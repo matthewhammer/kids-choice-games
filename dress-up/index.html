@@ -42,6 +42,14 @@
   .ctl > .lbl .val { color: var(--muted); font-weight: 400; }
   .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .row button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  /* a menu for each hand, mirrored about a line down the middle */
+  .ctl.pair { display: flex; }
+  .pair > .side { flex: 1 1 0; min-width: 0; }
+  .pair > .side:first-child { padding-right: 10px; }
+  .pair > .side:last-child { padding-left: 10px; border-left: 2px dashed var(--line); }
+  .pair > .side > .lbl { font-weight: 600; margin-bottom: 4px; }
+  .pair > .side:last-child > .lbl { text-align: right; }
+  .pair > .side:last-child > .row { justify-content: flex-end; }
   .swatch { width: 34px; height: 34px; border-radius: 50%; padding: 0; border: 3px solid var(--line); }
   .swatch[aria-pressed=true] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
   .swatch.skin { font-size: 0.6em; }
@@ -164,7 +172,7 @@ const DEFAULTS = {
   body:  { neck: 22, neckW: 26, arms: 55, armLen: 95, armW: 16, legLen: 140, legW: 20 },
   shirt: { style: "tee", collar: "v", width: 60, length: 150, color: "#5b8bd0", pattern: "plain",
            patternSize: 14, patternColor: "auto" },
-  hands: { style: "round", leftStyle: "same", size: 14, color: "skin", fingers: 5, alienFingers: 3, clawLen: 100, clawCount: 4, starPoints: 5, starAngle: 0,
+  hands: { style: "round", different: false, rightStyle: "round", size: 14, color: "skin", fingers: 5, alienFingers: 3, clawLen: 100, clawCount: 4, starPoints: 5, starAngle: 0,
            mittenAngle: 0, clawAngle: 0, humanAngle: 0, alienAngle: 0 },
   pants: { style: "long", color: "#34495e", pattern: "plain", patternSize: 14, patternColor: "auto", skirtLen: 50 },
   undies: { on: false, style: "trunks", top: false, color: "#3b82f6", pattern: "plain", patternSize: 14,
@@ -197,6 +205,12 @@ function upgradeFace(f, saved) {
 // before the alien finger slider there were two alien styles
 function upgradeHands(h) {
   if (h.style === "alien4" || h.style === "alien3") { h.alienFingers = h.style === "alien4" ? 4 : 3; h.style = "alien"; }
+  // "the hand on the left" (as we look at the picture) is the friend's
+  // own right hand: they face us
+  if ("leftStyle" in h) {
+    if (h.leftStyle && h.leftStyle !== "same") { h.different = true; h.rightStyle = h.leftStyle; }
+    delete h.leftStyle;
+  }
 }
 let state = clone(DEFAULTS);
 try {
@@ -2262,7 +2276,7 @@ function draw() {
   // (either hand's: the left may wear its own style)
   const reach = BIRD_SUIT[kind] ? B.armLen * 1.4 + 50
     : (suit ? handReach(suitHands(C, kind))
-            : Math.max(handReach(state.hands), handReach({ ...state.hands, style: leftHand(state.hands) }))) + 12;
+            : Math.max(handReach(state.hands), handReach({ ...state.hands, style: rightHand(state.hands) }))) + 12;
   // room for big hair on a tall head, a lid blown far off, and candy
   // and hair, stretched with the head (it hangs and spreads in face units)
   const hr = C ? { top: 0, bottom: 0, half: 0 } : hairReach(state.hair);
@@ -2470,9 +2484,10 @@ function draw() {
   if (!winged) {
     const hands = suit ? suitHands(C, kind) : state.hands;
     for (const { side, H, angle } of arms) {
-      // the hand on the left may wear a style of its own; a hand holding
-      // the broom is closed round it, a round fist
-      const own = !suit && side < 0 && hands.leftStyle && hands.leftStyle !== "same" ? { ...hands, style: hands.leftStyle } : hands;
+      // with different hands, the friend's right hand (on our left: they
+      // face us) wears its own style; a hand holding the broom is closed
+      // round it, a round fist
+      const own = !suit && side < 0 && hands.different ? { ...hands, style: hands.rightStyle } : hands;
       svg += handSvg(H[0], H[1], angle, side, broomH && side > 0 ? { ...own, style: "round" } : own, skin);
     }
   }
@@ -2511,10 +2526,10 @@ const ANIMAL_EYES = ["#e0a800", "#c6d43a", "#c88a1e", "#2b1a10", "#1a1410", "#3b
 const ACCENTS = ["#e89aa0", "#f4a0b0", "#5a3a2a", "#1d1410", "#f2c230", "#ff69b4"];
 const PATTERNS = [["plain", "plain"], ["stripes", "stripes"], ["dots", "dots"], ["hearts", "♥ hearts"], ["stars", "★ stars"]];
 
-// the hand on the left's style: its own, or the same as the other's
-const leftHand = h => (h.leftStyle && h.leftStyle !== "same" ? h.leftStyle : h.style);
+// the friend's right hand's style: its own, or the same as the other's
+const rightHand = h => (h.different ? h.rightStyle : h.style);
 // whether either hand wears a style, for showing that style's sliders
-const usesHand = (h, st) => h.style === st || leftHand(h) === st;
+const usesHand = (h, st) => h.style === st || rightHand(h) === st;
 const HAND_STYLES = [["round", "round"], ["mitten", "mittens"], ["star", "stars"], ["claw", "claws"],
                      ["human", "✋ human"], ["alien", "👽 alien"]];
 const TABS = [
@@ -2591,8 +2606,11 @@ const TABS = [
     ["range", "length", "length", 20, 300, 100, 190],
   ]],
   ["🖐 Hands", "hands", [
+    ["flip", "different", ["🖐️🖐️ hands are the same", "🖐️✊ hands are different"]],
     ["choice", "style", "style", HAND_STYLES],
-    ["choice", "leftStyle", "hand on the left", [["same", "same"], ...HAND_STYLES]],
+    // different hands get a menu each, placed as the hands are in the
+    // picture: the friend faces us, so their right hand is on our left
+    ["pair", "rightStyle", ["⬅️ right hand", "left hand ➡️"], "style", HAND_STYLES],
     ["color", "color", "color", ["skin", ...BRIGHT]],
     ["range", "fingers", "✋ number of fingers", 1, 100, 5, 7],
     ["range", "alienFingers", "👽 number of alien fingers", 1, 100, 2, 6],
@@ -2686,6 +2704,8 @@ function set(part, key, value) {
   // a skirt starts at skirt length and a dress at dress length
   if (part === "pants" && key === "style" && value === "skirt") state.pants.skirtLen = 50;
   if (part === "pants" && key === "style" && value === "dress") state.pants.skirtLen = 95;
+  // different hands start alike; then each changes on its own
+  if (part === "hands" && key === "different" && value) state.hands.rightStyle = state.hands.style;
   // a bikini comes with its top; trunks and briefs start without one
   if (part === "undies" && key === "style") state.undies.top = value === "bikini";
   // a figure too big for the stage, once a background is chosen, shrinks
@@ -2756,6 +2776,8 @@ const SHOWN_WHEN = {
   "costume.accent": c => !!ANIMALS[c.kind],
   "hair.length": h => ["long", "curly", "pigtails", "spiky", "afro"].includes(h.style),
   "pants.skirtLen": p => p.style === "skirt" || p.style === "dress",
+  "hands.style": h => !h.different,
+  "hands.rightStyle": h => !!h.different,
   "hands.fingers": h => usesHand(h, "human"),
   "hands.alienFingers": h => usesHand(h, "alien"),
   "hands.starPoints": h => usesHand(h, "star"),
@@ -2846,6 +2868,27 @@ function control(part, [kind, key, label, ...rest]) {
     box.append(b);
     syncs.push(() => { b.textContent = label + (state[part][key] ? ": on" : ": off");
                        b.setAttribute("aria-pressed", state[part][key]); });
+  } else if (kind === "flip") {
+    // one chip that says which way it is now; a tap turns it the other way
+    const b = el("button", { class: "flip", onclick: () => set(part, key, !state[part][key]) });
+    lbl.remove();
+    box.append(b);
+    syncs.push(() => { b.textContent = label[state[part][key] ? 1 : 0];
+                       b.setAttribute("aria-pressed", !!state[part][key]); });
+  } else if (kind === "pair") {
+    // two menus side by side, the first on the left, each with its own
+    // name, mirrored about the middle
+    const [otherKey, opts] = rest;
+    box.classList.add("pair");
+    box.replaceChildren(...[[key, label[0]], [otherKey, label[1]]].map(([k, text]) => {
+      const row = el("div", { class: "row" });
+      const bs = opts.map(([v, t]) => {
+        const b = el("button", { onclick: () => set(part, k, v) }, t);
+        row.append(b); return [v, b];
+      });
+      syncs.push(() => { for (const [v, b] of bs) b.setAttribute("aria-pressed", state[part][k] === v); });
+      return el("div", { class: "side" }, [el("div", { class: "lbl" }, [text]), row]);
+    }));
   } else if (kind === "choice") {
     const row = el("div", { class: "row" });
     const bs = rest[0].map(([v, text]) => {
@@ -3026,9 +3069,10 @@ document.getElementById("surprise").addEventListener("click", () => {
       else if (kind === "turn")
         state[part][key] = key === "starAngle" || Math.random() < 0.25 ? Math.random() * rest[0](state[part]) : 0;
       else if (kind === "toggle") state[part][key] = Math.random() < 0.3;
-      // (the hand on the left mostly matches the other one)
-      else if (kind === "choice")
-        state[part][key] = key === "leftStyle" && Math.random() < 0.75 ? "same" : pick(rest[0])[0];
+      // (the hands are mostly the same)
+      else if (kind === "flip") state[part][key] = Math.random() < 0.25;
+      else if (kind === "choice") state[part][key] = pick(rest[0])[0];
+      else if (kind === "pair") state[part][key] = pick(rest[1])[0];
       else if (kind === "color") state[part][key] = pick(rest[0]);
     }
   // keep the surprises friendly: mostly not sick, not exploded, a normal-ish head

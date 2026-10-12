@@ -2,6 +2,17 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.2 (2026-10-12)
+
+Everything in 0.0.1, with the hands' styles chosen in a new way. A player asked for it while still learning that a friend who faces you has their left hand on your right.
+
+- **One chip says whether the hands are the same or different,** and a tap flips it: 🖐️🖐️ *hands are the same*, or 🖐️✊ *hands are different*. It replaces the "hand on the left" menu and its "same" choice.
+- **Same hands have one style menu,** for both hands.
+- **Different hands have a menu each,** side by side and mirrored about a dashed line, placed as the hands are in the picture. The friend faces us, so **⬅️ right hand** is on the left and **left hand ➡️** is on the right, each arrow pointing at its hand.
+- Different hands start alike, and then each changes on its own.
+- 🎲 Surprise me makes the hands different about one time in four, as before.
+- Friends saved with 0.0.1 load as they were: their "hand on the left" was the friend's right hand, and it still is.
+
 ## 0.0.1 (2026-10-12)
 
 The game as it was when it got its first version number: everything built from 2026-10-09 to 2026-10-11, with M and N choosing. Those are the 64 commits before this file.
