@@ -180,7 +180,7 @@ const DEFAULTS = {
   shoes: { style: "sneaker", size: 100, color: "#c0392b" },
   // the figure's size and place in a background scene (dragged there)
   background: { kind: "none", figSize: 100, figX: 0, figY: 0, chickenLegs: false, legSize: 100, hutNear: 0,
-                eyeRate: 30, eyeGlow: 70 },
+                eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100 },
   // the sliders pinned to the full-screen controls, as "part.key"
   hud: { pins: [], min: [] },
   costume: { kind: "none", fur: "#e8862a", marks: "#1f1a17", belly: "#f7ead8", eyes: "#e0a800",
@@ -1966,6 +1966,9 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // big as the size slider says (a share of the hole). SVG's own
     // animation, on the picture's clock, so a redraw keeps them in step.
     const blinks = opts.eyeRate ?? 30, glow = (opts.eyeGlow ?? 70) / 100;
+    // the fence's skulls: each its own size, from the usual size up to the
+    // biggest (a share of the usual), and their eyes' size
+    const skullMax = Math.max(1, (opts.skullMax ?? 300) / 100), skullEye = (opts.skullEye ?? 100) / 100;
     const eyeDot = (cx, cy, hole) => {
       if (glow <= 0) return "";
       const r = hole * glow;
@@ -2072,23 +2075,36 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       s += `<path d="M${P(x - 7 * k, y)} L${P(x - 3 * k, y - 12 * k)} L${P(x, y)} L${P(x + 3 * k, y - 14 * k)} L${P(x + 7 * k, y)} Z" fill="#3d5a2a"/>`;
     }
     // a palisade across the middle: pointed stakes side by side, a skull
-    // on every other one
+    // on every fourth one (the skulls drawn after the whole fence, so a big
+    // one is in front of the stakes beside it)
     {
       const fy = g - 26 * k, ph = 70 * k, step = 22 * k;
+      let skulls = "";
       s += `<rect x="${f1(x0 - 10)}" y="${f1(fy - ph * 0.55)}" width="${f1(W + 20)}" height="${f1(6 * k)}" fill="#3a2a1a"/>`;
       for (let i = 0, x = x0 - step / 2; x < x1 + step; i++, x += step) {
         const h = ph * (0.9 + 0.2 * R(i, 50)), c = i % 2 ? "#6b5236" : "#7a5e3e";
         s += `<polygon points="${P(x - step / 2 + 1, fy)} ${P(x - step / 2 + 1, fy - h)} ${P(x, fy - h - 12 * k)} ${P(x + step / 2 - 1, fy - h)} ${P(x + step / 2 - 1, fy)}" fill="${c}" stroke="#2f2216" stroke-width="${f1(1.4 * k)}"/>` +
              `<line x1="${f1(x - 3 * k)}" y1="${f1(fy - h * 0.8)}" x2="${f1(x - 2 * k)}" y2="${f1(fy - h * 0.3)}" stroke="#4a3622" stroke-width="${f1(1.2 * k)}"/>`;
         if (i % 4 !== 1) continue;
-        const sx = x, sy = fy - h - 14 * k;
-        s += `<path d="M${P(sx - 11 * k, sy + 2 * k)} Q${P(sx - 12 * k, sy - 14 * k)} ${P(sx, sy - 15 * k)} Q${P(sx + 12 * k, sy - 14 * k)} ${P(sx + 11 * k, sy + 2 * k)} ` +
-             `L${P(sx + 6 * k, sy + 4 * k)} L${P(sx + 5 * k, sy + 10 * k)} L${P(sx - 5 * k, sy + 10 * k)} L${P(sx - 6 * k, sy + 4 * k)} Z" fill="#efe8d8" stroke="#6b6355" stroke-width="${f1(1.2 * k)}"/>` +
-             `<circle cx="${f1(sx - 4.5 * k)}" cy="${f1(sy - 3 * k)}" r="${f1(3.4 * k)}" fill="#1a1426"/><circle cx="${f1(sx + 4.5 * k)}" cy="${f1(sy - 3 * k)}" r="${f1(3.4 * k)}" fill="#1a1426"/>` +
-             eyeDot(sx - 4.5 * k, sy - 3 * k, 3.4 * k) + eyeDot(sx + 4.5 * k, sy - 3 * k, 3.4 * k) +
-             `<path d="M${P(sx - 1.5 * k, sy + 3 * k)} L${P(sx, sy)} L${P(sx + 1.5 * k, sy + 3 * k)} Z" fill="#1a1426"/>` +
-             [-3, 0, 3].map(t => `<line x1="${f1(sx + t * k)}" y1="${f1(sy + 6 * k)}" x2="${f1(sx + t * k)}" y2="${f1(sy + 10 * k)}" stroke="#6b6355" stroke-width="${f1(1 * k)}"/>`).join("");
+        // A skull on the stake, the tip in it: drawn in its own units (k at
+        // the usual size; x across, y down, its eyes on the line y = -3),
+        // then scaled about the tip. Bigger eyes keep their gap in the
+        // middle and grow the skull to hold them, as a face's do: its sides
+        // and its top out, its nose and jaw down.
+        const u = k * (1 + (skullMax - 1) * R(i, 51)), tipX = x, tipY = fy - h - 12 * k;
+        const r = 3.4 * skullEye, ex = 1.1 + r;
+        const hw = Math.max(1, (ex + r + 3.1) / 11), up = Math.max(1, (r + 8.6) / 12), drop = Math.max(0, r - 3.4);
+        const jw = 1 + (hw - 1) * 0.5;
+        const L = (lx, ly) => P(tipX + lx * u, tipY + (ly - 2 - drop) * u);
+        const Lx = lx => f1(tipX + lx * u), Ly = ly => f1(tipY + (ly - 2 - drop) * u);
+        skulls += `<path d="M${L(-11 * hw, 2 + drop)} Q${L(-12 * hw, -3 - 11 * up)} ${L(0, -3 - 12 * up)} Q${L(12 * hw, -3 - 11 * up)} ${L(11 * hw, 2 + drop)} ` +
+             `L${L(6 * jw, 4 + drop)} L${L(5 * jw, 10 + drop)} L${L(-5 * jw, 10 + drop)} L${L(-6 * jw, 4 + drop)} Z" fill="#efe8d8" stroke="#6b6355" stroke-width="${f1(1.2 * u)}"/>` +
+             [-1, 1].map(sd => `<circle cx="${Lx(sd * ex)}" cy="${Ly(-3)}" r="${f1(r * u)}" fill="#1a1426"/>`).join("") +
+             [-1, 1].map(sd => eyeDot(tipX + sd * ex * u, tipY + (-5 - drop) * u, r * u)).join("") +
+             `<path d="M${L(-1.5, 3 + drop)} L${L(0, drop)} L${L(1.5, 3 + drop)} Z" fill="#1a1426"/>` +
+             [-3, 0, 3].map(t => `<line x1="${Lx(t * jw)}" y1="${Ly(6 + drop)}" x2="${Lx(t * jw)}" y2="${Ly(10 + drop)}" stroke="#6b6355" stroke-width="${f1(1 * u)}"/>`).join("");
       }
+      s += skulls;
     }
     // and nearer: one giant on the left, its trunk massive and its limbs
     // sprawling wide toward the middle, its roots humped up out of the
@@ -2714,7 +2730,9 @@ const TABS = [
     ["range", "legSize", "🐔 leg size", 20, 300, 80, 140],
     ["range", "hutNear", "🛖 hut: far ↔ near (behind the fence)", 0, 100, 0, 60],
     ["range", "eyeRate", "💀 skull eyes: blinks a minute (0 = steady)", 0, 240, 20, 60],
-    ["range", "eyeGlow", "💀 skull eyes: size", 0, 100, 40, 90],
+    ["range", "skullMax", "💀 skulls: biggest size (% of the usual; the smallest is the usual)", 100, 3000, 200, 500],
+    ["range", "skullEye", "💀 skull eye size (the skulls grow to hold them)", 50, 500, 80, 200],
+    ["range", "eyeGlow", "💀 skull eyes: red glow size", 0, 100, 40, 90],
   ]],
 ];
 
@@ -2796,6 +2814,8 @@ const SHOWN_WHEN = {
   "background.hutNear": b => b.kind === "witch",
   "background.eyeRate": b => b.kind === "witch",
   "background.eyeGlow": b => b.kind === "witch",
+  "background.skullMax": b => b.kind === "witch",
+  "background.skullEye": b => b.kind === "witch",
   "costume.marks": c => !!ANIMALS[c.kind],
   "costume.spot": c => c.furPattern === "rosettes" && !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),
   "costume.belly": c => !!ANIMALS[c.kind],

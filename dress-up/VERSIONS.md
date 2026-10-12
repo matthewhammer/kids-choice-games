@@ -2,6 +2,16 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.4 (2026-10-12)
+
+Everything in 0.0.3, with the skulls on the witch's fence refined.
+
+- **Each skull has its own size,** from the usual size (the smallest) up to three times bigger.
+- **💀 skulls: biggest size** sets how big the biggest skull may be: from 100% (all the usual size) to 3000%, ten times the new usual biggest, for silly-huge skulls that tower over the woods.
+- **💀 skull eye size** (50% to 500%) makes the skulls' eyes bigger or smaller. As on a face, bigger eyes grow the skull to hold them: its sides and top move out, and its nose and jaw move down. The red glow stays its share of the eye.
+- Each skull stays on its stake, growing up and out from the tip, and is drawn in front of the whole fence, so a big skull covers the stakes beside it.
+- The old "skull eyes: size" slider is now **💀 skull eyes: red glow size**, which is what it always set.
+
 ## 0.0.3 (2026-10-12)
 
 Everything in 0.0.2, with each hand in its own column.
