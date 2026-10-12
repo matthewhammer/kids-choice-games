@@ -2,6 +2,17 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.3 (2026-10-12)
+
+Everything in 0.0.2, with each hand in its own column.
+
+- **With the hands the same,** the right/left columns are gone. In 0.0.2 they showed in that mode too, under the one style menu. Below the color come the sliders for the style the hands wear.
+- **With the hands different,** each column holds everything about its own hand: its style, and the sliders for that style, such as the number of fingers, the claws, the star's points, and the hand's angle. Each hand keeps its own values, so one hand can have 9 fingers and the other 5. Only the color and the size, which both hands share, stay below the columns.
+- Different hands start as a copy of each other, with their style and every setting, then change on their own.
+- A pinned slider from one hand's column says whose it is in the full-screen controls, such as "⬅️ right hand: ✋ number of fingers".
+- 🎲 Surprise me picks each hand's settings on their own when the hands are different.
+- Friends saved with 0.0.1 or 0.0.2 load as they were: their right hand takes its own style and keeps the settings it was drawn with.
+
 ## 0.0.2 (2026-10-12)
 
 Everything in 0.0.1, with the hands' styles chosen in a new way. A player asked for it while still learning that a friend who faces you has their left hand on your right.

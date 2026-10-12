@@ -43,13 +43,13 @@
   .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .row button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   /* a menu for each hand, mirrored about a line down the middle */
-  .ctl.pair { display: flex; }
+  .ctl.pair:not([hidden]) { display: flex; }
   .pair > .side { flex: 1 1 0; min-width: 0; }
   .pair > .side:first-child { padding-right: 10px; }
   .pair > .side:last-child { padding-left: 10px; border-left: 2px dashed var(--line); }
   .pair > .side > .lbl { font-weight: 600; margin-bottom: 4px; }
   .pair > .side:last-child > .lbl { text-align: right; }
-  .pair > .side:last-child > .row { justify-content: flex-end; }
+  .pair > .side:last-child .row { justify-content: flex-end; }
   .swatch { width: 34px; height: 34px; border-radius: 50%; padding: 0; border: 3px solid var(--line); }
   .swatch[aria-pressed=true] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
   .swatch.skin { font-size: 0.6em; }
@@ -172,7 +172,7 @@ const DEFAULTS = {
   body:  { neck: 22, neckW: 26, arms: 55, armLen: 95, armW: 16, legLen: 140, legW: 20 },
   shirt: { style: "tee", collar: "v", width: 60, length: 150, color: "#5b8bd0", pattern: "plain",
            patternSize: 14, patternColor: "auto" },
-  hands: { style: "round", different: false, rightStyle: "round", size: 14, color: "skin", fingers: 5, alienFingers: 3, clawLen: 100, clawCount: 4, starPoints: 5, starAngle: 0,
+  hands: { style: "round", different: false, size: 14, color: "skin", fingers: 5, alienFingers: 3, clawLen: 100, clawCount: 4, starPoints: 5, starAngle: 0,
            mittenAngle: 0, clawAngle: 0, humanAngle: 0, alienAngle: 0 },
   pants: { style: "long", color: "#34495e", pattern: "plain", patternSize: 14, patternColor: "auto", skirtLen: 50 },
   undies: { on: false, style: "trunks", top: false, color: "#3b82f6", pattern: "plain", patternSize: 14,
@@ -205,18 +205,31 @@ function upgradeFace(f, saved) {
 // before the alien finger slider there were two alien styles
 function upgradeHands(h) {
   if (h.style === "alien4" || h.style === "alien3") { h.alienFingers = h.style === "alien4" ? 4 : 3; h.style = "alien"; }
-  // "the hand on the left" (as we look at the picture) is the friend's
-  // own right hand: they face us
-  if ("leftStyle" in h) {
-    if (h.leftStyle && h.leftStyle !== "same") { h.different = true; h.rightStyle = h.leftStyle; }
-    delete h.leftStyle;
-  }
 }
+// Before 0.0.3 the friend's right hand had only a style of its own, and
+// took the rest from the hands, as it drew: "leftStyle" in 0.0.1 (the hand
+// on our left: the friend faces us), "rightStyle" in 0.0.2.
+function upgradeRightHand(st, saved) {
+  const h = st.hands, mine = h.leftStyle && h.leftStyle !== "same" ? h.leftStyle : h.rightStyle;
+  if (h.leftStyle && h.leftStyle !== "same") h.different = true;
+  if (!(saved && saved.rightHand)) {
+    for (const k of HAND_OWN) st.rightHand[k] = h[k];
+    if (mine) st.rightHand.style = mine;
+  }
+  delete h.leftStyle; delete h.rightStyle;
+}
+// What each hand has of its own: its style and that style's settings.
+// With different hands, "hands" holds the friend's left hand's, and
+// "rightHand" their right hand's; the color and the size are both hands'.
+const HAND_OWN = ["style", "fingers", "alienFingers", "clawLen", "clawCount", "starPoints", "starAngle",
+                  "mittenAngle", "clawAngle", "humanAngle", "alienAngle"];
+DEFAULTS.rightHand = Object.fromEntries(HAND_OWN.map(k => [k, DEFAULTS.hands[k]]));
 let state = clone(DEFAULTS);
 try {
   const saved = JSON.parse(localStorage.getItem("dress-up-v1") || "null");
   if (saved) for (const k of Object.keys(DEFAULTS)) state[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
   upgradeHands(state.hands);
+  upgradeRightHand(state, saved);
   upgradeFace(state.face, saved.face);
   // pants length moved to the legs (leg length)
   if (saved && saved.pants && saved.pants.length && !(saved.body && saved.body.legLen))
@@ -2276,7 +2289,7 @@ function draw() {
   // (either hand's: the left may wear its own style)
   const reach = BIRD_SUIT[kind] ? B.armLen * 1.4 + 50
     : (suit ? handReach(suitHands(C, kind))
-            : Math.max(handReach(state.hands), handReach({ ...state.hands, style: rightHand(state.hands) }))) + 12;
+            : Math.max(handReach(state.hands), handReach(rightHandOf(state.hands)))) + 12;
   // room for big hair on a tall head, a lid blown far off, and candy
   // and hair, stretched with the head (it hangs and spreads in face units)
   const hr = C ? { top: 0, bottom: 0, half: 0 } : hairReach(state.hair);
@@ -2487,7 +2500,7 @@ function draw() {
       // with different hands, the friend's right hand (on our left: they
       // face us) wears its own style; a hand holding the broom is closed
       // round it, a round fist
-      const own = !suit && side < 0 && hands.different ? { ...hands, style: hands.rightStyle } : hands;
+      const own = !suit && side < 0 ? rightHandOf(hands) : hands;
       svg += handSvg(H[0], H[1], angle, side, broomH && side > 0 ? { ...own, style: "round" } : own, skin);
     }
   }
@@ -2526,12 +2539,32 @@ const ANIMAL_EYES = ["#e0a800", "#c6d43a", "#c88a1e", "#2b1a10", "#1a1410", "#3b
 const ACCENTS = ["#e89aa0", "#f4a0b0", "#5a3a2a", "#1d1410", "#f2c230", "#ff69b4"];
 const PATTERNS = [["plain", "plain"], ["stripes", "stripes"], ["dots", "dots"], ["hearts", "♥ hearts"], ["stars", "★ stars"]];
 
-// the friend's right hand's style: its own, or the same as the other's
-const rightHand = h => (h.different ? h.rightStyle : h.style);
-// whether either hand wears a style, for showing that style's sliders
-const usesHand = (h, st) => h.style === st || rightHand(h) === st;
+// the friend's right hand: its own style and settings, or the same as the
+// other's (the color and the size are always both hands')
+const rightHandOf = h => (h.different ? { ...h, ...state.rightHand } : h);
 const HAND_STYLES = [["round", "round"], ["mitten", "mittens"], ["star", "stars"], ["claw", "claws"],
                      ["human", "✋ human"], ["alien", "👽 alien"]];
+// one hand's own controls: its style, and the sliders for each style
+const HAND_CTLS = [
+  ["choice", "style", "style", HAND_STYLES],
+  ["range", "fingers", "✋ number of fingers", 1, 100, 5, 7],
+  ["range", "alienFingers", "👽 number of alien fingers", 1, 100, 2, 6],
+  ["range", "starPoints", "⭐ number of star points", 1, 100, 4, 8],
+  ["range", "clawCount", "🐾 number of claws", 1, 100, 3, 6],
+  ["range", "clawLen", "🐾 claw length", 20, 900, 70, 140],
+  ["turn", "starAngle", "⭐ star angle (radians)", handPeriod],
+  ["turn", "mittenAngle", "🧤 mitten angle (radians)", handPeriod],
+  ["turn", "clawAngle", "🐾 claw angle (radians)", handPeriod],
+  ["turn", "humanAngle", "✋ human hand angle (radians)", handPeriod],
+  ["turn", "alienAngle", "👽 alien hand angle (radians)", handPeriod],
+];
+// the style each of a hand's sliders is for
+const SLIDER_STYLE = { fingers: "human", alienFingers: "alien", starPoints: "star", clawCount: "claw", clawLen: "claw",
+                       starAngle: "star", mittenAngle: "mitten", clawAngle: "claw", humanAngle: "human", alienAngle: "alien" };
+// a cat costume's paws have claws, set with the claw sliders
+const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
+// a hand's slider shows when the hand wears its style
+const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
 const TABS = [
   ["😀 Face", "face", [
     ["color", "color", "skin & head color", SKINS],
@@ -2607,21 +2640,14 @@ const TABS = [
   ]],
   ["🖐 Hands", "hands", [
     ["flip", "different", ["🖐️🖐️ hands are the same", "🖐️✊ hands are different"]],
-    ["choice", "style", "style", HAND_STYLES],
-    // different hands get a menu each, placed as the hands are in the
-    // picture: the friend faces us, so their right hand is on our left
-    ["pair", "rightStyle", ["⬅️ right hand", "left hand ➡️"], "style", HAND_STYLES],
+    // different hands get a column each, placed as the hands are in the
+    // picture (the friend faces us, so their right hand is on our left),
+    // each with its own style and that style's sliders
+    ["pair", "rightHand", ["⬅️ right hand", "left hand ➡️"], "hands", HAND_CTLS],
+    // the same hands: one style, and its sliders after the color
+    HAND_CTLS[0],
     ["color", "color", "color", ["skin", ...BRIGHT]],
-    ["range", "fingers", "✋ number of fingers", 1, 100, 5, 7],
-    ["range", "alienFingers", "👽 number of alien fingers", 1, 100, 2, 6],
-    ["range", "starPoints", "⭐ number of star points", 1, 100, 4, 8],
-    ["range", "clawCount", "🐾 number of claws", 1, 100, 3, 6],
-    ["range", "clawLen", "🐾 claw length", 20, 900, 70, 140],
-    ["turn", "starAngle", "⭐ star angle (radians)", handPeriod],
-    ["turn", "mittenAngle", "🧤 mitten angle (radians)", handPeriod],
-    ["turn", "clawAngle", "🐾 claw angle (radians)", handPeriod],
-    ["turn", "humanAngle", "✋ human hand angle (radians)", handPeriod],
-    ["turn", "alienAngle", "👽 alien hand angle (radians)", handPeriod],
+    ...HAND_CTLS.slice(1),
     ["range", "size", "size", 2, 80, 6, 28],
   ]],
   ["👖 Pants", "pants", [
@@ -2705,7 +2731,8 @@ function set(part, key, value) {
   if (part === "pants" && key === "style" && value === "skirt") state.pants.skirtLen = 50;
   if (part === "pants" && key === "style" && value === "dress") state.pants.skirtLen = 95;
   // different hands start alike; then each changes on its own
-  if (part === "hands" && key === "different" && value) state.hands.rightStyle = state.hands.style;
+  if (part === "hands" && key === "different" && value)
+    for (const k of HAND_OWN) state.rightHand[k] = state.hands[k];
   // a bikini comes with its top; trunks and briefs start without one
   if (part === "undies" && key === "style") state.undies.top = value === "bikini";
   // a figure too big for the stage, once a background is chosen, shrinks
@@ -2776,19 +2803,12 @@ const SHOWN_WHEN = {
   "costume.accent": c => !!ANIMALS[c.kind],
   "hair.length": h => ["long", "curly", "pigtails", "spiky", "afro"].includes(h.style),
   "pants.skirtLen": p => p.style === "skirt" || p.style === "dress",
+  // the same hands: one style menu, and its sliders below the color;
+  // different hands: a column each (claws: also a cat costume's paws)
   "hands.style": h => !h.different,
-  "hands.rightStyle": h => !!h.different,
-  "hands.fingers": h => usesHand(h, "human"),
-  "hands.alienFingers": h => usesHand(h, "alien"),
-  "hands.starPoints": h => usesHand(h, "star"),
-  "hands.starAngle": h => usesHand(h, "star"),
-  "hands.mittenAngle": h => usesHand(h, "mitten"),
-  "hands.clawAngle": h => usesHand(h, "claw"),
-  "hands.humanAngle": h => usesHand(h, "human"),
-  "hands.alienAngle": h => usesHand(h, "alien"),
-  // claws: the claw hand's, or a cat costume's paws
-  "hands.clawLen": h => usesHand(h, "claw") || (!!CLAWED[state.costume.kind] && !!costumeOn()),
-  "hands.clawCount": h => usesHand(h, "claw") || (!!CLAWED[state.costume.kind] && !!costumeOn()),
+  "hands.rightHand": h => !!h.different,
+  ...Object.fromEntries(Object.keys(SLIDER_STYLE).map(k =>
+    ["hands." + k, h => (!h.different && handSliderShown(k, h)) || ((k === "clawLen" || k === "clawCount") && clawedSuit())])),
   "undies.style": u => u.on,
   "undies.top": u => u.on && u.style !== "onepiece",
   "undies.color": u => u.on,
@@ -2819,7 +2839,7 @@ function togglePin(id) {
 // (while the HUD is built: its sliders have no pins -- pinning is for
 // the editor, not the performance)
 let buildingHud = false;
-function control(part, [kind, key, label, ...rest]) {
+function control(part, [kind, key, label, ...rest], opts = {}) {
   const val = el("span", { class: "val" });
   const name = el("span", { class: "name" }, [label]);
   const lbl = el("div", { class: "lbl" }, [el("span", {}, [name]), val]);
@@ -2876,19 +2896,18 @@ function control(part, [kind, key, label, ...rest]) {
     syncs.push(() => { b.textContent = label[state[part][key] ? 1 : 0];
                        b.setAttribute("aria-pressed", !!state[part][key]); });
   } else if (kind === "pair") {
-    // two menus side by side, the first on the left, each with its own
-    // name, mirrored about the middle
-    const [otherKey, opts] = rest;
+    // two columns side by side, mirrored about the middle: the first part's
+    // on the left, each with its name, then its controls, a slider showing
+    // when its own part wears the slider's style
+    const [otherPart, ctls] = rest;
     box.classList.add("pair");
-    box.replaceChildren(...[[key, label[0]], [otherKey, label[1]]].map(([k, text]) => {
-      const row = el("div", { class: "row" });
-      const bs = opts.map(([v, t]) => {
-        const b = el("button", { onclick: () => set(part, k, v) }, t);
-        row.append(b); return [v, b];
-      });
-      syncs.push(() => { for (const [v, b] of bs) b.setAttribute("aria-pressed", state[part][k] === v); });
-      return el("div", { class: "side" }, [el("div", { class: "lbl" }, [text]), row]);
-    }));
+    box.replaceChildren(...[[key, label[0]], [otherPart, label[1]]].map(([p, text]) =>
+      el("div", { class: "side" }, [el("div", { class: "lbl" }, [text]), ...ctls.map(c => {
+        const b = control(p, c, { when: SLIDER_STYLE[c[1]] ? h => h.style === SLIDER_STYLE[c[1]] : null });
+        // (the column's name says whose style it is)
+        if (c[0] === "choice") b.querySelector(".lbl").remove();
+        return b;
+      })])));
   } else if (kind === "choice") {
     const row = el("div", { class: "row" });
     const bs = rest[0].map(([v, text]) => {
@@ -2978,7 +2997,7 @@ function control(part, [kind, key, label, ...rest]) {
     box.append(svg);
     syncs.push(() => sun.setAttribute("transform", `translate(${state[part].lightX} ${state[part].lightY})`));
   }
-  const when = SHOWN_WHEN[part + "." + key];
+  const when = "when" in opts ? opts.when : SHOWN_WHEN[part + "." + key];
   if (when) syncs.push(() => { box.hidden = !when(state[part]); });
   return box;
 }
@@ -3024,7 +3043,7 @@ document.addEventListener("fullscreenchange", () => {
 // figure to move it), then every pinned slider, made by control() as in
 // the panel, with their own refreshes.
 const hud = document.getElementById("hud"), hudBtn = document.getElementById("hud-btn");
-const hudKey = () => JSON.stringify(state.hud.pins || []) + (state.background.kind !== "none");
+const hudKey = () => JSON.stringify(state.hud.pins || []) + (state.background.kind !== "none") + !!state.hands.different;
 let hudShown = "";
 function renderHud() {
   if (hud.hidden) return;
@@ -3037,8 +3056,14 @@ function renderHud() {
     for (const spec of TABS.find(t => t[1] === "background")[2].filter(c => c[1] === "figSize" || c[1] === "figPos")) boxes.push(control("background", spec));
   for (const id of state.hud.pins || []) {
     const [part, key] = id.split("."), tabEntry = TABS.find(t => t[1] === part);
-    const spec = tabEntry && tabEntry[2].find(c => c[1] === key);
-    if (spec) boxes.push(control(part, spec));
+    const spec = (part === "rightHand" ? HAND_CTLS : tabEntry ? tabEntry[2] : []).find(c => c[1] === key);
+    if (!spec) continue;
+    // one hand's own slider says whose it is
+    const whose = part === "rightHand" ? "⬅️ right hand: " : part === "hands" && SLIDER_STYLE[key] && state.hands.different ? "left hand ➡️: " : "";
+    if (!whose) { boxes.push(control(part, spec)); continue; }
+    const [kind, , label, ...rest] = spec;
+    boxes.push(control(part, [kind, key, whose + label, ...rest],
+                       { when: h => (part === "hands" || state.hands.different) && handSliderShown(key, h) }));
   }
   if (!boxes.length)
     boxes.push(el("div", { class: "empty" }, "Pin sliders with 📌 in the controls, and they show up here."));
@@ -3060,21 +3085,24 @@ hudBtn.addEventListener("click", () => setHud(hud.hidden));
 
 const pick = xs => xs[Math.floor(Math.random() * xs.length)];
 const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+// one control's surprise
+function surpriseOne(part, [kind, key, , ...rest]) {
+  if (kind === "range") state[part][key] = rnd(rest[2] ?? rest[0], rest[3] ?? rest[1]);
+  // (a star turned any way still looks like a star; other hands keep
+  // their usual angle most times)
+  else if (kind === "turn")
+    state[part][key] = key === "starAngle" || Math.random() < 0.25 ? Math.random() * rest[0](state[part]) : 0;
+  else if (kind === "toggle") state[part][key] = Math.random() < 0.3;
+  // (the hands are mostly the same)
+  else if (kind === "flip") state[part][key] = Math.random() < 0.25;
+  else if (kind === "choice") state[part][key] = pick(rest[0])[0];
+  // (a pair's first column has a part of its own: the friend's right hand)
+  else if (kind === "pair") for (const c of rest[1]) surpriseOne(key, c);
+  else if (kind === "color") state[part][key] = pick(rest[0]);
+}
 document.getElementById("surprise").addEventListener("click", () => {
   for (const [, part, ctls] of TABS)
-    for (const [kind, key, , ...rest] of ctls) {
-      if (kind === "range") state[part][key] = rnd(rest[2] ?? rest[0], rest[3] ?? rest[1]);
-      // (a star turned any way still looks like a star; other hands keep
-      // their usual angle most times)
-      else if (kind === "turn")
-        state[part][key] = key === "starAngle" || Math.random() < 0.25 ? Math.random() * rest[0](state[part]) : 0;
-      else if (kind === "toggle") state[part][key] = Math.random() < 0.3;
-      // (the hands are mostly the same)
-      else if (kind === "flip") state[part][key] = Math.random() < 0.25;
-      else if (kind === "choice") state[part][key] = pick(rest[0])[0];
-      else if (kind === "pair") state[part][key] = pick(rest[1])[0];
-      else if (kind === "color") state[part][key] = pick(rest[0]);
-    }
+    for (const c of ctls) surpriseOne(part, c);
   // keep the surprises friendly: mostly not sick, not exploded, a normal-ish head
   const F = state.face;
   if (Math.random() < 0.75) F.sick = 0;
@@ -3205,6 +3233,7 @@ document.getElementById("load-file").addEventListener("change", async e => {
     const next = clone(DEFAULTS);
     for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
     upgradeHands(next.hands);
+    upgradeRightHand(next, saved);
     upgradeFace(next.face, saved.face);
     state = next;
     changed();
