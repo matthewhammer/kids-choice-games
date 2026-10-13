@@ -2,6 +2,21 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.9, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead.
+
+- **🔊 The music's mute chip** is now at the top of the 🎵 Music tab, above the rest, not at the bottom under the mixing board.
+- **🌲 The forest walk is twice as long,** about 3 minutes:
+  - a third flute tune that wanders into E minor, over chords of its own;
+  - plucked violins answering the flute;
+  - a cuckoo calling far off, dewdrops, and a woodpecker tapping into the echo;
+  - a section a fourth higher, and breaks where the bass drops out.
+- **🌿 The peaceful garden is longer too,** about 4 minutes:
+  - a third flute tune in D minor, over its own pad and music box;
+  - wind chimes, soft vibraphone chords and a gentle bass;
+  - a section a whole step higher, and a quiet break of chimes and birds.
+
 ## 0.0.9 (2026-10-12)
 
 Everything in 0.0.8, plus a knob for each instrument, a tape stop, and a steady line for where the tune is.

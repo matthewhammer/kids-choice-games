@@ -2819,22 +2819,42 @@ const INSTRUMENTS = {
 const S = (bars, names, up = 0) => ({ bars, names: names.split(" "), up });
 const TUNES = {
   forest: { name: "🌲 a walk in the woods", make: () => {
-    const chords = ["G", "C", "G", "D", "G", "C", "D", "G"];
-    return { bpm: 100, room: 2, level: 1.1, parts: [
+    const chords = ["G", "C", "G", "D", "G", "C", "D", "G"], minor = ["Em", "C", "G", "D", "Em", "Am", "D", "G"];
+    return { bpm: 100, room: 2, level: 1.3, parts: [
       { name: "fluteA", inst: "flute", rev: 0.25, line: lineOf(
         "D5:2 G5:2 B5:2 A5:2 G5:4 D5:4 | E5:2 G5:2 C6:2 B5:2 A5:4 G5:4 | B5:2 A5:2 G5:2 A5:2 B5:4 D6:4 | A5:4 F#5:2 E5:2 D5:8 | " +
         "D5:2 G5:2 B5:2 D6:2 C6:2 B5:2 A5:4 | G5:2 E5:2 C5:2 E5:2 G5:4 A5:4 | F#5:2 A5:2 D6:2 C6:2 B5:2 A5:2 F#5:4 | G5:12 r:4") },
       { name: "fluteB", inst: "flute", rev: 0.25, line: lineOf(
         "B5:4 G5:4 D5:4 G5:4 | C6:4 B5:2 A5:2 G5:4 E5:4 | D5:2 E5:2 G5:2 A5:2 B5:8 | A5:2 B5:2 A5:2 F#5:2 D5:8 | " +
         "G5:2 A5:2 B5:4 D6:4 B5:4 | C6:2 B5:2 A5:2 G5:2 E5:8 | F#5:4 A5:4 C6:4 F#5:4 | G5:16") },
+      // a third tune, wandering into E minor, over chords of its own
+      { name: "fluteC", inst: "flute", rev: 0.3, line: lineOf(
+        "E5:4 G5:2 B5:2 E6:4 D6:4 | C6:4 B5:2 A5:2 G5:4 E5:4 | D5:2 G5:2 B5:4 A5:2 G5:2 D5:4 | F#5:4 A5:4 D6:8 | " +
+        "E6:4 D6:2 B5:2 G5:4 E5:4 | A5:4 C6:2 E6:2 D6:4 C6:4 | B5:2 A5:2 F#5:2 A5:2 D5:8 | G5:12 r:4") },
+      // plucked violins answering the flute, low and steady
+      { name: "counter", inst: "fiddle", level: 1, rev: 0.25, line: lineOf(
+        "B4:4 D5:4 G4:4 D5:4 | C5:4 E5:4 G4:4 E5:4 | B4:4 G4:4 D5:4 B4:4 | A4:4 F#4:4 D4:4 F#4:4 | " +
+        "G4:4 B4:4 D5:4 B4:4 | E5:4 C5:4 G4:4 C5:4 | F#4:4 A4:4 C5:4 A4:4 | G4:8 r:8") },
       { name: "arps", inst: "pizz", level: 0.7, rev: 0.2, line: arpOf(chords, 16, [0, 1, 2, 1], 4, 4) },
+      { name: "arpsMinor", inst: "pizz", level: 0.7, rev: 0.2, line: arpOf(minor, 16, [0, 1, 2, 1], 4, 4) },
       { name: "bass", inst: "bass", level: 0.6, line: bassOf(chords, 16, [[0, 0, 6], [8, 7, 6]], 2) },
+      { name: "bassMinor", inst: "bass", level: 0.6, line: bassOf(minor, 16, [[0, 0, 6], [8, 7, 6]], 2) },
       { name: "shaker", inst: "shaker", level: 0.5, line: hitsOf("o.x.o.x.o.x.o.x.") },
       { name: "kick", inst: "kick", level: 0.4, line: hitsOf("x.......x.......") },
       { name: "birds", inst: "bird", level: 0.8, rev: 0.3, line: lineOf("r:20 E7:1 r:43 G7:1 r:30 D7:1 r:32") },
+      // a cuckoo, far off
+      { name: "cuckoo", inst: "flute", level: 0.7, rev: 0.45, line: lineOf("r:8 D6:2 B5:6 r:16 D6:2 B5:6 r:24") },
+      // dewdrops, high and few
+      { name: "dewdrops", inst: "musicbox", level: 0.5, rev: 0.5, line: lineOf(
+        "r:6 D7:1 r:13 B6:1 r:21 G6:1 r:11 A6:1 r:19 D7:1 r:9 E7:1 r:20 B6:1 r:22") },
+      // a woodpecker tapping, into the echo
+      { name: "woodpecker", inst: "rim", level: 0.8, rev: 0.3, echo: 0.4, line: hitsOf(
+        "x.x.x.x.x....... ................ ......x.x.x.x... ................") },
     ], form: [
       S(8, "arps birds"), S(8, "arps bass shaker birds fluteA"), S(8, "arps bass shaker kick fluteB"),
-      S(8, "arps birds fluteB", 5), S(8, "arps bass shaker kick birds fluteA"), S(4, "arps birds"),
+      S(8, "arpsMinor bassMinor shaker fluteC cuckoo"), S(8, "arps birds dewdrops woodpecker"),
+      S(8, "arps bass shaker kick fluteB", 5), S(8, "arps bass shaker kick birds fluteA counter"),
+      S(8, "arpsMinor bassMinor fluteC dewdrops"), S(8, "arps bass shaker kick birds fluteA counter woodpecker"), S(4, "arps birds cuckoo"),
     ] };
   } },
   beach: { name: "🏖️ beach calypso", make: () => {
@@ -3070,17 +3090,30 @@ const TUNES = {
     ] };
   } },
   cemetery: { name: "🌿 a peaceful garden", make: () => {
-    const chords = ["F", "C", "Dm", "Bb", "F", "Bb", "C", "F"];
-    return { bpm: 66, room: 2.5, level: 1.15, parts: [
+    const chords = ["F", "C", "Dm", "Bb", "F", "Bb", "C", "F"], minor = ["Dm", "Bb", "F", "C", "Dm", "Gm", "C", "F"];
+    return { bpm: 66, room: 2.5, level: 1.35, parts: [
       { name: "pad", inst: "pad", rev: 0.4, line: stabsOf(chords, 16, [0], 16, 3) },
+      { name: "padMinor", inst: "pad", rev: 0.4, line: stabsOf(minor, 16, [0], 16, 3) },
       { name: "box", inst: "musicbox", level: 0.7, rev: 0.35, line: arpOf(chords, 16, [0, 1, 2, 3, 4, 3, 2, 1], 2, 4) },
+      { name: "boxMinor", inst: "musicbox", level: 0.7, rev: 0.35, line: arpOf(minor, 16, [0, 1, 2, 3, 4, 3, 2, 1], 2, 4) },
       { name: "fluteA", inst: "flute", level: 0.8, rev: 0.35, shift: -12, line: lineOf(
         "A5:6 G5:2 F5:8 | E5:6 F5:2 G5:8 | F5:4 E5:4 D5:4 F5:4 | D5:12 r:4 | C5:4 F5:4 A5:4 C6:4 | Bb5:6 A5:2 G5:8 | G5:4 A5:2 G5:2 E5:4 C5:4 | F5:12 r:4") },
       { name: "fluteB", inst: "flute", level: 0.8, rev: 0.35, shift: -12, line: lineOf(
         "C6:8 A5:8 | G5:8 E5:8 | F5:4 A5:4 D6:8 | D6:6 C6:2 Bb5:8 | A5:4 C6:4 F5:8 | D6:8 Bb5:8 | C6:4 Bb5:4 G5:4 E5:4 | F5:16") },
+      // a third tune, in D minor, over its own chords
+      { name: "fluteC", inst: "flute", level: 0.8, rev: 0.4, shift: -12, line: lineOf(
+        "D6:6 C6:2 A5:8 | Bb5:6 A5:2 F5:8 | A5:4 C6:4 F6:8 | E6:6 D6:2 C6:8 | F6:4 E6:4 D6:4 A5:4 | Bb5:4 D6:4 G6:8 | E6:4 D6:4 C6:4 G5:4 | A5:12 r:4") },
+      // soft vibraphone chords, wobbling slowly
+      { name: "vibes", inst: "vibes", level: 0.35, rev: 0.4, line: stabsOf(chords, 16, [0], 16, 4) },
+      { name: "bass", inst: "bass", level: 0.45, line: bassOf(chords, 16, [[0, 0, 16]], 2) },
       { name: "birds", inst: "bird", level: 0.6, rev: 0.4, line: lineOf("r:20 E7:1 r:43 G7:1 r:30 D7:1 r:32") },
+      // wind chimes
+      { name: "chimes", inst: "musicbox", level: 0.6, rev: 0.6, line: lineOf(
+        "r:3 C7:1 r:9 A6:1 r:2 F6:1 r:13 G6:1 r:7 C7:1 r:21 D7:1 r:5 A6:1 r:11 F6:1 r:25 C7:1 r:23") },
     ], form: [
-      S(8, "pad box"), S(8, "pad box fluteA"), S(8, "pad fluteB birds"), S(8, "box birds"), S(8, "pad box fluteA birds"),
+      S(8, "pad box"), S(8, "pad box fluteA"), S(8, "pad fluteB birds vibes"), S(8, "padMinor boxMinor fluteC"),
+      S(8, "box birds chimes"), S(8, "pad box vibes bass fluteA", 2), S(8, "padMinor boxMinor fluteC chimes"),
+      S(8, "pad box fluteB birds bass"), S(4, "box chimes"),
     ] };
   } },
 };
@@ -3678,6 +3711,7 @@ const TABS = [
     ["range", "eyeGlow", "💀 skull eyes: red glow size", 0, 100, 40, 90],
   ]],
   ["🎵 Music", "music", [
+    ["flip", "mute", ["🔊 sound on: tap to mute", "🔇 muted: tap for sound"]],
     ["note", "now", nowPlaying],
     ["transport", "where", "⏯️ where the tune is"],
     ["choice", "track", "tune", TUNE_CHOICES],
@@ -3685,7 +3719,6 @@ const TABS = [
     ["range", "tempo", "🏃 tempo (% of the tune's own speed)", 25, 300, 80, 130],
     ["range", "transpose", "🎹 transpose (half steps: + higher, − lower)", -24, 24, -5, 5],
     ["mixer", "mix", "🎚️ mixing board"],
-    ["flip", "mute", ["🔊 sound on: tap to mute", "🔇 muted: tap for sound"]],
   ]],
 ];
 
