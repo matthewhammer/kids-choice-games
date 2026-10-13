@@ -2,6 +2,24 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.7 (2026-10-12)
+
+Everything in 0.0.6, plus longer tunes that change as they go, four more spooky tunes for the witch's woods, and a mixing board.
+
+- **Every tune is longer and changes as it goes:** each now plays in sections, from about 1¼ to 2½ minutes before it starts again, with parts coming in and dropping out. There are quiet intros, breakdowns with only the drums and bass, a second melody, and some key changes: the calypso moves up a whole step for its last choruses, and the forest walk wanders up for a while.
+- **Four more spooky tunes** for the witch's woods, beside the theremin waltz:
+  - 🦇 bat-wing boogie: a low, buzzy bass line going round and round, plucked violins creeping over it, a ghostly voice in the break;
+  - 🕯️ haunted harpsichord: broken chords over a bass that creeps down a step at a time, a ticking clock and a tolling bell;
+  - 🔮 crystal-ball vibes: a spooky swing on vibraphone, with a walking bass, finger snaps, brushes and a theremin answering;
+  - 🕷️ spider's tiptoe: plucked violins on tiptoe over plucked cellos, with drips and a ghost in the break.
+
+  New instruments: a buzzy bass, a harpsichord, a vibraphone (with its wobble) and a plucked violin. Tunes can swing their eighth notes too.
+- **🎚️ The mixing board,** in the 🎵 Music tab, for the tune playing:
+  - each part has its own strip, with a light that blinks as it plays, so you can see the parts come and go;
+  - each strip has 🔇 mute, 🎧 solo, 🔊 level (−10 to +10 dB), 🌊 echo and 🏛️ room (how much of it goes to the echo and the reverb), and 🎛️ tone (a filter from dark to bright, for dub sweeps);
+  - for the whole tune: 🌊 echo repeats, ⏱️ echo time (in steps, kept in time with the tempo) and 🏛️ room, and ↺ reset the mix;
+  - the mix is kept for each tune and saved with the friend; 🎲 Surprise me leaves it alone, and ↺ Start over clears it.
+
 ## 0.0.6 (2026-10-12)
 
 Everything in 0.0.5, plus four more Caribbean and reggae tunes.

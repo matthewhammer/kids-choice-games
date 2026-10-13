@@ -98,6 +98,22 @@
               background: var(--panel); opacity: 0.9; }
   body.big .mute-btn { top: 16px; left: 16px; }
   .ctl > p.now { margin: 0; color: var(--muted); }
+  /* the mixing board: a strip for each part, the whole tune's first */
+  .mixer { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 4px; }
+  .mixer p.now { margin: 0; color: var(--muted); }
+  .strip { border: 2px solid var(--line); border-radius: 12px; padding: 6px 8px; font-size: 0.85em; }
+  .strip.master { border-style: dashed; }
+  .strip.dim { opacity: 0.45; }
+  .strip-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
+  .strip-name { flex: 1 1 auto; font-weight: 600; }
+  .strip-name small { color: var(--muted); font-weight: 400; }
+  .strip button.ms { padding: 1px 7px; font-size: 0.95em; }
+  .strip button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .knob { display: grid; grid-template-columns: 6.2em 1fr 3.8em; align-items: center; gap: 4px; }
+  .knob input[type=range] { height: 22px; }
+  .knob .val { color: var(--muted); text-align: right; font-size: 0.9em; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
+  .dot.on { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
   /* In full screen, a heads-up display of chosen controls: hidden until
      its button is pressed; the scene's own controls and every pinned slider. */
   .hud-btn { display: none; position: absolute; top: 16px; right: 66px; padding: 0 9px; font-size: 1.3em;
@@ -233,7 +249,7 @@ DEFAULTS.rightHand = Object.fromEntries(HAND_OWN.map(k => [k, DEFAULTS.hands[k]]
 // the music: the background's own tune (none without one) or a chosen one;
 // the volume and mute belong to the device, not the friend: Load and Start
 // over keep them
-DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0 };
+DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, mix: {} };
 let state = clone(DEFAULTS);
 try {
   const saved = JSON.parse(localStorage.getItem("dress-up-v1") || "null");
@@ -2706,6 +2722,29 @@ const INSTRUMENTS = {
     const o = tone(A, lp, "square", f, t, end + 0.6); tone(A, lp, "sawtooth", f, t, end + 0.6, 4);
     tone(A, gainOf(A, o.frequency, f * 0.004), "sine", 5.5, t, end + 0.6);
   },
+  // a low buzzy bass: two bright waves through a filter that closes as the note goes on
+  buzz(A, out, t, m, dur, v) {
+    const f = hz(m), end = t + dur * 0.9, lp = filter(A, held(A, out, t, 0.1 * v, 0.005, end, 0.04), "lowpass", 1800, 6);
+    lp.frequency.setValueAtTime(1800, t); lp.frequency.setTargetAtTime(260, t, 0.08);
+    tone(A, lp, "sawtooth", f, t, end + 0.3, -6); tone(A, lp, "square", f, t, end + 0.3, 6);
+  },
+  // a harpsichord: a bright plucked string and its octave, quick to fade, a click as the quill plucks
+  harpsichord(A, out, t, m, dur, v) {
+    const f = hz(m), lp = filter(A, amp(A, out, t, 0.25 * v, 0.002, 0.35), "lowpass", 5000);
+    tone(A, lp, "sawtooth", f, t, t + 2.2); tone(A, gainOf(A, lp, 0.4), "square", f * 2, t, t + 2.2, 3);
+    noise(A, filter(A, amp(A, out, t, 0.04 * v, 0.001, 0.01), "highpass", 3000), t, t + 0.06);
+  },
+  // a vibraphone: a soft mallet's ring, wobbling with its motor
+  vibes(A, out, t, m, dur, v) {
+    const f = hz(m), wob = gainOf(A, amp(A, out, t, 0.28 * v, 0.003, 0.8), 1);
+    tone(A, wob, "sine", f, t, t + 5); tone(A, gainOf(A, wob, 0.18), "sine", f * 4, t, t + 2);
+    tone(A, gainOf(A, wob.gain, 0.3), "sine", 5.5, t, t + 5);
+  },
+  // a plucked violin: brighter and shorter than the cello's pizz
+  fiddle(A, out, t, m, dur, v) {
+    const f = hz(m), lp = filter(A, amp(A, out, t, 0.4 * v, 0.002, 0.09), "lowpass", 2800);
+    tone(A, lp, "triangle", f, t, t + 0.7); tone(A, gainOf(A, lp, 0.25), "sawtooth", f, t, t + 0.7);
+  },
   // a ghostly voice, wavering, like a theremin
   ghost(A, out, t, m, dur, v) {
     const f = hz(m), end = t + dur, g = held(A, out, t, 0.15 * v, 0.08, end, 0.12), o = tone(A, g, "sine", f, t, end + 0.8);
@@ -2746,136 +2785,282 @@ const INSTRUMENTS = {
   },
 };
 
-// --- the tunes: so many beats a minute (a beat is 4 steps), the steps
-// shifted later on every other one by "swing" (a share of a step), how
-// long the room rings ("room", seconds), its loudness beside the other tunes
-// ("level"), and the parts: an instrument, its
-// notes, its level, how much goes to the room ("rev") and to the echo
-// ("echo", a repeat every "echoSteps"), and a shift in semitones
+// --- the tunes: so many beats a minute (a beat is 4 steps), steps a bar
+// ("bar", 16 unless it says), the steps shifted later by "swing" (every
+// other sixteenth, a share of a step) or "swing8" (every other eighth, for
+// a jazzy lilt), how long the room rings ("room", seconds), its loudness
+// beside the other tunes ("level"), and the parts: a name, an instrument,
+// its notes, its level, how much goes to the room ("rev") and to the echo
+// ("echo", a repeat every "echoSteps"), and a shift in semitones.
+// The "form" is the tune from start to end: sections of so many bars, each
+// with the parts it names (by name; several parts may share one), each
+// part starting its notes again at the section's start, and the whole
+// section moved up or down ("up", semitones) if it says.
+const S = (bars, names, up = 0) => ({ bars, names: names.split(" "), up });
 const TUNES = {
   forest: { name: "🌲 a walk in the woods", make: () => {
     const chords = ["G", "C", "G", "D", "G", "C", "D", "G"];
     return { bpm: 100, room: 2, level: 1.1, parts: [
-      { inst: "flute", rev: 0.25, line: lineOf(
+      { name: "fluteA", inst: "flute", rev: 0.25, line: lineOf(
         "D5:2 G5:2 B5:2 A5:2 G5:4 D5:4 | E5:2 G5:2 C6:2 B5:2 A5:4 G5:4 | B5:2 A5:2 G5:2 A5:2 B5:4 D6:4 | A5:4 F#5:2 E5:2 D5:8 | " +
         "D5:2 G5:2 B5:2 D6:2 C6:2 B5:2 A5:4 | G5:2 E5:2 C5:2 E5:2 G5:4 A5:4 | F#5:2 A5:2 D6:2 C6:2 B5:2 A5:2 F#5:4 | G5:12 r:4") },
-      { inst: "pizz", level: 0.7, rev: 0.2, line: arpOf(chords, 16, [0, 1, 2, 1], 4, 4) },
-      { inst: "bass", level: 0.6, line: bassOf(chords, 16, [[0, 0, 6], [8, 7, 6]], 2) },
-      { inst: "shaker", level: 0.5, line: hitsOf("o.x.o.x.o.x.o.x.") },
-      { inst: "kick", level: 0.4, line: hitsOf("x.......x.......") },
-      { inst: "bird", level: 0.8, rev: 0.3, line: lineOf("r:20 E7:1 r:43 G7:1 r:30 D7:1 r:32") },
+      { name: "fluteB", inst: "flute", rev: 0.25, line: lineOf(
+        "B5:4 G5:4 D5:4 G5:4 | C6:4 B5:2 A5:2 G5:4 E5:4 | D5:2 E5:2 G5:2 A5:2 B5:8 | A5:2 B5:2 A5:2 F#5:2 D5:8 | " +
+        "G5:2 A5:2 B5:4 D6:4 B5:4 | C6:2 B5:2 A5:2 G5:2 E5:8 | F#5:4 A5:4 C6:4 F#5:4 | G5:16") },
+      { name: "arps", inst: "pizz", level: 0.7, rev: 0.2, line: arpOf(chords, 16, [0, 1, 2, 1], 4, 4) },
+      { name: "bass", inst: "bass", level: 0.6, line: bassOf(chords, 16, [[0, 0, 6], [8, 7, 6]], 2) },
+      { name: "shaker", inst: "shaker", level: 0.5, line: hitsOf("o.x.o.x.o.x.o.x.") },
+      { name: "kick", inst: "kick", level: 0.4, line: hitsOf("x.......x.......") },
+      { name: "birds", inst: "bird", level: 0.8, rev: 0.3, line: lineOf("r:20 E7:1 r:43 G7:1 r:30 D7:1 r:32") },
+    ], form: [
+      S(8, "arps birds"), S(8, "arps bass shaker birds fluteA"), S(8, "arps bass shaker kick fluteB"),
+      S(8, "arps birds fluteB", 5), S(8, "arps bass shaker kick birds fluteA"), S(4, "arps birds"),
     ] };
   } },
   beach: { name: "🏖️ beach calypso", make: () => {
     const chords = ["C", "F", "G7", "C", "Am", "F", "G7", "C"];
     return { bpm: 116, room: 1.5, level: 0.72, parts: [
-      { inst: "steelpan", rev: 0.2, line: lineOf(
+      { name: "panA", inst: "steelpan", rev: 0.2, line: lineOf(
         "E5:2 G5:2 C6:3 G5:1 A5:2 G5:2 E5:4 | F5:2 A5:2 C6:4 A5:2 F5:2 A5:4 | G5:2 B5:2 D6:3 B5:1 G5:2 F5:2 D5:4 | E5:3 D5:1 C5:4 r:2 G4:2 C5:2 E5:2 | " +
         "A5:2 C6:2 E6:3 C6:1 A5:2 G5:2 E5:4 | F5:2 G5:2 A5:2 C6:2 A5:2 G5:2 F5:4 | D6:2 C6:2 B5:2 A5:2 G5:2 F5:2 D5:4 | C5:4 E5:2 G5:2 C6:6 r:2") },
-      { inst: "pluck", level: 0.8, rev: 0.15, line: stabsOf(chords, 16, [2, 6, 10, 14], 2, 4) },
-      { inst: "bass", line: bassOf(chords, 16, [[0, 0, 5], [6, 7, 2], [8, 12, 5], [14, 7, 2]], 2) },
-      { inst: "kick", level: 0.8, line: hitsOf("x.....x.x.......") },
-      { inst: "rim", level: 0.6, line: hitsOf("....x.......x...") },
-      { inst: "shaker", level: 0.5, line: hitsOf("xoxoxoxoxoxoxoxo") },
-      { inst: "conga", level: 0.6, line: hitsOf("..x..x.x..x..xx.", midiOf("A3")) },
+      { name: "panB", inst: "steelpan", rev: 0.2, line: lineOf(
+        "G5:2 E5:2 G5:2 C6:2 E6:4 D6:4 | C6:2 A5:2 F5:2 A5:2 C6:4 A5:4 | B5:2 D6:2 F6:2 D6:2 B5:4 G5:4 | C6:4 G5:4 E5:4 C5:4 | " +
+        "E5:2 A5:2 C6:2 E6:2 D6:4 C6:4 | A5:2 C6:2 F6:4 E6:2 D6:2 C6:4 | B5:2 C6:2 D6:2 B5:2 G5:2 A5:2 B5:4 | C6:12 r:4") },
+      { name: "pluck", inst: "pluck", level: 0.8, rev: 0.15, line: stabsOf(chords, 16, [2, 6, 10, 14], 2, 4) },
+      { name: "bass", inst: "bass", line: bassOf(chords, 16, [[0, 0, 5], [6, 7, 2], [8, 12, 5], [14, 7, 2]], 2) },
+      { name: "drums", inst: "kick", level: 0.8, line: hitsOf("x.....x.x.......") },
+      { name: "drums", inst: "rim", level: 0.6, line: hitsOf("....x.......x...") },
+      { name: "shaker", inst: "shaker", level: 0.5, line: hitsOf("xoxoxoxoxoxoxoxo") },
+      { name: "conga", inst: "conga", level: 0.6, line: hitsOf("..x..x.x..x..xx.", midiOf("A3")) },
+    ], form: [
+      S(4, "conga shaker bass"), S(8, "conga shaker bass pluck drums panA"), S(8, "conga shaker bass pluck drums panB"),
+      S(8, "conga shaker panA"), S(8, "conga shaker bass pluck drums panA", 2), S(8, "conga shaker bass pluck drums panB", 2),
     ] };
   } },
   soca: { name: "🥁 beach soca jump-up", make: () => {
     const chords = ["D", "G", "A", "D", "Bm", "G", "A", "D"];
     return { bpm: 128, room: 1.5, level: 0.7, parts: [
-      { inst: "steelpan", rev: 0.2, line: lineOf(
+      { name: "panA", inst: "steelpan", rev: 0.2, line: lineOf(
         "F#5:2 A5:2 D6:2 A5:2 F#5:2 A5:1 B5:1 A5:4 | G5:2 B5:2 D6:2 B5:2 G5:2 A5:1 B5:1 G5:4 | A5:2 C#6:2 E6:2 C#6:2 A5:2 B5:1 C#6:1 E6:4 | D6:3 C#6:1 D6:2 A5:2 F#5:4 r:4 | " +
         "B5:2 D6:2 F#6:2 D6:2 B5:2 C#6:1 D6:1 B5:4 | G5:2 B5:2 D6:2 E6:2 D6:2 B5:2 G5:4 | E6:2 D6:2 C#6:2 B5:2 A5:2 G5:2 E5:4 | D6:4 A5:2 F#5:2 D5:4 r:4") },
-      { inst: "chop", level: 0.9, line: stabsOf(chords, 16, [2, 6, 10, 14], 1, 4) },
-      { inst: "bass", line: bassOf(chords, 16, [[0, 0, 3], [3, 0, 1], [6, 7, 2], [8, 12, 3], [11, 7, 1], [14, 0, 2]], 2) },
-      { inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
-      { inst: "snare", level: 0.6, line: hitsOf("....x.......x...") },
-      { inst: "hat", level: 0.6, line: hitsOf("..x...x...x...x.") },
-      { inst: "cowbell", level: 0.5, line: hitsOf("x..x..x...x..x..") },
+      { name: "panB", inst: "steelpan", rev: 0.2, line: lineOf(
+        "A5:1 A5:1 r:2 A5:1 A5:1 r:2 F#5:2 A5:2 D6:4 | B5:1 B5:1 r:2 B5:1 B5:1 r:2 G5:2 B5:2 D6:4 | C#6:1 C#6:1 r:2 C#6:1 C#6:1 r:2 A5:2 C#6:2 E6:4 | D6:2 F#6:2 E6:2 D6:2 A5:8 | " +
+        "B5:1 B5:1 r:2 B5:1 B5:1 r:2 F#5:2 B5:2 D6:4 | D6:2 B5:2 G5:2 B5:2 D6:2 E6:2 D6:4 | E6:2 C#6:2 A5:2 C#6:2 E6:2 F#6:2 E6:4 | D6:4 A5:4 D6:8") },
+      { name: "chop", inst: "chop", level: 0.9, line: stabsOf(chords, 16, [2, 6, 10, 14], 1, 4) },
+      { name: "bass", inst: "bass", line: bassOf(chords, 16, [[0, 0, 3], [3, 0, 1], [6, 7, 2], [8, 12, 3], [11, 7, 1], [14, 0, 2]], 2) },
+      { name: "kick", inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
+      { name: "snare", inst: "snare", level: 0.6, line: hitsOf("....x.......x...") },
+      { name: "hat", inst: "hat", level: 0.6, line: hitsOf("..x...x...x...x.") },
+      { name: "bell", inst: "cowbell", level: 0.5, line: hitsOf("x..x..x...x..x..") },
+      // the build before the last jump: the snare faster and faster
+      { name: "roll", inst: "snare", level: 0.5, line: hitsOf("....x...x...x... x.x.x.x.x.x.x.x. xxxxxxxxxxxxxxxx xxxxxxxxxxxxxxxx") },
+    ], form: [
+      S(4, "kick bell"), S(4, "kick bell bass hat"), S(8, "kick bell bass hat snare chop panA"), S(8, "kick bell bass hat snare chop panB"),
+      S(4, "bell roll"), S(8, "kick bell bass hat snare chop panA"), S(8, "kick bell bass hat snare chop panB"),
     ] };
   } },
   roots: { name: "🌴 sunny reggae", make: () => {
     const chords = ["G", "Em", "C", "D", "G", "Em", "C", "D"];
     return { bpm: 76, swing: 0.2, room: 2, level: 0.9, parts: [
-      { inst: "kick", line: hitsOf("........x.......") },
-      { inst: "rim", level: 0.7, rev: 0.15, line: hitsOf("........x.......") },
-      { inst: "hat", level: 0.5, line: hitsOf("o.x.o.x.o.x.o.x.") },
-      { inst: "chop", echo: 0.2, line: stabsOf(chords, 16, [4, 12], 1, 4) },
+      { name: "drums", inst: "kick", line: hitsOf("........x.......") },
+      { name: "drums", inst: "rim", level: 0.7, rev: 0.15, line: hitsOf("........x.......") },
+      { name: "drums", inst: "hat", level: 0.5, line: hitsOf("o.x.o.x.o.x.o.x.") },
+      { name: "chop", inst: "chop", echo: 0.2, line: stabsOf(chords, 16, [4, 12], 1, 4) },
       // the organ's "bubble": the chord low and quick, between the beats
-      { inst: "organ", level: 0.45, line: stabsOf(chords, 16, [2, 3, 6, 7, 10, 11, 14, 15], 1, 3) },
-      { inst: "bass", line: lineOf(
+      { name: "organ", inst: "organ", level: 0.45, line: stabsOf(chords, 16, [2, 3, 6, 7, 10, 11, 14, 15], 1, 3) },
+      { name: "bass", inst: "bass", line: lineOf(
         "r:2 G2:2 B2:2 D3:2 G3:4 F#3:2 D3:2 | r:2 E2:2 G2:2 B2:2 E3:4 D3:2 B2:2 | r:2 C3:2 E3:2 G3:2 C3:4 D3:2 E3:2 | r:2 D3:2 F#3:2 A3:2 D3:4 C3:2 A2:2") },
-      { inst: "melodica", rev: 0.2, echo: 0.15, line: lineOf(
+      { name: "tuneA", inst: "melodica", rev: 0.2, echo: 0.15, line: lineOf(
         "B4:4 D5:2 B4:2 A4:4 G4:4 | G4:2 A4:2 B4:4 E5:8 | E5:4 D5:2 C5:2 B4:4 A4:4 | A4:8 r:8 | " +
         "B4:2 D5:2 G5:4 F#5:2 E5:2 D5:4 | E5:4 D5:2 B4:2 G4:8 | C5:2 E5:2 G5:4 E5:2 D5:2 C5:4 | D5:8 F#4:4 A4:4") },
+      { name: "tuneB", inst: "melodica", rev: 0.2, echo: 0.15, line: lineOf(
+        "D5:4 B4:4 G4:4 B4:4 | E5:4 G5:4 B5:8 | G5:4 E5:2 C5:2 E5:8 | F#5:4 A5:4 D5:8 | " +
+        "B4:2 D5:2 G5:2 B5:2 A5:4 G5:4 | G5:2 F#5:2 E5:4 B4:8 | C5:4 E5:4 G5:4 E5:4 | D5:4 C5:2 B4:2 A4:8") },
+    ], form: [
+      S(4, "drums bass"), S(8, "drums bass chop organ tuneA"), S(8, "drums bass chop organ tuneB"),
+      S(8, "drums bass chop"), S(8, "drums bass chop organ tuneA"), S(8, "drums bass chop organ tuneB"),
     ] };
   } },
   underwater: { name: "🐠 bubble reggae", make: () => {
     const chords = ["Am", "Dm", "Am", "Dm", "F", "G", "Am", "Am"];
     return { bpm: 72, swing: 0.22, room: 3, echoSteps: 3, level: 0.85, parts: [
-      { inst: "kick", line: hitsOf("........x.......") },
-      { inst: "rim", level: 0.7, rev: 0.2, line: hitsOf("........x.......") },
-      { inst: "hat", level: 0.5, line: hitsOf("x.o.x.o.x.o.x.o.") },
-      { inst: "organ", level: 0.9, rev: 0.2, echo: 0.35, line: stabsOf(chords, 16, [4, 12], 2, 4) },
-      { inst: "bass", line: lineOf(
+      { name: "drums", inst: "kick", line: hitsOf("........x.......") },
+      { name: "drums", inst: "rim", level: 0.7, rev: 0.2, line: hitsOf("........x.......") },
+      { name: "drums", inst: "hat", level: 0.5, line: hitsOf("x.o.x.o.x.o.x.o.") },
+      { name: "organ", inst: "organ", level: 0.9, rev: 0.2, echo: 0.35, line: stabsOf(chords, 16, [4, 12], 2, 4) },
+      { name: "bass", inst: "bass", line: lineOf(
         "r:2 A2:2 A2:2 C3:2 E3:4 D3:2 C3:2 | r:2 D3:2 D3:2 F3:2 A3:4 G3:2 F3:2 | r:2 A2:2 A2:2 C3:2 E3:4 D3:2 C3:2 | r:2 D3:2 D3:2 F3:2 A3:4 G3:2 F3:2 | " +
         "r:2 F2:2 F2:2 A2:2 C3:4 A2:2 F2:2 | r:2 G2:2 G2:2 B2:2 D3:4 B2:2 G2:2 | r:2 A2:2 A2:2 C3:2 E3:4 G3:2 E3:2 | A2:4 r:4 E2:4 G2:4") },
-      { inst: "steelpan", rev: 0.35, echo: 0.3, line: lineOf(
+      { name: "panA", inst: "steelpan", rev: 0.35, echo: 0.3, line: lineOf(
         "r:4 E5:2 A5:2 C6:4 B5:2 A5:2 | D5:4 F5:2 A5:6 r:4 | r:4 E5:2 A5:2 C6:2 E6:2 D6:2 C6:2 | A5:8 r:8 | " +
         "r:4 F5:2 A5:2 C6:4 A5:4 | B5:2 D6:2 B5:2 G5:2 r:4 D5:4 | E5:4 A5:4 C6:4 B5:4 | A5:12 r:4") },
-      { inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf(
+      { name: "panB", inst: "steelpan", rev: 0.35, echo: 0.3, line: lineOf(
+        "A5:2 C6:2 E6:4 D6:2 C6:2 A5:4 | F5:2 A5:2 D6:4 C6:2 A5:2 F5:4 | E5:4 r:4 E6:4 r:4 | D6:2 C6:2 A5:4 F5:8 | " +
+        "C6:4 A5:2 F5:2 A5:4 C6:4 | D6:4 B5:2 G5:2 B5:4 D6:4 | E6:4 C6:4 A5:8 | r:16") },
+      { name: "bubbles", inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf(
         "r:3 C6:1 r:9 G6:1 r:14 E6:1 r:5 A6:1 r:22 D6:1 r:7 F6:1 r:30 B5:1 r:11 E6:1 r:19") },
+    ], form: [
+      S(4, "bass bubbles"), S(4, "bass bubbles drums"), S(8, "bass bubbles drums organ panA"),
+      S(8, "bass bubbles drums organ"), S(8, "bass bubbles drums organ panB"), S(8, "bass bubbles drums organ panA"),
     ] };
   } },
   steppers: { name: "🐢 turtle steppers dub", make: () => {
     const chords = ["Em", "Em", "Am", "Em", "C", "D", "Em", "Em"];
     return { bpm: 74, swing: 0.15, room: 3, echoSteps: 3, level: 0.85, parts: [
-      { inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
-      { inst: "rim", level: 0.7, rev: 0.3, echo: 0.3, line: hitsOf("........x.......") },
-      { inst: "hat", level: 0.5, line: hitsOf("..x...x...x...x.") },
-      { inst: "chop", echo: 0.5, rev: 0.2, line: stabsOf(chords, 16, [4, 12], 1, 4) },
-      { inst: "bass", line: bassOf(chords, 16, [[0, 0, 3], [4, 0, 2], [6, 7, 2], [8, 0, 3], [12, 12, 2], [14, 10, 2]], 2) },
+      { name: "kick", inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
+      { name: "drums", inst: "rim", level: 0.7, rev: 0.3, echo: 0.3, line: hitsOf("........x.......") },
+      { name: "drums", inst: "hat", level: 0.5, line: hitsOf("..x...x...x...x.") },
+      { name: "chop", inst: "chop", echo: 0.5, rev: 0.2, line: stabsOf(chords, 16, [4, 12], 1, 4) },
+      { name: "bass", inst: "bass", line: bassOf(chords, 16, [[0, 0, 3], [4, 0, 2], [6, 7, 2], [8, 0, 3], [12, 12, 2], [14, 10, 2]], 2) },
       // a ping, like sonar, far off in the echo
-      { inst: "bell", level: 0.35, rev: 0.5, echo: 0.6, line: lineOf("E6:1 r:63 B5:1 r:63") },
-      { inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(
+      { name: "sonar", inst: "bell", level: 0.35, rev: 0.5, echo: 0.6, line: lineOf("E6:1 r:63 B5:1 r:63") },
+      { name: "tuneA", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(
         "r:8 B4:2 D5:2 E5:4 | G5:4 E5:4 r:8 | r:8 C5:2 E5:2 A5:4 | G5:2 F#5:2 E5:4 r:8 | " +
         "r:4 G5:4 E5:4 C5:4 | D5:4 F#5:4 A5:8 | B5:8 G5:4 E5:4 | E5:12 r:4") },
-      { inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf("r:9 E6:1 r:21 B6:1 r:17 G6:1 r:33 D6:1 r:11 A6:1 r:32") },
+      { name: "tuneB", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(
+        "E5:4 r:4 G5:4 r:4 | B5:8 r:8 | A5:4 r:4 C6:4 r:4 | B5:4 G5:4 E5:8 | E5:4 G5:4 C6:8 | D6:4 A5:4 F#5:8 | G5:4 F#5:4 E5:8 | r:16") },
+      { name: "bubbles", inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf("r:9 E6:1 r:21 B6:1 r:17 G6:1 r:33 D6:1 r:11 A6:1 r:32") },
+    ], form: [
+      S(8, "kick bass sonar"), S(8, "kick bass sonar drums chop"), S(8, "kick bass sonar drums chop tuneA bubbles"),
+      S(8, "kick bass sonar chop"), S(8, "kick bass sonar drums chop tuneB bubbles"), S(8, "kick bass sonar drums chop tuneA bubbles"),
     ] };
   } },
   lullaby: { name: "🎐 steel-pan lullaby", make: () => {
     const chords = ["F", "Dm", "Bb", "C", "F", "Dm", "Bb", "C"];
     return { bpm: 84, room: 2.5, level: 1, parts: [
-      { inst: "steelpan", rev: 0.3, line: lineOf(
+      { name: "panA", inst: "steelpan", rev: 0.3, line: lineOf(
         "A5:4 C6:4 A5:2 G5:2 F5:4 | F5:4 A5:4 D6:8 | D6:4 C6:2 Bb5:2 A5:4 G5:4 | G5:8 E5:4 C5:4 | " +
         "A5:2 Bb5:2 C6:4 F6:4 C6:4 | D6:4 C6:2 A5:2 F5:8 | Bb5:4 D6:4 F6:4 D6:4 | C6:8 E5:4 G5:4") },
+      { name: "panB", inst: "steelpan", rev: 0.3, line: lineOf(
+        "C6:6 A5:2 F5:8 | D6:6 C6:2 A5:8 | Bb5:4 D6:4 F6:8 | E6:6 D6:2 C6:8 | A5:4 C6:4 F6:4 C6:4 | F6:4 D6:4 A5:8 | G5:4 Bb5:4 D6:4 F6:4 | E6:8 G5:8") },
       // a second pan, the chord broken gently under the tune
-      { inst: "steelpan", level: 0.45, rev: 0.3, line: arpOf(chords, 16, [0, 1, 2, 1], 4, 5) },
-      { inst: "bass", level: 0.6, line: bassOf(chords, 16, [[0, 0, 6], [6, 7, 2], [8, 0, 6], [14, 7, 2]], 2) },
-      { inst: "shaker", level: 0.5, line: hitsOf("o.o.o.o.o.o.o.o.") },
-      { inst: "conga", level: 0.4, line: hitsOf("x.....x.x.......", midiOf("C4")) },
-      { inst: "bubble", level: 0.7, rev: 0.5, line: lineOf("r:14 C6:1 r:29 A6:1 r:41 F6:1 r:41") },
+      { name: "arps", inst: "steelpan", level: 0.45, rev: 0.3, line: arpOf(chords, 16, [0, 1, 2, 1], 4, 5) },
+      { name: "bass", inst: "bass", level: 0.6, line: bassOf(chords, 16, [[0, 0, 6], [6, 7, 2], [8, 0, 6], [14, 7, 2]], 2) },
+      { name: "hands", inst: "shaker", level: 0.5, line: hitsOf("o.o.o.o.o.o.o.o.") },
+      { name: "hands", inst: "conga", level: 0.4, line: hitsOf("x.....x.x.......", midiOf("C4")) },
+      { name: "bubbles", inst: "bubble", level: 0.7, rev: 0.5, line: lineOf("r:14 C6:1 r:29 A6:1 r:41 F6:1 r:41") },
+      { name: "twinkles", inst: "musicbox", level: 0.5, rev: 0.5, line: lineOf(
+        "r:4 C7:1 r:11 | r:8 A6:1 r:7 | r:4 F6:1 r:11 | r:12 G6:1 r:3 | r:2 C7:1 r:13 | r:6 D7:1 r:9 | r:4 Bb6:1 r:11 | r:8 E6:1 r:7") },
+    ], form: [
+      S(8, "arps bubbles"), S(8, "arps bubbles bass panA"), S(8, "arps bubbles bass hands panB"),
+      S(8, "arps bubbles twinkles"), S(8, "arps bubbles bass hands panA twinkles"), S(4, "arps bubbles"),
     ] };
   } },
   witch: { name: "🧙 spooky waltz", make: () => {
     // three beats a bar: 12 steps
     const chords = ["Dm", "Dm", "Gm", "Dm", "Bb", "A7", "Dm", "A7"];
-    return { bpm: 120, room: 3, level: 1.1, parts: [
-      { inst: "bass", line: bassOf(chords, 12, [[0, 0, 3]], 2) },
-      { inst: "pizz", level: 0.6, rev: 0.3, line: stabsOf(chords, 12, [4, 8], 2, 4) },
-      { inst: "ghost", rev: 0.45, line: lineOf(
+    return { bpm: 120, bar: 12, room: 3, level: 1.1, parts: [
+      { name: "oom", inst: "bass", line: bassOf(chords, 12, [[0, 0, 3]], 2) },
+      { name: "pah", inst: "pizz", level: 0.6, rev: 0.3, line: stabsOf(chords, 12, [4, 8], 2, 4) },
+      { name: "ghostA", inst: "ghost", rev: 0.45, line: lineOf(
         "A4:4 D5:4 F5:4 | E5:4 D5:4 C#5:4 | D5:4 G5:4 Bb5:4 | A5:8 r:4 | Bb5:4 A5:4 G5:4 | F5:4 E5:4 C#5:4 | D5:4 F5:2 E5:2 D5:4 | C#5:6 E5:2 A4:4") },
-      { inst: "bell", level: 0.8, rev: 0.5, line: lineOf("D3:24 r:24 A2:24 r:24") },
-      { inst: "musicbox", level: 0.6, rev: 0.6, line: lineOf("r:10 A6:1 r:13 F6:1 r:11 D6:1 r:23 C#7:1 r:12 E6:1 r:22") },
+      { name: "ghostB", inst: "ghost", rev: 0.45, line: lineOf(
+        "F5:8 E5:4 | D5:4 A4:8 | Bb4:4 D5:4 G5:4 | F5:12 | D5:4 F5:4 Bb5:4 | A5:4 G5:4 E5:4 | F5:4 E5:4 D5:4 | C#5:12") },
+      { name: "bell", inst: "bell", level: 0.8, rev: 0.5, line: lineOf("D3:24 r:24 A2:24 r:24") },
+      { name: "twinkles", inst: "musicbox", level: 0.6, rev: 0.6, line: lineOf("r:10 A6:1 r:13 F6:1 r:11 D6:1 r:23 C#7:1 r:12 E6:1 r:22") },
+    ], form: [
+      S(8, "oom pah bell"), S(8, "oom pah bell ghostA"), S(8, "oom pah ghostB twinkles"),
+      S(8, "oom bell twinkles"), S(8, "oom pah bell ghostA twinkles"), S(8, "oom pah bell ghostB"),
+    ] };
+  } },
+  bats: { name: "🦇 bat-wing boogie", make: () => {
+    // a low, buzzy bass going round and round, and plucked violins creeping over it
+    const A = ["Cm", "Cm", "Ab", "G7"], B = ["Fm", "Cm", "Ab", "G7"];
+    return { bpm: 104, room: 2, level: 1.1, parts: [
+      { name: "bassA", inst: "buzz", line: lineOf(
+        "C2:2 C3:2 G2:2 C3:2 Eb2:2 C3:2 G2:2 Bb2:2 | C2:2 C3:2 G2:2 C3:2 Eb2:2 C3:2 G2:2 Bb2:2 | " +
+        "Ab1:2 Ab2:2 Eb2:2 Ab2:2 C2:2 Ab2:2 Eb2:2 G2:2 | G1:2 G2:2 D2:2 G2:2 B1:2 G2:2 F2:2 D2:2") },
+      { name: "bassB", inst: "buzz", line: lineOf(
+        "F1:2 F2:2 C2:2 F2:2 Ab1:2 F2:2 C2:2 Eb2:2 | C2:2 C3:2 G2:2 C3:2 Eb2:2 C3:2 G2:2 Bb2:2 | " +
+        "Ab1:2 Ab2:2 Eb2:2 Ab2:2 C2:2 Ab2:2 Eb2:2 G2:2 | G1:2 G2:2 D2:2 G2:2 B1:2 G2:2 F2:2 D2:2") },
+      { name: "violinsA", inst: "fiddle", rev: 0.25, line: lineOf(
+        "G5:1 r:1 G5:1 r:1 Eb5:2 C5:2 D5:1 r:1 Eb5:1 r:1 F5:2 G5:2 | Ab5:2 G5:2 F5:2 Eb5:2 D5:4 r:4 | " +
+        "C6:1 r:1 C6:1 r:1 Ab5:2 Eb5:2 F5:1 r:1 G5:1 r:1 Ab5:2 C6:2 | B5:2 C6:2 D6:2 B5:2 G5:4 r:4") },
+      { name: "violinsB", inst: "fiddle", rev: 0.25, line: lineOf(
+        "F5:2 Ab5:2 C6:4 Bb5:2 Ab5:2 G5:4 | G5:2 Eb5:2 C5:4 D5:2 Eb5:2 G5:4 | Ab5:2 C6:2 Eb6:4 D6:2 C6:2 Ab5:4 | G5:2 F5:2 D5:2 B4:2 G4:8") },
+      { name: "plucksA", inst: "fiddle", level: 0.45, line: stabsOf(A, 16, [4, 12], 1, 4) },
+      { name: "plucksB", inst: "fiddle", level: 0.45, line: stabsOf(B, 16, [4, 12], 1, 4) },
+      { name: "drums", inst: "kick", level: 0.6, line: hitsOf("x.......x.......") },
+      { name: "drums", inst: "rim", level: 0.5, rev: 0.2, line: hitsOf("....x.......x...") },
+      { name: "drums", inst: "hat", level: 0.4, line: hitsOf("x.x.x.x.x.x.x.x.") },
+      { name: "ghost", inst: "ghost", level: 0.8, rev: 0.5, line: lineOf("C5:16 B4:16 Ab4:16 G4:16") },
+    ], form: [
+      S(4, "bassA"), S(4, "bassA drums"), S(8, "bassA drums violinsA"), S(8, "bassB drums violinsB plucksB"),
+      S(4, "bassA ghost"), S(8, "bassA drums violinsA plucksA"), S(8, "bassB drums violinsB plucksB"), S(4, "bassA drums"),
+    ] };
+  } },
+  harpsichord: { name: "🕯️ haunted harpsichord", make: () => {
+    // broken chords over a bass that creeps down a step a bar, and a clock ticking
+    const chords = ["Dm", "A7", "Dm", "G", "Gm", "Dm", "A7", "Dm"];
+    return { bpm: 92, room: 2.5, level: 1.3, parts: [
+      { name: "arps", inst: "harpsichord", level: 0.55, rev: 0.25, line: arpOf(chords, 16, [0, 1, 2, 3, 4, 3, 2, 1], 1, 4) },
+      { name: "bass", inst: "harpsichord", rev: 0.25, line: lineOf(
+        "D3:8 D3:8 | C#3:8 C#3:8 | C3:8 C3:8 | B2:8 B2:8 | Bb2:8 Bb2:8 | A2:8 A2:8 | A2:8 E2:8 | D2:16") },
+      { name: "tune", inst: "harpsichord", level: 1.3, rev: 0.25, line: lineOf(
+        "A5:4 F5:2 D5:2 A5:4 D6:4 | C#6:4 E5:2 G5:2 Bb5:4 A5:4 | F5:4 A5:2 F5:2 D5:8 | B5:4 G5:2 D5:2 B4:4 D5:4 | " +
+        "Bb5:4 G5:2 D5:2 Bb4:4 D5:4 | A5:4 F5:2 D5:2 A4:4 F5:4 | E5:2 F5:2 G5:2 A5:2 Bb5:2 A5:2 G5:2 E5:2 | D5:12 r:4") },
+      { name: "drone", inst: "pad", level: 0.8, rev: 0.4, line: lineOf("D2:64 A1:64") },
+      { name: "bell", inst: "bell", level: 0.6, rev: 0.5, line: lineOf("D3:1 r:63 A2:1 r:63") },
+      { name: "clock", inst: "rim", level: 0.25, rev: 0.3, line: hitsOf("x...x...x...x...") },
+    ], form: [
+      S(8, "arps clock"), S(8, "arps bass clock"), S(8, "arps bass tune drone"),
+      S(8, "bass tune bell"), S(8, "arps bass tune drone bell"), S(8, "arps bass clock"),
+    ] };
+  } },
+  vibes: { name: "🔮 crystal-ball vibes", make: () => {
+    // a spooky lounge, swung: vibraphone, a walking bass, finger snaps
+    const chords = ["Am", "F7", "E7", "Am", "Dm", "F7", "E7", "E7"];
+    return { bpm: 96, swing8: 0.66, room: 2.5, level: 1, parts: [
+      { name: "walk", inst: "bass", level: 0.55, line: lineOf(
+        "A2:4 B2:4 C3:4 E3:4 | F2:4 A2:4 C3:4 Eb3:4 | E2:4 G#2:4 B2:4 D3:4 | A2:4 E2:4 A2:4 G#2:4 | " +
+        "D3:4 F3:4 A3:4 F3:4 | F2:4 A2:4 C3:4 A2:4 | E2:4 F2:4 G#2:4 B2:4 | E3:4 D3:4 B2:4 G#2:4") },
+      { name: "comp", inst: "vibes", level: 0.3, rev: 0.3, line: stabsOf(chords, 16, [0, 6, 10], 2, 4) },
+      { name: "tune", inst: "vibes", rev: 0.3, line: lineOf(
+        "E5:6 C5:2 A4:8 | Eb5:6 C5:2 A4:4 F4:4 | G#4:4 B4:4 D5:4 F5:4 | E5:12 r:4 | " +
+        "F5:6 D5:2 A4:8 | A5:6 F5:2 Eb5:4 C5:4 | B4:4 D5:4 F5:4 G#5:4 | A5:12 r:4") },
+      { name: "ghost", inst: "ghost", level: 0.6, rev: 0.5, line: lineOf("A4:16 | C5:16 | B4:16 | A4:16 | D5:16 | C5:16 | B4:8 G#4:8 | A4:16") },
+      { name: "snaps", inst: "rim", level: 0.4, rev: 0.25, line: hitsOf("....x.......x...") },
+      { name: "brushes", inst: "shaker", level: 0.8, line: hitsOf("x.o.x.o.x.o.x.o.") },
+      { name: "twinkles", inst: "musicbox", level: 0.5, rev: 0.6, line: lineOf("r:6 E7:1 r:25 C7:1 r:31 A6:1 r:23 B6:1 r:39") },
+    ], form: [
+      S(8, "comp walk snaps"), S(8, "comp walk snaps brushes tune"), S(8, "comp walk snaps brushes ghost twinkles"),
+      S(8, "comp walk snaps brushes tune ghost"), S(8, "walk snaps brushes"), S(8, "comp walk snaps brushes tune twinkles"),
+    ] };
+  } },
+  spiders: { name: "🕷️ spider's tiptoe", make: () => {
+    // plucked violins on tiptoe, plucked cellos under them
+    const A = ["Em", "Em", "Am", "B7"], B = ["C", "Am", "B7", "Em"];
+    return { bpm: 120, room: 2, level: 1.2, parts: [
+      { name: "cellosA", inst: "fiddle", line: bassOf(A, 16, [[0, 0, 1], [4, 7, 1], [8, 0, 1], [12, 7, 1]], 3) },
+      { name: "cellosB", inst: "fiddle", line: bassOf(B, 16, [[0, 0, 1], [4, 7, 1], [8, 0, 1], [12, 7, 1]], 3) },
+      { name: "violinsA", inst: "fiddle", rev: 0.2, line: lineOf(
+        "E5:1 r:1 F#5:1 r:1 G5:1 r:1 G#5:1 r:1 A5:2 r:2 B5:2 r:2 | B5:1 r:1 A#5:1 r:1 B5:1 r:1 G5:1 r:1 E5:4 r:4 | " +
+        "A5:1 r:1 B5:1 r:1 C6:1 r:1 C#6:1 r:1 D6:2 r:2 E6:2 r:2 | D#6:1 r:1 E6:1 r:1 D#6:1 r:1 C6:1 r:1 B5:4 r:4") },
+      { name: "violinsB", inst: "fiddle", rev: 0.2, line: lineOf(
+        "G5:2 E5:2 C5:2 E5:2 G5:2 C6:2 B5:2 G5:2 | A5:2 E5:2 C5:2 E5:2 A5:2 C6:2 B5:2 A5:2 | " +
+        "B5:2 F#5:2 D#5:2 F#5:2 A5:2 F#5:2 D#5:2 B4:2 | E5:2 r:2 B4:2 r:2 E5:4 r:4") },
+      { name: "harmonyA", inst: "fiddle", level: 0.4, line: stabsOf(A, 16, [2, 6, 10, 14], 1, 4) },
+      { name: "harmonyB", inst: "fiddle", level: 0.4, line: stabsOf(B, 16, [2, 6, 10, 14], 1, 4) },
+      { name: "tick", inst: "rim", level: 0.3, rev: 0.2, line: hitsOf("x.......x.......") },
+      { name: "ghost", inst: "ghost", level: 0.7, rev: 0.5, line: lineOf("B4:32 C5:16 B4:16") },
+      { name: "drips", inst: "vibes", level: 0.5, rev: 0.5, line: lineOf("r:12 B6:1 r:19 G6:1 r:17 E7:1 r:13") },
+    ], form: [
+      S(4, "cellosA"), S(8, "cellosA violinsA tick"), S(8, "cellosB violinsB harmonyB drips"), S(8, "cellosA violinsA harmonyA tick"),
+      S(4, "tick ghost drips"), S(8, "cellosB violinsB harmonyB tick"), S(8, "cellosA violinsA harmonyA tick drips"),
     ] };
   } },
   cemetery: { name: "🌿 a peaceful garden", make: () => {
     const chords = ["F", "C", "Dm", "Bb", "F", "Bb", "C", "F"];
     return { bpm: 66, room: 2.5, level: 1.15, parts: [
-      { inst: "pad", rev: 0.4, line: stabsOf(chords, 16, [0], 16, 3) },
-      { inst: "musicbox", level: 0.7, rev: 0.35, line: arpOf(chords, 16, [0, 1, 2, 3, 4, 3, 2, 1], 2, 4) },
-      { inst: "flute", level: 0.8, rev: 0.35, shift: -12, line: lineOf(
+      { name: "pad", inst: "pad", rev: 0.4, line: stabsOf(chords, 16, [0], 16, 3) },
+      { name: "box", inst: "musicbox", level: 0.7, rev: 0.35, line: arpOf(chords, 16, [0, 1, 2, 3, 4, 3, 2, 1], 2, 4) },
+      { name: "fluteA", inst: "flute", level: 0.8, rev: 0.35, shift: -12, line: lineOf(
         "A5:6 G5:2 F5:8 | E5:6 F5:2 G5:8 | F5:4 E5:4 D5:4 F5:4 | D5:12 r:4 | C5:4 F5:4 A5:4 C6:4 | Bb5:6 A5:2 G5:8 | G5:4 A5:2 G5:2 E5:4 C5:4 | F5:12 r:4") },
+      { name: "fluteB", inst: "flute", level: 0.8, rev: 0.35, shift: -12, line: lineOf(
+        "C6:8 A5:8 | G5:8 E5:8 | F5:4 A5:4 D6:8 | D6:6 C6:2 Bb5:8 | A5:4 C6:4 F5:8 | D6:8 Bb5:8 | C6:4 Bb5:4 G5:4 E5:4 | F5:16") },
+      { name: "birds", inst: "bird", level: 0.6, rev: 0.4, line: lineOf("r:20 E7:1 r:43 G7:1 r:30 D7:1 r:32") },
+    ], form: [
+      S(8, "pad box"), S(8, "pad box fluteA"), S(8, "pad fluteB birds"), S(8, "box birds"), S(8, "pad box fluteA birds"),
     ] };
   } },
 };
@@ -2884,18 +3069,29 @@ const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach",
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
 
 // a tune made ready to play: every part's notes in one list, by step,
-// each part repeated to the length of the longest
+// section after section of its form
 const songs = {};
 function songOf(id) {
   if (songs[id] !== undefined) return songs[id];
   try {
-    const T = TUNES[id].make(), steps = Math.max(...T.parts.map(p => p.line.steps)), events = [];
-    T.parts.forEach((p, part) => {
-      for (let rep = 0; rep * p.line.steps < steps; rep++)
-        for (const e of p.line.events) { const at = rep * p.line.steps + e.at; if (at < steps) events.push({ ...e, at, part }); }
-    });
+    const T = TUNES[id].make(), bar = T.bar || 16, events = [];
+    // (without a form: every part all the time, as long as the longest)
+    const form = T.form || [{ bars: Math.max(...T.parts.map(p => p.line.steps)) / bar, names: null, up: 0 }];
+    let start = 0;
+    for (const sec of form) {
+      const len = sec.bars * bar;
+      T.parts.forEach((p, part) => {
+        if (sec.names && !sec.names.includes(p.name)) return;
+        for (let rep = 0; rep * p.line.steps < len; rep++)
+          for (const e of p.line.events) {
+            const at = rep * p.line.steps + e.at;
+            if (at < len) events.push({ ...e, at: start + at, part, up: sec.up || 0 });
+          }
+      });
+      start += len;
+    }
     events.sort((a, b) => a.at - b.at);
-    return songs[id] = { T, steps, events };
+    return songs[id] = { T, steps: start, events };
   } catch (err) {
     console.error("the tune " + id + " didn't build:", err);
     return songs[id] = null;
@@ -2907,28 +3103,31 @@ function roomOf(A, secs) {
   for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3); }
   return b;
 }
-// a tune's way out: each part at its level, some of it to the room and to
-// the echo (each repeat softer and duller), all into one gain
+// a tune's way out, a channel strip for each part, as on a mixing board:
+// its tone (a filter, wide open unless the mixer closes it), its level,
+// and what it sends to the room and to the echo (each repeat softer and
+// duller), all into one gain. The parts' notes go in at the tone.
 function busesOf(A, T, into) {
-  const rev = A.createConvolver(); rev.buffer = roomOf(A, T.room || 2); rev.connect(gainOf(A, into, 1));
-  const echo = A.createDelay(2); echo.delayTime.value = (T.echoSteps || 3) * 60 / T.bpm / 4;
+  const rev = A.createConvolver(); rev.buffer = roomOf(A, T.room || 2);
+  const revOut = gainOf(A, into, 1); rev.connect(revOut);
+  const echo = A.createDelay(8); echo.delayTime.value = (T.echoSteps || 3) * 60 / T.bpm / 4;
   const back = gainOf(A, echo, 0.38); echo.connect(filter(A, back, "lowpass", 1800)); echo.connect(gainOf(A, into, 0.8));
-  const parts = T.parts.map(p => {
-    const g = gainOf(A, into, p.level ?? 1);
-    if (p.rev) g.connect(gainOf(A, rev, p.rev));
-    if (p.echo) g.connect(gainOf(A, echo, p.echo));
-    return g;
+  const strips = T.parts.map(p => {
+    const gain = gainOf(A, into, p.level ?? 1), tone = filter(A, gain, "lowpass", 20000);
+    const strip = { tone, gain, rev: gainOf(A, rev, p.rev || 0), echo: gainOf(A, echo, p.echo || 0) };
+    gain.connect(strip.rev); gain.connect(strip.echo);
+    return strip;
   });
-  parts.echo = echo;
-  return parts;
+  return Object.assign(strips.map(st => st.tone), { strips, echo, back, revOut });
 }
 const stepSecs = T => 60 / T.bpm / 4;
 // when a note starts: its step, and the swing on every other step
-const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + (at % 2 ? song.T.swing || 0 : 0)) * stepSecs(song.T);
+const swingOf = (T, at) => (at % 2 ? T.swing || 0 : 0) + (at % 4 === 2 ? T.swing8 || 0 : 0);
+const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + swingOf(song.T, at)) * stepSecs(song.T);
 // (drums keep their sound when the tune is moved up or down)
 const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell"]);
 function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0) {
-  const p = song.T.parts[ev.part], dur = ev.len * sd, move = (p.shift || 0) + (PERCUSSION.has(p.inst) ? 0 : up);
+  const p = song.T.parts[ev.part], dur = ev.len * sd, move = (p.shift || 0) + (PERCUSSION.has(p.inst) ? 0 : up + (ev.up || 0));
   for (const m of ev.notes) INSTRUMENTS[p.inst](A, buses[ev.part], t, m + move, dur, (ev.vel ?? 1) * (p.vel ?? 1));
 }
 
@@ -2952,7 +3151,7 @@ function startTune(id) {
   // its clock: step s0 at time t0, sd seconds a step (the tempo slider's)
   playing = { id, song, into, buses: busesOf(audio, song.T, into), t0: audio.currentTime + 0.08, s0: 0, sd: tunedStep(song.T), i: 0, loop: 0 };
   const p = playing;
-  p.buses.echo.delayTime.value = (song.T.echoSteps || 3) * p.sd;
+  applyMix(true);
   p.timer = setInterval(() => sendAhead(p), 25);
   sendAhead(p);
 }
@@ -2961,10 +3160,13 @@ function sendAhead(p) {
   const until = audio.currentTime + 0.2;
   for (;;) {
     const ev = p.song.events[p.i];
-    const step = p.loop * p.song.steps + ev.at + (ev.at % 2 ? p.song.T.swing || 0 : 0), t = p.t0 + (step - p.s0) * p.sd;
+    const step = p.loop * p.song.steps + ev.at + swingOf(p.song.T, ev.at), t = p.t0 + (step - p.s0) * p.sd;
     if (t > until) break;
     // (a note already late, after a busy moment, is skipped, not crammed in)
-    if (t > audio.currentTime - 0.02) playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0);
+    if (t > audio.currentTime - 0.02) {
+      playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0);
+      if (mixLights && mixLights.id === p.id) blink(mixLights.dots[ev.part], t - audio.currentTime);
+    }
     if (++p.i >= p.song.events.length) { p.i = 0; p.loop++; }
   }
 }
@@ -2973,6 +3175,111 @@ function stopTune() {
   clearInterval(p.timer);
   p.into.gain.setTargetAtTime(0, audio.currentTime, 0.12);
   setTimeout(() => p.into.disconnect(), 1500);
+}
+// --- the mixing board: each part of a tune a channel (by its name and
+// instrument), with mute, solo, a level (-10 to +10 dB), sends to the
+// echo and the room, and a tone; and for the whole tune, the echo's
+// repeats and time and the room's level. Kept for each tune, with the friend.
+const channelKey = p => p.name + "·" + p.inst;
+const mixOf = id => (state.music.mix || {})[id] || {};
+function chan(id, key) {
+  const mix = state.music.mix || (state.music.mix = {}), t = mix[id] || (mix[id] = {});
+  return t[key] || (t[key] = {});
+}
+const fxOf = (id, T) => ({ repeats: 38, time: T.echoSteps || 3, room: 100, ...(mixOf(id).fx || {}) });
+// the tone slider: a filter from dark (150 Hz) to wide open
+const toneHz = v => 150 * Math.pow(20000 / 150, v / 100);
+function applyMix(instant = false) {
+  const p = playing;
+  if (!p) return;
+  const { song, buses } = p, mix = mixOf(p.id), now = audio.currentTime;
+  const to = (param, v) => instant ? param.setValueAtTime(v, now) : param.setTargetAtTime(v, now, 0.03);
+  const solo = song.T.parts.some(q => (mix[channelKey(q)] || {}).solo);
+  song.T.parts.forEach((q, i) => {
+    const c = mix[channelKey(q)] || {}, st = buses.strips[i], heard = !c.mute && (!solo || c.solo);
+    to(st.gain.gain, heard ? (q.level ?? 1) * Math.pow(10, (c.level || 0) / 20) : 0);
+    to(st.rev.gain, (c.rev ?? (q.rev || 0) * 100) / 100);
+    to(st.echo.gain, (c.echo ?? (q.echo || 0) * 100) / 100);
+    to(st.tone.frequency, toneHz(c.tone ?? 100));
+  });
+  const fx = fxOf(p.id, song.T);
+  to(buses.back.gain, fx.repeats / 100);
+  to(buses.echo.delayTime, fx.time * p.sd);
+  to(buses.revOut.gain, fx.room / 100);
+}
+function mixChanged() { persist(); applyMix(); }
+// the board's lights: one per channel, lit as its part plays a note
+let mixLights = null;
+function blink(dot, after) {
+  if (!dot) return;
+  setTimeout(() => { dot.classList.add("on"); setTimeout(() => dot.classList.remove("on"), 110); }, Math.max(0, after * 1000));
+}
+const INST_ICON = { steelpan: "🥘", organ: "🎹", bass: "🎸", kick: "🥁", rim: "🥢", snare: "🥁", cowbell: "🔔", hat: "🎩",
+                    shaker: "🧂", conga: "🪘", bubble: "🫧", pizz: "🎻", pluck: "🎸", chop: "🎸", melodica: "🎹", ghost: "👻",
+                    bell: "🔔", pad: "☁️", musicbox: "🎶", flute: "🌬️", bird: "🐦", buzz: "🐝", harpsichord: "🎼",
+                    vibes: "🔮", fiddle: "🎻" };
+// "panA" reads "pan A"
+const partName = n => n.replace(/([a-z])([A-Z])$/, "$1 $2");
+// The board itself, for the tune of the moment; built again when the tune
+// changes, or its mix does from outside (Load, Start over).
+function mixerBox(box) {
+  const body = el("div", { class: "mixer" });
+  box.append(body);
+  let shown, snap;
+  const idNow = () => tuneOf() || (TUNES[state.music.track] ? state.music.track : null);
+  const build = () => {
+    const id = shown = idNow(), song = id && songOf(id);
+    snap = JSON.stringify(mixOf(id));
+    mixLights = null;
+    if (!song) { body.replaceChildren(el("p", { class: "now" }, "Pick a tune, and its instruments show up here to mix.")); return; }
+    const local = () => { mixChanged(); snap = JSON.stringify(mixOf(id)); };
+    const knob = (label, lo, hi, get, put, show) => {
+      const val = el("span", { class: "val" }, show(get()));
+      const input = el("input", { type: "range", min: lo, max: hi, step: 1,
+                                  oninput: e => { put(Number(e.target.value)); val.textContent = show(Number(e.target.value)); local(); } });
+      input.value = get();
+      return el("label", { class: "knob" }, [el("span", {}, label), input, val]);
+    };
+    const pct = v => v + "%";
+    const master = el("div", { class: "strip master" }, [
+      el("div", { class: "strip-top" }, [el("span", { class: "strip-name" }, "🎚️ the whole tune")]),
+      knob("🌊 echo repeats", 0, 90, () => fxOf(id, song.T).repeats, v => { chan(id, "fx").repeats = v; }, pct),
+      knob("⏱️ echo time", 1, 8, () => fxOf(id, song.T).time, v => { chan(id, "fx").time = v; }, v => v + (v === 1 ? " step" : " steps")),
+      knob("🏛️ room", 0, 200, () => fxOf(id, song.T).room, v => { chan(id, "fx").room = v; }, pct),
+      el("button", { class: "ms", onclick: () => { if (state.music.mix) delete state.music.mix[id]; mixChanged(); build(); } }, "↺ reset the mix"),
+    ]);
+    const dots = [], rows = [];
+    const strips = song.T.parts.map(p => {
+      const key = channelKey(p), c = () => mixOf(id)[key] || {};
+      const dot = el("span", { class: "dot" });
+      const flip = what => () => { const ch = chan(id, key); ch[what] = !ch[what]; local(); syncButtons(); };
+      const mute = el("button", { class: "ms", onclick: flip("mute") }, "🔇 mute"), solo = el("button", { class: "ms", onclick: flip("solo") }, "🎧 solo");
+      const strip = el("div", { class: "strip" }, [
+        el("div", { class: "strip-top" }, [dot, el("span", { class: "strip-name" }, [(INST_ICON[p.inst] || "🎵") + " " + partName(p.name) + " ",
+          // (the instrument too, unless the name says it: "bass", "organ")
+          ...(partName(p.name).toLowerCase().startsWith(p.inst) ? [] : [el("small", {}, p.inst)])]), mute, solo]),
+        knob("🔊 level", -10, 10, () => c().level || 0, v => { chan(id, key).level = v; }, v => (v > 0 ? "+" : "") + v + " dB"),
+        knob("🌊 echo", 0, 100, () => c().echo ?? Math.round((p.echo || 0) * 100), v => { chan(id, key).echo = v; }, pct),
+        knob("🏛️ room", 0, 100, () => c().rev ?? Math.round((p.rev || 0) * 100), v => { chan(id, key).rev = v; }, pct),
+        knob("🎛️ tone", 0, 100, () => c().tone ?? 100, v => { chan(id, key).tone = v; }, v => v === 100 ? "open" : v + "%"),
+      ]);
+      dots.push(dot); rows.push({ strip, mute, solo, c });
+      return strip;
+    });
+    // a muted channel, or one left out by another's solo, is dimmed
+    function syncButtons() {
+      const anySolo = rows.some(r => r.c().solo);
+      for (const r of rows) {
+        r.mute.setAttribute("aria-pressed", !!r.c().mute); r.solo.setAttribute("aria-pressed", !!r.c().solo);
+        r.strip.classList.toggle("dim", !!r.c().mute || (anySolo && !r.c().solo));
+      }
+    }
+    syncButtons();
+    body.replaceChildren(master, ...strips);
+    mixLights = { id, dots };
+  };
+  build();
+  syncs.push(() => { if (idNow() !== shown || JSON.stringify(mixOf(shown)) !== snap) build(); });
 }
 // the tune for now: the one chosen, or the background's own (none without one)
 const tuneOf = () => { const m = state.music, id = m.track === "scene" ? SCENE_TUNE[state.background.kind] : m.track; return TUNES[id] ? id : null; };
@@ -3003,7 +3310,7 @@ function musicSync() {
   if (playing.sd !== sd) {
     const p = playing, now = audio.currentTime;
     p.s0 += (now - p.t0) / p.sd; p.t0 = now; p.sd = sd;
-    p.buses.echo.delayTime.setTargetAtTime((p.song.T.echoSteps || 3) * sd, now, 0.05);
+    applyMix();
   }
 }
 // the first tap or key lets the sound start (inside it, as browsers ask)
@@ -3224,6 +3531,7 @@ const TABS = [
     ["range", "volume", "🔊 volume", 0, 100, 40, 80],
     ["range", "tempo", "🏃 tempo (% of the tune's own speed)", 25, 300, 80, 130],
     ["range", "transpose", "🎹 transpose (half steps: + higher, − lower)", -24, 24, -5, 5],
+    ["mixer", "mix", "🎚️ mixing board"],
     ["flip", "mute", ["🔊 sound on: tap to mute", "🔇 muted: tap for sound"]],
   ]],
 ];
@@ -3401,6 +3709,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     box.append(b);
     syncs.push(() => { b.textContent = label + (state[part][key] ? ": on" : ": off");
                        b.setAttribute("aria-pressed", state[part][key]); });
+  } else if (kind === "mixer") {
+    mixerBox(box);
   } else if (kind === "note") {
     // a line of words that says how things are: the label is a function
     const p = el("p", { class: "now" });
@@ -3522,7 +3832,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
 }
 
 function showTab() {
-  syncs = [];
+  syncs = []; mixLights = null;
   const tabs = document.getElementById("tabs"), panel = document.getElementById("panel");
   tabs.replaceChildren(...TABS.map(([name], i) =>
     el("button", { "aria-pressed": i === tab, onclick: () => { tab = i; showTab(); } }, name)));
