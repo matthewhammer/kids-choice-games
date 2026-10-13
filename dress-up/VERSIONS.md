@@ -2,9 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.10 (2026-10-12)
 
-Changes since 0.0.9, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead.
+Everything in 0.0.9, plus longer forest and garden tunes, rhythm vamps in sunny reggae, and the music's mute at the top of its tab.
 
 - **🔊 The music's mute chip** is now at the top of the 🎵 Music tab, above the rest, not at the bottom under the mixing board.
 - **🌲 The forest walk is twice as long,** about 3 minutes:
