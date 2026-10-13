@@ -2,7 +2,7 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.12 (2026-10-13)
 
 Everything in 0.0.11, plus five new backgrounds with sliders of their own, and four chase tunes.
 
