@@ -109,6 +109,8 @@
   .strip-name small { color: var(--muted); font-weight: 400; }
   .strip button.ms { padding: 1px 7px; font-size: 0.95em; }
   .strip button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  /* a throw is held down: no text selection or long-press menu on a tablet */
+  .strip button.throw { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
   .knob { display: grid; grid-template-columns: 6.2em 1fr 3.8em; align-items: center; gap: 4px; }
   .knob input[type=range] { height: 22px; }
   .knob .val { color: var(--muted); text-align: right; font-size: 0.9em; }
@@ -3105,16 +3107,20 @@ function roomOf(A, secs) {
 }
 // a tune's way out, a channel strip for each part, as on a mixing board:
 // its tone (a filter, wide open unless the mixer closes it), its level,
-// and what it sends to the room and to the echo (each repeat softer and
-// duller), all into one gain. The parts' notes go in at the tone.
+// where it sits from left to right, and what it sends to the room and to
+// the echo (each repeat softer and duller), all into one gain. The parts'
+// notes go in at the tone.
 function busesOf(A, T, into) {
   const rev = A.createConvolver(); rev.buffer = roomOf(A, T.room || 2);
   const revOut = gainOf(A, into, 1); rev.connect(revOut);
   const echo = A.createDelay(8); echo.delayTime.value = (T.echoSteps || 3) * 60 / T.bpm / 4;
   const back = gainOf(A, echo, 0.38); echo.connect(filter(A, back, "lowpass", 1800)); echo.connect(gainOf(A, into, 0.8));
   const strips = T.parts.map(p => {
-    const gain = gainOf(A, into, p.level ?? 1), tone = filter(A, gain, "lowpass", 20000);
-    const strip = { tone, gain, rev: gainOf(A, rev, p.rev || 0), echo: gainOf(A, echo, p.echo || 0) };
+    // (a browser without a stereo panner plays every part in the middle)
+    const pan = A.createStereoPanner ? A.createStereoPanner() : null;
+    if (pan) pan.connect(into);
+    const gain = gainOf(A, pan || into, p.level ?? 1), tone = filter(A, gain, "lowpass", 20000);
+    const strip = { tone, gain, pan, rev: gainOf(A, rev, p.rev || 0), echo: gainOf(A, echo, p.echo || 0) };
     gain.connect(strip.rev); gain.connect(strip.echo);
     return strip;
   });
@@ -3199,8 +3205,10 @@ function applyMix(instant = false) {
     const c = mix[channelKey(q)] || {}, st = buses.strips[i], heard = !c.mute && (!solo || c.solo);
     to(st.gain.gain, heard ? (q.level ?? 1) * Math.pow(10, (c.level || 0) / 20) : 0);
     to(st.rev.gain, (c.rev ?? (q.rev || 0) * 100) / 100);
-    to(st.echo.gain, (c.echo ?? (q.echo || 0) * 100) / 100);
+    // (a part thrown to the echo sends all of itself there while it is)
+    to(st.echo.gain, throwing.has(i) || throwing.has("all") ? 1 : (c.echo ?? (q.echo || 0) * 100) / 100);
     to(st.tone.frequency, toneHz(c.tone ?? 100));
+    if (st.pan) to(st.pan.pan, (c.pan || 0) / 10);
   });
   const fx = fxOf(p.id, song.T);
   to(buses.back.gain, fx.repeats / 100);
@@ -3208,6 +3216,29 @@ function applyMix(instant = false) {
   to(buses.revOut.gain, fx.room / 100);
 }
 function mixChanged() { persist(); applyMix(); }
+// The dub "throw": while a part is thrown (its strip's button held), all
+// of it goes to the echo, then its send goes back to where it was set;
+// thrown for a beat at least, so a quick tap is heard. "all": every part.
+const throwing = new Set();
+function throwButton(label, which) {
+  const b = el("button", { class: "ms throw", "aria-pressed": "false" }, label);
+  let since = 0, held = false;
+  const start = e => {
+    e.preventDefault(); held = true; since = performance.now();
+    throwing.add(which); b.setAttribute("aria-pressed", "true"); applyMix();
+  };
+  const stop = () => {
+    if (!held) return;
+    held = false;
+    const beat = playing ? 4 * playing.sd * 1000 : 0, left = Math.max(0, beat - (performance.now() - since));
+    setTimeout(() => { if (held) return; throwing.delete(which); b.setAttribute("aria-pressed", "false"); applyMix(); }, left);
+  };
+  b.addEventListener("pointerdown", start);
+  for (const kind of ["pointerup", "pointercancel", "pointerleave"]) b.addEventListener(kind, stop);
+  // (a key throws for a beat)
+  b.addEventListener("keydown", e => { if ((e.key === " " || e.key === "Enter") && !held) { start(e); stop(); } });
+  return b;
+}
 // the board's lights: one per channel, lit as its part plays a note
 let mixLights = null;
 function blink(dot, after) {
@@ -3230,7 +3261,7 @@ function mixerBox(box) {
   const build = () => {
     const id = shown = idNow(), song = id && songOf(id);
     snap = JSON.stringify(mixOf(id));
-    mixLights = null;
+    mixLights = null; throwing.clear();
     if (!song) { body.replaceChildren(el("p", { class: "now" }, "Pick a tune, and its instruments show up here to mix.")); return; }
     const local = () => { mixChanged(); snap = JSON.stringify(mixOf(id)); };
     const knob = (label, lo, hi, get, put, show) => {
@@ -3246,10 +3277,11 @@ function mixerBox(box) {
       knob("🌊 echo repeats", 0, 90, () => fxOf(id, song.T).repeats, v => { chan(id, "fx").repeats = v; }, pct),
       knob("⏱️ echo time", 1, 8, () => fxOf(id, song.T).time, v => { chan(id, "fx").time = v; }, v => v + (v === 1 ? " step" : " steps")),
       knob("🏛️ room", 0, 200, () => fxOf(id, song.T).room, v => { chan(id, "fx").room = v; }, pct),
-      el("button", { class: "ms", onclick: () => { if (state.music.mix) delete state.music.mix[id]; mixChanged(); build(); } }, "↺ reset the mix"),
+      el("div", { class: "strip-top" }, [throwButton("🌊 throw everything", "all"),
+        el("button", { class: "ms", onclick: () => { if (state.music.mix) delete state.music.mix[id]; mixChanged(); build(); } }, "↺ reset the mix")]),
     ]);
     const dots = [], rows = [];
-    const strips = song.T.parts.map(p => {
+    const strips = song.T.parts.map((p, i) => {
       const key = channelKey(p), c = () => mixOf(id)[key] || {};
       const dot = el("span", { class: "dot" });
       const flip = what => () => { const ch = chan(id, key); ch[what] = !ch[what]; local(); syncButtons(); };
@@ -3257,11 +3289,12 @@ function mixerBox(box) {
       const strip = el("div", { class: "strip" }, [
         el("div", { class: "strip-top" }, [dot, el("span", { class: "strip-name" }, [(INST_ICON[p.inst] || "🎵") + " " + partName(p.name) + " ",
           // (the instrument too, unless the name says it: "bass", "organ")
-          ...(partName(p.name).toLowerCase().startsWith(p.inst) ? [] : [el("small", {}, p.inst)])]), mute, solo]),
+          ...(partName(p.name).toLowerCase().startsWith(p.inst) ? [] : [el("small", {}, p.inst)])]), mute, solo, throwButton("🌊 throw", i)]),
         knob("🔊 level", -10, 10, () => c().level || 0, v => { chan(id, key).level = v; }, v => (v > 0 ? "+" : "") + v + " dB"),
         knob("🌊 echo", 0, 100, () => c().echo ?? Math.round((p.echo || 0) * 100), v => { chan(id, key).echo = v; }, pct),
         knob("🏛️ room", 0, 100, () => c().rev ?? Math.round((p.rev || 0) * 100), v => { chan(id, key).rev = v; }, pct),
         knob("🎛️ tone", 0, 100, () => c().tone ?? 100, v => { chan(id, key).tone = v; }, v => v === 100 ? "open" : v + "%"),
+        knob("↔️ pan", -10, 10, () => c().pan || 0, v => { chan(id, key).pan = v; }, v => v === 0 ? "middle" : v < 0 ? "◀ " + -v : v + " ▶"),
       ]);
       dots.push(dot); rows.push({ strip, mute, solo, c });
       return strip;

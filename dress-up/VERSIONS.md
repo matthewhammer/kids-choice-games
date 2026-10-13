@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.7, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead.
+
+- **↔️ Pan** on every strip of the mixing board: from 10 to the left to 10 to the right. The dry sound moves, and the echo and the room stay in the middle.
+- **🌊 Throw,** the dub engineer's trick, on every strip: hold it, and everything that part plays goes into the echo; let go, and it goes back to its own echo setting. A quick tap throws for a whole beat. On the whole tune's strip, **🌊 throw everything** throws every part at once.
+
 ## 0.0.7 (2026-10-12)
 
 Everything in 0.0.6, plus longer tunes that change as they go, four more spooky tunes for the witch's woods, and a mixing board.
