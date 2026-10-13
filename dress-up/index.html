@@ -2861,7 +2861,7 @@ const TUNES = {
     ] };
   } },
   beach: { name: "🏖️ beach calypso", make: () => {
-    const chords = ["C", "F", "G7", "C", "Am", "F", "G7", "C"];
+    const chords = ["C", "F", "G7", "C", "Am", "F", "G7", "C"], bridge = ["Am", "F", "C", "G", "Am", "F", "G", "G7"];
     return { bpm: 116, room: 1.5, level: 0.72, parts: [
       { name: "panA", inst: "steelpan", rev: 0.2, line: lineOf(
         "E5:2 G5:2 C6:3 G5:1 A5:2 G5:2 E5:4 | F5:2 A5:2 C6:4 A5:2 F5:2 A5:4 | G5:2 B5:2 D6:3 B5:1 G5:2 F5:2 D5:4 | E5:3 D5:1 C5:4 r:2 G4:2 C5:2 E5:2 | " +
@@ -2869,19 +2869,33 @@ const TUNES = {
       { name: "panB", inst: "steelpan", rev: 0.2, line: lineOf(
         "G5:2 E5:2 G5:2 C6:2 E6:4 D6:4 | C6:2 A5:2 F5:2 A5:2 C6:4 A5:4 | B5:2 D6:2 F6:2 D6:2 B5:4 G5:4 | C6:4 G5:4 E5:4 C5:4 | " +
         "E5:2 A5:2 C6:2 E6:2 D6:4 C6:4 | A5:2 C6:2 F6:4 E6:2 D6:2 C6:4 | B5:2 C6:2 D6:2 B5:2 G5:2 A5:2 B5:4 | C6:12 r:4") },
+      // a third tune, over a bridge of its own: A minor, F, C, G
+      { name: "panC", inst: "steelpan", rev: 0.2, line: lineOf(
+        "E5:2 A5:2 C6:2 A5:2 E5:4 r:4 | F5:2 A5:2 C6:2 F6:2 E6:4 C6:4 | G5:2 C6:2 E6:4 D6:2 C6:2 G5:4 | B5:2 D6:2 G6:4 F6:2 D6:2 B5:4 | " +
+        "A5:2 C6:2 E6:2 A6:2 G6:4 E6:4 | F6:2 E6:2 C6:2 A5:2 C6:4 F6:4 | D6:2 B5:2 G5:2 B5:2 D6:4 G6:4 | F6:4 D6:4 B5:4 G5:4") },
+      // a second pan, the chord broken under the tune
+      { name: "pan2", inst: "steelpan", level: 0.45, rev: 0.25, line: arpOf(chords, 16, [0, 1, 2, 1], 4, 5) },
       { name: "pluck", inst: "pluck", level: 0.8, rev: 0.15, line: stabsOf(chords, 16, [2, 6, 10, 14], 2, 4) },
+      { name: "pluckBridge", inst: "pluck", level: 0.8, rev: 0.15, line: stabsOf(bridge, 16, [2, 6, 10, 14], 2, 4) },
       { name: "bass", inst: "bass", line: bassOf(chords, 16, [[0, 0, 5], [6, 7, 2], [8, 12, 5], [14, 7, 2]], 2) },
+      { name: "bassBridge", inst: "bass", line: bassOf(bridge, 16, [[0, 0, 5], [6, 7, 2], [8, 12, 5], [14, 7, 2]], 2) },
       { name: "drums", inst: "kick", level: 0.8, line: hitsOf("x.....x.x.......") },
       { name: "drums", inst: "rim", level: 0.6, line: hitsOf("....x.......x...") },
       { name: "shaker", inst: "shaker", level: 0.5, line: hitsOf("xoxoxoxoxoxoxoxo") },
       { name: "conga", inst: "conga", level: 0.6, line: hitsOf("..x..x.x..x..xx.", midiOf("A3")) },
+      // a second conga, higher, answering the first
+      { name: "conga2", inst: "conga", level: 0.5, line: hitsOf("x...x..x.x...x..", midiOf("E4")) },
+      // a carnival whistle
+      { name: "whistle", inst: "flute", level: 0.7, rev: 0.3, line: lineOf("G6:1 r:1 G6:1 r:1 G6:2 r:10 | r:16 | r:16 | r:16") },
     ], form: [
       S(4, "conga shaker bass"), S(8, "conga shaker bass pluck drums panA"), S(8, "conga shaker bass pluck drums panB"),
-      S(8, "conga shaker panA"), S(8, "conga shaker bass pluck drums panA", 2), S(8, "conga shaker bass pluck drums panB", 2),
+      S(8, "conga shaker drums pluckBridge bassBridge panC"), S(8, "conga conga2 shaker panA"),
+      S(8, "conga conga2 shaker bass pluck drums pan2 panA whistle", 2), S(8, "conga shaker drums pluckBridge bassBridge panC whistle", 2),
+      S(8, "conga conga2 shaker bass pluck drums pan2"), S(8, "conga conga2 shaker bass pluck drums panB", 2), S(4, "conga shaker whistle"),
     ] };
   } },
   soca: { name: "🥁 beach soca jump-up", make: () => {
-    const chords = ["D", "G", "A", "D", "Bm", "G", "A", "D"];
+    const chords = ["D", "G", "A", "D", "Bm", "G", "A", "D"], bridge = ["Bm", "G", "D", "A", "Bm", "G", "A", "A"];
     return { bpm: 128, room: 1.5, level: 0.7, parts: [
       { name: "panA", inst: "steelpan", rev: 0.2, line: lineOf(
         "F#5:2 A5:2 D6:2 A5:2 F#5:2 A5:1 B5:1 A5:4 | G5:2 B5:2 D6:2 B5:2 G5:2 A5:1 B5:1 G5:4 | A5:2 C#6:2 E6:2 C#6:2 A5:2 B5:1 C#6:1 E6:4 | D6:3 C#6:1 D6:2 A5:2 F#5:4 r:4 | " +
@@ -2889,40 +2903,60 @@ const TUNES = {
       { name: "panB", inst: "steelpan", rev: 0.2, line: lineOf(
         "A5:1 A5:1 r:2 A5:1 A5:1 r:2 F#5:2 A5:2 D6:4 | B5:1 B5:1 r:2 B5:1 B5:1 r:2 G5:2 B5:2 D6:4 | C#6:1 C#6:1 r:2 C#6:1 C#6:1 r:2 A5:2 C#6:2 E6:4 | D6:2 F#6:2 E6:2 D6:2 A5:8 | " +
         "B5:1 B5:1 r:2 B5:1 B5:1 r:2 F#5:2 B5:2 D6:4 | D6:2 B5:2 G5:2 B5:2 D6:2 E6:2 D6:4 | E6:2 C#6:2 A5:2 C#6:2 E6:2 F#6:2 E6:4 | D6:4 A5:4 D6:8") },
+      // a bridge tune: B minor, G, D, A
+      { name: "panC", inst: "steelpan", rev: 0.2, line: lineOf(
+        "F#5:4 B5:4 D6:4 C#6:2 B5:2 | B5:4 G5:4 D5:8 | A5:4 D6:4 F#6:4 E6:2 D6:2 | C#6:8 A5:8 | " +
+        "D6:2 C#6:2 B5:4 F#5:4 B5:4 | G5:4 B5:4 D6:4 G6:4 | E6:4 C#6:4 A5:4 E5:4 | A5:12 r:4") },
       { name: "chop", inst: "chop", level: 0.9, line: stabsOf(chords, 16, [2, 6, 10, 14], 1, 4) },
+      { name: "chopB", inst: "chop", level: 0.9, line: stabsOf(bridge, 16, [2, 6, 10, 14], 1, 4) },
       { name: "bass", inst: "bass", line: bassOf(chords, 16, [[0, 0, 3], [3, 0, 1], [6, 7, 2], [8, 12, 3], [11, 7, 1], [14, 0, 2]], 2) },
+      { name: "bassB", inst: "bass", line: bassOf(bridge, 16, [[0, 0, 3], [3, 0, 1], [6, 7, 2], [8, 12, 3], [11, 7, 1], [14, 0, 2]], 2) },
+      // buzzy synth stabs, for jumping
+      { name: "stabs", inst: "buzz", level: 0.5, rev: 0.15, line: rhythmOf(chords, 16, [[0, 2], [3, 1], [6, 2], [10, 1], [12, 2]], 3) },
       { name: "kick", inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
       { name: "snare", inst: "snare", level: 0.6, line: hitsOf("....x.......x...") },
       { name: "hat", inst: "hat", level: 0.6, line: hitsOf("..x...x...x...x.") },
       { name: "bell", inst: "cowbell", level: 0.5, line: hitsOf("x..x..x...x..x..") },
-      // the build before the last jump: the snare faster and faster
+      // the build before a jump: the snare faster and faster
       { name: "roll", inst: "snare", level: 0.5, line: hitsOf("....x...x...x... x.x.x.x.x.x.x.x. xxxxxxxxxxxxxxxx xxxxxxxxxxxxxxxx") },
+      { name: "whistle", inst: "flute", level: 0.7, rev: 0.3, line: lineOf("A6:1 r:1 A6:1 r:1 A6:2 r:10 | r:16 | r:16 | r:16") },
     ], form: [
       S(4, "kick bell"), S(4, "kick bell bass hat"), S(8, "kick bell bass hat snare chop panA"), S(8, "kick bell bass hat snare chop panB"),
-      S(4, "bell roll"), S(8, "kick bell bass hat snare chop panA"), S(8, "kick bell bass hat snare chop panB"),
+      S(8, "bell bassB chopB snare panC"), S(4, "bell roll"),
+      S(8, "kick bell bass hat snare chop stabs panA whistle"), S(8, "kick bell bass hat snare chop stabs panB"),
+      S(8, "kick bell hat bassB chopB panC"), S(4, "bell roll"),
+      S(8, "kick bell bass hat snare chop stabs panA", 2), S(4, "kick bell whistle"),
     ] };
   } },
   roots: { name: "🌴 sunny reggae", make: () => {
-    const chords = ["G", "Em", "C", "D", "G", "Em", "C", "D"];
+    const chords = ["G", "Em", "C", "D", "G", "Em", "C", "D"], bridge = ["C", "D", "G", "Em"];
     return { bpm: 76, swing: 0.2, room: 2, level: 0.9, parts: [
       { name: "drums", inst: "kick", line: hitsOf("........x.......") },
       { name: "drums", inst: "rim", level: 0.7, rev: 0.15, line: hitsOf("........x.......") },
       { name: "drums", inst: "hat", level: 0.5, line: hitsOf("o.x.o.x.o.x.o.x.") },
+      // sixteenth-note hats, for a busier stretch
+      { name: "hat16", inst: "hat", level: 0.35, line: hitsOf("xoxoxoxoxoxoxoxo") },
       { name: "chop", inst: "chop", echo: 0.2, line: stabsOf(chords, 16, [4, 12], 1, 4) },
-      // the organ's "bubble": the chord low and quick, between the beats
+      // the chop and a rim shot thrown deep into the echo, for the dub sections
+      { name: "chopDub", inst: "chop", echo: 0.6, rev: 0.3, line: stabsOf(chords, 16, [4, 12], 1, 4) },
+      { name: "rimDub", inst: "rim", level: 0.7, echo: 0.6, rev: 0.3, line: hitsOf("............x...") },
       { name: "organ", inst: "organ", level: 0.45, line: stabsOf(chords, 16, [2, 3, 6, 7, 10, 11, 14, 15], 1, 3) },
       { name: "bass", inst: "bass", line: lineOf(
         "r:2 G2:2 B2:2 D3:2 G3:4 F#3:2 D3:2 | r:2 E2:2 G2:2 B2:2 E3:4 D3:2 B2:2 | r:2 C3:2 E3:2 G3:2 C3:4 D3:2 E3:2 | r:2 D3:2 F#3:2 A3:2 D3:4 C3:2 A2:2") },
-      // rhythm, not tune: the melodica's chords stabbing with the bass line's
-      // own syncopation (its notes on steps 2, 6, 8 and 14 of the bar)...
       { name: "vampA", inst: "melodica", level: 0.6, rev: 0.2, echo: 0.15, line: rhythmOf(chords, 16, [[2, 1], [6, 1], [8, 3], [14, 1]], 4) },
-      // ...and the melodica doubling the end of each bar's bass figure an
-      // octave up, short, as a reggae guitar picks along with the bass
       { name: "vampB", inst: "melodica", level: 0.8, rev: 0.2, echo: 0.15, line: lineOf(
         "r:8 G4:2 r:2 F#4:1 r:1 D4:1 r:1 | r:8 E4:2 r:2 D4:1 r:1 B3:1 r:1 | r:8 C4:2 r:2 D4:1 r:1 E4:1 r:1 | r:8 D4:2 r:2 C4:1 r:1 A3:1 r:1") },
+      // the bridge: C, D, G, E minor, its own bass, chop, bubble and vamp
+      { name: "bassBridge", inst: "bass", line: lineOf(
+        "r:2 C3:2 E3:2 G3:2 C3:4 B2:2 A2:2 | r:2 D3:2 F#3:2 A3:2 D3:4 C3:2 A2:2 | r:2 G2:2 B2:2 D3:2 G3:4 F#3:2 D3:2 | r:2 E2:2 G2:2 B2:2 E3:4 D3:2 B2:2") },
+      { name: "chopBridge", inst: "chop", echo: 0.2, line: stabsOf(bridge, 16, [4, 12], 1, 4) },
+      { name: "organBridge", inst: "organ", level: 0.45, line: stabsOf(bridge, 16, [2, 3, 6, 7, 10, 11, 14, 15], 1, 3) },
+      { name: "vampBridge", inst: "melodica", level: 0.6, rev: 0.2, echo: 0.15, line: rhythmOf(bridge, 16, [[2, 1], [6, 1], [8, 3], [14, 1]], 4) },
     ], form: [
       S(4, "drums bass"), S(8, "drums bass chop organ vampA"), S(8, "drums bass chop organ vampB"),
-      S(8, "drums bass chop"), S(8, "drums bass chop organ vampA"), S(8, "drums bass chop organ vampA vampB"),
+      S(8, "drums bass chopDub rimDub"), S(8, "drums bassBridge chopBridge organBridge vampBridge"),
+      S(8, "drums hat16 bass chop organ vampA vampB"), S(8, "drums bass chopDub"),
+      S(8, "drums bass chop organ vampA vampB"), S(4, "drums bass"),
     ] };
   } },
   underwater: { name: "🐠 bubble reggae", make: () => {

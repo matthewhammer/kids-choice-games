@@ -2,6 +2,25 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.10, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead.
+
+- **The beach tunes are longer, and change as they go:**
+  - 🏖️ **Beach calypso** (about 2½ minutes, 10 sections):
+    - a third steel-pan tune over a bridge of its own (A minor, F, C, G), with its own strum and bass;
+    - a second pan breaking the chords under the tune;
+    - a higher conga answering the first, and a carnival whistle;
+    - a break of pans and hand drums only, and the last stretch a whole step higher.
+  - 🥁 **Beach soca jump-up** (about 2½ minutes, 12 sections):
+    - a bridge tune (B minor, G, D, A) with its own chop and bass, as a breather;
+    - buzzy synth stabs for the jumps, and the whistle;
+    - two snare-roll build-ups, and the last jump a whole step higher.
+  - 🌴 **Sunny reggae** (about 3½ minutes, 9 sections), still all rhythm:
+    - a bridge (C, D, G, E minor) with its own bass line, chop, organ bubble and vamp;
+    - two dub sections, where the chop and a rim shot drop deep into the echo;
+    - a stretch with sixteenth-note hi-hats.
+
 ## 0.0.10 (2026-10-12)
 
 Everything in 0.0.9, plus longer forest and garden tunes, rhythm vamps in sunny reggae, and the music's mute at the top of its tab.
