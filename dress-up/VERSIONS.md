@@ -2,9 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.6 (2026-10-12)
 
-Changes since 0.0.5, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead.
+Everything in 0.0.5, plus four more Caribbean and reggae tunes.
 
 - **Four more Caribbean and reggae tunes** in the 🎵 Music tab, six in all for the beach and under the sea:
   - 🥁 beach soca jump-up: fast, a kick on every beat, a cowbell, and a bouncing steel-pan riff;
