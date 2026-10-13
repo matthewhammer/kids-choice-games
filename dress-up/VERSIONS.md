@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.14 (2026-10-13)
+
+Everything in 0.0.13, plus the great tree's crown.
+
+- **🌳 The tree house's great tree has a crown,** high above the picture: its trunk goes on up, branches spread wide, and big bonsai pads of leaves sit on them. At the usual size it is out of sight; shrink the tree to see it. The leaves slider fills it too (0: bare branches).
+
 ## 0.0.13 (2026-10-13)
 
 Everything in 0.0.12, plus a forest, a stream and a swing round the tree house, and three more kinds of tree house.

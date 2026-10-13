@@ -2118,6 +2118,27 @@ function treehouseScene(c) {
   // the tree, its leaves, houses, bridges and ladders: built in the tree's
   // units, so its size slider builds none of them again
   s += OPEN(`<g id="bg-tree" ${tf(0, g, ts * k)}>`);
+  // the crown, high above the frame at the tree's usual size (its top is
+  // about 600 of the tree's units up): seen only when the tree is small
+  s += SEP + part("tree-crown", [leaves], () => {
+    let t = `<polygon points="-62,-720 -26,-1290 26,-1290 62,-720" fill="#5e3d22" stroke="#3a2414" stroke-width="2"/>` +
+            [-30, -8, 14].map(x => `<path d="M${x} -730 Q${x + 10} -950 ${x / 2} -1280" fill="none" stroke="#3a2414" stroke-width="3" opacity="0.5"/>`).join("");
+    const tips = [];
+    for (let j = 0; j < 14; j++) {
+      const sd = j % 2 ? 1 : -1, sy = -780 - 34 * j, tx = sd * (160 + 470 * R(j, 230)), ty = sy - 80 - 220 * R(j, 231);
+      const fx = tx * 0.7 + sd * 60, fy = ty - 90 - 60 * R(j, 232);
+      t += `<path d="M${sd * 20} ${sy} Q${f1(tx * 0.45)} ${f1(sy - 20)} ${f1(tx)} ${f1(ty)}" fill="none" stroke="#6e4a2c" stroke-width="${f1(26 - j)}" stroke-linecap="round"/>` +
+           `<path d="M${f1(tx * 0.6)} ${f1((sy + ty) / 2 - 10)} L${f1(fx)} ${f1(fy)}" fill="none" stroke="#6e4a2c" stroke-width="11" stroke-linecap="round"/>`;
+      tips.push([tx, ty], [fx, fy]);
+    }
+    tips.push([0, -1300], [-120, -1360], [120, -1350], [0, -1420]);
+    t += [...Array(Math.round(leaves * 0.8))].map((_, i) => {
+      const [x, y] = tips[i % tips.length], more = Math.floor(i / tips.length), sc = 1 + 1.1 * R(i, 233);
+      return use(`bg-pad${Math.floor(R(i, 234) * 8)}`, x + more * 70 * (R(i, 235) - 0.5) * 2, y + 10 - more * 50, sc * (R(i, 236) < 0.5 ? -1 : 1), sc,
+                 ` color="${["#2a6e2e", "#2f7d32", "#3c9a40", "#266b30", "#4fb04f"][Math.floor(R(i, 237) * 5)]}"`);
+    }).join("");
+    return t;
+  });
   // more branches, up the trunk and out each side, a fork on each
   s += SEP + part("tree-branches", [], () => TREE_TIPS.map(([sx, sy, tx, ty, fx, fy]) =>
     `<path d="M${sx} ${sy} Q${f1((sx + tx) / 2)} ${f1(sy - 6)} ${tx} ${ty}" fill="none" stroke="#6e4a2c" stroke-width="13" stroke-linecap="round"/>` +
