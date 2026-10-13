@@ -180,7 +180,7 @@ const DEFAULTS = {
   shoes: { style: "sneaker", size: 100, color: "#c0392b" },
   // the figure's size and place in a background scene (dragged there)
   background: { kind: "none", figSize: 100, figX: 0, figY: 0, chickenLegs: false, legSize: 100, hutNear: 0,
-                eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100 },
+                eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false },
   // the sliders pinned to the full-screen controls, as "part.key"
   hud: { pins: [], min: [] },
   costume: { kind: "none", fur: "#e8862a", marks: "#1f1a17", belly: "#f7ead8", eyes: "#e0a800",
@@ -1961,19 +1961,22 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // roots humped out of the ground; her cauldron bubbling over a fire on
     // the right; skeletons reaching up out of the ground.
     s += `<defs>${grad("bg-dusk", "#2b1d4a", "#e0874a", y0, g - 40 * k)}</defs>` + all("url(#bg-dusk)");
-    // The skulls' eyes: a red dot in each eye hole, all growing and
-    // shrinking together, so many times a minute (0: a steady glow), as
-    // big as the size slider says (a share of the hole). SVG's own
-    // animation, on the picture's clock, so a redraw keeps them in step.
-    const blinks = opts.eyeRate ?? 30, glow = (opts.eyeGlow ?? 70) / 100;
+    // The skulls' eyes: a red dot in each eye hole, growing and shrinking
+    // so many times a minute (0: a steady glow), as big as the glow slider
+    // says (a share of the hole). In sync, all together; out of sync, each
+    // skull (its seed) at its own pace, from half to one and a half times
+    // the rate's, from its own place in the blink. SVG's own animation, on
+    // the picture's clock, so a redraw keeps them where they were.
+    const blinks = opts.eyeRate ?? 30, glow = (opts.eyeGlow ?? 70) / 100, apart = !!opts.blinkApart;
     // the fence's skulls: each its own size, from the usual size up to the
     // biggest (a share of the usual), and their eyes' size
     const skullMax = Math.max(1, (opts.skullMax ?? 300) / 100), skullEye = (opts.skullEye ?? 100) / 100;
-    const eyeDot = (cx, cy, hole) => {
+    const eyeDot = (cx, cy, hole, seed) => {
       if (glow <= 0) return "";
-      const r = hole * glow;
+      const r = hole * glow, own = apart && seed !== undefined;
+      const dur = (60 / blinks) * (own ? 0.5 + R(seed, 60) : 1), begin = own ? -R(seed, 61) * dur : 0;
       const anim = blinks > 0 ? `<animate attributeName="r" values="${f1(r * 0.08)};${f1(r)};${f1(r * 0.08)}" keyTimes="0;0.5;1" ` +
-        `calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" dur="${(60 / blinks).toFixed(3)}s" begin="0s" repeatCount="indefinite"/>` : "";
+        `calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" dur="${dur.toFixed(3)}s" begin="${begin.toFixed(3)}s" repeatCount="indefinite"/>` : "";
       return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="#ff2626">${anim}</circle>`;
     };
     const mx = x1 - W * 0.17, my = y0 + H * 0.15;
@@ -2100,7 +2103,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
         skulls += `<path d="M${L(-11 * hw, 2 + drop)} Q${L(-12 * hw, -3 - 11 * up)} ${L(0, -3 - 12 * up)} Q${L(12 * hw, -3 - 11 * up)} ${L(11 * hw, 2 + drop)} ` +
              `L${L(6 * jw, 4 + drop)} L${L(5 * jw, 10 + drop)} L${L(-5 * jw, 10 + drop)} L${L(-6 * jw, 4 + drop)} Z" fill="#efe8d8" stroke="#6b6355" stroke-width="${f1(1.2 * u)}"/>` +
              [-1, 1].map(sd => `<circle cx="${Lx(sd * ex)}" cy="${Ly(-3)}" r="${f1(r * u)}" fill="#1a1426"/>`).join("") +
-             [-1, 1].map(sd => eyeDot(tipX + sd * ex * u, tipY + (-5 - drop) * u, r * u)).join("") +
+             [-1, 1].map(sd => eyeDot(tipX + sd * ex * u, tipY + (-5 - drop) * u, r * u, i)).join("") +
              `<path d="M${L(-1.5, 3 + drop)} L${L(0, drop)} L${L(1.5, 3 + drop)} Z" fill="#1a1426"/>` +
              [-3, 0, 3].map(t => `<line x1="${Lx(t * jw)}" y1="${Ly(6 + drop)}" x2="${Lx(t * jw)}" y2="${Ly(10 + drop)}" stroke="#6b6355" stroke-width="${f1(1 * u)}"/>`).join("");
       }
@@ -2129,7 +2132,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // skeletons reaching up out of the ground: a skull half buried, an arm
     // bone up to a bony hand
     for (const [fx, fy, sd] of [[-0.14, 52, 1], [0.12, 66, -1], [-0.44, 74, -1], [0.45, 70, 1]]) {
-      const x = W * fx, y = g + fy * k, bone = "#efe8d8", ln = "#6b6355";
+      const x = W * fx, y = g + fy * k, bone = "#efe8d8", ln = "#6b6355", seed = 200 + Math.round(fx * 100);
       const ax = x + sd * 26 * k, ay = y - 4 * k, ex = ax + sd * 10 * k, ey = ay - 34 * k, hx = ex - sd * 4 * k, hy = ey - 26 * k;
       s += `<path d="M${P(ax, ay)} L${P(ex, ey)} L${P(hx, hy)}" fill="none" stroke="${ln}" stroke-width="${f1(7 * k)}" stroke-linecap="round" stroke-linejoin="round"/>` +
            `<path d="M${P(ax, ay)} L${P(ex, ey)} L${P(hx, hy)}" fill="none" stroke="${bone}" stroke-width="${f1(4.5 * k)}" stroke-linecap="round" stroke-linejoin="round"/>` +
@@ -2137,7 +2140,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
              return `<line x1="${f1(hx)}" y1="${f1(hy)}" x2="${f1(hx + 12 * k * Math.cos(a))}" y2="${f1(hy + 12 * k * Math.sin(a))}" stroke="${bone}" stroke-width="${f1(2.6 * k)}" stroke-linecap="round"/>`; }).join("") +
            `<path d="M${P(x - 13 * k, y)} Q${P(x - 14 * k, y - 20 * k)} ${P(x, y - 21 * k)} Q${P(x + 14 * k, y - 20 * k)} ${P(x + 13 * k, y)} Z" fill="${bone}" stroke="${ln}" stroke-width="${f1(1.2 * k)}"/>` +
            `<circle cx="${f1(x - 5 * k)}" cy="${f1(y - 9 * k)}" r="${f1(3.6 * k)}" fill="#1a1426"/><circle cx="${f1(x + 5 * k)}" cy="${f1(y - 9 * k)}" r="${f1(3.6 * k)}" fill="#1a1426"/>` +
-           eyeDot(x - 5 * k, y - 9 * k, 3.6 * k) + eyeDot(x + 5 * k, y - 9 * k, 3.6 * k) +
+           eyeDot(x - 5 * k, y - 9 * k, 3.6 * k, seed) + eyeDot(x + 5 * k, y - 9 * k, 3.6 * k, seed) +
            `<ellipse cx="${f1(x)}" cy="${f1(y + 1 * k)}" rx="${f1(26 * k)}" ry="${f1(5 * k)}" fill="#3a2c1e"/>`;
     }
     // her cauldron on the right, bubbling green over a fire
@@ -2730,6 +2733,7 @@ const TABS = [
     ["range", "legSize", "🐔 leg size", 20, 300, 80, 140],
     ["range", "hutNear", "🛖 hut: far ↔ near (behind the fence)", 0, 100, 0, 60],
     ["range", "eyeRate", "💀 skull eyes: blinks a minute (0 = steady)", 0, 240, 20, 60],
+    ["flip", "blinkApart", ["💀 skull eyes blink in sync", "💀 skull eyes blink out of sync"]],
     ["range", "skullMax", "💀 skulls: biggest size (% of the usual; the smallest is the usual)", 100, 3000, 200, 500],
     ["range", "skullEye", "💀 skull eye size (the skulls grow to hold them)", 50, 500, 80, 200],
     ["range", "eyeGlow", "💀 skull eyes: red glow size", 0, 100, 40, 90],
@@ -2815,6 +2819,7 @@ const SHOWN_WHEN = {
   "background.eyeRate": b => b.kind === "witch",
   "background.eyeGlow": b => b.kind === "witch",
   "background.skullMax": b => b.kind === "witch",
+  "background.blinkApart": b => b.kind === "witch" && b.eyeRate > 0 && b.eyeGlow > 0,
   "background.skullEye": b => b.kind === "witch",
   "costume.marks": c => !!ANIMALS[c.kind],
   "costume.spot": c => c.furPattern === "rosettes" && !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),

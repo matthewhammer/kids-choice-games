@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.4, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead, once a day or so, after testing.
+
+- **💀 skull eyes blink in sync / out of sync:** a chip in the witch's woods. In sync, every skull's eyes blink together, as before. Out of sync, each skull (on the fence and the buried skeletons) blinks at its own pace, from half to one and a half times the blink rate, starting from its own place in the blink. Both eyes of one skull stay together, and a redraw keeps each skull where it was. The chip shows while the eyes blink and glow.
+
 ## 0.0.4 (2026-10-12)
 
 Everything in 0.0.3, with the skulls on the witch's fence refined.
