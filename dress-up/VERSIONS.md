@@ -15,6 +15,11 @@ Changes since 0.0.4, for the next version. They are not deployed yet: the versio
   - 🌿 cemetery: a peaceful garden (a music box over a soft pad, a gentle flute).
 
   The 🎵 Music tab plays the scene's own tune, or any tune over any background. It has a volume slider and a mute chip, and a 🔊/🔇 button sits in the picture's top-left corner. There is no music without a background, unless a tune is picked. The sound starts with the first tap, as browsers require, and rests while the page is hidden. 🎲 Surprise me leaves the music alone, and Load and ↺ Start over keep the volume and mute.
+- **🏃 Tempo and 🎹 transpose** in the 🎵 Music tab:
+  - Tempo runs from 25% to 300% of the tune's own speed. A change carries the tune on from where it is, at the new pace, with the echo kept in time.
+  - Transpose moves the tune from 24 half steps down to 24 up. The drums keep their sound.
+  - The "playing" line says the beats a minute and how far the tune is moved.
+  - Both go with the friend, like the tune choice: Load brings them back, and Start over resets them.
 
 ## 0.0.4 (2026-10-12)
 

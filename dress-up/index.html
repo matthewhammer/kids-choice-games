@@ -233,7 +233,7 @@ DEFAULTS.rightHand = Object.fromEntries(HAND_OWN.map(k => [k, DEFAULTS.hands[k]]
 // the music: the background's own tune (none without one) or a chosen one;
 // the volume and mute belong to the device, not the friend: Load and Start
 // over keep them
-DEFAULTS.music = { track: "scene", volume: 60, mute: false };
+DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0 };
 let state = clone(DEFAULTS);
 try {
   const saved = JSON.parse(localStorage.getItem("dress-up-v1") || "null");
@@ -2833,19 +2833,23 @@ function busesOf(A, T, into) {
   const rev = A.createConvolver(); rev.buffer = roomOf(A, T.room || 2); rev.connect(gainOf(A, into, 1));
   const echo = A.createDelay(2); echo.delayTime.value = (T.echoSteps || 3) * 60 / T.bpm / 4;
   const back = gainOf(A, echo, 0.38); echo.connect(filter(A, back, "lowpass", 1800)); echo.connect(gainOf(A, into, 0.8));
-  return T.parts.map(p => {
+  const parts = T.parts.map(p => {
     const g = gainOf(A, into, p.level ?? 1);
     if (p.rev) g.connect(gainOf(A, rev, p.rev));
     if (p.echo) g.connect(gainOf(A, echo, p.echo));
     return g;
   });
+  parts.echo = echo;
+  return parts;
 }
 const stepSecs = T => 60 / T.bpm / 4;
 // when a note starts: its step, and the swing on every other step
 const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + (at % 2 ? song.T.swing || 0 : 0)) * stepSecs(song.T);
-function playNote(A, buses, song, ev, t) {
-  const p = song.T.parts[ev.part], dur = ev.len * stepSecs(song.T);
-  for (const m of ev.notes) INSTRUMENTS[p.inst](A, buses[ev.part], t, m + (p.shift || 0), dur, (ev.vel ?? 1) * (p.vel ?? 1));
+// (drums keep their sound when the tune is moved up or down)
+const PERCUSSION = new Set(["kick", "rim", "hat", "shaker", "conga"]);
+function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0) {
+  const p = song.T.parts[ev.part], dur = ev.len * sd, move = (p.shift || 0) + (PERCUSSION.has(p.inst) ? 0 : up);
+  for (const m of ev.notes) INSTRUMENTS[p.inst](A, buses[ev.part], t, m + move, dur, (ev.vel ?? 1) * (p.vel ?? 1));
 }
 
 // --- playing: one tune at a time, its notes sent a little ahead
@@ -2865,18 +2869,22 @@ function startTune(id) {
   const song = songOf(id);
   if (!song || !song.events.length) return;
   const into = gainOf(audio, master, song.T.level ?? 1);
-  playing = { id, song, into, buses: busesOf(audio, song.T, into), t0: audio.currentTime + 0.08, i: 0, loop: 0 };
+  // its clock: step s0 at time t0, sd seconds a step (the tempo slider's)
+  playing = { id, song, into, buses: busesOf(audio, song.T, into), t0: audio.currentTime + 0.08, s0: 0, sd: tunedStep(song.T), i: 0, loop: 0 };
   const p = playing;
+  p.buses.echo.delayTime.value = (song.T.echoSteps || 3) * p.sd;
   p.timer = setInterval(() => sendAhead(p), 25);
   sendAhead(p);
 }
+const tunedStep = T => stepSecs(T) * 100 / (state.music.tempo || 100);
 function sendAhead(p) {
   const until = audio.currentTime + 0.2;
   for (;;) {
-    const ev = p.song.events[p.i], t = timeOf(p.song, p.t0, p.loop, ev.at);
+    const ev = p.song.events[p.i];
+    const step = p.loop * p.song.steps + ev.at + (ev.at % 2 ? p.song.T.swing || 0 : 0), t = p.t0 + (step - p.s0) * p.sd;
     if (t > until) break;
     // (a note already late, after a busy moment, is skipped, not crammed in)
-    if (t > audio.currentTime - 0.02) playNote(audio, p.buses, p.song, ev, t);
+    if (t > audio.currentTime - 0.02) playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0);
     if (++p.i >= p.song.events.length) { p.i = 0; p.loop++; }
   }
 }
@@ -2891,7 +2899,10 @@ const tuneOf = () => { const m = state.music, id = m.track === "scene" ? SCENE_T
 function nowPlaying() {
   const id = tuneOf(), m = state.music;
   if (!id) return "No background, so no music. Pick a tune to play one anyway.";
-  return (m.mute ? "🔇 muted: " : "▶ playing: ") + TUNES[id].name + (heard || m.mute ? "" : " (tap anywhere to start the sound)");
+  const song = songOf(id), bpm = song ? Math.round(song.T.bpm * (m.tempo || 100) / 100) : 0;
+  const moved = m.transpose ? `, ${m.transpose > 0 ? "up" : "down"} ${Math.abs(m.transpose)} half step${Math.abs(m.transpose) === 1 ? "" : "s"}` : "";
+  return (m.mute ? "🔇 muted: " : "▶ playing: ") + TUNES[id].name + ` (${bpm} beats a minute${moved})` +
+         (heard || m.mute ? "" : " (tap anywhere to start the sound)");
 }
 // after every change: the right tune playing (or none), at the volume
 function musicSync() {
@@ -2907,6 +2918,13 @@ function musicSync() {
   if (v !== volumeSet) { master.gain.setTargetAtTime(v, audio.currentTime, 0.05); volumeSet = v; }
   if (playing && playing.id !== want) stopTune();
   if (!playing) startTune(want);
+  // a new tempo: on from the step playing now, at the new pace (the echo too)
+  const sd = tunedStep(playing.song.T);
+  if (playing.sd !== sd) {
+    const p = playing, now = audio.currentTime;
+    p.s0 += (now - p.t0) / p.sd; p.t0 = now; p.sd = sd;
+    p.buses.echo.delayTime.setTargetAtTime((p.song.T.echoSteps || 3) * sd, now, 0.05);
+  }
 }
 // the first tap or key lets the sound start (inside it, as browsers ask)
 for (const kind of ["pointerdown", "touchend", "keydown", "click"])
@@ -3124,6 +3142,8 @@ const TABS = [
     ["note", "now", nowPlaying],
     ["choice", "track", "tune", TUNE_CHOICES],
     ["range", "volume", "🔊 volume", 0, 100, 40, 80],
+    ["range", "tempo", "🏃 tempo (% of the tune's own speed)", 25, 300, 80, 130],
+    ["range", "transpose", "🎹 transpose (half steps: + higher, − lower)", -24, 24, -5, 5],
     ["flip", "mute", ["🔊 sound on: tap to mute", "🔇 muted: tap for sound"]],
   ]],
 ];
