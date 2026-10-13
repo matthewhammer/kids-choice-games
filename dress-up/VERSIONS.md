@@ -2,6 +2,17 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.13 (2026-10-13)
+
+Everything in 0.0.12, plus a forest, a stream and a swing round the tree house, and three more kinds of tree house.
+
+- **🌳 The tree house stands in a forest:** pines and round trees on the hills and at the meadow's edge, bushes, and flowers in the grass.
+- **A stream** winds down past the tree, and **a rope swing** sways over it from a long branch.
+- **Three more kinds of house** in each house's menu, beside the animals:
+  - 🪵 **cabin:** a plain red gable and a chimney;
+  - 🎀 **fancy house:** a steep scalloped roof, lacy trim, a gold finial, a round window and flower boxes;
+  - 🔨 **craftsman:** a low wide gable with rafter tails and braces, and tapered porch posts on stone.
+
 ## 0.0.12 (2026-10-13)
 
 Everything in 0.0.11, plus five new backgrounds with sliders of their own, and four chase tunes.
