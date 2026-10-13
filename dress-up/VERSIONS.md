@@ -2,6 +2,29 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.8, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead.
+
+- **A knob for each instrument** on its mixing-board strip, at 50 as the tune was written:
+  - ✨ ring: steel pan, harpsichord, plucked violin and strings, guitar strum, music box, bell;
+  - ✨ length: rim, snare, hat, shaker, cowbell, chop;
+  - 💥 boom: kick;
+  - 🎵 pitch: conga, in half steps;
+  - 🎸 growl: bass;
+  - 🐝 wah: the buzzy bass;
+  - 🎹 bright: organ;
+  - 〰️ vibrato: flute and melodica;
+  - 〰️ waver: the ghost;
+  - 🌀 wobble: the vibraphone (0 stops it);
+  - 🌅 swell: the pad;
+  - 🫧 bloop: bubbles;
+  - 🐦 chirp: birds.
+
+  A knob changes the notes that part plays from then on.
+- **📼 Tape stop** in the transport: as when a tape machine loses its power, the music, its echoes and its room slow down and slide down in pitch together to a halt, then pause there. ▶ play carries on from where the tape stopped.
+- Fixed: where the tune is ("bar 14 · beat 2 of 4 · section 2 of 6") and its time ("0:16 / 0:59") sometimes broke onto two lines as the numbers changed. They now sit on a line of their own under the buttons, which never wraps.
+
 ## 0.0.8 (2026-10-12)
 
 Everything in 0.0.7, plus stereo panning and dub echo throws on the mixing board, and a transport for the music.
