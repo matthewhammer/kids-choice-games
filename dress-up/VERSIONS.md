@@ -8,6 +8,13 @@ Changes since 0.0.7, for the next version. They are not deployed yet: the versio
 
 - **↔️ Pan** on every strip of the mixing board: from 10 to the left to 10 to the right. The dry sound moves, and the echo and the room stay in the middle.
 - **🌊 Throw,** the dub engineer's trick, on every strip: hold it, and everything that part plays goes into the echo; let go, and it goes back to its own echo setting. A quick tap throws for a whole beat. On the whole tune's strip, **🌊 throw everything** throws every part at once.
+- **⏯️ Where the tune is,** at the top of the 🎵 Music tab:
+  - a slider across the whole tune, with its sections marked underneath and the one playing lit;
+  - where it is in bars and beats ("bar 21 · beat 2 of 4 · section 3 of 6"), and in minutes and seconds at the tempo set ("0:53 / 2:05");
+  - ⏸ pause and ▶ play, which carries on from the same place, and ⏮ rewind;
+  - drag the slider and let go to jump there, while playing or paused.
+
+  Choosing another tune plays it from the start.
 
 ## 0.0.7 (2026-10-12)
 

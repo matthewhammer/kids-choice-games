@@ -116,6 +116,13 @@
   .knob .val { color: var(--muted); text-align: right; font-size: 0.9em; }
   .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
   .dot.on { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+  /* the transport: where the tune is, its sections marked under it */
+  .ctl .where { font-weight: 600; }
+  .ctl .when { color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .marks { display: flex; gap: 2px; margin-top: 2px; }
+  .marks span { height: 14px; border-radius: 4px; background: var(--line); color: var(--muted); font-size: 10px; line-height: 14px; text-align: center; overflow: hidden; }
+  .marks span.on { background: var(--accent); color: var(--accent-ink); }
+  .ctl.idle input[type=range], .ctl.idle .marks { opacity: 0.4; }
   /* In full screen, a heads-up display of chosen controls: hidden until
      its button is pressed; the scene's own controls and every pinned slider. */
   .hud-btn { display: none; position: absolute; top: 16px; right: 66px; padding: 0 9px; font-size: 1.3em;
@@ -3150,12 +3157,15 @@ function audioReady() {
   if (audio.state === "suspended" && !document.hidden) audio.resume();
   return true;
 }
-function startTune(id) {
+function startTune(id, from = 0) {
   const song = songOf(id);
   if (!song || !song.events.length) return;
   const into = gainOf(audio, master, song.T.level ?? 1);
-  // its clock: step s0 at time t0, sd seconds a step (the tempo slider's)
-  playing = { id, song, into, buses: busesOf(audio, song.T, into), t0: audio.currentTime + 0.08, s0: 0, sd: tunedStep(song.T), i: 0, loop: 0 };
+  // its clock: step s0 at time t0, sd seconds a step (the tempo slider's);
+  // the first note to send, from the step it starts at
+  let i = song.events.findIndex(ev => ev.at >= from), loop = 0;
+  if (i < 0) { i = 0; loop = 1; }
+  playing = { id, song, into, buses: busesOf(audio, song.T, into), t0: audio.currentTime + 0.08, s0: from, sd: tunedStep(song.T), i, loop };
   const p = playing;
   applyMix(true);
   p.timer = setInterval(() => sendAhead(p), 25);
@@ -3314,6 +3324,63 @@ function mixerBox(box) {
   build();
   syncs.push(() => { if (idNow() !== shown || JSON.stringify(mixOf(shown)) !== snap) build(); });
 }
+// --- the transport: where the tune is, and pause, play, rewind and seek
+let paused = null, startFrom = 0;
+// the step playing now, within the tune (it loops)
+function stepNow() {
+  if (playing) return Math.max(playing.s0, playing.s0 + (audio.currentTime - playing.t0) / playing.sd) % playing.song.steps;
+  return paused ? paused.at : 0;
+}
+function pauseOrPlay(id) {
+  if (paused) { startFrom = paused.at; paused = null; }
+  else if (playing) { paused = { id: playing.id, at: stepNow() }; stopTune(); }
+  else return;
+  musicSync();
+  // (the "playing" line says "paused" now, or "playing" again)
+  for (const f of syncs) f();
+}
+function seek(id, at) {
+  if (paused) { paused.at = at; return; }
+  if (!playing) return;
+  stopTune(); startFrom = at; musicSync();
+}
+const clock = secs => Math.floor(secs / 60) + ":" + String(Math.floor(secs % 60)).padStart(2, "0");
+function transportBox(box) {
+  const say = el("span", { class: "where" }), when = el("span", { class: "when" });
+  const playBtn = el("button", { class: "ms", onclick: () => pauseOrPlay() }), back = el("button", { class: "ms", onclick: () => seek(null, 0) }, "⏮ rewind");
+  const slider = el("input", { type: "range", min: 0, max: 1, step: 1, value: 0 }), marks = el("div", { class: "marks" });
+  let dragging = false, marksFor = null;
+  slider.addEventListener("pointerdown", () => { dragging = true; });
+  slider.addEventListener("input", () => { dragging = true; });
+  slider.addEventListener("change", () => { dragging = false; seek(null, Number(slider.value)); });
+  box.append(el("div", { class: "strip-top" }, [back, playBtn, say, when]), slider, marks);
+  const song = () => { const id = playing ? playing.id : paused ? paused.id : tuneOf(); return id ? songOf(id) : null; };
+  function frame() {
+    if (!box.isConnected) return;
+    const sg = song();
+    box.classList.toggle("idle", !sg);
+    if (sg) {
+      const T = sg.T, bar = T.bar || 16, at = dragging ? Number(slider.value) : Math.floor(stepNow()), sd = playing ? playing.sd : tunedStep(T);
+      slider.max = sg.steps;
+      if (!dragging) slider.value = at;
+      // the sections, as marks under the slider, the one playing lit
+      if (marksFor !== sg) {
+        marksFor = sg;
+        marks.replaceChildren(...(T.form || [{ bars: sg.steps / bar }]).map((sec, n) => el("span", { style: `flex:${sec.bars}` }, String(n + 1))));
+      }
+      let start = 0, here = 0;
+      (T.form || []).forEach((sec, n) => { if (at >= start) here = n; start += sec.bars * bar; });
+      [...marks.children].forEach((m, n) => m.classList.toggle("on", n === here));
+      say.textContent = `bar ${Math.floor(at / bar) + 1} · beat ${Math.floor((at % bar) / 4) + 1} of ${bar / 4}` +
+                        (T.form ? ` · section ${here + 1} of ${T.form.length}` : "");
+      when.textContent = `${clock(at * sd)} / ${clock(sg.steps * sd)}`;
+    } else { say.textContent = "no tune playing"; when.textContent = ""; }
+    playBtn.textContent = paused ? "▶ play" : "⏸ pause";
+    playBtn.disabled = !(playing || paused);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
 // the tune for now: the one chosen, or the background's own (none without one)
 const tuneOf = () => { const m = state.music, id = m.track === "scene" ? SCENE_TUNE[state.background.kind] : m.track; return TUNES[id] ? id : null; };
 function nowPlaying() {
@@ -3321,7 +3388,7 @@ function nowPlaying() {
   if (!id) return "No background, so no music. Pick a tune to play one anyway.";
   const song = songOf(id), bpm = song ? Math.round(song.T.bpm * (m.tempo || 100) / 100) : 0;
   const moved = m.transpose ? `, ${m.transpose > 0 ? "up" : "down"} ${Math.abs(m.transpose)} half step${Math.abs(m.transpose) === 1 ? "" : "s"}` : "";
-  return (m.mute ? "🔇 muted: " : "▶ playing: ") + TUNES[id].name + ` (${bpm} beats a minute${moved})` +
+  return (m.mute ? "🔇 muted: " : paused && paused.id === id ? "⏸ paused: " : "▶ playing: ") + TUNES[id].name + ` (${bpm} beats a minute${moved})` +
          (heard || m.mute ? "" : " (tap anywhere to start the sound)");
 }
 // after every change: the right tune playing (or none), at the volume
@@ -3331,13 +3398,15 @@ function musicSync() {
   btn.textContent = m.mute ? "🔇" : "🔊";
   btn.setAttribute("aria-pressed", !!m.mute);
   if (!heard) return;
-  const want = m.mute ? null : id;
+  // (a paused tune stays paused until play, unless another tune is chosen)
+  if (paused && id !== paused.id) paused = null;
+  const want = m.mute || paused ? null : id;
   if (!want) { if (playing) stopTune(); return; }
   if (!audioReady()) return;
   const v = Math.pow(m.volume / 100, 2);
   if (v !== volumeSet) { master.gain.setTargetAtTime(v, audio.currentTime, 0.05); volumeSet = v; }
   if (playing && playing.id !== want) stopTune();
-  if (!playing) startTune(want);
+  if (!playing) { startTune(want, startFrom); startFrom = 0; }
   // a new tempo: on from the step playing now, at the new pace (the echo too)
   const sd = tunedStep(playing.song.T);
   if (playing.sd !== sd) {
@@ -3560,6 +3629,7 @@ const TABS = [
   ]],
   ["🎵 Music", "music", [
     ["note", "now", nowPlaying],
+    ["transport", "where", "⏯️ where the tune is"],
     ["choice", "track", "tune", TUNE_CHOICES],
     ["range", "volume", "🔊 volume", 0, 100, 40, 80],
     ["range", "tempo", "🏃 tempo (% of the tune's own speed)", 25, 300, 80, 130],
@@ -3744,6 +3814,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                        b.setAttribute("aria-pressed", state[part][key]); });
   } else if (kind === "mixer") {
     mixerBox(box);
+  } else if (kind === "transport") {
+    transportBox(box);
   } else if (kind === "note") {
     // a line of words that says how things are: the label is a function
     const p = el("p", { class: "now" });
