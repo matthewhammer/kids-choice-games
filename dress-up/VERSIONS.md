@@ -7,6 +7,14 @@ Each version lists the game's features as of that version. The newest version is
 Changes since 0.0.4, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead, once a day or so, after testing.
 
 - **💀 skull eyes blink in sync / out of sync:** a chip in the witch's woods. In sync, every skull's eyes blink together, as before. Out of sync, each skull (on the fence and the buried skeletons) blinks at its own pace, from half to one and a half times the blink rate, starting from its own place in the blink. Both eyes of one skull stay together, and a redraw keeps each skull where it was. The chip shows while the eyes blink and glow.
+- **🎵 Music, a first cut:** each background plays a tune of its own, made by the game's own little synthesizers from notes written as MIDI numbers (no sound files):
+  - 🌲 forest: a walk in the woods (flute, plucked strings and birds);
+  - 🏖️ beach: calypso (steel pan, strummed guitar and congas);
+  - 🐠 underwater: bubble reggae (one-drop drums, organ chops in a dub echo, bubbles);
+  - 🧙 witch's woods: a spooky waltz (a ghostly wavering voice and a tolling bell);
+  - 🌿 cemetery: a peaceful garden (a music box over a soft pad, a gentle flute).
+
+  The 🎵 Music tab plays the scene's own tune, or any tune over any background. It has a volume slider and a mute chip, and a 🔊/🔇 button sits in the picture's top-left corner. There is no music without a background, unless a tune is picked. The sound starts with the first tap, as browsers require, and rests while the page is hidden. 🎲 Surprise me leaves the music alone, and Load and ↺ Start over keep the volume and mute.
 
 ## 0.0.4 (2026-10-12)
 

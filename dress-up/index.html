@@ -93,6 +93,11 @@
                       display: flex; flex-direction: column; gap: 8px; }
   body.big svg#pic { width: 100%; height: 0; flex: 1 1 auto; max-height: none; }
   body.big .max-btn { top: 16px; right: 16px; }
+  /* the music's quick mute, at the picture's other top corner */
+  .mute-btn { position: absolute; top: 8px; left: 8px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
+              background: var(--panel); opacity: 0.9; }
+  body.big .mute-btn { top: 16px; left: 16px; }
+  .ctl > p.now { margin: 0; color: var(--muted); }
   /* In full screen, a heads-up display of chosen controls: hidden until
      its button is pressed; the scene's own controls and every pinned slider. */
   .hud-btn { display: none; position: absolute; top: 16px; right: 66px; padding: 0 9px; font-size: 1.3em;
@@ -128,6 +133,7 @@
     <div class="pic-wrap">
       <svg id="pic" xmlns="http://www.w3.org/2000/svg"></svg>
       <button class="max-btn" id="max" title="Full screen" aria-label="Full screen">⤢</button>
+      <button class="mute-btn" id="mute" title="Music on or off" aria-label="Music on or off" hidden>🔊</button>
       <button class="hud-btn" id="hud-btn" title="Show the pinned controls" aria-label="Show the pinned controls" aria-pressed="false">🎛️</button>
       <div class="hud" id="hud" hidden></div>
     </div>
@@ -224,6 +230,10 @@ function upgradeRightHand(st, saved) {
 const HAND_OWN = ["style", "fingers", "alienFingers", "clawLen", "clawCount", "starPoints", "starAngle",
                   "mittenAngle", "clawAngle", "humanAngle", "alienAngle"];
 DEFAULTS.rightHand = Object.fromEntries(HAND_OWN.map(k => [k, DEFAULTS.hands[k]]));
+// the music: the background's own tune (none without one) or a chosen one;
+// the volume and mute belong to the device, not the friend: Load and Start
+// over keep them
+DEFAULTS.music = { track: "scene", volume: 60, mute: false };
 let state = clone(DEFAULTS);
 try {
   const saved = JSON.parse(localStorage.getItem("dress-up-v1") || "null");
@@ -2540,6 +2550,378 @@ function draw() {
   document.getElementById("mood").textContent = "feeling " + mood(family(F.color), F.brow, F.smile);
 }
 
+// ===================== MUSIC =====================
+// Each background has a tune of its own, and any tune can play over any
+// background (or none). A tune is written as notes, MIDI numbers (60 is
+// middle C) in a small text form, and played by little synthesizers made
+// of Web Audio oscillators and noise: no sound files. Browsers allow sound
+// only after a tap or a key, so the music starts with the first one; it
+// rests while the page is hidden.
+
+const NOTE_STEP = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+// "C4" is 60, "F#3" 54, "Bb2" 46
+function midiOf(name) {
+  const m = /^([A-G])([#b]?)(\d)$/.exec(name);
+  if (!m) throw new Error("not a note: " + name);
+  return 12 * (Number(m[3]) + 1) + NOTE_STEP[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0);
+}
+// a line of notes, each with its length in steps (sixteenth notes):
+// "E5:2 G5:2 C5+E5+G5:4 r:2", "+" for notes played together, "r" a rest,
+// "|" a bar line (only for reading)
+function lineOf(text) {
+  const events = []; let at = 0;
+  for (const tok of text.trim().split(/\s+/)) {
+    if (tok === "|") continue;
+    const [what, len] = tok.split(":"), n = Number(len);
+    if (!(n > 0)) throw new Error("no length: " + tok);
+    if (what !== "r") events.push({ at, len: n, notes: what.split("+").map(midiOf) });
+    at += n;
+  }
+  return { events, steps: at };
+}
+// a drum's hits, a character a step, repeated: "x" a hit, "o" a soft one
+function hitsOf(text, note = 60) {
+  const p = text.replace(/[\s|]/g, ""), events = [];
+  for (let at = 0; at < p.length; at++)
+    if (p[at] === "x" || p[at] === "o") events.push({ at, len: 1, notes: [note], vel: p[at] === "x" ? 1 : 0.55 });
+  return { events, steps: p.length };
+}
+// a chord by name, its notes up from the root at an octave: "Am", "G7", "Bb"
+const CHORD_SHAPES = { "": [0, 4, 7], m: [0, 3, 7], "7": [0, 4, 7, 10], m7: [0, 3, 7, 10], maj7: [0, 4, 7, 11], dim: [0, 3, 6] };
+function chordOf(name, oct) {
+  const m = /^([A-G][#b]?)(.*)$/.exec(name);
+  return CHORD_SHAPES[m[2]].map(s => midiOf(m[1] + oct) + s);
+}
+// Parts made from a tune's chords, one chord a bar of so many steps:
+// a bass line, [step, semitones above the root, length] in every bar
+const bassOf = (chords, bar, pat, oct) => ({ steps: chords.length * bar, events: chords.flatMap((c, i) =>
+  pat.map(([at, up, len]) => ({ at: i * bar + at, len, notes: [chordOf(c, oct)[0] + up] }))) });
+// the chord, struck at these steps of every bar
+const stabsOf = (chords, bar, ats, len, oct) => ({ steps: chords.length * bar, events: chords.flatMap((c, i) =>
+  ats.map(at => ({ at: i * bar + at, len, notes: chordOf(c, oct) }))) });
+// a broken chord: its notes in this order, one every so many steps (past
+// the chord's last note, the same notes an octave up)
+const arpOf = (chords, bar, order, every, oct) => ({ steps: chords.length * bar, events: chords.flatMap((c, i) => {
+  const ns = chordOf(c, oct), tone = j => ns[j % ns.length] + 12 * Math.floor(j / ns.length);
+  return Array.from({ length: bar / every }, (_, j) => ({ at: i * bar + j * every, len: every, notes: [tone(order[j % order.length])] }));
+}) });
+
+// --- the instruments: each plays one note, at time t, for dur seconds
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+const noiseBufs = new WeakMap();
+function noiseBuf(A) {
+  if (!noiseBufs.has(A)) {
+    const b = A.createBuffer(1, A.sampleRate, A.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    noiseBufs.set(A, b);
+  }
+  return noiseBufs.get(A);
+}
+// a gain into dest (a node or a setting): fixed, ...
+function gainOf(A, dest, value) { const g = A.createGain(); g.gain.value = value; g.connect(dest); return g; }
+// ... rising to its peak and dying away (tau: how fast) ...
+function amp(A, dest, t, peak, attack, tau) {
+  const g = A.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + attack);
+  g.gain.setTargetAtTime(0, t + attack, tau); g.connect(dest); return g;
+}
+// ... or holding until the note ends, then letting go
+function held(A, dest, t, peak, attack, end, release) {
+  const g = A.createGain(), from = Math.max(t + attack, end);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + attack);
+  g.gain.setValueAtTime(peak, from); g.gain.setTargetAtTime(0, from, release); g.connect(dest); return g;
+}
+function tone(A, dest, type, f, t, stop, detune = 0) {
+  const o = A.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t);
+  if (detune) o.detune.setValueAtTime(detune, t);
+  o.connect(dest); o.start(t); o.stop(stop); return o;
+}
+function noise(A, dest, t, stop) {
+  const s = A.createBufferSource(); s.buffer = noiseBuf(A); s.loop = true;
+  s.connect(dest); s.start(t, Math.random() * 0.5); s.stop(stop); return s;
+}
+function filter(A, dest, type, f, q = 0.7) {
+  const b = A.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; b.connect(dest); return b;
+}
+const INSTRUMENTS = {
+  // a steel pan: a bright ring that dies away, its octave strong
+  steelpan(A, out, t, m, dur, v) {
+    const f = hz(m), g = amp(A, out, t, 0.3 * v, 0.004, 0.32);
+    for (const [r, a] of [[1, 1], [2, 0.55], [3.01, 0.18]]) tone(A, gainOf(A, g, a), "sine", f * r, t, t + 2);
+    tone(A, amp(A, out, t, 0.05 * v, 0.002, 0.025), "triangle", f * 4, t, t + 0.2);
+  },
+  // a reggae organ's chop: short and buzzy
+  organ(A, out, t, m, dur, v) {
+    const end = t + dur, lp = filter(A, held(A, out, t, 0.08 * v, 0.004, end, 0.03), "lowpass", 1600);
+    tone(A, lp, "sawtooth", hz(m), t, end + 0.25, -7); tone(A, lp, "square", hz(m), t, end + 0.25, 7);
+  },
+  // a round bass, with an edge so a small speaker can still play it
+  bass(A, out, t, m, dur, v) {
+    const f = hz(m), end = t + dur * 0.9, lp = filter(A, held(A, out, t, 0.22 * v, 0.008, end, 0.05), "lowpass", 650);
+    tone(A, lp, "triangle", f, t, end + 0.4); tone(A, gainOf(A, lp, 0.35), "square", f, t, end + 0.4);
+  },
+  kick(A, out, t, m, dur, v) {
+    const o = tone(A, amp(A, out, t, 0.9 * v, 0.002, 0.09), "sine", 150, t, t + 0.6);
+    o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+  },
+  rim(A, out, t, m, dur, v) {
+    noise(A, filter(A, amp(A, out, t, 0.5 * v, 0.001, 0.025), "bandpass", 2600, 3), t, t + 0.2);
+    tone(A, amp(A, out, t, 0.3 * v, 0.001, 0.015), "triangle", 420, t, t + 0.12);
+  },
+  hat(A, out, t, m, dur, v) { noise(A, filter(A, amp(A, out, t, 0.3 * v, 0.001, 0.018), "highpass", 7500), t, t + 0.15); },
+  shaker(A, out, t, m, dur, v) { noise(A, filter(A, amp(A, out, t, 0.22 * v, 0.012, 0.03), "bandpass", 5500, 1.2), t, t + 0.25); },
+  // a hand drum, tuned to its note
+  conga(A, out, t, m, dur, v) {
+    const f = hz(m), o = tone(A, amp(A, out, t, 0.42 * v, 0.002, 0.1), "sine", f * 1.4, t, t + 0.7);
+    o.frequency.exponentialRampToValueAtTime(f, t + 0.04);
+  },
+  // a bubble: a quick rising bloop
+  bubble(A, out, t, m, dur, v) {
+    const f = hz(m), o = tone(A, amp(A, out, t, 0.22 * v, 0.004, 0.05), "sine", f, t, t + 0.4);
+    o.frequency.exponentialRampToValueAtTime(f * 2.2, t + 0.09);
+  },
+  // a plucked string, short
+  pizz(A, out, t, m, dur, v) { tone(A, filter(A, amp(A, out, t, 0.3 * v, 0.003, 0.13), "lowpass", 1400), "triangle", hz(m), t, t + 1); },
+  // a guitar's strum, bright, then mellow
+  pluck(A, out, t, m, dur, v) {
+    const lp = filter(A, amp(A, out, t, 0.14 * v, 0.003, 0.16), "lowpass", 3200);
+    lp.frequency.setTargetAtTime(700, t, 0.07); tone(A, lp, "sawtooth", hz(m), t, t + 1.1);
+  },
+  // a ghostly voice, wavering, like a theremin
+  ghost(A, out, t, m, dur, v) {
+    const f = hz(m), end = t + dur, g = held(A, out, t, 0.15 * v, 0.08, end, 0.12), o = tone(A, g, "sine", f, t, end + 0.8);
+    tone(A, gainOf(A, o.frequency, f * 0.015), "sine", 5.5, t, end + 0.8);
+    tone(A, gainOf(A, g, 0.15), "triangle", f * 2, t, end + 0.8);
+  },
+  // a bell, its overtones out of tune with each other, ringing long
+  bell(A, out, t, m, dur, v) {
+    const f = hz(m);
+    for (const [r, a, tau] of [[1, 1, 1.4], [2, 0.5, 0.9], [2.76, 0.4, 0.6], [5.4, 0.2, 0.3]])
+      tone(A, amp(A, out, t, 0.14 * v * a, 0.003, tau), "sine", f * r, t, t + 7 * tau);
+  },
+  // a soft pad: three saws a little out of tune, gently filtered
+  pad(A, out, t, m, dur, v) {
+    const end = t + dur, lp = filter(A, held(A, out, t, 0.035 * v, 0.6, end, 0.5), "lowpass", 900);
+    for (const d of [-9, 0, 9]) tone(A, lp, "sawtooth", hz(m), t, end + 3.5, d);
+  },
+  // a music box: a sweet ping and its ring
+  musicbox(A, out, t, m, dur, v) {
+    const f = hz(m);
+    tone(A, amp(A, out, t, 0.18 * v, 0.002, 0.45), "sine", f, t, t + 3);
+    tone(A, amp(A, out, t, 0.045 * v, 0.002, 0.12), "sine", f * 4, t, t + 1);
+  },
+  // a flute: soft, with a little vibrato once the note settles
+  flute(A, out, t, m, dur, v) {
+    const f = hz(m), end = t + dur * 0.95, g = held(A, out, t, 0.15 * v, 0.05, end, 0.06), o = tone(A, g, "sine", f, t, end + 0.5);
+    tone(A, gainOf(A, g, 0.3), "triangle", f, t, end + 0.5);
+    const depth = A.createGain(); depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(f * 0.006, t + 0.25);
+    depth.connect(o.frequency); tone(A, depth, "sine", 5, t, end + 0.5);
+  },
+  // a bird: two quick chirps
+  bird(A, out, t, m, dur, v) {
+    const f = hz(m);
+    for (const dt of [0, 0.11]) {
+      const o = tone(A, amp(A, out, t + dt, 0.12 * v, 0.004, 0.03), "sine", f, t + dt, t + dt + 0.25);
+      o.frequency.exponentialRampToValueAtTime(f * 1.7, t + dt + 0.06);
+    }
+  },
+};
+
+// --- the tunes: so many beats a minute (a beat is 4 steps), the steps
+// shifted later on every other one by "swing" (a share of a step), how
+// long the room rings ("room", seconds), its loudness beside the other tunes
+// ("level"), and the parts: an instrument, its
+// notes, its level, how much goes to the room ("rev") and to the echo
+// ("echo", a repeat every "echoSteps"), and a shift in semitones
+const TUNES = {
+  forest: { name: "🌲 a walk in the woods", make: () => {
+    const chords = ["G", "C", "G", "D", "G", "C", "D", "G"];
+    return { bpm: 100, room: 2, level: 1.1, parts: [
+      { inst: "flute", rev: 0.25, line: lineOf(
+        "D5:2 G5:2 B5:2 A5:2 G5:4 D5:4 | E5:2 G5:2 C6:2 B5:2 A5:4 G5:4 | B5:2 A5:2 G5:2 A5:2 B5:4 D6:4 | A5:4 F#5:2 E5:2 D5:8 | " +
+        "D5:2 G5:2 B5:2 D6:2 C6:2 B5:2 A5:4 | G5:2 E5:2 C5:2 E5:2 G5:4 A5:4 | F#5:2 A5:2 D6:2 C6:2 B5:2 A5:2 F#5:4 | G5:12 r:4") },
+      { inst: "pizz", level: 0.7, rev: 0.2, line: arpOf(chords, 16, [0, 1, 2, 1], 4, 4) },
+      { inst: "bass", level: 0.6, line: bassOf(chords, 16, [[0, 0, 6], [8, 7, 6]], 2) },
+      { inst: "shaker", level: 0.5, line: hitsOf("o.x.o.x.o.x.o.x.") },
+      { inst: "kick", level: 0.4, line: hitsOf("x.......x.......") },
+      { inst: "bird", level: 0.8, rev: 0.3, line: lineOf("r:20 E7:1 r:43 G7:1 r:30 D7:1 r:32") },
+    ] };
+  } },
+  beach: { name: "🏖️ beach calypso", make: () => {
+    const chords = ["C", "F", "G7", "C", "Am", "F", "G7", "C"];
+    return { bpm: 116, room: 1.5, level: 0.72, parts: [
+      { inst: "steelpan", rev: 0.2, line: lineOf(
+        "E5:2 G5:2 C6:3 G5:1 A5:2 G5:2 E5:4 | F5:2 A5:2 C6:4 A5:2 F5:2 A5:4 | G5:2 B5:2 D6:3 B5:1 G5:2 F5:2 D5:4 | E5:3 D5:1 C5:4 r:2 G4:2 C5:2 E5:2 | " +
+        "A5:2 C6:2 E6:3 C6:1 A5:2 G5:2 E5:4 | F5:2 G5:2 A5:2 C6:2 A5:2 G5:2 F5:4 | D6:2 C6:2 B5:2 A5:2 G5:2 F5:2 D5:4 | C5:4 E5:2 G5:2 C6:6 r:2") },
+      { inst: "pluck", level: 0.8, rev: 0.15, line: stabsOf(chords, 16, [2, 6, 10, 14], 2, 4) },
+      { inst: "bass", line: bassOf(chords, 16, [[0, 0, 5], [6, 7, 2], [8, 12, 5], [14, 7, 2]], 2) },
+      { inst: "kick", level: 0.8, line: hitsOf("x.....x.x.......") },
+      { inst: "rim", level: 0.6, line: hitsOf("....x.......x...") },
+      { inst: "shaker", level: 0.5, line: hitsOf("xoxoxoxoxoxoxoxo") },
+      { inst: "conga", level: 0.6, line: hitsOf("..x..x.x..x..xx.", midiOf("A3")) },
+    ] };
+  } },
+  underwater: { name: "🐠 bubble reggae", make: () => {
+    const chords = ["Am", "Dm", "Am", "Dm", "F", "G", "Am", "Am"];
+    return { bpm: 72, swing: 0.22, room: 3, echoSteps: 3, level: 0.85, parts: [
+      { inst: "kick", line: hitsOf("........x.......") },
+      { inst: "rim", level: 0.7, rev: 0.2, line: hitsOf("........x.......") },
+      { inst: "hat", level: 0.5, line: hitsOf("x.o.x.o.x.o.x.o.") },
+      { inst: "organ", level: 0.9, rev: 0.2, echo: 0.35, line: stabsOf(chords, 16, [4, 12], 2, 4) },
+      { inst: "bass", line: lineOf(
+        "r:2 A2:2 A2:2 C3:2 E3:4 D3:2 C3:2 | r:2 D3:2 D3:2 F3:2 A3:4 G3:2 F3:2 | r:2 A2:2 A2:2 C3:2 E3:4 D3:2 C3:2 | r:2 D3:2 D3:2 F3:2 A3:4 G3:2 F3:2 | " +
+        "r:2 F2:2 F2:2 A2:2 C3:4 A2:2 F2:2 | r:2 G2:2 G2:2 B2:2 D3:4 B2:2 G2:2 | r:2 A2:2 A2:2 C3:2 E3:4 G3:2 E3:2 | A2:4 r:4 E2:4 G2:4") },
+      { inst: "steelpan", rev: 0.35, echo: 0.3, line: lineOf(
+        "r:4 E5:2 A5:2 C6:4 B5:2 A5:2 | D5:4 F5:2 A5:6 r:4 | r:4 E5:2 A5:2 C6:2 E6:2 D6:2 C6:2 | A5:8 r:8 | " +
+        "r:4 F5:2 A5:2 C6:4 A5:4 | B5:2 D6:2 B5:2 G5:2 r:4 D5:4 | E5:4 A5:4 C6:4 B5:4 | A5:12 r:4") },
+      { inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf(
+        "r:3 C6:1 r:9 G6:1 r:14 E6:1 r:5 A6:1 r:22 D6:1 r:7 F6:1 r:30 B5:1 r:11 E6:1 r:19") },
+    ] };
+  } },
+  witch: { name: "🧙 spooky waltz", make: () => {
+    // three beats a bar: 12 steps
+    const chords = ["Dm", "Dm", "Gm", "Dm", "Bb", "A7", "Dm", "A7"];
+    return { bpm: 120, room: 3, level: 1.1, parts: [
+      { inst: "bass", line: bassOf(chords, 12, [[0, 0, 3]], 2) },
+      { inst: "pizz", level: 0.6, rev: 0.3, line: stabsOf(chords, 12, [4, 8], 2, 4) },
+      { inst: "ghost", rev: 0.45, line: lineOf(
+        "A4:4 D5:4 F5:4 | E5:4 D5:4 C#5:4 | D5:4 G5:4 Bb5:4 | A5:8 r:4 | Bb5:4 A5:4 G5:4 | F5:4 E5:4 C#5:4 | D5:4 F5:2 E5:2 D5:4 | C#5:6 E5:2 A4:4") },
+      { inst: "bell", level: 0.8, rev: 0.5, line: lineOf("D3:24 r:24 A2:24 r:24") },
+      { inst: "musicbox", level: 0.6, rev: 0.6, line: lineOf("r:10 A6:1 r:13 F6:1 r:11 D6:1 r:23 C#7:1 r:12 E6:1 r:22") },
+    ] };
+  } },
+  cemetery: { name: "🌿 a peaceful garden", make: () => {
+    const chords = ["F", "C", "Dm", "Bb", "F", "Bb", "C", "F"];
+    return { bpm: 66, room: 2.5, level: 1.15, parts: [
+      { inst: "pad", rev: 0.4, line: stabsOf(chords, 16, [0], 16, 3) },
+      { inst: "musicbox", level: 0.7, rev: 0.35, line: arpOf(chords, 16, [0, 1, 2, 3, 4, 3, 2, 1], 2, 4) },
+      { inst: "flute", level: 0.8, rev: 0.35, shift: -12, line: lineOf(
+        "A5:6 G5:2 F5:8 | E5:6 F5:2 G5:8 | F5:4 E5:4 D5:4 F5:4 | D5:12 r:4 | C5:4 F5:4 A5:4 C6:4 | Bb5:6 A5:2 G5:8 | G5:4 A5:2 G5:2 E5:4 C5:4 | F5:12 r:4") },
+    ] };
+  } },
+};
+// each background's own tune
+const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", witch: "witch", cemetery: "cemetery" };
+const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
+
+// a tune made ready to play: every part's notes in one list, by step,
+// each part repeated to the length of the longest
+const songs = {};
+function songOf(id) {
+  if (songs[id] !== undefined) return songs[id];
+  try {
+    const T = TUNES[id].make(), steps = Math.max(...T.parts.map(p => p.line.steps)), events = [];
+    T.parts.forEach((p, part) => {
+      for (let rep = 0; rep * p.line.steps < steps; rep++)
+        for (const e of p.line.events) { const at = rep * p.line.steps + e.at; if (at < steps) events.push({ ...e, at, part }); }
+    });
+    events.sort((a, b) => a.at - b.at);
+    return songs[id] = { T, steps, events };
+  } catch (err) {
+    console.error("the tune " + id + " didn't build:", err);
+    return songs[id] = null;
+  }
+}
+// a long fading hiss: the ring of a room, for the reverb
+function roomOf(A, secs) {
+  const n = Math.floor(A.sampleRate * secs), b = A.createBuffer(2, n, A.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3); }
+  return b;
+}
+// a tune's way out: each part at its level, some of it to the room and to
+// the echo (each repeat softer and duller), all into one gain
+function busesOf(A, T, into) {
+  const rev = A.createConvolver(); rev.buffer = roomOf(A, T.room || 2); rev.connect(gainOf(A, into, 1));
+  const echo = A.createDelay(2); echo.delayTime.value = (T.echoSteps || 3) * 60 / T.bpm / 4;
+  const back = gainOf(A, echo, 0.38); echo.connect(filter(A, back, "lowpass", 1800)); echo.connect(gainOf(A, into, 0.8));
+  return T.parts.map(p => {
+    const g = gainOf(A, into, p.level ?? 1);
+    if (p.rev) g.connect(gainOf(A, rev, p.rev));
+    if (p.echo) g.connect(gainOf(A, echo, p.echo));
+    return g;
+  });
+}
+const stepSecs = T => 60 / T.bpm / 4;
+// when a note starts: its step, and the swing on every other step
+const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + (at % 2 ? song.T.swing || 0 : 0)) * stepSecs(song.T);
+function playNote(A, buses, song, ev, t) {
+  const p = song.T.parts[ev.part], dur = ev.len * stepSecs(song.T);
+  for (const m of ev.notes) INSTRUMENTS[p.inst](A, buses[ev.part], t, m + (p.shift || 0), dur, (ev.vel ?? 1) * (p.vel ?? 1));
+}
+
+// --- playing: one tune at a time, its notes sent a little ahead
+let audio = null, master = null, heard = false, playing = null, volumeSet = null;
+function audioReady() {
+  if (!audio) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    audio = new AC();
+    const limit = audio.createDynamicsCompressor(); limit.threshold.value = -10; limit.ratio.value = 8; limit.connect(audio.destination);
+    master = gainOf(audio, limit, 0);
+  }
+  if (audio.state === "suspended" && !document.hidden) audio.resume();
+  return true;
+}
+function startTune(id) {
+  const song = songOf(id);
+  if (!song || !song.events.length) return;
+  const into = gainOf(audio, master, song.T.level ?? 1);
+  playing = { id, song, into, buses: busesOf(audio, song.T, into), t0: audio.currentTime + 0.08, i: 0, loop: 0 };
+  const p = playing;
+  p.timer = setInterval(() => sendAhead(p), 25);
+  sendAhead(p);
+}
+function sendAhead(p) {
+  const until = audio.currentTime + 0.2;
+  for (;;) {
+    const ev = p.song.events[p.i], t = timeOf(p.song, p.t0, p.loop, ev.at);
+    if (t > until) break;
+    // (a note already late, after a busy moment, is skipped, not crammed in)
+    if (t > audio.currentTime - 0.02) playNote(audio, p.buses, p.song, ev, t);
+    if (++p.i >= p.song.events.length) { p.i = 0; p.loop++; }
+  }
+}
+function stopTune() {
+  const p = playing; playing = null;
+  clearInterval(p.timer);
+  p.into.gain.setTargetAtTime(0, audio.currentTime, 0.12);
+  setTimeout(() => p.into.disconnect(), 1500);
+}
+// the tune for now: the one chosen, or the background's own (none without one)
+const tuneOf = () => { const m = state.music, id = m.track === "scene" ? SCENE_TUNE[state.background.kind] : m.track; return TUNES[id] ? id : null; };
+function nowPlaying() {
+  const id = tuneOf(), m = state.music;
+  if (!id) return "No background, so no music. Pick a tune to play one anyway.";
+  return (m.mute ? "🔇 muted: " : "▶ playing: ") + TUNES[id].name + (heard || m.mute ? "" : " (tap anywhere to start the sound)");
+}
+// after every change: the right tune playing (or none), at the volume
+function musicSync() {
+  const id = tuneOf(), m = state.music, btn = document.getElementById("mute");
+  btn.hidden = !id;
+  btn.textContent = m.mute ? "🔇" : "🔊";
+  btn.setAttribute("aria-pressed", !!m.mute);
+  if (!heard) return;
+  const want = m.mute ? null : id;
+  if (!want) { if (playing) stopTune(); return; }
+  if (!audioReady()) return;
+  const v = Math.pow(m.volume / 100, 2);
+  if (v !== volumeSet) { master.gain.setTargetAtTime(v, audio.currentTime, 0.05); volumeSet = v; }
+  if (playing && playing.id !== want) stopTune();
+  if (!playing) startTune(want);
+}
+// the first tap or key lets the sound start (inside it, as browsers ask)
+for (const kind of ["pointerdown", "touchend", "keydown", "click"])
+  document.addEventListener(kind, () => {
+    if (heard && (!audio || audio.state === "running")) return;
+    heard = true;
+    musicSync();
+    for (const f of syncs) f();
+  }, true);
+document.addEventListener("visibilitychange", () => {
+  if (!audio) return;
+  if (document.hidden) audio.suspend(); else if (playing) audio.resume();
+});
+document.getElementById("mute").addEventListener("click", () => set("music", "mute", !state.music.mute));
+
 // ===================== CONTROLS =====================
 
 // a witch's green skin
@@ -2738,6 +3120,12 @@ const TABS = [
     ["range", "skullEye", "💀 skull eye size (the skulls grow to hold them)", 50, 500, 80, 200],
     ["range", "eyeGlow", "💀 skull eyes: red glow size", 0, 100, 40, 90],
   ]],
+  ["🎵 Music", "music", [
+    ["note", "now", nowPlaying],
+    ["choice", "track", "tune", TUNE_CHOICES],
+    ["range", "volume", "🔊 volume", 0, 100, 40, 80],
+    ["flip", "mute", ["🔊 sound on: tap to mute", "🔇 muted: tap for sound"]],
+  ]],
 ];
 
 let tab = 0;
@@ -2767,7 +3155,7 @@ function set(part, key, value) {
   changed();
 }
 function changed() {
-  draw(); for (const f of syncs) f(); for (const f of hudSyncs) f(); persist();
+  draw(); for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync();
   // a new friend (loaded, started over, surprised) or a scene turned on or
   // off rebuilds the HUD; a slider moving in it does not
   if (!hud.hidden && hudKey() !== hudShown) renderHud();
@@ -2913,6 +3301,12 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     box.append(b);
     syncs.push(() => { b.textContent = label + (state[part][key] ? ": on" : ": off");
                        b.setAttribute("aria-pressed", state[part][key]); });
+  } else if (kind === "note") {
+    // a line of words that says how things are: the label is a function
+    const p = el("p", { class: "now" });
+    lbl.remove();
+    box.append(p);
+    syncs.push(() => { p.textContent = label(); });
   } else if (kind === "flip") {
     // one chip that says which way it is now; a tap turns it the other way
     const b = el("button", { class: "flip", onclick: () => set(part, key, !state[part][key]) });
@@ -3126,7 +3520,8 @@ function surpriseOne(part, [kind, key, , ...rest]) {
   else if (kind === "color") state[part][key] = pick(rest[0]);
 }
 document.getElementById("surprise").addEventListener("click", () => {
-  for (const [, part, ctls] of TABS)
+  // (the music is not part of the surprise)
+  for (const [, part, ctls] of TABS.filter(t => t[1] !== "music"))
     for (const c of ctls) surpriseOne(part, c);
   // keep the surprises friendly: mostly not sick, not exploded, a normal-ish head
   const F = state.face;
@@ -3152,7 +3547,10 @@ document.getElementById("surprise").addEventListener("click", () => {
   if (ANIMALS[state.costume.kind]) Object.assign(state.costume, lookOf(state.costume.kind));
   changed();
 });
-document.getElementById("reset").addEventListener("click", () => { state = clone(DEFAULTS); changed(); });
+document.getElementById("reset").addEventListener("click", () => {
+  const { volume, mute } = state.music;
+  state = clone(DEFAULTS); state.music.volume = volume; state.music.mute = mute; changed();
+});
 // SAVE: up to three files with one name, stamped with the local date and time
 // so each save is new: my-friend-2026-10-10-16-29-05.png, .svg and .json.
 // The picture as it is drawn (.png), the drawing itself, which Firefox
@@ -3260,6 +3658,7 @@ document.getElementById("load-file").addEventListener("change", async e => {
     upgradeHands(next.hands);
     upgradeRightHand(next, saved);
     upgradeFace(next.face, saved.face);
+    next.music = { ...next.music, volume: state.music.volume, mute: state.music.mute };
     state = next;
     changed();
   } catch (err) {
