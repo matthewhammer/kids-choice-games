@@ -2,9 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.11 (2026-10-12)
 
-Changes since 0.0.10, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead.
+Everything in 0.0.10, plus longer beach tunes, with bridges, breaks and new parts.
 
 - **The beach tunes are longer, and change as they go:**
   - 🏖️ **Beach calypso** (about 2½ minutes, 10 sections):
