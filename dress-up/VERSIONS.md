@@ -16,6 +16,11 @@ Changes since 0.0.9, for the next version. They are not deployed yet: the versio
   - a third flute tune in D minor, over its own pad and music box;
   - wind chimes, soft vibraphone chords and a gentle bass;
   - a section a whole step higher, and a quiet break of chimes and birds.
+- **🌴 Sunny reggae has rhythm where its tunes were.** The melodica's two lead melodies are gone. In their place are two vamps that follow the bass line:
+  - vamp A stabs the chord on the bass line's own off-beats;
+  - vamp B doubles the end of each bar's bass figure an octave up, short, as a reggae guitar picks along with the bass.
+
+  The last section has both.
 
 ## 0.0.9 (2026-10-12)
 

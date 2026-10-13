@@ -2626,6 +2626,9 @@ const bassOf = (chords, bar, pat, oct) => ({ steps: chords.length * bar, events:
 // the chord, struck at these steps of every bar
 const stabsOf = (chords, bar, ats, len, oct) => ({ steps: chords.length * bar, events: chords.flatMap((c, i) =>
   ats.map(at => ({ at: i * bar + at, len, notes: chordOf(c, oct) }))) });
+// the chord, struck at these steps of every bar, each for its own length: [step, length]
+const rhythmOf = (chords, bar, pat, oct) => ({ steps: chords.length * bar, events: chords.flatMap((c, i) =>
+  pat.map(([at, len]) => ({ at: i * bar + at, len, notes: chordOf(c, oct) }))) });
 // a broken chord: its notes in this order, one every so many steps (past
 // the chord's last note, the same notes an octave up)
 const arpOf = (chords, bar, order, every, oct) => ({ steps: chords.length * bar, events: chords.flatMap((c, i) => {
@@ -2910,15 +2913,16 @@ const TUNES = {
       { name: "organ", inst: "organ", level: 0.45, line: stabsOf(chords, 16, [2, 3, 6, 7, 10, 11, 14, 15], 1, 3) },
       { name: "bass", inst: "bass", line: lineOf(
         "r:2 G2:2 B2:2 D3:2 G3:4 F#3:2 D3:2 | r:2 E2:2 G2:2 B2:2 E3:4 D3:2 B2:2 | r:2 C3:2 E3:2 G3:2 C3:4 D3:2 E3:2 | r:2 D3:2 F#3:2 A3:2 D3:4 C3:2 A2:2") },
-      { name: "tuneA", inst: "melodica", rev: 0.2, echo: 0.15, line: lineOf(
-        "B4:4 D5:2 B4:2 A4:4 G4:4 | G4:2 A4:2 B4:4 E5:8 | E5:4 D5:2 C5:2 B4:4 A4:4 | A4:8 r:8 | " +
-        "B4:2 D5:2 G5:4 F#5:2 E5:2 D5:4 | E5:4 D5:2 B4:2 G4:8 | C5:2 E5:2 G5:4 E5:2 D5:2 C5:4 | D5:8 F#4:4 A4:4") },
-      { name: "tuneB", inst: "melodica", rev: 0.2, echo: 0.15, line: lineOf(
-        "D5:4 B4:4 G4:4 B4:4 | E5:4 G5:4 B5:8 | G5:4 E5:2 C5:2 E5:8 | F#5:4 A5:4 D5:8 | " +
-        "B4:2 D5:2 G5:2 B5:2 A5:4 G5:4 | G5:2 F#5:2 E5:4 B4:8 | C5:4 E5:4 G5:4 E5:4 | D5:4 C5:2 B4:2 A4:8") },
+      // rhythm, not tune: the melodica's chords stabbing with the bass line's
+      // own syncopation (its notes on steps 2, 6, 8 and 14 of the bar)...
+      { name: "vampA", inst: "melodica", level: 0.6, rev: 0.2, echo: 0.15, line: rhythmOf(chords, 16, [[2, 1], [6, 1], [8, 3], [14, 1]], 4) },
+      // ...and the melodica doubling the end of each bar's bass figure an
+      // octave up, short, as a reggae guitar picks along with the bass
+      { name: "vampB", inst: "melodica", level: 0.8, rev: 0.2, echo: 0.15, line: lineOf(
+        "r:8 G4:2 r:2 F#4:1 r:1 D4:1 r:1 | r:8 E4:2 r:2 D4:1 r:1 B3:1 r:1 | r:8 C4:2 r:2 D4:1 r:1 E4:1 r:1 | r:8 D4:2 r:2 C4:1 r:1 A3:1 r:1") },
     ], form: [
-      S(4, "drums bass"), S(8, "drums bass chop organ tuneA"), S(8, "drums bass chop organ tuneB"),
-      S(8, "drums bass chop"), S(8, "drums bass chop organ tuneA"), S(8, "drums bass chop organ tuneB"),
+      S(4, "drums bass"), S(8, "drums bass chop organ vampA"), S(8, "drums bass chop organ vampB"),
+      S(8, "drums bass chop"), S(8, "drums bass chop organ vampA"), S(8, "drums bass chop organ vampA vampB"),
     ] };
   } },
   underwater: { name: "🐠 bubble reggae", make: () => {
