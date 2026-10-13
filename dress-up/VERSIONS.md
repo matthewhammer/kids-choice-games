@@ -2,6 +2,27 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Everything in 0.0.11, plus five new backgrounds with sliders of their own, and four chase tunes.
+
+- **Five new backgrounds**, each with its own sliders (a size, a count, and for pictures, their detail):
+  - 🦆 **Lake:** ducks, cattails at the water's edge, a little beach, thin grass on the dirt shore, sun and puffy clouds. Sliders: ducks, duck size, cattails, clouds, cloud size.
+  - 🏠 **House and yard:** a brown house of two floors with the garage on its right, a driveway, a stone walk, a tree each side, bushes, flowers, and toys left on the lawn. Sliders: house size, tree size, toys, flowers.
+  - 🌳 **Tree house:** one great tree, its trunk five trunks braided into one, with up to six houses, rope bridges across it and ladders down. Its leaves grow in bonsai pads on many branches. Each house is an animal (🦊 fox, 🦉 owl, 🐸 frog, 🐰 bunny, 🐻 bear, 🐱 cat): its roof is the animal's head, its face above the door, like a costume's hood; the lower houses stand in front. Sliders: houses, tree size, rope bridges, ladders, leaves, and each house's animal.
+  - 🪜 **Inside the tree house:** a bunk room, a kitchen, a reading nook or a lookout. Each room has its own wood, floor and window. The tree's trunk comes up through the floor, its strands braided, and bare branches poke through the walls. It is dim inside. Sliders: room, window size, things in the room, pictures on the wall and their detail, and each picture's scene.
+  - 🛋️ **Living room:** a couch in the middle, pillows on it, a lamp and a plant. Above the couch, a window with curtains looks out on a background of your choice, at its own detail. Up to six pictures hang on the wall, and each one shows a background of your choice. A picture of the living room holds its own pictures. Sliders: what is outside the window and its detail, couch size, pillows, pictures, picture detail (0 is a blur, 100 is all of it), picture size, and each picture's scene.
+- **Four chase tunes,** layered synths with drums dropping out and crashing back in, made for the tempo slider (try 250%). Each is about 2 minutes:
+  - 🌳 **Tree-house chase** (the tree house's own, inside and out);
+  - 🦆 **Duck-pond dash** (the lake's);
+  - 🛋️ **Couch-cushion rave** (the living room's);
+  - 🏠 **Round-the-house chase** (the house's).
+- **Two new instruments** on the mixing board: 🎛️ a dance lead (its knob: how bright) and ⚡ a laser zap (its knob: how far it falls).
+- **Scenes are kept between moves:**
+  - moving one of the figure's sliders no longer draws the scenery again;
+  - a scene's own slider builds again only the parts it changes, and the page keeps the rest as they are: a size slider (the tree's, the house's, the couch's) changes one group's transform, and a count slider (ducks, toys, pillows) one part.
+  - a picture of the living room on its own wall changes with the room (its pillows, its couch), as it should.
+
 ## 0.0.11 (2026-10-12)
 
 Everything in 0.0.10, plus longer beach tunes, with bridges, breaks and new parts.
