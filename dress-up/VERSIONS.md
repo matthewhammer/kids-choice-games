@@ -2,9 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.9 (2026-10-12)
 
-Changes since 0.0.8, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead.
+Everything in 0.0.8, plus a knob for each instrument, a tape stop, and a steady line for where the tune is.
 
 - **A knob for each instrument** on its mixing-board strip, at 50 as the tune was written:
   - ✨ ring: steel pan, harpsichord, plucked violin and strings, guitar strum, music box, bell;
