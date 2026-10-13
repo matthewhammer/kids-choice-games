@@ -2,6 +2,18 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.5, for the next version. They are not deployed yet: the version and the deploy wait for Matthew's go-ahead.
+
+- **Four more Caribbean and reggae tunes** in the 🎵 Music tab, six in all for the beach and under the sea:
+  - 🥁 beach soca jump-up: fast, a kick on every beat, a cowbell, and a bouncing steel-pan riff;
+  - 🌴 sunny reggae: a major-key one-drop, with a guitar's chop, the organ's quick "bubble" between the beats, and a melodica tune;
+  - 🐢 turtle steppers dub: a kick on every beat under the sea, a deep rolling bass, the chop and the melodica deep in echo, and a far-off ping like sonar;
+  - 🎐 steel-pan lullaby: slow and gentle, one steel pan singing over another's broken chords, with a soft bass and bubbles.
+
+  Each background keeps its own tune as before (beach calypso, bubble reggae), and the new tunes sit in the list beside their scene's own. New instruments: a snare, a cowbell, a reggae guitar's chop and a melodica.
+
 ## 0.0.5 (2026-10-12)
 
 Everything in 0.0.4, plus music, and the skulls' blinking in or out of sync. Tested at home before release.
