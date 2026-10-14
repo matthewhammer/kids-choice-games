@@ -36,6 +36,7 @@
   .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .tabs button { font-weight: 600; }
   .tabs button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .ctl.master .name { font-weight: 700; }
   .tabs .repo-chip { align-self: center; padding: 3px 9px; border: 1px dashed var(--line); border-radius: 12px;
                      color: var(--muted); font-size: 0.8em; text-decoration: none; }
   .tabs .repo-chip:hover, .tabs .repo-chip:focus-visible { color: var(--ink); border-color: var(--muted); }
@@ -6289,6 +6290,7 @@ const TABS = [
   // bare one, and the pants the legs
   ["👻 Visibility", "visible", [
     ["every", "all", "every part at once", [["🫥 invisible", 0], ["🙂 visible", 100], ["👻 ghost", 50]]],
+    ["master", "all", "🧍 full body: moves every part", 0, 100],
     ["range", "head", "🙂 head", 0, 100],
     ["range", "eyes", "👀 eyes", 0, 100],
     ["range", "hair", "💇 hair", 0, 100],
@@ -6717,6 +6719,26 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     });
     box.append(row);
     syncs.push(() => { for (const [v, b] of bs) b.setAttribute("aria-pressed", keys().every(k => state[part][k] === v)); });
+  } else if (kind === "master") {
+    // one slider that moves every slider of the part by the same amount,
+    // keeping their differences (each stops at its ends); it shows the
+    // highest of them. A drag moves them from where they were when it began,
+    // so dragging back puts them back as they were.
+    const [lo, hi] = rest;
+    const keys = () => TABS.find(t => t[1] === part)[2].filter(c => c[0] === "range").map(c => c[1]);
+    const top = () => Math.max(...keys().map(k => state[part][k] ?? hi));
+    let from = null;
+    const input = el("input", { type: "range", min: lo, max: hi,
+      oninput: e => {
+        if (!from) from = { at: top(), was: Object.fromEntries(keys().map(k => [k, state[part][k] ?? hi])) };
+        const d = Number(e.target.value) - from.at;
+        for (const k of keys()) state[part][k] = clamp(from.was[k] + d, lo, hi);
+        changed();
+      },
+      onchange: () => { from = null; } });
+    box.classList.add("master");
+    box.append(input);
+    syncs.push(() => { if (!from) input.value = top(); val.textContent = top(); });
   } else if (kind === "nudge") {
     // three chips for the slider above: down by the interval, the interval
     // (a tap goes to the next, a half step up to the octave), up by it

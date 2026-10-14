@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.23, for the next version, which waits for Matthew's go-ahead.
+
+- **🧍 A full-body slider:** in the 👻 Visibility tab, under the "every part at once" chips and above the parts, one slider moves every part's slider by the same amount, so the friend fades or comes back as a whole while each part keeps its own difference (each stops at invisible or fully there). It shows the most visible part. A drag moves the parts from where they were when it began, so dragging back puts them back as they were.
+
 ## 0.0.23 (2026-10-14)
 
 Everything in 0.0.22, plus a quiet link to the game's code.
