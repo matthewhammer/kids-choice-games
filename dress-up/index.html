@@ -240,6 +240,9 @@ const DEFAULTS = {
                 windowSize: 100, things: 10,
                 witchX: 150, witchY: 0, witchSize: 100, cauldronSize: 100, crows: 3, frogs: 4, snakes: 2,
                 seeHouse: true, seeTree: true, seeWitch: true, seeCastle: true, seeHealer: true,
+                peakHeight: 100, mtClouds: 5, birds: 3, farLake: true,
+                fallWidth: 100, vines: 8, mist: 60, parrots: 2,
+                campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
                 pic1: "lake", pic2: "beach", pic3: "livingroom", pic4: "forest", pic5: "treehouse", pic6: "underwater",
                 view: "lake", viewDetail: 80,
@@ -2417,7 +2420,7 @@ const framedSvg = (kind, detail, o, depth, x, y, w) => {
 const PICTURE_CHOICES = [["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"], ["treehouse", "🌳 tree house"],
   ["treeroom", "🪜 inside the tree house"], ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
-  ["clearing", "🌲 forest clearing"]];
+  ["clearing", "🌲 forest clearing"], ["mountains", "⛰️ mountain trail"], ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"]];
 const picturesSvg = (o, here, slots, scale, keyOf = i => "pic" + (i + 1)) => {
   const depth = (o.depth ?? 0) + 1, count = depth > 2 ? 0 : Math.min(slots.length, o.pictures ?? 3), detail = o.picDetail ?? 70;
   return slots.slice(0, count).map(([x, y, w], i) => {
@@ -2998,12 +3001,28 @@ function farWitchSvg() {
        `<rect x="-14" y="-6" width="26" height="22" fill="#ffd23f"/><path d="M-14 5 H12 M-1 -6 V16" stroke="#5a3a2a" stroke-width="3"/>` +
        `<polygon points="28,-60 44,-64 46,-30 30,-34" fill="#2a1a12"/>` +
        `<path d="M38 -66 Q26 -96 46 -116 Q62 -136 48 -160" fill="none" stroke="#c9c9d6" stroke-width="10" stroke-linecap="round" opacity="0.6"/>`;
+  // her fence: crooked pickets either side of the gate, rails across
+  t += [-1, 1].map(sd => `<path d="M${sd * 22} 84 H${sd * 130} M${sd * 22} 100 H${sd * 130}" stroke="#4a3626" stroke-width="5"/>` +
+         [...Array(8)].map((_, i) => { const x = sd * (28 + i * 14), lean = ((i * 7) % 5 - 2) * 2;
+           return `<polygon points="${x - 5},108 ${x + 5},108 ${x + 5 + lean},${72 - (i % 3) * 4} ${x + lean},${62 - (i % 3) * 4} ${x - 5 + lean},${72 - (i % 3) * 4}" fill="#5a4432" stroke="#2a1d14" stroke-width="1.5"/>`; }).join("")).join("") +
+       `<path d="M-20 108 L-18 74 M20 108 L18 74" stroke="#2a1d14" stroke-width="5"/>`;
   return t;
 }
 // a castle on its hill: towers with pointed roofs and flags, a gate
 function castleSvg() {
   const stone = "#b8b8c4", dark = "#8e8e9c", teeth = (x, w, y) => [...Array(Math.floor(w / 16))].map((_, i) => `<rect x="${x + i * 16}" y="${y - 10}" width="10" height="10" fill="${stone}"/>`).join("");
-  return `<path d="M-260 60 Q-120 -40 0 -30 Q130 -40 260 60 Z" fill="#7cb85a"/>` +
+  // (the moat lies round the castle's foot: its far side hidden by the walls)
+  const moat = `<ellipse cx="0" cy="12" rx="232" ry="36" fill="#3f8fc8" stroke="#2c6e9e" stroke-width="3"/><ellipse cx="0" cy="18" rx="200" ry="22" fill="#62b0e0" opacity="0.6"/>`;
+  // the drawbridge, down across the moat from the gate, its chains up to the wall
+  const bridge = `<polygon points="-34,0 34,0 42,50 -42,50" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
+    [10, 20, 30, 40].map(y => `<line x1="${-34 - y * 0.16}" y1="${y}" x2="${34 + y * 0.16}" y2="${y}" stroke="#5e3d22" stroke-width="2"/>`).join("") +
+    `<path d="M-30 -70 L-40 48 M30 -70 L40 48" stroke="#555" stroke-width="2.5" stroke-dasharray="5 3"/>`;
+  // a low fence outside the moat, round its near side, open at the bridge
+  const posts = [...Array(23)].map((_, i) => { const a = Math.PI * (i + 0.5) / 23, x = 270 * Math.cos(a), y = 16 + 50 * Math.sin(a); return [x, y]; }).filter(([x]) => Math.abs(x) > 50);
+  const fence = [-1, 1].map(sd => { const side = posts.filter(([x]) => Math.sign(x) === sd).sort((p, q) => p[0] - q[0]);
+      return `<polyline points="${side.map(([x, y]) => `${f1(x)},${f1(y - 14)}`).join(" ")}" fill="none" stroke="#6e4a2c" stroke-width="4"/>`; }).join("") +
+    posts.map(([x, y]) => `<rect x="${f1(x - 3)}" y="${f1(y - 22)}" width="6" height="24" fill="#7a5232" stroke="#4a2e1a" stroke-width="1"/>`).join("");
+  return `<path d="M-300 70 Q-120 -40 0 -30 Q130 -40 300 70 Z" fill="#7cb85a"/>` + moat +
     `<rect x="-120" y="-120" width="240" height="120" fill="${stone}" stroke="${dark}" stroke-width="3"/>` + teeth(-120, 240, -120) +
     [-1, 1].map(sd => `<rect x="${sd * 150 - 30}" y="-180" width="60" height="180" fill="${stone}" stroke="${dark}" stroke-width="3"/>` +
       `<polygon points="${sd * 150 - 38},-180 ${sd * 150},-250 ${sd * 150 + 38},-180" fill="#3b5ea8"/>` +
@@ -3013,11 +3032,17 @@ function castleSvg() {
     `<polygon points="-48,-230 0,-300 48,-230" fill="#3b5ea8"/><line x1="0" y1="-300" x2="0" y2="-334" stroke="#555" stroke-width="3"/><polygon points="0,-334 30,-325 0,-316" fill="#f2c12e"/>` +
     `<path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z" fill="#3a2a1a"/>` + [-20, -7, 7, 20].map(x => `<line x1="${x}" y1="-80" x2="${x}" y2="0" stroke="#6a5a4a" stroke-width="3"/>`).join("") +
     [-80, 80].map(x => `<rect x="${x - 8}" y="-90" width="16" height="24" rx="8" fill="#3a3a48"/>`).join("") +
-    [...Array(18)].map((_, i) => `<rect x="${-110 + (i % 6) * 38 + (Math.floor(i / 6) % 2) * 19}" y="${-110 + Math.floor(i / 6) * 34}" width="30" height="14" fill="none" stroke="${dark}" stroke-width="1" opacity="0.6"/>`).join("");
+    [...Array(18)].map((_, i) => `<rect x="${-110 + (i % 6) * 38 + (Math.floor(i / 6) % 2) * 19}" y="${-110 + Math.floor(i / 6) * 34}" width="30" height="14" fill="none" stroke="${dark}" stroke-width="1" opacity="0.6"/>`).join("") +
+    bridge + fence;
 }
 // a healer's hut: round, thatched, a heart on its sign, herbs growing by it
 function healerSvg() {
-  return [-90, -70, -50, 60, 80, 100].map((x, i) => `<path d="M${x} 40 Q${x - 6} 20 ${x - 10} 6 M${x} 40 Q${x + 4} 18 ${x + 10} 8" stroke="${["#5f8a3a", "#7a9a3a", "#4a8a4a"][i % 3]}" stroke-width="4" fill="none"/>` +
+  // a grove round it: trees behind and either side, their trunks in the ground at y = 40
+  const grove = [[-150, 10, 52], [-105, -5, 62], [120, -10, 66], [165, 15, 50], [-40, -40, 58], [55, -45, 54]].map(([x, y, r], i) =>
+    `<rect x="${x - 7}" y="${y}" width="14" height="${40 - y}" fill="#6b4a2b"/>` +
+    `<circle cx="${x}" cy="${y - r * 0.7}" r="${r}" fill="${["#3c8a3e", "#4a9a46", "#2f7d32"][i % 3]}"/>` +
+    `<circle cx="${x - r * 0.35}" cy="${y - r * 1.05}" r="${r * 0.45}" fill="#5aad52"/>`).join("");
+  return grove + [-90, -70, -50, 60, 80, 100].map((x, i) => `<path d="M${x} 40 Q${x - 6} 20 ${x - 10} 6 M${x} 40 Q${x + 4} 18 ${x + 10} 8" stroke="${["#5f8a3a", "#7a9a3a", "#4a8a4a"][i % 3]}" stroke-width="4" fill="none"/>` +
       `<circle cx="${x - 10}" cy="6" r="4" fill="${["#c39bd3", "#f7a8c8", "#f2c12e"][i % 3]}"/>`).join("") +
     `<path d="M-60 40 V-20 Q0 -40 60 -20 V40 Z" fill="#e8d5b0" stroke="#a88a5a" stroke-width="3"/>` +
     `<path d="M-80 -14 Q0 -130 80 -14 Q0 -36 -80 -14 Z" fill="#c9a35a" stroke="#8a6a2a" stroke-width="3"/>` +
@@ -3030,11 +3055,11 @@ function healerSvg() {
 // what is far off in the clearing, where (x as a share of the width, how
 // far up from the clearing's near edge), its size, and its doorway
 const CLEARING_THINGS = [
-  { key: "seeCastle", at: [0.1, 120], size: 0.42, draw: () => castleSvg(), to: null },
-  { key: "seeTree", at: [-0.17, 95], size: 0.36, draw: o => miniTreeSvg(o), to: "treehouse", reads: o => [1, 2, 3].map(n => [o["house" + n], ...houseLook(o["house" + n] || TREE_SLOTS[n - 1][2], o, n).cols]) },
-  { key: "seeHouse", at: [-0.33, 70], size: 0.3, draw: () => houseBuildingSvg(), to: "house" },
-  { key: "seeWitch", at: [0.25, 95], size: 0.52, draw: () => farWitchSvg(), to: "witch" },
-  { key: "seeHealer", at: [0.36, 40], size: 0.58, draw: () => healerSvg(), to: null },
+  { key: "seeCastle", at: [0.1, 120], size: 0.42, foot: 62, draw: () => castleSvg(), to: null },
+  { key: "seeTree", at: [-0.17, 95], size: 0.36, foot: 6, draw: o => miniTreeSvg(o), to: "treehouse", reads: o => [1, 2, 3].map(n => [o["house" + n], ...houseLook(o["house" + n] || TREE_SLOTS[n - 1][2], o, n).cols]) },
+  { key: "seeHouse", at: [-0.33, 70], size: 0.3, foot: 4, draw: () => houseBuildingSvg(), to: "house" },
+  { key: "seeWitch", at: [0.25, 95], size: 0.52, foot: 108, draw: () => farWitchSvg(), to: "witch" },
+  { key: "seeHealer", at: [0.36, 40], size: 0.58, foot: 40, draw: () => healerSvg(), to: null },
 ];
 function clearingScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
@@ -3052,19 +3077,14 @@ function clearingScene(c) {
                              ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
     return t;
   });
-  // the things far off, each its own piece, behind the paths' near ends
-  const shown = CLEARING_THINGS.filter(T => o[T.key] ?? T.key !== "seeHealer");
-  for (const T of shown) {
-    const x = W * T.at[0], y = near - T.at[1] * k;
-    s += SEP + (T.to ? `<g class="portal" data-to="${T.to}">` : "") +
-         part("clear-" + T.key, [c.F, T.reads ? T.reads(o) : 0], () => `<g ${tf(x, y, T.size * k)}>${T.draw(o)}</g>`) + (T.to ? `</g>` : "");
-  }
+  const shown = CLEARING_THINGS.filter(T => o[T.key] ?? true);
   // the paths, from the near edge out to each thing shown
   s += SEP + part("clear-paths", [c.F, shown.map(T => T.key)], () => {
     let t = land(near, 3, "#7cc25a", 0.6) + `<path d="M${P(-40 * k, y1 + pad)} L${P(40 * k, y1 + pad)} L${P(26 * k, near)} L${P(-26 * k, near)} Z" fill="#d9c08a"/>`;
     for (const T of shown) {
-      const x = W * T.at[0], y = near - T.at[1] * k + 6 * k;
-      t += `<path d="M${P(0, near + 4 * k)} Q${P(x * 0.5, near - 10 * k)} ${P(x, y)}" fill="none" stroke="#d9c08a" stroke-width="${f1(14 * k)}" stroke-linecap="round"/>`;
+      // (to where it stands on the ground: its door, its gate, its foot)
+      const x = W * T.at[0], y = near - T.at[1] * k + (T.foot + 4) * T.size * k;
+      t += `<path d="M${P(0, near + 4 * k)} Q${P(x * 0.5, Math.max(y, near - 10 * k))} ${P(x, y)}" fill="none" stroke="#d9c08a" stroke-width="${f1(14 * k)}" stroke-linecap="round"/>`;
     }
     for (let i = 0; i < 40; i++) {   // flowers in the near grass
       const d = R(i, 312), x = x0 + W * R(i, 313), y = near + 10 * k + (y1 - near) * d;
@@ -3073,13 +3093,294 @@ function clearingScene(c) {
     }
     return `<defs>${FLOWER_DEFS}</defs>` + t;
   });
+  // the things far off, each its own piece, over the paths' far ends
+  for (const T of shown) {
+    const x = W * T.at[0], y = near - T.at[1] * k;
+    s += SEP + (T.to ? `<g class="portal" data-to="${T.to}">` : "") +
+         part("clear-" + T.key, [c.F, T.reads ? T.reads(o) : 0], () => `<g ${tf(x, y, T.size * k)}>${T.draw(o)}</g>`) + (T.to ? `</g>` : "");
+  }
   // near trees at the frame's edges, framing the clearing
   s += SEP + part("clear-near-woods", c.F, () => [-1, 1].map(sd => [[0, 0, 1.15], [1, 40, 0.8]].map(([j, dy, z]) =>
     use("bg-woods-oak", sd * (W * 0.5 + 40 * k - j * 30 * k), g + (40 + dy) * k, k * z * sd, k * z)).join("")).join(""));
   return s;
 }
+// Three places away from the woods: a mountain trail, a jungle waterfall,
+// and a camp site. A signpost on the trail points (a doorway each) to the
+// other two, and each of them has a sign back to the trail.
+const PINE_DEF = `<g id="bg-pine"><rect x="-6" y="-30" width="12" height="32" fill="#5e3d22"/>` +
+  `<polygon points="0,-200 -50,-28 50,-28" fill="currentColor"/><polygon points="0,-200 -14,-150 0,-60 12,-120" fill="#ffffff" opacity="0.1"/></g>`;
+// a wooden signpost, its arrows doorways (each [text, to, side]), at (x, base)
+const signpost = (x, base, k, arrows) => `<rect x="${f1(x - 5 * k)}" y="${f1(base - 150 * k)}" width="${f1(10 * k)}" height="${f1(150 * k)}" fill="#6e4a2c"/>` +
+  arrows.map(([text, to, sd], i) => {
+    const y = base - (130 - i * 42) * k, w = 120 * k, x1 = sd > 0 ? x : x - w, tip = sd > 0 ? x + w + 16 * k : x - w - 16 * k;
+    return `<g class="portal" data-to="${to}"><polygon points="${P2(x1, y - 16 * k)} ${P2(x1 + w, y - 16 * k)} ${P2(sd > 0 ? tip : x1 + w, sd > 0 ? y : y - 16 * k)} ` +
+           `${P2(x1 + w, y + 16 * k)} ${P2(x1, y + 16 * k)} ${P2(sd > 0 ? x1 : tip, sd > 0 ? y + 16 * k : y)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2.5 * k)}"/>` +
+           `<text x="${f1(x1 + w / 2)}" y="${f1(y + 7 * k)}" text-anchor="middle" font-size="${f1(19 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${text}</text></g>`;
+  }).join("");
+const P2 = (x, y) => `${f1(x)},${f1(y)}`;
+// a cloud that drifts, back and forth, slowly
+const driftingCloud = (x, y, s, i) => `<use href="#bg-cloud" ${tf(x, y, s)}><animateTransform attributeName="transform" type="translate" additive="sum" ` +
+  `values="0 0;${30 + 12 * (i % 3)} 0;0 0" dur="${24 + 7 * (i % 4)}s" repeatCount="indefinite"/></use>`;
+
+// The mountain trail: far snowy peaks (their height a slider: they stand
+// in a group that stretches them up from the valley), a lake and a village
+// far below, drifting clouds, birds circling, and the trail going on up.
+function mountainsScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
+  const peaks = (o.peakHeight ?? 100) / 100, birds = o.birds ?? 3, clouds = o.mtClouds ?? 5, lake = o.farLake ?? true;
+  const valley = g - 150 * k;
+  let s = SEP + part("mt-sky", c.F, () => `<defs>${grad("bg-sky", "#4f9fe0", "#e2f2ff", y0, valley)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)") +
+    `<circle cx="${f1(x1 - W * 0.12)}" cy="${f1(y0 + H * 0.12)}" r="${f1(30 * k)}" fill="#fff6c8"/>`);
+  // the high clouds, behind the peaks
+  s += SEP + part("mt-clouds-high", [c.F, clouds], () => [...Array(Math.ceil(clouds / 2))].map((_, i) =>
+    driftingCloud(x0 + W * (0.1 + 0.8 * R(i, 320)), y0 + H * (0.06 + 0.12 * R(i, 321)), k * (0.6 + 0.4 * R(i, 322)), i)).join(""));
+  // the peaks, three ranges, far to near, snow on the far ones
+  s += OPEN(`<g transform="translate(0 ${f1(valley)}) scale(1 ${peaks.toFixed(3)}) translate(0 ${f1(-valley)})">`) + part("mt-peaks", c.F, () => {
+    let t = "";
+    [[0, "#b6c6dc", 330, 9, true], [1, "#8ea3c0", 250, 7, true], [2, "#6d8296", 170, 6, false]].forEach(([r, fill, hgt, n, snow]) => {
+      const base = valley + r * 12 * k, pts = [[x0 - pad, base]];
+      for (let i = 0; i <= n; i++) {
+        const x = x0 - 60 * k + (W + 120 * k) * i / n + 30 * k * (R(i + r * 10, 323) - 0.5);
+        pts.push([x - (W / n) * 0.45, base - hgt * k * (0.35 + 0.3 * R(i + r * 10, 324))], [x, base - hgt * k * (0.75 + 0.25 * R(i + r * 10, 325))]);
+      }
+      pts.push([x1 + pad, base], [x1 + pad, base + 60 * k], [x0 - pad, base + 60 * k]);
+      t += `<polygon points="${pts.map(([x, y]) => P2(x, y)).join(" ")}" fill="${fill}"/>`;
+      if (snow) for (let i = 2; i < pts.length - 3; i += 2) {
+        const [px, py] = pts[i], d = 0.22 * (base - py);
+        t += `<polygon points="${P2(px, py)} ${P2(px - d * 0.8, py + d)} ${P2(px - d * 0.3, py + d * 0.8)} ${P2(px, py + d * 1.05)} ${P2(px + d * 0.4, py + d * 0.75)} ${P2(px + d * 0.8, py + d)}" fill="#ffffff" opacity="0.92"/>`;
+      }
+    });
+    return t;
+  }) + CLOSE;
+  // far below: a lake and a village by it (or not)
+  if (lake) s += SEP + part("mt-lake", c.F, () => `<ellipse cx="${f1(W * 0.18)}" cy="${f1(valley + 22 * k)}" rx="${f1(120 * k)}" ry="${f1(14 * k)}" fill="#5aa9e0"/>` +
+    `<ellipse cx="${f1(W * 0.18)}" cy="${f1(valley + 20 * k)}" rx="${f1(90 * k)}" ry="${f1(6 * k)}" fill="#bfe3f5" opacity="0.6"/>` +
+    [...Array(7)].map((_, i) => { const x = W * 0.18 - 150 * k + i * 16 * k, y = valley + 18 * k + 6 * k * R(i, 326);
+      return `<rect x="${f1(x)}" y="${f1(y - 7 * k)}" width="${f1(10 * k)}" height="${f1(7 * k)}" fill="#f4efe6"/><polygon points="${P2(x - 1 * k, y - 7 * k)} ${P2(x + 5 * k, y - 12 * k)} ${P2(x + 11 * k, y - 7 * k)}" fill="${["#c0392b", "#8a5a32", "#3b5ea8"][i % 3]}"/>`; }).join(""));
+  // the low clouds, in front of the peaks
+  s += SEP + part("mt-clouds-low", [c.F, clouds], () => [...Array(Math.floor(clouds / 2))].map((_, i) =>
+    driftingCloud(x0 + W * (0.05 + 0.9 * R(i, 327)), valley - (40 + 90 * R(i, 328)) * k, k * (0.8 + 0.5 * R(i, 329)), i + 2)).join(""));
+  // the near slope: grass, rocks, the trail winding off uphill
+  s += SEP + part("mt-slope", c.F, () => {
+    let t = `<defs>${PINE_DEF}</defs>` + land(valley + 40 * k, 14, "#8fb35a", 0.8) + land(g - 30 * k, 6, "#7aa34e", 1.6);
+    const L = [], Rr = [];
+    for (let i = 0; i <= 20; i++) {
+      const u = i / 20, y = y1 + 10 * k - (y1 - valley - 50 * k) * u, x = W * 0.05 * Math.sin(u * 5) - W * 0.25 * u * u, w = (90 - 80 * u) * k;
+      L.push(P2(x - w / 2, y)); Rr.push(P2(x + w / 2, y));
+    }
+    t += `<polygon points="${[...L, ...Rr.reverse()].join(" ")}" fill="#c9a774"/>`;
+    for (let i = 0; i < 9; i++) {
+      const x = side(i) * (W * 0.18 + W * 0.28 * R(i, 330)), y = g - 10 * k + 70 * k * R(i, 331), r = (12 + 20 * R(i, 332)) * k;
+      t += `<path d="M${P(x - r, y)} L${P(x - r * 0.6, y - r * 0.8)} L${P(x + r * 0.2, y - r)} L${P(x + r, y - r * 0.3)} L${P(x + r * 1.1, y)} Z" fill="${["#8a8a8a", "#9c9c9c", "#7a7a7a"][i % 3]}" stroke="#5a5a5a" stroke-width="${f1(1.5 * k)}"/>`;
+    }
+    for (let i = 0; i < 8; i++) t += use("bg-pine", side(i) * (W * 0.36 + W * 0.14 * R(i, 333)), g + 30 * k * R(i, 334), k * (0.9 + 0.5 * R(i, 335)), k * (0.9 + 0.5 * R(i, 335)),
+      ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
+    return t;
+  });
+  // the signpost by the trail: to the falls, and to the camp
+  s += SEP + part("mt-sign", c.F, () => signpost(-W * 0.2, g + 10 * k, k, [["💦 falls", "waterfall", -1], ["🏕️ camp", "campsite", 1]]));
+  // birds, circling high up
+  s += SEP + part("mt-birds", [c.F, birds], () => [...Array(birds)].map((_, i) => {
+    const cx = x0 + W * (0.2 + 0.6 * R(i, 336)), cy = y0 + H * (0.15 + 0.15 * R(i, 337)), rx = (50 + 40 * R(i, 338)) * k, ry = rx * 0.35;
+    return `<path d="M${f1(-12 * k)} 0 Q${f1(-6 * k)} ${f1(-7 * k)} 0 0 Q${f1(6 * k)} ${f1(-7 * k)} ${f1(12 * k)} 0" fill="none" stroke="#333" stroke-width="${f1(2.5 * k)}">` +
+           `<animateMotion path="M${P(cx - rx, cy)} A${f1(rx)} ${f1(ry)} 0 1 1 ${P(cx + rx, cy)} A${f1(rx)} ${f1(ry)} 0 1 1 ${P(cx - rx, cy)}" dur="${(9 + 5 * R(i, 339)).toFixed(1)}s" repeatCount="indefinite"/></path>`;
+  }).join(""));
+  return s;
+}
+
+// The jungle waterfall: a mossy cliff, the water falling (streaks running
+// down it), a pool below with ripples, mist rising, big-leaved trees,
+// vines swaying, parrots, flowers.
+function waterfallScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
+  const fw = (o.fallWidth ?? 100) / 100, vines = o.vines ?? 8, mist = (o.mist ?? 60) / 100, parrots = o.parrots ?? 2;
+  const top = y0 + H * 0.12, pool = g - 70 * k;
+  let s = SEP + part("wf-back", c.F, () => {
+    let t = `<defs>${grad("bg-sky", "#9fd8c8", "#e8fff4", y0, g)}</defs>` + all("url(#bg-sky)");
+    // the far jungle, layers of round crowns
+    for (const [row, fill, yb, n] of [[0, "#5f9a6a", y0 + H * 0.3, 16], [1, "#3f8050", y0 + H * 0.42, 14]])
+      for (let i = 0; i < n; i++) {
+        const x = x0 - 20 * k + (W + 40 * k) * i / (n - 1), r = (40 + 25 * R(i + row * 20, 340)) * k;
+        t += `<circle cx="${f1(x)}" cy="${f1(yb + 10 * k * R(i, 341))}" r="${f1(r)}" fill="${fill}"/>`;
+      }
+    // the cliff, mossy, the falls' lip at its top
+    t += `<path d="M${P(-W * 0.34, pool)} L${P(-W * 0.3, top + 40 * k)} Q${P(-W * 0.2, top - 10 * k)} ${P(-W * 0.06, top)} L${P(W * 0.08, top)} Q${P(W * 0.22, top - 12 * k)} ${P(W * 0.3, top + 30 * k)} L${P(W * 0.36, pool)} Z" fill="#6e6a62"/>`;
+    for (let i = 0; i < 14; i++) {
+      const x = -W * 0.3 + W * 0.62 * R(i, 342), y = top + 20 * k + (pool - top - 40 * k) * R(i, 343);
+      t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((14 + 14 * R(i, 344)) * k)}" ry="${f1(7 * k)}" fill="${i % 2 ? "#4f8a3a" : "#5c5850"}" opacity="0.85"/>`;
+    }
+    return t;
+  });
+  // the falls: a sheet of water, streaks running down it, foam at the lip
+  s += SEP + part("wf-falls", [c.F, fw], () => {
+    const half = 60 * fw * k;
+    let t = `<defs><linearGradient id="bg-falls" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9ad7f0"/><stop offset="0.5" stop-color="#e6f8ff"/><stop offset="1" stop-color="#9ad7f0"/></linearGradient></defs>` +
+            `<path d="M${P(-half, top)} L${P(half, top)} L${P(half * 1.25, pool)} L${P(-half * 1.25, pool)} Z" fill="url(#bg-falls)" opacity="0.95"/>`;
+    const n = Math.max(4, Math.round(10 * fw));
+    for (let i = 0; i < n; i++) {
+      const u = (i + 0.5) / n, xa = -half + 2 * half * u, xb = -half * 1.25 + 2.5 * half * u, dash = (30 + 30 * R(i, 345)) * k, gap = (20 + 20 * R(i, 346)) * k;
+      t += `<line x1="${f1(xa)}" y1="${f1(top)}" x2="${f1(xb)}" y2="${f1(pool)}" stroke="#ffffff" stroke-width="${f1((2 + 3 * R(i, 347)) * k)}" stroke-dasharray="${f1(dash)} ${f1(gap)}" opacity="0.8">` +
+           `<animate attributeName="stroke-dashoffset" values="0;${f1(-(dash + gap) * 2)}" dur="${(0.6 + 0.4 * R(i, 348)).toFixed(2)}s" repeatCount="indefinite"/></line>`;
+    }
+    return t + `<ellipse cx="0" cy="${f1(top)}" rx="${f1(half * 1.1)}" ry="${f1(6 * k)}" fill="#ffffff" opacity="0.9"/>`;
+  });
+  // the pool, ripples spreading
+  s += SEP + part("wf-pool", c.F, () => land(pool + 30 * k, 6, "#5f8a3a", 0.3) +
+    `<ellipse cx="0" cy="${f1(pool + 30 * k)}" rx="${f1(W * 0.42)}" ry="${f1(55 * k)}" fill="#3f9ad0"/>` +
+    `<ellipse cx="0" cy="${f1(pool + 24 * k)}" rx="${f1(W * 0.34)}" ry="${f1(36 * k)}" fill="#62b6e4"/>` +
+    [0, 1, 2].map(i => `<ellipse cx="0" cy="${f1(pool + 6 * k)}" rx="${f1(60 * k)}" ry="${f1(10 * k)}" fill="none" stroke="#ffffff" stroke-width="${f1(2 * k)}">` +
+      `<animate attributeName="rx" values="${f1(40 * k)};${f1(200 * k)}" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/>` +
+      `<animate attributeName="ry" values="${f1(6 * k)};${f1(30 * k)}" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/>` +
+      `<animate attributeName="opacity" values="0.8;0" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`).join("") +
+    land(g + 20 * k, 4, "#4f8a3a", 1.1));
+  // the mist at the falls' foot, billowing (as much as the slider says)
+  if (mist > 0) s += SEP + part("wf-mist", [c.F, mist], () => `<defs><filter id="bg-mist" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${f1(14 * k)}"/></filter></defs>` +
+    `<g filter="url(#bg-mist)" pointer-events="none">` + [...Array(Math.round(3 + 6 * mist))].map((_, i) => {
+      const x = (R(i, 349) - 0.5) * 220 * k, y = pool - (10 + 60 * R(i, 350)) * k, r = (40 + 40 * R(i, 351)) * k;
+      return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.55)}" fill="#ffffff" opacity="${(0.25 + 0.35 * mist).toFixed(2)}">` +
+             `<animate attributeName="cy" values="${f1(y)};${f1(y - 30 * k)};${f1(y)}" dur="${(4 + 3 * R(i, 352)).toFixed(1)}s" repeatCount="indefinite"/>` +
+             `<animate attributeName="opacity" values="${(0.15 + 0.3 * mist).toFixed(2)};${(0.35 + 0.4 * mist).toFixed(2)};${(0.15 + 0.3 * mist).toFixed(2)}" dur="${(3 + 2 * R(i, 353)).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`;
+    }).join("") + `</g>`);
+  // big-leaved jungle trees either side, flowers at their feet
+  s += SEP + part("wf-trees", c.F, () => {
+    let t = "";
+    for (const sd of [-1, 1]) {
+      const tx = sd * W * 0.43, tb = g + 60 * k, tt = y0 + H * 0.18;
+      t += `<path d="M${P(tx - 22 * k, tb)} Q${P(tx - 10 * k, (tb + tt) / 2)} ${P(tx - sd * 20 * k, tt)} L${P(tx - sd * 4 * k, tt)} Q${P(tx + 14 * k, (tb + tt) / 2)} ${P(tx + 22 * k, tb)} Z" fill="#6b4a2b"/>`;
+      for (let j = 0; j < 9; j++) {
+        const a = (-160 + j * 40) * Math.PI / 180, l = (110 + 50 * R(j, 354)) * k, ex = tx - sd * 20 * k + Math.cos(a) * l, ey = tt + Math.sin(a) * l * 0.7 + 30 * k;
+        t += `<path d="M${P(tx - sd * 14 * k, tt)} Q${P((tx - sd * 14 * k + ex) / 2 + 10 * k, (tt + ey) / 2 - 40 * k)} ${P(ex, ey)} Q${P((tx - sd * 14 * k + ex) / 2 - 10 * k, (tt + ey) / 2 + 10 * k)} ${P(tx - sd * 14 * k, tt)} Z" ` +
+             `fill="${["#2e8b3a", "#3fa34a", "#24753a"][j % 3]}" stroke="#1d5a2a" stroke-width="${f1(1.5 * k)}"/>`;
+      }
+      for (let j = 0; j < 4; j++) {   // flowers by the trunk
+        const fx = tx - sd * (30 + 40 * j) * k, fy = g + (30 + 10 * j) * k;
+        t += [0, 72, 144, 216, 288].map(a => `<ellipse cx="${f1(fx)}" cy="${f1(fy - 8 * k)}" rx="${f1(4 * k)}" ry="${f1(9 * k)}" fill="${["#ff4f6d", "#ff8c1a", "#f2c12e", "#e85dbe"][j]}" transform="rotate(${a} ${f1(fx)} ${f1(fy)})"/>`).join("") +
+             `<circle cx="${f1(fx)}" cy="${f1(fy)}" r="${f1(3.5 * k)}" fill="#ffd23f"/>`;
+      }
+    }
+    return t;
+  });
+  // vines hanging from the top, swaying
+  s += SEP + part("wf-vines", [c.F, vines], () => [...Array(vines)].map((_, i) => {
+    const x = x0 + W * (0.04 + 0.92 * R(i, 355)), len = (120 + 220 * R(i, 356)) * k;
+    let d = `M${P(x, y0 - 10 * k)}`, leaves = "";
+    for (let j = 1; j <= 8; j++) {
+      const y = y0 - 10 * k + len * j / 8, xx = x + 10 * k * Math.sin(j * 1.1 + i);
+      d += ` L${P(xx, y)}`;
+      leaves += `<ellipse cx="${f1(xx + (j % 2 ? 7 : -7) * k)}" cy="${f1(y)}" rx="${f1(7 * k)}" ry="${f1(3.5 * k)}" fill="#3fa34a" transform="rotate(${j % 2 ? 30 : -30} ${f1(xx)} ${f1(y)})"/>`;
+    }
+    return `<g><animateTransform attributeName="transform" type="rotate" values="-3 ${f1(x)} ${f1(y0)};3 ${f1(x)} ${f1(y0)};-3 ${f1(x)} ${f1(y0)}" dur="${(4 + 2 * R(i, 357)).toFixed(1)}s" repeatCount="indefinite"/>` +
+           `<path d="${d}" fill="none" stroke="#3f7a2a" stroke-width="${f1(3 * k)}"/>${leaves}</g>`;
+  }).join(""));
+  // parrots on the branches
+  s += SEP + part("wf-parrots", [c.F, parrots], () => [...Array(parrots)].map((_, i) => {
+    const sd = i % 2 ? 1 : -1, x = sd * (W * 0.32 - 30 * k * Math.floor(i / 2)), y = y0 + H * (0.3 + 0.08 * Math.floor(i / 2)), f = sd < 0 ? 1 : -1;
+    return `<g ${tf(x, y, k * f, k)}><path d="M-6 0 Q-14 22 -4 40 L4 40 Q10 20 6 0 Z" fill="${["#e53935", "#2e86de", "#27ae60"][i % 3]}"/>` +
+           `<path d="M-4 38 L-8 66 L0 50 L6 68 L4 38 Z" fill="${["#2e86de", "#f2c12e", "#e53935"][i % 3]}"/>` +
+           `<circle cx="2" cy="-4" r="9" fill="${["#e53935", "#2e86de", "#27ae60"][i % 3]}"/><circle cx="5" cy="-6" r="2.5" fill="#ffffff"/><circle cx="5.5" cy="-6" r="1.2" fill="#111"/>` +
+           `<path d="M9 -6 Q18 -4 12 4 Q10 0 9 -2 Z" fill="#f2c12e"/><path d="M-6 8 Q-18 20 -10 34" fill="none" stroke="#f2c12e" stroke-width="4"/></g>`;
+  }).join(""));
+  // a sign back to the trail
+  s += SEP + part("wf-sign", c.F, () => signpost(W * 0.3, g + 40 * k, k, [["⛰️ trail", "mountains", 1]]));
+  return s;
+}
+
+// The camp site: day, sunset or night; tents round a campfire (on or out,
+// its flames as big as the slider says, in a group that grows them),
+// sparks, and on the fire nothing, veggie sausages on sticks, or a pot of
+// soup hanging over it, steaming.
+const CAMP_SKY = { day: ["#5aa9e6", "#dff2ff"], sunset: ["#3a2a6a", "#f2a65a"], night: ["#0b1030", "#24305a"] };
+function campsiteScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
+  const time = CAMP_SKY[o.campTime] ? o.campTime : "day", fire = o.fireOn ?? true, fz = (o.flameSize ?? 100) / 100;
+  const food = o.campFood ?? "none", tents = o.tents ?? 2, night = time === "night";
+  const fx = 0, fy = g + 40 * k;
+  let s = SEP + part("camp-sky", [c.F, time], () => {
+    const [a, b] = CAMP_SKY[time];
+    let t = `<defs>${grad("bg-sky", a, b, y0, g - 100 * k)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)");
+    if (time === "day") t += `<circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(34 * k)}" fill="#ffd23f"/>` +
+      [0, 1, 2].map(i => use("bg-cloud", x0 + W * (0.15 + 0.3 * i), y0 + H * (0.1 + 0.05 * (i % 2)), k * 0.7)).join("");
+    if (time === "sunset") t += `<circle cx="${f1(-W * 0.2)}" cy="${f1(g - 110 * k)}" r="${f1(46 * k)}" fill="#ff8c42" opacity="0.95"/>`;
+    if (night) {
+      t += `<circle cx="${f1(x1 - W * 0.16)}" cy="${f1(y0 + H * 0.14)}" r="${f1(28 * k)}" fill="#f4eebc"/><circle cx="${f1(x1 - W * 0.16 + 12 * k)}" cy="${f1(y0 + H * 0.14 - 8 * k)}" r="${f1(24 * k)}" fill="#0b1030"/>`;
+      for (let i = 0; i < 70; i++) {
+        const x = x0 + W * R(i, 360), y = y0 + (g - 160 * k - y0) * R(i, 361), r = (0.8 + 1.4 * R(i, 362)) * k;
+        t += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="#ffffff">` +
+             (i % 4 === 0 ? `<animate attributeName="opacity" values="1;0.2;1" dur="${(1.5 + 2 * R(i, 363)).toFixed(1)}s" repeatCount="indefinite"/>` : "") + `</circle>`;
+      }
+    }
+    return t;
+  });
+  // the ground, the woods round the camp (darker at night)
+  s += SEP + part("camp-ground", [c.F, time], () => {
+    const tree = { day: ["#2f6e3a", "#3a7d44"], sunset: ["#2a4a3a", "#33553f"], night: ["#0f2018", "#13281d"] }[time];
+    let t = `<defs>${PINE_DEF}</defs>` + land(g - 110 * k, 8, night ? "#1d3a24" : time === "sunset" ? "#4a6a3a" : "#7cc25a", 0.5);
+    for (let i = 0; i < 26; i++) t += use("bg-pine", x0 - 20 * k + (W + 40 * k) * i / 25, g - 100 * k + 10 * k * R(i, 364), k * (0.45 + 0.25 * R(i, 365)), k * (0.45 + 0.25 * R(i, 365)), ` color="${tree[i % 2]}"`);
+    t += land(g - 40 * k, 4, night ? "#24452c" : time === "sunset" ? "#5a7a40" : "#8bc56a", 1.3) +
+         `<ellipse cx="${f1(fx)}" cy="${f1(fy + 6 * k)}" rx="${f1(170 * k)}" ry="${f1(45 * k)}" fill="${night ? "#3a2e22" : "#a8875a"}"/>`;
+    return t;
+  });
+  // tents
+  s += SEP + part("camp-tents", [c.F, tents, time], () => [[-0.32, "#e8762c", 1], [0.33, "#3b7dd8", -1], [-0.12, "#27ae60", 1]].slice(0, tents).map(([u, col, sd], i) => {
+    const tx = W * u, tb = g - 40 * k + i * 6 * k, w = 130 * k, h = 110 * k, dark = night ? 0.45 : 0;
+    return `<polygon points="${P2(tx - w / 2, tb)} ${P2(tx, tb - h)} ${P2(tx + w / 2, tb)}" fill="${col}" stroke="#00000055" stroke-width="${f1(2 * k)}"/>` +
+           `<polygon points="${P2(tx - 12 * k * sd, tb)} ${P2(tx, tb - h * 0.75)} ${P2(tx + 22 * k * sd, tb)}" fill="#2a1a12" opacity="0.75"/>` +
+           `<line x1="${f1(tx)}" y1="${f1(tb - h)}" x2="${f1(tx)}" y2="${f1(tb - h - 14 * k)}" stroke="#555" stroke-width="${f1(2.5 * k)}"/>` +
+           (dark ? `<polygon points="${P2(tx - w / 2, tb)} ${P2(tx, tb - h)} ${P2(tx + w / 2, tb)}" fill="#000814" opacity="${dark}"/>` : "");
+  }).join(""));
+  // logs to sit on, round the fire
+  s += SEP + part("camp-logs", c.F, () => [[-150, 30], [150, 30], [0, 100]].map(([dx, dy]) =>
+    `<rect x="${f1(fx + dx * k - 50 * k)}" y="${f1(fy + dy * k - 14 * k)}" width="${f1(100 * k)}" height="${f1(28 * k)}" rx="${f1(14 * k)}" fill="#7a5232" stroke="#4a2e1a" stroke-width="${f1(2 * k)}"/>` +
+    `<ellipse cx="${f1(fx + dx * k + 50 * k)}" cy="${f1(fy + dy * k)}" rx="${f1(7 * k)}" ry="${f1(14 * k)}" fill="#c9a66b"/>`).join(""));
+  // at night, the dark over everything but the fire (drawn after it, bright)
+  if (night) s += SEP + part("camp-night", c.F, () => all("#000814").replace("<rect ", `<rect pointer-events="none" opacity="0.28" `));
+  // the fire: stones and wood; its flames, sparks and glow in a group that
+  // grows with the slider (out: smoke)
+  s += SEP + part("camp-hearth", c.F, () => [...Array(10)].map((_, i) => {
+    const a = i / 10 * 2 * Math.PI;
+    return `<ellipse cx="${f1(fx + 50 * k * Math.cos(a))}" cy="${f1(fy + 14 * k * Math.sin(a))}" rx="${f1(13 * k)}" ry="${f1(9 * k)}" fill="${["#8a8a8a", "#9c9c9c", "#7a7a7a"][i % 3]}" stroke="#555" stroke-width="${f1(k)}"/>`;
+  }).join("") + `<path d="M${P(fx - 34 * k, fy + 4 * k)} L${P(fx + 30 * k, fy - 10 * k)} M${P(fx + 34 * k, fy + 4 * k)} L${P(fx - 30 * k, fy - 10 * k)}" stroke="#5a3a1c" stroke-width="${f1(10 * k)}" stroke-linecap="round"/>`);
+  if (fire) {
+    s += OPEN(`<g pointer-events="none" ${tf(fx, fy - 4 * k, fz * k)}>`) + part("camp-flames", [night], () => {
+      const flame = (x, top, w) => `M${x - w} 0 Q${x - w * 0.6} ${-top * 0.55} ${x} ${-top} Q${x + w * 0.6} ${-top * 0.55} ${x + w} 0 Z`;
+      return (night ? `<ellipse cx="0" cy="-30" rx="220" ry="140" fill="#ff9a3c" opacity="0.18"/>` : "") +
+        [[-18, 80, 18, "#ff6a1a", 0.7], [16, 90, 18, "#ff6a1a", 0.85], [0, 120, 24, "#ff8c1a", 0.6], [-6, 70, 12, "#ffd23f", 0.5], [8, 76, 11, "#ffd23f", 0.65]].map(([x, top, w, col, d]) =>
+          `<path d="${flame(x, top, w)}" fill="${col}"><animate attributeName="d" values="${flame(x, top, w)};${flame(x + 3, top * 0.75, w)};${flame(x - 2, top * 1.1, w)};${flame(x, top, w)}" dur="${d}s" repeatCount="indefinite"/></path>`).join("") +
+        [...Array(8)].map((_, i) => { const x = -20 + 40 * ((i * 37) % 10) / 10;
+          return `<circle cx="${x}" cy="-60" r="2.5" fill="#ffd23f"><animate attributeName="cy" values="-60;-220" dur="${(1.2 + (i % 4) * 0.35).toFixed(2)}s" begin="${(i * 0.3).toFixed(1)}s" repeatCount="indefinite"/>` +
+                 `<animate attributeName="opacity" values="1;0" dur="${(1.2 + (i % 4) * 0.35).toFixed(2)}s" begin="${(i * 0.3).toFixed(1)}s" repeatCount="indefinite"/></circle>`; }).join("");
+    }) + CLOSE;
+  } else {
+    s += SEP + part("camp-smoke", c.F, () => [0, 1, 2].map(i => `<circle cx="${f1(fx + (i - 1) * 8 * k)}" cy="${f1(fy - 20 * k)}" r="${f1(10 * k)}" fill="#9a9aa2" opacity="0.5">` +
+      `<animate attributeName="cy" values="${f1(fy - 20 * k)};${f1(fy - 170 * k)}" dur="3s" begin="${i}s" repeatCount="indefinite"/>` +
+      `<animate attributeName="r" values="${f1(8 * k)};${f1(26 * k)}" dur="3s" begin="${i}s" repeatCount="indefinite"/>` +
+      `<animate attributeName="opacity" values="0.5;0" dur="3s" begin="${i}s" repeatCount="indefinite"/></circle>`).join(""));
+  }
+  // what is cooking
+  if (food === "sausages") s += SEP + part("camp-sausages", c.F, () => [[-1, -40], [1, -55], [-1, -70]].map(([sd, dy], i) => {
+    const ex = fx + sd * 14 * k, ey = fy + dy * k, hx = fx + sd * 170 * k, hy = fy + (dy + 70) * k;
+    return `<line x1="${f1(hx)}" y1="${f1(hy)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="#8b5e34" stroke-width="${f1(3.5 * k)}" stroke-linecap="round"/>` +
+           `<rect x="${f1(ex - 26 * k)}" y="${f1(ey - 7 * k)}" width="${f1(36 * k)}" height="${f1(14 * k)}" rx="${f1(7 * k)}" fill="${["#b5674d", "#a0523a", "#c27a5a"][i]}" ` +
+           `stroke="#5a2a1a" stroke-width="${f1(1.5 * k)}" transform="rotate(${f1(Math.atan2(ey - hy, ex - hx) * 180 / Math.PI)} ${f1(ex)} ${f1(ey)})"/>`;
+  }).join(""));
+  if (food === "soup") s += SEP + part("camp-soup", c.F, () => {
+    const top = fy - 200 * k, px = fx, py = fy - 95 * k;
+    return [-1, 1].map(sd => `<line x1="${f1(fx + sd * 90 * k)}" y1="${f1(fy + 10 * k)}" x2="${f1(fx)}" y2="${f1(top)}" stroke="#6e4a2c" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`).join("") +
+      `<line x1="${f1(fx)}" y1="${f1(top + 4 * k)}" x2="${f1(fx + 10 * k)}" y2="${f1(fy + 14 * k)}" stroke="#6e4a2c" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>` +
+      `<line x1="${f1(px)}" y1="${f1(top)}" x2="${f1(px)}" y2="${f1(py - 34 * k)}" stroke="#555" stroke-width="${f1(2.5 * k)}" stroke-dasharray="${f1(4 * k)} ${f1(2 * k)}"/>` +
+      `<path d="M${P(px - 34 * k, py - 30 * k)} Q${P(px, py - 52 * k)} ${P(px + 34 * k, py - 30 * k)}" fill="none" stroke="#555" stroke-width="${f1(2.5 * k)}"/>` +
+      `<path d="M${P(px - 38 * k, py - 30 * k)} Q${P(px - 40 * k, py + 20 * k)} ${P(px, py + 22 * k)} Q${P(px + 40 * k, py + 20 * k)} ${P(px + 38 * k, py - 30 * k)} Z" fill="#2b2b30" stroke="#111" stroke-width="${f1(2 * k)}"/>` +
+      `<ellipse cx="${f1(px)}" cy="${f1(py - 30 * k)}" rx="${f1(36 * k)}" ry="${f1(7 * k)}" fill="#e8a33a"/>` +
+      [0, 1, 2].map(i => `<path d="M${P(px + (i - 1) * 14 * k, py - 40 * k)} q${f1(-8 * k)} ${f1(-14 * k)} 0 ${f1(-28 * k)} q${f1(8 * k)} ${f1(-14 * k)} 0 ${f1(-28 * k)}" fill="none" stroke="#ffffff" stroke-width="${f1(3 * k)}" stroke-linecap="round" opacity="0">` +
+        `<animate attributeName="opacity" values="0;0.75;0" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/>` +
+        `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-40 * k)}" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/></path>`).join("");
+  });
+  // a sign back to the trail
+  s += SEP + part("camp-sign", c.F, () => signpost(W * 0.42, g + 30 * k, k, [["⛰️ trail", "mountains", -1]]));
+  return s;
+}
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
-                 witchroom: witchroomScene, clearing: clearingScene };
+                 witchroom: witchroomScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene };
 
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);
@@ -4676,7 +4977,7 @@ const TUNES = {
 // each background's own tune
 const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
-                     witchroom: "witch", clearing: "forest" };
+                     witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby" };
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
 
 // a tune made ready to play: every part's notes in one list, by step,
@@ -5274,7 +5575,8 @@ const TABS = [
                                       ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
                                       ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
                                       ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
-                                      ["clearing", "🌲 forest clearing"]]],
+                                      ["clearing", "🌲 forest clearing"], ["mountains", "⛰️ mountain trail"],
+                                      ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"]]],
     ["range", "figSize", "🧍 size in the scene", 10, 200, 100, 100],
     ["place", "figPos", "🧍 place in the scene (or drag the figure)"],
     // the witch's woods: the hut behind the fence, on chicken legs or not
@@ -5311,6 +5613,22 @@ const TABS = [
       ...[1, 2].map(i => ["choice", `r${n}pic${i}`, `🏡 ${n}: picture ${i} on its wall`, PICTURE_CHOICES])]),
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
     ["range", "things", "🧸 things in the room", 0, 24, 4, 20],
+    // the mountain trail
+    ["range", "peakHeight", "🏔️ how high the peaks are", 50, 170, 70, 140],
+    ["range", "mtClouds", "☁️ clouds", 0, 10, 2, 8],
+    ["range", "birds", "🦅 birds circling", 0, 8, 1, 5],
+    ["toggle", "farLake", "🏞️ the lake and village far below"],
+    // the jungle waterfall
+    ["range", "fallWidth", "💦 waterfall width", 40, 250, 70, 160],
+    ["range", "vines", "🌿 vines", 0, 20, 4, 14],
+    ["range", "mist", "🌫️ mist", 0, 100, 30, 90],
+    ["range", "parrots", "🦜 parrots", 0, 6, 1, 4],
+    // the camp site
+    ["choice", "campTime", "🌗 time of day", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"]]],
+    ["toggle", "fireOn", "🔥 the campfire is lit"],
+    ["range", "flameSize", "🔥 flame size", 20, 250, 60, 160],
+    ["choice", "campFood", "🍲 on the fire", [["none", "nothing"], ["sausages", "🌭 veggie sausages on sticks"], ["soup", "🍲 a pot of soup"]]],
+    ["range", "tents", "⛺ tents", 0, 3, 1, 3],
     // the forest clearing: what is far off down its paths
     ["toggle", "seeHouse", "🏠 see the family house"],
     ["toggle", "seeTree", "🌳 see the tree house"],
@@ -5461,6 +5779,10 @@ const SHOWN_WHEN = {
   "background.house5": b => b.kind === "treehouse" && b.houses >= 5,
   "background.house6": b => b.kind === "treehouse" && b.houses >= 6,
   "background.inside": b => b.kind === "treeroom",
+  ...Object.fromEntries(["peakHeight", "mtClouds", "birds", "farLake"].map(key => ["background." + key, b => b.kind === "mountains"])),
+  ...Object.fromEntries(["fallWidth", "vines", "mist", "parrots"].map(key => ["background." + key, b => b.kind === "waterfall"])),
+  ...Object.fromEntries(["campTime", "fireOn", "campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
+  "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),
   ...Object.fromEntries(["witchSize", "cauldronSize", "crows", "frogs", "snakes"].map(key => ["background." + key, b => b.kind === "witchroom"])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],

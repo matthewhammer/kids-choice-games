@@ -2,6 +2,19 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.18 (2026-10-13)
+
+Everything in 0.0.17, plus three new places: a mountain trail, a jungle waterfall and a camp site.
+
+- **⛰️ A mountain trail:** snowy peaks in ranges, a lake and a village far below, clouds drifting, birds circling, and the trail winding off uphill. Its signpost points to the falls and the camp (each arrow a doorway). Sliders: how high the peaks are, clouds, birds, and the lake and village (on or off).
+- **💦 A jungle waterfall:** the water streaming down a mossy cliff into a pool, ripples spreading, mist rising at its foot, big-leaved trees, vines swaying, parrots and flowers; a sign back to the trail. Sliders: waterfall width, vines, mist, parrots.
+- **🏕️ A camp site:** tents round a campfire, logs to sit on, a sign back to the trail. Controls:
+  - the time of day: ☀️ day, 🌇 sunset or 🌙 night (stars twinkling and a moon);
+  - the campfire lit or out (out, it smokes), and its flames' size, sparks flying up;
+  - what is on the fire: nothing, 🌭 veggie sausages on sticks, or 🍲 a pot of soup hanging over it, steaming;
+  - how many tents.
+- **🌲 The forest clearing:** the paths run on the ground to each place's door or gate; the castle has a moat, its drawbridge down, and a low fence outside it; the witch's hut has a crooked fence; the healer's hut stands among trees.
+
 ## 0.0.17 (2026-10-13)
 
 Everything in 0.0.16, plus a room inside every tree house, ways between them, inside the witch's hut, and a forest clearing.
