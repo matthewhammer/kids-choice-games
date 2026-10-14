@@ -2,9 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.29 (2026-10-14)
 
-Changes since 0.0.28, for the next version, which waits for Matthew's go-ahead.
+Everything in 0.0.28, plus no skeletons in the castles unless you ask for them, castle colors, bangs in front of the face, a fairy, and parts that fade with the music's LFOs.
 
 - **〰️ Three LFOs, shared:** the mixing board's LFOs are now three, A, B and C (D is gone; no tune used it), and with the whole tune's strip they make a square of four before the instruments. The same three are used everywhere: by the drums' pitch, and now by the friend's parts.
 - **👻 Fading with the beat:** on the Visibility tab, each part has an LFO chip beside its name (no LFO, A, B, C): that part fades in and out with the LFO's wave, never past its slider, as far as the LFO's depth says (full depth fades it right out), in time with the music while it plays (else at the tune's tempo). The full-body slider has one too, which sets every part to the same LFO ("mixed LFOs" when they differ). Changing an LFO on the mixing board changes the fading at once.
