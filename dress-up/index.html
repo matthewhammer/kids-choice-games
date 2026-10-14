@@ -370,6 +370,7 @@ const DEFAULTS = {
                 peakHeight: 100, mtClouds: 5, birds: 3, farLake: true,
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2,
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
+                starShape: "mix", starSize: 100, starBright: 85, starTwinkle: 40,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
                 pic1: "lake", pic2: "beach", pic3: "livingroom", pic4: "forest", pic5: "treehouse", pic6: "underwater",
                 view: "lake", viewDetail: 80,
@@ -4498,24 +4499,73 @@ function waterfallScene(c) {
 const CAMP_TENTS = [{ u: -0.32, color: "#e8762c", sd: 1, name: "🟧 orange" }, { u: 0.33, color: "#3b7dd8", sd: -1, name: "🟦 blue" },
                     { u: -0.12, color: "#27ae60", sd: 1, name: "🟩 green" }];
 const CAMP_SKY = { day: ["#5aa9e6", "#dff2ff"], sunset: ["#3a2a6a", "#f2a65a"], night: ["#0b1030", "#24305a"] };
+// Stars in a night sky, as the place's settings say: their shape (dots, or
+// stars of four, five, six or eight points, or a mix of them), their size
+// on average (many small, a few big; 100 = the usual, up to huge), their
+// brightness on average (the brightest with a soft glow), and how much the
+// big bright ones twinkle: turning a little, growing and shrinking,
+// glimmering (and the small ones blink, more with more twinkle).
+const STAR_SHAPES = [["dot", "• dots"], ["four", "✦ four points"], ["five", "★ five points"], ["six", "✶ six points"],
+                     ["eight", "✴ eight points"], ["mix", "🎲 a mix"]];
+const STAR_TINTS = ["#ffffff", "#fff4d6", "#e2ebff", "#fffbe8"];
+// a star's outline about (0, 0), its points r out
+function starPath(shape, r) {
+  if (shape === "four") {   // a sparkle: four points, its sides curving in
+    const c = 0.14 * r;
+    return `M0 ${f1(-r)} Q${f1(c)} ${f1(-c)} ${f1(r)} 0 Q${f1(c)} ${f1(c)} 0 ${f1(r)} Q${f1(-c)} ${f1(c)} ${f1(-r)} 0 Q${f1(-c)} ${f1(-c)} 0 ${f1(-r)} Z`;
+  }
+  // five or six points; eight, the four between them shorter
+  const n = { five: 5, six: 6, eight: 8 }[shape], inner = { five: 0.42, six: 0.48, eight: 0.26 }[shape], pts = [];
+  for (let i = 0; i < 2 * n; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / n, rr = i % 2 ? r * inner : shape === "eight" && i % 4 === 2 ? r * 0.58 : r;
+    pts.push(`${f1(rr * Math.cos(a))} ${f1(rr * Math.sin(a))}`);
+  }
+  return "M" + pts.join(" L") + " Z";
+}
+// n stars over the box (xa..xb, ya..yb), at the scene's scale k; R and the
+// seed place them (each its own size, brightness, tint and shape)
+function starsSvg(o, n, xa, xb, ya, yb, k, R, seed) {
+  const pick = STAR_SHAPES.some(([v]) => v === o.starShape) ? o.starShape : "mix";
+  const size = (o.starSize ?? 100) / 100, bright = (o.starBright ?? 85) / 100, tw = (o.starTwinkle ?? 40) / 100;
+  let t = `<defs><radialGradient id="bg-star-glow"><stop offset="0" stop-color="#fffbe8" stop-opacity="0.6"/><stop offset="1" stop-color="#fffbe8" stop-opacity="0"/></radialGradient></defs>`;
+  for (let i = 0; i < n; i++) {
+    const x = xa + (xb - xa) * R(i, seed), y = ya + (yb - ya) * R(i, seed + 1), u = R(i, seed + 2);
+    const f = 0.4 + 2.4 * u * u * u, op = Math.max(0.08, Math.min(1, bright * (0.55 + 0.9 * R(i, seed + 3))));
+    const shape = pick !== "mix" ? pick : f < 0.6 ? "dot" : ["four", "five", "six", "eight", "four"][Math.floor(R(i, seed + 4) * 5)];
+    // (a point star's ink is thin: it is drawn wider than a dot, to look as big)
+    const r = 1.5 * k * size * f * (shape === "dot" ? 1 : 2.2), tint = STAR_TINTS[Math.floor(R(i, seed + 5) * STAR_TINTS.length)];
+    const body = shape === "dot" ? `<circle r="${f1(r)}" fill="${tint}"/>` : `<path d="${starPath(shape, r)}" fill="${tint}"/>`;
+    // (the glow hugs a big star closer, or big stars would fog the sky)
+    const glow = op * f > 1.1 ? `<circle r="${f1(r * (1 + 1.6 / Math.max(1, Math.sqrt(size))))}" fill="url(#bg-star-glow)" opacity="${(Math.min(1, op * f / 2)).toFixed(2)}"/>` : "";
+    // the big bright ones twinkle: turn, grow and shrink, glimmer, each at
+    // its own pace; the small ones blink (a quarter of them)
+    const big = tw > 0 && op * f > 0.9, d = (s0, s1) => (s0 + s1 * R(i, seed + 6)).toFixed(2);
+    const glimmer = big || (tw > 0 && i % 4 === 0)
+      ? `<animate attributeName="opacity" values="${op.toFixed(2)};${(op * (1 - 0.75 * tw)).toFixed(2)};${op.toFixed(2)}" dur="${d(1.4, 2.2)}s" repeatCount="indefinite"/>` : "";
+    let star = `<g opacity="${op.toFixed(2)}">${glimmer}${glow}${body}</g>`;
+    if (big) star = `<g><animateTransform attributeName="transform" type="scale" values="1;${(1 + 0.45 * tw).toFixed(2)};1" dur="${d(1.1, 1.6)}s" repeatCount="indefinite"/>${star}</g>`;
+    if (big && shape !== "dot")
+      star = `<g><animateTransform attributeName="transform" type="rotate" values="0;${f1(18 * tw)};0;${f1(-18 * tw)};0" dur="${d(4, 4)}s" repeatCount="indefinite"/>${star}</g>`;
+    t += `<g transform="translate(${f1(x)} ${f1(y)})">${star}</g>`;
+  }
+  return t;
+}
 function campsiteScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   const time = CAMP_SKY[o.campTime] ? o.campTime : "day", fire = o.fireOn ?? true, fz = (o.flameSize ?? 100) / 100;
   const food = o.campFood ?? "none", tents = o.tents ?? 2, night = time === "night";
   const fx = 0, fy = g + 40 * k;
-  let s = SEP + part("camp-sky", [c.F, time], () => {
+  const starKeys = night ? [o.starShape, o.starSize, o.starBright, o.starTwinkle] : [];
+  let s = SEP + part("camp-sky", [c.F, time, ...starKeys], () => {
     const [a, b] = CAMP_SKY[time];
     let t = `<defs>${grad("bg-sky", a, b, y0, g - 100 * k)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)");
     if (time === "day") t += `<circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(34 * k)}" fill="#ffd23f"/>` +
       [0, 1, 2].map(i => driftingCloud(x0 + W * (0.15 + 0.3 * i), y0 + H * (0.1 + 0.05 * (i % 2)), k * 0.7, i)).join("");
     if (time === "sunset") t += `<circle cx="${f1(-W * 0.2)}" cy="${f1(g - 110 * k)}" r="${f1(46 * k)}" fill="#ff8c42" opacity="0.95"/>`;
     if (night) {
-      t += `<circle cx="${f1(x1 - W * 0.16)}" cy="${f1(y0 + H * 0.14)}" r="${f1(28 * k)}" fill="#f4eebc"/><circle cx="${f1(x1 - W * 0.16 + 12 * k)}" cy="${f1(y0 + H * 0.14 - 8 * k)}" r="${f1(24 * k)}" fill="#0b1030"/>`;
-      for (let i = 0; i < 70; i++) {
-        const x = x0 + W * R(i, 360), y = y0 + (g - 160 * k - y0) * R(i, 361), r = (0.8 + 1.4 * R(i, 362)) * k;
-        t += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="#ffffff">` +
-             (i % 4 === 0 ? `<animate attributeName="opacity" values="1;0.2;1" dur="${(1.5 + 2 * R(i, 363)).toFixed(1)}s" repeatCount="indefinite"/>` : "") + `</circle>`;
-      }
+      // the stars, then the moon over them (its dark side hides those behind it)
+      t += starsSvg(o, 70, x0, x1, y0, g - 160 * k, k, R, 360) +
+           `<circle cx="${f1(x1 - W * 0.16)}" cy="${f1(y0 + H * 0.14)}" r="${f1(28 * k)}" fill="#f4eebc"/><circle cx="${f1(x1 - W * 0.16 + 12 * k)}" cy="${f1(y0 + H * 0.14 - 8 * k)}" r="${f1(24 * k)}" fill="#0b1030"/>`;
     }
     return t;
   });
@@ -4632,13 +4682,14 @@ function tentScene(c) {
     return t;
   });
   // the door, open onto the camp: its sky, the far trees, the fire
-  s += SEP + part("tent-door", [c.F, n, time, fire], () => {
+  s += SEP + part("tent-door", [c.F, n, time, fire, ...(night ? [o.starShape, o.starSize, o.starBright, o.starTwinkle] : [])], () => {
     const [a, b] = CAMP_SKY[time], hor = back - 34 * k;
     const ground = night ? "#24452c" : time === "sunset" ? "#5a7a40" : "#8bc56a", tree = { day: "#2f6e3a", sunset: "#2a4a3a", night: "#0f2018" }[time];
     let v = `<defs><clipPath id="bg-tent-door"><polygon points="${P2(0, top)} ${P2(-dh, back)} ${P2(dh, back)}"/></clipPath>${grad("bg-tent-sky", a, b, top, hor)}${PINE_DEF}</defs>` +
             `<g class="portal" data-to="campsite"><g clip-path="url(#bg-tent-door)">` +
             `<rect x="${f1(-dh)}" y="${f1(top)}" width="${f1(2 * dh)}" height="${f1(back - top)}" fill="url(#bg-tent-sky)"/>`;
-    if (night) for (let i = 0; i < 14; i++) v += `<circle cx="${f1(-dh + 2 * dh * R(i, 371))}" cy="${f1(top + (hor - top) * 0.8 * R(i, 372))}" r="${f1((0.8 + R(i, 373)) * k)}" fill="#ffffff"/>`;
+    // (the same night sky as outside the tent, its stars as they are there)
+    if (night) v += starsSvg(o, 14, -dh, dh, top, top + (hor - top) * 0.8, k, R, 371);
     for (let i = 0; i < 7; i++) v += use("bg-pine", -dh + 2 * dh * (i + 0.5) / 7, hor + 6 * k * R(i, 374), k * (0.22 + 0.1 * R(i, 375)), k * (0.22 + 0.1 * R(i, 375)), ` color="${tree}"`);
     v += `<rect x="${f1(-dh)}" y="${f1(hor)}" width="${f1(2 * dh)}" height="${f1(back - hor + 2 * k)}" fill="${ground}"/>`;
     // the fire, small and far off (or its smoke)
@@ -7603,6 +7654,10 @@ const TABS = [
     ["range", "parrots", "🦜 parrots", 0, 6, 1, 4],
     // the camp site
     ["choice", "campTime", "🌗 time of day", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"]]],
+    ["choice", "starShape", "⭐ stars: shape", STAR_SHAPES],
+    ["range", "starSize", "⭐ stars: size (100 = the usual, up to huge)", 25, 2000, 60, 600],
+    ["range", "starBright", "⭐ stars: brightness", 5, 100, 50, 100],
+    ["range", "starTwinkle", "✨ stars: twinkle (the big bright ones turn, grow and shrink, and glimmer)", 0, 100, 20, 100],
     ["toggle", "fireOn", "🔥 the campfire is lit"],
     ["range", "flameSize", "🔥 flame size", 20, 250, 60, 160],
     ["choice", "campFood", "🍲 on the fire", [["none", "nothing"], ["sausages", "🌭 veggie sausages on sticks"], ["soup", "🍲 a pot of soup"]]],
@@ -7792,6 +7847,8 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
+  ...Object.fromEntries(["starShape", "starSize", "starBright", "starTwinkle"].map(key =>
+    ["background." + key, b => (b.kind === "campsite" || b.kind === "tent") && b.campTime === "night"])),
   "background.tent": b => b.kind === "tent",
   "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),

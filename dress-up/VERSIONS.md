@@ -7,6 +7,7 @@ Each version lists the game's features as of that version. The newest version is
 Changes since 0.0.29, for the next version, which waits for Matthew's go-ahead.
 
 - **🧚 Fly as a fairy:** a fairy's wings keep flapping while you drag her about, so she can fly (and the sparkle wings' stars keep twinkling). The rest of the picture's animations still hold still during a drag, as before, so dragging stays smooth: measured, the flapping costs nothing noticeable.
+- **⭐ Stars at the camp site:** at night, new controls for the stars: their **shape** (• dots as before, ✦ four points, ★ five, ✶ six, ✴ eight, or 🎲 a mix, the new usual: the small ones dots, the bigger ones stars of every kind), their **size** on average (many small and a few big, from tiny up to huge), their **brightness** on average (the brightest with a soft glow), and how much they **twinkle**: the big bright ones turn a little, grow and shrink, and glimmer, each at its own pace, and the small ones blink. The night seen through the tent's door has the same stars. The moon is drawn over the stars now, so none shows through its dark side.
 
 ## 0.0.29 (2026-10-14)
 
