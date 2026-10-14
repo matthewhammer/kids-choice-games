@@ -1,5 +1,7 @@
 # Kids' Choice Games
 
+**▶ Play Messed Up Dress Up at http://matthewhammer.org/kids-choice-games/dress-up/**
+
 Small games made with and for M and N, my daughter and son, who choose what comes next. Each is a plain HTML and JavaScript page, and each has two jobs.
 
 **Real play.** The kids ask for features as they play: a witch with a cat on her shoulder, claws at 900%, a hut on chicken legs. Each request goes live as soon as it's ready, so the next round of play tests it.
@@ -10,7 +12,7 @@ The order matters: the plain prototype is played with first, by real players, an
 
 ## Games
 
-- [`dress-up/`](dress-up/): **Messed Up Dress Up**, a paper doll with every part on a slider, dozens of costumes and five backgrounds. Its features by version are in [`dress-up/VERSIONS.md`](dress-up/VERSIONS.md).
+- [`dress-up/`](dress-up/): **Messed Up Dress Up**, a paper doll with every part on a slider, dozens of costumes and backgrounds, and its own music. Live at http://matthewhammer.org/kids-choice-games/dress-up/. Its features by version are in [`dress-up/VERSIONS.md`](dress-up/VERSIONS.md).
 
 ## Playing one
 
