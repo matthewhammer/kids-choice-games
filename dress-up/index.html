@@ -4374,24 +4374,38 @@ function midiOf(name) {
 }
 // a line of notes, each with its length in steps (sixteenth notes):
 // "E5:2 G5:2 C5+E5+G5:4 r:2", "+" for notes played together, "r" a rest,
-// "|" a bar line (only for reading)
+// "|" a bar line (only for reading). A length may be a fraction, for
+// triplets: "E5:4/3" is an eighth-note triplet (three to a beat), "E5:8/3"
+// a quarter-note triplet (three to two beats).
+// (the steps counted in 720ths, whole numbers, so that thirds, fifths and
+// sixths add up exactly and a line ends on its bar)
+const TICK = 720;
 function lineOf(text) {
   const events = []; let at = 0;
   for (const tok of text.trim().split(/\s+/)) {
     if (tok === "|") continue;
-    const [what, len] = tok.split(":"), n = Number(len);
+    const [what, len] = tok.split(":"), [a, b = 1] = (len || "").split("/").map(Number), n = a / b;
     if (!(n > 0)) throw new Error("no length: " + tok);
-    if (what !== "r") events.push({ at, len: n, notes: what.split("+").map(midiOf) });
-    at += n;
+    if (what !== "r") events.push({ at: at / TICK, len: n, notes: what.split("+").map(midiOf) });
+    at += Math.round(n * TICK);
   }
-  return { events, steps: at };
+  return { events, steps: at / TICK };
 }
-// a drum's hits, a character a step, repeated: "x" a hit, "o" a soft one
+// a drum's hits, a character a step, repeated: "x" a hit, "o" a soft one.
+// Hits in parentheses share a beat (4 steps) evenly, or as many steps as
+// the number before them says: "(xxx)" a beat's triplets, "8(xxx)" three
+// hits over two beats (against the beat's two: a polyrhythm), "16(xxx)"
+// three over the bar's four.
 function hitsOf(text, note = 60) {
-  const p = text.replace(/[\s|]/g, ""), events = [];
-  for (let at = 0; at < p.length; at++)
-    if (p[at] === "x" || p[at] === "o") events.push({ at, len: 1, notes: [note], vel: p[at] === "x" ? 1 : 0.55 });
-  return { events, steps: p.length };
+  const events = []; let at = 0;   // (in 720ths of a step, as lineOf)
+  const hit = (ch, ticks) => {
+    if (ch === "x" || ch === "o") events.push({ at: at / TICK, len: ticks / TICK, notes: [note], vel: ch === "x" ? 1 : 0.55 });
+    at += ticks;
+  };
+  for (const [, span, group, ch] of text.replace(/[\s|]/g, "").matchAll(/(\d*)\(([^)]*)\)|(.)/g))
+    if (ch !== undefined) hit(ch, TICK);
+    else for (const c of group) hit(c, Math.round((span ? Number(span) : 4) * TICK / group.length));
+  return { events, steps: at / TICK };
 }
 // a chord by name, its notes up from the root at an octave: "Am", "G7", "Bb"
 const CHORD_SHAPES = { "": [0, 4, 7], m: [0, 3, 7], "7": [0, 4, 7, 10], m7: [0, 3, 7, 10], maj7: [0, 4, 7, 11], dim: [0, 3, 6] };
@@ -4696,8 +4710,10 @@ function funkTune(c) {
     { name: "breakKick", inst: "kick", level: 0.95, line: hitsOf(c.bKick) },
     { name: "breakSnare", inst: "snare", level: 0.6, rev: 0.15, line: hitsOf(c.bSnare) },
     { name: "breakHat", inst: "hat", level: 0.4, line: hitsOf(c.bHat) },
-    // a roll on the snare into the next section, in the last bar of eight
-    { name: "fill", inst: "snare", level: 0.5, line: hitsOf(".".repeat(112) + "x.x.x.x.xxxxxxxx") },
+    // a roll on the snare into the next section, in the last bar of eight:
+    // faster and faster, in triplets (three over two beats, three to a
+    // beat, six to a beat)
+    { name: "fill", inst: "snare", level: 0.5, line: hitsOf(".".repeat(112) + "8(xxx) (xox) (xxxxxx)") },
     { name: "bongoHi", inst: "bongo", level: 0.7, rev: 0.15, line: hitsOf(c.hi, 71) },
     { name: "bongoLo", inst: "bongo", level: 0.75, rev: 0.15, line: hitsOf(c.lo, 64) },
     { name: "soloHi", inst: "bongo", level: 0.8, rev: 0.15, line: hitsOf(c.soloHi, 71) },
@@ -5172,9 +5188,13 @@ const TUNES = {
     hat: "xoxoxoxoxoxoxoxo xoxoxoxoxoxoxoxo", open: "................ ..............x.",
     bKick: "x.x.....x.x..x.. x.x...x...x.....", bSnare: "....x..o..o.x..o .o..x..o.o..x.xx",
     bHat: "x.x.xxx.x.x.xxx. x.x.xxx.x.x.x.x.",
-    hi: "x..x..x.x..x.xx.", lo: "..x...x...x...x.",
-    soloHi: "x.xx.x.xx.x.xxxx x..x..x.x..x.x.x x.xx.x.xx.x.x.x. xxxxx.x.x.xxxxxx",
-    soloLo: "..x...x...x...x. .x..x..x..x..x.. ..x...x...x...x. x.x.x.x.........",
+    // (the high bongo ends every other bar in triplets; the low one plays
+    // three over the last two beats of it, against the kick's two)
+    hi: "x..x..x.x..x.xx. x..x..x.x..x(xxx)", lo: "..x...x...x...x. ..x...x.8(xxx)",
+    // the solo: the low bongo keeps the beat while the high one plays
+    // three to it, then three over two beats, then six to a beat
+    soloHi: "x.xx.x.xx.x.xxxx (xox)(xox)(xox)(xox) 8(xxx)8(xxx) (xxxxxx)(xoxoxo)8(xxx)",
+    soloLo: "..x...x...x...x. x...x...x...x... x...x...x...x... x...x...x.x.x...",
     rhythm: [[0, 1], [3, 1], [6, 2], [10, 1], [12, 1], [14, 1]], rhythmSolo: [[0, 1], [2, 1], [3, 1], [6, 1], [7, 1], [8, 1], [10, 1], [11, 1], [14, 1], [15, 1]],
     organ: [[0, 7], [10, 5]],
     plan: [["intro", 4], ["kitIn", 4], ["groove", 8], ["theme", 8], ["bassSolo", 8], ["bongoSolo", 8], ["drumBreak", 8], ["organSolo", 8], ["rhythmSolo", 4], ["gtrSolo", 8], ["theme", 8, 2], ["outro", 4], ["intro", 4]],
@@ -5182,16 +5202,19 @@ const TUNES = {
   canyon: { name: "🏜️ canyon cruise", make: () => funkTune({
     // D minor at 104, wide open: a twangy guitar with a long echo over a rolling bass; bongos and a dusty breakbeat
     bpm: 104, swing: 0, echo: 0.25, chords: ["Dm", "Dm", "Bb", "C"],
-    bass: "D2:2 r:1 D2:1 A2:2 r:1 D3:1 r:2 C3:2 A2:2 F2:2 | D2:2 r:2 F2:2 G2:2 A2:2 r:2 C3:2 A2:2 | Bb1:2 r:1 Bb1:1 F2:2 r:1 Bb2:1 r:2 A2:2 F2:2 D2:2 | C2:2 r:1 C2:1 G2:2 r:1 C3:1 r:2 E2:2 G2:2 C#2:2",
+    bass: "D2:2 r:1 D2:1 A2:2 r:1 D3:1 r:2 C3:2 A2:2 F2:2 | D2:2 r:2 F2:2 G2:2 A2:2 r:2 C3:2 A2:2 | Bb1:2 r:1 Bb1:1 F2:2 r:1 Bb2:1 r:2 A2:2 F2:2 D2:2 | C2:2 r:1 C2:1 G2:2 r:1 C3:1 r:2 E2:2 G2:4/3 E2:4/3 C#2:4/3",
     bassSolo: "D2:1 r:1 D3:1 D2:1 r:1 D2:1 F2:1 G2:1 A2:2 C3:1 D3:1 r:1 C3:1 A2:2 | D2:2 D3:1 r:1 C3:2 A2:2 G2:1 A2:1 F2:2 D2:4 | Bb1:1 r:1 Bb2:1 Bb1:1 r:1 Bb1:1 D2:1 F2:1 G2:2 A2:1 Bb2:1 r:1 A2:1 F2:2 | C2:1 r:1 C3:1 C2:1 r:1 C2:1 E2:1 G2:1 Bb2:2 A2:1 G2:1 E2:2 C#2:2 | D2:1 r:1 D3:1 D2:1 r:1 D2:1 F2:1 G2:1 A2:2 C3:1 D3:1 r:1 C3:1 A2:2 | D2:1 D2:1 r:1 D3:1 r:1 C3:1 A2:1 r:1 G2:1 A2:1 r:1 C3:1 D3:2 A2:2 | Bb1:2 F2:1 Bb2:1 r:2 C2:2 G2:1 C3:1 r:2 E2:2 G2:2 | A2:2 G2:2 F2:2 E2:2 D2:8",
-    theme: "A4:3 D5:1 F5:4 E5:2 D5:2 A4:4 | C5:2 D5:2 E5:2 F5:2 E5:4 r:4 | D5:3 F5:1 Bb5:4 A5:2 F5:2 D5:4 | E5:2 G5:2 C6:4 Bb5:2 A5:2 G5:4 | A5:6 G5:2 F5:4 E5:4 | D5:2 E5:2 F5:2 A5:2 G5:4 F5:4 | Bb4:3 D5:1 F5:4 E5:3 C5:1 E5:4 | D5:12 r:4",
+    theme: "A4:3 D5:1 F5:4 E5:2 D5:2 A4:4 | C5:2 D5:2 E5:2 F5:2 E5:4 r:4 | D5:3 F5:1 Bb5:4 A5:2 F5:2 D5:4 | E5:2 G5:2 C6:4 Bb5:2 A5:2 G5:4 | A5:6 G5:2 F5:8/3 E5:8/3 D5:8/3 | D5:2 E5:2 F5:2 A5:2 G5:4 F5:4 | Bb4:3 D5:1 F5:4 E5:3 C5:1 E5:4 | D5:12 r:4",
     organSolo: "D5:2 F5:2 A5:3 G5:1 F5:2 D5:2 r:4 | C5:1 D5:1 F5:2 G5:2 A5:2 C6:2 A5:2 r:4 | Bb5:4 A5:2 F5:2 D5:4 F5:2 A5:2 | G5:2 E5:2 C5:2 E5:2 G5:4 r:4 | A5:1 Bb5:1 A5:1 F5:1 D5:2 F5:2 A5:4 D6:4 | C6:2 A5:2 G5:2 F5:2 E5:4 D5:4 | F5:2 D5:2 Bb4:2 D5:2 E5:2 G5:2 C#5:4 | D5:12 r:4",
     gtrSolo: "D5:1 F5:1 G5:1 A5:1 C6:2 A5:2 G5:2 F5:2 D5:4 | r:2 A4:1 C5:1 D5:2 F5:2 E5:1 D5:1 C5:2 D5:4 | F5:1 G5:1 A5:1 Bb5:1 D6:4 Bb5:2 A5:2 F5:4 | E5:1 G5:1 C6:2 Bb5:2 G5:2 E5:4 C5:4 | A5:4 C6:2 D6:2 C6:2 A5:2 G5:4 | F5:1 G5:1 F5:1 D5:1 F5:1 D5:1 C5:2 D5:8 | Bb4:2 D5:2 F5:2 Bb5:2 C6:2 E5:2 G5:2 C#6:2 | D6:16",
     kick: "x.......x.x..... x..x....x.......", snare: "....x.......x... ....x..o....x..o",
-    hat: "x.x.x.x.x.x.x.x. x.x.x.x.x.x.x.xx", open: "......x......... ..............x.",
+    hat: "x.x.x.x.x.x.x.x. x.x.x.x.x.x.(xxx)", open: "......x......... ..............x.",
     bKick: "x..x..x...x.x... x..x..x...x..x..", bSnare: "....x.o.....x.oo .o..x..o.o..x..x",
     bHat: "xoxoxoxoxoxoxoxo xoxoxoxoxoxoxoxo",
-    hi: "x.x..x.xx.x..x.x", lo: "...x......x.x...",
+    // (the low bongo every six steps, a dotted quarter: three of its
+    // beats for every two of the band's, coming round to the bar's start
+    // every three bars)
+    hi: "x.x..x.xx.x..x.x", lo: "x..o..",
     soloHi: "x.x.x.xxx.x.x.xx x..xx..xx..xx.x. x.x.x.xxx.x.x.xx xxx.xxx.xxx.xxxx",
     soloLo: ".x...x...x...x.. ..x...x...x...x. .x...x...x...x.. x...x...x.......",
     rhythm: [[0, 2], [4, 1], [6, 1], [10, 2], [14, 1]], rhythmSolo: [[0, 1], [1, 1], [4, 1], [6, 1], [7, 1], [10, 1], [12, 1], [13, 1], [15, 1]],
@@ -5203,18 +5226,19 @@ const TUNES = {
     bpm: 96, swing: 0.18, echo: 0.15, chords: ["Am7", "Am7", "Dm7", "E7"],
     bass: "A1:3 r:1 A2:1 r:2 C2:1 r:2 E2:2 G2:2 A2:2 | A1:2 r:4 E2:2 r:2 G2:1 A2:1 r:2 C3:2 | D2:3 r:1 D3:1 r:2 F2:1 r:2 A2:2 C3:2 D3:2 | E2:3 r:1 E3:1 r:2 G#2:1 r:2 B2:2 D3:2 G#2:2",
     bassSolo: "A1:2 A2:1 r:1 G2:1 E2:1 r:2 C2:1 D2:1 E2:2 G2:1 A2:1 C3:2 | A2:1 G2:1 E2:1 r:1 A1:4 r:2 E2:1 G2:1 A2:2 C3:2 | D2:2 D3:1 r:1 C3:1 A2:1 r:2 F2:1 G2:1 A2:2 C3:1 D3:1 F3:2 | E2:2 E3:1 r:1 D3:1 B2:1 r:2 G#2:1 A2:1 B2:2 D3:1 E3:1 G#3:2 | A1:2 A2:1 r:1 G2:1 E2:1 r:2 C2:1 D2:1 E2:2 G2:1 A2:1 C3:2 | A1:1 A1:1 r:2 C2:1 D2:1 E2:1 r:1 G2:2 A2:2 E2:4 | D2:2 F2:1 A2:1 r:2 E2:2 G#2:1 B2:1 r:2 D3:2 E3:2 | E3:2 D3:2 C3:2 B2:2 A2:8",
-    theme: "E5:2 r:2 E5:1 D5:1 C5:2 A4:4 r:4 | G4:2 A4:2 C5:2 D5:2 E5:4 D5:4 | F5:2 r:2 F5:1 E5:1 D5:2 A4:4 r:4 | G#4:2 B4:2 D5:2 E5:2 G#5:4 E5:4 | A5:3 G5:1 E5:2 D5:2 C5:4 r:4 | D5:2 E5:2 G5:2 A5:2 G5:4 E5:4 | F5:2 D5:2 A4:2 D5:2 E5:2 G#5:2 B5:4 | A5:12 r:4",
+    theme: "E5:2 r:2 E5:1 D5:1 C5:2 A4:4 r:4 | G4:8/3 A4:8/3 C5:8/3 D5:2 E5:4 D5:2 | F5:2 r:2 F5:1 E5:1 D5:2 A4:4 r:4 | G#4:2 B4:2 D5:2 E5:2 G#5:4 E5:4 | A5:3 G5:1 E5:2 D5:2 C5:4 r:4 | D5:2 E5:2 G5:2 A5:2 G5:4 E5:4 | F5:2 D5:2 A4:2 D5:2 E5:2 G#5:2 B5:4 | A5:12 r:4",
     organSolo: "A4:2 C5:2 E5:2 G5:2 A5:4 G5:2 E5:2 | D5:2 C5:2 A4:4 r:4 E5:1 G5:1 A5:2 | D5:2 F5:2 A5:2 C6:2 D6:4 C6:2 A5:2 | G#5:2 B5:2 E6:4 D6:2 B5:2 G#5:4 | C6:3 B5:1 A5:2 G5:2 E5:4 r:4 | G5:1 A5:1 G5:1 E5:1 D5:2 C5:2 A4:4 r:4 | D5:2 F5:2 A5:2 F5:2 E5:2 G#5:2 B5:2 D6:2 | C6:2 B5:2 A5:8 r:4",
     gtrSolo: "A4:1 C5:1 D5:1 E5:1 G5:2 E5:2 D5:2 C5:2 A4:4 | r:2 E5:1 G5:1 A5:2 C6:2 B5:1 A5:1 G5:2 E5:4 | D5:1 F5:1 A5:1 C6:1 D6:4 C6:2 A5:2 F5:4 | E5:1 G#5:1 B5:2 D6:2 B5:2 G#5:4 E5:4 | A5:4 C6:2 E6:2 D6:2 C6:2 A5:4 | G5:1 A5:1 G5:1 E5:1 G5:1 E5:1 D5:2 E5:8 | F5:2 A5:2 D6:2 C6:2 B5:2 G#5:2 E5:2 D5:2 | A4:16",
     kick: "x......x..x..... x.x.......x.....", snare: "....x.......x... ....x..o....x.o.",
-    hat: "x.x.x.x.x.x.x.x. x.x.x.x.x.x.x.x.", open: "................ ..........x.....",
+    hat: "x.x.x.x.x.x.x.x. x.x.x.x.(xxx)(xoxoxo)", open: "................ ..........x.....",
     bKick: "x..x......x.x... x..x...x..x.....", bSnare: "....x..o....x... .o..x..o..o.x.x.",
     bHat: "x.xxx.x.x.xxx.x. x.x.x.xxx.x.x.x.",
     hi: "x.x...x.x.x...x.", lo: "....x.......x..x",
     soloHi: "x.x.xx.x.x.x.xx. x..x.x..x.x.x.xx x.x.xx.x.x.x.xx. x.xxx.x.xxxxx.x.",
     soloLo: "...x.......x.... ..x...x...x..... ...x.......x.... x.x.x...........",
     rhythm: [[0, 1], [2, 1], [7, 2], [10, 1], [12, 2]], rhythmSolo: [[0, 1], [2, 1], [3, 1], [5, 1], [7, 1], [8, 1], [10, 1], [12, 1], [13, 1], [15, 1]],
-    organ: [[0, 6], [8, 3], [12, 3]],
+    // (its second half three chords over two beats)
+    organ: [[0, 6], [8, 8 / 3], [8 + 8 / 3, 8 / 3], [8 + 16 / 3, 8 / 3]],
     plan: [["intro", 4], ["kitIn", 4], ["groove", 8], ["theme", 8], ["bassSolo", 8], ["bongoSolo", 4], ["drumBreak", 4], ["organSolo", 8], ["rhythmSolo", 4], ["gtrSolo", 8], ["theme", 8, 2], ["outro", 4]],
   }) },
 };
@@ -5302,8 +5326,9 @@ function busesOf(A, T, into) {
   return Object.assign(strips.map(st => st.tone), { strips, echo, back, revOut });
 }
 const stepSecs = T => 60 / T.bpm / 4;
-// when a note starts: its step, and the swing on every other step
-const swingOf = (T, at) => (at % 2 ? T.swing || 0 : 0) + (at % 4 === 2 ? T.swing8 || 0 : 0);
+// when a note starts: its step, and the swing on every other step (a
+// triplet, between the steps, keeps its even spacing)
+const swingOf = (T, at) => !Number.isInteger(at) ? 0 : (at % 2 ? T.swing || 0 : 0) + (at % 4 === 2 ? T.swing8 || 0 : 0);
 const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + swingOf(song.T, at)) * stepSecs(song.T);
 // (drums keep their sound when the tune is moved up or down)
 const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell", "bongo", "openhat"]);
