@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.29, for the next version, which waits for Matthew's go-ahead.
+
+- **🧚 Fly as a fairy:** a fairy's wings keep flapping while you drag her about, so she can fly (and the sparkle wings' stars keep twinkling). The rest of the picture's animations still hold still during a drag, as before, so dragging stays smooth: measured, the flapping costs nothing noticeable.
+
 ## 0.0.29 (2026-10-14)
 
 Everything in 0.0.28, plus no skeletons in the castles unless you ask for them, castle colors, bangs in front of the face, a fairy, and parts that fade with the music's LFOs.

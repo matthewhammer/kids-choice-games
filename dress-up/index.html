@@ -184,6 +184,13 @@
      door) glows under the pointer; a click goes through it */
   #bg .portal { cursor: pointer; }
   #bg .portal:hover { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f) brightness(1.08); }
+/* A fairy's wings flap, and their stars twinkle, by CSS, not SVG
+   animation: a drag pauses the picture's SVG animations (see pointerdown),
+   and the wings go on flapping through it, to fly. Each redraw starts them
+   in step with the clock (fairyPhase), so they never restart mid-flap. */
+@keyframes fairy-flap-l { 50% { transform: rotate(9deg); } }
+@keyframes fairy-flap-r { 50% { transform: rotate(-9deg); } }
+@keyframes fairy-twinkle { 50% { opacity: 0.2; } }
 </style>
 </head>
 <body>
@@ -1792,6 +1799,9 @@ function toedFoot(x, y, side, sc, skin, T) {
 // A fairy's wings, behind her: for each side, from her back (just inside
 // the shoulder) out and up; in their style and color, fluttering (a slow
 // beat, both together) unless that is off
+// how far into its cycle (of `dur` seconds, begun `begin` seconds in) a CSS
+// animation is now, as the negative delay that starts it there
+const fairyPhase = (dur, begin = 0) => (-(((performance.now() / 1000 - begin) % dur + dur) % dur)).toFixed(3);
 function fairyWingsSvg(style, color, w, L, flutter = true) {
   const dk = darker(color), lt = mix(color, "#ffffff", 0.45), out = [];
   for (const sd of [-1, 1]) {
@@ -1831,10 +1841,12 @@ function fairyWingsSvg(style, color, w, L, flutter = true) {
            `<path d="M${X(16)} 36 C${X(w + 110)} 40 ${X(w + 130)} 140 ${X(w + 50)} 150 C${X(24)} 150 ${X(12)} 90 ${X(16)} 36 Z" fill="${color}" fill-opacity="0.5" stroke="${lt}" stroke-width="4"/>` +
            `<path d="M${X(w + 40)} -110 Q${X(w + 110)} -140 ${X(w + 150)} -90" fill="none" stroke="#ffffff" stroke-width="5" opacity="0.7"/>` +
            [[w + 120, -100, 0], [w + 170, -40, 0.4], [w + 70, 100, 0.8], [w + 200, -130, 1.2]].map(([x, y, d]) =>
-             `<path d="M${X(x)} ${f1(y - 10)} L${X(x + 3)} ${f1(y - 3)} L${X(x + 10)} ${f1(y)} L${X(x + 3)} ${f1(y + 3)} L${X(x)} ${f1(y + 10)} L${X(x - 3)} ${f1(y + 3)} L${X(x - 10)} ${f1(y)} L${X(x - 3)} ${f1(y - 3)} Z" fill="#fff7c2">` +
-             `<animate attributeName="opacity" values="1;0.2;1" dur="1.6s" begin="${d}s" repeatCount="indefinite"/></path>`).join("");
+             `<path d="M${X(x)} ${f1(y - 10)} L${X(x + 3)} ${f1(y - 3)} L${X(x + 10)} ${f1(y)} L${X(x + 3)} ${f1(y + 3)} L${X(x)} ${f1(y + 10)} L${X(x - 3)} ${f1(y + 3)} L${X(x - 10)} ${f1(y)} L${X(x - 3)} ${f1(y - 3)} Z" fill="#fff7c2" style="animation: fairy-twinkle 1.6s ${fairyPhase(1.6, d)}s infinite ease-in-out"/>`).join("");
     }
-    out.push(flutter ? `<g><animateTransform attributeName="transform" type="rotate" values="0 ${ax} ${ay};${sd * -9} ${ax} ${ay};0 ${ax} ${ay}" dur="0.9s" repeatCount="indefinite"/>${t}</g>` : `<g>${t}</g>`);
+    // (turning about the shoulder, (ax, ay): the CSS turn is about the
+    // group's own origin, moved there)
+    out.push(flutter ? `<g transform="translate(${ax} ${ay})"><g style="transform-origin: 0 0; animation: fairy-flap-${sd < 0 ? "l" : "r"} 0.9s ${fairyPhase(0.9)}s infinite ease-in-out">` +
+                       `<g transform="translate(${-ax} ${-ay})">${t}</g></g></g>` : `<g>${t}</g>`);
   }
   const defs = style === "petal" ? `<defs><radialGradient id="fairy-petal" cx="0.2" cy="0.5" r="0.9"><stop offset="0" stop-color="${lt}"/><stop offset="1" stop-color="${color}"/></radialGradient></defs>` : "";
   return defs + out.join("");
