@@ -16,13 +16,7 @@ The order matters: the plain prototype is played with first, by real players, an
 
 ## Playing one
 
-Each game is a single HTML file, with nothing to install. Open `dress-up/index.html` in a browser, or serve the folder:
-
-```
-cd dress-up && python3 -m http.server 8133
-```
-
-and visit http://localhost:8133/.
+Play it at http://matthewhammer.org/kids-choice-games/dress-up/, nothing to install. Each game is a single HTML file, so a copy also plays from disk: open `dress-up/index.html` in a browser.
 
 ## History
 
