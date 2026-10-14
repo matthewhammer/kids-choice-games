@@ -253,23 +253,54 @@ const CASTLE_DEFAULTS = { N: { levels: 3, stone: "#b8b8c4", trees: 6, moat: 100 
                           M: { levels: 4, stone: "#e2c9a0", trees: 10, moat: 60 },
                           D: { levels: 2, stone: "#8a8f98", trees: 4, moat: 150 } };
 const CASTLE_STONES = ["#b8b8c4", "#e2c9a0", "#8a8f98", "#e8e4da", "#c98f7a", "#7c8b6f", "#5a5f6e"];
+// a castle's banners and flags: two colors of its owner's, used in turn,
+// as stripes, or as checkers; and its roofs' color
+const CASTLE_FLAG_COLORS = ["#e53935", "#f2c12e", "#3b82f6", "#22c55e", "#6a2c91", "#f472b6", "#f97316", "#ffffff", "#1f1f22"];
+const CASTLE_FLAG_DEFAULTS = { N: ["#e53935", "#ffffff"], M: ["#f2c12e", "#6a2c91"], D: ["#3b82f6", "#ffffff"] };
+const CASTLE_FLAG_STYLES = [["alternate", "↔️ in turn"], ["stripes", "▥ stripes"], ["checkers", "▦ checkers"]];
+const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c2410c", "#1f2937"];
 // A castle's rooms: up to six, each in a style. The styles are by who made
 // them up (N's, M's and D's), and any castle may use any of them. A trap
 // room's two pits drop into the castle's dungeons.
 const ROOM_STYLES = [["N", "N's rooms", [["king", "👑 king's room"], ["greenhouse", "🌿 greenhouse"], ["trap", "🕳️ trap room"],
-                                          ["dungeon1", "💀 dungeon"], ["dungeon2", "⛓️ deep dungeon"]]]];
+                                          ["dungeon1", "🗝️ dungeon"], ["dungeon2", "⛓️ deep dungeon"]]]];
 const CASTLE_ROOM_CHOICES = ROOM_STYLES.flatMap(([, , list]) => list);
 const roomLabel = st => (CASTLE_ROOM_CHOICES.find(([v]) => v === st) || [st, st])[1];
+// skeletons and skulls: none unless asked for, room by room (0 up to what
+// the room's drawing has); the dungeons are the rooms that have them
+const ROOM_BONES = { dungeon1: 2, dungeon2: 4 };
+const roomBonesKey = (id, n, st) => "castleBones" + n + id + st;
 const CASTLE_ROOMS = { N: ["king", "greenhouse", "trap", "dungeon1", "dungeon2"], M: ["greenhouse", "king"], D: ["king", "trap", "dungeon1"] };
 const castleOf = o => {
   const id = CASTLE_DEFAULTS[o.castle] ? o.castle : "N", d = CASTLE_DEFAULTS[id];
-  return { id, flag: CASTLES.find(c => c[0] === id)[2],
+  const fl = CASTLE_FLAG_DEFAULTS[id], flagA = o["castleFlagA" + id] ?? fl[0];
+  return { id, flag: flagA, flagA, flagB: o["castleFlagB" + id] ?? fl[1],
+           flagStyle: CASTLE_FLAG_STYLES.some(([v]) => v === o["castleFlagStyle" + id]) ? o["castleFlagStyle" + id] : "alternate",
+           roof: o["castleRoof" + id] ?? "#3b5ea8",
            levels: Math.max(1, Math.min(5, Math.round(o["castleLevels" + id] ?? d.levels))),
            stone: o["castleStone" + id] ?? d.stone, trees: Math.max(0, Math.round(o["castleTrees" + id] ?? d.trees)),
            moat: Math.max(0, (o["castleMoat" + id] ?? d.moat) / 100),
            rooms: [...Array(Math.max(1, Math.min(6, Math.round(o["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].map((_, i) => {
              const st = o["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i] ?? "king";
-             return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king"; }) };
+             return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king"; }),
+           bones: [1, 2, 3, 4, 5, 6].map(n => Object.fromEntries(Object.entries(ROOM_BONES).map(([st, most]) =>
+             [st, Math.max(0, Math.min(most, Math.round(o[roomBonesKey(id, n, st)] ?? 0)))]))) };
+};
+// the fill for a castle's i-th flag or banner: its two colors in turn, or
+// both, as stripes or checkers (a pattern, its squares u across)
+const castleFlagFill = (K, i, u = 6) => K.flagStyle === "alternate" ? (i % 2 ? K.flagB : K.flagA) : `url(#cflag-${K.id}-${K.flagStyle}-${Math.round(u * 10)})`;
+const castleFlagDefs = (K, u = 6) => K.flagStyle === "alternate" ? "" :
+  `<defs><pattern id="cflag-${K.id}-${K.flagStyle}-${Math.round(u * 10)}" patternUnits="userSpaceOnUse" width="${f1(2 * u)}" height="${f1(2 * u)}">` +
+  `<rect width="${f1(2 * u)}" height="${f1(2 * u)}" fill="${K.flagA}"/>` +
+  (K.flagStyle === "stripes" ? `<rect x="${f1(u)}" width="${f1(u)}" height="${f1(2 * u)}" fill="${K.flagB}"/>`
+                             : `<rect width="${f1(u)}" height="${f1(u)}" fill="${K.flagB}"/><rect x="${f1(u)}" y="${f1(u)}" width="${f1(u)}" height="${f1(u)}" fill="${K.flagB}"/>`) + `</pattern></defs>`;
+// the owner's letter, readable on any banner: dark on a light one, white on
+// a dark one, outlined in the other; on stripes and checkers, on a round
+// badge of its own (the outline's color)
+const inkOn = hex => { const [r, g, b] = hexToRgb(hex).map(v => v / 255); return 0.299 * r + 0.587 * g + 0.114 * b > 0.6 ? ["#1f1f22", "#ffffff"] : ["#ffffff", "#1f1f22"]; };
+const castleLetter = (K, i, x, y, size, family = "sans-serif") => {
+  const [ink, edge] = inkOn(K.flagStyle === "alternate" ? (i % 2 ? K.flagB : K.flagA) : K.flagA);
+  return (K.flagStyle === "alternate" ? "" : `<circle cx="${f1(x)}" cy="${f1(y - size * 0.36)}" r="${f1(size * 0.62)}" fill="${edge}" stroke="${ink}" stroke-width="${f1(size * 0.06)}"/>`) + `<text x="${f1(x)}" y="${f1(y)}" text-anchor="middle" font-size="${f1(size)}" font-weight="bold" fill="${ink}" stroke="${edge}" stroke-width="${f1(size * 0.16)}" paint-order="stroke" stroke-linejoin="round" font-family="${family}">${K.id}</text>`;
 };
 
 // The fairy: wings in five styles and a tunic in five, each style with its
@@ -319,7 +350,9 @@ const DEFAULTS = {
                 houses: 4, bridges: 2, ladders: 3, leaves: 60, treeHouseSize: 100,
                 castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
                   [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
-                   ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"])])),
+                   ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, "alternate"], ["castleRoof" + id, "#3b5ea8"],
+                   ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
+                   ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0]))])),
                 castleRoom: 1,
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
@@ -3375,7 +3408,7 @@ function castleSvg(K = castleOf({})) {
       [...Array(Math.floor(w / 20))].map((_, i) => `<line x1="${x + 10 + i * 20 + (j % 2) * 10}" y1="${f1(y + 16 * j)}" x2="${x + 10 + i * 20 + (j % 2) * 10}" y2="${f1(y + 16 * (j + 1))}" stroke="${dark}" stroke-width="1" opacity="0.35"/>`).join("")).join("") +
     `<rect x="${x + w * 0.62}" y="${y}" width="${f1(w * 0.38)}" height="${h}" fill="#000000" opacity="0.1"/>`;
   // a cone roof's tiles and its sunny side
-  const tiles = (cx, base, hw, h) => [0.3, 0.55, 0.78].map(u => `<line x1="${f1(cx - hw * (1 - u))}" y1="${f1(base - h * u)}" x2="${f1(cx + hw * (1 - u))}" y2="${f1(base - h * u)}" stroke="#2c4a88" stroke-width="2"/>`).join("") +
+  const tiles = (cx, base, hw, h) => [0.3, 0.55, 0.78].map(u => `<line x1="${f1(cx - hw * (1 - u))}" y1="${f1(base - h * u)}" x2="${f1(cx + hw * (1 - u))}" y2="${f1(base - h * u)}" stroke="${darker(K.roof)}" stroke-width="2"/>`).join("") +
     `<polygon points="${f1(cx - hw)},${base} ${cx},${base - h} ${f1(cx - hw * 0.35)},${base}" fill="#ffffff" opacity="0.12"/>`;
   // ivy climbing a corner
   const ivy = (x, y, h, sd) => [...Array(Math.floor(h / 9))].map((_, j) => `<circle cx="${f1(x + sd * (4 + 6 * r(j, 7 + sd)))}" cy="${f1(y - j * 9)}" r="${f1(5 + 3 * r(j, 9))}" fill="${["#3c8a3e", "#2f7d32", "#4a9a46"][j % 3]}"/>`).join("");
@@ -3388,29 +3421,29 @@ function castleSvg(K = castleOf({})) {
   // the moat's reflection of the walls, wavering
   const shine = m <= 0 ? "" : `<rect x="-110" y="${f1(cy - ry + 6)}" width="220" height="${f1(Math.min(30, ry))}" fill="${stone}" opacity="0.25"/>` +
     [...Array(5)].map((_, j) => `<line x1="${f1(-90 + j * 40)}" y1="${f1(cy - ry + 12 + j * 3)}" x2="${f1(-70 + j * 40)}" y2="${f1(cy - ry + 12 + j * 3)}" stroke="#ffffff" stroke-width="2" opacity="0.5"/>`).join("");
-  return trees + mound + moat + shine + pads +
+  return castleFlagDefs(K, 4) + trees + mound + moat + shine + pads +
     `<rect x="-120" y="${-wallH}" width="240" height="${wallH}" fill="${stone}" stroke="${dark}" stroke-width="3"/>` + teeth(-120, 240, -wallH) +
     [-1, 1].map(sd => `<rect x="${sd * 150 - 30}" y="${-towerH}" width="60" height="${towerH}" fill="${stone}" stroke="${dark}" stroke-width="3"/>` +
       courses(sd * 150 - 30, -towerH, 60, towerH) + teeth(sd * 150 - 34, 68, -towerH + 2) +
-      `<polygon points="${sd * 150 - 38},${-towerH} ${sd * 150},${-towerH - 70} ${sd * 150 + 38},${-towerH}" fill="#3b5ea8"/>` + tiles(sd * 150, -towerH, 38, 70) +
-      `<line x1="${sd * 150}" y1="${-towerH - 70}" x2="${sd * 150}" y2="${-towerH - 100}" stroke="#555" stroke-width="3"/><polygon points="${sd * 150},${-towerH - 100} ${sd * 150 + 26},${-towerH - 92} ${sd * 150},${-towerH - 84}" fill="${K.flag}"/>` +
+      `<polygon points="${sd * 150 - 38},${-towerH} ${sd * 150},${-towerH - 70} ${sd * 150 + 38},${-towerH}" fill="${K.roof}"/>` + tiles(sd * 150, -towerH, 38, 70) +
+      `<line x1="${sd * 150}" y1="${-towerH - 70}" x2="${sd * 150}" y2="${-towerH - 100}" stroke="#555" stroke-width="3"/><polygon points="${sd * 150},${-towerH - 100} ${sd * 150 + 26},${-towerH - 92} ${sd * 150},${-towerH - 84}" fill="${castleFlagFill(K, 1, 4)}"/>` +
       [...Array(L)].map((_, j) => `<rect x="${sd * 150 - 8}" y="${-towerH + 40 + 40 * j}" width="16" height="26" rx="8" fill="${j % 2 ? "#3a3a48" : "#ffd66b"}"/>`).join("") +
       ivy(sd * 150 - sd * 30, 0, Math.min(towerH * 0.6, 120), -sd)).join("") +
     `<rect x="-40" y="${keepTop}" width="80" height="${-keepTop - wallH}" fill="${stone}" stroke="${dark}" stroke-width="3"/>` + teeth(-40, 80, keepTop) +
     courses(-40, keepTop, 80, -keepTop - wallH) +
     [...Array(Math.max(0, L - 1))].map((_, j) => `<rect x="-8" y="${keepTop + 24 + 34 * j}" width="16" height="22" rx="8" fill="#3a3a48"/>`).join("") +
     // (the keep's banner: its owner's letter, in its owner's color)
-    `<polygon points="-48,${keepTop} 0,${keepTop - 70} 48,${keepTop}" fill="#3b5ea8"/>` + tiles(0, keepTop, 48, 70) + `<line x1="0" y1="${keepTop - 70}" x2="0" y2="${keepTop - 120}" stroke="#555" stroke-width="3"/>` +
-    `<polygon points="0,${keepTop - 120} 46,${keepTop - 108} 0,${keepTop - 96}" fill="${K.flag}"/>` +
-    `<text x="15" y="${keepTop - 102}" text-anchor="middle" font-size="16" font-weight="bold" fill="#ffffff" font-family="sans-serif">${K.id}</text>` +
+    `<polygon points="-48,${keepTop} 0,${keepTop - 70} 48,${keepTop}" fill="${K.roof}"/>` + tiles(0, keepTop, 48, 70) + `<line x1="0" y1="${keepTop - 70}" x2="0" y2="${keepTop - 120}" stroke="#555" stroke-width="3"/>` +
+    `<polygon points="0,${keepTop - 120} 46,${keepTop - 108} 0,${keepTop - 96}" fill="${castleFlagFill(K, 0, 4)}"/>` +
+    castleLetter(K, 0, 15, keepTop - 102, 16) +
     `<path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z" fill="#3a2a1a"/>` + [-20, -7, 7, 20].map(x => `<line x1="${x}" y1="-80" x2="${x}" y2="0" stroke="#6a5a4a" stroke-width="3"/>`).join("") +
     [-80, 80].map(x => `<rect x="${x - 8}" y="${-wallH + 30}" width="16" height="24" rx="8" fill="#3a3a48"/>`).join("") +
     // banners hanging from the wall, in the owner's color, the owner's letter on them
     // (from just under the battlements, as long as the wall is tall, and
     // never down to the ground or the moat)
     (() => { const bl = Math.min(wallH * 0.55, wallH - 22), bt = -wallH + 4;
-      return [-1, 1].map(sd => `<path d="M${sd * 102 - 13} ${bt} h26 v${f1(bl)} l-13 -9 l-13 9 Z" fill="${K.flag}" stroke="#e8b923" stroke-width="1.5"/>` +
-        `<text x="${sd * 102}" y="${f1(bt + Math.min(bl * 0.55, 34) + 6)}" text-anchor="middle" font-size="16" font-weight="bold" fill="#e8b923" font-family="serif">${K.id}</text>`).join(""); })() +
+      return [-1, 1].map((sd, i) => `<path d="M${sd * 102 - 13} ${bt} h26 v${f1(bl)} l-13 -9 l-13 9 Z" fill="${castleFlagFill(K, i, 4)}" stroke="#e8b923" stroke-width="1.5"/>` +
+        castleLetter(K, i, sd * 102, bt + Math.min(bl * 0.55, 34) + 6, 16, "serif")).join(""); })() +
     // torches either side of the gate
     [-1, 1].map(sd => `<rect x="${sd * 46 - 2}" y="-62" width="4" height="12" fill="#3a3a44"/><circle cx="${sd * 46}" cy="-68" r="12" fill="#ffcf6b" opacity="0.35"/>` +
       `<path d="M${sd * 46} -76 q5 6 0 10 q-5 -4 0 -10 Z" fill="#ffb53b"/>`).join("") +
@@ -3443,7 +3476,7 @@ const CLEARING_THINGS = [
   // its houses, bridges and ladders; the house its size; the witch's hut its
   // legs and its skulls)
   { key: "seeCastle", at: [0.1, 120], size: 0.42, foot: 62, draw: o => { const K = castleOf(o);
-      return part("far-castle", [K.id, K.levels, K.stone, K.trees, K.moat], () => castleSvg(K)); }, to: "castle" },
+      return part("far-castle", [K.id, K.levels, K.stone, K.trees, K.moat, K.flagA, K.flagB, K.flagStyle, K.roof], () => castleSvg(K)); }, to: "castle" },
   { key: "seeTree", at: [-0.2, 95], size: 0.25, foot: 6, grow: o => (o.treeSize ?? 100) / 100, draw: (o, c) => unmarked(treeInner(c)), to: "treehouse" },
   { key: "seeHouse", at: [-0.36, 70], size: 0.3, foot: 4, grow: o => (o.houseSize ?? 100) / 100, draw: () => part("house-building", [], houseBuildingSvg), to: "house" },
   { key: "seeWitch", at: [0.25, 95], size: 0.52, foot: 108, draw: o => part("far-witch", [!!o.chickenLegs, o.legSize ?? 100, o.skullMax ?? 300, o.skullEye ?? 100, o.eyeGlow ?? 70], () => farWitchSvg(o)), to: "witch" },
@@ -3539,19 +3572,20 @@ function castleScene(c) {
     return t + land(g - 80 * k, 6, "#8bc56a", 1.1) + land(g - 30 * k, 3, "#7cc25a", 0.6);
   });
   // the castle, from the same settings as the clearing's
-  s += SEP + part("castle-near", [c.F, K.id, K.levels, K.stone, K.trees, K.moat], () => `<g ${tf(0, foot, z)}>${castleSvg(K)}</g>`);
+  s += SEP + part("castle-near", [c.F, K.id, K.levels, K.stone, K.trees, K.moat, K.flagA, K.flagB, K.flagStyle, K.roof], () => `<g ${tf(0, foot, z)}>${castleSvg(K)}</g>`);
   // the road up to the drawbridge, pennants on poles either side of it, the
   // ruts of carts in it, stones along its edges
-  s += SEP + part("castle-road", [c.F, K.id, K.moat, K.levels], () => {
+  s += SEP + part("castle-road", [c.F, K.id, K.moat, K.levels, K.flagA, K.flagB, K.flagStyle], () => {
     const rw = 44 * z, bw2 = W * 0.17;
     let t = `<path d="M${P(-rw, bridgeEnd)} L${P(rw, bridgeEnd)} L${P(bw2, y1 + pad)} L${P(-bw2, y1 + pad)} Z" fill="#cdb487"/>` +
       [-1, 1].map(e => `<path d="M${P(e * rw * 0.45, bridgeEnd)} L${P(e * bw2 * 0.45, y1 + pad)}" stroke="#b39a6c" stroke-width="${f1(4 * k)}"/>`).join("");
     for (let i = 0; i < 14; i++) { const u = (i + R(i, 430)) / 14, e = i % 2 ? 1 : -1, x = e * (rw + (bw2 - rw) * u) * 1.02, y = bridgeEnd + (y1 - bridgeEnd) * u;
       t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((5 + 6 * u) * k)}" ry="${f1((3 + 3 * u) * k)}" fill="${R(i, 431) < 0.5 ? "#9a9488" : "#b0aa9c"}"/>`; }
+    t += castleFlagDefs(K, 6 * k);
     for (const e of [-1, 1]) {
       const px = e * (rw + 30 * k), py = bridgeEnd + 30 * k, h = 120 * k;
       t += `<rect x="${f1(px - 3 * k)}" y="${f1(py - h)}" width="${f1(6 * k)}" height="${f1(h)}" fill="#6e4a2c"/><circle cx="${f1(px)}" cy="${f1(py - h)}" r="${f1(5 * k)}" fill="#e8b923"/>` +
-           `<path d="M${P(px + 3 * k, py - h + 6 * k)} q${f1(e * 30 * k)} ${f1(6 * k)} ${f1(e * 56 * k)} ${f1(14 * k)} q${f1(-e * 26 * k)} ${f1(6 * k)} ${f1(-e * 56 * k)} ${f1(16 * k)} Z" fill="${K.flag}">` +
+           `<path d="M${P(px + 3 * k, py - h + 6 * k)} q${f1(e * 30 * k)} ${f1(6 * k)} ${f1(e * 56 * k)} ${f1(14 * k)} q${f1(-e * 26 * k)} ${f1(6 * k)} ${f1(-e * 56 * k)} ${f1(16 * k)} Z" fill="${castleFlagFill(K, e < 0 ? 0 : 1, 6 * k)}">` +
            `<animateTransform attributeName="transform" type="skewY" values="0;${e * 4};0;${-e * 3};0" dur="3s" repeatCount="indefinite" additive="sum"/></path>`;
     }
     return t;
@@ -3790,15 +3824,20 @@ function trapRoomSvg(c, K, pits) {
         return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((10 + 6 * R(j, 921 + i)) * k)}" ry="${f1(6 * k)}" fill="${R(j, 922) < 0.5 ? "#6b625a" : "#5a524a"}"/>`; }).join("") +
       (to ? plankSign(cx, cy - ry - 34 * k, k, `🕳️ ${roomLabel(K.rooms[to - 1]).split(" ")[0]} ${to}`) : "") + `</g>`;
   });
-  // a helmet someone dropped by the left pit, a bone by the right one
+  // a helmet someone dropped by the left pit, a sword by the right one
   t += `<path d="M${P(-W * 0.36, floor + 70 * k)} Q${P(-W * 0.36, floor + 40 * k)} ${P(-W * 0.33, floor + 40 * k)} Q${P(-W * 0.3, floor + 40 * k)} ${P(-W * 0.3, floor + 70 * k)} Z" fill="#9aa0aa" stroke="#5a5f6a" stroke-width="${f1(2 * k)}"/>` +
-       `<line x1="${f1(W * 0.36)}" y1="${f1(floor + 120 * k)}" x2="${f1(W * 0.42)}" y2="${f1(floor + 112 * k)}" stroke="#efe8d6" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`;
+       `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.42)}" y2="${f1(floor + 110 * k)}" stroke="#c9ced6" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
+       `<line x1="${f1(W * 0.33 - 5 * k)}" y1="${f1(floor + 118 * k)}" x2="${f1(W * 0.33 + 4 * k)}" y2="${f1(floor + 131 * k)}" stroke="#8b5e34" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
+       `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.31)}" y2="${f1(floor + 127 * k)}" stroke="#6e4a2c" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`;
   return t;
 }
 // a dungeon: cold stone, wet, a barred window high up with moonlight coming
-// through, chains and shackles on the walls, skeletons hanging, straw, a
-// bucket, bones, a rat; water dripping
-function dungeonSvg(c, K, deep) {
+// through, chains and shackles on the walls, straw, a bucket, a rat; water
+// dripping. Skeletons only as many as asked for (`bones`, none at first),
+// the least scary first: in the deep dungeon the skull under the candle,
+// the one sitting in the cell, the one curled in the cage, the one hanging;
+// in the first, the two hanging (and the bones on the floor come with them)
+function dungeonSvg(c, K, deep, bones = 0) {
   const { x0, x1, y1, W, k, R, P } = c, { floor, top, bw } = roomFrame(c);
   let t = roomShell(c, deep ? ROOM_TONE.dungeon2 : ROOM_TONE.dungeon1, { moss: deep ? "#3f6b3a" : "#4a5a4a", floor: deep ? "#3a3e36" : "#45474e" });
   // the barred window, high in the back wall, and its beam of moonlight
@@ -3809,34 +3848,37 @@ function dungeonSvg(c, K, deep) {
        `<rect x="${f1(wx - 32 * k)}" y="${f1(wy - 24 * k)}" width="${f1(64 * k)}" height="${f1(52 * k)}" fill="none" stroke="#2a2a32" stroke-width="${f1(5 * k)}"/>`;
   t += torchSvg(deep ? -bw * 0.7 : bw * 0.7, floor - 200 * k, k, deep ? 2 : 1);
   // skeletons hanging by their wrists from the back wall, chains to their shackles
-  const hung = deep ? [[-bw * 0.15, 1]] : [[-bw * 0.05, 1.1], [bw * 0.3, 1]];
-  for (const [hx, z] of hung) {
+  // (or, with none, the chains hanging empty, an open cuff at each end)
+  const hung = deep ? [[-bw * 0.15, 1, bones >= 4]] : [[-bw * 0.05, 1.1, bones >= 1], [bw * 0.3, 1, bones >= 2]];
+  for (const [hx, z, shown] of hung) {
     const s = 2.1 * k * z, hy = floor - 230 * k * z;
     t += shackle(hx - 20 * s, hy - 40 * s, s) + shackle(hx + 20 * s, hy - 40 * s, s) + chainSvg(hx - 20 * s, hy - 32 * s, 14 * s, s) + chainSvg(hx + 20 * s, hy - 32 * s, 14 * s, s) +
-         skeletonSvg(hx, hy, s, "hang");
+         (shown ? skeletonSvg(hx, hy, s, "hang") : [-1, 1].map(e => `<path d="M${f1(hx + e * 20 * s - 4 * s)} ${f1(hy - 18 * s)} a${f1(4 * s)} ${f1(4 * s)} 0 1 0 ${f1(8 * s)} 0" fill="none" stroke="#5a5a66" stroke-width="${f1(1.8 * s)}"/>`).join(""));
   }
   // empty shackles and chains along the walls
   for (const sx of deep ? [-bw * 0.45, bw * 0.05] : [-bw * 0.75, bw * 0.55]) t += shackle(sx, floor - 150 * k, 2 * k) + chainSvg(sx, floor - 140 * k, 90 * k, 2 * k);
   if (deep) {
     // a cage hanging from the ceiling, a skeleton curled inside
     const cx = W * 0.27, cy = top + 70 * k, cw = 70 * k, ch = 120 * k;
-    t += chainSvg(cx, top - 40 * k, 110 * k, 2 * k) + skeletonSvg(cx, cy + 40 * k, 1.5 * k, "cage") +
+    t += chainSvg(cx, top - 40 * k, 110 * k, 2 * k) + (bones >= 3 ? skeletonSvg(cx, cy + 40 * k, 1.5 * k, "cage") : "") +
          `<path d="M${P(cx - cw / 2, cy + ch)} V${f1(cy + 20 * k)} Q${P(cx, cy - 20 * k)} ${P(cx + cw / 2, cy + 20 * k)} V${f1(cy + ch)} Z" fill="none" stroke="#3a3a44" stroke-width="${f1(4 * k)}"/>` +
          [...Array(6)].map((_, j) => `<line x1="${f1(cx - cw / 2 + cw * j / 5)}" y1="${f1(cy + 8 * k)}" x2="${f1(cx - cw / 2 + cw * j / 5)}" y2="${f1(cy + ch)}" stroke="#3a3a44" stroke-width="${f1(3 * k)}"/>`).join("") +
          `<ellipse cx="${f1(cx)}" cy="${f1(cy + ch)}" rx="${f1(cw / 2 + 4 * k)}" ry="${f1(8 * k)}" fill="#2a2a32"/>`;
     // a cell across the left: iron bars, a skeleton sitting chained inside
     const cl = -W * 0.5, cr = -W * 0.26;
-    t += skeletonSvg(-W * 0.38, floor + 10 * k, 2.2 * k, "sit") + shackle(-W * 0.38, floor - 20 * k, 2 * k) +
+    t += (bones >= 2 ? skeletonSvg(-W * 0.38, floor + 10 * k, 2.2 * k, "sit") : "") + shackle(-W * 0.38, floor - 20 * k, 2 * k) +
          [...Array(8)].map((_, j) => `<line x1="${f1(cl + (cr - cl) * j / 7)}" y1="${f1(top + 30 * k)}" x2="${f1(cl + (cr - cl) * j / 7)}" y2="${f1(floor + 150 * k)}" stroke="#2f2f38" stroke-width="${f1(6 * k)}"/>`).join("") +
          `<line x1="${f1(cl)}" y1="${f1(floor - 60 * k)}" x2="${f1(cr)}" y2="${f1(floor - 60 * k)}" stroke="#2f2f38" stroke-width="${f1(6 * k)}"/>`;
     // glowing mushrooms by the wall, a skull with a candle on it
     for (let i = 0; i < 7; i++) { const x = bw * (0.1 + 0.08 * i), y = floor + (8 + 6 * R(i, 940)) * k, h = (10 + 12 * R(i, 941)) * k;
       t += `<rect x="${f1(x - 1.5 * k)}" y="${f1(y - h)}" width="${f1(3 * k)}" height="${f1(h)}" fill="#cfe8c0"/><ellipse cx="${f1(x)}" cy="${f1(y - h)}" rx="${f1((6 + 4 * R(i, 942)) * k)}" ry="${f1(4 * k)}" fill="#7dff9a" opacity="0.85"/>`; }
-    // a skull on the floor, a candle burning on top of it
+    // a candle burning on the floor: on a skull, or (with none) a stone
     const sx = W * 0.06, sy = floor + 40 * k, s2 = 1.8 * k;
     t += `<ellipse cx="${f1(sx)}" cy="${f1(sy + 24 * s2)}" rx="${f1(14 * s2)}" ry="${f1(3 * s2)}" fill="#000000" opacity="0.3"/>` +
-         `<path d="M${f1(sx - 10 * s2)} ${f1(sy + 12 * s2)} Q${f1(sx - 11 * s2)} ${f1(sy)} ${f1(sx)} ${f1(sy)} Q${f1(sx + 11 * s2)} ${f1(sy)} ${f1(sx + 10 * s2)} ${f1(sy + 12 * s2)} L${f1(sx + 6 * s2)} ${f1(sy + 22 * s2)} L${f1(sx - 6 * s2)} ${f1(sy + 22 * s2)} Z" fill="#efe8d6" stroke="#b9b19c" stroke-width="${f1(1.2 * s2)}"/>` +
-         [-1, 1].map(e => `<ellipse cx="${f1(sx + e * 4.5 * s2)}" cy="${f1(sy + 11 * s2)}" rx="${f1(3 * s2)}" ry="${f1(3.4 * s2)}" fill="#2a2420"/>`).join("") +
+         (bones >= 1
+           ? `<path d="M${f1(sx - 10 * s2)} ${f1(sy + 12 * s2)} Q${f1(sx - 11 * s2)} ${f1(sy)} ${f1(sx)} ${f1(sy)} Q${f1(sx + 11 * s2)} ${f1(sy)} ${f1(sx + 10 * s2)} ${f1(sy + 12 * s2)} L${f1(sx + 6 * s2)} ${f1(sy + 22 * s2)} L${f1(sx - 6 * s2)} ${f1(sy + 22 * s2)} Z" fill="#efe8d6" stroke="#b9b19c" stroke-width="${f1(1.2 * s2)}"/>` +
+             [-1, 1].map(e => `<ellipse cx="${f1(sx + e * 4.5 * s2)}" cy="${f1(sy + 11 * s2)}" rx="${f1(3 * s2)}" ry="${f1(3.4 * s2)}" fill="#2a2420"/>`).join("")
+           : `<path d="M${f1(sx - 12 * s2)} ${f1(sy + 23 * s2)} Q${f1(sx - 13 * s2)} ${f1(sy + 4 * s2)} ${f1(sx - 2 * s2)} ${f1(sy + 1 * s2)} Q${f1(sx + 12 * s2)} ${f1(sy + 2 * s2)} ${f1(sx + 12 * s2)} ${f1(sy + 23 * s2)} Z" fill="#6b625a" stroke="#4a4038" stroke-width="${f1(1.2 * s2)}"/>`) +
          `<rect x="${f1(sx - 3 * s2)}" y="${f1(sy - 14 * s2)}" width="${f1(6 * s2)}" height="${f1(15 * s2)}" fill="#f6efd8"/>` +
          `<path d="M${f1(sx + 3 * s2)} ${f1(sy - 14 * s2)} q${f1(2 * s2)} ${f1(5 * s2)} 0 ${f1(9 * s2)}" fill="none" stroke="#f6efd8" stroke-width="${f1(2 * s2)}"/>` +
          `<circle cx="${f1(sx)}" cy="${f1(sy - 20 * s2)}" r="${f1(16 * s2)}" fill="url(#bg-glow)"/>` +
@@ -3850,7 +3892,7 @@ function dungeonSvg(c, K, deep) {
          [0.75, 0.95].map(u => `<line x1="${f1(W * 0.17 + 1 * k)}" y1="${f1(floor + 60 * k + 50 * k * u)}" x2="${f1(W * 0.25 - 1 * k)}" y2="${f1(floor + 60 * k + 50 * k * u)}" stroke="#3a3a44" stroke-width="${f1(3 * k)}"/>`).join("") +
          `<path d="M${P(W * 0.05, floor + 140 * k)} q${f1(14 * k)} ${f1(-14 * k)} ${f1(30 * k)} 0 q${f1(-6 * k)} ${f1(6 * k)} ${f1(-30 * k)} 0 Z" fill="#6a6a72"/><path d="M${P(W * 0.05, floor + 140 * k)} q${f1(-20 * k)} ${f1(4 * k)} ${f1(-30 * k)} ${f1(-8 * k)}" fill="none" stroke="#8a8a92" stroke-width="${f1(2 * k)}"/>` +
          `<circle cx="${f1(W * 0.05 + 26 * k)}" cy="${f1(floor + 134 * k)}" r="${f1(1.6 * k)}" fill="#111"/>`;
-    for (let i = 0; i < 4; i++) { const x = W * (-0.1 + 0.12 * i), y = floor + (90 + 40 * R(i, 960)) * k, a = R(i, 961) * 3;
+    if (bones >= 1) for (let i = 0; i < 4; i++) { const x = W * (-0.1 + 0.12 * i), y = floor + (90 + 40 * R(i, 960)) * k, a = R(i, 961) * 3;
       t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + Math.cos(a) * 26 * k)}" y2="${f1(y + Math.sin(a) * 8 * k)}" stroke="#efe8d6" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>`; }
   }
   // water dripping from the ceiling into a puddle
@@ -3867,8 +3909,8 @@ function dungeonSvg(c, K, deep) {
 // open door, the hallway outside, torches going off along it
 function kingRoomSvg(c, K) {
   const { x0, x1, y1, W, k, R, P } = c, { floor, top, bw, vy, out } = roomFrame(c);
-  const flag = K.flag, gold = "#e8b923", red = "#a3122a";
-  let t = roomShell(c, ROOM_TONE.king, {});
+  const flag = K.flagA, gold = "#e8b923", red = "#a3122a";
+  let t = roomShell(c, ROOM_TONE.king, {}) + castleFlagDefs(K, 12 * k);
   // the stained-glass window high in the middle, its panes in colors
   const wy = top + 30 * k, ww = 90 * k, wh = 120 * k;
   t += `<path d="M${P(-ww / 2, wy + wh)} V${f1(wy + ww / 2)} A${f1(ww / 2)} ${f1(ww / 2)} 0 0 1 ${P(ww / 2, wy + ww / 2)} V${f1(wy + wh)} Z" fill="#2a3a5a" stroke="#3a3530" stroke-width="${f1(8 * k)}"/>` +
@@ -3876,19 +3918,19 @@ function kingRoomSvg(c, K) {
          return `<rect x="${f1(cx - ww / 7)}" y="${f1(cy - (wh - ww / 2) / 9)}" width="${f1(ww * 2 / 7)}" height="${f1((wh - ww / 2) * 2 / 9)}" fill="${["#e53935", "#3b82f6", "#f2c12e", "#22c55e", "#9b59b6"][(j * 7) % 5]}" opacity="0.85"/>`; }).join("") +
        `<circle cx="0" cy="${f1(wy + ww / 2)}" r="${f1(ww / 4)}" fill="${flag}" opacity="0.9"/>`;
   // banners either side, the owner's color, a gold crown and the owner's letter
-  for (const sd of [-1, 1]) {
+  for (const [i, sd] of [-1, 1].entries()) {
     const bx = sd * bw * 0.42, by = top + 20 * k, bwid = 70 * k, bh = 220 * k;
     t += `<rect x="${f1(bx - bwid / 2 - 6 * k)}" y="${f1(by - 6 * k)}" width="${f1(bwid + 12 * k)}" height="${f1(8 * k)}" rx="${f1(3 * k)}" fill="#5e3d22"/>` +
-         `<path d="M${P(bx - bwid / 2, by)} H${f1(bx + bwid / 2)} V${f1(by + bh)} L${P(bx, by + bh - 30 * k)} L${P(bx - bwid / 2, by + bh)} Z" fill="${flag}" stroke="${gold}" stroke-width="${f1(4 * k)}"/>` +
-         `<path d="M${P(bx - 20 * k, by + 70 * k)} L${P(bx - 20 * k, by + 46 * k)} L${P(bx - 10 * k, by + 58 * k)} L${P(bx, by + 40 * k)} L${P(bx + 10 * k, by + 58 * k)} L${P(bx + 20 * k, by + 46 * k)} L${P(bx + 20 * k, by + 70 * k)} Z" fill="${gold}"/>` +
-         `<text x="${f1(bx)}" y="${f1(by + 130 * k)}" text-anchor="middle" font-size="${f1(44 * k)}" font-weight="bold" fill="${gold}" font-family="serif">${K.id}</text>`;
+         `<path d="M${P(bx - bwid / 2, by)} H${f1(bx + bwid / 2)} V${f1(by + bh)} L${P(bx, by + bh - 30 * k)} L${P(bx - bwid / 2, by + bh)} Z" fill="${castleFlagFill(K, i, 12 * k)}" stroke="${gold}" stroke-width="${f1(4 * k)}"/>` +
+         `<path d="M${P(bx - 20 * k, by + 70 * k)} L${P(bx - 20 * k, by + 46 * k)} L${P(bx - 10 * k, by + 58 * k)} L${P(bx, by + 40 * k)} L${P(bx + 10 * k, by + 58 * k)} L${P(bx + 20 * k, by + 46 * k)} L${P(bx + 20 * k, by + 70 * k)} Z" fill="${gold}" stroke="#7a5a0a" stroke-width="${f1(2.5 * k)}" stroke-linejoin="round"/>` +
+         castleLetter(K, i, bx, by + 130 * k, 44 * k, "serif");
   }
   // crossed swords and a shield on the wall, either side of the window
   for (const sd of [-1, 1]) {
     const sx = sd * bw * 0.2, sy = top + 120 * k;
     t += [-1, 1].map(e => `<line x1="${f1(sx - e * 34 * k)}" y1="${f1(sy - 34 * k)}" x2="${f1(sx + e * 34 * k)}" y2="${f1(sy + 34 * k)}" stroke="#c8ccd6" stroke-width="${f1(5 * k)}"/>` +
            `<line x1="${f1(sx + e * 22 * k)}" y1="${f1(sy + 18 * k)}" x2="${f1(sx + e * 38 * k)}" y2="${f1(sy + 30 * k)}" stroke="${gold}" stroke-width="${f1(6 * k)}"/>`).join("") +
-         `<path d="M${P(sx - 22 * k, sy - 22 * k)} H${f1(sx + 22 * k)} V${f1(sy + 6 * k)} Q${P(sx + 22 * k, sy + 30 * k)} ${P(sx, sy + 38 * k)} Q${P(sx - 22 * k, sy + 30 * k)} ${P(sx - 22 * k, sy + 6 * k)} Z" fill="${sd < 0 ? flag : "#3b5ea8"}" stroke="${gold}" stroke-width="${f1(3 * k)}"/>`;
+         `<path d="M${P(sx - 22 * k, sy - 22 * k)} H${f1(sx + 22 * k)} V${f1(sy + 6 * k)} Q${P(sx + 22 * k, sy + 30 * k)} ${P(sx, sy + 38 * k)} Q${P(sx - 22 * k, sy + 30 * k)} ${P(sx - 22 * k, sy + 6 * k)} Z" fill="${sd < 0 ? K.flagA : K.flagB}" stroke="${gold}" stroke-width="${f1(3 * k)}"/>`;
   }
   // the red carpet, gold-edged, from us to the dais
   const [ca, cy] = out(-60 * k, floor, y1 + 40 * k);
@@ -4152,9 +4194,10 @@ function castleroomScene(c) {
   // where a trap room's pits lead: the castle's dungeons (the first, then the deep one)
   const d1 = K.rooms.indexOf("dungeon1") + 1, d2 = K.rooms.indexOf("dungeon2") + 1;
   const pits = [d1 || d2, d2 || d1];
-  const draw = { trap: () => trapRoomSvg(c, K, pits), dungeon1: () => dungeonSvg(c, K, false), dungeon2: () => dungeonSvg(c, K, true),
+  const bones = K.bones[n - 1][style] ?? 0;
+  const draw = { trap: () => trapRoomSvg(c, K, pits), dungeon1: () => dungeonSvg(c, K, false, bones), dungeon2: () => dungeonSvg(c, K, true, bones),
                  king: () => kingRoomSvg(c, K), greenhouse: () => greenhouseSvg(c, K) }[style];
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : ""], draw);
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle], draw);
   s += SEP + part("croom-ways", [c.F, K.id, n, style, K.rooms.join()], () => castleWays(c, K, n, style));
   return s;
 }
@@ -7506,8 +7549,13 @@ const TABS = [
       ["color", "castleStone" + id, `🪨 ${id}'s castle: stone`, CASTLE_STONES],
       ["range", "castleTrees" + id, `🌳 ${id}'s castle: trees nearby`, 0, 16, 0, 12],
       ["range", "castleMoat" + id, `🌊 ${id}'s castle: moat and drawbridge`, 0, 250, 0, 200],
+      ["color", "castleFlagA" + id, `🚩 ${id}'s castle: flag color 1`, CASTLE_FLAG_COLORS],
+      ["color", "castleFlagB" + id, `🚩 ${id}'s castle: flag color 2`, CASTLE_FLAG_COLORS],
+      ["choice", "castleFlagStyle" + id, `🚩 ${id}'s castle: the two colors`, CASTLE_FLAG_STYLES],
+      ["color", "castleRoof" + id, `🔺 ${id}'s castle: roofs`, CASTLE_ROOFS],
       ["range", "castleRooms" + id, `🚪 ${id}'s castle: how many rooms`, 1, 6, 1, 6],
-      ...[1, 2, 3, 4, 5, 6].map(n => ["choice", "castleRoom" + n + id, `🚪 ${id}'s castle: room ${n}`, CASTLE_ROOM_CHOICES])]),
+      ...[1, 2, 3, 4, 5, 6].flatMap(n => [["choice", "castleRoom" + n + id, `🚪 ${id}'s castle: room ${n}`, CASTLE_ROOM_CHOICES],
+        ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), `💀 ${id}'s castle: room ${n}: skeletons (0 = none)`, 0, most, 0, 0])])]),
     ["toggle", "seeHealer", "🌿 see the healer's hut"],
     // inside the witch's hut (the witch herself: drag her)
     ["range", "witchSize", "🧙 the witch's size (drag her to move her)", 30, 250, 70, 150],
@@ -7676,11 +7724,17 @@ const SHOWN_WHEN = {
   "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),
   "background.castle": b => b.kind === "clearing" || b.kind === "castle" || b.kind === "castleroom",
-  ...Object.fromEntries(CASTLES.flatMap(([id]) => ["castleLevels", "castleStone", "castleTrees", "castleMoat"].map(key =>
+  ...Object.fromEntries(CASTLES.flatMap(([id]) => ["castleLevels", "castleStone", "castleTrees", "castleMoat", "castleRoof"].map(key =>
     ["background." + key + id, b => (b.kind === "clearing" || b.kind === "castle") && (b.castle ?? "N") === id]))),
+  // (the flags show in the king's room too: its banners and shields)
+  ...Object.fromEntries(CASTLES.flatMap(([id]) => ["castleFlagA", "castleFlagB", "castleFlagStyle"].map(key =>
+    ["background." + key + id, b => (b.kind === "clearing" || b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id]))),
   ...Object.fromEntries(CASTLES.flatMap(([id]) => [["background.castleRooms" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id],
     ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoom" + n + id,
-      b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id && n <= (b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)])])),
+      b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id && n <= (b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)]),
+    ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => ["background." + roomBonesKey(id, n, st),
+      b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id && n <= (b["castleRooms" + id] ?? CASTLE_ROOMS[id].length) &&
+           (b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1] ?? "king") === st]))])),
   ...Object.fromEntries(["witchSize", "cauldronSize", "crows", "frogs", "snakes"].map(key => ["background." + key, b => b.kind === "witchroom"])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
