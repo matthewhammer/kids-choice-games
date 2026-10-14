@@ -6191,6 +6191,28 @@ const SLIDER_STYLE = { fingers: "human", alienFingers: "alien", starPoints: "sta
 const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
 // a hand's slider shows when the hand wears its style
 const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
+// The places, and the kinds of place they are, for the Background tab's
+// two rows (as the music's): every place is of exactly one kind.
+const PLACES = [["none", "none"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"],
+  ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
+  ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
+  ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
+  ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
+  ["clearing", "🌲 forest clearing"], ["mountains", "⛰️ mountain trail"],
+  ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
+  ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
+  ["woodpath", "🥾 path through the woods"]];
+const PLACE_GROUPS = [
+  ["woods", "🌲 woods", ["forest", "clearing", "woodpath", "mountains"]],
+  ["water", "💧 water", ["lake", "beach", "underwater", "waterfall"]],
+  ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
+  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
+  ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
+];
+const groupOfPlace = v => v === "none" ? "none" : (PLACE_GROUPS.find(g => g[2].includes(v)) || [null])[0];
+console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g => g[2]).length === PLACES.length - 1,
+               "every place is of exactly one kind");
+
 const TABS = [
   ["😀 Face", "face", [
     ["color", "color", "skin & head color", SKINS],
@@ -6347,15 +6369,7 @@ const TABS = [
     ["color", "bootColor", "👢 boots & belt color", ["#1f1f22", "#6a2c91", "#4a2c17", "#b71c1c", "#2e7d32", "#ffffff"]],
   ]],
   ["🏞️ Background", "background", [
-    ["choice", "kind", "background", [["none", "none"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"],
-                                      ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
-                                      ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
-                                      ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
-                                      ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
-                                      ["clearing", "🌲 forest clearing"], ["mountains", "⛰️ mountain trail"],
-                                      ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
-                                      ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
-                                      ["woodpath", "🥾 path through the woods"]]],
+    ["places", "kind", "background", PLACES],
     ["range", "figSize", "🧍 size in the scene", 10, 1000, 100, 100],
     ["place", "figPos", "🧍 place in the scene (or drag the figure)"],
     // the witch's woods: the hut behind the fence, on chicken legs or not
@@ -6809,6 +6823,38 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     });
     box.append(row);
     syncs.push(() => { for (const [v, b] of bs) b.setAttribute("aria-pressed", state[part][key] === v); });
+  } else if (kind === "places") {
+    // two rows, as the music's: the kind of place (or none), then that
+    // kind's places, each in a dashed box with its name; picking a kind goes
+    // to its first place, unless the place now is already of that kind
+    const kinds = el("div", { class: "row" }), places = el("div", { class: "row" });
+    const placeCap = el("div", { class: "cap" });
+    const kindBox = el("div", { class: "chipset" }, [el("div", { class: "cap" }, "kind of place"), kinds]);
+    const placeBox = el("div", { class: "chipset" }, [placeCap, places]);
+    const label = v => (rest[0].find(([x]) => x === v) || [v, v])[1];
+    const kindBtns = [["none", "⬜ no background"], ...PLACE_GROUPS.map(([g, text]) => [g, text])].map(([g, text]) => {
+      const b = el("button", { onclick: () => {
+        if (g === "none") return set(part, key, "none");
+        const list = PLACE_GROUPS.find(x => x[0] === g)[2];
+        if (!list.includes(state[part][key])) set(part, key, list[0]);
+      } }, text);
+      kinds.append(b); return [g, b];
+    });
+    box.append(kindBox, placeBox);
+    let shownKind, placeBtns = [];
+    syncs.push(() => {
+      const now = state[part][key], g = groupOfPlace(now);
+      for (const [v, b] of kindBtns) b.setAttribute("aria-pressed", v === g);
+      if (g !== shownKind) {
+        shownKind = g;
+        const list = g && g !== "none" ? PLACE_GROUPS.find(x => x[0] === g)[2] : [];
+        placeBtns = list.map(id => [id, el("button", { onclick: () => set(part, key, id) }, label(id))]);
+        places.replaceChildren(...placeBtns.map(([, b]) => b));
+        placeBox.hidden = !placeBtns.length;
+        placeCap.textContent = placeBtns.length ? `places: ${PLACE_GROUPS.find(x => x[0] === g)[1]}` : "";
+      }
+      for (const [v, b] of placeBtns) b.setAttribute("aria-pressed", v === now);
+    });
   } else if (kind === "color") {
     const row = el("div", { class: "row" });
     const bs = rest[0].map(c => {
@@ -7003,7 +7049,7 @@ function surpriseOne(part, [kind, key, , ...rest]) {
   else if (kind === "toggle") state[part][key] = Math.random() < 0.3;
   // (the hands are mostly the same)
   else if (kind === "flip") state[part][key] = Math.random() < 0.25;
-  else if (kind === "choice") state[part][key] = pick(rest[0])[0];
+  else if (kind === "choice" || kind === "places") state[part][key] = pick(rest[0])[0];
   // (a pair's first column has a part of its own: the friend's right hand)
   else if (kind === "pair") for (const c of rest[1]) surpriseOne(key, c);
   else if (kind === "color") state[part][key] = pick(rest[0]);

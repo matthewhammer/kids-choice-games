@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.25, for the next version, which waits for Matthew's go-ahead.
+
+- **🏞️ Backgrounds by kind of place,** as the music is by kind: the Background tab's long row of places is now two rows, each in a dashed box with its name: first the kind of place (⬜ no background, 🌲 woods, 💧 water, 🏕️ camping, 🏠 home, 🧙 the witch's), then that kind's places. Picking a kind goes to its first place, unless the place now is already of that kind; going through a doorway shows the new place's kind.
+
 ## 0.0.25 (2026-10-14)
 
 Everything in 0.0.24, with the full-body slider working as it should.
