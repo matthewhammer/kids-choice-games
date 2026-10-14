@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.19 (2026-10-13)
+
+Everything in 0.0.18, plus the far views match the places they show.
+
+- **🌲 The forest clearing shows the places as you made them:** the tree house is that very tree, small and far off: its houses, their animals and colors, its bridges, ladders, leaves, swing and size (and its crown, seen from afar), each house a doorway into its room. The family house is as big as its slider says. The witch's hut stands on chicken legs only when it has them, as long as they are, with skulls on its fence as big, as wide-eyed and as glowing as her woods' skulls.
+- (Pictures on the walls were already drawn from the same settings as their scenes.)
+
 ## 0.0.18 (2026-10-13)
 
 Everything in 0.0.17, plus three new places: a mountain trail, a jungle waterfall and a camp site.

@@ -2243,51 +2243,15 @@ const CABIN_DEFS = `<g id="bg-cabin">` +
 // the room inside each tree house
 const HOUSE_ROOMS = ["bunks", "kitchen", "books", "lookout", "art", "music"];
 const TREE_BRIDGES = [[2, 3], [0, 1], [4, 5], [0, 3], [2, 1]];   // across the tree
-function treehouseScene(c) {
-  const { x0, y0, W, H, k, g, grad, all, land, o, R } = c;
-  const n = Math.max(1, Math.min(6, o.houses ?? 4)), ts = (o.treeSize ?? 100) / 100;
+// The great tree, in its own units (standing at 0, 0): its crown, branches,
+// braided trunk, leaves, swing, bridges, ladders and houses, all as the
+// sliders and menus say. The tree house scene draws it, and so does the
+// forest clearing, small and far off: the same tree.
+function treeInner(c) {
+  const { o, R } = c;
+  const n = Math.max(1, Math.min(6, o.houses ?? 4));
   const bridges = o.bridges ?? 2, ladders = o.ladders ?? 3, leaves = o.leaves ?? 60;
-  let s = SEP + part("tree-sky", c.F, () => `<defs>${grad("bg-sky", "#5eb6ee", "#e6f6ff", y0, g)}</defs>` + all("url(#bg-sky)") +
-                                       land(g - 130 * k, 12, "#a5d48e", 0.3) + land(g - 30 * k, 5, "#79b956", 0.9));
-  s += SEP + cloudsSvg(c, 3, 0.9, 110);
-  // the forest round the great tree: far pines and round trees on the
-  // hills, nearer ones, bushes, and flowers in the grass (an oak, a pine, a
-  // tulip and a daisy, each drawn once)
-  s += SEP + part("tree-woods", c.F, () => {
-    const { x1, y1, P } = c, side = c.side;
-    let t = `<defs>${oakDef("bg-woods-oak", 1)}<g id="bg-pine"><rect x="-6" y="-30" width="12" height="32" fill="#5e3d22"/>` +
-            `<polygon points="0,-200 -50,-28 50,-28" fill="currentColor"/><polygon points="0,-200 -14,-150 0,-60 12,-120" fill="#ffffff" opacity="0.1"/></g>${FLOWER_DEFS}</defs>`;
-    const tree = (i, x, y, sc) => i % 3 === 1 ? use("bg-woods-oak", x, y, sc * (R(i, 211) < 0.5 ? -1 : 1), sc)
-                                              : use("bg-pine", x, y, sc, sc, ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
-    for (let i = 0; i < 30; i++)   // the far row, small, on the far hills
-      t += tree(i, x0 - 30 * k + (W + 60 * k) * i / 29 + 14 * k * (R(i, 210) - 0.5), g - 128 * k + 10 * k * R(i, 212), k * (0.32 + 0.2 * R(i, 213)));
-    for (let i = 0; i < 12; i++)   // nearer ones, at the meadow's edge, left and right
-      t += tree(i + 1, side(i) * (W * 0.2 + W * 0.32 * R(i, 214)), g - 42 * k + 8 * k * R(i, 215), k * (0.55 + 0.3 * R(i, 216)));
-    // a stream winding down from the hills, past the tree, out at the front
-    const sp = streamAt(c), Lb = [], Rb = [];
-    for (let i = 0; i <= 30; i++) { const [x, y, hw] = sp(i / 30); Lb.push(P(x - hw, y)); Rb.push(P(x + hw, y)); }
-    t += `<defs><linearGradient id="bg-stream" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(g - 125 * k)}" x2="0" y2="${f1(y1)}">` +
-         `<stop offset="0" stop-color="#9fdcf7"/><stop offset="1" stop-color="#2f86c6"/></linearGradient></defs>` +
-         `<polygon points="${[...Lb, ...Rb.reverse()].join(" ")}" fill="url(#bg-stream)" stroke="#6f9b4a" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>`;
-    for (let i = 0; i < 14; i++) {
-      const [x, y, hw] = sp(0.15 + 0.8 * R(i, 222)), l = hw * 0.5;
-      t += `<path d="M${P(x - l, y)} Q${P(x, y - l * 0.25)} ${P(x + l, y)}" fill="none" stroke="#ffffff" stroke-width="${f1(1.6 * k)}" opacity="0.7"/>`;
-    }
-    for (let i = 0; i < 16; i++) {  // bushes
-      const x = side(i) * (W * 0.12 + W * 0.36 * R(i, 217)), y = g - 18 * k + 50 * k * R(i, 218), r = (16 + 14 * R(i, 219)) * k;
-      t += `<circle cx="${f1(x - r * 0.6)}" cy="${f1(y - r * 0.5)}" r="${f1(r * 0.75)}" fill="#2f7d32"/><circle cx="${f1(x + r * 0.6)}" cy="${f1(y - r * 0.45)}" r="${f1(r * 0.7)}" fill="#2f7d32"/>` +
-           `<circle cx="${f1(x)}" cy="${f1(y - r * 0.8)}" r="${f1(r)}" fill="#3c9a40"/><circle cx="${f1(x - r * 0.3)}" cy="${f1(y - r * 1.1)}" r="${f1(r * 0.4)}" fill="#55b04f"/>`;
-    }
-    for (let i = 0; i < 48; i++) {  // flowers in the grass
-      const d = R(i, 220), x = x0 + W * R(i, 221), y = g - 22 * k + (y1 - g + 10 * k) * d;
-      if (inStream(sp, x, y, 8 * k)) continue;
-      t += use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.7 * d), k * (0.8 + 0.7 * d), ` color="${FLOWER_COLORS[i % 6]}"`);
-    }
-    return t;
-  });
-  // the tree, its leaves, houses, bridges and ladders: built in the tree's
-  // units, so its size slider builds none of them again
-  s += OPEN(`<g id="bg-tree" ${tf(0, g, ts * k)}>`);
+  let s = "";
   // the crown, high above the frame at the tree's usual size (its top is
   // about 600 of the tree's units up): seen only when the tree is small
   s += SEP + part("tree-crown", [leaves], () => {
@@ -2371,6 +2335,53 @@ function treehouseScene(c) {
       return part("tree-house", [i, animal, look.cols], () => `<g class="portal" data-to="treeroom" data-house="${i + 1}">` +
         use("bg-cabin", x, y, sc, sc, ` color="${look.walls}"`) + `<g ${tf(x, y, sc)}>${look.head}</g></g>`);
     }).join("");
+  return s;
+}
+function treehouseScene(c) {
+  const { x0, y0, W, H, k, g, grad, all, land, o, R } = c;
+  const n = Math.max(1, Math.min(6, o.houses ?? 4)), ts = (o.treeSize ?? 100) / 100;
+  const bridges = o.bridges ?? 2, ladders = o.ladders ?? 3, leaves = o.leaves ?? 60;
+  let s = SEP + part("tree-sky", c.F, () => `<defs>${grad("bg-sky", "#5eb6ee", "#e6f6ff", y0, g)}</defs>` + all("url(#bg-sky)") +
+                                       land(g - 130 * k, 12, "#a5d48e", 0.3) + land(g - 30 * k, 5, "#79b956", 0.9));
+  s += SEP + cloudsSvg(c, 3, 0.9, 110);
+  // the forest round the great tree: far pines and round trees on the
+  // hills, nearer ones, bushes, and flowers in the grass (an oak, a pine, a
+  // tulip and a daisy, each drawn once)
+  s += SEP + part("tree-woods", c.F, () => {
+    const { x1, y1, P } = c, side = c.side;
+    let t = `<defs>${oakDef("bg-woods-oak", 1)}<g id="bg-pine"><rect x="-6" y="-30" width="12" height="32" fill="#5e3d22"/>` +
+            `<polygon points="0,-200 -50,-28 50,-28" fill="currentColor"/><polygon points="0,-200 -14,-150 0,-60 12,-120" fill="#ffffff" opacity="0.1"/></g>${FLOWER_DEFS}</defs>`;
+    const tree = (i, x, y, sc) => i % 3 === 1 ? use("bg-woods-oak", x, y, sc * (R(i, 211) < 0.5 ? -1 : 1), sc)
+                                              : use("bg-pine", x, y, sc, sc, ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
+    for (let i = 0; i < 30; i++)   // the far row, small, on the far hills
+      t += tree(i, x0 - 30 * k + (W + 60 * k) * i / 29 + 14 * k * (R(i, 210) - 0.5), g - 128 * k + 10 * k * R(i, 212), k * (0.32 + 0.2 * R(i, 213)));
+    for (let i = 0; i < 12; i++)   // nearer ones, at the meadow's edge, left and right
+      t += tree(i + 1, side(i) * (W * 0.2 + W * 0.32 * R(i, 214)), g - 42 * k + 8 * k * R(i, 215), k * (0.55 + 0.3 * R(i, 216)));
+    // a stream winding down from the hills, past the tree, out at the front
+    const sp = streamAt(c), Lb = [], Rb = [];
+    for (let i = 0; i <= 30; i++) { const [x, y, hw] = sp(i / 30); Lb.push(P(x - hw, y)); Rb.push(P(x + hw, y)); }
+    t += `<defs><linearGradient id="bg-stream" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(g - 125 * k)}" x2="0" y2="${f1(y1)}">` +
+         `<stop offset="0" stop-color="#9fdcf7"/><stop offset="1" stop-color="#2f86c6"/></linearGradient></defs>` +
+         `<polygon points="${[...Lb, ...Rb.reverse()].join(" ")}" fill="url(#bg-stream)" stroke="#6f9b4a" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>`;
+    for (let i = 0; i < 14; i++) {
+      const [x, y, hw] = sp(0.15 + 0.8 * R(i, 222)), l = hw * 0.5;
+      t += `<path d="M${P(x - l, y)} Q${P(x, y - l * 0.25)} ${P(x + l, y)}" fill="none" stroke="#ffffff" stroke-width="${f1(1.6 * k)}" opacity="0.7"/>`;
+    }
+    for (let i = 0; i < 16; i++) {  // bushes
+      const x = side(i) * (W * 0.12 + W * 0.36 * R(i, 217)), y = g - 18 * k + 50 * k * R(i, 218), r = (16 + 14 * R(i, 219)) * k;
+      t += `<circle cx="${f1(x - r * 0.6)}" cy="${f1(y - r * 0.5)}" r="${f1(r * 0.75)}" fill="#2f7d32"/><circle cx="${f1(x + r * 0.6)}" cy="${f1(y - r * 0.45)}" r="${f1(r * 0.7)}" fill="#2f7d32"/>` +
+           `<circle cx="${f1(x)}" cy="${f1(y - r * 0.8)}" r="${f1(r)}" fill="#3c9a40"/><circle cx="${f1(x - r * 0.3)}" cy="${f1(y - r * 1.1)}" r="${f1(r * 0.4)}" fill="#55b04f"/>`;
+    }
+    for (let i = 0; i < 48; i++) {  // flowers in the grass
+      const d = R(i, 220), x = x0 + W * R(i, 221), y = g - 22 * k + (y1 - g + 10 * k) * d;
+      if (inStream(sp, x, y, 8 * k)) continue;
+      t += use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.7 * d), k * (0.8 + 0.7 * d), ` color="${FLOWER_COLORS[i % 6]}"`);
+    }
+    return t;
+  });
+  // the tree, its leaves, houses, bridges and ladders: built in the tree's
+  // units, so its size slider builds none of them again
+  s += OPEN(`<g id="bg-tree" ${tf(0, g, ts * k)}>`) + treeInner(c);
   return s + CLOSE;
 }
 
@@ -2974,38 +2985,35 @@ function witchroomScene(c) {
 // each shown or not by its own switch: the family house, the tree house,
 // the witch's hut, a castle, a healer's hut. The ones with a scene of their
 // own close up are doorways into it.
-// a small tree house, in its own units (standing at 0, 0): the braided
-// trunk, pads of leaves, and three of the tree's houses as they are chosen
-function miniTreeSvg(o) {
-  let t = `<defs>${[...Array(8)].map((_, j) => padDef(`bg-pad${j}`, j)).join("")}${CABIN_DEFS}</defs>` +
-          [[-1, -300, -230, -360], [1, -330, 240, -400], [-1, -420, -180, -500], [1, -440, 190, -520]].map(([sd, sy, tx, ty]) =>
-            `<path d="M${sd * 30} ${sy} Q${f1(tx * 0.5)} ${sy - 10} ${tx} ${ty}" fill="none" stroke="#6e4a2c" stroke-width="18" stroke-linecap="round"/>`).join("") +
-          braidSvg(0, -620, 6, 150, 1, { strands: 4, taper: 0.5, base: "#00000026" });
-  [[-230, -380], [240, -420], [-180, -520], [190, -540], [0, -600], [-90, -580], [100, -600], [-280, -470], [290, -500]].forEach(([x, y], i) => {
-    t += use(`bg-pad${i % 8}`, x, y, 1.3 * (i % 2 ? -1 : 1), 1.3, ` color="${["#2f7d32", "#3c9a40", "#4fb04f"][i % 3]}"`);
-  });
-  [[-230, -362], [240, -402], [-180, -502]].forEach(([x, y], i) => {
-    const kind = HOUSE_ANIMALS.some(([v]) => v === o["house" + (i + 1)]) ? o["house" + (i + 1)] : TREE_SLOTS[i][2], look = houseLook(kind, o, i + 1);
-    t += use("bg-cabin", x, y, 0.8, 0.8, ` color="${look.walls}"`) + `<g ${tf(x, y, 0.8)}>${look.head}</g>`;
-  });
-  return t;
-}
 // the witch's hut from afar: dark pines round a log hut on chicken legs,
 // its window glowing, smoke curling from its crooked chimney
-function farWitchSvg() {
+function farWitchSvg(o) {
+  // (on chicken legs, as long as hers, or sat on the ground: as in her woods)
+  const ls = (o.legSize ?? 100) / 100, legH = o.chickenLegs ? 46 * ls : 0, dy = 42 - legH;
   let t = [-120, -70, 80, 130, 30].map((x, i) => `<polygon points="${x},${-20 - 40 * (i % 2)} ${x - 40},90 ${x + 40},90" fill="${["#1f3a2a", "#24402e", "#18301f"][i % 3]}"/>`).join("");
-  t += [-1, 1].map(sd => `<path d="M${sd * 18} 40 L${sd * 22} 70 L${sd * 34} 84 M${sd * 22} 70 L${sd * 14} 86" stroke="#e0552b" stroke-width="7" stroke-linecap="round" fill="none"/>`).join("") +
+  if (legH) t += [-1, 1].map(sd => `<path d="M${sd * 18} ${f1(44 + dy)} L${sd * 22} ${f1(86 - legH * 0.35)} L${sd * 34} 84 M${sd * 22} ${f1(86 - legH * 0.35)} L${sd * 14} 86" stroke="#e0552b" stroke-width="${f1(7 * Math.sqrt(ls))}" stroke-linecap="round" fill="none"/>`).join("");
+  t += `<g transform="translate(0 ${f1(dy)})">` +
        `<rect x="-50" y="-26" width="100" height="70" fill="#5a3a2a" stroke="#2a1a12" stroke-width="3"/>` +
        [-12, 2, 16, 30].map(y => `<line x1="-50" y1="${y}" x2="50" y2="${y}" stroke="#2a1a12" stroke-width="2"/>`).join("") +
        `<polygon points="-64,-24 0,-78 66,-22" fill="#3b2f2a" stroke="#1d1410" stroke-width="3"/>` +
        `<rect x="-14" y="-6" width="26" height="22" fill="#ffd23f"/><path d="M-14 5 H12 M-1 -6 V16" stroke="#5a3a2a" stroke-width="3"/>` +
        `<polygon points="28,-60 44,-64 46,-30 30,-34" fill="#2a1a12"/>` +
-       `<path d="M38 -66 Q26 -96 46 -116 Q62 -136 48 -160" fill="none" stroke="#c9c9d6" stroke-width="10" stroke-linecap="round" opacity="0.6"/>`;
+       `<path d="M38 -66 Q26 -96 46 -116 Q62 -136 48 -160" fill="none" stroke="#c9c9d6" stroke-width="10" stroke-linecap="round" opacity="0.6"/></g>`;
   // her fence: crooked pickets either side of the gate, rails across
   t += [-1, 1].map(sd => `<path d="M${sd * 22} 84 H${sd * 130} M${sd * 22} 100 H${sd * 130}" stroke="#4a3626" stroke-width="5"/>` +
          [...Array(8)].map((_, i) => { const x = sd * (28 + i * 14), lean = ((i * 7) % 5 - 2) * 2;
            return `<polygon points="${x - 5},108 ${x + 5},108 ${x + 5 + lean},${72 - (i % 3) * 4} ${x + lean},${62 - (i % 3) * 4} ${x - 5 + lean},${72 - (i % 3) * 4}" fill="#5a4432" stroke="#2a1d14" stroke-width="1.5"/>`; }).join("")).join("") +
        `<path d="M-20 108 L-18 74 M20 108 L18 74" stroke="#2a1d14" stroke-width="5"/>`;
+  // skulls on her fence posts, as big as her woods' skulls (the biggest
+  // grow with their slider), their eyes as big and as glowing
+  const big = Math.min(4, (o.skullMax ?? 300) / 100), eye = (o.skullEye ?? 100) / 100, glow = (o.eyeGlow ?? 70) / 100;
+  t += [-112, -56, 56, 112].map((x, i) => {
+    const r = 9 * (1 + (big - 1) * (i % 2 ? 0.5 : 0.2)), y = 58 - r * 0.6, er = 2.6 * eye * r / 9;
+    return `<circle cx="${x}" cy="${f1(y)}" r="${f1(r)}" fill="#ece6d6" stroke="#8a8476" stroke-width="1.2"/>` +
+           `<rect x="${f1(x - r * 0.5)}" y="${f1(y + r * 0.55)}" width="${f1(r)}" height="${f1(r * 0.5)}" fill="#ece6d6"/>` +
+           [-1, 1].map(sd => (glow > 0 ? `<circle cx="${f1(x + sd * r * 0.38)}" cy="${f1(y)}" r="${f1(er * (1.4 + 2 * glow))}" fill="#ff2a2a" opacity="${(0.25 + 0.3 * glow).toFixed(2)}"/>` : "") +
+             `<circle cx="${f1(x + sd * r * 0.38)}" cy="${f1(y)}" r="${f1(er)}" fill="#ff3b3b"/>`).join("");
+  }).join("");
   return t;
 }
 // a castle on its hill: towers with pointed roofs and flags, a gate
@@ -3055,11 +3063,14 @@ function healerSvg() {
 // what is far off in the clearing, where (x as a share of the width, how
 // far up from the clearing's near edge), its size, and its doorway
 const CLEARING_THINGS = [
-  { key: "seeCastle", at: [0.1, 120], size: 0.42, foot: 62, draw: () => castleSvg(), to: null },
-  { key: "seeTree", at: [-0.17, 95], size: 0.36, foot: 6, draw: o => miniTreeSvg(o), to: "treehouse", reads: o => [1, 2, 3].map(n => [o["house" + n], ...houseLook(o["house" + n] || TREE_SLOTS[n - 1][2], o, n).cols]) },
-  { key: "seeHouse", at: [-0.33, 70], size: 0.3, foot: 4, draw: () => houseBuildingSvg(), to: "house" },
-  { key: "seeWitch", at: [0.25, 95], size: 0.52, foot: 108, draw: () => farWitchSvg(), to: "witch" },
-  { key: "seeHealer", at: [0.36, 40], size: 0.58, foot: 40, draw: () => healerSvg(), to: null },
+  // (each as its own scene has it: the tree house is that scene's very tree,
+  // its houses, bridges and ladders; the house its size; the witch's hut its
+  // legs and its skulls)
+  { key: "seeCastle", at: [0.1, 120], size: 0.42, foot: 62, draw: () => part("far-castle", [], castleSvg), to: null },
+  { key: "seeTree", at: [-0.2, 95], size: 0.25, foot: 6, grow: o => (o.treeSize ?? 100) / 100, draw: (o, c) => unmarked(treeInner(c)), to: "treehouse" },
+  { key: "seeHouse", at: [-0.36, 70], size: 0.3, foot: 4, grow: o => (o.houseSize ?? 100) / 100, draw: () => part("house-building", [], houseBuildingSvg), to: "house" },
+  { key: "seeWitch", at: [0.25, 95], size: 0.52, foot: 108, draw: o => part("far-witch", [!!o.chickenLegs, o.legSize ?? 100, o.skullMax ?? 300, o.skullEye ?? 100, o.eyeGlow ?? 70], () => farWitchSvg(o)), to: "witch" },
+  { key: "seeHealer", at: [0.36, 40], size: 0.58, foot: 40, draw: () => part("far-healer", [], healerSvg), to: null },
 ];
 function clearingScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
@@ -3096,8 +3107,8 @@ function clearingScene(c) {
   // the things far off, each its own piece, over the paths' far ends
   for (const T of shown) {
     const x = W * T.at[0], y = near - T.at[1] * k;
-    s += SEP + (T.to ? `<g class="portal" data-to="${T.to}">` : "") +
-         part("clear-" + T.key, [c.F, T.reads ? T.reads(o) : 0], () => `<g ${tf(x, y, T.size * k)}>${T.draw(o)}</g>`) + (T.to ? `</g>` : "");
+    const z = T.size * (T.grow ? T.grow(o) : 1) * k;
+    s += SEP + (T.to ? `<g class="portal" data-to="${T.to}">` : "") + `<g ${tf(x, y, z)}>${T.draw(o, c)}</g>` + (T.to ? `</g>` : "");
   }
   // near trees at the frame's edges, framing the clearing
   s += SEP + part("clear-near-woods", c.F, () => [-1, 1].map(sd => [[0, 0, 1.15], [1, 40, 0.8]].map(([j, dy, z]) =>
