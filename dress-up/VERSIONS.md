@@ -8,6 +8,8 @@ Changes since 0.0.28, for the next version, which waits for Matthew's go-ahead.
 
 - **〰️ Three LFOs, shared:** the mixing board's LFOs are now three, A, B and C (D is gone; no tune used it), and with the whole tune's strip they make a square of four before the instruments. The same three are used everywhere: by the drums' pitch, and now by the friend's parts.
 - **👻 Fading with the beat:** on the Visibility tab, each part has an LFO chip beside its name (no LFO, A, B, C): that part fades in and out with the LFO's wave, never past its slider, as far as the LFO's depth says (full depth fades it right out), in time with the music while it plays (else at the tune's tempo). The full-body slider has one too, which sets every part to the same LFO ("mixed LFOs" when they differ). Changing an LFO on the mixing board changes the fading at once.
+- **🧚 A fairy costume:** wings in five styles (🦋 butterfly, 🪰 dragonfly, 🍃 leaf, 🌸 petal, ✨ sparkle, its stars twinkling), each with its own colors, fluttering (unless turned off); a tunic in five (🌸 petals, 🍃 leaves, 🔔 bluebell, ✨ sparkle with gold stars, 🍄 toadstool with white spots and a frill), each its own hem and colors; and shoes of the fairy's own: curly slippers, petal shoes, leaf wraps, sparkle boots, or bare feet with flower anklets. Her own hair, face and hands.
+- **📌 Pin the full-body slider** to the full-screen controls, like any other slider.
 
 ## 0.0.28 (2026-10-14)
 
