@@ -118,6 +118,11 @@
   .knob { display: grid; grid-template-columns: 6.2em 1fr 3.8em; align-items: center; gap: 4px; }
   .knob input[type=range] { height: 22px; }
   .knob .val { color: var(--muted); text-align: right; font-size: 0.9em; }
+  /* a channel's move: its chips beside the name, how far it is moved on a line of its own */
+  .knob.move { grid-template-columns: 6.2em 1fr; }
+  .knob.move .row { display: flex; gap: 4px; flex-wrap: nowrap; }
+  .knob.move .row button { white-space: nowrap; flex-shrink: 0; }
+  .knob.move .val { grid-column: 1 / -1; }
   .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
   .dot.on { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
   /* the transport: where the tune is, its sections marked under it */
@@ -314,7 +319,7 @@ function upgradeFeet(st, saved) {
 // the music: the background's own tune (none without one) or a chosen one;
 // the volume and mute belong to the device, not the friend: Load and Start
 // over keep them
-DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, mix: {} };
+DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 let state = clone(DEFAULTS);
 try {
   const saved = JSON.parse(localStorage.getItem("dress-up-v1") || "null");
@@ -4514,6 +4519,57 @@ const INSTRUMENTS = {
     const depth = A.createGain(); depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(f * 0.012 * x / 100, t + 0.25);
     depth.connect(o.frequency); tone(A, depth, "sine", 5, t, end + 0.5);
   },
+  // --- the funk band, for the classic beats ---
+  // a bass guitar, played with the fingers: a thump as the string is
+  // plucked, then a round note that fades while it is held
+  // (its knob is its growl: how much of the string's edge comes through)
+  bassgtr(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), end = t + dur * 0.92, g = held(A, out, t, 0.26 * v, 0.004, end, 0.04);
+    const lp = filter(A, g, "lowpass", 380 + 9 * x, 1.2);
+    lp.frequency.setValueAtTime(900 + 18 * x, t); lp.frequency.setTargetAtTime(380 + 9 * x, t, 0.06);
+    tone(A, lp, "triangle", f, t, end + 0.3); tone(A, gainOf(A, lp, 0.45), "sawtooth", f, t, end + 0.3);
+    noise(A, filter(A, amp(A, out, t, 0.05 * v, 0.001, 0.008), "bandpass", 1200, 1.5), t, t + 0.05);
+  },
+  // a bongo: a quick, high, tight drum, a slap and a ring that falls to
+  // its note (its knob tunes it, a half step at a time, as a conga's does)
+  bongo(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m) * Math.pow(2, Math.round((x - 50) * 12 / 50) / 12);
+    const o = tone(A, amp(A, out, t, 0.38 * v, 0.001, 0.055), "sine", f * 1.6, t, t + 0.4);
+    o.frequency.exponentialRampToValueAtTime(f, t + 0.025);
+    noise(A, filter(A, amp(A, out, t, 0.12 * v, 0.001, 0.012), "bandpass", 3200, 1.2), t, t + 0.06);
+  },
+  // an open hi-hat: the hat, let ring
+  openhat(A, out, t, m, dur, v, x = 50) { noise(A, filter(A, amp(A, out, t, 0.24 * v, 0.002, 0.11 * ring(x)), "highpass", 7000), t, t + 0.8 * ring(x)); },
+  // a tonewheel organ: its drawbars (sines at a note's octaves and
+  // fifths), a click as a key goes down, and the wobble of a spinning
+  // speaker (its knob is how fast the speaker spins)
+  tonewheel(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), end = t + dur * 0.96, g = held(A, out, t, 0.075 * v, 0.006, end, 0.05);
+    const wob = gainOf(A, g, 1);
+    for (const [r, a] of [[0.5, 0.6], [1, 1], [1.5, 0.5], [2, 0.7], [3, 0.3], [4, 0.25]]) tone(A, gainOf(A, wob, a), "sine", f * r, t, end + 0.4);
+    if (x > 0) tone(A, gainOf(A, wob.gain, 0.22), "sine", 0.12 * x, t, end + 0.4);
+    tone(A, amp(A, out, t, 0.03 * v, 0.001, 0.01), "square", f * 4, t, t + 0.05);
+  },
+  // a funk guitar's chord: short, bright and dry, a wah's peak on it
+  // (its knob is where the wah sits, from dark to bright)
+  funkgtr(A, out, t, m, dur, v, x = 50) {
+    const bp = filter(A, amp(A, out, t, 0.2 * v, 0.002, 0.05 + 0.05 * Math.min(1, dur * 3)), "bandpass", 500 + 30 * x, 3);
+    tone(A, bp, "sawtooth", hz(m), t, t + 0.4); tone(A, gainOf(A, bp, 0.5), "square", hz(m), t, t + 0.4, 5);
+  },
+  // a twangy lead guitar: a bright pluck that sings on, bending up into
+  // its note, with a whammy bar's wobble as it is held
+  // (its knob is how wide the wobble is)
+  twang(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), end = t + dur * 0.95, g = held(A, out, t, 0.11 * v, 0.003, end, 0.12);
+    const lp = filter(A, g, "lowpass", 3200, 2.5);
+    lp.frequency.setValueAtTime(4200, t); lp.frequency.setTargetAtTime(1800, t, 0.25);
+    const a = tone(A, lp, "sawtooth", f * 0.97, t, end + 0.8), b = tone(A, gainOf(A, lp, 0.6), "square", f * 0.97, t, end + 0.8, 6);
+    for (const o of [a, b]) {
+      o.frequency.setTargetAtTime(f, t, 0.02);
+      const depth = A.createGain(); depth.gain.setValueAtTime(0, t); depth.gain.linearRampToValueAtTime(f * 0.0003 * x, t + 0.35);
+      depth.connect(o.frequency); tone(A, depth, "sine", 5.2, t, end + 0.8);
+    }
+  },
   // a bird: two quick chirps
   bird(A, out, t, m, dur, v, x = 50) {
     const f = hz(m);
@@ -4536,6 +4592,51 @@ const INSTRUMENTS = {
 // part starting its notes again at the section's start, and the whole
 // section moved up or down ("up", semitones) if it says.
 const S = (bars, names, up = 0) => ({ bars, names: names.split(" "), up });
+// --- the classic beats: a funk band's tune, made from its lines,
+// patterns and plan. Each tune's sections give each player a turn in front:
+// the bongos open it, then the bass, the bongos again, the drum kit, the
+// organ, the rhythm guitar and the lead guitar take a solo each, over the
+// band or alone. (Our own tunes, in the style of the funk instrumentals
+// hip-hop grew up on: a breakbeat, bongos, an organ, a twangy guitar.)
+const FUNK_SECTIONS = {
+  intro: "bongoHi bongoLo",
+  kitIn: "bongoHi bongoLo kick snare hat",
+  groove: "kick snare hat openhat bass rhythm organ bongoHi fill",
+  theme: "kick snare hat openhat bass rhythm organ theme bongoHi bongoLo fill",
+  bassSolo: "kick hat bassSolo fill",
+  bongoSolo: "soloHi soloLo kick",
+  drumBreak: "breakKick breakSnare breakHat openhat fill",
+  organSolo: "kick snare hat bass organSolo",
+  rhythmSolo: "kick snare hat bass rhythmSolo",
+  gtrSolo: "kick snare hat openhat bass rhythm gtrSolo fill",
+  outro: "bongoHi bongoLo kick hat",
+};
+function funkTune(c) {
+  const ch = c.chords;
+  return { bpm: c.bpm, swing: c.swing || 0, room: 1.6, level: 1, echoSteps: 3, parts: [
+    { name: "kick", inst: "kick", level: 0.9, line: hitsOf(c.kick) },
+    { name: "snare", inst: "snare", level: 0.55, rev: 0.15, line: hitsOf(c.snare) },
+    { name: "hat", inst: "hat", level: 0.35, line: hitsOf(c.hat) },
+    { name: "openhat", inst: "openhat", level: 0.3, line: hitsOf(c.open) },
+    { name: "breakKick", inst: "kick", level: 0.95, line: hitsOf(c.bKick) },
+    { name: "breakSnare", inst: "snare", level: 0.6, rev: 0.15, line: hitsOf(c.bSnare) },
+    { name: "breakHat", inst: "hat", level: 0.4, line: hitsOf(c.bHat) },
+    // a roll on the snare into the next section, in the last bar of eight
+    { name: "fill", inst: "snare", level: 0.5, line: hitsOf(".".repeat(112) + "x.x.x.x.xxxxxxxx") },
+    { name: "bongoHi", inst: "bongo", level: 0.7, rev: 0.15, line: hitsOf(c.hi, 71) },
+    { name: "bongoLo", inst: "bongo", level: 0.75, rev: 0.15, line: hitsOf(c.lo, 64) },
+    { name: "soloHi", inst: "bongo", level: 0.8, rev: 0.15, line: hitsOf(c.soloHi, 71) },
+    { name: "soloLo", inst: "bongo", level: 0.85, rev: 0.15, line: hitsOf(c.soloLo, 64) },
+    { name: "bass", inst: "bassgtr", level: 0.95, line: lineOf(c.bass) },
+    { name: "bassSolo", inst: "bassgtr", level: 1, line: lineOf(c.bassSolo) },
+    { name: "rhythm", inst: "funkgtr", level: 0.45, rev: 0.1, line: rhythmOf(ch, 16, c.rhythm, 4) },
+    { name: "rhythmSolo", inst: "funkgtr", level: 0.6, rev: 0.1, line: rhythmOf(ch, 16, c.rhythmSolo, 4) },
+    { name: "organ", inst: "tonewheel", level: 0.5, rev: 0.2, line: rhythmOf(ch, 16, c.organ, 3) },
+    { name: "organSolo", inst: "tonewheel", level: 0.85, rev: 0.2, line: lineOf(c.organSolo) },
+    { name: "theme", inst: "twang", level: 0.8, rev: 0.3, echo: c.echo, line: lineOf(c.theme) },
+    { name: "gtrSolo", inst: "twang", level: 0.8, rev: 0.3, echo: 0.1, line: lineOf(c.gtrSolo) },
+  ], form: c.plan.map(([what, bars, up]) => S(bars, FUNK_SECTIONS[what], up || 0)) };
+}
 const TUNES = {
   forest: { name: "🌲 a walk in the woods", make: () => {
     const chords = ["G", "C", "G", "D", "G", "C", "D", "G"], minor = ["Em", "C", "G", "D", "Em", "Am", "D", "G"];
@@ -4984,12 +5085,90 @@ const TUNES = {
       S(8, "pad box fluteB birds bass"), S(4, "box chimes"),
     ] };
   } },
+  bongobreak: { name: "🥁 bongo breakdown", make: () => funkTune({
+    // E dorian at 112: bongos open it and break it down halfway; the bass, the kit, the organ and the guitars each get a turn
+    bpm: 112, swing: 0.08, echo: 0.12, chords: ["Em7", "Em7", "A7", "A7"],
+    bass: "E2:2 r:1 E2:1 r:2 E3:1 r:1 D3:2 B2:2 G2:2 A2:2 | E2:2 r:2 G2:1 r:1 A2:2 r:2 B2:1 r:1 D3:2 E3:2 | A2:2 r:1 A2:1 r:2 A3:1 r:1 G3:2 E3:2 C#3:2 D3:2 | A2:2 r:2 C#3:1 r:1 D3:2 r:2 E3:1 r:1 G3:2 B2:2",
+    bassSolo: "E2:1 r:1 E3:1 E2:1 r:2 E2:1 G2:1 r:1 A2:1 B2:2 D3:1 E3:1 D3:1 B2:1 | E2:2 r:1 E3:1 r:1 E2:1 G2:2 A2:1 r:1 B2:1 D3:2 E3:1 G3:2 | A2:1 r:1 A3:1 A2:1 r:2 A2:1 C#3:1 r:1 D3:1 E3:2 G3:1 A3:1 G3:1 E3:1 | A2:2 r:1 A3:1 r:1 A2:1 C#3:2 D3:1 r:1 E3:1 G3:2 E3:1 D3:2 | E2:1 r:1 E3:1 E2:1 r:2 E2:1 G2:1 r:1 A2:1 B2:2 D3:1 E3:1 D3:1 B2:1 | E2:1 E2:1 r:1 E2:1 G2:1 r:1 A2:1 r:1 B2:1 B2:1 r:1 D3:1 E3:2 D3:1 B2:1 | A2:1 A2:1 r:1 A2:1 C#3:1 r:1 D3:1 r:1 E3:1 E3:1 r:1 G3:1 A3:2 G3:1 E3:1 | D3:2 C#3:2 B2:2 A2:2 G2:2 F#2:2 E2:4",
+    theme: "E4:3 G4:1 A4:2 B4:6 r:4 | D5:2 B4:2 A4:2 G4:2 A4:8 | C#5:3 E5:1 D5:2 C#5:2 A4:4 r:4 | G4:2 A4:2 B4:2 D5:2 E5:8 | G5:3 F#5:1 E5:2 D5:6 r:4 | B4:2 D5:2 E5:2 G5:2 F#5:4 E5:4 | E5:2 C#5:2 A4:2 C#5:2 E5:4 G5:2 F#5:2 | E5:12 r:4",
+    organSolo: "B4:2 D5:2 E5:4 r:2 D5:1 E5:1 G5:2 E5:2 | D5:2 B4:2 A4:2 B4:2 r:4 E4:2 G4:2 | A4:2 C#5:2 E5:4 r:2 F#5:1 G5:1 A5:2 G5:2 | E5:3 D5:1 C#5:2 A4:2 r:4 E5:2 G5:2 | B5:4 A5:2 G5:2 E5:2 D5:2 E5:4 | G5:1 A5:1 G5:1 E5:1 D5:2 B4:2 D5:4 r:4 | C#5:2 E5:2 A5:4 G5:2 E5:2 C#5:2 A4:2 | B4:2 D5:2 E5:8 r:4",
+    gtrSolo: "E5:1 G5:1 A5:1 B5:1 A5:2 G5:2 E5:2 D5:2 E5:4 | r:2 B4:1 D5:1 E5:2 G5:2 A5:1 G5:1 E5:2 D5:4 | A5:1 B5:1 C#6:1 E6:1 C#6:2 B5:2 A5:2 G5:2 E5:4 | r:2 E5:1 F#5:1 G5:2 A5:2 B5:4 A5:4 | E6:4 D6:2 B5:2 D6:2 B5:2 A5:4 | G5:1 A5:1 G5:1 E5:1 G5:1 E5:1 D5:2 E5:8 | C#5:2 E5:2 G5:2 A5:2 C#6:2 B5:2 A5:2 G5:2 | E5:16",
+    kick: "x.....x.x..x.... x.....x...x..x..", snare: "....x..o.o..x..o ....x..o.o..x.o.",
+    hat: "xoxoxoxoxoxoxoxo xoxoxoxoxoxoxoxo", open: "................ ..............x.",
+    bKick: "x.x.....x.x..x.. x.x...x...x.....", bSnare: "....x..o..o.x..o .o..x..o.o..x.xx",
+    bHat: "x.x.xxx.x.x.xxx. x.x.xxx.x.x.x.x.",
+    hi: "x..x..x.x..x.xx.", lo: "..x...x...x...x.",
+    soloHi: "x.xx.x.xx.x.xxxx x..x..x.x..x.x.x x.xx.x.xx.x.x.x. xxxxx.x.x.xxxxxx",
+    soloLo: "..x...x...x...x. .x..x..x..x..x.. ..x...x...x...x. x.x.x.x.........",
+    rhythm: [[0, 1], [3, 1], [6, 2], [10, 1], [12, 1], [14, 1]], rhythmSolo: [[0, 1], [2, 1], [3, 1], [6, 1], [7, 1], [8, 1], [10, 1], [11, 1], [14, 1], [15, 1]],
+    organ: [[0, 7], [10, 5]],
+    plan: [["intro", 4], ["kitIn", 4], ["groove", 8], ["theme", 8], ["bassSolo", 8], ["bongoSolo", 8], ["drumBreak", 8], ["organSolo", 8], ["rhythmSolo", 4], ["gtrSolo", 8], ["theme", 8, 2], ["outro", 4], ["intro", 4]],
+  }) },
+  canyon: { name: "🏜️ canyon cruise", make: () => funkTune({
+    // D minor at 104, wide open: a twangy guitar with a long echo over a rolling bass; bongos and a dusty breakbeat
+    bpm: 104, swing: 0, echo: 0.25, chords: ["Dm", "Dm", "Bb", "C"],
+    bass: "D2:2 r:1 D2:1 A2:2 r:1 D3:1 r:2 C3:2 A2:2 F2:2 | D2:2 r:2 F2:2 G2:2 A2:2 r:2 C3:2 A2:2 | Bb1:2 r:1 Bb1:1 F2:2 r:1 Bb2:1 r:2 A2:2 F2:2 D2:2 | C2:2 r:1 C2:1 G2:2 r:1 C3:1 r:2 E2:2 G2:2 C#2:2",
+    bassSolo: "D2:1 r:1 D3:1 D2:1 r:1 D2:1 F2:1 G2:1 A2:2 C3:1 D3:1 r:1 C3:1 A2:2 | D2:2 D3:1 r:1 C3:2 A2:2 G2:1 A2:1 F2:2 D2:4 | Bb1:1 r:1 Bb2:1 Bb1:1 r:1 Bb1:1 D2:1 F2:1 G2:2 A2:1 Bb2:1 r:1 A2:1 F2:2 | C2:1 r:1 C3:1 C2:1 r:1 C2:1 E2:1 G2:1 Bb2:2 A2:1 G2:1 E2:2 C#2:2 | D2:1 r:1 D3:1 D2:1 r:1 D2:1 F2:1 G2:1 A2:2 C3:1 D3:1 r:1 C3:1 A2:2 | D2:1 D2:1 r:1 D3:1 r:1 C3:1 A2:1 r:1 G2:1 A2:1 r:1 C3:1 D3:2 A2:2 | Bb1:2 F2:1 Bb2:1 r:2 C2:2 G2:1 C3:1 r:2 E2:2 G2:2 | A2:2 G2:2 F2:2 E2:2 D2:8",
+    theme: "A4:3 D5:1 F5:4 E5:2 D5:2 A4:4 | C5:2 D5:2 E5:2 F5:2 E5:4 r:4 | D5:3 F5:1 Bb5:4 A5:2 F5:2 D5:4 | E5:2 G5:2 C6:4 Bb5:2 A5:2 G5:4 | A5:6 G5:2 F5:4 E5:4 | D5:2 E5:2 F5:2 A5:2 G5:4 F5:4 | Bb4:3 D5:1 F5:4 E5:3 C5:1 E5:4 | D5:12 r:4",
+    organSolo: "D5:2 F5:2 A5:3 G5:1 F5:2 D5:2 r:4 | C5:1 D5:1 F5:2 G5:2 A5:2 C6:2 A5:2 r:4 | Bb5:4 A5:2 F5:2 D5:4 F5:2 A5:2 | G5:2 E5:2 C5:2 E5:2 G5:4 r:4 | A5:1 Bb5:1 A5:1 F5:1 D5:2 F5:2 A5:4 D6:4 | C6:2 A5:2 G5:2 F5:2 E5:4 D5:4 | F5:2 D5:2 Bb4:2 D5:2 E5:2 G5:2 C#5:4 | D5:12 r:4",
+    gtrSolo: "D5:1 F5:1 G5:1 A5:1 C6:2 A5:2 G5:2 F5:2 D5:4 | r:2 A4:1 C5:1 D5:2 F5:2 E5:1 D5:1 C5:2 D5:4 | F5:1 G5:1 A5:1 Bb5:1 D6:4 Bb5:2 A5:2 F5:4 | E5:1 G5:1 C6:2 Bb5:2 G5:2 E5:4 C5:4 | A5:4 C6:2 D6:2 C6:2 A5:2 G5:4 | F5:1 G5:1 F5:1 D5:1 F5:1 D5:1 C5:2 D5:8 | Bb4:2 D5:2 F5:2 Bb5:2 C6:2 E5:2 G5:2 C#6:2 | D6:16",
+    kick: "x.......x.x..... x..x....x.......", snare: "....x.......x... ....x..o....x..o",
+    hat: "x.x.x.x.x.x.x.x. x.x.x.x.x.x.x.xx", open: "......x......... ..............x.",
+    bKick: "x..x..x...x.x... x..x..x...x..x..", bSnare: "....x.o.....x.oo .o..x..o.o..x..x",
+    bHat: "xoxoxoxoxoxoxoxo xoxoxoxoxoxoxoxo",
+    hi: "x.x..x.xx.x..x.x", lo: "...x......x.x...",
+    soloHi: "x.x.x.xxx.x.x.xx x..xx..xx..xx.x. x.x.x.xxx.x.x.xx xxx.xxx.xxx.xxxx",
+    soloLo: ".x...x...x...x.. ..x...x...x...x. .x...x...x...x.. x...x...x.......",
+    rhythm: [[0, 2], [4, 1], [6, 1], [10, 2], [14, 1]], rhythmSolo: [[0, 1], [1, 1], [4, 1], [6, 1], [7, 1], [10, 1], [12, 1], [13, 1], [15, 1]],
+    organ: [[0, 8], [8, 8]],
+    plan: [["intro", 4], ["kitIn", 4], ["groove", 8], ["theme", 8], ["bassSolo", 8], ["bongoSolo", 4], ["drumBreak", 8], ["organSolo", 8], ["rhythmSolo", 4], ["gtrSolo", 8], ["theme", 8, 2], ["outro", 4]],
+  }) },
+  skatepark: { name: "🛹 skatepark strut", make: () => funkTune({
+    // A minor at 96, laid back and swung, a hip-hop beat: a fat bass, ghost notes on the snare, an organ that takes its time
+    bpm: 96, swing: 0.18, echo: 0.15, chords: ["Am7", "Am7", "Dm7", "E7"],
+    bass: "A1:3 r:1 A2:1 r:2 C2:1 r:2 E2:2 G2:2 A2:2 | A1:2 r:4 E2:2 r:2 G2:1 A2:1 r:2 C3:2 | D2:3 r:1 D3:1 r:2 F2:1 r:2 A2:2 C3:2 D3:2 | E2:3 r:1 E3:1 r:2 G#2:1 r:2 B2:2 D3:2 G#2:2",
+    bassSolo: "A1:2 A2:1 r:1 G2:1 E2:1 r:2 C2:1 D2:1 E2:2 G2:1 A2:1 C3:2 | A2:1 G2:1 E2:1 r:1 A1:4 r:2 E2:1 G2:1 A2:2 C3:2 | D2:2 D3:1 r:1 C3:1 A2:1 r:2 F2:1 G2:1 A2:2 C3:1 D3:1 F3:2 | E2:2 E3:1 r:1 D3:1 B2:1 r:2 G#2:1 A2:1 B2:2 D3:1 E3:1 G#3:2 | A1:2 A2:1 r:1 G2:1 E2:1 r:2 C2:1 D2:1 E2:2 G2:1 A2:1 C3:2 | A1:1 A1:1 r:2 C2:1 D2:1 E2:1 r:1 G2:2 A2:2 E2:4 | D2:2 F2:1 A2:1 r:2 E2:2 G#2:1 B2:1 r:2 D3:2 E3:2 | E3:2 D3:2 C3:2 B2:2 A2:8",
+    theme: "E5:2 r:2 E5:1 D5:1 C5:2 A4:4 r:4 | G4:2 A4:2 C5:2 D5:2 E5:4 D5:4 | F5:2 r:2 F5:1 E5:1 D5:2 A4:4 r:4 | G#4:2 B4:2 D5:2 E5:2 G#5:4 E5:4 | A5:3 G5:1 E5:2 D5:2 C5:4 r:4 | D5:2 E5:2 G5:2 A5:2 G5:4 E5:4 | F5:2 D5:2 A4:2 D5:2 E5:2 G#5:2 B5:4 | A5:12 r:4",
+    organSolo: "A4:2 C5:2 E5:2 G5:2 A5:4 G5:2 E5:2 | D5:2 C5:2 A4:4 r:4 E5:1 G5:1 A5:2 | D5:2 F5:2 A5:2 C6:2 D6:4 C6:2 A5:2 | G#5:2 B5:2 E6:4 D6:2 B5:2 G#5:4 | C6:3 B5:1 A5:2 G5:2 E5:4 r:4 | G5:1 A5:1 G5:1 E5:1 D5:2 C5:2 A4:4 r:4 | D5:2 F5:2 A5:2 F5:2 E5:2 G#5:2 B5:2 D6:2 | C6:2 B5:2 A5:8 r:4",
+    gtrSolo: "A4:1 C5:1 D5:1 E5:1 G5:2 E5:2 D5:2 C5:2 A4:4 | r:2 E5:1 G5:1 A5:2 C6:2 B5:1 A5:1 G5:2 E5:4 | D5:1 F5:1 A5:1 C6:1 D6:4 C6:2 A5:2 F5:4 | E5:1 G#5:1 B5:2 D6:2 B5:2 G#5:4 E5:4 | A5:4 C6:2 E6:2 D6:2 C6:2 A5:4 | G5:1 A5:1 G5:1 E5:1 G5:1 E5:1 D5:2 E5:8 | F5:2 A5:2 D6:2 C6:2 B5:2 G#5:2 E5:2 D5:2 | A4:16",
+    kick: "x......x..x..... x.x.......x.....", snare: "....x.......x... ....x..o....x.o.",
+    hat: "x.x.x.x.x.x.x.x. x.x.x.x.x.x.x.x.", open: "................ ..........x.....",
+    bKick: "x..x......x.x... x..x...x..x.....", bSnare: "....x..o....x... .o..x..o..o.x.x.",
+    bHat: "x.xxx.x.x.xxx.x. x.x.x.xxx.x.x.x.",
+    hi: "x.x...x.x.x...x.", lo: "....x.......x..x",
+    soloHi: "x.x.xx.x.x.x.xx. x..x.x..x.x.x.xx x.x.xx.x.x.x.xx. x.xxx.x.xxxxx.x.",
+    soloLo: "...x.......x.... ..x...x...x..... ...x.......x.... x.x.x...........",
+    rhythm: [[0, 1], [2, 1], [7, 2], [10, 1], [12, 2]], rhythmSolo: [[0, 1], [2, 1], [3, 1], [5, 1], [7, 1], [8, 1], [10, 1], [12, 1], [13, 1], [15, 1]],
+    organ: [[0, 6], [8, 3], [12, 3]],
+    plan: [["intro", 4], ["kitIn", 4], ["groove", 8], ["theme", 8], ["bassSolo", 8], ["bongoSolo", 4], ["drumBreak", 4], ["organSolo", 8], ["rhythmSolo", 4], ["gtrSolo", 8], ["theme", 8, 2], ["outro", 4]],
+  }) },
 };
 // each background's own tune
 const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby" };
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
+// the kinds of music, each with its tunes: the music tab's first row of
+// chips picks a kind, the second its tune
+const TUNE_GROUPS = [
+  ["beats", "🥁 classic beats", ["bongobreak", "canyon", "skatepark"]],
+  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers"]],
+  ["calypso", "🏖️ calypso", ["beach", "soca", "lullaby"]],
+  ["house", "🏠 house", ["cushions"]],
+  ["groove", "🕺 groove", ["bats", "vibes"]],
+  ["waltz", "💃 waltz", ["witch"]],
+  ["chase", "🏃 chase", ["treechase", "duckdash", "housechase"]],
+  ["story", "📖 storybook", ["forest", "harpsichord", "spiders", "cemetery"]],
+];
+const groupOfTune = id => id === "scene" ? "scene" : (TUNE_GROUPS.find(g => g[2].includes(id)) || [null])[0];
+// (every tune in one kind, and only one)
+for (const id of Object.keys(TUNES))
+  if (TUNE_GROUPS.filter(g => g[2].includes(id)).length !== 1) console.error("the tune " + id + " is not in exactly one kind of music");
+// Moving music by an interval: a tap on its chip goes to the next, from a
+// half step up to the octave, then round again
+const INTERVALS = [null, "half step", "whole step", "minor 3rd", "major 3rd", "4th", "tritone", "5th",
+                   "minor 6th", "major 6th", "minor 7th", "major 7th", "octave"];
+const nextInterval = iv => (iv || 12) % 12 + 1;
 
 // a tune made ready to play: every part's notes in one list, by step,
 // section after section of its form
@@ -5052,9 +5231,10 @@ const stepSecs = T => 60 / T.bpm / 4;
 const swingOf = (T, at) => (at % 2 ? T.swing || 0 : 0) + (at % 4 === 2 ? T.swing8 || 0 : 0);
 const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + swingOf(song.T, at)) * stepSecs(song.T);
 // (drums keep their sound when the tune is moved up or down)
-const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell"]);
-function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0, knobs = null) {
-  const p = song.T.parts[ev.part], dur = ev.len * sd, move = (p.shift || 0) + (PERCUSSION.has(p.inst) ? 0 : up + (ev.up || 0));
+const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell", "bongo", "openhat"]);
+function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0, knobs = null, ups = null) {
+  const p = song.T.parts[ev.part], dur = ev.len * sd,
+        move = (p.shift || 0) + (PERCUSSION.has(p.inst) ? 0 : up + (ev.up || 0) + (ups ? ups[ev.part] : 0));
   for (const m of ev.notes) INSTRUMENTS[p.inst](A, buses[ev.part], t, m + move, dur, (ev.vel ?? 1) * (p.vel ?? 1), knobs ? knobs[ev.part] : 50);
 }
 
@@ -5095,7 +5275,7 @@ function sendAhead(p) {
     if (t > until || (p.until && t > p.until)) break;
     // (a note already late, after a busy moment, is skipped, not crammed in)
     if (t > audio.currentTime - 0.02) {
-      playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0, p.knobs);
+      playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0, p.knobs, p.ups);
       if (mixLights && mixLights.id === p.id) blink(mixLights.dots[ev.part], t - audio.currentTime);
     }
     if (++p.i >= p.song.events.length) { p.i = 0; p.loop++; }
@@ -5117,6 +5297,8 @@ function chan(id, key) {
   const mix = state.music.mix || (state.music.mix = {}), t = mix[id] || (mix[id] = {});
   return t[key] || (t[key] = {});
 }
+// a channel moved up or down: presses (-3 to 3) times its interval (half steps)
+const chanUp = c => (c.upN || 0) * (c.upIv || 12);
 const fxOf = (id, T) => ({ repeats: 38, time: T.echoSteps || 3, room: 100, ...(mixOf(id).fx || {}) });
 // the tone slider: a filter from dark (150 Hz) to wide open
 const toneHz = v => 150 * Math.pow(20000 / 150, v / 100);
@@ -5126,8 +5308,10 @@ function applyMix(instant = false) {
   const { song, buses } = p, mix = mixOf(p.id), now = audio.currentTime;
   const to = (param, v) => instant ? param.setValueAtTime(v, now) : param.setTargetAtTime(v, now, 0.03);
   const solo = song.T.parts.some(q => (mix[channelKey(q)] || {}).solo);
-  // each instrument's own knob, for its notes from now on
+  // each instrument's own knob, for its notes from now on, and its own move
+  // up or down: so many times an interval
   p.knobs = song.T.parts.map(q => (mix[channelKey(q)] || {}).knob ?? 50);
+  p.ups = song.T.parts.map(q => chanUp(mix[channelKey(q)] || {}));
   song.T.parts.forEach((q, i) => {
     const c = mix[channelKey(q)] || {}, st = buses.strips[i], heard = !c.mute && (!solo || c.solo);
     to(st.gain.gain, heard ? (q.level ?? 1) * Math.pow(10, (c.level || 0) / 20) : 0);
@@ -5175,15 +5359,35 @@ function blink(dot, after) {
 const INST_ICON = { steelpan: "🥘", organ: "🎹", bass: "🎸", kick: "🥁", rim: "🥢", snare: "🥁", cowbell: "🔔", hat: "🎩",
                     shaker: "🧂", conga: "🪘", bubble: "🫧", pizz: "🎻", pluck: "🎸", chop: "🎸", melodica: "🎹", ghost: "👻",
                     bell: "🔔", pad: "☁️", musicbox: "🎶", flute: "🌬️", bird: "🐦", buzz: "🐝", harpsichord: "🎼",
-                    vibes: "🔮", fiddle: "🎻", lead: "🎛️", zap: "⚡" };
+                    vibes: "🔮", fiddle: "🎻", lead: "🎛️", zap: "⚡",
+                    bassgtr: "🎸", bongo: "🪘", openhat: "🎩", tonewheel: "🎹", funkgtr: "🎸", twang: "🎸" };
 // each instrument's own knob, by name (what it does is in INSTRUMENTS)
 const INST_KNOB = { steelpan: "✨ ring", harpsichord: "✨ ring", fiddle: "✨ ring", pizz: "✨ ring", pluck: "✨ ring", musicbox: "✨ ring",
                     bell: "✨ ring", rim: "✨ length", snare: "✨ length", hat: "✨ length", shaker: "✨ length", cowbell: "✨ length",
                     chop: "✨ length", kick: "💥 boom", conga: "🎵 pitch", bass: "🎸 growl", buzz: "🐝 wah", organ: "🎹 bright",
                     melodica: "〰️ vibrato", flute: "〰️ vibrato", ghost: "〰️ waver", vibes: "🌀 wobble", pad: "🌅 swell",
-                    bubble: "🫧 bloop", bird: "🐦 chirp", lead: "✨ bright", zap: "⚡ fall" };
-// "panA" reads "pan A"
-const partName = n => n.replace(/([a-z])([A-Z])$/, "$1 $2");
+                    bubble: "🫧 bloop", bird: "🐦 chirp", lead: "✨ bright", zap: "⚡ fall",
+                    bassgtr: "🎸 growl", bongo: "🎵 pitch", openhat: "✨ length", tonewheel: "🌀 spin", funkgtr: "🦆 wah", twang: "〰️ whammy" };
+// "panA" reads "pan A", "bassSolo" "bass Solo"
+const partName = n => n.replace(/([a-z])([A-Z])/g, "$1 $2");
+// A channel's move up or down: minus, its interval (a tap goes to the
+// next), plus; and how far it is moved now: none, or so many presses of
+// its interval, up to three either way. Changing the interval keeps the
+// presses: "+2 × 5th" becomes "+2 × octave".
+function channelMove(get, put, changed) {
+  const say = el("span", { class: "val" });
+  const show = () => {
+    const c = get(), n = c.upN || 0, iv = c.upIv || 12;
+    say.textContent = n === 0 ? "none" : `${n > 0 ? "+" : "−"}${Math.abs(n)} × ${INTERVALS[iv]} (${n > 0 ? "+" : "−"}${Math.abs(n) * iv} half steps)`;
+    ivBtn.textContent = "🎵 " + INTERVALS[iv];
+  };
+  const press = d => () => { const ch = put(); ch.upN = Math.max(-3, Math.min(3, (ch.upN || 0) + d)); changed(); show(); };
+  const down = el("button", { class: "ms", title: "down by the interval", onclick: press(-1) }, "➖");
+  const ivBtn = el("button", { class: "ms", title: "the interval: tap for the next", onclick: () => { const ch = put(); ch.upIv = nextInterval(ch.upIv); changed(); show(); } });
+  const up = el("button", { class: "ms", title: "up by the interval", onclick: press(1) }, "➕");
+  show();
+  return el("div", { class: "knob move" }, [el("span", {}, "🎹 move"), el("div", { class: "row" }, [down, ivBtn, up]), say]);
+}
 // The board itself, for the tune of the moment; built again when the tune
 // changes, or its mix does from outside (Load, Start over).
 function mixerBox(box) {
@@ -5229,7 +5433,8 @@ function mixerBox(box) {
         knob("🎛️ tone", 0, 100, () => c().tone ?? 100, v => { chan(id, key).tone = v; }, v => v === 100 ? "open" : v + "%"),
         knob("↔️ pan", -10, 10, () => c().pan || 0, v => { chan(id, key).pan = v; }, v => v === 0 ? "middle" : v < 0 ? "◀ " + -v : v + " ▶"),
         ...(INST_KNOB[p.inst] ? [knob(INST_KNOB[p.inst], 0, 100, () => c().knob ?? 50, v => { chan(id, key).knob = v; },
-          p.inst === "conga" ? v => { const h = Math.round((v - 50) * 12 / 50); return h === 0 ? "usual" : (h > 0 ? "+" : "") + h; } : v => v === 50 ? "usual" : String(v))] : []),
+          (p.inst === "conga" || p.inst === "bongo") ? v => { const h = Math.round((v - 50) * 12 / 50); return h === 0 ? "usual" : (h > 0 ? "+" : "") + h; } : v => v === 50 ? "usual" : String(v))] : []),
+        ...(PERCUSSION.has(p.inst) ? [] : [channelMove(() => c(), () => chan(id, key), local)]),
       ]);
       dots.push(dot); rows.push({ strip, mute, solo, c });
       return strip;
@@ -5672,10 +5877,11 @@ const TABS = [
     ["flip", "mute", ["🔊 sound on: tap to mute", "🔇 muted: tap for sound"]],
     ["note", "now", nowPlaying],
     ["transport", "where", "⏯️ where the tune is"],
-    ["choice", "track", "tune", TUNE_CHOICES],
+    ["tunes", "track", "🎶 the kind of music, then the tune"],
     ["range", "volume", "🔊 volume", 0, 100, 40, 80],
     ["range", "tempo", "🏃 tempo (% of the tune's own speed)", 25, 300, 80, 130],
     ["range", "transpose", "🎹 transpose (half steps: + higher, − lower)", -24, 24, -5, 5],
+    ["nudge", "transpose", "🎹 move the tune by an interval", -24, 24, "interval"],
     ["mixer", "mix", "🎚️ mixing board"],
   ]],
 ];
@@ -5911,6 +6117,42 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     box.append(b);
     syncs.push(() => { b.textContent = label + (state[part][key] ? ": on" : ": off");
                        b.setAttribute("aria-pressed", state[part][key]); });
+  } else if (kind === "tunes") {
+    // two rows of chips: the kind of music (or the scene's own tune), then
+    // that kind's tunes; picking a kind plays its first tune, unless the
+    // tune playing is already of that kind
+    const kinds = el("div", { class: "row" }), tunes = el("div", { class: "row" });
+    const kindBtns = [["scene", "🏞️ the scene's own"], ...TUNE_GROUPS.map(([g, text]) => [g, text])].map(([g, text]) => {
+      const b = el("button", { onclick: () => {
+        if (g === "scene") return set(part, key, "scene");
+        const list = TUNE_GROUPS.find(x => x[0] === g)[2];
+        if (!list.includes(state[part][key])) set(part, key, list[0]);
+      } }, text);
+      kinds.append(b); return [g, b];
+    });
+    box.append(kinds, tunes);
+    let shownKind, tuneBtns = [];
+    syncs.push(() => {
+      const now = state[part][key], g = groupOfTune(now);
+      for (const [v, b] of kindBtns) b.setAttribute("aria-pressed", v === g);
+      if (g !== shownKind) {
+        shownKind = g;
+        const list = g && g !== "scene" ? TUNE_GROUPS.find(x => x[0] === g)[2] : [];
+        tuneBtns = list.map(id => [id, el("button", { onclick: () => set(part, key, id) }, TUNES[id].name)]);
+        tunes.replaceChildren(...tuneBtns.map(([, b]) => b));
+        tunes.hidden = !tuneBtns.length;
+      }
+      for (const [v, b] of tuneBtns) b.setAttribute("aria-pressed", v === now);
+    });
+  } else if (kind === "nudge") {
+    // three chips for the slider above: down by the interval, the interval
+    // (a tap goes to the next, a half step up to the octave), up by it
+    const [lo, hi, ikey] = rest, iv = () => state[part][ikey] || 12;
+    const down = el("button", { title: "down by the interval", onclick: () => set(part, key, Math.max(lo, (state[part][key] || 0) - iv())) }, "➖");
+    const ivBtn = el("button", { title: "the interval: tap for the next", onclick: () => set(part, ikey, nextInterval(iv())) });
+    const up = el("button", { title: "up by the interval", onclick: () => set(part, key, Math.min(hi, (state[part][key] || 0) + iv())) }, "➕");
+    box.append(el("div", { class: "row" }, [down, ivBtn, up]));
+    syncs.push(() => { ivBtn.textContent = "🎵 " + INTERVALS[iv()]; val.textContent = INTERVALS[iv()] + ` (${iv()} half step${iv() === 1 ? "" : "s"})`; });
   } else if (kind === "mixer") {
     mixerBox(box);
   } else if (kind === "transport") {

@@ -2,6 +2,16 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.20 (2026-10-14)
+
+Everything in 0.0.19, plus music by kind, three classic beats, and moving music by an interval.
+
+- **🎶 Music by kind:** the Music tab picks a kind of music, then one of its tunes: 🥁 classic beats, 🌴 reggae, 🏖️ calypso, 🏠 house, 🕺 groove, 💃 waltz, 🏃 chase and 📖 storybook (or 🏞️ the scene's own tune). Picking a kind plays its first tune, unless the tune playing is already of that kind.
+- **🥁 Three classic beats:** our own funk tunes in the style of the instrumentals hip-hop grew up on, about three minutes each: 🥁 bongo breakdown, 🏜️ canyon cruise and 🛹 skatepark strut. Each gives every player a turn in front: the bongos open it, then the bass guitar, the bongos again, the drum kit, the organ, the rhythm guitar and the lead guitar each take a solo (watch the sections under the tune's slider, and solo or mute them on the mixing board). New instruments for them: a bass guitar, bongos, an open hi-hat, a tonewheel organ with a spinning speaker, a funk guitar with a wah, and a twangy lead guitar with a whammy bar.
+- **🎹 Move the tune by an interval:** under the transpose slider, ➖ | 🎵 interval | ➕. A tap on the interval goes to the next one, a half step, a whole step, a minor 3rd and so on up to the octave (where it starts); ➖ and ➕ move the slider by exactly that much.
+- **🎚️ Move each instrument too:** on the mixing board, every instrument that plays notes has its own ➖ | 🎵 interval | ➕, and says how far it is moved: none, or up to three presses either way ("+2 × 5th"). Drums keep their sound.
+- Part names on the mixing board read with spaces ("bass Solo", "break Kick").
+
 ## 0.0.19 (2026-10-13)
 
 Everything in 0.0.18, plus the far views match the places they show.
