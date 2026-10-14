@@ -2,9 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.26 (2026-10-14)
 
-Changes since 0.0.25, for the next version, which waits for Matthew's go-ahead.
+Everything in 0.0.25, plus backgrounds by kind of place, and three castles with their rooms.
 
 - **🏞️ Backgrounds by kind of place,** as the music is by kind: the Background tab's long row of places is now two rows, each in a dashed box with its name: first the kind of place (⬜ no background, 🌲 woods, 💧 water, 🏕️ camping, 🏠 home, 🧙 the witch's), then that kind's places. Picking a kind goes to its first place, unless the place now is already of that kind; going through a doorway shows the new place's kind.
 - **🏰 Three castles, N's, M's and D's:** each with its own settings: how many levels (1 to 5), its stone, how many trees grow round it, and how wide its moat and drawbridge are (none to very wide), its flags and banners in its owner's color with the owner's letter. The forest clearing shows the one picked ("🏰 whose castle"), far off and now a doorway; a new place, 🏰 castle, shows it up close: far snowy mountains and forest, the sun and birds, stonework, ivy, lit windows and torches, reeds and lily pads in the moat, a road with pennants, a hay cart, a well, barrels, flowers, framing oaks.
