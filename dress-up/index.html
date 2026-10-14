@@ -107,6 +107,7 @@
   .mixer p.now { margin: 0; color: var(--muted); }
   .strip { border: 2px solid var(--line); border-radius: 12px; padding: 6px 8px; font-size: 0.85em; }
   .strip.master { border-style: dashed; }
+  .strip.lfo { border-style: dotted; }
   /* a set of chips in a dashed box of its own, with its name (the music's
      kinds, then the kind's tunes), as the mixing board's master strip */
   .chipset { border: 2px dashed var(--line); border-radius: 12px; padding: 6px 8px; }
@@ -5057,7 +5058,7 @@ const FUNK_SECTIONS = {
 };
 function funkTune(c) {
   const ch = c.chords;
-  return { bpm: c.bpm, swing: c.swing || 0, room: 1.6, level: 1, echoSteps: 3, parts: [
+  return { bpm: c.bpm, swing: c.swing || 0, room: 1.6, level: 1, echoSteps: 3, lfos: c.lfos || {}, parts: [
     { name: "kick", inst: "kick", level: 0.9, line: hitsOf(c.kick) },
     { name: "snare", inst: "snare", level: 0.55, rev: 0.15, line: hitsOf(c.snare) },
     { name: "hat", inst: "hat", level: 0.35, line: hitsOf(c.hat) },
@@ -5069,10 +5070,11 @@ function funkTune(c) {
     // faster and faster, in triplets (three over two beats, three to a
     // beat, six to a beat)
     { name: "fill", inst: "snare", level: 0.5, line: hitsOf(".".repeat(112) + "8(xxx) (xox) (xxxxxx)") },
-    { name: "bongoHi", inst: "bongo", level: 0.7, rev: 0.15, line: hitsOf(c.hi, 71) },
-    { name: "bongoLo", inst: "bongo", level: 0.75, rev: 0.15, line: hitsOf(c.lo, 64) },
-    { name: "soloHi", inst: "bongo", level: 0.8, rev: 0.15, line: hitsOf(c.soloHi, 71) },
-    { name: "soloLo", inst: "bongo", level: 0.85, rev: 0.15, line: hitsOf(c.soloLo, 64) },
+    // (the bongos' pitch may follow one of the tune's LFOs: c.lfo, by part)
+    { name: "bongoHi", inst: "bongo", level: 0.7, rev: 0.15, line: hitsOf(c.hi, 71), lfo: (c.lfo || {}).hi },
+    { name: "bongoLo", inst: "bongo", level: 0.75, rev: 0.15, line: hitsOf(c.lo, 64), lfo: (c.lfo || {}).lo },
+    { name: "soloHi", inst: "bongo", level: 0.8, rev: 0.15, line: hitsOf(c.soloHi, 71), lfo: (c.lfo || {}).soloHi },
+    { name: "soloLo", inst: "bongo", level: 0.85, rev: 0.15, line: hitsOf(c.soloLo, 64), lfo: (c.lfo || {}).soloLo },
     { name: "bass", inst: "bassgtr", level: 0.95, line: lineOf(c.bass) },
     { name: "bassSolo", inst: "bassgtr", level: 1, line: lineOf(c.bassSolo) },
     { name: "rhythm", inst: "funkgtr", level: 0.45, rev: 0.1, line: rhythmOf(ch, 16, c.rhythm, 4) },
@@ -5125,7 +5127,7 @@ const TUNES = {
   } },
   beach: { name: "🏖️ beach calypso", make: () => {
     const chords = ["C", "F", "G7", "C", "Am", "F", "G7", "C"], bridge = ["Am", "F", "C", "G", "Am", "F", "G", "G7"];
-    return { bpm: 116, room: 1.5, level: 0.72, parts: [
+    return { bpm: 116, room: 1.5, level: 0.72, lfos: { A: { beats: 8, shape: "sine", depth: 2 } }, parts: [
       { name: "panA", inst: "steelpan", rev: 0.2, line: lineOf(
         "E5:2 G5:2 C6:3 G5:1 A5:2 G5:2 E5:4 | F5:2 A5:2 C6:4 A5:2 F5:2 A5:4 | G5:2 B5:2 D6:3 B5:1 G5:2 F5:2 D5:4 | E5:3 D5:1 C5:4 r:2 G4:2 C5:2 E5:2 | " +
         "A5:2 C6:2 E6:3 C6:1 A5:2 G5:2 E5:4 | F5:2 G5:2 A5:2 C6:2 A5:2 G5:2 F5:4 | D6:2 C6:2 B5:2 A5:2 G5:2 F5:2 D5:4 | C5:4 E5:2 G5:2 C6:6 r:2") },
@@ -5147,7 +5149,7 @@ const TUNES = {
       { name: "shaker", inst: "shaker", level: 0.5, line: hitsOf("xoxoxoxoxoxoxoxo") },
       { name: "conga", inst: "conga", level: 0.6, line: hitsOf("..x..x.x..x..xx.", midiOf("A3")) },
       // a second conga, higher, answering the first
-      { name: "conga2", inst: "conga", level: 0.5, line: hitsOf("x...x..x.x...x..", midiOf("E4")) },
+      { name: "conga2", inst: "conga", level: 0.5, line: hitsOf("x...x..x.x...x..", midiOf("E4")), lfo: "A" },
       // a carnival whistle
       { name: "whistle", inst: "flute", level: 0.7, rev: 0.3, line: lineOf("G6:1 r:1 G6:1 r:1 G6:2 r:10 | r:16 | r:16 | r:16") },
     ], form: [
@@ -5552,6 +5554,11 @@ const TUNES = {
     soloLo: "..x...x...x...x. x...x...x...x... x...x...x...x... x...x...x.x.x...",
     rhythm: [[0, 1], [3, 1], [6, 2], [10, 1], [12, 1], [14, 1]], rhythmSolo: [[0, 1], [2, 1], [3, 1], [6, 1], [7, 1], [8, 1], [10, 1], [11, 1], [14, 1], [15, 1]],
     organ: [[0, 7], [10, 5]],
+    // the high bongo rising and falling once a bar; in the solo, the high
+    // one talking, up and down every two beats, the low one climbing over
+    // eight bars
+    lfos: { A: { beats: 4, shape: "triangle", depth: 2 }, B: { beats: 2, shape: "sine", depth: 4 }, C: { beats: 32, shape: "saw", depth: 3 } },
+    lfo: { hi: "A", soloHi: "B", soloLo: "C" },
     plan: [["intro", 4], ["kitIn", 4], ["groove", 8], ["theme", 8], ["bassSolo", 8], ["bongoSolo", 8], ["drumBreak", 8], ["organSolo", 8], ["rhythmSolo", 4], ["gtrSolo", 8], ["theme", 8, 2], ["outro", 4], ["intro", 4]],
   }) },
   canyon: { name: "🏜️ canyon cruise", make: () => funkTune({
@@ -5574,6 +5581,11 @@ const TUNES = {
     soloLo: ".x...x...x...x.. ..x...x...x...x. .x...x...x...x.. x...x...x.......",
     rhythm: [[0, 2], [4, 1], [6, 1], [10, 2], [14, 1]], rhythmSolo: [[0, 1], [1, 1], [4, 1], [6, 1], [7, 1], [10, 1], [12, 1], [13, 1], [15, 1]],
     organ: [[0, 8], [8, 8]],
+    // the low bongo, a hit every six steps, round its LFO in six beats:
+    // four hits to a turn, a little tune of four notes coming round every
+    // bar and a half; the high one drifting over two bars
+    lfos: { A: { beats: 6, shape: "triangle", depth: 5 }, B: { beats: 8, shape: "sine", depth: 2 } },
+    lfo: { lo: "A", hi: "B", soloHi: "B" },
     plan: [["intro", 4], ["kitIn", 4], ["groove", 8], ["theme", 8], ["bassSolo", 8], ["bongoSolo", 4], ["drumBreak", 8], ["organSolo", 8], ["rhythmSolo", 4], ["gtrSolo", 8], ["theme", 8, 2], ["outro", 4]],
   }) },
   skatepark: { name: "🛹 skatepark strut", make: () => funkTune({
@@ -5594,6 +5606,10 @@ const TUNES = {
     rhythm: [[0, 1], [2, 1], [7, 2], [10, 1], [12, 2]], rhythmSolo: [[0, 1], [2, 1], [3, 1], [5, 1], [7, 1], [8, 1], [10, 1], [12, 1], [13, 1], [15, 1]],
     // (its second half three chords over two beats)
     organ: [[0, 6], [8, 8 / 3], [8 + 8 / 3, 8 / 3], [8 + 16 / 3, 8 / 3]],
+    // the high bongo round its LFO every three beats, against the bar's
+    // four; in the solo, a slow climb over four bars
+    lfos: { A: { beats: 3, shape: "sine", depth: 3 }, B: { beats: 16, shape: "saw", depth: 5 } },
+    lfo: { hi: "A", soloHi: "B" },
     plan: [["intro", 4], ["kitIn", 4], ["groove", 8], ["theme", 8], ["bassSolo", 8], ["bongoSolo", 4], ["drumBreak", 4], ["organSolo", 8], ["rhythmSolo", 4], ["gtrSolo", 8], ["theme", 8, 2], ["outro", 4]],
   }) },
 };
@@ -5688,9 +5704,10 @@ const swingOf = (T, at) => !Number.isInteger(at) ? 0 : (at % 2 ? T.swing || 0 : 
 const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + swingOf(song.T, at)) * stepSecs(song.T);
 // (drums keep their sound when the tune is moved up or down)
 const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell", "bongo", "openhat"]);
-function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0, knobs = null, ups = null) {
+// (bend: half steps more, even for a drum: where its LFO is, see below)
+function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0, knobs = null, ups = null, bend = 0) {
   const p = song.T.parts[ev.part], dur = ev.len * sd,
-        move = (p.shift || 0) + (PERCUSSION.has(p.inst) ? 0 : up + (ev.up || 0) + (ups ? ups[ev.part] : 0));
+        move = (p.shift || 0) + bend + (PERCUSSION.has(p.inst) ? 0 : up + (ev.up || 0) + (ups ? ups[ev.part] : 0));
   for (const m of ev.notes) INSTRUMENTS[p.inst](A, buses[ev.part], t, m + move, dur, (ev.vel ?? 1) * (p.vel ?? 1), knobs ? knobs[ev.part] : 50);
 }
 
@@ -5731,7 +5748,10 @@ function sendAhead(p) {
     if (t > until || (p.until && t > p.until)) break;
     // (a note already late, after a busy moment, is skipped, not crammed in)
     if (t > audio.currentTime - 0.02) {
-      playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0, p.knobs, p.ups);
+      // (a drum following an LFO: the wave where the tune is, at this hit)
+      const lfo = p.lfos && p.lfos[ev.part];
+      const bend = lfo ? lfo.depth * lfoWave(lfo.shape, ((p.loop * p.song.steps + ev.at) / lfo.steps) % 1) : 0;
+      playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0, p.knobs, p.ups, bend);
       if (mixLights && mixLights.id === p.id) blink(mixLights.dots[ev.part], t - audio.currentTime);
     }
     if (++p.i >= p.song.events.length) { p.i = 0; p.loop++; }
@@ -5753,6 +5773,28 @@ function chan(id, key) {
   const mix = state.music.mix || (state.music.mix = {}), t = mix[id] || (mix[id] = {});
   return t[key] || (t[key] = {});
 }
+// --- the LFOs: four slow waves, A to D, that a drum's pitch can follow
+// (a drum with a pitch knob: its LFO chip picks one, or none). Each keeps
+// time with the tune, going once round in so many beats, from one beat to
+// eight bars, from the tune's start; in a shape (triangle, saw or sine);
+// so far up and down (its depth, in half steps). A hit takes the wave's
+// value at its moment. Set on the mixing board, kept for each tune; a tune
+// may set its own to start with (T.lfos, and a part's lfo).
+const LFO_NAMES = ["A", "B", "C", "D"];
+const LFO_BEATS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
+const LFO_SHAPES = ["triangle", "saw", "sine"], LFO_SHAPE_NAME = { triangle: "△ triangle", saw: "◿ saw", sine: "∿ sine" };
+const LFO_DEFAULT = { A: { beats: 4, shape: "triangle", depth: 3 }, B: { beats: 2, shape: "sine", depth: 4 },
+                      C: { beats: 8, shape: "saw", depth: 3 }, D: { beats: 16, shape: "sine", depth: 2 } };
+const beatsName = b => b % 4 ? `${b} beats`.replace(/^1 beats/, "1 beat") : `${b / 4} bar${b === 4 ? "" : "s"}`;
+const lfoOf = (id, T, L) => ({ ...LFO_DEFAULT[L], ...((T.lfos || {})[L] || {}), ...(mixOf(id)["lfo" + L] || {}) });
+// the wave, from -1 to 1, a share u of the way round (a triangle and a
+// sine start in the middle, going up; a saw climbs from the bottom)
+const lfoWave = (shape, u) => shape === "sine" ? Math.sin(2 * Math.PI * u) : shape === "saw" ? 2 * u - 1
+  : u < 0.25 ? 4 * u : u < 0.75 ? 2 - 4 * u : 4 * u - 4;
+// the LFO a part follows: the mix's choice ("none" too), or the tune's
+const partLfo = (id, q) => { const c = (mixOf(id)[channelKey(q)] || {}).lfo; return c === "none" ? null : c || q.lfo || null; };
+// the parts that can follow one: drums tuned by their knob
+const PITCHED_DRUMS = new Set(["bongo", "conga"]);
 // a channel moved up or down: presses (-3 to 3) times its interval (half steps)
 const chanUp = c => (c.upN || 0) * (c.upIv || 12);
 const fxOf = (id, T) => ({ repeats: 38, time: T.echoSteps || 3, room: 100, ...(mixOf(id).fx || {}) });
@@ -5768,6 +5810,11 @@ function applyMix(instant = false) {
   // up or down: so many times an interval
   p.knobs = song.T.parts.map(q => (mix[channelKey(q)] || {}).knob ?? 50);
   p.ups = song.T.parts.map(q => chanUp(mix[channelKey(q)] || {}));
+  // and the LFO each drum follows, if any: its steps round, shape, depth
+  p.lfos = song.T.parts.map(q => {
+    const L = PITCHED_DRUMS.has(q.inst) && partLfo(p.id, q), o = L && lfoOf(p.id, song.T, L);
+    return o ? { steps: o.beats * 4, shape: o.shape, depth: o.depth } : null;
+  });
   song.T.parts.forEach((q, i) => {
     const c = mix[channelKey(q)] || {}, st = buses.strips[i], heard = !c.mute && (!solo || c.solo);
     to(st.gain.gain, heard ? (q.level ?? 1) * Math.pow(10, (c.level || 0) / 20) : 0);
@@ -5873,6 +5920,21 @@ function mixerBox(box) {
       el("div", { class: "strip-top" }, [throwButton("🌊 throw everything", "all"),
         el("button", { class: "ms", onclick: () => { if (state.music.mix) delete state.music.mix[id]; mixChanged(); build(); } }, "↺ reset the mix")]),
     ]);
+    // the four LFOs, in a row before the parts: each its speed, shape and
+    // depth, and which drums follow it now
+    const lfoStrips = LFO_NAMES.map(L => {
+      const o = () => lfoOf(id, song.T, L);
+      const shapeBtn = el("button", { class: "ms", title: "the wave's shape: tap for the next",
+        onclick: () => { chan(id, "lfo" + L).shape = LFO_SHAPES[(LFO_SHAPES.indexOf(o().shape) + 1) % LFO_SHAPES.length]; local(); shapeBtn.textContent = LFO_SHAPE_NAME[o().shape]; } },
+        LFO_SHAPE_NAME[o().shape]);
+      const who = song.T.parts.filter(q => PITCHED_DRUMS.has(q.inst) && partLfo(id, q) === L).map(q => partName(q.name));
+      return el("div", { class: "strip lfo" }, [
+        el("div", { class: "strip-top" }, [el("span", { class: "strip-name" }, `〰️ LFO ${L}`), shapeBtn]),
+        knob("⏱️ round in", 0, LFO_BEATS.length - 1, () => Math.max(0, LFO_BEATS.indexOf(o().beats)), v => { chan(id, "lfo" + L).beats = LFO_BEATS[v]; }, v => beatsName(LFO_BEATS[v])),
+        knob("↕️ depth", 0, 12, () => o().depth, v => { chan(id, "lfo" + L).depth = v; }, v => v === 0 ? "still" : "±" + v),
+        el("p", { class: "now" }, who.length ? "🪘 " + who.join(", ") : "no drum follows it"),
+      ]);
+    });
     const dots = [], rows = [];
     const strips = song.T.parts.map((p, i) => {
       const key = channelKey(p), c = () => mixOf(id)[key] || {};
@@ -5890,6 +5952,14 @@ function mixerBox(box) {
         knob("↔️ pan", -10, 10, () => c().pan || 0, v => { chan(id, key).pan = v; }, v => v === 0 ? "middle" : v < 0 ? "◀ " + -v : v + " ▶"),
         ...(INST_KNOB[p.inst] ? [knob(INST_KNOB[p.inst], 0, 100, () => c().knob ?? 50, v => { chan(id, key).knob = v; },
           (p.inst === "conga" || p.inst === "bongo") ? v => { const h = Math.round((v - 50) * 12 / 50); return h === 0 ? "usual" : (h > 0 ? "+" : "") + h; } : v => v === 50 ? "usual" : String(v))] : []),
+        // a drum with a pitch: which LFO it follows (none, A to D: a tap for the next)
+        ...(PITCHED_DRUMS.has(p.inst) ? [(() => {
+          const now = () => partLfo(id, p) || "none";
+          const b = el("button", { class: "ms", title: "the LFO this drum's pitch follows: tap for the next",
+            onclick: () => { const all = ["none", ...LFO_NAMES]; chan(id, key).lfo = all[(all.indexOf(now()) + 1) % all.length]; local(); build(); } },
+            now() === "none" ? "none" : "LFO " + now());
+          return el("div", { class: "knob move" }, [el("span", {}, "〰️ LFO"), el("div", { class: "row" }, [b])]);
+        })()] : []),
         ...(PERCUSSION.has(p.inst) ? [] : [channelMove(() => c(), () => chan(id, key), local)]),
       ]);
       dots.push(dot); rows.push({ strip, mute, solo, c });
@@ -5904,7 +5974,7 @@ function mixerBox(box) {
       }
     }
     syncButtons();
-    body.replaceChildren(master, ...strips);
+    body.replaceChildren(master, ...lfoStrips, ...strips);
     mixLights = { id, dots };
   };
   build();

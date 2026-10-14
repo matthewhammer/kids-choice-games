@@ -2,6 +2,11 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **〰️ LFOs on the drums' pitch:** the mixing board has four LFOs, A to D, in a row before the instruments: each is a slow wave that keeps time with the tune, going once round in one beat up to eight bars, in a shape (△ triangle, ◿ saw or ∿ sine), so far up and down (its depth, up to an octave either way). Every drum with a 🎵 pitch knob (the bongos, the congas) has an LFO chip: tap it for none, LFO A, B, C or D, and its pitch follows that wave, a hit at a time. Kept for each tune with the friend, as the rest of the mix.
+- **🪘 Bongos that sing:** the classic beats set their own LFOs: 🥁 bongo breakdown's high bongo rises and falls once a bar, and in the solo the high one talks, up and down every two beats, while the low one climbs over eight bars; 🏜️ canyon cruise's low bongo, a hit every dotted quarter, plays a little tune of its own that comes round every bar and a half; 🛹 skatepark strut's high bongo goes round every three beats, against the bar's four. And 🏖️ beach calypso's second conga sways.
+
 ## 0.0.21 (2026-10-14)
 
 Everything in 0.0.20, plus inside the tents, a cave behind the falls, a path through the woods, a usual size for every place, a visibility panel, and the classic beats in threes.
