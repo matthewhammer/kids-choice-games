@@ -239,8 +239,25 @@ const HOUSE_COLOR_DEFAULTS = {
 // friend saves which it was sized in, figUnit; see upgradeFigSize.)
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
+// The three castles, N's, M's and D's, each with its own settings: how many
+// levels (1 to 5), its stone, how many trees grow round it, and how wide
+// its moat is (and so its drawbridge), from none to very wide. The forest
+// clearing shows the one picked, far off; its own scene shows it up close.
+const CASTLES = [["N", "🏰 N's castle", "#e53935"], ["M", "🏰 M's castle", "#f2c12e"], ["D", "🏰 D's castle", "#3b82f6"]];
+const CASTLE_DEFAULTS = { N: { levels: 3, stone: "#b8b8c4", trees: 6, moat: 100 },
+                          M: { levels: 4, stone: "#e2c9a0", trees: 10, moat: 60 },
+                          D: { levels: 2, stone: "#8a8f98", trees: 4, moat: 150 } };
+const CASTLE_STONES = ["#b8b8c4", "#e2c9a0", "#8a8f98", "#e8e4da", "#c98f7a", "#7c8b6f", "#5a5f6e"];
+const castleOf = o => {
+  const id = CASTLE_DEFAULTS[o.castle] ? o.castle : "N", d = CASTLE_DEFAULTS[id];
+  return { id, flag: CASTLES.find(c => c[0] === id)[2],
+           levels: Math.max(1, Math.min(5, Math.round(o["castleLevels" + id] ?? d.levels))),
+           stone: o["castleStone" + id] ?? d.stone, trees: Math.max(0, Math.round(o["castleTrees" + id] ?? d.trees)),
+           moat: Math.max(0, (o["castleMoat" + id] ?? d.moat) / 100) };
+};
+
 const DEFAULTS = {
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
            stars: false, hearts: false, xeyes: false, unibrow: true, eyes: 50, sides: 0,
@@ -266,6 +283,8 @@ const DEFAULTS = {
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,
                 houses: 4, bridges: 2, ladders: 3, leaves: 60, treeHouseSize: 100,
+                castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
+                  [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat]])),
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
                 inside: 1, room1: "bunks", room2: "kitchen", room3: "books", room4: "lookout", room5: "art", room6: "music",
@@ -3069,30 +3088,53 @@ function farWitchSvg(o) {
   return t;
 }
 // a castle on its hill: towers with pointed roofs and flags, a gate
-function castleSvg() {
-  const stone = "#b8b8c4", dark = "#8e8e9c", teeth = (x, w, y) => [...Array(Math.floor(w / 16))].map((_, i) => `<rect x="${x + i * 16}" y="${y - 10}" width="10" height="10" fill="${stone}"/>`).join("");
-  // (the moat lies round the castle's foot: its far side hidden by the walls)
-  const moat = `<ellipse cx="0" cy="12" rx="232" ry="36" fill="#3f8fc8" stroke="#2c6e9e" stroke-width="3"/><ellipse cx="0" cy="18" rx="200" ry="22" fill="#62b0e0" opacity="0.6"/>`;
+function castleSvg(K = castleOf({})) {
+  const stone = K.stone, dark = darker(stone), L = K.levels, m = K.moat;
+  // (each level adds to the walls, the towers and the keep; at 3 levels it
+  // is the castle the clearing always had)
+  const wallH = 66 + 18 * L, towerH = 60 + 40 * L, keepTop = -(wallH + 50 + 20 * L);
+  const teeth = (x, w, y) => [...Array(Math.floor(w / 16))].map((_, i) => `<rect x="${x + i * 16}" y="${y - 10}" width="10" height="10" fill="${stone}"/>`).join("");
+  const r = (i, sd) => { const v = Math.sin(i * 12.9898 + sd * 78.233) * 43758.5453; return v - Math.floor(v); };
+  // the moat round the castle's foot (its far side hidden by the walls), as
+  // wide as the castle's own setting: none, or out to very wide
+  const rx = 187 + 45 * m, ry = 14 + 22 * m, cy = 12, len = 26 + 24 * m;
+  const moat = m <= 0 ? "" : `<ellipse cx="0" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#3f8fc8" stroke="#2c6e9e" stroke-width="3"/>` +
+    `<ellipse cx="0" cy="${f1(cy + 6)}" rx="${f1(rx - 32)}" ry="${f1(Math.max(4, ry - 14))}" fill="#62b0e0" opacity="0.6"/>`;
   // the drawbridge, down across the moat from the gate, its chains up to the wall
-  const bridge = `<polygon points="-34,0 34,0 42,50 -42,50" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
-    [10, 20, 30, 40].map(y => `<line x1="${-34 - y * 0.16}" y1="${y}" x2="${34 + y * 0.16}" y2="${y}" stroke="#5e3d22" stroke-width="2"/>`).join("") +
-    `<path d="M-30 -70 L-40 48 M30 -70 L40 48" stroke="#555" stroke-width="2.5" stroke-dasharray="5 3"/>`;
+  const sp = l => 34 + l * 0.16;
+  const bridge = m <= 0 ? "" : `<polygon points="-34,0 34,0 ${f1(sp(len))},${f1(len)} ${f1(-sp(len))},${f1(len)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
+    [...Array(Math.floor(len / 10))].map((_, j) => { const y = 10 * (j + 1); return `<line x1="${f1(-sp(y))}" y1="${y}" x2="${f1(sp(y))}" y2="${y}" stroke="#5e3d22" stroke-width="2"/>`; }).join("") +
+    `<path d="M-30 -70 L${f1(-sp(len) + 2)} ${f1(len - 2)} M30 -70 L${f1(sp(len) - 2)} ${f1(len - 2)}" stroke="#555" stroke-width="2.5" stroke-dasharray="5 3"/>`;
   // a low fence outside the moat, round its near side, open at the bridge
-  const posts = [...Array(23)].map((_, i) => { const a = Math.PI * (i + 0.5) / 23, x = 270 * Math.cos(a), y = 16 + 50 * Math.sin(a); return [x, y]; }).filter(([x]) => Math.abs(x) > 50);
+  const fx = (m <= 0 ? 230 : rx + 38), fy = (m <= 0 ? 30 : ry + 14);
+  const posts = [...Array(23)].map((_, i) => { const a = Math.PI * (i + 0.5) / 23; return [fx * Math.cos(a), 16 + fy * Math.sin(a)]; }).filter(([x]) => Math.abs(x) > 50);
   const fence = [-1, 1].map(sd => { const side = posts.filter(([x]) => Math.sign(x) === sd).sort((p, q) => p[0] - q[0]);
       return `<polyline points="${side.map(([x, y]) => `${f1(x)},${f1(y - 14)}`).join(" ")}" fill="none" stroke="#6e4a2c" stroke-width="4"/>`; }).join("") +
     posts.map(([x, y]) => `<rect x="${f1(x - 3)}" y="${f1(y - 22)}" width="6" height="24" fill="#7a5232" stroke="#4a2e1a" stroke-width="1"/>`).join("");
-  return `<path d="M-300 70 Q-120 -40 0 -30 Q130 -40 300 70 Z" fill="#7cb85a"/>` + moat +
-    `<rect x="-120" y="-120" width="240" height="120" fill="${stone}" stroke="${dark}" stroke-width="3"/>` + teeth(-120, 240, -120) +
-    [-1, 1].map(sd => `<rect x="${sd * 150 - 30}" y="-180" width="60" height="180" fill="${stone}" stroke="${dark}" stroke-width="3"/>` +
-      `<polygon points="${sd * 150 - 38},-180 ${sd * 150},-250 ${sd * 150 + 38},-180" fill="#3b5ea8"/>` +
-      `<line x1="${sd * 150}" y1="-250" x2="${sd * 150}" y2="-280" stroke="#555" stroke-width="3"/><polygon points="${sd * 150},-280 ${sd * 150 + 26},-272 ${sd * 150},-264" fill="#e53935"/>` +
-      `<rect x="${sd * 150 - 8}" y="-140" width="16" height="26" rx="8" fill="#3a3a48"/>`).join("") +
-    `<rect x="-40" y="-230" width="80" height="110" fill="${stone}" stroke="${dark}" stroke-width="3"/>` + teeth(-40, 80, -230) +
-    `<polygon points="-48,-230 0,-300 48,-230" fill="#3b5ea8"/><line x1="0" y1="-300" x2="0" y2="-334" stroke="#555" stroke-width="3"/><polygon points="0,-334 30,-325 0,-316" fill="#f2c12e"/>` +
+  // trees round it, behind and beside the walls: the more, the further out
+  const trees = [...Array(K.trees)].map((_, i) => {
+    const sd = i % 2 ? 1 : -1, j = Math.floor(i / 2), x = sd * (175 + 52 * j + 18 * r(i, 1)), y = -24 - 26 * r(i, 2) - (j % 2) * 18, h = 0.75 + 0.45 * r(i, 3);
+    return r(i, 4) < 0.5
+      ? `<rect x="${f1(x - 6)}" y="${f1(y - 30 * h)}" width="12" height="${f1(32 * h)}" fill="#5e3d22"/><polygon points="${f1(x)},${f1(y - 170 * h)} ${f1(x - 48 * h)},${f1(y - 26 * h)} ${f1(x + 48 * h)},${f1(y - 26 * h)}" fill="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"/>`
+      : `<rect x="${f1(x - 7)}" y="${f1(y - 60 * h)}" width="14" height="${f1(62 * h)}" fill="#6b4a2b"/><circle cx="${f1(x)}" cy="${f1(y - 90 * h)}" r="${f1(46 * h)}" fill="${["#3c8a3e", "#4a9a46", "#2f7d32"][i % 3]}"/>` +
+        `<circle cx="${f1(x - 16 * h)}" cy="${f1(y - 112 * h)}" r="${f1(20 * h)}" fill="#5aad52"/>`;
+  }).join("");
+  const mound = `<path d="M${f1(-fx - 40)} 70 Q-120 -40 0 -30 Q130 -40 ${f1(fx + 40)} 70 Z" fill="#7cb85a"/>`;
+  return trees + mound + moat +
+    `<rect x="-120" y="${-wallH}" width="240" height="${wallH}" fill="${stone}" stroke="${dark}" stroke-width="3"/>` + teeth(-120, 240, -wallH) +
+    [-1, 1].map(sd => `<rect x="${sd * 150 - 30}" y="${-towerH}" width="60" height="${towerH}" fill="${stone}" stroke="${dark}" stroke-width="3"/>` +
+      `<polygon points="${sd * 150 - 38},${-towerH} ${sd * 150},${-towerH - 70} ${sd * 150 + 38},${-towerH}" fill="#3b5ea8"/>` +
+      `<line x1="${sd * 150}" y1="${-towerH - 70}" x2="${sd * 150}" y2="${-towerH - 100}" stroke="#555" stroke-width="3"/><polygon points="${sd * 150},${-towerH - 100} ${sd * 150 + 26},${-towerH - 92} ${sd * 150},${-towerH - 84}" fill="${K.flag}"/>` +
+      [...Array(L)].map((_, j) => `<rect x="${sd * 150 - 8}" y="${-towerH + 40 + 40 * j}" width="16" height="26" rx="8" fill="#3a3a48"/>`).join("")).join("") +
+    `<rect x="-40" y="${keepTop}" width="80" height="${-keepTop - wallH}" fill="${stone}" stroke="${dark}" stroke-width="3"/>` + teeth(-40, 80, keepTop) +
+    [...Array(Math.max(0, L - 1))].map((_, j) => `<rect x="-8" y="${keepTop + 24 + 34 * j}" width="16" height="22" rx="8" fill="#3a3a48"/>`).join("") +
+    // (the keep's banner: its owner's letter, in its owner's color)
+    `<polygon points="-48,${keepTop} 0,${keepTop - 70} 48,${keepTop}" fill="#3b5ea8"/><line x1="0" y1="${keepTop - 70}" x2="0" y2="${keepTop - 120}" stroke="#555" stroke-width="3"/>` +
+    `<polygon points="0,${keepTop - 120} 46,${keepTop - 108} 0,${keepTop - 96}" fill="${K.flag}"/>` +
+    `<text x="15" y="${keepTop - 102}" text-anchor="middle" font-size="16" font-weight="bold" fill="#ffffff" font-family="sans-serif">${K.id}</text>` +
     `<path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z" fill="#3a2a1a"/>` + [-20, -7, 7, 20].map(x => `<line x1="${x}" y1="-80" x2="${x}" y2="0" stroke="#6a5a4a" stroke-width="3"/>`).join("") +
-    [-80, 80].map(x => `<rect x="${x - 8}" y="-90" width="16" height="24" rx="8" fill="#3a3a48"/>`).join("") +
-    [...Array(18)].map((_, i) => `<rect x="${-110 + (i % 6) * 38 + (Math.floor(i / 6) % 2) * 19}" y="${-110 + Math.floor(i / 6) * 34}" width="30" height="14" fill="none" stroke="${dark}" stroke-width="1" opacity="0.6"/>`).join("") +
+    [-80, 80].map(x => `<rect x="${x - 8}" y="${-wallH + 30}" width="16" height="24" rx="8" fill="#3a3a48"/>`).join("") +
+    [...Array(18)].map((_, i) => `<rect x="${-110 + (i % 6) * 38 + (Math.floor(i / 6) % 2) * 19}" y="${-wallH + 10 + Math.floor(i / 6) * 34}" width="30" height="14" fill="none" stroke="${dark}" stroke-width="1" opacity="0.6"/>`).join("") +
     bridge + fence;
 }
 // a healer's hut: round, thatched, a heart on its sign, herbs growing by it
@@ -3118,7 +3160,8 @@ const CLEARING_THINGS = [
   // (each as its own scene has it: the tree house is that scene's very tree,
   // its houses, bridges and ladders; the house its size; the witch's hut its
   // legs and its skulls)
-  { key: "seeCastle", at: [0.1, 120], size: 0.42, foot: 62, draw: () => part("far-castle", [], castleSvg), to: null },
+  { key: "seeCastle", at: [0.1, 120], size: 0.42, foot: 62, draw: o => { const K = castleOf(o);
+      return part("far-castle", [K.id, K.levels, K.stone, K.trees, K.moat], () => castleSvg(K)); }, to: "castle" },
   { key: "seeTree", at: [-0.2, 95], size: 0.25, foot: 6, grow: o => (o.treeSize ?? 100) / 100, draw: (o, c) => unmarked(treeInner(c)), to: "treehouse" },
   { key: "seeHouse", at: [-0.36, 70], size: 0.3, foot: 4, grow: o => (o.houseSize ?? 100) / 100, draw: () => part("house-building", [], houseBuildingSvg), to: "house" },
   { key: "seeWitch", at: [0.25, 95], size: 0.52, foot: 108, draw: o => part("far-witch", [!!o.chickenLegs, o.legSize ?? 100, o.skullMax ?? 300, o.skullEye ?? 100, o.eyeGlow ?? 70], () => farWitchSvg(o)), to: "witch" },
@@ -3171,6 +3214,27 @@ function clearingScene(c) {
   // near trees at the frame's edges, framing the clearing
   s += SEP + part("clear-near-woods", c.F, () => [-1, 1].map(sd => [[0, 0, 1.15], [1, 40, 0.8]].map(([j, dy, z]) =>
     use("bg-woods-oak", sd * (W * 0.5 + 40 * k - j * 30 * k), g + (40 + dy) * k, k * z * sd, k * z)).join("")).join(""));
+  return s;
+}
+// A castle up close: the one the clearing shows, from the same settings,
+// its gate a doorway in (to its first room), a sign back to the clearing.
+function castleScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, P, grad, all, land, o } = c;
+  const K = castleOf(o), foot = g - 20 * k;
+  const z = Math.min(1.5 * k, (foot - y0 - 20 * k) / (226 + 38 * K.levels));
+  let s = SEP + part("castle-sky", c.F, () => `<defs>${grad("bg-sky", "#6ec2f2", "#e8f6ff", y0, g - 150 * k)}</defs>` + all("url(#bg-sky)") +
+    land(g - 230 * k, 10, "#9ccf86", 0.4) + land(g - 170 * k, 6, "#8bc56a", 1.2) + land(g - 110 * k, 3, "#7cc25a", 0.6));
+  s += SEP + cloudsSvg(c, 3, 0.8, 160);
+  s += SEP + part("castle-near", [c.F, K.id, K.levels, K.stone, K.trees, K.moat], () => `<g ${tf(0, foot, z)}>${castleSvg(K)}</g>`);
+  // the gate, a doorway into the castle's first room
+  s += SEP + part("castle-gate", [c.F, K.levels], () => `<g class="portal" data-to="castleroom" data-room="1"><g ${tf(0, foot, z)}>` +
+    `<path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z" fill="#000000" opacity="0.01"/></g>` +
+    `<rect x="${f1(W * 0.17 - 4 * k)}" y="${f1(g - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
+    plankSign(W * 0.17, g - 44 * k, k, "🚪 inside") + `</g>`);
+  // the way back to the clearing
+  s += SEP + part("castle-back", c.F, () => `<g class="portal" data-to="clearing">` +
+    `<rect x="${f1(-W * 0.36 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
+    plankSign(-W * 0.36, y1 - 44 * k, k, "🌲 clearing") + `</g>`);
   return s;
 }
 // Three places away from the woods: a mountain trail, a jungle waterfall,
@@ -3777,7 +3841,7 @@ function woodpathScene(c) {
 }
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, woodpath: woodpathScene };
+                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, castle: castleScene };
 
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);
@@ -5639,7 +5703,7 @@ const TUNES = {
 const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby",
-                     tent: "lullaby", cave: "steppers", woodpath: "forest" };
+                     tent: "lullaby", cave: "steppers", woodpath: "forest", castle: "witch" };
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
 // the kinds of music, each with its tunes: the music tab's first row of
 // chips picks a kind, the second its tune
@@ -6201,13 +6265,14 @@ const PLACES = [["none", "none"], ["forest", "🌲 forest"], ["underwater", "�
   ["clearing", "🌲 forest clearing"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
-  ["woodpath", "🥾 path through the woods"]];
+  ["woodpath", "🥾 path through the woods"], ["castle", "🏰 castle"]];
 const PLACE_GROUPS = [
   ["woods", "🌲 woods", ["forest", "clearing", "woodpath", "mountains"]],
   ["water", "💧 water", ["lake", "beach", "underwater", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
+  ["castles", "🏰 castles", ["castle"]],
 ];
 const groupOfPlace = v => v === "none" ? "none" : (PLACE_GROUPS.find(g => g[2].includes(v)) || [null])[0];
 console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g => g[2]).length === PLACES.length - 1,
@@ -6429,6 +6494,14 @@ const TABS = [
     ["toggle", "seeTree", "🌳 see the tree house"],
     ["toggle", "seeWitch", "🧙 see the witch's hut"],
     ["toggle", "seeCastle", "🏰 see the castle"],
+    // the castles: which one stands in the clearing, and each one's own
+    // settings (only the one picked shows its sliders)
+    ["choice", "castle", "🏰 whose castle", CASTLES.map(([id, label]) => [id, label])],
+    ...CASTLES.flatMap(([id]) => [
+      ["range", "castleLevels" + id, `🏰 ${id}'s castle: levels`, 1, 5, 1, 5],
+      ["color", "castleStone" + id, `🪨 ${id}'s castle: stone`, CASTLE_STONES],
+      ["range", "castleTrees" + id, `🌳 ${id}'s castle: trees nearby`, 0, 16, 0, 12],
+      ["range", "castleMoat" + id, `🌊 ${id}'s castle: moat and drawbridge`, 0, 250, 0, 200]]),
     ["toggle", "seeHealer", "🌿 see the healer's hut"],
     // inside the witch's hut (the witch herself: drag her)
     ["range", "witchSize", "🧙 the witch's size (drag her to move her)", 30, 250, 70, 150],
@@ -6593,6 +6666,9 @@ const SHOWN_WHEN = {
   "background.tent": b => b.kind === "tent",
   "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),
+  "background.castle": b => b.kind === "clearing" || b.kind === "castle" || b.kind === "castleroom",
+  ...Object.fromEntries(CASTLES.flatMap(([id]) => ["castleLevels", "castleStone", "castleTrees", "castleMoat"].map(key =>
+    ["background." + key + id, b => (b.kind === "clearing" || b.kind === "castle") && (b.castle ?? "N") === id]))),
   ...Object.fromEntries(["witchSize", "cauldronSize", "crows", "frogs", "snakes"].map(key => ["background." + key, b => b.kind === "witchroom"])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
@@ -7353,7 +7429,7 @@ function flyInto(box, arrive) {
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25] };
+const ARRIVE = { campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30] };
 // Where each trip through a doorway began, the last on top: the back chip
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.

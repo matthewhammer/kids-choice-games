@@ -7,6 +7,7 @@ Each version lists the game's features as of that version. The newest version is
 Changes since 0.0.25, for the next version, which waits for Matthew's go-ahead.
 
 - **🏞️ Backgrounds by kind of place,** as the music is by kind: the Background tab's long row of places is now two rows, each in a dashed box with its name: first the kind of place (⬜ no background, 🌲 woods, 💧 water, 🏕️ camping, 🏠 home, 🧙 the witch's), then that kind's places. Picking a kind goes to its first place, unless the place now is already of that kind; going through a doorway shows the new place's kind.
+- **🏰 Three castles, N's, M's and D's:** each with its own settings: how many levels (1 to 5), its stone, how many trees grow round it, and how wide its moat and drawbridge are (none to very wide), its flags in its owner's color with the owner's letter on the keep's banner. The forest clearing shows the one picked ("🏰 whose castle"), far off and now a doorway, and a new place, 🏰 castle (in the 🏰 castles kind), shows it up close, its gate a doorway inside and a sign back to the clearing.
 
 ## 0.0.25 (2026-10-14)
 
