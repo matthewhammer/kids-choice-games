@@ -2,6 +2,18 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.17 (2026-10-13)
+
+Everything in 0.0.16, plus a room inside every tree house, ways between them, inside the witch's hut, and a forest clearing.
+
+- **🪜 A room inside each tree house, 1 to 6,** numbered as the houses are outside, a sign with its number and its animal hanging from the rafters. Each house's kind of room is its own, with two more kinds: 🎨 an **art studio** (an easel, paint jars, drawings pinned up) and 🥁 a **music room** (drums, a keyboard, records on the wall). Each room's two pictures are its own to choose.
+- **Ways between the rooms,** where the houses are joined outside: a door in the side wall where a rope bridge goes out, a hatch in the floor down a ladder (to the house below, or 🌳 out to the ground), a ladder up through the ceiling where the house above comes down to this one. Each has a sign saying where it goes, and is a doorway.
+- **The ladders join the houses:** house 1's goes down to house 5, house 2's to house 6, house 3's to house 1, house 4's to house 2 (to the ground when there is no house below).
+- **Inside always matches outside,** whatever the numbers of houses, bridges and ladders (checked for all 252 ways): a bridge to a smaller house now reaches its platform, and you are always inside a house the tree has (going into house 6 grows the tree to six; fewer houses take you to the last one).
+- **🧙 Inside the witch's hut:** click her hut in the witch's woods to go in. A cauldron bubbles over its fire, crows sit in hanging cages, frogs in jars, snakes in a glass tank, and the witch herself stands there: drag her anywhere. It matches her hut outside: the red door in the middle, a window either side, and a round window above, now in the hut's gable too. Both cauldrons, inside and out, bubble over a flickering fire, and their fumes rise as a double helix, one green and one blue, turning as they go up and out past the top of the picture. Sliders: the witch's size, the cauldron's size, crows, frogs, snakes. Her door goes back out to the woods.
+- **🌲 A forest clearing,** with paths out to what you choose to see far off, each with its own switch: 🏠 the family house, 🌳 the tree house (with its houses as you chose them), 🧙 the witch's hut, 🏰 a castle on its hill, and 🌿 a healer's hut. The house, the tree house and the witch's hut are doorways into their scenes (the castle's and the healer's insides are still to come).
+- Fixed: the pictures in the tree house rooms and the living room's window could not be clicked through (a dim or a pane of glass lay over them).
+
 ## 0.0.16 (2026-10-13)
 
 Everything in 0.0.15, plus as many talons as you like.

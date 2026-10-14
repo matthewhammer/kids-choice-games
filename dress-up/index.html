@@ -236,10 +236,16 @@ const DEFAULTS = {
                 houses: 4, bridges: 2, ladders: 3, leaves: 60,
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
-                room: "bunks", windowSize: 100, things: 10,
+                inside: 1, room1: "bunks", room2: "kitchen", room3: "books", room4: "lookout", room5: "art", room6: "music",
+                windowSize: 100, things: 10,
+                witchX: 150, witchY: 0, witchSize: 100, cauldronSize: 100, crows: 3, frogs: 4, snakes: 2,
+                seeHouse: true, seeTree: true, seeWitch: true, seeCastle: true, seeHealer: true,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
                 pic1: "lake", pic2: "beach", pic3: "livingroom", pic4: "forest", pic5: "treehouse", pic6: "underwater",
-                view: "lake", viewDetail: 80 },
+                view: "lake", viewDetail: 80,
+                // each tree house room's own two pictures
+                ...Object.fromEntries([["lake", "forest"], ["beach", "livingroom"], ["forest", "underwater"], ["treehouse", "lake"], ["house", "witch"], ["cemetery", "beach"]]
+                  .flatMap((two, h) => two.map((kd, i) => [`r${h + 1}pic${i + 1}`, kd]))) },
   // the sliders pinned to the full-screen controls, as "part.key"
   hud: { pins: [], min: [] },
   costume: { kind: "none", fur: "#e8862a", marks: "#1f1a17", belly: "#f7ead8", eyes: "#e0a800",
@@ -288,6 +294,12 @@ DEFAULTS.rightHand = Object.fromEntries(HAND_OWN.map(k => [k, DEFAULTS.hands[k]]
 // foot's; the color and the size are both feet's.
 const SHOE_OWN = ["style", "toes", "alienToes", "talonCount"];
 DEFAULTS.rightShoe = Object.fromEntries(SHOE_OWN.map(k => [k, DEFAULTS.shoes[k]]));
+// before 0.0.17 there was one tree house room, of a kind ("room"): now
+// each house has its own, and "inside" says which house you are in
+function upgradeInside(bg, saved) {
+  const old = saved && saved.background;
+  if (old && old.room && old.inside === undefined) bg.inside = Math.max(1, ["bunks", "kitchen", "books", "lookout"].indexOf(old.room) + 1);
+}
 // before 0.0.15 there were three toed styles, each with its own count
 function upgradeFeet(st, saved) {
   if (!(saved && saved.rightShoe)) for (const k of SHOE_OWN) st.rightShoe[k] = st.shoes[k];
@@ -307,6 +319,7 @@ try {
   upgradeHands(state.hands);
   upgradeRightHand(state, saved);
   upgradeFeet(state, saved);
+  upgradeInside(state.background, saved);
   upgradeFace(state.face, saved.face);
   // pants length moved to the legs (leg length)
   if (saved && saved.pants && saved.pants.length && !(saved.body && saved.body.legLen))
@@ -1888,6 +1901,31 @@ function partByReads(name, opts, build) {
   READS.set(name, kept.slice(0, 12));
   return value;
 }
+// A cauldron's fumes: a double helix, one green strand and one blue,
+// rising from the brew to past the top of the picture, widening as it
+// rises and turning round as you watch. Each strand is short segments; a
+// segment swells and brightens as it turns toward you and thins and fades
+// as it turns away, so the two pass in front of each other and behind.
+function helixSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
+  const step = 13 * k, n = Math.max(2, Math.ceil((bottom - top) / step)), K = 12, dur = "2.4s";
+  let t = "";
+  colors.forEach((c, si) => {
+    for (let j = 0; j < n; j++) {
+      const u0 = j / n, u1 = (j + 1) / n, y1 = bottom - (bottom - top) * u0, y2 = bottom - (bottom - top) * u1;
+      const ra = r0 + (r1 - r0) * u0, rb = r0 + (r1 - r0) * u1, w = (7 - 3 * u0) * k;
+      const at = (f, jj) => jj * 0.42 + si * Math.PI - 2 * Math.PI * f / K;
+      const xs = (r, jj) => [...Array(K + 1)].map((_, f) => f1(cx + r * Math.cos(at(f, jj)))).join(";");
+      const ws = [...Array(K + 1)].map((_, f) => f1(w * (1 + 0.55 * Math.sin(at(f, j + 0.5))))).join(";");
+      const os = [...Array(K + 1)].map((_, f) => (0.5 + 0.4 * Math.sin(at(f, j + 0.5))).toFixed(2)).join(";");
+      t += `<line x1="${f1(cx + ra * Math.cos(at(0, j)))}" y1="${f1(y1)}" x2="${f1(cx + rb * Math.cos(at(0, j + 1)))}" y2="${f1(y2)}" stroke="${c}" stroke-linecap="round" stroke-width="${f1(w)}" stroke-opacity="0.8">` +
+           `<animate attributeName="x1" values="${xs(ra, j)}" dur="${dur}" repeatCount="indefinite"/>` +
+           `<animate attributeName="x2" values="${xs(rb, j + 1)}" dur="${dur}" repeatCount="indefinite"/>` +
+           `<animate attributeName="stroke-width" values="${ws}" dur="${dur}" repeatCount="indefinite"/>` +
+           `<animate attributeName="stroke-opacity" values="${os}" dur="${dur}" repeatCount="indefinite"/></line>`;
+    }
+  });
+  return t;
+}
 // a scene drawn inside another (a picture on a wall) keeps its ids apart
 const prefixIds = (svg, p) => svg.replace(/(id="|url\(#|href="#)/g, `$1${p}`);
 const tf = (x, y, s = 1, sy = s) => `transform="translate(${f1(x)} ${f1(y)}) scale(${+s.toFixed(4)} ${+sy.toFixed(4)})"`;
@@ -2011,6 +2049,34 @@ const oakDef = (id, s) => `<g id="${id}"><g transform="scale(${+s.toFixed(3)})">
 
 // a brown house of two floors, the garage on its right, a driveway and a
 // stone walk, a tree each side, bushes, flowers and toys on the lawn
+// the house and its garage, in the building's own units (its base's
+// middle at 0, 0), for the house scene and seen from afar
+function houseBuildingSvg() {
+    let t = `<rect x="-220" y="-300" width="320" height="300" fill="#8a5a32"/>`;
+    for (let y = -288; y < 0; y += 12) t += `<line x1="-220" y1="${y}" x2="100" y2="${y}" stroke="#74492a" stroke-width="1.5"/>`;
+    t += `<rect x="-220" y="-300" width="8" height="300" fill="#6b4423"/><rect x="92" y="-300" width="8" height="300" fill="#6b4423"/>` +
+         `<rect x="-226" y="-155" width="332" height="9" fill="#5e3b1f"/>` +
+         `<rect x="30" y="-392" width="26" height="80" fill="#8e3b2e"/><rect x="26" y="-398" width="34" height="9" fill="#6f2c22"/>` +
+         `<polygon points="-244,-296 124,-296 -60,-398" fill="#3d2b22"/>`;
+    for (let y = -380; y < -296; y += 14) { const half = (y + 398) / 102 * 184; t += `<line x1="${f1(-60 - half)}" y1="${y}" x2="${f1(-60 + half)}" y2="${y}" stroke="#2c1f18" stroke-width="2"/>`; }
+    t += `<circle cx="-60" cy="-338" r="15" fill="#bfe3f5" stroke="#ffffff" stroke-width="4"/>` +
+         [-180, -60, 60].map(x => winSvg(x, -255, 48, 60)).join("") + [-170, 50].map(x => winSvg(x, -122, 58, 72)).join("") +
+         // the front door, its little roof and its step
+         `<g class="portal" data-to="livingroom"><rect x="-86" y="-112" width="52" height="112" fill="#ffffff"/><rect x="-81" y="-107" width="42" height="107" fill="#7a1f1f"/>` +
+         `<rect x="-72" y="-96" width="24" height="18" fill="#bfe3f5"/><circle cx="-46" cy="-50" r="3.5" fill="#f2c12e"/></g>` +
+         `<polygon points="-100,-114 -20,-114 -60,-142" fill="#3d2b22"/><rect x="-96" y="0" width="72" height="9" fill="#9a958b"/>` +
+         `<circle cx="-100" cy="-90" r="5" fill="#ffe9a8" stroke="#555" stroke-width="1.5"/>`;
+    // the garage on the right
+    t += `<rect x="100" y="-165" width="190" height="165" fill="#8a5a32"/>`;
+    for (let y = -153; y < 0; y += 12) t += `<line x1="100" y1="${y}" x2="290" y2="${y}" stroke="#74492a" stroke-width="1.5"/>`;
+    t += `<polygon points="88,-160 302,-160 195,-226" fill="#3d2b22"/><rect x="118" y="-132" width="154" height="132" fill="#f1ede4" stroke="#cfc8b8" stroke-width="2"/>` +
+         [-99, -66, -33].map(y => `<line x1="118" y1="${y}" x2="272" y2="${y}" stroke="#cfc8b8" stroke-width="2"/>`).join("") +
+         [0, 1, 2, 3].map(i => `<rect x="${128 + i * 37}" y="-124" width="26" height="14" fill="#bfe3f5"/>`).join("");
+    // bushes along the front
+    for (const [x, r] of [[-205, 26], [-160, 22], [-122, 20], [-4, 22], [36, 25], [76, 22]])
+      t += `<circle cx="${x}" cy="${-r * 0.6}" r="${r}" fill="#3f8a3a"/><circle cx="${x - r * 0.3}" cy="${-r * 0.9}" r="${r * 0.45}" fill="#55a54d"/>`;
+    return t;
+  }
 function houseScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   const hs = (o.houseSize ?? 100) / 100, ts = (o.treeSize ?? 100) / 100, toys = o.toys ?? 6, flowers = o.flowers ?? 18;
@@ -2040,32 +2106,7 @@ function houseScene(c) {
   s += SEP + part("house-trees", [c.F, hs, ts], () => `<defs>${oakDef("bg-oak", ts)}</defs>` +
     use("bg-oak", Math.max(X(-300), x0 + 50 * k), yb + 20 * k, k) + use("bg-oak", Math.min(X(370), x1 - 50 * k), yb + 30 * k, k));
   // the building, in its own units: its size is its group's transform
-  s += OPEN(`<g id="bg-building" ${tf(bx, yb, S)}>`) + part("house-building", [], () => {
-    let t = `<rect x="-220" y="-300" width="320" height="300" fill="#8a5a32"/>`;
-    for (let y = -288; y < 0; y += 12) t += `<line x1="-220" y1="${y}" x2="100" y2="${y}" stroke="#74492a" stroke-width="1.5"/>`;
-    t += `<rect x="-220" y="-300" width="8" height="300" fill="#6b4423"/><rect x="92" y="-300" width="8" height="300" fill="#6b4423"/>` +
-         `<rect x="-226" y="-155" width="332" height="9" fill="#5e3b1f"/>` +
-         `<rect x="30" y="-392" width="26" height="80" fill="#8e3b2e"/><rect x="26" y="-398" width="34" height="9" fill="#6f2c22"/>` +
-         `<polygon points="-244,-296 124,-296 -60,-398" fill="#3d2b22"/>`;
-    for (let y = -380; y < -296; y += 14) { const half = (y + 398) / 102 * 184; t += `<line x1="${f1(-60 - half)}" y1="${y}" x2="${f1(-60 + half)}" y2="${y}" stroke="#2c1f18" stroke-width="2"/>`; }
-    t += `<circle cx="-60" cy="-338" r="15" fill="#bfe3f5" stroke="#ffffff" stroke-width="4"/>` +
-         [-180, -60, 60].map(x => winSvg(x, -255, 48, 60)).join("") + [-170, 50].map(x => winSvg(x, -122, 58, 72)).join("") +
-         // the front door, its little roof and its step
-         `<g class="portal" data-to="livingroom"><rect x="-86" y="-112" width="52" height="112" fill="#ffffff"/><rect x="-81" y="-107" width="42" height="107" fill="#7a1f1f"/>` +
-         `<rect x="-72" y="-96" width="24" height="18" fill="#bfe3f5"/><circle cx="-46" cy="-50" r="3.5" fill="#f2c12e"/></g>` +
-         `<polygon points="-100,-114 -20,-114 -60,-142" fill="#3d2b22"/><rect x="-96" y="0" width="72" height="9" fill="#9a958b"/>` +
-         `<circle cx="-100" cy="-90" r="5" fill="#ffe9a8" stroke="#555" stroke-width="1.5"/>`;
-    // the garage on the right
-    t += `<rect x="100" y="-165" width="190" height="165" fill="#8a5a32"/>`;
-    for (let y = -153; y < 0; y += 12) t += `<line x1="100" y1="${y}" x2="290" y2="${y}" stroke="#74492a" stroke-width="1.5"/>`;
-    t += `<polygon points="88,-160 302,-160 195,-226" fill="#3d2b22"/><rect x="118" y="-132" width="154" height="132" fill="#f1ede4" stroke="#cfc8b8" stroke-width="2"/>` +
-         [-99, -66, -33].map(y => `<line x1="118" y1="${y}" x2="272" y2="${y}" stroke="#cfc8b8" stroke-width="2"/>`).join("") +
-         [0, 1, 2, 3].map(i => `<rect x="${128 + i * 37}" y="-124" width="26" height="14" fill="#bfe3f5"/>`).join("");
-    // bushes along the front
-    for (const [x, r] of [[-205, 26], [-160, 22], [-122, 20], [-4, 22], [36, 25], [76, 22]])
-      t += `<circle cx="${x}" cy="${-r * 0.6}" r="${r}" fill="#3f8a3a"/><circle cx="${x - r * 0.3}" cy="${-r * 0.9}" r="${r * 0.45}" fill="#55a54d"/>`;
-    return t;
-  });
+  s += OPEN(`<g id="bg-building" ${tf(bx, yb, S)}>`) + part("house-building", [], houseBuildingSvg);
   // flowers in the bed in front of the bushes (not the door's): two
   // drawings, colored by their <use>, in the building's group
   s += SEP + part("house-flowers", [flowers], () => `<defs>${FLOWER_DEFS}</defs>` +
@@ -2182,8 +2223,22 @@ function padDef(id, j) {
          `<polygon points="${pts([...shade, ...bottom])}" fill="#000000" opacity="0.2"/>` +
          `<polygon points="${pts(lit)}" fill="#ffffff" opacity="0.13"/></g>`;
 }
+// where each house's ladder goes down to: the house below it (house 1's to
+// house 5, 2's to 6, 3's to 1, 4's to 2), or the ground (-1) when there is
+// no house below it
+const LADDER_TO = [4, 5, 0, 1, -1, -1];
+// a tree house's cabin (its walls the color of its <use>) and an animal's eye
+const CABIN_DEFS = `<g id="bg-cabin">` +
+      `<rect x="-82" y="0" width="164" height="14" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
+      [-80, -66, 66, 80].map(x => `<line x1="${x}" y1="0" x2="${x}" y2="-28" stroke="#8b5e34" stroke-width="4"/>`).join("") +
+      `<path d="M-82 -28 H-52 M52 -28 H82" stroke="#8b5e34" stroke-width="4"/>` +
+      `<rect x="-52" y="-100" width="104" height="100" fill="currentColor"/>` +
+      [-88, -76, -64, -52, -40, -28, -16].map(y => `<line x1="-52" y1="${y}" x2="52" y2="${y}" stroke="#00000030" stroke-width="1.5"/>`).join("") +
+      [-1, 1].map(sd => `<rect x="${sd * 34 - 11}" y="-78" width="22" height="24" fill="#bfe3f5" stroke="#ffffff" stroke-width="3"/>`).join("") +
+      `<path d="M-15 0 V-56 Q0 -72 15 -56 V0 Z" fill="#7a4b28" stroke="#4a2e1a" stroke-width="2"/><circle cx="9" cy="-28" r="2.5" fill="#f2c12e"/></g>` +
+      `<g id="bg-eye"><circle cx="0" cy="0" r="9" fill="#ffffff" stroke="#00000055" stroke-width="1.5"/><circle cx="1" cy="1" r="5" fill="#1f1a17"/><circle cx="-1.5" cy="-1.5" r="1.8" fill="#ffffff"/></g>`;
 // the room inside each tree house
-const HOUSE_ROOMS = ["bunks", "kitchen", "books", "lookout", "books", "bunks"];
+const HOUSE_ROOMS = ["bunks", "kitchen", "books", "lookout", "art", "music"];
 const TREE_BRIDGES = [[2, 3], [0, 1], [4, 5], [0, 3], [2, 1]];   // across the tree
 function treehouseScene(c) {
   const { x0, y0, W, H, k, g, grad, all, land, o, R } = c;
@@ -2285,7 +2340,8 @@ function treehouseScene(c) {
     `<rect x="358" y="-72" width="74" height="12" rx="4" fill="#a0703f" stroke="#5e3d22" stroke-width="2"/></g>`);
   s += SEP + part("tree-bridges", [n, bridges], () => TREE_BRIDGES.filter(([a, b]) => a < n && b < n).slice(0, bridges).map(([a, b]) => {
     const [ax, ay] = TREE_SLOTS[a], [bx, by] = TREE_SLOTS[b], sa = Math.sign(bx - ax) || 1;
-    const p = [ax + sa * 78, ay], q = [bx - sa * 78, by], sag = 30 + 0.08 * Math.hypot(q[0] - p[0], q[1] - p[1]);
+    // (a smaller house's platform is narrower)
+    const edge = j => 78 * (j >= 2 ? 0.85 : 1), p = [ax + sa * edge(a), ay], q = [bx - sa * edge(b), by], sag = 30 + 0.08 * Math.hypot(q[0] - p[0], q[1] - p[1]);
     const m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2 + sag];
     let t = `<path d="M${p[0]} ${p[1]} Q${f1(m[0])} ${f1(m[1])} ${q[0]} ${q[1]}" fill="none" stroke="#8b5e34" stroke-width="10" stroke-dasharray="7 3"/>` +
             `<path d="M${p[0]} ${p[1] - 30} Q${f1(m[0])} ${f1(m[1] - 30)} ${q[0]} ${q[1] - 30}" fill="none" stroke="#d8c49a" stroke-width="3"/>`;
@@ -2296,28 +2352,20 @@ function treehouseScene(c) {
     return t;
   }).join(""));
   s += SEP + part("tree-ladders", [n, ladders], () => TREE_SLOTS.slice(0, Math.min(n, ladders)).map(([x, y], i) => {
-    // an upper house's ladder goes down to the house below it, if there is one
-    const below = i >= 2 && i < 4 && i - 2 < n ? TREE_SLOTS[i - 2][1] - 4 : 0;
+    // a house's ladder goes down to the house below it, if there is one
+    const to = LADDER_TO[i], below = to >= 0 && to < n ? TREE_SLOTS[to][1] - 4 : 0;
     const lx = x + Math.sign(x) * 52, top = y + 14;
     let t = `<line x1="${lx - 12}" y1="${top}" x2="${lx - 12}" y2="${below}" stroke="#8b5e34" stroke-width="5"/><line x1="${lx + 12}" y1="${top}" x2="${lx + 12}" y2="${below}" stroke="#8b5e34" stroke-width="5"/>`;
     for (let y2 = top + 18; y2 < below - 4; y2 += 22) t += `<line x1="${lx - 12}" y1="${y2}" x2="${lx + 12}" y2="${y2}" stroke="#a0703f" stroke-width="4"/>`;
     return t;
   }).join(""));
   // the houses: one drawing, its roof the color of its <use>
-  s += SEP + part("tree-cabin", [], () => `<defs><g id="bg-cabin">` +
-      `<rect x="-82" y="0" width="164" height="14" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
-      [-80, -66, 66, 80].map(x => `<line x1="${x}" y1="0" x2="${x}" y2="-28" stroke="#8b5e34" stroke-width="4"/>`).join("") +
-      `<path d="M-82 -28 H-52 M52 -28 H82" stroke="#8b5e34" stroke-width="4"/>` +
-      `<rect x="-52" y="-100" width="104" height="100" fill="currentColor"/>` +
-      [-88, -76, -64, -52, -40, -28, -16].map(y => `<line x1="-52" y1="${y}" x2="52" y2="${y}" stroke="#00000030" stroke-width="1.5"/>`).join("") +
-      [-1, 1].map(sd => `<rect x="${sd * 34 - 11}" y="-78" width="22" height="24" fill="#bfe3f5" stroke="#ffffff" stroke-width="3"/>`).join("") +
-      `<path d="M-15 0 V-56 Q0 -72 15 -56 V0 Z" fill="#7a4b28" stroke="#4a2e1a" stroke-width="2"/><circle cx="9" cy="-28" r="2.5" fill="#f2c12e"/></g>` +
-      `<g id="bg-eye"><circle cx="0" cy="0" r="9" fill="#ffffff" stroke="#00000055" stroke-width="1.5"/><circle cx="1" cy="1" r="5" fill="#1f1a17"/><circle cx="-1.5" cy="-1.5" r="1.8" fill="#ffffff"/></g></defs>` +
+  s += SEP + part("tree-cabin", [], () => `<defs>${CABIN_DEFS}</defs>` +
     "") + TREE_SLOTS.slice(0, n).map((slot, i) => [slot, i]).sort((u, v) => u[0][1] - v[0][1]).map(([[x, y, usual], i]) => {
       // (the higher houses first: a lower one is nearer, in front of them)
       const chosen = o["house" + (i + 1)], animal = HOUSE_ANIMALS.some(([v]) => v === chosen) ? chosen : usual, sc = i >= 2 ? 0.85 : 1;
       const look = houseLook(animal, o, i + 1);
-      return part("tree-house", [i, animal, look.cols], () => `<g class="portal" data-to="treeroom" data-room="${HOUSE_ROOMS[i]}">` +
+      return part("tree-house", [i, animal, look.cols], () => `<g class="portal" data-to="treeroom" data-house="${i + 1}">` +
         use("bg-cabin", x, y, sc, sc, ` color="${look.walls}"`) + `<g ${tf(x, y, sc)}>${look.head}</g></g>`);
     }).join("");
   return s + CLOSE;
@@ -2368,11 +2416,12 @@ const framedSvg = (kind, detail, o, depth, x, y, w) => {
 // (each picture's scene is a choice of its own: pic1, pic2, ...)
 const PICTURE_CHOICES = [["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"], ["treehouse", "🌳 tree house"],
-  ["treeroom", "🪜 inside the tree house"], ["livingroom", "🛋️ living room"]];
-const picturesSvg = (o, here, slots, scale) => {
+  ["treeroom", "🪜 inside the tree house"], ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
+  ["clearing", "🌲 forest clearing"]];
+const picturesSvg = (o, here, slots, scale, keyOf = i => "pic" + (i + 1)) => {
   const depth = (o.depth ?? 0) + 1, count = depth > 2 ? 0 : Math.min(slots.length, o.pictures ?? 3), detail = o.picDetail ?? 70;
   return slots.slice(0, count).map(([x, y, w], i) => {
-    const chosen = o["pic" + (i + 1)], kind = SCENES[chosen] || PICTURE_CHOICES.some(([kd]) => kd === chosen) ? chosen : PICTURE_KINDS[i];
+    const chosen = o[keyOf(i)], kind = SCENES[chosen] || PICTURE_CHOICES.some(([kd]) => kd === chosen) ? chosen : PICTURE_KINDS[i];
     return framedSvg(kind, detail, o, depth, x, y, w * scale);
   }).join(SEP);
 };
@@ -2429,7 +2478,7 @@ function livingroomScene(c) {
            `Q${P(ix + sd * 4 * k, tie + 40 * k)} ${P(sd * (wx - 4 * k), wy1 + 50 * k)} L${P(ex, wy1 + 50 * k)} Z" fill="#b8434f"/>` +
            `<path d="M${P(sd * (wx + 6 * k), tie)} L${P(ex, tie + 4 * k)}" stroke="#e8c870" stroke-width="${f1(4 * k)}"/>`;
     }
-    return t + `<rect x="${f1(-wx - 50 * k)}" y="${f1(wy0 - 22 * k)}" width="${f1(2 * wx + 100 * k)}" height="${f1(7 * k)}" rx="${f1(3 * k)}" fill="#6b4423"/>`;
+    return `<g pointer-events="none">` + t + `<rect x="${f1(-wx - 50 * k)}" y="${f1(wy0 - 22 * k)}" width="${f1(2 * wx + 100 * k)}" height="${f1(7 * k)}" rx="${f1(3 * k)}" fill="#6b4423"/></g>`;
   });
   // the pictures, either side of the window
   s += SEP + picturesSvg(o, "livingroom", [[-255, y0 + H * 0.27, 210 * k], [255, y0 + H * 0.27, 210 * k], [-230, y0 + H * 0.07, 95 * k],
@@ -2464,12 +2513,18 @@ const HOUSE_COLOR_CTLS = [
   ["craftTrim", "🔨 trim (posts, window)", ["#f4efe6", "#c9b27a", "#2f4a3a", "#7a2f2a", "#1f1f22"]],
   ["craftGable", "🔨 gable", ["#c9b27a", "#f4efe6", "#8a9bb0", "#b5674d", "#5a3e2b"]],
 ];
+const ROOM_CHOICES = [["bunks", "🛏️ bunk room"], ["kitchen", "🍳 kitchen"], ["books", "📚 reading nook"], ["lookout", "🔭 lookout"],
+                      ["art", "🎨 art studio"], ["music", "🥁 music room"]];
 const HOUSE_ANIMALS = [["fox", "🦊 fox"], ["owl", "🦉 owl"], ["frog", "🐸 frog"], ["bunny", "🐰 bunny"], ["bear", "🐻 bear"], ["cat", "🐱 cat"],
                        ["cabin", "🪵 cabin"], ["fancy", "🎀 fancy house"], ["craftsman", "🔨 craftsman"]];
 // each room its own: its wood, its floor, its window, where the tree's
 // trunk comes up through it, and where branches poke through its walls
 // ([x, y, size, flip, turn], from a hole in the wall or the trunk)
 const ROOM_LOOK = {
+  art: { planks: ["#e9d8c4", "#e2cfb8", "#efdfcc", "#dcc8ae"], floor: "#a87a4f", window: "wide", trunk: -372,
+         branches: [[-70, -150, 1, 1, -8], [120, -178, 0.85, -1, 12]] },
+  music: { planks: ["#8a4b3a", "#7d4334", "#94523f", "#83473a"], floor: "#5e3d22", window: "round", trunk: 372,
+           branches: [[-80, -172, 0.9, 1, -15], [60, -175, 0.8, -1, 8]] },
   bunks: { planks: ["#b9824c", "#c08a52", "#ad7742", "#b47e48"], floor: "#9a6a3d", window: "square", trunk: -372,
            branches: [[-70, -150, 1, 1, -8], [120, -178, 0.85, -1, 12]] },
   kitchen: { planks: ["#e8dcc8", "#e0d2bb", "#ede3d2", "#d9cbb2"], floor: "#8a5d36", window: "wide", trunk: 260,
@@ -2500,13 +2555,72 @@ function braidSvg(cx, top, bottom, w, k, { strands = 3, taper = 0, base = "#2a1a
   }
   return t;
 }
-const ROOMS = { bunks: "bunk room", kitchen: "kitchen", books: "reading nook", lookout: "lookout" };
+const ROOMS = { bunks: "bunk room", kitchen: "kitchen", books: "reading nook", lookout: "lookout", art: "art studio", music: "music room" };
 // where each room's wall is free for pictures (in the stage's units)
 const ROOM_PICTURES = { bunks: [[-255, 115, 110], [95, -105, 85]], kitchen: [[95, -125, 80], [-60, -150, 60]],
-                        books: [[175, -25, 120], [305, 10, 70]], lookout: [[175, -20, 120], [-335, 140, 80]] };
+                        books: [[175, -25, 120], [305, 10, 70]], lookout: [[175, -20, 120], [-335, 140, 80]],
+                        art: [[95, -125, 80], [-60, -150, 60]], music: [[-60, -150, 60], [95, -125, 60]] };
+// what joins a tree house (0-based) to the others, outside: a rope bridge
+// (on its left or right), its ladder down (to the house below, or the
+// ground: to -1), the ladder up from the house above; and their emoji
+function houseLinks(o, i) {
+  const n = Math.max(1, Math.min(6, o.houses ?? 4)), bridges = o.bridges ?? 2, ladders = o.ladders ?? 3, out = [];
+  if (i >= n) return out;
+  for (const [a, b] of TREE_BRIDGES.filter(([a, b]) => a < n && b < n).slice(0, bridges))
+    if (a === i || b === i) { const j = a === i ? b : a; out.push({ to: j, way: TREE_SLOTS[j][0] > TREE_SLOTS[i][0] ? "right" : "left" }); }
+  const has = j => j < Math.min(n, ladders), down = j => (LADDER_TO[j] >= 0 && LADDER_TO[j] < n ? LADDER_TO[j] : -1);
+  if (has(i)) out.push({ to: down(i), way: "down" });
+  for (let j = 0; j < n; j++) if (has(j) && down(j) === i) out.push({ to: j, way: "up" });
+  return out.map(L => ({ ...L, label: L.to < 0 ? "🌳" : houseEmoji(o, L.to + 1) }));
+}
+const houseEmoji = (o, n) => {
+  const kind = o["house" + n], e = HOUSE_ANIMALS.find(([v]) => v === kind) || HOUSE_ANIMALS.find(([v]) => v === TREE_SLOTS[n - 1][2]);
+  return e[1].split(" ")[0];
+};
+// a wooden sign, its words in the middle at (x, y)
+const plankSign = (x, y, k, text) => `<rect x="${f1(x - 52 * k)}" y="${f1(y - 18 * k)}" width="${f1(104 * k)}" height="${f1(36 * k)}" rx="${f1(5 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2.5 * k)}"/>` +
+  `<text x="${f1(x)}" y="${f1(y + 7 * k)}" text-anchor="middle" font-size="${f1(20 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${text}</text>`;
+function waysSvg({ x0, x1, y0, W, H, k, P }, floor, links) {
+  let t = "";
+  const sides = { left: 0, right: 0 };
+  for (const L of links) {
+    const go = L.to < 0 ? `data-to="treehouse"` : `data-to="treeroom" data-house="${L.to + 1}"`, name = L.to < 0 ? "🌳 out" : `${L.label} ${L.to + 1}`;
+    t += `<g class="portal" ${go}>`;
+    if (L.way === "left" || L.way === "right") {
+      // a door in the side wall, the rope bridge going out through it
+      const sd = L.way === "left" ? -1 : 1, j = sides[L.way]++, cx = sd < 0 ? x0 + (60 + 120 * j) * k : x1 - (60 + 120 * j) * k;
+      const w = 84 * k, top = floor - 172 * k;
+      t += `<rect x="${f1(cx - w / 2)}" y="${f1(top)}" width="${f1(w)}" height="${f1(floor - top)}" fill="#a8dcf5"/>` +
+           `<circle cx="${f1(cx - 18 * k)}" cy="${f1(top + 26 * k)}" r="${f1(24 * k)}" fill="#4fb04f"/><circle cx="${f1(cx + 22 * k)}" cy="${f1(top + 16 * k)}" r="${f1(20 * k)}" fill="#3c9a40"/>` +
+           `<polygon points="${P(cx - w / 2, floor)} ${P(cx + w / 2, floor)} ${P(cx + sd * w * 0.2 + w * 0.12, floor - 70 * k)} ${P(cx + sd * w * 0.2 - w * 0.12, floor - 70 * k)}" fill="#8b5e34"/>` +
+           [0.25, 0.5, 0.75].map(u => `<line x1="${f1(cx - w / 2 + (sd * w * 0.2 + w * 0.38) * u)}" y1="${f1(floor - 70 * k * u)}" x2="${f1(cx + w / 2 + (sd * w * 0.2 - w * 0.38) * u)}" y2="${f1(floor - 70 * k * u)}" stroke="#5e3d22" stroke-width="${f1(2 * k)}"/>`).join("") +
+           [-1, 1].map(e => `<line x1="${f1(cx + e * w / 2)}" y1="${f1(floor - 45 * k)}" x2="${f1(cx + sd * w * 0.2 + e * w * 0.12)}" y2="${f1(floor - 100 * k)}" stroke="#d8c49a" stroke-width="${f1(2.5 * k)}"/>`).join("") +
+           `<rect x="${f1(cx - w / 2)}" y="${f1(top)}" width="${f1(w)}" height="${f1(floor - top)}" fill="none" stroke="#5e3d22" stroke-width="${f1(9 * k)}"/>` +
+           plankSign(cx, top - 26 * k, k, `${name} ${sd < 0 ? "⬅️" : "➡️"}`);
+    } else if (L.way === "down") {
+      // a hatch in the floor, its lid up, the ladder's top poking out
+      const hx = x0 + W * 0.26, hy = floor + 72 * k;
+      t += `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 55 * k, hy - 74 * k)} ${P(hx - 55 * k, hy - 74 * k)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(3 * k)}"/>` +
+           `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 76 * k, hy + 20 * k)} ${P(hx - 76 * k, hy + 20 * k)}" fill="#2a1a0e" stroke="#5e3d22" stroke-width="${f1(4 * k)}"/>` +
+           [-22, 22].map(e => `<line x1="${f1(hx + e * k)}" y1="${f1(hy + 14 * k)}" x2="${f1(hx + e * 0.9 * k)}" y2="${f1(hy - 50 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
+           [-36, -14, 8].map(dy => `<line x1="${f1(hx - 21 * k)}" y1="${f1(hy + dy * k)}" x2="${f1(hx + 21 * k)}" y2="${f1(hy + dy * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") +
+           plankSign(hx + 120 * k, hy - 30 * k, k, `${name} ⬇️`);
+    } else {
+      // a ladder up through a hole in the ceiling
+      const lx = x1 - W * 0.4;
+      t += `<ellipse cx="${f1(lx)}" cy="${f1(y0 + 6 * k)}" rx="${f1(40 * k)}" ry="${f1(12 * k)}" fill="#2a1a0e"/>` +
+           [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(y0 + 2 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
+           [...Array(Math.floor((floor + 14 * k - y0) / (30 * k)))].map((_, r) => `<line x1="${f1(lx - 20 * k)}" y1="${f1(floor - r * 30 * k)}" x2="${f1(lx + 20 * k)}" y2="${f1(floor - r * 30 * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") +
+           plankSign(lx, y0 + H * 0.24, k, `${name} ⬆️`);
+    }
+    t += `</g>`;
+  }
+  return t;
+}
 function treeroomScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, all, o } = c;
-  const room = ROOMS[o.room] ? o.room : "bunks", ws = (o.windowSize ?? 100) / 100, things = o.things ?? 10;
+  const inside = Math.max(1, Math.min(6, o.houses ?? 4, Math.round(o.inside ?? 1))), chosen = o["room" + inside];
+  const room = ROOMS[chosen] ? chosen : HOUSE_ROOMS[inside - 1], ws = (o.windowSize ?? 100) / 100, things = o.things ?? 10;
   const floor = g - 110 * k;
   const look = ROOM_LOOK[room];
   let s = SEP + part("room-shell", [c.F, room], () => {
@@ -2562,7 +2676,7 @@ function treeroomScene(c) {
     `</g></defs>` + look.branches.map(([x, y, sc, fl, a]) =>
       `<use href="#bg-wallbranch" transform="translate(${f1(x)} ${f1(y)}) rotate(${a}) scale(${+(sc * k * fl).toFixed(3)} ${+(sc * k).toFixed(3)})"/>`).join(""));
   // pictures on the far side of the wall from the window
-  s += SEP + picturesSvg(o, "treeroom", ROOM_PICTURES[room].map(([x, y, w]) => [x, y, w * k]), 1);
+  s += SEP + picturesSvg(o, "treeroom", ROOM_PICTURES[room].map(([x, y, w]) => [x, y, w * k]), 1, i => `r${inside}pic${i + 1}`);
   // the room's furniture and its things
   s += SEP + part("room-" + room, [c.F, things], () => {
     let t = "";
@@ -2623,6 +2737,54 @@ function treeroomScene(c) {
       t += `<path d="M${P(gx - 90 * k, floor + 60 * k)} Q${P(gx - 100 * k, floor - 70 * k)} ${P(gx, floor - 60 * k)} Q${P(gx + 100 * k, floor - 70 * k)} ${P(gx + 90 * k, floor + 60 * k)} Z" fill="#e85d75"/>` +
            `<line x1="${f1(lx)}" y1="${f1(ly - 60 * k)}" x2="${f1(lx)}" y2="${f1(ly)}" stroke="#333" stroke-width="${f1(2 * k)}"/>` +
            `<rect x="${f1(lx - 16 * k)}" y="${f1(ly)}" width="${f1(32 * k)}" height="${f1(42 * k)}" rx="${f1(6 * k)}" fill="#ffe08a" stroke="#333" stroke-width="${f1(3 * k)}"/>`;
+    } else if (room === "art") {
+      // an easel with a child's painting, a table of paint jars, paint on the
+      // floor, and drawings pinned up (the things: jars, then drawings)
+      const ex = x1 - W * 0.22, top = floor - 270 * k, cols = ["#e53935", "#3b7dd8", "#f2c12e", "#27ae60", "#8e44ad", "#ff8c42"];
+      t += [[-60, 30], [-30, 50], [40, 20], [70, 60], [10, 80]].map(([dx, dy], i) =>
+             `<ellipse cx="${f1(dx * k)}" cy="${f1(floor + dy * k)}" rx="${f1(16 * k)}" ry="${f1(6 * k)}" fill="${cols[i]}" opacity="0.8"/>`).join("") +
+           [-1, 1].map(sd => `<line x1="${f1(ex)}" y1="${f1(top)}" x2="${f1(ex + sd * 60 * k)}" y2="${f1(floor + 30 * k)}" stroke="#8b5e34" stroke-width="${f1(7 * k)}"/>`).join("") +
+           `<line x1="${f1(ex)}" y1="${f1(top)}" x2="${f1(ex)}" y2="${f1(floor + 20 * k)}" stroke="#6e4a2c" stroke-width="${f1(6 * k)}"/>` +
+           `<rect x="${f1(ex - 80 * k)}" y="${f1(top + 20 * k)}" width="${f1(160 * k)}" height="${f1(120 * k)}" fill="#fffdf6" stroke="#8b5e34" stroke-width="${f1(4 * k)}"/>` +
+           `<circle cx="${f1(ex + 45 * k)}" cy="${f1(top + 50 * k)}" r="${f1(14 * k)}" fill="#ffd23f"/>` +
+           `<path d="M${P(ex - 78 * k, top + 138 * k)} Q${P(ex, top + 80 * k)} ${P(ex + 78 * k, top + 138 * k)} Z" fill="#7cc25a"/>` +
+           `<rect x="${f1(ex - 40 * k)}" y="${f1(top + 82 * k)}" width="${f1(36 * k)}" height="${f1(30 * k)}" fill="#e85d75"/>` +
+           `<polygon points="${P(ex - 46 * k, top + 82 * k)} ${P(ex - 22 * k, top + 62 * k)} ${P(ex + 2 * k, top + 82 * k)}" fill="#3b7dd8"/>` +
+           `<rect x="${f1(ex - 90 * k)}" y="${f1(top + 140 * k)}" width="${f1(180 * k)}" height="${f1(8 * k)}" fill="#6e4a2c"/>`;
+      const tx = x0 + W * 0.2, ty = floor - 70 * k;
+      t += `<rect x="${f1(tx - 110 * k)}" y="${f1(ty)}" width="${f1(220 * k)}" height="${f1(12 * k)}" fill="#8b5e34"/>` +
+           [-95, 95].map(dx => `<rect x="${f1(tx + dx * k - 5 * k)}" y="${f1(ty + 12 * k)}" width="${f1(10 * k)}" height="${f1(80 * k)}" fill="#6e4a2c"/>`).join("") +
+           [...Array(Math.min(things, 10))].map((_, i) => { const x = tx - 98 * k + i * 21 * k;
+             return `<rect x="${f1(x)}" y="${f1(ty - 26 * k)}" width="${f1(16 * k)}" height="${f1(26 * k)}" rx="${f1(3 * k)}" fill="${cols[i % 6]}" stroke="#ffffff" stroke-width="${f1(1.5 * k)}"/>` +
+                    (i % 2 ? `<line x1="${f1(x + 8 * k)}" y1="${f1(ty - 24 * k)}" x2="${f1(x + 14 * k)}" y2="${f1(ty - 52 * k)}" stroke="#c9a66b" stroke-width="${f1(2.5 * k)}"/>` : ""); }).join("");
+      t += [...Array(Math.max(0, things - 10))].map((_, i) => {
+        const x = 150 + (i % 6) * 34 * k, y = y0 + H * 0.12 + Math.floor(i / 6) * 46 * k, c = cols[i % 6];
+        return `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(28 * k)}" height="${f1(36 * k)}" fill="#ffffff" stroke="#d8cdb8" stroke-width="${f1(k)}" transform="rotate(${(i % 3 - 1) * 5} ${f1(x + 14 * k)} ${f1(y)})"/>` +
+               `<circle cx="${f1(x + 14 * k)}" cy="${f1(y + 15 * k)}" r="${f1(7 * k)}" fill="${c}"/><circle cx="${f1(x + 14 * k)}" cy="${f1(y + 2 * k)}" r="${f1(2.5 * k)}" fill="#e53935"/>`;
+      }).join("");
+    } else if (room === "music") {
+      // a drum kit, a keyboard on its stand, records on the wall (the
+      // things), and notes in the air
+      const dx = x1 - W * 0.26, dy = floor + 14 * k;
+      t += [[-110, -150, 30], [105, -160, 34]].map(([ox, oy, r]) => `<line x1="${f1(dx + ox * k)}" y1="${f1(dy + oy * k)}" x2="${f1(dx + ox * 0.8 * k)}" y2="${f1(dy)}" stroke="#555" stroke-width="${f1(3 * k)}"/>` +
+             `<ellipse cx="${f1(dx + ox * k)}" cy="${f1(dy + oy * k)}" rx="${f1(r * k)}" ry="${f1(5 * k)}" fill="#e2b73c" stroke="#a8862a" stroke-width="${f1(1.5 * k)}"/>`).join("") +
+           [-42, 42].map(ox => `<ellipse cx="${f1(dx + ox * k)}" cy="${f1(dy - 112 * k)}" rx="${f1(24 * k)}" ry="${f1(14 * k)}" fill="#c0392b" stroke="#7a1f1f" stroke-width="${f1(2 * k)}"/>` +
+             `<ellipse cx="${f1(dx + ox * k)}" cy="${f1(dy - 118 * k)}" rx="${f1(22 * k)}" ry="${f1(7 * k)}" fill="#f4efe6"/>`).join("") +
+           `<circle cx="${f1(dx)}" cy="${f1(dy - 52 * k)}" r="${f1(52 * k)}" fill="#c0392b" stroke="#7a1f1f" stroke-width="${f1(3 * k)}"/>` +
+           `<circle cx="${f1(dx)}" cy="${f1(dy - 52 * k)}" r="${f1(40 * k)}" fill="#f4efe6"/><text x="${f1(dx)}" y="${f1(dy - 44 * k)}" text-anchor="middle" font-size="${f1(24 * k)}">⭐</text>` +
+           `<line x1="${f1(dx - 88 * k)}" y1="${f1(dy - 70 * k)}" x2="${f1(dx - 92 * k)}" y2="${f1(dy)}" stroke="#555" stroke-width="${f1(3 * k)}"/>` +
+           `<ellipse cx="${f1(dx - 88 * k)}" cy="${f1(dy - 72 * k)}" rx="${f1(28 * k)}" ry="${f1(10 * k)}" fill="#d8d8d8" stroke="#888" stroke-width="${f1(2 * k)}"/>`;
+      const kx = x0 + W * 0.22, ky = floor - 95 * k;
+      t += [-1, 1].map(sd => `<line x1="${f1(kx - 70 * k)}" y1="${f1(ky + 30 * k)}" x2="${f1(kx + 70 * k)}" y2="${f1(floor + 20 * k)}" stroke="#333" stroke-width="${f1(5 * k)}" transform="scale(${sd} 1)" transform-origin="${f1(kx)} 0"/>`).join("") +
+           `<rect x="${f1(kx - 115 * k)}" y="${f1(ky)}" width="${f1(230 * k)}" height="${f1(34 * k)}" rx="${f1(4 * k)}" fill="#222"/>` +
+           `<rect x="${f1(kx - 108 * k)}" y="${f1(ky + 10 * k)}" width="${f1(216 * k)}" height="${f1(20 * k)}" fill="#ffffff"/>` +
+           [...Array(15)].map((_, i) => [1, 2, 4, 5, 6].includes(i % 7) ? `<rect x="${f1(kx - 108 * k + (i + 0.65) * 14.4 * k)}" y="${f1(ky + 10 * k)}" width="${f1(7 * k)}" height="${f1(12 * k)}" fill="#222"/>` : "").join("") +
+           [[-60, -150, "♪"], [-10, -190, "♫"], [40, -160, "♪"]].map(([nx, ny, ch]) => `<text x="${f1(kx + nx * k)}" y="${f1(ky + ny * k)}" font-size="${f1(30 * k)}" fill="#f2c12e">${ch}</text>`).join("");
+      t += [...Array(things)].map((_, i) => {
+        const x = 150 + (i % 6) * 40 * k, y = y0 + H * 0.14 + Math.floor(i / 6) * 42 * k;
+        return `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(17 * k)}" fill="#1f1f22"/><circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(11 * k)}" fill="none" stroke="#333" stroke-width="${f1(k)}"/>` +
+               `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(5.5 * k)}" fill="${["#e53935", "#f2c12e", "#3b7dd8", "#27ae60", "#ff8c42", "#e85d75"][i % 6]}"/>`;
+      }).join("");
     } else {
       // the lookout: a telescope at the window, a map, and pennants overhead
       const tx = x0 + W * 0.3, ty = floor - 150 * k;
@@ -2642,12 +2804,282 @@ function treeroomScene(c) {
     }
     return t;
   });
+  // the ways out: a door to each house a rope bridge joins this one to, a
+  // hatch down its ladder, a ladder up to the house above; each a doorway
+  const links = houseLinks(o, inside - 1);
+  s += SEP + part("room-ways", [c.F, links], () => waysSvg(c, floor, links));
+  // which house this is: a sign hanging from the rafters
+  s += SEP + part("room-sign", [c.F, inside, houseEmoji(o, inside)], () => {
+    const sx = x1 - W * 0.14, sy = y0 + H * 0.12;
+    return `<path d="M${P(sx - 30 * k, sy - 60 * k)} L${P(sx - 30 * k, sy)} M${P(sx + 30 * k, sy - 60 * k)} L${P(sx + 30 * k, sy)}" stroke="#d8c49a" stroke-width="${f1(2 * k)}"/>` +
+           `<rect x="${f1(sx - 46 * k)}" y="${f1(sy - 4 * k)}" width="${f1(92 * k)}" height="${f1(40 * k)}" rx="${f1(5 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2.5 * k)}"/>` +
+           `<text x="${f1(sx)}" y="${f1(sy + 25 * k)}" text-anchor="middle" font-size="${f1(24 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${houseEmoji(o, inside)} ${inside}</text>`;
+  });
   // dim in here: darker toward the corners
   s += SEP + part("room-dim", c.F, () => `<defs><radialGradient id="bg-dim" gradientUnits="userSpaceOnUse" cx="${f1((x0 + x1) / 2)}" cy="${f1(y0 + H * 0.42)}" r="${f1(0.62 * Math.hypot(W, H))}">` +
-    `<stop offset="0.5" stop-color="#1a0f05" stop-opacity="0"/><stop offset="1" stop-color="#1a0f05" stop-opacity="0.5"/></radialGradient></defs>` + all("url(#bg-dim)"));
+    `<stop offset="0.5" stop-color="#1a0f05" stop-opacity="0"/><stop offset="1" stop-color="#1a0f05" stop-opacity="0.5"/></radialGradient></defs>` +
+    all("url(#bg-dim)").replace("<rect ", `<rect pointer-events="none" `));
   return s;
 }
-const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene };
+// Inside the witch's hut: log walls, herbs and a crooked shelf of potions,
+// a cauldron bubbling over its fire, crows in hanging cages, frogs in jars,
+// snakes in a glass tank, and the witch herself, who can be dragged about
+// (data-drag: her place is the scene's witchX, witchY). Her door goes back
+// out to her woods.
+const WITCH_DEFS = `<g id="bg-crow"><path d="M-14 4 Q-4 -12 12 -6 L20 -9 L14 -2 Q8 10 -6 10 Z" fill="#1f1f22"/>` +
+  `<circle cx="11" cy="-10" r="7" fill="#1f1f22"/><path d="M17 -12 L27 -9 L17 -7 Z" fill="#e0a800"/><circle cx="12" cy="-12" r="1.6" fill="#ffffff"/>` +
+  `<path d="M-14 4 L-24 10 L-14 9 Z" fill="#1f1f22"/><path d="M-2 10 L-2 18 M4 10 L4 18" stroke="#e0a800" stroke-width="1.6"/></g>` +
+  `<g id="bg-cage"><path d="M-26 30 V-6 Q-26 -34 0 -38 Q26 -34 26 -6 V30" fill="none" stroke="#b08a43" stroke-width="2"/>` +
+  [-16, -6, 4, 14].map(x => `<path d="M${x} 30 V-6 Q${x} -30 0 -38" fill="none" stroke="#b08a43" stroke-width="1.5"/>`).join("") +
+  `<ellipse cx="0" cy="30" rx="28" ry="6" fill="#6b4a2b"/><circle cx="0" cy="-42" r="5" fill="none" stroke="#b08a43" stroke-width="2"/></g>` +
+  `<g id="bg-frogjar"><rect x="-17" y="-40" width="34" height="40" rx="6" fill="#cfe8f0" opacity="0.45" stroke="#e8f6fa" stroke-width="1.5"/>` +
+  `<ellipse cx="0" cy="-10" rx="11" ry="8" fill="#4f9a3a"/><circle cx="-6" cy="-18" r="4" fill="#4f9a3a"/><circle cx="6" cy="-18" r="4" fill="#4f9a3a"/>` +
+  `<circle cx="-6" cy="-19" r="1.8" fill="#111"/><circle cx="6" cy="-19" r="1.8" fill="#111"/><path d="M-5 -9 Q0 -6 5 -9" stroke="#2a5e22" stroke-width="1.2" fill="none"/>` +
+  `<rect x="-19" y="-46" width="38" height="8" rx="2" fill="#7a4b28"/></g>`;
+// the witch, in her own units, standing at (0, 0), about 300 tall
+const WITCH_SVG = `<path d="M-10 -40 L-70 -230" stroke="#8b5e34" stroke-width="6" stroke-linecap="round"/>` +
+  `<path d="M-76 -246 L-58 -236 L-90 -200 Z" fill="#c9a66b"/>` +
+  `<ellipse cx="-18" cy="-4" rx="16" ry="7" fill="#1f1f22"/><ellipse cx="18" cy="-4" rx="16" ry="7" fill="#1f1f22"/>` +
+  `<path d="M-30 -150 L-55 -8 L55 -8 L30 -150 Z" fill="#6a2c91"/><path d="M-55 -8 L-45 -18 L-35 -8 L-25 -18 L-15 -8 L-5 -18 L5 -8 L15 -18 L25 -8 L35 -18 L45 -8 L55 -8 Z" fill="#4a1d66"/>` +
+  `<rect x="-30" y="-100" width="60" height="9" fill="#1f1f22"/><rect x="-7" y="-102" width="14" height="13" fill="none" stroke="#f2c230" stroke-width="3"/>` +
+  `<path d="M-28 -146 Q-60 -120 -48 -80" fill="none" stroke="#6a2c91" stroke-width="18" stroke-linecap="round"/>` +
+  `<path d="M28 -146 Q60 -150 72 -180" fill="none" stroke="#6a2c91" stroke-width="18" stroke-linecap="round"/>` +
+  `<circle cx="-48" cy="-76" r="10" fill="#7cc25a"/><circle cx="76" cy="-186" r="10" fill="#7cc25a"/>` +
+  `<path d="M-30 -200 Q-44 -150 -38 -120 M30 -200 Q44 -150 38 -120" stroke="#2b2b2b" stroke-width="12" stroke-linecap="round" fill="none"/>` +
+  `<circle cx="0" cy="-185" r="30" fill="#7cc25a"/>` +
+  `<path d="M2 -188 L34 -170 L4 -176 Z" fill="#6aa84a"/><circle cx="24" cy="-174" r="3" fill="#5a8a3a"/>` +
+  `<ellipse cx="-12" cy="-194" rx="5" ry="6" fill="#ffffff"/><ellipse cx="12" cy="-196" rx="5" ry="6" fill="#ffffff"/>` +
+  `<circle cx="-11" cy="-193" r="2.5" fill="#c0392b"/><circle cx="13" cy="-195" r="2.5" fill="#c0392b"/>` +
+  `<path d="M-14 -168 Q0 -160 14 -170" stroke="#2a3a1a" stroke-width="3" fill="none"/>` +
+  `<ellipse cx="0" cy="-212" rx="58" ry="11" fill="#1f1f22"/>` +
+  `<path d="M-30 -214 Q-14 -260 8 -300 Q14 -290 34 -276 Q20 -268 28 -214 Z" fill="#1f1f22"/>` +
+  `<rect x="-30" y="-232" width="58" height="10" fill="#6a2c91" transform="rotate(-3 0 -227)"/>`;
+function witchroomScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, all, o } = c;
+  const floor = g - 100 * k, cz = (o.cauldronSize ?? 100) / 100, wz = (o.witchSize ?? 100) / 100;
+  const crows = o.crows ?? 3, frogs = o.frogs ?? 4, snakes = o.snakes ?? 2;
+  // the hut: log walls, a beam with herbs, cobwebs, a round window with the moon
+  let s = SEP + part("wroom-shell", c.F, () => {
+    let t = all("#3a2a3a");
+    for (let i = 0; i < 16; i++) {
+      const y = y0 - 10 * k + i * 30 * k;
+      if (y > floor) break;
+      t += `<rect x="${f1(x0 - pad)}" y="${f1(y)}" width="${f1(W + 2 * pad)}" height="${f1(27 * k)}" rx="${f1(13 * k)}" fill="${["#5a4048", "#4e3740", "#634850"][i % 3]}"/>`;
+    }
+    t += `<rect x="${f1(x0 - pad)}" y="${f1(floor)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - floor + pad)}" fill="#3b2a22"/>`;
+    for (let i = -14; i <= 14; i++)
+      t += `<line x1="${f1(i * W / 20)}" y1="${f1(floor)}" x2="${f1(i * W / 6)}" y2="${f1(y1 + pad)}" stroke="#2a1d17" stroke-width="${f1(2 * k)}"/>`;
+    // the round window, the moon in it
+    const wx = 0, wy = y0 + H * 0.14;
+    t += `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(48 * k)}" fill="#1c2340"/><circle cx="${f1(wx + 14 * k)}" cy="${f1(wy - 10 * k)}" r="${f1(18 * k)}" fill="#f4e7b0"/>` +
+         `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(48 * k)}" fill="none" stroke="#2a3a8a" stroke-width="${f1(9 * k)}"/><path d="M${P(wx - 48 * k, wy)} H${f1(wx + 48 * k)} M${P(wx, wy - 48 * k)} V${f1(wy + 48 * k)}" stroke="#2a3a8a" stroke-width="${f1(4 * k)}"/>`;
+    // a window either side of the door, as outside: blue frames, the dark woods beyond
+    for (const sd of [-1, 1]) {
+      const cx = sd * W * 0.24, top = y0 + H * 0.25, w = 92 * k, h = 104 * k;
+      t += `<rect x="${f1(cx - w / 2)}" y="${f1(top)}" width="${f1(w)}" height="${f1(h)}" fill="#3a2a5a"/>` +
+           `<rect x="${f1(cx - w / 2)}" y="${f1(top + h * 0.55)}" width="${f1(w)}" height="${f1(h * 0.45)}" fill="#24304a"/>` +
+           [-0.3, 0.05, 0.35].map((u, j) => `<polygon points="${P(cx + u * w - 12 * k, top + h)} ${P(cx + u * w, top + h * (0.2 + 0.12 * j))} ${P(cx + u * w + 12 * k, top + h)}" fill="#162418"/>`).join("") +
+           `<circle cx="${f1(cx + sd * 22 * k)}" cy="${f1(top + 20 * k)}" r="${f1(2 * k)}" fill="#ffffff"/>` +
+           `<rect x="${f1(cx - w / 2)}" y="${f1(top)}" width="${f1(w)}" height="${f1(h)}" fill="none" stroke="#2a3a8a" stroke-width="${f1(7 * k)}"/>` +
+           `<path d="M${P(cx, top)} V${f1(top + h)}" stroke="#2a3a8a" stroke-width="${f1(4 * k)}"/>`;
+    }
+    // the beam across, herbs hanging from it, cobwebs in the corners
+    const by = y0 + H * 0.02;
+    t += `<rect x="${f1(x0 - pad)}" y="${f1(by)}" width="${f1(W + 2 * pad)}" height="${f1(16 * k)}" fill="#2a1a12"/>`;
+    for (let i = 0; i < 9; i++) {
+      const hx = x0 + W * (0.06 + 0.11 * i) + 10 * k * R(i, 300);
+      if (Math.abs(hx) < 70 * k) continue;
+      t += `<line x1="${f1(hx)}" y1="${f1(by + 14 * k)}" x2="${f1(hx)}" y2="${f1(by + 40 * k)}" stroke="#c9b27a" stroke-width="${f1(1.5 * k)}"/>` +
+           [-8, 0, 8].map(dx => `<path d="M${P(hx, by + 40 * k)} Q${P(hx + dx * k, by + 60 * k)} ${P(hx + dx * 1.4 * k, by + 78 * k)}" stroke="${["#5f8a3a", "#7a6a3a", "#4a7a5a"][i % 3]}" stroke-width="${f1(4 * k)}" fill="none" stroke-linecap="round"/>`).join("");
+    }
+    for (const [cx, sd] of [[x0, 1], [x1, -1]])
+      t += [20, 40, 60].map(r => `<path d="M${P(cx, by + 16 * k + r * k)} Q${P(cx + sd * r * 0.5 * k, by + 16 * k + r * 0.5 * k)} ${P(cx + sd * r * k, by + 16 * k)}" fill="none" stroke="#d8d8e0" stroke-width="${f1(1.2 * k)}" opacity="0.7"/>`).join("") +
+           [0.3, 0.6, 0.9].map(a => `<line x1="${f1(cx)}" y1="${f1(by + 16 * k)}" x2="${f1(cx + sd * 64 * k * Math.cos(a * Math.PI / 2))}" y2="${f1(by + 16 * k + 64 * k * Math.sin(a * Math.PI / 2))}" stroke="#d8d8e0" stroke-width="${f1(1.2 * k)}" opacity="0.7"/>`).join("");
+    // the crooked shelf of potions, high on the right
+    const sx = W * 0.11, sy = y0 + H * 0.47;
+    t += `<polygon points="${P(sx, sy)} ${P(sx + W * 0.26, sy - 8 * k)} ${P(sx + W * 0.26, sy)} ${P(sx, sy + 8 * k)}" fill="#2a1a12"/>`;
+    for (let i = 0; i < 7; i++) {
+      const bx = sx + 14 * k + i * W * 0.035, h = (26 + 20 * R(i, 301)) * k, cc = ["#7cc25a", "#c0392b", "#8e44ad", "#3fd0e0", "#f2c12e", "#e85d75", "#27ae60"][i];
+      t += `<rect x="${f1(bx)}" y="${f1(sy - 2 * k - i * 1.1 * k - h)}" width="${f1(16 * k)}" height="${f1(h)}" rx="${f1(6 * k)}" fill="${cc}" opacity="0.85" stroke="#ffffff" stroke-width="${f1(k)}"/>` +
+           `<rect x="${f1(bx + 4 * k)}" y="${f1(sy - 2 * k - i * 1.1 * k - h - 7 * k)}" width="${f1(8 * k)}" height="${f1(8 * k)}" fill="#7a4b28"/>`;
+    }
+    return t;
+  });
+  // the door back out to the woods, in the middle, as outside: red, braced
+  s += SEP + part("wroom-door", c.F, () => {
+    const w = 96 * k, top = floor - 196 * k;
+    return `<g class="portal" data-to="witch"><rect x="${f1(-w / 2 - 8 * k)}" y="${f1(top - 8 * k)}" width="${f1(w + 16 * k)}" height="${f1(floor - top + 8 * k)}" fill="#2a1a12"/>` +
+           `<rect x="${f1(-w / 2)}" y="${f1(top)}" width="${f1(w)}" height="${f1(floor - top)}" fill="#c0392b" stroke="#4a1410" stroke-width="${f1(3 * k)}"/>` +
+           `<path d="M${P(-w / 2 + 10 * k, top + 12 * k)} L${P(w / 2 - 10 * k, floor - 12 * k)} M${P(w / 2 - 10 * k, top + 12 * k)} L${P(-w / 2 + 10 * k, floor - 12 * k)}" stroke="#4a1410" stroke-width="${f1(6 * k)}"/>` +
+           `<circle cx="${f1(w / 2 - 16 * k)}" cy="${f1(floor - 92 * k)}" r="${f1(5 * k)}" fill="#f2c230"/>` +
+           plankSign(0, top - 30 * k, k, "🌲 out") + `</g>`;
+  });
+  // frogs in jars on a shelf on the left
+  s += SEP + part("wroom-frogs", [c.F, frogs], () => {
+    const fx = -W * 0.37, fy = y0 + H * 0.47, n = Math.min(frogs, 8);
+    return `<defs>${WITCH_DEFS}</defs><rect x="${f1(fx - 16 * k)}" y="${f1(fy)}" width="${f1(W * 0.26)}" height="${f1(9 * k)}" fill="#2a1a12"/>` +
+           [...Array(n)].map((_, i) => use("bg-frogjar", fx + 8 * k + i * 26 * k, fy, k * 0.8)).join("");
+  });
+  // snakes in a glass tank on a table on the right
+  s += SEP + part("wroom-snakes", [c.F, snakes], () => {
+    const tx = x1 - W * 0.12, ty = floor - 60 * k, tw = 130 * k, th = 80 * k;
+    let t = `<rect x="${f1(tx - 90 * k)}" y="${f1(ty)}" width="${f1(180 * k)}" height="${f1(12 * k)}" fill="#3a2418"/>` +
+            [-80, 80].map(dx => `<rect x="${f1(tx + dx * k - 5 * k)}" y="${f1(ty + 12 * k)}" width="${f1(10 * k)}" height="${f1(70 * k)}" fill="#2a1a12"/>`).join("") +
+            `<rect x="${f1(tx - tw / 2)}" y="${f1(ty - th)}" width="${f1(tw)}" height="${f1(th)}" fill="#7a6a3a" opacity="0.35"/>`;
+    for (let i = 0; i < Math.min(snakes, 6); i++) {
+      const yy = ty - 12 * k - i * 11 * k, ph = i * 1.3, cc = ["#4f9a3a", "#c0392b", "#f2c12e", "#8e44ad", "#27ae60", "#e8762c"][i];
+      let d = `M${P(tx - tw / 2 + 10 * k, yy)}`;
+      for (let j = 1; j <= 12; j++) d += ` L${P(tx - tw / 2 + 10 * k + j * (tw - 30 * k) / 12, yy - 8 * k * Math.sin(j * 0.9 + ph))}`;
+      t += `<path d="${d}" fill="none" stroke="${cc}" stroke-width="${f1(7 * k)}" stroke-linecap="round" stroke-linejoin="round"/>` +
+           `<path d="${d}" fill="none" stroke="#1f1f22" stroke-width="${f1(2 * k)}" stroke-dasharray="${f1(3 * k)} ${f1(8 * k)}"/>` +
+           `<circle cx="${f1(tx + tw / 2 - 20 * k)}" cy="${f1(yy - 8 * k * Math.sin(12 * 0.9 + ph))}" r="${f1(6 * k)}" fill="${cc}"/>`;
+    }
+    return t + `<rect x="${f1(tx - tw / 2)}" y="${f1(ty - th)}" width="${f1(tw)}" height="${f1(th)}" fill="#cfe8f0" opacity="0.18" stroke="#e8f6fa" stroke-width="${f1(2.5 * k)}"/>` +
+               `<rect x="${f1(tx - tw / 2 - 4 * k)}" y="${f1(ty - th - 6 * k)}" width="${f1(tw + 8 * k)}" height="${f1(7 * k)}" fill="#3a2418"/>`;
+  });
+  // crows in cages, hanging from the beam
+  s += SEP + part("wroom-crows", [c.F, crows], () => {
+    const by = y0 + H * 0.02 + 16 * k, spots = [-0.36, 0.3, -0.22, 0.18, -0.44, 0.42];
+    return `<defs>${WITCH_DEFS}</defs>` + spots.slice(0, Math.min(crows, 6)).map((u, i) => {
+      const x = W * u, hang = (60 + 30 * R(i, 302)) * k;
+      return `<line x1="${f1(x)}" y1="${f1(by)}" x2="${f1(x)}" y2="${f1(by + hang)}" stroke="#555" stroke-width="${f1(1.5 * k)}"/>` +
+             use("bg-crow", x, by + hang + 50 * k, k * 0.9 * (i % 2 ? -1 : 1), k * 0.9) + use("bg-cage", x, by + hang + 40 * k, k * 0.9);
+    }).join("");
+  });
+  // the cauldron over its fire, bubbling, its size its group's
+  s += OPEN(`<g ${tf(-W * 0.22, floor + 50 * k, cz * k)}>`) + part("wroom-cauldron", [], () =>
+    `<path d="M-60 0 L60 0 M-50 -6 L50 6 M-50 6 L50 -6" stroke="#5a3a1a" stroke-width="10" stroke-linecap="round"/>` +
+    [[-30, 0], [0, 6], [30, -4]].map(([fx, ph]) => `<path d="M${fx - 16} -4 Q${fx} -${46 + ph} ${fx + 16} -4 Z" fill="#ff8c1a"><animate attributeName="d" dur="${(0.6 + ph / 30).toFixed(2)}s" repeatCount="indefinite" ` +
+      `values="M${fx - 16} -4 Q${fx} -${46 + ph} ${fx + 16} -4 Z;M${fx - 16} -4 Q${fx + 6} -${30 + ph} ${fx + 16} -4 Z;M${fx - 16} -4 Q${fx} -${46 + ph} ${fx + 16} -4 Z"/></path>` +
+      `<path d="M${fx - 8} -4 Q${fx} -${26 + ph} ${fx + 8} -4 Z" fill="#ffd23f"/>`).join("") +
+    `<path d="M-70 -40 Q-80 -130 0 -136 Q80 -130 70 -40 Q60 -20 0 -18 Q-60 -20 -70 -40 Z" fill="#1f1f22"/>` +
+    `<path d="M-60 -24 L-70 -6 M60 -24 L70 -6" stroke="#1f1f22" stroke-width="8"/>` +
+    `<ellipse cx="0" cy="-124" rx="74" ry="16" fill="#2b2b30"/><ellipse cx="0" cy="-122" rx="64" ry="11" fill="#7cfc3a"/>` +
+    [[-30, 0.9], [-5, 1.3], [22, 1.1], [40, 0.7]].map(([bx, d]) => `<circle cx="${bx}" cy="-124" r="6" fill="#b6ff7a" opacity="0.9">` +
+      `<animate attributeName="cy" values="-120;-150;-120" dur="${d}s" repeatCount="indefinite"/><animate attributeName="r" values="3;8;0" dur="${d}s" repeatCount="indefinite"/></circle>`).join("") +
+    "") + CLOSE;
+  s += SEP + part("wroom-fumes", [c.F, cz], () => helixSvg(-W * 0.22, floor + 50 * k - 128 * cz * k, y0 - 80 * k, 14 * cz * k, 50 * cz * k, k));
+  // the witch: dragged anywhere (her place), her size her group's
+  s += OPEN(`<g data-drag="witch" style="cursor: grab" ${tf(o.witchX ?? 150, g + (o.witchY ?? 0), wz * k)}>`) + part("wroom-witch", [], () => WITCH_SVG) + CLOSE;
+  // dim and glowing: darker toward the corners, a green glow over the cauldron
+  s += SEP + part("wroom-dim", c.F, () => `<defs><radialGradient id="bg-wdim" gradientUnits="userSpaceOnUse" cx="${f1(-W * 0.2)}" cy="${f1(floor - 40 * k)}" r="${f1(0.75 * Math.hypot(W, H))}">` +
+    `<stop offset="0" stop-color="#7cfc3a" stop-opacity="0.12"/><stop offset="0.35" stop-color="#140a14" stop-opacity="0"/><stop offset="1" stop-color="#140a14" stop-opacity="0.55"/></radialGradient></defs>` +
+    all("url(#bg-wdim)").replace("<rect ", `<rect pointer-events="none" `));
+  return s;
+}
+// A clearing in the forest, and far off down its paths, things to see,
+// each shown or not by its own switch: the family house, the tree house,
+// the witch's hut, a castle, a healer's hut. The ones with a scene of their
+// own close up are doorways into it.
+// a small tree house, in its own units (standing at 0, 0): the braided
+// trunk, pads of leaves, and three of the tree's houses as they are chosen
+function miniTreeSvg(o) {
+  let t = `<defs>${[...Array(8)].map((_, j) => padDef(`bg-pad${j}`, j)).join("")}${CABIN_DEFS}</defs>` +
+          [[-1, -300, -230, -360], [1, -330, 240, -400], [-1, -420, -180, -500], [1, -440, 190, -520]].map(([sd, sy, tx, ty]) =>
+            `<path d="M${sd * 30} ${sy} Q${f1(tx * 0.5)} ${sy - 10} ${tx} ${ty}" fill="none" stroke="#6e4a2c" stroke-width="18" stroke-linecap="round"/>`).join("") +
+          braidSvg(0, -620, 6, 150, 1, { strands: 4, taper: 0.5, base: "#00000026" });
+  [[-230, -380], [240, -420], [-180, -520], [190, -540], [0, -600], [-90, -580], [100, -600], [-280, -470], [290, -500]].forEach(([x, y], i) => {
+    t += use(`bg-pad${i % 8}`, x, y, 1.3 * (i % 2 ? -1 : 1), 1.3, ` color="${["#2f7d32", "#3c9a40", "#4fb04f"][i % 3]}"`);
+  });
+  [[-230, -362], [240, -402], [-180, -502]].forEach(([x, y], i) => {
+    const kind = HOUSE_ANIMALS.some(([v]) => v === o["house" + (i + 1)]) ? o["house" + (i + 1)] : TREE_SLOTS[i][2], look = houseLook(kind, o, i + 1);
+    t += use("bg-cabin", x, y, 0.8, 0.8, ` color="${look.walls}"`) + `<g ${tf(x, y, 0.8)}>${look.head}</g>`;
+  });
+  return t;
+}
+// the witch's hut from afar: dark pines round a log hut on chicken legs,
+// its window glowing, smoke curling from its crooked chimney
+function farWitchSvg() {
+  let t = [-120, -70, 80, 130, 30].map((x, i) => `<polygon points="${x},${-20 - 40 * (i % 2)} ${x - 40},90 ${x + 40},90" fill="${["#1f3a2a", "#24402e", "#18301f"][i % 3]}"/>`).join("");
+  t += [-1, 1].map(sd => `<path d="M${sd * 18} 40 L${sd * 22} 70 L${sd * 34} 84 M${sd * 22} 70 L${sd * 14} 86" stroke="#e0552b" stroke-width="7" stroke-linecap="round" fill="none"/>`).join("") +
+       `<rect x="-50" y="-26" width="100" height="70" fill="#5a3a2a" stroke="#2a1a12" stroke-width="3"/>` +
+       [-12, 2, 16, 30].map(y => `<line x1="-50" y1="${y}" x2="50" y2="${y}" stroke="#2a1a12" stroke-width="2"/>`).join("") +
+       `<polygon points="-64,-24 0,-78 66,-22" fill="#3b2f2a" stroke="#1d1410" stroke-width="3"/>` +
+       `<rect x="-14" y="-6" width="26" height="22" fill="#ffd23f"/><path d="M-14 5 H12 M-1 -6 V16" stroke="#5a3a2a" stroke-width="3"/>` +
+       `<polygon points="28,-60 44,-64 46,-30 30,-34" fill="#2a1a12"/>` +
+       `<path d="M38 -66 Q26 -96 46 -116 Q62 -136 48 -160" fill="none" stroke="#c9c9d6" stroke-width="10" stroke-linecap="round" opacity="0.6"/>`;
+  return t;
+}
+// a castle on its hill: towers with pointed roofs and flags, a gate
+function castleSvg() {
+  const stone = "#b8b8c4", dark = "#8e8e9c", teeth = (x, w, y) => [...Array(Math.floor(w / 16))].map((_, i) => `<rect x="${x + i * 16}" y="${y - 10}" width="10" height="10" fill="${stone}"/>`).join("");
+  return `<path d="M-260 60 Q-120 -40 0 -30 Q130 -40 260 60 Z" fill="#7cb85a"/>` +
+    `<rect x="-120" y="-120" width="240" height="120" fill="${stone}" stroke="${dark}" stroke-width="3"/>` + teeth(-120, 240, -120) +
+    [-1, 1].map(sd => `<rect x="${sd * 150 - 30}" y="-180" width="60" height="180" fill="${stone}" stroke="${dark}" stroke-width="3"/>` +
+      `<polygon points="${sd * 150 - 38},-180 ${sd * 150},-250 ${sd * 150 + 38},-180" fill="#3b5ea8"/>` +
+      `<line x1="${sd * 150}" y1="-250" x2="${sd * 150}" y2="-280" stroke="#555" stroke-width="3"/><polygon points="${sd * 150},-280 ${sd * 150 + 26},-272 ${sd * 150},-264" fill="#e53935"/>` +
+      `<rect x="${sd * 150 - 8}" y="-140" width="16" height="26" rx="8" fill="#3a3a48"/>`).join("") +
+    `<rect x="-40" y="-230" width="80" height="110" fill="${stone}" stroke="${dark}" stroke-width="3"/>` + teeth(-40, 80, -230) +
+    `<polygon points="-48,-230 0,-300 48,-230" fill="#3b5ea8"/><line x1="0" y1="-300" x2="0" y2="-334" stroke="#555" stroke-width="3"/><polygon points="0,-334 30,-325 0,-316" fill="#f2c12e"/>` +
+    `<path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z" fill="#3a2a1a"/>` + [-20, -7, 7, 20].map(x => `<line x1="${x}" y1="-80" x2="${x}" y2="0" stroke="#6a5a4a" stroke-width="3"/>`).join("") +
+    [-80, 80].map(x => `<rect x="${x - 8}" y="-90" width="16" height="24" rx="8" fill="#3a3a48"/>`).join("") +
+    [...Array(18)].map((_, i) => `<rect x="${-110 + (i % 6) * 38 + (Math.floor(i / 6) % 2) * 19}" y="${-110 + Math.floor(i / 6) * 34}" width="30" height="14" fill="none" stroke="${dark}" stroke-width="1" opacity="0.6"/>`).join("");
+}
+// a healer's hut: round, thatched, a heart on its sign, herbs growing by it
+function healerSvg() {
+  return [-90, -70, -50, 60, 80, 100].map((x, i) => `<path d="M${x} 40 Q${x - 6} 20 ${x - 10} 6 M${x} 40 Q${x + 4} 18 ${x + 10} 8" stroke="${["#5f8a3a", "#7a9a3a", "#4a8a4a"][i % 3]}" stroke-width="4" fill="none"/>` +
+      `<circle cx="${x - 10}" cy="6" r="4" fill="${["#c39bd3", "#f7a8c8", "#f2c12e"][i % 3]}"/>`).join("") +
+    `<path d="M-60 40 V-20 Q0 -40 60 -20 V40 Z" fill="#e8d5b0" stroke="#a88a5a" stroke-width="3"/>` +
+    `<path d="M-80 -14 Q0 -130 80 -14 Q0 -36 -80 -14 Z" fill="#c9a35a" stroke="#8a6a2a" stroke-width="3"/>` +
+    [-50, -25, 0, 25, 50].map(x => `<path d="M${x * 1.4} -18 Q${x} -60 ${x * 0.3} -96" stroke="#a8823a" stroke-width="2" fill="none"/>`).join("") +
+    `<path d="M-16 40 V4 Q0 -10 16 4 V40 Z" fill="#7a5a3a"/>` +
+    `<rect x="24" y="-10" width="34" height="26" rx="4" fill="#ffffff" stroke="#a88a5a" stroke-width="2"/>` +
+    `<path d="M41 12 L31 2 A5 5 0 0 1 41 -4 A5 5 0 0 1 51 2 Z" fill="#e53935"/>` +
+    `<path d="M10 -96 Q2 -120 16 -140" fill="none" stroke="#d8d8e0" stroke-width="8" stroke-linecap="round" opacity="0.6"/>`;
+}
+// what is far off in the clearing, where (x as a share of the width, how
+// far up from the clearing's near edge), its size, and its doorway
+const CLEARING_THINGS = [
+  { key: "seeCastle", at: [0.1, 120], size: 0.42, draw: () => castleSvg(), to: null },
+  { key: "seeTree", at: [-0.17, 95], size: 0.36, draw: o => miniTreeSvg(o), to: "treehouse", reads: o => [1, 2, 3].map(n => [o["house" + n], ...houseLook(o["house" + n] || TREE_SLOTS[n - 1][2], o, n).cols]) },
+  { key: "seeHouse", at: [-0.33, 70], size: 0.3, draw: () => houseBuildingSvg(), to: "house" },
+  { key: "seeWitch", at: [0.25, 95], size: 0.52, draw: () => farWitchSvg(), to: "witch" },
+  { key: "seeHealer", at: [0.36, 40], size: 0.58, draw: () => healerSvg(), to: null },
+];
+function clearingScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
+  const near = g - 40 * k;   // the clearing's near edge, where the paths start
+  let s = SEP + part("clear-sky", c.F, () => `<defs>${grad("bg-sky", "#6ec2f2", "#e8f6ff", y0, g - 150 * k)}</defs>` + all("url(#bg-sky)") +
+    land(g - 230 * k, 10, "#9ccf86", 0.4) + land(g - 175 * k, 6, "#8bc56a", 1.2));
+  s += SEP + cloudsSvg(c, 3, 0.8, 140);
+  // the forest round the clearing: far trees all along, near ones at the sides
+  s += SEP + part("clear-far-woods", c.F, () => {
+    let t = `<defs>${oakDef("bg-woods-oak", 1)}<g id="bg-pine"><rect x="-6" y="-30" width="12" height="32" fill="#5e3d22"/>` +
+            `<polygon points="0,-200 -50,-28 50,-28" fill="currentColor"/><polygon points="0,-200 -14,-150 0,-60 12,-120" fill="#ffffff" opacity="0.1"/></g></defs>`;
+    for (let i = 0; i < 34; i++)
+      t += i % 3 === 1 ? use("bg-woods-oak", x0 - 30 * k + (W + 60 * k) * i / 33, g - 218 * k + 8 * k * R(i, 310), k * (0.3 + 0.15 * R(i, 311)))
+                       : use("bg-pine", x0 - 30 * k + (W + 60 * k) * i / 33, g - 218 * k + 8 * k * R(i, 310), k * (0.28 + 0.16 * R(i, 311)), k * (0.28 + 0.16 * R(i, 311)),
+                             ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
+    return t;
+  });
+  // the things far off, each its own piece, behind the paths' near ends
+  const shown = CLEARING_THINGS.filter(T => o[T.key] ?? T.key !== "seeHealer");
+  for (const T of shown) {
+    const x = W * T.at[0], y = near - T.at[1] * k;
+    s += SEP + (T.to ? `<g class="portal" data-to="${T.to}">` : "") +
+         part("clear-" + T.key, [c.F, T.reads ? T.reads(o) : 0], () => `<g ${tf(x, y, T.size * k)}>${T.draw(o)}</g>`) + (T.to ? `</g>` : "");
+  }
+  // the paths, from the near edge out to each thing shown
+  s += SEP + part("clear-paths", [c.F, shown.map(T => T.key)], () => {
+    let t = land(near, 3, "#7cc25a", 0.6) + `<path d="M${P(-40 * k, y1 + pad)} L${P(40 * k, y1 + pad)} L${P(26 * k, near)} L${P(-26 * k, near)} Z" fill="#d9c08a"/>`;
+    for (const T of shown) {
+      const x = W * T.at[0], y = near - T.at[1] * k + 6 * k;
+      t += `<path d="M${P(0, near + 4 * k)} Q${P(x * 0.5, near - 10 * k)} ${P(x, y)}" fill="none" stroke="#d9c08a" stroke-width="${f1(14 * k)}" stroke-linecap="round"/>`;
+    }
+    for (let i = 0; i < 40; i++) {   // flowers in the near grass
+      const d = R(i, 312), x = x0 + W * R(i, 313), y = near + 10 * k + (y1 - near) * d;
+      if (Math.abs(x) < (40 + 30 * d) * k) continue;
+      t += use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.6 * d), k * (0.8 + 0.6 * d), ` color="${FLOWER_COLORS[i % 6]}"`);
+    }
+    return `<defs>${FLOWER_DEFS}</defs>` + t;
+  });
+  // near trees at the frame's edges, framing the clearing
+  s += SEP + part("clear-near-woods", c.F, () => [-1, 1].map(sd => [[0, 0, 1.15], [1, 40, 0.8]].map(([j, dy, z]) =>
+    use("bg-woods-oak", sd * (W * 0.5 + 40 * k - j * 30 * k), g + (40 + dy) * k, k * z * sd, k * z)).join("")).join(""));
+  return s;
+}
+const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
+                 witchroom: witchroomScene, clearing: clearingScene };
 
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);
@@ -2979,7 +3411,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // the fence and grows, but stays behind it (drawn before it).
     const legs = !!opts.chickenLegs, ls = (opts.legSize ?? 100) / 100, near = (opts.hutNear ?? 0) / 100;
     const hutBase = g - 112 * k, hutAt = hutBase + near * 76 * k, hutScale = 1 + 1.1 * near, hutX = W * 0.19;
-    s += `<g transform="translate(${f1(hutX)} ${f1(hutAt)}) scale(${hutScale.toFixed(3)}) translate(${f1(-hutX)} ${f1(-hutBase)})">`;
+    s += `<g class="portal" data-to="witchroom"><g transform="translate(${f1(hutX)} ${f1(hutAt)}) scale(${hutScale.toFixed(3)}) translate(${f1(-hutX)} ${f1(-hutBase)})">`;
     s += `<path d="M${P(hutX - W * 0.17, g - 40 * k)} Q${P(hutX - W * 0.03, g - 140 * k)} ${P(hutX + W * 0.17, g - 40 * k)} Z" fill="#3b2f2a"/>`;
     {
       const hx = hutX, feet = hutBase, legH = legs ? 120 * k * ls : 0, hw = 120 * k, hh = 84 * k, top = feet - legH - hh;
@@ -3014,9 +3446,12 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
            [-1, 1].map(sd => `<rect x="${f1(hx + sd * 38 * k - 11 * k)}" y="${f1(top + 18 * k)}" width="${f1(22 * k)}" height="${f1(24 * k)}" fill="#ffd166" stroke="#2a3a8a" stroke-width="${f1(3 * k)}"/>` +
              `<line x1="${f1(hx + sd * 38 * k)}" y1="${f1(top + 18 * k)}" x2="${f1(hx + sd * 38 * k)}" y2="${f1(top + 42 * k)}" stroke="#2a3a8a" stroke-width="${f1(2 * k)}"/>`).join("") +
            `<polygon points="${P(hx - hw / 2 - 20 * k, top + 4 * k)} ${P(hx, top - 52 * k)} ${P(hx + hw / 2 + 20 * k, top + 4 * k)}" fill="#6b4a2b" stroke="#3a2614" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>` +
-           [1, 2, 3].map(j => `<line x1="${f1(hx - (hw / 2 + 20 * k) * (1 - j / 4))}" y1="${f1(top + 4 * k - 56 * k * (1 - j / 4) * 0 - 14 * k * j + 14 * k * 0)}" x2="${f1(hx + (hw / 2 + 20 * k) * (1 - j / 4))}" y2="${f1(top + 4 * k - 14 * k * j)}" stroke="#4a301a" stroke-width="${f1(1.5 * k)}"/>`).join("");
+           [1, 2, 3].map(j => `<line x1="${f1(hx - (hw / 2 + 20 * k) * (1 - j / 4))}" y1="${f1(top + 4 * k - 56 * k * (1 - j / 4) * 0 - 14 * k * j + 14 * k * 0)}" x2="${f1(hx + (hw / 2 + 20 * k) * (1 - j / 4))}" y2="${f1(top + 4 * k - 14 * k * j)}" stroke="#4a301a" stroke-width="${f1(1.5 * k)}"/>`).join("") +
+           // a round window up in the gable
+           `<circle cx="${f1(hx)}" cy="${f1(top - 17 * k)}" r="${f1(11 * k)}" fill="#ffd166" stroke="#2a3a8a" stroke-width="${f1(3 * k)}"/>` +
+           `<path d="M${P(hx - 11 * k, top - 17 * k)} h${f1(22 * k)} M${P(hx, top - 28 * k)} v${f1(22 * k)}" stroke="#2a3a8a" stroke-width="${f1(1.5 * k)}"/>`;
     }
-    s += `</g>`;   // the hut
+    s += `</g></g>`;   // the hut, and its doorway
     // the ground, dark earth, with tufts of grass
     s += land(g - 40 * k, 8, "#4a3a2a", 1.9);
     for (let i = 0; i < 22; i++) {
@@ -3092,8 +3527,10 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // her cauldron on the right, bubbling green over a fire
     {
       const cx = Math.max(W * 0.32, 180 * k), b = g + 55 * k, r = 46 * k, cy = b - 26 * k - r * 0.7;
-      s += [-1, 0, 1].map(t => `<path d="M${P(cx + t * 26 * k - 10 * k, b - 14 * k)} Q${P(cx + t * 26 * k - 6 * k, b - 46 * k)} ${P(cx + t * 26 * k, b - 60 * k)} ` +
-             `Q${P(cx + t * 26 * k + 6 * k, b - 46 * k)} ${P(cx + t * 26 * k + 10 * k, b - 14 * k)} Z" fill="#ff8c1a"/>` +
+      // (the flames flicker, each at its own pace)
+      const flame = (t, top) => `M${P(cx + t * 26 * k - 10 * k, b - 14 * k)} Q${P(cx + t * 26 * k - 6 * k, b - 46 * k)} ${P(cx + t * 26 * k, b - top * k)} ` +
+                                `Q${P(cx + t * 26 * k + 6 * k, b - 46 * k)} ${P(cx + t * 26 * k + 10 * k, b - 14 * k)} Z`;
+      s += [-1, 0, 1].map(t => `<path d="${flame(t, 60)}" fill="#ff8c1a"><animate attributeName="d" values="${flame(t, 60)};${flame(t, 44)};${flame(t, 66)};${flame(t, 60)}" dur="${(0.7 + 0.15 * (t + 1)).toFixed(2)}s" repeatCount="indefinite"/></path>` +
              `<path d="M${P(cx + t * 26 * k - 5 * k, b - 14 * k)} Q${P(cx + t * 26 * k - 3 * k, b - 32 * k)} ${P(cx + t * 26 * k, b - 40 * k)} ` +
              `Q${P(cx + t * 26 * k + 3 * k, b - 32 * k)} ${P(cx + t * 26 * k + 5 * k, b - 14 * k)} Z" fill="#ffd23f"/>`).join("") +
            [-30, -10, 10, 30].map(t => `<line x1="${f1(cx + t * k)}" y1="${f1(b - 6 * k)}" x2="${f1(cx + t * 1.4 * k)}" y2="${f1(b - 16 * k)}" stroke="#5a3a1c" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`).join("") +
@@ -3101,18 +3538,18 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
            `<path d="M${P(cx - r, cy)} Q${P(cx - r * 1.1, cy + r * 1.05)} ${P(cx, cy + r * 1.05)} Q${P(cx + r * 1.1, cy + r * 1.05)} ${P(cx + r, cy)} Z" fill="#26262c" stroke="#0e0e12" stroke-width="${f1(3 * k)}"/>` +
            `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(r * 1.06)}" ry="${f1(r * 0.24)}" fill="#1b1b1f"/>` +
            `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(r * 0.92)}" ry="${f1(r * 0.17)}" fill="#7bd33a"/>` +
-           [[-0.4, -4, 7], [0.1, -8, 9], [0.45, -3, 6], [-0.1, -20, 5], [0.3, -30, 4]].map(([dx, dy, rr]) =>
-             `<circle cx="${f1(cx + dx * r)}" cy="${f1(cy + dy * k)}" r="${f1(rr * k)}" fill="#a6e86a" stroke="#4f9a1f" stroke-width="${f1(1.5 * k)}"/>`).join("") +
+           // bubbles rising out of the brew and bursting, as inside her hut
+           [[-0.4, 7, 0.9], [0.1, 9, 1.3], [0.45, 6, 1.1], [-0.1, 5, 0.7], [0.3, 4, 1.6]].map(([dx, rr, d]) =>
+             `<circle cx="${f1(cx + dx * r)}" cy="${f1(cy)}" r="${f1(rr * k)}" fill="#a6e86a" stroke="#4f9a1f" stroke-width="${f1(1.5 * k)}">` +
+             `<animate attributeName="cy" values="${f1(cy)};${f1(cy - 30 * k)};${f1(cy)}" dur="${d}s" repeatCount="indefinite"/>` +
+             `<animate attributeName="r" values="${f1(rr * 0.4 * k)};${f1(rr * k)};0" dur="${d}s" repeatCount="indefinite"/></circle>`).join("") +
            // a skull on the pot, red-eyed
            `<path d="M${P(cx - 14 * k, cy + 30 * k)} Q${P(cx - 15 * k, cy + 12 * k)} ${P(cx, cy + 11 * k)} Q${P(cx + 15 * k, cy + 12 * k)} ${P(cx + 14 * k, cy + 30 * k)} ` +
            `L${P(cx + 7 * k, cy + 33 * k)} L${P(cx + 6 * k, cy + 39 * k)} L${P(cx - 6 * k, cy + 39 * k)} L${P(cx - 7 * k, cy + 33 * k)} Z" fill="#3b3b44" stroke="#55555f" stroke-width="${f1(1.2 * k)}"/>` +
            [-1, 1].map(sd => `<circle cx="${f1(cx + sd * 6 * k)}" cy="${f1(cy + 22 * k)}" r="${f1(3.6 * k)}" fill="#ff3b3b"/>`).join("") +
-           // the plume: two ribbons twisting up round each other, green and cyan
-           [["#7bd33a", 0], ["#3fd0e0", Math.PI]].map(([c, ph]) => {
-             let d = `M${P(cx, cy - 6 * k)}`;
-             for (let t = 1; t <= 12; t++) d += ` L${P(cx + 18 * k * Math.sin(t * 0.7 + ph) * (1 - t / 16), cy - 6 * k - t * 16 * k)}`;
-             return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f1(6 * k)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`;
-           }).join("");
+           // the fumes: one green, one blue, a double helix turning as it
+           // rises, out past the top of the picture
+           helixSvg(cx, cy - 6 * k, y0 - 80 * k, 12 * k, 46 * k, k);
     }
   } else if (kind === "beach") {
     const sea = g - 170 * k, shore = g - 55 * k;
@@ -4238,7 +4675,8 @@ const TUNES = {
 };
 // each background's own tune
 const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", witch: "witch", cemetery: "cemetery",
-                     lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions" };
+                     lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
+                     witchroom: "witch", clearing: "forest" };
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
 
 // a tune made ready to play: every part's notes in one list, by step,
@@ -4835,7 +5273,8 @@ const TABS = [
                                       ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
                                       ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
                                       ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
-                                      ["livingroom", "🛋️ living room"]]],
+                                      ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
+                                      ["clearing", "🌲 forest clearing"]]],
     ["range", "figSize", "🧍 size in the scene", 10, 200, 100, 100],
     ["place", "figPos", "🧍 place in the scene (or drag the figure)"],
     // the witch's woods: the hut behind the fence, on chicken legs or not
@@ -4867,9 +5306,23 @@ const TABS = [
     ...[1, 2, 3, 4, 5, 6].flatMap(n => [["choice", "house" + n, "🏡 house " + n, HOUSE_ANIMALS],
       ...HOUSE_COLOR_CTLS.map(([k, label, colors]) => ["color", k + n, `🏡 house ${n}: ${label}`, colors])]),
     // inside the tree house
-    ["choice", "room", "room", [["bunks", "🛏️ bunk room"], ["kitchen", "🍳 kitchen"], ["books", "📚 reading nook"], ["lookout", "🔭 lookout"]]],
+    ["choice", "inside", "🏡 which tree house", [1, 2, 3, 4, 5, 6].map(n => [n, "🏡 " + n])],
+    ...[1, 2, 3, 4, 5, 6].flatMap(n => [["choice", "room" + n, `🏡 ${n}: its room`, ROOM_CHOICES],
+      ...[1, 2].map(i => ["choice", `r${n}pic${i}`, `🏡 ${n}: picture ${i} on its wall`, PICTURE_CHOICES])]),
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
     ["range", "things", "🧸 things in the room", 0, 24, 4, 20],
+    // the forest clearing: what is far off down its paths
+    ["toggle", "seeHouse", "🏠 see the family house"],
+    ["toggle", "seeTree", "🌳 see the tree house"],
+    ["toggle", "seeWitch", "🧙 see the witch's hut"],
+    ["toggle", "seeCastle", "🏰 see the castle"],
+    ["toggle", "seeHealer", "🌿 see the healer's hut"],
+    // inside the witch's hut (the witch herself: drag her)
+    ["range", "witchSize", "🧙 the witch's size (drag her to move her)", 30, 250, 70, 150],
+    ["range", "cauldronSize", "🫕 cauldron size", 40, 250, 70, 160],
+    ["range", "crows", "🐦‍⬛ crows in cages", 0, 6, 1, 6],
+    ["range", "frogs", "🐸 frogs in jars", 0, 8, 2, 8],
+    ["range", "snakes", "🐍 snakes in the tank", 0, 6, 1, 5],
     // the living room
     ["choice", "view", "🪟 outside the window", PICTURE_CHOICES],
     ["range", "viewDetail", "🪟 outside the window: detail (0 = a blur, 100 = all of it)", 0, 100, 30, 100],
@@ -4911,6 +5364,10 @@ function set(part, key, value) {
   if (part === "pants" && key === "style" && value === "skirt") state.pants.skirtLen = 50;
   if (part === "pants" && key === "style" && value === "dress") state.pants.skirtLen = 95;
   if (part === "background" && key === "kind") trips.length = 0;
+  // you are always inside a house the tree has: going into house 6 grows
+  // the tree to six houses, and fewer houses take you to the last one left
+  if (part === "background" && key === "inside" && value > (state.background.houses ?? 4)) state.background.houses = value;
+  if (part === "background" && key === "houses" && (state.background.inside ?? 1) > value) state.background.inside = value;
   // different hands start alike; then each changes on its own
   if (part === "hands" && key === "different" && value)
     for (const k of HAND_OWN) state.rightHand[k] = state.hands[k];
@@ -5003,7 +5460,11 @@ const SHOWN_WHEN = {
   "background.house4": b => b.kind === "treehouse" && b.houses >= 4,
   "background.house5": b => b.kind === "treehouse" && b.houses >= 5,
   "background.house6": b => b.kind === "treehouse" && b.houses >= 6,
-  "background.room": b => b.kind === "treeroom",
+  "background.inside": b => b.kind === "treeroom",
+  ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),
+  ...Object.fromEntries(["witchSize", "cauldronSize", "crows", "frogs", "snakes"].map(key => ["background." + key, b => b.kind === "witchroom"])),
+  ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
+    ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
   "background.windowSize": b => b.kind === "treeroom",
   "background.things": b => b.kind === "treeroom",
   "background.couchSize": b => b.kind === "livingroom",
@@ -5013,12 +5474,12 @@ const SHOWN_WHEN = {
   "background.pictures": b => b.kind === "livingroom" || b.kind === "treeroom",
   "background.picDetail": b => (b.kind === "livingroom" || b.kind === "treeroom") && b.pictures > 0,
   "background.picSize": b => b.kind === "livingroom" && b.pictures > 0,
-  "background.pic1": b => (b.kind === "livingroom" || (b.kind === "treeroom" && 1 <= 2)) && b.pictures >= 1,
-  "background.pic2": b => (b.kind === "livingroom" || (b.kind === "treeroom" && 2 <= 2)) && b.pictures >= 2,
-  "background.pic3": b => (b.kind === "livingroom" || (b.kind === "treeroom" && 3 <= 2)) && b.pictures >= 3,
-  "background.pic4": b => (b.kind === "livingroom" || (b.kind === "treeroom" && 4 <= 2)) && b.pictures >= 4,
-  "background.pic5": b => (b.kind === "livingroom" || (b.kind === "treeroom" && 5 <= 2)) && b.pictures >= 5,
-  "background.pic6": b => (b.kind === "livingroom" || (b.kind === "treeroom" && 6 <= 2)) && b.pictures >= 6,
+  "background.pic1": b => b.kind === "livingroom" && b.pictures >= 1,
+  "background.pic2": b => b.kind === "livingroom" && b.pictures >= 2,
+  "background.pic3": b => b.kind === "livingroom" && b.pictures >= 3,
+  "background.pic4": b => b.kind === "livingroom" && b.pictures >= 4,
+  "background.pic5": b => b.kind === "livingroom" && b.pictures >= 5,
+  "background.pic6": b => b.kind === "livingroom" && b.pictures >= 6,
   "costume.marks": c => !!ANIMALS[c.kind],
   "costume.spot": c => c.furPattern === "rosettes" && !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),
   "costume.belly": c => !!ANIMALS[c.kind],
@@ -5485,6 +5946,7 @@ document.getElementById("load-file").addEventListener("change", async e => {
     upgradeHands(next.hands);
     upgradeRightHand(next, saved);
     upgradeFeet(next, saved);
+    upgradeInside(next.background, saved);
     upgradeFace(next.face, saved.face);
     next.music = { ...next.music, volume: state.music.volume, mute: state.music.mute };
     state = next;
@@ -5522,8 +5984,13 @@ const onFace = e => {
 // page; only a one-finger touch that starts on the face is kept for the
 // drag (the page used to opt the whole picture out of zooming). A second
 // finger lets go of the face, so a pinch goes to the browser.
+// in a scene, a press on a thing that moves (data-drag: the witch) picks it up
+const onThing = e => {
+  const t = document.elementFromPoint(e.clientX, e.clientY);
+  return t && t.closest ? t.closest("#bg [data-drag]") : null;
+};
 pic.addEventListener("touchstart", e => {
-  if (e.touches.length === 1 && (onFace(e.touches[0]) || onFigure(e.touches[0]))) e.preventDefault();
+  if (e.touches.length === 1 && (onFace(e.touches[0]) || onFigure(e.touches[0]) || onThing(e.touches[0]))) e.preventDefault();
   else drag = null;
 }, { passive: false });
 pic.addEventListener("touchmove", e => {
@@ -5531,6 +5998,13 @@ pic.addEventListener("touchmove", e => {
 }, { passive: false });
 pic.addEventListener("pointerdown", e => {
   if (!e.isPrimary) return;
+  const thing = onThing(e);
+  if (thing && !onFigure(e)) {
+    const p = picUnits(e), B = state.background, name = thing.dataset.drag;
+    drag = { thing: name, x0: B[name + "X"] ?? 0, y0: B[name + "Y"] ?? 0, px: p.x, py: p.y };
+    pic.setPointerCapture(e.pointerId);
+    return;
+  }
   if (!onFace(e)) {
     if (!onFigure(e)) return;
     const p = picUnits(e);
@@ -5546,6 +6020,14 @@ pic.addEventListener("pointerdown", e => {
 // One step per screen pixel, however big the picture is drawn.
 pic.addEventListener("pointermove", e => {
   if (!drag) return;
+  if (drag.thing) {
+    // kept in the scene, as the figure is
+    const p = picUnits(e), F = sceneFrame, B = state.background;
+    B[drag.thing + "X"] = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right));
+    B[drag.thing + "Y"] = Math.round(clamp(drag.y0 + p.y - drag.py, (F.top - F.ground) * 0.6, F.bottom - F.ground));
+    changed();
+    return;
+  }
   if (drag.figure) {
     // kept in the scene: its feet within the frame, from the frame's top
     // half down to just below the ground
@@ -5619,15 +6101,15 @@ function flyInto(box, arrive) {
 // the last trip went to.
 const trips = [];
 function enterScene(door) {
-  const to = door.dataset.to, room = door.dataset.room, B = state.background;
+  const to = door.dataset.to, house = door.dataset.house, B = state.background;
   if (!SCENES[to] && !PICTURE_CHOICES.some(([kd]) => kd === to)) return;
   // (a picture's own box: the scene inside it spills past it, hidden)
   const view = door.querySelector(":scope > svg");
-  const from = { kind: B.kind, room: B.room, figX: B.figX ?? 0, figY: B.figY ?? 0, to };
+  const from = { kind: B.kind, inside: B.inside, figX: B.figX ?? 0, figY: B.figY ?? 0, to };
   flyInto(view ? svgBox(view) : door.getBoundingClientRect(), () => {
     trips.push(from);
     Object.assign(B, { kind: to, figX: 0, figY: 0 });
-    if (room) B.room = room;
+    if (house) B.inside = +house;
   });
 }
 const backBtn = document.getElementById("back");
@@ -5648,7 +6130,7 @@ backBtn.addEventListener("click", () => {
   flyInto(backBtn.getBoundingClientRect(), () => {
     trips.pop();
     Object.assign(state.background, { kind: last.kind, figX: last.figX, figY: last.figY });
-    if (last.room) state.background.room = last.room;
+    if (last.inside) state.background.inside = last.inside;
   });
 });
 
