@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.25 (2026-10-14)
+
+Everything in 0.0.24, with the full-body slider working as it should.
+
+- **🧍 The full-body slider sets every part to its value:** moving it puts every part's visibility exactly where it is, wherever the parts were (in 0.0.24 it moved them by the same amount, keeping their differences). It keeps its own value; when a part is moved on its own, the parts no longer all match it, so it dims and says "mixed" until it is moved again. The "every part at once" chips set it too.
+- **The chips in order:** 🙂 visible, 👻 ghost, 🫥 invisible.
+
 ## 0.0.24 (2026-10-14)
 
 Everything in 0.0.23, plus a full-body visibility slider, a smooth drag past the cauldron, tree house size, and a tab icon.

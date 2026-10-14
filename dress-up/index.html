@@ -42,6 +42,8 @@
   .tabs button { font-weight: 600; }
   .tabs button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .ctl.master .name { font-weight: 700; }
+  .ctl.master.mixed input, .ctl.master.mixed .name { opacity: 0.45; }
+  .ctl.master.mixed .val { font-style: italic; color: var(--muted); }
   .tabs .repo-chip { align-self: center; padding: 3px 9px; border: 1px dashed var(--line); border-radius: 12px;
                      color: var(--muted); font-size: 0.8em; text-decoration: none; }
   .tabs .repo-chip:hover, .tabs .repo-chip:focus-visible { color: var(--ink); border-color: var(--muted); }
@@ -355,7 +357,7 @@ function upgradeFeet(st, saved) {
 // the volume and mute belong to the device, not the friend: Load and Start
 // over keep them
 // how much of each part of the body shows (VISIBILITY): all of it
-DEFAULTS.visible = { head: 100, eyes: 100, hair: 100, shirt: 100, pants: 100, feet: 100, hands: 100 };
+DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pants: 100, feet: 100, hands: 100 };
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 let state = clone(DEFAULTS);
 try {
@@ -6305,7 +6307,7 @@ const TABS = [
   // how see-through each part is: the shirt the body under it, never a
   // bare one, and the pants the legs
   ["👻 Visibility", "visible", [
-    ["every", "all", "every part at once", [["🫥 invisible", 0], ["🙂 visible", 100], ["👻 ghost", 50]]],
+    ["every", "all", "every part at once", [["🙂 visible", 100], ["👻 ghost", 50], ["🫥 invisible", 0]]],
     ["master", "all", "🧍 full body: moves every part", 0, 100],
     ["range", "head", "🙂 head", 0, 100],
     ["range", "eyes", "👀 eyes", 0, 100],
@@ -6732,31 +6734,34 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const row = el("div", { class: "row" });
     const keys = () => TABS.find(t => t[1] === part)[2].filter(c => c[0] === "range").map(c => c[1]);
     const bs = rest[0].map(([text, v]) => {
-      const b = el("button", { onclick: () => { for (const k of keys()) state[part][k] = v; changed(); } }, text);
+      const b = el("button", { onclick: () => { for (const k of keys()) state[part][k] = v; state[part][key] = v; changed(); } }, text);
       row.append(b); return [v, b];
     });
     box.append(row);
     syncs.push(() => { for (const [v, b] of bs) b.setAttribute("aria-pressed", keys().every(k => state[part][k] === v)); });
   } else if (kind === "master") {
-    // one slider that moves every slider of the part by the same amount,
-    // keeping their differences (each stops at its ends); it shows the
-    // highest of them. A drag moves them from where they were when it began,
-    // so dragging back puts them back as they were.
+    // one slider for every slider of the part: moving it sets each of them
+    // to its value, wherever they were. It keeps its own value; once a part
+    // is moved on its own, the parts no longer all match it, and it dims
+    // ("mixed") until it is moved again.
     const [lo, hi] = rest;
     const keys = () => TABS.find(t => t[1] === part)[2].filter(c => c[0] === "range").map(c => c[1]);
-    const top = () => Math.max(...keys().map(k => state[part][k] ?? hi));
-    let from = null;
+    const own = () => state[part][key] ?? hi;
     const input = el("input", { type: "range", min: lo, max: hi,
       oninput: e => {
-        if (!from) from = { at: top(), was: Object.fromEntries(keys().map(k => [k, state[part][k] ?? hi])) };
-        const d = Number(e.target.value) - from.at;
-        for (const k of keys()) state[part][k] = clamp(from.was[k] + d, lo, hi);
+        const v = Number(e.target.value);
+        state[part][key] = v;
+        for (const k of keys()) state[part][k] = v;
         changed();
-      },
-      onchange: () => { from = null; } });
+      } });
     box.classList.add("master");
     box.append(input);
-    syncs.push(() => { if (!from) input.value = top(); val.textContent = top(); });
+    syncs.push(() => {
+      const v = own(), mixed = keys().some(k => (state[part][k] ?? hi) !== v);
+      input.value = v; val.textContent = mixed ? `${v} · mixed` : v;
+      box.classList.toggle("mixed", mixed);
+      box.title = mixed ? "Some parts were moved on their own; move this to set them all again" : "";
+    });
   } else if (kind === "nudge") {
     // three chips for the slider above: down by the interval, the interval
     // (a tap goes to the next, a half step up to the octave), up by it
