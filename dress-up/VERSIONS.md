@@ -2,7 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.21 (2026-10-14)
+
+Everything in 0.0.20, plus inside the tents, a cave behind the falls, a path through the woods, a usual size for every place, a visibility panel, and the classic beats in threes.
 
 - **⛺ Inside the tents:** at the camp site every tent is a doorway into its own inside, the same color as outside: the 🟧 orange one has sleeping bags and a flashlight, the 🟦 blue one a teddy bear, books and a lantern, the 🟩 green one an explorer's map, binoculars, a backpack and a jar of fireflies. Its door stands open onto the camp at the camp's own time of day, its fire lit or out, and is the way back out. (Also a background of its own, with a choice of which tent.)
 - **🪨 The cave behind the falls:** the waterfall itself is a doorway into a cave you can't see from outside: stalactites dripping, crystals glowing, glowworms, bats asleep and an old chest. From inside you see the falls from behind, as wide and as misty as the waterfall's sliders make them, and they are the way back out.
