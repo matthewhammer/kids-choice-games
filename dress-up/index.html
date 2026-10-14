@@ -332,7 +332,7 @@ const DEFAULTS = {
            pupil: "#000000", iris: 0, irisColor: "#3b82f6", whites: 0, oval: 0, tilt: 0,
            faceW: 100, faceH: 100, alien: 0, eyeGap: 38, noseView: "none", nose: "L", noseFront: "round", noseW: 100, noseH: 100,
            witchDir: "right", witchLen: 100, mouthSize: 100 },
-  hair:  { style: "long", color: "#2b2b2b", length: 100 },
+  hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100 },
   body:  { neck: 22, neckW: 26, arms: 55, armLen: 95, armW: 16, legLen: 140, legW: 20 },
   shirt: { style: "tee", collar: "v", width: 60, length: 150, color: "#5b8bd0", pattern: "plain",
            patternSize: 14, patternColor: "auto" },
@@ -1035,6 +1035,61 @@ function hairBackSvg(h) {
     .map(([x, y]) => [100 + (x - d.crown[0]) * k, 30.6 + (y - d.crown[1]) * k]);
   const fill = mix(h.color, "#000000", 0.22);
   return poly(outline, fill, darker(fill), 3);
+}
+// The front of the hair, the bangs: the hairdo where it lies over the
+// head, from the crown down to its fringe, drawn over the face, the eyes
+// and the brows (the rest of the hairdo is behind the head). The fringe
+// comes down `bangs` of the way from the crown to the top of the brows
+// (100: its locks' tips just touch them; past 100, over the brows and the
+// eyes; 0, no bangs), its edge in locks of the hairdo's own kind: pointed
+// for straight hair, round for curly hair and an afro, a zigzag for spiky
+// hair. Outlined where it crosses the hair, and nowhere else (not across a
+// long hairdo's parting). In face units.
+const BANG_LOCKS = { short: ["point", 7, 9], long: ["point", 6, 9], pigtails: ["point", 7, 9],
+                     curly: ["round", 8, 8], afro: ["round", 9, 8], spiky: ["zig", 9, 14] };
+// the top of the brows, as drawn (with their lift, their line's half-width)
+function browTop(F) {
+  const shift = faceLayout(F).eyeY - 100 - browLift(F);
+  if (F.unibrow) return Math.min(78, 39 + (50 + idiv(2 * F.brow, 5)) / 2) + shift - 3.5;
+  const inner = 66 + idiv(F.brow * 24, 100), top = Math.min(inner, 80) - 8;
+  let m = Infinity;
+  for (let i = 0; i <= 20; i++) { const t = i / 20; m = Math.min(m, (1 - t) * (1 - t) * 80 + 2 * t * (1 - t) * top + t * t * inner); }
+  return m + shift - 3;
+}
+function bangsSvg(h, F) {
+  const b = (h.bangs ?? 100) / 100, hair = BANG_LOCKS[h.style] && b > 0 ? hairSvg(h) : "";
+  if (!hair) return "";
+  const crown = headCrown(F), Yf = Math.min(headChin(F), crown + (browTop(F) - crown) * b);
+  const [shape, n, depth] = BANG_LOCKS[h.style];
+  if (Yf <= crown + depth) return "";
+  // the locks, across the whole head (the head's outline clips them)
+  const half = 80 * headWidth(F) * (1 + 0.12 * F.alien / 100) + 6, xL = 100 - half, w = 2 * half / n, up = Yf - depth;
+  let edge = "";
+  for (let j = 0; j < n; j++) {
+    const x = xL + j * w;
+    edge += shape === "round" ? ` Q${f1(x + w / 2)} ${f1(Yf + depth)} ${f1(x + w)} ${f1(up)}`
+          : shape === "zig" ? ` L${f1(x + w / 2)} ${f1(Yf)} L${f1(x + w)} ${f1(up)}`
+          : ` Q${f1(x + 0.35 * w)} ${f1(Yf - 0.2 * depth)} ${f1(x + 0.58 * w)} ${f1(Yf)} Q${f1(x + 0.72 * w)} ${f1(Yf - 0.55 * depth)} ${f1(x + w)} ${f1(up)}`;
+  }
+  const above = `M${f1(xL - 400)} ${f1(up)} L${f1(xL)} ${f1(up)}${edge} L${f1(xL + 2 * half + 400)} ${f1(up)} V-3000 H${f1(xL - 400)} Z`;
+  // (the head's outline grown a little, so the bangs cover its line where
+  // the hair goes over it, with no seam)
+  const W = headWidth(F), H = headH(F);
+  const head = "M" + headPoints(F).map(([x, y]) => f1(x) + " " + f1(y)).join(" L") + " Z";
+  const grow = `translate(100 ${HEAD_C}) scale(${(1 + 2.5 / (80 * W)).toFixed(4)} ${(1 + 2.5 / (80 * H)).toFixed(4)}) translate(-100 ${-HEAD_C})`;
+  const white = hair.replace(/fill="[^"]*"/g, 'fill="#ffffff"').replace(/stroke="[^"]*"/g, 'stroke="#ffffff"');
+  const defs = `<clipPath id="bangs-head"><path d="${head}" transform="${grow}"/></clipPath><clipPath id="bangs-above"><path d="${above}"/></clipPath>` +
+    `<mask id="bangs-hair" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="6000" height="6000"><g transform="${hairStretch(F)}">${white}</g></mask>`;
+  const bangs = `<g clip-path="url(#bangs-head)"><g clip-path="url(#bangs-above)"><g transform="${hairStretch(F)}">${hair}</g></g>` +
+    `<path d="M${f1(xL)} ${f1(up)}${edge}" fill="none" stroke="${darker(h.color)}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" mask="url(#bangs-hair)"/></g>`;
+  if (F.burst <= 0) return `<defs>${defs}</defs>` + bangs;
+  // a head exploding: the bangs split along its crack, the top half going
+  // with the lid (as faceSvg moves it), the rest staying on the face
+  const crackY = HEAD_C - 50.6 * F.faceH / 100, lift = idiv(F.burst * 7, 10), tilt = idiv(F.burst, 4);
+  return `<defs>${defs}<clipPath id="bangs-lid"><rect x="-2000" y="-4000" width="4200" height="${f1(4000 + crackY)}"/></clipPath>` +
+         `<clipPath id="bangs-rest"><rect x="-2000" y="${f1(crackY)}" width="4200" height="4000"/></clipPath></defs>` +
+         `<g clip-path="url(#bangs-rest)">${bangs}</g>` +
+         `<g transform="translate(0 ${-lift}) rotate(${-tilt} 100 ${f1(crackY)})"><g clip-path="url(#bangs-lid)">${bangs}</g></g>`;
 }
 // How far hair reaches, in face units (before the head's stretch): its
 // top, its bottom and its half-width about x = 100, to size the picture.
@@ -5724,7 +5779,8 @@ function draw() {
   veilFrom("shirt", bodyAt);
   // the hair, in the face's frame: over the body and shirt, but under the
   // arms, which are drawn again over it (long or curly hair hangs beside
-  // them), and behind the head
+  // them), and behind the head (its front, the bangs, comes again over the
+  // face: see bangsSvg)
   if (!C)
     svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
            `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairSvg(state.hair), "under-hat")}</g></g></g>`);
@@ -5738,6 +5794,9 @@ function draw() {
   const face = faceSvg(F, groundInFace, true);
   const inFace = t => `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">${t}</g>`;
   svg += veil("head", inFace(face.under)) + veil("eyes", inFace(face.eyes)) + veil("head", inFace(face.over));
+  // and the front of the hair over them all: the bangs (on the lid, when
+  // the head explodes)
+  if (!C) svg += veil("hair", inFace(tucked(bangsSvg(state.hair, F), "under-hat-bangs")));
   // a witch's hat over it, stretched with the head as hair is (and flying
   // off with the lid); her cat on her shoulder
   if (witch) {
@@ -7369,6 +7428,7 @@ const TABS = [
     ["choice", "style", "style", [["none", "none"], ["short", "short"], ["long", "long"], ["curly", "curly"],
                                   ["spiky", "spiky"], ["afro", "afro"], ["pigtails", "pigtails"]]],
     ["range", "length", "📏 length", 30, 400, 70, 180],
+    ["range", "bangs", "✂️ bangs (0 = none, 100 = down to the brows)", 0, 300, 40, 140],
     ["color", "color", "color", HAIRS],
   ]],
   ["🦒 Neck, arms & legs", "body", [
@@ -7759,6 +7819,7 @@ const SHOWN_WHEN = {
   "costume.eyes": c => !!ANIMALS[c.kind],
   "costume.accent": c => !!ANIMALS[c.kind],
   "hair.length": h => ["long", "curly", "pigtails", "spiky", "afro"].includes(h.style),
+  "hair.bangs": h => !!BANG_LOCKS[h.style],
   "pants.skirtLen": p => p.style === "skirt" || p.style === "dress",
   // the same hands: one style menu, and its sliders below the color;
   // different hands: a column each (claws: also a cat costume's paws)
