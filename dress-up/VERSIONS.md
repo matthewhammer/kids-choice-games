@@ -2,9 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.24 (2026-10-14)
 
-Changes since 0.0.23, for the next version, which waits for Matthew's go-ahead.
+Everything in 0.0.23, plus a full-body visibility slider, a smooth drag past the cauldron, tree house size, and a tab icon.
 
 - **🧍 A full-body slider:** in the 👻 Visibility tab, under the "every part at once" chips and above the parts, one slider moves every part's slider by the same amount, so the friend fades or comes back as a whole while each part keeps its own difference (each stops at invisible or fully there). It shows the most visible part. A drag moves the parts from where they were when it began, so dragging back puts them back as they were.
 - **🧙 Dragging the friend past the cauldron is smooth again:** in the witch's woods and inside her hut, a drag of the friend crawled (60 moves took 8 seconds in the woods, with frames up to a quarter second apart). Now the scenery stays put while the friend is redrawn, instead of being taken out and put back on every move, and the scene's animations (the fumes, the bubbles) hold still while a drag is held, going on from where they stopped when you let go: the same drag takes 2 seconds, at a steady 60 frames a second, as in a scene with no fumes.
