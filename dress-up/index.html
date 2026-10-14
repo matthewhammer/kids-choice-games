@@ -42,6 +42,7 @@
   .tabs button { font-weight: 600; }
   .tabs button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .ctl.master .name { font-weight: 700; }
+  .lfo-chip { font-size: 0.75em; padding: 1px 8px; margin-left: auto; margin-right: 8px; }
   .ctl.master.mixed input, .ctl.master.mixed .name { opacity: 0.45; }
   .ctl.master.mixed .val { font-style: italic; color: var(--muted); }
   .tabs .repo-chip { align-self: center; padding: 3px 9px; border: 1px dashed var(--line); border-radius: 12px;
@@ -119,6 +120,8 @@
   .strip { border: 2px solid var(--line); border-radius: 12px; padding: 6px 8px; font-size: 0.85em; }
   .strip.master { border-style: dashed; }
   .strip.lfo { border-style: dotted; }
+  .mixer .quad { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 520px) { .mixer .quad { grid-template-columns: minmax(0, 1fr); } }
   /* a set of chips in a dashed box of its own, with its name (the music's
      kinds, then the kind's tunes), as the mixing board's master strip */
   .chipset { border: 2px dashed var(--line); border-radius: 12px; padding: 6px 8px; }
@@ -5397,12 +5400,21 @@ function draw() {
   // see-through where its two layers overlap. A layer is added from where
   // the picture's text was (`at`) to its end.
   const seen = visibility(), layers = {};
+  // (a part following an LFO fades with its wave, never past its slider;
+  // the animation picks up where the wave is now, so a redraw keeps time)
+  const pic0 = document.getElementById("pic"), tNow = pic0 && pic0.getCurrentTime ? pic0.getCurrentTime() : 0;
   const veil = (g, inner) => {
-    const a = seen[g];
-    if (a >= 1 || !inner) return inner;
+    const a = seen[g], lf = visLfo(g);
+    if ((a >= 1 && !lf) || !inner) return inner;
     if (a <= 0) return "";
     const n = layers[g] = (layers[g] ?? 0) + 1;
-    return `<g opacity="${a.toFixed(2)}" data-veil="${g} ${n}"><g id="veil-${g}-${n}">${inner}</g></g>`;
+    let anim = "";
+    if (lf) {
+      const N = 16, vals = [], kt = [];
+      for (let i = 0; i <= N; i++) { const u = i / N; vals.push((a * (1 - lf.amp * (1 - lfoWave(lf.shape, u)) / 2)).toFixed(3)); kt.push(u.toFixed(4)); }
+      anim = `<animate attributeName="opacity" values="${vals.join(";")}" keyTimes="${kt.join(";")}" dur="${lf.dur.toFixed(3)}s" begin="${(tNow - lf.phase * lf.dur).toFixed(3)}s" repeatCount="indefinite"/>`;
+    }
+    return `<g opacity="${a.toFixed(2)}" data-veil="${g} ${n}">${anim}<g id="veil-${g}-${n}">${inner}</g></g>`;
   };
   const veilFrom = (g, at) => { svg = svg.slice(0, at) + veil(g, svg.slice(at)); };
   const meanSeen = Object.values(seen).reduce((x, y) => x + y, 0) / VISIBLE_PARTS.length;
@@ -6697,18 +6709,19 @@ function chan(id, key) {
   const mix = state.music.mix || (state.music.mix = {}), t = mix[id] || (mix[id] = {});
   return t[key] || (t[key] = {});
 }
-// --- the LFOs: four slow waves, A to D, that a drum's pitch can follow
+// --- the LFOs: three slow waves, A to C, that a drum's pitch can follow,
+// and the friend's parts' see-through-ness, and the fairy house's
 // (a drum with a pitch knob: its LFO chip picks one, or none). Each keeps
 // time with the tune, going once round in so many beats, from one beat to
 // eight bars, from the tune's start; in a shape (triangle, saw or sine);
 // so far up and down (its depth, in half steps). A hit takes the wave's
 // value at its moment. Set on the mixing board, kept for each tune; a tune
 // may set its own to start with (T.lfos, and a part's lfo).
-const LFO_NAMES = ["A", "B", "C", "D"];
+const LFO_NAMES = ["A", "B", "C"];
 const LFO_BEATS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
 const LFO_SHAPES = ["triangle", "saw", "sine"], LFO_SHAPE_NAME = { triangle: "△ triangle", saw: "◿ saw", sine: "∿ sine" };
 const LFO_DEFAULT = { A: { beats: 4, shape: "triangle", depth: 3 }, B: { beats: 2, shape: "sine", depth: 4 },
-                      C: { beats: 8, shape: "saw", depth: 3 }, D: { beats: 16, shape: "sine", depth: 2 } };
+                      C: { beats: 8, shape: "saw", depth: 3 } };
 const beatsName = b => b % 4 ? `${b} beats`.replace(/^1 beats/, "1 beat") : `${b / 4} bar${b === 4 ? "" : "s"}`;
 const lfoOf = (id, T, L) => ({ ...LFO_DEFAULT[L], ...((T.lfos || {})[L] || {}), ...(mixOf(id)["lfo" + L] || {}) });
 // the wave, from -1 to 1, a share u of the way round (a triangle and a
@@ -6716,7 +6729,20 @@ const lfoOf = (id, T, L) => ({ ...LFO_DEFAULT[L], ...((T.lfos || {})[L] || {}), 
 const lfoWave = (shape, u) => shape === "sine" ? Math.sin(2 * Math.PI * u) : shape === "saw" ? 2 * u - 1
   : u < 0.25 ? 4 * u : u < 0.75 ? 2 - 4 * u : 4 * u - 4;
 // the LFO a part follows: the mix's choice ("none" too), or the tune's
-const partLfo = (id, q) => { const c = (mixOf(id)[channelKey(q)] || {}).lfo; return c === "none" ? null : c || q.lfo || null; };
+const partLfo = (id, q) => { const c = (mixOf(id)[channelKey(q)] || {}).lfo, L = c === "none" ? null : c || q.lfo || null; return LFO_NAMES.includes(L) ? L : null; };
+// a part of the friend following an LFO: how long one round takes (in
+// seconds), where in it we are now (from the music's own clock while it
+// plays, so it keeps the beat; else at the tune's tempo), its shape, and
+// how far it fades (its depth: twelve half steps' worth fades it right out)
+function visLfo(g) {
+  const L = state.visible["lfo_" + g];
+  if (!LFO_NAMES.includes(L)) return null;
+  const id = (playing && playing.id) || tuneOf(), song = id ? songOf(id) : null;
+  const T = song ? song.T : { bpm: 100, lfos: {} }, o = song ? lfoOf(id, T, L) : LFO_DEFAULT[L];
+  const sd = playing ? playing.sd : tunedStep(T), steps = o.beats * 4;
+  const nowStep = playing && typeof audio !== "undefined" && audio ? playing.s0 + (audio.currentTime - playing.t0) / playing.sd : performance.now() / 1000 / sd;
+  return { dur: steps * sd, phase: ((nowStep / steps) % 1 + 1) % 1, shape: o.shape, amp: Math.min(1, o.depth / 12) };
+}
 // the parts that can follow one: drums tuned by their knob
 const PITCHED_DRUMS = new Set(["bongo", "conga"]);
 // a channel moved up or down: presses (-3 to 3) times its interval (half steps)
@@ -6753,7 +6779,7 @@ function applyMix(instant = false) {
   to(buses.echo.delayTime, fx.time * p.sd);
   to(buses.revOut.gain, fx.room / 100);
 }
-function mixChanged() { persist(); applyMix(); }
+function mixChanged() { persist(); applyMix(); if (VISIBLE_PARTS.some(g => LFO_NAMES.includes(state.visible["lfo_" + g]))) draw(); }
 // The dub "throw": while a part is thrown (its strip's button held), all
 // of it goes to the echo, then its send goes back to where it was set;
 // thrown for a beat at least, so a quick tap is heard. "all": every part.
@@ -6844,19 +6870,21 @@ function mixerBox(box) {
       el("div", { class: "strip-top" }, [throwButton("🌊 throw everything", "all"),
         el("button", { class: "ms", onclick: () => { if (state.music.mix) delete state.music.mix[id]; mixChanged(); build(); } }, "↺ reset the mix")]),
     ]);
-    // the four LFOs, in a row before the parts: each its speed, shape and
-    // depth, and which drums follow it now
+    // the three LFOs: each its speed, shape and depth, and what follows it
+    // now (drums, and the friend's parts); with the whole tune's strip, a
+    // square of four before the parts
     const lfoStrips = LFO_NAMES.map(L => {
       const o = () => lfoOf(id, song.T, L);
       const shapeBtn = el("button", { class: "ms", title: "the wave's shape: tap for the next",
         onclick: () => { chan(id, "lfo" + L).shape = LFO_SHAPES[(LFO_SHAPES.indexOf(o().shape) + 1) % LFO_SHAPES.length]; local(); shapeBtn.textContent = LFO_SHAPE_NAME[o().shape]; } },
         LFO_SHAPE_NAME[o().shape]);
-      const who = song.T.parts.filter(q => PITCHED_DRUMS.has(q.inst) && partLfo(id, q) === L).map(q => partName(q.name));
+      const who = song.T.parts.filter(q => PITCHED_DRUMS.has(q.inst) && partLfo(id, q) === L).map(q => "🪘 " + partName(q.name))
+        .concat(VISIBLE_PARTS.filter(g => state.visible["lfo_" + g] === L).map(g => "👻 " + g));
       return el("div", { class: "strip lfo" }, [
         el("div", { class: "strip-top" }, [el("span", { class: "strip-name" }, `〰️ LFO ${L}`), shapeBtn]),
         knob("⏱️ round in", 0, LFO_BEATS.length - 1, () => Math.max(0, LFO_BEATS.indexOf(o().beats)), v => { chan(id, "lfo" + L).beats = LFO_BEATS[v]; }, v => beatsName(LFO_BEATS[v])),
         knob("↕️ depth", 0, 12, () => o().depth, v => { chan(id, "lfo" + L).depth = v; }, v => v === 0 ? "still" : "±" + v),
-        el("p", { class: "now" }, who.length ? "🪘 " + who.join(", ") : "no drum follows it"),
+        el("p", { class: "now" }, who.length ? who.join(", ") : "nothing follows it yet"),
       ]);
     });
     const dots = [], rows = [];
@@ -6876,7 +6904,7 @@ function mixerBox(box) {
         knob("↔️ pan", -10, 10, () => c().pan || 0, v => { chan(id, key).pan = v; }, v => v === 0 ? "middle" : v < 0 ? "◀ " + -v : v + " ▶"),
         ...(INST_KNOB[p.inst] ? [knob(INST_KNOB[p.inst], 0, 100, () => c().knob ?? 50, v => { chan(id, key).knob = v; },
           (p.inst === "conga" || p.inst === "bongo") ? v => { const h = Math.round((v - 50) * 12 / 50); return h === 0 ? "usual" : (h > 0 ? "+" : "") + h; } : v => v === 50 ? "usual" : String(v))] : []),
-        // a drum with a pitch: which LFO it follows (none, A to D: a tap for the next)
+        // a drum with a pitch: which LFO it follows (none, A to C: a tap for the next)
         ...(PITCHED_DRUMS.has(p.inst) ? [(() => {
           const now = () => partLfo(id, p) || "none";
           const b = el("button", { class: "ms", title: "the LFO this drum's pitch follows: tap for the next",
@@ -6898,7 +6926,7 @@ function mixerBox(box) {
       }
     }
     syncButtons();
-    body.replaceChildren(master, ...lfoStrips, ...strips);
+    body.replaceChildren(el("div", { class: "quad" }, [master, ...lfoStrips]), ...strips);
     mixLights = { id, dots };
   };
   build();
@@ -7609,6 +7637,15 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                 oninput: e => set(part, key, Number(e.target.value)) });
     box.append(input);
     syncs.push(() => { input.value = state[part][key]; val.textContent = state[part][key]; });
+    // a part's see-through-ness can follow one of the mixer's LFOs: a chip
+    // beside its name, a tap for the next (none, A, B, C)
+    if (part === "visible" && VISIBLE_PARTS.includes(key) && !buildingHud) {
+      const lk = "lfo_" + key, now = () => LFO_NAMES.includes(state.visible[lk]) ? state.visible[lk] : "none";
+      const chip = el("button", { class: "ms lfo-chip", title: "Fade in and out with an LFO (the music's): tap for the next",
+        onclick: () => { const all = ["none", ...LFO_NAMES]; state.visible[lk] = all[(all.indexOf(now()) + 1) % all.length]; changed(); } });
+      lbl.insertBefore(chip, val);
+      syncs.push(() => { chip.textContent = now() === "none" ? "〰️ no LFO" : "〰️ LFO " + now(); chip.setAttribute("aria-pressed", now() !== "none"); });
+    }
   } else if (kind === "turn") {
     // an angle in radians, from 0 to a period that the other settings
     // decide (a star's turn to its next point), in hundredths shown; past
@@ -7689,6 +7726,16 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       } });
     box.classList.add("master");
     box.append(input);
+    // and one LFO for them all: a tap sets every part to follow the next one
+    // (none, A, B, C); "mixed" when they follow different ones
+    if (part === "visible" && !buildingHud) {
+      const lfoNow = () => { const ls = keys().map(k => LFO_NAMES.includes(state[part]["lfo_" + k]) ? state[part]["lfo_" + k] : "none"); return ls.every(l => l === ls[0]) ? ls[0] : "mixed"; };
+      const chip = el("button", { class: "ms lfo-chip", title: "Every part fades in and out with one LFO (the music's): tap for the next",
+        onclick: () => { const all = ["none", ...LFO_NAMES], cur = lfoNow(), next = all[(all.indexOf(cur === "mixed" ? "none" : cur) + 1) % all.length];
+          for (const k of keys()) state[part]["lfo_" + k] = next; changed(); } });
+      lbl.insertBefore(chip, val);
+      syncs.push(() => { const l = lfoNow(); chip.textContent = l === "none" ? "〰️ no LFO" : l === "mixed" ? "〰️ mixed LFOs" : "〰️ LFO " + l; chip.setAttribute("aria-pressed", l !== "none"); });
+    }
     syncs.push(() => {
       const v = own(), mixed = keys().some(k => (state[part][k] ?? hi) !== v);
       input.value = v; val.textContent = mixed ? `${v} · mixed` : v;
