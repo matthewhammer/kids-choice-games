@@ -7195,7 +7195,9 @@ function mixerBox(box) {
         onclick: () => { chan(id, "lfo" + L).shape = LFO_SHAPES[(LFO_SHAPES.indexOf(o().shape) + 1) % LFO_SHAPES.length]; local(); shapeBtn.textContent = LFO_SHAPE_NAME[o().shape]; } },
         LFO_SHAPE_NAME[o().shape]);
       const who = song.T.parts.filter(q => PITCHED_DRUMS.has(q.inst) && partLfo(id, q) === L).map(q => "🪘 " + partName(q.name))
-        .concat(VISIBLE_PARTS.filter(g => state.visible["lfo_" + g] === L).map(g => "👻 " + g));
+        .concat(VISIBLE_PARTS.filter(g => state.visible["lfo_" + g] === L).map(g => "👻 " + g))
+        // (a fairy's wings, while she wears them and they flap with it)
+        .concat(state.costume.kind === "fairy" && state.costume.wingFlutter !== false && state.costume.wingLfo === L ? ["🧚 fairy wings"] : []);
       return el("div", { class: "strip lfo" }, [
         el("div", { class: "strip-top" }, [el("span", { class: "strip-name" }, `〰️ LFO ${L}`), shapeBtn]),
         knob("⏱️ round in", 0, LFO_BEATS.length - 1, () => Math.max(0, LFO_BEATS.indexOf(o().beats)), v => { chan(id, "lfo" + L).beats = LFO_BEATS[v]; }, v => beatsName(LFO_BEATS[v])),

@@ -6,7 +6,7 @@ Each version lists the game's features as of that version. The newest version is
 
 Changes since 0.0.30, for the next version, which waits for Matthew's go-ahead.
 
-- **〰️ Wings that flap with the music:** the fairy's wing controls have an LFO chip (no LFO, A, B or C). With an LFO, the wings flap once per LFO cycle, in the shape of its wave (a triangle, a saw or a sine), in time with the music, and farther the deeper the LFO (from a gentle flap to a big one, more than the usual flutter). Changing the LFO on the mixing board changes the flapping at once, and the wings keep flapping while you drag the fairy.
+- **〰️ Wings that flap with the music:** the fairy's wing controls have an LFO chip (no LFO, A, B or C). With an LFO, the wings flap once per LFO cycle, in the shape of its wave (a triangle, a saw or a sine), in time with the music, and farther the deeper the LFO (from a gentle flap to a big one, more than the usual flutter). Changing the LFO on the mixing board changes the flapping at once, and the board lists 🧚 fairy wings among what that LFO drives; the wings keep flapping while you drag the fairy.
 
 ## 0.0.30 (2026-10-14)
 
