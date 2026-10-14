@@ -319,6 +319,8 @@ function upgradeFeet(st, saved) {
 // the music: the background's own tune (none without one) or a chosen one;
 // the volume and mute belong to the device, not the friend: Load and Start
 // over keep them
+// how much of each part of the body shows (VISIBILITY): all of it
+DEFAULTS.visible = { head: 100, eyes: 100, hair: 100, shirt: 100, pants: 100, feet: 100, hands: 100 };
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 let state = clone(DEFAULTS);
 try {
@@ -1024,7 +1026,10 @@ function topFlies(F) {
   const lift = idiv(b * 7, 10) + idiv(b * 4, 10), tilt = idiv(b, 4);
   return `translate(0 ${-lift}) rotate(${-tilt} 100 ${f1(HEAD_C - 50.6 * F.faceH / 100)})`;
 }
-function faceSvg(F, ground) {
+// (with parts, its three layers apart: what is under the eyes, the eyes,
+// and what is over them -- the nose, brows and mouth -- each to be made
+// see-through on its own; see VISIBILITY)
+function faceSvg(F, ground, parts = false) {
   const b = F.burst, k = F.candy, r = F.rays, o = F.open;
   const rayLen = r === 0 ? 0 : idiv((15 + idiv(r * 6, 10)) * b, 100);
   const shown = k * b >= 2500 ? 40 : idiv(k * b * 40, 2500);
@@ -1047,7 +1052,7 @@ function faceSvg(F, ground) {
   const C = costumeOn(), kind = state.costume.kind;
   const hoodClips = C ? `<clipPath id="hood-brim"><rect x="-200" y="-400" width="600" height="454"/></clipPath>` +
                         `<clipPath id="hood-inside"><ellipse ${hoodEllipse(F)}/></clipPath>` : "";
-  return `<defs>${clips}${hoodClips}</defs>` +
+  const under = `<defs>${clips}${hoodClips}</defs>` +
     (C ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F)}</g></g>` : "") +
     sideLines(F.sides) +
     (b > 0 ? part(' clip-path="url(#below-crack)"') : part()) +
@@ -1055,11 +1060,11 @@ function faceSvg(F, ground) {
     (b > 0 ? `<g transform="translate(0 ${-lift}) rotate(${-tilt} 100 ${f1(crackY)})">${part(' clip-path="url(#above-crack)"')}</g>` : "") +
     (C ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodFront(C, kind, F)}</g></g>` : "") +
     pieces(shown, b, crackY) +
-    (b > 0 ? `<path d="${crack}" fill="none" stroke="black" stroke-width="2"/>` : "") +
-    `<g transform="translate(0 ${f1(LY.eyeY - 100)})">` +
+    (b > 0 ? `<path d="${crack}" fill="none" stroke="black" stroke-width="2"/>` : "");
+  const eyes = `<g transform="translate(0 ${f1(LY.eyeY - 100)})">` +
       eye(100 - LY.eyeDX, F.eyes, F.stars, F.hearts, F.xeyes, F, F.tilt) +
-      eye(100 + LY.eyeDX, F.eyes, F.stars, F.hearts, F.xeyes, F, -F.tilt) + `</g>` +
-    noseSvg(F) +
+      eye(100 + LY.eyeDX, F.eyes, F.stars, F.hearts, F.xeyes, F, -F.tilt) + `</g>`;
+  const over = noseSvg(F) +
     // the brows spread with the eyes (their path's points, so the line
     // keeps its width)
     `<path d="${(F.unibrow ? browPath(F.brow) : browPair(F.brow)).replace(/(-?[\d.]+) (-?[\d.]+)/g, (_, x, y) =>
@@ -1069,6 +1074,7 @@ function faceSvg(F, ground) {
     `<g transform="translate(100 ${f1(LY.mouthY)}) scale(${LY.mx.toFixed(3)} ${LY.my.toFixed(3)}) translate(-100 -150)">` +
     mouthSvg(F, o, upper, lower) +
     sickPile(F.sick, 150 + idiv(lower - 150, 2), 150 + (ground - LY.mouthY) / LY.my) + `</g>`;
+  return parts ? { under, eyes, over } : under + eyes + over;
 }
 
 // ===================== COSTUMES =====================
@@ -3979,6 +3985,30 @@ const SCENE = { left: -405.9, top: -195, bottom: 406.2, ground: 320 };
 let naturalFrame = { left: -200, top: -200, ground: 0 };
 let figureT = { k: 1, dx: 0, dy: 0, g: 0, sg: 0 }, sceneFrame = { left: -200, top: -200, right: 200, bottom: 200, ground: 0 };   // where the face is, for dragging it
 
+// The parts of the body each with its own visibility: a slider each
+// (0 invisible to 100 all there), and the shirt and pants stand for the
+// body and the legs under them.
+const VISIBLE_PARTS = ["head", "eyes", "hair", "shirt", "pants", "feet", "hands"];
+const visibility = () => Object.fromEntries(VISIBLE_PARTS.map(k =>
+  [k, Math.max(0, Math.min(100, Number(state.visible?.[k] ?? 100))) / 100]));
+// The masks the see-through layers need: each layer of a part but its last
+// is hidden where the part's later layers are drawn (their shapes, inked
+// black over white); the last one needs none.
+function unveil(svg, layers) {
+  let masks = "";
+  for (const [g, N] of Object.entries(layers))
+    for (let n = 1; n < N; n++) {
+      masks += `<mask id="veil-m-${g}-${n}" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="10000" height="10000">` +
+               `<rect x="-5000" y="-5000" width="10000" height="10000" fill="white"/>`;
+      for (let m = n + 1; m <= N; m++) masks += `<use href="#veil-${g}-${m}" filter="url(#veil-ink)"/>`;
+      masks += `</mask>`;
+    }
+  svg = svg.replace(/ data-veil="(\w+) (\d+)"/g, (_, g, n) => Number(n) < layers[g] ? ` mask="url(#veil-m-${g}-${n})"` : "");
+  if (!masks) return svg;
+  return `<defs><filter id="veil-ink" x="-0.5" y="-0.5" width="2" height="2" color-interpolation-filters="sRGB">` +
+         `<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter>${masks}</defs>` + svg;
+}
+
 function draw() {
   const { face: F, body: B } = state;
   let { shirt: SH, pants: P } = state;
@@ -4082,6 +4112,24 @@ function draw() {
   if (scened) ({ left, top, bottom } = SCENE);
   const width = -2 * left;
 
+  // VISIBILITY: each part of the body as see-through as its slider says
+  // (100 all there, 0 gone). A part is drawn in layers between other
+  // parts' (the shirt's arms under the hair, and again over the face):
+  // each layer is see-through on its own, and masked where a later layer
+  // of the same part covers it (see unveil), so a ghost's arm is no less
+  // see-through where its two layers overlap. A layer is added from where
+  // the picture's text was (`at`) to its end.
+  const seen = visibility(), layers = {};
+  const veil = (g, inner) => {
+    const a = seen[g];
+    if (a >= 1 || !inner) return inner;
+    if (a <= 0) return "";
+    const n = layers[g] = (layers[g] ?? 0) + 1;
+    return `<g opacity="${a.toFixed(2)}" data-veil="${g} ${n}"><g id="veil-${g}-${n}">${inner}</g></g>`;
+  };
+  const veilFrom = (g, at) => { svg = svg.slice(0, at) + veil(g, svg.slice(at)); };
+  const meanSeen = Object.values(seen).reduce((x, y) => x + y, 0) / VISIBLE_PARTS.length;
+
   let svg = `<defs>${patternDef("pat-shirt", SH.color, SH.pattern, SH.patternSize, SH.patternColor)}${patternDef("pat-pants", P.color, P.pattern, P.patternSize, P.patternColor)}` +
             `${patternDef("pat-undies", U.color, U.pattern, U.patternSize, U.patternColor)}${C ? furDefs(C, kind) : ""}</defs>`;
   // the background first, behind everything, its ground at the feet
@@ -4095,35 +4143,43 @@ function draw() {
                    : { k: 1, dx: 0, dy: 0, g: ground, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
   svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-ground)})">`;
-  svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="0.08"/>`;
+  if (meanSeen > 0) svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
   // behind everything: long hair's back layer, in the face's frame
-  if (!C) svg += `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
-                 `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairBackSvg(state.hair), "under-hat-back")}</g></g></g>`;
+  if (!C) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
+                 `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairBackSvg(state.hair), "under-hat-back")}</g></g></g>`);
 
   // behind everything: a falcon's wings and tail, or a suit's tail
   // (a bald eagle's: plain dark brown wings and a white tail)
-  if (kind === "falcon") svg += falconWings(C, w) + falconTail(C, hw, L, LL);
-  else if (kind === "eagle") svg += falconWings(C, w, C.fur) + falconTail(C, hw, L, LL, C.belly);
-  else if (kind === "falconsuit") svg += falconTail(C, hw, L, LL, "url(#pat-fur)");
-  else if (kind === "eaglesuit") svg += falconTail(C, hw, L, LL, C.belly);
-  else if (suit) svg += tailSvg(C, kind, hw, L);
+  // (wings go with the shirt, the body; a tail with the pants, the hips)
+  if (kind === "falcon") svg += veil("shirt", falconWings(C, w)) + veil("pants", falconTail(C, hw, L, LL));
+  else if (kind === "eagle") svg += veil("shirt", falconWings(C, w, C.fur)) + veil("pants", falconTail(C, hw, L, LL, C.belly));
+  else if (kind === "falconsuit") svg += veil("pants", falconTail(C, hw, L, LL, "url(#pat-fur)"));
+  else if (kind === "eaglesuit") svg += veil("pants", falconTail(C, hw, L, LL, C.belly));
+  else if (suit) svg += veil("pants", tailSvg(C, kind, hw, L));
 
   // legs, then shoes, then pants over both: long pants cover a boot's top
+  // (the legs are the pants' to see through: invisible pants are
+  // invisible legs, never bare ones)
+  const legsAt = svg.length;
   for (const side of [1, -1]) svg += line(side * fx, L, side * fx, feetY, B.legW, limb, limbLine);
   if (witch)   // striped stockings
     for (const side of [1, -1])
       svg += `<line x1="${f1(side * fx)}" y1="${f1(L)}" x2="${f1(side * fx)}" y2="${f1(feetY)}" stroke="${WC.trimColor}" ` +
              `stroke-width="${f1(B.legW)}" stroke-dasharray="9 9"/>`;
+  veilFrom("pants", legsAt);
   const feet = BIRD_SUIT[kind] ? { style: "talons", size: state.shoes.size }
              : kind === "deer" ? { style: "hoof", size: state.shoes.size }
              : witch ? { style: "witchboot", size: state.shoes.size, color: WC.bootColor ?? "#1f1f22" }
              : suit ? { style: "paw", size: state.shoes.size, color: C.fur, pad: C.accent } : state.shoes;
   // (a falcon suit's talons are yellow, like a falcon's feet)
   // (with different feet, the friend's right foot, on our left, wears its own)
+  const feetAt = svg.length;
   for (const side of [1, -1])
     svg += shoeSvg(side * fx, feetY, side, feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet, BIRD_SUIT[kind] ? C.accent : skin);
+  veilFrom("feet", feetAt);
   const pf = suit ? "url(#pat-fur)" : fillOf("pat-pants", P.color, P.pattern);
   const ps = suit ? darker(C.fur) : darker(P.color);
+  const pantsAt = svg.length;
   if (undies) {
     // no clothes: plain skin from the waist to the tops of the legs, and
     // over it the underwear or swimsuit bottom
@@ -4159,8 +4215,12 @@ function draw() {
     svg += poly(legs, pf, ps);
     if (wrapStripes(C)) svg += legStripes(legs, hw, fx, half, L, len, Math.min(len * 0.3, 40), C.marks);
   }
+  veilFrom("pants", pantsAt);
 
   // neck, behind the shirt so it shows in the collar
+  // (the neck, the arms and the body are the shirt's to see through: an
+  // invisible shirt is an invisible body, never a bare one)
+  const bodyAt = svg.length;
   svg += `<rect x="${-B.neckW / 2}" y="${neckTop}" width="${B.neckW}" height="${B.neck + 44}" rx="4" ` +
          `fill="${limb}" stroke="${limbLine}" stroke-width="2.5"/>`;
 
@@ -4199,23 +4259,28 @@ function draw() {
   if (wrapStripes(C) && !undies) svg += torsoStripes(torso, w, L, C.marks);
   if (suit && kind !== "eaglesuit")  // the suit's belly (a bald eagle is brown all over)
     svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>`;
+  veilFrom("shirt", bodyAt);
   // the hair, in the face's frame: over the body and shirt, but under the
   // arms, which are drawn again over it (long or curly hair hangs beside
   // them), and behind the head
   if (!C)
-    svg += `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
-           `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairSvg(state.hair), "under-hat")}</g></g></g>`;
+    svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
+           `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairSvg(state.hair), "under-hat")}</g></g></g>`);
 
-  if (winged) for (const arm of arms) svg += armWing(C, arm, armW);
+  if (winged) svg += veil("shirt", arms.map(arm => armWing(C, arm, armW)).join(""));
 
   // the face, in its own units
   const groundInFace = (ground - ty) / s;
-  svg += `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">${faceSvg(F, groundInFace)}</g>`;
+  // (the eyes see-through on their own: an invisible head can keep its
+  // eyes, floating)
+  const face = faceSvg(F, groundInFace, true);
+  const inFace = t => `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">${t}</g>`;
+  svg += veil("head", inFace(face.under)) + veil("eyes", inFace(face.eyes)) + veil("head", inFace(face.over));
   // a witch's hat over it, stretched with the head as hair is (and flying
   // off with the lid); her cat on her shoulder
   if (witch) {
-    svg += `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
-           `<g transform="${hairStretch(F)}">${witchHat(WC, brimRx)}</g></g></g>`;
+    svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
+           `<g transform="${hairStretch(F)}">${witchHat(WC, brimRx)}</g></g></g>`);
     // (the cat grows or shrinks about where it sits)
     if (WC.witchCat)
       svg += `<g transform="translate(${f1(-(w - 4))} -9) scale(${((WC.catSize ?? 100) / 100).toFixed(3)}) translate(${f1(w - 4)} 9)">` +
@@ -4227,6 +4292,7 @@ function draw() {
   // (only outside the body, where they showed before: the body still
   // covers their tops, outline and all)
   // (a bird suit's wings stay behind the face, or they would hide it)
+  const armsAt = svg.length;
   if (!winged) {
     svg += `<mask id="off-body" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="10000" height="10000">` +
            `<rect x="-5000" y="-5000" width="10000" height="10000" fill="white"/>` +
@@ -4240,6 +4306,7 @@ function draw() {
     if (wrapStripes(C))
       for (const arm of arms) svg += limbStripes(arm.A, sleeveEnd(arm), armW + 9, C.marks, `arm-stripes${arm.side}`, 22);
   }
+  veilFrom("shirt", armsAt);
 
   // a witch's broom, held in her right hand (on the picture's right)
   // (it grows or shrinks about the hand)
@@ -4249,6 +4316,7 @@ function draw() {
 
   // and the hands last, in front of everything, the face too: raised
   // arms put them by the cheeks or over the eyes, not behind the head
+  const handsAt = svg.length;
   if (!winged) {
     const hands = suit ? suitHands(C, kind) : state.hands;
     for (const { side, H, angle } of arms) {
@@ -4259,7 +4327,9 @@ function draw() {
       svg += handSvg(H[0], H[1], angle, side, broomH && side > 0 ? { ...own, style: "round" } : own, skin);
     }
   }
+  veilFrom("hands", handsAt);
   svg += `</g>`;   // the figure
+  svg = unveil(svg, layers);
 
   const pic = document.getElementById("pic");
   pic.setAttribute("viewBox", `${f1(left)} ${f1(top)} ${f1(width)} ${f1(bottom - top)}`);
@@ -5756,6 +5826,18 @@ const TABS = [
     ...SHOE_CTLS.slice(1),
     ["range", "size", "size", 20, 310, 60, 170],
   ]],
+  // how see-through each part is: the shirt the body under it, never a
+  // bare one, and the pants the legs
+  ["👻 Visibility", "visible", [
+    ["every", "all", "every part at once", [["🫥 invisible", 0], ["🙂 visible", 100], ["👻 ghost", 50]]],
+    ["range", "head", "🙂 head", 0, 100],
+    ["range", "eyes", "👀 eyes", 0, 100],
+    ["range", "hair", "💇 hair", 0, 100],
+    ["range", "shirt", "👕 shirt: the body, neck & arms", 0, 100],
+    ["range", "pants", "👖 pants: the hips & legs", 0, 100],
+    ["range", "feet", "👟 feet", 0, 100],
+    ["range", "hands", "🖐 hands", 0, 100],
+  ]],
   ["🐯 Costume", "costume", [
     ["choice", "kind", "costume", [["none", "none"], ["tiger", "🐯 tiger"], ["cat", "🐈‍⬛ black cat"],
                                    ["lion", "🦁 lion"], ["bear", "🐻 bear"], ["falcon", "🦅 peregrine falcon"],
@@ -6144,6 +6226,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       }
       for (const [v, b] of tuneBtns) b.setAttribute("aria-pressed", v === now);
     });
+  } else if (kind === "every") {
+    // chips that set every slider of the part at once (visibility's
+    // invisible, visible and ghost), each pressed while all are at it
+    const row = el("div", { class: "row" });
+    const keys = () => TABS.find(t => t[1] === part)[2].filter(c => c[0] === "range").map(c => c[1]);
+    const bs = rest[0].map(([text, v]) => {
+      const b = el("button", { onclick: () => { for (const k of keys()) state[part][k] = v; changed(); } }, text);
+      row.append(b); return [v, b];
+    });
+    box.append(row);
+    syncs.push(() => { for (const [v, b] of bs) b.setAttribute("aria-pressed", keys().every(k => state[part][k] === v)); });
   } else if (kind === "nudge") {
     // three chips for the slider above: down by the interval, the interval
     // (a tap goes to the next, a half step up to the octave), up by it
@@ -6383,8 +6476,8 @@ function surpriseOne(part, [kind, key, , ...rest]) {
   else if (kind === "color") state[part][key] = pick(rest[0]);
 }
 document.getElementById("surprise").addEventListener("click", () => {
-  // (the music is not part of the surprise)
-  for (const [, part, ctls] of TABS.filter(t => t[1] !== "music"))
+  // (the music is not part of the surprise, nor what is see-through)
+  for (const [, part, ctls] of TABS.filter(t => t[1] !== "music" && t[1] !== "visible"))
     for (const c of ctls) surpriseOne(part, c);
   // keep the surprises friendly: mostly not sick, not exploded, a normal-ish head
   const F = state.face;
