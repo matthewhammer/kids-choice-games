@@ -4698,13 +4698,21 @@ function draw() {
 
   const pic = document.getElementById("pic");
   pic.setAttribute("viewBox", `${f1(left)} ${f1(top)} ${f1(width)} ${f1(bottom - top)}`);
-  pic.innerHTML = svg;
   // the scenery: the node parsed from it last time, if it has not changed
-  // (a figure's slider redraws the figure, not the scene)
-  if (scened) {
-    if (bgText !== bgShown.text) { bgShown.node = mountScene(bgText); bgShown.text = bgText; }
-    pic.insertBefore(bgShown.node, pic.firstChild.nextSibling);
+  // (a figure's slider redraws the figure, not the scene), and left where
+  // it is: the rest is replaced around it. Taking it out and putting it
+  // back on every redraw restarted all of its animations and re-rendered
+  // all of it, so dragging the friend past a cauldron's fumes crawled.
+  const fresh = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  fresh.innerHTML = svg;
+  if (scened && bgText !== bgShown.text) { bgShown.node = mountScene(bgText); bgShown.text = bgText; }
+  const scenery = scened ? bgShown.node : null;
+  for (const c of [...pic.childNodes]) if (c !== scenery) c.remove();
+  if (scenery) {
+    if (scenery.parentNode !== pic) pic.append(scenery);
+    if (fresh.firstChild) pic.insertBefore(fresh.firstChild, scenery);   // the defs, before the scene
   }
+  pic.append(...fresh.childNodes);
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was
   // drawn, kept centred
@@ -7219,7 +7227,11 @@ pic.addEventListener("pointermove", e => {
   state.face[drag.feature] = clamp(Math.round(drag.v0 + (e.clientY - drag.y0)), -100, 200);
   changed();
 });
-const letGo = () => { drag = null; };
+// While a drag is held, the picture's animations (a cauldron's fumes, its
+// bubbles) hold still: drawing them is most of a frame in the witch's woods,
+// and a drag redraws on every move. They go on from where they stopped.
+pic.addEventListener("pointerdown", () => { if (drag) pic.pauseAnimations(); });
+const letGo = () => { if (drag) pic.unpauseAnimations(); drag = null; };
 pic.addEventListener("pointerup", letGo);
 pic.addEventListener("pointercancel", letGo);
 
