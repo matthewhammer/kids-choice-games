@@ -2,6 +2,16 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.26, for the next version, which waits for Matthew's go-ahead.
+
+- **🌳 Trees, bushes, grass and rocks, grown as the tree house's are:** every broadleaf tree now has a trunk flaring at its roots, limbs forking up, and leaf pads at their tips (the tree house's own pad shapes), darker behind and lighter in front, each tree from its own seed; pines are tiers of drooping boughs; bushes are low mounds of leaf pads, some in flower; grass grows in tufts of curved blades; rocks are irregular stones with a lit face and a crack. No more lollipops or ice-cream scoops, in the woods, the clearing, the tree house's woods, the house's yard, the lake's far wood, the castle, the healer's grove, the cemetery, the waterfall's jungle, the path through the woods, the mountain trail, the witch's woods and under the sea. One set of drawings for every scene, for consistency.
+- **🏔️ Snow that sits on the mountains:** each snow cap is cut from its own peak's slopes, with a ragged snow line, on the mountain trail and behind the castle (whose mountains are now a proper range).
+- **☁️ Every cloud drifts,** slowly, each at its own pace; **🦆 the lake's ducks** paddle about, bobbing and rocking; **☀️ the sun's rays** turn slowly and breathe, at the lake and the castle.
+- **🌤️ Sunbeams in the woods** (and on the path through them) come from one far, still sun: they run parallel, each its own width, and each dims and brightens as clouds go by, now and then nearly gone.
+- **Fixed:** bushes no longer grow in the tree house's stream; castle banners hang from the battlements as long as the wall is tall, so a one-level castle's no longer dip into the moat.
+
 ## 0.0.26 (2026-10-14)
 
 Everything in 0.0.25, plus backgrounds by kind of place, and three castles with their rooms.

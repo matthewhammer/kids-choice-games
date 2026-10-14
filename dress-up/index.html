@@ -2014,10 +2014,12 @@ function helixSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
 const prefixIds = (svg, p) => svg.replace(/(id="|url\(#|href="#)/g, `$1${p}`);
 const tf = (x, y, s = 1, sy = s) => `transform="translate(${f1(x)} ${f1(y)}) scale(${+s.toFixed(4)} ${+sy.toFixed(4)})"`;
 const use = (id, x, y, s = 1, sy = s, more = "") => `<use href="#${id}" ${tf(x, y, s, sy)}${more}/>`;
-const sunSvg = (x, y, r) => [...Array(12)].map((_, i) => { const a = i * Math.PI / 6;
+// (turning: its rays go slowly round, one ray's spacing a loop, and breathe)
+const sunSvg = (x, y, r, turning = false) => (turning ? `<g><animateTransform attributeName="transform" type="rotate" from="0 ${f1(x)} ${f1(y)}" to="30 ${f1(x)} ${f1(y)}" dur="8s" repeatCount="indefinite"/>` : "") +
+  [...Array(12)].map((_, i) => { const a = i * Math.PI / 6;
   return `<line x1="${f1(x + r * 1.26 * Math.cos(a))}" y1="${f1(y + r * 1.26 * Math.sin(a))}" x2="${f1(x + r * 1.78 * Math.cos(a))}" y2="${f1(y + r * 1.78 * Math.sin(a))}" ` +
-         `stroke="#ffd23f" stroke-width="${f1(r * 0.13)}" stroke-linecap="round"/>`; }).join("") +
-  `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="#ffd23f"/>`;
+         `stroke="#ffd23f" stroke-width="${f1(r * 0.13)}" stroke-linecap="round"${turning ? `><animate attributeName="stroke-width" values="${f1(r * 0.13)};${f1(r * 0.2)};${f1(r * 0.13)}" dur="${(2.4 + 0.3 * (i % 3)).toFixed(1)}s" repeatCount="indefinite"/></line>` : "/>"}`; }).join("") +
+  (turning ? "</g>" : "") + `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="#ffd23f"/>`;
 // a puffy cloud, its size the drawing's own
 const cloudDef = (id, puff) => `<g id="${id}"><g transform="scale(${+puff.toFixed(3)})">` +
   `<ellipse cx="0" cy="14" rx="92" ry="22" fill="#e4edf7"/>` +
@@ -2025,8 +2027,9 @@ const cloudDef = (id, puff) => `<g id="${id}"><g transform="scale(${+puff.toFixe
   `</g></g>`;
 const cloudsSvg = (c, n, puff, seed) => part("clouds", [c.F, n, puff, seed], () => {
   const { x0, y0, W, H, k, R } = c;
+  // (each drifting slowly back and forth, at its own pace)
   return `<defs>${cloudDef("bg-cloud", puff)}</defs>` + [...Array(n)].map((_, i) =>
-    use("bg-cloud", x0 + W * (i + 0.2 + 0.6 * R(i, seed)) / n, y0 + H * (0.07 + 0.2 * R(i, seed + 1)), k * (0.7 + 0.5 * R(i, seed + 2)))).join("");
+    driftingCloud(x0 + W * (i + 0.2 + 0.6 * R(i, seed)) / n, y0 + H * (0.07 + 0.2 * R(i, seed + 1)), k * (0.7 + 0.5 * R(i, seed + 2)), i + seed)).join("");
 });
 const plank = (x, y, w, h, fill, line) => `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="${fill}" stroke="${line}" stroke-width="1.5"/>`;
 const winSvg = (x, y, w, h) => `<rect x="${x - w / 2 - 9}" y="${y}" width="9" height="${h}" fill="#4a2e1a"/><rect x="${x + w / 2}" y="${y}" width="9" height="${h}" fill="#4a2e1a"/>` +
@@ -2040,14 +2043,18 @@ function lakeScene(c) {
   const horizon = g - 250 * k, shore = g - 70 * k;
   const ducks = o.ducks ?? 5, dsz = (o.duckSize ?? 100) / 100, tails = o.cattails ?? 14;
   let s = SEP + part("lake-sky", c.F, () => `<defs>${grad("bg-sky", "#58b7f0", "#dff3ff", y0, horizon)}</defs>` + all("url(#bg-sky)") +
-                                       sunSvg(x0 + W * 0.14, y0 + H * 0.14, 40 * k));
+                                       sunSvg(x0 + W * 0.14, y0 + H * 0.14, 40 * k, true));
   s += SEP + cloudsSvg(c, o.clouds ?? 4, (o.cloudSize ?? 100) / 100, 30);
   s += SEP + part("lake-water", c.F, () => {
     let t = `<defs>${grad("bg-lake", "#2f7fc2", "#79c6ea", horizon, shore)}</defs>` + land(horizon - 6 * k, 4, "#5c9c4c", 0.4);
     // the far shore: a wood of round trees
+    // (leaf pads behind, so the wood is thick, then leafy trees and a few pines)
+    t += `<defs>${leafyTreeDef("bg-lake-oak", 41)}${pineDef("bg-lake-pine", 43)}</defs>`;
+    for (let i = 0; i < 30; i++) t += padSvg(Math.floor(R(i, 44) * 8), x0 - 30 * k + (W + 60 * k) * i / 29, horizon - 10 * k - 10 * k * R(i, 45), k * 0.42 * (R(i, 46) < 0.5 ? -1 : 1), k * 0.5, ["#2f6a32", "#356f33", "#2a5f2c"][i % 3]);
     for (let i = 0; i < 24; i++) {
       const x = x0 - 20 * k + (W + 40 * k) * i / 23 + 12 * k * (R(i, 40) - 0.5), r = (22 + 18 * R(i, 41)) * k;
-      t += `<ellipse cx="${f1(x)}" cy="${f1(horizon - 6 * k - r * 0.5)}" rx="${f1(r)}" ry="${f1(r * 0.9)}" fill="${["#3f7f3a", "#4b8f43", "#356f33"][i % 3]}"/>`;
+      t += R(i, 47) < 0.25 ? use("bg-lake-pine", x, horizon, r * 2.4 / 200, r * 2.4 / 200, ` color="${["#2f6e3a", "#356f33"][i % 2]}"`)
+                           : use("bg-lake-oak", x, horizon + 2 * k, (r * 2.2 / 330) * (R(i, 48) < 0.5 ? -1 : 1), r * 2.2 / 330);
     }
     t += `<rect x="${f1(x0 - pad)}" y="${f1(horizon)}" width="${f1(W + 2 * pad)}" height="${f1(shore - horizon + 14 * k)}" fill="url(#bg-lake)"/>`;
     for (let i = 0; i < 18; i++) {   // the sun on the water
@@ -2065,7 +2072,7 @@ function lakeScene(c) {
          `<path d="M${P(-W * 0.3, shore + 8 * k)} Q${P(0, shore - 10 * k)} ${P(W * 0.3, shore + 8 * k)}" fill="none" stroke="#c9b27a" stroke-width="${f1(5 * k)}"/>`;
     for (let i = 0; i < 46; i++) {
       const sd = side(i), x = sd * (W * 0.27 + W * 0.25 * R(i, 46)), y = shore + 14 * k + (y1 - shore) * R(i, 47), h = (8 + 10 * R(i, 48)) * k;
-      t += `<path d="M${P(x - 5 * k, y - h * 0.7)} L${P(x - 2 * k, y)} L${P(x, y - h)} L${P(x + 2 * k, y)} L${P(x + 6 * k, y - h * 0.6)}" fill="none" stroke="#6f9b3c" stroke-width="${f1(1.6 * k)}" stroke-linejoin="round"/>`;
+      t += grassTuft(x, y, h * 1.2, 650 + i, "#6f9b3c", 1.6 * k);
     }
     for (let i = 0; i < 14; i++) {   // pebbles on the beach
       const x = W * 0.36 * (R(i, 49) - 0.5), y = shore + 30 * k + (y1 - shore - 40 * k) * R(i, 50);
@@ -2083,8 +2090,16 @@ function lakeScene(c) {
       `<path d="M13 -27 L27 -27 L29 -20 L12 -20 Z" fill="#1f7a3a"/><path d="M13 -25 L28 -25 L28 -22 L13 -22 Z" fill="#ffffff"/>` +
       `<circle cx="20" cy="-37" r="11" fill="#1f7a3a"/><path d="M29 -40 Q43 -38 42 -34 Q35 -32 29 -35 Z" fill="#f2b13a"/>` +
       `<circle cx="23" cy="-40" r="2.2" fill="#111"/></g></g></defs>` +
-    [...Array(ducks)].map((_, i) => { const d = R(i, 52); return { d, i }; }).sort((a, b) => a.d - b.d).map(({ d, i }) =>
-      use("bg-duck", x0 + W * (0.06 + 0.88 * R(i, 53)), horizon + 16 * k + (shore - horizon - 40 * k) * d, k * (R(i, 54) < 0.5 ? -1 : 1) * (0.45 + 0.75 * d), k * (0.45 + 0.75 * d))).join(""));
+    // each paddling about on its own: a little way the way it faces and back,
+    // bobbing and rocking on the water as it goes
+    [...Array(ducks)].map((_, i) => { const d = R(i, 52); return { d, i }; }).sort((a, b) => a.d - b.d).map(({ d, i }) => {
+      const sd = R(i, 54) < 0.5 ? -1 : 1, z = 0.45 + 0.75 * d, x = x0 + W * (0.06 + 0.88 * R(i, 53)), y = horizon + 16 * k + (shore - horizon - 40 * k) * d;
+      const go = sd * (14 + 26 * R(i, 55)) * k * z, bob = 2 * k * z;
+      return `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(go)} ${f1(-bob)};${f1(go * 1.4)} 0;${f1(go)} ${f1(bob)};0 0" ` +
+             `dur="${(12 + 8 * R(i, 56)).toFixed(1)}s" repeatCount="indefinite"/>` +
+             `<g><animateTransform attributeName="transform" type="rotate" values="0 ${f1(x)} ${f1(y)};${(3 * sd).toFixed(1)} ${f1(x)} ${f1(y)};0 ${f1(x)} ${f1(y)};${(-2 * sd).toFixed(1)} ${f1(x)} ${f1(y)};0 ${f1(x)} ${f1(y)}" ` +
+             `dur="${(2.6 + 0.8 * R(i, 57)).toFixed(1)}s" repeatCount="indefinite"/>` + use("bg-duck", x, y, k * sd * z, k * z) + `</g></g>`;
+    }).join(""));
   // cattails at the water's edge, either side
   s += SEP + part("lake-cattails", [c.F, tails], () => `<defs><g id="bg-cattail">` +
       `<path d="M0 0 Q-14 -60 -30 -108 M2 0 Q16 -50 26 -94 M-2 0 Q-4 -70 -12 -136" fill="none" stroke="#5b8f35" stroke-width="4" stroke-linecap="round"/>` +
@@ -2126,10 +2141,9 @@ const FLOWER_DEFS = `<g id="bg-tulip"><path d="M0 0 Q-2 -12 0 -22" stroke="#3f8a
   `<g id="bg-daisy"><path d="M0 0 V-20" stroke="#3f8a3a" stroke-width="2"/>` + [...Array(8)].map((_, i) => `<ellipse cx="0" cy="-27" rx="2.4" ry="6" fill="currentColor" transform="rotate(${i * 45} 0 -22)"/>`).join("") +
   `<circle cx="0" cy="-22" r="3" fill="#f2c12e"/></g>`;
 const FLOWER_COLORS = ["#e53935", "#ffffff", "#f7a8c8", "#f2c12e", "#9b59b6", "#ff8c42"];
-const oakDef = (id, s) => `<g id="${id}"><g transform="scale(${+s.toFixed(3)})"><ellipse cx="0" cy="0" rx="60" ry="10" fill="#000000" opacity="0.15"/>` +
-  `<path d="M-16 0 Q-10 -70 -10 -150 L10 -150 Q10 -70 16 0 Z" fill="#6b4a2b"/><path d="M-6 -110 L-40 -170 M6 -120 L38 -175" stroke="#6b4a2b" stroke-width="9" stroke-linecap="round"/>` +
-  [[0, -205, 72, "#3f8f3f"], [-58, -172, 52, "#3a8638"], [58, -172, 52, "#3a8638"], [-36, -248, 52, "#47a047"], [36, -252, 52, "#47a047"], [0, -282, 46, "#52ad4f"],
-   [-20, -215, 26, "#5fbb5a"], [28, -230, 22, "#5fbb5a"]].map(([x, y, r, f]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${f}"/>`).join("") + `</g></g>`;
+// (each id its own tree: a seed from its name)
+const idSeed = id => [...id].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 9973, 7);
+const oakDef = (id, s) => `<g id="${id}"><g transform="scale(${+s.toFixed(3)})">${leafyTree(idSeed(id))}</g></g>`;
 
 // a brown house of two floors, the garage on its right, a driveway and a
 // stone walk, a tree each side, bushes, flowers and toys on the lawn
@@ -2157,8 +2171,8 @@ function houseBuildingSvg() {
          [-99, -66, -33].map(y => `<line x1="118" y1="${y}" x2="272" y2="${y}" stroke="#cfc8b8" stroke-width="2"/>`).join("") +
          [0, 1, 2, 3].map(i => `<rect x="${128 + i * 37}" y="-124" width="26" height="14" fill="#bfe3f5"/>`).join("");
     // bushes along the front
-    for (const [x, r] of [[-205, 26], [-160, 22], [-122, 20], [-4, 22], [36, 25], [76, 22]])
-      t += `<circle cx="${x}" cy="${-r * 0.6}" r="${r}" fill="#3f8a3a"/><circle cx="${x - r * 0.3}" cy="${-r * 0.9}" r="${r * 0.45}" fill="#55a54d"/>`;
+    for (const [i, [x, r]] of [[-205, 26], [-160, 22], [-122, 20], [-4, 22], [36, 25], [76, 22]].entries())
+      t += bushSvg(x, 0, r * 1.25, 400 + i);
     return t;
   }
 function houseScene(c) {
@@ -2291,7 +2305,7 @@ const TREE_TIPS = [...Array(14)].map((_, j) => {
 });
 // a bonsai pad of leaves: a low cloud, a scalloped top over a flat bottom,
 // shaded beneath and lit on top whatever its color (currentColor)
-function padDef(id, j) {
+function padInner(j) {
   const r = v => { const z = Math.sin(j * 57.1 + v * 13.9) * 43758.5453; return z - Math.floor(z); };
   const w = 170 + 70 * r(1), h = 34 + 22 * r(2), bumps = 3 + j % 5, amp = 7 + 7 * r(3), lean = (r(4) - 0.5) * 0.6;
   const top = [], bottom = [];
@@ -2303,10 +2317,114 @@ function padDef(id, j) {
   const pts = a => a.map(([x, y]) => `${f1(x)},${f1(y)}`).join(" ");
   const shade = top.map(([x, y]) => [x, y * 0.3]);
   const lit = top.filter((_, i) => i > 4 && i < 30).map(([x, y]) => [x * 0.7 - w * 0.06, y * 0.85 - 4]);
-  return `<g id="${id}"><polygon points="${pts([...top, ...bottom])}" fill="currentColor"/>` +
+  return `<polygon points="${pts([...top, ...bottom])}" fill="currentColor"/>` +
          `<polygon points="${pts([...shade, ...bottom])}" fill="#000000" opacity="0.2"/>` +
-         `<polygon points="${pts(lit)}" fill="#ffffff" opacity="0.13"/></g>`;
+         `<polygon points="${pts(lit)}" fill="#ffffff" opacity="0.13"/>`;
 }
+const PAD_INNER = [...Array(8)].map((_, j) => padInner(j));
+function padDef(id, j) { return `<g id="${id}">${PAD_INNER[j]}</g>`; }
+// a leaf pad anywhere: shape j (of 8), at (x, y), sx by sy, in a color
+const padSvg = (j, x, y, sx, sy, color) => `<g transform="translate(${f1(x)} ${f1(y)}) scale(${sx.toFixed(3)} ${sy.toFixed(3)})" color="${color}">${PAD_INNER[((j % 8) + 8) % 8]}</g>`;
+
+// ---- the organic things every scene grows from: trees, pines, bushes,
+// grass and rocks, all in the tree house's style (limbs and leaf pads, no
+// lollipops), each from its own seed, so no two are alike ----
+const seeded = seed => i => { const v = Math.sin(seed * 71.3 + i * 13.7) * 43758.5453; return v - Math.floor(v); };
+// a curved, tapering limb: from p0 by way of p1 to p2, w0 wide to w1
+const taperSvg = (p0, p1, p2, w0, w1, fill) => {
+  const L = [], Rr = [];
+  for (let i = 0; i <= 8; i++) {
+    const u = i / 8, x = (1 - u) * (1 - u) * p0[0] + 2 * u * (1 - u) * p1[0] + u * u * p2[0], y = (1 - u) * (1 - u) * p0[1] + 2 * u * (1 - u) * p1[1] + u * u * p2[1];
+    const dx = 2 * (1 - u) * (p1[0] - p0[0]) + 2 * u * (p2[0] - p1[0]), dy = 2 * (1 - u) * (p1[1] - p0[1]) + 2 * u * (p2[1] - p1[1]), d = Math.hypot(dx, dy) || 1;
+    const w = (w0 + (w1 - w0) * u) / 2;
+    L.push(`${f1(x - dy / d * w)},${f1(y + dx / d * w)}`); Rr.push(`${f1(x + dy / d * w)},${f1(y - dx / d * w)}`);
+  }
+  return `<polygon points="${[...L, ...Rr.reverse()].join(" ")}" fill="${fill}"/>`;
+};
+// A broadleaf tree, in the old oak's units (its foot at 0, 0, about 330
+// tall): a trunk flaring at the roots, limbs forking up and out, and leaf
+// pads clustered at their tips, darker behind and lighter in front
+function leafyTree(seed, o = {}) {
+  const r = seeded(seed), H = o.h ?? 320, wide = o.wide ?? 1, bark = o.bark ?? "#6b4a2b", dk = mix(bark, "#000000", 0.35);
+  const greens = o.greens ?? ["#285e2a", "#2f7d32", "#3a8a3c", "#47a047", "#58b050"];
+  const limbs = [], tips = [];
+  const grow = (x, y, a, len, w, lvl, id) => {
+    const bend = (r(id * 7 + 1) - 0.5) * 0.6, mx = x + Math.cos(a) * len * 0.5, my = y + Math.sin(a) * len * 0.5;
+    const ex = mx + Math.cos(a + bend) * len * 0.5, ey = my + Math.sin(a + bend) * len * 0.5;
+    limbs.push(taperSvg([x, y], [mx, my], [ex, ey], w, w * 0.6, bark));
+    if (lvl === 0) { tips.push([ex, ey, len]); return; }
+    const n = 2 + (r(id * 7 + 2) > 0.45 ? 1 : 0);
+    for (let c = 0; c < n; c++) grow(ex, ey, a + bend + (c - (n - 1) / 2) * (0.55 + 0.3 * r(id * 7 + 3 + c)) * wide, len * (0.6 + 0.18 * r(id * 11 + c)), w * 0.6, lvl - 1, id * 3 + c + 1);
+  };
+  const lean = (r(1) - 0.5) * 0.18, top = [Math.sin(lean) * H * 0.45, -H * 0.44];
+  let t = `<ellipse cx="0" cy="2" rx="${f1(70 * wide)}" ry="11" fill="#000000" opacity="0.15"/>`;
+  // roots, flaring into the ground
+  for (const e of [-1, 1]) t += `<path d="M${f1(e * 10)} -24 Q${f1(e * 16)} -4 ${f1(e * (30 + 8 * r(2 + e)))} 2 L${f1(e * 6)} 2 Z" fill="${bark}"/>`;
+  t += taperSvg([0, 2], [top[0] * 0.4, -H * 0.24], top, 30, 19, bark);
+  for (let c = 0; c < 3; c++) grow(top[0], top[1], -Math.PI / 2 + (c - 1) * 0.7 * wide + (r(10 + c) - 0.5) * 0.3, H * (0.25 + 0.06 * r(20 + c)), 16, 1, c + 2);
+  t += limbs.join("") + `<path d="M${f1(-4)} -20 Q${f1(top[0] * 0.3 - 6)} ${f1(-H * 0.22)} ${f1(top[0] - 4)} ${f1(top[1] + 10)}" fill="none" stroke="${dk}" stroke-width="3" opacity="0.5"/>`;
+  // the leaves: a back layer over the crown, then a cluster at each tip
+  const pads = [];
+  for (let i = 0; i < 4; i++) pads.push([top[0] + (r(30 + i) - 0.5) * 140 * wide, top[1] - 60 - 70 * r(34 + i), 0.55 + 0.2 * r(38 + i), 0]);
+  tips.forEach(([x, y, len], i) => { pads.push([x + (r(40 + i) - 0.5) * 30, y - 16, 0.42 + 0.16 * r(50 + i), 1]); pads.push([x + (r(60 + i) - 0.5) * 40, y + 8, 0.36 + 0.14 * r(70 + i), 2]); });
+  pads.sort((a, b) => a[3] - b[3] || a[1] - b[1]);
+  t += pads.map(([x, y, sc, layer], i) => padSvg(Math.floor(r(80 + i) * 8), x, y, sc * (r(90 + i) < 0.5 ? -1 : 1) * wide, sc, greens[Math.min(greens.length - 1, layer + Math.floor(r(100 + i) * 3))])).join("");
+  return t;
+}
+// a tree's drawing under an id, for <use> (one drawing, many trees)
+const leafyTreeDef = (id, seed, o) => `<g id="${id}">${leafyTree(seed, o)}</g>`;
+// A pine, in the old pine's units (its foot at 0, 0, 200 tall, 100 wide at
+// the bottom): a trunk, then tiers of drooping boughs, ragged at their
+// tips, darker underneath, in the color of its <use>
+function pineTree(seed, o = {}) {
+  const r = seeded(seed), n = o.tiers ?? 5;
+  let t = `<rect x="-6" y="-34" width="12" height="36" fill="#5e3d22"/>`;
+  for (let j = 0; j < n; j++) {
+    // (broad tiers, overlapping, each drooping to three soft points a side)
+    const u = j / n, y = -22 - u * 158, hw = 60 * (1 - u * 0.84), th = 62 - 22 * u, tip = y - th;
+    const right = [];
+    for (let q = 1; q <= 3; q++) { const v = q / 3, x = hw * v;
+      right.push([x - hw / 6, y - 4 - 6 * r(j * 10 + q)], [x, y + 6 + 6 * r(j * 10 + q + 5) - 4 * v]); }
+    const pts = [[0, tip], ...right, ...[...right].reverse().map(([x, yy]) => [-x * (0.94 + 0.1 * r(j + 40)), yy + 2 * (r(j + 41) - 0.5)])];
+    const ps = pts.map(([x, yy]) => `${f1(x)},${f1(yy)}`).join(" ");
+    t += `<polygon points="${ps}" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>` +
+         `<polygon points="${f1(-hw * 0.85)},${f1(y + 2)} ${f1(hw * 0.85)},${f1(y + 2)} ${f1(hw * 0.5)},${f1(y - th * 0.3)} ${f1(-hw * 0.5)},${f1(y - th * 0.3)}" fill="#000000" opacity="0.16"/>` +
+         `<polygon points="0,${f1(tip + 4)} ${f1(-hw * 0.6)},${f1(y - th * 0.15)} ${f1(-hw * 0.18)},${f1(y - th * 0.5)}" fill="#ffffff" opacity="0.1"/>`;
+  }
+  return t;
+}
+const pineDef = (id, seed = 1, o) => `<g id="${id}">${pineTree(seed, o)}</g>`;
+// a bush: a low mound of leaf pads, darker at its foot, flowers on some
+const bushSvg = (x, y, rad, seed, o = {}) => {
+  const r = seeded(seed), greens = o.greens ?? ["#285e2a", "#2f7d32", "#3a8a3c", "#4a9a46", "#5aad52"], sc = rad / 95;
+  let t = `<ellipse cx="${f1(x)}" cy="${f1(y + 2 * sc)}" rx="${f1(rad * 1.1)}" ry="${f1(rad * 0.22)}" fill="#000000" opacity="0.16"/>`;
+  const n = 4 + Math.floor(r(1) * 3);
+  for (let i = 0; i < n; i++) {
+    const u = (i + 0.5) / n, px = x + (u - 0.5) * rad * 1.3 + (r(10 + i) - 0.5) * rad * 0.3, py = y - rad * (0.15 + 0.5 * Math.sin(Math.PI * u)) * (0.7 + 0.5 * r(20 + i));
+    t += padSvg(Math.floor(r(30 + i) * 8), px, py, sc * (0.5 + 0.25 * r(40 + i)) * (r(50 + i) < 0.5 ? -1 : 1), sc * (0.6 + 0.3 * r(60 + i)), greens[Math.min(greens.length - 1, Math.floor(i / n * greens.length + r(70 + i)))]);
+  }
+  if (o.flowers) for (let i = 0; i < 6; i++) { const fx = x + (r(80 + i) - 0.5) * rad * 1.4, fy = y - rad * (0.2 + 0.6 * r(90 + i));
+    t += `<circle cx="${f1(fx)}" cy="${f1(fy)}" r="${f1(rad * 0.07)}" fill="${o.flowers[i % o.flowers.length]}"/><circle cx="${f1(fx)}" cy="${f1(fy)}" r="${f1(rad * 0.025)}" fill="#fde047"/>`; }
+  return t;
+};
+// a tuft of grass: blades from one root, each leaning its own way
+const grassTuft = (x, y, h, seed, col = "#4f9a3a", wd = 2) => {
+  const r = seeded(seed), lit = mix(col, "#ffffff", 0.25), n = 5 + Math.floor(r(1) * 3);
+  return [...Array(n)].map((_, i) => { const lean = (i / (n - 1) - 0.5) * 1.2 + (r(10 + i) - 0.5) * 0.4, hh = h * (0.6 + 0.4 * r(20 + i));
+    return `<path d="M${f1(x + (i - n / 2) * wd * 0.6)} ${f1(y)} Q${f1(x + lean * hh * 0.25)} ${f1(y - hh * 0.6)} ${f1(x + lean * hh * 0.6)} ${f1(y - hh)}" fill="none" stroke="${i % 2 ? lit : col}" stroke-width="${f1(wd)}" stroke-linecap="round"/>`; }).join("");
+};
+// a rock: an irregular stone, flat where it sits, its top lit, a crack
+const rockSvg = (x, y, rad, seed, tone = "#9a9488") => {
+  const r = seeded(seed), lit = mix(tone, "#ffffff", 0.25), dk = mix(tone, "#000000", 0.25), pts = [], n = 10;
+  for (let i = 0; i < n; i++) { const a = Math.PI + i / (n - 1) * Math.PI, rr = rad * (0.8 + 0.3 * r(i));
+    pts.push([x + Math.cos(a) * rr * (1.2 + 0.2 * r(20)), y + Math.min(0, Math.sin(a)) * rr * (0.75 + 0.2 * r(i + 10))]); }
+  const top = pts.slice(1, 6).map(([px, py]) => [x + (px - x) * 0.7 - rad * 0.08, y + (py - y) * 0.85 - rad * 0.05]);
+  const P_ = a => a.map(([px, py]) => `${f1(px)},${f1(py)}`).join(" ");
+  return `<ellipse cx="${f1(x)}" cy="${f1(y + rad * 0.06)}" rx="${f1(rad * 1.35)}" ry="${f1(rad * 0.2)}" fill="#000000" opacity="0.18"/>` +
+    `<polygon points="${P_(pts)}" fill="${tone}" stroke="${dk}" stroke-width="${f1(rad * 0.04)}" stroke-linejoin="round"/>` +
+    `<polygon points="${P_([[x - rad * 0.9, y - rad * 0.1], ...top, [x + rad * 0.3, y - rad * 0.3]])}" fill="${lit}" opacity="0.7"/>` +
+    `<path d="M${f1(x + rad * 0.2)} ${f1(y - rad * 0.55)} l${f1(rad * 0.15)} ${f1(rad * 0.25)} l${f1(-rad * 0.05)} ${f1(rad * 0.22)}" fill="none" stroke="${dk}" stroke-width="${f1(rad * 0.04)}"/>`;
+};
 // where each house's ladder goes down to: the house below it (house 1's to
 // house 5, 2's to 6, 3's to 1, 4's to 2), or the ground (-1) when there is
 // no house below it
@@ -2433,8 +2551,7 @@ function treehouseScene(c) {
   // tulip and a daisy, each drawn once)
   s += SEP + part("tree-woods", c.F, () => {
     const { x1, y1, P } = c, side = c.side;
-    let t = `<defs>${oakDef("bg-woods-oak", 1)}<g id="bg-pine"><rect x="-6" y="-30" width="12" height="32" fill="#5e3d22"/>` +
-            `<polygon points="0,-200 -50,-28 50,-28" fill="currentColor"/><polygon points="0,-200 -14,-150 0,-60 12,-120" fill="#ffffff" opacity="0.1"/></g>${FLOWER_DEFS}</defs>`;
+    let t = `<defs>${oakDef("bg-woods-oak", 1)}${pineDef("bg-pine", 3)}${FLOWER_DEFS}</defs>`;
     const tree = (i, x, y, sc) => i % 3 === 1 ? use("bg-woods-oak", x, y, sc * (R(i, 211) < 0.5 ? -1 : 1), sc)
                                               : use("bg-pine", x, y, sc, sc, ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
     for (let i = 0; i < 30; i++)   // the far row, small, on the far hills
@@ -2453,8 +2570,8 @@ function treehouseScene(c) {
     }
     for (let i = 0; i < 16; i++) {  // bushes
       const x = side(i) * (W * 0.12 + W * 0.36 * R(i, 217)), y = g - 18 * k + 50 * k * R(i, 218), r = (16 + 14 * R(i, 219)) * k;
-      t += `<circle cx="${f1(x - r * 0.6)}" cy="${f1(y - r * 0.5)}" r="${f1(r * 0.75)}" fill="#2f7d32"/><circle cx="${f1(x + r * 0.6)}" cy="${f1(y - r * 0.45)}" r="${f1(r * 0.7)}" fill="#2f7d32"/>` +
-           `<circle cx="${f1(x)}" cy="${f1(y - r * 0.8)}" r="${f1(r)}" fill="#3c9a40"/><circle cx="${f1(x - r * 0.3)}" cy="${f1(y - r * 1.1)}" r="${f1(r * 0.4)}" fill="#55b04f"/>`;
+      if (inStream(sp, x, y, r * 1.4)) continue;   // (no bushes in the water)
+      t += bushSvg(x, y, r * 1.4, 300 + i);
     }
     for (let i = 0; i < 48; i++) {  // flowers in the grass
       const d = R(i, 220), x = x0 + W * R(i, 221), y = g - 22 * k + (y1 - g + 10 * k) * d;
@@ -3074,7 +3191,9 @@ function witchroomScene(c) {
 function farWitchSvg(o) {
   // (on chicken legs, as long as hers, or sat on the ground: as in her woods)
   const ls = (o.legSize ?? 100) / 100, legH = o.chickenLegs ? 46 * ls : 0, dy = 42 - legH;
-  let t = [-120, -70, 80, 130, 30].map((x, i) => `<polygon points="${x},${-20 - 40 * (i % 2)} ${x - 40},90 ${x + 40},90" fill="${["#1f3a2a", "#24402e", "#18301f"][i % 3]}"/>`).join("");
+  // (dark pines round it: the shared pine, in her woods' dusk greens)
+  let t = `<defs>${pineDef("bg-far-witch-pine", 91)}</defs>` + [-120, -70, 80, 130, 30].map((x, i) => {
+    const h = 110 + 40 * (i % 2); return use("bg-far-witch-pine", x, 90, h / 200, h / 200, ` color="${["#1f3a2a", "#24402e", "#18301f"][i % 3]}"`); }).join("");
   if (legH) t += [-1, 1].map(sd => `<path d="M${sd * 18} ${f1(44 + dy)} L${sd * 22} ${f1(86 - legH * 0.35)} L${sd * 34} 84 M${sd * 22} ${f1(86 - legH * 0.35)} L${sd * 14} 86" stroke="#e0552b" stroke-width="${f1(7 * Math.sqrt(ls))}" stroke-linecap="round" fill="none"/>`).join("");
   t += `<g transform="translate(0 ${f1(dy)})">` +
        `<rect x="-50" y="-26" width="100" height="70" fill="#5a3a2a" stroke="#2a1a12" stroke-width="3"/>` +
@@ -3125,13 +3244,12 @@ function castleSvg(K = castleOf({})) {
       return `<polyline points="${side.map(([x, y]) => `${f1(x)},${f1(y - 14)}`).join(" ")}" fill="none" stroke="#6e4a2c" stroke-width="4"/>`; }).join("") +
     posts.map(([x, y]) => `<rect x="${f1(x - 3)}" y="${f1(y - 22)}" width="6" height="24" fill="#7a5232" stroke="#4a2e1a" stroke-width="1"/>`).join("");
   // trees round it, behind and beside the walls: the more, the further out
-  const trees = [...Array(K.trees)].map((_, i) => {
-    const sd = i % 2 ? 1 : -1, j = Math.floor(i / 2), x = sd * (175 + 52 * j + 18 * r(i, 1)), y = -24 - 26 * r(i, 2) - (j % 2) * 18, h = 0.75 + 0.45 * r(i, 3);
-    return r(i, 4) < 0.5
-      ? `<rect x="${f1(x - 6)}" y="${f1(y - 30 * h)}" width="12" height="${f1(32 * h)}" fill="#5e3d22"/><polygon points="${f1(x)},${f1(y - 170 * h)} ${f1(x - 48 * h)},${f1(y - 26 * h)} ${f1(x + 48 * h)},${f1(y - 26 * h)}" fill="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"/>`
-      : `<rect x="${f1(x - 7)}" y="${f1(y - 60 * h)}" width="14" height="${f1(62 * h)}" fill="#6b4a2b"/><circle cx="${f1(x)}" cy="${f1(y - 90 * h)}" r="${f1(46 * h)}" fill="${["#3c8a3e", "#4a9a46", "#2f7d32"][i % 3]}"/>` +
-        `<circle cx="${f1(x - 16 * h)}" cy="${f1(y - 112 * h)}" r="${f1(20 * h)}" fill="#5aad52"/>`;
-  }).join("");
+  const trees = (K.trees ? `<defs>${leafyTreeDef("bg-ctree0", 11)}${leafyTreeDef("bg-ctree1", 23)}${pineDef("bg-cpine", 7)}</defs>` : "") +
+    [...Array(K.trees)].map((_, i) => {
+      const sd = i % 2 ? 1 : -1, j = Math.floor(i / 2), x = sd * (175 + 52 * j + 18 * r(i, 1)), y = -24 - 26 * r(i, 2) - (j % 2) * 18, h = 0.75 + 0.45 * r(i, 3);
+      return r(i, 4) < 0.5 ? use("bg-cpine", x, y, 0.85 * h, 0.85 * h, ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`)
+                           : use(`bg-ctree${i % 2}`, x, y, 0.44 * h * (r(i, 5) < 0.5 ? -1 : 1), 0.44 * h);
+    }).join("");
   const mound = `<path d="M${f1(-fx - 40)} 70 Q-120 -40 0 -30 Q130 -40 ${f1(fx + 40)} 70 Z" fill="#7cb85a"/>`;
   // the stonework: courses of blocks on a tower or the keep, its shaded side
   const courses = (x, y, w, h) => [...Array(Math.floor(h / 16))].map((_, j) => `<line x1="${x}" y1="${f1(y + 16 * (j + 1))}" x2="${x + w}" y2="${f1(y + 16 * (j + 1))}" stroke="${dark}" stroke-width="1" opacity="0.45"/>` +
@@ -3169,8 +3287,11 @@ function castleSvg(K = castleOf({})) {
     `<path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z" fill="#3a2a1a"/>` + [-20, -7, 7, 20].map(x => `<line x1="${x}" y1="-80" x2="${x}" y2="0" stroke="#6a5a4a" stroke-width="3"/>`).join("") +
     [-80, 80].map(x => `<rect x="${x - 8}" y="${-wallH + 30}" width="16" height="24" rx="8" fill="#3a3a48"/>`).join("") +
     // banners hanging from the wall, in the owner's color, the owner's letter on them
-    [-1, 1].map(sd => `<path d="M${sd * 80 - 13} ${-wallH + 64} h26 v46 l-13 -9 l-13 9 Z" fill="${K.flag}" stroke="#e8b923" stroke-width="1.5"/>` +
-      `<text x="${sd * 80}" y="${-wallH + 94}" text-anchor="middle" font-size="16" font-weight="bold" fill="#e8b923" font-family="serif">${K.id}</text>`).join("") +
+    // (from just under the battlements, as long as the wall is tall, and
+    // never down to the ground or the moat)
+    (() => { const bl = Math.min(wallH * 0.55, wallH - 22), bt = -wallH + 4;
+      return [-1, 1].map(sd => `<path d="M${sd * 102 - 13} ${bt} h26 v${f1(bl)} l-13 -9 l-13 9 Z" fill="${K.flag}" stroke="#e8b923" stroke-width="1.5"/>` +
+        `<text x="${sd * 102}" y="${f1(bt + Math.min(bl * 0.55, 34) + 6)}" text-anchor="middle" font-size="16" font-weight="bold" fill="#e8b923" font-family="serif">${K.id}</text>`).join(""); })() +
     // torches either side of the gate
     [-1, 1].map(sd => `<rect x="${sd * 46 - 2}" y="-62" width="4" height="12" fill="#3a3a44"/><circle cx="${sd * 46}" cy="-68" r="12" fill="#ffcf6b" opacity="0.35"/>` +
       `<path d="M${sd * 46} -76 q5 6 0 10 q-5 -4 0 -10 Z" fill="#ffb53b"/>`).join("") +
@@ -3180,10 +3301,12 @@ function castleSvg(K = castleOf({})) {
 // a healer's hut: round, thatched, a heart on its sign, herbs growing by it
 function healerSvg() {
   // a grove round it: trees behind and either side, their trunks in the ground at y = 40
-  const grove = [[-150, 10, 52], [-105, -5, 62], [120, -10, 66], [165, 15, 50], [-40, -40, 58], [55, -45, 54]].map(([x, y, r], i) =>
-    `<rect x="${x - 7}" y="${y}" width="14" height="${40 - y}" fill="#6b4a2b"/>` +
-    `<circle cx="${x}" cy="${y - r * 0.7}" r="${r}" fill="${["#3c8a3e", "#4a9a46", "#2f7d32"][i % 3]}"/>` +
-    `<circle cx="${x - r * 0.35}" cy="${y - r * 1.05}" r="${r * 0.45}" fill="#5aad52"/>`).join("");
+  // (leafy trees, as everywhere: their feet in the ground at y = 40)
+  const grove = `<defs>${leafyTreeDef("bg-htree0", 31)}${leafyTreeDef("bg-htree1", 37)}</defs>` +
+    [[-150, 10, 52], [-105, -5, 62], [120, -10, 66], [165, 15, 50], [-40, -40, 58], [55, -45, 54]].map(([x, y, r], i) => {
+      const z = ((40 - y) + 1.7 * r) / 330;
+      return use(`bg-htree${i % 2}`, x, 40, z * (i % 3 ? 1 : -1), z);
+    }).join("");
   return grove + [-90, -70, -50, 60, 80, 100].map((x, i) => `<path d="M${x} 40 Q${x - 6} 20 ${x - 10} 6 M${x} 40 Q${x + 4} 18 ${x + 10} 8" stroke="${["#5f8a3a", "#7a9a3a", "#4a8a4a"][i % 3]}" stroke-width="4" fill="none"/>` +
       `<circle cx="${x - 10}" cy="6" r="4" fill="${["#c39bd3", "#f7a8c8", "#f2c12e"][i % 3]}"/>`).join("") +
     `<path d="M-60 40 V-20 Q0 -40 60 -20 V40 Z" fill="#e8d5b0" stroke="#a88a5a" stroke-width="3"/>` +
@@ -3215,8 +3338,7 @@ function clearingScene(c) {
   s += SEP + cloudsSvg(c, 3, 0.8, 140);
   // the forest round the clearing: far trees all along, near ones at the sides
   s += SEP + part("clear-far-woods", c.F, () => {
-    let t = `<defs>${oakDef("bg-woods-oak", 1)}<g id="bg-pine"><rect x="-6" y="-30" width="12" height="32" fill="#5e3d22"/>` +
-            `<polygon points="0,-200 -50,-28 50,-28" fill="currentColor"/><polygon points="0,-200 -14,-150 0,-60 12,-120" fill="#ffffff" opacity="0.1"/></g></defs>`;
+    let t = `<defs>${oakDef("bg-woods-oak", 1)}${pineDef("bg-pine", 3)}</defs>`;
     for (let i = 0; i < 34; i++)
       t += i % 3 === 1 ? use("bg-woods-oak", x0 - 30 * k + (W + 60 * k) * i / 33, g - 218 * k + 8 * k * R(i, 310), k * (0.3 + 0.15 * R(i, 311)))
                        : use("bg-pine", x0 - 30 * k + (W + 60 * k) * i / 33, g - 218 * k + 8 * k * R(i, 310), k * (0.28 + 0.16 * R(i, 311)), k * (0.28 + 0.16 * R(i, 311)),
@@ -3265,7 +3387,7 @@ function castleScene(c) {
   const bridgeEnd = foot + (K.moat > 0 ? 26 + 24 * K.moat : 8) * z;
   // a warm afternoon: the sky, the sun, clouds, birds far off
   let s = SEP + part("castle-sky", c.F, () => `<defs>${grad("bg-sky", "#6fbaf0", "#fde6c2", y0, g - 160 * k)}</defs>` + all("url(#bg-sky)") +
-    sunSvg(x1 - W * 0.13, y0 + H * 0.13, 30 * k) +
+    sunSvg(x1 - W * 0.13, y0 + H * 0.13, 30 * k, true) +
     [...Array(6)].map((_, i) => { const bx = x0 + W * (0.12 + 0.13 * i + 0.05 * R(i, 401)), by = y0 + H * (0.1 + 0.12 * R(i, 402)), b = (7 + 5 * R(i, 403)) * k;
       return `<path d="M${P(bx - b, by - b * 0.4)} Q${P(bx - b * 0.4, by - b * 0.7)} ${P(bx, by)} Q${P(bx + b * 0.4, by - b * 0.7)} ${P(bx + b, by - b * 0.4)}" fill="none" stroke="#3a3a4a" stroke-width="${f1(2 * k)}" stroke-linecap="round"/>`; }).join(""));
   s += SEP + cloudsSvg(c, 4, 0.85, 170);
@@ -3273,19 +3395,27 @@ function castleScene(c) {
   s += SEP + part("castle-far", c.F, () => {
     let t = "";
     for (const [row, col, snow] of [[0, "#9fb4cf", "#f4f7fb"], [1, "#86a0bf", "#e8eef6"]]) {
-      let d = `M${P(x0 - pad, g - 140 * k)}`;
-      for (let i = 0; i <= 9; i++) { const x = x0 - 40 * k + (W + 80 * k) * i / 9, h = (row ? 150 : 210) * k * (0.6 + 0.5 * R(i, 410 + row));
-        d += ` L${P(x - 30 * k, g - (row ? 150 : 170) * k)} L${P(x, g - (row ? 150 : 170) * k - h)}`;
-        t += `<polygon points="${P(x, g - (row ? 150 : 170) * k - h)} ${P(x - h * 0.22, g - (row ? 150 : 170) * k - h * 0.7)} ${P(x - h * 0.06, g - (row ? 150 : 170) * k - h * 0.76)} ${P(x + h * 0.08, g - (row ? 150 : 170) * k - h * 0.66)} ${P(x + h * 0.2, g - (row ? 150 : 170) * k - h * 0.72)}" fill="${snow}"/>`; }
-      t = `<path d="${d} L${P(x1 + pad, g - 140 * k)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z" fill="${col}"/>` + t;
+      // a range: peaks with saddles between them, each cap cut from its own slopes
+      const base = g - (row ? 150 : 170) * k, n = 9, sp = (W + 80 * k) / n, pts = [[x0 - pad, base]];
+      for (let i = 0; i <= n; i++) {
+        const x = x0 - 40 * k + sp * i + 16 * k * (R(i, 412 + row) - 0.5), h = (row ? 150 : 210) * k * (0.6 + 0.5 * R(i, 410 + row));
+        pts.push([x - sp * 0.5, base - h * (0.25 + 0.2 * R(i, 414 + row))], [x, base - h]);
+      }
+      pts.push([x1 + pad, base], [x1 + pad, y1 + pad], [x0 - pad, y1 + pad]);
+      t += `<polygon points="${pts.map(([x, y]) => P2(x, y)).join(" ")}" fill="${col}"/>`;
+      for (let i = 2; i < pts.length - 3; i += 2) {
+        const [px, py] = pts[i], [lx, ly] = pts[i - 1], [rx, ry] = pts[i + 1];
+        t += snowCap(px, py, lx, ly, rx, ry, 0.3 * (base - py), i + row * 30, snow, 1);
+      }
     }
     t += land(g - 150 * k, 10, "#a9d48e", 0.4);
+    // (pines and leafy trees, far ones paler; from the drawings every scene shares)
+    t += `<defs>${pineDef("bg-far-pine", 9)}${leafyTreeDef("bg-far-oak", 17)}</defs>`;
     for (const [row, base, cols] of [[0, g - 140 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 100 * k, ["#2f6b3a", "#3c7d45"]]])
       for (let i = 0, x = x0 - 50 * k; x < x1 + 50 * k; i++, x += (row ? 46 : 34) * k) {
-        const h = (row ? 120 : 84) * k * (0.8 + 0.4 * R(i, 420 + row)), b = base + 12 * k * R(i, 422 + row), w = h * 0.42;
-        t += R(i, 424 + row) < 0.7
-          ? `<polygon points="${P(x, b - h)} ${P(x + w / 2, b)} ${P(x - w / 2, b)}" fill="${cols[i % 2]}"/>`
-          : `<rect x="${f1(x - 3 * k)}" y="${f1(b - h * 0.4)}" width="${f1(6 * k)}" height="${f1(h * 0.4)}" fill="#5d3f24"/><circle cx="${f1(x)}" cy="${f1(b - h * 0.6)}" r="${f1(h * 0.32)}" fill="${cols[(i + 1) % 2]}"/>`;
+        const h = (row ? 120 : 84) * k * (0.8 + 0.4 * R(i, 420 + row)), b = base + 12 * k * R(i, 422 + row);
+        t += R(i, 424 + row) < 0.7 ? use("bg-far-pine", x, b, h / 200, h / 200, ` color="${cols[i % 2]}"`)
+                                   : `<g opacity="${row ? 1 : 0.85}">${use("bg-far-oak", x, b, (h / 330) * (R(i, 426) < 0.5 ? -1 : 1), h / 330)}</g>`;
       }
     return t + land(g - 80 * k, 6, "#8bc56a", 1.1) + land(g - 30 * k, 3, "#7cc25a", 0.6);
   });
@@ -3339,11 +3469,12 @@ function castleScene(c) {
     for (let i = 0; i < 46; i++) {   // flowers and grass in the near meadow, not on the road
       const u = R(i, 460), x = x0 + W * R(i, 461), y = g + 20 * k + (y1 - g) * u;
       if (Math.abs(x) < W * 0.07 + W * 0.12 * u + 20 * k) continue;
-      t += i % 3 === 2 ? `<path d="M${P(x, y)} l${f1(-4 * k)} ${f1(-12 * k)} M${P(x, y)} l0 ${f1(-15 * k)} M${P(x, y)} l${f1(4 * k)} ${f1(-12 * k)}" stroke="#4f9a3a" stroke-width="${f1(2 * k)}"/>`
+      t += i % 3 === 2 ? grassTuft(x, y, (12 + 10 * u) * k, 470 + i, "#4f9a3a", 1.8 * k)
         : use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.7 + 0.6 * u), k * (0.7 + 0.6 * u), ` color="${FLOWER_COLORS[i % 6]}"`);
     }
     for (let i = 0; i < 6; i++) { const x = x0 + W * (0.05 + 0.18 * i), y = g + (60 + 50 * R(i, 470)) * k, rr = (10 + 8 * R(i, 471)) * k;
       if (Math.abs(x) < W * 0.2) continue;
+      t += rockSvg(x, y, rr * 1.2, 480 + i); continue;
       t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rr * 1.4)}" ry="${f1(rr)}" fill="#9a9488"/><ellipse cx="${f1(x - rr * 0.3)}" cy="${f1(y - rr * 0.3)}" rx="${f1(rr * 0.6)}" ry="${f1(rr * 0.35)}" fill="#b8b2a8"/>`; }
     return t;
   });
@@ -3723,9 +3854,11 @@ function greenhouseSvg(c, K) {
   // beyond the glass: sky, clouds, the castle's own trees
   t += `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(floor - y0 + pad)}" fill="url(#bg-gsky)"/>`;
   for (let i = 0; i < 4; i++) { const cx = x0 + W * (0.1 + 0.25 * i), cy = y0 + H * (0.06 + 0.06 * R(i, 980));
-    t += [[-30, 6, 22], [0, -6, 30], [30, 4, 22]].map(([dx, dy, r]) => `<circle cx="${f1(cx + dx * k)}" cy="${f1(cy + dy * k)}" r="${f1(r * k)}" fill="#ffffff" opacity="0.9"/>`).join(""); }
-  for (let i = 0; i < 16; i++) { const x = x0 + W * i / 15, h = (90 + 60 * R(i, 981)) * k;
-    t += `<circle cx="${f1(x)}" cy="${f1(floor - h)}" r="${f1((40 + 20 * R(i, 982)) * k)}" fill="${["#4f9a4a", "#3f8a3e", "#5aa852"][i % 3]}" opacity="0.8"/>`; }
+    t += drifting([[-30, 6, 22], [0, -6, 30], [30, 4, 22]].map(([dx, dy, r]) => `<circle cx="${f1(cx + dx * k)}" cy="${f1(cy + dy * k)}" r="${f1(r * k)}" fill="#ffffff" opacity="0.9"/>`).join(""), i, 30 * k); }
+  // (the castle's trees beyond, leafy as everywhere)
+  t += `<defs>${leafyTreeDef("bg-gh-tree", 97)}</defs>`;
+  for (let i = 0; i < 16; i++) { const x = x0 + W * i / 15, h = (150 + 90 * R(i, 981)) * k;
+    t += `<g opacity="0.85">${use("bg-gh-tree", x, floor - 20 * k, (h / 330) * (R(i, 982) < 0.5 ? -1 : 1), h / 330)}</g>`; }
   t += `<rect x="${f1(x0 - pad)}" y="${f1(floor - 30 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 + pad - floor + 30 * k)}" fill="#7cb85a"/>`;
   // the glass: back wall panes, side walls going off toward us, the roof's
   // panes in an arch; white iron frames between them
@@ -3910,8 +4043,7 @@ function castleroomScene(c) {
 // Three places away from the woods: a mountain trail, a jungle waterfall,
 // and a camp site. A signpost on the trail points (a doorway each) to the
 // other two, and each of them has a sign back to the trail.
-const PINE_DEF = `<g id="bg-pine"><rect x="-6" y="-30" width="12" height="32" fill="#5e3d22"/>` +
-  `<polygon points="0,-200 -50,-28 50,-28" fill="currentColor"/><polygon points="0,-200 -14,-150 0,-60 12,-120" fill="#ffffff" opacity="0.1"/></g>`;
+const PINE_DEF = pineDef("bg-pine", 5);
 // a wooden signpost, its arrows doorways (each [text, to, side]), at (x, base)
 const signpost = (x, base, k, arrows) => `<rect x="${f1(x - 5 * k)}" y="${f1(base - 150 * k)}" width="${f1(10 * k)}" height="${f1(150 * k)}" fill="#6e4a2c"/>` +
   arrows.map(([text, to, sd], i) => {
@@ -3921,6 +4053,40 @@ const signpost = (x, base, k, arrows) => `<rect x="${f1(x - 5 * k)}" y="${f1(bas
            `<text x="${f1(x1 + w / 2)}" y="${f1(y + 7 * k)}" text-anchor="middle" font-size="${f1(19 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${text}</text></g>`;
   }).join("");
 const P2 = (x, y) => `${f1(x)},${f1(y)}`;
+// A snow cap on a peak, cut from the mountain's own two slopes: from the
+// peak (px, py) down each slope toward its neighbors (lx, ly) and (rx, ry)
+// to a depth `d`, its lower edge ragged (more at the middle), so the snow
+// lies on the rock rather than floating over it
+const snowCap = (px, py, lx, ly, rx, ry, d, seed, fill = "#ffffff", opacity = 0.92) => {
+  const on = (qx, qy, f) => [px + (qx - px) * f, py + (qy - py) * f];
+  const fl = Math.min(1, d / Math.max(1, ly - py)), fr = Math.min(1, d / Math.max(1, ry - py));
+  const [ax, ay] = on(lx, ly, fl), [bx, by] = on(rx, ry, fr), pts = [[px, py], [ax, ay]];
+  const rr = i => { const v = Math.sin(seed * 91.7 + i * 47.3) * 43758.5453; return v - Math.floor(v); };
+  for (let i = 1; i < 7; i++) {
+    const u = i / 7, x = ax + (bx - ax) * u, y = ay + (by - ay) * u, bite = (i % 2 ? -0.28 : 0.12 + 0.18 * rr(i)) * d * Math.sin(Math.PI * u);
+    pts.push([x, y + bite]);
+  }
+  pts.push([bx, by]);
+  return `<polygon points="${pts.map(([x, y]) => P2(x, y)).join(" ")}" fill="${fill}" opacity="${opacity}"/>`;
+};
+// Sunbeams from a far, still sun: parallel (one slope), each its own width,
+// widening a little as it falls, brightest high up; each dims and brightens
+// on its own as clouds go by, now and then nearly gone
+const sunbeamsSvg = (id, x0, W, k, ytop, ybot, n, seed, slope = 0.42) => {
+  const r = seeded(seed);
+  let t = `<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(ytop)}" x2="0" y2="${f1(ybot)}">` +
+          `<stop offset="0" stop-color="#fff6bf" stop-opacity="1"/><stop offset="1" stop-color="#fff6bf" stop-opacity="0.35"/></linearGradient></defs>`;
+  for (let j = 0; j < n; j++) {
+    const xt = x0 - W * 0.12 + W * (0.06 + (0.98 / n) * j + 0.07 * r(j)), wt = (14 + 56 * r(j + 10)) * k, wb = wt * (1.15 + 0.25 * r(j + 20));
+    const xb = xt + slope * (ybot - ytop), a = 0.14 + 0.2 * r(j + 30), dim = (0.05 + 0.25 * r(j + 40)) * a, dur = 9 + 8 * r(j + 50), begin = -dur * r(j + 60);
+    t += `<polygon points="${f1(xt - wt / 2)},${f1(ytop)} ${f1(xt + wt / 2)},${f1(ytop)} ${f1(xb + wb / 2)},${f1(ybot)} ${f1(xb - wb / 2)},${f1(ybot)}" fill="url(#${id})" opacity="${a.toFixed(2)}" pointer-events="none">` +
+         `<animate attributeName="opacity" values="${a.toFixed(2)};${a.toFixed(2)};${dim.toFixed(3)};${dim.toFixed(3)};${a.toFixed(2)}" keyTimes="0;0.4;0.55;0.68;1" ` +
+         `calcMode="spline" keySplines="0 0 1 1;0.4 0 0.6 1;0 0 1 1;0.4 0 0.6 1" dur="${dur.toFixed(1)}s" begin="${begin.toFixed(1)}s" repeatCount="indefinite"/></polygon>`;
+  }
+  return t;
+};
+// a drift for any drawing of a cloud: slowly there and back, each at its own pace
+const drifting = (inner, i, reach = 30) => `<g><animateTransform attributeName="transform" type="translate" values="0 0;${reach + 12 * (i % 3)} 0;0 0" dur="${24 + 7 * (i % 4)}s" repeatCount="indefinite"/>${inner}</g>`;
 // a cloud that drifts, back and forth, slowly
 const driftingCloud = (x, y, s, i) => `<use href="#bg-cloud" ${tf(x, y, s)}><animateTransform attributeName="transform" type="translate" additive="sum" ` +
   `values="0 0;${30 + 12 * (i % 3)} 0;0 0" dur="${24 + 7 * (i % 4)}s" repeatCount="indefinite"/></use>`;
@@ -3949,8 +4115,8 @@ function mountainsScene(c) {
       pts.push([x1 + pad, base], [x1 + pad, base + 60 * k], [x0 - pad, base + 60 * k]);
       t += `<polygon points="${pts.map(([x, y]) => P2(x, y)).join(" ")}" fill="${fill}"/>`;
       if (snow) for (let i = 2; i < pts.length - 3; i += 2) {
-        const [px, py] = pts[i], d = 0.22 * (base - py);
-        t += `<polygon points="${P2(px, py)} ${P2(px - d * 0.8, py + d)} ${P2(px - d * 0.3, py + d * 0.8)} ${P2(px, py + d * 1.05)} ${P2(px + d * 0.4, py + d * 0.75)} ${P2(px + d * 0.8, py + d)}" fill="#ffffff" opacity="0.92"/>`;
+        const [px, py] = pts[i], [lx, ly] = pts[i - 1], [rx, ry] = pts[i + 1];
+        t += snowCap(px, py, lx, ly, rx, ry, 0.24 * (base - py), i + r * 20);
       }
     });
     return t;
@@ -3974,7 +4140,7 @@ function mountainsScene(c) {
     t += `<polygon points="${[...L, ...Rr.reverse()].join(" ")}" fill="#c9a774"/>`;
     for (let i = 0; i < 9; i++) {
       const x = side(i) * (W * 0.18 + W * 0.28 * R(i, 330)), y = g - 10 * k + 70 * k * R(i, 331), r = (12 + 20 * R(i, 332)) * k;
-      t += `<path d="M${P(x - r, y)} L${P(x - r * 0.6, y - r * 0.8)} L${P(x + r * 0.2, y - r)} L${P(x + r, y - r * 0.3)} L${P(x + r * 1.1, y)} Z" fill="${["#8a8a8a", "#9c9c9c", "#7a7a7a"][i % 3]}" stroke="#5a5a5a" stroke-width="${f1(1.5 * k)}"/>`;
+      t += rockSvg(x, y, r, 330 + i, ["#8a8a8a", "#9c9c9c", "#7a7a7a"][i % 3]) + grassTuft(x + r * 1.3, y + 2 * k, 14 * k, 340 + i, "#6f9a48", 1.8 * k);
     }
     for (let i = 0; i < 8; i++) t += use("bg-pine", side(i) * (W * 0.36 + W * 0.14 * R(i, 333)), g + 30 * k * R(i, 334), k * (0.9 + 0.5 * R(i, 335)), k * (0.9 + 0.5 * R(i, 335)),
       ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
@@ -4000,11 +4166,16 @@ function waterfallScene(c) {
   const top = y0 + H * 0.12, pool = g - 70 * k;
   let s = SEP + part("wf-back", c.F, () => {
     let t = `<defs>${grad("bg-sky", "#9fd8c8", "#e8fff4", y0, g)}</defs>` + all("url(#bg-sky)");
-    // the far jungle, layers of round crowns
+    // the far jungle: layers of leaf pads, a crown here and there standing up
+    // out of them (the shared leafy tree)
+    t += `<defs>${leafyTreeDef("bg-jungle-tree", 81, { wide: 1.3 })}</defs>`;
     for (const [row, fill, yb, n] of [[0, "#5f9a6a", y0 + H * 0.3, 16], [1, "#3f8050", y0 + H * 0.42, 14]])
       for (let i = 0; i < n; i++) {
-        const x = x0 - 20 * k + (W + 40 * k) * i / (n - 1), r = (40 + 25 * R(i + row * 20, 340)) * k;
-        t += `<circle cx="${f1(x)}" cy="${f1(yb + 10 * k * R(i, 341))}" r="${f1(r)}" fill="${fill}"/>`;
+        const x = x0 - 20 * k + (W + 40 * k) * i / (n - 1), r = (40 + 25 * R(i + row * 20, 340)) * k, y = yb + 10 * k * R(i, 341);
+        t += `<rect x="${f1(x - r)}" y="${f1(y)}" width="${f1(2 * r)}" height="${f1(H)}" fill="${fill}"/>` +
+             padSvg(Math.floor(R(i + row * 30, 342) * 8), x, y + r * 0.3, (r / 95) * (R(i, 343) < 0.5 ? -1 : 1), r / 70, fill) +
+             padSvg(Math.floor(R(i + row * 30, 344) * 8), x + r * 0.3, y - r * 0.2, (r / 130), r / 90, mix(fill, "#ffffff", 0.08));
+        if (R(i + row * 40, 345) < 0.25) t += use("bg-jungle-tree", x, y + r * 0.6, r * 3 / 330, r * 3 / 330, ` color="${fill}"`);
       }
     // the cliff, mossy, the falls' lip at its top
     t += `<path d="M${P(-W * 0.34, pool)} L${P(-W * 0.3, top + 40 * k)} Q${P(-W * 0.2, top - 10 * k)} ${P(-W * 0.06, top)} L${P(W * 0.08, top)} Q${P(W * 0.22, top - 12 * k)} ${P(W * 0.3, top + 30 * k)} L${P(W * 0.36, pool)} Z" fill="#6e6a62"/>`;
@@ -4107,7 +4278,7 @@ function campsiteScene(c) {
     const [a, b] = CAMP_SKY[time];
     let t = `<defs>${grad("bg-sky", a, b, y0, g - 100 * k)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)");
     if (time === "day") t += `<circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(34 * k)}" fill="#ffd23f"/>` +
-      [0, 1, 2].map(i => use("bg-cloud", x0 + W * (0.15 + 0.3 * i), y0 + H * (0.1 + 0.05 * (i % 2)), k * 0.7)).join("");
+      [0, 1, 2].map(i => driftingCloud(x0 + W * (0.15 + 0.3 * i), y0 + H * (0.1 + 0.05 * (i % 2)), k * 0.7, i)).join("");
     if (time === "sunset") t += `<circle cx="${f1(-W * 0.2)}" cy="${f1(g - 110 * k)}" r="${f1(46 * k)}" fill="#ff8c42" opacity="0.95"/>`;
     if (night) {
       t += `<circle cx="${f1(x1 - W * 0.16)}" cy="${f1(y0 + H * 0.14)}" r="${f1(28 * k)}" fill="#f4eebc"/><circle cx="${f1(x1 - W * 0.16 + 12 * k)}" cy="${f1(y0 + H * 0.14 - 8 * k)}" r="${f1(24 * k)}" fill="#0b1030"/>`;
@@ -4456,15 +4627,16 @@ function woodpathScene(c) {
       const x = x0 + W * (i + R(i, 404)) / 26, w = (6 + 6 * R(i, 405)) * k;
       t += `<rect x="${f1(x - w / 2)}" y="${f1(y0 - pad)}" width="${f1(w)}" height="${f1(far + 10 * k - y0 + pad)}" fill="#8a7a62" opacity="0.7"/>`;
     }
-    for (let i = 0; i < 22; i++)
-      t += `<circle cx="${f1(x0 + W * i / 21)}" cy="${f1(y0 + H * (0.02 + 0.1 * R(i, 406)))}" r="${f1((50 + 40 * R(i, 407)) * k)}" fill="${["#5c9c63", "#4f8f5a", "#6aa86a"][i % 3]}"/>`;
+    // (a roof of leaf pads, overlapping, a band of green behind them)
+    t += `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(pad + H * 0.06)}" fill="#4f8f5a"/>`;
+    for (let i = 0; i < 30; i++) {
+      const x = x0 - 30 * k + (W + 60 * k) * i / 29, y = y0 + H * (0.04 + 0.1 * R(i, 406)), z = (50 + 40 * R(i, 407)) * k / 80;
+      t += padSvg(Math.floor(R(i, 408) * 8), x, y, z * (R(i, 409) < 0.5 ? -1 : 1), z * 1.2, ["#5c9c63", "#4f8f5a", "#6aa86a"][i % 3]);
+    }
     return t + land(far, 6, "#86a95a", 0.7) + land(g - 80 * k, 8, "#6f9a48", 1.9);
   });
   // the sunbeams, slanting down through the leaves
-  s += SEP + part("wp-beams", c.F, () => [0, 1, 2].map(j => {
-    const xt = x0 + W * (0.2 + 0.25 * j);
-    return `<polygon points="${P2(xt, y0 - 20 * k)} ${P2(xt + 40 * k, y0 - 20 * k)} ${P2(xt - W * 0.12 + 90 * k, g + 40 * k)} ${P2(xt - W * 0.12, g + 40 * k)}" fill="#fff6bf" opacity="0.28" pointer-events="none"/>`;
-  }).join(""));
+  s += SEP + part("wp-beams", c.F, () => sunbeamsSvg("bg-wp-shaft", x0, W, k, y0 - 20 * k, g + 40 * k, 5, 88, -0.3));
   // the path, winding off ahead, narrowing as it goes
   s += SEP + part("wp-path", c.F, () => {
     const L = [], Rr = [];
@@ -4536,18 +4708,17 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     s += `<defs>${grad("bg-sky", "#a9dcf0", "#eef8e2", y0, g)}</defs>` + all("url(#bg-sky)");
     s += land(g - 150 * k, 30, "#b5dc98", 0.5);
     // the far wood: rows of pines
+    s += `<defs>${pineDef("bg-wood-pine0", 51)}${pineDef("bg-wood-pine1", 53)}${leafyTreeDef("bg-wood-big0", 57, { wide: 1.25, h: 340 })}${leafyTreeDef("bg-wood-big1", 61, { wide: 1.2, h: 330 })}</defs>`;
     for (const [row, base, col] of [[0, g - 110 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 60 * k, ["#2f6b3a", "#3c7d45"]]])
       for (let i = 0, x = x0 - 50 * k; x < x1 + 50 * k; i++, x += (row ? 52 : 40) * k) {
-        const h = (row ? 210 : 150) * k * (0.8 + 0.4 * R(i, row)), b = base + 20 * k * R(i, row + 2), w = h * 0.42;
-        s += `<rect x="${f1(x - 4 * k)}" y="${f1(b - 10 * k)}" width="${f1(8 * k)}" height="${f1(14 * k)}" fill="#5d3f24"/>` +
-             `<polygon points="${P(x, b - h)} ${P(x + w / 2, b - 4 * k)} ${P(x - w / 2, b - 4 * k)}" fill="${col[i % 2]}"/>`;
+        const h = (row ? 210 : 150) * k * (0.8 + 0.4 * R(i, row)), b = base + 20 * k * R(i, row + 2);
+        s += use(`bg-wood-pine${i % 2}`, x, b, h / 200 * (R(i, row + 4) < 0.5 ? -1 : 1), h / 200, ` color="${col[i % 2]}"`);
       }
-    // sunshafts, slanting down through the trees onto the meadow
-    for (let j = 0; j < 4; j++) {
-      const xt = x0 + W * (0.12 + 0.2 * j), xb = -W * 0.12 + j * W * 0.09;
-      s += `<polygon points="${P(xt, y0 - pad * 0.1)} ${P(xt + 50 * k, y0 - pad * 0.1)} ${P(xb + 110 * k, g + 20 * k)} ${P(xb - 20 * k, g + 20 * k)}" ` +
-           `fill="#fff6bf" opacity="0.32"/>`;
-    }
+    // sunbeams, slanting down through the trees onto the meadow: the sun is
+    // far off and still, so they run parallel and keep their shapes; each
+    // dims and brightens on its own as clouds go by the sun, now and then
+    // nearly gone, brightest high up and fading toward the grass
+    s += sunbeamsSvg("bg-shaft", x0, W, k, y0 - pad * 0.1, g + 20 * k, 7, 77);
     // the meadow, brightest in the middle where the figure stands
     s += land(g - 30 * k, 10, "#86c95f", 2.1) +
          `<ellipse cx="0" cy="${f1(g + 20 * k)}" rx="${f1(W * 0.42)}" ry="${f1(70 * k)}" fill="#a6e07a"/>`;
@@ -4556,15 +4727,11 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       s += [0, 72, 144, 216, 288].map(a => `<circle cx="${f1(x + 5 * k * Math.cos(a * Math.PI / 180))}" cy="${f1(y + 5 * k * Math.sin(a * Math.PI / 180))}" r="${f1(3.6 * k)}" fill="${c}"/>`).join("") +
            `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(2.6 * k)}" fill="#f2a900"/>`;
     }
-    // big round trees at the sides, nearest of all
+    // big leafy trees at the sides, nearest of all
     for (let i = 0; i < 4; i++) {
       const sd = side(i), x = sd * Math.max(W / 2 - (i < 2 ? 70 : 200) * k, 170 * k), b = g + (i < 2 ? 60 : 30) * k;
-      const sc = i < 2 ? 1.15 : 0.9, cy = b - 270 * k * sc;
-      s += `<path d="M${P(x - 18 * k * sc, b)} Q${P(x - 10 * k * sc, b - 120 * k * sc)} ${P(x - 12 * k * sc, cy)} L${P(x + 12 * k * sc, cy)} ` +
-           `Q${P(x + 10 * k * sc, b - 120 * k * sc)} ${P(x + 18 * k * sc, b)} Z" fill="#6b4728" stroke="#4a301a" stroke-width="${f1(2 * k)}"/>`;
-      for (const [dx, dy, r, c] of [[-60, 10, 70, "#2e7d32"], [60, 10, 70, "#2e7d32"], [0, -50, 85, "#388e3c"],
-                                    [-45, -40, 60, "#43a047"], [45, -45, 60, "#43a047"], [0, 30, 65, "#33873a"]])
-        s += `<circle cx="${f1(x + dx * k * sc)}" cy="${f1(cy + dy * k * sc)}" r="${f1(r * k * sc)}" fill="${c}"/>`;
+      const sc = i < 2 ? 1.15 : 0.9, z = 355 * k * sc / 330;
+      s += use(`bg-wood-big${i % 2}`, x, b, z * -sd, z);
     }
   } else if (kind === "underwater") {
     s += `<defs>${grad("bg-sea", "#6fd6f2", "#0b4f7a", y0, y1)}</defs>` + all("url(#bg-sea)");
@@ -4577,6 +4744,9 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     s += land(g - 70 * k, 40, "#2f6f8f", 1.2) + land(g - 18 * k, 8, "#e6d29a", 0.3);
     for (let i = 0; i < 30; i++)
       s += `<circle cx="${f1(x0 + W * R(i, 9))}" cy="${f1(g - 5 * k + 120 * k * R(i, 10))}" r="${f1(2.2 * k)}" fill="#c9b27a"/>`;
+    // rocks on the bottom, at the sides, weed on some
+    for (let i = 0; i < 5; i++) { const x = side(i) * (W * 0.3 + W * 0.17 * R(i, 15)), y = g + (10 + 60 * R(i, 16)) * k;
+      s += rockSvg(x, y, (16 + 16 * R(i, 17)) * k, 700 + i, ["#5f7f8f", "#6f8a94", "#577584"][i % 3]); }
     // seaweed swaying up from the bottom, along both sides (behind the
     // wreck and the table)
     for (let i = 0; i < 12; i++) {
@@ -4670,21 +4840,17 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     const cloud = (x, y, sc) => [[0, 0, 26], [-26, 6, 18], [26, 6, 20], [-12, -12, 18], [12, -14, 20], [40, 10, 14], [-40, 10, 12]]
       .map(([dx, dy, r]) => `<circle cx="${f1(x + dx * sc * k)}" cy="${f1(y + dy * sc * k)}" r="${f1(r * sc * k)}" fill="#ffffff"/>`).join("") +
       `<ellipse cx="${f1(x)}" cy="${f1(y + 16 * sc * k)}" rx="${f1(52 * sc * k)}" ry="${f1(8 * sc * k)}" fill="#e6eef6"/>`;
-    for (let i = 0; i < 5; i++) s += cloud(x0 + W * (0.08 + 0.21 * i + 0.05 * R(i, 60)), y0 + H * (0.08 + 0.14 * R(i, 61)), 0.8 + 0.6 * R(i, 62));
+    for (let i = 0; i < 5; i++) s += drifting(cloud(x0 + W * (0.08 + 0.21 * i + 0.05 * R(i, 60)), y0 + H * (0.08 + 0.14 * R(i, 61)), 0.8 + 0.6 * R(i, 62)), i, 30 * k);
     s += land(g - 150 * k, 26, "#8fcf7a", 0.3) + land(g - 105 * k, 18, "#76bd62", 1.7);
-    // trees far off: dark yews like flames, and round leafy ones
+    // trees far off: dark yews, tall and narrow, and leafy ones (the shared
+    // pines and leafy trees, as everywhere)
+    s += `<defs>${pineDef("bg-yew", 71, { tiers: 6 })}${leafyTreeDef("bg-cem-oak", 73)}</defs>`;
     for (let i = 0; i < 9; i++) {
       const x = x0 + W * (i + 0.5 * R(i, 63)) / 9, b = g - 95 * k + 10 * k * R(i, 64);
-      if (R(i, 65) < 0.5) {
-        const h = (110 + 60 * R(i, 66)) * k, w = h * 0.32;
-        s += `<path d="M${P(x, b - h)} Q${P(x + w * 0.9, b - h * 0.55)} ${P(x + w / 2, b)} L${P(x - w / 2, b)} Q${P(x - w * 0.9, b - h * 0.55)} ${P(x, b - h)} Z" fill="#2f5d3a"/>` +
-             `<path d="M${P(x - w * 0.1, b - h * 0.85)} Q${P(x + w * 0.3, b - h * 0.5)} ${P(x + w * 0.15, b - h * 0.1)}" fill="none" stroke="#3f7a4a" stroke-width="${f1(3 * k)}"/>`;
-      } else {
-        const r = (30 + 16 * R(i, 66)) * k;
-        s += `<rect x="${f1(x - 4 * k)}" y="${f1(b - r * 1.2)}" width="${f1(8 * k)}" height="${f1(r * 1.2)}" fill="#6b4a2b"/>` +
-             [[0, -1.6, 1], [-0.7, -1.2, 0.75], [0.7, -1.2, 0.75]].map(([dx, dy, rr]) =>
-               `<circle cx="${f1(x + dx * r)}" cy="${f1(b + dy * r)}" r="${f1(rr * r)}" fill="${R(i, 67) < 0.5 ? "#5aa04a" : "#6cb85a"}"/>`).join("");
-      }
+      if (R(i, 65) < 0.5) { const h = (110 + 60 * R(i, 66)) * k;
+        s += use("bg-yew", x, b, h / 200 * 0.62, h / 200, ` color="#2f5d3a"`); }
+      else { const r = (30 + 16 * R(i, 66)) * k;
+        s += use("bg-cem-oak", x, b, (r * 2.8 / 330) * (R(i, 68) < 0.5 ? -1 : 1), r * 2.8 / 330, ` color="#5aa04a"`); }
     }
     // the grass
     s += land(g - 62 * k, 6, "#7cc66a", 2.4);
@@ -4750,9 +4916,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
              return `<path d="M${P(sx, tb - th * 0.86)} Q${P(sx + (j - 7) * 2 * k, tb - th * 0.6)} ${P(sx + (j - 7) * 3 * k, tb - th * 0.86 + len)}" fill="none" stroke="${j % 2 ? "#7fb35e" : "#9ccc78"}" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`; }).join("");
     }
     // bushes, some in flower
-    const bush = (x, b, r, fl) => [[-0.7, -0.5, 0.7], [0.7, -0.5, 0.7], [0, -0.9, 0.85]].map(([dx, dy, rr]) =>
-        `<circle cx="${f1(x + dx * r)}" cy="${f1(b + dy * r)}" r="${f1(rr * r)}" fill="#3f8a3f"/>`).join("") +
-      (fl ? [...Array(7)].map((_, j) => `<circle cx="${f1(x + (R(j, x | 0) - 0.5) * 1.6 * r)}" cy="${f1(b - (0.3 + 1.1 * R(j + 9, x | 0)) * r)}" r="${f1(3 * k)}" fill="${fl}"/>`).join("") : "");
+    const bush = (x, b, r, fl) => bushSvg(x, b, r * 1.5, (x | 0) + 500, fl ? { flowers: [fl] } : {});
     // the near stones and bushes, at the sides
     for (const [fx, dy, h, kd, seed] of [[-0.36, 30, 215, "deer", 6], [-0.2, 4, 62, "head", 7], [0.26, 6, 120, "cross", 8], [0.44, 26, 80, "head", 9]])
       s += stone(W * fx, g + dy * k, h * k, kd, seed);
@@ -4888,7 +5052,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     s += land(g - 40 * k, 8, "#4a3a2a", 1.9);
     for (let i = 0; i < 22; i++) {
       const x = x0 + W * R(i, 41), y = g - 30 * k + 120 * k * R(i, 42);
-      s += `<path d="M${P(x - 7 * k, y)} L${P(x - 3 * k, y - 12 * k)} L${P(x, y)} L${P(x + 3 * k, y - 14 * k)} L${P(x + 7 * k, y)} Z" fill="#3d5a2a"/>`;
+      s += grassTuft(x, y, (12 + 8 * R(i, 43)) * k, 600 + i, "#3d5a2a", 1.8 * k);
     }
     // a palisade across the middle: pointed stakes side by side, a skull
     // on every fourth one (the skulls drawn after the whole fence, so a big
