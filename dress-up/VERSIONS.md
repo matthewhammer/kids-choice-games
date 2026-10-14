@@ -2,9 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.28 (2026-10-14)
 
-Changes since 0.0.27, for the next version, which waits for Matthew's go-ahead.
+Everything in 0.0.27, with the ducks swimming forward.
 
 - **🦆 Ducks swim forward:** in 0.0.27 a duck paddled out and then came back the same way facing, as if swimming backwards. Now it swims out, pauses to turn round, and swims back facing where it goes, then turns again.
 
