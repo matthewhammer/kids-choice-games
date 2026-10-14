@@ -36,6 +36,9 @@
   .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .tabs button { font-weight: 600; }
   .tabs button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .tabs .repo-chip { align-self: center; padding: 3px 9px; border: 1px dashed var(--line); border-radius: 12px;
+                     color: var(--muted); font-size: 0.8em; text-decoration: none; }
+  .tabs .repo-chip:hover, .tabs .repo-chip:focus-visible { color: var(--ink); border-color: var(--muted); }
   .panel { background: var(--panel); border-radius: 18px; padding: 12px 14px; border: 2px solid var(--line); }
   .ctl { margin: 10px 0; }
   .ctl > .lbl { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
@@ -6851,10 +6854,18 @@ function showTab() {
   syncs = []; mixLights = null;
   const tabs = document.getElementById("tabs"), panel = document.getElementById("panel");
   tabs.replaceChildren(...TABS.map(([name], i) =>
-    el("button", { "aria-pressed": i === tab, onclick: () => { tab = i; showTab(); } }, name)));
+    el("button", { "aria-pressed": i === tab, onclick: () => { tab = i; showTab(); } }, name)),
+    repoChip());
   const [, part, ctls] = TABS[tab];
   panel.replaceChildren(...ctls.map(c => control(part, c)));
   changed();
+}
+
+// The game's code on GitHub: a quiet last chip after the tabs, in a new tab
+// so the game keeps its place.
+function repoChip() {
+  return el("a", { class: "repo-chip", href: "https://github.com/matthewhammer/kids-choice-games",
+    target: "_blank", rel: "noopener", title: "This game's code, on GitHub" }, "GitHub ↗");
 }
 
 // ===================== FULL SCREEN =====================

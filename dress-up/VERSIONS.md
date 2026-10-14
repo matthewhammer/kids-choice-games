@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.22, for the next version, which waits for Matthew's go-ahead.
+
+- **The game's code, one chip away:** a quiet "GitHub ↗" chip after 🎵 Music, last in the row of tabs, opens the game's repository (matthewhammer/kids-choice-games) in a new tab, so the game keeps its place.
+
 ## 0.0.22 (2026-10-14)
 
 Everything in 0.0.21, plus LFOs on the drums' pitch, and bongos that sing.
