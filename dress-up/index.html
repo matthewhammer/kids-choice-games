@@ -227,7 +227,7 @@ const DEFAULTS = {
   pants: { style: "long", color: "#34495e", pattern: "plain", patternSize: 14, patternColor: "auto", skirtLen: 50 },
   undies: { on: false, style: "trunks", top: false, color: "#3b82f6", pattern: "plain", patternSize: 14,
             patternColor: "auto" },
-  shoes: { style: "sneaker", different: false, size: 100, color: "#c0392b", toes: 5, alienToes: 3 },
+  shoes: { style: "sneaker", different: false, size: 100, color: "#c0392b", toes: 5, alienToes: 3, talonCount: 4 },
   // the figure's size and place in a background scene (dragged there)
   background: { kind: "none", figSize: 100, figX: 0, figY: 0, chickenLegs: false, legSize: 100, hutNear: 0,
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false,
@@ -286,7 +286,7 @@ DEFAULTS.rightHand = Object.fromEntries(HAND_OWN.map(k => [k, DEFAULTS.hands[k]]
 // The feet the same way: with different feet, "shoes" holds the friend's
 // left foot's (on our right: they face us), and "rightShoe" their right
 // foot's; the color and the size are both feet's.
-const SHOE_OWN = ["style", "toes", "alienToes"];
+const SHOE_OWN = ["style", "toes", "alienToes", "talonCount"];
 DEFAULTS.rightShoe = Object.fromEntries(SHOE_OWN.map(k => [k, DEFAULTS.shoes[k]]));
 // before 0.0.15 there were three toed styles, each with its own count
 function upgradeFeet(st, saved) {
@@ -1526,18 +1526,37 @@ function alienToes(n) {
   }
   return { sole: [6, 14, 14, 10], tip, toes };
 }
+// A bird's foot with n talons (1 to 100): one toe back and the rest
+// forward, fanned wider and thinner as there are more, each with its hooked
+// claw; four are the foot drawn above (three forward, one back).
+function talonToes(n) {
+  n = Math.max(1, Math.min(100, Math.round(n)));
+  if (n === 4) return TOED.talons;
+  const k = n >= 2 ? n - 1 : 1, half = k <= 1 ? 0 : Math.min(150, 17 + Math.max(0, k - 3) * 5), step = k > 1 ? 2 * half / (k - 1) : 0;
+  const w = Math.max(0.6, Math.min(3.6, Math.sin(Math.max(step, 6) * Math.PI / 360) * 32 * 0.75)), toes = [];
+  for (let i = 0; i < k; i++) {
+    const u = k > 1 ? i / (k - 1) : 0.5, a = (-half + 2 * half * u) * Math.PI / 180, len = 34 - 7 * Math.abs(2 * u - 1);
+    toes.push([6, 17, +(6 + len * Math.cos(a)).toFixed(1), +(17 + len * Math.sin(a)).toFixed(1), +w.toFixed(2)]);   // (numbers: a talon's claw is reckoned from them)
+  }
+  if (n >= 2) toes.push([2, 18, -14, 24, Math.min(3.2, w + 0.4)]);
+  return { sole: [4, 16, 10, 8], talon: true, toes };
+}
 // what a foot's toes are, if it has toes
-const toesOf = sh => sh.style === "human" ? humanToes(sh.toes ?? 5) : sh.style === "alien" ? alienToes(sh.alienToes ?? 3) : TOED[sh.style];
-// how far a foot reaches out from the ankle (toes counted), in shoe units
+const toesOf = sh => sh.style === "human" ? humanToes(sh.toes ?? 5) : sh.style === "alien" ? alienToes(sh.alienToes ?? 3)
+                   : sh.style === "talons" ? talonToes(sh.talonCount ?? 4) : TOED[sh.style];
+// the feet whose toes are counted (their reach follows the count)
+const COUNTED_FEET = { human: 1, alien: 1, talons: 1 };
+// how far a foot reaches out from the ankle (toes counted, and a talon's
+// claw past its toe), in shoe units
 const footReach = sh => {
-  const T = (sh.style === "human" || sh.style === "alien") && toesOf(sh);
-  return T ? Math.max(...T.toes.map(([, , x2, , w]) => +x2 + w + (T.tip || 0))) : FOOT_REACH[sh.style] ?? 76;
+  const T = COUNTED_FEET[sh.style] && toesOf(sh);
+  return T ? Math.max(...T.toes.map(([, , x2, , w]) => +x2 + w + (T.tip || 0) + (T.talon ? 13 : 0))) : FOOT_REACH[sh.style] ?? 76;
 };
 // and how far its toes reach down below the ankle (many toes fan round
 // the foot, past its sole), in shoe units
 const footDown = sh => {
-  const T = (sh.style === "human" || sh.style === "alien") && toesOf(sh);
-  return T ? Math.max(...T.toes.map(([, , , y2, w]) => +y2 + w + (T.tip || 0))) : 0;
+  const T = COUNTED_FEET[sh.style] && toesOf(sh);
+  return T ? Math.max(...T.toes.map(([, , , y2, w]) => +y2 + w + (T.tip || 0) + (T.talon ? 13 : 0))) : 0;
 };
 function toedFoot(x, y, side, sc, skin, T) {
   const st = darker(skin), lw = 2.5 / sc;
@@ -4643,8 +4662,9 @@ const SHOE_CTLS = [
   ["choice", "style", "style", FOOT_STYLES],
   ["range", "toes", "🦶 number of toes", 1, 100, 4, 6],
   ["range", "alienToes", "👽 number of alien toes", 1, 100, 2, 6],
+  ["range", "talonCount", "🦅 number of talons", 1, 100, 3, 6],
 ];
-const FOOT_SLIDER_STYLE = { toes: "human", alienToes: "alien" };
+const FOOT_SLIDER_STYLE = { toes: "human", alienToes: "alien", talonCount: "talons" };
 const HAND_STYLES = [["round", "round"], ["mitten", "mittens"], ["star", "stars"], ["claw", "claws"],
                      ["human", "✋ human"], ["alien", "👽 alien"]];
 // one hand's own controls: its style, and the sliders for each style
@@ -5017,6 +5037,7 @@ const SHOWN_WHEN = {
   "shoes.rightShoe": sh => !!sh.different,
   "shoes.toes": sh => !sh.different && sh.style === "human",
   "shoes.alienToes": sh => !sh.different && sh.style === "alien",
+  "shoes.talonCount": sh => !sh.different && sh.style === "talons",
   "undies.style": u => u.on,
   "undies.top": u => u.on && u.style !== "onepiece",
   "undies.color": u => u.on,

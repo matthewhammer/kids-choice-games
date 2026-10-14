@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.16 (2026-10-13)
+
+Everything in 0.0.15, plus as many talons as you like.
+
+- **🦅 Talons, 1 to 100,** like the toes, each foot its own: one talon back and the rest forward, fanned wider and thinner as there are more, each with its hooked claw (4 looks as it always did).
+
 ## 0.0.15 (2026-10-13)
 
 Everything in 0.0.14, plus doorways between the scenes, feet as free as the hands, and tree houses in colors of your own.
