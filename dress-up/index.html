@@ -107,6 +107,11 @@
   .mixer p.now { margin: 0; color: var(--muted); }
   .strip { border: 2px solid var(--line); border-radius: 12px; padding: 6px 8px; font-size: 0.85em; }
   .strip.master { border-style: dashed; }
+  /* a set of chips in a dashed box of its own, with its name (the music's
+     kinds, then the kind's tunes), as the mixing board's master strip */
+  .chipset { border: 2px dashed var(--line); border-radius: 12px; padding: 6px 8px; }
+  .chipset + .chipset { margin-top: 6px; }
+  .chipset > .cap { color: var(--muted); font-size: 0.85em; margin-bottom: 4px; }
   .strip.dim { opacity: 0.45; }
   .strip-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
   .strip-name { flex: 1 1 auto; font-weight: 600; }
@@ -6203,7 +6208,12 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // two rows of chips: the kind of music (or the scene's own tune), then
     // that kind's tunes; picking a kind plays its first tune, unless the
     // tune playing is already of that kind
+    // (each row in a dashed box with its name, so the kinds and the tunes
+    // read apart)
     const kinds = el("div", { class: "row" }), tunes = el("div", { class: "row" });
+    const tuneCap = el("div", { class: "cap" });
+    const kindBox = el("div", { class: "chipset" }, [el("div", { class: "cap" }, "kind of music"), kinds]);
+    const tuneBox = el("div", { class: "chipset" }, [tuneCap, tunes]);
     const kindBtns = [["scene", "🏞️ the scene's own"], ...TUNE_GROUPS.map(([g, text]) => [g, text])].map(([g, text]) => {
       const b = el("button", { onclick: () => {
         if (g === "scene") return set(part, key, "scene");
@@ -6212,7 +6222,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       } }, text);
       kinds.append(b); return [g, b];
     });
-    box.append(kinds, tunes);
+    box.append(kindBox, tuneBox);
     let shownKind, tuneBtns = [];
     syncs.push(() => {
       const now = state[part][key], g = groupOfTune(now);
@@ -6222,7 +6232,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         const list = g && g !== "scene" ? TUNE_GROUPS.find(x => x[0] === g)[2] : [];
         tuneBtns = list.map(id => [id, el("button", { onclick: () => set(part, key, id) }, TUNES[id].name)]);
         tunes.replaceChildren(...tuneBtns.map(([, b]) => b));
-        tunes.hidden = !tuneBtns.length;
+        tuneBox.hidden = !tuneBtns.length;
+        tuneCap.textContent = tuneBtns.length ? `tunes: ${TUNE_GROUPS.find(x => x[0] === g)[1]}` : "";
       }
       for (const [v, b] of tuneBtns) b.setAttribute("aria-pressed", v === now);
     });

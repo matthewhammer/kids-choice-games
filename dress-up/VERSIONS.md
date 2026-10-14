@@ -5,6 +5,7 @@ Each version lists the game's features as of that version. The newest version is
 ## Unreleased
 
 - **👻 Visibility:** a new panel with a slider for how much of each part of the body shows (100 all of it, 0 none): 🙂 head, 👀 eyes, 💇 hair, 👕 shirt, 👖 pants, 👟 feet and 🖐 hands. Above them, three chips set every part at once: 🫥 invisible, 🙂 visible and 👻 ghost (every part half there). An invisible shirt is an invisible body (the neck and arms too), and invisible pants are invisible hips and legs: parts turn ghostly or vanish, the clothes never come off. The eyes go on their own, so an invisible head can keep its eyes, floating; things held or worn on the side (a witch's cat and broom) stay. A ghost is evenly see-through, even where a part is drawn twice (the arms go behind the hair and again over the face), and its shadow fades with it. 🎲 Surprise leaves what shows alone.
+- **🎶 The music's chips in boxes:** the kinds of music and the kind's tunes each sit in a dashed box with its name ("kind of music", "tunes: 🥁 classic beats"), so the two rows read apart.
 
 ## 0.0.20 (2026-10-14)
 
