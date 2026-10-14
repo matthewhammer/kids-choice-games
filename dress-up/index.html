@@ -97,6 +97,10 @@
   .mute-btn { position: absolute; top: 8px; left: 8px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
               background: var(--panel); opacity: 0.9; }
   body.big .mute-btn { top: 16px; left: 16px; }
+  /* back through the last doorway, after a trip through one */
+  .back-btn { position: absolute; bottom: 8px; left: 8px; padding: 0 10px; font-size: 1.15em; line-height: 1.6;
+              background: var(--panel); opacity: 0.92; }
+  body.big .back-btn { bottom: auto; top: 16px; left: 66px; }
   .ctl > p.now { margin: 0; color: var(--muted); }
   /* the mixing board: a strip for each part, the whole tune's first */
   .mixer { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 4px; }
@@ -151,6 +155,10 @@
   .hud .ctl.min > .lbl { margin: 0; }
   .hud svg.place { max-width: 130px; }
   .hud .ctl.min svg.place { display: none; }
+  /* a doorway into another scene (a picture, a window, a tree house, a
+     door) glows under the pointer; a click goes through it */
+  #bg .portal { cursor: pointer; }
+  #bg .portal:hover { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f) brightness(1.08); }
 </style>
 </head>
 <body>
@@ -161,6 +169,7 @@
       <svg id="pic" xmlns="http://www.w3.org/2000/svg"></svg>
       <button class="max-btn" id="max" title="Full screen" aria-label="Full screen">⤢</button>
       <button class="mute-btn" id="mute" title="Music on or off" aria-label="Music on or off" hidden>🔊</button>
+      <button class="back-btn" id="back" hidden></button>
       <button class="hud-btn" id="hud-btn" title="Show the pinned controls" aria-label="Show the pinned controls" aria-pressed="false">🎛️</button>
       <div class="hud" id="hud" hidden></div>
     </div>
@@ -192,6 +201,14 @@
 
 // ===================== STATE =====================
 
+// Each tree house's own colors, for the kinds of house that have them: a
+// cat's (a tuxedo cat to start), a fancy house's, a craftsman's. Kept per
+// house: house3's cat can be orange while house5's is a tuxedo.
+const HOUSE_COLOR_DEFAULTS = {
+  cat: { catFur: "#1f1f22", catWhite: "#ffffff", catEyes: "#c6d43a" },
+  fancy: { fancyWalls: "#d9c3e6", fancyRoof: "#6a4c93", fancyTrim: "#ffffff" },
+  craftsman: { craftWalls: "#9aa982", craftRoof: "#5a3e2b", craftTrim: "#f4efe6", craftGable: "#c9b27a" },
+};
 const DEFAULTS = {
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
            stars: false, hearts: false, xeyes: false, unibrow: true, eyes: 50, sides: 0,
@@ -210,7 +227,7 @@ const DEFAULTS = {
   pants: { style: "long", color: "#34495e", pattern: "plain", patternSize: 14, patternColor: "auto", skirtLen: 50 },
   undies: { on: false, style: "trunks", top: false, color: "#3b82f6", pattern: "plain", patternSize: 14,
             patternColor: "auto" },
-  shoes: { style: "sneaker", size: 100, color: "#c0392b" },
+  shoes: { style: "sneaker", different: false, size: 100, color: "#c0392b", toes: 5, alienToes: 3 },
   // the figure's size and place in a background scene (dragged there)
   background: { kind: "none", figSize: 100, figX: 0, figY: 0, chickenLegs: false, legSize: 100, hutNear: 0,
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false,
@@ -218,6 +235,7 @@ const DEFAULTS = {
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,
                 houses: 4, bridges: 2, ladders: 3, leaves: 60,
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
+                ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
                 room: "bunks", windowSize: 100, things: 10,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
                 pic1: "lake", pic2: "beach", pic3: "livingroom", pic4: "forest", pic5: "treehouse", pic6: "underwater",
@@ -265,6 +283,19 @@ function upgradeRightHand(st, saved) {
 const HAND_OWN = ["style", "fingers", "alienFingers", "clawLen", "clawCount", "starPoints", "starAngle",
                   "mittenAngle", "clawAngle", "humanAngle", "alienAngle"];
 DEFAULTS.rightHand = Object.fromEntries(HAND_OWN.map(k => [k, DEFAULTS.hands[k]]));
+// The feet the same way: with different feet, "shoes" holds the friend's
+// left foot's (on our right: they face us), and "rightShoe" their right
+// foot's; the color and the size are both feet's.
+const SHOE_OWN = ["style", "toes", "alienToes"];
+DEFAULTS.rightShoe = Object.fromEntries(SHOE_OWN.map(k => [k, DEFAULTS.shoes[k]]));
+// before 0.0.15 there were three toed styles, each with its own count
+function upgradeFeet(st, saved) {
+  if (!(saved && saved.rightShoe)) for (const k of SHOE_OWN) st.rightShoe[k] = st.shoes[k];
+  for (const f of [st.shoes, st.rightShoe]) {
+    if (f.style === "toes5") { f.style = "human"; f.toes = 5; }
+    if (f.style === "alien4" || f.style === "alien3") { f.alienToes = f.style === "alien4" ? 4 : 3; f.style = "alien"; }
+  }
+}
 // the music: the background's own tune (none without one) or a chosen one;
 // the volume and mute belong to the device, not the friend: Load and Start
 // over keep them
@@ -275,6 +306,7 @@ try {
   if (saved) for (const k of Object.keys(DEFAULTS)) state[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
   upgradeHands(state.hands);
   upgradeRightHand(state, saved);
+  upgradeFeet(state, saved);
   upgradeFace(state.face, saved.face);
   // pants length moved to the legs (leg length)
   if (saved && saved.pants && saved.pants.length && !(saved.body && saved.body.legLen))
@@ -1461,8 +1493,54 @@ const TOED = {
 // so the picture's frame can hold big feet (and big shoes).
 const FOOT_REACH = { sneaker: 46, boot: 44, clown: 76, bare: 36, paw: 40, hoof: 34, witchboot: 58,
                      toes5: 44, alien4: 52, alien3: 62, talons: 56 };
-function toedFoot(x, y, side, sc, skin, style) {
-  const T = TOED[style], st = darker(skin), lw = 2.5 / sc;
+// A human foot with n toes (1 to 100), as the hands have n fingers: the
+// toes along the front of the foot, the big toe first and longest; past
+// five they fan further round it, thinner, to a fringe at 100. Five toes
+// are the foot drawn above.
+function humanToes(n) {
+  n = Math.max(1, Math.min(100, Math.round(n)));
+  if (n === 5) return TOED.toes5;
+  const lo = n <= 5 ? -45 : -45 - Math.min(110, (n - 5) * 3), hi = n <= 5 ? 50 : 50 + Math.min(110, (n - 5) * 3);
+  const toes = [];
+  for (let i = 0; i < n; i++) {
+    const t = n > 1 ? i / (n - 1) : 0.25, th = (lo + (hi - lo) * t) * Math.PI / 180, d = th * (n <= 5 ? 0.45 : 0.7);
+    const bx = 14 + 16 * Math.cos(th), by = 16 + 8 * Math.sin(th), len = 14 - 4 * t;
+    const w = Math.max(0.45, (3.2 - 1.1 * t) * Math.pow(Math.min(1, 5 / n), 0.8));
+    toes.push([f1(bx), f1(by), f1(bx + len * Math.cos(d)), f1(by + len * Math.sin(d)), +w.toFixed(2)]);
+  }
+  return { sole: [14, 16, 20, 10], toes };
+}
+// An alien foot with n long thin toes (1 to 100), round pads at their
+// ends, fanned forward from a small sole, wider as there are more; three
+// and four are the feet drawn above.
+function alienToes(n) {
+  n = Math.max(1, Math.min(100, Math.round(n)));
+  if (n === 3) return TOED.alien3;
+  if (n === 4) return TOED.alien4;
+  const half = n <= 1 ? 0 : Math.min(170, 20 + (n - 3) * 6), step = n > 1 ? 2 * half / (n - 1) : 0;
+  const chord = Math.sin(Math.max(step, 8) * Math.PI / 360) * 40;
+  const w = Math.max(0.5, Math.min(2.6, chord * 0.35)), tip = Math.max(1, Math.min(6, chord * 0.6)), toes = [];
+  for (let i = 0; i < n; i++) {
+    const a = (n > 1 ? -half + i * step : 0) * Math.PI / 180, len = 44 - 8 * Math.abs(n > 1 ? (i / (n - 1)) * 2 - 1 : 0);
+    toes.push([8, 14, f1(8 + len * Math.cos(a)), f1(14 + len * Math.sin(a)), +w.toFixed(2)]);
+  }
+  return { sole: [6, 14, 14, 10], tip, toes };
+}
+// what a foot's toes are, if it has toes
+const toesOf = sh => sh.style === "human" ? humanToes(sh.toes ?? 5) : sh.style === "alien" ? alienToes(sh.alienToes ?? 3) : TOED[sh.style];
+// how far a foot reaches out from the ankle (toes counted), in shoe units
+const footReach = sh => {
+  const T = (sh.style === "human" || sh.style === "alien") && toesOf(sh);
+  return T ? Math.max(...T.toes.map(([, , x2, , w]) => +x2 + w + (T.tip || 0))) : FOOT_REACH[sh.style] ?? 76;
+};
+// and how far its toes reach down below the ankle (many toes fan round
+// the foot, past its sole), in shoe units
+const footDown = sh => {
+  const T = (sh.style === "human" || sh.style === "alien") && toesOf(sh);
+  return T ? Math.max(...T.toes.map(([, , , y2, w]) => +y2 + w + (T.tip || 0))) : 0;
+};
+function toedFoot(x, y, side, sc, skin, T) {
+  const st = darker(skin), lw = 2.5 / sc;
   const [sx, sy, srx, sry] = T.sole;
   const layer = (fill, grow) =>
     `<ellipse cx="${sx}" cy="${sy}" rx="${f1(srx + grow)}" ry="${f1(sry + grow)}" fill="${fill}"/>` +
@@ -1501,7 +1579,8 @@ function shoeSvg(x, y, side, sh, skin) {
   if (sh.style === "bare")
     return `<ellipse cx="${f1(x + side * 12 * sc)}" cy="${f1(y + 8 * sc)}" rx="${f1(22 * sc)}" ry="${f1(10 * sc)}" ` +
            `fill="${skin}" stroke="${darker(skin)}" stroke-width="2.5"/>`;
-  if (TOED[sh.style]) return toedFoot(x, y, side, sc, skin, sh.style);
+  const T = toesOf(sh);
+  if (T) return toedFoot(x, y, side, sc, skin, T);
   const ps = SHOES[sh.style].map(([dx, dy]) => [x + side * dx * sc, y + dy * sc]);
   let s = poly(ps, sh.color, darker(sh.color));
   if (sh.style === "sneaker")
@@ -1953,8 +2032,8 @@ function houseScene(c) {
     t += `<circle cx="-60" cy="-338" r="15" fill="#bfe3f5" stroke="#ffffff" stroke-width="4"/>` +
          [-180, -60, 60].map(x => winSvg(x, -255, 48, 60)).join("") + [-170, 50].map(x => winSvg(x, -122, 58, 72)).join("") +
          // the front door, its little roof and its step
-         `<rect x="-86" y="-112" width="52" height="112" fill="#ffffff"/><rect x="-81" y="-107" width="42" height="107" fill="#7a1f1f"/>` +
-         `<rect x="-72" y="-96" width="24" height="18" fill="#bfe3f5"/><circle cx="-46" cy="-50" r="3.5" fill="#f2c12e"/>` +
+         `<g class="portal" data-to="livingroom"><rect x="-86" y="-112" width="52" height="112" fill="#ffffff"/><rect x="-81" y="-107" width="42" height="107" fill="#7a1f1f"/>` +
+         `<rect x="-72" y="-96" width="24" height="18" fill="#bfe3f5"/><circle cx="-46" cy="-50" r="3.5" fill="#f2c12e"/></g>` +
          `<polygon points="-100,-114 -20,-114 -60,-142" fill="#3d2b22"/><rect x="-96" y="0" width="72" height="9" fill="#9a958b"/>` +
          `<circle cx="-100" cy="-90" r="5" fill="#ffe9a8" stroke="#555" stroke-width="1.5"/>`;
     // the garage on the right
@@ -1992,30 +2071,49 @@ const TREE_SLOTS = [[-245, -250, "fox"], [250, -290, "owl"], [-195, -420, "frog"
 // animal's head, its face above the door. One cabin drawn once (its walls
 // the color of its <use>), one eye drawn once, and a head for each animal.
 const HOUSE_WALLS = { fox: "#e09a5a", owl: "#b98a5a", frog: "#9cc27a", bunny: "#f2c9d6", bear: "#a8713d", cat: "#a79bbd",
-                      cabin: "#c98f55", fancy: "#d9c3e6", craftsman: "#9aa982" };
+                      cabin: "#c98f55" };
 const houseEye = (x, y, r = 1) => `<use href="#bg-eye" ${tf(x, y, r)}/>`;
 // and three houses that are only houses: a cabin (a plain gable), a fancy
 // house (a steep scalloped roof, lacy trim, a finial, flower boxes) and a
 // craftsman (a low wide gable, rafter tails, braces, tapered porch posts)
 const scallops = (x0, x1, y, r, fill) => { let d = ""; for (let x = x0; x < x1 - 1; x += 2 * r) d += `M${x} ${y} a${r} ${r} 0 0 0 ${2 * r} 0 `; return `<path d="${d}" fill="${fill}"/>`; };
 const HOUSE_STYLES = {
-  cabin: `<polygon points="-66,-96 66,-96 0,-152" fill="#d64545" stroke="#00000055" stroke-width="2"/>` +
+  cabin: () => `<polygon points="-66,-96 66,-96 0,-152" fill="#d64545" stroke="#00000055" stroke-width="2"/>` +
          `<rect x="30" y="-150" width="14" height="34" fill="#8e3b2e"/><rect x="-10" y="-130" width="20" height="18" fill="#bfe3f5" stroke="#ffffff" stroke-width="3"/>`,
-  fancy: `<polygon points="-70,-96 70,-96 0,-184" fill="#6a4c93" stroke="#3e2a5a" stroke-width="2"/>` +
-         [-110, -124, -138, -152, -166].map(y => { const half = (y + 184) / 88 * 70; return `<path d="${[...Array(Math.max(1, Math.floor(half / 7)))].map((_, j) => `M${f1(-half + j * 14)} ${y} a7 7 0 0 0 14 0`).join(" ")}" fill="none" stroke="#8a6cb3" stroke-width="2"/>`; }).join("") +
-         scallops(-70, 70, -96, 5, "#ffffff") + `<circle cx="0" cy="-132" r="13" fill="#bfe3f5" stroke="#ffffff" stroke-width="4"/><path d="M0 -145 V-119 M-13 -132 H13" stroke="#ffffff" stroke-width="2"/>` +
+  fancy: ({ fancyRoof: r, fancyTrim: t }) => `<polygon points="-70,-96 70,-96 0,-184" fill="${r}" stroke="${darker(r)}" stroke-width="2"/>` +
+         [-110, -124, -138, -152, -166].map(y => { const half = (y + 184) / 88 * 70; return `<path d="${[...Array(Math.max(1, Math.floor(half / 7)))].map((_, j) => `M${f1(-half + j * 14)} ${y} a7 7 0 0 0 14 0`).join(" ")}" fill="none" stroke="${mix(r, "#ffffff", 0.2)}" stroke-width="2"/>`; }).join("") +
+         scallops(-70, 70, -96, 5, t) + `<circle cx="0" cy="-132" r="13" fill="#bfe3f5" stroke="${t}" stroke-width="4"/><path d="M0 -145 V-119 M-13 -132 H13" stroke="${t}" stroke-width="2"/>` +
          `<line x1="0" y1="-184" x2="0" y2="-206" stroke="#f2c12e" stroke-width="3"/><circle cx="0" cy="-208" r="5" fill="#f2c12e"/>` +
-         [-1, 1].map(sd => `<rect x="${sd * 34 - 14}" y="-54" width="28" height="7" fill="#ffffff"/>` +
+         [-1, 1].map(sd => `<rect x="${sd * 34 - 14}" y="-54" width="28" height="7" fill="${t}"/>` +
            [-8, 0, 8].map((dx, j) => `<circle cx="${sd * 34 + dx}" cy="-56" r="3.5" fill="${["#e85d75", "#f2c12e", "#e53935"][j]}"/>`).join("")).join(""),
-  craftsman: `<polygon points="-80,-96 80,-96 0,-140" fill="#5a3e2b" stroke="#3a2414" stroke-width="2"/>` +
-             `<polygon points="-56,-100 56,-100 0,-130" fill="#c9b27a"/>` + [-40, -24, -8, 8, 24, 40].map(x => `<line x1="${x}" y1="-100" x2="${x}" y2="${f1(-100 - 30 * (1 - Math.abs(x) / 56))}" stroke="#8a7748" stroke-width="2"/>`).join("") +
-             `<rect x="-18" y="-118" width="36" height="12" fill="#f2e6b5" stroke="#ffffff" stroke-width="2"/><path d="M-6 -118 V-106 M6 -118 V-106" stroke="#ffffff" stroke-width="2"/>` +
-             [-1, 1].map(sd => [0, 1, 2].map(j => `<rect x="${f1(sd * (82 - j * 9) - 2.5)}" y="-98" width="5" height="9" fill="#3a2414"/>`).join("") +
-               `<path d="M${sd * 52} -96 L${sd * 52} -78 L${sd * 70} -96" fill="none" stroke="#3a2414" stroke-width="3"/>` +
-               `<polygon points="${sd * 22 - 5},-64 ${sd * 22 + 5},-64 ${sd * 22 + 7},-14 ${sd * 22 - 7},-14" fill="#f4efe6" stroke="#8a7748" stroke-width="1.5"/>` +
+  craftsman: ({ craftRoof: r, craftTrim: t, craftGable: gb }) => `<polygon points="-80,-96 80,-96 0,-140" fill="${r}" stroke="${darker(r)}" stroke-width="2"/>` +
+             `<polygon points="-56,-100 56,-100 0,-130" fill="${gb}"/>` + [-40, -24, -8, 8, 24, 40].map(x => `<line x1="${x}" y1="-100" x2="${x}" y2="${f1(-100 - 30 * (1 - Math.abs(x) / 56))}" stroke="${darker(gb)}" stroke-width="2"/>`).join("") +
+             `<rect x="-18" y="-118" width="36" height="12" fill="#f2e6b5" stroke="${t}" stroke-width="2"/><path d="M-6 -118 V-106 M6 -118 V-106" stroke="${t}" stroke-width="2"/>` +
+             [-1, 1].map(sd => [0, 1, 2].map(j => `<rect x="${f1(sd * (82 - j * 9) - 2.5)}" y="-98" width="5" height="9" fill="${darker(r)}"/>`).join("") +
+               `<path d="M${sd * 52} -96 L${sd * 52} -78 L${sd * 70} -96" fill="none" stroke="${darker(r)}" stroke-width="3"/>` +
+               `<polygon points="${sd * 22 - 5},-64 ${sd * 22 + 5},-64 ${sd * 22 + 7},-14 ${sd * 22 - 7},-14" fill="${t}" stroke="${darker(t)}" stroke-width="1.5"/>` +
                `<rect x="${sd * 22 - 9}" y="-14" width="18" height="14" fill="#8e8a80" stroke="#5e5a50" stroke-width="1.5"/>`).join("") +
-             `<rect x="-30" y="-70" width="60" height="7" fill="#5a3e2b"/>`,
+             `<rect x="-30" y="-70" width="60" height="7" fill="${r}"/>`,
+  // a cat's house: its fur, and for a tuxedo cat a white muzzle and a white
+  // bib on the wall above the door
+  cat: ({ catFur: f, catWhite: w, catEyes: e }) => {
+    const white = w === "off" ? null : w, pale = parseInt(f.slice(1), 16) > 0xb0b0b0;
+    return `<path d="M-66 -96 L-62 -140 L-54 -182 L-24 -152 L24 -152 L54 -182 L62 -140 L66 -96 Z" fill="${f}" stroke="#00000044" stroke-width="2"/>` +
+      `<path d="M-52 -150 L-50 -170 L-34 -154 Z M52 -150 L50 -170 L34 -154 Z" fill="#f7a8c8"/>` +
+      (white ? `<path d="M-32 -96 Q-32 -124 0 -126 Q32 -124 32 -96 Z" fill="${white}"/><path d="M-26 -100 Q0 -64 26 -100 Z" fill="${white}"/>` : "") +
+      [-24, 24].map(x => `<ellipse cx="${x}" cy="-134" rx="10" ry="12" fill="${e}"/><ellipse cx="${x}" cy="-134" rx="3" ry="10" fill="#111"/>`).join("") +
+      `<path d="M-6 -118 L6 -118 L0 -111 Z" fill="#ff8fb1"/>` +
+      `<path d="M-10 -113 L-50 -119 M-10 -110 L-50 -107 M10 -113 L50 -119 M10 -110 L50 -107" stroke="${white || pale ? "#777777" : "#eeeeee"}" stroke-width="1.5"/>`;
+  },
 };
+// a house's walls and roof (its head, for an animal): the colored kinds
+// from the house's own colors, read only for its kind
+function houseLook(kind, o, n) {
+  const d = HOUSE_COLOR_DEFAULTS[kind];
+  if (!d) return { walls: HOUSE_WALLS[kind], head: HOUSE_HEADS[kind] || HOUSE_STYLES[kind](), cols: [] };
+  const c = Object.fromEntries(Object.entries(d).map(([k, v]) => [k, o[k + n] ?? v]));
+  return { walls: c.catFur || c.fancyWalls || c.craftWalls, head: HOUSE_STYLES[kind](c), cols: Object.values(c) };
+}
 const HOUSE_HEADS = {
   fox: `<path d="M-66 -96 L-60 -146 L-44 -182 L-24 -150 L24 -150 L44 -182 L60 -146 L66 -96 Z" fill="#e8762c" stroke="#00000044" stroke-width="2"/>` +
        `<path d="M-52 -150 L-44 -172 L-34 -152 Z M52 -150 L44 -172 L34 -152 Z" fill="#3a2414"/>` +
@@ -2039,14 +2137,7 @@ const HOUSE_HEADS = {
         `<path d="M-66 -96 Q-68 -162 0 -166 Q68 -162 66 -96 Z" fill="#7a4b28" stroke="#00000044" stroke-width="2"/>` + houseEye(-26, -138) + houseEye(26, -138) +
         `<ellipse cx="0" cy="-114" rx="24" ry="16" fill="#d9b38c"/><ellipse cx="0" cy="-121" rx="8" ry="6" fill="#1f1a17"/>` +
         `<path d="M0 -115 V-108 M-8 -104 Q0 -100 8 -104" fill="none" stroke="#1f1a17" stroke-width="2"/>`,
-  cat: `<path d="M-66 -96 L-62 -140 L-54 -182 L-24 -152 L24 -152 L54 -182 L62 -140 L66 -96 Z" fill="#6f6f7d" stroke="#00000044" stroke-width="2"/>` +
-       `<path d="M-52 -150 L-50 -170 L-34 -154 Z M52 -150 L50 -170 L34 -154 Z" fill="#f7a8c8"/>` +
-       `<ellipse cx="-24" cy="-130" rx="10" ry="12" fill="#c6d43a"/><ellipse cx="24" cy="-130" rx="10" ry="12" fill="#c6d43a"/>` +
-       `<ellipse cx="-24" cy="-130" rx="3" ry="10" fill="#111"/><ellipse cx="24" cy="-130" rx="3" ry="10" fill="#111"/>` +
-       `<path d="M-6 -116 L6 -116 L0 -109 Z" fill="#ff8fb1"/>` +
-       `<path d="M-10 -112 L-50 -118 M-10 -109 L-50 -106 M10 -112 L50 -118 M10 -109 L50 -106" stroke="#eeeeee" stroke-width="1.5"/>`,
 };
-Object.assign(HOUSE_HEADS, HOUSE_STYLES);
 // the tree's other branches: from the trunk (sx, sy) out to a tip (tx, ty),
 // with a fork to (fx, fy); a pad of leaves on each tip
 const TREE_TIPS = [...Array(14)].map((_, j) => {
@@ -2072,6 +2163,8 @@ function padDef(id, j) {
          `<polygon points="${pts([...shade, ...bottom])}" fill="#000000" opacity="0.2"/>` +
          `<polygon points="${pts(lit)}" fill="#ffffff" opacity="0.13"/></g>`;
 }
+// the room inside each tree house
+const HOUSE_ROOMS = ["bunks", "kitchen", "books", "lookout", "books", "bunks"];
 const TREE_BRIDGES = [[2, 3], [0, 1], [4, 5], [0, 3], [2, 1]];   // across the tree
 function treehouseScene(c) {
   const { x0, y0, W, H, k, g, grad, all, land, o, R } = c;
@@ -2203,8 +2296,10 @@ function treehouseScene(c) {
       `<g id="bg-eye"><circle cx="0" cy="0" r="9" fill="#ffffff" stroke="#00000055" stroke-width="1.5"/><circle cx="1" cy="1" r="5" fill="#1f1a17"/><circle cx="-1.5" cy="-1.5" r="1.8" fill="#ffffff"/></g></defs>` +
     "") + TREE_SLOTS.slice(0, n).map((slot, i) => [slot, i]).sort((u, v) => u[0][1] - v[0][1]).map(([[x, y, usual], i]) => {
       // (the higher houses first: a lower one is nearer, in front of them)
-      const animal = HOUSE_HEADS[o["house" + (i + 1)]] ? o["house" + (i + 1)] : usual, sc = i >= 2 ? 0.85 : 1;
-      return part("tree-house", [i, animal], () => use("bg-cabin", x, y, sc, sc, ` color="${HOUSE_WALLS[animal]}"`) + `<g ${tf(x, y, sc)}>${HOUSE_HEADS[animal]}</g>`);
+      const chosen = o["house" + (i + 1)], animal = HOUSE_ANIMALS.some(([v]) => v === chosen) ? chosen : usual, sc = i >= 2 ? 0.85 : 1;
+      const look = houseLook(animal, o, i + 1);
+      return part("tree-house", [i, animal, look.cols], () => `<g class="portal" data-to="treeroom" data-room="${HOUSE_ROOMS[i]}">` +
+        use("bg-cabin", x, y, sc, sc, ` color="${look.walls}"`) + `<g ${tf(x, y, sc)}>${look.head}</g></g>`);
     }).join("");
   return s + CLOSE;
 }
@@ -2246,10 +2341,10 @@ function pictureSvg(kind, detail, o, depth, x, y, w, h) {
 // a framed picture, its middle at (x, y), w wide
 const framedSvg = (kind, detail, o, depth, x, y, w) => {
   const h = w * 0.74, fr = w * 0.07, mat = w * 0.04;
-  return `<rect x="${f1(x - w / 2 + 4)}" y="${f1(y - h / 2 + 6)}" width="${f1(w)}" height="${f1(h)}" fill="#000000" opacity="0.18"/>` +
+  return `<g class="portal" data-to="${kind}"><rect x="${f1(x - w / 2 + 4)}" y="${f1(y - h / 2 + 6)}" width="${f1(w)}" height="${f1(h)}" fill="#000000" opacity="0.18"/>` +
          `<rect x="${f1(x - w / 2)}" y="${f1(y - h / 2)}" width="${f1(w)}" height="${f1(h)}" fill="#b8862f" stroke="#7a5518" stroke-width="2"/>` +
          `<rect x="${f1(x - w / 2 + fr)}" y="${f1(y - h / 2 + fr)}" width="${f1(w - 2 * fr)}" height="${f1(h - 2 * fr)}" fill="#f7f2e6"/>` +
-         pictureSvg(kind, detail, o, depth, x - w / 2 + fr + mat, y - h / 2 + fr + mat, w - 2 * fr - 2 * mat, h - 2 * fr - 2 * mat);
+         pictureSvg(kind, detail, o, depth, x - w / 2 + fr + mat, y - h / 2 + fr + mat, w - 2 * fr - 2 * mat, h - 2 * fr - 2 * mat) + `</g>`;
 };
 // (each picture's scene is a choice of its own: pic1, pic2, ...)
 const PICTURE_CHOICES = [["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
@@ -2299,7 +2394,7 @@ function livingroomScene(c) {
   const wx = 170 * k, wy0 = y0 + H * 0.05, wy1 = y0 + H * 0.36, depth = (o.depth ?? 0) + 1;
   if (depth <= 2) {
     const view = PICTURE_CHOICES.some(([kd]) => kd === o.view) ? o.view : "lake";
-    s += SEP + pictureSvg(view, o.viewDetail ?? 80, o, depth, -wx, wy0, 2 * wx, wy1 - wy0);
+    s += SEP + `<g class="portal" data-to="${view}">` + pictureSvg(view, o.viewDetail ?? 80, o, depth, -wx, wy0, 2 * wx, wy1 - wy0) + `</g>`;
   }
   s += SEP + part("living-window", c.F, () => {
     const fw = 10 * k;
@@ -2337,6 +2432,19 @@ function livingroomScene(c) {
 
 // inside a tree house: a real room under a sloped roof, a window onto the
 // leaves, pictures on the plank wall, and the things that room keeps
+// the colors a house of each colored kind can take
+const HOUSE_COLOR_CTLS = [
+  ["catFur", "🐱 cat's fur", ["#1f1f22", "#6f6f7d", "#e8862a", "#6b4226", "#ffffff", "#8b5cf6"]],
+  ["catWhite", "🐱 tuxedo white (muzzle and bib)", ["#ffffff", "off", "#f7ead8", "#ffd1dc", "#c0c0c0", "#1f1f22"]],
+  ["catEyes", "🐱 cat's eyes", ["#c6d43a", "#e0a800", "#3b82f6", "#22c55e", "#f28c28"]],
+  ["fancyWalls", "🎀 walls", ["#d9c3e6", "#bcd7ea", "#f7d6e0", "#fff1b8", "#c8e6c9", "#ffffff"]],
+  ["fancyRoof", "🎀 roof", ["#6a4c93", "#2e5a88", "#b03a5b", "#3f7f3a", "#5a5a66", "#e8762c"]],
+  ["fancyTrim", "🎀 trim", ["#ffffff", "#f2c12e", "#f7a8c8", "#bfe3f5", "#1f1f22"]],
+  ["craftWalls", "🔨 walls", ["#9aa982", "#c9a66b", "#8a9bb0", "#b5674d", "#d8cfb8", "#6f7f5a"]],
+  ["craftRoof", "🔨 roof", ["#5a3e2b", "#3a3a40", "#6b2f2a", "#2f4a3a", "#7a6a55"]],
+  ["craftTrim", "🔨 trim (posts, window)", ["#f4efe6", "#c9b27a", "#2f4a3a", "#7a2f2a", "#1f1f22"]],
+  ["craftGable", "🔨 gable", ["#c9b27a", "#f4efe6", "#8a9bb0", "#b5674d", "#5a3e2b"]],
+];
 const HOUSE_ANIMALS = [["fox", "🦊 fox"], ["owl", "🦉 owl"], ["frog", "🐸 frog"], ["bunny", "🐰 bunny"], ["bear", "🐻 bear"], ["cat", "🐱 cat"],
                        ["cabin", "🪵 cabin"], ["fancy", "🎀 fancy house"], ["craftsman", "🔨 craftsman"]];
 // each room its own: its wood, its floor, its window, where the tree's
@@ -2413,7 +2521,7 @@ function treeroomScene(c) {
                     wide: `<rect x="-120" y="-55" width="240" height="110"/>`, arch: `<path d="M-60 70 V-20 A60 60 0 0 1 60 -20 V70 Z"/>` }[look.window];
     return `<defs><clipPath id="bg-win">${shape}</clipPath><linearGradient id="bg-view" x1="0" y1="-80" x2="0" y2="80" gradientUnits="userSpaceOnUse">` +
            `<stop offset="0" stop-color="#7cc7f2"/><stop offset="1" stop-color="#d9f1ff"/></linearGradient></defs>` +
-           `<g clip-path="url(#bg-win)"><rect x="-100" y="-100" width="200" height="200" fill="url(#bg-view)"/>` +
+           `<g class="portal" data-to="treehouse" clip-path="url(#bg-win)"><rect x="-100" y="-100" width="200" height="200" fill="url(#bg-view)"/>` +
            `<path d="M-100 40 Q-20 10 100 -10" stroke="#6e4a2c" stroke-width="12" fill="none"/>` +
            [[-70, -40, 34], [-20, -70, 30], [50, -50, 38], [80, 30, 30], [-60, 60, 32], [20, 70, 26]].map(([x, y, r], i) =>
              `<circle cx="${x}" cy="${y}" r="${r}" fill="${i % 2 ? "#3c9a40" : "#4fb04f"}"/>`).join("") + `</g>` +
@@ -3180,11 +3288,12 @@ function draw() {
   // and a long skirt or dress, which can reach past the feet
   const skirtHem = !suit && !undies && (P.style === "skirt" || P.style === "dress")
     ? L + LL * (P.skirtLen ?? 50) / 100 + 30 : 0;
-  let bottom = Math.max(ground + 24, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem,
+  const toesDown = suit || witch ? 0 : feetY + Math.max(footDown(state.shoes), footDown(rightShoeOf(state.shoes))) * shoeSc + 12;
+  let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem,
                           broomH ? broomH[1] + 140 * kb : 0, catK ? -9 + 46 * catK : 0);
   const hairHalf = hr.half * headWidth(F) * (1 + 0.12 * F.alien / 100) * s;
   let left = Math.min(-200, C ? -(w + 185) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
-                        -(fx + half + 70), -(fx + (FOOT_REACH[witch ? "witchboot" : state.shoes.style] ?? 76) * shoeSc + 20), -(w + 40), -(pileRx + 20), -(B.neckW / 2 + 40), -(hairHalf + 20),
+                        -(fx + half + 70), -(fx + (witch ? FOOT_REACH.witchboot : Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes)))) * shoeSc + 20), -(w + 40), -(pileRx + 20), -(B.neckW / 2 + 40), -(hairHalf + 20),
                         -((80 + (C ? (kind === "deer" ? 60 : 30) : witch ? brimRx - 80 : 0)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20),
                         broomH ? -(Math.abs(broomH[0]) + 60 * kb) : 0,
                         catK ? -(w - 4) - 24 * catK : 0, catK ? -(-(w - 4) + 40 * catK) : 0);
@@ -3237,7 +3346,9 @@ function draw() {
              : witch ? { style: "witchboot", size: state.shoes.size, color: WC.bootColor ?? "#1f1f22" }
              : suit ? { style: "paw", size: state.shoes.size, color: C.fur, pad: C.accent } : state.shoes;
   // (a falcon suit's talons are yellow, like a falcon's feet)
-  for (const side of [1, -1]) svg += shoeSvg(side * fx, feetY, side, feet, BIRD_SUIT[kind] ? C.accent : skin);
+  // (with different feet, the friend's right foot, on our left, wears its own)
+  for (const side of [1, -1])
+    svg += shoeSvg(side * fx, feetY, side, feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet, BIRD_SUIT[kind] ? C.accent : skin);
   const pf = suit ? "url(#pat-fur)" : fillOf("pat-pants", P.color, P.pattern);
   const ps = suit ? darker(C.fur) : darker(P.color);
   if (undies) {
@@ -4523,6 +4634,17 @@ const PATTERNS = [["plain", "plain"], ["stripes", "stripes"], ["dots", "dots"], 
 // the friend's right hand: its own style and settings, or the same as the
 // other's (the color and the size are always both hands')
 const rightHandOf = h => (h.different ? { ...h, ...state.rightHand } : h);
+// and the friend's right foot
+const rightShoeOf = sh => (sh.different ? { ...sh, ...state.rightShoe } : sh);
+const FOOT_STYLES = [["sneaker", "sneakers"], ["boot", "boots"], ["clown", "clown shoes"], ["bare", "bare feet"],
+                     ["human", "🦶 toes"], ["alien", "👽 alien toes"], ["talons", "🦅 talons"]];
+// one foot's own controls: its style, and the toe counts
+const SHOE_CTLS = [
+  ["choice", "style", "style", FOOT_STYLES],
+  ["range", "toes", "🦶 number of toes", 1, 100, 4, 6],
+  ["range", "alienToes", "👽 number of alien toes", 1, 100, 2, 6],
+];
+const FOOT_SLIDER_STYLE = { toes: "human", alienToes: "alien" };
 const HAND_STYLES = [["round", "round"], ["mitten", "mittens"], ["star", "stars"], ["claw", "claws"],
                      ["human", "✋ human"], ["alien", "👽 alien"]];
 // one hand's own controls: its style, and the sliders for each style
@@ -4650,9 +4772,13 @@ const TABS = [
     ["color", "patternColor", "pattern color", PATTERN_COLORS],
   ]],
   ["👟 Feet", "shoes", [
-    ["choice", "style", "style", [["sneaker", "sneakers"], ["boot", "boots"], ["clown", "clown shoes"], ["bare", "bare feet"],
-                                  ["toes5", "🦶 5 toes"], ["alien4", "👽 4 toes"], ["alien3", "👽 3 toes"], ["talons", "🦅 talons"]]],
+    ["flip", "different", ["👟👟 feet are the same", "👟🦶 feet are different"]],
+    // different feet get a column each, as the hands do: the friend's
+    // right foot on our left
+    ["pair", "rightShoe", ["⬅️ right foot", "left foot ➡️"], "shoes", SHOE_CTLS, FOOT_SLIDER_STYLE],
+    SHOE_CTLS[0],
     ["color", "color", "color", BRIGHT],
+    ...SHOE_CTLS.slice(1),
     ["range", "size", "size", 20, 310, 60, 170],
   ]],
   ["🐯 Costume", "costume", [
@@ -4717,12 +4843,9 @@ const TABS = [
     ["range", "bridges", "🌉 rope bridges", 0, 5, 0, 5],
     ["range", "ladders", "🪜 ladders", 0, 6, 1, 6],
     ["range", "leaves", "🍃 leaves", 0, 100, 30, 100],
-    ["choice", "house1", "🏡 house 1", HOUSE_ANIMALS],
-    ["choice", "house2", "🏡 house 2", HOUSE_ANIMALS],
-    ["choice", "house3", "🏡 house 3", HOUSE_ANIMALS],
-    ["choice", "house4", "🏡 house 4", HOUSE_ANIMALS],
-    ["choice", "house5", "🏡 house 5", HOUSE_ANIMALS],
-    ["choice", "house6", "🏡 house 6", HOUSE_ANIMALS],
+    // each house's kind, and then its own colors, for the kinds with colors
+    ...[1, 2, 3, 4, 5, 6].flatMap(n => [["choice", "house" + n, "🏡 house " + n, HOUSE_ANIMALS],
+      ...HOUSE_COLOR_CTLS.map(([k, label, colors]) => ["color", k + n, `🏡 house ${n}: ${label}`, colors])]),
     // inside the tree house
     ["choice", "room", "room", [["bunks", "🛏️ bunk room"], ["kitchen", "🍳 kitchen"], ["books", "📚 reading nook"], ["lookout", "🔭 lookout"]]],
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
@@ -4767,9 +4890,12 @@ function set(part, key, value) {
   // a skirt starts at skirt length and a dress at dress length
   if (part === "pants" && key === "style" && value === "skirt") state.pants.skirtLen = 50;
   if (part === "pants" && key === "style" && value === "dress") state.pants.skirtLen = 95;
+  if (part === "background" && key === "kind") trips.length = 0;
   // different hands start alike; then each changes on its own
   if (part === "hands" && key === "different" && value)
     for (const k of HAND_OWN) state.rightHand[k] = state.hands[k];
+  if (part === "shoes" && key === "different" && value)
+    for (const k of SHOE_OWN) state.rightShoe[k] = state.shoes[k];
   // a bikini comes with its top; trunks and briefs start without one
   if (part === "undies" && key === "style") state.undies.top = value === "bikini";
   // a figure too big for the stage, once a background is chosen, shrinks
@@ -4782,7 +4908,7 @@ function set(part, key, value) {
   changed();
 }
 function changed() {
-  draw(); for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync();
+  draw(); for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync();
   // a new friend (loaded, started over, surprised) or a scene turned on or
   // off rebuilds the HUD; a slider moving in it does not
   if (!hud.hidden && hudKey() !== hudShown) renderHud();
@@ -4849,6 +4975,8 @@ const SHOWN_WHEN = {
   "background.bridges": b => b.kind === "treehouse",
   "background.ladders": b => b.kind === "treehouse",
   "background.leaves": b => b.kind === "treehouse",
+  ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.entries(HOUSE_COLOR_DEFAULTS).flatMap(([kind, d]) =>
+    Object.keys(d).map(k => ["background." + k + n, b => b.kind === "treehouse" && b.houses >= n && b["house" + n] === kind])))),
   "background.house1": b => b.kind === "treehouse" && b.houses >= 1,
   "background.house2": b => b.kind === "treehouse" && b.houses >= 2,
   "background.house3": b => b.kind === "treehouse" && b.houses >= 3,
@@ -4884,6 +5012,11 @@ const SHOWN_WHEN = {
   "hands.rightHand": h => !!h.different,
   ...Object.fromEntries(Object.keys(SLIDER_STYLE).map(k =>
     ["hands." + k, h => (!h.different && handSliderShown(k, h)) || ((k === "clawLen" || k === "clawCount") && clawedSuit())])),
+  // the feet as the hands: one style menu and its toe slider, or a column each
+  "shoes.style": sh => !sh.different,
+  "shoes.rightShoe": sh => !!sh.different,
+  "shoes.toes": sh => !sh.different && sh.style === "human",
+  "shoes.alienToes": sh => !sh.different && sh.style === "alien",
   "undies.style": u => u.on,
   "undies.top": u => u.on && u.style !== "onepiece",
   "undies.color": u => u.on,
@@ -4984,11 +5117,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // two columns side by side, mirrored about the middle: the first part's
     // on the left, each with its name, then its controls, a slider showing
     // when its own part wears the slider's style
-    const [otherPart, ctls] = rest;
+    const [otherPart, ctls, styleOf = SLIDER_STYLE] = rest;
     box.classList.add("pair");
     box.replaceChildren(...[[key, label[0]], [otherPart, label[1]]].map(([p, text]) =>
       el("div", { class: "side" }, [el("div", { class: "lbl" }, [text]), ...ctls.map(c => {
-        const b = control(p, c, { when: SLIDER_STYLE[c[1]] ? h => h.style === SLIDER_STYLE[c[1]] : null });
+        const b = control(p, c, { when: styleOf[c[1]] ? h => h.style === styleOf[c[1]] : null });
         // (the column's name says whose style it is)
         if (c[0] === "choice") b.querySelector(".lbl").remove();
         return b;
@@ -5128,7 +5261,7 @@ document.addEventListener("fullscreenchange", () => {
 // figure to move it), then every pinned slider, made by control() as in
 // the panel, with their own refreshes.
 const hud = document.getElementById("hud"), hudBtn = document.getElementById("hud-btn");
-const hudKey = () => JSON.stringify(state.hud.pins || []) + (state.background.kind !== "none") + !!state.hands.different;
+const hudKey = () => JSON.stringify(state.hud.pins || []) + (state.background.kind !== "none") + !!state.hands.different + !!state.shoes.different;
 let hudShown = "";
 function renderHud() {
   if (hud.hidden) return;
@@ -5141,10 +5274,17 @@ function renderHud() {
     for (const spec of TABS.find(t => t[1] === "background")[2].filter(c => c[1] === "figSize" || c[1] === "figPos")) boxes.push(control("background", spec));
   for (const id of state.hud.pins || []) {
     const [part, key] = id.split("."), tabEntry = TABS.find(t => t[1] === part);
-    const spec = (part === "rightHand" ? HAND_CTLS : tabEntry ? tabEntry[2] : []).find(c => c[1] === key);
+    const spec = (part === "rightHand" ? HAND_CTLS : part === "rightShoe" ? SHOE_CTLS : tabEntry ? tabEntry[2] : []).find(c => c[1] === key);
     if (!spec) continue;
     // one hand's own slider says whose it is
     const whose = part === "rightHand" ? "⬅️ right hand: " : part === "hands" && SLIDER_STYLE[key] && state.hands.different ? "left hand ➡️: " : "";
+    const foot = part === "rightShoe" ? "⬅️ right foot: " : part === "shoes" && FOOT_SLIDER_STYLE[key] && state.shoes.different ? "left foot ➡️: " : "";
+    if (foot) {
+      const [kind, , label, ...rest] = spec;
+      boxes.push(control(part, [kind, key, foot + label, ...rest],
+                         { when: sh => (part === "shoes" || state.shoes.different) && sh.style === FOOT_SLIDER_STYLE[key] }));
+      continue;
+    }
     if (!whose) { boxes.push(control(part, spec)); continue; }
     const [kind, , label, ...rest] = spec;
     boxes.push(control(part, [kind, key, whose + label, ...rest],
@@ -5323,6 +5463,7 @@ document.getElementById("load-file").addEventListener("change", async e => {
     for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
     upgradeHands(next.hands);
     upgradeRightHand(next, saved);
+    upgradeFeet(next, saved);
     upgradeFace(next.face, saved.face);
     next.music = { ...next.music, volume: state.music.volume, mute: state.music.mute };
     state = next;
@@ -5399,6 +5540,96 @@ pic.addEventListener("pointermove", e => {
 const letGo = () => { drag = null; };
 pic.addEventListener("pointerup", letGo);
 pic.addEventListener("pointercancel", letGo);
+
+// Through a doorway (a picture, a window, a tree house, a door: .portal in
+// the scene) into its scene: the friend flies to it, shrinking to fit it
+// and spinning, slowly and then fast, and lands in the new scene where a
+// friend starts, at the size they had.
+let entering = false;
+pic.addEventListener("click", e => {
+  const door = !entering && e.target.closest && e.target.closest("#bg .portal");
+  if (door) enterScene(door);
+});
+// a nested <svg>'s own box on the screen, from its x, y, width and height
+function svgBox(el) {
+  const m = el.parentNode.getScreenCTM(), g = k => el[k].baseVal.value;
+  const p = new DOMPoint(g("x"), g("y")).matrixTransform(m), q = new DOMPoint(g("x") + g("width"), g("y") + g("height")).matrixTransform(m);
+  return { x: Math.min(p.x, q.x), y: Math.min(p.y, q.y), width: Math.abs(q.x - p.x), height: Math.abs(q.y - p.y) };
+}
+// The friend flies into a box on the screen (a doorway, or the back chip),
+// shrinking to fit it and spinning, slowly and then fast; then the scene
+// changes (arrive) and they land, spinning out, at their own size.
+function flyInto(box, arrive) {
+  const fig = document.getElementById("figure");
+  if (!fig) return;
+  entering = true;
+  const NS = "http://www.w3.org/2000/svg", inv = pic.getScreenCTM().inverse();
+  const at = r => new DOMPoint(r.x + r.width / 2, r.y + r.height / 2).matrixTransform(inv);
+  const fr = fig.getBoundingClientRect(), f0 = at(fr), d0 = at(box);
+  const s = Math.min(box.width / fr.width, box.height / fr.height) * 0.75, dx = d0.x - f0.x, dy = d0.y - f0.y;
+  // (in a group of its own, so the figure keeps its own transform)
+  const wrap = document.createElementNS(NS, "g");
+  fig.replaceWith(wrap);
+  wrap.append(fig);
+  wrap.style.transformBox = "fill-box";
+  wrap.style.transformOrigin = "center";
+  const step = (u, turn, k, o = 1) => ({ transform: `translate(${f1(dx * u)}px, ${f1(dy * u)}px) rotate(${turn}deg) scale(${+k.toFixed(3)})`, opacity: o });
+  const fly = wrap.animate([step(0, 0, 1), step(0.2, 45, 1 - (1 - s) * 0.2), step(0.55, 240, 1 - (1 - s) * 0.6),
+                            step(0.85, 720, 1 - (1 - s) * 0.9), step(1, 1260, s), step(1, 1620, s * 0.2, 0)],
+                           { duration: 2000, easing: "ease-in", fill: "forwards" });
+  fly.onfinish = () => {
+    arrive();
+    entering = false;
+    changed();
+    // landing: a quick spin out, slowing, to the friend's own size
+    const there = document.getElementById("figure");
+    if (!there) return;
+    const land = document.createElementNS(NS, "g");
+    there.replaceWith(land);
+    land.append(there);
+    land.style.transformBox = "fill-box";
+    land.style.transformOrigin = "center bottom";
+    land.animate([{ transform: "rotate(-360deg) scale(0.2)", opacity: 0 }, { transform: "rotate(0deg) scale(1)", opacity: 1 }],
+                 { duration: 600, easing: "ease-out" });
+  };
+}
+// Where each trip through a doorway began, the last on top: the back chip
+// goes back through them, one at a time, while the friend is in the scene
+// the last trip went to.
+const trips = [];
+function enterScene(door) {
+  const to = door.dataset.to, room = door.dataset.room, B = state.background;
+  if (!SCENES[to] && !PICTURE_CHOICES.some(([kd]) => kd === to)) return;
+  // (a picture's own box: the scene inside it spills past it, hidden)
+  const view = door.querySelector(":scope > svg");
+  const from = { kind: B.kind, room: B.room, figX: B.figX ?? 0, figY: B.figY ?? 0, to };
+  flyInto(view ? svgBox(view) : door.getBoundingClientRect(), () => {
+    trips.push(from);
+    Object.assign(B, { kind: to, figX: 0, figY: 0 });
+    if (room) B.room = room;
+  });
+}
+const backBtn = document.getElementById("back");
+const sceneName = kd => (TABS.find(t => t[1] === "background")[2][0][3].find(([v]) => v === kd) || [kd, kd])[1];
+function backSync() {
+  const last = trips[trips.length - 1], show = !!last && last.to === state.background.kind;
+  backBtn.hidden = !show;
+  if (show) {
+    const name = sceneName(last.kind);
+    backBtn.textContent = `⬅️ ${name.split(" ")[0]} back`;
+    backBtn.title = "back to the " + name.replace(/^\S+\s/, "");
+    backBtn.setAttribute("aria-label", backBtn.title);
+  }
+}
+backBtn.addEventListener("click", () => {
+  const last = trips[trips.length - 1];
+  if (entering || !last) return;
+  flyInto(backBtn.getBoundingClientRect(), () => {
+    trips.pop();
+    Object.assign(state.background, { kind: last.kind, figX: last.figX, figY: last.figY });
+    if (last.room) state.background.room = last.room;
+  });
+});
 
 showTab();
 </script>

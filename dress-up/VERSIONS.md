@@ -2,6 +2,26 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.15 (2026-10-13)
+
+Everything in 0.0.14, plus doorways between the scenes, feet as free as the hands, and tree houses in colors of your own.
+
+- **🚪 Doorways into other scenes:** a picture on a wall, a window, a tree house and the house's front door glow under the pointer. Click one (or tap it), and the friend flies to it, shrinking to fit it and spinning, slowly and then fast, into its scene. They land where a friend starts, at the size they had.
+  - the living room's pictures and its window go to the scenes they show;
+  - inside the tree house, the pictures go to theirs, and the window back outside;
+  - each tree house goes inside it, each to a room of its own (bunk room, kitchen, reading nook, lookout);
+  - the house's front door goes into the living room.
+  - after a trip, a **⬅️ back** chip on the picture goes back through the doorway, the friend spinning into it, to where they stood; after several trips, back one at a time. Choosing a scene from the menu starts afresh.
+
+- **👟 Feet, like hands:**
+  - a **"feet are different"** switch gives each foot a column of its own (the friend's right foot on our left, as with the hands), each with its own style and toes; the color and the size are both feet's;
+  - **🦶 toes** and **👽 alien toes** each have a slider for how many, **1 to 100** (5 toes and 3 or 4 alien toes look as they always did; more fan round the foot, to a fringe at 100);
+  - the picture's frame grows to hold toes that fan out below the feet;
+  - saved friends with the old "5 toes", "4 toes" and "3 toes" feet come back the same.
+- **🌳 Tree houses in colors of your own,** each house its own:
+  - a 🐱 **cat** house starts as a **tuxedo cat** (black, a white muzzle and a white bib over the door); its fur, its white (or none) and its eyes are each house's;
+  - a 🎀 **fancy house**'s walls, roof and trim, and a 🔨 **craftsman**'s walls, roof, trim and gable, start as they were and can change.
+
 ## 0.0.14 (2026-10-13)
 
 Everything in 0.0.13, plus the great tree's crown.
