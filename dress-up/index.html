@@ -2090,15 +2090,19 @@ function lakeScene(c) {
       `<path d="M13 -27 L27 -27 L29 -20 L12 -20 Z" fill="#1f7a3a"/><path d="M13 -25 L28 -25 L28 -22 L13 -22 Z" fill="#ffffff"/>` +
       `<circle cx="20" cy="-37" r="11" fill="#1f7a3a"/><path d="M29 -40 Q43 -38 42 -34 Q35 -32 29 -35 Z" fill="#f2b13a"/>` +
       `<circle cx="23" cy="-40" r="2.2" fill="#111"/></g></g></defs>` +
-    // each paddling about on its own: a little way the way it faces and back,
-    // bobbing and rocking on the water as it goes
+    // each paddling about on its own: out the way it faces, a pause while it
+    // turns round, then back the other way, facing where it goes (never
+    // swimming backwards); bobbing and rocking on the water as it goes
     [...Array(ducks)].map((_, i) => { const d = R(i, 52); return { d, i }; }).sort((a, b) => a.d - b.d).map(({ d, i }) => {
       const sd = R(i, 54) < 0.5 ? -1 : 1, z = 0.45 + 0.75 * d, x = x0 + W * (0.06 + 0.88 * R(i, 53)), y = horizon + 16 * k + (shore - horizon - 40 * k) * d;
-      const go = sd * (14 + 26 * R(i, 55)) * k * z, bob = 2 * k * z;
-      return `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(go)} ${f1(-bob)};${f1(go * 1.4)} 0;${f1(go)} ${f1(bob)};0 0" ` +
-             `dur="${(12 + 8 * R(i, 56)).toFixed(1)}s" repeatCount="indefinite"/>` +
-             `<g><animateTransform attributeName="transform" type="rotate" values="0 ${f1(x)} ${f1(y)};${(3 * sd).toFixed(1)} ${f1(x)} ${f1(y)};0 ${f1(x)} ${f1(y)};${(-2 * sd).toFixed(1)} ${f1(x)} ${f1(y)};0 ${f1(x)} ${f1(y)}" ` +
-             `dur="${(2.6 + 0.8 * R(i, 57)).toFixed(1)}s" repeatCount="indefinite"/>` + use("bg-duck", x, y, k * sd * z, k * z) + `</g></g>`;
+      const go = sd * (24 + 36 * R(i, 55)) * k * z, bob = 2 * k * z, dur = (14 + 10 * R(i, 56)).toFixed(1);
+      return `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(go)} 0;${f1(go)} 0;0 0;0 0" keyTimes="0;0.44;0.5;0.94;1" ` +
+             `calcMode="spline" keySplines="0.4 0 0.6 1;0 0 1 1;0.4 0 0.6 1;0 0 1 1" dur="${dur}s" repeatCount="indefinite"/>` +
+             `<g transform="translate(${f1(x)} ${f1(y)})">` +
+             `<g><animateTransform attributeName="transform" type="scale" values="1 1;-1 1" keyTimes="0;0.47" calcMode="discrete" dur="${dur}s" repeatCount="indefinite"/>` +
+             `<g><animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-bob)};0 0;0 ${f1(bob)};0 0" dur="${(2.2 + 0.6 * R(i, 58)).toFixed(1)}s" repeatCount="indefinite"/>` +
+             `<g><animateTransform attributeName="transform" type="rotate" values="0;${(3 * sd).toFixed(1)};0;${(-2 * sd).toFixed(1)};0" dur="${(2.6 + 0.8 * R(i, 57)).toFixed(1)}s" repeatCount="indefinite"/>` +
+             use("bg-duck", 0, 0, k * sd * z, k * z) + `</g></g></g></g></g>`;
     }).join(""));
   // cattails at the water's edge, either side
   s += SEP + part("lake-cattails", [c.F, tails], () => `<defs><g id="bg-cattail">` +

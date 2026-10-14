@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.27, for the next version, which waits for Matthew's go-ahead.
+
+- **🦆 Ducks swim forward:** in 0.0.27 a duck paddled out and then came back the same way facing, as if swimming backwards. Now it swims out, pauses to turn round, and swims back facing where it goes, then turns again.
+
 ## 0.0.27 (2026-10-14)
 
 Everything in 0.0.26, plus organic trees, bushes, grass and rocks in every scene, snow that sits on its mountains, and skies that move.
