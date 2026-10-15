@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.44 (2026-10-15)
+
+Everything in 0.0.43, plus doors you can see in the hallway and the dining room, and a picture as big as your screen allows.
+
+- **🚪 The hallway's and the dining room's doors stand closer** (Matthew and M): their doors were spread down the whole corridor, so the far ones were tiny and their signs too small to read. Now the doors stand close together near you, a pair after a pair, the torches between them, and every sign is big enough to read even when the game isn't full screen (the far ones about twice the size they were). Where a farther door's sign would cover a nearer one's, it goes up above it. The stairs' sign at the hallway's far end, and the dining room's far door's sign, are bigger too.
+- **🖼️ The picture as big as it can be:** the game uses the whole window now, with no wide margins either side. The picture is as large as its side of the window allows, the caption and buttons in one row right under it, and the title moves to the top of the controls.
+- **↔️ A divider to drag** between the picture and the controls: drag it right for a bigger picture, left for more room for the controls. The game remembers where you left it; double-click it to go back to the best fit.
+- **💾 Save is a menu:** the kinds of file to save, the Save button, and the links to what you saved, in a box that opens over the picture, so they no longer take room under it. (The tip about dragging the mouth and eyebrows shows when you point at the caption.)
+
 ## 0.0.43 (2026-10-15)
 
 Everything in 0.0.42, plus more doors in the hallway and the dining room.

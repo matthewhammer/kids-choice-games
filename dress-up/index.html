@@ -17,23 +17,47 @@
             --panel: #29253a; --accent: #a78bfa; --accent-ink: #1d1a26; }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink);
+  body { margin: 0; padding: 8px; background: var(--bg); color: var(--ink);
          font: 16px/1.35 system-ui, "Segoe UI", Roboto, sans-serif; }
-  /* over the picture, centered on it (at the window's edge it hung far out
-     to the left of a picture centered in its column) */
-  h1 { margin: 0 0 10px; font-size: 1.6em; letter-spacing: 0.02em; text-align: center; }
-  .app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;
-         max-width: 1100px; margin: 0 auto; }
+  /* (at the top of the controls, so the picture's column is all picture: ticket 116) */
+  h1 { margin: 0 0 6px; font-size: 1.3em; letter-spacing: 0.02em; }
+  /* The whole window: the picture's column, a divider to drag, the controls
+     (ticket 116: no more 1100px cap with margins either side). The
+     picture's column is as wide as the picture can use at the window's
+     height (setSplit), or where the divider was dragged to. */
+  .app { display: grid; grid-template-columns: minmax(240px, var(--split, 60%)) 14px minmax(0, 1fr); gap: 0 4px; }
   @media (max-width: 760px) { .app { grid-template-columns: minmax(0, 1fr); } }
-  .stage { position: sticky; top: 8px; align-self: start; }
   /* The picture, its caption and buttons always fit on the screen, so the
-     picture stays in view while the controls scroll. */
-  svg#pic { display: block; width: 100%; height: auto;
-            max-height: calc(100vh - 195px); max-height: calc(100dvh - 195px);
+     picture stays in view while the controls scroll; the picture takes all
+     the height its caption and buttons leave (fitPic sizes it) */
+  .stage { position: sticky; top: 8px; align-self: start; min-width: 0;
+           height: calc(100vh - 16px); height: calc(100dvh - 16px); display: flex; flex-direction: column; }
+  .pic-wrap { position: relative; flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .pic-area { flex: 1 1 0; min-height: 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+  .pic-box { position: relative; line-height: 0; max-width: 100%; }
+  svg#pic { display: block; width: 100%; height: auto; max-width: 100%;
             background: var(--paper); border-radius: 18px; border: 2px solid var(--line);
             user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-  .caption { text-align: center; margin-top: 6px; font-size: 1.2em; }
-  .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+  /* the caption and the buttons, in one row under the picture */
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; padding-top: 6px; width: 100%; }
+  body.big .bar { display: none; }
+  .caption { text-align: center; font-size: 1.1em; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  /* saving, in a menu of its own: the kinds of file, the button, the links to what was saved */
+  .save-menu { position: relative; }
+  .save-pop { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 30;
+              width: max-content; max-width: min(92vw, 440px); display: flex; flex-direction: column; align-items: center; gap: 8px;
+              background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px;
+              box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28); }
+  .save-pop[hidden] { display: none; }
+  .save-pop .formats, .save-pop .saved { margin-top: 0; }
+  /* the divider between the picture and the controls: drag it */
+  .divider { position: sticky; top: 8px; height: calc(100vh - 16px); height: calc(100dvh - 16px); cursor: col-resize;
+             touch-action: none; display: flex; align-items: center; justify-content: center; border-radius: 7px; outline: none; }
+  .divider::before { content: ""; width: 5px; height: 56px; border-radius: 3px; background: var(--line); }
+  .divider:hover::before, .divider:focus-visible::before, .divider.drag::before { background: var(--accent); height: 96px; }
+  body.dragging-split { cursor: col-resize; user-select: none; -webkit-user-select: none; }
+  @media (max-width: 760px) { .divider { display: none; } }
   button { font: inherit; cursor: pointer; border-radius: 12px; border: 2px solid var(--line);
            background: var(--panel); color: var(--ink); padding: 6px 12px; }
   button.big { background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
@@ -78,12 +102,11 @@
   @media (max-width: 760px) {
     body { padding-top: 8px; }
     h1 { display: none; }
-    .stage { top: 0; z-index: 1; background: var(--bg); padding: 4px 0 8px; margin: 0 -16px; padding-inline: 16px; }
-    svg#pic { max-height: 40vh; max-height: 40dvh; }
-    .stage .hint { display: none; }
-    .actions { margin-top: 4px; gap: 6px; flex-wrap: nowrap; }
-    .actions button { padding: 4px 8px; font-size: 0.85em; white-space: nowrap; }
-    .caption { margin-top: 2px; font-size: 1em; }
+    .stage { top: 0; z-index: 1; background: var(--bg); padding: 4px 0 8px; margin: 0 -8px; padding-inline: 8px; height: auto; }
+    .pic-wrap, .pic-area { flex: none; }
+    .actions { gap: 4px; flex-wrap: nowrap; }
+    .actions button { padding: 4px 6px; font-size: 0.85em; white-space: nowrap; }
+    .caption { font-size: 1em; }
   }
   .formats { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center; align-items: center;
              margin-top: 8px; font-size: 13px; color: var(--muted); }
@@ -103,16 +126,13 @@
   body.big .app > :not(.stage) { visibility: hidden; }
   body.big .pic-wrap { position: fixed; inset: 0; z-index: 10; background: var(--bg); padding: 8px;
                       display: flex; flex-direction: column; gap: 8px; }
-  body.big svg#pic { width: 100%; height: 0; flex: 1 1 auto; max-height: none; }
-  body.big .max-btn { top: 16px; right: 16px; }
   /* the music's quick mute, at the picture's other top corner */
   .mute-btn { position: absolute; top: 8px; left: 8px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
               background: var(--panel); opacity: 0.9; }
-  body.big .mute-btn { top: 16px; left: 16px; }
   /* back through the last doorway, after a trip through one */
   .back-btn { position: absolute; bottom: 8px; left: 8px; padding: 0 10px; font-size: 1.15em; line-height: 1.6;
               background: var(--panel); opacity: 0.92; }
-  body.big .back-btn { bottom: auto; top: 16px; left: 66px; }
+  body.big .back-btn { bottom: auto; top: 8px; left: 66px; }
   .ctl > p.now { margin: 0; color: var(--muted); }
   /* the mixing board: a strip for each part, the whole tune's first */
   .mixer { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 4px; }
@@ -168,7 +188,7 @@
   .ctl.idle input[type=range], .ctl.idle .marks { opacity: 0.4; }
   /* In full screen, a heads-up display of chosen controls: hidden until
      its button is pressed; the scene's own controls and every pinned slider. */
-  .hud-btn { display: none; position: absolute; top: 16px; right: 66px; padding: 0 9px; font-size: 1.3em;
+  .hud-btn { display: none; position: absolute; top: 8px; right: 66px; padding: 0 9px; font-size: 1.3em;
              line-height: 1.45; background: var(--panel); opacity: 0.9; }
   body.big .hud-btn { display: block; }
   /* (below the picture, which shrinks to make room: it never covers the
@@ -208,33 +228,45 @@
 <body>
 <div class="app">
   <div class="stage">
-    <h1>Messed Up Dress Up</h1>
     <div class="pic-wrap">
-      <svg id="pic" xmlns="http://www.w3.org/2000/svg"></svg>
-      <button class="max-btn" id="max" title="Full screen" aria-label="Full screen">⤢</button>
-      <button class="mute-btn" id="mute" title="Music on or off" aria-label="Music on or off" hidden>🔊</button>
-      <button class="back-btn" id="back" hidden></button>
-      <button class="hud-btn" id="hud-btn" title="Show the pinned controls" aria-label="Show the pinned controls" aria-pressed="false">🎛️</button>
+      <div class="pic-area">
+        <div class="pic-box">
+          <svg id="pic" xmlns="http://www.w3.org/2000/svg"></svg>
+          <button class="max-btn" id="max" title="Full screen" aria-label="Full screen">⤢</button>
+          <button class="mute-btn" id="mute" title="Music on or off" aria-label="Music on or off" hidden>🔊</button>
+          <button class="back-btn" id="back" hidden></button>
+          <button class="hud-btn" id="hud-btn" title="Show the pinned controls" aria-label="Show the pinned controls" aria-pressed="false">🎛️</button>
+        </div>
+        <div class="bar">
+          <div class="caption" id="mood" title="Drag the mouth or the eyebrows on the face, too!"></div>
+          <div class="actions">
+            <button class="big" id="surprise">🎲 Surprise me!</button>
+            <div class="save-menu">
+              <button id="save-open" aria-haspopup="true" aria-expanded="false" aria-controls="save-pop" title="Save your friend: a picture, a drawing, and its settings">💾 Save ▾</button>
+              <div class="save-pop" id="save-pop" hidden>
+                <div class="formats" id="formats">
+                  <span id="formats-label">save as:</span>
+                  <label><input type="checkbox" value="png" checked> picture (.png)</label>
+                  <label><input type="checkbox" value="svg" checked> drawing (.svg)</label>
+                  <label><input type="checkbox" value="json" checked> settings (.json)</label>
+                </div>
+                <button class="big" id="save" title="Saves the files checked above: a picture (.png), a drawing that prints at any size (.svg), and your friend's settings (.json) to load again later">💾 Save</button>
+                <div class="saved" id="saved" aria-live="polite"></div>
+              </div>
+            </div>
+            <button id="load" title="Load a friend you saved (.json)">📂 Load</button>
+            <input type="file" id="load-file" accept=".json,application/json" hidden>
+            <button id="reset">↺ Start over</button>
+          </div>
+        </div>
+      </div>
       <div class="hud" id="hud" hidden></div>
     </div>
-    <div class="caption" id="mood"></div>
-    <div class="actions">
-      <button class="big" id="surprise">🎲 Surprise me!</button>
-      <button id="save" title="Saves the files checked below: a picture (.png), a drawing that prints at any size (.svg), and your friend's settings (.json) to load again later">💾 Save</button>
-      <button id="load" title="Load a friend you saved (.json)">📂 Load</button>
-      <input type="file" id="load-file" accept=".json,application/json" hidden>
-      <button id="reset">↺ Start over</button>
-    </div>
-    <div class="formats" id="formats">
-      <span id="formats-label">save as:</span>
-      <label><input type="checkbox" value="png" checked> picture (.png)</label>
-      <label><input type="checkbox" value="svg" checked> drawing (.svg)</label>
-      <label><input type="checkbox" value="json" checked> settings (.json)</label>
-    </div>
-    <div class="saved" id="saved" aria-live="polite"></div>
-    <p class="hint" style="text-align:center">Drag the mouth or the eyebrows on the face, too!</p>
   </div>
-  <div>
+  <div class="divider" id="divider" role="separator" aria-orientation="vertical" tabindex="0"
+       aria-label="Between the picture and the controls" title="Drag to make the picture bigger or smaller (double-click: the best fit)"></div>
+  <div class="side">
+    <h1>Messed Up Dress Up</h1>
     <div class="tabs" id="tabs"></div>
     <div class="panel" id="panel"></div>
   </div>
@@ -5063,7 +5095,7 @@ function hallwaySvg(c, K, R = {}) {
   // along the walls, by turns: a torch on one side and a banner on the other, in each stretch of the corridor
   const lights = [];
   for (let i = 0; i < N - 1; i++) {
-    const f = 1 / (1 + 0.8 * i + 0.58), w = bw * f, kk = k * f, sd = i % 2 ? 1 : -1;   // (past the stretch's door: hallSideDoor)
+    const f = 1 / (1 + HALL_LIGHT_Z[i]), w = bw * f, kk = k * f, sd = i % 2 ? 1 : -1;   // (between the pairs of doors: hallDoor)
     lights.push(torchSvg(sd * (w - 18 * kk), Y(floor - 220 * k, f), kk, i, c.o));
     // (the banner hangs from a pole jutting straight out of the wall across the corridor, so it
     // faces down the corridor, as drawn; the pole and its brace go back into the wall)
@@ -5203,7 +5235,7 @@ function diningRoomSvg(c, K, r = {}) {
   }
   // along the walls, torches, each side, in each stretch of the room (clear of the doors: as the hallway's)
   for (let i = 0; i < N - 1; i++) for (const sd of [-1, 1]) {
-    const f = 1 / (1 + 0.8 * i + 0.58), w = bw * f, kk = k * f;
+    const f = 1 / (1 + HALL_LIGHT_Z[i]), w = bw * f, kk = k * f;
     lights.push(torchSvg(sd * (w - 18 * kk), Y(floor - 220 * k, f), kk, i * 2 + (sd > 0 ? 1 : 0), o));
   }
   for (const sd of [-1, 1]) lights.push(torchSvg(sd * bw * 1.12, floor - 250 * k, k * 1.1, 7 + (sd > 0 ? 1 : 0), o));
@@ -6340,10 +6372,12 @@ function stableHorses(c, K, wags) {
     return `<g transform="translate(${f1(hx)} ${f1(hy)}) scale(${s.toFixed(3)})">${horseHead(Hh, wags[i], i, i % 2 ? K.flagB : K.flagA)}</g>` + L.rail(X);
   }).join("");
 }
-function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0) {
+// (sk: its sign's size, when it is not the door's own: a hallway's farther doors keep signs big enough to read)
+function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0, sk = 0) {
   const { k } = c, S = roomSpace(c), { floor, bw } = S, h = 170 * k, rise = 46 * k;
   const at = (z, y) => S.at(sd * bw, y, z);   // (on its side wall)
   const zm = (z0 + z1) / 2, fm = 1 / (1 + zm), km = k * fm;
+  sk = sk || km;
   const nb = at(z0, floor), nt = at(z0, floor - h), ft = at(z1, floor - h), fb = at(z1, floor), ap = at(zm, floor - h - rise);
   const ctl = [2 * ap[0] - (nt[0] + ft[0]) / 2, 2 * ap[1] - (nt[1] + ft[1]) / 2];
   const shape = `M${P2(...nb)} L${P2(...nt)} Q${P2(...ctl)} ${P2(...ft)} L${P2(...fb)} Z`;
@@ -6360,7 +6394,29 @@ function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0) {
     band(floor - h * 0.22) + band(floor - h * 0.78) +
     `<ellipse cx="${f1(ring[0])}" cy="${f1(ring[1])}" rx="${f1(3.2 * km)}" ry="${f1(6 * km)}" fill="none" stroke="#2a2a32" stroke-width="${f1(Math.max(0.8, 2.2 * km))}"/>` +
     `<path d="${shape}" fill="#0b1030" opacity="0.45"/>` +
-    plankSign(Math.max(c.x0 + 56 * km, Math.min(c.x1 - 56 * km, ap[0])), ap[1] - 22 * km - lift, km, label) + `</g>`;
+    plankSign(Math.max(c.x0 + 56 * sk, Math.min(c.x1 - 56 * sk, ap[0])), ap[1] - 22 * sk - lift, sk, label) + `</g>`;
+}
+// A hallway's doors, and the dining room's: by turns left and right, a pair to each span of the side
+// walls, packed toward us (ticket 116: spread down the whole corridor, the farther ones were too far
+// away to see), each sign at least HALL_SIGN_MIN of the size it would have at the corridor's mouth;
+// the torches along the walls stand in the gaps between the pairs (HALL_LIGHT_Z)
+const HALL_DOOR_Z = [[0, 0.24], [0.36, 0.62], [0.82, 1.12], [1.36, 1.76]], HALL_LIGHT_Z = [0.72, 1.24, 2.18], HALL_SIGN_MIN = 0.8;
+// where a side door's sign would sit (its middle), and its size: above the door's arch, kept in the picture
+function hallSignAt(c, sd, z0, z1, sk) {
+  const S = roomSpace(c), zm = (z0 + z1) / 2, [ax, ay] = S.at(sd * S.bw, S.floor - 216 * c.k, zm);
+  return { x: Math.max(c.x0 + 56 * sk, Math.min(c.x1 - 56 * sk, ax)), y: ay - 22 * sk, w: 104 * sk, h: 36 * sk };
+}
+// (all of a room's doors at once: a farther door's sign, where it would sit on a nearer one's on the same
+// side, goes up above it, so every sign can be read)
+function hallDoors(c, doors) {
+  const tops = { "-1": [], "1": [] };
+  return doors.map((L, i) => {
+    const sd = i % 2 ? 1 : -1, [z0, z1] = HALL_DOOR_Z[Math.floor(i / 2)], sk = c.k * Math.max(HALL_SIGN_MIN, 2 / (2 + z0 + z1));
+    const A = hallSignAt(c, sd, z0, z1, sk); let y = A.y;
+    for (const B of tops[sd]) if (Math.abs(A.x - B.x) < (A.w + B.w) / 2 + 4 * c.k && y + A.h / 2 > B.y - B.h / 2 - 4 * c.k) y = B.y - B.h / 2 - 4 * c.k - A.h / 2;
+    tops[sd].push({ ...A, y });
+    return hallSideDoor(c, sd, z0, z1, L.label, L.attrs, A.y - y, sk);
+  }).join("");
 }
 // Where a castle room's ways lead, for the picture (castleWays) and the
 // castle designer alike: 0 is out of the castle, a number a room, null
@@ -6399,14 +6455,14 @@ function roomExits(K, n) {
   return X;
 }
 // the dining room's door in its far wall, to the left of the great fireplace (as far away as the
-// fireplace, so small; its sign a little bigger than that, to be read)
+// fireplace, so small; its sign as big as the side doors' farthest, to be read)
 function farWallDoor(c, label, attrs) {
   const { k } = c, { floor, top, bw, vy } = roomFrame(c), f = 1 / (1 + HALL_STRETCHES * 0.8), Y = y => vy + (y - vy) * f;
   const w = bw * f, tp = Y(top), fl = Y(floor), kf = k * f, cx = -w * 0.73, hw = w * 0.17, dt = fl - (fl - tp) * 0.58;
   return `<g class="portal" ${attrs}><path d="M${f1(cx - hw)} ${f1(fl)} V${f1(dt + hw)} A${f1(hw)} ${f1(hw)} 0 0 1 ${f1(cx + hw)} ${f1(dt + hw)} V${f1(fl)} Z" fill="#1d1712" stroke="#4a3a2a" stroke-width="${f1(8 * kf)}"/>` +
     `<path d="M${f1(cx - hw * 0.7)} ${f1(fl)} V${f1(dt + hw * 1.1)} A${f1(hw * 0.7)} ${f1(hw * 0.7)} 0 0 1 ${f1(cx + hw * 0.7)} ${f1(dt + hw * 1.1)} V${f1(fl)}" fill="#2c2219"/>` +
     `<ellipse cx="${f1(cx)}" cy="${f1(fl - 2 * kf)}" rx="${f1(hw * 0.6)}" ry="${f1(3 * kf)}" fill="#ffcf6b" opacity="0.25"/>` +
-    plankSign(cx, dt - 14 * k * 0.42, k * 0.42, label) + `</g>`;
+    plankSign(cx, dt - 22 * k * HALL_SIGN_MIN, k * HALL_SIGN_MIN, label) + `</g>`;
 }
 // a sign at the bottom of the picture, toward us, on its post: a way through a door we can't see
 function bottomSign(c, x, label, attrs) {
@@ -6440,7 +6496,7 @@ function castleWays(c, K, n, style) {
     // a long room's doors run down its walls, as a hallway's do)
     // (a spiral staircase's doors come out onto its steps, each higher than the last)
     return (exits === "spiral" ? doors.map((L, i) => { const d = spiralDoorAt(c, i); return archDoor(d.x, d.y, d.k, L.label, L.attrs, 70, 130); }).join("")
-      : exits === "long" ? doors.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("")
+      : exits === "long" ? hallDoors(c, doors)
       : doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j; return hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k); }).join("")) +
       (out ? `<g class="portal" ${out.attrs}><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
       plankSign(-W * 0.2, y1 - 44 * k, k, `${out.label} ⬇️`) + `</g>` : "") + far;
@@ -6450,8 +6506,8 @@ function castleWays(c, K, n, style) {
     const end = X.find(x => x.kind === "stairs").to || 0;
     // (to this very hallway too: the friend flies up the stairs and lands back here, as through a picture of its own room)
     const A = hallFarArch(c), far = end ? `<g class="portal" data-to="castleroom" data-room="${end}"><path d="${A.d}" fill="#000000" fill-opacity="0.01"/>` +
-      plankSign(0, A.top - 14 * k * 0.18, k * 0.3, `${roomLabel(rooms[end - 1]).split(" ")[0]} ${end}`) + `</g>` : "";
-    return doors.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("") + far + behind;
+      plankSign(0, A.top - 22 * k * HALL_SIGN_MIN, k * HALL_SIGN_MIN, `${roomLabel(rooms[end - 1]).split(" ")[0]} ${end}`) + `</g>` : "";
+    return hallDoors(c, doors) + far + behind;
   }
   // (the greenhouse: archways along its back wall, three either side of its middle; any more, as
   // with a castle of many rooms, doors in its stone side walls, in perspective, as the king's room's,
@@ -8406,6 +8462,7 @@ function draw() {
   const BGK = state.background.kind, where = PLACE_PHRASE[BGK];
   const place = typeof where === "function" ? where(state.background) : where || "";
   document.getElementById("mood").textContent = "feeling " + mood(family(F.color), F.brow, F.smile) + (place ? " " + place : "");
+  fitPic();
 }
 
 // Where the friend is, after their feeling ("feeling happy in the forest"):
@@ -11241,6 +11298,91 @@ function repoChip() {
     target: "_blank", rel: "noopener", title: "This game's code, on GitHub" }, "GitHub ↗");
 }
 
+// ===================== THE PICTURE'S SIZE, AND THE DIVIDER =====================
+// (ticket 116) The picture is as large as its place allows, whatever its
+// shape: as wide as its column, unless that would make it taller than the
+// room under it leaves; then as tall as that (on a phone, 40% of the
+// screen's height; in full screen, the whole window, less the HUD). Called
+// after every draw (a picture without a scene changes shape with the
+// friend) and whenever its place changes size.
+let picFit = "";
+function fitPic() {
+  const pic = document.getElementById("pic"), area = document.querySelector(".pic-area");
+  if (!pic || !area) return;
+  const vb = pic.viewBox.baseVal, ar = vb && vb.width > 0 && vb.height > 0 ? vb.width / vb.height : 4 / 3;
+  const narrow = matchMedia("(max-width: 760px)").matches && !document.body.classList.contains("big");
+  // (the caption and buttons under it, in the same area, take their share of its height)
+  const bar = document.body.classList.contains("big") ? null : area.querySelector(".bar");
+  const W = area.clientWidth, H = narrow ? window.innerHeight * 0.4 : area.clientHeight - (bar ? bar.offsetHeight : 0);
+  if (!(W > 0) || !(H > 0)) return;
+  let w = W, h = W / ar;
+  if (h > H) { h = H; w = H * ar; }
+  const key = Math.floor(w) + "x" + Math.floor(h);
+  if (key === picFit) return;
+  picFit = key; pic.style.width = Math.floor(w) + "px"; pic.style.height = Math.floor(h) + "px";
+}
+// The divider between the picture's column and the controls: dragged, it
+// moves (and the place it was left, as a share of the window, is
+// remembered in this browser); double-clicked, or never dragged, the
+// picture's column is as wide as the picture can be at the window's
+// height (between 40% and 70% of the window, and leaving the controls
+// 320 pixels); the arrow keys move it too.
+const appEl = document.querySelector(".app"), divider = document.getElementById("divider");
+const SPLIT_KEY = "dress-up-split";
+const splitBounds = () => [260, Math.max(260, appEl.clientWidth - 18 - 320)];
+function setSplit(px, keep = false) {
+  if (matchMedia("(max-width: 760px)").matches) { appEl.style.removeProperty("--split"); fitPic(); return; }
+  const total = appEl.clientWidth, [lo, hi] = splitBounds();
+  if (px == null) {
+    let f = NaN; try { f = parseFloat(localStorage.getItem(SPLIT_KEY)); } catch (_) {}
+    if (f > 0 && f < 1) px = f * total;
+    else { const vb = document.getElementById("pic").viewBox.baseVal, ar = vb && vb.height > 0 ? vb.width / vb.height : 4 / 3;
+      const area = document.querySelector(".pic-area");
+      px = Math.max(total * 0.4, Math.min(total * 0.7, ((area.clientHeight || window.innerHeight * 0.8) - (area.querySelector(".bar")?.offsetHeight ?? 0)) * ar)); }
+  }
+  px = Math.max(lo, Math.min(hi, px));
+  appEl.style.setProperty("--split", Math.round(px) + "px");
+  divider.setAttribute("aria-valuenow", String(Math.round(100 * px / total)));
+  if (keep) try { localStorage.setItem(SPLIT_KEY, String(px / total)); } catch (_) {}
+  fitPic();
+}
+let splitDrag = null;
+divider.addEventListener("pointerdown", e => {
+  if (e.button !== 0) return;
+  splitDrag = { id: e.pointerId }; divider.setPointerCapture(e.pointerId);
+  divider.classList.add("drag"); document.body.classList.add("dragging-split"); e.preventDefault();
+});
+divider.addEventListener("pointermove", e => {
+  if (!splitDrag || e.pointerId !== splitDrag.id) return;
+  splitDrag.px = e.clientX - appEl.getBoundingClientRect().left - 7;
+  setSplit(splitDrag.px);
+});
+const endSplitDrag = e => {
+  if (!splitDrag || e.pointerId !== splitDrag.id) return;
+  if (splitDrag.px != null) setSplit(splitDrag.px, true);
+  splitDrag = null; divider.classList.remove("drag"); document.body.classList.remove("dragging-split");
+};
+divider.addEventListener("pointerup", endSplitDrag);
+divider.addEventListener("pointercancel", endSplitDrag);
+divider.addEventListener("dblclick", () => { try { localStorage.removeItem(SPLIT_KEY); } catch (_) {} setSplit(); });
+divider.addEventListener("keydown", e => {
+  const d = { ArrowLeft: -40, ArrowRight: 40 }[e.key];
+  if (!d) return;
+  e.preventDefault();
+  setSplit(document.querySelector(".stage").getBoundingClientRect().width + d, true);
+});
+window.addEventListener("resize", () => setSplit());
+if (window.ResizeObserver) new ResizeObserver(fitPic).observe(document.querySelector(".pic-area"));
+setSplit();
+
+// The save menu: its button opens and closes it; a click anywhere else, or
+// Escape, closes it. It stays open after a save, for the links to the files.
+const saveOpen = document.getElementById("save-open"), savePop = document.getElementById("save-pop");
+function setSavePop(on) { savePop.hidden = !on; saveOpen.setAttribute("aria-expanded", String(on)); }
+saveOpen.addEventListener("click", () => setSavePop(savePop.hidden));
+document.addEventListener("pointerdown", e => { if (!savePop.hidden && !e.target.closest(".save-menu")) setSavePop(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !savePop.hidden) setSavePop(false); });
+
 // ===================== FULL SCREEN =====================
 // The picture fills the window, the controls hidden -- and the screen too,
 // where the browser allows it (not an iPhone's); an X, Escape, or leaving
@@ -11681,6 +11823,8 @@ backBtn.addEventListener("click", () => {
 });
 
 showTab();
+// (the divider's place again, now that the first picture is drawn and its shape known)
+setSplit();
 </script>
 </body>
 </html>
