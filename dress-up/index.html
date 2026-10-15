@@ -4667,6 +4667,19 @@ const cobweb = (x, y, r, sd, k) => {
   for (const f of [0.35, 0.6, 0.85]) t += `<path d="M${f1(x + sd * r * f)} ${f1(y)} Q${f1(x + sd * r * f * 0.6)} ${f1(y + r * f * 0.6)} ${f1(x)} ${f1(y + r * f)}" fill="none" stroke="#e8e8f0" stroke-width="${f1(1 * k)}" opacity="0.45"/>`;
   return t;
 };
+// A perspective floor's lines across it, each from side wall to side wall,
+// closer together toward the back as paving is (each a step dz further back
+// than the last), down to past the picture's foot
+function floorRows(c, stroke, dz = 0.07) {
+  const { k, y1, pad } = c, { floor, bw, vy } = roomFrame(c);
+  let t = "";
+  for (let j = 1; ; j++) {
+    const f = 1 / (1 - dz * j), y = vy + (floor - vy) * f;
+    if (!(f > 0) || y > y1 + pad) break;
+    t += `<line x1="${f1(-bw * f)}" y1="${f1(y)}" x2="${f1(bw * f)}" y2="${f1(y)}" stroke="${stroke}" stroke-width="${f1(2 * k)}"/>`;
+  }
+  return t;
+}
 // The stone room: back wall, side walls, vaulted ceiling, flagstone floor,
 // in its style's stone; mossy or wet where its style says
 function roomShell(c, tone, opts = {}) {
@@ -4700,20 +4713,20 @@ function roomShell(c, tone, opts = {}) {
     }
   }
   // the vaulted ceiling: ribs springing from the walls, a boss where they meet
-  t += `<polygon points="${P(-bw, top)} ${P(bw, top)} ${P(W + pad, y0 - pad)} ${P(-W - pad, y0 - pad)}" fill="${ceil}"/>`;
+  t += `<polygon points="${P(-bw, top)} ${P(bw, top)} ${P(...out(bw, top, y0 - pad))} ${P(...out(-bw, top, y0 - pad))}" fill="${ceil}"/>`;
   for (const sd of [-1, 1]) t += `<path d="M${P(sd * bw, top)} Q${P(sd * bw * 0.5, top - 70 * k)} ${P(0, top - 60 * k)}" fill="none" stroke="${mix(tone, "#000000", 0.25)}" stroke-width="${f1(10 * k)}"/>` +
     `<path d="M${P(sd * bw, top)} Q${P(sd * (bw + 120 * k), y0 - 40 * k)} ${P(sd * (bw + 260 * k), y0 - pad * 0.2)}" fill="none" stroke="${mix(tone, "#000000", 0.25)}" stroke-width="${f1(12 * k)}"/>`;
   t += `<circle cx="0" cy="${f1(top - 60 * k)}" r="${f1(12 * k)}" fill="${mix(tone, "#000000", 0.15)}" stroke="${mortar}" stroke-width="${f1(3 * k)}"/>`;
   // the floor: flagstones toward the back wall, darker where the wall meets it
   const fl = opts.floor || mix(tone, "#5a4a3a", 0.35);
-  t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(W + pad, y1 + pad)} ${P(-W - pad, y1 + pad)}" fill="${fl}"/>`;
+  t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(...out(bw, floor, y1 + pad))} ${P(...out(-bw, floor, y1 + pad))}" fill="${fl}"/>`;
   for (let i = -8; i <= 8; i++) { const [ex, ey] = out(i * bw / 8, floor, y1 + pad); t += `<line x1="${f1(i * bw / 8)}" y1="${f1(floor)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="${mix(fl, "#000000", 0.3)}" stroke-width="${f1(2 * k)}"/>`; }
-  for (let j = 1; j < 9; j++) { const y = floor + (y1 + pad - floor) * Math.pow(j / 9, 1.8); t += `<line x1="${f1(-W - pad)}" y1="${f1(y)}" x2="${f1(W + pad)}" y2="${f1(y)}" stroke="${mix(fl, "#000000", 0.3)}" stroke-width="${f1(2 * k)}"/>`; }
+  t += floorRows(c, mix(fl, "#000000", 0.3));
   for (let i = 0; i < 14; i++) {   // a flagstone here and there a shade lighter or darker
     const u = R(i, 905), x = (R(i, 906) - 0.5) * 2 * bw * (1 + u * 1.6), y = floor + (y1 - floor) * u * u + 6 * k;
     t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((22 + 40 * u) * k)}" ry="${f1((6 + 14 * u) * k)}" fill="${R(i, 907) < 0.5 ? "#000000" : "#ffffff"}" opacity="0.06"/>`;
   }
-  t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(W + pad, y1 + pad)} ${P(-W - pad, y1 + pad)}" fill="url(#bg-floorfade)"/>`;
+  t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(...out(bw, floor, y1 + pad))} ${P(...out(-bw, floor, y1 + pad))}" fill="url(#bg-floorfade)"/>`;
   if (opts.moss) for (let i = 0; i < 16; i++) {   // moss along the foot of the walls
     const x = -bw + 2 * bw * R(i, 910);
     t += `<ellipse cx="${f1(x)}" cy="${f1(floor - 3 * k)}" rx="${f1((14 + 18 * R(i, 911)) * k)}" ry="${f1((5 + 5 * R(i, 912)) * k)}" fill="${opts.moss}" opacity="0.8"/>`;
@@ -5083,13 +5096,13 @@ function greenhouseSvg(c, K) {
     t += `<line x1="${f1(sd * bw * 1.25)}" y1="${f1(top - 20 * k)}" x2="${f1(sd * bw * 1.6)}" y2="${f1(floor - 20 * k)}" stroke="#ffffff" stroke-width="${f1(10 * k)}" opacity="0.25"/>`;
   }
   // the roof: arched ribs of iron over glass
-  t += `<polygon points="${P(-bw, top)} ${P(bw, top)} ${P(W + pad, y0 - pad)} ${P(-W - pad, y0 - pad)}" fill="url(#bg-glass)" opacity="0.35"/>`;
+  t += `<polygon points="${P(-bw, top)} ${P(bw, top)} ${P(...out(bw, top, y0 - pad))} ${P(...out(-bw, top, y0 - pad))}" fill="url(#bg-glass)" opacity="0.35"/>`;
   for (let j = -3; j <= 3; j++) t += `<path d="M${P(-bw - 40 * k, top + 10 * k)} Q${P(j * bw / 3, y0 - 120 * k)} ${P(bw + 40 * k, top + 10 * k)}" fill="none" stroke="${iron}" stroke-width="${f1(4 * k)}" opacity="${j ? 0.7 : 1}"/>`;
   t += `<line x1="${f1(-bw)}" y1="${f1(top)}" x2="${f1(bw)}" y2="${f1(top)}" stroke="${iron}" stroke-width="${f1(8 * k)}"/>`;
   // the floor: warm stone tiles, a mossy path round the fountain
-  t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(W + pad, y1 + pad)} ${P(-W - pad, y1 + pad)}" fill="#c9b79a"/>`;
+  t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(...out(bw, floor, y1 + pad))} ${P(...out(-bw, floor, y1 + pad))}" fill="#c9b79a"/>`;
   for (let i = -6; i <= 6; i++) { const [ex, ey] = out(i * bw / 6, floor, y1 + pad); t += `<line x1="${f1(i * bw / 6)}" y1="${f1(floor)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="#a8977c" stroke-width="${f1(2 * k)}"/>`; }
-  for (let j = 1; j < 8; j++) { const y = floor + (y1 + pad - floor) * Math.pow(j / 8, 1.8); t += `<line x1="${f1(-W - pad)}" y1="${f1(y)}" x2="${f1(W + pad)}" y2="${f1(y)}" stroke="#a8977c" stroke-width="${f1(2 * k)}"/>`; }
+  t += floorRows(c, "#a8977c", 0.09);
   for (let i = 0; i < 26; i++) { const u = R(i, 983), x = (R(i, 984) - 0.5) * 2.6 * bw * (1 + u), y = floor + (y1 - floor) * u * u + 8 * k;
     t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((8 + 16 * u) * k)}" ry="${f1((3 + 6 * u) * k)}" fill="#6f9a4a" opacity="0.5"/>`; }
   // vines up every back post and along the top, leaves and flowers on them
