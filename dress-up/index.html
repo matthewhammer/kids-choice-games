@@ -7704,9 +7704,9 @@ function chan(id, key) {
 // the wave through its sound (see sendAhead). Set on the mixing board, kept for each tune; a tune
 // may set its own to start with (T.lfos, and a part's lfo).
 const LFO_NAMES = ["A", "B", "C"];
-// (below a beat, the lengths above it turned over: 1/2 to 1/32 of a beat
-// mirrors 2 beats to 8 bars, so one beat is the knob's middle)
-const LFO_LONG = [2, 3, 4, 6, 8, 12, 16, 24, 32];
+// (every whole number of beats from 2 to 32, eight bars; below a beat,
+// the same turned over: 1/2 to 1/32 of a beat, so one beat is the knob's middle)
+const LFO_LONG = [...Array(31)].map((_, i) => i + 2);
 const LFO_BEATS = [...LFO_LONG].reverse().map(b => 1 / b).concat([1], LFO_LONG);
 // a length's place on the knob: its own, or the nearest by ratio
 const lfoBeatsAt = b => { let best = 0; LFO_BEATS.forEach((x, i) => { if (Math.abs(Math.log(x / b)) < Math.abs(Math.log(LFO_BEATS[best] / b))) best = i; }); return best; };
