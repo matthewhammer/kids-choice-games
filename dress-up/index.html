@@ -385,7 +385,7 @@ const DEFAULTS = {
              accent: "#e89aa0", furPattern: "stripes", spot: "auto",
              witchColor: "#6a2c91", webColor: "#3fae4a", webStyle: "tiled", trimColor: "#f28c28", witchCat: false, broom: false,
              catFur: "#1f1f22", catWhite: "#ffffff", catEyes: "#c6d43a", catNose: "#f4a0b0", catSize: 100, broomSize: 100, bootColor: "#1f1f22",
-             wingStyle: "butterfly", fairyOutfit: "dress", tunicStyle: "petal", fairyShoes: "slipper", fairyShoeColor: FAIRY_SHOE_COLORS[0], wingFlutter: true, wingLfo: "none", wreath: true, wreathFlowers: "mix",
+             wingStyle: "butterfly", fairyOutfit: "dress", tunicStyle: "petal", ghostRagged: 30, ghostEyes: "2", ghostHideEyes: false, ghostColor: "#f4f1ea", fairyShoes: "slipper", fairyShoeColor: FAIRY_SHOE_COLORS[0], wingFlutter: true, wingLfo: "none", wreath: true, wreathFlowers: "mix",
              ...Object.fromEntries(Object.entries(FAIRY_WINGS).map(([id, w]) => ["wingColor_" + id, w.colors[0]])),
              ...Object.fromEntries(Object.entries(FAIRY_TUNICS).map(([id, t]) => ["tunicColor_" + id, t.colors[0]])) },
 };
@@ -1326,6 +1326,61 @@ function faceSvg(F, ground, parts = false) {
     mouthSvg(F, o, upper, lower) +
     sickPile(F.sick, 150 + idiv(lower - 150, 2), 150 + (ground - LY.mouthY) / LY.my) + `</g>`;
   return parts ? { under, eyes, over } : under + eyes + over;
+}
+
+// ===================== THE GHOST =====================
+// A ghost, like the 👻 emoji but the friend's full size: a sheet over all
+// of them, domed over the head, falling to a wavy hem just above the feet,
+// its sleeves along the arms (as they are held) ending in round nubs; a
+// few soft folds. Ragged (0 to 100): the hem's scallops turn into torn
+// points of every length, and the edges fray. Its eyes where the friend's
+// are, in the friend's own eye style (none, one in the middle, two, or a
+// third in the middle of the forehead, like the three-eyed smiley on the
+// poster for the movie Evolution), or, hidden, plain black holes as the
+// emoji's; an "o" of a mouth. In body units; returns the sheet, the eyes
+// and the mouth apart, for the visibility panel's parts.
+const GHOST_COLORS = ["#f4f1ea", "#ffffff", "#e5e7eb", "#c4b5fd", "#a7f3d0", "#fde68a", "#fbcfe8", "#1f1f22"];
+function ghostSvg(G, { F, tx, ty, s, w, L, feetY, arms, armW }) {
+  const col = G.ghostColor || GHOST_COLORS[0], ln = darker(col), rag = Math.max(0, Math.min(1, (G.ghostRagged ?? 30) / 100));
+  const rnd = (i, t) => { const v = Math.sin(i * 12.9898 + t * 78.233) * 43758.5453; return v - Math.floor(v); };
+  const LY = faceLayout(F), at = (x, y) => [tx + x * s, ty + y * s];
+  const [hcx, hcy] = at(100, HEAD_C), R = 80 * s * Math.max(headWidth(F) * (1 + 0.12 * F.alien / 100), headH(F)) + 14;
+  const hemY = feetY - 8, half = Math.max(w + 45, R * 1.25), n = rag < 0.35 ? 5 : 4 + Math.round(3 * rag);
+  // the outline: up the left side, over the dome, down the right side, then
+  // the hem back from right to left in scallops (or torn points)
+  const side = (sd, k) => { const pts = []; const top = hcy, bot = hemY - 4;
+    for (let i = 0; i <= 8; i++) { const u = i / 8, y = top + (bot - top) * u, x = hcx + sd * (R + (half - R) * Math.pow(u, 1.4)) + sd * rag * 7 * (rnd(i + k, 3) - 0.5) * (u > 0.1 ? 1 : 0);
+      pts.push([x, y]); }
+    return pts; };
+  const left = side(-1, 0).reverse(), right = side(1, 20);
+  let d = `M${left.map(([x, y]) => f1(x) + " " + f1(y)).join(" L")} A${f1(R)} ${f1(R)} 0 0 1 ${f1(right[0][0])} ${f1(right[0][1])} L${right.slice(1).map(([x, y]) => f1(x) + " " + f1(y)).join(" L")}`;
+  const x0 = right[right.length - 1][0], x1 = left[0][0], step = (x0 - x1) / n;
+  for (let i = 1; i <= n; i++) {
+    const a = x0 - (i - 1) * step, b = x0 - i * step, m = (a + b) / 2;
+    // (smooth: round waves, as the emoji's; ragged: torn points, each its
+    // own length and lean, longer the more ragged)
+    if (rag < 0.35) d += ` Q${f1(m)} ${f1(hemY + 34 * (1 - rag))} ${f1(b)} ${f1(hemY - 4)}`;
+    else { const deep = 20 + 50 * rag * (0.35 + 0.65 * rnd(i, 7)), lean = (rnd(i, 8) - 0.5) * step * 0.5, notch = i < n ? 10 + 22 * rag * rnd(i, 9) : 0;
+      d += ` L${f1(m + lean)} ${f1(hemY + deep)} L${f1(b)} ${f1(hemY - 4 - notch)}`; }
+  }
+  d += " Z";
+  // the sleeves, along the arms, behind the body, with round ends
+  const sleeves = arms.map(({ A, H }) => `<line x1="${f1(A[0])}" y1="${f1(A[1])}" x2="${f1(H[0])}" y2="${f1(H[1])}" stroke="${ln}" stroke-width="${f1(armW + 30)}" stroke-linecap="round"/>` +
+    `<line x1="${f1(A[0])}" y1="${f1(A[1])}" x2="${f1(H[0])}" y2="${f1(H[1])}" stroke="${col}" stroke-width="${f1(armW + 25)}" stroke-linecap="round"/>`).join("");
+  // folds: soft lines down the sheet
+  const folds = [-0.55, -0.15, 0.3, 0.62].map((u, i) => { const x = hcx + u * half * 0.8;
+    return `<path d="M${f1(x)} ${f1(hcy + R * 0.6 + 20 * rnd(i, 5))} Q${f1(x + 14 * (rnd(i, 6) - 0.5))} ${f1((hcy + hemY) / 2)} ${f1(x + u * 18)} ${f1(hemY - 6)}" fill="none" stroke="${ln}" stroke-width="2.5" opacity="0.35" stroke-linecap="round"/>`; }).join("");
+  const sheet = sleeves + `<path d="${d}" fill="${col}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` + folds;
+  // the eyes: where the friend's are, in the friend's style, or black holes
+  const count = Math.max(0, Math.min(3, Number(G.ghostEyes ?? 2))), hide = !!G.ghostHideEyes;
+  const spots = count === 0 ? [] : count === 1 ? [[100, LY.eyeY]] : [[100 - LY.eyeDX, LY.eyeY], [100 + LY.eyeDX, LY.eyeY]];
+  if (count === 3) spots.push([100, LY.eyeY - 2 * eyeHalfH(F) - 10]);
+  const eyes = spots.map(([x, y], i) => hide
+    ? `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(Math.max(7, eyeHalfW(F) * 0.7))}" ry="${f1(Math.max(10, eyeHalfH(F) * 1.05))}" fill="#1f1f22"/>`
+    : `<g transform="translate(0 ${f1(y - 100)})">${eye(x, F.eyes, F.stars, F.hearts, F.xeyes, F, i === 1 && count > 1 ? -F.tilt : F.tilt)}</g>`).join("");
+  const inFace = t => `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">${t}</g>`;
+  const mouth = `<ellipse cx="100" cy="${f1(LY.mouthY - 4)}" rx="14" ry="19" fill="#1f1f22"/>`;
+  return { sheet, eyes: inFace(eyes), mouth: inFace(mouth) };
 }
 
 // ===================== COSTUMES =====================
@@ -6226,6 +6281,7 @@ function draw() {
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
   svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-ground)})">`;
   if (meanSeen > 0) svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
+  const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
   if (!C) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
                  `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairBackSvg(state.hair), "under-hat-back")}</g></g></g>`);
@@ -6442,6 +6498,14 @@ function draw() {
     }
   }
   veilFrom("hands", handsAt);
+  // a ghost: the sheet over all of the friend instead (what was drawn of
+  // them is dropped, and its see-through layers with it)
+  if (kind === "ghost") {
+    svg = svg.slice(0, figAt);
+    for (const g of Object.keys(layers)) delete layers[g];
+    const gh = ghostSvg(WC, { F, tx, ty, s, w, L, feetY, arms, armW });
+    svg += veil("shirt", gh.sheet) + veil("head", gh.mouth) + veil("eyes", gh.eyes);
+  }
   svg += `</g>`;   // the figure
   svg = unveil(svg, layers);
 
@@ -8175,7 +8239,15 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"]]],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"]]],
+    // the ghost: its sheet, its eyes, and how see-through it is (the
+    // visibility panel's all-at-once controls, and their LFO)
+    ["range", "ghostRagged", "👻 how ragged (0 = smooth)", 0, 100, 0, 70],
+    ["choice", "ghostEyes", "👀 eyes", [["0", "none"], ["1", "one"], ["2", "two"], ["3", "three"]]],
+    ["toggle", "ghostHideEyes", "🕳️ hide eyes (black holes)"],
+    ["color", "ghostColor", "👻 the sheet's color", GHOST_COLORS],
+    ["of", "visible", ["every", "all", "👻 see-through: every part at once", [["🙂 visible", 100], ["👻 ghost", 50], ["🫥 invisible", 0]]], c => c.kind === "ghost"],
+    ["of", "visible", ["master", "all", "🧍 full body: moves every part", 0, 100], c => c.kind === "ghost"],
     ["color", "fur", "fur / feather color", FURS],
     ["choice", "furPattern", "fur pattern", [["none", "plain"], ["stripes", "stripes"], ["spots", "spots"],
                                              ["rosettes", "rosettes"], ["patches", "patches"]]],
@@ -8412,6 +8484,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",
+  ...Object.fromEntries(["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor"].map(k => ["costume." + k, c => c.kind === "ghost"])),
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),
   ...Object.fromEntries(Object.keys(FAIRY_TUNICS).map(id => ["costume.tunicColor_" + id, c => c.kind === "fairy" && (c.tunicStyle ?? "petal") === id])),
@@ -8555,6 +8628,10 @@ function togglePin(id) {
 // the editor, not the performance)
 let buildingHud = false;
 function control(part, [kind, key, label, ...rest], opts = {}) {
+  // another tab's control, shown here when this tab's settings say (its
+  // settings are that tab's: the ghost's see-through-ness is the
+  // visibility panel's)
+  if (kind === "of") return control(key, label, { when: rest[0] ? () => rest[0](state[part]) : null });
   const val = el("span", { class: "val" });
   const name = el("span", { class: "name" }, [label]);
   const lbl = el("div", { class: "lbl" }, [el("span", {}, [name]), val]);
