@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.32, for the next version, which waits for Matthew's go-ahead.
+
+- **🧚 The fairy in a shirt and pants:** two chips, 👗 dress or 👕 shirt + pants. With pants, her tunic is a top, in the same five styles and colors, its hem a short frill at her hips (petals, leaves, bells, a sparkly zigzag, or a toadstool's, with its white frill), over pants a shade deeper than the tunic.
+
 ## 0.0.32 (2026-10-14)
 
 Everything in 0.0.31, plus inside the healer's hut, three peaceful waltzes, a wreath of flowers for the fairy, an afro of its own shape, and bangs that sit under the witch's brim.

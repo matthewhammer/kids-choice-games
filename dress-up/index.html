@@ -384,7 +384,7 @@ const DEFAULTS = {
              accent: "#e89aa0", furPattern: "stripes", spot: "auto",
              witchColor: "#6a2c91", webColor: "#3fae4a", webStyle: "tiled", trimColor: "#f28c28", witchCat: false, broom: false,
              catFur: "#1f1f22", catWhite: "#ffffff", catEyes: "#c6d43a", catNose: "#f4a0b0", catSize: 100, broomSize: 100, bootColor: "#1f1f22",
-             wingStyle: "butterfly", tunicStyle: "petal", fairyShoes: "slipper", fairyShoeColor: FAIRY_SHOE_COLORS[0], wingFlutter: true, wingLfo: "none", wreath: true, wreathFlowers: "mix",
+             wingStyle: "butterfly", fairyOutfit: "dress", tunicStyle: "petal", fairyShoes: "slipper", fairyShoeColor: FAIRY_SHOE_COLORS[0], wingFlutter: true, wingLfo: "none", wreath: true, wreathFlowers: "mix",
              ...Object.fromEntries(Object.entries(FAIRY_WINGS).map(([id, w]) => ["wingColor_" + id, w.colors[0]])),
              ...Object.fromEntries(Object.entries(FAIRY_TUNICS).map(([id, t]) => ["tunicColor_" + id, t.colors[0]])) },
 };
@@ -5941,7 +5941,10 @@ function draw() {
   if (fairy) {
     const pat = fTunic === "toadstool" ? { pattern: "dots", patternSize: 34, patternColor: "#ffffff" } : fTunic === "sparkle" ? { pattern: "stars", patternSize: 26, patternColor: "#fde047" } : { pattern: "plain" };
     SH = { ...SH, style: "tank", color: fCol, ...pat };
-    P = { ...P, style: "dress", skirtLen: 58, color: fCol, ...pat };
+    // (in a dress; or a shirt and pants: her tunic top over pants a shade
+    // deeper, its hem a short frill at her hips, see below)
+    P = WC.fairyOutfit === "pants" ? { ...P, style: "pants", color: mix(fCol, "#000000", 0.28), pattern: "plain" }
+                                   : { ...P, style: "dress", skirtLen: 58, color: fCol, ...pat };
   }
   const w = SH.width, L = SH.length;
   const nw = Math.max(22, B.neckW / 2 + 6);           // the collar fits the neck
@@ -6144,6 +6147,20 @@ function draw() {
     if (wrapStripes(C)) svg += legStripes(legs, hw, fx, half, L, len, Math.min(len * 0.3, 40), C.marks);
   }
   veilFrom("pants", pantsAt);
+  // a fairy in a shirt and pants: her tunic's hem, a short frill at her
+  // hips over the pants, in her tunic's style (the shirt's to see through)
+  if (fairy && WC.fairyOutfit === "pants" && !undies) {
+    const sl = LL * 0.17, fl = hw + 14 + sl * 0.25, n = 7, tf0 = fillOf("pat-shirt", SH.color, SH.pattern), ts = darker(SH.color);
+    let fr = "";
+    if (fTunic === "toadstool") {
+      let u = `M${f1(-fl - 5)} ${f1(L + sl - 5)}`;
+      for (let i = 0; i < 12; i++) { const xa = -fl - 5 + (2 * fl + 10) * i / 12, xb = -fl - 5 + (2 * fl + 10) * (i + 1) / 12; u += ` Q${f1((xa + xb) / 2)} ${f1(L + sl + 20)} ${f1(xb)} ${f1(L + sl - 5)}`; }
+      fr += `<path d="${u} Z" fill="#fffaf0" stroke="#d6cfc0" stroke-width="2"/>`;
+    }
+    let d = `M${-hw} ${L - 10} L${hw} ${L - 10} L${f1(fl)} ${f1(L + sl)}`;
+    for (let i = 1; i <= n; i++) d += fairyHem(fTunic, fl - (i - 1) * 2 * fl / n, fl - i * 2 * fl / n, L + sl);
+    svg += veil("shirt", fr + `<path d="${d} Z" fill="${tf0}" stroke="${ts}" stroke-width="2.5" stroke-linejoin="round"/>`);
+  }
 
   // neck, behind the shirt so it shows in the collar
   // (the neck, the arms and the body are the shirt's to see through: an
@@ -8022,6 +8039,7 @@ const TABS = [
     ...Object.entries(FAIRY_WINGS).map(([id, w]) => ["color", "wingColor_" + id, "🧚 wings' color", w.colors]),
     ["toggle", "wingFlutter", "🧚 wings flutter"],
     ["choice", "wingLfo", "〰️ wings flap with", [["none", "no LFO"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
+    ["choice", "fairyOutfit", "🧚 wears", [["dress", "👗 dress"], ["pants", "👕 shirt + pants"]]],
     ["choice", "tunicStyle", "🧚 tunic", Object.entries(FAIRY_TUNICS).map(([id, t]) => [id, t.name])],
     ...Object.entries(FAIRY_TUNICS).map(([id, t]) => ["color", "tunicColor_" + id, "🧚 tunic's color", t.colors]),
     ["toggle", "wreath", "🌸 a wreath of flowers"],
@@ -8223,7 +8241,7 @@ const SHOWN_WHEN = {
   "costume.fur": c => !!ANIMALS[c.kind],
   "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),
   "costume.witchColor": c => c.kind === "witch",
-  ...Object.fromEntries(["wingStyle", "wingFlutter", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
+  ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
