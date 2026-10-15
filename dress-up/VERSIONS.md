@@ -4,6 +4,7 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **Fixed: the deep dungeon's hanging cage, and the greenhouse's monstera leaves.** The cage's bars stuck up past its dome or stopped short of it; now each starts on the dome. The monstera's slits started in the air beside the leaf; now each cuts in from the leaf's own edge.
 - **Fixed: the cat room's window seat has three panels side by side,** no longer overlapping.
 - **Fixed: the castle road's stones line its edges,** instead of wandering off into the meadow beside it.
 - **Fixed: the healer's chimney is stone all the way up.** Its stonework stopped partway, leaving the chimney breast bare above the mantel, and a stone in every other row stuck out past its edge; now the stones run from the ceiling to the mantel, and stay on the breast.
