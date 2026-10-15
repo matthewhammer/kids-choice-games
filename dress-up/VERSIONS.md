@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.36 (2026-10-15)
+
+Everything in 0.0.35, plus a hallway whose stairs lead nowhere ends in a wall.
+
+- **🧱 A hallway whose stairs lead nowhere ends in a wall.** When "🌀 the stairs at its end lead to" is "🧱 nowhere", there are no stairs: the corridor ends in a stone wall, its courses meeting the side walls' at the corners, with a torch on it lighting it warmly. Before, the lit archway and its stairs were still there, leading nowhere. Matthew's idea.
+
 ## 0.0.35 (2026-10-15)
 
 Everything in 0.0.34, plus the spooky waltz funked five ways; seven LFOs, with every place moving to the music; three new castle rooms (a cat room, a stable and a hallway), with the castle's cats and horses; our imagination, a new place; gems in the cave; D's castle; two color themes per castle; and many drawings fixed, inside the tree house most of all.

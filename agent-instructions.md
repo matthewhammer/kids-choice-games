@@ -143,7 +143,7 @@ Every place moves at least one quick thing and one slow thing with the music. A 
 
 **A castle room style.** One entry in `ROOM_KINDS`:
 - its label (emoji first) and whose idea it was;
-- its drawing, `(c, K, r) => …`;
+- its drawing, `(c, K, r) => …`, where `r` carries what `castleroomScene` works out for this room: a trap room's `pits`, a dungeon's `bones`, a hallway's `hallEnd` ("none" when its stairs lead nowhere, and it ends in a wall). Anything new in `r` must also go into the inputs of the room's `part`, or the cached drawing won't change with it;
 - its exits:
   - `side`: doors in its side walls, set per room, a sign out toward us, and a color theme, as the king's room has;
   - `hall`: a hallway's doors and stairs;

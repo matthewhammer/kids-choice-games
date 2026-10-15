@@ -314,7 +314,7 @@ const ROOM_KINDS = {
   trap: { label: "🕳️ trap room", by: "N", exits: "trap", tone: "#8f8a96", draw: (c, K, r) => trapRoomSvg(c, K, r.pits) },
   dungeon1: { label: "🗝️ dungeon", by: "N", exits: "ladder", tone: "#6c6f7a", draw: (c, K, r) => dungeonSvg(c, K, false, r.bones) },
   dungeon2: { label: "⛓️ deep dungeon", by: "N", exits: "ladder", tone: "#5d6b62", draw: (c, K, r) => dungeonSvg(c, K, true, r.bones) },
-  hallway: { label: "🕯️ hallway", by: "N", exits: "hall", tone: "#8a8597", draw: (c, K) => hallwaySvg(c, K) },
+  hallway: { label: "🕯️ hallway", by: "N", exits: "hall", tone: "#8a8597", draw: (c, K, R) => hallwaySvg(c, K, R) },
   catroom: { label: "🐈 cat room", by: "more", exits: "side", draw: (c, K) => catRoomSvg(c, K) },
   stable: { label: "🐴 stable", by: "more", exits: "side", draw: (c, K) => stableSvg(c, K) },
 };
@@ -4963,7 +4963,7 @@ function dungeonSvg(c, K, deep, bones = 0) {
 // torch and a banner in the castle's flag colors with the owner's letter.
 // A carpet in the castle's carpet color runs from us down its whole length
 // to a closed door at the far end, a little light under it.
-function hallwaySvg(c, K) {
+function hallwaySvg(c, K, R = {}) {
   const { x0, y0, y1, W, H, k, pad, P } = c, { floor, top, bw, vy, out } = roomFrame(c);
   const tone = ROOM_TONE.hallway, mortar = mix(tone, "#000000", 0.35), gold = "#e8b923";
   let t = roomShell(c, tone, {});
@@ -4991,8 +4991,26 @@ function hallwaySvg(c, K) {
   // staircase, its steps winding up round their stone column and out of
   // sight, warm light coming down them (where it leads: castleWays)
   // (the stairwell is lit, so it is drawn over the hallway's dark, at the end)
+  // When the stairs lead nowhere, there are none: the corridor ends in a
+  // stone wall, its courses meeting the side walls' at the corners, and a
+  // torch on it.
+  const deadEnd = R.hallEnd === "none";
   let stairwell = "";
-  { const f = fN, w = bw * f, tp = Y(top, f), fl = Y(floor, f), A = hallFarArch(c), kf = k * f;
+  // (lit by its torch, so, as the stairwell, it is drawn over the hallway's dark: in the night's
+  // blue, warm round the torch)
+  if (deadEnd) { const f = fN, w = bw * f, tp = Y(top, f), fl = Y(floor, f), kf = k * f, bwid = w / 3, ty = Y(floor - 220 * k, f);
+    const stone = mix(mix(tone, "#000000", 0.3), "#0b1030", 0.6), seam = mix(stone, "#000000", 0.4);
+    stairwell += `<defs><radialGradient id="hall-endlight" cx="0" cy="${f1(ty - 24 * kf)}" r="${f1(w * 1.1)}" gradientUnits="userSpaceOnUse">` +
+         `<stop offset="0" stop-color="#ffcf6b" stop-opacity="0.4"/><stop offset="1" stop-color="#ffcf6b" stop-opacity="0"/></radialGradient></defs>` +
+         `<rect x="${f1(-w)}" y="${f1(tp)}" width="${f1(2 * w)}" height="${f1(fl - tp)}" fill="${stone}"/>`;
+    for (let j = 0; j < 12; j++) {
+      const ya = Y(top + (floor - top) * j / 12, f), yb = Y(top + (floor - top) * (j + 1) / 12, f);
+      if (j > 0) stairwell += `<line x1="${f1(-w)}" y1="${f1(ya)}" x2="${f1(w)}" y2="${f1(ya)}" stroke="${seam}" stroke-width="${f1(1.6 * kf)}"/>`;
+      for (let x = -w + (j % 2 ? bwid / 2 : bwid); x < w - 1e-6; x += bwid)
+        stairwell += `<line x1="${f1(x)}" y1="${f1(ya)}" x2="${f1(x)}" y2="${f1(yb)}" stroke="${seam}" stroke-width="${f1(1.6 * kf)}"/>`;
+    }
+    stairwell += `<rect x="${f1(-w)}" y="${f1(tp)}" width="${f1(2 * w)}" height="${f1(fl - tp)}" fill="url(#hall-endlight)"/>`;
+  } else { const f = fN, w = bw * f, tp = Y(top, f), fl = Y(floor, f), A = hallFarArch(c), kf = k * f;
     t += `<rect x="${f1(-w)}" y="${f1(tp)}" width="${f1(2 * w)}" height="${f1(fl - tp)}" fill="${mix(tone, "#000000", 0.28)}"/>`;
     stairwell += `<path d="${A.d}" fill="#1a1410" stroke="${mix(tone, "#ffffff", 0.08)}" stroke-width="${f1(Math.max(1, 8 * kf))}"/>` +
          `<clipPath id="hall-arch"><path d="${A.d}"/></clipPath><g clip-path="url(#hall-arch)">` +
@@ -5028,8 +5046,9 @@ function hallwaySvg(c, K) {
          `<path d="M${P(bx - bwid / 2, by)} H${f1(bx + bwid / 2)} V${f1(by + bh)} L${P(bx, by + bh - 24 * kk)} L${P(bx - bwid / 2, by + bh)} Z" fill="${castleFlagFill(K, i, u)}" stroke="${gold}" stroke-width="${f1(Math.max(0.6, 3 * kk))}"/>` +
          castleLetter(K, i, bx, by + 100 * kk, 34 * kk, "serif");
   }
-  // the stairwell's light, at the far end
-  { const A = hallFarArch(c); lights.push(`<circle cx="0" cy="${f1(A.top + (A.fl - A.top) * 0.15)}" r="${f1((A.x1 - A.x0) * 0.75)}" fill="url(#bg-glow)" opacity="0.6"/>`); }
+  // the stairwell's light, at the far end; or, at a dead end, a torch on its wall
+  if (deadEnd) lights.push(torchSvg(0, Y(floor - 220 * k, fN), k * fN * 1.4, 9, c.o));
+  else { const A = hallFarArch(c); lights.push(`<circle cx="0" cy="${f1(A.top + (A.fl - A.top) * 0.15)}" r="${f1((A.x1 - A.x0) * 0.75)}" fill="url(#bg-glow)" opacity="0.6"/>`); }
   // and a torch either side where the corridor opens, near us
   for (const sd of [-1, 1]) lights.push(torchSvg(sd * bw * 1.12, floor - 250 * k, k * 1.1, 7 + (sd > 0 ? 1 : 0), c.o));
   // the dark: deeper toward the far end, the night over everything, then the torches' light and flames on top
@@ -5908,8 +5927,9 @@ function castleroomScene(c) {
   if (style === "hallway") c = { ...c, eye: 0.3 };
   // (in its own color theme)
   if (K.roomTheme[n - 1] === "B") K = { ...K, ...K.themeB };
-  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones });
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "",
+  const hallEnd = style === "hallway" && K.hall[n - 1].end === "none" ? "none" : "";
+  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd });
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd,
                                   SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)
