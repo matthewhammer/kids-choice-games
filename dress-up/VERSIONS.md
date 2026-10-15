@@ -4,6 +4,18 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **🧙 A new tune, the spooky waltz, funked** (with the waltzes on the music tab). It is the spooky waltz, all of it (the theremin ghosts, the oom-pah-pah, the bell, the music box), quicker (205 beats a minute) and four half steps down, over a funk beat in 4 against the waltz's 3:
+  - kick, snare and hats;
+  - a shaker, a cowbell and congas;
+  - bongos as the bongo breakdown's, with their own solo halfway through;
+  - and a pair of wah-wah basses, buzzy and plucky: one low, popping its octaves, and one higher, answering it. Both keep to the waltz's chords as they change.
+
+  The waltz and the beat meet again at every eight bars. Its bass lines are louder than the waltz's own.
+- **〰️ Five LFOs, and the scenes move with the music.** The mixing board has two more LFOs: D, a quick one (once a beat to start with), and E, a slow one (once in four bars). Out of the box, they are the scenes' own:
+  - in every scene, its quick things (flames leaping, hens pecking, …) move with D;
+  - and its slow things (toys swinging, dust drifting, …) move with E.
+
+  Things side by side each go their own way into the wave, never in step. That is only how they start: D and E can be set like any LFO, anything can follow any LFO, and two new choices on the scene's panel say which LFO its quick things and its slow things follow ("〰️ quick things in the scene move with", "〰️ slow things in the scene move with"), or "their own pace", as before. Each LFO's strip on the mixing board names the scene's things that follow it.
 - **🐈 A cat room, a new castle room:** a big, cozy wooden room. It has honey plank walls, beams overhead and a lantern, and a stone fireplace with a crackling fire, sparks rising from it. Over the mantel, with its candles and its little clock, hangs a portrait of a royal cat in a crown. There is a window seat under the evening sky (a crescent moon, twinkling stars), its curtains tied back. Two tall cat trees have carpeted platforms, sisal posts, a pompom swinging, and a cubby at the foot with eyes peeking out of it. Shelves step up the side walls to a high walkway across the back, with a cat flap at its end and a feather toy dangling from it, and a rope bridge crosses the room. On the floor are a big braided rug, bowls of fish and water, a basket, a box, balls of yarn, a toy mouse, and a mouse hole whose mouse peeks out now and then. Its doors are in its side walls, as the king's room's are, and its way out is a sign at the bottom. The rug, the curtains, the window seat and the cat trees take its color theme.
 - **🐈 The castle's cats:** up to eight ("🐈 how many cats"), six to start with. Each has its own fur, tuxedo white, eyes and size, and it is one of:
   - 🐈 sitting, its tail hanging over a shelf's edge, or curled round its paws on the floor;
@@ -11,7 +23,7 @@ Each version lists the game's features as of that version. The newest version is
   - 🐾 walking to and fro.
 
   Where it is: by the fire, on either cat tree, on the high walkway, in the window seat, in the basket, on a shelf, on the mantel, on the rug, in the box, or on the rope bridge.
-- **〰️ Each cat wags in its own time, never together.** A cat wags at its own pace, or with LFO A, B or C ("〰️ its tail wags with"), in time with the music. Each starts its own way into the wag ("↪️ how far into the wag it starts"), spread out to begin with. A tail on an LFO too fast to see blurs, as the fairy's wings do. The mixing board's LFO strip lists the cats' tails that follow it.
+- **〰️ Each cat wags in its own time, never together.** A cat wags with an LFO, in time with the music ("〰️ its tail wags with"; the quick LFO D to start with), or at its own pace. Each starts its own way into the wag ("↪️ how far into the wag it starts"), spread out to begin with. A tail on an LFO too fast to see blurs, as the fairy's wings do. The mixing board's LFO strip lists the cats' tails that follow it.
 - **🐴 A stable, a new castle room:** the castle's stone under timber.
   - Along the back wall, four stalls, each with a half door, its top door swung open, a brass name plate, a bucket, and a hay net inside.
   - Over the stalls, a hay loft stacked with bales, straw hanging off its edge, and a ladder up.
@@ -19,7 +31,7 @@ Each version lists the game's features as of that version. The newest version is
   - Horseshoes are nailed up for luck, and saddles and a bridle hang on the walls. A lantern hangs on the middle post.
   - On the floor: straw everywhere, a stone water trough that ripples, buckets, a heap of hay with a pitchfork in it, and two hens pecking about.
   - Its doors are in its side walls, as the king's room's are.
-- **🐴 The castle's horses:** up to four ("🐴 how many horses"), three to start with, each looking out over its stall's door. Each has its own coat, mane and face marking (⭐ a star, ❕ a stripe, ⬜ a blaze, or none), and a halter in the castle's colors. A horse nods, looks round now and then, flicks an ear, blinks, and munches a wisp of hay. Each nods in its own time: at its own pace, or with LFO A, B or C ("〰️ it nods with"), starting its own way into the nod. An empty stall has a blanket in the castle's colors over its door.
+- **🐴 The castle's horses:** up to four ("🐴 how many horses"), three to start with, each looking out over its stall's door. Each has its own coat, mane and face marking (⭐ a star, ❕ a stripe, ⬜ a blaze, or none), and a halter in the castle's colors. A horse nods, looks round now and then, flicks an ear, blinks, and munches a wisp of hay. Each nods in its own time: with an LFO ("〰️ it nods with"; the slow LFO E to start with) or at its own pace, starting its own way into the nod. An empty stall has a blanket in the castle's colors over its door.
 - **Fixed: the fairy forest's lanterns hang from branches.** M noticed that the two lanterns by the great tree hung from nothing. Now the tree has two branches reaching out from its trunk, each ending in a tuft of leaves, and each lantern's string is tied round one of them.
 - **Fixed: the fairy house follows its LFO at once.** Before, changing its LFO's speed, shape or depth on the mixing board left the house fading as before, until something else in the fairy forest changed.
 - **🕯️ A hallway, a new castle room:** a long corridor going off into the dark, lit only by its torches (the fairy forest's night over it, and no fireflies: they live outside), arches across its vault, and along its walls, by turns, torches and banners in the castle's flag colors with its owner's letter. A carpet runs from you all the way down it, in a color of the castle's own ("🟥 the hallway's carpet"). Its doors are set into its side walls in perspective, left and right, as a hand-painted adventure game draws them, each with its sign. At the far end, an archway onto the foot of a spiral staircase, lit from above; where it leads is the hallway's own setting ("🌀 the stairs at its end lead to": the first spiral stairs, any room, or nowhere), even the hallway itself: the friend flies up the stairs and lands back in it, as through a picture of the room you are in. The hallway is seen from a little higher than the other rooms, so its far end shows above the friend's head.

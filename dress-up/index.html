@@ -377,12 +377,12 @@ const castleOf = o => {
              return { fur: v("Fur") ?? d.fur, white: v("White") ?? d.white, eyes: v("Eyes") ?? d.eyes,
                       pose: CAT_POSES.some(([p]) => p === v("Pose")) ? v("Pose") : d.pose,
                       spot: CAT_SPOTS.some(([p]) => p === v("Spot")) ? v("Spot") : d.spot, size: Math.max(20, Math.min(300, v("Size") ?? 100)),
-                      lfo: LFO_NAMES.includes(v("Lfo")) ? v("Lfo") : "none", offset: Math.max(0, Math.min(99, v("Offset") ?? d.offset)) }; }),
+                      lfo: v("Lfo") === "none" ? "none" : LFO_NAMES.includes(v("Lfo")) ? v("Lfo") : "D", offset: Math.max(0, Math.min(99, v("Offset") ?? d.offset)) }; }),
            // its horses, who live in its stable
            horses: STABLE_HORSES.slice(0, Math.max(0, Math.min(4, Math.round(o["castleHorses" + id] ?? STABLE_HORSE_COUNT)))).map((d, i) => {
              const v = w => o[horseKey(id, i + 1, w)];
              return { coat: v("Coat") ?? d.coat, mane: v("Mane") ?? d.mane, mark: HORSE_MARKS.some(([m]) => m === v("Mark")) ? v("Mark") : d.mark,
-                      lfo: LFO_NAMES.includes(v("Lfo")) ? v("Lfo") : "none", offset: Math.max(0, Math.min(99, v("Offset") ?? d.offset)) }; }) };
+                      lfo: v("Lfo") === "none" ? "none" : LFO_NAMES.includes(v("Lfo")) ? v("Lfo") : "E", offset: Math.max(0, Math.min(99, v("Offset") ?? d.offset)) }; }) };
 };
 // the fill for a castle's i-th flag or banner: its two colors in turn, or
 // both, as stripes or checkers (a pattern, its squares u across)
@@ -458,12 +458,13 @@ const DEFAULTS = {
                    ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
                    ["castleCats" + id, CAT_ROOM_COUNT], ...CAT_ROOM_CATS.flatMap((d, i) => [[catKey(id, i + 1, "Fur"), d.fur], [catKey(id, i + 1, "White"), d.white],
                      [catKey(id, i + 1, "Eyes"), d.eyes], [catKey(id, i + 1, "Pose"), d.pose], [catKey(id, i + 1, "Spot"), d.spot], [catKey(id, i + 1, "Size"), 100],
-                     [catKey(id, i + 1, "Lfo"), "none"], [catKey(id, i + 1, "Offset"), d.offset]]),
+                     [catKey(id, i + 1, "Lfo"), "D"], [catKey(id, i + 1, "Offset"), d.offset]]),
                    ["castleHorses" + id, STABLE_HORSE_COUNT], ...STABLE_HORSES.flatMap((d, i) => [[horseKey(id, i + 1, "Coat"), d.coat], [horseKey(id, i + 1, "Mane"), d.mane],
-                     [horseKey(id, i + 1, "Mark"), d.mark], [horseKey(id, i + 1, "Lfo"), "none"], [horseKey(id, i + 1, "Offset"), d.offset]])])),
+                     [horseKey(id, i + 1, "Mark"), d.mark], [horseKey(id, i + 1, "Lfo"), "E"], [horseKey(id, i + 1, "Offset"), d.offset]])])),
                 castleRoom: 1,
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
+                lfoFast: "D", lfoSlow: "E",
                 inside: 1, room1: "bunks", room2: "kitchen", room3: "books", room4: "lookout", room5: "art", room6: "music",
                 windowSize: 100, things: 10,
                 witchX: 150, witchY: 0, witchSize: 100, cauldronSize: 100, crows: 3, frogs: 4, snakes: 2,
@@ -2430,6 +2431,19 @@ function wagAnim(W, attr, val, sh = 0, type = "rotate") {
 // an eighth of a cycle behind the last
 const wagged = (W, tailAt) => W.lf && W.lf.dur < LFO_BLUR
   ? [...Array(8)].map((_, j) => `<g opacity="0.25">${tailAt(j / 8)}</g>`).join("") : tailAt(0);
+// A scene's thing moving with the music: an animation of `attr` whose values
+// follow the wave (val(w, depth)) of the LFO the scene's quick or slow things
+// follow (pace "fast": o.lfoFast, D to start with; "slow": o.lfoSlow, E), begun
+// `off` of a cycle on, so things side by side each go their own way; or, with
+// no LFO, its own steady animation (own). It reads the LFO through the
+// scene's options (sceneOpts), so the mixing board's changes to it draw the
+// scene again; a part holding it takes sceneLfoKey(o, pace) among its inputs.
+const sceneLfoName = (o, pace) => { const L = pace === "fast" ? o.lfoFast ?? "D" : o.lfoSlow ?? "E"; return LFO_NAMES.includes(L) ? L : null; };
+const sceneLfoKey = (o, pace) => { const L = sceneLfoName(o, pace); return L ? L + o["lfo:" + L] : "own"; };
+function sceneLfo(o, pace, off, attr, val, own = "", type = "rotate") {
+  const L = sceneLfoName(o, pace), lf = L && (void o["lfo:" + L], lfoNow(L));
+  return lf ? wagAnim({ lf, off }, attr, val, 0, type) : own;
+}
 // A cat asleep, curled up nose to tail, (0, 0) under its middle: it breathes
 // slowly, the tip of its tail twitching with its wag, and now and then a "z"
 // rises from it
@@ -5243,8 +5257,10 @@ function catRoomSvg(c, K) {
        `<ellipse cx="${f1(fx)}" cy="${f1(fy - 6 * k)}" rx="${f1(fbw * 0.4)}" ry="${f1(6 * k)}" fill="#ff5a1f" opacity="0.85"><animate attributeName="opacity" values="0.85;0.6;0.9;0.85" dur="2.3s" repeatCount="indefinite"/></ellipse>`;
   for (const [sd, a] of [[-1, -14], [1, 12]]) t += `<rect x="${f1(fx - fbw * 0.36)}" y="${f1(fy - 15 * k)}" width="${f1(fbw * 0.72)}" height="${f1(10 * k)}" rx="${f1(5 * k)}" fill="#6b4226" stroke="#3a2414" stroke-width="${f1(1 * k)}" transform="rotate(${a} ${f1(fx)} ${f1(fy - 10 * k)})"/>` +
     `<ellipse cx="${f1(fx + sd * fbw * 0.33)}" cy="${f1(fy - 10 * k + sd * a * 0.9 * k * 0.3)}" rx="${f1(3 * k)}" ry="${f1(5 * k)}" fill="#c9a26b" transform="rotate(${a} ${f1(fx)} ${f1(fy - 10 * k)})"/>`;
+  // (its flames: the scene's quick things, leaping with the quick LFO, each a different way into it)
   const flame = (x, y, h, w, col, dur) => `<g transform="translate(${f1(x)} ${f1(y)})"><path d="M0 ${f1(-h)} Q${f1(w)} ${f1(-h * 0.45)} ${f1(w * 0.6)} 0 Q0 ${f1(h * 0.06)} ${f1(-w * 0.6)} 0 Q${f1(-w)} ${f1(-h * 0.45)} 0 ${f1(-h)} Z" fill="${col}">` +
-    `<animateTransform attributeName="transform" type="scale" additive="sum" values="1 1;1.08 0.84;0.93 1.12;1 1" dur="${dur}s" repeatCount="indefinite"/></path></g>`;
+    sceneLfo(c.o, "fast", dur * 1.7 % 1, "transform", (v, amp) => `${(1 - 0.05 * v).toFixed(3)} ${(1 + (0.06 + 0.24 * amp) * v).toFixed(3)}`,
+      `<animateTransform attributeName="transform" type="scale" additive="sum" values="1 1;1.08 0.84;0.93 1.12;1 1" dur="${dur}s" repeatCount="indefinite"/>`, "scale") + `</path></g>`;
   t += flame(fx - fbw * 0.18, fy - 12 * k, fbh * 0.55, 14 * k, "#ff7a1a", 0.9) + flame(fx + fbw * 0.16, fy - 12 * k, fbh * 0.5, 13 * k, "#ff7a1a", 1.1) +
        flame(fx, fy - 12 * k, fbh * 0.7, 18 * k, "#ff9a2e", 0.8) + flame(fx - fbw * 0.06, fy - 12 * k, fbh * 0.45, 10 * k, "#ffd166", 0.7) + flame(fx + fbw * 0.08, fy - 12 * k, fbh * 0.36, 8 * k, "#fff1a8", 0.6);
   for (let j = 0; j < 5; j++) { const sx = fx + (R(j, 1230) - 0.5) * fbw * 0.6, d = (1.4 + 0.5 * R(j, 1231)).toFixed(2);
@@ -5321,7 +5337,8 @@ function catRoomSvg(c, K) {
          `<rect x="${f1(fx2 - 16 * k)}" y="${f1(fy2 - 66 * k)}" width="${f1(32 * k)}" height="${f1(13 * k)}" rx="${f1(3 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(1.2 * k)}"/>` +
          `<text x="${f1(fx2)}" y="${f1(fy2 - 56.5 * k)}" text-anchor="middle" font-size="${f1(9 * k)}" font-family="sans-serif" fill="#fff8e7">🐾 out</text>`;
     const [tx, ty] = at(-0.2 * bw, Yw + 8 * k, -0.07), sl = 70 * k;
-    t += `<g><animateTransform attributeName="transform" type="rotate" values="-8 ${f1(tx)} ${f1(ty)};9 ${f1(tx)} ${f1(ty)};-8 ${f1(tx)} ${f1(ty)}" dur="3.1s" repeatCount="indefinite"/>` +
+    t += `<g>${sceneLfo(c.o, "slow", 0.3, "transform", (v, amp) => `${f1((5 + 12 * amp) * v)} ${f1(tx)} ${f1(ty)}`,
+           `<animateTransform attributeName="transform" type="rotate" values="-8 ${f1(tx)} ${f1(ty)};9 ${f1(tx)} ${f1(ty)};-8 ${f1(tx)} ${f1(ty)}" dur="3.1s" repeatCount="indefinite"/>`)}` +
          `<line x1="${f1(tx)}" y1="${f1(ty)}" x2="${f1(tx)}" y2="${f1(ty + sl)}" stroke="#e8e0d0" stroke-width="${f1(0.8 * k)}"/>` +
          `<path d="M${P(tx, ty + sl)} q${f1(-7 * k)} ${f1(12 * k)} ${f1(-2 * k)} ${f1(26 * k)} q${f1(8 * k)} ${f1(-12 * k)} ${f1(2 * k)} ${f1(-26 * k)} Z" fill="#3fb6c8"/>` +
          `<path d="M${P(tx + 1 * k, ty + sl)} q${f1(8 * k)} ${f1(10 * k)} ${f1(3 * k)} ${f1(22 * k)} q${f1(-6 * k)} ${f1(-10 * k)} ${f1(-3 * k)} ${f1(-22 * k)} Z" fill="#f2c12e"/></g>`; }
@@ -5359,7 +5376,9 @@ function catRoomSvg(c, K) {
          `<ellipse cx="${f1(px - sd * 12 * kf)}" cy="${f1((y1 + pyb) / 2 + 12 * kf)}" rx="${f1(4 * kf)}" ry="${f1(2.5 * kf)}" fill="#ffd166" opacity="0.8"/>`;
     t += plat(px + sd * 20 * kf, Yh(0.38), 40 * kf);
     const [hx, hy] = [px + sd * 50 * kf, y2 + 7 * kf];
-    t += `<g><animateTransform attributeName="transform" type="rotate" values="-14 ${f1(hx)} ${f1(hy)};14 ${f1(hx)} ${f1(hy)};-14 ${f1(hx)} ${f1(hy)}" dur="${sd < 0 ? 2.2 : 2.7}s" repeatCount="indefinite"/>` +
+    // (the pompom, and the feather on the walkway: the scene's slow things, swinging with the slow LFO)
+    t += `<g>${sceneLfo(c.o, "slow", sd < 0 ? 0.1 : 0.55, "transform", (v, amp) => `${f1((8 + 18 * amp) * v)} ${f1(hx)} ${f1(hy)}`,
+           `<animateTransform attributeName="transform" type="rotate" values="-14 ${f1(hx)} ${f1(hy)};14 ${f1(hx)} ${f1(hy)};-14 ${f1(hx)} ${f1(hy)}" dur="${sd < 0 ? 2.2 : 2.7}s" repeatCount="indefinite"/>`)}` +
          `<line x1="${f1(hx)}" y1="${f1(hy)}" x2="${f1(hx)}" y2="${f1(hy + 40 * kf)}" stroke="#e8e0d0" stroke-width="${f1(1 * kf)}"/><circle cx="${f1(hx)}" cy="${f1(hy + 46 * kf)}" r="${f1(7 * kf)}" fill="${sd < 0 ? "#e5484d" : "#3b82f6"}"/>` +
          [...Array(6)].map((_, j) => `<line x1="${f1(hx)}" y1="${f1(hy + 46 * kf)}" x2="${f1(hx + Math.cos(j) * 9 * kf)}" y2="${f1(hy + 46 * kf + Math.sin(j) * 9 * kf)}" stroke="${sd < 0 ? "#e5484d" : "#3b82f6"}" stroke-width="${f1(2 * kf)}"/>`).join("") + `</g>`;
     // (the top: a round bed with a rim, and a ramp up to the first shelf on the wall)
@@ -5601,7 +5620,9 @@ function stableSvg(c, K) {
          `<line x1="-3" y1="-8" x2="-4" y2="0" stroke="#e8a33a" stroke-width="1.6"/><line x1="3" y1="-8" x2="4" y2="0" stroke="#e8a33a" stroke-width="1.6"/>` +
          `<path d="M-16 -18 Q-20 -30 -12 -28 Q-6 -14 6 -14 Q14 -14 14 -22 L10 -8 Q0 -2 -10 -8 Z" fill="${i ? "#f5efe2" : "#a0522d"}" stroke="${i ? "#c9bca2" : "#6b3418"}" stroke-width="1"/>` +
          `<path d="M-6 -16 Q0 -12 6 -15" fill="none" stroke="${i ? "#c9bca2" : "#6b3418"}" stroke-width="1"/>` +
-         `<g><animateTransform attributeName="transform" type="rotate" values="0 10 -18;0 10 -18;55 10 -18;0 10 -18;0 10 -18;55 10 -18;0 10 -18" keyTimes="0;0.4;0.47;0.54;0.75;0.82;1" dur="${pk}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/>` +
+         // (a peck, down and back, once round the quick LFO: the scene's quick things)
+         `<g>${sceneLfo(c.o, "fast", i * 0.45, "transform", (v, amp) => `${f1(Math.max(0, v) * (30 + 50 * amp))} 10 -18`,
+           `<animateTransform attributeName="transform" type="rotate" values="0 10 -18;0 10 -18;55 10 -18;0 10 -18;0 10 -18;55 10 -18;0 10 -18" keyTimes="0;0.4;0.47;0.54;0.75;0.82;1" dur="${pk}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`)}` +
          `<circle cx="14" cy="-24" r="5" fill="${i ? "#f5efe2" : "#a0522d"}"/><path d="M12 -29 q2 -4 4 0 q2 -4 3 1 Z" fill="#d62828"/><path d="M18 -24 l4 1 l-4 1 Z" fill="#e8a33a"/>` +
          `<path d="M15 -21 q1 3 -1 4" fill="#d62828"/><circle cx="15.5" cy="-25" r="0.9" fill="#111"/></g></g>`;
   }
@@ -5609,7 +5630,8 @@ function stableSvg(c, K) {
   { const [fx, fy] = at(0.36 * bw, floor, -0.25), [gx] = at(0.62 * bw, floor, -0.25);
     t += `<polygon points="${P(ox - orr * 0.7, oy)} ${P(ox + orr * 0.7, oy)} ${P(gx, fy)} ${P(fx, fy)}" fill="url(#bg-beam)"/>`;
     for (let i = 0; i < 12; i++) { const u = R(i, 1330), w = R(i, 1331), x = ox + (fx + (gx - fx) * w - ox) * u, y = oy + (fy - oy) * u, d = (5 + 5 * R(i, 1332)).toFixed(1);
-      t += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(1.3 * k)}" fill="#fff8d8"><animate attributeName="cy" values="${f1(y)};${f1(y - 14 * k)};${f1(y)}" dur="${d}s" begin="-${(R(i, 1333) * 5).toFixed(1)}s" repeatCount="indefinite"/>` +
+      t += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(1.3 * k)}" fill="#fff8d8">${sceneLfo(c.o, "slow", R(i, 1333), "cy", (v, amp) => f1(y - (4 + 18 * amp) * k * (1 + v) / 2),
+        `<animate attributeName="cy" values="${f1(y)};${f1(y - 14 * k)};${f1(y)}" dur="${d}s" begin="-${(R(i, 1333) * 5).toFixed(1)}s" repeatCount="indefinite"/>`)}` +
            `<animate attributeName="opacity" values="0.2;0.9;0.2" dur="${(+d * 0.7).toFixed(1)}s" begin="-${(R(i, 1334) * 4).toFixed(1)}s" repeatCount="indefinite"/></circle>`; } }
   // swallows, looping round under the beams
   for (const [i, cx, cy, rx, ry, d] of [[0, -0.3 * bw, top + 30 * k, 120 * k, 26 * k, 7], [1, 0.32 * bw, top + 48 * k, 100 * k, 22 * k, 9]]) {
@@ -5705,7 +5727,8 @@ function castleroomScene(c) {
   if (K.roomTheme[n - 1] === "B") K = { ...K, ...K.themeB };
   const draw = { trap: () => trapRoomSvg(c, K, pits), dungeon1: () => dungeonSvg(c, K, false, bones), dungeon2: () => dungeonSvg(c, K, true, bones),
                  king: () => kingRoomSvg(c, K), greenhouse: () => greenhouseSvg(c, K), hallway: () => hallwaySvg(c, K), catroom: () => catRoomSvg(c, K), stable: () => stableSvg(c, K) }[style];
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : ""], draw);
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "",
+                                  SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)
     const wags = K.cats.map(catWag);
@@ -7574,6 +7597,18 @@ const bassOf = (chords, bar, pat, oct) => ({ steps: chords.length * bar, events:
 // the chord, struck at these steps of every bar
 const stabsOf = (chords, bar, ats, len, oct) => ({ steps: chords.length * bar, events: chords.flatMap((c, i) =>
   ats.map(at => ({ at: i * bar + at, len, notes: chordOf(c, oct) }))) });
+// a line in one meter over chords in another: a pattern `len` steps long,
+// [step, chord tone (0 the root, 1 the next one up...), length, octaves up],
+// played over and over, each note taken from the chord sounding at its step
+// (one chord every `bar` steps): so a funk bass in 4 keeps to a waltz's chords in 3
+const crossOf = (chords, bar, len, pat, oct) => {
+  const gcd = (a, b) => b ? gcd(b, a % b) : a, steps = chords.length * bar * len / gcd(chords.length * bar, len), events = [];
+  for (let rep = 0; rep * len < steps; rep++) for (const [at, tn, l, up = 0] of pat) {
+    const s0 = rep * len + at, ns = chordOf(chords[Math.floor(s0 / bar) % chords.length], oct);
+    events.push({ at: s0, len: l, notes: [ns[tn % ns.length] + 12 * (Math.floor(tn / ns.length) + up)] });
+  }
+  return { steps, events };
+};
 // the chord, struck at these steps of every bar, each for its own length: [step, length]
 const rhythmOf = (chords, bar, pat, oct) => ({ steps: chords.length * bar, events: chords.flatMap((c, i) =>
   pat.map(([at, len]) => ({ at: i * bar + at, len, notes: chordOf(c, oct) }))) });
@@ -7698,6 +7733,16 @@ const INSTRUMENTS = {
     const f = hz(m), end = t + dur * 0.9, open = 600 + 24 * x, lp = filter(A, held(A, out, t, 0.1 * v, 0.005, end, 0.04), "lowpass", open, 1 + x / 10);
     lp.frequency.setValueAtTime(open, t); lp.frequency.setTargetAtTime(260, t, 0.08);
     tone(A, lp, "sawtooth", f, t, end + 0.3, -6); tone(A, lp, "square", f, t, end + 0.3, 6);
+  },
+  // a funk bass through a wah pedal: buzzy (a saw and a square a little
+  // apart, with a saw an octave down for weight), plucked (it dies away
+  // quickly), and on every note its filter sings up and back down, wah-wah
+  // (its knob is how wide the wah opens)
+  wahbass(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), end = t + Math.min(dur, 0.7), lo = 220, hi = 900 + 32 * x;
+    const lp = filter(A, amp(A, out, t, 0.17 * v, 0.004, 0.12 + 0.12 * Math.min(1, dur * 2)), "lowpass", lo, 6 + x / 10);
+    lp.frequency.setValueAtTime(lo, t); lp.frequency.linearRampToValueAtTime(hi, t + 0.045); lp.frequency.setTargetAtTime(lo, t + 0.045, 0.08);
+    tone(A, lp, "sawtooth", f, t, end + 0.4, -8); tone(A, lp, "square", f, t, end + 0.4, 8); tone(A, gainOf(A, lp, 0.6), "sawtooth", f / 2, t, end + 0.4);
   },
   // a dance synth's lead: two saws a little apart and a square an octave
   // down, through a filter that opens bright on each note and closes
@@ -8106,6 +8151,51 @@ const TUNES = {
       S(8, "oom bell twinkles"), S(8, "oom pah bell ghostA twinkles"), S(8, "oom pah bell ghostB"),
     ] };
   } },
+  // The spooky waltz, funked: the same waltz, quicker and four half steps
+  // down, over a funk beat in 4 against its 3 (the funk's sixteenths are
+  // two of the waltz's steps, so a funk bar is eight of its beats and each
+  // eight-bar section of the waltz holds three funk bars, the two meeting
+  // again at every section), with more drums, bongos as the bongo
+  // breakdown's, and a pair of wah basses, one low, popping its octaves,
+  // and one higher, answering it, both keeping to the waltz's chords
+  witchfunk: { name: "🧙 spooky waltz, funked", make: () => {
+    const chords = ["Dm", "Dm", "Gm", "Dm", "Bb", "A7", "Dm", "A7"];
+    const f16 = pat => pat.replace(/\s/g, "").replace(/[x.o]/g, ch => ch + ".");   // (a character a funk sixteenth: two steps)
+    const W = TUNES.witch.make().parts, waltz = n => ({ ...W.find(p => p.name === n) });
+    return { bpm: 205, bar: 12, room: 2.4, level: 0.6,
+      lfos: { A: { beats: 8, shape: "triangle", depth: 2 }, B: { beats: 4, shape: "sine", depth: 4 }, C: { beats: 24, shape: "saw", depth: 3 } },
+      parts: [
+        // (the bass lines all louder than the waltz's own: Matthew's call)
+        { ...waltz("oom"), level: 1.8 }, waltz("pah"), waltz("ghostA"), waltz("ghostB"), waltz("bell"), waltz("twinkles"),
+        { name: "kick", inst: "kick", level: 0.9, line: hitsOf(f16("x.x....x..x..... x.x....x..x..x..")) },
+        { name: "snare", inst: "snare", level: 0.55, rev: 0.15, line: hitsOf(f16("....x..o.o..x..o ....x..o.o..x.o.")) },
+        { name: "hat", inst: "hat", level: 0.32, line: hitsOf(f16("xoxoxoxoxoxoxoxo xoxoxoxoxoxoxoxo")) },
+        { name: "openhat", inst: "openhat", level: 0.28, line: hitsOf(f16("................ ..............x.")) },
+        // (more drums: a shaker on the sixteenths, a cowbell, congas)
+        { name: "shaker", inst: "shaker", level: 0.35, line: hitsOf(f16("xooxxooxxooxxoox")) },
+        { name: "cowbell", inst: "cowbell", level: 0.3, line: hitsOf(f16("x...x...x.x.x... x...x...x...x.x.")) },
+        { name: "conga", inst: "conga", level: 0.5, rev: 0.1, line: hitsOf(f16("..x...xx..x..x.x ..x...xx..x.xx.."), 62) },
+        // a roll on the snare into the next section, in its last half a funk bar
+        { name: "fill", inst: "snare", level: 0.5, line: hitsOf(".".repeat(80) + "8(xxx) (xox) (xxxxxx)") },
+        // the bongos, as the bongo breakdown's: the high one ending every other bar in triplets
+        { name: "bongoHi", inst: "bongo", level: 0.7, rev: 0.15, line: hitsOf(f16("x..x..x.x..x.xx. x..x..x.x..x") + "8(xxx)", 71), lfo: "B" },
+        { name: "bongoLo", inst: "bongo", level: 0.75, rev: 0.15, line: hitsOf(f16("..x...x...x...x. ..x...x...x...x."), 64) },
+        // their solo: the low one keeping the beat, the high one three to it, then six
+        { name: "soloHi", inst: "bongo", level: 0.8, rev: 0.15, line: hitsOf(f16("x.xx.x.xx.x.xxxx") + "8(xxx)8(xxx)8(xxx)8(xxx)" + f16("x.x.xx.xx.x.x.xx") + "8(xxxxxx)8(xoxoxo)8(xxx)8(xxxxxx)", 71), lfo: "A" },
+        { name: "soloLo", inst: "bongo", level: 0.85, rev: 0.15, line: hitsOf(f16("x...x...x...x... x...x...x...x.x. x...x...x...x... x...x...x.x.x..."), 64), lfo: "C" },
+        // the wah basses: the low one on the beat, popping up its octave; the high one answering off it
+        { name: "wahLo", inst: "wahbass", level: 1.6, line: crossOf(chords, 12, 32, [[0, 0, 3], [6, 0, 1, 1], [10, 0, 2], [14, 2, 2], [20, 0, 1, 1], [22, 0, 2], [26, 0, 1], [28, 1, 2], [30, 2, 2]], 2) },
+        { name: "wahHi", inst: "wahbass", level: 1.1, rev: 0.1, line: crossOf(chords, 12, 32, [[4, 1, 2, 1], [8, 2, 1, 1], [12, 0, 2, 2], [18, 2, 2, 1], [24, 1, 1, 1], [26, 2, 1, 1]], 2) },
+      ], form: [
+        S(8, "oom pah bell bongoHi bongoLo", -4),
+        S(8, "oom pah bell ghostA kick snare hat bongoHi bongoLo shaker fill", -4),
+        S(8, "pah wahLo wahHi kick snare hat openhat ghostB twinkles bongoHi bongoLo cowbell conga fill", -4),
+        S(8, "pah bell wahLo wahHi kick snare hat openhat ghostA shaker conga bongoHi bongoLo fill", -4),
+        S(8, "soloHi soloLo kick wahLo", -4),
+        S(8, "pah bell ghostB twinkles kick snare hat openhat wahLo wahHi bongoHi bongoLo cowbell shaker conga fill", -4),
+        S(8, "oom pah bell twinkles bongoHi bongoLo", -4),
+      ] };
+  } },
   // Peaceful waltzes: three beats a bar (12 steps), oom-pah-pah under a
   // tune, two eight-bar halves, each with its own chords
   castlewaltz: { name: "🏰 castle waltz", make: () => {
@@ -8489,7 +8579,7 @@ const TUNE_GROUPS = [
   ["calypso", "🏖️ calypso", ["beach", "soca", "lullaby"]],
   ["house", "🏠 house", ["cushions"]],
   ["groove", "🕺 groove", ["bats", "vibes"]],
-  ["waltz", "💃 waltz", ["witch", "castlewaltz", "ballroom", "healerwaltz"]],
+  ["waltz", "💃 waltz", ["witch", "witchfunk", "castlewaltz", "ballroom", "healerwaltz"]],
   ["chase", "🏃 chase", ["treechase", "duckdash", "housechase"]],
   ["story", "📖 storybook", ["forest", "harpsichord", "spiders", "cemetery"]],
 ];
@@ -8649,8 +8739,12 @@ function chan(id, key) {
   const mix = state.music.mix || (state.music.mix = {}), t = mix[id] || (mix[id] = {});
   return t[key] || (t[key] = {});
 }
-// --- the LFOs: three slow waves, A to C, that a drum's pitch can follow,
-// and the friend's parts' see-through-ness, and the fairy house's
+// --- the LFOs: five waves, A to E, that a drum's pitch can follow,
+// and the friend's parts' see-through-ness, and the fairy house's, and
+// things in the scenes: D and E are the scenes' own to start with (D the
+// faster, for things that flap, peck, flicker and wag; E the slower, for
+// things that sway, breathe, drift and glow), but only to start with:
+// anything can follow any of them, and they can be set like any other
 // (a drum with a pitch knob: its LFO chip picks one, or none). Each keeps
 // time with the tune, going once round in so many beats, from a 32nd of a
 // beat to eight bars, from the tune's start; in a shape (triangle, saw or
@@ -8658,7 +8752,7 @@ function chan(id, key) {
 // wave's value at its moment; or, for an LFO faster than a beat, follows
 // the wave through its sound (see sendAhead). Set on the mixing board, kept for each tune; a tune
 // may set its own to start with (T.lfos, and a part's lfo).
-const LFO_NAMES = ["A", "B", "C"];
+const LFO_NAMES = ["A", "B", "C", "D", "E"];
 // (every whole number of beats from 2 to 32, eight bars; below a beat,
 // the same turned over: 1/2 to 1/32 of a beat, so one beat is the knob's middle)
 const LFO_LONG = [...Array(31)].map((_, i) => i + 2);
@@ -8667,7 +8761,7 @@ const LFO_BEATS = [...LFO_LONG].reverse().map(b => 1 / b).concat([1], LFO_LONG);
 const lfoBeatsAt = b => { let best = 0; LFO_BEATS.forEach((x, i) => { if (Math.abs(Math.log(x / b)) < Math.abs(Math.log(LFO_BEATS[best] / b))) best = i; }); return best; };
 const LFO_SHAPES = ["triangle", "saw", "sine"], LFO_SHAPE_NAME = { triangle: "△ triangle", saw: "◿ saw", sine: "∿ sine" };
 const LFO_DEFAULT = { A: { beats: 4, shape: "triangle", depth: 3 }, B: { beats: 2, shape: "sine", depth: 4 },
-                      C: { beats: 8, shape: "saw", depth: 3 } };
+                      C: { beats: 8, shape: "saw", depth: 3 }, D: { beats: 1, shape: "sine", depth: 4 }, E: { beats: 16, shape: "sine", depth: 4 } };
 const beatsName = b => b < 1 ? `1/${Math.round(1 / b)} beat` : b % 4 ? `${b} beats`.replace(/^1 beats/, "1 beat") : `${b / 4} bar${b === 4 ? "" : "s"}`;
 const lfoOf = (id, T, L) => ({ ...LFO_DEFAULT[L], ...((T.lfos || {})[L] || {}), ...(mixOf(id)["lfo" + L] || {}) });
 // the wave, from -1 to 1, a share u of the way round (a triangle and a
@@ -8681,7 +8775,7 @@ const partLfo = (id, q) => { const c = (mixOf(id)[channelKey(q)] || {}).lfo, L =
 // plays, so it keeps the beat; else at the tune's tempo), its shape, and
 // how far it fades (its depth: twelve half steps' worth fades it right out)
 function visLfo(g) { return lfoNow(state.visible["lfo_" + g]); }
-// An LFO (A, B or C) as it is now: its length in seconds, how far into its
+// An LFO (A to E) as it is now: its length in seconds, how far into its
 // wave it is (0 to 1), the wave's shape, and its depth as 0 to 1; in time
 // with the music while it plays (else at the tune's tempo). Null for none.
 function lfoNow(L) {
@@ -8728,9 +8822,17 @@ function applyMix(instant = false) {
   to(buses.echo.delayTime, fx.time * p.sd);
   to(buses.revOut.gain, fx.room / 100);
 }
+// What in each scene moves with its quick LFO and its slow one (sceneLfo), as
+// the mixing board names them; a castle room by its style
+const SCENE_LFO_THINGS = {
+  "castleroom:catroom": { fast: "🔥 the cat room's fire", slow: "🎾 the cat toys swinging" },
+  "castleroom:stable": { fast: "🐔 the hens pecking", slow: "✨ the dust in the sunbeam" },
+};
+const sceneLfoThings = b => SCENE_LFO_THINGS[b.kind === "castleroom" ? "castleroom:" + (roomHereNowOf(b)[1] ?? "king") : b.kind] || {};
 // the cats in the room the friend is in, when it is a cat room; the horses, when it is a stable
-const roomHereNow = () => { const B = state.background; if (B.kind !== "castleroom") return [null, null];
+const roomHereNowOf = B => { if (B.kind !== "castleroom") return [null, null];
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))); return [K, K.rooms[n - 1]]; };
+const roomHereNow = () => roomHereNowOf(state.background);
 const catsHereNow = () => { const [K, st] = roomHereNow(); return st === "catroom" ? K.cats : []; };
 const horsesHereNow = () => { const [K, st] = roomHereNow(); return st === "stable" ? K.horses : []; };
 function mixChanged() {
@@ -8738,7 +8840,8 @@ function mixChanged() {
   // (a part fading with an LFO, or a fairy's wings flapping with one, follow its changes at once)
   if (VISIBLE_PARTS.some(g => LFO_NAMES.includes(state.visible["lfo_" + g])) || LFO_NAMES.includes(state.costume.wingLfo) ||
       (state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo)) ||
-      catsHereNow().some(C => LFO_NAMES.includes(C.lfo)) || horsesHereNow().some(Hh => LFO_NAMES.includes(Hh.lfo))) draw();
+      catsHereNow().some(C => LFO_NAMES.includes(C.lfo)) || horsesHereNow().some(Hh => LFO_NAMES.includes(Hh.lfo)) ||
+      ["fast", "slow"].some(pace => sceneLfoThings(state.background)[pace] && sceneLfoName(state.background, pace))) draw();
 }
 // The dub "throw": while a part is thrown (its strip's button held), all
 // of it goes to the echo, then its send goes back to where it was set;
@@ -8771,13 +8874,13 @@ function blink(dot, after) {
 }
 const INST_ICON = { steelpan: "🥘", organ: "🎹", bass: "🎸", kick: "🥁", rim: "🥢", snare: "🥁", cowbell: "🔔", hat: "🎩",
                     shaker: "🧂", conga: "🪘", bubble: "🫧", pizz: "🎻", pluck: "🎸", chop: "🎸", melodica: "🎹", ghost: "👻",
-                    bell: "🔔", pad: "☁️", musicbox: "🎶", flute: "🌬️", bird: "🐦", buzz: "🐝", harpsichord: "🎼",
+                    bell: "🔔", pad: "☁️", musicbox: "🎶", flute: "🌬️", bird: "🐦", buzz: "🐝", wahbass: "🎸", harpsichord: "🎼",
                     vibes: "🔮", fiddle: "🎻", lead: "🎛️", zap: "⚡",
                     bassgtr: "🎸", bongo: "🪘", openhat: "🎩", tonewheel: "🎹", funkgtr: "🎸", twang: "🎸" };
 // each instrument's own knob, by name (what it does is in INSTRUMENTS)
 const INST_KNOB = { steelpan: "✨ ring", harpsichord: "✨ ring", fiddle: "✨ ring", pizz: "✨ ring", pluck: "✨ ring", musicbox: "✨ ring",
                     bell: "✨ ring", rim: "✨ length", snare: "✨ length", hat: "✨ length", shaker: "✨ length", cowbell: "✨ length",
-                    chop: "✨ length", kick: "💥 boom", conga: "🎵 pitch", bass: "🎸 growl", buzz: "🐝 wah", organ: "🎹 bright",
+                    chop: "✨ length", kick: "💥 boom", conga: "🎵 pitch", bass: "🎸 growl", buzz: "🐝 wah", wahbass: "🎸 wah", organ: "🎹 bright",
                     melodica: "〰️ vibrato", flute: "〰️ vibrato", ghost: "〰️ waver", vibes: "🌀 wobble", pad: "🌅 swell",
                     bubble: "🫧 bloop", bird: "🐦 chirp", lead: "✨ bright", zap: "⚡ fall",
                     bassgtr: "🎸 growl", bongo: "🎵 pitch", openhat: "✨ length", tonewheel: "🌀 spin", funkgtr: "🦆 wah", twang: "〰️ whammy" };
@@ -8844,7 +8947,9 @@ function mixerBox(box) {
         .concat(state.costume.kind === "fairy" && state.costume.wingFlutter !== false && state.costume.wingLfo === L ? ["🧚 fairy wings"] : [])
         .concat(state.background.kind === "fairyforest" && state.background.fairyHouseLfo === L ? ["🏡 fairy house"] : [])
         .concat(catsHereNow().flatMap((C, i) => C.lfo === L ? [`🐈 cat ${i + 1}'s tail`] : []))
-        .concat(horsesHereNow().flatMap((Hh, i) => Hh.lfo === L ? [`🐴 horse ${i + 1}'s nod`] : []));
+        .concat(horsesHereNow().flatMap((Hh, i) => Hh.lfo === L ? [`🐴 horse ${i + 1}'s nod`] : []))
+        // (the scene's quick things and its slow things, when they follow this one)
+        .concat(["fast", "slow"].flatMap(pace => { const B = state.background, th = sceneLfoThings(B)[pace]; return th && sceneLfoName(B, pace) === L ? [th] : []; }));
       return el("div", { class: "strip lfo" }, [
         el("div", { class: "strip-top" }, [el("span", { class: "strip-name" }, `〰️ LFO ${L}`), shapeBtn]),
         knob("⏱️ round in", 0, LFO_BEATS.length - 1, () => lfoBeatsAt(o().beats), v => { chan(id, "lfo" + L).beats = LFO_BEATS[v]; }, v => beatsName(LFO_BEATS[v])),
@@ -8869,7 +8974,7 @@ function mixerBox(box) {
         knob("↔️ pan", -10, 10, () => c().pan || 0, v => { chan(id, key).pan = v; }, v => v === 0 ? "middle" : v < 0 ? "◀ " + -v : v + " ▶"),
         ...(INST_KNOB[p.inst] ? [knob(INST_KNOB[p.inst], 0, 100, () => c().knob ?? 50, v => { chan(id, key).knob = v; },
           (p.inst === "conga" || p.inst === "bongo") ? v => { const h = Math.round((v - 50) * 12 / 50); return h === 0 ? "usual" : (h > 0 ? "+" : "") + h; } : v => v === 50 ? "usual" : String(v))] : []),
-        // a drum with a pitch: which LFO it follows (none, A to C: a tap for the next)
+        // a drum with a pitch: which LFO it follows (none, A to E: a tap for the next)
         ...(PITCHED_DRUMS.has(p.inst) ? [(() => {
           const now = () => partLfo(id, p) || "none";
           const b = el("button", { class: "ms", title: "the LFO this drum's pitch follows: tap for the next",
@@ -9290,6 +9395,9 @@ const TABS = [
     ["places", "kind", "background", PLACES],
     ["range", "figSize", "🧍 size in the scene", 10, 1000, 100, 100],
     ["place", "figPos", "🧍 place in the scene (or drag the figure)"],
+    // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)
+    ["choice", "lfoFast", "〰️ quick things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
+    ["choice", "lfoSlow", "〰️ slow things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
     // the witch's woods: the hut behind the fence, on chicken legs or not
     ["toggle", "chickenLegs", "🐔 chicken legs on the hut"],
     ["range", "legSize", "🐔 leg size", 20, 300, 80, 140],
@@ -9549,6 +9657,7 @@ const SHOWN_WHEN = {
   "costume.broomSize": c => c.kind === "witch" && c.broom,
   "costume.bootColor": c => c.kind === "witch",
   "background.figSize": b => b.kind !== "none",
+  "background.lfoFast": b => !!sceneLfoThings(b).fast, "background.lfoSlow": b => !!sceneLfoThings(b).slow,
   "background.figPos": b => b.kind !== "none",
   "background.chickenLegs": b => b.kind === "witch",
   "background.legSize": b => b.kind === "witch" && b.chickenLegs,
