@@ -7,6 +7,7 @@ Each version lists the game's features as of that version. The newest version is
 Changes since 0.0.31, for the next version, which waits for Matthew's go-ahead.
 
 - **Fixed: bangs under the witch's hat.** With big eyes (which make the head taller, and lift the hat with it), a band of bare forehead opened between the hat's brim and the bangs, and only bits of hair over the eyes showed. Now the bangs come from right under the brim, whatever the eyes' size.
+- **🌸 A wreath of flowers for the fairy,** worn round her head on her forehead, above her brows, over her hair: a vine with leaves and six flowers, smaller toward the sides as the ring turns away. Its flowers in every color, or all of one kind: 🌸 pink roses, 🤍 daisies, 🌼 buttercups, 💙 forget-me-nots or 💜 violets. On by default; a toggle takes it off. When her head explodes, it goes off with the lid.
 
 ## 0.0.31 (2026-10-14)
 

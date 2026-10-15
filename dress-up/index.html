@@ -383,7 +383,7 @@ const DEFAULTS = {
              accent: "#e89aa0", furPattern: "stripes", spot: "auto",
              witchColor: "#6a2c91", webColor: "#3fae4a", webStyle: "tiled", trimColor: "#f28c28", witchCat: false, broom: false,
              catFur: "#1f1f22", catWhite: "#ffffff", catEyes: "#c6d43a", catNose: "#f4a0b0", catSize: 100, broomSize: 100, bootColor: "#1f1f22",
-             wingStyle: "butterfly", tunicStyle: "petal", fairyShoes: "slipper", fairyShoeColor: FAIRY_SHOE_COLORS[0], wingFlutter: true, wingLfo: "none",
+             wingStyle: "butterfly", tunicStyle: "petal", fairyShoes: "slipper", fairyShoeColor: FAIRY_SHOE_COLORS[0], wingFlutter: true, wingLfo: "none", wreath: true, wreathFlowers: "mix",
              ...Object.fromEntries(Object.entries(FAIRY_WINGS).map(([id, w]) => ["wingColor_" + id, w.colors[0]])),
              ...Object.fromEntries(Object.entries(FAIRY_TUNICS).map(([id, t]) => ["tunicColor_" + id, t.colors[0]])) },
 };
@@ -1098,6 +1098,45 @@ function bangsSvg(h, F) {
          `<clipPath id="bangs-rest"><rect x="-2000" y="${f1(crackY)}" width="4200" height="4000"/></clipPath></defs>` +
          `<g clip-path="url(#bangs-rest)">${bangs}</g>` +
          `<g transform="translate(0 ${-lift}) rotate(${-tilt} 100 ${f1(crackY)})"><g clip-path="url(#bangs-lid)">${bangs}</g></g>`;
+}
+// A fairy's wreath of flowers, worn round her head on her forehead, above
+// her brows: a band of vine and leaves, the front of the ring dipping a
+// little toward the brows (seen from a little above), flowers along it,
+// smaller toward the sides as the ring turns away. Over her hair and
+// bangs. Its flowers all of one kind, or every color. In face units.
+const WREATH_SETS = { mix: { name: "🌈 every color", petals: ["#f472b6", "#ffffff", "#facc15", "#60a5fa", "#a78bfa", "#fb7185"], mid: "#f59e0b" },
+                      pink: { name: "🌸 pink roses", petals: ["#f472b6", "#ec4899", "#f9a8d4"], mid: "#be185d" },
+                      white: { name: "🤍 daisies", petals: ["#ffffff"], mid: "#facc15" },
+                      yellow: { name: "🌼 buttercups", petals: ["#facc15", "#fde047"], mid: "#ca8a04" },
+                      blue: { name: "💙 forget-me-nots", petals: ["#60a5fa", "#93c5fd"], mid: "#fde047" },
+                      purple: { name: "💜 violets", petals: ["#a78bfa", "#7c3aed", "#c4b5fd"], mid: "#fde047" } };
+function wreathSvg(F, kind = "mix") {
+  const set = WREATH_SETS[kind] || WREATH_SETS.mix, rnd = (i, s) => { const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v); };
+  const crown = headCrown(F), bt = browTop(F), fr = 11;
+  const cy = bt - (bt - crown) * 0.55, [xl, xr] = acrossAt(headPoints(F), cy);
+  const cx = (xl + xr) / 2, rx = (xr - xl) / 2 + 6, sag = Math.max(2, Math.min(12, bt - cy - fr * 0.8));
+  const at = t => [cx - rx * Math.cos(Math.PI * t), cy + sag * Math.sin(Math.PI * t)];
+  // the vine
+  let band = "M" + [...Array(21)].map((_, i) => at(i / 20).map(f1).join(" ")).join(" L");
+  let t = `<path d="${band}" fill="none" stroke="#2f6e3a" stroke-width="8" stroke-linecap="round"/>` +
+          `<path d="${band}" fill="none" stroke="#4a9a52" stroke-width="3.5" stroke-linecap="round"/>`;
+  // leaves along it, pointing either way
+  for (let i = 0; i < 14; i++) {
+    const u = (i + 0.5) / 14, [x, y] = at(u), a = (i % 2 ? -1 : 1) * (35 + 20 * rnd(i, 1)) + (u - 0.5) * 40, k = 0.7 + 0.5 * Math.sin(Math.PI * u);
+    t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(8.5 * k)}" ry="${f1(3.6 * k)}" transform="rotate(${f1(a)} ${f1(x)} ${f1(y)}) translate(${f1(6 * k)} 0)" fill="${i % 3 ? "#3f8f48" : "#5cb85c"}" stroke="#2f6e3a" stroke-width="0.8"/>`;
+  }
+  // flowers: five petals round a middle, smaller toward the sides
+  const n = 6;
+  for (let i = 0; i < n; i++) {
+    const u = 0.06 + 0.88 * i / (n - 1), [x, y] = at(u), k = (0.62 + 0.38 * Math.sin(Math.PI * u)) * (0.9 + 0.2 * rnd(i, 2));
+    const pc = set.petals[(i * 2 + Math.floor(rnd(i, 3) * 3)) % set.petals.length], r = fr * k, spin = rnd(i, 4) * 72;
+    t += [...Array(5)].map((_, j) => { const a = (spin + j * 72) * Math.PI / 180, px = x + Math.cos(a) * r * 0.55, py = y + Math.sin(a) * r * 0.55;
+      return `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="${f1(r * 0.55)}" ry="${f1(r * 0.4)}" transform="rotate(${f1(spin + j * 72)} ${f1(px)} ${f1(py)})" fill="${pc}" stroke="${darker(pc)}" stroke-width="0.8"/>`; }).join("") +
+         `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r * 0.3)}" fill="${set.mid}" stroke="${darker(set.mid)}" stroke-width="0.8"/>`;
+  }
+  // (a head exploding: the wreath goes off with the lid)
+  if (F.burst > 0) t = `<g transform="translate(0 ${-idiv(F.burst * 7, 10)}) rotate(${-idiv(F.burst, 4)} 100 ${f1(HEAD_C - 50.6 * F.faceH / 100)})">${t}</g>`;
+  return t;
 }
 // How far hair reaches, in face units (before the head's stretch): its
 // top, its bottom and its half-width about x = 100, to size the picture.
@@ -5878,6 +5917,8 @@ function draw() {
   // (under a witch's hat, from its brim down: the brim's line as the hat is
   // stretched with the head, which big eyes make taller)
   if (!C) svg += veil("hair", inFace(tucked(bangsSvg(state.hair, F), "under-hat-bangs", HEAD_C + (40 - HEAD_C) * headH(F))));
+  // a fairy's wreath of flowers, over her hair
+  if (fairy && WC.wreath !== false) svg += veil("hair", inFace(wreathSvg(F, WC.wreathFlowers)));
   // a witch's hat over it, stretched with the head as hair is (and flying
   // off with the lid); her cat on her shoulder
   if (witch) {
@@ -7628,6 +7669,8 @@ const TABS = [
     ["choice", "wingLfo", "〰️ wings flap with", [["none", "no LFO"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
     ["choice", "tunicStyle", "🧚 tunic", Object.entries(FAIRY_TUNICS).map(([id, t]) => [id, t.name])],
     ...Object.entries(FAIRY_TUNICS).map(([id, t]) => ["color", "tunicColor_" + id, "🧚 tunic's color", t.colors]),
+    ["toggle", "wreath", "🌸 a wreath of flowers"],
+    ["choice", "wreathFlowers", "🌸 the wreath's flowers", Object.entries(WREATH_SETS).map(([id, w]) => [id, w.name])],
     ["choice", "fairyShoes", "🧚 shoes", FAIRY_SHOES],
     ["color", "fairyShoeColor", "🧚 shoes' color", FAIRY_SHOE_COLORS],
   ]],
@@ -7822,6 +7865,8 @@ const SHOWN_WHEN = {
   "costume.witchColor": c => c.kind === "witch",
   ...Object.fromEntries(["wingStyle", "wingFlutter", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
+  "costume.wreath": c => c.kind === "fairy",
+  "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),
   ...Object.fromEntries(Object.keys(FAIRY_TUNICS).map(id => ["costume.tunicColor_" + id, c => c.kind === "fairy" && (c.tunicStyle ?? "petal") === id])),
   "costume.webColor": c => c.kind === "witch",
