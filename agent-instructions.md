@@ -181,7 +181,11 @@ From this come its settings' keys and defaults, `castleOf`'s list, the controls,
 A refactor must not change any drawing. Before and after each step, run:
 - **The sweep** (`sweep.mjs`): draws every place at each time of day, every castle room style in both themes, and every costume, from the defaults with every LFO off. It hashes each picture's markup (69 pictures); compare the two lists.
 - **The structure dump** (`structure.mjs`): the defaults, the controls, every show-when rule over a set of castle states, and `castleOf` for them. These are what the pictures can't show; compare these too.
-- **The archive** (`archive.mjs <port> <page> ~/dress-up-screenshots/YYYY/MM/DD`): every background with and without the friend, and every chip menu's options against the defaults, each as a 1920-wide PNG, an SVG and its settings `.json` (the game's save format), with an index. Its names stay the same from day to day, so two days can be compared folder by folder.
+- **The archive** (`archive.mjs <port> <page> ~/dress-up-screenshots/YYYY/MM/DD`): every background with and without the friend, and every chip menu's options against the defaults. Each picture is a 1920-wide PNG, an SVG and its settings `.json` (the game's save format), with an index.
+  - A menu repeated per castle, room, cat or horse is taken once.
+  - A menu hidden under the defaults is shown with the one setting of its tab that brings it out, named in its label ("with …"); one that no single setting brings out is listed as such, with no picture.
+  - Names stay the same from day to day, so two days can be compared folder by folder.
+  - In a script injected into the page as a template literal, write `[0-9]`, not `\d`: the backslash is lost, and the filter for repeated menus once quietly matched the letter d.
 
 The tools live on Matthew's laptop, in `~/du-shots/tools/` (see the open questions).
 
