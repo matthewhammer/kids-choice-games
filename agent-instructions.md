@@ -145,12 +145,16 @@ Every place moves at least one quick thing and one slow thing with the music. A 
 - its label (emoji first) and whose idea it was;
 - its drawing, `(c, K, r) => …`, where `r` carries what `castleroomScene` works out for this room: a trap room's `pits`, a dungeon's `bones`, a hallway's `hallEnd` ("none" when its stairs lead nowhere, and it ends in a wall). Anything new in `r` must also go into the inputs of the room's `part`, or the cached drawing won't change with it;
 - its exits:
-  - `side`: doors in its side walls, set per room, a sign out toward us, and a color theme, as the king's room has;
+  - `side`: doors in its side walls, set per room, a sign toward us (its way out), and a color theme, as the king's room has;
   - `hall`: a hallway's doors and stairs;
-  - `trap`: one arch out;
-  - `ladder`: up to the trap room;
-  - `all`: an arch to every other room;
+  - `trap`: one arch (its way out), and two pits into the dungeons;
+  - `ladder`: a ladder up (its way out; the usual way, up to the trap room);
+  - `all`: an arch to every other room but the dungeons, and one more (its way out) where that leads elsewhere;
 - its stone's tone.
+
+**How a castle's rooms connect.** A castle has up to `ROOM_MAX` (13) rooms by number. Every room but a hallway has a way out, set per room (`castleOut<n><castle>`). "✨ The usual way" is out of the castle from room 1, up to the trap room from a dungeon, and back to room 1 from any other room: only room 1 leads outside to start with. Doors default the same way (`hallDoorDefault`). In a room with a sign, a door that leads where the sign does is that sign, and isn't drawn twice.
+- **One source of truth:** `roomExits(K, n)` lists a room's ways (kind, where it leads: 0 is outside, a number a room, null nowhere; and the setting that says so, or none when it is fixed). `castleWays` draws them, and the castle designer maps them. Change one, and both follow.
+- **The castle designer** (`castledesigner` control, in the rooms' box): the castle as a map, drawn with [Cytoscape.js](https://js.cytoscape.org/) 3.30.4, loaded from cdnjs (with its integrity hash) the first time the designer opens. It is the game's only outside script, and the game works without it; the designer's lists still work if it fails to load. `castleProblems` finds rooms that can't be reached, rooms with no way back out, ways to rooms the castle doesn't have, and one-way doors (a pit is one way by design). `mapPlan` says how to fix each, and does it: a door back where there's space, else lead the way to a room that has a way back, else close the door. Doors are two-way by default: setting where a way leads gives the room it leads to a door back.
 
 Then:
 - add any settings of its own to the room's group in `TABS`, shown only for that style;
@@ -182,17 +186,20 @@ From this come its settings' keys and defaults, `castleOf`'s list, the controls,
 A refactor must not change any drawing. Before and after each step, run:
 - **The sweep** (`sweep.mjs`): draws every place at each time of day, every castle room style in both themes, and every costume, from the defaults with every LFO off. It hashes each picture's markup (74 pictures, the tree house's six rooms each on its own); compare the two lists.
 - **The structure dump** (`structure.mjs`): the defaults, the controls, every show-when rule over a set of castle states, and `castleOf` for them. These are what the pictures can't show; compare these too.
-- **The archive** (`archive.mjs <port> <page> ~/dress-up-screenshots/YYYY/MM/DD`): every background with and without the friend, and every chip menu's options against the defaults. Each picture is a 1920-wide PNG, an SVG and its settings `.json` (the game's save format), with an index.
+**The archives.** Every past version of the game, in pictures and in sound, is kept by day in two public repositories of their own, apart from the game: [dress-up-pictures](https://github.com/matthewhammer/dress-up-pictures) (`~/dress-up-pictures`, browsable at http://matthewhammer.org/dress-up-pictures/) and [dress-up-music](https://github.com/matthewhammer/dress-up-music) (`~/dress-up-music`, at http://matthewhammer.org/dress-up-music/). Being able to look back at all prior versions matters a great deal to Matthew. They will reach GitHub's limits before the game does, and can move to other storage then. Each holds `YYYY/MM/DD/` folders, each with a `source.json` (the game version and commit drawn from), and the tools that made it in `tools/`.
+- **To archive a day:** `~/du-shots/tools/archive-today.sh [pictures|music|both] [--push]`. It copies the game as it is now, runs the tools below, writes each archive's front page, and commits in each repo. Run it after a release. It's two heavy jobs, run one after the other.
+- **Unchanged files cost nothing:** a file the same as on the latest earlier day (a picture, byte for byte; a tune, by its fingerprint) is a relative symlink to that day's real file, and the day's page links straight to the real file.
+- **The pictures** (`archive.mjs <port> <page> ~/dress-up-pictures/YYYY/MM/DD [music url]`): every background with and without the friend, and every chip menu's options against the defaults. Each picture is a 1920-wide PNG, an SVG and its settings `.json` (the game's save format), with an index.
   - A menu repeated per castle, room, cat or horse is taken once.
   - A menu hidden under the defaults is shown with the one setting of its tab that brings it out, named in its label ("with …"); one that no single setting brings out is listed as such, with no picture.
   - Names stay the same from day to day, so two days can be compared folder by folder.
   - In a script injected into the page as a template literal, write `[0-9]`, not `\d`: the backslash is lost, and the filter for repeated menus once quietly matched the letter d.
-- **The music archive** (`music.mjs <port> <page> ~/dress-up-screenshots YYYY/MM/DD [release dir]`): every tune at its default settings, one loop plus a short tail for its echoes, rendered offline in the page (44.1 kHz stereo, through a limiter) and encoded with `lame -V 2`, into the day's `music/` folder with a manifest and a page of players.
+- **The music** (`music.mjs <port> <page> ~/dress-up-music YYYY/MM/DD [release dir] [pictures url]`): every tune at its default settings, one loop plus a short tail for its echoes, rendered offline in the page (44.1 kHz stereo, through a limiter) and encoded with `lame -V 2`, into the day's folder with a manifest and a page of players.
   - Each tune has a fingerprint: its notes, sections, tempo and levels, the code of each instrument it uses, and the player's and mixer's code. A tune whose fingerprint matches an earlier day's is a relative symlink to that day's file, not a new recording.
   - A busy tune takes minutes to render (forest, 3 minutes of music, about 2). The manifest is written after each tune, and a re-run the same day keeps every recording whose fingerprint still matches, so a stopped run resumes.
   - With a release dir, real copies of the day's MP3s go there with a public page.
 
-The tools live on Matthew's laptop, in `~/du-shots/tools/` (see the open questions).
+The archive tools live in the archives' own repositories (`~/du-shots/tools/` links to them). The other test drivers live on Matthew's laptop, in `~/du-shots/tools/` (see the open questions).
 
 ## Drawing gotchas, and a routine for finding them
 
@@ -233,6 +240,5 @@ Each picture is a hand-drawn illusion of depth, and a few kinds of slip break it
 
 ## Open questions for Matthew (delete once answered)
 
-1. Should this file be public at all, or kept outside the repository (in hazel-work-notes, next to the dashboard's instructions)?
-2. Should the test drivers (the safety net's `sweep.mjs` and `structure.mjs`, the screenshot `archive.mjs`, contact sheets, drag timing, tune rendering) move into the repository, as a `tools/` folder? They live outside it today, in `~/du-shots/tools/`.
-3. Should the README link here, or leave it for agents to find?
+1. Should the other test drivers (the safety net's `sweep.mjs` and `structure.mjs`, contact sheets, drag timing) move into the repository, as a `tools/` folder? They live outside it today, in `~/du-shots/tools/`. (The archive tools now live in the archive repositories.)
+2. Should the README link here, or leave it for agents to find?

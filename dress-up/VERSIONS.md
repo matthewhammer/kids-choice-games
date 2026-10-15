@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.37 (2026-10-15)
+
+Everything in 0.0.36, plus the castle designer, each room's own way out, and castles of up to 13 rooms.
+
+- **🗺️ The castle designer:** in a castle's rooms box, "🗺️ open the castle designer" shows the castle as a map: outside and each room as a box (with its emoji and number), and every way between them as an arrow (🚪 a door, 🪧 a sign, 🏛️ an archway, 🪜 a ladder, 🌀 stairs, 🕳️ a pit, dashed for a pit or a ladder). The room you are in is ringed in purple. Tap a room (on the map, or in the row of rooms under it) to see where its ways lead, or to go there; tap a way to choose where it leads. Doors are two-way to start with ("↔️ two-way doors"): when you choose where a way leads, the room it leads to gets a door back, if it has space for one. Under the map, a list of what looks wrong: a room that can't be reached from outside, a room with no way back out, a way to a room the castle doesn't have, a way with no way back. Each has a button saying how it would put it right (add a door back, lead it somewhere that has a way back, close the door), and "🔧 fix everything" does them all. Matthew's idea. (The map is drawn with Cytoscape.js, loaded the first time the designer opens.)
+- **↩️ Each room's own way out:** the king's room's sign toward you, the trap room's archway, a dungeon's ladder and the greenhouse's archway out now lead where you say, room by room ("↩️ its way out leads to": "✨ the usual way", out of the castle, or any room). The usual way: out of the castle only from room 1, up to the trap room from a dungeon, and back to room 1 from any other room. Before, every one of these led out of the castle. A hallway's first door leads out only in room 1 too; elsewhere it leads to room 1.
+- **🚪 Castles of up to 13 rooms** ("🚪 how many rooms", 1 to 13).
+
 ## 0.0.36 (2026-10-15)
 
 Everything in 0.0.35, plus a hallway whose stairs lead nowhere ends in a wall.

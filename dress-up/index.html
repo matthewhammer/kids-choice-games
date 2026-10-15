@@ -122,6 +122,13 @@
   .strip.lfo { border-style: dotted; }
   .mixer .quad { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   @media (max-width: 520px) { .mixer .quad { grid-template-columns: minmax(0, 1fr); } }
+  /* the castle designer: a map of the castle's rooms and the ways between them */
+  .designer { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
+  .designer .map { height: 340px; border: 2px solid var(--line); border-radius: 12px; background: rgba(127, 127, 127, 0.08); }
+  .designer .note { color: var(--muted); font-size: 0.85em; margin: 0; }
+  .designer .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .designer ul.problems { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .designer ul.problems li { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   /* a set of chips in a dashed box of its own, with its name (the music's
      kinds, then the kind's tunes), as the mixing board's master strip */
   .chipset { border: 2px dashed var(--line); border-radius: 12px; padding: 6px 8px; }
@@ -285,19 +292,26 @@ const CARPET_COLORS = [...new Set([...CASTLE_CARPETS, ...CASTLE_FLAG_COLORS])];
 const THEMES = [["A", "🎨 theme A"], ["B", "🎨 theme B"]];
 // where the hallway's far end, the foot of a spiral staircase, leads: the
 // castle's first spiral staircase room, a room of its own choosing, or nowhere
-// A castle is rooms by number, each with its own exits. A hallway's: up to
-// four doors in its walls, each to the outside or to a room by its number
-// (its own too), and the stairs at its far end. By default, its first door
-// leads out and the others to the castle's other rooms in turn.
+// A castle is rooms by number (up to ROOM_MAX), each with its own exits. A
+// hallway's: up to four doors in its walls, each to the outside or to a room
+// by its number (its own too), and the stairs at its far end. By default,
+// only room 1 leads out: its first door does; in any other room, the first
+// leads to room 1, and the others to the castle's other rooms in turn.
+// Every other room has a way out of its own (castleOut: the king's room's
+// sign toward us, the trap room's arch, a dungeon's ladder, the greenhouse's
+// arch out), set per room; "the usual way" is out of the castle from room 1,
+// up to the trap room from a dungeon, and back to room 1 from any other.
+const ROOM_MAX = 13, ROOM_NS = [...Array(ROOM_MAX)].map((_, i) => i + 1);
 // (a castle's rooms by number, as choices: only those it has)
-const castleRoomCount = (b, id) => Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
-const roomChoices = id => [1, 2, 3, 4, 5, 6].map(n => [String(n), b => `${roomLabel(castleOf({ ...b, castle: id }).rooms[n - 1] ?? "king").split(" ")[0]} room ${n}`, b => n <= castleRoomCount(b, id)]);
+const castleRoomCount = (b, id) => Math.max(1, Math.min(ROOM_MAX, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
+const roomChoices = id => ROOM_NS.map(n => [String(n), b => `${roomLabel(castleOf({ ...b, castle: id }).rooms[n - 1] ?? "king").split(" ")[0]} room ${n}`, b => n <= castleRoomCount(b, id)]);
 const hallDoorDests = id => [["out", "🏰 out of the castle"], ...roomChoices(id)];
 const hallEnds = id => [["auto", "🌀 the first spiral stairs"], ...roomChoices(id), ["none", "🧱 nowhere"]];
 const hallDoorKey = (id, n, j) => "castleHallDoor" + n + "_" + j + id;
-const hallDoorDefault = (n, j) => j === 1 ? "out" : String([1, 2, 3, 4, 5, 6].filter(m => m !== n)[j - 2]);
+const hallDoorDefault = (n, j) => String((n === 1 ? ["out", ...ROOM_NS.filter(m => m !== 1)] : [1, ...ROOM_NS.filter(m => m !== n && m !== 1)])[j - 1]);
+const wayOutDests = id => [["auto", "✨ the usual way"], ["out", "🏰 out of the castle"], ...roomChoices(id)];
 const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c2410c", "#1f2937"];
-// A castle's rooms: up to six, each in a style. The styles are by who made
+// A castle's rooms: up to ROOM_MAX (13), each in a style. The styles are by who made
 // them up (N's, M's and D's), and any castle may use any of them. A trap
 // room's two pits drop into the castle's dungeons.
 // The castle's room styles, one entry each: its label, whose idea it was
@@ -405,18 +419,18 @@ const castleOf = o => {
            roof: o["castleRoof" + id] ?? CASTLE_ROOF_DEFAULTS[id], carpet: o["castleCarpet" + id] ?? CASTLE_CARPETS[0],
            themeB: { flagA: o["castleFlagA_B" + id] ?? fl[1], flagB: o["castleFlagB_B" + id] ?? fl[0], carpet: o["castleCarpet_B" + id] ?? fl[1],
                      flagStyle: CASTLE_FLAG_STYLES.some(([v]) => v === o["castleFlagStyle_B" + id]) ? o["castleFlagStyle_B" + id] : CASTLE_FLAG_STYLE_DEFAULTS[id], theme: "B" },
-           roomTheme: [1, 2, 3, 4, 5, 6].map(n => ["A", "B"].includes(o["castleRoomTheme" + n + id]) ? o["castleRoomTheme" + n + id] : n % 2 ? "A" : "B"),
+           roomTheme: ROOM_NS.map(n => ["A", "B"].includes(o["castleRoomTheme" + n + id]) ? o["castleRoomTheme" + n + id] : n % 2 ? "A" : "B"),
            // each room's own exits, when it is a hallway (castleWays)
-           hall: [1, 2, 3, 4, 5, 6].map(n => ({
+           hall: ROOM_NS.map(n => ({
              doors: [...Array(Math.max(0, Math.min(4, Math.round(o["castleHallDoors" + n + id] ?? 3))))].map((_, j) => String(o[hallDoorKey(id, n, j + 1)] ?? hallDoorDefault(n, j + 1))),
-             end: String(o["castleHallEnd" + n + id] ?? "auto") })),
+             end: String(o["castleHallEnd" + n + id] ?? "auto"), out: String(o["castleOut" + n + id] ?? "auto") })),
            levels: Math.max(1, Math.min(5, Math.round(o["castleLevels" + id] ?? d.levels))),
            stone: o["castleStone" + id] ?? d.stone, trees: Math.max(0, Math.round(o["castleTrees" + id] ?? d.trees)),
            moat: Math.max(0, (o["castleMoat" + id] ?? d.moat) / 100),
-           rooms: [...Array(Math.max(1, Math.min(6, Math.round(o["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].map((_, i) => {
+           rooms: [...Array(Math.max(1, Math.min(ROOM_MAX, Math.round(o["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].map((_, i) => {
              const st = o["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i] ?? "king";
              return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king"; }),
-           bones: [1, 2, 3, 4, 5, 6].map(n => Object.fromEntries(Object.entries(ROOM_BONES).map(([st, most]) =>
+           bones: ROOM_NS.map(n => Object.fromEntries(Object.entries(ROOM_BONES).map(([st, most]) =>
              [st, Math.max(0, Math.min(most, Math.round(o[roomBonesKey(id, n, st)] ?? 0)))]))),
            // its residents: its cats, who live in its cat room (or rooms), its horses, in its stable
            ...Object.fromEntries(Object.entries(RESIDENTS).map(([kind, R]) => [kind, residentsOf(R, o, id)])) };
@@ -488,11 +502,11 @@ const DEFAULTS = {
                    ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleRoof" + id, CASTLE_ROOF_DEFAULTS[id]], ["castleCarpet" + id, CASTLE_CARPETS[0]],
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
-                   ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoomTheme" + n + id, n % 2 ? "A" : "B"]),
-                   ...[1, 2, 3, 4, 5, 6].flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"],
+                   ...ROOM_NS.map(n => ["castleRoomTheme" + n + id, n % 2 ? "A" : "B"]),
+                   ...ROOM_NS.flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"], ["castleOut" + n + id, "auto"],
                      ...[1, 2, 3, 4].map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
-                   ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
-                   ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
+                   ["castleRooms" + id, CASTLE_ROOMS[id].length], ...ROOM_NS.map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
+                   ...ROOM_NS.flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
                    ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
                 castleRoom: 1,
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
@@ -4662,7 +4676,7 @@ function castleScene(c) {
 }
 // Inside a castle: a stone room in perspective, its ceiling vaulted, torches
 // on the walls, and the things its style keeps. Rooms: the castle's own list
-// (up to six), each in a style; a trap room's two pits drop into its
+// (up to ROOM_MAX), each in a style; a trap room's two pits drop into its
 // dungeons, and a dungeon's ladder climbs back to the trap room.
 const ROOM_TONE = Object.fromEntries(Object.entries(ROOM_KINDS).filter(([, R]) => R.tone).map(([st, R]) => [st, R.tone]));
 // the room's frame: the back wall from x = -bw to bw, from its top to the
@@ -5874,36 +5888,62 @@ function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0) {
     `<path d="${shape}" fill="#0b1030" opacity="0.45"/>` +
     plankSign(Math.max(c.x0 + 56 * km, Math.min(c.x1 - 56 * km, ap[0])), ap[1] - 22 * km - lift, km, label) + `</g>`;
 }
+// Where a castle room's ways lead, for the picture (castleWays) and the
+// castle designer alike: 0 is out of the castle, a number a room, null
+// nowhere (or a room the castle doesn't have). Each exit has its kind, where
+// it leads, and the setting that says so (key: none when it is fixed).
+function wayOutOf(K, n) {
+  const v = K.hall[n - 1].out, st = K.rooms[n - 1];
+  if (v === "auto") { const trapAt = K.rooms.indexOf("trap") + 1;
+    return ROOM_KINDS[st].exits === "ladder" && trapAt && trapAt !== n ? trapAt : n === 1 ? 0 : 1; }
+  if (v === "out") return 0;
+  const r = Number(v); return r >= 1 && r <= K.rooms.length ? r : null;
+}
+function roomExits(K, n) {
+  const st = K.rooms[n - 1], ex = ROOM_KINDS[st].exits, H = K.hall[n - 1], id = K.id, X = [];
+  const dest = d => d === "out" ? 0 : Number(d) >= 1 && Number(d) <= K.rooms.length ? Number(d) : null;
+  if (ex !== "hall") X.push({ kind: { side: "sign", trap: "arch", ladder: "ladder", all: "arch" }[ex], to: wayOutOf(K, n), key: "castleOut" + n + id, way: true });
+  if (ex === "hall" || ex === "side")
+    H.doors.forEach((d, j) => {
+      // (in a room with a sign toward us, a door that leads where the sign does is that sign)
+      const to = dest(d); if (ex === "side" && to === X[0].to) return;
+      X.push({ kind: "door", to, key: hallDoorKey(id, n, j + 1), j: j + 1, missing: to === null });
+    });
+  if (ex === "hall") { const e = H.end, to = e === "none" ? null : e === "auto" ? K.rooms.indexOf("spiral") + 1 || null : dest(e);
+    X.push({ kind: "stairs", to, key: "castleHallEnd" + n + id, nowhere: to === null && (e === "none" || e === "auto") }); }
+  // (a trap room's two pits drop into the castle's dungeons, the first and then the deep one: fixed)
+  if (ex === "trap") { const d1 = K.rooms.indexOf("dungeon1") + 1, d2 = K.rooms.indexOf("dungeon2") + 1;
+    [d1 || d2, d2 || d1].forEach((to, i) => X.push({ kind: "pit", to: to || null, key: null, i, nowhere: !to })); }
+  // (the greenhouse: an arch to every other room but the dungeons, which are fallen into: fixed)
+  if (ex === "all") K.rooms.forEach((s2, i) => { if (i + 1 !== n && ROOM_KINDS[s2].exits !== "ladder" && i + 1 !== X[0].to) X.push({ kind: "arch", to: i + 1, key: null }); });
+  return X;
+}
 function castleWays(c, K, n, style) {
   const { W, k } = c, { floor, bw } = roomFrame(c);
-  const rooms = K.rooms, trapAt = rooms.indexOf("trap") + 1, exits = ROOM_KINDS[style].exits;
-  if (exits === "trap") return archDoor(0, floor, k, "🏰 out", `data-to="castle"`, 100, 180);
+  const rooms = K.rooms, exits = ROOM_KINDS[style].exits, X = roomExits(K, n);
+  const way = to => to === 0 ? { attrs: `data-to="castle"`, label: "🏰 out" }
+    : to ? { attrs: `data-to="castleroom" data-room="${to}"`, label: `${roomLabel(rooms[to - 1]).split(" ")[0]} ${to}` } : null;
+  // (its way out, where it has one: castleOut; leading nowhere, it isn't there)
+  const out = X[0] && X[0].way ? way(X[0].to) : null;
+  if (exits === "trap") return out ? archDoor(0, floor, k, out.label, out.attrs, 100, 180) : "";
   if (exits === "ladder")
-    return ladderUp(bw * 0.82, floor, roomFrame(c).top - 30 * k, k, trapAt ? `🪜 up to ${roomLabel("trap").split(" ")[0]} ${trapAt}` : "🪜 up and out",
-                    trapAt ? `data-to="castleroom" data-room="${trapAt}"` : `data-to="castle"`);
-  const links = [{ attrs: `data-to="castle"`, label: "🏰 out" },
-    // (not the dungeons, or any room whose way out is a ladder: those are reached by falling in)
-    ...rooms.map((st, i) => ({ st, i })).filter(({ st, i }) => i + 1 !== n && ROOM_KINDS[st].exits !== "ladder")
-      .map(({ st, i }) => ({ attrs: `data-to="castleroom" data-room="${i + 1}"`, label: `${roomLabel(st).split(" ")[0]} ${i + 1}` }))];
+    return out ? ladderUp(bw * 0.82, floor, roomFrame(c).top - 30 * k, k, X[0].to === 0 ? "🪜 up and out" : `🪜 up to ${out.label}`, out.attrs) : "";
+  const links = X.filter(x => x.kind === "arch").map(x => way(x.to)).filter(Boolean);
+  const doors = X.filter(x => x.kind === "door").map(x => way(x.to)).filter(Boolean);
   // the hallway's: doors in its side walls, by turns left and right, two to each stretch of it
-  // a room's own exits (K.hall), for a hallway and the king's room: each door to the outside or a room
-  // by its number (a room the castle no longer has: no door)
-  const H = K.hall[n - 1], to = d => d === "out" ? links[0] : Number(d) >= 1 && Number(d) <= rooms.length
-    ? { attrs: `data-to="castleroom" data-room="${Number(d)}"`, label: `${roomLabel(rooms[Number(d) - 1]).split(" ")[0]} ${Number(d)}` } : null;
   // the king's room: its doors in its side walls, two to a side, between its back corners and the
   // picture's edges (clear of all it holds); its way out a sign at the bottom, as the forest clearing's
-  // path, toward us (a door set to lead out is that sign)
+  // path, toward us (a door set to lead where the sign does is that sign)
   if (exits === "side") {
-    const { y1, pad } = c, doors = H.doors.filter(d => d !== "out").map(to).filter(Boolean);
+    const { y1, pad } = c;
     // (a nearer door's sign, kept inside the picture, would sit on the farther one's: it goes above it)
     return doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j; return hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k); }).join("") +
-      `<g class="portal" data-to="castle"><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
-      plankSign(-W * 0.2, y1 - 44 * k, k, "🏰 out ⬇️") + `</g>`;
+      (out ? `<g class="portal" ${out.attrs}><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
+      plankSign(-W * 0.2, y1 - 44 * k, k, `${out.label} ⬇️`) + `</g>` : "");
   }
   if (exits === "hall") {
     // and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
-    const doors = H.doors.map(to).filter(Boolean);
-    const end = H.end === "none" ? 0 : H.end === "auto" ? rooms.indexOf("spiral") + 1 : Math.min(rooms.length, Number(H.end) || 0);
+    const end = X.find(x => x.kind === "stairs").to || 0;
     // (to this very hallway too: the friend flies up the stairs and lands back here, as through a picture of its own room)
     const A = hallFarArch(c), far = end ? `<g class="portal" data-to="castleroom" data-room="${end}"><path d="${A.d}" fill="#000000" fill-opacity="0.01"/>` +
       plankSign(0, A.top - 14 * k * 0.18, k * 0.3, `${roomLabel(rooms[end - 1]).split(" ")[0]} ${end}`) + `</g>` : "";
@@ -5916,6 +5956,93 @@ function castleWays(c, K, n, style) {
   });
   return t;
 }
+// The castle as a map, for the castle designer: every way between its rooms
+// (the gate into room 1, then each room's exits: roomExits), what looks wrong
+// with it, and how to put each thing right. A way leading out of the castle
+// leads to 0; the gate leads from 0 into room 1.
+const EXIT_ICONS = { door: "🚪", sign: "🪧", arch: "🏛️", ladder: "🪜", stairs: "🌀", pit: "🕳️", gate: "🏰" };
+const EXIT_WORDS = { door: "door", sign: "sign", arch: "archway", ladder: "ladder", stairs: "stairs", pit: "pit", gate: "gate" };
+function castleGraph(K) {
+  const E = [{ from: 0, kind: "gate", to: 1, key: null }];
+  K.rooms.forEach((_, i) => roomExits(K, i + 1).forEach(x => E.push({ from: i + 1, ...x })));
+  return E;
+}
+const mapRoomName = (K, r) => r === 0 ? "🏰 outside" : `${roomLabel(K.rooms[r - 1]).split(" ")[0]} room ${r}`;
+const mapExitName = (K, e) => e.kind === "gate" ? "🏰 castle's gate" :
+  `${EXIT_ICONS[e.kind]} ${e.kind === "door" ? "door " + e.j : e.way ? "way out (its " + EXIT_WORDS[e.kind] + ")" : EXIT_WORDS[e.kind] + (e.kind === "pit" ? " " + (e.i + 1) : "")} of ${mapRoomName(K, e.from)}`;
+// (the rooms that can be reached from outside, or, backward, that can get back out)
+function mapReach(E, forward) {
+  const seen = new Set([0]), q = [0];
+  while (q.length) { const a = q.shift();
+    for (const e of E) { const u = forward ? e.from : e.to, v = forward ? e.to : e.from;
+      if (u === a && v !== null && v !== undefined && !seen.has(v)) { seen.add(v); q.push(v); } } }
+  return seen;
+}
+function castleProblems(K) {
+  const E = castleGraph(K), inn = mapReach(E, true), out = mapReach(E, false), P = [];
+  K.rooms.forEach((_, i) => { const r = i + 1;
+    if (!inn.has(r)) P.push({ kind: "unreached", room: r, text: `${mapRoomName(K, r)} can't be reached from outside.` });
+    if (!out.has(r)) P.push({ kind: "stuck", room: r, text: `From ${mapRoomName(K, r)}, there's no way back out of the castle.` }); });
+  for (const e of E) {
+    if (e.to === null && !e.nowhere) P.push({ kind: "missing", e, text: `The ${mapExitName(K, e)} leads to a room the castle doesn't have.` });
+    // (a pit is one way, by design: you fall in, and climb the ladder back up)
+    else if (e.from && e.to && e.to !== e.from && e.kind !== "pit" && !E.some(f => f.from === e.to && f.to === e.from))
+      P.push({ kind: "oneway", e, text: `The ${mapExitName(K, e)} goes to ${mapRoomName(K, e.to)}, but there's no way back.` });
+  }
+  return P;
+}
+// (rooms with doors in their walls, as many as four: the hallway, the king's room and its kind)
+const mapDoorRoom = (K, r) => ["hall", "side"].includes(ROOM_KINDS[K.rooms[r - 1]].exits);
+// a door from room a to b (0: out), in a door leading nowhere or a new one; false when a has no space
+function mapAddDoor(B, K, a, b) {
+  if (!mapDoorRoom(K, a)) return false;
+  const id = K.id, n = K.hall[a - 1].doors.length, val = b === 0 ? "out" : String(b);
+  const bad = roomExits(K, a).find(x => x.kind === "door" && x.missing);
+  if (bad) { B[bad.key] = val; return true; }
+  if (n >= 4) return false;
+  B["castleHallDoors" + a + id] = n + 1; B[hallDoorKey(id, a, n + 1)] = val; return true;
+}
+// doors two-way: when room a's way leads to room b, b gets a way back to a (a door), where it has space
+function mapWayBack(B, id, a, b) {
+  const K = castleOf({ ...B, castle: id });
+  if (!b || b === a || roomExits(K, b).some(x => x.to === a)) return true;
+  return mapAddDoor(B, K, b, a);
+}
+// (a door taken out of room a's walls, the ones after it moving up)
+function mapCloseDoor(B, K, a, j) {
+  const id = K.id, D = K.hall[a - 1].doors;
+  for (let k = j; k < D.length; k++) B[hallDoorKey(id, a, k)] = String(D[k]);
+  B["castleHallDoors" + a + id] = D.length - 1;
+}
+// how to put one thing right: what the fix says it does, and doing it (to B, the settings); null when it can't be
+function mapPlan(B, id, p) {
+  const K = castleOf({ ...B, castle: id }), E = castleGraph(K), inn = mapReach(E, true), name = r => mapRoomName(K, r);
+  if (p.kind === "missing") { const v = p.e.kind === "door" ? (p.e.from === 1 ? "out" : "1") : p.e.kind === "stairs" ? "none" : "auto";
+    return { text: v === "none" ? "🔧 lead it nowhere" : v === "auto" ? "🔧 the usual way" : v === "out" ? "🔧 lead it out" : "🔧 lead it to room 1", apply: b => { b[p.e.key] = v; } }; }
+  if (p.kind === "oneway") { const a = p.e.from, t = p.e.to;
+    // (a door back, where the room it leads to has space; or lead it to a room that has a way back; or close it)
+    if (mapAddDoor({ ...B }, K, t, a)) return { text: "🔧 add a door back", apply: b => mapAddDoor(b, castleOf({ ...b, castle: id }), t, a) };
+    if (p.e.key) {
+      const c = K.rooms.map((_, i) => i + 1).find(c => c !== a && c !== t && inn.has(c) && E.some(f => f.from === c && f.to === a));
+      if (c) return { text: `🔧 lead it to ${name(c)} instead`, apply: b => { b[p.e.key] = String(c); } };
+      if (p.e.kind === "door") return { text: "🔧 close this door", apply: b => mapCloseDoor(b, K, a, p.e.j) };
+    }
+    return null;
+  }
+  if (p.kind === "unreached") {
+    // (a door to it from a room that can be reached, room 1 first, and a way back)
+    const a = [1, ...ROOM_NS].find(a => a <= K.rooms.length && a !== p.room && inn.has(a) && mapAddDoor({ ...B }, K, a, p.room));
+    return a ? { text: `🔧 a door to it from ${name(a)}`, apply: b => { mapAddDoor(b, castleOf({ ...b, castle: id }), a, p.room); mapWayBack(b, id, a, p.room); } } : null;
+  }
+  if (p.kind === "stuck") {
+    const w = roomExits(K, p.room).find(x => x.way), to = p.room === 1 ? 0 : 1;
+    if (w && B[w.key] !== "auto") return { text: "🔧 its way out, the usual way", apply: b => { b[w.key] = "auto"; } };
+    return mapAddDoor({ ...B }, K, p.room, to) ? { text: `🔧 a door to ${name(to)}`, apply: b => mapAddDoor(b, castleOf({ ...b, castle: id }), p.room, to) } : null;
+  }
+  return null;
+}
+const mapFix = (B, id, p) => { const plan = mapPlan(B, id, p); if (plan) plan.apply(B); return !!plan; };
+const mapCanFix = (B, id, p) => !!mapPlan(B, id, p);
 function castleroomScene(c) {
   const { o } = c;
   let K = castleOf(o);
@@ -9814,14 +9941,16 @@ const TABS = [
           ["color", "castleCarpet_B" + id, "🟥 carpet", CARPET_COLORS]]]]],
       ["group", "castleRoomList" + id, `🚪 ${id}'s castle: its rooms`, [
         ["castlejump", "castleGo" + id, "🚶 go straight to"],
-        ["range", "castleRooms" + id, "🚪 how many rooms", 1, 6, 1, 6]]],
-      ...[1, 2, 3, 4, 5, 6].map(n => ["group", "castleRoomBox" + n + id, `🚪 ${id}'s castle: room ${n}`, [
+        ["range", "castleRooms" + id, "🚪 how many rooms", 1, ROOM_MAX, 1, 6],
+        ["castledesigner", "castleDesign" + id, "🗺️ castle designer"]]],
+      ...ROOM_NS.map(n => ["group", "castleRoomBox" + n + id, `🚪 ${id}'s castle: room ${n}`, [
         ["choice", "castleRoom" + n + id, `🚪 room ${n} is`, CASTLE_ROOM_CHOICES],
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, 4, 0, 4],
         ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
-        ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)]],
+        ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)],
+        ["choice", "castleOut" + n + id, "↩️ its way out leads to", wayOutDests(id)]],
         b => b.kind === "castleroom" && (b.castle ?? "N") === id && Math.round(b.castleRoom ?? 1) === n]),
       // (its residents, each kind in a box of its own, each one in its own box in that: RESIDENTS)
       ...Object.values(RESIDENTS).map(R => ["group", R.group[0] + id, R.group[1](id), [
@@ -10026,28 +10155,29 @@ const SHOWN_WHEN = {
   // (the castle's groups: its look where it is seen, its rooms and each room's own at the castle and inside it)
   ...Object.fromEntries(CASTLES.flatMap(([id]) => {
     const atCastle = b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id;
-    const nRooms = b => Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
+    const nRooms = b => Math.max(1, Math.min(ROOM_MAX, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
     const typeOf = (b, n) => b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1];
     const isHall = (b, n) => typeOf(b, n) === "hallway", hasDoors = (b, n) => OWN_EXIT_ROOMS.includes(typeOf(b, n));
     // (its cats: in a cat room of its, and at the castle when it has one)
-    const livesHere = st => b => atCastle(b) && (b.kind === "castle" ? [1, 2, 3, 4, 5, 6].some(n => n <= nRooms(b) && typeOf(b, n) === st)
+    const livesHere = st => b => atCastle(b) && (b.kind === "castle" ? ROOM_NS.some(n => n <= nRooms(b) && typeOf(b, n) === st)
                                                                       : typeOf(b, Math.round(b.castleRoom ?? 1)) === st);
 
     return [["background.castleLook" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id],
             ["background.castleThemes" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id], ["background.castleThemeB" + id, atCastle],
-            ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoomTheme" + n + id, b => OWN_EXIT_ROOMS.includes(typeOf(b, n))]),
+            ...ROOM_NS.map(n => ["background.castleRoomTheme" + n + id, b => OWN_EXIT_ROOMS.includes(typeOf(b, n))]),
             // (its residents: where they live, and as many as there are)
             ...Object.values(RESIDENTS).flatMap(R => [["background." + R.group[0] + id, livesHere(R.room)],
               ...R.list.map((_, i) => ["background." + R.box[0] + (i + 1) + id, b => livesHere(R.room)(b) && i + 1 <= Math.round(b[R.count[0] + id] ?? R.count[2])])]),
-            ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle],
-            ...[1, 2, 3, 4, 5, 6].flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
+            ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle], ["background.castleDesign" + id, atCastle],
+            ...ROOM_NS.flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
+              ["background.castleOut" + n + id, b => !isHall(b, n)],
               ...[1, 2, 3, 4].map(k => ["background." + hallDoorKey(id, n, k), b => hasDoors(b, n) && k <= Math.round(b["castleHallDoors" + n + id] ?? 3)])])];
   })),
   ...Object.fromEntries(CASTLES.flatMap(([id]) => [["background.castleRooms" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id],
-    ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoom" + n + id,
+    ...ROOM_NS.map(n => ["background.castleRoom" + n + id,
       b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id && n <= (b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)]),
-    ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => ["background." + roomBonesKey(id, n, st),
+    ...ROOM_NS.flatMap(n => Object.keys(ROOM_BONES).map(st => ["background." + roomBonesKey(id, n, st),
       b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id && n <= (b["castleRooms" + id] ?? CASTLE_ROOMS[id].length) &&
            (b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1] ?? "king") === st]))])),
   ...Object.fromEntries(["witchSize", "cauldronSize", "crows", "frogs", "snakes"].map(key => ["background." + key, b => b.kind === "witchroom"])),
@@ -10120,6 +10250,116 @@ function togglePin(id) {
 // (while the HUD is built: its sliders have no pins -- pinning is for
 // the editor, not the performance)
 let buildingHud = false;
+// The castle designer, in its rooms' box: the castle as a map (Cytoscape.js,
+// loaded from a CDN the first time it is opened), each room a node and each
+// way between rooms an arrow, the room you are in ringed. Tap a way to set
+// where it leads, a room to see its ways (or go there); below the map, what
+// looks wrong, each with a fix. Doors are two-way to start with: setting
+// where a way leads gives the room it leads to a door back, where it has
+// space for one.
+const CYTOSCAPE = { src: "https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js",
+                    sri: "sha512-xpXUCbrkyJCwC5noJXZqec9rSXdRgFfDoL7Q9/pCPe54Y04OlqwPobMcNuA5NPJ7DRR51OIr6xcOH2wUspyKDQ==" };
+let cytoscapeLoad = null;
+const loadCytoscape = () => cytoscapeLoad ||= new Promise((res, rej) => {
+  if (window.cytoscape) return res(window.cytoscape);
+  document.head.append(el("script", { src: CYTOSCAPE.src, integrity: CYTOSCAPE.sri, crossorigin: "anonymous", referrerpolicy: "no-referrer",
+    onload: () => res(window.cytoscape), onerror: () => { cytoscapeLoad = null; rej(new Error("the map didn't load")); } }));
+});
+const MAP_STYLE = [
+  { selector: "node", style: { label: "data(label)", "text-valign": "center", "text-halign": "center", "text-wrap": "wrap", "font-size": 13, "line-height": 1.1,
+                               shape: "round-rectangle", width: 50, height: 46, "background-color": "#efe6d2", "border-width": 2, "border-color": "#8a6d3b", color: "#2a1d0e" } },
+  { selector: "node.outside", style: { width: 76, "background-color": "#cfe8c4", "border-color": "#4f7a43" } },
+  { selector: "node.here", style: { "border-color": "#7c5cff", "border-width": 5 } },
+  { selector: "node.picked", style: { "border-color": "#e8b923", "border-width": 5 } },
+  { selector: "edge", style: { width: 2.5, "curve-style": "bezier", "line-color": "#b9a98f", "target-arrow-color": "#b9a98f", "target-arrow-shape": "triangle",
+                               label: "data(label)", "font-size": 12, "text-background-color": "#f6f0e2", "text-background-opacity": 0.9, "text-background-padding": 1, "text-background-shape": "roundrectangle" } },
+  { selector: "edge.pit, edge.ladder", style: { "line-style": "dashed" } },
+  { selector: "edge.fixed", style: { "line-color": "#8c8579", "target-arrow-color": "#8c8579" } },
+  { selector: "edge.bad", style: { "line-color": "#e0533b", "target-arrow-color": "#e0533b", width: 3.5 } },
+  { selector: "edge.picked", style: { "line-color": "#e8b923", "target-arrow-color": "#e8b923", width: 5 } },
+];
+const MAP_LAYOUT = n => n <= 6 ? { name: "breadthfirst", roots: ["r0"], directed: false, spacingFactor: 1.1, padding: 14, animate: false }
+                             : { name: "circle", startAngle: -Math.PI / 2, padding: 14, animate: false, sort: (a, b) => +a.id().slice(1) - +b.id().slice(1) };
+const MAP_FIXED = { pit: "A trap room's pits drop into the castle's dungeons (the first, then the deep one); a dungeon's ladder climbs back.",
+                    arch: "The greenhouse has an archway to every room but the dungeons (they are fallen into).",
+                    gate: "The castle's gate always leads into room 1." };
+function castleDesigner(part, key, box, syncs) {
+  const id = key.replace("castleDesign", ""), B = () => state[part];
+  let open = false, cy = null, sig = "", picked = null, twoWay = true;
+  const toggle = el("button", { onclick: () => { open = !open; picked = null; draw(); } });
+  const map = el("div", { class: "map" }), note = el("p", { class: "note" }), rooms = el("div", { class: "row" }), edit = el("div", { class: "row" }),
+        tools = el("div", { class: "row" }), probs = el("div"), panel = el("div", { class: "designer" }, [map, note, rooms, edit, tools, probs]);
+  box.append(toggle, panel);
+  const eid = e => `e${e.from}-${e.kind}${e.j ?? e.i ?? ""}${e.way ? "w" : ""}`;
+  const pickOf = e => e.key || eid(e);
+  const go = n => { const b = B(); if (n) { b.kind = "castleroom"; b.castleRoom = n; } else b.kind = "castle"; [b.figX, b.figY] = ARRIVE[b.kind] || [0, 0]; changed(); };
+  const setWay = (e, v) => {
+    const b = B(); b[e.key] = v;
+    if (twoWay) { const K = castleOf({ ...b, castle: id }), x = roomExits(K, e.from).find(x => x.key === e.key); if (x && x.to) mapWayBack(b, id, e.from, x.to); }
+    changed();
+  };
+  const draw = () => {
+    toggle.textContent = open ? "🗺️ close the castle designer" : "🗺️ open the castle designer";
+    toggle.setAttribute("aria-pressed", open);
+    panel.style.display = open ? "" : "none";
+    if (!open) return;
+    const b = { ...B(), castle: id }, K = castleOf(b), E = castleGraph(K), P = castleProblems(K);
+    const here = b.kind === "castleroom" ? Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1))) : 0;
+    const bad = new Set(P.filter(p => p.e).map(p => eid(p.e)));
+    // the rooms, as chips too (the map's nodes, for a small screen or when the map can't load)
+    rooms.replaceChildren(el("span", { class: "note" }, "rooms:"), ...[0, ...K.rooms.map((_, i) => i + 1)].map(r =>
+      el("button", { "aria-pressed": picked?.room === r, onclick: () => { picked = { room: r }; draw(); } }, r ? `${roomLabel(K.rooms[r - 1]).split(" ")[0]} ${r}` : "🏰 outside")));
+    // what is picked: a way, and where it can lead; or a room, and its ways
+    const e = picked?.way && E.find(x => pickOf(x) === picked.way);
+    if (e) {
+      const opts = !e.key ? [] : e.key.startsWith("castleOut") ? wayOutDests(id) : e.key.startsWith("castleHallEnd") ? hallEnds(id) : hallDoorDests(id);
+      edit.replaceChildren(el("span", {}, `${mapExitName(K, e)} leads to:`), ...(e.key ? opts.filter(([, , vis]) => !vis || vis(b)).map(([v, lab]) =>
+        el("button", { "aria-pressed": String(B()[e.key]) === String(v), onclick: () => setWay(e, v) }, typeof lab === "function" ? lab(b) : lab))
+        : [el("span", { class: "note" }, MAP_FIXED[e.kind] || "This way is fixed.")]));
+    } else if (picked && picked.room !== undefined) {
+      const r = picked.room, X = E.filter(x => x.from === r);
+      edit.replaceChildren(el("span", {}, `${mapRoomName(K, r)}:`), ...X.map(x => el("button", { onclick: () => { picked = { way: pickOf(x) }; draw(); } },
+        `${EXIT_ICONS[x.kind]} ${x.kind === "door" ? "door " + x.j : x.way ? "way out" : EXIT_WORDS[x.kind]} → ${x.to === null ? (x.nowhere ? "🧱 nowhere" : "❓") : mapRoomName(K, x.to)}`)),
+        el("button", { onclick: () => go(r) }, "🚶 go there"));
+    } else edit.replaceChildren(el("span", { class: "note" }, "Tap a room or an arrow on the map (or a room above) to see where its ways lead, and change them."));
+    // two-way doors, and putting everything right at once
+    const fixable = P.filter(p => mapCanFix(B(), id, p));
+    const fixAll = el("button", { onclick: () => {
+      for (let i = 0; i < 40; i++) { const Q = castleProblems(castleOf({ ...B(), castle: id })), p = Q.find(p => mapCanFix(B(), id, p)); if (!p) break; mapFix(B(), id, p); }
+      changed(); } }, `🔧 fix everything (${fixable.length})`);
+    fixAll.disabled = !fixable.length;
+    tools.replaceChildren(
+      el("button", { "aria-pressed": twoWay, title: "Setting where a way leads also gives the room it leads to a door back, where it has space", onclick: () => { twoWay = !twoWay; draw(); } }, "↔️ two-way doors"), fixAll);
+    // what looks wrong
+    probs.replaceChildren(P.length ? el("ul", { class: "problems" }, P.map(p => el("li", {}, [el("span", {}, (p.kind === "oneway" ? "↗️ " : p.kind === "missing" ? "❓ " : "⚠️ ") + p.text),
+        (plan => plan ? el("button", { onclick: () => { plan.apply(B()); changed(); } }, plan.text) : el("span", { class: "note" }, "(can't be changed here: it's fixed)"))(mapPlan(B(), id, p))])))
+      : el("p", { class: "note" }, "✅ Nothing looks wrong: every room can be reached from outside, and has a way back out."));
+    // the map itself
+    if (!window.cytoscape) {
+      note.textContent = "Loading the map…";
+      loadCytoscape().then(() => draw(), () => { note.textContent = "The map couldn't load (it needs the internet the first time it opens). The rooms and their ways still work above and below."; });
+      return;
+    }
+    note.textContent = "🟣 the room you're in · 🔴 a way with no way back · dashed: a pit or a ladder";
+    const nodes = [{ data: { id: "r0", label: "🏰\noutside" }, classes: "outside" + (b.kind === "castle" ? " here" : "") + (picked?.room === 0 ? " picked" : "") },
+      ...K.rooms.map((st, i) => ({ data: { id: "r" + (i + 1), label: `${roomLabel(st).split(" ")[0]}\n${i + 1}` },
+                                   classes: (here === i + 1 ? "here" : "") + (picked?.room === i + 1 ? " picked" : "") }))];
+    const edges = E.filter(x => x.to !== null).map(x => ({ data: { id: eid(x), source: "r" + x.from, target: "r" + x.to, label: EXIT_ICONS[x.kind] },
+      classes: [x.kind, x.key ? "set" : "fixed", bad.has(eid(x)) ? "bad" : "", picked?.way === pickOf(x) ? "picked" : ""].join(" ") }));
+    const now = K.rooms.join();
+    map.style.height = (K.rooms.length > 6 ? 460 : 340) + "px";
+    if (!cy) {
+      cy = window.cytoscape({ container: map, elements: [...nodes, ...edges], style: MAP_STYLE, layout: MAP_LAYOUT(K.rooms.length), minZoom: 0.3, maxZoom: 2.5, wheelSensitivity: 0.3 });
+      cy.on("tap", "edge", ev => { const x = castleGraph(castleOf({ ...B(), castle: id })).find(x => eid(x) === ev.target.id()); picked = x ? { way: pickOf(x) } : null; setTimeout(draw); });
+      cy.on("tap", "node", ev => { picked = { room: +ev.target.id().slice(1) }; setTimeout(draw); });
+      cy.on("tap", ev => { if (ev.target === cy) { picked = null; setTimeout(draw); } });
+      sig = now;
+    } else if (now !== sig) { cy.elements().remove(); cy.add([...nodes, ...edges]); cy.layout(MAP_LAYOUT(K.rooms.length)).run(); sig = now; }
+    else { cy.edges().remove(); cy.add(edges); for (const nd of nodes) cy.getElementById(nd.data.id).classes(nd.classes); }
+    cy.resize(); if (now !== sig || !cy.__fitted) { cy.fit(undefined, 14); cy.__fitted = true; }
+  };
+  syncs.push(draw);
+}
 function control(part, [kind, key, label, ...rest], opts = {}) {
   // another tab's control, shown here when this tab's settings say (its
   // settings are that tab's: the ghost's see-through-ness is the
@@ -10164,6 +10404,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       } }, n ? `${roomLabel(K.rooms[n - 1]).split(" ")[0]} ${n}` : "🏰 outside")));
     });
   }
+  if (kind === "castledesigner" && !buildingHud) castleDesigner(part, key, box, syncs);
   if (kind === "action") {
     const b = el("button", { onclick: () => { rest[0](); changed(); } }, label);
     lbl.replaceChildren();
