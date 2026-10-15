@@ -4,7 +4,7 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
-- **⏱️ LFOs faster than a beat,** down to a 64th of a beat. The "⏱️ round in" knob on the mixing board now starts at 1/64 beat and goes through 1/63, 1/62 … 1/3, 1/2 beat before 1 beat to 8 bars, as before. A bongo or conga following a fast LFO bends all through each hit, in time with the tune, not just at its start: at a few to the beat it warbles, and near 1/64 beat (about 120 times a second) it buzzes. Slower LFOs sound as they did.
+- **⏱️ LFOs faster than a beat,** down to a 32nd of a beat. The "⏱️ round in" knob on the mixing board mirrors itself around 1 beat, now its middle: 1/32, 1/24, 1/16, 1/12, 1/8, 1/6, 1/4, 1/3 and 1/2 beat below it, and 2, 3, 4 and 6 beats to 8 bars above it, as before. A bongo or conga following a fast LFO bends all through each hit, in time with the tune, not just at its start: at a few to the beat it warbles, and near 1/32 beat (about 60 times a second) it buzzes. Slower LFOs sound as they did.
 - **🧚 Wings too fast to see:** wings flapping with an LFO faster than the screen can draw (a cycle in under about four frames, around 1/8 beat or faster) show as fast wings look, a see-through blur across the whole sweep of the flap, thickest where the wave lingers. A part fading with an LFO that fast (and the fairy house) holds at its average see-through-ness instead of flickering.
 
 ## 0.0.33 (2026-10-14)
