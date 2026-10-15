@@ -331,13 +331,14 @@ const ROOM_KINDS = {
   hallway: { label: "🕯️ hallway", by: "N", exits: "hall", tone: "#8a8597", draw: (c, K, R) => hallwaySvg(c, K, R) },
   catroom: { label: "🐈 cat room", by: "more", exits: "side", draw: (c, K) => catRoomSvg(c, K) },
   stable: { label: "🐴 stable", by: "more", exits: "side", draw: (c, K) => stableSvg(c, K) },
+  dining: { label: "🍽️ dining room", by: "M", exits: "long", tone: "#9c8f84", draw: (c, K, r) => diningRoomSvg(c, K, r) },
 };
-const ROOM_STYLES = [["N", "N's rooms"], ["more", "more rooms"]].map(([by, name]) =>
+const ROOM_STYLES = [["N", "N's rooms"], ["M", "M's rooms"], ["more", "more rooms"]].map(([by, name]) =>
   [by, name, Object.entries(ROOM_KINDS).filter(([, R]) => R.by === by).map(([st, R]) => [st, R.label])]);
 // the rooms whose exits are their own (K.hall): a hallway's doors and stairs; the
 // others', doors in their side walls, as the king's room's, and a sign out toward
 // us; each of these rooms also takes a color theme
-const SIDE_DOOR_ROOMS = Object.keys(ROOM_KINDS).filter(st => ROOM_KINDS[st].exits === "side"), OWN_EXIT_ROOMS = ["hallway", ...SIDE_DOOR_ROOMS];
+const SIDE_DOOR_ROOMS = Object.keys(ROOM_KINDS).filter(st => ["side", "long"].includes(ROOM_KINDS[st].exits)), OWN_EXIT_ROOMS = ["hallway", ...SIDE_DOOR_ROOMS];
 // The cat room's cats: the castle's own, up to eight, each with its fur, its
 // tuxedo white (or none), its eyes, how it is (sitting, asleep, walking), where
 // in the room it is, its size, and its wag: with an LFO (in time with the
@@ -430,6 +431,7 @@ const castleOf = o => {
            rooms: [...Array(Math.max(1, Math.min(ROOM_MAX, Math.round(o["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].map((_, i) => {
              const st = o["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i] ?? "king";
              return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king"; }),
+           places: ROOM_NS.map(n => Math.max(4, Math.min(18, Math.round(o["castlePlaces" + n + id] ?? 10)))),
            bones: ROOM_NS.map(n => Object.fromEntries(Object.entries(ROOM_BONES).map(([st, most]) =>
              [st, Math.max(0, Math.min(most, Math.round(o[roomBonesKey(id, n, st)] ?? 0)))]))),
            // its residents: its cats, who live in its cat room (or rooms), its horses, in its stable
@@ -503,7 +505,7 @@ const DEFAULTS = {
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
                    ...ROOM_NS.map(n => ["castleRoomTheme" + n + id, n % 2 ? "A" : "B"]),
-                   ...ROOM_NS.flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"], ["castleOut" + n + id, "auto"],
+                   ...ROOM_NS.flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"], ["castleOut" + n + id, "auto"], ["castlePlaces" + n + id, 10],
                      ...[1, 2, 3, 4].map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...ROOM_NS.map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
                    ...ROOM_NS.flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
@@ -5070,6 +5072,133 @@ function hallwaySvg(c, K, R = {}) {
        `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="#0b1030" opacity="0.5"/>`;
   return t + stairwell + lights.join("");
 }
+// The dining room (M's idea): a long hall, drawn as the hallway is, down its
+// length and from the same height, its floor of boards. Down its middle, a
+// long table set for as many as "🍽️ places at table" says, 4 to 18: one at
+// each end, and the rest down its two sides (eight to a side at most). A white
+// cloth with a runner in the room's carpet color; at each place a chair with
+// a cushion, a plate, a cup, and a knife and fork; candles burning down the
+// table; candelabras of candles hanging over it on chains from the vault;
+// torches along the walls; and at the far end, a great fireplace, its fire
+// burning. The candle flames flicker with the quick LFO, and the torches and
+// the fire glow with the slow one.
+function diningRoomSvg(c, K, r = {}) {
+  const { k, P, o } = c, { floor, top, bw, vy } = roomFrame(c);
+  const tone = ROOM_TONE.dining, mortar = mix(tone, "#000000", 0.35), gold = "#e8b923", wood = "#7a4e2c", woodDk = "#4a2e18";
+  const N = HALL_STRETCHES, fz = z => 1 / (1 + z * 0.8), fN = fz(N), Y = (y, f) => vy + (y - vy) * f;
+  // (a point in the room: x across, y up and down, z how far down the room, in stretches)
+  const at = (x, y, z) => { const f = fz(z); return [x * f, Y(y, f)]; }, pt = (x, y, z) => P(...at(x, y, z));
+  const poly = (pts, fill, more = "") => `<polygon points="${pts.map(p => pt(...p)).join(" ")}" fill="${fill}"${more}/>`;
+  let t = roomShell(c, tone, {});
+  t += `<defs><radialGradient id="dine-depth" cx="0" cy="${f1(vy)}" r="${f1(bw)}" gradientUnits="userSpaceOnUse">` +
+       `<stop offset="0" stop-color="#000000" stop-opacity="0.45"/><stop offset="0.6" stop-color="#000000" stop-opacity="0.18"/><stop offset="1" stop-color="#000000" stop-opacity="0"/></radialGradient></defs>`;
+  // its walls, floor and vault, from the back wall's opening to the far end (as the hallway's), the floor of boards
+  for (const sd of [-1, 1]) {
+    t += poly([[sd * bw, top, 0], [sd * bw, top, N], [sd * bw, floor, N], [sd * bw, floor, 0]], mix(tone, "#000000", 0.18));
+    for (let j = 1; j < 12; j++) { const y = top + (floor - top) * j / 12;
+      t += `<line x1="${f1(sd * bw)}" y1="${f1(y)}" x2="${f1(sd * bw * fN)}" y2="${f1(Y(y, fN))}" stroke="${mortar}" stroke-width="${f1(1.6 * k)}" opacity="0.55"/>`; }
+  }
+  t += poly([[-bw, floor, 0], [bw, floor, 0], [bw, floor, N], [-bw, floor, N]], "#7a5434") + poly([[-bw, top, 0], [bw, top, 0], [bw, top, N], [-bw, top, N]], mix(tone, "#000000", 0.45));
+  for (let i = -9; i <= 9; i++) t += `<line x1="${f1(i * bw / 9)}" y1="${f1(floor)}" x2="${f1(i * bw / 9 * fN)}" y2="${f1(Y(floor, fN))}" stroke="#5a3a20" stroke-width="${f1(1.2 * k)}" opacity="0.6"/>`;
+  for (let i = 1; i <= N; i++) { const f = fz(i), w = bw * f, tp = Y(top, f), fl = Y(floor, f);
+    t += `<path d="M${P(-w, fl)} V${f1(tp)} Q${P(0, tp - 60 * k * f)} ${P(w, tp)} V${f1(fl)}" fill="none" stroke="${mix(tone, "#000000", 0.3)}" stroke-width="${f1(Math.max(1, 10 * k * f))}"/>` +
+         `<line x1="${f1(-w)}" y1="${f1(fl)}" x2="${f1(w)}" y2="${f1(fl)}" stroke="#4a2e18" stroke-width="${f1(Math.max(0.6, 2 * k * f))}"/>`; }
+  // the far end: its wall, its courses meeting the side walls', and a great fireplace in it
+  const flames = [], lights = [];
+  { const f = fN, w = bw * f, tp = Y(top, f), fl = Y(floor, f), kf = k * f, fw = w * 0.42, fh = (fl - tp) * 0.46, mt = fl - fh;
+    t += `<rect x="${f1(-w)}" y="${f1(tp)}" width="${f1(2 * w)}" height="${f1(fl - tp)}" fill="${mix(tone, "#000000", 0.22)}"/>`;
+    for (let j = 1; j < 12; j++) { const y = Y(top + (floor - top) * j / 12, f);
+      t += `<line x1="${f1(-w)}" y1="${f1(y)}" x2="${f1(w)}" y2="${f1(y)}" stroke="${mortar}" stroke-width="${f1(1.6 * kf)}" opacity="0.6"/>`; }
+    t += `<rect x="${f1(-fw - 14 * kf)}" y="${f1(mt - 4 * kf)}" width="${f1(2 * fw + 28 * kf)}" height="${f1(fl - mt + 4 * kf)}" fill="${mix(tone, "#ffffff", 0.12)}"/>` +
+         `<path d="M${P(-fw, fl)} V${f1(mt + fh * 0.35)} Q${P(0, mt + fh * 0.02)} ${P(fw, mt + fh * 0.35)} V${f1(fl)} Z" fill="#1a1008"/>` +
+         `<rect x="${f1(-fw - 22 * kf)}" y="${f1(mt - 16 * kf)}" width="${f1(2 * fw + 44 * kf)}" height="${f1(12 * kf)}" fill="${mix(tone, "#ffffff", 0.22)}"/>` +
+         `<rect x="${f1(-fw * 0.6)}" y="${f1(fl - 8 * kf)}" width="${f1(fw * 1.2)}" height="${f1(7 * kf)}" rx="${f1(3 * kf)}" fill="${woodDk}"/>`;
+    // (the fire: three flames, the middle one tallest, each flickering about its own base)
+    [-0.38, 0, 0.38].forEach((u, j) => { const h = (j === 1 ? 0.62 : 0.45) * fh, bx = u * fw;
+      flames.push(`<g transform="translate(${f1(bx)} ${f1(fl - 6 * kf)})"><path d="M${f1(-fw * 0.22)} 0 Q${f1(-fw * 0.2)} ${f1(-h * 0.6)} 0 ${f1(-h)} Q${f1(fw * 0.2)} ${f1(-h * 0.6)} ${f1(fw * 0.22)} 0 Z" fill="${j === 1 ? "#ffd05a" : "#ff8a2e"}">` +
+        sceneLfo(o, "fast", (j * 0.31) % 1, "transform", (v, amp) => `1 ${(1 + (0.08 + 0.18 * amp) * v).toFixed(3)}`,
+          `<animateTransform attributeName="transform" type="scale" values="1 1;1 1.12;1 0.92;1 1" dur="${(0.7 + 0.13 * j).toFixed(2)}s" repeatCount="indefinite"/>`, "scale") + `</path></g>`); });
+    lights.push(`<circle cx="0" cy="${f1(fl - fh * 0.4)}" r="${f1(fw * 2.2)}" fill="url(#bg-glow)">${sceneLfo(o, "slow", 0.5, "opacity", (v, amp) => (0.85 - (0.15 + 0.3 * amp) * (1 + v) / 2).toFixed(2), "")}</circle>`);
+  }
+  // the table, down the middle: one place at each end, the rest down its sides (the left side
+  // has the odd one), its places evenly spaced
+  const places = Math.max(4, Math.min(18, Math.round(r.places ?? 10))), sides = [Math.ceil((places - 2) / 2), Math.floor((places - 2) / 2)];
+  const per = Math.max(1, sides[0]), step = 0.34, zA = 0.3, zB = zA + per * step, tw = 64 * k, ytop = floor - 80 * k, ys = floor - 46 * k;
+  const zOf = (sd, j) => zA + (j + 0.5 + (per - sides[sd < 0 ? 0 : 1]) / 2) * step;
+  // (a chair: its seat with a cushion in the carpet color, its back on the far side from the table;
+  // at an end, its back across the room)
+  const chair = (cx, z, sd, end) => {
+    // (our end's chair, its back to us, is low, so the table shows over it)
+    const d = end ? 0.08 : 0.07, za = z - d, zb = z + d, hi = end > 0 ? floor - 170 * k : end < 0 ? floor - 96 * k : floor - 132 * k;
+    if (end) { const x = 24 * k, zBack = end < 0 ? za : zb;
+      return poly([[-x, ys, za], [x, ys, za], [x, ys, zb], [-x, ys, zb]], wood) + poly([[-x * 0.8, ys - 3 * k, za + 0.01], [x * 0.8, ys - 3 * k, za + 0.01], [x * 0.8, ys - 3 * k, zb - 0.01], [-x * 0.8, ys - 3 * k, zb - 0.01]], K.carpet) +
+             [[-x, za], [x, za], [-x, zb], [x, zb]].map(([lx, lz]) => `<line x1="${f1(at(lx, ys, lz)[0])}" y1="${f1(at(lx, ys, lz)[1])}" x2="${f1(at(lx, floor, lz)[0])}" y2="${f1(at(lx, floor, lz)[1])}" stroke="${woodDk}" stroke-width="${f1(3 * k * fz(lz))}"/>`).join("") +
+             poly([[-x, ys, zBack], [x, ys, zBack], [x, hi, zBack], [-x, hi, zBack]], woodDk, ` stroke="${wood}" stroke-width="${f1(2 * k * fz(zBack))}"`);
+    }
+    const xi = sd * (tw - 6 * k), xo = sd * (tw + 34 * k);
+    return [[xi, za], [xo, za], [xi, zb], [xo, zb]].map(([lx, lz]) => `<line x1="${f1(at(lx, ys, lz)[0])}" y1="${f1(at(lx, ys, lz)[1])}" x2="${f1(at(lx, floor, lz)[0])}" y2="${f1(at(lx, floor, lz)[1])}" stroke="${woodDk}" stroke-width="${f1(3 * k * fz(lz))}"/>`).join("") +
+           poly([[xi, ys, za], [xo, ys, za], [xo, ys, zb], [xi, ys, zb]], wood) + poly([[xi, ys - 3 * k, za + 0.01], [xo - sd * 4 * k, ys - 3 * k, za + 0.01], [xo - sd * 4 * k, ys - 3 * k, zb - 0.01], [xi, ys - 3 * k, zb - 0.01]], K.carpet) +
+           poly([[xo, ys, za], [xo, ys, zb], [xo, hi, zb], [xo, hi, za]], woodDk, ` stroke="${wood}" stroke-width="${f1(2 * k * fz(z))}"`);
+  };
+  // far to near: the far end's chair, the chairs down the sides, the legs, the top, what is on it, and the near end's chair
+  t += chair(0, zB + 0.2, 0, 1);
+  for (const sd of [-1, 1]) for (let j = sides[sd < 0 ? 0 : 1] - 1; j >= 0; j--) t += chair(0, zOf(sd, j), sd, 0);
+  for (const [z, sd] of [[zB - 0.06, -1], [zB - 0.06, 1], [zA + 0.06, -1], [zA + 0.06, 1]]) {
+    const [x, y] = at(sd * (tw - 8 * k), ytop, z), f = fz(z);
+    t += `<rect x="${f1(x - 5 * k * f)}" y="${f1(y)}" width="${f1(10 * k * f)}" height="${f1(Y(floor, f) - y)}" fill="${woodDk}"/>`;
+  }
+  // (the cloth over the top and hanging down at our end, the runner along it, gold at its edges)
+  const rw = tw * 0.34;
+  t += poly([[-tw, ytop, zA], [tw, ytop, zA], [tw, ytop, zB], [-tw, ytop, zB]], "#f3ead6") +
+       poly([[-tw, ytop, zA], [tw, ytop, zA], [tw, ytop + 24 * k, zA], [-tw, ytop + 24 * k, zA]], "#e4d8bd") +
+       poly([[-rw, ytop, zA], [rw, ytop, zA], [rw, ytop, zB], [-rw, ytop, zB]], K.carpet) +
+       poly([[-rw, ytop, zA], [rw, ytop, zA], [rw, ytop + 34 * k, zA], [0, ytop + 42 * k, zA], [-rw, ytop + 34 * k, zA]], mix(K.carpet, "#000000", 0.12)) +
+       [-1, 1].map(sd => `<line x1="${f1(at(sd * rw, ytop, zA)[0])}" y1="${f1(at(sd * rw, ytop, zA)[1])}" x2="${f1(at(sd * rw, ytop, zB)[0])}" y2="${f1(at(sd * rw, ytop, zB)[1])}" stroke="${gold}" stroke-width="${f1(1.6 * k)}"/>`).join("");
+  // (a place: a plate with its rim, a gold cup beyond it, a knife and fork either side; on the table's top,
+  // so flattened as it is)
+  const setting = (x, z) => { const [px, py] = at(x, ytop, z), f = fz(z), ry = Math.abs(at(x, ytop, z - 0.035)[1] - at(x, ytop, z + 0.035)[1]) / 2, rx = 15 * k * f;
+    const [cx, cy] = at(x * 0.82, ytop, z + 0.05);
+    return `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#ffffff" stroke="#c9bfa8" stroke-width="${f1(1.2 * k * f)}"/>` +
+           `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="${f1(rx * 0.6)}" ry="${f1(ry * 0.6)}" fill="none" stroke="#d8cfb9" stroke-width="${f1(0.8 * k * f)}"/>` +
+           `<line x1="${f1(px - rx * 1.35)}" y1="${f1(py - ry)}" x2="${f1(px - rx * 1.35)}" y2="${f1(py + ry)}" stroke="#b8b8c4" stroke-width="${f1(1.4 * k * f)}"/>` +
+           `<line x1="${f1(px + rx * 1.35)}" y1="${f1(py - ry)}" x2="${f1(px + rx * 1.35)}" y2="${f1(py + ry)}" stroke="#b8b8c4" stroke-width="${f1(1.4 * k * f)}"/>` +
+           `<path d="M${f1(cx - 4 * k * f)} ${f1(cy - 14 * k * f)} h${f1(8 * k * f)} l${f1(-2 * k * f)} ${f1(8 * k * f)} h${f1(-4 * k * f)} Z M${f1(cx - 1 * k * f)} ${f1(cy - 6 * k * f)} v${f1(5 * k * f)} M${f1(cx - 3 * k * f)} ${f1(cy)} h${f1(6 * k * f)}" fill="${gold}" stroke="${gold}" stroke-width="${f1(1.2 * k * f)}"/>`; };
+  // (far to near, so nearer things sit over farther ones)
+  const onTable = [[0, zB - 0.07], ...[-1, 1].flatMap(sd => [...Array(sides[sd < 0 ? 0 : 1])].map((_, j) => [sd * (tw - 20 * k), zOf(sd, j)])), [0, zA + 0.07]];
+  // the candles down the runner, between the places, each in a brass stick, flickering
+  const nc = Math.max(2, Math.ceil(per / 2) + 1), candles = [...Array(nc)].map((_, m) => zA + (zB - zA) * (m + 0.5) / nc);
+  const candle = (x, y, f, j, tall = 26) => { const kk = k * f;
+    flames.push(`<g transform="translate(${f1(x)} ${f1(y - tall * kk)})"><ellipse cx="0" cy="${f1(-5 * kk)}" rx="${f1(3 * kk)}" ry="${f1(6 * kk)}" fill="#ffb53b">` +
+      sceneLfo(o, "fast", (j * 0.37) % 1, "ry", (v, amp) => f1(6 * kk * (1 + (0.12 + 0.25 * amp) * v)), `<animate attributeName="ry" values="${f1(6 * kk)};${f1(4.6 * kk)};${f1(6.6 * kk)};${f1(6 * kk)}" dur="${(0.7 + 0.11 * (j % 5)).toFixed(2)}s" repeatCount="indefinite"/>`) +
+      `</ellipse><ellipse cx="0" cy="${f1(-3 * kk)}" rx="${f1(1.4 * kk)}" ry="${f1(3 * kk)}" fill="#fff4c2"/></g>`);
+    lights.push(`<circle cx="${f1(x)}" cy="${f1(y - (tall + 6) * kk)}" r="${f1(26 * kk)}" fill="url(#bg-glow)" opacity="0.55"/>`);
+    return `<rect x="${f1(x - 3 * kk)}" y="${f1(y - tall * kk)}" width="${f1(6 * kk)}" height="${f1(tall * kk)}" fill="#fbf3dc"/>`;
+  };
+  const things = [...onTable.map(([x, z]) => ({ z, s: setting(x, z) })), ...candles.map((z, m) => ({ z, s: (() => { const [x, y] = at(0, ytop, z), f = fz(z);
+    return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(8 * k * f)}" ry="${f1(2.6 * k * f)}" fill="#b8892c"/><rect x="${f1(x - 2 * k * f)}" y="${f1(y - 10 * k * f)}" width="${f1(4 * k * f)}" height="${f1(10 * k * f)}" fill="#c99a38"/>` +
+           candle(x, y - 10 * k * f, f, m); })() }))];
+  t += things.sort((a, b) => b.z - a.z).map(x => x.s).join("");
+  t += chair(0, zA - 0.2, 0, -1);
+  // the candelabras, hanging over the table on chains from the vault: a gold ring of candles each
+  const nh = per <= 3 ? 1 : per <= 6 ? 2 : 3;
+  for (let m = nh - 1; m >= 0; m--) {
+    // (hung well above our eyes, so the nearer ones show higher, each clear of the next)
+    const z = zA + (zB - zA) * (m + 0.5) / nh, f = fz(z), kk = k * f, [cx, cy] = at(0, top + 34 * k, z), ctop = Y(top - 30 * k, f), rx = 46 * kk, ry = 9 * kk;
+    t += chainSvg(cx, ctop, cy - ctop, 2 * kk) + `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="none" stroke="${gold}" stroke-width="${f1(4 * kk)}"/>` +
+         [...Array(6)].map((_, j) => { const a = Math.PI * 2 * j / 6 + 0.3, x = cx + Math.cos(a) * rx, y = cy + Math.sin(a) * ry; return { y, s: candle(x, y, f, 10 + m * 6 + j, 18) }; })
+           .sort((a, b) => a.y - b.y).map(x => x.s).join("");
+  }
+  // along the walls, torches, each side, in each stretch of the room (clear of the doors: as the hallway's)
+  for (let i = 0; i < N - 1; i++) for (const sd of [-1, 1]) {
+    const f = 1 / (1 + 0.8 * i + 0.58), w = bw * f, kk = k * f;
+    lights.push(torchSvg(sd * (w - 18 * kk), Y(floor - 220 * k, f), kk, i * 2 + (sd > 0 ? 1 : 0), o));
+  }
+  for (const sd of [-1, 1]) lights.push(torchSvg(sd * bw * 1.12, floor - 250 * k, k * 1.1, 7 + (sd > 0 ? 1 : 0), o));
+  // the dark, gentler than the hallway's (the candles light it), then the flames and the light on top
+  t += `<rect x="${f1(-bw)}" y="${f1(top)}" width="${f1(2 * bw)}" height="${f1(floor - top)}" fill="url(#dine-depth)"/>` +
+       `<rect x="${f1(c.x0 - c.pad)}" y="${f1(c.y0 - c.pad)}" width="${f1(c.W + 2 * c.pad)}" height="${f1(c.H + 2 * c.pad)}" fill="#1a1030" opacity="0.28"/>`;
+  return t + lights.join("") + flames.join("");
+}
 // the king's room: a red carpet to a throne on a dais, banners in the
 // owner's color, crossed swords and shields, a stained-glass window, a
 // chandelier, suits of armor at the sides, a chest of gold; and through its
@@ -5902,11 +6031,12 @@ function wayOutOf(K, n) {
 function roomExits(K, n) {
   const st = K.rooms[n - 1], ex = ROOM_KINDS[st].exits, H = K.hall[n - 1], id = K.id, X = [];
   const dest = d => d === "out" ? 0 : Number(d) >= 1 && Number(d) <= K.rooms.length ? Number(d) : null;
-  if (ex !== "hall") X.push({ kind: { side: "sign", trap: "arch", ladder: "ladder", all: "arch" }[ex], to: wayOutOf(K, n), key: "castleOut" + n + id, way: true });
-  if (ex === "hall" || ex === "side")
+  const signed = ex === "side" || ex === "long";
+  if (ex !== "hall") X.push({ kind: { side: "sign", long: "sign", trap: "arch", ladder: "ladder", all: "arch" }[ex], to: wayOutOf(K, n), key: "castleOut" + n + id, way: true });
+  if (ex === "hall" || signed)
     H.doors.forEach((d, j) => {
       // (in a room with a sign toward us, a door that leads where the sign does is that sign)
-      const to = dest(d); if (ex === "side" && to === X[0].to) return;
+      const to = dest(d); if (signed && to === X[0].to) return;
       X.push({ kind: "door", to, key: hallDoorKey(id, n, j + 1), j: j + 1, missing: to === null });
     });
   if (ex === "hall") { const e = H.end, to = e === "none" ? null : e === "auto" ? K.rooms.indexOf("spiral") + 1 || null : dest(e);
@@ -5934,10 +6064,12 @@ function castleWays(c, K, n, style) {
   // the king's room: its doors in its side walls, two to a side, between its back corners and the
   // picture's edges (clear of all it holds); its way out a sign at the bottom, as the forest clearing's
   // path, toward us (a door set to lead where the sign does is that sign)
-  if (exits === "side") {
+  if (exits === "side" || exits === "long") {
     const { y1, pad } = c;
-    // (a nearer door's sign, kept inside the picture, would sit on the farther one's: it goes above it)
-    return doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j; return hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k); }).join("") +
+    // (a nearer door's sign, kept inside the picture, would sit on the farther one's: it goes above it;
+    // a long room's doors run down its walls, as a hallway's do)
+    return (exits === "long" ? doors.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("")
+      : doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j; return hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k); }).join("")) +
       (out ? `<g class="portal" ${out.attrs}><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
       plankSign(-W * 0.2, y1 - 44 * k, k, `${out.label} ⬇️`) + `</g>` : "");
   }
@@ -5992,7 +6124,7 @@ function castleProblems(K) {
   return P;
 }
 // (rooms with doors in their walls, as many as four: the hallway, the king's room and its kind)
-const mapDoorRoom = (K, r) => ["hall", "side"].includes(ROOM_KINDS[K.rooms[r - 1]].exits);
+const mapDoorRoom = (K, r) => ["hall", "side", "long"].includes(ROOM_KINDS[K.rooms[r - 1]].exits);
 // a door from room a to b (0: out), in a door leading nowhere or a new one; false when a has no space
 function mapAddDoor(B, K, a, b) {
   if (!mapDoorRoom(K, a)) return false;
@@ -6051,12 +6183,13 @@ function castleroomScene(c) {
   const d1 = K.rooms.indexOf("dungeon1") + 1, d2 = K.rooms.indexOf("dungeon2") + 1;
   const pits = [d1 || d2, d2 || d1];
   const bones = K.bones[n - 1][style] ?? 0;
-  if (style === "hallway") c = { ...c, eye: 0.3 };
+  if (style === "hallway" || style === "dining") c = { ...c, eye: 0.3 };
   // (in its own color theme)
   if (K.roomTheme[n - 1] === "B") K = { ...K, ...K.themeB };
   const hallEnd = style === "hallway" && K.hall[n - 1].end === "none" ? "none" : "";
-  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd });
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd,
+  const places = style === "dining" ? K.places[n - 1] : 0;
+  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places });
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,
                                   SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)
@@ -9269,6 +9402,7 @@ const SCENE_LFO_THINGS = {
   "castleroom:greenhouse": { fast: "🦜 the glass parrots' wings", slow: "☁️ the clouds drifting" },
   "castleroom:catroom": { fast: "🔥 the cat room's fire", slow: "🎾 the cat toys swinging" },
   "castleroom:stable": { fast: "🐔 the hens pecking", slow: "✨ the dust in the sunbeam" },
+  "castleroom:dining": { fast: "🕯️ the candle flames", slow: "🔥 the torches' and the fire's glow" },
 };
 const sceneLfoThings = b => SCENE_LFO_THINGS[b.kind === "castleroom" ? "castleroom:" + (roomHereNowOf(b)[1] ?? "king") : b.kind] || {};
 // the cats in the room the friend is in, when it is a cat room; the horses, when it is a stable
@@ -9947,6 +10081,7 @@ const TABS = [
         ["choice", "castleRoom" + n + id, `🚪 room ${n} is`, CASTLE_ROOM_CHOICES],
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
+        ["range", "castlePlaces" + n + id, "🍽️ places at table", 4, 18, 4, 18],
         ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, 4, 0, 4],
         ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
         ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)],
@@ -10171,7 +10306,7 @@ const SHOWN_WHEN = {
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle], ["background.castleDesign" + id, atCastle],
             ...ROOM_NS.flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
-              ["background.castleOut" + n + id, b => !isHall(b, n)],
+              ["background.castleOut" + n + id, b => !isHall(b, n)], ["background.castlePlaces" + n + id, b => typeOf(b, n) === "dining"],
               ...[1, 2, 3, 4].map(k => ["background." + hallDoorKey(id, n, k), b => hasDoors(b, n) && k <= Math.round(b["castleHallDoors" + n + id] ?? 3)])])];
   })),
   ...Object.fromEntries(CASTLES.flatMap(([id]) => [["background.castleRooms" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id],

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.38 (2026-10-15)
+
+Everything in 0.0.37, plus M's dining room.
+
+- **🍽️ A dining room, a new castle room (M's idea, the first of "M's rooms"):** a long hall, seen down its length as the hallway is, its floor of wooden boards. Down its middle runs a long table, set for as many as "🍽️ places at table" says: 4 to 18, one at each end and the rest down its two sides (eight to a side at most). The table grows longer with more places. It has a white cloth with a runner in the room's carpet color, gold at its edges. At each place there's a chair with a cushion, a plate, a gold cup, and a knife and fork. Candles burn down the table in brass sticks, and candelabras of candles hang over it on chains from the vault. Torches line the walls, and at the far end a great fireplace burns. The candle flames and the fire flicker with the quick LFO, and the torches and the fire glow with the slow one. Its doors run down its walls as the hallway's do, and its way out is a sign toward you.
+
 ## 0.0.37 (2026-10-15)
 
 Everything in 0.0.36, plus the castle designer, each room's own way out, and castles of up to 13 rooms.
