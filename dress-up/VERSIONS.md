@@ -4,13 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
-- **🧙 A new tune, the spooky waltz, funked** (with the waltzes on the music tab). It is the spooky waltz, all of it (the theremin ghosts, the oom-pah-pah, the bell, the music box), quicker (205 beats a minute) and four half steps down, over a funk beat in 4 against the waltz's 3:
-  - kick, snare and hats;
-  - a shaker, a cowbell and congas;
-  - bongos as the bongo breakdown's, with their own solo halfway through;
-  - and a pair of wah-wah basses, buzzy and plucky: one low, popping its octaves, and one higher, answering it. Both keep to the waltz's chords as they change.
-
-  The waltz and the beat meet again at every eight bars. Its bass lines are louder than the waltz's own.
+- **🧙 The spooky waltz, funked, five ways (A to E; one to keep, once Matthew picks):** the spooky waltz, all of it (the theremin ghosts, the oom-pah-pah, the bell, the music box), quicker (205 beats a minute) and four half steps down, with a funk beat in 4. The beat has kick, snare, hats, a shaker, a cowbell and congas, plus bongos as the bongo breakdown's, with their own solo halfway. Under it all, a pair of wah-wah basses, buzzy and plucky: one low, popping its octaves, and one higher, answering it. Both keep to the waltz's chords, and the bass lines are louder than the waltz's own. The five differ in how the funk's big beats land on the waltz's:
+  - A, four to a bar: a whole funk bar in each waltz bar;
+  - B, half-time over two bars: the kick on one waltz bar's downbeat, the snare on the next's;
+  - C, the waltz in 4: the waltz itself re-set in four;
+  - D, the kick with the waltz: the snare and hats in 4 over it;
+  - E, a shuffle over two bars: in the waltz's own triplets.
 - **〰️ Five LFOs, and the scenes move with the music.** The mixing board has two more LFOs: D, a quick one (once a beat to start with), and E, a slow one (once in four bars). Out of the box, they are the scenes' own:
   - in every scene, its quick things (flames leaping, hens pecking, …) move with D;
   - and its slow things (toys swinging, dust drifting, …) move with E.

@@ -7930,6 +7930,93 @@ function funkTune(c) {
     { name: "gtrSolo", inst: "twang", level: 0.8, rev: 0.3, echo: 0.1, line: lineOf(c.gtrSolo) },
   ], form: c.plan.map(([what, bars, up]) => S(bars, FUNK_SECTIONS[what], up || 0)) };
 }
+// The spooky waltz, funked: the same waltz, quicker (205) and four half
+// steps down, its parts as they were (the bass lines louder: Matthew's call),
+// over a funk beat in 4, more drums, the bongo breakdown's bongos and their
+// solo, and a pair of wah basses, one low, popping its octaves, one higher,
+// answering it, both keeping to the waltz's chords (crossOf). The funk's big
+// beats land on the waltz's, five ways, A to E, for Matthew to choose from:
+//   A  four to a bar: a whole funk bar in each waltz bar, its four beats
+//      against the waltz's three, the kick on every waltz downbeat
+//   B  half-time over two bars: a funk bar across two waltz bars, the kick on
+//      the first's downbeat and the snare on the second's
+//   C  the waltz in 4: each waltz bar re-set in four beats (its first beat
+//      held for two) under an ordinary half-time funk bar
+//   D  the kick with the waltz: the kick on the waltz's own beats, the snare
+//      and the hats in 4 over it
+//   E  a shuffle over two bars: a funk shuffle across two waltz bars in the
+//      waltz's own triplets, the snare on the second's downbeat
+// Each pattern is n slots spread over a funk bar of L steps; each its own level, so all five are
+// about as loud as one another (checked offline).
+const WITCH_FUNK = {
+  A: { level: 0.48, what: "four to a bar", bar: 12, L: 12, n: 16, kick: "x.x....x..x.....", snare: "....x..o.o..x..o", hat: "xoxoxoxoxoxoxoxo", open: "..............x.",
+       shaker: "xooxxooxxooxxoox", cowbell: "x...x...x.x.x...", conga: "..x...xx..x..x.x", hi: "x..x..x.x..x.xx.", lo: "..x...x...x...x.",
+       soloHi: "x.xx.x.xx.x.xxxx", soloLo: "x...x...x...x...",
+       wahLo: [[0, 0, 2], [3, 0, 1, 1], [5, 0, 1], [7, 2, 1], [10, 0, 1, 1], [11, 0, 1], [13, 1, 1], [14, 2, 1]],
+       wahHi: [[2, 1, 1, 1], [4, 2, 1, 1], [6, 0, 1, 2], [9, 2, 1, 1], [12, 1, 1, 1], [15, 2, 1, 1]] },
+  B: { level: 0.6, what: "half-time over two bars", bar: 12, L: 24, n: 16, kick: "x.x.......x..x..", snare: "...o..o.x..o...o", hat: "xoxoxoxoxoxoxoxo", open: "..............x.",
+       shaker: "xooxxooxxooxxoox", cowbell: "x.....x.x...x...", conga: "..x..xx...x..x.x", hi: "x..x..x.x..x.xx.", lo: "..x...x...x...x.",
+       soloHi: "x.xx.x.xx.x.xxxx", soloLo: "x...x...x...x...",
+       wahLo: [[0, 0, 3], [3, 0, 1, 1], [6, 0, 1], [8, 0, 2], [11, 0, 1, 1], [12, 2, 1], [14, 1, 2]],
+       wahHi: [[2, 1, 1, 1], [5, 2, 1, 1], [7, 0, 1, 2], [10, 2, 1, 1], [13, 1, 1, 1], [15, 2, 1, 1]] },
+  C: { level: 0.5, what: "the waltz in 4", bar: 16, L: 16, n: 16, inFour: true, kick: "x.x.......x..x..", snare: "...o..o.x..o...o", hat: "x.x.x.x.x.x.x.x.", open: "..............x.",
+       shaker: "xoxoxoxoxoxoxoxo", cowbell: "x.....x.x...x...", conga: "..x..xx...x..x.x", hi: "x..x..x.x..x.xx.", lo: "..x...x...x...x.",
+       soloHi: "x.xx.x.xx.x.xxxx", soloLo: "x...x...x...x...",
+       wahLo: [[0, 0, 3], [3, 0, 1, 1], [6, 0, 1], [8, 0, 2], [11, 0, 1, 1], [12, 2, 1], [14, 1, 2]],
+       wahHi: [[2, 1, 1, 1], [5, 2, 1, 1], [7, 0, 1, 2], [10, 2, 1, 1], [13, 1, 1, 1], [15, 2, 1, 1]] },
+  D: { level: 0.5, what: "kick with the waltz", bar: 12, L: 16, n: 16, kickL: 12, kick: "x.......x.x.", snare: "..o.....x..o..o.", hat: "x.x.x.x.x.x.x.x.", open: "..............x.",
+       shaker: "xoxoxoxoxoxoxoxo", cowbell: "x...x...x.x.x...", conga: "..x...xx..x..x.x", hi: "x..x..x.x..x.xx.", lo: "..x...x...x...x.",
+       soloHi: "x.xx.x.xx.x.xxxx", soloLo: "x...x...x...x...", bassL: 12, bassN: 12,
+       wahLo: [[0, 0, 3], [4, 0, 1, 1], [6, 0, 1], [8, 2, 2], [10, 0, 1, 1], [11, 1, 1]],
+       wahHi: [[2, 1, 1, 1], [5, 2, 1, 1], [7, 0, 1, 2], [9, 2, 1, 1]] },
+  E: { level: 0.6, what: "shuffle over two bars", bar: 12, L: 24, n: 12, kick: "x....x..x...", snare: ".o..o.x..o.o", hat: "x.xx.xx.xx.x", open: "..........x.",
+       shaker: "xoxxoxxoxxox", cowbell: "x..x..x.xx..", conga: "..x..xx..x.x", hi: "x.xx..x.xx.x", lo: "..x..x..x..x",
+       soloHi: "x.xx.xx.xxxx", soloLo: "x..x..x..x..",
+       wahLo: [[0, 0, 2], [2, 0, 1, 1], [3, 0, 1], [5, 2, 1], [6, 0, 2], [8, 0, 1, 1], [9, 1, 1], [11, 2, 1]],
+       wahHi: [[1, 1, 1, 1], [4, 2, 1, 1], [7, 0, 1, 2], [10, 2, 1, 1]] },
+};
+function witchFunk(v) {
+  const c = WITCH_FUNK[v], { bar, L, n } = c, chords = ["Dm", "Dm", "Gm", "Dm", "Bb", "A7", "Dm", "A7"];
+  // (n slots over L steps: one funk bar's pattern)
+  const slots = (pat, len = L, note) => hitsOf(`${len}(${pat})`, note);
+  // (C: a waltz bar of 12 steps re-set as 16, its first beat held two)
+  const four = s => { const b = Math.floor(s / 12), r = s - 12 * b; return 16 * b + (r < 4 ? 2 * r : r + 4); };
+  const inFour = line => ({ steps: line.steps / 12 * 16, events: line.events.map(e => ({ ...e, at: four(e.at), len: Math.max(0.5, four(e.at + e.len) - four(e.at)) })) });
+  const W = TUNES.witch.make().parts, waltz = (name, more = {}) => { const p = { ...W.find(q => q.name === name), ...more }; return c.inFour ? { ...p, line: inFour(p.line) } : p; };
+  const bL = c.bassL || L, bN = c.bassN || n, bass = pat => crossOf(chords, bar, bL, pat.map(([at, tn, len, up]) => [at * bL / bN, tn, len * bL / bN, up]), 2);
+  const sec = 8 * bar;
+  return { bpm: 205, bar, room: 2.4, level: c.level,
+    lfos: { A: { beats: 8, shape: "triangle", depth: 2 }, B: { beats: 4, shape: "sine", depth: 4 }, C: { beats: 24, shape: "saw", depth: 3 } },
+    parts: [
+      waltz("oom", { level: 1.8 }), waltz("pah"), waltz("ghostA"), waltz("ghostB"), waltz("bell"), waltz("twinkles"),
+      { name: "kick", inst: "kick", level: 0.9, line: slots(c.kick, c.kickL || L) },
+      { name: "snare", inst: "snare", level: 0.55, rev: 0.15, line: slots(c.snare) },
+      { name: "hat", inst: "hat", level: 0.32, line: slots(c.hat) },
+      { name: "openhat", inst: "openhat", level: 0.28, line: slots(c.open) },
+      // (more drums: a shaker, a cowbell, congas)
+      { name: "shaker", inst: "shaker", level: 0.35, line: slots(c.shaker) },
+      { name: "cowbell", inst: "cowbell", level: 0.3, line: slots(c.cowbell) },
+      { name: "conga", inst: "conga", level: 0.5, rev: 0.1, line: slots(c.conga, L, 62) },
+      // a roll on the snare into the next section, in its last 16 steps
+      { name: "fill", inst: "snare", level: 0.5, line: hitsOf(".".repeat(sec - 16) + "8(xxx) (xox) (xxxxxx)") },
+      // the bongos, as the bongo breakdown's, and their solo: the low one keeping the beat, the high one running
+      { name: "bongoHi", inst: "bongo", level: 0.7, rev: 0.15, line: slots(c.hi, L, 71), lfo: "B" },
+      { name: "bongoLo", inst: "bongo", level: 0.75, rev: 0.15, line: slots(c.lo, L, 64) },
+      { name: "soloHi", inst: "bongo", level: 0.8, rev: 0.15, line: hitsOf(`${L}(${c.soloHi}) ${L}(xxxxxxxxxxxx)`, 71), lfo: "A" },
+      { name: "soloLo", inst: "bongo", level: 0.85, rev: 0.15, line: slots(c.soloLo, L, 64), lfo: "C" },
+      // the wah basses: the low one on the big beats, popping up its octave; the high one answering off them
+      { name: "wahLo", inst: "wahbass", level: 1.6, line: bass(c.wahLo) },
+      { name: "wahHi", inst: "wahbass", level: 1.1, rev: 0.1, line: bass(c.wahHi) },
+    ], form: [
+      S(8, "oom pah bell bongoHi bongoLo", -4),
+      S(8, "oom pah bell ghostA kick snare hat bongoHi bongoLo shaker fill", -4),
+      S(8, "pah wahLo wahHi kick snare hat openhat ghostB twinkles bongoHi bongoLo cowbell conga fill", -4),
+      S(8, "pah bell wahLo wahHi kick snare hat openhat ghostA shaker conga bongoHi bongoLo fill", -4),
+      S(8, "soloHi soloLo kick wahLo", -4),
+      S(8, "pah bell ghostB twinkles kick snare hat openhat wahLo wahHi bongoHi bongoLo cowbell shaker conga fill", -4),
+      S(8, "oom pah bell twinkles bongoHi bongoLo", -4),
+    ] };
+}
 const TUNES = {
   forest: { name: "🌲 a walk in the woods", make: () => {
     const chords = ["G", "C", "G", "D", "G", "C", "D", "G"], minor = ["Em", "C", "G", "D", "Em", "Am", "D", "G"];
@@ -8151,51 +8238,8 @@ const TUNES = {
       S(8, "oom bell twinkles"), S(8, "oom pah bell ghostA twinkles"), S(8, "oom pah bell ghostB"),
     ] };
   } },
-  // The spooky waltz, funked: the same waltz, quicker and four half steps
-  // down, over a funk beat in 4 against its 3 (the funk's sixteenths are
-  // two of the waltz's steps, so a funk bar is eight of its beats and each
-  // eight-bar section of the waltz holds three funk bars, the two meeting
-  // again at every section), with more drums, bongos as the bongo
-  // breakdown's, and a pair of wah basses, one low, popping its octaves,
-  // and one higher, answering it, both keeping to the waltz's chords
-  witchfunk: { name: "🧙 spooky waltz, funked", make: () => {
-    const chords = ["Dm", "Dm", "Gm", "Dm", "Bb", "A7", "Dm", "A7"];
-    const f16 = pat => pat.replace(/\s/g, "").replace(/[x.o]/g, ch => ch + ".");   // (a character a funk sixteenth: two steps)
-    const W = TUNES.witch.make().parts, waltz = n => ({ ...W.find(p => p.name === n) });
-    return { bpm: 205, bar: 12, room: 2.4, level: 0.6,
-      lfos: { A: { beats: 8, shape: "triangle", depth: 2 }, B: { beats: 4, shape: "sine", depth: 4 }, C: { beats: 24, shape: "saw", depth: 3 } },
-      parts: [
-        // (the bass lines all louder than the waltz's own: Matthew's call)
-        { ...waltz("oom"), level: 1.8 }, waltz("pah"), waltz("ghostA"), waltz("ghostB"), waltz("bell"), waltz("twinkles"),
-        { name: "kick", inst: "kick", level: 0.9, line: hitsOf(f16("x.x....x..x..... x.x....x..x..x..")) },
-        { name: "snare", inst: "snare", level: 0.55, rev: 0.15, line: hitsOf(f16("....x..o.o..x..o ....x..o.o..x.o.")) },
-        { name: "hat", inst: "hat", level: 0.32, line: hitsOf(f16("xoxoxoxoxoxoxoxo xoxoxoxoxoxoxoxo")) },
-        { name: "openhat", inst: "openhat", level: 0.28, line: hitsOf(f16("................ ..............x.")) },
-        // (more drums: a shaker on the sixteenths, a cowbell, congas)
-        { name: "shaker", inst: "shaker", level: 0.35, line: hitsOf(f16("xooxxooxxooxxoox")) },
-        { name: "cowbell", inst: "cowbell", level: 0.3, line: hitsOf(f16("x...x...x.x.x... x...x...x...x.x.")) },
-        { name: "conga", inst: "conga", level: 0.5, rev: 0.1, line: hitsOf(f16("..x...xx..x..x.x ..x...xx..x.xx.."), 62) },
-        // a roll on the snare into the next section, in its last half a funk bar
-        { name: "fill", inst: "snare", level: 0.5, line: hitsOf(".".repeat(80) + "8(xxx) (xox) (xxxxxx)") },
-        // the bongos, as the bongo breakdown's: the high one ending every other bar in triplets
-        { name: "bongoHi", inst: "bongo", level: 0.7, rev: 0.15, line: hitsOf(f16("x..x..x.x..x.xx. x..x..x.x..x") + "8(xxx)", 71), lfo: "B" },
-        { name: "bongoLo", inst: "bongo", level: 0.75, rev: 0.15, line: hitsOf(f16("..x...x...x...x. ..x...x...x...x."), 64) },
-        // their solo: the low one keeping the beat, the high one three to it, then six
-        { name: "soloHi", inst: "bongo", level: 0.8, rev: 0.15, line: hitsOf(f16("x.xx.x.xx.x.xxxx") + "8(xxx)8(xxx)8(xxx)8(xxx)" + f16("x.x.xx.xx.x.x.xx") + "8(xxxxxx)8(xoxoxo)8(xxx)8(xxxxxx)", 71), lfo: "A" },
-        { name: "soloLo", inst: "bongo", level: 0.85, rev: 0.15, line: hitsOf(f16("x...x...x...x... x...x...x...x.x. x...x...x...x... x...x...x.x.x..."), 64), lfo: "C" },
-        // the wah basses: the low one on the beat, popping up its octave; the high one answering off it
-        { name: "wahLo", inst: "wahbass", level: 1.6, line: crossOf(chords, 12, 32, [[0, 0, 3], [6, 0, 1, 1], [10, 0, 2], [14, 2, 2], [20, 0, 1, 1], [22, 0, 2], [26, 0, 1], [28, 1, 2], [30, 2, 2]], 2) },
-        { name: "wahHi", inst: "wahbass", level: 1.1, rev: 0.1, line: crossOf(chords, 12, 32, [[4, 1, 2, 1], [8, 2, 1, 1], [12, 0, 2, 2], [18, 2, 2, 1], [24, 1, 1, 1], [26, 2, 1, 1]], 2) },
-      ], form: [
-        S(8, "oom pah bell bongoHi bongoLo", -4),
-        S(8, "oom pah bell ghostA kick snare hat bongoHi bongoLo shaker fill", -4),
-        S(8, "pah wahLo wahHi kick snare hat openhat ghostB twinkles bongoHi bongoLo cowbell conga fill", -4),
-        S(8, "pah bell wahLo wahHi kick snare hat openhat ghostA shaker conga bongoHi bongoLo fill", -4),
-        S(8, "soloHi soloLo kick wahLo", -4),
-        S(8, "pah bell ghostB twinkles kick snare hat openhat wahLo wahHi bongoHi bongoLo cowbell shaker conga fill", -4),
-        S(8, "oom pah bell twinkles bongoHi bongoLo", -4),
-      ] };
-  } },
+  // The spooky waltz, funked, five ways (Matthew picks): see witchFunk
+  ...Object.fromEntries(Object.entries(WITCH_FUNK).map(([v, c]) => ["witchfunk" + v, { name: `🧙 funked waltz ${v}: ${c.what}`, make: () => witchFunk(v) }])),
   // Peaceful waltzes: three beats a bar (12 steps), oom-pah-pah under a
   // tune, two eight-bar halves, each with its own chords
   castlewaltz: { name: "🏰 castle waltz", make: () => {
@@ -8579,7 +8623,7 @@ const TUNE_GROUPS = [
   ["calypso", "🏖️ calypso", ["beach", "soca", "lullaby"]],
   ["house", "🏠 house", ["cushions"]],
   ["groove", "🕺 groove", ["bats", "vibes"]],
-  ["waltz", "💃 waltz", ["witch", "witchfunk", "castlewaltz", "ballroom", "healerwaltz"]],
+  ["waltz", "💃 waltz", ["witch", ..."ABCDE".split("").map(v => "witchfunk" + v), "castlewaltz", "ballroom", "healerwaltz"]],
   ["chase", "🏃 chase", ["treechase", "duckdash", "housechase"]],
   ["story", "📖 storybook", ["forest", "harpsichord", "spiders", "cemetery"]],
 ];
