@@ -6288,13 +6288,19 @@ function tentScene(c) {
       const [lx, ly] = out(half * u, back, y1 + pad);
       t += `<line x1="${f1(half * u)}" y1="${f1(back)}" x2="${f1(lx)}" y2="${f1(ly)}" stroke="#4a5360" stroke-width="${f1(2 * k)}"/>`;
     }
-    // a mesh window high on each wall, the sky behind it
+    // a mesh window high on each wall, the sky behind it, drawn on the wall
+    // in perspective: a point on a wall is u of the way down the far wall's
+    // edge, carried out along its seam to sc times as far from where the
+    // seams meet; equal steps in 1/sc are equal steps along the wall
+    const onWall = (sd, u, sc) => [sd * half * u * sc, vy + (apex + (back - apex) * u - vy) * sc];
+    const segment = (a, b) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#333" stroke-width="${f1(0.8 * k)}" opacity="0.5"/>`;
     for (const sd of [-1, 1]) {
-      const wx = sd * W * 0.36, wy = y0 + H * 0.22, ww = 70 * k, wh = 46 * k;
-      t += `<polygon points="${P2(wx - ww / 2, wy - wh / 2 + sd * 8 * k)} ${P2(wx + ww / 2, wy - wh / 2 - sd * 8 * k)} ${P2(wx + ww / 2, wy + wh / 2 - sd * 8 * k)} ${P2(wx - ww / 2, wy + wh / 2 + sd * 8 * k)}" ` +
-           `fill="${CAMP_SKY[time][1]}" stroke="${seam}" stroke-width="${f1(3 * k)}"/>`;
-      for (let j = 1; j < 6; j++) t += `<line x1="${f1(wx - ww / 2 + ww * j / 6)}" y1="${f1(wy - wh / 2)}" x2="${f1(wx - ww / 2 + ww * j / 6)}" y2="${f1(wy + wh / 2)}" stroke="#333" stroke-width="${f1(0.8 * k)}" opacity="0.5"/>`;
-      for (let j = 1; j < 4; j++) t += `<line x1="${f1(wx - ww / 2)}" y1="${f1(wy - wh / 2 + wh * j / 4)}" x2="${f1(wx + ww / 2)}" y2="${f1(wy - wh / 2 + wh * j / 4)}" stroke="#333" stroke-width="${f1(0.8 * k)}" opacity="0.5"/>`;
+      const u0 = 0.385, u1 = 0.42, s0 = 2.67, s1 = 3.29;
+      t += `<polygon points="${[[u0, s0], [u0, s1], [u1, s1], [u1, s0]].map(([u, sc]) => P2(...onWall(sd, u, sc))).join(" ")}" ` +
+           `fill="${CAMP_SKY[time][1]}" stroke="${seam}" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>`;
+      // (the mesh: threads along the wall, toward where the seams meet, and across it, along the far wall's edge)
+      for (let j = 1; j < 4; j++) { const u = u0 + (u1 - u0) * j / 4; t += segment(onWall(sd, u, s0), onWall(sd, u, s1)); }
+      for (let j = 1; j < 6; j++) { const sc = 1 / (1 / s0 + (1 / s1 - 1 / s0) * j / 6); t += segment(onWall(sd, u0, sc), onWall(sd, u1, sc)); }
     }
     return t;
   });
