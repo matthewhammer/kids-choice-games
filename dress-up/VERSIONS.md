@@ -2,7 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.34 (2026-10-15)
+
+Everything in 0.0.33, plus LFOs faster than a beat, down to a 32nd of a beat, with fairy wings that blur when they flap faster than the screen can show.
 
 - **⏱️ LFOs faster than a beat,** down to a 32nd of a beat. The "⏱️ round in" knob on the mixing board mirrors itself around 1 beat, now its middle: 1/32, 1/31 … 1/3, 1/2 beat below it, and 2, 3, 4, 5 … beats to 8 bars above it, every whole number of beats now (it used to skip 5, 7, 9 and others). A bongo or conga following a fast LFO bends all through each hit, in time with the tune, not just at its start: at a few to the beat it warbles, and near 1/32 beat (about 60 times a second) it buzzes. Slower LFOs sound as they did.
 - **🧚 Wings too fast to see:** wings flapping with an LFO faster than the screen can draw (a cycle in under about four frames, around 1/8 beat or faster) show as fast wings look: a see-through blur across the whole sweep of the flap, thickest where the wave lingers, that keeps moving (eight see-through copies flap at the LFO's own speed, each an eighth of a cycle behind the last, so every frame catches them spread round the cycle, in a new place each time). A part fading with an LFO that fast (and the fairy house) holds at its average see-through-ness instead of flickering.
