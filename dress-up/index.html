@@ -343,6 +343,36 @@ const STABLE_HORSES = [
   { coat: "#d9a95b", mane: "#f3e6c8", mark: "stripe", offset: 8 }];
 const STABLE_HORSE_COUNT = 3;
 const horseKey = (id, j, what) => "castleHorse" + j + what + id;
+// The castle's residents, by kind: who lives in which room style, up to how
+// many (`count`: the setting, its most, how many to start with), and each
+// one's settings (`fields`: [the key's last word, its control, its label,
+// its colors, choices, [min, max, everyday min, everyday max] or, for an LFO,
+// the "none" choice's name, and its default, from the kind's list]). From
+// this come the settings' keys and defaults (DEFAULTS), castleOf's lists, the
+// controls (TABS), when they show (SHOWN_WHEN) and the mixing board's names.
+const RESIDENTS = {
+  cats: { room: "catroom", key: "castleCat", list: CAT_ROOM_CATS, count: ["castleCats", 8, CAT_ROOM_COUNT],
+          group: ["castleCatList", id => `🐈 ${id}'s castle: its cats, in its cat room`, "🐈 how many cats"], box: ["castleCatBox", j => `🐈 cat ${j}`],
+          follows: i => `🐈 cat ${i + 1}'s tail`,
+          fields: [["Fur", "color", "🐈 its fur", CAT_FURS, d => d.fur], ["White", "color", "🤍 tuxedo white (muzzle and bib)", CAT_WHITES, d => d.white],
+                   ["Eyes", "color", "👀 its eyes", CAT_EYES, d => d.eyes], ["Pose", "choice", "🐾 it is", CAT_POSES, d => d.pose],
+                   ["Spot", "choice", "📍 where it is", CAT_SPOTS, d => d.spot], ["Size", "range", "📏 its size", [20, 300, 80, 120], () => 100],
+                   ["Lfo", "lfo", "〰️ its tail wags with", "its own wag", () => "D"], ["Offset", "range", "↪️ how far into the wag it starts (%)", [0, 99, 0, 99], d => d.offset]] },
+  horses: { room: "stable", key: "castleHorse", list: STABLE_HORSES, count: ["castleHorses", 4, STABLE_HORSE_COUNT],
+            group: ["castleHorseList", id => `🐴 ${id}'s castle: its horses, in its stable`, "🐴 how many horses"], box: ["castleHorseBox", j => `🐴 horse ${j}`],
+            follows: i => `🐴 horse ${i + 1}'s nod`,
+            fields: [["Coat", "color", "🐴 its coat", HORSE_COATS, d => d.coat], ["Mane", "color", "💈 its mane", HORSE_MANES, d => d.mane],
+                     ["Mark", "choice", "⭐ on its face", HORSE_MARKS, d => d.mark], ["Lfo", "lfo", "〰️ it nods with", "its own nod", () => "E"],
+                     ["Offset", "range", "↪️ how far into the nod it starts (%)", [0, 99, 0, 99], d => d.offset]] },
+};
+// a resident's setting, as saved (v), made good: a choice one of its own, a
+// number within its range, an LFO one there is (or none), else its default
+const residentField = ([, kind, , opts, dflt], v, d) => kind === "choice" ? (opts.some(([o]) => o === v) ? v : dflt(d))
+  : kind === "range" ? Math.max(opts[0], Math.min(opts[1], v ?? dflt(d)))
+  : kind === "lfo" ? (v === "none" ? "none" : LFO_NAMES.includes(v) ? v : dflt(d)) : v ?? dflt(d);
+// a castle's residents of a kind, as castleOf lists them ({ fur, white, ... })
+const residentsOf = (R, o, id) => R.list.slice(0, Math.max(0, Math.min(R.count[1], Math.round(o[R.count[0] + id] ?? R.count[2]))))
+  .map((d, i) => Object.fromEntries(R.fields.map(f => [f[0].toLowerCase(), residentField(f, o[R.key + (i + 1) + f[0] + id], d)])));
 const CASTLE_ROOM_CHOICES = ROOM_STYLES.flatMap(([, , list]) => list);
 const roomLabel = st => (CASTLE_ROOM_CHOICES.find(([v]) => v === st) || [st, st])[1];
 // skeletons and skulls: none unless asked for, room by room (0 up to what
@@ -371,18 +401,8 @@ const castleOf = o => {
              return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king"; }),
            bones: [1, 2, 3, 4, 5, 6].map(n => Object.fromEntries(Object.entries(ROOM_BONES).map(([st, most]) =>
              [st, Math.max(0, Math.min(most, Math.round(o[roomBonesKey(id, n, st)] ?? 0)))]))),
-           // its cats, who live in its cat room (or rooms)
-           cats: CAT_ROOM_CATS.slice(0, Math.max(0, Math.min(8, Math.round(o["castleCats" + id] ?? CAT_ROOM_COUNT)))).map((d, i) => {
-             const v = w => o[catKey(id, i + 1, w)];
-             return { fur: v("Fur") ?? d.fur, white: v("White") ?? d.white, eyes: v("Eyes") ?? d.eyes,
-                      pose: CAT_POSES.some(([p]) => p === v("Pose")) ? v("Pose") : d.pose,
-                      spot: CAT_SPOTS.some(([p]) => p === v("Spot")) ? v("Spot") : d.spot, size: Math.max(20, Math.min(300, v("Size") ?? 100)),
-                      lfo: v("Lfo") === "none" ? "none" : LFO_NAMES.includes(v("Lfo")) ? v("Lfo") : "D", offset: Math.max(0, Math.min(99, v("Offset") ?? d.offset)) }; }),
-           // its horses, who live in its stable
-           horses: STABLE_HORSES.slice(0, Math.max(0, Math.min(4, Math.round(o["castleHorses" + id] ?? STABLE_HORSE_COUNT)))).map((d, i) => {
-             const v = w => o[horseKey(id, i + 1, w)];
-             return { coat: v("Coat") ?? d.coat, mane: v("Mane") ?? d.mane, mark: HORSE_MARKS.some(([m]) => m === v("Mark")) ? v("Mark") : d.mark,
-                      lfo: v("Lfo") === "none" ? "none" : LFO_NAMES.includes(v("Lfo")) ? v("Lfo") : "E", offset: Math.max(0, Math.min(99, v("Offset") ?? d.offset)) }; }) };
+           // its residents: its cats, who live in its cat room (or rooms), its horses, in its stable
+           ...Object.fromEntries(Object.entries(RESIDENTS).map(([kind, R]) => [kind, residentsOf(R, o, id)])) };
 };
 // the fill for a castle's i-th flag or banner: its two colors in turn, or
 // both, as stripes or checkers (a pattern, its squares u across)
@@ -456,11 +476,7 @@ const DEFAULTS = {
                      ...[1, 2, 3, 4].map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
                    ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
-                   ["castleCats" + id, CAT_ROOM_COUNT], ...CAT_ROOM_CATS.flatMap((d, i) => [[catKey(id, i + 1, "Fur"), d.fur], [catKey(id, i + 1, "White"), d.white],
-                     [catKey(id, i + 1, "Eyes"), d.eyes], [catKey(id, i + 1, "Pose"), d.pose], [catKey(id, i + 1, "Spot"), d.spot], [catKey(id, i + 1, "Size"), 100],
-                     [catKey(id, i + 1, "Lfo"), "D"], [catKey(id, i + 1, "Offset"), d.offset]]),
-                   ["castleHorses" + id, STABLE_HORSE_COUNT], ...STABLE_HORSES.flatMap((d, i) => [[horseKey(id, i + 1, "Coat"), d.coat], [horseKey(id, i + 1, "Mane"), d.mane],
-                     [horseKey(id, i + 1, "Mark"), d.mark], [horseKey(id, i + 1, "Lfo"), "E"], [horseKey(id, i + 1, "Offset"), d.offset]])])),
+                   ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
                 castleRoom: 1,
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
@@ -9017,14 +9033,14 @@ const sceneLfoThings = b => SCENE_LFO_THINGS[b.kind === "castleroom" ? "castlero
 const roomHereNowOf = B => { if (B.kind !== "castleroom") return [null, null];
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))); return [K, K.rooms[n - 1]]; };
 const roomHereNow = () => roomHereNowOf(state.background);
-const catsHereNow = () => { const [K, st] = roomHereNow(); return st === "catroom" ? K.cats : []; };
-const horsesHereNow = () => { const [K, st] = roomHereNow(); return st === "stable" ? K.horses : []; };
+// the residents in the room the friend is in, of each kind that lives there: [R, its list]
+const residentsHereNow = () => { const [K, st] = roomHereNow(); return Object.entries(RESIDENTS).filter(([, R]) => R.room === st).map(([kind, R]) => [R, K[kind]]); };
 function mixChanged() {
   persist(); applyMix();
   // (a part fading with an LFO, or a fairy's wings flapping with one, follow its changes at once)
   if (VISIBLE_PARTS.some(g => LFO_NAMES.includes(state.visible["lfo_" + g])) || LFO_NAMES.includes(state.costume.wingLfo) ||
       (state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo)) ||
-      catsHereNow().some(C => LFO_NAMES.includes(C.lfo)) || horsesHereNow().some(Hh => LFO_NAMES.includes(Hh.lfo)) ||
+      residentsHereNow().some(([, list]) => list.some(one => LFO_NAMES.includes(one.lfo))) ||
       ["fast", "slow", "wings"].some(pace => sceneLfoThings(state.background)[pace] && sceneLfoName(state.background, pace))) draw();
 }
 // The dub "throw": while a part is thrown (its strip's button held), all
@@ -9130,8 +9146,7 @@ function mixerBox(box) {
         // (a fairy's wings, while she wears them and they flap with it)
         .concat(state.costume.kind === "fairy" && state.costume.wingFlutter !== false && state.costume.wingLfo === L ? ["🧚 fairy wings"] : [])
         .concat(state.background.kind === "fairyforest" && state.background.fairyHouseLfo === L ? ["🏡 fairy house"] : [])
-        .concat(catsHereNow().flatMap((C, i) => C.lfo === L ? [`🐈 cat ${i + 1}'s tail`] : []))
-        .concat(horsesHereNow().flatMap((Hh, i) => Hh.lfo === L ? [`🐴 horse ${i + 1}'s nod`] : []))
+        .concat(residentsHereNow().flatMap(([R, list]) => list.flatMap((one, i) => one.lfo === L ? [R.follows(i)] : [])))
         // (the scene's quick things and its slow things, when they follow this one)
         .concat(["fast", "slow", "wings"].flatMap(pace => { const B = state.background, th = sceneLfoThings(B)[pace]; return th && sceneLfoName(B, pace) === L ? [th] : []; }));
       return el("div", { class: "strip lfo" }, [
@@ -9684,25 +9699,13 @@ const TABS = [
         ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
         ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)]],
         b => b.kind === "castleroom" && (b.castle ?? "N") === id && Math.round(b.castleRoom ?? 1) === n]),
-      ["group", "castleCatList" + id, `🐈 ${id}'s castle: its cats, in its cat room`, [
-        ["range", "castleCats" + id, "🐈 how many cats", 0, 8, 0, 8],
-        ...[1, 2, 3, 4, 5, 6, 7, 8].map(j => ["group", "castleCatBox" + j + id, `🐈 cat ${j}`, [
-          ["color", catKey(id, j, "Fur"), "🐈 its fur", CAT_FURS],
-          ["color", catKey(id, j, "White"), "🤍 tuxedo white (muzzle and bib)", CAT_WHITES],
-          ["color", catKey(id, j, "Eyes"), "👀 its eyes", CAT_EYES],
-          ["choice", catKey(id, j, "Pose"), "🐾 it is", CAT_POSES],
-          ["choice", catKey(id, j, "Spot"), "📍 where it is", CAT_SPOTS],
-          ["range", catKey(id, j, "Size"), "📏 its size", 20, 300, 80, 120],
-          ["choice", catKey(id, j, "Lfo"), "〰️ its tail wags with", [["none", "its own wag"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
-          ["range", catKey(id, j, "Offset"), "↪️ how far into the wag it starts (%)", 0, 99, 0, 99]]])]],
-      ["group", "castleHorseList" + id, `🐴 ${id}'s castle: its horses, in its stable`, [
-        ["range", "castleHorses" + id, "🐴 how many horses", 0, 4, 0, 4],
-        ...[1, 2, 3, 4].map(j => ["group", "castleHorseBox" + j + id, `🐴 horse ${j}`, [
-          ["color", horseKey(id, j, "Coat"), "🐴 its coat", HORSE_COATS],
-          ["color", horseKey(id, j, "Mane"), "💈 its mane", HORSE_MANES],
-          ["choice", horseKey(id, j, "Mark"), "⭐ on its face", HORSE_MARKS],
-          ["choice", horseKey(id, j, "Lfo"), "〰️ it nods with", [["none", "its own nod"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
-          ["range", horseKey(id, j, "Offset"), "↪️ how far into the nod it starts (%)", 0, 99, 0, 99]]])]]]),
+      // (its residents, each kind in a box of its own, each one in its own box in that: RESIDENTS)
+      ...Object.values(RESIDENTS).map(R => ["group", R.group[0] + id, R.group[1](id), [
+        ["range", R.count[0] + id, R.group[2], 0, R.count[1], 0, R.count[1]],
+        ...R.list.map((_, i) => ["group", R.box[0] + (i + 1) + id, R.box[1](i + 1), R.fields.map(([what, kind, label, opts]) => {
+          const key = R.key + (i + 1) + what + id;
+          return kind === "range" ? ["range", key, label, ...opts] : kind === "lfo" ? ["choice", key, label, [["none", opts], ...LFO_NAMES.map(L => [L, "LFO " + L])]] : [kind, key, label, opts];
+        })])]])]),
     ["toggle", "seeHealer", "🌿 see the healer's hut"],
     // inside the witch's hut (the witch herself: drag her)
     ["range", "witchSize", "🧙 the witch's size (drag her to move her)", 30, 250, 70, 150],
@@ -9905,14 +9908,13 @@ const SHOWN_WHEN = {
     // (its cats: in a cat room of its, and at the castle when it has one)
     const livesHere = st => b => atCastle(b) && (b.kind === "castle" ? [1, 2, 3, 4, 5, 6].some(n => n <= nRooms(b) && typeOf(b, n) === st)
                                                                       : typeOf(b, Math.round(b.castleRoom ?? 1)) === st);
-    const catsHere = livesHere("catroom"), horsesHere = livesHere("stable");
+
     return [["background.castleLook" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id],
             ["background.castleThemes" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id], ["background.castleThemeB" + id, atCastle],
             ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoomTheme" + n + id, b => OWN_EXIT_ROOMS.includes(typeOf(b, n))]),
-            ["background.castleCatList" + id, catsHere],
-            ...[1, 2, 3, 4, 5, 6, 7, 8].map(j => ["background.castleCatBox" + j + id, b => catsHere(b) && j <= Math.round(b["castleCats" + id] ?? CAT_ROOM_COUNT)]),
-            ["background.castleHorseList" + id, horsesHere],
-            ...[1, 2, 3, 4].map(j => ["background.castleHorseBox" + j + id, b => horsesHere(b) && j <= Math.round(b["castleHorses" + id] ?? STABLE_HORSE_COUNT)]),
+            // (its residents: where they live, and as many as there are)
+            ...Object.values(RESIDENTS).flatMap(R => [["background." + R.group[0] + id, livesHere(R.room)],
+              ...R.list.map((_, i) => ["background." + R.box[0] + (i + 1) + id, b => livesHere(R.room)(b) && i + 1 <= Math.round(b[R.count[0] + id] ?? R.count[2])])]),
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle],
             ...[1, 2, 3, 4, 5, 6].flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
