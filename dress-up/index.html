@@ -248,7 +248,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // own usual size. (Before 0.0.21, 100 was the full size everywhere: a
 // friend saves which it was sized in, figUnit; see upgradeFigSize.)
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
-                    treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, clearing: 0.45, mountains: 0.45,
+                    treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35, castleroom: 0.55 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // The three castles, N's, M's and D's, each with its own settings: how many
@@ -367,6 +367,7 @@ const DEFAULTS = {
                 windowSize: 100, things: 10,
                 witchX: 150, witchY: 0, witchSize: 100, cauldronSize: 100, crows: 3, frogs: 4, snakes: 2,
                 healerSize: 100, healerCatFur: "#e8862a", healerCatWhite: "#ffffff", healerCatEyes: "#22c55e",
+                fairyTime: "day", mushrooms: 14, fairyHouseSeen: 100, fairyHouseLfo: "none",
                 seeHouse: true, seeTree: true, seeWitch: true, seeCastle: true, seeHealer: true,
                 peakHeight: 100, mtClouds: 5, birds: 3, farLake: true,
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2,
@@ -3748,6 +3749,162 @@ function healerroomScene(c) {
     all("url(#bg-hwarm)").replace("<rect ", `<rect pointer-events="none" `));
   return s;
 }
+// The fairy forest: a glade in the woods at the time of day its chips say,
+// a ring of toadstools in the grass, and a great old tree with a fairy
+// house in it: a round door between its roots, lit windows, shelf-fungus
+// steps up to a little balcony, lanterns, a chimney. The house shows as
+// much as its slider says, and can fade in and out with one of the three
+// LFOs, in time with the music. Fireflies at sunset and at night, the
+// night's stars as the camp site's settings say; a sign back to the
+// clearing.
+const FAIRY_TIMES = [["day", "☀️ day"], ["sunrise", "🌅 sunrise"], ["sunset", "🌇 sunset"], ["night", "🌙 night"]];
+const FAIRY_SKY = { day: ["#7cc4f0", "#e6f6ff"], sunrise: ["#f0a0c4", "#ffe6b0"], sunset: ["#5a3a8a", "#ff9a5a"], night: ["#0b1030", "#283066"] };
+// the light's tint over the greens and the bark, and how much of it
+const FAIRY_TINT = { day: ["#ffffff", 0], sunrise: ["#f4a6c4", 0.18], sunset: ["#5a2a4a", 0.3], night: ["#0b1030", 0.62] };
+// the fairy house's see-through-ness, and its fade with an LFO: an
+// animation of its opacity begun so the wave is where the music's is (its
+// start rounded, so the scene's text stays the same from draw to draw)
+function fairyHouseFade(o) {
+  const a = Math.max(0, Math.min(1, (o.fairyHouseSeen ?? 100) / 100)), lf = lfoNow(o.fairyHouseLfo);
+  if (!lf) return { a, key: "", anim: "" };
+  const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() : 0;
+  const begin = Math.round(((now - lf.phase * lf.dur) % lf.dur + lf.dur) % lf.dur * 20) / 20, N = 16, vals = [], kt = [];
+  for (let i = 0; i <= N; i++) { const u = i / N; vals.push((a * (1 - lf.amp * (1 - lfoWave(lf.shape, u)) / 2)).toFixed(3)); kt.push(u.toFixed(4)); }
+  return { a, key: [lf.dur.toFixed(3), lf.shape, lf.amp.toFixed(2), begin].join(),
+           anim: `<animate attributeName="opacity" values="${vals.join(";")}" keyTimes="${kt.join(";")}" dur="${lf.dur.toFixed(3)}s" begin="${begin}s" repeatCount="indefinite"/>` };
+}
+// a toadstool: a cream stem, a red cap with white spots, (x, y) its foot
+const toadstool = (x, y, s, cap = "#d62828", glow = false) =>
+  (glow ? `<ellipse cx="${f1(x)}" cy="${f1(y - 22 * s)}" rx="${f1(30 * s)}" ry="${f1(22 * s)}" fill="#fff3a8" opacity="0.22"/>` : "") +
+  `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(11 * s)}" ry="${f1(3 * s)}" fill="#000000" opacity="0.2"/>` +
+  `<path d="M${f1(x - 6 * s)} ${f1(y)} Q${f1(x - 7 * s)} ${f1(y - 12 * s)} ${f1(x - 4 * s)} ${f1(y - 20 * s)} L${f1(x + 4 * s)} ${f1(y - 20 * s)} Q${f1(x + 7 * s)} ${f1(y - 12 * s)} ${f1(x + 6 * s)} ${f1(y)} Z" fill="#f6eedd" stroke="#c9b48a" stroke-width="${f1(1.2 * s)}"/>` +
+  `<path d="M${f1(x - 20 * s)} ${f1(y - 18 * s)} Q${f1(x - 20 * s)} ${f1(y - 40 * s)} ${f1(x)} ${f1(y - 41 * s)} Q${f1(x + 20 * s)} ${f1(y - 40 * s)} ${f1(x + 20 * s)} ${f1(y - 18 * s)} Q${f1(x)} ${f1(y - 13 * s)} ${f1(x - 20 * s)} ${f1(y - 18 * s)} Z" fill="${cap}" stroke="${darker(cap)}" stroke-width="${f1(1.5 * s)}"/>` +
+  [[-11, -26, 3], [-2, -34, 3.4], [9, -27, 2.8], [13, -21, 2], [-15, -21, 2]].map(([dx, dy, r]) => `<circle cx="${f1(x + dx * s)}" cy="${f1(y + dy * s)}" r="${f1(r * s)}" fill="#ffffff"/>`).join("");
+function fairyforestScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o } = c;
+  const time = FAIRY_SKY[o.fairyTime] ? o.fairyTime : "day", night = time === "night", dusk = time === "sunset" || night;
+  const [tint, ta] = FAIRY_TINT[time], tn = col => ta ? mix(col, tint, ta) : col;
+  const starKeys = night ? [o.starShape, o.starSize, o.starBright, o.starTwinkle] : [];
+  // the sky: its sun low or high, or the moon and stars
+  let s = SEP + part("fairy-sky", [c.F, time, ...starKeys], () => {
+    const [a, b] = FAIRY_SKY[time];
+    let t = `<defs>${grad("bg-sky", a, b, y0, g - 150 * k)}</defs>` + all("url(#bg-sky)");
+    if (time === "day") t += sunSvg(x1 - W * 0.14, y0 + H * 0.12, 30 * k, true);
+    if (time === "sunrise") t += `<circle cx="${f1(x0 + W * 0.2)}" cy="${f1(g - 170 * k)}" r="${f1(44 * k)}" fill="#ffd27a" opacity="0.95"/>`;
+    if (time === "sunset") t += `<circle cx="${f1(x1 - W * 0.22)}" cy="${f1(g - 165 * k)}" r="${f1(48 * k)}" fill="#ff8c42" opacity="0.95"/>`;
+    if (night) t += starsSvg(o, 70, x0, x1, y0, g - 170 * k, k, R, 1300) +
+      `<circle cx="${f1(x1 - W * 0.18)}" cy="${f1(y0 + H * 0.14)}" r="${f1(28 * k)}" fill="#f4eebc"/><circle cx="${f1(x1 - W * 0.18 + 12 * k)}" cy="${f1(y0 + H * 0.14 - 8 * k)}" r="${f1(24 * k)}" fill="${FAIRY_SKY.night[0]}"/>`;
+    return t;
+  });
+  if (!night) s += SEP + cloudsSvg(c, 3, 0.7, 150);
+  // the woods round the glade: rows of pines and leafy trees, paler far off
+  s += SEP + part("fairy-woods", [c.F, time], () => {
+    let t = `<defs>${pineDef("bg-fpine", 7)}${leafyTreeDef("bg-foak", 23, { greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#47a047", "#58b050"].map(tn), bark: tn("#6b4a2b") })}</defs>` +
+            land(g - 160 * k, 8, tn("#a9d48e"), 0.4);
+    for (const [row, base, cols] of [[0, g - 150 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 110 * k, ["#2f6b3a", "#3c7d45"]]])
+      for (let i = 0, x = x0 - 50 * k; x < x1 + 50 * k; i++, x += (row ? 52 : 36) * k) {
+        const h = (row ? 150 : 100) * k * (0.8 + 0.4 * R(i, 1310 + row)), b = base + 12 * k * R(i, 1312 + row);
+        t += R(i, 1314 + row) < 0.6 ? use("bg-fpine", x, b, h / 200, h / 200, ` color="${tn(cols[i % 2])}"`)
+                                    : use("bg-foak", x, b, (h / 330) * (R(i, 1316) < 0.5 ? -1 : 1), h / 330);
+      }
+    return t + land(g - 70 * k, 6, tn("#8bc56a"), 1.1) + land(g - 20 * k, 3, tn("#7cc25a"), 0.6);
+  });
+  // the great old tree, on the left: its crown, then a thick trunk with roots
+  const tx = -W * 0.3, tb = g + 20 * k;
+  s += SEP + part("fairy-tree", [c.F, time], () => {
+    const bark = tn("#6b4a2b"), dk = mix(bark, "#000000", 0.35);
+    let t = `<defs>${leafyTreeDef("bg-fbig", 41, { wide: 1.5, greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#47a047", "#58b050"].map(tn), bark })}</defs>` +
+            use("bg-fbig", tx, tb - 120 * k, 2.2 * k);
+    // the trunk: wide, flaring into roots, bark lines up it
+    t += `<path d="M${P(tx - 120 * k, tb)} Q${P(tx - 70 * k, tb - 30 * k)} ${P(tx - 62 * k, tb - 110 * k)} L${P(tx - 46 * k, tb - 380 * k)} L${P(tx + 46 * k, tb - 380 * k)} L${P(tx + 62 * k, tb - 110 * k)} Q${P(tx + 70 * k, tb - 30 * k)} ${P(tx + 120 * k, tb)} Z" fill="${bark}" stroke="${dk}" stroke-width="${f1(3 * k)}"/>` +
+         [[-150, -40], [-90, -55], [100, -50], [160, -38]].map(([dx, h]) => `<path d="M${P(tx + dx * 0.4 * k, tb - 40 * k)} Q${P(tx + dx * 0.8 * k, tb + h * 0.2 * k)} ${P(tx + dx * k, tb + 6 * k)}" fill="none" stroke="${bark}" stroke-width="${f1(18 * k)}" stroke-linecap="round"/>`).join("") +
+         [...Array(9)].map((_, i) => { const x = tx + (-40 + 10 * i) * k; return `<path d="M${P(x, tb - 20 * k)} Q${P(x + (R(i, 1320) - 0.5) * 16 * k, tb - 200 * k)} ${P(x * 0.98 + tx * 0.02, tb - 370 * k)}" fill="none" stroke="${dk}" stroke-width="${f1(1.8 * k)}" opacity="0.6"/>`; }).join("");
+    return t;
+  });
+  // the fairy house in it (its own see-through, and its LFO)
+  const fade = fairyHouseFade(o);
+  s += SEP + part("fairy-house", [c.F, time, fade.a, fade.key], () => {
+    if (fade.a <= 0 && !fade.anim) return "";
+    const warm = dusk ? "#ffd27a" : "#ffe9a8", lit = dusk ? 0.9 : 0.6;
+    let t = `<g opacity="${fade.a.toFixed(2)}">${fade.anim}`;
+    // the round door between the roots, its step a little toadstool
+    const dy = tb - 6 * k, dw = 58 * k, dh = 92 * k;
+    t += `<path d="M${P(tx - dw / 2, dy)} V${f1(dy - dh + dw / 2)} A${f1(dw / 2)} ${f1(dw / 2)} 0 0 1 ${P(tx + dw / 2, dy - dh + dw / 2)} V${f1(dy)} Z" fill="#3a8a4a" stroke="#22562c" stroke-width="${f1(3 * k)}"/>` +
+         [-0.18, 0.18].map(u => `<line x1="${f1(tx + u * dw)}" y1="${f1(dy - dh + 10 * k)}" x2="${f1(tx + u * dw)}" y2="${f1(dy)}" stroke="#22562c" stroke-width="${f1(2 * k)}"/>`).join("") +
+         `<circle cx="${f1(tx + dw * 0.32)}" cy="${f1(dy - dh * 0.42)}" r="${f1(4 * k)}" fill="#f2c230"/>` +
+         `<circle cx="${f1(tx)}" cy="${f1(dy - dh + 24 * k)}" r="${f1(9 * k)}" fill="${warm}" opacity="${lit}" stroke="#22562c" stroke-width="${f1(2 * k)}"/>` +
+         toadstool(tx + dw * 0.75, tb + 8 * k, 0.8 * k, "#d62828", night);
+    // round windows up the trunk, lit, flower boxes under them
+    for (const [wx, wy, wr] of [[tx - 22 * k, tb - 180 * k, 18 * k], [tx + 20 * k, tb - 270 * k, 15 * k]]) {
+      t += `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(wr + 5 * k)}" fill="#4a3220"/>` +
+           `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(wr)}" fill="${warm}" opacity="${lit}"/>` +
+           `<path d="M${P(wx - wr, wy)} H${f1(wx + wr)} M${P(wx, wy - wr)} V${f1(wy + wr)}" stroke="#4a3220" stroke-width="${f1(2.5 * k)}"/>` +
+           (dusk ? `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(wr * 2.4)}" fill="#ffd27a" opacity="0.18"/>` : "") +
+           `<rect x="${f1(wx - wr - 4 * k)}" y="${f1(wy + wr + 3 * k)}" width="${f1(2 * wr + 8 * k)}" height="${f1(8 * k)}" rx="${f1(2 * k)}" fill="#8b5e34"/>` +
+           [-0.6, -0.2, 0.2, 0.6].map((u, j) => `<circle cx="${f1(wx + u * wr)}" cy="${f1(wy + wr + 2 * k)}" r="${f1(3.5 * k)}" fill="${["#f472b6", "#facc15", "#ffffff", "#c4b5fd"][j]}"/>`).join("");
+    }
+    // shelf-fungus steps winding up the trunk to a little balcony
+    for (const [sx, sy, sd] of [[-52, -60, -1], [52, -110, 1], [-54, -160, -1], [54, -215, 1], [-50, -268, -1], [50, -320, 1]])
+      t += `<path d="M${P(tx + sx * k, tb + sy * k)} Q${P(tx + (sx + sd * 26) * k, tb + (sy - 8) * k)} ${P(tx + (sx + sd * 34) * k, tb + (sy + 3) * k)} Q${P(tx + (sx + sd * 16) * k, tb + (sy + 8) * k)} ${P(tx + sx * k, tb + (sy + 5) * k)} Z" fill="#e8c88a" stroke="#a8823a" stroke-width="${f1(1.5 * k)}"/>`;
+    const by = tb - 360 * k;
+    t += `<rect x="${f1(tx - 70 * k)}" y="${f1(by)}" width="${f1(140 * k)}" height="${f1(9 * k)}" rx="${f1(3 * k)}" fill="#8b5e34"/>` +
+         [...Array(9)].map((_, i) => `<line x1="${f1(tx - 66 * k + i * 16.5 * k)}" y1="${f1(by)}" x2="${f1(tx - 66 * k + i * 16.5 * k)}" y2="${f1(by - 24 * k)}" stroke="#8b5e34" stroke-width="${f1(3 * k)}"/>`).join("") +
+         `<line x1="${f1(tx - 70 * k)}" y1="${f1(by - 24 * k)}" x2="${f1(tx + 70 * k)}" y2="${f1(by - 24 * k)}" stroke="#8b5e34" stroke-width="${f1(4 * k)}"/>`;
+    // lanterns hanging from the branches either side, glowing at dusk
+    for (const [lx, ly] of [[tx - 120 * k, tb - 330 * k], [tx + 118 * k, tb - 300 * k]])
+      t += `<line x1="${f1(lx)}" y1="${f1(ly - 40 * k)}" x2="${f1(lx)}" y2="${f1(ly)}" stroke="#4a3220" stroke-width="${f1(1.5 * k)}"/>` +
+           (dusk ? `<circle cx="${f1(lx)}" cy="${f1(ly + 12 * k)}" r="${f1(30 * k)}" fill="#ffd27a" opacity="0.25"/>` : "") +
+           `<rect x="${f1(lx - 8 * k)}" y="${f1(ly)}" width="${f1(16 * k)}" height="${f1(22 * k)}" rx="${f1(4 * k)}" fill="${warm}" opacity="${dusk ? 1 : 0.8}" stroke="#4a3220" stroke-width="${f1(2 * k)}"/>` +
+           `<path d="M${P(lx - 10 * k, ly)} L${P(lx, ly - 8 * k)} L${P(lx + 10 * k, ly)} Z" fill="#4a3220"/>`;
+    // a little chimney out of the trunk, smoke curling up
+    const cx = tx + 40 * k, cy = tb - 200 * k;
+    t += `<rect x="${f1(cx)}" y="${f1(cy - 6 * k)}" width="${f1(34 * k)}" height="${f1(10 * k)}" fill="#7a756a"/><rect x="${f1(cx + 24 * k)}" y="${f1(cy - 40 * k)}" width="${f1(12 * k)}" height="${f1(40 * k)}" fill="#7a756a"/>` +
+         [0, 1].map(i => `<path d="M${f1(cx + 30 * k)} ${f1(cy - 44 * k)} q${f1(10 * k)} ${f1(-12 * k)} 0 ${f1(-24 * k)} q${f1(-10 * k)} ${f1(-12 * k)} 0 ${f1(-24 * k)}" fill="none" stroke="#e8e8f0" stroke-width="${f1(5 * k)}" stroke-linecap="round" opacity="0">` +
+           `<animate attributeName="opacity" values="0;0.5;0" dur="4s" begin="${i * 2}s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-36 * k)}" dur="4s" begin="${i * 2}s" repeatCount="indefinite"/></path>`).join("");
+    return t + `</g>`;
+  });
+  // the ring of toadstools in the grass, on the right of the middle: the
+  // far ones smaller, the near ones bigger; glowing a little at night
+  const n = Math.max(4, Math.min(30, Math.round(o.mushrooms ?? 14)));
+  const rx0 = W * 0.06, ry0 = g + 40 * k, rrx = 190 * k, rry = 44 * k;
+  s += SEP + part("fairy-ring", [c.F, n, night], () => {
+    const ms = [...Array(n)].map((_, i) => { const a = (i + 0.3 * R(i, 1330)) / n * 2 * Math.PI; return [rx0 + Math.cos(a) * rrx, ry0 + Math.sin(a) * rry, i]; })
+      .sort((p, q) => p[1] - q[1]);
+    return `<ellipse cx="${f1(rx0)}" cy="${f1(ry0)}" rx="${f1(rrx * 0.9)}" ry="${f1(rry * 0.8)}" fill="${night ? "#2a5a3a" : "#9fd27e"}" opacity="0.5"/>` +
+      ms.map(([x, y, i]) => toadstool(x, y, k * (0.75 + 0.5 * (y - (ry0 - rry)) / (2 * rry)) * (0.85 + 0.3 * R(i, 1331)), ["#d62828", "#e85d04", "#d62828", "#c1121f"][i % 4], night)).join("");
+  });
+  // flowers, tufts, bushes and stones in the near grass
+  s += SEP + part("fairy-near", [c.F, time], () => {
+    let t = `<defs>${FLOWER_DEFS}</defs>`;
+    for (let i = 0; i < 34; i++) {
+      const d = R(i, 1340), x = x0 + W * R(i, 1341), y = g + 10 * k + (y1 - g) * d;
+      if (Math.abs(x - rx0) < rrx * 1.05 && Math.abs(y - ry0) < rry * 1.3) continue;
+      t += i % 3 === 0 ? grassTuft(x, y, (14 + 10 * d) * k, i + 1340, tn("#4f9a3a"), 2 * k)
+                       : use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.6 * d), k * (0.8 + 0.6 * d), ` color="${tn(FLOWER_COLORS[i % 6])}"`);
+    }
+    t += bushSvg(x1 - W * 0.08, g + 6 * k, 70 * k, 1350, { greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#4a9a46", "#5aad52"].map(tn) }) +
+         rockSvg(x0 + W * 0.1, g + 60 * k, 26 * k, 1351, tn("#9a9488")) + rockSvg(x1 - W * 0.3, g + 90 * k, 18 * k, 1352, tn("#9a9488"));
+    return t;
+  });
+  // fireflies at sunset and at night, drifting and blinking; sparkles by day
+  s += SEP + part("fairy-lights", [c.F, time], () => [...Array(dusk ? 18 : 10)].map((_, i) => {
+    const x = x0 + W * (0.08 + 0.84 * R(i, 1360)), y = g - 260 * k + 300 * k * R(i, 1361), dx = (R(i, 1362) - 0.5) * 60 * k, dyy = (R(i, 1363) - 0.5) * 40 * k, d = (5 + 5 * R(i, 1364)).toFixed(1);
+    return dusk
+      ? `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(dx)} ${f1(dyy)};0 0" dur="${d}s" repeatCount="indefinite"/>` +
+        `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(9 * k)}" fill="#fff3a8" opacity="0.25"/><circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(3 * k)}" fill="#fffbd0">` +
+        `<animate attributeName="opacity" values="1;0.15;1" dur="${(1.4 + R(i, 1365) * 1.6).toFixed(2)}s" repeatCount="indefinite"/></circle></g>`
+      : `<path d="${starPath("four", 6 * k)}" transform="translate(${f1(x)} ${f1(y)})" fill="#ffffff" opacity="0">` +
+        `<animate attributeName="opacity" values="0;0.9;0" dur="${(2 + R(i, 1365) * 2).toFixed(2)}s" begin="${(R(i, 1366) * 3).toFixed(2)}s" repeatCount="indefinite"/></path>`;
+  }).join(""));
+  // the way back to the clearing: a sign on a post, a doorway
+  s += SEP + part("fairy-back", c.F, () => `<g class="portal" data-to="clearing">` +
+    `<rect x="${f1(x1 - W * 0.07 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
+    plankSign(x1 - W * 0.07, y1 - 44 * k, k, "🌲 clearing ➡️") + `</g>`);
+  // the light: a dusk glow, or the night's blue over everything
+  if (time !== "day") s += SEP + part("fairy-light", [c.F, time], () =>
+    all(night ? "#0b1030" : time === "sunset" ? "#5a2a4a" : "#f4a6c4").replace("<rect ", `<rect pointer-events="none" opacity="${night ? 0.22 : 0.1}" `));
+  return s;
+}
 // A clearing in the forest, and far off down its paths, things to see,
 // each shown or not by its own switch: the family house, the tree house,
 // the witch's hut, a castle, a healer's hut. The ones with a scene of their
@@ -3939,6 +4096,10 @@ function clearingScene(c) {
     `<path d="M${P(-40 * k, y1 + pad)} L${P(40 * k, y1 + pad)} L${P(26 * k, near)} L${P(-26 * k, near)} Z" fill="#d9c08a"/>` +
     `<rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
     plankSign(-W * 0.2, y1 - 44 * k, k, "🥾 path ⬇️") + `</g>`);
+  // and a sign on the right, to the fairy forest
+  s += SEP + part("clear-fairy-sign", c.F, () => `<g class="portal" data-to="fairyforest">` +
+    `<rect x="${f1(W * 0.24 - 4 * k)}" y="${f1(y1 - 50 * k)}" width="${f1(8 * k)}" height="${f1(70 * k + pad)}" fill="#6e4a2c"/>` +
+    plankSign(W * 0.24, y1 - 54 * k, k, "🧚 fairies ↗️") + toadstool(W * 0.24 + 30 * k, y1 + 4 * k, 0.6 * k) + `</g>`);
   // near trees at the frame's edges, framing the clearing
   s += SEP + part("clear-near-woods", c.F, () => [-1, 1].map(sd => [[0, 0, 1.15], [1, 40, 0.8]].map(([j, dy, z]) =>
     use("bg-woods-oak", sd * (W * 0.5 + 40 * k - j * 30 * k), g + (40 + dy) * k, k * z * sd, k * z)).join("")).join(""));
@@ -5308,7 +5469,7 @@ function woodpathScene(c) {
   return s;
 }
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
-                 witchroom: witchroomScene, healerroom: healerroomScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
+                 witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
                  tent: tentScene, cave: caveScene, woodpath: woodpathScene, castle: castleScene, castleroom: castleroomScene };
 
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
@@ -7278,7 +7439,7 @@ const TUNES = {
 // each background's own tune
 const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
-                     witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz",
+                     witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
                      tent: "lullaby", cave: "steppers", woodpath: "forest", castle: "castlewaltz", castleroom: "ballroom" };
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
 // the kinds of music, each with its tunes: the music tab's first row of
@@ -7511,7 +7672,8 @@ function applyMix(instant = false) {
 function mixChanged() {
   persist(); applyMix();
   // (a part fading with an LFO, or a fairy's wings flapping with one, follow its changes at once)
-  if (VISIBLE_PARTS.some(g => LFO_NAMES.includes(state.visible["lfo_" + g])) || LFO_NAMES.includes(state.costume.wingLfo)) draw();
+  if (VISIBLE_PARTS.some(g => LFO_NAMES.includes(state.visible["lfo_" + g])) || LFO_NAMES.includes(state.costume.wingLfo) ||
+      (state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo))) draw();
 }
 // The dub "throw": while a part is thrown (its strip's button held), all
 // of it goes to the echo, then its send goes back to where it was set;
@@ -7614,7 +7776,8 @@ function mixerBox(box) {
       const who = song.T.parts.filter(q => PITCHED_DRUMS.has(q.inst) && partLfo(id, q) === L).map(q => "🪘 " + partName(q.name))
         .concat(VISIBLE_PARTS.filter(g => state.visible["lfo_" + g] === L).map(g => "👻 " + g))
         // (a fairy's wings, while she wears them and they flap with it)
-        .concat(state.costume.kind === "fairy" && state.costume.wingFlutter !== false && state.costume.wingLfo === L ? ["🧚 fairy wings"] : []);
+        .concat(state.costume.kind === "fairy" && state.costume.wingFlutter !== false && state.costume.wingLfo === L ? ["🧚 fairy wings"] : [])
+        .concat(state.background.kind === "fairyforest" && state.background.fairyHouseLfo === L ? ["🏡 fairy house"] : []);
       return el("div", { class: "strip lfo" }, [
         el("div", { class: "strip-top" }, [el("span", { class: "strip-name" }, `〰️ LFO ${L}`), shapeBtn]),
         knob("⏱️ round in", 0, LFO_BEATS.length - 1, () => Math.max(0, LFO_BEATS.indexOf(o().beats)), v => { chan(id, "lfo" + L).beats = LFO_BEATS[v]; }, v => beatsName(LFO_BEATS[v])),
@@ -7863,12 +8026,12 @@ const PLACES = [["none", "none"], ["forest", "🌲 forest"], ["underwater", "�
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
   ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
-  ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["mountains", "⛰️ mountain trail"],
+  ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
   ["woodpath", "🥾 path through the woods"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"]];
 const PLACE_GROUPS = [
-  ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "woodpath", "mountains"]],
+  ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "mountains"]],
   ["water", "💧 water", ["lake", "beach", "underwater", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
@@ -8134,6 +8297,11 @@ const TABS = [
     ["range", "crows", "🐦‍⬛ crows in cages", 0, 6, 1, 6],
     ["range", "frogs", "🐸 frogs in jars", 0, 8, 2, 8],
     ["range", "snakes", "🐍 snakes in the tank", 0, 6, 1, 5],
+    // the fairy forest: its time of day, its ring of toadstools, its fairy house
+    ["choice", "fairyTime", "🌗 time of day", FAIRY_TIMES],
+    ["range", "mushrooms", "🍄 toadstools in the ring", 4, 30, 8, 24],
+    ["range", "fairyHouseSeen", "🏡 the fairy house: how much it shows (0 = hidden)", 0, 100, 40, 100],
+    ["choice", "fairyHouseLfo", "〰️ the fairy house fades with", [["none", "no LFO"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
     // inside the healer's hut (the healer herself: drag her)
     ["range", "healerSize", "🌿 the healer's size (drag her to move her)", 30, 250, 70, 150],
     ["color", "healerCatFur", "🐈 the healer's cat: fur", ["#e8862a", "#1f1f22", "#6b4226", "#9ca3af", "#ffffff", "#8b5cf6"]],
@@ -8300,7 +8468,7 @@ const SHOWN_WHEN = {
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
   ...Object.fromEntries(["starShape", "starSize", "starBright", "starTwinkle"].map(key =>
-    ["background." + key, b => (b.kind === "campsite" || b.kind === "tent") && b.campTime === "night"])),
+    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && b.campTime === "night") || (b.kind === "fairyforest" && b.fairyTime === "night")])),
   "background.tent": b => b.kind === "tent",
   "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),
@@ -8318,6 +8486,7 @@ const SHOWN_WHEN = {
            (b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1] ?? "king") === st]))])),
   ...Object.fromEntries(["witchSize", "cauldronSize", "crows", "frogs", "snakes"].map(key => ["background." + key, b => b.kind === "witchroom"])),
   ...Object.fromEntries(["healerSize", "healerCatFur", "healerCatWhite", "healerCatEyes"].map(key => ["background." + key, b => b.kind === "healerroom"])),
+  ...Object.fromEntries(["fairyTime", "mushrooms", "fairyHouseSeen", "fairyHouseLfo"].map(key => ["background." + key, b => b.kind === "fairyforest"])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
   "background.windowSize": b => b.kind === "treeroom",
@@ -9098,7 +9267,7 @@ function flyInto(box, arrive) {
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { healerroom: [60, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
+const ARRIVE = { healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
 // Where each trip through a doorway began, the last on top: the back chip
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.

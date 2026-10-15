@@ -6,6 +6,7 @@ Each version lists the game's features as of that version. The newest version is
 
 Changes since 0.0.32, for the next version, which waits for Matthew's go-ahead.
 
+- **🧚 The fairy forest,** a new background, reached by a "🧚 fairies" sign in the forest clearing: a glade in the woods at the time of day you pick (☀️ day, 🌅 sunrise, 🌇 sunset, 🌙 night), a ring of red-and-white toadstools in the grass (as many as you like, glowing a little at night), and a great old tree with a fairy house in it: a round green door between its roots, lit round windows with flower boxes, shelf-fungus steps winding up to a little balcony, lanterns, a chimney with smoke. The house shows as much as its slider says (0 hides it), and it can fade in and out with LFO A, B or C, in time with the music; the mixing board lists it. Fireflies at sunset and at night, sparkles by day; at night, the stars as the camp site's star settings say. A sign goes back to the clearing.
 - **🧚 The fairy in a shirt and pants:** two chips, 👗 dress or 👕 shirt + pants. With pants, her tunic is a top, in the same five styles and colors, its hem a short frill at her hips (petals, leaves, bells, a sparkly zigzag, or a toadstool's, with its white frill), over pants a shade deeper than the tunic.
 
 ## 0.0.32 (2026-10-14)
