@@ -180,13 +180,17 @@ From this come its settings' keys and defaults, `castleOf`'s list, the controls,
 ## The safety net
 
 A refactor must not change any drawing. Before and after each step, run:
-- **The sweep** (`sweep.mjs`): draws every place at each time of day, every castle room style in both themes, and every costume, from the defaults with every LFO off. It hashes each picture's markup (69 pictures); compare the two lists.
+- **The sweep** (`sweep.mjs`): draws every place at each time of day, every castle room style in both themes, and every costume, from the defaults with every LFO off. It hashes each picture's markup (74 pictures, the tree house's six rooms each on its own); compare the two lists.
 - **The structure dump** (`structure.mjs`): the defaults, the controls, every show-when rule over a set of castle states, and `castleOf` for them. These are what the pictures can't show; compare these too.
 - **The archive** (`archive.mjs <port> <page> ~/dress-up-screenshots/YYYY/MM/DD`): every background with and without the friend, and every chip menu's options against the defaults. Each picture is a 1920-wide PNG, an SVG and its settings `.json` (the game's save format), with an index.
   - A menu repeated per castle, room, cat or horse is taken once.
   - A menu hidden under the defaults is shown with the one setting of its tab that brings it out, named in its label ("with …"); one that no single setting brings out is listed as such, with no picture.
   - Names stay the same from day to day, so two days can be compared folder by folder.
   - In a script injected into the page as a template literal, write `[0-9]`, not `\d`: the backslash is lost, and the filter for repeated menus once quietly matched the letter d.
+- **The music archive** (`music.mjs <port> <page> ~/dress-up-screenshots YYYY/MM/DD [release dir]`): every tune at its default settings, one loop plus a short tail for its echoes, rendered offline in the page (44.1 kHz stereo, through a limiter) and encoded with `lame -V 2`, into the day's `music/` folder with a manifest and a page of players.
+  - Each tune has a fingerprint: its notes, sections, tempo and levels, the code of each instrument it uses, and the player's and mixer's code. A tune whose fingerprint matches an earlier day's is a relative symlink to that day's file, not a new recording.
+  - A busy tune takes minutes to render (forest, 3 minutes of music, about 2). The manifest is written after each tune, and a re-run the same day keeps every recording whose fingerprint still matches, so a stopped run resumes.
+  - With a release dir, real copies of the day's MP3s go there with a public page.
 
 The tools live on Matthew's laptop, in `~/du-shots/tools/` (see the open questions).
 
