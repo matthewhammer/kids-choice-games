@@ -4955,7 +4955,8 @@ function castleWays(c, K, n, style) {
   if (style === "hallway") {
     // and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
     const end = K.hallEnd === "none" ? 0 : K.hallEnd === "auto" ? rooms.indexOf("spiral") + 1 : Math.min(rooms.length, Number(K.hallEnd) || 0);
-    const A = hallFarArch(c), far = end && end !== n ? `<g class="portal" data-to="castleroom" data-room="${end}"><path d="${A.d}" fill="#000000" fill-opacity="0.01"/>` +
+    // (to this very hallway too: the friend flies up the stairs and lands back here, as through a picture of its own room)
+    const A = hallFarArch(c), far = end ? `<g class="portal" data-to="castleroom" data-room="${end}"><path d="${A.d}" fill="#000000" fill-opacity="0.01"/>` +
       plankSign(0, A.top - 14 * k * 0.18, k * 0.3, `${roomLabel(rooms[end - 1]).split(" ")[0]} ${end}`) + `</g>` : "";
     return links.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("") + far;
   }
