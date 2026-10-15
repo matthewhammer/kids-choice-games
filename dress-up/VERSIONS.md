@@ -2,9 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.32 (2026-10-14)
 
-Changes since 0.0.31, for the next version, which waits for Matthew's go-ahead.
+Everything in 0.0.31, plus inside the healer's hut, three peaceful waltzes, a wreath of flowers for the fairy, an afro of its own shape, and bangs that sit under the witch's brim.
 
 - **Fixed: the afro no longer becomes a beard.** It was one big circle, whose lower part reached down beside the cheeks to the jaw. Now it is an afro's own shape: a big round puff over the head, curly at its edge, ending at the ears, at every length.
 - **Fixed: bangs under the witch's hat.** With big eyes (which make the head taller, and lift the hat with it), a band of bare forehead opened between the hat's brim and the bangs, and only bits of hair over the eyes showed. Now the bangs come from right under the brim, whatever the eyes' size.
