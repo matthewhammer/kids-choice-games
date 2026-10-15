@@ -4605,6 +4605,16 @@ function roomFrame(c) {
   const out = (x, y, to) => { const t = (to - y) / (y - vy); return [x + x * t, to]; };
   return { floor, top, bw, vy, out };
 }
+// A room's space, for drawing in it in perspective: roomFrame's, and a
+// point (X, Y) on the back wall's plane brought z toward us (z < 0; a side
+// wall is X = ±bw), as drawn: at(X, Y, z); a height on the back wall, as a
+// share of the wall from the floor: Yh(h). The cat room, the stable and the
+// side doors place everything with it.
+function roomSpace(c) {
+  const { floor, top, bw, vy, out } = roomFrame(c), wh = floor - top;
+  const at = (X, Y, z = 0) => { const f = 1 / (1 + z); return [X * f, vy + (Y - vy) * f]; };
+  return { floor, top, bw, vy, out, wh, at, Yh: h => floor - h * wh };
+}
 // a torch on the wall: a bracket, a cup, a flame that flickers, a warm glow
 // (o, the scene's options: the flame then flickers with the scene's quick LFO
 // and its glow breathes with the slow one, each torch its own way in)
@@ -5198,9 +5208,8 @@ function hallFarArch(c) {
 // The places in it, shared by the room's drawing and its cats': a point
 // (X, Y) on the back wall's plane, brought z toward us (z < 0), as drawn
 function catRoomPlaces(c) {
-  const { k } = c, { floor, top, bw, vy } = roomFrame(c), wh = floor - top;
-  const at = (X, Y, z = 0) => { const f = 1 / (1 + z); return [X * f, vy + (Y - vy) * f]; };
-  const Yh = h => floor - h * wh, FX = -0.44 * bw, WX = 0.42 * bw, TX = 0.8 * bw;
+  const { k } = c, { floor, top, bw, vy, wh, at, Yh } = roomSpace(c);
+  const FX = -0.44 * bw, WX = 0.42 * bw, TX = 0.8 * bw;
   const spot = (X, Y, z, edge, span, lift = 0) => { const f = 1 / (1 + z), [x, y] = at(X, Y, z); return { x, y: y - lift * k * f, f, z, edge, span: span * f }; };
   // the rope bridge: across the room from wall to wall, sagging in the middle
   const BZ = -0.42, bf = 1 / (1 + BZ), [bxa, bya] = at(-bw, Yh(0.7), BZ), ymid = at(0, Yh(0.66), BZ)[1], byc = 2 * ymid - bya;
@@ -5567,9 +5576,8 @@ function horseHead(H, W, i, halter) {
 // bridles on the side walls; straw all over the floor, a water trough, a
 // heap of hay with a pitchfork in it, buckets, and two hens pecking about.
 function stablePlaces(c) {
-  const { k } = c, { floor, top, bw, vy } = roomFrame(c), wh = floor - top;
-  const at = (X, Y, z = 0) => { const f = 1 / (1 + z); return [X * f, vy + (Y - vy) * f]; };
-  const Yh = h => floor - h * wh, hb = 0.205 * bw;
+  const { k } = c, { floor, top, bw, vy, wh, at, Yh } = roomSpace(c);
+  const hb = 0.205 * bw;
   // (the stalls' middles, left to right, and the order horses take them: the outer ones first, clear of the friend)
   const bays = [-0.72, -0.24, 0.24, 0.72].map(u => u * bw), order = [0, 3, 1, 2];
   const doorTop = Yh(0.3), lintel = Yh(0.64);
@@ -5721,8 +5729,8 @@ function stableHorses(c, K, wags) {
   }).join("");
 }
 function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0) {
-  const { k } = c, { floor, bw, vy } = roomFrame(c), h = 170 * k, rise = 46 * k;
-  const at = (z, y) => { const f = 1 / (1 + z); return [sd * bw * f, vy + (y - vy) * f]; };
+  const { k } = c, S = roomSpace(c), { floor, bw } = S, h = 170 * k, rise = 46 * k;
+  const at = (z, y) => S.at(sd * bw, y, z);   // (on its side wall)
   const zm = (z0 + z1) / 2, fm = 1 / (1 + zm), km = k * fm;
   const nb = at(z0, floor), nt = at(z0, floor - h), ft = at(z1, floor - h), fb = at(z1, floor), ap = at(zm, floor - h - rise);
   const ctl = [2 * ap[0] - (nt[0] + ft[0]) / 2, 2 * ap[1] - (nt[1] + ft[1]) / 2];
