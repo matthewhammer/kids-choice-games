@@ -3614,9 +3614,13 @@ function treeroomScene(c) {
         return `<rect x="${f1(x)}" y="${f1(top + (shelf + 1) * sh - 6 * k - bh)}" width="${f1(bw)}" height="${f1(bh)}" fill="${["#c0392b", "#2e86de", "#27ae60", "#f2c12e", "#8e44ad", "#e67e22", "#16a085"][i % 7]}"/>`;
       }).join("");
       // a beanbag and a lantern
+      // (the lantern hangs on a cord from the roof itself: the roof's edge, at the cord, is
+      // where the slope above, from x0 - pad to x0 + 0.3 W, crosses it)
       const gx = x0 + W * 0.2, lx = x0 + W * 0.1, ly = y0 + H * 0.36 * (1 - W * 0.1 / (W * 0.3)) + 60 * k;
+      const roofAt = y0 + H * 0.36 * (1 - (lx - (x0 - pad)) / (x0 + W * 0.3 - (x0 - pad)));
       t += `<path d="M${P(gx - 90 * k, floor + 60 * k)} Q${P(gx - 100 * k, floor - 70 * k)} ${P(gx, floor - 60 * k)} Q${P(gx + 100 * k, floor - 70 * k)} ${P(gx + 90 * k, floor + 60 * k)} Z" fill="#e85d75"/>` +
-           `<line x1="${f1(lx)}" y1="${f1(ly - 60 * k)}" x2="${f1(lx)}" y2="${f1(ly)}" stroke="#333" stroke-width="${f1(2 * k)}"/>` +
+           `<line x1="${f1(lx)}" y1="${f1(roofAt - 4 * k)}" x2="${f1(lx)}" y2="${f1(ly)}" stroke="#333" stroke-width="${f1(2 * k)}"/>` +
+           `<path d="M${P(lx - 5 * k, roofAt - 2 * k)} q${f1(5 * k)} ${f1(-7 * k)} ${f1(10 * k)} 0" fill="none" stroke="#333" stroke-width="${f1(2.5 * k)}"/>` +
            `<rect x="${f1(lx - 16 * k)}" y="${f1(ly)}" width="${f1(32 * k)}" height="${f1(42 * k)}" rx="${f1(6 * k)}" fill="#ffe08a" stroke="#333" stroke-width="${f1(3 * k)}"/>`;
     } else if (room === "art") {
       // an easel with a child's painting, a table of paint jars, paint on the

@@ -4,6 +4,7 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **Fixed: the tree house's reading lantern hangs from the roof.** Its cord stopped in mid-air, well below the sloping roof (the same kind of slip M spotted in the fairy forest). Now it runs up to the roof's edge, on a hook.
 - **Fixed: the tents' mesh windows lie on their walls.** Each was a flat box with a square grid, as if stuck on the picture. Now its frame and mesh are drawn on the sloping canvas in perspective: threads along the wall run toward the far end as the seams do, threads across it slant as the far wall's edge does, and they close up toward the back. Matthew caught this one.
 - **Fixed: the cat room window's leads stay inside its arch.** The window's lead lines ran up past the curve at its top onto the wall; now everything in the window is kept inside its arch.
 - **Fixed: the castle rooms' floors stay on the floor.** In the stone rooms (the king's room, the trap room, the dungeons, the hallway, the stable) and the greenhouse, the lines across the floor ran on up the side walls. Now each ends where the floor meets the wall, and the rows close up toward the back, as paving does. The floor's and ceiling's far corners follow the walls' own lines, so no dark wedge shows at the bottom corners. Matthew caught this one.
