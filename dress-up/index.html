@@ -3998,11 +3998,13 @@ function healerroomScene(c) {
   s += SEP + part("hroom-hearth", c.F, () => {
     const hw = 130 * k, top = floor - 190 * k;
     let t = `<rect x="${f1(potX - hw * 0.55)}" y="${f1(wallTop)}" width="${f1(hw * 1.1)}" height="${f1(top - wallTop)}" fill="#a39a8c"/>`;
-    for (let i = 0; i < 40; i++) {
-      const row = Math.floor(i / 5), col = i % 5, sy = wallTop + row * 22 * k, sx = potX - hw * 0.55 + (col + (row % 2) * 0.5) * hw * 0.22;
-      if (sy > top) break;
-      t += `<rect x="${f1(sx)}" y="${f1(sy)}" width="${f1(hw * 0.2)}" height="${f1(19 * k)}" rx="${f1(4 * k)}" fill="${["#b8afa0", "#a8a090", "#c2b9aa"][(i * 7) % 3]}"/>`;
-    }
+    // (its stones, row on row all the way down to the mantel, each row half a stone along
+    // from the last, kept on the breast)
+    t += `<clipPath id="bg-hbreast"><rect x="${f1(potX - hw * 0.55)}" y="${f1(wallTop)}" width="${f1(hw * 1.1)}" height="${f1(top - wallTop)}"/></clipPath><g clip-path="url(#bg-hbreast)">`;
+    for (let row = 0, sy = wallTop; sy < top; row++, sy += 22 * k)
+      for (let col = -1; col < 5; col++) { const i = row * 5 + col + 5, sx = potX - hw * 0.55 + (col + (row % 2) * 0.5) * hw * 0.22;
+        t += `<rect x="${f1(sx)}" y="${f1(sy)}" width="${f1(hw * 0.2)}" height="${f1(19 * k)}" rx="${f1(4 * k)}" fill="${["#b8afa0", "#a8a090", "#c2b9aa"][(i * 7) % 3]}"/>`; }
+    t += `</g>`;
     t += `<path d="M${P(potX - hw, floor)} V${f1(top + 30 * k)} Q${P(potX - hw, top)} ${P(potX - hw + 30 * k, top)} H${f1(potX + hw - 30 * k)} Q${P(potX + hw, top)} ${P(potX + hw, top + 30 * k)} V${f1(floor)} Z" fill="#b8afa0" stroke="#8a8274" stroke-width="${f1(3 * k)}"/>` +
          `<path d="M${P(potX - hw * 0.68, floor)} V${f1(top + 80 * k)} A${f1(hw * 0.68)} ${f1(hw * 0.55)} 0 0 1 ${P(potX + hw * 0.68, top + 80 * k)} V${f1(floor)} Z" fill="#3a2418"/>` +
          `<ellipse cx="${f1(potX)}" cy="${f1(floor - 20 * k)}" rx="${f1(hw * 0.6)}" ry="${f1(50 * k)}" fill="#ff9a3c" opacity="0.35"/>` +
@@ -4579,7 +4581,9 @@ function castleScene(c) {
     const rw = 44 * z, bw2 = W * 0.17;
     let t = `<path d="M${P(-rw, bridgeEnd)} L${P(rw, bridgeEnd)} L${P(bw2, y1 + pad)} L${P(-bw2, y1 + pad)} Z" fill="#cdb487"/>` +
       [-1, 1].map(e => `<path d="M${P(e * rw * 0.45, bridgeEnd)} L${P(e * bw2 * 0.45, y1 + pad)}" stroke="#b39a6c" stroke-width="${f1(4 * k)}"/>`).join("");
-    for (let i = 0; i < 14; i++) { const u = (i + R(i, 430)) / 14, e = i % 2 ? 1 : -1, x = e * (rw + (bw2 - rw) * u) * 1.02, y = bridgeEnd + (y1 - bridgeEnd) * u;
+    // (stones along its edges: at a stone's height y, the edge is v of the way from the bridge to
+    // y1 + pad, where the road is bw2 wide, not u of the way)
+    for (let i = 0; i < 14; i++) { const u = (i + R(i, 430)) / 14, e = i % 2 ? 1 : -1, y = bridgeEnd + (y1 - bridgeEnd) * u, v = (y - bridgeEnd) / (y1 + pad - bridgeEnd), x = e * (rw + (bw2 - rw) * v) * 1.02;
       t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((5 + 6 * u) * k)}" ry="${f1((3 + 3 * u) * k)}" fill="${R(i, 431) < 0.5 ? "#9a9488" : "#b0aa9c"}"/>`; }
     t += castleFlagDefs(K, 6 * k);
     for (const e of [-1, 1]) {
