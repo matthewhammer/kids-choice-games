@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.43 (2026-10-15)
+
+Everything in 0.0.42, plus more doors in the hallway and the dining room.
+
+- **🚪 More doors, M's idea:** a hallway can have up to four doors in each side wall now (eight, one pair to each stretch of the corridor), and the dining room up to three a side (six). With the far wall and the near wall, that's ten ways out of a hallway (its stairs at the far end, and the door behind you) and eight out of the dining room. Rooms still start with three doors, and the slider stops at each room's most.
+- **🚪 A door in the dining room's far wall,** to the left of the great fireplace: a new setting, "🚪 the door in its far wall leads to", out of the castle or to any room; it leads nowhere until you set it. The castle designer can use it for a way back.
+
 ## 0.0.42 (2026-10-15)
 
 Everything in 0.0.41, plus a door behind you.

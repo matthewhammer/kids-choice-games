@@ -308,6 +308,10 @@ const roomChoices = id => ROOM_NS.map(n => [String(n), b => `${roomLabel(castleO
 const hallDoorDests = id => [["out", "🏰 out of the castle"], ...roomChoices(id)];
 const hallEnds = id => [["auto", "🌀 the first spiral stairs"], ...roomChoices(id), ["none", "🧱 nowhere"]];
 const hallDoorKey = (id, n, j) => "castleHallDoor" + n + "_" + j + id;
+// (how many doors a room's walls hold: a hallway four to a side, one pair to each stretch of it, and
+// the dining room three to a side (ticket 113, M's idea); the other rooms two to a side)
+const DOOR_MAX = 8, DOOR_JS = [...Array(DOOR_MAX)].map((_, j) => j + 1);
+const roomDoorMax = st => ({ hall: 8, long: 6 })[ROOM_KINDS[st]?.exits] ?? 4;
 const hallDoorDefault = (n, j) => String((n === 1 ? ["out", ...ROOM_NS.filter(m => m !== 1)] : [1, ...ROOM_NS.filter(m => m !== n && m !== 1)])[j - 1]);
 const wayOutDests = id => [["auto", "✨ the usual way"], ["out", "🏰 out of the castle"], ...roomChoices(id)];
 // (a door behind us, at the bottom of the picture, that we can't see: where it leads, if anywhere)
@@ -428,8 +432,8 @@ const castleOf = o => {
            roomTheme: ROOM_NS.map(n => ["A", "B"].includes(o["castleRoomTheme" + n + id]) ? o["castleRoomTheme" + n + id] : n % 2 ? "A" : "B"),
            // each room's own exits, when it is a hallway (castleWays)
            hall: ROOM_NS.map(n => ({
-             doors: [...Array(Math.max(0, Math.min(4, Math.round(o["castleHallDoors" + n + id] ?? 3))))].map((_, j) => String(o[hallDoorKey(id, n, j + 1)] ?? hallDoorDefault(n, j + 1))),
-             end: String(o["castleHallEnd" + n + id] ?? "auto"), out: String(o["castleOut" + n + id] ?? "auto"), back: String(o["castleBack" + n + id] ?? "none") })),
+             doors: [...Array(Math.max(0, Math.min(roomDoorMax(o["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1] ?? "king"), Math.round(o["castleHallDoors" + n + id] ?? 3))))].map((_, j) => String(o[hallDoorKey(id, n, j + 1)] ?? hallDoorDefault(n, j + 1))),
+             end: String(o["castleHallEnd" + n + id] ?? "auto"), out: String(o["castleOut" + n + id] ?? "auto"), back: String(o["castleBack" + n + id] ?? "none"), far: String(o["castleFar" + n + id] ?? "none") })),
            levels: Math.max(1, Math.min(5, Math.round(o["castleLevels" + id] ?? d.levels))),
            stone: o["castleStone" + id] ?? d.stone, trees: Math.max(0, Math.round(o["castleTrees" + id] ?? d.trees)),
            moat: Math.max(0, (o["castleMoat" + id] ?? d.moat) / 100),
@@ -510,8 +514,8 @@ const DEFAULTS = {
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
                    ...ROOM_NS.map(n => ["castleRoomTheme" + n + id, n % 2 ? "A" : "B"]),
-                   ...ROOM_NS.flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"], ["castleOut" + n + id, "auto"], ["castleBack" + n + id, "none"], ["castlePlaces" + n + id, 10],
-                     ...[1, 2, 3, 4].map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
+                   ...ROOM_NS.flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"], ["castleOut" + n + id, "auto"], ["castleBack" + n + id, "none"], ["castleFar" + n + id, "none"], ["castlePlaces" + n + id, 10],
+                     ...DOOR_JS.map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...ROOM_NS.map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
                    ...ROOM_NS.flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
                    ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
@@ -6377,6 +6381,8 @@ function roomExits(K, n) {
   // (the door behind us, at the bottom of the picture: optional, in a room with no sign there already,
   // and never in a dungeon, a pit with no way in but from above)
   if (["hall", "trap", "all"].includes(ex)) { const v = H.back; X.push({ kind: "back", to: v === "none" ? null : dest(v), key: "castleBack" + n + id, nowhere: v === "none" }); }
+  // (the dining room's door in its far wall, by the fireplace: optional)
+  if (ex === "long") { const v = H.far; X.push({ kind: "far", to: v === "none" ? null : dest(v), key: "castleFar" + n + id, nowhere: v === "none" }); }
   if (ex === "hall" || signed)
     H.doors.forEach((d, j) => {
       // (in a room with a sign toward us, a door that leads where the sign does is that sign)
@@ -6391,6 +6397,16 @@ function roomExits(K, n) {
   // (the greenhouse: an arch to every other room but the dungeons, which are fallen into: fixed)
   if (ex === "all") K.rooms.forEach((s2, i) => { if (i + 1 !== n && ROOM_KINDS[s2].exits !== "ladder" && i + 1 !== X[0].to) X.push({ kind: "arch", to: i + 1, key: null }); });
   return X;
+}
+// the dining room's door in its far wall, to the left of the great fireplace (as far away as the
+// fireplace, so small; its sign a little bigger than that, to be read)
+function farWallDoor(c, label, attrs) {
+  const { k } = c, { floor, top, bw, vy } = roomFrame(c), f = 1 / (1 + HALL_STRETCHES * 0.8), Y = y => vy + (y - vy) * f;
+  const w = bw * f, tp = Y(top), fl = Y(floor), kf = k * f, cx = -w * 0.73, hw = w * 0.17, dt = fl - (fl - tp) * 0.58;
+  return `<g class="portal" ${attrs}><path d="M${f1(cx - hw)} ${f1(fl)} V${f1(dt + hw)} A${f1(hw)} ${f1(hw)} 0 0 1 ${f1(cx + hw)} ${f1(dt + hw)} V${f1(fl)} Z" fill="#1d1712" stroke="#4a3a2a" stroke-width="${f1(8 * kf)}"/>` +
+    `<path d="M${f1(cx - hw * 0.7)} ${f1(fl)} V${f1(dt + hw * 1.1)} A${f1(hw * 0.7)} ${f1(hw * 0.7)} 0 0 1 ${f1(cx + hw * 0.7)} ${f1(dt + hw * 1.1)} V${f1(fl)}" fill="#2c2219"/>` +
+    `<ellipse cx="${f1(cx)}" cy="${f1(fl - 2 * kf)}" rx="${f1(hw * 0.6)}" ry="${f1(3 * kf)}" fill="#ffcf6b" opacity="0.25"/>` +
+    plankSign(cx, dt - 14 * k * 0.42, k * 0.42, label) + `</g>`;
 }
 // a sign at the bottom of the picture, toward us, on its post: a way through a door we can't see
 function bottomSign(c, x, label, attrs) {
@@ -6418,6 +6434,8 @@ function castleWays(c, K, n, style) {
   // path, toward us (a door set to lead where the sign does is that sign)
   if (exits === "side" || exits === "long" || exits === "spiral") {
     const { y1, pad } = c;
+    // (the dining room's door in its far wall, where it leads somewhere)
+    const FX = X.find(x => x.kind === "far"), FL = FX && FX.to !== null && way(FX.to), far = FL ? farWallDoor(c, FL.label, FL.attrs) : "";
     // (a nearer door's sign, kept inside the picture, would sit on the farther one's: it goes above it;
     // a long room's doors run down its walls, as a hallway's do)
     // (a spiral staircase's doors come out onto its steps, each higher than the last)
@@ -6425,7 +6443,7 @@ function castleWays(c, K, n, style) {
       : exits === "long" ? doors.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("")
       : doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j; return hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k); }).join("")) +
       (out ? `<g class="portal" ${out.attrs}><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
-      plankSign(-W * 0.2, y1 - 44 * k, k, `${out.label} ⬇️`) + `</g>` : "");
+      plankSign(-W * 0.2, y1 - 44 * k, k, `${out.label} ⬇️`) + `</g>` : "") + far;
   }
   if (exits === "hall") {
     // and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
@@ -6454,8 +6472,8 @@ function castleWays(c, K, n, style) {
 // (the gate into room 1, then each room's exits: roomExits), what looks wrong
 // with it, and how to put each thing right. A way leading out of the castle
 // leads to 0; the gate leads from 0 into room 1.
-const EXIT_ICONS = { door: "🚪", sign: "🪧", arch: "🏛️", ladder: "🪜", stairs: "🌀", pit: "🕳️", gate: "🏰", back: "⬇️" };
-const EXIT_WORDS = { door: "door", sign: "sign", arch: "archway", ladder: "ladder", stairs: "stairs", pit: "pit", gate: "gate", back: "door behind you" };
+const EXIT_ICONS = { door: "🚪", sign: "🪧", arch: "🏛️", ladder: "🪜", stairs: "🌀", pit: "🕳️", gate: "🏰", back: "⬇️", far: "🚪" };
+const EXIT_WORDS = { door: "door", sign: "sign", arch: "archway", ladder: "ladder", stairs: "stairs", pit: "pit", gate: "gate", back: "door behind you", far: "door in the far wall" };
 function castleGraph(K) {
   const E = [{ from: 0, kind: "gate", to: 1, key: null }];
   K.rooms.forEach((_, i) => roomExits(K, i + 1).forEach(x => E.push({ from: i + 1, ...x })));
@@ -6492,12 +6510,12 @@ function mapAddDoor(B, K, a, b) {
   const id = K.id, val = b === 0 ? "out" : String(b), X = roomExits(K, a);
   const bad = X.find(x => x.kind === "door" && x.missing);
   if (bad) { B[bad.key] = val; return true; }
-  // (the door behind us, where it's free: a hallway's, the trap room's, the greenhouse's)
-  const back = X.find(x => x.kind === "back" && x.nowhere);
+  // (the door behind us, where it's free: a hallway's, the trap room's, the greenhouse's; or the dining room's far door)
+  const back = X.find(x => (x.kind === "back" || x.kind === "far") && x.nowhere);
   if (back) { B[back.key] = val; return true; }
   if (!mapDoorRoom(K, a)) return false;
   const n = K.hall[a - 1].doors.length;
-  if (n >= 4) return false;
+  if (n >= roomDoorMax(K.rooms[a - 1])) return false;
   B["castleHallDoors" + a + id] = n + 1; B[hallDoorKey(id, a, n + 1)] = val; return true;
 }
 // doors two-way: when room a's way leads to room b, b gets a way back to a (a door), where it has space
@@ -6515,7 +6533,7 @@ function mapCloseDoor(B, K, a, j) {
 // how to put one thing right: what the fix says it does, and doing it (to B, the settings); null when it can't be
 function mapPlan(B, id, p) {
   const K = castleOf({ ...B, castle: id }), E = castleGraph(K), inn = mapReach(E, true), name = r => mapRoomName(K, r);
-  if (p.kind === "missing") { const v = p.e.kind === "door" ? (p.e.from === 1 ? "out" : "1") : p.e.kind === "stairs" || p.e.kind === "back" ? "none" : "auto";
+  if (p.kind === "missing") { const v = p.e.kind === "door" ? (p.e.from === 1 ? "out" : "1") : ["stairs", "back", "far"].includes(p.e.kind) ? "none" : "auto";
     return { text: v === "none" ? "🔧 lead it nowhere" : v === "auto" ? "🔧 the usual way" : v === "out" ? "🔧 lead it out" : "🔧 lead it to room 1", apply: b => { b[p.e.key] = v; } }; }
   if (p.kind === "oneway") { const a = p.e.from, t = p.e.to;
     // (a door back, where the room it leads to has space; or lead it to a room that has a way back; or close it)
@@ -10455,8 +10473,9 @@ const TABS = [
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castlePlaces" + n + id, "🍽️ places at table", 4, 18, 4, 18],
-        ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, 4, 0, 4],
-        ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
+        ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, DOOR_MAX, 0, 4, b => roomDoorMax(castleOf({ ...b, castle: id }).rooms[n - 1] ?? "king")],
+        ...DOOR_JS.map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
+        ["choice", "castleFar" + n + id, "🚪 the door in its far wall leads to", backDests(id)],
         ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)],
         ["choice", "castleOut" + n + id, "↩️ its way out leads to", wayOutDests(id)],
         ["choice", "castleBack" + n + id, "⬇️ behind you (a door we can't see) leads to", backDests(id)]],
@@ -10681,10 +10700,10 @@ const SHOWN_WHEN = {
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle], ["background.castleDesign" + id, atCastle],
             ...ROOM_NS.flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
-              ["background.castleOut" + n + id, b => !isHall(b, n)],
+              ["background.castleOut" + n + id, b => !isHall(b, n)], ["background.castleFar" + n + id, b => typeOf(b, n) === "dining"],
               // (the door behind us: where a room has no sign at the bottom already; never a dungeon, a pit with no way in but from above)
               ["background.castleBack" + n + id, b => ["hall", "trap", "all"].includes(ROOM_KINDS[typeOf(b, n)]?.exits)], ["background.castlePlaces" + n + id, b => typeOf(b, n) === "dining"],
-              ...[1, 2, 3, 4].map(k => ["background." + hallDoorKey(id, n, k), b => hasDoors(b, n) && k <= Math.round(b["castleHallDoors" + n + id] ?? 3)])])];
+              ...DOOR_JS.map(k => ["background." + hallDoorKey(id, n, k), b => hasDoors(b, n) && k <= Math.min(roomDoorMax(typeOf(b, n)), Math.round(b["castleHallDoors" + n + id] ?? 3))])])];
   })),
   ...Object.fromEntries(CASTLES.flatMap(([id]) => [["background.castleRooms" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id],
     ...ROOM_NS.map(n => ["background.castleRoom" + n + id,
@@ -10826,7 +10845,7 @@ function castleDesigner(part, key, box, syncs) {
     // what is picked: a way, and where it can lead; or a room, and its ways
     const e = picked?.way && E.find(x => pickOf(x) === picked.way);
     if (e) {
-      const opts = !e.key ? [] : e.key.startsWith("castleOut") ? wayOutDests(id) : e.key.startsWith("castleBack") ? backDests(id) : e.key.startsWith("castleHallEnd") ? hallEnds(id) : hallDoorDests(id);
+      const opts = !e.key ? [] : e.key.startsWith("castleOut") ? wayOutDests(id) : e.key.startsWith("castleBack") || e.key.startsWith("castleFar") ? backDests(id) : e.key.startsWith("castleHallEnd") ? hallEnds(id) : hallDoorDests(id);
       edit.replaceChildren(el("span", {}, `${mapExitName(K, e)} leads to:`), ...(e.key ? opts.filter(([, , vis]) => !vis || vis(b)).map(([v, lab]) =>
         el("button", { "aria-pressed": String(B()[e.key]) === String(v), onclick: () => setWay(e, v) }, typeof lab === "function" ? lab(b) : lab))
         : [el("span", { class: "note" }, MAP_FIXED[e.kind] || "This way is fixed.")]));
@@ -10925,11 +10944,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     box.append(b);
   }
   if (kind === "range") {
-    const [lo, hi] = rest;
+    const [lo, hi, , , limit] = rest;
     const input = el("input", { type: "range", min: lo, max: hi,
                                 oninput: e => set(part, key, Number(e.target.value)) });
     box.append(input);
-    syncs.push(() => { input.value = state[part][key]; val.textContent = state[part][key]; });
+    // (with a limit of its own, from the settings, as a room's doors are: the slider stops there, and shows no more)
+    syncs.push(() => { const most = typeof limit === "function" ? limit(state[part]) : hi; input.max = most;
+                       input.value = Math.min(most, state[part][key]); val.textContent = Math.min(most, state[part][key]); });
     // a part's see-through-ness can follow one of the mixer's LFOs: a chip
     // beside its name, a tap for the next (none, A, B, C)
     if (part === "visible" && VISIBLE_PARTS.includes(key) && !buildingHud) {
