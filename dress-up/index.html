@@ -283,7 +283,7 @@ const CASTLE_CARPETS = ["#a3122a", "#1e3a8a", "#14532d", "#6a2c91", "#7c2d12", "
 // leads out and the others to the castle's other rooms in turn.
 // (a castle's rooms by number, as choices: only those it has)
 const castleRoomCount = (b, id) => Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
-const roomChoices = id => [1, 2, 3, 4, 5, 6].map(n => [String(n), `🚪 room ${n}`, b => n <= castleRoomCount(b, id)]);
+const roomChoices = id => [1, 2, 3, 4, 5, 6].map(n => [String(n), b => `${roomLabel(castleOf({ ...b, castle: id }).rooms[n - 1] ?? "king").split(" ")[0]} room ${n}`, b => n <= castleRoomCount(b, id)]);
 const hallDoorDests = id => [["out", "🏰 out of the castle"], ...roomChoices(id)];
 const hallEnds = id => [["auto", "🌀 the first spiral stairs"], ...roomChoices(id), ["none", "🧱 nowhere"]];
 const hallDoorKey = (id, n, j) => "castleHallDoor" + n + "_" + j + id;
@@ -9134,12 +9134,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   } else if (kind === "choice") {
     const row = el("div", { class: "row" });
     // (an option may come with a test of the settings: shown only when it holds, as a room the castle has)
+    // (and its text may follow the settings too: a castle room's emoji, its type's)
     const bs = rest[0].map(([v, text, ok]) => {
-      const b = el("button", { onclick: () => set(part, key, v) }, text);
-      row.append(b); return [v, b, ok];
+      const b = el("button", { onclick: () => set(part, key, v) }, typeof text === "function" ? "" : text);
+      row.append(b); return [v, b, ok, text];
     });
     box.append(row);
-    syncs.push(() => { for (const [v, b, ok] of bs) { b.setAttribute("aria-pressed", state[part][key] === v); if (ok) b.hidden = !ok(state[part]); } });
+    syncs.push(() => { for (const [v, b, ok, text] of bs) { b.setAttribute("aria-pressed", state[part][key] === v); if (ok) b.hidden = !ok(state[part]); if (typeof text === "function") b.textContent = text(state[part]); } });
   } else if (kind === "places") {
     // two rows, as the music's: the kind of place (or none), then that
     // kind's places, each in a dashed box with its name; picking a kind goes
