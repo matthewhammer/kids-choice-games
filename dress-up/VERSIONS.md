@@ -4,6 +4,7 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **Fixed: the castle rooms' cobwebs hang together.** In each top corner, a web's threads fanned out over the side wall while its rings hung on the back wall; now threads and rings make one web, in the corner.
 - **Fixed: the fairy's wings' veins end at the wing's edge.** On the butterfly, dragonfly and leaf wings, veins ran off the wing into the air, or stopped well short of its edge, and two of the butterfly's spots floated beside it. Now every vein reaches the edge and stops there, and the spots sit on the wing.
 - **Fixed: the tree house's reading lantern hangs from the roof.** Its cord stopped in mid-air, well below the sloping roof (the same kind of slip M spotted in the fairy forest). Now it runs up to the roof's edge, on a hook.
 - **Fixed: the tents' mesh windows lie on their walls.** Each was a flat box with a square grid, as if stuck on the picture. Now its frame and mesh are drawn on the sloping canvas in perspective: threads along the wall run toward the far end as the seams do, threads across it slant as the far wall's edge does, and they close up toward the back. Matthew caught this one.

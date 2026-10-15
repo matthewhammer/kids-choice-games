@@ -4678,7 +4678,8 @@ const torchSvg = (x, y, k, i = 0, o = null) => `<circle cx="${f1(x)}" cy="${f1(y
 // a cobweb in a corner (sd: which side), its threads and rings
 const cobweb = (x, y, r, sd, k) => {
   let t = "";
-  for (let a = 0; a <= 4; a++) { const an = (sd < 0 ? 0 : Math.PI / 2) + a * Math.PI / 8; t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + Math.cos(an) * r * sd * (sd < 0 ? -1 : 1))}" y2="${f1(y + Math.sin(an) * r)}" stroke="#e8e8f0" stroke-width="${f1(1 * k)}" opacity="0.55"/>`; }
+  // (its threads fan across the same quarter as its rings: out along the wall's top, down the corner, and between)
+  for (let a = 0; a <= 4; a++) { const an = a * Math.PI / 8; t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + sd * Math.cos(an) * r)}" y2="${f1(y + Math.sin(an) * r)}" stroke="#e8e8f0" stroke-width="${f1(1 * k)}" opacity="0.55"/>`; }
   for (const f of [0.35, 0.6, 0.85]) t += `<path d="M${f1(x + sd * r * f)} ${f1(y)} Q${f1(x + sd * r * f * 0.6)} ${f1(y + r * f * 0.6)} ${f1(x)} ${f1(y + r * f)}" fill="none" stroke="#e8e8f0" stroke-width="${f1(1 * k)}" opacity="0.45"/>`;
   return t;
 };
