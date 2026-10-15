@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.40 (2026-10-15)
+
+Everything in 0.0.39, plus the castle's kitchen and smithy, and their people.
+
+- **🍲 A kitchen, a new castle room:** a big warm room of stone under oak beams. A great hearth burns in the back wall, with onions, garlic and herbs hung along its mantel. In front of it a cauldron of soup hangs on its tripod over its own little fire, steaming, and a cook in a frilled white cap and a blue dress stirs it. There's a domed bread oven with its mouth aglow and loaves on its sill, shelves of blue-rimmed plates and crocks, and copper pots and pans hanging from a rack on the beam. Sacks of flour and barrels stand by the back wall. In front is a long worktable of bread, cheese, a cabbage and a bowl of apples, where a cook in a tall white hat chops carrots on a board, once a beat. The cooks keep time with the quick LFO, and the steam and the oven's glow with the slow one.
+- **⚒️ A smithy, a new castle room,** dark and very rustic: rough stone black with soot under old timbers, lit only by the forge. The forge's coals glow and breathe, with a hood over it up to the chimney and its bellows working. The smith, bearded, in a leather apron, beats a glowing bar on the anvil on its stump, holding it with his tongs, and sparks fly as his hammer lands. There's a quench barrel, steaming, tongs, hammers and horseshoes on the wall, a rack of swords, a shield in the castle's colors, and a heap of coal. His hammer and the sparks keep time with the quick LFO, and the forge's glow and the bellows with the slow one.
+- Both rooms have doors in their side walls and a way out toward you, as the king's room does. The cooks and the smith will join the cast of friends to come, with settings of their own.
+
 ## 0.0.39 (2026-10-15)
 
 Everything in 0.0.38, plus room in the greenhouse for every way out of it.

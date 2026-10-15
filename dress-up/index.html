@@ -332,6 +332,8 @@ const ROOM_KINDS = {
   catroom: { label: "🐈 cat room", by: "more", exits: "side", draw: (c, K) => catRoomSvg(c, K) },
   stable: { label: "🐴 stable", by: "more", exits: "side", draw: (c, K) => stableSvg(c, K) },
   dining: { label: "🍽️ dining room", by: "M", exits: "long", tone: "#9c8f84", draw: (c, K, r) => diningRoomSvg(c, K, r) },
+  kitchen: { label: "🍲 kitchen", by: "more", exits: "side", tone: "#b8a58c", draw: (c, K) => kitchenSvg(c, K) },
+  smithy: { label: "⚒️ smithy", by: "more", exits: "side", tone: "#5e5650", draw: (c, K) => smithySvg(c, K) },
 };
 const ROOM_STYLES = [["N", "N's rooms"], ["M", "M's rooms"], ["more", "more rooms"]].map(([by, name]) =>
   [by, name, Object.entries(ROOM_KINDS).filter(([, R]) => R.by === by).map(([st, R]) => [st, R.label])]);
@@ -5199,6 +5201,252 @@ function diningRoomSvg(c, K, r = {}) {
        `<rect x="${f1(c.x0 - c.pad)}" y="${f1(c.y0 - c.pad)}" width="${f1(c.W + 2 * c.pad)}" height="${f1(c.H + 2 * c.pad)}" fill="#1a1030" opacity="0.28"/>`;
   return t + lights.join("") + flames.join("");
 }
+// A castle helper: one of the castle's staff (the kitchen's two cooks, the
+// smith), drawn as the healer is, in their own units, feet at (0, 0), about
+// 240 tall, from `h`: skin, hair, shirt, legs (or a skirt), apron, a hat
+// ("toque", "cap") or a beard, and what their hands do ("stir": a ladle
+// into a pot whose middle is at (-110, -48); "chop": a knife at a table at
+// their hands' height, -104; "hammer": a hammer on an anvil, striking at
+// (-96, -86), tongs holding the work there). Their work keeps time with the
+// scene's quick LFO (o), or their own without one. (They come into ticket
+// 92's cast later, with settings of their own.)
+function helperSvg(h, o, off = 0) {
+  const skin = h.skin, sk = darker(skin), hair = h.hair, shirt = h.shirt, ap = h.apron;
+  const limb = (pts, w, c) => `<path d="M${pts.map(p => p.join(" ")).join(" L")}" fill="none" stroke="${darker(c)}" stroke-width="${w + 3}" stroke-linecap="round" stroke-linejoin="round"/>` +
+                              `<path d="M${pts.map(p => p.join(" ")).join(" L")}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const sleeve = h.sleeves === "rolled" ? skin : shirt;
+  let t = `<ellipse cx="-16" cy="-4" rx="13" ry="6" fill="#3e2a18"/><ellipse cx="16" cy="-4" rx="13" ry="6" fill="#3e2a18"/>`;
+  t += h.skirt ? `<path d="M-26 -96 Q-34 -60 -46 -10 Q0 -2 46 -10 Q34 -60 26 -96 Z" fill="${h.skirt}" stroke="${darker(h.skirt)}" stroke-width="2.5"/>`
+               : `<path d="M-25 -92 L-22 -8 L-5 -8 L-1 -58 L1 -58 L5 -8 L22 -8 L25 -92 Z" fill="${h.legs}" stroke="${darker(h.legs)}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  t += `<path d="M-28 -150 Q-35 -122 -30 -88 L30 -88 Q35 -122 28 -150 Q0 -158 -28 -150 Z" fill="${shirt}" stroke="${darker(shirt)}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  // (the apron: a cook's to the knee, a smith's of leather to the shin)
+  t += `<path d="M-19 -134 L19 -134 L${h.long ? 30 : 26} ${h.long ? -24 : -44} L${h.long ? -30 : -26} ${h.long ? -24 : -44} Z" fill="${ap}" stroke="${darker(ap)}" stroke-width="2"/>` +
+       `<rect x="-29" y="-100" width="58" height="6" rx="3" fill="${ap}" stroke="${darker(ap)}" stroke-width="1.5"/>` +
+       `<path d="M-19 -134 L-24 -150 M19 -134 L24 -150" stroke="${ap}" stroke-width="4"/>`;
+  if (h.neckerchief) t += `<path d="M-12 -152 L12 -152 L0 -136 Z" fill="${h.neckerchief}" stroke="${darker(h.neckerchief)}" stroke-width="1.5"/>`;
+  // the arms: the left (the picture's right) still; the right (the picture's left) at its work
+  let rest = "", work = "";
+  if (h.pose === "stir") {
+    rest = limb([[24, -146], [38, -116]], 12, sleeve) + limb([[38, -116], [20, -99]], 9, skin) + `<circle cx="19" cy="-98" r="7" fill="${skin}" stroke="${sk}" stroke-width="1.5"/>`;
+    work = lfoTimed(o, "fast", off, `<animateTransform attributeName="transform" type="rotate" values="0 -24 -146;-6 -24 -146;0 -24 -146;5 -24 -146;0 -24 -146" dur="2.4s" repeatCount="indefinite"/>`) +
+      `<line x1="-58" y1="-118" x2="-110" y2="-48" stroke="#5b3a1f" stroke-width="6" stroke-linecap="round"/>` + `<ellipse cx="-110" cy="-46" rx="9" ry="5" fill="#5b3a1f"/>` +
+      limb([[-24, -146], [-44, -118]], 12, sleeve) + limb([[-44, -118], [-64, -106]], 9, skin) + `<circle cx="-65" cy="-105" r="7.5" fill="${skin}" stroke="${sk}" stroke-width="1.5"/>`;
+  } else if (h.pose === "chop") {
+    // (a carrot held flat on the board, the knife coming down by it, once a beat)
+    rest = limb([[24, -146], [42, -120]], 12, sleeve) + limb([[42, -120], [30, -106]], 9, skin) + `<circle cx="29" cy="-105" r="7" fill="${skin}" stroke="${sk}" stroke-width="1.5"/>` +
+           `<path d="M24 -103 L-4 -101 L24 -99 Z" fill="#f28c28" stroke="#c96a12" stroke-width="1"/>`;
+    work = lfoTimed(o, "fast", off, `<animateTransform attributeName="transform" type="translate" values="0 -10;0 0;0 -10" keyTimes="0;0.3;1" dur="0.6s" repeatCount="indefinite"/>`) +
+      limb([[-24, -146], [-44, -124]], 12, sleeve) + limb([[-44, -124], [-26, -112]], 9, skin) + `<circle cx="-25" cy="-111" r="7" fill="${skin}" stroke="${sk}" stroke-width="1.5"/>` +
+      `<path d="M-20 -110 L-4 -104 L-6 -100 L-24 -106 Z" fill="#d6dbe2" stroke="#8a929e" stroke-width="1"/>`;
+  } else if (h.pose === "hammer") {
+    // (the tongs in the left hand hold the work on the anvil; the right arm swings the hammer down onto it,
+    // the hammer striking at the middle of each round, sparks then: smithyRoom)
+    rest = limb([[24, -146], [30, -118]], 13, sleeve) + limb([[30, -118], [-20, -100]], 10, skin) + `<circle cx="-22" cy="-100" r="7.5" fill="${skin}" stroke="${sk}" stroke-width="1.5"/>` +
+           `<path d="M-22 -100 L-84 -88 M-22 -96 L-84 -84" stroke="#2e2e36" stroke-width="3.5" stroke-linecap="round"/>` +
+           `<rect x="-100" y="-90" width="22" height="7" rx="2" fill="#ff8a2e" stroke="#c2410c" stroke-width="1"/>`;
+    work = lfoTimed(o, "fast", off, `<animateTransform attributeName="transform" type="rotate" values="95 -24 -146;0 -24 -146;95 -24 -146" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.6 0 1 1;0 0 0.4 1" dur="0.9s" repeatCount="indefinite"/>`) +
+      limb([[-24, -146], [-50, -128]], 13, sleeve) + limb([[-50, -128], [-70, -116]], 10, skin) + `<circle cx="-71" cy="-115" r="8" fill="${skin}" stroke="${sk}" stroke-width="1.5"/>` +
+      `<line x1="-71" y1="-115" x2="-92" y2="-98" stroke="#6b4426" stroke-width="5" stroke-linecap="round"/>` +
+      `<rect x="-104" y="-104" width="22" height="13" rx="2" transform="rotate(-38 -93 -97)" fill="#4a4a54" stroke="#2a2a30" stroke-width="1.5"/>`;
+  }
+  // the neck and head; the face: eyes, brows, rosy cheeks, a smile (or a smith's moustache and beard)
+  t += rest + `<rect x="-7" y="-168" width="14" height="20" fill="${skin}"/><circle cx="0" cy="-190" r="30" fill="${skin}" stroke="${sk}" stroke-width="2"/>` +
+       [-1, 1].map(e => `<ellipse cx="${e * 11}" cy="-193" rx="3.8" ry="4.8" fill="#2b1d14"/><circle cx="${e * 11 + 1.4}" cy="-195" r="1.4" fill="#ffffff"/>` +
+         `<path d="M${e * 17} -204 Q${e * 11} ${h.beard ? -207 : -209} ${e * 5} -205" fill="none" stroke="${darker(hair)}" stroke-width="${h.beard ? 3.5 : 2.5}" stroke-linecap="round"/>` +
+         `<circle cx="${e * 18}" cy="-181" r="6" fill="#f28b8b" opacity="0.4"/>`).join("") +
+       `<path d="M-2 -187 Q0 -184 2 -187" fill="none" stroke="${sk}" stroke-width="1.5" stroke-linecap="round"/>`;
+  t += h.beard ? `<path d="M-26 -186 Q-28 -150 0 -144 Q28 -150 26 -186 Q20 -172 8 -174 Q0 -168 -8 -174 Q-20 -172 -26 -186 Z" fill="${hair}" stroke="${darker(hair)}" stroke-width="1.5"/>` +
+                 `<path d="M-14 -177 Q0 -184 14 -177 Q0 -172 -14 -177 Z" fill="${darker(hair)}"/>`
+               : `<path d="M-11 -178 Q0 -166 11 -178 Q0 -172 -11 -178 Z" fill="#9b3b3b" stroke="#6b2b2b" stroke-width="1.5" stroke-linejoin="round"/>`;
+  // the hair, and over it a hat: a cook's tall white toque, or a maid's white cap with its frill
+  t += `<path d="M-31 -194 Q-34 -224 0 -224 Q34 -224 31 -194 Q24 -208 10 -210 Q0 -203 -10 -210 Q-24 -208 -31 -194 Z" fill="${hair}" stroke="${darker(hair)}" stroke-width="1.5"/>`;
+  if (h.bun) t += `<circle cx="0" cy="-226" r="11" fill="${hair}" stroke="${darker(hair)}" stroke-width="1.5"/>`;
+  if (h.hat === "toque") t += `<rect x="-24" y="-226" width="48" height="12" rx="3" fill="#ffffff" stroke="#d6d6d6" stroke-width="1.5"/>` +
+    `<path d="M-24 -224 Q-40 -246 -20 -258 Q-10 -276 6 -266 Q26 -278 32 -256 Q44 -242 24 -224 Z" fill="#ffffff" stroke="#d6d6d6" stroke-width="1.5"/>`;
+  if (h.hat === "cap") t += `<path d="M-34 -204 Q-38 -236 0 -238 Q38 -236 34 -204 Q30 -214 0 -216 Q-30 -214 -34 -204 Z" fill="#fbf8f0" stroke="#d9d2c0" stroke-width="1.5"/>` +
+    [...Array(9)].map((_, i) => `<circle cx="${-32 + i * 8}" cy="${f1(-205 - 10 * Math.sin(Math.PI * i / 8))}" r="4" fill="#fbf8f0" stroke="#d9d2c0" stroke-width="1"/>`).join("");
+  return t + `<g>${work}</g>`;
+}
+const KITCHEN_COOKS = [{ skin: "#e9b48c", hair: "#6b3f22", shirt: "#7d95b8", skirt: "#4f6488", apron: "#fbf8f0", hat: "cap", bun: true, pose: "stir" },
+                       { skin: "#b5784e", hair: "#2e1d12", shirt: "#f4f1ea", legs: "#6b5038", apron: "#fbf8f0", hat: "toque", sleeves: "rolled", pose: "chop" }];
+const SMITH = { skin: "#d39a6a", hair: "#3a2a1c", shirt: "#8a7a6a", legs: "#3e3a36", apron: "#7a4a26", long: true, beard: true, sleeves: "rolled", neckerchief: "#b83a2e", pose: "hammer" };
+// The castle's kitchen: a big warm room of stone under oak beams. A great
+// hearth in the back wall, its fire burning; in front of it a black cauldron
+// on its tripod over its own little fire, steaming, that one cook stirs; a
+// domed bread oven, its mouth aglow, loaves on its sill; shelves of crocks,
+// plates and jars; strings of onions and garlic and bunches of herbs; copper
+// pots and pans hanging from a rack on the beam; sacks of flour and barrels;
+// and in front, a long worktable of bread, cheese, vegetables and a board,
+// where the other cook chops carrots, once a beat. Its doors are in its side
+// walls, as the king's room's are, and its way out a sign toward us.
+function kitchenSvg(c, K) {
+  const { y1, W, k, pad, R, P, o } = c, { at, Yh, floor, top, bw, vy } = roomSpace(c);
+  const oak = "#7a5230", oakD = "#4e341d", oakL = "#a87548", copper = "#c46a32", copperD = "#8a4520";
+  const pg = (pts, fill, more = "") => `<polygon points="${pts.map(p => P(...p)).join(" ")}" fill="${fill}"${more}/>`;
+  const fl = mix(ROOM_TONE.kitchen, "#5a4a3a", 0.35);
+  let t = roomShell(c, ROOM_TONE.kitchen, { floor: "#9a7e5c" }) +
+    `<defs><radialGradient id="bg-fireglow"><stop offset="0" stop-color="#ffb347" stop-opacity="0.55"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient></defs>`;
+  const flames = [];
+  // the beams across the ceiling, toward us
+  for (const z of [0, -0.2, -0.42]) { const f = 1 / (1 + z), [xa, ya] = at(-bw, top + 26 * k, z);
+    t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(-2 * xa)}" height="${f1(18 * k * f)}" fill="${oak}" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>`; }
+  // the great hearth, left of the middle: a stone arch, its fire, the dark behind it, a stone mantel
+  const hx = -bw * 0.5, hw = 96 * k, hh = Yh(0.46), [hl, hb] = at(hx - hw, floor), [hr] = at(hx + hw, floor);
+  t += `<rect x="${f1(hl - 16 * k)}" y="${f1(hh - 30 * k)}" width="${f1(hr - hl + 32 * k)}" height="${f1(hb - hh + 30 * k)}" fill="${mix(ROOM_TONE.kitchen, "#ffffff", 0.12)}"/>` +
+       `<path d="M${f1(hl)} ${f1(hb)} V${f1(hh + 30 * k)} Q${f1(hx)} ${f1(hh - 18 * k)} ${f1(hr)} ${f1(hh + 30 * k)} V${f1(hb)} Z" fill="#1e140c"/>` +
+       `<rect x="${f1(hl - 26 * k)}" y="${f1(hh - 42 * k)}" width="${f1(hr - hl + 52 * k)}" height="${f1(14 * k)}" fill="${mix(ROOM_TONE.kitchen, "#ffffff", 0.22)}"/>` +
+       `<rect x="${f1(hx - 50 * k)}" y="${f1(hb - 12 * k)}" width="${f1(100 * k)}" height="${f1(10 * k)}" rx="${f1(5 * k)}" fill="${oakD}"/>`;
+  // (its fire burns in the wall, behind all that stands in front of it)
+  [-0.5, 0, 0.5].forEach((u, j) => { const h = (j === 1 ? 70 : 52) * k, bx = hx + u * 60 * k;
+    t += (`<g transform="translate(${f1(bx)} ${f1(hb - 8 * k)})"><path d="M${f1(-20 * k)} 0 Q${f1(-18 * k)} ${f1(-h * 0.6)} 0 ${f1(-h)} Q${f1(18 * k)} ${f1(-h * 0.6)} ${f1(20 * k)} 0 Z" fill="${j === 1 ? "#ffd05a" : "#ff8a2e"}">` +
+      sceneLfo(o, "fast", (j * 0.31) % 1, "transform", (v, amp) => `1 ${(1 + (0.08 + 0.18 * amp) * v).toFixed(3)}`,
+        `<animateTransform attributeName="transform" type="scale" values="1 1;1 1.12;1 0.92;1 1" dur="${(0.7 + 0.13 * j).toFixed(2)}s" repeatCount="indefinite"/>`, "scale") + `</path></g>`); });
+  flames.push(`<circle cx="${f1(hx)}" cy="${f1(hb - 40 * k)}" r="${f1(150 * k)}" fill="url(#bg-fireglow)">${sceneLfo(o, "slow", 0.2, "opacity", (v, amp) => (0.9 - (0.15 + 0.3 * amp) * (1 + v) / 2).toFixed(2), "")}</circle>`);
+  // strings of onions and garlic, and bunches of herbs, hung along the mantel
+  for (let i = 0; i < 6; i++) { const x = hl - 10 * k + (hr - hl + 20 * k) * (i + 0.5) / 6, y = hh - 28 * k, kind = i % 3;
+    t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x)}" y2="${f1(y + 44 * k)}" stroke="#8a6a3a" stroke-width="${f1(1.5 * k)}"/>` +
+         (kind === 2 ? `<path d="M${f1(x)} ${f1(y + 40 * k)} l${f1(-9 * k)} ${f1(22 * k)} M${f1(x)} ${f1(y + 40 * k)} l0 ${f1(26 * k)} M${f1(x)} ${f1(y + 40 * k)} l${f1(9 * k)} ${f1(22 * k)}" stroke="#4f8a3a" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`
+           : [0, 1, 2, 3].map(j => `<ellipse cx="${f1(x + (j % 2 ? 5 : -5) * k)}" cy="${f1(y + (14 + 9 * j) * k)}" rx="${f1(7 * k)}" ry="${f1(6 * k)}" fill="${kind ? "#f1e6cf" : "#c98a3a"}" stroke="${kind ? "#cbbd9e" : "#8a5a20"}" stroke-width="${f1(1 * k)}"/>`).join("")); }
+  // the bread oven, right of the middle: a dome of brick, its mouth aglow, loaves on its sill
+  const ox = bw * 0.58, orad = 80 * k, [, ob] = at(0, floor);
+  t += `<rect x="${f1(ox - orad - 10 * k)}" y="${f1(ob - 70 * k)}" width="${f1(2 * orad + 20 * k)}" height="${f1(70 * k)}" fill="${mix(ROOM_TONE.kitchen, "#000000", 0.1)}"/>` +
+       `<path d="M${f1(ox - orad)} ${f1(ob - 70 * k)} A${f1(orad)} ${f1(orad * 0.9)} 0 0 1 ${f1(ox + orad)} ${f1(ob - 70 * k)} Z" fill="#b5653f" stroke="#8a4528" stroke-width="${f1(2 * k)}"/>` +
+       [0.3, 0.6].map(u => `<path d="M${f1(ox - orad * Math.sqrt(1 - u * u))} ${f1(ob - 70 * k - orad * 0.9 * u)} H${f1(ox + orad * Math.sqrt(1 - u * u))}" stroke="#8a4528" stroke-width="${f1(1.5 * k)}"/>`).join("") +
+       `<path d="M${f1(ox - 28 * k)} ${f1(ob - 70 * k)} V${f1(ob - 96 * k)} Q${f1(ox)} ${f1(ob - 124 * k)} ${f1(ox + 28 * k)} ${f1(ob - 96 * k)} V${f1(ob - 70 * k)} Z" fill="#2a160c"/>` +
+       `<rect x="${f1(ox - orad - 14 * k)}" y="${f1(ob - 74 * k)}" width="${f1(2 * orad + 28 * k)}" height="${f1(8 * k)}" fill="${oakD}"/>` +
+       [-0.7, -0.45, 0.5, 0.75].map(u => `<ellipse cx="${f1(ox + u * orad)}" cy="${f1(ob - 81 * k)}" rx="${f1(13 * k)}" ry="${f1(8 * k)}" fill="#d9a05a" stroke="#a8702e" stroke-width="${f1(1.2 * k)}"/>` +
+         `<path d="M${f1(ox + u * orad - 6 * k)} ${f1(ob - 84 * k)} l${f1(4 * k)} ${f1(-3 * k)} M${f1(ox + u * orad + 1 * k)} ${f1(ob - 85 * k)} l${f1(4 * k)} ${f1(-3 * k)}" stroke="#a8702e" stroke-width="${f1(1.2 * k)}"/>`).join("");
+  flames.push(`<ellipse cx="${f1(ox)}" cy="${f1(ob - 84 * k)}" rx="${f1(22 * k)}" ry="${f1(12 * k)}" fill="#ff9a3c" opacity="0.8">${sceneLfo(o, "slow", 0.6, "opacity", (v, amp) => (0.8 - (0.1 + 0.3 * amp) * (1 + v) / 2).toFixed(2), "")}</ellipse>`);
+  // shelves on the back wall between them: crocks, plates on edge, jars
+  for (const [yy, kind] of [[Yh(0.72), "plates"], [Yh(0.56), "crocks"]]) { const xa = -bw * 0.12, xb = bw * 0.3;
+    t += `<rect x="${f1(xa)}" y="${f1(yy)}" width="${f1(xb - xa)}" height="${f1(7 * k)}" fill="${oak}" stroke="${oakD}" stroke-width="${f1(1 * k)}"/>`;
+    for (let i = 0; i < 6; i++) { const x = xa + (xb - xa) * (i + 0.5) / 6;
+      t += kind === "plates" ? `<ellipse cx="${f1(x)}" cy="${f1(yy - 15 * k)}" rx="${f1(13 * k)}" ry="${f1(15 * k)}" fill="#f4efe4" stroke="#5a7ab0" stroke-width="${f1(2 * k)}"/><circle cx="${f1(x)}" cy="${f1(yy - 15 * k)}" r="${f1(6 * k)}" fill="none" stroke="#5a7ab0" stroke-width="${f1(1.2 * k)}"/>`
+        : `<path d="M${f1(x - 10 * k)} ${f1(yy)} Q${f1(x - 14 * k)} ${f1(yy - 18 * k)} ${f1(x - 7 * k)} ${f1(yy - 26 * k)} H${f1(x + 7 * k)} Q${f1(x + 14 * k)} ${f1(yy - 18 * k)} ${f1(x + 10 * k)} ${f1(yy)} Z" fill="${["#c98a5a", "#8aa0b8", "#d8c08a"][i % 3]}" stroke="${oakD}" stroke-width="${f1(1 * k)}"/>`; } }
+  // copper pots and pans on hooks along a rack hung from the middle beam
+  { const z = -0.2, f = 1 / (1 + z), [ra, ry] = at(-bw * 0.42, top + 70 * k, z), [rb] = at(bw * 0.42, top + 70 * k, z), [, by] = at(0, top + 44 * k, z);
+    t += [ra, rb].map(x => `<line x1="${f1(x)}" y1="${f1(by)}" x2="${f1(x)}" y2="${f1(ry)}" stroke="#3a3a44" stroke-width="${f1(2 * k)}"/>`).join("") +
+         `<rect x="${f1(ra)}" y="${f1(ry)}" width="${f1(rb - ra)}" height="${f1(6 * k * f)}" fill="#3a3a44"/>`;
+    for (let i = 0; i < 7; i++) { const x = ra + (rb - ra) * (i + 0.5) / 7, d = (16 + 6 * (i % 3)) * k * f, hang = (10 + 8 * (i % 2)) * k * f, yy = ry + 6 * k * f + hang;
+      t += `<line x1="${f1(x)}" y1="${f1(ry + 6 * k * f)}" x2="${f1(x)}" y2="${f1(yy)}" stroke="#3a3a44" stroke-width="${f1(1.5 * k)}"/>` +
+           (i % 2 ? `<path d="M${f1(x - d)} ${f1(yy + 4 * k * f)} H${f1(x + d)} V${f1(yy + d * 1.2)} Q${f1(x)} ${f1(yy + d * 1.5)} ${f1(x - d)} ${f1(yy + d * 1.2)} Z" fill="${copper}" stroke="${copperD}" stroke-width="${f1(1.5 * k)}"/>`
+                  : `<circle cx="${f1(x)}" cy="${f1(yy + d)}" r="${f1(d)}" fill="${copper}" stroke="${copperD}" stroke-width="${f1(1.5 * k)}"/><line x1="${f1(x)}" y1="${f1(yy)}" x2="${f1(x)}" y2="${f1(yy + 2 * k)}" stroke="${copperD}" stroke-width="${f1(4 * k)}"/>`) +
+           `<path d="M${f1(x - d * 0.5)} ${f1(yy + d * 0.7)} q${f1(d * 0.2)} ${f1(-d * 0.3)} ${f1(d * 0.4)} 0" stroke="#f0b088" stroke-width="${f1(1.5 * k)}" fill="none" opacity="0.7"/>`; } }
+  // sacks of flour and barrels by the back wall, right
+  { const [bx, by] = at(bw * 0.92, floor, -0.02), f = 1.02;
+    for (const [dx, dy, sc] of [[-40, 0, 1], [0, 0, 1.1]]) t += `<rect x="${f1(bx + dx * k - 20 * k * sc)}" y="${f1(by + dy - 60 * k * sc)}" width="${f1(40 * k * sc)}" height="${f1(60 * k * sc)}" rx="${f1(10 * k)}" fill="#8a5a32" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>` +
+      [0.2, 0.8].map(u => `<line x1="${f1(bx + dx * k - 20 * k * sc)}" y1="${f1(by - 60 * k * sc * (1 - u))}" x2="${f1(bx + dx * k + 20 * k * sc)}" y2="${f1(by - 60 * k * sc * (1 - u))}" stroke="#3a3a44" stroke-width="${f1(3 * k)}"/>`).join("");
+    t += `<path d="M${f1(bx - 96 * k)} ${f1(by)} Q${f1(bx - 104 * k)} ${f1(by - 40 * k)} ${f1(bx - 84 * k)} ${f1(by - 52 * k)} Q${f1(bx - 72 * k)} ${f1(by - 58 * k)} ${f1(bx - 62 * k)} ${f1(by - 50 * k)} Q${f1(bx - 52 * k)} ${f1(by - 36 * k)} ${f1(bx - 58 * k)} ${f1(by)} Z" fill="#efe6d2" stroke="#c9b993" stroke-width="${f1(1.5 * k)}"/>` +
+         `<text x="${f1(bx - 77 * k)}" y="${f1(by - 18 * k)}" font-size="${f1(11 * k)}" text-anchor="middle" fill="#8a7a5a" font-family="serif">FLOUR</text>`; }
+  // the cauldron cook: in front of the hearth, stirring the cauldron on its tripod over its little fire
+  const cz = -0.16, cf = 1 / (1 + cz), cs = 1.05 * k * cf, [cxx, cfy] = at(hx + 150 * k, floor, cz), potX = cxx - 110 * cs, potY = cfy - 46 * cs;   // (the pot's mouth, where her ladle dips)
+  t += [-1, 1, 0].map(e => `<line x1="${f1(potX)}" y1="${f1(potY - 60 * cs)}" x2="${f1(potX + e * 46 * cs)}" y2="${f1(cfy + (e ? 0 : -8 * cs))}" stroke="#2a2a30" stroke-width="${f1(3 * cs)}"/>`).join("") +
+       `<rect x="${f1(potX - 22 * cs)}" y="${f1(cfy - 8 * cs)}" width="${f1(44 * cs)}" height="${f1(7 * cs)}" rx="${f1(3 * cs)}" fill="${oakD}"/>`;
+  t += `<g transform="translate(${f1(potX)} ${f1(cfy - 6 * cs)})"><path d="M${f1(-16 * cs)} 0 Q0 ${f1(-34 * cs)} ${f1(16 * cs)} 0 Z" fill="#ff8a2e">` +
+    sceneLfo(o, "fast", 0.7, "transform", (v, amp) => `1 ${(1 + (0.1 + 0.2 * amp) * v).toFixed(3)}`, `<animateTransform attributeName="transform" type="scale" values="1 1;1 1.2;1 0.9;1 1" dur="0.8s" repeatCount="indefinite"/>`, "scale") + `</path></g>`;
+  // (a shallow pot, hung clear above its fire)
+  t += `<path d="M${f1(potX - 40 * cs)} ${f1(potY)} Q${f1(potX - 42 * cs)} ${f1(potY + 22 * cs)} ${f1(potX)} ${f1(potY + 24 * cs)} Q${f1(potX + 42 * cs)} ${f1(potY + 22 * cs)} ${f1(potX + 40 * cs)} ${f1(potY)} Z" fill="#26262c" stroke="#111114" stroke-width="${f1(2 * cs)}"/>` +
+       `<ellipse cx="${f1(potX)}" cy="${f1(potY)}" rx="${f1(40 * cs)}" ry="${f1(10 * cs)}" fill="#3a3a42"/><ellipse cx="${f1(potX)}" cy="${f1(potY + 2 * cs)}" rx="${f1(34 * cs)}" ry="${f1(7 * cs)}" fill="#c98a3a"/>` +
+       `<g transform="translate(${f1(cxx)} ${f1(cfy)}) scale(${cs.toFixed(4)})">${helperSvg(KITCHEN_COOKS[0], o, 0.1)}</g>`;
+  // (its steam, rising and fading, with the slow LFO)
+  flames.push([0, 1, 2].map(j => `<path d="M${f1(potX + (j - 1) * 14 * cs)} ${f1(potY - 6 * cs)} q${f1(-10 * cs)} ${f1(-20 * cs)} 0 ${f1(-40 * cs)} q${f1(10 * cs)} ${f1(-20 * cs)} 0 ${f1(-40 * cs)}" fill="none" stroke="#ffffff" stroke-width="${f1(6 * cs)}" stroke-linecap="round" opacity="0.4">` +
+    lfoTimed(o, "slow", j / 3, `<animate attributeName="opacity" values="0;0.5;0" dur="${(3 + j * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`) + `</path>`).join(""));
+  // the worktable, in front, right of the middle: the other cook behind it, chopping carrots on a board
+  const tz0 = -0.24, tz1 = -0.4, tx0 = bw * 0.02, tx1 = bw * 0.72, tH = floor - 118 * k;
+  const mz = -0.1, mf = 1 / (1 + mz), ms = 1.05 * k * mf, [mx, my] = at((tx0 + tx1) / 2 + 10 * k, floor, mz);
+  t += `<g transform="translate(${f1(mx)} ${f1(my)}) scale(${ms.toFixed(4)})">${helperSvg(KITCHEN_COOKS[1], o, 0.5)}</g>`;
+  for (const [x, z] of [[tx0 + 10 * k, tz0], [tx1 - 10 * k, tz0], [tx0 + 10 * k, tz1], [tx1 - 10 * k, tz1]]) { const [lx, ly] = at(x, tH, z), [, lb] = at(x, floor, z), f = 1 / (1 + z);
+    t += `<rect x="${f1(lx - 6 * k * f)}" y="${f1(ly)}" width="${f1(12 * k * f)}" height="${f1(lb - ly)}" fill="${oakD}"/>`; }
+  t += pg([at(tx0, tH, tz0), at(tx1, tH, tz0), at(tx1, tH, tz1), at(tx0, tH, tz1)], oakL, ` stroke="${oakD}" stroke-width="${f1(1.5 * k)}"`) +
+       pg([at(tx0, tH, tz1), at(tx1, tH, tz1), at(tx1, tH + 14 * k, tz1), at(tx0, tH + 14 * k, tz1)], oak) +
+       [0.25, 0.5, 0.75].map(u => { const z = tz0 + (tz1 - tz0) * u; return `<line x1="${f1(at(tx0, tH, z)[0])}" y1="${f1(at(tx0, tH, z)[1])}" x2="${f1(at(tx1, tH, z)[0])}" y2="${f1(at(tx1, tH, z)[1])}" stroke="${oak}" stroke-width="${f1(1 * k)}"/>`; }).join("");
+  // what is on it: the board and carrots by the cook's hands, loaves, a round of cheese, a cabbage, a bowl of apples
+  const on = (x, z) => at(x, tH, z), [bdx, bdy] = on(mx - 2 * k, tz0 - 0.03);
+  t += `<rect x="${f1(bdx - 34 * k)}" y="${f1(bdy - 6 * k)}" width="${f1(64 * k)}" height="${f1(12 * k)}" rx="${f1(3 * k)}" fill="#d8b07a" stroke="#a8804a" stroke-width="${f1(1 * k)}"/>` +
+       [0, 1, 2, 3].map(i => `<circle cx="${f1(bdx - 26 * k + i * 6 * k)}" cy="${f1(bdy)}" r="${f1(2.6 * k)}" fill="#f28c28"/>`).join("");
+  for (const [u, w, kind] of [[0.12, 0.3, "loaf"], [0.32, 0.65, "cheese"], [0.86, 0.35, "cabbage"], [0.88, 0.75, "apples"], [0.1, 0.72, "loaf"]]) {
+    const [x, y] = on(tx0 + (tx1 - tx0) * u, tz0 + (tz1 - tz0) * w), f = 1 / (1 + tz0 + (tz1 - tz0) * w), q = k * f;
+    t += kind === "loaf" ? `<ellipse cx="${f1(x)}" cy="${f1(y - 8 * q)}" rx="${f1(22 * q)}" ry="${f1(11 * q)}" fill="#d9a05a" stroke="#a8702e" stroke-width="${f1(1.2 * q)}"/><path d="M${f1(x - 12 * q)} ${f1(y - 12 * q)} l${f1(6 * q)} ${f1(-5 * q)} M${f1(x)} ${f1(y - 13 * q)} l${f1(6 * q)} ${f1(-5 * q)}" stroke="#a8702e" stroke-width="${f1(1.4 * q)}"/>`
+      : kind === "cheese" ? `<path d="M${f1(x - 20 * q)} ${f1(y)} V${f1(y - 14 * q)} A${f1(20 * q)} ${f1(6 * q)} 0 0 1 ${f1(x + 20 * q)} ${f1(y - 14 * q)} V${f1(y)} Z" fill="#f2c94c" stroke="#c9a02a" stroke-width="${f1(1.2 * q)}"/><ellipse cx="${f1(x)}" cy="${f1(y - 14 * q)}" rx="${f1(20 * q)}" ry="${f1(6 * q)}" fill="#f7d96a" stroke="#c9a02a" stroke-width="${f1(1 * q)}"/>`
+      : kind === "cabbage" ? `<circle cx="${f1(x)}" cy="${f1(y - 13 * q)}" r="${f1(14 * q)}" fill="#7cb342" stroke="#4f7a2a" stroke-width="${f1(1.2 * q)}"/><path d="M${f1(x - 8 * q)} ${f1(y - 20 * q)} Q${f1(x)} ${f1(y - 8 * q)} ${f1(x + 8 * q)} ${f1(y - 20 * q)}" fill="none" stroke="#4f7a2a" stroke-width="${f1(1.2 * q)}"/>`
+      : `<ellipse cx="${f1(x)}" cy="${f1(y - 6 * q)}" rx="${f1(22 * q)}" ry="${f1(8 * q)}" fill="#8a5a32"/>` + [-10, 0, 10, -5, 5].map((dx, i) => `<circle cx="${f1(x + dx * q)}" cy="${f1(y - (i < 3 ? 12 : 19) * q)}" r="${f1(6 * q)}" fill="${i % 2 ? "#e53935" : "#7cb342"}"/>`).join("");
+  }
+  return t + flames.join("");
+}
+// The smithy: dark and very rustic. Rough stone, black with soot, under old
+// timbers; the forge in the back wall, its coals glowing and breathing with
+// the slow LFO, a hood over it to a chimney, its bellows working; the smith
+// at the anvil on its stump, beating a glowing bar with his hammer, once
+// round the quick LFO, the sparks flying off it as the hammer strikes; a
+// quench barrel, steaming; tongs, hammers and horseshoes on the wall; a rack
+// of swords and a shield; a heap of coal. The room's light is the forge's.
+function smithySvg(c, K) {
+  const { y1, W, k, pad, P, o } = c, { at, Yh, floor, top, bw, vy } = roomSpace(c);
+  const oak = "#5a3a20", oakD = "#3a2412", iron = "#3a3a44", ironL = "#8a8f9a";
+  let t = roomShell(c, ROOM_TONE.smithy, { floor: "#4a4038" }) +
+    `<defs><radialGradient id="bg-forge"><stop offset="0" stop-color="#ff7a1a" stop-opacity="0.7"/><stop offset="0.5" stop-color="#ff5a0a" stop-opacity="0.25"/><stop offset="1" stop-color="#ff5a0a" stop-opacity="0"/></radialGradient>` +
+    `<radialGradient id="bg-coals"><stop offset="0" stop-color="#fff0a0"/><stop offset="0.4" stop-color="#ff9a2e"/><stop offset="1" stop-color="#a0280a"/></radialGradient></defs>`;
+  const glow = [];
+  // soot up the walls, and old timbers across the ceiling
+  t += `<rect x="${f1(-bw)}" y="${f1(top)}" width="${f1(2 * bw)}" height="${f1(floor - top)}" fill="#000000" opacity="0.25"/>`;
+  for (const z of [0, -0.22, -0.46]) { const f = 1 / (1 + z), [xa, ya] = at(-bw, top + 24 * k, z);
+    t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(-2 * xa)}" height="${f1(20 * k * f)}" fill="${oak}" stroke="${oakD}" stroke-width="${f1(2 * k)}"/>`; }
+  // the forge: a brick hearth, its coals, a hood up to the chimney, the bellows at its side
+  const fx = -bw * 0.42, fw = 104 * k, [, fb] = at(0, floor), fy = fb - 92 * k;
+  t += `<path d="M${f1(fx - fw * 0.8)} ${f1(fy - 50 * k)} L${f1(fx - fw * 0.3)} ${f1(top)} H${f1(fx + fw * 0.3)} L${f1(fx + fw * 0.8)} ${f1(fy - 50 * k)} Z" fill="#2a2420" stroke="#1a1612" stroke-width="${f1(2 * k)}"/>` +
+       `<rect x="${f1(fx - fw)}" y="${f1(fy)}" width="${f1(2 * fw)}" height="${f1(fb - fy)}" fill="#7a3a26" stroke="#4a2014" stroke-width="${f1(2 * k)}"/>` +
+       [1, 2, 3].map(r => `<line x1="${f1(fx - fw)}" y1="${f1(fy + (fb - fy) * r / 4)}" x2="${f1(fx + fw)}" y2="${f1(fy + (fb - fy) * r / 4)}" stroke="#4a2014" stroke-width="${f1(1.5 * k)}"/>`).join("") +
+       `<rect x="${f1(fx - fw - 6 * k)}" y="${f1(fy - 8 * k)}" width="${f1(2 * fw + 12 * k)}" height="${f1(10 * k)}" fill="#5a2a1a"/>`;
+  glow.push(`<ellipse cx="${f1(fx)}" cy="${f1(fy - 6 * k)}" rx="${f1(fw * 0.8)}" ry="${f1(12 * k)}" fill="url(#bg-coals)">${sceneLfo(o, "slow", 0, "opacity", (v, amp) => (1 - (0.15 + 0.3 * amp) * (1 + v) / 2).toFixed(2),
+      `<animate attributeName="opacity" values="1;0.75;1" dur="3.2s" repeatCount="indefinite"/>`)}</ellipse>` +
+    `<circle cx="${f1(fx)}" cy="${f1(fy - 10 * k)}" r="${f1(260 * k)}" fill="url(#bg-forge)">${sceneLfo(o, "slow", 0, "opacity", (v, amp) => (0.95 - (0.15 + 0.3 * amp) * (1 + v) / 2).toFixed(2),
+      `<animate attributeName="opacity" values="0.95;0.7;0.95" dur="3.2s" repeatCount="indefinite"/>`)}</circle>`);
+  // (the bellows, to the forge's left, its top board rising and falling with the slow LFO)
+  { const bx = fx - fw - 54 * k, by = fy + 20 * k;
+    t += `<path d="M${f1(bx - 40 * k)} ${f1(by)} L${f1(bx + 40 * k)} ${f1(by)} L${f1(bx + 52 * k)} ${f1(by - 6 * k)} L${f1(bx + 40 * k)} ${f1(by + 10 * k)} L${f1(bx - 40 * k)} ${f1(by + 10 * k)} Z" fill="${oak}"/>` +
+         `<g><path d="M${f1(bx - 40 * k)} ${f1(by)} Q${f1(bx - 46 * k)} ${f1(by - 26 * k)} ${f1(bx - 34 * k)} ${f1(by - 30 * k)} L${f1(bx + 40 * k)} ${f1(by - 4 * k)} Z" fill="#6b4a32" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>` +
+         `<line x1="${f1(bx - 34 * k)}" y1="${f1(by - 30 * k)}" x2="${f1(bx - 60 * k)}" y2="${f1(by - 70 * k)}" stroke="${oak}" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
+         lfoTimed(o, "slow", 0.3, `<animateTransform attributeName="transform" type="rotate" values="0 ${f1(bx + 40 * k)} ${f1(by - 4 * k)};-9 ${f1(bx + 40 * k)} ${f1(by - 4 * k)};0 ${f1(bx + 40 * k)} ${f1(by - 4 * k)}" dur="3.2s" repeatCount="indefinite"/>`) + `</g>`; }
+  // the wall's right: tongs, hammers and horseshoes on pegs; a rack of swords; a round shield
+  { const y = Yh(0.62);
+    t += `<rect x="${f1(bw * 0.05)}" y="${f1(y)}" width="${f1(bw * 0.5)}" height="${f1(8 * k)}" fill="${oak}"/>`;
+    for (let i = 0; i < 7; i++) { const x = bw * 0.1 + bw * 0.42 * i / 6;
+      t += i % 3 === 0 ? `<path d="M${f1(x - 3 * k)} ${f1(y + 8 * k)} L${f1(x - 8 * k)} ${f1(y + 70 * k)} M${f1(x + 3 * k)} ${f1(y + 8 * k)} L${f1(x + 8 * k)} ${f1(y + 70 * k)}" stroke="${iron}" stroke-width="${f1(3 * k)}" stroke-linecap="round"/>`
+        : i % 3 === 1 ? `<line x1="${f1(x)}" y1="${f1(y + 8 * k)}" x2="${f1(x)}" y2="${f1(y + 58 * k)}" stroke="#6b4426" stroke-width="${f1(4 * k)}"/><rect x="${f1(x - 10 * k)}" y="${f1(y + 54 * k)}" width="${f1(20 * k)}" height="${f1(12 * k)}" rx="${f1(2 * k)}" fill="${iron}"/>`
+        : `<path d="M${f1(x - 11 * k)} ${f1(y + 40 * k)} A${f1(11 * k)} ${f1(13 * k)} 0 1 1 ${f1(x + 11 * k)} ${f1(y + 40 * k)}" fill="none" stroke="${ironL}" stroke-width="${f1(5 * k)}"/>`; } }
+  { const rx = bw * 0.78, ry = Yh(0.3);
+    t += `<rect x="${f1(rx - 50 * k)}" y="${f1(ry)}" width="${f1(100 * k)}" height="${f1(8 * k)}" fill="${oak}"/><rect x="${f1(rx - 50 * k)}" y="${f1(ry + 90 * k)}" width="${f1(100 * k)}" height="${f1(8 * k)}" fill="${oak}"/>`;
+    for (const dx of [-30, 0, 30]) t += `<path d="M${f1(rx + dx * k)} ${f1(ry - 40 * k)} L${f1(rx + dx * k - 4 * k)} ${f1(ry + 110 * k)} L${f1(rx + dx * k + 4 * k)} ${f1(ry + 110 * k)} Z" fill="#c9ced6" stroke="#6a707c" stroke-width="${f1(1 * k)}"/>` +
+      `<rect x="${f1(rx + dx * k - 12 * k)}" y="${f1(ry - 44 * k)}" width="${f1(24 * k)}" height="${f1(5 * k)}" fill="#8a6a2a"/><rect x="${f1(rx + dx * k - 2.5 * k)}" y="${f1(ry - 64 * k)}" width="${f1(5 * k)}" height="${f1(20 * k)}" fill="#5a3a20"/>`;
+    const [sx, sy] = at(bw * 0.4, Yh(0.32));
+    t += `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(34 * k)}" fill="${castleFlagFill(K, 0, 8 * k)}" stroke="#8a8f9a" stroke-width="${f1(5 * k)}"/><circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(8 * k)}" fill="#c9ced6"/>`; }
+  // a heap of coal by the forge
+  { const [cx, cy] = at(fx + fw + 40 * k, floor, -0.05);
+    t += `<path d="M${f1(cx - 50 * k)} ${f1(cy)} Q${f1(cx - 30 * k)} ${f1(cy - 40 * k)} ${f1(cx)} ${f1(cy - 44 * k)} Q${f1(cx + 34 * k)} ${f1(cy - 36 * k)} ${f1(cx + 50 * k)} ${f1(cy)} Z" fill="#1c1c22"/>` +
+         [...Array(9)].map((_, i) => `<circle cx="${f1(cx - 38 * k + i * 9.5 * k)}" cy="${f1(cy - 8 * k - 22 * k * Math.sin(Math.PI * (i + 0.5) / 9))}" r="${f1(5 * k)}" fill="#2e2e36"/>`).join(""); }
+  // the quench barrel, front right, steaming with the slow LFO
+  { const z = -0.36, f = 1 / (1 + z), q = k * f, [bx, by] = at(bw * 0.5, floor, z);
+    t += `<path d="M${f1(bx - 34 * q)} ${f1(by)} Q${f1(bx - 40 * q)} ${f1(by - 40 * q)} ${f1(bx - 34 * q)} ${f1(by - 80 * q)} H${f1(bx + 34 * q)} Q${f1(bx + 40 * q)} ${f1(by - 40 * q)} ${f1(bx + 34 * q)} ${f1(by)} Z" fill="${oak}" stroke="${oakD}" stroke-width="${f1(2 * q)}"/>` +
+         [0.15, 0.85].map(u => `<line x1="${f1(bx - 37 * q)}" y1="${f1(by - 80 * q * u)}" x2="${f1(bx + 37 * q)}" y2="${f1(by - 80 * q * u)}" stroke="${iron}" stroke-width="${f1(4 * q)}"/>`).join("") +
+         `<ellipse cx="${f1(bx)}" cy="${f1(by - 80 * q)}" rx="${f1(34 * q)}" ry="${f1(8 * q)}" fill="#2a4a5a"/>`;
+    glow.push([0, 1].map(j => `<path d="M${f1(bx + (j ? 10 : -10) * q)} ${f1(by - 84 * q)} q${f1(-10 * q)} ${f1(-20 * q)} 0 ${f1(-40 * q)} q${f1(10 * q)} ${f1(-20 * q)} 0 ${f1(-40 * q)}" fill="none" stroke="#e8e8f0" stroke-width="${f1(6 * q)}" stroke-linecap="round" opacity="0.3">` +
+      lfoTimed(o, "slow", 0.4 + j / 2, `<animate attributeName="opacity" values="0;0.4;0" dur="${(3.4 + j).toFixed(1)}s" repeatCount="indefinite"/>`) + `</path>`).join("")); }
+  // the anvil on its stump, the smith beside it, striking the glowing bar on it; the sparks as the hammer lands
+  const z = -0.2, f = 1 / (1 + z), s = 1.08 * k * f, [ax, ay] = at(bw * 0.08, floor, z), hitX = ax, sx = ax + 96 * s, hitY = ay - 86 * s;   // (the smith stands so his strike, at (-96, -86) of his own, lands on the anvil)
+  t += `<path d="M${f1(ax - 26 * s)} ${f1(ay)} L${f1(ax - 22 * s)} ${f1(ay - 50 * s)} H${f1(ax + 22 * s)} L${f1(ax + 26 * s)} ${f1(ay)} Z" fill="#6b4a32" stroke="${oakD}" stroke-width="${f1(2 * s)}"/>` +
+       `<ellipse cx="${f1(ax)}" cy="${f1(ay - 50 * s)}" rx="${f1(22 * s)}" ry="${f1(5 * s)}" fill="#8a6a4a"/>` +
+       `<path d="M${f1(ax - 18 * s)} ${f1(ay - 50 * s)} L${f1(ax - 12 * s)} ${f1(ay - 64 * s)} H${f1(ax + 12 * s)} L${f1(ax + 18 * s)} ${f1(ay - 50 * s)} Z" fill="#2a2a30"/>` +
+       `<path d="M${f1(ax - 40 * s)} ${f1(ay - 72 * s)} Q${f1(ax - 56 * s)} ${f1(ay - 76 * s)} ${f1(ax - 64 * s)} ${f1(ay - 84 * s)} H${f1(ax + 34 * s)} V${f1(ay - 72 * s)} H${f1(ax + 12 * s)} V${f1(ay - 64 * s)} H${f1(ax - 12 * s)} V${f1(ay - 72 * s)} Z" fill="#3a3a44" stroke="#1a1a20" stroke-width="${f1(1.5 * s)}"/>` +
+       `<g transform="translate(${f1(sx)} ${f1(ay)}) scale(${s.toFixed(4)})">${helperSvg(SMITH, o, 0)}</g>`;
+  // (the sparks: a burst off the struck bar, bright at the strike, the middle of each round, gone soon after)
+  glow.push(`<g opacity="0">` + lfoTimed(o, "fast", 0, `<animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.48;0.5;0.72;1" dur="0.9s" repeatCount="indefinite"/>`) +
+    [...Array(9)].map((_, i) => { const a = -Math.PI * (0.1 + 0.8 * i / 8), r1 = 10 * s, r2 = (34 + 18 * (i % 3)) * s;
+      return `<line x1="${f1(hitX + Math.cos(a) * r1)}" y1="${f1(hitY + Math.sin(a) * r1)}" x2="${f1(hitX + Math.cos(a) * r2)}" y2="${f1(hitY + Math.sin(a) * r2)}" stroke="${i % 2 ? "#ffd05a" : "#ff9a2e"}" stroke-width="${f1(2.5 * s)}" stroke-linecap="round"/>`; }).join("") +
+    `<circle cx="${f1(hitX)}" cy="${f1(hitY)}" r="${f1(12 * s)}" fill="#fff0a0" opacity="0.8"/></g>`);
+  // the dark: the room's light is the forge's
+  t += `<rect x="${f1(c.x0 - pad)}" y="${f1(c.y0 - pad)}" width="${f1(c.W + 2 * pad)}" height="${f1(c.H + 2 * pad)}" fill="#0a0806" opacity="0.42"/>`;
+  return t + glow.join("");
+}
 // the king's room: a red carpet to a throne on a dais, banners in the
 // owner's color, crossed swords and shields, a stained-glass window, a
 // chandelier, suits of armor at the sides, a chest of gold; and through its
@@ -9423,6 +9671,8 @@ const SCENE_LFO_THINGS = {
   "castleroom:catroom": { fast: "🔥 the cat room's fire", slow: "🎾 the cat toys swinging" },
   "castleroom:stable": { fast: "🐔 the hens pecking", slow: "✨ the dust in the sunbeam" },
   "castleroom:dining": { fast: "🕯️ the candle flames", slow: "🔥 the torches' and the fire's glow" },
+  "castleroom:kitchen": { fast: "🔪 the cooks stirring and chopping, the fires", slow: "♨️ the steam, the oven's glow" },
+  "castleroom:smithy": { fast: "🔨 the smith's hammer and the sparks", slow: "🔥 the forge's glow, the bellows" },
 };
 const sceneLfoThings = b => SCENE_LFO_THINGS[b.kind === "castleroom" ? "castleroom:" + (roomHereNowOf(b)[1] ?? "king") : b.kind] || {};
 // the cats in the room the friend is in, when it is a cat room; the horses, when it is a stable
