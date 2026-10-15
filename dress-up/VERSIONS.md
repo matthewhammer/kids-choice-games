@@ -4,6 +4,7 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **Fixed: the stable's horseshoes, saddles and bridle lie on their walls.** They were drawn face-on, as if stuck to the picture; now each is laid flat on its side wall in perspective, narrower and slanted as the wall runs toward us.
 - **Fixed: the castle's gate, well and hay cart.** The portcullis's bars started below the top of its arch and had nothing across them; now they fill the arch, with bars across too. The well's stones and the hay cart's straws stay on the well and on the heap.
 - **Fixed: the deep dungeon's hanging cage, and the greenhouse's monstera leaves.** The cage's bars stuck up past its dome or stopped short of it; now each starts on the dome. The monstera's slits started in the air beside the leaf; now each cuts in from the leaf's own edge.
 - **Fixed: the cat room's window seat has three panels side by side,** no longer overlapping.

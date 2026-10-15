@@ -4679,10 +4679,16 @@ function roomFrame(c) {
 // wall is X = ±bw), as drawn: at(X, Y, z); a height on the back wall, as a
 // share of the wall from the floor: Yh(h). The cat room, the stable and the
 // side doors place everything with it.
+// onWall(sd, Y, z): a transform that lays a small drawing flat on a side wall
+// (sd: -1 the left, 1 the right) at height Y and depth z: its own x runs along
+// the wall toward us, its y down the wall, in units of k, foreshortened as the
+// wall is (a unit toward us is z's 1/800 of the way: the side doors' scale)
 function roomSpace(c) {
   const { floor, top, bw, vy, out } = roomFrame(c), wh = floor - top;
   const at = (X, Y, z = 0) => { const f = 1 / (1 + z); return [X * f, vy + (Y - vy) * f]; };
-  return { floor, top, bw, vy, out, wh, at, Yh: h => floor - h * wh };
+  const onWall = (sd, Y, z) => { const f = 1 / (1 + z), [x0, y0] = at(sd * bw, Y, z), q = f * f / 800;
+    return `matrix(${(sd * bw * q).toFixed(4)} ${((Y - vy) * q).toFixed(4)} 0 ${(f * c.k).toFixed(4)} ${f1(x0)} ${f1(y0)})`; };
+  return { floor, top, bw, vy, out, wh, at, Yh: h => floor - h * wh, onWall };
 }
 // a torch on the wall: a bracket, a cup, a flame that flickers, a warm glow
 // (o, the scene's options: the flame then flickers with the scene's quick LFO
@@ -5666,17 +5672,17 @@ function horseHead(H, W, i, halter) {
 // bridles on the side walls; straw all over the floor, a water trough, a
 // heap of hay with a pitchfork in it, buckets, and two hens pecking about.
 function stablePlaces(c) {
-  const { k } = c, { floor, top, bw, vy, wh, at, Yh } = roomSpace(c);
+  const { k } = c, { floor, top, bw, vy, wh, at, Yh, onWall } = roomSpace(c);
   const hb = 0.205 * bw;
   // (the stalls' middles, left to right, and the order horses take them: the outer ones first, clear of the friend)
   const bays = [-0.72, -0.24, 0.24, 0.72].map(u => u * bw), order = [0, 3, 1, 2];
   const doorTop = Yh(0.3), lintel = Yh(0.64);
   const rail = X => { const [xa, ya] = at(X - hb, doorTop, -0.01), [xb] = at(X + hb, doorTop, -0.01);
     return `<rect x="${f1(xa)}" y="${f1(ya - 2 * k)}" width="${f1(xb - xa)}" height="${f1(9 * k)}" fill="#6b4527" stroke="#3e2714" stroke-width="${f1(1 * k)}"/>`; };
-  return { at, Yh, hb, bays, order, doorTop, lintel, rail, floor, top, bw, vy, wh };
+  return { at, Yh, hb, bays, order, doorTop, lintel, rail, floor, top, bw, vy, wh, onWall };
 }
 function stableSvg(c, K) {
-  const { x0, x1, y0, y1, W, H, k, pad, R, P } = c, L = stablePlaces(c), { at, Yh, hb, bays, order, doorTop, lintel, floor, top, bw, vy, wh } = L;
+  const { x0, x1, y0, y1, W, H, k, pad, R, P } = c, L = stablePlaces(c), { at, Yh, hb, bays, order, doorTop, lintel, floor, top, bw, vy, wh, onWall } = L;
   const oak = "#7a5230", oakD = "#4e341d", oakL = "#9c6b40", straw = "#e3c46a", strawD = "#b8963e", iron = "#2e2e36";
   const pg = (pts, fill, more = "") => `<polygon points="${pts.map(p => P(...p)).join(" ")}" fill="${fill}"${more}/>`;
   const has = new Set(order.slice(0, K.horses.length));
@@ -5748,16 +5754,17 @@ function stableSvg(c, K) {
          `<path d="M${P(lx - 12 * s, ly - 14 * s)} L${P(lx, ly - 22 * s)} L${P(lx + 12 * s, ly - 14 * s)} Z" fill="${iron}"/>` +
          `<ellipse cx="${f1(lx)}" cy="${f1(ly)}" rx="${f1(2.4 * s)}" ry="${f1(4.5 * s)}" fill="#ff9a2e"><animate attributeName="ry" values="${f1(4.5 * s)};${f1(3.4 * s)};${f1(5 * s)};${f1(4.5 * s)}" dur="1.1s" repeatCount="indefinite"/></ellipse>`; }
   // the side walls, above their doors: horseshoes nailed up in a row (for luck, ends up), saddles on racks, bridles on pegs
-  for (let j = 0; j < 6; j++) { const z = -0.05 - 0.055 * j, f = 1 / (1 + z), [hx, hy] = at(-bw, Yh(0.74), z), s = k * f;
-    t += `<path d="M${f1(hx - 7 * s)} ${f1(hy - 8 * s)} Q${f1(hx - 8 * s)} ${f1(hy + 9 * s)} ${f1(hx)} ${f1(hy + 9 * s)} Q${f1(hx + 8 * s)} ${f1(hy + 9 * s)} ${f1(hx + 7 * s)} ${f1(hy - 8 * s)}" fill="none" stroke="#7d8590" stroke-width="${f1(4 * s)}" stroke-linecap="round"/>` +
-         `<circle cx="${f1(hx)}" cy="${f1(hy - 12 * s)}" r="${f1(1.4 * s)}" fill="${iron}"/>`; }
-  for (const [z, col] of [[-0.09, "#7a3e1e"], [-0.25, "#4a2a16"]]) { const f = 1 / (1 + z), [sx, sy] = at(bw, Yh(0.72), z), s = k * f;
-    t += `<rect x="${f1(sx - 2 * s)}" y="${f1(sy - 4 * s)}" width="${f1(16 * s)}" height="${f1(5 * s)}" fill="${oakD}"/>` +
-         `<path d="M${f1(sx - 22 * s)} ${f1(sy)} Q${f1(sx - 10 * s)} ${f1(sy - 14 * s)} ${f1(sx + 2 * s)} ${f1(sy - 6 * s)} Q${f1(sx + 14 * s)} ${f1(sy - 16 * s)} ${f1(sx + 20 * s)} ${f1(sy - 2 * s)} L${f1(sx + 14 * s)} ${f1(sy + 18 * s)} L${f1(sx - 18 * s)} ${f1(sy + 18 * s)} Z" fill="${col}" stroke="#2a160a" stroke-width="${f1(1 * s)}"/>` +
-         `<path d="M${f1(sx - 4 * s)} ${f1(sy + 18 * s)} v${f1(14 * s)} M${f1(sx - 9 * s)} ${f1(sy + 34 * s)} q${f1(5 * s)} ${f1(-6 * s)} ${f1(10 * s)} 0" fill="none" stroke="#9aa3ad" stroke-width="${f1(1.6 * s)}"/>`; }
-  { const [bx, by] = at(bw, Yh(0.78), -0.17), s = k / 0.83;
-    t += `<circle cx="${f1(bx)}" cy="${f1(by)}" r="${f1(2 * s)}" fill="${iron}"/><path d="M${f1(bx)} ${f1(by)} q${f1(-12 * s)} ${f1(18 * s)} ${f1(-2 * s)} ${f1(40 * s)} M${f1(bx)} ${f1(by)} q${f1(10 * s)} ${f1(20 * s)} ${f1(2 * s)} ${f1(40 * s)} M${f1(bx - 6 * s)} ${f1(by + 26 * s)} h${f1(12 * s)}" fill="none" stroke="#6b3a1a" stroke-width="${f1(2 * s)}"/>` +
-         `<circle cx="${f1(bx)}" cy="${f1(by + 42 * s)}" r="${f1(3 * s)}" fill="none" stroke="#9aa3ad" stroke-width="${f1(1.5 * s)}"/>`; }
+  // (each laid flat on its wall in perspective: onWall)
+  for (let j = 0; j < 6; j++)
+    t += `<g transform="${onWall(-1, Yh(0.74), -0.05 - 0.055 * j)}"><path d="M-7 -8 Q-8 9 0 9 Q8 9 7 -8" fill="none" stroke="#7d8590" stroke-width="4" stroke-linecap="round"/>` +
+         `<circle cx="0" cy="-12" r="1.4" fill="${iron}"/></g>`;
+  for (const [z, col] of [[-0.09, "#7a3e1e"], [-0.25, "#4a2a16"]])
+    t += `<g transform="${onWall(1, Yh(0.72), z)}"><rect x="-2" y="-4" width="16" height="5" fill="${oakD}"/>` +
+         `<path d="M-22 0 Q-10 -14 2 -6 Q14 -16 20 -2 L14 18 L-18 18 Z" fill="${col}" stroke="#2a160a" stroke-width="1"/>` +
+         `<path d="M-4 18 v14 M-9 34 q5 -6 10 0" fill="none" stroke="#9aa3ad" stroke-width="1.6"/></g>`;
+  t += `<g transform="${onWall(1, Yh(0.78), -0.17)}"><circle cx="0" cy="0" r="2" fill="${iron}"/>` +
+       `<path d="M0 0 q-12 18 -2 40 M0 0 q10 20 2 40 M-6 26 h12" fill="none" stroke="#6b3a1a" stroke-width="2"/>` +
+       `<circle cx="0" cy="42" r="3" fill="none" stroke="#9aa3ad" stroke-width="1.5"/></g>`;
   // straw all over the floor, the more toward the stalls
   for (let i = 0; i < 150; i++) { const z = -0.62 * Math.pow(R(i, 1310), 1.6), X = (R(i, 1311) - 0.5) * 2 * bw, [sx, sy] = at(X, floor, z), s = k / (1 + z), a = R(i, 1312) * Math.PI;
     t += `<line x1="${f1(sx)}" y1="${f1(sy)}" x2="${f1(sx + Math.cos(a) * 9 * s)}" y2="${f1(sy + Math.sin(a) * 2.5 * s)}" stroke="${R(i, 1313) < 0.6 ? straw : strawD}" stroke-width="${f1(1.2 * s)}" opacity="0.9"/>`; }
