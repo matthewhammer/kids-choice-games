@@ -4984,7 +4984,9 @@ function trapRoomSvg(c, K, pits) {
       (to ? plankSign(cx, cy - ry - 34 * k, k, `🕳️ ${roomLabel(K.rooms[to - 1]).split(" ")[0]} ${to}`) : "") + `</g>`;
   });
   // a helmet someone dropped by the left pit, a sword by the right one
-  t += `<path d="M${P(-W * 0.36, floor + 70 * k)} Q${P(-W * 0.36, floor + 40 * k)} ${P(-W * 0.33, floor + 40 * k)} Q${P(-W * 0.3, floor + 40 * k)} ${P(-W * 0.3, floor + 70 * k)} Z" fill="#9aa0aa" stroke="#5a5f6a" stroke-width="${f1(2 * k)}"/>` +
+  // (the helmet an object, standing where its rim meets the floor; the pits
+  // are holes in the floor, and the sword lies flat on it: neither stands)
+  t += obj("helmet", floor + 70 * k, `<path d="M${P(-W * 0.36, floor + 70 * k)} Q${P(-W * 0.36, floor + 40 * k)} ${P(-W * 0.33, floor + 40 * k)} Q${P(-W * 0.3, floor + 40 * k)} ${P(-W * 0.3, floor + 70 * k)} Z" fill="#9aa0aa" stroke="#5a5f6a" stroke-width="${f1(2 * k)}"/>`) +
        `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.42)}" y2="${f1(floor + 110 * k)}" stroke="#c9ced6" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
        `<line x1="${f1(W * 0.33 - 5 * k)}" y1="${f1(floor + 118 * k)}" x2="${f1(W * 0.33 + 4 * k)}" y2="${f1(floor + 131 * k)}" stroke="#8b5e34" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
        `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.31)}" y2="${f1(floor + 127 * k)}" stroke="#6e4a2c" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`;
@@ -5018,23 +5020,31 @@ function dungeonSvg(c, K, deep, bones = 0) {
   for (const sx of deep ? [-bw * 0.45, bw * 0.05] : [-bw * 0.75, bw * 0.55]) t += shackle(sx, floor - 150 * k, 2 * k) + chainSvg(sx, floor - 140 * k, 90 * k, 2 * k);
   if (deep) {
     // a cage hanging from the ceiling, a skeleton curled inside
+    // (an object, as a thing hung from the ceiling is: at the floor under it,
+    // here the back wall's foot, as it is drawn at the back wall's size)
     const cx = W * 0.27, cy = top + 70 * k, cw = 70 * k, ch = 120 * k;
-    t += chainSvg(cx, top - 40 * k, 110 * k, 2 * k) + (bones >= 3 ? skeletonSvg(cx, cy + 40 * k, 1.5 * k, "cage") : "") +
+    t += obj("cage", floor, chainSvg(cx, top - 40 * k, 110 * k, 2 * k) + (bones >= 3 ? skeletonSvg(cx, cy + 40 * k, 1.5 * k, "cage") : "") +
          `<path d="M${P(cx - cw / 2, cy + ch)} V${f1(cy + 20 * k)} Q${P(cx, cy - 20 * k)} ${P(cx + cw / 2, cy + 20 * k)} V${f1(cy + ch)} Z" fill="none" stroke="#3a3a44" stroke-width="${f1(4 * k)}"/>` +
          // (its bars, each from the dome over it down to the floor: the dome, at a share t across, is at cy + 20k - 80k t (1 - t))
          [...Array(6)].map((_, j) => { const t = j / 5; return `<line x1="${f1(cx - cw / 2 + cw * t)}" y1="${f1(cy + 20 * k - 80 * k * t * (1 - t))}" x2="${f1(cx - cw / 2 + cw * t)}" y2="${f1(cy + ch)}" stroke="#3a3a44" stroke-width="${f1(3 * k)}"/>`; }).join("") +
-         `<ellipse cx="${f1(cx)}" cy="${f1(cy + ch)}" rx="${f1(cw / 2 + 4 * k)}" ry="${f1(8 * k)}" fill="#2a2a32"/>`;
+         `<ellipse cx="${f1(cx)}" cy="${f1(cy + ch)}" rx="${f1(cw / 2 + 4 * k)}" ry="${f1(8 * k)}" fill="#2a2a32"/>`);
     // a cell across the left: iron bars, a skeleton sitting chained inside
+    // (one object, the skeleton in it part of it: standing where its bars meet the floor)
     const cl = -W * 0.5, cr = -W * 0.26;
-    t += (bones >= 2 ? skeletonSvg(-W * 0.38, floor + 10 * k, 2.2 * k, "sit") : "") + shackle(-W * 0.38, floor - 20 * k, 2 * k) +
+    t += obj("cell", floor + 150 * k, (bones >= 2 ? skeletonSvg(-W * 0.38, floor + 10 * k, 2.2 * k, "sit") : "") + shackle(-W * 0.38, floor - 20 * k, 2 * k) +
          [...Array(8)].map((_, j) => `<line x1="${f1(cl + (cr - cl) * j / 7)}" y1="${f1(top + 30 * k)}" x2="${f1(cl + (cr - cl) * j / 7)}" y2="${f1(floor + 150 * k)}" stroke="#2f2f38" stroke-width="${f1(6 * k)}"/>`).join("") +
-         `<line x1="${f1(cl)}" y1="${f1(floor - 60 * k)}" x2="${f1(cr)}" y2="${f1(floor - 60 * k)}" stroke="#2f2f38" stroke-width="${f1(6 * k)}"/>`;
+         `<line x1="${f1(cl)}" y1="${f1(floor - 60 * k)}" x2="${f1(cr)}" y2="${f1(floor - 60 * k)}" stroke="#2f2f38" stroke-width="${f1(6 * k)}"/>`);
     // glowing mushrooms by the wall, a skull with a candle on it
+    // (the mushrooms one object, a row at its middle depth: they stand
+    // behind the candle, and so must be sorted with it, not left between)
+    let shrooms = "";
     for (let i = 0; i < 7; i++) { const x = bw * (0.1 + 0.08 * i), y = floor + (8 + 6 * R(i, 940)) * k, h = (10 + 12 * R(i, 941)) * k;
-      t += `<rect x="${f1(x - 1.5 * k)}" y="${f1(y - h)}" width="${f1(3 * k)}" height="${f1(h)}" fill="#cfe8c0"/><ellipse cx="${f1(x)}" cy="${f1(y - h)}" rx="${f1((6 + 4 * R(i, 942)) * k)}" ry="${f1(4 * k)}" fill="#7dff9a" opacity="0.85"/>`; }
+      shrooms += `<rect x="${f1(x - 1.5 * k)}" y="${f1(y - h)}" width="${f1(3 * k)}" height="${f1(h)}" fill="#cfe8c0"/><ellipse cx="${f1(x)}" cy="${f1(y - h)}" rx="${f1((6 + 4 * R(i, 942)) * k)}" ry="${f1(4 * k)}" fill="#7dff9a" opacity="0.85"/>`; }
+    t += obj("mushrooms", floor + 11 * k, shrooms);
     // a candle burning on the floor: on a skull, or (with none) a stone
+    // (an object, standing where its shadow lies)
     const sx = W * 0.06, sy = floor + 40 * k, s2 = 1.8 * k;
-    t += `<ellipse cx="${f1(sx)}" cy="${f1(sy + 24 * s2)}" rx="${f1(14 * s2)}" ry="${f1(3 * s2)}" fill="#000000" opacity="0.3"/>` +
+    t += obj("candle", sy + 24 * s2, `<ellipse cx="${f1(sx)}" cy="${f1(sy + 24 * s2)}" rx="${f1(14 * s2)}" ry="${f1(3 * s2)}" fill="#000000" opacity="0.3"/>` +
          (bones >= 1
            ? `<path d="M${f1(sx - 10 * s2)} ${f1(sy + 12 * s2)} Q${f1(sx - 11 * s2)} ${f1(sy)} ${f1(sx)} ${f1(sy)} Q${f1(sx + 11 * s2)} ${f1(sy)} ${f1(sx + 10 * s2)} ${f1(sy + 12 * s2)} L${f1(sx + 6 * s2)} ${f1(sy + 22 * s2)} L${f1(sx - 6 * s2)} ${f1(sy + 22 * s2)} Z" fill="#efe8d6" stroke="#b9b19c" stroke-width="${f1(1.2 * s2)}"/>` +
              [-1, 1].map(e => `<ellipse cx="${f1(sx + e * 4.5 * s2)}" cy="${f1(sy + 11 * s2)}" rx="${f1(3 * s2)}" ry="${f1(3.4 * s2)}" fill="#2a2420"/>`).join("")
@@ -5042,16 +5052,17 @@ function dungeonSvg(c, K, deep, bones = 0) {
          `<rect x="${f1(sx - 3 * s2)}" y="${f1(sy - 14 * s2)}" width="${f1(6 * s2)}" height="${f1(15 * s2)}" fill="#f6efd8"/>` +
          `<path d="M${f1(sx + 3 * s2)} ${f1(sy - 14 * s2)} q${f1(2 * s2)} ${f1(5 * s2)} 0 ${f1(9 * s2)}" fill="none" stroke="#f6efd8" stroke-width="${f1(2 * s2)}"/>` +
          `<circle cx="${f1(sx)}" cy="${f1(sy - 20 * s2)}" r="${f1(16 * s2)}" fill="url(#bg-glow)"/>` +
-         `<ellipse cx="${f1(sx)}" cy="${f1(sy - 19 * s2)}" rx="${f1(2.6 * s2)}" ry="${f1(5 * s2)}" fill="#ffb53b"><animate attributeName="ry" values="${f1(5 * s2)};${f1(3.6 * s2)};${f1(5.4 * s2)};${f1(5 * s2)}" dur="0.9s" repeatCount="indefinite"/></ellipse>`;
+         `<ellipse cx="${f1(sx)}" cy="${f1(sy - 19 * s2)}" rx="${f1(2.6 * s2)}" ry="${f1(5 * s2)}" fill="#ffb53b"><animate attributeName="ry" values="${f1(5 * s2)};${f1(3.6 * s2)};${f1(5.4 * s2)};${f1(5 * s2)}" dur="0.9s" repeatCount="indefinite"/></ellipse>`);
   } else {
     // straw on the floor, a bucket, a rat, scattered bones
     for (let i = 0; i < 30; i++) { const x = -W * 0.32 + 120 * k * R(i, 950), y = floor + (40 + 50 * R(i, 951)) * k, a = (R(i, 952) - 0.5) * 1.4, l = (18 + 14 * R(i, 953)) * k;
       t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + Math.cos(a) * l)}" y2="${f1(y + Math.sin(a) * l * 0.4)}" stroke="${R(i, 954) < 0.5 ? "#d9b85c" : "#b8953e"}" stroke-width="${f1(2.5 * k)}" stroke-linecap="round"/>`; }
-    t += `<path d="M${P(W * 0.18, floor + 60 * k)} L${P(W * 0.17, floor + 110 * k)} L${P(W * 0.25, floor + 110 * k)} L${P(W * 0.24, floor + 60 * k)} Z" fill="#6e4a2c"/>` +
+    // (the bucket and the rat objects, each standing where its bottom meets the floor)
+    t += obj("bucket", floor + 110 * k, `<path d="M${P(W * 0.18, floor + 60 * k)} L${P(W * 0.17, floor + 110 * k)} L${P(W * 0.25, floor + 110 * k)} L${P(W * 0.24, floor + 60 * k)} Z" fill="#6e4a2c"/>` +
          `<ellipse cx="${f1(W * 0.21)}" cy="${f1(floor + 60 * k)}" rx="${f1(W * 0.03)}" ry="${f1(6 * k)}" fill="#4a3a2a"/>` +
-         [0.75, 0.95].map(u => `<line x1="${f1(W * 0.17 + 1 * k)}" y1="${f1(floor + 60 * k + 50 * k * u)}" x2="${f1(W * 0.25 - 1 * k)}" y2="${f1(floor + 60 * k + 50 * k * u)}" stroke="#3a3a44" stroke-width="${f1(3 * k)}"/>`).join("") +
-         `<path d="M${P(W * 0.05, floor + 140 * k)} q${f1(14 * k)} ${f1(-14 * k)} ${f1(30 * k)} 0 q${f1(-6 * k)} ${f1(6 * k)} ${f1(-30 * k)} 0 Z" fill="#6a6a72"/><path d="M${P(W * 0.05, floor + 140 * k)} q${f1(-20 * k)} ${f1(4 * k)} ${f1(-30 * k)} ${f1(-8 * k)}" fill="none" stroke="#8a8a92" stroke-width="${f1(2 * k)}"/>` +
-         `<circle cx="${f1(W * 0.05 + 26 * k)}" cy="${f1(floor + 134 * k)}" r="${f1(1.6 * k)}" fill="#111"/>`;
+         [0.75, 0.95].map(u => `<line x1="${f1(W * 0.17 + 1 * k)}" y1="${f1(floor + 60 * k + 50 * k * u)}" x2="${f1(W * 0.25 - 1 * k)}" y2="${f1(floor + 60 * k + 50 * k * u)}" stroke="#3a3a44" stroke-width="${f1(3 * k)}"/>`).join("")) +
+         obj("rat", floor + 140 * k, `<path d="M${P(W * 0.05, floor + 140 * k)} q${f1(14 * k)} ${f1(-14 * k)} ${f1(30 * k)} 0 q${f1(-6 * k)} ${f1(6 * k)} ${f1(-30 * k)} 0 Z" fill="#6a6a72"/><path d="M${P(W * 0.05, floor + 140 * k)} q${f1(-20 * k)} ${f1(4 * k)} ${f1(-30 * k)} ${f1(-8 * k)}" fill="none" stroke="#8a8a92" stroke-width="${f1(2 * k)}"/>` +
+         `<circle cx="${f1(W * 0.05 + 26 * k)}" cy="${f1(floor + 134 * k)}" r="${f1(1.6 * k)}" fill="#111"/>`);
     if (bones >= 1) for (let i = 0; i < 4; i++) { const x = W * (-0.1 + 0.12 * i), y = floor + (90 + 40 * R(i, 960)) * k, a = R(i, 961) * 3;
       t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + Math.cos(a) * 26 * k)}" y2="${f1(y + Math.sin(a) * 8 * k)}" stroke="#efe8d6" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>`; }
   }
@@ -5073,6 +5084,8 @@ function dungeonSvg(c, K, deep, bones = 0) {
 function hallwaySvg(c, K, R = {}) {
   const { x0, y0, y1, W, H, k, pad, P } = c, { floor, top, bw, vy, out } = roomFrame(c);
   const tone = ROOM_TONE.hallway, mortar = mix(tone, "#000000", 0.35), gold = "#e8b923";
+  // (ticket 99: nothing stands in it, so it has no objects: its torches and
+  // banners are on its walls, its stairs in the far wall, its carpet flat)
   let t = roomShell(c, tone, {});
   // the corridor's cross-sections, going away: f is each one's size, from
   // the back wall's (1) toward the vanishing point (0, vy)
@@ -5232,15 +5245,20 @@ function diningRoomSvg(c, K, r = {}) {
            poly([[xo, ys, za], [xo, ys, zb], [xo, hi, zb], [xo, hi, za]], woodDk, ` stroke="${wood}" stroke-width="${f1(2 * k * fz(z))}"`);
   };
   // far to near: the far end's chair, the chairs down the sides, the legs, the top, what is on it, and the near end's chair
-  t += chair(0, zB + 0.2, 0, 1);
-  for (const sd of [-1, 1]) for (let j = sides[sd < 0 ? 0 : 1] - 1; j >= 0; j--) t += chair(0, zOf(sd, j), sd, 0);
+  // (ticket 99: each chair an object, standing at its middle on the floor, a
+  // side's numbered from our end; the table one object, its legs, top and all
+  // on it, standing at its NEAR end, zA, as it is long, running away from us)
+  const floorAt = z => at(0, floor, z)[1];
+  t += obj("chair, far end", floorAt(zB + 0.2), chair(0, zB + 0.2, 0, 1));
+  for (const sd of [-1, 1]) for (let j = sides[sd < 0 ? 0 : 1] - 1; j >= 0; j--) t += obj(`chair, ${sd < 0 ? "left" : "right"} ${j + 1}`, floorAt(zOf(sd, j)), chair(0, zOf(sd, j), sd, 0));
+  let table = "";
   for (const [z, sd] of [[zB - 0.06, -1], [zB - 0.06, 1], [zA + 0.06, -1], [zA + 0.06, 1]]) {
     const [x, y] = at(sd * (tw - 8 * k), ytop, z), f = fz(z);
-    t += `<rect x="${f1(x - 5 * k * f)}" y="${f1(y)}" width="${f1(10 * k * f)}" height="${f1(Y(floor, f) - y)}" fill="${woodDk}"/>`;
+    table += `<rect x="${f1(x - 5 * k * f)}" y="${f1(y)}" width="${f1(10 * k * f)}" height="${f1(Y(floor, f) - y)}" fill="${woodDk}"/>`;
   }
   // (the cloth over the top and hanging down at our end, the runner along it, gold at its edges)
   const rw = tw * 0.34;
-  t += poly([[-tw, ytop, zA], [tw, ytop, zA], [tw, ytop, zB], [-tw, ytop, zB]], "#f3ead6") +
+  table += poly([[-tw, ytop, zA], [tw, ytop, zA], [tw, ytop, zB], [-tw, ytop, zB]], "#f3ead6") +
        poly([[-tw, ytop, zA], [tw, ytop, zA], [tw, ytop + 24 * k, zA], [-tw, ytop + 24 * k, zA]], "#e4d8bd") +
        poly([[-rw, ytop, zA], [rw, ytop, zA], [rw, ytop, zB], [-rw, ytop, zB]], K.carpet) +
        poly([[-rw, ytop, zA], [rw, ytop, zA], [rw, ytop + 34 * k, zA], [0, ytop + 42 * k, zA], [-rw, ytop + 34 * k, zA]], mix(K.carpet, "#000000", 0.12)) +
@@ -5268,16 +5286,18 @@ function diningRoomSvg(c, K, r = {}) {
   const things = [...onTable.map(([x, z]) => ({ z, s: setting(x, z) })), ...candles.map((z, m) => ({ z, s: (() => { const [x, y] = at(0, ytop, z), f = fz(z);
     return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(8 * k * f)}" ry="${f1(2.6 * k * f)}" fill="#b8892c"/><rect x="${f1(x - 2 * k * f)}" y="${f1(y - 10 * k * f)}" width="${f1(4 * k * f)}" height="${f1(10 * k * f)}" fill="#c99a38"/>` +
            candle(x, y - 10 * k * f, f, m); })() }))];
-  t += things.sort((a, b) => b.z - a.z).map(x => x.s).join("");
-  t += chair(0, zA - 0.2, 0, -1);
+  table += things.sort((a, b) => b.z - a.z).map(x => x.s).join("");
+  t += obj("table", floorAt(zA), table);
+  t += obj("chair, near end", floorAt(zA - 0.2), chair(0, zA - 0.2, 0, -1));
   // the candelabras, hanging over the table on chains from the vault: a gold ring of candles each
+  // (each an object, at the floor under it, numbered from our end)
   const nh = per <= 3 ? 1 : per <= 6 ? 2 : 3;
   for (let m = nh - 1; m >= 0; m--) {
     // (hung well above our eyes, so the nearer ones show higher, each clear of the next)
     const z = zA + (zB - zA) * (m + 0.5) / nh, f = fz(z), kk = k * f, [cx, cy] = at(0, top + 34 * k, z), ctop = Y(top - 30 * k, f), rx = 46 * kk, ry = 9 * kk;
-    t += chainSvg(cx, ctop, cy - ctop, 2 * kk) + `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="none" stroke="${gold}" stroke-width="${f1(4 * kk)}"/>` +
+    t += obj(`candelabra ${m + 1}`, floorAt(z), chainSvg(cx, ctop, cy - ctop, 2 * kk) + `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="none" stroke="${gold}" stroke-width="${f1(4 * kk)}"/>` +
          [...Array(6)].map((_, j) => { const a = Math.PI * 2 * j / 6 + 0.3, x = cx + Math.cos(a) * rx, y = cy + Math.sin(a) * ry; return { y, s: candle(x, y, f, 10 + m * 6 + j, 18) }; })
-           .sort((a, b) => a.y - b.y).map(x => x.s).join("");
+           .sort((a, b) => a.y - b.y).map(x => x.s).join(""));
   }
   // along the walls, torches, each side, in each stretch of the room (clear of the doors: as the hallway's)
   for (let i = 0; i < N - 1; i++) for (const sd of [-1, 1]) {
@@ -5397,14 +5417,16 @@ function kitchenSvg(c, K) {
          (kind === 2 ? `<path d="M${f1(x)} ${f1(y + 40 * k)} l${f1(-9 * k)} ${f1(22 * k)} M${f1(x)} ${f1(y + 40 * k)} l0 ${f1(26 * k)} M${f1(x)} ${f1(y + 40 * k)} l${f1(9 * k)} ${f1(22 * k)}" stroke="#4f8a3a" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`
            : [0, 1, 2, 3].map(j => `<ellipse cx="${f1(x + (j % 2 ? 5 : -5) * k)}" cy="${f1(y + (14 + 9 * j) * k)}" rx="${f1(7 * k)}" ry="${f1(6 * k)}" fill="${kind ? "#f1e6cf" : "#c98a3a"}" stroke="${kind ? "#cbbd9e" : "#8a5a20"}" stroke-width="${f1(1 * k)}"/>`).join("")); }
   // the bread oven, right of the middle: a dome of brick, its mouth aglow, loaves on its sill
+  // (an object, standing against the back wall, at its foot; its mouth's glow
+  // is light, drawn over all at the end with the fire's)
   const ox = bw * 0.58, orad = 80 * k, [, ob] = at(0, floor);
-  t += `<rect x="${f1(ox - orad - 10 * k)}" y="${f1(ob - 70 * k)}" width="${f1(2 * orad + 20 * k)}" height="${f1(70 * k)}" fill="${mix(ROOM_TONE.kitchen, "#000000", 0.1)}"/>` +
+  t += obj("oven", ob, `<rect x="${f1(ox - orad - 10 * k)}" y="${f1(ob - 70 * k)}" width="${f1(2 * orad + 20 * k)}" height="${f1(70 * k)}" fill="${mix(ROOM_TONE.kitchen, "#000000", 0.1)}"/>` +
        `<path d="M${f1(ox - orad)} ${f1(ob - 70 * k)} A${f1(orad)} ${f1(orad * 0.9)} 0 0 1 ${f1(ox + orad)} ${f1(ob - 70 * k)} Z" fill="#b5653f" stroke="#8a4528" stroke-width="${f1(2 * k)}"/>` +
        [0.3, 0.6].map(u => `<path d="M${f1(ox - orad * Math.sqrt(1 - u * u))} ${f1(ob - 70 * k - orad * 0.9 * u)} H${f1(ox + orad * Math.sqrt(1 - u * u))}" stroke="#8a4528" stroke-width="${f1(1.5 * k)}"/>`).join("") +
        `<path d="M${f1(ox - 28 * k)} ${f1(ob - 70 * k)} V${f1(ob - 96 * k)} Q${f1(ox)} ${f1(ob - 124 * k)} ${f1(ox + 28 * k)} ${f1(ob - 96 * k)} V${f1(ob - 70 * k)} Z" fill="#2a160c"/>` +
        `<rect x="${f1(ox - orad - 14 * k)}" y="${f1(ob - 74 * k)}" width="${f1(2 * orad + 28 * k)}" height="${f1(8 * k)}" fill="${oakD}"/>` +
        [-0.7, -0.45, 0.5, 0.75].map(u => `<ellipse cx="${f1(ox + u * orad)}" cy="${f1(ob - 81 * k)}" rx="${f1(13 * k)}" ry="${f1(8 * k)}" fill="#d9a05a" stroke="#a8702e" stroke-width="${f1(1.2 * k)}"/>` +
-         `<path d="M${f1(ox + u * orad - 6 * k)} ${f1(ob - 84 * k)} l${f1(4 * k)} ${f1(-3 * k)} M${f1(ox + u * orad + 1 * k)} ${f1(ob - 85 * k)} l${f1(4 * k)} ${f1(-3 * k)}" stroke="#a8702e" stroke-width="${f1(1.2 * k)}"/>`).join("");
+         `<path d="M${f1(ox + u * orad - 6 * k)} ${f1(ob - 84 * k)} l${f1(4 * k)} ${f1(-3 * k)} M${f1(ox + u * orad + 1 * k)} ${f1(ob - 85 * k)} l${f1(4 * k)} ${f1(-3 * k)}" stroke="#a8702e" stroke-width="${f1(1.2 * k)}"/>`).join(""));
   flames.push(`<ellipse cx="${f1(ox)}" cy="${f1(ob - 84 * k)}" rx="${f1(22 * k)}" ry="${f1(12 * k)}" fill="#ff9a3c" opacity="0.8">${sceneLfo(o, "slow", 0.6, "opacity", (v, amp) => (0.8 - (0.1 + 0.3 * amp) * (1 + v) / 2).toFixed(2), "")}</ellipse>`);
   // shelves on the back wall between them: crocks, plates on edge, jars
   for (const [yy, kind] of [[Yh(0.72), "plates"], [Yh(0.56), "crocks"]]) { const xa = -bw * 0.12, xb = bw * 0.3;
@@ -5413,53 +5435,65 @@ function kitchenSvg(c, K) {
       t += kind === "plates" ? `<ellipse cx="${f1(x)}" cy="${f1(yy - 15 * k)}" rx="${f1(13 * k)}" ry="${f1(15 * k)}" fill="#f4efe4" stroke="#5a7ab0" stroke-width="${f1(2 * k)}"/><circle cx="${f1(x)}" cy="${f1(yy - 15 * k)}" r="${f1(6 * k)}" fill="none" stroke="#5a7ab0" stroke-width="${f1(1.2 * k)}"/>`
         : `<path d="M${f1(x - 10 * k)} ${f1(yy)} Q${f1(x - 14 * k)} ${f1(yy - 18 * k)} ${f1(x - 7 * k)} ${f1(yy - 26 * k)} H${f1(x + 7 * k)} Q${f1(x + 14 * k)} ${f1(yy - 18 * k)} ${f1(x + 10 * k)} ${f1(yy)} Z" fill="${["#c98a5a", "#8aa0b8", "#d8c08a"][i % 3]}" stroke="${oakD}" stroke-width="${f1(1 * k)}"/>`; } }
   // copper pots and pans on hooks along a rack hung from the middle beam
+  // (one object, hung from the ceiling: at the floor under the rack)
   { const z = -0.2, f = 1 / (1 + z), [ra, ry] = at(-bw * 0.42, top + 70 * k, z), [rb] = at(bw * 0.42, top + 70 * k, z), [, by] = at(0, top + 44 * k, z);
-    t += [ra, rb].map(x => `<line x1="${f1(x)}" y1="${f1(by)}" x2="${f1(x)}" y2="${f1(ry)}" stroke="#3a3a44" stroke-width="${f1(2 * k)}"/>`).join("") +
+    let rack = [ra, rb].map(x => `<line x1="${f1(x)}" y1="${f1(by)}" x2="${f1(x)}" y2="${f1(ry)}" stroke="#3a3a44" stroke-width="${f1(2 * k)}"/>`).join("") +
          `<rect x="${f1(ra)}" y="${f1(ry)}" width="${f1(rb - ra)}" height="${f1(6 * k * f)}" fill="#3a3a44"/>`;
     for (let i = 0; i < 7; i++) { const x = ra + (rb - ra) * (i + 0.5) / 7, d = (16 + 6 * (i % 3)) * k * f, hang = (10 + 8 * (i % 2)) * k * f, yy = ry + 6 * k * f + hang;
-      t += `<line x1="${f1(x)}" y1="${f1(ry + 6 * k * f)}" x2="${f1(x)}" y2="${f1(yy)}" stroke="#3a3a44" stroke-width="${f1(1.5 * k)}"/>` +
+      rack += `<line x1="${f1(x)}" y1="${f1(ry + 6 * k * f)}" x2="${f1(x)}" y2="${f1(yy)}" stroke="#3a3a44" stroke-width="${f1(1.5 * k)}"/>` +
            (i % 2 ? `<path d="M${f1(x - d)} ${f1(yy + 4 * k * f)} H${f1(x + d)} V${f1(yy + d * 1.2)} Q${f1(x)} ${f1(yy + d * 1.5)} ${f1(x - d)} ${f1(yy + d * 1.2)} Z" fill="${copper}" stroke="${copperD}" stroke-width="${f1(1.5 * k)}"/>`
                   : `<circle cx="${f1(x)}" cy="${f1(yy + d)}" r="${f1(d)}" fill="${copper}" stroke="${copperD}" stroke-width="${f1(1.5 * k)}"/><line x1="${f1(x)}" y1="${f1(yy)}" x2="${f1(x)}" y2="${f1(yy + 2 * k)}" stroke="${copperD}" stroke-width="${f1(4 * k)}"/>`) +
-           `<path d="M${f1(x - d * 0.5)} ${f1(yy + d * 0.7)} q${f1(d * 0.2)} ${f1(-d * 0.3)} ${f1(d * 0.4)} 0" stroke="#f0b088" stroke-width="${f1(1.5 * k)}" fill="none" opacity="0.7"/>`; } }
+           `<path d="M${f1(x - d * 0.5)} ${f1(yy + d * 0.7)} q${f1(d * 0.2)} ${f1(-d * 0.3)} ${f1(d * 0.4)} 0" stroke="#f0b088" stroke-width="${f1(1.5 * k)}" fill="none" opacity="0.7"/>`; }
+    t += obj("pots and pans", at(0, floor, z)[1], rack); }
   // sacks of flour and barrels by the back wall, right
+  // (the barrels one object, the sack another, both standing at by)
   { const [bx, by] = at(bw * 0.92, floor, -0.02), f = 1.02;
-    for (const [dx, dy, sc] of [[-40, 0, 1], [0, 0, 1.1]]) t += `<rect x="${f1(bx + dx * k - 20 * k * sc)}" y="${f1(by + dy - 60 * k * sc)}" width="${f1(40 * k * sc)}" height="${f1(60 * k * sc)}" rx="${f1(10 * k)}" fill="#8a5a32" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>` +
+    let barrels = "";
+    for (const [dx, dy, sc] of [[-40, 0, 1], [0, 0, 1.1]]) barrels += `<rect x="${f1(bx + dx * k - 20 * k * sc)}" y="${f1(by + dy - 60 * k * sc)}" width="${f1(40 * k * sc)}" height="${f1(60 * k * sc)}" rx="${f1(10 * k)}" fill="#8a5a32" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>` +
       [0.2, 0.8].map(u => `<line x1="${f1(bx + dx * k - 20 * k * sc)}" y1="${f1(by - 60 * k * sc * (1 - u))}" x2="${f1(bx + dx * k + 20 * k * sc)}" y2="${f1(by - 60 * k * sc * (1 - u))}" stroke="#3a3a44" stroke-width="${f1(3 * k)}"/>`).join("");
-    t += `<path d="M${f1(bx - 96 * k)} ${f1(by)} Q${f1(bx - 104 * k)} ${f1(by - 40 * k)} ${f1(bx - 84 * k)} ${f1(by - 52 * k)} Q${f1(bx - 72 * k)} ${f1(by - 58 * k)} ${f1(bx - 62 * k)} ${f1(by - 50 * k)} Q${f1(bx - 52 * k)} ${f1(by - 36 * k)} ${f1(bx - 58 * k)} ${f1(by)} Z" fill="#efe6d2" stroke="#c9b993" stroke-width="${f1(1.5 * k)}"/>` +
-         `<text x="${f1(bx - 77 * k)}" y="${f1(by - 18 * k)}" font-size="${f1(11 * k)}" text-anchor="middle" fill="#8a7a5a" font-family="serif">FLOUR</text>`; }
+    t += obj("barrels", by, barrels) + obj("flour sack", by, `<path d="M${f1(bx - 96 * k)} ${f1(by)} Q${f1(bx - 104 * k)} ${f1(by - 40 * k)} ${f1(bx - 84 * k)} ${f1(by - 52 * k)} Q${f1(bx - 72 * k)} ${f1(by - 58 * k)} ${f1(bx - 62 * k)} ${f1(by - 50 * k)} Q${f1(bx - 52 * k)} ${f1(by - 36 * k)} ${f1(bx - 58 * k)} ${f1(by)} Z" fill="#efe6d2" stroke="#c9b993" stroke-width="${f1(1.5 * k)}"/>` +
+         `<text x="${f1(bx - 77 * k)}" y="${f1(by - 18 * k)}" font-size="${f1(11 * k)}" text-anchor="middle" fill="#8a7a5a" font-family="serif">FLOUR</text>`); }
   // the cauldron cook: in front of the hearth, stirring the cauldron on its tripod over its little fire
+  // (the cauldron, its tripod, fire and pot, one object, and the cook another:
+  // both standing at her feet, cfy, where the tripod's legs stand too; the
+  // cauldron first, so her ladle stays over the pot)
   const cz = -0.16, cf = 1 / (1 + cz), cs = 1.05 * k * cf, [cxx, cfy] = at(hx + 150 * k, floor, cz), potX = cxx - 110 * cs, potY = cfy - 46 * cs;   // (the pot's mouth, where her ladle dips)
-  t += [-1, 1, 0].map(e => `<line x1="${f1(potX)}" y1="${f1(potY - 60 * cs)}" x2="${f1(potX + e * 46 * cs)}" y2="${f1(cfy + (e ? 0 : -8 * cs))}" stroke="#2a2a30" stroke-width="${f1(3 * cs)}"/>`).join("") +
+  let cauldron = [-1, 1, 0].map(e => `<line x1="${f1(potX)}" y1="${f1(potY - 60 * cs)}" x2="${f1(potX + e * 46 * cs)}" y2="${f1(cfy + (e ? 0 : -8 * cs))}" stroke="#2a2a30" stroke-width="${f1(3 * cs)}"/>`).join("") +
        `<rect x="${f1(potX - 22 * cs)}" y="${f1(cfy - 8 * cs)}" width="${f1(44 * cs)}" height="${f1(7 * cs)}" rx="${f1(3 * cs)}" fill="${oakD}"/>`;
-  t += `<g transform="translate(${f1(potX)} ${f1(cfy - 6 * cs)})"><path d="M${f1(-16 * cs)} 0 Q0 ${f1(-34 * cs)} ${f1(16 * cs)} 0 Z" fill="#ff8a2e">` +
+  cauldron += `<g transform="translate(${f1(potX)} ${f1(cfy - 6 * cs)})"><path d="M${f1(-16 * cs)} 0 Q0 ${f1(-34 * cs)} ${f1(16 * cs)} 0 Z" fill="#ff8a2e">` +
     sceneLfo(o, "fast", 0.7, "transform", (v, amp) => `1 ${(1 + (0.1 + 0.2 * amp) * v).toFixed(3)}`, `<animateTransform attributeName="transform" type="scale" values="1 1;1 1.2;1 0.9;1 1" dur="0.8s" repeatCount="indefinite"/>`, "scale") + `</path></g>`;
   // (a shallow pot, hung clear above its fire)
-  t += `<path d="M${f1(potX - 40 * cs)} ${f1(potY)} Q${f1(potX - 42 * cs)} ${f1(potY + 22 * cs)} ${f1(potX)} ${f1(potY + 24 * cs)} Q${f1(potX + 42 * cs)} ${f1(potY + 22 * cs)} ${f1(potX + 40 * cs)} ${f1(potY)} Z" fill="#26262c" stroke="#111114" stroke-width="${f1(2 * cs)}"/>` +
-       `<ellipse cx="${f1(potX)}" cy="${f1(potY)}" rx="${f1(40 * cs)}" ry="${f1(10 * cs)}" fill="#3a3a42"/><ellipse cx="${f1(potX)}" cy="${f1(potY + 2 * cs)}" rx="${f1(34 * cs)}" ry="${f1(7 * cs)}" fill="#c98a3a"/>` +
-       `<g transform="translate(${f1(cxx)} ${f1(cfy)}) scale(${cs.toFixed(4)})">${helperSvg(KITCHEN_COOKS[0], o, 0.1)}</g>`;
+  cauldron += `<path d="M${f1(potX - 40 * cs)} ${f1(potY)} Q${f1(potX - 42 * cs)} ${f1(potY + 22 * cs)} ${f1(potX)} ${f1(potY + 24 * cs)} Q${f1(potX + 42 * cs)} ${f1(potY + 22 * cs)} ${f1(potX + 40 * cs)} ${f1(potY)} Z" fill="#26262c" stroke="#111114" stroke-width="${f1(2 * cs)}"/>` +
+       `<ellipse cx="${f1(potX)}" cy="${f1(potY)}" rx="${f1(40 * cs)}" ry="${f1(10 * cs)}" fill="#3a3a42"/><ellipse cx="${f1(potX)}" cy="${f1(potY + 2 * cs)}" rx="${f1(34 * cs)}" ry="${f1(7 * cs)}" fill="#c98a3a"/>`;
+  t += obj("cauldron", cfy, cauldron) +
+       obj("cook, stirring", cfy, `<g transform="translate(${f1(cxx)} ${f1(cfy)}) scale(${cs.toFixed(4)})">${helperSvg(KITCHEN_COOKS[0], o, 0.1)}</g>`);
   // (its steam, rising and fading, with the slow LFO)
   flames.push([0, 1, 2].map(j => `<path d="M${f1(potX + (j - 1) * 14 * cs)} ${f1(potY - 6 * cs)} q${f1(-10 * cs)} ${f1(-20 * cs)} 0 ${f1(-40 * cs)} q${f1(10 * cs)} ${f1(-20 * cs)} 0 ${f1(-40 * cs)}" fill="none" stroke="#ffffff" stroke-width="${f1(6 * cs)}" stroke-linecap="round" opacity="0.4">` +
     lfoTimed(o, "slow", j / 3, `<animate attributeName="opacity" values="0;0.5;0" dur="${(3 + j * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`) + `</path>`).join(""));
   // the worktable, in front, right of the middle: the other cook behind it, chopping carrots on a board
   const tz0 = -0.24, tz1 = -0.4, tx0 = bw * 0.02, tx1 = bw * 0.72, tH = floor - 118 * k;
+  // (the cook an object at her feet; the worktable one object, its legs, top
+  // and all on it, standing at its near legs, tz1)
   const mz = -0.1, mf = 1 / (1 + mz), ms = 1.05 * k * mf, [mx, my] = at((tx0 + tx1) / 2 + 10 * k, floor, mz);
-  t += `<g transform="translate(${f1(mx)} ${f1(my)}) scale(${ms.toFixed(4)})">${helperSvg(KITCHEN_COOKS[1], o, 0.5)}</g>`;
+  t += obj("cook, chopping", my, `<g transform="translate(${f1(mx)} ${f1(my)}) scale(${ms.toFixed(4)})">${helperSvg(KITCHEN_COOKS[1], o, 0.5)}</g>`);
+  let wt = "";
   for (const [x, z] of [[tx0 + 10 * k, tz0], [tx1 - 10 * k, tz0], [tx0 + 10 * k, tz1], [tx1 - 10 * k, tz1]]) { const [lx, ly] = at(x, tH, z), [, lb] = at(x, floor, z), f = 1 / (1 + z);
-    t += `<rect x="${f1(lx - 6 * k * f)}" y="${f1(ly)}" width="${f1(12 * k * f)}" height="${f1(lb - ly)}" fill="${oakD}"/>`; }
-  t += pg([at(tx0, tH, tz0), at(tx1, tH, tz0), at(tx1, tH, tz1), at(tx0, tH, tz1)], oakL, ` stroke="${oakD}" stroke-width="${f1(1.5 * k)}"`) +
+    wt += `<rect x="${f1(lx - 6 * k * f)}" y="${f1(ly)}" width="${f1(12 * k * f)}" height="${f1(lb - ly)}" fill="${oakD}"/>`; }
+  wt += pg([at(tx0, tH, tz0), at(tx1, tH, tz0), at(tx1, tH, tz1), at(tx0, tH, tz1)], oakL, ` stroke="${oakD}" stroke-width="${f1(1.5 * k)}"`) +
        pg([at(tx0, tH, tz1), at(tx1, tH, tz1), at(tx1, tH + 14 * k, tz1), at(tx0, tH + 14 * k, tz1)], oak) +
        [0.25, 0.5, 0.75].map(u => { const z = tz0 + (tz1 - tz0) * u; return `<line x1="${f1(at(tx0, tH, z)[0])}" y1="${f1(at(tx0, tH, z)[1])}" x2="${f1(at(tx1, tH, z)[0])}" y2="${f1(at(tx1, tH, z)[1])}" stroke="${oak}" stroke-width="${f1(1 * k)}"/>`; }).join("");
   // what is on it: the board and carrots by the cook's hands, loaves, a round of cheese, a cabbage, a bowl of apples
   const on = (x, z) => at(x, tH, z), [bdx, bdy] = on(mx - 2 * k, tz0 - 0.03);
-  t += `<rect x="${f1(bdx - 34 * k)}" y="${f1(bdy - 6 * k)}" width="${f1(64 * k)}" height="${f1(12 * k)}" rx="${f1(3 * k)}" fill="#d8b07a" stroke="#a8804a" stroke-width="${f1(1 * k)}"/>` +
+  wt += `<rect x="${f1(bdx - 34 * k)}" y="${f1(bdy - 6 * k)}" width="${f1(64 * k)}" height="${f1(12 * k)}" rx="${f1(3 * k)}" fill="#d8b07a" stroke="#a8804a" stroke-width="${f1(1 * k)}"/>` +
        [0, 1, 2, 3].map(i => `<circle cx="${f1(bdx - 26 * k + i * 6 * k)}" cy="${f1(bdy)}" r="${f1(2.6 * k)}" fill="#f28c28"/>`).join("");
   for (const [u, w, kind] of [[0.12, 0.3, "loaf"], [0.32, 0.65, "cheese"], [0.86, 0.35, "cabbage"], [0.88, 0.75, "apples"], [0.1, 0.72, "loaf"]]) {
     const [x, y] = on(tx0 + (tx1 - tx0) * u, tz0 + (tz1 - tz0) * w), f = 1 / (1 + tz0 + (tz1 - tz0) * w), q = k * f;
-    t += kind === "loaf" ? `<ellipse cx="${f1(x)}" cy="${f1(y - 8 * q)}" rx="${f1(22 * q)}" ry="${f1(11 * q)}" fill="#d9a05a" stroke="#a8702e" stroke-width="${f1(1.2 * q)}"/><path d="M${f1(x - 12 * q)} ${f1(y - 12 * q)} l${f1(6 * q)} ${f1(-5 * q)} M${f1(x)} ${f1(y - 13 * q)} l${f1(6 * q)} ${f1(-5 * q)}" stroke="#a8702e" stroke-width="${f1(1.4 * q)}"/>`
+    wt += kind === "loaf" ? `<ellipse cx="${f1(x)}" cy="${f1(y - 8 * q)}" rx="${f1(22 * q)}" ry="${f1(11 * q)}" fill="#d9a05a" stroke="#a8702e" stroke-width="${f1(1.2 * q)}"/><path d="M${f1(x - 12 * q)} ${f1(y - 12 * q)} l${f1(6 * q)} ${f1(-5 * q)} M${f1(x)} ${f1(y - 13 * q)} l${f1(6 * q)} ${f1(-5 * q)}" stroke="#a8702e" stroke-width="${f1(1.4 * q)}"/>`
       : kind === "cheese" ? `<path d="M${f1(x - 20 * q)} ${f1(y)} V${f1(y - 14 * q)} A${f1(20 * q)} ${f1(6 * q)} 0 0 1 ${f1(x + 20 * q)} ${f1(y - 14 * q)} V${f1(y)} Z" fill="#f2c94c" stroke="#c9a02a" stroke-width="${f1(1.2 * q)}"/><ellipse cx="${f1(x)}" cy="${f1(y - 14 * q)}" rx="${f1(20 * q)}" ry="${f1(6 * q)}" fill="#f7d96a" stroke="#c9a02a" stroke-width="${f1(1 * q)}"/>`
       : kind === "cabbage" ? `<circle cx="${f1(x)}" cy="${f1(y - 13 * q)}" r="${f1(14 * q)}" fill="#7cb342" stroke="#4f7a2a" stroke-width="${f1(1.2 * q)}"/><path d="M${f1(x - 8 * q)} ${f1(y - 20 * q)} Q${f1(x)} ${f1(y - 8 * q)} ${f1(x + 8 * q)} ${f1(y - 20 * q)}" fill="none" stroke="#4f7a2a" stroke-width="${f1(1.2 * q)}"/>`
       : `<ellipse cx="${f1(x)}" cy="${f1(y - 6 * q)}" rx="${f1(22 * q)}" ry="${f1(8 * q)}" fill="#8a5a32"/>` + [-10, 0, 10, -5, 5].map((dx, i) => `<circle cx="${f1(x + dx * q)}" cy="${f1(y - (i < 3 ? 12 : 19) * q)}" r="${f1(6 * q)}" fill="${i % 2 ? "#e53935" : "#7cb342"}"/>`).join("");
   }
+  t += obj("worktable", at(0, floor, tz1)[1], wt);
   return t + flames.join("");
 }
 // The smithy: dark and very rustic. Rough stone, black with soot, under old
@@ -5481,8 +5515,10 @@ function smithySvg(c, K) {
   for (const z of [0, -0.22, -0.46]) { const f = 1 / (1 + z), [xa, ya] = at(-bw, top + 24 * k, z);
     t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(-2 * xa)}" height="${f1(20 * k * f)}" fill="${oak}" stroke="${oakD}" stroke-width="${f1(2 * k)}"/>`; }
   // the forge: a brick hearth, its coals, a hood up to the chimney, the bellows at its side
+  // (one object with its hood and bellows, standing against the back wall, at
+  // its foot; its coals' glow and its light are light, drawn over all at the end)
   const fx = -bw * 0.42, fw = 104 * k, [, fb] = at(0, floor), fy = fb - 92 * k;
-  t += `<path d="M${f1(fx - fw * 0.8)} ${f1(fy - 50 * k)} L${f1(fx - fw * 0.3)} ${f1(top)} H${f1(fx + fw * 0.3)} L${f1(fx + fw * 0.8)} ${f1(fy - 50 * k)} Z" fill="#2a2420" stroke="#1a1612" stroke-width="${f1(2 * k)}"/>` +
+  let forge = `<path d="M${f1(fx - fw * 0.8)} ${f1(fy - 50 * k)} L${f1(fx - fw * 0.3)} ${f1(top)} H${f1(fx + fw * 0.3)} L${f1(fx + fw * 0.8)} ${f1(fy - 50 * k)} Z" fill="#2a2420" stroke="#1a1612" stroke-width="${f1(2 * k)}"/>` +
        `<rect x="${f1(fx - fw)}" y="${f1(fy)}" width="${f1(2 * fw)}" height="${f1(fb - fy)}" fill="#7a3a26" stroke="#4a2014" stroke-width="${f1(2 * k)}"/>` +
        [1, 2, 3].map(r => `<line x1="${f1(fx - fw)}" y1="${f1(fy + (fb - fy) * r / 4)}" x2="${f1(fx + fw)}" y2="${f1(fy + (fb - fy) * r / 4)}" stroke="#4a2014" stroke-width="${f1(1.5 * k)}"/>`).join("") +
        `<rect x="${f1(fx - fw - 6 * k)}" y="${f1(fy - 8 * k)}" width="${f1(2 * fw + 12 * k)}" height="${f1(10 * k)}" fill="#5a2a1a"/>`;
@@ -5492,10 +5528,11 @@ function smithySvg(c, K) {
       `<animate attributeName="opacity" values="0.95;0.7;0.95" dur="3.2s" repeatCount="indefinite"/>`)}</circle>`);
   // (the bellows, to the forge's left, its top board rising and falling with the slow LFO)
   { const bx = fx - fw - 54 * k, by = fy + 20 * k;
-    t += `<path d="M${f1(bx - 40 * k)} ${f1(by)} L${f1(bx + 40 * k)} ${f1(by)} L${f1(bx + 52 * k)} ${f1(by - 6 * k)} L${f1(bx + 40 * k)} ${f1(by + 10 * k)} L${f1(bx - 40 * k)} ${f1(by + 10 * k)} Z" fill="${oak}"/>` +
+    forge += `<path d="M${f1(bx - 40 * k)} ${f1(by)} L${f1(bx + 40 * k)} ${f1(by)} L${f1(bx + 52 * k)} ${f1(by - 6 * k)} L${f1(bx + 40 * k)} ${f1(by + 10 * k)} L${f1(bx - 40 * k)} ${f1(by + 10 * k)} Z" fill="${oak}"/>` +
          `<g><path d="M${f1(bx - 40 * k)} ${f1(by)} Q${f1(bx - 46 * k)} ${f1(by - 26 * k)} ${f1(bx - 34 * k)} ${f1(by - 30 * k)} L${f1(bx + 40 * k)} ${f1(by - 4 * k)} Z" fill="#6b4a32" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>` +
          `<line x1="${f1(bx - 34 * k)}" y1="${f1(by - 30 * k)}" x2="${f1(bx - 60 * k)}" y2="${f1(by - 70 * k)}" stroke="${oak}" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
          lfoTimed(o, "slow", 0.3, `<animateTransform attributeName="transform" type="rotate" values="0 ${f1(bx + 40 * k)} ${f1(by - 4 * k)};-9 ${f1(bx + 40 * k)} ${f1(by - 4 * k)};0 ${f1(bx + 40 * k)} ${f1(by - 4 * k)}" dur="3.2s" repeatCount="indefinite"/>`) + `</g>`; }
+  t += obj("forge", fb, forge);
   // the wall's right: tongs, hammers and horseshoes on pegs; a rack of swords; a round shield
   { const y = Yh(0.62);
     t += `<rect x="${f1(bw * 0.05)}" y="${f1(y)}" width="${f1(bw * 0.5)}" height="${f1(8 * k)}" fill="${oak}"/>`;
@@ -5509,24 +5546,27 @@ function smithySvg(c, K) {
       `<rect x="${f1(rx + dx * k - 12 * k)}" y="${f1(ry - 44 * k)}" width="${f1(24 * k)}" height="${f1(5 * k)}" fill="#8a6a2a"/><rect x="${f1(rx + dx * k - 2.5 * k)}" y="${f1(ry - 64 * k)}" width="${f1(5 * k)}" height="${f1(20 * k)}" fill="#5a3a20"/>`;
     const [sx, sy] = at(bw * 0.4, Yh(0.32));
     t += `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(34 * k)}" fill="${castleFlagFill(K, 0, 8 * k)}" stroke="#8a8f9a" stroke-width="${f1(5 * k)}"/><circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(8 * k)}" fill="#c9ced6"/>`; }
-  // a heap of coal by the forge
+  // a heap of coal by the forge (an object, at its foot)
   { const [cx, cy] = at(fx + fw + 40 * k, floor, -0.05);
-    t += `<path d="M${f1(cx - 50 * k)} ${f1(cy)} Q${f1(cx - 30 * k)} ${f1(cy - 40 * k)} ${f1(cx)} ${f1(cy - 44 * k)} Q${f1(cx + 34 * k)} ${f1(cy - 36 * k)} ${f1(cx + 50 * k)} ${f1(cy)} Z" fill="#1c1c22"/>` +
-         [...Array(9)].map((_, i) => `<circle cx="${f1(cx - 38 * k + i * 9.5 * k)}" cy="${f1(cy - 8 * k - 22 * k * Math.sin(Math.PI * (i + 0.5) / 9))}" r="${f1(5 * k)}" fill="#2e2e36"/>`).join(""); }
+    t += obj("coal heap", cy, `<path d="M${f1(cx - 50 * k)} ${f1(cy)} Q${f1(cx - 30 * k)} ${f1(cy - 40 * k)} ${f1(cx)} ${f1(cy - 44 * k)} Q${f1(cx + 34 * k)} ${f1(cy - 36 * k)} ${f1(cx + 50 * k)} ${f1(cy)} Z" fill="#1c1c22"/>` +
+         [...Array(9)].map((_, i) => `<circle cx="${f1(cx - 38 * k + i * 9.5 * k)}" cy="${f1(cy - 8 * k - 22 * k * Math.sin(Math.PI * (i + 0.5) / 9))}" r="${f1(5 * k)}" fill="#2e2e36"/>`).join("")); }
   // the quench barrel, front right, steaming with the slow LFO
+  // (an object, at its foot; its steam drawn over all at the end)
   { const z = -0.36, f = 1 / (1 + z), q = k * f, [bx, by] = at(bw * 0.5, floor, z);
-    t += `<path d="M${f1(bx - 34 * q)} ${f1(by)} Q${f1(bx - 40 * q)} ${f1(by - 40 * q)} ${f1(bx - 34 * q)} ${f1(by - 80 * q)} H${f1(bx + 34 * q)} Q${f1(bx + 40 * q)} ${f1(by - 40 * q)} ${f1(bx + 34 * q)} ${f1(by)} Z" fill="${oak}" stroke="${oakD}" stroke-width="${f1(2 * q)}"/>` +
+    t += obj("water barrel", by, `<path d="M${f1(bx - 34 * q)} ${f1(by)} Q${f1(bx - 40 * q)} ${f1(by - 40 * q)} ${f1(bx - 34 * q)} ${f1(by - 80 * q)} H${f1(bx + 34 * q)} Q${f1(bx + 40 * q)} ${f1(by - 40 * q)} ${f1(bx + 34 * q)} ${f1(by)} Z" fill="${oak}" stroke="${oakD}" stroke-width="${f1(2 * q)}"/>` +
          [0.15, 0.85].map(u => `<line x1="${f1(bx - 37 * q)}" y1="${f1(by - 80 * q * u)}" x2="${f1(bx + 37 * q)}" y2="${f1(by - 80 * q * u)}" stroke="${iron}" stroke-width="${f1(4 * q)}"/>`).join("") +
-         `<ellipse cx="${f1(bx)}" cy="${f1(by - 80 * q)}" rx="${f1(34 * q)}" ry="${f1(8 * q)}" fill="#2a4a5a"/>`;
+         `<ellipse cx="${f1(bx)}" cy="${f1(by - 80 * q)}" rx="${f1(34 * q)}" ry="${f1(8 * q)}" fill="#2a4a5a"/>`);
     glow.push([0, 1].map(j => `<path d="M${f1(bx + (j ? 10 : -10) * q)} ${f1(by - 84 * q)} q${f1(-10 * q)} ${f1(-20 * q)} 0 ${f1(-40 * q)} q${f1(10 * q)} ${f1(-20 * q)} 0 ${f1(-40 * q)}" fill="none" stroke="#e8e8f0" stroke-width="${f1(6 * q)}" stroke-linecap="round" opacity="0.3">` +
       lfoTimed(o, "slow", 0.4 + j / 2, `<animate attributeName="opacity" values="0;0.4;0" dur="${(3.4 + j).toFixed(1)}s" repeatCount="indefinite"/>`) + `</path>`).join("")); }
   // the anvil on its stump, the smith beside it, striking the glowing bar on it; the sparks as the hammer lands
+  // (the anvil, with its stump, an object, and the smith another, both standing
+  // at ay; the anvil first, so his tongs and the bar stay over it)
   const z = -0.2, f = 1 / (1 + z), s = 1.08 * k * f, [ax, ay] = at(bw * 0.08, floor, z), hitX = ax, sx = ax + 96 * s, hitY = ay - 86 * s;   // (the smith stands so his strike, at (-96, -86) of his own, lands on the anvil)
-  t += `<path d="M${f1(ax - 26 * s)} ${f1(ay)} L${f1(ax - 22 * s)} ${f1(ay - 50 * s)} H${f1(ax + 22 * s)} L${f1(ax + 26 * s)} ${f1(ay)} Z" fill="#6b4a32" stroke="${oakD}" stroke-width="${f1(2 * s)}"/>` +
+  t += obj("anvil", ay, `<path d="M${f1(ax - 26 * s)} ${f1(ay)} L${f1(ax - 22 * s)} ${f1(ay - 50 * s)} H${f1(ax + 22 * s)} L${f1(ax + 26 * s)} ${f1(ay)} Z" fill="#6b4a32" stroke="${oakD}" stroke-width="${f1(2 * s)}"/>` +
        `<ellipse cx="${f1(ax)}" cy="${f1(ay - 50 * s)}" rx="${f1(22 * s)}" ry="${f1(5 * s)}" fill="#8a6a4a"/>` +
        `<path d="M${f1(ax - 18 * s)} ${f1(ay - 50 * s)} L${f1(ax - 12 * s)} ${f1(ay - 64 * s)} H${f1(ax + 12 * s)} L${f1(ax + 18 * s)} ${f1(ay - 50 * s)} Z" fill="#2a2a30"/>` +
-       `<path d="M${f1(ax - 40 * s)} ${f1(ay - 72 * s)} Q${f1(ax - 56 * s)} ${f1(ay - 76 * s)} ${f1(ax - 64 * s)} ${f1(ay - 84 * s)} H${f1(ax + 34 * s)} V${f1(ay - 72 * s)} H${f1(ax + 12 * s)} V${f1(ay - 64 * s)} H${f1(ax - 12 * s)} V${f1(ay - 72 * s)} Z" fill="#3a3a44" stroke="#1a1a20" stroke-width="${f1(1.5 * s)}"/>` +
-       `<g transform="translate(${f1(sx)} ${f1(ay)}) scale(${s.toFixed(4)})">${helperSvg(SMITH, o, 0)}</g>`;
+       `<path d="M${f1(ax - 40 * s)} ${f1(ay - 72 * s)} Q${f1(ax - 56 * s)} ${f1(ay - 76 * s)} ${f1(ax - 64 * s)} ${f1(ay - 84 * s)} H${f1(ax + 34 * s)} V${f1(ay - 72 * s)} H${f1(ax + 12 * s)} V${f1(ay - 64 * s)} H${f1(ax - 12 * s)} V${f1(ay - 72 * s)} Z" fill="#3a3a44" stroke="#1a1a20" stroke-width="${f1(1.5 * s)}"/>`) +
+       obj("smith", ay, `<g transform="translate(${f1(sx)} ${f1(ay)}) scale(${s.toFixed(4)})">${helperSvg(SMITH, o, 0)}</g>`);
   // (the sparks: a burst off the struck bar, bright at the strike, the middle of each round, gone soon after)
   glow.push(`<g opacity="0">` + lfoTimed(o, "fast", 0, `<animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.48;0.5;0.72;1" dur="0.9s" repeatCount="indefinite"/>`) +
     [...Array(9)].map((_, i) => { const a = -Math.PI * (0.1 + 0.8 * i / 8), r1 = 10 * s, r2 = (34 + 18 * (i % 3)) * s;
@@ -5597,13 +5637,21 @@ function spiralSvg(c, K) {
     const shade = mix(tone, "#ffffff", 0.18 - 0.12 * Math.min(1, (Yf - ya) / (420 * k)));
     const tread = `<polygon points="${[pt(r0, a, ya), pt(R, a, ya), pt(R, b, ya), pt(r0, b, ya)].map(p => P(...p)).join(" ")}" fill="${shade}" stroke="${mortar}" stroke-width="${f1(1.2 * k)}"/>` +
       `<polygon points="${[pt(r0, b, ya), pt(R, b, ya), pt(R, b, yb), pt(r0, b, yb)].map(p => P(...p)).join(" ")}" fill="${mix(tone, "#000000", 0.25)}" stroke="${mortar}" stroke-width="${f1(1 * k)}"/>`;
-    (sn > 0 ? front : back).push({ y: ya, s: tread });
+    (sn > 0 ? front : back).push({ y: ya, s: tread, low: th < Math.PI });
   }
+  // (ticket 99: the steps behind the column climb the back wall, behind
+  // anywhere one stands, so they are not an object; the column is one,
+  // standing where its foot is drawn; the steps in front of it at the foot
+  // of the stairs (the first half turn, from the floor) are one more, a row
+  // at its middle: the floor under their outer edge halfway round them. The
+  // cut edges of the turns above, high at the sides, are drawn before those
+  // (higher, so first in the sort) and stay as they were.)
   t += back.map(x => x.s).join("");
   // (the column, from the floor up out of sight)
-  t += `<rect x="${f1(-r0)}" y="${f1(top)}" width="${f1(2 * r0)}" height="${f1(Yf + 30 * k - top)}" fill="url(#bg-column)"/>` +
-       [...Array(14)].map((_, i) => `<path d="M${f1(-r0)} ${f1(Yf - i * 44 * k)} Q0 ${f1(Yf - i * 44 * k + 6 * k)} ${f1(r0)} ${f1(Yf - i * 44 * k)}" fill="none" stroke="${mortar}" stroke-width="${f1(1.5 * k)}" opacity="0.6"/>`).join("");
-  t += front.sort((a, b) => a.y - b.y).map(x => x.s).join("");
+  t += obj("column", Yf + 30 * k, `<rect x="${f1(-r0)}" y="${f1(top)}" width="${f1(2 * r0)}" height="${f1(Yf + 30 * k - top)}" fill="url(#bg-column)"/>` +
+       [...Array(14)].map((_, i) => `<path d="M${f1(-r0)} ${f1(Yf - i * 44 * k)} Q0 ${f1(Yf - i * 44 * k + 6 * k)} ${f1(r0)} ${f1(Yf - i * 44 * k)}" fill="none" stroke="${mortar}" stroke-width="${f1(1.5 * k)}" opacity="0.6"/>`).join(""));
+  const ahead = front.sort((a, b) => a.y - b.y);
+  t += ahead.filter(x => !x.low).map(x => x.s).join("") + obj("steps", pt(R, (G.th0 + Math.PI) / 2, Yf)[1], ahead.filter(x => x.low).map(x => x.s).join(""));
   // torches on the column, lighting the way up
   const lights = [Yf - 150 * k, Yf - 330 * k, Yf - 510 * k].map((y, i) => torchSvg(r0 * (i % 2 ? 0.6 : -0.6), y, k * 0.85, 20 + i, o));
   // the dark, deeper as it rises
