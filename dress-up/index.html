@@ -3721,11 +3721,16 @@ function treeroomScene(c) {
   // poke through the walls, a few pale leaves on them (it is dim in here)
   // (the tree's big limbs pass through the room, bare and still: leaves grow outside, in the
   // sun, and the wind is out there too; see the window)
-  s += SEP + part("room-tree", [c.F, room], () => braidSvg(look.trunk, y0 - pad, floor + 40 * k, 100 * k, k) +
+  // (the trunk an object, standing where it comes up through the floor, with the limbs
+  // that leave it; a limb out of the wall, far from it, is the wall's, drawn first,
+  // behind everything: it crosses no trunk, and the ways drawn over it stay over it)
+  const limb = ([x, y, sc, fl, a]) => `<use href="#bg-wallbranch" transform="translate(${f1(x)} ${f1(y)}) rotate(${a}) scale(${+(sc * k * fl).toFixed(3)} ${+(sc * k).toFixed(3)})"/>`;
+  const onTrunk = ([x]) => Math.abs(x - look.trunk) < 100 * k;
+  s += SEP + part("room-tree", [c.F, room], () =>
     `<defs><g id="bg-wallbranch"><ellipse cx="0" cy="0" rx="11" ry="15" fill="#2a1a0e"/>` +
     `<path d="M-2 -8 Q60 -24 140 -52 L142 -44 Q64 -10 -2 8 Z" fill="#6e4a2c" stroke="#3a2414" stroke-width="1.5"/>` +
-    `</g></defs>` + look.branches.map(([x, y, sc, fl, a]) =>
-      `<use href="#bg-wallbranch" transform="translate(${f1(x)} ${f1(y)}) rotate(${a}) scale(${+(sc * k * fl).toFixed(3)} ${+(sc * k).toFixed(3)})"/>`).join(""));
+    `</g></defs>` + look.branches.filter(b => !onTrunk(b)).map(limb).join("") +
+    obj("tree trunk", floor + 40 * k, braidSvg(look.trunk, y0 - pad, floor + 40 * k, 100 * k, k) + look.branches.filter(onTrunk).map(limb).join("")));
   // pictures on the far side of the wall from the window
   s += SEP + picturesSvg(o, "treeroom", ROOM_PICTURES[room].map(([x, y, w]) => [x, y, w * k]), 1, i => `r${inside}pic${i + 1}`);
   // the room's furniture and its things
@@ -3733,31 +3738,30 @@ function treeroomScene(c) {
     let t = "";
     if (room === "bunks") {
       const bx = x1 - W * 0.2, top = floor - 330 * k, mid = floor - 170 * k, w = 210 * k;
-      t += [-1, 1].map(sd => `<rect x="${f1(bx + sd * w / 2 - 7 * k)}" y="${f1(top - 20 * k)}" width="${f1(14 * k)}" height="${f1(floor + 30 * k - top)}" fill="#6e4a2c"/>`).join("");
+      // (the bunks and their ladder an object, standing on their posts, floor + 10k; the
+      // chest another; each toy is drawn with the one it sits on)
+      let bed = [-1, 1].map(sd => `<rect x="${f1(bx + sd * w / 2 - 7 * k)}" y="${f1(top - 20 * k)}" width="${f1(14 * k)}" height="${f1(floor + 30 * k - top)}" fill="#6e4a2c"/>`).join("");
       for (const [y, q] of [[top, "#3b7dd8"], [mid, "#d64545"]])
-        t += `<rect x="${f1(bx - w / 2)}" y="${f1(y)}" width="${f1(w)}" height="${f1(22 * k)}" fill="#f3efe6"/>` +
+        bed += `<rect x="${f1(bx - w / 2)}" y="${f1(y)}" width="${f1(w)}" height="${f1(22 * k)}" fill="#f3efe6"/>` +
              `<rect x="${f1(bx - w / 2 + 50 * k)}" y="${f1(y - 4 * k)}" width="${f1(w - 50 * k)}" height="${f1(30 * k)}" fill="${q}"/>` +
              [0, 1, 2, 3].map(j => `<rect x="${f1(bx - w / 2 + 60 * k + j * 36 * k)}" y="${f1(y + 4 * k)}" width="${f1(14 * k)}" height="${f1(14 * k)}" fill="#ffffff" opacity="0.5"/>`).join("") +
              `<rect x="${f1(bx - w / 2 + 6 * k)}" y="${f1(y - 16 * k)}" width="${f1(42 * k)}" height="${f1(18 * k)}" rx="${f1(8 * k)}" fill="#ffffff"/>` +
              `<rect x="${f1(bx - w / 2)}" y="${f1(y + 22 * k)}" width="${f1(w)}" height="${f1(12 * k)}" fill="#6e4a2c"/>`;
       const lx = bx - w / 2 - 34 * k;
-      t += `<line x1="${f1(lx)}" y1="${f1(top)}" x2="${f1(lx)}" y2="${f1(floor + 20 * k)}" stroke="#8b5e34" stroke-width="${f1(6 * k)}"/><line x1="${f1(lx + 26 * k)}" y1="${f1(top)}" x2="${f1(lx + 26 * k)}" y2="${f1(floor + 20 * k)}" stroke="#8b5e34" stroke-width="${f1(6 * k)}"/>` +
+      bed += `<line x1="${f1(lx)}" y1="${f1(top)}" x2="${f1(lx)}" y2="${f1(floor + 20 * k)}" stroke="#8b5e34" stroke-width="${f1(6 * k)}"/><line x1="${f1(lx + 26 * k)}" y1="${f1(top)}" x2="${f1(lx + 26 * k)}" y2="${f1(floor + 20 * k)}" stroke="#8b5e34" stroke-width="${f1(6 * k)}"/>` +
            [...Array(8)].map((_, j) => `<line x1="${f1(lx)}" y1="${f1(top + 20 * k + j * 42 * k)}" x2="${f1(lx + 26 * k)}" y2="${f1(top + 20 * k + j * 42 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("");
       // stuffed toys on the beds, the rest on a chest by the window
-      t += `<defs>${toyDefs}</defs><rect x="${f1(x0 + W * 0.12)}" y="${f1(floor - 70 * k)}" width="${f1(150 * k)}" height="${f1(90 * k)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(3 * k)}"/>`;
-      t += [...Array(things)].map((_, i) => {
-        const at = [[bx + w / 2 - 30 * k - (i % 4) * 40 * k, top - 2 * k], [bx + w / 2 - 30 * k - (i % 4) * 40 * k, mid - 2 * k], [x0 + W * 0.12 + 20 * k + (i % 4) * 36 * k, floor - 70 * k]][Math.floor(i / 4) % 3];
-        return use(`bg-toy-${["teddy", "ball", "blocks", "teddy"][i % 4]}`, at[0], at[1] - Math.floor(i / 12) * 30 * k, k * 0.9);
-      }).join("");
+      let chest = `<rect x="${f1(x0 + W * 0.12)}" y="${f1(floor - 70 * k)}" width="${f1(150 * k)}" height="${f1(90 * k)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(3 * k)}"/>`;
+      [...Array(things)].forEach((_, i) => {
+        const on = Math.floor(i / 4) % 3, at = [[bx + w / 2 - 30 * k - (i % 4) * 40 * k, top - 2 * k], [bx + w / 2 - 30 * k - (i % 4) * 40 * k, mid - 2 * k], [x0 + W * 0.12 + 20 * k + (i % 4) * 36 * k, floor - 70 * k]][on];
+        const toy = use(`bg-toy-${["teddy", "ball", "blocks", "teddy"][i % 4]}`, at[0], at[1] - Math.floor(i / 12) * 30 * k, k * 0.9);
+        if (on < 2) bed += toy; else chest += toy;
+      });
+      t += `<defs>${toyDefs}</defs>` + obj("bunk beds", floor + 10 * k, bed) + obj("toy chest", floor + 20 * k, chest);
     } else if (room === "kitchen") {
       const cx = x0 + W * 0.05, top = floor - 120 * k;
-      t += `<rect x="${f1(cx)}" y="${f1(top)}" width="${f1(W * 0.34)}" height="${f1(130 * k)}" fill="#7a4f2a"/>` +
-           `<rect x="${f1(cx - 8 * k)}" y="${f1(top - 12 * k)}" width="${f1(W * 0.34 + 16 * k)}" height="${f1(14 * k)}" fill="#d9c7a8"/>` +
-           [0, 1, 2].map(j => `<rect x="${f1(cx + 12 * k + j * W * 0.11)}" y="${f1(top + 14 * k)}" width="${f1(W * 0.1)}" height="${f1(96 * k)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(2 * k)}"/><circle cx="${f1(cx + 12 * k + j * W * 0.11 + W * 0.085)}" cy="${f1(top + 60 * k)}" r="${f1(3.5 * k)}" fill="#f2c12e"/>`).join("") +
-           // a little stove, a kettle on it
-           `<rect x="${f1(cx + W * 0.36)}" y="${f1(top - 30 * k)}" width="${f1(110 * k)}" height="${f1(160 * k)}" fill="#3a3a3a"/><rect x="${f1(cx + W * 0.36 + 14 * k)}" y="${f1(top + 30 * k)}" width="${f1(82 * k)}" height="${f1(60 * k)}" fill="#e8762c" opacity="0.8"/>` +
-           `<ellipse cx="${f1(cx + W * 0.36 + 55 * k)}" cy="${f1(top - 50 * k)}" rx="${f1(30 * k)}" ry="${f1(22 * k)}" fill="#c0392b"/><path d="M${P(cx + W * 0.36 + 82 * k, top - 54 * k)} L${P(cx + W * 0.36 + 104 * k, top - 70 * k)}" stroke="#c0392b" stroke-width="${f1(7 * k)}"/>`;
       // shelves of jars above the counter
+      // (on the wall: drawn before the objects, which they cross none of)
       const sy = [y0 + H * 0.52, y0 + H * 0.36], jx = x1 - W * 0.36;
       t += sy.map(y => `<rect x="${f1(jx)}" y="${f1(y)}" width="${f1(W * 0.3)}" height="${f1(8 * k)}" fill="#6e4a2c"/>`).join("") +
            [...Array(things)].map((_, i) => {
@@ -3765,11 +3769,19 @@ function treeroomScene(c) {
              return `<rect x="${f1(x)}" y="${f1(y - h)}" width="${f1(20 * k)}" height="${f1(h)}" rx="${f1(4 * k)}" fill="${["#e8c870", "#c0504d", "#7cb342", "#f2a65a", "#8e6bbf"][i % 5]}" opacity="0.9" stroke="#ffffff" stroke-width="${f1(1.5 * k)}"/>` +
                     `<rect x="${f1(x - 1 * k)}" y="${f1(y - h - 6 * k)}" width="${f1(22 * k)}" height="${f1(7 * k)}" fill="#8b5e34"/>`;
            }).join("");
+      // (the counter and the stove each an object, both down to top + 130k, floor + 10k)
+      t += obj("counter", floor + 10 * k, `<rect x="${f1(cx)}" y="${f1(top)}" width="${f1(W * 0.34)}" height="${f1(130 * k)}" fill="#7a4f2a"/>` +
+           `<rect x="${f1(cx - 8 * k)}" y="${f1(top - 12 * k)}" width="${f1(W * 0.34 + 16 * k)}" height="${f1(14 * k)}" fill="#d9c7a8"/>` +
+           [0, 1, 2].map(j => `<rect x="${f1(cx + 12 * k + j * W * 0.11)}" y="${f1(top + 14 * k)}" width="${f1(W * 0.1)}" height="${f1(96 * k)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(2 * k)}"/><circle cx="${f1(cx + 12 * k + j * W * 0.11 + W * 0.085)}" cy="${f1(top + 60 * k)}" r="${f1(3.5 * k)}" fill="#f2c12e"/>`).join("")) +
+           // a little stove, a kettle on it
+           obj("stove", floor + 10 * k, `<rect x="${f1(cx + W * 0.36)}" y="${f1(top - 30 * k)}" width="${f1(110 * k)}" height="${f1(160 * k)}" fill="#3a3a3a"/><rect x="${f1(cx + W * 0.36 + 14 * k)}" y="${f1(top + 30 * k)}" width="${f1(82 * k)}" height="${f1(60 * k)}" fill="#e8762c" opacity="0.8"/>` +
+           `<ellipse cx="${f1(cx + W * 0.36 + 55 * k)}" cy="${f1(top - 50 * k)}" rx="${f1(30 * k)}" ry="${f1(22 * k)}" fill="#c0392b"/><path d="M${P(cx + W * 0.36 + 82 * k, top - 54 * k)} L${P(cx + W * 0.36 + 104 * k, top - 70 * k)}" stroke="#c0392b" stroke-width="${f1(7 * k)}"/>`);
       // a table and two stools on the right
+      // (an object, its legs down to floor + 84k)
       const tx = x1 - W * 0.18;
-      t += `<rect x="${f1(tx - 90 * k)}" y="${f1(floor - 40 * k)}" width="${f1(180 * k)}" height="${f1(14 * k)}" fill="#8b5e34"/>` +
+      t += obj("table", floor + 84 * k, `<rect x="${f1(tx - 90 * k)}" y="${f1(floor - 40 * k)}" width="${f1(180 * k)}" height="${f1(14 * k)}" fill="#8b5e34"/>` +
            [-70, 70].map(dx => `<rect x="${f1(tx + dx * k - 6 * k)}" y="${f1(floor - 26 * k)}" width="${f1(12 * k)}" height="${f1(110 * k)}" fill="#6e4a2c"/>`).join("") +
-           `<circle cx="${f1(tx)}" cy="${f1(floor - 58 * k)}" r="${f1(18 * k)}" fill="#e53935"/>`;
+           `<circle cx="${f1(tx)}" cy="${f1(floor - 58 * k)}" r="${f1(18 * k)}" fill="#e53935"/>`);
     } else if (room === "books") {
       const bx = x1 - W * 0.36, w = W * 0.32, top = y0 + H * 0.5;
       t += `<rect x="${f1(bx)}" y="${f1(top)}" width="${f1(w)}" height="${f1(floor + 20 * k - top)}" fill="#6e4a2c"/>`;
@@ -3786,32 +3798,38 @@ function treeroomScene(c) {
       // a beanbag and a lantern
       // (the lantern hangs on a cord from the roof itself: the roof's edge, at the cord, is
       // where the slope above, from x0 - pad to x0 + 0.3 W, crosses it)
+      // (the bookcase and its books an object, standing on the floor at floor + 20k; the
+      // beanbag another, at its foot, floor + 60k; the lantern hangs at the wall, from the
+      // roof's edge there, and is not one: it is drawn first, crossing neither)
       const gx = x0 + W * 0.2, lx = x0 + W * 0.1, ly = y0 + H * 0.36 * (1 - W * 0.1 / (W * 0.3)) + 60 * k;
       const roofAt = y0 + H * 0.36 * (1 - (lx - (x0 - pad)) / (x0 + W * 0.3 - (x0 - pad)));
-      t += `<path d="M${P(gx - 90 * k, floor + 60 * k)} Q${P(gx - 100 * k, floor - 70 * k)} ${P(gx, floor - 60 * k)} Q${P(gx + 100 * k, floor - 70 * k)} ${P(gx + 90 * k, floor + 60 * k)} Z" fill="#e85d75"/>` +
-           `<line x1="${f1(lx)}" y1="${f1(roofAt - 4 * k)}" x2="${f1(lx)}" y2="${f1(ly)}" stroke="#333" stroke-width="${f1(2 * k)}"/>` +
-           `<path d="M${P(lx - 5 * k, roofAt - 2 * k)} q${f1(5 * k)} ${f1(-7 * k)} ${f1(10 * k)} 0" fill="none" stroke="#333" stroke-width="${f1(2.5 * k)}"/>` +
-           `<rect x="${f1(lx - 16 * k)}" y="${f1(ly)}" width="${f1(32 * k)}" height="${f1(42 * k)}" rx="${f1(6 * k)}" fill="#ffe08a" stroke="#333" stroke-width="${f1(3 * k)}"/>`;
+      t = `<line x1="${f1(lx)}" y1="${f1(roofAt - 4 * k)}" x2="${f1(lx)}" y2="${f1(ly)}" stroke="#333" stroke-width="${f1(2 * k)}"/>` +
+          `<path d="M${P(lx - 5 * k, roofAt - 2 * k)} q${f1(5 * k)} ${f1(-7 * k)} ${f1(10 * k)} 0" fill="none" stroke="#333" stroke-width="${f1(2.5 * k)}"/>` +
+          `<rect x="${f1(lx - 16 * k)}" y="${f1(ly)}" width="${f1(32 * k)}" height="${f1(42 * k)}" rx="${f1(6 * k)}" fill="#ffe08a" stroke="#333" stroke-width="${f1(3 * k)}"/>` +
+          obj("bookcase", floor + 20 * k, t) +
+          obj("beanbag", floor + 60 * k, `<path d="M${P(gx - 90 * k, floor + 60 * k)} Q${P(gx - 100 * k, floor - 70 * k)} ${P(gx, floor - 60 * k)} Q${P(gx + 100 * k, floor - 70 * k)} ${P(gx + 90 * k, floor + 60 * k)} Z" fill="#e85d75"/>`);
     } else if (room === "art") {
       // an easel with a child's painting, a table of paint jars, paint on the
       // floor, and drawings pinned up (the things: jars, then drawings)
       const ex = x1 - W * 0.22, top = floor - 270 * k, cols = ["#e53935", "#3b7dd8", "#f2c12e", "#27ae60", "#8e44ad", "#ff8c42"];
       t += [[-60, 30], [-30, 50], [40, 20], [70, 60], [10, 80]].map(([dx, dy], i) =>
              `<ellipse cx="${f1(dx * k)}" cy="${f1(floor + dy * k)}" rx="${f1(16 * k)}" ry="${f1(6 * k)}" fill="${cols[i]}" opacity="0.8"/>`).join("") +
-           [-1, 1].map(sd => `<line x1="${f1(ex)}" y1="${f1(top)}" x2="${f1(ex + sd * 60 * k)}" y2="${f1(floor + 30 * k)}" stroke="#8b5e34" stroke-width="${f1(7 * k)}"/>`).join("") +
+           // (the easel an object, at its splayed legs' feet, floor + 30k; the paint on the floor is not)
+           obj("easel", floor + 30 * k, [-1, 1].map(sd => `<line x1="${f1(ex)}" y1="${f1(top)}" x2="${f1(ex + sd * 60 * k)}" y2="${f1(floor + 30 * k)}" stroke="#8b5e34" stroke-width="${f1(7 * k)}"/>`).join("") +
            `<line x1="${f1(ex)}" y1="${f1(top)}" x2="${f1(ex)}" y2="${f1(floor + 20 * k)}" stroke="#6e4a2c" stroke-width="${f1(6 * k)}"/>` +
            `<rect x="${f1(ex - 80 * k)}" y="${f1(top + 20 * k)}" width="${f1(160 * k)}" height="${f1(120 * k)}" fill="#fffdf6" stroke="#8b5e34" stroke-width="${f1(4 * k)}"/>` +
            `<circle cx="${f1(ex + 45 * k)}" cy="${f1(top + 50 * k)}" r="${f1(14 * k)}" fill="#ffd23f"/>` +
            `<path d="M${P(ex - 78 * k, top + 138 * k)} Q${P(ex, top + 80 * k)} ${P(ex + 78 * k, top + 138 * k)} Z" fill="#7cc25a"/>` +
            `<rect x="${f1(ex - 40 * k)}" y="${f1(top + 82 * k)}" width="${f1(36 * k)}" height="${f1(30 * k)}" fill="#e85d75"/>` +
            `<polygon points="${P(ex - 46 * k, top + 82 * k)} ${P(ex - 22 * k, top + 62 * k)} ${P(ex + 2 * k, top + 82 * k)}" fill="#3b7dd8"/>` +
-           `<rect x="${f1(ex - 90 * k)}" y="${f1(top + 140 * k)}" width="${f1(180 * k)}" height="${f1(8 * k)}" fill="#6e4a2c"/>`;
+           `<rect x="${f1(ex - 90 * k)}" y="${f1(top + 140 * k)}" width="${f1(180 * k)}" height="${f1(8 * k)}" fill="#6e4a2c"/>`);
+      // (the table and its jars an object, its legs down to ty + 92k)
       const tx = x0 + W * 0.2, ty = floor - 70 * k;
-      t += `<rect x="${f1(tx - 110 * k)}" y="${f1(ty)}" width="${f1(220 * k)}" height="${f1(12 * k)}" fill="#8b5e34"/>` +
+      t += obj("paint table", ty + 92 * k, `<rect x="${f1(tx - 110 * k)}" y="${f1(ty)}" width="${f1(220 * k)}" height="${f1(12 * k)}" fill="#8b5e34"/>` +
            [-95, 95].map(dx => `<rect x="${f1(tx + dx * k - 5 * k)}" y="${f1(ty + 12 * k)}" width="${f1(10 * k)}" height="${f1(80 * k)}" fill="#6e4a2c"/>`).join("") +
            [...Array(Math.min(things, 10))].map((_, i) => { const x = tx - 98 * k + i * 21 * k;
              return `<rect x="${f1(x)}" y="${f1(ty - 26 * k)}" width="${f1(16 * k)}" height="${f1(26 * k)}" rx="${f1(3 * k)}" fill="${cols[i % 6]}" stroke="#ffffff" stroke-width="${f1(1.5 * k)}"/>` +
-                    (i % 2 ? `<line x1="${f1(x + 8 * k)}" y1="${f1(ty - 24 * k)}" x2="${f1(x + 14 * k)}" y2="${f1(ty - 52 * k)}" stroke="#c9a66b" stroke-width="${f1(2.5 * k)}"/>` : ""); }).join("");
+                    (i % 2 ? `<line x1="${f1(x + 8 * k)}" y1="${f1(ty - 24 * k)}" x2="${f1(x + 14 * k)}" y2="${f1(ty - 52 * k)}" stroke="#c9a66b" stroke-width="${f1(2.5 * k)}"/>` : ""); }).join(""));
       t += [...Array(Math.max(0, things - 10))].map((_, i) => {
         const x = 150 + (i % 6) * 34 * k, y = y0 + H * 0.12 + Math.floor(i / 6) * 46 * k, c = cols[i % 6];
         return `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(28 * k)}" height="${f1(36 * k)}" fill="#ffffff" stroke="#d8cdb8" stroke-width="${f1(k)}" transform="rotate(${(i % 3 - 1) * 5} ${f1(x + 14 * k)} ${f1(y)})"/>` +
@@ -3820,32 +3838,32 @@ function treeroomScene(c) {
     } else if (room === "music") {
       // a drum kit, a keyboard on its stand, records on the wall (the
       // things), and notes in the air
+      // (the records, on the wall: drawn before the objects, which they cross none of)
+      t += [...Array(things)].map((_, i) => {
+        const x = 150 + (i % 6) * 40 * k, y = y0 + H * 0.14 + Math.floor(i / 6) * 42 * k;
+        return `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(17 * k)}" fill="#1f1f22"/><circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(11 * k)}" fill="none" stroke="#333" stroke-width="${f1(k)}"/>` +
+               `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(5.5 * k)}" fill="${["#e53935", "#f2c12e", "#3b7dd8", "#27ae60", "#ff8c42", "#e85d75"][i % 6]}"/>`;
+      }).join("");
+      // (the drum kit an object, its stands and drum down to dy; the keyboard another, its
+      // stand down to floor + 20k, the notes over it with it)
       const dx = x1 - W * 0.26, dy = floor + 14 * k;
-      t += [[-110, -150, 30], [105, -160, 34]].map(([ox, oy, r]) => `<line x1="${f1(dx + ox * k)}" y1="${f1(dy + oy * k)}" x2="${f1(dx + ox * 0.8 * k)}" y2="${f1(dy)}" stroke="#555" stroke-width="${f1(3 * k)}"/>` +
+      t += obj("drum kit", dy, [[-110, -150, 30], [105, -160, 34]].map(([ox, oy, r]) => `<line x1="${f1(dx + ox * k)}" y1="${f1(dy + oy * k)}" x2="${f1(dx + ox * 0.8 * k)}" y2="${f1(dy)}" stroke="#555" stroke-width="${f1(3 * k)}"/>` +
              `<ellipse cx="${f1(dx + ox * k)}" cy="${f1(dy + oy * k)}" rx="${f1(r * k)}" ry="${f1(5 * k)}" fill="#e2b73c" stroke="#a8862a" stroke-width="${f1(1.5 * k)}"/>`).join("") +
            [-42, 42].map(ox => `<ellipse cx="${f1(dx + ox * k)}" cy="${f1(dy - 112 * k)}" rx="${f1(24 * k)}" ry="${f1(14 * k)}" fill="#c0392b" stroke="#7a1f1f" stroke-width="${f1(2 * k)}"/>` +
              `<ellipse cx="${f1(dx + ox * k)}" cy="${f1(dy - 118 * k)}" rx="${f1(22 * k)}" ry="${f1(7 * k)}" fill="#f4efe6"/>`).join("") +
            `<circle cx="${f1(dx)}" cy="${f1(dy - 52 * k)}" r="${f1(52 * k)}" fill="#c0392b" stroke="#7a1f1f" stroke-width="${f1(3 * k)}"/>` +
            `<circle cx="${f1(dx)}" cy="${f1(dy - 52 * k)}" r="${f1(40 * k)}" fill="#f4efe6"/><text x="${f1(dx)}" y="${f1(dy - 44 * k)}" text-anchor="middle" font-size="${f1(24 * k)}">⭐</text>` +
            `<line x1="${f1(dx - 88 * k)}" y1="${f1(dy - 70 * k)}" x2="${f1(dx - 92 * k)}" y2="${f1(dy)}" stroke="#555" stroke-width="${f1(3 * k)}"/>` +
-           `<ellipse cx="${f1(dx - 88 * k)}" cy="${f1(dy - 72 * k)}" rx="${f1(28 * k)}" ry="${f1(10 * k)}" fill="#d8d8d8" stroke="#888" stroke-width="${f1(2 * k)}"/>`;
+           `<ellipse cx="${f1(dx - 88 * k)}" cy="${f1(dy - 72 * k)}" rx="${f1(28 * k)}" ry="${f1(10 * k)}" fill="#d8d8d8" stroke="#888" stroke-width="${f1(2 * k)}"/>`);
       const kx = x0 + W * 0.22, ky = floor - 95 * k;
-      t += [-1, 1].map(sd => `<line x1="${f1(kx - 70 * k)}" y1="${f1(ky + 30 * k)}" x2="${f1(kx + 70 * k)}" y2="${f1(floor + 20 * k)}" stroke="#333" stroke-width="${f1(5 * k)}" transform="scale(${sd} 1)" transform-origin="${f1(kx)} 0"/>`).join("") +
+      t += obj("keyboard", floor + 20 * k, [-1, 1].map(sd => `<line x1="${f1(kx - 70 * k)}" y1="${f1(ky + 30 * k)}" x2="${f1(kx + 70 * k)}" y2="${f1(floor + 20 * k)}" stroke="#333" stroke-width="${f1(5 * k)}" transform="scale(${sd} 1)" transform-origin="${f1(kx)} 0"/>`).join("") +
            `<rect x="${f1(kx - 115 * k)}" y="${f1(ky)}" width="${f1(230 * k)}" height="${f1(34 * k)}" rx="${f1(4 * k)}" fill="#222"/>` +
            `<rect x="${f1(kx - 108 * k)}" y="${f1(ky + 10 * k)}" width="${f1(216 * k)}" height="${f1(20 * k)}" fill="#ffffff"/>` +
            [...Array(15)].map((_, i) => [1, 2, 4, 5, 6].includes(i % 7) ? `<rect x="${f1(kx - 108 * k + (i + 0.65) * 14.4 * k)}" y="${f1(ky + 10 * k)}" width="${f1(7 * k)}" height="${f1(12 * k)}" fill="#222"/>` : "").join("") +
-           [[-60, -150, "♪"], [-10, -190, "♫"], [40, -160, "♪"]].map(([nx, ny, ch]) => `<text x="${f1(kx + nx * k)}" y="${f1(ky + ny * k)}" font-size="${f1(30 * k)}" fill="#f2c12e">${ch}</text>`).join("");
-      t += [...Array(things)].map((_, i) => {
-        const x = 150 + (i % 6) * 40 * k, y = y0 + H * 0.14 + Math.floor(i / 6) * 42 * k;
-        return `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(17 * k)}" fill="#1f1f22"/><circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(11 * k)}" fill="none" stroke="#333" stroke-width="${f1(k)}"/>` +
-               `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(5.5 * k)}" fill="${["#e53935", "#f2c12e", "#3b7dd8", "#27ae60", "#ff8c42", "#e85d75"][i % 6]}"/>`;
-      }).join("");
+           [[-60, -150, "♪"], [-10, -190, "♫"], [40, -160, "♪"]].map(([nx, ny, ch]) => `<text x="${f1(kx + nx * k)}" y="${f1(ky + ny * k)}" font-size="${f1(30 * k)}" fill="#f2c12e">${ch}</text>`).join(""));
     } else {
       // the lookout: a telescope at the window, a map, and pennants overhead
-      const tx = x0 + W * 0.3, ty = floor - 150 * k;
-      t += `<g transform="translate(${f1(2 * tx)} 0) scale(-1 1)">` + [-1, 0, 1].map(sd => `<line x1="${f1(tx)}" y1="${f1(ty)}" x2="${f1(tx + sd * 50 * k)}" y2="${f1(floor + 20 * k)}" stroke="#5e3d22" stroke-width="${f1(6 * k)}"/>`).join("") +
-           `<g transform="rotate(-28 ${f1(tx)} ${f1(ty)})"><rect x="${f1(tx - 90 * k)}" y="${f1(ty - 14 * k)}" width="${f1(150 * k)}" height="${f1(28 * k)}" rx="${f1(8 * k)}" fill="#c9a94a" stroke="#7a5518" stroke-width="${f1(3 * k)}"/>` +
-           `<rect x="${f1(tx - 110 * k)}" y="${f1(ty - 18 * k)}" width="${f1(26 * k)}" height="${f1(36 * k)}" rx="${f1(5 * k)}" fill="#8a6a1a"/></g></g>`;
+      // (the map and the pennants, on the wall: drawn before the telescope, which they do not cross)
       const mx = x1 - W * 0.3, my = y0 + H * 0.55;
       t += `<rect x="${f1(mx)}" y="${f1(my)}" width="${f1(170 * k)}" height="${f1(120 * k)}" fill="#f3e3b8" stroke="#a0703f" stroke-width="${f1(3 * k)}"/>` +
            `<path d="M${P(mx + 20 * k, my + 90 * k)} Q${P(mx + 60 * k, my + 30 * k)} ${P(mx + 100 * k, my + 70 * k)} T${P(mx + 150 * k, my + 30 * k)}" fill="none" stroke="#c0392b" stroke-width="${f1(3 * k)}" stroke-dasharray="${f1(6 * k)} ${f1(5 * k)}"/>` +
@@ -3856,27 +3874,45 @@ function treeroomScene(c) {
              const u = (i + 0.5) / n, x = a + (b - a) * u, y = (1 - u) * (1 - u) * top + 2 * u * (1 - u) * (top + 60 * k) + u * u * top;
              return `<polygon points="${P(x - 14 * k, y)} ${P(x + 14 * k, y)} ${P(x, y + 34 * k)}" fill="${["#e53935", "#f2c12e", "#2e86de", "#27ae60", "#8e44ad"][i % 5]}"/>`;
            }).join("");
+      // (the telescope an object, its tripod's feet at floor + 20k (its mirroring group
+      // keeps every y); the map is on the wall, and the pennants are strung along it)
+      const tx = x0 + W * 0.3, ty = floor - 150 * k;
+      t += obj("telescope", floor + 20 * k, `<g transform="translate(${f1(2 * tx)} 0) scale(-1 1)">` + [-1, 0, 1].map(sd => `<line x1="${f1(tx)}" y1="${f1(ty)}" x2="${f1(tx + sd * 50 * k)}" y2="${f1(floor + 20 * k)}" stroke="#5e3d22" stroke-width="${f1(6 * k)}"/>`).join("") +
+           `<g transform="rotate(-28 ${f1(tx)} ${f1(ty)})"><rect x="${f1(tx - 90 * k)}" y="${f1(ty - 14 * k)}" width="${f1(150 * k)}" height="${f1(28 * k)}" rx="${f1(8 * k)}" fill="#c9a94a" stroke="#7a5518" stroke-width="${f1(3 * k)}"/>` +
+           `<rect x="${f1(tx - 110 * k)}" y="${f1(ty - 18 * k)}" width="${f1(26 * k)}" height="${f1(36 * k)}" rx="${f1(5 * k)}" fill="#8a6a1a"/></g></g>`);
     }
     return t;
   });
   // the ways out: a door to each house a rope bridge joins this one to, a
   // hatch down its ladder, a ladder up to the house above; each a doorway
-  const links = houseLinks(o, inside - 1);
-  s += SEP + part("room-ways", [c.F, links], () => waysSvg(c, floor, links));
+  // (the doors are in the side walls, and are not objects; the hatch is one, at its hole's
+  // front edge, hy + 20k = floor + 92k in waysSvg, and the ladder up another, at its foot,
+  // floor + 14k: each drawn by itself, in the order waysSvg draws them all)
+  const links = houseLinks(o, inside - 1), ways = way => links.filter(L => way.includes(L.way));
+  s += SEP + part("room-ways", [c.F, links], () => {
+    const down = ways(["down"]), up = ways(["up"]);
+    return waysSvg(c, floor, ways(["left", "right"])) + (down.length ? obj("hatch", floor + 92 * k, waysSvg(c, floor, down)) : "") +
+           (up.length ? obj("ladder up", floor + 14 * k, waysSvg(c, floor, up)) : "");
+  });
   // which house this is: a sign hanging from the rafters
-  s += SEP + part("room-sign", [c.F, inside, houseEmoji(o, inside)], () => {
+  // (drawn after the room's objects, so it is in front of everything, an object at
+  // Infinity, as the dark and the sign below are: the friend is always under it)
+  s += SEP + obj("house sign", Infinity, part("room-sign", [c.F, inside, houseEmoji(o, inside)], () => {
     const sx = x1 - W * 0.14, sy = y0 + H * 0.12;
     // (hanging still on its ropes: no wind indoors)
     return (`<path d="M${P(sx - 30 * k, sy - 60 * k)} L${P(sx - 30 * k, sy)} M${P(sx + 30 * k, sy - 60 * k)} L${P(sx + 30 * k, sy)}" stroke="#d8c49a" stroke-width="${f1(2 * k)}"/>` +
            `<rect x="${f1(sx - 46 * k)}" y="${f1(sy - 4 * k)}" width="${f1(92 * k)}" height="${f1(40 * k)}" rx="${f1(5 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2.5 * k)}"/>` +
            `<text x="${f1(sx)}" y="${f1(sy + 25 * k)}" text-anchor="middle" font-size="${f1(24 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${houseEmoji(o, inside)} ${inside}</text>`);
-  });
+  }));
   // dim in here: darker toward the corners
-  s += SEP + part("room-dim", c.F, () => `<defs><radialGradient id="bg-dim" gradientUnits="userSpaceOnUse" cx="${f1((x0 + x1) / 2)}" cy="${f1(y0 + H * 0.42)}" r="${f1(0.62 * Math.hypot(W, H))}">` +
+  // (over everything, the friend too: in front, at Infinity)
+  s += SEP + obj("dark", Infinity, part("room-dim", c.F, () => `<defs><radialGradient id="bg-dim" gradientUnits="userSpaceOnUse" cx="${f1((x0 + x1) / 2)}" cy="${f1(y0 + H * 0.42)}" r="${f1(0.62 * Math.hypot(W, H))}">` +
     `<stop offset="0.5" stop-color="#1a0f05" stop-opacity="0"/><stop offset="1" stop-color="#1a0f05" stop-opacity="0.5"/></radialGradient></defs>` +
-    all("url(#bg-dim)").replace("<rect ", `<rect pointer-events="none" `));
+    all("url(#bg-dim)").replace("<rect ", `<rect pointer-events="none" `)));
   // (a door behind us, at the bottom of the picture, where it leads somewhere)
-  s += SEP + behindSign(c, o["treeBack" + inside]);
+  // (its sign in front of everything, at Infinity, as the living room's is)
+  const back = behindSign(c, o["treeBack" + inside]);
+  s += SEP + (back && obj("sign", Infinity, back));
   return s;
 }
 // Inside the witch's hut: log walls, herbs and a crooked shelf of potions,
@@ -3978,8 +4014,22 @@ function witchroomScene(c) {
     return `<defs>${WITCH_DEFS}</defs><rect x="${f1(fx - 16 * k)}" y="${f1(fy)}" width="${f1(W * 0.26)}" height="${f1(9 * k)}" fill="#2a1a12"/>` +
            [...Array(n)].map((_, i) => use("bg-frogjar", fx + 8 * k + i * 26 * k, fy, k * 0.8)).join("");
   });
+  // crows in cages, hanging from the beam
+  // (the beam runs along the top of the back wall, as the herbs on it do: the cages hang
+  // at the wall, and are not objects; drawn before the objects, so always behind the
+  // friend; they cross none of them, the snake tank they once came after included)
+  s += SEP + part("wroom-crows", [c.F, crows, sceneLfoKey(o, "slow")], () => {
+    const by = y0 + H * 0.02 + 16 * k, spots = [-0.36, 0.3, -0.22, 0.18, -0.44, 0.42];
+    return `<defs>${WITCH_DEFS}</defs>` + spots.slice(0, Math.min(crows, 6)).map((u, i) => {
+      const x = W * u, hang = (60 + 30 * R(i, 302)) * k;
+      // (each cage swinging on its chain with the slow LFO, its own way in)
+      return swaying(o, `<line x1="${f1(x)}" y1="${f1(by)}" x2="${f1(x)}" y2="${f1(by + hang)}" stroke="#555" stroke-width="${f1(1.5 * k)}"/>` +
+             use("bg-crow", x, by + hang + 50 * k, k * 0.9 * (i % 2 ? -1 : 1), k * 0.9) + use("bg-cage", x, by + hang + 40 * k, k * 0.9), x, by, 4, R(i, 302), 5);
+    }).join("");
+  });
   // snakes in a glass tank on a table on the right
-  s += SEP + part("wroom-snakes", [c.F, snakes], () => {
+  // (the table and its tank an object, the table's legs down to ty + 82k, floor + 22k)
+  s += SEP + obj("snake tank", floor + 22 * k, part("wroom-snakes", [c.F, snakes], () => {
     const tx = x1 - W * 0.12, ty = floor - 60 * k, tw = 130 * k, th = 80 * k;
     let t = `<rect x="${f1(tx - 90 * k)}" y="${f1(ty)}" width="${f1(180 * k)}" height="${f1(12 * k)}" fill="#3a2418"/>` +
             [-80, 80].map(dx => `<rect x="${f1(tx + dx * k - 5 * k)}" y="${f1(ty + 12 * k)}" width="${f1(10 * k)}" height="${f1(70 * k)}" fill="#2a1a12"/>`).join("") +
@@ -3994,19 +4044,10 @@ function witchroomScene(c) {
     }
     return t + `<rect x="${f1(tx - tw / 2)}" y="${f1(ty - th)}" width="${f1(tw)}" height="${f1(th)}" fill="#cfe8f0" opacity="0.18" stroke="#e8f6fa" stroke-width="${f1(2.5 * k)}"/>` +
                `<rect x="${f1(tx - tw / 2 - 4 * k)}" y="${f1(ty - th - 6 * k)}" width="${f1(tw + 8 * k)}" height="${f1(7 * k)}" fill="#3a2418"/>`;
-  });
-  // crows in cages, hanging from the beam
-  s += SEP + part("wroom-crows", [c.F, crows, sceneLfoKey(o, "slow")], () => {
-    const by = y0 + H * 0.02 + 16 * k, spots = [-0.36, 0.3, -0.22, 0.18, -0.44, 0.42];
-    return `<defs>${WITCH_DEFS}</defs>` + spots.slice(0, Math.min(crows, 6)).map((u, i) => {
-      const x = W * u, hang = (60 + 30 * R(i, 302)) * k;
-      // (each cage swinging on its chain with the slow LFO, its own way in)
-      return swaying(o, `<line x1="${f1(x)}" y1="${f1(by)}" x2="${f1(x)}" y2="${f1(by + hang)}" stroke="#555" stroke-width="${f1(1.5 * k)}"/>` +
-             use("bg-crow", x, by + hang + 50 * k, k * 0.9 * (i % 2 ? -1 : 1), k * 0.9) + use("bg-cage", x, by + hang + 40 * k, k * 0.9), x, by, 4, R(i, 302), 5);
-    }).join("");
-  });
+  }));
   // the cauldron over its fire, bubbling, its size its group's
-  s += OPEN(`<g ${tf(-W * 0.22, floor + 50 * k, cz * k)}>`) + part("wroom-cauldron", [sceneLfoKey(o, "fast")], () =>
+  // (an object with its fumes, standing where its group stands its fire, floor + 50k)
+  s += obj("cauldron", floor + 50 * k, OPEN(`<g ${tf(-W * 0.22, floor + 50 * k, cz * k)}>`) + part("wroom-cauldron", [sceneLfoKey(o, "fast")], () =>
     `<path d="M-60 0 L60 0 M-50 -6 L50 6 M-50 6 L50 -6" stroke="#5a3a1a" stroke-width="10" stroke-linecap="round"/>` +
     [[-30, 0], [0, 6], [30, -4]].map(([fx, ph]) => `<path d="M${fx - 16} -4 Q${fx} -${46 + ph} ${fx + 16} -4 Z" fill="#ff8c1a">${lfoTimed(o, "fast", (fx + 30) / 90, `<animate attributeName="d" dur="${(0.6 + ph / 30).toFixed(2)}s" repeatCount="indefinite" ` +
       `values="M${fx - 16} -4 Q${fx} -${46 + ph} ${fx + 16} -4 Z;M${fx - 16} -4 Q${fx + 6} -${30 + ph} ${fx + 16} -4 Z;M${fx - 16} -4 Q${fx} -${46 + ph} ${fx + 16} -4 Z"/>`)}</path>` +
@@ -4016,14 +4057,16 @@ function witchroomScene(c) {
     `<ellipse cx="0" cy="-124" rx="74" ry="16" fill="#2b2b30"/><ellipse cx="0" cy="-122" rx="64" ry="11" fill="#7cfc3a"/>` +
     [[-30, 0.9], [-5, 1.3], [22, 1.1], [40, 0.7]].map(([bx, d]) => `<circle cx="${bx}" cy="-124" r="6" fill="#b6ff7a" opacity="0.9">` +
       `<animate attributeName="cy" values="-120;-150;-120" dur="${d}s" repeatCount="indefinite"/><animate attributeName="r" values="3;8;0" dur="${d}s" repeatCount="indefinite"/></circle>`).join("") +
-    "") + CLOSE;
-  s += SEP + part("wroom-fumes", [c.F, cz], () => helixSvg(-W * 0.22, floor + 50 * k - 128 * cz * k, y0 - 80 * k, 14 * cz * k, 50 * cz * k, k));
+    "") + CLOSE +
+    SEP + part("wroom-fumes", [c.F, cz], () => helixSvg(-W * 0.22, floor + 50 * k - 128 * cz * k, y0 - 80 * k, 14 * cz * k, 50 * cz * k, k)));
   // the witch: dragged anywhere (her place), her size her group's
-  s += OPEN(`<g data-drag="witch" style="cursor: grab" ${tf(o.witchX ?? 150, g + (o.witchY ?? 0), wz * k)}>`) + part("wroom-witch", [], () => WITCH_SVG) + CLOSE;
+  // (an object at her feet, where her place puts them)
+  s += obj("witch", g + (o.witchY ?? 0), OPEN(`<g data-drag="witch" style="cursor: grab" ${tf(o.witchX ?? 150, g + (o.witchY ?? 0), wz * k)}>`) + part("wroom-witch", [], () => WITCH_SVG) + CLOSE);
   // dim and glowing: darker toward the corners, a green glow over the cauldron
-  s += SEP + part("wroom-dim", c.F, () => `<defs><radialGradient id="bg-wdim" gradientUnits="userSpaceOnUse" cx="${f1(-W * 0.2)}" cy="${f1(floor - 40 * k)}" r="${f1(0.75 * Math.hypot(W, H))}">` +
+  // (over everything, the friend too: in front, at Infinity; the whole room's, so not the cauldron's)
+  s += SEP + obj("dark", Infinity, part("wroom-dim", c.F, () => `<defs><radialGradient id="bg-wdim" gradientUnits="userSpaceOnUse" cx="${f1(-W * 0.2)}" cy="${f1(floor - 40 * k)}" r="${f1(0.75 * Math.hypot(W, H))}">` +
     `<stop offset="0" stop-color="#7cfc3a" stop-opacity="0.12"/><stop offset="0.35" stop-color="#140a14" stop-opacity="0"/><stop offset="1" stop-color="#140a14" stop-opacity="0.55"/></radialGradient></defs>` +
-    all("url(#bg-wdim)").replace("<rect ", `<rect pointer-events="none" `));
+    all("url(#bg-wdim)").replace("<rect ", `<rect pointer-events="none" `)));
   return s;
 }
 // The healer: a friendly woman in a green dress and a cream apron, a red
@@ -4178,9 +4221,24 @@ function healerroomScene(c) {
     }
     return t;
   });
+  // the door back out to the clearing, in the middle: an arched brown door, as outside
+  // (drawn before the objects, in the wall behind them all: it crosses none, the pot it
+  // once came after included)
+  s += SEP + part("hroom-door", c.F, () => {
+    const w = 100 * k, top = floor - 200 * k;
+    return `<g class="portal" data-to="clearing"><path d="M${P(-w / 2 - 10 * k, floor)} V${f1(top + w / 2)} A${f1(w / 2 + 10 * k)} ${f1(w / 2 + 10 * k)} 0 0 1 ${P(w / 2 + 10 * k, top + w / 2)} V${f1(floor)} Z" fill="#6e4a28"/>` +
+           `<path d="M${P(-w / 2, floor)} V${f1(top + w / 2)} A${f1(w / 2)} ${f1(w / 2)} 0 0 1 ${P(w / 2, top + w / 2)} V${f1(floor)} Z" fill="#7a5a3a" stroke="#4a3220" stroke-width="${f1(3 * k)}"/>` +
+           [-0.25, 0, 0.25].map(u => `<line x1="${f1(u * w)}" y1="${f1(top + (u ? 8 : 0) * k)}" x2="${f1(u * w)}" y2="${f1(floor)}" stroke="#5a3e26" stroke-width="${f1(2.5 * k)}"/>`).join("") +
+           `<circle cx="${f1(w / 2 - 16 * k)}" cy="${f1(floor - 90 * k)}" r="${f1(5 * k)}" fill="#f2c230"/>` +
+           `<path d="M${P(0, top + 56 * k)} L${P(-12 * k, top + 44 * k)} A${f1(6 * k)} ${f1(6 * k)} 0 0 1 ${P(0, top + 36 * k)} A${f1(6 * k)} ${f1(6 * k)} 0 0 1 ${P(12 * k, top + 44 * k)} Z" fill="#e53935"/>` +
+           plankSign(0, top - 28 * k, k, "🌲 out") + `</g>`;
+  });
   // the big pot of soup on its fire, in front of the hearth: flames, the
   // pot on three legs, golden soup with carrots and herbs in it, steam
-  s += SEP + part("hroom-pot", [c.F, sceneLfoKey(o, "fast")], () => {
+  // (an object, with its fire and the stones round it, at g: where the healer stands
+  // at first, beside it, stirring; its legs reach g + 4k, but she stirs it from in front
+  // of its side, her spoon in the soup, so it stands no nearer than her feet)
+  s += SEP + obj("soup pot", g, part("hroom-pot", [c.F, sceneLfoKey(o, "fast")], () => {
     const py = g - 62 * k, rx = 74 * k;
     let t = `<ellipse cx="${f1(potX)}" cy="${f1(g + 12 * k)}" rx="${f1(92 * k)}" ry="${f1(18 * k)}" fill="#6b625a"/>` +
             [...Array(10)].map((_, i) => { const a = i / 10 * 2 * Math.PI; return `<ellipse cx="${f1(potX + Math.cos(a) * 88 * k)}" cy="${f1(g + 12 * k + Math.sin(a) * 16 * k)}" rx="${f1(14 * k)}" ry="${f1(8 * k)}" fill="${i % 2 ? "#8a8274" : "#a39a8c"}"/>`; }).join("") +
@@ -4204,20 +4262,12 @@ function healerroomScene(c) {
       `<animate attributeName="opacity" values="0;0.55;0" dur="3.2s" begin="${(i * 1.05).toFixed(2)}s" repeatCount="indefinite"/>` +
       `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-40 * k)}" dur="3.2s" begin="${(i * 1.05).toFixed(2)}s" repeatCount="indefinite"/></path>`).join("");
     return t;
-  });
-  // the door back out to the clearing, in the middle: an arched brown door, as outside
-  s += SEP + part("hroom-door", c.F, () => {
-    const w = 100 * k, top = floor - 200 * k;
-    return `<g class="portal" data-to="clearing"><path d="M${P(-w / 2 - 10 * k, floor)} V${f1(top + w / 2)} A${f1(w / 2 + 10 * k)} ${f1(w / 2 + 10 * k)} 0 0 1 ${P(w / 2 + 10 * k, top + w / 2)} V${f1(floor)} Z" fill="#6e4a28"/>` +
-           `<path d="M${P(-w / 2, floor)} V${f1(top + w / 2)} A${f1(w / 2)} ${f1(w / 2)} 0 0 1 ${P(w / 2, top + w / 2)} V${f1(floor)} Z" fill="#7a5a3a" stroke="#4a3220" stroke-width="${f1(3 * k)}"/>` +
-           [-0.25, 0, 0.25].map(u => `<line x1="${f1(u * w)}" y1="${f1(top + (u ? 8 : 0) * k)}" x2="${f1(u * w)}" y2="${f1(floor)}" stroke="#5a3e26" stroke-width="${f1(2.5 * k)}"/>`).join("") +
-           `<circle cx="${f1(w / 2 - 16 * k)}" cy="${f1(floor - 90 * k)}" r="${f1(5 * k)}" fill="#f2c230"/>` +
-           `<path d="M${P(0, top + 56 * k)} L${P(-12 * k, top + 44 * k)} A${f1(6 * k)} ${f1(6 * k)} 0 0 1 ${P(0, top + 36 * k)} A${f1(6 * k)} ${f1(6 * k)} 0 0 1 ${P(12 * k, top + 44 * k)} Z" fill="#e53935"/>` +
-           plankSign(0, top - 28 * k, k, "🌲 out") + `</g>`;
-  });
+  }));
   // the shelves of potions, floor to beam on the right, neatly kept; her
   // cat sits up on the top one, at its left end, its tail hanging down
   const cat = { catFur: o.healerCatFur ?? "#e8862a", catWhite: o.healerCatWhite ?? "#ffffff", catEyes: o.healerCatEyes ?? "#22c55e", catNose: "#f4a0b0" };
+  // (the shelves and their potions an object, standing on the floor at the wall, at
+  // floor; the cat on them another, at the floor under her, the same)
   s += SEP + part("hroom-shelves", [c.F, cat.catFur, cat.catWhite, cat.catEyes], () => {
     const sx0 = W * 0.13, sx1 = W * 0.47, top = wallTop + 70 * k, n = 5, gap = (floor - 20 * k - top) / (n - 0.3);
     let t = [sx0, sx1].map(x => `<rect x="${f1(x - 7 * k)}" y="${f1(top - 50 * k)}" width="${f1(14 * k)}" height="${f1(floor - top + 50 * k)}" fill="#8b5e34" stroke="#6e4a28" stroke-width="${f1(1.5 * k)}"/>`).join("");
@@ -4230,8 +4280,8 @@ function healerroomScene(c) {
       const m = Math.floor((to - from) / step) + 1;
       for (let i = 0; i < m; i++) t += potionSvg(kind, from + i * (to - from) / Math.max(1, m - 1), sy, k * (kind === "jar" && r === 4 ? 1.25 : 1), POTION_COLORS[Math.floor(i * POTION_COLORS.length / m)]);
     }
-    t += `<g transform="translate(${f1(sx0 + 32 * k)} ${f1(top)}) scale(${(1.15 * k).toFixed(3)})">${shoulderCat(4, cat, true)}</g>`;
-    return t;
+    return obj("potion shelves", floor, t) +
+           obj("cat", floor, `<g transform="translate(${f1(sx0 + 32 * k)} ${f1(top)}) scale(${(1.15 * k).toFixed(3)})">${shoulderCat(4, cat, true)}</g>`);
   });
   // a little round table with two chairs and tea, to sit and talk
   s += SEP + part("hroom-tea", c.F, () => {
@@ -4242,7 +4292,9 @@ function healerroomScene(c) {
       `<rect x="${f1(x + sd * 22 * k - (sd > 0 ? 6 : 0) * k)}" y="${f1(ty - 64 * k)}" width="${f1(6 * k)}" height="${f1(70 * k)}" fill="#8b5e34"/>` +
       [[-22, 1], [22, 1]].map(([dx]) => `<line x1="${f1(x + dx * k)}" y1="${f1(ty + 12 * k)}" x2="${f1(x + dx * k)}" y2="${f1(ty + 44 * k)}" stroke="#6e4a28" stroke-width="${f1(5 * k)}"/>`).join("") +
       `<rect x="${f1(x + sd * 22 * k - (sd > 0 ? 9 : -3) * k)}" y="${f1(ty - 70 * k)}" width="${f1(6 * k)}" height="${f1(4 * k)}" fill="#6e4a28"/>`;
-    return chair(tx - 92 * k, -1) + chair(tx + 92 * k, 1) +
+    // (each chair an object, its legs down to ty + 44k; the table and its tea another, its
+    // foot at ty + 42k)
+    return obj("chair, left", ty + 44 * k, chair(tx - 92 * k, -1)) + obj("chair, right", ty + 44 * k, chair(tx + 92 * k, 1)) + obj("tea table", ty + 42 * k,
       `<rect x="${f1(tx - 5 * k)}" y="${f1(ty - 10 * k)}" width="${f1(10 * k)}" height="${f1(52 * k)}" fill="#6e4a28"/><ellipse cx="${f1(tx)}" cy="${f1(ty + 42 * k)}" rx="${f1(24 * k)}" ry="${f1(6 * k)}" fill="#6e4a28"/>` +
       `<ellipse cx="${f1(tx)}" cy="${f1(ty - 10 * k)}" rx="${f1(62 * k)}" ry="${f1(14 * k)}" fill="#a0703f" stroke="#6e4a28" stroke-width="${f1(2 * k)}"/>` +
       // a teapot, two cups on saucers, a little vase of flowers
@@ -4253,7 +4305,7 @@ function healerroomScene(c) {
         `<path d="M${P(tx + dx * k - 6 * k, ty - 24 * k)} V${f1(ty - 16 * k)} Q${P(tx + dx * k, ty - 13 * k)} ${P(tx + dx * k + 6 * k, ty - 16 * k)} V${f1(ty - 24 * k)} Z" fill="#ffffff" stroke="#d9cbb0" stroke-width="${f1(k)}"/>` +
         `<ellipse cx="${f1(tx + dx * k)}" cy="${f1(ty - 24 * k)}" rx="${f1(6 * k)}" ry="${f1(2 * k)}" fill="#b5834a"/>`).join("") +
       `<rect x="${f1(tx + 14 * k)}" y="${f1(ty - 30 * k)}" width="${f1(8 * k)}" height="${f1(16 * k)}" rx="${f1(3 * k)}" fill="#9ccfe0" stroke="#6aa8c0" stroke-width="${f1(k)}"/>` +
-      [[-4, -42, "#f472b6"], [3, -46, "#facc15"], [8, -40, "#ffffff"]].map(([dx, dy, cc]) => `<line x1="${f1(tx + 18 * k)}" y1="${f1(ty - 30 * k)}" x2="${f1(tx + 18 * k + dx * k)}" y2="${f1(ty + dy * k + 2 * k)}" stroke="#4a9a52" stroke-width="${f1(1.5 * k)}"/><circle cx="${f1(tx + 18 * k + dx * k)}" cy="${f1(ty + dy * k)}" r="${f1(4 * k)}" fill="${cc}"/>`).join("");
+      [[-4, -42, "#f472b6"], [3, -46, "#facc15"], [8, -40, "#ffffff"]].map(([dx, dy, cc]) => `<line x1="${f1(tx + 18 * k)}" y1="${f1(ty - 30 * k)}" x2="${f1(tx + 18 * k + dx * k)}" y2="${f1(ty + dy * k + 2 * k)}" stroke="#4a9a52" stroke-width="${f1(1.5 * k)}"/><circle cx="${f1(tx + 18 * k + dx * k)}" cy="${f1(ty + dy * k)}" r="${f1(4 * k)}" fill="${cc}"/>`).join(""));
   });
   // her worktable at the front on the right: a mortar and pestle, bowls of
   // powders, bundles of herbs, scissors, a knife, a little brass balance
@@ -4286,19 +4338,22 @@ function healerroomScene(c) {
          [-1, 1].map(e => `<line x1="${f1(bx + e * 26 * k)}" y1="${f1(bb - 44 * k)}" x2="${f1(bx + e * 26 * k)}" y2="${f1(bb - 26 * k)}" stroke="#c99a2e" stroke-width="${f1(1 * k)}"/>` +
            `<path d="M${P(bx + e * 26 * k - 10 * k, bb - 26 * k)} Q${P(bx + e * 26 * k, bb - 18 * k)} ${P(bx + e * 26 * k + 10 * k, bb - 26 * k)} Z" fill="#e0b84a" stroke="#a87a1e" stroke-width="${f1(k)}"/>`).join("") +
          `<ellipse cx="${f1(bx)}" cy="${f1(bb)}" rx="${f1(10 * k)}" ry="${f1(3 * k)}" fill="#c99a2e"/>`;
-    return t;
+    // (the worktable and all on it an object, its legs down to ty + 64k)
+    return obj("worktable", ty + 64 * k, t);
   });
   // the healer: dragged anywhere (her place), her size her group's; at
   // first by the pot, her spoon in it
   // (data-x, data-y: where she is, for a drag to start from before she has a place of her own)
   // (her spoon's end, (-110, -48) in her units, at the soup's middle, g - 62k)
   // (her feet on the ground: at her usual size, the spoon's end is in the soup)
+  // (an object at her feet, g + hy)
   const hx = o.healerX ?? potX + 110 * HEALER_Z * hz * k, hy = o.healerY ?? 0;
-  s += OPEN(`<g data-drag="healer" data-x="${f1(hx)}" data-y="${f1(hy)}" style="cursor: grab" ${tf(hx, g + hy, HEALER_Z * hz * k)}>`) + part("hroom-healer", [sceneLfoKey(o, "slow")], () => HEALER_SVG.replace(HEALER_SWAY, lfoTimed(o, "slow", 0.1, HEALER_SWAY))) + CLOSE;
+  s += obj("healer", g + hy, OPEN(`<g data-drag="healer" data-x="${f1(hx)}" data-y="${f1(hy)}" style="cursor: grab" ${tf(hx, g + hy, HEALER_Z * hz * k)}>`) + part("hroom-healer", [sceneLfoKey(o, "slow")], () => HEALER_SVG.replace(HEALER_SWAY, lfoTimed(o, "slow", 0.1, HEALER_SWAY))) + CLOSE);
   // warm: the fire's glow over the room, a little darker toward the corners
-  s += SEP + part("hroom-warm", c.F, () => `<defs><radialGradient id="bg-hwarm" gradientUnits="userSpaceOnUse" cx="${f1(potX)}" cy="${f1(g - 40 * k)}" r="${f1(0.8 * Math.hypot(W, H))}">` +
+  // (over everything, the friend too: in front, at Infinity; the whole room's, so not the pot's)
+  s += SEP + obj("warm light", Infinity, part("hroom-warm", c.F, () => `<defs><radialGradient id="bg-hwarm" gradientUnits="userSpaceOnUse" cx="${f1(potX)}" cy="${f1(g - 40 * k)}" r="${f1(0.8 * Math.hypot(W, H))}">` +
     `<stop offset="0" stop-color="#ffb347" stop-opacity="0.2"/><stop offset="0.4" stop-color="#ffb347" stop-opacity="0.05"/><stop offset="1" stop-color="#5a2a0a" stop-opacity="0.3"/></radialGradient></defs>` +
-    all("url(#bg-hwarm)").replace("<rect ", `<rect pointer-events="none" `));
+    all("url(#bg-hwarm)").replace("<rect ", `<rect pointer-events="none" `)));
   return s;
 }
 // The fairy forest: a glade in the woods at the time of day its chips say,
@@ -4355,12 +4410,16 @@ function fairyforestScene(c) {
   s += SEP + part("fairy-woods", [c.F, time], () => {
     let t = `<defs>${pineDef("bg-fpine", 7)}${leafyTreeDef("bg-foak", 23, { greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#47a047", "#58b050"].map(tn), bark: tn("#6b4a2b") })}</defs>` +
             land(g - 160 * k, 8, tn("#a9d48e"), 0.4);
-    for (const [row, base, cols] of [[0, g - 150 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 110 * k, ["#2f6b3a", "#3c7d45"]]])
+    // (each row an object, standing at its trees' middle depth, base + 6k)
+    for (const [row, base, cols] of [[0, g - 150 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 110 * k, ["#2f6b3a", "#3c7d45"]]]) {
+      let r = "";
       for (let i = 0, x = x0 - 50 * k; x < x1 + 50 * k; i++, x += (row ? 52 : 36) * k) {
         const h = (row ? 150 : 100) * k * (0.8 + 0.4 * R(i, 1310 + row)), b = base + 12 * k * R(i, 1312 + row);
-        t += R(i, 1314 + row) < 0.6 ? use("bg-fpine", x, b, h / 200, h / 200, ` color="${tn(cols[i % 2])}"`)
+        r += R(i, 1314 + row) < 0.6 ? use("bg-fpine", x, b, h / 200, h / 200, ` color="${tn(cols[i % 2])}"`)
                                     : use("bg-foak", x, b, (h / 330) * (R(i, 1316) < 0.5 ? -1 : 1), h / 330);
       }
+      t += obj(row ? "trees, near row" : "trees, far row", base + 6 * k, r);
+    }
     return t + land(g - 70 * k, 6, tn("#8bc56a"), 1.1) + land(g - 20 * k, 3, tn("#7cc25a"), 0.6);
   });
   // the great old tree, on the left: its crown, then a thick trunk with roots
@@ -4374,7 +4433,8 @@ function fairyforestScene(c) {
     let u = 0.5; for (let it = 0; it < 30; it++) { const x = pt(u)[0]; u += (tx + lx * k - x) / (B[0] - A[0]) * 0.8; u = Math.max(0, Math.min(1, u)); }
     return { A, Q, B, pt, tie: pt(u), u };
   });
-  s += SEP + part("fairy-tree", [c.F, time], () => {
+  // (an object, standing at its trunk's foot, tb)
+  s += SEP + obj("great tree", tb, part("fairy-tree", [c.F, time], () => {
     const bark = tn("#6b4a2b"), dk = mix(bark, "#000000", 0.35);
     let t = `<defs>${leafyTreeDef("bg-fbig", 41, { wide: 1.5, greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#47a047", "#58b050"].map(tn), bark })}</defs>` +
             use("bg-fbig", tx, tb - 120 * k, 2.2 * k);
@@ -4392,10 +4452,12 @@ function fairyforestScene(c) {
          [[-150, -40], [-90, -55], [100, -50], [160, -38]].map(([dx, h]) => `<path d="M${P(tx + dx * 0.4 * k, tb - 40 * k)} Q${P(tx + dx * 0.8 * k, tb + h * 0.2 * k)} ${P(tx + dx * k, tb + 6 * k)}" fill="none" stroke="${bark}" stroke-width="${f1(18 * k)}" stroke-linecap="round"/>`).join("") +
          [...Array(9)].map((_, i) => { const x = tx + (-40 + 10 * i) * k; return `<path d="M${P(x, tb - 20 * k)} Q${P(x + (R(i, 1320) - 0.5) * 16 * k, tb - 200 * k)} ${P(x * 0.98 + tx * 0.02, tb - 370 * k)}" fill="none" stroke="${dk}" stroke-width="${f1(1.8 * k)}" opacity="0.6"/>`; }).join("");
     return t;
-  });
+  }));
   // the fairy house in it (its own see-through, and its LFO)
+  // (an object with its lanterns, at the tree's foot, tb, as the tree is: drawn just after
+  // it, in its trunk; when it is all faded away, it is not there)
   const fade = fairyHouseFade(o);
-  s += SEP + part("fairy-house", [c.F, time, fade.a, fade.key, sceneLfoKey(o, "slow")], () => {
+  const house = part("fairy-house", [c.F, time, fade.a, fade.key, sceneLfoKey(o, "slow")], () => {
     if (fade.a <= 0 && !fade.anim) return "";
     const warm = dusk ? "#ffd27a" : "#ffe9a8", lit = dusk ? 0.9 : 0.6;
     let t = `<g opacity="${fade.a.toFixed(2)}">${fade.anim}`;
@@ -4439,15 +4501,18 @@ function fairyforestScene(c) {
            `<animate attributeName="opacity" values="0;0.5;0" dur="4s" begin="${i * 2}s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-36 * k)}" dur="4s" begin="${i * 2}s" repeatCount="indefinite"/></path>`).join("");
     return t + `</g>`;
   });
+  s += SEP + (house && obj("fairy house", tb, house));
   // the ring of toadstools in the grass, on the right of the middle: the
   // far ones smaller, the near ones bigger; glowing a little at night
+  // (each toadstool an object at its foot, numbered round the ring, so one can stand
+  // in the ring, behind its near side and in front of its far side; the grass in it is flat)
   const n = Math.max(4, Math.min(30, Math.round(o.mushrooms ?? 14)));
   const rx0 = W * 0.06, ry0 = g + 40 * k, rrx = 190 * k, rry = 44 * k;
   s += SEP + part("fairy-ring", [c.F, n, night], () => {
     const ms = [...Array(n)].map((_, i) => { const a = (i + 0.3 * R(i, 1330)) / n * 2 * Math.PI; return [rx0 + Math.cos(a) * rrx, ry0 + Math.sin(a) * rry, i]; })
       .sort((p, q) => p[1] - q[1]);
     return `<ellipse cx="${f1(rx0)}" cy="${f1(ry0)}" rx="${f1(rrx * 0.9)}" ry="${f1(rry * 0.8)}" fill="${night ? "#2a5a3a" : "#9fd27e"}" opacity="0.5"/>` +
-      ms.map(([x, y, i]) => toadstool(x, y, k * (0.75 + 0.5 * (y - (ry0 - rry)) / (2 * rry)) * (0.85 + 0.3 * R(i, 1331)), ["#d62828", "#e85d04", "#d62828", "#c1121f"][i % 4], night)).join("");
+      ms.map(([x, y, i]) => obj(`toadstool ${i + 1}`, y, toadstool(x, y, k * (0.75 + 0.5 * (y - (ry0 - rry)) / (2 * rry)) * (0.85 + 0.3 * R(i, 1331)), ["#d62828", "#e85d04", "#d62828", "#c1121f"][i % 4], night))).join("");
   });
   // flowers, tufts, bushes and stones in the near grass
   s += SEP + part("fairy-near", [c.F, time], () => {
@@ -4458,12 +4523,14 @@ function fairyforestScene(c) {
       t += i % 3 === 0 ? grassTuft(x, y, (14 + 10 * d) * k, i + 1340, tn("#4f9a3a"), 2 * k)
                        : use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.6 * d), k * (0.8 + 0.6 * d), ` color="${tn(FLOWER_COLORS[i % 6])}"`);
     }
-    t += bushSvg(x1 - W * 0.08, g + 6 * k, 70 * k, 1350, { greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#4a9a46", "#5aad52"].map(tn) }) +
-         rockSvg(x0 + W * 0.1, g + 60 * k, 26 * k, 1351, tn("#9a9488")) + rockSvg(x1 - W * 0.3, g + 90 * k, 18 * k, 1352, tn("#9a9488"));
+    // (the flowers and tufts are flat; the bush and the stones are objects, each at its foot)
+    t += obj("bush", g + 6 * k, bushSvg(x1 - W * 0.08, g + 6 * k, 70 * k, 1350, { greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#4a9a46", "#5aad52"].map(tn) })) +
+         obj("stone, left", g + 60 * k, rockSvg(x0 + W * 0.1, g + 60 * k, 26 * k, 1351, tn("#9a9488"))) + obj("stone, right", g + 90 * k, rockSvg(x1 - W * 0.3, g + 90 * k, 18 * k, 1352, tn("#9a9488")));
     return t;
   });
   // fireflies at sunset and at night, drifting and blinking; sparkles by day
-  s += SEP + part("fairy-lights", [c.F, time, sceneLfoKey(o, "fast")], () => [...Array(dusk ? 18 : 10)].map((_, i) => {
+  // (drawn after the objects, flying all over: in front of everything, at Infinity)
+  s += SEP + obj(dusk ? "fireflies" : "sparkles", Infinity, part("fairy-lights", [c.F, time, sceneLfoKey(o, "fast")], () => [...Array(dusk ? 18 : 10)].map((_, i) => {
     const x = x0 + W * (0.08 + 0.84 * R(i, 1360)), y = g - 260 * k + 300 * k * R(i, 1361), dx = (R(i, 1362) - 0.5) * 60 * k, dyy = (R(i, 1363) - 0.5) * 40 * k, d = (5 + 5 * R(i, 1364)).toFixed(1);
     return dusk
       ? `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(dx)} ${f1(dyy)};0 0" dur="${d}s" repeatCount="indefinite"/>` +
@@ -4471,14 +4538,16 @@ function fairyforestScene(c) {
         lfoTimed(o, "fast", R(i, 1366), `<animate attributeName="opacity" values="1;0.15;1" dur="${(1.4 + R(i, 1365) * 1.6).toFixed(2)}s" repeatCount="indefinite"/>`) + `</circle></g>`
       : `<path d="${starPath("four", 6 * k)}" transform="translate(${f1(x)} ${f1(y)})" fill="#ffffff" opacity="0">` +
         lfoTimed(o, "fast", R(i, 1366), `<animate attributeName="opacity" values="0;0.9;0" dur="${(2 + R(i, 1365) * 2).toFixed(2)}s" begin="${(R(i, 1366) * 3).toFixed(2)}s" repeatCount="indefinite"/>`) + `</path>`;
-  }).join(""));
+  }).join("")));
   // the way back to the clearing: a sign on a post, a doorway
-  s += SEP + part("fairy-back", c.F, () => `<g class="portal" data-to="clearing">` +
+  // (a sign at the bottom, in front of everything, at Infinity, the doorway wrapped whole)
+  s += SEP + obj("sign", Infinity, part("fairy-back", c.F, () => `<g class="portal" data-to="clearing">` +
     `<rect x="${f1(x1 - W * 0.07 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
-    plankSign(x1 - W * 0.07, y1 - 44 * k, k, "🌲 clearing ➡️") + `</g>`);
+    plankSign(x1 - W * 0.07, y1 - 44 * k, k, "🌲 clearing ➡️") + `</g>`));
   // the light: a dusk glow, or the night's blue over everything
-  if (time !== "day") s += SEP + part("fairy-light", [c.F, time], () =>
-    all(night ? "#0b1030" : time === "sunset" ? "#5a2a4a" : "#f4a6c4").replace("<rect ", `<rect pointer-events="none" opacity="${night ? 0.22 : 0.1}" `));
+  // (over everything, the friend too: in front, at Infinity, named for its time)
+  if (time !== "day") s += SEP + obj(night ? "dark" : time + " light", Infinity, part("fairy-light", [c.F, time], () =>
+    all(night ? "#0b1030" : time === "sunset" ? "#5a2a4a" : "#f4a6c4").replace("<rect ", `<rect pointer-events="none" opacity="${night ? 0.22 : 0.1}" `)));
   return s;
 }
 // A clearing in the forest, and far off down its paths, things to see,
