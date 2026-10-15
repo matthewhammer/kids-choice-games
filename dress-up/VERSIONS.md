@@ -2,6 +2,16 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.45 (2026-10-15)
+
+Everything in 0.0.44, plus dragging the friend smoothly again, while the scene moves with the music.
+
+- **Fixed: dragging the friend is smooth again, and the music keeps playing** (Matthew). Since the scenes began moving with the music (0.0.35), a drag in a scene went slower and slower, and could stall the music. The picture's clock (its animations') and the music's clock run at the same speed, but the picture's moves on only once a frame. Read afresh at every redraw, the gap between them wobbled, so the scene's animations came out timed a little differently each time, and the whole scene was built again on every move of the drag. Each slow frame made the next one worse; holding the scene's animations still during a drag (0.0.24) made it worse still, since the picture's clock stopped while the music's ran on. Now the gap is measured once and kept, and measured again only when it truly moves (the music starting, stopping or jumping to another place in the tune). Measured with a real drag of 60 moves in every place, at the scene's defaults with the music playing:
+  - no place builds its scene again, during a drag or after it (in 0.0.44, every move did);
+  - the drag took: in our imagination, 20.6 seconds, now 3.4; in the witch's woods, 5.0, now 2.3; in the living room, 6.7, now 1.6; in the witch's hut, 7.8, now 1.8; inside the tree house, 3.8, now 1.1;
+  - every other place at a steady 60 frames a second.
+- **The scene's animations, held still during a drag, go on from where the music is when you let go,** instead of from where they stopped, so whatever moves with the music is in time with it again at once. (A fairy's wings still beat while you drag her, as before.)
+
 ## 0.0.44 (2026-10-15)
 
 Everything in 0.0.43, plus doors you can see in the hallway and the dining room, and a picture as big as your screen allows.

@@ -99,6 +99,8 @@ A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground 
 - `partByReads(name, opts, build)` records which settings a piece read, and caches on just those.
 - `SEP`, `OPEN` and `CLOSE` mark pieces in the scene text. `mountScene` then keeps each piece's element while its text is unchanged.
 - Anything that varies per frame must not end up in a piece's text, or every frame re-parses it. Animation is SMIL or CSS, begun at a rounded phase.
+- An animation in time with an LFO takes its `begin` from `lfoBegin`, which reads the kept gap between the picture's clock and the music's (`picGapNow`, measured again only when it moves by more than `PIC_GAP_SLACK`: the music starting, stopping or jumping). Never write `pic.getCurrentTime()` or `performance.now()` into a scene's text: the picture's clock moves once a frame and the music's all the time, so the text changes from draw to draw, and the scene is rebuilt on every move (ticket 117: a drag ground to a halt and the music stuttered). A figure's own animations may, since the figure is drawn afresh anyway.
+- While a drag is held, the picture's SMIL animations are paused (`pic.pauseAnimations()`), and `picGapNow` keeps the gap as it was. Letting go moves the picture's clock on by as long as it was held (`pic.setCurrentTime`), so the gap is right again and nothing is rebuilt.
 
 **Castles.**
 - `castleOf(o)` reads one castle's settings (N's, M's or D's) into a model:
@@ -237,7 +239,7 @@ Each picture is a hand-drawn illusion of depth, and a few kinds of slip break it
   - Evaluate with `Runtime.evaluate` after the page has loaded: it sees the page's top-level names (`state`, `changed`). WebDriver's script execution once did not.
   - If you put several serialized SVGs into one page, give each its own ids, or their clip paths will borrow from each other.
 - **A hidden browser pane stalls Web Animations,** so a trip through a doorway never lands. When testing mechanics there, replace `flyInto` with one that arrives at once: `flyInto = (b, arrive) => { arrive(); changed(); }`.
-- **Drags** use real input events (`Input.dispatchMouseEvent`) and are timed by frames, not by function calls.
+- **Drags** use real input events (`Input.dispatchMouseEvent`) and are timed by frames, not by function calls. Count `mountScene` calls too (wrap it from `Runtime.evaluate`): after a first drag (the click starts the music, which rightly re-times the scene once), a drag in any place must build no scene again. Measure every place, from `PLACES`, with the music playing.
 - **Old saves.** After changing a setting's meaning, load a JSON saved by the last release and check that it looks the same.
 
 ## Working with Matthew

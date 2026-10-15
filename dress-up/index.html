@@ -2508,6 +2508,30 @@ function catWag(C, i) {
   if (lf) return { lf, off, key: [lf.dur.toFixed(4), lf.shape, lf.amp.toFixed(2), lfoBegin(lf, off)].join() };
   return { lf: null, off, dur: 2.6 + 0.37 * ((i * 5) % 8), key: "own" };
 }
+// The music's clock, in seconds (lfoNow's): where the tune is while it
+// plays, else the page's own time. An LFO's wave is where this clock is,
+// round its cycle.
+const musicSeconds = () => playing && typeof audio !== "undefined" && audio
+  ? playing.s0 * playing.sd + audio.currentTime - playing.t0 : performance.now() / 1000;
+// How far the picture's own clock (its animations') is ahead of the music's.
+// The two run at the same speed, so the gap stays put; but the picture's
+// clock moves on only once a frame, and the music's all the time, so a gap
+// read afresh at every draw wobbled by a frame, and a slow frame wobbled it
+// past lfoBegin's rounding: the scene's text changed from draw to draw, and
+// the whole scene was built again on every move of a drag, slowing every
+// frame further, until dragging the friend ground to a halt and the music
+// stuttered (ticket 117). So the gap is measured once and kept, and measured
+// again only when it truly moves (by more than PIC_GAP_SLACK seconds): the
+// music starting, stopping or jumping. While a drag holds the picture's
+// clock still, the gap is kept as it was (letting go moves that clock on by
+// as long as it was held, so the gap is right again).
+const PIC_GAP_SLACK = 0.25;
+let picGap = null;
+function picGapNow() {
+  const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() : 0, g = now - musicSeconds();
+  if (picGap === null || (Math.abs(g - picGap) > PIC_GAP_SLACK && !(pic && pic.animationsPaused && pic.animationsPaused()))) picGap = g;
+  return picGap;
+}
 // when, in the picture's own time, an animation must have begun for its wave
 // to be where the LFO's is now, `shift` of a cycle on (rounded, to a 20th of a
 // second or a 16th of a cycle, so the scene's text stays the same from draw to
@@ -2515,8 +2539,8 @@ function catWag(C, i) {
 // with nothing, its copies just spread round the cycle
 function lfoBegin(lf, shift) {
   if (lf.dur < LFO_BLUR) return -(((shift % 1) + 1) % 1) * lf.dur;
-  const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() : 0, step = Math.min(0.05, lf.dur / 16);
-  return Math.round(((now - (lf.phase + shift) * lf.dur) % lf.dur + lf.dur) % lf.dur / step) * step;
+  const step = Math.min(0.05, lf.dur / 16);
+  return Math.round(((picGapNow() - shift * lf.dur) % lf.dur + lf.dur) % lf.dur / step) * step;
 }
 // a wag's animation of `attr` (a rotation for "transform"): val(w, depth) its
 // value at the wave's height w (-1 to 1); sh: a further shift, for a blur's copies
@@ -4229,8 +4253,7 @@ function fairyHouseFade(o) {
   if (!lf) return { a, key: "", anim: "" };
   // (too fast to show: its average, the wave's being 0 for every shape)
   if (lf.dur < LFO_BLUR) return { a: a * (1 - lf.amp / 2), key: "blur", anim: "" };
-  const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() : 0;
-  const begin = Math.round(((now - lf.phase * lf.dur) % lf.dur + lf.dur) % lf.dur * 20) / 20, N = 16, vals = [], kt = [];
+  const begin = lfoBegin(lf, 0).toFixed(4), N = 16, vals = [], kt = [];
   for (let i = 0; i <= N; i++) { const u = i / N; vals.push((a * (1 - lf.amp * (1 - lfoWave(lf.shape, u)) / 2)).toFixed(3)); kt.push(u.toFixed(4)); }
   return { a, key: [lf.dur.toFixed(4), lf.shape, lf.amp.toFixed(2), begin].join(),
            anim: `<animate attributeName="opacity" values="${vals.join(";")}" keyTimes="${kt.join(";")}" dur="${lf.dur.toFixed(4)}s" begin="${begin}s" repeatCount="indefinite"/>` };
@@ -11715,9 +11738,16 @@ pic.addEventListener("pointermove", e => {
 });
 // While a drag is held, the picture's animations (a cauldron's fumes, its
 // bubbles) hold still: drawing them is most of a frame in the witch's woods,
-// and a drag redraws on every move. They go on from where they stopped.
-pic.addEventListener("pointerdown", () => { if (drag) pic.pauseAnimations(); });
-const letGo = () => { if (drag) pic.unpauseAnimations(); drag = null; };
+// and a drag redraws on every move. Let go, and they go on from where they
+// would have been by then, so whatever moves with the music is in time with
+// it again (and the picture's clock is as far ahead of the music's as it was:
+// picGapNow), without the scene being built again.
+let heldAt = 0;
+pic.addEventListener("pointerdown", () => { if (drag && !pic.animationsPaused()) { pic.pauseAnimations(); heldAt = performance.now(); } });
+const letGo = () => {
+  if (drag && pic.animationsPaused()) { pic.setCurrentTime(pic.getCurrentTime() + (performance.now() - heldAt) / 1000); pic.unpauseAnimations(); }
+  drag = null;
+};
 pic.addEventListener("pointerup", letGo);
 pic.addEventListener("pointercancel", letGo);
 
