@@ -2,7 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.35 (2026-10-15)
+
+Everything in 0.0.34, plus the spooky waltz funked five ways; seven LFOs, with every place moving to the music; three new castle rooms (a cat room, a stable and a hallway), with the castle's cats and horses; our imagination, a new place; gems in the cave; D's castle; two color themes per castle; and many drawings fixed, inside the tree house most of all.
 
 - **Fixed: inside the tree house, the wind is outside.** The tree's limbs inside each room had twigs and leaves fluttering in a breeze, and the house sign swung on its ropes, though no wind blows indoors and no leaves grow without sun. Now the limbs that pass through a room are bare and still, and the sign hangs still. Out of each window you see one of the tree's limbs, with branches forking off it and the tree house's own leaf pads on their tips: the limb sways in the wind with E, and its leaves flutter with D. Matthew caught this one.
 - **Fixed: the hallway's banners hang from poles.** They hung face-on just off the walls, from nothing; now each hangs from a pole jutting out of the wall, braced back into it, so it faces down the corridor as it is drawn.
@@ -21,7 +23,7 @@ Each version lists the game's features as of that version. The newest version is
 - **Fixed: the tents' mesh windows lie on their walls.** Each was a flat box with a square grid, as if stuck on the picture. Now its frame and mesh are drawn on the sloping canvas in perspective: threads along the wall run toward the far end as the seams do, threads across it slant as the far wall's edge does, and they close up toward the back. Matthew caught this one.
 - **Fixed: the cat room window's leads stay inside its arch.** The window's lead lines ran up past the curve at its top onto the wall; now everything in the window is kept inside its arch.
 - **Fixed: the castle rooms' floors stay on the floor.** In the stone rooms (the king's room, the trap room, the dungeons, the hallway, the stable) and the greenhouse, the lines across the floor ran on up the side walls. Now each ends where the floor meets the wall, and the rows close up toward the back, as paving does. The floor's and ceiling's far corners follow the walls' own lines, so no dark wedge shows at the bottom corners. Matthew caught this one.
-- **🧙 The spooky waltz, funked, five ways (A to E; one to keep, once Matthew picks):** the spooky waltz, all of it (the theremin ghosts, the oom-pah-pah, the bell, the music box), quicker (205 beats a minute) and four half steps down, with a funk beat in 4. The beat has kick, snare, hats, a shaker, a cowbell and congas, plus bongos as the bongo breakdown's, with their own solo halfway. Under it all, a pair of wah-wah basses, buzzy and plucky: one low, popping its octaves, and one higher, answering it. Both keep to the waltz's chords, and the bass lines are louder than the waltz's own. The five differ in how the funk's big beats land on the waltz's:
+- **🧙 The spooky waltz, funked, five ways (A to E, all five kept):** the spooky waltz, all of it (the theremin ghosts, the oom-pah-pah, the bell, the music box), quicker (205 beats a minute) and four half steps down, with a funk beat in 4. The beat has kick, snare, hats, a shaker, a cowbell and congas, plus bongos as the bongo breakdown's, with their own solo halfway. Under it all, a pair of wah-wah basses, buzzy and plucky: one low, popping its octaves, and one higher, answering it. Both keep to the waltz's chords, and the bass lines are louder than the waltz's own. The five differ in how the funk's big beats land on the waltz's:
   - A, four to a bar: a whole funk bar in each waltz bar;
   - B, half-time over two bars: the kick on one waltz bar's downbeat, the snare on the next's;
   - C, the waltz in 4: the waltz itself re-set in four;
