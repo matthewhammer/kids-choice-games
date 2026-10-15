@@ -254,7 +254,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // friend saves which it was sized in, figUnit; see upgradeFigSize.)
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35, castleroom: 0.55 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // The three castles, N's, M's and D's, each with its own settings: how many
 // levels (1 to 5), its stone, how many trees grow round it, and how wide
@@ -3008,6 +3008,8 @@ function pictureSvg(kind, detail, o, depth, x, y, w, h) {
     if (TRIMMED.size > 200) TRIMMED.clear();
     TRIMMED.set(trimmed, body = root.innerHTML);
   }
+  // (the picture's own doorways are only paint: the picture as a whole is the way into its place)
+  body = body.replaceAll('class="portal"', 'class="painted-portal"');
   const blur = (1 - detail / 100) * 14, fid = `bg-blur-${depth}-${Math.round(blur * 10)}`;
   const W = -2 * SCENE.left, H = SCENE.bottom - SCENE.top;
   return `<svg x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" viewBox="${SCENE.left} ${SCENE.top} ${W} ${H}" preserveAspectRatio="xMidYMid slice">` +
@@ -5686,9 +5688,44 @@ function woodpathScene(c) {
   s += SEP + part("wp-sign", c.F, () => signpost(W * 0.2, g + 50 * k, k, [["🌲 clearing", "clearing", 1], ["⛰️ trail", "mountains", 1]]));
   return s;
 }
+// Our imagination: a room of endless white, the empty white of a film's
+// training world, the floor only a soft grey toward us; and on its far
+// wall a big map of every place there is, each a framed picture of it to
+// go through, a column to each kind of place (PLACE_GROUPS) with its name,
+// the places down it joined like stations on a line by a dotted path. A
+// picture of this room holds no pictures (they would go on forever).
+function imaginationScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, all, o } = c;
+  let s = SEP + part("imagination-room", c.F, () => {
+    let t = `<defs><linearGradient id="bg-imag-floor" x1="0" y1="${f1(g - 60 * k)}" x2="0" y2="${f1(y1)}" gradientUnits="userSpaceOnUse">` +
+            `<stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e4e7ee"/></linearGradient>` +
+            `<radialGradient id="bg-imag-glow"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f3f5f9"/></radialGradient></defs>` + all("url(#bg-imag-glow)");
+    t += `<rect x="${f1(x0 - pad)}" y="${f1(g - 60 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - g + 60 * k + pad)}" fill="url(#bg-imag-floor)"/>` +
+         `<ellipse cx="0" cy="${f1(g + 8 * k)}" rx="${f1(W * 0.16)}" ry="${f1(14 * k)}" fill="#c9ced8" opacity="0.5"/>`;
+    return t;
+  });
+  const groups = PLACE_GROUPS.filter(([gid]) => gid !== "imagination"), cols = groups.length, rows = Math.max(...groups.map(([, , kinds]) => kinds.length));
+  const mx = W * 0.03, top = y0 + H * 0.05, bottom = g - 70 * k, cw = (W - 2 * mx) / cols, rh = (bottom - top - 26 * k) / rows;
+  const fw = Math.min(cw * 0.78, rh * 0.86 / 0.74 * 0.8), depth = (o.depth ?? 0) + 1;
+  s += SEP + part("imagination-map", [c.F, cols, rows], () =>
+    `<rect x="${f1(x0 + mx * 0.5)}" y="${f1(top - 6 * k)}" width="${f1(W - mx)}" height="${f1(bottom - top + 12 * k)}" rx="${f1(10 * k)}" fill="#ffffff" stroke="#d5dae3" stroke-width="${f1(2 * k)}"/>` +
+    groups.map(([, name, kinds], i) => {
+      const cx = x0 + mx + cw * (i + 0.5), ys = kinds.map((_, j) => top + 26 * k + rh * (j + 0.5));
+      return `<text x="${f1(cx)}" y="${f1(top + 14 * k)}" text-anchor="middle" font-size="${f1(13 * k)}" font-weight="bold" fill="#5a6270" font-family="sans-serif">${name}</text>` +
+        (ys.length > 1 ? `<line x1="${f1(cx)}" y1="${f1(ys[0])}" x2="${f1(cx)}" y2="${f1(ys[ys.length - 1])}" stroke="#b9c0cc" stroke-width="${f1(3 * k)}" stroke-dasharray="${f1(2 * k)} ${f1(6 * k)}" stroke-linecap="round"/>` : "");
+    }).join(""));
+  // the pictures, each a way there (in a picture of this room, only their frames)
+  s += SEP + groups.map(([, , kinds], i) => kinds.map((kd, j) => {
+    const cx = x0 + mx + cw * (i + 0.5), cy = top + 26 * k + rh * (j + 0.5), name = (PLACES.find(([v]) => v === kd) || [kd, kd])[1];
+    return (depth > 2 ? `<g class="portal" data-to="${kd}"><rect x="${f1(cx - fw / 2)}" y="${f1(cy - fw * 0.37)}" width="${f1(fw)}" height="${f1(fw * 0.74)}" fill="#e8ebf0" stroke="#b8862f" stroke-width="${f1(3 * k)}"/></g>`
+                      : framedSvg(kd, 45, o, depth, cx, cy - 6 * k, fw)) +
+      `<text x="${f1(cx)}" y="${f1(cy + fw * 0.37 + 4 * k)}" text-anchor="middle" font-size="${f1(9 * k)}" fill="#5a6270" font-family="sans-serif">${name}</text>`;
+  }).join("")).join(SEP);
+  return s;
+}
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, castle: castleScene, castleroom: castleroomScene };
+                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene };
 
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);
@@ -6709,7 +6746,7 @@ function draw() {
 // Where the friend is, after their feeling ("feeling happy in the forest"):
 // each place with the word it takes, in, at, on, near or outside of; a
 // castle room by its own name and number; a castle by its owner.
-const PLACE_PHRASE = { forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
+const PLACE_PHRASE = { imagination: "in 💭 our imagination", forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
   cemetery: "in the 🌿 cemetery", lake: "at the 🦆 lake", house: "outside of the 🏠 house", treehouse: "near the 🌳 tree house",
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
   healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",
@@ -8287,7 +8324,7 @@ const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
 const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
 // The places, and the kinds of place they are, for the Background tab's
 // two rows (as the music's): every place is of exactly one kind.
-const PLACES = [["none", "none"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"],
+const PLACES = [["none", "none"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"],
   ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
@@ -8297,6 +8334,7 @@ const PLACES = [["none", "none"], ["forest", "🌲 forest"], ["underwater", "�
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
   ["woodpath", "🥾 path through the woods"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"]];
 const PLACE_GROUPS = [
+  ["imagination", "💭 imagination", ["imagination"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "mountains"]],
   ["water", "💧 water", ["lake", "beach", "underwater", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
@@ -9592,7 +9630,7 @@ function flyInto(box, arrive) {
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
+const ARRIVE = { imagination: [0, 70], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
 // Where each trip through a doorway began, the last on top: the back chip
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.
