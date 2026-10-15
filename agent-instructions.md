@@ -17,7 +17,7 @@ Read this before changing anything in this repository. The [README](README.md) s
 The repository's own GitHub Pages site serves `main` at http://matthewhammer.org/kids-choice-games/. **A push to `main` is a deploy** of a public game that the kids, and anyone else, play.
 
 1. **Commit each change locally**, and add a line for it under `## Unreleased` at the top of [`dress-up/VERSIONS.md`](dress-up/VERSIONS.md).
-2. **Don't bump the version, and don't push, until Matthew says so in his current message.** An earlier "when you can" is not enough. A version is a tested bundle of changes, about one a day, not one per change. If a push is refused, don't work around it. Give him the one-line command instead: `git -C ~/kids-choice-games push origin HEAD dress-up-X.Y.Z`.
+2. **Release new features as soon as they're done and checked.** Matthew's call, 2026-10-15: "all new features to Dress Up get pushed and made public, with a version bump, asap", ahead of other work such as the archives. The kids want to see the progress. (Before that, a version waited for his word and bundled about a day of changes.) Still ask him first when a push would publish something he asked to read beforehand. If a push is refused, don't work around it. Give him the one-line command instead: `git -C ~/kids-choice-games push origin HEAD dress-up-X.Y.Z`.
 3. **To release:**
    - Turn `## Unreleased` into `## X.Y.Z (YYYY-MM-DD)`. Open it with a one-line summary ("Everything in X.Y.Z−1, plus …").
    - Commit, and tag `dress-up-X.Y.Z`.
