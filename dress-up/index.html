@@ -263,12 +263,15 @@ const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 const CASTLES = [["N", "🏰 N's castle", "#e53935"], ["M", "🏰 M's castle", "#f2c12e"], ["D", "🏰 D's castle", "#3b82f6"]];
 const CASTLE_DEFAULTS = { N: { levels: 3, stone: "#b8b8c4", trees: 6, moat: 100 },
                           M: { levels: 4, stone: "#e2c9a0", trees: 10, moat: 60 },
-                          D: { levels: 2, stone: "#8a8f98", trees: 4, moat: 150 } };
+                          D: { levels: 2, stone: "#7c8b6f", trees: 16, moat: 72 } };
 const CASTLE_STONES = ["#b8b8c4", "#e2c9a0", "#8a8f98", "#e8e4da", "#c98f7a", "#7c8b6f", "#5a5f6e"];
 // a castle's banners and flags: two colors of its owner's, used in turn,
 // as stripes, or as checkers; and its roofs' color
 const CASTLE_FLAG_COLORS = ["#e53935", "#f2c12e", "#3b82f6", "#22c55e", "#6a2c91", "#f472b6", "#f97316", "#ffffff", "#1f1f22"];
-const CASTLE_FLAG_DEFAULTS = { N: ["#e53935", "#ffffff"], M: ["#f2c12e", "#6a2c91"], D: ["#3b82f6", "#ffffff"] };
+const CASTLE_FLAG_DEFAULTS = { N: ["#e53935", "#ffffff"], M: ["#f2c12e", "#6a2c91"], D: ["#6a2c91", "#22c55e"] };
+// (each castle's own to start with: how its flags' two colors go, and its roofs; D's chosen by D, 2026-10-15)
+const CASTLE_FLAG_STYLE_DEFAULTS = { N: "alternate", M: "alternate", D: "stripes" };
+const CASTLE_ROOF_DEFAULTS = { N: "#3b5ea8", M: "#3b5ea8", D: "#7c3aed" };
 const CASTLE_FLAG_STYLES = [["alternate", "↔️ in turn"], ["stripes", "▥ stripes"], ["checkers", "▦ checkers"]];
 // a castle's hallway carpet (the hallway: hallwaySvg)
 const CASTLE_CARPETS = ["#a3122a", "#1e3a8a", "#14532d", "#6a2c91", "#7c2d12", "#d4a017", "#1f1f22"];
@@ -302,8 +305,8 @@ const castleOf = o => {
   const id = CASTLE_DEFAULTS[o.castle] ? o.castle : "N", d = CASTLE_DEFAULTS[id];
   const fl = CASTLE_FLAG_DEFAULTS[id], flagA = o["castleFlagA" + id] ?? fl[0];
   return { id, flag: flagA, flagA, flagB: o["castleFlagB" + id] ?? fl[1],
-           flagStyle: CASTLE_FLAG_STYLES.some(([v]) => v === o["castleFlagStyle" + id]) ? o["castleFlagStyle" + id] : "alternate",
-           roof: o["castleRoof" + id] ?? "#3b5ea8", carpet: o["castleCarpet" + id] ?? CASTLE_CARPETS[0],
+           flagStyle: CASTLE_FLAG_STYLES.some(([v]) => v === o["castleFlagStyle" + id]) ? o["castleFlagStyle" + id] : CASTLE_FLAG_STYLE_DEFAULTS[id],
+           roof: o["castleRoof" + id] ?? CASTLE_ROOF_DEFAULTS[id], carpet: o["castleCarpet" + id] ?? CASTLE_CARPETS[0],
            // each room's own exits, when it is a hallway (castleWays)
            hall: [1, 2, 3, 4, 5, 6].map(n => ({
              doors: [...Array(Math.max(0, Math.min(4, Math.round(o["castleHallDoors" + n + id] ?? 3))))].map((_, j) => String(o[hallDoorKey(id, n, j + 1)] ?? hallDoorDefault(n, j + 1))),
@@ -381,7 +384,7 @@ const DEFAULTS = {
                 houses: 4, bridges: 2, ladders: 3, leaves: 60, treeHouseSize: 100,
                 castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
                   [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
-                   ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, "alternate"], ["castleRoof" + id, "#3b5ea8"], ["castleCarpet" + id, CASTLE_CARPETS[0]],
+                   ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleRoof" + id, CASTLE_ROOF_DEFAULTS[id]], ["castleCarpet" + id, CASTLE_CARPETS[0]],
                    ...[1, 2, 3, 4, 5, 6].flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"],
                      ...[1, 2, 3, 4].map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
@@ -396,7 +399,8 @@ const DEFAULTS = {
                 fairyTime: "day", mushrooms: 14, fairyHouseSeen: 100, fairyHouseLfo: "none",
                 seeHouse: true, seeTree: true, seeWitch: true, seeCastle: true, seeHealer: true,
                 peakHeight: 100, mtClouds: 5, birds: 3, farLake: true,
-                fallWidth: 100, vines: 8, mist: 60, parrots: 2,
+                fallWidth: 100, vines: 8, mist: 60, parrots: 2, fallRate: 100, fallTime: "day",
+                caveGems: 16, gemShape: "four", gemSize: 100, gemBright: 90, gemTwinkle: 60,
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
                 starShape: "mix", starSize: 100, starBright: 85, starTwinkle: 40,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
@@ -5117,9 +5121,14 @@ function mountainsScene(c) {
 // The jungle waterfall: a mossy cliff, the water falling (streaks running
 // down it), a pool below with ripples, mist rising, big-leaved trees,
 // vines swaying, parrots, flowers.
+// The jungle waterfall's time of day (its own, so the cave behind it sees
+// the same): day, or a tint over everything at sunset and at night, the
+// moon out at night; and how fast its water falls (100 = the usual)
+const FALL_TINT = { day: ["#ffffff", 0], sunset: ["#9a3412", 0.25], night: ["#0b1030", 0.55] };
+const fallTimeOf = o => FALL_TINT[o.fallTime] ? o.fallTime : "day", fallRateOf = o => Math.max(0.1, (o.fallRate ?? 100) / 100);
 function waterfallScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
-  const fw = (o.fallWidth ?? 100) / 100, vines = o.vines ?? 8, mist = (o.mist ?? 60) / 100, parrots = o.parrots ?? 2;
+  const fw = (o.fallWidth ?? 100) / 100, vines = o.vines ?? 8, mist = (o.mist ?? 60) / 100, parrots = o.parrots ?? 2, rate = fallRateOf(o), time = fallTimeOf(o);
   const top = y0 + H * 0.12, pool = g - 70 * k;
   let s = SEP + part("wf-back", c.F, () => {
     let t = `<defs>${grad("bg-sky", "#9fd8c8", "#e8fff4", y0, g)}</defs>` + all("url(#bg-sky)");
@@ -5144,7 +5153,7 @@ function waterfallScene(c) {
   });
   // the falls: a sheet of water, streaks running down it, foam at the lip
   // (a doorway: behind them is a cave, unseen from here)
-  s += SEP + `<g class="portal" data-to="cave">` + part("wf-falls", [c.F, fw], () => {
+  s += SEP + `<g class="portal" data-to="cave">` + part("wf-falls", [c.F, fw, rate], () => {
     const half = 60 * fw * k;
     let t = `<defs><linearGradient id="bg-falls" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9ad7f0"/><stop offset="0.5" stop-color="#e6f8ff"/><stop offset="1" stop-color="#9ad7f0"/></linearGradient></defs>` +
             `<path d="M${P(-half, top)} L${P(half, top)} L${P(half * 1.25, pool)} L${P(-half * 1.25, pool)} Z" fill="url(#bg-falls)" opacity="0.95"/>`;
@@ -5152,7 +5161,7 @@ function waterfallScene(c) {
     for (let i = 0; i < n; i++) {
       const u = (i + 0.5) / n, xa = -half + 2 * half * u, xb = -half * 1.25 + 2.5 * half * u, dash = (30 + 30 * R(i, 345)) * k, gap = (20 + 20 * R(i, 346)) * k;
       t += `<line x1="${f1(xa)}" y1="${f1(top)}" x2="${f1(xb)}" y2="${f1(pool)}" stroke="#ffffff" stroke-width="${f1((2 + 3 * R(i, 347)) * k)}" stroke-dasharray="${f1(dash)} ${f1(gap)}" opacity="0.8">` +
-           `<animate attributeName="stroke-dashoffset" values="0;${f1(-(dash + gap) * 2)}" dur="${(0.6 + 0.4 * R(i, 348)).toFixed(2)}s" repeatCount="indefinite"/></line>`;
+           `<animate attributeName="stroke-dashoffset" values="0;${f1(-(dash + gap) * 2)}" dur="${((0.6 + 0.4 * R(i, 348)) / rate).toFixed(2)}s" repeatCount="indefinite"/></line>`;
     }
     return t + `<ellipse cx="0" cy="${f1(top)}" rx="${f1(half * 1.1)}" ry="${f1(6 * k)}" fill="#ffffff" opacity="0.9"/>`;
   }) + `</g>`;
@@ -5213,6 +5222,8 @@ function waterfallScene(c) {
            `<path d="M9 -6 Q18 -4 12 4 Q10 0 9 -2 Z" fill="#f2c12e"/><path d="M-6 8 Q-18 20 -10 34" fill="none" stroke="#f2c12e" stroke-width="4"/></g>`;
   }).join(""));
   // a sign back to the trail
+  if (time !== "day") s += SEP + part("wf-tint", [c.F, time], () => all(FALL_TINT[time][0]).replace("<rect ", `<rect pointer-events="none" opacity="${FALL_TINT[time][1]}" `) +
+    (time === "night" ? `<circle cx="${f1(-W * 0.32)}" cy="${f1(y0 + H * 0.12)}" r="${f1(26 * k)}" fill="#fff6d6" opacity="0.95"/><circle cx="${f1(-W * 0.32 + 10 * k)}" cy="${f1(y0 + H * 0.12 - 6 * k)}" r="${f1(22 * k)}" fill="#0b1030" opacity="0.35"/>` : ""));
   s += SEP + part("wf-sign", c.F, () => signpost(W * 0.3, g + 40 * k, k, [["⛰️ trail", "mountains", 1]]));
   return s;
 }
@@ -5530,7 +5541,7 @@ const TENT_GLOW = [
 // them, the light coming through: a doorway back out.
 function caveScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, o } = c;
-  const fw = (o.fallWidth ?? 100) / 100, mist = (o.mist ?? 60) / 100;
+  const fw = (o.fallWidth ?? 100) / 100, mist = (o.mist ?? 60) / 100, rate = fallRateOf(o), time = fallTimeOf(o);
   const floor = g - 50 * k, mt = y0 + H * 0.1, mh = W * 0.24, cw = Math.min(mh, 70 * fw * k);
   const mouth = `M${P(-mh, floor)} L${P(-mh * 0.96, mt + 90 * k)} Q${P(-mh * 0.75, mt)} ${P(0, mt - 8 * k)} Q${P(mh * 0.75, mt)} ${P(mh * 0.96, mt + 90 * k)} L${P(mh, floor)} Z`;
   let s = SEP + part("cave-rock", c.F, () => {
@@ -5543,8 +5554,10 @@ function caveScene(c) {
   });
   // the mouth: the light outside, the jungle blurred beyond, the curtain
   // of water falling across it, mist at its foot
-  s += SEP + part("cave-mouth", [c.F, fw, mist], () => {
-    let t = `<defs><clipPath id="bg-cave-mouth"><path d="${mouth}"/></clipPath>${grad("bg-cave-light", "#effcff", "#a9dcc6", mt, floor)}` +
+  s += SEP + part("cave-mouth", [c.F, fw, mist, rate, time], () => {
+    // (the light outside, by the falls' time of day)
+    const sky = { day: ["#effcff", "#a9dcc6"], sunset: ["#ffe0b0", "#e8946a"], night: ["#4a5c88", "#1c2742"] }[time];
+    let t = `<defs><clipPath id="bg-cave-mouth"><path d="${mouth}"/></clipPath>${grad("bg-cave-light", sky[0], sky[1], mt, floor)}` +
             `<linearGradient id="bg-cave-water" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9ad7f0"/><stop offset="0.5" stop-color="#e6f8ff"/><stop offset="1" stop-color="#9ad7f0"/></linearGradient>` +
             `<filter id="bg-cave-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${f1(10 * k)}"/></filter></defs>` +
             `<g class="portal" data-to="waterfall"><g clip-path="url(#bg-cave-mouth)">` +
@@ -5556,13 +5569,16 @@ function caveScene(c) {
     for (let i = 0; i < n; i++) {
       const u = (i + 0.5) / n, xa = -cw + 2 * cw * u, xb = -cw * 1.15 + 2.3 * cw * u, dash = (30 + 30 * R(i, 387)) * k, gap = (20 + 20 * R(i, 388)) * k;
       t += `<line x1="${f1(xa)}" y1="${f1(mt - 20 * k)}" x2="${f1(xb)}" y2="${f1(floor)}" stroke="#ffffff" stroke-width="${f1((2 + 3 * R(i, 389)) * k)}" stroke-dasharray="${f1(dash)} ${f1(gap)}" opacity="0.75">` +
-           `<animate attributeName="stroke-dashoffset" values="0;${f1(-(dash + gap) * 2)}" dur="${(0.6 + 0.4 * R(i, 390)).toFixed(2)}s" repeatCount="indefinite"/></line>`;
+           `<animate attributeName="stroke-dashoffset" values="0;${f1(-(dash + gap) * 2)}" dur="${((0.6 + 0.4 * R(i, 390)) / rate).toFixed(2)}s" repeatCount="indefinite"/></line>`;
     }
     if (mist > 0) t += `<g filter="url(#bg-cave-blur)">` + [...Array(Math.round(2 + 5 * mist))].map((_, i) => {
       const x = (R(i, 391) - 0.5) * 2 * mh, y = floor - (10 + 30 * R(i, 392)) * k, r = (30 + 30 * R(i, 393)) * k;
       return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.5)}" fill="#ffffff" opacity="${(0.25 + 0.4 * mist).toFixed(2)}">` +
              `<animate attributeName="cy" values="${f1(y)};${f1(y - 20 * k)};${f1(y)}" dur="${(4 + 3 * R(i, 394)).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`;
     }).join("") + `</g>`;
+    // (outside, the falls' time of day: its tint over all of it, the moon behind the water at night)
+    if (time !== "day") t += (time === "night" ? `<circle cx="${f1(-mh * 0.45)}" cy="${f1(mt + 50 * k)}" r="${f1(18 * k)}" fill="#fff6d6"/>` : "") +
+      `<rect x="${f1(-mh)}" y="${f1(mt - 20 * k)}" width="${f1(2 * mh)}" height="${f1(floor - mt + 20 * k)}" fill="${FALL_TINT[time][0]}" opacity="${FALL_TINT[time][1]}" pointer-events="none"/>`;
     return t + `</g><path d="${mouth}" fill="none" stroke="#1a171f" stroke-width="${f1(8 * k)}" stroke-linejoin="round"/></g>`;
   });
   // the light falling in through the water, the floor, wet by the mouth
@@ -5599,6 +5615,22 @@ function caveScene(c) {
       t += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(1.6 * k)}" fill="#7dfcd2"${i % 3 ? "" : `><animate attributeName="opacity" values="1;0.2;1" dur="${(1.5 + 2 * R(i, 403)).toFixed(1)}s" repeatCount="indefinite"/></circle`}${i % 3 ? "/>" : ">"}`;
     }
     return t;
+  });
+  // gems all over the walls (not across the mouth, or on the floor), each
+  // with its sparkle, drawn as the night sky's stars are and set the same
+  // way (gemShape, gemSize, gemBright, gemTwinkle); and sparkles on the crystals
+  const so = { starShape: o.gemShape, starSize: o.gemSize, starBright: o.gemBright, starTwinkle: o.gemTwinkle }, gems = Math.max(0, Math.round(o.caveGems ?? 16));
+  s += SEP + part("cave-gems", [c.F, gems, o.gemShape, o.gemSize, o.gemBright, o.gemTwinkle], () => {
+    let t = "", i = 0;
+    for (let j = 0; i < gems && j < gems * 12; j++) {
+      const x = x0 + W * (0.03 + 0.94 * R(j, 1210)), y = y0 + H * 0.05 + (floor - y0 - H * 0.12) * R(j, 1211);
+      if (Math.abs(x) < mh * 1.08 && y > mt - 30 * k) continue;
+      const col = ["#b388ff", "#5ee6ff", "#7dfcd2", "#ffd36e", "#ff8fb1"][j % 5], z = (0.5 + 0.6 * R(j, 1212)) * k, a = f1((R(j, 1213) - 0.5) * 70);
+      t += `<polygon points="-5,0 -5,-12 0,-18 5,-12 5,0" fill="${col}" stroke="${mix(col, "#ffffff", 0.5)}" stroke-width="1.2" transform="translate(${f1(x)} ${f1(y)}) rotate(${a}) scale(${z.toFixed(3)})"/>` +
+           starsSvg(so, 1, x, x, y - 12 * z, y - 12 * z, k, (n, seed) => R(j, seed), 1220);
+      i++;
+    }
+    return t + [[-0.4, 0.5], [0.37, 0.42], [-0.3, 0.2]].map(([u, v], j) => starsSvg(so, 4, W * u - 30 * k, W * u + 30 * k, y0 + H * v - 10 * k, y0 + H * v + 30 * k, k, (n, seed) => R(n + 10 * j, seed), 1240)).join("");
   });
   // crystals glowing on the walls, either side
   s += SEP + part("cave-crystals", c.F, () => [[-0.4, 0.5, "#b388ff"], [0.37, 0.42, "#5ee6ff"], [-0.3, 0.2, "#5ee6ff"]].map(([u, v, col], j) => {
@@ -8571,6 +8603,14 @@ const TABS = [
     ["range", "vines", "🌿 vines", 0, 20, 4, 14],
     ["range", "mist", "🌫️ mist", 0, 100, 30, 90],
     ["range", "parrots", "🦜 parrots", 0, 6, 1, 4],
+    ["range", "fallRate", "💦 how fast it falls (100 = the usual)", 25, 400, 50, 250],
+    ["choice", "fallTime", "🌗 time of day (outside the cave too)", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"]]],
+    // the cave behind the falls: gems on its walls, sparkling
+    ["range", "caveGems", "💎 gems on the walls", 0, 40, 6, 30],
+    ["choice", "gemShape", "✨ sparkles: shape", STAR_SHAPES],
+    ["range", "gemSize", "✨ sparkles: size (100 = the usual, up to huge)", 25, 2000, 60, 600],
+    ["range", "gemBright", "✨ sparkles: brightness", 5, 100, 50, 100],
+    ["range", "gemTwinkle", "✨ sparkles: twinkle (the big bright ones turn, grow and shrink, and glimmer)", 0, 100, 20, 100],
     // the camp site
     ["choice", "campTime", "🌗 time of day", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"]]],
     ["choice", "starShape", "⭐ stars: shape", STAR_SHAPES],
@@ -8785,7 +8825,8 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["peakHeight", "mtClouds", "birds", "farLake"].map(key => ["background." + key, b => b.kind === "mountains"])),
   ...Object.fromEntries(["vines", "parrots"].map(key => ["background." + key, b => b.kind === "waterfall"])),
   // (the cave sees the falls from behind: their width and mist)
-  ...Object.fromEntries(["fallWidth", "mist"].map(key => ["background." + key, b => b.kind === "waterfall" || b.kind === "cave"])),
+  ...Object.fromEntries(["fallWidth", "mist", "fallRate", "fallTime"].map(key => ["background." + key, b => b.kind === "waterfall" || b.kind === "cave"])),
+  ...Object.fromEntries(["caveGems", "gemShape", "gemSize", "gemBright", "gemTwinkle"].map(key => ["background." + key, b => b.kind === "cave"])),
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
