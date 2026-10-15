@@ -301,7 +301,35 @@ const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c
 // them up (N's, M's and D's), and any castle may use any of them. A trap
 // room's two pits drop into the castle's dungeons.
 const ROOM_STYLES = [["N", "N's rooms", [["king", "👑 king's room"], ["greenhouse", "🌿 greenhouse"], ["trap", "🕳️ trap room"],
-                                          ["dungeon1", "🗝️ dungeon"], ["dungeon2", "⛓️ deep dungeon"], ["hallway", "🕯️ hallway"]]]];
+                                          ["dungeon1", "🗝️ dungeon"], ["dungeon2", "⛓️ deep dungeon"], ["hallway", "🕯️ hallway"]]],
+                    ["more", "more rooms", [["catroom", "🐈 cat room"]]]];
+// the rooms whose exits are their own (K.hall): a hallway's doors and stairs; the
+// others', doors in their side walls, as the king's room's, and a sign out toward
+// us; each of these rooms also takes a color theme
+const SIDE_DOOR_ROOMS = ["king", "catroom"], OWN_EXIT_ROOMS = ["hallway", ...SIDE_DOOR_ROOMS];
+// The cat room's cats: the castle's own, up to eight, each with its fur, its
+// tuxedo white (or none), its eyes, how it is (sitting, asleep, walking), where
+// in the room it is, its size, and its wag: with an LFO (in time with the
+// music) or its own, and how far into the wag it starts, each its own (at
+// random to begin with), so no two wag together
+const CAT_FURS = ["#1f1f22", "#6f6f7d", "#e8862a", "#6b4226", "#ffffff", "#d9b38c", "#8b5cf6"];
+const CAT_WHITES = ["#ffffff", "off", "#f7ead8", "#ffd1dc", "#c0c0c0", "#1f1f22"];
+const CAT_EYES = ["#c6d43a", "#e0a800", "#3b82f6", "#22c55e", "#f28c28"];
+const CAT_POSES = [["sit", "🐈 sitting"], ["sleep", "😴 curled up asleep"], ["walk", "🐾 walking"]];
+const CAT_SPOTS = [["fire", "🔥 by the fire"], ["treeL", "🌳 on the left cat tree"], ["walkway", "🌉 on the high walkway"], ["window", "🪟 in the window seat"],
+                   ["treeR", "🌳 on the right cat tree"], ["basket", "🧺 in the basket"], ["shelfL", "🪵 on the left shelf"], ["shelfR", "🪵 on the right shelf"],
+                   ["mantel", "🕯️ on the mantel"], ["rug", "🧶 on the rug"], ["box", "📦 in the box"], ["bridge", "🪢 on the rope bridge"]];
+const CAT_ROOM_CATS = [
+  { fur: "#e8862a", white: "#ffffff", eyes: "#22c55e", pose: "sleep", spot: "fire", offset: 17 },
+  { fur: "#1f1f22", white: "#ffffff", eyes: "#c6d43a", pose: "sit", spot: "treeL", offset: 62 },
+  { fur: "#6f6f7d", white: "off", eyes: "#e0a800", pose: "walk", spot: "walkway", offset: 38 },
+  { fur: "#ffffff", white: "off", eyes: "#3b82f6", pose: "sit", spot: "window", offset: 85 },
+  { fur: "#6b4226", white: "#f7ead8", eyes: "#f28c28", pose: "sit", spot: "treeR", offset: 9 },
+  { fur: "#6f6f7d", white: "#ffffff", eyes: "#22c55e", pose: "sleep", spot: "basket", offset: 51 },
+  { fur: "#1f1f22", white: "off", eyes: "#e0a800", pose: "sit", spot: "box", offset: 74 },
+  { fur: "#d9b38c", white: "#ffffff", eyes: "#3b82f6", pose: "walk", spot: "bridge", offset: 29 }];
+const CAT_ROOM_COUNT = 6;
+const catKey = (id, j, what) => "castleCat" + j + what + id;
 const CASTLE_ROOM_CHOICES = ROOM_STYLES.flatMap(([, , list]) => list);
 const roomLabel = st => (CASTLE_ROOM_CHOICES.find(([v]) => v === st) || [st, st])[1];
 // skeletons and skulls: none unless asked for, room by room (0 up to what
@@ -329,7 +357,14 @@ const castleOf = o => {
              const st = o["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i] ?? "king";
              return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king"; }),
            bones: [1, 2, 3, 4, 5, 6].map(n => Object.fromEntries(Object.entries(ROOM_BONES).map(([st, most]) =>
-             [st, Math.max(0, Math.min(most, Math.round(o[roomBonesKey(id, n, st)] ?? 0)))]))) };
+             [st, Math.max(0, Math.min(most, Math.round(o[roomBonesKey(id, n, st)] ?? 0)))]))),
+           // its cats, who live in its cat room (or rooms)
+           cats: CAT_ROOM_CATS.slice(0, Math.max(0, Math.min(8, Math.round(o["castleCats" + id] ?? CAT_ROOM_COUNT)))).map((d, i) => {
+             const v = w => o[catKey(id, i + 1, w)];
+             return { fur: v("Fur") ?? d.fur, white: v("White") ?? d.white, eyes: v("Eyes") ?? d.eyes,
+                      pose: CAT_POSES.some(([p]) => p === v("Pose")) ? v("Pose") : d.pose,
+                      spot: CAT_SPOTS.some(([p]) => p === v("Spot")) ? v("Spot") : d.spot, size: Math.max(20, Math.min(300, v("Size") ?? 100)),
+                      lfo: LFO_NAMES.includes(v("Lfo")) ? v("Lfo") : "none", offset: Math.max(0, Math.min(99, v("Offset") ?? d.offset)) }; }) };
 };
 // the fill for a castle's i-th flag or banner: its two colors in turn, or
 // both, as stripes or checkers (a pattern, its squares u across)
@@ -402,7 +437,10 @@ const DEFAULTS = {
                    ...[1, 2, 3, 4, 5, 6].flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"],
                      ...[1, 2, 3, 4].map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
-                   ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0]))])),
+                   ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
+                   ["castleCats" + id, CAT_ROOM_COUNT], ...CAT_ROOM_CATS.flatMap((d, i) => [[catKey(id, i + 1, "Fur"), d.fur], [catKey(id, i + 1, "White"), d.white],
+                     [catKey(id, i + 1, "Eyes"), d.eyes], [catKey(id, i + 1, "Pose"), d.pose], [catKey(id, i + 1, "Spot"), d.spot], [catKey(id, i + 1, "Size"), 100],
+                     [catKey(id, i + 1, "Lfo"), "none"], [catKey(id, i + 1, "Offset"), d.offset]])])),
                 castleRoom: 1,
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
@@ -2313,13 +2351,22 @@ function witchHat(WC, rx = 128) {
 // hangs down behind; its eyes and nose in their own colors.
 // (wag: its tail swings slowly about its root, as the healer's cat's does
 // on its shelf)
-function shoulderCat(w, WC, wag = false) {
+// (wag: true for the healer's cat's own slow wag, or a cat's wag from catWag,
+// with an LFO or at its own pace, begun its own offset into the cycle; curl:
+// sitting on the floor, its tail curled round its front paws, the tip
+// twitching with the wag, instead of hanging down over a shelf's edge)
+function shoulderCat(w, WC, wag = false, curl = false) {
   const x = -(w - 4), y = -9, fur = WC.catFur, ln = darker(fur), wh = WC.catWhite;
-  const tux = wh && wh !== "off";
-  const tail = `<path d="M${x + 8} ${y - 6} Q${x + 34} ${y + 6} ${x + 24} ${y + 42}" fill="none" stroke="${fur}" stroke-width="6" stroke-linecap="round"/>`;
-  return (wag ? `<g>${tail}<animateTransform attributeName="transform" type="rotate" values="-14 ${x + 8} ${y - 6};16 ${x + 8} ${y - 6};-14 ${x + 8} ${y - 6}" dur="3.4s" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/></g>` : tail) +
+  const tux = wh && wh !== "off", stroke = `fill="none" stroke="${fur}" stroke-width="6" stroke-linecap="round"`;
+  const hang = `<path d="M${x + 8} ${y - 6} Q${x + 34} ${y + 6} ${x + 24} ${y + 42}" ${stroke}/>`;
+  const curlD = v => `M${x + 11} ${y - 8} Q${x + 26} ${y + 2} ${x + 8} ${y + 3} Q${x - 6} ${y + 4} ${f1(x - 16 + v)} ${f1(y - 1 - 6 * v)}`;
+  const tail = curl ? (wag && wag !== true ? wagged(wag, sh => `<path d="${curlD(0)}" ${stroke}>${wagAnim(wag, "d", v => curlD((1 + v) / 2), sh)}</path>`) : `<path d="${curlD(0)}" ${stroke}/>`)
+    : wag === true ? `<g>${hang}<animateTransform attributeName="transform" type="rotate" values="-14 ${x + 8} ${y - 6};16 ${x + 8} ${y - 6};-14 ${x + 8} ${y - 6}" dur="3.4s" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/></g>`
+    : wag ? wagged(wag, sh => `<g>${hang}${wagAnim(wag, "transform", (v, amp) => `${f1(-(8 + 20 * amp) * v)} ${x + 8} ${y - 6}`, sh)}</g>`) : hang;
+  return (curl ? "" : tail) +
     `<ellipse cx="${x}" cy="${y - 17}" rx="15" ry="18" fill="${fur}" stroke="${ln}" stroke-width="1.5"/>` +
     (tux ? `<path d="M${x - 9} ${y - 32} Q${x - 3} ${y - 26} ${x + 3} ${y - 32} Q${x + 6} ${y - 14} ${x - 3} ${y - 2} Q${x - 12} ${y - 14} ${x - 9} ${y - 32} Z" fill="${wh}"/>` : "") +
+    (curl ? tail : "") +
     // the front paws, side by side at the front of its body
     [x - 8, x + 2].map(px => `<ellipse cx="${px}" cy="${y - 2}" rx="5" ry="4" fill="${tux ? wh : fur}" stroke="${ln}" stroke-width="1.2"/>`).join("") +
     poly([[x - 15, y - 44], [x - 13, y - 64], [x - 4, y - 52]], fur, ln, 1.5) +
@@ -2330,6 +2377,83 @@ function shoulderCat(w, WC, wag = false) {
                              `<ellipse cx="${ex}" cy="${y - 43}" rx="1" ry="3.2" fill="#111"/>`).join("") +
     `<path d="M${x - 5} ${y - 37} L${x - 1} ${y - 37} L${x - 3} ${y - 35} Z" fill="${WC.catNose}"/>`;
 }
+// A cat's wag: its tail swinging (or its tip twitching) once a cycle, with an
+// LFO in time with the music, or else at its own pace (each cat its own,
+// i its place in the castle's list); either way begun its own offset into the
+// cycle, so no two cats wag together. The key says what its drawing depends on.
+function catWag(C, i) {
+  const lf = lfoNow(C.lfo), off = (C.offset ?? 0) / 100;
+  if (lf) return { lf, off, key: [lf.dur.toFixed(4), lf.shape, lf.amp.toFixed(2), lfoBegin(lf, off)].join() };
+  return { lf: null, off, dur: 2.6 + 0.37 * ((i * 5) % 8), key: "own" };
+}
+// when, in the picture's own time, an animation must have begun for its wave
+// to be where the LFO's is now, `shift` of a cycle on (rounded, to a 20th of a
+// second or a 16th of a cycle, so the scene's text stays the same from draw to
+// draw while the music keeps time); an LFO too fast to show is a blur, in time
+// with nothing, its copies just spread round the cycle
+function lfoBegin(lf, shift) {
+  if (lf.dur < LFO_BLUR) return -(((shift % 1) + 1) % 1) * lf.dur;
+  const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() : 0, step = Math.min(0.05, lf.dur / 16);
+  return Math.round(((now - (lf.phase + shift) * lf.dur) % lf.dur + lf.dur) % lf.dur / step) * step;
+}
+// a wag's animation of `attr` (a rotation for "transform"): val(w, depth) its
+// value at the wave's height w (-1 to 1); sh: a further shift, for a blur's copies
+function wagAnim(W, attr, val, sh = 0) {
+  const N = 16, vals = [], kt = [], shape = W.lf ? W.lf.shape : "sine", amp = W.lf ? W.lf.amp : 0.4, dur = W.lf ? W.lf.dur : W.dur;
+  for (let j = 0; j <= N; j++) { vals.push(val(lfoWave(shape, j / N), amp)); kt.push((j / N).toFixed(4)); }
+  const begin = W.lf ? lfoBegin(W.lf, W.off + sh) : -(((W.off + sh) % 1) * dur);
+  return `<${attr === "transform" ? `animateTransform attributeName="transform" type="rotate"` : `animate attributeName="${attr}"`} values="${vals.join(";")}" ` +
+         `keyTimes="${kt.join(";")}" dur="${dur.toFixed(4)}s" begin="${begin.toFixed(4)}s" repeatCount="indefinite"/>`;
+}
+// a tail drawn wagging, by tailAt(shift): once, or with an LFO too fast to
+// show, as the wings are (wingLfoBlur), a blur of 8 see-through copies, each
+// an eighth of a cycle behind the last
+const wagged = (W, tailAt) => W.lf && W.lf.dur < LFO_BLUR
+  ? [...Array(8)].map((_, j) => `<g opacity="0.25">${tailAt(j / 8)}</g>`).join("") : tailAt(0);
+// A cat asleep, curled up nose to tail, (0, 0) under its middle: it breathes
+// slowly, the tip of its tail twitching with its wag, and now and then a "z"
+// rises from it
+function sleepingCat(WC, W, i) {
+  const fur = WC.catFur, ln = darker(fur), wh = WC.catWhite, tux = wh && wh !== "off";
+  const stroke = `fill="none" stroke="${fur}" stroke-width="6" stroke-linecap="round"`;
+  const tailD = v => `M24 -9 Q32 1 12 2 Q-4 3 ${f1(-12 + 2 * v)} ${f1(-2 - 5 * v)}`;
+  const breathe = (3.4 + 0.45 * (i % 4)).toFixed(2), zb = `-${(1.3 * i % 4).toFixed(1)}s`;
+  return `<ellipse cx="2" cy="1" rx="31" ry="4" fill="#000000" opacity="0.18"/>` +
+    `<g><animateTransform attributeName="transform" type="scale" values="1 1;1.02 1.06;1 1" dur="${breathe}s" begin="-${(0.9 * i).toFixed(1)}s" repeatCount="indefinite"/>` +
+    `<ellipse cx="2" cy="-12" rx="28" ry="13" fill="${fur}" stroke="${ln}" stroke-width="1.5"/>` +
+    `<path d="M8 -20 Q22 -22 25 -9" fill="none" stroke="${ln}" stroke-width="1.2" opacity="0.6"/></g>` +
+    (tux ? `<ellipse cx="-12" cy="-3" rx="7" ry="3.5" fill="${wh}" stroke="${ln}" stroke-width="1"/>` : "") +
+    wagged(W, sh => `<path d="${tailD(0)}" ${stroke}>${wagAnim(W, "d", v => tailD((1 + v) / 2), sh)}</path>`) +
+    poly([[-29, -17], [-31, -30], [-22, -23]], fur, ln, 1.5) + poly([[-16, -24], [-10, -33], [-8, -19]], fur, ln, 1.5) +
+    `<circle cx="-18" cy="-14" r="11" fill="${fur}" stroke="${ln}" stroke-width="1.5"/>` +
+    (tux ? `<ellipse cx="-18" cy="-8.5" rx="5.5" ry="3.5" fill="${wh}"/>` : "") +
+    `<path d="M-25 -15 q2.5 2 5 0 M-16 -15 q2.5 2 5 0" fill="none" stroke="${fur === "#1f1f22" ? "#8a8a96" : "#2a2420"}" stroke-width="1.3" stroke-linecap="round"/>` +
+    `<path d="M-20 -10.5 L-16 -10.5 L-18 -8.5 Z" fill="${WC.catNose}"/>` +
+    `<text x="-26" y="-30" font-size="10" font-weight="bold" font-family="sans-serif" fill="#ffffff" stroke="#5a4a8a" stroke-width="0.7" opacity="0">z` +
+    `<animate attributeName="y" values="-28;-50" dur="4s" begin="${zb}" repeatCount="indefinite"/>` +
+    `<animate attributeName="opacity" values="0;0.9;0" dur="4s" begin="${zb}" repeatCount="indefinite"/></text>`;
+}
+// A cat walking, seen from the side, facing right, (0, 0) on the ground
+// under its middle: its legs swinging by pairs, its tail up, swaying with its wag
+function walkingCat(WC, W, i) {
+  const fur = WC.catFur, ln = darker(fur), wh = WC.catWhite, tux = wh && wh !== "off", step = (0.8 + 0.06 * (i % 3)).toFixed(2);
+  const leg = (hx, ph, near) => `<g><line x1="${hx}" y1="-21" x2="${hx}" y2="-1" stroke="${near ? fur : mix(fur, "#000000", 0.3)}" stroke-width="5" stroke-linecap="round"/>` +
+    (near && tux ? `<circle cx="${hx}" cy="-2" r="2.6" fill="${wh}"/>` : "") +
+    `<animateTransform attributeName="transform" type="rotate" values="-22 ${hx} -21;22 ${hx} -21;-22 ${hx} -21" dur="${step}s" begin="-${(ph * step).toFixed(2)}s" repeatCount="indefinite"/></g>`;
+  return `<ellipse cx="0" cy="0" rx="24" ry="3.5" fill="#000000" opacity="0.18"/>` + leg(-13, 0, false) + leg(13, 0.5, false) +
+    wagged(W, sh => `<g><path d="M-17 -27 Q-34 -32 -29 -52" fill="none" stroke="${fur}" stroke-width="6" stroke-linecap="round"/>` +
+      wagAnim(W, "transform", (v, amp) => `${f1((6 + 16 * amp) * v)} -17 -27`, sh) + `</g>`) +
+    `<ellipse cx="0" cy="-25" rx="21" ry="10" fill="${fur}" stroke="${ln}" stroke-width="1.5"/>` +
+    (tux ? `<ellipse cx="14" cy="-21" rx="6" ry="6.5" fill="${wh}"/>` : "") +
+    leg(-11, 0.5, true) + leg(15, 0, true) +
+    poly([[16, -38], [17, -50], [23, -41]], fur, ln, 1.5) + poly([[24, -42], [29, -51], [31, -37]], fur, ln, 1.5) +
+    `<circle cx="23" cy="-33" r="10" fill="${fur}" stroke="${ln}" stroke-width="1.5"/>` +
+    (tux ? `<ellipse cx="28" cy="-28.5" rx="5" ry="3.2" fill="${wh}"/>` : "") +
+    `<ellipse cx="27" cy="-35" rx="2.3" ry="2.9" fill="${WC.catEyes}"/><ellipse cx="27.6" cy="-35" rx="0.8" ry="2.4" fill="#111"/>` +
+    `<path d="M32 -31 L34 -31 L33 -29.5 Z" fill="${WC.catNose}"/>` +
+    `<path d="M30 -29 L40 -31 M30 -28 L40 -27" stroke="${tux || fur === "#1f1f22" ? "#d8d8de" : "#3a3a3a"}" stroke-width="0.6"/>`;
+}
+
 // A broom through the hand at H, in body units: the stick, leaning a
 // little, 120 above the hand and 52 below it, then the bristles flaring
 // out under a band in the trim color.
@@ -3883,6 +4007,7 @@ const FAIRY_TINT = { day: ["#ffffff", 0], sunrise: ["#f4a6c4", 0.18], sunset: ["
 // animation of its opacity begun so the wave is where the music's is (its
 // start rounded, so the scene's text stays the same from draw to draw)
 function fairyHouseFade(o) {
+  void o["lfo:" + o.fairyHouseLfo];   // (so a change to its LFO draws the scene again: sceneOpts)
   const a = Math.max(0, Math.min(1, (o.fairyHouseSeen ?? 100) / 100)), lf = lfoNow(o.fairyHouseLfo);
   if (!lf) return { a, key: "", anim: "" };
   // (too fast to show: its average, the wave's being 0 for every shape)
@@ -4937,6 +5062,329 @@ function hallFarArch(c) {
 // cross-section 1 / (1 + z), as hallwaySvg's are), its arch rising between
 // them, planks running up it, an iron ring; the hallway's dark over it, its
 // sign above it facing us
+// The cat room: a big, cozy wooden room for the castle's cats. Honey plank
+// walls over dark wainscot, a beamed ceiling and a lantern, a stone
+// fireplace with a fire (a portrait of a royal cat over its mantel), a
+// window seat under the evening sky, two tall cat trees, shelves stepping up
+// the side walls to a high walkway across the back, a rope bridge across the
+// room, a big braided rug in the room's colors, and all a cat keeps: bowls,
+// a basket, a box, yarn, a toy mouse, a feather on a string. Its cats are
+// the castle's own (castleOf's cats), each where its setting puts it.
+// The places in it, shared by the room's drawing and its cats': a point
+// (X, Y) on the back wall's plane, brought z toward us (z < 0), as drawn
+function catRoomPlaces(c) {
+  const { k } = c, { floor, top, bw, vy } = roomFrame(c), wh = floor - top;
+  const at = (X, Y, z = 0) => { const f = 1 / (1 + z); return [X * f, vy + (Y - vy) * f]; };
+  const Yh = h => floor - h * wh, FX = -0.44 * bw, WX = 0.42 * bw, TX = 0.8 * bw;
+  const spot = (X, Y, z, edge, span, lift = 0) => { const f = 1 / (1 + z), [x, y] = at(X, Y, z); return { x, y: y - lift * k * f, f, z, edge, span: span * f }; };
+  // the rope bridge: across the room from wall to wall, sagging in the middle
+  const BZ = -0.42, bf = 1 / (1 + BZ), [bxa, bya] = at(-bw, Yh(0.7), BZ), ymid = at(0, Yh(0.66), BZ)[1], byc = 2 * ymid - bya;
+  const deck = u => [bxa * (1 - 2 * u), (1 - u) * (1 - u) * bya + 2 * u * (1 - u) * byc + u * u * bya];
+  const [bx, by] = deck(0.31);
+  const spots = {
+    fire: spot(FX - 0.12 * bw, floor, -0.17, false, 0.08 * bw), treeL: spot(-TX, Yh(0.56), -0.02, true, 0.03 * bw),
+    walkway: spot(0.3 * bw, Yh(0.84), -0.035, true, 0.3 * bw), window: spot(WX - 0.1 * bw, Yh(0.24), -0.05, true, 0.1 * bw),
+    treeR: spot(TX, Yh(0.56), -0.02, true, 0.03 * bw), basket: spot(-0.7 * bw, floor, -0.3, false, 0.02 * bw, 9),
+    shelfL: spot(-0.965 * bw, Yh(0.76), -0.25, true, 0.02 * bw), shelfR: spot(0.965 * bw, Yh(0.76), -0.25, true, 0.02 * bw),
+    mantel: spot(FX + 0.13 * bw, Yh(0.36), -0.05, true, 0.06 * bw), rug: spot(0.42 * bw, floor, -0.3, false, 0.14 * bw),
+    box: spot(0.55 * bw, floor, -0.45, false, 0.02 * bw, 12), bridge: { x: bx, y: by, f: bf, z: BZ - 0.001, edge: true, span: 0.05 * bw * bf } };
+  // the bridge's drawing: rope rails, planks along the deck, ropes down to it
+  const bridge = () => {
+    const kf = k * bf, rail = (lift, w) => { const [x0, y0] = deck(0), [x1, y1] = deck(1);
+      return `<path d="M${f1(x0)} ${f1(y0 - lift)} Q0 ${f1(byc - lift)} ${f1(x1)} ${f1(y1 - lift)}" fill="none" stroke="#b08a52" stroke-width="${f1(w)}"/>`; };
+    let t = rail(-3 * kf, 3 * kf);
+    for (let j = 0; j <= 40; j++) { const [x, y] = deck(j / 40), [xn, yn] = deck(Math.min(1, j / 40 + 0.012)), a = Math.atan2(yn - y, xn - x) * 180 / Math.PI;
+      t += `<rect x="${f1(x - 5 * kf)}" y="${f1(y - 3 * kf)}" width="${f1(10 * kf)}" height="${f1(6 * kf)}" rx="${f1(1 * kf)}" fill="${j % 3 ? "#9a6a3a" : "#8a5a30"}" stroke="#5e3d22" stroke-width="${f1(0.8 * kf)}" transform="rotate(${a.toFixed(1)} ${f1(x)} ${f1(y)})"/>`; }
+    for (let j = 1; j < 20; j++) { const [x, y] = deck(j / 20);
+      t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x)}" y2="${f1(y - 30 * kf)}" stroke="#c9a46a" stroke-width="${f1(1.5 * kf)}"/>`; }
+    return t + rail(30 * kf, 2.5 * kf);
+  };
+  // the basket's and the box's near sides, drawn again over a cat in them
+  const [kx, ky] = at(-0.7 * bw, floor, -0.3), kfb = k * 1 / 0.7, [ox, oy] = at(0.55 * bw, floor, -0.45), kfo = k / 0.55;
+  const basketFront = () => `<path d="M${f1(kx - 46 * kfb)} ${f1(ky - 22 * kfb)} A${f1(46 * kfb)} ${f1(12 * kfb)} 0 0 0 ${f1(kx + 46 * kfb)} ${f1(ky - 22 * kfb)} ` +
+      `L${f1(kx + 40 * kfb)} ${f1(ky - 2 * kfb)} A${f1(40 * kfb)} ${f1(9 * kfb)} 0 0 1 ${f1(kx - 40 * kfb)} ${f1(ky - 2 * kfb)} Z" fill="#c8995a" stroke="#7a5a2a" stroke-width="${f1(1.5 * kfb)}"/>` +
+    [...Array(9)].map((_, j) => { const u = (j + 0.5) / 9 * 2 - 1, xa = kx + u * 44 * kfb, ya = ky - 22 * kfb + Math.sqrt(1 - u * u) * 12 * kfb;
+      return `<line x1="${f1(xa)}" y1="${f1(ya)}" x2="${f1(kx + u * 38 * kfb)}" y2="${f1(ky - 2 * kfb + Math.sqrt(1 - u * u) * 9 * kfb)}" stroke="#7a5a2a" stroke-width="${f1(1 * kfb)}" opacity="0.6"/>`; }).join("") +
+    [0.35, 0.7].map(v => `<path d="M${f1(kx - (46 - 6 * v) * kfb)} ${f1(ky - (22 - 20 * v) * kfb)} A${f1((46 - 6 * v) * kfb)} ${f1((12 - 3 * v) * kfb)} 0 0 0 ${f1(kx + (46 - 6 * v) * kfb)} ${f1(ky - (22 - 20 * v) * kfb)}" fill="none" stroke="#e0b97a" stroke-width="${f1(2 * kfb)}" stroke-dasharray="${f1(4 * kfb)} ${f1(3 * kfb)}"/>`).join("") +
+    `<ellipse cx="${f1(kx)}" cy="${f1(ky - 22 * kfb)}" rx="${f1(46 * kfb)}" ry="${f1(12 * kfb)}" fill="none" stroke="#a87a3e" stroke-width="${f1(5 * kfb)}" stroke-dasharray="${f1(6 * kfb)} ${f1(2 * kfb)}"/>`;
+  const boxFront = () => `<rect x="${f1(ox - 34 * kfo)}" y="${f1(oy - 40 * kfo)}" width="${f1(68 * kfo)}" height="${f1(40 * kfo)}" fill="#c9a06a" stroke="#8a6a3a" stroke-width="${f1(1.5 * kfo)}"/>` +
+    `<rect x="${f1(ox - 10 * kfo)}" y="${f1(oy - 40 * kfo)}" width="${f1(20 * kfo)}" height="${f1(40 * kfo)}" fill="#d9b480" opacity="0.6"/>` +
+    `<path d="M${f1(ox - 34 * kfo)} ${f1(oy - 40 * kfo)} L${f1(ox - 46 * kfo)} ${f1(oy - 30 * kfo)} L${f1(ox - 40 * kfo)} ${f1(oy - 52 * kfo)} L${f1(ox - 30 * kfo)} ${f1(oy - 46 * kfo)} Z" fill="#b8905a" stroke="#8a6a3a" stroke-width="${f1(1.2 * kfo)}"/>` +
+    `<path d="M${f1(ox + 34 * kfo)} ${f1(oy - 40 * kfo)} L${f1(ox + 48 * kfo)} ${f1(oy - 32 * kfo)} L${f1(ox + 42 * kfo)} ${f1(oy - 54 * kfo)} L${f1(ox + 30 * kfo)} ${f1(oy - 46 * kfo)} Z" fill="#b8905a" stroke="#8a6a3a" stroke-width="${f1(1.2 * kfo)}"/>` +
+    `<text x="${f1(ox)}" y="${f1(oy - 16 * kfo)}" text-anchor="middle" font-size="${f1(11 * kfo)}" font-family="sans-serif" fill="#6a4a22" opacity="0.7">🐟 FISH</text>`;
+  return { at, Yh, FX, WX, TX, floor, top, bw, vy, wh, spots, bridge, basketFront, boxFront, BZ, kx, ky, kfb, ox, oy, kfo };
+}
+function catRoomSvg(c, K) {
+  const { x0, y0, x1, y1, W, H, k, pad, R, P } = c, L = catRoomPlaces(c), { at, Yh, FX, WX, TX, floor, top, bw, vy, wh } = L;
+  const wood = "#c68a52", woodD = "#8a5a32", woodL = "#ddb07a", beam = "#5b3a1f", wain = "#7d4b27", gold = "#e8b923";
+  const pg = (pts, fill, more = "") => `<polygon points="${pts.map(p => P(...p)).join(" ")}" fill="${fill}"${more}/>`;
+  const Z = -0.7;   // (as far toward us as the walls are drawn: past the picture's edges)
+  let t = `<defs><radialGradient id="bg-glow"><stop offset="0" stop-color="#ffcf6b" stop-opacity="0.55"/><stop offset="1" stop-color="#ffcf6b" stop-opacity="0"/></radialGradient>` +
+    `<radialGradient id="bg-fireglow"><stop offset="0" stop-color="#ffb347" stop-opacity="0.5"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient>` +
+    `<linearGradient id="bg-catsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26305c"/><stop offset="0.65" stop-color="#7a5a8c"/><stop offset="1" stop-color="#f2a65a"/></linearGradient></defs>`;
+  t += `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="${beam}"/>`;
+  // the back wall: planks, each a shade of its own, knots and grain; the wainscot below, its raised panels
+  const pw = 30 * k, wy = Yh(0.2);
+  for (let i = 0, x = -bw; x < bw - 1; i++, x += pw) {
+    const xb = Math.min(bw, x + pw), col = mix(wood, R(i, 1201) < 0.5 ? "#000000" : "#ffffff", 0.03 + 0.1 * R(i, 1202));
+    t += `<rect x="${f1(x)}" y="${f1(top)}" width="${f1(xb - x)}" height="${f1(wy - top)}" fill="${col}" stroke="${woodD}" stroke-width="${f1(1.2 * k)}"/>` +
+         `<path d="M${P(x + pw * 0.3, top)} Q${P(x + pw * (0.15 + 0.5 * R(i, 1205)), (top + wy) / 2)} ${P(x + pw * 0.4, wy)}" fill="none" stroke="${woodD}" stroke-width="${f1(0.8 * k)}" opacity="0.3"/>`;
+    if (R(i, 1203) < 0.45) { const ky = top + (wy - top) * (0.1 + 0.8 * R(i, 1204));
+      t += `<ellipse cx="${f1(x + pw * 0.55)}" cy="${f1(ky)}" rx="${f1(4.5 * k)}" ry="${f1(2.6 * k)}" fill="none" stroke="${woodD}" stroke-width="${f1(1 * k)}" opacity="0.6"/>` +
+           `<ellipse cx="${f1(x + pw * 0.55)}" cy="${f1(ky)}" rx="${f1(1.8 * k)}" ry="${f1(1.1 * k)}" fill="${woodD}" opacity="0.8"/>`; }
+  }
+  t += `<rect x="${f1(-bw)}" y="${f1(wy)}" width="${f1(2 * bw)}" height="${f1(floor - wy)}" fill="${wain}"/>`;
+  for (let i = 0; i < 10; i++) { const xa = -bw + 2 * bw * i / 10 + 6 * k, w = 2 * bw / 10 - 12 * k;
+    t += `<rect x="${f1(xa)}" y="${f1(wy + 10 * k)}" width="${f1(w)}" height="${f1(floor - wy - 26 * k)}" rx="${f1(2 * k)}" fill="${mix(wain, "#ffffff", 0.06)}" stroke="${mix(wain, "#000000", 0.35)}" stroke-width="${f1(1.5 * k)}"/>`; }
+  t += `<rect x="${f1(-bw)}" y="${f1(wy - 5 * k)}" width="${f1(2 * bw)}" height="${f1(9 * k)}" fill="${woodL}" stroke="${woodD}" stroke-width="${f1(1 * k)}"/>` +
+       `<rect x="${f1(-bw)}" y="${f1(floor - 10 * k)}" width="${f1(2 * bw)}" height="${f1(10 * k)}" fill="${beam}"/>`;
+  // the side walls, going off toward us: planks in perspective, their wainscot, their rail
+  for (const sd of [-1, 1]) {
+    t += pg([at(sd * bw, top), at(sd * bw, top, Z), at(sd * bw, wy, Z), at(sd * bw, wy)], mix(wood, "#000000", 0.2));
+    t += pg([at(sd * bw, wy), at(sd * bw, wy, Z), at(sd * bw, floor, Z), at(sd * bw, floor)], mix(wain, "#000000", 0.15));
+    for (let j = 1; j <= 24; j++) { const z = -0.03 * j, [xa, ya] = at(sd * bw, top, z), [, yb] = at(sd * bw, wy, z);
+      t += `<line x1="${f1(xa)}" y1="${f1(ya)}" x2="${f1(xa)}" y2="${f1(yb)}" stroke="${woodD}" stroke-width="${f1(1.2 * k / (1 + z))}" opacity="0.7"/>`; }
+    for (let j = 1; j <= 8; j++) { const z = -0.09 * j, [xa, ya] = at(sd * bw, wy, z), [, yb] = at(sd * bw, floor, z);
+      t += `<line x1="${f1(xa)}" y1="${f1(ya)}" x2="${f1(xa)}" y2="${f1(yb)}" stroke="${mix(wain, "#000000", 0.35)}" stroke-width="${f1(2 * k / (1 + z))}"/>`; }
+    const [ra, rb] = [at(sd * bw, wy, 0), at(sd * bw, wy, Z)];
+    t += `<line x1="${f1(ra[0])}" y1="${f1(ra[1])}" x2="${f1(rb[0])}" y2="${f1(rb[1])}" stroke="${woodL}" stroke-width="${f1(7 * k)}"/>`;
+  }
+  // the ceiling: boards toward us, beams across it, a lantern hanging from the middle one
+  t += pg([at(-bw, top), at(bw, top), at(bw, top, Z), at(-bw, top, Z)], "#7a5232");
+  for (let i = -8; i <= 8; i++) { const [xa, ya] = at(i * bw / 8, top), [xb, yb] = at(i * bw / 8, top, Z);
+    t += `<line x1="${f1(xa)}" y1="${f1(ya)}" x2="${f1(xb)}" y2="${f1(yb)}" stroke="${beam}" stroke-width="${f1(1.5 * k)}" opacity="0.7"/>`; }
+  for (const z of [0, -0.12, -0.26, -0.42, -0.6]) { const f = 1 / (1 + z), [xa, ya] = at(-bw, top, z);
+    t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(-2 * xa)}" height="${f1(16 * k * f)}" fill="${beam}"/>` +
+         `<rect x="${f1(xa)}" y="${f1(ya + 13 * k * f)}" width="${f1(-2 * xa)}" height="${f1(3 * k * f)}" fill="#3e2714"/>`;
+    for (const sd of [-1, 1]) t += `<path d="M${P(sd * bw * f, ya + 16 * k * f)} l${f1(-sd * 18 * k * f)} 0 l${f1(sd * 18 * k * f)} ${f1(26 * k * f)} Z" fill="${beam}"/>`; }
+  { const [lx, ly] = at(0, top + 16 * k, -0.26), lf = 1 / 0.74, s = k * lf, by = ly + 50 * s;
+    t += `<line x1="${f1(lx)}" y1="${f1(ly)}" x2="${f1(lx)}" y2="${f1(by - 26 * s)}" stroke="#2a2a32" stroke-width="${f1(2 * s)}"/>` +
+         `<circle cx="${f1(lx)}" cy="${f1(by)}" r="${f1(60 * s)}" fill="url(#bg-glow)"/>` +
+         `<path d="M${P(lx - 14 * s, by - 18 * s)} L${P(lx + 14 * s, by - 18 * s)} L${P(lx + 11 * s, by + 18 * s)} L${P(lx - 11 * s, by + 18 * s)} Z" fill="#ffe7a8" stroke="#2a2a32" stroke-width="${f1(2.5 * s)}"/>` +
+         `<path d="M${P(lx - 18 * s, by - 18 * s)} L${P(lx, by - 30 * s)} L${P(lx + 18 * s, by - 18 * s)} Z" fill="#2a2a32"/>` +
+         `<rect x="${f1(lx - 13 * s)}" y="${f1(by + 18 * s)}" width="${f1(26 * s)}" height="${f1(5 * s)}" fill="#2a2a32"/>` +
+         `<line x1="${f1(lx)}" y1="${f1(by - 18 * s)}" x2="${f1(lx)}" y2="${f1(by + 18 * s)}" stroke="#2a2a32" stroke-width="${f1(1.5 * s)}"/>` +
+         `<ellipse cx="${f1(lx)}" cy="${f1(by + 2 * s)}" rx="${f1(3 * s)}" ry="${f1(6 * s)}" fill="#ff9a2e"><animate attributeName="ry" values="${f1(6 * s)};${f1(4.5 * s)};${f1(6.5 * s)};${f1(6 * s)}" dur="0.9s" repeatCount="indefinite"/></ellipse>`; }
+  // the floor: boards toward us, their ends staggered, darker by the wall
+  t += pg([at(-bw, floor), at(bw, floor), at(bw, floor, Z), at(-bw, floor, Z)], "#a46a3a");
+  for (let i = -10; i <= 10; i++) { const [xa, ya] = at(i * bw / 10, floor), [xb, yb] = at(i * bw / 10, floor, Z);
+    t += `<line x1="${f1(xa)}" y1="${f1(ya)}" x2="${f1(xb)}" y2="${f1(yb)}" stroke="#7c4c26" stroke-width="${f1(1.6 * k)}"/>`;
+    if (i < 10) for (let j = 0; j < 3; j++) { const z = -(0.05 + 0.22 * j + 0.15 * R(i + 20, 1210 + j)), [ax, ay] = at(i * bw / 10, floor, z), [bx] = at((i + 1) * bw / 10, floor, z);
+      t += `<line x1="${f1(ax)}" y1="${f1(ay)}" x2="${f1(bx)}" y2="${f1(ay)}" stroke="#7c4c26" stroke-width="${f1(1.4 * k / (1 + z))}"/>`; } }
+  t += pg([at(-bw, floor), at(bw, floor), at(bw, floor, -0.04), at(-bw, floor, -0.04)], "#000000", ` opacity="0.22"`);
+  // the rug: braided rings in the room's colors, from the back of the room nearly to us
+  { const ra = at(0, floor, -0.08)[1], rb = at(0, floor, -0.55)[1], rcy = (ra + rb) / 2, rry = (rb - ra) / 2, rrx = 0.78 * bw * 1.4;
+    const cols = [K.flagA, "#efe2c4", K.flagB, K.carpet, "#efe2c4", K.flagA, K.flagB, "#efe2c4"];
+    t += `<ellipse cx="0" cy="${f1(rcy + 4 * k)}" rx="${f1(rrx)}" ry="${f1(rry)}" fill="#000000" opacity="0.2"/>`;
+    cols.forEach((col, i) => { const u = 1 - i / cols.length;
+      t += `<ellipse cx="0" cy="${f1(rcy)}" rx="${f1(rrx * u)}" ry="${f1(rry * u)}" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="${f1(2.2 * k)}" stroke-dasharray="${f1(6 * k)} ${f1(3 * k)}"/>`; }); }
+  // the fireplace: a chimney breast of round stones, standing out a little from the wall, to the ceiling
+  const hw = 0.2 * bw, fz = -0.04, [cxa] = at(FX - hw, top, fz), [cxb] = at(FX + hw, top, fz), cyt = at(0, top, fz)[1], cyb = at(0, floor, fz)[1];
+  t += pg([at(FX + hw, top), at(FX + hw, top, fz), at(FX + hw, floor, fz), at(FX + hw, floor)], "#4e4640");
+  t += `<rect x="${f1(cxa)}" y="${f1(cyt)}" width="${f1(cxb - cxa)}" height="${f1(cyb - cyt)}" fill="#5e554e"/>`;
+  for (let r = 0, y = cyb; y > cyt; r++, y -= 21 * k)
+    for (let i = 0, x = cxa - (r % 2) * 14 * k; x < cxb; i++, x += (26 + 14 * R(r * 13 + i, 1220)) * k) {
+      const w = (24 + 12 * R(r * 13 + i, 1221)) * k, xa = Math.max(x + 1.5 * k, cxa + 1 * k), xb = Math.min(x + w - 1.5 * k, cxb - 1 * k);
+      if (xb - xa < 5 * k) continue;
+      t += `<rect x="${f1(xa)}" y="${f1(Math.max(y - 20 * k, cyt))}" width="${f1(xb - xa)}" height="${f1(Math.min(19 * k, y - cyt))}" rx="${f1(7 * k)}" fill="${mix("#9a8f84", R(r * 13 + i, 1222) < 0.5 ? "#5a4a3e" : "#d8d0c4", 0.12 + 0.25 * R(r * 13 + i, 1223))}"/>`;
+    }
+  // its hearth, a stone slab before it, and the firebox: an arch, sooty, logs, the fire, sparks
+  const ff = 1 / (1 + fz), fbw = 0.17 * bw * ff, fbh = 0.27 * wh * ff, fx = FX * ff, fy = cyb;
+  t += pg([at(FX - hw - 0.02 * bw, floor, fz), at(FX + hw + 0.04 * bw, floor, fz), at(FX + hw + 0.04 * bw, floor, -0.13), at(FX - hw - 0.02 * bw, floor, -0.13)], "#8a8078") +
+       pg([at(FX - hw - 0.02 * bw, floor, -0.13), at(FX + hw + 0.04 * bw, floor, -0.13), [at(FX + hw + 0.04 * bw, floor, -0.13)[0], at(0, floor, -0.13)[1] + 6 * k], [at(FX - hw - 0.02 * bw, floor, -0.13)[0], at(0, floor, -0.13)[1] + 6 * k]], "#6a6058");
+  for (let i = 1; i < 6; i++) { const X = FX - hw - 0.02 * bw + (2 * hw + 0.06 * bw) * i / 6, [xa, ya] = at(X, floor, fz), [xb, yb] = at(X, floor, -0.13);
+    t += `<line x1="${f1(xa)}" y1="${f1(ya)}" x2="${f1(xb)}" y2="${f1(yb)}" stroke="#5e554e" stroke-width="${f1(1.4 * k)}"/>`; }
+  t += `<circle cx="${f1(fx)}" cy="${f1(fy - fbh * 0.3)}" r="${f1(200 * k)}" fill="url(#bg-fireglow)"/>`;
+  t += `<path d="M${P(fx - fbw / 2 - 8 * k, fy)} V${f1(fy - fbh + fbw / 2)} A${f1(fbw / 2 + 8 * k)} ${f1(fbw / 2 + 8 * k)} 0 0 1 ${P(fx + fbw / 2 + 8 * k, fy - fbh + fbw / 2)} V${f1(fy)} Z" fill="#7a6e64"/>` +
+       `<path d="M${P(fx - fbw / 2, fy)} V${f1(fy - fbh + fbw / 2)} A${f1(fbw / 2)} ${f1(fbw / 2)} 0 0 1 ${P(fx + fbw / 2, fy - fbh + fbw / 2)} V${f1(fy)} Z" fill="#1a0f0a"/>` +
+       [...Array(4)].map((_, j) => `<line x1="${f1(fx - fbw * 0.4)}" y1="${f1(fy - fbh * (0.2 + 0.18 * j))}" x2="${f1(fx + fbw * 0.4)}" y2="${f1(fy - fbh * (0.2 + 0.18 * j))}" stroke="#3a1a10" stroke-width="${f1(1.2 * k)}"/>`).join("") +
+       `<ellipse cx="${f1(fx)}" cy="${f1(fy - 6 * k)}" rx="${f1(fbw * 0.4)}" ry="${f1(6 * k)}" fill="#ff5a1f" opacity="0.85"><animate attributeName="opacity" values="0.85;0.6;0.9;0.85" dur="2.3s" repeatCount="indefinite"/></ellipse>`;
+  for (const [sd, a] of [[-1, -14], [1, 12]]) t += `<rect x="${f1(fx - fbw * 0.36)}" y="${f1(fy - 15 * k)}" width="${f1(fbw * 0.72)}" height="${f1(10 * k)}" rx="${f1(5 * k)}" fill="#6b4226" stroke="#3a2414" stroke-width="${f1(1 * k)}" transform="rotate(${a} ${f1(fx)} ${f1(fy - 10 * k)})"/>` +
+    `<ellipse cx="${f1(fx + sd * fbw * 0.33)}" cy="${f1(fy - 10 * k + sd * a * 0.9 * k * 0.3)}" rx="${f1(3 * k)}" ry="${f1(5 * k)}" fill="#c9a26b" transform="rotate(${a} ${f1(fx)} ${f1(fy - 10 * k)})"/>`;
+  const flame = (x, y, h, w, col, dur) => `<g transform="translate(${f1(x)} ${f1(y)})"><path d="M0 ${f1(-h)} Q${f1(w)} ${f1(-h * 0.45)} ${f1(w * 0.6)} 0 Q0 ${f1(h * 0.06)} ${f1(-w * 0.6)} 0 Q${f1(-w)} ${f1(-h * 0.45)} 0 ${f1(-h)} Z" fill="${col}">` +
+    `<animateTransform attributeName="transform" type="scale" additive="sum" values="1 1;1.08 0.84;0.93 1.12;1 1" dur="${dur}s" repeatCount="indefinite"/></path></g>`;
+  t += flame(fx - fbw * 0.18, fy - 12 * k, fbh * 0.55, 14 * k, "#ff7a1a", 0.9) + flame(fx + fbw * 0.16, fy - 12 * k, fbh * 0.5, 13 * k, "#ff7a1a", 1.1) +
+       flame(fx, fy - 12 * k, fbh * 0.7, 18 * k, "#ff9a2e", 0.8) + flame(fx - fbw * 0.06, fy - 12 * k, fbh * 0.45, 10 * k, "#ffd166", 0.7) + flame(fx + fbw * 0.08, fy - 12 * k, fbh * 0.36, 8 * k, "#fff1a8", 0.6);
+  for (let j = 0; j < 5; j++) { const sx = fx + (R(j, 1230) - 0.5) * fbw * 0.6, d = (1.4 + 0.5 * R(j, 1231)).toFixed(2);
+    t += `<circle cx="${f1(sx)}" cy="${f1(fy - fbh * 0.5)}" r="${f1(1.6 * k)}" fill="#ffd166"><animate attributeName="cy" values="${f1(fy - fbh * 0.4)};${f1(fy - fbh * 0.95)}" dur="${d}s" begin="-${(R(j, 1232) * 2).toFixed(2)}s" repeatCount="indefinite"/>` +
+         `<animate attributeName="opacity" values="1;0" dur="${d}s" begin="-${(R(j, 1232) * 2).toFixed(2)}s" repeatCount="indefinite"/></circle>`; }
+  // a stack of firewood at the hearth's end, toward the wall's corner
+  { const [lx, ly] = at(FX - hw + 0.02 * bw, floor, -0.09);
+    for (let j = 0; j < 6; j++) { const row = j < 3 ? 0 : j < 5 ? 1 : 2, i = j - [0, 3, 5][row], x = lx + (i - (2 - row) / 2) * 12 * k + row * 0, y = ly - 6 * k - row * 10 * k;
+      t += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(5.6 * k)}" fill="#c9a26b" stroke="#6b4226" stroke-width="${f1(1.6 * k)}"/><circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(2.2 * k)}" fill="none" stroke="#9a7a4a" stroke-width="${f1(0.8 * k)}"/>`; } }
+  // the mantel, a thick beam, two candles and a little clock on it; over it, a royal cat's portrait
+  { const ma = FX - hw - 0.03 * bw, mb = FX + hw + 0.04 * bw, Ym = Yh(0.36);
+    t += pg([at(ma, Ym, -0.02), at(mb, Ym, -0.02), at(mb, Ym, -0.09), at(ma, Ym, -0.09)], "#9a6a3a") +
+         pg([at(ma, Ym, -0.09), at(mb, Ym, -0.09), at(mb, Ym + 14 * k, -0.09), at(ma, Ym + 14 * k, -0.09)], beam) +
+         pg([at(mb, Ym, -0.02), at(mb, Ym, -0.09), at(mb, Ym + 14 * k, -0.09), at(mb, Ym + 14 * k, -0.02)], "#3e2714");
+    for (const [X, i] of [[ma + 0.04 * bw, 0], [FX - 0.01 * bw, 1]]) { const [cx, cy] = at(X, Ym, -0.055);
+      t += `<rect x="${f1(cx - 6 * k)}" y="${f1(cy - 3 * k)}" width="${f1(12 * k)}" height="${f1(3 * k)}" fill="${gold}"/><rect x="${f1(cx - 3 * k)}" y="${f1(cy - 22 * k)}" width="${f1(6 * k)}" height="${f1(19 * k)}" fill="#fff6dc"/>` +
+           `<circle cx="${f1(cx)}" cy="${f1(cy - 28 * k)}" r="${f1(24 * k)}" fill="url(#bg-glow)"/>` +
+           `<ellipse cx="${f1(cx)}" cy="${f1(cy - 27 * k)}" rx="${f1(3.2 * k)}" ry="${f1(5.5 * k)}" fill="#ffb53b"><animate attributeName="ry" values="${f1(5.5 * k)};${f1(4.2 * k)};${f1(6 * k)};${f1(5.5 * k)}" dur="${0.8 + 0.2 * i}s" repeatCount="indefinite"/></ellipse>`; }
+    { const [cx, cy] = at(FX - 0.13 * bw, Ym, -0.055);
+      t += `<rect x="${f1(cx - 11 * k)}" y="${f1(cy - 26 * k)}" width="${f1(22 * k)}" height="${f1(26 * k)}" rx="${f1(4 * k)}" fill="#6b4226" stroke="${gold}" stroke-width="${f1(1.5 * k)}"/>` +
+           `<circle cx="${f1(cx)}" cy="${f1(cy - 15 * k)}" r="${f1(7.5 * k)}" fill="#fff6dc" stroke="${gold}" stroke-width="${f1(1.2 * k)}"/>` +
+           `<line x1="${f1(cx)}" y1="${f1(cy - 15 * k)}" x2="${f1(cx)}" y2="${f1(cy - 20 * k)}" stroke="#1f1f22" stroke-width="${f1(1 * k)}"/>` +
+           `<line x1="${f1(cx)}" y1="${f1(cy - 15 * k)}" x2="${f1(cx + 4 * k)}" y2="${f1(cy - 14 * k)}" stroke="#1f1f22" stroke-width="${f1(1 * k)}"><animateTransform attributeName="transform" type="rotate" values="0 ${f1(cx)} ${f1(cy - 15 * k)};360 ${f1(cx)} ${f1(cy - 15 * k)}" dur="60s" repeatCount="indefinite"/></line>`; }
+    const [px, py] = at(FX, Yh(0.58), fz), pw2 = 0.28 * bw * ff, ph = 0.22 * wh * ff;
+    t += `<rect x="${f1(px - pw2 / 2 - 6 * k)}" y="${f1(py - ph / 2 - 6 * k)}" width="${f1(pw2 + 12 * k)}" height="${f1(ph + 12 * k)}" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(2 * k)}"/>` +
+         `<rect x="${f1(px - pw2 / 2)}" y="${f1(py - ph / 2)}" width="${f1(pw2)}" height="${f1(ph)}" fill="#2f4a3a"/>` +
+         `<path d="M${P(px - pw2 / 2, py + ph / 2)} Q${P(px, py + ph * 0.1)} ${P(px + pw2 / 2, py + ph / 2)} Z" fill="${K.flagA}" opacity="0.85"/>` +
+         `<g transform="translate(${f1(px)} ${f1(py + ph * 0.42)}) scale(${(ph / 92).toFixed(3)})">${shoulderCat(4, { catFur: "#9ca3af", catWhite: "#ffffff", catEyes: "#e0a800", catNose: "#f4a0b0" }, false, true)}` +
+         `<path d="M-14 -60 L-14 -70 L-8 -64 L-3 -73 L2 -64 L8 -70 L8 -60 Z" fill="${gold}" stroke="#9a7a12" stroke-width="1"/></g>`; }
+  // the window: an arch onto the evening, a crescent moon, stars, far hills;
+  // leaded panes; curtains tied back in the room's colors; the window seat under it
+  { const [wx, wyb] = at(WX, Yh(0.3)), wyt = at(WX, Yh(0.74))[1], ww = 0.38 * bw, ar = ww / 2;
+    const arch = (g) => `M${P(wx - ar + g, wyb)} V${f1(wyt + ar)} A${f1(ar - g)} ${f1(ar - g)} 0 0 1 ${P(wx + ar - g, wyt + ar)} V${f1(wyb)} Z`;
+    t += `<path d="${arch(-8 * k)}" fill="${beam}"/><path d="${arch(0)}" fill="url(#bg-catsky)"/>` +
+         `<path d="M${P(wx - ar, wyb - 20 * k)} Q${P(wx - ar * 0.4, wyb - 46 * k)} ${P(wx, wyb - 28 * k)} Q${P(wx + ar * 0.5, wyb - 12 * k)} ${P(wx + ar, wyb - 34 * k)} V${f1(wyb)} H${f1(wx - ar)} Z" fill="#3a3a5e"/>` +
+         `<path d="M${P(wx - ar, wyb - 6 * k)} Q${P(wx, wyb - 22 * k)} ${P(wx + ar, wyb - 8 * k)} V${f1(wyb)} H${f1(wx - ar)} Z" fill="#2a2a48"/>` +
+         `<circle cx="${f1(wx + ar * 0.45)}" cy="${f1(wyt + ar * 0.75)}" r="${f1(12 * k)}" fill="#fff6c8"/><circle cx="${f1(wx + ar * 0.45 + 6 * k)}" cy="${f1(wyt + ar * 0.7)}" r="${f1(11 * k)}" fill="#3a3f6e"/>` +
+         [...Array(9)].map((_, j) => `<circle cx="${f1(wx - ar * 0.8 + ar * 1.6 * R(j, 1240))}" cy="${f1(wyt + ar * 0.3 + (wyb - wyt) * 0.45 * R(j, 1241))}" r="${f1((0.8 + 1.2 * R(j, 1242)) * k)}" fill="#ffffff">` +
+           `<animate attributeName="opacity" values="1;0.25;1" dur="${(1.6 + 2 * R(j, 1243)).toFixed(1)}s" begin="-${(3 * R(j, 1244)).toFixed(1)}s" repeatCount="indefinite"/></circle>`).join("");
+    for (let i = 1; i < 6; i++) t += `<line x1="${f1(wx - ar + ww * i / 6)}" y1="${f1(wyt)}" x2="${f1(wx - ar + ww * i / 6)}" y2="${f1(wyb)}" stroke="#2a2a32" stroke-width="${f1(1 * k)}" opacity="0.5"/>`;
+    for (let i = 1; i < 7; i++) t += `<line x1="${f1(wx - ar)}" y1="${f1(wyt + (wyb - wyt) * i / 7)}" x2="${f1(wx + ar)}" y2="${f1(wyt + (wyb - wyt) * i / 7)}" stroke="#2a2a32" stroke-width="${f1(1 * k)}" opacity="0.5"/>`;
+    t += `<path d="${arch(0)}" fill="none" stroke="${woodD}" stroke-width="${f1(5 * k)}"/><line x1="${f1(wx)}" y1="${f1(wyt)}" x2="${f1(wx)}" y2="${f1(wyb)}" stroke="${woodD}" stroke-width="${f1(5 * k)}"/>` +
+         `<line x1="${f1(wx - ar)}" y1="${f1(wyt + ar)}" x2="${f1(wx + ar)}" y2="${f1(wyt + ar)}" stroke="${woodD}" stroke-width="${f1(5 * k)}"/>`;
+    // (the curtains: a rod, and each side gathered up and tied back with a gold cord)
+    t += `<rect x="${f1(wx - ar - 30 * k)}" y="${f1(wyt - 12 * k)}" width="${f1(ww + 60 * k)}" height="${f1(5 * k)}" rx="${f1(2.5 * k)}" fill="${beam}"/>` +
+         [-1, 1].map(sd => `<circle cx="${f1(wx + sd * (ar + 32 * k))}" cy="${f1(wyt - 9.5 * k)}" r="${f1(5 * k)}" fill="${gold}"/>` +
+           `<path d="M${P(wx + sd * (ar + 26 * k), wyt - 8 * k)} L${P(wx + sd * (ar - 22 * k), wyt - 8 * k)} Q${P(wx + sd * (ar - 4 * k), (wyt + wyb) / 2)} ${P(wx + sd * (ar + 4 * k), (wyt + wyb) / 2 + 10 * k)} ` +
+           `Q${P(wx + sd * (ar - 6 * k), wyb - 10 * k)} ${P(wx + sd * (ar + 2 * k), wyb + 6 * k)} L${P(wx + sd * (ar + 30 * k), wyb + 6 * k)} Q${P(wx + sd * (ar + 22 * k), (wyt + wyb) / 2 + 20 * k)} ${P(wx + sd * (ar + 26 * k), wyt - 8 * k)} Z" fill="${K.flagA}" stroke="${mix(K.flagA, "#000000", 0.35)}" stroke-width="${f1(1.5 * k)}"/>` +
+           [0.3, 0.55, 0.8].map(u => `<path d="M${P(wx + sd * (ar + (26 - 40 * u) * k), wyt - 6 * k)} Q${P(wx + sd * (ar + 6 * k), (wyt + wyb) / 2)} ${P(wx + sd * (ar + 12 * k), wyb)}" fill="none" stroke="${mix(K.flagA, "#000000", 0.3)}" stroke-width="${f1(1 * k)}" opacity="0.6"/>`).join("") +
+           `<ellipse cx="${f1(wx + sd * (ar + 9 * k))}" cy="${f1((wyt + wyb) / 2 + 8 * k)}" rx="${f1(10 * k)}" ry="${f1(3 * k)}" fill="${gold}"/>`).join("");
+    // (the seat: a box standing out from the wall, a cushion in the room's second color, two pillows)
+    const sa = WX - 0.27 * bw, sb = WX + 0.27 * bw, Ys = Yh(0.22);
+    t += pg([at(sa, Ys, 0), at(sb, Ys, 0), at(sb, Ys, -0.09), at(sa, Ys, -0.09)], "#9a6a3a") +
+         pg([at(sa, Ys, -0.09), at(sb, Ys, -0.09), at(sb, floor, -0.09), at(sa, floor, -0.09)], wood, ` stroke="${woodD}" stroke-width="${f1(1.5 * k)}"`);
+    for (const u of [0.25, 0.5, 0.75]) { const [xa, ya] = at(sa + (sb - sa) * u - 0.1 * bw, Ys + 10 * k, -0.09), [xb, yb] = at(sa + (sb - sa) * u + 0.1 * bw, floor - 8 * k, -0.09);
+      t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(xb - xa)}" height="${f1(yb - ya)}" rx="${f1(2 * k)}" fill="none" stroke="${woodD}" stroke-width="${f1(1.4 * k)}"/>`; }
+    t += pg([at(sa + 0.01 * bw, Ys - 9 * k, -0.005), at(sb - 0.01 * bw, Ys - 9 * k, -0.005), at(sb - 0.01 * bw, Ys - 4 * k, -0.085), at(sa + 0.01 * bw, Ys - 4 * k, -0.085)], K.flagB, ` stroke="${mix(K.flagB, "#000000", 0.3)}" stroke-width="${f1(1.5 * k)}"`) +
+         pg([at(sa + 0.01 * bw, Ys - 4 * k, -0.085), at(sb - 0.01 * bw, Ys - 4 * k, -0.085), at(sb - 0.01 * bw, Ys + 1 * k, -0.09), at(sa + 0.01 * bw, Ys + 1 * k, -0.09)], mix(K.flagB, "#000000", 0.2));
+    for (const [X, col] of [[sa + 0.06 * bw, K.flagA], [sb - 0.06 * bw, "#efe2c4"]]) { const [cx, cy] = at(X, Ys - 8 * k, -0.03);
+      t += `<rect x="${f1(cx - 14 * k)}" y="${f1(cy - 22 * k)}" width="${f1(28 * k)}" height="${f1(24 * k)}" rx="${f1(8 * k)}" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="${f1(1.4 * k)}"/>` +
+           `<circle cx="${f1(cx)}" cy="${f1(cy - 10 * k)}" r="${f1(2 * k)}" fill="${mix(col, "#000000", 0.3)}"/>`; } }
+  // the high walkway, across the back wall under the ceiling, on brackets, its edge a rail of little posts;
+  // a cat flap in the wall at its end, and a feather toy dangling from it
+  { const Yw = Yh(0.84), wa = -0.98 * bw, wb = 0.98 * bw;
+    for (let i = 0; i <= 8; i++) { const X = wa + (wb - wa) * i / 8, [bxa, bya] = at(X, Yw + 8 * k, -0.005);
+      t += `<path d="M${P(bxa - 3 * k, bya)} L${P(bxa + 3 * k, bya)} L${P(bxa + 3 * k, bya + 26 * k)} Z" fill="${beam}"/>`; }
+    t += pg([at(wa, Yw + 8 * k), at(wb, Yw + 8 * k), at(wb, Yw + 8 * k, -0.07), at(wa, Yw + 8 * k, -0.07)], "#6b4527") +
+         pg([at(wa, Yw, -0.07), at(wb, Yw, -0.07), at(wb, Yw + 8 * k, -0.07), at(wa, Yw + 8 * k, -0.07)], wood, ` stroke="${woodD}" stroke-width="${f1(1 * k)}"`);
+    for (let i = 0; i < 12; i++) { const [mx, my] = at(wa + (wb - wa) * (i + 0.5) / 12, Yw + 4 * k, -0.07);
+      t += `<path d="M${f1(mx - 2 * k)} ${f1(my)} a${f1(1.2 * k)} ${f1(1.2 * k)} 0 1 0 0.1 0 M${f1(mx + 1.2 * k)} ${f1(my - 1.5 * k)} a${f1(0.7 * k)} ${f1(0.7 * k)} 0 1 0 0.1 0" fill="${woodD}" opacity="0.5"/>`; }
+    const [fx2, fy2] = at(0.88 * bw, Yw), fw = 22 * k;
+    t += `<path d="M${P(fx2 - fw, fy2)} V${f1(fy2 - 30 * k)} A${f1(fw)} ${f1(fw)} 0 0 1 ${P(fx2 + fw, fy2 - 30 * k)} V${f1(fy2)} Z" fill="#2a1a10" stroke="${beam}" stroke-width="${f1(3 * k)}"/>` +
+         `<path d="M${P(fx2 - fw + 3 * k, fy2 - 32 * k)} H${f1(fx2 + fw - 3 * k)} V${f1(fy2 - 2 * k)} H${f1(fx2 - fw + 3 * k)} Z" fill="${K.flagB}" opacity="0.85"><animateTransform attributeName="transform" type="skewX" values="0;3;0;-2;0" dur="5s" repeatCount="indefinite"/></path>` +
+         `<rect x="${f1(fx2 - 16 * k)}" y="${f1(fy2 - 66 * k)}" width="${f1(32 * k)}" height="${f1(13 * k)}" rx="${f1(3 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(1.2 * k)}"/>` +
+         `<text x="${f1(fx2)}" y="${f1(fy2 - 56.5 * k)}" text-anchor="middle" font-size="${f1(9 * k)}" font-family="sans-serif" fill="#fff8e7">🐾 out</text>`;
+    const [tx, ty] = at(-0.2 * bw, Yw + 8 * k, -0.07), sl = 70 * k;
+    t += `<g><animateTransform attributeName="transform" type="rotate" values="-8 ${f1(tx)} ${f1(ty)};9 ${f1(tx)} ${f1(ty)};-8 ${f1(tx)} ${f1(ty)}" dur="3.1s" repeatCount="indefinite"/>` +
+         `<line x1="${f1(tx)}" y1="${f1(ty)}" x2="${f1(tx)}" y2="${f1(ty + sl)}" stroke="#e8e0d0" stroke-width="${f1(0.8 * k)}"/>` +
+         `<path d="M${P(tx, ty + sl)} q${f1(-7 * k)} ${f1(12 * k)} ${f1(-2 * k)} ${f1(26 * k)} q${f1(8 * k)} ${f1(-12 * k)} ${f1(2 * k)} ${f1(-26 * k)} Z" fill="#3fb6c8"/>` +
+         `<path d="M${P(tx + 1 * k, ty + sl)} q${f1(8 * k)} ${f1(10 * k)} ${f1(3 * k)} ${f1(22 * k)} q${f1(-6 * k)} ${f1(-10 * k)} ${f1(-3 * k)} ${f1(-22 * k)} Z" fill="#f2c12e"/></g>`; }
+  // the castle's banner, its letter, hanging from the walkway in the middle
+  { const [bx, by] = at(0, Yh(0.84) + 8 * k, -0.01), bwid = 0.22 * bw, bh = 0.3 * wh;
+    t += castleFlagDefs(K, 10 * k) + `<path d="M${P(bx - bwid / 2, by)} H${f1(bx + bwid / 2)} V${f1(by + bh)} L${P(bx, by + bh - 24 * k)} L${P(bx - bwid / 2, by + bh)} Z" fill="${castleFlagFill(K, 0, 10 * k)}" stroke="${gold}" stroke-width="${f1(3 * k)}"/>` +
+         castleLetter(K, 0, bx, by + bh * 0.48, 40 * k, "serif") +
+         `<g transform="translate(${f1(bx)} ${f1(by + bh * 0.82)}) scale(${(k * 0.9).toFixed(3)})">` +
+         [[-6, -6], [6, -6], [-10, 2], [10, 2]].map(([dx, dy]) => `<ellipse cx="${dx}" cy="${dy}" rx="3.2" ry="4" fill="${gold}"/>`).join("") + `<ellipse cx="0" cy="8" rx="8" ry="6.5" fill="${gold}"/></g>`; }
+  // the shelves stepping up the side walls, toward us, to the walkway's ends
+  const sideShelf = (sd, z0, z1, Y) => { const d = 0.07 * bw, th = 8 * k, Xw = sd * bw, Xo = sd * (bw - d);
+    return pg([at(Xw, Y + th, z0), at(Xw, Y + th, z1), at(Xo, Y + th, z1), at(Xo, Y + th, z0)], "#6b4527") +
+      pg([at(Xo, Y, z0), at(Xo, Y, z1), at(Xo, Y + th, z1), at(Xo, Y + th, z0)], wood, ` stroke="${woodD}" stroke-width="${f1(1 * k)}"`) +
+      pg([at(Xw, Y, z1), at(Xo, Y, z1), at(Xo, Y + th, z1), at(Xw, Y + th, z1)], woodD) +
+      [z0 + (z1 - z0) * 0.25, z0 + (z1 - z0) * 0.75].map(z => { const [a, b] = [at(Xw, Y + th, z), at(Xo, Y + th, z)], [cx, cy] = at(Xw, Y + th + 22 * k, z);
+        return `<path d="M${P(...a)} L${P(...b)} L${P(cx, cy)} Z" fill="${beam}"/>`; }).join(""); };
+  for (const sd of [-1, 1]) t += sideShelf(sd, -0.04, -0.14, Yh(0.8)) + sideShelf(sd, -0.2, -0.3, Yh(0.76)) + sideShelf(sd, -0.36, -0.46, Yh(0.68));
+  // two cat trees, near the back corners: sisal posts, carpeted platforms in a
+  // shade of the room's first color, a cubby at the foot, a pompom swinging, a cup bed on top
+  for (const sd of [-1, 1]) {
+    const X = sd * TX, z = -0.02, f = 1 / (1 + z), kf = k * f, [px, pyb] = at(X, floor, z), cpt = mix(K.flagA, "#efe2c4", 0.55), cptD = mix(cpt, "#000000", 0.25);
+    const post = (x, ya, yb) => `<rect x="${f1(x - 7 * kf)}" y="${f1(ya)}" width="${f1(14 * kf)}" height="${f1(yb - ya)}" fill="#c9b48a" stroke="#8a7a5a" stroke-width="${f1(1 * kf)}"/>` +
+      [...Array(Math.max(1, Math.floor((yb - ya) / (5 * kf))))].map((_, j) => `<line x1="${f1(x - 7 * kf)}" y1="${f1(ya + j * 5 * kf + 4 * kf)}" x2="${f1(x + 7 * kf)}" y2="${f1(ya + j * 5 * kf)}" stroke="#9a8a62" stroke-width="${f1(1 * kf)}"/>`).join("");
+    const plat = (x, Y, rx) => { const y = at(X, Y, z)[1], up = Y > vy;
+      return `<rect x="${f1(x - rx)}" y="${f1(y)}" width="${f1(2 * rx)}" height="${f1(7 * kf)}" fill="${cptD}"/>` +
+        `<ellipse cx="${f1(x)}" cy="${f1(up ? y : y + 7 * kf)}" rx="${f1(rx)}" ry="${f1(7 * kf)}" fill="${up ? cpt : cptD}" stroke="${cptD}" stroke-width="${f1(1 * kf)}"/>` +
+        (up ? "" : `<rect x="${f1(x - rx)}" y="${f1(y - 1 * kf)}" width="${f1(2 * rx)}" height="${f1(3 * kf)}" fill="${cpt}"/>`); };
+    const y1 = at(X, Yh(0.18), z)[1], y2 = at(X, Yh(0.38), z)[1], y3 = at(X, Yh(0.56), z)[1];
+    t += `<ellipse cx="${f1(px)}" cy="${f1(pyb)}" rx="${f1(50 * kf)}" ry="${f1(8 * kf)}" fill="#000000" opacity="0.25"/>` +
+         post(px + sd * 20 * kf, y2, y1) + post(px - sd * 10 * kf, y3, y1) + post(px + sd * 14 * kf, y3, y2);
+    // (the cubby: a carpeted box, a round door)
+    t += `<rect x="${f1(px - 44 * kf)}" y="${f1(y1)}" width="${f1(88 * kf)}" height="${f1(pyb - y1)}" rx="${f1(5 * kf)}" fill="${cpt}" stroke="${cptD}" stroke-width="${f1(1.5 * kf)}"/>` +
+         `<circle cx="${f1(px - sd * 8 * kf)}" cy="${f1((y1 + pyb) / 2 + 4 * kf)}" r="${f1(19 * kf)}" fill="#2a1a10" stroke="${cptD}" stroke-width="${f1(3 * kf)}"/>` +
+         `<ellipse cx="${f1(px - sd * 6 * kf)}" cy="${f1((y1 + pyb) / 2 + 12 * kf)}" rx="${f1(4 * kf)}" ry="${f1(2.5 * kf)}" fill="#ffd166" opacity="0.8"/>` +
+         `<ellipse cx="${f1(px - sd * 12 * kf)}" cy="${f1((y1 + pyb) / 2 + 12 * kf)}" rx="${f1(4 * kf)}" ry="${f1(2.5 * kf)}" fill="#ffd166" opacity="0.8"/>`;
+    t += plat(px + sd * 20 * kf, Yh(0.38), 40 * kf);
+    const [hx, hy] = [px + sd * 50 * kf, y2 + 7 * kf];
+    t += `<g><animateTransform attributeName="transform" type="rotate" values="-14 ${f1(hx)} ${f1(hy)};14 ${f1(hx)} ${f1(hy)};-14 ${f1(hx)} ${f1(hy)}" dur="${sd < 0 ? 2.2 : 2.7}s" repeatCount="indefinite"/>` +
+         `<line x1="${f1(hx)}" y1="${f1(hy)}" x2="${f1(hx)}" y2="${f1(hy + 40 * kf)}" stroke="#e8e0d0" stroke-width="${f1(1 * kf)}"/><circle cx="${f1(hx)}" cy="${f1(hy + 46 * kf)}" r="${f1(7 * kf)}" fill="${sd < 0 ? "#e5484d" : "#3b82f6"}"/>` +
+         [...Array(6)].map((_, j) => `<line x1="${f1(hx)}" y1="${f1(hy + 46 * kf)}" x2="${f1(hx + Math.cos(j) * 9 * kf)}" y2="${f1(hy + 46 * kf + Math.sin(j) * 9 * kf)}" stroke="${sd < 0 ? "#e5484d" : "#3b82f6"}" stroke-width="${f1(2 * kf)}"/>`).join("") + `</g>`;
+    // (the top: a round bed with a rim, and a ramp up to the first shelf on the wall)
+    t += plat(px, Yh(0.56), 38 * kf) + `<path d="M${P(px - 36 * kf, y3)} Q${P(px, y3 - 16 * kf)} ${P(px + 36 * kf, y3)}" fill="none" stroke="${cptD}" stroke-width="${f1(6 * kf)}" stroke-linecap="round"/>`;
+    const [ra, rb] = [at(X + sd * 0.04 * bw, Yh(0.56), -0.03), at(sd * (bw - 0.035 * bw), Yh(0.8), -0.09)];
+    t += `<line x1="${f1(ra[0])}" y1="${f1(ra[1])}" x2="${f1(rb[0])}" y2="${f1(rb[1])}" stroke="${wood}" stroke-width="${f1(9 * k)}" stroke-linecap="round"/>` +
+         [0.2, 0.4, 0.6, 0.8].map(u => `<line x1="${f1(ra[0] + (rb[0] - ra[0]) * u - 4 * k)}" y1="${f1(ra[1] + (rb[1] - ra[1]) * u)}" x2="${f1(ra[0] + (rb[0] - ra[0]) * u + 4 * k)}" y2="${f1(ra[1] + (rb[1] - ra[1]) * u)}" stroke="${woodD}" stroke-width="${f1(2.5 * k)}"/>`).join("");
+  }
+  // a mouse hole in the wainscot, a little mouse peeking out now and then
+  { const [mx, my] = at(0.22 * bw, floor), mr = 11 * k;
+    t += `<path d="M${P(mx - mr, my)} V${f1(my - mr)} A${f1(mr)} ${f1(mr)} 0 0 1 ${P(mx + mr, my - mr)} V${f1(my)} Z" fill="#1a0f0a"/>` +
+         `<g opacity="0"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.7;0.75;0.9;1" dur="9s" repeatCount="indefinite"/>` +
+         `<circle cx="${f1(mx + 2 * k)}" cy="${f1(my - 6 * k)}" r="${f1(5 * k)}" fill="#9ca3af"/><circle cx="${f1(mx - 1 * k)}" cy="${f1(my - 11 * k)}" r="${f1(3 * k)}" fill="#c9ccd4"/>` +
+         `<circle cx="${f1(mx + 5 * k)}" cy="${f1(my - 11 * k)}" r="${f1(3 * k)}" fill="#c9ccd4"/><circle cx="${f1(mx + 4 * k)}" cy="${f1(my - 6 * k)}" r="${f1(0.9 * k)}" fill="#111"/>` +
+         `<circle cx="${f1(mx + 7 * k)}" cy="${f1(my - 4.5 * k)}" r="${f1(1 * k)}" fill="#f4a0b0"/></g>`; }
+  // on the floor: bowls of fish and water on a mat, the basket, the box, yarn, a toy mouse
+  { const [bx, by] = at(0.64 * bw, floor, -0.15), s = k / 0.85;
+    t += `<rect x="${f1(bx - 34 * s)}" y="${f1(by - 6 * s)}" width="${f1(68 * s)}" height="${f1(14 * s)}" rx="${f1(4 * s)}" fill="${K.flagB}" opacity="0.85"/>` +
+         [[-16, "#e5484d", "fish"], [16, "#3b82f6", "water"]].map(([dx, col, what]) =>
+           `<path d="M${P(bx + dx * s - 13 * s, by - 6 * s)} L${P(bx + dx * s + 13 * s, by - 6 * s)} L${P(bx + dx * s + 10 * s, by + 3 * s)} L${P(bx + dx * s - 10 * s, by + 3 * s)} Z" fill="${col}"/>` +
+           `<ellipse cx="${f1(bx + dx * s)}" cy="${f1(by - 6 * s)}" rx="${f1(13 * s)}" ry="${f1(3.5 * s)}" fill="${what === "fish" ? "#a8642a" : "#8fd3ff"}"/>` +
+           (what === "fish" ? [...Array(6)].map((_, j) => `<circle cx="${f1(bx + dx * s + (j - 2.5) * 3.6 * s)}" cy="${f1(by - 7 * s + (j % 2) * 1.5 * s)}" r="${f1(1.6 * s)}" fill="#7a4418"/>`).join("")
+             : `<ellipse cx="${f1(bx + dx * s)}" cy="${f1(by - 6 * s)}" rx="${f1(6 * s)}" ry="${f1(1.6 * s)}" fill="none" stroke="#ffffff" stroke-width="${f1(0.8 * s)}" opacity="0.8"><animate attributeName="rx" values="${f1(2 * s)};${f1(11 * s)}" dur="2.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.9;0" dur="2.6s" repeatCount="indefinite"/></ellipse>`)).join(""); }
+  { const { kx, ky, kfb } = L;
+    t += `<ellipse cx="${f1(kx)}" cy="${f1(ky)}" rx="${f1(46 * kfb)}" ry="${f1(10 * kfb)}" fill="#000000" opacity="0.2"/>` +
+         `<ellipse cx="${f1(kx)}" cy="${f1(ky - 22 * kfb)}" rx="${f1(46 * kfb)}" ry="${f1(12 * kfb)}" fill="#7a5a2a"/>` +
+         `<ellipse cx="${f1(kx)}" cy="${f1(ky - 19 * kfb)}" rx="${f1(40 * kfb)}" ry="${f1(9 * kfb)}" fill="${K.flagB}"/>` + L.basketFront(); }
+  { const { ox, oy, kfo } = L;
+    t += `<ellipse cx="${f1(ox)}" cy="${f1(oy)}" rx="${f1(42 * kfo)}" ry="${f1(6 * kfo)}" fill="#000000" opacity="0.2"/>` +
+         `<path d="M${P(ox - 34 * kfo, oy - 40 * kfo)} L${P(ox - 26 * kfo, oy - 50 * kfo)} L${P(ox + 26 * kfo, oy - 50 * kfo)} L${P(ox + 34 * kfo, oy - 40 * kfo)} Z" fill="#5a4022"/>` +
+         `<path d="M${P(ox - 26 * kfo, oy - 50 * kfo)} L${P(ox - 22 * kfo, oy - 66 * kfo)} L${P(ox + 22 * kfo, oy - 66 * kfo)} L${P(ox + 26 * kfo, oy - 50 * kfo)} Z" fill="#b8905a" stroke="#8a6a3a" stroke-width="${f1(1.2 * kfo)}"/>` + L.boxFront(); }
+  for (const [X, z, col, i] of [[-0.42 * bw, -0.42, "#e5484d", 0], [0.18 * bw, -0.5, "#22c55e", 1], [-0.12 * bw, -0.26, "#f2c12e", 2]]) {
+    const [yx, yy] = at(X, floor, z), r = 9 * k / (1 + z);
+    t += `<path d="M${P(yx + r * 0.6, yy - r * 0.3)} q${f1(r * 2)} ${f1(r * 0.8)} ${f1(r * 3.2)} ${f1(r * 0.2)} t${f1(r * 2.6)} ${f1(r * 0.6)}" fill="none" stroke="${col}" stroke-width="${f1(1.2 * k)}"/>` +
+         `<circle cx="${f1(yx)}" cy="${f1(yy - r)}" r="${f1(r)}" fill="${col}"/>` +
+         [-0.5, 0, 0.5].map(a => `<path d="M${P(yx - r * Math.cos(a + 1), yy - r - r * Math.sin(a + 1) * 0.5)} Q${P(yx, yy - r * (1.4 + a))} ${P(yx + r * Math.cos(a + 1), yy - r + r * Math.sin(a + 1) * 0.5)}" fill="none" stroke="${mix(col, "#000000", 0.3)}" stroke-width="${f1(0.9 * k)}"/>`).join("");
+  }
+  { const [mx, my] = at(-0.5 * bw, floor, -0.36), s = k / 0.64;
+    t += `<ellipse cx="${f1(mx)}" cy="${f1(my - 5 * s)}" rx="${f1(9 * s)}" ry="${f1(5.5 * s)}" fill="#9ca3af"/><circle cx="${f1(mx + 9 * s)}" cy="${f1(my - 6 * s)}" r="${f1(4 * s)}" fill="#9ca3af"/>` +
+         `<circle cx="${f1(mx + 7 * s)}" cy="${f1(my - 10 * s)}" r="${f1(2.6 * s)}" fill="#f4a0b0"/><circle cx="${f1(mx + 11.5 * s)}" cy="${f1(my - 6.5 * s)}" r="${f1(0.9 * s)}" fill="#111"/>` +
+         `<path d="M${P(mx - 9 * s, my - 4 * s)} q${f1(-10 * s)} ${f1(2 * s)} ${f1(-14 * s)} ${f1(-6 * s)}" fill="none" stroke="#c9ccd4" stroke-width="${f1(1.4 * s)}"/>`; }
+  return t;
+}
+// The cat room's cats, each at its place, drawn farthest first, the rope
+// bridge among them at its own depth (so a cat on a far shelf is behind it,
+// and one on it in front), the basket's and the box's near sides over a cat
+// sitting in them
+function catRoomCats(c, K, wags) {
+  const L = catRoomPlaces(c), { k } = c, items = [{ z: L.BZ, svg: L.bridge() }];
+  K.cats.forEach((C, i) => {
+    const sp = L.spots[C.spot] || L.spots.rug, s = 0.85 * k * sp.f * C.size / 100, W = wags[i];
+    const WC = { catFur: C.fur, catWhite: C.white, catEyes: C.eyes, catNose: "#f4a0b0" };
+    const at = (inner, dy = 0) => `<g transform="translate(${f1(sp.x)} ${f1(sp.y + dy)}) scale(${s.toFixed(3)})">${inner}</g>`;
+    let svg;
+    if (C.pose === "sleep") svg = at(sleepingCat(WC, W, i));
+    else if (C.pose === "walk") {
+      // (pacing to and fro along its place, turning round at each end, about 26 of its own units a second)
+      const u = Math.max(10, sp.span / s), dur = (2 * u / 26).toFixed(2), b = `-${((i * 1.7) % +dur).toFixed(2)}s`;
+      svg = at(`<g><animateTransform attributeName="transform" type="translate" values="${f1(-u)} 0;${f1(u)} 0;${f1(-u)} 0" dur="${dur}s" begin="${b}" repeatCount="indefinite"/>` +
+        `<g><animateTransform attributeName="transform" type="scale" values="1 1;-1 1" keyTimes="0;0.5" calcMode="discrete" dur="${dur}s" begin="${b}" repeatCount="indefinite"/>${walkingCat(WC, W, i)}</g></g>`);
+    } else svg = (sp.edge ? "" : `<ellipse cx="${f1(sp.x)}" cy="${f1(sp.y)}" rx="${f1(18 * s)}" ry="${f1(3.5 * s)}" fill="#000000" opacity="0.18"/>`) + at(shoulderCat(4, WC, W, !sp.edge), 7 * s);
+    if (C.spot === "basket") svg += L.basketFront();
+    if (C.spot === "box") svg += L.boxFront();
+    items.push({ z: sp.z, svg });
+  });
+  return items.sort((a, b) => b.z - a.z).map(e => e.svg).join("");
+}
 function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0) {
   const { k } = c, { floor, bw, vy } = roomFrame(c), h = 170 * k, rise = 46 * k;
   const at = (z, y) => { const f = 1 / (1 + z); return [sd * bw * f, vy + (y - vy) * f]; };
@@ -4977,7 +5425,7 @@ function castleWays(c, K, n, style) {
   // the king's room: its doors in its side walls, two to a side, between its back corners and the
   // picture's edges (clear of all it holds); its way out a sign at the bottom, as the forest clearing's
   // path, toward us (a door set to lead out is that sign)
-  if (style === "king") {
+  if (SIDE_DOOR_ROOMS.includes(style)) {
     const { y1, pad } = c, doors = H.doors.filter(d => d !== "out").map(to).filter(Boolean);
     // (a nearer door's sign, kept inside the picture, would sit on the farther one's: it goes above it)
     return doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j; return hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k); }).join("") +
@@ -5012,8 +5460,12 @@ function castleroomScene(c) {
   // (in its own color theme)
   if (K.roomTheme[n - 1] === "B") K = { ...K, ...K.themeB };
   const draw = { trap: () => trapRoomSvg(c, K, pits), dungeon1: () => dungeonSvg(c, K, false, bones), dungeon2: () => dungeonSvg(c, K, true, bones),
-                 king: () => kingRoomSvg(c, K), greenhouse: () => greenhouseSvg(c, K), hallway: () => hallwaySvg(c, K) }[style];
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, style === "hallway" || style === "king" ? K.carpet : ""], draw);
+                 king: () => kingRoomSvg(c, K), greenhouse: () => greenhouseSvg(c, K), hallway: () => hallwaySvg(c, K), catroom: () => catRoomSvg(c, K) }[style];
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : ""], draw);
+  // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
+  if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)
+    const wags = K.cats.map(catWag);
+    s += SEP + part("croom-cats", [c.F, K.id, JSON.stringify(K.cats), wags.map(W => W.key).join("|")], () => catRoomCats(c, K, wags)); }
   s += SEP + part("croom-ways", [c.F, K.id, n, style, K.rooms.join(), JSON.stringify(K.hall[n - 1])], () => castleWays(c, K, n, style));
   return s;
 }
@@ -6373,6 +6825,13 @@ function unveil(svg, layers) {
          `<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter>${masks}</defs>` + svg;
 }
 
+// A scene's options, as it reads them: its background's settings, and, as
+// o["lfo:A"] (B, C), what it shows of an LFO: its length, shape and depth, and
+// where its wave is. The mixer's LFOs are not background settings, so a scene
+// following one reads it this way, and a change to that LFO on the mixing
+// board draws that scene again (partByReads), and no other.
+const sceneOpts = BG => new Proxy(BG, { get: (t, key) => typeof key === "string" && key.startsWith("lfo:") ? lfoStamp(key.slice(4)) : t[key] });
+const lfoStamp = L => { const lf = lfoNow(L); return lf ? [lf.dur.toFixed(4), lf.shape, lf.amp.toFixed(2), lfoBegin(lf, 0)].join() : ""; };
 function draw() {
   const { face: F, body: B } = state;
   let { shirt: SH, pants: P } = state;
@@ -6524,7 +6983,7 @@ function draw() {
   const BG = state.background;
   // (kept under the scene's own options, read as it was drawn: the
   // figure's sliders draw no scenery again; see part above)
-  const bgText = scened ? partByReads(`scene:${BG.kind}`, BG, o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o)) : null;
+  const bgText = scened ? partByReads(`scene:${BG.kind}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o)) : null;
   // and in a scene, the figure's feet (its ground, g) on the stage's
   // ground (sg), at its own size about them, where it was dragged
   figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: ground, sg: SCENE.ground }
@@ -8021,11 +8480,15 @@ function applyMix(instant = false) {
   to(buses.echo.delayTime, fx.time * p.sd);
   to(buses.revOut.gain, fx.room / 100);
 }
+// the cats in the room the friend is in, when it is a cat room
+const catsHereNow = () => { const B = state.background; if (B.kind !== "castleroom") return [];
+  const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))); return K.rooms[n - 1] === "catroom" ? K.cats : []; };
 function mixChanged() {
   persist(); applyMix();
   // (a part fading with an LFO, or a fairy's wings flapping with one, follow its changes at once)
   if (VISIBLE_PARTS.some(g => LFO_NAMES.includes(state.visible["lfo_" + g])) || LFO_NAMES.includes(state.costume.wingLfo) ||
-      (state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo))) draw();
+      (state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo)) ||
+      catsHereNow().some(C => LFO_NAMES.includes(C.lfo))) draw();
 }
 // The dub "throw": while a part is thrown (its strip's button held), all
 // of it goes to the echo, then its send goes back to where it was set;
@@ -8129,7 +8592,8 @@ function mixerBox(box) {
         .concat(VISIBLE_PARTS.filter(g => state.visible["lfo_" + g] === L).map(g => "👻 " + g))
         // (a fairy's wings, while she wears them and they flap with it)
         .concat(state.costume.kind === "fairy" && state.costume.wingFlutter !== false && state.costume.wingLfo === L ? ["🧚 fairy wings"] : [])
-        .concat(state.background.kind === "fairyforest" && state.background.fairyHouseLfo === L ? ["🏡 fairy house"] : []);
+        .concat(state.background.kind === "fairyforest" && state.background.fairyHouseLfo === L ? ["🏡 fairy house"] : [])
+        .concat(catsHereNow().flatMap((C, i) => C.lfo === L ? [`🐈 cat ${i + 1}'s tail`] : []));
       return el("div", { class: "strip lfo" }, [
         el("div", { class: "strip-top" }, [el("span", { class: "strip-name" }, `〰️ LFO ${L}`), shapeBtn]),
         knob("⏱️ round in", 0, LFO_BEATS.length - 1, () => lfoBeatsAt(o().beats), v => { chan(id, "lfo" + L).beats = LFO_BEATS[v]; }, v => beatsName(LFO_BEATS[v])),
@@ -8675,7 +9139,18 @@ const TABS = [
         ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, 4, 0, 4],
         ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
         ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)]],
-        b => b.kind === "castleroom" && (b.castle ?? "N") === id && Math.round(b.castleRoom ?? 1) === n])]),
+        b => b.kind === "castleroom" && (b.castle ?? "N") === id && Math.round(b.castleRoom ?? 1) === n]),
+      ["group", "castleCatList" + id, `🐈 ${id}'s castle: its cats, in its cat room`, [
+        ["range", "castleCats" + id, "🐈 how many cats", 0, 8, 0, 8],
+        ...[1, 2, 3, 4, 5, 6, 7, 8].map(j => ["group", "castleCatBox" + j + id, `🐈 cat ${j}`, [
+          ["color", catKey(id, j, "Fur"), "🐈 its fur", CAT_FURS],
+          ["color", catKey(id, j, "White"), "🤍 tuxedo white (muzzle and bib)", CAT_WHITES],
+          ["color", catKey(id, j, "Eyes"), "👀 its eyes", CAT_EYES],
+          ["choice", catKey(id, j, "Pose"), "🐾 it is", CAT_POSES],
+          ["choice", catKey(id, j, "Spot"), "📍 where it is", CAT_SPOTS],
+          ["range", catKey(id, j, "Size"), "📏 its size", 20, 300, 80, 120],
+          ["choice", catKey(id, j, "Lfo"), "〰️ its tail wags with", [["none", "its own wag"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
+          ["range", catKey(id, j, "Offset"), "↪️ how far into the wag it starts (%)", 0, 99, 0, 99]]])]]]),
     ["toggle", "seeHealer", "🌿 see the healer's hut"],
     // inside the witch's hut (the witch herself: drag her)
     ["range", "witchSize", "🧙 the witch's size (drag her to move her)", 30, 250, 70, 150],
@@ -8873,10 +9348,15 @@ const SHOWN_WHEN = {
     const atCastle = b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id;
     const nRooms = b => Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
     const typeOf = (b, n) => b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1];
-    const isHall = (b, n) => typeOf(b, n) === "hallway", hasDoors = (b, n) => ["hallway", "king"].includes(typeOf(b, n));
+    const isHall = (b, n) => typeOf(b, n) === "hallway", hasDoors = (b, n) => OWN_EXIT_ROOMS.includes(typeOf(b, n));
+    // (its cats: in a cat room of its, and at the castle when it has one)
+    const catsHere = b => atCastle(b) && (b.kind === "castle" ? [1, 2, 3, 4, 5, 6].some(n => n <= nRooms(b) && typeOf(b, n) === "catroom")
+                                                              : typeOf(b, Math.round(b.castleRoom ?? 1)) === "catroom");
     return [["background.castleLook" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id],
             ["background.castleThemes" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id], ["background.castleThemeB" + id, atCastle],
-            ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoomTheme" + n + id, b => ["hallway", "king"].includes(typeOf(b, n))]),
+            ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoomTheme" + n + id, b => OWN_EXIT_ROOMS.includes(typeOf(b, n))]),
+            ["background.castleCatList" + id, catsHere],
+            ...[1, 2, 3, 4, 5, 6, 7, 8].map(j => ["background.castleCatBox" + j + id, b => catsHere(b) && j <= Math.round(b["castleCats" + id] ?? CAT_ROOM_COUNT)]),
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle],
             ...[1, 2, 3, 4, 5, 6].flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],

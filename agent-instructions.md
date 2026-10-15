@@ -110,9 +110,10 @@ A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground 
 - **To add a room style:**
   - add it to `ROOM_STYLES` with its emoji;
   - add its drawing to the `draw` table in `castleroomScene`;
-  - add its exits to `castleWays`;
+  - give it exits: add it to `SIDE_DOOR_ROOMS` for doors in its side walls and a sign out toward us, set per room like the king's room's (it then takes a color theme too), or give it its own branch in `castleWays`;
   - add any settings of its own to the room's group in `TABS`, shown only for that style;
-  - pass its inputs to its `part(…)` key.
+  - pass its inputs to its `part(…)` key. Something with many settings of its own, such as the cat room's cats, gets a `part` of its own, so its settings redraw only it.
+- **The cat room's cats** belong to the castle, not to a room (`castleOf(o).cats`, keys `castleCat<j><What><id>`), so a castle with two cat rooms shows the same cats in both. Their places are `CAT_SPOTS`, laid out in `catRoomPlaces`. They are drawn back to front with the rope bridge among them, so depth comes out right.
 
 **Music.** The music is a Web Audio sequencer inside the page:
 - tunes are written as text (MIDI note numbers, sections, drum patterns);
@@ -120,6 +121,8 @@ A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground 
 - the mixing board sets each part's level, echo, room, pan and so on;
 - LFOs A to D (`LFO_BEATS`, from 1/32 beat to 32 beats) drive both sounds and pictures: fading parts, fairy wings, the fairy house;
 - LFOs belong to the scene's tune. A place without a tune uses the defaults. Write mixer settings through `chan(id, key)`.
+- **A scene that follows an LFO must read it through its options**, as `o["lfo:A"]` (see `sceneOpts`). Scenes are cached by the background settings they read (`partByReads`), and the mixer's LFOs are not background settings. Without that read, a change on the mixing board never reaches the scene. The fairy house had this bug until the cat room's release.
+- **Everything that moves with an LFO keeps its own phase**, so things side by side never move in lockstep (Matthew's call for the cats' wags). Each cat has its own offset into the cycle, and its own pace when it follows no LFO. An LFO too fast to show is drawn as a blur of copies spread round the cycle (`LFO_BLUR`), in time with nothing.
 
 ## Testing
 
