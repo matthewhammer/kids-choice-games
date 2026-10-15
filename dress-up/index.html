@@ -273,8 +273,16 @@ const CASTLE_FLAG_DEFAULTS = { N: ["#e53935", "#ffffff"], M: ["#f2c12e", "#6a2c9
 const CASTLE_FLAG_STYLE_DEFAULTS = { N: "alternate", M: "alternate", D: "stripes" };
 const CASTLE_ROOF_DEFAULTS = { N: "#3b5ea8", M: "#3b5ea8", D: "#7c3aed" };
 const CASTLE_FLAG_STYLES = [["alternate", "↔️ in turn"], ["stripes", "▥ stripes"], ["checkers", "▦ checkers"]];
-// a castle's hallway carpet (the hallway: hallwaySvg)
+// a castle's carpets (the hallway's, the king's room's)
 const CASTLE_CARPETS = ["#a3122a", "#1e3a8a", "#14532d", "#6a2c91", "#7c2d12", "#d4a017", "#1f1f22"];
+// Each castle has two color themes, A and B, each its two colors, how they
+// go (in turn, stripes, checkers) and a carpet color; each room takes one
+// (its banners, shields and carpet), so two hallways or two king's rooms
+// can look different. A is the castle's own (its flags outside too); B
+// starts as A with its two colors swapped and its carpet in A's second
+// color; rooms take A and B by turns to start with (odd rooms A).
+const CARPET_COLORS = [...new Set([...CASTLE_CARPETS, ...CASTLE_FLAG_COLORS])];
+const THEMES = [["A", "🎨 theme A"], ["B", "🎨 theme B"]];
 // where the hallway's far end, the foot of a spiral staircase, leads: the
 // castle's first spiral staircase room, a room of its own choosing, or nowhere
 // A castle is rooms by number, each with its own exits. A hallway's: up to
@@ -307,6 +315,9 @@ const castleOf = o => {
   return { id, flag: flagA, flagA, flagB: o["castleFlagB" + id] ?? fl[1],
            flagStyle: CASTLE_FLAG_STYLES.some(([v]) => v === o["castleFlagStyle" + id]) ? o["castleFlagStyle" + id] : CASTLE_FLAG_STYLE_DEFAULTS[id],
            roof: o["castleRoof" + id] ?? CASTLE_ROOF_DEFAULTS[id], carpet: o["castleCarpet" + id] ?? CASTLE_CARPETS[0],
+           themeB: { flagA: o["castleFlagA_B" + id] ?? fl[1], flagB: o["castleFlagB_B" + id] ?? fl[0], carpet: o["castleCarpet_B" + id] ?? fl[1],
+                     flagStyle: CASTLE_FLAG_STYLES.some(([v]) => v === o["castleFlagStyle_B" + id]) ? o["castleFlagStyle_B" + id] : CASTLE_FLAG_STYLE_DEFAULTS[id], theme: "B" },
+           roomTheme: [1, 2, 3, 4, 5, 6].map(n => ["A", "B"].includes(o["castleRoomTheme" + n + id]) ? o["castleRoomTheme" + n + id] : n % 2 ? "A" : "B"),
            // each room's own exits, when it is a hallway (castleWays)
            hall: [1, 2, 3, 4, 5, 6].map(n => ({
              doors: [...Array(Math.max(0, Math.min(4, Math.round(o["castleHallDoors" + n + id] ?? 3))))].map((_, j) => String(o[hallDoorKey(id, n, j + 1)] ?? hallDoorDefault(n, j + 1))),
@@ -322,9 +333,9 @@ const castleOf = o => {
 };
 // the fill for a castle's i-th flag or banner: its two colors in turn, or
 // both, as stripes or checkers (a pattern, its squares u across)
-const castleFlagFill = (K, i, u = 6) => K.flagStyle === "alternate" ? (i % 2 ? K.flagB : K.flagA) : `url(#cflag-${K.id}-${K.flagStyle}-${Math.round(u * 10)})`;
+const castleFlagFill = (K, i, u = 6) => K.flagStyle === "alternate" ? (i % 2 ? K.flagB : K.flagA) : `url(#cflag-${K.id}${K.theme ?? "A"}-${K.flagStyle}-${Math.round(u * 10)})`;
 const castleFlagDefs = (K, u = 6) => K.flagStyle === "alternate" ? "" :
-  `<defs><pattern id="cflag-${K.id}-${K.flagStyle}-${Math.round(u * 10)}" patternUnits="userSpaceOnUse" width="${f1(2 * u)}" height="${f1(2 * u)}">` +
+  `<defs><pattern id="cflag-${K.id}${K.theme ?? "A"}-${K.flagStyle}-${Math.round(u * 10)}" patternUnits="userSpaceOnUse" width="${f1(2 * u)}" height="${f1(2 * u)}">` +
   `<rect width="${f1(2 * u)}" height="${f1(2 * u)}" fill="${K.flagA}"/>` +
   (K.flagStyle === "stripes" ? `<rect x="${f1(u)}" width="${f1(u)}" height="${f1(2 * u)}" fill="${K.flagB}"/>`
                              : `<rect width="${f1(u)}" height="${f1(u)}" fill="${K.flagB}"/><rect x="${f1(u)}" y="${f1(u)}" width="${f1(u)}" height="${f1(u)}" fill="${K.flagB}"/>`) + `</pattern></defs>`;
@@ -385,6 +396,9 @@ const DEFAULTS = {
                 castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
                   [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
                    ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleRoof" + id, CASTLE_ROOF_DEFAULTS[id]], ["castleCarpet" + id, CASTLE_CARPETS[0]],
+                   ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
+                   ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
+                   ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoomTheme" + n + id, n % 2 ? "A" : "B"]),
                    ...[1, 2, 3, 4, 5, 6].flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"],
                      ...[1, 2, 3, 4].map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
@@ -4694,9 +4708,9 @@ function kingRoomSvg(c, K) {
            `<line x1="${f1(sx + e * 22 * k)}" y1="${f1(sy + 18 * k)}" x2="${f1(sx + e * 38 * k)}" y2="${f1(sy + 30 * k)}" stroke="${gold}" stroke-width="${f1(6 * k)}"/>`).join("") +
          `<path d="M${P(sx - 22 * k, sy - 22 * k)} H${f1(sx + 22 * k)} V${f1(sy + 6 * k)} Q${P(sx + 22 * k, sy + 30 * k)} ${P(sx, sy + 38 * k)} Q${P(sx - 22 * k, sy + 30 * k)} ${P(sx - 22 * k, sy + 6 * k)} Z" fill="${sd < 0 ? K.flagA : K.flagB}" stroke="${gold}" stroke-width="${f1(3 * k)}"/>`;
   }
-  // the red carpet, gold-edged, from us to the dais
+  // the carpet, gold-edged, from us to the dais, in its color theme's carpet color
   const [ca, cy] = out(-60 * k, floor, y1 + 40 * k);
-  t += `<polygon points="${P(-60 * k, floor - 2 * k)} ${P(60 * k, floor - 2 * k)} ${P(-ca, cy)} ${P(ca, cy)}" fill="${red}"/>` +
+  t += `<polygon points="${P(-60 * k, floor - 2 * k)} ${P(60 * k, floor - 2 * k)} ${P(-ca, cy)} ${P(ca, cy)}" fill="${K.carpet}"/>` +
        `<polygon points="${P(-60 * k, floor - 2 * k)} ${P(60 * k, floor - 2 * k)} ${P(-ca, cy)} ${P(ca, cy)}" fill="none" stroke="${gold}" stroke-width="${f1(4 * k)}"/>`;
   // the dais, its steps, and the throne: tall-backed, gold, red velvet, a crown on top
   for (let j = 0; j < 3; j++) { const w = (190 - j * 30) * k, y = floor - j * 14 * k;
@@ -4988,15 +5002,18 @@ function castleWays(c, K, n, style) {
 }
 function castleroomScene(c) {
   const { o } = c;
-  const K = castleOf(o), n = Math.max(1, Math.min(K.rooms.length, Math.round(o.castleRoom ?? 1))), style = K.rooms[n - 1];
+  let K = castleOf(o);
+  const n = Math.max(1, Math.min(K.rooms.length, Math.round(o.castleRoom ?? 1))), style = K.rooms[n - 1];
   // where a trap room's pits lead: the castle's dungeons (the first, then the deep one)
   const d1 = K.rooms.indexOf("dungeon1") + 1, d2 = K.rooms.indexOf("dungeon2") + 1;
   const pits = [d1 || d2, d2 || d1];
   const bones = K.bones[n - 1][style] ?? 0;
   if (style === "hallway") c = { ...c, eye: 0.3 };
+  // (in its own color theme)
+  if (K.roomTheme[n - 1] === "B") K = { ...K, ...K.themeB };
   const draw = { trap: () => trapRoomSvg(c, K, pits), dungeon1: () => dungeonSvg(c, K, false, bones), dungeon2: () => dungeonSvg(c, K, true, bones),
                  king: () => kingRoomSvg(c, K), greenhouse: () => greenhouseSvg(c, K), hallway: () => hallwaySvg(c, K) }[style];
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, style === "hallway" ? K.carpet : ""], draw);
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, style === "hallway" || style === "king" ? K.carpet : ""], draw);
   s += SEP + part("croom-ways", [c.F, K.id, n, style, K.rooms.join(), JSON.stringify(K.hall[n - 1])], () => castleWays(c, K, n, style));
   return s;
 }
@@ -8636,16 +8653,24 @@ const TABS = [
         ["color", "castleStone" + id, "🪨 stone", CASTLE_STONES],
         ["range", "castleTrees" + id, "🌳 trees nearby", 0, 16, 0, 12],
         ["range", "castleMoat" + id, "🌊 moat and drawbridge", 0, 250, 0, 200],
-        ["color", "castleFlagA" + id, "🚩 flag color 1", CASTLE_FLAG_COLORS],
-        ["color", "castleFlagB" + id, "🚩 flag color 2", CASTLE_FLAG_COLORS],
-        ["choice", "castleFlagStyle" + id, "🚩 the two colors", CASTLE_FLAG_STYLES],
-        ["color", "castleRoof" + id, "🔺 roofs", CASTLE_ROOFS],
-        ["color", "castleCarpet" + id, "🟥 the hallways' carpet", CASTLE_CARPETS]]],
+        ["color", "castleRoof" + id, "🔺 roofs", CASTLE_ROOFS]]],
+      ["group", "castleThemes" + id, `🎨 ${id}'s castle: its color themes`, [
+        ["group", "castleThemeA" + id, "🎨 theme A (and the castle's own flags)", [
+          ["color", "castleFlagA" + id, "🚩 color 1", CASTLE_FLAG_COLORS],
+          ["color", "castleFlagB" + id, "🚩 color 2", CASTLE_FLAG_COLORS],
+          ["choice", "castleFlagStyle" + id, "🚩 the two colors", CASTLE_FLAG_STYLES],
+          ["color", "castleCarpet" + id, "🟥 carpet", CARPET_COLORS]]],
+        ["group", "castleThemeB" + id, "🎨 theme B", [
+          ["color", "castleFlagA_B" + id, "🚩 color 1", CASTLE_FLAG_COLORS],
+          ["color", "castleFlagB_B" + id, "🚩 color 2", CASTLE_FLAG_COLORS],
+          ["choice", "castleFlagStyle_B" + id, "🚩 the two colors", CASTLE_FLAG_STYLES],
+          ["color", "castleCarpet_B" + id, "🟥 carpet", CARPET_COLORS]]]]],
       ["group", "castleRoomList" + id, `🚪 ${id}'s castle: its rooms`, [
         ["castlejump", "castleGo" + id, "🚶 go straight to"],
         ["range", "castleRooms" + id, "🚪 how many rooms", 1, 6, 1, 6]]],
       ...[1, 2, 3, 4, 5, 6].map(n => ["group", "castleRoomBox" + n + id, `🚪 ${id}'s castle: room ${n}`, [
         ["choice", "castleRoom" + n + id, `🚪 room ${n} is`, CASTLE_ROOM_CHOICES],
+        ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, 4, 0, 4],
         ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
@@ -8842,8 +8867,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(CASTLES.flatMap(([id]) => ["castleFlagA", "castleFlagB", "castleFlagStyle"].map(key =>
     ["background." + key + id, b => (b.kind === "clearing" || b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id]))),
   // (the carpet, when the castle has a hallway among its rooms)
-  ...Object.fromEntries(CASTLES.map(([id]) => ["background.castleCarpet" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id &&
-    [...Array(Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].some((_, i) => (b["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i]) === "hallway")])),
+  ...Object.fromEntries(CASTLES.map(([id]) => ["background.castleCarpet" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id])),
   // (the castle's groups: its look where it is seen, its rooms and each room's own at the castle and inside it)
   ...Object.fromEntries(CASTLES.flatMap(([id]) => {
     const atCastle = b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id;
@@ -8851,6 +8875,8 @@ const SHOWN_WHEN = {
     const typeOf = (b, n) => b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1];
     const isHall = (b, n) => typeOf(b, n) === "hallway", hasDoors = (b, n) => ["hallway", "king"].includes(typeOf(b, n));
     return [["background.castleLook" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id],
+            ["background.castleThemes" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id], ["background.castleThemeB" + id, atCastle],
+            ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoomTheme" + n + id, b => ["hallway", "king"].includes(typeOf(b, n))]),
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle],
             ...[1, 2, 3, 4, 5, 6].flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
