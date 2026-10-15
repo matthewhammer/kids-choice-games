@@ -5991,7 +5991,7 @@ function greenhouseSvg(c, K) {
        `<circle cx="${f1(fx + 5 * k)}" cy="${f1(bowlY - 22 * k)}" r="${f1(2 * k)}" fill="#1f2937"/>` +
        `<path d="M${P(fx, bowlY - 34 * k)} Q${P(fx + 6 * k, bowlY - 90 * k)} ${P(fx + 26 * k, bowlY - 4 * k)}" fill="none" stroke="#bfe6ff" stroke-width="${f1(3.5 * k)}" stroke-dasharray="${f1(8 * k)} ${f1(6 * k)}">` +
        `<animate attributeName="stroke-dashoffset" values="${f1(28 * k)};0" dur="0.5s" repeatCount="indefinite"/></path>`;
-  t += obj("fountain", fb, ft);
+  t += obj("fountain", fb - 10 * k, ft);   // (at its pedestal's foot: the friend's first spot, 320, stays in front of it)
   // a watering can and a bench at the sides (the petals fallen on the floor: with the moss, above)
   t += obj("watering can", floor + 190 * k, `<path d="M${P(-W * 0.2, floor + 190 * k)} h${f1(40 * k)} v${f1(-30 * k)} h${f1(-40 * k)} Z" fill="#5b8fb9"/><path d="M${P(-W * 0.2 + 40 * k, floor + 170 * k)} l${f1(30 * k)} ${f1(-20 * k)}" stroke="#5b8fb9" stroke-width="${f1(5 * k)}"/>` +
        `<path d="M${P(-W * 0.2 + 6 * k, floor + 160 * k)} q${f1(14 * k)} ${f1(-20 * k)} ${f1(28 * k)} 0" fill="none" stroke="#4a7aa0" stroke-width="${f1(4 * k)}"/>`);
@@ -7209,12 +7209,14 @@ function campsiteScene(c) {
   s += SEP + part("camp-logs", c.F, () => [[-150, 30, "left"], [150, 30, "right"], [0, 100, "near"]].map(([dx, dy, where]) =>
     obj(`log, ${where}`, fy + (dy + 14) * k, `<rect x="${f1(fx + dx * k - 50 * k)}" y="${f1(fy + dy * k - 14 * k)}" width="${f1(100 * k)}" height="${f1(28 * k)}" rx="${f1(14 * k)}" fill="#7a5232" stroke="#4a2e1a" stroke-width="${f1(2 * k)}"/>` +
     `<ellipse cx="${f1(fx + dx * k + 50 * k)}" cy="${f1(fy + dy * k)}" rx="${f1(7 * k)}" ry="${f1(14 * k)}" fill="#c9a66b"/>`)).join(""));
-  // at night, the dark over everything but the fire (drawn after it,
-  // bright): in front of everything, the friend too; and what it leaves
-  // bright (the fire, what is cooking, the sign), painted after it, then in
-  // front of everything as well
-  const lit = z => night ? Infinity : z;
-  if (night) s += SEP + obj("dark", Infinity, part("camp-night", c.F, () => all("#000814").replace("<rect ", `<rect pointer-events="none" opacity="0.28" `)));
+  // at night, the dark: in front of everything, the friend too, wherever
+  // they stand; but the fire makes a pool of light round itself, clear at
+  // the fire and dark far from it, so the fire stays bright and what stands
+  // near it (the friend too) is lit by it
+  if (night) s += SEP + obj("dark", Infinity, part("camp-night", c.F, () =>
+    `<defs><radialGradient id="bg-camp-dark" gradientUnits="userSpaceOnUse" cx="${f1(fx)}" cy="${f1(fy - 50 * k)}" r="${f1(300 * k)}">` +
+    `<stop offset="0.3" stop-color="#000814" stop-opacity="0"/><stop offset="1" stop-color="#000814" stop-opacity="0.28"/></radialGradient></defs>` +
+    all("url(#bg-camp-dark)").replace("<rect ", `<rect pointer-events="none" `)));
   // the fire: stones and wood; its flames, sparks and glow in a group that
   // grows with the slider (out: smoke); all one object, at the fire's foot
   let campfire = SEP + part("camp-hearth", c.F, () => [...Array(10)].map((_, i) => {
@@ -7239,16 +7241,16 @@ function campsiteScene(c) {
       `<animate attributeName="r" values="${f1(8 * k)};${f1(26 * k)}" dur="3s" begin="${i}s" repeatCount="indefinite"/>` +
       `<animate attributeName="opacity" values="0.5;0" dur="3s" begin="${i}s" repeatCount="indefinite"/></circle>`).join(""));
   }
-  s += obj("campfire", lit(fy), campfire);
+  s += obj("campfire", fy, campfire);
   // what is cooking (an object over the fire, at its foot: sausages on
   // sticks, or a pot on a tripod standing round it)
-  if (food === "sausages") s += SEP + obj("sausages", lit(fy), part("camp-sausages", c.F, () => [[-1, -40], [1, -55], [-1, -70]].map(([sd, dy], i) => {
+  if (food === "sausages") s += SEP + obj("sausages", fy, part("camp-sausages", c.F, () => [[-1, -40], [1, -55], [-1, -70]].map(([sd, dy], i) => {
     const ex = fx + sd * 14 * k, ey = fy + dy * k, hx = fx + sd * 170 * k, hy = fy + (dy + 70) * k;
     return `<line x1="${f1(hx)}" y1="${f1(hy)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="#8b5e34" stroke-width="${f1(3.5 * k)}" stroke-linecap="round"/>` +
            `<rect x="${f1(ex - 26 * k)}" y="${f1(ey - 7 * k)}" width="${f1(36 * k)}" height="${f1(14 * k)}" rx="${f1(7 * k)}" fill="${["#b5674d", "#a0523a", "#c27a5a"][i]}" ` +
            `stroke="#5a2a1a" stroke-width="${f1(1.5 * k)}" transform="rotate(${f1(Math.atan2(ey - hy, ex - hx) * 180 / Math.PI)} ${f1(ex)} ${f1(ey)})"/>`;
   }).join("")));
-  if (food === "soup") s += SEP + obj("soup", lit(fy + 10 * k), part("camp-soup", c.F, () => {
+  if (food === "soup") s += SEP + obj("soup", fy + 10 * k, part("camp-soup", c.F, () => {
     const top = fy - 200 * k, px = fx, py = fy - 95 * k;
     return [-1, 1].map(sd => `<line x1="${f1(fx + sd * 90 * k)}" y1="${f1(fy + 10 * k)}" x2="${f1(fx)}" y2="${f1(top)}" stroke="#6e4a2c" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`).join("") +
       `<line x1="${f1(fx)}" y1="${f1(top + 4 * k)}" x2="${f1(fx + 10 * k)}" y2="${f1(fy + 14 * k)}" stroke="#6e4a2c" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>` +
@@ -7261,7 +7263,7 @@ function campsiteScene(c) {
         `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-40 * k)}" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/></path>`).join("");
   }));
   // a sign back to the trail (an object, at its post's foot)
-  s += SEP + obj("signpost", lit(g + 30 * k), part("camp-sign", c.F, () => signpost(W * 0.42, g + 30 * k, k, [["⛰️ trail", "mountains", -1]])));
+  s += SEP + obj("signpost", g + 30 * k, part("camp-sign", c.F, () => signpost(W * 0.42, g + 30 * k, k, [["⛰️ trail", "mountains", -1]])));
   return s;
 }
 // Inside a tent at the camp site: its canvas all round, the same color as
