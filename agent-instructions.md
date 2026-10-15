@@ -4,11 +4,13 @@
 
 Read this before changing anything in this repository. The [README](README.md) says what the games are and why they exist. This file covers how to work on them: who decides what, how a change goes live, how the code is laid out, and how to test without disturbing anyone.
 
+**Keep this file in sync as you go.** The games are where Hazel features are prototyped: in plain HTML and JavaScript, for the best-case UX, with as little friction as possible between an idea and something the kids can play. So the prototype's shape keeps changing, and so does how we work on it. When a change moves something this file describes (a registry, a control kind, a castle setting, a release step, a rule Matthew states, a testing trick that turns out to matter), update this file in the same commit. Treat the code map below as a snapshot: check that a name still exists before relying on it, and fix this file when it doesn't.
+
 ## Who decides
 
 - **The players decide what comes next.** The players are Matthew's kids, **M** (his daughter) and **N** (his son). Their requests reach you through Matthew. In anything published (commits, VERSIONS.md, the README, issues), call them M and N and nothing else. Credit a request to one of them only when Matthew said whose it was. A castle can belong to someone else too (D's castle); use the letter he uses.
 - **Matthew decides releases and design calls.** When a request is ambiguous, ask him. A call he has made is a rule (see below); don't reopen it.
-- **The game is the prototype.** The game is played first, by real players. Its features are then rebuilt as user-defined livelits in Hazel (the Livelit Playground slides). So name things plainly and keep features recognizable: the Hazel versions follow the game's options, names and layering.
+- **The game is the prototype.** The game is played first, by real players, to find the best UX when nothing stands in the way. Its features are then rebuilt as user-defined livelits in Hazel (the Livelit Playground slides), and the gap between the two is what the Hazel work closes. So name things plainly and keep features recognizable: the Hazel versions follow the game's options, names and layering. A new idea, with no player experience yet, goes into the game first.
 
 ## Going live: push = deploy
 
