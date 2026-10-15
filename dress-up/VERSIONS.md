@@ -4,6 +4,7 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **Fixed: the cat room's window seat has three panels side by side,** no longer overlapping.
 - **Fixed: the castle road's stones line its edges,** instead of wandering off into the meadow beside it.
 - **Fixed: the healer's chimney is stone all the way up.** Its stonework stopped partway, leaving the chimney breast bare above the mantel, and a stone in every other row stuck out past its edge; now the stones run from the ceiling to the mantel, and stay on the breast.
 - **Fixed: the castle's stonework stays behind its gate.** The wall's blocks were drawn over everything on it, crossing the gate, the portcullis, the windows, the banners and the torches, and one poked onto a tower. Now they are drawn first, and kept on the wall.

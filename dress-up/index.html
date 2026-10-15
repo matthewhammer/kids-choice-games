@@ -5470,7 +5470,8 @@ function catRoomSvg(c, K) {
     const sa = WX - 0.27 * bw, sb = WX + 0.27 * bw, Ys = Yh(0.22);
     t += pg([at(sa, Ys, 0), at(sb, Ys, 0), at(sb, Ys, -0.09), at(sa, Ys, -0.09)], "#9a6a3a") +
          pg([at(sa, Ys, -0.09), at(sb, Ys, -0.09), at(sb, floor, -0.09), at(sa, floor, -0.09)], wood, ` stroke="${woodD}" stroke-width="${f1(1.5 * k)}"`);
-    for (const u of [0.25, 0.5, 0.75]) { const [xa, ya] = at(sa + (sb - sa) * u - 0.1 * bw, Ys + 10 * k, -0.09), [xb, yb] = at(sa + (sb - sa) * u + 0.1 * bw, floor - 8 * k, -0.09);
+    // (its three panels, side by side, each in its own third of the front)
+    for (const u of [1 / 6, 0.5, 5 / 6]) { const [xa, ya] = at(sa + (sb - sa) * u - 0.075 * bw, Ys + 10 * k, -0.09), [xb, yb] = at(sa + (sb - sa) * u + 0.075 * bw, floor - 8 * k, -0.09);
       t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(xb - xa)}" height="${f1(yb - ya)}" rx="${f1(2 * k)}" fill="none" stroke="${woodD}" stroke-width="${f1(1.4 * k)}"/>`; }
     t += pg([at(sa + 0.01 * bw, Ys - 9 * k, -0.005), at(sb - 0.01 * bw, Ys - 9 * k, -0.005), at(sb - 0.01 * bw, Ys - 4 * k, -0.085), at(sa + 0.01 * bw, Ys - 4 * k, -0.085)], K.flagB, ` stroke="${mix(K.flagB, "#000000", 0.3)}" stroke-width="${f1(1.5 * k)}"`) +
          pg([at(sa + 0.01 * bw, Ys - 4 * k, -0.085), at(sb - 0.01 * bw, Ys - 4 * k, -0.085), at(sb - 0.01 * bw, Ys + 1 * k, -0.09), at(sa + 0.01 * bw, Ys + 1 * k, -0.09)], mix(K.flagB, "#000000", 0.2));
