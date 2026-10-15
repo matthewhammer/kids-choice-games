@@ -127,6 +127,9 @@
   .chipset { border: 2px dashed var(--line); border-radius: 12px; padding: 6px 8px; }
   .chipset + .chipset { margin-top: 6px; }
   .chipset > .cap { color: var(--muted); font-size: 0.85em; margin-bottom: 4px; }
+  /* a group of controls in its dashed box (the castle's look, its rooms, each room's own) */
+  .ctlgroup { margin: 10px 0; }
+  .ctlgroup > .ctl { margin: 8px 0; }
   .strip.dim { opacity: 0.45; }
   .strip-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
   .strip-name { flex: 1 1 auto; font-weight: 600; }
@@ -270,6 +273,13 @@ const CASTLE_CARPETS = ["#a3122a", "#1e3a8a", "#14532d", "#6a2c91", "#7c2d12", "
 // where the hallway's far end, the foot of a spiral staircase, leads: the
 // castle's first spiral staircase room, a room of its own choosing, or nowhere
 const HALL_ENDS = [["auto", "🌀 the first spiral stairs"], ...[1, 2, 3, 4, 5, 6].map(n => [String(n), `🚪 room ${n}`]), ["none", "🧱 nowhere"]];
+// A castle is rooms by number, each with its own exits. A hallway's: up to
+// four doors in its walls, each to the outside or to a room by its number
+// (its own too), and the stairs at its far end. By default, its first door
+// leads out and the others to the castle's other rooms in turn.
+const HALL_DOOR_DESTS = [["out", "🏰 out of the castle"], ...[1, 2, 3, 4, 5, 6].map(n => [String(n), `🚪 room ${n}`])];
+const hallDoorKey = (id, n, j) => "castleHallDoor" + n + "_" + j + id;
+const hallDoorDefault = (n, j) => j === 1 ? "out" : String([1, 2, 3, 4, 5, 6].filter(m => m !== n)[j - 2]);
 const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c2410c", "#1f2937"];
 // A castle's rooms: up to six, each in a style. The styles are by who made
 // them up (N's, M's and D's), and any castle may use any of them. A trap
@@ -288,7 +298,11 @@ const castleOf = o => {
   const fl = CASTLE_FLAG_DEFAULTS[id], flagA = o["castleFlagA" + id] ?? fl[0];
   return { id, flag: flagA, flagA, flagB: o["castleFlagB" + id] ?? fl[1],
            flagStyle: CASTLE_FLAG_STYLES.some(([v]) => v === o["castleFlagStyle" + id]) ? o["castleFlagStyle" + id] : "alternate",
-           roof: o["castleRoof" + id] ?? "#3b5ea8", carpet: o["castleCarpet" + id] ?? CASTLE_CARPETS[0], hallEnd: String(o["castleHallEnd" + id] ?? "auto"),
+           roof: o["castleRoof" + id] ?? "#3b5ea8", carpet: o["castleCarpet" + id] ?? CASTLE_CARPETS[0],
+           // each room's own exits, when it is a hallway (castleWays)
+           hall: [1, 2, 3, 4, 5, 6].map(n => ({
+             doors: [...Array(Math.max(0, Math.min(4, Math.round(o["castleHallDoors" + n + id] ?? 2))))].map((_, j) => String(o[hallDoorKey(id, n, j + 1)] ?? hallDoorDefault(n, j + 1))),
+             end: String(o["castleHallEnd" + n + id] ?? "auto") })),
            levels: Math.max(1, Math.min(5, Math.round(o["castleLevels" + id] ?? d.levels))),
            stone: o["castleStone" + id] ?? d.stone, trees: Math.max(0, Math.round(o["castleTrees" + id] ?? d.trees)),
            moat: Math.max(0, (o["castleMoat" + id] ?? d.moat) / 100),
@@ -362,7 +376,9 @@ const DEFAULTS = {
                 houses: 4, bridges: 2, ladders: 3, leaves: 60, treeHouseSize: 100,
                 castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
                   [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
-                   ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, "alternate"], ["castleRoof" + id, "#3b5ea8"], ["castleCarpet" + id, CASTLE_CARPETS[0]], ["castleHallEnd" + id, "auto"],
+                   ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, "alternate"], ["castleRoof" + id, "#3b5ea8"], ["castleCarpet" + id, CASTLE_CARPETS[0]],
+                   ...[1, 2, 3, 4, 5, 6].flatMap(n => [["castleHallDoors" + n + id, 2], ["castleHallEnd" + n + id, "auto"],
+                     ...[1, 2, 3, 4].map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
                    ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0]))])),
                 castleRoom: 1,
@@ -4953,12 +4969,16 @@ function castleWays(c, K, n, style) {
       .map(({ st, i }) => ({ attrs: `data-to="castleroom" data-room="${i + 1}"`, label: `${roomLabel(st).split(" ")[0]} ${i + 1}` }))];
   // the hallway's: doors in its side walls, by turns left and right, two to each stretch of it
   if (style === "hallway") {
-    // and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
-    const end = K.hallEnd === "none" ? 0 : K.hallEnd === "auto" ? rooms.indexOf("spiral") + 1 : Math.min(rooms.length, Number(K.hallEnd) || 0);
+    // its own exits (K.hall): each door to the outside or a room by its number (a room the castle no
+    // longer has: no door); and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
+    const H = K.hall[n - 1], to = d => d === "out" ? links[0] : Number(d) >= 1 && Number(d) <= rooms.length
+      ? { attrs: `data-to="castleroom" data-room="${Number(d)}"`, label: `${roomLabel(rooms[Number(d) - 1]).split(" ")[0]} ${Number(d)}` } : null;
+    const doors = H.doors.map(to).filter(Boolean);
+    const end = H.end === "none" ? 0 : H.end === "auto" ? rooms.indexOf("spiral") + 1 : Math.min(rooms.length, Number(H.end) || 0);
     // (to this very hallway too: the friend flies up the stairs and lands back here, as through a picture of its own room)
     const A = hallFarArch(c), far = end ? `<g class="portal" data-to="castleroom" data-room="${end}"><path d="${A.d}" fill="#000000" fill-opacity="0.01"/>` +
       plankSign(0, A.top - 14 * k * 0.18, k * 0.3, `${roomLabel(rooms[end - 1]).split(" ")[0]} ${end}`) + `</g>` : "";
-    return links.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("") + far;
+    return doors.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("") + far;
   }
   let t = "";
   links.forEach((L, i) => {
@@ -4980,7 +5000,7 @@ function castleroomScene(c) {
   const draw = { trap: () => trapRoomSvg(c, K, pits), dungeon1: () => dungeonSvg(c, K, false, bones), dungeon2: () => dungeonSvg(c, K, true, bones),
                  king: () => kingRoomSvg(c, K), greenhouse: () => greenhouseSvg(c, K), hallway: () => hallwaySvg(c, K) }[style];
   let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, style === "hallway" ? K.carpet : ""], draw);
-  s += SEP + part("croom-ways", [c.F, K.id, n, style, K.rooms.join(), K.hallEnd], () => castleWays(c, K, n, style));
+  s += SEP + part("croom-ways", [c.F, K.id, n, style, K.rooms.join(), JSON.stringify(K.hall[n - 1])], () => castleWays(c, K, n, style));
   return s;
 }
 
@@ -8527,19 +8547,25 @@ const TABS = [
     // settings (only the one picked shows its sliders)
     ["choice", "castle", "🏰 whose castle", CASTLES.map(([id, label]) => [id, label])],
     ...CASTLES.flatMap(([id]) => [
-      ["range", "castleLevels" + id, `🏰 ${id}'s castle: levels`, 1, 5, 1, 5],
-      ["color", "castleStone" + id, `🪨 ${id}'s castle: stone`, CASTLE_STONES],
-      ["range", "castleTrees" + id, `🌳 ${id}'s castle: trees nearby`, 0, 16, 0, 12],
-      ["range", "castleMoat" + id, `🌊 ${id}'s castle: moat and drawbridge`, 0, 250, 0, 200],
-      ["color", "castleFlagA" + id, `🚩 ${id}'s castle: flag color 1`, CASTLE_FLAG_COLORS],
-      ["color", "castleFlagB" + id, `🚩 ${id}'s castle: flag color 2`, CASTLE_FLAG_COLORS],
-      ["choice", "castleFlagStyle" + id, `🚩 ${id}'s castle: the two colors`, CASTLE_FLAG_STYLES],
-      ["color", "castleRoof" + id, `🔺 ${id}'s castle: roofs`, CASTLE_ROOFS],
-      ["color", "castleCarpet" + id, `🟥 ${id}'s castle: the hallway's carpet`, CASTLE_CARPETS],
-      ["choice", "castleHallEnd" + id, `🌀 ${id}'s castle: the hallway's far end leads to`, HALL_ENDS],
-      ["range", "castleRooms" + id, `🚪 ${id}'s castle: how many rooms`, 1, 6, 1, 6],
-      ...[1, 2, 3, 4, 5, 6].flatMap(n => [["choice", "castleRoom" + n + id, `🚪 ${id}'s castle: room ${n}`, CASTLE_ROOM_CHOICES],
-        ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), `💀 ${id}'s castle: room ${n}: skeletons (0 = none)`, 0, most, 0, 0])])]),
+      ["group", "castleLook" + id, `🏰 ${id}'s castle`, [
+        ["range", "castleLevels" + id, "🏰 levels", 1, 5, 1, 5],
+        ["color", "castleStone" + id, "🪨 stone", CASTLE_STONES],
+        ["range", "castleTrees" + id, "🌳 trees nearby", 0, 16, 0, 12],
+        ["range", "castleMoat" + id, "🌊 moat and drawbridge", 0, 250, 0, 200],
+        ["color", "castleFlagA" + id, "🚩 flag color 1", CASTLE_FLAG_COLORS],
+        ["color", "castleFlagB" + id, "🚩 flag color 2", CASTLE_FLAG_COLORS],
+        ["choice", "castleFlagStyle" + id, "🚩 the two colors", CASTLE_FLAG_STYLES],
+        ["color", "castleRoof" + id, "🔺 roofs", CASTLE_ROOFS],
+        ["color", "castleCarpet" + id, "🟥 the hallways' carpet", CASTLE_CARPETS]]],
+      ["group", "castleRoomList" + id, `🚪 ${id}'s castle: its rooms`, [
+        ["castlejump", "castleGo" + id, "🚶 go straight to"],
+        ["range", "castleRooms" + id, "🚪 how many rooms", 1, 6, 1, 6]]],
+      ...[1, 2, 3, 4, 5, 6].map(n => ["group", "castleRoomBox" + n + id, `🚪 ${id}'s castle: room ${n}`, [
+        ["choice", "castleRoom" + n + id, `🚪 room ${n} is`, CASTLE_ROOM_CHOICES],
+        ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
+        ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, 4, 0, 4],
+        ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, HALL_DOOR_DESTS]),
+        ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", HALL_ENDS]]])]),
     ["toggle", "seeHealer", "🌿 see the healer's hut"],
     // inside the witch's hut (the witch herself: drag her)
     ["range", "witchSize", "🧙 the witch's size (drag her to move her)", 30, 250, 70, 150],
@@ -8730,8 +8756,19 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(CASTLES.flatMap(([id]) => ["castleFlagA", "castleFlagB", "castleFlagStyle"].map(key =>
     ["background." + key + id, b => (b.kind === "clearing" || b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id]))),
   // (the carpet, when the castle has a hallway among its rooms)
-  ...Object.fromEntries(CASTLES.flatMap(([id]) => ["castleCarpet", "castleHallEnd"].map(key => ["background." + key + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id &&
-    [...Array(Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].some((_, i) => (b["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i]) === "hallway")]))),
+  ...Object.fromEntries(CASTLES.map(([id]) => ["background.castleCarpet" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id &&
+    [...Array(Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].some((_, i) => (b["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i]) === "hallway")])),
+  // (the castle's groups: its look where it is seen, its rooms and each room's own at the castle and inside it)
+  ...Object.fromEntries(CASTLES.flatMap(([id]) => {
+    const atCastle = b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id;
+    const nRooms = b => Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
+    const isHall = (b, n) => (b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1]) === "hallway";
+    return [["background.castleLook" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id],
+            ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle],
+            ...[1, 2, 3, 4, 5, 6].flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b)],
+              ["background.castleHallDoors" + n + id, b => isHall(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
+              ...[1, 2, 3, 4].map(k => ["background." + hallDoorKey(id, n, k), b => isHall(b, n) && k <= Math.round(b["castleHallDoors" + n + id] ?? 2)])])];
+  })),
   ...Object.fromEntries(CASTLES.flatMap(([id]) => [["background.castleRooms" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id],
     ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoom" + n + id,
       b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id && n <= (b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)]),
@@ -8813,6 +8850,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // settings are that tab's: the ghost's see-through-ness is the
   // visibility panel's)
   if (kind === "of") return control(key, label, { when: rest[0] ? () => rest[0](state[part]) : null });
+  // a group: its controls in a dashed box with its name, shown or hidden together
+  if (kind === "group") {
+    const g = el("div", { class: "chipset ctlgroup" }, [el("div", { class: "cap" }, [label]), ...rest[0].map(c => control(part, c))]);
+    const when = SHOWN_WHEN[part + "." + key];
+    if (when) syncs.push(() => { g.hidden = !when(state[part]); });
+    return g;
+  }
   const val = el("span", { class: "val" });
   const name = el("span", { class: "name" }, [label]);
   const lbl = el("div", { class: "lbl" }, [el("span", {}, [name]), val]);
@@ -8830,6 +8874,19 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                                        onclick: () => togglePin(id) }, "📌");
     name.before(pin);
     syncs.push(() => pin.setAttribute("aria-pressed", pinned(id)));
+  }
+  // chips to go straight to the castle or into one of its rooms, by number (to try a castle out)
+  if (kind === "castlejump") {
+    const row = el("div", { class: "row" });
+    box.append(row);
+    syncs.push(() => {
+      const B = state[part], K = castleOf(B), here = B.kind === "castle" ? 0 : B.kind === "castleroom" ? Math.round(B.castleRoom ?? 1) : -1;
+      row.replaceChildren(...[0, ...K.rooms.map((_, i) => i + 1)].map(n => el("button", { "aria-pressed": n === here, onclick: () => {
+        if (n) { B.kind = "castleroom"; B.castleRoom = n; } else B.kind = "castle";
+        [B.figX, B.figY] = ARRIVE[B.kind] || [0, 0];
+        changed();
+      } }, n ? `${roomLabel(K.rooms[n - 1]).split(" ")[0]} ${n}` : "🏰 outside")));
+    });
   }
   if (kind === "action") {
     const b = el("button", { onclick: () => { rest[0](); changed(); } }, label);
