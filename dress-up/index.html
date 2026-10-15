@@ -2722,7 +2722,7 @@ const unmarked = svg => svg.replaceAll(SEP, "");
 // (or a doorway, or a thing to drag) can have the friend stand in front of
 // it; one inside another object is part of that one.
 const obj = (name, z, svg) => OPEN(`<g data-obj="${name}" data-z="${Number.isFinite(z) ? f1(z) : "front"}">`) + svg + CLOSE;
-const byDepth = list => list.slice().sort((a, b) => a[1] - b[1]).map(([name, z, svg]) => obj(name, z, svg)).join("");
+const byDepth = list => list.slice().sort((a, b) => (a[1] - b[1]) || 0).map(([name, z, svg]) => obj(name, z, svg)).join("");
 const PARTS = new Map();
 function part(name, inputs, build) {
   const key = name + "|" + JSON.stringify(inputs);
@@ -8359,7 +8359,7 @@ const objDepth = n => n.getAttribute("data-z") === "front" ? Infinity : Number(n
 function sortObjects(root) {
   const objs = [...root.querySelectorAll("[data-obj]")];
   for (const parent of new Set(objs.map(n => n.parentNode))) {
-    const here = objs.filter(n => n.parentNode === parent), sorted = here.slice().sort((a, b) => objDepth(a) - objDepth(b));
+    const here = objs.filter(n => n.parentNode === parent), sorted = here.slice().sort((a, b) => (objDepth(a) - objDepth(b)) || 0);   // (two in front tie, in their text order)
     if (sorted.every((n, i) => n === here[i])) continue;
     const slots = here.map(n => { const m = n.ownerDocument.createComment(""); n.before(m); return m; });
     sorted.forEach((n, i) => slots[i].replaceWith(n));
