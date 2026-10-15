@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.42 (2026-10-15)
+
+Everything in 0.0.41, plus a door behind you.
+
+- **⬇️ A door behind you:** the bottom edge of a room's picture is a door we can't see, behind the friend, and now it can lead somewhere. In a castle hallway, the trap room and the greenhouse, a new setting, "⬇️ behind you (a door we can't see) leads to", sends it out of the castle or to any room; it leads nowhere until you set it. When it leads somewhere, a sign at the bottom of the picture points down to it, and a click on the sign goes there. The living room and each tree house room have the same setting, leading to any place in the game. (Rooms with a sign at the bottom already, like the king's room, have that sign as their door behind you; a dungeon has none, since a pit has no way in but from above.)
+- **The castle designer uses it:** it can put a way back in a room's door behind you when the room has no other free exit. In N's castle, the greenhouse's archway into the trap room was one way with no fix; now "🔧 add a door back" fixes it, and the castle has no problems left.
+
 ## 0.0.41 (2026-10-15)
 
 Everything in 0.0.40, plus the spiral staircase, where a hallway's stairs lead.
