@@ -2811,13 +2811,16 @@ function lakeScene(c) {
     let t = `<defs>${grad("bg-lake", "#2f7fc2", "#79c6ea", horizon, shore)}</defs>` + land(horizon - 6 * k, 4, "#5c9c4c", 0.4);
     // the far shore: a wood of round trees
     // (leaf pads behind, so the wood is thick, then leafy trees and a few pines)
+    // (the wood one object, standing on the far shore)
     t += `<defs>${leafyTreeDef("bg-lake-oak", 41)}${pineDef("bg-lake-pine", 43)}</defs>`;
-    for (let i = 0; i < 30; i++) t += padSvg(Math.floor(R(i, 44) * 8), x0 - 30 * k + (W + 60 * k) * i / 29, horizon - 10 * k - 10 * k * R(i, 45), k * 0.42 * (R(i, 46) < 0.5 ? -1 : 1), k * 0.5, ["#2f6a32", "#356f33", "#2a5f2c"][i % 3]);
+    let wood = "";
+    for (let i = 0; i < 30; i++) wood += padSvg(Math.floor(R(i, 44) * 8), x0 - 30 * k + (W + 60 * k) * i / 29, horizon - 10 * k - 10 * k * R(i, 45), k * 0.42 * (R(i, 46) < 0.5 ? -1 : 1), k * 0.5, ["#2f6a32", "#356f33", "#2a5f2c"][i % 3]);
     for (let i = 0; i < 24; i++) {
       const x = x0 - 20 * k + (W + 40 * k) * i / 23 + 12 * k * (R(i, 40) - 0.5), r = (22 + 18 * R(i, 41)) * k;
-      t += R(i, 47) < 0.25 ? use("bg-lake-pine", x, horizon, r * 2.4 / 200, r * 2.4 / 200, ` color="${["#2f6e3a", "#356f33"][i % 2]}"`)
-                           : use("bg-lake-oak", x, horizon + 2 * k, (r * 2.2 / 330) * (R(i, 48) < 0.5 ? -1 : 1), r * 2.2 / 330);
+      wood += R(i, 47) < 0.25 ? use("bg-lake-pine", x, horizon, r * 2.4 / 200, r * 2.4 / 200, ` color="${["#2f6e3a", "#356f33"][i % 2]}"`)
+                              : use("bg-lake-oak", x, horizon + 2 * k, (r * 2.2 / 330) * (R(i, 48) < 0.5 ? -1 : 1), r * 2.2 / 330);
     }
+    t += obj("far wood", horizon, wood);
     t += `<rect x="${f1(x0 - pad)}" y="${f1(horizon)}" width="${f1(W + 2 * pad)}" height="${f1(shore - horizon + 14 * k)}" fill="url(#bg-lake)"/>`;
     for (let i = 0; i < 18; i++) {   // the sun on the water
       const d = R(i, 43), x = x0 + W * R(i, 42), y = horizon + (shore - horizon) * (0.08 + 0.84 * d), l = (6 + 14 * d) * k;
@@ -2858,21 +2861,26 @@ function lakeScene(c) {
     [...Array(ducks)].map((_, i) => { const d = R(i, 52); return { d, i }; }).sort((a, b) => a.d - b.d).map(({ d, i }) => {
       const sd = R(i, 54) < 0.5 ? -1 : 1, z = 0.45 + 0.75 * d, x = x0 + W * (0.06 + 0.88 * R(i, 53)), y = horizon + 16 * k + (shore - horizon - 40 * k) * d;
       const go = sd * (24 + 36 * R(i, 55)) * k * z, bob = 2 * k * z, dur = (14 + 10 * R(i, 56)).toFixed(1);
-      return `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(go)} 0;${f1(go)} 0;0 0;0 0" keyTimes="0;0.44;0.5;0.94;1" ` +
+      // (each duck an object, at the water line under it)
+      return obj(`duck ${i + 1}`, y, `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(go)} 0;${f1(go)} 0;0 0;0 0" keyTimes="0;0.44;0.5;0.94;1" ` +
              `calcMode="spline" keySplines="0.4 0 0.6 1;0 0 1 1;0.4 0 0.6 1;0 0 1 1" dur="${dur}s" repeatCount="indefinite"/>` +
              `<g transform="translate(${f1(x)} ${f1(y)})">` +
              `<g><animateTransform attributeName="transform" type="scale" values="1 1;-1 1" keyTimes="0;0.47" calcMode="discrete" dur="${dur}s" repeatCount="indefinite"/>` +
              `<g>${lfoTimed(o, "fast", R(i, 58), `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-bob)};0 0;0 ${f1(bob)};0 0" dur="${(2.2 + 0.6 * R(i, 58)).toFixed(1)}s" repeatCount="indefinite"/>`)}` +
              `<g><animateTransform attributeName="transform" type="rotate" values="0;${(3 * sd).toFixed(1)};0;${(-2 * sd).toFixed(1)};0" dur="${(2.6 + 0.8 * R(i, 57)).toFixed(1)}s" repeatCount="indefinite"/>` +
-             use("bg-duck", 0, 0, k * sd * z, k * z) + `</g></g></g></g></g>`;
+             use("bg-duck", 0, 0, k * sd * z, k * z) + `</g></g></g></g></g>`);
     }).join(""));
   // cattails at the water's edge, either side
+  // (each side's a row, one object at its middle depth)
   s += SEP + part("lake-cattails", [c.F, tails], () => `<defs><g id="bg-cattail">` +
       `<path d="M0 0 Q-14 -60 -30 -108 M2 0 Q16 -50 26 -94 M-2 0 Q-4 -70 -12 -136" fill="none" stroke="#5b8f35" stroke-width="4" stroke-linecap="round"/>` +
       `<line x1="0" y1="0" x2="2" y2="-152" stroke="#6f8f3a" stroke-width="3"/><rect x="-5" y="-132" width="13" height="44" rx="6.5" fill="#6b3f1f"/>` +
       `<line x1="1.5" y1="-132" x2="1.5" y2="-154" stroke="#7a6a3a" stroke-width="2"/></g></defs>` +
-    [...Array(tails)].map((_, i) =>
-      use("bg-cattail", side(i) * (W * 0.25 + W * 0.25 * R(i, 60)), shore + 10 * k * R(i, 61), k * (R(i, 63) < 0.5 ? -1 : 1) * (0.75 + 0.5 * R(i, 62)), k * (0.75 + 0.5 * R(i, 62)))).join(""));
+    [-1, 1].map(sd => {
+      const row = [...Array(tails)].map((_, i) => side(i) !== sd ? "" :
+        use("bg-cattail", side(i) * (W * 0.25 + W * 0.25 * R(i, 60)), shore + 10 * k * R(i, 61), k * (R(i, 63) < 0.5 ? -1 : 1) * (0.75 + 0.5 * R(i, 62)), k * (0.75 + 0.5 * R(i, 62)))).join("");
+      return row && obj(sd < 0 ? "cattails, left" : "cattails, right", shore + 5 * k, row);
+    }).join(""));
   return s;
 }
 
@@ -2970,25 +2978,37 @@ function houseScene(c) {
     return t;
   });
   // the trees beside the house: one drawing, its size the slider's
+  // (each an object, where its trunk meets the lawn)
   s += SEP + part("house-trees", [c.F, hs, ts], () => `<defs>${oakDef("bg-oak", ts)}</defs>` +
-    use("bg-oak", Math.max(X(-300), x0 + 50 * k), yb + 20 * k, k) + use("bg-oak", Math.min(X(370), x1 - 50 * k), yb + 30 * k, k));
-  // the building, in its own units: its size is its group's transform
-  s += OPEN(`<g id="bg-building" ${tf(bx, yb, S)}>`) + part("house-building", [], houseBuildingSvg);
+    obj("tree, left", yb + 20 * k, use("bg-oak", Math.max(X(-300), x0 + 50 * k), yb + 20 * k, k)) +
+    obj("tree, right", yb + 30 * k, use("bg-oak", Math.min(X(370), x1 - 50 * k), yb + 30 * k, k)));
   // flowers in the bed in front of the bushes (not the door's): two
   // drawings, colored by their <use>, in the building's group
-  s += SEP + part("house-flowers", [flowers], () => `<defs>${FLOWER_DEFS}</defs>` +
+  const bed = part("house-flowers", [flowers], () => `<defs>${FLOWER_DEFS}</defs>` +
     [...Array(flowers)].map((_, i) => use(i % 2 ? "bg-daisy" : "bg-tulip", (i % 16 < 8 ? -222 : -12) + (i % 8) * 14.5 + 4 * R(i, 95), 6 + 9 * Math.floor(i / 16), 1, 1,
-      ` color="${["#e53935", "#ffffff", "#f7a8c8", "#f2c12e", "#9b59b6", "#ff8c42"][i % 6]}"`)).join("")) + CLOSE;
+      ` color="${["#e53935", "#ffffff", "#f7a8c8", "#f2c12e", "#9b59b6", "#ff8c42"][i % 6]}"`)).join(""));
+  // the building, in its own units: its size is its group's transform
+  // (the whole group one object, standing on its base line)
+  s += obj("house", yb, OPEN(`<g id="bg-building" ${tf(bx, yb, S)}>`) + part("house-building", [], houseBuildingSvg) + SEP + bed + CLOSE);
   // toys on the lawn, either side of the walk, off the driveway
-  s += SEP + part("house-toys", [c.F, hs, toys], () => `<defs>${toyDefs}</defs>` + [...Array(toys)].map((_, i) => {
-    const u = R(i, 71), y = yb + 40 * k + (y1 - yb - 70 * k) * u;
-    let x = side(i) * (W * 0.16 + W * 0.3 * R(i, 70));
-    const drive = X(120) + 30 * k * (y - yb) / (y1 + pad - yb);
-    if (x > drive - 30 * k) x = -x;
-    return use(`bg-toy-${TOYS[i % TOYS.length]}`, x, y, k * (0.9 + 0.8 * u) * (R(i, 72) < 0.5 ? -1 : 1), k * (0.9 + 0.8 * u));
-  }).join(""));
+  // (each standing toy an object, nearer ones later; the frisbee and the
+  // rope lie flat on the grass, so they go first, under the rest)
+  s += SEP + part("house-toys", [c.F, hs, toys], () => {
+    const flat = [], standing = [];
+    for (let i = 0; i < toys; i++) {
+      const u = R(i, 71), y = yb + 40 * k + (y1 - yb - 70 * k) * u, toy = TOYS[i % TOYS.length];
+      let x = side(i) * (W * 0.16 + W * 0.3 * R(i, 70));
+      const drive = X(120) + 30 * k * (y - yb) / (y1 + pad - yb);
+      if (x > drive - 30 * k) x = -x;
+      const t = use(`bg-toy-${toy}`, x, y, k * (0.9 + 0.8 * u) * (R(i, 72) < 0.5 ? -1 : 1), k * (0.9 + 0.8 * u));
+      if (toy === "frisbee" || toy === "rope") flat.push(t);
+      else standing.push([i < TOYS.length ? toy : `${toy} ${Math.floor(i / TOYS.length) + 1}`, y, t]);
+    }
+    return `<defs>${toyDefs}</defs>` + flat.join("") + byDepth(standing);
+  });
   // butterflies, fluttering with the quick LFO
-  s += SEP + part("house-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => butterfliesSvg(c, [[x0 + W * 0.15, g - 60 * k, 1], [x0 + W * 0.3, g - 100 * k, 0.9], [x0 + W * 0.84, g - 70 * k, 1.1]]));
+  // (at the depth of the ground under the nearest)
+  s += obj("butterflies", g - 60 * k, part("house-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => butterfliesSvg(c, [[x0 + W * 0.15, g - 60 * k, 1], [x0 + W * 0.3, g - 100 * k, 0.9], [x0 + W * 0.84, g - 70 * k, 1.1]])));
   return s;
 }
 
@@ -3325,10 +3345,13 @@ function treehouseScene(c) {
     let t = `<defs>${oakDef("bg-woods-oak", 1)}${pineDef("bg-pine", 3)}${FLOWER_DEFS}</defs>`;
     const tree = (i, x, y, sc) => i % 3 === 1 ? use("bg-woods-oak", x, y, sc * (R(i, 211) < 0.5 ? -1 : 1), sc)
                                               : use("bg-pine", x, y, sc, sc, ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
+    // (the far row one object, at its middle depth; the stream and the
+    // flowers lie flat on the ground, so they come next, under all that
+    // stands nearer: the nearer trees, a row each side, and each bush)
+    let far = "";
     for (let i = 0; i < 30; i++)   // the far row, small, on the far hills
-      t += tree(i, x0 - 30 * k + (W + 60 * k) * i / 29 + 14 * k * (R(i, 210) - 0.5), g - 128 * k + 10 * k * R(i, 212), k * (0.32 + 0.2 * R(i, 213)));
-    for (let i = 0; i < 12; i++)   // nearer ones, at the meadow's edge, left and right
-      t += tree(i + 1, side(i) * (W * 0.2 + W * 0.32 * R(i, 214)), g - 42 * k + 8 * k * R(i, 215), k * (0.55 + 0.3 * R(i, 216)));
+      far += tree(i, x0 - 30 * k + (W + 60 * k) * i / 29 + 14 * k * (R(i, 210) - 0.5), g - 128 * k + 10 * k * R(i, 212), k * (0.32 + 0.2 * R(i, 213)));
+    t += obj("trees, far row", g - 123 * k, far);
     // a stream winding down from the hills, past the tree, out at the front
     const sp = streamAt(c), Lb = [], Rb = [];
     for (let i = 0; i <= 30; i++) { const [x, y, hw] = sp(i / 30); Lb.push(P(x - hw, y)); Rb.push(P(x + hw, y)); }
@@ -3339,24 +3362,29 @@ function treehouseScene(c) {
       const [x, y, hw] = sp(0.15 + 0.8 * R(i, 222)), l = hw * 0.5;
       t += `<path d="M${P(x - l, y)} Q${P(x, y - l * 0.25)} ${P(x + l, y)}" fill="none" stroke="#ffffff" stroke-width="${f1(1.6 * k)}" opacity="0.7"/>`;
     }
-    for (let i = 0; i < 16; i++) {  // bushes
-      const x = side(i) * (W * 0.12 + W * 0.36 * R(i, 217)), y = g - 18 * k + 50 * k * R(i, 218), r = (16 + 14 * R(i, 219)) * k;
-      if (inStream(sp, x, y, r * 1.4)) continue;   // (no bushes in the water)
-      t += bushSvg(x, y, r * 1.4, 300 + i);
-    }
     for (let i = 0; i < 48; i++) {  // flowers in the grass
       const d = R(i, 220), x = x0 + W * R(i, 221), y = g - 22 * k + (y1 - g + 10 * k) * d;
       if (inStream(sp, x, y, 8 * k)) continue;
       t += use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.7 * d), k * (0.8 + 0.7 * d), ` color="${FLOWER_COLORS[i % 6]}"`);
     }
-    return t;
+    const near = ["", ""], stand = [];
+    for (let i = 0; i < 12; i++)   // nearer ones, at the meadow's edge, left and right
+      near[side(i) < 0 ? 0 : 1] += tree(i + 1, side(i) * (W * 0.2 + W * 0.32 * R(i, 214)), g - 42 * k + 8 * k * R(i, 215), k * (0.55 + 0.3 * R(i, 216)));
+    stand.push(["trees, left", g - 38 * k, near[0]], ["trees, right", g - 38 * k, near[1]]);
+    for (let i = 0; i < 16; i++) {  // bushes
+      const x = side(i) * (W * 0.12 + W * 0.36 * R(i, 217)), y = g - 18 * k + 50 * k * R(i, 218), r = (16 + 14 * R(i, 219)) * k;
+      if (inStream(sp, x, y, r * 1.4)) continue;   // (no bushes in the water)
+      stand.push([`bush, ${side(i) < 0 ? "left" : "right"} ${Math.floor(i / 2) + 1}`, y, bushSvg(x, y, r * 1.4, 300 + i)]);
+    }
+    return t + byDepth(stand);
   });
   // the tree, its leaves, houses, bridges and ladders: built in the tree's
   // units, so its size slider builds none of them again
-  s += OPEN(`<g id="bg-tree" ${tf(0, g, ts * k)}>`) + treeInner(c);
-  s += CLOSE;
+  // (the whole group one object, standing where its trunk meets the ground)
+  s += obj("tree house", g, OPEN(`<g id="bg-tree" ${tf(0, g, ts * k)}>`) + treeInner(c) + CLOSE);
   // butterflies, fluttering with the quick LFO
-  s += SEP + part("treehouse-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => butterfliesSvg(c, [[x0 + W * 0.12, g - 80 * k, 1], [x0 + W * 0.86, g - 60 * k, 1.1]]));
+  // (at the depth of the ground under the nearest)
+  s += obj("butterflies", g - 60 * k, part("treehouse-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => butterfliesSvg(c, [[x0 + W * 0.12, g - 80 * k, 1], [x0 + W * 0.86, g - 60 * k, 1.1]])));
   return s;
 }
 
@@ -3422,7 +3450,9 @@ function livingroomScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, all, o } = c;
   const cs = (o.couchSize ?? 100) / 100, pillows = o.pillows ?? 4, ps = (o.picSize ?? 100) / 100;
   const floor = g - 120 * k;
-  let s = SEP + part("living-room", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => {
+  // (the room's part is two: its walls and floor, and what stands on the
+  // floor, which comes after the window and the pictures on the wall)
+  const [room, things] = part("living-room", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => {
     let t = `<defs><pattern id="bg-paper" patternUnits="userSpaceOnUse" width="${f1(36 * k)}" height="${f1(36 * k)}">` +
             `<rect width="${f1(36 * k)}" height="${f1(36 * k)}" fill="#efe1c6"/><rect width="${f1(14 * k)}" height="${f1(36 * k)}" fill="#e7d5b4"/>` +
             `<circle cx="${f1(25 * k)}" cy="${f1(18 * k)}" r="${f1(2.5 * k)}" fill="#d9b98a"/></pattern></defs>` + all("url(#bg-paper)");
@@ -3433,13 +3463,14 @@ function livingroomScene(c) {
     t += `<rect x="${f1(x0 - pad)}" y="${f1(floor - 14 * k)}" width="${f1(W + 2 * pad)}" height="${f1(16 * k)}" fill="#ffffff" stroke="#d8cdb8" stroke-width="${f1(1.5 * k)}"/>` +
          [1, 0.78, 0.56, 0.34].map((u, i) => `<ellipse cx="0" cy="${f1(g + 6 * k)}" rx="${f1(W * 0.42 * u)}" ry="${f1(70 * k * u)}" fill="${["#3d6e8f", "#e8c870", "#c0504d", "#3d6e8f"][i]}"/>`).join("");
     // a lamp on a little table on the right, a plant on the left
+    // (each an object, where it stands on the floor)
     const lx = x1 - W * 0.1, ly = floor + 30 * k;
-    t += `<rect x="${f1(lx - 40 * k)}" y="${f1(ly - 110 * k)}" width="${f1(80 * k)}" height="${f1(10 * k)}" fill="#6b4423"/>` +
+    const lamp = obj("lamp", ly, `<rect x="${f1(lx - 40 * k)}" y="${f1(ly - 110 * k)}" width="${f1(80 * k)}" height="${f1(10 * k)}" fill="#6b4423"/>` +
          [-32, 32].map(dx => `<line x1="${f1(lx + dx * k)}" y1="${f1(ly - 100 * k)}" x2="${f1(lx + dx * 1.1 * k)}" y2="${f1(ly)}" stroke="#6b4423" stroke-width="${f1(6 * k)}"/>`).join("") +
          `<rect x="${f1(lx - 6 * k)}" y="${f1(ly - 200 * k)}" width="${f1(12 * k)}" height="${f1(90 * k)}" fill="#c9a94a"/>` +
          `<polygon points="${P(lx - 30 * k, ly - 200 * k)} ${P(lx + 30 * k, ly - 200 * k)} ${P(lx + 44 * k, ly - 150 * k)} ${P(lx - 44 * k, ly - 150 * k)}" fill="#f6e7b5" transform="translate(0 ${f1(-50 * k)})"/>` +
          `<ellipse cx="${f1(lx)}" cy="${f1(ly - 190 * k)}" rx="${f1(60 * k)}" ry="${f1(30 * k)}" fill="#fff6c8" opacity="0.35">` +
-           sceneLfo(o, "slow", 0.2, "opacity", (v, amp) => (0.35 * (1 + (0.25 + 0.6 * amp) * v)).toFixed(3)) + `</ellipse>`;
+           sceneLfo(o, "slow", 0.2, "opacity", (v, amp) => (0.35 * (1 + (0.25 + 0.6 * amp) * v)).toFixed(3)) + `</ellipse>`);
     // a little wall clock high on the right (above the pictures, as the small one on the left is), its pendulum swinging with the quick LFO
     { const cx = x1 - W * 0.217, cy = y0 + H * 0.075, r = 15 * k;
       t += `<rect x="${f1(cx - r - 6 * k)}" y="${f1(cy - r - 8 * k)}" width="${f1(2 * r + 12 * k)}" height="${f1(2 * r + 50 * k)}" rx="${f1(8 * k)}" fill="#7a4a26" stroke="#4a2c14" stroke-width="${f1(2 * k)}"/>` +
@@ -3453,13 +3484,14 @@ function livingroomScene(c) {
            `<line x1="${f1(cx)}" y1="${f1(cy)}" x2="${f1(cx)}" y2="${f1(cy - r * 0.6)}" stroke="#3a2414" stroke-width="${f1(2 * k)}" stroke-linecap="round"/>` +
            `<line x1="${f1(cx)}" y1="${f1(cy)}" x2="${f1(cx + r * 0.45)}" y2="${f1(cy + r * 0.2)}" stroke="#3a2414" stroke-width="${f1(2 * k)}" stroke-linecap="round"/>`; }
     const px = x0 + W * 0.08, py = floor + 50 * k;
-    t += `<path d="M${P(px - 30 * k, py - 60 * k)} H${f1(px + 30 * k)} L${P(px + 22 * k, py)} H${f1(px - 22 * k)} Z" fill="#c0663a"/>`;
+    let plant = `<path d="M${P(px - 30 * k, py - 60 * k)} H${f1(px + 30 * k)} L${P(px + 22 * k, py)} H${f1(px - 22 * k)} Z" fill="#c0663a"/>`;
     for (let i = 0; i < 9; i++) {
       const a = -Math.PI / 2 + (i - 4) * 0.3, l = (90 + 40 * R(i, 130)) * k;
-      t += `<path d="M${P(px, py - 60 * k)} Q${P(px + Math.cos(a) * l * 0.4 - 20 * k, py - 60 * k + Math.sin(a) * l * 0.6)} ${P(px + Math.cos(a) * l, py - 60 * k + Math.sin(a) * l)} Q${P(px + Math.cos(a) * l * 0.5 + 20 * k, py - 60 * k + Math.sin(a) * l * 0.5)} ${P(px, py - 60 * k)} Z" fill="${i % 2 ? "#2f8a3a" : "#3fa34a"}"/>`;
+      plant += `<path d="M${P(px, py - 60 * k)} Q${P(px + Math.cos(a) * l * 0.4 - 20 * k, py - 60 * k + Math.sin(a) * l * 0.6)} ${P(px + Math.cos(a) * l, py - 60 * k + Math.sin(a) * l)} Q${P(px + Math.cos(a) * l * 0.5 + 20 * k, py - 60 * k + Math.sin(a) * l * 0.5)} ${P(px, py - 60 * k)} Z" fill="${i % 2 ? "#2f8a3a" : "#3fa34a"}"/>`;
     }
-    return t;
+    return [t, lamp + obj("plant", py, plant)];
   });
+  let s = SEP + room;
   // the window above the couch, and what is outside it: a scene of its
   // own, at its own detail (a window in a picture of the room shows it too,
   // once, not forever)
@@ -3487,8 +3519,11 @@ function livingroomScene(c) {
   // the pictures, either side of the window
   s += SEP + picturesSvg(o, "livingroom", [[-255, y0 + H * 0.27, 210 * k], [255, y0 + H * 0.27, 210 * k], [-230, y0 + H * 0.07, 95 * k],
                                      [230, y0 + H * 0.07, 95 * k], [-350, y0 + H * 0.07, 80 * k], [350, y0 + H * 0.07, 80 * k]], ps);
+  // the lamp and the plant, in front of the wall
+  s += SEP + things;
   // the couch and its pillows, in the couch's own units
-  s += OPEN(`<g id="bg-couch" ${tf(0, g - 40 * k, cs * k)}>`) + part("living-couch", [], () =>
+  // (the whole group one object, standing on its feet)
+  s += obj("couch", g - 40 * k, OPEN(`<g id="bg-couch" ${tf(0, g - 40 * k, cs * k)}>`) + part("living-couch", [], () =>
     `<rect x="-300" y="-6" width="600" height="12" rx="6" fill="#000000" opacity="0.15"/>` +
     [-270, 270].map(x => `<rect x="${x - 8}" y="-20" width="16" height="22" fill="#4a2e1a"/>`).join("") +
     `<rect x="-260" y="-250" width="520" height="160" rx="40" fill="#2f6f86"/>` +
@@ -3498,9 +3533,11 @@ function livingroomScene(c) {
     SEP + part("living-pillows", [pillows], () => `<defs><g id="bg-pillow"><path d="M-36 -34 Q0 -44 36 -34 Q44 0 36 34 Q0 44 -36 34 Q-44 0 -36 -34 Z" fill="currentColor" stroke="#00000033" stroke-width="2"/>` +
       `<circle cx="0" cy="0" r="5" fill="#00000022"/></g></defs>` +
       [...Array(pillows)].map((_, i) => use("bg-pillow", -195 + (i % 5) * 97 + (i >= 5 ? 48 : 0), -165 + (i >= 5 ? 22 : 0), 1, 1, ` color="${["#f2c12e", "#e85d75", "#ffffff", "#8bc34a", "#ff8c42", "#9b59b6", "#00b894", "#e53935"][i % 8]}"`)).join("")) +
-    CLOSE;
+    CLOSE);
   // (a door behind us, at the bottom of the picture, where it leads somewhere)
-  s += SEP + behindSign(c, o.livingBack);
+  // (its sign, toward us on its post, in front of everything)
+  const back = behindSign(c, o.livingBack);
+  if (back) s += obj("sign", Infinity, back);
   return s;
 }
 
