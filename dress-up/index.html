@@ -2841,7 +2841,10 @@ function houseScene(c) {
   s += SEP + part("house-paths", [c.F, hs], () => {
     const gl = X(120), gr = X(270), d = X(-60);
     let t = `<polygon points="${P(gl, yb)} ${P(gr, yb)} ${P(gr + 150 * k, y1 + pad)} ${P(gl + 30 * k, y1 + pad)}" fill="#a3a09a"/>` +
-            [0.3, 0.6].map(u => `<line x1="${f1(gl + 30 * k * u)}" y1="${f1(yb + (y1 - yb) * u)}" x2="${f1(gr + 150 * k * u)}" y2="${f1(yb + (y1 - yb) * u)}" stroke="#8a8780" stroke-width="${f1(2 * k)}"/>`).join("");
+            // (its joints, edge to edge: the edges spread over the whole way to y1 + pad, so at a
+            // joint's height they are a share v of the way out, not u)
+            [0.3, 0.6].map(u => { const y = yb + (y1 - yb) * u, v = (y - yb) / (y1 + pad - yb);
+              return `<line x1="${f1(gl + 30 * k * v)}" y1="${f1(y)}" x2="${f1(gr + 150 * k * v)}" y2="${f1(y)}" stroke="#8a8780" stroke-width="${f1(2 * k)}"/>`; }).join("");
     for (let j = 0; j < 9; j++) for (let m = 0; m < 3; m++) {
       const u = (j + 0.5) / 9, cx = d + (0 - d) * u, cy = yb + 8 * k + (y1 - yb) * u, w = (50 * hs + 110 * u) * k, h = (8 + 20 * u) * k;
       const sx = cx + (m - 1) * w / 3 + w * 0.05 * (R(j * 3 + m, 90) - 0.5);
