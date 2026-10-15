@@ -5595,7 +5595,9 @@ function draw() {
   // (her brim covers her hair: as wide as its widest reach and 14 more,
   // up to 300; and the hair above the brim is inside the hat, unseen)
   const brimRx = witch ? Math.min(300, Math.max(128, hairReach(state.hair).half + 14)) : 128;
-  const tucked = (inner, id) => witch ? `<clipPath id="${id}"><rect x="-4000" y="40" width="8200" height="8000"/></clipPath>` +
+  // (y: the brim's line where the hair is drawn: 40 in the hair's own
+  // units, stretched with the head; the bangs give it in the face's)
+  const tucked = (inner, id, y = 40) => witch ? `<clipPath id="${id}"><rect x="-4000" y="${f1(y)}" width="8200" height="8000"/></clipPath>` +
                                         `<g clip-path="url(#${id})">${inner}</g>` : inner;
   // (her web is tiled all over the dress, or "a few" separate webs on it,
   // as the Hazel slide draws them)
@@ -5873,7 +5875,9 @@ function draw() {
   svg += veil("head", inFace(face.under)) + veil("eyes", inFace(face.eyes)) + veil("head", inFace(face.over));
   // and the front of the hair over them all: the bangs (on the lid, when
   // the head explodes)
-  if (!C) svg += veil("hair", inFace(tucked(bangsSvg(state.hair, F), "under-hat-bangs")));
+  // (under a witch's hat, from its brim down: the brim's line as the hat is
+  // stretched with the head, which big eyes make taller)
+  if (!C) svg += veil("hair", inFace(tucked(bangsSvg(state.hair, F), "under-hat-bangs", HEAD_C + (40 - HEAD_C) * headH(F))));
   // a witch's hat over it, stretched with the head as hair is (and flying
   // off with the lid); her cat on her shoulder
   if (witch) {

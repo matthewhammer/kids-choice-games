@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+Changes since 0.0.31, for the next version, which waits for Matthew's go-ahead.
+
+- **Fixed: bangs under the witch's hat.** With big eyes (which make the head taller, and lift the hat with it), a band of bare forehead opened between the hat's brim and the bangs, and only bits of hair over the eyes showed. Now the bangs come from right under the brim, whatever the eyes' size.
+
 ## 0.0.31 (2026-10-14)
 
 Everything in 0.0.30, plus fairy wings that flap with the music's LFOs.
