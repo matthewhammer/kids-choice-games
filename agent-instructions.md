@@ -124,6 +124,24 @@ A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground 
 - **A scene that follows an LFO must read it through its options**, as `o["lfo:A"]` (see `sceneOpts`). Scenes are cached by the background settings they read (`partByReads`), and the mixer's LFOs are not background settings. Without that read, a change on the mixing board never reaches the scene. The fairy house had this bug until the cat room's release.
 - **Everything that moves with an LFO keeps its own phase**, so things side by side never move in lockstep (Matthew's call for the cats' wags). Each cat has its own offset into the cycle, and its own pace when it follows no LFO. An LFO too fast to show is drawn as a blur of copies spread round the cycle (`LFO_BLUR`), in time with nothing.
 
+## Drawing gotchas, and a routine for finding them
+
+Each picture is a hand-drawn illusion of depth, and a few kinds of slip break it at once. Matthew and M have caught each of these by eye:
+
+1. **A line runs past the thing it belongs to, or stops short of it.** Examples: floor tiles that carry on up into the walls (the castle rooms' floors); veins that run off a leaf's edge or stop well inside it; lead lines in a window that cross its arch. Every seam, vein, grid, tile line and plank edge must end on its shape's outline. There are two ways to make sure:
+   - work out its ends on the outline (on a perspective floor at height `y`, the floor spans `x` within ±`bw·(y − vy)/(floor − vy)`);
+   - or draw it inside a `clipPath` of the shape.
+2. **A line that should follow the perspective doesn't.** In a room, everything on a side wall, the floor or the ceiling converges on the vanishing point `(0, vy)` from `roomFrame`. A grid or mesh drawn as an upright screen rectangle on a side wall looks pasted on. Place every point with `at(X, Y, z)` (or `out`), and draw the grid between projected points. The spacing grows toward us, as 1/(1 + z); it is not even.
+3. **A thing hangs from nothing, or stands on nothing.** M found lanterns hanging in the air beside the fairy forest's great tree, with no branch to hang from. Anything that hangs needs its branch, hook, chain or beam. Anything that stands needs its floor, shelf or ground under it, at the same depth.
+4. **Layers are out of depth order.** Examples: a door's sign drawn over a cat on a cat tree; a cat on a far shelf drawn in front of the near rope bridge. Draw back to front (sort by depth, as the cat room's cats are sorted), and keep a room's signs clear of what it holds.
+5. **Things hidden behind the friend.** The friend stands in the middle of every scene and covers about a third of its width, from mid-height down. Put what matters to the sides, and always check a scene with the friend hidden too.
+
+**The routine, after drawing or changing a scene:**
+1. **Render a contact sheet** in muted headless Chrome. Include the scene as it starts, the same with the friend hidden, and the extremes of its settings (the most and fewest of everything, each color theme). Use the picture's full size, with its animations removed, or caught at a few moments.
+2. **Look at it at full size, region by region,** not as a thumbnail: corners, where floors meet walls, windows, what hangs, what stands. Ask the five questions above of each part.
+3. **Check the code you touched** for lines spanning fixed screen widths (`-W - pad` to `W + pad`), evenly spaced grids inside a room, and points inside a room not placed with `at()` or `out()`.
+4. **Fix, re-render, and confirm** that nothing else changed: compare every other scene's markup with the last commit's (the byte-identical check).
+
 ## Testing
 
 - **Silence.** Every test browser runs muted: start headless Chrome with `--mute-audio`. A dispatched click counts as a user gesture and starts the music; one test once played through the laptop's speakers. In a visible browser, mute the game (🔇) before clicking anything. Test audio only at volume 0, or render it offline with `OfflineAudioContext` at 22 kHz or more (at 8 kHz the hi-hats render silent).
