@@ -300,6 +300,28 @@ const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, witch: 0.4, cem
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
+// (ticket 99) The friend is smaller farther back and bigger nearer, as a
+// place draws what stands in it. A place's vanishing height is the y where
+// a thing standing there would shrink to nothing (the horizon of its
+// ground); the friend's size is their slider's times the place's own
+// (SCENE_FIG), times (feet - vanish) / (arrival - vanish): exactly the
+// place's own size where they arrive (ARRIVE, else the ground line, 320),
+// kept between 0.3 and 1.5. A castle room's comes from its perspective
+// (roomFrame: the eye's height on the wall); rooms drawn flatter, with big
+// things at their back walls, vanish far above the picture.
+const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, tent: -60, imagination: -60 };
+function sceneVanish(B) {
+  if (B.kind === "castleroom") {
+    const H = SCENE.bottom - SCENE.top, k = H / 700, top = SCENE.top + H * 0.1, floor = SCENE.ground - 110 * k;
+    const style = castleOf(B).rooms[Math.round(B.castleRoom ?? 1) - 1];
+    return top + (floor - top) * (style === "hallway" || style === "dining" ? 0.3 : 0.55);
+  }
+  return SCENE_VANISH[B.kind] ?? 60;
+}
+function depthSize(B, figY) {
+  const v = sceneVanish(B), arrive = SCENE.ground + (ARRIVE[B.kind] || [0, 0])[1];
+  return Math.max(0.3, Math.min(1.5, (SCENE.ground + figY - v) / (arrive - v)));
+}
 // The three castles, N's, M's and D's, each with its own settings: how many
 // levels (1 to 5), its stone, how many trees grow round it, and how wide
 // its moat is (and so its drawbridge), from none to very wide. The forest
@@ -8653,7 +8675,7 @@ function draw() {
   const bgText = scened ? partByReads(`scene:${BG.kind}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o)) : null;
   // and in a scene, the figure's feet (its ground, g) on the stage's
   // ground (sg), at its own size about them, where it was dragged
-  figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: ground, sg: SCENE.ground }
+  figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: ground, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: ground, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
   svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-ground)})">`;
