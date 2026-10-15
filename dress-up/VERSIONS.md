@@ -12,7 +12,7 @@ Each version lists the game's features as of that version. The newest version is
 - **Fixed: a picture takes you to its own place.** A picture showed its place's own signposts and doors, and a click on one of them took you where that one led (the camp site's picture to the mountain trail); now the whole picture is the way in (the living room's pictures too).
 - **💎 Gems in the cave behind the falls:** gems all over its walls ("💎 gems on the walls", up to 40), each with a sparkle, and sparkles on its crystals, set like the night sky's stars: their shape, size (up to huge), brightness and twinkle.
 - **💦 The jungle waterfall's speed and time of day:** "how fast it falls", and "🌗 time of day" (☀️ day, 🌇 sunset, 🌙 night, the moon out at night), the waterfall's own settings, so the falls and the view out of the cave behind them always agree. Its width shows in the cave too.
-- **🏰 D's castle, as D chose it:** to start with, green-grey stone, 16 trees round it, a narrower moat, purple and green flags in stripes, and purple roofs.
+- **🏰 D's castle, as D chose it:** to start with, five levels, green-grey stone, 16 trees round it, a narrower moat, purple and green flags in stripes, and purple roofs.
 - **Fixed: torch flames stay on their torches.** A torch's flame flickered by stretching about the corner of the picture, so the farther a torch was from the middle, the further its flame drifted off it (the dungeons' too).
 
 ## 0.0.34 (2026-10-15)
