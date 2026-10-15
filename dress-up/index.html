@@ -334,13 +334,14 @@ const ROOM_KINDS = {
   dining: { label: "🍽️ dining room", by: "M", exits: "long", tone: "#9c8f84", draw: (c, K, r) => diningRoomSvg(c, K, r) },
   kitchen: { label: "🍲 kitchen", by: "more", exits: "side", tone: "#b8a58c", draw: (c, K) => kitchenSvg(c, K) },
   smithy: { label: "⚒️ smithy", by: "more", exits: "side", tone: "#5e5650", draw: (c, K) => smithySvg(c, K) },
+  spiral: { label: "🌀 spiral staircase", by: "N", exits: "spiral", tone: "#8d8796", draw: (c, K) => spiralSvg(c, K) },
 };
 const ROOM_STYLES = [["N", "N's rooms"], ["M", "M's rooms"], ["more", "more rooms"]].map(([by, name]) =>
   [by, name, Object.entries(ROOM_KINDS).filter(([, R]) => R.by === by).map(([st, R]) => [st, R.label])]);
 // the rooms whose exits are their own (K.hall): a hallway's doors and stairs; the
 // others', doors in their side walls, as the king's room's, and a sign out toward
 // us; each of these rooms also takes a color theme
-const SIDE_DOOR_ROOMS = Object.keys(ROOM_KINDS).filter(st => ["side", "long"].includes(ROOM_KINDS[st].exits)), OWN_EXIT_ROOMS = ["hallway", ...SIDE_DOOR_ROOMS];
+const SIDE_DOOR_ROOMS = Object.keys(ROOM_KINDS).filter(st => ["side", "long", "spiral"].includes(ROOM_KINDS[st].exits)), OWN_EXIT_ROOMS = ["hallway", ...SIDE_DOOR_ROOMS];
 // The cat room's cats: the castle's own, up to eight, each with its fur, its
 // tuxedo white (or none), its eyes, how it is (sitting, asleep, walking), where
 // in the room it is, its size, and its wag: with an LFO (in time with the
@@ -5447,6 +5448,81 @@ function smithySvg(c, K) {
   t += `<rect x="${f1(c.x0 - pad)}" y="${f1(c.y0 - pad)}" width="${f1(c.W + 2 * pad)}" height="${f1(c.H + 2 * pad)}" fill="#0a0806" opacity="0.42"/>`;
   return t + glow.join("");
 }
+// The spiral staircase (ticket 92): a round tower room, cut away at the
+// front as a doll's house is, its stone wall curving round behind, and in
+// the middle a stone column the steps wind up round, turn after turn, out of
+// sight; the front of each turn above the first is cut away with the wall,
+// so the steps can be seen climbing the back. Its doors come out onto the
+// steps at four heights (its own doors, set as a hallway's: spiralDoorAt),
+// arrow slits let in beams of light, torches light the way, and its way out
+// is a sign toward us. A hallway's stairs lead to the castle's first one.
+function spiralGeom(c) {
+  const { W, k, g } = c, Yf = g - 96 * k, R = W * 0.42, r0 = W * 0.065, sq = 0.22, th0 = 0.6 * Math.PI, rise = 44 * k;
+  const lvl = th => Yf - rise * (th - th0);
+  // (a point at radius r and angle th, at height y: the front of the circle lower on the picture)
+  const pt = (r, th, y) => [r * Math.cos(th), y + r * sq * Math.sin(th)];
+  return { Yf, R, r0, sq, th0, rise, lvl, pt };
+}
+// where door j (from 0) comes out onto the steps: at the wall, at its step's height, smaller the farther back
+const SPIRAL_DOORS = [1.12, 1.86, 2.95, 3.72].map(u => u * Math.PI);
+function spiralDoorAt(c, j) {
+  const G = spiralGeom(c), th = SPIRAL_DOORS[j % 4], [x, y] = G.pt(G.R * 0.98, th, G.lvl(th));
+  return { x, y, k: c.k * (0.78 + 0.14 * Math.sin(th)) };
+}
+function spiralSvg(c, K) {
+  const { x0, y0, W, H, k, pad, P, o, R: rnd } = c, G = spiralGeom(c), { Yf, R, r0, lvl, pt } = G;
+  const tone = ROOM_TONE.spiral, mortar = mix(tone, "#000000", 0.35);
+  let t = `<defs><radialGradient id="bg-glow"><stop offset="0" stop-color="#ffcf6b" stop-opacity="0.55"/><stop offset="1" stop-color="#ffcf6b" stop-opacity="0"/></radialGradient>` +
+    `<linearGradient id="bg-column" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${mix(tone, "#000000", 0.35)}"/><stop offset="0.45" stop-color="${mix(tone, "#ffffff", 0.12)}"/><stop offset="1" stop-color="${mix(tone, "#000000", 0.45)}"/></linearGradient>` +
+    `<linearGradient id="bg-slitbeam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4" stop-opacity="0.4"/><stop offset="1" stop-color="#fff3c4" stop-opacity="0"/></linearGradient></defs>`;
+  // the wall curving round behind: courses bowing as a round wall's do (up above our eyes, down below), joints by turns
+  t += `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="${mix(tone, "#000000", 0.12)}"/>`;
+  const eye = Yf - 180 * k, edge = W * 0.5 + pad;
+  for (let y = Yf + 40 * k, r = 0; y > y0 - pad; y -= 30 * k, r++) {
+    const bow = (y - eye) * 0.12;
+    t += `<path d="M${f1(-edge)} ${f1(y + bow)} Q0 ${f1(y - bow)} ${f1(edge)} ${f1(y + bow)}" fill="none" stroke="${mortar}" stroke-width="${f1(2 * k)}" opacity="0.7"/>`;
+    for (let q = -8; q <= 8; q++) { const u = (q + (r % 2) * 0.5) / 8.5, x = edge * Math.sin(u * Math.PI / 2);
+      if (Math.abs(u) > 1) continue;
+      const yy = y + bow - 2 * bow * (1 - (x / edge) ** 2);
+      t += `<line x1="${f1(x)}" y1="${f1(yy)}" x2="${f1(x)}" y2="${f1(yy - 30 * k)}" stroke="${mortar}" stroke-width="${f1(1.6 * k)}" opacity="0.55"/>`; }
+  }
+  // arrow slits high in the wall, their light slanting down; torches on the wall by the steps
+  for (const [x, y] of [[-W * 0.3, Yf - 330 * k], [W * 0.28, Yf - 230 * k], [-W * 0.05, Yf - 470 * k]]) {
+    t += `<rect x="${f1(x - 6 * k)}" y="${f1(y - 40 * k)}" width="${f1(12 * k)}" height="${f1(80 * k)}" rx="${f1(5 * k)}" fill="#cfe9ff" stroke="${mortar}" stroke-width="${f1(4 * k)}"/>` +
+         `<polygon points="${f1(x - 6 * k)},${f1(y - 30 * k)} ${f1(x + 6 * k)},${f1(y - 30 * k)} ${f1(x + 90 * k)},${f1(y + 170 * k)} ${f1(x + 40 * k)},${f1(y + 190 * k)}" fill="url(#bg-slitbeam)"/>`;
+  }
+  // the floor, round as the tower is (the wall's circle, at the steps' foot), and on toward us where the
+  // front is cut away; its flagstones radiating from the column, to the wall behind
+  const Rw = R * 1.06, fy = Yf, fl = mix(tone, "#5a4a3a", 0.4);
+  t += `<ellipse cx="0" cy="${f1(fy)}" rx="${f1(Rw)}" ry="${f1(Rw * G.sq)}" fill="${fl}"/><rect x="${f1(-Rw)}" y="${f1(fy)}" width="${f1(2 * Rw)}" height="${f1(c.y1 + pad - fy)}" fill="${fl}"/>`;
+  for (let i = 0; i <= 8; i++) { const a = Math.PI + Math.PI * i / 8, [ex, ey] = pt(Rw, a, fy);
+    t += `<line x1="0" y1="${f1(fy)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="${mortar}" stroke-width="${f1(1.5 * k)}" opacity="0.5"/>`; }
+  for (const f of [0.45, 0.75]) t += `<path d="M${f1(-Rw * f)} ${f1(fy)} A${f1(Rw * f)} ${f1(Rw * f * G.sq)} 0 0 1 ${f1(Rw * f)} ${f1(fy)}" fill="none" stroke="${mortar}" stroke-width="${f1(1.5 * k)}" opacity="0.5"/>`;
+  // (the cut edge of the tower's wall, at either side of the floor, down to us)
+  for (const sd of [-1, 1]) t += `<rect x="${f1(sd > 0 ? Rw : -Rw - 30 * k)}" y="${f1(fy - 6 * k)}" width="${f1(30 * k)}" height="${f1(c.y1 + pad - fy)}" fill="${mix(tone, "#000000", 0.3)}"/>`;
+  // the steps: wedges from the column out to the wall, each a step higher; the front of each turn above
+  // the first cut away (as the wall is); those behind the column first, then the column, then those in front
+  const step = Math.PI / 10, top = y0 - pad, back = [], front = [];
+  for (let th = G.th0; lvl(th) > top - 40 * k; th += step) {
+    const a = th, b = th + step, ya = lvl(a), yb = lvl(b), sn = Math.sin((a + b) / 2);
+    if (sn > 0.2 && ya < Yf - 40 * k) continue;
+    const shade = mix(tone, "#ffffff", 0.18 - 0.12 * Math.min(1, (Yf - ya) / (420 * k)));
+    const tread = `<polygon points="${[pt(r0, a, ya), pt(R, a, ya), pt(R, b, ya), pt(r0, b, ya)].map(p => P(...p)).join(" ")}" fill="${shade}" stroke="${mortar}" stroke-width="${f1(1.2 * k)}"/>` +
+      `<polygon points="${[pt(r0, b, ya), pt(R, b, ya), pt(R, b, yb), pt(r0, b, yb)].map(p => P(...p)).join(" ")}" fill="${mix(tone, "#000000", 0.25)}" stroke="${mortar}" stroke-width="${f1(1 * k)}"/>`;
+    (sn > 0 ? front : back).push({ y: ya, s: tread });
+  }
+  t += back.map(x => x.s).join("");
+  // (the column, from the floor up out of sight)
+  t += `<rect x="${f1(-r0)}" y="${f1(top)}" width="${f1(2 * r0)}" height="${f1(Yf + 30 * k - top)}" fill="url(#bg-column)"/>` +
+       [...Array(14)].map((_, i) => `<path d="M${f1(-r0)} ${f1(Yf - i * 44 * k)} Q0 ${f1(Yf - i * 44 * k + 6 * k)} ${f1(r0)} ${f1(Yf - i * 44 * k)}" fill="none" stroke="${mortar}" stroke-width="${f1(1.5 * k)}" opacity="0.6"/>`).join("");
+  t += front.sort((a, b) => a.y - b.y).map(x => x.s).join("");
+  // torches on the column, lighting the way up
+  const lights = [Yf - 150 * k, Yf - 330 * k, Yf - 510 * k].map((y, i) => torchSvg(r0 * (i % 2 ? 0.6 : -0.6), y, k * 0.85, 20 + i, o));
+  // the dark, deeper as it rises
+  t += `<linearGradient id="bg-towerdark" x1="0" y1="${f1(top)}" x2="0" y2="${f1(Yf)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#05040a" stop-opacity="0.55"/><stop offset="1" stop-color="#05040a" stop-opacity="0.1"/></linearGradient>` +
+       `<rect x="${f1(x0 - pad)}" y="${f1(top)}" width="${f1(W + 2 * pad)}" height="${f1(Yf - top + 60 * k)}" fill="url(#bg-towerdark)"/>`;
+  return t + lights.join("");
+}
 // the king's room: a red carpet to a throne on a dais, banners in the
 // owner's color, crossed swords and shields, a stained-glass window, a
 // chandelier, suits of armor at the sides, a chest of gold; and through its
@@ -6290,8 +6366,8 @@ function wayOutOf(K, n) {
 function roomExits(K, n) {
   const st = K.rooms[n - 1], ex = ROOM_KINDS[st].exits, H = K.hall[n - 1], id = K.id, X = [];
   const dest = d => d === "out" ? 0 : Number(d) >= 1 && Number(d) <= K.rooms.length ? Number(d) : null;
-  const signed = ex === "side" || ex === "long";
-  if (ex !== "hall") X.push({ kind: { side: "sign", long: "sign", trap: "arch", ladder: "ladder", all: "arch" }[ex], to: wayOutOf(K, n), key: "castleOut" + n + id, way: true });
+  const signed = ex === "side" || ex === "long" || ex === "spiral";
+  if (ex !== "hall") X.push({ kind: { side: "sign", long: "sign", spiral: "sign", trap: "arch", ladder: "ladder", all: "arch" }[ex], to: wayOutOf(K, n), key: "castleOut" + n + id, way: true });
   if (ex === "hall" || signed)
     H.doors.forEach((d, j) => {
       // (in a room with a sign toward us, a door that leads where the sign does is that sign)
@@ -6323,11 +6399,13 @@ function castleWays(c, K, n, style) {
   // the king's room: its doors in its side walls, two to a side, between its back corners and the
   // picture's edges (clear of all it holds); its way out a sign at the bottom, as the forest clearing's
   // path, toward us (a door set to lead where the sign does is that sign)
-  if (exits === "side" || exits === "long") {
+  if (exits === "side" || exits === "long" || exits === "spiral") {
     const { y1, pad } = c;
     // (a nearer door's sign, kept inside the picture, would sit on the farther one's: it goes above it;
     // a long room's doors run down its walls, as a hallway's do)
-    return (exits === "long" ? doors.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("")
+    // (a spiral staircase's doors come out onto its steps, each higher than the last)
+    return (exits === "spiral" ? doors.map((L, i) => { const d = spiralDoorAt(c, i); return archDoor(d.x, d.y, d.k, L.label, L.attrs, 70, 130); }).join("")
+      : exits === "long" ? doors.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("")
       : doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j; return hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k); }).join("")) +
       (out ? `<g class="portal" ${out.attrs}><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
       plankSign(-W * 0.2, y1 - 44 * k, k, `${out.label} ⬇️`) + `</g>` : "");
@@ -6392,7 +6470,7 @@ function castleProblems(K) {
   return P;
 }
 // (rooms with doors in their walls, as many as four: the hallway, the king's room and its kind)
-const mapDoorRoom = (K, r) => ["hall", "side", "long"].includes(ROOM_KINDS[K.rooms[r - 1]].exits);
+const mapDoorRoom = (K, r) => ["hall", "side", "long", "spiral"].includes(ROOM_KINDS[K.rooms[r - 1]].exits);
 // a door from room a to b (0: out), in a door leading nowhere or a new one; false when a has no space
 function mapAddDoor(B, K, a, b) {
   if (!mapDoorRoom(K, a)) return false;
@@ -9673,6 +9751,7 @@ const SCENE_LFO_THINGS = {
   "castleroom:dining": { fast: "🕯️ the candle flames", slow: "🔥 the torches' and the fire's glow" },
   "castleroom:kitchen": { fast: "🔪 the cooks stirring and chopping, the fires", slow: "♨️ the steam, the oven's glow" },
   "castleroom:smithy": { fast: "🔨 the smith's hammer and the sparks", slow: "🔥 the forge's glow, the bellows" },
+  "castleroom:spiral": TORCH_LFO_THINGS,
 };
 const sceneLfoThings = b => SCENE_LFO_THINGS[b.kind === "castleroom" ? "castleroom:" + (roomHereNowOf(b)[1] ?? "king") : b.kind] || {};
 // the cats in the room the friend is in, when it is a cat room; the horses, when it is a stable

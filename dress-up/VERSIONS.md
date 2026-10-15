@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.41 (2026-10-15)
+
+Everything in 0.0.40, plus the spiral staircase, where a hallway's stairs lead.
+
+- **🌀 A spiral staircase, a new castle room:** a round tower room, cut away at the front like a doll's house, its stone wall curving round behind. In the middle a stone column rises, and the steps wind up round it, turn after turn, out of sight. Its doors come out onto the steps at different heights, one higher than the last ("🚪 doors in its walls", up to four, each leading where you say). Arrow slits let in beams of light, torches on the column light the way up, and its way out is a sign toward you. Now "🌀 the first spiral stairs", the hallway's stairs, lead somewhere: up to the castle's first spiral staircase, when it has one.
+
 ## 0.0.40 (2026-10-15)
 
 Everything in 0.0.39, plus the castle's kitchen and smithy, and their people.

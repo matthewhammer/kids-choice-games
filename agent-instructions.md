@@ -146,6 +146,7 @@ Every place moves at least one quick thing and one slow thing with the music. A 
 - its drawing, `(c, K, r) => …`, where `r` carries what `castleroomScene` works out for this room: a trap room's `pits`, a dungeon's `bones`, a hallway's `hallEnd` ("none" when its stairs lead nowhere, and it ends in a wall). Anything new in `r` must also go into the inputs of the room's `part`, or the cached drawing won't change with it;
 - its exits:
   - `side`: doors in its side walls, set per room, a sign toward us (its way out), and a color theme, as the king's room has;
+  - `spiral`: the same, but its doors come out onto its steps at four heights (`spiralDoorAt`, from the room's own geometry, `spiralGeom`); a hallway's stairs ("the first spiral stairs") lead to the castle's first spiral staircase;
   - `long`: the same, but for a long room drawn as the hallway is (seen from its height, `eye: 0.3` in `castleroomScene`): its doors run down its walls, as the hallway's do (the dining room);
   - `hall`: a hallway's doors and stairs;
   - `trap`: one arch (its way out), and two pits into the dungeons;
