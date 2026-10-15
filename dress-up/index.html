@@ -248,7 +248,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // own usual size. (Before 0.0.21, 100 was the full size everywhere: a
 // friend saves which it was sized in, figUnit; see upgradeFigSize.)
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
-                    treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, clearing: 0.45, mountains: 0.45,
+                    treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35, castleroom: 0.55 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // The three castles, N's, M's and D's, each with its own settings: how many
@@ -366,6 +366,7 @@ const DEFAULTS = {
                 inside: 1, room1: "bunks", room2: "kitchen", room3: "books", room4: "lookout", room5: "art", room6: "music",
                 windowSize: 100, things: 10,
                 witchX: 150, witchY: 0, witchSize: 100, cauldronSize: 100, crows: 3, frogs: 4, snakes: 2,
+                healerSize: 100, healerCatFur: "#e8862a", healerCatWhite: "#ffffff", healerCatEyes: "#22c55e",
                 seeHouse: true, seeTree: true, seeWitch: true, seeCastle: true, seeHealer: true,
                 peakHeight: 100, mtClouds: 5, birds: 3, farLake: true,
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2,
@@ -2175,10 +2176,13 @@ function witchHat(WC, rx = 128) {
 // a tuxedo cat: its fur, with a white blaze down its nose, a white chest
 // and white boots on its front paws ("off" leaves it all fur). Its tail
 // hangs down behind; its eyes and nose in their own colors.
-function shoulderCat(w, WC) {
+// (wag: its tail swings slowly about its root, as the healer's cat's does
+// on its shelf)
+function shoulderCat(w, WC, wag = false) {
   const x = -(w - 4), y = -9, fur = WC.catFur, ln = darker(fur), wh = WC.catWhite;
   const tux = wh && wh !== "off";
-  return `<path d="M${x + 8} ${y - 6} Q${x + 34} ${y + 6} ${x + 24} ${y + 42}" fill="none" stroke="${fur}" stroke-width="6" stroke-linecap="round"/>` +
+  const tail = `<path d="M${x + 8} ${y - 6} Q${x + 34} ${y + 6} ${x + 24} ${y + 42}" fill="none" stroke="${fur}" stroke-width="6" stroke-linecap="round"/>`;
+  return (wag ? `<g>${tail}<animateTransform attributeName="transform" type="rotate" values="-14 ${x + 8} ${y - 6};16 ${x + 8} ${y - 6};-14 ${x + 8} ${y - 6}" dur="3.4s" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/></g>` : tail) +
     `<ellipse cx="${x}" cy="${y - 17}" rx="15" ry="18" fill="${fur}" stroke="${ln}" stroke-width="1.5"/>` +
     (tux ? `<path d="M${x - 9} ${y - 32} Q${x - 3} ${y - 26} ${x + 3} ${y - 32} Q${x + 6} ${y - 14} ${x - 3} ${y - 2} Q${x - 12} ${y - 14} ${x - 9} ${y - 32} Z" fill="${wh}"/>` : "") +
     // the front paws, side by side at the front of its body
@@ -3455,6 +3459,277 @@ function witchroomScene(c) {
     all("url(#bg-wdim)").replace("<rect ", `<rect pointer-events="none" `));
   return s;
 }
+// The healer: a friendly woman in a green dress and a cream apron, a red
+// heart on its pocket (the heart on her hut's sign), long auburn hair with
+// flowers in it by her ears, rosy cheeks, smiling. She sways gently from
+// side to side, and stirs her soup with a long wooden spoon in her right
+// hand (on the picture's left), its end at (-110, -48), in the pot. In her
+// own units, her feet at (0, 0); drawn 1.3 times as big (HEALER_Z).
+const HEALER_SVG = (() => {
+  const skin = "#e2a67c", hair = "#8a4a2a", dress = "#5f9e6e", apron = "#f6eedd", dk = darker(dress), sk = darker(skin);
+  const flower = (x, y, petal) => [0, 72, 144, 216, 288].map(a => { const r = a * Math.PI / 180;
+      return `<ellipse cx="${f1(x + 4.6 * Math.cos(r))}" cy="${f1(y + 4.6 * Math.sin(r))}" rx="4.6" ry="3.4" transform="rotate(${a} ${f1(x + 4.6 * Math.cos(r))} ${f1(y + 4.6 * Math.sin(r))})" fill="${petal}" stroke="${darker(petal)}" stroke-width="0.8"/>`; }).join("") +
+    `<circle cx="${x}" cy="${y}" r="2.8" fill="#facc15" stroke="#ca8a04" stroke-width="0.8"/>`;
+  const leaf = (x, y, a) => `<ellipse cx="${x}" cy="${y}" rx="6" ry="2.6" transform="rotate(${a} ${x} ${y})" fill="#4a9a52" stroke="#2f6e3a" stroke-width="0.8"/>`;
+  const limb = (pts, w, c) => `<path d="M${pts.map(p => p.join(" ")).join(" L")}" fill="none" stroke="${darker(c)}" stroke-width="${w + 3}" stroke-linecap="round" stroke-linejoin="round"/>` +
+                              `<path d="M${pts.map(p => p.join(" ")).join(" L")}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const body =
+    // her long hair, behind her
+    `<path d="M-34 -205 Q-48 -160 -45 -112 Q-32 -102 -20 -110 L20 -110 Q32 -102 45 -112 Q48 -160 34 -205 Q0 -234 -34 -205 Z" fill="${hair}" stroke="${darker(hair)}" stroke-width="2"/>` +
+    // her shoes, her dress, her apron with its pocket and heart
+    `<ellipse cx="-16" cy="-4" rx="13" ry="6" fill="#6b4226"/><ellipse cx="16" cy="-4" rx="13" ry="6" fill="#6b4226"/>` +
+    `<path d="M-26 -150 Q-30 -120 -40 -80 Q-52 -40 -60 -12 Q-30 -4 0 -7 Q30 -4 60 -12 Q52 -40 40 -80 Q30 -120 26 -150 Q0 -158 -26 -150 Z" fill="${dress}" stroke="${dk}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="M-22 -112 Q-27 -70 -35 -30 Q0 -23 35 -30 Q27 -70 22 -112 Q0 -116 -22 -112 Z" fill="${apron}" stroke="#d9cbb0" stroke-width="2"/>` +
+    `<rect x="-28" y="-117" width="56" height="7" rx="3" fill="${apron}" stroke="#d9cbb0" stroke-width="1.5"/>` +
+    `<rect x="-13" y="-74" width="26" height="20" rx="4" fill="none" stroke="#d9cbb0" stroke-width="2"/>` +
+    `<path d="M0 -58 L-7 -65 A3.6 3.6 0 0 1 0 -69.5 A3.6 3.6 0 0 1 7 -65 Z" fill="#e53935"/>` +
+    // her left arm (the picture's right), its hand on her apron
+    limb([[24, -146], [38, -114]], 12, dress) + limb([[38, -114], [20, -97]], 9, skin) + `<circle cx="19" cy="-96" r="7" fill="${skin}" stroke="${sk}" stroke-width="1.5"/>` +
+    // her neck and head, her face: kind eyes, rosy cheeks, a smile
+    `<rect x="-7" y="-166" width="14" height="18" fill="${skin}"/>` +
+    `<circle cx="0" cy="-188" r="30" fill="${skin}" stroke="${sk}" stroke-width="2"/>` +
+    [-1, 1].map(e => `<ellipse cx="${e * 11}" cy="-191" rx="4" ry="5" fill="#2b1d14"/><circle cx="${e * 11 + 1.5}" cy="-193" r="1.5" fill="#ffffff"/>` +
+      `<path d="M${e * 17} -202 Q${e * 11} -207 ${e * 5} -203" fill="none" stroke="${darker(hair)}" stroke-width="2.5" stroke-linecap="round"/>` +
+      `<circle cx="${e * 18}" cy="-179" r="6" fill="#f28b8b" opacity="0.45"/>`).join("") +
+    `<path d="M-2 -185 Q0 -182 2 -185" fill="none" stroke="${sk}" stroke-width="1.5" stroke-linecap="round"/>` +
+    `<path d="M-12 -176 Q0 -162 12 -176 Q0 -169 -12 -176 Z" fill="#9b3b3b" stroke="#6b2b2b" stroke-width="1.5" stroke-linejoin="round"/>` +
+    // her hair over her head: a side-swept fringe, locks down past her cheeks
+    `<path d="M-31 -192 Q-35 -224 0 -223 Q35 -224 31 -192 Q26 -206 12 -209 Q2 -201 -8 -210 Q-24 -207 -31 -192 Z" fill="${hair}" stroke="${darker(hair)}" stroke-width="1.5"/>` +
+    [-1, 1].map(e => `<path d="M${e * 30} -197 Q${e * 38} -162 ${e * 35} -128" fill="none" stroke="${hair}" stroke-width="9" stroke-linecap="round"/>`).join("") +
+    // flowers in her hair, by her ears, with leaves
+    leaf(-36, -172, 30) + leaf(-28, -170, -40) + flower(-31, -178, "#f472b6") +
+    leaf(36, -174, -30) + leaf(28, -171, 40) + flower(31, -180, "#ffffff") + flower(36, -190, "#c4b5fd");
+  // her right arm (the picture's left), stirring: the arm and the spoon
+  // turn a little about her shoulder, back and forth
+  const stir = `<g><animateTransform attributeName="transform" type="rotate" values="0 -24 -146;-6 -24 -146;0 -24 -146;5 -24 -146;0 -24 -146" dur="2.6s" repeatCount="indefinite"/>` +
+    `<line x1="-56" y1="-120" x2="-110" y2="-48" stroke="#7a5228" stroke-width="7" stroke-linecap="round"/>` +
+    `<line x1="-56" y1="-120" x2="-110" y2="-48" stroke="#c08a50" stroke-width="4" stroke-linecap="round"/>` +
+    limb([[-24, -146], [-44, -118]], 12, dress) + limb([[-44, -118], [-64, -106]], 9, skin) +
+    `<circle cx="-65" cy="-105" r="7.5" fill="${skin}" stroke="${sk}" stroke-width="1.5"/></g>`;
+  // and the whole of her sways, slowly, about her feet
+  return `<g><animateTransform attributeName="transform" type="rotate" values="-2.5 0 0;2.5 0 0;-2.5 0 0" dur="4.6s" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/>${body}${stir}</g>`;
+})();
+const HEALER_Z = 1.3;
+// Bottles of potions, neatly kept: each shelf one kind of bottle, their
+// colors in rainbow order along it, each corked and labelled
+const POTION_COLORS = ["#e53935", "#f57c00", "#fbc02d", "#7cb342", "#26a69a", "#1e88e5", "#5e35b1", "#d81b60"];
+function potionSvg(kind, x, y, k, color) {
+  const cork = `fill="#9a6b3f" stroke="#6e4a28" stroke-width="${f1(0.8 * k)}"`, glass = `fill="${color}" fill-opacity="0.85" stroke="${darker(color)}" stroke-width="${f1(1.2 * k)}"`;
+  const shine = (x0, y0, h) => `<line x1="${f1(x0)}" y1="${f1(y0)}" x2="${f1(x0)}" y2="${f1(y0 + h)}" stroke="#ffffff" stroke-opacity="0.55" stroke-width="${f1(2 * k)}" stroke-linecap="round"/>`;
+  const label = (cy, w) => `<rect x="${f1(x - w / 2)}" y="${f1(cy - 4 * k)}" width="${f1(w)}" height="${f1(8 * k)}" rx="${f1(1.5 * k)}" fill="#f6eedd"/>` +
+                           `<line x1="${f1(x - w / 3)}" y1="${f1(cy)}" x2="${f1(x + w / 3)}" y2="${f1(cy)}" stroke="#8a7a5a" stroke-width="${f1(0.9 * k)}"/>`;
+  if (kind === "flask")   // a round flask with a long neck
+    return `<rect x="${f1(x - 3 * k)}" y="${f1(y - 34 * k)}" width="${f1(6 * k)}" height="${f1(14 * k)}" ${glass}/><circle cx="${f1(x)}" cy="${f1(y - 11 * k)}" r="${f1(11 * k)}" ${glass}/>` +
+           `<rect x="${f1(x - 3.5 * k)}" y="${f1(y - 39 * k)}" width="${f1(7 * k)}" height="${f1(6 * k)}" rx="${f1(1.5 * k)}" ${cork}/>` + shine(x - 5 * k, y - 17 * k, 7 * k);
+  if (kind === "tall")    // a tall slim bottle
+    return `<path d="M${f1(x - 6 * k)} ${f1(y)} V${f1(y - 30 * k)} Q${f1(x - 6 * k)} ${f1(y - 36 * k)} ${f1(x - 2.5 * k)} ${f1(y - 38 * k)} V${f1(y - 44 * k)} H${f1(x + 2.5 * k)} V${f1(y - 38 * k)} Q${f1(x + 6 * k)} ${f1(y - 36 * k)} ${f1(x + 6 * k)} ${f1(y - 30 * k)} V${f1(y)} Z" ${glass}/>` +
+           `<rect x="${f1(x - 3 * k)}" y="${f1(y - 49 * k)}" width="${f1(6 * k)}" height="${f1(6 * k)}" rx="${f1(1.5 * k)}" ${cork}/>` + label(y - 16 * k, 10 * k) + shine(x - 3.5 * k, y - 30 * k, 10 * k);
+  if (kind === "jar")     // a square jar, a wide cork, a label
+    return `<rect x="${f1(x - 9 * k)}" y="${f1(y - 26 * k)}" width="${f1(18 * k)}" height="${f1(26 * k)}" rx="${f1(3 * k)}" ${glass}/>` +
+           `<rect x="${f1(x - 7 * k)}" y="${f1(y - 31 * k)}" width="${f1(14 * k)}" height="${f1(6 * k)}" rx="${f1(1.5 * k)}" ${cork}/>` + label(y - 13 * k, 14 * k) + shine(x - 6 * k, y - 23 * k, 8 * k);
+  // a small vial
+  return `<rect x="${f1(x - 4 * k)}" y="${f1(y - 20 * k)}" width="${f1(8 * k)}" height="${f1(20 * k)}" rx="${f1(4 * k)}" ${glass}/>` +
+         `<rect x="${f1(x - 3 * k)}" y="${f1(y - 24 * k)}" width="${f1(6 * k)}" height="${f1(5 * k)}" rx="${f1(1.2 * k)}" ${cork}/>` + shine(x - 1.5 * k, y - 17 * k, 6 * k);
+}
+// Inside the healer's hut: warm. Round cream walls under a thatched roof,
+// herbs drying from the beam, a round window full of sun; a stone hearth
+// with a fire, and on it a big pot of soup, steaming, that the healer
+// stirs; shelves and shelves of potions, neatly kept, her cat up on the top
+// one, its tail hanging down and slowly swinging; a worktable of tools,
+// herbs and bowls; a little table with two chairs and tea, to sit and
+// talk; a braided rug; and the door back out to the clearing. She can be
+// dragged anywhere (her place is the scene's healerX, healerY), at her size.
+function healerroomScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, all, o } = c;
+  const floor = g - 100 * k, hz = (o.healerSize ?? 100) / 100, potX = -W * 0.24, wallTop = y0 + H * 0.06;
+  // the room: thatch above, cream walls, posts, a beam with herbs, the floor and its rug
+  let s = SEP + part("hroom-shell", c.F, () => {
+    let t = all("#ecd9b4");
+    // the thatch: straw, its rafters running up to the roof's peak, high above
+    t += `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(wallTop - y0 + pad)}" fill="#c9a35a"/>`;
+    for (let i = -12; i <= 12; i++)
+      t += `<line x1="${f1(i * W / 40)}" y1="${f1(y0 - H * 0.6)}" x2="${f1(i * W / 10)}" y2="${f1(wallTop)}" stroke="${i % 3 ? "#a8823a" : "#7a5a2a"}" stroke-width="${f1((i % 3 ? 1.5 : 5) * k)}"/>`;
+    // the walls: daub, a little uneven, posts at intervals
+    for (let i = 0; i < 26; i++)
+      t += `<ellipse cx="${f1(x0 + W * R(i, 1101))}" cy="${f1(wallTop + (floor - wallTop) * R(i, 1102))}" rx="${f1((30 + 40 * R(i, 1103)) * k)}" ry="${f1((10 + 12 * R(i, 1104)) * k)}" fill="#e2cca2" opacity="0.5"/>`;
+    for (const u of [-0.5, -0.36, 0.5, 0.36])
+      t += `<rect x="${f1(W * u - 9 * k)}" y="${f1(wallTop)}" width="${f1(18 * k)}" height="${f1(floor - wallTop)}" fill="#8b5e34" stroke="#6e4a28" stroke-width="${f1(1.5 * k)}"/>`;
+    t += `<rect x="${f1(x0 - pad)}" y="${f1(wallTop - 4 * k)}" width="${f1(W + 2 * pad)}" height="${f1(16 * k)}" fill="#6e4a28"/>`;
+    // the floor: warm boards, and a round braided rug
+    t += `<rect x="${f1(x0 - pad)}" y="${f1(floor)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - floor + pad)}" fill="#a8743f"/>`;
+    for (let i = -14; i <= 14; i++)
+      t += `<line x1="${f1(i * W / 20)}" y1="${f1(floor)}" x2="${f1(i * W / 6)}" y2="${f1(y1 + pad)}" stroke="#8a5a2e" stroke-width="${f1(2 * k)}"/>`;
+    t += [["#c0392b", 1], ["#e8a33a", 0.82], ["#f3d27a", 0.66], ["#7a9a3a", 0.5], ["#c0392b", 0.34], ["#f3d27a", 0.18]].map(([cc, u]) =>
+      `<ellipse cx="${f1(W * 0.02)}" cy="${f1(g + 46 * k)}" rx="${f1(200 * k * u)}" ry="${f1(44 * k * u)}" fill="${cc}"/>`).join("");
+    // the round window, high in the middle: sun, a green hill, flowers; its beam on the floor
+    const wx = 0, wy = y0 + H * 0.17, wr = 46 * k;
+    t += `<polygon points="${P(wx - 40 * k, wy + 20 * k)} ${P(wx + 40 * k, wy + 20 * k)} ${P(wx + 230 * k, g + 60 * k)} ${P(wx + 30 * k, g + 70 * k)}" fill="#fff3c4" opacity="0.2"/>` +
+         `<defs><clipPath id="bg-hwin"><circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(wr)}"/></clipPath></defs>` +
+         `<g clip-path="url(#bg-hwin)"><rect x="${f1(wx - wr)}" y="${f1(wy - wr)}" width="${f1(2 * wr)}" height="${f1(2 * wr)}" fill="#bfe6ff"/>` +
+         `<circle cx="${f1(wx + 20 * k)}" cy="${f1(wy - 22 * k)}" r="${f1(12 * k)}" fill="#ffd23f"/>` +
+         `<ellipse cx="${f1(wx - 10 * k)}" cy="${f1(wy + 46 * k)}" rx="${f1(80 * k)}" ry="${f1(36 * k)}" fill="#7cc25a"/>` +
+         [[-24, 18, "#f472b6"], [-6, 24, "#facc15"], [14, 16, "#ffffff"], [28, 26, "#c4b5fd"]].map(([dx, dy, cc]) => `<circle cx="${f1(wx + dx * k)}" cy="${f1(wy + dy * k)}" r="${f1(3 * k)}" fill="${cc}"/>`).join("") + `</g>` +
+         `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(wr)}" fill="none" stroke="#8b5e34" stroke-width="${f1(9 * k)}"/>` +
+         `<path d="M${P(wx - wr, wy)} H${f1(wx + wr)} M${P(wx, wy - wr)} V${f1(wy + wr)}" stroke="#8b5e34" stroke-width="${f1(4 * k)}"/>`;
+    // herbs drying in bundles from the beam (not across the window)
+    for (let i = 0; i < 12; i++) {
+      const hx = x0 + W * (0.04 + 0.08 * i) + 8 * k * R(i, 1105), by = wallTop + 12 * k;
+      if (Math.abs(hx) < 70 * k) continue;
+      const cc = ["#5f8a3a", "#a78bfa", "#7a9a3a", "#f2c12e", "#4a8a4a"][i % 5], len = (50 + 24 * R(i, 1106)) * k;
+      t += `<line x1="${f1(hx)}" y1="${f1(by)}" x2="${f1(hx)}" y2="${f1(by + 18 * k)}" stroke="#c9b27a" stroke-width="${f1(1.5 * k)}"/>` +
+           `<rect x="${f1(hx - 4 * k)}" y="${f1(by + 16 * k)}" width="${f1(8 * k)}" height="${f1(5 * k)}" fill="#c9b27a"/>` +
+           [-10, -5, 0, 5, 10].map(dx => `<path d="M${P(hx, by + 20 * k)} Q${P(hx + dx * 0.6 * k, by + 20 * k + len * 0.5)} ${P(hx + dx * k, by + 20 * k + len)}" stroke="${cc}" stroke-width="${f1(3.5 * k)}" fill="none" stroke-linecap="round"/>`).join("") +
+           (i % 2 ? [-8, 0, 8].map(dx => `<circle cx="${f1(hx + dx * k)}" cy="${f1(by + 20 * k + len)}" r="${f1(3 * k)}" fill="${cc === "#a78bfa" ? "#c4b5fd" : "#f7f2c4"}"/>`).join("") : "");
+    }
+    return t;
+  });
+  // the hearth: a stone fireplace in the wall, its mantel with candles and jars
+  s += SEP + part("hroom-hearth", c.F, () => {
+    const hw = 130 * k, top = floor - 190 * k;
+    let t = `<rect x="${f1(potX - hw * 0.55)}" y="${f1(wallTop)}" width="${f1(hw * 1.1)}" height="${f1(top - wallTop)}" fill="#a39a8c"/>`;
+    for (let i = 0; i < 40; i++) {
+      const row = Math.floor(i / 5), col = i % 5, sy = wallTop + row * 22 * k, sx = potX - hw * 0.55 + (col + (row % 2) * 0.5) * hw * 0.22;
+      if (sy > top) break;
+      t += `<rect x="${f1(sx)}" y="${f1(sy)}" width="${f1(hw * 0.2)}" height="${f1(19 * k)}" rx="${f1(4 * k)}" fill="${["#b8afa0", "#a8a090", "#c2b9aa"][(i * 7) % 3]}"/>`;
+    }
+    t += `<path d="M${P(potX - hw, floor)} V${f1(top + 30 * k)} Q${P(potX - hw, top)} ${P(potX - hw + 30 * k, top)} H${f1(potX + hw - 30 * k)} Q${P(potX + hw, top)} ${P(potX + hw, top + 30 * k)} V${f1(floor)} Z" fill="#b8afa0" stroke="#8a8274" stroke-width="${f1(3 * k)}"/>` +
+         `<path d="M${P(potX - hw * 0.68, floor)} V${f1(top + 80 * k)} A${f1(hw * 0.68)} ${f1(hw * 0.55)} 0 0 1 ${P(potX + hw * 0.68, top + 80 * k)} V${f1(floor)} Z" fill="#3a2418"/>` +
+         `<ellipse cx="${f1(potX)}" cy="${f1(floor - 20 * k)}" rx="${f1(hw * 0.6)}" ry="${f1(50 * k)}" fill="#ff9a3c" opacity="0.35"/>` +
+         `<rect x="${f1(potX - hw - 14 * k)}" y="${f1(top - 12 * k)}" width="${f1(2 * hw + 28 * k)}" height="${f1(14 * k)}" rx="${f1(3 * k)}" fill="#6e4a28"/>`;
+    // on the mantel: two candles, three jars of herbs, a little heart
+    for (const [dx, kind] of [[-0.85, "candle"], [-0.5, "jar"], [-0.2, "jar"], [0.15, "heart"], [0.45, "jar"], [0.82, "candle"]]) {
+      const x = potX + dx * hw, b = top - 12 * k;
+      t += kind === "candle"
+        ? `<rect x="${f1(x - 5 * k)}" y="${f1(b - 30 * k)}" width="${f1(10 * k)}" height="${f1(30 * k)}" fill="#f6eedd"/><ellipse cx="${f1(x)}" cy="${f1(b - 37 * k)}" rx="${f1(3.5 * k)}" ry="${f1(7 * k)}" fill="#ffb53b"/><circle cx="${f1(x)}" cy="${f1(b - 34 * k)}" r="${f1(16 * k)}" fill="#ffcf6b" opacity="0.25"/>`
+        : kind === "heart" ? `<path d="M${P(x, b - 4 * k)} L${P(x - 12 * k, b - 16 * k)} A${f1(6 * k)} ${f1(6 * k)} 0 0 1 ${P(x, b - 24 * k)} A${f1(6 * k)} ${f1(6 * k)} 0 0 1 ${P(x + 12 * k, b - 16 * k)} Z" fill="#e53935"/>`
+        : `<rect x="${f1(x - 10 * k)}" y="${f1(b - 26 * k)}" width="${f1(20 * k)}" height="${f1(26 * k)}" rx="${f1(4 * k)}" fill="#cfe8d0" fill-opacity="0.7" stroke="#8aa88a" stroke-width="${f1(1.2 * k)}"/>` +
+          `<path d="M${P(x - 6 * k, b - 4 * k)} Q${P(x, b - 20 * k)} ${P(x + 6 * k, b - 4 * k)}" fill="#5f8a3a"/><rect x="${f1(x - 8 * k)}" y="${f1(b - 31 * k)}" width="${f1(16 * k)}" height="${f1(6 * k)}" fill="#9a6b3f"/>`;
+    }
+    return t;
+  });
+  // the big pot of soup on its fire, in front of the hearth: flames, the
+  // pot on three legs, golden soup with carrots and herbs in it, steam
+  s += SEP + part("hroom-pot", c.F, () => {
+    const py = g - 62 * k, rx = 74 * k;
+    let t = `<ellipse cx="${f1(potX)}" cy="${f1(g + 12 * k)}" rx="${f1(92 * k)}" ry="${f1(18 * k)}" fill="#6b625a"/>` +
+            [...Array(10)].map((_, i) => { const a = i / 10 * 2 * Math.PI; return `<ellipse cx="${f1(potX + Math.cos(a) * 88 * k)}" cy="${f1(g + 12 * k + Math.sin(a) * 16 * k)}" rx="${f1(14 * k)}" ry="${f1(8 * k)}" fill="${i % 2 ? "#8a8274" : "#a39a8c"}"/>`; }).join("") +
+            [-1, 1].map(e => `<line x1="${f1(potX - 50 * k)}" y1="${f1(g + 10 * k + e * 4 * k)}" x2="${f1(potX + 50 * k)}" y2="${f1(g + 10 * k - e * 4 * k)}" stroke="#5a3a1a" stroke-width="${f1(9 * k)}" stroke-linecap="round"/>`).join("");
+    t += [[-34, 0], [-6, 6], [24, -4], [44, 3]].map(([fx, ph]) => { const x = potX + fx * k, b = g + 6 * k, h = (40 + ph) * k;
+      return `<path d="M${f1(x - 14 * k)} ${f1(b)} Q${f1(x)} ${f1(b - h)} ${f1(x + 14 * k)} ${f1(b)} Z" fill="#ff8c1a"><animate attributeName="d" dur="${(0.6 + ph / 30).toFixed(2)}s" repeatCount="indefinite" ` +
+        `values="M${f1(x - 14 * k)} ${f1(b)} Q${f1(x)} ${f1(b - h)} ${f1(x + 14 * k)} ${f1(b)} Z;M${f1(x - 14 * k)} ${f1(b)} Q${f1(x + 5 * k)} ${f1(b - h * 0.7)} ${f1(x + 14 * k)} ${f1(b)} Z;M${f1(x - 14 * k)} ${f1(b)} Q${f1(x)} ${f1(b - h)} ${f1(x + 14 * k)} ${f1(b)} Z"/></path>` +
+        `<path d="M${f1(x - 7 * k)} ${f1(b)} Q${f1(x)} ${f1(b - h * 0.55)} ${f1(x + 7 * k)} ${f1(b)} Z" fill="#ffd23f"/>`; }).join("");
+    // the pot
+    t += [-0.7, 0, 0.7].map(u => `<line x1="${f1(potX + u * 50 * k)}" y1="${f1(g - 20 * k)}" x2="${f1(potX + u * 62 * k)}" y2="${f1(g + 4 * k)}" stroke="#2a2a30" stroke-width="${f1(7 * k)}" stroke-linecap="round"/>`).join("") +
+         `<path d="M${P(potX - rx, py)} Q${P(potX - rx * 1.12, g - 30 * k)} ${P(potX - rx * 0.62, g - 14 * k)} Q${P(potX, g - 6 * k)} ${P(potX + rx * 0.62, g - 14 * k)} Q${P(potX + rx * 1.12, g - 30 * k)} ${P(potX + rx, py)} Z" fill="#2b2b30" stroke="#18181c" stroke-width="${f1(3 * k)}"/>` +
+         `<path d="M${P(potX - rx * 0.8, g - 46 * k)} Q${P(potX - rx * 0.5, g - 22 * k)} ${P(potX - rx * 0.1, g - 18 * k)}" fill="none" stroke="#ff9a3c" stroke-opacity="0.35" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
+         [-1, 1].map(e => `<path d="M${P(potX + e * rx * 0.95, py + 8 * k)} q${f1(e * 16 * k)} ${f1(-4 * k)} ${f1(e * 14 * k)} ${f1(14 * k)}" fill="none" stroke="#2b2b30" stroke-width="${f1(6 * k)}"/>`).join("") +
+         `<ellipse cx="${f1(potX)}" cy="${f1(py)}" rx="${f1(rx + 4 * k)}" ry="${f1(19 * k)}" fill="#3a3a42" stroke="#18181c" stroke-width="${f1(3 * k)}"/>` +
+         `<ellipse cx="${f1(potX)}" cy="${f1(py + 2 * k)}" rx="${f1(rx - 4 * k)}" ry="${f1(14 * k)}" fill="#f0a032"/>` +
+         `<ellipse cx="${f1(potX - 10 * k)}" cy="${f1(py)}" rx="${f1(rx * 0.5)}" ry="${f1(6 * k)}" fill="#f7c062" opacity="0.7"/>` +
+         [[-40, 4, "#e8762c"], [-14, -2, "#e8762c"], [22, 6, "#e8762c"], [44, 0, "#e8762c"], [-28, -6, "#4a9a52"], [6, 8, "#4a9a52"], [36, -6, "#4a9a52"], [0, -4, "#f6eedd"]].map(([dx, dy, cc]) =>
+           `<ellipse cx="${f1(potX + dx * k)}" cy="${f1(py + 2 * k + dy * k)}" rx="${f1(5 * k)}" ry="${f1(2.6 * k)}" fill="${cc}"/>`).join("");
+    // steam, rising and fading, in turn
+    t += [-30, 6, 38].map((dx, i) => `<path d="M${f1(potX + dx * k)} ${f1(py - 6 * k)} q${f1(10 * k)} ${f1(-14 * k)} 0 ${f1(-28 * k)} q${f1(-10 * k)} ${f1(-14 * k)} 0 ${f1(-28 * k)}" fill="none" stroke="#ffffff" stroke-width="${f1(5 * k)}" stroke-linecap="round" opacity="0">` +
+      `<animate attributeName="opacity" values="0;0.55;0" dur="3.2s" begin="${(i * 1.05).toFixed(2)}s" repeatCount="indefinite"/>` +
+      `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-40 * k)}" dur="3.2s" begin="${(i * 1.05).toFixed(2)}s" repeatCount="indefinite"/></path>`).join("");
+    return t;
+  });
+  // the door back out to the clearing, in the middle: an arched brown door, as outside
+  s += SEP + part("hroom-door", c.F, () => {
+    const w = 100 * k, top = floor - 200 * k;
+    return `<g class="portal" data-to="clearing"><path d="M${P(-w / 2 - 10 * k, floor)} V${f1(top + w / 2)} A${f1(w / 2 + 10 * k)} ${f1(w / 2 + 10 * k)} 0 0 1 ${P(w / 2 + 10 * k, top + w / 2)} V${f1(floor)} Z" fill="#6e4a28"/>` +
+           `<path d="M${P(-w / 2, floor)} V${f1(top + w / 2)} A${f1(w / 2)} ${f1(w / 2)} 0 0 1 ${P(w / 2, top + w / 2)} V${f1(floor)} Z" fill="#7a5a3a" stroke="#4a3220" stroke-width="${f1(3 * k)}"/>` +
+           [-0.25, 0, 0.25].map(u => `<line x1="${f1(u * w)}" y1="${f1(top + (u ? 8 : 0) * k)}" x2="${f1(u * w)}" y2="${f1(floor)}" stroke="#5a3e26" stroke-width="${f1(2.5 * k)}"/>`).join("") +
+           `<circle cx="${f1(w / 2 - 16 * k)}" cy="${f1(floor - 90 * k)}" r="${f1(5 * k)}" fill="#f2c230"/>` +
+           `<path d="M${P(0, top + 56 * k)} L${P(-12 * k, top + 44 * k)} A${f1(6 * k)} ${f1(6 * k)} 0 0 1 ${P(0, top + 36 * k)} A${f1(6 * k)} ${f1(6 * k)} 0 0 1 ${P(12 * k, top + 44 * k)} Z" fill="#e53935"/>` +
+           plankSign(0, top - 28 * k, k, "🌲 out") + `</g>`;
+  });
+  // the shelves of potions, floor to beam on the right, neatly kept; her
+  // cat sits up on the top one, at its left end, its tail hanging down
+  const cat = { catFur: o.healerCatFur ?? "#e8862a", catWhite: o.healerCatWhite ?? "#ffffff", catEyes: o.healerCatEyes ?? "#22c55e", catNose: "#f4a0b0" };
+  s += SEP + part("hroom-shelves", [c.F, cat.catFur, cat.catWhite, cat.catEyes], () => {
+    const sx0 = W * 0.13, sx1 = W * 0.47, top = wallTop + 70 * k, n = 5, gap = (floor - 20 * k - top) / (n - 0.3);
+    let t = [sx0, sx1].map(x => `<rect x="${f1(x - 7 * k)}" y="${f1(top - 50 * k)}" width="${f1(14 * k)}" height="${f1(floor - top + 50 * k)}" fill="#8b5e34" stroke="#6e4a28" stroke-width="${f1(1.5 * k)}"/>`).join("");
+    const kinds = ["flask", "tall", "jar", "vial", "jar"];
+    for (let r = 0; r < n; r++) {
+      const sy = top + r * gap;
+      t += `<rect x="${f1(sx0 - 10 * k)}" y="${f1(sy)}" width="${f1(sx1 - sx0 + 20 * k)}" height="${f1(9 * k)}" fill="#a0703f" stroke="#6e4a28" stroke-width="${f1(1.5 * k)}"/>`;
+      // (the top shelf keeps room at its left end for the cat)
+      const from = sx0 + (r === 0 ? 70 : 20) * k, to = sx1 - 18 * k, kind = kinds[r], step = kind === "vial" ? 18 * k : kind === "tall" ? 22 * k : 28 * k;
+      const m = Math.floor((to - from) / step) + 1;
+      for (let i = 0; i < m; i++) t += potionSvg(kind, from + i * (to - from) / Math.max(1, m - 1), sy, k * (kind === "jar" && r === 4 ? 1.25 : 1), POTION_COLORS[Math.floor(i * POTION_COLORS.length / m)]);
+    }
+    t += `<g transform="translate(${f1(sx0 + 32 * k)} ${f1(top)}) scale(${(1.15 * k).toFixed(3)})">${shoulderCat(4, cat, true)}</g>`;
+    return t;
+  });
+  // a little round table with two chairs and tea, to sit and talk
+  s += SEP + part("hroom-tea", c.F, () => {
+    const tx = W * 0.13, ty = g + 34 * k;
+    const chair = (x, sd) => `<path d="M${P(x + sd * 22 * k, ty - 66 * k)} V${f1(ty + 40 * k)}" stroke="#7a4b28" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>` +
+      [0.2, 0.45].map(u => `<line x1="${f1(x + sd * 22 * k)}" y1="${f1(ty - 66 * k + u * 60 * k)}" x2="${f1(x + sd * 22 * k)}" y2="${f1(ty - 66 * k + u * 60 * k)}" stroke="#7a4b28"/>`).join("") +
+      `<rect x="${f1(x - 26 * k)}" y="${f1(ty + 4 * k)}" width="${f1(52 * k)}" height="${f1(8 * k)}" rx="${f1(3 * k)}" fill="#a0703f" stroke="#6e4a28" stroke-width="${f1(1.5 * k)}"/>` +
+      `<rect x="${f1(x + sd * 22 * k - (sd > 0 ? 6 : 0) * k)}" y="${f1(ty - 64 * k)}" width="${f1(6 * k)}" height="${f1(70 * k)}" fill="#8b5e34"/>` +
+      [[-22, 1], [22, 1]].map(([dx]) => `<line x1="${f1(x + dx * k)}" y1="${f1(ty + 12 * k)}" x2="${f1(x + dx * k)}" y2="${f1(ty + 44 * k)}" stroke="#6e4a28" stroke-width="${f1(5 * k)}"/>`).join("") +
+      `<rect x="${f1(x + sd * 22 * k - (sd > 0 ? 9 : -3) * k)}" y="${f1(ty - 70 * k)}" width="${f1(6 * k)}" height="${f1(4 * k)}" fill="#6e4a28"/>`;
+    return chair(tx - 92 * k, -1) + chair(tx + 92 * k, 1) +
+      `<rect x="${f1(tx - 5 * k)}" y="${f1(ty - 10 * k)}" width="${f1(10 * k)}" height="${f1(52 * k)}" fill="#6e4a28"/><ellipse cx="${f1(tx)}" cy="${f1(ty + 42 * k)}" rx="${f1(24 * k)}" ry="${f1(6 * k)}" fill="#6e4a28"/>` +
+      `<ellipse cx="${f1(tx)}" cy="${f1(ty - 10 * k)}" rx="${f1(62 * k)}" ry="${f1(14 * k)}" fill="#a0703f" stroke="#6e4a28" stroke-width="${f1(2 * k)}"/>` +
+      // a teapot, two cups on saucers, a little vase of flowers
+      `<ellipse cx="${f1(tx - 6 * k)}" cy="${f1(ty - 26 * k)}" rx="${f1(16 * k)}" ry="${f1(13 * k)}" fill="#5f9e6e" stroke="#3f7a4e" stroke-width="${f1(1.5 * k)}"/>` +
+      `<path d="M${P(tx + 9 * k, ty - 28 * k)} q${f1(12 * k)} ${f1(-2 * k)} ${f1(16 * k)} ${f1(-12 * k)}" fill="none" stroke="#5f9e6e" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>` +
+      `<path d="M${P(tx - 21 * k, ty - 32 * k)} q${f1(-9 * k)} ${f1(4 * k)} 0 ${f1(12 * k)}" fill="none" stroke="#5f9e6e" stroke-width="${f1(3 * k)}"/><circle cx="${f1(tx - 6 * k)}" cy="${f1(ty - 40 * k)}" r="${f1(3 * k)}" fill="#3f7a4e"/>` +
+      [-40, 34].map(dx => `<ellipse cx="${f1(tx + dx * k)}" cy="${f1(ty - 14 * k)}" rx="${f1(10 * k)}" ry="${f1(3 * k)}" fill="#f6eedd" stroke="#d9cbb0" stroke-width="${f1(k)}"/>` +
+        `<path d="M${P(tx + dx * k - 6 * k, ty - 24 * k)} V${f1(ty - 16 * k)} Q${P(tx + dx * k, ty - 13 * k)} ${P(tx + dx * k + 6 * k, ty - 16 * k)} V${f1(ty - 24 * k)} Z" fill="#ffffff" stroke="#d9cbb0" stroke-width="${f1(k)}"/>` +
+        `<ellipse cx="${f1(tx + dx * k)}" cy="${f1(ty - 24 * k)}" rx="${f1(6 * k)}" ry="${f1(2 * k)}" fill="#b5834a"/>`).join("") +
+      `<rect x="${f1(tx + 14 * k)}" y="${f1(ty - 30 * k)}" width="${f1(8 * k)}" height="${f1(16 * k)}" rx="${f1(3 * k)}" fill="#9ccfe0" stroke="#6aa8c0" stroke-width="${f1(k)}"/>` +
+      [[-4, -42, "#f472b6"], [3, -46, "#facc15"], [8, -40, "#ffffff"]].map(([dx, dy, cc]) => `<line x1="${f1(tx + 18 * k)}" y1="${f1(ty - 30 * k)}" x2="${f1(tx + 18 * k + dx * k)}" y2="${f1(ty + dy * k + 2 * k)}" stroke="#4a9a52" stroke-width="${f1(1.5 * k)}"/><circle cx="${f1(tx + 18 * k + dx * k)}" cy="${f1(ty + dy * k)}" r="${f1(4 * k)}" fill="${cc}"/>`).join("");
+  });
+  // her worktable at the front on the right: a mortar and pestle, bowls of
+  // powders, bundles of herbs, scissors, a knife, a little brass balance
+  s += SEP + part("hroom-work", c.F, () => {
+    const tx = W * 0.37, ty = g + 20 * k, tw = 190 * k;
+    let t = [-0.42, 0.42].map(u => `<rect x="${f1(tx + u * tw - 6 * k)}" y="${f1(ty)}" width="${f1(12 * k)}" height="${f1(64 * k)}" fill="#6e4a28"/>`).join("") +
+            `<rect x="${f1(tx - tw / 2)}" y="${f1(ty - 12 * k)}" width="${f1(tw)}" height="${f1(14 * k)}" rx="${f1(3 * k)}" fill="#a0703f" stroke="#6e4a28" stroke-width="${f1(2 * k)}"/>`;
+    const at = u => tx + u * tw / 2, b = ty - 12 * k;
+    // the mortar and pestle
+    t += `<path d="M${P(at(-0.8) - 18 * k, b - 22 * k)} Q${P(at(-0.8), b + 4 * k)} ${P(at(-0.8) + 18 * k, b - 22 * k)} Z" fill="#9a9488" stroke="#6b665c" stroke-width="${f1(1.5 * k)}"/>` +
+         `<ellipse cx="${f1(at(-0.8))}" cy="${f1(b - 22 * k)}" rx="${f1(18 * k)}" ry="${f1(5 * k)}" fill="#7a756a"/>` +
+         `<line x1="${f1(at(-0.8) + 4 * k)}" y1="${f1(b - 22 * k)}" x2="${f1(at(-0.8) + 16 * k)}" y2="${f1(b - 46 * k)}" stroke="#b0aa9c" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`;
+    // bowls of powders and petals
+    t += [[-0.45, "#f2c12e"], [-0.18, "#c0392b"], [0.12, "#7cb342"]].map(([u, cc]) =>
+      `<path d="M${P(at(u) - 16 * k, b - 12 * k)} Q${P(at(u), b + 2 * k)} ${P(at(u) + 16 * k, b - 12 * k)} Z" fill="#f6eedd" stroke="#c9b48a" stroke-width="${f1(1.2 * k)}"/>` +
+      `<ellipse cx="${f1(at(u))}" cy="${f1(b - 12 * k)}" rx="${f1(14 * k)}" ry="${f1(4 * k)}" fill="${cc}"/>`).join("");
+    // herb bundles lying on it
+    t += [[0.36, "#5f8a3a"], [0.52, "#a78bfa"]].map(([u, cc]) => [-6, -2, 2, 6].map(d =>
+      `<line x1="${f1(at(u) - 22 * k)}" y1="${f1(b - 4 * k + d * 0.3 * k)}" x2="${f1(at(u) + 18 * k)}" y2="${f1(b - 6 * k + d * k)}" stroke="${cc}" stroke-width="${f1(3 * k)}" stroke-linecap="round"/>`).join("") +
+      `<rect x="${f1(at(u) - 16 * k)}" y="${f1(b - 8 * k)}" width="${f1(5 * k)}" height="${f1(7 * k)}" fill="#c9b27a"/>`).join("");
+    // scissors and a knife
+    t += [-1, 1].map(e => `<circle cx="${f1(at(0.74) - 8 * k)}" cy="${f1(b - 4 * k + e * 4 * k)}" r="${f1(4 * k)}" fill="none" stroke="#c0392b" stroke-width="${f1(2 * k)}"/>`).join("") +
+         `<path d="M${P(at(0.74) - 4 * k, b - 6 * k)} L${P(at(0.74) + 16 * k, b - 3 * k)} M${P(at(0.74) - 4 * k, b - 2 * k)} L${P(at(0.74) + 16 * k, b - 5 * k)}" stroke="#9aa0aa" stroke-width="${f1(2 * k)}"/>` +
+         `<line x1="${f1(at(0.9) - 14 * k)}" y1="${f1(b - 3 * k)}" x2="${f1(at(0.9) - 2 * k)}" y2="${f1(b - 3 * k)}" stroke="#6e4a28" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>` +
+         `<path d="M${P(at(0.9) - 2 * k, b - 5 * k)} L${P(at(0.9) + 18 * k, b - 3 * k)} L${P(at(0.9) - 2 * k, b - 1 * k)} Z" fill="#c9ced6"/>`;
+    // a little brass balance, high at the back
+    const bx = at(-0.02), bb = b - 2 * k;
+    t += `<line x1="${f1(bx)}" y1="${f1(bb)}" x2="${f1(bx)}" y2="${f1(bb - 44 * k)}" stroke="#c99a2e" stroke-width="${f1(3 * k)}"/>` +
+         `<line x1="${f1(bx - 26 * k)}" y1="${f1(bb - 44 * k)}" x2="${f1(bx + 26 * k)}" y2="${f1(bb - 44 * k)}" stroke="#c99a2e" stroke-width="${f1(3 * k)}"/>` +
+         [-1, 1].map(e => `<line x1="${f1(bx + e * 26 * k)}" y1="${f1(bb - 44 * k)}" x2="${f1(bx + e * 26 * k)}" y2="${f1(bb - 26 * k)}" stroke="#c99a2e" stroke-width="${f1(1 * k)}"/>` +
+           `<path d="M${P(bx + e * 26 * k - 10 * k, bb - 26 * k)} Q${P(bx + e * 26 * k, bb - 18 * k)} ${P(bx + e * 26 * k + 10 * k, bb - 26 * k)} Z" fill="#e0b84a" stroke="#a87a1e" stroke-width="${f1(k)}"/>`).join("") +
+         `<ellipse cx="${f1(bx)}" cy="${f1(bb)}" rx="${f1(10 * k)}" ry="${f1(3 * k)}" fill="#c99a2e"/>`;
+    return t;
+  });
+  // the healer: dragged anywhere (her place), her size her group's; at
+  // first by the pot, her spoon in it
+  // (data-x, data-y: where she is, for a drag to start from before she has a place of her own)
+  // (her spoon's end, (-110, -48) in her units, at the soup's middle, g - 62k)
+  // (her feet on the ground: at her usual size, the spoon's end is in the soup)
+  const hx = o.healerX ?? potX + 110 * HEALER_Z * hz * k, hy = o.healerY ?? 0;
+  s += OPEN(`<g data-drag="healer" data-x="${f1(hx)}" data-y="${f1(hy)}" style="cursor: grab" ${tf(hx, g + hy, HEALER_Z * hz * k)}>`) + part("hroom-healer", [], () => HEALER_SVG) + CLOSE;
+  // warm: the fire's glow over the room, a little darker toward the corners
+  s += SEP + part("hroom-warm", c.F, () => `<defs><radialGradient id="bg-hwarm" gradientUnits="userSpaceOnUse" cx="${f1(potX)}" cy="${f1(g - 40 * k)}" r="${f1(0.8 * Math.hypot(W, H))}">` +
+    `<stop offset="0" stop-color="#ffb347" stop-opacity="0.2"/><stop offset="0.4" stop-color="#ffb347" stop-opacity="0.05"/><stop offset="1" stop-color="#5a2a0a" stop-opacity="0.3"/></radialGradient></defs>` +
+    all("url(#bg-hwarm)").replace("<rect ", `<rect pointer-events="none" `));
+  return s;
+}
 // A clearing in the forest, and far off down its paths, things to see,
 // each shown or not by its own switch: the family house, the tree house,
 // the witch's hut, a castle, a healer's hut. The ones with a scene of their
@@ -3601,7 +3876,7 @@ const CLEARING_THINGS = [
   { key: "seeTree", at: [-0.2, 95], size: 0.25, foot: 6, grow: o => (o.treeSize ?? 100) / 100, draw: (o, c) => unmarked(treeInner(c)), to: "treehouse" },
   { key: "seeHouse", at: [-0.36, 70], size: 0.3, foot: 4, grow: o => (o.houseSize ?? 100) / 100, draw: () => part("house-building", [], houseBuildingSvg), to: "house" },
   { key: "seeWitch", at: [0.25, 95], size: 0.52, foot: 108, draw: o => part("far-witch", [!!o.chickenLegs, o.legSize ?? 100, o.skullMax ?? 300, o.skullEye ?? 100, o.eyeGlow ?? 70], () => farWitchSvg(o)), to: "witch" },
-  { key: "seeHealer", at: [0.36, 40], size: 0.58, foot: 40, draw: () => part("far-healer", [], healerSvg), to: null },
+  { key: "seeHealer", at: [0.36, 40], size: 0.58, foot: 40, draw: () => part("far-healer", [], healerSvg), to: "healerroom" },
 ];
 function clearingScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
@@ -5015,7 +5290,7 @@ function woodpathScene(c) {
   return s;
 }
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
-                 witchroom: witchroomScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
+                 witchroom: witchroomScene, healerroom: healerroomScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
                  tent: tentScene, cave: caveScene, woodpath: woodpathScene, castle: castleScene, castleroom: castleroomScene };
 
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
@@ -7491,12 +7766,12 @@ const PLACES = [["none", "none"], ["forest", "🌲 forest"], ["underwater", "�
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
   ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
-  ["clearing", "🌲 forest clearing"], ["mountains", "⛰️ mountain trail"],
+  ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
   ["woodpath", "🥾 path through the woods"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"]];
 const PLACE_GROUPS = [
-  ["woods", "🌲 woods", ["forest", "clearing", "woodpath", "mountains"]],
+  ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "woodpath", "mountains"]],
   ["water", "💧 water", ["lake", "beach", "underwater", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
@@ -7761,6 +8036,11 @@ const TABS = [
     ["range", "crows", "🐦‍⬛ crows in cages", 0, 6, 1, 6],
     ["range", "frogs", "🐸 frogs in jars", 0, 8, 2, 8],
     ["range", "snakes", "🐍 snakes in the tank", 0, 6, 1, 5],
+    // inside the healer's hut (the healer herself: drag her)
+    ["range", "healerSize", "🌿 the healer's size (drag her to move her)", 30, 250, 70, 150],
+    ["color", "healerCatFur", "🐈 the healer's cat: fur", ["#e8862a", "#1f1f22", "#6b4226", "#9ca3af", "#ffffff", "#8b5cf6"]],
+    ["color", "healerCatWhite", "🐈 the healer's cat: tuxedo (nose, chest, paws)", ["#ffffff", "off", "#f7ead8", "#ffd1dc", "#c0c0c0", "#1f1f22"]],
+    ["color", "healerCatEyes", "🐈 the healer's cat: eyes", ["#22c55e", "#c6d43a", "#e0a800", "#3b82f6", "#f28c28"]],
     // the living room
     ["choice", "view", "🪟 outside the window", PICTURE_CHOICES],
     ["range", "viewDetail", "🪟 outside the window: detail (0 = a blur, 100 = all of it)", 0, 100, 30, 100],
@@ -7939,6 +8219,7 @@ const SHOWN_WHEN = {
       b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id && n <= (b["castleRooms" + id] ?? CASTLE_ROOMS[id].length) &&
            (b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1] ?? "king") === st]))])),
   ...Object.fromEntries(["witchSize", "cauldronSize", "crows", "frogs", "snakes"].map(key => ["background." + key, b => b.kind === "witchroom"])),
+  ...Object.fromEntries(["healerSize", "healerCatFur", "healerCatWhite", "healerCatEyes"].map(key => ["background." + key, b => b.kind === "healerroom"])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
   "background.windowSize": b => b.kind === "treeroom",
@@ -8615,7 +8896,7 @@ pic.addEventListener("pointerdown", e => {
   const thing = onThing(e);
   if (thing && !onFigure(e)) {
     const p = picUnits(e), B = state.background, name = thing.dataset.drag;
-    drag = { thing: name, x0: B[name + "X"] ?? 0, y0: B[name + "Y"] ?? 0, px: p.x, py: p.y };
+    drag = { thing: name, x0: B[name + "X"] ?? +(thing.dataset.x ?? 0), y0: B[name + "Y"] ?? +(thing.dataset.y ?? 0), px: p.x, py: p.y };
     pic.setPointerCapture(e.pointerId);
     return;
   }
@@ -8719,7 +9000,7 @@ function flyInto(box, arrive) {
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
+const ARRIVE = { healerroom: [60, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
 // Where each trip through a doorway began, the last on top: the back chip
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.
