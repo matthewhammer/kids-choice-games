@@ -153,6 +153,11 @@
      kinds, then the kind's tunes), as the mixing board's master strip */
   .chipset { border: 2px dashed var(--line); border-radius: 12px; padding: 6px 8px; }
   .chipset + .chipset { margin-top: 6px; }
+  /* (ticket 99) a scene's objects: small chips, many to a line */
+  .row.objs { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+  .row.objs button.obj { font-size: 0.78em; padding: 0 5px; line-height: 1.5; border-radius: 9px; }
+  .row.objs button.obj.off { opacity: 0.5; text-decoration: line-through; }
+  .row.objs .me { font-size: 0.95em; padding: 0 2px; }
   .chipset > .cap { color: var(--muted); font-size: 0.85em; margin-bottom: 4px; }
   /* a group of controls in its dashed box (the castle's look, its rooms, each room's own) */
   .ctlgroup { margin: 10px 0; }
@@ -535,7 +540,7 @@ const DEFAULTS = {
             patternColor: "auto" },
   shoes: { style: "sneaker", different: false, size: 100, color: "#c0392b", toes: 5, alienToes: 3, talonCount: 4 },
   // the figure's size and place in a background scene (dragged there)
-  background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, chickenLegs: false, legSize: 100, hutNear: 0,
+  background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, objectsOff: {}, chickenLegs: false, legSize: 100, hutNear: 0,
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false,
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,
@@ -2692,6 +2697,24 @@ function broomSvg([hx, hy], trim) {
 // and a size slider (a tree's, a house's, a couch's) only a group's tag.
 const SEP = "\u0001", OPEN = tag => SEP + tag + SEP, CLOSE = SEP + "</g>" + SEP;
 const unmarked = svg => svg.replaceAll(SEP, "");
+// (ticket 99) A scene's objects, by depth. A scene is painted back to front.
+// A thing standing in it (a tree, a table, the witch) is an object: named,
+// and marked with its depth, the y where it stands on the ground (its foot,
+// in the picture's own units, as the friend's feet are). The friend is
+// drawn just before the first object standing nearer than their feet (a
+// greater y), so they pass behind whatever stands in front of them. Flat
+// things on the ground, and what is behind anywhere one can stand (the sky,
+// far hills, a back wall), are not objects: they stay behind. An object
+// always in front has the depth Infinity; something flying takes the depth
+// of the ground under it. A scene's objects come in its text nearest last
+// (a moving one, as the witch, put in order by byDepth), and in that order
+// they are its list in the game, each one shown or hidden there
+// (objectsOff). A name is plain words (no quotes or angle brackets), its
+// own within its scene. Only an object outside any group with a transform
+// (or a doorway, or a thing to drag) can have the friend stand in front of
+// it; one inside another object is part of that one.
+const obj = (name, z, svg) => OPEN(`<g data-obj="${name}" data-z="${Number.isFinite(z) ? f1(z) : "front"}">`) + svg + CLOSE;
+const byDepth = list => list.slice().sort((a, b) => a[1] - b[1]).map(([name, z, svg]) => obj(name, z, svg)).join("");
 const PARTS = new Map();
 function part(name, inputs, build) {
   const key = name + "|" + JSON.stringify(inputs);
@@ -7476,11 +7499,15 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     s += land(g - 150 * k, 30, "#b5dc98", 0.5);
     // the far wood: rows of pines
     s += `<defs>${pineDef("bg-wood-pine0", 51)}${pineDef("bg-wood-pine1", 53)}${leafyTreeDef("bg-wood-big0", 57, { wide: 1.25, h: 340 })}${leafyTreeDef("bg-wood-big1", 61, { wide: 1.2, h: 330 })}</defs>`;
-    for (const [row, base, col] of [[0, g - 110 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 60 * k, ["#2f6b3a", "#3c7d45"]]])
+    // (each row an object, standing at its trees' middle depth)
+    for (const [row, base, col] of [[0, g - 110 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 60 * k, ["#2f6b3a", "#3c7d45"]]]) {
+      let t = "";
       for (let i = 0, x = x0 - 50 * k; x < x1 + 50 * k; i++, x += (row ? 52 : 40) * k) {
         const h = (row ? 210 : 150) * k * (0.8 + 0.4 * R(i, row)), b = base + 20 * k * R(i, row + 2);
-        s += use(`bg-wood-pine${i % 2}`, x, b, h / 200 * (R(i, row + 4) < 0.5 ? -1 : 1), h / 200, ` color="${col[i % 2]}"`);
+        t += use(`bg-wood-pine${i % 2}`, x, b, h / 200 * (R(i, row + 4) < 0.5 ? -1 : 1), h / 200, ` color="${col[i % 2]}"`);
       }
+      s += obj(row ? "pines, near row" : "pines, far row", base + 10 * k, t);
+    }
     // sunbeams, slanting down through the trees onto the meadow: the sun is
     // far off and still, so they run parallel and keep their shapes; each
     // dims and brightens on its own as clouds go by the sun, now and then
@@ -7494,13 +7521,14 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       s += [0, 72, 144, 216, 288].map(a => `<circle cx="${f1(x + 5 * k * Math.cos(a * Math.PI / 180))}" cy="${f1(y + 5 * k * Math.sin(a * Math.PI / 180))}" r="${f1(3.6 * k)}" fill="${c}"/>`).join("") +
            `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(2.6 * k)}" fill="#f2a900"/>`;
     }
-    // big leafy trees at the sides, nearest of all
-    for (let i = 0; i < 4; i++) {
+    // the butterflies, flying over the meadow (at the depth of the ground under the nearest)
+    s += obj("butterflies", g - 40 * k, butterfliesSvg({ k, o: opts }, [[x0 + W * 0.16, g - 70 * k, 1.1], [x1 - W * 0.18, g - 110 * k, 1], [x1 - W * 0.34, g - 40 * k, 1.2]]));
+    // big leafy trees at the sides, nearest of all (the outer two nearer still)
+    s += byDepth([0, 1, 2, 3].map(i => {
       const sd = side(i), x = sd * Math.max(W / 2 - (i < 2 ? 70 : 200) * k, 170 * k), b = g + (i < 2 ? 60 : 30) * k;
       const sc = i < 2 ? 1.15 : 0.9, z = 355 * k * sc / 330;
-      s += use(`bg-wood-big${i % 2}`, x, b, z * -sd, z);
-    }
-    s += butterfliesSvg({ k, o: opts }, [[x0 + W * 0.16, g - 70 * k, 1.1], [x1 - W * 0.18, g - 110 * k, 1], [x1 - W * 0.34, g - 40 * k, 1.2]]);
+      return [`big tree, ${sd < 0 ? "left" : "right"}${i < 2 ? ", outer" : ", inner"}`, b, use(`bg-wood-big${i % 2}`, x, b, z * -sd, z)];
+    }));
   } else if (kind === "underwater") {
     s += `<defs>${grad("bg-sea", "#6fd6f2", "#0b4f7a", y0, y1)}</defs>` + all("url(#bg-sea)");
     for (let j = 0; j < 5; j++) {
@@ -7996,7 +8024,30 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
 }
 
 let faceFrame = { tx: 0, ty: 0, s: 1 };
-const bgShown = { text: null, node: null, kept: new Map() };
+const bgShown = { text: null, node: null, kept: new Map(), objs: [] };
+// (ticket 99) the scene's objects as mounted, in order: name, depth, element
+// (see obj); where the friend stands among them; which are hidden
+let figShown = [];
+function sceneObjects(root) {
+  return [...root.querySelectorAll("[data-obj]")].filter(n => {
+    for (let q = n.parentNode; q && q !== root; q = q.parentNode)
+      if (q.hasAttribute("transform") || q.hasAttribute("data-obj") || q.hasAttribute("data-drag") || q.classList.contains("portal")) return false;
+    return true;
+  }).map(n => ({ name: n.dataset.obj, z: n.dataset.z === "front" ? Infinity : Number(n.dataset.z), node: n }));
+}
+const objectAhead = feet => (bgShown.objs.find(o => o.z > feet) || {}).node || null;
+// which list of hidden objects a place keeps: a castle room's by its style,
+// a room in the tree house by its number, any other by its kind
+function objPlace(B) {
+  if (B.kind === "castleroom") return "castleroom:" + (castleOf(B).rooms[Math.round(B.castleRoom ?? 1) - 1] ?? "king");
+  if (B.kind === "treeroom") return "treeroom:" + Math.round(B.inside ?? 1);
+  return B.kind;
+}
+const objectsOff = B => new Set(((B.objectsOff || {})[objPlace(B)]) || []);
+function showObjects() {
+  const off = objectsOff(state.background);
+  for (const o of bgShown.objs) o.node.style.display = off.has(o.name) ? "none" : "";
+}
 // the scene's element, its pieces those of the last scene where their text
 // is the same (see SEP), the rest parsed
 function mountScene(text) {
@@ -8464,14 +8515,22 @@ function draw() {
   // all of it, so dragging the friend past a cauldron's fumes crawled.
   const fresh = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   fresh.innerHTML = svg;
-  if (scened && bgText !== bgShown.text) { bgShown.node = mountScene(bgText); bgShown.text = bgText; }
+  if (scened && bgText !== bgShown.text) { bgShown.node = mountScene(bgText); bgShown.text = bgText; bgShown.objs = sceneObjects(bgShown.node); }
+  if (!scened) bgShown.objs = [];
   const scenery = scened ? bgShown.node : null;
   for (const c of [...pic.childNodes]) if (c !== scenery) c.remove();
+  for (const n of figShown) n.remove();   // (last time's friend, who may have stood inside the scene)
   if (scenery) {
     if (scenery.parentNode !== pic) pic.append(scenery);
     if (fresh.firstChild) pic.insertBefore(fresh.firstChild, scenery);   // the defs, before the scene
   }
-  pic.append(...fresh.childNodes);
+  // the friend, among the scene's objects by depth (ticket 99): just before
+  // the first standing nearer than their feet, or in front of everything
+  figShown = [...fresh.childNodes];
+  const ahead = scenery ? objectAhead(figureT.sg + figureT.dy) : null;
+  if (ahead) for (const n of figShown) ahead.parentNode.insertBefore(n, ahead);
+  else pic.append(...figShown);
+  showObjects();
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was
   // drawn, kept centred
@@ -10449,6 +10508,7 @@ const TABS = [
     ["places", "kind", "background", PLACES],
     ["range", "figSize", "🧍 size in the scene", 10, 1000, 100, 100],
     ["place", "figPos", "🧍 place in the scene (or drag the figure)"],
+    ["objects", "objectsOff", "👁️ what stands in the scene, back to front (tap to hide or show)"],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)
     ["choice", "lfoFast", "〰️ quick things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
     ["choice", "lfoSlow", "〰️ slow things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
@@ -10709,6 +10769,7 @@ const SHOWN_WHEN = {
   "background.figSize": b => b.kind !== "none",
   "background.lfoFast": b => !!sceneLfoThings(b).fast, "background.lfoSlow": b => !!sceneLfoThings(b).slow, "background.lfoWings": b => !!sceneLfoThings(b).wings,
   "background.figPos": b => b.kind !== "none",
+  "background.objectsOff": b => b.kind !== "none",
   "background.chickenLegs": b => b.kind === "witch",
   "background.legSize": b => b.kind === "witch" && b.chickenLegs,
   "background.hutNear": b => b.kind === "witch",
@@ -11018,6 +11079,31 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     });
   }
   if (kind === "castledesigner" && !buildingHud) castleDesigner(part, key, box, syncs);
+  // (ticket 99) the scene's objects, back to front, as small chips: a tap
+  // hides one (🙈) or shows it again (👁️); the friend's chip (🧍) stands
+  // among them where the friend stands, so a drag moves it along the list
+  if (kind === "objects") {
+    const row = el("div", { class: "row objs" }), me = el("span", { class: "me", title: "where the friend stands: in front of every object to the left, behind every one to the right" }, "🧍");
+    box.append(row);
+    let shown = "", chips = [];
+    syncs.push(() => {
+      const B = state[part], list = bgShown.objs, off = objectsOff(B), at = objPlace(B);
+      const sig = at + "|" + list.map(o => o.name + "@" + o.z).join("|");
+      if (sig !== shown) {
+        shown = sig;
+        chips = list.map(o => [o, el("button", { class: "obj", title: `${o.name}: stands at depth ${Number.isFinite(o.z) ? Math.round(o.z) : "in front of everything"} (the friend's feet are at ${Math.round(SCENE.ground)} on the ground line)`,
+          onclick: () => { const all = { ...(B.objectsOff || {}) }, now = new Set(all[at] || []);
+                           if (now.has(o.name)) now.delete(o.name); else now.add(o.name);
+                           if (now.size) all[at] = [...now]; else delete all[at];
+                           B.objectsOff = all; changed(); } }, [el("span", { class: "eye" }), " " + o.name])]);
+        row.replaceChildren(...chips.map(([, b]) => b));
+      }
+      for (const [o, b] of chips) { const hid = off.has(o.name); b.querySelector(".eye").textContent = hid ? "🙈" : "👁️"; b.classList.toggle("off", hid); b.setAttribute("aria-pressed", !hid); }
+      const feet = SCENE.ground + (B.figY ?? 0), i = list.findIndex(o => o.z > feet);
+      row.insertBefore(me, i < 0 ? null : chips[i][1]);
+      box.hidden = !list.length;
+    });
+  }
   if (kind === "action") {
     const b = el("button", { onclick: () => { rest[0](); changed(); } }, label);
     lbl.replaceChildren();
