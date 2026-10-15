@@ -300,13 +300,30 @@ const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c
 // A castle's rooms: up to six, each in a style. The styles are by who made
 // them up (N's, M's and D's), and any castle may use any of them. A trap
 // room's two pits drop into the castle's dungeons.
-const ROOM_STYLES = [["N", "N's rooms", [["king", "👑 king's room"], ["greenhouse", "🌿 greenhouse"], ["trap", "🕳️ trap room"],
-                                          ["dungeon1", "🗝️ dungeon"], ["dungeon2", "⛓️ deep dungeon"], ["hallway", "🕯️ hallway"]]],
-                    ["more", "more rooms", [["catroom", "🐈 cat room"], ["stable", "🐴 stable"]]]];
+// The castle's room styles, one entry each: its label, whose idea it was
+// (N's, or more besides), its drawing (r: its pits and its bones, for the
+// trap room and the dungeons), its exits (side: doors in its side walls and a
+// sign out, set per room, and a color theme, as the king's room; hall: a
+// hallway's doors and stairs, set per room; trap: one arch out; ladder: a
+// ladder up to the trap room; all: an arch to every other room) and its
+// stone's tone. ROOM_STYLES, ROOM_TONE, SIDE_DOOR_ROOMS and the room's
+// drawing (castleroomScene) and exits (castleWays) all come from this.
+const ROOM_KINDS = {
+  king: { label: "👑 king's room", by: "N", exits: "side", tone: "#a9a2b4", draw: (c, K) => kingRoomSvg(c, K) },
+  greenhouse: { label: "🌿 greenhouse", by: "N", exits: "all", tone: "#c9c3b0", draw: (c, K) => greenhouseSvg(c, K) },
+  trap: { label: "🕳️ trap room", by: "N", exits: "trap", tone: "#8f8a96", draw: (c, K, r) => trapRoomSvg(c, K, r.pits) },
+  dungeon1: { label: "🗝️ dungeon", by: "N", exits: "ladder", tone: "#6c6f7a", draw: (c, K, r) => dungeonSvg(c, K, false, r.bones) },
+  dungeon2: { label: "⛓️ deep dungeon", by: "N", exits: "ladder", tone: "#5d6b62", draw: (c, K, r) => dungeonSvg(c, K, true, r.bones) },
+  hallway: { label: "🕯️ hallway", by: "N", exits: "hall", tone: "#8a8597", draw: (c, K) => hallwaySvg(c, K) },
+  catroom: { label: "🐈 cat room", by: "more", exits: "side", draw: (c, K) => catRoomSvg(c, K) },
+  stable: { label: "🐴 stable", by: "more", exits: "side", draw: (c, K) => stableSvg(c, K) },
+};
+const ROOM_STYLES = [["N", "N's rooms"], ["more", "more rooms"]].map(([by, name]) =>
+  [by, name, Object.entries(ROOM_KINDS).filter(([, R]) => R.by === by).map(([st, R]) => [st, R.label])]);
 // the rooms whose exits are their own (K.hall): a hallway's doors and stairs; the
 // others', doors in their side walls, as the king's room's, and a sign out toward
 // us; each of these rooms also takes a color theme
-const SIDE_DOOR_ROOMS = ["king", "catroom", "stable"], OWN_EXIT_ROOMS = ["hallway", ...SIDE_DOOR_ROOMS];
+const SIDE_DOOR_ROOMS = Object.keys(ROOM_KINDS).filter(st => ROOM_KINDS[st].exits === "side"), OWN_EXIT_ROOMS = ["hallway", ...SIDE_DOOR_ROOMS];
 // The cat room's cats: the castle's own, up to eight, each with its fur, its
 // tuxedo white (or none), its eyes, how it is (sitting, asleep, walking), where
 // in the room it is, its size, and its wag: with an LFO (in time with the
@@ -4607,7 +4624,7 @@ function castleScene(c) {
 // on the walls, and the things its style keeps. Rooms: the castle's own list
 // (up to six), each in a style; a trap room's two pits drop into its
 // dungeons, and a dungeon's ladder climbs back to the trap room.
-const ROOM_TONE = { king: "#a9a2b4", greenhouse: "#c9c3b0", trap: "#8f8a96", dungeon1: "#6c6f7a", dungeon2: "#5d6b62", hallway: "#8a8597" };
+const ROOM_TONE = Object.fromEntries(Object.entries(ROOM_KINDS).filter(([, R]) => R.tone).map(([st, R]) => [st, R.tone]));
 // the room's frame: the back wall from x = -bw to bw, from its top to the
 // floor; the vanishing point, at the eye's height, where the floor's and
 // ceiling's lines meet
@@ -5768,13 +5785,14 @@ function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0) {
 }
 function castleWays(c, K, n, style) {
   const { W, k } = c, { floor, bw } = roomFrame(c);
-  const rooms = K.rooms, trapAt = rooms.indexOf("trap") + 1;
-  if (style === "trap") return archDoor(0, floor, k, "🏰 out", `data-to="castle"`, 100, 180);
-  if (style === "dungeon1" || style === "dungeon2")
+  const rooms = K.rooms, trapAt = rooms.indexOf("trap") + 1, exits = ROOM_KINDS[style].exits;
+  if (exits === "trap") return archDoor(0, floor, k, "🏰 out", `data-to="castle"`, 100, 180);
+  if (exits === "ladder")
     return ladderUp(bw * 0.82, floor, roomFrame(c).top - 30 * k, k, trapAt ? `🪜 up to ${roomLabel("trap").split(" ")[0]} ${trapAt}` : "🪜 up and out",
                     trapAt ? `data-to="castleroom" data-room="${trapAt}"` : `data-to="castle"`);
   const links = [{ attrs: `data-to="castle"`, label: "🏰 out" },
-    ...rooms.map((st, i) => ({ st, i })).filter(({ st, i }) => i + 1 !== n && st !== "dungeon1" && st !== "dungeon2")
+    // (not the dungeons, or any room whose way out is a ladder: those are reached by falling in)
+    ...rooms.map((st, i) => ({ st, i })).filter(({ st, i }) => i + 1 !== n && ROOM_KINDS[st].exits !== "ladder")
       .map(({ st, i }) => ({ attrs: `data-to="castleroom" data-room="${i + 1}"`, label: `${roomLabel(st).split(" ")[0]} ${i + 1}` }))];
   // the hallway's: doors in its side walls, by turns left and right, two to each stretch of it
   // a room's own exits (K.hall), for a hallway and the king's room: each door to the outside or a room
@@ -5784,14 +5802,14 @@ function castleWays(c, K, n, style) {
   // the king's room: its doors in its side walls, two to a side, between its back corners and the
   // picture's edges (clear of all it holds); its way out a sign at the bottom, as the forest clearing's
   // path, toward us (a door set to lead out is that sign)
-  if (SIDE_DOOR_ROOMS.includes(style)) {
+  if (exits === "side") {
     const { y1, pad } = c, doors = H.doors.filter(d => d !== "out").map(to).filter(Boolean);
     // (a nearer door's sign, kept inside the picture, would sit on the farther one's: it goes above it)
     return doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j; return hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k); }).join("") +
       `<g class="portal" data-to="castle"><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
       plankSign(-W * 0.2, y1 - 44 * k, k, "🏰 out ⬇️") + `</g>`;
   }
-  if (style === "hallway") {
+  if (exits === "hall") {
     // and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
     const doors = H.doors.map(to).filter(Boolean);
     const end = H.end === "none" ? 0 : H.end === "auto" ? rooms.indexOf("spiral") + 1 : Math.min(rooms.length, Number(H.end) || 0);
@@ -5818,8 +5836,7 @@ function castleroomScene(c) {
   if (style === "hallway") c = { ...c, eye: 0.3 };
   // (in its own color theme)
   if (K.roomTheme[n - 1] === "B") K = { ...K, ...K.themeB };
-  const draw = { trap: () => trapRoomSvg(c, K, pits), dungeon1: () => dungeonSvg(c, K, false, bones), dungeon2: () => dungeonSvg(c, K, true, bones),
-                 king: () => kingRoomSvg(c, K), greenhouse: () => greenhouseSvg(c, K), hallway: () => hallwaySvg(c, K), catroom: () => catRoomSvg(c, K), stable: () => stableSvg(c, K) }[style];
+  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones });
   let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "",
                                   SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
