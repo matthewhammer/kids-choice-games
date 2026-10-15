@@ -4,6 +4,7 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **Fixed: the castle's stonework stays behind its gate.** The wall's blocks were drawn over everything on it, crossing the gate, the portcullis, the windows, the banners and the torches, and one poked onto a tower. Now they are drawn first, and kept on the wall.
 - **Fixed: the house's driveway joints run edge to edge,** instead of out onto the lawn on one side and short of the edge on the other.
 - **Fixed: the healer's hut's roof, seen from the clearing.** Its thatch stuck up above the roof and its smoke rose from the air above it; the roof now peaks where the thatch meets, each line of thatch runs from the eaves to the peak, and the smoke comes out of its top.
 - **Fixed: the castle rooms' cobwebs hang together.** In each top corner, a web's threads fanned out over the side wall while its rings hung on the back wall; now threads and rings make one web, in the corner.
