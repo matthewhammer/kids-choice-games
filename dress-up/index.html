@@ -4076,10 +4076,28 @@ function fairyforestScene(c) {
   });
   // the great old tree, on the left: its crown, then a thick trunk with roots
   const tx = -W * 0.3, tb = g + 20 * k;
+  // two branches reaching out from its trunk, a lantern hanging from each (in
+  // the house's part, below): each a curve from inside the trunk out to its
+  // leafy end, and where on it the lantern's string is tied
+  const fairyBranches = [[[-40, -300], [-110, -322], [-168, -392], -120], [[40, -268], [100, -284], [168, -352], 118]].map(([a, q, b, lx]) => {
+    const A = [tx + a[0] * k, tb + a[1] * k], Q = [tx + q[0] * k, tb + q[1] * k], B = [tx + b[0] * k, tb + b[1] * k];
+    const pt = u => [0, 1].map(d => (1 - u) * (1 - u) * A[d] + 2 * u * (1 - u) * Q[d] + u * u * B[d]);
+    let u = 0.5; for (let it = 0; it < 30; it++) { const x = pt(u)[0]; u += (tx + lx * k - x) / (B[0] - A[0]) * 0.8; u = Math.max(0, Math.min(1, u)); }
+    return { A, Q, B, pt, tie: pt(u), u };
+  });
   s += SEP + part("fairy-tree", [c.F, time], () => {
     const bark = tn("#6b4a2b"), dk = mix(bark, "#000000", 0.35);
     let t = `<defs>${leafyTreeDef("bg-fbig", 41, { wide: 1.5, greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#47a047", "#58b050"].map(tn), bark })}</defs>` +
             use("bg-fbig", tx, tb - 120 * k, 2.2 * k);
+    // (its two branches, out of the trunk: thick near it, thinner out to a tuft of leaves)
+    for (const { A, Q, B, pt } of fairyBranches) {
+      const M = pt(0.5), Q2 = [(Q[0] + B[0]) / 2, (Q[1] + B[1]) / 2], Q1 = [(A[0] + Q[0]) / 2, (A[1] + Q[1]) / 2];
+      t += `<path d="M${P(...A)} Q${P(...Q1)} ${P(...M)}" fill="none" stroke="${bark}" stroke-width="${f1(22 * k)}" stroke-linecap="round"/>` +
+           `<path d="M${P(...M)} Q${P(...Q2)} ${P(...B)}" fill="none" stroke="${bark}" stroke-width="${f1(12 * k)}" stroke-linecap="round"/>` +
+           `<path d="M${P(...A)} Q${P(...Q1)} ${P(...M)} Q${P(...Q2)} ${P(...B)}" fill="none" stroke="${dk}" stroke-width="${f1(1.6 * k)}" opacity="0.6" transform="translate(0 ${f1(4 * k)})"/>` +
+           [[0, 0, 26, 15], [-14, -12, 20, 12], [14, -10, 20, 12], [6, 10, 18, 11], [-10, 8, 17, 10]].map(([dx, dy, rx, ry], j) =>
+             `<ellipse cx="${f1(B[0] + dx * k)}" cy="${f1(B[1] + dy * k)}" rx="${f1(rx * k)}" ry="${f1(ry * k)}" fill="${tn(["#2f7d32", "#3a8a3c", "#47a047", "#285e2a", "#58b050"][j])}"/>`).join("");
+    }
     // the trunk: wide, flaring into roots, bark lines up it
     t += `<path d="M${P(tx - 120 * k, tb)} Q${P(tx - 70 * k, tb - 30 * k)} ${P(tx - 62 * k, tb - 110 * k)} L${P(tx - 46 * k, tb - 380 * k)} L${P(tx + 46 * k, tb - 380 * k)} L${P(tx + 62 * k, tb - 110 * k)} Q${P(tx + 70 * k, tb - 30 * k)} ${P(tx + 120 * k, tb)} Z" fill="${bark}" stroke="${dk}" stroke-width="${f1(3 * k)}"/>` +
          [[-150, -40], [-90, -55], [100, -50], [160, -38]].map(([dx, h]) => `<path d="M${P(tx + dx * 0.4 * k, tb - 40 * k)} Q${P(tx + dx * 0.8 * k, tb + h * 0.2 * k)} ${P(tx + dx * k, tb + 6 * k)}" fill="none" stroke="${bark}" stroke-width="${f1(18 * k)}" stroke-linecap="round"/>`).join("") +
@@ -4115,12 +4133,16 @@ function fairyforestScene(c) {
     t += `<rect x="${f1(tx - 70 * k)}" y="${f1(by)}" width="${f1(140 * k)}" height="${f1(9 * k)}" rx="${f1(3 * k)}" fill="#8b5e34"/>` +
          [...Array(9)].map((_, i) => `<line x1="${f1(tx - 66 * k + i * 16.5 * k)}" y1="${f1(by)}" x2="${f1(tx - 66 * k + i * 16.5 * k)}" y2="${f1(by - 24 * k)}" stroke="#8b5e34" stroke-width="${f1(3 * k)}"/>`).join("") +
          `<line x1="${f1(tx - 70 * k)}" y1="${f1(by - 24 * k)}" x2="${f1(tx + 70 * k)}" y2="${f1(by - 24 * k)}" stroke="#8b5e34" stroke-width="${f1(4 * k)}"/>`;
-    // lanterns hanging from the branches either side, glowing at dusk
-    for (const [lx, ly] of [[tx - 120 * k, tb - 330 * k], [tx + 118 * k, tb - 300 * k]])
-      t += `<line x1="${f1(lx)}" y1="${f1(ly - 40 * k)}" x2="${f1(lx)}" y2="${f1(ly)}" stroke="#4a3220" stroke-width="${f1(1.5 * k)}"/>` +
+    // lanterns hanging from the branches either side, glowing at dusk: each
+    // string tied round its branch (its underside, the branch's half-width below its middle)
+    for (const { tie } of fairyBranches) {
+      const lx = tie[0], top = tie[1] + 5 * k, ly = top + 34 * k;
+      t += `<line x1="${f1(lx)}" y1="${f1(top)}" x2="${f1(lx)}" y2="${f1(ly)}" stroke="#4a3220" stroke-width="${f1(1.5 * k)}"/>` +
+           `<ellipse cx="${f1(lx)}" cy="${f1(top)}" rx="${f1(3 * k)}" ry="${f1(1.6 * k)}" fill="none" stroke="#4a3220" stroke-width="${f1(1.2 * k)}"/>` +
            (dusk ? `<circle cx="${f1(lx)}" cy="${f1(ly + 12 * k)}" r="${f1(30 * k)}" fill="#ffd27a" opacity="0.25"/>` : "") +
            `<rect x="${f1(lx - 8 * k)}" y="${f1(ly)}" width="${f1(16 * k)}" height="${f1(22 * k)}" rx="${f1(4 * k)}" fill="${warm}" opacity="${dusk ? 1 : 0.8}" stroke="#4a3220" stroke-width="${f1(2 * k)}"/>` +
            `<path d="M${P(lx - 10 * k, ly)} L${P(lx, ly - 8 * k)} L${P(lx + 10 * k, ly)} Z" fill="#4a3220"/>`;
+    }
     // a little chimney out of the trunk, smoke curling up
     const cx = tx + 40 * k, cy = tb - 200 * k;
     t += `<rect x="${f1(cx)}" y="${f1(cy - 6 * k)}" width="${f1(34 * k)}" height="${f1(10 * k)}" fill="#7a756a"/><rect x="${f1(cx + 24 * k)}" y="${f1(cy - 40 * k)}" width="${f1(12 * k)}" height="${f1(40 * k)}" fill="#7a756a"/>` +
