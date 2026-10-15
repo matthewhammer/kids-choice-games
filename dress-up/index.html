@@ -530,7 +530,7 @@ const DEFAULTS = {
            faceW: 100, faceH: 100, alien: 0, eyeGap: 38, noseView: "none", nose: "L", noseFront: "round", noseW: 100, noseH: 100,
            witchDir: "right", witchLen: 100, mouthSize: 100 },
   hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100 },
-  body:  { neck: 22, neckW: 26, arms: 55, armLen: 95, armW: 16, legLen: 140, legW: 20 },
+  body:  { neck: 22, neckW: 26, arms: 55, elbows: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0 },
   shirt: { style: "tee", collar: "v", width: 60, length: 150, color: "#5b8bd0", pattern: "plain",
            patternSize: 14, patternColor: "auto" },
   hands: { style: "round", different: false, size: 14, color: "skin", fingers: 5, alienFingers: 3, clawLen: 100, clawCount: 4, starPoints: 5, starAngle: 0,
@@ -690,6 +690,14 @@ const lighter = h => mix(h, "#ffffff", 0.45);
 function line(x1, y1, x2, y2, w, color, outline) {
   const l = (ww, c) => `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" ` +
                        `stroke="${c}" stroke-width="${f1(ww)}" stroke-linecap="round"/>`;
+  return (outline ? l(w + 5, outline) : "") + l(w, color);
+}
+// a limb through its joints (an arm: shoulder, elbow, hand): a straight
+// one (two points) is a line, as ever; a bent one, a path round its joints
+function limbThrough(P, w, color, outline) {
+  if (P.length === 2) return line(P[0][0], P[0][1], P[1][0], P[1][1], w, color, outline);
+  const d = "M" + P.map(([x, y]) => f1(x) + " " + f1(y)).join(" L");
+  const l = (ww, c) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f1(ww)}" stroke-linecap="round" stroke-linejoin="round"/>`;
   return (outline ? l(w + 5, outline) : "") + l(w, color);
 }
 const poly = (ps, fill, stroke, sw = 2.5) =>
@@ -8171,20 +8179,41 @@ function draw() {
   const w = SH.width, L = SH.length;
   const nw = Math.max(22, B.neckW / 2 + 6);           // the collar fits the neck
 
-  // ARMS: from each shoulder, at the arms angle, to a hand.
-  const a = B.arms * Math.PI / 180, armLen = B.armLen, armW = B.armW;
+  // ARMS: from each shoulder, at the arms angle, to a hand. (ticket 99)
+  // Each bends at its elbow, halfway: the forearm turned from the upper
+  // arm by the elbows' bend (+ up, - down; both arms alike, mirrored), the
+  // hand at the forearm's angle. Unbent (0), an arm is one straight line.
+  const a = B.arms * Math.PI / 180, armLen = B.armLen, armW = B.armW, elbow = B.elbows ?? 0, eb = elbow * Math.PI / 180;
   const arms = [1, -1].map(side => {
     const A = [side * (w - 6), 8];
-    return { side, A, H: [A[0] + side * armLen * Math.cos(a), A[1] + armLen * Math.sin(a)],
-             angle: side > 0 ? B.arms : 180 - B.arms };
+    if (!eb) return { side, A, H: [A[0] + side * armLen * Math.cos(a), A[1] + armLen * Math.sin(a)],
+                      angle: side > 0 ? B.arms : 180 - B.arms, joints: null };
+    const E = [A[0] + side * armLen / 2 * Math.cos(a), A[1] + armLen / 2 * Math.sin(a)];
+    const H = [E[0] + side * armLen / 2 * Math.cos(a - eb), E[1] + armLen / 2 * Math.sin(a - eb)];
+    return { side, A, E, H, angle: side > 0 ? B.arms - elbow : 180 - B.arms + elbow, joints: [A, E, H] };
   });
+  // an arm's joints (shoulder, elbow, hand; or shoulder and hand), and its
+  // sleeve's: the share `f` of the arm's length from the shoulder, round the elbow
+  const armJoints = arm => arm.joints || [arm.A, arm.H];
+  const alongArm = (arm, f) => {
+    if (!arm.joints) return [arm.A, [arm.A[0] + (arm.H[0] - arm.A[0]) * f, arm.A[1] + (arm.H[1] - arm.A[1]) * f]];
+    const { A, E, H } = arm;
+    return f <= 0.5 ? [A, [A[0] + (E[0] - A[0]) * 2 * f, A[1] + (E[1] - A[1]) * 2 * f]] : [A, E, [E[0] + (H[0] - E[0]) * (2 * f - 1), E[1] + (H[1] - E[1]) * (2 * f - 1)]];
+  };
   // no clothes: underwear or a swimsuit instead of the shirt and pants
   // (a full animal suit still covers everything)
   const U = state.undies, undies = U.on && !suit && !witch && !fairy;
   const sleeve = suit ? 0.97 : undies ? 0 : { tee: 0.38, long: 0.95, tank: 0 }[SH.style];
 
   // PANTS: their hips under the shirt's hem, their feet under the legs.
-  const hw = w - 2, LL = B.legLen, fx = hw / 2 + 6, feetY = L + LL;
+  // (ticket 99) Each leg bends at its knee, halfway: bent, the knees go out
+  // and the feet stay under the hips, the thigh and the shin each leaning
+  // half the knees' bend, so the legs reach less far down and the friend
+  // crouches (lower on the ground by as much). Unbent (0), a leg is straight.
+  const knee = (B.knees ?? 0) * Math.PI / 360;
+  const hw = w - 2, LL = B.legLen, fx = hw / 2 + 6, feetY = knee ? L + LL * Math.cos(knee) : L + LL;
+  const kneeAt = side => [side * (fx + LL / 2 * Math.sin(knee)), L + LL / 2 * Math.cos(knee)];
+  const legJoints = side => knee ? [[side * fx, L], kneeAt(side), [side * fx, feetY]] : [[side * fx, L], [side * fx, feetY]];
   // each pants leg is wide enough for the leg inside it
   const half = Math.max(hw / 2, B.legW / 2 + 6);
   const shoeSc = state.shoes.size / 100;
@@ -8224,12 +8253,13 @@ function draw() {
   const pileRx = (6 + pileP * 84 / 100) * 1.6 * s;
   // and a long skirt or dress, which can reach past the feet
   const skirtHem = !suit && !undies && (P.style === "skirt" || P.style === "dress")
-    ? L + LL * (P.skirtLen ?? 50) / 100 + 30 : 0;
+    ? L + (feetY - L) * (P.skirtLen ?? 50) / 100 + 30 : 0;
   const toesDown = suit || witch ? 0 : feetY + Math.max(footDown(state.shoes), footDown(rightShoeOf(state.shoes))) * shoeSc + 12;
   let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem,
                           broomH ? broomH[1] + 140 * kb : 0, catK ? -9 + 46 * catK : 0);
   const hairHalf = hr.half * headWidth(F) * (1 + 0.12 * F.alien / 100) * s;
   let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
+                        ...arms.filter(x => x.E).map(x => -Math.abs(x.E[0]) - armW - 20), knee ? -Math.abs(kneeAt(1)[0]) - B.legW - 30 : 0,
                         -(fx + half + 70), -(fx + (witch ? FOOT_REACH.witchboot : Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes)))) * shoeSc + 20), -(w + 40), -(pileRx + 20), -(B.neckW / 2 + 40), -(hairHalf + 20),
                         -((80 + (C ? (kind === "deer" ? 60 : 30) : witch ? brimRx - 80 : 0)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20),
                         broomH ? -(Math.abs(broomH[0]) + 60 * kb) : 0,
@@ -8308,10 +8338,11 @@ function draw() {
   // (the legs are the pants' to see through: invisible pants are
   // invisible legs, never bare ones)
   const legsAt = svg.length;
-  for (const side of [1, -1]) svg += line(side * fx, L, side * fx, feetY, B.legW, limb, limbLine);
+  for (const side of [1, -1]) svg += limbThrough(legJoints(side), B.legW, limb, limbLine);
   if (witch)   // striped stockings
     for (const side of [1, -1])
-      svg += `<line x1="${f1(side * fx)}" y1="${f1(L)}" x2="${f1(side * fx)}" y2="${f1(feetY)}" stroke="${WC.trimColor}" ` +
+      svg += knee ? `<path d="M${legJoints(side).map(([x, y]) => f1(x) + " " + f1(y)).join(" L")}" fill="none" stroke="${WC.trimColor}" stroke-width="${f1(B.legW)}" stroke-dasharray="9 9"/>`
+                  : `<line x1="${f1(side * fx)}" y1="${f1(L)}" x2="${f1(side * fx)}" y2="${f1(feetY)}" stroke="${WC.trimColor}" ` +
              `stroke-width="${f1(B.legW)}" stroke-dasharray="9 9"/>`;
   veilFrom("pants", legsAt);
   const feet = BIRD_SUIT[kind] ? { style: "talons", size: state.shoes.size }
@@ -8337,7 +8368,7 @@ function draw() {
   } else if (!suit && (P.style === "skirt" || P.style === "dress")) {
     // a skirt flares a little; a dress flares more as it gets longer and
     // has a scalloped hem. The length is a share of the legs' length.
-    const sl = LL * (P.skirtLen ?? 50) / 100;
+    const sl = (feetY - L) * (P.skirtLen ?? 50) / 100;
     if (P.style === "skirt")
       svg += `<path d="M${-hw} ${L - 10} L${hw} ${L - 10} L${f1(hw + 30)} ${f1(L + sl)} Q0 ${f1(L + sl + 14)} ${f1(-hw - 30)} ${f1(L + sl)} Z" ` +
              `fill="${pf}" stroke="${ps}" stroke-width="2.5" stroke-linejoin="round"/>`;
@@ -8366,8 +8397,17 @@ function draw() {
     }
   } else {
     const len = !suit && P.style === "shorts" ? LL * 0.38 : LL;
-    const legs = [[-hw, L - 10], [hw, L - 10], [fx + half, L + len], [fx - half, L + len],
-                  [0, L + Math.min(len * 0.3, 40)], [-(fx - half), L + len], [-(fx + half), L + len]];
+    // (bent legs: each pants leg follows its thigh and, past the knee, its
+    // shin, as wide across as it is when straight)
+    const crotch = Math.min(len * 0.3, 40) * Math.cos(knee), wd = half / Math.cos(knee);
+    const legEdge = (side, t) => { const [hx, hy] = [side * fx, L], [kx, ky] = kneeAt(side);
+      return t <= LL / 2 ? [hx + (kx - hx) * t / (LL / 2), hy + (ky - hy) * t / (LL / 2)] : [kx + (side * fx - kx) * (t - LL / 2) / (LL / 2), ky + (feetY - ky) * (t - LL / 2) / (LL / 2)]; };
+    const legSide = side => { const end = legEdge(side, len), mid = len > LL / 2 ? [kneeAt(side)] : [];
+      return { out: [...mid.map(([x, y]) => [x + side * wd, y]), [end[0] + side * wd, end[1]]], in: [[end[0] - side * wd, end[1]], ...mid.map(([x, y]) => [x - side * wd, y])] }; };
+    const legs = !knee ? [[-hw, L - 10], [hw, L - 10], [fx + half, L + len], [fx - half, L + len],
+                          [0, L + Math.min(len * 0.3, 40)], [-(fx - half), L + len], [-(fx + half), L + len]]
+      : [[-hw, L - 10], [hw, L - 10], ...legSide(1).out, ...legSide(1).in, [0, L + crotch],
+         ...legSide(-1).in.slice().reverse(), ...legSide(-1).out.slice().reverse()];
     svg += poly(legs, pf, ps);
     if (wrapStripes(C)) svg += legStripes(legs, hw, fx, half, L, len, Math.min(len * 0.3, 40), C.marks);
   }
@@ -8399,9 +8439,10 @@ function draw() {
   const ss = suit ? darker(C.fur) : darker(SH.color);
   // (a falcon suit's arms are inside its wings, drawn after the body)
   const winged = !!BIRD_SUIT[kind];
-  if (!winged) for (const { A, H } of arms) svg += line(A[0], A[1], H[0], H[1], armW, limb, limbLine);
-  const sleeveEnd = ({ A, H }) => [A[0] + (H[0] - A[0]) * sleeve, A[1] + (H[1] - A[1]) * sleeve];
-  if (sleeve > 0 && !winged) for (const arm of arms) { const E = sleeveEnd(arm); svg += line(arm.A[0], arm.A[1], E[0], E[1], armW + 14, ss); }
+  if (!winged) for (const arm of arms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
+  // (a sleeve: the shirt's share of the arm, round the elbow)
+  const sleeveOf = arm => alongArm(arm, sleeve);
+  if (sleeve > 0 && !winged) for (const arm of arms) svg += limbThrough(sleeveOf(arm), armW + 14, ss);
   const collar = { v: [[0, 18]], round: [[-nw * 0.7, -6], [0, -1], [nw * 0.7, -6]], flat: [] }[SH.collar];
   const shoulder = !suit && SH.style === "tank" ? [[nw + 12, -20], [w, 30]] : [[w + 4, -6], [w, 44]];
   const torso = [[-nw, -20], ...collar, [nw, -20], ...shoulder, [w + 2, L], [-(w + 2), L],
@@ -8476,13 +8517,15 @@ function draw() {
            `<rect x="-5000" y="-5000" width="10000" height="10000" fill="white"/>` +
            `<polygon points="${pts(undies ? bareBody : torso)}" fill="black" stroke="black" stroke-width="3" stroke-linejoin="round"/></mask>` +
            `<g mask="url(#off-body)">`;
-    for (const { A, H } of arms) svg += line(A[0], A[1], H[0], H[1], armW, limb, limbLine);
-    if (sleeve > 0) for (const arm of arms) { const E = sleeveEnd(arm); svg += line(arm.A[0], arm.A[1], E[0], E[1], armW + 14, ss); }
+    for (const arm of arms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
+    if (sleeve > 0) for (const arm of arms) svg += limbThrough(sleeveOf(arm), armW + 14, ss);
     svg += `</g>`;
-    if (sleeve > 0) for (const arm of arms) { const E = sleeveEnd(arm); svg += line(arm.A[0], arm.A[1], E[0], E[1], armW + 9, sf); }
+    if (sleeve > 0) for (const arm of arms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
     // (from past the shoulder, where the fur sleeve joins the body)
     if (wrapStripes(C))
-      for (const arm of arms) svg += limbStripes(arm.A, sleeveEnd(arm), armW + 9, C.marks, `arm-stripes${arm.side}`, 22);
+      for (const arm of arms) { const P = sleeveOf(arm);   // (round a bent elbow: the upper arm's, then the forearm's)
+        svg += P.length === 2 ? limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22)
+                              : limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0); }
   }
   veilFrom("shirt", armsAt);
 
@@ -10398,10 +10441,12 @@ const TABS = [
     ["range", "neck", "neck length", 0, 420, 4, 60],
     ["range", "neckW", "neck width", 2, 120, 12, 40],
     ["range", "arms", "arms (up ↔ down)", -180, 180, -75, 85],
+    ["range", "elbows", "💪 elbows bend (− down, + up)", -150, 150, 0, 45],
     ["range", "armLen", "arm length", 10, 600, 60, 130],
     ["range", "armW", "arm width", 3, 60, 10, 24],
     ["range", "legLen", "leg length", 20, 420, 70, 200],
     ["range", "legW", "leg width", 4, 70, 14, 28],
+    ["range", "knees", "🦵 knees bend (out, so the friend crouches)", 0, 150, 0, 25],
   ]],
   ["👕 Shirt", "shirt", [
     ["choice", "style", "style", [["tee", "t-shirt"], ["long", "long sleeves"], ["tank", "tank top"]]],
