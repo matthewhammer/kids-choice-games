@@ -130,6 +130,8 @@
   /* a group of controls in its dashed box (the castle's look, its rooms, each room's own) */
   .ctlgroup { margin: 10px 0; }
   .ctlgroup > .ctl { margin: 8px 0; }
+  .ctlgroup.here { border-style: solid; border-color: var(--accent); }
+  .ctlgroup.here > .cap { color: var(--accent); font-weight: 600; }
   .strip.dim { opacity: 0.45; }
   .strip-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
   .strip-name { flex: 1 1 auto; font-weight: 600; }
@@ -6698,8 +6700,23 @@ function draw() {
     if (l < left || t < top || btm > bottom)
       pic.setAttribute("viewBox", `${f1(l)} ${f1(t)} ${f1(-2 * l)} ${f1(btm - t)}`);
   }
-  document.getElementById("mood").textContent = "feeling " + mood(family(F.color), F.brow, F.smile);
+  // the feeling, and where, as each place takes it (PLACE_PHRASE)
+  const BGK = state.background.kind, where = PLACE_PHRASE[BGK];
+  const place = typeof where === "function" ? where(state.background) : where || "";
+  document.getElementById("mood").textContent = "feeling " + mood(family(F.color), F.brow, F.smile) + (place ? " " + place : "");
 }
+
+// Where the friend is, after their feeling ("feeling happy in the forest"):
+// each place with the word it takes, in, at, on, near or outside of; a
+// castle room by its own name and number; a castle by its owner.
+const PLACE_PHRASE = { forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
+  cemetery: "in the 🌿 cemetery", lake: "at the 🦆 lake", house: "outside of the 🏠 house", treehouse: "near the 🌳 tree house",
+  treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
+  healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",
+  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", woodpath: "on the 🥾 path through the woods",
+  castle: b => `outside of ${castleOf(b).id}'s 🏰 castle`,
+  castleroom: b => { const K = castleOf(b), n = Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1)));
+    return `in the ${roomLabel(K.rooms[n - 1])} (room ${n} of ${K.id}'s castle)`; } };
 
 // ===================== MUSIC =====================
 // Each background has a tune of its own, and any tune can play over any
@@ -8554,7 +8571,8 @@ const TABS = [
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, 4, 0, 4],
         ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
-        ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)]]])]),
+        ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)]],
+        b => b.kind === "castleroom" && (b.castle ?? "N") === id && Math.round(b.castleRoom ?? 1) === n])]),
     ["toggle", "seeHealer", "🌿 see the healer's hut"],
     // inside the witch's hut (the witch herself: drag her)
     ["range", "witchSize", "🧙 the witch's size (drag her to move her)", 30, 250, 70, 150],
@@ -8755,7 +8773,7 @@ const SHOWN_WHEN = {
     const isHall = (b, n) => typeOf(b, n) === "hallway", hasDoors = (b, n) => ["hallway", "king"].includes(typeOf(b, n));
     return [["background.castleLook" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id],
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle],
-            ...[1, 2, 3, 4, 5, 6].flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b)],
+            ...[1, 2, 3, 4, 5, 6].flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
               ...[1, 2, 3, 4].map(k => ["background." + hallDoorKey(id, n, k), b => hasDoors(b, n) && k <= Math.round(b["castleHallDoors" + n + id] ?? 3)])])];
   })),
@@ -8841,10 +8859,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // visibility panel's)
   if (kind === "of") return control(key, label, { when: rest[0] ? () => rest[0](state[part]) : null });
   // a group: its controls in a dashed box with its name, shown or hidden together
+  // (and, with a test, marked when it holds: the castle room you are in)
   if (kind === "group") {
     const g = el("div", { class: "chipset ctlgroup" }, [el("div", { class: "cap" }, [label]), ...rest[0].map(c => control(part, c))]);
-    const when = SHOWN_WHEN[part + "." + key];
-    if (when) syncs.push(() => { g.hidden = !when(state[part]); });
+    const when = SHOWN_WHEN[part + "." + key], here = rest[1];
+    if (when || here) syncs.push(() => { if (when) g.hidden = !when(state[part]); if (here) g.classList.toggle("here", !!here(state[part])); });
     return g;
   }
   const val = el("span", { class: "val" });
