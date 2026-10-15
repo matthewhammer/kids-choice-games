@@ -10,11 +10,38 @@ Each version lists the game's features as of that version. The newest version is
   - C, the waltz in 4: the waltz itself re-set in four;
   - D, the kick with the waltz: the snare and hats in 4 over it;
   - E, a shuffle over two bars: in the waltz's own triplets.
-- **〰️ Five LFOs, and the scenes move with the music.** The mixing board has two more LFOs: D, a quick one (once a beat to start with), and E, a slow one (once in four bars). Out of the box, they are the scenes' own:
-  - in every scene, its quick things (flames leaping, hens pecking, …) move with D;
-  - and its slow things (toys swinging, dust drifting, …) move with E.
+- **〰️ Seven LFOs, and every scene moves with the music.** The mixing board has four more LFOs: D, a quick one (once a beat to start with); E, a slow one (once in four bars); and F and G, for wings (F a wingbeat that looks like one, a quarter of a beat; G so fast it blurs, a sixteenth). Out of the box, they are the scenes' own. In every scene, its quick things move with D and its slow things with E; butterflies' wings beat with F:
 
-  Things side by side each go their own way into the wave, never in step. That is only how they start: D and E can be set like any LFO, anything can follow any LFO, and two new choices on the scene's panel say which LFO its quick things and its slow things follow ("〰️ quick things in the scene move with", "〰️ slow things in the scene move with"), or "their own pace", as before. Each LFO's strip on the mixing board names the scene's things that follow it.
+  | Place | Quick things (D) | Slow things (E) |
+  |---|---|---|
+  | lake | the sun's rays, the ducks bobbing | the clouds |
+  | forest, house, tree house, clearing, path through the woods | the butterflies bobbing (their wings with F) | sunbeams, clouds, the tree house's swing |
+  | cemetery | the moths | the clouds |
+  | under the sea | the fishes' tails | the seaweed swaying |
+  | beach | the sand castles' flags | the palm fronds |
+  | witch's woods | her cauldron fire | the bats gliding |
+  | witch's hut | the cauldron fire | the crows' cages swinging |
+  | healer's hut | the fire under the pot | the healer swaying |
+  | living room | a new wall clock's pendulum | the lamp's glow |
+  | inside the tree house | the leaves on the branches | the house sign swinging |
+  | fairy forest | the fairy lights, the sun's rays, the stars | the lanterns swinging, the clouds |
+  | mountain trail | the birds' wings | the clouds |
+  | jungle waterfall | the parrots' wings | the vines swaying |
+  | camp site | the campfire, the stars | the clouds, the fire's glow |
+  | inside a tent | the campfire outside, the stars | the tent's light |
+  | cave behind the falls | the gems sparkling | the crystals glowing |
+  | castle | the pennants, the sun's rays | the clouds |
+  | the castle's rooms with torches | the torches' flames | the torches' glow |
+  | greenhouse | the glass parrots' wings | the clouds |
+  | cat room | the fire | the cat toys swinging |
+  | stable | the hens pecking | the dust in the sunbeam |
+  | our imagination | the map's dotted paths | the room's glow |
+
+  Things side by side each go their own way into the wave, never in step. That is only how they start:
+  - D to G can be set like any LFO, and anything can follow any LFO.
+  - Three new choices on the scene's panel say which LFO its quick things, its slow things and its wings follow: "〰️ quick things in the scene move with", "〰️ slow things in the scene move with" and "〰️ wings in the scene beat with". Or "their own pace", as before.
+  - Each LFO's strip on the mixing board names the scene's things that follow it.
+- **🕰️ A wall clock in the living room,** high on the right, its pendulum swinging.
 - **🐈 A cat room, a new castle room:** a big, cozy wooden room. It has honey plank walls, beams overhead and a lantern, and a stone fireplace with a crackling fire, sparks rising from it. Over the mantel, with its candles and its little clock, hangs a portrait of a royal cat in a crown. There is a window seat under the evening sky (a crescent moon, twinkling stars), its curtains tied back. Two tall cat trees have carpeted platforms, sisal posts, a pompom swinging, and a cubby at the foot with eyes peeking out of it. Shelves step up the side walls to a high walkway across the back, with a cat flap at its end and a feather toy dangling from it, and a rope bridge crosses the room. On the floor are a big braided rug, bowls of fish and water, a basket, a box, balls of yarn, a toy mouse, and a mouse hole whose mouse peeks out now and then. Its doors are in its side walls, as the king's room's are, and its way out is a sign at the bottom. The rug, the curtains, the window seat and the cat trees take its color theme.
 - **🐈 The castle's cats:** up to eight ("🐈 how many cats"), six to start with. Each has its own fur, tuxedo white, eyes and size, and it is one of:
   - 🐈 sitting, its tail hanging over a shelf's edge, or curled round its paws on the floor;
