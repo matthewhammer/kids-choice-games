@@ -2706,9 +2706,9 @@ const unmarked = svg => svg.replaceAll(SEP, "");
 // things on the ground, and what is behind anywhere one can stand (the sky,
 // far hills, a back wall), are not objects: they stay behind. An object
 // always in front has the depth Infinity; something flying takes the depth
-// of the ground under it. A scene's objects come in its text nearest last
-// (a moving one, as the witch, put in order by byDepth), and in that order
-// they are its list in the game, each one shown or hidden there
+// of the ground under it. A scene's objects are put in order by depth when
+// it is shown (sceneObjects), and in that order they are its list in the
+// game, each one shown or hidden there
 // (objectsOff). A name is plain words (no quotes or angle brackets), its
 // own within its scene. Only an object outside any group with a transform
 // (or a doorway, or a thing to drag) can have the friend stand in front of
@@ -8028,12 +8028,23 @@ const bgShown = { text: null, node: null, kept: new Map(), objs: [] };
 // (ticket 99) the scene's objects as mounted, in order: name, depth, element
 // (see obj); where the friend stands among them; which are hidden
 let figShown = [];
+// (the objects are put in order by depth, nearest last, in the places they
+// held: a scene's later pieces, as a castle room's cats, drawn after the
+// room, then stand among its furniture; what is between them stays put)
 function sceneObjects(root) {
-  return [...root.querySelectorAll("[data-obj]")].filter(n => {
+  const depth = n => n.dataset.z === "front" ? Infinity : Number(n.dataset.z);
+  const objs = [...root.querySelectorAll("[data-obj]")].filter(n => {
     for (let q = n.parentNode; q && q !== root; q = q.parentNode)
       if (q.hasAttribute("transform") || q.hasAttribute("data-obj") || q.hasAttribute("data-drag") || q.classList.contains("portal")) return false;
     return true;
-  }).map(n => ({ name: n.dataset.obj, z: n.dataset.z === "front" ? Infinity : Number(n.dataset.z), node: n }));
+  });
+  for (const parent of new Set(objs.map(n => n.parentNode))) {
+    const here = objs.filter(n => n.parentNode === parent), sorted = here.slice().sort((a, b) => depth(a) - depth(b));
+    if (sorted.every((n, i) => n === here[i])) continue;
+    const slots = here.map(n => { const m = document.createComment(""); n.before(m); return m; });
+    sorted.forEach((n, i) => slots[i].replaceWith(n));
+  }
+  return [...root.querySelectorAll("[data-obj]")].filter(n => objs.includes(n)).map(n => ({ name: n.dataset.obj, z: depth(n), node: n }));
 }
 const objectAhead = feet => (bgShown.objs.find(o => o.z > feet) || {}).node || null;
 // which list of hidden objects a place keeps: a castle room's by its style,
