@@ -5418,7 +5418,8 @@ function catRoomSvg(c, K) {
   // leaded panes; curtains tied back in the room's colors; the window seat under it
   { const [wx, wyb] = at(WX, Yh(0.3)), wyt = at(WX, Yh(0.74))[1], ww = 0.38 * bw, ar = ww / 2;
     const arch = (g) => `M${P(wx - ar + g, wyb)} V${f1(wyt + ar)} A${f1(ar - g)} ${f1(ar - g)} 0 0 1 ${P(wx + ar - g, wyt + ar)} V${f1(wyb)} Z`;
-    t += `<path d="${arch(-8 * k)}" fill="${beam}"/><path d="${arch(0)}" fill="url(#bg-catsky)"/>` +
+    // (all inside the window, its leads too, kept inside its arch)
+    t += `<path d="${arch(-8 * k)}" fill="${beam}"/><defs><clipPath id="bg-catwin"><path d="${arch(0)}"/></clipPath></defs><g clip-path="url(#bg-catwin)"><path d="${arch(0)}" fill="url(#bg-catsky)"/>` +
          `<path d="M${P(wx - ar, wyb - 20 * k)} Q${P(wx - ar * 0.4, wyb - 46 * k)} ${P(wx, wyb - 28 * k)} Q${P(wx + ar * 0.5, wyb - 12 * k)} ${P(wx + ar, wyb - 34 * k)} V${f1(wyb)} H${f1(wx - ar)} Z" fill="#3a3a5e"/>` +
          `<path d="M${P(wx - ar, wyb - 6 * k)} Q${P(wx, wyb - 22 * k)} ${P(wx + ar, wyb - 8 * k)} V${f1(wyb)} H${f1(wx - ar)} Z" fill="#2a2a48"/>` +
          `<circle cx="${f1(wx + ar * 0.45)}" cy="${f1(wyt + ar * 0.75)}" r="${f1(12 * k)}" fill="#fff6c8"/><circle cx="${f1(wx + ar * 0.45 + 6 * k)}" cy="${f1(wyt + ar * 0.7)}" r="${f1(11 * k)}" fill="#3a3f6e"/>` +
@@ -5426,6 +5427,7 @@ function catRoomSvg(c, K) {
            `<animate attributeName="opacity" values="1;0.25;1" dur="${(1.6 + 2 * R(j, 1243)).toFixed(1)}s" begin="-${(3 * R(j, 1244)).toFixed(1)}s" repeatCount="indefinite"/></circle>`).join("");
     for (let i = 1; i < 6; i++) t += `<line x1="${f1(wx - ar + ww * i / 6)}" y1="${f1(wyt)}" x2="${f1(wx - ar + ww * i / 6)}" y2="${f1(wyb)}" stroke="#2a2a32" stroke-width="${f1(1 * k)}" opacity="0.5"/>`;
     for (let i = 1; i < 7; i++) t += `<line x1="${f1(wx - ar)}" y1="${f1(wyt + (wyb - wyt) * i / 7)}" x2="${f1(wx + ar)}" y2="${f1(wyt + (wyb - wyt) * i / 7)}" stroke="#2a2a32" stroke-width="${f1(1 * k)}" opacity="0.5"/>`;
+    t += `</g>`;
     t += `<path d="${arch(0)}" fill="none" stroke="${woodD}" stroke-width="${f1(5 * k)}"/><line x1="${f1(wx)}" y1="${f1(wyt)}" x2="${f1(wx)}" y2="${f1(wyb)}" stroke="${woodD}" stroke-width="${f1(5 * k)}"/>` +
          `<line x1="${f1(wx - ar)}" y1="${f1(wyt + ar)}" x2="${f1(wx + ar)}" y2="${f1(wyt + ar)}" stroke="${woodD}" stroke-width="${f1(5 * k)}"/>`;
     // (the curtains: a rod, and each side gathered up and tied back with a gold cord)
