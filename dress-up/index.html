@@ -9035,13 +9035,27 @@ const roomHereNowOf = B => { if (B.kind !== "castleroom") return [null, null];
 const roomHereNow = () => roomHereNowOf(state.background);
 // the residents in the room the friend is in, of each kind that lives there: [R, its list]
 const residentsHereNow = () => { const [K, st] = roomHereNow(); return Object.entries(RESIDENTS).filter(([, R]) => R.room === st).map(([kind, R]) => [R, K[kind]]); };
+// Everything in the picture that follows an LFO now, as [the LFO, its name on
+// the mixing board], each kind of follower once, here: the mixing board's
+// strip for an LFO names its followers from this, and a change to an LFO
+// draws the picture again when anything in it follows one. A new kind of
+// follower is a line here (and, in a scene, a read of its LFO: sceneOpts).
+const LFO_FOLLOWERS = [
+  // (a part of the friend fading in and out)
+  () => VISIBLE_PARTS.filter(g => LFO_NAMES.includes(state.visible["lfo_" + g])).map(g => [state.visible["lfo_" + g], "👻 " + g]),
+  // (a fairy's wings, while she wears them and they flap with it)
+  () => state.costume.kind === "fairy" && state.costume.wingFlutter !== false && LFO_NAMES.includes(state.costume.wingLfo) ? [[state.costume.wingLfo, "🧚 fairy wings"]] : [],
+  () => state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo) ? [[state.background.fairyHouseLfo, "🏡 fairy house"]] : [],
+  // (the castle's residents in the room the friend is in)
+  () => residentsHereNow().flatMap(([R, list]) => list.flatMap((one, i) => LFO_NAMES.includes(one.lfo) ? [[one.lfo, R.follows(i)]] : [])),
+  // (the scene's quick things, its slow things and its wings)
+  () => ["fast", "slow", "wings"].flatMap(pace => { const B = state.background, th = sceneLfoThings(B)[pace], L = th && sceneLfoName(B, pace); return L ? [[L, th]] : []; }),
+];
+const lfoFollowers = () => LFO_FOLLOWERS.flatMap(f => f());
 function mixChanged() {
   persist(); applyMix();
-  // (a part fading with an LFO, or a fairy's wings flapping with one, follow its changes at once)
-  if (VISIBLE_PARTS.some(g => LFO_NAMES.includes(state.visible["lfo_" + g])) || LFO_NAMES.includes(state.costume.wingLfo) ||
-      (state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo)) ||
-      residentsHereNow().some(([, list]) => list.some(one => LFO_NAMES.includes(one.lfo))) ||
-      ["fast", "slow", "wings"].some(pace => sceneLfoThings(state.background)[pace] && sceneLfoName(state.background, pace))) draw();
+  // (whatever follows an LFO follows its changes at once)
+  if (lfoFollowers().length) draw();
 }
 // The dub "throw": while a part is thrown (its strip's button held), all
 // of it goes to the echo, then its send goes back to where it was set;
@@ -9142,13 +9156,8 @@ function mixerBox(box) {
         onclick: () => { chan(id, "lfo" + L).shape = LFO_SHAPES[(LFO_SHAPES.indexOf(o().shape) + 1) % LFO_SHAPES.length]; local(); shapeBtn.textContent = LFO_SHAPE_NAME[o().shape]; } },
         LFO_SHAPE_NAME[o().shape]);
       const who = song.T.parts.filter(q => PITCHED_DRUMS.has(q.inst) && partLfo(id, q) === L).map(q => "🪘 " + partName(q.name))
-        .concat(VISIBLE_PARTS.filter(g => state.visible["lfo_" + g] === L).map(g => "👻 " + g))
-        // (a fairy's wings, while she wears them and they flap with it)
-        .concat(state.costume.kind === "fairy" && state.costume.wingFlutter !== false && state.costume.wingLfo === L ? ["🧚 fairy wings"] : [])
-        .concat(state.background.kind === "fairyforest" && state.background.fairyHouseLfo === L ? ["🏡 fairy house"] : [])
-        .concat(residentsHereNow().flatMap(([R, list]) => list.flatMap((one, i) => one.lfo === L ? [R.follows(i)] : [])))
-        // (the scene's quick things and its slow things, when they follow this one)
-        .concat(["fast", "slow", "wings"].flatMap(pace => { const B = state.background, th = sceneLfoThings(B)[pace]; return th && sceneLfoName(B, pace) === L ? [th] : []; }));
+        // (and everything in the picture that follows it: LFO_FOLLOWERS)
+        .concat(lfoFollowers().filter(([of]) => of === L).map(([, name]) => name));
       return el("div", { class: "strip lfo" }, [
         el("div", { class: "strip-top" }, [el("span", { class: "strip-name" }, `〰️ LFO ${L}`), shapeBtn]),
         knob("⏱️ round in", 0, LFO_BEATS.length - 1, () => lfoBeatsAt(o().beats), v => { chan(id, "lfo" + L).beats = LFO_BEATS[v]; }, v => beatsName(LFO_BEATS[v])),
