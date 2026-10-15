@@ -265,12 +265,17 @@ const CASTLE_STONES = ["#b8b8c4", "#e2c9a0", "#8a8f98", "#e8e4da", "#c98f7a", "#
 const CASTLE_FLAG_COLORS = ["#e53935", "#f2c12e", "#3b82f6", "#22c55e", "#6a2c91", "#f472b6", "#f97316", "#ffffff", "#1f1f22"];
 const CASTLE_FLAG_DEFAULTS = { N: ["#e53935", "#ffffff"], M: ["#f2c12e", "#6a2c91"], D: ["#3b82f6", "#ffffff"] };
 const CASTLE_FLAG_STYLES = [["alternate", "↔️ in turn"], ["stripes", "▥ stripes"], ["checkers", "▦ checkers"]];
+// a castle's hallway carpet (the hallway: hallwaySvg)
+const CASTLE_CARPETS = ["#a3122a", "#1e3a8a", "#14532d", "#6a2c91", "#7c2d12", "#d4a017", "#1f1f22"];
+// where the hallway's far end, the foot of a spiral staircase, leads: the
+// castle's first spiral staircase room, a room of its own choosing, or nowhere
+const HALL_ENDS = [["auto", "🌀 the first spiral stairs"], ...[1, 2, 3, 4, 5, 6].map(n => [String(n), `🚪 room ${n}`]), ["none", "🧱 nowhere"]];
 const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c2410c", "#1f2937"];
 // A castle's rooms: up to six, each in a style. The styles are by who made
 // them up (N's, M's and D's), and any castle may use any of them. A trap
 // room's two pits drop into the castle's dungeons.
 const ROOM_STYLES = [["N", "N's rooms", [["king", "👑 king's room"], ["greenhouse", "🌿 greenhouse"], ["trap", "🕳️ trap room"],
-                                          ["dungeon1", "🗝️ dungeon"], ["dungeon2", "⛓️ deep dungeon"]]]];
+                                          ["dungeon1", "🗝️ dungeon"], ["dungeon2", "⛓️ deep dungeon"], ["hallway", "🕯️ hallway"]]]];
 const CASTLE_ROOM_CHOICES = ROOM_STYLES.flatMap(([, , list]) => list);
 const roomLabel = st => (CASTLE_ROOM_CHOICES.find(([v]) => v === st) || [st, st])[1];
 // skeletons and skulls: none unless asked for, room by room (0 up to what
@@ -283,7 +288,7 @@ const castleOf = o => {
   const fl = CASTLE_FLAG_DEFAULTS[id], flagA = o["castleFlagA" + id] ?? fl[0];
   return { id, flag: flagA, flagA, flagB: o["castleFlagB" + id] ?? fl[1],
            flagStyle: CASTLE_FLAG_STYLES.some(([v]) => v === o["castleFlagStyle" + id]) ? o["castleFlagStyle" + id] : "alternate",
-           roof: o["castleRoof" + id] ?? "#3b5ea8",
+           roof: o["castleRoof" + id] ?? "#3b5ea8", carpet: o["castleCarpet" + id] ?? CASTLE_CARPETS[0], hallEnd: String(o["castleHallEnd" + id] ?? "auto"),
            levels: Math.max(1, Math.min(5, Math.round(o["castleLevels" + id] ?? d.levels))),
            stone: o["castleStone" + id] ?? d.stone, trees: Math.max(0, Math.round(o["castleTrees" + id] ?? d.trees)),
            moat: Math.max(0, (o["castleMoat" + id] ?? d.moat) / 100),
@@ -357,7 +362,7 @@ const DEFAULTS = {
                 houses: 4, bridges: 2, ladders: 3, leaves: 60, treeHouseSize: 100,
                 castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
                   [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
-                   ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, "alternate"], ["castleRoof" + id, "#3b5ea8"],
+                   ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, "alternate"], ["castleRoof" + id, "#3b5ea8"], ["castleCarpet" + id, CASTLE_CARPETS[0]], ["castleHallEnd" + id, "auto"],
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
                    ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0]))])),
                 castleRoom: 1,
@@ -4297,13 +4302,15 @@ function castleScene(c) {
 // on the walls, and the things its style keeps. Rooms: the castle's own list
 // (up to six), each in a style; a trap room's two pits drop into its
 // dungeons, and a dungeon's ladder climbs back to the trap room.
-const ROOM_TONE = { king: "#a9a2b4", greenhouse: "#c9c3b0", trap: "#8f8a96", dungeon1: "#6c6f7a", dungeon2: "#5d6b62" };
+const ROOM_TONE = { king: "#a9a2b4", greenhouse: "#c9c3b0", trap: "#8f8a96", dungeon1: "#6c6f7a", dungeon2: "#5d6b62", hallway: "#8a8597" };
 // the room's frame: the back wall from x = -bw to bw, from its top to the
 // floor; the vanishing point, at the eye's height, where the floor's and
 // ceiling's lines meet
 function roomFrame(c) {
   const { x0, y0, x1, y1, g, W, H, k } = c;
-  const floor = g - 110 * k, top = y0 + H * 0.1, bw = W * 0.34, vy = top + (floor - top) * 0.55;
+  // (the eye's height, a share of the wall: 0.55 in most rooms; the hallway's
+  // is higher, so it is seen from a little above and its far end clears the friend's head)
+  const floor = g - 110 * k, top = y0 + H * 0.1, bw = W * 0.34, vy = top + (floor - top) * (c.eye ?? 0.55);
   // a point (x, y) on the back wall's plane, carried out toward us to the
   // line y = to
   const out = (x, y, to) => { const t = (to - y) / (y - vy); return [x + x * t, to]; };
@@ -4314,8 +4321,10 @@ const torchSvg = (x, y, k, i = 0) => `<circle cx="${f1(x)}" cy="${f1(y - 24 * k)
   `<path d="M${f1(x - 4 * k)} ${f1(y + 22 * k)} L${f1(x - 2 * k)} ${f1(y)} L${f1(x + 2 * k)} ${f1(y)} L${f1(x + 4 * k)} ${f1(y + 22 * k)} Z" fill="#3a3a44"/>` +
   `<rect x="${f1(x - 12 * k)}" y="${f1(y + 18 * k)}" width="${f1(24 * k)}" height="${f1(6 * k)}" fill="#2a2a32"/>` +
   `<path d="M${f1(x - 9 * k)} ${f1(y)} L${f1(x + 9 * k)} ${f1(y)} L${f1(x + 6 * k)} ${f1(y + 8 * k)} L${f1(x - 6 * k)} ${f1(y + 8 * k)} Z" fill="#5a4632"/>` +
-  `<path d="M${f1(x)} ${f1(y - 34 * k)} Q${f1(x + 12 * k)} ${f1(y - 14 * k)} ${f1(x + 7 * k)} ${f1(y - 2 * k)} Q${f1(x)} ${f1(y + 2 * k)} ${f1(x - 7 * k)} ${f1(y - 2 * k)} Q${f1(x - 12 * k)} ${f1(y - 14 * k)} ${f1(x)} ${f1(y - 34 * k)} Z" fill="#ff9a2e">` +
-  `<animateTransform attributeName="transform" type="scale" additive="sum" values="1 1;1.06 0.9;0.96 1.08;1 1" dur="${(0.7 + 0.13 * (i % 3)).toFixed(2)}s" repeatCount="indefinite"/></path>` +
+  // (the flame flickers by scaling about its own base, (x, y): drawn about
+  // the origin and moved there, or it drifts off the torch)
+  `<g transform="translate(${f1(x)} ${f1(y)})"><path d="M0 ${f1(-34 * k)} Q${f1(12 * k)} ${f1(-14 * k)} ${f1(7 * k)} ${f1(-2 * k)} Q0 ${f1(2 * k)} ${f1(-7 * k)} ${f1(-2 * k)} Q${f1(-12 * k)} ${f1(-14 * k)} 0 ${f1(-34 * k)} Z" fill="#ff9a2e">` +
+  `<animateTransform attributeName="transform" type="scale" additive="sum" values="1 1;1.06 0.9;0.96 1.08;1 1" dur="${(0.7 + 0.13 * (i % 3)).toFixed(2)}s" repeatCount="indefinite"/></path></g>` +
   `<path d="M${f1(x)} ${f1(y - 22 * k)} Q${f1(x + 6 * k)} ${f1(y - 10 * k)} ${f1(x + 3 * k)} ${f1(y - 2 * k)} Q${f1(x)} ${f1(y)} ${f1(x - 3 * k)} ${f1(y - 2 * k)} Q${f1(x - 6 * k)} ${f1(y - 10 * k)} ${f1(x)} ${f1(y - 22 * k)} Z" fill="#ffe066"/>`;
 // a cobweb in a corner (sd: which side), its threads and rings
 const cobweb = (x, y, r, sd, k) => {
@@ -4551,6 +4560,83 @@ function dungeonSvg(c, K, deep, bones = 0) {
        `<animate attributeName="rx" values="${f1(4 * k)};${f1(40 * k)}" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="1.6s" repeatCount="indefinite"/></ellipse>` +
        `<circle cx="${f1(dx)}" cy="${f1(top)}" r="${f1(3 * k)}" fill="#cfe3ff"><animate attributeName="cy" values="${f1(top)};${f1(floor + 40 * k)}" dur="1.6s" repeatCount="indefinite"/></circle>`;
   return t;
+}
+// The hallway: the room's back wall opens onto a long corridor going off
+// into the dark, lit only by its torches (the night of the fairy forest
+// over it all, the torches' light on top; and no fireflies: they live
+// outside). Arches cross its vault, and along its walls, by turns, a
+// torch and a banner in the castle's flag colors with the owner's letter.
+// A carpet in the castle's carpet color runs from us down its whole length
+// to a closed door at the far end, a little light under it.
+function hallwaySvg(c, K) {
+  const { x0, y0, y1, W, H, k, pad, P } = c, { floor, top, bw, vy, out } = roomFrame(c);
+  const tone = ROOM_TONE.hallway, mortar = mix(tone, "#000000", 0.35), gold = "#e8b923";
+  let t = roomShell(c, tone, {});
+  // the corridor's cross-sections, going away: f is each one's size, from
+  // the back wall's (1) toward the vanishing point (0, vy)
+  const N = HALL_STRETCHES, F = [...Array(N + 1)].map((_, i) => 1 / (1 + i * 0.8)), fN = F[N];
+  const Y = (y, f) => vy + (y - vy) * f;
+  t += `<defs><radialGradient id="hall-depth" cx="0" cy="${f1(vy)}" r="${f1(bw)}" gradientUnits="userSpaceOnUse">` +
+       `<stop offset="0" stop-color="#000000" stop-opacity="0.75"/><stop offset="0.55" stop-color="#000000" stop-opacity="0.35"/><stop offset="1" stop-color="#000000" stop-opacity="0"/></radialGradient>` +
+       `<linearGradient id="hall-stairlight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcf6b" stop-opacity="0.55"/><stop offset="1" stop-color="#ffcf6b" stop-opacity="0"/></linearGradient></defs>`;
+  // its walls, floor and vault, from the back wall's opening to the far end
+  for (const sd of [-1, 1]) {
+    t += `<polygon points="${P(sd * bw, top)} ${P(sd * bw * fN, Y(top, fN))} ${P(sd * bw * fN, Y(floor, fN))} ${P(sd * bw, floor)}" fill="${mix(tone, "#000000", 0.18)}"/>`;
+    for (let j = 1; j < 12; j++) { const y = top + (floor - top) * j / 12;
+      t += `<line x1="${f1(sd * bw)}" y1="${f1(y)}" x2="${f1(sd * bw * fN)}" y2="${f1(Y(y, fN))}" stroke="${mortar}" stroke-width="${f1(1.6 * k)}" opacity="0.55"/>`; }
+  }
+  t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(bw * fN, Y(floor, fN))} ${P(-bw * fN, Y(floor, fN))}" fill="${mix(tone, "#5a4a3a", 0.4)}"/>` +
+       `<polygon points="${P(-bw, top)} ${P(bw, top)} ${P(bw * fN, Y(top, fN))} ${P(-bw * fN, Y(top, fN))}" fill="${mix(tone, "#000000", 0.45)}"/>`;
+  for (let i = -6; i <= 6; i++) t += `<line x1="${f1(i * bw / 6)}" y1="${f1(floor)}" x2="${f1(i * bw / 6 * fN)}" y2="${f1(Y(floor, fN))}" stroke="${mix(tone, "#000000", 0.4)}" stroke-width="${f1(1.2 * k)}" opacity="0.5"/>`;
+  // at each cross-section, an arch over the vault and its pillars down the walls, and a seam in the floor
+  for (let i = 1; i <= N; i++) { const f = F[i], w = bw * f, tp = Y(top, f), fl = Y(floor, f);
+    t += `<path d="M${P(-w, fl)} V${f1(tp)} Q${P(0, tp - 60 * k * f)} ${P(w, tp)} V${f1(fl)}" fill="none" stroke="${mix(tone, "#000000", 0.3)}" stroke-width="${f1(Math.max(1, 10 * k * f))}"/>` +
+         `<line x1="${f1(-w)}" y1="${f1(fl)}" x2="${f1(w)}" y2="${f1(fl)}" stroke="${mortar}" stroke-width="${f1(Math.max(0.6, 2 * k * f))}"/>`; }
+  // the far end: its wall, and in it an archway onto the foot of a spiral
+  // staircase, its steps winding up round their stone column and out of
+  // sight, warm light coming down them (where it leads: castleWays)
+  // (the stairwell is lit, so it is drawn over the hallway's dark, at the end)
+  let stairwell = "";
+  { const f = fN, w = bw * f, tp = Y(top, f), fl = Y(floor, f), A = hallFarArch(c), kf = k * f;
+    t += `<rect x="${f1(-w)}" y="${f1(tp)}" width="${f1(2 * w)}" height="${f1(fl - tp)}" fill="${mix(tone, "#000000", 0.28)}"/>`;
+    stairwell += `<path d="${A.d}" fill="#1a1410" stroke="${mix(tone, "#ffffff", 0.08)}" stroke-width="${f1(Math.max(1, 8 * kf))}"/>` +
+         `<clipPath id="hall-arch"><path d="${A.d}"/></clipPath><g clip-path="url(#hall-arch)">` +
+         `<rect x="${f1(A.x0)}" y="${f1(A.top)}" width="${f1(A.x1 - A.x0)}" height="${f1(A.fl - A.top)}" fill="#5a4330"/>`;
+    // the steps: wedges climbing from the left round to the right, each higher and narrower, behind the column at last
+    for (let j = 0; j < 9; j++) {
+      const u = j / 8, y = A.fl - j * (A.fl - A.top) * 0.11, sh = (A.fl - A.top) * 0.11, xl = A.x0 + (A.x1 - A.x0) * (0.12 + 0.05 * j), xr = A.x1 - (A.x1 - A.x0) * 0.02;
+      const lit = mix("#b8aca0", "#ffe2a8", 0.25 + 0.55 * u);
+      stairwell += `<polygon points="${P(xl, y - sh)} ${P(xr, y - sh * (1.4 - 0.5 * u))} ${P(xr, y)} ${P(xl, y)}" fill="${mix(lit, "#000000", 0.35)}"/>` +
+           `<polygon points="${P(xl, y - sh)} ${P(xl + (A.x1 - A.x0) * 0.04, y - sh * 1.35)} ${P(xr, y - sh * (1.75 - 0.5 * u))} ${P(xr, y - sh * (1.4 - 0.5 * u))}" fill="${lit}"/>`;
+    }
+    // the central column, and the light from above
+    stairwell += `<rect x="${f1(A.x0 + (A.x1 - A.x0) * 0.04)}" y="${f1(A.top)}" width="${f1((A.x1 - A.x0) * 0.16)}" height="${f1(A.fl - A.top)}" fill="${mix(tone, "#000000", 0.15)}"/>` +
+         `<rect x="${f1(A.x0)}" y="${f1(A.top)}" width="${f1(A.x1 - A.x0)}" height="${f1((A.fl - A.top) * 0.6)}" fill="url(#hall-stairlight)"/></g>`; }
+  // the carpet, from us, through the room, all the way down: its color the castle's, gold at its edges, a darker band inside them
+  const cw = 72 * k, edge = (u, side) => { const x = side * cw * u, [nx] = out(x, floor, y1 + pad); return [[nx, y1 + pad], [x, floor], [x * fN, Y(floor, fN)]]; };
+  const strip = u => { const L = edge(u, -1), Rr = edge(u, 1); return [...L, ...Rr.reverse()].map(([x, y]) => P(x, y)).join(" "); };
+  t += `<polygon points="${strip(1)}" fill="${K.carpet}"/>` +
+       `<polygon points="${strip(0.8)}" fill="none" stroke="${mix(K.carpet, "#000000", 0.35)}" stroke-width="${f1(5 * k)}"/>` +
+       [-1, 1].map(sd => `<polyline points="${edge(1, sd).map(([x, y]) => P(x, y)).join(" ")}" fill="none" stroke="${gold}" stroke-width="${f1(4 * k)}"/>`).join("");
+  // along the walls, by turns: a torch on one side and a banner on the other, in each stretch of the corridor
+  const lights = [];
+  for (let i = 0; i < N - 1; i++) {
+    const f = 1 / (1 + 0.8 * i + 0.58), w = bw * f, kk = k * f, sd = i % 2 ? 1 : -1;   // (past the stretch's door: hallSideDoor)
+    lights.push(torchSvg(sd * (w - 18 * kk), Y(floor - 220 * k, f), kk, i));
+    const bx = -sd * (w - 34 * kk), by = Y(top + 40 * k, f), bwid = 50 * kk, bh = 180 * kk, u = 10 * kk;
+    t += castleFlagDefs(K, u) +
+         `<rect x="${f1(bx - bwid / 2 - 5 * kk)}" y="${f1(by - 5 * kk)}" width="${f1(bwid + 10 * kk)}" height="${f1(6 * kk)}" rx="${f1(2 * kk)}" fill="#5e3d22"/>` +
+         `<path d="M${P(bx - bwid / 2, by)} H${f1(bx + bwid / 2)} V${f1(by + bh)} L${P(bx, by + bh - 24 * kk)} L${P(bx - bwid / 2, by + bh)} Z" fill="${castleFlagFill(K, i, u)}" stroke="${gold}" stroke-width="${f1(Math.max(0.6, 3 * kk))}"/>` +
+         castleLetter(K, i, bx, by + 100 * kk, 34 * kk, "serif");
+  }
+  // the stairwell's light, at the far end
+  { const A = hallFarArch(c); lights.push(`<circle cx="0" cy="${f1(A.top + (A.fl - A.top) * 0.15)}" r="${f1((A.x1 - A.x0) * 0.75)}" fill="url(#bg-glow)" opacity="0.6"/>`); }
+  // and a torch either side where the corridor opens, near us
+  for (const sd of [-1, 1]) lights.push(torchSvg(sd * bw * 1.12, floor - 250 * k, k * 1.1, 7 + (sd > 0 ? 1 : 0)));
+  // the dark: deeper toward the far end, the night over everything, then the torches' light and flames on top
+  t += `<rect x="${f1(-bw)}" y="${f1(top)}" width="${f1(2 * bw)}" height="${f1(floor - top)}" fill="url(#hall-depth)"/>` +
+       `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="#0b1030" opacity="0.5"/>`;
+  return t + stairwell + lights.join("");
 }
 // the king's room: a red carpet to a throne on a dais, banners in the
 // owner's color, crossed swords and shields, a stained-glass window, a
@@ -4818,6 +4904,43 @@ function greenhouseSvg(c, K) {
 
 // the ways out of a room: the castle (out), and its other rooms; a trap
 // room has its one doorway; a dungeon only its ladder up to the trap room
+// the hallway's stretches, from its opening to its far end: few enough that
+// the far end, the spiral stairs, stands above the friend's head
+const HALL_STRETCHES = 4;
+// the archway at the hallway's far end: its outline, and its box
+function hallFarArch(c) {
+  const { k } = c, { floor, top, bw, vy } = roomFrame(c), f = 1 / (1 + HALL_STRETCHES * 0.8), Y = y => vy + (y - vy) * f;
+  const fl = Y(floor), tp = Y(top), x1 = bw * f * 0.55, x0 = -x1, r = x1, aTop = tp + (fl - tp) * 0.12;
+  return { d: `M${P2(x0, fl)} V${f1(aTop + r)} A${f1(r)} ${f1(r)} 0 0 1 ${P2(x1, aTop + r)} V${f1(fl)} Z`, x0, x1, top: aTop, fl };
+}
+// A door in the hallway's side wall (sd: -1 left, 1 right), seen down the
+// hallway in perspective, as a hand-painted adventure game draws one: its
+// near and far edges at depths z0 and z1 along the wall (each at the
+// cross-section 1 / (1 + z), as hallwaySvg's are), its arch rising between
+// them, planks running up it, an iron ring; the hallway's dark over it, its
+// sign above it facing us
+function hallSideDoor(c, sd, z0, z1, label, attrs) {
+  const { k } = c, { floor, bw, vy } = roomFrame(c), h = 170 * k, rise = 46 * k;
+  const at = (z, y) => { const f = 1 / (1 + z); return [sd * bw * f, vy + (y - vy) * f]; };
+  const zm = (z0 + z1) / 2, fm = 1 / (1 + zm), km = k * fm;
+  const nb = at(z0, floor), nt = at(z0, floor - h), ft = at(z1, floor - h), fb = at(z1, floor), ap = at(zm, floor - h - rise);
+  const ctl = [2 * ap[0] - (nt[0] + ft[0]) / 2, 2 * ap[1] - (nt[1] + ft[1]) / 2];
+  const shape = `M${P2(...nb)} L${P2(...nt)} Q${P2(...ctl)} ${P2(...ft)} L${P2(...fb)} Z`;
+  let planks = "";
+  for (let j = 1; j < 4; j++) {
+    const u = j / 4, z = z0 + (z1 - z0) * u, a = at(z, floor), b = at(z, floor - h - rise * Math.sin(Math.PI * u) * 0.9);
+    planks += `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#3a2a1a" stroke-width="${f1(Math.max(0.6, 1.6 * km))}"/>`;
+  }
+  const ring = at(z0 + (z1 - z0) * 0.78, floor - h * 0.48), band = (y) => { const a = at(z0, y), b = at(z1, y);
+    return `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#2a2a32" stroke-width="${f1(Math.max(0.8, 3 * km))}"/>`; };
+  return `<g class="portal" ${attrs}>` +
+    `<path d="${shape}" fill="none" stroke="${mix(ROOM_TONE.hallway, "#ffffff", 0.12)}" stroke-width="${f1(10 * km)}" stroke-linejoin="round"/>` +
+    `<path d="${shape}" fill="#5a3a22" stroke="#2e1f12" stroke-width="${f1(Math.max(0.8, 3 * km))}" stroke-linejoin="round"/>` + planks +
+    band(floor - h * 0.22) + band(floor - h * 0.78) +
+    `<ellipse cx="${f1(ring[0])}" cy="${f1(ring[1])}" rx="${f1(3.2 * km)}" ry="${f1(6 * km)}" fill="none" stroke="#2a2a32" stroke-width="${f1(Math.max(0.8, 2.2 * km))}"/>` +
+    `<path d="${shape}" fill="#0b1030" opacity="0.45"/>` +
+    plankSign(ap[0], ap[1] - 22 * km, km, label) + `</g>`;
+}
 function castleWays(c, K, n, style) {
   const { W, k } = c, { floor, bw } = roomFrame(c);
   const rooms = K.rooms, trapAt = rooms.indexOf("trap") + 1;
@@ -4828,6 +4951,14 @@ function castleWays(c, K, n, style) {
   const links = [{ attrs: `data-to="castle"`, label: "🏰 out" },
     ...rooms.map((st, i) => ({ st, i })).filter(({ st, i }) => i + 1 !== n && st !== "dungeon1" && st !== "dungeon2")
       .map(({ st, i }) => ({ attrs: `data-to="castleroom" data-room="${i + 1}"`, label: `${roomLabel(st).split(" ")[0]} ${i + 1}` }))];
+  // the hallway's: doors in its side walls, by turns left and right, two to each stretch of it
+  if (style === "hallway") {
+    // and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
+    const end = K.hallEnd === "none" ? 0 : K.hallEnd === "auto" ? rooms.indexOf("spiral") + 1 : Math.min(rooms.length, Number(K.hallEnd) || 0);
+    const A = hallFarArch(c), far = end && end !== n ? `<g class="portal" data-to="castleroom" data-room="${end}"><path d="${A.d}" fill="#000000" fill-opacity="0.01"/>` +
+      plankSign(0, A.top - 14 * k * 0.18, k * 0.3, `${roomLabel(rooms[end - 1]).split(" ")[0]} ${end}`) + `</g>` : "";
+    return links.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("") + far;
+  }
   let t = "";
   links.forEach((L, i) => {
     // the king's room's way out is its open door onto the hallway
@@ -4844,10 +4975,11 @@ function castleroomScene(c) {
   const d1 = K.rooms.indexOf("dungeon1") + 1, d2 = K.rooms.indexOf("dungeon2") + 1;
   const pits = [d1 || d2, d2 || d1];
   const bones = K.bones[n - 1][style] ?? 0;
+  if (style === "hallway") c = { ...c, eye: 0.3 };
   const draw = { trap: () => trapRoomSvg(c, K, pits), dungeon1: () => dungeonSvg(c, K, false, bones), dungeon2: () => dungeonSvg(c, K, true, bones),
-                 king: () => kingRoomSvg(c, K), greenhouse: () => greenhouseSvg(c, K) }[style];
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle], draw);
-  s += SEP + part("croom-ways", [c.F, K.id, n, style, K.rooms.join()], () => castleWays(c, K, n, style));
+                 king: () => kingRoomSvg(c, K), greenhouse: () => greenhouseSvg(c, K), hallway: () => hallwaySvg(c, K) }[style];
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, style === "hallway" ? K.carpet : ""], draw);
+  s += SEP + part("croom-ways", [c.F, K.id, n, style, K.rooms.join(), K.hallEnd], () => castleWays(c, K, n, style));
   return s;
 }
 
@@ -8402,6 +8534,8 @@ const TABS = [
       ["color", "castleFlagB" + id, `🚩 ${id}'s castle: flag color 2`, CASTLE_FLAG_COLORS],
       ["choice", "castleFlagStyle" + id, `🚩 ${id}'s castle: the two colors`, CASTLE_FLAG_STYLES],
       ["color", "castleRoof" + id, `🔺 ${id}'s castle: roofs`, CASTLE_ROOFS],
+      ["color", "castleCarpet" + id, `🟥 ${id}'s castle: the hallway's carpet`, CASTLE_CARPETS],
+      ["choice", "castleHallEnd" + id, `🌀 ${id}'s castle: the hallway's far end leads to`, HALL_ENDS],
       ["range", "castleRooms" + id, `🚪 ${id}'s castle: how many rooms`, 1, 6, 1, 6],
       ...[1, 2, 3, 4, 5, 6].flatMap(n => [["choice", "castleRoom" + n + id, `🚪 ${id}'s castle: room ${n}`, CASTLE_ROOM_CHOICES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), `💀 ${id}'s castle: room ${n}: skeletons (0 = none)`, 0, most, 0, 0])])]),
@@ -8594,6 +8728,9 @@ const SHOWN_WHEN = {
   // (the flags show in the king's room too: its banners and shields)
   ...Object.fromEntries(CASTLES.flatMap(([id]) => ["castleFlagA", "castleFlagB", "castleFlagStyle"].map(key =>
     ["background." + key + id, b => (b.kind === "clearing" || b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id]))),
+  // (the carpet, when the castle has a hallway among its rooms)
+  ...Object.fromEntries(CASTLES.flatMap(([id]) => ["castleCarpet", "castleHallEnd"].map(key => ["background." + key + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id &&
+    [...Array(Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].some((_, i) => (b["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i]) === "hallway")]))),
   ...Object.fromEntries(CASTLES.flatMap(([id]) => [["background.castleRooms" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id],
     ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoom" + n + id,
       b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id && n <= (b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)]),

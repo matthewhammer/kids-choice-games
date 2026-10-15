@@ -2,6 +2,11 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🕯️ A hallway, a new castle room:** a long corridor going off into the dark, lit only by its torches (the fairy forest's night over it, and no fireflies: they live outside), arches across its vault, and along its walls, by turns, torches and banners in the castle's flag colors with its owner's letter. A carpet runs from you all the way down it, in a color of the castle's own ("🟥 the hallway's carpet"). Its doors are set into its side walls in perspective, left and right, as a hand-painted adventure game draws them, each with its sign. At the far end, an archway onto the foot of a spiral staircase, lit from above; where it leads is the castle's setting ("🌀 the hallway's far end leads to": the first spiral stairs, any room, or nowhere). The hallway is seen from a little higher than the other rooms, so its far end shows above the friend's head.
+- **Fixed: torch flames stay on their torches.** A torch's flame flickered by stretching about the corner of the picture, so the farther a torch was from the middle, the further its flame drifted off it (the dungeons' too).
+
 ## 0.0.34 (2026-10-15)
 
 Everything in 0.0.33, plus LFOs faster than a beat, down to a 32nd of a beat, with fairy wings that blur when they flap faster than the screen can show.
