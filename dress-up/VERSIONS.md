@@ -4,6 +4,7 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **Fixed: inside the tree house, the wind is outside.** The tree's limbs inside each room had twigs and leaves fluttering in a breeze, and the house sign swung on its ropes, though no wind blows indoors and no leaves grow without sun. Now the limbs that pass through a room are bare and still, and the sign hangs still. Out of each window you see one of the tree's limbs, with branches forking off it and the tree house's own leaf pads on their tips: the limb sways in the wind with E, and its leaves flutter with D. Matthew caught this one.
 - **Fixed: the hallway's banners hang from poles.** They hung face-on just off the walls, from nothing; now each hangs from a pole jutting out of the wall, braced back into it, so it faces down the corridor as it is drawn.
 - **Fixed: the stable's horseshoes, saddles and bridle lie on their walls.** They were drawn face-on, as if stuck to the picture; now each is laid flat on its side wall in perspective, narrower and slanted as the wall runs toward us.
 - **Fixed: the castle's gate, well and hay cart.** The portcullis's bars started below the top of its arch and had nothing across them; now they fill the arch, with bars across too. The well's stones and the hay cart's straws stay on the well and on the heap.
@@ -39,7 +40,7 @@ Each version lists the game's features as of that version. The newest version is
   | witch's hut | the cauldron fire | the crows' cages swinging |
   | healer's hut | the fire under the pot | the healer swaying |
   | living room | a new wall clock's pendulum | the lamp's glow |
-  | inside the tree house | the leaves on the branches | the house sign swinging |
+  | inside the tree house | the leaves outside the window | the limbs outside the window swaying |
   | fairy forest | the fairy lights, the sun's rays, the stars | the lanterns swinging, the clouds |
   | mountain trail | the birds' wings | the clouds |
   | jungle waterfall | the parrots' wings | the vines swaying |
