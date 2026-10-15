@@ -1922,11 +1922,24 @@ const fairyPhase = (dur, begin = 0) => (-(((performance.now() / 1000 - begin) % 
 // 36 at full depth: more than the usual flap's 9, to beat with the music),
 // once per LFO cycle, in time with the music. Its keyframes, made for the wave
 // and depth (one set per side), go in the picture with it.
+const wingLfoAngle = (lf, sd, u) => -sd * (8 + 28 * lf.amp) * (1 + lfoWave(lf.shape, u)) / 2;
 function wingLfoFlap(lf, sd) {
   const name = `fairy-lfo-${sd < 0 ? "l" : "r"}-${lf.shape}-${Math.round(lf.amp * 100)}`, N = 16, stops = [];
-  for (let i = 0; i <= N; i++) stops.push(`${(i / N * 100).toFixed(2)}% { transform: rotate(${(-sd * (8 + 28 * lf.amp) * (1 + lfoWave(lf.shape, i / N)) / 2).toFixed(2)}deg); }`);
+  for (let i = 0; i <= N; i++) stops.push(`${(i / N * 100).toFixed(2)}% { transform: rotate(${wingLfoAngle(lf, sd, i / N).toFixed(2)}deg); }`);
   return { css: `@keyframes ${name} { ${stops.join(" ")} }`,
-           style: `transform-origin: 0 0; animation: ${name} ${lf.dur.toFixed(3)}s linear ${(-lf.phase * lf.dur).toFixed(3)}s infinite` };
+           style: `transform-origin: 0 0; animation: ${name} ${lf.dur.toFixed(4)}s linear ${(-lf.phase * lf.dur).toFixed(4)}s infinite` };
+}
+// An LFO going round faster than the screen can show (a cycle in under
+// about four frames) is drawn as the eye sees fast wings: a blur, the wing
+// where the wave puts it at K evenly spaced moments of a cycle, each see-
+// through, so the blur is thickest where the wave lingers (a sine's ends)
+// and nearly solid at the shoulder, where every copy overlaps. A fade that
+// fast holds at its average instead (see fairyHouseFade and veil).
+const LFO_BLUR = 1 / 15;
+function wingLfoBlur(lf, sd, ax, ay, t) {
+  const K = 8, op = (1 - Math.pow(0.1, 1 / K)).toFixed(3);
+  return `<g transform="translate(${ax} ${ay})">` + [...Array(K)].map((_, i) =>
+    `<g transform="rotate(${wingLfoAngle(lf, sd, (i + 0.5) / K).toFixed(2)})" opacity="${op}"><g transform="translate(${-ax} ${-ay})">${t}</g></g>`).join("") + `</g>`;
 }
 function fairyWingsSvg(style, color, w, L, flutter = true, lfo = null) {
   const dk = darker(color), lt = mix(color, "#ffffff", 0.45), out = [];
@@ -1972,6 +1985,7 @@ function fairyWingsSvg(style, color, w, L, flutter = true, lfo = null) {
     }
     // (turning about the shoulder, (ax, ay): the CSS turn is about the
     // group's own origin, moved there)
+    if (lf && lf.dur < LFO_BLUR) { out.push(wingLfoBlur(lf, sd, ax, ay, t)); continue; }
     const flap = lf ? wingLfoFlap(lf, sd) : null;
     if (flap) css.push(flap.css);
     out.push(flutter ? `<g transform="translate(${ax} ${ay})"><g style="${flap ? flap.style : `transform-origin: 0 0; animation: fairy-flap-${sd < 0 ? "l" : "r"} 0.9s ${fairyPhase(0.9)}s infinite ease-in-out`}">` +
@@ -3822,11 +3836,13 @@ const FAIRY_TINT = { day: ["#ffffff", 0], sunrise: ["#f4a6c4", 0.18], sunset: ["
 function fairyHouseFade(o) {
   const a = Math.max(0, Math.min(1, (o.fairyHouseSeen ?? 100) / 100)), lf = lfoNow(o.fairyHouseLfo);
   if (!lf) return { a, key: "", anim: "" };
+  // (too fast to show: its average, the wave's being 0 for every shape)
+  if (lf.dur < LFO_BLUR) return { a: a * (1 - lf.amp / 2), key: "blur", anim: "" };
   const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() : 0;
   const begin = Math.round(((now - lf.phase * lf.dur) % lf.dur + lf.dur) % lf.dur * 20) / 20, N = 16, vals = [], kt = [];
   for (let i = 0; i <= N; i++) { const u = i / N; vals.push((a * (1 - lf.amp * (1 - lfoWave(lf.shape, u)) / 2)).toFixed(3)); kt.push(u.toFixed(4)); }
-  return { a, key: [lf.dur.toFixed(3), lf.shape, lf.amp.toFixed(2), begin].join(),
-           anim: `<animate attributeName="opacity" values="${vals.join(";")}" keyTimes="${kt.join(";")}" dur="${lf.dur.toFixed(3)}s" begin="${begin}s" repeatCount="indefinite"/>` };
+  return { a, key: [lf.dur.toFixed(4), lf.shape, lf.amp.toFixed(2), begin].join(),
+           anim: `<animate attributeName="opacity" values="${vals.join(";")}" keyTimes="${kt.join(";")}" dur="${lf.dur.toFixed(4)}s" begin="${begin}s" repeatCount="indefinite"/>` };
 }
 // a toadstool: a cream stem, a red cap with white spots, (x, y) its foot
 const toadstool = (x, y, s, cap = "#d62828", glow = false) =>
@@ -6256,13 +6272,15 @@ function draw() {
     if ((a >= 1 && !lf) || !inner) return inner;
     if (a <= 0) return "";
     const n = layers[g] = (layers[g] ?? 0) + 1;
-    let anim = "";
-    if (lf) {
+    let anim = "", shown = a;
+    // (an LFO too fast to show: the part held at its average, LFO_BLUR)
+    if (lf && lf.dur < LFO_BLUR) shown = a * (1 - lf.amp / 2);
+    else if (lf) {
       const N = 16, vals = [], kt = [];
       for (let i = 0; i <= N; i++) { const u = i / N; vals.push((a * (1 - lf.amp * (1 - lfoWave(lf.shape, u)) / 2)).toFixed(3)); kt.push(u.toFixed(4)); }
-      anim = `<animate attributeName="opacity" values="${vals.join(";")}" keyTimes="${kt.join(";")}" dur="${lf.dur.toFixed(3)}s" begin="${(tNow - lf.phase * lf.dur).toFixed(3)}s" repeatCount="indefinite"/>`;
+      anim = `<animate attributeName="opacity" values="${vals.join(";")}" keyTimes="${kt.join(";")}" dur="${lf.dur.toFixed(4)}s" begin="${(tNow - lf.phase * lf.dur).toFixed(4)}s" repeatCount="indefinite"/>`;
     }
-    return `<g opacity="${a.toFixed(2)}" data-veil="${g} ${n}">${anim}<g id="veil-${g}-${n}">${inner}</g></g>`;
+    return `<g opacity="${shown.toFixed(2)}" data-veil="${g} ${n}">${anim}<g id="veil-${g}-${n}">${inner}</g></g>`;
   };
   const veilFrom = (g, at) => { svg = svg.slice(0, at) + veil(g, svg.slice(at)); };
   const meanSeen = Object.values(seen).reduce((x, y) => x + y, 0) / VISIBLE_PARTS.length;
@@ -6694,6 +6712,7 @@ const INSTRUMENTS = {
   conga(A, out, t, m, dur, v, x = 50) {
     const f = hz(m) * Math.pow(2, Math.round((x - 50) * 12 / 50) / 12), o = tone(A, amp(A, out, t, 0.42 * v, 0.002, 0.1), "sine", f * 1.4, t, t + 0.7);
     o.frequency.exponentialRampToValueAtTime(f, t + 0.04);
+    return o;
   },
   // a bubble: a quick rising bloop
   bubble(A, out, t, m, dur, v, x = 50) {
@@ -6807,6 +6826,7 @@ const INSTRUMENTS = {
     const o = tone(A, amp(A, out, t, 0.38 * v, 0.001, 0.055), "sine", f * 1.6, t, t + 0.4);
     o.frequency.exponentialRampToValueAtTime(f, t + 0.025);
     noise(A, filter(A, amp(A, out, t, 0.12 * v, 0.001, 0.012), "bandpass", 3200, 1.2), t, t + 0.06);
+    return o;
   },
   // an open hi-hat: the hat, let ring
   openhat(A, out, t, m, dur, v, x = 50) { noise(A, filter(A, amp(A, out, t, 0.24 * v, 0.002, 0.11 * ring(x)), "highpass", 7000), t, t + 0.8 * ring(x)); },
@@ -7592,10 +7612,23 @@ const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + swingOf(so
 // (drums keep their sound when the tune is moved up or down)
 const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell", "bongo", "openhat"]);
 // (bend: half steps more, even for a drum: where its LFO is, see below)
-function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0, knobs = null, ups = null, bend = 0) {
+function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0, knobs = null, ups = null, bend = 0, wob = null) {
   const p = song.T.parts[ev.part], dur = ev.len * sd,
         move = (p.shift || 0) + bend + (PERCUSSION.has(p.inst) ? 0 : up + (ev.up || 0) + (ups ? ups[ev.part] : 0));
-  for (const m of ev.notes) INSTRUMENTS[p.inst](A, buses[ev.part], t, m + move, dur, (ev.vel ?? 1) * (p.vel ?? 1), knobs ? knobs[ev.part] : 50);
+  for (const m of ev.notes) {
+    const o = INSTRUMENTS[p.inst](A, buses[ev.part], t, m + move, dur, (ev.vel ?? 1) * (p.vel ?? 1), knobs ? knobs[ev.part] : 50);
+    if (wob && o && o.detune) wobble(o, t, wob);
+  }
+}
+// An LFO faster than a beat bends a hit all through its sound, not once at
+// its start: a curve of its pitch (in cents) over the hit's 0.7 seconds,
+// the wave where the tune is at each moment, 32 points a round (so at a
+// 64th of a beat, about 120 rounds a second, the wobble is a buzz).
+const WOBBLE_SECS = 0.7;
+function wobble(o, t, w) {
+  const round = w.lfo.steps * w.sd, n = Math.min(8192, Math.max(64, Math.ceil(WOBBLE_SECS / round * 32))), c = new Float32Array(n);
+  for (let i = 0; i < n; i++) c[i] = 100 * w.lfo.depth * lfoWave(w.lfo.shape, (((w.at + i / (n - 1) * WOBBLE_SECS / w.sd) / w.lfo.steps) % 1 + 1) % 1);
+  o.detune.setValueCurveAtTime(c, t, WOBBLE_SECS);
 }
 
 // --- playing: one tune at a time, its notes sent a little ahead
@@ -7635,10 +7668,11 @@ function sendAhead(p) {
     if (t > until || (p.until && t > p.until)) break;
     // (a note already late, after a busy moment, is skipped, not crammed in)
     if (t > audio.currentTime - 0.02) {
-      // (a drum following an LFO: the wave where the tune is, at this hit)
-      const lfo = p.lfos && p.lfos[ev.part];
-      const bend = lfo ? lfo.depth * lfoWave(lfo.shape, ((p.loop * p.song.steps + ev.at) / lfo.steps) % 1) : 0;
-      playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0, p.knobs, p.ups, bend);
+      // (a drum following an LFO: the wave where the tune is, at this hit;
+      // or, an LFO faster than a beat, the wave all through the hit)
+      const lfo = p.lfos && p.lfos[ev.part], at = p.loop * p.song.steps + ev.at, fast = lfo && lfo.steps < 4;
+      const bend = lfo && !fast ? lfo.depth * lfoWave(lfo.shape, (at / lfo.steps) % 1) : 0;
+      playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0, p.knobs, p.ups, bend, fast ? { lfo, at, sd: p.sd } : null);
       if (mixLights && mixLights.id === p.id) blink(mixLights.dots[ev.part], t - audio.currentTime);
     }
     if (++p.i >= p.song.events.length) { p.i = 0; p.loop++; }
@@ -7663,17 +7697,21 @@ function chan(id, key) {
 // --- the LFOs: three slow waves, A to C, that a drum's pitch can follow,
 // and the friend's parts' see-through-ness, and the fairy house's
 // (a drum with a pitch knob: its LFO chip picks one, or none). Each keeps
-// time with the tune, going once round in so many beats, from one beat to
-// eight bars, from the tune's start; in a shape (triangle, saw or sine);
-// so far up and down (its depth, in half steps). A hit takes the wave's
-// value at its moment. Set on the mixing board, kept for each tune; a tune
+// time with the tune, going once round in so many beats, from a 64th of a
+// beat to eight bars, from the tune's start; in a shape (triangle, saw or
+// sine); so far up and down (its depth, in half steps). A hit takes the
+// wave's value at its moment; or, for an LFO faster than a beat, follows
+// the wave through its sound (see sendAhead). Set on the mixing board, kept for each tune; a tune
 // may set its own to start with (T.lfos, and a part's lfo).
 const LFO_NAMES = ["A", "B", "C"];
-const LFO_BEATS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
+// (below a beat: 1/2, 1/3, ... 1/64, each a fraction of a beat)
+const LFO_BEATS = [...Array(63)].map((_, i) => 1 / (64 - i)).concat([1, 2, 3, 4, 6, 8, 12, 16, 24, 32]);
+// a length's place on the knob (one it does not have, at one beat)
+const lfoBeatsAt = b => { const i = LFO_BEATS.findIndex(x => Math.abs(x - b) < 1e-9); return i < 0 ? LFO_BEATS.indexOf(1) : i; };
 const LFO_SHAPES = ["triangle", "saw", "sine"], LFO_SHAPE_NAME = { triangle: "△ triangle", saw: "◿ saw", sine: "∿ sine" };
 const LFO_DEFAULT = { A: { beats: 4, shape: "triangle", depth: 3 }, B: { beats: 2, shape: "sine", depth: 4 },
                       C: { beats: 8, shape: "saw", depth: 3 } };
-const beatsName = b => b % 4 ? `${b} beats`.replace(/^1 beats/, "1 beat") : `${b / 4} bar${b === 4 ? "" : "s"}`;
+const beatsName = b => b < 1 ? `1/${Math.round(1 / b)} beat` : b % 4 ? `${b} beats`.replace(/^1 beats/, "1 beat") : `${b / 4} bar${b === 4 ? "" : "s"}`;
 const lfoOf = (id, T, L) => ({ ...LFO_DEFAULT[L], ...((T.lfos || {})[L] || {}), ...(mixOf(id)["lfo" + L] || {}) });
 // the wave, from -1 to 1, a share u of the way round (a triangle and a
 // sine start in the middle, going up; a saw climbs from the bottom)
@@ -7844,7 +7882,7 @@ function mixerBox(box) {
         .concat(state.background.kind === "fairyforest" && state.background.fairyHouseLfo === L ? ["🏡 fairy house"] : []);
       return el("div", { class: "strip lfo" }, [
         el("div", { class: "strip-top" }, [el("span", { class: "strip-name" }, `〰️ LFO ${L}`), shapeBtn]),
-        knob("⏱️ round in", 0, LFO_BEATS.length - 1, () => Math.max(0, LFO_BEATS.indexOf(o().beats)), v => { chan(id, "lfo" + L).beats = LFO_BEATS[v]; }, v => beatsName(LFO_BEATS[v])),
+        knob("⏱️ round in", 0, LFO_BEATS.length - 1, () => lfoBeatsAt(o().beats), v => { chan(id, "lfo" + L).beats = LFO_BEATS[v]; }, v => beatsName(LFO_BEATS[v])),
         knob("↕️ depth", 0, 12, () => o().depth, v => { chan(id, "lfo" + L).depth = v; }, v => v === 0 ? "still" : "±" + v),
         el("p", { class: "now" }, who.length ? who.join(", ") : "nothing follows it yet"),
       ]);
