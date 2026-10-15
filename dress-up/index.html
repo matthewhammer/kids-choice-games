@@ -272,12 +272,15 @@ const CASTLE_FLAG_STYLES = [["alternate", "↔️ in turn"], ["stripes", "▥ st
 const CASTLE_CARPETS = ["#a3122a", "#1e3a8a", "#14532d", "#6a2c91", "#7c2d12", "#d4a017", "#1f1f22"];
 // where the hallway's far end, the foot of a spiral staircase, leads: the
 // castle's first spiral staircase room, a room of its own choosing, or nowhere
-const HALL_ENDS = [["auto", "🌀 the first spiral stairs"], ...[1, 2, 3, 4, 5, 6].map(n => [String(n), `🚪 room ${n}`]), ["none", "🧱 nowhere"]];
 // A castle is rooms by number, each with its own exits. A hallway's: up to
 // four doors in its walls, each to the outside or to a room by its number
 // (its own too), and the stairs at its far end. By default, its first door
 // leads out and the others to the castle's other rooms in turn.
-const HALL_DOOR_DESTS = [["out", "🏰 out of the castle"], ...[1, 2, 3, 4, 5, 6].map(n => [String(n), `🚪 room ${n}`])];
+// (a castle's rooms by number, as choices: only those it has)
+const castleRoomCount = (b, id) => Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
+const roomChoices = id => [1, 2, 3, 4, 5, 6].map(n => [String(n), `🚪 room ${n}`, b => n <= castleRoomCount(b, id)]);
+const hallDoorDests = id => [["out", "🏰 out of the castle"], ...roomChoices(id)];
+const hallEnds = id => [["auto", "🌀 the first spiral stairs"], ...roomChoices(id), ["none", "🧱 nowhere"]];
 const hallDoorKey = (id, n, j) => "castleHallDoor" + n + "_" + j + id;
 const hallDoorDefault = (n, j) => j === 1 ? "out" : String([1, 2, 3, 4, 5, 6].filter(m => m !== n)[j - 2]);
 const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c2410c", "#1f2937"];
@@ -301,7 +304,7 @@ const castleOf = o => {
            roof: o["castleRoof" + id] ?? "#3b5ea8", carpet: o["castleCarpet" + id] ?? CASTLE_CARPETS[0],
            // each room's own exits, when it is a hallway (castleWays)
            hall: [1, 2, 3, 4, 5, 6].map(n => ({
-             doors: [...Array(Math.max(0, Math.min(4, Math.round(o["castleHallDoors" + n + id] ?? 2))))].map((_, j) => String(o[hallDoorKey(id, n, j + 1)] ?? hallDoorDefault(n, j + 1))),
+             doors: [...Array(Math.max(0, Math.min(4, Math.round(o["castleHallDoors" + n + id] ?? 3))))].map((_, j) => String(o[hallDoorKey(id, n, j + 1)] ?? hallDoorDefault(n, j + 1))),
              end: String(o["castleHallEnd" + n + id] ?? "auto") })),
            levels: Math.max(1, Math.min(5, Math.round(o["castleLevels" + id] ?? d.levels))),
            stone: o["castleStone" + id] ?? d.stone, trees: Math.max(0, Math.round(o["castleTrees" + id] ?? d.trees)),
@@ -377,7 +380,7 @@ const DEFAULTS = {
                 castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
                   [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
                    ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, "alternate"], ["castleRoof" + id, "#3b5ea8"], ["castleCarpet" + id, CASTLE_CARPETS[0]],
-                   ...[1, 2, 3, 4, 5, 6].flatMap(n => [["castleHallDoors" + n + id, 2], ["castleHallEnd" + n + id, "auto"],
+                   ...[1, 2, 3, 4, 5, 6].flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"],
                      ...[1, 2, 3, 4].map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...[1, 2, 3, 4, 5, 6].map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
                    ...[1, 2, 3, 4, 5, 6].flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0]))])),
@@ -4705,9 +4708,10 @@ function kingRoomSvg(c, K) {
        [...Array(7)].map((_, j) => { const a = Math.PI * (j + 0.5) / 7, x = -Math.cos(a) * 80 * k, y = chy + Math.sin(a) * 14 * k;
          return `<rect x="${f1(x - 3 * k)}" y="${f1(y - 18 * k)}" width="${f1(6 * k)}" height="${f1(18 * k)}" fill="#fff6dc"/>` +
                 `<ellipse cx="${f1(x)}" cy="${f1(y - 24 * k)}" rx="${f1(3.5 * k)}" ry="${f1(6 * k)}" fill="#ffb53b"${j % 2 ? "" : ` ><animate attributeName="ry" values="${f1(6 * k)};${f1(4.5 * k)};${f1(6.5 * k)};${f1(6 * k)}" dur="${(0.8 + 0.1 * j).toFixed(1)}s" repeatCount="indefinite"/></ellipse`}${j % 2 ? "/" : ""}>`; }).join("");
-  // suits of armor at the sides, each holding a halberd, plumes in the owner's color
+  // suits of armor against the back wall, beside the banners, each holding a halberd, plumes in the
+  // owner's color (the side walls are the doors': castleWays)
   for (const sd of [-1, 1]) {
-    const ax = sd * W * 0.34, ay = floor + 120 * k, s = 1.25 * k, st = "#aab0bc", dk = "#6a707c";
+    const ax = sd * bw * 0.76, ay = floor, s = 1.0 * k, st = "#aab0bc", dk = "#6a707c";
     t += `<line x1="${f1(ax + sd * 30 * s)}" y1="${f1(ay - 200 * s)}" x2="${f1(ax + sd * 30 * s)}" y2="${f1(ay)}" stroke="#6e4a2c" stroke-width="${f1(4 * s)}"/>` +
          `<path d="M${P(ax + sd * 30 * s, ay - 200 * s)} q${f1(sd * 22 * s)} ${f1(10 * s)} ${f1(sd * 20 * s)} ${f1(34 * s)} q${f1(-sd * 10 * s)} ${f1(-10 * s)} ${f1(-sd * 20 * s)} ${f1(-12 * s)} Z" fill="${st}" stroke="${dk}" stroke-width="${f1(1.5 * s)}"/>` +
          `<rect x="${f1(ax - 14 * s)}" y="${f1(ay - 70 * s)}" width="${f1(10 * s)}" height="${f1(70 * s)}" fill="${st}" stroke="${dk}" stroke-width="${f1(1.5 * s)}"/><rect x="${f1(ax + 4 * s)}" y="${f1(ay - 70 * s)}" width="${f1(10 * s)}" height="${f1(70 * s)}" fill="${st}" stroke="${dk}" stroke-width="${f1(1.5 * s)}"/>` +
@@ -4728,30 +4732,6 @@ function kingRoomSvg(c, K) {
   t += torchSvg(-bw * 0.66, floor - 300 * k, k, 0) + torchSvg(bw * 0.66, floor - 300 * k, k, 1);
   return t;
 }
-// the hallway outside the king's room, seen through its open door: a stone
-// corridor going off, torches along it, a rug down its middle
-function hallwayDoor(cx, floor, k, label, attrs) {
-  const w = 120 * k, h = 200 * k, tp = floor - h, hw = w / 2, vx = cx, vyy = floor - h * 0.45;
-  const at = u => [cx - hw * (1 - u), floor - (floor - vyy) * u, cx + hw * (1 - u), tp + hw + (vyy - tp - hw) * u];
-  let t = `<g class="portal" ${attrs}><defs><clipPath id="bg-hall"><path d="M${f1(cx - hw)} ${f1(floor)} V${f1(tp + hw)} A${f1(hw)} ${f1(hw)} 0 0 1 ${f1(cx + hw)} ${f1(tp + hw)} V${f1(floor)} Z"/></clipPath></defs>` +
-    `<g clip-path="url(#bg-hall)"><rect x="${f1(cx - hw)}" y="${f1(tp)}" width="${f1(w)}" height="${f1(h)}" fill="#7d7686"/>` +
-    `<polygon points="${f1(cx - hw)},${f1(floor)} ${f1(cx + hw)},${f1(floor)} ${f1(vx + 6 * k)},${f1(vyy)} ${f1(vx - 6 * k)},${f1(vyy)}" fill="#5a5048"/>` +
-    `<polygon points="${f1(cx - 14 * k)},${f1(floor)} ${f1(cx + 14 * k)},${f1(floor)} ${f1(vx + 2 * k)},${f1(vyy)} ${f1(vx - 2 * k)},${f1(vyy)}" fill="#a3122a"/>` +
-    `<polygon points="${f1(cx - hw)},${f1(tp)} ${f1(cx - hw)},${f1(floor)} ${f1(vx - 6 * k)},${f1(vyy)} ${f1(vx - 6 * k)},${f1(vyy - 30 * k)}" fill="#6a6474"/>` +
-    `<polygon points="${f1(cx + hw)},${f1(tp)} ${f1(cx + hw)},${f1(floor)} ${f1(vx + 6 * k)},${f1(vyy)} ${f1(vx + 6 * k)},${f1(vyy - 30 * k)}" fill="#615b6b"/>` +
-    `<rect x="${f1(vx - 6 * k)}" y="${f1(vyy - 30 * k)}" width="${f1(12 * k)}" height="${f1(30 * k)}" fill="#3a3530"/>`;
-  for (const u of [0.25, 0.5, 0.72]) for (const sd of [-1, 1]) {   // torches along the walls, smaller as they go
-    const x = cx + sd * hw * (1 - u) * 0.92, y = floor - (floor - vyy) * u - 70 * k * (1 - u);
-    t += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(16 * k * (1 - u))}" fill="#ffcf6b" opacity="0.35"/><circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(4 * k * (1 - u) + 1 * k)}" fill="#ffb53b"/>`;
-  }
-  t += `</g><path d="M${f1(cx - hw)} ${f1(floor)} V${f1(tp + hw)} A${f1(hw)} ${f1(hw)} 0 0 1 ${f1(cx + hw)} ${f1(tp + hw)} V${f1(floor)}" fill="none" stroke="#4a3a2a" stroke-width="${f1(12 * k)}"/>` +
-    // the door itself, swung open against the wall
-    `<path d="M${f1(cx + hw)} ${f1(floor)} L${f1(cx + hw + 30 * k)} ${f1(floor + 12 * k)} L${f1(cx + hw + 30 * k)} ${f1(tp + hw - 6 * k)} L${f1(cx + hw)} ${f1(tp + hw)} Z" fill="#7a4f2a" stroke="#4a2e1a" stroke-width="${f1(2 * k)}"/>` +
-    [0.3, 0.7].map(u => `<line x1="${f1(cx + hw)}" y1="${f1(tp + hw + (floor - tp - hw) * u)}" x2="${f1(cx + hw + 30 * k)}" y2="${f1(tp + hw + (floor - tp - hw) * u + 6 * k)}" stroke="#3a3a44" stroke-width="${f1(4 * k)}"/>`).join("") +
-    plankSign(cx, tp - 26 * k, k, label) + `</g>`;
-  return t;
-}
-
 // The greenhouse: walls and roof of glass in white iron frames, the sky and
 // the castle's trees beyond; vines climbing every post and hanging from the
 // ribs; glass parrots flying by the vines near the roof; palms, a banana
@@ -4935,7 +4915,7 @@ function hallFarArch(c) {
 // cross-section 1 / (1 + z), as hallwaySvg's are), its arch rising between
 // them, planks running up it, an iron ring; the hallway's dark over it, its
 // sign above it facing us
-function hallSideDoor(c, sd, z0, z1, label, attrs) {
+function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0) {
   const { k } = c, { floor, bw, vy } = roomFrame(c), h = 170 * k, rise = 46 * k;
   const at = (z, y) => { const f = 1 / (1 + z); return [sd * bw * f, vy + (y - vy) * f]; };
   const zm = (z0 + z1) / 2, fm = 1 / (1 + zm), km = k * fm;
@@ -4955,7 +4935,7 @@ function hallSideDoor(c, sd, z0, z1, label, attrs) {
     band(floor - h * 0.22) + band(floor - h * 0.78) +
     `<ellipse cx="${f1(ring[0])}" cy="${f1(ring[1])}" rx="${f1(3.2 * km)}" ry="${f1(6 * km)}" fill="none" stroke="#2a2a32" stroke-width="${f1(Math.max(0.8, 2.2 * km))}"/>` +
     `<path d="${shape}" fill="#0b1030" opacity="0.45"/>` +
-    plankSign(ap[0], ap[1] - 22 * km, km, label) + `</g>`;
+    plankSign(Math.max(c.x0 + 56 * km, Math.min(c.x1 - 56 * km, ap[0])), ap[1] - 22 * km - lift, km, label) + `</g>`;
 }
 function castleWays(c, K, n, style) {
   const { W, k } = c, { floor, bw } = roomFrame(c);
@@ -4968,11 +4948,22 @@ function castleWays(c, K, n, style) {
     ...rooms.map((st, i) => ({ st, i })).filter(({ st, i }) => i + 1 !== n && st !== "dungeon1" && st !== "dungeon2")
       .map(({ st, i }) => ({ attrs: `data-to="castleroom" data-room="${i + 1}"`, label: `${roomLabel(st).split(" ")[0]} ${i + 1}` }))];
   // the hallway's: doors in its side walls, by turns left and right, two to each stretch of it
+  // a room's own exits (K.hall), for a hallway and the king's room: each door to the outside or a room
+  // by its number (a room the castle no longer has: no door)
+  const H = K.hall[n - 1], to = d => d === "out" ? links[0] : Number(d) >= 1 && Number(d) <= rooms.length
+    ? { attrs: `data-to="castleroom" data-room="${Number(d)}"`, label: `${roomLabel(rooms[Number(d) - 1]).split(" ")[0]} ${Number(d)}` } : null;
+  // the king's room: its doors in its side walls, two to a side, between its back corners and the
+  // picture's edges (clear of all it holds); its way out a sign at the bottom, as the forest clearing's
+  // path, toward us (a door set to lead out is that sign)
+  if (style === "king") {
+    const { y1, pad } = c, doors = H.doors.filter(d => d !== "out").map(to).filter(Boolean);
+    // (a nearer door's sign, kept inside the picture, would sit on the farther one's: it goes above it)
+    return doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j; return hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k); }).join("") +
+      `<g class="portal" data-to="castle"><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
+      plankSign(-W * 0.2, y1 - 44 * k, k, "🏰 out ⬇️") + `</g>`;
+  }
   if (style === "hallway") {
-    // its own exits (K.hall): each door to the outside or a room by its number (a room the castle no
-    // longer has: no door); and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
-    const H = K.hall[n - 1], to = d => d === "out" ? links[0] : Number(d) >= 1 && Number(d) <= rooms.length
-      ? { attrs: `data-to="castleroom" data-room="${Number(d)}"`, label: `${roomLabel(rooms[Number(d) - 1]).split(" ")[0]} ${Number(d)}` } : null;
+    // and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
     const doors = H.doors.map(to).filter(Boolean);
     const end = H.end === "none" ? 0 : H.end === "auto" ? rooms.indexOf("spiral") + 1 : Math.min(rooms.length, Number(H.end) || 0);
     // (to this very hallway too: the friend flies up the stairs and lands back here, as through a picture of its own room)
@@ -4982,9 +4973,7 @@ function castleWays(c, K, n, style) {
   }
   let t = "";
   links.forEach((L, i) => {
-    // the king's room's way out is its open door onto the hallway
-    if (i === 0 && style === "king") { t += hallwayDoor(-bw * 0.76, floor, k, L.label, L.attrs); return; }
-    const sd = i % 2 ? 1 : -1, j = Math.floor((i + (style === "king" ? 1 : 0)) / 2);
+    const sd = i % 2 ? 1 : -1, j = Math.floor(i / 2);
     t += archDoor(sd * (bw * 0.86 - j * 104 * k), floor, k, L.label, L.attrs, 76, 140);
   });
   return t;
@@ -8564,8 +8553,8 @@ const TABS = [
         ["choice", "castleRoom" + n + id, `🚪 room ${n} is`, CASTLE_ROOM_CHOICES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, 4, 0, 4],
-        ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, HALL_DOOR_DESTS]),
-        ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", HALL_ENDS]]])]),
+        ...[1, 2, 3, 4].map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
+        ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)]]])]),
     ["toggle", "seeHealer", "🌿 see the healer's hut"],
     // inside the witch's hut (the witch herself: drag her)
     ["range", "witchSize", "🧙 the witch's size (drag her to move her)", 30, 250, 70, 150],
@@ -8762,12 +8751,13 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(CASTLES.flatMap(([id]) => {
     const atCastle = b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id;
     const nRooms = b => Math.max(1, Math.min(6, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
-    const isHall = (b, n) => (b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1]) === "hallway";
+    const typeOf = (b, n) => b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1];
+    const isHall = (b, n) => typeOf(b, n) === "hallway", hasDoors = (b, n) => ["hallway", "king"].includes(typeOf(b, n));
     return [["background.castleLook" + id, b => (b.kind === "clearing" || atCastle(b)) && (b.castle ?? "N") === id],
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle],
             ...[1, 2, 3, 4, 5, 6].flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b)],
-              ["background.castleHallDoors" + n + id, b => isHall(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
-              ...[1, 2, 3, 4].map(k => ["background." + hallDoorKey(id, n, k), b => isHall(b, n) && k <= Math.round(b["castleHallDoors" + n + id] ?? 2)])])];
+              ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
+              ...[1, 2, 3, 4].map(k => ["background." + hallDoorKey(id, n, k), b => hasDoors(b, n) && k <= Math.round(b["castleHallDoors" + n + id] ?? 3)])])];
   })),
   ...Object.fromEntries(CASTLES.flatMap(([id]) => [["background.castleRooms" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id],
     ...[1, 2, 3, 4, 5, 6].map(n => ["background.castleRoom" + n + id,
@@ -9045,12 +9035,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       })])));
   } else if (kind === "choice") {
     const row = el("div", { class: "row" });
-    const bs = rest[0].map(([v, text]) => {
+    // (an option may come with a test of the settings: shown only when it holds, as a room the castle has)
+    const bs = rest[0].map(([v, text, ok]) => {
       const b = el("button", { onclick: () => set(part, key, v) }, text);
-      row.append(b); return [v, b];
+      row.append(b); return [v, b, ok];
     });
     box.append(row);
-    syncs.push(() => { for (const [v, b] of bs) b.setAttribute("aria-pressed", state[part][key] === v); });
+    syncs.push(() => { for (const [v, b, ok] of bs) { b.setAttribute("aria-pressed", state[part][key] === v); if (ok) b.hidden = !ok(state[part]); } });
   } else if (kind === "places") {
     // two rows, as the music's: the kind of place (or none), then that
     // kind's places, each in a dashed box with its name; picking a kind goes
