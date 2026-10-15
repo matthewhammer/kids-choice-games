@@ -1019,9 +1019,27 @@ function hairSvg(h) {
       return poly(ps, h.color, stroke, 4);
     }
     case "afro": {
-      // bigger all round, its bottom edge staying behind the face
-      const r = 104 * L;
-      return `<circle cx="100" cy="${f1(150 - r)}" r="${f1(r)}" fill="${h.color}" stroke="${stroke}" stroke-width="4"/>`;
+      // a big round puff over the head, bigger all round with the length,
+      // curly at its edge; at the ears it tucks in, ending there (a whole
+      // circle reached down past the cheeks and framed the face like a
+      // beard). Its outline: round the circle above the ear line, the
+      // edge in little curls, then in under the ears, and across behind
+      // the face.
+      const r = 104 * L, cy = 150 - r, ear = 112, curls = Math.max(12, Math.round(2 * Math.PI * r / 24));
+      const half = r * r - (ear - cy) * (ear - cy);
+      if (cy + r <= ear || half <= 0) return `<circle cx="100" cy="${f1(cy)}" r="${f1(r)}" fill="${h.color}" stroke="${stroke}" stroke-width="4"/>`;
+      // the arc's ends at the ear line, as angles (y down: the right end's
+      // angle a0 below the middle, round over the top to the left end's)
+      const a0 = Math.asin((ear - cy) / r), from = a0, to = Math.PI - a0 - 2 * Math.PI, n = Math.max(96, curls * 8), pts = [];
+      for (let i = 0; i <= n; i++) {
+        const a = from + (to - from) * i / n, rr = r - 5 + 6 * Math.abs(Math.sin(curls * a / 2));
+        pts.push([100 + rr * Math.cos(a), cy + rr * Math.sin(a)]);
+      }
+      const w = Math.sqrt(half), tuck = Math.min(72, w - 4);
+      const [lx, ly] = pts[pts.length - 1], [rx, ry] = pts[0];
+      const d = `M${f1(rx)} ${f1(ry)} ` + pts.slice(1).map(([x, y]) => `L${f1(x)} ${f1(y)}`).join(" ") +
+        ` Q${f1(lx)} ${f1(ear + 16)} ${f1(100 - tuck)} ${f1(ear + 14)} L${f1(100 + tuck)} ${f1(ear + 14)} Q${f1(rx)} ${f1(ear + 16)} ${f1(rx)} ${f1(ry)} Z`;
+      return `<path d="${d}" fill="${h.color}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>`;
     }
     case "pigtails": {
       // the tails hang from where they're tied, longer and longer
@@ -1147,7 +1165,7 @@ function hairReach(h) {
     case "long": return { top: 0, bottom: 30.6 + (124 - 84 + 70 * L) * k, half: 100 };
     case "curly": return { top: -40, bottom: 30.6 + (120 - 84 + Math.max(0, (L - 1) * 70) + 6) * k, half: 115 };
     case "spiky": return { top: 110.6 - 84 - 44 * L, bottom: 120, half: 84 + 44 * L };
-    case "afro": return { top: 150 - 2 * 104 * L, bottom: 150, half: 104 * L };
+    case "afro": return { top: 150 - 2 * 104 * L, bottom: Math.min(150, 126), half: 104 * L };
     case "pigtails": return { top: 0, bottom: 36 + 2 * 34 * Math.max(0.5, L), half: 150 };
     default: return { top: 0, bottom: 120, half: 100 };
   }
