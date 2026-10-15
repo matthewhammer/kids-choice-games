@@ -4430,7 +4430,11 @@ function castleSvg(K = castleOf({})) {
     `<polygon points="-48,${keepTop} 0,${keepTop - 70} 48,${keepTop}" fill="${K.roof}"/>` + tiles(0, keepTop, 48, 70) + `<line x1="0" y1="${keepTop - 70}" x2="0" y2="${keepTop - 120}" stroke="#555" stroke-width="3"/>` +
     `<polygon points="0,${keepTop - 120} 46,${keepTop - 108} 0,${keepTop - 96}" fill="${castleFlagFill(K, 0, 4)}"/>` +
     castleLetter(K, 0, 15, keepTop - 102, 16) +
-    `<path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z" fill="#3a2a1a"/>` + [-20, -7, 7, 20].map(x => `<line x1="${x}" y1="-80" x2="${x}" y2="0" stroke="#6a5a4a" stroke-width="3"/>`).join("") +
+    // (the gate's arch, and its portcullis: bars from the arch down, and bars across, all inside the arch)
+    `<path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z" fill="#3a2a1a"/>` +
+    `<clipPath id="castle-gate-${K.id}-${L}"><path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z"/></clipPath><g clip-path="url(#castle-gate-${K.id}-${L})">` +
+    [-20, -7, 7, 20].map(x => `<line x1="${x}" y1="-92" x2="${x}" y2="0" stroke="#6a5a4a" stroke-width="3"/>`).join("") +
+    [-70, -46, -22].map(y => `<line x1="-36" y1="${y}" x2="36" y2="${y}" stroke="#6a5a4a" stroke-width="2.5"/>`).join("") + `</g>` +
     [-80, 80].map(x => `<rect x="${x - 8}" y="${-wallH + 30}" width="16" height="24" rx="8" fill="#3a3a48"/>`).join("") +
     // banners hanging from the wall, in the owner's color, the owner's letter on them
     // (from just under the battlements, as long as the wall is tall, and
@@ -4601,7 +4605,9 @@ function castleScene(c) {
     const cx = -W * 0.42, cy = g + 40 * k, s2 = 1.15 * k;
     t += `<ellipse cx="${f1(cx)}" cy="${f1(cy + 4 * s2)}" rx="${f1(70 * s2)}" ry="${f1(8 * s2)}" fill="#000000" opacity="0.15"/>` +
          `<path d="M${P(cx - 60 * s2, cy - 50 * s2)} Q${P(cx - 40 * s2, cy - 110 * s2)} ${P(cx, cy - 100 * s2)} Q${P(cx + 40 * s2, cy - 112 * s2)} ${P(cx + 60 * s2, cy - 50 * s2)} Z" fill="#e8c35a"/>` +
-         [...Array(14)].map((_, i) => `<line x1="${f1(cx - 50 * s2 + 100 * s2 * R(i, 440))}" y1="${f1(cy - 60 * s2 - 40 * s2 * R(i, 441))}" x2="${f1(cx - 50 * s2 + 100 * s2 * R(i, 440) + 10 * s2)}" y2="${f1(cy - 70 * s2 - 40 * s2 * R(i, 441))}" stroke="#c9a23e" stroke-width="${f1(2 * s2)}"/>`).join("") +
+         // (its straws, kept on the heap)
+         `<clipPath id="bg-hayheap"><path d="M${P(cx - 60 * s2, cy - 50 * s2)} Q${P(cx - 40 * s2, cy - 110 * s2)} ${P(cx, cy - 100 * s2)} Q${P(cx + 40 * s2, cy - 112 * s2)} ${P(cx + 60 * s2, cy - 50 * s2)} Z"/></clipPath><g clip-path="url(#bg-hayheap)">` +
+         [...Array(14)].map((_, i) => `<line x1="${f1(cx - 50 * s2 + 100 * s2 * R(i, 440))}" y1="${f1(cy - 60 * s2 - 40 * s2 * R(i, 441))}" x2="${f1(cx - 50 * s2 + 100 * s2 * R(i, 440) + 10 * s2)}" y2="${f1(cy - 70 * s2 - 40 * s2 * R(i, 441))}" stroke="#c9a23e" stroke-width="${f1(2 * s2)}"/>`).join("") + `</g>` +
          `<rect x="${f1(cx - 64 * s2)}" y="${f1(cy - 52 * s2)}" width="${f1(128 * s2)}" height="${f1(30 * s2)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(2 * s2)}"/>` +
          [0.33, 0.66].map(u => `<line x1="${f1(cx - 64 * s2 + 128 * s2 * u)}" y1="${f1(cy - 52 * s2)}" x2="${f1(cx - 64 * s2 + 128 * s2 * u)}" y2="${f1(cy - 22 * s2)}" stroke="#5e3d22" stroke-width="${f1(2 * s2)}"/>`).join("") +
          `<line x1="${f1(cx + 64 * s2)}" y1="${f1(cy - 30 * s2)}" x2="${f1(cx + 110 * s2)}" y2="${f1(cy - 10 * s2)}" stroke="#6e4a2c" stroke-width="${f1(5 * s2)}"/>` +
@@ -4611,7 +4617,9 @@ function castleScene(c) {
     const wx = W * 0.35, wy = g + 16 * k, w2 = 1.1 * k;
     t += `<ellipse cx="${f1(wx)}" cy="${f1(wy + 4 * w2)}" rx="${f1(50 * w2)}" ry="${f1(8 * w2)}" fill="#000000" opacity="0.15"/>` +
          `<path d="M${P(wx - 40 * w2, wy - 50 * w2)} V${f1(wy)} Q${P(wx, wy + 14 * w2)} ${P(wx + 40 * w2, wy)} V${f1(wy - 50 * w2)} Z" fill="#a8a29a"/>` +
-         [...Array(3)].map((_, j) => [...Array(4)].map((_, i) => `<rect x="${f1(wx - 40 * w2 + i * 20 * w2 + (j % 2) * 10 * w2)}" y="${f1(wy - 48 * w2 + j * 16 * w2)}" width="${f1(18 * w2)}" height="${f1(14 * w2)}" rx="${f1(2 * w2)}" fill="${R(i + j * 4, 450) < 0.5 ? "#b8b2a8" : "#9e988e"}"/>`).join("")).join("") +
+         // (its stones, kept on the well)
+         `<clipPath id="bg-wellwall"><path d="M${P(wx - 40 * w2, wy - 50 * w2)} V${f1(wy)} Q${P(wx, wy + 14 * w2)} ${P(wx + 40 * w2, wy)} V${f1(wy - 50 * w2)} Z"/></clipPath><g clip-path="url(#bg-wellwall)">` +
+         [...Array(3)].map((_, j) => [...Array(4)].map((_, i) => `<rect x="${f1(wx - 40 * w2 + i * 20 * w2 + (j % 2) * 10 * w2)}" y="${f1(wy - 48 * w2 + j * 16 * w2)}" width="${f1(18 * w2)}" height="${f1(14 * w2)}" rx="${f1(2 * w2)}" fill="${R(i + j * 4, 450) < 0.5 ? "#b8b2a8" : "#9e988e"}"/>`).join("")).join("") + `</g>` +
          `<ellipse cx="${f1(wx)}" cy="${f1(wy - 50 * w2)}" rx="${f1(40 * w2)}" ry="${f1(10 * w2)}" fill="#3a3a44"/>` +
          [-1, 1].map(e => `<rect x="${f1(wx + e * 34 * w2 - 3 * w2)}" y="${f1(wy - 120 * w2)}" width="${f1(6 * w2)}" height="${f1(70 * w2)}" fill="#6e4a2c"/>`).join("") +
          `<polygon points="${P(wx - 54 * w2, wy - 112 * w2)} ${P(wx, wy - 150 * w2)} ${P(wx + 54 * w2, wy - 112 * w2)}" fill="#a3122a"/><line x1="${f1(wx - 34 * w2)}" y1="${f1(wy - 100 * w2)}" x2="${f1(wx + 34 * w2)}" y2="${f1(wy - 100 * w2)}" stroke="#5e3d22" stroke-width="${f1(4 * w2)}"/>` +
