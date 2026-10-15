@@ -100,29 +100,90 @@ A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground 
 
 **Castles.**
 - `castleOf(o)` reads one castle's settings (N's, M's or D's) into a model:
-  - `rooms`, by number (up to six, each a style from `ROOM_STYLES`);
-  - `hall[n]`, each hallway's doors and its stairs' end;
+  - `rooms`, by number (up to six, each a style from `ROOM_KINDS`);
+  - `hall[n]`, each room's own exits;
   - its color themes, A (the castle's own) and `themeB`;
   - `roomTheme[n]`, which theme each room takes;
-  - its carpet and roof.
+  - its carpet and roof;
+  - its residents (`cats`, `horses`, …), from `RESIDENTS`.
 - Settings keys end with the castle's letter, such as `castleRoom3N` or `castleHallDoor2_1M`.
-- `castleroomScene` draws a room by its style, in its theme, and `castleWays` adds its exits. A hallway's and a king's room's side doors are drawn in perspective by `hallSideDoor`.
-- **To add a room style:**
-  - add it to `ROOM_STYLES` with its emoji;
-  - add its drawing to the `draw` table in `castleroomScene`;
-  - give it exits: add it to `SIDE_DOOR_ROOMS` for doors in its side walls and a sign out toward us, set per room like the king's room's (it then takes a color theme too), or give it its own branch in `castleWays`;
-  - add any settings of its own to the room's group in `TABS`, shown only for that style;
-  - pass its inputs to its `part(…)` key. Something with many settings of its own, such as the cat room's cats, gets a `part` of its own, so its settings redraw only it.
-- **The cat room's cats** belong to the castle, not to a room (`castleOf(o).cats`, keys `castleCat<j><What><id>`), so a castle with two cat rooms shows the same cats in both. Their places are `CAT_SPOTS`, laid out in `catRoomPlaces`. They are drawn back to front with the rope bridge among them, so depth comes out right.
+- `castleroomScene` draws a room by its style, in its theme, and `castleWays` adds its exits.
+- Rooms are drawn in perspective with `roomSpace(c)`:
+  - `at(X, Y, z)` is a point on the back wall's plane, brought z toward us (z < 0); a side wall is X = ±bw;
+  - `Yh(h)` is a height on the back wall, as a share of it.
 
-**Music.** The music is a Web Audio sequencer inside the page:
+  Side doors come from `hallSideDoor`.
+
+**Music and LFOs.** The music is a Web Audio sequencer inside the page:
 - tunes are written as text (MIDI note numbers, sections, drum patterns);
 - about 30 instruments are synthesized in the page;
 - the mixing board sets each part's level, echo, room, pan and so on;
-- LFOs A to D (`LFO_BEATS`, from 1/32 beat to 32 beats) drive both sounds and pictures: fading parts, fairy wings, the fairy house;
+- seven LFOs, A to G (`LFO_NAMES`, `LFO_DEFAULT`, lengths from 1/32 beat to 32 beats), drive both sounds and pictures.
+  - D, E, F and G are the scenes' own to start with: D for quick things, E for slow ones, F and G for wings.
+  - Seven, with the whole tune's strip first, sit evenly on the mixing board.
 - LFOs belong to the scene's tune. A place without a tune uses the defaults. Write mixer settings through `chan(id, key)`.
-- **A scene that follows an LFO must read it through its options**, as `o["lfo:A"]` (see `sceneOpts`). Scenes are cached by the background settings they read (`partByReads`), and the mixer's LFOs are not background settings. Without that read, a change on the mixing board never reaches the scene. The fairy house had this bug until the cat room's release.
-- **Everything that moves with an LFO keeps its own phase**, so things side by side never move in lockstep (Matthew's call for the cats' wags). Each cat has its own offset into the cycle, and its own pace when it follows no LFO. An LFO too fast to show is drawn as a blur of copies spread round the cycle (`LFO_BLUR`), in time with nothing.
+- A tune line in one meter over chords in another is `crossOf` (the funked waltzes' basses).
+
+## Recipes: adding things
+
+Each kind of thing has one table. Add an entry there, and the rest follows from it. Check every change with the safety net, below.
+
+**A place.** Add one line in each of these:
+- `PLACES`: its value and its label with an emoji;
+- `PLACE_GROUPS`: exactly one kind (an assertion checks this);
+- `SCENES`: its scene function;
+- `SCENE_FIG`: the friend's size there;
+- `ARRIVE`: where the friend lands;
+- `PLACE_PHRASE`: the caption's words, such as "in the 🌲 forest" or "at the 🏕️ camp site";
+- `SCENE_TUNE`, if it has its own music;
+- `SCENE_LFO_THINGS`: its quick, slow and winged things.
+
+Every place moves at least one quick thing and one slow thing with the music. A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground at 320). Doorways are `<g class="portal" data-to="place">`; `flyInto` animates the trip, and the back chip undoes it.
+
+**A castle room style.** One entry in `ROOM_KINDS`:
+- its label (emoji first) and whose idea it was;
+- its drawing, `(c, K, r) => …`;
+- its exits:
+  - `side`: doors in its side walls, set per room, a sign out toward us, and a color theme, as the king's room has;
+  - `hall`: a hallway's doors and stairs;
+  - `trap`: one arch out;
+  - `ladder`: up to the trap room;
+  - `all`: an arch to every other room;
+- its stone's tone.
+
+Then:
+- add any settings of its own to the room's group in `TABS`, shown only for that style;
+- pass its inputs to its `part(…)` key in `castleroomScene`;
+- add its line to `SCENE_LFO_THINGS` as `"castleroom:<style>"`.
+
+**A resident** (who lives in a room style, like the cat room's cats). One entry in `RESIDENTS`:
+- its room style;
+- its key prefix, its list of starting ones, and its count `[setting, most, to start with]`;
+- its group's and boxes' keys and titles;
+- its name on the mixing board;
+- `fields`, each as `[key word, control, label, colors / choices / [min, max, everyday min, everyday max] / the "none" choice's name, default]`.
+
+From this come its settings' keys and defaults, `castleOf`'s list, the controls, when they show, and the mixing board's names. Residents belong to the castle, not to a room, so two cat rooms show the same cats. Draw them in a `part` of their own, back to front, with what stands in front of them drawn after them (as the cat room does with its rope bridge).
+
+**Something that moves with an LFO.**
+- **In a scene, a new animation:** use `sceneLfo(o, pace, off, attr, val, own)`, where `pace` is `"fast"`, `"slow"` or `"wings"` and `own` is what it does with no LFO.
+- **In a scene, an animation that already exists:** wrap it in `lfoTimed(o, pace, off, own)`, which times it to the LFO as it is written.
+- **Shared helpers:**
+  - `swaying(o, inner, x, y, deg, off)` sways a thing slowly about its foot or hook;
+  - `butterfliesSvg` makes butterflies.
+- **Elsewhere** (a costume, a part, a resident): add a line to `LFO_FOLLOWERS`, so the mixing board names it and an LFO change redraws it.
+- **Each thing gets its own `off`set**, so things side by side never move in lockstep.
+- **A part holding one takes `sceneLfoKey(o, pace)` among its inputs.** Scenes read an LFO through their options (`sceneOpts`, `o["lfo:A"]`). Without that, a change on the mixing board never reaches the scene, which is how the fairy house's bug happened.
+- **An LFO too fast to show is drawn as a blur** of copies spread round its cycle (`LFO_BLUR`, `wagged`), in time with nothing.
+
+## The safety net
+
+A refactor must not change any drawing. Before and after each step, run:
+- **The sweep** (`sweep.mjs`): draws every place at each time of day, every castle room style in both themes, and every costume, from the defaults with every LFO off. It hashes each picture's markup (69 pictures); compare the two lists.
+- **The structure dump** (`structure.mjs`): the defaults, the controls, every show-when rule over a set of castle states, and `castleOf` for them. These are what the pictures can't show; compare these too.
+- **The archive** (`archive.mjs <port> <page> ~/dress-up-screenshots/YYYY/MM/DD`): every background with and without the friend, and every chip menu's options against the defaults, each as a 1920-wide PNG, an SVG and its settings `.json` (the game's save format), with an index. Its names stay the same from day to day, so two days can be compared folder by folder.
+
+The tools live on Matthew's laptop, in `~/du-shots/tools/` (see the open questions).
 
 ## Drawing gotchas, and a routine for finding them
 
@@ -164,5 +225,5 @@ Each picture is a hand-drawn illusion of depth, and a few kinds of slip break it
 ## Open questions for Matthew (delete once answered)
 
 1. Should this file be public at all, or kept outside the repository (in hazel-work-notes, next to the dashboard's instructions)?
-2. Should the test drivers (contact sheets, drag timing, tune rendering) move into the repository, as a `tools/` folder? They live outside it today.
+2. Should the test drivers (the safety net's `sweep.mjs` and `structure.mjs`, the screenshot `archive.mjs`, contact sheets, drag timing, tune rendering) move into the repository, as a `tools/` folder? They live outside it today, in `~/du-shots/tools/`.
 3. Should the README link here, or leave it for agents to find?
