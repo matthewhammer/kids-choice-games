@@ -5308,6 +5308,17 @@ function greenhouseSvg(c, K) {
       t += `<line x1="${f1(sd * bw)}" y1="${f1(y)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="${iron}" stroke-width="${f1(5 * k)}"/>`; }
     // the glass's shine
     t += `<line x1="${f1(sd * bw * 1.25)}" y1="${f1(top - 20 * k)}" x2="${f1(sd * bw * 1.6)}" y2="${f1(floor - 20 * k)}" stroke="#ffffff" stroke-width="${f1(10 * k)}" opacity="0.25"/>`;
+    // a stone wall up each side, the glass above it, for the doors to stand in (a castle of many
+    // rooms has more archways than the back wall holds: castleWays); its courses run toward us,
+    // its joints by turns, each in the wall's perspective, ending on its edges; a coping on top
+    { const yw = floor - 0.7 * (floor - top), Xe = sd * (W + pad), fe = (W + pad) / bw, at = (x, y) => vy + (y - vy) * Math.abs(x) / bw;
+      t += `<polygon points="${P(sd * bw, floor)} ${P(sd * bw, yw)} ${P(Xe, at(Xe, yw))} ${P(Xe, at(Xe, floor))}" fill="#c8b59a"/>`;
+      const rows = 9, yr = m => floor - (floor - yw) * m / rows;
+      for (let m = 1; m < rows; m++) t += `<line x1="${f1(sd * bw)}" y1="${f1(yr(m))}" x2="${f1(Xe)}" y2="${f1(at(Xe, yr(m)))}" stroke="#a08b6e" stroke-width="${f1(1.4 * k)}"/>`;
+      for (let m = 0; m < rows; m++) for (let q = 1 + (m % 2) * 0.5; ; q++) { const x = sd * bw * Math.pow(1.14, q); if (Math.abs(x) >= W + pad) break;
+        t += `<line x1="${f1(x)}" y1="${f1(at(x, yr(m)))}" x2="${f1(x)}" y2="${f1(at(x, yr(m + 1)))}" stroke="#a08b6e" stroke-width="${f1(1.2 * k)}"/>`; }
+      t += `<line x1="${f1(sd * bw)}" y1="${f1(yw)}" x2="${f1(Xe)}" y2="${f1(at(Xe, yw))}" stroke="#e2d6c0" stroke-width="${f1(7 * k)}"/>` +
+           `<line x1="${f1(sd * bw)}" y1="${f1(yw)}" x2="${f1(sd * bw)}" y2="${f1(floor)}" stroke="#a08b6e" stroke-width="${f1(2 * k)}"/>`; }
   }
   // the roof: arched ribs of iron over glass
   t += `<polygon points="${P(-bw, top)} ${P(bw, top)} ${P(...out(bw, top, y0 - pad))} ${P(...out(-bw, top, y0 - pad))}" fill="url(#bg-glass)" opacity="0.35"/>`;
@@ -6081,11 +6092,20 @@ function castleWays(c, K, n, style) {
       plankSign(0, A.top - 14 * k * 0.18, k * 0.3, `${roomLabel(rooms[end - 1]).split(" ")[0]} ${end}`) + `</g>` : "";
     return doors.map((L, i) => { const z0 = 0.8 * Math.floor(i / 2) + 0.08; return hallSideDoor(c, i % 2 ? 1 : -1, z0, z0 + 0.28, L.label, L.attrs); }).join("") + far;
   }
+  // (the greenhouse: archways along its back wall, three either side of its middle; any more, as
+  // with a castle of many rooms, doors in its stone side walls, in perspective, as the king's room's,
+  // two to a side; and any more still, signs at the bottom, toward us, as the king's room's way out)
   let t = "";
-  links.forEach((L, i) => {
+  const back = links.slice(0, 6), more = links.slice(6, 10), signs = links.slice(10);
+  back.forEach((L, i) => {
     const sd = i % 2 ? 1 : -1, j = Math.floor(i / 2);
     t += archDoor(sd * (bw * 0.86 - j * 104 * k), floor, k, L.label, L.attrs, 76, 140);
   });
+  more.forEach((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.15 * j;
+    t += hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.11, z1, L.label, L.attrs, j * 46 * k); });
+  signs.forEach((L, i) => { const x = (i % 2 ? 1 : -1) * W * (0.12 + 0.17 * Math.floor(i / 2));
+    t += `<g class="portal" ${L.attrs}><rect x="${f1(x - 4 * k)}" y="${f1(c.y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + c.pad)}" fill="#6e4a2c"/>` +
+         plankSign(x, c.y1 - 44 * k, k, `${L.label} ⬇️`) + `</g>`; });
   return t;
 }
 // The castle as a map, for the castle designer: every way between its rooms

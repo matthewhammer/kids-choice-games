@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.39 (2026-10-15)
+
+Everything in 0.0.38, plus room in the greenhouse for every way out of it.
+
+- **🌿 The greenhouse has stone walls up its sides, and room for every way out.** With many rooms, its archways crowded together along its back wall, one over another. Now the back wall holds six archways, three either side of its middle. Any more are doors in its side walls, two to a side, set in perspective (as the king's room's are), and those walls are stone now, up to above the doors, with the glass above them. Any more still are signs at the bottom, pointing toward you ("👑 13 ⬇️"). Matthew's idea.
+
 ## 0.0.38 (2026-10-15)
 
 Everything in 0.0.37, plus M's dining room.
