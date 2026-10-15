@@ -2080,7 +2080,13 @@ function wingLfoBlur(lf, sd, ax, ay, t) {
   return { css: wingLfoFlap(lf, sd).css, svg: `<g transform="translate(${ax} ${ay})">` + [...Array(K)].map((_, i) =>
     `<g style="${wingLfoFlap(lf, sd, i / K).style}" opacity="${op}"><g transform="translate(${-ax} ${-ay})">${t}</g></g>`).join("") + `</g>` };
 }
+// a wing's markings (veins, spots, a shine), kept inside the wing's outline d:
+// drawn a little long and clipped, every vein ends exactly at the wing's edge
+let wingClips = 0;
+const insideWing = (d, inner) => { const id = "fw-clip-" + wingClips++;
+  return `<clipPath id="${id}"><path d="${d}"/></clipPath><g clip-path="url(#${id})">${inner}</g>`; };
 function fairyWingsSvg(style, color, w, L, flutter = true, lfo = null) {
+  wingClips = 0;   // (the same wings, the same clip ids, every draw)
   const dk = darker(color), lt = mix(color, "#ffffff", 0.45), out = [];
   const lf = flutter ? lfoNow(lfo) : null, css = [];
   for (const sd of [-1, 1]) {
@@ -2091,24 +2097,29 @@ function fairyWingsSvg(style, color, w, L, flutter = true, lfo = null) {
       const lo = `M${X(16)} 36 C${X(w + 120)} 40 ${X(w + 160)} 150 ${X(w + 70)} 176 C${X(30)} 178 ${X(12)} 100 ${X(16)} 36 Z`;
       t += `<path d="${lo}" fill="${color}" stroke="#1f1f22" stroke-width="7" stroke-linejoin="round"/>` +
            `<path d="${up}" fill="${color}" stroke="#1f1f22" stroke-width="7" stroke-linejoin="round"/>` +
-           [[w + 150, -110], [w + 170, -40], [w + 90, -120], [w + 40, 30]].map(([x, y]) => `<path d="M${X(20)} 26 Q${X(x * 0.55)} ${f1(y * 0.6)} ${X(x)} ${f1(y)}" fill="none" stroke="#1f1f22" stroke-width="3"/>`).join("") +
-           [[w + 110, 130], [w + 40, 90]].map(([x, y]) => `<path d="M${X(20)} 40 Q${X(x * 0.6)} ${f1(y * 0.7)} ${X(x)} ${f1(y)}" fill="none" stroke="#1f1f22" stroke-width="3"/>`).join("") +
-           [[w + 170, -70], [w + 160, -10], [w + 130, -125], [w + 100, 150], [w + 60, 165], [w + 140, 110]].map(([x, y]) => `<circle cx="${X(x)}" cy="${f1(y)}" r="6" fill="#ffffff"/>`).join("");
+           // (its veins and spots, each inside its own wing, the veins carried on to the wing's edge)
+           insideWing(up, [[w + 150, -110], [w + 170, -40], [w + 90, -120], [w + 40, 30]].map(([x, y]) => `<path d="M${X(20)} 26 Q${X(x * 0.55)} ${f1(y * 0.6)} ${X(20 + (x - 20) * 1.5)} ${f1(26 + (y - 26) * 1.5)}" fill="none" stroke="#1f1f22" stroke-width="3"/>`).join("") +
+             [[w + 170, -70], [w + 160, -10], [w + 130, -125]].map(([x, y]) => `<circle cx="${X(x)}" cy="${f1(y)}" r="6" fill="#ffffff"/>`).join("")) +
+           insideWing(lo, [[w + 110, 130], [w + 40, 90]].map(([x, y]) => `<path d="M${X(20)} 40 Q${X(x * 0.6)} ${f1(y * 0.7)} ${X(20 + (x - 20) * 1.6)} ${f1(40 + (y - 40) * 1.6)}" fill="none" stroke="#1f1f22" stroke-width="3"/>`).join("") +
+             [[w + 100, 150], [w + 60, 165], [w + 140, 110]].map(([x, y]) => `<circle cx="${X(x)}" cy="${f1(y)}" r="6" fill="#ffffff"/>`).join(""));
     } else if (style === "dragonfly") {
-      const wing = (tx, ty, wd) => { const mx = tx * 0.55, my = ty * 0.55 + 18;
-        return `<path d="M${X(16)} ${ay} Q${X(mx)} ${f1(my - wd)} ${X(tx)} ${f1(ty)} Q${X(mx)} ${f1(my + wd)} ${X(16)} ${ay} Z" fill="${color}" fill-opacity="0.5" stroke="${dk}" stroke-width="2.5"/>` +
+      const wing = (tx, ty, wd) => { const mx = tx * 0.55, my = ty * 0.55 + 18, d = `M${X(16)} ${ay} Q${X(mx)} ${f1(my - wd)} ${X(tx)} ${f1(ty)} Q${X(mx)} ${f1(my + wd)} ${X(16)} ${ay} Z`;
+        return `<path d="${d}" fill="${color}" fill-opacity="0.5" stroke="${dk}" stroke-width="2.5"/>` +
           `<path d="M${X(16)} ${ay} Q${X(mx)} ${f1(my)} ${X(tx)} ${f1(ty)}" fill="none" stroke="${dk}" stroke-width="1.5"/>` +
-          [...Array(9)].map((_, j) => { const u = (j + 1) / 10, cx = 16 + (tx - 16) * u, cy = ay + (ty - ay) * u + 18 * Math.sin(Math.PI * u) * 0.5;
-            return `<line x1="${X(cx - 4)}" y1="${f1(cy - wd * 0.8 * Math.sin(Math.PI * u))}" x2="${X(cx + 4)}" y2="${f1(cy + wd * 0.8 * Math.sin(Math.PI * u))}" stroke="${dk}" stroke-width="1" opacity="0.7"/>`; }).join(""); };
+          // (its cross-veins, edge to edge: drawn long, kept inside the wing)
+          insideWing(d, [...Array(9)].map((_, j) => { const u = (j + 1) / 10, cx = 16 + (tx - 16) * u, cy = ay + (ty - ay) * u + 18 * Math.sin(Math.PI * u) * 0.5;
+            return `<line x1="${X(cx - 5)}" y1="${f1(cy - wd * 1.2)}" x2="${X(cx + 5)}" y2="${f1(cy + wd * 1.2)}" stroke="${dk}" stroke-width="1" opacity="0.7"/>`; }).join("")); };
       t += wing(w + 210, 70, 26) + wing(w + 240, -60, 30) +
            `<path d="M${X(w + 120)} -40 l${X(14)} -6" stroke="#ffffff" stroke-width="3" opacity="0.6"/>`;
     } else if (style === "leaf") {
-      const leaf = (tx, ty, wd) => { const mx = tx * 0.5, my = ty * 0.5 + ay * 0.5;
-        let v = `<path d="M${X(16)} ${ay} Q${X(mx - 10)} ${f1(my - wd)} ${X(tx)} ${f1(ty)} Q${X(mx + 10)} ${f1(my + wd)} ${X(16)} ${ay} Z" fill="${color}" stroke="${dk}" stroke-width="3"/>` +
+      const leaf = (tx, ty, wd) => { const mx = tx * 0.5, my = ty * 0.5 + ay * 0.5, d = `M${X(16)} ${ay} Q${X(mx - 10)} ${f1(my - wd)} ${X(tx)} ${f1(ty)} Q${X(mx + 10)} ${f1(my + wd)} ${X(16)} ${ay} Z`;
+        let v = `<path d="${d}" fill="${color}" stroke="${dk}" stroke-width="3"/>`, veins = "";
+        v +=
                 `<path d="M${X(16)} ${ay} Q${X(mx)} ${f1(my)} ${X(tx)} ${f1(ty)}" fill="none" stroke="${dk}" stroke-width="2.5"/>`;
+        // (its side veins, from the midrib out to the leaf's edge, and its shine: kept inside the leaf)
         for (let j = 1; j < 6; j++) { const u = j / 6, cx = 16 + (tx - 16) * u, cy = ay + (ty - ay) * u;
-          for (const e of [-1, 1]) v += `<path d="M${X(cx)} ${f1(cy)} q${X((tx - 16) * 0.08)} ${f1(e * wd * 0.45)} ${X((tx - 16) * 0.14)} ${f1(e * wd * 0.55)}" fill="none" stroke="${dk}" stroke-width="1.5" opacity="0.8"/>`; }
-        return v + `<path d="M${X(mx * 0.7)} ${f1(my - wd * 0.4)} q${X(30)} -14 ${X(60)} -12" fill="none" stroke="${lt}" stroke-width="4" opacity="0.6"/>`; };
+          for (const e of [-1, 1]) veins += `<path d="M${X(cx)} ${f1(cy)} q${X((tx - 16) * 0.08)} ${f1(e * wd * 0.9)} ${X((tx - 16) * 0.14)} ${f1(e * wd * 1.4)}" fill="none" stroke="${dk}" stroke-width="1.5" opacity="0.8"/>`; }
+        return v + insideWing(d, veins + `<path d="M${X(mx * 0.7)} ${f1(my - wd * 0.4)} q${X(30)} -14 ${X(60)} -12" fill="none" stroke="${lt}" stroke-width="4" opacity="0.6"/>`); };
       t += leaf(w + 140, 120, 46) + leaf(w + 175, -110, 62);
     } else if (style === "petal") {
       const petal = (tx, ty, wd) => { const ang = Math.atan2(ty - ay, sd * (tx - 16)), len = Math.hypot(tx - 16, ty - ay);
