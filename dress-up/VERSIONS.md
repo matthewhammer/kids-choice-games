@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.51 (2026-10-15)
+
+Everything in 0.0.50, plus the shore in front of the friend in the water.
+
+- **Fixed: legs under the water showed through the sand** (Matthew). Since 0.0.50 the friend sinks into the water where they stand, and near the shore their legs, under the water, reached down over the sand, the bank or the grass in front of them. Now what is under the water shows only where the water is: the sand at the lake and the beach, the bank of the jungle pool, the grass by a castle's moat, and the banks of the stream and the brook are in front of it. The ripples stay on the water too.
+
 ## 0.0.50 (2026-10-15)
 
 Everything in 0.0.49, plus the friend standing in the water rather than on it.
