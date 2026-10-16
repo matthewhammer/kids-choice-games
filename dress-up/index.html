@@ -729,7 +729,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.63", released: "2026-10-16" };
+const VERSION = { number: "0.0.64", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -2933,7 +2933,9 @@ function broomSvg([hx, hy], trim) {
 // (mountScene, below), so a scene slider parses only the pieces it changed,
 // and a size slider (a tree's, a house's, a couch's) only a group's tag.
 const SEP = "\u0001", OPEN = tag => SEP + tag + SEP, CLOSE = SEP + "</g>" + SEP;
-const unmarked = svg => svg.replaceAll(SEP, "");
+// (ticket 137: and a place seen from another, as a far view or a picture,
+// has no ladders to climb: only the place itself does)
+const unmarked = svg => svg.replaceAll(SEP, "").replaceAll(' data-ladder="1"', "");
 // (ticket 99) A scene's objects, by depth. A scene is painted back to front.
 // A thing standing in it (a tree, a table, the witch) is an object: named,
 // and marked with its depth, the y where it stands on the ground (its foot,
@@ -3621,7 +3623,9 @@ function treeInner(c) {
     const lx = x + Math.sign(x) * 52 * hz, top = y + 14 * hz;
     let t = `<line x1="${lx - 12}" y1="${top}" x2="${lx - 12}" y2="${below}" stroke="#8b5e34" stroke-width="5"/><line x1="${lx + 12}" y1="${top}" x2="${lx + 12}" y2="${below}" stroke="#8b5e34" stroke-width="5"/>`;
     for (let y2 = top + 18; y2 < below - 4; y2 += 22) t += `<line x1="${lx - 12}" y1="${y2}" x2="${lx + 12}" y2="${y2}" stroke="#a0703f" stroke-width="4"/>`;
-    return t;
+    // (ticket 137: one down to the ground can be climbed, up to house i + 1;
+    // one between houses is out of reach from the ground)
+    return below === 0 ? `<g data-ladder="1" data-house="${i + 1}">${t}</g>` : t;
   }).join(""));
   // the houses: one drawing, its roof the color of its <use>
   s += SEP + part("tree-cabin", [], () => `<defs>${CABIN_DEFS}</defs>` +
@@ -3968,8 +3972,8 @@ function waysSvg({ x0, x1, y0, W, H, k, P }, floor, links) {
       // a ladder up through a hole in the ceiling
       const lx = x1 - W * 0.4;
       t += `<ellipse cx="${f1(lx)}" cy="${f1(y0 + 6 * k)}" rx="${f1(40 * k)}" ry="${f1(12 * k)}" fill="#2a1a0e"/>` +
-           [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(y0 + 2 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
-           [...Array(Math.floor((floor + 14 * k - y0) / (30 * k)))].map((_, r) => `<line x1="${f1(lx - 20 * k)}" y1="${f1(floor - r * 30 * k)}" x2="${f1(lx + 20 * k)}" y2="${f1(floor - r * 30 * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") +
+           `<g data-ladder="1">` + [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(y0 + 2 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
+           [...Array(Math.floor((floor + 14 * k - y0) / (30 * k)))].map((_, r) => `<line x1="${f1(lx - 20 * k)}" y1="${f1(floor - r * 30 * k)}" x2="${f1(lx + 20 * k)}" y2="${f1(floor - r * 30 * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") + `</g>` +
            plankSign(lx, y0 + H * 0.24, k, `${name} ⬆️`);
     }
     t += `</g>`;
@@ -5449,9 +5453,9 @@ const shackle = (x, y, s) => `<rect x="${f1(x - 5 * s)}" y="${f1(y - 5 * s)}" wi
 const ladderUp = (x, floor, top, k, label, attrs) => `<g class="portal" ${attrs}>` +
   `<polygon points="${f1(x - 50 * k)},${f1(top)} ${f1(x + 50 * k)},${f1(top)} ${f1(x + 120 * k)},${f1(floor + 40 * k)} ${f1(x - 120 * k)},${f1(floor + 40 * k)}" fill="#fff6c8" opacity="0.12"/>` +
   `<ellipse cx="${f1(x)}" cy="${f1(top)}" rx="${f1(56 * k)}" ry="${f1(14 * k)}" fill="#fff3c4" opacity="0.8"/>` +
-  [-1, 1].map(e => `<line x1="${f1(x + e * 22 * k)}" y1="${f1(top)}" x2="${f1(x + e * 30 * k)}" y2="${f1(floor + 10 * k)}" stroke="#6e4a2c" stroke-width="${f1(7 * k)}"/>`).join("") +
+  `<g data-ladder="1">` + [-1, 1].map(e => `<line x1="${f1(x + e * 22 * k)}" y1="${f1(top)}" x2="${f1(x + e * 30 * k)}" y2="${f1(floor + 10 * k)}" stroke="#6e4a2c" stroke-width="${f1(7 * k)}"/>`).join("") +
   [...Array(9)].map((_, j) => { const u = (j + 0.5) / 9, y = top + (floor + 10 * k - top) * u, hw = (22 + 8 * u) * k;
-    return `<line x1="${f1(x - hw)}" y1="${f1(y)}" x2="${f1(x + hw)}" y2="${f1(y)}" stroke="#8b5e34" stroke-width="${f1(5 * k)}"/>`; }).join("") +
+    return `<line x1="${f1(x - hw)}" y1="${f1(y)}" x2="${f1(x + hw)}" y2="${f1(y)}" stroke="#8b5e34" stroke-width="${f1(5 * k)}"/>`; }).join("") + `</g>` +
   plankSign(x, floor - 200 * k, k, label) + `</g>`;
 
 // The trap room: bare stone, two torches, a lever on the wall, and two pits
@@ -6972,8 +6976,8 @@ function stableSvg(c, K) {
   // object at its foot, so the horses (drawn after the room) are sorted in among them by depth
   // the ladder up to the loft, standing on the floor by the left wall
   { const [la, lt] = at(-0.985 * bw, loftY - 14 * k, -0.14), [, lb] = at(-0.985 * bw, floor, -0.14), lw = 24 * k;
-    t += obj("ladder", lb, [-1, 1].map(e => `<line x1="${f1(la + e * lw / 2)}" y1="${f1(lt)}" x2="${f1(la + e * lw / 2 + 4 * k)}" y2="${f1(lb)}" stroke="${oakL}" stroke-width="${f1(5 * k)}"/>`).join("") +
-         [...Array(9)].map((_, j) => { const y = lt + (lb - lt) * (j + 0.5) / 9; return `<line x1="${f1(la - lw / 2)}" y1="${f1(y)}" x2="${f1(la + lw / 2 + 4 * k)}" y2="${f1(y)}" stroke="${oak}" stroke-width="${f1(3.5 * k)}"/>`; }).join("")); }
+    t += obj("ladder", lb, `<g data-ladder="1">` + [-1, 1].map(e => `<line x1="${f1(la + e * lw / 2)}" y1="${f1(lt)}" x2="${f1(la + e * lw / 2 + 4 * k)}" y2="${f1(lb)}" stroke="${oakL}" stroke-width="${f1(5 * k)}"/>`).join("") +
+         [...Array(9)].map((_, j) => { const y = lt + (lb - lt) * (j + 0.5) / 9; return `<line x1="${f1(la - lw / 2)}" y1="${f1(y)}" x2="${f1(la + lw / 2 + 4 * k)}" y2="${f1(y)}" stroke="${oak}" stroke-width="${f1(3.5 * k)}"/>`; }).join("") + `</g>`); }
   // the stone water trough, its water rippling; buckets by it
   { const [tx, ty] = at(-0.66 * bw, floor, -0.3), s = k / 0.7;
     t += obj("water trough", ty, `<ellipse cx="${f1(tx)}" cy="${f1(ty)}" rx="${f1(58 * s)}" ry="${f1(7 * s)}" fill="#000000" opacity="0.2"/>` +
@@ -9072,9 +9076,64 @@ function treadStroke(amt, u) {
 // about the hips (rot, crawling), and a ladder's rungs going by (ladder,
 // climbing). One stride to LFO B's wave (2 beats to start), as treading,
 // so it moves with the music. Without one chosen, deep water still treads.
-const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing a ladder"]];
+const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"]];
 // (walking, running and crawling are seen from the side: chosen facing us, the friend turns to our right)
 const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
+// (ticket 137) Climbing a ladder that stands in the place ("🧗 climbing"):
+// the friend goes to the ladder nearest them, just in front of it at its
+// depth, facing us, and climbs it, CLIMB_SPEED stage units a second at the
+// size they are there; at the top they go through it if it is a doorway (a
+// dungeon's ladder up, a tree house room's ladder up, a ladder up the tree
+// to its house: the house), or stay up there holding on (the hay loft).
+// A place's ladders are its drawing's [data-ladder] groups, measured when
+// a climb starts (startClimb, after a drawing, never in draw()). climb is
+// null (to look for one), { none } (no ladder here, or, put down, none
+// within reach: far), or the ladder: { place (the place it is in), x, z
+// (its depth), top, door (its doorway's data-to and data-house, found
+// again at the top: the scene's text, and so its nodes, may change on the
+// way up, as the music starting re-times it), start, done, through }.
+// Chosen, or in a new place, they go to the nearest ladder anywhere; put
+// down by a drag, only to one within reach (CLIMB_REACH)
+let climb = null, climbLook = 0, climbAnywhere = true;
+const CLIMB_SPEED = 70, CLIMB_REACH = 140;
+const climbPlace = BG => [BG.kind, BG.inside, BG.castleRoom, BG.tent].join(":");
+function startClimb() {
+  climbLook = 0;
+  const B = state.body, BG = state.background, node = bgShown.node;
+  if (B.anim !== "climbup" || drag || entering || BG.kind === "none" || !node || climb) return;
+  const fx = BG.figX ?? 0, fz = SCENE.ground + (BG.figY ?? 0);
+  // (in the picture's own units, the friend's: through the screen, as the
+  // scene may sit in a nested svg of its own)
+  const P = pic.getScreenCTM();
+  let best = null;
+  for (const el of node.querySelectorAll("[data-ladder]")) {
+    const b = el.getBBox(), E = el.getScreenCTM(), m = P && E ? P.inverse().multiply(E) : null;
+    if (!m || !b.height) continue;
+    const at = (x, y) => new DOMPoint(x, y).matrixTransform(m), lo = at(b.x + b.width / 2, b.y + b.height), hi = at(b.x + b.width / 2, b.y);
+    // (its depth: the object it is, else its foot)
+    const ob = el.closest("[data-obj]"), z = ob && Number.isFinite(Number(ob.dataset.z)) ? Number(ob.dataset.z) : lo.y;
+    const d = Math.hypot(lo.x - fx, z - fz);
+    if (!best || d < best.d) best = { d, x: lo.x, z, top: Math.min(lo.y, hi.y), el };
+  }
+  const anywhere = climbAnywhere;
+  climbAnywhere = true;
+  if (!best || (!anywhere && best.d > CLIMB_REACH)) { climb = { none: true, far: !!best, place: climbPlace(BG) }; changed(); return; }
+  BG.figX = Math.round(best.x); BG.figY = Math.round(best.z - SCENE.ground + 2);
+  B.facing = "front";
+  const p = best.el.closest(".portal"), house = best.el.dataset.house;
+  const door = p ? { to: p.dataset.to, house: p.dataset.house, room: p.dataset.room, tent: p.dataset.tent } : house ? { to: "treeroom", house } : null;
+  climb = { place: climbPlace(BG), x: best.x, z: best.z + 2, top: best.top, door, start: performance.now(), done: false, through: false };
+  changed();
+}
+// (at the top of a ladder that is a doorway: through it, as a click would)
+function climbThrough() {
+  const c = climb, node = bgShown.node;
+  if (!c || !c.door || !node || entering || state.body.anim !== "climbup") return;
+  const door = node.querySelector(`.portal[data-to="${c.door.to}"]` + ["house", "room", "tent"].map(k => c.door[k] ? `[data-${k}="${c.door[k]}"]` : "").join(""));
+  if (!door) return;
+  c.through = true;
+  enterScene(door);
+}
 function moveNow() {
   const B = state.body, a = B.anim;
   if (!a || a === "none" || poseHeld) return treadNow();
@@ -9115,6 +9174,16 @@ function moveNow() {
     return { ...both("Leg", sd => tilt - swing(sd) - t0), ...both("Knee", sd => 90 - swing(sd) - b0),
              ...both("Arm", sd => 90 - tilt - (B.arms ?? 0) - lean(sd) + 14 * sd * s), ...both("Elbow", () => -(B.elbows ?? 0)),
              ...both("Foot", () => -(180 - tilt)), rot: dir ? tilt * dir : 0 };
+  }
+  if (a === "climbup") {
+    // (ticket 137) up a ladder that stands in the place (see climb, below),
+    // facing us: the stroke of climbing with a ladder of their own, without
+    // one; still while there is no ladder to climb, and holding on, still,
+    // at its top (held: no more frames)
+    if (!climb || climb.none) return treadNow();
+    const s = climb.done ? 0 : sin(1), up = side => -80 - (B.arms ?? 0) - lean(side);
+    return { ...both("Arm", sd => up(sd) + 30 * sd * s), ...both("Elbow", sd => 20 + 30 * Math.max(0, -sd * s)),
+             ...both("Leg", sd => 8 * Math.max(0, sd * s)), ...both("Knee", sd => 55 * Math.max(0, sd * s)), lift: 5 * Math.abs(s), held: climb.done };
   }
   if (a === "climb") {
     // (ticket 137) seen from the side, the ladder in front of them: a hand
@@ -9508,6 +9577,19 @@ function draw() {
   figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
+  // (ticket 137) climbing a place's ladder: up it as time goes by (not while
+  // dragged), at its depth (their feet are sorted there still), their
+  // shadow left at its foot; to the top, or, up a doorway, till their head
+  // is through. A new place ends a climb (and climbing, if it went through)
+  if (climb && climb.place !== climbPlace(BG)) { if (climb.through) B.anim = "none"; climb = null; }
+  let climbUp = 0;
+  if (climb && !climb.none && B.anim === "climbup" && scened && !poseHeld && !drag) {
+    const tall = (ground - neckTop + 90) * figureT.k, all = Math.max(0.4 * (climb.z - climb.top), climb.z - climb.top - (climb.door ? 0.55 * tall : 0));
+    const got = Math.min(all, (performance.now() - climb.start) / 1000 * CLIMB_SPEED * figureT.k);
+    if (got >= all && !climb.done) { climb.done = true; if (climb.door) setTimeout(climbThrough, 250); }
+    climbUp = got / figureT.k;
+    figureT.g += climbUp;
+  }
   svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})${rotTf}">`;
   // (ticket 42) on the tree house's swing they swing with its seat: the same
   // rotation about the same hook, at the same time, added to where they are
@@ -9517,7 +9599,7 @@ function draw() {
     const lx = (hx - figureT.dx) / figureT.k, ly = (hy - figureT.dy - figureT.sg) / figureT.k + figureT.g, at = `${f1(lx)} ${f1(ly)}`;
     svg += lfoTimed(BG, "slow", 0.15, `<animateTransform attributeName="transform" type="rotate" additive="sum" values="-14 ${at};14 ${at};-14 ${at}" dur="2.6s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`);
   }
-  if (meanSeen > 0 && !wet && !rot) svg += `<ellipse cx="0" cy="${f1(ground + hugLift)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
+  if (meanSeen > 0 && !wet && !rot) svg += `<ellipse cx="0" cy="${f1(ground + hugLift + climbUp)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
   // (ticket 132) climbing: a ladder behind the friend, its rungs going down two a stride
   // (ticket 137: seen from the side, the ladder stands in front of them,
   // side on: its two rails nearly one behind the other, the far one a
@@ -10020,9 +10102,11 @@ function draw() {
   // the feeling, and where, as each place takes it (PLACE_PHRASE)
   const BGK = state.background.kind, where = PLACE_PHRASE[BGK];
   const place = typeof where === "function" ? where(state.background) : where || "";
-  document.getElementById("mood").textContent = "feeling " + mood(family(F.color), F.brow, F.smile) + (place ? " " + place : "");
+  document.getElementById("mood").textContent = "feeling " + mood(family(F.color), F.brow, F.smile) + (place ? " " + place : "") +
+    (B.anim === "climbup" && (!scened || (climb && climb.none)) ? (climb && climb.far ? " (🧗 put them by a ladder to climb it)" : " (🧗 no ladder here to climb)") : "");
   fitPic();
-  if (move && !treadLoop) treadLoop = requestAnimationFrame(treadTick);
+  if (move && !move.held && !treadLoop) treadLoop = requestAnimationFrame(treadTick);
+  if (B.anim === "climbup" && scened && !climb && !drag && !entering && !climbLook) climbLook = setTimeout(startClimb, 0);   // (ticket 137)
 }
 // (ticket 123) While the friend treads water they are drawn again about 30
 // times a second: not while a drag draws them anyway, nor while the page is
@@ -12202,7 +12286,8 @@ function set(part, key, value) {
   // the side turns a friend who faces us to our right
   if (part === "body" && key === "pose") strikePose(value);
   if (part === "body" && key === "anim" && ANIM_SIDEWAYS[value] && facingOf(state.body) === 0) state.body.facing = "right";
-  if (part === "body" && key === "anim" && value === "climb") state.body.facing = "front";   // (the ladder is behind them, facing us)
+  if (part === "body" && key === "anim" && (value === "climb" || value === "climbup")) state.body.facing = "front";   // (the ladder is behind them, facing us)
+  if (part === "body" && key === "anim") climb = null;   // (ticket 137: a climb starts afresh)
   // (walking, running, crawling and climbing start from standing: sitting
   // or cross-legged, they had nothing to move with)
   if (part === "body" && key === "anim" && value !== "none" && value !== "swim" && state.body.pose !== "stand") strikePose("stand");
@@ -13557,6 +13642,7 @@ const letGo = () => {
   drag = null;
   if (posing) { poseHeld = null; changed(); }
   if (moved) dropOnSeat();
+  if (moved && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)
 };
 pic.addEventListener("pointerup", letGo);
 // (ticket 133: a touch the browser takes over, as a scroll or a gesture, ends

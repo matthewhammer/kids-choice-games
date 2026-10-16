@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.64 (2026-10-16)
+
+Everything in 0.0.63, plus climbing the ladders that are in a place.
+
+- **🧗 climbing** (Matthew), a new animation in the 🧍 Body tab: the friend goes to the nearest ladder in the place and climbs it. Up a dungeon's ladder, they climb out into the trap room. Up a ladder in a tree house room, they climb into the room above (or out to the tree). Up the tree's ladder from the ground, they climb into its house. Up the stable's ladder, they climb to the hay loft and hold on there. Put them down by another ladder and they climb that one. Where there is no ladder, the caption under the picture says so.
+- **🪜 climbing (with ladder)**: the old climbing, with a ladder of their own, has its new name.
+
 ## 0.0.63 (2026-10-16)
 
 Everything in 0.0.62, plus the ladder seen from the side.
