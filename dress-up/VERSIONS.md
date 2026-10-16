@@ -2,6 +2,16 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.78 (2026-10-16)
+
+Everything in 0.0.77, plus a ⚙️ Advanced tab, and 💭 our imagination smooth to walk in.
+
+- **⚙️ Advanced** (Matthew), a new tab in place of the GitHub chip: the game's code on GitHub; the version, with the 🆕 chip to change to a newer one when there is one (on a phone, where the title is hidden, this is the only place to see them); how many frames a second the picture is drawing now, and how long a drawing takes; and the things a background can draw that slow it down, each kept off until it can be made fast. Matthew: the priority is 60 frames a second at all times, for everything the controller does.
+  - **🌫️ soft blurs**, off: the soft edges in pictures, the waterfall's mist and the leaves seen outside the cave. Off, pictures are sharp, and the mist is a soft fade instead. Switched on, it says how many blurs the place has.
+  - **🎞️ moving pictures in the imagination's map**, off: the 22 pictures on the imagination's wall, each its own place still, instead of all of them moving at once.
+  - **📏 measure here**, by each: the friend walks right and back for 2 seconds with it off and 2 with it on, and it says how many frames a second each managed, on this computer. Handy on the black laptop.
+- **Fixed:** walking or dragging the friend in 💭 our imagination was very slow, 18 frames a second on Matthew's laptop and worse on the black laptop. Now it is 60.
+
 ## 0.0.77 (2026-10-16)
 
 Everything in 0.0.76, plus an empty room, and dragging smooth everywhere.

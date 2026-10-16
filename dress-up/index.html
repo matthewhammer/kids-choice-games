@@ -73,9 +73,10 @@
   .lfo-chip { font-size: 0.75em; padding: 1px 8px; margin-left: auto; margin-right: 8px; }
   .ctl.master.mixed input, .ctl.master.mixed .name { opacity: 0.45; }
   .ctl.master.mixed .val { font-style: italic; color: var(--muted); }
-  .tabs .repo-chip { align-self: center; padding: 3px 9px; border: 1px dashed var(--line); border-radius: 12px;
-                     color: var(--muted); font-size: 0.8em; text-decoration: none; }
-  .tabs .repo-chip:hover, .tabs .repo-chip:focus-visible { color: var(--ink); border-color: var(--muted); }
+  /* (ticket 155) the ⚙️ advanced tab: a feature kept off until it is fast, a row each */
+  .perfrow { border-top: 1px dashed var(--line); padding: 8px 0 4px; margin-top: 6px; }
+  .perfrow .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .perfrow button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .panel { background: var(--panel); border-radius: 18px; padding: 12px 14px; border: 2px solid var(--line); }
   .ctl { margin: 10px 0; }
   .ctl > .lbl { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
@@ -773,6 +774,82 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4 };
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 let state = clone(DEFAULTS);
+// (ticket 155, Matthew: "The priority is 60 FPS at all times, for all
+// actions that a game controller does in the scene.") What a background
+// can draw that costs frames is kept OFF until it can be made fast, each
+// one switched on in the ⚙️ advanced tab, which says how many there are
+// in the place and can measure what they cost here. The settings are this
+// computer's (localStorage "dress-up-perf"), not the friend's: a slow one,
+// like the black laptop, keeps them off whatever friend is loaded. A new
+// one: an entry in PERF_FEATURES, a flag the drawing reads (PERF.id), and
+// what to count. perfSet empties the scene caches, so every place draws
+// again with it.
+const PERF_FEATURES = [
+  { id: "blur", label: "🌫️ soft blurs", what: "the soft edges in pictures on walls and in the imagination's map, the waterfall's mist and the leaves outside the cave (Gaussian blurs). Off, pictures are sharp and the mist is a soft gradient.",
+    count: () => document.querySelectorAll("#bg feGaussianBlur").length + [...document.querySelectorAll('#bg image[href^="data:image/svg"]')].filter(i => i.getAttribute("href").includes("feGaussianBlur")).length, unit: ["blur", "blurs"] },
+  { id: "livePictures", label: "🎞️ moving pictures in the imagination's map", what: "the 22 pictures on the 💭 imagination's wall drawn live, each place's own animations playing. Off, each is the same place held still, as an image.",
+    count: () => state.background.kind === "imagination" ? document.querySelectorAll("#bg .portal > svg").length : 0, unit: ["picture drawn live", "pictures drawn live"] },
+];
+const PERF = Object.fromEntries(PERF_FEATURES.map(f => [f.id, false]));
+try { Object.assign(PERF, JSON.parse(localStorage.getItem("dress-up-perf") || "{}")); } catch (e) { /* (all off) */ }
+function perfSet(id, on, keep = true) {
+  PERF[id] = !!on;
+  if (keep) try { localStorage.setItem("dress-up-perf", JSON.stringify(PERF)); } catch (e) { /* (for this visit only) */ }
+  PARTS.clear(); READS.clear(); TRIMMED.clear(); STILLS.clear(); SCENE_PARTS.clear();
+  bgShown.text = null; bgShown.kept = new Map();
+  changed();
+}
+// (ticket 155) Frames a second, counted each second while the ⚙️ advanced
+// tab is shown (a frame the page could draw: idle, it is the screen's
+// rate), and a drawing's cost on average (changed() times draw()).
+const perfMeter = { node: null, loop: 0, t0: 0, n: 0, ms: 0, draws: 0 };
+function perfMeterTick(t) {
+  perfMeter.loop = 0;
+  if (!perfMeter.node || !perfMeter.node.isConnected || document.hidden) { perfMeter.t0 = 0; return; }
+  if (!perfMeter.t0) Object.assign(perfMeter, { t0: t, n: 0, ms: 0, draws: 0 });
+  else perfMeter.n++;
+  if (t - perfMeter.t0 >= 1000) {
+    const fps = Math.round(1000 * perfMeter.n / (t - perfMeter.t0));
+    perfMeter.node.textContent = `🎞️ frames a second now: ${fps}` + (perfMeter.draws ? ` · a drawing takes ${(perfMeter.ms / perfMeter.draws).toFixed(1)} ms (${perfMeter.draws} in the last second)` : " · nothing drawn in the last second");
+    Object.assign(perfMeter, { t0: t, n: 0, ms: 0, draws: 0 });
+  }
+  perfMeter.loop = requestAnimationFrame(perfMeterTick);
+}
+// (ticket 155) What a feature costs here: the friend walks right and back
+// for 2 s with it off, then 2 s with it on, as the controller walks them
+// (no controller needed), counting frames and timing each drawing; then
+// the friend, the place and the setting as they were.
+let perfBusy = false;
+async function perfMeasure(f, report) {
+  if (perfBusy) return;
+  perfBusy = true;
+  const B = state.background, body = state.body, keep = { x: B.figX, y: B.figY, anim: body.anim, facing: body.facing, was: PERF[f.id] };
+  const walk = on => new Promise(done => {
+    perfSet(f.id, on, false);
+    let t0 = 0, last = 0, frames = 0, ms = 0, draws = 0;
+    const step = t => {
+      if (!t0) t0 = last = t;
+      const dt = Math.min(0.1, (t - last) / 1000), u = (t - t0) / 2000;
+      last = t;
+      if (u >= 1) { done({ fps: 1000 * frames / (t - t0), ms: ms / Math.max(1, draws) }); return; }
+      frames++;
+      body.anim = "walk"; body.facing = u < 0.5 ? "right" : "left";
+      if (B.kind !== "none") B.figX = Math.round(10 * clamp((B.figX ?? 0) + (u < 0.5 ? 1 : -1) * PAD_SPEED.walk * dt, sceneFrame.left, sceneFrame.right)) / 10;
+      const a = performance.now(); changed(); ms += performance.now() - a; draws++;
+      requestAnimationFrame(step);
+    };
+    setTimeout(() => requestAnimationFrame(step), 500);   // (a moment for the place, drawn anew, to settle)
+  });
+  report(`📏 measuring ${f.label}: off…`);
+  const off = await walk(false);
+  report(`📏 measuring ${f.label}: on…`);
+  const on = await walk(true);
+  Object.assign(B, { figX: keep.x, figY: keep.y }); Object.assign(body, { anim: keep.anim, facing: keep.facing });
+  perfSet(f.id, keep.was, false);
+  perfBusy = false;
+  const line = r => `${Math.round(r.fps)} frames a second, ${r.ms.toFixed(1)} ms a drawing`;
+  report(`📏 walking here, off: ${line(off)}; on: ${line(on)}.`);
+}
 try {
   const saved = JSON.parse(localStorage.getItem("dress-up-v1") || "null");
   if (saved) for (const k of Object.keys(DEFAULTS)) state[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
@@ -797,7 +874,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.77", released: "2026-10-16" };
+const VERSION = { number: "0.0.78", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -3890,8 +3967,8 @@ function treehouseScene(c) {
 // the less detail it has; a picture of this room holds its own pictures
 // once, not forever
 const PICTURE_KINDS = ["lake", "beach", "livingroom", "forest", "treehouse", "underwater", "house", "witch", "cemetery", "treeroom"];
-const SCENE_PARTS = new Map(), TRIMMED = new Map();
-function pictureSvg(kind, detail, o, depth, x, y, w, h) {
+const SCENE_PARTS = new Map(), TRIMMED = new Map(), STILLS = new Map();
+function pictureSvg(kind, detail, o, depth, x, y, w, h, still = false) {
   const opts = new Proxy({}, { get: (_, key) => (key === "depth" ? depth : o[key]) });
   const full = partByReads(`picture:${kind}:${depth}`, opts, oo =>
     prefixIds(unmarked(backgroundSvg(kind, SCENE.left, SCENE.top, -SCENE.left, SCENE.bottom, SCENE.ground, oo)), `p${depth}${kind}-`));
@@ -3916,19 +3993,38 @@ function pictureSvg(kind, detail, o, depth, x, y, w, h) {
   }
   // (the picture's own doorways are only paint: the picture as a whole is the way into its place)
   body = body.replaceAll('class="portal"', 'class="painted-portal"');
-  const blur = (1 - detail / 100) * 14, fid = `bg-blur-${depth}-${Math.round(blur * 10)}`;
+  const blur = PERF.blur ? (1 - detail / 100) * 14 : 0, fid = `bg-blur-${depth}-${Math.round(blur * 10)}`;   // (ticket 155: blurs off by default)
   const W = -2 * SCENE.left, H = SCENE.bottom - SCENE.top;
-  return `<svg x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" viewBox="${SCENE.left} ${SCENE.top} ${W} ${H}" preserveAspectRatio="xMidYMid slice">` +
-         (blur > 0.2 ? `<defs><filter id="${fid}" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="${f1(blur)}"/></filter></defs><g filter="url(#${fid})">${body}</g>` : body) +
-         `</svg>`;
+  const inner = blur > 0.2 ? `<defs><filter id="${fid}" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="${f1(blur)}"/></filter></defs><g filter="url(#${fid})">${body}</g>` : body;
+  // (ticket 154) A still picture: the place drawn by its own code, as
+  // always, but held still (its animations taken out) and shown as an
+  // image, which the browser draws into pixels once and keeps. The
+  // imagination's map holds 22 pictures, 7,700 shapes and 24 blurs; drawn
+  // live, any move of the friend made the browser draw them again: 18
+  // frames a second at 1920 wide on Matthew's laptop, far less on the black
+  // laptop. Small and blurred, their animations hardly showed.
+  if (still) {
+    const key = `${trimmed}\u0001${f1(w)}x${f1(h)}`;
+    let href = STILLS.get(key);
+    if (href === undefined) {
+      const doc = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${f1(w)}" height="${f1(h)}" viewBox="${SCENE.left} ${SCENE.top} ${W} ${H}" preserveAspectRatio="xMidYMid slice">` +
+                  inner.replace(/<(animate|animateTransform|animateMotion|set)\b[^>]*?(\/>|>[\s\S]*?<\/\1>)/g, "") + `</svg>`;
+      // (only what a data URL in an attribute must not hold as it is)
+      href = "data:image/svg+xml;charset=utf-8," + doc.replace(/%/g, "%25").replace(/#/g, "%23").replace(/"/g, "%22").replace(/&/g, "%26");
+      if (STILLS.size > 80) STILLS.clear();
+      STILLS.set(key, href);
+    }
+    return `<image x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" preserveAspectRatio="xMidYMid slice" href="${href}"/>`;
+  }
+  return `<svg x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" viewBox="${SCENE.left} ${SCENE.top} ${W} ${H}" preserveAspectRatio="xMidYMid slice">` + inner + `</svg>`;
 }
 // a framed picture, its middle at (x, y), w wide
-const framedSvg = (kind, detail, o, depth, x, y, w) => {
+const framedSvg = (kind, detail, o, depth, x, y, w, still = false) => {
   const h = w * 0.74, fr = w * 0.07, mat = w * 0.04;
   return `<g class="portal" data-to="${kind}"><rect x="${f1(x - w / 2 + 4)}" y="${f1(y - h / 2 + 6)}" width="${f1(w)}" height="${f1(h)}" fill="#000000" opacity="0.18"/>` +
          `<rect x="${f1(x - w / 2)}" y="${f1(y - h / 2)}" width="${f1(w)}" height="${f1(h)}" fill="#b8862f" stroke="#7a5518" stroke-width="2"/>` +
          `<rect x="${f1(x - w / 2 + fr)}" y="${f1(y - h / 2 + fr)}" width="${f1(w - 2 * fr)}" height="${f1(h - 2 * fr)}" fill="#f7f2e6"/>` +
-         pictureSvg(kind, detail, o, depth, x - w / 2 + fr + mat, y - h / 2 + fr + mat, w - 2 * fr - 2 * mat, h - 2 * fr - 2 * mat) + `</g>`;
+         pictureSvg(kind, detail, o, depth, x - w / 2 + fr + mat, y - h / 2 + fr + mat, w - 2 * fr - 2 * mat, h - 2 * fr - 2 * mat, still) + `</g>`;
 };
 // (each picture's scene is a choice of its own: pic1, pic2, ...)
 const PICTURE_CHOICES = [["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
@@ -7747,10 +7843,13 @@ function waterfallScene(c) {
     land(pl.near, 4, "#4f8a3a", 1.1));
   // the mist at the falls' foot, billowing (as much as the slider says; an
   // object at the depth of the pool's far edge, under it)
-  if (mist > 0) s += SEP + obj("mist", pool, part("wf-mist", [c.F, mist], () => `<defs><filter id="bg-mist" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${f1(14 * k)}"/></filter></defs>` +
-    `<g filter="url(#bg-mist)" pointer-events="none">` + [...Array(Math.round(3 + 6 * mist))].map((_, i) => {
+  // (ticket 155: with blurs off, each puff a radial gradient fading to
+  // nothing at its edge, soft without a filter)
+  if (mist > 0) s += SEP + obj("mist", pool, part("wf-mist", [c.F, mist, PERF.blur], () => (PERF.blur ? `<defs><filter id="bg-mist" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${f1(14 * k)}"/></filter></defs><g filter="url(#bg-mist)" pointer-events="none">`
+                    : `<defs><radialGradient id="bg-mist-soft"><stop offset="0.35" stop-color="#ffffff"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient></defs><g pointer-events="none">`) +
+    [...Array(Math.round(3 + 6 * mist))].map((_, i) => {
       const x = (R(i, 349) - 0.5) * 220 * k, y = pool - (10 + 60 * R(i, 350)) * k, r = (40 + 40 * R(i, 351)) * k;
-      return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.55)}" fill="#ffffff" opacity="${(0.25 + 0.35 * mist).toFixed(2)}">` +
+      return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.55)}" fill="${PERF.blur ? "#ffffff" : "url(#bg-mist-soft)"}" opacity="${(0.25 + 0.35 * mist).toFixed(2)}">` +
              `<animate attributeName="cy" values="${f1(y)};${f1(y - 30 * k)};${f1(y)}" dur="${(4 + 3 * R(i, 352)).toFixed(1)}s" repeatCount="indefinite"/>` +
              `<animate attributeName="opacity" values="${(0.15 + 0.3 * mist).toFixed(2)};${(0.35 + 0.4 * mist).toFixed(2)};${(0.15 + 0.3 * mist).toFixed(2)}" dur="${(3 + 2 * R(i, 353)).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`;
     }).join("") + `</g>`));
@@ -8172,15 +8271,16 @@ function caveScene(c) {
   });
   // the mouth: the light outside, the jungle blurred beyond, the curtain
   // of water falling across it, mist at its foot
-  s += SEP + part("cave-mouth", [c.F, fw, mist, rate, time], () => {
+  s += SEP + part("cave-mouth", [c.F, fw, mist, rate, time, PERF.blur], () => {
     // (the light outside, by the falls' time of day)
     const sky = { day: ["#effcff", "#a9dcc6"], sunset: ["#ffe0b0", "#e8946a"], night: ["#4a5c88", "#1c2742"] }[time];
     let t = `<defs><clipPath id="bg-cave-mouth"><path d="${mouth}"/></clipPath>${grad("bg-cave-light", sky[0], sky[1], mt, floor)}` +
             `<linearGradient id="bg-cave-water" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9ad7f0"/><stop offset="0.5" stop-color="#e6f8ff"/><stop offset="1" stop-color="#9ad7f0"/></linearGradient>` +
-            `<filter id="bg-cave-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${f1(10 * k)}"/></filter></defs>` +
+            (PERF.blur ? `<filter id="bg-cave-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${f1(10 * k)}"/></filter>` : "") + `</defs>` +
             `<g class="portal" data-to="waterfall"><g clip-path="url(#bg-cave-mouth)">` +
             `<rect x="${f1(-mh)}" y="${f1(mt - 20 * k)}" width="${f1(2 * mh)}" height="${f1(floor - mt + 20 * k)}" fill="url(#bg-cave-light)"/>` +
-            `<g filter="url(#bg-cave-blur)" opacity="0.6">` + [...Array(8)].map((_, i) => `<circle cx="${f1((R(i, 384) - 0.5) * 2 * mh)}" cy="${f1(mt + (floor - mt) * (0.2 + 0.6 * R(i, 385)))}" r="${f1((30 + 30 * R(i, 386)) * k)}" fill="${i % 2 ? "#3f8050" : "#5f9a6a"}"/>`).join("") + `</g>` +
+            // (ticket 155: with blurs off, the leaves outside are fainter, and sharp)
+            (PERF.blur ? `<g filter="url(#bg-cave-blur)" opacity="0.6">` : `<g opacity="0.35">`) + [...Array(8)].map((_, i) => `<circle cx="${f1((R(i, 384) - 0.5) * 2 * mh)}" cy="${f1(mt + (floor - mt) * (0.2 + 0.6 * R(i, 385)))}" r="${f1((30 + 30 * R(i, 386)) * k)}" fill="${i % 2 ? "#3f8050" : "#5f9a6a"}"/>`).join("") + `</g>` +
             `<rect x="${f1(-mh)}" y="${f1(floor - 30 * k)}" width="${f1(2 * mh)}" height="${f1(30 * k)}" fill="#62b6e4" opacity="0.7"/>` +
             `<path d="M${P(-cw, mt - 20 * k)} L${P(cw, mt - 20 * k)} L${P(cw * 1.15, floor)} L${P(-cw * 1.15, floor)} Z" fill="url(#bg-cave-water)" opacity="0.85"/>`;
     const n = Math.max(4, Math.round(10 * fw));
@@ -8189,9 +8289,10 @@ function caveScene(c) {
       t += `<line x1="${f1(xa)}" y1="${f1(mt - 20 * k)}" x2="${f1(xb)}" y2="${f1(floor)}" stroke="#ffffff" stroke-width="${f1((2 + 3 * R(i, 389)) * k)}" stroke-dasharray="${f1(dash)} ${f1(gap)}" opacity="0.75">` +
            `<animate attributeName="stroke-dashoffset" values="0;${f1(-(dash + gap) * 2)}" dur="${((0.6 + 0.4 * R(i, 390)) / rate).toFixed(2)}s" repeatCount="indefinite"/></line>`;
     }
-    if (mist > 0) t += `<g filter="url(#bg-cave-blur)">` + [...Array(Math.round(2 + 5 * mist))].map((_, i) => {
+    // (ticket 155: with blurs off, each puff a radial gradient, as the waterfall's mist)
+    if (mist > 0) t += (PERF.blur ? `<g filter="url(#bg-cave-blur)">` : `<defs><radialGradient id="bg-cave-mist-soft"><stop offset="0.35" stop-color="#ffffff"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient></defs><g>`) + [...Array(Math.round(2 + 5 * mist))].map((_, i) => {
       const x = (R(i, 391) - 0.5) * 2 * mh, y = floor - (10 + 30 * R(i, 392)) * k, r = (30 + 30 * R(i, 393)) * k;
-      return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.5)}" fill="#ffffff" opacity="${(0.25 + 0.4 * mist).toFixed(2)}">` +
+      return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.5)}" fill="${PERF.blur ? "#ffffff" : "url(#bg-cave-mist-soft)"}" opacity="${(0.25 + 0.4 * mist).toFixed(2)}">` +
              `<animate attributeName="cy" values="${f1(y)};${f1(y - 20 * k)};${f1(y)}" dur="${(4 + 3 * R(i, 394)).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`;
     }).join("") + `</g>`;
     // (outside, the falls' time of day: its tint over all of it, the moon behind the water at night)
@@ -8414,7 +8515,7 @@ function imaginationScene(c) {
   s += SEP + groups.map(([, , kinds], i) => kinds.map((kd, j) => {
     const cx = x0 + mx + cw * (i + 0.5), cy = top + 26 * k + rh * (j + 0.5), name = (PLACES.find(([v]) => v === kd) || [kd, kd])[1];
     return (depth > 2 ? `<g class="portal" data-to="${kd}"><rect x="${f1(cx - fw / 2)}" y="${f1(cy - fw * 0.37)}" width="${f1(fw)}" height="${f1(fw * 0.74)}" fill="#e8ebf0" stroke="#b8862f" stroke-width="${f1(3 * k)}"/></g>`
-                      : framedSvg(kd, 45, o, depth, cx, cy - 6 * k, fw)) +
+                      : framedSvg(kd, 45, o, depth, cx, cy - 6 * k, fw, !PERF.livePictures)) +
       `<text x="${f1(cx)}" y="${f1(cy + fw * 0.37 + 4 * k)}" text-anchor="middle" font-size="${f1(9 * k)}" fill="#5a6270" font-family="sans-serif">${name}</text>`;
   }).join("")).join(SEP);
   // (ticket 145) the ladders: from just off the floor at the wall's foot up
@@ -9370,7 +9471,7 @@ function measureMarks() {
   const Pinv = P.inverse(), ladders = [], pics = [];
   for (const el of node.querySelectorAll("[data-ladder]")) { const L = ladderAt(el, Pinv); if (L) ladders.push(L); }
   for (const d of node.querySelectorAll(".portal")) {
-    const view = d.querySelector(":scope > svg");
+    const view = d.querySelector(":scope > svg, :scope > image");
     if (!view) continue;
     const r = svgBox(view);
     if (!r.width || !r.height) continue;
@@ -12743,6 +12844,10 @@ const TABS = [
     ["nudge", "transpose", "🎹 move the tune by an interval", -24, 24, "interval"],
     ["mixer", "mix", "🎚️ mixing board"],
   ]],
+  // (ticket 155) last, where the GitHub chip was
+  ["⚙️ Advanced", "advanced", [
+    ["advanced", "perf", "⚙️ advanced"],
+  ]],
 ];
 
 let tab = 0;
@@ -12797,7 +12902,8 @@ function set(part, key, value) {
   changed();
 }
 function changed() {
-  draw(); for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync(); feedMusic();
+  const t0 = performance.now(); draw(); perfMeter.ms += performance.now() - t0; perfMeter.draws++;   // (ticket 155: for the ⚙️ advanced tab's meter)
+  for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync(); feedMusic();
   // a new friend (loaded, started over, surprised) or a scene turned on or
   // off rebuilds the HUD; a slider moving in it does not
   if (!hud.hidden && hudKey() !== hudShown) renderHud();
@@ -13207,6 +13313,42 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       box.hidden = !list.length;
     });
   }
+  // (ticket 155, Matthew) ⚙️ Advanced: the game's code on GitHub; its
+  // version, and a newer one to change to (a phone hides the title, where
+  // they are otherwise); the frame rate now; and the background features
+  // kept off until they are fast (PERF_FEATURES), each with how many there
+  // are in this place, and a measure of what it costs on this computer.
+  if (kind === "advanced") {
+    // (syncs run on every frame of a walk: the page is changed only when a value changes)
+    const put = (node, text) => { if (node.textContent !== text) node.textContent = text; };
+    const ver = el("span", { class: "hint" }), up = el("button", { class: "newer", hidden: "", onclick: () => document.getElementById("newer").click() });
+    const meter = el("div", { class: "hint" });
+    box.append(el("div", { class: "row" }, [el("a", { href: "https://github.com/matthewhammer/kids-choice-games", target: "_blank", rel: "noopener" }, "💻 this game's code, on GitHub ↗")]),
+               el("div", { class: "row" }, [ver, up]), meter,
+               el("div", { class: "hint" }, "🚀 Kept off until they are fast: 60 frames a second, for everything the controller does, comes first. Switched on, each says how many it draws in this place; 📏 walks the friend here with it off, then on, and says what it costs on this computer."));
+    perfMeter.node = meter;
+    if (!perfMeter.loop) perfMeter.loop = requestAnimationFrame(perfMeterTick);
+    const rows = PERF_FEATURES.map(f => {
+      const chip = el("button", { onclick: () => perfSet(f.id, !PERF[f.id]) }), here = el("div", { class: "hint" }), result = el("div", { class: "hint" });
+      const measure = el("button", { onclick: () => perfMeasure(f, t => { result.textContent = t; }) }, "📏 measure here");
+      box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [chip, measure]), el("div", { class: "hint" }, f.what), here, result]));
+      return [f, chip, here];
+    });
+    let counted = "";
+    syncs.push(() => {
+      put(ver, `🏷️ version ${VERSION.number}, out ${VERSION.released}`);
+      if (up.hidden !== !offered) up.hidden = !offered;
+      if (offered) put(up, "🆕 change to " + offered.number);
+      // (counted again only when the place is drawn anew)
+      const key = `${bgShown.text ? bgShown.text.length : 0}:${state.background.kind}:${JSON.stringify(PERF)}`;
+      for (const [f, chip, here] of rows) {
+        put(chip, `${f.label}: ${PERF[f.id] ? "on" : "off"}`);
+        if (chip.getAttribute("aria-pressed") !== String(PERF[f.id])) chip.setAttribute("aria-pressed", PERF[f.id]);
+        if (key !== counted) { const n = PERF[f.id] ? f.count() : 0; put(here, PERF[f.id] ? `here: ${n} ${n === 1 ? f.unit[0] : f.unit[1]}` : "off (as it starts): none drawn"); }
+      }
+      counted = key;
+    });
+  }
   // (ticket 138) the game controller: whether one is there, then each of its
   // buttons with a menu of what it does (lit while held), and the usual layout
   if (kind === "padmap") {
@@ -13540,19 +13682,12 @@ function showTab() {
   syncs = []; mixLights = null;
   const tabs = document.getElementById("tabs"), panel = document.getElementById("panel");
   tabs.replaceChildren(...TABS.map(([name], i) =>
-    el("button", { "aria-pressed": i === tab, onclick: () => { tab = i; showTab(); } }, name)),
-    repoChip());
+    el("button", { "aria-pressed": i === tab, onclick: () => { tab = i; showTab(); } }, name)));
   const [, part, ctls] = TABS[tab];
   panel.replaceChildren(...ctls.map(c => control(part, c)));
   changed();
 }
 
-// The game's code on GitHub: a quiet last chip after the tabs, in a new tab
-// so the game keeps its place.
-function repoChip() {
-  return el("a", { class: "repo-chip", href: "https://github.com/matthewhammer/kids-choice-games",
-    target: "_blank", rel: "noopener", title: "This game's code, on GitHub" }, "GitHub ↗");
-}
 
 // ===================== THE PICTURE'S SIZE, AND THE DIVIDER =====================
 // (ticket 116) The picture is as large as its place allows, whatever its
@@ -13751,7 +13886,7 @@ function surpriseOne(part, [kind, key, , ...rest]) {
 }
 document.getElementById("surprise").addEventListener("click", () => {
   // (the music is not part of the surprise, nor what is see-through)
-  for (const [, part, ctls] of TABS.filter(t => t[1] !== "music" && t[1] !== "visible" && t[1] !== "controls"))
+  for (const [, part, ctls] of TABS.filter(t => t[1] !== "music" && t[1] !== "visible" && t[1] !== "controls" && t[1] !== "advanced"))
     for (const c of ctls) surpriseOne(part, c);
   if (state.body.pose === "hug") state.body.pose = "stand";   // (a hug needs someone to hug: ticket 136)
   // keep the surprises friendly: mostly not sick, not exploded, a normal-ish head
@@ -14498,7 +14633,7 @@ function enterScene(door) {
   const to = door.dataset.to, house = door.dataset.house, tent = door.dataset.tent, room = door.dataset.room, B = state.background;
   if (!SCENES[to] && !PICTURE_CHOICES.some(([kd]) => kd === to)) return;
   // (a picture's own box: the scene inside it spills past it, hidden)
-  const view = door.querySelector(":scope > svg");
+  const view = door.querySelector(":scope > svg, :scope > image");
   const from = { kind: B.kind, inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to };
   flyInto(view ? svgBox(view) : door.getBoundingClientRect(), () => {
     trips.push(from);
