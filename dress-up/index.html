@@ -296,6 +296,8 @@ const HOUSE_COLOR_DEFAULTS = {
 // whatever scene: the slider grows or shrinks the friend from the place's
 // own usual size. (Before 0.0.21, 100 was the full size everywhere: a
 // friend saves which it was sized in, figUnit; see upgradeFigSize.)
+// (ticket 50) where people can sit, per place: see seatsHere
+const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3 };
@@ -572,7 +574,7 @@ const DEFAULTS = {
   // the figure's size and place in a background scene (dragged there)
   background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, objectsOff: {}, chickenLegs: false, legSize: 100, hutNear: 0,
                 // (standing in water: how see-through below the waist, and how big a wake: ticket 122)
-                waterSee: 70, waterWake: 100, waterTread: 100,
+                waterSee: 70, waterWake: 100, waterTread: 100, seat: null,   // (ticket 50: the seat the friend sits on here, by name)
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false,
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,
@@ -3602,6 +3604,10 @@ const picturesSvg = (o, here, slots, scale, keyOf = i => "pic" + (i + 1)) => {
 };
 
 // a living room: a couch in the middle, pillows on it, pictures on the wall
+// (ticket 50) the couch: its three cushions' tops, in its own units, across
+// -232 to 236 and at 112 above its feet, as livingroomScene draws it
+SEATS.livingroom = (c, B) => { const cs = (B.couchSize ?? 100) / 100, k = c.k, base = c.g - 40 * k;
+  return [{ name: "couch", x0: -232 * cs * k, x1: 236 * cs * k, y: base - 112 * cs * k, z: base + 1, facing: ["front", "left", "right"] }]; };
 function livingroomScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, all, o } = c;
   const cs = (o.couchSize ?? 100) / 100, pillows = o.pillows ?? 4, ps = (o.picSize ?? 100) / 100;
@@ -8731,6 +8737,22 @@ function waterRuns(B, bgText, x0, x1, y0, y1, step = 2) {
   runsKept = { key, bg: bgText, runs };
   return runs;
 }
+// (ticket 50) Where people can sit, place by place: SEATS[kind](c, B), with c
+// the stage (stageC) and B the place's settings, gives the place's seats
+// (SEATS itself is declared at the top, with SCENE_FIG, as each place's
+// lines come before this),
+// each { name, x0, x1, y, z, facing }: its name as a child reads it (the
+// object's own name in the objects list, where it is one), the span of its
+// top across (x0 to x1, stage units), the height of its top, where a
+// sitter's hips go (y), the depth of the floor in front of it, where their
+// feet go (z, as an object's depth: a sitter is sorted among the objects
+// there), and the ways one can face on it, the usual first ("front",
+// "left", "right"). Built from the same helpers as the place's drawing, so
+// the two can't drift. A place's lines sit next to its scene function.
+const seatsHere = B => { try { return (SEATS[B.kind]?.(stageC(), B) ?? []).filter(Boolean); } catch (e) { return []; } };
+// the seat the friend sits on now (a seat here of the name kept, while they sit), or null
+const seatNow = () => { const B = state.background; if (!state.body.sit || !B.seat || B.kind === "none") return null;
+  return seatsHere(B).find(t => t.name === B.seat) || null; };
 // (ticket 123) In deep water (not the shallow stream or brook) the friend
 // treads water: both arms scull out and in together, the legs kick in turn,
 // and they bob a little, twice a stroke; one stroke to LFO B's wave (2 beats
@@ -9455,7 +9477,9 @@ function draw() {
   // the friend, among the scene's objects by depth (ticket 99): just before
   // the first standing nearer than their feet, or in front of everything
   figShown = [...fresh.childNodes];
-  const ahead = scenery ? objectAhead(figureT.sg + figureT.dy) : null;
+  // (seated, they are sorted at the seat's own depth: ticket 50)
+  const onSeat = scenery && !poseHeld ? seatNow() : null;
+  const ahead = scenery ? objectAhead(onSeat ? onSeat.z : figureT.sg + figureT.dy) : null;
   if (ahead) for (const n of figShown) ahead.parentNode.insertBefore(n, ahead);
   else pic.append(...figShown);
   showObjects();
@@ -11455,6 +11479,7 @@ const TABS = [
     ["range", "figSize", "🧍 size in the scene", 10, 1000, 100, 100],
     ["place", "figPos", "🧍 place in the scene (or drag the figure)"],
     ["objects", "objectsOff", "👁️ what stands in the scene, back to front (tap to hide or show)"],
+    ["seats", "seat", "🪑 sit on (or drag the friend onto a seat)"],
     // the friend standing in water, where a place has water to stand in (WATER, ticket 122)
     ["range", "waterSee", "🌊 see-through under the water (0 = not at all)", 0, 100, 50, 90],
     ["range", "waterWake", "💧 a wake round the friend in the water (0 = none)", 0, 250, 60, 160],
@@ -12055,6 +12080,22 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       for (const [o, b] of chips) { const hid = off.has(o.name); b.querySelector(".eye").textContent = hid ? "🙈" : "👁️"; b.classList.toggle("off", hid); b.setAttribute("aria-pressed", !hid); }
       const feet = SCENE.ground + (B.figY ?? 0), i = list.findIndex(o => o.z > feet);
       row.insertBefore(me, i < 0 ? null : chips[i][1]);
+      box.hidden = !list.length;
+    });
+  }
+  if (kind === "seats") {
+    // (ticket 50) a chip for each seat here, and one to stand up again
+    const row = el("div", { class: "row objs" });
+    box.append(row);
+    let shown = "";
+    syncs.push(() => {
+      const list = seatsHere(state.background), now = seatNow(), sig = state.background.kind + "|" + list.map(t => t.name).join("|") + "|" + (now ? now.name : "");
+      if (sig !== shown) {
+        shown = sig;
+        row.replaceChildren(...list.map(t => el("button", { class: "obj" + (now && now.name === t.name ? " on" : ""), "aria-pressed": !!(now && now.name === t.name),
+                                                             onclick: () => sitOn(t) }, "🪑 " + t.name)),
+                            ...(state.body.sit ? [el("button", { class: "obj", onclick: () => standUp() }, "🧍 stand up")] : []));
+      }
       box.hidden = !list.length;
     });
   }
@@ -12847,12 +12888,48 @@ pic.addEventListener("pointermove", e => {
 // picGapNow), without the scene being built again.
 let heldAt = 0;
 pic.addEventListener("pointerdown", () => { if (drag && !pic.animationsPaused()) { pic.pauseAnimations(); heldAt = performance.now(); } });
+// (ticket 50) Sitting on a seat: the friend sits, facing a way the seat
+// allows, across it where they were (or in its middle), and is moved up or
+// down until their hips are on its top (their size changes with the depth,
+// so a few rounds); kept by the seat's name. Standing up again puts their
+// feet on the floor in front of it.
+function sitOn(t) {
+  const B = state.background, body = state.body;
+  body.sit = true; B.seat = t.name;
+  if (t.facing && t.facing.length && !t.facing.includes(body.facing || "front")) body.facing = t.facing[0];
+  const fx = B.figX ?? 0, m = Math.min(12, (t.x1 - t.x0) / 3);
+  B.figX = Math.round(fx >= t.x0 + m && fx <= t.x1 - m ? fx : (t.x0 + t.x1) / 2);
+  B.figY = Math.round(t.z - SCENE.ground);
+  for (let i = 0; i < 4; i++) {
+    draw();
+    const T = figureT, hips = T.sg + T.dy + T.k * (poseJoints.legs[0].H[1] - T.g);
+    B.figY = Math.round(B.figY + (t.y - hips));
+  }
+  changed();
+}
+function standUp() {
+  const B = state.background, t = seatNow();
+  state.body.sit = false; B.seat = null;
+  if (t) B.figY = Math.round(t.z - SCENE.ground);
+  changed();
+}
+// (a friend let go of over a seat, their feet between its top and the floor
+// in front of it, sits on it; one sitting on a seat and let go of elsewhere
+// stands up)
+function dropOnSeat() {
+  const B = state.background; if (B.kind === "none") return;
+  const x = B.figX ?? 0, y = SCENE.ground + (B.figY ?? 0), was = seatNow();
+  const t = seatsHere(B).find(t => x >= t.x0 && x <= t.x1 && y >= t.y - 10 && y <= t.z + 18);
+  if (t && (!was || was.name !== t.name)) sitOn(t);
+  else if (!t && was) { state.body.sit = false; B.seat = null; changed(); }
+}
 const letGo = () => {
   if (drag && pic.animationsPaused()) { pic.setCurrentTime(pic.getCurrentTime() + (performance.now() - heldAt) / 1000); pic.unpauseAnimations(); }
   // (a joint let go: the friend settles on their lower foot, the frame round them)
-  const posing = drag && drag.pose;
+  const posing = drag && drag.pose, moved = drag && drag.figure;
   drag = null;
   if (posing) { poseHeld = null; changed(); }
+  if (moved) dropOnSeat();
 };
 pic.addEventListener("pointerup", letGo);
 pic.addEventListener("pointercancel", letGo);
