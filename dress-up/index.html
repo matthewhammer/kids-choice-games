@@ -567,6 +567,8 @@ const DEFAULTS = {
            poseArmL: 0, poseArmR: 0, poseElbowL: 0, poseElbowR: 0, poseLegL: 0, poseLegR: 0, poseKneeL: 0, poseKneeR: 0,
            // (ticket 129) each foot's own turn, by side, and both feet's
            poseFootL: 0, poseFootR: 0, feetTurn: 0,
+           // (ticket 132) the Body tab: the pose chosen, and the animation on top of it
+           pose: "stand", anim: "none",
            // (ticket 124) which way the friend faces (toward us, or in profile
            // to our left or right), and whether they sit
            facing: "front", sit: false },
@@ -709,6 +711,7 @@ try {
   upgradeInside(state.background, saved);
   upgradeFigSize(state.background, saved);
   upgradeFace(state.face, saved.face);
+  if (state.body.sit && state.body.pose === "stand") state.body.pose = "sit";   // (ticket 132)
   // pants length moved to the legs (leg length)
   if (saved && saved.pants && saved.pants.length && !(saved.body && saved.body.legLen))
     state.body.legLen = saved.pants.length;
@@ -723,7 +726,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.60", released: "2026-10-16" };
+const VERSION = { number: "0.0.61", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9050,13 +9053,74 @@ const seatNow = () => { const B = state.background; if (!state.body.sit || !B.se
 function treadNow() {
   const W = state.background, amt = Math.max(0, Number(W.waterTread ?? 100) || 0) / 100;
   if (!amt || poseHeld || W.kind === "none" || SHALLOW_WATER[W.kind] || !inWater(W, W.figX ?? 0, SCENE.ground + (W.figY ?? 0))) return null;
-  const u = lfoNow("B").phase, s = Math.sin(2 * Math.PI * u), c = Math.cos(2 * Math.PI * u);
-  // (the arms angled down and sweeping out and in under the surface, the
-  // forearms near level: not lifted out of the water)
-  const arm = amt * (6 + 10 * s), elbow = amt * (18 + 18 * c);
+  return { ...treadStroke(amt, lfoNow("B").phase), water: true };
+}
+// (the arms angled down and sweeping out and in under the surface, the
+// forearms near level: not lifted out of the water)
+function treadStroke(amt, u) {
+  const s = Math.sin(2 * Math.PI * u), c = Math.cos(2 * Math.PI * u), arm = amt * (6 + 10 * s), elbow = amt * (18 + 18 * c);
   return { ArmL: arm, ArmR: arm, ElbowL: elbow, ElbowR: elbow,
            LegL: amt * (12 + 10 * c), LegR: amt * (12 - 10 * c), KneeL: amt * (45 + 35 * s), KneeR: amt * (45 - 35 * s),
            bob: amt * 4 * Math.cos(4 * Math.PI * u) };
+}
+// (ticket 132) The friend's animation for now, chosen in the Body tab: its
+// turns and bends (degrees, by side: L their left), added to the pose's;
+// how far it lifts them off the ground (lift), a turn of the whole friend
+// about the hips (rot, crawling), and a ladder's rungs going by (ladder,
+// climbing). One stride to LFO B's wave (2 beats to start), as treading,
+// so it moves with the music. Without one chosen, deep water still treads.
+const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing a ladder"]];
+// (walking, running and crawling are seen from the side: chosen facing us, the friend turns to our right)
+const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
+function moveNow() {
+  const B = state.body, a = B.anim;
+  if (!a || a === "none" || poseHeld) return treadNow();
+  const u = lfoNow("B").phase, T = 2 * Math.PI, sin = f => Math.sin(T * u * f), cos = f => Math.cos(T * u * f);
+  const dir = facingOf(B), lean = side => dir ? (side === dir ? -14 : 4) : 0;
+  const both = (k, f) => ({ [k + "L"]: f(1), [k + "R"]: f(-1) });
+  if (a === "swim") return treadNow() || treadStroke(1, u);
+  if (a === "walk") {
+    // (each leg swinging forward and back, its knee bending as it comes
+    // through; each arm swinging with the other leg; a small lift each step)
+    // (facing us: stepping in place, each knee bending in turn, as a leg
+    // swung forward would only splay out sideways from the front)
+    const s = sin(1), c = cos(1);
+    if (!dir) return { ...both("Leg", sd => 10 * Math.max(0, sd * s)), ...both("Knee", sd => 20 * Math.max(0, sd * s)),
+                       ...both("Arm", sd => 8 * sd * s), ...both("Elbow", () => 10), lift: 3 * Math.abs(s) };
+    return { ...both("Leg", sd => 24 * sd * s), ...both("Knee", sd => 30 * Math.max(0, sd * c)),
+             ...both("Arm", sd => 20 * sd * s), ...both("Elbow", () => 14), lift: 3 * Math.abs(c) };
+  }
+  if (a === "run") {
+    // (twice as quick: long strides, the back foot kicked high, the elbows
+    // bent, the arms pumping, a bound each step)
+    const s = sin(2), c = cos(2);
+    if (!dir) return { ...both("Leg", sd => 10 * Math.max(0, sd * s)), ...both("Knee", sd => 70 * Math.max(0, sd * s)),
+                       ...both("Arm", sd => 14 * sd * s - 10), ...both("Elbow", () => 80), lift: 8 * Math.abs(s) };
+    return { ...both("Leg", sd => 40 * sd * s), ...both("Knee", sd => 25 + 70 * Math.max(0, sd * c)),
+             ...both("Arm", sd => 32 * sd * s - 10), ...both("Elbow", () => 85), lift: 9 * Math.abs(c) };
+  }
+  if (a === "crawl") {
+    // (on hands and knees: turned about the hips, by as much as puts the
+    // hands and the knees on the ground together for this friend's arms,
+    // thighs and body (cos turn = (arm - thigh) / body, between 50 and 100
+    // degrees); each thigh straight down, each shin level behind, the feet
+    // soles up, the arms straight down; a hand and the other knee forward
+    // together)
+    const body = Math.max(40, (state.shirt.length ?? 150) - 8), thigh = (B.legLen ?? 140) / 2, arm = B.armLen ?? 95;
+    const tilt = Math.max(50, Math.min(100, Math.acos(Math.max(-1, Math.min(1, (arm - thigh) / body))) * 180 / Math.PI));
+    const s = sin(1), t0 = (B.knees ?? 0) / 2, b0 = B.knees ?? 0, swing = sd => 12 * sd * s;
+    return { ...both("Leg", sd => tilt - swing(sd) - t0), ...both("Knee", sd => 90 - swing(sd) - b0),
+             ...both("Arm", sd => 90 - tilt - (B.arms ?? 0) - lean(sd) + 14 * sd * s), ...both("Elbow", () => -(B.elbows ?? 0)),
+             ...both("Foot", () => -(180 - tilt)), rot: dir ? tilt * dir : 0 };
+  }
+  if (a === "climb") {
+    // (facing us on a ladder: a hand reaching up for the next rung while the
+    // other pulls, the knee on its side lifting, the rungs going down)
+    const s = sin(1), up = side => -80 - (B.arms ?? 0) - lean(side);
+    return { ...both("Arm", sd => up(sd) + 30 * sd * s), ...both("Elbow", sd => 20 + 30 * Math.max(0, -sd * s)),
+             ...both("Leg", sd => 8 * Math.max(0, sd * s)), ...both("Knee", sd => 55 * Math.max(0, sd * s)), lift: 5 * Math.abs(s), ladder: u };
+  }
+  return treadNow();
 }
 // The friend standing in water, in their own units: what was drawn of them
 // (`inner`) see-through below the waterline, their waist (wl), as much as
@@ -9138,8 +9202,10 @@ let lastDance = null;
 function strikePose(which) {
   const B = state.body, F = state.face;
   for (const k of POSE_KEYS) B[k] = 0;
-  B.sit = false; B.facing = "front";
-  if (which === "stand") { F.closed = false; return; }
+  B.pose = which; B.sit = which === "sit";
+  // (standing and sitting keep the way they face; the others face us: ticket 132)
+  if (which === "stand" || which === "sit") { F.closed = false; return; }
+  B.facing = "front";
   let P = POSES[which];
   if (Array.isArray(P)) { const left = P.filter(d => d.name !== lastDance); P = left[Math.floor(Math.random() * left.length)]; lastDance = P.name; }
   Object.assign(B, P.pose);
@@ -9159,7 +9225,9 @@ let treadLoop = 0, treadLast = 0;
 function draw() {
   const { face: F, body: B } = state;
   // (ticket 123) treading water: the strokes for now, on top of any pose
-  const tread = treadNow(), poseT = (what, side) => poseOf(B, what, side) + (tread ? tread[what + (side > 0 ? "L" : "R")] : 0);
+  // (ticket 132: any animation from the Body tab, the same way; `tread` is only treading in water)
+  const move = moveNow(), tread = move && move.water ? move : null;
+  const poseT = (what, side) => poseOf(B, what, side) + (move ? move[what + (side > 0 ? "L" : "R")] || 0 : 0);
   // (ticket 124) which way they face (0 toward us; -1, 1 in profile to our
   // left or right), and whether they sit. In profile the friend is narrower,
   // their arms and legs come from under the shoulder and hip, and point the
@@ -9282,7 +9350,7 @@ function draw() {
   const standOn = (fy, kneeY) => Math.max(fy + (state.shoes.style === "bare" ? 18 : 30) * shoeSc, kneeY);
   // (treading, they float where they would stand: the ground of their legs
   // as posed, not as they kick, or every kick would jolt them up and down)
-  const still = tread && bonesBy((what, side) => poseOf(B, what, side));
+  const still = move && !move.rot && bonesBy((what, side) => poseOf(B, what, side));
   const ground = still ? standOn(Math.max(...still.bones.map(l => l.joints[l.joints.length - 1][1])), still.posed ? Math.max(...still.bones.map(l => l.joints[1][1])) + B.legW / 2 : -Infinity)
                        : standOn(feetY, legPosed ? Math.max(kneeAt(1)[1], kneeAt(-1)[1]) + B.legW / 2 : -Infinity);   // (or kneels, a knee lowest)
   poseJoints = { armLen, LL, armW, legW: B.legW, legBase,
@@ -9402,12 +9470,22 @@ function draw() {
   const wet = scened && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)),
         wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : tread ? Math.max(12, Math.min(L, 8 + 0.5 * armLen)) : L;
   const gStand = poseHeld && scened ? poseHeld.g : wet ? wl : ground;
+  // (ticket 132) an animation lifts the friend (a step, a bound, a pull up
+  // the ladder); crawling turns them about the hips (rot), and they rest on
+  // the lowest of their hands, knees and feet as turned
+  const rot = move && move.rot ? move.rot : 0;
+  let gFig = gStand;
+  if (rot) {
+    const a = rot * Math.PI / 180, turned = ([x, y]) => L + x * Math.sin(a) + (y - L) * Math.cos(a);
+    gFig = Math.max(...arms.map(x => turned(x.H) + 10), ...[1, -1].map(sd => turned(kneeAt(sd)) + B.legW / 2), ...[1, -1].map(sd => turned(footAt(sd)) + 8));
+  } else if (move && move.lift && !wet && !poseHeld) gFig = gStand + move.lift;
+  const rotTf = rot ? ` rotate(${rot} 0 ${f1(L)})` : "";
   // (seated, sized by the seat's depth, not by where their feet hang: ticket 50)
   const sizeSeat = scened ? seatNow() : null;
-  figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gStand, sg: SCENE.ground }
-                   : { k: 1, dx: 0, dy: 0, g: ground, sg: ground };
+  figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
+                   : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
-  svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})">`;
+  svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})${rotTf}">`;
   // (ticket 42) on the tree house's swing they swing with its seat: the same
   // rotation about the same hook, at the same time, added to where they are
   // (the hook in their own units); not while a joint is held
@@ -9416,7 +9494,15 @@ function draw() {
     const lx = (hx - figureT.dx) / figureT.k, ly = (hy - figureT.dy - figureT.sg) / figureT.k + figureT.g, at = `${f1(lx)} ${f1(ly)}`;
     svg += lfoTimed(BG, "slow", 0.15, `<animateTransform attributeName="transform" type="rotate" additive="sum" values="-14 ${at};14 ${at};-14 ${at}" dur="2.6s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`);
   }
-  if (meanSeen > 0 && !wet) svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
+  if (meanSeen > 0 && !wet && !rot) svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
+  // (ticket 132) climbing: a ladder behind the friend, its rungs going down two a stride
+  if (move && move.ladder != null) {
+    const x = hw + 26, top = -380, gap = 48, off = (move.ladder * 2 * gap) % gap;
+    let t = `<g class="ladder"><line x1="${f1(-x)}" y1="${top}" x2="${f1(-x)}" y2="${f1(ground + 6)}" stroke="#7a5230" stroke-width="9" stroke-linecap="round"/>` +
+            `<line x1="${f1(x)}" y1="${top}" x2="${f1(x)}" y2="${f1(ground + 6)}" stroke="#7a5230" stroke-width="9" stroke-linecap="round"/>`;
+    for (let y = top + off; y < ground; y += gap) t += `<line x1="${f1(-x)}" y1="${f1(y)}" x2="${f1(x)}" y2="${f1(y)}" stroke="#9c6b3d" stroke-width="7" stroke-linecap="round"/>`;
+    svg += t + "</g>";
+  }
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
   if (!C && !dir) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
@@ -9468,7 +9554,7 @@ function draw() {
   // (ticket 129) each foot turns about its ankle, as a hand does: both by
   // "👣 feet turn" (toes up +), and each by the pose's own turn, by side
   for (const side of legOrder) {
-    const [ax, ay] = footAt(side), turn = -(dir || side) * ((Number(B.feetTurn) || 0) + poseOf(B, "Foot", side));
+    const [ax, ay] = footAt(side), turn = -(dir || side) * ((Number(B.feetTurn) || 0) + poseT("Foot", side));   // (an animation's too: ticket 132)
     const shoe = shoeSvg(ax, ay, dir || side, feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet, BIRD_SUIT[kind] ? C.accent : skin);
     svg += turn ? `<g transform="rotate(${f1(turn)} ${f1(ax)} ${f1(ay)})">${shoe}</g>` : shoe;
   }
@@ -9823,7 +9909,7 @@ function draw() {
     svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), wl, hw, most, tread ? tread.bob : 0, water);
   }
   svg += `</g>`;   // the figure
-  if (farDeep) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})">${veil("shirt", farDeep)}</g>`;   // (see-through with the shirt, as it was)
+  if (farDeep) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})${rotTf}">${veil("shirt", farDeep)}</g>`;   // (see-through with the shirt, as it was)
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
   if (poseHeld && poseJoints) {
@@ -9885,14 +9971,14 @@ function draw() {
   const place = typeof where === "function" ? where(state.background) : where || "";
   document.getElementById("mood").textContent = "feeling " + mood(family(F.color), F.brow, F.smile) + (place ? " " + place : "");
   fitPic();
-  if (tread && !treadLoop) treadLoop = requestAnimationFrame(treadTick);
+  if (move && !treadLoop) treadLoop = requestAnimationFrame(treadTick);
 }
 // (ticket 123) While the friend treads water they are drawn again about 30
 // times a second: not while a drag draws them anyway, nor while the page is
 // hidden. Only the friend is drawn; the scene is kept (see draw).
 function treadTick(t) {
   treadLoop = 0;
-  if (!treadNow()) return;
+  if (!moveNow()) return;
   if (!drag && !document.hidden && t - treadLast >= 32) { treadLast = t; draw(); feedMusic(); return; }
   treadLoop = requestAnimationFrame(treadTick);
 }
@@ -11689,10 +11775,11 @@ console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g 
 
 const TABS = [
   // (ticket 129) whole poses, first (Matthew: top level, before the face)
-  ["🤸 Pose", "body", [
-    ["action", "poseStand", "🧍 standing, facing us", () => strikePose("stand")],
-    ["action", "poseMeditate", "🧘 cross-legged, meditating", () => strikePose("meditate")],
-    ["action", "poseDance", "💃 dance (a new one each time)", () => strikePose("dance")],
+  // (ticket 132: "Body", with poses, the way they face, and animations)
+  ["🧍 Body", "body", [
+    ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"]]],
+    ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"]]],
+    ["choice", "anim", "🎬 animations", ANIMS],
   ]],
   ["😀 Face", "face", [
     ["color", "color", "skin & head color", SKINS],
@@ -11752,8 +11839,6 @@ const TABS = [
     ["color", "color", "color", HAIRS],
   ]],
   ["🦒 Neck, arms & legs", "body", [
-    ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"]]],
-    ["toggle", "sit", "🪑 sitting"],
     ["range", "neck", "neck length", 0, 420, 4, 60],
     ["range", "neckW", "neck width", 2, 120, 12, 40],
     ["range", "arms", "arms (up ↔ down)", -180, 180, -75, 85],
@@ -11765,7 +11850,7 @@ const TABS = [
     ["range", "legW", "leg width", 4, 70, 14, 28],
     ["range", "knees", "🦵 knees bend (out, so the friend crouches)", 0, 150, 0, 25],
     ["note", "poseHow", () => posed(state.body) ? "🤸 Posed: each arm and leg as you dragged it." : "🤸 To pose the friend, drag a hand, a foot, an elbow or a knee in the picture."],
-    ["action", "unpose", "🧍 stand straight again", () => { for (const k of POSE_KEYS) state.body[k] = 0; }],
+    ["action", "unpose", "🧍 stand straight again", () => { for (const k of POSE_KEYS) state.body[k] = 0; if (state.body.pose === "meditate" || state.body.pose === "dance") state.body.pose = state.body.sit ? "sit" : "stand"; }],
   ]],
   ["👕 Shirt", "shirt", [
     ["choice", "style", "style", [["tee", "t-shirt"], ["long", "long sleeves"], ["tank", "tank top"]]],
@@ -12061,6 +12146,14 @@ let hudSyncs = [];   // ...and the full-screen controls'
 function set(part, key, value) {
   const wasBare = state.background.kind === "none";
   state[part][key] = value;
+  // (ticket 132) the Body tab: a pose, from scratch; an animation seen from
+  // the side turns a friend who faces us to our right
+  if (part === "body" && key === "pose") strikePose(value);
+  if (part === "body" && key === "anim" && ANIM_SIDEWAYS[value] && facingOf(state.body) === 0) state.body.facing = "right";
+  if (part === "body" && key === "anim" && value === "climb") state.body.facing = "front";   // (the ladder is behind them, facing us)
+  // (walking, running, crawling and climbing start from standing: sitting
+  // or cross-legged, they had nothing to move with)
+  if (part === "body" && key === "anim" && value !== "none" && value !== "swim" && state.body.pose !== "stand") strikePose("stand");
   // choosing an animal dresses it in its natural colors
   if (part === "costume" && key === "kind" && ANIMALS[value]) Object.assign(state.costume, lookOf(value));
   // a skirt starts at skirt length and a dress at dress length
@@ -13374,7 +13467,7 @@ pic.addEventListener("pointermove", e => {
 // feet on the floor in front of it.
 function sitOn(t) {
   const B = state.background, body = state.body;
-  body.sit = true; B.seat = t.name;
+  body.sit = true; body.pose = "sit"; B.seat = t.name;
   if (t.facing && t.facing.length && !t.facing.includes(body.facing || "front")) body.facing = t.facing[0];
   const fx = B.figX ?? 0, m = Math.min(12, (t.x1 - t.x0) / 3);
   B.figX = Math.round(fx >= t.x0 + m && fx <= t.x1 - m ? fx : (t.x0 + t.x1) / 2);
@@ -13388,7 +13481,7 @@ function sitOn(t) {
 }
 function standUp() {
   const B = state.background, t = seatNow();
-  state.body.sit = false; B.seat = null;
+  state.body.sit = false; state.body.pose = "stand"; B.seat = null;
   if (t) B.figY = Math.round(t.z - SCENE.ground);
   changed();
 }

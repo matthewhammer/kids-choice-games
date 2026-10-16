@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.61 (2026-10-16)
+
+Everything in 0.0.60, plus the Body tab: poses, the way the friend faces, and animations.
+
+- **🧍 Body** (Matthew), the first tab, three rows of chips:
+  - **🤸 poses**: standing; sitting (legs down, eyes open); cross-legged, meditating; dancing, a new dance each time.
+  - **↔️ facing**: toward us, to the left, to the right (moved here from the arms and legs tab, with sitting).
+  - **🎬 animations**: still; 🚶 walking; 🏃 running; 🏊 swimming (treading water, anywhere); 🐛 crawling on hands and knees; 🪜 climbing a ladder. They move with the music. Walking, running and crawling turn the friend sideways; climbing turns them toward us, with a ladder behind them.
+
 ## 0.0.60 (2026-10-16)
 
 Everything in 0.0.59, plus dragging the friend by the body again, and glows that show what a press will take.
