@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.74 (2026-10-16)
+
+Everything in 0.0.73, plus a controller on the screen, for playing with no game controller plugged in.
+
+- **🎮 a controller on the screen** (Matthew: the iPad has no USB port for our controller, and one day, traveling, we may not have it with us). While no game controller is connected, a 🎮 button at the picture's bottom right shows one: the arrows, L and select in the screen's bottom left corner, and X, Y, A, B, R and start in the bottom right, laid out as on a SNES controller, to touch, or to click with a mouse. Each button shows what it does. It does everything a real controller does: the arrows walk the friend (diagonals too, sliding from one arrow to the next), A is the short jump, B the high one, Y crouches, L turns crawling on or off, select goes back and start goes through the nearest doorway. Hold R with an arrow to run, one thumb on each. Tap 🎮 again to hide it. The game remembers whether you showed it, on that device. The 🎮 Controls tab has the same button, and 🎯 set changes its buttons as it does a real controller's, kept apart from the real one's. When a real controller connects, the one on the screen goes away, and it comes back when the real one leaves.
+
 ## 0.0.73 (2026-10-16)
 
 Everything in 0.0.72, plus teaching the game your controller.

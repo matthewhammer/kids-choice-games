@@ -146,6 +146,51 @@
   .back-btn { position: absolute; bottom: 8px; left: 8px; padding: 0 10px; font-size: 1.15em; line-height: 1.6;
               background: var(--panel); opacity: 0.92; }
   body.big .back-btn { bottom: auto; top: 8px; left: 66px; }
+  /* (ticket 150) the on-screen controller, offered while no game controller
+     is connected: the button that shows it, at the picture's bottom right */
+  .pad-btn { position: absolute; bottom: 8px; right: 8px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
+             background: var(--panel); opacity: 0.9; }
+  .pad-btn[hidden] { display: none; }
+  /* its two halves, in the screen's bottom corners, over everything: the
+     arrows and L and select on the left, the four buttons and R and start on
+     the right, as on a SNES controller. Only the controls take a touch; a
+     press never scrolls, zooms or selects. */
+  .touchpad { --tp: clamp(118px, 24vmin, 176px); position: fixed; inset: auto 0 0 0; z-index: 40; pointer-events: none;
+              display: flex; justify-content: space-between; align-items: flex-end;
+              padding: 0 max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+  .touchpad[hidden] { display: none; }
+  .touchpad .half { display: grid; gap: 6px; align-items: end; justify-items: center; }
+  .touchpad .half.l { grid-template-columns: auto auto; grid-template-areas: "sh ." "pad sm"; }
+  .touchpad .half.r { grid-template-columns: auto auto; grid-template-areas: ". sh" "sm pad"; }
+  .touchpad .sh { grid-area: sh; } .touchpad .sm { grid-area: sm; } .touchpad .pad { grid-area: pad; }
+  body.big .pad-btn { bottom: auto; top: 8px; right: 124px; }
+  .touchpad button, .touchpad .dpad { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none;
+                                      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  .touchpad button { font: 600 calc(var(--tp) * 0.13)/1 sans-serif; color: #fff; border: 2px solid rgba(255, 255, 255, 0.55);
+                     background: rgba(40, 36, 56, 0.62); padding: 0; display: flex; flex-direction: column; align-items: center;
+                     justify-content: center; gap: 2px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+  .touchpad button small { font-size: 0.72em; font-weight: 400; line-height: 1; }
+  .touchpad button.down, .touchpad .dpad .arm.down { filter: brightness(1.45); transform: scale(0.94); }
+  .touchpad .sh { width: calc(var(--tp) * 0.62); height: calc(var(--tp) * 0.26); border-radius: 14px 14px 8px 8px; }
+  .touchpad .sm { width: calc(var(--tp) * 0.42); height: calc(var(--tp) * 0.2); border-radius: 99px; font-size: calc(var(--tp) * 0.09); }
+  /* the arrows: one cross, a press anywhere on it is a direction (a
+     diagonal too), and a finger slides from one to the next */
+  .touchpad .dpad { width: var(--tp); height: var(--tp); position: relative; border-radius: 50%; }
+  .touchpad .dpad .arm { position: absolute; background: rgba(40, 36, 56, 0.66); border: 2px solid rgba(255, 255, 255, 0.55);
+                         color: #fff; font-size: calc(var(--tp) * 0.13); display: flex; align-items: center; justify-content: center; }
+  .touchpad .dpad .arm.u { left: 34%; top: 0; width: 32%; height: 38%; border-radius: 8px 8px 0 0; border-bottom: none; }
+  .touchpad .dpad .arm.d { left: 34%; bottom: 0; width: 32%; height: 38%; border-radius: 0 0 8px 8px; border-top: none; }
+  .touchpad .dpad .arm.l { top: 34%; left: 0; width: 38%; height: 32%; border-radius: 8px 0 0 8px; border-right: none; }
+  .touchpad .dpad .arm.r { top: 34%; right: 0; width: 38%; height: 32%; border-radius: 0 8px 8px 0; border-left: none; }
+  .touchpad .dpad .hub { position: absolute; left: 34%; top: 34%; width: 32%; height: 32%; background: rgba(40, 36, 56, 0.66); }
+  /* the four buttons in their diamond, in the Super Famicom's colors */
+  .touchpad .abxy { width: var(--tp); height: var(--tp); position: relative; }
+  .touchpad .abxy button { position: absolute; width: 36%; height: 36%; border-radius: 50%; }
+  .touchpad .abxy .bx { left: 32%; top: 0; background: rgba(48, 92, 214, 0.82); }
+  .touchpad .abxy .by { left: 0; top: 32%; background: rgba(36, 150, 72, 0.82); }
+  .touchpad .abxy .ba { right: 0; top: 32%; background: rgba(214, 44, 44, 0.82); }
+  .touchpad .abxy .bb { left: 32%; bottom: 0; background: rgba(226, 178, 20, 0.86); }
+  .touchpad button.idle { opacity: 0.55; }
   .ctl > p.now { margin: 0; color: var(--muted); }
   /* the mixing board: a strip for each part, the whole tune's first */
   .mixer { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 4px; }
@@ -254,6 +299,7 @@
           <button class="mute-btn" id="mute" title="Music on or off" aria-label="Music on or off" hidden>🔊</button>
           <button class="back-btn" id="back" hidden></button>
           <button class="hud-btn" id="hud-btn" title="Show the pinned controls" aria-label="Show the pinned controls" aria-pressed="false">🎛️</button>
+          <button class="pad-btn" id="pad-btn" title="A controller on the screen: arrows and buttons to touch or click" aria-label="Show the on-screen controller" aria-pressed="false">🎮</button>
         </div>
         <div class="bar">
           <div class="caption" id="mood" title="Drag the mouth or the eyebrows on the face, too!"></div>
@@ -748,7 +794,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.73", released: "2026-10-16" };
+const VERSION = { number: "0.0.74", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -12997,7 +13043,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const stop = el("button", { onclick: () => { padTeach = null; changed(); } }, "stop");
     const askText = el("span", { class: "padask" }), done = el("div", { class: "hint" }, [line, copy]);
     ask.append(askText, skip, stop);
-    box.append(status, how, teach, ask, done, rows, down, el("button", { onclick: () => { padLearn = null; padTeach = null; Object.assign(state[part], DEFAULTS.controls); padKeep(); changed(); } }, "↺ the usual buttons"));
+    // (ticket 150) the on-screen controller, for anyone, with or without a real one
+    const onscreen = el("button", { onclick: () => touchWant(!touchPad.want) });
+    box.append(status, onscreen, how, teach, ask, done, rows, down, el("button", { onclick: () => { padLearn = null; padTeach = null; Object.assign(state[part], padId === TOUCH_ID ? TOUCH_CONTROLS : DEFAULTS.controls); padKeep(); changed(); } }, "↺ the usual buttons"));
     syncs.push(() => {
       for (const [a, which, learn, row] of rowsOf) {
         const i = state[part][a];
@@ -13006,7 +13054,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         row.classList.toggle("down", i >= 0 && padDown.has(i));
       }
       status.textContent = padName ? `🎮 ${padName}: ready${padMapping === "standard" ? "" : " (its buttons are numbered its own way: set them with 🎯 if they are not where you want)"}.`
-                                   : "🎮 No game controller yet: plug one in (USB) or pair it, then press one of its buttons.";
+                                   : "🎮 No game controller yet: plug one in (USB) or pair it, then press one of its buttons. Or use the one on the screen.";
+      onscreen.textContent = touchPad.want ? "🎮 hide the controller on the screen" : "🎮 a controller on the screen, to touch or click";
+      onscreen.setAttribute("aria-pressed", touchPad.want);
       down.textContent = padName ? "held now: " + ([...padDown].map(padButtonName).join(", ") || "nothing") + (padCrawl ? " · 🐛 crawling is on" : "") : "";
       const teaching = !!padTeach && !padTeach.done;
       teach.hidden = !padName || teaching;
@@ -14029,11 +14079,15 @@ const PAD_SPEED = { none: 160, walk: 90, run: 230, crawl: 55, swim: 70, swimfast
 let padLoop = 0, padName = "", padMapping = "", padDown = new Set(), padMoving = false, padLast = 0, padWant = "none", padLearn = null;
 function padPoll(t) {
   padLoop = 0;
-  const g = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(Boolean);
+  // (ticket 150: a real one first; else the on-screen one, if it is shown)
+  const real = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(Boolean);
+  touchShow(!real && touchPad.want, !real);
+  const g = real || (touchPad.want ? touchPad.pad : null);
   if (!g) { padName = ""; padDown = new Set(); padLast = 0; if (padMoving) { padMoving = false; changed(); } return; }
   padName = (g.id || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
   padMapping = g.mapping || "";
-  padId = g.id || padName;
+  if ((g.id || padName) !== padId) padUse(g.id || padName);
+  if (g === touchPad.pad) touchLabels();
   const dt = padLast ? Math.min(0.1, (t - padLast) / 1000) : 0;
   padLast = t;
   const now = new Set(g.buttons.map((b, i) => (b.pressed ? i : -1)).filter(i => i >= 0));
@@ -14117,14 +14171,116 @@ function padDoor() {
 window.addEventListener("gamepadconnected", e => {
   padName = ((e.gamepad && e.gamepad.id) || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
   padMapping = (e.gamepad && e.gamepad.mapping) || "";
-  padId = (e.gamepad && e.gamepad.id) || padName;
   // (ticket 146: a pad taught its buttons gets its own layout back)
-  const kept = padLayouts()[padId];
-  if (kept) Object.assign(state.controls, kept);
+  padUse((e.gamepad && e.gamepad.id) || padName);
   if (!padLoop) padLoop = requestAnimationFrame(padPoll);
   changed();
 });
 window.addEventListener("gamepaddisconnected", () => { if (!padLoop) padLoop = requestAnimationFrame(padPoll); });
+// (a pad's own layout, when the pad in use changes: the one kept by its id;
+// else the on-screen controller's own to start with; else, coming from the
+// on-screen one, the usual buttons)
+function padUse(id) {
+  const kept = padLayouts()[id], C = state.controls, like = L => Object.keys(L).every(a => C[a] === L[a]);
+  if (kept) Object.assign(C, kept);
+  else if (id === TOUCH_ID) Object.assign(C, TOUCH_CONTROLS);
+  else if (padId === TOUCH_ID || like(TOUCH_CONTROLS)) Object.assign(C, DEFAULTS.controls);
+  padId = id;
+}
+// (ticket 150) The on-screen controller, for a tablet or a phone with no
+// game controller (an iPad has no USB port for ours), or any screen without
+// one: a SNES controller's layout in the screen's bottom corners, to touch
+// or click (touchpad, built the first time it is shown). It is a pad like a
+// real one (touchPad.pad, with the standard numbers), read by padPoll every
+// frame while it is shown, so every action works as with a real controller
+// and is set in the same 🎮 Controls tab. Its own layout is kept by its id
+// (TOUCH_ID), as a real pad's is, and starts as TOUCH_CONTROLS: Matthew's
+// taught one (A the short jump, B the high one, X free, Y crouch, select
+// back, start the nearest doorway), with run on R and crawling on or off on
+// L, so the right thumb holds run while the left one steers. Offered (🎮, at
+// the picture's bottom right) while no game controller is connected, and
+// hidden while one is. Whether it is shown is this browser's own
+// (localStorage "dress-up-touchpad"), not the friend's.
+const TOUCH_ID = "on-screen controller";
+const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9 };
+const touchPad = { want: false, shown: false, el: null, keys: "",
+  pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
+         buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, at: 0, tok: 0 })) } };
+try { touchPad.want = localStorage.getItem("dress-up-touchpad") === "1"; } catch (e) { /* (not shown to start) */ }
+const padBtn = document.getElementById("pad-btn");
+padBtn.addEventListener("click", () => touchWant(!touchPad.want));
+function touchWant(on) {
+  touchPad.want = on;
+  try { localStorage.setItem("dress-up-touchpad", on ? "1" : "0"); } catch (e) { /* (for this visit only) */ }
+  if (!padLoop) padLoop = requestAnimationFrame(padPoll);
+  changed();
+}
+// (shown or not; and the 🎮 that offers it, only while no game controller is connected)
+function touchShow(on, offer) {
+  if (padBtn.hidden !== !offer) padBtn.hidden = !offer;   // (each frame: the page is changed only when this changes)
+  if (on === touchPad.shown) return;
+  padBtn.setAttribute("aria-pressed", on);
+  padBtn.title = on ? "Hide the controller on the screen" : "A controller on the screen: arrows and buttons to touch or click";
+  touchPad.shown = on;
+  if (!touchPad.el) touchBuild();
+  touchPad.el.hidden = !on;
+  if (!on) for (const b of touchPad.pad.buttons) { b.pressed = false; b.value = 0; b.tok++; }
+  if (!on) for (const x of touchPad.el.querySelectorAll(".down")) x.classList.remove("down");
+}
+// A press holds its button down until the finger (or the mouse) lets go,
+// for at least 70 ms, so a tap shorter than a frame is still seen by padPoll
+function touchSet(i, on, x) {
+  const b = touchPad.pad.buttons[i], tok = ++b.tok;
+  if (on) { b.pressed = true; b.value = 1; b.at = performance.now(); if (x) x.classList.add("down"); return; }
+  if (!b.pressed) return;
+  setTimeout(() => { if (b.tok !== tok) return; b.pressed = false; b.value = 0; if (x) x.classList.remove("down"); }, Math.max(0, b.at + 70 - performance.now()));
+}
+function touchBuild() {
+  const hold = (x, i) => {
+    x.addEventListener("pointerdown", e => { e.preventDefault(); try { x.setPointerCapture(e.pointerId); } catch (_) { /* (a synthetic press) */ } touchSet(i, true, x); });
+    for (const k of ["pointerup", "pointercancel", "lostpointercapture"]) x.addEventListener(k, () => touchSet(i, false, x));
+    x.addEventListener("contextmenu", e => e.preventDefault());
+    return x;
+  };
+  const btn = (cls, i, name) => { const x = hold(el("button", { type: "button", class: cls, "aria-label": name }, [name, el("small")]), i); x.dataset.b = i; return x; };
+  // the arrows: where a finger is on the cross, from its middle, is the
+  // direction (a diagonal between two arms), and it slides from one to the next
+  const arm = (cls, sign) => el("div", { class: "arm " + cls }, sign);
+  const arms = { 12: arm("u", "▲"), 13: arm("d", "▼"), 14: arm("l", "◀"), 15: arm("r", "▶") };
+  const dpad = el("div", { class: "dpad pad", role: "group", "aria-label": "arrows" }, [el("div", { class: "hub" }), ...Object.values(arms)]);
+  let held = null;
+  const aim = e => {
+    const r = dpad.getBoundingClientRect(), dx = (e.clientX - r.left) / r.width * 2 - 1, dy = (e.clientY - r.top) / r.height * 2 - 1;
+    const far = Math.hypot(dx, dy) > 0.18, a = Math.atan2(dy, dx), c = Math.cos(a), s = Math.sin(a);
+    const on = { 12: far && s < -0.38, 13: far && s > 0.38, 14: far && c < -0.38, 15: far && c > 0.38 };
+    for (const i in on) if (on[i] !== touchPad.pad.buttons[i].pressed || on[i]) touchSet(+i, on[i], arms[i]);
+  };
+  dpad.addEventListener("pointerdown", e => { e.preventDefault(); held = e.pointerId; try { dpad.setPointerCapture(e.pointerId); } catch (_) { /* (a synthetic press) */ } aim(e); });
+  dpad.addEventListener("pointermove", e => { if (e.pointerId === held) aim(e); });
+  for (const k of ["pointerup", "pointercancel", "lostpointercapture"])
+    dpad.addEventListener(k, e => { if (e.pointerId !== held) return; held = null; for (const i in arms) touchSet(+i, false, arms[i]); });
+  dpad.addEventListener("contextmenu", e => e.preventDefault());
+  const abxy = el("div", { class: "abxy pad", role: "group", "aria-label": "buttons" }, [btn("bx", 3, "X"), btn("by", 2, "Y"), btn("ba", 1, "A"), btn("bb", 0, "B")]);
+  touchPad.el = el("div", { class: "touchpad", id: "touchpad", hidden: "" }, [
+    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, btn("sm", 8, "select")]),
+    el("div", { class: "half r" }, [btn("sh", 5, "R"), btn("sm", 9, "start"), abxy])]);
+  document.body.append(touchPad.el);
+  touchPad.keys = "";
+  touchLabels();
+}
+// (each button shows what it does: its action's emoji, from the 🎮 Controls tab's layout)
+function touchLabels() {
+  const C = state.controls, key = JSON.stringify(C);
+  if (!touchPad.el || key === touchPad.keys) return;
+  touchPad.keys = key;
+  for (const x of touchPad.el.querySelectorAll("button[data-b]")) {
+    const a = PAD_ACTIONS.find(([k]) => C[k] === +x.dataset.b);
+    x.lastChild.textContent = a ? a[1].split(" ")[0] : "";
+    x.title = `${x.firstChild.textContent}: ${a ? a[1] : "nothing yet (set one in the 🎮 Controls tab)"}`;
+    x.classList.toggle("idle", !a);
+  }
+}
+if (touchPad.want) padLoop = requestAnimationFrame(padPoll);
 // Where a friend lands, arriving in a place, if not in its middle: on the
 // ground, by the camp's fire and not in it, on the bank of the falls' pool
 // and not in the water, and to one side of a doorway at the far end (a
