@@ -563,6 +563,8 @@ const DEFAULTS = {
   shoes: { style: "sneaker", different: false, size: 100, color: "#c0392b", toes: 5, alienToes: 3, talonCount: 4 },
   // the figure's size and place in a background scene (dragged there)
   background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, objectsOff: {}, chickenLegs: false, legSize: 100, hutNear: 0,
+                // (standing in water: how see-through below the waist, and how big a wake: ticket 122)
+                waterSee: 70, waterWake: 100,
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false,
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,
@@ -2820,11 +2822,17 @@ const winSvg = (x, y, w, h) => `<rect x="${x - w / 2 - 9}" y="${y}" width="9" he
   `<rect x="${x - w / 2}" y="${y}" width="${w}" height="${h}" fill="#bfe3f5" stroke="#ffffff" stroke-width="5"/>` +
   `<path d="M${x} ${y} V${y + h} M${x - w / 2} ${y + h / 2} H${x + w / 2}" stroke="#ffffff" stroke-width="4"/>`;
 
+// the lake's far shore (its horizon) and its near shore: where its water
+// is, for its drawing and for a friend wading in it (WATER, ticket 122)
+const lakeLines = ({ g, k }) => ({ horizon: g - 250 * k, shore: g - 70 * k });
+// the little beach's top edge on the near shore: a curve from its left end
+// to its right, bowed up in the middle
+const lakeBeach = ({ W, k }, shore) => [[-W * 0.3, shore + 8 * k], [0, shore - 10 * k], [W * 0.3, shore + 8 * k]];
 // the lake: sky, far wood, the lake with ducks, cattails at its edge, a
 // little beach, and dirt with thin grass on the near shore
 function lakeScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
-  const horizon = g - 250 * k, shore = g - 70 * k;
+  const { horizon, shore } = lakeLines(c);
   const ducks = o.ducks ?? 5, dsz = (o.duckSize ?? 100) / 100, tails = o.cattails ?? 14;
   let s = SEP + part("lake-sky", [c.F, sceneLfoKey(o, "fast")], () => `<defs>${grad("bg-sky", "#58b7f0", "#dff3ff", y0, horizon)}</defs>` + all("url(#bg-sky)") +
                                        sunSvg(x0 + W * 0.14, y0 + H * 0.14, 40 * k, true, o));
@@ -2854,9 +2862,11 @@ function lakeScene(c) {
            (i % 3 === 0 ? `<circle cx="${f1(x - r * 0.3)}" cy="${f1(y - r * 0.2)}" r="${f1(r * 0.3)}" fill="#f7a8c8"/>` : "");
     }
     // the near shore: packed dirt, thin grass, and a little beach in the middle
+    // (the shore's wave, 5 and 1.1, is WATER's too)
+    const [ba, bq, bb] = lakeBeach(c, shore), beachTop = `M${P(...ba)} Q${P(...bq)} ${P(...bb)}`;
     t += land(shore, 5, "#b59a68", 1.1) +
-         `<path d="M${P(-W * 0.3, shore + 8 * k)} Q${P(0, shore - 10 * k)} ${P(W * 0.3, shore + 8 * k)} L${P(W * 0.22, y1 + pad)} L${P(-W * 0.22, y1 + pad)} Z" fill="#ecd8a2"/>` +
-         `<path d="M${P(-W * 0.3, shore + 8 * k)} Q${P(0, shore - 10 * k)} ${P(W * 0.3, shore + 8 * k)}" fill="none" stroke="#c9b27a" stroke-width="${f1(5 * k)}"/>`;
+         `<path d="${beachTop} L${P(W * 0.22, y1 + pad)} L${P(-W * 0.22, y1 + pad)} Z" fill="#ecd8a2"/>` +
+         `<path d="${beachTop}" fill="none" stroke="#c9b27a" stroke-width="${f1(5 * k)}"/>`;
     for (let i = 0; i < 46; i++) {
       const sd = side(i), x = sd * (W * 0.27 + W * 0.25 * R(i, 46)), y = shore + 14 * k + (y1 - shore) * R(i, 47), h = (8 + 10 * R(i, 48)) * k;
       t += grassTuft(x, y, h * 1.2, 650 + i, "#6f9b3c", 1.6 * k);
@@ -2928,6 +2938,9 @@ const streamAt = ({ W, g, k, y1, pad }) => u => {
   const x = (1 - u) * (1 - u) * a[0] + 2 * u * (1 - u) * b[0] + u * u * e[0], y = (1 - u) * (1 - u) * a[1] + 2 * u * (1 - u) * b[1] + u * u * e[1];
   return [x + 14 * k * Math.sin(u * 9), y, (5 + 95 * u * u + 20 * u) * k];
 };
+// a winding stream's points, n steps from its far end to its near one, as
+// its outline is drawn (the friend wading in it reads the same: WATER)
+const sampled = (along, n) => [...Array(n + 1)].map((_, i) => along(i / n));
 const inStream = (sp, x, y, margin) => {
   for (let i = 0; i <= 30; i++) { const [sx, sy, hw] = sp(i / 30); if (Math.abs(sy - y) < 12 * margin / 8 && Math.abs(sx - x) < hw + margin) return true; }
   return false;
@@ -3376,7 +3389,7 @@ function treehouseScene(c) {
     t += obj("trees, far row", g - 123 * k, far);
     // a stream winding down from the hills, past the tree, out at the front
     const sp = streamAt(c), Lb = [], Rb = [];
-    for (let i = 0; i <= 30; i++) { const [x, y, hw] = sp(i / 30); Lb.push(P(x - hw, y)); Rb.push(P(x + hw, y)); }
+    for (const [x, y, hw] of sampled(sp, 30)) { Lb.push(P(x - hw, y)); Rb.push(P(x + hw, y)); }
     t += `<defs><linearGradient id="bg-stream" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(g - 125 * k)}" x2="0" y2="${f1(y1)}">` +
          `<stop offset="0" stop-color="#9fdcf7"/><stop offset="1" stop-color="#2f86c6"/></linearGradient></defs>` +
          `<polygon points="${[...Lb, ...Rb.reverse()].join(" ")}" fill="url(#bg-stream)" stroke="#6f9b4a" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>`;
@@ -4609,6 +4622,14 @@ function farWitchSvg(o) {
   }).join("");
   return t;
 }
+// a castle's moat, in the castle's own units (its walls' foot at y = 0), as
+// wide as its setting m: an ellipse, and the drawbridge's length across it;
+// and the drawbridge's half width, l down from the gate (for its drawing,
+// and for a friend wading in the moat: WATER, ticket 122)
+const moatOf = m => ({ rx: 187 + 45 * m, ry: 14 + 22 * m, cy: 12, len: 26 + 24 * m });
+const bridgeHalf = l => 34 + l * 0.16;
+// where a castle stands up close, on the stage: its walls' foot, and its size there
+const castleAt = ({ g, k, y0 }, K) => { const foot = g - 34 * k; return { foot, z: Math.min(1.25 * k, (foot - y0 - 20 * k) / (226 + 38 * K.levels)) }; };
 // a castle on its hill: towers with pointed roofs and flags, a gate
 function castleSvg(K = castleOf({})) {
   const stone = K.stone, dark = darker(stone), L = K.levels, m = K.moat;
@@ -4619,11 +4640,11 @@ function castleSvg(K = castleOf({})) {
   const r = (i, sd) => { const v = Math.sin(i * 12.9898 + sd * 78.233) * 43758.5453; return v - Math.floor(v); };
   // the moat round the castle's foot (its far side hidden by the walls), as
   // wide as the castle's own setting: none, or out to very wide
-  const rx = 187 + 45 * m, ry = 14 + 22 * m, cy = 12, len = 26 + 24 * m;
+  const { rx, ry, cy, len } = moatOf(m);
   const moat = m <= 0 ? "" : `<ellipse cx="0" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#3f8fc8" stroke="#2c6e9e" stroke-width="3"/>` +
     `<ellipse cx="0" cy="${f1(cy + 6)}" rx="${f1(rx - 32)}" ry="${f1(Math.max(4, ry - 14))}" fill="#62b0e0" opacity="0.6"/>`;
   // the drawbridge, down across the moat from the gate, its chains up to the wall
-  const sp = l => 34 + l * 0.16;
+  const sp = bridgeHalf;
   const bridge = m <= 0 ? "" : `<polygon points="-34,0 34,0 ${f1(sp(len))},${f1(len)} ${f1(-sp(len))},${f1(len)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
     [...Array(Math.floor(len / 10))].map((_, j) => { const y = 10 * (j + 1); return `<line x1="${f1(-sp(y))}" y1="${y}" x2="${f1(sp(y))}" y2="${y}" stroke="#5e3d22" stroke-width="2"/>`; }).join("") +
     `<path d="M-30 -70 L${f1(-sp(len) + 2)} ${f1(len - 2)} M30 -70 L${f1(sp(len) - 2)} ${f1(len - 2)}" stroke="#555" stroke-width="2.5" stroke-dasharray="5 3"/>`;
@@ -4801,8 +4822,7 @@ function clearingScene(c) {
 // its gate a doorway in (to its first room), a sign back to the clearing.
 function castleScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o } = c;
-  const K = castleOf(o), foot = g - 34 * k;
-  const z = Math.min(1.25 * k, (foot - y0 - 20 * k) / (226 + 38 * K.levels));
+  const K = castleOf(o), { foot, z } = castleAt(c, K);
   const bridgeEnd = foot + (K.moat > 0 ? 26 + 24 * K.moat : 8) * z;
   // a warm afternoon: the sky, the sun, clouds, birds far off
   let s = SEP + part("castle-sky", [c.F, sceneLfoKey(o, "fast")], () => `<defs>${grad("bg-sky", "#6fbaf0", "#fde6c2", y0, g - 160 * k)}</defs>` + all("url(#bg-sky)") +
@@ -7104,10 +7124,14 @@ function mountainsScene(c) {
 // moon out at night; and how fast its water falls (100 = the usual)
 const FALL_TINT = { day: ["#ffffff", 0], sunset: ["#9a3412", 0.25], night: ["#0b1030", 0.55] };
 const fallTimeOf = o => FALL_TINT[o.fallTime] ? o.fallTime : "day", fallRateOf = o => Math.max(0.1, (o.fallRate ?? 100) / 100);
+// the falls' pool: the line where the falls meet it, its water (an ellipse
+// about (0, cy)), and the near bank's edge over its near side (for its
+// drawing, and for a friend wading in it: WATER, ticket 122)
+const poolOf = ({ g, k, W }) => { const pool = g - 70 * k; return { pool, cy: pool + 30 * k, rx: W * 0.42, ry: 55 * k, near: g + 20 * k }; };
 function waterfallScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   const fw = (o.fallWidth ?? 100) / 100, vines = o.vines ?? 8, mist = (o.mist ?? 60) / 100, parrots = o.parrots ?? 2, rate = fallRateOf(o), time = fallTimeOf(o);
-  const top = y0 + H * 0.12, pool = g - 70 * k;
+  const top = y0 + H * 0.12, pl = poolOf(c), pool = pl.pool;
   let s = SEP + part("wf-back", c.F, () => {
     let t = `<defs>${grad("bg-sky", "#9fd8c8", "#e8fff4", y0, g)}</defs>` + all("url(#bg-sky)");
     // the far jungle: layers of leaf pads, a crown here and there standing up
@@ -7143,15 +7167,15 @@ function waterfallScene(c) {
     }
     return t + `<ellipse cx="0" cy="${f1(top)}" rx="${f1(half * 1.1)}" ry="${f1(6 * k)}" fill="#ffffff" opacity="0.9"/>`;
   }) + `</g>`;
-  // the pool, ripples spreading
+  // the pool, ripples spreading (the near bank's wave, 4 and 1.1, is WATER's too)
   s += SEP + part("wf-pool", c.F, () => land(pool + 30 * k, 6, "#5f8a3a", 0.3) +
-    `<ellipse cx="0" cy="${f1(pool + 30 * k)}" rx="${f1(W * 0.42)}" ry="${f1(55 * k)}" fill="#3f9ad0"/>` +
+    `<ellipse cx="0" cy="${f1(pl.cy)}" rx="${f1(pl.rx)}" ry="${f1(pl.ry)}" fill="#3f9ad0"/>` +
     `<ellipse cx="0" cy="${f1(pool + 24 * k)}" rx="${f1(W * 0.34)}" ry="${f1(36 * k)}" fill="#62b6e4"/>` +
     [0, 1, 2].map(i => `<ellipse cx="0" cy="${f1(pool + 6 * k)}" rx="${f1(60 * k)}" ry="${f1(10 * k)}" fill="none" stroke="#ffffff" stroke-width="${f1(2 * k)}">` +
       `<animate attributeName="rx" values="${f1(40 * k)};${f1(200 * k)}" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/>` +
       `<animate attributeName="ry" values="${f1(6 * k)};${f1(30 * k)}" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/>` +
       `<animate attributeName="opacity" values="0.8;0" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`).join("") +
-    land(g + 20 * k, 4, "#4f8a3a", 1.1));
+    land(pl.near, 4, "#4f8a3a", 1.1));
   // the mist at the falls' foot, billowing (as much as the slider says; an
   // object at the depth of the pool's far edge, under it)
   if (mist > 0) s += SEP + obj("mist", pool, part("wf-mist", [c.F, mist], () => `<defs><filter id="bg-mist" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${f1(14 * k)}"/></filter></defs>` +
@@ -7798,6 +7822,13 @@ function imaginationScene(c) {
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
                  tent: tentScene, cave: caveScene, woodpath: woodpathScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene };
+// the beach's sea, from the horizon (sea) to the shore, where the foam and
+// then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
+// to 1 (past the frame's foot): its middle, its height and half its width
+// (for their drawings, and for a friend wading in them: WATER, ticket 122)
+const beachLines = ({ g, k }) => ({ sea: g - 170 * k, shore: g - 55 * k });
+const brookAt = ({ W, g, k, y1 }) => t => { const y = g - 62 * k + t * (y1 + 40 * k - (g - 62 * k));
+  return [W * (0.2 + 0.2 * t) + W * 0.05 * Math.sin(t * Math.PI * 1.6), y, (8 + 70 * t * t) * k]; };
 
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);
@@ -7808,6 +7839,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     `<stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
   const all = fill => `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="${fill}"/>`;
   // ground from y = at (a gentle wave) down past the frame
+  // (landY finds its edge's height at any x, for WATER: keep the two alike)
   const land = (at, amp, fill, phase = 0) => {
     let d = `M${P(x0 - pad, at)}`;
     for (let i = 0; i <= 12; i++) {
@@ -8031,10 +8063,9 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // ripples on it, stones along it
     let willow = "";
     {
-      const pts = t => { const y = g - 62 * k + t * (y1 + 40 * k - (g - 62 * k));
-        return [W * (0.2 + 0.2 * t) + W * 0.05 * Math.sin(t * Math.PI * 1.6), y, (8 + 70 * t * t) * k]; };
+      const pts = brookAt({ W, g, k, y1 });
       let left = [], right = [];
-      for (let i = 0; i <= 20; i++) { const [cx, y, w] = pts(i / 20); left.push([cx - w, y]); right.push([cx + w, y]); }
+      for (const [cx, y, w] of sampled(pts, 20)) { left.push([cx - w, y]); right.push([cx + w, y]); }
       const ring = [...left, ...right.reverse()];
       s += `<polygon points="${pts ? ring.map(([x, y]) => `${f1(x)},${f1(y)}`).join(" ") : ""}" fill="url(#bg-brook)" stroke="#5f9e52" stroke-width="${f1(4 * k)}" stroke-linejoin="round"/>`;
       for (let i = 2; i < 18; i += 2) {
@@ -8309,7 +8340,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
            helixSvg(cx, cy - 6 * k, y0 - 80 * k, 12 * k, 46 * k, k));
     }
   } else if (kind === "beach") {
-    const sea = g - 170 * k, shore = g - 55 * k;
+    const { sea, shore } = beachLines({ g, k });
     s += `<defs>${grad("bg-sky", "#5fbdf2", "#d6f0ff", y0, sea)}${grad("bg-ocean", "#1f86c4", "#4cc0e6", sea, shore)}</defs>` + all("url(#bg-sky)");
     // the sun, high on the right
     const sx = x1 - W * 0.16, sy = y0 + H * 0.14;
@@ -8323,6 +8354,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       const x = x0 + W * R(i, 20), y = sea + (shore - sea) * (0.15 + 0.7 * R(i, 21));
       s += `<path d="M${P(x - 16 * k, y)} Q${P(x - 8 * k, y - 6 * k)} ${P(x, y)} Q${P(x + 8 * k, y - 6 * k)} ${P(x + 16 * k, y)}" fill="none" stroke="#ffffff" stroke-width="${f1(2.5 * k)}" opacity="0.8"/>`;
     }
+    // (the sand's wave, 6 and 1.4, is WATER's too: the foam counts as sea)
     s += land(shore - 4 * k, 6, "#ffffff", 0.9) + land(shore + 4 * k, 6, "#f3dca5", 1.4);
     // blankets on the sand, striped (flat: drawn before what stands, ticket 99)
     for (const [sd, ca, cb, dy] of [[-1, "#8e44ad", "#ffd23f", 70], [1, "#2ecc71", "#ffffff", 95]]) {
@@ -8490,6 +8522,98 @@ function unveil(svg, layers) {
   if (!masks) return svg;
   return `<defs><filter id="veil-ink" x="-0.5" y="-0.5" width="2" height="2" color-interpolation-filters="sRGB">` +
          `<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter>${masks}</defs>` + svg;
+}
+
+// WATER (ticket 122): where in a place the friend stands in water. Each
+// place with water to stand in has a test of whether a point on the stage
+// (in its units, the ground line at 320) is in it, made from the same lines
+// the place's drawing uses: lakeLines and lakeBeach, beachLines, poolOf,
+// castleAt and moatOf, streamAt and brookAt. Under the sea is not here: the
+// friend is all under water there already.
+// (the stage as a scene function sees it, in the picture: backgroundSvg's c)
+const stageC = () => { const x0 = SCENE.left, y0 = SCENE.top, x1 = -SCENE.left, y1 = SCENE.bottom, W = x1 - x0, H = y1 - y0;
+  return { x0, y0, x1, y1, g: SCENE.ground, W, H, k: H / 700, pad: Math.max(W, H) }; };
+// (a curve from a to b, bowed by q halfway across: its height at x, or null past its ends)
+const bowY = (a, q, b, x) => { const t = (x - a[0]) / (b[0] - a[0]);
+  return t < 0 || t > 1 ? null : (1 - t) * (1 - t) * a[1] + 2 * t * (1 - t) * q[1] + t * t * b[1]; };
+// (the height at x of the wavy edge backgroundSvg's land(at, amp, fill, phase)
+// draws: a bow to each twelfth of its width; keep the two alike)
+const landY = ({ x0, W, k, pad }, at, amp, phase, x) => {
+  const span = W + 2 * pad, i = Math.max(1, Math.min(12, Math.ceil((x - x0 + pad) / span * 12)));
+  const xa = x0 - pad + span * (i - 1) / 12, xb = x0 - pad + span * i / 12;
+  return bowY([xa, at], [xb - span / 24, at + amp * k * Math.sin(i * 1.7 + phase)], [xb, at], x) ?? at;
+};
+// (a winding ribbon of water, drawn through its points [middle, y, half its
+// width] going down the picture, as a stream is (sampled): is (x, y) in it?)
+const inRibbon = (pts, x, y) => {
+  for (let i = 1; i < pts.length; i++) {
+    const [xa, ya, ha] = pts[i - 1], [xb, yb, hb] = pts[i];
+    if (y < ya || y > yb) continue;
+    const t = yb > ya ? (y - ya) / (yb - ya) : 0;
+    return Math.abs(x - (xa + (xb - xa) * t)) < ha + (hb - ha) * t;
+  }
+  return false;
+};
+const WATER = {
+  // the lake, from its far shore to its near one, but for the little beach
+  lake: c => { const { horizon, shore } = lakeLines(c), [a, q, b] = lakeBeach(c, shore);
+    return (x, y) => y > horizon && y < landY(c, shore, 5, 1.1, x) && y < (bowY(a, q, b, x) ?? Infinity); },
+  // the sea, from the horizon to the sand (the foam at its edge is sea too)
+  beach: c => { const { sea, shore } = beachLines(c); return (x, y) => y > sea && y < landY(c, shore + 4 * c.k, 6, 1.4, x); },
+  // the falls' pool, but where the near bank covers it
+  waterfall: c => { const p = poolOf(c);
+    return (x, y) => (x / p.rx) * (x / p.rx) + ((y - p.cy) / p.ry) * ((y - p.cy) / p.ry) < 1 && y < landY(c, p.near, 4, 1.1, x); },
+  // the moat's near half, but for the drawbridge (its far half is behind the
+  // walls, and a friend standing there is behind the whole castle); none
+  // when the castle has no moat
+  castle: (c, B) => { const K = castleOf(B); if (K.moat <= 0) return null;
+    const { foot, z } = castleAt(c, K), M = moatOf(K.moat);
+    return (x, y) => { const u = x / z, v = (y - foot) / z;
+      return v > 0 && (u / M.rx) * (u / M.rx) + ((v - M.cy) / M.ry) * ((v - M.cy) / M.ry) < 1 && !(v < M.len && Math.abs(u) < bridgeHalf(v)); }; },
+  // the tree house's stream and the cemetery's brook, as their outlines are drawn
+  treehouse: c => { const pts = sampled(streamAt(c), 30); return (x, y) => inRibbon(pts, x, y); },
+  cemetery: c => { const pts = sampled(brookAt(c), 20); return (x, y) => inRibbon(pts, x, y); },
+};
+// a place's test, or null where there is no water to stand in
+const waterHere = B => WATER[B.kind]?.(stageC(), B) ?? null;
+const inWater = (B, x, y) => { const at = waterHere(B); return !!at && at(x, y); };
+// The friend standing in water, in their own units: what was drawn of them
+// (`inner`) see-through below the waterline, their waist (wl), as much as
+// "🌊 see-through in the water" says; and a wake round them on the water as
+// big as its slider says: rings spreading and fading, as at the foot of the
+// falls, and foam going round where the water meets them, each ring's far
+// half behind them and its near half in front. The waterline is a gentle
+// wave, and still: a moving mask would draw all of them again every frame.
+// The rings keep fixed times (constant begins), so drawing the friend again,
+// as every move of a drag does, never jumps them. hw: their half width at
+// the waist. With both settings at 0, nothing changes.
+function wading(B, inner, wl, hw) {
+  const see = Math.max(0, Math.min(100, Number(B.waterSee ?? 70) || 0)) / 100, wake = Math.max(0, Number(B.waterWake ?? 100) || 0) / 100;
+  let svg = inner;
+  if (see > 0) {
+    // (white above the waterline, a bow each 40 or so across, 4 up or down;
+    // below it, the white faint, so they are faint there)
+    const X = hw + 80, n = 2 * Math.ceil(X / 40), st = 2 * X / n;
+    let line = `M-5000 ${f1(wl)} H${f1(-X)}`;
+    for (let i = 0; i < n; i++) line += ` q${f1(st / 2)} ${i % 2 ? 8 : -8} ${f1(st)} 0`;
+    svg = `<mask id="water-line" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="10000" height="10000">` +
+          `<rect x="-5000" y="-5000" width="10000" height="10000" fill="white" fill-opacity="${(1 - see).toFixed(2)}"/>` +
+          `<path d="${line} H5000 V-5000 H-5000 Z" fill="white"/></mask><g mask="url(#water-line)">${svg}</g>`;
+  }
+  if (wake <= 0) return svg;
+  // (three rings a third of the way apart, as flat as the pool's; the foam
+  // in dashes, going round)
+  const r0 = hw + 12, r1 = r0 + 220 * wake, flat = 0.16;
+  const ring = begin => { const t = `dur="2.4s" begin="${begin}" repeatCount="indefinite"`;
+    return `<ellipse cx="0" cy="${f1(wl)}" rx="${f1(r0)}" ry="${f1(r0 * flat)}" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.8">` +
+      `<animate attributeName="rx" values="${f1(r0)};${f1(r1)}" ${t}/><animate attributeName="ry" values="${f1(r0 * flat)};${f1(r1 * flat)}" ${t}/>` +
+      `<animate attributeName="opacity" values="0.8;0" ${t}/></ellipse>`; };
+  const rf = hw + 6, rings = `<ellipse cx="0" cy="${f1(wl)}" rx="${f1(rf)}" ry="${f1(rf * flat)}" fill="none" stroke="#ffffff" stroke-width="7" stroke-dasharray="9 7" stroke-linecap="round" opacity="0.75">` +
+    `<animate attributeName="stroke-dashoffset" values="0;-32" dur="1.2s" begin="0s" repeatCount="indefinite"/></ellipse>` +
+    ["0s", "-0.8s", "-1.6s"].map(ring).join("");
+  return `<clipPath id="water-far"><rect x="-5000" y="-5000" width="10000" height="${f1(wl + 5000)}"/></clipPath>` +
+         `<clipPath id="water-near"><rect x="-5000" y="${f1(wl)}" width="10000" height="5000"/></clipPath>` +
+         `<g clip-path="url(#water-far)">${rings}</g>${svg}<g clip-path="url(#water-near)">${rings}</g>`;
 }
 
 // A scene's options, as it reads them: its background's settings, and, as
@@ -8918,6 +9042,8 @@ function draw() {
     const gh = ghostSvg(WC, { F, tx, ty, s, w, L, feetY, arms, armW });
     svg += veil("shirt", gh.sheet) + veil("head", gh.mouth) + veil("eyes", gh.eyes);
   }
+  // standing in water: see-through below the waist, a wake round them (ticket 122)
+  if (scened && inWater(BG, figureT.dx, figureT.sg + figureT.dy)) svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), L, hw);
   svg += `</g>`;   // the figure
   svg = unveil(svg, layers);
 
@@ -10926,6 +11052,9 @@ const TABS = [
     ["range", "figSize", "🧍 size in the scene", 10, 1000, 100, 100],
     ["place", "figPos", "🧍 place in the scene (or drag the figure)"],
     ["objects", "objectsOff", "👁️ what stands in the scene, back to front (tap to hide or show)"],
+    // the friend standing in water, where a place has water to stand in (WATER, ticket 122)
+    ["range", "waterSee", "🌊 see-through in the water, below the waist (0 = not at all)", 0, 100, 50, 90],
+    ["range", "waterWake", "💧 a wake round the friend in the water (0 = none)", 0, 250, 60, 160],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)
     ["choice", "lfoFast", "〰️ quick things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
     ["choice", "lfoSlow", "〰️ slow things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
@@ -11187,6 +11316,7 @@ const SHOWN_WHEN = {
   "background.lfoFast": b => !!sceneLfoThings(b).fast, "background.lfoSlow": b => !!sceneLfoThings(b).slow, "background.lfoWings": b => !!sceneLfoThings(b).wings,
   "background.figPos": b => b.kind !== "none",
   "background.objectsOff": b => b.kind !== "none",
+  "background.waterSee": b => !!waterHere(b), "background.waterWake": b => !!waterHere(b),
   "background.chickenLegs": b => b.kind === "witch",
   "background.legSize": b => b.kind === "witch" && b.chickenLegs,
   "background.hutNear": b => b.kind === "witch",
