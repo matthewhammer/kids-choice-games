@@ -8581,6 +8581,14 @@ const WATER = {
 // a place's test, or null where there is no water to stand in
 const waterHere = B => WATER[B.kind]?.(stageC(), B) ?? null;
 const inWater = (B, x, y) => { const at = waterHere(B); return !!at && at(x, y); };
+// (a stream and a brook are shallow: in them the friend is in to the knees,
+// not the waist)
+const SHALLOW_WATER = { treehouse: true, cemetery: true };
+// (how far the water reaches across from (x, y), to the nearer bank, up to
+// `most`: a wake keeps to the water, in a narrow stream as in a lake)
+const waterAcross = (B, x, y, most) => { const at = waterHere(B); let d = 0;
+  while (d < most && at && at(x - d - 4, y) && at(x + d + 4, y)) d += 4;
+  return d; };
 // The friend standing in water, in their own units: what was drawn of them
 // (`inner`) see-through below the waterline, their waist (wl), as much as
 // "🌊 see-through in the water" says; and a wake round them on the water as
@@ -8591,7 +8599,7 @@ const inWater = (B, x, y) => { const at = waterHere(B); return !!at && at(x, y);
 // The rings keep fixed times (constant begins), so drawing the friend again,
 // as every move of a drag does, never jumps them. hw: their half width at
 // the waist. With both settings at 0, nothing changes.
-function wading(B, inner, wl, hw) {
+function wading(B, inner, wl, hw, most = Infinity) {
   const see = Math.max(0, Math.min(100, Number(B.waterSee ?? 70) || 0)) / 100, wake = Math.max(0, Number(B.waterWake ?? 100) || 0) / 100;
   let svg = inner;
   if (see > 0) {
@@ -8607,7 +8615,7 @@ function wading(B, inner, wl, hw) {
   if (wake <= 0) return svg;
   // (three rings a third of the way apart, as flat as the pool's; the foam
   // in dashes, going round)
-  const r0 = hw + 12, r1 = r0 + 220 * wake, flat = 0.16;
+  const r0 = hw + 12, r1 = Math.max(r0 + 20, Math.min(r0 + 220 * wake, most)), flat = 0.16;
   const ring = begin => { const t = `dur="2.4s" begin="${begin}" repeatCount="indefinite"`;
     return `<ellipse cx="0" cy="${f1(wl)}" rx="${f1(r0)}" ry="${f1(r0 * flat)}" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.8">` +
       `<animate attributeName="rx" values="${f1(r0)};${f1(r1)}" ${t}/><animate attributeName="ry" values="${f1(r0 * flat)};${f1(r1 * flat)}" ${t}/>` +
@@ -9115,7 +9123,10 @@ function draw() {
     svg += veil("shirt", gh.sheet) + veil("head", gh.mouth) + veil("eyes", gh.eyes);
   }
   // standing in water: see-through below the waist, a wake round them (ticket 122)
-  if (scened && inWater(BG, figureT.dx, figureT.sg + figureT.dy)) svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), L, hw);
+  // (in a stream, to the knees; the wake out to the nearer bank at most)
+  if (scened && inWater(BG, figureT.dx, figureT.sg + figureT.dy))
+    svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : L, hw,
+                                       waterAcross(BG, figureT.dx, figureT.sg + figureT.dy, 400) / figureT.k);
   svg += `</g>`;   // the figure
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
@@ -11135,7 +11146,7 @@ const TABS = [
     ["place", "figPos", "🧍 place in the scene (or drag the figure)"],
     ["objects", "objectsOff", "👁️ what stands in the scene, back to front (tap to hide or show)"],
     // the friend standing in water, where a place has water to stand in (WATER, ticket 122)
-    ["range", "waterSee", "🌊 see-through in the water, below the waist (0 = not at all)", 0, 100, 50, 90],
+    ["range", "waterSee", "🌊 see-through under the water (0 = not at all)", 0, 100, 50, 90],
     ["range", "waterWake", "💧 a wake round the friend in the water (0 = none)", 0, 250, 60, 160],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)
     ["choice", "lfoFast", "〰️ quick things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
