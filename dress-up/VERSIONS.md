@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.52 (2026-10-15)
+
+Everything in 0.0.51, plus the friend turning sideways and sitting down.
+
+- **↔️ Facing:** a new choice in the "Neck, arms & legs" tab: "🧍 toward us", "⬅️ to the left" or "➡️ to the right" (Matthew). Turned to the side, the friend is seen in profile: one eye and brow at the front of the face, the mouth at the front edge (a smile turns up toward the cheek), a nose sticking out if they have one, and an ear. Their hair is drawn from the side too, every style: long hair down their back, curls, the afro's puff, spikes, a pigtail. Their arms and legs point the way they face, the near arm in front of them and the far one behind, and their shoes point forward. Animal costumes' hoods are open at the front with the animal's face on the brim, tails swing out behind, and a witch's hat bends back.
+- **🪑 Sitting:** a new switch in the same tab (Matthew). Facing us, the friend's knees come toward you and their shins hang down; turned to the side, their thighs go forward and their shins hang down, as on a chair. Posing by dragging still works, sideways and sitting.
+- Facing us and standing, the friend looks exactly as before. Places to sit (the couch, chairs, logs, benches), and other people sitting, come next.
+
 ## 0.0.51 (2026-10-15)
 
 Everything in 0.0.50, plus the shore in front of the friend in the water.
