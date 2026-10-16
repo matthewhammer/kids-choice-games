@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.89 (2026-10-16)
+
+Everything in 0.0.88, plus walls and things the friend can't walk through, and jumping over the small ones.
+
+- **The castle rooms' walls are solid** (Matthew): the friend stops at the back wall's foot and at the side walls, which close in as the room goes back. The spiral stair's room has no back wall to stop at: walking up it is going up the stairs, to its doors.
+- **What one sits on is solid**: barrels, benches, chairs, logs, couches, the throne. The friend stops at them, walking or dragged, and slides along them; stopping at one sits down on it, as before.
+- **Jumping over the small ones**: while jumping, a short jump clears what is lower than half the friend's legs, a high jump what is lower than their legs, if it is narrow enough to clear in one jump. Landing on one, they step off by its nearer side.
+
 ## 0.0.88 (2026-10-16)
 
 Everything in 0.0.87, plus doors that open, and walking through them.

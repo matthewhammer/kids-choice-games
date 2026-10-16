@@ -1042,7 +1042,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.88", released: "2026-10-16" };
+const VERSION = { number: "0.0.89", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9421,6 +9421,84 @@ let figureT = { k: 1, dx: 0, dy: 0, g: 0, sg: 0 }, sceneFrame = { left: -200, to
 // place control all keep to it (figYMin, a figY).
 const SCENE_BACK = { imagination: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3, emptyroom: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3 };
 const figYMin = F => Math.max((F.top - F.ground) * 0.6, (F.back ?? -Infinity) - F.ground);
+// (ticket 149) What the friend can't walk through. A castle room's walls,
+// from its perspective (roomFrame, as the room is drawn): the back wall's
+// foot is SCENE_BACK's, and the side walls close in toward it, so how far
+// across the friend's feet can go depends on how deep they are (walls: the
+// half width at a depth). And the things one sits on (SEATS: a barrel, a
+// bench, a chair, a throne), as boxes on the ground: across their top's
+// span (x0 to x1) and from the floor in front of them (z, where a sitter's
+// feet go) back by half their height, at most SOLID_DEPTH of their width;
+// their height is their top's above that floor. Low ones can be jumped: while jumping, lower than half
+// the friend's legs by the short jump, lower than their legs by the high
+// one. The controller and a drag move the friend through solidMove, which
+// slides along what they meet; already inside one (put there by a setting,
+// or arriving), they can walk out. Closed ticket 50's "collision shape for
+// the places it makes no sense to stand", begun with what we know the
+// shape of.
+const SOLID_DEPTH = 0.4, SOLID_MARGIN = 6;
+let wallsMemo = { text: undefined, kind: null, W: null };
+function castleWalls(B) {
+  if (B.kind !== "castleroom") return null;
+  if (wallsMemo.text === bgShown.text && wallsMemo.kind === B.kind && bgShown.text) return wallsMemo.W;
+  wallsMemo = { text: bgShown.text, kind: B.kind, W: castleWallsOf(B) };
+  return wallsMemo.W;
+}
+function castleWallsOf(B) {
+  const style = castleOf(B).rooms[Math.round(B.castleRoom ?? 1) - 1], deep = style === "hallway" || style === "dining";
+  const c = deep ? { ...stageC(), eye: 0.3 } : stageC(), { floor, bw, vy } = roomFrame(c);
+  const back = vy + (floor - vy) / (1 + (deep ? HALL_STRETCHES * 0.8 : 0));
+  return { back, stairs: style === "spiral", half: y => Math.max(0, bw * (y - vy) / (floor - vy)) };
+}
+// (read once a drawing, before the drawing mounts the place's scene: worked out afresh, not memoized on the scene's text)
+// (not the spiral stair's room: walking up it is going up the stairs, to its doors higher up)
+SCENE_BACK.castleroom = () => { const W = castleWallsOf(state.background); return W && !W.stairs ? W.back + 3 : -Infinity; };
+// (the solids here, made again only when the place or its seats change)
+let solidMemo = { text: undefined, kind: null, list: [] };
+function solidsHere() {
+  const B = state.background;
+  if (B.kind === "none") return [];
+  if (solidMemo.text !== bgShown.text || solidMemo.kind !== B.kind || !bgShown.text) solidMemo = { text: bgShown.text, kind: B.kind, list: seatsHere(B).map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
+    return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y }; }) };
+  return solidMemo.list;
+}
+// the friend's legs, hip to foot, in the stage's units (for what a jump clears)
+const legReach = () => poseJoints && poseJoints.legs && poseJoints.legs.length
+  ? figureT.k * Math.max(...poseJoints.legs.map(l => Math.hypot(l.F[0] - l.H[0], l.F[1] - l.H[1]))) : 100 * figureT.k;
+// what stops the friend's feet at (x, z): a wall, a solid, or null
+function solidAt(x, z) {
+  const B = state.background, W = castleWalls(B);
+  if (W && Math.abs(x) > W.half(z) - SOLID_MARGIN) return { wall: true };
+  const sitting = state.body.sit && B.seat, a = state.body.anim, jumping = isJump(a);
+  const clears = jumping ? (a === "jumphigh" ? 1 : 0.5) * legReach() : 0;
+  for (const o of solidsHere()) {
+    if (sitting && o.name === B.seat) continue;
+    if (o.h < clears) continue;
+    if (x > o.x0 - SOLID_MARGIN && x < o.x1 + SOLID_MARGIN && z > o.back && z < o.front) return o;
+  }
+  return null;
+}
+// a move of the friend's feet from (x0, y0) to (x, y) (figX, figY): where
+// they end up, sliding along a wall or a solid they meet; inside one
+// already, any move that does not go deeper into it
+function solidMove(x0, y0, x, y) {
+  const g = SCENE.ground;
+  if (!solidAt(x, g + y)) return [x, y];
+  const here = solidAt(x0, g + y0);
+  if (here && !here.wall) return [x, y];   // (inside a solid already: let them out)
+  if (!solidAt(x, g + y0)) return [x, y0];
+  if (!solidAt(x0, g + y)) return [x0, y];
+  // (a wall alone: the farthest across it lets them, at the new depth)
+  const W = castleWalls(state.background);
+  if (W && !here) { const h = W.half(g + y) - SOLID_MARGIN - 0.5, cx = clamp(x, -h, h); if (!solidAt(cx, g + y)) return [cx, y]; }
+  return [x0, y0];
+}
+// (after a jump: landed inside a solid, out by its nearer side)
+function solidUnstick() {
+  const B = state.background, x = B.figX ?? 0, z = SCENE.ground + (B.figY ?? 0), o = solidAt(x, z);
+  if (!o || o.wall) return;
+  B.figX = Math.round(x - o.x0 < o.x1 - x ? o.x0 - SOLID_MARGIN - 1 : o.x1 + SOLID_MARGIN + 1);
+}
 
 // The parts of the body each with its own visibility: a slider each
 // (0 invisible to 100 all there), and the shirt and pants stand for the
@@ -9823,7 +9901,7 @@ function endJump() {
   jumpEnd = 0;
   // (after a dolphin's dive, they are where they came back up: ticket 143)
   if (jumpAhead) { const F = sceneFrame, BG = state.background; BG.figX = Math.round(clamp((BG.figX ?? 0) + jumpAhead * figureT.k, F.left, F.right)); jumpAhead = 0; }
-  if (isJump(state.body.anim)) { state.body.anim = jumpPrev || "none"; changed(); }
+  if (isJump(state.body.anim)) { state.body.anim = jumpPrev || "none"; solidUnstick(); changed(); }   // (ticket 149)
 }
 function moveNow() {
   const B = state.body, a = B.anim;
@@ -14766,9 +14844,10 @@ pic.addEventListener("pointermove", e => {
   if (drag.figure) {
     // kept in the scene: its feet within the frame, from the frame's top
     // half down to just below the ground
-    const p = picUnits(e), F = sceneFrame;
-    state.background.figX = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right));
-    state.background.figY = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
+    const p = picUnits(e), F = sceneFrame, BG = state.background;
+    // (ticket 149: walls and solids stop a dragged friend too, who slides along them)
+    [BG.figX, BG.figY] = solidMove(BG.figX ?? 0, BG.figY ?? 0, Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)),
+                                   Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground)));
     dragChanged();
     return;
   }
@@ -15003,8 +15082,10 @@ function padPoll(t) {
   if (hit("enter")) enterPicture();   // (ticket 145)
   if (moving) {
     const sp = (PAD_SPEED[isJump(B.anim) ? jumpPrev : B.anim] ?? PAD_SPEED.none) * dt, F = sceneFrame;
-    BG.figX = Math.round(10 * clamp((BG.figX ?? 0) + vx * sp, F.left, F.right)) / 10;
-    BG.figY = Math.round(10 * clamp((BG.figY ?? 0) + vy * sp * 0.6, figYMin(F), F.bottom - F.ground)) / 10;
+    // (ticket 149: walls and solids stop them, and they slide along)
+    const [mx, my] = solidMove(BG.figX ?? 0, BG.figY ?? 0, Math.round(10 * clamp((BG.figX ?? 0) + vx * sp, F.left, F.right)) / 10,
+                               Math.round(10 * clamp((BG.figY ?? 0) + vy * sp * 0.6, figYMin(F), F.bottom - F.ground)) / 10);
+    BG.figX = mx; BG.figY = my;
     // (which way they face: a diagonal keeps the one of its two ways they faced, else the side one)
     const ax = Math.abs(vx), ay = Math.abs(vy), m = Math.max(ax, ay);
     const side = ax > 0.38 * m ? (vx < 0 ? "left" : "right") : null, depth = ay > 0.38 * m ? (vy < 0 ? "back" : "front") : null;
