@@ -98,7 +98,8 @@
   .hint { color: var(--muted); font-size: 0.9em; }
   .padmap { display: grid; gap: 4px; margin: 8px 0; }
   .padrow { display: flex; gap: 8px; align-items: center; padding: 2px 6px; border-radius: 8px; }
-  .padrow .pbtn { min-width: 11em; }
+  .padrow .pbtn { min-width: 15em; }
+  .padrow .pwhich { min-width: 10em; color: var(--muted); }
   .padrow.down { outline: 2px solid #8b5cf6; background: color-mix(in srgb, #8b5cf6 14%, transparent); }
   /* the figure's place in its scene: the stage in small, the figure a box */
   svg.place { display: block; width: 100%; max-width: 240px; height: auto; touch-action: none; cursor: crosshair;
@@ -710,10 +711,11 @@ function upgradeFeet(st, saved) {
 // over keep them
 // how much of each part of the body shows (VISIBILITY): all of it
 DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pants: 100, feet: 100, hands: 100 };
-// (ticket 138) the game controller's buttons, by the browser's "standard"
-// numbers (0 the bottom face button, 1 the right, 2 the left, 3 the top,
-// 4 and 5 the shoulders, 6 and 7 the triggers, 8 select, 9 start): what each does
-DEFAULTS.controls = { b0: "jump", b1: "run", b2: "walk", b3: "climbup", b4: "crawl", b5: "swim", b6: "climb", b7: "none", b8: "back", b9: "door" };
+// (ticket 141) the game controller: each action's button, by the browser's
+// "standard" numbers (0 the bottom face button, 1 the right, 2 the left, 3 the
+// top, 8 select, 9 start): on a SNES-style pad A (right) the short jump, B
+// (bottom) the high one, X (top) run, Y (left) crouch. (The arrows walk.)
+DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, back: 8, door: 9 };
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 let state = clone(DEFAULTS);
 try {
@@ -740,7 +742,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.68", released: "2026-10-16" };
+const VERSION = { number: "0.0.69", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9133,7 +9135,7 @@ function treadStroke(amt, u) {
 // about the hips (rot, crawling), and a ladder's rungs going by (ladder,
 // climbing). One stride to LFO B's wave (2 beats to start), as treading,
 // so it moves with the music. Without one chosen, deep water still treads.
-const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"], ["jump", "🐸 short, fast jump"], ["jumphigh", "🦘 high, slow jump"]];
+const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"], ["jump", "🐸 short, fast jump"], ["jumphigh", "🦘 high, slow jump"], ["crouch", "🧎 crouching down"]];
 // (walking, running and crawling are seen from the side: chosen facing us, the friend turns to our right)
 const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
 // (ticket 137) Climbing a ladder that stands in the place ("🧗 climbing"):
@@ -9217,6 +9219,10 @@ function moveNow() {
   const dir = facingOf(B), lean = side => dir ? (side === dir ? -14 : 4) : 0;
   const both = (k, f) => ({ [k + "L"]: f(1), [k + "R"]: f(-1) });
   if (a === "swim") return treadNow() || treadStroke(1, u);
+  // (ticket 141) swimming fast (the controller's run, in water): the stroke twice as quick
+  if (a === "swimfast") return { ...treadStroke(1, (2 * u) % 1), water: true };
+  // (ticket 141) crouching down, held there: the knees bent, the arms a little forward
+  if (a === "crouch") return { ...both("Leg", () => 34), ...both("Knee", () => 75), ...both("Arm", sd => -18 - lean(sd)), ...both("Elbow", () => 25), held: true, grounded: true };
   if (a === "walk") {
     // (each leg swinging forward and back, its knee bending as it comes
     // through; each arm swinging with the other leg; a small lift each step)
@@ -9260,7 +9266,7 @@ function moveNow() {
     if (t < c) { const u = ease(t / c); bend = 0.8 * u; arm = 35 * u; }
     else if (t < f) { const u = (t - c) / (f - c); lift = H * 4 * u * (1 - u); bend = 0.8 * (1 - u) * (1 - u) + 0.35 * Math.sin(Math.PI * u); arm = 35 - 150 * Math.sin(Math.PI * Math.min(1, u * 1.6)); }
     else { const u = (t - f) / (l - f); bend = 0.7 * Math.sin(Math.PI * Math.min(1, u * 1.3)); arm = -25 * (1 - u); }
-    return { ...both("Leg", () => 40 * bend), ...both("Knee", () => 85 * bend), ...both("Arm", () => arm), ...both("Elbow", () => 15), lift, jump: true };
+    return { ...both("Leg", () => 40 * bend), ...both("Knee", () => 85 * bend), ...both("Arm", () => arm), ...both("Elbow", () => 15), lift, jump: true, grounded: true };
   }
   if (a === "climbup") {
     // (ticket 137) up a ladder that stands in the place (see climb, below),
@@ -9528,7 +9534,8 @@ function draw() {
   const standOn = (fy, kneeY) => Math.max(fy + (state.shoes.style === "bare" ? 18 : 30) * shoeSc, kneeY);
   // (treading, they float where they would stand: the ground of their legs
   // as posed, not as they kick, or every kick would jolt them up and down)
-  const still = move && !move.rot && bonesBy((what, side) => poseOf(B, what, side));
+  // (ticket 141: a crouch and a jump stand on their feet as bent: grounded)
+  const still = move && !move.rot && !move.grounded && bonesBy((what, side) => poseOf(B, what, side));
   const ground = still ? standOn(Math.max(...still.bones.map(l => l.joints[l.joints.length - 1][1])), still.posed ? Math.max(...still.bones.map(l => l.joints[1][1])) + B.legW / 2 : -Infinity)
                        : standOn(feetY, legPosed ? Math.max(kneeAt(1)[1], kneeAt(-1)[1]) + B.legW / 2 : -Infinity);   // (or kneels, a knee lowest)
   poseJoints = { armLen, LL, armW, legW: B.legW, legBase,
@@ -12854,19 +12861,27 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // (ticket 138) the game controller: whether one is there, then each of its
   // buttons with a menu of what it does (lit while held), and the usual layout
   if (kind === "padmap") {
-    const status = el("div", { class: "hint" }), rows = el("div", { class: "padmap" });
-    const how = el("div", { class: "hint" }, ["Its arrows, or its left stick, move the friend as dragging them does, and turn them that way: ⬆️ away from us, into the place, ⬇️ toward us. " +
-                                             "With an animation on, they move at its pace (walking, running, crawling, swimming). Press a button again to stop its animation."]);
-    const sels = PAD_BUTTONS.map(([i, name]) => {
-      const sel = el("select", { onchange: e => set(part, "b" + i, e.target.value) }, PAD_ACTIONS.map(([v, l]) => el("option", { value: v }, l)));
-      const row = el("div", { class: "padrow" }, [el("span", { class: "pbtn" }, name), sel]);
+    const status = el("div", { class: "hint" }), rows = el("div", { class: "padmap" }), down = el("div", { class: "hint" });
+    const how = el("div", { class: "hint" }, ["Its arrows (or its left stick) walk the friend that way, diagonals too, from standing or sitting: ⬆️ away from us, into the place, ⬇️ toward us. " +
+                                             "Hold 🏃 run with an arrow to run; hold 🧎 crouch to crouch down, or crawl with an arrow. In water they swim, and run swims fast. " +
+                                             "To change a button, click 🎯 set, then press the button you want."]);
+    const rowsOf = PAD_ACTIONS.map(([a, name]) => {
+      const which = el("span", { class: "pwhich" }), learn = el("button", { onclick: () => { padLearn = padLearn === a ? null : a; changed(); } }, "🎯 set");
+      const row = el("div", { class: "padrow" }, [el("span", { class: "pbtn" }, name), which, learn]);
       rows.append(row);
-      return [i, sel, row];
+      return [a, which, learn, row];
     });
-    box.append(status, how, rows, el("button", { onclick: () => { Object.assign(state[part], DEFAULTS.controls); changed(); } }, "↺ the usual buttons"));
+    box.append(status, how, rows, down, el("button", { onclick: () => { padLearn = null; Object.assign(state[part], DEFAULTS.controls); changed(); } }, "↺ the usual buttons"));
     syncs.push(() => {
-      for (const [i, sel, row] of sels) { sel.value = state[part]["b" + i] ?? "nothing"; row.classList.toggle("down", padDown.has(i)); }
-      status.textContent = padName ? `🎮 ${padName}: ready.` : "🎮 No game controller yet: plug one in (USB) or pair it, then press one of its buttons.";
+      for (const [a, which, learn, row] of rowsOf) {
+        const i = state[part][a];
+        which.textContent = padLearn === a ? "press a button…" : padButtonName(i);
+        learn.setAttribute("aria-pressed", padLearn === a);
+        row.classList.toggle("down", i >= 0 && padDown.has(i));
+      }
+      status.textContent = padName ? `🎮 ${padName}: ready${padMapping === "standard" ? "" : " (its buttons are numbered its own way: set them with 🎯 if they are not where you want)"}.`
+                                   : "🎮 No game controller yet: plug one in (USB) or pair it, then press one of its buttons.";
+      down.textContent = padName ? "held now: " + ([...padDown].map(padButtonName).join(", ") || "nothing") : "";
     });
   }
   if (kind === "action") {
@@ -13836,41 +13851,81 @@ function flyInto(box, arrive) {
                  { duration: 600, easing: "ease-out" });
   };
 }
-// (ticket 138) A game controller, through the browser's Gamepad API (its
-// "standard" layout). Its arrows (12 up, 13 down, 14 left, 15 right) or its
-// left stick move the friend as dragging them does, PAD_SPEED stage units a
-// second (or the animation's own pace), farther into the place more slowly,
-// and turn them that way: up away from us (into the place), down toward us.
-// Each other button does what the 🎮 Controls tab says (state.controls.bN):
-// an animation, as its chip in the Body tab (pressed again, it stops); a
-// jump on top of what they are doing; back the way they came; through the
-// nearest doorway. Polled each frame while one is connected, never without.
-const PAD_BUTTONS = [[0, "Ⓐ / ✕ (bottom)"], [1, "Ⓑ / ○ (right)"], [2, "Ⓧ / □ (left)"], [3, "Ⓨ / △ (top)"], [4, "LB / L1 (left shoulder)"], [5, "RB / R1 (right shoulder)"],
-                     [6, "LT / L2 (left trigger)"], [7, "RT / R2 (right trigger)"], [8, "select / back / view"], [9, "start / menu / options"]];
-const PAD_ACTIONS = [...ANIMS, ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest doorway"], ["nothing", "— nothing"]];
-const PAD_SPEED = { none: 160, walk: 90, run: 230, crawl: 55, swim: 80, jump: 160, jumphigh: 160 };
-let padLoop = 0, padName = "", padDown = new Set(), padMoving = false, padLast = 0;
+// (ticket 138, as actions since ticket 141) A game controller, through the
+// browser's Gamepad API. Played as a video game is, not as a puppet: the
+// arrows (buttons 12 to 15 on a "standard" pad), or the left stick, walk the
+// friend that way, from standing or sitting (a seat too), the diagonals as
+// well, deeper into the place at 0.6 of the pace; they face the way they go
+// (up: away from us, down: toward us; a diagonal keeps the one of its two
+// ways they faced, else the side one: no diagonal postures yet, ticket 144).
+// Held with an arrow, 🏃 run runs; 🧎 crouch crouches down, or crawls with
+// an arrow. In water, walking is swimming and running is swimming fast. The
+// two jumps go on top of whatever they are doing, and two buttons go places
+// (back, the nearest doorway). Which button does what: state.controls (an
+// action's button number; -1 none), set in the 🎮 Controls tab, where "🎯 set"
+// learns the next button pressed (padLearn). The pad changes the animation
+// only when what it is told changes (padWant), so it never undoes a chip;
+// nor while they are up a place's ladder. Polled each frame while a pad is
+// connected, never without one.
+const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
+                     ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest doorway"]];
+const PAD_PLACES = ["bottom", "right", "left", "top", "left shoulder", "right shoulder", "left trigger", "right trigger", "select", "start", "left stick", "right stick", "up", "down", "left", "right", "home"];
+const padButtonName = i => !(i >= 0) ? "—" : padMapping === "standard" && PAD_PLACES[i] ? `${PAD_PLACES[i]} (button ${i})` : `button ${i}`;
+const PAD_SPEED = { none: 160, walk: 90, run: 230, crawl: 55, swim: 70, swimfast: 150, crouch: 0 };
+let padLoop = 0, padName = "", padMapping = "", padDown = new Set(), padMoving = false, padLast = 0, padWant = "none", padLearn = null;
 function padPoll(t) {
   padLoop = 0;
   const g = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(Boolean);
   if (!g) { padName = ""; padDown = new Set(); padLast = 0; if (padMoving) { padMoving = false; changed(); } return; }
   padName = (g.id || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
+  padMapping = g.mapping || "";
   const dt = padLast ? Math.min(0.1, (t - padLast) / 1000) : 0;
   padLast = t;
-  // a button pressed: its action (the arrows are for moving)
   const now = new Set(g.buttons.map((b, i) => (b.pressed ? i : -1)).filter(i => i >= 0));
-  const pressed = [...now].filter(i => !padDown.has(i) && (i < 12 || i > 15)), lit = now.size !== padDown.size || pressed.length > 0;
+  const arrows = padMapping === "standard" ? [12, 13, 14, 15] : [];
+  const pressed = [...now].filter(i => !padDown.has(i) && !arrows.includes(i)), lit = now.size !== padDown.size || pressed.length > 0;
   padDown = now;
-  for (const i of pressed) padAct(state.controls["b" + i]);
-  // the arrows, or the left stick past its dead middle
+  const C = state.controls, B = state.body, BG = state.background;
+  // learning a button: the next one pressed is the action's (and no other's)
+  if (padLearn && pressed.length) {
+    for (const [a] of PAD_ACTIONS) if (C[a] === pressed[0]) C[a] = -1;
+    C[padLearn] = pressed[0]; padLearn = null; changed();
+    padLoop = requestAnimationFrame(padPoll); return;
+  }
+  const btn = a => Number.isInteger(C[a]) && C[a] >= 0 ? C[a] : -2, held = a => now.has(btn(a)), hit = a => pressed.includes(btn(a));
+  if (hit("back")) { if (!backBtn.hidden) backBtn.click(); }
+  if (hit("door")) padDoor();
+  // the arrows, or the left stick past its dead middle (at most one step a frame's worth, diagonals too)
   const stick = v => (Math.abs(v ?? 0) > 0.25 ? v : 0);
-  const vx = clamp((now.has(15) ? 1 : 0) - (now.has(14) ? 1 : 0) + stick(g.axes[0]), -1, 1), vy = clamp((now.has(13) ? 1 : 0) - (now.has(12) ? 1 : 0) + stick(g.axes[1]), -1, 1);
-  const B = state.body, BG = state.background, onLadder = B.anim === "climb" || (B.anim === "climbup" && climb && !climb.none);
-  if ((vx || vy) && BG.kind !== "none" && !entering && !drag && !onLadder) {
-    const sp = (PAD_SPEED[B.anim] ?? PAD_SPEED.none) * dt, F = sceneFrame;
+  let vx = clamp((now.has(15) ? 1 : 0) - (now.has(14) ? 1 : 0) + stick(g.axes[0]), -1, 1), vy = clamp((now.has(13) ? 1 : 0) - (now.has(12) ? 1 : 0) + stick(g.axes[1]), -1, 1);
+  const len = Math.hypot(vx, vy);
+  if (len > 1) { vx /= len; vy /= len; }
+  const onLadder = B.anim === "climbup" && climb && !climb.none;
+  const moving = !!(vx || vy) && BG.kind !== "none" && !entering && !drag && !onLadder;
+  const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
+  const run = held("run"), low = held("crouch");
+  const want = moving ? (low ? (wet ? "swim" : "crawl") : wet ? (run ? "swimfast" : "swim") : run ? "run" : "walk") : low && !wet ? "crouch" : "none";
+  if (isJump(B.anim)) jumpPrev = want;   // (landing into what they are told now)
+  else if (want !== padWant && !onLadder) {
+    padWant = want;
+    if (want !== "none" && BG.seat) standUp();
+    // (as its chip would, but keeping the way they face: they turn as they go, below)
+    if (B.anim !== want) {
+      if (want !== "none" && want !== "swim" && want !== "swimfast" && B.pose !== "stand") strikePose("stand");
+      B.anim = want; climb = null;
+      changed();
+    }
+  }
+  if (hit("jumpShort") && !wet) { startJump(B.anim, "jump"); changed(); }
+  if (hit("jumpHigh") && !wet) { startJump(B.anim, "jumphigh"); changed(); }
+  if (moving) {
+    const sp = (PAD_SPEED[isJump(B.anim) ? jumpPrev : B.anim] ?? PAD_SPEED.none) * dt, F = sceneFrame;
     BG.figX = Math.round(10 * clamp((BG.figX ?? 0) + vx * sp, F.left, F.right)) / 10;
     BG.figY = Math.round(10 * clamp((BG.figY ?? 0) + vy * sp * 0.6, (F.top - F.ground) * 0.6, F.bottom - F.ground)) / 10;
-    B.facing = Math.abs(vx) >= Math.abs(vy) ? (vx < 0 ? "left" : "right") : vy < 0 ? "back" : "front";
+    // (which way they face: a diagonal keeps the one of its two ways they faced, else the side one)
+    const ax = Math.abs(vx), ay = Math.abs(vy), m = Math.max(ax, ay);
+    const side = ax > 0.38 * m ? (vx < 0 ? "left" : "right") : null, depth = ay > 0.38 * m ? (vy < 0 ? "back" : "front") : null;
+    B.facing = !side ? depth : !depth ? side : B.facing === side || B.facing === depth ? B.facing : side;
     padMoving = true;
     changed();
   } else if (padMoving) {
@@ -13879,16 +13934,8 @@ function padPoll(t) {
     dropOnSeat();
     if (B.anim === "climbup") { climb = null; climbAnywhere = false; }
     changed();
-  } else if (lit && !pressed.length) changed();   // (the Controls tab shows which button is down)
+  } else if (lit) changed();   // (the Controls tab shows which buttons are down)
   padLoop = requestAnimationFrame(padPoll);
-}
-function padAct(a) {
-  const B = state.body;
-  if (!a || a === "nothing") return;
-  if (a === "back") { if (!backBtn.hidden) backBtn.click(); return; }
-  if (a === "door") { padDoor(); return; }
-  if (a === "jump") { startJump(B.anim, "jump"); changed(); return; }
-  set("body", "anim", B.anim === a && a !== "none" ? "none" : a);
 }
 // (the doorway nearest the friend's feet, in the picture's units)
 function padDoor() {
@@ -13906,6 +13953,7 @@ function padDoor() {
 }
 window.addEventListener("gamepadconnected", e => {
   padName = ((e.gamepad && e.gamepad.id) || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
+  padMapping = (e.gamepad && e.gamepad.mapping) || "";
   if (!padLoop) padLoop = requestAnimationFrame(padPoll);
   changed();
 });

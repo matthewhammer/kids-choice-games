@@ -2,6 +2,17 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.69 (2026-10-16)
+
+Everything in 0.0.68, plus a game controller that plays like a video game.
+
+- **The arrows walk** (Matthew): press an arrow and the friend walks that way, from standing or sitting (and gets up off a seat). The diagonals work too. Let go and they stop. They face the way they go: up is away from us, down is toward us, and on a diagonal they keep facing whichever of its two ways they faced already.
+- **Four buttons** (on a SNES-style controller: A, B, X, Y): A a short, fast jump; B a high, slow jump; X runs, with an arrow (on its own it does nothing); Y crouches down, or crawls with an arrow. A jump goes on top of walking or running, and they land still going. Select goes back the way they came, and start goes through the nearest doorway.
+- **In water**, walking is swimming, and running is swimming fast.
+- **🎮 Controls** now lists these actions, each with its button, lit while you hold it. To change one, click "🎯 set" and press the button you want. Some controllers number their buttons their own way, and the tab says so.
+- **🧎 crouching down**, a new animation in the 🧍 Body tab too.
+- **Fixed:** in a crouch, and while getting ready to jump and landing, the friend floated above the ground with their legs folded up. Now they bend down with their feet on the ground.
+
 ## 0.0.68 (2026-10-16)
 
 Everything in 0.0.67, plus two jumps.
