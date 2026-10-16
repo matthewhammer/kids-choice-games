@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.84 (2026-10-16)
+
+Everything in 0.0.83, plus the duck pond held still where it would be choppy.
+
+- **The places hold still when the friend's moves come out choppy** (Matthew: the duck pond was still choppy on the black laptop, while the controller was held, and the music paused with it). The black laptop draws the friend as fast as Matthew's laptop, so 0.0.83's test of drawing time never found it slow. Now the game also watches the frames while the friend moves: where more than one in ten comes late, the places hold still from then on (their animations, the rings in the water, the faint part under it), and the game remembers that on that computer. "🌀 moving scenery and water on a slow computer" in ⚙️ Advanced still keeps everything moving, and says why the computer was found slow.
+- **🧪 this computer's speed measures the duck pond too:** after the empty room, the friend swims across the pond with it moving, held still, and with its music, and the line ends with a block of numbers (the screen, the browser, each pass's frames, pauses and drawing times) to compare two computers. Still with the friend as they start, and everything put back after.
+
 ## 0.0.83 (2026-10-16)
 
 Everything in 0.0.82, plus places that hold still on a slow computer.

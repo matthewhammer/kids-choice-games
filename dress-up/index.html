@@ -805,8 +805,8 @@ const PERF_FEATURES = [
     count: () => [...document.querySelectorAll("#bg .portal")].filter(p => p.querySelector(":scope > rect") && p.querySelector(":scope > svg")).length, unit: ["picture drawn live", "pictures drawn live"] },
   // (ticket 164: on a computer too slow for them, a place's animations, the
   // wake and the faint copy under the water cost it most of its frames)
-  { id: "slowMoving", label: "🌀 moving scenery and water on a slow computer", what: "on a computer measured to be slow (a drawing of the friend takes over 6 ms, on average), each place is held still: its animations (ducks, the sun's rays, the fumes, fairies' wings), the rings round the friend in water, and the faint part of the friend under the water. On, everything moves anyway. A fast computer is never held still.",
-    count: () => 0, unit: ["", ""], status: () => `this computer: ${slowFlag ? "slow" : "not slow"} (a drawing takes ${slowAvg.toFixed(1)} ms, on average${slowN < 30 ? ", still measuring" : ""})${slowFlag ? (PERF.slowMoving ? ": everything moves anyway" : ": the places are held still") : ": everything moves"}` },
+  { id: "slowMoving", label: "🌀 moving scenery and water on a slow computer", what: "on a computer measured to be slow (a drawing of the friend takes over 6 ms, on average, or frames come late while the friend moves), each place is held still: its animations (ducks, the sun's rays, the fumes, fairies' wings), the rings round the friend in water, and the faint part of the friend under the water. On, everything moves anyway. A fast computer is never held still.",
+    count: () => 0, unit: ["", ""], status: () => `this computer: ${slowFlag || choppy ? "slow" : "not slow"} (a drawing takes ${slowAvg.toFixed(1)} ms, on average${slowN < 30 ? ", still measuring" : ""}${choppy ? "; frames came late while the friend moved" : ""})${slowFlag || choppy ? (PERF.slowMoving ? ": everything moves anyway" : ": the places are held still") : ": everything moves"}` },
   // (ticket 161: Matthew found the beach and the empty room nearly frozen;
   // a friend half see-through walked at 36 frames a second in the empty
   // room, 60 without these masks)
@@ -856,42 +856,71 @@ async function speedCheck(report) {
   if (perfBusy) return;
   perfBusy = true;
   const saved = JSON.stringify(state), wait = ms => new Promise(r => setTimeout(r, ms));
+  const keep = { slowFlag, choppy, slowMoving: PERF.slowMoving };
+  // (a pass: frames a second, the longest pause, the share of frames later
+  // than 25 ms, the friend's drawings a second, a drawing's mean ms)
   const frames = (ms, step) => new Promise(done => {
-    const gaps = []; let t0 = 0, last = 0, d0 = movedDraws;
+    const gaps = []; let t0 = 0, last = 0, d0 = movedDraws, ms0 = movedMs;
     const f = t => {
       if (!t0) t0 = last = t; else { gaps.push(t - last); }
       const dt = Math.min(0.1, (t - last) / 1000); last = t;
-      if (t - t0 >= ms) { const s = gaps.reduce((a, b) => a + b, 0); done({ fps: Math.round(1000 * gaps.length / s), worst: Math.round(Math.max(...gaps)), dps: Math.round(1000 * (movedDraws - d0) / s) }); return; }
+      if (t - t0 >= ms) {
+        const s = gaps.reduce((a, b) => a + b, 0), dn = movedDraws - d0;
+        done({ fps: Math.round(1000 * gaps.length / s), worst: Math.round(Math.max(...gaps)), late: Math.round(100 * gaps.filter(g => g > 25).length / gaps.length),
+               dps: Math.round(1000 * dn / s), ms: dn ? +((movedMs - ms0) / dn).toFixed(1) : null });
+        return;
+      }
       if (step) step(dt);
       requestAnimationFrame(f);
     };
     requestAnimationFrame(f);
   });
+  const across = (B, body, speed, anim) => { let dir = 1; return dt => {
+    body.anim = anim; B.figX = (B.figX ?? 0) + dir * speed * dt;
+    if (B.figX > 150) dir = -1; if (B.figX < -150) dir = 1;
+    body.facing = dir > 0 ? "right" : "left";
+    moved();
+  }; };
   try {
+    // (the late-frame trigger rests during the check, which must not decide this computer is choppy)
+    moveSuspend = true;
+    PERF.slowMoving = true;   // (the scenery moves, whatever this computer was found to be, except in the pass held still)
     state = clone(DEFAULTS); state.music.mute = true;
-    const B = state.background, body = state.body;
+    let B = state.background, body = state.body;
     Object.assign(B, { kind: "emptyroom", figX: -150, figY: 0 }); body.anim = "none"; body.facing = "right";
     changed(); await wait(600);
-    report("🧪 1 of 3: drawing the friend…"); await wait(50);
+    report("🧪 1 of 6: drawing the friend…"); await wait(50);
     body.anim = "walk";
     const times = [];
     for (let i = 0; i < 60; i++) { const t = performance.now(); draw(); times.push(performance.now() - t); }
     times.sort((a, b) => a - b);
     const med = times[30];
-    report("🧪 2 of 3: walking across…"); await wait(300);
-    let dir = 1;
-    const across = await frames(2000, dt => {
-      B.figX = (B.figX ?? 0) + dir * PAD_SPEED.walk * dt;
-      if (B.figX > 150) dir = -1; if (B.figX < -150) dir = 1;
-      body.facing = dir > 0 ? "right" : "left";
-      moved();
-    });
-    report("🧪 3 of 3: walking in place…"); B.figX = 0; changed(); await wait(300);
+    report("🧪 2 of 6: walking across the empty room…"); await wait(300);
+    const room = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
+    report("🧪 3 of 6: walking in place…"); B.figX = 0; changed(); await wait(300);
     const inPlace = await frames(2000, null);
+    // (ticket 164, Matthew: the duck pond, swimming across, as the controller swims them, in the water's middle row)
+    B.kind = "lake"; B.figX = -150; body.anim = "swim";
+    { const ys = []; for (let y = -200; y <= 86; y += 2) if (inWater(B, 0, SCENE.ground + y) && inWater(B, -150, SCENE.ground + y) && inWater(B, 150, SCENE.ground + y)) ys.push(y); B.figY = ys[ys.length >> 1] ?? 0; }
+    changed(); report("🧪 4 of 6: swimming in the duck pond…"); await wait(1200);
+    const pond = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
+    report("🧪 5 of 6: the duck pond held still…");
+    slowFlag = true; PERF.slowMoving = false; changed(); await wait(800);
+    const pondStill = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
+    slowFlag = keep.slowFlag; PERF.slowMoving = true;
+    report("🧪 6 of 6: the duck pond with its music…");
+    state.music.mute = false; changed(); await wait(1200);
+    const pondMusic = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
     const ua = navigator.userAgent, browser = (ua.match(/(Firefox|Edg|Chrome|Safari)\/(\d+)/) || [, "a browser", ""]).slice(1).join(" ").trim();
-    report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · walking across: ${across.fps} frames a second, the longest pause ${across.worst} ms, the friend drawn ${across.dps} a second · in place: ${inPlace.fps} frames a second, the longest pause ${inPlace.worst} ms · ${browser}, ${navigator.platform || ""}, ${screen.width}×${screen.height} at ${devicePixelRatio}×`);
+    const p = r => `${r.fps} fps (longest pause ${r.worst} ms, ${r.late}% late)`;
+    const data = { v: VERSION.number, draw: +med.toFixed(2), room, inPlace, pond, pondStill, pondMusic, browser, platform: navigator.platform || "",
+                   screen: `${screen.width}x${screen.height}`, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency || null, memory: navigator.deviceMemory || null,
+                   pic: (r => `${Math.round(r.width)}x${Math.round(r.height)}`)(pic.getBoundingClientRect()), found: { slow: keep.slowFlag, choppy: keep.choppy } };
+    report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · with music: ${p(pondMusic)} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
   } finally {
     state = JSON.parse(saved);
+    slowFlag = keep.slowFlag; choppy = keep.choppy; PERF.slowMoving = keep.slowMoving;
+    moveSuspend = false; moveFrames = moveLate = 0;
     perfBusy = false;
     changed();
   }
@@ -955,7 +984,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.83", released: "2026-10-16" };
+const VERSION = { number: "0.0.84", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9934,7 +9963,31 @@ let treadLoop = 0, treadLast = 0;
 const SLOW_IN = 6, SLOW_OUT = 2.5;
 let slowAvg = 0, slowN = 0, slowFlag = false;
 try { slowFlag = localStorage.getItem("dress-up-slow") === "1"; } catch (e) { /* (measured afresh) */ }
-const sceneryStill = () => slowFlag && !PERF.slowMoving;
+// (ticket 164) Or frames dropping while the friend moves: the black laptop
+// draws the friend in 1 ms, as fast as Matthew's laptop, yet the duck pond
+// was choppy there. Over each 120 frames of movement (moved(), the
+// controller's steps and a drag's frames; a gap over 250 ms is a pause,
+// not a frame), more than 10% later than 25 ms makes this computer choppy (a fast one has 0 to 3%),
+// and it stays so (kept in "dress-up-choppy"): with the places held still
+// its frames come back, and it would only flip back and forth.
+let choppy = false, moveFrameLast = 0, moveFrames = 0, moveLate = 0, moveSuspend = false;
+try { choppy = localStorage.getItem("dress-up-choppy") === "1"; } catch (e) { /* (measured afresh) */ }
+function noteMoveFrame(t) {
+  if (moveSuspend) return;   // (🧪 the speed check)
+  const g = t - moveFrameLast;
+  moveFrameLast = t;
+  if (g <= 0 || g > 250) return;
+  moveFrames++;
+  if (g > 25) moveLate++;
+  if (moveFrames < 120) return;
+  if (!choppy && moveLate > 0.1 * moveFrames) {
+    choppy = true;
+    try { localStorage.setItem("dress-up-choppy", "1"); } catch (e) { /* (for this visit) */ }
+    setTimeout(changed, 0);
+  }
+  moveFrames = moveLate = 0;
+}
+const sceneryStill = () => (slowFlag || choppy) && !PERF.slowMoving;
 function draw() {
   const t = performance.now(), text = bgShown.text;
   drawNow();
@@ -13044,9 +13097,10 @@ function set(part, key, value) {
 // picture's own frames stay at 60; the friend's place and pose catch up
 // 30 times a second. The last move is always drawn (force).
 const DRAW_SLOW = 6, MOVE_EVERY = 30;
-let settleTimer = 0, drawAvg = 0, movedLast = 0, movedTrail = 0, movedDraws = 0;
+let settleTimer = 0, drawAvg = 0, movedLast = 0, movedTrail = 0, movedDraws = 0, movedMs = 0;
 function moved(force = false) {
   const t = performance.now();
+  if (!force) noteMoveFrame(t);   // (ticket 164: frames dropping while moving)
   if (!force && drawAvg > DRAW_SLOW && t - movedLast < MOVE_EVERY) {
     // (the latest move drawn soon even if no other comes: a held-still drag, a stop)
     if (!movedTrail) movedTrail = setTimeout(() => { movedTrail = 0; moved(true); }, MOVE_EVERY - (t - movedLast));
@@ -13058,7 +13112,7 @@ function moved(force = false) {
   draw();
   const ms = performance.now() - t;
   drawAvg = drawAvg ? 0.85 * drawAvg + 0.15 * ms : ms;
-  perfMeter.ms += ms; perfMeter.draws++; movedDraws++;
+  perfMeter.ms += ms; perfMeter.draws++; movedDraws++; movedMs += ms;
   feedMusic();
   if (!settleTimer) settleTimer = setTimeout(settle, 250);
 }
@@ -13505,7 +13559,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // Fumola canister of our own takes its place; the black laptop has no easy way to send it)
     const speedPad = el("a", { href: SPEED_PAD, target: "_blank", rel: "noopener", title: "A shared page anyone with its address can read and write: paste the line there" }, "📝 then paste it here");
     box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [speedBtn, speedCopy, speedPad]), speedOut,
-      el("div", { class: "hint" }, "About 5 seconds in the empty room, with the friend as they start and the music off, the same on every computer; then your friend and everything back as it was. Run it on two computers and compare the lines: the drawing times' ratio is how much slower one is.")]));
+      el("div", { class: "hint" }, "About 15 seconds, in the empty room and then swimming in the duck pond (moving, held still, and with its music), with the friend as they start, the same on every computer; then your friend and everything back as it was. Run it on two computers and compare the lines: the drawing times' ratio is how much slower one is.")]));
     if (!perfMeter.loop) perfMeter.loop = requestAnimationFrame(perfMeterTick);
     const rows = PERF_FEATURES.map(f => {
       const chip = el("button", { onclick: () => perfSet(f.id, !PERF[f.id]) }), here = el("div", { class: "hint" }), result = el("div", { class: "hint" });
