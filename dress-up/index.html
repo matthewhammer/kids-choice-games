@@ -11,10 +11,14 @@
 <title>Messed Up Dress Up</title>
 <style>
   :root { --ink: #222; --muted: #666; --line: #d6d6d6; --paper: #fffdf7; --bg: #f3f0ff;
-          --panel: #ffffff; --accent: #7c3aed; --accent-ink: #fff; }
+          --panel: #ffffff; --accent: #7c3aed; --accent-ink: #fff;
+          /* (ticket 170) the music tab's groups, each its own colour: the
+             main controls, the whole tune's strip, the LFOs, the instruments */
+          --mu-main: #e8f1ff; --mu-mix: #fff0d9; --mu-lfo: #f0e8ff; --mu-inst: #e4f6ea; }
   @media (prefers-color-scheme: dark) {
     :root { --ink: #eee; --muted: #aaa; --line: #444; --paper: #fffdf7; --bg: #1d1a26;
-            --panel: #29253a; --accent: #a78bfa; --accent-ink: #1d1a26; }
+            --panel: #29253a; --accent: #a78bfa; --accent-ink: #1d1a26;
+            --mu-main: #1b2238; --mu-mix: #2c2416; --mu-lfo: #261c38; --mu-inst: #162a20; }
   }
   * { box-sizing: border-box; }
   body { margin: 0; padding: 8px; background: var(--bg); color: var(--ink);
@@ -157,7 +161,16 @@
   /* back through the last doorway, after a trip through one */
   .back-btn { position: absolute; bottom: 8px; left: 8px; padding: 0 10px; font-size: 1.15em; line-height: 1.6;
               background: var(--panel); opacity: 0.92; }
-  body.big .back-btn { bottom: auto; top: 8px; left: 66px; }
+  body.big .back-btn { bottom: auto; top: 8px; left: 124px; }
+  /* (ticket 170) in full screen, next to the mute: the music's controls,
+     full screen (✕ there comes back here) */
+  .mfs-btn { display: none; position: absolute; top: 8px; left: 66px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
+             background: var(--panel); opacity: 0.9; }
+  body.big .mfs-btn { display: block; }
+  body.big .mute-btn[hidden] + .mfs-btn { left: 8px; }
+  body.big .mute-btn[hidden] ~ .back-btn { left: 66px; }
+  /* (a phone: the way back on a row of its own, clear of the right corner's buttons) */
+  @media (max-width: 480px) { body.big .back-btn, body.big .mute-btn[hidden] ~ .back-btn { top: 52px; left: 8px; } }
   /* (ticket 150) the on-screen controller, offered while no game controller
      is connected: the button that shows it, at the picture's bottom right */
   .pad-btn { position: absolute; bottom: 8px; right: 8px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
@@ -212,6 +225,18 @@
   .strip.lfo { border-style: dotted; }
   .mixer .quad { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   @media (max-width: 520px) { .mixer .quad { grid-template-columns: minmax(0, 1fr); } }
+  /* (ticket 170) the whole tune's strip and the LFOs two of the board's
+     columns wide (and two rows tall, the instruments beside them), so each
+     strip is as wide as an instrument's, not half the screen; one strip to
+     a row where the board is narrow */
+  .mixer { container-type: inline-size; }
+  @container (min-width: 408px) { .mixer .quad { grid-column: span 2; grid-row: span 2; } }
+  @container (min-width: 408px) and (max-width: 487px) { body.music-big .mixer .quad { grid-column: 1 / -1; } }
+  @container (max-width: 407px) { .mixer .quad { grid-template-columns: minmax(0, 1fr); } }
+  .strip { background: var(--mu-inst); }
+  .strip.master { background: var(--mu-mix); }
+  .strip.lfo { background: var(--mu-lfo); }
+  #panel[data-part=music] > .ctl:not(.mixctl) { background: var(--mu-main); border-radius: 12px; padding: 6px 10px; margin: 6px 0; }
   /* the castle designer: a map of the castle's rooms and the ways between them */
   .designer { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
   .designer .map { height: 340px; border: 2px solid var(--line); border-radius: 12px; background: rgba(127, 127, 127, 0.08); }
@@ -312,6 +337,7 @@
           <svg id="pic" xmlns="http://www.w3.org/2000/svg"></svg>
           <button class="max-btn" id="max" title="Full screen" aria-label="Full screen">⤢</button>
           <button class="mute-btn" id="mute" title="Music on or off" aria-label="Music on or off" hidden>🔊</button>
+          <button class="mfs-btn" id="music-fs" title="The music's controls, full screen" aria-label="The music's controls, full screen">🎚️</button>
           <button class="back-btn" id="back" hidden></button>
           <button class="hud-btn" id="hud-btn" title="Show the pinned controls" aria-label="Show the pinned controls" aria-pressed="false">🎛️</button>
           <button class="pad-btn" id="pad-btn" title="A controller on the screen: arrows and buttons to touch or click" aria-label="Show the on-screen controller" aria-pressed="false">🎮</button>
@@ -984,7 +1010,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.84", released: "2026-10-16" };
+const VERSION = { number: "0.0.85", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -13755,6 +13781,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     box.append(el("div", { class: "row" }, [down, ivBtn, up]));
     syncs.push(() => { ivBtn.textContent = "🎵 " + INTERVALS[iv()]; val.textContent = INTERVALS[iv()] + ` (${iv()} half step${iv() === 1 ? "" : "s"})`; });
   } else if (kind === "mixer") {
+    box.classList.add("mixctl");   // (its strips carry their own colours)
     mixerBox(box);
   } else if (kind === "transport") {
     transportBox(box);
@@ -13918,6 +13945,7 @@ function showTab() {
   tabs.replaceChildren(...TABS.map(([name], i) =>
     el("button", { "aria-pressed": i === tab, onclick: () => { tab = i; showTab(); } }, name)));
   const [, part, ctls] = TABS[tab];
+  panel.dataset.part = part;
   panel.replaceChildren(...ctls.map(c => control(part, c)));
   changed();
 }
@@ -14027,12 +14055,14 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !savePop.h
 // where the browser allows it (not an iPhone's); an X, Escape, or leaving
 // the browser's full screen brings the controls back.
 const maxBtn = document.getElementById("max");
-function setBig(on) {
+// (keepScreen: the music's full screen takes over, and the screen stays full)
+function setBig(on, keepScreen) {
   document.body.classList.toggle("big", on);
   if (!on) setHud(false);
   maxBtn.textContent = on ? "✕" : "⤢";
   maxBtn.title = on ? "Back to the controls" : "Full screen";
   maxBtn.setAttribute("aria-label", maxBtn.title);
+  if (keepScreen) return;
   try {
     if (on && document.documentElement.requestFullscreen && !document.fullscreenElement)
       document.documentElement.requestFullscreen().catch(() => {});
@@ -14045,11 +14075,26 @@ maxBtn.addEventListener("click", () => setBig(!document.body.classList.contains(
 // picture, the title and the other tabs hidden), and the screen where the
 // browser allows; ✕, Escape or leaving the browser's full screen bring the
 // game back.
+// (ticket 170, Matthew) It opens from the game's full screen too (🎚️, next
+// to the mute): then ✕ goes back there, the screen still full, the tab and
+// the HUD as they were; leaving the browser's full screen (leaving) goes
+// back to the game with its controls.
 const MUSIC_BIG = ["⛶ the music, full screen", "✕ back to the game"];
-function setMusicBig(on) {
+let musicFrom = null;
+function setMusicBig(on, leaving) {
+  const musicTab = TABS.findIndex(t => t[1] === "music");
+  if (on && document.body.classList.contains("big")) {
+    musicFrom = { tab, hud: !hud.hidden };
+    setBig(false, true);
+    if (tab !== musicTab) { tab = musicTab; showTab(); }
+  }
   document.body.classList.toggle("music-big", on);
   for (const b of document.querySelectorAll("button.musicbig")) b.textContent = MUSIC_BIG[on ? 1 : 0];
   if (on) document.querySelector(".side").scrollTop = 0;
+  const from = on ? null : musicFrom;
+  if (!on) musicFrom = null;
+  if (from && from.tab !== tab) { tab = from.tab; showTab(); }
+  if (from && !leaving) { setBig(true); if (from.hud) setHud(true); return; }
   try {
     if (on && document.documentElement.requestFullscreen && !document.fullscreenElement)
       document.documentElement.requestFullscreen().catch(() => {});
@@ -14062,7 +14107,7 @@ document.addEventListener("keydown", e => {
 });
 document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement && document.body.classList.contains("big")) setBig(false);
-  if (!document.fullscreenElement && document.body.classList.contains("music-big")) setMusicBig(false);
+  if (!document.fullscreenElement && document.body.classList.contains("music-big")) setMusicBig(false, true);
 });
 
 // ===================== THE HEADS-UP DISPLAY =====================
@@ -14116,6 +14161,7 @@ function setHud(on) {
   if (on) renderHud(); else { hud.replaceChildren(); hudSyncs = []; }
 }
 hudBtn.addEventListener("click", () => setHud(hud.hidden));
+document.getElementById("music-fs").addEventListener("click", () => setMusicBig(true));
 
 // ===================== SURPRISE, SAVE, START OVER =====================
 

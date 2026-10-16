@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.85 (2026-10-16)
+
+Everything in 0.0.84, plus the music's full screen from the game's, and a mixing board in colours.
+
+- **🎚️ the music, full screen, from the game's full screen** (Matthew): next to the 🔇 mute in the corner of the full-screen picture, it opens the 🎵 Music tab over the whole screen. ✕ goes back to the game's full screen, with the pinned controls as they were, and the screen stays full the whole way. From the Music tab, ✕ goes back to the game with its controls, as before.
+- **The LFOs are as wide as an instrument:** in the music's full screen, the whole tune's strip and the seven LFOs were half the screen wide each; now they take two of the board's columns, two rows tall, with the instruments beside them.
+- **Each part of the music tab has its own colour:** the tune, where it is, the volume and the other main controls in blue, the whole tune's strip in peach, the LFOs in lavender, and the instruments in mint. Pastels in light mode, dim colours in dark mode.
+
 ## 0.0.84 (2026-10-16)
 
 Everything in 0.0.83, plus the duck pond held still where it would be choppy.
