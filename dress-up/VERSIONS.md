@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.79 (2026-10-16)
+
+Everything in 0.0.78, plus the living room smooth to walk in, and the music full screen.
+
+- **Fixed:** walking in the 🛋️ living room was choppy (about 50 frames a second, worse on a slower computer): its framed pictures were each a whole place drawn live, every animation in them playing. Now the ⚙️ Advanced tab's "🎞️ moving pictures" covers every framed picture, not only the imagination's map, and is off to start: each picture is its place held still. The window above the couch still shows the lake moving outside.
+- **⛶ the music, full screen** (Matthew), first in the 🎵 Music tab: the tune, where it is, the kinds of music and the mixing board take the whole window, and the whole screen where the browser allows. "✕ back to the game", or Escape, brings the friend back.
+- **Fixed:** after ↺ Start over or 📂 Load, the controller on the screen had the usual game controller's buttons (✨ on L, crawling on R, run on X) instead of its own. Now it gets its own back.
+
 ## 0.0.78 (2026-10-16)
 
 Everything in 0.0.77, plus a ⚙️ Advanced tab, and 💭 our imagination smooth to walk in.

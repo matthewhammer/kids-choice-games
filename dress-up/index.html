@@ -73,6 +73,15 @@
   .lfo-chip { font-size: 0.75em; padding: 1px 8px; margin-left: auto; margin-right: 8px; }
   .ctl.master.mixed input, .ctl.master.mixed .name { opacity: 0.45; }
   .ctl.master.mixed .val { font-style: italic; color: var(--muted); }
+  /* (ticket 159) the 🎵 Music tab full screen: the tune, where it is, the
+     tunes and the mixing board take the whole window; the picture, the
+     title and the other tabs hidden until ✕, Escape or leaving full screen */
+  body.music-big { overflow: hidden; }
+  body.music-big .stage, body.music-big .divider, body.music-big .side > h1, body.music-big #tabs { display: none; }
+  body.music-big .side { position: fixed; inset: 0; z-index: 30; overflow: auto; background: var(--bg);
+                         padding: 12px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
+  body.music-big .mixer { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  body.music-big .touchpad { display: none; }   /* (no friend to move here) */
   /* (ticket 155) the ⚙️ advanced tab: a feature kept off until it is fast, a row each */
   .perfrow { border-top: 1px dashed var(--line); padding: 8px 0 4px; margin-top: 6px; }
   .perfrow .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -787,8 +796,11 @@ let state = clone(DEFAULTS);
 const PERF_FEATURES = [
   { id: "blur", label: "🌫️ soft blurs", what: "the soft edges in pictures on walls and in the imagination's map, the waterfall's mist and the leaves outside the cave (Gaussian blurs). Off, pictures are sharp and the mist is a soft gradient.",
     count: () => document.querySelectorAll("#bg feGaussianBlur").length + [...document.querySelectorAll('#bg image[href^="data:image/svg"]')].filter(i => i.getAttribute("href").includes("feGaussianBlur")).length, unit: ["blur", "blurs"] },
-  { id: "livePictures", label: "🎞️ moving pictures in the imagination's map", what: "the 22 pictures on the 💭 imagination's wall drawn live, each place's own animations playing. Off, each is the same place held still, as an image.",
-    count: () => state.background.kind === "imagination" ? document.querySelectorAll("#bg .portal > svg").length : 0, unit: ["picture drawn live", "pictures drawn live"] },
+  // (ticket 158: every framed picture, not only the imagination's: the living
+  // room's three held it to 49 frames a second dragging, 60 held still. A
+  // window's view of outside stays moving: it has no frame)
+  { id: "livePictures", label: "🎞️ moving pictures", what: "framed pictures drawn live, each place's own animations playing: on the walls of the living room, the healer's hut and the castle's rooms, and the 22 in the 💭 imagination's map. Off, each is that place held still, as an image. A window's view of outside moves either way.",
+    count: () => [...document.querySelectorAll("#bg .portal")].filter(p => p.querySelector(":scope > rect") && p.querySelector(":scope > svg")).length, unit: ["picture drawn live", "pictures drawn live"] },
 ];
 const PERF = Object.fromEntries(PERF_FEATURES.map(f => [f.id, false]));
 try { Object.assign(PERF, JSON.parse(localStorage.getItem("dress-up-perf") || "{}")); } catch (e) { /* (all off) */ }
@@ -874,7 +886,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.78", released: "2026-10-16" };
+const VERSION = { number: "0.0.79", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -4035,7 +4047,7 @@ const picturesSvg = (o, here, slots, scale, keyOf = i => "pic" + (i + 1)) => {
   const depth = (o.depth ?? 0) + 1, count = depth > 2 ? 0 : Math.min(slots.length, o.pictures ?? 3), detail = o.picDetail ?? 70;
   return slots.slice(0, count).map(([x, y, w], i) => {
     const chosen = o[keyOf(i)], kind = SCENES[chosen] || PICTURE_CHOICES.some(([kd]) => kd === chosen) ? chosen : PICTURE_KINDS[i];
-    return framedSvg(kind, detail, o, depth, x, y, w * scale);
+    return framedSvg(kind, detail, o, depth, x, y, w * scale, !PERF.livePictures);   // (ticket 158: held still unless moving pictures are on)
   }).join(SEP);
 };
 
@@ -12834,6 +12846,7 @@ const TABS = [
     ["padmap", "map", "🎮 game controller"],
   ]],
   ["🎵 Music", "music", [
+    ["musicbig", "big", "⛶ full screen"],
     ["flip", "mute", ["🔊 sound on: tap to mute", "🔇 muted: tap for sound"]],
     ["note", "now", nowPlaying],
     ["transport", "where", "⏯️ where the tune is"],
@@ -13313,6 +13326,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       box.hidden = !list.length;
     });
   }
+  // (ticket 159, Matthew) the music, full screen: this tab's controls take
+  // the whole window, and the screen where the browser allows (setMusicBig)
+  if (kind === "musicbig") box.append(el("button", { class: "musicbig", onclick: () => setMusicBig(!document.body.classList.contains("music-big")) },
+                                         document.body.classList.contains("music-big") ? MUSIC_BIG[1] : MUSIC_BIG[0]));
   // (ticket 155, Matthew) ⚙️ Advanced: the game's code on GitHub; its
   // version, and a newer one to change to (a phone hides the title, where
   // they are otherwise); the frame rate now; and the background features
@@ -13806,11 +13823,29 @@ function setBig(on) {
   } catch (e) { /* the window-filling picture is enough */ }
 }
 maxBtn.addEventListener("click", () => setBig(!document.body.classList.contains("big")));
+// (ticket 159, Matthew) The 🎵 Music tab full screen: what is playing, where
+// the tune is, the tunes and the mixing board take the whole window (the
+// picture, the title and the other tabs hidden), and the screen where the
+// browser allows; ✕, Escape or leaving the browser's full screen bring the
+// game back.
+const MUSIC_BIG = ["⛶ the music, full screen", "✕ back to the game"];
+function setMusicBig(on) {
+  document.body.classList.toggle("music-big", on);
+  for (const b of document.querySelectorAll("button.musicbig")) b.textContent = MUSIC_BIG[on ? 1 : 0];
+  if (on) document.querySelector(".side").scrollTop = 0;
+  try {
+    if (on && document.documentElement.requestFullscreen && !document.fullscreenElement)
+      document.documentElement.requestFullscreen().catch(() => {});
+    else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* the window-filling controls are enough */ }
+}
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && document.body.classList.contains("big")) setBig(false);
+  if (e.key === "Escape" && document.body.classList.contains("music-big")) setMusicBig(false);
 });
 document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement && document.body.classList.contains("big")) setBig(false);
+  if (!document.fullscreenElement && document.body.classList.contains("music-big")) setMusicBig(false);
 });
 
 // ===================== THE HEADS-UP DISPLAY =====================
@@ -14406,7 +14441,10 @@ function padPoll(t) {
   if (!g) { padName = ""; padDown = new Set(); padLast = 0; if (padMoving) { padMoving = false; changed(); } return; }
   padName = (g.id || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
   padMapping = g.mapping || "";
-  if ((g.id || padName) !== padId) padUse(g.id || padName);
+  // (and again when the settings are replaced: ↺ start over or 📂 load put
+  // the usual buttons back, and the on-screen controller kept the standard
+  // pad's layout, ✨ on L and crawling on R, instead of its own)
+  if ((g.id || padName) !== padId || padFor !== state.controls) padUse(g.id || padName);
   if (g === touchPad.pad) touchLabels();
   const dt = padLast ? Math.min(0.1, (t - padLast) / 1000) : 0;
   padLast = t;
@@ -14514,11 +14552,14 @@ window.addEventListener("gamepaddisconnected", () => { if (!padLoop) padLoop = r
 // (a pad's own layout, when the pad in use changes: the one kept by its id;
 // else the on-screen controller's own to start with; else, coming from the
 // on-screen one, the usual buttons)
+let padFor = null;   // (the settings padUse last put a layout into)
 function padUse(id) {
   const kept = padLayouts()[id], C = state.controls, like = L => Object.keys(L).every(a => C[a] === L[a]);
+  const fresh = padFor !== C;
+  padFor = C;
   if (kept) Object.assign(C, kept);
-  else if (id === TOUCH_ID) Object.assign(C, TOUCH_CONTROLS);
-  else if (padId === TOUCH_ID || like(TOUCH_CONTROLS)) Object.assign(C, DEFAULTS.controls);
+  else if (id === TOUCH_ID && (id !== padId || fresh)) Object.assign(C, TOUCH_CONTROLS);
+  else if (id !== TOUCH_ID && (padId === TOUCH_ID || like(TOUCH_CONTROLS))) Object.assign(C, DEFAULTS.controls);
   // (an action newer than the layout kept, as ticket 145's ✨: on its usual
   // button, unless another action has that one)
   const usual = id === TOUCH_ID ? TOUCH_CONTROLS : DEFAULTS.controls;
