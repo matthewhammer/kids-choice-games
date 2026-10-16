@@ -556,7 +556,10 @@ const DEFAULTS = {
            // (ticket 121) each limb's own pose, dragged in the picture: on
            // top of the sliders' turn and bend, by the friend's own side (L
            // their left, on our right)
-           poseArmL: 0, poseArmR: 0, poseElbowL: 0, poseElbowR: 0, poseLegL: 0, poseLegR: 0, poseKneeL: 0, poseKneeR: 0 },
+           poseArmL: 0, poseArmR: 0, poseElbowL: 0, poseElbowR: 0, poseLegL: 0, poseLegR: 0, poseKneeL: 0, poseKneeR: 0,
+           // (ticket 124) which way the friend faces (toward us, or in profile
+           // to our left or right), and whether they sit
+           facing: "front", sit: false },
   shirt: { style: "tee", collar: "v", width: 60, length: 150, color: "#5b8bd0", pattern: "plain",
            patternSize: 14, patternColor: "auto" },
   hands: { style: "round", different: false, size: 14, color: "skin", fingers: 5, alienFingers: 3, clawLen: 100, clawCount: 4, starPoints: 5, starAngle: 0,
@@ -8684,6 +8687,9 @@ const lfoStamp = L => { const lf = lfoNow(L); return lf ? [lf.dur.toFixed(4), lf
 // shoulder and bend at the elbow, each leg's at the hip and knee, in
 // degrees, added to the sliders' (which move both alike). By the friend's
 // own side: L is their left, on our right (side 1); R their right (side -1).
+// (ticket 124) which way the friend faces: 0 toward us, -1 in profile to our
+// left, 1 to our right
+const facingOf = B => B.facing === "left" ? -1 : B.facing === "right" ? 1 : 0;
 const POSE_KEYS = ["poseArmL", "poseArmR", "poseElbowL", "poseElbowR", "poseLegL", "poseLegR", "poseKneeL", "poseKneeR"];
 const poseOf = (B, what, side) => Number(B["pose" + what + (side > 0 ? "L" : "R")]) || 0;
 const posed = B => POSE_KEYS.some(k => Number(B[k]));
@@ -11092,6 +11098,8 @@ const TABS = [
     ["color", "color", "color", HAIRS],
   ]],
   ["🦒 Neck, arms & legs", "body", [
+    ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"]]],
+    ["toggle", "sit", "🪑 sitting"],
     ["range", "neck", "neck length", 0, 420, 4, 60],
     ["range", "neckW", "neck width", 2, 120, 12, 40],
     ["range", "arms", "arms (up ↔ down)", -180, 180, -75, 85],
