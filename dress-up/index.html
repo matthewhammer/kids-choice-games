@@ -797,7 +797,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.75", released: "2026-10-16" };
+const VERSION = { number: "0.0.76", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9604,9 +9604,15 @@ function wading(B, inner, wl, hw, most = Infinity, bob = 0, water = "") {
   const X = hw + 80, n = 2 * Math.ceil(X / 40), st = 2 * X / n;
   let line = `M-5000 ${f1(wl)} H${f1(-X)}`;
   for (let i = 0; i < n; i++) line += ` q${f1(st / 2)} ${i % 2 ? 8 : -8} ${f1(st)} 0`;
-  svg = `<mask id="water-line" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="10000" height="10000">` +
-        (see < 1 ? `<g fill="white" fill-opacity="${(1 - see).toFixed(2)}">${water}</g>` : "") +
-        `<path d="${line} H5000 V-5000 H-5000 Z" fill="white"/></mask><g mask="url(#water-line)">${svg}</g>`;
+  // (ticket 151) Two clipped copies, not a mask: the friend whole above the
+  // wave, and below it, only where the water is, faint (1 - see). A mask is
+  // drawn again offscreen, pixel by pixel, on every frame the friend moves:
+  // walking in the castle's moat at 1920 wide it held the page to 49 frames
+  // a second, and swimming in the duck pond to 52 (59 and 60 without it).
+  const body = svg;
+  svg = `<clipPath id="water-above"><path d="${line} H5000 V-5000 H-5000 Z"/></clipPath><g clip-path="url(#water-above)">${body}</g>` +
+        (see < 1 ? `<clipPath id="water-below"><path d="${line} H5000 V5000 H-5000 Z"/></clipPath><clipPath id="water-in">${water}</clipPath>` +
+                   `<g clip-path="url(#water-below)"><g clip-path="url(#water-in)"${see > 0 ? ` opacity="${(1 - see).toFixed(2)}"` : ""}>${body}</g></g>` : "");
   if (wake <= 0) return svg;
   // (three rings a third of the way apart, as flat as the pool's; the foam
   // in dashes, going round)
@@ -10472,7 +10478,11 @@ function draw() {
   const pic = document.getElementById("pic");
   // (kept as it was while a joint is held: the picture's frame growing
   // round a reaching hand would slide it out from under the finger)
-  if (!poseHeld) pic.setAttribute("viewBox", `${f1(left)} ${f1(top)} ${f1(width)} ${f1(bottom - top)}`);
+  // (ticket 151: only when it changes. Setting it, even to what it was,
+  // makes the browser paint the whole picture again, every drawing: walking
+  // in the castle at 1920 wide held 56 frames a second, 60 without)
+  const vb = `${f1(left)} ${f1(top)} ${f1(width)} ${f1(bottom - top)}`;
+  if (!poseHeld && pic.getAttribute("viewBox") !== vb) pic.setAttribute("viewBox", vb);
   // the scenery: the node parsed from it last time, if it has not changed
   // (a figure's slider redraws the figure, not the scene), and left where
   // it is: the rest is replaced around it. Taking it out and putting it

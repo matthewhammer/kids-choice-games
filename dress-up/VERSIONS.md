@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.76 (2026-10-16)
+
+Everything in 0.0.75, plus smooth walking in the castle's moat and swimming in the duck pond.
+
+- **Fixed:** walking or swimming in water was choppy on a big screen. In the 🏰 castle's moat the picture dropped to about 49 frames a second, and in the 🦆 duck pond to about 52 (Matthew found it walking round the castle with the controller). Now both stay at 60. The friend in the water looks the same as before: whole above the waterline, faint below it.
+- **Fixed:** the whole picture was painted again every time the friend moved, even where nothing had changed, which slowed walking in busy places like the castle.
+- Dragging the friend round the castle is a little smoother than before (about 49 frames a second, from 46), but not yet as smooth as the other places. That is next.
+
 ## 0.0.75 (2026-10-16)
 
 Everything in 0.0.74, plus climbing up to the imagination's pictures and going into them with X.
