@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.70 (2026-10-16)
+
+Everything in 0.0.69, plus jumping in water.
+
+- **🐸 The short jump, in deep water** (Matthew): like jumping for a ball in a pool: a quick dip, then up fast until their waist is out of the water, arms reaching up, and back in with a splash.
+- **🦘 The high jump, in deep water** (Matthew): turned to the side, a dolphin's dive: they sink a little, put their arms out in front of their head, leap out of the water in an arc head first, and dive back in a little way ahead, then come back up. Facing us or away, they shoot straight up out of the water, arms overhead, and drop back in.
+- Both make a splash where they leave the water and where they come back in, and both work with the game controller's jump buttons.
+
 ## 0.0.69 (2026-10-16)
 
 Everything in 0.0.68, plus a game controller that plays like a video game.

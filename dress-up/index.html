@@ -742,7 +742,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.69", released: "2026-10-16" };
+const VERSION = { number: "0.0.70", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9203,6 +9203,45 @@ function climbThrough() {
 let jumpStart = 0, jumpPrev = "none", jumpEnd = 0;
 const JUMP_TIMES = [0.24, 0.82, 1.12];
 const isJump = a => a === "jump" || a === "jumphigh";
+// (ticket 143) where they stand is deep water (not a shallow stream)
+const deepHere = () => { const W = state.background; return W.kind !== "none" && !SHALLOW_WATER[W.kind] && inWater(W, W.figX ?? 0, SCENE.ground + (W.figY ?? 0)); };
+// (ticket 143) The jumps in deep water, moving the friend inside the water's
+// mask (bob, a transform in their units: the waterline stays on the water),
+// over JUMP_TIMES as the jumps on land. The short one, as in a pool jumping
+// for a ball: a dip, up fast till the waist is out, the arms reaching up,
+// and back in. The high one, turned to the side, a dolphin's dive: sinking
+// a little, the arms going up in front of the head, out of the water in an
+// arc, head first, the body turning over (from leaning forward to head
+// down), in again ahead of where they left, and a roll back upright under
+// the water; endJump moves them on by as much (jumpAhead). Facing us or away,
+// the high one goes straight up and down, the arms overhead. A splash where
+// they leave the water and where they come back in (splash: where, how far on).
+let jumpAhead = 0;
+function waterJump(B, hi, t, H, dir, lean, both) {
+  const [c, f, l] = JUMP_TIMES, ease = x => x * x * (3 - 2 * x), Lb = state.shirt.length ?? 150;
+  const up = side => -90 - (B.arms ?? 0) - lean(side), straight = -(B.elbows ?? 0), mixA = (a, b, u) => a + (b - a) * u;
+  const splashAt = (x, t0) => t >= t0 && t < t0 + 0.32 ? { x, p: (t - t0) / 0.32 } : null;
+  if (hi && dir) {
+    const Hd = 1.2 * H, D = 0.9 * H;
+    let dy, angle, dx = 0, armsUp, legs = 0;
+    if (t < c) { const u = ease(t / c); dy = 18 * u; angle = 25 * u; armsUp = u; }
+    else if (t < f) { const u = (t - c) / (f - c); dy = 18 * (1 - u) + 40 * u - Hd * Math.sin(Math.PI * u); angle = 25 + 130 * u; dx = D * u; armsUp = 1; }
+    else { const u = ease((t - f) / (l - f)); dy = 40 * (1 - u); angle = 155 + 205 * u; dx = D; armsUp = 1 - u; legs = Math.sin(Math.PI * u); }
+    jumpAhead = dir * D;
+    return { ...both("Arm", sd => mixA(0, up(sd) + 4 * sd, armsUp)), ...both("Elbow", () => mixA(0, straight, armsUp)),
+             ...both("Leg", sd => 14 * legs * sd), ...both("Knee", () => 20 * legs), water: true, jump: true,
+             bob: `translate(${f1(dir * dx)} ${f1(dy)}) rotate(${f1(dir * angle)} 0 ${f1(Lb)})`, splash: splashAt(0, c + 0.05) || splashAt(dir * D, f - 0.06) };
+  }
+  jumpAhead = 0;
+  const Hs = hi ? 1.2 * H : 1.4 * H, reach = hi ? 1 : 0.85;
+  let dy, arms, knees;
+  if (t < c) { const u = ease(t / c); dy = 10 * u; arms = 0; knees = 40 * u; }
+  else if (t < f) { const u = (t - c) / (f - c); dy = 10 * (1 - u) - Hs * Math.sin(Math.PI * u); arms = Math.min(1, 2 * u) * reach; knees = 40 * (1 - u) + 25 * Math.sin(2 * Math.PI * u); }
+  else { const u = (t - f) / (l - f); dy = 12 * Math.sin(Math.PI * u); arms = reach * (1 - u); knees = 15 * Math.sin(Math.PI * u); }
+  return { ...both("Arm", sd => mixA(0, up(sd) + (hi ? 4 : 16) * sd, arms)), ...both("Elbow", () => mixA(0, hi ? straight : 12, arms)),
+           ...both("Leg", sd => 6 * sd), ...both("Knee", () => knees), water: true, jump: true,
+           bob: `translate(0 ${f1(dy)})`, splash: splashAt(0, c + 0.05) || splashAt(0, f - 0.04) };
+}
 function startJump(prev = "none", kind = "jump") {
   if (!isJump(prev)) jumpPrev = prev;
   jumpStart = performance.now();
@@ -9210,6 +9249,8 @@ function startJump(prev = "none", kind = "jump") {
 }
 function endJump() {
   jumpEnd = 0;
+  // (after a dolphin's dive, they are where they came back up: ticket 143)
+  if (jumpAhead) { const F = sceneFrame, BG = state.background; BG.figX = Math.round(clamp((BG.figX ?? 0) + jumpAhead * figureT.k, F.left, F.right)); jumpAhead = 0; }
   if (isJump(state.body.anim)) { state.body.anim = jumpPrev || "none"; changed(); }
 }
 function moveNow() {
@@ -9262,6 +9303,7 @@ function moveNow() {
     const t = (performance.now() - jumpStart) / 1000 * rate, [c, f, l] = JUMP_TIMES, ease = x => x * x * (3 - 2 * x);
     const H = Math.max(0, Number(hi ? B.jumpHighH ?? 90 : B.jumpShortH ?? 30) || 0) / 100 * (B.legLen ?? 140);
     if (t >= l) { if (!jumpEnd) jumpEnd = setTimeout(endJump, 0); return treadNow(); }
+    if (deepHere()) return waterJump(B, hi, t, H, dir, lean, both);
     let bend, arm, lift = 0;
     if (t < c) { const u = ease(t / c); bend = 0.8 * u; arm = 35 * u; }
     else if (t < f) { const u = (t - c) / (f - c); lift = H * 4 * u * (1 - u); bend = 0.8 * (1 - u) * (1 - u) + 0.35 * Math.sin(Math.PI * u); arm = 35 - 150 * Math.sin(Math.PI * Math.min(1, u * 1.6)); }
@@ -9308,7 +9350,8 @@ function moveNow() {
 function wading(B, inner, wl, hw, most = Infinity, bob = 0, water = "") {
   const see = Math.max(0, Math.min(100, Number(B.waterSee ?? 70) || 0)) / 100, wake = Math.max(0, Number(B.waterWake ?? 100) || 0) / 100;
   // (treading, the friend bobs in the water: they move, the waterline doesn't)
-  let svg = bob ? `<g transform="translate(0 ${f1(bob)})">${inner}</g>` : inner;
+  // (ticket 143: or a jump in the water, a whole transform)
+  let svg = typeof bob === "string" ? `<g transform="${bob}">${inner}</g>` : bob ? `<g transform="translate(0 ${f1(bob)})">${inner}</g>` : inner;
   // (white above the waterline, a bow each 40 or so across, 4 up or down;
   // below it, white only where the water is in the picture (`water`, its
   // shape round them), and faint, so they are faint there and hidden where
@@ -10149,6 +10192,14 @@ function draw() {
     const water = waterRuns(BG, bgText, Math.round(sx - R), Math.round(sx + R), Math.round(sy - 0.2 * R - 12), Math.round(sy + down))
       .map(([x, y, w]) => `<rect x="${f1((x - sx) / T.k)}" y="${f1((y - sy) / T.k + T.g)}" width="${f1(w / T.k)}" height="${f1(2 / T.k + 0.6)}"/>`).join("");
     svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), wl, hw, most, tread ? tread.bob : 0, water);
+    // (ticket 143) a splash where a jump leaves the water or comes back in:
+    // drops thrown up and out in a crown, falling and fading
+    if (tread && tread.splash) {
+      const { x, p } = tread.splash, r = hw + 10;
+      for (let i = 0; i < 9; i++) { const a = Math.PI * (0.1 + 0.8 * i / 8), sp = 40 + 50 * Math.abs(Math.sin(i * 1.7));
+        svg += `<circle cx="${f1(x + Math.cos(a) * (r * 0.6 + sp * p) * 1.3)}" cy="${f1(wl - Math.sin(a) * sp * 1.6 * p + 160 * p * p)}" r="${f1(6 - 3 * p)}" fill="#ffffff" opacity="${(0.9 * (1 - p)).toFixed(2)}"/>`; }
+      svg += `<ellipse cx="${f1(x)}" cy="${f1(wl)}" rx="${f1(r * (0.8 + 0.8 * p))}" ry="${f1(r * 0.16 * (0.8 + 0.8 * p))}" fill="none" stroke="#ffffff" stroke-width="5" opacity="${(0.9 * (1 - p)).toFixed(2)}"/>`;
+    }
   }
   svg += `</g>`;   // the figure
   // (ticket 136: the far leg first, see-through with the pants and the feet,
@@ -13916,8 +13967,8 @@ function padPoll(t) {
       changed();
     }
   }
-  if (hit("jumpShort") && !wet) { startJump(B.anim, "jump"); changed(); }
-  if (hit("jumpHigh") && !wet) { startJump(B.anim, "jumphigh"); changed(); }
+  if (hit("jumpShort")) { startJump(B.anim, "jump"); changed(); }
+  if (hit("jumpHigh")) { startJump(B.anim, "jumphigh"); changed(); }
   if (moving) {
     const sp = (PAD_SPEED[isJump(B.anim) ? jumpPrev : B.anim] ?? PAD_SPEED.none) * dt, F = sceneFrame;
     BG.figX = Math.round(10 * clamp((BG.figX ?? 0) + vx * sp, F.left, F.right)) / 10;
