@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.63 (2026-10-16)
+
+Everything in 0.0.62, plus the ladder seen from the side.
+
+- **🪜 climbing a ladder, from the side** (Matthew): with the friend turned to the left or to the right, the ladder they climb now stands in front of them, seen side on: its two rails nearly one behind the other, and each rung seen end on. Their hands reach forward and up for it, and each knee comes up to the next rung. (Before, it stood behind them as if they faced us.)
+
 ## 0.0.62 (2026-10-16)
 
 Everything in 0.0.61, plus legs that hug, and jumping up into a hug.

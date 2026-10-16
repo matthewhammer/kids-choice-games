@@ -729,7 +729,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.62", released: "2026-10-16" };
+const VERSION = { number: "0.0.63", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9117,6 +9117,14 @@ function moveNow() {
              ...both("Foot", () => -(180 - tilt)), rot: dir ? tilt * dir : 0 };
   }
   if (a === "climb") {
+    // (ticket 137) seen from the side, the ladder in front of them: a hand
+    // reaching up and forward for the next rung while the other pulls, the
+    // knee on its side coming up to the next rung, the rungs going down
+    if (dir) {
+      const s = sin(1), up = side => -52 - (B.arms ?? 0) - lean(side);
+      return { ...both("Arm", sd => up(sd) - 22 * sd * s), ...both("Elbow", sd => 6 + 14 * Math.max(0, -sd * s)),
+               ...both("Leg", sd => 8 + 36 * Math.max(0, sd * s)), ...both("Knee", sd => 16 + 62 * Math.max(0, sd * s)), lift: 5 * Math.abs(s), ladder: u };
+    }
     // (facing us on a ladder: a hand reaching up for the next rung while the
     // other pulls, the knee on its side lifting, the rungs going down)
     const s = sin(1), up = side => -80 - (B.arms ?? 0) - lean(side);
@@ -9511,7 +9519,16 @@ function draw() {
   }
   if (meanSeen > 0 && !wet && !rot) svg += `<ellipse cx="0" cy="${f1(ground + hugLift)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
   // (ticket 132) climbing: a ladder behind the friend, its rungs going down two a stride
-  if (move && move.ladder != null) {
+  // (ticket 137: seen from the side, the ladder stands in front of them,
+  // side on: its two rails nearly one behind the other, the far one a
+  // little farther on and darker, and each rung seen end on, a short stub
+  // between them)
+  if (move && move.ladder != null && dir) {
+    const x = dir * (hw + 20), x2 = x + dir * 9, top = -380, gap = 48, off = (move.ladder * 2 * gap) % gap;
+    let t = `<g class="ladder"><line x1="${f1(x2)}" y1="${top}" x2="${f1(x2)}" y2="${f1(ground + 6)}" stroke="#5e3f24" stroke-width="7" stroke-linecap="round"/>`;
+    for (let y = top + off; y < ground; y += gap) t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x2)}" y2="${f1(y)}" stroke="#9c6b3d" stroke-width="7" stroke-linecap="round"/>`;
+    svg += t + `<line x1="${f1(x)}" y1="${top}" x2="${f1(x)}" y2="${f1(ground + 6)}" stroke="#7a5230" stroke-width="9" stroke-linecap="round"/></g>`;
+  } else if (move && move.ladder != null) {
     const x = hw + 26, top = -380, gap = 48, off = (move.ladder * 2 * gap) % gap;
     let t = `<g class="ladder"><line x1="${f1(-x)}" y1="${top}" x2="${f1(-x)}" y2="${f1(ground + 6)}" stroke="#7a5230" stroke-width="9" stroke-linecap="round"/>` +
             `<line x1="${f1(x)}" y1="${top}" x2="${f1(x)}" y2="${f1(ground + 6)}" stroke="#7a5230" stroke-width="9" stroke-linecap="round"/>`;
