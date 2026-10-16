@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.53 (2026-10-15)
+
+Everything in 0.0.52, plus ears, and wings seen from the side.
+
+- **👂 Ears** (M asked for them): the friend has ears now, facing us and from the side, in their skin's color. Choose them in the face tab, "👂 ears": "lobe hanging free", "lobe attached", "🧝 elf or fairy, pointy", or "none"; "👂 ear size" makes them bigger or smaller. Long hair covers ears, but elf ears poke out through any hair. A costume's hood covers them.
+- **Wings seen from the side** (Matthew): turned sideways, a fairy's wings, and a falcon's or eagle's, are seen in perspective, spreading out behind the friend, the far wing just behind the near one. A bird suit's wings, along the arms, are seen nearly edge on.
+
 ## 0.0.52 (2026-10-15)
 
 Everything in 0.0.51, plus the friend turning sideways and sitting down.

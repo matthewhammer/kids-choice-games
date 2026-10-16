@@ -141,6 +141,10 @@ A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground 
 - a hood (`hoodSide`) covers the top and back, open in a rounded oval at the front, the animal's face on the brim on our side only; the hood's back and ears sit a little back;
 - a witch's hat bends back and its buckle, and her belt's, are seen edge on at her front.
 
+Wings in profile: wings on the back (a fairy's, a falcon's or eagle's) are turned away from us (`turnedAway`): only the half that spread behind them, narrowed to 0.42, out from the back of the shoulders, the far wing a copy a little behind and above, shaded; a bird suit's wings along the arms are drawn nearly edge on (`armWing`'s `edge` 0.3). Matthew: wings seen from the side should be in perspective, or edge on, never flat.
+
+**Ears** (ticket 125, M's). `face.ears` ("none", "free", "attached", "elf"; "free" to start) and `face.earSize`; `earSvg(kind, k, color, x0, y, s)` draws one in the face's units, its base at x0 on the head, sticking out to side s, in the skin's color with a curl for the rim. Facing us they stick out at the sides at the eyes' height, behind the head: under long hair, which covers them, but over shorter hair, and an elf's always over the hair, so its tips poke through. In profile the same shape shows on the side of the head (`sideHair`'s `ear`), unless long hair covers it. Hoods hide them.
+
 Sitting (`legBase`): facing us, the thighs come toward us and are drawn short (0.3), the shins straight down, with a crease across each pants knee (two round knees in pants looked like a seat, Matthew said) or round bare knees; in profile the thighs go forward, level, and the shins hang down. The pose (121) adds to these, and posing works in profile and sitting (`poseTo` uses each limb's `out`, the sitting angles and the short thigh). Contact sheets: `~/du-shots/tools/figsheet.py <out.png> <cols> '<[state setters]>'` (headless Firefox, the friend alone, framed to them).
 
 **Castles.**

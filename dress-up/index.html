@@ -550,7 +550,8 @@ const DEFAULTS = {
            lightX: -0.6, lightY: -0.6, shine: "#ffffff", shineMix: 100, shineSize: 45,
            pupil: "#000000", iris: 0, irisColor: "#3b82f6", whites: 0, oval: 0, tilt: 0,
            faceW: 100, faceH: 100, alien: 0, eyeGap: 38, noseView: "none", nose: "L", noseFront: "round", noseW: 100, noseH: 100,
-           witchDir: "right", witchLen: 100, mouthSize: 100 },
+           witchDir: "right", witchLen: 100, mouthSize: 100,
+           ears: "free", earSize: 100 },   // (ticket 125, M's: ears, their shape and size)
   hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100 },
   body:  { neck: 22, neckW: 26, arms: 55, elbows: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0,
            // (ticket 121) each limb's own pose, dragged in the picture: on
@@ -1583,6 +1584,23 @@ function topFlies(F) {
 // (with parts, its three layers apart: what is under the eyes, the eyes,
 // and what is over them -- the nose, brows and mouth -- each to be made
 // see-through on its own; see VISIBILITY)
+// (ticket 125) An ear, in the face's units, `k` times the usual size, in the
+// skin's color: its base on the head at x0, sticking out to side s (1 our
+// right, -1 our left), its middle at height y. "free": a round top, the lobe
+// hanging free below the head's line; "attached": the lobe running straight
+// into the head; "elf": pointing up and out to a tip, the lobe free. A curl
+// inside, the ear's rim.
+function earSvg(kind, k, color, x0, y, s) {
+  const w = 28 * k, h = 50 * k, P = (u, v) => f1(x0 + s * u * w) + " " + f1(y + v * h);
+  const lobe = kind === "attached" ? `Q${P(0.95, 0.25)} ${P(0.6, 0.4)} Q${P(0.35, 0.5)} ${P(0, 0.52)}`
+                                   : `Q${P(0.95, 0.25)} ${P(0.65, 0.38)} Q${P(0.55, 0.62)} ${P(0.3, 0.58)} Q${P(0.12, 0.52)} ${P(0.15, 0.36)} L${P(0, 0.3)}`;
+  const top = kind === "elf" ? `M${P(0, -0.38)} Q${P(0.35, -0.55)} ${P(1.4, -1.1)} Q${P(1.1, -0.45)} ${P(1.0, -0.05)}`
+                             : `M${P(0, -0.45)} Q${P(0.15, -0.62)} ${P(0.6, -0.6)} Q${P(1.05, -0.55)} ${P(1.0, -0.1)}`;
+  const curl = kind === "elf" ? `M${P(0.32, -0.3)} Q${P(0.85, -0.55)} ${P(0.75, 0)} Q${P(0.7, 0.2)} ${P(0.45, 0.28)}`
+                              : `M${P(0.3, -0.35)} Q${P(0.75, -0.4)} ${P(0.72, 0)} Q${P(0.7, 0.2)} ${P(0.45, 0.28)}`;
+  return `<path d="${top} ${lobe} Z" fill="${color}" stroke="black" stroke-width="3" stroke-linejoin="round"/>` +
+         `<path d="${curl}" fill="none" stroke="${darker(color)}" stroke-width="2.5" stroke-linecap="round"/>`;
+}
 function faceSvg(F, ground, parts = false, dir = 0) {
   const b = F.burst, k = F.candy, r = F.rays, o = F.open;
   const rayLen = r === 0 ? 0 : idiv((15 + idiv(r * 6, 10)) * b, 100);
@@ -2014,7 +2032,7 @@ function tailSvg(C, kind, hw, L) {
 // edge, from the shoulder A to the hand H, and flight feathers trail on
 // the side that faces down, longest in the middle, with long primaries
 // past the hand. It moves with the arm, as the arms slider moves it.
-function armWing(C, { A, H, side }, armW) {
+function armWing(C, { A, H, side }, armW, edge = 1) {
   const len = Math.hypot(H[0] - A[0], H[1] - A[1]) || 1;
   const ux = (H[0] - A[0]) / len, uy = (H[1] - A[1]) / len;
   // the trailing side: whichever perpendicular points more downward (or,
@@ -2022,8 +2040,10 @@ function armWing(C, { A, H, side }, armW) {
   let nx = -uy, ny = ux;
   if (ny < -0.15 || (Math.abs(ny) <= 0.15 && nx * side < 0)) { nx = -nx; ny = -ny; }
   const Q = (t, d) => [A[0] + ux * t + nx * d, A[1] + uy * t + ny * d];
-  const lead = armW / 2 + 6, ext = len * 0.75, total = len + ext, D = len * 0.55 + 26;
-  const depth = t => 12 + D * Math.pow(Math.sin(Math.PI * Math.min(1, t / total)), 0.8);
+  // (ticket 124: seen from the side, `edge` below 1, the wing is turned
+  // nearly edge on: its feathers' depth and its reach past the hand less)
+  const lead = armW / 2 + 6, ext = len * 0.75 * (edge < 1 ? 0.55 : 1), total = len + ext, D = (len * 0.55 + 26) * edge;
+  const depth = t => 12 * Math.max(edge, 0.5) + D * Math.pow(Math.sin(Math.PI * Math.min(1, t / total)), 0.8);
   const k = 8, feathers = [];
   for (let i = 0; i <= k; i++) {
     const t = total * (1 - i / k) * 0.97;
@@ -9050,13 +9070,24 @@ function draw() {
   // behind everything: a falcon's wings and tail, or a suit's tail
   // (a bald eagle's: plain dark brown wings and a white tail)
   // (wings go with the shirt, the body; a tail with the pants, the hips)
-  if (kind === "falcon") svg += veil("shirt", falconWings(C, w)) + veil("pants", falconTail(C, hw, L, LL));
-  else if (kind === "eagle") svg += veil("shirt", falconWings(C, w, C.fur)) + veil("pants", falconTail(C, hw, L, LL, C.belly));
+  // (ticket 124: in profile, wings on the back are seen turned away from us,
+  // in perspective: the near wing, the half that spreads behind them,
+  // narrowed to under half, out from the back of the shoulders, and the far
+  // one a little behind and above it, shaded; the half that spread toward
+  // the face is hidden)
+  const turnedAway = t => {
+    if (!dir) return t;
+    const half = `<clipPath id="wings-back"><rect x="${dir > 0 ? -4000 : 0}" y="-4000" width="4000" height="8000"/></clipPath><g clip-path="url(#wings-back)">${t}</g>`;
+    return `<g transform="translate(${f1(-dir * (w * 0.55 + 10))} -10) scale(0.42 1)" opacity="0.8">${half.replace('id="wings-back"', 'id="wings-back-far"').replace("url(#wings-back)", "url(#wings-back-far)")}</g>` +
+           `<g transform="translate(${f1(-dir * w * 0.55)} 0) scale(0.42 1)">${half}</g>`;
+  };
+  if (kind === "falcon") svg += veil("shirt", turnedAway(falconWings(C, w))) + veil("pants", falconTail(C, hw, L, LL));
+  else if (kind === "eagle") svg += veil("shirt", turnedAway(falconWings(C, w, C.fur))) + veil("pants", falconTail(C, hw, L, LL, C.belly));
   else if (kind === "falconsuit") svg += veil("pants", falconTail(C, hw, L, LL, "url(#pat-fur)"));
   else if (kind === "eaglesuit") svg += veil("pants", falconTail(C, hw, L, LL, C.belly));
   // (a suit's tail swings out to our right; in profile, out behind them)
   else if (suit) svg += veil("pants", dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L));
-  else if (fairy) svg += veil("shirt", fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo));
+  else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
 
   // legs, then shoes, then pants over both: long pants cover a boot's top
   // (the legs are the pants' to see through: invisible pants are
@@ -9250,6 +9281,15 @@ function draw() {
   if (suit && kind !== "eaglesuit")  // the suit's belly (a bald eagle is brown all over)
     svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>`;
   veilFrom("shirt", bodyAt);
+  // (ticket 125) the ears, facing us: out at the sides of the head at the
+  // eyes' height, behind the head; under long hair, which covers them, but
+  // over shorter hair, and an elf's poke out through any hair
+  const earsOn = F.ears && F.ears !== "none" && !C, earK = (F.earSize ?? 100) / 100;
+  const earsFront = () => { const ey = faceLayout(F).eyeY + 10, [xl, xr] = acrossAt(headPoints(F), ey);
+    return veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
+                        earSvg(F.ears, earK, F.color, xl + 6, ey, -1) + earSvg(F.ears, earK, F.color, xr - 6, ey, 1) + `</g>`); };
+  const longHair = state.hair.style === "long" || (state.hair.style === "curly" && hairLen(state.hair) > 1.05);
+  if (earsOn && !dir && longHair && F.ears !== "elf") svg += earsFront();
   // the hair, in the face's frame: over the body and shirt, but under the
   // arms, which are drawn again over it (long or curly hair hangs beside
   // them), and behind the head (its front, the bangs, comes again over the
@@ -9260,7 +9300,8 @@ function draw() {
            (side ? `<g transform="${topFlies(F)}">${tucked(side.back, "under-hat")}</g></g>`
                  : `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairSvg(state.hair), "under-hat")}</g></g></g>`));
 
-  if (winged) svg += veil("shirt", arms.map(arm => armWing(C, arm, armW)).join(""));
+  if (earsOn && !dir && !(longHair && F.ears !== "elf")) svg += earsFront();
+  if (winged) svg += veil("shirt", arms.map(arm => dir ? armWing(C, arm, armW, 0.3) : armWing(C, arm, armW)).join(""));
 
   // the face, in its own units
   const groundInFace = (ground - ty) / s;
@@ -9293,10 +9334,10 @@ function draw() {
     const brows = mi < 0 ? rest : rest.slice(0, mi), mouth = mi < 0 ? "" : rest.slice(mi);
     const lips = `<defs><clipPath id="face-far"><rect x="${dir > 0 ? -4000 : 100}" y="-4000" width="4100" height="8000"/></clipPath></defs>` +
                  `<g transform="translate(${f1(dir * (edge - 4))} 0)"><g clip-path="url(#face-far)">${mouth}</g></g>`;
-    const earAt = C ? null : side ? side.ear : [100 - dir * 0.12 * 80 * headWidth(F), HEAD_C + 5];
-    const earSvg = earAt ? `<ellipse cx="${f1(earAt[0])}" cy="${f1(earAt[1])}" rx="10" ry="14" fill="${F.color}" stroke="black" stroke-width="3"/>` +
-                           `<path d="M${f1(earAt[0] + dir * 3)} ${f1(earAt[1] - 7)} q${f1(-dir * 6)} 7 0 14" fill="none" stroke="black" stroke-width="2"/>` : "";
-    svg += veil("head", inFace(face.under + earSvg)) + veil("eyes", inFace(near(face.eyes).replace('id="face-near"', 'id="face-near-e"').replace("url(#face-near)", "url(#face-near-e)"))) +
+    // (the ear, as chosen, seen whole: its front edge toward the face, its rim toward the back)
+    const earAt = !earsOn ? null : side ? side.ear : [100 - dir * 0.12 * 80 * headWidth(F), HEAD_C + 5];
+    const earSide = earAt ? earSvg(F.ears, earK, F.color, earAt[0] + dir * 8 * earK, earAt[1], -dir) : "";
+    svg += veil("head", inFace(face.under + earSide)) + veil("eyes", inFace(near(face.eyes).replace('id="face-near"', 'id="face-near-e"').replace("url(#face-near)", "url(#face-near-e)"))) +
            veil("head", inFace(near(brows) + lips + nose));
   }
   // and the front of the hair over them all: the bangs (on the lid, when
@@ -11240,6 +11281,8 @@ const TABS = [
     ["choice", "noseView", "👃 nose", [["none", "none"], ["right", "side, L →"], ["left", "side, ← backwards L"], ["front", "front"], ["witch", "🧙 witch, warts"]]],
     ["choice", "nose", "side shape", [["L", "L"], ["angle", "<"], ["soft", "soft"], ["hook", "bulbous"]]],
     ["choice", "noseFront", "front shape", [["pointed", "pointed"], ["round", "round"]]],
+    ["choice", "ears", "👂 ears", [["none", "none"], ["free", "lobe hanging free"], ["attached", "lobe attached"], ["elf", "🧝 elf or fairy, pointy"]]],
+    ["range", "earSize", "👂 ear size", 30, 250, 70, 140],
     ["choice", "witchDir", "🧙 witch nose points", [["left", "L ←"], ["center", "C"], ["right", "R →"]]],
     ["range", "witchLen", "🧙 witch nose length", 30, 400, 70, 200],
     ["range", "noseH", "nose height", 20, 300, 70, 150],
@@ -11641,6 +11684,7 @@ function el(tag, attrs = {}, kids = []) {
 const SHOWN_WHEN = {
   "body.unpose": posed,
   "face.irisColor": f => f.iris > 0,
+  "face.earSize": f => !!f.ears && f.ears !== "none",
   "face.nose": f => f.noseView === "right" || f.noseView === "left",
   "face.noseFront": f => f.noseView === "front",
   "face.witchDir": f => f.noseView === "witch",
