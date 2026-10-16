@@ -100,6 +100,9 @@
   .padrow { display: flex; gap: 8px; align-items: center; padding: 2px 6px; border-radius: 8px; }
   .padrow .pbtn { min-width: 15em; }
   .padrow .pwhich { min-width: 10em; color: var(--muted); }
+  .padteach { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; padding: 6px 8px; border-radius: 8px; outline: 2px solid #8b5cf6; }
+  .padask { font-weight: bold; }
+  .padline { width: 100%; max-width: 46em; font: inherit; font-size: 0.85em; margin: 4px 0; }
   .padrow.down { outline: 2px solid #8b5cf6; background: color-mix(in srgb, #8b5cf6 14%, transparent); }
   /* the figure's place in its scene: the stage in small, the figure a box */
   svg.place { display: block; width: 100%; max-width: 240px; height: auto; touch-action: none; cursor: crosshair;
@@ -715,7 +718,10 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 // "standard" numbers (0 the bottom face button, 1 the right, 2 the left, 3 the
 // top, 8 select, 9 start): on a SNES-style pad A (right) the short jump, B
 // (bottom) the high one, X (top) run, Y (left) crouch. (The arrows walk.)
-DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, back: 8, door: 9 };
+// (ticket 146) R (5, the right shoulder) turns crawling on or off. A pad
+// taught its buttons (🎓 in the Controls tab) keeps its own layout, by its
+// name, in localStorage["dress-up-pads"], put back whenever it connects.
+DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9 };
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 let state = clone(DEFAULTS);
 try {
@@ -742,7 +748,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.72", released: "2026-10-16" };
+const VERSION = { number: "0.0.73", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -12983,7 +12989,15 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       rows.append(row);
       return [a, which, learn, row];
     });
-    box.append(status, how, rows, down, el("button", { onclick: () => { padLearn = null; Object.assign(state[part], DEFAULTS.controls); changed(); } }, "↺ the usual buttons"));
+    // (ticket 146) 🎓 teach me your controller: press each button as asked
+    const ask = el("div", { class: "padteach" }), line = el("input", { type: "text", readonly: "", class: "padline", onfocus: e => e.target.select() });
+    const copy = el("button", { onclick: () => { line.select(); try { navigator.clipboard.writeText(line.value).then(() => { copy.textContent = "📋 copied"; }, () => document.execCommand("copy")); } catch (e) { document.execCommand("copy"); } } }, "📋 copy");
+    const teach = el("button", { onclick: () => { padLearn = null; padTeach = { step: 0, got: {} }; copy.textContent = "📋 copy"; changed(); } }, "🎓 teach me your controller");
+    const skip = el("button", { onclick: () => { if (padTeach && !padTeach.done) { if (++padTeach.step >= PAD_TEACH.length) padTaught(); changed(); } } }, "skip: it has none");
+    const stop = el("button", { onclick: () => { padTeach = null; changed(); } }, "stop");
+    const askText = el("span", { class: "padask" }), done = el("div", { class: "hint" }, [line, copy]);
+    ask.append(askText, skip, stop);
+    box.append(status, how, teach, ask, done, rows, down, el("button", { onclick: () => { padLearn = null; padTeach = null; Object.assign(state[part], DEFAULTS.controls); padKeep(); changed(); } }, "↺ the usual buttons"));
     syncs.push(() => {
       for (const [a, which, learn, row] of rowsOf) {
         const i = state[part][a];
@@ -12993,7 +13007,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       }
       status.textContent = padName ? `🎮 ${padName}: ready${padMapping === "standard" ? "" : " (its buttons are numbered its own way: set them with 🎯 if they are not where you want)"}.`
                                    : "🎮 No game controller yet: plug one in (USB) or pair it, then press one of its buttons.";
-      down.textContent = padName ? "held now: " + ([...padDown].map(padButtonName).join(", ") || "nothing") : "";
+      down.textContent = padName ? "held now: " + ([...padDown].map(padButtonName).join(", ") || "nothing") + (padCrawl ? " · 🐛 crawling is on" : "") : "";
+      const teaching = !!padTeach && !padTeach.done;
+      teach.hidden = !padName || teaching;
+      ask.hidden = !teaching;
+      if (teaching) askText.textContent = `🎓 ${padTeach.step + 1} of ${PAD_TEACH.length}: press ${PAD_TEACH[padTeach.step][1]}`;
+      done.hidden = !(padTeach && padTeach.done);
+      if (padTeach && padTeach.done) line.value = padTeach.line;
     });
   }
   if (kind === "action") {
@@ -13980,7 +14000,29 @@ function flyInto(box, arrive) {
 // nor while they are up a place's ladder. Polled each frame while a pad is
 // connected, never without one.
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
-                     ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest doorway"]];
+                     ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
+                     ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest doorway"]];
+// (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
+// this order. Then A is the short jump, B the high one, X kept free (for
+// what comes next), Y crouch, R crawling on or off, select back, start the
+// nearest doorway; run stays on the button it had (Matthew: "perfect"),
+// taking it from any other that also wanted it.
+const PAD_TEACH = [["B", "B, the bottom button"], ["A", "A, the right one"], ["X", "X, the top one"], ["Y", "Y, the left one"],
+                   ["L", "L, the left shoulder"], ["R", "R, the right shoulder"], ["select", "select"], ["start", "start"]];
+let padId = "", padTeach = null, padCrawl = false;
+const padLayouts = () => { try { return JSON.parse(localStorage.getItem("dress-up-pads") || "{}") || {}; } catch (e) { return {}; } };
+function padKeep() {
+  if (!padId) return;
+  try { const all = padLayouts(); all[padId] = Object.fromEntries(PAD_ACTIONS.map(([a]) => [a, state.controls[a] ?? -1])); localStorage.setItem("dress-up-pads", JSON.stringify(all)); } catch (e) { /* (kept for this visit only) */ }
+}
+function padTaught() {
+  const G = padTeach.got, C = state.controls, run = C.run, at = k => (Number.isInteger(G[k]) ? G[k] : -1);
+  Object.assign(C, { jumpShort: at("A"), jumpHigh: at("B"), crouch: at("Y"), crawlToggle: at("R"), back: at("select"), door: at("start") });
+  for (const [a] of PAD_ACTIONS) if (a !== "run" && C[a] === run && run >= 0) C[a] = -1;
+  padTeach = { done: true, got: G, line: `${padId || padName} (${padMapping === "standard" ? "standard numbers" : "its own numbers"}): ` +
+    PAD_TEACH.map(([k]) => `${k}=${at(k)}`).join(", ") + `, run=${run}` };
+  padKeep();
+}
 const PAD_PLACES = ["bottom", "right", "left", "top", "left shoulder", "right shoulder", "left trigger", "right trigger", "select", "start", "left stick", "right stick", "up", "down", "left", "right", "home"];
 const padButtonName = i => !(i >= 0) ? "—" : padMapping === "standard" && PAD_PLACES[i] ? `${PAD_PLACES[i]} (button ${i})` : `button ${i}`;
 const PAD_SPEED = { none: 160, walk: 90, run: 230, crawl: 55, swim: 70, swimfast: 150, crouch: 0 };
@@ -13991,6 +14033,7 @@ function padPoll(t) {
   if (!g) { padName = ""; padDown = new Set(); padLast = 0; if (padMoving) { padMoving = false; changed(); } return; }
   padName = (g.id || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
   padMapping = g.mapping || "";
+  padId = g.id || padName;
   const dt = padLast ? Math.min(0.1, (t - padLast) / 1000) : 0;
   padLast = t;
   const now = new Set(g.buttons.map((b, i) => (b.pressed ? i : -1)).filter(i => i >= 0));
@@ -14001,12 +14044,20 @@ function padPoll(t) {
   // learning a button: the next one pressed is the action's (and no other's)
   if (padLearn && pressed.length) {
     for (const [a] of PAD_ACTIONS) if (C[a] === pressed[0]) C[a] = -1;
-    C[padLearn] = pressed[0]; padLearn = null; changed();
+    C[padLearn] = pressed[0]; padLearn = null; padKeep(); changed();
+    padLoop = requestAnimationFrame(padPoll); return;
+  }
+  // (ticket 146) teaching the pad: each button pressed is the next one asked for
+  if (padTeach && !padTeach.done && pressed.length) {
+    padTeach.got[PAD_TEACH[padTeach.step][0]] = pressed[0];
+    if (++padTeach.step >= PAD_TEACH.length) padTaught();
+    changed();
     padLoop = requestAnimationFrame(padPoll); return;
   }
   const btn = a => Number.isInteger(C[a]) && C[a] >= 0 ? C[a] : -2, held = a => now.has(btn(a)), hit = a => pressed.includes(btn(a));
   if (hit("back")) { if (!backBtn.hidden) backBtn.click(); }
   if (hit("door")) padDoor();
+  if (hit("crawlToggle")) { padCrawl = !padCrawl; padWant = null; }   // (ticket 146: on or off; arrows then crawl)
   // the arrows, or the left stick past its dead middle (at most one step a frame's worth, diagonals too)
   const stick = v => (Math.abs(v ?? 0) > 0.25 ? v : 0);
   let vx = clamp((now.has(15) ? 1 : 0) - (now.has(14) ? 1 : 0) + stick(g.axes[0]), -1, 1), vy = clamp((now.has(13) ? 1 : 0) - (now.has(12) ? 1 : 0) + stick(g.axes[1]), -1, 1);
@@ -14015,7 +14066,7 @@ function padPoll(t) {
   const onLadder = B.anim === "climbup" && climb && !climb.none;
   const moving = !!(vx || vy) && BG.kind !== "none" && !entering && !drag && !onLadder;
   const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
-  const run = held("run"), low = held("crouch");
+  const run = held("run"), low = held("crouch") || padCrawl;
   const want = moving ? (low ? (wet ? "swim" : "crawl") : wet ? (run ? "swimfast" : "swim") : run ? "run" : "walk") : low && !wet ? "crouch" : "none";
   if (isJump(B.anim)) jumpPrev = want;   // (landing into what they are told now)
   else if (want !== padWant && !onLadder) {
@@ -14066,6 +14117,10 @@ function padDoor() {
 window.addEventListener("gamepadconnected", e => {
   padName = ((e.gamepad && e.gamepad.id) || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
   padMapping = (e.gamepad && e.gamepad.mapping) || "";
+  padId = (e.gamepad && e.gamepad.id) || padName;
+  // (ticket 146: a pad taught its buttons gets its own layout back)
+  const kept = padLayouts()[padId];
+  if (kept) Object.assign(state.controls, kept);
   if (!padLoop) padLoop = requestAnimationFrame(padPoll);
   changed();
 });

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.73 (2026-10-16)
+
+Everything in 0.0.72, plus teaching the game your controller.
+
+- **🎓 teach me your controller** (Matthew), in the 🎮 Controls tab: the game asks you to press B, A, X, Y, L, R, select and start, one at a time (skip any your controller doesn't have). Then they're set up like a SNES game: A a short jump, B a high jump, Y crouch, R crawling on or off, select back, start through the nearest doorway, and X kept free for something new. Run stays where it was. A line shows your controller's button numbers, with a 📋 copy button. The game remembers each controller's buttons by its name, and puts them back whenever you plug it in.
+- **🐛 crawling on or off** with one press (R): then the arrows crawl, and standing still they crouch. Press it again to stand up.
+
 ## 0.0.72 (2026-10-16)
 
 Everything in 0.0.71, plus the witch's places smooth again.
