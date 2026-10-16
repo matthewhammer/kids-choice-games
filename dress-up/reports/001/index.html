@@ -1,0 +1,2386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>60 Frames a Second</title>
+<style>
+  :root { --bg: #fbfaf7; --paper: #ffffff; --ink: #1f2328; --muted: #5b6470; --line: #e3e0d8; --accent: #6d28d9; --soft: #cbbcf0; --good: #15803d; --bad: #b91c1c; --link: #1d4ed8; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --good: #4ade80; --bad: #f87171; --link: #93c5fd; } }
+  :root[data-theme="dark"] { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --good: #4ade80; --bad: #f87171; --link: #93c5fd; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 2em; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 1.35em; margin: 48px 0 10px; padding-top: 8px; border-top: 2px solid var(--line); }
+  p, li { max-width: 72ch; }
+  .series { color: var(--muted); margin: 0 0 6px; font-size: 0.92em; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .headline { background: var(--paper); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 6px; }
+  .headline ol > li { margin: 8px 0; }
+  a { color: var(--link); text-underline-offset: 2px; }
+  a.ref code, code { font-size: 0.9em; }
+  code { background: color-mix(in srgb, var(--line) 50%, transparent); padding: 0 4px; border-radius: 4px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 18px 0; }
+  .kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .kpi .v { font-size: 1.7em; font-weight: 700; } .kpi .l { color: var(--muted); font-size: 0.9em; }
+  .good { color: var(--good); } .bad { color: var(--bad); }
+  figure { margin: 18px 0; } figcaption { color: var(--muted); font-size: 0.9em; margin-top: 6px; max-width: 72ch; }
+  svg.chart { width: 100%; height: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; }
+  svg.chart .grid { stroke: var(--line); } svg.chart .limit { stroke: var(--bad); stroke-dasharray: 4 3; }
+  svg.chart .tick { fill: var(--muted); font-size: 11px; } svg.chart .limitlabel { fill: var(--bad); }
+  svg.chart .lab { fill: var(--ink); font-size: 12px; }
+  svg.chart .b0 { fill: var(--soft); } svg.chart .b1 { fill: var(--accent); }
+  svg.chart .val0 { fill: var(--muted); font-size: 10px; } svg.chart .val1 { fill: var(--ink); font-size: 11px; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92em; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; } td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.yes { color: var(--good); text-align: center; } td.no { color: var(--muted); text-align: center; }
+  .scroll { overflow-x: auto; }
+  .note { color: var(--muted); font-size: 0.9em; }
+  ol.steps { list-style: none; padding-left: 0; } ol.steps li { margin: 12px 0; border-left: 3px solid var(--line); padding-left: 12px; }
+  .stepnum a { font-weight: 700; text-decoration: none; }
+  button.tk, button.theme { font: inherit; font-size: 0.8em; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; }
+  button.theme { position: fixed; top: 10px; right: 10px; }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../001/"><code><b>^du_report(</b>1<b>)</b></code></a> · 2026-10-16 · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, a game made with M and N</p>
+<h1>60 frames a second, and what checks it</h1>
+<p class="sub">Does Messed Up Dress Up hold 60 frames a second for what a game controller does in a place? How much of that do our tests check, and where do they run? From Matthew's rule, made on 2026-10-16 after the castle and 💭 our imagination dropped frames: "The priority is 60 FPS at all times, for all actions that a game controller does in the scene."</p>
+
+<div class="headline" id="answers">
+<p><b>Short answers.</b> Measured with the frame-rate gate (<a href="#method">below</a>) at 1920×1080 on Matthew's laptop, in headless Chrome; each figure the median of three runs.</p>
+<ol>
+<li><b>Where we measure, yes: every case holds 59.3 to 60 frames a second on 0.0.78</b> (<a href="https://github.com/matthewhammer/kids-choice-games/commit/fce3163"><code>fce3163</code></a>): walking and dragging the friend in seven places. On 0.0.75, the same screen, 4 of the 10 cases in the first five places fell below 55, the lowest the castle drag at 45.8; and 💭 our imagination managed 18 on 0.0.77 (<a href="#where">results</a>, <a href="#how">what it took</a>).</li>
+<li><b>What we measure is narrow: 2 of the 8 kinds of controller action, in 7 of the 24 places (the castle's rooms and the tree house's count as one each).</b> Running, crouching and crawling, the jumps, climbing, going through doors and into pictures, and the on-screen controller are not measured yet (<a href="#coverage">coverage</a>).</li>
+<li><b>None of it runs in CI.</b> The repository has no workflows; GitHub only deploys the site. The gate runs by hand on Matthew's laptop before each release. A frame rate on a shared runner would mean little, but a count of what costs, per place, would not depend on the machine, and could fail a build (<a href="#ci">CI</a>).</li>
+<li><b>What costs is kept off by default.</b> Two things a background can draw, Gaussian blurs and the imagination's 22 pictures drawn live, are now settings in the game's ⚙️ Advanced tab, off until they can be made fast; on, walking in the imagination drops from 60 to 33 frames a second (<a href="#settings">settings</a>). The slow computer the kids use, the black laptop, is not measured yet (<a href="#slow">the slow computer</a>).</li>
+</ol>
+</div>
+
+<div class="kpis">
+<div class="kpi"><div class="v good">14 of 14</div><div class="l">gate cases at 55 frames a second or more on 0.0.78 (lowest 59.3)</div></div>
+<div class="kpi"><div class="v">18 → 59.7</div><div class="l">frames a second walking in 💭 our imagination, 0.0.77 → 0.0.78</div></div>
+<div class="kpi"><div class="v">2 of 8</div><div class="l">kinds of controller action measured, in 7 of 24 places</div></div>
+<div class="kpi"><div class="v bad">0</div><div class="l">tests that run in CI</div></div>
+</div>
+
+<figure id="fig-1">
+<svg viewBox="0 0 790 434" role="img" aria-labelledby="f1t" class="chart"><title id="f1t">Frames a second for each scene and action: before the fixes and on 0.0.78</title>
+<line x1="250.0" y1="28" x2="250.0" y2="408" class="grid"/><text x="250.0" y="424" class="tick" text-anchor="middle">0</text>
+<line x1="362.0" y1="28" x2="362.0" y2="408" class="grid"/><text x="362.0" y="424" class="tick" text-anchor="middle">15</text>
+<line x1="474.0" y1="28" x2="474.0" y2="408" class="grid"/><text x="474.0" y="424" class="tick" text-anchor="middle">30</text>
+<line x1="586.0" y1="28" x2="586.0" y2="408" class="grid"/><text x="586.0" y="424" class="tick" text-anchor="middle">45</text>
+<line x1="698.0" y1="28" x2="698.0" y2="408" class="grid"/><text x="698.0" y="424" class="tick" text-anchor="middle">60</text>
+<line x1="660.7" y1="24" x2="660.7" y2="408" class="limit"/><text x="660.7" y="18" class="tick limitlabel" text-anchor="middle">55: the gate</text>
+<text x="242" y="49" class="lab" text-anchor="end">🏰 outside the castle, walk</text>
+<rect x="250" y="36" width="363.6" height="8" class="b0"/><text x="617.6" y="44" class="val0">48.7 (0.0.75)</text>
+<rect x="250" y="45" width="442.8" height="11" class="b1"/><text x="696.8" y="55" class="val1">59.3</text>
+<text x="242" y="75" class="lab" text-anchor="end">🏰 outside the castle, drag</text>
+<rect x="250" y="62" width="342.0" height="8" class="b0"/><text x="596.0" y="70" class="val0">45.8 (0.0.75)</text>
+<rect x="250" y="71" width="448.0" height="11" class="b1"/><text x="702.0" y="81" class="val1">60</text>
+<text x="242" y="101" class="lab" text-anchor="end">🧙 outside the witch&#x27;s house, walk</text>
+<rect x="250" y="88" width="448.0" height="8" class="b0"/><text x="702.0" y="96" class="val0">60 (0.0.75)</text>
+<rect x="250" y="97" width="448.0" height="11" class="b1"/><text x="702.0" y="107" class="val1">60</text>
+<text x="242" y="127" class="lab" text-anchor="end">🧙 outside the witch&#x27;s house, drag</text>
+<rect x="250" y="114" width="415.1" height="8" class="b0"/><text x="669.1" y="122" class="val0">55.6 (0.0.75)</text>
+<rect x="250" y="123" width="442.8" height="11" class="b1"/><text x="696.8" y="133" class="val1">59.3</text>
+<text x="242" y="153" class="lab" text-anchor="end">🧙 inside the witch&#x27;s hut, walk</text>
+<rect x="250" y="140" width="448.0" height="8" class="b0"/><text x="702.0" y="148" class="val0">60 (0.0.75)</text>
+<rect x="250" y="149" width="448.0" height="11" class="b1"/><text x="702.0" y="159" class="val1">60</text>
+<text x="242" y="179" class="lab" text-anchor="end">🧙 inside the witch&#x27;s hut, drag</text>
+<rect x="250" y="166" width="448.0" height="8" class="b0"/><text x="702.0" y="174" class="val0">60 (0.0.75)</text>
+<rect x="250" y="175" width="448.0" height="11" class="b1"/><text x="702.0" y="185" class="val1">60</text>
+<text x="242" y="205" class="lab" text-anchor="end">🌿 inside the healer&#x27;s house, walk</text>
+<rect x="250" y="192" width="448.0" height="8" class="b0"/><text x="702.0" y="200" class="val0">60 (0.0.75)</text>
+<rect x="250" y="201" width="448.0" height="11" class="b1"/><text x="702.0" y="211" class="val1">60</text>
+<text x="242" y="231" class="lab" text-anchor="end">🌿 inside the healer&#x27;s house, drag</text>
+<rect x="250" y="218" width="448.0" height="8" class="b0"/><text x="702.0" y="226" class="val0">60 (0.0.75)</text>
+<rect x="250" y="227" width="448.0" height="11" class="b1"/><text x="702.0" y="237" class="val1">60</text>
+<text x="242" y="257" class="lab" text-anchor="end">🦆 swimming in the duck pond, walk</text>
+<rect x="250" y="244" width="386.0" height="8" class="b0"/><text x="640.0" y="252" class="val0">51.7 (0.0.75)</text>
+<rect x="250" y="253" width="448.0" height="11" class="b1"/><text x="702.0" y="263" class="val1">60</text>
+<text x="242" y="283" class="lab" text-anchor="end">🦆 swimming in the duck pond, drag</text>
+<rect x="250" y="270" width="408.4" height="8" class="b0"/><text x="662.4" y="278" class="val0">54.7 (0.0.75)</text>
+<rect x="250" y="279" width="448.0" height="11" class="b1"/><text x="702.0" y="289" class="val1">60</text>
+<text x="242" y="309" class="lab" text-anchor="end">🔲 the empty room, walk</text>
+<rect x="250" y="296" width="448.0" height="8" class="b0"/><text x="702.0" y="304" class="val0">60 (0.0.77)</text>
+<rect x="250" y="305" width="448.0" height="11" class="b1"/><text x="702.0" y="315" class="val1">60</text>
+<text x="242" y="335" class="lab" text-anchor="end">🔲 the empty room, drag</text>
+<rect x="250" y="322" width="448.0" height="8" class="b0"/><text x="702.0" y="330" class="val0">60 (0.0.77)</text>
+<rect x="250" y="331" width="448.0" height="11" class="b1"/><text x="702.0" y="341" class="val1">60</text>
+<text x="242" y="361" class="lab" text-anchor="end">💭 our imagination, walk</text>
+<rect x="250" y="348" width="134.4" height="8" class="b0"/><text x="388.4" y="356" class="val0">18 (0.0.77)</text>
+<rect x="250" y="357" width="445.8" height="11" class="b1"/><text x="699.8" y="367" class="val1">59.7</text>
+<text x="242" y="387" class="lab" text-anchor="end">💭 our imagination, drag</text>
+<rect x="250" y="374" width="129.9" height="8" class="b0"/><text x="383.9" y="382" class="val0">17.4 (0.0.77)</text>
+<rect x="250" y="383" width="445.8" height="11" class="b1"/><text x="699.8" y="393" class="val1">59.7</text>
+</svg>
+<figcaption>Figure 1. Frames a second for each place and action: the thin pale bar before the fixes (0.0.75 for the first five places, 0.0.77 for the empty room and the imagination, which joined the gate later), the thick bar on 0.0.78. The dashed line is the gate's 55. The empty room was new in 0.0.77, already at 60.</figcaption>
+</figure>
+
+<h2 id="where">Where it stands</h2>
+<p>The gate on 0.0.78 (<a href="https://github.com/matthewhammer/kids-choice-games/commit/fce3163"><code>fce3163</code></a>), at 1920×1080. The figure is the median of three runs; the runs, the 95th-percentile gap between frames (16.7 ms is a frame at 60), and the game's own drawing time are beside it. The game's drawing takes 1 to 3 ms in every case: when frames are lost, the browser's painting is the cost, not the game's code.</p>
+<div class="scroll"><table>
+<tr><th>Place</th><th>Action</th><th>Frames a second</th><th>Runs</th><th>95th-percentile gap (ms)</th><th>A drawing (ms)</th></tr>
+<tr><td>🏰 outside the castle</td><td>walk</td><td class="n">59.3</td><td class="n">59.3, 57.7, 59.7</td><td class="n">16.8 / 16.8 / 16.8</td><td class="n">1.51 / 1.42 / 1.5</td></tr><tr><td>🏰 outside the castle</td><td>drag</td><td class="n">60</td><td class="n">60, 60, 60</td><td class="n">16.7 / 16.7 / 16.8</td><td class="n">1.63 / 1.57 / 1.7</td></tr><tr><td>🧙 outside the witch&#x27;s house</td><td>walk</td><td class="n">60</td><td class="n">60, 60, 60</td><td class="n">16.8 / 16.7 / 16.8</td><td class="n">1.1 / 1 / 1.03</td></tr><tr><td>🧙 outside the witch&#x27;s house</td><td>drag</td><td class="n">59.3</td><td class="n">59.3, 59.3, 60</td><td class="n">16.8 / 16.7 / 16.8</td><td class="n">1.51 / 1.36 / 1.2</td></tr><tr><td>🧙 inside the witch&#x27;s hut</td><td>walk</td><td class="n">60</td><td class="n">60, 60, 60</td><td class="n">16.7 / 16.7 / 16.7</td><td class="n">1.25 / 1.23 / 1.15</td></tr><tr><td>🧙 inside the witch&#x27;s hut</td><td>drag</td><td class="n">60</td><td class="n">60, 60, 60</td><td class="n">16.7 / 16.7 / 16.8</td><td class="n">1.35 / 1.2 / 1.41</td></tr><tr><td>🌿 inside the healer&#x27;s house</td><td>walk</td><td class="n">60</td><td class="n">60, 60, 60</td><td class="n">16.8 / 16.7 / 16.7</td><td class="n">1.64 / 1.51 / 1.6</td></tr><tr><td>🌿 inside the healer&#x27;s house</td><td>drag</td><td class="n">60</td><td class="n">60, 60, 60</td><td class="n">16.8 / 16.7 / 16.7</td><td class="n">1.61 / 1.68 / 1.75</td></tr><tr><td>🦆 swimming in the duck pond</td><td>walk</td><td class="n">60</td><td class="n">60, 59.7, 60</td><td class="n">16.7 / 16.7 / 16.7</td><td class="n">1.79 / 1.83 / 1.96</td></tr><tr><td>🦆 swimming in the duck pond</td><td>drag</td><td class="n">60</td><td class="n">60, 60, 60</td><td class="n">16.8 / 16.7 / 16.7</td><td class="n">2.14 / 1.99 / 1.93</td></tr><tr><td>🔲 the empty room</td><td>walk</td><td class="n">60</td><td class="n">60, 60, 60</td><td class="n">16.7 / 16.7 / 16.8</td><td class="n">1.83 / 1.87 / 1.82</td></tr><tr><td>🔲 the empty room</td><td>drag</td><td class="n">60</td><td class="n">60, 60, 60</td><td class="n">16.7 / 16.7 / 16.8</td><td class="n">1.97 / 2.08 / 1.89</td></tr><tr><td>💭 our imagination</td><td>walk</td><td class="n">59.7</td><td class="n">57.7, 59.7, 60</td><td class="n">16.8 / 16.7 / 16.7</td><td class="n">1.37 / 1.45 / 1.59</td></tr><tr><td>💭 our imagination</td><td>drag</td><td class="n">59.7</td><td class="n">59, 59.7, 60</td><td class="n">16.8 / 16.8 / 16.7</td><td class="n">1.62 / 1.67 / 1.68</td></tr>
+</table></div>
+
+<h2 id="how">How it got here</h2>
+<p>Each cause was found the same way: freeze or hide one thing at a time and measure again, then trace what was left. Three kinds of thing cost frames, and none of them was the game's code:</p>
+<div class="scroll"><table>
+<tr><th>Place</th><th>Before (walk / drag)</th><th>0.0.78</th><th>What it took</th><th>Version</th></tr>
+<tr><td>🏰 outside the castle</td><td class="n">48.7 / 45.8 (0.0.75)</td><td class="n">59.3 / 60</td><td>The friend in the moat was drawn through an SVG mask (the water's), which the browser draws again offscreen on every frame they move: now two clipped copies of the friend. The picture's <code>viewBox</code> was written on every drawing, unchanged, which made the browser paint the whole picture again: now only when it changes. Facing us, the friend's arms were drawn over the hair and face through another mask: now a clip.</td><td>0.0.76 <a href="https://github.com/matthewhammer/kids-choice-games/commit/8d81a39"><code>8d81a39</code></a>, 0.0.77 <a href="https://github.com/matthewhammer/kids-choice-games/commit/5c77b16"><code>5c77b16</code></a></td></tr>
+<tr><td>🦆 swimming in the duck pond</td><td class="n">51.7 / 54.7 (0.0.75)</td><td class="n">60 / 60</td><td>The water's mask, as in the moat.</td><td>0.0.76 <a href="https://github.com/matthewhammer/kids-choice-games/commit/8d81a39"><code>8d81a39</code></a></td></tr>
+<tr><td>🧙 outside the witch's house</td><td class="n">60 / 55.6 (0.0.75)</td><td class="n">60 / 59.3</td><td>The arms' mask, as in the castle.</td><td>0.0.77 <a href="https://github.com/matthewhammer/kids-choice-games/commit/5c77b16"><code>5c77b16</code></a></td></tr>
+<tr><td>💭 our imagination</td><td class="n">18 / 17.4 (0.0.77)</td><td class="n">59.7 / 59.7</td><td>Its map holds 22 pictures of whole places: 7,728 of its 8,080 shapes, 197 animations and 24 Gaussian blurs. Hiding them gave 59 frames a second; taking out the blurs alone, 25; drawing each picture still, as an image, and blurs off, 60. Both are now settings, off by default.</td><td>0.0.78 <a href="https://github.com/matthewhammer/kids-choice-games/commit/fce3163"><code>fce3163</code></a></td></tr>
+<tr><td>🧙 inside the witch's hut, 🌿 inside the healer's house</td><td class="n">60 / 60 (0.0.75)</td><td class="n">60 / 60</td><td>Already smooth. In the gate because Matthew named them: the hut's cauldron fumes held it to 20 to 33 frames a second until 0.0.72.</td><td></td></tr>
+</table></div>
+
+<h2 id="coverage">Coverage</h2>
+<p>What the gate measures today, by controller action and place. The places are the ones that have had trouble: Matthew named the first five, and the empty room and the imagination joined with the imagination's slowness. Following his call to grow coverage slowly, a place joins when it shows trouble, and the next actions to add are in <a href="#next">What next</a>.</p>
+<div class="scroll"><table>
+<tr><th>Action</th><th>🏰 outside the castle</th><th>🧙 outside the witch&#x27;s house</th><th>🧙 inside the witch&#x27;s hut</th><th>🌿 inside the healer&#x27;s house</th><th>🦆 swimming in the duck pond</th><th>🔲 the empty room</th><th>💭 our imagination</th><th>the other 17 places</th></tr>
+<tr><td>walk (arrows)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅ (swims)</td><td class="yes">✅</td><td class="yes">✅</td><td class="no">—</td></tr><tr><td>drag (mouse)</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="yes">✅</td><td class="no">—</td></tr><tr><td>run (held, with an arrow)</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr><tr><td>crouch, crawl</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr><tr><td>the two jumps</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr><tr><td>climbing a ladder by hand</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr><tr><td>through a door, ✨ into a picture, back</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr><tr><td>the on-screen controller (touch)</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+</table></div>
+<p>Other checks, not about frame rates, also run before a release: the sweep, which draws every place, castle room and costume and compares each drawing's hash with the last release's, so a change can't alter a drawing unnoticed; a dump of the settings and their rules; and checks of single features (the on-screen controller with several fingers at once, climbing and the picture that glows). A change to how the friend is drawn is compared with the last release pixel by pixel.</p>
+
+<h2 id="ci">What runs in CI</h2>
+<p><b>Nothing yet.</b> The repository has no workflows: the one thing GitHub runs is its own deployment of the site, on every push. The gate and every other check run by hand on Matthew's laptop before each release, and their tools live outside the repository.</p>
+<p>A frame rate measured in CI would not say much: GitHub's runners are shared and have no graphics card, and their speed varies from run to run, so a laptop's 60 is not a runner's. What could run in CI and mean the same everywhere is a count of what costs. Each kind of cost above is a countable thing in the drawing: masks on the friend, blurs, shapes drawn live in pictures, animations of a CSS property. A budget per place, counted at its defaults, would fail a build the moment a new mask or blur arrived on a path the friend moves through, before anyone felt it. Beside it, the drawings' checks can fail a build too, being exact, and the frame-rate gate can run on a runner as information, kept but not failing; the gate that fails stays the laptop's, before release.</p>
+
+<h2 id="settings">The settings kept off until they are fast</h2>
+<p>In the game's ⚙️ Advanced tab since 0.0.78, each off unless switched on, on that computer only. Switched on, each says how many it draws in the place; 📏 <i>measure here</i> walks the friend for 2 seconds with it off and 2 with it on, and says what each managed. Matthew: "Each time we find some feature of the background that's threatening our FPS being 60 at all times, let's make it optional, and off by default, and add to the advanced panel in a similar way."</p>
+<div class="scroll"><table>
+<tr><th>Setting</th><th>What it draws</th><th>What it cost, measured</th></tr>
+<tr><td>🌫️ soft blurs</td><td>Gaussian blurs: the pictures' soft edges, the waterfall's mist, the leaves outside the cave. Off, pictures are sharp and the mist is a soft gradient.</td><td>In the imagination with its pictures drawn live (0.0.77): walking, 25.5 frames a second without them, 18 with them (one run each).</td></tr>
+<tr><td>🎞️ moving pictures in the imagination's map</td><td>The map's 22 pictures drawn live, each place's animations playing. Off, each is that place held still, as an image.</td><td>Walking in the imagination, with 📏 in the game: 60 frames a second off, 33 on (1.2 and 1.4 ms a drawing; one run each, 1400×900).</td></tr>
+</table></div>
+
+<h2 id="slow">The slow computer</h2>
+<p>The kids also play on the black laptop, N's old one, where 💭 our imagination was too slow to walk in on 0.0.76, while walking with no background was fine. The gate runs on Matthew's much faster laptop and does not stand in for it yet. Chrome can slow a page's main thread (throttling) and can be started with a single thread for painting, which together come closer to an old computer; the gate has a slow mode for that, not yet set to match the black laptop. The surest measure is the black laptop itself: the ⚙️ Advanced tab's meter and 📏 run there with nothing to install.</p>
+
+<h2 id="next">What next</h2>
+<ol class="steps"><li id="step-1"><span class="stepnum"><a href="#step-1">1.</a></span> Add <b>running</b>, <b>the two jumps</b> and <b>climbing a ladder by hand</b> to the gate, in the places it already covers (climbing in 💭 our imagination, where the ladders are). Running changes more of the picture each frame than walking; a jump lifts the friend through more of it. <button class="tk" data-step="1">copy for a ticket</button></li><li id="step-2"><span class="stepnum"><a href="#step-2">2.</a></span> Measure on <b>the black laptop</b> itself, with the ⚙️ Advanced tab's meter and 📏 <i>measure here</i> in each covered place, then set the gate's slow mode (Chrome's CPU throttling and one raster thread) until it gives the same numbers, so the gate can stand in for it. <button class="tk" data-step="2">copy for a ticket</button></li><li id="step-3"><span class="stepnum"><a href="#step-3">3.</a></span> <b>Cost budgets that CI can run:</b> for each place at its defaults, count the masks, blurs, SMIL animations of CSS properties, and shapes drawn live, and fail when one goes over its budget (no masks on the friend, no blurs by default). They do not depend on the machine, so they can fail a build. <button class="tk" data-step="3">copy for a ticket</button></li><li id="step-4"><span class="stepnum"><a href="#step-4">4.</a></span> Move the test tools into the repository and add a workflow: the budgets and the drawings' checks (the sweep, the structure dump) failing the build, the frame-rate gate recorded alongside, not failing. <button class="tk" data-step="4">copy for a ticket</button></li><li id="step-5"><span class="stepnum"><a href="#step-5">5.</a></span> Cover <b>touch</b>: the on-screen controller's arrows and buttons, held and tapped, in the covered places (a phone's or tablet's screen size). <button class="tk" data-step="5">copy for a ticket</button></li></ol>
+
+<h2 id="method">How this was put together</h2>
+<p>The gate is <code>fpsgate.mjs</code> (a copy in <a href="https://github.com/matthewhammer/kids-choice-games/tree/main/dress-up/reports/001/drivers"><code>001/drivers/</code></a>), run against the game's own file in headless Chromium 155 started muted, at 1920×1080, on Matthew's laptop, with nothing else heavy running. For each place it loads the page once, sets the place from the game's defaults with the music muted, and runs a warm-up walk and drag, then three of each:</p>
+<ul>
+<li><b>walk:</b> a fake standard game controller (a Gamepad-shaped object the game reads as it reads a real one) holds ▶ for 1.5 s, then ◀ for 1.5 s;</li>
+<li><b>drag:</b> mouse events sent through the DevTools protocol press on the middle of the friend's body (facing us, so the press is not on an arm) and move right and back over 3 s, a move every 8 ms.</li>
+</ul>
+<p>Frames are counted with <code>requestAnimationFrame</code> while the friend moves; a run's frames a second is the count over the time; a case's figure is the median of three runs, and it passes at 55 or more. The game's <code>draw()</code> is timed around each call. Causes were found with the gate's <code>TWEAK</code> (code run in the page before the runs, to freeze, hide or remove one thing at a time) and with <code>dragtrace.mjs</code>, which sums a Chrome performance trace of one walk or drag by thread and event, with Chrome's reasons for each invalidation. One run per variant was used to find causes; the figures in this report are the median-of-three gate runs.</p>
+<p>The data is here twice: embedded in this page as JSON (<code>&lt;script type="application/json" id="report-data"&gt;</code> at its end: every gate run's raw readings, the versions and commits, and what each measure is), and as the gate's own files in <a href="https://github.com/matthewhammer/kids-choice-games/tree/main/dress-up/reports/001/data"><code>001/data/</code></a>. The 0.0.77 run of the empty room and the imagination wrote no file; its numbers are copied from the gate's printed output, and its file says so. The page is made by <code>001/drivers/make.py</code> from those files.</p>
+<p class="note">Builds: 0.0.75 <a href="https://github.com/matthewhammer/kids-choice-games/commit/bdc744f"><code>bdc744f</code></a>, 0.0.76 <a href="https://github.com/matthewhammer/kids-choice-games/commit/8d81a39"><code>8d81a39</code></a>, 0.0.77 <a href="https://github.com/matthewhammer/kids-choice-games/commit/5c77b16"><code>5c77b16</code></a>, 0.0.78 <a href="https://github.com/matthewhammer/kids-choice-games/commit/fce3163"><code>fce3163</code></a>.</p>
+</main>
+<script type="application/json" id="report-data">{
+ "report": 1,
+ "series": "Dress Up reports",
+ "title": "60 frames a second, and what checks it",
+ "date": "2026-10-16",
+ "question": "Does Messed Up Dress Up hold 60 frames a second for what a game controller does in a place, and how much of that do our tests check, and where do they run?",
+ "builds": {
+  "0.0.74": "17f21e0",
+  "0.0.75": "bdc744f",
+  "0.0.76": "8d81a39",
+  "0.0.77": "5c77b16",
+  "0.0.78": "fce3163"
+ },
+ "repo": "https://github.com/matthewhammer/kids-choice-games",
+ "measure": {
+  "tool": "fpsgate.mjs (copy in 001/drivers/)",
+  "browser": "headless Chromium 155, muted, on Matthew's laptop (Linux)",
+  "screen": "1920x1080, device pixel ratio 1",
+  "walk": "a fake standard game controller holds the right arrow 1.5 s, then the left 1.5 s",
+  "drag": "real mouse events (DevTools Input.dispatchMouseEvent) hold the friend's body and move them right and back over 3 s, a move every 8 ms",
+  "fps": "frames the page drew while the friend moved (requestAnimationFrame gaps), over the time; a case's figure is the median of 3 runs on one page load, after a warm-up",
+  "pass": "median >= 55",
+  "draw_ms": "the game's own draw() per drawing, mean of a run",
+  "p95_gap_ms": "95th percentile gap between frames, per run"
+ },
+ "rows": [
+  {
+   "scene": "castle",
+   "label": "🏰 outside the castle",
+   "kind": "walk",
+   "before": 48.7,
+   "before_version": "0.0.75",
+   "after": 59.3,
+   "after_runs": [
+    59.3,
+    57.7,
+    59.7
+   ],
+   "p95_gap_ms": [
+    16.8,
+    16.8,
+    16.8
+   ],
+   "draw_ms": [
+    1.51,
+    1.42,
+    1.5
+   ]
+  },
+  {
+   "scene": "castle",
+   "label": "🏰 outside the castle",
+   "kind": "drag",
+   "before": 45.8,
+   "before_version": "0.0.75",
+   "after": 60,
+   "after_runs": [
+    60,
+    60,
+    60
+   ],
+   "p95_gap_ms": [
+    16.7,
+    16.7,
+    16.8
+   ],
+   "draw_ms": [
+    1.63,
+    1.57,
+    1.7
+   ]
+  },
+  {
+   "scene": "witch",
+   "label": "🧙 outside the witch's house",
+   "kind": "walk",
+   "before": 60,
+   "before_version": "0.0.75",
+   "after": 60,
+   "after_runs": [
+    60,
+    60,
+    60
+   ],
+   "p95_gap_ms": [
+    16.8,
+    16.7,
+    16.8
+   ],
+   "draw_ms": [
+    1.1,
+    1,
+    1.03
+   ]
+  },
+  {
+   "scene": "witch",
+   "label": "🧙 outside the witch's house",
+   "kind": "drag",
+   "before": 55.6,
+   "before_version": "0.0.75",
+   "after": 59.3,
+   "after_runs": [
+    59.3,
+    59.3,
+    60
+   ],
+   "p95_gap_ms": [
+    16.8,
+    16.7,
+    16.8
+   ],
+   "draw_ms": [
+    1.51,
+    1.36,
+    1.2
+   ]
+  },
+  {
+   "scene": "witchroom",
+   "label": "🧙 inside the witch's hut",
+   "kind": "walk",
+   "before": 60,
+   "before_version": "0.0.75",
+   "after": 60,
+   "after_runs": [
+    60,
+    60,
+    60
+   ],
+   "p95_gap_ms": [
+    16.7,
+    16.7,
+    16.7
+   ],
+   "draw_ms": [
+    1.25,
+    1.23,
+    1.15
+   ]
+  },
+  {
+   "scene": "witchroom",
+   "label": "🧙 inside the witch's hut",
+   "kind": "drag",
+   "before": 60,
+   "before_version": "0.0.75",
+   "after": 60,
+   "after_runs": [
+    60,
+    60,
+    60
+   ],
+   "p95_gap_ms": [
+    16.7,
+    16.7,
+    16.8
+   ],
+   "draw_ms": [
+    1.35,
+    1.2,
+    1.41
+   ]
+  },
+  {
+   "scene": "healerroom",
+   "label": "🌿 inside the healer's house",
+   "kind": "walk",
+   "before": 60,
+   "before_version": "0.0.75",
+   "after": 60,
+   "after_runs": [
+    60,
+    60,
+    60
+   ],
+   "p95_gap_ms": [
+    16.8,
+    16.7,
+    16.7
+   ],
+   "draw_ms": [
+    1.64,
+    1.51,
+    1.6
+   ]
+  },
+  {
+   "scene": "healerroom",
+   "label": "🌿 inside the healer's house",
+   "kind": "drag",
+   "before": 60,
+   "before_version": "0.0.75",
+   "after": 60,
+   "after_runs": [
+    60,
+    60,
+    60
+   ],
+   "p95_gap_ms": [
+    16.8,
+    16.7,
+    16.7
+   ],
+   "draw_ms": [
+    1.61,
+    1.68,
+    1.75
+   ]
+  },
+  {
+   "scene": "lake",
+   "label": "🦆 swimming in the duck pond",
+   "kind": "walk",
+   "before": 51.7,
+   "before_version": "0.0.75",
+   "after": 60,
+   "after_runs": [
+    60,
+    59.7,
+    60
+   ],
+   "p95_gap_ms": [
+    16.7,
+    16.7,
+    16.7
+   ],
+   "draw_ms": [
+    1.79,
+    1.83,
+    1.96
+   ]
+  },
+  {
+   "scene": "lake",
+   "label": "🦆 swimming in the duck pond",
+   "kind": "drag",
+   "before": 54.7,
+   "before_version": "0.0.75",
+   "after": 60,
+   "after_runs": [
+    60,
+    60,
+    60
+   ],
+   "p95_gap_ms": [
+    16.8,
+    16.7,
+    16.7
+   ],
+   "draw_ms": [
+    2.14,
+    1.99,
+    1.93
+   ]
+  },
+  {
+   "scene": "emptyroom",
+   "label": "🔲 the empty room",
+   "kind": "walk",
+   "before": 60,
+   "before_version": "0.0.77",
+   "after": 60,
+   "after_runs": [
+    60,
+    60,
+    60
+   ],
+   "p95_gap_ms": [
+    16.7,
+    16.7,
+    16.8
+   ],
+   "draw_ms": [
+    1.83,
+    1.87,
+    1.82
+   ]
+  },
+  {
+   "scene": "emptyroom",
+   "label": "🔲 the empty room",
+   "kind": "drag",
+   "before": 60,
+   "before_version": "0.0.77",
+   "after": 60,
+   "after_runs": [
+    60,
+    60,
+    60
+   ],
+   "p95_gap_ms": [
+    16.7,
+    16.7,
+    16.8
+   ],
+   "draw_ms": [
+    1.97,
+    2.08,
+    1.89
+   ]
+  },
+  {
+   "scene": "imagination",
+   "label": "💭 our imagination",
+   "kind": "walk",
+   "before": 18,
+   "before_version": "0.0.77",
+   "after": 59.7,
+   "after_runs": [
+    57.7,
+    59.7,
+    60
+   ],
+   "p95_gap_ms": [
+    16.8,
+    16.7,
+    16.7
+   ],
+   "draw_ms": [
+    1.37,
+    1.45,
+    1.59
+   ]
+  },
+  {
+   "scene": "imagination",
+   "label": "💭 our imagination",
+   "kind": "drag",
+   "before": 17.4,
+   "before_version": "0.0.77",
+   "after": 59.7,
+   "after_runs": [
+    59,
+    59.7,
+    60
+   ],
+   "p95_gap_ms": [
+    16.8,
+    16.8,
+    16.7
+   ],
+   "draw_ms": [
+    1.62,
+    1.67,
+    1.68
+   ]
+  }
+ ],
+ "gate_runs": {
+  "0.0.75": {
+   "url": "file:///home/matthew/kids-choice-games/dress-up/index.html?v=g8",
+   "min": 55,
+   "runs": 3,
+   "size": [
+    1920,
+    1080,
+    1
+   ],
+   "when": "2026-10-16T18:22:10.102Z",
+   "results": [
+    {
+     "scene": "castle",
+     "label": "🏰 outside the castle",
+     "kind": "walk",
+     "fps": 48.7,
+     "pass": false,
+     "runs": [
+      {
+       "fps": 48.7,
+       "p95": 33.4,
+       "dropped": 33,
+       "frames": 146,
+       "drawMs": 1.78,
+       "x": -100,
+       "anim": "swim"
+      },
+      {
+       "fps": 47.7,
+       "p95": 33.4,
+       "dropped": 36,
+       "frames": 143,
+       "drawMs": 1.57,
+       "x": -100,
+       "anim": "swim"
+      },
+      {
+       "fps": 49.3,
+       "p95": 33.4,
+       "dropped": 31,
+       "frames": 148,
+       "drawMs": 1.78,
+       "x": -99,
+       "anim": "swim"
+      }
+     ]
+    },
+    {
+     "scene": "castle",
+     "label": "🏰 outside the castle",
+     "kind": "drag",
+     "fps": 45.8,
+     "pass": false,
+     "runs": [
+      {
+       "fps": 45.8,
+       "p95": 33.4,
+       "dropped": 42,
+       "frames": 136,
+       "drawMs": 2.24,
+       "x": -97,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 45.6,
+       "p95": 33.4,
+       "dropped": 43,
+       "frames": 136,
+       "drawMs": 2.21,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 45.9,
+       "p95": 33.4,
+       "dropped": 42,
+       "frames": 137,
+       "drawMs": 2.23,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "witch",
+     "label": "🧙 outside the witch's house",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 0.98,
+       "x": -101,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 0.92,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 0.9,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "witch",
+     "label": "🧙 outside the witch's house",
+     "kind": "drag",
+     "fps": 55.6,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 56.7,
+       "p95": 33.2,
+       "dropped": 10,
+       "frames": 170,
+       "drawMs": 1.47,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 55.6,
+       "p95": 33.3,
+       "dropped": 13,
+       "frames": 166,
+       "drawMs": 1.41,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 55.6,
+       "p95": 33.3,
+       "dropped": 13,
+       "frames": 166,
+       "drawMs": 1.44,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "witchroom",
+     "label": "🧙 inside the witch's hut",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 0.88,
+       "x": -103,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 0.95,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 0.92,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "witchroom",
+     "label": "🧙 inside the witch's hut",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.24,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 181,
+       "drawMs": 1.26,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.34,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "healerroom",
+     "label": "🌿 inside the healer's house",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.01,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 0.97,
+       "x": -101,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 0.96,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "healerroom",
+     "label": "🌿 inside the healer's house",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.51,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 0.97,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.04,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "lake",
+     "label": "🦆 swimming in the duck pond",
+     "kind": "walk",
+     "fps": 51.7,
+     "pass": false,
+     "runs": [
+      {
+       "fps": 50.7,
+       "p95": 33.4,
+       "dropped": 28,
+       "frames": 153,
+       "drawMs": 1.76,
+       "x": -104,
+       "anim": "swim"
+      },
+      {
+       "fps": 51.7,
+       "p95": 33.3,
+       "dropped": 25,
+       "frames": 155,
+       "drawMs": 1.66,
+       "x": -103,
+       "anim": "swim"
+      },
+      {
+       "fps": 53,
+       "p95": 33.3,
+       "dropped": 21,
+       "frames": 159,
+       "drawMs": 1.68,
+       "x": -102,
+       "anim": "swim"
+      }
+     ]
+    },
+    {
+     "scene": "lake",
+     "label": "🦆 swimming in the duck pond",
+     "kind": "drag",
+     "fps": 54.7,
+     "pass": false,
+     "runs": [
+      {
+       "fps": 55,
+       "p95": 33.3,
+       "dropped": 15,
+       "frames": 164,
+       "drawMs": 2,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 54.7,
+       "p95": 33.3,
+       "dropped": 15,
+       "frames": 164,
+       "drawMs": 2.01,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 54.7,
+       "p95": 33.3,
+       "dropped": 16,
+       "frames": 164,
+       "drawMs": 2.09,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    }
+   ]
+  },
+  "0.0.76": {
+   "url": "file:///home/matthew/kids-choice-games/dress-up/index.html?v=0.0.76",
+   "min": 55,
+   "runs": 3,
+   "size": [
+    1920,
+    1080,
+    1
+   ],
+   "when": "2026-10-16T19:33:54.566Z",
+   "results": [
+    {
+     "scene": "castle",
+     "label": "🏰 outside the castle",
+     "kind": "walk",
+     "fps": 59.7,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 59.7,
+       "p95": 16.8,
+       "dropped": 1,
+       "frames": 179,
+       "drawMs": 1.53,
+       "x": -99,
+       "anim": "swim"
+      },
+      {
+       "fps": 59,
+       "p95": 16.8,
+       "dropped": 3,
+       "frames": 178,
+       "drawMs": 1.46,
+       "x": -99,
+       "anim": "swim"
+      },
+      {
+       "fps": 59.7,
+       "p95": 16.8,
+       "dropped": 1,
+       "frames": 179,
+       "drawMs": 1.4,
+       "x": -100,
+       "anim": "swim"
+      }
+     ]
+    },
+    {
+     "scene": "castle",
+     "label": "🏰 outside the castle",
+     "kind": "drag",
+     "fps": 47,
+     "pass": false,
+     "runs": [
+      {
+       "fps": 47,
+       "p95": 33.4,
+       "dropped": 39,
+       "frames": 141,
+       "drawMs": 2.61,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 48.9,
+       "p95": 33.4,
+       "dropped": 32,
+       "frames": 146,
+       "drawMs": 2.65,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 46.9,
+       "p95": 33.4,
+       "dropped": 37,
+       "frames": 140,
+       "drawMs": 2.66,
+       "x": -97,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "witch",
+     "label": "🧙 outside the witch's house",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.06,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.02,
+       "x": -103,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.02,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "witch",
+     "label": "🧙 outside the witch's house",
+     "kind": "drag",
+     "fps": 55,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 55,
+       "p95": 33.3,
+       "dropped": 15,
+       "frames": 164,
+       "drawMs": 1.63,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 55,
+       "p95": 33.3,
+       "dropped": 15,
+       "frames": 164,
+       "drawMs": 1.5,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 54.3,
+       "p95": 33.4,
+       "dropped": 17,
+       "frames": 161,
+       "drawMs": 1.4,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "witchroom",
+     "label": "🧙 inside the witch's hut",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.25,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.11,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.16,
+       "x": -101,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "witchroom",
+     "label": "🧙 inside the witch's hut",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.33,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 59.3,
+       "p95": 16.7,
+       "dropped": 2,
+       "frames": 178,
+       "drawMs": 1.33,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.22,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "healerroom",
+     "label": "🌿 inside the healer's house",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.45,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.44,
+       "x": -101,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.45,
+       "x": -103,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "healerroom",
+     "label": "🌿 inside the healer's house",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.41,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.02,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.06,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "lake",
+     "label": "🦆 swimming in the duck pond",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.56,
+       "x": -100,
+       "anim": "swim"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.61,
+       "x": -102,
+       "anim": "swim"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.49,
+       "x": -100,
+       "anim": "swim"
+      }
+     ]
+    },
+    {
+     "scene": "lake",
+     "label": "🦆 swimming in the duck pond",
+     "kind": "drag",
+     "fps": 59.3,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 2.71,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 59.3,
+       "p95": 16.8,
+       "dropped": 2,
+       "frames": 178,
+       "drawMs": 2.61,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 58.7,
+       "p95": 16.8,
+       "dropped": 4,
+       "frames": 176,
+       "drawMs": 2.78,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    }
+   ]
+  },
+  "0.0.77": {
+   "url": "file:///home/matthew/kids-choice-games/dress-up/index.html?v=0.0.77",
+   "min": 55,
+   "runs": 3,
+   "size": [
+    1920,
+    1080,
+    1
+   ],
+   "when": "2026-10-16T19:48:33.137Z",
+   "results": [
+    {
+     "scene": "castle",
+     "label": "🏰 outside the castle",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.45,
+       "x": -101,
+       "anim": "swim"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.4,
+       "x": -100,
+       "anim": "swim"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.51,
+       "x": -100,
+       "anim": "swim"
+      }
+     ]
+    },
+    {
+     "scene": "castle",
+     "label": "🏰 outside the castle",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 59.7,
+       "p95": 16.8,
+       "dropped": 1,
+       "frames": 179,
+       "drawMs": 1.78,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.74,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.75,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "witch",
+     "label": "🧙 outside the witch's house",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.04,
+       "x": -103,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.09,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "witch",
+     "label": "🧙 outside the witch's house",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 59.7,
+       "p95": 16.7,
+       "dropped": 1,
+       "frames": 179,
+       "drawMs": 1.25,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.26,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.36,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "witchroom",
+     "label": "🧙 inside the witch's hut",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.26,
+       "x": -101,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.24,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.23,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "witchroom",
+     "label": "🧙 inside the witch's hut",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 59.3,
+       "p95": 16.8,
+       "dropped": 2,
+       "frames": 178,
+       "drawMs": 1.3,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.26,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.26,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "healerroom",
+     "label": "🌿 inside the healer's house",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.15,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.32,
+       "x": -101,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.45,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "healerroom",
+     "label": "🌿 inside the healer's house",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.64,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.6,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.51,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "lake",
+     "label": "🦆 swimming in the duck pond",
+     "kind": "walk",
+     "fps": 59.7,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 2.05,
+       "x": -100,
+       "anim": "swim"
+      },
+      {
+       "fps": 59.7,
+       "p95": 16.8,
+       "dropped": 1,
+       "frames": 180,
+       "drawMs": 2.26,
+       "x": -100,
+       "anim": "swim"
+      },
+      {
+       "fps": 59.7,
+       "p95": 16.7,
+       "dropped": 1,
+       "frames": 179,
+       "drawMs": 2.04,
+       "x": -100,
+       "anim": "swim"
+      }
+     ]
+    },
+    {
+     "scene": "lake",
+     "label": "🦆 swimming in the duck pond",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 2.25,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 2.26,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 2.09,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    }
+   ]
+  },
+  "0.0.77 imagination": {
+   "url": "file:///home/matthew/kids-choice-games/dress-up/index.html (0.0.77, commit 5c77b16)",
+   "min": 55,
+   "runs": 3,
+   "cpu": 1,
+   "size": [
+    1920,
+    1080,
+    1
+   ],
+   "when": "2026-10-16T19:53Z",
+   "note": "This run wrote no file (no OUT=); its numbers are copied from fpsgate.mjs's printed output (SLOW=1, the empty room and the imagination). The other fields of a run (dropped frames, frames counted) were not printed.",
+   "results": [
+    {
+     "scene": "emptyroom",
+     "kind": "walk",
+     "fps": 60,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "drawMs": 2.08
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "drawMs": 2.08
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "drawMs": 2.11
+      }
+     ],
+     "pass": true
+    },
+    {
+     "scene": "emptyroom",
+     "kind": "drag",
+     "fps": 60,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "drawMs": 2.46
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "drawMs": 2.3
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "drawMs": 2.25
+      }
+     ],
+     "pass": true
+    },
+    {
+     "scene": "imagination",
+     "kind": "walk",
+     "fps": 18,
+     "runs": [
+      {
+       "fps": 17.5,
+       "p95": 66.7,
+       "drawMs": 1.79
+      },
+      {
+       "fps": 18,
+       "p95": 66.7,
+       "drawMs": 1.77
+      },
+      {
+       "fps": 19.3,
+       "p95": 66.7,
+       "drawMs": 1.56
+      }
+     ],
+     "pass": false
+    },
+    {
+     "scene": "imagination",
+     "kind": "drag",
+     "fps": 17.4,
+     "runs": [
+      {
+       "fps": 17.9,
+       "p95": 66.7,
+       "drawMs": 1.93
+      },
+      {
+       "fps": 17.4,
+       "p95": 66.7,
+       "drawMs": 1.85
+      },
+      {
+       "fps": 17.2,
+       "p95": 83.3,
+       "drawMs": 1.97
+      }
+     ],
+     "pass": false
+    }
+   ]
+  },
+  "0.0.78": {
+   "url": "file:///home/matthew/kids-choice-games/dress-up/index.html?v=0.0.78",
+   "min": 55,
+   "runs": 3,
+   "cpu": 1,
+   "size": [
+    1920,
+    1080,
+    1
+   ],
+   "when": "2026-10-16T20:14:47.200Z",
+   "results": [
+    {
+     "scene": "castle",
+     "label": "🏰 outside the castle",
+     "kind": "walk",
+     "fps": 59.3,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 59.3,
+       "p95": 16.8,
+       "dropped": 2,
+       "frames": 178,
+       "drawMs": 1.51,
+       "x": -99,
+       "anim": "swim"
+      },
+      {
+       "fps": 57.7,
+       "p95": 16.8,
+       "dropped": 7,
+       "frames": 173,
+       "drawMs": 1.42,
+       "x": -99,
+       "anim": "swim"
+      },
+      {
+       "fps": 59.7,
+       "p95": 16.8,
+       "dropped": 1,
+       "frames": 179,
+       "drawMs": 1.5,
+       "x": -101,
+       "anim": "swim"
+      }
+     ]
+    },
+    {
+     "scene": "castle",
+     "label": "🏰 outside the castle",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 181,
+       "drawMs": 1.63,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.57,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.7,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "witch",
+     "label": "🧙 outside the witch's house",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.1,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1,
+       "x": -101,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.03,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "witch",
+     "label": "🧙 outside the witch's house",
+     "kind": "drag",
+     "fps": 59.3,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 59.3,
+       "p95": 16.8,
+       "dropped": 2,
+       "frames": 178,
+       "drawMs": 1.51,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 59.3,
+       "p95": 16.7,
+       "dropped": 2,
+       "frames": 178,
+       "drawMs": 1.36,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.2,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "witchroom",
+     "label": "🧙 inside the witch's hut",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.25,
+       "x": -101,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.23,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.15,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "witchroom",
+     "label": "🧙 inside the witch's hut",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.35,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.2,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.41,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "healerroom",
+     "label": "🌿 inside the healer's house",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.64,
+       "x": -103,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.51,
+       "x": -101,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.6,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "healerroom",
+     "label": "🌿 inside the healer's house",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.61,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.68,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.75,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "lake",
+     "label": "🦆 swimming in the duck pond",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.79,
+       "x": -99,
+       "anim": "swim"
+      },
+      {
+       "fps": 59.7,
+       "p95": 16.7,
+       "dropped": 1,
+       "frames": 179,
+       "drawMs": 1.83,
+       "x": -99,
+       "anim": "swim"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.96,
+       "x": -99,
+       "anim": "swim"
+      }
+     ]
+    },
+    {
+     "scene": "lake",
+     "label": "🦆 swimming in the duck pond",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 2.14,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.99,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.93,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    }
+   ]
+  },
+  "0.0.78 imagination": {
+   "url": "file:///home/matthew/kids-choice-games/dress-up/index.html?v=0.0.78",
+   "min": 55,
+   "runs": 3,
+   "cpu": 1,
+   "size": [
+    1920,
+    1080,
+    1
+   ],
+   "when": "2026-10-16T20:15:53.364Z",
+   "results": [
+    {
+     "scene": "emptyroom",
+     "label": "🔲 the empty room",
+     "kind": "walk",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.83,
+       "x": -101,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.87,
+       "x": -103,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.82,
+       "x": -100,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "emptyroom",
+     "label": "🔲 the empty room",
+     "kind": "drag",
+     "fps": 60,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.97,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 2.08,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.8,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.89,
+       "x": -100,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    },
+    {
+     "scene": "imagination",
+     "label": "💭 our imagination",
+     "kind": "walk",
+     "fps": 59.7,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 57.7,
+       "p95": 16.8,
+       "dropped": 7,
+       "frames": 173,
+       "drawMs": 1.37,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 59.7,
+       "p95": 16.7,
+       "dropped": 1,
+       "frames": 179,
+       "drawMs": 1.45,
+       "x": -100,
+       "anim": "walk"
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 180,
+       "drawMs": 1.59,
+       "x": -103,
+       "anim": "walk"
+      }
+     ]
+    },
+    {
+     "scene": "imagination",
+     "label": "💭 our imagination",
+     "kind": "drag",
+     "fps": 59.7,
+     "pass": true,
+     "runs": [
+      {
+       "fps": 59,
+       "p95": 16.8,
+       "dropped": 3,
+       "frames": 177,
+       "drawMs": 1.62,
+       "x": -99,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 59.7,
+       "p95": 16.8,
+       "dropped": 1,
+       "frames": 178,
+       "drawMs": 1.67,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      },
+      {
+       "fps": 60,
+       "p95": 16.7,
+       "dropped": 0,
+       "frames": 179,
+       "drawMs": 1.68,
+       "x": -98,
+       "anim": "none",
+       "held": true
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "settings_measured": {
+  "livePictures": {
+   "how": "the ⚙️ Advanced tab's 📏 measure here, in 💭 our imagination, headless Chrome 1400x900, one run each",
+   "off_fps": 60,
+   "on_fps": 33,
+   "off_draw_ms": 1.2,
+   "on_draw_ms": 1.4
+  },
+  "blur": {
+   "how": "fpsgate.mjs TWEAK removing every filter, 💭 our imagination with its pictures drawn live (0.0.77 code), 1920x1080, one run",
+   "walk_fps_with": 18,
+   "walk_fps_without": 25.5
+  }
+ }
+}</script>
+<script>
+(() => {
+  const b = document.getElementById("theme"), modes = ["auto", "light", "dark"], names = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
+  let m = "auto"; try { m = localStorage.getItem("theme") || "auto"; } catch (e) {}
+  const show = () => { b.textContent = names[m]; if (m === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", m); };
+  b.onclick = () => { m = modes[(modes.indexOf(m) + 1) % 3]; try { localStorage.setItem("theme", m); } catch (e) {} show(); };
+  show();
+  for (const t of document.querySelectorAll("button.tk")) t.onclick = () => {
+    const li = t.closest("li"), n = t.dataset.step, text = li.cloneNode(true);
+    text.querySelectorAll("button, .stepnum").forEach(e => e.remove());
+    const msg = `Mint a ticket for this step: Dress Up reports, ^du_report(1), What next, step ${n}: "${text.textContent.trim()}". ${location.href.split("#")[0]}#step-${n}`;
+    navigator.clipboard.writeText(msg).then(() => { t.textContent = "copied"; setTimeout(() => t.textContent = "copy for a ticket", 1500); });
+  };
+})();
+</script>
+</body>
+</html>

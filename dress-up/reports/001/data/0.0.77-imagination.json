@@ -1,0 +1,107 @@
+{
+ "url": "file:///home/matthew/kids-choice-games/dress-up/index.html (0.0.77, commit 5c77b16)",
+ "min": 55,
+ "runs": 3,
+ "cpu": 1,
+ "size": [
+  1920,
+  1080,
+  1
+ ],
+ "when": "2026-10-16T19:53Z",
+ "note": "This run wrote no file (no OUT=); its numbers are copied from fpsgate.mjs's printed output (SLOW=1, the empty room and the imagination). The other fields of a run (dropped frames, frames counted) were not printed.",
+ "results": [
+  {
+   "scene": "emptyroom",
+   "kind": "walk",
+   "fps": 60,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "drawMs": 2.08
+    },
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "drawMs": 2.08
+    },
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "drawMs": 2.11
+    }
+   ],
+   "pass": true
+  },
+  {
+   "scene": "emptyroom",
+   "kind": "drag",
+   "fps": 60,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "drawMs": 2.46
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "drawMs": 2.3
+    },
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "drawMs": 2.25
+    }
+   ],
+   "pass": true
+  },
+  {
+   "scene": "imagination",
+   "kind": "walk",
+   "fps": 18,
+   "runs": [
+    {
+     "fps": 17.5,
+     "p95": 66.7,
+     "drawMs": 1.79
+    },
+    {
+     "fps": 18,
+     "p95": 66.7,
+     "drawMs": 1.77
+    },
+    {
+     "fps": 19.3,
+     "p95": 66.7,
+     "drawMs": 1.56
+    }
+   ],
+   "pass": false
+  },
+  {
+   "scene": "imagination",
+   "kind": "drag",
+   "fps": 17.4,
+   "runs": [
+    {
+     "fps": 17.9,
+     "p95": 66.7,
+     "drawMs": 1.93
+    },
+    {
+     "fps": 17.4,
+     "p95": 66.7,
+     "drawMs": 1.85
+    },
+    {
+     "fps": 17.2,
+     "p95": 83.3,
+     "drawMs": 1.97
+    }
+   ],
+   "pass": false
+  }
+ ]
+}

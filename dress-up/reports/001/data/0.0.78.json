@@ -1,0 +1,389 @@
+{
+ "url": "file:///home/matthew/kids-choice-games/dress-up/index.html?v=0.0.78",
+ "min": 55,
+ "runs": 3,
+ "cpu": 1,
+ "size": [
+  1920,
+  1080,
+  1
+ ],
+ "when": "2026-10-16T20:14:47.200Z",
+ "results": [
+  {
+   "scene": "castle",
+   "label": "🏰 outside the castle",
+   "kind": "walk",
+   "fps": 59.3,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 59.3,
+     "p95": 16.8,
+     "dropped": 2,
+     "frames": 178,
+     "drawMs": 1.51,
+     "x": -99,
+     "anim": "swim"
+    },
+    {
+     "fps": 57.7,
+     "p95": 16.8,
+     "dropped": 7,
+     "frames": 173,
+     "drawMs": 1.42,
+     "x": -99,
+     "anim": "swim"
+    },
+    {
+     "fps": 59.7,
+     "p95": 16.8,
+     "dropped": 1,
+     "frames": 179,
+     "drawMs": 1.5,
+     "x": -101,
+     "anim": "swim"
+    }
+   ]
+  },
+  {
+   "scene": "castle",
+   "label": "🏰 outside the castle",
+   "kind": "drag",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 181,
+     "drawMs": 1.63,
+     "x": -100,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.57,
+     "x": -99,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.7,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    }
+   ]
+  },
+  {
+   "scene": "witch",
+   "label": "🧙 outside the witch's house",
+   "kind": "walk",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.1,
+     "x": -100,
+     "anim": "walk"
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1,
+     "x": -101,
+     "anim": "walk"
+    },
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.03,
+     "x": -100,
+     "anim": "walk"
+    }
+   ]
+  },
+  {
+   "scene": "witch",
+   "label": "🧙 outside the witch's house",
+   "kind": "drag",
+   "fps": 59.3,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 59.3,
+     "p95": 16.8,
+     "dropped": 2,
+     "frames": 178,
+     "drawMs": 1.51,
+     "x": -100,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 59.3,
+     "p95": 16.7,
+     "dropped": 2,
+     "frames": 178,
+     "drawMs": 1.36,
+     "x": -99,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.2,
+     "x": -99,
+     "anim": "none",
+     "held": true
+    }
+   ]
+  },
+  {
+   "scene": "witchroom",
+   "label": "🧙 inside the witch's hut",
+   "kind": "walk",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.25,
+     "x": -101,
+     "anim": "walk"
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.23,
+     "x": -100,
+     "anim": "walk"
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.15,
+     "x": -100,
+     "anim": "walk"
+    }
+   ]
+  },
+  {
+   "scene": "witchroom",
+   "label": "🧙 inside the witch's hut",
+   "kind": "drag",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.35,
+     "x": -100,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.2,
+     "x": -100,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.41,
+     "x": -99,
+     "anim": "none",
+     "held": true
+    }
+   ]
+  },
+  {
+   "scene": "healerroom",
+   "label": "🌿 inside the healer's house",
+   "kind": "walk",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.64,
+     "x": -103,
+     "anim": "walk"
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.51,
+     "x": -101,
+     "anim": "walk"
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.6,
+     "x": -100,
+     "anim": "walk"
+    }
+   ]
+  },
+  {
+   "scene": "healerroom",
+   "label": "🌿 inside the healer's house",
+   "kind": "drag",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.61,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.68,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.75,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    }
+   ]
+  },
+  {
+   "scene": "lake",
+   "label": "🦆 swimming in the duck pond",
+   "kind": "walk",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.79,
+     "x": -99,
+     "anim": "swim"
+    },
+    {
+     "fps": 59.7,
+     "p95": 16.7,
+     "dropped": 1,
+     "frames": 179,
+     "drawMs": 1.83,
+     "x": -99,
+     "anim": "swim"
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.96,
+     "x": -99,
+     "anim": "swim"
+    }
+   ]
+  },
+  {
+   "scene": "lake",
+   "label": "🦆 swimming in the duck pond",
+   "kind": "drag",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 2.14,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.99,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.93,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,164 @@
+{
+ "url": "file:///home/matthew/kids-choice-games/dress-up/index.html?v=0.0.78",
+ "min": 55,
+ "runs": 3,
+ "cpu": 1,
+ "size": [
+  1920,
+  1080,
+  1
+ ],
+ "when": "2026-10-16T20:15:53.364Z",
+ "results": [
+  {
+   "scene": "emptyroom",
+   "label": "🔲 the empty room",
+   "kind": "walk",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.83,
+     "x": -101,
+     "anim": "walk"
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.87,
+     "x": -103,
+     "anim": "walk"
+    },
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.82,
+     "x": -100,
+     "anim": "walk"
+    }
+   ]
+  },
+  {
+   "scene": "emptyroom",
+   "label": "🔲 the empty room",
+   "kind": "drag",
+   "fps": 60,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.97,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 2.08,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.8,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.89,
+     "x": -100,
+     "anim": "none",
+     "held": true
+    }
+   ]
+  },
+  {
+   "scene": "imagination",
+   "label": "💭 our imagination",
+   "kind": "walk",
+   "fps": 59.7,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 57.7,
+     "p95": 16.8,
+     "dropped": 7,
+     "frames": 173,
+     "drawMs": 1.37,
+     "x": -100,
+     "anim": "walk"
+    },
+    {
+     "fps": 59.7,
+     "p95": 16.7,
+     "dropped": 1,
+     "frames": 179,
+     "drawMs": 1.45,
+     "x": -100,
+     "anim": "walk"
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 180,
+     "drawMs": 1.59,
+     "x": -103,
+     "anim": "walk"
+    }
+   ]
+  },
+  {
+   "scene": "imagination",
+   "label": "💭 our imagination",
+   "kind": "drag",
+   "fps": 59.7,
+   "pass": true,
+   "runs": [
+    {
+     "fps": 59,
+     "p95": 16.8,
+     "dropped": 3,
+     "frames": 177,
+     "drawMs": 1.62,
+     "x": -99,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 59.7,
+     "p95": 16.8,
+     "dropped": 1,
+     "frames": 178,
+     "drawMs": 1.67,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    },
+    {
+     "fps": 60,
+     "p95": 16.7,
+     "dropped": 0,
+     "frames": 179,
+     "drawMs": 1.68,
+     "x": -98,
+     "anim": "none",
+     "held": true
+    }
+   ]
+  }
+ ]
+}
