@@ -569,6 +569,9 @@ const DEFAULTS = {
            poseFootL: 0, poseFootR: 0, feetTurn: 0,
            // (ticket 132) the Body tab: the pose chosen, and the animation on top of it
            pose: "stand", anim: "none",
+           // (ticket 136) jumping up into a hug: how high they are held, in a
+           // share of their legs' length
+           hugLift: 50,
            // (ticket 124) which way the friend faces (toward us, or in profile
            // to our left or right), and whether they sit
            facing: "front", sit: false },
@@ -726,7 +729,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.61", released: "2026-10-16" };
+const VERSION = { number: "0.0.62", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9190,6 +9193,11 @@ const POSES = {
   meditate: { pose: { poseLegL: 72, poseLegR: 72, poseKneeL: 158, poseKneeR: 150, poseFootL: 70, poseFootR: 70,
                       poseArmL: 30, poseArmR: 30, poseElbowL: -90, poseElbowR: -90 }, closed: true },
   // dances, one picked at random each time, never the same twice in a row
+  // (ticket 136) jumping up into a hug, held up off the ground: the legs as
+  // sitting (thighs forward, shins down), so in profile they wrap round the
+  // one hugged, the near leg in front of them and the far one behind (see
+  // legApart in draw); the arms reach forward round their neck
+  hug: { pose: { poseArmL: -40, poseArmR: -34, poseElbowL: 40, poseElbowR: 34, poseKneeL: 12, poseKneeR: 12 } },
   dance: [
     { name: "disco", pose: { poseArmL: -105, poseElbowL: 10, poseArmR: 40, poseElbowR: 95, poseLegR: 28, poseKneeR: 40 } },
     { name: "ballet", pose: { poseArmL: -150, poseElbowL: -35, poseArmR: -45, poseElbowR: 15, poseLegL: 55, poseKneeL: 95, poseFootL: 40 } },
@@ -9205,6 +9213,8 @@ function strikePose(which) {
   B.pose = which; B.sit = which === "sit";
   // (standing and sitting keep the way they face; the others face us: ticket 132)
   if (which === "stand" || which === "sit") { F.closed = false; return; }
+  // (a hug is seen from the side: facing us, they turn to our right)
+  if (which === "hug") { F.closed = false; if (!facingOf(B)) B.facing = "right"; Object.assign(B, POSES.hug.pose); return; }
   B.facing = "front";
   let P = POSES[which];
   if (Array.isArray(P)) { const left = P.filter(d => d.name !== lastDance); P = left[Math.floor(Math.random() * left.length)]; lastDance = P.name; }
@@ -9233,7 +9243,7 @@ function draw() {
   // their arms and legs come from under the shoulder and hip, and point the
   // way they face; the side nearer us is their -dir side (facing our right,
   // their right shoulder is toward us)
-  const dir = facingOf(B), sitting = !!B.sit;
+  const dir = facingOf(B), sitting = !!B.sit || B.pose === "hug";   // (ticket 136: a hug's legs are a sitter's)
   let { shirt: SH, pants: P } = state;
   const skin = F.color, skinLine = darker(skin);
   // A costume: a suit is fur over everything below the hood; a falcon is
@@ -9479,6 +9489,11 @@ function draw() {
     const a = rot * Math.PI / 180, turned = ([x, y]) => L + x * Math.sin(a) + (y - L) * Math.cos(a);
     gFig = Math.max(...arms.map(x => turned(x.H) + 10), ...[1, -1].map(sd => turned(kneeAt(sd)) + B.legW / 2), ...[1, -1].map(sd => turned(footAt(sd)) + 8));
   } else if (move && move.lift && !wet && !poseHeld) gFig = gStand + move.lift;
+  // (ticket 136) jumping up into a hug, they are held up off the ground
+  // (their shadow stays on it); not in water, nor while a joint is held,
+  // whose ground was kept as it was
+  const hugLift = B.pose === "hug" && !rot && !wet ? LL * Math.max(0, Number(B.hugLift ?? 50) || 0) / 100 : 0;
+  if (hugLift && !poseHeld) gFig += hugLift;
   const rotTf = rot ? ` rotate(${rot} 0 ${f1(L)})` : "";
   // (seated, sized by the seat's depth, not by where their feet hang: ticket 50)
   const sizeSeat = scened ? seatNow() : null;
@@ -9494,7 +9509,7 @@ function draw() {
     const lx = (hx - figureT.dx) / figureT.k, ly = (hy - figureT.dy - figureT.sg) / figureT.k + figureT.g, at = `${f1(lx)} ${f1(ly)}`;
     svg += lfoTimed(BG, "slow", 0.15, `<animateTransform attributeName="transform" type="rotate" additive="sum" values="-14 ${at};14 ${at};-14 ${at}" dur="2.6s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`);
   }
-  if (meanSeen > 0 && !wet && !rot) svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
+  if (meanSeen > 0 && !wet && !rot) svg += `<ellipse cx="0" cy="${f1(ground + hugLift)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
   // (ticket 132) climbing: a ladder behind the friend, its rungs going down two a stride
   if (move && move.ladder != null) {
     const x = hw + 26, top = -380, gap = 48, off = (move.ladder * 2 * gap) % gap;
@@ -9536,12 +9551,22 @@ function draw() {
   const legsAt = svg.length;
   // (in profile, the far leg first, then the one on our side)
   const legOrder = dir ? [dir, -dir] : [1, -1];
-  for (const side of legOrder) svg += limbThrough(legJoints(side), B.legW, limb, limbLine);
-  if (witch)   // striped stockings
-    for (const side of legOrder)
-      svg += legJoints(side).length > 2 ? `<path d="M${legJoints(side).map(([x, y]) => f1(x) + " " + f1(y)).join(" L")}" fill="none" stroke="${WC.trimColor}" stroke-width="${f1(B.legW)}" stroke-dasharray="9 9"/>`
+  // (ticket 136, a hug) in a place, turned sideways and not in water, the
+  // far leg (its skin, stocking, shoe and pants leg) is drawn apart with the
+  // far arm (farDeep, below), a body's depth behind their feet: so a leg can
+  // go behind someone they hug while the near one is in front. Otherwise
+  // both legs are drawn here, exactly as before
+  const feetOver = legPosed && [1, -1].some(side => footAt(side)[1] <= kneeAt(side)[1] + 12);
+  const legApart = scened && dir && !wet && !feetOver;
+  const legSides = legApart ? [-dir] : legOrder, farLeg = { skin: "", shoe: "", pants: "" };
+  const legSkin = side => limbThrough(legJoints(side), B.legW, limb, limbLine);
+  // (striped stockings)
+  const stocking = side => legJoints(side).length > 2 ? `<path d="M${legJoints(side).map(([x, y]) => f1(x) + " " + f1(y)).join(" L")}" fill="none" stroke="${WC.trimColor}" stroke-width="${f1(B.legW)}" stroke-dasharray="9 9"/>`
                   : `<line x1="${f1(side * fx)}" y1="${f1(L)}" x2="${f1(side * fx)}" y2="${f1(feetY)}" stroke="${WC.trimColor}" ` +
              `stroke-width="${f1(B.legW)}" stroke-dasharray="9 9"/>`;
+  for (const side of legSides) svg += legSkin(side);
+  if (witch) for (const side of legSides) svg += stocking(side);
+  if (legApart) farLeg.skin = legSkin(dir) + (witch ? stocking(dir) : "");
   veilFrom("pants", legsAt);
   const feet = BIRD_SUIT[kind] ? { style: "talons", size: state.shoes.size }
              : kind === "deer" ? { style: "hoof", size: state.shoes.size }
@@ -9553,15 +9578,16 @@ function draw() {
   const feetAt = svg.length;
   // (ticket 129) each foot turns about its ankle, as a hand does: both by
   // "👣 feet turn" (toes up +), and each by the pose's own turn, by side
-  for (const side of legOrder) {
+  const shoeOf = side => {
     const [ax, ay] = footAt(side), turn = -(dir || side) * ((Number(B.feetTurn) || 0) + poseT("Foot", side));   // (an animation's too: ticket 132)
     const shoe = shoeSvg(ax, ay, dir || side, feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet, BIRD_SUIT[kind] ? C.accent : skin);
-    svg += turn ? `<g transform="rotate(${f1(turn)} ${f1(ax)} ${f1(ay)})">${shoe}</g>` : shoe;
-  }
+    return turn ? `<g transform="rotate(${f1(turn)} ${f1(ax)} ${f1(ay)})">${shoe}</g>` : shoe;
+  };
+  for (const side of legSides) svg += shoeOf(side);
+  if (legApart) farLeg.shoe = shoeOf(dir);
   veilFrom("feet", feetAt);
   // (ticket 129) a foot resting up on the other leg, as cross-legged, is
-  // drawn over the pants, after them
-  const feetOver = legPosed && [1, -1].some(side => footAt(side)[1] <= kneeAt(side)[1] + 12);
+  // drawn over the pants, after them (feetOver, above)
   const feetLater = feetOver ? svg.slice(feetAt) : "";
   if (feetOver) svg = svg.slice(0, feetAt);
   const pf = suit ? "url(#pat-fur)" : fillOf("pat-pants", P.color, P.pattern);
@@ -9591,9 +9617,11 @@ function draw() {
     // to len, the far one first, as profile pants are drawn
     const hipsSide = (fill, line, tall = half * 1.4) => `<rect x="${f1(-hw - 2)}" y="${f1(L - 10)}" width="${f1(2 * hw + 4)}" height="${f1(10 + tall)}" rx="${f1(Math.min(half * 0.7, (10 + tall) / 2))}" fill="${fill}"` +
                                                        (line ? ` stroke="${line}" stroke-width="2.5"/>` : `/>`);
-    const sideLegs = (len, w, fill, line) => legOrder.map(side => { const { p } = legFrame(side, len), H = legJoints(side)[0];
-      const d = `M${f1(H[0])} ${f1(H[1])} L${f1(p[0])} ${f1(p[1])}`;
-      return `<path d="${d}" fill="none" stroke="${line}" stroke-width="${f1(2 * w + 5)}"/><path d="${d}" fill="none" stroke="${fill}" stroke-width="${f1(2 * w)}"/>`; }).join("");
+    const sideLegs = (len, w, fill, line) => { const band = side => { const { p } = legFrame(side, len), H = legJoints(side)[0];
+        const d = `M${f1(H[0])} ${f1(H[1])} L${f1(p[0])} ${f1(p[1])}`;
+        return `<path d="${d}" fill="none" stroke="${line}" stroke-width="${f1(2 * w + 5)}"/><path d="${d}" fill="none" stroke="${fill}" stroke-width="${f1(2 * w)}"/>`; };
+      if (legApart) farLeg.pants += band(dir);   // (ticket 136: the far one apart)
+      return legSides.map(band).join(""); };
     svg += !fitted ? poly([[-hw, L - 10], [hw, L - 10], [fx + half, L + 34], [fx - half, L + 34], [0, L + 14],
                            [-(fx - half), L + 34], [-(fx + half), L + 34]], limb, limbLine)
          : dir ? hipsSide(limb, limbLine)
@@ -9663,16 +9691,19 @@ function draw() {
       const hips = (line) => `<rect x="${f1(-hw - 2)}" y="${f1(L - 10)}" width="${f1(2 * hw + 4)}" height="${f1(10 + half * 1.4)}" rx="${f1(half * 0.7)}" fill="${pf}"` +
                              (line ? ` stroke="${ps}" stroke-width="2.5"/>` : `/>`);
       let t = hips(true);
-      for (const side of legOrder) { const J = legJoints(side), end = along(J, len), Q = len > LL / 2 ? [J[0], J[1], end] : [J[0], end];
+      const pantsLeg = side => { const J = legJoints(side), end = along(J, len), Q = len > LL / 2 ? [J[0], J[1], end] : [J[0], end];
         const d = "M" + Q.map(([x, y]) => f1(x) + " " + f1(y)).join(" L");
-        t += `<path d="${d}" fill="none" stroke="${ps}" stroke-width="${f1(2 * half + 5)}" stroke-linejoin="round"/>` +
-             `<path d="${d}" fill="none" stroke="${pf}" stroke-width="${f1(2 * half)}" stroke-linejoin="round"/>`; }
+        return `<path d="${d}" fill="none" stroke="${ps}" stroke-width="${f1(2 * half + 5)}" stroke-linejoin="round"/>` +
+               `<path d="${d}" fill="none" stroke="${pf}" stroke-width="${f1(2 * half)}" stroke-linejoin="round"/>`; };
+      for (const side of legSides) t += pantsLeg(side);
+      if (legApart) farLeg.pants += pantsLeg(dir);   // (ticket 136: the far one apart)
       svg += t + `<g transform="translate(0 1.5)">${hips(false).replace(/x="([^"]+)"/, (_, x) => `x="${f1(Number(x) + 1.5)}"`).replace(/width="([^"]+)"/, (_, w) => `width="${f1(Number(w) - 3)}"`)}</g>`;
     } else svg += poly(legs, pf, ps);
     if (wrapStripes(C) && legPosed)   // (along each thigh and shin, as an arm's are)
       for (const side of [1, -1]) { const J = legJoints(side), end = along(J, len);
-        svg += len > LL / 2 ? limbStripes(J[0], J[1], 2 * half, C.marks, `leg-stripes${side}`, 14) + limbStripes(J[1], end, 2 * half, C.marks, `leg-stripes${side}b`, 0)
-                            : limbStripes(J[0], end, 2 * half, C.marks, `leg-stripes${side}`, 14); }
+        const marks = len > LL / 2 ? limbStripes(J[0], J[1], 2 * half, C.marks, `leg-stripes${side}`, 14) + limbStripes(J[1], end, 2 * half, C.marks, `leg-stripes${side}b`, 0)
+                                   : limbStripes(J[0], end, 2 * half, C.marks, `leg-stripes${side}`, 14);
+        if (legApart && side === dir) farLeg.pants += marks; else svg += marks; }
     else if (wrapStripes(C)) svg += legStripes(legs, hw, fx, half, L, len, Math.min(len * 0.3, 40), C.marks);
   }
   // (ticket 124) sitting, facing us: the knees toward us, round, in the
@@ -9909,7 +9940,10 @@ function draw() {
     svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), wl, hw, most, tread ? tread.bob : 0, water);
   }
   svg += `</g>`;   // the figure
-  if (farDeep) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})${rotTf}">${veil("shirt", farDeep)}</g>`;   // (see-through with the shirt, as it was)
+  // (ticket 136: the far leg first, see-through with the pants and the feet,
+  // then the far arm, see-through with the shirt, as it was)
+  const farLegSvg = legApart ? veil("pants", farLeg.skin) + veil("feet", farLeg.shoe) + veil("pants", farLeg.pants) : "";
+  if (farDeep || farLegSvg) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
   if (poseHeld && poseJoints) {
@@ -11777,7 +11811,8 @@ const TABS = [
   // (ticket 129) whole poses, first (Matthew: top level, before the face)
   // (ticket 132: "Body", with poses, the way they face, and animations)
   ["🧍 Body", "body", [
-    ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"]]],
+    ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"], ["hug", "🤗 jumping up into a hug"]]],
+    ["range", "hugLift", "🦘 held up (100 = a leg's length)", 0, 300, 40, 90],
     ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"]]],
     ["choice", "anim", "🎬 animations", ANIMS],
   ]],
@@ -11850,7 +11885,7 @@ const TABS = [
     ["range", "legW", "leg width", 4, 70, 14, 28],
     ["range", "knees", "🦵 knees bend (out, so the friend crouches)", 0, 150, 0, 25],
     ["note", "poseHow", () => posed(state.body) ? "🤸 Posed: each arm and leg as you dragged it." : "🤸 To pose the friend, drag a hand, a foot, an elbow or a knee in the picture."],
-    ["action", "unpose", "🧍 stand straight again", () => { for (const k of POSE_KEYS) state.body[k] = 0; if (state.body.pose === "meditate" || state.body.pose === "dance") state.body.pose = state.body.sit ? "sit" : "stand"; }],
+    ["action", "unpose", "🧍 stand straight again", () => { for (const k of POSE_KEYS) state.body[k] = 0; if (state.body.pose === "meditate" || state.body.pose === "dance" || state.body.pose === "hug") state.body.pose = state.body.sit ? "sit" : "stand"; }],
   ]],
   ["👕 Shirt", "shirt", [
     ["choice", "style", "style", [["tee", "t-shirt"], ["long", "long sleeves"], ["tank", "tank top"]]],
@@ -12206,6 +12241,7 @@ function el(tag, attrs = {}, kids = []) {
 // Iris color and eye whites only mean something once there is an iris.
 const SHOWN_WHEN = {
   "body.unpose": posed,
+  "body.hugLift": b => b.pose === "hug",
   "face.irisColor": f => f.iris > 0,
   "face.earSize": f => !!f.ears && f.ears !== "none",
   "face.nose": f => f.noseView === "right" || f.noseView === "left",
@@ -13099,6 +13135,7 @@ document.getElementById("surprise").addEventListener("click", () => {
   // (the music is not part of the surprise, nor what is see-through)
   for (const [, part, ctls] of TABS.filter(t => t[1] !== "music" && t[1] !== "visible"))
     for (const c of ctls) surpriseOne(part, c);
+  if (state.body.pose === "hug") state.body.pose = "stand";   // (a hug needs someone to hug: ticket 136)
   // keep the surprises friendly: mostly not sick, not exploded, a normal-ish head
   const F = state.face;
   if (Math.random() < 0.75) F.sick = 0;

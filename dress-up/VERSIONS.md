@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.62 (2026-10-16)
+
+Everything in 0.0.61, plus legs that hug, and jumping up into a hug.
+
+- **Legs in a hug** (Matthew): in a place, with the friend turned to the left or to the right, their far leg now goes behind whoever they stand against, as their far arm already did, and their near leg stays in front. So a friend hugging the witch can put a leg round her.
+- **🤗 jumping up into a hug** (Matthew), a new pose in the 🧍 Body tab: the friend jumps up and is held, their legs wrapped round the one they hug (the near leg in front, the far one behind) and their arms round their neck. Facing us, they turn to the right first. "🦘 held up" says how high (100 = a leg's length), and their shadow stays on the floor. Drag them against someone to hug them. Surprise me never picks it, since a hug needs someone to hug.
+
 ## 0.0.61 (2026-10-16)
 
 Everything in 0.0.60, plus the Body tab: poses, the way the friend faces, and animations.
