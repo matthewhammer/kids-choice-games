@@ -42,6 +42,7 @@ The repository's own GitHub Pages site serves `main` at http://matthewhammer.org
 - **Use the shared organic helpers, never lollipop trees:** `leafyTree`, `pineTree`, `bushSvg`, `grassTuft`, `rockSvg` (built on the tree house's pads), plus `snowCap`, `sunbeamsSvg` and `starsSvg`.
 - **Connected views share their settings.** A place seen from somewhere else must be drawn from that place's own settings, and where possible by its own drawing code. Examples: a far tree house, a picture on a wall, a window's view, a hut seen from inside and from outside, the cave and the waterfall it hides behind. Otherwise, as Matthew put it, the illusion of being connected is broken, for a kid or for an adult using their imagination. Check by comparing the drawings, not by eye.
 - **The wind is outdoors.** Indoors nothing sways in a breeze, and leaves and small branches don't grow without sun: a tree's limbs passing through a room are bare and still, and nothing hangs swinging unless something gives it a reason (a creature, a fire, a pendulum). Show the weather through the windows instead: the tree house rooms' windows show the tree's limbs, with leaf pads, swaying (E) and fluttering (D). Matthew's call, 2026-10-15.
+- **Depth: the friend passes behind what stands nearer, and is smaller farther back** (ticket 99, Matthew's call). The scenes are pseudo-3D. Every thing that stands in a place (a tree, a table, a cook, a duck) is an object with a depth, and the friend, wherever they are put or dragged, is drawn behind everything standing nearer than their feet. Flat things on the ground and the backdrop (sky, far hills, back walls and what hangs on them) are not objects. Anything painted over the whole place (darkness, glows, steam, the sign toward us at the bottom) is an object in front of everything, so the friend is always under it. Each place lists its objects with an 👁️ chip each, to hide or show one; the list is the formal record of what can stand in front of the friend.
 - **Cartoon bodies:** plain skin shapes, no anatomy.
 - **Nothing scary unless asked for.** Skeletons are off by default (one slider per dungeon room, starting at 0), because M found them scary.
 - **Every setting has a visible label with an emoji.** A choice that names a place or room shows that place's own emoji, so the same thing looks the same everywhere.
@@ -52,8 +53,9 @@ The repository's own GitHub Pages site serves `main` at http://matthewhammer.org
 
 | What | Where |
 |---|---|
-| The game | [`dress-up/index.html`](dress-up/index.html): one file holding all the HTML, CSS and JavaScript, about 9,700 lines. No build step and no dependencies. It also plays from disk. |
+| The game | [`dress-up/index.html`](dress-up/index.html): one file holding all the HTML, CSS and JavaScript, about 12,400 lines. No build step and no dependencies. It also plays from disk. |
 | Its versions | [`dress-up/VERSIONS.md`](dress-up/VERSIONS.md), newest first, with tags `dress-up-X.Y.Z`. |
+| Its objects | [`dress-up/OBJECTS.md`](dress-up/OBJECTS.md): every place's standing things, back to front, with their depths (ticket 99). Made from the depth sheets' `objects.json` (below) by `~/du-shots/tools/objects_md.py <objects.json> dress-up/OBJECTS.md <version>`; make it again after changing what stands in a place. |
 | Live | http://matthewhammer.org/kids-choice-games/dress-up/ (Pages, from `main` at `/`, with `.nojekyll`). |
 | Local | Any static server over `dress-up/`. On Matthew's laptop, http://localhost:8133/dress-up.html serves this working copy through a symlink. The kids test there before a release, so whatever you commit locally is what they play. |
 | Saved state | `localStorage["dress-up-v1"]` holds the whole `state`. Save writes PNG, SVG and JSON (`{app: "dress-up", version: 1, state}`), and Load reads the JSON back. Save is a menu (💾 Save ▾): the kinds of file, the button, and the links to what was saved, which keep it open. |
@@ -102,6 +104,16 @@ A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground 
 - An animation in time with an LFO takes its `begin` from `lfoBegin`, which reads the kept gap between the picture's clock and the music's (`picGapNow`, measured again only when it moves by more than `PIC_GAP_SLACK`: the music starting, stopping or jumping). Never write `pic.getCurrentTime()` or `performance.now()` into a scene's text: the picture's clock moves once a frame and the music's all the time, so the text changes from draw to draw, and the scene is rebuilt on every move (ticket 117: a drag ground to a halt and the music stuttered). A figure's own animations may, since the figure is drawn afresh anyway.
 - While a drag is held, the picture's SMIL animations are paused (`pic.pauseAnimations()`), and `picGapNow` keeps the gap as it was. Letting go moves the picture's clock on by as long as it was held (`pic.setCurrentTime`), so the gap is right again and nothing is rebuilt.
 
+**Depth** (ticket 99).
+- `obj(name, z, svg)` marks a standing thing: `<g data-obj="name" data-z="z">`. `z` is the y where it stands on the ground, in the stage's units (the friend's feet are at `SCENE.ground + figY`); something flying takes the ground under it, and `Infinity` (written `front`) is in front of everything. `byDepth([[name, z, svg], …])` writes a list of them in order.
+- Names are plain words a child reads, and stay the same as settings change: number a row from our end or by its index (`duck 3`, `chair, left 2`). A row of like things far from one another can be one object at its middle depth (`pines, far row`).
+- `sceneObjects` puts each group's objects in order by depth in the places they held (`sortObjects`), and lists the ones that count: an object inside a transform group, a doorway, a dragged thing or another object is drawn but not listed. Wrap a thing outside its `<g transform>`. Pictures and window views of a place are sorted too (`pictureSvg`), so they paint as the place does.
+- `draw()` puts the friend just before the first listed object deeper than their feet (`objectAhead`), else last. So whatever a scene paints after its objects must be an object itself, at `Infinity`; a light that belongs to one object goes inside it, so hiding the object hides its light.
+- **The friend's size by depth:** `depthSize(B, figY)` scales the friend on top of their size slider and the place's own size (`SCENE_FIG`): (feet − v) / (arrival − v), where v is the place's vanishing height (`sceneVanish`: a castle room's from `roomFrame`'s eye; `SCENE_VANISH` for rooms drawn flatter; 60 otherwise) and the arrival spot is `ARRIVE`'s, else the ground line. So the friend is exactly the place's own size where they arrive, smaller farther back, bigger nearer, between 0.3 and 1.5. Matthew's call: the place's own size stays the setting, and depth is a factor on top.
+- The objects control (`objects`, in the background tab) shows the list as small chips, 👁️ or 🙈 and the name, with 🧍 where the friend stands among them. A tap hides or shows one; hidden names are kept per place in `background.objectsOff[objPlace(B)]` (a castle room by its style, a tree house room by its number).
+
+**The friend's joints** (ticket 99). `body.elbows` (−150 to 150, up is +) and `body.knees` (0 to 150, out, so the friend crouches) bend both arms and both legs alike. At 0 every arm and leg is drawn exactly as before. A bent limb is a polyline through its joints (`armJoints`, `legJoints`, drawn by `limbThrough`); sleeves (`alongArm`), pants, stockings and skirt lengths follow the joints. Each limb posed on its own comes with ticket 121 (posing by touch).
+
 **Castles.**
 - `castleOf(o)` reads one castle's settings (N's, M's or D's) into a model:
   - `rooms`, by number (up to six, each a style from `ROOM_KINDS`);
@@ -141,6 +153,8 @@ Each kind of thing has one table. Add an entry there, and the rest follows from 
 - `PLACE_PHRASE`: the caption's words, such as "in the 🌲 forest" or "at the 🏕️ camp site";
 - `SCENE_TUNE`, if it has its own music;
 - `SCENE_LFO_THINGS`: its quick, slow and winged things.
+
+Wrap each thing that stands in it with `obj` (see Depth), make its depth sheet, and add its list to `OBJECTS.md`.
 
 Every place moves at least one quick thing and one slow thing with the music. A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground at 320). Doorways are `<g class="portal" data-to="place">`; `flyInto` animates the trip, and the back chip undoes it.
 
@@ -240,6 +254,7 @@ Each picture is a hand-drawn illusion of depth, and a few kinds of slip break it
   - If you put several serialized SVGs into one page, give each its own ids, or their clip paths will borrow from each other.
 - **A hidden browser pane stalls Web Animations,** so a trip through a doorway never lands. When testing mechanics there, replace `flyInto` with one that arrives at once: `flyInto = (b, arrive) => { arrive(); changed(); }`.
 - **Drags** use real input events (`Input.dispatchMouseEvent`) and are timed by frames, not by function calls. Count `mountScene` calls too (wrap it from `Runtime.evaluate`): after a first drag (the click starts the music, which rightly re-times the scene once), a drag in any place must build no scene again. Measure every place, from `PLACES`, with the music playing.
+- **Depth sheets** (`~/du-shots/tools/depthsheet.mjs <port> <url> <outdir> [place,…]`, places as `castleroom:<style>` and `treeroom:<n>`; all of them when none are named): for each place, the friend standing just behind each of its objects in turn, one contact sheet per place, and `objects.txt` and `objects.json`, the lists. Look at every sheet a change touches: each object should hide the friend's feet, and the friend should look the same (lit or dark) behind an object as in front of everything.
 - **Old saves.** After changing a setting's meaning, load a JSON saved by the last release and check that it looks the same.
 
 ## Working with Matthew

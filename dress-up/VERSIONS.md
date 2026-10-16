@@ -2,6 +2,19 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.46 (2026-10-15)
+
+Everything in 0.0.45, plus depth: the friend steps behind whatever stands nearer and is smaller farther back, each place lists what stands in it, and the friend has elbows and knees.
+
+- **🧍 The friend steps behind things** (Matthew): every place has depth now. Wherever you put or drag the friend, everything standing nearer than their feet is in front of them, and everything farther off is behind them. Walk them behind a tree in the forest, the couch in the living room, the trunk of the tree house, the bars of the deep dungeon's cell, the cooks in the kitchen or the castle's barrels. Things lying flat (rugs, paths, flowers) and what is far away (the sky, the hills, a room's back wall) stay behind the friend.
+- **The friend is smaller farther back** (Matthew): as the friend goes back into a place they get smaller, and coming toward you they get bigger, at the rate the place itself is drawn. They are the place's usual size where they arrive, and the "🧍 size in the scene" slider still sets their size on top of that.
+- **👁️ What stands here:** each place's background tab lists everything standing in it, from the back to the front, as small chips, with 🧍 where the friend is among them. Tap a chip to hide that thing (🙈), and tap it again to bring it back (👁️). The game remembers what you hid, place by place (each castle room style, and each room of the tree house, on its own). The darkness of the night or of a dark room, and the light of a fire or candles, are on the list too, so you can turn the dark off. The whole list, for every place, is in [OBJECTS.md](OBJECTS.md).
+- **The friend is lit like the place:** at night, and in the dark smithy, dining room and spiral staircase, the dark is over the friend too, wherever they stand (before, it was only when they stood behind something). At the camp at night, the fire makes a pool of light round itself, and the friend standing near the fire is lit by it.
+- **A picture of a place shows it the same way:** a picture on a wall, or the view out of a window, draws the place's things in the same order as the place itself.
+- **💪 Elbows and 🦵 knees:** two new sliders in the body tab. "💪 elbows bend" bends both arms at the elbows, down or up, and "🦵 knees bend" bends both knees out, so the friend crouches. Sleeves, pants, stockings and skirts follow the bend. At 0 the friend looks exactly as before. These are a start on posing the friend, and on moves like walking, climbing and dancing.
+- **Some places look a little different,** where a nearer thing used to be painted under a farther one: the yard's two trees stand in front of the house's corners, the tree house's near bushes in front of its roots, the greenhouse's palm trunks in front of the ferns, and the beach umbrellas' poles in front of the chairs. The butterflies fly behind the nearer trees.
+- Measured with a real drag of 60 moves in every place, with the music playing: no place builds its scene again during a drag, as in 0.0.45, and every place drags as fast as in 0.0.45 or faster (our imagination 2.7 seconds, was 3.4; the witch's woods 1.5, was 2.3; the witch's hut 1.4, was 1.8).
+
 ## 0.0.45 (2026-10-15)
 
 Everything in 0.0.44, plus dragging the friend smoothly again, while the scene moves with the music.
