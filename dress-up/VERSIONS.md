@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.87 (2026-10-16)
+
+Everything in 0.0.86, plus the places drawn as still pictures while the friend moves, on a slow computer.
+
+- **On a slow computer, each place is a still picture while the friend moves** (for the black laptop: its 🧪 on 0.0.86 swam the duck pond at 30 frames a second, and at 59 with the pond's scenery as one still picture). While the friend walks, swims or is dragged, the place is drawn as pictures cut where the friend stands in it, so they still go behind the trees in front of them and in front of the ones behind. A moment after they stop, the place is itself again, and doors, pictures and ladders work as ever; the ✨ glow on a picture to go into shows the whole time. A fast computer draws everything as before; ⚙️ Advanced's 🌀 moving scenery on a slow computer turns it off.
+- **🧪 for the iPad** (where the still picture of 0.0.86 helped nothing): two more passes, the pond's still picture as a bitmap drawn once in pixels, and the friend swimming without both the rings and the part under water. Fourteen passes, about 40 seconds; pass 9 is now the still pictures as the game draws them.
+
 ## 0.0.86 (2026-10-16)
 
 Everything in 0.0.85, plus 🧪 tests that find what costs the duck pond its frames.

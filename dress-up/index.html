@@ -831,7 +831,7 @@ const PERF_FEATURES = [
     count: () => [...document.querySelectorAll("#bg .portal")].filter(p => p.querySelector(":scope > rect") && p.querySelector(":scope > svg")).length, unit: ["picture drawn live", "pictures drawn live"] },
   // (ticket 164: on a computer too slow for them, a place's animations, the
   // wake and the faint copy under the water cost it most of its frames)
-  { id: "slowMoving", label: "🌀 moving scenery and water on a slow computer", what: "on a computer measured to be slow (a drawing of the friend takes over 6 ms, on average, or frames come late while the friend moves), each place is held still: its animations (ducks, the sun's rays, the fumes, fairies' wings), the rings round the friend in water, and the faint part of the friend under the water. On, everything moves anyway. A fast computer is never held still.",
+  { id: "slowMoving", label: "🌀 moving scenery and water on a slow computer", what: "on a computer measured to be slow (a drawing of the friend takes over 6 ms, on average, or frames come late while the friend moves), each place is held still: its animations (ducks, the sun's rays, the fumes, fairies' wings), the rings round the friend in water, and the faint part of the friend under the water; and while the friend moves, the place is drawn as one still picture, its standing things (trees, rocks) as they are. On, everything moves anyway. A fast computer is never held still.",
     count: () => 0, unit: ["", ""], status: () => `this computer: ${slowFlag || choppy ? "slow" : "not slow"} (a drawing takes ${slowAvg.toFixed(1)} ms, on average${slowN < 30 ? ", still measuring" : ""}${choppy ? "; frames came late while the friend moved" : ""})${slowFlag || choppy ? (PERF.slowMoving ? ": everything moves anyway" : ": the places are held still") : ": everything moves"}` },
   // (ticket 161: Matthew found the beach and the empty room nearly frozen;
   // a friend half see-through walked at 36 frames a second in the empty
@@ -915,69 +915,68 @@ async function speedCheck(report) {
     let B = state.background, body = state.body;
     Object.assign(B, { kind: "emptyroom", figX: -150, figY: 0 }); body.anim = "none"; body.facing = "right";
     changed(); await wait(600);
-    report("🧪 1 of 12: drawing the friend…"); await wait(50);
+    report("🧪 1 of 14: drawing the friend…"); await wait(50);
     body.anim = "walk";
     const times = [];
     for (let i = 0; i < 60; i++) { const t = performance.now(); draw(); times.push(performance.now() - t); }
     times.sort((a, b) => a - b);
     const med = times[30];
-    report("🧪 2 of 12: walking across the empty room…"); await wait(300);
+    report("🧪 2 of 14: walking across the empty room…"); await wait(300);
     const room = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
-    report("🧪 3 of 12: walking in place…"); B.figX = 0; changed(); await wait(300);
+    report("🧪 3 of 14: walking in place…"); B.figX = 0; changed(); await wait(300);
     const inPlace = await frames(2000, null);
     // (ticket 164, Matthew: the duck pond, swimming across, as the controller swims them, in the water's middle row)
     B.kind = "lake"; B.figX = -150; body.anim = "swim";
     { const ys = []; for (let y = -200; y <= 86; y += 2) if (inWater(B, 0, SCENE.ground + y) && inWater(B, -150, SCENE.ground + y) && inWater(B, 150, SCENE.ground + y)) ys.push(y); B.figY = ys[ys.length >> 1] ?? 0; }
-    changed(); report("🧪 4 of 12: swimming in the duck pond…"); await wait(1200);
+    changed(); report("🧪 4 of 14: swimming in the duck pond…"); await wait(1200);
     const pond = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
-    report("🧪 5 of 12: the duck pond held still…");
-    slowFlag = true; PERF.slowMoving = false; changed(); await wait(800);
+    report("🧪 5 of 14: the duck pond held still…");
+    slowFlag = true; PERF.slowMoving = false; SPEED_TEST.noPic = true; changed(); await wait(800);   // (held still, not yet a picture: 0.0.86's pass)
     const pondStill = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
-    slowFlag = keep.slowFlag; PERF.slowMoving = true;
+    slowFlag = keep.slowFlag; PERF.slowMoving = true; SPEED_TEST.noPic = false;
     // (0.0.86, Matthew: which part of the pond costs the frames; each pass
     // swims as the first, moving, with one part taken away: SPEED_TEST)
     const without = async (n, what, on, off) => {
-      report(`🧪 ${n} of 12: the duck pond ${what}…`); on(); changed(); await wait(800);
+      report(`🧪 ${n} of 14: the duck pond ${what}…`); on(); changed(); await wait(800);
+      for (let i = 0; i < 40 && stillPicWanted() && !stillPic.ready; i++) await wait(100);   // (a slow computer's picture, made)
+      stillPic.draws = stillPic.drawsOn = 0;
       const r = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
+      if (stillPic.draws) r.pic = Math.round(100 * stillPic.drawsOn / stillPic.draws);   // (the share of drawings with the still picture)
       off(); changed(); return r;
     };
     const NS = "http://www.w3.org/2000/svg", holder = () => { const g = document.createElementNS(NS, "g"); g.id = "bg"; return g; };
     const pondNoScene = await without(6, "without its scenery", () => { SPEED_TEST.holder = holder(); }, () => { SPEED_TEST.holder = null; });
     const pondNoUnder = await without(7, "without the friend's part under the water", () => { SPEED_TEST.noUnder = true; }, () => { SPEED_TEST.noUnder = false; });
     const pondNoRings = await without(8, "without the rings", () => { SPEED_TEST.noRings = true; }, () => { SPEED_TEST.noRings = false; });
-    // (as held still, the pass before, but the place an image the browser
-    // draws once: its text, held still, in a picture of the same frame)
-    const pondPicture = await without(9, "with its scenery a still picture", () => {
-      slowFlag = true; PERF.slowMoving = false; changed();
-      const [x, y, w, h] = pic.getAttribute("viewBox").split(" ").map(Number);
-      const doc = `<svg xmlns="${NS}" xmlns:xlink="http://www.w3.org/1999/xlink" width="${f1(w)}" height="${f1(h)}" viewBox="${f1(x)} ${f1(y)} ${f1(w)} ${f1(h)}">` +
-                  bgShown.text.split(SEP).join("") + `</svg>`;
-      const img = document.createElementNS(NS, "image");
-      for (const [k, v] of [["x", x], ["y", y], ["width", w], ["height", h]]) img.setAttribute(k, f1(v));
-      img.setAttribute("href", "data:image/svg+xml;charset=utf-8," + doc.replace(/%/g, "%25").replace(/#/g, "%23").replace(/"/g, "%22").replace(/&/g, "%26"));
-      const g = holder(); g.append(img); SPEED_TEST.holder = g;
-    }, () => { SPEED_TEST.holder = null; slowFlag = keep.slowFlag; PERF.slowMoving = true; });
-    report("🧪 10 of 12: the duck pond with its music…");
+    // (0.0.87: as held still, but the place a still picture while the friend
+    // moves, as a slow computer now draws it (stillPic); 0.0.86's pass 9 made
+    // the whole place one picture, the friend in front of everything)
+    const pondPicture = await without(9, "with its scenery a still picture", () => { slowFlag = true; PERF.slowMoving = false; }, () => { slowFlag = keep.slowFlag; PERF.slowMoving = true; });
+    // (0.0.87, for the iPad, where 9 helped nothing: the picture as a bitmap;
+    // and both of the friend's water parts away at once)
+    const pondBitmap = await without(10, "with its scenery a still bitmap", () => { slowFlag = true; PERF.slowMoving = false; SPEED_TEST.bitmap = true; }, () => { slowFlag = keep.slowFlag; PERF.slowMoving = true; SPEED_TEST.bitmap = false; });
+    const pondNoWater = await without(11, "without the rings and the part under water", () => { SPEED_TEST.noRings = SPEED_TEST.noUnder = true; }, () => { SPEED_TEST.noRings = SPEED_TEST.noUnder = false; });
+    report("🧪 12 of 14: the duck pond with its music…");
     state.music.mute = false; changed(); await wait(1200);
     const pondMusic = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
     // (Matthew: after the pond, the empty room was as slow as the pond,
     // until the page was loaded again: the room once more, as the first
     // time, then with its music)
-    report("🧪 11 of 12: the empty room, after the pond…");
+    report("🧪 13 of 14: the empty room, after the pond…");
     state.music.mute = true; Object.assign(B, { kind: "emptyroom", figX: -150, figY: 0 }); body.anim = "walk"; body.facing = "right"; changed(); await wait(600);
     const roomAfter = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
-    report("🧪 12 of 12: the empty room after the pond, with its music…");
+    report("🧪 14 of 14: the empty room after the pond, with its music…");
     state.music.mute = false; changed(); await wait(1200);
     const roomAfterMusic = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
     const ua = navigator.userAgent, browser = (ua.match(/(Firefox|Edg|Chrome|Safari)\/(\d+)/) || [, "a browser", ""]).slice(1).join(" ").trim();
     const p = r => `${r.fps} fps (longest pause ${r.worst} ms, ${r.late}% late)`;
-    const data = { v: VERSION.number, draw: +med.toFixed(2), room, inPlace, pond, pondStill, pondNoScene, pondNoUnder, pondNoRings, pondPicture, pondMusic, roomAfter, roomAfterMusic, browser, platform: navigator.platform || "",
+    const data = { v: VERSION.number, draw: +med.toFixed(2), room, inPlace, pond, pondStill, pondNoScene, pondNoUnder, pondNoRings, pondPicture, pondBitmap, bitmapOk: stillPic.bitmapOk, pondNoWater, pondMusic, roomAfter, roomAfterMusic, browser, platform: navigator.platform || "",
                    screen: `${screen.width}x${screen.height}`, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency || null, memory: navigator.deviceMemory || null,
                    pic: (r => `${Math.round(r.width)}x${Math.round(r.height)}`)(pic.getBoundingClientRect()), found: { slow: keep.slowFlag, choppy: keep.choppy } };
-    report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · without its scenery: ${p(pondNoScene)} · without the part under water: ${p(pondNoUnder)} · without the rings: ${p(pondNoRings)} · scenery a still picture: ${p(pondPicture)} · with music: ${p(pondMusic)} · the empty room after the pond: ${p(roomAfter)}, with its music: ${p(roomAfterMusic)} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
+    report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · without its scenery: ${p(pondNoScene)} · without the part under water: ${p(pondNoUnder)} · without the rings: ${p(pondNoRings)} · scenery a still picture: ${p(pondPicture)} · a still bitmap: ${p(pondBitmap)} · without the rings and the part under water: ${p(pondNoWater)} · with music: ${p(pondMusic)} · the empty room after the pond: ${p(roomAfter)}, with its music: ${p(roomAfterMusic)} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
   } finally {
     state = JSON.parse(saved);
-    Object.assign(SPEED_TEST, { holder: null, noUnder: false, noRings: false });
+    Object.assign(SPEED_TEST, { holder: null, noUnder: false, noRings: false, noPic: false, bitmap: false });
     slowFlag = keep.slowFlag; choppy = keep.choppy; PERF.slowMoving = keep.slowMoving;
     moveSuspend = false; moveFrames = moveLate = 0;
     perfBusy = false;
@@ -1043,7 +1042,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.86", released: "2026-10-16" };
+const VERSION = { number: "0.0.87", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -10051,9 +10050,171 @@ const sceneryStill = () => (slowFlag || choppy) && !PERF.slowMoving;
 // away while the friend swims, to find what costs the black laptop its
 // frames: holder, a group drawn instead of the place's scenery (empty, or
 // the place as a still picture), with the friend in front of it all;
-// noUnder, no faint copy of the friend under the water; noRings, no rings.
-// Only the speed check sets them, and it puts them back.
-const SPEED_TEST = { holder: null, noUnder: false, noRings: false };
+// noUnder, no faint copy of the friend under the water; noRings, no rings;
+// (0.0.87) noPic, no still picture (below); bitmap, the still picture as a
+// bitmap. Only the speed check sets them, and it puts them back.
+const SPEED_TEST = { holder: null, noUnder: false, noRings: false, noPic: false, bitmap: false };
+// (ticket 164, 0.0.87) On a slow computer, while the friend moves, the
+// place is drawn as still pictures. The black laptop's 🧪 (0.0.86) swam the
+// duck pond at 30 frames a second as it is, and at 59 with its scenery one
+// still picture: Firefox paints a picture once instead of its ~1,000 shapes
+// every frame. The scene is cut where the friend goes in it (before the
+// first standing object nearer than their feet, and their far arm's place
+// before that: see draw), and each part is one picture, so the friend stays
+// behind and in front of the same things as ever. The scene itself stays,
+// hidden, so doorways, ladders and the ✨ glow measure it as before (a copy
+// of the glow is shown over its picture). The pictures are made before they
+// are needed, for the place and the friend's depth, and again when the
+// friend goes past an object's depth; until they are ready the scene is
+// drawn as it is. STILL_PIC_HOLD ms after the last move the scene itself is
+// shown again, where clicks reach it.
+const STILL_PIC_HOLD = 400, STILL_PARTS = 6, STILL_RES = "defs, linearGradient, radialGradient, pattern, clipPath, mask, filter, symbol, marker, style";
+const stillPic = { gen: 0, node: null, text: null, vb: null, bitmap: false, off: "", parts: new Map(), shown: [], on: false, onNode: null, glow: null, glowOf: null, bitmapOk: null, drawsOn: 0, draws: 0 };
+let stillPicUntil = 0, stillPicEnd = 0;
+const stillPicWanted = () => !!bgShown.node && sceneryStill() && !SPEED_TEST.holder && !SPEED_TEST.noPic;
+// (the parts' pictures, kept while the place, its frame and its hidden objects stay as they are)
+function stillPicReset() {
+  const vb = pic.getAttribute("viewBox"), off = [...objectsOff(state.background)].join(",");
+  if (stillPic.node === bgShown.node && stillPic.text === bgShown.text && stillPic.vb === vb && stillPic.bitmap === SPEED_TEST.bitmap && stillPic.off === off) return;
+  showStillPic(null);
+  for (const p of stillPic.parts.values()) { if (p.img) p.img.remove(); if (p.url) URL.revokeObjectURL(p.url); }
+  Object.assign(stillPic, { gen: stillPic.gen + 1, node: bgShown.node, text: bgShown.text, vb, bitmap: SPEED_TEST.bitmap, off, parts: new Map(), shown: [] });
+}
+// a part's picture: what the scene draws from just after object lo - 1 (from
+// its start, for 0) to just before object hi (to its end, for the last),
+// counting bgShown.objs in their drawing order
+function stillPart(lo, hi) {
+  const key = lo + ":" + hi;
+  let p = stillPic.parts.get(key);
+  if (p) return p;
+  p = { lo, hi, img: null, url: null, ready: false, used: performance.now() };
+  stillPic.parts.set(key, p);
+  const gen = stillPic.gen, node = stillPic.node, bitmap = stillPic.bitmap, vb = stillPic.vb, NS = "http://www.w3.org/2000/svg";
+  setTimeout(async () => {
+    if (gen !== stillPic.gen || !node.isConnected || stillPic.parts.get(key) !== p) return;
+    const objs = bgShown.objs;
+    objs.forEach((o, i) => o.node.setAttribute("data-still-obj", i));
+    for (const n of figShown) if (n.setAttribute) n.setAttribute("data-still-out", "");
+    const copy = node.cloneNode(true);
+    objs.forEach(o => o.node.removeAttribute("data-still-obj"));
+    for (const n of figShown) if (n.removeAttribute) n.removeAttribute("data-still-out");
+    copy.removeAttribute("style");
+    for (const n of copy.querySelectorAll("[data-still-out], [data-still-pic], .enter-glow")) n.remove();
+    const full = copy.cloneNode(true), defs = document.createElementNS(NS, "defs");
+    // (pos: 0 before the first object, k + 1 from object k on)
+    let pos = 0;
+    const walk = el => {
+      for (const c of [...el.children]) {
+        if (c.matches(STILL_RES)) continue;
+        const k = c.getAttribute("data-still-obj");
+        if (k !== null) pos = +k + 1;
+        else if (c.querySelector("[data-still-obj]")) { walk(c); continue; }   // (a group with objects in it, part by part)
+        if (pos < lo || pos > hi) { for (const r of c.querySelectorAll(STILL_RES)) defs.append(r); c.remove(); }
+      }
+    };
+    walk(copy);
+    // (a shape drawn again elsewhere by <use>: kept for it, if the part left it out)
+    for (const u of copy.querySelectorAll("use")) {
+      const id = (u.getAttribute("href") || u.getAttributeNS("http://www.w3.org/1999/xlink", "href") || "").replace(/^#/, "");
+      if (!id || copy.querySelector(`[id="${CSS.escape(id)}"]`) || defs.querySelector(`[id="${CSS.escape(id)}"]`)) continue;
+      const t = full.querySelector(`[id="${CSS.escape(id)}"]`);
+      if (t) defs.append(t.cloneNode(true));
+    }
+    copy.prepend(defs);
+    // (the picture's frame and 3% more round it: a scene may draw a sliver past the frame, at its edges)
+    const [x, y, w, h] = (([x, y, w, h]) => [x - 0.03 * w, y - 0.03 * h, 1.06 * w, 1.06 * h])(vb.split(" ").map(Number));
+    const doc = `<svg xmlns="${NS}" xmlns:xlink="http://www.w3.org/1999/xlink" width="${f1(w)}" height="${f1(h)}" viewBox="${f1(x)} ${f1(y)} ${f1(w)} ${f1(h)}">` +
+                new XMLSerializer().serializeToString(copy) + `</svg>`;
+    let url = URL.createObjectURL(new Blob([doc], { type: "image/svg+xml" }));
+    if (bitmap) {
+      // (for Safari, where 0.0.86's svg picture helped nothing: drawn once
+      // into pixels at this screen's size)
+      try {
+        const im = new Image(); im.src = url; await im.decode();
+        const r = pic.getBoundingClientRect(), k = Math.min(r.width / w, r.height / h) * (devicePixelRatio || 1);
+        const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        const blob = await new Promise(res => c.toBlob(res, "image/png"));
+        if (!blob) throw new Error("no bitmap");
+        URL.revokeObjectURL(url); url = URL.createObjectURL(blob); stillPic.bitmapOk = true;
+      } catch (e) { stillPic.bitmapOk = false; }
+    }
+    if (gen !== stillPic.gen || !node.isConnected || stillPic.parts.get(key) !== p) { URL.revokeObjectURL(url); return; }   // (a new place, or this part let go)
+    const img = document.createElementNS(NS, "image");
+    for (const [k, v] of [["x", x], ["y", y], ["width", w], ["height", h]]) img.setAttribute(k, f1(v));
+    img.setAttribute("preserveAspectRatio", "none"); img.setAttribute("pointer-events", "none"); img.setAttribute("data-still-pic", "");
+    img.style.visibility = "hidden";
+    img.addEventListener("load", () => { if (gen === stillPic.gen) p.ready = true; }, { once: true });
+    img.setAttribute("href", url);
+    node.append(img);   // (hidden, at the scene's end, until wanted)
+    Object.assign(p, { img, url });
+  }, 0);
+  return p;
+}
+// (from draw, before the friend is put in: the parts for where the friend
+// goes, behind (their far arm's object) and ahead (their own), made if they
+// are not yet; while the friend moves and all are ready, the parts, in their
+// drawing order at the scene's end)
+function stillLayers(farNode, behind, ahead) {
+  if (!stillPicWanted()) return null;
+  stillPicReset();
+  const N = bgShown.objs.length, at = n => { const i = n ? bgShown.objs.findIndex(o => o.node === n) : -1; return i < 0 ? N : i; };
+  const r = at(ahead), f = farNode ? at(behind) : r;
+  const parts = [stillPart(0, f), f < r ? stillPart(f + 1, r) : null, r < N ? stillPart(r + 1, N) : null];
+  // (at most STILL_PARTS kept: each is a picture the size of the screen in memory; the longest unused goes)
+  const now = performance.now();
+  for (const q of parts) if (q) q.used = now;
+  if (stillPic.parts.size > STILL_PARTS) {
+    const old = [...stillPic.parts.entries()].filter(([, q]) => !parts.includes(q)).sort((a, b) => a[1].used - b[1].used);
+    for (const [k, q] of old.slice(0, stillPic.parts.size - STILL_PARTS)) {
+      if (q.img) q.img.remove(); if (q.url) URL.revokeObjectURL(q.url);
+      stillPic.parts.delete(k); stillPic.shown = stillPic.shown.filter(m => m !== q.img);
+    }
+  }
+  if (!(performance.now() < stillPicUntil && !poseHeld && !entering && parts.every(q => !q || q.ready))) return null;
+  const imgs = parts.filter(Boolean).map(q => q.img);
+  if (imgs.some((m, i) => i && !(imgs[i - 1].compareDocumentPosition(m) & Node.DOCUMENT_POSITION_FOLLOWING))) bgShown.node.append(...imgs);
+  return parts;
+}
+// the pictures on (the scene hidden, the friend and the glow's copy shown)
+// or off, written only when it changes
+function showStillPic(parts) {
+  const node = bgShown.node;
+  if (stillPic.on && stillPic.onNode !== node) { stillPic.on = false; stillPic.shown = []; }
+  const want = parts ? parts.filter(Boolean).map(q => q.img) : [];
+  if (want.length !== stillPic.shown.length || want.some((m, i) => m !== stillPic.shown[i])) {
+    for (const m of stillPic.shown) if (!want.includes(m)) m.style.visibility = "hidden";
+    for (const m of want) m.style.visibility = "visible";
+    stillPic.shown = want;
+  }
+  const on = !!parts;
+  if (on !== stillPic.on && node) { node.style.visibility = on ? "hidden" : ""; stillPic.on = on; stillPic.onNode = node; }
+  if (on) for (const n of figShown) if (n.style) n.style.visibility = "visible";
+  // (the ✨ glow on a picture to go into: a copy over the part its picture is in)
+  const g = on && enterGlow && enterGlow.isConnected ? enterGlow : null;
+  if (stillPic.glow && (!g || stillPic.glowOf !== g)) { stillPic.glow.remove(); stillPic.glow = stillPic.glowOf = null; }
+  if (g) {
+    if (!stillPic.glow) {
+      const m = pic.getScreenCTM().inverse().multiply(g.getScreenCTM()), w = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      w.setAttribute("transform", `matrix(${[m.a, m.b, m.c, m.d, m.e, m.f].map(v => +v.toFixed(4)).join(" ")})`);
+      w.setAttribute("data-still-pic", ""); w.setAttribute("pointer-events", "none"); w.style.visibility = "visible";
+      w.append(g.cloneNode(true));
+      Object.assign(stillPic, { glow: w, glowOf: g });
+    }
+    let k = 0;
+    for (const o of bgShown.objs) { if (o.node === g || o.node.contains(g)) { k++; break; } if (g.compareDocumentPosition(o.node) & Node.DOCUMENT_POSITION_FOLLOWING) break; k++; }
+    const q = parts.find(q => q && q.lo <= k && k <= q.hi);
+    if (q && stillPic.glow.previousSibling !== q.img) q.img.after(stillPic.glow);
+  }
+}
+// (from moved(): the pictures hold while moves keep coming; after the last,
+// one more drawing shows the scene itself)
+function stillPicMoved(t) {
+  stillPicUntil = t + STILL_PIC_HOLD;
+  if (!stillPic.on && !stillPic.parts.size) return;
+  clearTimeout(stillPicEnd);
+  stillPicEnd = setTimeout(() => { stillPicEnd = 0; if (stillPic.on && performance.now() >= stillPicUntil) draw(); }, STILL_PIC_HOLD + 50);
+}
 function draw() {
   const t = performance.now(), text = bgShown.text;
   drawNow();
@@ -10887,16 +11048,27 @@ function drawNow() {
   // before the first thing standing nearer than that, so behind the rest)
   const farNode = figShown.find(n => n.id === "figure-far"), rest = figShown.filter(n => n !== farNode);
   const behind = farNode && scenery && !SPEED_TEST.holder ? objectAhead(feetZ - 26 * figureT.k) : null;
-  if (behind) behind.parentNode.insertBefore(farNode, behind);
-  else if (farNode) pic.append(farNode);
   const ahead = scenery && !SPEED_TEST.holder ? objectAhead(feetZ) : null;
-  if (ahead) for (const n of rest) ahead.parentNode.insertBefore(n, ahead);
-  else pic.append(...rest);
+  // (ticket 164: on a slow computer, while the friend moves, the scene as
+  // still pictures at its end, cut where the friend goes, the friend between)
+  const stills = scened && scenery === bgShown.node ? stillLayers(farNode, behind, ahead) : null;
+  if (stills) {
+    const B = stills[1] && stills[1].img, C = stills[2] && stills[2].img;
+    if (farNode) scenery.insertBefore(farNode, B || C || null);
+    for (const n of rest) scenery.insertBefore(n, C || null);
+  } else {
+    if (behind) behind.parentNode.insertBefore(farNode, behind);
+    else if (farNode) pic.append(farNode);
+    if (ahead) for (const n of rest) ahead.parentNode.insertBefore(n, ahead);
+    else pic.append(...rest);
+  }
   showObjects();
   if (hoverOn) showHover();   // (the hover glow, over the new drawing: ticket 135)
   if (padName || enterGlow) showEnterGlow();   // (the picture ✨ would go into: ticket 145)
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
+  if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
+  if (scened) { stillPic.draws++; if (stills) stillPic.drawsOn++; }   // (for 🧪)
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was
   // drawn, kept centred
@@ -13167,6 +13339,7 @@ let settleTimer = 0, drawAvg = 0, movedLast = 0, movedTrail = 0, movedDraws = 0,
 function moved(force = false) {
   const t = performance.now();
   if (!force) noteMoveFrame(t);   // (ticket 164: frames dropping while moving)
+  stillPicMoved(t);   // (ticket 164: the place a still picture while moving, on a slow computer)
   if (!force && drawAvg > DRAW_SLOW && t - movedLast < MOVE_EVERY) {
     // (the latest move drawn soon even if no other comes: a held-still drag, a stop)
     if (!movedTrail) movedTrail = setTimeout(() => { movedTrail = 0; moved(true); }, MOVE_EVERY - (t - movedLast));
