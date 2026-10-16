@@ -2708,14 +2708,15 @@ const musicSeconds = () => playing && typeof audio !== "undefined" && audio
 // frame further, until dragging the friend ground to a halt and the music
 // stuttered (ticket 117). So the gap is measured once and kept, and measured
 // again only when it truly moves (by more than PIC_GAP_SLACK seconds): the
-// music starting, stopping or jumping. While a drag holds the picture's
-// clock still, the gap is kept as it was (letting go moves that clock on by
-// as long as it was held, so the gap is right again).
+// music starting, stopping or jumping. During a drag the gap is kept as it
+// was, and measured again once it ends (ticket 133): a press on the picture
+// can start the music, and measuring it then built the whole scene again in
+// the middle of the drag.
 const PIC_GAP_SLACK = 0.25;
-let picGap = null;
+let picGap = null, picDragging = false;
 function picGapNow() {
   const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() : 0, g = now - musicSeconds();
-  if (picGap === null || (Math.abs(g - picGap) > PIC_GAP_SLACK && !(pic && pic.animationsPaused && pic.animationsPaused()))) picGap = g;
+  if (picGap === null || (Math.abs(g - picGap) > PIC_GAP_SLACK && !picDragging)) picGap = g;
   return picGap;
 }
 // when, in the picture's own time, an animation must have begun for its wave
@@ -2947,10 +2948,8 @@ function helixSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
 }
 // (ticket 118) The fumes' widths and see-through-ness as Web Animations, one
 // per segment, started where the picture's clock is in its 2.4 s loop (the
-// SMIL x1/x2 beside them run on that clock), so the two stay together; held
-// still with the picture's animations during a drag and set to its clock
-// again on letting go (helixSync). Segments kept from the last drawing keep
-// theirs.
+// SMIL x1/x2 beside them run on that clock), so the two stay together.
+// Segments kept from the last drawing keep theirs.
 const HELIX_MS = 2400;
 function startHelix(root) {
   const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() * 1000 : 0;
@@ -2962,10 +2961,6 @@ function startHelix(root) {
     el.__helix.currentTime = now % HELIX_MS;
     if (paused) el.__helix.pause();
   }
-}
-function helixSync(play) {
-  const pic = document.getElementById("pic"), now = pic.getCurrentTime() * 1000;
-  for (const el of pic.querySelectorAll("[data-helix]")) if (el.__helix) { el.__helix.currentTime = now % HELIX_MS; play ? el.__helix.play() : el.__helix.pause(); }
 }
 // a scene drawn inside another (a picture on a wall) keeps its ids apart
 const prefixIds = (svg, p) => svg.replace(/(id="|url\(#|href="#)/g, `$1${p}`);
@@ -9848,7 +9843,7 @@ function draw() {
 function treadTick(t) {
   treadLoop = 0;
   if (!treadNow()) return;
-  if (!drag && !document.hidden && t - treadLast >= 32) { treadLast = t; draw(); return; }
+  if (!drag && !document.hidden && t - treadLast >= 32) { treadLast = t; draw(); feedMusic(); return; }
   treadLoop = requestAnimationFrame(treadTick);
 }
 
@@ -11076,11 +11071,20 @@ function startTune(id, from = 0) {
   const p = playing;
   applyMix(true);
   p.timer = setInterval(() => sendAhead(p), 25);
+  // (ticket 133: and every frame, as frames still come when timers are held back)
+  const frame = () => { if (playing === p) { sendAhead(p); requestAnimationFrame(frame); } };
+  requestAnimationFrame(frame);
   sendAhead(p);
 }
 const tunedStep = T => stepSecs(T) * 100 / (state.music.tempo || 100);
+// (ticket 133) Notes are sent to the audio clock 0.5 s ahead (0.2 s until
+// 0.0.58), by a 25 ms timer, every frame, and every drawing (feedMusic): a
+// drag or a busy page can hold timers back for a fifth of a second, in which
+// a note came too late and was skipped, a glitch, while frames still came.
+const MUSIC_AHEAD = 0.5;
+function feedMusic() { if (playing && audio) sendAhead(playing); }
 function sendAhead(p) {
-  const until = audio.currentTime + 0.2;
+  const until = audio.currentTime + MUSIC_AHEAD;
   for (;;) {
     const ev = p.song.events[p.i];
     const step = p.loop * p.song.steps + ev.at + swingOf(p.song.T, ev.at), t = p.t0 + (step - p.s0) * p.sd;
@@ -12041,7 +12045,7 @@ function set(part, key, value) {
   changed();
 }
 function changed() {
-  draw(); for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync();
+  draw(); for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync(); feedMusic();
   // a new friend (loaded, started over, surprised) or a scene turned on or
   // off rebuilds the HUD; a slider moving in it does not
   if (!hud.hidden && hudKey() !== hudShown) renderHud();
@@ -12761,15 +12765,29 @@ function repoChip() {
 // after every draw (a picture without a scene changes shape with the
 // friend) and whenever its place changes size.
 let picFit = "";
+// (ticket 133) The picture's area is measured only when it may have changed
+// size (a ResizeObserver, the window, the big-picture switch): reading it
+// right after a drawing changed the picture made the browser lay the whole
+// page out again, on every drawing, every move of a drag.
+const narrowMedia = matchMedia("(max-width: 760px)");
+let picAreaSize = null, picAreaWatch = null;
 function fitPic() {
   const pic = document.getElementById("pic"), area = document.querySelector(".pic-area");
   if (!pic || !area) return;
+  if (!picAreaWatch && typeof ResizeObserver === "function") {
+    picAreaWatch = new ResizeObserver(() => { picAreaSize = null; fitPic(); });
+    picAreaWatch.observe(area);
+    window.addEventListener("resize", () => { picAreaSize = null; });
+  }
   const vb = pic.viewBox.baseVal, ar = vb && vb.width > 0 && vb.height > 0 ? vb.width / vb.height : 4 / 3;
-  const narrow = matchMedia("(max-width: 760px)").matches && !document.body.classList.contains("big");
-  // (the caption and buttons under it, in the same area, take their share of its height)
-  const bar = document.body.classList.contains("big") ? null : area.querySelector(".bar");
-  const W = area.clientWidth, H = narrow ? window.innerHeight * 0.4 : area.clientHeight - (bar ? bar.offsetHeight : 0);
-  if (!(W > 0) || !(H > 0)) return;
+  const big = document.body.classList.contains("big"), narrow = narrowMedia.matches && !big;
+  if (!picAreaSize || picAreaSize.big !== big || picAreaSize.narrow !== narrow || !picAreaWatch) {
+    // (the caption and buttons under it, in the same area, take their share of its height)
+    const bar = big ? null : area.querySelector(".bar");
+    picAreaSize = { big, narrow, W: area.clientWidth, H: narrow ? window.innerHeight * 0.4 : area.clientHeight - (bar ? bar.offsetHeight : 0) };
+  }
+  const { W, H } = picAreaSize;
+  if (!(W > 0) || !(H > 0)) { picAreaSize = null; return; }
   let w = W, h = W / ar;
   if (h > H) { h = H; w = H * ar; }
   const key = Math.floor(w) + "x" + Math.floor(h);
@@ -13184,7 +13202,7 @@ pic.addEventListener("pointerdown", e => {
   if (joint) {
     drag = { pose: joint, T: { ...figureT } };
     poseHeld = { what: joint.what, side: joint.side, g: figureT.g };
-    pic.setPointerCapture(e.pointerId);
+    pic.setPointerCapture(e.pointerId); picDragging = true;   // (a drag: picGapNow waits for letGo)
     changed();   // (the ring)
     return;
   }
@@ -13192,31 +13210,41 @@ pic.addEventListener("pointerdown", e => {
   if (thing && !onFigure(e)) {
     const p = picUnits(e), B = state.background, name = thing.dataset.drag;
     drag = { thing: name, x0: B[name + "X"] ?? +(thing.dataset.x ?? 0), y0: B[name + "Y"] ?? +(thing.dataset.y ?? 0), px: p.x, py: p.y };
-    pic.setPointerCapture(e.pointerId);
+    pic.setPointerCapture(e.pointerId); picDragging = true;
     return;
   }
   if (!onFace(e)) {
     if (!onFigure(e)) return;
     const p = picUnits(e);
     drag = { figure: true, x0: state.background.figX ?? 0, y0: state.background.figY ?? 0, px: p.x, py: p.y };
-    pic.setPointerCapture(e.pointerId);
+    pic.setPointerCapture(e.pointerId); picDragging = true;
     return;
   }
   const [x, y] = faceUnits(e);
   const feature = y < faceLayout(state.face).eyeY - 12 - browLift(state.face) ? "brow" : "smile";
   drag = { feature, v0: state.face[feature], y0: e.clientY };
-  pic.setPointerCapture(e.pointerId);
+  pic.setPointerCapture(e.pointerId); picDragging = true;
 });
+// (ticket 133) A drag's moves come faster than frames (a 125 Hz mouse, a
+// 240 Hz pencil, and all of them while the page is busy): each move updates
+// the friend at once, and the picture is drawn once a frame, for the newest
+// move. A timer stands in where frames do not come.
+let dragFrame = 0, dragTimer = 0;
+function dragDraw() { cancelAnimationFrame(dragFrame); clearTimeout(dragTimer); dragFrame = dragTimer = 0; changed(); }
+function dragChanged() {
+  if (dragFrame || dragTimer) return;
+  dragFrame = requestAnimationFrame(dragDraw); dragTimer = setTimeout(dragDraw, 50);
+}
 // One step per screen pixel, however big the picture is drawn.
 pic.addEventListener("pointermove", e => {
   if (!drag) return;
-  if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); changed(); return; }
+  if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
     B[drag.thing + "X"] = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right));
     B[drag.thing + "Y"] = Math.round(clamp(drag.y0 + p.y - drag.py, (F.top - F.ground) * 0.6, F.bottom - F.ground));
-    changed();
+    dragChanged();
     return;
   }
   if (drag.figure) {
@@ -13225,20 +13253,16 @@ pic.addEventListener("pointermove", e => {
     const p = picUnits(e), F = sceneFrame;
     state.background.figX = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right));
     state.background.figY = Math.round(clamp(drag.y0 + p.y - drag.py, (F.top - F.ground) * 0.6, F.bottom - F.ground));
-    changed();
+    dragChanged();
     return;
   }
   state.face[drag.feature] = clamp(Math.round(drag.v0 + (e.clientY - drag.y0)), -100, 200);
-  changed();
+  dragChanged();
 });
-// While a drag is held, the picture's animations (a cauldron's fumes, its
-// bubbles) hold still: drawing them is most of a frame in the witch's woods,
-// and a drag redraws on every move. Let go, and they go on from where they
-// would have been by then, so whatever moves with the music is in time with
-// it again (and the picture's clock is as far ahead of the music's as it was:
-// picGapNow), without the scene being built again.
-let heldAt = 0;
-pic.addEventListener("pointerdown", () => { if (drag && !pic.animationsPaused()) { pic.pauseAnimations(); helixSync(false); heldAt = performance.now(); } });
+// (ticket 133) The picture's animations go on during a drag: the ducks keep
+// paddling while you move the friend. (Since ticket 118 they held still
+// during a drag, as drawing the witch's fumes was most of a frame; since
+// 0.0.55 the fumes are cheap, and holding still bought nothing, measured.)
 // (ticket 50) Sitting on a seat: the friend sits, facing a way the seat
 // allows, across it where they were (or in its middle), and is moved up or
 // down until their hips are on its top (their size changes with the depth,
@@ -13275,7 +13299,8 @@ function dropOnSeat() {
   else if (!t && was) { state.body.sit = false; B.seat = null; changed(); }
 }
 const letGo = () => {
-  if (drag && pic.animationsPaused()) { pic.setCurrentTime(pic.getCurrentTime() + (performance.now() - heldAt) / 1000); pic.unpauseAnimations(); helixSync(true); }
+  if (dragFrame || dragTimer) dragDraw();   // (the last move, drawn before letting go)
+  picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, moved = drag && drag.figure;
   drag = null;
@@ -13283,6 +13308,9 @@ const letGo = () => {
   if (moved) dropOnSeat();
 };
 pic.addEventListener("pointerup", letGo);
+// (ticket 133: a touch the browser takes over, as a scroll or a gesture, ends
+// the drag too, or the friend stays held)
+pic.addEventListener("pointercancel", letGo);
 pic.addEventListener("pointercancel", letGo);
 
 // Through a doorway (a picture, a window, a tree house, a door: .portal in

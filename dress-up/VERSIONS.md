@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.58 (2026-10-16)
+
+Everything in 0.0.57, plus smoother dragging and posing, and music that keeps playing.
+
+- **Faster dragging and posing** (Matthew: posing was very slow, dragging into water most of all): each drawing of the friend takes about half as long as before, in every place, and the picture is drawn once a frame however fast the mouse or pencil moves. Measured on the duck pond: a drag into the water 3.6 to 1.8 thousandths of a second a drawing in Chrome (4.8 to 2.4 in Firefox), posing a hand 2.9 to 1.7, treading water 4.0 to 2.3.
+- **The pond keeps moving while you drag** (Matthew: the duck pond stopped animating): the ducks, the water and everything else in a place go on moving during a drag, instead of standing still until you let go.
+- **Fixed: the music glitched during a drag**: notes are sent further ahead and more often, so a busy moment no longer skips them. The first press that starts the music no longer rebuilds the whole place in the middle of the drag.
+- **Fixed on touch screens**: a drag the browser takes over (a scroll or a gesture) lets go of the friend properly.
+
 ## 0.0.57 (2026-10-15)
 
 Everything in 0.0.56, plus poses, flowing water, and a hug.
