@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.88 (2026-10-16)
+
+Everything in 0.0.87, plus doors that open, and walking through them.
+
+- **Doors glow, and X goes through** (Matthew): the castle's doors, its archways, its gate from outside, and the house's front door glow when the friend comes near, as pictures have since 0.0.74, and whichever door or picture is closest gets the glow; X (or a click, or 🚪 the nearest doorway) goes through.
+- **Through a door on foot**: the friend walks up to it, a wooden door swings open by itself (by magic: no reaching for the handle yet) on a dark doorway, and they step in and are gone, then come in, fading in, in the place beyond, facing us. The signs at the picture's foot (a door behind you) walk them out toward us.
+- **The spin is for pictures and windows only** (Matthew: "it's the most magical looking").
+
 ## 0.0.87 (2026-10-16)
 
 Everything in 0.0.86, plus the places drawn as still pictures while the friend moves, on a slow computer.
