@@ -552,7 +552,11 @@ const DEFAULTS = {
            faceW: 100, faceH: 100, alien: 0, eyeGap: 38, noseView: "none", nose: "L", noseFront: "round", noseW: 100, noseH: 100,
            witchDir: "right", witchLen: 100, mouthSize: 100 },
   hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100 },
-  body:  { neck: 22, neckW: 26, arms: 55, elbows: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0 },
+  body:  { neck: 22, neckW: 26, arms: 55, elbows: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0,
+           // (ticket 121) each limb's own pose, dragged in the picture: on
+           // top of the sliders' turn and bend, by the friend's own side (L
+           // their left, on our right)
+           poseArmL: 0, poseArmR: 0, poseElbowL: 0, poseElbowR: 0, poseLegL: 0, poseLegR: 0, poseKneeL: 0, poseKneeR: 0 },
   shirt: { style: "tee", collar: "v", width: 60, length: 150, color: "#5b8bd0", pattern: "plain",
            patternSize: 14, patternColor: "auto" },
   hands: { style: "round", different: false, size: 14, color: "skin", fingers: 5, alienFingers: 3, clawLen: 100, clawCount: 4, starPoints: 5, starAngle: 0,
@@ -8499,6 +8503,20 @@ function unveil(svg, layers) {
 // board draws that scene again (partByReads), and no other.
 const sceneOpts = BG => new Proxy(BG, { get: (t, key) => typeof key === "string" && key.startsWith("lfo:") ? lfoStamp(key.slice(4)) : t[key] });
 const lfoStamp = L => { const lf = lfoNow(L); return lf ? [lf.dur.toFixed(4), lf.shape, lf.amp.toFixed(2), lfoBegin(lf, 0)].join() : ""; };
+// (ticket 121) The friend posed limb by limb: each arm's own turn at the
+// shoulder and bend at the elbow, each leg's at the hip and knee, in
+// degrees, added to the sliders' (which move both alike). By the friend's
+// own side: L is their left, on our right (side 1); R their right (side -1).
+const POSE_KEYS = ["poseArmL", "poseArmR", "poseElbowL", "poseElbowR", "poseLegL", "poseLegR", "poseKneeL", "poseKneeR"];
+const poseOf = (B, what, side) => Number(B["pose" + what + (side > 0 ? "L" : "R")]) || 0;
+const posed = B => POSE_KEYS.some(k => Number(B[k]));
+// where each joint was drawn, in the figure's units, for grabbing them
+// (draw fills it in): shoulders, elbows, hands; hips, knees, feet, by side
+let poseJoints = null;
+// while a joint is held (the drag below): which, and the ground the friend
+// stood on when it was grabbed, kept till it is let go, so the friend stays
+// put under the finger even as the lower foot changes
+let poseHeld = null;
 function draw() {
   const { face: F, body: B } = state;
   let { shirt: SH, pants: P } = state;
@@ -8544,14 +8562,23 @@ function draw() {
   // Each bends at its elbow, halfway: the forearm turned from the upper
   // arm by the elbows' bend (+ up, - down; both arms alike, mirrored), the
   // hand at the forearm's angle. Unbent (0), an arm is one straight line.
+  // (ticket 121) An arm posed on its own turns and bends by its own pose
+  // on top of the sliders' (poseOf), and is always drawn through its elbow.
   const a = B.arms * Math.PI / 180, armLen = B.armLen, armW = B.armW, elbow = B.elbows ?? 0, eb = elbow * Math.PI / 180;
   const arms = [1, -1].map(side => {
     const A = [side * (w - 6), 8];
-    if (!eb) return { side, A, H: [A[0] + side * armLen * Math.cos(a), A[1] + armLen * Math.sin(a)],
-                      angle: side > 0 ? B.arms : 180 - B.arms, joints: null };
-    const E = [A[0] + side * armLen / 2 * Math.cos(a), A[1] + armLen / 2 * Math.sin(a)];
-    const H = [E[0] + side * armLen / 2 * Math.cos(a - eb), E[1] + armLen / 2 * Math.sin(a - eb)];
-    return { side, A, E, H, angle: side > 0 ? B.arms - elbow : 180 - B.arms + elbow, joints: [A, E, H] };
+    const turn = B.arms + poseOf(B, "Arm", side), bend = elbow + poseOf(B, "Elbow", side);
+    if (turn === B.arms && bend === elbow) {
+      if (!eb) return { side, A, H: [A[0] + side * armLen * Math.cos(a), A[1] + armLen * Math.sin(a)],
+                        angle: side > 0 ? B.arms : 180 - B.arms, joints: null };
+      const E = [A[0] + side * armLen / 2 * Math.cos(a), A[1] + armLen / 2 * Math.sin(a)];
+      const H = [E[0] + side * armLen / 2 * Math.cos(a - eb), E[1] + armLen / 2 * Math.sin(a - eb)];
+      return { side, A, E, H, angle: side > 0 ? B.arms - elbow : 180 - B.arms + elbow, joints: [A, E, H] };
+    }
+    const ta = turn * Math.PI / 180, fa = (turn - bend) * Math.PI / 180;
+    const E = [A[0] + side * armLen / 2 * Math.cos(ta), A[1] + armLen / 2 * Math.sin(ta)];
+    const H = [E[0] + side * armLen / 2 * Math.cos(fa), E[1] + armLen / 2 * Math.sin(fa)];
+    return { side, A, E, H, angle: side > 0 ? turn - bend : 180 - turn + bend, joints: [A, E, H] };
   });
   // an arm's joints (shoulder, elbow, hand; or shoulder and hand), and its
   // sleeve's: the share `f` of the arm's length from the shoulder, round the elbow
@@ -8571,14 +8598,36 @@ function draw() {
   // and the feet stay under the hips, the thigh and the shin each leaning
   // half the knees' bend, so the legs reach less far down and the friend
   // crouches (lower on the ground by as much). Unbent (0), a leg is straight.
+  // (ticket 121) A leg posed on its own: its thigh turned out from straight
+  // down by half the knees' bend and its own turn, its shin back in by the
+  // knees' bend and its own; then the feet need not be level, and the
+  // friend stands on the lower (feetY).
   const knee = (B.knees ?? 0) * Math.PI / 360;
-  const hw = w - 2, LL = B.legLen, fx = hw / 2 + 6, feetY = knee ? L + LL * Math.cos(knee) : L + LL;
-  const kneeAt = side => [side * (fx + LL / 2 * Math.sin(knee)), L + LL / 2 * Math.cos(knee)];
-  const legJoints = side => knee ? [[side * fx, L], kneeAt(side), [side * fx, feetY]] : [[side * fx, L], [side * fx, feetY]];
+  const hw = w - 2, LL = B.legLen, fx = hw / 2 + 6;
+  const legPosed = [1, -1].some(side => poseOf(B, "Leg", side) || poseOf(B, "Knee", side));
+  const legBones = [1, -1].map(side => {
+    const Hp = [side * fx, L];
+    if (!legPosed) { const fy = knee ? L + LL * Math.cos(knee) : L + LL;
+      return { side, joints: knee ? [Hp, [side * (fx + LL / 2 * Math.sin(knee)), L + LL / 2 * Math.cos(knee)], [side * fx, fy]] : [Hp, [side * fx, fy]] }; }
+    const tt = ((B.knees ?? 0) / 2 + poseOf(B, "Leg", side)) * Math.PI / 180, st = tt - ((B.knees ?? 0) + poseOf(B, "Knee", side)) * Math.PI / 180;
+    const K = [Hp[0] + side * LL / 2 * Math.sin(tt), Hp[1] + LL / 2 * Math.cos(tt)];
+    return { side, joints: [Hp, K, [K[0] + side * LL / 2 * Math.sin(st), K[1] + LL / 2 * Math.cos(st)]] };
+  });
+  const legOf = side => legBones[side > 0 ? 0 : 1];
+  const footAt = side => legOf(side).joints[legOf(side).joints.length - 1];
+  const feetY = Math.max(footAt(1)[1], footAt(-1)[1]);
+  const kneeAt = side => { const J = legOf(side).joints; return J.length > 2 ? J[1] : [(J[0][0] + J[1][0]) / 2, (J[0][1] + J[1][1]) / 2]; };
+  const legJoints = side => legOf(side).joints;
   // each pants leg is wide enough for the leg inside it
   const half = Math.max(hw / 2, B.legW / 2 + 6);
   const shoeSc = state.shoes.size / 100;
-  const ground = feetY + (state.shoes.style === "bare" ? 18 : 30) * shoeSc;
+  const ground = Math.max(feetY + (state.shoes.style === "bare" ? 18 : 30) * shoeSc,
+                          legPosed ? Math.max(kneeAt(1)[1], kneeAt(-1)[1]) + B.legW / 2 : -Infinity);   // (or kneels, a knee lowest)
+  poseJoints = { armLen, LL, armW, legW: B.legW,
+                 arms: arms.map(x => ({ side: x.side, A: x.A, H: x.H, E: x.E || [(x.A[0] + x.H[0]) / 2, (x.A[1] + x.H[1]) / 2] })),
+                 legs: legBones.map(l => ({ side: l.side, H: l.joints[0], K: kneeAt(l.side), F: footAt(l.side) })),
+                 handR: Math.min(80, 0.7 * Math.max(handReach(state.hands), handReach(rightHandOf(state.hands)))),
+                 footR: Math.min(90, 0.7 * Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes))) * shoeSc) };
 
   // HEAD: its chin on the top of the neck.
   const neckTop = -20 - B.neck;
@@ -8608,7 +8657,10 @@ function draw() {
   // (and a cat on the shoulder, 64 above where it sits and 42 below, its
   // tail out 34 to the side, all times its size)
   const kb = (state.costume.broomSize ?? 100) / 100, catK = witch && WC.witchCat ? (WC.catSize ?? 100) / 100 : 0;
-  let top = Math.min(ty + faceTop * s, ...handYs.map(y => y - Math.max(40, reach)), broomH ? broomH[1] - 140 * kb : 0,
+  // (posed limbs: room for their elbows, knees and feet wherever they went)
+  const armPosed = [1, -1].some(side => poseOf(B, "Arm", side) || poseOf(B, "Elbow", side));
+  const posedYs = [...(armPosed ? arms.filter(x => x.E).map(x => x.E[1] - armW - 20) : []), ...(legPosed ? legBones.flatMap(l => l.joints.slice(1)).map(([, y]) => y - B.legW - 40) : [])];
+  let top = Math.min(ty + faceTop * s, ...handYs.map(y => y - Math.max(40, reach)), broomH ? broomH[1] - 140 * kb : 0, ...posedYs,
                        catK ? -9 - 70 * catK : 0);
   const pileP = F.sick > 100 ? 100 + (F.sick - 100) / 2 : F.sick > 30 ? (F.sick - 30) * 100 / 70 : 0;
   const pileRx = (6 + pileP * 84 / 100) * 1.6 * s;
@@ -8621,6 +8673,7 @@ function draw() {
   const hairHalf = hr.half * headWidth(F) * (1 + 0.12 * F.alien / 100) * s;
   let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
                         ...arms.filter(x => x.E).map(x => -Math.abs(x.E[0]) - armW - 20), knee ? -Math.abs(kneeAt(1)[0]) - B.legW - 30 : 0,
+                        ...(legPosed ? legBones.flatMap(l => [-Math.abs(l.joints[1][0]) - B.legW - 30, -Math.abs(l.joints[2][0]) - 60 - Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes))) * shoeSc]) : []),
                         -(fx + half + 70), -(fx + (witch ? FOOT_REACH.witchboot : Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes)))) * shoeSc + 20), -(w + 40), -(pileRx + 20), -(B.neckW / 2 + 40), -(hairHalf + 20),
                         -((80 + (C ? (kind === "deer" ? 60 : 30) : witch ? brimRx - 80 : 0)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20),
                         broomH ? -(Math.abs(broomH[0]) + 60 * kb) : 0,
@@ -8675,10 +8728,12 @@ function draw() {
   const bgText = scened ? partByReads(`scene:${BG.kind}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o)) : null;
   // and in a scene, the figure's feet (its ground, g) on the stage's
   // ground (sg), at its own size about them, where it was dragged
-  figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: ground, sg: SCENE.ground }
+  // (a joint held: the ground the friend stood on when it was grabbed)
+  const gStand = poseHeld && scened ? poseHeld.g : ground;
+  figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gStand, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: ground, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
-  svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-ground)})">`;
+  svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})">`;
   if (meanSeen > 0) svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
@@ -8702,7 +8757,7 @@ function draw() {
   for (const side of [1, -1]) svg += limbThrough(legJoints(side), B.legW, limb, limbLine);
   if (witch)   // striped stockings
     for (const side of [1, -1])
-      svg += knee ? `<path d="M${legJoints(side).map(([x, y]) => f1(x) + " " + f1(y)).join(" L")}" fill="none" stroke="${WC.trimColor}" stroke-width="${f1(B.legW)}" stroke-dasharray="9 9"/>`
+      svg += legJoints(side).length > 2 ? `<path d="M${legJoints(side).map(([x, y]) => f1(x) + " " + f1(y)).join(" L")}" fill="none" stroke="${WC.trimColor}" stroke-width="${f1(B.legW)}" stroke-dasharray="9 9"/>`
                   : `<line x1="${f1(side * fx)}" y1="${f1(L)}" x2="${f1(side * fx)}" y2="${f1(feetY)}" stroke="${WC.trimColor}" ` +
              `stroke-width="${f1(B.legW)}" stroke-dasharray="9 9"/>`;
   veilFrom("pants", legsAt);
@@ -8715,7 +8770,7 @@ function draw() {
   // (with different feet, the friend's right foot, on our left, wears its own)
   const feetAt = svg.length;
   for (const side of [1, -1])
-    svg += shoeSvg(side * fx, feetY, side, feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet, BIRD_SUIT[kind] ? C.accent : skin);
+    svg += shoeSvg(footAt(side)[0], footAt(side)[1], side, feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet, BIRD_SUIT[kind] ? C.accent : skin);
   veilFrom("feet", feetAt);
   const pf = suit ? "url(#pat-fur)" : fillOf("pat-pants", P.color, P.pattern);
   const ps = suit ? darker(C.fur) : darker(P.color);
@@ -8765,12 +8820,29 @@ function draw() {
       return t <= LL / 2 ? [hx + (kx - hx) * t / (LL / 2), hy + (ky - hy) * t / (LL / 2)] : [kx + (side * fx - kx) * (t - LL / 2) / (LL / 2), ky + (feetY - ky) * (t - LL / 2) / (LL / 2)]; };
     const legSide = side => { const end = legEdge(side, len), mid = len > LL / 2 ? [kneeAt(side)] : [];
       return { out: [...mid.map(([x, y]) => [x + side * wd, y]), [end[0] + side * wd, end[1]]], in: [[end[0] - side * wd, end[1]], ...mid.map(([x, y]) => [x - side * wd, y])] }; };
-    const legs = !knee ? [[-hw, L - 10], [hw, L - 10], [fx + half, L + len], [fx - half, L + len],
+    // (ticket 121: legs posed on their own, each pants leg along its own
+    // thigh and shin, as wide across them as when straight, mitred round
+    // the knee; the crotch rises as the thighs turn up)
+    const along = (J, t) => t <= LL / 2 ? [J[0][0] + (J[1][0] - J[0][0]) * t / (LL / 2), J[0][1] + (J[1][1] - J[0][1]) * t / (LL / 2)]
+                                        : [J[1][0] + (J[2][0] - J[1][0]) * (t - LL / 2) / (LL / 2), J[1][1] + (J[2][1] - J[1][1]) * (t - LL / 2) / (LL / 2)];
+    const outward = (side, P0, P1) => { const dx = P1[0] - P0[0], dy = P1[1] - P0[1], l = Math.hypot(dx, dy) || 1; return [side * dy / l, -side * dx / l]; };
+    const posedSide = side => { const J = legJoints(side), end = along(J, len), n1 = outward(side, J[0], J[1]), n2 = outward(side, J[1], J[2]);
+      const bentOn = len > LL / 2, d = Math.max(0.3, 1 + n1[0] * n2[0] + n1[1] * n2[1]), m = [(n1[0] + n2[0]) * half / d, (n1[1] + n2[1]) * half / d], ne = bentOn ? n2 : n1;
+      return { out: [...(bentOn ? [[J[1][0] + m[0], J[1][1] + m[1]]] : []), [end[0] + ne[0] * half, end[1] + ne[1] * half]],
+               in: [[end[0] - ne[0] * half, end[1] - ne[1] * half], ...(bentOn ? [[J[1][0] - m[0], J[1][1] - m[1]]] : [])] }; };
+    const thighsDown = Math.max(0.2, Math.min(...[1, -1].map(side => (legJoints(side)[1][1] - L) / (LL / 2))));
+    const legs = legPosed ? [[-hw, L - 10], [hw, L - 10], ...posedSide(1).out, ...posedSide(1).in, [0, L + Math.min(len * 0.3, 40) * thighsDown],
+                             ...posedSide(-1).in.slice().reverse(), ...posedSide(-1).out.slice().reverse()]
+      : !knee ? [[-hw, L - 10], [hw, L - 10], [fx + half, L + len], [fx - half, L + len],
                           [0, L + Math.min(len * 0.3, 40)], [-(fx - half), L + len], [-(fx + half), L + len]]
       : [[-hw, L - 10], [hw, L - 10], ...legSide(1).out, ...legSide(1).in, [0, L + crotch],
          ...legSide(-1).in.slice().reverse(), ...legSide(-1).out.slice().reverse()];
     svg += poly(legs, pf, ps);
-    if (wrapStripes(C)) svg += legStripes(legs, hw, fx, half, L, len, Math.min(len * 0.3, 40), C.marks);
+    if (wrapStripes(C) && legPosed)   // (along each thigh and shin, as an arm's are)
+      for (const side of [1, -1]) { const J = legJoints(side), end = along(J, len);
+        svg += len > LL / 2 ? limbStripes(J[0], J[1], 2 * half, C.marks, `leg-stripes${side}`, 14) + limbStripes(J[1], end, 2 * half, C.marks, `leg-stripes${side}b`, 0)
+                            : limbStripes(J[0], end, 2 * half, C.marks, `leg-stripes${side}`, 14); }
+    else if (wrapStripes(C)) svg += legStripes(legs, hw, fx, half, L, len, Math.min(len * 0.3, 40), C.marks);
   }
   veilFrom("pants", pantsAt);
   // a fairy in a shirt and pants: her tunic's hem, a short frill at her
@@ -8920,9 +8992,17 @@ function draw() {
   }
   svg += `</g>`;   // the figure
   svg = unveil(svg, layers);
+  // a held joint: a ring round it, where the finger is
+  if (poseHeld && poseJoints) {
+    const J = poseHeld.what === "hand" || poseHeld.what === "elbow" ? poseJoints.arms.find(x => x.side === poseHeld.side) : poseJoints.legs.find(x => x.side === poseHeld.side);
+    const [jx, jy] = { hand: J.H, elbow: J.E, foot: J.F, knee: J.K }[poseHeld.what], T = figureT;
+    svg += `<circle cx="${f1(T.dx + T.k * jx)}" cy="${f1(T.dy + T.sg + T.k * (jy - T.g))}" r="${f1(28 * T.k + 6)}" fill="#ffffff" fill-opacity="0.3" stroke="#ffffff" stroke-width="2.5" pointer-events="none"/>`;
+  }
 
   const pic = document.getElementById("pic");
-  pic.setAttribute("viewBox", `${f1(left)} ${f1(top)} ${f1(width)} ${f1(bottom - top)}`);
+  // (kept as it was while a joint is held: the picture's frame growing
+  // round a reaching hand would slide it out from under the finger)
+  if (!poseHeld) pic.setAttribute("viewBox", `${f1(left)} ${f1(top)} ${f1(width)} ${f1(bottom - top)}`);
   // the scenery: the node parsed from it last time, if it has not changed
   // (a figure's slider redraws the figure, not the scene), and left where
   // it is: the rest is replaced around it. Taking it out and putting it
@@ -8949,7 +9029,7 @@ function draw() {
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was
   // drawn, kept centred
-  if (F.burst > 0 && !scened) {
+  if (F.burst > 0 && !scened && !poseHeld) {
     const b = pic.getBBox(), l = Math.min(left, b.x - 12, -(b.x + b.width + 12));
     const t = Math.min(top, b.y - 12), btm = Math.max(bottom, b.y + b.height + 12);
     if (l < left || t < top || btm > bottom)
@@ -10808,6 +10888,8 @@ const TABS = [
     ["range", "legLen", "leg length", 20, 420, 70, 200],
     ["range", "legW", "leg width", 4, 70, 14, 28],
     ["range", "knees", "🦵 knees bend (out, so the friend crouches)", 0, 150, 0, 25],
+    ["note", "poseHow", () => posed(state.body) ? "🤸 Posed: each arm and leg as you dragged it." : "🤸 To pose the friend, drag a hand, a foot, an elbow or a knee in the picture."],
+    ["action", "unpose", "🧍 stand straight again", () => { for (const k of POSE_KEYS) state.body[k] = 0; }],
   ]],
   ["👕 Shirt", "shirt", [
     ["choice", "style", "style", [["tee", "t-shirt"], ["long", "long sleeves"], ["tank", "tank top"]]],
@@ -11149,6 +11231,7 @@ function el(tag, attrs = {}, kids = []) {
 
 // Iris color and eye whites only mean something once there is an iris.
 const SHOWN_WHEN = {
+  "body.unpose": posed,
   "face.irisColor": f => f.iris > 0,
   "face.nose": f => f.noseView === "right" || f.noseView === "left",
   "face.noseFront": f => f.noseView === "front",
@@ -12188,8 +12271,56 @@ const onThing = e => {
   const t = document.elementFromPoint(e.clientX, e.clientY);
   return t && t.closest ? t.closest("#bg [data-drag]") : null;
 };
+// POSING (ticket 121), as in M's games on the iPad: a press on a hand, a
+// foot, an elbow or a knee (the nearest within a fingertip, or within a
+// big hand's or shoe's size) takes hold of it, and dragging poses that limb
+// alone: a hand or a foot reaches for the finger, the elbow or knee bending
+// the way it already bent; an elbow or a knee swings the whole arm or leg
+// round its shoulder or hip. Each limb's turn and bend is kept on top of
+// the sliders' (poseOf), so the sliders still move both alike.
+const figUnits = (e, T = figureT) => { const p = picUnits(e); return [(p.x - T.dx) / T.k, (p.y - T.dy - T.sg) / T.k + T.g]; };
+function onJoint(e) {
+  if (!poseJoints || entering) return null;
+  const [x, y] = figUnits(e), near = 30 / (pic.getScreenCTM().a * figureT.k);   // (30 pixels on the screen)
+  let best = null;
+  const consider = (what, side, P, r) => { const d = Math.hypot(x - P[0], y - P[1]); if (d <= Math.max(near, r) && (!best || d < best.d)) best = { what, side, d }; };
+  for (const a of poseJoints.arms) { consider("hand", a.side, a.H, poseJoints.handR); consider("elbow", a.side, a.E, poseJoints.armW); }
+  for (const l of poseJoints.legs) { consider("foot", l.side, l.F, poseJoints.footR); consider("knee", l.side, l.K, poseJoints.legW); }
+  return best;
+}
+// a limb's new turn (and, for a hand or foot, bend) for its joint at
+// (x, y), in the figure's units
+function poseTo({ what, side }, [x, y]) {
+  const B = state.body, sk = side > 0 ? "L" : "R", J = poseJoints, deg = r => r * 180 / Math.PI, rad = d => d * Math.PI / 180;
+  const norm = d => ((d % 360) + 540) % 360 - 180, r1 = v => Math.round(v * 10) / 10;
+  // (two bones of a length each from the root R: the first's angle so the
+  // second's end is at the finger; of the two ways the middle joint can
+  // go, the one nearer where it is now; then the second's angle)
+  const reach = (R, M0, len, own, at) => {
+    const dx = x - R[0], dy = y - R[1], d = Math.min(Math.hypot(dx, dy), 2 * len - 0.01), phi = own(dx, dy), g = deg(Math.acos(d / (2 * len)));
+    const off = t => Math.hypot(at(t)[0] - M0[0], at(t)[1] - M0[1]), first = off(phi + g) <= off(phi - g) ? phi + g : phi - g, M = at(first);
+    return [first, own(x - M[0], y - M[1])];
+  };
+  if (what === "hand" || what === "elbow") {
+    // (angles as the arms slider measures them: from level, + down, mirrored for the side)
+    const arm = J.arms.find(a => a.side === side), A = arm.A, half = J.armLen / 2, own = (dx, dy) => deg(Math.atan2(dy, side * dx));
+    const at = t => [A[0] + side * half * Math.cos(rad(t)), A[1] + half * Math.sin(rad(t))];
+    if (what === "elbow") { B["poseArm" + sk] = r1(norm(own(x - A[0], y - A[1]) - B.arms)); return; }
+    const [up, fore] = reach(A, arm.E, half, own, at);
+    B["poseArm" + sk] = r1(norm(up - B.arms));
+    B["poseElbow" + sk] = r1(norm(up - fore - (B.elbows ?? 0)));
+  } else {
+    // (angles from straight down, + out, mirrored for the side)
+    const leg = J.legs.find(l => l.side === side), Hp = leg.H, half = J.LL / 2, own = (dx, dy) => deg(Math.atan2(side * dx, dy)), kn = B.knees ?? 0;
+    const at = t => [Hp[0] + side * half * Math.sin(rad(t)), Hp[1] + half * Math.cos(rad(t))];
+    if (what === "knee") { B["poseLeg" + sk] = r1(norm(own(x - Hp[0], y - Hp[1]) - kn / 2)); return; }
+    const [thigh, shin] = reach(Hp, leg.K, half, own, at);
+    B["poseLeg" + sk] = r1(norm(thigh - kn / 2));
+    B["poseKnee" + sk] = r1(norm(thigh - shin - kn));
+  }
+}
 pic.addEventListener("touchstart", e => {
-  if (e.touches.length === 1 && (onFace(e.touches[0]) || onFigure(e.touches[0]) || onThing(e.touches[0]))) e.preventDefault();
+  if (e.touches.length === 1 && (onJoint(e.touches[0]) || onFace(e.touches[0]) || onFigure(e.touches[0]) || onThing(e.touches[0]))) e.preventDefault();
   else drag = null;
 }, { passive: false });
 pic.addEventListener("touchmove", e => {
@@ -12197,6 +12328,14 @@ pic.addEventListener("touchmove", e => {
 }, { passive: false });
 pic.addEventListener("pointerdown", e => {
   if (!e.isPrimary) return;
+  const joint = onJoint(e);
+  if (joint) {
+    drag = { pose: joint, T: { ...figureT } };
+    poseHeld = { what: joint.what, side: joint.side, g: figureT.g };
+    pic.setPointerCapture(e.pointerId);
+    changed();   // (the ring)
+    return;
+  }
   const thing = onThing(e);
   if (thing && !onFigure(e)) {
     const p = picUnits(e), B = state.background, name = thing.dataset.drag;
@@ -12219,6 +12358,7 @@ pic.addEventListener("pointerdown", e => {
 // One step per screen pixel, however big the picture is drawn.
 pic.addEventListener("pointermove", e => {
   if (!drag) return;
+  if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); changed(); return; }
   if (drag.thing) {
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
@@ -12249,7 +12389,10 @@ let heldAt = 0;
 pic.addEventListener("pointerdown", () => { if (drag && !pic.animationsPaused()) { pic.pauseAnimations(); heldAt = performance.now(); } });
 const letGo = () => {
   if (drag && pic.animationsPaused()) { pic.setCurrentTime(pic.getCurrentTime() + (performance.now() - heldAt) / 1000); pic.unpauseAnimations(); }
+  // (a joint let go: the friend settles on their lower foot, the frame round them)
+  const posing = drag && drag.pose;
   drag = null;
+  if (posing) { poseHeld = null; changed(); }
 };
 pic.addEventListener("pointerup", letGo);
 pic.addEventListener("pointercancel", letGo);
