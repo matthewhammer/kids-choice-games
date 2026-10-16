@@ -3106,6 +3106,30 @@ function houseBuildingSvg() {
       t += bushSvg(x, 0, r * 1.25, 400 + i);
     return t;
   }
+// (ticket 50) the scenes' own "random", the same every time: backgroundSvg's
+// R (keep the two alike), for the seats of places that scatter things
+const sceneR = (i, j = 0) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
+// (ticket 50) the front step under the door: 72 of the building's units
+// across (-96 to -24), its top level with the door's foot, on the building's
+// base line, as houseBuildingSvg draws it; and each wagon on the lawn, a
+// rider in its bed (60 across, its sides from 24 to 8 above the ground; the
+// hips 18 up, a little down inside it), placed as houseScene places the toys
+SEATS.house = (c, B) => { const { W, g, k, y1, pad } = c, hs = (B.houseSize ?? 100) / 100, toys = B.toys ?? 6;
+  const yb = g - 175 * k, bx = -40 * k, S = hs * k, X = lx => bx + lx * S;
+  const seats = [{ name: "front step", x0: X(-96), x1: X(-24), y: yb, z: yb + 1, facing: ["front", "left", "right"] }];
+  for (let i = 0; i < toys; i++) {
+    if (TOYS[i % TOYS.length] !== "wagon") continue;
+    const u = sceneR(i, 71), y = yb + 40 * k + (y1 - yb - 70 * k) * u, sc = k * (0.9 + 0.8 * u);
+    let x = (i % 2 ? 1 : -1) * (W * 0.16 + W * 0.3 * sceneR(i, 70));
+    const drive = X(120) + 30 * k * (y - yb) / (y1 + pad - yb);
+    if (x > drive - 30 * k) x = -x;
+    // (its handle is on its left in its own units, on its right when it is
+    // drawn flipped: a rider faces the way it is pulled)
+    const ahead = sceneR(i, 72) < 0.5 ? "right" : "left";
+    seats.push({ name: i < TOYS.length ? "wagon" : `wagon ${Math.floor(i / TOYS.length) + 1}`, x0: x - 30 * sc, x1: x + 30 * sc, y: y - 18 * sc, z: y + 1,
+                 facing: ["front", ahead] });
+  }
+  return seats; };
 function houseScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   const hs = (o.houseSize ?? 100) / 100, ts = (o.treeSize ?? 100) / 100, toys = o.toys ?? 6, flowers = o.flowers ?? 18;
@@ -3373,6 +3397,13 @@ const rockSvg = (x, y, rad, seed, tone = "#9a9488") => {
     `<polygon points="${P_([[x - rad * 0.9, y - rad * 0.1], ...top, [x + rad * 0.3, y - rad * 0.3]])}" fill="${lit}" opacity="0.7"/>` +
     `<path d="M${f1(x + rad * 0.2)} ${f1(y - rad * 0.55)} l${f1(rad * 0.15)} ${f1(rad * 0.25)} l${f1(-rad * 0.05)} ${f1(rad * 0.22)}" fill="none" stroke="${dk}" stroke-width="${f1(rad * 0.04)}"/>`;
 };
+// (ticket 50) a rock's top, to sit on: the span across of its four topmost
+// points (the 4th to 7th of its outline's 10) and their mean height, as
+// rockSvg places them (keep the two alike)
+const rockTop = (x, y, rad, seed) => { const r = seeded(seed), w = 1.2 + 0.2 * r(20);
+  const pts = [3, 4, 5, 6].map(i => { const a = Math.PI + i / 9 * Math.PI, rr = rad * (0.8 + 0.3 * r(i));
+    return [x + Math.cos(a) * rr * w, y + Math.sin(a) * rr * (0.75 + 0.2 * r(i + 10))]; });
+  return { x0: pts[0][0], x1: pts[3][0], y: pts.reduce((s, p) => s + p[1], 0) / 4 }; };
 // where each house's ladder goes down to: the house below it (house 1's to
 // house 5, 2's to 6, 3's to 1, 4's to 2), or the ground (-1) when there is
 // no house below it
@@ -3487,6 +3518,14 @@ function treeInner(c) {
     }).join("");
   return s;
 }
+// (ticket 50) the swing: its seat, 74 of the tree's units across (358 to
+// 432), its top 72 above the ground, as treeInner's "tree-swing" hangs it
+// at rest, in the tree's group (its size the tree's slider's); a sitter is
+// in front of the whole tree, and still (the seat swings on under them). A
+// big tree carries it out past the picture's right edge: only the part of
+// it inside is a seat, and none once less than half of it is left.
+SEATS.treehouse = (c, B) => { const ts = (B.treeSize ?? 100) / 100 * c.k, x0 = 358 * ts, x1 = Math.min(432 * ts, c.x1 - 10);
+  return x1 - x0 < 37 * ts ? [] : [{ name: "swing", x0, x1, y: c.g - 72 * ts, z: c.g + 1, facing: ["front"] }]; };
 function treehouseScene(c) {
   const { x0, y0, W, H, k, g, grad, all, land, o, R } = c;
   const n = Math.max(1, Math.min(6, o.houses ?? 4)), ts = (o.treeSize ?? 100) / 100;
@@ -4570,6 +4609,16 @@ const toadstool = (x, y, s, cap = "#d62828", glow = false) =>
   `<path d="M${f1(x - 6 * s)} ${f1(y)} Q${f1(x - 7 * s)} ${f1(y - 12 * s)} ${f1(x - 4 * s)} ${f1(y - 20 * s)} L${f1(x + 4 * s)} ${f1(y - 20 * s)} Q${f1(x + 7 * s)} ${f1(y - 12 * s)} ${f1(x + 6 * s)} ${f1(y)} Z" fill="#f6eedd" stroke="#c9b48a" stroke-width="${f1(1.2 * s)}"/>` +
   `<path d="M${f1(x - 20 * s)} ${f1(y - 18 * s)} Q${f1(x - 20 * s)} ${f1(y - 40 * s)} ${f1(x)} ${f1(y - 41 * s)} Q${f1(x + 20 * s)} ${f1(y - 40 * s)} ${f1(x + 20 * s)} ${f1(y - 18 * s)} Q${f1(x)} ${f1(y - 13 * s)} ${f1(x - 20 * s)} ${f1(y - 18 * s)} Z" fill="${cap}" stroke="${darker(cap)}" stroke-width="${f1(1.5 * s)}"/>` +
   [[-11, -26, 3], [-2, -34, 3.4], [9, -27, 2.8], [13, -21, 2], [-15, -21, 2]].map(([dx, dy, r]) => `<circle cx="${f1(x + dx * s)}" cy="${f1(y + dy * s)}" r="${f1(r * s)}" fill="#ffffff"/>`).join("");
+// (ticket 50) the three biggest toadstools in the ring: the top of each
+// one's cap (41 of its units up at the crown; within 12 each side of it the
+// dome is still nearly as high), placed and sized as fairyforestScene's
+// "fairy-ring" places them, and named as it names them
+SEATS.fairyforest = (c, B) => { const { W, g, k } = c, n = Math.max(4, Math.min(30, Math.round(B.mushrooms ?? 14)));
+  const rx0 = W * 0.06, ry0 = g + 40 * k, rrx = 190 * k, rry = 44 * k;
+  return [...Array(n)].map((_, i) => { const a = (i + 0.3 * sceneR(i, 1330)) / n * 2 * Math.PI, x = rx0 + Math.cos(a) * rrx, y = ry0 + Math.sin(a) * rry;
+      return { i, x, y, s: k * (0.75 + 0.5 * (y - (ry0 - rry)) / (2 * rry)) * (0.85 + 0.3 * sceneR(i, 1331)) }; })
+    .sort((p, q) => q.s - p.s).slice(0, 3)
+    .map(({ i, x, y, s }) => ({ name: `toadstool ${i + 1}`, x0: x - 12 * s, x1: x + 12 * s, y: y - 41 * s, z: y + 1, facing: ["front", "left", "right"] })); };
 function fairyforestScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o } = c;
   const time = FAIRY_SKY[o.fairyTime] ? o.fairyTime : "day", night = time === "night", dusk = time === "sunset" || night;
@@ -4966,6 +5015,14 @@ function clearingScene(c) {
 }
 // A castle up close: the one the clearing shows, from the same settings,
 // its gate a doorway in (to its first room), a sign back to the clearing.
+// (ticket 50) the crate (40 across, its top 34 above its foot) and two of
+// the barrels by the road (each one's lid, 32 of its units across and 44
+// up; not the far one, partly behind the near one), as castleScene's
+// "castle-things" draws them
+SEATS.castle = (c, B) => { const { W, g, k } = c;
+  return [{ name: "crate", x0: -W * 0.3, x1: -W * 0.3 + 40 * k, y: g + 50 * k, z: g + 84 * k + 1, facing: ["front", "left", "right"] },
+    ...[[W * 0.3, g + 74 * k, 1, "barrel, middle"], [W * 0.235, g + 84 * k, 0.95, "barrel, near"]].map(([bx, by, sc2, name]) =>
+      ({ name, x0: bx - 16 * sc2 * k, x1: bx + 16 * sc2 * k, y: by - 44 * sc2 * k, z: by + 1, facing: ["front", "left", "right"] }))]; };
 function castleScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o } = c;
   const K = castleOf(o), { foot, z } = castleAt(c, K);
@@ -7250,6 +7307,14 @@ const driftingCloud = (x, y, s, i, o = null) => o ? `<g>${cloudDrift(i, 30, o)}<
 // The mountain trail: far snowy peaks (their height a slider: they stand
 // in a group that stretches them up from the valley), a lake and a village
 // far below, drifting clouds, birds circling, and the trail going on up.
+// (ticket 50) three big rocks on the slope with no rock or pine standing in
+// front of them (rocks left 3, right 1 and right 4, the nearest of their
+// heaps; the biggest, left 1, is behind left 3): each one's top (rockTop),
+// placed and sized as mountainsScene's "mt-slope" places them, and named as
+// it names them
+SEATS.mountains = (c, B) => { const { W, g, k } = c;
+  return [4, 1, 7].map(i => { const x = (i % 2 ? 1 : -1) * (W * 0.18 + W * 0.28 * sceneR(i, 330)), y = g - 10 * k + 70 * k * sceneR(i, 331), r = (12 + 20 * sceneR(i, 332)) * k;
+    return { name: `rock, ${i % 2 ? "right" : "left"} ${Math.floor(i / 2) + 1}`, ...rockTop(x, y, r, 330 + i), z: y + 1, facing: ["front", "left", "right"] }; }); };
 function mountainsScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   const peaks = (o.peakHeight ?? 100) / 100, birds = o.birds ?? 3, clouds = o.mtClouds ?? 5, lake = o.farLake ?? true;
@@ -7505,6 +7570,14 @@ function starsSvg(o, n, xa, xb, ya, yb, k, R, seed) {
   }
   return t;
 }
+// (ticket 50) the logs by the fire: each one's top, 100 long and 28 thick
+// about its middle (dx, dy from the fire), as campsiteScene's "camp-logs"
+// draws them; one sits on the left log facing the fire (right), on the
+// right one facing it (left). Not the near log: there one would face the
+// fire, away from us, and the friend has no back view.
+SEATS.campsite = (c, B) => { const { g, k } = c, fx = 0, fy = g + 40 * k;
+  return [[-150, 30, "left", "right"], [150, 30, "right", "left"]].map(([dx, dy, where, face]) =>
+    ({ name: `log, ${where}`, x0: fx + (dx - 50) * k, x1: fx + (dx + 50) * k, y: fy + (dy - 14) * k, z: fy + (dy + 14) * k + 1, facing: [face] })); };
 function campsiteScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   const time = CAMP_SKY[o.campTime] ? o.campTime : "day", fire = o.fireOn ?? true, fz = (o.flameSize ?? 100) / 100;
@@ -7907,6 +7980,13 @@ function caveScene(c) {
 // tall trunks either side, ferns and mushrooms at their feet, sunbeams,
 // the path winding off ahead; a signpost back to the clearing and on to
 // the trail.
+// (ticket 50) the two big mushrooms, the outer ones (the inner two are too
+// small to sit on): each one's cap, its crown 34 of its units up (its
+// curve, bowed toward 48, peaks there), within 12 each side of the crown,
+// as woodpathScene's "wp-near" draws them
+SEATS.woodpath = (c, B) => { const { W, g, k } = c;
+  return [[-0.38, 70, 1.1, "mushroom, left outer"], [0.4, 60, 1, "mushroom, right outer"]].map(([u, dy, z, name]) => { const mx = W * u, my = g + dy * k, kk = k * z;
+    return { name, x0: mx - 12 * kk, x1: mx + 12 * kk, y: my - 34 * kk, z: my + 1, facing: ["front", "left", "right"] }; }); };
 function woodpathScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   const far = g - 170 * k;
@@ -8032,6 +8112,29 @@ const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, 
 const beachLines = ({ g, k }) => ({ sea: g - 170 * k, shore: g - 55 * k });
 const brookAt = ({ W, g, k, y1 }) => t => { const y = g - 62 * k + t * (y1 + 40 * k - (g - 62 * k));
   return [W * (0.2 + 0.2 * t) + W * 0.05 * Math.sin(t * Math.PI * 1.6), y, (8 + 70 * t * t) * k]; };
+// (ticket 50) seats in the places backgroundSvg draws itself, as it draws
+// them. Under the sea, the picnic bench: its plank's top (34 above the
+// table's foot), between the sharks at its ends (their bodies come in to
+// 98 of its 120 each side); one sits with their back to the table, facing us.
+SEATS.underwater = (c, B) => { const { x1, W, g, k } = c, x = Math.max(x1 - W * 0.22, 230 * k), y = g + 30 * k;
+  return [{ name: "picnic bench", x0: x - 98 * k, x1: x + 98 * k, y: y - 34 * k, z: y + 1, facing: ["front"] }]; };
+// At the beach, the beach chairs (low): each one's seat, 68 across at its
+// front edge, the hips 28 above the chair's feet, between the seat's back
+// edge (34 up) and its front edge (18 up).
+SEATS.beach = (c, B) => { const { W, g, k } = c;
+  return [-1, 1].map(sd => { const x = sd * Math.max(W / 2 - 210 * k, 150 * k), b = g + 20 * k, cx = x + sd * 30 * k, cy = b - 10 * k;
+    return { name: `beach chair, ${sd < 0 ? "left" : "right"}`, x0: cx - 34 * k, x1: cx + 34 * k, y: cy - 28 * k, z: cy + 1, facing: ["front"] }; }); };
+// In the witch's woods, the giant tree's thickest root (the first of its
+// humped roots, [30, 230, 30, 15]), where it humps up out of the ground
+// beside the trunk on its way toward the middle: the top of its stroke
+// over the highest stretch of its curve (sampled; within 3 of the top).
+SEATS.witch = (c, B) => { const { x0, W, g, k } = c, x = x0 + W * 0.1, b = g + 40 * k;
+  const [dx, reach, dy, rw] = [30, 230, 30, 15], sx = x + dx * k, ex = x + reach * k, ey = b + dy * k, hump = (18 + 14 * sceneR(0, 80)) * k;
+  const m1 = sx + (ex - sx) * 0.35, m2 = sx + (ex - sx) * 0.7;
+  const at = (t, p0, p1, p2, p3) => (1 - t) ** 3 * p0 + 3 * (1 - t) ** 2 * t * p1 + 3 * (1 - t) * t * t * p2 + t ** 3 * p3;
+  const pts = [...Array(41)].map((_, i) => [at(i / 40, sx, m1, m2, ex), at(i / 40, b - 14 * k, b - 14 * k - hump, ey - hump * 0.6, ey)]);
+  const top = Math.min(...pts.map(p => p[1])), high = pts.filter(p => p[1] <= top + 3 * k);
+  return [{ name: "big root", x0: high[0][0], x1: high[high.length - 1][0], y: top - (rw + 3) * k / 2, z: b + 1, facing: ["front", "left", "right"] }]; };
 
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);
