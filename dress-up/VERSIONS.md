@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.66 (2026-10-16)
+
+Everything in 0.0.65, plus jumping.
+
+- **🐸 jumping (once)** (Matthew), a new animation in the 🧍 Body tab, the first that doesn't go round and round: the friend crouches with their arms back, jumps up with their arms up, comes down, and lands on bent knees. Then they stand still again. Their shadow stays on the ground while they're in the air.
+
 ## 0.0.65 (2026-10-16)
 
 Everything in 0.0.64, plus the friend seen from behind.
