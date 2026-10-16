@@ -576,6 +576,9 @@ const DEFAULTS = {
            // (ticket 136) jumping up into a hug: how high they are held, in a
            // share of their legs' length
            hugLift: 50,
+           // (ticket 142) the two jumps: how high (a share of a leg's length)
+           // and how fast (100 = as 0.0.66 jumped)
+           jumpShortH: 30, jumpShortS: 150, jumpHighH: 90, jumpHighS: 75,
            // (ticket 124) which way the friend faces (toward us, or in profile
            // to our left or right), and whether they sit
            facing: "front", sit: false },
@@ -737,7 +740,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.67", released: "2026-10-16" };
+const VERSION = { number: "0.0.68", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9130,7 +9133,7 @@ function treadStroke(amt, u) {
 // about the hips (rot, crawling), and a ladder's rungs going by (ladder,
 // climbing). One stride to LFO B's wave (2 beats to start), as treading,
 // so it moves with the music. Without one chosen, deep water still treads.
-const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"], ["jump", "🐸 jumping (once)"]];
+const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"], ["jump", "🐸 short, fast jump"], ["jumphigh", "🦘 high, slow jump"]];
 // (walking, running and crawling are seen from the side: chosen facing us, the friend turns to our right)
 const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
 // (ticket 137) Climbing a ladder that stands in the place ("🧗 climbing"):
@@ -9188,6 +9191,8 @@ function climbThrough() {
   c.through = true;
   enterScene(door);
 }
+// (ticket 142: two of them, "jump" short and fast and "jumphigh" high and
+// slow, each with its own height and speed in the Body tab)
 // (ticket 138) Jumping, once, not in a loop: crouching, arms back (the
 // beginning), up in the air with the arms up and down again (the middle),
 // landing on bent knees and standing up (the end); then back to what they
@@ -9195,14 +9200,15 @@ function climbThrough() {
 // each part ends, in seconds. Their shadow stays on the ground.
 let jumpStart = 0, jumpPrev = "none", jumpEnd = 0;
 const JUMP_TIMES = [0.24, 0.82, 1.12];
-function startJump(prev = "none") {
-  if (prev !== "jump") jumpPrev = prev;
+const isJump = a => a === "jump" || a === "jumphigh";
+function startJump(prev = "none", kind = "jump") {
+  if (!isJump(prev)) jumpPrev = prev;
   jumpStart = performance.now();
-  state.body.anim = "jump";
+  state.body.anim = kind;
 }
 function endJump() {
   jumpEnd = 0;
-  if (state.body.anim === "jump") { state.body.anim = jumpPrev || "none"; changed(); }
+  if (isJump(state.body.anim)) { state.body.anim = jumpPrev || "none"; changed(); }
 }
 function moveNow() {
   const B = state.body, a = B.anim;
@@ -9245,8 +9251,10 @@ function moveNow() {
              ...both("Arm", sd => 90 - tilt - (B.arms ?? 0) - lean(sd) + 14 * sd * s), ...both("Elbow", () => -(B.elbows ?? 0)),
              ...both("Foot", () => -(180 - tilt)), rot: dir ? tilt * dir : 0 };
   }
-  if (a === "jump") {
-    const t = (performance.now() - jumpStart) / 1000, [c, f, l] = JUMP_TIMES, H = 0.55 * (B.legLen ?? 140), ease = x => x * x * (3 - 2 * x);
+  if (isJump(a)) {
+    const hi = a === "jumphigh", rate = Math.max(0.1, Number(hi ? B.jumpHighS ?? 75 : B.jumpShortS ?? 150) || 100) / 100;
+    const t = (performance.now() - jumpStart) / 1000 * rate, [c, f, l] = JUMP_TIMES, ease = x => x * x * (3 - 2 * x);
+    const H = Math.max(0, Number(hi ? B.jumpHighH ?? 90 : B.jumpShortH ?? 30) || 0) / 100 * (B.legLen ?? 140);
     if (t >= l) { if (!jumpEnd) jumpEnd = setTimeout(endJump, 0); return treadNow(); }
     let bend, arm, lift = 0;
     if (t < c) { const u = ease(t / c); bend = 0.8 * u; arm = 35 * u; }
@@ -12010,9 +12018,15 @@ const TABS = [
   // (ticket 132: "Body", with poses, the way they face, and animations)
   ["🧍 Body", "body", [
     ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"], ["hug", "🤗 jumping up into a hug"]]],
-    ["range", "hugLift", "🦘 held up (100 = a leg's length)", 0, 300, 40, 90],
+    ["range", "hugLift", "🙌 held up (100 = a leg's length)", 0, 300, 40, 90],
     ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"], ["back", "⬆️ away from us"]]],
     ["choice", "anim", "🎬 animations", ANIMS],
+    ["group", "jumps", "🐸🦘 the two jumps", [
+      ["range", "jumpShortH", "🐸 short jump: how high (100 = a leg's length)", 5, 200, 20, 45],
+      ["range", "jumpShortS", "🐸 short jump: how fast (100 = steady)", 25, 400, 120, 180],
+      ["range", "jumpHighH", "🦘 high jump: how high (100 = a leg's length)", 5, 300, 70, 130],
+      ["range", "jumpHighS", "🦘 high jump: how fast (100 = steady)", 25, 400, 60, 90],
+    ]],
   ]],
   ["😀 Face", "face", [
     ["color", "color", "skin & head color", SKINS],
@@ -12389,7 +12403,7 @@ function set(part, key, value) {
   if (part === "body" && key === "anim" && value === "climb") state.body.facing = "front";   // (the ladder is behind them, facing us)
   if (part === "body" && key === "anim" && value === "climbup") state.body.facing = "back";   // (up a place's ladder, facing it: ticket 138)
   if (part === "body" && key === "anim") climb = null;   // (ticket 137: a climb starts afresh)
-  if (part === "body" && key === "anim" && value === "jump") startJump("none");   // (ticket 138: once, then still)
+  if (part === "body" && key === "anim" && isJump(value)) startJump("none", value);   // (ticket 138: once, then still)
   // (walking, running, crawling and climbing start from standing: sitting
   // or cross-legged, they had nothing to move with)
   if (part === "body" && key === "anim" && value !== "none" && value !== "swim" && state.body.pose !== "stand") strikePose("stand");
@@ -13834,7 +13848,7 @@ function flyInto(box, arrive) {
 const PAD_BUTTONS = [[0, "Ⓐ / ✕ (bottom)"], [1, "Ⓑ / ○ (right)"], [2, "Ⓧ / □ (left)"], [3, "Ⓨ / △ (top)"], [4, "LB / L1 (left shoulder)"], [5, "RB / R1 (right shoulder)"],
                      [6, "LT / L2 (left trigger)"], [7, "RT / R2 (right trigger)"], [8, "select / back / view"], [9, "start / menu / options"]];
 const PAD_ACTIONS = [...ANIMS, ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest doorway"], ["nothing", "— nothing"]];
-const PAD_SPEED = { none: 160, walk: 90, run: 230, crawl: 55, swim: 80, jump: 160 };
+const PAD_SPEED = { none: 160, walk: 90, run: 230, crawl: 55, swim: 80, jump: 160, jumphigh: 160 };
 let padLoop = 0, padName = "", padDown = new Set(), padMoving = false, padLast = 0;
 function padPoll(t) {
   padLoop = 0;
@@ -13873,7 +13887,7 @@ function padAct(a) {
   if (!a || a === "nothing") return;
   if (a === "back") { if (!backBtn.hidden) backBtn.click(); return; }
   if (a === "door") { padDoor(); return; }
-  if (a === "jump") { startJump(B.anim); changed(); return; }
+  if (a === "jump") { startJump(B.anim, "jump"); changed(); return; }
   set("body", "anim", B.anim === a && a !== "none" ? "none" : a);
 }
 // (the doorway nearest the friend's feet, in the picture's units)

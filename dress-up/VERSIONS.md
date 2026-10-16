@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.68 (2026-10-16)
+
+Everything in 0.0.67, plus two jumps.
+
+- **🐸 short, fast jump** and **🦘 high, slow jump** (Matthew) in the 🧍 Body tab's animations, in place of the one jump. Each has its own sliders in "🐸🦘 the two jumps": how high (100 = a leg's length) and how fast. The short one starts a little under a third of a leg high and quick; the high one almost a leg's length high and slower.
+- "🙌 held up" is the hug's slider's new emoji (the kangaroo is the high jump's now).
+
 ## 0.0.67 (2026-10-16)
 
 Everything in 0.0.66, plus playing with a game controller.
