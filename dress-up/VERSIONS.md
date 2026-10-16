@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.47 (2026-10-15)
+
+Everything in 0.0.46, plus posing the friend by dragging their hands, feet, elbows and knees.
+
+- **🤸 Pose the friend by dragging** (Matthew, for M, who poses characters this way in a game on her iPad): press on one of the friend's hands, feet, elbows or knees, with a finger or the mouse, and drag it. A hand or a foot follows your finger, and its arm or leg bends at the elbow or knee to reach it. An elbow or a knee swings the whole arm or leg round from the shoulder or hip. Each arm and leg is posed on its own, so the friend can wave with one hand, stand on one leg, kick, or kneel. With a leg lifted, the friend stands on the other foot; with a knee lowest, they kneel on it. Pants follow each leg as it bends, and shoes, sleeves, a witch's stockings, a falcon's wings and a ghost's sheet follow too.
+- Press anywhere else on the friend to move them around the place, as before, or on their face to change their smile and brows.
+- The "💪 elbows bend", "🦵 knees bend" and arms sliders still move both arms or both legs together, on top of the pose. The body tab says how to pose, and when the friend is posed, a "🧍 stand straight again" button there puts every arm and leg back. A friend who was never posed looks exactly as before.
+
 ## 0.0.46 (2026-10-15)
 
 Everything in 0.0.45, plus depth: the friend steps behind whatever stands nearer and is smaller farther back, each place lists what stands in it, and the friend has elbows and knees.
