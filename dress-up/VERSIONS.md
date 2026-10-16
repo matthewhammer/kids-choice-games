@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.81 (2026-10-16)
+
+Everything in 0.0.80, plus walking on a slow computer.
+
+- **Fixed:** on a slow computer (the black laptop), walking with a controller, the one on the screen, or dragging the friend was slow in every place, while animations with no background looked fine. Each step did much more than an animation does: it refreshed every control beside the picture and saved the friend, 60 times a second. Now a step only draws the friend, and the rest happens a few times a second. On a computer too slow to draw the friend 60 times a second, they are drawn 30 times a second while they move, as animations with no background always were, and the picture stays smooth. Tried on Matthew's laptop slowed to a sixth of its speed: 🔲 the empty room walks at 58 to 60 frames a second.
+- The duck pond is still slow on a slow computer: its drawing is about a thousand shapes, and the browser goes over all of them every time anything moves. That needs a bigger change, which is next.
+
 ## 0.0.80 (2026-10-16)
 
 Everything in 0.0.79, plus a see-through friend smooth to walk with.

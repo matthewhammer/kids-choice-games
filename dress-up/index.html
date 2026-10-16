@@ -891,7 +891,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.80", released: "2026-10-16" };
+const VERSION = { number: "0.0.81", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9214,7 +9214,9 @@ function objPlace(B) {
 const objectsOff = B => new Set(((B.objectsOff || {})[objPlace(B)]) || []);
 function showObjects() {
   const off = objectsOff(state.background);
-  for (const o of bgShown.objs) o.node.style.display = off.has(o.name) ? "none" : "";
+  // (ticket 163: written only when it changes; every drawing, each write
+  // made the browser restyle that object, every frame of a walk)
+  for (const o of bgShown.objs) { const d = off.has(o.name) ? "none" : ""; if (o.node.style.display !== d) o.node.style.display = d; }
 }
 // the scene's element, its pieces those of the last scene where their text
 // is the same (see SEP), the rest parsed
@@ -9351,29 +9353,39 @@ const waterAcross = (B, x, y, most) => { const at = waterHere(B); let d = 0;
   while (d < most && at && at(x - d - 4, y) && at(x + d + 4, y)) d += 4;
   return d; };
 // (the water's own shape round a spot on the stage: rows `step` apart, each
-// the runs across it of points in the place's water, as [x, y, width];
-// kept while the place's drawing and the spot are the same, as they are
-// while the friend treads water)
-let runsKept = null;
-function waterRuns(B, bgText, x0, x1, y0, y1, step = 2) {
-  const key = [B.kind, x0, x1, y0, y1, step].map(v => typeof v === "number" ? v.toFixed(1) : v).join();
-  if (runsKept && runsKept.key === key && runsKept.bg === bgText) return runsKept.runs;
-  // (each row tried every 8 across, and where it goes in or out of the
-  // water, the edge found to within one by halving)
-  const at = waterHere(B), runs = [];
-  const edge = (y, a, b, wa) => { for (let i = 0; i < 3; i++) { const m = (a + b) / 2; if (at(m, y) === wa) a = m; else b = m; } return (a + b) / 2; };
-  for (let y = y0; at && y < y1; y += step) {
-    const yc = y + step / 2;
-    let from = null, prev = false, px = x0;
-    for (let x = x0; x <= x1; x += 8) {
-      const wet = at(x, yc);
-      if (x === x0) { if (wet) from = x0; }
-      else if (wet !== prev) { const e = edge(yc, px, x, prev); if (wet) from = e; else { runs.push([from, y, e - from]); from = null; } }
-      prev = wet; px = x;
-    }
-    if (from !== null) runs.push([from, y, x1 - from]);
+// the runs across it of points in the place's water, as [x, y, width])
+// (ticket 163) Each row is worked out once for a place, across the whole
+// stage and past it, and kept until the place's drawing changes; a drawing
+// takes the rows round the friend and cuts them to its window. Before, the
+// runs round the friend were worked out again whenever they moved, hundreds
+// of tests of the place's water every drawing, and a swim in the duck pond
+// drew 12 times a second on a computer 6 times slower than Matthew's.
+const WATER_X0 = -1000, WATER_X1 = 1000;
+let waterRows = { key: null, bg: null, rows: new Map() };
+function waterRow(at, y, step) {
+  // (tried every 8 across, and where it goes in or out of the water, the
+  // edge found to within one by halving)
+  const yc = y + step / 2, segs = [];
+  const edge = (a, b, wa) => { for (let i = 0; i < 3; i++) { const m = (a + b) / 2; if (at(m, yc) === wa) a = m; else b = m; } return (a + b) / 2; };
+  let from = null, prev = false, px = WATER_X0;
+  for (let x = WATER_X0; x <= WATER_X1; x += 8) {
+    const wet = at(x, yc);
+    if (x === WATER_X0) { if (wet) from = x; }
+    else if (wet !== prev) { const e = edge(px, x, prev); if (wet) from = e; else { segs.push([from, e]); from = null; } }
+    prev = wet; px = x;
   }
-  runsKept = { key, bg: bgText, runs };
+  if (from !== null) segs.push([from, WATER_X1]);
+  return segs;
+}
+function waterRuns(B, bgText, x0, x1, y0, y1, step = 2) {
+  const at = waterHere(B), key = B.kind + ":" + step, runs = [];
+  if (!at) return runs;
+  if (waterRows.key !== key || waterRows.bg !== bgText) waterRows = { key, bg: bgText, rows: new Map() };
+  for (let y = Math.floor(y0 / step) * step; y < y1; y += step) {
+    let segs = waterRows.rows.get(y);
+    if (!segs) waterRows.rows.set(y, segs = waterRow(at, y, step));
+    for (const [a, b] of segs) { const l = Math.max(a, x0), r = Math.min(b, x1); if (r > l) runs.push([l, y, r - l]); }
+  }
   return runs;
 }
 // (ticket 50) Where people can sit, place by place: SEATS[kind](c, B), with c
@@ -12921,6 +12933,44 @@ function set(part, key, value) {
   }
   changed();
 }
+// (ticket 163) A frame of movement (the controller walking or climbing, a
+// drag) does what an animation with no background does: it draws, and
+// feeds the music. The rest of changed() (every control's refresh, the
+// full-screen controls, the save to localStorage, the music's and the back
+// chip's state) waits for settle(), a few times a second while it goes on,
+// and once when it stops: on a slow computer (the black laptop) those, every
+// frame, were what a walk in a place had and an animation with no
+// background did not.
+// And on a computer where a drawing costs more than a frame can spare
+// (DRAW_SLOW ms, on average), the friend is drawn at most every MOVE_EVERY
+// ms while they move: as an animation with no background is (treadTick),
+// which looked fine on the black laptop when every place did not. The
+// picture's own frames stay at 60; the friend's place and pose catch up
+// 30 times a second. The last move is always drawn (force).
+const DRAW_SLOW = 6, MOVE_EVERY = 30;
+let settleTimer = 0, drawAvg = 0, movedLast = 0, movedTrail = 0;
+function moved(force = false) {
+  const t = performance.now();
+  if (!force && drawAvg > DRAW_SLOW && t - movedLast < MOVE_EVERY) {
+    // (the latest move drawn soon even if no other comes: a held-still drag, a stop)
+    if (!movedTrail) movedTrail = setTimeout(() => { movedTrail = 0; moved(true); }, MOVE_EVERY - (t - movedLast));
+    if (!settleTimer) settleTimer = setTimeout(settle, 250);
+    return;
+  }
+  clearTimeout(movedTrail); movedTrail = 0;
+  movedLast = t;
+  draw();
+  const ms = performance.now() - t;
+  drawAvg = drawAvg ? 0.85 * drawAvg + 0.15 * ms : ms;
+  perfMeter.ms += ms; perfMeter.draws++;
+  feedMusic();
+  if (!settleTimer) settleTimer = setTimeout(settle, 250);
+}
+function settle() {
+  clearTimeout(settleTimer); settleTimer = 0;
+  for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync();
+  if (!hud.hidden && hudKey() !== hudShown) renderHud();
+}
 function changed() {
   const t0 = performance.now(); draw(); perfMeter.ms += performance.now() - t0; perfMeter.draws++;   // (ticket 155: for the ⚙️ advanced tab's meter)
   for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync(); feedMusic();
@@ -14259,7 +14309,7 @@ pic.addEventListener("pointerdown", e => {
 // the friend at once, and the picture is drawn once a frame, for the newest
 // move. A timer stands in where frames do not come.
 let dragFrame = 0, dragTimer = 0;
-function dragDraw() { cancelAnimationFrame(dragFrame); clearTimeout(dragTimer); dragFrame = dragTimer = 0; changed(); }
+function dragDraw(last = false) { cancelAnimationFrame(dragFrame); clearTimeout(dragTimer); dragFrame = dragTimer = 0; moved(last === true); }   // (ticket 163: a drag's frames only draw)
 function dragChanged() {
   if (dragFrame || dragTimer) return;
   dragFrame = requestAnimationFrame(dragDraw); dragTimer = setTimeout(dragDraw, 50);
@@ -14328,14 +14378,14 @@ function dropOnSeat() {
   else if (!t && was) { state.body.sit = false; B.seat = null; changed(); }
 }
 const letGo = () => {
-  if (dragFrame || dragTimer) dragDraw();   // (the last move, drawn before letting go)
+  if (dragFrame || dragTimer) dragDraw(true);   // (the last move, drawn before letting go)
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
-  const posing = drag && drag.pose, moved = drag && drag.figure;
+  const posing = drag && drag.pose, placed = drag && drag.figure;
   drag = null;
   if (posing) { poseHeld = null; changed(); }
-  if (moved) dropOnSeat();
-  if (moved && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)
+  if (placed) dropOnSeat();
+  if (placed && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)
 };
 pic.addEventListener("pointerup", letGo);
 // (ticket 133: a touch the browser takes over, as a scroll or a gesture, ends
@@ -14494,7 +14544,7 @@ function padPoll(t) {
   if (onLadder && ud && !climb.manual) Object.assign(climb, { manual: true, got: climb.at ?? 0 });
   if (onLadder && climb.manual && !entering) {
     if (climb.got <= 0 && (ud > 0 || (!ud && Math.abs(vx) > 0.5))) { B.anim = "none"; climb = null; padWant = null; changed(); }
-    else if (ud) { climb.got = clamp(climb.got - ud * CLIMB_HAND * (held("run") ? 1.8 : 1) * figureT.k * dt, 0, climb.all ?? Infinity); changed(); }
+    else if (ud) { climb.got = clamp(climb.got - ud * CLIMB_HAND * (held("run") ? 1.8 : 1) * figureT.k * dt, 0, climb.all ?? Infinity); moved(); }
   }
   const moving = !!(vx || vy) && BG.kind !== "none" && !entering && !drag && !onLadder;
   const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
@@ -14523,7 +14573,7 @@ function padPoll(t) {
     const side = ax > 0.38 * m ? (vx < 0 ? "left" : "right") : null, depth = ay > 0.38 * m ? (vy < 0 ? "back" : "front") : null;
     B.facing = !side ? depth : !depth ? side : B.facing === side || B.facing === depth ? B.facing : side;
     padMoving = true;
-    changed();
+    moved();   // (ticket 163)
   } else if (padMoving) {
     // (stopped: on a seat if they were put down by one; up a ladder within reach, climbing)
     padMoving = false;
