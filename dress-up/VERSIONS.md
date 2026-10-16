@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.65 (2026-10-16)
+
+Everything in 0.0.64, plus the friend seen from behind.
+
+- **⬆️ away from us** (Matthew), a fourth way to face in the 🧍 Body tab: the friend turns their back to us. We see the back of their head, covered by their hair, or by long hair down their back, curls, or an afro all round. A costume's hood is closed at the back, with its ears, mane or antlers still on it. Wings and tails are on their back, in front of them now. A ghost is a plain sheet from behind. Walking and running away from us, they step in place.
+- **🧗 climbing** now faces the ladder, away from us.
+
 ## 0.0.64 (2026-10-16)
 
 Everything in 0.0.63, plus climbing the ladders that are in a place.

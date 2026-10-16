@@ -729,7 +729,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.64", released: "2026-10-16" };
+const VERSION = { number: "0.0.65", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -1490,6 +1490,52 @@ function sideHair(h, F, dir) {
     back = `<circle cx="${f1(X(-0.35))}" cy="${f1(150 - r)}" r="${f1(r)}" fill="${color}" stroke="${stroke}" stroke-width="4"/>`;
   }
   return { cap, back, ear: long ? null : ear };
+}
+// (ticket 138) Hair seen from behind, in the face's units, over the head as
+// drawn: the back of the head covered from the top down to the nape, its
+// lower edge in the locks of its kind and its outside round, curly or
+// spiky (an afro's a big round puff); long hair hanging down the back to
+// its length, long curls down it. What shows at the sides (pigtails, the
+// long sides) is hairSvg's, still drawn behind the head.
+function backHair(h, F) {
+  const style = h.style;
+  if (style === "none" || !BANG_LOCKS[style]) return "";
+  const pts = headPoints(F), n = pts.length, R = 80 * headWidth(F), cx = 100, cy = HEAD_C, L = hairLen(h);
+  const color = h.color, stroke = darker(color), P = ([x, y]) => f1(x) + " " + f1(y);
+  // (a point of the head's outline at an angle, degrees, y down: 0 to our
+  // right, -90 or 270 the top; pushed out by grow, as sideHair's)
+  const at = (deg, grow = 0) => {
+    const t = ((deg % 360) + 360) % 360, f = t / 5, i = Math.floor(f) % n, j = (i + 1) % n, u = f - Math.floor(f);
+    const x = pts[i][0] + (pts[j][0] - pts[i][0]) * u, y = pts[i][1] + (pts[j][1] - pts[i][1]) * u, dx = x - cx, dy = y - cy, r = Math.hypot(dx, dy) || 1;
+    return [x + dx / r * grow, y + dy / r * grow];
+  };
+  let t = "";
+  if (style === "long") {
+    // (down the back, as the long hairdo's ends: 159 + 155 times the length)
+    const bottom = 159 + 155 * L;
+    t += poly([[cx - 1.0 * R, cy - 0.15 * R], [cx - 1.1 * R, bottom - 24], [cx - 0.55 * R, bottom], [cx, bottom - 10], [cx + 0.55 * R, bottom],
+               [cx + 1.1 * R, bottom - 24], [cx + 1.0 * R, cy - 0.15 * R]], color, stroke, 4);
+  } else if (style === "curly" && L > 1.05) {
+    const drop = (L - 1) * 155;
+    for (let y = cy + 0.35 * R; y < cy + 0.35 * R + drop; y += 20)
+      for (const u of [-0.6, -0.2, 0.2, 0.6]) t += `<circle cx="${f1(cx + u * R + ((y / 20) % 2 ? 6 : -6))}" cy="${f1(y)}" r="16" fill="${color}" stroke="${stroke}" stroke-width="4"/>`;
+  }
+  // the cap: over the top from one side to the other, down to 20 degrees
+  // below level (an afro's, all round but its bottom)
+  const low = style === "afro" ? 60 : 20, edge = [];
+  for (let d = 180 - low, i = 0; d <= 360 + low; d += 5, i++) {
+    const g = style === "spiky" ? (i % 2 && d > 200 && d < 340 ? 8 + 30 * L : 8) : style === "afro" ? (i % 2 ? 16 : 8) + 30 * L : style === "curly" ? (i % 2 ? 13 : 7) : 7;
+    edge.push(at(d, g));
+  }
+  // the nape: locks from our right back to our left
+  const [shape, , depth] = BANG_LOCKS[style], a = edge[edge.length - 1], b = edge[0], nl = 4;
+  let locks = "";
+  for (let k = 1; k <= nl; k++) {
+    const p = [a[0] + (b[0] - a[0]) * (k - 1) / nl, a[1] + (b[1] - a[1]) * (k - 1) / nl], q = [a[0] + (b[0] - a[0]) * k / nl, a[1] + (b[1] - a[1]) * k / nl];
+    const m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2 + depth];
+    locks += shape === "round" ? ` Q${P(m)} ${P(q)}` : shape === "zig" ? ` L${P(m)} L${P(q)}` : ` Q${P([m[0] + 3, m[1] - depth * 0.3])} ${P(m)} L${P(q)}`;
+  }
+  return t + `<path d="M${P(b)} ${edge.slice(1).map(p => "L" + P(p)).join(" ")}${locks} Z" fill="${color}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>`;
 }
 // A fairy's wreath of flowers, worn round her head on her forehead, above
 // her brows: a band of vine and leaves, the front of the ring dipping a
@@ -9081,7 +9127,7 @@ const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃
 const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
 // (ticket 137) Climbing a ladder that stands in the place ("🧗 climbing"):
 // the friend goes to the ladder nearest them, just in front of it at its
-// depth, facing us, and climbs it, CLIMB_SPEED stage units a second at the
+// depth, facing it (away from us), and climbs it, CLIMB_SPEED stage units a second at the
 // size they are there; at the top they go through it if it is a doorway (a
 // dungeon's ladder up, a tree house room's ladder up, a ladder up the tree
 // to its house: the house), or stay up there holding on (the hay loft).
@@ -9119,7 +9165,7 @@ function startClimb() {
   climbAnywhere = true;
   if (!best || (!anywhere && best.d > CLIMB_REACH)) { climb = { none: true, far: !!best, place: climbPlace(BG) }; changed(); return; }
   BG.figX = Math.round(best.x); BG.figY = Math.round(best.z - SCENE.ground + 2);
-  B.facing = "front";
+  B.facing = "back";   // (facing the ladder, away from us: ticket 138)
   const p = best.el.closest(".portal"), house = best.el.dataset.house;
   const door = p ? { to: p.dataset.to, house: p.dataset.house, room: p.dataset.room, tent: p.dataset.tent } : house ? { to: "treeroom", house } : null;
   climb = { place: climbPlace(BG), x: best.x, z: best.z + 2, top: best.top, door, start: performance.now(), done: false, through: false };
@@ -9177,7 +9223,7 @@ function moveNow() {
   }
   if (a === "climbup") {
     // (ticket 137) up a ladder that stands in the place (see climb, below),
-    // facing us: the stroke of climbing with a ladder of their own, without
+    // facing it, away from us: the stroke of climbing with a ladder of their own, without
     // one; still while there is no ladder to climb, and holding on, still,
     // at its top (held: no more frames)
     if (!climb || climb.none) return treadNow();
@@ -9321,6 +9367,10 @@ function draw() {
   // way they face; the side nearer us is their -dir side (facing our right,
   // their right shoulder is toward us)
   const dir = facingOf(B), sitting = !!B.sit || B.pose === "hug";   // (ticket 136: a hug's legs are a sitter's)
+  // (ticket 138) facing away from us: drawn as facing us (dir 0), but the
+  // back of the head is hair, with no face on it, and what is on their back
+  // (wings, a tail) is in front of them
+  const away = B.facing === "back";
   let { shirt: SH, pants: P } = state;
   const skin = F.color, skinLine = darker(skin);
   // A costume: a suit is fur over everything below the hood; a falcon is
@@ -9619,7 +9669,7 @@ function draw() {
   }
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
-  if (!C && !dir) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
+  if (!C && !dir && !away) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
                  `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairBackSvg(state.hair), "under-hat-back")}</g></g></g>`);
 
   // behind everything: a falcon's wings and tail, or a suit's tail
@@ -9636,6 +9686,7 @@ function draw() {
     return `<g transform="translate(${f1(-dir * (w * 0.55 + 10))} -10) scale(0.42 1)" opacity="0.8">${half.replace('id="wings-back"', 'id="wings-back-far"').replace("url(#wings-back)", "url(#wings-back-far)")}</g>` +
            `<g transform="translate(${f1(-dir * w * 0.55)} 0) scale(0.42 1)">${half}</g>`;
   };
+  const backAt = svg.length;
   if (kind === "falcon") svg += veil("shirt", turnedAway(falconWings(C, w))) + veil("pants", falconTail(C, hw, L, LL));
   else if (kind === "eagle") svg += veil("shirt", turnedAway(falconWings(C, w, C.fur))) + veil("pants", falconTail(C, hw, L, LL, C.belly));
   else if (kind === "falconsuit") svg += veil("pants", falconTail(C, hw, L, LL, "url(#pat-fur)"));
@@ -9643,6 +9694,9 @@ function draw() {
   // (a suit's tail swings out to our right; in profile, out behind them)
   else if (suit) svg += veil("pants", dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L));
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
+  // (ticket 138: facing away, the wings and the tail are drawn last, over them)
+  const onBack = away ? svg.slice(backAt) : "";
+  if (away) svg = svg.slice(0, backAt);
 
   // legs, then shoes, then pants over both: long pants cover a boot's top
   // (the legs are the pants' to see through: invisible pants are
@@ -9809,7 +9863,7 @@ function draw() {
   // pants or bare (none under a skirt or dress, which hides them)
   // (a crease across each pants knee; a bare knee, round. Two round knees
   // in pants looked like a seat, Matthew said)
-  if (sitting && !dir && (suit || undies || !(P.style === "skirt" || P.style === "dress"))) {
+  if (sitting && !dir && !away && (suit || undies || !(P.style === "skirt" || P.style === "dress"))) {
     const longPants = suit || (!undies && P.style !== "shorts");
     for (const side of [1, -1]) { const [kx, ky] = kneeAt(side);
       svg += longPants ? `<path d="M${f1(kx - half * 0.7)} ${f1(ky + 4)} Q${f1(kx)} ${f1(ky + 13)} ${f1(kx + half * 0.7)} ${f1(ky + 4)}" fill="none" stroke="${ps}" stroke-width="3" stroke-linecap="round"/>`
@@ -9867,7 +9921,8 @@ function draw() {
   // arm can reach round someone they stand just in front of, for a hug
   const farDeep = scened && dir && !winged && !wet ? svg.slice(farAt) : "";
   if (farDeep) svg = svg.slice(0, farAt);
-  const collar = { v: [[0, 18]], round: [[-nw * 0.7, -6], [0, -1], [nw * 0.7, -6]], flat: [] }[SH.collar];
+  // (ticket 138: from behind, a shirt's neckline is a shallow round one)
+  const collar = { v: [[0, 18]], round: [[-nw * 0.7, -6], [0, -1], [nw * 0.7, -6]], flat: [] }[away && SH.collar === "v" ? "round" : SH.collar];
   const shoulder = !suit && SH.style === "tank" ? [[nw + 12, -20], [w, 30]] : [[w + 4, -6], [w, 44]];
   const torso = [[-nw, -20], ...collar, [nw, -20], ...shoulder, [w + 2, L], [-(w + 2), L],
                  ...shoulder.map(([x, y]) => [-x, y]).reverse()];
@@ -9893,7 +9948,7 @@ function draw() {
                   `<line x1="-3" y1="${f1(L - 10)}" x2="9" y2="${f1(L - 10)}" stroke="#f2c230" stroke-width="2.5" stroke-linecap="round"/>`);
   }
   if (wrapStripes(C) && !undies) svg += torsoStripes(torso, w, L, C.marks);
-  if (suit && kind !== "eaglesuit")  // the suit's belly (a bald eagle is brown all over)
+  if (suit && kind !== "eaglesuit" && !away)  // the suit's belly (a bald eagle is brown all over; none on its back: ticket 138)
     svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>`;
   veilFrom("shirt", bodyAt);
   // (ticket 125) the ears, facing us: out at the sides of the head at the
@@ -9924,7 +9979,15 @@ function draw() {
   // eyes, floating)
   const face = faceSvg(F, groundInFace, true, dir);
   const inFace = t => `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">${t}</g>`;
-  if (!dir) svg += veil("head", inFace(face.under)) + veil("eyes", inFace(face.eyes)) + veil("head", inFace(face.over));
+  // (ticket 138: from behind, the head and its hair, no face)
+  // (in a costume, the hood's back closed over the head: its ears, mane or
+  // horns, and no face on its brim)
+  if (away && C) {
+    const fill = falconHead(kind) ? C.marks : eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
+    svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F)}` +
+                               `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/></g></g>`));
+  } else if (away) svg += veil("head", inFace(face.under)) + veil("hair", inFace(`<g transform="${topFlies(F)}">${backHair(state.hair, F)}</g>`));
+  else if (!dir) svg += veil("head", inFace(face.under)) + veil("eyes", inFace(face.eyes)) + veil("head", inFace(face.over));
   else {
     // (ticket 124) in profile: the face's features on our side only (one
     // eye and brow, half the mouth), moved toward the front of the head; a
@@ -9960,7 +10023,7 @@ function draw() {
   // (under a witch's hat, from its brim down: the brim's line as the hat is
   // stretched with the head, which big eyes make taller)
   // (in profile, the hair on the head itself, over its top and back)
-  if (!C) svg += veil("hair", inFace(side ? `<g transform="${topFlies(F)}">${tucked(side.cap, "under-hat-bangs", HEAD_C + (40 - HEAD_C) * headH(F))}</g>`
+  if (!C && !away) svg += veil("hair", inFace(side ? `<g transform="${topFlies(F)}">${tucked(side.cap, "under-hat-bangs", HEAD_C + (40 - HEAD_C) * headH(F))}</g>`
                                           : tucked(bangsSvg(state.hair, F), "under-hat-bangs", HEAD_C + (40 - HEAD_C) * headH(F))));
   // a fairy's wreath of flowers, over her hair
   if (fairy && WC.wreath !== false) svg += veil("hair", inFace(wreathSvg(F, WC.wreathFlowers)));
@@ -9975,6 +10038,7 @@ function draw() {
              `${shoulderCat(w, WC)}</g>`;
   }
 
+  svg += onBack;   // (ticket 138: wings and a tail, seen from behind)
   // then the arms again, over the hair and the face: raised arms cross
   // the chin and cheeks in front of the head, not behind it
   // (only outside the body, where they showed before: the body still
@@ -10024,7 +10088,7 @@ function draw() {
     svg = svg.slice(0, figAt);
     for (const g of Object.keys(layers)) delete layers[g];
     const gh = ghostSvg(WC, { F, tx, ty, s, w, L, feetY, arms, armW });
-    svg += veil("shirt", gh.sheet) + veil("head", gh.mouth) + veil("eyes", gh.eyes);
+    svg += veil("shirt", gh.sheet) + (away ? "" : veil("head", gh.mouth) + veil("eyes", gh.eyes));   // (from behind, no face: ticket 138)
   }
   // standing in water: see-through below the waist, a wake round them (ticket 122)
   // (in a stream, to the knees; the wake out to the nearer bank at most)
@@ -11914,7 +11978,7 @@ const TABS = [
   ["🧍 Body", "body", [
     ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"], ["hug", "🤗 jumping up into a hug"]]],
     ["range", "hugLift", "🦘 held up (100 = a leg's length)", 0, 300, 40, 90],
-    ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"]]],
+    ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"], ["back", "⬆️ away from us"]]],
     ["choice", "anim", "🎬 animations", ANIMS],
   ]],
   ["😀 Face", "face", [
@@ -12285,8 +12349,9 @@ function set(part, key, value) {
   // (ticket 132) the Body tab: a pose, from scratch; an animation seen from
   // the side turns a friend who faces us to our right
   if (part === "body" && key === "pose") strikePose(value);
-  if (part === "body" && key === "anim" && ANIM_SIDEWAYS[value] && facingOf(state.body) === 0) state.body.facing = "right";
-  if (part === "body" && key === "anim" && (value === "climb" || value === "climbup")) state.body.facing = "front";   // (the ladder is behind them, facing us)
+  if (part === "body" && key === "anim" && ANIM_SIDEWAYS[value] && state.body.facing === "front") state.body.facing = "right";   // (away from us, they step in place: ticket 138)
+  if (part === "body" && key === "anim" && value === "climb") state.body.facing = "front";   // (the ladder is behind them, facing us)
+  if (part === "body" && key === "anim" && value === "climbup") state.body.facing = "back";   // (up a place's ladder, facing it: ticket 138)
   if (part === "body" && key === "anim") climb = null;   // (ticket 137: a climb starts afresh)
   // (walking, running, crawling and climbing start from standing: sitting
   // or cross-legged, they had nothing to move with)
