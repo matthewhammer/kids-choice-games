@@ -742,7 +742,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.71", released: "2026-10-16" };
+const VERSION = { number: "0.0.72", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -3111,16 +3111,22 @@ function helixSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
 // per segment, started where the picture's clock is in its 2.4 s loop (the
 // SMIL x1/x2 beside them run on that clock), so the two stay together.
 // Segments kept from the last drawing keep theirs.
-const HELIX_MS = 2400;
+// (ticket 148) The fade is the segment's opacity (its stroke-opacity held at
+// 1 while it plays, so it looks the same), and smooth; the width steps, 24
+// times a loop. A stroke's width changing every frame, on these 240 or so
+// segments, held the witch's hut to 20 to 33 frames a second in Chrome,
+// standing or walking; this way, 60.
+const HELIX_MS = 2400, HELIX_STEPS = 24;
 function startHelix(root) {
   const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() * 1000 : 0;
   const paused = pic && pic.animationsPaused && pic.animationsPaused();
   for (const el of root.querySelectorAll("[data-helix]")) {
     if (el.__helix || !el.animate) continue;
     const [ws, os] = el.getAttribute("data-helix").split("|").map(v => v.split(";"));
-    el.__helix = el.animate(ws.map((w, i) => ({ strokeWidth: w + "px", strokeOpacity: os[i], offset: i / (ws.length - 1) })), { duration: HELIX_MS, iterations: Infinity });
-    el.__helix.currentTime = now % HELIX_MS;
-    if (paused) el.__helix.pause();
+    el.style.strokeOpacity = "1";
+    el.__helix = [el.animate(os.map((o, i) => ({ opacity: o, offset: i / (os.length - 1) })), { duration: HELIX_MS, iterations: Infinity }),
+                  el.animate(ws.map((w, i) => ({ strokeWidth: w + "px", offset: i / (ws.length - 1) })), { duration: HELIX_MS, iterations: Infinity, easing: `steps(${HELIX_STEPS})` })];
+    for (const a of el.__helix) { a.currentTime = now % HELIX_MS; if (paused) a.pause(); }
   }
 }
 // a scene drawn inside another (a picture on a wall) keeps its ids apart

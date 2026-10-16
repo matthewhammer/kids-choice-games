@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.72 (2026-10-16)
+
+Everything in 0.0.71, plus the witch's places smooth again.
+
+- **Fixed: walking around the witch's hut was slow** (Matthew): the cauldron's fumes held the hut to about 20 to 30 frames a second (and the witch's woods to about 13), standing or walking. They look the same, and both places now run at 60 frames a second, in Chrome and in Firefox.
+
 ## 0.0.71 (2026-10-16)
 
 Everything in 0.0.70, plus walking toward us and away that looks like walking.
