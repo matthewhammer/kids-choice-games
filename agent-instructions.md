@@ -147,6 +147,8 @@ Wings in profile: wings on the back (a fairy's, a falcon's or eagle's) are turne
 
 Sitting (`legBase`): facing us, the thighs come toward us and are drawn short (0.3), the shins straight down, with a crease across each pants knee (two round knees in pants looked like a seat, Matthew said) or round bare knees; in profile the thighs go forward, level, and the shins hang down. The pose (121) adds to these, and posing works in profile and sitting (`poseTo` uses each limb's `out`, the sitting angles and the short thigh). Contact sheets: `~/du-shots/tools/figsheet.py <out.png> <cols> '<[state setters]>'` (headless Firefox, the friend alone, framed to them).
 
+**Seats** (ticket 50): `SEATS[kind](c, B)` lists a place's seats (see `seatsHere`), its lines just before the place's scene function, built from that scene's own expressions. Places with seats: the living room's couch; the healer's two chairs; a tree house's bottom bunk (the bunk room) and beanbag (the reading nook); and in a castle (`ROOM_SEATS`, by room style) the dining room's chairs but our end's, which faces away (`diningPlaces`, shared with its drawing), the king's throne, the cat room's window seat, the spiral staircase's steps 2 to 5, and the stable's hay heap.
+
 **Castles.**
 - `castleOf(o)` reads one castle's settings (N's, M's or D's) into a model:
   - `rooms`, by number (up to six, each a style from `ROOM_KINDS`);

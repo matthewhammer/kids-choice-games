@@ -3822,6 +3822,20 @@ function waysSvg({ x0, x1, y0, W, H, k, P }, floor, links) {
   }
   return t;
 }
+// (ticket 50) a tree house room's seats, by which room it is (picked as
+// treeroomScene picks it): the bunk room's bottom bunk, the top of its
+// mattress (at floor - 170) between the posts at its ends, facing us; the
+// reading nook's beanbag, across the top of it (its peak at floor - 60),
+// sunk 10 into it, as one sinks into a beanbag
+SEATS.treeroom = (c, B) => {
+  const { x0, x1, g, W, k } = c, inside = Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1))), chosen = B["room" + inside];
+  const room = ROOMS[chosen] ? chosen : HOUSE_ROOMS[inside - 1], floor = g - 110 * k;
+  if (room === "bunks") { const bx = x1 - W * 0.2, mid = floor - 170 * k, w = 210 * k;
+    return [{ name: "bottom bunk", x0: bx - w / 2 + 7 * k, x1: bx + w / 2 - 7 * k, y: mid, z: floor + 10 * k + 1, facing: ["front"] }]; }
+  if (room === "books") { const gx = x0 + W * 0.2;
+    return [{ name: "beanbag", x0: gx - 36 * k, x1: gx + 36 * k, y: floor - 50 * k, z: floor + 60 * k + 1, facing: ["front", "left", "right"] }]; }
+  return [];
+};
 function treeroomScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, all, o } = c;
   const inside = Math.max(1, Math.min(6, o.houses ?? 4, Math.round(o.inside ?? 1))), chosen = o["room" + inside];
@@ -4312,6 +4326,12 @@ function potionSvg(kind, x, y, k, color) {
 // herbs and bowls; a little table with two chairs and tea, to sit and
 // talk; a braided rug; and the door back out to the clearing. She can be
 // dragged anywhere (her place is the scene's healerX, healerY), at her size.
+// (ticket 50) the tea table's two chairs: each seat's top, 52 across at ty + 4
+// (the chairs at the table's sides, 92 out, ty = g + 34, as healerroomScene
+// draws them), each facing the table, its back on the far side
+SEATS.healerroom = c => { const { W, g, k } = c, tx = W * 0.13, ty = g + 34 * k;
+  return [[-1, "chair, left", "right"], [1, "chair, right", "left"]].map(([sd, name, way]) => { const x = tx + sd * 92 * k;
+    return { name, x0: x - 26 * k, x1: x + 26 * k, y: ty + 4 * k, z: ty + 44 * k + 1, facing: [way] }; }); };
 function healerroomScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, all, o } = c;
   const floor = g - 100 * k, hz = (o.healerSize ?? 100) / 100, potX = -W * 0.24, wallTop = y0 + H * 0.06;
@@ -5502,12 +5522,29 @@ function hallwaySvg(c, K, R = {}) {
 // torches along the walls; and at the far end, a great fireplace, its fire
 // burning. The candle flames flicker with the quick LFO, and the torches and
 // the fire glow with the slow one.
+// (ticket 50) The dining room's table and chairs, where they stand, for its
+// drawing (diningRoomSvg) and its seats (SEATS.castleroom) alike, so the two
+// can't drift: a point in the room (x across, y up and down, z how far down
+// the room, in stretches) is at(x, y, z); its places (4 to 18), one at each
+// end and the rest down its sides, the left side taking the odd one; the
+// table from zA (our end) to zB; the end chairs at zNear and zFar, a side's
+// chair j (from our end) at zOf(sd, j); a side chair's seat from seatX(sd)[0],
+// by the table, out to seatX(sd)[1], an end chair's across ±endX, at ys
+function diningPlaces(c, places) {
+  const { k } = c, { floor, vy } = roomFrame(c);
+  const fz = z => 1 / (1 + z * 0.8), Y = (y, f) => vy + (y - vy) * f, at = (x, y, z) => { const f = fz(z); return [x * f, Y(y, f)]; };
+  places = Math.max(4, Math.min(18, Math.round(places ?? 10)));
+  const sides = [Math.ceil((places - 2) / 2), Math.floor((places - 2) / 2)];
+  const per = Math.max(1, sides[0]), step = 0.34, zA = 0.3, zB = zA + per * step, tw = 64 * k, ytop = floor - 80 * k, ys = floor - 46 * k;
+  const zOf = (sd, j) => zA + (j + 0.5 + (per - sides[sd < 0 ? 0 : 1]) / 2) * step;
+  return { fz, Y, at, places, sides, per, step, zA, zB, zNear: zA - 0.2, zFar: zB + 0.2, tw, ytop, ys, zOf,
+           seatX: sd => [sd * (tw - 6 * k), sd * (tw + 34 * k)], endX: 24 * k, floorAt: z => at(0, floor, z)[1] };
+}
 function diningRoomSvg(c, K, r = {}) {
   const { k, P, o } = c, { floor, top, bw, vy } = roomFrame(c);
   const tone = ROOM_TONE.dining, mortar = mix(tone, "#000000", 0.35), gold = "#e8b923", wood = "#7a4e2c", woodDk = "#4a2e18";
-  const N = HALL_STRETCHES, fz = z => 1 / (1 + z * 0.8), fN = fz(N), Y = (y, f) => vy + (y - vy) * f;
-  // (a point in the room: x across, y up and down, z how far down the room, in stretches)
-  const at = (x, y, z) => { const f = fz(z); return [x * f, Y(y, f)]; }, pt = (x, y, z) => P(...at(x, y, z));
+  // (a point in the room, the table and the chairs: diningPlaces)
+  const D = diningPlaces(c, r.places), { fz, Y, at } = D, N = HALL_STRETCHES, fN = fz(N), pt = (x, y, z) => P(...at(x, y, z));
   const poly = (pts, fill, more = "") => `<polygon points="${pts.map(p => pt(...p)).join(" ")}" fill="${fill}"${more}/>`;
   let t = roomShell(c, tone, {});
   t += `<defs><radialGradient id="dine-depth" cx="0" cy="${f1(vy)}" r="${f1(bw)}" gradientUnits="userSpaceOnUse">` +
@@ -5546,20 +5583,18 @@ function diningRoomSvg(c, K, r = {}) {
   }
   // the table, down the middle: one place at each end, the rest down its sides (the left side
   // has the odd one), its places evenly spaced
-  const places = Math.max(4, Math.min(18, Math.round(r.places ?? 10))), sides = [Math.ceil((places - 2) / 2), Math.floor((places - 2) / 2)];
-  const per = Math.max(1, sides[0]), step = 0.34, zA = 0.3, zB = zA + per * step, tw = 64 * k, ytop = floor - 80 * k, ys = floor - 46 * k;
-  const zOf = (sd, j) => zA + (j + 0.5 + (per - sides[sd < 0 ? 0 : 1]) / 2) * step;
+  const { sides, per, zA, zB, tw, ytop, ys, zOf } = D;
   // (a chair: its seat with a cushion in the carpet color, its back on the far side from the table;
   // at an end, its back across the room)
   const chair = (cx, z, sd, end) => {
     // (our end's chair, its back to us, is low, so the table shows over it)
     const d = end ? 0.08 : 0.07, za = z - d, zb = z + d, hi = end > 0 ? floor - 170 * k : end < 0 ? floor - 96 * k : floor - 132 * k;
-    if (end) { const x = 24 * k, zBack = end < 0 ? za : zb;
+    if (end) { const x = D.endX, zBack = end < 0 ? za : zb;
       return poly([[-x, ys, za], [x, ys, za], [x, ys, zb], [-x, ys, zb]], wood) + poly([[-x * 0.8, ys - 3 * k, za + 0.01], [x * 0.8, ys - 3 * k, za + 0.01], [x * 0.8, ys - 3 * k, zb - 0.01], [-x * 0.8, ys - 3 * k, zb - 0.01]], K.carpet) +
              [[-x, za], [x, za], [-x, zb], [x, zb]].map(([lx, lz]) => `<line x1="${f1(at(lx, ys, lz)[0])}" y1="${f1(at(lx, ys, lz)[1])}" x2="${f1(at(lx, floor, lz)[0])}" y2="${f1(at(lx, floor, lz)[1])}" stroke="${woodDk}" stroke-width="${f1(3 * k * fz(lz))}"/>`).join("") +
              poly([[-x, ys, zBack], [x, ys, zBack], [x, hi, zBack], [-x, hi, zBack]], woodDk, ` stroke="${wood}" stroke-width="${f1(2 * k * fz(zBack))}"`);
     }
-    const xi = sd * (tw - 6 * k), xo = sd * (tw + 34 * k);
+    const [xi, xo] = D.seatX(sd);
     return [[xi, za], [xo, za], [xi, zb], [xo, zb]].map(([lx, lz]) => `<line x1="${f1(at(lx, ys, lz)[0])}" y1="${f1(at(lx, ys, lz)[1])}" x2="${f1(at(lx, floor, lz)[0])}" y2="${f1(at(lx, floor, lz)[1])}" stroke="${woodDk}" stroke-width="${f1(3 * k * fz(lz))}"/>`).join("") +
            poly([[xi, ys, za], [xo, ys, za], [xo, ys, zb], [xi, ys, zb]], wood) + poly([[xi, ys - 3 * k, za + 0.01], [xo - sd * 4 * k, ys - 3 * k, za + 0.01], [xo - sd * 4 * k, ys - 3 * k, zb - 0.01], [xi, ys - 3 * k, zb - 0.01]], K.carpet) +
            poly([[xo, ys, za], [xo, ys, zb], [xo, hi, zb], [xo, hi, za]], woodDk, ` stroke="${wood}" stroke-width="${f1(2 * k * fz(z))}"`);
@@ -5568,8 +5603,8 @@ function diningRoomSvg(c, K, r = {}) {
   // (ticket 99: each chair an object, standing at its middle on the floor, a
   // side's numbered from our end; the table one object, its legs, top and all
   // on it, standing at its NEAR end, zA, as it is long, running away from us)
-  const floorAt = z => at(0, floor, z)[1];
-  t += obj("chair, far end", floorAt(zB + 0.2), chair(0, zB + 0.2, 0, 1));
+  const { floorAt } = D;
+  t += obj("chair, far end", floorAt(D.zFar), chair(0, D.zFar, 0, 1));
   for (const sd of [-1, 1]) for (let j = sides[sd < 0 ? 0 : 1] - 1; j >= 0; j--) t += obj(`chair, ${sd < 0 ? "left" : "right"} ${j + 1}`, floorAt(zOf(sd, j)), chair(0, zOf(sd, j), sd, 0));
   let table = "";
   for (const [z, sd] of [[zB - 0.06, -1], [zB - 0.06, 1], [zA + 0.06, -1], [zA + 0.06, 1]]) {
@@ -5610,7 +5645,7 @@ function diningRoomSvg(c, K, r = {}) {
            candle(x, y - 10 * k * f, f, m, 26, tFlames, tLights); })() }))];
   table += things.sort((a, b) => b.z - a.z).map(x => x.s).join("") + tLights.join("") + tFlames.join("");
   t += obj("table", floorAt(zA), table);
-  t += obj("chair, near end", floorAt(zA - 0.2), chair(0, zA - 0.2, 0, -1));
+  t += obj("chair, near end", floorAt(D.zNear), chair(0, D.zNear, 0, -1));
   // the candelabras, hanging over the table on chains from the vault: a gold ring of candles each
   // (each an object, at the floor under it, numbered from our end)
   const nh = per <= 3 ? 1 : per <= 6 ? 2 : 3;
@@ -7085,6 +7120,48 @@ function mapPlan(B, id, p) {
 }
 const mapFix = (B, id, p) => { const plan = mapPlan(B, id, p); if (plan) plan.apply(B); return !!plan; };
 const mapCanFix = (B, id, p) => !!mapPlan(B, id, p);
+// (ticket 50) A castle room's seats, by its style, each from the room's own
+// drawing and its helpers:
+// - the dining room's chairs (diningPlaces, seen from the room's height, eye
+//   0.3, as castleroomScene draws it): each chair's cushion, 3 above its
+//   seat, across it at its middle; a side's chairs face the table (the left
+//   side's right, the right side's left), the far end's faces us (our end's
+//   faces away from us, so it is no seat: there is no back view);
+// - the king's room's throne (kingRoomSvg): the top of its red cushion, 40
+//   above ty = floor - 42, across between its arms (at ±56, 14 wide);
+// - the cat room's window seat (catRoomPlaces, and catRoomSvg's sa, sb and
+//   Ys): its cushion's top halfway back (9 above Ys at the wall, 4 at the
+//   front, z -0.005 to -0.085), from end to end;
+// - the spiral staircase's steps (spiralGeom; each a tenth of a half turn,
+//   as spiralSvg draws them): steps 2 to 5, counted up from the one on the
+//   floor (0), the middle half of each from the column out to the wall, at
+//   its middle; a sitter is in front of all the low steps (the steps
+//   object), their legs hanging down over the lower steps; down the stairs
+//   is toward us, so facing us first;
+// - the stable's hay heap (stableSvg): the top of the heap, left of the
+//   pitchfork in it (the heap's peak, between its two curves, at 52 up, in
+//   its own units s), sunk 2 into the hay.
+const ROOM_SEATS = {
+  dining: (c, K, n) => {
+    const { k } = c, D = diningPlaces({ ...c, eye: 0.3 }, K.places[n - 1]), seat = (name, z, xa, xb, facing) => { const f = D.fz(z);
+      return { name, x0: Math.min(xa, xb) * f, x1: Math.max(xa, xb) * f, y: D.Y(D.ys - 3 * k, f), z: D.floorAt(z) + 1, facing }; };
+    return [seat("chair, far end", D.zFar, -0.8 * D.endX, 0.8 * D.endX, ["front"]),
+            ...[-1, 1].flatMap(sd => [...Array(D.sides[sd < 0 ? 0 : 1])].map((_, j) => { const [xi, xo] = D.seatX(sd);
+              return seat(`chair, ${sd < 0 ? "left" : "right"} ${j + 1}`, D.zOf(sd, j), xi, xo - sd * 4 * k, [sd < 0 ? "right" : "left"]); }))];
+  },
+  king: c => { const { k } = c, { floor } = roomFrame(c), ty = floor - 42 * k;
+    return [{ name: "throne", x0: -42 * k, x1: 42 * k, y: ty - 40 * k, z: floor + 1, facing: ["front"] }]; },
+  catroom: c => { const { k } = c, { at, Yh, WX, bw, floor } = catRoomPlaces(c), sa = WX - 0.27 * bw, sb = WX + 0.27 * bw, Ys = Yh(0.22), z = -0.045;
+    return [{ name: "window seat", x0: at(sa + 0.01 * bw, Ys, z)[0], x1: at(sb - 0.01 * bw, Ys, z)[0], y: at(0, Ys - 6.5 * k, z)[1], z: at(0, floor, -0.09)[1] + 1, facing: ["front"] }]; },
+  spiral: c => { const { Yf, R, r0, th0, lvl, pt } = spiralGeom(c), step = Math.PI / 10, ra = r0 + (R - r0) * 0.25, rb = r0 + (R - r0) * 0.75;
+    return [2, 3, 4, 5].map(j => { const a = th0 + j * step, th = a + step / 2, xa = pt(ra, th, 0)[0], xb = pt(rb, th, 0)[0];
+      return { name: `step ${j}`, x0: Math.min(xa, xb), x1: Math.max(xa, xb), y: pt((ra + rb) / 2, th, lvl(a))[1], z: pt(R, (th0 + Math.PI) / 2, Yf)[1] + 1,
+               facing: th < Math.PI ? ["front", "right", "left"] : ["front", "left", "right"] }; }); },
+  stable: c => { const { k } = c, { at, floor, bw } = roomSpace(c), [hx, hy] = at(0.6 * bw, floor, -0.4), s = k / 0.6;
+    return [{ name: "hay heap", x0: hx - 24 * s, x1: hx + 6 * s, y: hy - 50 * s, z: hy + 1, facing: ["front", "left", "right"] }]; },
+};
+SEATS.castleroom = (c, B) => { const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
+  return ROOM_SEATS[K.rooms[n - 1]]?.(c, K, n) ?? []; };
 function castleroomScene(c) {
   const { o } = c;
   let K = castleOf(o);
