@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.54 (2026-10-15)
+
+Everything in 0.0.53, plus places to sit.
+
+- **🪑 Sit on things** (Matthew, for the sitting pose): drag the friend onto a seat and let go, and they sit on it; drag them off, and they stand up. Or use the "🪑 sit on" chips in the background tab, one for each seat in the place, and "🧍 stand up". Seated, the friend sits on the seat's top, among the place's things at the seat's depth, at their usual size there, facing a way that seat allows (toward the fire on the camp's logs, toward the table in the healer's hut and at the castle's dining table).
+- **Where:** the living room's couch; the healer's two chairs; the castle's dining chairs, the king's throne, the cat room's window seat, the spiral staircase's steps and the stable's hay heap; the tree house's beanbag; the logs by the camp fire; the beach chairs; the picnic bench under the sea; the biggest toadstools in the fairy ring; the mushrooms on the path through the woods; rocks on the mountain trail; the crate and barrels by the castle; the house's front step and the toy wagon; the tree house's swing; and the witch's big root.
+
 ## 0.0.53 (2026-10-15)
 
 Everything in 0.0.52, plus ears, and wings seen from the side.
