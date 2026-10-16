@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.80 (2026-10-16)
+
+Everything in 0.0.79, plus a see-through friend smooth to walk with.
+
+- **Fixed:** a friend made see-through (👻 Visibility) made walking choppy everywhere, nearly frozen on Matthew's laptop at the 🏖️ beach and in the 🔲 empty room (about 35 frames a second here). Their see-through layers were drawn with masks the browser drew again on every step. Now each layer is see-through on its own, at 60: where two layers of one part overlap, the one behind shows a little (the hair is a little darker where it goes behind and in front of the head, and the legs show through see-through pants). The exact look is "👻 exact see-through" in the ⚙️ Advanced tab, off to start.
+
 ## 0.0.79 (2026-10-16)
 
 Everything in 0.0.78, plus the living room smooth to walk in, and the music full screen.

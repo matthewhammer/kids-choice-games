@@ -801,6 +801,11 @@ const PERF_FEATURES = [
   // window's view of outside stays moving: it has no frame)
   { id: "livePictures", label: "🎞️ moving pictures", what: "framed pictures drawn live, each place's own animations playing: on the walls of the living room, the healer's hut and the castle's rooms, and the 22 in the 💭 imagination's map. Off, each is that place held still, as an image. A window's view of outside moves either way.",
     count: () => [...document.querySelectorAll("#bg .portal")].filter(p => p.querySelector(":scope > rect") && p.querySelector(":scope > svg")).length, unit: ["picture drawn live", "pictures drawn live"] },
+  // (ticket 161: Matthew found the beach and the empty room nearly frozen;
+  // a friend half see-through walked at 36 frames a second in the empty
+  // room, 60 without these masks)
+  { id: "exactSeeThrough", label: "👻 exact see-through", what: "a see-through friend (👻 Visibility) drawn so that a part never shows through itself where its layers overlap, with masks the browser draws again on every frame the friend moves. Off, each layer is see-through on its own: where two layers of one part overlap (the hair behind the head and in front of it), the one behind shows a little.",
+    count: () => document.querySelectorAll('#pic [mask^="url(#veil-m-"]').length, unit: ["see-through mask", "see-through masks"] },
 ];
 const PERF = Object.fromEntries(PERF_FEATURES.map(f => [f.id, false]));
 try { Object.assign(PERF, JSON.parse(localStorage.getItem("dress-up-perf") || "{}")); } catch (e) { /* (all off) */ }
@@ -886,7 +891,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.79", released: "2026-10-16" };
+const VERSION = { number: "0.0.80", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9268,6 +9273,8 @@ const visibility = () => Object.fromEntries(VISIBLE_PARTS.map(k =>
 // is hidden where the part's later layers are drawn (their shapes, inked
 // black over white); the last one needs none.
 function unveil(svg, layers) {
+  // (ticket 161: without exact see-through, each layer its own see-through, no masks)
+  if (!PERF.exactSeeThrough) return svg.replace(/ data-veil="(\w+) (\d+)"/g, "");
   let masks = "";
   for (const [g, N] of Object.entries(layers))
     for (let n = 1; n < N; n++) {
