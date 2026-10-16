@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.67 (2026-10-16)
+
+Everything in 0.0.66, plus playing with a game controller.
+
+- **🎮 Controls** (Matthew), a new tab, and a game controller to play with: plug one in (USB) or pair it, and press one of its buttons. Its arrows (or its left stick) move the friend around the place, as dragging them does, and turn them the way they go: ⬆️ up is away from us, into the place, and ⬇️ down is toward us. Its other buttons start the animations, and the friend moves at the animation's pace: walking is slow, running is fast. Press the same button again to stop. A jump goes on top of whatever they are doing. Two buttons are for going places: back the way they came, and through the nearest doorway.
+- **The usual buttons** have every animation on them: Ⓐ jumping, Ⓑ running, Ⓧ walking, Ⓨ climbing, the shoulders crawling and swimming, the triggers climbing (with ladder) and still, select back, start through the nearest doorway. The 🎮 Controls tab lists each button with a menu to change what it does (the row lights up while you hold its button), and "↺ the usual buttons" puts them back.
+
 ## 0.0.66 (2026-10-16)
 
 Everything in 0.0.65, plus jumping.

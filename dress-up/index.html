@@ -96,6 +96,10 @@
   input[type=range] { width: 100%; height: 28px; accent-color: var(--accent); }
   input[type=color] { width: 40px; height: 34px; border: none; padding: 0; background: none; }
   .hint { color: var(--muted); font-size: 0.9em; }
+  .padmap { display: grid; gap: 4px; margin: 8px 0; }
+  .padrow { display: flex; gap: 8px; align-items: center; padding: 2px 6px; border-radius: 8px; }
+  .padrow .pbtn { min-width: 11em; }
+  .padrow.down { outline: 2px solid #8b5cf6; background: color-mix(in srgb, #8b5cf6 14%, transparent); }
   /* the figure's place in its scene: the stage in small, the figure a box */
   svg.place { display: block; width: 100%; max-width: 240px; height: auto; touch-action: none; cursor: crosshair;
               border-radius: 10px; border: 2px solid var(--line); }
@@ -703,6 +707,10 @@ function upgradeFeet(st, saved) {
 // over keep them
 // how much of each part of the body shows (VISIBILITY): all of it
 DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pants: 100, feet: 100, hands: 100 };
+// (ticket 138) the game controller's buttons, by the browser's "standard"
+// numbers (0 the bottom face button, 1 the right, 2 the left, 3 the top,
+// 4 and 5 the shoulders, 6 and 7 the triggers, 8 select, 9 start): what each does
+DEFAULTS.controls = { b0: "jump", b1: "run", b2: "walk", b3: "climbup", b4: "crawl", b5: "swim", b6: "climb", b7: "none", b8: "back", b9: "door" };
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 let state = clone(DEFAULTS);
 try {
@@ -729,7 +737,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.66", released: "2026-10-16" };
+const VERSION = { number: "0.0.67", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -10203,7 +10211,7 @@ function draw() {
 function treadTick(t) {
   treadLoop = 0;
   if (!moveNow()) return;
-  if (!drag && !document.hidden && t - treadLast >= 32) { treadLast = t; draw(); feedMusic(); return; }
+  if (!drag && !padMoving && !document.hidden && t - treadLast >= 32) { treadLast = t; draw(); feedMusic(); return; }
   treadLoop = requestAnimationFrame(treadTick);
 }
 
@@ -12351,6 +12359,9 @@ const TABS = [
     ["choice", "pic5", "🖼️ picture 5", PICTURE_CHOICES],
     ["choice", "pic6", "🖼️ picture 6", PICTURE_CHOICES],
   ]],
+  ["🎮 Controls", "controls", [
+    ["padmap", "map", "🎮 game controller"],
+  ]],
   ["🎵 Music", "music", [
     ["flip", "mute", ["🔊 sound on: tap to mute", "🔇 muted: tap for sound"]],
     ["note", "now", nowPlaying],
@@ -12824,6 +12835,24 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                             ...(state.body.sit ? [el("button", { class: "obj", onclick: () => standUp() }, "🧍 stand up")] : []));
       }
       box.hidden = !list.length;
+    });
+  }
+  // (ticket 138) the game controller: whether one is there, then each of its
+  // buttons with a menu of what it does (lit while held), and the usual layout
+  if (kind === "padmap") {
+    const status = el("div", { class: "hint" }), rows = el("div", { class: "padmap" });
+    const how = el("div", { class: "hint" }, ["Its arrows, or its left stick, move the friend as dragging them does, and turn them that way: ⬆️ away from us, into the place, ⬇️ toward us. " +
+                                             "With an animation on, they move at its pace (walking, running, crawling, swimming). Press a button again to stop its animation."]);
+    const sels = PAD_BUTTONS.map(([i, name]) => {
+      const sel = el("select", { onchange: e => set(part, "b" + i, e.target.value) }, PAD_ACTIONS.map(([v, l]) => el("option", { value: v }, l)));
+      const row = el("div", { class: "padrow" }, [el("span", { class: "pbtn" }, name), sel]);
+      rows.append(row);
+      return [i, sel, row];
+    });
+    box.append(status, how, rows, el("button", { onclick: () => { Object.assign(state[part], DEFAULTS.controls); changed(); } }, "↺ the usual buttons"));
+    syncs.push(() => {
+      for (const [i, sel, row] of sels) { sel.value = state[part]["b" + i] ?? "nothing"; row.classList.toggle("down", padDown.has(i)); }
+      status.textContent = padName ? `🎮 ${padName}: ready.` : "🎮 No game controller yet: plug one in (USB) or pair it, then press one of its buttons.";
     });
   }
   if (kind === "action") {
@@ -13326,7 +13355,7 @@ function surpriseOne(part, [kind, key, , ...rest]) {
 }
 document.getElementById("surprise").addEventListener("click", () => {
   // (the music is not part of the surprise, nor what is see-through)
-  for (const [, part, ctls] of TABS.filter(t => t[1] !== "music" && t[1] !== "visible"))
+  for (const [, part, ctls] of TABS.filter(t => t[1] !== "music" && t[1] !== "visible" && t[1] !== "controls"))
     for (const c of ctls) surpriseOne(part, c);
   if (state.body.pose === "hug") state.body.pose = "stand";   // (a hug needs someone to hug: ticket 136)
   // keep the surprises friendly: mostly not sick, not exploded, a normal-ish head
@@ -13793,6 +13822,80 @@ function flyInto(box, arrive) {
                  { duration: 600, easing: "ease-out" });
   };
 }
+// (ticket 138) A game controller, through the browser's Gamepad API (its
+// "standard" layout). Its arrows (12 up, 13 down, 14 left, 15 right) or its
+// left stick move the friend as dragging them does, PAD_SPEED stage units a
+// second (or the animation's own pace), farther into the place more slowly,
+// and turn them that way: up away from us (into the place), down toward us.
+// Each other button does what the 🎮 Controls tab says (state.controls.bN):
+// an animation, as its chip in the Body tab (pressed again, it stops); a
+// jump on top of what they are doing; back the way they came; through the
+// nearest doorway. Polled each frame while one is connected, never without.
+const PAD_BUTTONS = [[0, "Ⓐ / ✕ (bottom)"], [1, "Ⓑ / ○ (right)"], [2, "Ⓧ / □ (left)"], [3, "Ⓨ / △ (top)"], [4, "LB / L1 (left shoulder)"], [5, "RB / R1 (right shoulder)"],
+                     [6, "LT / L2 (left trigger)"], [7, "RT / R2 (right trigger)"], [8, "select / back / view"], [9, "start / menu / options"]];
+const PAD_ACTIONS = [...ANIMS, ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest doorway"], ["nothing", "— nothing"]];
+const PAD_SPEED = { none: 160, walk: 90, run: 230, crawl: 55, swim: 80, jump: 160 };
+let padLoop = 0, padName = "", padDown = new Set(), padMoving = false, padLast = 0;
+function padPoll(t) {
+  padLoop = 0;
+  const g = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(Boolean);
+  if (!g) { padName = ""; padDown = new Set(); padLast = 0; if (padMoving) { padMoving = false; changed(); } return; }
+  padName = (g.id || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
+  const dt = padLast ? Math.min(0.1, (t - padLast) / 1000) : 0;
+  padLast = t;
+  // a button pressed: its action (the arrows are for moving)
+  const now = new Set(g.buttons.map((b, i) => (b.pressed ? i : -1)).filter(i => i >= 0));
+  const pressed = [...now].filter(i => !padDown.has(i) && (i < 12 || i > 15)), lit = now.size !== padDown.size || pressed.length > 0;
+  padDown = now;
+  for (const i of pressed) padAct(state.controls["b" + i]);
+  // the arrows, or the left stick past its dead middle
+  const stick = v => (Math.abs(v ?? 0) > 0.25 ? v : 0);
+  const vx = clamp((now.has(15) ? 1 : 0) - (now.has(14) ? 1 : 0) + stick(g.axes[0]), -1, 1), vy = clamp((now.has(13) ? 1 : 0) - (now.has(12) ? 1 : 0) + stick(g.axes[1]), -1, 1);
+  const B = state.body, BG = state.background, onLadder = B.anim === "climb" || (B.anim === "climbup" && climb && !climb.none);
+  if ((vx || vy) && BG.kind !== "none" && !entering && !drag && !onLadder) {
+    const sp = (PAD_SPEED[B.anim] ?? PAD_SPEED.none) * dt, F = sceneFrame;
+    BG.figX = Math.round(10 * clamp((BG.figX ?? 0) + vx * sp, F.left, F.right)) / 10;
+    BG.figY = Math.round(10 * clamp((BG.figY ?? 0) + vy * sp * 0.6, (F.top - F.ground) * 0.6, F.bottom - F.ground)) / 10;
+    B.facing = Math.abs(vx) >= Math.abs(vy) ? (vx < 0 ? "left" : "right") : vy < 0 ? "back" : "front";
+    padMoving = true;
+    changed();
+  } else if (padMoving) {
+    // (stopped: on a seat if they were put down by one; up a ladder within reach, climbing)
+    padMoving = false;
+    dropOnSeat();
+    if (B.anim === "climbup") { climb = null; climbAnywhere = false; }
+    changed();
+  } else if (lit && !pressed.length) changed();   // (the Controls tab shows which button is down)
+  padLoop = requestAnimationFrame(padPoll);
+}
+function padAct(a) {
+  const B = state.body;
+  if (!a || a === "nothing") return;
+  if (a === "back") { if (!backBtn.hidden) backBtn.click(); return; }
+  if (a === "door") { padDoor(); return; }
+  if (a === "jump") { startJump(B.anim); changed(); return; }
+  set("body", "anim", B.anim === a && a !== "none" ? "none" : a);
+}
+// (the doorway nearest the friend's feet, in the picture's units)
+function padDoor() {
+  const node = bgShown.node, BG = state.background, P = pic.getScreenCTM();
+  if (!node || !P || entering || BG.kind === "none") return;
+  const fx = BG.figX ?? 0, fz = SCENE.ground + (BG.figY ?? 0), inv = P.inverse();
+  let best = null;
+  for (const d of node.querySelectorAll(".portal")) {
+    const r = d.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    const c = new DOMPoint(r.x + r.width / 2, r.y + r.height).matrixTransform(inv), dist = Math.hypot(c.x - fx, c.y - fz);
+    if (!best || dist < best.dist) best = { dist, d };
+  }
+  if (best) enterScene(best.d);
+}
+window.addEventListener("gamepadconnected", e => {
+  padName = ((e.gamepad && e.gamepad.id) || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
+  if (!padLoop) padLoop = requestAnimationFrame(padPoll);
+  changed();
+});
+window.addEventListener("gamepaddisconnected", () => { if (!padLoop) padLoop = requestAnimationFrame(padPoll); });
 // Where a friend lands, arriving in a place, if not in its middle: on the
 // ground, by the camp's fire and not in it, on the bank of the falls' pool
 // and not in the water, and to one side of a doorway at the far end (a
