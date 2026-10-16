@@ -20,6 +20,7 @@ The repository's own GitHub Pages site serves `main` at http://matthewhammer.org
 2. **Release new features as soon as they're done and checked.** Matthew's call, 2026-10-15: "all new features to Dress Up get pushed and made public, with a version bump, asap", ahead of other work such as the archives. The kids want to see the progress. (Before that, a version waited for his word and bundled about a day of changes.) Still ask him first when a push would publish something he asked to read beforehand. If a push is refused, don't work around it. Give him the one-line command instead: `git -C ~/kids-choice-games push origin HEAD dress-up-X.Y.Z`.
 3. **To release:**
    - Turn `## Unreleased` into `## X.Y.Z (YYYY-MM-DD)`. Open it with a one-line summary ("Everything in X.Y.Z−1, plus …").
+   - Set the version in two places, to the same number and date: `const VERSION = { number, released }` in `dress-up/index.html` (shown after the game's name) and `dress-up/version.json` (ticket 134). Every open copy of the game asks for version.json each minute and offers a newer number as a chip after its own; clicking it loads the new version at `?v=X.Y.Z`, keeping the friend, the place and every setting (they are saved in localStorage as always). A version.json ahead of the page offers players a version that is not there yet; one behind offers nothing.
    - Commit, and tag `dress-up-X.Y.Z`.
    - Before pushing, extract the page's `<script>` and run `node --check` on it. A duplicate `const` once broke the whole page.
    - Push the branch and the tag.

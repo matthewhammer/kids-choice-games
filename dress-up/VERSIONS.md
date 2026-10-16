@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.59 (2026-10-16)
+
+Everything in 0.0.58, plus the version in the title, and new versions offered.
+
+- **🆕 New versions** (Matthew): the game's name now has its version and the day it came out after it. Every minute the game checks whether a newer version is out, and if there is one, a chip after the version says so ("🆕 0.0.60"). Nothing pops up: click the chip when you're ready, and the game changes to the new version, keeping your friend, the place and all your settings.
+
 ## 0.0.58 (2026-10-16)
 
 Everything in 0.0.57, plus smoother dragging and posing, and music that keeps playing.
