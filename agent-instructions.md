@@ -114,6 +114,23 @@ A scene function returns SVG text and draws on the fixed stage (`SCENE`, ground 
 
 **The friend's joints** (ticket 99). `body.elbows` (−150 to 150, up is +) and `body.knees` (0 to 150, out, so the friend crouches) bend both arms and both legs alike. At 0 every arm and leg is drawn exactly as before. A bent limb is a polyline through its joints (`armJoints`, `legJoints`, drawn by `limbThrough`); sleeves (`alongArm`), pants, stockings and skirt lengths follow the joints. **Posing by touch** (ticket 121, M's games on the iPad do it): a press on a hand, a foot, an elbow or a knee in the picture takes hold of the nearest joint within 30 screen pixels (or within a big hand's or shoe's size; `onJoint`, from the joints `draw()` leaves in `poseJoints`), ahead of the face and of moving the friend. Dragging a hand or a foot reaches it for the finger, two equal bones from the shoulder or hip, the elbow or knee bending the way it already bent (`poseTo`); an elbow or a knee swings the whole limb round its shoulder or hip. Each limb's own turn and bend are kept as `body.poseArmL/R`, `poseElbowL/R`, `poseLegL/R`, `poseKneeL/R` (degrees, by the friend's own side: L is their left, on our right, side 1), on top of the sliders' (`poseOf`), so the sliders still move both alike; all zero, every limb is drawn exactly as before (checked on 200 random friends against 0.0.46). A posed leg's feet need not be level: the friend stands on the lower foot, or kneels on a knee lower still, and posed pants follow each thigh and shin, mitred at the knee. While a joint is held, the ground the friend stood on (`poseHeld`) and, with no background, the picture's frame are kept as they were, so the limb stays under the finger; letting go settles them. The arms and legs tab says how to pose, and "🧍 stand straight again" (shown only when posed) zeroes the pose.
 
+**Water** (ticket 122, Matthew's ask: "In water, by default, let's make the bottom half transparent, and add a 'wake' effect").
+- `WATER` holds a test for each place with water to stand in: is a point on the stage (the friend's feet, `figX`, `SCENE.ground + figY`) in it? Each test uses the same helpers as the place's drawing, so the two can't drift:
+  - the lake: between `lakeLines`' horizon and its near shore, but not the little beach (`lakeBeach`);
+  - the beach: the sea (`beachLines`) down to the sand, the foam included;
+  - the waterfall: the pool's ellipse (`poolOf`), up to the near bank;
+  - a castle: the moat's near half (`castleAt`, `moatOf`), but not the drawbridge (`bridgeHalf`), and nothing when its moat is 0. A friend in the far half stands behind the whole castle object anyway;
+  - the tree house's stream (`streamAt`) and the cemetery's brook (`brookAt`), as their outlines are drawn (`sampled`, `inRibbon`).
+
+  A wavy ground edge is found with `landY`, which mirrors `backgroundSvg`'s `land`: change one, and change the other. The sea floor (`underwater`) isn't in the list, since the friend is under water there already. `waterHere(B)` gives a place's test, or null; `inWater(B, x, y)` asks it.
+- Two settings in the background tab, shown only where `waterHere` finds water: "🌊 see-through in the water, below the waist" (`waterSee`, 0 to 100, default 70, so the part under water is at 30%), and "💧 a wake round the friend in the water" (`waterWake`, 0 to 250, default 100). At 0 each is off.
+- In `draw()`, when the feet are in water, everything of the friend after `figAt` goes through `wading(B, inner, L, hw)`:
+  - a mask (`water-line`, in the friend's own units) shows them whole above a gentle wave at the waist (`L`), and faint below it. The wave stays still, since a moving mask would redraw the whole friend every frame;
+  - the wake is three rings that spread and fade, as the waterfall pool's do, and dashed foam that goes round them. Each ring's far half is behind the friend and its near half in front (clip paths `water-far`, `water-near`). The rings begin at fixed times (0, −0.8 and −1.6 s), so redrawing on every drag move keeps them in step, and a saved PNG (drawn at time 0) shows all three.
+
+  On dry ground the friend's markup is exactly what it was before.
+- A new place with water to stand in gets a line in `WATER`, built from a helper its drawing shares.
+
 **Castles.**
 - `castleOf(o)` reads one castle's settings (N's, M's or D's) into a model:
   - `rooms`, by number (up to six, each a style from `ROOM_KINDS`);
@@ -152,7 +169,8 @@ Each kind of thing has one table. Add an entry there, and the rest follows from 
 - `ARRIVE`: where the friend lands;
 - `PLACE_PHRASE`: the caption's words, such as "in the 🌲 forest" or "at the 🏕️ camp site";
 - `SCENE_TUNE`, if it has its own music;
-- `SCENE_LFO_THINGS`: its quick, slow and winged things.
+- `SCENE_LFO_THINGS`: its quick, slow and winged things;
+- `WATER`, if it has water to stand in (see Water).
 
 Wrap each thing that stands in it with `obj` (see Depth), make its depth sheet, and add its list to `OBJECTS.md`.
 
