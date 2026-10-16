@@ -915,36 +915,69 @@ async function speedCheck(report) {
     let B = state.background, body = state.body;
     Object.assign(B, { kind: "emptyroom", figX: -150, figY: 0 }); body.anim = "none"; body.facing = "right";
     changed(); await wait(600);
-    report("🧪 1 of 6: drawing the friend…"); await wait(50);
+    report("🧪 1 of 12: drawing the friend…"); await wait(50);
     body.anim = "walk";
     const times = [];
     for (let i = 0; i < 60; i++) { const t = performance.now(); draw(); times.push(performance.now() - t); }
     times.sort((a, b) => a - b);
     const med = times[30];
-    report("🧪 2 of 6: walking across the empty room…"); await wait(300);
+    report("🧪 2 of 12: walking across the empty room…"); await wait(300);
     const room = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
-    report("🧪 3 of 6: walking in place…"); B.figX = 0; changed(); await wait(300);
+    report("🧪 3 of 12: walking in place…"); B.figX = 0; changed(); await wait(300);
     const inPlace = await frames(2000, null);
     // (ticket 164, Matthew: the duck pond, swimming across, as the controller swims them, in the water's middle row)
     B.kind = "lake"; B.figX = -150; body.anim = "swim";
     { const ys = []; for (let y = -200; y <= 86; y += 2) if (inWater(B, 0, SCENE.ground + y) && inWater(B, -150, SCENE.ground + y) && inWater(B, 150, SCENE.ground + y)) ys.push(y); B.figY = ys[ys.length >> 1] ?? 0; }
-    changed(); report("🧪 4 of 6: swimming in the duck pond…"); await wait(1200);
+    changed(); report("🧪 4 of 12: swimming in the duck pond…"); await wait(1200);
     const pond = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
-    report("🧪 5 of 6: the duck pond held still…");
+    report("🧪 5 of 12: the duck pond held still…");
     slowFlag = true; PERF.slowMoving = false; changed(); await wait(800);
     const pondStill = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
     slowFlag = keep.slowFlag; PERF.slowMoving = true;
-    report("🧪 6 of 6: the duck pond with its music…");
+    // (0.0.86, Matthew: which part of the pond costs the frames; each pass
+    // swims as the first, moving, with one part taken away: SPEED_TEST)
+    const without = async (n, what, on, off) => {
+      report(`🧪 ${n} of 12: the duck pond ${what}…`); on(); changed(); await wait(800);
+      const r = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
+      off(); changed(); return r;
+    };
+    const NS = "http://www.w3.org/2000/svg", holder = () => { const g = document.createElementNS(NS, "g"); g.id = "bg"; return g; };
+    const pondNoScene = await without(6, "without its scenery", () => { SPEED_TEST.holder = holder(); }, () => { SPEED_TEST.holder = null; });
+    const pondNoUnder = await without(7, "without the friend's part under the water", () => { SPEED_TEST.noUnder = true; }, () => { SPEED_TEST.noUnder = false; });
+    const pondNoRings = await without(8, "without the rings", () => { SPEED_TEST.noRings = true; }, () => { SPEED_TEST.noRings = false; });
+    // (as held still, the pass before, but the place an image the browser
+    // draws once: its text, held still, in a picture of the same frame)
+    const pondPicture = await without(9, "with its scenery a still picture", () => {
+      slowFlag = true; PERF.slowMoving = false; changed();
+      const [x, y, w, h] = pic.getAttribute("viewBox").split(" ").map(Number);
+      const doc = `<svg xmlns="${NS}" xmlns:xlink="http://www.w3.org/1999/xlink" width="${f1(w)}" height="${f1(h)}" viewBox="${f1(x)} ${f1(y)} ${f1(w)} ${f1(h)}">` +
+                  bgShown.text.split(SEP).join("") + `</svg>`;
+      const img = document.createElementNS(NS, "image");
+      for (const [k, v] of [["x", x], ["y", y], ["width", w], ["height", h]]) img.setAttribute(k, f1(v));
+      img.setAttribute("href", "data:image/svg+xml;charset=utf-8," + doc.replace(/%/g, "%25").replace(/#/g, "%23").replace(/"/g, "%22").replace(/&/g, "%26"));
+      const g = holder(); g.append(img); SPEED_TEST.holder = g;
+    }, () => { SPEED_TEST.holder = null; slowFlag = keep.slowFlag; PERF.slowMoving = true; });
+    report("🧪 10 of 12: the duck pond with its music…");
     state.music.mute = false; changed(); await wait(1200);
     const pondMusic = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
+    // (Matthew: after the pond, the empty room was as slow as the pond,
+    // until the page was loaded again: the room once more, as the first
+    // time, then with its music)
+    report("🧪 11 of 12: the empty room, after the pond…");
+    state.music.mute = true; Object.assign(B, { kind: "emptyroom", figX: -150, figY: 0 }); body.anim = "walk"; body.facing = "right"; changed(); await wait(600);
+    const roomAfter = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
+    report("🧪 12 of 12: the empty room after the pond, with its music…");
+    state.music.mute = false; changed(); await wait(1200);
+    const roomAfterMusic = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
     const ua = navigator.userAgent, browser = (ua.match(/(Firefox|Edg|Chrome|Safari)\/(\d+)/) || [, "a browser", ""]).slice(1).join(" ").trim();
     const p = r => `${r.fps} fps (longest pause ${r.worst} ms, ${r.late}% late)`;
-    const data = { v: VERSION.number, draw: +med.toFixed(2), room, inPlace, pond, pondStill, pondMusic, browser, platform: navigator.platform || "",
+    const data = { v: VERSION.number, draw: +med.toFixed(2), room, inPlace, pond, pondStill, pondNoScene, pondNoUnder, pondNoRings, pondPicture, pondMusic, roomAfter, roomAfterMusic, browser, platform: navigator.platform || "",
                    screen: `${screen.width}x${screen.height}`, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency || null, memory: navigator.deviceMemory || null,
                    pic: (r => `${Math.round(r.width)}x${Math.round(r.height)}`)(pic.getBoundingClientRect()), found: { slow: keep.slowFlag, choppy: keep.choppy } };
-    report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · with music: ${p(pondMusic)} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
+    report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · without its scenery: ${p(pondNoScene)} · without the part under water: ${p(pondNoUnder)} · without the rings: ${p(pondNoRings)} · scenery a still picture: ${p(pondPicture)} · with music: ${p(pondMusic)} · the empty room after the pond: ${p(roomAfter)}, with its music: ${p(roomAfterMusic)} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
   } finally {
     state = JSON.parse(saved);
+    Object.assign(SPEED_TEST, { holder: null, noUnder: false, noRings: false });
     slowFlag = keep.slowFlag; choppy = keep.choppy; PERF.slowMoving = keep.slowMoving;
     moveSuspend = false; moveFrames = moveLate = 0;
     perfBusy = false;
@@ -1010,7 +1043,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.85", released: "2026-10-16" };
+const VERSION = { number: "0.0.86", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9891,9 +9924,9 @@ function wading(B, inner, wl, hw, most = Infinity, bob = 0, water = "") {
   // a second, and swimming in the duck pond to 52 (59 and 60 without it).
   const body = svg;
   svg = `<clipPath id="water-above"><path d="${line} H5000 V-5000 H-5000 Z"/></clipPath><g clip-path="url(#water-above)">${body}</g>` +
-        (see < 1 && !sceneryStill() ? `<clipPath id="water-below"><path d="${line} H5000 V5000 H-5000 Z"/></clipPath><clipPath id="water-in">${water}</clipPath>` +
+        (see < 1 && !sceneryStill() && !SPEED_TEST.noUnder ? `<clipPath id="water-below"><path d="${line} H5000 V5000 H-5000 Z"/></clipPath><clipPath id="water-in">${water}</clipPath>` +
                    `<g clip-path="url(#water-below)"><g clip-path="url(#water-in)"${see > 0 ? ` opacity="${(1 - see).toFixed(2)}"` : ""}>${body}</g></g>` : "");
-  if (wake <= 0) return svg;
+  if (wake <= 0 || SPEED_TEST.noRings) return svg;
   const stillWake = sceneryStill();   // (ticket 164: on a slow computer, the rings held still)
   // (three rings a third of the way apart, as flat as the pool's; the foam
   // in dashes, going round)
@@ -10014,6 +10047,13 @@ function noteMoveFrame(t) {
   moveFrames = moveLate = 0;
 }
 const sceneryStill = () => (slowFlag || choppy) && !PERF.slowMoving;
+// (ticket 164, 0.0.86) 🧪's test passes, each taking one part of a place
+// away while the friend swims, to find what costs the black laptop its
+// frames: holder, a group drawn instead of the place's scenery (empty, or
+// the place as a still picture), with the friend in front of it all;
+// noUnder, no faint copy of the friend under the water; noRings, no rings.
+// Only the speed check sets them, and it puts them back.
+const SPEED_TEST = { holder: null, noUnder: false, noRings: false };
 function draw() {
   const t = performance.now(), text = bgShown.text;
   drawNow();
@@ -10830,7 +10870,7 @@ function drawNow() {
   fresh.innerHTML = svg;
   if (scened && bgText !== bgShown.text) { bgShown.node = mountScene(bgText); bgShown.text = bgText; bgShown.objs = sceneObjects(bgShown.node); bgShown.helix = true; }
   if (!scened) bgShown.objs = [];
-  const scenery = scened ? bgShown.node : null;
+  const scenery = scened ? SPEED_TEST.holder || bgShown.node : null;   // (🧪's test passes: SPEED_TEST)
   for (const c of [...pic.childNodes]) if (c !== scenery) c.remove();
   for (const n of figShown) n.remove();   // (last time's friend, who may have stood inside the scene)
   if (scenery) {
@@ -10846,10 +10886,10 @@ function drawNow() {
   // (ticket 130: the far arm, when it is apart, a body's depth farther back:
   // before the first thing standing nearer than that, so behind the rest)
   const farNode = figShown.find(n => n.id === "figure-far"), rest = figShown.filter(n => n !== farNode);
-  const behind = farNode && scenery ? objectAhead(feetZ - 26 * figureT.k) : null;
+  const behind = farNode && scenery && !SPEED_TEST.holder ? objectAhead(feetZ - 26 * figureT.k) : null;
   if (behind) behind.parentNode.insertBefore(farNode, behind);
   else if (farNode) pic.append(farNode);
-  const ahead = scenery ? objectAhead(feetZ) : null;
+  const ahead = scenery && !SPEED_TEST.holder ? objectAhead(feetZ) : null;
   if (ahead) for (const n of rest) ahead.parentNode.insertBefore(n, ahead);
   else pic.append(...rest);
   showObjects();
@@ -13585,7 +13625,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // Fumola canister of our own takes its place; the black laptop has no easy way to send it)
     const speedPad = el("a", { href: SPEED_PAD, target: "_blank", rel: "noopener", title: "A shared page anyone with its address can read and write: paste the line there" }, "📝 then paste it here");
     box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [speedBtn, speedCopy, speedPad]), speedOut,
-      el("div", { class: "hint" }, "About 15 seconds, in the empty room and then swimming in the duck pond (moving, held still, and with its music), with the friend as they start, the same on every computer; then your friend and everything back as it was. Run it on two computers and compare the lines: the drawing times' ratio is how much slower one is.")]));
+      el("div", { class: "hint" }, "About 40 seconds, in the empty room and then swimming in the duck pond (moving, held still, then without one part at a time: the scenery, the friend's part under the water, the rings; its scenery as a still picture; with its music), then the empty room again, with the friend as they start, the same on every computer; then your friend and everything back as it was. Run it on two computers and compare the lines: the drawing times' ratio is how much slower one is.")]));
     if (!perfMeter.loop) perfMeter.loop = requestAnimationFrame(perfMeterTick);
     const rows = PERF_FEATURES.map(f => {
       const chip = el("button", { onclick: () => perfSet(f.id, !PERF[f.id]) }), here = el("div", { class: "hint" }), result = el("div", { class: "hint" });

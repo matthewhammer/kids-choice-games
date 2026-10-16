@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.86 (2026-10-16)
+
+Everything in 0.0.85, plus 🧪 tests that find what costs the duck pond its frames.
+
+- **🧪 this computer's speed takes the duck pond apart** (Matthew, for the black laptop, where the pond is choppy and no other computer we have shows it): after swimming across the pond moving and held still, the friend swims across it four more times, each with one part taken away: without its scenery, without the friend's faint part under the water, without the rings, and with its scenery as one still picture the browser draws once. Then the pond with its music, as before.
+- **The empty room after the pond** (Matthew: after the duck pond, the empty room was as slow as the pond until the page was loaded again): 🧪 ends by walking across the empty room once more, then with its music, so one line shows whether the slowness stays behind.
+- Twelve passes, about 40 seconds; the line and its `DATA {...}` block carry each pass's numbers. Your friend and everything else go back as they were after.
+
 ## 0.0.85 (2026-10-16)
 
 Everything in 0.0.84, plus the music's full screen from the game's, and a mixing board in colours.
