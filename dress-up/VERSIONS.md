@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.48 (2026-10-15)
+
+Everything in 0.0.47, plus wading: the friend standing in water is in it.
+
+- **🌊 The friend in the water** (Matthew): put or drag the friend into water, and they stand in it. Below the water they are see-through, so you see the water through them, and a wake spreads round them: rings of ripples moving out and fading, like those at the foot of the jungle waterfall, and foam going round where the water meets them. The near half of each ripple is in front of the friend and the far half behind. Step back onto the shore, and they look just as before.
+- **Where there is water to stand in:** the lake (not its little beach), the sea at the beach, the pool under the jungle waterfall, a castle's moat (on our side of the castle, and not on the drawbridge), the stream by the tree house, and the brook in the cemetery. The lake, the sea, the pool and the moat come up to the friend's waist; the stream and the brook are shallow, and come up to their knees. In a narrow moat or stream the ripples stay on the water.
+- **Two new sliders in the background tab,** shown only in places with water: "🌊 see-through under the water" (70 to start; 100 hides what is under the water, 0 shows it all) and "💧 a wake round the friend in the water" (100 to start; 0 for none, up to 250 for a big one).
+- Treading water, for deep water, will come later.
+
 ## 0.0.47 (2026-10-15)
 
 Everything in 0.0.46, plus posing the friend by dragging their hands, feet, elbows and knees.
