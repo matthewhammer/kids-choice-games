@@ -8887,12 +8887,16 @@ function draw() {
   // and in a scene, the figure's feet (its ground, g) on the stage's
   // ground (sg), at its own size about them, where it was dragged
   // (a joint held: the ground the friend stood on when it was grabbed)
-  const gStand = poseHeld && scened ? poseHeld.g : ground;
+  // (in water, the friend is in it: their waterline, the waist or in a
+  // stream the knees, is where they stand on the water's surface, and what
+  // is below it sinks into the water, see-through (wading, below))
+  const wet = scened && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)), wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : L;
+  const gStand = poseHeld && scened ? poseHeld.g : wet ? wl : ground;
   figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gStand, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: ground, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
   svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})">`;
-  if (meanSeen > 0) svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
+  if (meanSeen > 0 && !wet) svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
   if (!C) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
@@ -9150,8 +9154,8 @@ function draw() {
   }
   // standing in water: see-through below the waist, a wake round them (ticket 122)
   // (in a stream, to the knees; the wake out to the nearer bank at most)
-  if (scened && inWater(BG, figureT.dx, figureT.sg + figureT.dy))
-    svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : L, hw,
+  if (wet)
+    svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), wl, hw,
                                        waterAcross(BG, figureT.dx, figureT.sg + figureT.dy, 400) / figureT.k, tread ? tread.bob : 0);
   svg += `</g>`;   // the figure
   svg = unveil(svg, layers);

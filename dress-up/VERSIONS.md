@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.50 (2026-10-15)
+
+Everything in 0.0.49, plus the friend standing in the water rather than on it.
+
+- **Fixed: the ripples floated above the water** (Matthew). In water, the friend's feet stayed where they stood and the water came up to their waist, so the ripples round their waist hung half a body above the water they were standing in, and over the trees when they stood far back. Now the friend sinks into the water where they stand: the water's surface meets their waist (their knees in the stream and the brook), the ripples spread on the water, and what is under the water is see-through below it. Their shadow on the ground is gone while they are in the water.
+
 ## 0.0.49 (2026-10-15)
 
 Everything in 0.0.48, plus treading water.
