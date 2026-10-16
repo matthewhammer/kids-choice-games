@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.82 (2026-10-16)
+
+Everything in 0.0.81, plus a speed check for comparing computers.
+
+- **🧪 this computer's speed**, in the ⚙️ Advanced tab (Matthew): about 5 seconds in the empty room with your friend as they are, then everything back as it was. It draws the friend 60 times and says how long one drawing takes, then walks them across the room and in place, and says how many frames a second each managed and the longest pause. Run it on two computers (Matthew's laptop and the black laptop) and compare the lines: the ratio of the drawing times is how much slower one is, which sets how the game is tested for a slow computer. 📋 copy puts the line on the clipboard.
+
 ## 0.0.81 (2026-10-16)
 
 Everything in 0.0.80, plus walking on a slow computer.
