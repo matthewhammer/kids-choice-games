@@ -9,6 +9,10 @@ The formal list of every place's objects (ticket 99), as of 0.0.46, at the defau
 
 Made by `depthsheet.mjs` (see agent-instructions.md, Testing) and `objects_md.py`. Make it again after changing what stands in a place.
 
+## 🔲 empty room
+
+(0.0.77, ticket 153.) Nothing stands here: the friend is in front of everything. Its back wall is solid, as the imagination's is.
+
 ## 💭 our imagination
 
 (0.0.75, ticket 145: its ladders, one at each column's right, at the wall's foot. Its back wall is solid: the friend's feet stay at 271.5 or nearer.)

@@ -362,7 +362,7 @@ const HOUSE_COLOR_DEFAULTS = {
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 99) The friend is smaller farther back and bigger nearer, as a
 // place draws what stands in it. A place's vanishing height is the y where
@@ -373,7 +373,7 @@ const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // kept between 0.3 and 1.5. A castle room's comes from its perspective
 // (roomFrame: the eye's height on the wall); rooms drawn flatter, with big
 // things at their back walls, vanish far above the picture.
-const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, tent: -60, imagination: -60 };
+const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, tent: -60, imagination: -60, emptyroom: -60 };
 function sceneVanish(B) {
   if (B.kind === "castleroom") {
     const H = SCENE.bottom - SCENE.top, k = H / 700, top = SCENE.top + H * 0.1, floor = SCENE.ground - 110 * k;
@@ -797,7 +797,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.76", released: "2026-10-16" };
+const VERSION = { number: "0.0.77", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -840,6 +840,22 @@ const mod = (a, n) => a - idiv(a, n) * n;
 const clamp = (n, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
 const f1 = x => (Math.round(x * 10) / 10).toString();
 const pts = ps => ps.map(([x, y]) => f1(x) + "," + f1(y)).join(" ");
+// (ticket 151) a polygon grown outward by d, its corners mitred (a mitre
+// held to 4 d, where a sharp corner would spike): what a stroke 2 d wide
+// adds round a filled polygon, for a clip, which has no strokes
+const growPoly = (ps, d) => {
+  const n = ps.length;
+  let a = 0;
+  for (let i = 0; i < n; i++) { const [x1, y1] = ps[i], [x2, y2] = ps[(i + 1) % n]; a += x1 * y2 - x2 * y1; }
+  const s = a > 0 ? 1 : -1, nrm = (p, q) => { const dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy) || 1; return [s * dy / l, -s * dx / l]; };
+  return ps.map((p, i) => {
+    const n1 = nrm(ps[(i - 1 + n) % n], p), n2 = nrm(p, ps[(i + 1) % n]), c = 1 + n1[0] * n2[0] + n1[1] * n2[1];
+    let ox = d * (n1[0] + n2[0]) / Math.max(c, 1e-6), oy = d * (n1[1] + n2[1]) / Math.max(c, 1e-6);
+    const m = Math.hypot(ox, oy);
+    if (m > 4 * d) { ox *= 4 * d / m; oy *= 4 * d / m; }
+    return [p[0] + ox, p[1] + oy];
+  });
+};
 function hexToRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
 function rgbToHex([r, g, b]) { return "#" + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, "0")).join(""); }
 const mix = (h, to, t) => { const a = hexToRgb(h), b = hexToRgb(to); return rgbToHex(a.map((v, i) => v + (b[i] - v) * t)); };
@@ -2122,10 +2138,11 @@ function hoodSide(C, kind, F, dir) {
   // so the hood is open there; its edge outlined where it crosses the hood)
   const fx = 100 + dir * 0.48 * rx, fcy = (54 + cy + ry) / 2 + 4, frx = 0.8 * rx, fry = (cy + ry - 54) / 2 + 6;
   const hole = `cx="${f1(fx)}" cy="${f1(fcy)}" rx="${f1(frx)}" ry="${f1(fry)}"`;
-  const cap = `<defs><mask id="hood-open" maskUnits="userSpaceOnUse" x="-500" y="-500" width="1200" height="1200">` +
-              `<rect x="-500" y="-500" width="1200" height="1200" fill="white"/><ellipse ${hole} fill="black"/></mask>` +
+  // (ticket 151: a clip, the mask's white square with the oval cut out, not
+  // a mask, which the browser draws again offscreen on every frame)
+  const cap = `<defs><clipPath id="hood-open"><path clip-rule="evenodd" d="M-500 -500 H700 V700 H-500 Z M${f1(fx - frx)} ${f1(fcy)} a${f1(frx)} ${f1(fry)} 0 1 0 ${f1(2 * frx)} 0 a${f1(frx)} ${f1(fry)} 0 1 0 ${f1(-2 * frx)} 0 Z"/></clipPath>` +
               `<clipPath id="hood-whole"><ellipse ${HOOD}/></clipPath></defs>` +
-              `<ellipse ${HOOD} fill="${fill}" stroke="${line}" stroke-width="4" mask="url(#hood-open)"/>` +
+              `<ellipse ${HOOD} fill="${fill}" stroke="${line}" stroke-width="4" clip-path="url(#hood-open)"/>` +
               `<ellipse ${hole} fill="none" stroke="${line}" stroke-width="4" clip-path="url(#hood-whole)"/>`;
   // (on the brim, the animal's face on our side only, a little to the front)
   const all = hoodFront(C, kind, F), cut = all.indexOf("/>", all.indexOf("<line ")) + 2, features = all.slice(cut);
@@ -8357,6 +8374,18 @@ function woodpathScene(c) {
 // bobbing slowly, to climb to the pictures up the column; its back wall is
 // solid (SCENE_BACK), so the ladders are the way up.
 const imaginationWall = (g, k) => g - 60 * k;
+// (ticket 153, Matthew) The empty room: the imagination's room with nothing
+// in it, its back wall only a line where it meets the floor, so the
+// controls and the actions can be tried on an old, slow computer (the
+// black laptop) with nothing in the picture moving but the friend. No
+// objects, no animation, no music of its own; its back wall is solid, as
+// the imagination's is.
+function emptyroomScene(c) {
+  const { x0, y1, g, W, k, pad, all } = c, wall = imaginationWall(g, k);
+  return SEP + part("emptyroom", c.F, () => all("#ffffff") +
+    `<rect x="${f1(x0 - pad)}" y="${f1(wall)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - wall + pad)}" fill="#f1f3f7"/>` +
+    `<line x1="${f1(x0 - pad)}" y1="${f1(wall)}" x2="${f1(x0 + W + pad)}" y2="${f1(wall)}" stroke="#c3c9d4" stroke-width="${f1(2 * k)}"/>`);
+}
 function imaginationScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, all, o } = c;
   let s = SEP + part("imagination-room", c.F, () => {
@@ -8408,7 +8437,7 @@ function imaginationScene(c) {
 }
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene };
+                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width
@@ -9113,7 +9142,7 @@ let figureT = { k: 1, dx: 0, dy: 0, g: 0, sg: 0 }, sceneFrame = { left: -200, to
 // ladders are the way up), a little in front of the wall's foot, in the
 // stage's units; else the frame's own limit. The controller, a drag and the
 // place control all keep to it (figYMin, a figY).
-const SCENE_BACK = { imagination: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3 };
+const SCENE_BACK = { imagination: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3, emptyroom: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3 };
 const figYMin = F => Math.max((F.top - F.ground) * 0.6, (F.back ?? -Infinity) - F.ground);
 
 // The parts of the body each with its own visibility: a slider each
@@ -10405,10 +10434,12 @@ function draw() {
       for (const arm of nearArms) { const P = sleeveOf(arm);
         svg += limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""); }
   } else if (!winged) {
-    svg += `<mask id="off-body" maskUnits="userSpaceOnUse" x="-5000" y="-5000" width="10000" height="10000">` +
-           `<rect x="-5000" y="-5000" width="10000" height="10000" fill="white"/>` +
-           `<polygon points="${pts(undies ? bareBody : torso)}" fill="black" stroke="black" stroke-width="3" stroke-linejoin="round"/></mask>` +
-           `<g mask="url(#off-body)">`;
+    // (ticket 151: a clip, everywhere but the body grown by 1.5, as the
+    // mask with its black body stroked 3 wide was; the mask was drawn again
+    // offscreen on every frame: dragging the friend round the castle at 1920
+    // wide held 44 frames a second, 60 without it)
+    svg += `<clipPath id="off-body"><path clip-rule="evenodd" d="M-5000 -5000 H5000 V5000 H-5000 Z M${pts(growPoly(undies ? bareBody : torso, 1.5)).replace(/ /g, " L")} Z"/></clipPath>` +
+           `<g clip-path="url(#off-body)">`;
     for (const arm of arms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
     if (sleeve > 0) for (const arm of arms) svg += limbThrough(sleeveOf(arm), armW + 14, ss);
     svg += `</g>`;
@@ -10551,7 +10582,7 @@ function treadTick(t) {
 // Where the friend is, after their feeling ("feeling happy in the forest"):
 // each place with the word it takes, in, at, on, near or outside of; a
 // castle room by its own name and number; a castle by its owner.
-const PLACE_PHRASE = { imagination: "in 💭 our imagination", forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
+const PLACE_PHRASE = { imagination: "in 💭 our imagination", emptyroom: "in the 🔲 empty room", forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
   cemetery: "in the 🌿 cemetery", lake: "at the 🦆 lake", house: "outside of the 🏠 house", treehouse: "near the 🌳 tree house",
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
   healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",
@@ -12313,7 +12344,7 @@ const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
 const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
 // The places, and the kinds of place they are, for the Background tab's
 // two rows (as the music's): every place is of exactly one kind.
-const PLACES = [["none", "none"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"],
+const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"],
   ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
@@ -12326,7 +12357,7 @@ const PLACES = [["none", "none"], ["imagination", "💭 our imagination"], ["for
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const behindSign = (c, to) => { const P = to && to !== "none" && PLACES.find(p => p[0] === to); return P ? bottomSign(c, c.W * 0.4, P[1], `data-to="${to}"`) : ""; };
 const PLACE_GROUPS = [
-  ["imagination", "💭 imagination", ["imagination"]],
+  ["imagination", "💭 imagination", ["emptyroom", "imagination"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "mountains"]],
   ["water", "💧 water", ["lake", "beach", "underwater", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
@@ -14458,7 +14489,7 @@ if (touchPad.want) padLoop = requestAnimationFrame(padPoll);
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { imagination: [0, 70], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
+const ARRIVE = { imagination: [0, 70], emptyroom: [0, 70], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
 // Where each trip through a doorway began, the last on top: the back chip
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.

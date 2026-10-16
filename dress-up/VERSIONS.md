@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.77 (2026-10-16)
+
+Everything in 0.0.76, plus an empty room, and dragging smooth everywhere.
+
+- **🔲 empty room** (Matthew): a new place, next to 💭 our imagination. It is the imagination's room with nothing in it: a white wall, a pale floor and the line where they meet, and nothing moving but the friend. It is for trying the controls and the moves on an old, slow computer (the black laptop), where the busier places are too slow. Its back wall is solid.
+- **Fixed:** dragging the friend was choppy in busy places on a big screen: about 47 frames a second round the 🏰 castle, 55 in the 🧙 witch's woods. Now both stay at 60. The friend looks the same as before; their arms are drawn over the hair and face in a way the computer can redraw much faster.
+- A hooded costume seen from the side is drawn the same faster way.
+
 ## 0.0.76 (2026-10-16)
 
 Everything in 0.0.75, plus smooth walking in the castle's moat and swimming in the duck pond.
