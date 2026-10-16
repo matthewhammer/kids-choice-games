@@ -546,7 +546,7 @@ const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa"
 
 const DEFAULTS = {
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
-           stars: false, hearts: false, xeyes: false, unibrow: true, eyes: 50, sides: 0,
+           stars: false, hearts: false, xeyes: false, closed: false, unibrow: true, eyes: 50, sides: 0,
            rays: 0, teeth: 5, open: 0, teethStyle: "normal",
            tongue: "in", tongueLen: 100, tongueW: 100, tongueColor: "#e75480",
            lightX: -0.6, lightY: -0.6, shine: "#ffffff", shineMix: 100, shineSize: 45,
@@ -560,6 +560,8 @@ const DEFAULTS = {
            // top of the sliders' turn and bend, by the friend's own side (L
            // their left, on our right)
            poseArmL: 0, poseArmR: 0, poseElbowL: 0, poseElbowR: 0, poseLegL: 0, poseLegR: 0, poseKneeL: 0, poseKneeR: 0,
+           // (ticket 129) each foot's own turn, by side, and both feet's
+           poseFootL: 0, poseFootR: 0, feetTurn: 0,
            // (ticket 124) which way the friend faces (toward us, or in profile
            // to our left or right), and whether they sit
            facing: "front", sit: false },
@@ -1072,6 +1074,12 @@ function eye(x, size, stars, hearts, xs, F, angle = 0) {
   const turned = inner => `<g transform="rotate(${f1(angle)} ${x} 100)">${inner}</g>`;
   const glyph = (g, gx, gy, gs) =>
     `<text x="${gx}" y="${gy}" font-size="${gs}" text-anchor="middle" dominant-baseline="central">${g}</text>`;
+  // (ticket 129) closed: a lid's line, curved down as a calm face's (😌),
+  // as wide as the eye would be open; before any other kind of eye
+  if (F.closed) {
+    const R = F.iris > 0 ? r + F.iris * 0.25 + (F.whites > 0 ? F.whites * 0.25 : 0) : r;
+    return turned(`<path d="M${f1(x - R)} 100 Q${x} ${f1(100 + R * 0.8)} ${f1(x + R)} 100" fill="none" stroke="black" stroke-width="${f1(3 + R / 7)}" stroke-linecap="round"/>`);
+  }
   if (xs) return turned(`<path d="M${x - r} ${100 - r} L${x + r} ${100 + r} M${x - r} ${100 + r} L${x + r} ${100 - r}" ` +
                  `stroke="black" stroke-width="${3 + idiv(r, 6)}" stroke-linecap="round"/>`);
   if (hearts) return turned(glyph("❤️", x, 100, r * 3) + (stars ? glyph("⭐", x + r, 100 - r, idiv(r * 3, 2)) : ""));
@@ -1179,25 +1187,28 @@ const BUMPS = [[8, 15, 7], [20, 40, 8], [30, 62, 8], [40, 88, 9], [50, 96, 8],
                [60, 88, 9], [70, 62, 8], [80, 40, 8], [92, 15, 7], [25, 12, 6]];
 // Sickness, as in Kids' Choice, but the pile lands on the ground the
 // friend stands on (`ground`, in face units) rather than under the chin.
-function sickPile(s, mouthY, ground) {
+// (ticket 131) sx: where the stream falls from and the pile is centred, in
+// the mouth's units (100, the middle of the face, facing us); wide: the
+// pile's width as a share of facing us (in profile, 0.4: a side view of it)
+function sickPile(s, mouthY, ground, sx = 100, wide = 1) {
   if (s <= 0) return "";
   const blob = (x, y, r, i) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${SICK[mod(i, 4)]}" stroke="#6b7a1f" stroke-width="1"/>`;
   // past 100 the pile keeps growing, at half speed
   const p = s > 100 ? 100 + idiv(s - 100, 2) : s > 30 ? idiv((s - 30) * 100, 70) : 0;
   // past 100 it spreads wider but no taller, so the friend is not buried
-  const rx = (6 + idiv(p * 84, 100)) * 1.6, ry = (3 + idiv(Math.min(p, 100) * 42, 100)) * 1.6;
+  const rx = (6 + idiv(p * 84, 100)) * 1.6 * wide, ry = (3 + idiv(Math.min(p, 100) * 42, 100)) * 1.6;
   const top = ground - ry;
   const reach = mouthY + idiv((top - mouthY) * Math.min(s, 40), 40);
   const size = 3 + idiv(s, 12);
-  let out = `<path d="M100 ${mouthY} Q93 ${idiv(mouthY + reach, 2)} 100 ${reach}" fill="none" stroke="yellowgreen" ` +
+  let out = `<path d="M${f1(sx)} ${mouthY} Q${f1(sx - 7)} ${idiv(mouthY + reach, 2)} ${f1(sx)} ${reach}" fill="none" stroke="yellowgreen" ` +
             `stroke-width="${4 + idiv(s, 10)}" stroke-linecap="round"/>`;
   if (p > 0) {
-    out += `<path d="M${100 - rx} ${ground} A${rx} ${ry} 0 0 1 ${100 + rx} ${ground} Z" fill="#a8b83a" stroke="#6b7a1f" stroke-width="2"/>`;
+    out += `<path d="M${f1(sx - rx)} ${ground} A${f1(rx)} ${ry} 0 0 1 ${f1(sx + rx)} ${ground} Z" fill="#a8b83a" stroke="#6b7a1f" stroke-width="2"/>`;
     BUMPS.forEach(([bx, by, br], i) =>
-      out += blob(100 + (bx - 50) * 2 * rx / 100, ground - by * ry / 100, 1 + idiv(br * p, 100) * 1.6, i));
+      out += blob(f1(sx + (bx - 50) * 2 * rx / 100), ground - by * ry / 100, 1 + idiv(br * p, 100) * 1.6, i));
   }
   for (let j = 0; j < 6; j++)
-    out += blob(100 + (j % 2 === 0 ? -4 : 4), mouthY + idiv((reach - mouthY) * (j + 1), 6), size - mod(j, 3), j);
+    out += blob(f1(sx + (j % 2 === 0 ? -4 : 4)), mouthY + idiv((reach - mouthY) * (j + 1), 6), size - mod(j, 3), j);
   if (s >= 100)
     out += `<circle cx="84" cy="${ground - 38}" r="7"/><circle cx="116" cy="${ground - 38}" r="7"/>` +
            `<path d="M82 ${ground - 12} Q100 ${ground - 28} 118 ${ground - 12}" fill="none" stroke="black" stroke-width="4" stroke-linecap="round"/>`;
@@ -1603,6 +1614,8 @@ function earSvg(kind, k, color, x0, y, s) {
   return `<path d="${top} ${lobe} Z" fill="${color}" stroke="black" stroke-width="3" stroke-linejoin="round"/>` +
          `<path d="${curl}" fill="none" stroke="${darker(color)}" stroke-width="2.5" stroke-linecap="round"/>`;
 }
+// (ticket 124) in profile, the face's front edge from its middle, in the face's units
+const profileEdge = F => 80 * headWidth(F) * (1 + 0.12 * F.alien / 100) - 8;
 function faceSvg(F, ground, parts = false, dir = 0) {
   const b = F.burst, k = F.candy, r = F.rays, o = F.open;
   const rayLen = r === 0 ? 0 : idiv((15 + idiv(r * 6, 10)) * b, 100);
@@ -1647,8 +1660,14 @@ function faceSvg(F, ground, parts = false, dir = 0) {
     // the mouth, at its place and grown with the head
     `<g transform="translate(100 ${f1(LY.mouthY)}) scale(${LY.mx.toFixed(3)} ${LY.my.toFixed(3)}) translate(-100 -150)">` +
     mouthSvg(F, o, upper, lower) +
-    sickPile(F.sick, 150 + idiv(lower - 150, 2), 150 + (ground - LY.mouthY) / LY.my) + `</g>`;
-  return parts ? { under, eyes, over } : under + eyes + over;
+    (dir ? "" : sickPile(F.sick, 150 + idiv(lower - 150, 2), 150 + (ground - LY.mouthY) / LY.my)) + `</g>`;
+  // (ticket 131) in profile the mouth's far half is carried to the front
+  // (draw), so the pile is drawn on its own: the stream from where the lips
+  // meet the face's front edge, the pile whole under it, a side view of it
+  const sick = !dir || F.sick <= 0 ? "" :
+    `<g transform="translate(100 ${f1(LY.mouthY)}) scale(${LY.mx.toFixed(3)} ${LY.my.toFixed(3)}) translate(-100 -150)">` +
+    sickPile(F.sick, 150 + idiv(lower - 150, 2), 150 + (ground - LY.mouthY) / LY.my, 100 + dir * (profileEdge(F) - 4) / LY.mx, 0.4) + `</g>`;
+  return parts ? { under, eyes, over, sick } : under + eyes + over;
 }
 
 // ===================== THE GHOST =====================
@@ -2094,17 +2113,25 @@ function falconTail(C, hw, L, LL, fill = "url(#pat-bars)") {
 const tLegHoles = (hw, L) =>
   ` L${f1(hw)} ${f1(L + 9)} Q${f1(hw * 0.3)} ${f1(L + 12)} 9 ${f1(L + 34)}` +
   ` L-9 ${f1(L + 34)} Q${f1(-hw * 0.3)} ${f1(L + 12)} ${f1(-hw)} ${f1(L + 9)}`;
-function undiesBottom(U, hw, fx, half, L, LL) {
+// (ticket 128) fit: on posed or bent legs, the friend's thighs to follow
+// (shortLegs facing us; hipsSide and sideLegs in profile), else null
+function undiesBottom(U, hw, fx, half, L, LL, fit = null) {
   const f = fillOf("pat-undies", U.color, U.pattern), st = darker(U.color);
   const P = ps => poly(ps, f, st);
   switch (U.style) {
     case "trunks": {           // swim trunks: like short shorts
       const len = Math.max(34, LL * 0.26);
+      if (fit && fit.dir) return fit.hipsSide(f, st) + fit.sideLegs(len, half + 2, f, st) + fit.hipsSide(f, null).replace(/x="([^"]+)"/, (_, x) => `x="${f1(Number(x) + 1.5)}"`).replace(/width="([^"]+)"/, (_, w) => `width="${f1(Number(w) - 3)}"`) +
+                                    line(-hw - 1, L - 8, hw + 1, L - 8, 4, st);
+      if (fit) return P(fit.shortLegs(len, 16, half + 2, L - 12, hw + 1)) + line(-hw - 1, L - 8, hw + 1, L - 8, 4, st);
       return P([[-hw - 1, L - 12], [hw + 1, L - 12], [fx + half + 3, L + len], [fx - half - 1, L + len],
                 [0, L + 16], [-(fx - half - 1), L + len], [-(fx + half + 3), L + len]]) +
              line(-hw - 1, L - 8, hw + 1, L - 8, 4, st);
     }
     case "briefs":
+      // (posed: the leg holes rise toward the inside, along each thigh)
+      if (fit && fit.dir) return fit.hipsSide(f, st, 20);
+      if (fit) return P(fit.shortLegs(20, 26, half, L - 8, hw, half * 0.3, 32));
       return P([[-hw, L - 8], [hw, L - 8], [fx + half, L + 20], [fx - half * 0.3, L + 32], [0, L + 26],
                 [-(fx - half * 0.3), L + 32], [-(fx + half), L + 20]]);
     case "bikini":
@@ -3088,6 +3115,20 @@ const streamAt = ({ W, g, k, y1, pad }) => u => {
 // a winding stream's points, n steps from its far end to its near one, as
 // its outline is drawn (the friend wading in it reads the same: WATER)
 const sampled = (along, n) => [...Array(n + 1)].map((_, i) => along(i / n));
+// (ticket 42) Ripples carried down a stream: each starts where one is and in
+// `dur` seconds moves on to where the next one starts, along the water and
+// growing with its width (every part of a ripple, its line too, is in
+// proportion to the width), so the row of them flows on and on with no jump
+// when the loop begins again. along(u): the water's middle and half width at
+// u; us: the ripples' places, far to near (the last only where the one before
+// it ends up); draw(w): one ripple on water w wide, about the water's middle.
+const flowRipples = (along, us, dur, draw) => us.slice(0, -1).map((u, i) => {
+  const v = us[i + 1], K = 4, at = j => along(u + (v - u) * j / K), [x0, y0, w0] = at(0);
+  const tr = [...Array(K + 1)].map((_, j) => { const [x, y] = at(j); return `${f1(x - x0)} ${f1(y - y0)}`; }).join(";");
+  const sc = [...Array(K + 1)].map((_, j) => (at(j)[2] / w0).toFixed(3)).join(";");
+  const anim = (type, values) => `<animateTransform attributeName="transform" type="${type}" values="${values}" dur="${dur}s" repeatCount="indefinite"/>`;
+  return `<g class="flow" transform="translate(${f1(x0)} ${f1(y0)})"><g>${anim("translate", tr)}<g>${anim("scale", sc)}${draw(w0)}</g></g></g>`;
+}).join("");
 const inStream = (sp, x, y, margin) => {
   for (let i = 0; i <= 30; i++) { const [sx, sy, hw] = sp(i / 30); if (Math.abs(sy - y) < 12 * margin / 8 && Math.abs(sx - x) < hw + margin) return true; }
   return false;
@@ -3546,7 +3587,7 @@ function treeInner(c) {
 // (ticket 50) the swing: its seat, 74 of the tree's units across (358 to
 // 432), its top 72 above the ground, as treeInner's "tree-swing" hangs it
 // at rest, in the tree's group (its size the tree's slider's); a sitter is
-// in front of the whole tree, and still (the seat swings on under them). A
+// in front of the whole tree, and swings with the seat (ticket 42). A
 // big tree carries it out past the picture's right edge: only the part of
 // it inside is a seat, and none once less than half of it is left.
 SEATS.treehouse = (c, B) => { const ts = (B.treeSize ?? 100) / 100 * c.k, x0 = 358 * ts, x1 = Math.min(432 * ts, c.x1 - 10);
@@ -3579,10 +3620,9 @@ function treehouseScene(c) {
     t += `<defs><linearGradient id="bg-stream" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(g - 125 * k)}" x2="0" y2="${f1(y1)}">` +
          `<stop offset="0" stop-color="#9fdcf7"/><stop offset="1" stop-color="#2f86c6"/></linearGradient></defs>` +
          `<polygon points="${[...Lb, ...Rb.reverse()].join(" ")}" fill="url(#bg-stream)" stroke="#6f9b4a" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>`;
-    for (let i = 0; i < 14; i++) {
-      const [x, y, hw] = sp(0.15 + 0.8 * R(i, 222)), l = hw * 0.5;
-      t += `<path d="M${P(x - l, y)} Q${P(x, y - l * 0.25)} ${P(x + l, y)}" fill="none" stroke="#ffffff" stroke-width="${f1(1.6 * k)}" opacity="0.7"/>`;
-    }
+    // (ticket 42) its ripples flowing down it, a little faster than the brook's
+    t += flowRipples(sp, [...Array(14)].map((_, i) => 0.12 + 0.83 * i / 13), 2.2, hw => { const l = hw * 0.5;
+      return `<path d="M${f1(-l)} 0 Q0 ${f1(-l * 0.25)} ${f1(l)} 0" fill="none" stroke="#ffffff" stroke-width="${f1(hw * 0.045)}" opacity="0.7"/>`; });
     for (let i = 0; i < 48; i++) {  // flowers in the grass
       const d = R(i, 220), x = x0 + W * R(i, 221), y = g - 22 * k + (y1 - g + 10 * k) * d;
       if (inStream(sp, x, y, 8 * k)) continue;
@@ -8399,10 +8439,9 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       for (const [cx, y, w] of sampled(pts, 20)) { left.push([cx - w, y]); right.push([cx + w, y]); }
       const ring = [...left, ...right.reverse()];
       s += `<polygon points="${pts ? ring.map(([x, y]) => `${f1(x)},${f1(y)}`).join(" ") : ""}" fill="url(#bg-brook)" stroke="#5f9e52" stroke-width="${f1(4 * k)}" stroke-linejoin="round"/>`;
-      for (let i = 2; i < 18; i += 2) {
-        const [cx, y, w] = pts(i / 20 + 0.02 * R(i, 71));
-        s += `<path d="M${P(cx - w * 0.4, y)} q${f1(w * 0.2)} ${f1(-3 * k)} ${f1(w * 0.4)} 0" fill="none" stroke="#e8f8ff" stroke-width="${f1(1.8 * k)}" opacity="0.85"/>`;
-      }
+      // (ticket 42) its ripples flowing down it
+      s += flowRipples(pts, [...Array(10)].map((_, i) => 0.08 + 0.09 * i), 2.8, w =>
+        `<path d="M${f1(-w * 0.4)} 0 q${f1(w * 0.2)} ${f1(-w * 0.12)} ${f1(w * 0.4)} 0" fill="none" stroke="#e8f8ff" stroke-width="${f1(w * 0.06)}" opacity="0.85"/>`);
       for (let i = 0; i < 7; i++) {
         const [cx, y, w] = pts(0.25 + 0.1 * i), sd = i % 2 ? 1 : -1;
         s += `<ellipse cx="${f1(cx + sd * w * 1.05)}" cy="${f1(y)}" rx="${f1((5 + 4 * R(i, 72)) * k * (0.6 + i * 0.12))}" ry="${f1(3.5 * k * (0.6 + i * 0.12))}" fill="#9a9a94" stroke="#6b6b66" stroke-width="${f1(1 * k)}"/>`;
@@ -9032,7 +9071,36 @@ const lfoStamp = L => { const lf = lfoNow(L); return lf ? [lf.dur.toFixed(4), lf
 // (ticket 124) which way the friend faces: 0 toward us, -1 in profile to our
 // left, 1 to our right
 const facingOf = B => B.facing === "left" ? -1 : B.facing === "right" ? 1 : 0;
-const POSE_KEYS = ["poseArmL", "poseArmR", "poseElbowL", "poseElbowR", "poseLegL", "poseLegR", "poseKneeL", "poseKneeR"];
+const POSE_KEYS = ["poseArmL", "poseArmR", "poseElbowL", "poseElbowR", "poseLegL", "poseLegR", "poseKneeL", "poseKneeR", "poseFootL", "poseFootR"];
+// (ticket 129) the pose menu: whole poses for the friend, each the pose's
+// own turns and bends (degrees, by side: L their left, on our right),
+// with what else the pose needs. Standing is all of them zero.
+const POSES = {
+  // cross-legged on the ground, hands in the lap, eyes closed: each thigh
+  // out and a little down, each shin back across in front of the other,
+  // the feet turned soles up
+  meditate: { pose: { poseLegL: 72, poseLegR: 72, poseKneeL: 158, poseKneeR: 150, poseFootL: 70, poseFootR: 70,
+                      poseArmL: 30, poseArmR: 30, poseElbowL: -90, poseElbowR: -90 }, closed: true },
+  // dances, one picked at random each time, never the same twice in a row
+  dance: [
+    { name: "disco", pose: { poseArmL: -105, poseElbowL: 10, poseArmR: 40, poseElbowR: 95, poseLegR: 28, poseKneeR: 40 } },
+    { name: "ballet", pose: { poseArmL: -150, poseElbowL: -35, poseArmR: -45, poseElbowR: 15, poseLegL: 55, poseKneeL: 95, poseFootL: 40 } },
+    { name: "hooray", pose: { poseArmL: -135, poseElbowL: -10, poseArmR: -135, poseElbowR: -10, poseLegL: 18, poseLegR: 18 } },
+    { name: "robot", pose: { poseArmL: -55, poseElbowL: 90, poseArmR: -55, poseElbowR: -90, poseKneeL: 35, poseKneeR: 5 } },
+    { name: "kick", pose: { poseArmL: -60, poseElbowL: 60, poseArmR: -60, poseElbowR: 60, poseLegR: 80, poseKneeR: 10, poseFootR: 30 } },
+  ],
+};
+let lastDance = null;
+function strikePose(which) {
+  const B = state.body, F = state.face;
+  for (const k of POSE_KEYS) B[k] = 0;
+  B.sit = false; B.facing = "front";
+  if (which === "stand") { F.closed = false; return; }
+  let P = POSES[which];
+  if (Array.isArray(P)) { const left = P.filter(d => d.name !== lastDance); P = left[Math.floor(Math.random() * left.length)]; lastDance = P.name; }
+  Object.assign(B, P.pose);
+  F.closed = !!P.closed;
+}
 const poseOf = (B, what, side) => Number(B["pose" + what + (side > 0 ? "L" : "R")]) || 0;
 const posed = B => POSE_KEYS.some(k => Number(B[k]));
 // where each joint was drawn, in the figure's units, for grabbing them
@@ -9296,6 +9364,14 @@ function draw() {
                    : { k: 1, dx: 0, dy: 0, g: ground, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
   svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})">`;
+  // (ticket 42) on the tree house's swing they swing with its seat: the same
+  // rotation about the same hook, at the same time, added to where they are
+  // (the hook in their own units); not while a joint is held
+  if (sizeSeat && sizeSeat.name === "swing" && BG.kind === "treehouse" && !poseHeld) {
+    const ts = sizeSeat.x0 / 358, hx = 395 * ts, hy = sizeSeat.y - 274 * ts;
+    const lx = (hx - figureT.dx) / figureT.k, ly = (hy - figureT.dy - figureT.sg) / figureT.k + figureT.g, at = `${f1(lx)} ${f1(ly)}`;
+    svg += lfoTimed(BG, "slow", 0.15, `<animateTransform attributeName="transform" type="rotate" additive="sum" values="-14 ${at};14 ${at};-14 ${at}" dur="2.6s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`);
+  }
   if (meanSeen > 0 && !wet) svg += `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
@@ -9345,18 +9421,54 @@ function draw() {
   // (a falcon suit's talons are yellow, like a falcon's feet)
   // (with different feet, the friend's right foot, on our left, wears its own)
   const feetAt = svg.length;
-  for (const side of legOrder)
-    svg += shoeSvg(footAt(side)[0], footAt(side)[1], dir || side, feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet, BIRD_SUIT[kind] ? C.accent : skin);
+  // (ticket 129) each foot turns about its ankle, as a hand does: both by
+  // "👣 feet turn" (toes up +), and each by the pose's own turn, by side
+  for (const side of legOrder) {
+    const [ax, ay] = footAt(side), turn = -(dir || side) * ((Number(B.feetTurn) || 0) + poseOf(B, "Foot", side));
+    const shoe = shoeSvg(ax, ay, dir || side, feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet, BIRD_SUIT[kind] ? C.accent : skin);
+    svg += turn ? `<g transform="rotate(${f1(turn)} ${f1(ax)} ${f1(ay)})">${shoe}</g>` : shoe;
+  }
   veilFrom("feet", feetAt);
+  // (ticket 129) a foot resting up on the other leg, as cross-legged, is
+  // drawn over the pants, after them
+  const feetOver = legPosed && [1, -1].some(side => footAt(side)[1] <= kneeAt(side)[1] + 12);
+  const feetLater = feetOver ? svg.slice(feetAt) : "";
+  if (feetOver) svg = svg.slice(0, feetAt);
   const pf = suit ? "url(#pat-fur)" : fillOf("pat-pants", P.color, P.pattern);
   const ps = suit ? darker(C.fur) : darker(P.color);
   const pantsAt = svg.length;
   if (undies) {
     // no clothes: plain skin from the waist to the tops of the legs, and
     // over it the underwear or swimsuit bottom
-    svg += poly([[-hw, L - 10], [hw, L - 10], [fx + half, L + 34], [fx - half, L + 34], [0, L + 14],
-                 [-(fx - half), L + 34], [-(fx + half), L + 34]], limb, limbLine);
-    svg += undiesBottom(U, hw, fx, half, L, LL);
+    // (ticket 128: on posed or bent legs, both follow each thigh, as pants
+    // do; straight, they are drawn exactly as before)
+    const fitted = legPosed || knee;
+    // a point t down a leg from its hip (no farther than its knee), and the
+    // way out across the thigh there
+    const legFrame = (side, t) => {
+      const J = legJoints(side), K = kneeAt(side), u = Math.min(t, LL / 2) / (LL / 2);
+      const dx = K[0] - J[0][0], dy = K[1] - J[0][1], l = Math.hypot(dx, dy) || 1;
+      return { p: [J[0][0] + dx * u, J[0][1] + dy * u], n: [side * dy / l, -side * dx / l] };
+    };
+    // facing us: an outline from the waist down each thigh to len, w half
+    // as wide there, up to the crotch (rising as the thighs turn up)
+    const shortLegs = (len, crotch, w, top, waist, wIn = w, lenIn = len) => {
+      const td = Math.max(0.2, Math.min(...[1, -1].map(side => (kneeAt(side)[1] - L) / (LL / 2))));
+      const edge = (side, t, ww) => { const { p, n } = legFrame(side, t); return [p[0] + n[0] * ww, p[1] + n[1] * ww]; };
+      return [[-waist, top], [waist, top], edge(1, len, w), edge(1, lenIn, -wIn), [0, L + crotch * td], edge(-1, lenIn, -wIn), edge(-1, len, w)];
+    };
+    // in profile: the hips, rounded at the seat, and a band down each thigh
+    // to len, the far one first, as profile pants are drawn
+    const hipsSide = (fill, line, tall = half * 1.4) => `<rect x="${f1(-hw - 2)}" y="${f1(L - 10)}" width="${f1(2 * hw + 4)}" height="${f1(10 + tall)}" rx="${f1(Math.min(half * 0.7, (10 + tall) / 2))}" fill="${fill}"` +
+                                                       (line ? ` stroke="${line}" stroke-width="2.5"/>` : `/>`);
+    const sideLegs = (len, w, fill, line) => legOrder.map(side => { const { p } = legFrame(side, len), H = legJoints(side)[0];
+      const d = `M${f1(H[0])} ${f1(H[1])} L${f1(p[0])} ${f1(p[1])}`;
+      return `<path d="${d}" fill="none" stroke="${line}" stroke-width="${f1(2 * w + 5)}"/><path d="${d}" fill="none" stroke="${fill}" stroke-width="${f1(2 * w)}"/>`; }).join("");
+    svg += !fitted ? poly([[-hw, L - 10], [hw, L - 10], [fx + half, L + 34], [fx - half, L + 34], [0, L + 14],
+                           [-(fx - half), L + 34], [-(fx + half), L + 34]], limb, limbLine)
+         : dir ? hipsSide(limb, limbLine)
+         : poly(shortLegs(34, 14, half, L - 10, hw), limb, limbLine);
+    svg += undiesBottom(U, hw, fx, half, L, LL, fitted ? { dir, shortLegs, hipsSide, sideLegs } : null);
   } else if (!suit && (P.style === "skirt" || P.style === "dress")) {
     // a skirt flares a little; a dress flares more as it gets longer and
     // has a scalloped hem. The length is a share of the legs' length.
@@ -9444,6 +9556,7 @@ function draw() {
                        : `<ellipse cx="${f1(kx)}" cy="${f1(ky + 3)}" rx="${f1(B.legW / 2 + 1)}" ry="${f1((B.legW / 2 + 1) * 0.75)}" fill="${limb}" stroke="${limbLine}" stroke-width="2"/>`; }
   }
   veilFrom("pants", pantsAt);
+  svg += feetLater;
   // a fairy in a shirt and pants: her tunic's hem, a short frill at her
   // hips over the pants, in her tunic's style (the shirt's to see through)
   if (fairy && WC.fairyOutfit === "pants" && !undies) {
@@ -9471,6 +9584,7 @@ function draw() {
   const ss = suit ? darker(C.fur) : darker(SH.color);
   // (a falcon suit's arms are inside its wings, drawn after the body)
   const winged = !!BIRD_SUIT[kind];
+  const farAt = svg.length;
   if (!winged) for (const arm of farArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
   // (a sleeve: the shirt's share of the arm, round the elbow)
   const sleeveOf = arm => alongArm(arm, sleeve);
@@ -9487,6 +9601,12 @@ function draw() {
     for (const arm of farArms) svg += handOf(arm);
     veilFrom("hands", farHandsAt);
   }
+  // (ticket 130) in a place, turned sideways and not in water, the far arm,
+  // its sleeve and its hand are drawn apart from the rest of the friend, a
+  // body's depth behind them among the place's things (draw, below): so an
+  // arm can reach round someone they stand just in front of, for a hug
+  const farDeep = scened && dir && !winged && !wet ? svg.slice(farAt) : "";
+  if (farDeep) svg = svg.slice(0, farAt);
   const collar = { v: [[0, 18]], round: [[-nw * 0.7, -6], [0, -1], [nw * 0.7, -6]], flat: [] }[SH.collar];
   const shoulder = !suit && SH.style === "tank" ? [[nw + 12, -20], [w, 30]] : [[w + 4, -6], [w, 44]];
   const torso = [[-nw, -20], ...collar, [nw, -20], ...shoulder, [w + 2, L], [-(w + 2), L],
@@ -9550,7 +9670,7 @@ function draw() {
     // eye and brow, half the mouth), moved toward the front of the head; a
     // nose, if they have one, seen from the side at its front edge,
     // pointing the way they face
-    const sh = 24 * headWidth(F), edge = 80 * headWidth(F) * (1 + 0.12 * F.alien / 100) - 8;
+    const sh = 24 * headWidth(F), edge = profileEdge(F);
     const near = t => `<defs><clipPath id="face-near"><rect x="${dir > 0 ? 100 : -4000}" y="-4000" width="4100" height="8000"/></clipPath></defs>` +
                       `<g transform="translate(${f1(dir * sh)} 0)"><g clip-path="url(#face-near)">${t}</g></g>`;
     // (the nose, from the side: a bump out of the face's front edge, as tall
@@ -9573,7 +9693,7 @@ function draw() {
     const earAt = !earsOn ? null : side ? side.ear : [100 - dir * 0.12 * 80 * headWidth(F), HEAD_C + 5];
     const earSide = earAt ? earSvg(F.ears, earK, F.color, earAt[0] + dir * 8 * earK, earAt[1], -dir) : "";
     svg += veil("head", inFace(face.under + earSide)) + veil("eyes", inFace(near(face.eyes).replace('id="face-near"', 'id="face-near-e"').replace("url(#face-near)", "url(#face-near-e)"))) +
-           veil("head", inFace(near(brows) + lips + nose));
+           veil("head", inFace(near(brows) + lips + face.sick + nose));
   }
   // and the front of the hair over them all: the bangs (on the lid, when
   // the head explodes)
@@ -9659,6 +9779,7 @@ function draw() {
     svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), wl, hw, most, tread ? tread.bob : 0, water);
   }
   svg += `</g>`;   // the figure
+  if (farDeep) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})">${veil("shirt", farDeep)}</g>`;   // (see-through with the shirt, as it was)
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
   if (poseHeld && poseJoints) {
@@ -9692,9 +9813,16 @@ function draw() {
   figShown = [...fresh.childNodes];
   // (seated, they are sorted at the seat's own depth: ticket 50)
   const onSeat = scenery && !poseHeld ? seatNow() : null;
-  const ahead = scenery ? objectAhead(onSeat ? onSeat.z : figureT.sg + figureT.dy) : null;
-  if (ahead) for (const n of figShown) ahead.parentNode.insertBefore(n, ahead);
-  else pic.append(...figShown);
+  const feetZ = onSeat ? onSeat.z : figureT.sg + figureT.dy;
+  // (ticket 130: the far arm, when it is apart, a body's depth farther back:
+  // before the first thing standing nearer than that, so behind the rest)
+  const farNode = figShown.find(n => n.id === "figure-far"), rest = figShown.filter(n => n !== farNode);
+  const behind = farNode && scenery ? objectAhead(feetZ - 26 * figureT.k) : null;
+  if (behind) behind.parentNode.insertBefore(farNode, behind);
+  else if (farNode) pic.append(farNode);
+  const ahead = scenery ? objectAhead(feetZ) : null;
+  if (ahead) for (const n of rest) ahead.parentNode.insertBefore(n, ahead);
+  else pic.append(...rest);
   showObjects();
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; startHelix(scenery); }
@@ -11506,6 +11634,12 @@ console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g 
                "every place is of exactly one kind");
 
 const TABS = [
+  // (ticket 129) whole poses, first (Matthew: top level, before the face)
+  ["🤸 Pose", "body", [
+    ["action", "poseStand", "🧍 standing, facing us", () => strikePose("stand")],
+    ["action", "poseMeditate", "🧘 cross-legged, meditating", () => strikePose("meditate")],
+    ["action", "poseDance", "💃 dance (a new one each time)", () => strikePose("dance")],
+  ]],
   ["😀 Face", "face", [
     ["color", "color", "skin & head color", SKINS],
     ["range", "size", "head size", 8, 750, 36, 64],
@@ -11554,6 +11688,7 @@ const TABS = [
     ["toggle", "stars", "⭐ star eyes"],
     ["toggle", "hearts", "❤️ heart eyes"],
     ["toggle", "xeyes", "✖ x eyes"],
+    ["toggle", "closed", "😌 eyes closed"],
   ]],
   ["💇 Hair", "hair", [
     ["choice", "style", "style", [["none", "none"], ["short", "short"], ["long", "long"], ["curly", "curly"],
@@ -11572,6 +11707,7 @@ const TABS = [
     ["range", "armLen", "arm length", 10, 600, 60, 130],
     ["range", "armW", "arm width", 3, 60, 10, 24],
     ["range", "legLen", "leg length", 20, 420, 70, 200],
+    ["range", "feetTurn", "👣 feet turn (toes down ↔ up)", -90, 180, -30, 60],
     ["range", "legW", "leg width", 4, 70, 14, 28],
     ["range", "knees", "🦵 knees bend (out, so the friend crouches)", 0, 150, 0, 25],
     ["note", "poseHow", () => posed(state.body) ? "🤸 Posed: each arm and leg as you dragged it." : "🤸 To pose the friend, drag a hand, a foot, an elbow or a knee in the picture."],

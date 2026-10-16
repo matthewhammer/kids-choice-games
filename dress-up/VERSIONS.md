@@ -2,6 +2,19 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.57 (2026-10-15)
+
+Everything in 0.0.56, plus poses, flowing water, and a hug.
+
+- **🤸 Pose** (Matthew), a new tab, first: "🧍 standing, facing us" (the friend as they start); "🧘 cross-legged, meditating", sitting on the ground with their legs crossed, their feet resting up on the other leg, their hands together in their lap and their eyes closed; and "💃 dance", a different dance each time (disco, ballet, hooray, robot, a big kick).
+- **😌 Eyes closed** (Matthew, for meditating): in the eyes tab, the eyes shut, calm lids curving down.
+- **👣 Feet turn** (Matthew): the feet turn at the ankle, toes down or up, as hands turn ("👣 feet turn" in the neck, arms & legs tab, and a pose turns each foot its own way). A foot resting up on the other leg is drawn over the pants.
+- **Shorts and swimsuits fit posed legs** (Matthew): swim trunks, briefs, and the skin under any swimsuit or underwear now follow each leg when it is posed or the knees bend, facing us and from the side, as long pants already did.
+- **A hug** (Matthew): turned sideways in a place, the friend's far arm is a body's depth behind them, so standing just in front of someone, one arm goes round in front and the other behind them.
+- **The stream and the brook flow** (Matthew): the ripples on the tree house's stream and the cemetery's brook drift down toward you, all the time.
+- **The swing swings its sitter** (Matthew): sitting on the tree house's swing, the friend swings with it.
+- **Fixed: the sick puddle from the side** (Matthew): turned sideways and very sick, the puddle was cut in half and pushed to one side. Now it is whole, under where it falls, a side view of it, narrower than from the front.
+
 ## 0.0.56 (2026-10-15)
 
 Everything in 0.0.55, plus treading water with the arms in the water.
