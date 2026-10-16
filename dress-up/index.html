@@ -8968,7 +8968,9 @@ function treadNow() {
   const W = state.background, amt = Math.max(0, Number(W.waterTread ?? 100) || 0) / 100;
   if (!amt || poseHeld || W.kind === "none" || SHALLOW_WATER[W.kind] || !inWater(W, W.figX ?? 0, SCENE.ground + (W.figY ?? 0))) return null;
   const u = lfoNow("B").phase, s = Math.sin(2 * Math.PI * u), c = Math.cos(2 * Math.PI * u);
-  const arm = amt * (-10 + 12 * s), elbow = amt * (30 + 25 * c);
+  // (the arms angled down and sweeping out and in under the surface, the
+  // forearms near level: not lifted out of the water)
+  const arm = amt * (6 + 10 * s), elbow = amt * (18 + 18 * c);
   return { ArmL: arm, ArmR: arm, ElbowL: elbow, ElbowR: elbow,
            LegL: amt * (12 + 10 * c), LegR: amt * (12 - 10 * c), KneeL: amt * (45 + 35 * s), KneeR: amt * (45 - 35 * s),
            bob: amt * 4 * Math.cos(4 * Math.PI * u) };
@@ -9282,7 +9284,11 @@ function draw() {
   // (in water, the friend is in it: their waterline, the waist or in a
   // stream the knees, is where they stand on the water's surface, and what
   // is below it sinks into the water, see-through (wading, below))
-  const wet = scened && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)), wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : L;
+  // (treading, they are in deeper: the water up to half an arm below the
+  // shoulders, so even short arms sweep under it, never above the
+  // shoulders, never below the waist; Matthew: the arms should be in the water)
+  const wet = scened && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)),
+        wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : tread ? Math.max(12, Math.min(L, 8 + 0.5 * armLen)) : L;
   const gStand = poseHeld && scened ? poseHeld.g : wet ? wl : ground;
   // (seated, sized by the seat's depth, not by where their feet hang: ticket 50)
   const sizeSeat = scened ? seatNow() : null;

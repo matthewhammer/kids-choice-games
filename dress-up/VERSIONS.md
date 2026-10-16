@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.56 (2026-10-15)
+
+Everything in 0.0.55, plus treading water with the arms in the water.
+
+- **Treading water, deeper** (Matthew): treading in deep water, the friend is in up to their chest, and their arms reach down into the water and sweep out and in under the surface, instead of waving above it. Friends with very long arms still tread with the water at their waist.
+
 ## 0.0.55 (2026-10-15)
 
 Everything in 0.0.54, plus smooth witch's places.
