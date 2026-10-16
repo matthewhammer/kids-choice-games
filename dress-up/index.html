@@ -723,7 +723,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.59", released: "2026-10-16" };
+const VERSION = { number: "0.0.60", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9868,6 +9868,7 @@ function draw() {
   if (ahead) for (const n of rest) ahead.parentNode.insertBefore(n, ahead);
   else pic.append(...rest);
   showObjects();
+  if (hoverOn) showHover();   // (the hover glow, over the new drawing: ticket 135)
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; startHelix(scenery); }
   // a blown lid tilts about the crack, and on a tall head its top (and
@@ -13192,14 +13193,66 @@ const onThing = e => {
 // round its shoulder or hip. Each limb's turn and bend is kept on top of
 // the sliders' (poseOf), so the sliders still move both alike.
 const figUnits = (e, T = figureT) => { const p = picUnits(e); return [(p.x - T.dx) / T.k, (p.y - T.dy - T.sg) / T.k + T.g]; };
+// (ticket 135) A press is on a joint only when it is really on it: a hand or
+// a foot within its own size and a little more (8 screen pixels for a mouse
+// or a pen, 18 for a finger), an elbow or a knee within its limb's width.
+// Anywhere else on the friend the press moves them. (It was 30 pixels round
+// every joint, and in a place, where the friend is small, the elbows' and
+// hands' circles covered most of the torso: dragging the friend took an arm.)
 function onJoint(e) {
   if (!poseJoints || entering) return null;
-  const [x, y] = figUnits(e), near = 30 / (pic.getScreenCTM().a * figureT.k);   // (30 pixels on the screen)
+  const [x, y] = figUnits(e), px = 1 / (pic.getScreenCTM().a * figureT.k), slop = (e.pointerType === "touch" ? 18 : 8) * px;
   let best = null;
-  const consider = (what, side, P, r) => { const d = Math.hypot(x - P[0], y - P[1]); if (d <= Math.max(near, r) && (!best || d < best.d)) best = { what, side, d }; };
-  for (const a of poseJoints.arms) { consider("hand", a.side, a.H, poseJoints.handR); consider("elbow", a.side, a.E, poseJoints.armW); }
-  for (const l of poseJoints.legs) { consider("foot", l.side, l.F, poseJoints.footR); consider("knee", l.side, l.K, poseJoints.legW); }
+  const consider = (what, side, P, r) => { const d = Math.hypot(x - P[0], y - P[1]); if (d <= r && (!best || d < best.d)) best = { what, side, d, P, r }; };
+  for (const a of poseJoints.arms) { consider("hand", a.side, a.H, Math.max(poseJoints.handR, 12 * px) + slop); consider("elbow", a.side, a.E, poseJoints.armW * 0.6 + 2 * px); }
+  for (const l of poseJoints.legs) { consider("foot", l.side, l.F, Math.max(poseJoints.footR, 12 * px) + slop); consider("knee", l.side, l.K, poseJoints.legW * 0.6 + 2 * px); }
   return best;
+}
+// (ticket 135) Under a mouse or a pen, what a press would take glows: the
+// orb of a hand, a foot, an elbow or a knee it would pose, or the friend's
+// body when it would move them. Drawn over the picture, kept across
+// drawings, changed only when what is under the pointer changes.
+let hoverOn = null;
+function hoverTarget(e) {
+  if (drag || e.pointerType === "touch") return null;
+  const joint = onJoint(e);
+  if (joint) return { kind: "joint", what: joint.what, side: joint.side, key: "j" + joint.what + joint.side };
+  if (onThing(e) && !onFigure(e)) return null;
+  if (onFace(e)) return null;   // (a press on the face moves the brows or the smile)
+  return onFigure(e) ? { kind: "figure", key: "f" } : null;
+}
+function hoverGlowSvg() {
+  if (!hoverOn || !poseJoints) return "";
+  const T = figureT, at = (x, y) => [T.dx + T.k * x, T.dy + T.sg + T.k * (y - T.g)], J = poseJoints;
+  const ring = (cx, cy, r) => `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r + 7)}" fill="none" stroke="#fff6a0" stroke-opacity="0.45" stroke-width="7"/>` +
+                              `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r + 3)}" fill="#fff6a0" fill-opacity="0.18" stroke="#fffbe0" stroke-width="2.5"/>`;
+  if (hoverOn.kind === "joint") {
+    const limb = hoverOn.what === "hand" || hoverOn.what === "elbow" ? J.arms.find(a => a.side === hoverOn.side) : J.legs.find(l => l.side === hoverOn.side);
+    if (!limb) return "";
+    const P = { hand: limb.H, elbow: limb.E, foot: limb.F, knee: limb.K }[hoverOn.what], r = { hand: J.handR, foot: J.footR, elbow: J.armW / 2, knee: J.legW / 2 }[hoverOn.what];
+    const [cx, cy] = at(P[0], P[1]);
+    return ring(cx, cy, Math.max(6, T.k * Math.min(r, 40)));
+  }
+  // the body: shoulders to hips, as wide as the wider of the two, rounded
+  const xs = [...J.arms.map(a => a.A[0]), ...J.legs.map(l => l.H[0])], ys = [...J.arms.map(a => a.A[1]), ...J.legs.map(l => l.H[1])];
+  const pad = Math.max(J.armW, 10), [x0, y0] = at(Math.min(...xs) - pad, Math.min(...ys) - pad), [x1, y1] = at(Math.max(...xs) + pad, Math.max(...ys) + pad);
+  const rx = Math.min(x1 - x0, y1 - y0) * 0.3;
+  return `<rect x="${f1(x0)}" y="${f1(y0)}" width="${f1(x1 - x0)}" height="${f1(y1 - y0)}" rx="${f1(rx)}" fill="#fff6a0" fill-opacity="0.12" stroke="#fff6a0" stroke-opacity="0.5" stroke-width="7"/>` +
+         `<rect x="${f1(x0)}" y="${f1(y0)}" width="${f1(x1 - x0)}" height="${f1(y1 - y0)}" rx="${f1(rx)}" fill="none" stroke="#fffbe0" stroke-width="2.5"/>`;
+}
+function showHover() {
+  const old = document.getElementById("hover-glow");
+  if (old) old.remove();
+  const svg = hoverGlowSvg();
+  if (!svg) return;
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.id = "hover-glow"; g.setAttribute("pointer-events", "none"); g.innerHTML = svg;
+  pic.append(g);
+}
+function hoverAt(e) {
+  const t = hoverTarget(e), key = t ? t.key : null;
+  if (key === (hoverOn ? hoverOn.key : null)) return;
+  hoverOn = t; showHover();
 }
 // a limb's new turn (and, for a hand or foot, bend) for its joint at
 // (x, y), in the figure's units
@@ -13245,8 +13298,10 @@ pic.addEventListener("touchstart", e => {
 pic.addEventListener("touchmove", e => {
   if (drag && e.touches.length === 1) e.preventDefault();
 }, { passive: false });
+pic.addEventListener("pointerleave", () => { if (hoverOn) { hoverOn = null; showHover(); } });
 pic.addEventListener("pointerdown", e => {
   if (!e.isPrimary) return;
+  if (hoverOn) { hoverOn = null; showHover(); }
   const joint = onJoint(e);
   if (joint) {
     drag = { pose: joint, T: { ...figureT } };
@@ -13286,7 +13341,7 @@ function dragChanged() {
 }
 // One step per screen pixel, however big the picture is drawn.
 pic.addEventListener("pointermove", e => {
-  if (!drag) return;
+  if (!drag) { hoverAt(e); return; }
   if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
     // kept in the scene, as the figure is

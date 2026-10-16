@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.60 (2026-10-16)
+
+Everything in 0.0.59, plus dragging the friend by the body again, and glows that show what a press will take.
+
+- **Fixed: dragging the friend by the body grabbed an arm** (Matthew): in a place, where the friend is drawn small, a press anywhere near a hand or an elbow took the arm. Now a hand, a foot, an elbow or a knee is taken only when you press right on it, and anywhere else on the friend moves them.
+- **✨ Glows under the mouse** (Matthew): point at the friend's body and it glows: a press will move them. Point at a hand or a foot (or an elbow or a knee) and its orb glows: a press will pose it.
+
 ## 0.0.59 (2026-10-16)
 
 Everything in 0.0.58, plus the version in the title, and new versions offered.
