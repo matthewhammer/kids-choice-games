@@ -279,6 +279,9 @@
      door) glows under the pointer; a click goes through it */
   #bg .portal { cursor: pointer; }
   #bg .portal:hover { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f) brightness(1.08); }
+  /* (ticket 145) the picture the controller's ✨ would go into: its glow breathes */
+  #bg .enter-glow { animation: enter-glow 1.3s ease-in-out infinite alternate; }
+  @keyframes enter-glow { from { opacity: 0.45; } to { opacity: 1; } }
 /* A fairy's wings flap, and their stars twinkle, by CSS, not SVG
    animation: a drag pauses the picture's SVG animations (see pointerdown),
    and the wings go on flapping through it, to fly. Each redraw starts them
@@ -767,7 +770,7 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 // (ticket 146) R (5, the right shoulder) turns crawling on or off. A pad
 // taught its buttons (🎓 in the Controls tab) keeps its own layout, by its
 // name, in localStorage["dress-up-pads"], put back whenever it connects.
-DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9 };
+DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4 };
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 let state = clone(DEFAULTS);
 try {
@@ -794,7 +797,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.74", released: "2026-10-16" };
+const VERSION = { number: "0.0.75", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -8348,8 +8351,12 @@ function woodpathScene(c) {
 // go through, a column to each kind of place (PLACE_GROUPS) with its name,
 // the places down it joined like stations on a line by a dotted path. A
 // picture of this room holds no pictures (they would go on forever).
-// (ticket 99) Nothing stands in it: the map and its pictures are on the
-// wall, the rest is floor and glow; so it has no objects.
+// (ticket 99) The map and its pictures are on the wall, the rest is floor
+// and glow. (ticket 145) Its only objects are the ladders, one at each
+// column's right, floating a little off the floor at the wall's foot and
+// bobbing slowly, to climb to the pictures up the column; its back wall is
+// solid (SCENE_BACK), so the ladders are the way up.
+const imaginationWall = (g, k) => g - 60 * k;
 function imaginationScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, all, o } = c;
   let s = SEP + part("imagination-room", c.F, () => {
@@ -8381,6 +8388,22 @@ function imaginationScene(c) {
                       : framedSvg(kd, 45, o, depth, cx, cy - 6 * k, fw)) +
       `<text x="${f1(cx)}" y="${f1(cy + fw * 0.37 + 4 * k)}" text-anchor="middle" font-size="${f1(9 * k)}" fill="#5a6270" font-family="sans-serif">${name}</text>`;
   }).join("")).join(SEP);
+  // (ticket 145) the ladders: from just off the floor at the wall's foot up
+  // to just under the column's name, in the gap at each column's right,
+  // climbed till the hands are at its top (data-top), so the top row is in
+  // reach; each bobs a
+  // few units, slowly, at a pace and a phase of its own; its shadow on the
+  // floor under it stays put
+  const wall = imaginationWall(g, k), ltop = top + 22 * k, lw = Math.min((cw - fw) * 0.36, 13 * k), foot = wall - 5 * k;
+  s += SEP + part("imagination-ladders", [c.F, cols, rows], () => groups.map((_, i) => {
+    const lx = x0 + mx + cw * (i + 1);
+    let t = "";
+    for (let y = foot - 14 * k; y > ltop + 4 * k; y -= 20 * k)
+      t += `<line x1="${f1(lx - lw)}" y1="${f1(y)}" x2="${f1(lx + lw)}" y2="${f1(y)}" stroke="#e3c37f" stroke-width="${f1(2.8 * k)}" stroke-linecap="round"/>`;
+    t += [-1, 1].map(e => `<line x1="${f1(lx + e * lw)}" y1="${f1(ltop)}" x2="${f1(lx + e * lw)}" y2="${f1(foot)}" stroke="#c9a15a" stroke-width="${f1(3.4 * k)}" stroke-linecap="round"/>`).join("");
+    return obj(`ladder ${i + 1}`, wall, `<ellipse cx="${f1(lx)}" cy="${f1(wall)}" rx="${f1(lw * 1.7)}" ry="${f1(3 * k)}" fill="#c9ced8" opacity="0.45"/>` +
+      `<g data-ladder="1" data-top="hands"><animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-3.5 * k)};0 0" dur="${(5.5 + 0.7 * (i % 3)).toFixed(1)}s" begin="${(-1.7 * i).toFixed(1)}s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>${t}</g>`);
+  }).join(""));
   return s;
 }
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
@@ -9084,7 +9107,14 @@ const SCENE = { left: -405.9, top: -195, bottom: 406.2, ground: 320 };
 // the frame the figure itself needs (before a stage replaces it), for
 // fitting it to the stage
 let naturalFrame = { left: -200, top: -200, ground: 0 };
-let figureT = { k: 1, dx: 0, dy: 0, g: 0, sg: 0 }, sceneFrame = { left: -200, top: -200, right: 200, bottom: 200, ground: 0 };   // where the face is, for dragging it
+let figureT = { k: 1, dx: 0, dy: 0, g: 0, sg: 0 }, sceneFrame = { left: -200, top: -200, right: 200, bottom: 200, ground: 0, back: -Infinity };   // where the face is, for dragging it
+// (ticket 145) A solid back wall: the deepest the friend's feet go in a
+// place whose back wall can't be walked through (the imagination's: its
+// ladders are the way up), a little in front of the wall's foot, in the
+// stage's units; else the frame's own limit. The controller, a drag and the
+// place control all keep to it (figYMin, a figY).
+const SCENE_BACK = { imagination: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3 };
+const figYMin = F => Math.max((F.top - F.ground) * 0.6, (F.back ?? -Infinity) - F.ground);
 
 // The parts of the body each with its own visibility: a slider each
 // (0 invisible to 100 all there), and the shirt and pants stand for the
@@ -9256,36 +9286,145 @@ const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
 // way up, as the music starting re-times it), start, done, through }.
 // Chosen, or in a new place, they go to the nearest ladder anywhere; put
 // down by a drag, only to one within reach (CLIMB_REACH)
+// (ticket 145) Climbed by hand, with the controller (climb.manual): at a
+// ladder's foot, up gets on it (mountLadder); up and down move them on it
+// (climb.got, in the picture's units, as draw() lifts them), and down at
+// its foot, or an arrow to the side there, steps off. Their stroke follows
+// how far they have climbed (CLIMB_STROKE of their own units a stroke),
+// and they hold still while the arrows do.
 let climb = null, climbLook = 0, climbAnywhere = true;
-const CLIMB_SPEED = 70, CLIMB_REACH = 140;
+const CLIMB_SPEED = 70, CLIMB_REACH = 140, CLIMB_HAND = 300, CLIMB_STROKE = 160;
 const climbPlace = BG => [BG.kind, BG.inside, BG.castleRoom, BG.tent].join(":");
+// (a [data-ladder] group, in the picture's own units, the friend's: through
+// the screen, as the scene may sit in a nested svg of its own; its depth is
+// the object it is in, else its foot; and the doorway it is, if it is one)
+function ladderAt(el, Pinv) {
+  const b = el.getBBox(), E = el.getScreenCTM(), m = Pinv && E ? Pinv.multiply(E) : null;
+  if (!m || !b.height) return null;
+  const at = (x, y) => new DOMPoint(x, y).matrixTransform(m), lo = at(b.x + b.width / 2, b.y + b.height), hi = at(b.x + b.width / 2, b.y);
+  const ob = el.closest("[data-obj]"), z = ob && Number.isFinite(Number(ob.dataset.z)) ? Number(ob.dataset.z) : lo.y;
+  const p = el.closest(".portal"), house = el.dataset.house;
+  const door = p ? { to: p.dataset.to, house: p.dataset.house, room: p.dataset.room, tent: p.dataset.tent } : house ? { to: "treeroom", house } : null;
+  return { x: lo.x, z, top: Math.min(lo.y, hi.y), door, hands: el.dataset.top === "hands" };
+}
 function startClimb() {
   climbLook = 0;
   const B = state.body, BG = state.background, node = bgShown.node;
   if (B.anim !== "climbup" || drag || entering || BG.kind === "none" || !node || climb) return;
-  const fx = BG.figX ?? 0, fz = SCENE.ground + (BG.figY ?? 0);
-  // (in the picture's own units, the friend's: through the screen, as the
-  // scene may sit in a nested svg of its own)
-  const P = pic.getScreenCTM();
+  const fx = BG.figX ?? 0, fz = SCENE.ground + (BG.figY ?? 0), P = pic.getScreenCTM(), Pinv = P ? P.inverse() : null;
   let best = null;
   for (const el of node.querySelectorAll("[data-ladder]")) {
-    const b = el.getBBox(), E = el.getScreenCTM(), m = P && E ? P.inverse().multiply(E) : null;
-    if (!m || !b.height) continue;
-    const at = (x, y) => new DOMPoint(x, y).matrixTransform(m), lo = at(b.x + b.width / 2, b.y + b.height), hi = at(b.x + b.width / 2, b.y);
-    // (its depth: the object it is, else its foot)
-    const ob = el.closest("[data-obj]"), z = ob && Number.isFinite(Number(ob.dataset.z)) ? Number(ob.dataset.z) : lo.y;
-    const d = Math.hypot(lo.x - fx, z - fz);
-    if (!best || d < best.d) best = { d, x: lo.x, z, top: Math.min(lo.y, hi.y), el };
+    const L = ladderAt(el, Pinv);
+    if (!L) continue;
+    const d = Math.hypot(L.x - fx, L.z - fz);
+    if (!best || d < best.d) best = { ...L, d };
   }
   const anywhere = climbAnywhere;
   climbAnywhere = true;
   if (!best || (!anywhere && best.d > CLIMB_REACH)) { climb = { none: true, far: !!best, place: climbPlace(BG) }; changed(); return; }
   BG.figX = Math.round(best.x); BG.figY = Math.round(best.z - SCENE.ground + 2);
   B.facing = "back";   // (facing the ladder, away from us: ticket 138)
-  const p = best.el.closest(".portal"), house = best.el.dataset.house;
-  const door = p ? { to: p.dataset.to, house: p.dataset.house, room: p.dataset.room, tent: p.dataset.tent } : house ? { to: "treeroom", house } : null;
-  climb = { place: climbPlace(BG), x: best.x, z: best.z + 2, top: best.top, door, start: performance.now(), done: false, through: false };
+  climb = { place: climbPlace(BG), x: best.x, z: best.z + 2, top: best.top, door: best.door, hands: best.hands, start: performance.now(), done: false, through: false };
   changed();
+}
+// (ticket 145) A place's ladders and its pictures (and windows: a doorway
+// with a view of its own, a nested svg), in the picture's units, measured
+// after its drawing is mounted (never in draw(): it reads layout) and again
+// whenever the scene's text changes; only while a controller is in use,
+// which is all that needs them. marks.pics' box is the doorway's own
+// bounds in its own units, for its glow.
+let marks = { text: null, ladders: [], pics: [] }, marksLook = 0;
+function measureMarks() {
+  marksLook = 0;
+  const node = bgShown.node, P = pic.getScreenCTM();
+  if (!node || !P) return;
+  const Pinv = P.inverse(), ladders = [], pics = [];
+  for (const el of node.querySelectorAll("[data-ladder]")) { const L = ladderAt(el, Pinv); if (L) ladders.push(L); }
+  for (const d of node.querySelectorAll(".portal")) {
+    const view = d.querySelector(":scope > svg");
+    if (!view) continue;
+    const r = svgBox(view);
+    if (!r.width || !r.height) continue;
+    const a = new DOMPoint(r.x, r.y).matrixTransform(Pinv), b = new DOMPoint(r.x + r.width, r.y + r.height).matrixTransform(Pinv);
+    // (its glow's box: its frame, the doorway's own rects but the shadow
+    // (see-through); else the view, a little larger. Not the doorway's
+    // bounds: the scene inside a picture spills past it, hidden)
+    const frames = [...d.querySelectorAll(":scope > rect:not([opacity])")].map(f => f.getBBox()).filter(f => f.width && f.height);
+    const vb = { x: view.x.baseVal.value, y: view.y.baseVal.value, width: view.width.baseVal.value, height: view.height.baseVal.value };
+    const box = frames.length ? frames.reduce((u, f) => { const x = Math.min(u.x, f.x), y = Math.min(u.y, f.y); return { x, y, width: Math.max(u.x + u.width, f.x + f.width) - x, height: Math.max(u.y + u.height, f.y + f.height) - y }; })
+                              : { x: vb.x - 0.04 * vb.width, y: vb.y - 0.04 * vb.height, width: 1.08 * vb.width, height: 1.08 * vb.height };
+    pics.push({ x0: Math.min(a.x, b.x), y0: Math.min(a.y, b.y), x1: Math.max(a.x, b.x), y1: Math.max(a.y, b.y), el: d, box });
+  }
+  marks = { text: bgShown.text, ladders, pics };
+  showEnterGlow();
+}
+// (the ladder whose foot the friend stands at, if any)
+function ladderNear() {
+  const BG = state.background, fx = BG.figX ?? 0, fz = SCENE.ground + (BG.figY ?? 0), k = figureT.k;
+  if (marks.text !== bgShown.text) return null;
+  let best = null;
+  for (const L of marks.ladders) {
+    const dx = Math.abs(L.x - fx), dz = Math.abs(L.z - fz);
+    if (dx > Math.max(24, 150 * k) || dz > Math.max(16, 110 * k)) continue;
+    if (!best || dx + dz < best.d) best = { ...L, d: dx + dz };
+  }
+  return best;
+}
+function mountLadder(L) {
+  const B = state.body, BG = state.background;
+  if (BG.seat) standUp();
+  if (B.pose !== "stand") strikePose("stand");
+  B.anim = "climbup"; B.facing = "back";
+  BG.figX = Math.round(L.x); BG.figY = Math.round(L.z - SCENE.ground + 2);
+  climb = { place: climbPlace(BG), x: L.x, z: L.z + 2, top: L.top, door: L.door, hands: L.hands, start: performance.now(), done: false, through: false, manual: true, got: 0 };
+}
+// (ticket 145) The picture the controller's ✨ would go into: of those whose
+// box is within reach of the friend's chest (twice the chest's height: about an arm's length) and
+// whose bottom edge their feet are not far below (about their height, so
+// one standing well in front of a wall can't reach up into its picture),
+// the one whose middle is nearest. It glows: a rounded frame over the
+// picture, inside its doorway (so it is in front of the picture and behind
+// whatever stands nearer), kept while it stays the one.
+let enterAt = null, enterGlow = null;
+function enterTarget() {
+  const BG = state.background, J = poseJoints, T = figureT;
+  if (!padName || BG.kind === "none" || !J || !J.arms.length || !J.legs.length || entering || marks.text !== bgShown.text) return null;
+  const at = (x, y) => [T.dx + T.k * x, T.dy + T.sg + T.k * (y - T.g)];
+  const mean = ps => [ps.reduce((s, p) => s + p[0], 0) / ps.length, ps.reduce((s, p) => s + p[1], 0) / ps.length];
+  const A = mean(J.arms.map(a => a.A)), H = mean(J.legs.map(l => l.H)), [cx, cy] = at((A[0] + H[0]) / 2, (A[1] + H[1]) / 2);
+  const torso = T.k * Math.hypot(A[0] - H[0], A[1] - H[1]), feet = Math.max(...J.legs.map(l => at(l.F[0], l.F[1])[1]));
+  let best = null;
+  for (const p of marks.pics) {
+    if (!p.el.isConnected) continue;
+    const d = Math.hypot(Math.max(p.x0 - cx, 0, cx - p.x1), Math.max(p.y0 - cy, 0, cy - p.y1));
+    if (d > 2 * torso || feet - p.y1 > 3.6 * torso) continue;
+    const dc = Math.hypot((p.x0 + p.x1) / 2 - cx, (p.y0 + p.y1) / 2 - cy);
+    if (!best || dc < best.dc) best = { dc, p };
+  }
+  return best && best.p;
+}
+function showEnterGlow() {
+  const p = enterTarget();
+  enterAt = p;
+  if (enterGlow && enterGlow.isConnected && p && enterGlow.parentNode === p.el) return;
+  if (enterGlow) enterGlow.remove();
+  enterGlow = null;
+  if (!p) return;
+  const b = p.box, e = Math.max(2, 0.03 * Math.min(b.width, b.height)), r = 3 * e;
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("class", "enter-glow"); g.setAttribute("pointer-events", "none");
+  g.innerHTML = `<rect x="${f1(b.x - e)}" y="${f1(b.y - e)}" width="${f1(b.width + 2 * e)}" height="${f1(b.height + 2 * e)}" rx="${f1(r)}" fill="#fff6a0" fill-opacity="0.14" stroke="#ffd23f" stroke-opacity="0.75" stroke-width="7" vector-effect="non-scaling-stroke"/>` +
+                `<rect x="${f1(b.x - e)}" y="${f1(b.y - e)}" width="${f1(b.width + 2 * e)}" height="${f1(b.height + 2 * e)}" rx="${f1(r)}" fill="none" stroke="#fffbe0" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
+  p.el.append(g);
+  enterGlow = g;
+}
+function enterPicture() {
+  const p = enterAt;
+  if (!p || !p.el.isConnected || entering) return;
+  if (climb && !climb.none) climb.through = true;   // (off the ladder, arriving: see draw)
+  if (enterGlow) enterGlow.remove();
+  enterGlow = null; enterAt = null;
+  enterScene(p.el);
 }
 // (at the top of a ladder that is a doorway: through it, as a click would)
 function climbThrough() {
@@ -9422,9 +9561,9 @@ function moveNow() {
     // one; still while there is no ladder to climb, and holding on, still,
     // at its top (held: no more frames)
     if (!climb || climb.none) return treadNow();
-    const s = climb.done ? 0 : sin(1), up = side => -80 - (B.arms ?? 0) - lean(side);
+    const s = climb.manual ? Math.sin(2 * Math.PI * (climb.got || 0) / (CLIMB_STROKE * figureT.k)) : climb.done ? 0 : sin(1), up = side => -80 - (B.arms ?? 0) - lean(side);
     return { ...both("Arm", sd => up(sd) + 30 * sd * s), ...both("Elbow", sd => 20 + 30 * Math.max(0, -sd * s)),
-             ...both("Leg", sd => 8 * Math.max(0, sd * s)), ...both("Knee", sd => 55 * Math.max(0, sd * s)), lift: 5 * Math.abs(s), held: climb.done };
+             ...both("Leg", sd => 8 * Math.max(0, sd * s)), ...both("Knee", sd => 55 * Math.max(0, sd * s)), lift: 5 * Math.abs(s), held: climb.manual || climb.done };
   }
   if (a === "climb") {
     // (ticket 137) seen from the side, the ladder in front of them: a hand
@@ -9826,7 +9965,7 @@ function draw() {
   const sizeSeat = scened ? seatNow() : null;
   figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
-  sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
+  sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg, back: scened && SCENE_BACK[BG.kind] ? SCENE_BACK[BG.kind]() : -Infinity };
   // (ticket 137) climbing a place's ladder: up it as time goes by (not while
   // dragged), at its depth (their feet are sorted there still), their
   // shadow left at its foot; to the top, or, up a doorway, till their head
@@ -9834,9 +9973,12 @@ function draw() {
   if (climb && climb.place !== climbPlace(BG)) { if (climb.through) B.anim = "none"; climb = null; }
   let climbUp = 0;
   if (climb && !climb.none && B.anim === "climbup" && scened && !poseHeld && !drag) {
-    const tall = (ground - neckTop + 90) * figureT.k, all = Math.max(0.4 * (climb.z - climb.top), climb.z - climb.top - (climb.door ? 0.55 * tall : 0));
-    const got = Math.min(all, (performance.now() - climb.start) / 1000 * CLIMB_SPEED * figureT.k);
-    if (got >= all && !climb.done) { climb.done = true; if (climb.door) setTimeout(climbThrough, 250); }
+    const tall = (ground - neckTop + 90) * figureT.k, all = Math.max(0.4 * (climb.z - climb.top), climb.z - climb.top - (climb.door ? 0.55 * tall : climb.hands ? 0.85 * tall : 0));
+    // (ticket 145: by hand, as far as the controller has taken them; through a doorway at its top)
+    const got = climb.manual ? clamp(climb.got, 0, all) : Math.min(all, (performance.now() - climb.start) / 1000 * CLIMB_SPEED * figureT.k);
+    climb.all = all; climb.at = got;
+    if (climb.manual) { if (got >= all && climb.door && !climb.going) { climb.going = true; setTimeout(climbThrough, 250); } }
+    else if (got >= all && !climb.done) { climb.done = true; if (climb.door) setTimeout(climbThrough, 250); }
     climbUp = got / figureT.k;
     figureT.g += climbUp;
   }
@@ -10364,6 +10506,7 @@ function draw() {
   else pic.append(...rest);
   showObjects();
   if (hoverOn) showHover();   // (the hover glow, over the new drawing: ticket 135)
+  if (padName || enterGlow) showEnterGlow();   // (the picture ✨ would go into: ticket 145)
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; startHelix(scenery); }
   // a blown lid tilts about the crack, and on a tall head its top (and
@@ -10383,6 +10526,7 @@ function draw() {
   fitPic();
   if (move && !move.held && !treadLoop) treadLoop = requestAnimationFrame(treadTick);
   if (B.anim === "climbup" && scened && !climb && !drag && !entering && !climbLook) climbLook = setTimeout(startClimb, 0);   // (ticket 137)
+  if (padName && scened && marks.text !== bgShown.text && !marksLook) marksLook = setTimeout(measureMarks, 0);   // (ticket 145)
 }
 // (ticket 123) While the friend treads water they are drawn again about 30
 // times a second: not while a drag draws them anyway, nor while the page is
@@ -13302,7 +13446,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const fig = svg.querySelector("#fig");
     const at = e => {
       const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse()), F = sceneFrame;
-      let x = clamp(p.x, F.left, F.right), y = clamp(p.y - F.ground, (F.top - F.ground) * 0.6, F.bottom - F.ground);
+      let x = clamp(p.x, F.left, F.right), y = clamp(p.y - F.ground, figYMin(F), F.bottom - F.ground);
       if (Math.abs(x) < W * 0.03) x = 0;
       if (Math.abs(y) < H * 0.03) y = 0;
       state.background.figX = Math.round(x); state.background.figY = Math.round(y); changed();
@@ -13910,7 +14054,7 @@ pic.addEventListener("pointermove", e => {
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
     B[drag.thing + "X"] = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right));
-    B[drag.thing + "Y"] = Math.round(clamp(drag.y0 + p.y - drag.py, (F.top - F.ground) * 0.6, F.bottom - F.ground));
+    B[drag.thing + "Y"] = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
     dragChanged();
     return;
   }
@@ -13919,7 +14063,7 @@ pic.addEventListener("pointermove", e => {
     // half down to just below the ground
     const p = picUnits(e), F = sceneFrame;
     state.background.figX = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right));
-    state.background.figY = Math.round(clamp(drag.y0 + p.y - drag.py, (F.top - F.ground) * 0.6, F.bottom - F.ground));
+    state.background.figY = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
     dragChanged();
     return;
   }
@@ -14051,12 +14195,12 @@ function flyInto(box, arrive) {
 // connected, never without one.
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
                      ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
-                     ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest doorway"]];
+                     ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest doorway"], ["enter", "✨ into the picture that glows"]];
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
-// this order. Then A is the short jump, B the high one, X kept free (for
-// what comes next), Y crouch, R crawling on or off, select back, start the
-// nearest doorway; run stays on the button it had (Matthew: "perfect"),
-// taking it from any other that also wanted it.
+// this order. Then A is the short jump, B the high one, X into the picture
+// that glows (ticket 145), Y crouch, R crawling on or off, select back,
+// start the nearest doorway; run stays on the button it had (Matthew:
+// "perfect"), taking it from any other that also wanted it.
 const PAD_TEACH = [["B", "B, the bottom button"], ["A", "A, the right one"], ["X", "X, the top one"], ["Y", "Y, the left one"],
                    ["L", "L, the left shoulder"], ["R", "R, the right shoulder"], ["select", "select"], ["start", "start"]];
 let padId = "", padTeach = null, padCrawl = false;
@@ -14067,7 +14211,7 @@ function padKeep() {
 }
 function padTaught() {
   const G = padTeach.got, C = state.controls, run = C.run, at = k => (Number.isInteger(G[k]) ? G[k] : -1);
-  Object.assign(C, { jumpShort: at("A"), jumpHigh: at("B"), crouch: at("Y"), crawlToggle: at("R"), back: at("select"), door: at("start") });
+  Object.assign(C, { jumpShort: at("A"), jumpHigh: at("B"), enter: at("X"), crouch: at("Y"), crawlToggle: at("R"), back: at("select"), door: at("start") });
   for (const [a] of PAD_ACTIONS) if (a !== "run" && C[a] === run && run >= 0) C[a] = -1;
   padTeach = { done: true, got: G, line: `${padId || padName} (${padMapping === "standard" ? "standard numbers" : "its own numbers"}): ` +
     PAD_TEACH.map(([k]) => `${k}=${at(k)}`).join(", ") + `, run=${run}` };
@@ -14118,6 +14262,19 @@ function padPoll(t) {
   const len = Math.hypot(vx, vy);
   if (len > 1) { vx /= len; vy /= len; }
   const onLadder = B.anim === "climbup" && climb && !climb.none;
+  // (ticket 145) a ladder by hand: at its foot, up gets on it; on it, up and
+  // down climb (a chip's climb too, taken over), and down at its foot, or an
+  // arrow to the side there, steps off
+  const ud = Math.abs(vy) > 0.5 && Math.abs(vx) < 0.75 * Math.abs(vy) ? Math.sign(vy) : 0;
+  if (!onLadder && ud < 0 && BG.kind !== "none" && !entering && !drag && !isJump(B.anim)) {
+    const L = ladderNear();
+    if (L) { mountLadder(L); padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return; }
+  }
+  if (onLadder && ud && !climb.manual) Object.assign(climb, { manual: true, got: climb.at ?? 0 });
+  if (onLadder && climb.manual && !entering) {
+    if (climb.got <= 0 && (ud > 0 || (!ud && Math.abs(vx) > 0.5))) { B.anim = "none"; climb = null; padWant = null; changed(); }
+    else if (ud) { climb.got = clamp(climb.got - ud * CLIMB_HAND * (held("run") ? 1.8 : 1) * figureT.k * dt, 0, climb.all ?? Infinity); changed(); }
+  }
   const moving = !!(vx || vy) && BG.kind !== "none" && !entering && !drag && !onLadder;
   const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
   const run = held("run"), low = held("crouch") || padCrawl;
@@ -14133,12 +14290,13 @@ function padPoll(t) {
       changed();
     }
   }
-  if (hit("jumpShort")) { startJump(B.anim, "jump"); changed(); }
-  if (hit("jumpHigh")) { startJump(B.anim, "jumphigh"); changed(); }
+  if (hit("jumpShort") && !onLadder) { startJump(B.anim, "jump"); changed(); }
+  if (hit("jumpHigh") && !onLadder) { startJump(B.anim, "jumphigh"); changed(); }
+  if (hit("enter")) enterPicture();   // (ticket 145)
   if (moving) {
     const sp = (PAD_SPEED[isJump(B.anim) ? jumpPrev : B.anim] ?? PAD_SPEED.none) * dt, F = sceneFrame;
     BG.figX = Math.round(10 * clamp((BG.figX ?? 0) + vx * sp, F.left, F.right)) / 10;
-    BG.figY = Math.round(10 * clamp((BG.figY ?? 0) + vy * sp * 0.6, (F.top - F.ground) * 0.6, F.bottom - F.ground)) / 10;
+    BG.figY = Math.round(10 * clamp((BG.figY ?? 0) + vy * sp * 0.6, figYMin(F), F.bottom - F.ground)) / 10;
     // (which way they face: a diagonal keeps the one of its two ways they faced, else the side one)
     const ax = Math.abs(vx), ay = Math.abs(vy), m = Math.max(ax, ay);
     const side = ax > 0.38 * m ? (vx < 0 ? "left" : "right") : null, depth = ay > 0.38 * m ? (vy < 0 ? "back" : "front") : null;
@@ -14185,6 +14343,10 @@ function padUse(id) {
   if (kept) Object.assign(C, kept);
   else if (id === TOUCH_ID) Object.assign(C, TOUCH_CONTROLS);
   else if (padId === TOUCH_ID || like(TOUCH_CONTROLS)) Object.assign(C, DEFAULTS.controls);
+  // (an action newer than the layout kept, as ticket 145's ✨: on its usual
+  // button, unless another action has that one)
+  const usual = id === TOUCH_ID ? TOUCH_CONTROLS : DEFAULTS.controls;
+  if (kept) for (const [a] of PAD_ACTIONS) if (!(a in kept)) C[a] = PAD_ACTIONS.some(([o]) => o !== a && C[o] === usual[a]) ? -1 : usual[a];
   padId = id;
 }
 // (ticket 150) The on-screen controller, for a tablet or a phone with no
@@ -14195,14 +14357,14 @@ function padUse(id) {
 // frame while it is shown, so every action works as with a real controller
 // and is set in the same 🎮 Controls tab. Its own layout is kept by its id
 // (TOUCH_ID), as a real pad's is, and starts as TOUCH_CONTROLS: Matthew's
-// taught one (A the short jump, B the high one, X free, Y crouch, select
+// taught one (A the short jump, B the high one, X into the picture that glows, Y crouch, select
 // back, start the nearest doorway), with run on R and crawling on or off on
 // L, so the right thumb holds run while the left one steers. Offered (🎮, at
 // the picture's bottom right) while no game controller is connected, and
 // hidden while one is. Whether it is shown is this browser's own
 // (localStorage "dress-up-touchpad"), not the friend's.
 const TOUCH_ID = "on-screen controller";
-const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9 };
+const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3 };
 const touchPad = { want: false, shown: false, el: null, keys: "",
   pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
          buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, at: 0, tok: 0 })) } };

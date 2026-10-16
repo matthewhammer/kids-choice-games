@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.75 (2026-10-16)
+
+Everything in 0.0.74, plus climbing up to the imagination's pictures and going into them with X.
+
+- **🪜 ladders in 💭 our imagination** (Matthew): a ladder floats beside each column of pictures, bobbing gently and slowly. Walk, run or crawl the friend to one, and press ⬆️ at its foot to climb it. ⬆️ and ⬇️ climb up and down (hold 🏃 run to climb faster), and ⬇️ at the bottom, or an arrow to the side there, steps off. The 🧗 climbing chip climbs them too.
+- **The imagination's back wall is solid:** the friend can't walk into it, so the ladders are the way up.
+- **✨ into the picture that glows** (Matthew): with a controller (a real one or the one on the screen), the picture nearest the friend glows when they are close enough to reach it, on a ladder or standing in front of it, in any place with pictures or windows. Press X to go into it, with the spin, as clicking it does. A controller taught before this version gets ✨ on its left shoulder (L) when that button is free; teach it again (🎓) to put ✨ on X. On the screen's controller it is X.
+
 ## 0.0.74 (2026-10-16)
 
 Everything in 0.0.73, plus a controller on the screen, for playing with no game controller plugged in.

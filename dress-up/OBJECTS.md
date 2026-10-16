@@ -11,7 +11,16 @@ Made by `depthsheet.mjs` (see agent-instructions.md, Testing) and `objects_md.py
 
 ## 💭 our imagination
 
-Nothing stands here: the friend is in front of everything.
+(0.0.75, ticket 145: its ladders, one at each column's right, at the wall's foot. Its back wall is solid: the friend's feet stay at 271.5 or nearer.)
+
+| depth | object |
+|---:|---|
+| 268.5 | ladder 1 |
+| 268.5 | ladder 2 |
+| 268.5 | ladder 3 |
+| 268.5 | ladder 4 |
+| 268.5 | ladder 5 |
+| 268.5 | ladder 6 |
 
 ## 🌲 forest
 
