@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.90 (2026-10-16)
+
+Everything in 0.0.89, plus falling into the castle's pits (N's).
+
+- **Falling into a pit** (N, via Matthew): in a trap room, walking onto a pit's hole (not jumping over it) drops the friend in: arms flung up, a moment's teeter, then down into the hole, ever faster, hidden below its near rim. X, a click or 🚪 the nearest doorway walks them to the pit's middle first. Landing a jump on a pit falls in too.
+- **Landing in the dungeon below**: each pit drops into the dungeon its sign names; the friend drops in from above the picture and lands on bent knees (the high jump's landing), then stands. The dungeon's ladder still climbs back up.
+
 ## 0.0.89 (2026-10-16)
 
 Everything in 0.0.88, plus walls and things the friend can't walk through, and jumping over the small ones.
