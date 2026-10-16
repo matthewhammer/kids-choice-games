@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.83 (2026-10-16)
+
+Everything in 0.0.82, plus places that hold still on a slow computer.
+
+- **On a slow computer, the places hold still** (Matthew: "moving scenery off on a slow computer"): the game times how long it takes to draw the friend, and where that is over 6 ms on average (the black laptop, not Matthew's laptop, where it is about 1), each place's own animations stop (the ducks, the sun's rays, the fumes, the fairies' wings), the rings round the friend in water hold still, and the part of the friend under the water is hidden instead of faint. The friend still moves and animates as always. On a computer six times slower than Matthew's, swimming in the 🦆 duck pond went from 17 frames a second to 37, and dragging to 52.
+- 🧪 this computer's speed measures with the friend as they start and the music off (Matthew: the same on every computer), then puts your friend back. The 📋 chip says "copy" again for each new measurement, and "📝 then paste it here" opens a shared page to paste the line into, so it can be read from another computer (Matthew: the black laptop has no easy way to send it).
+- In ⚙️ Advanced, "🌀 moving scenery and water on a slow computer" (off to start) keeps everything moving anyway, and its row says whether this computer was found slow and how long a drawing takes. The game remembers it on that computer and keeps checking.
+
 ## 0.0.82 (2026-10-16)
 
 Everything in 0.0.81, plus a speed check for comparing computers.

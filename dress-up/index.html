@@ -82,6 +82,8 @@
                          padding: 12px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
   body.music-big .mixer { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
   body.music-big .touchpad { display: none; }   /* (no friend to move here) */
+  /* (ticket 164) a still place, on a slow computer: no CSS animations in the scenery either (the fairies' wings) */
+  body.still-scenery #bg * { animation: none !important; }
   /* (ticket 155) the ⚙️ advanced tab: a feature kept off until it is fast, a row each */
   .perfrow { border-top: 1px dashed var(--line); padding: 8px 0 4px; margin-top: 6px; }
   .perfrow .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -801,6 +803,10 @@ const PERF_FEATURES = [
   // window's view of outside stays moving: it has no frame)
   { id: "livePictures", label: "🎞️ moving pictures", what: "framed pictures drawn live, each place's own animations playing: on the walls of the living room, the healer's hut and the castle's rooms, and the 22 in the 💭 imagination's map. Off, each is that place held still, as an image. A window's view of outside moves either way.",
     count: () => [...document.querySelectorAll("#bg .portal")].filter(p => p.querySelector(":scope > rect") && p.querySelector(":scope > svg")).length, unit: ["picture drawn live", "pictures drawn live"] },
+  // (ticket 164: on a computer too slow for them, a place's animations, the
+  // wake and the faint copy under the water cost it most of its frames)
+  { id: "slowMoving", label: "🌀 moving scenery and water on a slow computer", what: "on a computer measured to be slow (a drawing of the friend takes over 6 ms, on average), each place is held still: its animations (ducks, the sun's rays, the fumes, fairies' wings), the rings round the friend in water, and the faint part of the friend under the water. On, everything moves anyway. A fast computer is never held still.",
+    count: () => 0, unit: ["", ""], status: () => `this computer: ${slowFlag ? "slow" : "not slow"} (a drawing takes ${slowAvg.toFixed(1)} ms, on average${slowN < 30 ? ", still measuring" : ""})${slowFlag ? (PERF.slowMoving ? ": everything moves anyway" : ": the places are held still") : ": everything moves"}` },
   // (ticket 161: Matthew found the beach and the empty room nearly frozen;
   // a friend half see-through walked at 36 frames a second in the empty
   // room, 60 without these masks)
@@ -835,11 +841,17 @@ function perfMeterTick(t) {
 // (ticket 163, Matthew) 🧪 This computer's speed, to compare two computers
 // (his laptop and the black laptop) and set the frame-rate gate's slowdown
 // from the ratio: the same work everywhere, in the empty room, with the
-// friend as they are. (1) The friend drawn 60 times back to back: the
+// friend as they start (the defaults; Matthew: "so all params are fixed and
+// controlled across all samples") and the music off. (1) The friend drawn 60 times back to back: the
 // median ms of a drawing, the page's main thread at work. (2) 2 s walking
 // across the room as the controller walks them: frames a second, the
 // longest pause between frames, drawings a second. (3) 2 s walking in
 // place, as with no background. Then everything as it was.
+// (ticket 166) Where the speed lines are pasted for now: a public Etherpad
+// (Riseup's; anyone with the address can read and edit it, and it is
+// deleted after 60 days with no edits), read back as text from
+// <pad>/export/txt. To be replaced by a Fumola canister we control.
+const SPEED_PAD = "https://pad.riseup.net/p/LgBrn8VRzEJxrsmMW82I";
 async function speedCheck(report) {
   if (perfBusy) return;
   perfBusy = true;
@@ -856,6 +868,7 @@ async function speedCheck(report) {
     requestAnimationFrame(f);
   });
   try {
+    state = clone(DEFAULTS); state.music.mute = true;
     const B = state.background, body = state.body;
     Object.assign(B, { kind: "emptyroom", figX: -150, figY: 0 }); body.anim = "none"; body.facing = "right";
     changed(); await wait(600);
@@ -942,7 +955,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.82", released: "2026-10-16" };
+const VERSION = { number: "0.0.83", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9823,9 +9836,10 @@ function wading(B, inner, wl, hw, most = Infinity, bob = 0, water = "") {
   // a second, and swimming in the duck pond to 52 (59 and 60 without it).
   const body = svg;
   svg = `<clipPath id="water-above"><path d="${line} H5000 V-5000 H-5000 Z"/></clipPath><g clip-path="url(#water-above)">${body}</g>` +
-        (see < 1 ? `<clipPath id="water-below"><path d="${line} H5000 V5000 H-5000 Z"/></clipPath><clipPath id="water-in">${water}</clipPath>` +
+        (see < 1 && !sceneryStill() ? `<clipPath id="water-below"><path d="${line} H5000 V5000 H-5000 Z"/></clipPath><clipPath id="water-in">${water}</clipPath>` +
                    `<g clip-path="url(#water-below)"><g clip-path="url(#water-in)"${see > 0 ? ` opacity="${(1 - see).toFixed(2)}"` : ""}>${body}</g></g>` : "");
   if (wake <= 0) return svg;
+  const stillWake = sceneryStill();   // (ticket 164: on a slow computer, the rings held still)
   // (three rings a third of the way apart, as flat as the pool's; the foam
   // in dashes, going round)
   const r0 = hw + 12, r1 = Math.max(r0 + 20, Math.min(r0 + 220 * wake, most)), flat = 0.16;
@@ -9835,13 +9849,14 @@ function wading(B, inner, wl, hw, most = Infinity, bob = 0, water = "") {
       `<animate attributeName="opacity" values="0.8;0" ${t}/></ellipse>`; };
   const rf = hw + 6, rings = `<ellipse cx="0" cy="${f1(wl)}" rx="${f1(rf)}" ry="${f1(rf * flat)}" fill="none" stroke="#ffffff" stroke-width="7" stroke-dasharray="9 7" stroke-linecap="round" opacity="0.75">` +
     `<animate attributeName="stroke-dashoffset" values="0;-32" dur="1.2s" begin="0s" repeatCount="indefinite"/></ellipse>` +
-    ["0s", "-0.8s", "-1.6s"].map(ring).join("");
+    (stillWake ? "" : ["0s", "-0.8s", "-1.6s"].map(ring).join(""));   // (still: the foam only, without its dashes going round)
+  const ringsHere = stillWake ? rings.replace(ANIMS_RE, "") : rings;
   // (the rings are on the water: only where it is, as the friend's under-water part)
   return `<clipPath id="water-far"><rect x="-5000" y="-5000" width="10000" height="${f1(wl + 5000)}"/></clipPath>` +
          `<clipPath id="water-near"><rect x="-5000" y="${f1(wl)}" width="10000" height="5000"/></clipPath>` +
          `<clipPath id="water-area">${water}</clipPath>` +
-         `<g clip-path="url(#water-far)"><g clip-path="url(#water-area)">${rings}</g></g>${svg}` +
-         `<g clip-path="url(#water-near)"><g clip-path="url(#water-area)">${rings}</g></g>`;
+         `<g clip-path="url(#water-far)"><g clip-path="url(#water-area)">${ringsHere}</g></g>${svg}` +
+         `<g clip-path="url(#water-near)"><g clip-path="url(#water-area)">${ringsHere}</g></g>`;
 }
 
 // A scene's options, as it reads them: its background's settings, and, as
@@ -9908,7 +9923,35 @@ let poseJoints = null;
 let poseHeld = null;
 // (ticket 123) the treading friend's own redraws: the next frame asked for, and when the last was drawn
 let treadLoop = 0, treadLast = 0;
+// (ticket 164) Is this a slow computer? The time a drawing takes, on
+// average (a drawing that built the place anew leaves it out: that says
+// nothing about the computer): over SLOW_IN ms, after 30 drawings, it is
+// slow, and under SLOW_OUT it is not again (so it does not flip back and
+// forth). Kept in this browser ("dress-up-slow"), so a slow computer starts
+// still next time, and is measured again. On a slow computer the scenery's
+// animations, the wake and the faint copy under the water hold still
+// (sceneryStill), unless 🌀 moving scenery on a slow computer is on.
+const SLOW_IN = 6, SLOW_OUT = 2.5;
+let slowAvg = 0, slowN = 0, slowFlag = false;
+try { slowFlag = localStorage.getItem("dress-up-slow") === "1"; } catch (e) { /* (measured afresh) */ }
+const sceneryStill = () => slowFlag && !PERF.slowMoving;
 function draw() {
+  const t = performance.now(), text = bgShown.text;
+  drawNow();
+  if (bgShown.text !== text) return;
+  const ms = performance.now() - t;
+  slowAvg = slowN ? 0.9 * slowAvg + 0.1 * ms : ms;
+  if (++slowN < 30) return;
+  const was = slowFlag;
+  if (!slowFlag && slowAvg > SLOW_IN) slowFlag = true;
+  else if (slowFlag && slowAvg < SLOW_OUT) slowFlag = false;
+  if (slowFlag !== was) { try { localStorage.setItem("dress-up-slow", slowFlag ? "1" : "0"); } catch (e) { /* (for this visit) */ } setTimeout(changed, 0); }
+}
+// (the scene's drawing held still: its animations taken out, once for each text)
+const ANIMS_RE = /<(animate|animateTransform|animateMotion|set)\b[^>]*?(\/>|>[\s\S]*?<\/\1>)/g;
+let stillMemo = { in: null, out: null };
+const stillScene = text => { if (text !== stillMemo.in) stillMemo = { in: text, out: text.replace(ANIMS_RE, "") }; return stillMemo.out; };
+function drawNow() {
   const { face: F, body: B } = state;
   // (ticket 123) treading water: the strokes for now, on top of any pose
   // (ticket 132: any animation from the Body tab, the same way; `tread` is only treading in water)
@@ -10151,7 +10194,9 @@ function draw() {
   const BG = state.background;
   // (kept under the scene's own options, read as it was drawn: the
   // figure's sliders draw no scenery again; see part above)
-  const bgText = scened ? partByReads(`scene:${BG.kind}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o)) : null;
+  const bgFull = scened ? partByReads(`scene:${BG.kind}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o)) : null;
+  const sceneStill = sceneryStill(), bgText = bgFull && sceneStill ? stillScene(bgFull) : bgFull;   // (ticket 164: held still on a slow computer)
+  if (document.body.classList.contains("still-scenery") !== sceneStill) document.body.classList.toggle("still-scenery", sceneStill);
   // and in a scene, the figure's feet (its ground, g) on the stage's
   // ground (sg), at its own size about them, where it was dragged
   // (a joint held: the ground the friend stood on when it was grabbed)
@@ -10732,7 +10777,7 @@ function draw() {
   if (hoverOn) showHover();   // (the hover glow, over the new drawing: ticket 135)
   if (padName || enterGlow) showEnterGlow();   // (the picture ✨ would go into: ticket 145)
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
-  if (bgShown.helix && scenery) { bgShown.helix = false; startHelix(scenery); }
+  if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was
   // drawn, kept centred
@@ -13454,10 +13499,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     perfMeter.node = meter;
     // (ticket 163) 🧪 this computer's speed, a line to copy and compare
     const speedOut = el("input", { type: "text", readonly: "", class: "padline", placeholder: "🧪 the result shows here", onfocus: e => e.target.select() });
-    const speedBtn = el("button", { onclick: () => speedCheck(t => { speedOut.value = t; }) }, "🧪 this computer's speed");
+    const speedBtn = el("button", { onclick: () => { speedCopy.textContent = "📋 copy"; speedCheck(t => { speedOut.value = t; }); } }, "🧪 this computer's speed");
     const speedCopy = el("button", { onclick: () => { speedOut.select(); try { navigator.clipboard.writeText(speedOut.value).then(() => { speedCopy.textContent = "📋 copied"; }, () => document.execCommand("copy")); } catch (e) { document.execCommand("copy"); } } }, "📋 copy");
-    box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [speedBtn, speedCopy]), speedOut,
-      el("div", { class: "hint" }, "About 5 seconds in the empty room, with your friend as they are, then everything back as it was. Run it on two computers and compare the lines: the drawing times' ratio is how much slower one is.")]));
+    // (ticket 166: for now, a shared page to paste the line into, readable from anywhere, until a
+    // Fumola canister of our own takes its place; the black laptop has no easy way to send it)
+    const speedPad = el("a", { href: SPEED_PAD, target: "_blank", rel: "noopener", title: "A shared page anyone with its address can read and write: paste the line there" }, "📝 then paste it here");
+    box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [speedBtn, speedCopy, speedPad]), speedOut,
+      el("div", { class: "hint" }, "About 5 seconds in the empty room, with the friend as they start and the music off, the same on every computer; then your friend and everything back as it was. Run it on two computers and compare the lines: the drawing times' ratio is how much slower one is.")]));
     if (!perfMeter.loop) perfMeter.loop = requestAnimationFrame(perfMeterTick);
     const rows = PERF_FEATURES.map(f => {
       const chip = el("button", { onclick: () => perfSet(f.id, !PERF[f.id]) }), here = el("div", { class: "hint" }), result = el("div", { class: "hint" });
@@ -13475,7 +13523,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       for (const [f, chip, here] of rows) {
         put(chip, `${f.label}: ${PERF[f.id] ? "on" : "off"}`);
         if (chip.getAttribute("aria-pressed") !== String(PERF[f.id])) chip.setAttribute("aria-pressed", PERF[f.id]);
-        if (key !== counted) { const n = PERF[f.id] ? f.count() : 0; put(here, PERF[f.id] ? `here: ${n} ${n === 1 ? f.unit[0] : f.unit[1]}` : "off (as it starts): none drawn"); }
+        if (f.status) put(here, f.status());
+        else if (key !== counted) { const n = PERF[f.id] ? f.count() : 0; put(here, PERF[f.id] ? `here: ${n} ${n === 1 ? f.unit[0] : f.unit[1]}` : "off (as it starts): none drawn"); }
       }
       counted = key;
     });
