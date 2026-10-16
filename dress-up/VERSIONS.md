@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.55 (2026-10-15)
+
+Everything in 0.0.54, plus smooth witch's places.
+
+- **Fixed: the witch's woods and the witch's hut were jerky, even with nothing moving them.** The green and blue fumes rising from the cauldrons were made of hundreds of little pieces, each one changing its thickness and see-through-ness on its own, and some browsers spent every frame working all of them out again. Now those changes play a cheaper way, and look the same. Measured with nothing being dragged, in Chrome: the witch's hut went from 13 frames a second to a steady 60, and the witch's woods from 17 to 43; dragging the friend got quicker too (the hut 1.7 s to 1.2 s for the same drag, the woods 2.6 s to 2.4 s).
+
 ## 0.0.54 (2026-10-15)
 
 Everything in 0.0.53, plus places to sit.

@@ -2906,14 +2906,39 @@ function helixSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
       const xs = (r, jj) => [...Array(K + 1)].map((_, f) => f1(cx + r * Math.cos(at(f, jj)))).join(";");
       const ws = [...Array(K + 1)].map((_, f) => f1(w * (1 + 0.55 * Math.sin(at(f, j + 0.5))))).join(";");
       const os = [...Array(K + 1)].map((_, f) => (0.5 + 0.4 * Math.sin(at(f, j + 0.5))).toFixed(2)).join(";");
-      t += `<line x1="${f1(cx + ra * Math.cos(at(0, j)))}" y1="${f1(y1)}" x2="${f1(cx + rb * Math.cos(at(0, j + 1)))}" y2="${f1(y2)}" stroke="${c}" stroke-linecap="round" stroke-width="${f1(w)}" stroke-opacity="0.8">` +
+      // (ticket 118: the width and the see-through-ness, CSS properties, are
+      // not SMIL: a browser restyles every SMIL animation of a CSS property
+      // on every frame, and these, hundreds, held the witch's places to a
+      // few frames a second. They are kept in data-helix and played as Web
+      // Animations in time with the picture's clock: startHelix)
+      t += `<line x1="${f1(cx + ra * Math.cos(at(0, j)))}" y1="${f1(y1)}" x2="${f1(cx + rb * Math.cos(at(0, j + 1)))}" y2="${f1(y2)}" stroke="${c}" stroke-linecap="round" stroke-width="${f1(w)}" stroke-opacity="0.8" data-helix="${ws}|${os}">` +
            `<animate attributeName="x1" values="${xs(ra, j)}" dur="${dur}" repeatCount="indefinite"/>` +
-           `<animate attributeName="x2" values="${xs(rb, j + 1)}" dur="${dur}" repeatCount="indefinite"/>` +
-           `<animate attributeName="stroke-width" values="${ws}" dur="${dur}" repeatCount="indefinite"/>` +
-           `<animate attributeName="stroke-opacity" values="${os}" dur="${dur}" repeatCount="indefinite"/></line>`;
+           `<animate attributeName="x2" values="${xs(rb, j + 1)}" dur="${dur}" repeatCount="indefinite"/></line>`;
     }
   });
   return t;
+}
+// (ticket 118) The fumes' widths and see-through-ness as Web Animations, one
+// per segment, started where the picture's clock is in its 2.4 s loop (the
+// SMIL x1/x2 beside them run on that clock), so the two stay together; held
+// still with the picture's animations during a drag and set to its clock
+// again on letting go (helixSync). Segments kept from the last drawing keep
+// theirs.
+const HELIX_MS = 2400;
+function startHelix(root) {
+  const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() * 1000 : 0;
+  const paused = pic && pic.animationsPaused && pic.animationsPaused();
+  for (const el of root.querySelectorAll("[data-helix]")) {
+    if (el.__helix || !el.animate) continue;
+    const [ws, os] = el.getAttribute("data-helix").split("|").map(v => v.split(";"));
+    el.__helix = el.animate(ws.map((w, i) => ({ strokeWidth: w + "px", strokeOpacity: os[i], offset: i / (ws.length - 1) })), { duration: HELIX_MS, iterations: Infinity });
+    el.__helix.currentTime = now % HELIX_MS;
+    if (paused) el.__helix.pause();
+  }
+}
+function helixSync(play) {
+  const pic = document.getElementById("pic"), now = pic.getCurrentTime() * 1000;
+  for (const el of pic.querySelectorAll("[data-helix]")) if (el.__helix) { el.__helix.currentTime = now % HELIX_MS; play ? el.__helix.play() : el.__helix.pause(); }
 }
 // a scene drawn inside another (a picture on a wall) keeps its ids apart
 const prefixIds = (svg, p) => svg.replace(/(id="|url\(#|href="#)/g, `$1${p}`);
@@ -9647,7 +9672,7 @@ function draw() {
   // all of it, so dragging the friend past a cauldron's fumes crawled.
   const fresh = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   fresh.innerHTML = svg;
-  if (scened && bgText !== bgShown.text) { bgShown.node = mountScene(bgText); bgShown.text = bgText; bgShown.objs = sceneObjects(bgShown.node); }
+  if (scened && bgText !== bgShown.text) { bgShown.node = mountScene(bgText); bgShown.text = bgText; bgShown.objs = sceneObjects(bgShown.node); bgShown.helix = true; }
   if (!scened) bgShown.objs = [];
   const scenery = scened ? bgShown.node : null;
   for (const c of [...pic.childNodes]) if (c !== scenery) c.remove();
@@ -9665,6 +9690,8 @@ function draw() {
   if (ahead) for (const n of figShown) ahead.parentNode.insertBefore(n, ahead);
   else pic.append(...figShown);
   showObjects();
+  // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
+  if (bgShown.helix && scenery) { bgShown.helix = false; startHelix(scenery); }
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was
   // drawn, kept centred
@@ -13069,7 +13096,7 @@ pic.addEventListener("pointermove", e => {
 // it again (and the picture's clock is as far ahead of the music's as it was:
 // picGapNow), without the scene being built again.
 let heldAt = 0;
-pic.addEventListener("pointerdown", () => { if (drag && !pic.animationsPaused()) { pic.pauseAnimations(); heldAt = performance.now(); } });
+pic.addEventListener("pointerdown", () => { if (drag && !pic.animationsPaused()) { pic.pauseAnimations(); helixSync(false); heldAt = performance.now(); } });
 // (ticket 50) Sitting on a seat: the friend sits, facing a way the seat
 // allows, across it where they were (or in its middle), and is moved up or
 // down until their hips are on its top (their size changes with the depth,
@@ -13106,7 +13133,7 @@ function dropOnSeat() {
   else if (!t && was) { state.body.sit = false; B.seat = null; changed(); }
 }
 const letGo = () => {
-  if (drag && pic.animationsPaused()) { pic.setCurrentTime(pic.getCurrentTime() + (performance.now() - heldAt) / 1000); pic.unpauseAnimations(); }
+  if (drag && pic.animationsPaused()) { pic.setCurrentTime(pic.getCurrentTime() + (performance.now() - heldAt) / 1000); pic.unpauseAnimations(); helixSync(true); }
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, moved = drag && drag.figure;
   drag = null;
