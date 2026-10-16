@@ -3830,8 +3830,8 @@ function waysSvg({ x0, x1, y0, W, H, k, P }, floor, links) {
 SEATS.treeroom = (c, B) => {
   const { x0, x1, g, W, k } = c, inside = Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1))), chosen = B["room" + inside];
   const room = ROOMS[chosen] ? chosen : HOUSE_ROOMS[inside - 1], floor = g - 110 * k;
-  if (room === "bunks") { const bx = x1 - W * 0.2, mid = floor - 170 * k, w = 210 * k;
-    return [{ name: "bottom bunk", x0: bx - w / 2 + 7 * k, x1: bx + w / 2 - 7 * k, y: mid, z: floor + 10 * k + 1, facing: ["front"] }]; }
+  // (no seat on the bottom bunk: at their size there, a sitter's head went
+  // through the top bunk)
   if (room === "books") { const gx = x0 + W * 0.2;
     return [{ name: "beanbag", x0: gx - 36 * k, x1: gx + 36 * k, y: floor - 50 * k, z: floor + 60 * k + 1, facing: ["front", "left", "right"] }]; }
   return [];
@@ -9156,7 +9156,9 @@ function draw() {
   // is below it sinks into the water, see-through (wading, below))
   const wet = scened && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)), wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : L;
   const gStand = poseHeld && scened ? poseHeld.g : wet ? wl : ground;
-  figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gStand, sg: SCENE.ground }
+  // (seated, sized by the seat's depth, not by where their feet hang: ticket 50)
+  const sizeSeat = scened ? seatNow() : null;
+  figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gStand, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: ground, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg };
   svg += `<g id="figure" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})">`;
