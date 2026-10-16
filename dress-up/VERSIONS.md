@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.49 (2026-10-15)
+
+Everything in 0.0.48, plus treading water.
+
+- **🏊 The friend treads water where it's deep** (Matthew): in the lake, the sea at the beach, the pool under the jungle waterfall and a castle's moat, the friend's arms sweep out and in, their legs kick one after the other under the water, and they bob gently, in time with the music. In the shallow stream by the tree house and the brook in the cemetery they just stand, as before.
+- A new slider in the background tab, shown in places with deep water: "🏊 treading water where it's deep" (100 to start; 0 to stand still, up to 200 for big strokes). A pose you give the friend stays, with the strokes on top; while you drag a hand or a foot, the strokes wait.
+
 ## 0.0.48 (2026-10-15)
 
 Everything in 0.0.47, plus wading: the friend standing in water is in it.

@@ -568,7 +568,7 @@ const DEFAULTS = {
   // the figure's size and place in a background scene (dragged there)
   background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, objectsOff: {}, chickenLegs: false, legSize: 100, hutNear: 0,
                 // (standing in water: how see-through below the waist, and how big a wake: ticket 122)
-                waterSee: 70, waterWake: 100,
+                waterSee: 70, waterWake: 100, waterTread: 100,
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false,
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,
@@ -8589,6 +8589,21 @@ const SHALLOW_WATER = { treehouse: true, cemetery: true };
 const waterAcross = (B, x, y, most) => { const at = waterHere(B); let d = 0;
   while (d < most && at && at(x - d - 4, y) && at(x + d + 4, y)) d += 4;
   return d; };
+// (ticket 123) In deep water (not the shallow stream or brook) the friend
+// treads water: both arms scull out and in together, the legs kick in turn,
+// and they bob a little, twice a stroke; one stroke to LFO B's wave (2 beats
+// to start), so it moves with the music. As much as "🏊 treading water"
+// says; none while a joint is held. The turns and bends for now (degrees,
+// as the pose's, by side), and the bob, or null.
+function treadNow() {
+  const W = state.background, amt = Math.max(0, Number(W.waterTread ?? 100) || 0) / 100;
+  if (!amt || poseHeld || W.kind === "none" || SHALLOW_WATER[W.kind] || !inWater(W, W.figX ?? 0, SCENE.ground + (W.figY ?? 0))) return null;
+  const u = lfoNow("B").phase, s = Math.sin(2 * Math.PI * u), c = Math.cos(2 * Math.PI * u);
+  const arm = amt * (-10 + 12 * s), elbow = amt * (30 + 25 * c);
+  return { ArmL: arm, ArmR: arm, ElbowL: elbow, ElbowR: elbow,
+           LegL: amt * (12 + 10 * c), LegR: amt * (12 - 10 * c), KneeL: amt * (45 + 35 * s), KneeR: amt * (45 - 35 * s),
+           bob: amt * 4 * Math.cos(4 * Math.PI * u) };
+}
 // The friend standing in water, in their own units: what was drawn of them
 // (`inner`) see-through below the waterline, their waist (wl), as much as
 // "🌊 see-through in the water" says; and a wake round them on the water as
@@ -8599,9 +8614,10 @@ const waterAcross = (B, x, y, most) => { const at = waterHere(B); let d = 0;
 // The rings keep fixed times (constant begins), so drawing the friend again,
 // as every move of a drag does, never jumps them. hw: their half width at
 // the waist. With both settings at 0, nothing changes.
-function wading(B, inner, wl, hw, most = Infinity) {
+function wading(B, inner, wl, hw, most = Infinity, bob = 0) {
   const see = Math.max(0, Math.min(100, Number(B.waterSee ?? 70) || 0)) / 100, wake = Math.max(0, Number(B.waterWake ?? 100) || 0) / 100;
-  let svg = inner;
+  // (treading, the friend bobs in the water: they move, the waterline doesn't)
+  let svg = bob ? `<g transform="translate(0 ${f1(bob)})">${inner}</g>` : inner;
   if (see > 0) {
     // (white above the waterline, a bow each 40 or so across, 4 up or down;
     // below it, the white faint, so they are faint there)
@@ -8649,8 +8665,12 @@ let poseJoints = null;
 // stood on when it was grabbed, kept till it is let go, so the friend stays
 // put under the finger even as the lower foot changes
 let poseHeld = null;
+// (ticket 123) the treading friend's own redraws: the next frame asked for, and when the last was drawn
+let treadLoop = 0, treadLast = 0;
 function draw() {
   const { face: F, body: B } = state;
+  // (ticket 123) treading water: the strokes for now, on top of any pose
+  const tread = treadNow(), poseT = (what, side) => poseOf(B, what, side) + (tread ? tread[what + (side > 0 ? "L" : "R")] : 0);
   let { shirt: SH, pants: P } = state;
   const skin = F.color, skinLine = darker(skin);
   // A costume: a suit is fur over everything below the hood; a falcon is
@@ -8699,7 +8719,7 @@ function draw() {
   const a = B.arms * Math.PI / 180, armLen = B.armLen, armW = B.armW, elbow = B.elbows ?? 0, eb = elbow * Math.PI / 180;
   const arms = [1, -1].map(side => {
     const A = [side * (w - 6), 8];
-    const turn = B.arms + poseOf(B, "Arm", side), bend = elbow + poseOf(B, "Elbow", side);
+    const turn = B.arms + poseT("Arm", side), bend = elbow + poseT("Elbow", side);
     if (turn === B.arms && bend === elbow) {
       if (!eb) return { side, A, H: [A[0] + side * armLen * Math.cos(a), A[1] + armLen * Math.sin(a)],
                         angle: side > 0 ? B.arms : 180 - B.arms, joints: null };
@@ -8736,15 +8756,17 @@ function draw() {
   // friend stands on the lower (feetY).
   const knee = (B.knees ?? 0) * Math.PI / 360;
   const hw = w - 2, LL = B.legLen, fx = hw / 2 + 6;
-  const legPosed = [1, -1].some(side => poseOf(B, "Leg", side) || poseOf(B, "Knee", side));
-  const legBones = [1, -1].map(side => {
-    const Hp = [side * fx, L];
-    if (!legPosed) { const fy = knee ? L + LL * Math.cos(knee) : L + LL;
-      return { side, joints: knee ? [Hp, [side * (fx + LL / 2 * Math.sin(knee)), L + LL / 2 * Math.cos(knee)], [side * fx, fy]] : [Hp, [side * fx, fy]] }; }
-    const tt = ((B.knees ?? 0) / 2 + poseOf(B, "Leg", side)) * Math.PI / 180, st = tt - ((B.knees ?? 0) + poseOf(B, "Knee", side)) * Math.PI / 180;
-    const K = [Hp[0] + side * LL / 2 * Math.sin(tt), Hp[1] + LL / 2 * Math.cos(tt)];
-    return { side, joints: [Hp, K, [K[0] + side * LL / 2 * Math.sin(st), K[1] + LL / 2 * Math.cos(st)]] };
-  });
+  // (the legs by a pose: posed or not, and each leg's joints)
+  const bonesBy = pose => { const posed = [1, -1].some(side => pose("Leg", side) || pose("Knee", side));
+    return { posed, bones: [1, -1].map(side => {
+      const Hp = [side * fx, L];
+      if (!posed) { const fy = knee ? L + LL * Math.cos(knee) : L + LL;
+        return { side, joints: knee ? [Hp, [side * (fx + LL / 2 * Math.sin(knee)), L + LL / 2 * Math.cos(knee)], [side * fx, fy]] : [Hp, [side * fx, fy]] }; }
+      const tt = ((B.knees ?? 0) / 2 + pose("Leg", side)) * Math.PI / 180, st = tt - ((B.knees ?? 0) + pose("Knee", side)) * Math.PI / 180;
+      const K = [Hp[0] + side * LL / 2 * Math.sin(tt), Hp[1] + LL / 2 * Math.cos(tt)];
+      return { side, joints: [Hp, K, [K[0] + side * LL / 2 * Math.sin(st), K[1] + LL / 2 * Math.cos(st)]] };
+    }) }; };
+  const { posed: legPosed, bones: legBones } = bonesBy(poseT);
   const legOf = side => legBones[side > 0 ? 0 : 1];
   const footAt = side => legOf(side).joints[legOf(side).joints.length - 1];
   const feetY = Math.max(footAt(1)[1], footAt(-1)[1]);
@@ -8753,8 +8775,12 @@ function draw() {
   // each pants leg is wide enough for the leg inside it
   const half = Math.max(hw / 2, B.legW / 2 + 6);
   const shoeSc = state.shoes.size / 100;
-  const ground = Math.max(feetY + (state.shoes.style === "bare" ? 18 : 30) * shoeSc,
-                          legPosed ? Math.max(kneeAt(1)[1], kneeAt(-1)[1]) + B.legW / 2 : -Infinity);   // (or kneels, a knee lowest)
+  const standOn = (fy, kneeY) => Math.max(fy + (state.shoes.style === "bare" ? 18 : 30) * shoeSc, kneeY);
+  // (treading, they float where they would stand: the ground of their legs
+  // as posed, not as they kick, or every kick would jolt them up and down)
+  const still = tread && bonesBy((what, side) => poseOf(B, what, side));
+  const ground = still ? standOn(Math.max(...still.bones.map(l => l.joints[l.joints.length - 1][1])), still.posed ? Math.max(...still.bones.map(l => l.joints[1][1])) + B.legW / 2 : -Infinity)
+                       : standOn(feetY, legPosed ? Math.max(kneeAt(1)[1], kneeAt(-1)[1]) + B.legW / 2 : -Infinity);   // (or kneels, a knee lowest)
   poseJoints = { armLen, LL, armW, legW: B.legW,
                  arms: arms.map(x => ({ side: x.side, A: x.A, H: x.H, E: x.E || [(x.A[0] + x.H[0]) / 2, (x.A[1] + x.H[1]) / 2] })),
                  legs: legBones.map(l => ({ side: l.side, H: l.joints[0], K: kneeAt(l.side), F: footAt(l.side) })),
@@ -8790,7 +8816,7 @@ function draw() {
   // tail out 34 to the side, all times its size)
   const kb = (state.costume.broomSize ?? 100) / 100, catK = witch && WC.witchCat ? (WC.catSize ?? 100) / 100 : 0;
   // (posed limbs: room for their elbows, knees and feet wherever they went)
-  const armPosed = [1, -1].some(side => poseOf(B, "Arm", side) || poseOf(B, "Elbow", side));
+  const armPosed = [1, -1].some(side => poseT("Arm", side) || poseT("Elbow", side));
   const posedYs = [...(armPosed ? arms.filter(x => x.E).map(x => x.E[1] - armW - 20) : []), ...(legPosed ? legBones.flatMap(l => l.joints.slice(1)).map(([, y]) => y - B.legW - 40) : [])];
   let top = Math.min(ty + faceTop * s, ...handYs.map(y => y - Math.max(40, reach)), broomH ? broomH[1] - 140 * kb : 0, ...posedYs,
                        catK ? -9 - 70 * catK : 0);
@@ -9126,7 +9152,7 @@ function draw() {
   // (in a stream, to the knees; the wake out to the nearer bank at most)
   if (scened && inWater(BG, figureT.dx, figureT.sg + figureT.dy))
     svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : L, hw,
-                                       waterAcross(BG, figureT.dx, figureT.sg + figureT.dy, 400) / figureT.k);
+                                       waterAcross(BG, figureT.dx, figureT.sg + figureT.dy, 400) / figureT.k, tread ? tread.bob : 0);
   svg += `</g>`;   // the figure
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
@@ -9177,6 +9203,16 @@ function draw() {
   const place = typeof where === "function" ? where(state.background) : where || "";
   document.getElementById("mood").textContent = "feeling " + mood(family(F.color), F.brow, F.smile) + (place ? " " + place : "");
   fitPic();
+  if (tread && !treadLoop) treadLoop = requestAnimationFrame(treadTick);
+}
+// (ticket 123) While the friend treads water they are drawn again about 30
+// times a second: not while a drag draws them anyway, nor while the page is
+// hidden. Only the friend is drawn; the scene is kept (see draw).
+function treadTick(t) {
+  treadLoop = 0;
+  if (!treadNow()) return;
+  if (!drag && !document.hidden && t - treadLast >= 32) { treadLast = t; draw(); return; }
+  treadLoop = requestAnimationFrame(treadTick);
 }
 
 // Where the friend is, after their feeling ("feeling happy in the forest"):
@@ -11148,6 +11184,7 @@ const TABS = [
     // the friend standing in water, where a place has water to stand in (WATER, ticket 122)
     ["range", "waterSee", "🌊 see-through under the water (0 = not at all)", 0, 100, 50, 90],
     ["range", "waterWake", "💧 a wake round the friend in the water (0 = none)", 0, 250, 60, 160],
+    ["range", "waterTread", "🏊 treading water where it's deep (0 = standing still)", 0, 200, 60, 140],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)
     ["choice", "lfoFast", "〰️ quick things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
     ["choice", "lfoSlow", "〰️ slow things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
@@ -11411,6 +11448,7 @@ const SHOWN_WHEN = {
   "background.figPos": b => b.kind !== "none",
   "background.objectsOff": b => b.kind !== "none",
   "background.waterSee": b => !!waterHere(b), "background.waterWake": b => !!waterHere(b),
+  "background.waterTread": b => !!waterHere(b) && !SHALLOW_WATER[b.kind],
   "background.chickenLegs": b => b.kind === "witch",
   "background.legSize": b => b.kind === "witch" && b.chickenLegs,
   "background.hutNear": b => b.kind === "witch",
