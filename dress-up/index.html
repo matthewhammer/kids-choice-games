@@ -742,7 +742,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.70", released: "2026-10-16" };
+const VERSION = { number: "0.0.71", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -2572,6 +2572,51 @@ function shoeSvg(x, y, side, sh, skin) {
          `fill="none" stroke="#f2c230" stroke-width="${f1(2.6 * sc)}"/>`;
   }
   return s;
+}
+// (ticket 140) A foot seen front on (walking toward us) or from behind
+// (walking away), at the ankle (x, y), in the friend's units: a sneaker's
+// toe box with its laces and white rubber toe, or its heel; bare, the top of
+// the foot with its toes along the front, the big toe on the inside, or the
+// heel. As the foot lifts (0 to 1), its sole comes into view: under the
+// toe, from the front; from behind, tipped up toward us as it pushes off.
+// For the default friend: sneakers, bare feet, and toes ("human").
+const FRONT_FEET = { sneaker: true, bare: true, human: true };
+function footFront(x, y, side, sh, skin, away, lift) {
+  // (front on, a foot is about as wide as the leg above it: 1.45 times the side view's units)
+  const sc = 1.45 * (sh.size ?? 100) / 100, X = v => f1(x + v * sc), Y = v => f1(y + v * sc), inner = x > 0 ? -1 : 1;
+  if (sh.style === "sneaker") {
+    const c = sh.color, dk = darker(c);
+    const upper = `M${X(-11)} ${Y(-2)} L${X(11)} ${Y(-2)} Q${X(17)} ${Y(6)} ${X(16)} ${Y(16)} Q${X(15)} ${Y(24)} ${X(0)} ${Y(24)} Q${X(-15)} ${Y(24)} ${X(-16)} ${Y(16)} Q${X(-17)} ${Y(6)} ${X(-11)} ${Y(-2)} Z`;
+    if (!away)
+      return `<ellipse cx="${X(0)}" cy="${Y(23)}" rx="${f1(16 * sc)}" ry="${f1((2 + 6 * lift) * sc)}" fill="#ffffff" stroke="#9ca3af" stroke-width="2"/>` +
+             `<path d="${upper}" fill="${c}" stroke="${dk}" stroke-width="2.5" stroke-linejoin="round"/>` +
+             `<ellipse cx="${X(0)}" cy="${Y(-1)}" rx="${f1(8 * sc)}" ry="${f1(2.6 * sc)}" fill="${mix(c, "#000000", 0.45)}"/>` +
+             [5, 10].map(v => `<line x1="${X(-6)}" y1="${Y(v)}" x2="${X(6)}" y2="${Y(v)}" stroke="#ffffff" stroke-width="${f1(2.2 * sc)}" stroke-linecap="round"/>`).join("") +
+             `<path d="M${X(-15)} ${Y(17)} Q${X(0)} ${Y(27)} ${X(15)} ${Y(17)}" fill="none" stroke="#ffffff" stroke-width="${f1(3 * sc)}"/>`;
+    // (from behind: the heel, its tab and the white sole's edge; lifting, the sole itself, treads and all)
+    const ry = (3 + 14 * lift) * sc, cy = y + (24 - 6 * lift) * sc;
+    return `<path d="${upper}" fill="${c}" stroke="${dk}" stroke-width="2.5" stroke-linejoin="round"/>` +
+           `<rect x="${X(-3.5)}" y="${Y(-4)}" width="${f1(7 * sc)}" height="${f1(11 * sc)}" rx="${f1(2 * sc)}" fill="${dk}"/>` +
+           `<path d="M${X(-15)} ${Y(19)} Q${X(0)} ${Y(27)} ${X(15)} ${Y(19)}" fill="none" stroke="#ffffff" stroke-width="${f1(3 * sc)}"/>` +
+           (lift > 0.05 ? `<ellipse cx="${X(0)}" cy="${f1(cy)}" rx="${f1(15 * sc)}" ry="${f1(ry)}" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>` +
+             [-0.5, 0, 0.5].map(u => `<line x1="${X(-9)}" y1="${f1(cy + u * ry)}" x2="${X(9)}" y2="${f1(cy + u * ry)}" stroke="#c7cbd1" stroke-width="${f1(2 * sc)}"/>`).join("") : "");
+  }
+  // bare: the foot, and its sole a little paler
+  const dk = darker(skin), sole = mix(skin, "#ffffff", 0.3);
+  if (!away) {
+    const n = sh.style === "human" ? Math.max(1, Math.min(10, Math.round(sh.toes ?? 5))) : 0;
+    const toes = [...Array(n)].map((_, i) => { const u = n === 1 ? 0.5 : i / (n - 1);
+      return [x + inner * (12 - 24 * u) * sc, y + (21 + 2 * Math.sin(Math.PI * u)) * sc, ((i === 0 && n > 1 ? 5 : 3.8 - 1.1 * u)) * sc]; });
+    return `<ellipse cx="${X(0)}" cy="${Y(22)}" rx="${f1(14 * sc)}" ry="${f1((2 + 5 * lift) * sc)}" fill="${sole}" stroke="${dk}" stroke-width="2"/>` +
+           toes.map(([tx, ty, r]) => `<circle cx="${f1(tx)}" cy="${f1(ty)}" r="${f1(r + 2)}" fill="${dk}"/>`).join("") +
+           `<ellipse cx="${X(0)}" cy="${Y(11)}" rx="${f1(14 * sc)}" ry="${f1(12 * sc)}" fill="${skin}" stroke="${dk}" stroke-width="2.5"/>` +
+           toes.map(([tx, ty, r]) => `<circle cx="${f1(tx)}" cy="${f1(ty)}" r="${f1(r)}" fill="${skin}"/>`).join("");
+  }
+  const ry = (3 + 12 * lift) * sc, cy = y + (20 - 5 * lift) * sc;
+  return `<ellipse cx="${X(0)}" cy="${Y(13)}" rx="${f1(13 * sc)}" ry="${f1(12 * sc)}" fill="${skin}" stroke="${dk}" stroke-width="2.5"/>` +
+         `<path d="M${X(-7)} ${Y(21)} Q${X(0)} ${Y(25)} ${X(7)} ${Y(21)}" fill="none" stroke="${dk}" stroke-width="2"/>` +
+         (lift > 0.05 ? `<ellipse cx="${X(0)}" cy="${f1(cy)}" rx="${f1(13 * sc)}" ry="${f1(ry)}" fill="${sole}" stroke="${dk}" stroke-width="2"/>` +
+           (sh.style === "human" && lift > 0.3 ? [-8, -3, 2, 6, 9].map((v, i) => `<circle cx="${X(-inner * v)}" cy="${f1(cy - ry + 2 * sc)}" r="${f1((i ? 2.6 : 3.4) * sc)}" fill="${sole}" stroke="${dk}" stroke-width="1.5"/>`).join("") : "") : "");
 }
 // A hand with fingers, in the hand's frame (the arm points along +x): a
 // palm and, for each finger, a rounded stroke fanned out at angle `a`
@@ -9267,11 +9312,14 @@ function moveNow() {
   if (a === "walk") {
     // (each leg swinging forward and back, its knee bending as it comes
     // through; each arm swinging with the other leg; a small lift each step)
-    // (facing us: stepping in place, each knee bending in turn, as a leg
-    // swung forward would only splay out sideways from the front)
+    // (ticket 140) toward us or away: each foot in turn raised as its leg
+    // swings toward us (or away), the leg seen shorter (Step: how much
+    // shorter, a share of it), never splayed out to the side, and the feet
+    // seen front on (or from behind), the sole showing as a foot lifts
+    // (frontFeet); a small lift each step
     const s = sin(1), c = cos(1);
-    if (!dir) return { ...both("Leg", sd => 10 * Math.max(0, sd * s)), ...both("Knee", sd => 20 * Math.max(0, sd * s)),
-                       ...both("Arm", sd => 8 * sd * s), ...both("Elbow", () => 10), lift: 3 * Math.abs(s) };
+    if (!dir) return { ...both("Step", sd => 0.16 * Math.max(0, sd * s)), ...both("Arm", sd => 8 * sd * s), ...both("Elbow", () => 10),
+                       lift: 3 * Math.abs(s), frontFeet: 0.16 };
     return { ...both("Leg", sd => 24 * sd * s), ...both("Knee", sd => 30 * Math.max(0, sd * c)),
              ...both("Arm", sd => 20 * sd * s), ...both("Elbow", () => 14), lift: 3 * Math.abs(c) };
   }
@@ -9279,8 +9327,8 @@ function moveNow() {
     // (twice as quick: long strides, the back foot kicked high, the elbows
     // bent, the arms pumping, a bound each step)
     const s = sin(2), c = cos(2);
-    if (!dir) return { ...both("Leg", sd => 10 * Math.max(0, sd * s)), ...both("Knee", sd => 70 * Math.max(0, sd * s)),
-                       ...both("Arm", sd => 14 * sd * s - 10), ...both("Elbow", () => 80), lift: 8 * Math.abs(s) };
+    if (!dir) return { ...both("Step", sd => 0.3 * Math.max(0, sd * s)), ...both("Arm", sd => 14 * sd * s - 10), ...both("Elbow", () => 80),
+                       lift: 8 * Math.abs(s), frontFeet: 0.3 };
     return { ...both("Leg", sd => 40 * sd * s), ...both("Knee", sd => 25 + 70 * Math.max(0, sd * c)),
              ...both("Arm", sd => 32 * sd * s - 10), ...both("Elbow", () => 85), lift: 9 * Math.abs(c) };
   }
@@ -9556,14 +9604,17 @@ function draw() {
   // down; in profile the thighs go forward, level, and the shins hang down.
   // In profile a knee bends forward, the way the friend faces.
   const legBase = { t0: sitting ? (dir ? 88 : 10) : (B.knees ?? 0) / 2, b0: sitting ? (dir ? 88 : 10) : (B.knees ?? 0), thigh: sitting && !dir ? 0.3 : 1 };
-  const bonesBy = pose => { const posed = !!dir || sitting || [1, -1].some(side => pose("Leg", side) || pose("Knee", side));
+  // (ticket 140: a step toward us or away shortens the leg from the hip, as seen)
+  const stepOf = (pose, side) => (dir ? 0 : Math.max(0, Math.min(0.6, pose("Step", side) || 0)));
+  const foreshort = (joints, k) => (k ? joints.map(([x, y], i) => (i ? [x, L + (y - L) * (1 - k)] : [x, y])) : joints);
+  const bonesBy = pose => { const posed = !!dir || sitting || [1, -1].some(side => pose("Leg", side) || pose("Knee", side) || stepOf(pose, side));
     return { posed, bones: [1, -1].map(side => {
       const Hp = [side * fx, L], out = dir || side;
       if (!posed) { const fy = knee ? L + LL * Math.cos(knee) : L + LL;
         return { side, out, joints: knee ? [Hp, [side * (fx + LL / 2 * Math.sin(knee)), L + LL / 2 * Math.cos(knee)], [side * fx, fy]] : [Hp, [side * fx, fy]] }; }
       const tt = (legBase.t0 + pose("Leg", side)) * Math.PI / 180, st = tt - (legBase.b0 + pose("Knee", side)) * Math.PI / 180;
       const K = [Hp[0] + out * LL / 2 * legBase.thigh * Math.sin(tt), Hp[1] + LL / 2 * legBase.thigh * Math.cos(tt)];
-      return { side, out, joints: [Hp, K, [K[0] + out * LL / 2 * Math.sin(st), K[1] + LL / 2 * Math.cos(st)]] };
+      return { side, out, joints: foreshort([Hp, K, [K[0] + out * LL / 2 * Math.sin(st), K[1] + LL / 2 * Math.cos(st)]], stepOf(pose, side)) };
     }) }; };
   const { posed: legPosed, bones: legBones } = bonesBy(poseT);
   const legOf = side => legBones[side > 0 ? 0 : 1];
@@ -9824,7 +9875,11 @@ function draw() {
   // "👣 feet turn" (toes up +), and each by the pose's own turn, by side
   const shoeOf = side => {
     const [ax, ay] = footAt(side), turn = -(dir || side) * ((Number(B.feetTurn) || 0) + poseT("Foot", side));   // (an animation's too: ticket 132)
-    const shoe = shoeSvg(ax, ay, dir || side, feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet, BIRD_SUIT[kind] ? C.accent : skin);
+    const own = feet === state.shoes && side < 0 ? rightShoeOf(feet) : feet;
+    // (ticket 140: walking toward us or away, the friend's own sneakers or bare feet seen front on, or from behind)
+    if (move && move.frontFeet && !dir && feet === state.shoes && FRONT_FEET[own.style])
+      return footFront(ax, ay, side, own, skin, away, Math.min(1, poseT("Step", side) / move.frontFeet));
+    const shoe = shoeSvg(ax, ay, dir || side, own, BIRD_SUIT[kind] ? C.accent : skin);
     return turn ? `<g transform="rotate(${f1(turn)} ${f1(ax)} ${f1(ay)})">${shoe}</g>` : shoe;
   };
   for (const side of legSides) svg += shoeOf(side);

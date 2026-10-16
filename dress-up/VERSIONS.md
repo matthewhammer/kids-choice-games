@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.71 (2026-10-16)
+
+Everything in 0.0.70, plus walking toward us and away that looks like walking.
+
+- **Steps toward us and away** (Matthew): walking or running toward us or away from us, the friend no longer swings their legs out to the sides. Each leg in turn comes up as it steps, looking shorter as it swings toward us (or away).
+- **Feet seen from the front, or from behind**, while they walk toward us or away: sneakers show their toes, laces and white rubber toe, or their heels; bare feet show their toes pointing at us, or their heels. As a foot lifts you see its sole: a sneaker's white treads, or a bare foot's paler sole and toe pads. For now this is the friend's own sneakers and bare feet; other shoes and costumes come later.
+
 ## 0.0.70 (2026-10-16)
 
 Everything in 0.0.69, plus jumping in water.
