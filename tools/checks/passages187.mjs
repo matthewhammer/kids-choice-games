@@ -31,9 +31,9 @@ try {
   const clearing = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3"); await settle();
     const kinds = marks.pics.map(p => p.kind), out = [];
     // (it, or one just as near: two passages can end at one spot, as the clearing's old front path and its nav arrow S)
-    // (ticket 214: the spot measured again with the friend there, as every step of a walk does, and stood on: measured
-    // with the friend elsewhere, a far view's foot read some 30 units off, and X seemed to take nothing there)
-    for (const p of marks.pics.filter(p => p.spot)) { await feetAt(p.spot); const q = marks.pics.find(m => m.el === p.el); if (q && q.spot) await feetAt(q.spot); const t = enterTarget(), all = passesNear(Infinity), nOf = q => (all.find(e => e.p.el === q.el) || { n: Infinity }).n;   // (by element: the list is measured afresh as the friend moves)
+    // (ticket 214: and then a moment more, the game settling the friend where they can stand: put straight at the far
+    // castle's or tree house's foot, the first measure read no passage within reach, the next one the castle, the tree house)
+    for (const p of marks.pics.filter(p => p.spot)) { await feetAt(p.spot); await settle(); const t = enterTarget(), all = passesNear(Infinity), nOf = q => (all.find(e => e.p.el === q.el) || { n: Infinity }).n;   // (by element: the list is measured afresh as the friend moves)
       out.push({ kind: p.kind, to: p.el.dataset.to || p.el.dataset.way || "", it: !!t && (t.el === p.el || Math.abs(nOf(t) - nOf(p)) < 0.05), ...glows() }); }
     return JSON.stringify({ kinds, out }); })()`));
   ok("the clearing's passages, every kind in one list (signs, doorways, nav arrows...)", clearing.kinds.includes("nav") && clearing.kinds.some(k => k === "sign" || k === "doorway"), clearing.kinds);

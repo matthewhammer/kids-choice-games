@@ -85,7 +85,7 @@ try {
   const path = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { showPath: true });
     state.world = clone(DEFAULTS.world); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: -300, figY: 60 }); changed(); await w(450); measureMarks();
     // (one that is walked to: the way south, else the farthest passage; a picture within reach is flown into, no walk)
-    const far = q => Math.abs((q.x0 + q.x1) / 2 - B.figX), p = marks.pics.find(q => q.kind === "south") || [...marks.pics].sort((a, b) => far(b) - far(a))[0]; if (!p) return JSON.stringify({ none: true });
+    const far = q => Math.abs((q.x0 + q.x1) / 2 - B.figX), p = marks.pics.find(q => q.kind === "nav" && q.el.dataset.way === "S") || [...marks.pics].sort((a, b) => far(b) - far(a))[0]; if (!p) return JSON.stringify({ none: true });
     const from = B.kind; enterScene(p.el); let seen = 0, lines = 0;
     for (let t = 0; t < 4000 && entering; t += 50) { await w(50); const ov = document.querySelector("#access-layer svg.walk-path"); if (ov) { seen++; lines = Math.max(lines, ov.querySelectorAll("polyline").length); } }
     await w(300); const after = !!document.querySelector("#access-layer svg.walk-path"); A.showPath = false; changed();
@@ -104,6 +104,8 @@ try {
   const hit = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { showSolids: true });
     state.world = clone(DEFAULTS.world); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: 0, figY: 90 }); changed(); await w(500); changed(); await frames(3);
     const S = solidsHere(), couch = S.find(o => /couch/.test(o.name)) || S[0]; if (!couch) return JSON.stringify({ none: true });
+    // (facing us, whatever a step before left: facing a side, one foot stands behind the other and their soles overlap)
+    state.body.facing = "front"; state.body.anim = "none";
     const x = (couch.x0 + couch.x1) / 2, y = couch.front - SCENE.ground + 4; B.figX = x; B.figY = y; changed(); await frames(2);
     const [mx, my] = solidMove(x, y, x, y - 30); changed(); await frames(3);
     const ov = document.querySelector("#access-layer svg.solid-boxes"), you = ov ? [...ov.querySelectorAll(".you polygon")] : [];
