@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.111 (2026-10-17)
+
+Everything in 0.0.110, with green pines.
+
+- **Fixed: a 🌲 pine put in a place is green everywhere** (Matthew: his were white, while M's tablet showed them ordinary, on the same version). A pine's needles take whatever colour they are given; the places give theirs a green, and a pine you put there got none, so it took the colour of the page's writing: white with the page dark, nearly black with it light. It now has the lake's green.
+
 ## 0.0.110 (2026-10-17)
 
 Everything in 0.0.109, plus the start of a library of things to put in a place.

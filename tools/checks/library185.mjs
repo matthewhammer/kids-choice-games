@@ -48,6 +48,14 @@ try {
     return JSON.stringify({ text: state.background.things[3].text, drawn: e ? e.querySelector("text").textContent : null, bold: !!(e && e.querySelector("text b")), focused: !!a && a.getAttribute && a.getAttribute("aria-label") === "✏️ its words" }); })()`));
   ok("the sign's words typed in its row, drawn as words, not markup", typed.box && after.text === "<b>hi</b>" && after.drawn === "<b>hi</b>" && !after.bold, { typed, after });
   ok("and the box kept the caret while typing", after.focused, after);
+  // (Matthew, 2026-10-17: his pines white, M's ordinary, on the same version) a pine is green in a dark page and a light one
+  const greens = {};
+  for (const scheme of ["dark", "light"]) {
+    await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: scheme }] });
+    greens[scheme] = await ev(`(async () => { state.background.things = [{ kind: "pine", x: 0, z: 360, seed: 5, size: 100, tiers: 6 }]; changed(); await new Promise(r => setTimeout(r, 400));
+      const p = document.querySelector('#bg [data-drag="thing:0"] polygon'); return p ? getComputedStyle(p).fill : null; })()`);
+  }
+  ok("a pine is green, in a dark page and a light one", greens.dark === "rgb(47, 110, 58)" && greens.light === "rgb(47, 110, 58)", greens);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

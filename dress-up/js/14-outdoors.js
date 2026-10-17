@@ -846,6 +846,7 @@ const CROSS_DIRS = [["N", "⬆️ ahead"], ["NE", "↗️ ahead, right"], ["E", 
                     ["S", "⬇️ toward us"], ["SW", "↙️ toward us, left"], ["W", "⬅️ left"], ["NW", "↖️ ahead, left"]];
 const CROSS_PATH = "#8a5528", CROSS_PATH_EDGE = "#5f3a1a";
 const CROSS_FLOORS = ["#76843a", "#5f7a3a", "#8a9a4a", "#6b6b3a", "#4f6b3a", "#9a8a5a"];
+const PINE_GREEN = "#2f6e3a";   // (the lake's and the crossing's pines)
 const TOADSTOOL_CAPS = ["#d62828", "#f59e0b", "#7c3aed", "#2563eb", "#16a34a"];
 const xmlText = s => String(s).slice(0, 12).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const ROCK_TONES = ["#8f8a80", "#b4afa4", "#6f8a94", "#c2a67a", "#a8634a", "#7f8a6a", "#4f4b48"];
@@ -880,7 +881,8 @@ function thingSvg(o, t, i) {
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
   const body = t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :
                t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :
-               t.kind === "pine" ? at(shadow(70) + pineTree(seed, { tiers: t.tiers ?? 6 })) :
+               // (a pine's needles are currentColor: the places give theirs a green; with none, it took the page's text colour, white in dark mode: Matthew's laptop)
+               t.kind === "pine" ? at(shadow(70) + `<g color="${PINE_GREEN}">${pineTree(seed, { tiers: t.tiers ?? 6 })}</g>`) :
                t.kind === "toadstool" ? at(toadstool(0, 0, 2.4, t.cap || TOADSTOOL_CAPS[0], !!t.glow)) :
                t.kind === "potion" ? at(shadow(22) + potionSvg(t.shape || "flask", 0, 0, 2.2, t.color || POTION_COLORS[5])) :
                t.kind === "skeleton" ? at(shadow(60) + skeletonSvg(0, -80 * 2.6, 2.6, "sit")) :
