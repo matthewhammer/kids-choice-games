@@ -165,7 +165,7 @@ pic.addEventListener("pointerdown", e => {
     // (ticket 185: a thing put in a place, "thing:i", is things[i], its feet at depth z)
     const T = name.startsWith("thing:") ? (B.things || [])[+name.slice(6)] : null;
     if (name.startsWith("thing:") && !T) return;
-    drag = T ? { thing: name, put: +name.slice(6), x0: T.x, y0: T.z - SCENE.ground, px: p.x, py: p.y }
+    drag = T ? { thing: name, put: +name.slice(6), x0: T.x, y0: T.z - SCENE.ground, px: p.x, py: p.y, drawn: { x: T.x, z: T.z } }
              : { thing: name, x0: B[name + "X"] ?? +(thing.dataset.x ?? 0), y0: B[name + "Y"] ?? +(thing.dataset.y ?? 0), px: p.x, py: p.y };
     pic.setPointerCapture(e.pointerId); picDragging = true;
     return;
@@ -192,6 +192,31 @@ function dragChanged() {
   if (dragFrame || dragTimer) return;
   dragFrame = requestAnimationFrame(dragDraw); dragTimer = setTimeout(dragDraw, 50);
 }
+// (ticket 254, Matthew: "the dragging performance issue we had in prior days is re-surfacing, but now with placed
+// objects in the scene designer. when we drag them, the music pauses and glitches") A placed thing dragged is moved on
+// the screen, every move, by a transform of its own drawing: to where it is now, at its size there (depthSize). The
+// picture is drawn for real (its depth among the rest, the passages measured) only every THING_DRAG_DRAW ms and on
+// letting go. A whole drawing at each move cost five times a friend's drag (measured: 10.7 ms a frame against 2.1, on
+// GitHub's computers: the thing's piece of the scene built and mounted again, every passage measured again), enough on
+// a slow computer to starve the music.
+const THING_DRAG_DRAW = 200;
+function thingDragMove(T) {
+  const B = state.background, g = SCENE.ground, a = drag.drawn;
+  const el = bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${drag.put}"]`), host = el && (el.closest("[data-obj]") || el);
+  if (host) {
+    const r = depthSize(B, T.z - g) / Math.max(0.01, depthSize(B, a.z - g));
+    host.setAttribute("transform", `translate(${f1(T.x)} ${f1(T.z)}) scale(${r.toFixed(4)}) translate(${f1(-a.x)} ${f1(-a.z)})`);
+    drag.host = host;
+  }
+  if (!drag.redraw) drag.redraw = setTimeout(() => thingDragDraw(T), THING_DRAG_DRAW);
+}
+function thingDragDraw(T) {
+  if (!drag || !drag.redraw) return;
+  drag.redraw = 0;
+  if (drag.host) { drag.host.removeAttribute("transform"); drag.host = null; }
+  moved(true);
+  drag.drawn = { x: T.x, z: T.z };
+}
 // One step per screen pixel, however big the picture is drawn.
 pic.addEventListener("pointermove", e => {
   if (!drag) { hoverAt(e); return; }
@@ -201,8 +226,8 @@ pic.addEventListener("pointermove", e => {
     const p = picUnits(e), F = sceneFrame, B = state.background;
     const x = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)), y = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
     const T = drag.put !== undefined && (B.things || [])[drag.put];
-    if (T) { T.x = x; T.z = SCENE.ground + y; }
-    else { B[drag.thing + "X"] = x; B[drag.thing + "Y"] = y; }
+    if (T) { T.x = x; T.z = SCENE.ground + y; thingDragMove(T); return; }   // (ticket 254)
+    B[drag.thing + "X"] = x; B[drag.thing + "Y"] = y;
     dragChanged();
     return;
   }
@@ -263,8 +288,10 @@ const letGo = () => {
   if (dragFrame || dragTimer) dragDraw(true);   // (the last move, drawn before letting go)
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
-  const posing = drag && drag.pose, placed = drag && drag.figure;
+  const posing = drag && drag.pose, placed = drag && drag.figure, put = drag && drag.put !== undefined;
+  if (put) { clearTimeout(drag.redraw); if (drag.host) drag.host.removeAttribute("transform"); }   // (ticket 254: drawn where it was let go)
   drag = null;
+  if (put) changed();
   if (posing) { poseHeld = null; changed(); }
   if (placed) dropOnSeat();
   if (placed && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)

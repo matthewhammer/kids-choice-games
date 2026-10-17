@@ -26,7 +26,8 @@ try {
     const out = { chips: chips.map(b => b.textContent), first: items() };
     for (const b of chips) { b.click(); await new Promise(r => setTimeout(r, 100)); out[b.dataset.group] = items(); }
     chips[0].click(); return JSON.stringify(out); })()`));
-  ok("five groups, nature open at first: rock, bush, tree, pine, toadstool", groups.chips.length === 5 && groups.first.join() === "+ 🪨 rock,+ 🌿 bush,+ 🌳 tree,+ 🌲 pine,+ 🍄 toadstool", groups);
+  const THING_GROUPS_N = await ev("THING_GROUPS.length");
+  ok("its groups (six since the 🐚 sea's, ticket 219), nature open at first: rock, bush, tree, pine, toadstool", groups.chips.length === THING_GROUPS_N && groups.first.join() === "+ 🪨 rock,+ 🌿 bush,+ 🌳 tree,+ 🌲 pine,+ 🍄 toadstool", groups);
   ok("camp: log, campfire, bench, barrel; magic: cauldron, potion; spooky: a skeleton; signs: a sign", groups.camp.join() === "+ 🪵 log,+ 🔥 campfire,+ 🪑 bench,+ 🛢️ barrel" && groups.magic.join() === "+ 🫕 cauldron,+ 🧪 potion" && groups.spooky.join() === "+ 💀 skeleton" && groups.signs.join() === "+ 🪧 sign,+ 🧭 sign with directions", groups);
   // (0.0.113) the drawings lifted out of the places: each drawn as a thing too, burning or not
   const lifted = JSON.parse(await ev(`(async () => { const B = state.background, kinds = ["log", "campfire", "bench", "barrel", "cauldron"];
