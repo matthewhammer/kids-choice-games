@@ -20,7 +20,8 @@ try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
-  const first = JSON.parse(await ev(`(() => { state.music.mute = true; state.world = clone(DEFAULTS.world); changed();
+  // (the place shown takes its square's settings, as 🌍 the first world again does: whatever an earlier check left in this browser)
+  const first = JSON.parse(await ev(`(() => { state.music.mute = true; state.world = clone(DEFAULTS.world); worldChoose(state.background.kind); changed();
     return JSON.stringify({ cells: Object.keys(state.world.cells).length, problems: worldProblems(state.world).map(p => p.text), off: worldOffGrid(state.world).map(o => o.id + ":" + o.kind) }); })()`));
   ok("the first world: 18 places, no mistakes", first.cells === 18 && first.problems.length === 0, first.problems);
   ok("its insides off the grid, each with an id", first.off.includes("inside 1:" + "witchroom") || first.off.some(o => /^inside \d+:livingroom$/.test(o)), first.off);
