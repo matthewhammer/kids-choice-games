@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.129 (2026-10-17)
+
+Everything in 0.0.128, with cauldrons that cost less and busy places that stay shut.
+
+- **Simpler cauldron fumes** (Matthew): with two or more cauldrons in a place, or one on a slow computer, each cauldron's fumes are two smooth curls that sway and fade as they rise, instead of the twisting spiral. Fifteen cauldrons now move almost as smoothly as five did before (on GitHub's computers: 45 frames a second, against 48).
+- **💨 Fumes: auto, ✨ fancy or simple**, for each cauldron you put in a place (Matthew): auto picks for you, fancy always has the spiral, simple always has the curls.
+- **🐢 A place with a red frame takes nothing more** (Matthew, after N kept adding cauldrons): while anything in a place has the dashed red frame, every button for putting things there is greyed, not only the moving ones. Take away a marked thing, or make a cauldron's fumes simple, and once the place moves smoothly again the buttons come back.
+
 ## 0.0.128 (2026-10-17)
 
 Everything in 0.0.127, plus what's new, right in the game.
