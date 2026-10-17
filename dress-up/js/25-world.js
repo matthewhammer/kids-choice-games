@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 26 of 26 of the game's script, run in order by index.html.
+// (ticket 178) Part 25 of 26 of the game's script, run in order by index.html.
 
 // ===================== THE WORLD =====================
 // (ticket 185, Matthew, 2026-10-17) The world designer's model. The world

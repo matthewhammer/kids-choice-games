@@ -586,8 +586,6 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     }
   } else if (SCENES[kind])
     s += SCENES[kind]({ x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, side, o: opts, F: [x0, y0, x1, y1, g] });
-  // (ticket 185) the things put here, in any place
-  if (kind !== "none") s += thingsLayer({ o: opts, F: [x0, y0, x1, y1, g] });
   return s;
 }
 

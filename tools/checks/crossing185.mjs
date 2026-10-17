@@ -32,7 +32,10 @@ try {
     const B = state.background; B.things = [{ kind: "tree", x: -200, z: 360, seed: 901, size: 100 }, { kind: "rock", x: 150, z: 380, seed: 902, size: 100, mirror: true, tone: "#a8634a" }, { kind: "pine", x: 300, z: 330, seed: 903, size: 100 }, { kind: "bush", x: -80, z: 400, seed: 904, size: 100 }];
     changed(); await new Promise(r => setTimeout(r, 400));
     const g = [...document.querySelectorAll("#bg .thing")];
-    return JSON.stringify({ n: g.length, drag: g.map(e => e.dataset.drag), tf: g.map(e => e.firstElementChild.getAttribute("transform")), rockFill: g[1].querySelector("polygon") ? g[1].querySelector("polygon").getAttribute("fill") : null });
+    // (the page puts objects in depth order: find each thing by its own data-drag, not by place)
+    const by = i => document.querySelector('#bg [data-drag="thing:' + i + '"]');
+    return JSON.stringify({ n: g.length, drag: g.map(e => e.dataset.drag).sort(), tf: [0, 1, 2, 3].map(i => by(i).firstElementChild.getAttribute("transform")),
+      rockFill: by(1).querySelector("polygon") ? by(1).querySelector("polygon").getAttribute("fill") : null });
   })()`));
   ok("four things, each draggable", t.n === 4 && t.drag.join() === "thing:0,thing:1,thing:2,thing:3", t.drag);
   ok("the mirrored rock is flipped, the others not", /scale\(-/.test(t.tf[1]) && !/scale\(-/.test(t.tf[0]) && !/scale\(-/.test(t.tf[2]), t.tf);

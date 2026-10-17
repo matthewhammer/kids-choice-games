@@ -265,8 +265,12 @@ function drawNow() {
   const BG = state.background;
   // (kept under the scene's own options, read as it was drawn: the
   // figure's sliders draw no scenery again; see part above)
+  // (ticket 185) after the place, its things and the world square's ways out,
+  // each a piece cached on what it holds: outside the place's own cache,
+  // which compares the settings it read by identity, so a thing changed in
+  // place (moved, turned, its leaves) would draw nothing new inside it
   const bgFull = scened ? partByReads(`scene:${BG.kind}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o)) +
-                          worldWaysSvg(BG, left, top, -left, bottom, SCENE.ground) : null;   // (ticket 185: the world square's ways out)
+                          thingsLayer({ o: BG, F: [left, top, -left, bottom, SCENE.ground] }) + worldWaysSvg(BG, left, top, -left, bottom, SCENE.ground) : null;
   const sceneStill = sceneryStill(), bgText = bgFull && sceneStill ? stillScene(bgFull) : bgFull;   // (ticket 164: held still on a slow computer)
   if (document.body.classList.contains("still-scenery") !== sceneStill) document.body.classList.toggle("still-scenery", sceneStill);
   // and in a scene, the figure's feet (its ground, g) on the stage's

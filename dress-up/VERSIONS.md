@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.101 (2026-10-17)
+
+Everything in 0.0.100, with two fixes.
+
+- **Fixed:** opening the game, its first picture could fail to draw until you touched something (0.0.99 and 0.0.100): the world's part of the game loaded after the part that draws the first picture, which needs it.
+- **Fixed:** adding a thing to a place, turning it around, changing its leaves or dragging it sometimes changed nothing in the picture until something else changed (since 0.0.98): the place's picture is kept between drawings, and a thing changed in place did not count as a change. Things are drawn apart from it now, each kept on its own.
+
 ## 0.0.100 (2026-10-17)
 
 Everything in 0.0.99, plus walking from square to square, and things in every place.

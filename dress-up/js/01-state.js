@@ -276,7 +276,7 @@ const FAIRY_SHOES = [["slipper", "🩰 curly slippers"], ["petal", "🌸 petal s
 const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa", "#ffffff"];
 
 // (ticket 185) The world: places laid on a grid, each joined to its
-// neighbours by the ways out on their shared sides (see 26-world.js). A
+// neighbours by the ways out on their shared sides (see 25-world.js). A
 // part of DEFAULTS, so that Load and the autosave keep it. Its first world
 // is today's, laid out: the clearing at the middle, the wood path north of
 // it and the mountains beyond, the fairy forest north-east, the castle
@@ -786,7 +786,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.100", released: "2026-10-17" };
+const VERSION = { number: "0.0.101", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

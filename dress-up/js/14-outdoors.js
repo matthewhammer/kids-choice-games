@@ -872,7 +872,8 @@ function thingSvg(o, t, i) {
 }
 // (ticket 185) The things put in a place, any place: each an object at its
 // own depth, so the friend goes behind or in front of it; each its own
-// piece, so dragging one draws only that one again. From backgroundSvg.
+// piece, cached on what it holds, so dragging one draws only that one
+// again. From draw(), after the place's own (cached) drawing.
 function thingsLayer(c) {
   return (c.o.things || []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, JSON.stringify(t)], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
 }
