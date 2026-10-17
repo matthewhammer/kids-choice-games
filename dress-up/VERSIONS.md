@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.137 (2026-10-17)
+
+Everything in 0.0.136, with a neater tune chooser.
+
+- **🎶 genre/track selection**: the music tab's tune chooser has a shorter name, and is smaller and neater, its two rows (the genre, then its tracks) each named at its start, without the dashed boxes.
+
 ## 0.0.136 (2026-10-17)
 
 Everything in 0.0.135, with the forest crossings' corner trails lined up.
