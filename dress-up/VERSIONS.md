@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **Walking toward us on a slant** (Matthew: the controller's diagonals): holding down and left, or down and right, the friend faces us turned partway that way, body a little narrower, the far arm behind, the face looking that way, instead of turning all the way to the side. Straight sideways is still a side view, and walking away on a slant is as before.
+
 ## 0.0.94 (2026-10-16)
 
 Everything in 0.0.93, plus climbing that looks like climbing, and ladders you can click.

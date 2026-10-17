@@ -1,5 +1,37 @@
 [
- { "name": "duck-pond", "js": "state.background.kind = \"lake\"" },
- { "name": "castle", "js": "state.background.kind = \"castle\"" },
- { "name": "empty-room", "js": "state.background.kind = \"emptyroom\"" }
+ {
+  "name": "friend-facing-us",
+  "js": "state.background.kind = \"emptyroom\"",
+  "wait": 1200
+ },
+ {
+  "name": "friend-turned-right",
+  "js": "state.background.kind = \"emptyroom\"; state.body.turn = \"right\"",
+  "wait": 1200
+ },
+ {
+  "name": "friend-turned-left",
+  "js": "state.background.kind = \"emptyroom\"; state.body.turn = \"left\"",
+  "wait": 1200
+ },
+ {
+  "name": "friend-profile-right",
+  "js": "state.background.kind = \"emptyroom\"; state.body.facing = \"right\"",
+  "wait": 1200
+ },
+ {
+  "name": "friend-turned-right-walking",
+  "js": "state.background.kind = \"forest\"; state.body.turn = \"right\"; state.body.anim = \"walk\"",
+  "wait": 1200
+ },
+ {
+  "name": "fairy-turned-left",
+  "js": "state.background.kind = \"fairyforest\"; state.costume.kind = \"fairy\"; state.body.turn = \"left\"",
+  "wait": 1200
+ },
+ {
+  "name": "witch-turned-right",
+  "js": "state.background.kind = \"witch\"; state.costume.kind = \"witch\"; state.body.turn = \"right\"",
+  "wait": 1200
+ }
 ]
