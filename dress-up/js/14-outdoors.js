@@ -958,21 +958,21 @@ function crossingScene(c) {
   });
   // the paths: each from the meeting place to where it leaves, as wide as
   // its depth makes it; the meeting place itself, a worn patch
-  const on = CROSS_DIRS.map(([d]) => d).filter(d => o["cross" + d]);
+  // (in a world square, only the paths that lead somewhere: crossLive, set by worldKeep; else the ones switched on)
+  const on = typeof o.crossLive === "string" ? o.crossLive.split(",").filter(Boolean) : CROSS_DIRS.map(([d]) => d).filter(d => o["cross" + d]);
   s += SEP + part("cross-paths", [c.F, on.join(",")], () => {
     let t = "";
     for (const d of on) {
       const [ex, ey] = ends[d], dx = ex, dy = ey - cy, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
       const a = wAt(cy) * 0.5, b = wAt(Math.min(ey, y1 + 20 * k)) * 0.5;
-      t += `<path d="M${f1(nx * a)} ${f1(cy + ny * a)} L${f1(ex + nx * b)} ${f1(ey + ny * b)} L${f1(ex - nx * b)} ${f1(ey - ny * b)} L${f1(-nx * a)} ${f1(cy - ny * a)} Z" ` +
-           `fill="${CROSS_PATH}" stroke="${CROSS_PATH_EDGE}" stroke-width="${f1(2 * k)}" stroke-linejoin="round"/>`;
+      // (no outline: the paths overlap where they meet, and outlines drew seams there; Matthew, 2026-10-17)
+      t += `<path d="M${f1(nx * a)} ${f1(cy + ny * a)} L${f1(ex + nx * b)} ${f1(ey + ny * b)} L${f1(ex - nx * b)} ${f1(ey - ny * b)} L${f1(-nx * a)} ${f1(cy - ny * a)} Z" fill="${CROSS_PATH}"/>`;
       for (let i = 0; i < 9; i++) {
         const u = (i + 0.5) / 9, px = ex * u + (R(i, 509 + d.length) - 0.5) * 0.6 * (a + (b - a) * u) * nx, py = cy + dy * u + (R(i, 510) - 0.5) * 0.3 * (a + (b - a) * u);
         t += `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="${f1((3 + 3 * u) * k)}" ry="${f1((1.6 + 1.4 * u) * k)}" fill="${CROSS_PATH_EDGE}" opacity="0.55"/>`;
       }
     }
-    if (on.length) t += `<ellipse cx="0" cy="${f1(cy)}" rx="${f1(wAt(cy) * 0.95)}" ry="${f1(wAt(cy) * 0.36)}" fill="${CROSS_PATH}" stroke="${CROSS_PATH_EDGE}" stroke-width="${f1(2 * k)}"/>` +
-                         `<ellipse cx="0" cy="${f1(cy)}" rx="${f1(wAt(cy) * 0.8)}" ry="${f1(wAt(cy) * 0.28)}" fill="${CROSS_PATH}"/>`;
+    if (on.length) t += `<ellipse cx="0" cy="${f1(cy)}" rx="${f1(wAt(cy) * 0.95)}" ry="${f1(wAt(cy) * 0.36)}" fill="${CROSS_PATH}"/>`;
     return t;
   });
   // butterflies, as on the path through the woods

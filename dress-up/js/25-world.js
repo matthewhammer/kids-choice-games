@@ -22,6 +22,16 @@ const INSIDES = { house: ["livingroom"], treehouse: ["treeroom"], witch: ["witch
 const INSIDE_KINDS = new Set(Object.values(INSIDES).flat());
 const ELSEWHERE = ["imagination", "emptyroom"];
 const worldWays = cell => !cell ? [] : cell.kind === "crossing" ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : (cell.ways || []);
+// (Matthew, 2026-10-17: a crossing missing a passageway has no trail and no
+// arrow that way) A forest crossing in the world shows only the paths that
+// lead somewhere: switched on, and met by a way back from the square beside
+// it. Its others are not drawn, and are no mistake. Any other place shows
+// all its ways, a way to nowhere grey with 🚧, a mistake to put right.
+function worldLiveWays(W, key) {
+  const cell = W.cells[key], ways = worldWays(cell);
+  if (!cell || cell.kind !== "crossing") return ways;
+  return ways.filter(d => { const nb = worldNeighbour(W, key, d), other = W.cells[nb.key]; return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]); });
+}
 const placeName = kind => (PLACES.find(p => p[0] === kind) || [kind, kind])[1];
 // a square's name, as on a map: a letter for the column, a number for the row
 const squareName = key => { const [c, r] = key.split(",").map(Number); return String.fromCharCode(65 + c) + (r + 1); };
@@ -42,7 +52,7 @@ function worldProblems(W) {
   for (const key of worldKeys(W)) {
     const cell = W.cells[key];
     if (INSIDE_KINDS.has(cell.kind)) P.push({ key, text: `${name(key)} is an inside: put its outside on the grid instead, and it comes with it.` });
-    for (const d of worldWays(cell)) {
+    for (const d of cell.kind === "crossing" ? worldLiveWays(W, key) : worldWays(cell)) {   // (a crossing's dead ends are no mistake: not drawn)
       const nb = worldNeighbour(W, key, d), other = W.cells[nb.key];
       if (nb.off) P.push({ key, dir: d, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} leads off the map.` });
       else if (!other) P.push({ key, dir: d, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} leads to an empty square, ${squareName(nb.key)}.` });
@@ -97,7 +107,7 @@ function worldEnter(key, side = null, draw = true) {
 function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const W = state.world, cell = W && W.at && W.cells[W.at];
   if (!cell || cell.kind !== B.kind) return "";
-  const ways = worldWays(cell);
+  const ways = worldLiveWays(W, W.at);
   if (!ways.length) return "";
   const meets = d => { const nb = worldNeighbour(W, W.at, d), other = W.cells[nb.key]; return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]) ? other : null; };
   const sig = ways.map(d => d + (meets(d) ? meets(d).kind : "-")).join();
@@ -138,8 +148,12 @@ function worldKeep() {
   // and paths, as they are, are then kept in)
   if (W && !W.at && B.kind !== "none") { const key = worldKeys(W).find(k => W.cells[k].kind === B.kind); if (key) W.at = key; }
   const cell = W && W.at && W.cells[W.at];
-  if (!cell || cell.kind !== B.kind) return;
+  if (!cell || cell.kind !== B.kind) { if (B.crossLive !== undefined) delete B.crossLive; return; }
   for (const k of cellKeys(cell.kind)) if (JSON.stringify(cell[k]) !== JSON.stringify(B[k])) cell[k] = structuredClone(B[k]);
+  // (a crossing in its square draws the paths that lead somewhere: worldLiveWays,
+  // as a setting of its own, so its cached drawing knows when they change)
+  if (cell.kind === "crossing") { const live = worldLiveWays(W, W.at).join(","); if (B.crossLive !== live) B.crossLive = live; }
+  else if (B.crossLive !== undefined) delete B.crossLive;
 }
 // A place chosen in the Background tab is that place's square: the first
 // square holding it (its things come with it); a place the world doesn't

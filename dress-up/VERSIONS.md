@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.104 (2026-10-17)
+
+Everything in 0.0.103, with tidier forest crossings.
+
+- **A forest crossing in the world shows only the paths that lead somewhere** (Matthew: one missing a passageway should have no trail, and no arrow, that way): a path switched on, with nothing beside it to meet, is not drawn, has no arrow, and is no longer listed as a mistake. Drop a crossing between places and it joins those that have a way toward it.
+- **The crossing's paths have no outlines** (Matthew: they looked sloppy where they met).
+
 ## 0.0.103 (2026-10-17)
 
 Everything in 0.0.102, plus a forest crossing that looks farther, and the world laid out again.

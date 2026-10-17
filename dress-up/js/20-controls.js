@@ -569,8 +569,8 @@ function settle() {
   if (!hud.hidden && hudKey() !== hudShown) renderHud();
 }
 function changed() {
+  worldKeep();   // (ticket 185, as in settle: before the drawing, which reads a crossing's live paths from it)
   const t0 = performance.now(); draw(); perfMeter.ms += performance.now() - t0; perfMeter.draws++;   // (ticket 155: for the ⚙️ advanced tab's meter)
-  worldKeep();   // (ticket 185, as in settle)
   for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync(); feedMusic();
   // a new friend (loaded, started over, surprised) or a scene turned on or
   // off rebuilds the HUD; a slider moving in it does not
@@ -1066,7 +1066,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       grid.replaceChildren(...Array.from({ length: W.cols * W.rows }, (_, i) => {
         const key = (i % W.cols) + "," + Math.floor(i / W.cols), cell = W.cells[key];
         if (!cell) return el("div", { class: "world-cell empty", title: squareName(key) + ": empty: drag a place here", "data-square": key }, squareName(key));
-        const name = placeName(cell.kind), [emoji, ...words] = name.split(" "), ways = worldWays(cell);
+        const name = placeName(cell.kind), [emoji, ...words] = name.split(" "), ways = worldLiveWays(W, key);
         const b = el("button", { class: "world-cell" + (bad.has(key) ? " bad" : "") + (W.at === key ? " here" : "") + (W.start === key ? " start" : ""), "data-square": key,
                                  title: `${squareName(key)}: ${name}` + (ways.length ? ", ways out " + ways.map(d => WORLD_ARROWS[d]).join(" ") : "") + ". Tap to go there; drag to move it.",
                                  onclick: () => worldEnter(key) },

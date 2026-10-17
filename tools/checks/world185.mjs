@@ -57,6 +57,15 @@ try {
   const nowhere = JSON.parse(await ev(`(async () => { delete state.world.cells["3,1"]; changed(); await new Promise(r => setTimeout(r, 300));
     const n = [...document.querySelectorAll("#bg .way-out.nowhere")]; return JSON.stringify({ n: n.length, way: n.map(e => e.dataset.way || null), text: n.map(e => e.textContent).join(" ") }); })()`));
   ok("with the wood path gone, the way N is dimmed, 🚧, and goes nowhere", nowhere.n === 1 && nowhere.way[0] === null && /nowhere/.test(nowhere.text), nowhere);
+  // a crossing's dead ends: no trail, no arrow, no mistake (Matthew: a crossing missing a passageway has no trail and no arrow that way)
+  const dead = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldPut("0,0", "crossing"); worldEnter("0,0"); await new Promise(r => setTimeout(r, 400));
+    const paths = () => document.querySelectorAll('#bg path[fill="' + CROSS_PATH + '"]').length, arrows = () => document.querySelectorAll("#bg .way-out").length;
+    const before = { paths: paths(), arrows: arrows(), mistakes: worldProblems(state.world).filter(p => p.key === "0,0").length };
+    state.world.cells["0,1"].ways.push("N"); changed(); await new Promise(r => setTimeout(r, 400));
+    const after = { paths: paths(), arrows: arrows(), way: [...document.querySelectorAll("#bg .way-out")].map(e => e.dataset.way).join() };
+    return JSON.stringify({ before, after }); })()`));
+  ok("a crossing at A1 meeting nothing: no trail, no arrow, no mistake", dead.before.paths === 0 && dead.before.arrows === 0 && dead.before.mistakes === 0, dead.before);
+  ok("the cemetery below given a way north: one trail and one arrow, S", dead.after.paths === 1 && dead.after.arrows === 1 && dead.after.way === "S", dead.after);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
