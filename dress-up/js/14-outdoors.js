@@ -831,7 +831,7 @@ function imaginationScene(c) {
 // and to the side), E and W (off the sides), S (toward us), SE and SW
 // (toward us and to the side). Each crossing says which it has (crossN ...
 // crossNW); a grid cell will say it for each crossing laid in it. Its things
-// (crossThings: rocks, bushes, trees and pines) stand where they were put,
+// (things, which every place has since 0.0.100: rocks, bushes, trees and pines) stand where they were put,
 // each sized for its depth as the friend is, and drag as one piece. Each
 // thing is its own instance, { kind, x, z, seed, size, mirror }: what it is,
 // where its feet are, and its own parameters, which its drawing takes (so
@@ -858,9 +858,9 @@ const THING_PARAMS = {
 };
 const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" } };
 const thingParams = kind => [...THING_PARAMS.all, ...(THING_PARAMS[kind] || [])];
-const CROSS_THINGS = { rock: { label: "🪨 rock", size: 1 }, bush: { label: "🌿 bush", size: 1 }, tree: { label: "🌳 tree", size: 1 }, pine: { label: "🌲 pine", size: 1 } };
+const THING_KINDS = { rock: { label: "🪨 rock", size: 1 }, bush: { label: "🌿 bush", size: 1 }, tree: { label: "🌳 tree", size: 1 }, pine: { label: "🌲 pine", size: 1 } };
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
-function crossThingSvg(o, t, i) {
+function thingSvg(o, t, i) {
   const s = depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100, seed = t.seed ?? 900 + i;
   const at = inner => `<g transform="translate(${f1(t.x)} ${f1(t.z)}) scale(${(t.mirror ? -s : s).toFixed(3)} ${s.toFixed(3)})">${inner}</g>`;
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
@@ -868,7 +868,13 @@ function crossThingSvg(o, t, i) {
                t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :
                t.kind === "pine" ? at(shadow(70) + pineTree(seed, { tiers: t.tiers ?? 6 })) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
-  return `<g class="cross-thing" data-drag="cross:${i}" style="cursor: grab">${body}</g>`;
+  return `<g class="thing" data-drag="thing:${i}" style="cursor: grab">${body}</g>`;
+}
+// (ticket 185) The things put in a place, any place: each an object at its
+// own depth, so the friend goes behind or in front of it; each its own
+// piece, so dragging one draws only that one again. From backgroundSvg.
+function thingsLayer(c) {
+  return (c.o.things || []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, JSON.stringify(t)], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
 }
 function crossingScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, grad, all, land, o } = c;
@@ -919,10 +925,6 @@ function crossingScene(c) {
                          `<ellipse cx="0" cy="${f1(cy)}" rx="${f1(wAt(cy) * 0.8)}" ry="${f1(wAt(cy) * 0.28)}" fill="${CROSS_PATH}"/>`;
     return t;
   });
-  // the things put here, each an object at its own depth
-  const things = o.crossThings || [];
-  // (each its own piece: dragging one draws only that one again)
-  things.forEach((t, i) => { s += SEP + part("cross-thing-" + i, [c.F, JSON.stringify(t)], () => obj(`${t.kind} ${i + 1}`, t.z, crossThingSvg(o, t, i))); });
   // butterflies, as on the path through the woods
   s += SEP + part("cross-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () =>
     obj("butterflies", g - 50 * k, butterfliesSvg(c, [[x0 + W * 0.22, g - 60 * k, 1], [x0 + W * 0.74, g - 100 * k, 0.8]])));

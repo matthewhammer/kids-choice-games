@@ -41,14 +41,14 @@ try {
   await ev(`(async () => {
     state.music.mute = true; const B = state.background;
     Object.assign(B, { kind: "crossing", crossN: true, crossNE: true, crossE: false, crossSE: true, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#5f7a3a", figX: -40, figY: 30 });
-    B.crossThings = [{ kind: "tree", x: -260, z: 350, seed: 4242, size: 100, mirror: true, h: 480, leaves: "autumn" },
+    B.things = [{ kind: "tree", x: -260, z: 350, seed: 4242, size: 100, mirror: true, h: 480, leaves: "autumn" },
                      { kind: "rock", x: 120, z: 390, seed: 977, size: 100, mirror: false, tone: "#a8634a" },
                      { kind: "pine", x: 300, z: 320, seed: 31337, size: 100, tiers: 8 },
                      { kind: "bush", x: -60, z: 405, seed: 55, size: 100, flowers: "#f472b6" }];
     state.face.smile = 160; state.hair.color = state.hair.color === "#ffffff" ? "#000000" : "#ffffff";
     // (the world's grid, once the game has one: a few cells of it)
     if (DEFAULTS.world) { state.world = clone(DEFAULTS.world); const C = state.world.cells || (state.world.cells = {});
-      C["2,2"] = { kind: "crossing", crossN: true, crossS: true, crossThings: [{ kind: "rock", x: 0, z: 360, seed: 3, size: 100, tone: "#6f8a94" }] }; C["2,1"] = { kind: "clearing" }; }
+      C["2,2"] = { kind: "crossing", crossN: true, crossS: true, things: [{ kind: "rock", x: 0, z: 360, seed: 3, size: 100, tone: "#6f8a94" }] }; C["2,1"] = { kind: "clearing" }; }
     changed(); await new Promise(r => setTimeout(r, 600)); return 1; })()`);
   const A = JSON.parse(await ev(SNAP));
   // 💾 Save, only the .json
@@ -61,7 +61,7 @@ try {
   // started over: nothing of it left
   await ev(`(async () => { state = clone(DEFAULTS); state.music.mute = true; changed(); await new Promise(r => setTimeout(r, 400)); return 1; })()`);
   const O = JSON.parse(await ev(SNAP));
-  ok("started over, the crossing is gone", O.state.background.kind !== "crossing" && !(O.state.background.crossThings || []).length, O.state.background.kind);
+  ok("started over, the crossing is gone", O.state.background.kind !== "crossing" && !(O.state.background.things || []).length, O.state.background.kind);
   // 📂 Load, the file handed to the page's own input
   const doc = await send("DOM.getDocument", { depth: 0 });
   const q = await send("DOM.querySelector", { nodeId: doc.result.root.nodeId, selector: "#load-file" });
@@ -71,7 +71,7 @@ try {
   const d = firstDiff(A.state, B.state);
   ok("📂 Load gave back the same state", !d, d);
   ok("and the same picture (its objects, in drawing order)", A.pic === B.pic && A.pic.includes("tree 1"), [A.pic.slice(0, 200), B.pic.slice(0, 200)]);
-  ok("the crossing's things and their parameters", JSON.stringify(B.state.background.crossThings) === JSON.stringify(A.state.background.crossThings), B.state.background.crossThings);
+  ok("the crossing's things and their parameters", JSON.stringify(B.state.background.things) === JSON.stringify(A.state.background.things), B.state.background.things);
   if (A.state.world) ok("the world's grid", JSON.stringify(B.state.world) === JSON.stringify(A.state.world), B.state.world);
   // the autosave: kept, and read back on loading the page again
   await ev(`(() => { persist(); return 1; })()`);

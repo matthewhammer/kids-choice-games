@@ -265,7 +265,8 @@ function drawNow() {
   const BG = state.background;
   // (kept under the scene's own options, read as it was drawn: the
   // figure's sliders draw no scenery again; see part above)
-  const bgFull = scened ? partByReads(`scene:${BG.kind}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o)) : null;
+  const bgFull = scened ? partByReads(`scene:${BG.kind}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o)) +
+                          worldWaysSvg(BG, left, top, -left, bottom, SCENE.ground) : null;   // (ticket 185: the world square's ways out)
   const sceneStill = sceneryStill(), bgText = bgFull && sceneStill ? stillScene(bgFull) : bgFull;   // (ticket 164: held still on a slow computer)
   if (document.body.classList.contains("still-scenery") !== sceneStill) document.body.classList.toggle("still-scenery", sceneStill);
   // and in a scene, the figure's feet (its ground, g) on the stage's

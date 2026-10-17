@@ -162,10 +162,10 @@ pic.addEventListener("pointerdown", e => {
   const thing = onThing(e);
   if (thing && !onFigure(e)) {
     const p = picUnits(e), B = state.background, name = thing.dataset.drag;
-    // (ticket 185: a forest crossing's thing, "cross:i", is crossThings[i], its feet at depth z)
-    const T = name.startsWith("cross:") ? (B.crossThings || [])[+name.slice(6)] : null;
-    if (name.startsWith("cross:") && !T) return;
-    drag = T ? { thing: name, cross: +name.slice(6), x0: T.x, y0: T.z - SCENE.ground, px: p.x, py: p.y }
+    // (ticket 185: a thing put in a place, "thing:i", is things[i], its feet at depth z)
+    const T = name.startsWith("thing:") ? (B.things || [])[+name.slice(6)] : null;
+    if (name.startsWith("thing:") && !T) return;
+    drag = T ? { thing: name, put: +name.slice(6), x0: T.x, y0: T.z - SCENE.ground, px: p.x, py: p.y }
              : { thing: name, x0: B[name + "X"] ?? +(thing.dataset.x ?? 0), y0: B[name + "Y"] ?? +(thing.dataset.y ?? 0), px: p.x, py: p.y };
     pic.setPointerCapture(e.pointerId); picDragging = true;
     return;
@@ -200,7 +200,7 @@ pic.addEventListener("pointermove", e => {
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
     const x = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)), y = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
-    const T = drag.cross !== undefined && (B.crossThings || [])[drag.cross];
+    const T = drag.put !== undefined && (B.things || [])[drag.put];
     if (T) { T.x = x; T.z = SCENE.ground + y; }
     else { B[drag.thing + "X"] = x; B[drag.thing + "Y"] = y; }
     dragChanged();
@@ -620,6 +620,7 @@ const ARRIVE = { crossing: [0, 40], imagination: [0, 70], emptyroom: [0, 70], he
 // the last trip went to.
 const trips = [];
 function enterScene(door) {
+  if (door.dataset.way) { worldWalk(door); return; }   // (ticket 185: a way out of a world square, to the one beside it)
   const to = door.dataset.to, house = door.dataset.house, tent = door.dataset.tent, room = door.dataset.room, B = state.background;
   if (!SCENES[to] && !PICTURE_CHOICES.some(([kd]) => kd === to)) return;
   // (a picture's own box: the scene inside it spills past it, hidden)
@@ -821,6 +822,7 @@ backBtn.addEventListener("click", () => {
   if (entering || !last) return;
   flyInto(backBtn.getBoundingClientRect(), () => {
     trips.pop();
+    if (last.worldAt) worldEnter(last.worldAt, null, false);   // (ticket 185: back to the square left, its own things and paths)
     Object.assign(state.background, { kind: last.kind, figX: last.figX, figY: last.figY });
     if (last.inside) state.background.inside = last.inside;
     if (last.tent) state.background.tent = last.tent;

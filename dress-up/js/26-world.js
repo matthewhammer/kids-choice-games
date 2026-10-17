@@ -64,25 +64,85 @@ function worldProblems(W) {
     P.push({ key, text: `${name(key)} can't be reached from where the friend starts (${squareName(W.start)}).` });
   return P;
 }
-// A forest crossing's own settings, as a square keeps them and as the
-// Background tab edits them (state.background), so the square opened is
-// the square changed.
-const CELL_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossThings"];
-// go to a square: the friend into its place, with its own settings
-function worldEnter(key) {
+// What a square keeps of its place, as the Background tab edits it
+// (state.background), so the square opened is the square changed: its
+// things, any place's; and a forest crossing's paths and floor.
+const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor"];
+const cellKeys = kind => kind === "crossing" ? ["things", ...CROSS_KEYS] : ["things"];
+// where the friend comes in, walking into a square from a side: just
+// inside that side, as if they had come through it (the stage's units, as
+// figX and figY: across, and nearer or farther than the ground line)
+const WORLD_IN = { N: [0, -70], S: [0, 75], E: [270, 30], W: [-270, 30], NE: [210, -55], NW: [-210, -55], SE: [230, 70], SW: [-230, 70] };
+// go to a square: the friend into its place, with its own settings; from a
+// side when walking in through it, else where the place puts them
+function worldEnter(key, side = null, draw = true) {
   const W = state.world, cell = W.cells[key];
   if (!cell) return;
   W.at = key;
   const B = state.background;
   B.kind = cell.kind;
-  if (cell.kind === "crossing") for (const k of CELL_KEYS) if (k in cell) B[k] = structuredClone(cell[k]);
-  [B.figX, B.figY] = ARRIVE[cell.kind] || [0, 0];
-  changed();
+  for (const k of cellKeys(cell.kind)) B[k] = structuredClone(cell[k] ?? (k === "things" ? [] : DEFAULTS.background[k]));
+  [B.figX, B.figY] = side ? WORLD_IN[side] : ARRIVE[cell.kind] || [0, 0];
+  if (draw) changed();
 }
-// and back: a forest crossing edited where the friend is, kept in its square
-// (from settle(), after every change: cheap, and only for the square in use)
+// The ways out of the square the friend is in, in the picture (Matthew,
+// 2026-10-17: "how do I access those passageways in the game?"): a small
+// bobbing triangle at each, pointing out, as the ▼ toward us is: N at the
+// far end of the ground, S at the bottom, E and W at the sides, the four
+// between at the corners. Each a doorway (data-way: it glows when pointed
+// at or near the friend, X goes through, a click walks there) to the square
+// beside it; a way that is a mistake, leading nowhere, is dimmed, 🚧, and
+// goes nowhere. Drawn after the place, in front of everything; kept as a
+// piece of its own, as the place's own drawing does not know the world.
+function worldWaysSvg(B, x0, y0, x1, y1, g) {
+  const W = state.world, cell = W && W.at && W.cells[W.at];
+  if (!cell || cell.kind !== B.kind) return "";
+  const ways = worldWays(cell);
+  if (!ways.length) return "";
+  const meets = d => { const nb = worldNeighbour(W, W.at, d), other = W.cells[nb.key]; return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]) ? other : null; };
+  const sig = ways.map(d => d + (meets(d) ? meets(d).kind : "-")).join();
+  return SEP + part("world-ways", [W.at, sig, x0, y0, x1, y1, g], () => {
+    const k = (y1 - y0) / 700, far = g - 150 * k, mid = g + 40 * k, esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    const AT = { N: [0, far - 6 * k, -90], S: [0, y1 - 30 * k, 90], E: [x1 - 45 * k, mid, 0], W: [x0 + 45 * k, mid, 180],
+                 NE: [x1 * 0.55, far, -40], NW: [x0 * 0.55, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
+    return ways.map(d => {
+      const [x, y, a] = AT[d], to = meets(d), r = 28 * k, rad = a * Math.PI / 180, bx = 5 * k * Math.cos(rad), by = 5 * k * Math.sin(rad);
+      const label = to ? `${WORLD_ARROWS[d]} ${placeName(to.kind)}` : `🚧 ${WORLD_ARROWS[d]} leads nowhere yet`;
+      const tri = `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${a})"><path d="M${f1(-0.6 * r)} ${f1(-0.8 * r)} L${f1(0.9 * r)} 0 L${f1(-0.6 * r)} ${f1(0.8 * r)} Z" ` +
+                  `fill="${to ? "#fff4cf" : "#d6d3d1"}" fill-opacity="0.85" stroke="${to ? "#6b4a24" : "#78716c"}" stroke-width="${f1(2.2 * k)}" stroke-linejoin="round"/></g>`;
+      const inner = `<title>${esc(label)}</title><g>${to ? `<animateTransform attributeName="transform" type="translate" values="0 0;${f1(bx)} ${f1(by)};0 0" dur="1.8s" repeatCount="indefinite"/>` : ""}${tri}</g>` +
+                    `<rect x="${f1(x - 2 * r)}" y="${f1(y - 2 * r)}" width="${f1(4 * r)}" height="${f1(4 * r)}" fill="#000000" opacity="0"/>` +
+                    `<text class="south-label" x="${f1(x)}" y="${f1(y - 1.7 * r)}" text-anchor="middle" font-size="${f1(24 * k)}" font-family="sans-serif" font-weight="600" fill="#ffffff" stroke="#3b2a14" stroke-width="${f1(5 * k)}" paint-order="stroke">${esc(label)}</text>`;
+      return obj(`way ${d}`, Infinity, to ? `<g class="portal south-way way-out" data-door="1" data-way="${d}">${inner}</g>` : `<g class="south-way way-out nowhere" opacity="0.6">${inner}</g>`);
+    }).join("");
+  });
+}
+// a way out taken: the friend walks to it, then is in the square beside
+// it, come in from the side it leads to; the back chip can bring them back
+function worldWalk(door) {
+  const W = state.world, d = door.dataset.way, nb = worldNeighbour(W, W.at, d), other = W.cells[nb.key], B = state.background;
+  if (nb.off || !other) return;
+  const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: other.kind, worldAt: W.at };
+  tripStart(door, "walk");
+  walkInto(door, () => { trips.push(from); worldEnter(nb.key, WORLD_OPP[d], false); });
+}
+// and back: the place edited where the friend is, kept in its square
+// (from changed() and settle(): cheap, and only for the square in use)
 function worldKeep() {
-  const W = state.world, B = state.background, cell = W && W.at && W.cells[W.at];
-  if (!cell || cell.kind !== B.kind || B.kind !== "crossing") return;
-  for (const k of CELL_KEYS) if (JSON.stringify(cell[k]) !== JSON.stringify(B[k])) cell[k] = structuredClone(B[k]);
+  const W = state.world, B = state.background;
+  // (no square yet, as on a first visit, after starting over or loading an
+  // older save: the first holding the place shown, which the place's things
+  // and paths, as they are, are then kept in)
+  if (W && !W.at && B.kind !== "none") { const key = worldKeys(W).find(k => W.cells[k].kind === B.kind); if (key) W.at = key; }
+  const cell = W && W.at && W.cells[W.at];
+  if (!cell || cell.kind !== B.kind) return;
+  for (const k of cellKeys(cell.kind)) if (JSON.stringify(cell[k]) !== JSON.stringify(B[k])) cell[k] = structuredClone(B[k]);
+}
+// A place chosen in the Background tab is that place's square: the first
+// square holding it (its things come with it); a place the world doesn't
+// have is no square, and has no things of its own.
+function worldChoose(kind) {
+  const W = state.world, key = worldKeys(W).find(k => W.cells[k].kind === kind), B = state.background;
+  if (key) { W.at = key; for (const k of cellKeys(kind)) B[k] = structuredClone(W.cells[key][k] ?? (k === "things" ? [] : DEFAULTS.background[k])); }
+  else { W.at = null; B.things = []; }
 }

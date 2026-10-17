@@ -281,7 +281,7 @@ const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa"
 // is today's, laid out: the clearing at the middle, the wood path north of
 // it and the mountains beyond, the fairy forest north-east, the castle
 // east, forest crossings joining the rest; the insides off the grid.
-const WORLD_DEFAULT = {"cols": 5, "rows": 5, "start": "2,2", "cells": {"2,0": {"kind": "mountains", "ways": ["S"]}, "0,1": {"kind": "witch", "ways": ["S", "E"]}, "1,1": {"kind": "cemetery", "ways": ["W", "S"]}, "2,1": {"kind": "woodpath", "ways": ["N", "S"]}, "3,1": {"kind": "fairyforest", "ways": ["SW"]}, "0,2": {"kind": "forest", "ways": ["N", "E"]}, "1,2": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossThings": []}, "2,2": {"kind": "clearing", "ways": ["N", "NE", "E", "S", "W"]}, "3,2": {"kind": "castle", "ways": ["W", "S"]}, "0,3": {"kind": "lake", "ways": ["E", "S"]}, "1,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": false, "crossW": true, "crossNW": false, "crossThings": []}, "2,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossThings": []}, "3,3": {"kind": "house", "ways": ["N", "E", "S", "W"]}, "4,3": {"kind": "treehouse", "ways": ["W"]}, "0,4": {"kind": "beach", "ways": ["N"]}, "2,4": {"kind": "waterfall", "ways": ["N", "E"]}, "3,4": {"kind": "campsite", "ways": ["N", "W"]}}};
+const WORLD_DEFAULT = {"cols": 5, "rows": 5, "start": "2,2", "cells": {"2,0": {"kind": "mountains", "ways": ["S"]}, "0,1": {"kind": "witch", "ways": ["S", "E"]}, "1,1": {"kind": "cemetery", "ways": ["W", "S"]}, "2,1": {"kind": "woodpath", "ways": ["N", "S"]}, "3,1": {"kind": "fairyforest", "ways": ["SW"]}, "0,2": {"kind": "forest", "ways": ["N", "E"]}, "1,2": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "things": []}, "2,2": {"kind": "clearing", "ways": ["N", "NE", "E", "S", "W"]}, "3,2": {"kind": "castle", "ways": ["W", "S"]}, "0,3": {"kind": "lake", "ways": ["E", "S"]}, "1,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": false, "crossW": true, "crossNW": false, "things": []}, "2,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "things": []}, "3,3": {"kind": "house", "ways": ["N", "E", "S", "W"]}, "4,3": {"kind": "treehouse", "ways": ["W"]}, "0,4": {"kind": "beach", "ways": ["N"]}, "2,4": {"kind": "waterfall", "ways": ["N", "E"]}, "3,4": {"kind": "campsite", "ways": ["N", "W"]}}};
 const DEFAULTS = {
   world: WORLD_DEFAULT,
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
@@ -356,7 +356,7 @@ const DEFAULTS = {
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2, fallRate: 100, fallTime: "day",
                 caveGems: 16, gemShape: "four", gemSize: 100, gemBright: 90, gemTwinkle: 60,
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
-                crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossThings: [],
+                crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", things: [],
                 starShape: "mix", starSize: 100, starBright: 85, starTwinkle: 40,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
                 pic1: "lake", pic2: "beach", pic3: "livingroom", pic4: "forest", pic5: "treehouse", pic6: "underwater",
@@ -425,6 +425,15 @@ function upgradeInside(bg, saved) {
 // size (100 filled the stage); now 100 is the scene's own usual size
 // (SCENE_FIG). A friend saved at the old usual size gets the new usual
 // size; one sized on purpose keeps the size it had in its scene.
+// (ticket 185) the things put in a place: since 0.0.100 every place's, as
+// things; in 0.0.98 and 0.0.99 only a forest crossing had them, as crossThings
+function upgradeThings(next, saved) {
+  const bg = next.background, sb = saved && saved.background;
+  if (sb && Array.isArray(sb.crossThings) && !Array.isArray(sb.things)) bg.things = sb.crossThings;
+  delete bg.crossThings;
+  for (const cell of Object.values((next.world && next.world.cells) || {}))
+    if (Array.isArray(cell.crossThings)) { if (!Array.isArray(cell.things)) cell.things = cell.crossThings; delete cell.crossThings; }
+}
 function upgradeFigSize(bg, saved) {
   const old = saved && saved.background;
   if (old && old.figSize !== undefined && old.figUnit === undefined && old.figSize !== 100)
@@ -760,6 +769,7 @@ try {
   upgradeFeet(state, saved);
   upgradeInside(state.background, saved);
   upgradeFigSize(state.background, saved);
+  upgradeThings(state, saved);
   upgradeFace(state.face, saved.face);
   if (state.body.sit && state.body.pose === "stand") state.body.pose = "sit";   // (ticket 132)
   // pants length moved to the legs (leg length)
@@ -776,7 +786,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.99", released: "2026-10-17" };
+const VERSION = { number: "0.0.100", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

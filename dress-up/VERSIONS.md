@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.100 (2026-10-17)
+
+Everything in 0.0.99, plus walking from square to square, and things in every place.
+
+- **Ways out, in the picture** (Matthew: "how do I access those passageways in the game?"): in a place on the world's grid, a small bobbing triangle at each of its ways out, pointing out: ahead at the far end of the ground, toward us at the bottom, left and right at the sides, the ways between at the corners. Point at one to see where it goes; click it, or press X near it, and your friend walks through into the square beside it, coming in from that side. The back chip brings them back. A way that leads nowhere yet is grey, with 🚧.
+- **Things in every place**, not only the forest crossing: rocks, bushes, trees and pines to put anywhere and drag about, each place in the world keeping its own.
+- Choosing a place in 🏞️ Background takes your friend to its square in the world, with its things.
+
 ## 0.0.99 (2026-10-17)
 
 Everything in 0.0.98, plus the world, on its grid.

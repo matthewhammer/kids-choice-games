@@ -361,10 +361,10 @@ const TABS = [
     ["choice", "campFood", "🍲 on the fire", [["none", "nothing"], ["sausages", "🌭 veggie sausages on sticks"], ["soup", "🍲 a pot of soup"]]],
     ["range", "tents", "⛺ tents", 0, 3, 1, 3],
     ["choice", "tent", "⛺ which tent", CAMP_TENTS.map((T, i) => [i + 1, `⛺ ${i + 1}: ${T.name}`])],
-    // (ticket 185) the forest crossing: which paths meet, the floor, the things put there
+    // (ticket 185) the things put in any place; and the forest crossing: which paths meet, its floor
+    ["things", "things", "🪨 things to put here, then drag them where they go"],
     ["group", "crossPaths", "🛤️ the paths that meet here", CROSS_DIRS.map(([d, label]) => ["toggle", "cross" + d, label])],
     ["color", "crossFloor", "🌿 the forest floor", CROSS_FLOORS],
-    ["crossthings", "crossThings", "🪨 things to put here, then drag them where they go"],
     // the forest clearing: what is far off down its paths
     ["toggle", "seeHouse", "🏠 see the family house"],
     ["toggle", "seeTree", "🌳 see the tree house"],
@@ -478,6 +478,7 @@ let syncs = [];   // each control's refresh, run after every change
 let hudSyncs = [];   // ...and the full-screen controls'
 
 function set(part, key, value) {
+  if (part === "background" && key === "kind" && value !== state.background.kind) worldChoose(value);   // (ticket 185: a place is its square)
   const wasBare = state.background.kind === "none";
   state[part][key] = value;
   // (ticket 132) the Body tab: a pose, from scratch; an animation seen from
@@ -666,7 +667,8 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["fallWidth", "mist", "fallRate", "fallTime"].map(key => ["background." + key, b => b.kind === "waterfall" || b.kind === "cave"])),
   ...Object.fromEntries(["caveGems", "gemShape", "gemSize", "gemBright", "gemTwinkle"].map(key => ["background." + key, b => b.kind === "cave"])),
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
-  ...Object.fromEntries(["crossPaths", "crossFloor", "crossThings"].map(key => ["background." + key, b => b.kind === "crossing"])),
+  ...Object.fromEntries(["crossPaths", "crossFloor"].map(key => ["background." + key, b => b.kind === "crossing"])),
+  "background.things": b => b.kind !== "none",
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
   ...Object.fromEntries(["starShape", "starSize", "starBright", "starTwinkle"].map(key =>
@@ -989,15 +991,15 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // the picture; one more takes them all away. Under them, a row for each
   // thing: its own parameters (thingParams: ↔️ mirror for all, a rock's
   // colours as swatches), and ✖ to take it away.
-  if (kind === "crossthings") {
+  if (kind === "things") {
     const n = el("span", { class: "hint" }), list = el("div", { class: "cross-list" });
     let shown = null;
     const rows = () => {
-      const T = state.background.crossThings || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p]) => t[p] ?? null)]));
+      const T = state.background.things || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p]) => t[p] ?? null)]));
       if (sig === shown) return;
       shown = sig;
       list.replaceChildren(...T.map((t, i) => el("div", { class: "row" }, [
-        el("span", { class: "name" }, `${(CROSS_THINGS[t.kind] || { label: t.kind }).label} ${i + 1}`),
+        el("span", { class: "name" }, `${(THING_KINDS[t.kind] || { label: t.kind }).label} ${i + 1}`),
         ...thingParams(t.kind).flatMap(([p, label, how, opts]) => {
           const now = t[p] ?? (THING_DEFAULTS[t.kind] || {})[p], set = v => () => { t[p] = v; changed(); };
           if (how === "color") return [el("span", { class: "hint" }, label), ...opts.map(col => el("button", { title: col, "aria-pressed": String((now ?? opts[0]) === col),
@@ -1010,13 +1012,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         el("button", { onclick: () => { T.splice(i, 1); changed(); } }, "✖")])));
     };
     const add = kd => () => {
-      const B = state.background, T = B.crossThings || (B.crossThings = []), i = T.length;
+      const B = state.background, T = B.things || (B.things = []), i = T.length;
       T.push({ kind: kd, x: Math.round((((i * 0.37) % 1) - 0.5) * 520), z: Math.round(SCENE.ground + 10 + (i * 29) % 70), seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}) });
       changed();
     };
-    box.append(el("div", { class: "row" }, [...Object.entries(CROSS_THINGS).map(([kd, T]) => el("button", { onclick: add(kd) }, "+ " + T.label)),
-                                           el("button", { onclick: () => { state.background.crossThings = []; changed(); } }, "🧹 take them all away"), n]), list);
-    syncs.push(() => { const m = (state.background.crossThings || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); });
+    box.append(el("div", { class: "row" }, [...Object.entries(THING_KINDS).map(([kd, T]) => el("button", { onclick: add(kd) }, "+ " + T.label)),
+                                           el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
+    syncs.push(() => { const m = (state.background.things || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); });
   }
   // (ticket 185, Matthew) 🗺️ World design: places laid out on a big grid,
   // each joined to its neighbours by the doors on their shared side (no door

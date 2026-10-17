@@ -29,29 +29,29 @@ try {
     ok(`${on.length} paths on`, r.paths === on.length && (on.length ? r.patch >= 1 : r.patch === 0), r);
   }
   const t = JSON.parse(await ev(`(async () => {
-    const B = state.background; B.crossThings = [{ kind: "tree", x: -200, z: 360, seed: 901, size: 100 }, { kind: "rock", x: 150, z: 380, seed: 902, size: 100, mirror: true, tone: "#a8634a" }, { kind: "pine", x: 300, z: 330, seed: 903, size: 100 }, { kind: "bush", x: -80, z: 400, seed: 904, size: 100 }];
+    const B = state.background; B.things = [{ kind: "tree", x: -200, z: 360, seed: 901, size: 100 }, { kind: "rock", x: 150, z: 380, seed: 902, size: 100, mirror: true, tone: "#a8634a" }, { kind: "pine", x: 300, z: 330, seed: 903, size: 100 }, { kind: "bush", x: -80, z: 400, seed: 904, size: 100 }];
     changed(); await new Promise(r => setTimeout(r, 400));
-    const g = [...document.querySelectorAll("#bg .cross-thing")];
+    const g = [...document.querySelectorAll("#bg .thing")];
     return JSON.stringify({ n: g.length, drag: g.map(e => e.dataset.drag), tf: g.map(e => e.firstElementChild.getAttribute("transform")), rockFill: g[1].querySelector("polygon") ? g[1].querySelector("polygon").getAttribute("fill") : null });
   })()`));
-  ok("four things, each draggable", t.n === 4 && t.drag.join() === "cross:0,cross:1,cross:2,cross:3", t.drag);
+  ok("four things, each draggable", t.n === 4 && t.drag.join() === "thing:0,thing:1,thing:2,thing:3", t.drag);
   ok("the mirrored rock is flipped, the others not", /scale\(-/.test(t.tf[1]) && !/scale\(-/.test(t.tf[0]) && !/scale\(-/.test(t.tf[2]), t.tf);
   ok("the mirrored rock stands where it was put", /translate\(150 380\)/.test(t.tf[1]), t.tf[1]);
   ok("the rock is drawn in its own colour (red rock)", t.rockFill === "#a8634a", t.rockFill);
-  const leaves = JSON.parse(await ev(`(async () => { const B = state.background, T = B.crossThings[0], before = document.querySelector('#bg [data-drag="cross:0"]').innerHTML;
-    T.leaves = "autumn"; changed(); await new Promise(r => setTimeout(r, 300)); const after = document.querySelector('#bg [data-drag="cross:0"]').innerHTML;
-    T.leaves = "summer"; changed(); await new Promise(r => setTimeout(r, 300)); const back = document.querySelector('#bg [data-drag="cross:0"]').innerHTML;
+  const leaves = JSON.parse(await ev(`(async () => { const B = state.background, T = B.things[0], before = document.querySelector('#bg [data-drag="thing:0"]').innerHTML;
+    T.leaves = "autumn"; changed(); await new Promise(r => setTimeout(r, 300)); const after = document.querySelector('#bg [data-drag="thing:0"]').innerHTML;
+    T.leaves = "summer"; changed(); await new Promise(r => setTimeout(r, 300)); const back = document.querySelector('#bg [data-drag="thing:0"]').innerHTML;
     return JSON.stringify({ changed: before !== after, autumn: after.includes("#c2410c") || after.includes("#d97706"), backAsBefore: back === before }); })()`));
   ok("a tree's leaves to autumn, and back to summer as it was", leaves.changed && leaves.autumn && leaves.backAsBefore, leaves);
   // a mouse drag on the tree's trunk moves it
-  const at = JSON.parse(await ev(`(() => { const e = document.querySelector('#bg [data-drag="cross:0"]'), r = e.getBoundingClientRect(); return JSON.stringify([r.left + r.width / 2, r.bottom - r.height * 0.12]); })()`));
-  const before = JSON.parse(await ev(`JSON.stringify(state.background.crossThings[0])`));
+  const at = JSON.parse(await ev(`(() => { const e = document.querySelector('#bg [data-drag="thing:0"]'), r = e.getBoundingClientRect(); return JSON.stringify([r.left + r.width / 2, r.bottom - r.height * 0.12]); })()`));
+  const before = JSON.parse(await ev(`JSON.stringify(state.background.things[0])`));
   await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: at[0], y: at[1] });
   await send("Input.dispatchMouseEvent", { type: "mousePressed", x: at[0], y: at[1], button: "left", buttons: 1, clickCount: 1 });
   for (let i = 1; i <= 10; i++) { await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: at[0] + 12 * i, y: at[1] + 4 * i, button: "left", buttons: 1 }); await sleep(30); }
   await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: at[0] + 120, y: at[1] + 40, button: "left", buttons: 0, clickCount: 1 });
   await sleep(300);
-  const after = JSON.parse(await ev(`JSON.stringify(state.background.crossThings[0])`));
+  const after = JSON.parse(await ev(`JSON.stringify(state.background.things[0])`));
   ok("a drag moves the tree (right, and nearer)", after.x > before.x + 20 && after.z > before.z + 5, { before, after });
   const fig = JSON.parse(await ev(`JSON.stringify([state.background.figX, state.background.figY])`));
   ok("and not the friend", fig[0] === 0 && fig[1] === 120, fig);
