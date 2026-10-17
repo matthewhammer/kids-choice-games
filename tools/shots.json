@@ -1,12 +1,22 @@
 [
  {
-  "name": "witch-arrows-before",
-  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"1,1\"); const B = state.background; changed(); await new Promise(r => setTimeout(r, 600)); const by = Object.fromEntries(worldWaysAt.map(e => [e[0], e])); const a = by.E, b = by.SE; if (a && b) { B.figX = Math.round((a[1] + b[1]) / 2); B.figY = Math.round((a[2] + b[2]) / 2 - SCENE.ground); } window.waysApart = () => {}; changed(); await new Promise(r => setTimeout(r, 900));",
+  "name": "witch-E-SE-before",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); state.world.cells[\"1,1\"].ways = [\"E\", \"SE\"]; state.world.cells[\"2,2\"].crossNW = true; worldEnter(\"1,1\", null, false); const B = state.background; changed(); await new Promise(r => setTimeout(r, 600)); const by = Object.fromEntries(worldWaysAt.map(e => [e[0], e])); if (by.E && by.SE) { B.figX = Math.round(by.E[1] + 10); B.figY = Math.round((by.E[2] + by.SE[2]) / 2 - SCENE.ground); } window.waysApart = () => {}; changed(); await new Promise(r => setTimeout(r, 900));",
   "wait": 900
  },
  {
-  "name": "witch-arrows-after",
-  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"1,1\"); const B = state.background; changed(); await new Promise(r => setTimeout(r, 600)); const by = Object.fromEntries(worldWaysAt.map(e => [e[0], e])); const a = by.E, b = by.SE; if (a && b) { B.figX = Math.round((a[1] + b[1]) / 2); B.figY = Math.round((a[2] + b[2]) / 2 - SCENE.ground); }  changed(); await new Promise(r => setTimeout(r, 900));",
+  "name": "witch-E-SE-after",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); state.world.cells[\"1,1\"].ways = [\"E\", \"SE\"]; state.world.cells[\"2,2\"].crossNW = true; worldEnter(\"1,1\", null, false); const B = state.background; changed(); await new Promise(r => setTimeout(r, 600)); const by = Object.fromEntries(worldWaysAt.map(e => [e[0], e])); if (by.E && by.SE) { B.figX = Math.round(by.E[1] + 10); B.figY = Math.round((by.E[2] + by.SE[2]) / 2 - SCENE.ground); } changed(); await new Promise(r => setTimeout(r, 900));",
+  "wait": 900
+ },
+ {
+  "name": "witch-E-SE-full-before",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); state.world.cells[\"1,1\"].ways = [\"E\", \"SE\"]; state.world.cells[\"2,2\"].crossNW = true; worldEnter(\"1,1\", null, false); const B = state.background; changed(); await new Promise(r => setTimeout(r, 600)); const by = Object.fromEntries(worldWaysAt.map(e => [e[0], e])); if (by.E && by.SE) { B.figX = Math.round(by.E[1] + 10); B.figY = Math.round((by.E[2] + by.SE[2]) / 2 - SCENE.ground); } setBig(true, true); window.waysApart = () => {}; changed(); await new Promise(r => setTimeout(r, 900));",
+  "wait": 900
+ },
+ {
+  "name": "witch-E-SE-full-after",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); state.world.cells[\"1,1\"].ways = [\"E\", \"SE\"]; state.world.cells[\"2,2\"].crossNW = true; worldEnter(\"1,1\", null, false); const B = state.background; changed(); await new Promise(r => setTimeout(r, 600)); const by = Object.fromEntries(worldWaysAt.map(e => [e[0], e])); if (by.E && by.SE) { B.figX = Math.round(by.E[1] + 10); B.figY = Math.round((by.E[2] + by.SE[2]) / 2 - SCENE.ground); } setBig(true, true); changed(); await new Promise(r => setTimeout(r, 900));",
   "wait": 900
  }
 ]
