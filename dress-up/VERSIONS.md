@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.125 (2026-10-17)
+
+Everything in 0.0.124, with the 🏞️ Background tab lighter while your friend moves.
+
+- **The Background tab costs a quarter of what it did while your friend moves** (^du_report(3)'s next step): measured on GitHub's computers, its refresh went from about 26 ms to about 6 (Body's is under 1). It no longer builds a whole castle to read one room's doors, and it changes a button only when something about it changed.
+
 ## 0.0.124 (2026-10-17)
 
 Everything in 0.0.123, plus open water.
