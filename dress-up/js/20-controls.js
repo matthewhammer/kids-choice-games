@@ -996,15 +996,20 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       shown = sig;
       list.replaceChildren(...T.map((t, i) => el("div", { class: "row" }, [
         el("span", { class: "name" }, `${(CROSS_THINGS[t.kind] || { label: t.kind }).label} ${i + 1}`),
-        ...thingParams(t.kind).flatMap(([p, label, how, opts]) => how === "color"
-          ? [el("span", { class: "hint" }, label), ...opts.map((col, j) => el("button", { class: "swatch", title: col, "aria-pressed": String((t[p] || opts[0]) === col),
-                style: `background: ${col}; width: 1.6em; height: 1.6em; padding: 0; border-radius: 50%;`, onclick: () => { t[p] = col; changed(); } }, ""))]
-          : [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)]),
+        ...thingParams(t.kind).flatMap(([p, label, how, opts]) => {
+          const now = t[p] ?? (THING_DEFAULTS[t.kind] || {})[p], set = v => () => { t[p] = v; changed(); };
+          if (how === "color") return [el("span", { class: "hint" }, label), ...opts.map(col => el("button", { title: col, "aria-pressed": String((now ?? opts[0]) === col),
+            style: col === "none" ? "width: 1.6em; height: 1.6em; padding: 0; border-radius: 50%;" : `background: ${col}; width: 1.6em; height: 1.6em; padding: 0; border-radius: 50%;`,
+            onclick: set(col) }, col === "none" ? "∅" : ""))];
+          if (how === "choice") return [el("span", { class: "hint" }, label), ...opts.map(([v, name]) => el("button", { "aria-pressed": String(now === v), onclick: set(v) }, name))];
+          if (how === "action") return [el("button", { onclick: () => { t[p] = opts(t); changed(); } }, label)];
+          return [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)];
+        }),
         el("button", { onclick: () => { T.splice(i, 1); changed(); } }, "✖")])));
     };
     const add = kd => () => {
       const B = state.background, T = B.crossThings || (B.crossThings = []), i = T.length;
-      T.push({ kind: kd, x: Math.round((((i * 0.37) % 1) - 0.5) * 520), z: Math.round(SCENE.ground + 10 + (i * 29) % 70), seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}) });
+      T.push({ kind: kd, x: Math.round((((i * 0.37) % 1) - 0.5) * 520), z: Math.round(SCENE.ground + 10 + (i * 29) % 70), seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}) });
       changed();
     };
     box.append(el("div", { class: "row" }, [...Object.entries(CROSS_THINGS).map(([kd, T]) => el("button", { onclick: add(kd) }, "+ " + T.label)),

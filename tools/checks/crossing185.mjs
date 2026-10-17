@@ -38,6 +38,11 @@ try {
   ok("the mirrored rock is flipped, the others not", /scale\(-/.test(t.tf[1]) && !/scale\(-/.test(t.tf[0]) && !/scale\(-/.test(t.tf[2]), t.tf);
   ok("the mirrored rock stands where it was put", /translate\(150 380\)/.test(t.tf[1]), t.tf[1]);
   ok("the rock is drawn in its own colour (red rock)", t.rockFill === "#a8634a", t.rockFill);
+  const leaves = JSON.parse(await ev(`(async () => { const B = state.background, T = B.crossThings[0], before = document.querySelector('#bg [data-drag="cross:0"]').innerHTML;
+    T.leaves = "autumn"; changed(); await new Promise(r => setTimeout(r, 300)); const after = document.querySelector('#bg [data-drag="cross:0"]').innerHTML;
+    T.leaves = "summer"; changed(); await new Promise(r => setTimeout(r, 300)); const back = document.querySelector('#bg [data-drag="cross:0"]').innerHTML;
+    return JSON.stringify({ changed: before !== after, autumn: after.includes("#c2410c") || after.includes("#d97706"), backAsBefore: back === before }); })()`));
+  ok("a tree's leaves to autumn, and back to summer as it was", leaves.changed && leaves.autumn && leaves.backAsBefore, leaves);
   // a mouse drag on the tree's trunk moves it
   const at = JSON.parse(await ev(`(() => { const e = document.querySelector('#bg [data-drag="cross:0"]'), r = e.getBoundingClientRect(); return JSON.stringify([r.left + r.width / 2, r.bottom - r.height * 0.12]); })()`));
   const before = JSON.parse(await ev(`JSON.stringify(state.background.crossThings[0])`));

@@ -835,16 +835,28 @@ function imaginationScene(c) {
 // each sized for its depth as the friend is, and drag as one piece. Each
 // thing is its own instance, { kind, x, z, seed, size, mirror }: what it is,
 // where its feet are, and its own parameters, which its drawing takes (so
-// two of a kind look different): mirror, for every kind (Matthew,
-// 2026-10-17), turning it left for right about its feet; and a rock's
-// colour, tone, from a small palette (his too). THING_PARAMS lists them per
-// kind ("all" for every kind), for the controls: a toggle, or colours.
+// two of a kind look different), all of them options the nature drawings
+// already took (Matthew, 2026-10-17: expose them, change no drawing): for
+// every kind, mirror (left for right, about its feet) and 🎲 another shape
+// (a new seed: a tree's branches grow another way); a rock's colour (tone);
+// a tree's height (h) and leaves (greens); a pine's tiers; a bush's
+// flowers. THING_PARAMS lists them per kind ("all" for every kind), for the
+// controls: a toggle, colours, a few choices, or an action.
 const CROSS_DIRS = [["N", "⬆️ ahead"], ["NE", "↗️ ahead, right"], ["E", "➡️ right"], ["SE", "↘️ toward us, right"],
                     ["S", "⬇️ toward us"], ["SW", "↙️ toward us, left"], ["W", "⬅️ left"], ["NW", "↖️ ahead, left"]];
 const CROSS_PATH = "#8a5528", CROSS_PATH_EDGE = "#5f3a1a";
 const CROSS_FLOORS = ["#76843a", "#5f7a3a", "#8a9a4a", "#6b6b3a", "#4f6b3a", "#9a8a5a"];
 const ROCK_TONES = ["#8f8a80", "#b4afa4", "#6f8a94", "#c2a67a", "#a8634a", "#7f8a6a", "#4f4b48"];
-const THING_PARAMS = { all: [["mirror", "↔️ mirror", "toggle"]], rock: [["tone", "🎨", "color", ROCK_TONES]] };
+const LEAF_SETS = { summer: null, spring: ["#5f9e3a", "#74b04a", "#8cc45a", "#a3d46e", "#b8e080"], autumn: ["#9a3412", "#c2410c", "#d97706", "#eab308", "#b45309"],
+                    blossom: ["#f9a8d4", "#f472b6", "#fbcfe8", "#ec4899", "#fce7f3"] };
+const THING_PARAMS = {
+  all: [["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
+  rock: [["tone", "🎨", "color", ROCK_TONES]],
+  tree: [["h", "📏", "choice", [[280, "short"], [380, "tall"], [480, "taller"]]], ["leaves", "🍂", "choice", [["summer", "summer"], ["spring", "spring"], ["autumn", "autumn"], ["blossom", "🌸 blossom"]]]],
+  pine: [["tiers", "🌲 tiers", "choice", [[4, "4"], [5, "5"], [6, "6"], [7, "7"], [8, "8"]]]],
+  bush: [["flowers", "🌸", "color", ["none", "#f472b6", "#fde047", "#ffffff", "#a78bfa", "#ef4444"]]],
+};
+const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" } };
 const thingParams = kind => [...THING_PARAMS.all, ...(THING_PARAMS[kind] || [])];
 const CROSS_THINGS = { rock: { label: "🪨 rock", size: 1 }, bush: { label: "🌿 bush", size: 1 }, tree: { label: "🌳 tree", size: 1 }, pine: { label: "🌲 pine", size: 1 } };
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
@@ -853,9 +865,9 @@ function crossThingSvg(o, t, i) {
   const at = inner => `<g transform="translate(${f1(t.x)} ${f1(t.z)}) scale(${(t.mirror ? -s : s).toFixed(3)} ${s.toFixed(3)})">${inner}</g>`;
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
   const body = t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :
-               t.kind === "bush" ? at(bushSvg(0, 0, 70, seed)) :
-               t.kind === "pine" ? at(shadow(70) + pineTree(seed, { tiers: 6 })) :
-               at(shadow(90) + leafyTree(seed, { h: 380 }));
+               t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :
+               t.kind === "pine" ? at(shadow(70) + pineTree(seed, { tiers: t.tiers ?? 6 })) :
+               at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
   return `<g class="cross-thing" data-drag="cross:${i}" style="cursor: grab">${body}</g>`;
 }
 function crossingScene(c) {
@@ -910,7 +922,7 @@ function crossingScene(c) {
   // the things put here, each an object at its own depth
   const things = o.crossThings || [];
   // (each its own piece: dragging one draws only that one again)
-  things.forEach((t, i) => { s += SEP + part("cross-thing-" + i, [c.F, t.kind, t.x, t.z, t.seed, t.size, !!t.mirror, t.tone || ""], () => obj(`${t.kind} ${i + 1}`, t.z, crossThingSvg(o, t, i))); });
+  things.forEach((t, i) => { s += SEP + part("cross-thing-" + i, [c.F, JSON.stringify(t)], () => obj(`${t.kind} ${i + 1}`, t.z, crossThingSvg(o, t, i))); });
   // butterflies, as on the path through the woods
   s += SEP + part("cross-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () =>
     obj("butterflies", g - 50 * k, butterfliesSvg(c, [[x0 + W * 0.22, g - 60 * k, 1], [x0 + W * 0.74, g - 100 * k, 0.8]])));
