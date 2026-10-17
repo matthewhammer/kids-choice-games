@@ -972,10 +972,15 @@ function thingsLayer(c) {
 // the world (worldWaysSvg): its floor reaches far up the picture (far), the
 // paths meet a little below its middle (cy), and each path ends where it
 // leaves (ends), N and its two neighbours at the far line.
+// (ticket 218, Matthew: "align the nav arrow for SW with the trail being draw, favoring the placement of the nav
+// arrow and moving the trail SW (and mirrored in the SE direction)") The SW and SE trails go from the meeting place
+// through their arrows' spots (worldWaysSvg's AT: the picture's bottom corners), on past its bottom edge, so each
+// ends under its arrow; they used to aim at the sides, and on a wide picture left them well above the arrows.
 function crossGeom({ x0, x1, y1, g, W, k, pad }) {
-  const far = g - 300 * k, cy = g - 190 * k;
+  const far = g - 300 * k, cy = g - 190 * k, by = y1 + 60 * k;
+  const through = (ax, ay) => { const t = (by - cy) / Math.max(1, ay - cy); return [ax * t, by]; };
   return { far, cy, ends: { N: [0, far + 2 * k], NE: [W * 0.3, far + 2 * k], NW: [-W * 0.3, far + 2 * k], E: [x1 + pad, cy + 14 * k], W: [x0 - pad, cy + 14 * k],
-                            SE: [x1 + pad, y1 + 60 * k], SW: [x0 - pad, y1 + 60 * k], S: [0, y1 + 60 * k]} };
+                            SE: through(x1 - 60 * k, y1 - 50 * k), SW: through(x0 + 60 * k, y1 - 50 * k), S: [0, by]} };
 }
 const CROSS_BACKS = [["woods", "🌲 tall trees and shafts of light"], ["sky", "☁️ sky, sun and clouds over the trees"], ["mountains", "⛰️ mountains far off"]];
 function crossingScene(c) {
