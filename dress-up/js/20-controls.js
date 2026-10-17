@@ -585,6 +585,30 @@ function changed() {
 
 // (ticket 185, v3) the object library's group open, while the game is open
 let thingGroup = "nature";
+// (ticket 201, Matthew: N put fifteen or more cauldrons in one place, and the
+// Ubuntu laptop ground to a halt) Things that move (a cauldron: its flames,
+// bubbles and fumes, some seventy moving parts; a campfire, about twenty)
+// are watched: after one is put in a place, and every ten seconds while the
+// things are listed, a second of this computer's frames (framesNow: the
+// browser's own pace of frames, cheap); below THING_FPS_MIN, or more than
+// THING_MOVING_MAX moving parts in the place's things, no more moving
+// things can be put there (their buttons greyed, 🐢), and the things moving
+// the most are marked, in their rows and in the picture, as the ones to take away.
+const THING_FPS_MIN = 48, THING_MOVING_MAX = 600;
+let thingFps = null, thingFpsAt = 0, thingFpsBusy = false;
+const thingMoving = el => el.querySelectorAll("animate, animateTransform, animateMotion").length + (el.getAnimations ? el.getAnimations({ subtree: true }).length : 0);
+const thingsMovingNow = () => [...document.querySelectorAll('#bg [data-drag^="thing:"]')].map(el => ({ i: +el.dataset.drag.slice(6), el, n: thingMoving(el) }));
+function framesNow(ms = 1000) {
+  return new Promise(res => { let n = 0, done = false; const t0 = performance.now();
+    const end = () => { if (done) return; done = true; res(Math.round(10 * n * 1000 / Math.max(1, performance.now() - t0)) / 10); };
+    const f = t => { if (done) return; n++; if (t - t0 < ms) requestAnimationFrame(f); else end(); };
+    requestAnimationFrame(f); setTimeout(end, ms * 1.6); });   // (a hidden page gives no frames: it ends anyway)
+}
+function thingCheck(then) {
+  if (thingFpsBusy || document.hidden) return;
+  thingFpsBusy = true;
+  setTimeout(() => framesNow().then(fps => { thingFps = fps; thingFpsAt = performance.now(); thingFpsBusy = false; if (then) then(); }), 300);
+}
 function el(tag, attrs = {}, kids = []) {
   const e = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -1047,9 +1071,34 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const z = at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
       T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}) });
       changed();
+      if ((THING_KINDS[kd] || {}).moving) thingCheck(guard);   // (ticket 201: how this computer takes it)
+    };
+    // (ticket 201) more moving things allowed here? and which move the most
+    const slowNote = el("div", { class: "hint thing-slow", hidden: "" });
+    const guard = () => {
+      const moving = thingsMovingNow(), total = moving.reduce((s, m) => s + m.n, 0), most = Math.max(0, ...moving.map(m => m.n));
+      const slow = thingFps != null && thingFps < THING_FPS_MIN && total > 0, blocked = slow || total > THING_MOVING_MAX;
+      for (const b of items.querySelectorAll("button[data-kind]")) if ((THING_KINDS[b.dataset.kind] || {}).moving) {
+        if (b.disabled !== blocked) b.disabled = blocked;
+        const t = blocked ? "🐢 No more things that move here: this place is already as busy as this computer can show smoothly. Take one away first." : "Drag into the picture, or tap";
+        if (b.title !== t) b.title = t;
+      }
+      const costly = new Set(blocked ? moving.filter(m => m.n > 0 && m.n >= most * 0.5).map(m => m.i) : []);
+      [...list.children].forEach((r, i) => { const on = costly.has(i); if (r.classList.contains("thing-costly") !== on) r.classList.toggle("thing-costly", on); });
+      for (const m of moving) {
+        const g = m.el.querySelector(":scope > .cost-glow");
+        if (costly.has(m.i) && !g) { const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), b = m.el.getBBox();
+          w.setAttribute("class", "cost-glow"); w.setAttribute("pointer-events", "none");
+          w.innerHTML = `<rect x="${f1(b.x - 6)}" y="${f1(b.y - 6)}" width="${f1(b.width + 12)}" height="${f1(b.height + 12)}" rx="10" fill="none" stroke="#d9480f" stroke-width="3" stroke-dasharray="9 6" vector-effect="non-scaling-stroke"/>`;
+          m.el.append(w); }
+        else if (!costly.has(m.i) && g) g.remove();
+      }
+      const t = blocked ? `🐢 ${slow ? `About ${Math.round(thingFps)} frames a second here` : `${total} moving parts in these things`}: no more things that move. The ones marked move the most: take one away.` : "";
+      if (slowNote.textContent !== t) slowNote.textContent = t;
+      if (slowNote.hidden !== !t) slowNote.hidden = !t;
     };
     const addButton = (kd, T) => {
-      const b = el("button", { title: "Drag into the picture, or tap" }, "+ " + T.label);
+      const b = el("button", { title: "Drag into the picture, or tap", "data-kind": kd }, "+ " + T.label);
       pressDrag(b, () => T.label.split(" ")[0], { onTap: () => add(kd), onDrop: (under, ev) => { if (under && under.closest && under.closest("#pic")) add(kd, picUnits(ev)); } });
       return b;
     };
@@ -1058,11 +1107,14 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const showGroup = () => {
       for (const b of groups.children) b.setAttribute("aria-pressed", String(b.dataset.group === thingGroup));
       items.replaceChildren(...Object.entries(THING_KINDS).filter(([, T]) => T.group === thingGroup).map(([kd, T]) => addButton(kd, T)));
+      if (typeof guard === "function") guard();
     };
     groups.append(...THING_GROUPS.map(([g, name]) => el("button", { "data-group": g, onclick: () => { thingGroup = g; showGroup(); } }, name)));
     showGroup();
-    box.append(groups, items, el("div", { class: "row" }, [el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
-    syncs.push(() => { const m = (state.background.things || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); });
+    box.append(groups, items, slowNote, el("div", { class: "row" }, [el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
+    syncs.push(() => { const m = (state.background.things || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); guard();
+      // (ticket 201: every ten seconds, while there are things here that move)
+      if (performance.now() - thingFpsAt > 10000 && box.isConnected && (state.background.things || []).some(x => (THING_KINDS[x.kind] || {}).moving)) thingCheck(guard); });
   }
   // (ticket 185, Matthew) 🗺️ World design: places laid out on a big grid,
   // each joined to its neighbours by the doors on their shared side (no door
