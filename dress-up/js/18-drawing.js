@@ -864,6 +864,7 @@ function drawNow() {
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
+  if (figAway) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 193: a spin's copy is shown instead)
   if (scened) { stillPic.draws++; if (stills) stillPic.drawsOn++; }   // (for 🧪)
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was

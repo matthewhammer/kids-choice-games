@@ -307,18 +307,47 @@ function svgBox(el) {
 // The friend flies into a box on the screen (a doorway, or the back chip),
 // shrinking to fit it and spinning, slowly and then fast; then the scene
 // changes (arrive) and they land, spinning out, at their own size.
+// (ticket 193, Matthew 2026-10-17: going into a picture, the friend froze
+// in place and we waited; coming out, some limbs waited in their places,
+// never spinning) The friend is drawn in pieces, the far arm apart among the
+// scene's objects (figShown), and every drawing puts fresh pieces in: the
+// spin turned one piece, in a group a drawing during it emptied, while a
+// still friend was put back. So the spin turns a copy of all of them, on
+// top of the picture, while the friend itself is hidden (figAway: every
+// drawing hides its pieces again), going in and coming out. The copy's ids
+// are its own, so its masks and patterns are its own, not the hidden ones'.
+let figAway = false;
+function figHide(on) { figAway = on; for (const n of figShown) if (n.style) n.style.visibility = on ? "hidden" : ""; }
+function figCopy() {
+  const NS = "http://www.w3.org/2000/svg", g = document.createElementNS(NS, "g"), P = pic.getScreenCTM().inverse();
+  g.setAttribute("pointer-events", "none"); g.setAttribute("class", "fig-spin");
+  for (const n of figShown) {
+    if (n.nodeType !== 1) continue;
+    let html = n.outerHTML;
+    for (const id of new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1])))
+      html = html.split(`"${id}"`).join(`"${id}-spin"`).split(`#${id})`).join(`#${id}-spin)`).split(`"#${id}"`).join(`"#${id}-spin"`);
+    const holder = document.createElementNS(NS, "g"), par = n.parentNode, m = par && par.getScreenCTM ? P.multiply(par.getScreenCTM()) : null;
+    if (m) holder.setAttribute("transform", `matrix(${[m.a, m.b, m.c, m.d, m.e, m.f].map(v => +v.toFixed(4)).join(" ")})`);
+    holder.innerHTML = html;
+    for (const c of holder.children) { c.style.visibility = ""; c.style.opacity = ""; }
+    g.append(holder);
+  }
+  pic.append(g);
+  return g;
+}
 function flyInto(box, arrive) {
-  const fig = document.getElementById("figure");
-  if (!fig) return;
+  if (!document.getElementById("figure")) return;
   entering = true;
-  const NS = "http://www.w3.org/2000/svg", inv = pic.getScreenCTM().inverse();
+  const inv = pic.getScreenCTM().inverse();
   const at = r => new DOMPoint(r.x + r.width / 2, r.y + r.height / 2).matrixTransform(inv);
-  const fr = fig.getBoundingClientRect(), f0 = at(fr), d0 = at(box);
+  // (the friend's box: all their pieces)
+  const rs = figShown.filter(n => n.getBoundingClientRect).map(n => n.getBoundingClientRect()).filter(r => r.width && r.height);
+  if (!rs.length) { entering = false; arrive(); changed(); return; }
+  const x0 = Math.min(...rs.map(r => r.left)), y0 = Math.min(...rs.map(r => r.top)), x1 = Math.max(...rs.map(r => r.right)), y1 = Math.max(...rs.map(r => r.bottom));
+  const fr = { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, f0 = at(fr), d0 = at(box);
   const s = Math.min(box.width / fr.width, box.height / fr.height) * 0.75, dx = d0.x - f0.x, dy = d0.y - f0.y;
-  // (in a group of its own, so the figure keeps its own transform)
-  const wrap = document.createElementNS(NS, "g");
-  fig.replaceWith(wrap);
-  wrap.append(fig);
+  const wrap = figCopy();
+  figHide(true);
   wrap.style.transformBox = "fill-box";
   wrap.style.transformOrigin = "center";
   const step = (u, turn, k, o = 1) => ({ transform: `translate(${f1(dx * u)}px, ${f1(dy * u)}px) rotate(${turn}deg) scale(${+k.toFixed(3)})`, opacity: o });
@@ -326,20 +355,20 @@ function flyInto(box, arrive) {
                             step(0.85, 720, 1 - (1 - s) * 0.9), step(1, 1260, s), step(1, 1620, s * 0.2, 0)],
                            { duration: 2000, easing: "ease-in", fill: "forwards" });
   fly.onfinish = () => {
+    wrap.remove();
     tripPhase = "arriving";
     arrive();
     entering = false; tripNext("spinning out");
-    changed();
-    // landing: a quick spin out, slowing, to the friend's own size
-    const there = document.getElementById("figure");
-    if (!there) return;
-    const land = document.createElementNS(NS, "g");
-    there.replaceWith(land);
-    land.append(there);
+    changed();   // (drawn in the new place, still hidden)
+    // landing: a quick spin out, slowing, to the friend's own size: the copy, then the friend
+    const land = figCopy();
     land.style.transformBox = "fill-box";
     land.style.transformOrigin = "center bottom";
     land.animate([{ transform: "rotate(-360deg) scale(0.2)", opacity: 0 }, { transform: "rotate(0deg) scale(1)", opacity: 1 }],
-                 { duration: 600, easing: "ease-out" }).onfinish = () => { if (tripPhase === "spinning out") tripPhase = "arrived"; };
+                 { duration: 600, easing: "ease-out" }).onfinish = () => {
+      land.remove(); figHide(false);
+      if (tripPhase === "spinning out") tripPhase = "arrived";
+    };
   };
 }
 // (ticket 138, as actions since ticket 141) A game controller, through the
