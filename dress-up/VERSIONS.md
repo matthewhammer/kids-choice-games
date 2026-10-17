@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.118 (2026-10-17)
+
+Everything in 0.0.117, with one way through everything that leads somewhere.
+
+- **Every way somewhere works the same** (Matthew: no more pictures vs passages): doors, pictures, signs, the ▼ at the bottom, holes in the floor, ladders and the arrows to the next square. Walk up to one and it glows; that is the one ✨ X, Enter or the 🚪 button takes you through. Others in reach glow too, dimmer. It works without a game controller as well, and a tap still goes straight through.
+- **Many more ways can be reached from the controller**: signs and doorways that only the pointer could use before (of 180 in all the places, 166 now; 112 before).
+- **A tap on a door or sign behind a fence or a bush goes through it**, as on the witch's hut behind her fence.
+- **Ladders climb at a natural pace** (Matthew: they went up in slow motion): a tree house's ladder and the dungeon's trapdoor ladder, as fast as climbing with ⬆.
+
 ## 0.0.117 (2026-10-17)
 
 Everything in 0.0.116, with M's idea for the ways out in World design.
