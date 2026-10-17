@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.136 (2026-10-17)
+
+Everything in 0.0.135, with the forest crossings' corner trails lined up.
+
+- **A forest crossing's ↙️ and ↘️ trails lead to their arrows**: each runs to its bottom corner, under the arrow that takes you that way, instead of off the side of the picture above it.
+
 ## 0.0.135 (2026-10-17)
 
 Everything in 0.0.134, with a ♿ Accessibility tab.
