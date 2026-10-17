@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.110 (2026-10-17)
+
+Everything in 0.0.109, plus the start of a library of things to put in a place.
+
+- **🧰 Things in groups**: in 🗺️ World design, the things to put here open a group at a time: 🌲 nature, 🧪 magic, 💀 spooky and 🪧 signs.
+- **New things, from drawings the places already have**: a 🍄 toadstool (its cap's colour, and glowing or not), a 🧪 potion (a flask, a tall bottle, a jar or a vial, in any of the witch's colours), a 💀 skeleton sitting, and a 🪧 sign on a post **with your own words** (type them in its row, up to 12 letters). Each stands where you put it and grows nearer and smaller farther off, as the rocks and trees do.
+- **Fixed: a saved world loads back exactly as it was saved** (0.0.109 gave squares with no things an empty list).
+
 ## 0.0.109 (2026-10-17)
 
 Everything in 0.0.108, with the tree rooms' toys back, things in every place's world square again, and the world's checks passing.
