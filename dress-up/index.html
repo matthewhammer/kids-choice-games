@@ -465,7 +465,17 @@ const THEMES = [["A", "🎨 theme A"], ["B", "🎨 theme B"]];
 const ROOM_MAX = 13, ROOM_NS = [...Array(ROOM_MAX)].map((_, i) => i + 1);
 // (a castle's rooms by number, as choices: only those it has)
 const castleRoomCount = (b, id) => Math.max(1, Math.min(ROOM_MAX, Math.round(b["castleRooms" + id] ?? CASTLE_ROOMS[id].length)));
-const roomChoices = id => ROOM_NS.map(n => [String(n), b => `${roomLabel(castleOf({ ...b, castle: id }).rooms[n - 1] ?? "king").split(" ")[0]} room ${n}`, b => n <= castleRoomCount(b, id)]);
+// (ticket 167) a room's style by the rule castleOf's room list follows, for
+// a choice's label: castleOf builds the whole castle (every room's exits,
+// flags and residents), and these labels are drawn for every door and
+// hall end of every castle on every refresh of the 🏞️ Background tab;
+// built there, it held the duck pond's swimming to 2 to 15 frames a second
+const roomStyleOf = (b, id, n) => {
+  if (n > castleRoomCount(b, id)) return "king";
+  const st = b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1] ?? "king";
+  return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king";
+};
+const roomChoices = id => ROOM_NS.map(n => [String(n), b => `${roomLabel(roomStyleOf(b, id, n)).split(" ")[0]} room ${n}`, b => n <= castleRoomCount(b, id)]);
 const hallDoorDests = id => [["out", "🏰 out of the castle"], ...roomChoices(id)];
 const hallEnds = id => [["auto", "🌀 the first spiral stairs"], ...roomChoices(id), ["none", "🧱 nowhere"]];
 const hallDoorKey = (id, n, j) => "castleHallDoor" + n + "_" + j + id;

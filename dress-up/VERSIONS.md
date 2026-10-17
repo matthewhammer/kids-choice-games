@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **Fixed:** with the 🏞️ Background tab open, moving the friend was slow everywhere, worst in the busy places (the duck pond at 2 to 15 frames a second instead of 60 on a test computer), and stayed slow until the page was reloaded, which opens the 🧍 Body tab again. The castle's room menus in that tab worked out the whole castle for every choice's name on every refresh; they now look up just the room they name.
+
 ## 0.0.94 (2026-10-16)
 
 Everything in 0.0.93, plus climbing that looks like climbing, and ladders you can click.
