@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.134 (2026-10-17)
+
+Everything in 0.0.133, with walks that go round things.
+
+- **Walking around what's in the way**: tap a door, a sign, a picture or any way out, and your friend plans a way there around what stands in the way (a wagon, a cauldron, a soup pot, toadstools, a couch...), instead of walking straight through it. Swimming too, in deep water.
+
 ## 0.0.133 (2026-10-17)
 
 Everything in 0.0.132, with the tree house's trapdoor the right way round, and doors on its rooms.
