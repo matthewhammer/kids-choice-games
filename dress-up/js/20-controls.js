@@ -523,18 +523,14 @@ const TABS = [
   // (ticket 155) last, where the GitHub chip was
   // (ticket 217, Matthew) before Advanced: what helps a player see and read
   ["♿ Accessibility", "access", [
-    // (0.0.146, Matthew: the toggles all at the top; one colour picker each, the path's and the boxes' too. These
-    // overlays are for showing someone new to video games how it works, and for showing a problem as it is seen)
-    ["flip", "allArrows", ["🧭 all arrows", "🧭 all arrows"]],
-    ["flip", "showPath", ["👣 planned path", "👣 planned path"]],
-    ["flip", "showSolids", ["🟥 collision boxes", "🟥 collision boxes"]],
-    ["range", "arrowDim", "🌗 far arrows' brightness", 10, 100, 45, 45],
-    ["color", "arrowColor", "🎨 far arrows' colour", []],
-    ["color", "pathColor", "🎨 path colour", []],
-    ["color", "boxColor", "🎨 boxes' colour", []],
-    ["range", "glowFade", "✨ glow fade (ms)", 100, 3000, 800, 800],   // (ticket 229: a collision's glow, fading back in so long)
-    ["range", "arrowSize", "↕️ arrow size", 50, 250, 100, 100],
-    ["range", "gameFont", "🔤 text size", 60, 250, 100, 100],
+    // (These overlays are for showing someone new to video games how it works, and for showing a problem as it is seen.)
+    // (ticket 230) each a row, accbox: its chip, and while it is on, its colour and its sizes beside it, boxed; the words'
+    // size in a box of its own
+    ["accbox", "allArrows", "🧭 all arrows", [["color", "arrowColor", "🎨"], ["range", "arrowDim", "🌗 brightness", 10, 100], ["range", "arrowSize", "↕️ size", 50, 250]]],
+    ["accbox", "showPath", "👣 planned path", [["color", "pathColor", "🎨"], ["range", "pathWidth", "✏️ line", 1, 12]]],
+    ["accbox", "showSolids", "🧱 collision boxes", [["color", "boxColor", "🎨"], ["range", "boxWidth", "✏️ line", 1, 8], ["range", "boxFont", "🏷️ names", 8, 24],
+      ["range", "glowFade", "✨ glow ms", 100, 3000]]],   // (ticket 229: a collision's glow, fading back in so long)
+    ["accbox", null, "🔤 words in the game", [["range", "gameFont", "🔤 text size", 60, 250]]],
   ]],
   ["⚙️ Advanced", "advanced", [
     ["advanced", "perf", "⚙️ advanced"],
@@ -723,8 +719,7 @@ function el(tag, attrs = {}, kids = []) {
 
 // Iris color and eye whites only mean something once there is an iris.
 const SHOWN_WHEN = {
-  // (ticket 217: the far arrows' brightness and colour, only while every arrow is shown)
-  "access.arrowDim": o => !!o.allArrows, "access.arrowColor": o => !!o.allArrows, "access.pathColor": o => !!o.showPath, "access.boxColor": o => !!o.showSolids, "access.glowFade": o => !!o.showSolids,
+  // (ticket 230: the ♿ settings show beside their toggle, while it is on: accbox)
   "body.unpose": posed,
   "body.hugLift": b => b.pose === "hug",
   "face.irisColor": f => f.iris > 0,
@@ -1049,6 +1044,31 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const when = SHOWN_WHEN[part + "." + key], here = rest[1];
     if (when || here) syncs.push(() => { if (when) g.hidden = !when(state[part]); if (here) g.classList.toggle("here", !!here(state[part])); });
     return g;
+  }
+  // (ticket 230, Matthew: "for each of: all arrows ..., planned path ..., collision boxes (show a brick wall, not a red
+  // box please): chip toggle, as we have now, and then when on, color and stroke/font-size controls. -- all on one line,
+  // if possible. Each one gets a box around it to organize it when enabled. the other sliders can maybe be in another
+  // box, organized away. Try to make each slider less long in this view, and use the mixer/music as inspiration") A
+  // row: its chip (key, the toggle; null: a box of sliders alone, named), and while it is on, its colour pickers and
+  // short sliders beside it, wrapping where the panel is narrow, the row boxed as a mixer's strip
+  if (kind === "accbox") {
+    const row = el("div", { class: "accbox" + (key ? "" : " plain") }), more = el("div", { class: "accmore" });
+    const chip = key ? el("button", { class: "flip", onclick: () => set(part, key, !state[part][key]) }, [label]) : el("span", { class: "cap" }, [label]);
+    for (const [k2, key2, lab2, lo, hi] of rest[0]) {
+      const now = () => state[part][key2] ?? DEFAULTS[part][key2];
+      if (k2 === "color") {
+        const inp = el("input", { type: "color", title: lab2 + " colour", oninput: e => set(part, key2, e.target.value) });
+        more.append(el("label", { class: "accitem" }, [lab2, inp]));
+        syncs.push(() => { if (inp.value !== now()) inp.value = now(); });
+      } else {
+        const v = el("span", { class: "val" }), inp = el("input", { type: "range", min: lo, max: hi, oninput: e => set(part, key2, Number(e.target.value)) });
+        more.append(el("label", { class: "accitem" }, [el("span", {}, [lab2]), inp, v]));
+        syncs.push(() => { const x = now(); if (+inp.value !== x) inp.value = x; if (v.textContent !== String(x)) v.textContent = x; });
+      }
+    }
+    row.append(chip, more);
+    syncs.push(() => { const on = !key || !!state[part][key]; if (row.classList.contains("on") !== on) row.classList.toggle("on", on); more.hidden = !on; if (key) chip.setAttribute("aria-pressed", on); });
+    return row;
   }
   const val = el("span", { class: "val" });
   const name = el("span", { class: "name" }, [label]);

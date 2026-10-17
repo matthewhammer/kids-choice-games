@@ -32,8 +32,21 @@ try {
   const tab = JSON.parse(await ev(`(async () => { const t = TABS.find(t => t[1] === "access"), keep = clone(state); const before = JSON.stringify(state.access);
     for (let i = 0; i < 5; i++) document.getElementById("surprise").click(); await new Promise(r => setTimeout(r, 300));
     const same = JSON.stringify(state.access) === before; state = clone(keep); changed(); await new Promise(r => setTimeout(r, 300));
-    return JSON.stringify({ has: !!t, n: t ? t[2].length : 0, same, flipsFirst: !!t && t[2].slice(0, 3).every(c => c[0] === "flip") }); })()`));
-  ok("a ♿ Accessibility tab with its ten settings, its three toggles first", tab.has && tab.n === 10 && tab.flipsFirst, tab);
+    // (ticket 230) each overlay a row, its toggle and its own settings beside it, while on, boxed; the words' size in a box of its own
+    const rows = t ? t[2].filter(c => c[0] === "accbox") : [], keys = rows.flatMap(c => [c[1], ...c[3].map(i => i[1])]).filter(Boolean);
+    const boxes = [...document.querySelectorAll("#panel .accbox")];
+    return JSON.stringify({ has: !!t, rows: rows.map(c => c[1]), covered: Object.keys(DEFAULTS.access).every(k => keys.includes(k)), same, brick: rows.some(c => c[2].startsWith("🧱")) }); })()`));
+  ok("a ♿ Accessibility tab: a row for each overlay (arrows, path, boxes, the boxes' a 🧱 brick wall), then the words' size, every setting in one of them",
+     tab.has && JSON.stringify(tab.rows) === JSON.stringify(["allArrows", "showPath", "showSolids", null]) && tab.covered && tab.brick, tab);
+  const shown = JSON.parse(await ev(`(async () => { const keep = clone(state.access); const i = TABS.findIndex(t => t[1] === "access"); document.querySelectorAll("#tabs button")[i].click(); await new Promise(r => setTimeout(r, 300));
+    const rowOf = k => [...document.querySelectorAll("#panel .accbox")].find(b => b.querySelector("button.flip") && b.querySelector("button.flip").textContent.includes(k));
+    Object.assign(state.access, { allArrows: false, showSolids: true }); changed(); await new Promise(r => setTimeout(r, 200));
+    const off = rowOf("all arrows"), on = rowOf("collision boxes");
+    const r = { offHidden: !!off && off.querySelector(".accmore").hidden && !off.classList.contains("on"), onShown: !!on && !on.querySelector(".accmore").hidden && on.classList.contains("on"),
+      onItems: on ? on.querySelectorAll(".accitem").length : 0, oneLine: on ? Math.round(on.getBoundingClientRect().height) : 0 };
+    state.access = keep; changed(); return JSON.stringify(r); })()`));
+  ok("a row off: just its chip, no box; on: its colour and sizes beside it, boxed", shown.offHidden && shown.onShown && shown.onItems === 4, shown);
+  console.log(`  (the boxes' row, on, at 1600 wide: ${shown.oneLine}px tall; one line is about 50)`);
   ok("Surprise me leaves it alone", tab.same, tab);
   // every arrow shown: off, none far shows; on, all, the far ones dim and coloured
   const all = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access); await clearing();

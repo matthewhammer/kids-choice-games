@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.154 (2026-10-17)
+
+Everything in 0.0.153, with a tidier ♿ Accessibility tab.
+
+- **One row for each helper**: 🧭 all arrows, 👣 planned path and 🧱 collision boxes (a brick wall now) each have a row: switch it on, and its colour and its sizes appear right beside it, in a box, with short sliders. The path's line and the boxes' lines can be thicker or thinner, and the boxes' names bigger or smaller. The size of the words in the game has a box of its own.
+
 ## 0.0.153 (2026-10-17)
 
 Everything in 0.0.152, with places that look deeper, and palm trees you bump into all the way up.

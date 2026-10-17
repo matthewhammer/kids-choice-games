@@ -333,7 +333,9 @@ function worldWaysHud() {
 let gameFontShown = null;
 function accessApply() {
   const A = state.access || DEFAULTS.access, al = document.getElementById("access-layer");
-  if (al) for (const [k, v] of [["--path-color", A.pathColor || "#fde047"], ["--box-color", A.boxColor || "#ef4444"]]) if (al.style.getPropertyValue(k) !== v) al.style.setProperty(k, v);
+  if (al) for (const [k, v] of [["--path-color", A.pathColor || "#fde047"], ["--box-color", A.boxColor || "#ef4444"],
+                                 ["--path-width", (A.pathWidth ?? 4) + "px"], ["--box-width", (A.boxWidth ?? 2) + "px"], ["--box-font", (A.boxFont ?? 11) + "px"]])   // (ticket 230)
+    if (al.style.getPropertyValue(k) !== v) al.style.setProperty(k, v);
   const gf = (A.gameFont ?? 100) / 100;
   if (gf === gameFontShown) return;
   gameFontShown = gf;
