@@ -190,7 +190,9 @@ function standingHere(B, seats) {
   // (its box in the friend's units, through the screen, as ladderAt does: the scene may sit in a nested svg of its own)
   const picEl = document.getElementById("pic"), P = picEl && picEl.getScreenCTM(), Pinv = P ? P.inverse() : null;
   for (const o of bgShown.objs) {
-    const base = objBase(o.name), trunk = TRUNKED.has(base), potted = POTTED.has(base);
+    // (ticket 241) a drawing that marks its trunk (data-trunk: the tree house's braid) is a trunk, measured by it alone
+    const marked = o.node.querySelector("[data-trunk]"), root = marked || o.node;
+    const base = objBase(o.name), trunk = TRUNKED.has(base) || !!marked, potted = POTTED.has(base);
     if (!(trunk || STANDING.has(base)) || !Number.isFinite(o.z) || off.has(o.name) || seats.has(o.name)) continue;
     let b = null;
     // (ticket 214's audit: a cauldron's box stood up past the picture's top, its fumes measured as the pot) what rises
@@ -198,7 +200,7 @@ function standingHere(B, seats) {
     const fumes = [...o.node.querySelectorAll(".fumes")];
     for (const f of fumes) f.style.display = "none";
     try {   // (Firefox throws for a drawing not shown)
-      const r = o.node.getBBox(), E = o.node.getScreenCTM(), m = Pinv && E ? Pinv.multiply(E) : null;
+      const r = root.getBBox(), E = root.getScreenCTM(), m = Pinv && E ? Pinv.multiply(E) : null;
       if (m && r.width > 0 && r.height > 0) {
         const pts = [[r.x, r.y], [r.x + r.width, r.y], [r.x, r.y + r.height], [r.x + r.width, r.y + r.height]].map(([x, y]) => [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]);
         const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
@@ -216,7 +218,7 @@ function standingHere(B, seats) {
     let foot = null, bands = null;
     if ((trunk || potted) && Pinv) {
       const parts = [];
-      for (const sh of o.node.querySelectorAll("rect, path, polygon, polyline, line, ellipse")) {
+      for (const sh of root.querySelectorAll("rect, path, polygon, polyline, line, ellipse")) {
         let m, q;
         try { const E = sh.getScreenCTM(); m = E && Pinv.multiply(E); q = m && boxThrough(sh.getBBox(), m); } catch (e) { continue; }
         if (!q || (!q.width && !q.height)) continue;
