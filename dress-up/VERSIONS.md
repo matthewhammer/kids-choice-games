@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.147 (2026-10-17)
+
+Everything in 0.0.146, with trees and posts that stop you at their trunks.
+
+- **A tree stops your friend at its trunk, and a signpost at its post**, wherever the trunk or post is in the drawing. Before, the place you bumped into was the middle of the whole tree (its leaves spread to one side) or the middle of the sign's boards, so the 🟥 collision boxes stood beside the trunks.
+
 ## 0.0.146 (2026-10-17)
 
 Everything in 0.0.145, with ♿ Accessibility tidier.

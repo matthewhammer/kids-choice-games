@@ -159,7 +159,25 @@ function standingHere(B, seats) {
       }
     } catch (e) { continue; }
     if (!b || !(b.width > 0) || !(b.height > 0)) continue;
-    const mid = b.x + b.width / 2, w = trunk ? Math.min(b.width, Math.max(16 * k, TRUNK * b.width)) : b.width, h = Math.max(0, o.z - b.y);
+    // (0.0.147, Matthew: "the sign post and trees each have a box that looks misaligned") a trunk or a post is not
+    // always in the middle of its drawing: a canopy spreads to one side, a signpost's boards hang off its post. Its
+    // box is where its tall parts reach its foot (the trunk, the post: each at least a quarter of its height, ending
+    // in its lowest tenth, not as wide as the whole), else the middle, as before.
+    let foot = null;
+    if (trunk && Pinv) {
+      let fx0 = Infinity, fx1 = -Infinity;
+      for (const sh of o.node.querySelectorAll("rect, path, polygon, polyline, line, ellipse")) {
+        let r; try { r = sh.getBoundingClientRect(); } catch (e) { continue; }
+        if (!r.width && !r.height) continue;
+        const a = new DOMPoint(r.left, r.top).matrixTransform(Pinv), c = new DOMPoint(r.right, r.bottom).matrixTransform(Pinv);
+        const sx0 = Math.min(a.x, c.x), sx1 = Math.max(a.x, c.x), sy0 = Math.min(a.y, c.y), sy1 = Math.max(a.y, c.y);
+        if (sy1 < b.y + 0.9 * b.height || sy1 - sy0 < 0.25 * b.height || sx1 - sx0 > 0.6 * b.width) continue;
+        fx0 = Math.min(fx0, sx0); fx1 = Math.max(fx1, sx1);
+      }
+      if (fx1 >= fx0) foot = [fx0, fx1];
+    }
+    const mid = foot ? (foot[0] + foot[1]) / 2 : b.x + b.width / 2, h = Math.max(0, o.z - b.y);
+    const w = foot ? Math.min(0.4 * b.width, Math.max(16 * k, foot[1] - foot[0])) : trunk ? Math.min(b.width, Math.max(16 * k, TRUNK * b.width)) : b.width;
     out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front: o.z, h, standing: true });
   }
   return out;
