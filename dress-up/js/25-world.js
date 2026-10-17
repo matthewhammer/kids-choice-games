@@ -329,7 +329,9 @@ function worldWaysHud() {
 // (ticket 217) ♿ the words' size: a variable on the page, and the class that scales the place's words, only off 100
 let gameFontShown = null;
 function accessApply() {
-  const gf = ((state.access || DEFAULTS.access).gameFont ?? 100) / 100;
+  const A = state.access || DEFAULTS.access, al = document.getElementById("access-layer");
+  if (al) for (const [k, v] of [["--path-color", A.pathColor || "#fde047"], ["--box-color", A.boxColor || "#ef4444"]]) if (al.style.getPropertyValue(k) !== v) al.style.setProperty(k, v);
+  const gf = (A.gameFont ?? 100) / 100;
   if (gf === gameFontShown) return;
   gameFontShown = gf;
   document.documentElement.style.setProperty("--game-font", String(gf));

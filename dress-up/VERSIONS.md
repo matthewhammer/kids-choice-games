@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.146 (2026-10-17)
+
+Everything in 0.0.145, with ♿ Accessibility tidier.
+
+- **♿ Accessibility's three switches at the top**: 🧭 all arrows, 👣 planned path, 🟥 collision boxes.
+- **A colour for the planned path and for the collision boxes**, each its own picker (yellow and red to start), and one picker for the far arrows' colour too.
+
 ## 0.0.145 (2026-10-17)
 
 Everything in 0.0.144, with the arrows in their places in full screen.

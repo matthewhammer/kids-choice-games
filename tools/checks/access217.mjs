@@ -32,8 +32,8 @@ try {
   const tab = JSON.parse(await ev(`(async () => { const t = TABS.find(t => t[1] === "access"), keep = clone(state); const before = JSON.stringify(state.access);
     for (let i = 0; i < 5; i++) document.getElementById("surprise").click(); await new Promise(r => setTimeout(r, 300));
     const same = JSON.stringify(state.access) === before; state = clone(keep); changed(); await new Promise(r => setTimeout(r, 300));
-    return JSON.stringify({ has: !!t, n: t ? t[2].length : 0, same }); })()`));
-  ok("a ♿ Accessibility tab with its seven settings", tab.has && tab.n === 7, tab);
+    return JSON.stringify({ has: !!t, n: t ? t[2].length : 0, same, flipsFirst: !!t && t[2].slice(0, 3).every(c => c[0] === "flip") }); })()`));
+  ok("a ♿ Accessibility tab with its nine settings, its three toggles first", tab.has && tab.n === 9 && tab.flipsFirst, tab);
   ok("Surprise me leaves it alone", tab.same, tab);
   // every arrow shown: off, none far shows; on, all, the far ones dim and coloured
   const all = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access); await clearing();

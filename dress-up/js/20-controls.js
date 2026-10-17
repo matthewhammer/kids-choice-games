@@ -521,16 +521,17 @@ const TABS = [
   // (ticket 155) last, where the GitHub chip was
   // (ticket 217, Matthew) before Advanced: what helps a player see and read
   ["♿ Accessibility", "access", [
-    // (0.0.139, Matthew: the chips' words "way, way too long ... Just a few words please. Or just two words, or even one": a
-    // chip says what it is, and is lit (pressed) while on)
+    // (0.0.146, Matthew: the toggles all at the top; one colour picker each, the path's and the boxes' too. These
+    // overlays are for showing someone new to video games how it works, and for showing a problem as it is seen)
     ["flip", "allArrows", ["🧭 all arrows", "🧭 all arrows"]],
+    ["flip", "showPath", ["👣 planned path", "👣 planned path"]],
+    ["flip", "showSolids", ["🟥 collision boxes", "🟥 collision boxes"]],
     ["range", "arrowDim", "🌗 far arrows' brightness", 10, 100, 45, 45],
-    ["color", "arrowColor", "🎨 far arrows' colour", ["#38bdf8", "#a78bfa", "#f472b6", "#fb923c", "#4ade80", "#facc15", "#ffffff"]],
+    ["color", "arrowColor", "🎨 far arrows' colour", []],
+    ["color", "pathColor", "🎨 path colour", []],
+    ["color", "boxColor", "🎨 boxes' colour", []],
     ["range", "arrowSize", "↕️ arrow size", 50, 250, 100, 100],
     ["range", "gameFont", "🔤 text size", 60, 250, 100, 100],
-    ["flip", "showPath", ["👣 planned path", "👣 planned path"]],
-    // (Matthew, added: "show the collision boxes you are using for collision tests, if you can")
-    ["flip", "showSolids", ["🟥 collision boxes", "🟥 collision boxes"]],
   ]],
   ["⚙️ Advanced", "advanced", [
     ["advanced", "perf", "⚙️ advanced"],
@@ -720,7 +721,7 @@ function el(tag, attrs = {}, kids = []) {
 // Iris color and eye whites only mean something once there is an iris.
 const SHOWN_WHEN = {
   // (ticket 217: the far arrows' brightness and colour, only while every arrow is shown)
-  "access.arrowDim": o => !!o.allArrows, "access.arrowColor": o => !!o.allArrows,
+  "access.arrowDim": o => !!o.allArrows, "access.arrowColor": o => !!o.allArrows, "access.pathColor": o => !!o.showPath, "access.boxColor": o => !!o.showSolids,
   "body.unpose": posed,
   "body.hugLift": b => b.pose === "hug",
   "face.irisColor": f => f.iris > 0,

@@ -491,17 +491,17 @@
 @keyframes bub-pop { to { scale: 1.7; opacity: 0; } }   /* (ticket 227: a far arrow with no room for its words, just its triangle) */
 /* (ticket 217) ♿ the planned path, over the picture while the walk lasts */
 .walk-path { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.walk-path polyline { fill: none; stroke: #fde047; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 9;
+.walk-path polyline { fill: none; stroke: var(--path-color, #fde047); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 9;
   filter: drop-shadow(0 0 1.5px #3b2a14); }
-.walk-path circle { fill: #fde047; stroke: #3b2a14; stroke-width: 1.5; }
+.walk-path circle { fill: var(--path-color, #fde047); stroke: #3b2a14; stroke-width: 1.5; }
 .walk-path .walked { opacity: 0.35; }
 /* (ticket 217) ♿ the collision boxes: the solids red, a castle room's walls amber, the floor's back limit violet */
 .solid-boxes { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.solid-boxes polygon { fill: rgba(239, 68, 68, 0.2); stroke: #ef4444; stroke-width: 2; stroke-dasharray: 6 4; }
-.solid-boxes polygon.face { fill: rgba(239, 68, 68, 0.08); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.solid-boxes polygon { fill: color-mix(in srgb, var(--box-color, #ef4444) 20%, transparent); stroke: var(--box-color, #ef4444); stroke-width: 2; stroke-dasharray: 6 4; }
+.solid-boxes polygon.face { fill: color-mix(in srgb, var(--box-color, #ef4444) 8%, transparent); stroke-width: 1.5; stroke-dasharray: 3 4; }
 .solid-boxes .wall { fill: none; stroke: #f59e0b; stroke-width: 3; stroke-dasharray: 8 5; }
 .solid-boxes .back { fill: none; stroke: #a855f7; stroke-width: 2; stroke-dasharray: 4 6; }
-.solid-boxes text { font: 600 11px sans-serif; fill: #fff; paint-order: stroke; stroke: #7f1d1d; stroke-width: 3px; }
+.solid-boxes text { font: 600 11px sans-serif; fill: #fff; paint-order: stroke; stroke: color-mix(in srgb, var(--box-color, #ef4444) 55%, #000); stroke-width: 3px; }
 /* (ticket 217) ♿ the words in the game: each text in the place scaled about its own middle; the arrows' words too */
 body.game-font #bg text { transform-box: fill-box; transform-origin: center; scale: var(--game-font, 1); }
 .way-arrow .way-tri { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; transform: rotate(var(--a)); animation: way-bob 1.8s ease-in-out infinite; }
