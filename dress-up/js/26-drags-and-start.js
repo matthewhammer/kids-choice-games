@@ -385,6 +385,16 @@ function padTaught() {
 const PAD_PLACES = ["bottom", "right", "left", "top", "left shoulder", "right shoulder", "left trigger", "right trigger", "select", "start", "left stick", "right stick", "up", "down", "left", "right", "home"];
 const padButtonName = i => !(i >= 0) ? "—" : padMapping === "standard" && PAD_PLACES[i] ? `${PAD_PLACES[i]} (button ${i})` : `button ${i}`;
 const PAD_SPEED = { none: 160, walk: 90, run: 230, crawl: 55, swim: 70, swimfast: 150, crouch: 0 };
+// (ticket 188, Matthew: "slider to control max running speed, and an
+// acceleration/deceleration speed slider -- the current behavior, which can
+// be the default, is immediate") body.runSpeed scales running and fast
+// swimming (100: as before); body.accel, 0 to 100, is how long the friend
+// takes to get up to full running speed, and to stop from it (0: at once,
+// as before; 100: PAD_RAMP seconds), coasting to a stop, legs still going,
+// after the arrows are let go. padVel, their speed now, in stage units a second.
+const PAD_RAMP = 1.2;
+const padTop = key => (PAD_SPEED[key] ?? PAD_SPEED.none) * (key === "run" || key === "swimfast" ? (state.body.runSpeed ?? 100) / 100 : 1);
+let padVel = [0, 0];
 let padLoop = 0, padName = "", padMapping = "", padDown = new Set(), padMoving = false, padLast = 0, padWant = "none", padLearn = null;
 function padPoll(t) {
   padLoop = 0;
@@ -444,9 +454,13 @@ function padPoll(t) {
     else if (ud) { climb.got = clamp(climb.got - ud * CLIMB_HAND * (held("run") ? 1.8 : 1) * figureT.k * dt, 0, climb.all ?? Infinity); moved(); }
   }
   const moving = !!(vx || vy) && BG.kind !== "none" && !entering && !drag && !onLadder;
+  // (ticket 188: let go, still coasting to a stop, when speeding up and slowing down take time)
+  const ramp = (state.body.accel ?? 0) / 100 * PAD_RAMP;
+  const coasting = !moving && ramp > 0 && Math.hypot(padVel[0], padVel[1]) > 2 && BG.kind !== "none" && !entering && !drag && !onLadder;
+  if (!moving && !coasting) padVel = [0, 0];
   const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
   const run = held("run"), low = held("crouch") || padCrawl;
-  const want = moving ? (low ? (wet ? "swim" : "crawl") : wet ? (run ? "swimfast" : "swim") : run ? "run" : "walk") : low && !wet ? "crouch" : "none";
+  const want = moving ? (low ? (wet ? "swim" : "crawl") : wet ? (run ? "swimfast" : "swim") : run ? "run" : "walk") : coasting && padWant ? padWant : low && !wet ? "crouch" : "none";
   if (isJump(B.anim)) jumpPrev = want;   // (landing into what they are told now)
   else if (want !== padWant && !onLadder) {
     padWant = want;
@@ -461,19 +475,26 @@ function padPoll(t) {
   if (hit("jumpShort") && !onLadder) { startJump(B.anim, "jump"); changed(); }
   if (hit("jumpHigh") && !onLadder) { startJump(B.anim, "jumphigh"); changed(); }
   if (hit("enter")) enterPicture();   // (ticket 145)
-  if (moving) {
-    const sp = (PAD_SPEED[isJump(B.anim) ? jumpPrev : B.anim] ?? PAD_SPEED.none) * dt, F = sceneFrame;
+  if (moving || coasting) {
+    // (ticket 188: the speed they are told, reached at once, or over the ramp's time: a step toward it each frame)
+    const top = padTop(isJump(B.anim) ? jumpPrev : B.anim), want = moving ? [vx * top, vy * top] : [0, 0];
+    if (!ramp) padVel = want;
+    else { const step = padTop("run") / ramp * dt, ex = want[0] - padVel[0], ey = want[1] - padVel[1], e = Math.hypot(ex, ey);
+           padVel = e <= step ? want : [padVel[0] + ex / e * step, padVel[1] + ey / e * step]; }
+    const F = sceneFrame;
     // (ticket 149: walls and solids stop them, and they slide along)
-    const [mx, my] = solidMove(BG.figX ?? 0, BG.figY ?? 0, Math.round(10 * clamp((BG.figX ?? 0) + vx * sp, F.left, F.right)) / 10,
-                               Math.round(10 * clamp((BG.figY ?? 0) + vy * sp * 0.6, figYMin(F), F.bottom - F.ground)) / 10);
+    const [mx, my] = solidMove(BG.figX ?? 0, BG.figY ?? 0, Math.round(10 * clamp((BG.figX ?? 0) + padVel[0] * dt, F.left, F.right)) / 10,
+                               Math.round(10 * clamp((BG.figY ?? 0) + padVel[1] * dt * 0.6, figYMin(F), F.bottom - F.ground)) / 10);
+    if (mx === (BG.figX ?? 0) && my === (BG.figY ?? 0) && !moving) padVel = [0, 0];   // (stopped by a wall while coasting)
     BG.figX = mx; BG.figY = my;
     // (ticket 162: walking onto a pit's hole, not jumping, falls in)
     if (!isJump(B.anim) && !entering) { const pit = pitAt(mx, SCENE.ground + my); if (pit) enterScene(pit); }   // (the poll goes on: it must schedule itself again)
-    // (which way they face: a diagonal keeps the one of its two ways they faced, else the side one)
-    const ax = Math.abs(vx), ay = Math.abs(vy), m = Math.max(ax, ay);
+    // (which way they face: a diagonal keeps the one of its two ways they faced, else the side one; coasting, as they were)
+    const ax = Math.abs(vx), ay = Math.abs(vy), m = Math.max(ax, ay) || 1;
     const side = ax > 0.38 * m ? (vx < 0 ? "left" : "right") : null, depth = ay > 0.38 * m ? (vy < 0 ? "back" : "front") : null;
     // (ticket 144) a diagonal toward us: facing us, turned partway the side's way; away from us, as before
-    if (side && depth === "front") { B.facing = "front"; B.turn = side; }
+    if (!moving) { /* (coasting: facing as they were) */ }
+    else if (side && depth === "front") { B.facing = "front"; B.turn = side; }
     else { B.facing = !side ? depth : !depth ? side : B.facing === side || B.facing === depth ? B.facing : side; B.turn = ""; }
     padMoving = true;
     moved();   // (ticket 163)

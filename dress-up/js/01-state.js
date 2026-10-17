@@ -313,7 +313,7 @@ const DEFAULTS = {
            hugLift: 50,
            // (ticket 142) the two jumps: how high (a share of a leg's length)
            // and how fast (100 = as 0.0.66 jumped)
-           jumpShortH: 30, jumpShortS: 150, jumpHighH: 90, jumpHighS: 75,
+           jumpShortH: 30, jumpShortS: 150, jumpHighH: 90, jumpHighS: 75, runSpeed: 100, accel: 0,
            // (ticket 124) which way the friend faces (toward us, or in profile
            // to our left or right), and whether they sit
            facing: "front", sit: false,

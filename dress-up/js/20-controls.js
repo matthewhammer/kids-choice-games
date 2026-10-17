@@ -451,6 +451,11 @@ const TABS = [
   ]],
   ["🎮 Controls", "controls", [
     ["padmap", "map", "🎮 game controller"],
+    // (ticket 188, Matthew) how the friend moves: kept with the friend (body), not with a controller's buttons
+    ["of", "body", ["group", "moving", "🏃 how your friend moves", [
+      ["range", "runSpeed", "🏃 top running speed (100 = as it was)", 50, 250, 100, 100],
+      ["range", "accel", "🚀 speeding up and slowing down (0 = at once)", 0, 100, 0, 0],
+    ]]],
   ]],
   ["🎵 Music", "music", [
     ["musicbig", "big", "⛶ full screen"],
