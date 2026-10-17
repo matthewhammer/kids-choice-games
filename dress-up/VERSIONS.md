@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.169 (2026-10-17)
+
+Everything in 0.0.168, with collision boxes that swing with the swing.
+
+- **Fixed: the swing's box stayed still**: at the tree house, with "🧱 collision boxes" on, the swing's box stood still while the swing went back and forth, and so did your friend's boxes while they sat on it. Now they swing with it. And walking into the swing meets it where its seat is, not where it hangs at rest.
+
 ## 0.0.168 (2026-10-17)
 
 Everything in 0.0.167, with crawling through doors that are too small.

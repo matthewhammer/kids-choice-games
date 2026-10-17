@@ -427,6 +427,7 @@ function solidsHud() {
     polys[2].setAttribute("points", t ? pts(foot(t)) : "");
     polys[3].setAttribute("points", t ? pts([[t[0], crotch], [t[1], crotch], [t[1], crown], [t[0], crown]].map(([x, y]) => sc(x, y))) : "");
     const q0 = sc(Math.min(...soles.map(s => s[0])), Math.max(...soles.map(s => s[3]))); you.lastChild.setAttribute("x", (q0[0] + 2).toFixed(1)); you.lastChild.setAttribute("y", (q0[1] + 12).toFixed(1)); }
+  if (!swingHudOn && Bg.kind === "treehouse") { swingHudOn = true; requestAnimationFrame(swingHud); }   // (ticket 240)
   const A = state.access || DEFAULTS.access, fade = Math.max(100, A.glowFade ?? 800) + "ms";
   if (ov.style.getPropertyValue("--glow-fade") !== fade) ov.style.setProperty("--glow-fade", fade);
   if (solidHit.n !== solidsHitShown && solidHit.name && performance.now() - solidHit.t < 1000) {
@@ -436,6 +437,19 @@ function solidsHud() {
   }
 }
 let solidsHitShown = -1;
+// (ticket 240) ♿'s collision boxes at the tree house: every frame while they show, the swing's box turned about its
+// hook as the seat hangs now, and the friend's boxes with it while they sit on it (the drawing's swing is a SMIL
+// animation, running between drawings: so its own loop, stopping when the boxes, the swing or the place go)
+let swingHudOn = false;
+function swingHud() {
+  const ov = document.querySelector("#access-layer svg.solid-boxes"), S = ov ? swingNow() : null;
+  if (!S) { swingHudOn = false; return; }
+  const box = document.getElementById("access-layer").getBoundingClientRect(), tf = `rotate(${S.deg.toFixed(2)} ${(S.hook.x - box.left).toFixed(1)} ${(S.hook.y - box.top).toFixed(1)})`;
+  const g = ov.querySelector('[data-solid="swing"]'), you = ov.querySelector(".you"), B = state.background, on = !!(state.body.sit && B.seat === "swing");
+  if (g && g.getAttribute("transform") !== tf) g.setAttribute("transform", tf);
+  if (you) { if (on) { if (you.getAttribute("transform") !== tf) you.setAttribute("transform", tf); } else if (you.hasAttribute("transform")) you.removeAttribute("transform"); }
+  requestAnimationFrame(swingHud);
+}
 // (ticket 221, Matthew: "a new 'create bubbles' action for the player, where
 // they can blow bubbles out of their mouth of any style (up to three at once)
 // in any scene, or either hand. They can choose which of the three places they
