@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.116 (2026-10-17)
+
+Everything in 0.0.115, with the still pictures working again in Chrome.
+
+- **Fixed: a slow computer holds the scenery still again while your friend moves, in Chrome** (Matthew: find why they never switched on). Since 0.0.95 the game waited for a signal Chrome never sends before it used them, so a slow computer running Chrome drew every place live, the slow way. Measured on GitHub's computers: the duck pond with them on in 99 to 100 drawings of every 100 (it was none).
+- The speed check after each release tries a place that comes in under 55 frames a second once more before calling it slow, and says why a place failed.
+
 ## 0.0.115 (2026-10-17)
 
 Everything in 0.0.114, plus a sign with directions, and names for the squares.
