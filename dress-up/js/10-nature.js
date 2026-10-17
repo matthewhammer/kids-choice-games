@@ -188,7 +188,7 @@ function treeInner(c) {
     `<path d="M300 -338 Q330 -380 350 -400" fill="none" stroke="#6e4a2c" stroke-width="7" stroke-linecap="round"/>` +
     `<g>${lfoTimed(o, "slow", 0.15, `<animateTransform attributeName="transform" type="rotate" values="-14 395 -346;14 395 -346;-14 395 -346" dur="2.6s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`)}` +
     `<path d="M375 -344 L372 -70 M415 -348 L418 -70" stroke="#d8c49a" stroke-width="3.5"/>` +
-    `<rect x="358" y="-72" width="74" height="12" rx="4" fill="#a0703f" stroke="#5e3d22" stroke-width="2"/></g>`);
+    `<rect data-swing-seat="" x="358" y="-72" width="74" height="12" rx="4" fill="#a0703f" stroke="#5e3d22" stroke-width="2"/></g>`);   // (ticket 240: the seat, found as it swings: swingNow)
   s += SEP + part("tree-bridges", [n, bridges, hz], () => TREE_BRIDGES.filter(([a, b]) => a < n && b < n).slice(0, bridges).map(([a, b]) => {
     const [ax, ay] = TREE_SLOTS[a], [bx, by] = TREE_SLOTS[b], sa = Math.sign(bx - ax) || 1;
     // (a smaller house's platform is narrower)

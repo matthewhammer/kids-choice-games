@@ -296,12 +296,26 @@ function torsoBox(x, S) {
 const youBoxes = (x, z) => { const S = feetSoles(x, z), t = torsoBox(x, S); return t ? S.concat([t]) : S; };
 // a solid's boxes up from the ground: a trunk's bands, else one as tall as the thing (o.h)
 const solidBands = o => o.bands || [{ x0: o.x0, x1: o.x1, lo: 0, hi: o.h > 0 ? o.h : Infinity }];
+// (ticket 240, Matthew: "the swing's collision box does not swing at the tree house. our collision boxes don't swing
+// either") The tree house's swing as it is now, read from its drawing (its seat's group is turned by the swing's own
+// animation, which the screen matrix includes): the angle it hangs at, its hook on the screen, and how far its seat is
+// from where it hangs at rest, across, in the stage's units. Its box (a seat's, solidsHere) is met where the seat is;
+// ♿'s collision boxes turn its box, and the friend's on it, about the hook (swingHud).
+const SWING_HOOK = [395, -346], SWING_SEAT = [395, -66];   // (in the tree's units: treeInner's "tree-swing")
+function swingNow() {
+  const seat = state.background.kind === "treehouse" && bgShown.node ? bgShown.node.querySelector("[data-swing-seat]") : null, g = seat && seat.parentNode;
+  const M = g && g.getScreenCTM(), P = g && g.parentNode.getScreenCTM(), S = pic.getScreenCTM();
+  if (!M || !P || !S) return null;
+  const Si = S.inverse(), at = (m, [x, y]) => new DOMPoint(x, y).matrixTransform(m), stage = q => q.matrixTransform(Si);
+  return { deg: (Math.atan2(M.b, M.a) - Math.atan2(P.b, P.a)) * 180 / Math.PI, hook: at(P, SWING_HOOK), dx: stage(at(M, SWING_SEAT)).x - stage(at(P, SWING_SEAT)).x };
+}
 function solidAt(x, z) {
-  const B = state.background, W = castleWalls(B), S = youBoxes(x, z);
+  const B = state.background, W = castleWalls(B), S = youBoxes(x, z), sw = B.kind === "treehouse" ? swingNow() : null;
   if (W && S.some(s => Math.max(Math.abs(s[0]), Math.abs(s[1])) > W.half(z))) return { wall: true };
   const sitting = state.body.sit && B.seat, a = state.body.anim, jumping = isJump(a);
   const clears = jumping ? (a === "jumphigh" ? 1 : 0.5) * legReach() : 0;
-  for (const o of solidsHere()) {
+  for (const o0 of solidsHere()) {
+    const o = sw && o0.name === "swing" ? { ...o0, x0: o0.x0 + sw.dx, x1: o0.x1 + sw.dx } : o0;   // (ticket 240: where the seat is now)
     if (sitting && o.name === B.seat) continue;
     if (o.h < clears) continue;
     if (S.some(s => s[3] > o.back && s[2] < o.front && solidBands(o).some(b => s[1] > b.x0 && s[0] < b.x1 && s[5] > b.lo && s[4] < b.hi))) return o;   // (a sole, or the torso's box, over one of its boxes, at its heights)
