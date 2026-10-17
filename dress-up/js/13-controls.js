@@ -459,6 +459,10 @@ const TABS = [
     ["nudge", "transpose", "🎹 move the tune by an interval", -24, 24, "interval"],
     ["mixer", "mix", "🎚️ mixing board"],
   ]],
+  // (ticket 185, Matthew) after the music, before Advanced: the world designer
+  ["🗺️ World design", "world", [
+    ["world", "grid", "🗺️ world design"],
+  ]],
   // (ticket 155) last, where the GitHub chip was
   ["⚙️ Advanced", "advanced", [
     ["advanced", "perf", "⚙️ advanced"],
@@ -973,6 +977,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // the whole window, and the screen where the browser allows (setMusicBig)
   if (kind === "musicbig") box.append(el("button", { class: "musicbig", onclick: () => setMusicBig(!document.body.classList.contains("music-big")) },
                                          document.body.classList.contains("music-big") ? MUSIC_BIG[1] : MUSIC_BIG[0]));
+  // (ticket 185, Matthew) 🗺️ World design: places laid out on a big grid,
+  // each joined to its neighbours by the doors on their shared side (no door
+  // wired by hand; a door with no place beside it, or one that does not line
+  // up with its partner, is a mistake to fix), and each filled from a library
+  // of things. Its first piece is coming; for now the tab says what it will be.
+  if (kind === "world") box.append(
+    el("div", { class: "hint" }, "🗺️ Coming soon: a world to design. Drag places onto a big grid of squares; places side by side are joined through their doors, and a door with nothing beside it shows up as a mistake to fix. Then open a place and drag things into it, from a library of trees, furniture and more."));
   // (ticket 155, Matthew) ⚙️ Advanced: the game's code on GitHub; its
   // version, and a newer one to change to (a phone hides the title, where
   // they are otherwise); the frame rate now; and the background features
