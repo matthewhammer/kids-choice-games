@@ -339,9 +339,13 @@ function accessApply() {
 // keep, SOLID_MARGIN), named; a castle room's side walls (castleWalls: the half width at each depth); and the back
 // limit the feet stop at (figYMin: a back wall's foot, else the frame's). Drawn over the picture, in the picture's
 // own units through the screen; only when shown, and the page changed only when they move.
+// (0.0.139, Matthew: "some bug with scaling the font or arrow size misplaces them in the scene"; "collision boxes
+// should not disappear until we untoggle them") The overlays have a layer of their own (#access-layer): put in the
+// arrows' (#ways), whose children are its arrows by index, the boxes put first shifted every arrow onto another's
+// place, and each new square's arrows replaced the layer, boxes and all.
 let solidsShown = "";
 function solidsHud() {
-  const layer = document.getElementById("ways");
+  const layer = document.getElementById("access-layer");
   if (!layer) return;
   const on = !!(state.access || DEFAULTS.access).showSolids && state.background.kind !== "none";
   let ov = layer.querySelector("svg.solid-boxes");
@@ -352,19 +356,21 @@ function solidsHud() {
   const sc = (x, z) => { const q = new DOMPoint(x, z).matrixTransform(M); return [q.x - box.left, q.y - box.top]; };
   const pts = a => a.map(q => q.map(v => v.toFixed(1)).join(",")).join(" ");
   const back = g + figYMin(F), zs = Array.from({ length: 9 }, (_, i) => back + (F.bottom - back) * i / 8);
-  const solids = solidsHere().map(o => ({ name: o.name, q: [[o.x0 - m, o.back], [o.x1 + m, o.back], [o.x1 + m, o.front], [o.x0 - m, o.front]].map(([x, z]) => sc(x, z)) }));
+  // (each its footprint on the floor, and its front face up as tall as the thing, o.h, so it stands over what it is)
+  const solids = solidsHere().map(o => ({ name: o.name, q: [[o.x0 - m, o.back], [o.x1 + m, o.back], [o.x1 + m, o.front], [o.x0 - m, o.front]].map(([x, z]) => sc(x, z)),
+    face: [[o.x0 - m, o.front], [o.x1 + m, o.front], [o.x1 + m, o.front - (o.h || 0)], [o.x0 - m, o.front - (o.h || 0)]].map(([x, z]) => sc(x, z)) }));
   const walls = W ? [-1, 1].map(sd => zs.map(z => sc(sd * (W.half(z) - m), z))) : [];
   const line = [sc(F.left, back), sc(F.right, back)];
-  const sig = JSON.stringify([solids.map(o => pts(o.q)), walls.map(pts), pts(line)]);
+  const sig = JSON.stringify([solids.map(o => pts(o.q) + pts(o.face)), walls.map(pts), pts(line)]);
   if (sig === solidsShown && ov) return;
   solidsShown = sig;
   if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "solid-boxes"); layer.prepend(ov); }
   ov.innerHTML = `<polyline class="back" points="${pts(line)}"/>` + walls.map(w => `<polyline class="wall" points="${pts(w)}"/>`).join("") +
-    solids.map(o => `<polygon points="${pts(o.q)}"/><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("");
+    solids.map(o => `<polygon class="face" points="${pts(o.face)}"/><polygon points="${pts(o.q)}"/><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("");
 }
 let pathShown = "";
 function pathHud() {
-  const layer = document.getElementById("ways");
+  const layer = document.getElementById("access-layer");
   if (!layer) return;
   const A = state.access || DEFAULTS.access, P = walkPath, live = !!(A.showPath && P && entering && P.pts && P.pts.length > 1);
   let ov = layer.querySelector("svg.walk-path");

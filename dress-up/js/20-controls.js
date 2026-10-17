@@ -480,14 +480,16 @@ const TABS = [
   // (ticket 155) last, where the GitHub chip was
   // (ticket 217, Matthew) before Advanced: what helps a player see and read
   ["♿ Accessibility", "access", [
-    ["flip", "allArrows", ["🧭 nav arrows: only the near ones (tap: show every one)", "🧭 nav arrows: every one shown (tap: only the near ones)"]],
-    ["range", "arrowDim", "🌗 how bright the far arrows are (%)", 10, 100, 45, 45],
-    ["color", "arrowColor", "🎨 the far arrows' colour", ["#38bdf8", "#a78bfa", "#f472b6", "#fb923c", "#4ade80", "#facc15", "#ffffff"]],
-    ["range", "arrowSize", "↕️ the nav arrows' size (100 = as they were)", 50, 250, 100, 100],
-    ["range", "gameFont", "🔤 the words in the game: signs, the arrows' words (100 = as they were)", 60, 250, 100, 100],
-    ["flip", "showPath", ["👣 the planned path: hidden (tap: show it)", "👣 the planned path: shown while walking (tap: hide it)"]],
+    // (0.0.139, Matthew: the chips' words "way, way too long ... Just a few words please. Or just two words, or even one": a
+    // chip says what it is, and is lit (pressed) while on)
+    ["flip", "allArrows", ["🧭 all arrows", "🧭 all arrows"]],
+    ["range", "arrowDim", "🌗 far arrows' brightness", 10, 100, 45, 45],
+    ["color", "arrowColor", "🎨 far arrows' colour", ["#38bdf8", "#a78bfa", "#f472b6", "#fb923c", "#4ade80", "#facc15", "#ffffff"]],
+    ["range", "arrowSize", "↕️ arrow size", 50, 250, 100, 100],
+    ["range", "gameFont", "🔤 text size", 60, 250, 100, 100],
+    ["flip", "showPath", ["👣 planned path", "👣 planned path"]],
     // (Matthew, added: "show the collision boxes you are using for collision tests, if you can")
-    ["flip", "showSolids", ["🟥 collision boxes: hidden (tap: show them)", "🟥 collision boxes: shown (tap: hide them)"]],
+    ["flip", "showSolids", ["🟥 collision boxes", "🟥 collision boxes"]],
   ]],
   ["⚙️ Advanced", "advanced", [
     ["advanced", "perf", "⚙️ advanced"],

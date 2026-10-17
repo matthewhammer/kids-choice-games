@@ -73,19 +73,29 @@ try {
     // (one that is walked to: the way south, else the farthest passage; a picture within reach is flown into, no walk)
     const far = q => Math.abs((q.x0 + q.x1) / 2 - B.figX), p = marks.pics.find(q => q.kind === "south") || [...marks.pics].sort((a, b) => far(b) - far(a))[0]; if (!p) return JSON.stringify({ none: true });
     const from = B.kind; enterScene(p.el); let seen = 0, lines = 0;
-    for (let t = 0; t < 4000 && entering; t += 50) { await w(50); const ov = document.querySelector("#ways svg.walk-path"); if (ov) { seen++; lines = Math.max(lines, ov.querySelectorAll("polyline").length); } }
-    await w(300); const after = !!document.querySelector("#ways svg.walk-path"); A.showPath = false; changed();
+    for (let t = 0; t < 4000 && entering; t += 50) { await w(50); const ov = document.querySelector("#access-layer svg.walk-path"); if (ov) { seen++; lines = Math.max(lines, ov.querySelectorAll("polyline").length); } }
+    await w(300); const after = !!document.querySelector("#access-layer svg.walk-path"); A.showPath = false; changed();
     return JSON.stringify({ seen, lines, after, kind: B.kind, from }); })()`));
   ok("the planned path is drawn while the friend walks to a passage", !path.none && path.seen > 0 && path.lines > 0, path);
   ok("and gone once they are there", !path.after, path);
   // the collision boxes: one drawn for each solid, gone when hidden
   const sol = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { showSolids: true });
     state.world = clone(DEFAULTS.world); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: 0, figY: 40 }); changed(); await w(500); changed(); await frames(3);
-    const ov = document.querySelector("#ways svg.solid-boxes"), n = solidsHere().length, drawn = ov ? ov.querySelectorAll("polygon").length : 0, names = ov ? [...ov.querySelectorAll("text")].map(t => t.textContent) : [];
-    A.showSolids = false; changed(); await frames(3); const gone = !document.querySelector("#ways svg.solid-boxes");
+    const ov = document.querySelector("#access-layer svg.solid-boxes"), n = solidsHere().length, drawn = ov ? ov.querySelectorAll("polygon:not(.face)").length : 0, names = ov ? [...ov.querySelectorAll("text")].map(t => t.textContent) : [];
+    A.showSolids = false; changed(); await frames(3); const gone = !document.querySelector("#access-layer svg.solid-boxes");
     return JSON.stringify({ n, drawn, names, gone }); })()`));
   ok("🟥 the collision boxes: one drawn for each solid in the living room, named", sol.n > 0 && sol.drawn === sol.n && sol.names.length === sol.n, sol);
   ok("and gone when hidden", sol.gone, sol);
+  // (0.0.139, Matthew's bug: the boxes shifted the arrows onto each other's places, and vanished with a new square's arrows)
+  const keep = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { allArrows: true, arrowSize: 150, gameFont: 150 }); await clearing(); await w(300);
+    const where = () => arrows().map(el => el.dataset.way + "@" + el.style.left + "," + el.style.top).join(" ");
+    const before = where(); A.showSolids = true; changed(); await frames(4); await w(200); const after = where();
+    worldEnter("2,3", null, false); changed(); await frames(5); const still = !!document.querySelector("#access-layer svg.solid-boxes");
+    const firstIsArrow = arrows().length === document.getElementById("ways").children.length;
+    Object.assign(A, DEFAULTS.access); changed(); await frames(3);
+    return JSON.stringify({ same: before === after, before, after, still, firstIsArrow }); })()`));
+  ok("with the collision boxes shown, every arrow stays where it was", keep.same && keep.firstIsArrow, keep);
+  ok("and the boxes stay shown in the next square, till they are hidden", keep.still, keep);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
