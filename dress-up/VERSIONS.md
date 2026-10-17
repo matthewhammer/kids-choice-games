@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.93 (2026-10-16)
+
+Everything in 0.0.92, plus the still pictures as bitmaps, for the iPad.
+
+- **On a slow computer the places' still pictures are bitmaps now** (the kids' computers, 🧪 on 0.0.92): the duck pond swam at 22 frames a second on the iPad and 27 on the black laptop as it is; with the place as still pictures drawn as svg, 24 on the iPad (Safari draws them anew every frame) and 59 on the black laptop; as bitmaps, drawn once into the screen's own pixels, 60 on the iPad and 58 on the black laptop. So the pictures are bitmaps everywhere, at the picture's size on the screen (made again if it changes size).
+- **Found choppy sooner**: the frames are judged 60 at a time, not 120, so the iPad and the black laptop hold the places still after about 3 to 5 seconds of moving in a busy place, not 7 to 11.
+- 🧪's pass 9 is the pictures as svg, pass 10 as bitmaps, as the game now draws them.
+
 ## 0.0.92 (2026-10-16)
 
 Everything in 0.0.91, plus a fast computer no longer stays "choppy".

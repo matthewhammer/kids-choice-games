@@ -1000,10 +1000,10 @@ async function speedCheck(report) {
     // (0.0.87: as held still, but the place a still picture while the friend
     // moves, as a slow computer now draws it (stillPic); 0.0.86's pass 9 made
     // the whole place one picture, the friend in front of everything)
-    const pondPicture = await without(9, "with its scenery a still picture", () => { SPEED_TEST.still = true; PERF.slowMoving = false; }, () => { SPEED_TEST.still = false; PERF.slowMoving = true; });
-    // (0.0.87, for the iPad, where 9 helped nothing: the picture as a bitmap;
-    // and both of the friend's water parts away at once)
-    const pondBitmap = await without(10, "with its scenery a still bitmap", () => { SPEED_TEST.still = true; PERF.slowMoving = false; SPEED_TEST.bitmap = true; }, () => { SPEED_TEST.still = false; PERF.slowMoving = true; SPEED_TEST.bitmap = false; });
+    // (0.0.93: pass 9 the pictures as svg, pass 10 as bitmaps, as the game draws them since the iPad's 0.0.92 line)
+    const pondPicture = await without(9, "with its scenery a still picture (svg)", () => { SPEED_TEST.still = true; PERF.slowMoving = false; SPEED_TEST.svg = true; }, () => { SPEED_TEST.still = false; PERF.slowMoving = true; SPEED_TEST.svg = false; });
+    // (and both of the friend's water parts away at once)
+    const pondBitmap = await without(10, "with its scenery a still bitmap", () => { SPEED_TEST.still = true; PERF.slowMoving = false; }, () => { SPEED_TEST.still = false; PERF.slowMoving = true; });
     const pondNoWater = await without(11, "without the rings and the part under water", () => { SPEED_TEST.noRings = SPEED_TEST.noUnder = true; }, () => { SPEED_TEST.noRings = SPEED_TEST.noUnder = false; });
     report("🧪 12 of 14: the duck pond with its music…");
     state.music.mute = false; changed(); await wait(1200);
@@ -1025,7 +1025,7 @@ async function speedCheck(report) {
     report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · without its scenery: ${p(pondNoScene)} · without the part under water: ${p(pondNoUnder)} · without the rings: ${p(pondNoRings)} · scenery a still picture: ${p(pondPicture)} · a still bitmap: ${p(pondBitmap)} · without the rings and the part under water: ${p(pondNoWater)} · with music: ${p(pondMusic)} · the empty room after the pond: ${p(roomAfter)}, with its music: ${p(roomAfterMusic)} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
   } finally {
     state = JSON.parse(saved);
-    Object.assign(SPEED_TEST, { holder: null, noUnder: false, noRings: false, noPic: false, bitmap: false, still: false });
+    Object.assign(SPEED_TEST, { holder: null, noUnder: false, noRings: false, noPic: false, svg: false, still: false });
     slowFlag = keep.slowFlag; choppy = keep.choppy; PERF.slowMoving = keep.slowMoving;
     moveSuspend = false; moveFrames = moveLate = 0;
     perfBusy = false;
@@ -1091,7 +1091,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.92", released: "2026-10-16" };
+const VERSION = { number: "0.0.93", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -10182,18 +10182,20 @@ let slowAvg = 0, slowN = 0, slowFlag = false;
 try { slowFlag = localStorage.getItem("dress-up-slow") === "1"; } catch (e) { /* (measured afresh) */ }
 // (ticket 164) Or frames dropping while the friend moves: the black laptop
 // draws the friend in 1 ms, as fast as Matthew's laptop, yet the duck pond
-// was choppy there. Over each 120 frames of movement (moved(), the
+// was choppy there. Over each CHOPPY_FRAMES (60) frames of movement (moved(), the
 // controller's steps and a drag's frames; a gap over 250 ms is a pause,
 // not a frame), more than CHOPPY_LATE of them later than 25 ms, in
 // CHOPPY_WINDOWS such windows in a row, makes this computer choppy (the
 // black laptop's duck pond: 62 to 100% late; a fast one has 0 to 9%), and
-// it stays so for the visit: with the places held still its frames come
+// it stays so for the visit (0.0.93: 60 frames a window, not 120: at the
+// iPad's 22 frames a second two windows of 120 took 11 s of moving before
+// the places were held still, on every visit): with the places held still its frames come
 // back, and it would only flip back and forth. Not across visits (0.0.92,
 // ticket 172): kept in the browser, one bad moment held Matthew's laptop
 // still on every visit after (its 🧪 on 0.0.91: 57 to 61 frames a second
 // in every pass, yet found choppy); each visit measures afresh. A trip
 // through a doorway does not count: its arrival's frame is long by nature.
-const CHOPPY_LATE = 0.25, CHOPPY_WINDOWS = 2;
+const CHOPPY_LATE = 0.25, CHOPPY_WINDOWS = 2, CHOPPY_FRAMES = 60;
 let choppy = false, moveFrameLast = 0, moveFrames = 0, moveLate = 0, moveSuspend = false, choppyRun = 0;
 try { localStorage.removeItem("dress-up-choppy"); } catch (e) { /* (nothing kept) */ }
 function noteMoveFrame(t) {
@@ -10203,7 +10205,7 @@ function noteMoveFrame(t) {
   if (g <= 0 || g > 250) return;
   moveFrames++;
   if (g > 25) moveLate++;
-  if (moveFrames < 120) return;
+  if (moveFrames < CHOPPY_FRAMES) return;
   choppyRun = moveLate > CHOPPY_LATE * moveFrames ? choppyRun + 1 : 0;
   if (!choppy && choppyRun >= CHOPPY_WINDOWS) { choppy = true; setTimeout(changed, 0); }
   moveFrames = moveLate = 0;
@@ -10218,7 +10220,7 @@ const sceneryStill = () => (SPEED_TEST.still || slowFlag || choppy) && !PERF.slo
 // noUnder, no faint copy of the friend under the water; noRings, no rings;
 // (0.0.87) noPic, no still picture (below); bitmap, the still picture as a
 // bitmap. Only the speed check sets them, and it puts them back.
-const SPEED_TEST = { holder: null, noUnder: false, noRings: false, noPic: false, bitmap: false, still: false };
+const SPEED_TEST = { holder: null, noUnder: false, noRings: false, noPic: false, svg: false, still: false };
 // (ticket 164, 0.0.87) On a slow computer, while the friend moves, the
 // place is drawn as still pictures. The black laptop's 🧪 (0.0.86) swam the
 // duck pond at 30 frames a second as it is, and at 59 with its scenery one
@@ -10232,7 +10234,11 @@ const SPEED_TEST = { holder: null, noUnder: false, noRings: false, noPic: false,
 // are needed, for the place and the friend's depth, and again when the
 // friend goes past an object's depth; until they are ready the scene is
 // drawn as it is. STILL_PIC_HOLD ms after the last move the scene itself is
-// shown again, where clicks reach it.
+// shown again, where clicks reach it. Since 0.0.93 each part is a bitmap
+// (drawn once into a canvas at the screen's own pixels): the iPad's 🧪 on
+// 0.0.92 swam the pond at 24 frames a second with the parts as svg pictures
+// (Safari draws an svg picture again every frame) and at 60 as bitmaps; an
+// svg picture is the fallback where a bitmap can't be made (bitmapOk).
 const STILL_PIC_HOLD = 400, STILL_PARTS = 6, STILL_RES = "defs, linearGradient, radialGradient, pattern, clipPath, mask, filter, symbol, marker, style";
 const stillPic = { gen: 0, node: null, text: null, vb: null, bitmap: false, off: "", parts: new Map(), shown: [], on: false, onNode: null, glow: null, glowOf: null, bitmapOk: null, drawsOn: 0, draws: 0 };
 let stillPicUntil = 0, stillPicEnd = 0;
@@ -10240,10 +10246,12 @@ const stillPicWanted = () => !!bgShown.node && sceneryStill() && !SPEED_TEST.hol
 // (the parts' pictures, kept while the place, its frame and its hidden objects stay as they are)
 function stillPicReset() {
   const vb = pic.getAttribute("viewBox"), off = [...objectsOff(state.background)].join(",");
-  if (stillPic.node === bgShown.node && stillPic.text === bgShown.text && stillPic.vb === vb && stillPic.bitmap === SPEED_TEST.bitmap && stillPic.off === off) return;
+  // (the picture's size on the screen too, for a bitmap's pixels: in steps of 32 px)
+  const bitmap = !SPEED_TEST.svg, size = bitmap ? Math.round(pic.getBoundingClientRect().width * (devicePixelRatio || 1) / 32) : 0;
+  if (stillPic.node === bgShown.node && stillPic.text === bgShown.text && stillPic.vb === vb && stillPic.bitmap === bitmap && stillPic.size === size && stillPic.off === off) return;
   showStillPic(null);
   for (const p of stillPic.parts.values()) { if (p.img) p.img.remove(); if (p.url) URL.revokeObjectURL(p.url); }
-  Object.assign(stillPic, { gen: stillPic.gen + 1, node: bgShown.node, text: bgShown.text, vb, bitmap: SPEED_TEST.bitmap, off, parts: new Map(), shown: [] });
+  Object.assign(stillPic, { gen: stillPic.gen + 1, node: bgShown.node, text: bgShown.text, vb, bitmap, size, off, parts: new Map(), shown: [] });
 }
 // a part's picture: what the scene draws from just after object lo - 1 (from
 // its start, for 0) to just before object hi (to its end, for the last),
@@ -10292,11 +10300,11 @@ function stillPart(lo, hi) {
                 new XMLSerializer().serializeToString(copy) + `</svg>`;
     let url = URL.createObjectURL(new Blob([doc], { type: "image/svg+xml" }));
     if (bitmap) {
-      // (for Safari, where 0.0.86's svg picture helped nothing: drawn once
-      // into pixels at this screen's size)
+      // (drawn once into pixels at this screen's size: see above)
       try {
         const im = new Image(); im.src = url; await im.decode();
-        const r = pic.getBoundingClientRect(), k = Math.min(r.width / w, r.height / h) * (devicePixelRatio || 1);
+        // (pixels per unit as the screen shows the picture: its frame, without the 3% round it, across its box)
+        const r = pic.getBoundingClientRect(), k = Math.min(r.width / (w / 1.06), r.height / (h / 1.06)) * (devicePixelRatio || 1);
         const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
         c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
         const blob = await new Promise(res => c.toBlob(res, "image/png"));
