@@ -62,12 +62,51 @@ function setWorldBig(on) {
   document.body.classList.toggle("world-big", on);
   for (const b of document.querySelectorAll("button.worldbig")) b.textContent = WORLD_BIG[on ? 1 : 0];
   if (on) document.querySelector(".side").scrollTop = 0;
+  placePic();
   try {
     if (on && document.documentElement.requestFullscreen && !document.fullscreenElement)
       document.documentElement.requestFullscreen().catch(() => {});
     else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
   } catch (e) { /* the window-filling designer is enough */ }
 }
+// (ticket 231, Matthew: "show the in-game view as the first sub-panel, the full width of the RHS of the full screen
+// view. Then a way to scroll the panels below and keep that in-game view fixed. An eye-ball to hide it ... off by
+// default, so we are showing it by default") The world designer full screen, on a wide window: the picture itself
+// (.pic-box: #pic with its arrows and buttons, live, to walk in and to drag things into) moves into the right side's
+// first card (.world-view-pic), held under the bar as the cards below it scroll; ticket 224's dragger sizes it. The
+// card's 👁️ folds it away to its name and back, kept in this browser. Leaving full screen, a narrow window, or the
+// tab built again (showTab) puts the picture where it belongs again.
+const WORLD_VIEW_KEY = "dress-up-world-view", worldWide = matchMedia("(min-width: 900px)");
+// (held, not looked up: the tab built again takes the card, and the picture in it, out of the page until placed)
+const picBoxEl = document.querySelector(".pic-box"), picHome = document.querySelector(".pic-area");
+let worldViewHidden = false, picSlot = null;
+try { worldViewHidden = localStorage.getItem(WORLD_VIEW_KEY) === "hidden"; } catch (e) { /* (shown) */ }
+function placePic() {
+  const box = picBoxEl, home = picHome, slot = document.querySelector(".world-view-pic");
+  if (!box || !home) return;
+  const into = document.body.classList.contains("world-big") && worldWide.matches && !worldViewHidden && slot ? slot : null;
+  if (into !== picSlot && picAreaWatch) { if (picSlot) picAreaWatch.unobserve(picSlot); if (into) picAreaWatch.observe(into); }
+  picSlot = into;
+  if (into && box.parentNode !== into) into.append(box);
+  if (!into && box.parentNode !== home) home.insertBefore(box, home.querySelector(".bar"));
+  document.body.classList.toggle("pic-in-world", !!into);
+  picAreaSize = null; fitPic();
+}
+// the card's 👁️, lit while the view shows (as the HUD's eyes)
+function worldViewMark(card) {
+  card.classList.toggle("folded", worldViewHidden);
+  const eye = card.querySelector(".eye");
+  eye.setAttribute("aria-pressed", String(!worldViewHidden));
+  eye.title = worldViewHidden ? "Show the in-game view here" : "Hide the in-game view (more room for the controls)";
+  eye.setAttribute("aria-label", eye.title);
+}
+function worldViewShow(on) {
+  worldViewHidden = !on;
+  try { if (on) localStorage.removeItem(WORLD_VIEW_KEY); else localStorage.setItem(WORLD_VIEW_KEY, "hidden"); } catch (e) { /* (for this visit) */ }
+  for (const card of document.querySelectorAll(".world-view")) worldViewMark(card);
+  placePic();
+}
+worldWide.addEventListener("change", placePic);
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && document.body.classList.contains("world-big")) setWorldBig(false);
   if (e.key === "Escape" && document.body.classList.contains("big")) setBig(false);

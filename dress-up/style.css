@@ -125,7 +125,9 @@
     body.world-big .world-rest > :not([hidden]) { margin: 0; border: 2px solid var(--line); border-radius: 12px; padding: 8px 10px; background: var(--mu-main); }
     body.world-big .world-rest > :is(.world-alert, .world-warn, .world-palette, .world-things, .world-off) { grid-column: 1 / -1; }
     body.world-big .world-rest > .world-alert { border-color: #d97706; background: color-mix(in srgb, #f59e0b 18%, var(--panel)); }
-    body.world-big .world-grid { --grid-h: calc(100dvh - 120px); margin-top: 0; }
+    /* (ticket 231's check: the grid's column, 🗑️ under it, no taller than the window under the bar, or at the end of
+       the right side's scroll it rose 13px; 120px was the grid alone) */
+    body.world-big .world-grid { --grid-h: calc(100dvh - 140px); margin-top: 0; }
     /* the things here, each its own card, side by side (Matthew: "especially for squares with lots of objects, each with their own controls") */
     body.world-big .world-things .cross-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 8px; }
     body.world-big .world-things .cross-list > .row { margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: var(--mu-inst); flex-wrap: wrap; align-content: flex-start; }
@@ -136,6 +138,22 @@
                                grid-template-columns: var(--lab) repeat(var(--cols, 5), var(--cell)); grid-template-rows: var(--lab); }
   body.world-big .world-lab { display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--muted); font-size: clamp(12px, calc(var(--cell) * 0.16), 30px); }
   body.world-big .world-name-row input { font-size: 1.25em; padding: 8px 12px; }
+  /* (ticket 231) the in-game view, full screen on a wide window only: the right side's first card, the picture itself
+     (placePic) its whole width (fitPic: at most 60% of the window's height), held under the bar as the cards below
+     scroll past it; a strip of the page's colour over it hides them between it and the bar. Its 👁️ folds it to its
+     name, a card that scrolls with the rest. The picture's own full-screen and controller buttons are not for here. */
+  .world-view { display: none; }
+  @media (min-width: 900px) {
+    body.world-big .world-rest > .world-view { display: block; grid-column: 1 / -1; }
+    body.world-big .world-rest > .world-view:not(.folded) { position: sticky; top: 56px; z-index: 4; }
+    body.world-big .world-rest > .world-view:not(.folded)::before { content: ""; position: absolute; left: -2px; right: -2px; bottom: 100%; height: 16px; background: var(--bg); }
+  }
+  .world-view-head { gap: 6px; align-items: center; margin-bottom: 6px; }
+  .world-view-head .eye { font-size: 1.2em; margin: 0; }
+  .world-view.folded .world-view-head { margin-bottom: 0; }
+  .world-view-pic { display: flex; justify-content: center; }
+  .world-view.folded .world-view-pic { display: none; }
+  body.pic-in-world .max-btn, body.pic-in-world .pad-btn { display: none; }
   /* (ticket 164) a still place, on a slow computer: no CSS animations in the scenery either (the fairies' wings) */
   body.still-scenery #bg * { animation: none !important; }
   /* (ticket 155) the ⚙️ advanced tab: a feature kept off until it is fast, a row each */

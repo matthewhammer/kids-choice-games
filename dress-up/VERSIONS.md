@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.160 (2026-10-17)
+
+Everything in 0.0.159, with the game in view while you design its world.
+
+- **See the game while you design it**: in the world designer's ⛶ full screen, the game's picture is now the first card on the right, as wide as that side. It stays in place while the cards under it scroll, so you can walk your friend, follow the arrows to the next square, and drag things from "🪨 things here" straight into the picture. Drag the bar between the grid and the right side to make the picture bigger or smaller. Tap its 👁️ to fold it away for more room, and tap it again to bring it back; the browser remembers which. It shows when the window is at least 900 pixels wide.
+
 ## 0.0.159 (2026-10-17)
 
 Everything in 0.0.158, with far-off passages back within reach.

@@ -24,11 +24,14 @@ function fitPic() {
     window.addEventListener("resize", () => { picAreaSize = null; });
   }
   const vb = pic.viewBox.baseVal, ar = vb && vb.width > 0 && vb.height > 0 ? vb.width / vb.height : 4 / 3;
-  const big = document.body.classList.contains("big"), narrow = narrowMedia.matches && !big;
-  if (!picAreaSize || picAreaSize.big !== big || picAreaSize.narrow !== narrow || !picAreaWatch) {
+  const big = document.body.classList.contains("big"), view = document.body.classList.contains("pic-in-world"), narrow = narrowMedia.matches && !big && !view;
+  if (!picAreaSize || picAreaSize.big !== big || picAreaSize.narrow !== narrow || picAreaSize.view !== view || !picAreaWatch) {
     // (the caption and buttons under it, in the same area, take their share of its height)
-    const bar = big ? null : area.querySelector(".bar");
-    picAreaSize = { big, narrow, W: area.clientWidth, H: narrow ? window.innerHeight * 0.4 : area.clientHeight - (bar ? bar.offsetHeight : 0) };
+    const bar = big ? null : area.querySelector(".bar"), slot = view ? document.querySelector(".world-view-pic") : null;
+    // (ticket 231) in the world designer's right side (placePic): its card's width, and at most 60% of the window
+    // under the bar (56px, as the stylesheet's), so the cards below it keep room to scroll
+    picAreaSize = slot ? { big, narrow, view, W: slot.clientWidth, H: (window.innerHeight - 56) * 0.6 }
+      : { big, narrow, view, W: area.clientWidth, H: narrow ? window.innerHeight * 0.4 : area.clientHeight - (bar ? bar.offsetHeight : 0) };
   }
   const { W, H } = picAreaSize;
   if (!(W > 0) || !(H > 0)) { picAreaSize = null; return; }

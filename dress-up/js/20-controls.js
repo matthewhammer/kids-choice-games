@@ -1384,8 +1384,14 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     things.classList.add("world-things");
     const gridcol = el("div", { class: "world-gridcol" }, [gridWrap, el("div", { class: "row" }, [trash])]);
     const split = el("div", { class: "world-split", role: "separator", "aria-orientation": "vertical", title: "Drag: more room for the grid, or for the controls" });
+    // (ticket 231, Matthew: "show the in-game view as the first sub-panel, the full width of the RHS of the full screen
+    // view") full screen, the right side's first card: the picture itself, put in it by placePic, held in place as the
+    // cards below scroll; its 👁️ folds it away (worldViewShow), shown unless folded
+    const view = el("div", { class: "world-view" }, [el("div", { class: "row world-view-head" }, [
+      el("button", { class: "eye", onclick: () => worldViewShow(worldViewHidden) }, "👁️"), el("span", { class: "hint" }, "📺 in-game view")]), el("div", { class: "world-view-pic" })]);
+    worldViewMark(view);
     const layout = el("div", { class: "world-layout" }, [
-      el("div", { class: "world-rest" }, [notHere, warnings, palette, el("div", { class: "world-sizes" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
+      el("div", { class: "world-rest" }, [view, notHere, warnings, palette, el("div", { class: "world-sizes" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
       split, gridcol]);
     try { const v = localStorage.getItem("dress-up-world-split"); if (v) layout.style.setProperty("--left", v); } catch (e) { /* (the usual split) */ }
     split.addEventListener("pointerdown", e => {
@@ -1806,5 +1812,6 @@ function showTab() {
   const [, part, ctls] = TABS[tab];
   panel.dataset.part = part;
   panel.replaceChildren(...ctls.map(c => control(part, c)));
+  placePic();   // (ticket 231: the world designer's view built again, or gone with its tab)
   changed();
 }
