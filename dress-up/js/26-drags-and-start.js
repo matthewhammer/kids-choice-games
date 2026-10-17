@@ -788,12 +788,26 @@ function walkTo(x, y, then) {
 // widths): the one whose hole (PIT_EDGE of it, so a foot on the rim does not
 // fall) the friend's feet at (x, z) are over, or null. Walking onto one, not
 // jumping, falls in (padPoll, endJump).
+// (0.0.157, Matthew: "the mechanism for falling a pit works -- let's integrate that with the rest of collision
+// detection") A pit is one of the things the friend's boxes meet, as a solid is: not one that stops them, one they
+// fall into, when the middle of each sole (feetSoles) is over its hole; ♿'s collision boxes show it, named, the fall
+// glows it as a collision glows a solid (solidHit), and a planned walk goes round it (planPath).
 const PIT_EDGE = 0.8;
 let pitMemo = { text: undefined, pits: [] };
-function pitAt(x, z) {
+function pitsHere() {
   if (pitMemo.text !== bgShown.text) pitMemo = { text: bgShown.text, pits: bgShown.node ? [...bgShown.node.querySelectorAll(".portal[data-pit]")].map(el => {
-    const [cx, cy, rx, ry] = el.dataset.pit.split(" ").map(Number); return { el, cx, cy, rx, ry }; }) : [] };
-  return (pitMemo.pits.find(q => ((x - q.cx) / (PIT_EDGE * q.rx)) ** 2 + ((z - q.cy) / (PIT_EDGE * q.ry)) ** 2 < 1) || {}).el || null;
+    const [cx, cy, rx, ry] = el.dataset.pit.split(" ").map(Number), room = el.dataset.room;
+    return { el, cx, cy, rx, ry, name: room ? `pit to room ${room}` : "pit" }; }) : [] };
+  return pitMemo.pits;
+}
+const overPit = (q, x, z) => ((x - q.cx) / (PIT_EDGE * q.rx)) ** 2 + ((z - q.cy) / (PIT_EDGE * q.ry)) ** 2 < 1;
+function pitAt(x, z) {
+  const P = pitsHere();
+  if (!P.length) return null;
+  const mids = feetSoles(x, z).map(s => [(s[0] + s[1]) / 2, (s[2] + s[3]) / 2]), q = P.find(q => mids.every(([mx, mz]) => overPit(q, mx, mz)));
+  if (!q) return null;
+  solidHit = { name: q.name, n: solidHit.n + 1, t: performance.now() };   // (the fall glows it and the friend's boxes)
+  return q.el;
 }
 // (after a fall, in the place below: dropping in from above the picture, and landing on bent knees)
 let landFall = false;

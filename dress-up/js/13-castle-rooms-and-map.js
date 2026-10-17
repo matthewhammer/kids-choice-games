@@ -1919,8 +1919,11 @@ function castleWays(c, K, n, style) {
     // (a long room's doors one object, all as far as its nearest one's foot, at the room's mouth)
     return (exits === "spiral" ? doors.map((L, i) => { const d = spiralDoorAt(c, i); return obj(`door ${doorNo[i]}`, d.y, archDoor(d.x, d.y, d.k, L.label, L.attrs, 70, 130)); }).join("")
       : exits === "long" ? (doors.length ? obj("doors", floor, hallDoors(c, doors)) : "")
+      // (ticket 223, Matthew: "a layering issue", the throne room's side door drawn over the friend standing beside it,
+      // their head and arm sticking out past its edge) a door flat on its side wall is behind anyone in the room: drawn
+      // with the back wall (its foot, floor), as the long rooms' doors are, not at its near edge's depth
       : doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j;
-          return obj(`door ${doorNo[i]}`, S.at(0, floor, z1 - 0.12)[1], hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k)); }).join("")) + far +
+          return obj(`door ${doorNo[i]}`, floor, hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k)); }).join("")) + far +
       (out ? obj("sign", Infinity, `<g class="portal" ${out.attrs}><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
       plankSign(-W * 0.2, y1 - 44 * k, k, `${out.label} ⬇️`) + `</g>`) : "");
   }
@@ -1943,7 +1946,8 @@ function castleWays(c, K, n, style) {
     t += obj(`arch to room ${linkTo[i]}`, floor, archDoor(sd * (bw * 0.86 - j * 104 * k), floor, k, L.label, L.attrs, 76, 140));
   });
   more.forEach((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.15 * j;
-    t += obj(`door to room ${linkTo[6 + i]}`, S.at(0, floor, z1 - 0.11)[1], hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.11, z1, L.label, L.attrs, j * 46 * k)); });
+    // (ticket 223: on its wall, behind anyone in the room)
+    t += obj(`door to room ${linkTo[6 + i]}`, floor, hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.11, z1, L.label, L.attrs, j * 46 * k)); });
   signs.forEach((L, i) => { const x = (i % 2 ? 1 : -1) * W * (0.12 + 0.17 * Math.floor(i / 2));
     t += obj(`sign to room ${linkTo[10 + i]}`, Infinity, bottomSign(c, x, L.label, L.attrs)); });
   return t + behind;

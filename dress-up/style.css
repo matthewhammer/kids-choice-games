@@ -531,22 +531,24 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
 .solid-boxes polygon { fill: color-mix(in srgb, var(--box-color, #ef4444) 20%, transparent); stroke: var(--box-color, #ef4444); stroke-width: var(--box-width, 2px); stroke-dasharray: 6 4; }
 .solid-boxes polygon.face { fill: color-mix(in srgb, var(--box-color, #ef4444) 8%, transparent); stroke-width: calc(0.75 * var(--box-width, 2px)); stroke-dasharray: 3 4; }
 .solid-boxes .wall { fill: none; stroke: #f59e0b; stroke-width: 3; stroke-dasharray: 8 5; }
+.solid-boxes ellipse.pit { fill: color-mix(in srgb, #f97316 18%, transparent); stroke: #f97316; stroke-width: var(--box-width, 2px); stroke-dasharray: 5 4; }   /* (0.0.157: a pit's hole, gone round) */
 .solid-boxes .back { fill: none; stroke: #a855f7; stroke-width: 2; stroke-dasharray: 4 6; }
 /* (ticket 229) the friend's own box, and a collision's glow: the two boxes brighter and glowing, back in --glow-fade */
 .solid-boxes .you polygon { fill: color-mix(in srgb, var(--box-color, #ef4444) 30%, transparent); stroke: var(--box-color, #ef4444); stroke-width: var(--box-width, 2px); stroke-dasharray: none; }
 /* (Matthew: "when they glow, their interior temporarily becomes opaque, and then becomes transparent again", "maybe 50% opaque") */
-.solid-boxes .hit polygon, .solid-boxes polygon.hit { animation: solid-glow var(--glow-fade, 800ms) ease-out; }
+.solid-boxes .hit polygon, .solid-boxes polygon.hit, .solid-boxes .hit ellipse { animation: solid-glow var(--glow-fade, 800ms) ease-out; }
 .solid-boxes polyline.hit { animation: wall-glow var(--glow-fade, 800ms) ease-out; }
 @keyframes solid-glow { 0% { fill: var(--box-color, #ef4444); fill-opacity: 0.5; stroke-width: 5; filter: drop-shadow(0 0 7px var(--box-color, #ef4444)); } }
 @keyframes wall-glow { 0% { stroke-width: 8; filter: drop-shadow(0 0 7px var(--box-color, #ef4444)); } }
 .solid-boxes text { font: 600 var(--box-font, 11px) sans-serif; fill: #fff; paint-order: stroke; stroke: color-mix(in srgb, var(--box-color, #ef4444) 55%, #000); stroke-width: 3px; }
 /* (ticket 230) ♿ each overlay's row: its chip, and while on, its colour and short sliders beside it, boxed as a mixer's
    strip; the words' size in a dashed box of its own */
-.accbox { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 6px 0; padding: 4px 10px 4px 0; border: 2px solid transparent; border-radius: 12px; }
+.accbox { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 6px 0; padding: 4px 10px 4px 0; border: 2px solid transparent; border-radius: 12px; }
 .accbox.on { border-color: var(--line); background: var(--mu-inst); padding: 6px 10px; }
 .accbox.plain { border-style: dashed; background: var(--mu-main); }
 .accbox .cap { font-weight: 600; }
-.accmore { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+.accmore { display: contents; }   /* (its items wrap one by one beside the chip, not all onto a line of their own) */
+.accmore[hidden] { display: none; }
 .accitem { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; white-space: nowrap; }
 .accitem input[type=range] { width: 96px; }
 .accitem input[type=color] { width: 34px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }

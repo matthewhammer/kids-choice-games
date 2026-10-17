@@ -352,21 +352,28 @@ function segBox(ax, az, bx, bz, x0, z0, x1, z1) {   // (does the segment pass th
 }
 function planPath(x0, y0, x1, y1) {
   // (the boxes grown by the soles' reach either side, and their depth: the middle kept that far out)
-  const [sx, sz] = feetSpan(), g = SCENE.ground, z0 = g + y0, z1 = g + y1, m = sx + PATH_PAD;
-  const inside = (o, x, z, e = 0) => x > o.x0 - sx - e && x < o.x1 + sx + e && z > o.back - sz - e && z < o.front + sz + e;
+  const [sx, sz] = feetSpan(), g = SCENE.ground, z0 = g + y0, z1 = g + y1;
+  // (0.0.157, Matthew: "planned path goes through the pit --- they don't seem registered in the collision system, but
+  // they should have their own status as something to avoid when planning a path") a trap room's pits, the holes one
+  // falls into (pitsHere, PIT_EDGE of each), gone round too, unless the walk starts or ends in one; it is the middle of
+  // the feet that falls in, so a pit is kept PATH_PAD off, not grown by the soles' reach as a solid is
+  const gx = o => o.pit ? PATH_PAD : sx, gz = o => o.pit ? PATH_PAD : sz;
+  const inside = (o, x, z, e = 0) => x > o.x0 - gx(o) - e && x < o.x1 + gx(o) + e && z > o.back - gz(o) - e && z < o.front + gz(o) + e;
   // (0.0.156: the soles' reach can touch a thing the walk starts or ends beside, the healer's soup pot, the bunk beds;
   // such a thing was left out altogether, and the walk went straight through it. Left out now only when the middle of
   // the feet is in it; touched, a leg from or to that end must miss its own box, not grown)
   const rawIn = (o, x, z) => x > o.x0 && x < o.x1 && z > o.back && z < o.front;
-  const solids = solidsHere().filter(o => !rawIn(o, x0, z0) && !rawIn(o, x1, z1));
+  const pits = pitsHere().map(q => ({ name: "pit", pit: true, x0: q.cx - PIT_EDGE * q.rx, x1: q.cx + PIT_EDGE * q.rx, back: q.cy - PIT_EDGE * q.ry, front: q.cy + PIT_EDGE * q.ry }));
+  const solids = solidsHere().concat(pits).filter(o => !rawIn(o, x0, z0) && !rawIn(o, x1, z1));
   const nearA = new Set(solids.filter(o => inside(o, x0, z0))), nearB = new Set(solids.filter(o => inside(o, x1, z1)));
   const hits = (ax, az, bx, bz, a = false, b = false) => solids.some(o => (a && nearA.has(o)) || (b && nearB.has(o))
-    ? segBox(ax, az, bx, bz, o.x0, o.back, o.x1, o.front) : segBox(ax, az, bx, bz, o.x0 - sx, o.back - sz, o.x1 + sx, o.front + sz));
+    ? segBox(ax, az, bx, bz, o.x0, o.back, o.x1, o.front) : segBox(ax, az, bx, bz, o.x0 - gx(o), o.back - gz(o), o.x1 + gx(o), o.front + gz(o)));
   if (!solids.length || !hits(x0, z0, x1, z1, true, true)) return [[x1, y1]];
   const W = castleWalls(state.background), F = sceneFrame;
   const free = (x, z) => !solids.some(o => inside(o, x, z, 1)) && (!W || Math.abs(x) < W.half(z) - sx) && x > F.left && x < F.right && z - g >= figYMin(F) && z <= F.bottom;
   const pts = [[x0, z0], [x1, z1]];
-  for (const o of solids) for (const p of [[o.x0 - m, o.back - sz - PATH_PAD], [o.x1 + m, o.back - sz - PATH_PAD], [o.x0 - m, o.front + sz + PATH_PAD], [o.x1 + m, o.front + sz + PATH_PAD]]) if (free(...p)) pts.push(p);
+  for (const o of solids) { const mx = gx(o) + PATH_PAD, mz = gz(o) + PATH_PAD;
+    for (const p of [[o.x0 - mx, o.back - mz], [o.x1 + mx, o.back - mz], [o.x0 - mx, o.front + mz], [o.x1 + mx, o.front + mz]]) if (free(...p)) pts.push(p); }
   const cost = (a, b) => Math.hypot(b[0] - a[0], (b[1] - a[1]) / 0.6), n = pts.length;
   const dist = Array(n).fill(Infinity), prev = Array(n).fill(-1), done = Array(n).fill(false);
   dist[0] = 0;

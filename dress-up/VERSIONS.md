@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.157 (2026-10-17)
+
+Everything in 0.0.156, with pits that count as things you meet.
+
+- **Pits are part of bumping into things**: in the trap room, a walk to somewhere else now goes round the pits instead of across them. Walk onto one yourself and you still fall in, now when both feet are over the hole, and 🧱 collision boxes shows each pit (and lights it up when you fall).
+- **Doors stay on the wall**: in the castle's throne room, a side door is no longer drawn over your friend standing beside it.
+- **Tidier ♿ rows**: a helper's colour and sliders now wrap one at a time next to its switch, so more of them fit on one line.
+
 ## 0.0.156 (2026-10-17)
 
 Everything in 0.0.155, with walks that go round things they start or end beside.
