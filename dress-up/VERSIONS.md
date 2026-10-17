@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.133 (2026-10-17)
+
+Everything in 0.0.132, with the tree house's trapdoor the right way round, and doors on its rooms.
+
+- **⬇ takes the trapdoor down**: standing at a tree house room's trapdoor, press ⬇ to climb down its ladder, out of sight below the hatch's edge, into the room below. ⬆ there used to climb up the ladder's top instead.
+- **Doors in the tree house rooms**: each doorway to a rope bridge has a plank door now. Go through it and it swings open, as the castle's doors do, and you walk through to the next house.
+
 ## 0.0.132 (2026-10-17)
 
 Everything in 0.0.131, with a world designer that fills the screen.
