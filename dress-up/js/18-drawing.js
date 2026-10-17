@@ -876,7 +876,7 @@ function drawNow() {
     w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse"><rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/></clipPath>`;
     n.replaceWith(w); w.append(n);
   }
-  pathHud(); solidsHud(); accessApply();   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)
+  pathHud(); solidsHud(); accessApply(); bubbleRun();   // (ticket 220: bubble space's bubbles, moving while it is shown)   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)
   if (scened) { stillPic.draws++; if (stills) stillPic.drawsOn++; }   // (for 🧪)
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was
@@ -910,7 +910,7 @@ function treadTick(t) {
 // Where the friend is, after their feeling ("feeling happy in the forest"):
 // each place with the word it takes, in, at, on, near or outside of; a
 // castle room by its own name and number; a castle by its owner.
-const PLACE_PHRASE = { sea: "swimming in 🌊 open water", deepsea: "swimming in the 🪸 deep sea", imagination: "in 💭 our imagination", emptyroom: "in the 🔲 empty room", forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
+const PLACE_PHRASE = { sea: "swimming in 🌊 open water", deepsea: "swimming in the 🪸 deep sea", bubblespace: "in 🫧 bubble space", imagination: "in 💭 our imagination", emptyroom: "in the 🔲 empty room", forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
   cemetery: "in the 🌿 cemetery", lake: "at the 🦆 lake", house: "outside of the 🏠 house", treehouse: "near the 🌳 tree house",
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
   healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",

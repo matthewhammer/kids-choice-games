@@ -81,7 +81,7 @@ let figureT = { k: 1, dx: 0, dy: 0, g: 0, sg: 0 }, sceneFrame = { left: -200, to
 // ladders are the way up), a little in front of the wall's foot, in the
 // stage's units; else the frame's own limit. The controller, a drag and the
 // place control all keep to it (figYMin, a figY).
-const SCENE_BACK = { imagination: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3, emptyroom: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3 };
+const SCENE_BACK = { imagination: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3, emptyroom: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3, bubblespace: () => imaginationWall(SCENE.ground, (SCENE.bottom - SCENE.top) / 700) + 3 };
 const figYMin = F => Math.max((F.top - F.ground) * 0.6, (F.back ?? -Infinity) - F.ground);
 // (ticket 149) What the friend can't walk through. A castle room's walls,
 // from its perspective (roomFrame, as the room is drawn): the back wall's

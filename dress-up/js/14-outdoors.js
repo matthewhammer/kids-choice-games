@@ -787,6 +787,105 @@ function emptyroomScene(c) {
     `<rect x="${f1(x0 - pad)}" y="${f1(wall)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - wall + pad)}" fill="#f1f3f7"/>` +
     `<line x1="${f1(x0 - pad)}" y1="${f1(wall)}" x2="${f1(x0 + W + pad)}" y2="${f1(wall)}" stroke="#c3c9d4" stroke-width="${f1(2 * k)}"/>`);
 }
+// (ticket 220, Matthew: "bubble space -- like the empty background, except
+// populated with bubbles that collide with each other, and stick, and collide
+// with the player and pop. Controls for number of bubbles initially, their
+// rate of movement (the ambient wind in the room, jostling them around gently
+// or quickly), and up to three 'bubble themes' (A, B and C) with controls for
+// their color, etc") The empty room's wall and floor, in a paler blue, and a
+// layer for the bubbles, in front of everything; bubbleTick moves them each
+// frame while the place is shown (bubbleRun, from draw()).
+const BUBBLE_COLORS = ["#9ad7ff", "#ffb3e6", "#c8f7c5", "#fff3a3", "#d7c4ff", "#ffffff", "#ffc9a3"];
+function bubblespaceScene(c) {
+  const { x0, y1, g, W, k, pad, all } = c, wall = imaginationWall(g, k);
+  return SEP + part("bubblespace", c.F, () => all("#f6fbff") +
+    `<rect x="${f1(x0 - pad)}" y="${f1(wall)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - wall + pad)}" fill="#e9f2fb"/>` +
+    `<line x1="${f1(x0 - pad)}" y1="${f1(wall)}" x2="${f1(x0 + W + pad)}" y2="${f1(wall)}" stroke="#bdd0e4" stroke-width="${f1(2 * k)}"/>`) +
+    SEP + obj("bubbles", Infinity, `<g id="bubble-layer"></g>`);
+}
+// The bubbles, as they move (in the picture's units): each drifts in the
+// room's wind, a breeze slowly turning about, its strength the 🌬️ wind
+// setting, with a little jostle of its own; bounces off the picture's edges;
+// sticks to any it touches (a bond kept by a gentle spring, so stuck ones
+// drift on as a clump); and pops when it touches the friend (a quick swell
+// and fade), another drifting in from an edge a moment later, so the room
+// keeps its number. The themes take turns: A always, B and C when switched on.
+const bubbleSim = { list: [], bonds: [], layer: null, key: "", last: 0, raf: 0 };
+const bubbleThemes = B => ["A", "B", "C"].filter(L => L === "A" || B["bubble" + L + "On"]).map(L => ({
+  color: B["bubble" + L + "Color"], size: B["bubble" + L + "Size"] ?? 18, shine: (B["bubble" + L + "Shine"] ?? 70) / 100,
+  sparkle: B["bubble" + L + "Sparkle"] || "none", sparkleColor: B["bubble" + L + "SparkleColor"] || "#ffffff" }));
+function bubbleRun() {
+  if (state.background.kind !== "bubblespace") { if (bubbleSim.raf) cancelAnimationFrame(bubbleSim.raf); bubbleSim.raf = 0; bubbleSim.list = []; bubbleSim.bonds = []; bubbleSim.layer = null; bubbleSim.key = ""; return; }
+  if (!bubbleSim.raf) bubbleSim.raf = requestAnimationFrame(bubbleTick);
+}
+function bubbleTick(t) {
+  bubbleSim.raf = 0;
+  const B = state.background;
+  if (B.kind !== "bubblespace") return;
+  const layer = document.getElementById("bubble-layer"), F = sceneFrame, k = (F.bottom - F.top) / 700;
+  if (!layer || !(F.right > F.left)) { bubbleSim.raf = requestAnimationFrame(bubbleTick); return; }
+  const themes = bubbleThemes(B), n = Math.max(1, Math.min(80, Math.round(B.bubbleCount ?? 30))), key = JSON.stringify([n, themes, F.left, F.top, F.right, F.bottom]);
+  const rand = (a, b) => a + (b - a) * Math.random();
+  const spot = b => { b.x = rand(F.left + b.r, F.right - b.r); b.y = rand(F.top + b.r, F.bottom - b.r); b.vx = rand(-20, 20) * k; b.vy = rand(-20, 20) * k; };
+  if (key !== bubbleSim.key || layer !== bubbleSim.layer || layer.childNodes.length !== bubbleSim.list.length) {
+    // (made again: the number, a theme, or the picture's size changed; those already there keep their places)
+    const old = bubbleSim.list;
+    bubbleSim.list = Array.from({ length: n }, (_, i) => { const th = themes[i % themes.length], b = old[i] ? { ...old[i] } : {}; b.th = th; b.r = th.size * k; b.pop = 0; b.back = 0; if (!old[i]) spot(b); return b; });
+    bubbleSim.bonds = bubbleSim.bonds.filter(([i, j]) => i < n && j < n);
+    layer.innerHTML = bubbleSim.list.map(b => `<g transform="translate(${f1(b.x)} ${f1(b.y)})"><g class="bubin">${bubbleSvg(0, 0, b.r, b.th)}</g></g>`).join("");
+    bubbleSim.layer = layer; bubbleSim.key = key; bubbleSim.last = t;
+  }
+  const dt = Math.min(0.05, Math.max(0, (t - bubbleSim.last) / 1000)); bubbleSim.last = t;
+  const L = bubbleSim.list, wind = (B.bubbleWind ?? 30) / 100, ang = t / 1000 * 0.13, wx = Math.cos(ang) * 90 * k * wind, wy = Math.sin(ang * 1.7) * 45 * k * wind;
+  // the friend: their box in the picture's units, from the screen
+  let fr = null;
+  const fig = document.getElementById("figure"), P = pic.getScreenCTM();
+  if (fig && P && state.body) { const r = fig.getBoundingClientRect(), inv = P.inverse(), a = new DOMPoint(r.left, r.top).matrixTransform(inv), c = new DOMPoint(r.right, r.bottom).matrixTransform(inv);
+    if (r.width > 2) fr = [Math.min(a.x, c.x), Math.min(a.y, c.y), Math.max(a.x, c.x), Math.max(a.y, c.y)]; }
+  L.forEach((b, i) => {
+    if (b.back) { if (t < b.back) return; b.back = 0; b.pop = 0; const sd = Math.floor(Math.random() * 4);   // (in again, from an edge)
+      b.x = sd === 0 ? F.left + b.r : sd === 1 ? F.right - b.r : rand(F.left + b.r, F.right - b.r); b.y = sd === 2 ? F.top + b.r : sd === 3 ? F.bottom - b.r : rand(F.top + b.r, F.bottom - b.r);
+      b.vx = rand(-15, 15) * k; b.vy = rand(-15, 15) * k; const el = layer.childNodes[i]; if (el) { el.style.display = ""; const inn = el.firstChild; if (inn) inn.classList.remove("pop"); } }
+    if (b.pop) return;
+    // (the breeze, and a jostle of its own that turns slowly)
+    const j = t / 1000 * (0.7 + 0.05 * (i % 7)) + i * 1.3;
+    b.vx += (wx + Math.cos(j) * 30 * k * (0.3 + wind)) * dt; b.vy += (wy + Math.sin(j * 1.3) * 30 * k * (0.3 + wind)) * dt;
+    const damp = Math.pow(0.55, dt); b.vx *= damp; b.vy *= damp;
+  });
+  // stuck together: each bond kept at its length, both moving together
+  const bonded = new Set();
+  for (const [i, j, rest] of bubbleSim.bonds) {
+    const a = L[i], b = L[j]; if (a.pop || b.pop) continue;
+    bonded.add(i + "," + j);
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, e = (d - rest) / d * 0.5;
+    a.x += dx * e; a.y += dy * e; b.x -= dx * e; b.y -= dy * e;
+    const mx = (a.vx + b.vx) / 2, my = (a.vy + b.vy) / 2; a.vx = b.vx = mx; a.vy = b.vy = my;
+  }
+  // touching: they stick (a new bond), at most five to a bubble
+  const deg = new Array(L.length).fill(0); for (const [i, j] of bubbleSim.bonds) { deg[i]++; deg[j]++; }
+  for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
+    const a = L[i], b = L[j]; if (a.pop || b.pop || a.back || b.back) continue;
+    const dx = b.x - a.x, dy = b.y - a.y, rr = a.r + b.r;
+    if (Math.abs(dx) > rr || Math.abs(dy) > rr || dx * dx + dy * dy > rr * rr) continue;
+    if (!bonded.has(i + "," + j) && deg[i] < 5 && deg[j] < 5) { bubbleSim.bonds.push([i, j, rr * 0.96]); deg[i]++; deg[j]++; bonded.add(i + "," + j); }
+    else { const d = Math.hypot(dx, dy) || 1, push = (rr * 0.96 - d) / d * 0.5; if (push > 0) { a.x -= dx * push; a.y -= dy * push; b.x += dx * push; b.y += dy * push; } }
+  }
+  // moved, kept in the picture, and popped against the friend
+  L.forEach((b, i) => {
+    if (b.pop || b.back) return;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.x < F.left + b.r) { b.x = F.left + b.r; b.vx = Math.abs(b.vx) * 0.6; } else if (b.x > F.right - b.r) { b.x = F.right - b.r; b.vx = -Math.abs(b.vx) * 0.6; }
+    if (b.y < F.top + b.r) { b.y = F.top + b.r; b.vy = Math.abs(b.vy) * 0.6; } else if (b.y > F.bottom - b.r) { b.y = F.bottom - b.r; b.vy = -Math.abs(b.vy) * 0.6; }
+    const el = layer.childNodes[i];
+    if (fr && b.x + b.r > fr[0] && b.x - b.r < fr[2] && b.y + b.r > fr[1] && b.y - b.r < fr[3]) {
+      b.pop = t; b.back = t + 1400; bubbleSim.bonds = bubbleSim.bonds.filter(([p, q]) => p !== i && q !== i);
+      if (el && el.firstChild) { el.firstChild.classList.add("pop"); setTimeout(() => { if (b.pop && el.isConnected) el.style.display = "none"; }, 260); }
+      return;
+    }
+    if (el) el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
+  });
+  bubbleSim.raf = requestAnimationFrame(bubbleTick);
+}
 function imaginationScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, all, o } = c;
   let s = SEP + part("imagination-room", c.F, () => {
@@ -1263,7 +1362,7 @@ function crossingScene(c) {
 }
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene };
+                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width

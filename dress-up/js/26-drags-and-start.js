@@ -685,7 +685,7 @@ if (touchPad.want) padLoop = requestAnimationFrame(padPoll);
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { witchroom: [-170, 0], crossing: [0, -20], imagination: [0, 70], emptyroom: [0, 70], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
+const ARRIVE = { witchroom: [-170, 0], crossing: [0, -20], imagination: [0, 70], emptyroom: [0, 70], bubblespace: [0, 70], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
 // Where each trip through a doorway began, the last on top: the back chip
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.

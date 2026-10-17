@@ -21,7 +21,7 @@ const HOUSE_COLOR_DEFAULTS = {
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3, emptyroom: 0.3 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 99) The friend is smaller farther back and bigger nearer, as a
 // place draws what stands in it. A place's vanishing height is the y where
@@ -32,7 +32,7 @@ const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // kept between 0.3 and 1.5. A castle room's comes from its perspective
 // (roomFrame: the eye's height on the wall); rooms drawn flatter, with big
 // things at their back walls, vanish far above the picture.
-const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, tent: -60, imagination: -60, emptyroom: -60 };
+const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60 };
 function sceneVanish(B) {
   if (B.kind === "castleroom") {
     const H = SCENE.bottom - SCENE.top, k = H / 700, top = SCENE.top + H * 0.1, floor = SCENE.ground - 110 * k;
@@ -333,6 +333,11 @@ const DEFAULTS = {
   background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, objectsOff: {}, chickenLegs: false, legSize: 100, hutNear: 0,
                 // (standing in water: how see-through below the waist, and how big a wake: ticket 122)
                 waterSee: 70, waterWake: 100, waterTread: 100, seat: null,   // (ticket 50: the seat the friend sits on here, by name)
+                // (ticket 220) 🫧 bubble space: how many, the wind, and themes A (always), B and C (when on)
+                bubbleCount: 30, bubbleWind: 30,
+                bubbleAColor: "#9ad7ff", bubbleASize: 18, bubbleAShine: 70, bubbleASparkle: "none", bubbleASparkleColor: "#ffffff",
+                bubbleBOn: false, bubbleBColor: "#ffb3e6", bubbleBSize: 26, bubbleBShine: 85, bubbleBSparkle: "star", bubbleBSparkleColor: "#fff5b0",
+                bubbleCOn: false, bubbleCColor: "#c8f7c5", bubbleCSize: 11, bubbleCShine: 60, bubbleCSparkle: "dot", bubbleCSparkleColor: "#ffffff",
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false, cauldronFumes: "simple",
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,

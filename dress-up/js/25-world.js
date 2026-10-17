@@ -20,7 +20,7 @@ const WORLD_ARROWS = { N: "⬆️", NE: "↗️", E: "➡️", SE: "↘️", S: 
 const INSIDES = { house: ["livingroom"], treehouse: ["treeroom"], witch: ["witchroom"], clearing: ["healerroom"], campsite: ["tent"],
                   waterfall: ["cave"], castle: ["castleroom"], lake: ["underwater"] };
 const INSIDE_KINDS = new Set(Object.values(INSIDES).flat());
-const ELSEWHERE = ["imagination", "emptyroom"];
+const ELSEWHERE = ["imagination", "emptyroom", "bubblespace"];
 // (ticket 195, M) The waterfall's north is the waterfall itself, into the
 // cave behind it: "having both and having them mean different things is
 // too strange", so no way north on the grid there (WORLD_NO_WAY: never a

@@ -59,7 +59,7 @@ const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
 const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
 // The places, and the kinds of place they are, for the Background tab's
 // two rows (as the music's): every place is of exactly one kind.
-const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
+const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
@@ -72,7 +72,7 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["imaginatio
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const behindSign = (c, to) => { const P = to && to !== "none" && PLACES.find(p => p[0] === to); return P ? bottomSign(c, c.W * 0.4, P[1], `data-to="${to}"`) : ""; };
 const PLACE_GROUPS = [
-  ["imagination", "💭 imagination", ["emptyroom", "imagination"]],
+  ["imagination", "💭 imagination", ["emptyroom", "bubblespace", "imagination"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains"]],
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
@@ -292,6 +292,34 @@ const TABS = [
     ["range", "waterSee", "🌊 see-through under the water (0 = not at all)", 0, 100, 50, 90],
     ["range", "waterWake", "💧 a wake round the friend in the water (0 = none)", 0, 250, 60, 160],
     ["range", "waterTread", "🏊 treading water where it's deep (0 = standing still)", 0, 200, 60, 140],
+    // (ticket 220, Matthew) 🫧 bubble space's own: how many bubbles, the room's wind, and up to three bubble themes
+    ["group", "bubbles", "🫧 bubble space", [
+      ["range", "bubbleCount", "🫧 how many", 5, 80, 20, 40],
+      ["range", "bubbleWind", "🌬️ wind", 0, 100, 20, 60],
+      ["group", "bubbleA", "🅰️ theme A", [
+        ["color", "bubbleAColor", "🅰️ colour", BUBBLE_COLORS],
+        ["range", "bubbleASize", "🅰️ size", 4, 60, 10, 30],
+        ["range", "bubbleAShine", "🅰️ shine", 0, 100, 40, 90],
+        ["choice", "bubbleASparkle", "🅰️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
+        ["color", "bubbleASparkleColor", "🅰️ sparkle colour", BUBBLE_COLORS],
+      ]],
+      ["group", "bubbleB", "🅱️ theme B", [
+        ["flip", "bubbleBOn", ["🅱️ theme B", "🅱️ theme B"]],
+        ["color", "bubbleBColor", "🅱️ colour", BUBBLE_COLORS],
+        ["range", "bubbleBSize", "🅱️ size", 4, 60, 10, 30],
+        ["range", "bubbleBShine", "🅱️ shine", 0, 100, 40, 90],
+        ["choice", "bubbleBSparkle", "🅱️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
+        ["color", "bubbleBSparkleColor", "🅱️ sparkle colour", BUBBLE_COLORS],
+      ]],
+      ["group", "bubbleC", "©️ theme C", [
+        ["flip", "bubbleCOn", ["©️ theme C", "©️ theme C"]],
+        ["color", "bubbleCColor", "©️ colour", BUBBLE_COLORS],
+        ["range", "bubbleCSize", "©️ size", 4, 60, 10, 30],
+        ["range", "bubbleCShine", "©️ shine", 0, 100, 40, 90],
+        ["choice", "bubbleCSparkle", "©️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
+        ["color", "bubbleCSparkleColor", "©️ sparkle colour", BUBBLE_COLORS],
+      ]],
+    ]],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)
     ["choice", "lfoFast", "〰️ quick things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
     ["choice", "lfoSlow", "〰️ slow things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
@@ -721,6 +749,7 @@ const SHOWN_WHEN = {
   "background.lfoFast": b => !!sceneLfoThings(b).fast, "background.lfoSlow": b => !!sceneLfoThings(b).slow, "background.lfoWings": b => !!sceneLfoThings(b).wings,
   "background.figPos": b => b.kind !== "none",
   "background.objectsOff": b => b.kind !== "none",
+  "background.bubbles": b => b.kind === "bubblespace",   // (ticket 220)
   "background.waterSee": b => !!waterHere(b), "background.waterWake": b => !!waterHere(b),
   "background.waterTread": b => !!waterHere(b) && !SHALLOW_WATER[b.kind],
   "background.chickenLegs": b => b.kind === "witch",
