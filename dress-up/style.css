@@ -357,6 +357,18 @@
 .world-way.w-E { right: 1px; top: calc(50% - 4px); } .world-way.w-W { left: 1px; top: calc(50% - 4px); }
 .world-way.w-NE { top: 1px; right: 1px; } .world-way.w-NW { top: 1px; left: 1px; } .world-way.w-SE { bottom: 1px; right: 1px; } .world-way.w-SW { bottom: 1px; left: 1px; }
 .world-warn { align-items: center; gap: 8px; }
+/* (ticket 200) what's new, in ⚙️ Advanced: version cards in a box of their own that scrolls */
+.news-cap { margin-top: 14px; }
+.news { max-height: 55vh; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--paper); color: #222; }
+.news-card { padding: 8px 10px 4px; margin-bottom: 8px; border-radius: 8px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
+.news-card.now { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+.news-head { font-size: 1.05em; margin-bottom: 4px; }
+.news-this { font-size: 0.75em; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); }
+.news-card p { margin: 4px 0; }
+.news-sub { font-weight: 600; margin: 8px 0 2px; }
+.news-card ul { margin: 4px 0 6px; padding-left: 1.2em; }
+.news-card li { margin: 3px 0; line-height: 1.35; }
+.news-card code { font-size: 0.9em; }
 /* (ticket 201) a place too busy for this computer: the moving things' buttons greyed, the busiest marked */
 .thing-slow { color: #b45309; font-weight: 600; margin: 4px 0; }
 .thing-items button:disabled { opacity: 0.4; cursor: not-allowed; }

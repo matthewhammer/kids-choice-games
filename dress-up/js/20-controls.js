@@ -585,6 +585,36 @@ function changed() {
 
 // (ticket 185, v3) the object library's group open, while the game is open
 let thingGroup = "nature";
+// (ticket 200) VERSIONS.md as cards: a version's heading (its number and
+// date), its paragraphs and its points, **bold**, `code` and [links] as such,
+// all else as text; fetched once (afresh) and kept while the game is open
+let newsHtml = null;
+const newsInline = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
+  .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+function newsCards(md) {
+  const out = [];
+  let card = null, list = null;
+  for (const line of md.split("\n")) {
+    const h = line.match(/^## (\S+)(?: \(([^)]*)\))?/);
+    if (h) { if (card) out.push(card + (list ? "</ul>" : "") + "</div>"); list = null;
+      card = `<div class="news-card${h[1] === VERSION.number ? " now" : ""}" data-version="${newsInline(h[1])}"><div class="news-head"><b>${newsInline(h[1])}</b>${h[2] ? ` <span class="hint">${newsInline(h[2])}</span>` : ""}${h[1] === VERSION.number ? ' <span class="news-this">this one</span>' : ""}</div>`; continue; }
+    if (!card) continue;
+    const sub = line.match(/^#{3,} (.*)$/);
+    if (sub) { if (list) { card += "</ul>"; list = null; } card += `<div class="news-sub">${newsInline(sub[1])}</div>`; continue; }
+    const li = line.match(/^\s*[-*] (.*)$/);
+    if (li) { if (!list) { card += "<ul>"; list = true; } card += `<li>${newsInline(li[1])}</li>`; continue; }
+    if (line.trim()) { if (list) { card += "</ul>"; list = null; } card += `<p>${newsInline(line.trim())}</p>`; }
+  }
+  if (card) out.push(card + (list ? "</ul>" : "") + "</div>");
+  return out.join("");
+}
+function newsLoad(box) {
+  if (newsHtml) { box.innerHTML = newsHtml; return; }
+  fetch(`VERSIONS.md?v=${VERSION.number}`, { cache: "no-store" }).then(r => r.ok ? r.text() : Promise.reject(r.status))
+    .then(md => { newsHtml = newsCards(md) || '<div class="hint">No versions found.</div>'; if (box.isConnected) box.innerHTML = newsHtml; })
+    .catch(() => { if (box.isConnected) box.innerHTML = '<div class="hint">📰 The list of versions could not be read just now.</div>'; });
+}
 // (ticket 201, Matthew: N put fifteen or more cauldrons in one place, and the
 // Ubuntu laptop ground to a halt) Things that move (a cauldron: its flames,
 // bubbles and fumes, about 240 moving parts, the fumes' spiral most of them;
@@ -1251,6 +1281,12 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [chip, measure]), el("div", { class: "hint" }, f.what), here, result]));
       return [f, chip, here];
     });
+    // (ticket 200, Matthew: "M wants to read the list of recent features as we work") what's new: every
+    // version and its notes, from VERSIONS.md beside the game, as cards, newest first, this one marked;
+    // the tab's last part, scrolling on its own
+    const news = el("div", { class: "news", tabindex: "0", "aria-label": "what's new: every version and its notes" }, el("div", { class: "hint" }, "📰 …"));
+    box.append(el("div", { class: "cap news-cap" }, "📰 What's new, version by version"), news);
+    newsLoad(news);
     let counted = "";
     syncs.push(() => {
       put(ver, `🏷️ version ${VERSION.number}, out ${VERSION.released}`);

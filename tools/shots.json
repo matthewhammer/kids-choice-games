@@ -228,5 +228,10 @@
   "name": "open-water",
   "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"2,0\"); const B = state.background; B.figX = 60; B.figY = 40; changed(); await new Promise(r => setTimeout(r, 700));",
   "wait": 700
+ },
+ {
+  "name": "advanced-news",
+  "js": "state.music.mute = true; tab = TABS.findIndex(t => t[1] === \"advanced\"); showTab(); for (let i = 0; i < 50 && !document.querySelector(\".news .news-card\"); i++) await new Promise(r => setTimeout(r, 100)); document.querySelector(\".news\").scrollIntoView({ block: \"start\" });",
+  "wait": 400
  }
 ]
