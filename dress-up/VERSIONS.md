@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **While ⚙️ Advanced measures, it says so plainly** (Matthew): during 🧪 this computer's speed (about 40 seconds) and 📏 measure here, a notice over the game says to wait and touch nothing, with the seconds gone of about how long it takes and a bar filling up; 📋 copy, 📝 paste, 🧪, ⏱️, 📏 and the feature switches rest until it ends, so a half-done line can't be copied or a second measure started.
+
 ## 0.0.94 (2026-10-16)
 
 Everything in 0.0.93, plus climbing that looks like climbing, and ladders you can click.

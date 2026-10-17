@@ -92,6 +92,15 @@
   .perfrow { border-top: 1px dashed var(--line); padding: 8px 0 4px; margin-top: 6px; }
   .perfrow .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .perfrow button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  /* (ticket 179) measuring: the controls that would disturb it rest, and a notice says to wait */
+  body.measuring .perfrow button:disabled, body.measuring .perfrow a.resting { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+  .measuring-note { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 60; width: min(92vw, 560px);
+                    background: var(--accent); color: var(--accent-ink); border-radius: 14px; padding: 12px 16px; text-align: center;
+                    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); font-size: 1.15em; }
+  .measuring-note[hidden] { display: none; }
+  .measuring-note .big { font-size: 1.25em; font-weight: 700; display: block; }
+  .measuring-note .bar { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.35); margin-top: 8px; overflow: hidden; }
+  .measuring-note .bar > i { display: block; height: 100%; width: 0; background: currentColor; }
   .panel { background: var(--panel); border-radius: 18px; padding: 12px 14px; border: 2px solid var(--line); }
   .ctl { margin: 10px 0; }
   .ctl > .lbl { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
@@ -366,6 +375,7 @@
         </div>
       </div>
       <div class="hud" id="hud" hidden></div>
+      <div class="measuring-note" id="measuring" role="status" aria-live="polite" hidden></div>
     </div>
   </div>
   <div class="divider" id="divider" role="separator" aria-orientation="vertical" tabindex="0"
@@ -930,6 +940,7 @@ function tripReport(T) {
 async function speedCheck(report) {
   if (perfBusy) return;
   perfBusy = true;
+  measuringNote("Measuring this computer's speed", 40);
   const saved = JSON.stringify(state), wait = ms => new Promise(r => setTimeout(r, ms));
   const keep = { slowFlag, choppy, slowMoving: PERF.slowMoving };
   // (a pass: frames a second, the longest pause, the share of frames later
@@ -1029,6 +1040,7 @@ async function speedCheck(report) {
     slowFlag = keep.slowFlag; choppy = keep.choppy; PERF.slowMoving = keep.slowMoving;
     moveSuspend = false; moveFrames = moveLate = 0;
     perfBusy = false;
+    measuringNote(null);
     changed();
   }
 }
@@ -1037,9 +1049,29 @@ async function speedCheck(report) {
 // (no controller needed), counting frames and timing each drawing; then
 // the friend, the place and the setting as they were.
 let perfBusy = false;
+// (ticket 179, Matthew) while 🧪 or 📏 measures: the ⚙️ Advanced tab's
+// buttons rest (copying, pasting or starting another measure mid-way would
+// spoil it or copy half a line), and a notice over everything says to wait
+// and touch nothing, with the seconds gone against about how long it takes
+let measuringTimer = 0;
+function measuringNote(what, secs) {
+  const note = document.getElementById("measuring"), on = !!what;
+  document.body.classList.toggle("measuring", on);
+  for (const b of document.querySelectorAll("#panel .perfrow button")) b.disabled = on;
+  for (const a of document.querySelectorAll("#panel .perfrow a")) { a.classList.toggle("resting", on); if (on) a.setAttribute("aria-disabled", "true"); else a.removeAttribute("aria-disabled"); }
+  clearInterval(measuringTimer); measuringTimer = 0;
+  if (!on) { note.hidden = true; note.replaceChildren(); return; }
+  const t0 = performance.now(), big = el("span", { class: "big" }, `⏳ ${what}: please wait, and touch nothing`), line = el("span"), bar = el("i");
+  note.replaceChildren(big, line, el("div", { class: "bar" }, [bar]));
+  const tick = () => { const s = (performance.now() - t0) / 1000;
+    line.textContent = `${Math.floor(s)} s so far, of about ${secs} s`; bar.style.width = `${Math.min(100, 100 * s / secs).toFixed(1)}%`; };
+  tick(); note.hidden = false;
+  measuringTimer = setInterval(tick, 250);
+}
 async function perfMeasure(f, report) {
   if (perfBusy) return;
   perfBusy = true;
+  measuringNote(`Measuring ${f.label}`, 5);
   const B = state.background, body = state.body, keep = { x: B.figX, y: B.figY, anim: body.anim, facing: body.facing, was: PERF[f.id] };
   const walk = on => new Promise(done => {
     perfSet(f.id, on, false);
@@ -1064,6 +1096,7 @@ async function perfMeasure(f, report) {
   Object.assign(B, { figX: keep.x, figY: keep.y }); Object.assign(body, { anim: keep.anim, facing: keep.facing });
   perfSet(f.id, keep.was, false);
   perfBusy = false;
+  measuringNote(null);
   const line = r => `${Math.round(r.fps)} frames a second, ${r.ms.toFixed(1)} ms a drawing`;
   report(`📏 walking here, off: ${line(off)}; on: ${line(on)}.`);
 }

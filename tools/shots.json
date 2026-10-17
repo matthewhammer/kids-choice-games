@@ -1,5 +1,3 @@
 [
- { "name": "duck-pond", "js": "state.background.kind = \"lake\"" },
- { "name": "castle", "js": "state.background.kind = \"castle\"" },
- { "name": "empty-room", "js": "state.background.kind = \"emptyroom\"" }
+ { "name": "measuring-notice", "js": "state.background.kind = \"lake\"; tab = TABS.findIndex(t => /Advanced/.test(t[0])); showTab(); await new Promise(r => setTimeout(r, 300)); [...document.querySelectorAll('#panel button')].find(b => /this computer's speed/.test(b.textContent)).click(); await new Promise(r => setTimeout(r, 6000))", "wait": 600 }
 ]
