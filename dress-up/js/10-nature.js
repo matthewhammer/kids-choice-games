@@ -169,7 +169,9 @@ function treeInner(c) {
     }).join("");
     // the trunk: five trunks braided, apart at the ground, one tree above
     t += `<path d="M-90 -10 Q-140 -4 -175 12 M90 -10 Q140 -4 175 12" stroke="#6e4a2c" stroke-width="16" stroke-linecap="round" fill="none"/>` +
-         braidSvg(0, -780, 10, 240, 1, { strands: 5, taper: 0.5, base: "#00000026" });
+         // (ticket 241, Matthew: "there's no collision info for the outside tree house tree trunk system") the braid
+         // marked, data-trunk: the tree house's box is its trunk's alone (standingHere), not its houses', bridges' or ladders'
+         `<g data-trunk="">` + braidSvg(0, -780, 10, 240, 1, { strands: 5, taper: 0.5, base: "#00000026" }) + `</g>`;
     return t;
   });
   // leaves: bonsai pads, eight shapes drawn once, each used again and

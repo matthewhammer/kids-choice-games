@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.170 (2026-10-17)
+
+Everything in 0.0.169, with a tree house trunk you bump into.
+
+- **Fixed: walking through the tree house's trunk**: outside, at the tree house, your friend could walk right through the big braided trunk. Now it stops them, a walk goes round it, and "🧱 collision boxes" shows it, its boxes following the trunk up from the ground. The ladders to the houses are still there to climb.
+
 ## 0.0.169 (2026-10-17)
 
 Everything in 0.0.168, with collision boxes that swing with the swing.
