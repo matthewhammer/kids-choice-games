@@ -862,6 +862,7 @@ function drawNow() {
     else pic.append(...rest);
   }
   showObjects();
+  if (scened && BG.kind === "treeroom") treeBusyMeasure();   // (ticket 242: where its pictures can hang, measured once a room is drawn)
   if (hoverOn) showHover();   // (the hover glow, over the new drawing: ticket 135)
   if (scened) showEnterGlow();   // (the passage X, Enter or a tap would take, and the others within reach: tickets 145, 187)
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
