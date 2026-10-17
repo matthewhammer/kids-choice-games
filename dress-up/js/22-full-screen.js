@@ -52,11 +52,29 @@ function setMusicBig(on, leaving) {
     else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
   } catch (e) { /* the window-filling controls are enough */ }
 }
+// (ticket 210, Matthew: "full screen mode for world designer, follow the music
+// panel for a model") The 🗺️ World design tab full screen, as the music's:
+// its controls take the whole window, the grid as big as it allows, and the
+// screen where the browser allows; ✕, Escape or leaving the browser's full
+// screen bring the game back.
+const WORLD_BIG = ["⛶ the world designer, full screen", "✕ back to the game"];
+function setWorldBig(on) {
+  document.body.classList.toggle("world-big", on);
+  for (const b of document.querySelectorAll("button.worldbig")) b.textContent = WORLD_BIG[on ? 1 : 0];
+  if (on) document.querySelector(".side").scrollTop = 0;
+  try {
+    if (on && document.documentElement.requestFullscreen && !document.fullscreenElement)
+      document.documentElement.requestFullscreen().catch(() => {});
+    else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  } catch (e) { /* the window-filling designer is enough */ }
+}
 document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && document.body.classList.contains("world-big")) setWorldBig(false);
   if (e.key === "Escape" && document.body.classList.contains("big")) setBig(false);
   if (e.key === "Escape" && document.body.classList.contains("music-big")) setMusicBig(false);
 });
 document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement && document.body.classList.contains("big")) setBig(false);
   if (!document.fullscreenElement && document.body.classList.contains("music-big")) setMusicBig(false, true);
+  if (!document.fullscreenElement && document.body.classList.contains("world-big")) setWorldBig(false);
 });
