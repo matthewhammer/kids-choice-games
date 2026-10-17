@@ -310,7 +310,7 @@ function worldWaysHud() {
     const side = /E/.test(d) && !/W/.test(d) ? "left" : /W/.test(d) ? "right" : d === "N" ? "below" : "above";
     if (el.dataset.side !== side) el.dataset.side = side;
     if (el.classList.contains("near") !== near) el.classList.toggle("near", near);
-    at.push({ d, el, x: left, y: top, side, shown: near || el.classList.contains("aimed") });
+    at.push({ d, el, x: left, y: top, a, side, shown: near || el.classList.contains("aimed") });
   });
   waysApart(at.filter(w => w.shown), box);
   for (const w of at) { const l = w.x.toFixed(0) + "px", t = w.y.toFixed(0) + "px"; if (w.el.style.left !== l) w.el.style.left = l; if (w.el.style.top !== t) w.el.style.top = t; }
@@ -322,12 +322,16 @@ function worldWaysHud() {
 // the other: an arrow on a side (E, W) up or down, one at the top or bottom
 // (N, S) or a corner's (along the floor's front or far edge) across; kept in
 // the picture. Measured by arithmetic, each one's words measured once (their
-// size is their text's): nothing read back from the page on a drawing.
+// size is their text's): nothing read back from the page on a drawing. The
+// triangle's box is its 44px square turned to its angle (SE's: about 62px
+// across), and reaches 5px further along the angle at the top of its bob
+// (way-bob); taken as a plain 44px, E still sat over SE by a few px.
 const WAY_GAP = 6;
 function waysApart(ws, box) {
   if (ws.length < 2) return;
   for (const w of ws) { if (!w.el.__words) { const t = w.el.querySelector(".way-words"); w.el.__words = t ? [t.offsetWidth, t.offsetHeight] : [0, 0]; } }
-  const rect = w => { const [ww, wh] = w.el.__words, r = [w.x - 22, w.y - 22, w.x + 22, w.y + 22];
+  const rect = w => { const [ww, wh] = w.el.__words, c = Math.cos(w.a * Math.PI / 180), s = Math.sin(w.a * Math.PI / 180), h = 22 * (Math.abs(c) + Math.abs(s));
+    const r = [w.x - h + Math.min(0, 5 * c), w.y - h + Math.min(0, 5 * s), w.x + h + Math.max(0, 5 * c), w.y + h + Math.max(0, 5 * s)];
     const t = w.side === "left" ? [w.x - 26 - ww, w.y - wh / 2, w.x - 26, w.y + wh / 2] : w.side === "right" ? [w.x + 26, w.y - wh / 2, w.x + 26 + ww, w.y + wh / 2] :
               w.side === "below" ? [w.x - ww / 2, w.y + 26, w.x + ww / 2, w.y + 26 + wh] : [w.x - ww / 2, w.y - 26 - wh, w.x + ww / 2, w.y - 26];
     return [Math.min(r[0], t[0]), Math.min(r[1], t[1]), Math.max(r[2], t[2]), Math.max(r[3], t[3])]; };
