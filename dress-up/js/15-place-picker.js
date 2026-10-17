@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 15 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 15 of 26 of the game's script, run in order by index.html.
 
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);

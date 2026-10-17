@@ -334,3 +334,21 @@
 @keyframes fairy-flap-l { 50% { transform: rotate(9deg); } }
 @keyframes fairy-flap-r { 50% { transform: rotate(-9deg); } }
 @keyframes fairy-twinkle { 50% { opacity: 0.2; } }
+
+/* (ticket 185) the world designer's grid */
+.world-grid { display: grid; gap: 4px; margin: 0.5rem 0; max-width: 34rem; }
+.world-cell { position: relative; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 2px; border-radius: 8px; border: 2px solid var(--line, #ccc); background: var(--card, #fff); font: inherit; font-size: 0.68em; line-height: 1.1; overflow: hidden; cursor: pointer; }
+.world-cell.empty { border-style: dashed; color: var(--muted, #888); background: transparent; cursor: default; }
+.world-cell.bad { border-color: #d9480f; background: #fff1e6; }
+.world-cell.here { outline: 3px solid #3b82f6; outline-offset: 1px; }
+.world-cell.start .world-emoji::after { content: " 🏁"; font-size: 0.7em; }
+.world-emoji { font-size: 1.7em; }
+.world-name { text-align: center; }
+.world-way { position: absolute; width: 8px; height: 8px; background: #8a5528; border-radius: 2px; }
+.world-way.w-N { top: 1px; left: calc(50% - 4px); } .world-way.w-S { bottom: 1px; left: calc(50% - 4px); }
+.world-way.w-E { right: 1px; top: calc(50% - 4px); } .world-way.w-W { left: 1px; top: calc(50% - 4px); }
+.world-way.w-NE { top: 1px; right: 1px; } .world-way.w-NW { top: 1px; left: 1px; } .world-way.w-SE { bottom: 1px; right: 1px; } .world-way.w-SW { bottom: 1px; left: 1px; }
+.world-prob { font-size: 0.85em; margin: 2px 0; padding-left: 1em; text-indent: -1em; }
+.world-prob::before { content: "• "; }
+.world-off { margin-top: 0.5rem; }

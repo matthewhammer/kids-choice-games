@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 17 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 17 of 26 of the game's script, run in order by index.html.
 
 function waterRow(at, y, step) {
   // (tried every 8 across, and where it goes in or out of the water, the

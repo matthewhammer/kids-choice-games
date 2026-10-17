@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 13 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 13 of 26 of the game's script, run in order by index.html.
 
 // the room's frame: the back wall from x = -bw to bw, from its top to the
 // floor; the vanishing point, at the eye's height, where the floor's and

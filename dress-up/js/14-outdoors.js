@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 14 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 14 of 26 of the game's script, run in order by index.html.
 
 function mountainsScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;

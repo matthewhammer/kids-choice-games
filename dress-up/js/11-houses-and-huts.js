@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 11 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 11 of 26 of the game's script, run in order by index.html.
 
 function treehouseScene(c) {
   const { x0, y0, W, H, k, g, grad, all, land, o, R } = c;

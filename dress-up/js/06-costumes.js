@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 6 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 6 of 26 of the game's script, run in order by index.html.
 
 // ===================== COSTUMES =====================
 // An animal costume: a hood with the animal's face on its brim, above the

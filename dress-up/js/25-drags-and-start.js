@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 25 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 25 of 26 of the game's script, run in order by index.html.
 
 // ===================== DRAG THE MOUTH AND BROW =====================
 // As in Kids' Choice: a press above the eyes grabs the brow, below them

@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 5 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 5 of 26 of the game's script, run in order by index.html.
 
 // ===================== THE GHOST =====================
 // A ghost, like the 👻 emoji but the friend's full size: a sheet over all

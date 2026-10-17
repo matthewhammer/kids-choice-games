@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 16 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 16 of 26 of the game's script, run in order by index.html.
 
 // each group's objects put in order by depth, in the places they held (a
 // picture of a place, or the view out of a window, is in the same order)

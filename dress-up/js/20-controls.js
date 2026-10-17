@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 20 of 25 of the game's script, run in order by index.html.
+// (ticket 178) Part 20 of 26 of the game's script, run in order by index.html.
 
 // ===================== CONTROLS =====================
 
@@ -562,11 +562,13 @@ function moved(force = false) {
 }
 function settle() {
   clearTimeout(settleTimer); settleTimer = 0;
+  worldKeep();   // (ticket 185: a forest crossing edited in its square, kept there, before it is saved)
   for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync();
   if (!hud.hidden && hudKey() !== hudShown) renderHud();
 }
 function changed() {
   const t0 = performance.now(); draw(); perfMeter.ms += performance.now() - t0; perfMeter.draws++;   // (ticket 155: for the ⚙️ advanced tab's meter)
+  worldKeep();   // (ticket 185, as in settle)
   for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync(); feedMusic();
   // a new friend (loaded, started over, surprised) or a scene turned on or
   // off rebuilds the HUD; a slider moving in it does not
@@ -1021,8 +1023,37 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // wired by hand; a door with no place beside it, or one that does not line
   // up with its partner, is a mistake to fix), and each filled from a library
   // of things. Its first piece is coming; for now the tab says what it will be.
-  if (kind === "world") box.append(
-    el("div", { class: "hint" }, "🗺️ Coming soon: a world to design. Drag places onto a big grid of squares; places side by side are joined through their doors, and a door with nothing beside it shows up as a mistake to fix. Then open a place and drag things into it, from a library of trees, furniture and more."));
+  if (kind === "world") {
+    // the grid, a square per cell: its place, its ways out as marks on its
+    // edges, a mark when a mistake is about it, and where the friend is; a tap
+    // takes the friend there (and a crossing's settings come with them). Under
+    // it, the mistakes, and the places off the grid with their ids.
+    const grid = el("div", { class: "world-grid" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
+    let shown = null;
+    const render = () => {
+      const W = state.world, P = worldProblems(W), sig = JSON.stringify([W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c)]), P.length]);
+      if (sig === shown) return;
+      shown = sig;
+      const bad = new Set(P.map(p => p.key));
+      grid.style.gridTemplateColumns = `repeat(${W.cols}, 1fr)`;
+      grid.replaceChildren(...Array.from({ length: W.cols * W.rows }, (_, i) => {
+        const key = (i % W.cols) + "," + Math.floor(i / W.cols), cell = W.cells[key];
+        if (!cell) return el("div", { class: "world-cell empty", title: squareName(key) + ": empty" }, squareName(key));
+        const name = placeName(cell.kind), [emoji, ...words] = name.split(" ");
+        const ways = worldWays(cell);
+        return el("button", { class: "world-cell" + (bad.has(key) ? " bad" : "") + (W.at === key ? " here" : "") + (W.start === key ? " start" : ""), "data-square": key,
+                              title: `${squareName(key)}: ${name}` + (ways.length ? ", ways out " + ways.map(d => WORLD_ARROWS[d]).join(" ") : ""),
+                              onclick: () => worldEnter(key) },
+                  [el("span", { class: "world-emoji" }, emoji), el("span", { class: "world-name" }, words.join(" ")), ...ways.map(d => el("span", { class: "world-way w-" + d }, ""))]);
+      }));
+      probs.replaceChildren(P.length ? el("div", { class: "cap" }, `⚠️ ${P.length} to put right`) : el("div", { class: "hint" }, "✅ Every way out meets a way back, and every place can be reached."),
+                            ...P.map(p => el("div", { class: "world-prob" }, p.text)));
+      off.replaceChildren("Off the grid: ", ...worldOffGrid(W).flatMap((o, i) => [i ? " · " : "", `${o.id}: ${placeName(o.kind)}` + (o.from ? ` (through ${placeName(W.cells[o.from].kind)}, ${squareName(o.from)})` : "")]));
+    };
+    box.append(el("div", { class: "hint" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Tap a square to go there; a forest crossing changed there stays changed in its square."),
+               grid, probs, off);
+    syncs.push(render);
+  }
   // (ticket 155, Matthew) ⚙️ Advanced: the game's code on GitHub; its
   // version, and a newer one to change to (a phone hides the title, where
   // they are otherwise); the frame rate now; and the background features

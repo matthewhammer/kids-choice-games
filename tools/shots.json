@@ -178,5 +178,15 @@
   "name": "south-way-livingroom",
   "js": "state.music.mute = true; Object.assign(state.background, { kind: \"livingroom\", livingBack: \"forest\" }); changed(); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
+ },
+ {
+  "name": "world-design-tab",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); changed(); await new Promise(r => setTimeout(r, 500));",
+  "wait": 500
+ },
+ {
+  "name": "world-design-tab-mistakes",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); delete state.world.cells[\"2,1\"]; state.world.cells[\"4,0\"] = { kind: \"crossing\", crossN: true, crossS: true, crossW: true, crossThings: [] }; tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); changed(); await new Promise(r => setTimeout(r, 500));",
+  "wait": 500
  }
 ]
