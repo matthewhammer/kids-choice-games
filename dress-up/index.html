@@ -27,6 +27,9 @@
   h1 { margin: 0 0 6px; font-size: 1.3em; letter-spacing: 0.02em; }
   /* (ticket 134) this version and when it came out; a newer one, as a chip to change to */
   h1 .version { font-size: 0.6em; font-weight: 400; letter-spacing: 0; color: var(--muted, #888); white-space: nowrap; }
+  /* (ticket 184) this version came out slow (or with something to fix) on GitHub's computers, after it went live */
+  h1 .speed-mark { font-size: 0.6em; font-weight: 600; letter-spacing: 0; padding: 2px 10px; vertical-align: 0.15em; border-radius: 999px;
+                   background: #fde68a; color: #713f12; border: 1px solid #f59e0b; white-space: nowrap; text-decoration: none; }
   h1 .newer { font-size: 0.6em; font-weight: 600; letter-spacing: 0; padding: 2px 10px; vertical-align: 0.15em;
               background: var(--accent); color: var(--accent-ink); border-color: var(--accent); white-space: nowrap; }
   /* The whole window: the picture's column, a divider to drag, the controls
@@ -390,7 +393,7 @@
   <div class="divider" id="divider" role="separator" aria-orientation="vertical" tabindex="0"
        aria-label="Between the picture and the controls" title="Drag to make the picture bigger or smaller (double-click: the best fit)"></div>
   <div class="side">
-    <h1><span class="game-name">Messed Up Dress Up</span> <span class="version" id="version"></span> <button class="newer" id="newer" hidden></button></h1>
+    <h1><span class="game-name">Messed Up Dress Up</span> <span class="version" id="version"></span> <a class="speed-mark" id="speed-mark" hidden target="_blank" rel="noopener"></a> <button class="newer" id="newer" hidden></button></h1>
     <div class="tabs" id="tabs"></div>
     <div class="panel" id="panel"></div>
   </div>
@@ -1165,15 +1168,35 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.95", released: "2026-10-17" };
+const VERSION = { number: "0.0.96", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
   return false;
 };
 let offered = null;
+// (ticket 184) A release goes out first, and GitHub's computers check its
+// speed after (.github/workflows/dress-up-speed.yml), into speed.json beside
+// this page. When this version failed the frame-rate gate, 🚧🐢 says so after
+// its number (🚧 when one of the checks failed), a link to the run; when it
+// passed, or is still being checked, nothing shows. Read with version.json.
+function markSpeed(r) {
+  const el = document.getElementById("speed-mark");
+  if (!el) return;
+  const bad = !!r && (r.result === "slow" || r.result === "broken");
+  el.hidden = !bad;
+  if (!bad) return;
+  el.textContent = r.result === "slow" ? "🚧🐢 slow" : "🚧 being fixed";
+  el.title = (r.result === "slow" ? "This version runs slower than it should" : "Something in this version needs fixing") +
+    " on our test computer" + (Array.isArray(r.failed) && r.failed.length ? " (" + r.failed.join(", ") + ")" : "") + ". The next version will fix it.";
+  if (typeof r.run === "string" && /^https:\/\/github\.com\//.test(r.run)) el.href = r.run;
+}
 async function checkVersion() {
   if (document.hidden) return;
+  try {
+    const r = await fetch("speed.json?t=" + Date.now(), { cache: "no-store" });
+    if (r.ok) markSpeed((await r.json())[VERSION.number]);
+  } catch (_) { /* no speed.json yet, or offline: no mark */ }
   try {
     const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
     if (!r.ok) return;

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.96 (2026-10-17)
+
+Everything in 0.0.95, plus a sign when a version runs slow.
+
+- **🚧🐢 after the version number when it runs slow** (Matthew: deploy as soon as a version is made, so M and N can try it at once, and check its speed apart, so nobody has to): each new version goes out first, and then our test computer checks how fast it draws. If it came out slow, 🚧🐢 shows after its number (🚧 if something else needs fixing), and the next version fixes it. Nothing shows while it is being checked, or when it is fast enough.
+
 ## 0.0.95 (2026-10-17)
 
 Everything in 0.0.94, plus the 🏞️ Background tab fast again, no white flashes while moving, furniture that stands in the way, postcards, walking toward us on a slant, and a plain "please wait" while ⚙️ Advanced measures.
