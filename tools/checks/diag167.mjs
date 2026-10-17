@@ -21,7 +21,7 @@ const PRE = `(() => {
   const D = window.__D = { on: false, calls: {}, live: new Map(), listeners: {} };
   // (the first frame in the game's own page, its function and line: frames of this script have no page address)
   const where = () => { const s = (new Error().stack || "").split("\\n").slice(1);
-    for (const l of s) { if (!/dress-up\\/|index\\.html/.test(l)) continue; const m = l.match(/at (?:(\\S+) \\()?.*?:(\\d+):\\d+\\)?$/); if (m) return (m[1] || "(top)") + "@" + m[2]; }
+    for (const l of s) { if (!/dress-up\\/|index\\.html/.test(l) || /at (where|count|window\\.(requestAnimationFrame|setTimeout|setInterval|clearInterval)|EventTarget\\.(add|remove)EventListener) /.test(l)) continue; const m = l.match(/at (?:(\\S+) \\()?.*?:(\\d+):\\d+\\)?$/); if (m) return (m[1] || "(top)") + "@" + m[2]; }
     return "?"; };
   const count = (kind) => { if (!D.on) return; const k = kind + " " + where(); D.calls[k] = (D.calls[k] || 0) + 1; };
   const raf = window.requestAnimationFrame, si = window.setInterval, ci = window.clearInterval, st = window.setTimeout, ael = EventTarget.prototype.addEventListener, rel = EventTarget.prototype.removeEventListener;
