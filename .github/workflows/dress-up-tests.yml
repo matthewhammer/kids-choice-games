@@ -2,6 +2,8 @@
 # branch but main (a push to main deploys the game, so a change is tried on a
 # branch first), and by hand. Since 2026-10-16 no test browser runs on
 # Matthew's laptop (it froze four times that evening, each time during one).
+# A branch carrying tools/checks/.only runs only its own checks and pictures
+# (a diagnostic, answered in minutes), not the gate, the audit or the leaks.
 # Frame rates here are a GitHub computer's, not a kid's: compare them with
 # each other (a branch against main, a case against its control), never with
 # the 55 frames a second a release needs on the laptop or the kids' devices.
@@ -70,18 +72,22 @@ jobs:
         shell: bash
         run: node tools/shots.mjs 9333 "$PAGE" tools/shots.json out/shots | tee out/shots.txt
       - name: The frame-rate gate (ticket 152; this computer's numbers)
+        if: hashFiles('tools/checks/.only') == ''
         continue-on-error: true
         shell: bash
         run: W=1920 H=1080 OUT=out/fpsgate.json node tools/fpsgate.mjs 9333 "$PAGE" | tee out/fpsgate.txt
       - name: The frame-rate gate's slow scenes (SLOW=1)
+        if: hashFiles('tools/checks/.only') == ''
         continue-on-error: true
         shell: bash
         run: SLOW=1 W=1920 H=1080 OUT=out/fpsgate-slow.json node tools/fpsgate.mjs 9333 "$PAGE" | tee out/fpsgate-slow.txt
       - name: Every place with the on-screen controller (ticket 160)
+        if: hashFiles('tools/checks/.only') == ''
         continue-on-error: true
         shell: bash
         run: RUNS=1 OUT=out/audit160.json node tools/audit160.mjs 9333 "$PAGE" | tee out/audit160.txt
       - name: After the duck pond (ticket 167), in Chrome
+        if: hashFiles('tools/checks/.only') == ''
         continue-on-error: true
         shell: bash
         run: node tools/leak167.mjs 9333 "$PAGE" - 2 | tee out/leak167-chrome.txt
@@ -117,10 +123,12 @@ jobs:
           for i in $(seq 30); do curl -sf "$PAGE" > /dev/null && break; sleep 1; done
           firefox --version
       - name: After rounds of changes; then the caches emptied, the music paused, a reload
+        if: hashFiles('tools/checks/.only') == ''
         continue-on-error: true
         shell: bash
         run: CLEAR=1 python3 tools/leakff.py "$PAGE" - 2 | tee out/leakff-changes.txt
       - name: The control, only swimming for as long
+        if: hashFiles('tools/checks/.only') == ''
         continue-on-error: true
         shell: bash
         run: CONTROL=1 python3 tools/leakff.py "$PAGE" - 2 | tee out/leakff-control.txt
