@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **Fixed:** white flashes while walking or dragging (Matthew and the kids, since the still pictures became bitmaps in 0.0.93). On a computer the game finds slow, the place is drawn as still pictures while the friend moves, and a picture could be shown a frame before the browser had its pixels ready, so that frame was blank. A picture is now used only once it is ready to draw.
+
 ## 0.0.94 (2026-10-16)
 
 Everything in 0.0.93, plus climbing that looks like climbing, and ladders you can click.

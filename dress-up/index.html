@@ -10358,8 +10358,19 @@ function stillPart(lo, hi) {
     for (const [k, v] of [["x", x], ["y", y], ["width", w], ["height", h]]) img.setAttribute(k, f1(v));
     img.setAttribute("preserveAspectRatio", "none"); img.setAttribute("pointer-events", "none"); img.setAttribute("data-still-pic", "");
     img.style.visibility = "hidden";
-    img.addEventListener("load", () => { if (gen === stillPic.gen) p.ready = true; }, { once: true });
+    // (ticket 177: ready only once its pixels are decoded, not just loaded: a
+    // picture shown before then paints nothing for a frame, and with the scene
+    // hidden behind it that frame is the page's white, a flash while moving.
+    // Decoded twice over, as browsers differ: the element's own decode() where
+    // it has one, an Image of the same URL kept beside it, and decoding="sync"
+    // so a picture not yet decoded is painted late, never blank)
+    img.setAttribute("decoding", "sync");
+    const pre = new Image();
+    const loaded = new Promise(res => img.addEventListener("load", res, { once: true }));
     img.setAttribute("href", url);
+    pre.src = url;
+    Promise.all([loaded, (img.decode ? img.decode() : pre.decode()).catch(() => {}), pre.decode().catch(() => {})])
+      .then(() => { if (gen === stillPic.gen && stillPic.parts.get(key) === p) { p.pre = pre; p.ready = true; } });
     node.append(img);   // (hidden, at the scene's end, until wanted)
     Object.assign(p, { img, url });
   }, 0);
