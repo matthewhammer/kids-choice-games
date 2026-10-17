@@ -99,7 +99,7 @@ try {
     const face = you[3] && you[3].getAttribute("points") ? you[3].getAttribute("points").split(" ").map(p => +p.split(",")[1]) : [];
     const pole = T ? [(T[0] + T[1]) / 2 - 1, (T[0] + T[1]) / 2 + 1] : null;
     const r = { youPts: you.slice(0, 2).every(p => p.getAttribute("points")), soles: soles.map(s => s.map(Math.round)), torso: T && T.map(Math.round), gap: Math.round(gap),
-      torsoFits: !T || Math.abs((T[1] - T[0]) - gap) < 0.5, poleMissesSoles: !pole || !soles.some(s => s[1] > pole[0] && s[0] < pole[1]), poleMeetsTorso: !pole || (T[1] > pole[0] && T[0] < pole[1]),
+      torsoFits: !T || Math.abs((T[1] - T[0]) - Math.max(gap, 4 * figureT.k)) < 0.5, poleMissesSoles: !pole || !soles.some(s => s[1] > pole[0] && s[0] < pole[1]), poleMeetsTorso: !pole || (T[1] > pole[0] && T[0] < pole[1]),
       faceTall: !T || (face.length === 4 && Math.max(...face) - Math.min(...face) > 40),
       stopped: my > y - 30, youHit: !!(ov && ov.querySelector(".you.hit")), boxHit: !!(ov && ov.querySelector('[data-solid].hit')), name: solidHit.name };
     A.showSolids = false; changed(); return JSON.stringify(r); })()`));

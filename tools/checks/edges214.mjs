@@ -48,6 +48,17 @@ try {
     return JSON.stringify(out); })()`));
   const high = Object.entries(lim).filter(([, v]) => !(v.back > v.stand + 20));
   ok("every outdoor place's back limit at its own far edge, well below the old stand-in up in the sky", high.length === 0, high);
+  // (Matthew: "should scale the player down more dramatically as they go 'into' the scene (heading N)"; "each picture
+  // should have its own setting ... north-ward scaling factor") the 🔭 setting: one for each place, shown in it alone;
+  // at its default the mountain trail's far edge well under half the size where they arrive; at 0 the same size anywhere
+  const sz = JSON.parse(await ev(`(async () => { const B = state.background; state.world.at = null; Object.assign(B, { kind: "mountains", figX: 0, figY: 0 }); changed();
+    await new Promise(r => setTimeout(r, 400)); const F = sceneFrame, back = figYMin(F), at = y => depthSize(B, y);
+    const shown = [...document.querySelectorAll("#panel .ctl")].filter(c => /smaller going north/.test(c.textContent) && c.offsetParent).length;
+    const r = { keys: NORTH_OUT.every(kd => Number.isFinite(B["north_" + kd])), def: B.north_mountains, back: +at(back).toFixed(2), arrive: +at(0).toFixed(2), shown };
+    B.north_mountains = 0; r.flat = [at(back), at(0)].map(v => +v.toFixed(2)); B.north_mountains = northDefault("mountains"); changed(); return JSON.stringify(r); })()`));
+  ok("🔭 each outdoor place its own setting, the mountain trail's 40 by default", sz.keys && sz.def === 40, sz);
+  ok("at the default, the mountain trail's far edge well under half the size where they arrive", sz.back < 0.5 && sz.arrive === 1, sz);
+  ok("at 0, the same size anywhere", sz.flat[0] === 1 && sz.flat[1] === 1, sz);
   const e = await tryEdge("3,3", 300, 40, [15]);
   ok("in the clearing, walked on into its east edge: through its way E, to the castle (E4)", e.t !== null && e.where.startsWith("4,3"), e);
   ok("going through it, facing east, the way they walked, never turned back", e.faced.length > 0 && e.faced.every(f => f === "right"), e);

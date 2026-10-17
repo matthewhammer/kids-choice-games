@@ -156,6 +156,33 @@ const TRUNKED = new Set(["tree", "great tree", "jungle tree", "palm tree", "palm
 const POTTED = new Set(["plant"]);
 const TRUNK = 0.14, SWIM_PLACES = new Set(["lake", "underwater", "deepsea"]);
 const objBase = name => name.split(",")[0].replace(/\s+\d+$/, "").trim();
+// a box (x, y, width, height) through a matrix, as the box round its four corners
+function boxThrough(r, m) {
+  const pts = [[r.x, r.y], [r.x + r.width, r.y], [r.x, r.y + r.height], [r.x + r.width, r.y + r.height]].map(([x, y]) => [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]);
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
+}
+// (Matthew: "palm trees, and other curved things, need about 4 or 5 different collision boxes, not just one") A trunk's
+// boxes, TRUNK_BANDS of them stacked from its foot to its top, each as wide as the trunk is at that height: its parts
+// (the tall shapes standingHere found) followed along their length (getPointAtLength, through each one's matrix; a
+// stroked one grown by half its stroke), so a palm's leaning trunk has its boxes leaning with it. Each band: x0, x1,
+// and lo, hi, its heights above the ground where the thing stands (z).
+const TRUNK_BANDS = 5;
+function trunkBands(parts, z) {
+  const pts = [];
+  for (const [sh, m] of parts) {
+    let L = 0; try { L = sh.getTotalLength(); } catch (e) { continue; }
+    const st = sh.getAttribute("stroke"), hw = st && st !== "none" ? (parseFloat(sh.getAttribute("stroke-width")) || 1) / 2 * Math.hypot(m.a, m.b) : 0;
+    for (let i = 0; i <= 48 && L > 0; i++) { const p = sh.getPointAtLength(L * i / 48); pts.push([m.a * p.x + m.c * p.y + m.e, m.b * p.x + m.d * p.y + m.f, hw]); }
+  }
+  if (pts.length < 2) return null;
+  const top = Math.min(...pts.map(p => p[1] - p[2])), bot = Math.max(z, ...pts.map(p => p[1])), out = [];
+  for (let i = 0; i < TRUNK_BANDS; i++) {
+    const yA = top + (bot - top) * i / TRUNK_BANDS, yB = top + (bot - top) * (i + 1) / TRUNK_BANDS, inb = pts.filter(p => p[1] + p[2] >= yA && p[1] - p[2] <= yB);
+    if (inb.length) out.push({ x0: Math.min(...inb.map(p => p[0] - p[2])), x1: Math.max(...inb.map(p => p[0] + p[2])), lo: Math.max(0, z - yB), hi: z - yA });
+  }
+  return out.length ? out : null;
+}
 function standingHere(B, seats) {
   if (SWIM_PLACES.has(B.kind) || !bgShown.node) return [];
   const off = objectsOff(B), k = (SCENE.bottom - SCENE.top) / 700, out = [];
@@ -183,22 +210,28 @@ function standingHere(B, seats) {
     // always in the middle of its drawing: a canopy spreads to one side, a signpost's boards hang off its post. Its
     // box is where its tall parts reach its foot (the trunk, the post: each at least a quarter of its height, ending
     // in its lowest tenth, not as wide as the whole), else the middle, as before.
-    let foot = null;
+    // (0.0.153: each part measured as the whole is, its own box through its own matrix: the beach's palms, a trunk drawn
+    // as one stroked curve, were missed through the screen's boxes, and stood on their crowns' middles)
+    let foot = null, bands = null;
     if ((trunk || potted) && Pinv) {
-      let fx0 = Infinity, fx1 = -Infinity;
+      const parts = [];
       for (const sh of o.node.querySelectorAll("rect, path, polygon, polyline, line, ellipse")) {
-        let r; try { r = sh.getBoundingClientRect(); } catch (e) { continue; }
-        if (!r.width && !r.height) continue;
-        const a = new DOMPoint(r.left, r.top).matrixTransform(Pinv), c = new DOMPoint(r.right, r.bottom).matrixTransform(Pinv);
-        const sx0 = Math.min(a.x, c.x), sx1 = Math.max(a.x, c.x), sy0 = Math.min(a.y, c.y), sy1 = Math.max(a.y, c.y);
-        if (sy1 < b.y + 0.9 * b.height || (trunk && sy1 - sy0 < 0.25 * b.height) || sx1 - sx0 > 0.6 * b.width) continue;
-        fx0 = Math.min(fx0, sx0); fx1 = Math.max(fx1, sx1);
+        let m, q;
+        try { const E = sh.getScreenCTM(); m = E && Pinv.multiply(E); q = m && boxThrough(sh.getBBox(), m); } catch (e) { continue; }
+        if (!q || (!q.width && !q.height)) continue;
+        if (q.y + q.height < b.y + 0.9 * b.height || (trunk && q.height < 0.25 * b.height) || q.width > 0.6 * b.width) continue;
+        parts.push([sh, m, q]);
       }
-      if (fx1 >= fx0) foot = [fx0, fx1];
+      if (parts.length) {
+        foot = [Math.min(...parts.map(p => p[2].x)), Math.max(...parts.map(p => p[2].x + p[2].width))];
+        if (trunk) bands = trunkBands(parts, o.z);
+      }
     }
+    // (a trunk's foot is its lowest band's width, the part on the ground)
+    if (bands) { const fb = bands[bands.length - 1]; foot = [fb.x0, fb.x1]; }
     const mid = foot ? (foot[0] + foot[1]) / 2 : b.x + b.width / 2, h = Math.max(0, o.z - b.y);
     const w = foot ? (potted ? foot[1] - foot[0] : Math.min(0.4 * b.width, Math.max(16 * k, foot[1] - foot[0]))) : trunk ? Math.min(b.width, Math.max(16 * k, TRUNK * b.width)) : b.width;
-    out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front: o.z, h, standing: true });
+    out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front: o.z, h, standing: true, ...(bands ? { bands } : {}) });
   }
   return out;
 }
@@ -225,11 +258,19 @@ const legReach = () => poseJoints && poseJoints.legs && poseJoints.legs.length
 // middle from poseJoints' foot, at the friend's scale, figureT.k), as wide as the shoe seen this way (across, facing
 // us; its length, in profile: footR), a step deep. feetSoles(x, z): the two, were the feet at (x, z); feetSpan(): how
 // far they reach either side of the middle, and how deep.
+// (0.0.153, with the trunks' bands) each box also has its heights above the ground, [4] and [5]: a sole's from the
+// ground to the ankle, the torso's from the hips to the crown (youHeights), so a thing meets the boxes at its heights
+function youHeights() {
+  const J = poseJoints, T = figureT;
+  if (!J || !J.legs || !J.legs.length || !T || !(T.k > 0)) return { ankle: 20, hips: 80, crown: 200 };
+  const foot = Math.max(...J.legs.map(l => l.F[1])), hips = Math.max(...J.legs.map(l => l.H[1])), crown = faceFrame.ty + headCrown(state.face) * faceFrame.s;
+  return { ankle: Math.max(4, 0.2 * (foot - hips) * T.k), hips: Math.max(0, (foot - hips) * T.k), crown: Math.max(0, (foot - crown) * T.k) };
+}
 function feetSoles(x, z) {
   const J = poseJoints, T = figureT;
-  if (!J || !J.legs || !J.legs.length || !T || !(T.k > 0)) return [[x - SOLID_MARGIN, x + SOLID_MARGIN, z - 3, z + 3]];
-  const prof = facingOf(state.body) !== 0, hw = T.k * Math.max(8, Math.min(45, (J.footR || 50) * (prof ? 0.6 : 0.42))), hd = Math.max(2.5, hw * 0.35);
-  return J.legs.map(l => { const fx = x + T.k * l.F[0]; return [fx - hw, fx + hw, z - hd, z + hd]; });
+  if (!J || !J.legs || !J.legs.length || !T || !(T.k > 0)) return [[x - SOLID_MARGIN, x + SOLID_MARGIN, z - 3, z + 3, 0, 20]];
+  const prof = facingOf(state.body) !== 0, hw = T.k * Math.max(8, Math.min(45, (J.footR || 50) * (prof ? 0.6 : 0.42))), hd = Math.max(2.5, hw * 0.35), up = youHeights().ankle;
+  return J.legs.map(l => { const fx = x + T.k * l.F[0]; return [fx - hw, fx + hw, z - hd, z + hd, 0, up]; });
 }
 const feetSpan = () => { const S = feetSoles(0, 0); return [Math.max(...S.map(s => Math.max(-s[0], s[1]))), Math.max(...S.map(s => s[3]))]; };
 // (Matthew: "one final box, that coincides with the center of the torso, but narrower, to indicate that we can sometimes
@@ -237,12 +278,16 @@ const feetSpan = () => { const S = feetSoles(0, 0); return [Math.max(...S.map(s 
 // the width of the box above them, for the torso -- it extends from the crotch through the head") Under the middle of
 // the torso, between the soles, a box as wide as the gap between them (none when they meet), as deep as a sole: a pole
 // that would pass between the feet meets it. youBoxes(x, z): the soles and it, all that solidAt tests.
+// (0.0.153) With the feet together (in profile, the soles overlap) a sliver still, so a palm's leaning trunk, at the
+// body's height, is met side on as well.
 function torsoBox(x, S) {
-  if (S.length < 2) return null;
-  const [a, b] = S[0][0] <= S[1][0] ? [S[0], S[1]] : [S[1], S[0]], gap = b[0] - a[1];
-  return gap > 0.5 ? [x - gap / 2, x + gap / 2, a[2], a[3]] : null;
+  if (!S.length) return null;
+  const [a, b] = S.length < 2 || S[0][0] <= S[1][0] ? [S[0], S[1] || S[0]] : [S[1], S[0]], gap = b[0] - a[1], half = Math.max(gap / 2, 2 * (figureT.k || 1)), H = youHeights();
+  return [x - half, x + half, a[2], a[3], H.hips, H.crown];
 }
 const youBoxes = (x, z) => { const S = feetSoles(x, z), t = torsoBox(x, S); return t ? S.concat([t]) : S; };
+// a solid's boxes up from the ground: a trunk's bands, else one as tall as the thing (o.h)
+const solidBands = o => o.bands || [{ x0: o.x0, x1: o.x1, lo: 0, hi: o.h > 0 ? o.h : Infinity }];
 function solidAt(x, z) {
   const B = state.background, W = castleWalls(B), S = youBoxes(x, z);
   if (W && S.some(s => Math.max(Math.abs(s[0]), Math.abs(s[1])) > W.half(z))) return { wall: true };
@@ -251,7 +296,7 @@ function solidAt(x, z) {
   for (const o of solidsHere()) {
     if (sitting && o.name === B.seat) continue;
     if (o.h < clears) continue;
-    if (S.some(s => s[1] > o.x0 && s[0] < o.x1 && s[3] > o.back && s[2] < o.front)) return o;   // (a sole, or the torso's box, over its box)
+    if (S.some(s => s[3] > o.back && s[2] < o.front && solidBands(o).some(b => s[1] > b.x0 && s[0] < b.x1 && s[5] > b.lo && s[4] < b.hi))) return o;   // (a sole, or the torso's box, over one of its boxes, at its heights)
   }
   return null;
 }

@@ -364,15 +364,16 @@ function solidsHud() {
   const back = g + figYMin(F), zs = Array.from({ length: 9 }, (_, i) => back + (F.bottom - back) * i / 8);
   // (each its footprint on the floor, and its front face up as tall as the thing, o.h, so it stands over what it is)
   const solids = solidsHere().map(o => ({ name: o.name, q: [[o.x0 - m, o.back], [o.x1 + m, o.back], [o.x1 + m, o.front], [o.x0 - m, o.front]].map(([x, z]) => sc(x, z)),
-    face: [[o.x0 - m, o.front], [o.x1 + m, o.front], [o.x1 + m, o.front - (o.h || 0)], [o.x0 - m, o.front - (o.h || 0)]].map(([x, z]) => sc(x, z)) }));
+    // (0.0.153: a trunk's faces, its bands up from the ground, leaning as a palm's trunk leans)
+    faces: solidBands(o).map(b => { const hi = Number.isFinite(b.hi) ? b.hi : 0; return [[b.x0 - m, o.front - b.lo], [b.x1 + m, o.front - b.lo], [b.x1 + m, o.front - hi], [b.x0 - m, o.front - hi]].map(([x, z]) => sc(x, z)); }) }));
   const walls = W ? [-1, 1].map(sd => zs.map(z => sc(sd * (W.half(z) - m), z))) : [];
   const line = [sc(F.left, back), sc(F.right, back)];
-  const sig = JSON.stringify([solids.map(o => pts(o.q) + pts(o.face)), walls.map(pts), pts(line)]);
+  const sig = JSON.stringify([solids.map(o => pts(o.q) + o.faces.map(pts).join("|")), walls.map(pts), pts(line)]);
   if (sig !== solidsShown || !ov) {
     solidsShown = sig;
     if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "solid-boxes"); layer.prepend(ov); }
     ov.innerHTML = `<polyline class="back" points="${pts(line)}"/>` + walls.map(w => `<polyline class="wall" points="${pts(w)}"/>`).join("") +
-      solids.map(o => `<g data-solid="${xmlEsc(String(o.name))}"><polygon class="face" points="${pts(o.face)}"/><polygon points="${pts(o.q)}"/></g><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("") +
+      solids.map(o => `<g data-solid="${xmlEsc(String(o.name))}">${o.faces.map(f => `<polygon class="face" points="${pts(f)}"/>`).join("")}<polygon points="${pts(o.q)}"/></g><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("") +
       `<g class="you"><polygon/><polygon/><polygon class="torso"/><polygon class="face torso"/><text>you</text></g>`;
     solidsHitShown = -1;
   }

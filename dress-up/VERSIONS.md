@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.153 (2026-10-17)
+
+Everything in 0.0.152, with places that look deeper, and palm trees you bump into all the way up.
+
+- **🔭 smaller going north**: walking north, into the picture, your friend now gets much smaller in the outdoor places (on the mountain trail, about half the size at the far edge; in the forest clearing, about a fifth), and every place has its own setting in 🏞️ Background for how much smaller, for each tenth of the picture: 0 keeps them the same size anywhere.
+- **Palm trees bump all the way up**: a tree's trunk now has five collision boxes stacked up it, each as wide as the trunk at that height, so a palm's leaning trunk is solid where it leans. Your friend's feet meet the low parts of things and their body the high parts, so you can step over a low rock between your feet.
+
 ## 0.0.152 (2026-10-17)
 
 Everything in 0.0.151, with things solid again while you walk.

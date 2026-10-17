@@ -312,6 +312,8 @@ const TABS = [
   ["🏞️ Background", "background", [
     ["places", "kind", "background", PLACES],
     ["range", "figSize", "🧍 size in the scene", 10, 1000, 100, 100],
+    // (ticket 214) each place's own: how much smaller going north (Surprise me leaves it as it is)
+    ...[...NORTH_OUT, ...NORTH_ROOMS].map(kd => ["range", "north_" + kd, "🔭 smaller going north (% for each tenth of the picture)", 0, 80, northDefault(kd), northDefault(kd)]),
     ["place", "figPos", "🧍 place in the scene (or drag the figure)"],
     ["objects", "objectsOff", "👁️ what stands in the scene, back to front (tap to hide or show)"],
     ["seats", "seat", "🪑 sit on (or drag the friend onto a seat)"],
@@ -761,6 +763,7 @@ const SHOWN_WHEN = {
   "costume.broomSize": c => c.kind === "witch" && c.broom,
   "costume.bootColor": c => c.kind === "witch",
   "background.figSize": b => b.kind !== "none",
+  ...Object.fromEntries([...NORTH_OUT, ...NORTH_ROOMS].map(kd => ["background.north_" + kd, b => b.kind === kd])),
   "background.lfoFast": b => !!sceneLfoThings(b).fast, "background.lfoSlow": b => !!sceneLfoThings(b).slow, "background.lfoWings": b => !!sceneLfoThings(b).wings,
   "background.figPos": b => b.kind !== "none",
   "background.objectsOff": b => b.kind !== "none",

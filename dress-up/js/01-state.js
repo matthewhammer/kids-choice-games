@@ -33,17 +33,32 @@ const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (roomFrame: the eye's height on the wall); rooms drawn flatter, with big
 // things at their back walls, vanish far above the picture.
 const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60 };
+// (ticket 214, Matthew: "this scene, and the forest clearing scene, and maybe others, should scale the player down more
+// dramatically as they go 'into' the scene (heading N)"; "each picture should have its own setting for how much we get
+// smaller as we move a certain number of fractions of picture N. north-ward scaling factor") Each place's 🔭 setting,
+// background.north_<kind>: how much smaller the friend, and what is put there, gets for each tenth of the picture's
+// height farther north than where they arrive, in percent; it sets the place's vanishing height (sceneVanish), so all
+// of it shrinks as one. Outdoors 40 (the mountain trail's far edge about 0.4 of the size, the clearing's about 0.2);
+// the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
+const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
+                   "waterfall", "campsite", "cave", "castle", "woodpath", "crossing", "beach", "sea", "lake"];
+const NORTH_ROOMS = ["treeroom", "livingroom", "witchroom", "healerroom", "tent", "imagination", "emptyroom", "bubblespace"];
+const northDefault = kind => NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
   if (B.kind === "castleroom") {
     const H = SCENE.bottom - SCENE.top, k = H / 700, top = SCENE.top + H * 0.1, floor = SCENE.ground - 110 * k;
     const style = castleOf(B).rooms[Math.round(B.castleRoom ?? 1) - 1];
     return top + (floor - top) * (style === "hallway" || style === "dining" ? 0.3 : 0.55);
   }
-  return SCENE_VANISH[B.kind] ?? 60;
+  const pct = B["north_" + B.kind];
+  if (!Number.isFinite(pct)) return SCENE_VANISH[B.kind] ?? 60;
+  return pct > 0 ? SCENE.ground + (ARRIVE[B.kind] || [0, 0])[1] - (SCENE.bottom - SCENE.top) / 10 / (pct / 100) : -Infinity;
 }
+// (0.0.153: as small as a tenth, not 0.3, so a deep place's far edge, the crossing's, the forest path's, is far off)
 function depthSize(B, figY) {
   const v = sceneVanish(B), arrive = SCENE.ground + (ARRIVE[B.kind] || [0, 0])[1];
-  return Math.max(0.3, Math.min(1.5, (SCENE.ground + figY - v) / (arrive - v)));
+  if (!Number.isFinite(v)) return 1;   // (🔭 at 0: the same size anywhere)
+  return Math.max(0.1, Math.min(1.5, (SCENE.ground + figY - v) / (arrive - v)));
 }
 // The three castles, N's, M's and D's, each with its own settings: how many
 // levels (1 to 5), its stone, how many trees grow round it, and how wide
@@ -521,6 +536,7 @@ DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpos
 // far ones are and their colour (not the near ones' warm white), the arrows'
 // size, the size of the words in the game, and the planned path shown
 DEFAULTS.access = { allArrows: false, arrowDim: 45, arrowColor: "#38bdf8", arrowSize: 100, gameFont: 100, showPath: false, showSolids: false, pathColor: "#fde047", boxColor: "#ef4444", glowFade: 800 };
+for (const kd of [...NORTH_OUT, ...NORTH_ROOMS]) DEFAULTS.background["north_" + kd] = northDefault(kd);   // (ticket 214: each place's 🔭)
 let state = clone(DEFAULTS);
 // (ticket 155, Matthew: "The priority is 60 FPS at all times, for all
 // actions that a game controller does in the scene.") What a background
@@ -856,7 +872,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.152", released: "2026-10-17" };
+const VERSION = { number: "0.0.153", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
