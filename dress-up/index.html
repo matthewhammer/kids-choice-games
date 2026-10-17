@@ -878,6 +878,25 @@ function perfMeterTick(t) {
 // deleted after 60 days with no edits), read back as text from
 // <pad>/export/txt. To be replaced by a Fumola canister we control.
 const SPEED_PAD = "https://pad.riseup.net/p/LgBrn8VRzEJxrsmMW82I";
+// (ticket 166) Its replacement: a log in the Fumola canister (Adapton/fumola,
+// crates/fumola_canister, branch ic-canister), which keeps entries
+// {key, value} per space, appended by POST <canister>/s/<space>/log and read
+// back by GET there (tools/speedlog.py). Null until the canister is
+// deployed, and then the 📮 buttons show beside the 📝 links. A device can
+// point it elsewhere (a local canister, a test) with
+// localStorage["dress-up-speed-log"].
+const SPEED_LOG_DEPLOYED = null;
+const SPEED_LOG = (() => { try { return localStorage.getItem("dress-up-speed-log") || SPEED_LOG_DEPLOYED; } catch (e) { return SPEED_LOG_DEPLOYED; } })();
+// (a line sent to the log, on a press, never by itself: the key says what
+// it is, which version and when; the button says whether it went)
+function sendSpeedLine(kind, line, btn) {
+  if (!SPEED_LOG || !line) return Promise.resolve(false);
+  if (btn) btn.textContent = "📮 sending…";
+  const key = `${kind} ${VERSION.number} ${new Date().toISOString()}`;
+  return fetch(SPEED_LOG, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, value: line }) })
+    .then(r => { if (!r.ok) throw new Error(r.status); if (btn) btn.textContent = "📮 sent ✓"; return true; })
+    .catch(() => { if (btn) btn.textContent = "📮 not sent: copy and paste it"; return false; });
+}
 // (Matthew, 2026-10-16, on 0.0.90: pauses going through a castle door and
 // into a pit, on his laptop's Firefox, where headless Chrome and Firefox
 // show none: the browser's own painting, which only his laptop can show)
@@ -14012,14 +14031,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // (ticket 166: for now, a shared page to paste the line into, readable from anywhere, until a
     // Fumola canister of our own takes its place; the black laptop has no easy way to send it)
     const speedPad = el("a", { href: SPEED_PAD, target: "_blank", rel: "noopener", title: "A shared page anyone with its address can read and write: paste the line there" }, "📝 then paste it here");
-    box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [speedBtn, speedCopy, speedPad]), speedOut,
+    // (ticket 166: with the canister's log deployed, a press sends the line there instead)
+    const speedSend = el("button", { title: "Sends the line to Matthew's log, where he reads it", onclick: () => sendSpeedLine("speed", speedOut.value, speedSend) }, "📮 send it to Matthew");
+    box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [speedBtn, speedCopy, ...(SPEED_LOG ? [speedSend] : []), speedPad]), speedOut,
       el("div", { class: "hint" }, "About 40 seconds, in the empty room and then swimming in the duck pond (moving, held still, then without one part at a time: the scenery, the friend's part under the water, the rings; its scenery as a still picture; with its music), then the empty room again, with the friend as they start, the same on every computer; then your friend and everything back as it was. Run it on two computers and compare the lines: the drawing times' ratio is how much slower one is.")]));
     // (⏱️ time the next trip: a line to copy and paste, as 🧪's)
     const tripOut = el("input", { type: "text", readonly: "", class: "padline", placeholder: "⏱️ the trip's timing shows here", onfocus: e => e.target.select() });
     const tripCopy = el("button", { onclick: () => { tripOut.select(); try { navigator.clipboard.writeText(tripOut.value).then(() => { tripCopy.textContent = "📋 copied"; }, () => document.execCommand("copy")); } catch (e) { document.execCommand("copy"); } } }, "📋 copy");
     const tripBtn = el("button", { onclick: () => { tripCopy.textContent = "📋 copy"; tripArm(t => { tripOut.value = t; }); } }, "⏱️ time the next trip");
     const tripPad = el("a", { href: SPEED_PAD, target: "_blank", rel: "noopener", title: "A shared page anyone with its address can read and write: paste the line there" }, "📝 then paste it here");
-    box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [tripBtn, tripCopy, tripPad]), tripOut,
+    const tripSend = el("button", { title: "Sends the line to Matthew's log, where he reads it", onclick: () => sendSpeedLine("trip", tripOut.value, tripSend) }, "📮 send it to Matthew");
+    box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [tripBtn, tripCopy, ...(SPEED_LOG ? [tripSend] : []), tripPad]), tripOut,
       el("div", { class: "hint" }, "Press it, then go through a doorway: click a castle door or a pit, press X or 🚪, or walk onto a pit. Every frame is timed from the start of the trip until the friend has arrived and stood still a moment; the line says which frames were long, in which part of the trip (walking, stepping in, falling, arriving, landing), and how much of each was the game's own work.")]));
     if (!perfMeter.loop) perfMeter.loop = requestAnimationFrame(perfMeterTick);
     const rows = PERF_FEATURES.map(f => {
