@@ -97,6 +97,22 @@ try {
   ok("in its middle, no way is near and X takes none", floor.middle.near.length === 0 && floor.middle.x === null && floor.middle.aimed.length === 0, floor.middle);
   ok("walked to the far end of the path: N, and further back still N", floor.far.near.join() === "N" && floor.far.x === "N" && floor.past.near.join() === "N" && floor.past.x === "N", { far: floor.far, past: floor.past });
   ok("at its west side: W", floor.west.near.join() === "W" && floor.west.x === "W", floor.west);
+  // (ticket 189, M) a way off the map's edge can't be turned on; an off way that would put a warning right is starred, with the warnings shown
+  const m189 = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
+    state.world = clone(DEFAULTS.world); worldEnter("1,0"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await w(400);
+    const btn = d => document.querySelector('.world-ways-out button[data-way="' + d + '"]');
+    const edge = ["N", "NE", "NW"].map(d => !!btn(d) && btn(d).disabled), inside = ["E", "S"].map(d => !!btn(d) && !btn(d).disabled);
+    btn("N").click(); await w(200); const stillOff = !state.world.cells["1,0"].ways.includes("N");
+    // the clearing's way N off: the wood path's way S waits for it
+    worldEnter("3,2"); state.world.cells["3,2"].ways = state.world.cells["3,2"].ways.filter(d => d !== "N"); worldWarnShow(false); changed(); await w(400);
+    const hidden = !!btn("N") && btn("N").classList.contains("way-suggest");
+    document.querySelector(".world-warn-chip").click(); await w(300);
+    const shown = !!btn("N") && btn("N").classList.contains("way-suggest"), others = [...document.querySelectorAll(".world-ways-out button.way-suggest")].map(b => b.dataset.way);
+    btn("N").click(); await w(300);
+    const after = worldProblems(state.world).length; document.querySelector(".world-warn-chip").click(); await w(100);
+    return JSON.stringify({ edge, inside, stillOff, hidden, shown, others, after }); })()`));
+  ok("at B1 on the top edge: its ways N, NE and NW can't be turned on; E and S can", m189.edge.every(Boolean) && m189.inside.every(Boolean) && m189.stillOff, m189);
+  ok("an off way that would put a warning right: starred only with the warnings shown, and on, the warning is gone", !m189.hidden && m189.shown && m189.others.join() === "N" && m189.after === 0, m189);
   // a crossing's dead ends: no trail, no arrow, no mistake (Matthew: a crossing missing a passageway has no trail and no arrow that way)
   const dead = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldPut("0,0", "crossing"); worldEnter("0,0"); await new Promise(r => setTimeout(r, 400));
     const paths = () => document.querySelectorAll('#bg path[fill="' + CROSS_PATH + '"]').length, arrows = () => document.querySelectorAll("#bg .way-out").length;

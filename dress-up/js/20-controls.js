@@ -1111,7 +1111,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       }));
       // the square the friend is in: its ways out (a forest crossing's are its paths), the start
       if (at && at.kind === state.background.kind) {
-        const ways = worldWays(at), toggle = d => () => {
+        const ways = worldWays(at), suggest = worldWarnShown ? worldWaysToTurnOn(W, W.at) : [], toggle = d => () => {
           if (at.kind === "crossing") state.background["cross" + d] = !state.background["cross" + d];   // (its paths, which worldKeep keeps in its square)
           else at.ways = ways.includes(d) ? ways.filter(x => x !== d) : [...ways, d].sort((x, y) => Object.keys(WORLD_DIRS).indexOf(x) - Object.keys(WORLD_DIRS).indexOf(y));
           changed();
@@ -1121,7 +1121,12 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           onchange: e => { const v = e.target.value.trim().slice(0, WORLD_NAME_MAX); if (v) at.name = v; else delete at.name; changed(); } });
         here.replaceChildren(el("div", { class: "cap" }, `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
           el("div", { class: "row" }, [el("span", { class: "hint" }, "✏️ its name on signs:"), nameBox]),
-          el("div", { class: "row" }, [el("span", { class: "hint" }, "ways out:"), ...Object.keys(WORLD_DIRS).map(d => el("button", { "aria-pressed": String(ways.includes(d)), title: d, onclick: toggle(d) }, WORLD_ARROWS[d]))]),
+          el("div", { class: "row world-ways-out" }, [el("span", { class: "hint" }, "ways out:"), ...Object.keys(WORLD_DIRS).map(d => {
+            // (M, 2026-10-17) off the map's edge: can't be turned on (one on from before can still be turned off);
+            // with the warnings shown, one off that would put a warning right, starred
+            const on = ways.includes(d), off = worldOffMap(W, W.at, d), hint = !on && worldWarnShown && suggest.includes(d);
+            return el("button", { "aria-pressed": String(on), title: off ? (on ? d + ": leads off the map; turn it off" : d + ": the edge of the map") : hint ? d + ": off, but on it would put a warning right" : d,
+                                  class: hint ? "way-suggest" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]); })]),
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
       } else here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."));
       warnCount.textContent = P.length ? `⚠️ ${P.length} warning${P.length === 1 ? "" : "s"}` : "✅ no warnings";

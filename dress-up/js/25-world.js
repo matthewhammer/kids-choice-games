@@ -47,6 +47,23 @@ function worldNames(W, theirs = true) {   // (theirs false: the names the places
     return [k, own || (count[c.kind] > 1 ? `${placeName(c.kind)} ${squareName(k)}` : placeName(c.kind))]; }));
 }
 const worldName = (W, key) => worldNames(W)[key] || "";
+// (M, 2026-10-17: so there's no way to make that mistake) a way out of a square off the map's edge can't be turned on
+const worldOffMap = (W, key, d) => worldNeighbour(W, key, d).off;
+// (M) the ways out of a square that are off but, turned on, would put a
+// warning right: with it on, the world has fewer warnings (one meeting a
+// way that waits for it, or joining a square no one could reach; never one
+// into an empty square, which only trades one warning for another)
+function worldWaysToTurnOn(W, key) {
+  const cell = W.cells[key];
+  if (!cell) return [];
+  const now = worldProblems(W).length, out = [];
+  for (const d of Object.keys(WORLD_DIRS)) {
+    if (worldWays(cell).includes(d) || worldOffMap(W, key, d)) continue;
+    const on = cell.kind === "crossing" ? { ...cell, ["cross" + d]: true } : { ...cell, ways: [...(cell.ways || []), d] };
+    if (worldProblems({ ...W, cells: { ...W.cells, [key]: on } }).length < now) out.push(d);
+  }
+  return out;
+}
 // the square the way d out of key leads to, if it meets a way back there; else null
 function worldMeets(W, key, d) {
   const nb = worldNeighbour(W, key, d), other = W.cells[nb.key];

@@ -350,6 +350,10 @@
 .world-way.w-E { right: 1px; top: calc(50% - 4px); } .world-way.w-W { left: 1px; top: calc(50% - 4px); }
 .world-way.w-NE { top: 1px; right: 1px; } .world-way.w-NW { top: 1px; left: 1px; } .world-way.w-SE { bottom: 1px; right: 1px; } .world-way.w-SW { bottom: 1px; left: 1px; }
 .world-warn { align-items: center; gap: 8px; }
+.world-ways-out button:disabled { opacity: 0.28; cursor: not-allowed; }
+.world-ways-out button.way-suggest { position: relative; outline: 2px dashed #d9480f; outline-offset: 2px; }
+.world-ways-out button.way-suggest::after { content: "★"; position: absolute; top: -10px; right: -8px; font-size: 0.8em; color: #d9480f; text-shadow: 0 0 2px #fff; }
+.world-ways-out button.way-offmap { outline: 2px solid #d9480f; }
 .world-warn-count { font-size: 0.9em; }
 .world-probs-here, .world-probs-else { margin: 4px 0 8px; }
 .world-prob { font-size: 0.85em; margin: 2px 0; padding-left: 1em; text-indent: -1em; }
