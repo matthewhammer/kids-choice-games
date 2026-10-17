@@ -1,0 +1,138 @@
+2026-10-17T04:38:39.8536911Z Current runner version: '2.337.0'
+Hosted Compute Agent
+Version: 20261012.601
+Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+Build Date: 2026-10-12T17:48:21Z
+Worker ID: {90427217-0a18-470e-882a-f2df06ab49fa}
+Region: eastus
+Cloud: Azure
+Ubuntu
+24.04.5
+LTS
+Image: ubuntu-24.04
+Version: 20261012.334.1
+Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+Contents: read
+Metadata: read
+Secret source: Actions
+Cache mode: write
+Prepare workflow directory
+Prepare all required actions
+Getting action download info
+Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+Complete job name: Firefox (the leak, ticket 167)
+with:
+  repository: matthewhammer/kids-choice-games
+  token: ***
+  ssh-strict: true
+  ssh-user: git
+  persist-credentials: true
+  clean: true
+  sparse-checkout-cone-mode: true
+  fetch-depth: 1
+  fetch-tags: false
+  show-progress: true
+  lfs: false
+  submodules: false
+  set-safe-directory: true
+  allow-unsafe-pr-checkout: false
+Syncing repository: matthewhammer/kids-choice-games
+Working directory is '/home/runner/work/kids-choice-games/kids-choice-games'
+[command]/usr/bin/git version
+git version 2.55.0
+Temporarily overriding HOME='/home/runner/work/_temp/45f77e08-adbd-4cef-90e6-fb5fa5551aa0' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/kids-choice-games/kids-choice-games
+Deleting the contents of '/home/runner/work/kids-choice-games/kids-choice-games'
+[command]/usr/bin/git init /home/runner/work/kids-choice-games/kids-choice-games
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: will change to "main" in Git 3.0. To configure the initial branch name
+hint: to use in all of your new repositories, which will suppress this warning,
+hint: call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+hint:
+hint: Disable this message with "git config set advice.defaultBranchName false"
+Initialized empty Git repository in /home/runner/work/kids-choice-games/kids-choice-games/.git/
+[command]/usr/bin/git remote add origin https://github.com/matthewhammer/kids-choice-games
+[command]/usr/bin/git config --local gc.auto 0
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+[command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+[command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +d10582e82659a5173eaf821b1a235593d45e112e:refs/remotes/origin/diag-167
+From https://github.com/matthewhammer/kids-choice-games
+ * [new ref]         d10582e82659a5173eaf821b1a235593d45e112e -> origin/diag-167
+[command]/usr/bin/git sparse-checkout disable
+[command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+[command]/usr/bin/git checkout --progress --force -B diag-167 refs/remotes/origin/diag-167
+Switched to a new branch 'diag-167'
+branch 'diag-167' set up to track 'origin/diag-167'.
+[command]/usr/bin/git log -1 --format=%H
+d10582e82659a5173eaf821b1a235593d45e112e
+Mozilla Firefox 157.0
+Firefox (Firefox/157.0), the duck pond, the default friend swimming (a fresh page each):
+     60 fps (0% late)  🧍 Body
+   29.8 fps (94% late)  😀 Face
+   32.2 fps (84% late)  👁 Eyes
+   31.1 fps (90% late)  💇 Hair
+     32 fps (87% late)  🦒 Neck, arms & legs
+     32 fps (86% late)  👕 Shirt
+   32.3 fps (86% late)  🖐 Hands
+   32.6 fps (83% late)  👖 Pants
+   32.3 fps (85% late)  🩱 Swim & undies
+   32.5 fps (84% late)  👟 Feet
+   32.2 fps (85% late)  👻 Visibility
+   31.8 fps (87% late)  🐯 Costume
+    7.7 fps (42% late)  🏞️ Background
+   31.5 fps (90% late)  🎮 Controls
+   31.4 fps (88% late)  🎵 Music
+   32.1 fps (84% late)  ⚙️ Advanced
+   36.7 fps (42% late)  🧍 Body, with a tune playing: duckdash (suspended)
+with:
+  name: firefox
+  path: out/
+  if-no-files-found: warn
+  compression-level: 6
+  overwrite: false
+  include-hidden-files: false
+(node:2976) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+With the provided path, there will be 1 file uploaded
+Artifact name is valid!
+Root directory input is valid!
+Beginning upload of artifact content to blob storage
+(node:2976) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+Uploaded bytes 540
+Finished uploading artifact content to blob storage!
+SHA256 digest of uploaded artifact zip is 94626be2355cb2e0604bcd9a9de6c381a69b8a77469ac1fcc390fb436c1b0c86
+Finalizing artifact upload
+Artifact firefox.zip successfully finalized. Artifact ID 12090062865
+Artifact firefox has been successfully uploaded! Final size is 540 bytes. Artifact ID is 12090062865
+Artifact download URL: https://github.com/matthewhammer/kids-choice-games/actions/runs/39003331635/artifacts/12090062865
+Post job cleanup.
+[command]/usr/bin/git version
+git version 2.55.0
+Temporarily overriding HOME='/home/runner/work/_temp/de33a5b5-eedc-435d-8dfb-83c0060278d8' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/kids-choice-games/kids-choice-games
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+[command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Cleaning up orphan processes
+Terminate orphan process: pid (2325) (python3)

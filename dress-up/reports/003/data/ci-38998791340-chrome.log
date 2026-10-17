@@ -1,0 +1,329 @@
+2026-10-17T03:26:58.8754144Z Current runner version: '2.337.0'
+Hosted Compute Agent
+Version: 20261012.601
+Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+Build Date: 2026-10-12T17:48:21Z
+Worker ID: {b53cc060-498a-4355-a3f1-7fd56cdd4290}
+Region: northcentralus
+Cloud: Azure
+Ubuntu
+24.04.5
+LTS
+Image: ubuntu-24.04
+Version: 20261012.334.1
+Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+Contents: read
+Metadata: read
+Secret source: Actions
+Cache mode: write
+Prepare workflow directory
+Prepare all required actions
+Getting action download info
+Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+Complete job name: Chrome (script, safety net, pictures, gate, audit, leak)
+with:
+  fetch-depth: 0
+  repository: matthewhammer/kids-choice-games
+  token: ***
+  ssh-strict: true
+  ssh-user: git
+  persist-credentials: true
+  clean: true
+  sparse-checkout-cone-mode: true
+  fetch-tags: false
+  show-progress: true
+  lfs: false
+  submodules: false
+  set-safe-directory: true
+  allow-unsafe-pr-checkout: false
+Syncing repository: matthewhammer/kids-choice-games
+Working directory is '/home/runner/work/kids-choice-games/kids-choice-games'
+[command]/usr/bin/git version
+git version 2.55.0
+Temporarily overriding HOME='/home/runner/work/_temp/0934547d-286e-4826-bc3c-9d240f8f8422' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/kids-choice-games/kids-choice-games
+Deleting the contents of '/home/runner/work/kids-choice-games/kids-choice-games'
+[command]/usr/bin/git init /home/runner/work/kids-choice-games/kids-choice-games
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: will change to "main" in Git 3.0. To configure the initial branch name
+hint: to use in all of your new repositories, which will suppress this warning,
+hint: call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+hint:
+hint: Disable this message with "git config set advice.defaultBranchName false"
+Initialized empty Git repository in /home/runner/work/kids-choice-games/kids-choice-games/.git/
+[command]/usr/bin/git remote add origin https://github.com/matthewhammer/kids-choice-games
+[command]/usr/bin/git config --local gc.auto 0
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+[command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+[command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+From https://github.com/matthewhammer/kids-choice-games
+ * [new branch]      ci              -> origin/ci
+ * [new branch]      collisions-176  -> origin/collisions-176
+ * [new branch]      main            -> origin/main
+ * [new tag]         dress-up-0.0.1  -> dress-up-0.0.1
+ * [new tag]         dress-up-0.0.10 -> dress-up-0.0.10
+ * [new tag]         dress-up-0.0.11 -> dress-up-0.0.11
+ * [new tag]         dress-up-0.0.12 -> dress-up-0.0.12
+ * [new tag]         dress-up-0.0.13 -> dress-up-0.0.13
+ * [new tag]         dress-up-0.0.14 -> dress-up-0.0.14
+ * [new tag]         dress-up-0.0.15 -> dress-up-0.0.15
+ * [new tag]         dress-up-0.0.16 -> dress-up-0.0.16
+ * [new tag]         dress-up-0.0.17 -> dress-up-0.0.17
+ * [new tag]         dress-up-0.0.18 -> dress-up-0.0.18
+ * [new tag]         dress-up-0.0.19 -> dress-up-0.0.19
+ * [new tag]         dress-up-0.0.2  -> dress-up-0.0.2
+ * [new tag]         dress-up-0.0.20 -> dress-up-0.0.20
+ * [new tag]         dress-up-0.0.21 -> dress-up-0.0.21
+ * [new tag]         dress-up-0.0.22 -> dress-up-0.0.22
+ * [new tag]         dress-up-0.0.23 -> dress-up-0.0.23
+ * [new tag]         dress-up-0.0.24 -> dress-up-0.0.24
+ * [new tag]         dress-up-0.0.25 -> dress-up-0.0.25
+ * [new tag]         dress-up-0.0.26 -> dress-up-0.0.26
+ * [new tag]         dress-up-0.0.27 -> dress-up-0.0.27
+ * [new tag]         dress-up-0.0.28 -> dress-up-0.0.28
+ * [new tag]         dress-up-0.0.29 -> dress-up-0.0.29
+ * [new tag]         dress-up-0.0.3  -> dress-up-0.0.3
+ * [new tag]         dress-up-0.0.30 -> dress-up-0.0.30
+ * [new tag]         dress-up-0.0.31 -> dress-up-0.0.31
+ * [new tag]         dress-up-0.0.32 -> dress-up-0.0.32
+ * [new tag]         dress-up-0.0.33 -> dress-up-0.0.33
+ * [new tag]         dress-up-0.0.34 -> dress-up-0.0.34
+ * [new tag]         dress-up-0.0.35 -> dress-up-0.0.35
+ * [new tag]         dress-up-0.0.36 -> dress-up-0.0.36
+ * [new tag]         dress-up-0.0.37 -> dress-up-0.0.37
+ * [new tag]         dress-up-0.0.38 -> dress-up-0.0.38
+ * [new tag]         dress-up-0.0.39 -> dress-up-0.0.39
+ * [new tag]         dress-up-0.0.4  -> dress-up-0.0.4
+ * [new tag]         dress-up-0.0.40 -> dress-up-0.0.40
+ * [new tag]         dress-up-0.0.41 -> dress-up-0.0.41
+ * [new tag]         dress-up-0.0.42 -> dress-up-0.0.42
+ * [new tag]         dress-up-0.0.43 -> dress-up-0.0.43
+ * [new tag]         dress-up-0.0.44 -> dress-up-0.0.44
+ * [new tag]         dress-up-0.0.45 -> dress-up-0.0.45
+ * [new tag]         dress-up-0.0.46 -> dress-up-0.0.46
+ * [new tag]         dress-up-0.0.47 -> dress-up-0.0.47
+ * [new tag]         dress-up-0.0.48 -> dress-up-0.0.48
+ * [new tag]         dress-up-0.0.49 -> dress-up-0.0.49
+ * [new tag]         dress-up-0.0.5  -> dress-up-0.0.5
+ * [new tag]         dress-up-0.0.50 -> dress-up-0.0.50
+ * [new tag]         dress-up-0.0.51 -> dress-up-0.0.51
+ * [new tag]         dress-up-0.0.52 -> dress-up-0.0.52
+ * [new tag]         dress-up-0.0.53 -> dress-up-0.0.53
+ * [new tag]         dress-up-0.0.54 -> dress-up-0.0.54
+ * [new tag]         dress-up-0.0.55 -> dress-up-0.0.55
+ * [new tag]         dress-up-0.0.56 -> dress-up-0.0.56
+ * [new tag]         dress-up-0.0.57 -> dress-up-0.0.57
+ * [new tag]         dress-up-0.0.58 -> dress-up-0.0.58
+ * [new tag]         dress-up-0.0.59 -> dress-up-0.0.59
+ * [new tag]         dress-up-0.0.6  -> dress-up-0.0.6
+ * [new tag]         dress-up-0.0.60 -> dress-up-0.0.60
+ * [new tag]         dress-up-0.0.61 -> dress-up-0.0.61
+ * [new tag]         dress-up-0.0.62 -> dress-up-0.0.62
+ * [new tag]         dress-up-0.0.63 -> dress-up-0.0.63
+ * [new tag]         dress-up-0.0.64 -> dress-up-0.0.64
+ * [new tag]         dress-up-0.0.65 -> dress-up-0.0.65
+ * [new tag]         dress-up-0.0.66 -> dress-up-0.0.66
+ * [new tag]         dress-up-0.0.67 -> dress-up-0.0.67
+ * [new tag]         dress-up-0.0.68 -> dress-up-0.0.68
+ * [new tag]         dress-up-0.0.69 -> dress-up-0.0.69
+ * [new tag]         dress-up-0.0.7  -> dress-up-0.0.7
+ * [new tag]         dress-up-0.0.70 -> dress-up-0.0.70
+ * [new tag]         dress-up-0.0.71 -> dress-up-0.0.71
+ * [new tag]         dress-up-0.0.72 -> dress-up-0.0.72
+ * [new tag]         dress-up-0.0.73 -> dress-up-0.0.73
+ * [new tag]         dress-up-0.0.74 -> dress-up-0.0.74
+ * [new tag]         dress-up-0.0.75 -> dress-up-0.0.75
+ * [new tag]         dress-up-0.0.76 -> dress-up-0.0.76
+ * [new tag]         dress-up-0.0.77 -> dress-up-0.0.77
+ * [new tag]         dress-up-0.0.78 -> dress-up-0.0.78
+ * [new tag]         dress-up-0.0.79 -> dress-up-0.0.79
+ * [new tag]         dress-up-0.0.8  -> dress-up-0.0.8
+ * [new tag]         dress-up-0.0.80 -> dress-up-0.0.80
+ * [new tag]         dress-up-0.0.81 -> dress-up-0.0.81
+ * [new tag]         dress-up-0.0.82 -> dress-up-0.0.82
+ * [new tag]         dress-up-0.0.83 -> dress-up-0.0.83
+ * [new tag]         dress-up-0.0.84 -> dress-up-0.0.84
+ * [new tag]         dress-up-0.0.86 -> dress-up-0.0.86
+ * [new tag]         dress-up-0.0.87 -> dress-up-0.0.87
+ * [new tag]         dress-up-0.0.88 -> dress-up-0.0.88
+ * [new tag]         dress-up-0.0.89 -> dress-up-0.0.89
+ * [new tag]         dress-up-0.0.9  -> dress-up-0.0.9
+ * [new tag]         dress-up-0.0.90 -> dress-up-0.0.90
+ * [new tag]         dress-up-0.0.91 -> dress-up-0.0.91
+ * [new tag]         dress-up-0.0.92 -> dress-up-0.0.92
+ * [new tag]         dress-up-0.0.93 -> dress-up-0.0.93
+ * [new tag]         dress-up-0.0.94 -> dress-up-0.0.94
+[command]/usr/bin/git branch --list --remote origin/ci
+  origin/ci
+[command]/usr/bin/git rev-parse refs/remotes/origin/ci
+60b6c2065539981947b118ad1d3cc8e502d8a4fb
+[command]/usr/bin/git sparse-checkout disable
+[command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+[command]/usr/bin/git checkout --progress --force -B ci refs/remotes/origin/ci
+Switched to a new branch 'ci'
+branch 'ci' set up to track 'origin/ci'.
+[command]/usr/bin/git log -1 --format=%H
+60b6c2065539981947b118ad1d3cc8e502d8a4fb
+with:
+  node-version: 22
+  always-auth: false
+  check-latest: false
+  token: ***
+Found in cache @ /opt/hostedtoolcache/node/22.23.3/x64
+(node:2286) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+node: v22.23.3
+npm: 10.9.9
+yarn: 1.22.22
+script 1 of 1: 15214 lines, ok
+Preparing worktree (detached HEAD 6e264f9)
+HEAD is now at 6e264f9 Messed Up Dress Up 0.0.94: hand over hand, and ladders you can click
+   "Browser": "Chrome/155.0.8059.39",
+83 pictures hashed; 0 page errors 
+83 pictures hashed; 0 page errors 
+83 vs 83 pictures; 3 differ: waterfall@day, waterfall@night, waterfall@sunset
+dumped defaults, tabs, shown, castles
+dumped defaults, tabs, shown, castles
+defaults: identical
+tabs: identical
+shown: identical
+castles: identical
+duck-pond: ok
+castle: ok
+empty-room: ok
+errors: none
+pass  🏰 outside the castle, walk                 60 fps (runs 59.7, 60, 60; friend drawn 61.7/s; worst gap 33/17/17 ms; p95 gap 16.8/16.7/16.7 ms; draw 1.52/1.48/1.51 ms)
+pass  🏰 outside the castle, drag                 60 fps (runs 59.7, 60, 60; friend drawn 59.7/s; worst gap 33/17/17 ms; p95 gap 16.7/16.8/16.7 ms; draw 1.69/1.99/1.7 ms)
+pass  🧙 outside the witch's house, walk          60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.7/16.7/16.7 ms; draw 0.98/0.96/0.97 ms)
+pass  🧙 outside the witch's house, drag          60 fps (runs 60, 60, 59.7; friend drawn 60.3/s; worst gap 17/17/33 ms; p95 gap 16.7/16.7/16.7 ms; draw 1.17/1.1/1.14 ms)
+pass  🧙 inside the witch's hut, walk             60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.8/16.8/16.7 ms; draw 0.94/1.01/1.01 ms)
+pass  🧙 inside the witch's hut, drag             60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.7/16.8/16.7 ms; draw 1.15/1.12/1.06 ms)
+pass  🌿 inside the healer's house, walk          60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.7/16.7/16.7 ms; draw 0.84/0.88/0.84 ms)
+pass  🌿 inside the healer's house, drag          60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.8/16.7/16.8 ms; draw 0.88/0.89/0.86 ms)
+pass  🦆 swimming in the duck pond, walk          60 fps (runs 60, 60, 60; friend drawn 61/s; worst gap 17/17/17 ms; p95 gap 16.7/16.7/16.7 ms; draw 1.76/1.67/1.63 ms)
+pass  🦆 swimming in the duck pond, drag          60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.7/16.8/16.7 ms; draw 1.59/1.56/1.57 ms)
+pass  🦆 the duck pond, still pictures, walk      60 fps (runs 60, 60, 60; friend drawn 61/s; worst gap 17/17/17 ms; p95 gap 16.8/16.8/16.8 ms; draw 1.15/1.04/1.01 ms)  (still pictures in 99/99/99% of drawings)
+pass  🦆 the duck pond, still pictures, drag      60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.7/16.8/16.7 ms; draw 1.43/1.36/1.44 ms)  (still pictures in 100/100/100% of drawings)
+  🦆 the duck pond, still pictures: scenery held still (choppy)
+all 12 at 55 fps or more.
+pass  🛋️ the living room, walk                   60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.7/16.8/16.7 ms; draw 1.02/0.98/0.95 ms)
+pass  🛋️ the living room, drag                   60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.7/16.8/16.8 ms; draw 0.81/0.81/0.84 ms)
+pass  🏖️ the beach, walk                         60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.7/16.7/16.7 ms; draw 0.86/0.83/0.87 ms)
+pass  🏖️ the beach, drag                         60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.7/16.7/16.7 ms; draw 1.06/1.07/1.05 ms)
+pass  👻 a see-through friend, empty room, walk    60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.8/16.7/16.7 ms; draw 0.89/0.9/0.94 ms)
+pass  👻 a see-through friend, empty room, drag    60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.7/16.7/16.8 ms; draw 0.97/0.98/0.99 ms)
+pass  🔲 the empty room, walk                     60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.8/16.7/16.8 ms; draw 0.89/0.83/0.8 ms)
+pass  🔲 the empty room, drag                     60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.7/16.7/16.7 ms; draw 0.91/0.92/0.95 ms)
+FAIL  💭 our imagination, walk                  51.3 fps (runs 52.3, 51.3, 51.3; friend drawn 52/s; worst gap 33/33/33 ms; p95 gap 33.3/33.4/33.4 ms; draw 1.27/1.24/1.23 ms)
+FAIL  💭 our imagination, drag                  50.6 fps (runs 50.6, 51.7, 49.6; friend drawn 51/s; worst gap 33/33/33 ms; p95 gap 33.4/33.3/33.4 ms; draw 1.38/1.39/1.46 ms)
+2 of 10 below 55 fps: fix before releasing.
+42 cases, 1 runs each, CPU x1, 1920x1080
+pass  🔲 empty room                             60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 0.92 ms; moved 108)
+FAIL  💭 our imagination                      52.5 fps (runs 52.5; drawn 53.8/s; worst 33 ms; p95 33.4 ms; draw 1.34 ms; moved 108)
+FAIL  🌲 forest                               51.3 fps (runs 51.3; drawn 52.4/s; worst 33 ms; p95 33.4 ms; draw 1.17 ms; moved 110)
+pass  🐠 underwater                             60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 0.99 ms; moved 108)
+pass  🏖️ beach                                 60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.01 ms; moved 108)
+pass  🧙 witch's woods                          60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.12 ms; moved 108)
+pass  🌿 cemetery                               60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 0.93 ms; moved 108)
+pass  🦆 lake                                   60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 0.93 ms; moved 108)
+pass  🏠 house and yard                         60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.15 ms; moved 108)
+pass  🌳 tree house                             60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.16 ms; moved 108)
+pass  🪜 inside the tree house                  60 fps (runs 60; drawn 61.6/s; worst 17 ms; p95 16.8 ms; draw 1.18 ms; moved 108)
+pass  🛋️ living room                           60 fps (runs 60; drawn 62.7/s; worst 17 ms; p95 16.7 ms; draw 0.96 ms; moved 108)
+pass  🧙 inside the witch's hut                 60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.1 ms; moved 108)
+pass  🌲 forest clearing                        60 fps (runs 60; drawn 61.1/s; worst 17 ms; p95 16.7 ms; draw 1.2 ms; moved 108)
+pass  🌿 inside the healer's hut                60 fps (runs 60; drawn 63/s; worst 17 ms; p95 16.8 ms; draw 0.96 ms; moved 108)
+pass  🧚 fairy forest                           60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 0.97 ms; moved 108)
+pass  ⛰️ mountain trail                         60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.18 ms; moved 108)
+pass  💦 jungle waterfall                       60 fps (runs 60; drawn 62.2/s; worst 17 ms; p95 16.7 ms; draw 0.97 ms; moved 108)
+pass  🏕️ camp site                             60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 0.99 ms; moved 108)
+pass  ⛺ inside a tent                           60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.03 ms; moved 108)
+pass  🪨 cave behind the falls                  60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 0.97 ms; moved 108)
+pass  🥾 path through the woods                 60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.04 ms; moved 108)
+pass  🏰 castle                                 60 fps (runs 60; drawn 62.2/s; worst 17 ms; p95 16.7 ms; draw 1.22 ms; moved 108)
+pass  🚪 inside the castle                      60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.52 ms; moved 108)
+pass  🚪 👑 king's room                         60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.36 ms; moved 108)
+pass  🚪 🌿 greenhouse                          60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.46 ms; moved 108)
+pass  🚪 🕳️ trap room                          60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.33 ms; moved 108)
+pass  🚪 🗝️ dungeon                            60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.42 ms; moved 108)
+pass  🚪 ⛓️ deep dungeon                        60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.35 ms; moved 108)
+pass  🚪 🕯️ hallway                            60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.35 ms; moved 108)
+pass  🚪 🐈 cat room                            60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.23 ms; moved 108)
+pass  🚪 🐴 stable                              60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.26 ms; moved 108)
+pass  🚪 🍽️ dining room                        60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.3 ms; moved 108)
+pass  🚪 🍲 kitchen                             60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.23 ms; moved 108)
+pass  🚪 ⚒️ smithy                              60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.35 ms; moved 108)
+pass  🚪 🌀 spiral staircase                    60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.35 ms; moved 108)
+pass  🪜 tree house 1 (bunks)                   60 fps (runs 60; drawn 61.6/s; worst 17 ms; p95 16.7 ms; draw 1.13 ms; moved 108)
+pass  🪜 tree house 2 (kitchen)                 60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.8 ms; draw 1.04 ms; moved 108)
+pass  🪜 tree house 3 (books)                   60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.16 ms; moved 108)
+pass  🪜 tree house 4 (lookout)                 60 fps (runs 60; drawn 61.4/s; worst 17 ms; p95 16.7 ms; draw 1.24 ms; moved 108)
+pass  🪜 tree house 5 (art)                     60 fps (runs 60; drawn 61.6/s; worst 17 ms; p95 16.8 ms; draw 1.2 ms; moved 108)
+pass  🪜 tree house 6 (music)                   60 fps (runs 60; drawn 61.6/s; worst 17 ms; p95 16.7 ms; draw 1.24 ms; moved 108)
+2 of 42 not a pass: imagination FAIL 52.5, forest FAIL 51.3
+fresh, the default friend loaded    60 fps (p95 17 ms, worst 17, 0% late), draw 0.99 ms · nodes 9670 (page 985, picture 817) · listeners 135 · heap 9.7 MB · intervals 1 · rAF/frame 3 · anims 0 · smil 37 · audio nodes made 0 · lake
+after changes, round 1      58.7 fps (p95 17 ms, worst 33, 2% late), draw 0.99 ms · nodes 50480 (page 965, picture 817) · listeners 122 · heap 74.2 MB · intervals 2 · rAF/frame 5 · anims 0 · smil 37 · audio nodes made 97 · lake
+after changes, round 2      56.2 fps (p95 33 ms, worst 33, 7% late), draw 0.97 ms · nodes 141904 (page 965, picture 817) · listeners 11775 · heap 141.0 MB · intervals 2 · rAF/frame 5 · anims 0 · smil 37 · audio nodes made 1698 · lake
+after a reload              59.8 fps (p95 17 ms, worst 33, 0% late), draw 0.94 ms · nodes 13955 (page 985, picture 817) · listeners 135 · heap 32.0 MB · intervals 1 · rAF/frame 3 · anims 0 · smil 37 · audio nodes made 0 · lake
+errors: none
+with:
+  name: chrome
+  path: out/
+  if-no-files-found: warn
+  compression-level: 6
+  overwrite: false
+  include-hidden-files: false
+(node:4110) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+With the provided path, there will be 17 files uploaded
+Artifact name is valid!
+Root directory input is valid!
+Beginning upload of artifact content to blob storage
+(node:4110) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+Uploaded bytes 798569
+Finished uploading artifact content to blob storage!
+SHA256 digest of uploaded artifact zip is b3372bbfe719dbdbe6aacf1171c2594f235b79c3ca6af76c88dd7ab3aa7376df
+Finalizing artifact upload
+Artifact chrome.zip successfully finalized. Artifact ID 12089000541
+Artifact chrome has been successfully uploaded! Final size is 798569 bytes. Artifact ID is 12089000541
+Artifact download URL: https://github.com/matthewhammer/kids-choice-games/actions/runs/38998791340/artifacts/12089000541
+Post job cleanup.
+(node:4123) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Post job cleanup.
+[command]/usr/bin/git version
+git version 2.55.0
+Temporarily overriding HOME='/home/runner/work/_temp/5596a43e-e8d2-40e5-a6f6-7a5b90539e52' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/kids-choice-games/kids-choice-games
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+[command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Cleaning up orphan processes
+Terminate orphan process: pid (2331) (python3)
+Terminate orphan process: pid (2333) (chrome)
+Terminate orphan process: pid (2341) (cat)
+Terminate orphan process: pid (2342) (cat)
+Terminate orphan process: pid (2348) (chrome_crashpad_handler)
+Terminate orphan process: pid (2350) (chrome_crashpad_handler)

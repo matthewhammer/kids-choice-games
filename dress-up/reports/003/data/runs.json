@@ -1,0 +1,426 @@
+{
+ "game": {
+  "version": "0.0.94",
+  "commit": "6e264f9",
+  "fix": {
+   "branch": "bgtab-167",
+   "commit": "ffa9c31"
+  }
+ },
+ "browsers": {
+  "chrome": "Chrome 155.0.8059.39, headless, on GitHub's ubuntu-24.04 runners",
+  "firefox": "Firefox 157.0, headless, the same runners"
+ },
+ "pictures": {
+  "source": "dress-up-pictures 2026/10/16, game 0.0.90 (9958ca2), backgrounds-with-friend",
+  "duck-pond.svg": {
+   "bytes": 150232,
+   "animate": 37,
+   "animateTransform": 25
+  },
+  "forest.svg": {
+   "bytes": 104080
+  },
+  "imagination.webp": {
+   "note": "the archive's 480-wide thumbnail: its SVG is 1.7 MB, 22 pictures inside"
+  }
+ },
+ "tabs_chrome": {
+  "run_1": {
+   "run": 39001878021,
+   "commit": "13533b9",
+   "note": "14 tabs (it stopped there)",
+   "fps": {
+    "Body": 60,
+    "Face": 60,
+    "Eyes": 60,
+    "Hair": 60,
+    "Neck, arms & legs": 60,
+    "Shirt": 60,
+    "Hands": 60,
+    "Pants": 60,
+    "Swim & undies": 60,
+    "Feet": 60,
+    "Visibility": 60,
+    "Costume": 60,
+    "Background": 2.4,
+    "Controls": 60
+   }
+  },
+  "run_2": {
+   "run": 39002226943,
+   "commit": "d41eeaf",
+   "fps": {
+    "Body": 60,
+    "Face": 60,
+    "Eyes": 60,
+    "Hair": 60,
+    "Neck, arms & legs": 60,
+    "Shirt": 60,
+    "Hands": 60,
+    "Pants": 60,
+    "Swim & undies": 60,
+    "Feet": 60,
+    "Visibility": 60,
+    "Costume": 60,
+    "Background": 14.9,
+    "Controls": 60,
+    "Music": 60,
+    "Advanced": 60
+   }
+  },
+  "fixed": {
+   "run": 39002729428,
+   "commit": "ffa9c31 (bgtab-167)",
+   "fps": {
+    "Body": 60,
+    "Face": 60,
+    "Eyes": 60,
+    "Hair": 60,
+    "Neck, arms & legs": 60,
+    "Shirt": 60,
+    "Hands": 60,
+    "Pants": 60,
+    "Swim & undies": 60,
+    "Feet": 60,
+    "Visibility": 60,
+    "Costume": 60,
+    "Background": 59.3,
+    "Controls": 60,
+    "Music": 60,
+    "Advanced": 60
+   }
+  }
+ },
+ "tabs_firefox": {
+  "run": 39003331635,
+  "commit": "d10582e",
+  "note": "the first page is absolute; every later page load in the same headless session runs on a 33 ms beat (~30 fps): relative only",
+  "fps": {
+   "Body (first page)": 60,
+   "Face": 29.8,
+   "Eyes": 32.2,
+   "Hair": 31.1,
+   "Neck, arms & legs": 32,
+   "Shirt": 32,
+   "Hands": 32.3,
+   "Pants": 32.6,
+   "Swim & undies": 32.3,
+   "Feet": 32.5,
+   "Visibility": 32.2,
+   "Costume": 31.8,
+   "Background": 7.7,
+   "Controls": 31.5,
+   "Music": 31.4,
+   "Advanced": 32.1,
+   "Body, a tune playing": 36.7
+  }
+ },
+ "profile_chrome": {
+  "run": 39002226943,
+  "seconds": 4,
+  "body": {
+   "draw": [
+    245,
+    119
+   ],
+   "changed": [
+    3,
+    2
+   ],
+   "settle": [
+    15,
+    8
+   ],
+   "top": [
+    [
+     "(idle)",
+     3272
+    ],
+    [
+     "(program)",
+     637
+    ],
+    [
+     "drawNow@10449",
+     39
+    ]
+   ]
+  },
+  "background": {
+   "draw": [
+    57,
+    32
+   ],
+   "changed": [
+    1,
+    801
+   ],
+   "settle": [
+    4,
+    3162
+   ],
+   "top": [
+    [
+     "(anonymous)@468 (a room choice's name)",
+     2662,
+     "66%"
+    ],
+    [
+     "residentsOf@576",
+     172
+    ],
+    [
+     "(anonymous)@595 (inside castleOf)",
+     126
+    ],
+    [
+     "castleOf@585",
+     106
+    ]
+   ]
+  },
+  "background_fixed": {
+   "run": 39002729428,
+   "draw": [
+    243,
+    185
+   ],
+   "changed": [
+    8,
+    219
+   ],
+   "settle": [
+    15,
+    372
+   ],
+   "top": [
+    [
+     "(anonymous)@13428",
+     209
+    ],
+    [
+     "(anonymous)@14268",
+     127
+    ],
+    [
+     "(anonymous)@14112",
+     35
+    ]
+   ]
+  },
+  "units": "[calls, total ms] over 4 s of swimming"
+ },
+ "session_chrome": {
+  "run": 38998791340,
+  "commit": "60b6c20 (ci; game as main)",
+  "before_gc": [
+   [
+    "fresh",
+    {
+     "fps": 60,
+     "nodes": 9670,
+     "listeners": 135,
+     "heap_mb": 9.7,
+     "intervals": 1,
+     "raf_per_frame": 3
+    }
+   ],
+   [
+    "after round 1",
+    {
+     "fps": 58.7,
+     "nodes": 50480,
+     "listeners": 122,
+     "heap_mb": 74.2,
+     "intervals": 2,
+     "raf_per_frame": 5
+    }
+   ],
+   [
+    "after round 2",
+    {
+     "fps": 56.2,
+     "nodes": 141904,
+     "listeners": 11775,
+     "heap_mb": 141.0,
+     "intervals": 2,
+     "raf_per_frame": 5
+    }
+   ],
+   [
+    "after a reload",
+    {
+     "fps": 59.8,
+     "nodes": 13955,
+     "listeners": 135,
+     "heap_mb": 32.0,
+     "intervals": 1,
+     "raf_per_frame": 3
+    }
+   ]
+  ]
+ },
+ "session_chrome_after_gc": {
+  "run": 39003132453,
+  "commit": "02d31e9",
+  "on_body": [
+   [
+    "fresh",
+    329,
+    89,
+    2.8,
+    1
+   ],
+   [
+    "after round 1",
+    24442,
+    89,
+    35.1,
+    29
+   ],
+   [
+    "after round 2",
+    29215,
+    89,
+    45.4,
+    32
+   ]
+  ],
+  "clicking_every_tab": [
+   [
+    "fresh",
+    3302,
+    89,
+    3.3,
+    1
+   ],
+   [
+    "after round 1",
+    24664,
+    104,
+    35.3,
+    29
+   ],
+   [
+    "after round 2",
+    26705,
+    104,
+    35.4,
+    28
+   ]
+  ],
+  "columns": [
+   "when",
+   "nodes",
+   "listeners",
+   "heap MB",
+   "documents"
+  ]
+ },
+ "session_firefox": {
+  "run": 38998791340,
+  "rounds": [
+   [
+    "fresh",
+    58.5,
+    2
+   ],
+   [
+    "after round 1",
+    52.1,
+    13
+   ],
+   [
+    "after round 2",
+    50.8,
+    11
+   ],
+   [
+    "caches emptied, no reload",
+    50.8,
+    10
+   ],
+   [
+    "music paused too",
+    50.9,
+    11
+   ]
+  ],
+  "control": [
+   [
+    "fresh",
+    59.7,
+    0
+   ],
+   [
+    "after swimming, round 1",
+    60,
+    0
+   ],
+   [
+    "after swimming, round 2",
+    60,
+    0
+   ]
+  ],
+  "columns": [
+   "when",
+   "fps",
+   "% late"
+  ]
+ },
+ "calls_idle": {
+  "run": 39001495740,
+  "commit": "b23ec35",
+  "per_2_seconds_before_and_after": [
+   [
+    "frame@12541 (a tune's note loop)",
+    0,
+    121
+   ],
+   [
+    "perfMeterTick@865 (⚙️ Advanced's meter)",
+    0,
+    121
+   ],
+   [
+    "treadTick@11313 (treading water)",
+    0,
+    61
+   ],
+   [
+    "drawNow@11302",
+    0,
+    60
+   ],
+   [
+    "padPoll@15234 (the controller)",
+    120,
+    121
+   ]
+  ],
+  "intervals": [
+   [
+    "startTune@12539 (a tune's 25 ms timer)",
+    0,
+    1
+   ]
+  ]
+ },
+ "audit_chrome": {
+  "run": 38998791340,
+  "pass_60": 40,
+  "of": 42,
+  "under_55": [
+   [
+    "💭 our imagination",
+    52.5
+   ],
+   [
+    "🌲 forest",
+    51.3
+   ]
+  ]
+ }
+}

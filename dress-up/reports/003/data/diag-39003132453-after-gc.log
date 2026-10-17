@@ -1,0 +1,271 @@
+2026-10-17T04:35:27.0561965Z Current runner version: '2.337.0'
+Hosted Compute Agent
+Version: 20261012.601
+Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+Build Date: 2026-10-12T17:48:21Z
+Worker ID: {8b07be60-6a6b-4b9c-b078-d384a09ee75f}
+Region: northcentralus
+Cloud: Azure
+Ubuntu
+24.04.5
+LTS
+Image: ubuntu-24.04
+Version: 20261012.334.1
+Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+Contents: read
+Metadata: read
+Secret source: Actions
+Cache mode: write
+Prepare workflow directory
+Prepare all required actions
+Getting action download info
+Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+Complete job name: Chrome (script, safety net, pictures, gate, audit, leak)
+with:
+  fetch-depth: 0
+  repository: matthewhammer/kids-choice-games
+  token: ***
+  ssh-strict: true
+  ssh-user: git
+  persist-credentials: true
+  clean: true
+  sparse-checkout-cone-mode: true
+  fetch-tags: false
+  show-progress: true
+  lfs: false
+  submodules: false
+  set-safe-directory: true
+  allow-unsafe-pr-checkout: false
+Syncing repository: matthewhammer/kids-choice-games
+Working directory is '/home/runner/work/kids-choice-games/kids-choice-games'
+[command]/usr/bin/git version
+git version 2.55.0
+Temporarily overriding HOME='/home/runner/work/_temp/688d0331-5b9c-41ee-923b-e3c262c57a19' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/kids-choice-games/kids-choice-games
+Deleting the contents of '/home/runner/work/kids-choice-games/kids-choice-games'
+[command]/usr/bin/git init /home/runner/work/kids-choice-games/kids-choice-games
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: will change to "main" in Git 3.0. To configure the initial branch name
+hint: to use in all of your new repositories, which will suppress this warning,
+hint: call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+hint:
+hint: Disable this message with "git config set advice.defaultBranchName false"
+Initialized empty Git repository in /home/runner/work/kids-choice-games/kids-choice-games/.git/
+[command]/usr/bin/git remote add origin https://github.com/matthewhammer/kids-choice-games
+[command]/usr/bin/git config --local gc.auto 0
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+[command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+[command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+From https://github.com/matthewhammer/kids-choice-games
+ * [new branch]      bgtab-167       -> origin/bgtab-167
+ * [new branch]      bgtab-167-quick -> origin/bgtab-167-quick
+ * [new branch]      ci              -> origin/ci
+ * [new branch]      collisions-176  -> origin/collisions-176
+ * [new branch]      cost-160        -> origin/cost-160
+ * [new branch]      diag-167        -> origin/diag-167
+ * [new branch]      diagonals-144   -> origin/diagonals-144
+ * [new branch]      flash-177       -> origin/flash-177
+ * [new branch]      main            -> origin/main
+ * [new branch]      postcards-43    -> origin/postcards-43
+ * [new branch]      speedlog-166    -> origin/speedlog-166
+ * [new tag]         dress-up-0.0.1  -> dress-up-0.0.1
+ * [new tag]         dress-up-0.0.10 -> dress-up-0.0.10
+ * [new tag]         dress-up-0.0.11 -> dress-up-0.0.11
+ * [new tag]         dress-up-0.0.12 -> dress-up-0.0.12
+ * [new tag]         dress-up-0.0.13 -> dress-up-0.0.13
+ * [new tag]         dress-up-0.0.14 -> dress-up-0.0.14
+ * [new tag]         dress-up-0.0.15 -> dress-up-0.0.15
+ * [new tag]         dress-up-0.0.16 -> dress-up-0.0.16
+ * [new tag]         dress-up-0.0.17 -> dress-up-0.0.17
+ * [new tag]         dress-up-0.0.18 -> dress-up-0.0.18
+ * [new tag]         dress-up-0.0.19 -> dress-up-0.0.19
+ * [new tag]         dress-up-0.0.2  -> dress-up-0.0.2
+ * [new tag]         dress-up-0.0.20 -> dress-up-0.0.20
+ * [new tag]         dress-up-0.0.21 -> dress-up-0.0.21
+ * [new tag]         dress-up-0.0.22 -> dress-up-0.0.22
+ * [new tag]         dress-up-0.0.23 -> dress-up-0.0.23
+ * [new tag]         dress-up-0.0.24 -> dress-up-0.0.24
+ * [new tag]         dress-up-0.0.25 -> dress-up-0.0.25
+ * [new tag]         dress-up-0.0.26 -> dress-up-0.0.26
+ * [new tag]         dress-up-0.0.27 -> dress-up-0.0.27
+ * [new tag]         dress-up-0.0.28 -> dress-up-0.0.28
+ * [new tag]         dress-up-0.0.29 -> dress-up-0.0.29
+ * [new tag]         dress-up-0.0.3  -> dress-up-0.0.3
+ * [new tag]         dress-up-0.0.30 -> dress-up-0.0.30
+ * [new tag]         dress-up-0.0.31 -> dress-up-0.0.31
+ * [new tag]         dress-up-0.0.32 -> dress-up-0.0.32
+ * [new tag]         dress-up-0.0.33 -> dress-up-0.0.33
+ * [new tag]         dress-up-0.0.34 -> dress-up-0.0.34
+ * [new tag]         dress-up-0.0.35 -> dress-up-0.0.35
+ * [new tag]         dress-up-0.0.36 -> dress-up-0.0.36
+ * [new tag]         dress-up-0.0.37 -> dress-up-0.0.37
+ * [new tag]         dress-up-0.0.38 -> dress-up-0.0.38
+ * [new tag]         dress-up-0.0.39 -> dress-up-0.0.39
+ * [new tag]         dress-up-0.0.4  -> dress-up-0.0.4
+ * [new tag]         dress-up-0.0.40 -> dress-up-0.0.40
+ * [new tag]         dress-up-0.0.41 -> dress-up-0.0.41
+ * [new tag]         dress-up-0.0.42 -> dress-up-0.0.42
+ * [new tag]         dress-up-0.0.43 -> dress-up-0.0.43
+ * [new tag]         dress-up-0.0.44 -> dress-up-0.0.44
+ * [new tag]         dress-up-0.0.45 -> dress-up-0.0.45
+ * [new tag]         dress-up-0.0.46 -> dress-up-0.0.46
+ * [new tag]         dress-up-0.0.47 -> dress-up-0.0.47
+ * [new tag]         dress-up-0.0.48 -> dress-up-0.0.48
+ * [new tag]         dress-up-0.0.49 -> dress-up-0.0.49
+ * [new tag]         dress-up-0.0.5  -> dress-up-0.0.5
+ * [new tag]         dress-up-0.0.50 -> dress-up-0.0.50
+ * [new tag]         dress-up-0.0.51 -> dress-up-0.0.51
+ * [new tag]         dress-up-0.0.52 -> dress-up-0.0.52
+ * [new tag]         dress-up-0.0.53 -> dress-up-0.0.53
+ * [new tag]         dress-up-0.0.54 -> dress-up-0.0.54
+ * [new tag]         dress-up-0.0.55 -> dress-up-0.0.55
+ * [new tag]         dress-up-0.0.56 -> dress-up-0.0.56
+ * [new tag]         dress-up-0.0.57 -> dress-up-0.0.57
+ * [new tag]         dress-up-0.0.58 -> dress-up-0.0.58
+ * [new tag]         dress-up-0.0.59 -> dress-up-0.0.59
+ * [new tag]         dress-up-0.0.6  -> dress-up-0.0.6
+ * [new tag]         dress-up-0.0.60 -> dress-up-0.0.60
+ * [new tag]         dress-up-0.0.61 -> dress-up-0.0.61
+ * [new tag]         dress-up-0.0.62 -> dress-up-0.0.62
+ * [new tag]         dress-up-0.0.63 -> dress-up-0.0.63
+ * [new tag]         dress-up-0.0.64 -> dress-up-0.0.64
+ * [new tag]         dress-up-0.0.65 -> dress-up-0.0.65
+ * [new tag]         dress-up-0.0.66 -> dress-up-0.0.66
+ * [new tag]         dress-up-0.0.67 -> dress-up-0.0.67
+ * [new tag]         dress-up-0.0.68 -> dress-up-0.0.68
+ * [new tag]         dress-up-0.0.69 -> dress-up-0.0.69
+ * [new tag]         dress-up-0.0.7  -> dress-up-0.0.7
+ * [new tag]         dress-up-0.0.70 -> dress-up-0.0.70
+ * [new tag]         dress-up-0.0.71 -> dress-up-0.0.71
+ * [new tag]         dress-up-0.0.72 -> dress-up-0.0.72
+ * [new tag]         dress-up-0.0.73 -> dress-up-0.0.73
+ * [new tag]         dress-up-0.0.74 -> dress-up-0.0.74
+ * [new tag]         dress-up-0.0.75 -> dress-up-0.0.75
+ * [new tag]         dress-up-0.0.76 -> dress-up-0.0.76
+ * [new tag]         dress-up-0.0.77 -> dress-up-0.0.77
+ * [new tag]         dress-up-0.0.78 -> dress-up-0.0.78
+ * [new tag]         dress-up-0.0.79 -> dress-up-0.0.79
+ * [new tag]         dress-up-0.0.8  -> dress-up-0.0.8
+ * [new tag]         dress-up-0.0.80 -> dress-up-0.0.80
+ * [new tag]         dress-up-0.0.81 -> dress-up-0.0.81
+ * [new tag]         dress-up-0.0.82 -> dress-up-0.0.82
+ * [new tag]         dress-up-0.0.83 -> dress-up-0.0.83
+ * [new tag]         dress-up-0.0.84 -> dress-up-0.0.84
+ * [new tag]         dress-up-0.0.86 -> dress-up-0.0.86
+ * [new tag]         dress-up-0.0.87 -> dress-up-0.0.87
+ * [new tag]         dress-up-0.0.88 -> dress-up-0.0.88
+ * [new tag]         dress-up-0.0.89 -> dress-up-0.0.89
+ * [new tag]         dress-up-0.0.9  -> dress-up-0.0.9
+ * [new tag]         dress-up-0.0.90 -> dress-up-0.0.90
+ * [new tag]         dress-up-0.0.91 -> dress-up-0.0.91
+ * [new tag]         dress-up-0.0.92 -> dress-up-0.0.92
+ * [new tag]         dress-up-0.0.93 -> dress-up-0.0.93
+ * [new tag]         dress-up-0.0.94 -> dress-up-0.0.94
+[command]/usr/bin/git branch --list --remote origin/diag-167
+  origin/diag-167
+[command]/usr/bin/git rev-parse refs/remotes/origin/diag-167
+02d31e987d82be4243be2b037442aa46fad096b4
+[command]/usr/bin/git sparse-checkout disable
+[command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+[command]/usr/bin/git checkout --progress --force -B diag-167 refs/remotes/origin/diag-167
+Switched to a new branch 'diag-167'
+branch 'diag-167' set up to track 'origin/diag-167'.
+[command]/usr/bin/git log -1 --format=%H
+02d31e987d82be4243be2b037442aa46fad096b4
+with:
+  node-version: 22
+  always-auth: false
+  check-latest: false
+  token: ***
+Found in cache @ /opt/hostedtoolcache/node/22.23.3/x64
+(node:2309) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+node: v22.23.3
+npm: 10.9.9
+yarn: 1.22.22
+script 1 of 1: 15214 lines, ok
+Preparing worktree (detached HEAD 6e264f9)
+HEAD is now at 6e264f9 Messed Up Dress Up 0.0.94: hand over hand, and ladders you can click
+   "Browser": "Chrome/155.0.8059.39",
+83 pictures hashed; 0 page errors 
+83 pictures hashed; 0 page errors 
+83 vs 83 pictures; 3 differ: waterfall@day, waterfall@night, waterfall@sunset
+dumped defaults, tabs, shown, castles
+dumped defaults, tabs, shown, castles
+defaults: identical
+tabs: identical
+shown: identical
+castles: identical
+staying on the 🧍 Body tab: counts after a forced garbage collection
+  fresh          nodes     329 (page 165) · listeners     89 · heap 2.8 MB · documents 1
+  after round 1  nodes   24442 (page 958) · listeners     89 · heap 35.1 MB · documents 29
+  after round 2  nodes   29215 (page 958) · listeners     89 · heap 45.4 MB · documents 32
+clicking every tab in each round (then back to 🧍 Body): counts after a forced garbage collection
+  fresh          nodes    3302 (page 958) · listeners     89 · heap 3.3 MB · documents 1
+  after round 1  nodes   24664 (page 958) · listeners    104 · heap 35.3 MB · documents 29
+  after round 2  nodes   26705 (page 958) · listeners    104 · heap 35.4 MB · documents 28
+duck-pond: ok
+castle: ok
+empty-room: ok
+errors: none
+with:
+  name: chrome
+  path: out/
+  if-no-files-found: warn
+  compression-level: 6
+  overwrite: false
+  include-hidden-files: false
+(node:3117) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+With the provided path, there will be 11 files uploaded
+Artifact name is valid!
+Root directory input is valid!
+Beginning upload of artifact content to blob storage
+(node:3117) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+Uploaded bytes 997828
+Finished uploading artifact content to blob storage!
+SHA256 digest of uploaded artifact zip is 022c33bcb2ce816b85089327b7625c25f6d230ae5d0e7a0a6f91ea6801727f2d
+Finalizing artifact upload
+Artifact chrome.zip successfully finalized. Artifact ID 12089883199
+Artifact chrome has been successfully uploaded! Final size is 997828 bytes. Artifact ID is 12089883199
+Artifact download URL: https://github.com/matthewhammer/kids-choice-games/actions/runs/39003132453/artifacts/12089883199
+Post job cleanup.
+(node:3129) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Post job cleanup.
+[command]/usr/bin/git version
+git version 2.55.0
+Temporarily overriding HOME='/home/runner/work/_temp/8997f266-7586-4d78-a7b6-2b2505fca526' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/kids-choice-games/kids-choice-games
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+[command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Cleaning up orphan processes
+Terminate orphan process: pid (2354) (python3)
+Terminate orphan process: pid (2356) (chrome)
+Terminate orphan process: pid (2364) (cat)
+Terminate orphan process: pid (2365) (cat)
+Terminate orphan process: pid (2367) (chrome_crashpad_handler)
+Terminate orphan process: pid (2369) (chrome_crashpad_handler)
