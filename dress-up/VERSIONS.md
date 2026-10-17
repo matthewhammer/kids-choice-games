@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **Postcards** (💾 Save ▾ → "💌 Save a postcard"): your friend in their place, in a card's cream border, with something written under it, saved as one picture ready to send. The words start as the picture's own line ("feeling happy outside of N's castle"); type anything instead. A long message goes on two lines.
+
 ## 0.0.94 (2026-10-16)
 
 Everything in 0.0.93, plus climbing that looks like climbing, and ladders you can click.

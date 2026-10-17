@@ -1,5 +1,22 @@
 [
- { "name": "duck-pond", "js": "state.background.kind = \"lake\"" },
- { "name": "castle", "js": "state.background.kind = \"castle\"" },
- { "name": "empty-room", "js": "state.background.kind = \"emptyroom\"" }
+ {
+  "name": "postcard-pop-up",
+  "js": "state.background.kind = \"castle\"; changed(); await new Promise(r => setTimeout(r, 300)); setSavePop(true)",
+  "wait": 900
+ },
+ {
+  "name": "postcard-duck-pond",
+  "js": "state.background.kind = \"lake\"; changed(); await new Promise(r => setTimeout(r, 600)); const b = await postcardBlob(\"Greetings from the duck pond!\"); const im = document.createElement('img'); im.src = URL.createObjectURL(b); im.style.cssText = 'position:fixed;inset:0;margin:auto;max-width:94vw;max-height:94vh;z-index:9999;box-shadow:0 0 0 100vmax rgba(0,0,0,0.55)'; document.body.append(im)",
+  "wait": 1500
+ },
+ {
+  "name": "postcard-castle-mood-line",
+  "js": "state.background.kind = \"castle\"; changed(); await new Promise(r => setTimeout(r, 600)); const b = await postcardBlob(document.getElementById('mood').textContent); const im = document.createElement('img'); im.src = URL.createObjectURL(b); im.style.cssText = 'position:fixed;inset:0;margin:auto;max-width:94vw;max-height:94vh;z-index:9999;box-shadow:0 0 0 100vmax rgba(0,0,0,0.55)'; document.body.append(im)",
+  "wait": 1500
+ },
+ {
+  "name": "postcard-long-message",
+  "js": "state.background.kind = \"forest\"; changed(); await new Promise(r => setTimeout(r, 600)); const b = await postcardBlob(\"A very very long postcard message that goes on and on about the trees and the woods\"); const im = document.createElement('img'); im.src = URL.createObjectURL(b); im.style.cssText = 'position:fixed;inset:0;margin:auto;max-width:94vw;max-height:94vh;z-index:9999;box-shadow:0 0 0 100vmax rgba(0,0,0,0.55)'; document.body.append(im)",
+  "wait": 1500
+ }
 ]
