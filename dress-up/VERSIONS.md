@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.171 (2026-10-17)
+
+Everything in 0.0.170, with smooth music while you drag things.
+
+- **Fixed: the music stuttered while dragging things**: dragging something you'd put in a place (a rock, a tree, a potion) redrew the whole picture at every move of the mouse, which on a slower computer made the music pause and glitch. Now the thing simply moves under your finger, and the picture catches up a few times a second and when you let go.
+
 ## 0.0.170 (2026-10-17)
 
 Everything in 0.0.169, with a tree house trunk you bump into.
