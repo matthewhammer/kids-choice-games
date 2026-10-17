@@ -117,8 +117,10 @@ function helixCheapSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff
     }
     return d;
   };
-  return colors.map((c, si) => { const ds = [...Array(K + 1)].map((_, f) => pathAt(si, f));
-    return `<path d="${ds[0]}" fill="none" stroke="${c}" stroke-width="${f1(6 * k)}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.75">` +
+  // (fading as it rises, as the full ones do: a still gradient along each plume, no moving part)
+  return colors.map((c, si) => { const ds = [...Array(K + 1)].map((_, f) => pathAt(si, f)), id = `fume-${si}-${Math.round(bottom)}-${Math.round(top)}`;
+    return `<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(bottom)}" x2="0" y2="${f1(top)}"><stop offset="0" stop-color="${c}" stop-opacity="0.9"/><stop offset="1" stop-color="${c}" stop-opacity="0.2"/></linearGradient></defs>` +
+           `<path d="${ds[0]}" fill="none" stroke="url(#${id})" stroke-width="${f1(6 * k)}" stroke-linecap="round" stroke-linejoin="round">` +
            `<animate attributeName="d" values="${ds.join(";")}" dur="2.4s" repeatCount="indefinite"/></path>`; }).join("");
 }
 // (ticket 118) The fumes' widths and see-through-ness as Web Animations, one

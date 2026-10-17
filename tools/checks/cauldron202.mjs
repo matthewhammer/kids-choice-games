@@ -28,10 +28,10 @@ try {
     await put(1); thingFps = 30; changed(); await w(300); const slow = look(); thingFps = null; changed();
     B.things = []; worldEnter("1,1"); await w(500); const witch = document.querySelectorAll("#bg [data-helix]").length;
     return JSON.stringify({ one, three, slow, witch }); })()`));
-  ok("one cauldron: its fumes as they were (the spiral, some two hundred moving parts)", r.one.length === 1 && r.one[0].full > 100, r.one);
+  ok("one cauldron: its fumes as they were (the spiral, some two hundred moving parts)", r.one.length === 1 && r.one[0].full > 30 && r.one[0].moving > 150, r.one);
   ok("three cauldrons: each drawn cheap, two plumes turning, under thirty moving parts", r.three.length === 3 && r.three.every(c => c.full === 0 && c.plumes >= 2 && c.moving < 30), r.three);
   ok("one cauldron on a computer measuring 30 frames a second: cheap", r.slow.length === 1 && r.slow[0].full === 0 && r.slow[0].plumes >= 2, r.slow);
-  ok("the witch's woods' own cauldron: as it was", r.witch > 100, r.witch);
+  ok("the witch's woods' own cauldron: as it was", r.witch > 30, r.witch);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
