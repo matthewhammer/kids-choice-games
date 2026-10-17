@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.168 (2026-10-17)
+
+Everything in 0.0.167, with crawling through doors that are too small.
+
+- **Crawling through small doors**: when your friend is too tall for a door, like the tree house's little doors to its rope bridges, they walk up to it and crawl the last bit and through, instead of walking through as if it fit. A door they fit through, they still walk through. Make your friend very big, and they'll crawl through the castle's doors too.
+
 ## 0.0.167 (2026-10-17)
 
 Everything in 0.0.166, with a climb down a trapdoor you can see.

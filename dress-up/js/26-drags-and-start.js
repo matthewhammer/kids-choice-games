@@ -880,6 +880,15 @@ function fallDown([cx, cy, rx, ry], then) {
   }, FALL_TEETER_MS);
 }
 // (opt.out: the way they step through, else on toward the doorway, or deeper; opt.here: from where they stand, not walking to it)
+// (ticket 239) a doorway too low for the friend: their crown, standing at its depth (their size there), over 0.97 of its
+// opening (its first shape, r on the screen, from the top to its foot); then how far before its threshold they crawl
+const CRAWL_IN_PACE = 0.55;
+function doorTooLow(r, inv, foot) {
+  const BG = state.background, top = new DOMPoint(r.x, r.y).matrixTransform(inv).y, open = foot.y - top;
+  if (!(open > 0) || !(figureT.k > 0)) return null;
+  const tall = youHeights().crown / figureT.k * (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, foot.y - SCENE.ground);
+  return tall > 0.97 * open ? { tall, open, stretch: Math.max(40, 0.9 * tall) } : null;
+}
 function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {}) {
   const P = pic.getScreenCTM(), BG = state.background, B = state.body, F = sceneFrame;
   if (!P) return;
@@ -890,6 +899,12 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   // (a ladder (ticket 173): its foot, where a climb starts)
   const foot = lad ? { x: lad.x, y: lad.z + 2 } : pit ? { x: pit[0], y: pit[1] } : new DOMPoint(r.x + r.width / 2, r.y + r.height).matrixTransform(inv);
   const tx = opt.here ? BG.figX ?? 0 : clamp(foot.x, F.left, F.right), ty = opt.here ? BG.figY ?? 0 : clamp(foot.y - SCENE.ground, figYMin(F), F.bottom - F.ground);
+  // (ticket 239, Matthew: "it makes sense that the doors of the tree house are smaller than ordinary doors -- Can we do a
+  // nice check to see if we are currently 'too tall' and if so, part of the path plan for going out is crawling at the
+  // end of the animation, near to the threshold of the door") a door lower than the friend standing at it: the last
+  // stretch to its threshold, about a body's length, and the step through it, crawled, at a crawl's pace (not a world
+  // way's or a room's way toward us, a ladder or a pit: those go their own ways)
+  const low = walk && !lad && !pit && !opt.out && door.hasAttribute("data-door") ? doorTooLow(r, inv, foot) : null;
   // (the way in: on toward the doorway from where they stop; deeper into the place if it is straight ahead)
   let ux = foot.x - tx, uy = foot.y - (SCENE.ground + ty);
   if (opt.out) [ux, uy] = opt.out;
@@ -934,13 +949,14 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   const step = t => {
     const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
     if (phase === "walk") {
-      const [wx, wy] = path[leg], dx = wx - (BG.figX ?? 0), dy = wy - (BG.figY ?? 0), d = Math.hypot(dx, dy / 0.6), sp = speed * dt;
+      const crawling = !!low && Math.hypot(tx - (BG.figX ?? 0), (ty - (BG.figY ?? 0)) / 0.6) < low.stretch;
+      const [wx, wy] = path[leg], dx = wx - (BG.figX ?? 0), dy = wy - (BG.figY ?? 0), d = Math.hypot(dx, dy / 0.6), sp = (crawling ? CRAWL_IN_PACE : 1) * speed * dt;
       if ((d <= sp + 0.5) && leg < path.length - 1 && t - t0 <= WALK_IN_MAX) { BG.figX = wx; BG.figY = wy; walkPath.leg = ++leg; moved(); }
       else if (d <= sp + 0.5 || t - t0 > WALK_IN_MAX) { BG.figX = tx; BG.figY = ty; phase = "in"; tIn = t; walkPath.leg = path.length; }
       else {
         const k = sp / d;
         BG.figX = Math.round(10 * ((BG.figX ?? 0) + dx * k)) / 10; BG.figY = Math.round(10 * ((BG.figY ?? 0) + dy * k)) / 10;
-        B.anim = deepHere() ? "swim" : "walk"; B.facing = face(dx, dy); B.turn = "";   // (ticket 199: swimming, in deep water)
+        B.anim = crawling ? "crawl" : deepHere() ? "swim" : "walk"; B.facing = face(dx, dy); B.turn = "";   // (ticket 199: swimming, in deep water)
         moved();
       }
     }
@@ -975,7 +991,7 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
     if (phase === "in") {
       if (!tIn) { tIn = t; tripPhase = "stepping in"; }
       const u = Math.min(1, (t - tIn) / WALK_IN_MS);
-      if (walk) { B.anim = deepHere() ? "swim" : "walk"; B.facing = face(ux, uy); B.turn = ""; }
+      if (walk) { B.anim = low ? "crawl" : deepHere() ? "swim" : "walk"; B.facing = face(ux, uy); B.turn = ""; }
       BG.figX = tx + ux * WALK_IN_STEP * u; BG.figY = ty + uy * WALK_IN_STEP * 0.6 * u;
       draw(); fade((1 - u).toFixed(2));   // (drawn now, not as moved() may, later: the fade goes on what is drawn)
       if (u >= 1) { done(); return; }
