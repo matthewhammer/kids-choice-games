@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.172 (2026-10-17)
+
+Everything in 0.0.171, with pictures that hang clear of the ladders.
+
+- **Pictures out of the way**: in the tree house's rooms, a picture could hang right behind a ladder, the trapdoor or the furniture, so a tap meant for the ladder went into the picture, or the other way round. Now each picture hangs where nothing stands in front of it, well away from the ladders and the trapdoor; if a room has no clear place left, that picture isn't hung.
+
 ## 0.0.171 (2026-10-17)
 
 Everything in 0.0.170, with smooth music while you drag things.

@@ -129,8 +129,9 @@ const PICTURE_CHOICES = [["forest", "🌲 forest"], ["underwater", "🐠 underwa
   ["clearing", "🌲 forest clearing"], ["mountains", "⛰️ mountain trail"], ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"]];
 const picturesSvg = (o, here, slots, scale, keyOf = i => "pic" + (i + 1)) => {
   const depth = (o.depth ?? 0) + 1, count = depth > 2 ? 0 : Math.min(slots.length, o.pictures ?? 3), detail = o.picDetail ?? 70;
-  return slots.slice(0, count).map(([x, y, w], i) => {
-    const chosen = o[keyOf(i)], kind = SCENES[chosen] || PICTURE_CHOICES.some(([kd]) => kd === chosen) ? chosen : PICTURE_KINDS[i];
+  return slots.slice(0, count).map((sl, i) => {
+    if (!sl) return "";   // (ticket 242: no clear place on the wall for it)
+    const [x, y, w] = sl, chosen = o[keyOf(i)], kind = SCENES[chosen] || PICTURE_CHOICES.some(([kd]) => kd === chosen) ? chosen : PICTURE_KINDS[i];
     return framedSvg(kind, detail, o, depth, x, y, w * scale, !PERF.livePictures);   // (ticket 158: held still unless moving pictures are on)
   }).join(SEP);
 };
@@ -406,6 +407,54 @@ SEATS.treeroom = (c, B) => {
     return [{ name: "beanbag", x0: gx - 36 * k * f, x1: gx + 36 * k * f, y: floor - 50 * k * f, z: floor + 60 * k * f + 1, facing: ["front", "left", "right"] }]; }
   return [];
 };
+// (ticket 242, Matthew: "let's not place any pictures in the tree house behind any ladders, or other furniture. For
+// ladders esp, we can easily click on the picture when we meant the ladder, or vice versa -- best just to separate them
+// on the screen more") A tree room's pictures hang where nothing stands in front of them. What stands there is measured
+// once the room is drawn (treeBusyMeasure: its furniture and trunk, its ladder up, its hatch, its side doors, and the
+// window's frame), once for each room and its settings; then each picture goes to the nearest clear place on the back
+// wall to its own (TREE_PIC_CLEAR from anything, TREE_PIC_LADDER from a ladder or hatch), or, with none, is left out.
+// Until the room has been measured, its first drawing, no pictures.
+const TREE_PIC_CLEAR = 14, TREE_PIC_LADDER = 44;
+let treeBusy = { key: null, boxes: null }, treeKeyNow = null;
+const treeBusyKey = (o, room, c) => JSON.stringify([o.inside ?? 1, room, o.houses ?? 4, o.ladders ?? 3, o.bridges ?? 2, o.toys ?? 10, o.windowSize ?? 100, c.F]);
+function placeTreePictures(slots, busy, c) {
+  const { top, bw } = roomFrame(c), floor = c.g - 110 * c.k, pad = TREE_PIC_CLEAR * c.k, placed = [];
+  const hit = (r, b, m) => r[0] < b[2] + m && r[2] > b[0] - m && r[1] < b[3] + m && r[3] > b[1] - m;
+  return slots.map(([x, y, w]) => {
+    const h = w * 0.74, rect = (px, py) => [px - w / 2, py - h / 2, px + w / 2, py + h / 2];
+    const clear = (px, py) => { const r = rect(px, py); return r[0] > -bw + pad && r[2] < bw - pad && r[1] > top + pad && r[3] < floor - pad &&
+      !busy.some(b => hit(r, b.r, b.m)) && !placed.some(p => hit(r, p, pad)); };
+    // (the nearest clear place: along the wall either way, at its own height, then a little higher or lower)
+    let best = null;
+    for (const dy of [0, -50 * c.k, 50 * c.k, -100 * c.k]) for (let d = 0; d <= 2 * bw; d += 10 * c.k) {
+      if (best && d + 2 * Math.abs(dy) >= best.cost) break;
+      for (const px of d ? [x - d, x + d] : [x]) if (clear(px, y + dy)) { best = { px, py: y + dy, cost: d + 2 * Math.abs(dy) }; break; }
+    }
+    if (!best) return null;
+    placed.push(rect(best.px, best.py));
+    return [best.px, best.py, w];
+  });
+}
+// (after a tree room is drawn: what stands in front of its back wall, in the stage's units; a new room or new settings
+// drawn again with its pictures placed)
+function treeBusyMeasure() {
+  if (state.background.kind !== "treeroom" || !bgShown.node || !treeKeyNow || treeBusy.key === treeKeyNow) return;
+  const P = pic.getScreenCTM();
+  if (!P) return;
+  const Pinv = P.inverse(), k = (SCENE.bottom - SCENE.top) / 700, boxes = [];
+  const add = (node, m) => { try { const E = node.getScreenCTM(), q = E && boxThrough(node.getBBox(), Pinv.multiply(E)); if (q && q.width > 0 && q.height > 0) boxes.push({ r: [q.x, q.y, q.x + q.width, q.y + q.height], m: m * k }); } catch (e) { /* (not drawn) */ } };
+  // (each piece by itself, every shape, sign and rung: an object's own box is no good, the side doors' spans the room
+  // from one side wall to the other, and the trunk's reaches out along its limbs)
+  for (const o of bgShown.objs) {
+    const ladder = o.name === "hatch" || o.name === "ladder up";
+    if (ladder || o.name === "side doors" || STANDING.has(objBase(o.name)))
+      for (const sh of o.node.querySelectorAll("rect, path, polygon, polyline, line, ellipse, circle, use, image, text")) add(sh, ladder ? TREE_PIC_LADDER : TREE_PIC_CLEAR);
+  }
+  const win = bgShown.node.querySelector('.portal[data-to="treehouse"][clip-path]');
+  if (win && win.parentNode) add(win.parentNode, TREE_PIC_CLEAR);
+  treeBusy = { key: treeKeyNow, boxes, slots: null };
+  setTimeout(changed, 0);
+}
 function treeroomScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, all, o } = c;
   const inside = Math.max(1, Math.min(6, o.houses ?? 4, Math.round(o.inside ?? 1))), chosen = o["room" + inside];
@@ -488,8 +537,18 @@ function treeroomScene(c) {
     `<path d="M-2 -8 Q60 -24 140 -52 L142 -44 Q64 -10 -2 8 Z" fill="#6e4a2c" stroke="#3a2414" stroke-width="1.5"/>` +
     `</g></defs>` + look.branches.filter(b => !onTrunk(b)).map(limb).join("") +
     obj("tree trunk", floor + 40 * k, braidSvg(look.trunk, y0 - pad, floor + 40 * k, 100 * k, k) + look.branches.filter(onTrunk).map(limb).join("")), floor));
-  // pictures on the far side of the wall from the window
-  s += SEP + picturesSvg(o, "treeroom", ROOM_PICTURES[room].map(([x, y, w]) => [x * TREE_FIT, floor + (y - floor) * TREE_FIT, w * k * TREE_FIT]), 1, i => `r${inside}pic${i + 1}`);
+  // pictures on the far side of the wall from the window, each where nothing stands in front of it (ticket 242: the
+  // room the friend is in; one seen in a picture on a wall, smaller and drawn inside it, keeps its usual places)
+  const slots0 = ROOM_PICTURES[room].map(([x, y, w]) => [x * TREE_FIT, floor + (y - floor) * TREE_FIT, w * k * TREE_FIT]);
+  if (o.depth > 0) s += SEP + picturesSvg(o, "treeroom", slots0, 1, i => `r${inside}pic${i + 1}`);
+  else {
+    treeKeyNow = treeBusyKey(o, room, c);
+    // (read through the scene's options, so the scene, cached on what it reads, is built again once measured)
+    const busy = o["tree:busy"] === treeKeyNow ? treeBusy.boxes : null;
+    // (placed once for the room and its settings, not on every drawing: a walk draws every frame)
+    if (busy && !treeBusy.slots) treeBusy.slots = placeTreePictures(slots0, busy, c);
+    if (busy) s += SEP + picturesSvg(o, "treeroom", treeBusy.slots, 1, i => `r${inside}pic${i + 1}`);
+  }
   // the room's furniture and its things
   s += SEP + part("room-" + room, [c.F, things], () => treeFitText((() => {
     let t = "";
