@@ -658,10 +658,25 @@ function worldChoose(kind) {
 const worldPalette = () => PLACES.map(([k]) => k).filter(k => k !== "none" && !INSIDE_KINDS.has(k) && !ELSEWHERE.includes(k));
 // a place's usual ways out, put in a square: as in the first world, else east and west
 const worldUsualWays = kind => { const c = Object.values(WORLD_DEFAULT.cells).find(c => c.kind === kind); return c && c.ways ? [...c.ways] : ["E", "W"]; };
+// (ticket 232, Matthew: "'all passageways' does not respect the edge of the grid ... and it introduces issues that can
+// be avoided") a square's ways off the map's edge taken away: where a place is put, a square moved or the grid made
+// smaller, and by 🔗 all passageways; how many went. (A crossing's paths that way are dead ends, not drawn and no
+// mistake, part of its own look: they stay.)
+function worldTrimEdges(W, keys = worldKeys(W)) {
+  let gone = 0;
+  for (const key of keys) {
+    const c = W.cells[key];
+    if (!c || c.kind === "crossing" || !Array.isArray(c.ways)) continue;
+    const keep = c.ways.filter(d => !worldOffMap(W, key, d));
+    gone += c.ways.length - keep.length; c.ways = keep;
+  }
+  return gone;
+}
 function worldPut(key, kind) {
   const W = state.world;
   W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", things: [] }
                                      : { kind, ways: worldUsualWays(kind), things: [] };
+  worldTrimEdges(W, [key]);   // (ticket 232: its usual ways, but none off the edge where it is put)
   if (!W.start || !W.cells[W.start]) W.start = key;
   if (W.at === key) W.at = null;   // (the square the friend was in holds another place now)
   changed();
@@ -672,6 +687,7 @@ function worldMove(from, to) {
   if (from === to || !W.cells[from]) return;
   const a = W.cells[from], b = W.cells[to], swap = k => k === from ? to : k === to && b ? from : k;
   W.cells[to] = a; if (b) W.cells[from] = b; else delete W.cells[from];
+  worldTrimEdges(W, [to, from]);   // (ticket 232: moved to an edge, no way off it)
   W.start = swap(W.start); W.at = swap(W.at);
   changed();
 }
@@ -688,6 +704,7 @@ function worldResize(dc, dr) {
   if (cols < 1 || rows < 1 || cols > 12 || rows > 12) return;
   if (worldKeys(W).some(k => { const [c, r] = k.split(",").map(Number); return c >= cols || r >= rows; })) return;
   W.cols = cols; W.rows = rows;
+  worldTrimEdges(W);   // (ticket 232: a smaller grid, the squares along its new edge given no way off it)
   changed();
 }
 // A press that becomes a drag after a few pixels: a ghost of it follows the

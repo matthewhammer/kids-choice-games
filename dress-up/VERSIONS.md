@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.164 (2026-10-17)
+
+Everything in 0.0.163, with no ways off the edge of the world.
+
+- **Fixed: ways out could lead off the edge of the map**: a place put in a square at the edge of the world designer's grid kept all its usual ways, even ones pointing off the grid (a fairy forest in the bottom right corner had a way down and to the left, into nothing), and "🔗 all passageways" left them there. Now a place put on the grid, a square moved to an edge, or a grid made smaller keeps only the ways that stay on the map, and "🔗 all passageways" takes away any left from before, saying how many.
+
 ## 0.0.163 (2026-10-17)
 
 Everything in 0.0.162, with big arrows that keep out of each other's way.

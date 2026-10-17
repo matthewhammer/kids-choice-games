@@ -1280,8 +1280,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { state.world = clone(DEFAULTS.world); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
     const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
     // (ticket 195, M) every neighbour joined that can be
-    const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself)",
-      onclick: () => { const n = worldJoinAll(state.world); changed(); joinNote.textContent = n ? `🔗 ${n} way${n === 1 ? "" : "s"} added` : "🔗 every neighbour that can be is joined"; } }, "🔗 all passageways");
+    const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself), and take away every way that leads off the map's edge",
+      // (ticket 232: and every way off the map's edge taken away, saying how many)
+      onclick: () => { const cut = worldTrimEdges(state.world), n = worldJoinAll(state.world); changed();
+        joinNote.textContent = (n ? `🔗 ${n} way${n === 1 ? "" : "s"} added` : "🔗 every neighbour that can be is joined") + (cut ? `; ${cut} off the edge taken away` : ""); } }, "🔗 all passageways");
     const warnCount = el("span", { class: "world-warn-count" }), warnChip = el("button", { class: "world-warn-chip", onclick: () => { worldWarnShow(!worldWarnShown); shown = null; render(); } });
     const warnings = el("div", { class: "row world-warn" }, [warnCount, warnChip]);
     const emojiOf = kind => placeName(kind).split(" ")[0];
