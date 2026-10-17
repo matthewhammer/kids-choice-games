@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.156 (2026-10-17)
+
+Everything in 0.0.155, with walks that go round things they start or end beside.
+
+- **Round, not through**: walking to a doorway that starts or ends right beside something (the healer's soup pot, the bunk beds), your friend used to walk straight through it; now the walk goes round it.
+- **The compass shows which ways are on**: in the world designer, a square's ways out that are on are lit again in the new 3×3 compass.
+
 ## 0.0.155 (2026-10-17)
 
 Everything in 0.0.154, with a roomier world designer in full screen.

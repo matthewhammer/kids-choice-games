@@ -156,7 +156,7 @@
   .ctl > .lbl { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
   .ctl > .lbl .val { color: var(--muted); font-weight: 400; }
   .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .row button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .row button[aria-pressed=true], .world-compass button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   /* (0.0.139) ♿'s chips say only what they are: lit while on */
   #panel[data-part=access] button.flip[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   /* a menu for each hand, mirrored about a line down the middle */
