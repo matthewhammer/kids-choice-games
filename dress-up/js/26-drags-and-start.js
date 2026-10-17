@@ -485,9 +485,15 @@ function padPoll(t) {
   // down climb (a chip's climb too, taken over), and down at its foot, or an
   // arrow to the side there, steps off
   const ud = Math.abs(vy) > 0.5 && Math.abs(vx) < 0.75 * Math.abs(vy) ? Math.sign(vy) : 0;
-  if (!onLadder && ud < 0 && BG.kind !== "none" && !entering && !drag && !isJump(B.anim)) {
-    const L = ladderNear();
-    if (L) { mountLadder(L); padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return; }
+  // (ticket 216, Matthew: "we trigger going 'down' the ladder by pressing up, and animating an upward climb;
+  // that's backwards") A hatch's ladder (a tree house's trapdoor: down) is taken with ⬇, standing at the hatch,
+  // and goes down it as a tap or X does (walkInto: the climb down, cut off below the hatch's near edge, as the
+  // trap room's pits cut them off); ⬆ mounts only a ladder that goes up.
+  if (!onLadder && ud && BG.kind !== "none" && !entering && !drag && !isJump(B.anim)) {
+    const L = ladderNear(), fx = BG.figX ?? 0, fz = SCENE.ground + (BG.figY ?? 0), k = figureT.k;
+    const atHatch = L && L.down != null && L.door && Math.abs(L.x - fx) < Math.max(20, 70 * k) && Math.abs(L.z - fz) < Math.max(14, 50 * k);
+    if (ud > 0 && atHatch && L.el) { climbLadder(L.el); padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return; }
+    if (ud < 0 && L && L.down == null) { mountLadder(L); padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return; }
   }
   if (onLadder && ud && !climb.manual) Object.assign(climb, { manual: true, got: climb.at ?? 0 });
   if (onLadder && climb.manual && !entering && !climb.down) {

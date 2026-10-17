@@ -162,7 +162,7 @@ function measureMarks() {
   for (const el of node.querySelectorAll("[data-ladder]")) {
     const L = ladderAt(el, Pinv);
     if (!L) continue;
-    ladders.push(L);
+    ladders.push({ ...L, el });   // (ticket 216: its element, for ⬇ down a hatch: climbLadder, as X)
     // (ticket 173: a ladder that is a way somewhere glows, as pictures and doors do, and X climbs it)
     if (!L.door) continue;
     const r = el.getBoundingClientRect();

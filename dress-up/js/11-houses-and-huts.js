@@ -322,7 +322,7 @@ function waysSvg({ x0, x1, y0, W, H, k, P }, floor, links) {
   const sides = { left: 0, right: 0 };
   for (const L of links) {
     const go = L.to < 0 ? `data-to="treehouse"` : `data-to="treeroom" data-house="${L.to + 1}"`, name = L.to < 0 ? "🌳 out" : `${L.label} ${L.to + 1}`;
-    t += `<g class="portal" ${go}>`;
+    t += `<g class="portal" ${go}${L.way === "left" || L.way === "right" ? ` data-door=""` : ""}>`;
     if (L.way === "left" || L.way === "right") {
       // a door in the side wall, the rope bridge going out through it
       const sd = L.way === "left" ? -1 : 1, j = sides[L.way]++, cx = sd < 0 ? x0 + (60 + 120 * j) * k : x1 - (60 + 120 * j) * k;
@@ -332,6 +332,15 @@ function waysSvg({ x0, x1, y0, W, H, k, P }, floor, links) {
            `<polygon points="${P(cx - w / 2, floor)} ${P(cx + w / 2, floor)} ${P(cx + sd * w * 0.2 + w * 0.12, floor - 70 * k)} ${P(cx + sd * w * 0.2 - w * 0.12, floor - 70 * k)}" fill="#8b5e34"/>` +
            [0.25, 0.5, 0.75].map(u => `<line x1="${f1(cx - w / 2 + (sd * w * 0.2 + w * 0.38) * u)}" y1="${f1(floor - 70 * k * u)}" x2="${f1(cx + w / 2 + (sd * w * 0.2 - w * 0.38) * u)}" y2="${f1(floor - 70 * k * u)}" stroke="#5e3d22" stroke-width="${f1(2 * k)}"/>`).join("") +
            [-1, 1].map(e => `<line x1="${f1(cx + e * w / 2)}" y1="${f1(floor - 45 * k)}" x2="${f1(cx + sd * w * 0.2 + e * w * 0.12)}" y2="${f1(floor - 100 * k)}" stroke="#d8c49a" stroke-width="${f1(2.5 * k)}"/>`).join("") +
+           // (ticket 216, Matthew: "let's show doors on the treehouse ... they open like the castle doors when we trigger them
+           // as a passage way, and we walk through them") a plank door, hinged on its outer side: it swings open as the
+           // passage is taken (walkInto: [data-leaf] to its data-open shape, the same commands; its planks and knob fade),
+           // the bridge behind it; shut again on coming back
+           (() => { const fx = cx - sd * w / 2, hx = cx + sd * w / 2, ox = hx - sd * w * 0.2;
+             const shut = `M${P(fx, floor)} L${P(fx, top)} L${P(hx, top)} L${P(hx, floor)} Z`, open = `M${P(ox, floor + 8 * k)} L${P(ox, top - 8 * k)} L${P(hx, top)} L${P(hx, floor)} Z`;
+             return `<g data-leaf="" data-open="${open}"><path d="${shut}" fill="#9a6838" stroke="#5e3d22" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>` +
+               [0.25, 0.5, 0.75].map(u => `<line x1="${f1(cx - w / 2 + w * u)}" y1="${f1(top + 4 * k)}" x2="${f1(cx - w / 2 + w * u)}" y2="${f1(floor - 2 * k)}" stroke="#6b4423" stroke-width="${f1(2 * k)}"/>`).join("") +
+               `<ellipse cx="${f1(fx + sd * 13 * k)}" cy="${f1(floor - 82 * k)}" rx="${f1(4.5 * k)}" ry="${f1(4.5 * k)}" fill="#e2c26a" stroke="#5e3d22" stroke-width="${f1(1.5 * k)}"/></g>`; })() +
            `<rect x="${f1(cx - w / 2)}" y="${f1(top)}" width="${f1(w)}" height="${f1(floor - top)}" fill="none" stroke="#5e3d22" stroke-width="${f1(9 * k)}"/>` +
            plankSign(cx, top - 26 * k, k, `${name} ${sd < 0 ? "⬅️" : "➡️"}`);
     } else if (L.way === "down") {
