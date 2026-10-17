@@ -83,12 +83,45 @@
   /* (ticket 159) the 🎵 Music tab full screen: the tune, where it is, the
      tunes and the mixing board take the whole window; the picture, the
      title and the other tabs hidden until ✕, Escape or leaving full screen */
-  body.music-big { overflow: hidden; }
-  body.music-big .stage, body.music-big .divider, body.music-big .side > h1, body.music-big #tabs { display: none; }
-  body.music-big .side { position: fixed; inset: 0; z-index: 30; overflow: auto; background: var(--bg);
+  /* (ticket 210) and the 🗺️ World design tab full screen, the same way (world-big) */
+  body.music-big, body.world-big { overflow: hidden; }
+  body.music-big .stage, body.music-big .divider, body.music-big .side > h1, body.music-big #tabs,
+  body.world-big .stage, body.world-big .divider, body.world-big .side > h1, body.world-big #tabs { display: none; }
+  body.music-big .side, body.world-big .side { position: fixed; inset: 0; z-index: 30; overflow: auto; background: var(--bg);
                          padding: 12px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
   body.music-big .mixer { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-  body.music-big .touchpad { display: none; }   /* (no friend to move here) */
+  body.music-big .touchpad, body.world-big .touchpad { display: none; }   /* (no friend to move here) */
+  /* (ticket 210, Matthew: the music full screen "especially large and over-stated"; full screens "more compact, and
+     sleek looking") Both tabs' full screens: a slim bar across the top (the tab's name, and ✕ back to the game, small),
+     the panel's own frame gone, and the music's controls as cards in columns, not a row each the window's width */
+  body.music-big .side, body.world-big .side { padding-top: 0; }
+  body.music-big #panel, body.world-big #panel { background: transparent; border: 0; padding: 0; border-radius: 0; }
+  body.music-big #panel > .ctl:has(> button.musicbig), body.world-big #panel > .ctl:has(> button.worldbig) {
+    position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 8px 2px;
+    background: var(--bg); border-bottom: 1px solid var(--line); border-radius: 0; }
+  body.music-big #panel > .ctl:has(> button.musicbig) > .lbl, body.world-big #panel > .ctl:has(> button.worldbig) > .lbl { display: none; }
+  body.music-big #panel > .ctl:has(> button.musicbig)::before { content: "🎵 Music"; font-weight: 700; font-size: 1.1em; margin-right: auto; }
+  body.world-big #panel > .ctl:has(> button.worldbig)::before { content: "🗺️ World design"; font-weight: 700; font-size: 1.1em; margin-right: auto; }
+  body.music-big button.musicbig, body.world-big button.worldbig { padding: 3px 12px; font-size: 0.9em; }
+  body.music-big #panel[data-part=music] { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 8px; align-items: start; }
+  body.music-big #panel[data-part=music] > .ctl { margin: 0; }
+  body.music-big #panel[data-part=music] > .ctl:has(> button.musicbig), body.music-big #panel[data-part=music] > .mixctl,
+  body.music-big #panel[data-part=music] > .ctl:has(.chipset) { grid-column: 1 / -1; }
+  /* (ticket 210) the world designer full screen: on a wide window the grid on the left, as tall as the window
+     allows, and the square's controls beside it, scrolling on their own */
+  body.world-big .world-grid { --grid-h: calc(100dvh - 190px); }
+  body.world-big #panel > .ctl:not(:has(> button.worldbig)) > .lbl { display: none; }   /* (the bar names the tab) */
+  @media (min-width: 900px) {
+    /* the grid alone on the left, all the window's height; the warnings, the places to drag and the square's controls
+       on the right, in their order (the two halves' boxes let their pieces be placed: display contents; the grid's
+       height goes to the last row, so the right side's rows stay their own height) */
+    body.world-big .world-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); grid-template-rows: repeat(10, min-content) 1fr;
+                                   column-gap: 18px; row-gap: 6px; align-items: start; }
+    body.world-big .world-main, body.world-big .world-side { display: contents; }
+    body.world-big :is(.world-main, .world-side) > * { grid-column: 2; }
+    body.world-big .world-main > .world-grid-wrap { grid-column: 1; grid-row: 1 / -1; }
+    body.world-big .world-grid { --grid-h: calc(100dvh - 130px); margin-top: 0; }
+  }
   /* (ticket 164) a still place, on a slow computer: no CSS animations in the scenery either (the fairies' wings) */
   body.still-scenery #bg * { animation: none !important; }
   /* (ticket 155) the ⚙️ advanced tab: a feature kept off until it is fast, a row each */
@@ -343,20 +376,54 @@
 @keyframes fairy-twinkle { 50% { opacity: 0.2; } }
 
 /* (ticket 185) the world designer's grid */
-.world-grid { display: grid; gap: 4px; margin: 0.5rem 0; max-width: 34rem; }
-.world-cell { position: relative; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  padding: 2px; border-radius: 8px; border: 2px solid var(--line, #ccc); background: var(--card, #fff); font: inherit; font-size: 0.68em; line-height: 1.1; overflow: hidden; cursor: pointer; }
+/* (ticket 210, Matthew: "re-scale the grid to fill the available space, even in two column mode") A square's side
+   is the most that fits both the column's width (the wrap is the container) and the room's height (--grid-h: the
+   window less the tab's top, so the whole grid can be seen at once); its emoji, name and way marks scale with it.
+   The squares are the panel's colour with its ink: --card was never defined, so in dark mode they were white under
+   light words, the names faint. */
+.world-grid-wrap { container-type: inline-size; }
+.world-grid { --gap: 4px; --cell: min(calc((100cqw - (var(--cols, 5) - 1) * var(--gap)) / var(--cols, 5)), calc((var(--grid-h, calc(100dvh - 140px)) - (var(--rows, 6) - 1) * var(--gap)) / var(--rows, 6)));
+  display: grid; grid-template-columns: repeat(var(--cols, 5), var(--cell)); grid-auto-rows: var(--cell); gap: var(--gap); margin: 0.5rem 0; justify-content: center; }
+.world-cell { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0;
+  padding: 2px; border-radius: clamp(6px, calc(var(--cell) * 0.07), 14px); border: 2px solid var(--line, #ccc); --sq: var(--panel); background: color-mix(in srgb, var(--sq) 26%, var(--panel)); color: var(--ink);
+  font: inherit; font-size: clamp(8px, calc(var(--cell) * 0.105), 21px); line-height: 1.1; overflow: hidden; cursor: pointer; }
 .world-cell.empty { border-style: dashed; color: var(--muted, #888); background: transparent; cursor: default; }
-.world-cell.bad { border-color: #d9480f; background: #fff1e6; }
-.world-cell.here { outline: 3px solid #3b82f6; outline-offset: 1px; }
+/* (ticket 210, Matthew: "each type of grid square its own faint background color, like the instrument part panels in
+   the music panel are different from the LFOs", "so water is blue, and green areas are green, witch is purple",
+   "castle is grey (or the castle stone color...)") Each kind's own colour (from its place: the sea, the crossing's
+   floor, the witch's purple, the castle's stone), mixed faint into the panel's, so light and dark alike; the place
+   chips over the grid the same, so a place looks the same in both. */
+.world-chip { --sq: var(--panel); background: color-mix(in srgb, var(--sq) 26%, var(--panel)); }
+:is(.world-cell, .world-chip)[data-kind="sea"] { --sq: #2a9fd6; }
+:is(.world-cell, .world-chip)[data-kind="lake"] { --sq: #4cc0e6; }
+:is(.world-cell, .world-chip)[data-kind="waterfall"] { --sq: #24b0a0; }
+:is(.world-cell, .world-chip)[data-kind="beach"] { --sq: #e8c46a; }
+:is(.world-cell, .world-chip)[data-kind="forest"] { --sq: #2f8f3e; }
+:is(.world-cell, .world-chip)[data-kind="clearing"] { --sq: #7cc35a; }
+:is(.world-cell, .world-chip)[data-kind="crossing"] { --sq: #76843a; }
+:is(.world-cell, .world-chip)[data-kind="woodpath"] { --sq: #5f8f3a; }
+:is(.world-cell, .world-chip)[data-kind="treehouse"] { --sq: #4f9a3a; }
+:is(.world-cell, .world-chip)[data-kind="house"] { --sq: #9cc95c; }
+:is(.world-cell, .world-chip)[data-kind="campsite"] { --sq: #c08a3e; }
+:is(.world-cell, .world-chip)[data-kind="witch"] { --sq: #6a2c91; }
+:is(.world-cell, .world-chip)[data-kind="cemetery"] { --sq: #77738f; }
+:is(.world-cell, .world-chip)[data-kind="mountains"] { --sq: #7f8c99; }
+:is(.world-cell, .world-chip)[data-kind="fairyforest"] { --sq: #e05aa8; }
+:is(.world-cell, .world-chip)[data-kind="castle"] { --sq: #9a9aaa; }
+.world-cell.bad { border-color: #d9480f; border-width: clamp(4px, calc(var(--cell) * 0.045), 8px); background: #fff1e6; color: #7c2d12; }
+/* (ticket 210, Matthew: "make the 'this square has an error' red outline stroke bigger. Same for 'this is the current
+   square'") both thick, with the squares' size: the error's border, the current square's outline over its neighbours */
+.world-cell.here { outline: clamp(4px, calc(var(--cell) * 0.045), 8px) solid #3b82f6; outline-offset: 1px; z-index: 1; }
 .world-cell.start .world-emoji::after { content: " 🏁"; font-size: 0.7em; }
-.world-emoji { font-size: 1.7em; }
-.world-name { text-align: center; }
-.world-way { position: absolute; width: 8px; height: 8px; background: #8a5528; border-radius: 2px; }
-.world-way.w-N { top: 1px; left: calc(50% - 4px); } .world-way.w-S { bottom: 1px; left: calc(50% - 4px); }
-.world-way.w-E { right: 1px; top: calc(50% - 4px); } .world-way.w-W { left: 1px; top: calc(50% - 4px); }
+.world-emoji { font-size: 3.3em; line-height: 1; }
+.world-name { text-align: center; max-width: 100%; overflow-wrap: anywhere; }
+.world-way { --w: clamp(6px, calc(var(--cell) * 0.065), 14px); position: absolute; width: var(--w); height: var(--w); background: #8a5528; border-radius: 2px; }
+.world-way.w-N { top: 1px; left: calc(50% - var(--w) / 2); } .world-way.w-S { bottom: 1px; left: calc(50% - var(--w) / 2); }
+.world-way.w-E { right: 1px; top: calc(50% - var(--w) / 2); } .world-way.w-W { left: 1px; top: calc(50% - var(--w) / 2); }
 .world-way.w-NE { top: 1px; right: 1px; } .world-way.w-NW { top: 1px; left: 1px; } .world-way.w-SE { bottom: 1px; right: 1px; } .world-way.w-SW { bottom: 1px; left: 1px; }
 .world-warn { align-items: center; gap: 8px; }
+/* (ticket 210) the picture shows a place that is not the square the friend is in */
+.world-alert { margin: 6px 0; padding: 8px 12px; border-radius: 10px; border: 2px solid #d97706; background: color-mix(in srgb, #f59e0b 18%, var(--panel)); color: var(--ink); font-weight: 600; }
 /* (ticket 200) what's new, in ⚙️ Advanced: version cards in a box of their own that scrolls */
 .news-cap { margin-top: 14px; }
 .news { max-height: 55vh; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--paper); color: #222; }

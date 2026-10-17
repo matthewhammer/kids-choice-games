@@ -474,6 +474,7 @@ const TABS = [
   ]],
   // (ticket 185, Matthew) after the music, before Advanced: the world designer
   ["🗺️ World design", "world", [
+    ["worldbig", "big", "⛶ full screen"],
     ["world", "grid", "🗺️ world design"],
   ]],
   // (ticket 155) last, where the GitHub chip was
@@ -1064,6 +1065,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // the whole window, and the screen where the browser allows (setMusicBig)
   if (kind === "musicbig") box.append(el("button", { class: "musicbig", onclick: () => setMusicBig(!document.body.classList.contains("music-big")) },
                                          document.body.classList.contains("music-big") ? MUSIC_BIG[1] : MUSIC_BIG[0]));
+  // (ticket 210, Matthew) the world designer full screen, as the music's (setWorldBig)
+  if (kind === "worldbig") box.append(el("button", { class: "worldbig", onclick: () => setWorldBig(!document.body.classList.contains("world-big")) },
+                                         document.body.classList.contains("world-big") ? WORLD_BIG[1] : WORLD_BIG[0]));
   // (ticket 185) the forest crossing's things: a button for each kind puts
   // one in, at a free spot near the meeting place; drag it from there in
   // the picture; one more takes them all away. Under them, a row for each
@@ -1190,10 +1194,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // two lists (Matthew: a lot of them overwhelm), those about the square
     // the friend is in (its own, or a way into it: a warning's key or to),
     // then those about the other squares.
-    const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away");
+    const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), gridWrap = el("div", { class: "world-grid-wrap" }, [grid]), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away");
     const sizes = el("div", { class: "row" }, [...[["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { onclick: () => worldResize(dc, dr) }, t)),
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { state.world = clone(DEFAULTS.world); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
-    const here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
+    const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
     // (ticket 195, M) every neighbour joined that can be
     const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself)",
       onclick: () => { const n = worldJoinAll(state.world); changed(); joinNote.textContent = n ? `🔗 ${n} way${n === 1 ? "" : "s"} added` : "🔗 every neighbour that can be is joined"; } }, "🔗 all passageways");
@@ -1201,7 +1205,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const warnings = el("div", { class: "row world-warn" }, [warnCount, warnChip]);
     const emojiOf = kind => placeName(kind).split(" ")[0];
     for (const kd of worldPalette()) {
-      const chip = el("button", { class: "world-chip", title: "Drag " + placeName(kd) + " onto a square (or tap: the first empty square)" }, placeName(kd));
+      const chip = el("button", { class: "world-chip", "data-kind": kd, title: "Drag " + placeName(kd) + " onto a square (or tap: the first empty square)" }, placeName(kd));
       pressDrag(chip, () => emojiOf(kd), { onDrop: under => { const sq = under && under.closest && under.closest("[data-square]"); if (sq) worldPut(sq.dataset.square, kd); },
         onTap: () => { const W = state.world; for (let r = 0; r < W.rows; r++) for (let c = 0; c < W.cols; c++) if (!W.cells[c + "," + r]) { worldPut(c + "," + r, kd); return; } } });
       palette.append(chip);
@@ -1209,17 +1213,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     let shown = null;
     const render = () => {
       const W = state.world, P = worldProblems(W), at = W.at && W.cells[W.at];
-      const sig = JSON.stringify([W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown]);
+      const sig = JSON.stringify([state.background.kind, W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown]);
       if (sig === shown) return;
       shown = sig;
       const bad = worldWarnShown ? worldFixSquares(W, P) : new Set();   // (ticket 191: red where a fix is suggested)
-      grid.style.gridTemplateColumns = `repeat(${W.cols}, 1fr)`;
+      grid.style.setProperty("--cols", W.cols); grid.style.setProperty("--rows", W.rows);   // (ticket 210: the squares' size, from the room, in the stylesheet)
       grid.replaceChildren(...Array.from({ length: W.cols * W.rows }, (_, i) => {
         const key = (i % W.cols) + "," + Math.floor(i / W.cols), cell = W.cells[key];
         if (!cell) return el("div", { class: "world-cell empty", title: squareName(key) + ": empty: drag a place here", "data-square": key }, squareName(key));
         // (its words: the designer's name for it, if it has one, else its place's)
         const name = placeName(cell.kind), [emoji, ...words] = name.split(" "), ways = worldLiveWays(W, key), own = String(cell.name || "").trim();
-        const b = el("button", { class: "world-cell" + (bad.has(key) ? " bad" : "") + (W.at === key ? " here" : "") + (W.start === key ? " start" : ""), "data-square": key,
+        const b = el("button", { class: "world-cell" + (bad.has(key) ? " bad" : "") + (W.at === key ? " here" : "") + (W.start === key ? " start" : ""), "data-square": key, "data-kind": cell.kind,
                                  title: `${squareName(key)}: ${own ? own + " (" + name + ")" : name}` + (ways.length ? ", ways out " + ways.map(d => WORLD_ARROWS[d]).join(" ") : "") + ". Tap to go there; drag to move it.",
                                  onclick: () => worldEnter(key) },
                      [el("span", { class: "world-emoji" }, emoji), el("span", { class: "world-name" }, own || words.join(" ")), ...ways.map(d => el("span", { class: "world-way w-" + d }, ""))]);
@@ -1246,7 +1250,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             return el("button", { "aria-pressed": String(on), title: drop ? d + ": on, but taking it away would put a warning right" : none ? d + ": the waterfall itself, not a way to the next square" : off ? (on ? d + ": leads off the map; turn it off" : d + ": the edge of the map") : hint ? d + ": off, but on it would put a warning right" : d,
                                   class: hint ? "way-suggest" : drop ? "way-suggest-off" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]); })]),
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
-      } else here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."));
+      } else {
+        // (ticket 210, Matthew) the picture shows a place that is not the square the friend is in (one chosen in
+        // 🏞️ Background, or not on the grid yet): say so, and where it is on the grid if it is there
+        here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."));
+      }
+      // (at the top of the tab, over the warnings, so it is seen)
+      const kind = state.background.kind, onGrid = !(at && at.kind === kind) && worldPalette().includes(kind) ? Object.keys(W.cells).filter(k => W.cells[k].kind === kind) : null;
+      notHere.hidden = !onGrid;
+      notHere.textContent = !onGrid ? "" : onGrid.length
+        ? `📺 Showing ${placeName(kind)} in the viewport, not from a square of the world design: it is at ${onGrid.map(squareName).join(", ")}; tap ${onGrid.length === 1 ? "it" : "one"} to go there.`
+        : `📺 Showing ${placeName(kind)} in the viewport, not currently placed into the world design.`;
       warnCount.textContent = P.length ? `⚠️ ${P.length} warning${P.length === 1 ? "" : "s"}` : "✅ no warnings";
       warnChip.textContent = worldWarnShown ? "hide warnings" : "show warnings";
       warnChip.setAttribute("aria-pressed", String(worldWarnShown));
@@ -1259,7 +1273,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       off.replaceChildren("Off the grid: ", ...worldOffGrid(W).flatMap((o, i) => [i ? " · " : "", `${o.id}: ${placeName(o.kind)}` + (o.from ? ` (through ${placeName(W.cells[o.from].kind)}, ${squareName(o.from)})` : "")]));
     };
     box.append(el("div", { class: "hint" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."),
-               warnings, probs, palette, grid, el("div", { class: "row" }, [trash]), sizes, el("div", { class: "row" }, [joinAll, joinNote]), here, control("background", ["things", "things", "🪨 things here: drag one into the picture, then about"]), off);
+               el("div", { class: "world-layout" }, [
+                 // (ticket 210) the grid's side and the controls' side: one under the other in the tab, side by side full screen
+                 el("div", { class: "world-main" }, [notHere, warnings, probs, palette, gridWrap, el("div", { class: "row" }, [trash])]),
+                 el("div", { class: "world-side" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote]), here, control("background", ["things", "things", "🪨 things here: drag one into the picture, then about"]), off])]));
     syncs.push(render);
   }
   // (ticket 155, Matthew) ⚙️ Advanced: the game's code on GitHub; its
