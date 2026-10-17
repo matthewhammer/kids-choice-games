@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.131 (2026-10-17)
+
+Everything in 0.0.130, with the way arrows kept apart.
+
+- **Way arrows no longer cover each other in the corners** (Matthew, in the witch's woods): when two arrows show at once, like ➡️ to the beach and ↘️ to a forest crossing near the bottom right, one slides along its edge, away from the other, so both arrows and their words can be read. At any window size, and full screen too.
+
 ## 0.0.130 (2026-10-17)
 
 Everything in 0.0.129, with every cauldron simple until you upgrade it.
