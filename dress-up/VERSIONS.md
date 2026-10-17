@@ -2,6 +2,17 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.135 (2026-10-17)
+
+Everything in 0.0.134, with a ♿ Accessibility tab.
+
+- **♿ Accessibility**, a new tab, for seeing and reading the game more easily:
+  - **🧭 every nav arrow shown**, not only the near ones: the far ones dimmer, in a colour of your own (how bright, and which colour);
+  - **↕️ the nav arrows' size**, bigger or smaller;
+  - **🔤 the words in the game**, on signs and the arrows, bigger or smaller;
+  - **👣 the planned path**, drawn while your friend walks to a door or a picture;
+  - **🟥 the collision boxes**: what your friend can't walk into, shown as red boxes on the floor.
+
 ## 0.0.134 (2026-10-17)
 
 Everything in 0.0.133, with walks that go round things.
