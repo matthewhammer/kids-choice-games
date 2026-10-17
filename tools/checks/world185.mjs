@@ -129,6 +129,25 @@ try {
     return JSON.stringify({ noBack, empty, afterN }); })()`));
   ok("a way with no way back: red on the squares whose ways could put it right (D3 and D2), and those only", t191.noBack.red.join() === t191.noBack.fixAt.join() && t191.noBack.red.join() === "3,1,3,2" && t191.noBack.starN, t191.noBack);
   ok("a way into an empty square: ✕ on it to take it away; red where a fix is, never the empty square", t191.empty.dropN && !t191.empty.emptyRed && t191.empty.red.join() === t191.empty.fixAt.join() && t191.afterN === 0, { ...t191.empty, afterN: t191.afterN });
+  // (ticket 195, M) 🔗 all passageways; the waterfall's north is the waterfall itself
+  const t195 = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
+    state.world = clone(DEFAULTS.world); worldEnter("1,4"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await w(400);
+    const btn = d => document.querySelector('.world-ways-out button[data-way="' + d + '"]');
+    const waterN = !!btn("N") && btn("N").disabled, first = worldProblems(state.world).length;
+    const kept = { kind: "waterfall", ways: ["N", "NE"] }, ignored = worldWays(kept).join();
+    worldEnter("3,2"); await w(300);
+    const join = [...document.querySelectorAll("button")].find(b => /all passageways/.test(b.textContent)); join.click(); await w(300);
+    const C = state.world.cells, W = d => k => worldWays(C[k]).includes(d);
+    const out = { waterN, first, ignored, after: worldProblems(state.world).length,
+      diag: W("NE")("1,1") && W("SW")("2,0"), noSea: !["N", "NE", "NW"].some(d => W(d)("2,0")), noFallN: !W("N")("1,4"),
+      crossing: worldWays(C["1,2"]).join(), note: join.nextElementSibling ? join.nextElementSibling.textContent : "" };
+    const again = (join.click(), await w(200), join.nextElementSibling.textContent);
+    const old = { world: structuredClone(WORLD_DEFAULT_0103) }; upgradeWorld(old);
+    return JSON.stringify({ ...out, again, up: JSON.stringify(old.world.cells) === JSON.stringify(WORLD_DEFAULT.cells) }); })()`));
+  ok("the waterfall (B5): its way N can't be turned on, the waterfall itself; one kept from before is ignored; the first world has no warnings", t195.waterN && t195.ignored === "NE" && t195.first === 0, t195);
+  ok("🔗 all passageways: diagonals too (forest B2 NE, beach C1 SW), never into the sea or the waterfall's north, and no warnings", t195.diag && t195.noSea && t195.noFallN && t195.after === 0 && /added/.test(t195.note), t195);
+  ok("the crossing at B3 joined to each neighbour it can (all but the empty A4), and a second press adds nothing", t195.crossing === "N,NE,E,SE,S,W,NW" && /every neighbour/.test(t195.again), t195);
+  ok("an untouched first world from 0.0.103 to 0.0.122 comes back as today's", t195.up, t195.up);
   // a crossing's dead ends: no trail, no arrow, no mistake (Matthew: a crossing missing a passageway has no trail and no arrow that way)
   const dead = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldPut("0,0", "crossing"); worldEnter("0,0"); await new Promise(r => setTimeout(r, 400));
     const paths = () => document.querySelectorAll('#bg path[fill="' + CROSS_PATH + '"]').length, arrows = () => document.querySelectorAll("#bg .way-out").length;

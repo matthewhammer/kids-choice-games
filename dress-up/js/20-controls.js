@@ -1085,6 +1085,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const sizes = el("div", { class: "row" }, [...[["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { onclick: () => worldResize(dc, dr) }, t)),
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { state.world = clone(DEFAULTS.world); changed(); } } }, "🌍 the first world again")]);
     const here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
+    // (ticket 195, M) every neighbour joined that can be
+    const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself)",
+      onclick: () => { const n = worldJoinAll(state.world); changed(); joinNote.textContent = n ? `🔗 ${n} way${n === 1 ? "" : "s"} added` : "🔗 every neighbour that can be is joined"; } }, "🔗 all passageways");
     const warnCount = el("span", { class: "world-warn-count" }), warnChip = el("button", { class: "world-warn-chip", onclick: () => { worldWarnShow(!worldWarnShown); shown = null; render(); } });
     const warnings = el("div", { class: "row world-warn" }, [warnCount, warnChip]);
     const emojiOf = kind => placeName(kind).split(" ")[0];
@@ -1130,8 +1133,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             // (M, 2026-10-17) off the map's edge: can't be turned on (one on from before can still be turned off);
             // with the warnings shown, one off that would put a warning right, starred
             // (ticket 191) and one on that, taken away, would put a warning right: dotted too, ✕
-            const on = ways.includes(d), off = worldOffMap(W, W.at, d), hint = !on && fix.on.includes(d), drop = on && fix.off.includes(d);
-            return el("button", { "aria-pressed": String(on), title: drop ? d + ": on, but taking it away would put a warning right" : off ? (on ? d + ": leads off the map; turn it off" : d + ": the edge of the map") : hint ? d + ": off, but on it would put a warning right" : d,
+            const on = ways.includes(d), none = worldNoWay(at.kind, d), off = worldOffMap(W, W.at, d) || none, hint = !on && fix.on.includes(d), drop = on && fix.off.includes(d);
+            return el("button", { "aria-pressed": String(on), title: drop ? d + ": on, but taking it away would put a warning right" : none ? d + ": the waterfall itself, not a way to the next square" : off ? (on ? d + ": leads off the map; turn it off" : d + ": the edge of the map") : hint ? d + ": off, but on it would put a warning right" : d,
                                   class: hint ? "way-suggest" : drop ? "way-suggest-off" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]); })]),
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
       } else here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."));
@@ -1147,7 +1150,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       off.replaceChildren("Off the grid: ", ...worldOffGrid(W).flatMap((o, i) => [i ? " · " : "", `${o.id}: ${placeName(o.kind)}` + (o.from ? ` (through ${placeName(W.cells[o.from].kind)}, ${squareName(o.from)})` : "")]));
     };
     box.append(el("div", { class: "hint" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."),
-               warnings, probs, palette, grid, el("div", { class: "row" }, [trash]), sizes, here, control("background", ["things", "things", "🪨 things here: drag one into the picture, then about"]), off);
+               warnings, probs, palette, grid, el("div", { class: "row" }, [trash]), sizes, el("div", { class: "row" }, [joinAll, joinNote]), here, control("background", ["things", "things", "🪨 things here: drag one into the picture, then about"]), off);
     syncs.push(render);
   }
   // (ticket 155, Matthew) ⚙️ Advanced: the game's code on GitHub; its

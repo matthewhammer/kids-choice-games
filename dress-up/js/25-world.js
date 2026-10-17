@@ -21,7 +21,19 @@ const INSIDES = { house: ["livingroom"], treehouse: ["treeroom"], witch: ["witch
                   waterfall: ["cave"], castle: ["castleroom"], lake: ["underwater"] };
 const INSIDE_KINDS = new Set(Object.values(INSIDES).flat());
 const ELSEWHERE = ["imagination", "emptyroom"];
-const worldWays = cell => !cell ? [] : cell.kind === "crossing" ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : (cell.ways || []);
+// (ticket 195, M) The waterfall's north is the waterfall itself, into the
+// cave behind it: "having both and having them mean different things is
+// too strange", so no way north on the grid there (WORLD_NO_WAY: never a
+// way, as off the map's edge; one kept from before is ignored). And the
+// ways a place's own scene has no room for, which 🔗 all passageways
+// leaves out (WORLD_UNNATURAL): the beach's sea, the castle and the house
+// at their backs, the wood path's diagonals (thick woods either side of its
+// one path). A forest crossing has all eight; the insides are off the grid.
+const WORLD_NO_WAY = { waterfall: ["N"] };
+const WORLD_UNNATURAL = { beach: ["N", "NE", "NW"], castle: ["N"], house: ["N"], woodpath: ["NE", "NW", "SE", "SW"] };
+const worldNoWay = (kind, d) => (WORLD_NO_WAY[kind] || []).includes(d);
+const worldNatural = (kind, d) => !worldNoWay(kind, d) && !(WORLD_UNNATURAL[kind] || []).includes(d);
+const worldWays = cell => !cell ? [] : (cell.kind === "crossing" ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : (cell.ways || [])).filter(d => !worldNoWay(cell.kind, d));
 // (Matthew, 2026-10-17: a crossing missing a passageway has no trail and no
 // arrow that way) A forest crossing in the world shows only the paths that
 // lead somewhere: switched on, and met by a way back from the square beside
@@ -63,13 +75,35 @@ function worldWaysToToggle(W, key, now = worldProblems(W).length) {
   const ways = worldWays(cell);
   for (const d of Object.keys(WORLD_DIRS)) {
     const isOn = ways.includes(d);
-    if (!isOn && worldOffMap(W, key, d)) continue;
+    if (!isOn && (worldOffMap(W, key, d) || worldNoWay(cell.kind, d))) continue;
     const c2 = cell.kind === "crossing" ? { ...cell, ["cross" + d]: !isOn } : { ...cell, ways: isOn ? ways.filter(x => x !== d) : [...ways, d] };
     if (worldProblems({ ...W, cells: { ...W.cells, [key]: c2 } }).length < now) out[isOn ? "off" : "on"].push(d);
   }
   return out;
 }
 const worldWaysToTurnOn = (W, key) => worldWaysToToggle(W, key).on;
+// (ticket 195, M: "place matching passage ways on all adjacent grid squares, but only if both sides
+// the scene naturally have those passage ways there") every pair of neighbouring squares whose places
+// both have that way by nature, joined both ways; how many ways were added
+function worldJoinAll(W) {
+  let added = 0;
+  const order = Object.keys(WORLD_DIRS);
+  for (const key of worldKeys(W)) {
+    const a = W.cells[key];
+    if (INSIDE_KINDS.has(a.kind)) continue;
+    for (const d of order) {
+      const nb = worldNeighbour(W, key, d), b = W.cells[nb.key];
+      if (nb.off || !b || INSIDE_KINDS.has(b.kind) || !worldNatural(a.kind, d) || !worldNatural(b.kind, WORLD_OPP[d]) || worldWays(a).includes(d)) continue;
+      if (a.kind === "crossing") a["cross" + d] = true;
+      else a.ways = order.filter(x => x === d || worldWays(a).includes(x));
+      added++;
+    }
+  }
+  // (the square the friend is in, a crossing: its paths are the place's settings too)
+  const at = W.at && W.cells[W.at], B = state.background;
+  if (at && at.kind === "crossing" && B.kind === "crossing") for (const d of order) B["cross" + d] = !!at["cross" + d];
+  return added;
+}
 // (ticket 191: "the red square on the grid should correspond to the placement of the dotted red
 // suggestion", not its neighbour) the squares whose ways could put a warning right; and for a warning
 // no way can (a name twice, an inside on the grid, no start), its own square
