@@ -101,12 +101,19 @@ function helixSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
 // (ticket 202, Matthew: "a simplified cauldron animation, with the same two
 // fume plumes, but each drawn as a single path with a small number of points
 // (and curves between), with a fat stroke color per curvy line") The fumes,
-// cheap: each plume one smooth path through nine points (Catmull-Rom, as
-// cubic curves), a fat stroke in its colour, turning as the full ones do: its
-// shape at six moments of the 2.4 s turn, one SMIL animation of its d. Two
-// moving parts for the fumes, where the full ones have some two hundred.
+// cheap: each plume one smooth path through thirteen points (Catmull-Rom, as
+// cubic curves), turning as the full ones do: its shape at twelve moments of
+// the 2.4 s turn, as theirs (ticket 205; six before), one SMIL animation of
+// its d. (ticket 205, Matthew: closer to the full ones, "even if simpler")
+// Their depth too: a full plume's pieces swell and brighten as they come round
+// to the front, thin and fade at the back. Here the strand is thin and faint,
+// and a wide copy of it (a <use>, no animation of its own) is painted with a
+// band that repeats up the plume, bright where the strand is at the front:
+// the turn's phase grows evenly with height, so one turn's worth of band,
+// sliding up one turn's height every 2.4 s, stays on the front. Two moving
+// parts a plume, where the full ones have some hundred and twenty.
 function helixCheapSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
-  const n = Math.max(2, Math.ceil((bottom - top) / (13 * k))), K = 6, N = 9;
+  const n = Math.max(2, Math.ceil((bottom - top) / (13 * k))), K = 12, N = 13, turn = 2 * Math.PI * (bottom - top) / (0.42 * n);
   const pathAt = (si, f) => {
     const pts = [...Array(N)].map((_, i) => { const u = i / (N - 1), a = u * n * 0.42 + si * Math.PI - 2 * Math.PI * f / K;
       return [cx + (r0 + (r1 - r0) * u) * Math.cos(a), bottom - (bottom - top) * u]; });
@@ -117,11 +124,19 @@ function helixCheapSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff
     }
     return d;
   };
-  // (fading as it rises, as the full ones do: a still gradient along each plume, no moving part)
-  return colors.map((c, si) => { const ds = [...Array(K + 1)].map((_, f) => pathAt(si, f)), id = `fume-${si}-${Math.round(bottom)}-${Math.round(top)}`;
-    return `<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(bottom)}" x2="0" y2="${f1(top)}"><stop offset="0" stop-color="${c}" stop-opacity="0.9"/><stop offset="1" stop-color="${c}" stop-opacity="0.2"/></linearGradient></defs>` +
-           `<path d="${ds[0]}" fill="none" stroke="url(#${id})" stroke-width="${f1(6 * k)}" stroke-linecap="round" stroke-linejoin="round">` +
-           `<animate attributeName="d" values="${ds.join(";")}" dur="2.4s" repeatCount="indefinite"/></path>`; }).join("");
+  // (the band: at a height where the turn's phase is a, the strand is in front by sin(a); bright as its square, nothing at the back)
+  const band = si => [...Array(13)].map((_, i) => { const o = i / 12, front = (1 + Math.sin(2 * Math.PI * o + si * Math.PI)) / 2;
+    return `<stop offset="${o.toFixed(3)}" stop-color="${colors[si]}" stop-opacity="${(0.9 * front * front).toFixed(2)}"/>`; }).join("");
+  const tag = `${f1(cx)}-${Math.round(bottom)}-${Math.round(top)}-${f1(k)}`;
+  return colors.map((c, si) => { const ds = [...Array(K + 1)].map((_, f) => pathAt(si, f)), id = `fume-${si}-${tag}`;
+    // (its stroke on a group around it: a <use> copy takes its paint from the <use>, which the path's own attributes would override)
+    return `<g stroke="${c}" stroke-opacity="0.3" stroke-width="${f1(2.5 * k)}" stroke-linecap="round" stroke-linejoin="round"><path id="${id}" d="${ds[0]}" fill="none">` +
+           `<animate attributeName="d" values="${ds.join(";")}" dur="2.4s" repeatCount="indefinite"/></path></g>`; }).join("") +
+         // (the wide copies after both strands, so the one in front where they cross is on top)
+         colors.map((c, si) => { const g = `fume-band-${si}-${tag}`;
+    return `<defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="${f1(bottom)}" x2="0" y2="${f1(bottom - turn)}">${band(si)}` +
+           `<animateTransform attributeName="gradientTransform" type="translate" values="0 0;0 ${f1(-turn)}" dur="2.4s" repeatCount="indefinite"/></linearGradient></defs>` +
+           `<use href="#fume-${si}-${tag}" fill="none" stroke="url(#${g})" stroke-width="${f1(7.5 * k)}" stroke-linecap="round" stroke-linejoin="round"/>`; }).join("");
 }
 // (ticket 118) The fumes' widths and see-through-ness as Web Animations, one
 // per segment, started where the picture's clock is in its 2.4 s loop (the
