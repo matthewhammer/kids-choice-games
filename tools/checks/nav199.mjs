@@ -68,14 +68,16 @@ try {
     return JSON.stringify({ deep: ys.length, seen: [...seen] }); })()`));
   ok("in the duck pond's deep water, the walk to a passage swims", pond.deep > 0 && pond.seen.includes("swim") && !pond.seen.includes("walk"), pond);
   // a tree house's trapdoor: climbed down, out of sight below its edge, into the room below
-  const hatch = JSON.parse(await ev(`(async () => { ${H} let found = null;
+  const hatch = JSON.parse(await ev(`(async () => { ${H} let found = null; const houses0 = B.houses;
     for (let i = 1; i <= 6 && !found; i++) { Object.assign(B, { kind: "treeroom", houses: 6, inside: i, figX: 0, figY: 0 }); await settle(); const L = marks.pics.find(p => p.kind === "ladder" && p.el.dataset.down !== undefined); if (L) found = { i, L }; }
     if (!found) return JSON.stringify({ none: true });
     B.figX = Math.round(found.L.spot[0]); B.figY = Math.round(found.L.spot[1] - SCENE.ground); await settle();
     const aimed = (enterTarget() || { el: null }).el === found.L.el; enterPicture();
     let sawDown = false, clipped = false; const t0 = performance.now();
     while (performance.now() - t0 < 8000) { await w(80); if (climb && climb.down) sawDown = true; if (document.querySelector("#pic g.fig-clip")) clipped = true; if (B.inside !== found.i && !entering) break; }
-    return JSON.stringify({ from: found.i, to: B.inside, aimed, sawDown, clipped, ms: Math.round(performance.now() - t0), kind: B.kind }); })()`));
+    const out = { from: found.i, to: B.inside, aimed, sawDown, clipped, ms: Math.round(performance.now() - t0), kind: B.kind };
+    B.houses = houses0; changed();   // (as it was, for the checks after: the tree's ladders depend on how many houses)
+    return JSON.stringify(out); })()`));
   ok("a tree house's trapdoor: aimed from its edge; X climbs down it, cut off below its edge, into the room below within 6 s", !hatch.none && hatch.aimed && hatch.sawDown && hatch.clipped && hatch.to !== hatch.from && hatch.kind === "treeroom" && hatch.ms < 6000, hatch);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

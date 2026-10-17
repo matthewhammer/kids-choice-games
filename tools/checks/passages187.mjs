@@ -47,7 +47,7 @@ try {
     const took = await until(() => B.kind === "woodpath" && !entering); return JSON.stringify({ kind: p.kind, aimed, took, now: B.kind }); })()`));
   ok("the clearing's sign to the wood path: aimed from its foot, and Enter takes it", sign.aimed && sign.took !== null, sign);
   // a tree house's ladder: X at its foot climbs it, at ⬆'s pace, and goes in
-  const tree = JSON.parse(await ev(`(async () => { ${H} worldEnter("4,4"); await settle(); const p = marks.pics.find(p => p.kind === "ladder");
+  const tree = JSON.parse(await ev(`(async () => { ${H} worldEnter("4,4"); B.houses = DEFAULTS.background.houses; await settle();   // (the tree's own number of houses, whatever a check before left) const p = marks.pics.find(p => p.kind === "ladder");
     if (!p) return JSON.stringify({ none: marks.pics.map(p => p.kind) });
     await feetAt(p.spot); const aimed = enterTarget() && enterTarget().el === p.el; const t0 = performance.now(); enterPicture();
     const took = await until(() => B.kind === "treeroom" && !entering, 12000); return JSON.stringify({ aimed, took, now: B.kind }); })()`));
