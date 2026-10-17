@@ -175,13 +175,22 @@ const WAY_NEAR = 170, WAY_DEPTH = 500;   // (the floor's units: the stage's, at 
 const WAY_OUT = { N: [0, 1], S: [0, -1], E: [1, 0], W: [-1, 0], NE: [1, 1], NW: [-1, 1], SE: [1, -1], SW: [-1, -1] };   // (outward, on the floor: across, away)
 let worldWaysAt = [];   // (each way's [direction, x, y, angle, leads to], as last drawn)
 function floorAt(B, x, y) { const s = Math.max(0.05, depthSize(B, y - SCENE.ground)); return [x / s, WAY_DEPTH / s]; }
-function wayNearness(d) {
-  const w = worldWaysAt.find(e => e[0] === d), B = state.background, o = WAY_OUT[d];
-  if (!w || !o) return Infinity;
-  const a = floorAt(B, w[1], w[2]), f = floorAt(B, B.figX ?? 0, SCENE.ground + (B.figY ?? 0));
+// (ticket 187) how near the feet are to a spot on the floor, as a share of
+// how near counts (below 1: within reach): within WAY_NEAR, or half the
+// spot's distance from the floor's middle if that is less (never under
+// PASS_MIN); o, a way's outward direction, counts feet gone past the spot,
+// toward its edge, as at it. The nav arrows' measure, and every passage's
+// that stands on the floor (doors, signs, ladders, pits: passesNear).
+const PASS_MIN = 60;
+function floorNearness(x, y, o = null) {
+  const B = state.background, a = floorAt(B, x, y), f = floorAt(B, B.figX ?? 0, SCENE.ground + (B.figY ?? 0));
   const c = floorAt(B, 0, SCENE.ground + (ARRIVE[B.kind] || [0, 0])[1]);
-  const at = i => o[i] && (f[i] - a[i]) * o[i] > 0 ? a[i] : f[i];
-  return Math.hypot(at(0) - a[0], at(1) - a[1]) / Math.max(1, Math.min(WAY_NEAR, Math.hypot(a[0] - c[0], a[1] - c[1]) / 2));
+  const at = i => o && o[i] && (f[i] - a[i]) * o[i] > 0 ? a[i] : f[i];
+  return Math.hypot(at(0) - a[0], at(1) - a[1]) / Math.max(PASS_MIN, Math.min(WAY_NEAR, Math.hypot(a[0] - c[0], a[1] - c[1]) / 2));
+}
+function wayNearness(d) {
+  const w = worldWaysAt.find(e => e[0] === d);
+  return w && WAY_OUT[d] ? floorNearness(w[1], w[2], WAY_OUT[d]) : Infinity;
 }
 // (the way X goes through, aimed at: its arrow glows, as a door's frame does)
 function worldWaysAim(d) {

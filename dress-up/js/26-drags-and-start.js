@@ -285,7 +285,18 @@ pic.addEventListener("click", e => {
   const ladder = !entering && e.target.closest && e.target.closest("#bg [data-ladder]");
   if (ladder) { climbLadder(ladder); return; }
   const door = !entering && e.target.closest && e.target.closest("#bg .portal");
-  if (door) enterScene(door);
+  if (door) { enterScene(door); return; }
+  // (ticket 187) a passage behind something standing in front of it (a fence, a bush, a sign's post):
+  // through it too; never one behind the friend or a thing put there, which are for dragging
+  if (entering || !e.target.closest || e.target.closest("#figure, [data-drag], #ways") || marks.text !== bgShown.text) return;
+  const q = picUnits(e), hit = marks.pics.filter(p => p.kind !== "nav" && p.el.isConnected && q.x >= p.x0 && q.x <= p.x1 && q.y >= p.y0 && q.y <= p.y1)
+                                         .sort((a, b) => (a.x1 - a.x0) * (a.y1 - a.y0) - (b.x1 - b.x0) * (b.y1 - b.y0))[0];
+  if (hit) { enterAt = hit; enterPicture(); }
+});
+// (ticket 187) Enter: through the passage that glows, as X
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter" || e.repeat || (e.target.closest && e.target.closest("input, textarea, select, button, [contenteditable]"))) return;
+  if (enterAt) { e.preventDefault(); enterPicture(); }
 });
 // a nested <svg>'s own box on the screen, from its x, y, width and height
 function svgBox(el) {
@@ -349,7 +360,7 @@ function flyInto(box, arrive) {
 // connected, never without one.
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
                      ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
-                     ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest doorway"], ["enter", "✨ into the picture that glows"]];
+                     ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"]];
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -475,19 +486,11 @@ function padPoll(t) {
   } else if (lit) changed();   // (the Controls tab shows which buttons are down)
   padLoop = requestAnimationFrame(padPoll);
 }
-// (the doorway nearest the friend's feet, in the picture's units)
+// (the passage nearest the friend, however far: walked to and gone through; ticket 187: every kind, measured as X's)
 function padDoor() {
-  const node = bgShown.node, BG = state.background, P = pic.getScreenCTM();
-  if (!node || !P || entering || BG.kind === "none") return;
-  const fx = BG.figX ?? 0, fz = SCENE.ground + (BG.figY ?? 0), inv = P.inverse();
-  let best = null;
-  for (const d of node.querySelectorAll(".portal")) {
-    const r = d.getBoundingClientRect();
-    if (!r.width || !r.height) continue;
-    const c = new DOMPoint(r.x + r.width / 2, r.y + r.height).matrixTransform(inv), dist = Math.hypot(c.x - fx, c.y - fz);
-    if (!best || dist < best.dist) best = { dist, d };
-  }
-  if (best) enterScene(best.d);
+  if (entering || state.background.kind === "none") return;
+  const all = passesNear(Infinity);
+  if (all.length) { enterAt = all[0].p; enterPicture(); }
 }
 window.addEventListener("gamepadconnected", e => {
   padName = ((e.gamepad && e.gamepad.id) || "").replace(/\s*\(.*$/, "").trim() || "a game controller";

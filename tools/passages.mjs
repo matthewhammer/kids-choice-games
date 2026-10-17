@@ -35,10 +35,12 @@ const r = await send("Runtime.evaluate", { awaitPromise: true, returnByValue: tr
       const view = el.querySelector(":scope > svg, :scope > image"), d = el.dataset;
       const kind = d.way ? "nav arrow" : d.pit ? "pit" : el.hasAttribute("data-ladder") ? (el.closest(".portal") || d.house ? "ladder (a way)" : "ladder") :
                    view ? "picture" : el.classList.contains("south-way") ? "▼ sign" : el.querySelector("text") && !d.door ? "sign" : d.door ? "door" : "doorway (unmarked)";
-      const c = center(el), x = marks.pics.some(p => p.el === el) || marks.ladders.some(l => l.el === el);
+      const c = center(el), x = marks.pics.some(p => p.el === el), u = c[2] > 0 ? document.elementFromPoint(c[0], c[1]) : null;
+      // (ticket 187: a tap where something stands in front of it, not the friend or a thing put there, goes through too)
+      const tap = !!u && (u === el || el.contains(u) || (x && !u.closest("#figure, [data-drag], #ways")));
       const hud = d.way ? !!document.querySelector('#ways .way-arrow[data-way="' + d.way + '"]') : null;
       items.push({ kind, to: d.to || (d.way ? "square " + d.way : d.house ? "tree house " + d.house : d.pit ? "below" : ""), house: d.house || "", room: d.room || "", tent: d.tent || "",
-        x, click: d.way ? hud : (c[2] > 0 && c[3] > 0 ? onIt(el, c) : false), glow: el.classList.contains("portal") && !d.way, size: [Math.round(c[2]), Math.round(c[3])] });
+        x, click: d.way ? hud : (c[2] > 0 && c[3] > 0 ? onIt(el, c) : false), tap: d.way ? hud : tap, glow: el.classList.contains("portal") && !d.way, size: [Math.round(c[2]), Math.round(c[3])] });
     }
     out.push({ place: name, kind: B.kind, items });
   };
@@ -59,12 +61,12 @@ const yn = v => v === null ? "–" : v ? "yes" : "NO";
 const all = res.flatMap(p => p.items.map(i => ({ ...i, place: p.place })));
 for (const p of res) {
   console.log(`\n## ${p.place}: ${p.items.length} passage${p.items.length === 1 ? "" : "s"}`);
-  for (const i of p.items) console.log(`  ${i.kind.padEnd(19)} → ${(i.to + (i.room ? " room " + i.room : "") + (i.tent ? " tent " + i.tent : "")).padEnd(22)} X ${yn(i.x).padEnd(3)} click ${yn(i.click).padEnd(3)} glow ${yn(i.glow).padEnd(3)} ${i.size.join("x")}`);
+  for (const i of p.items) console.log(`  ${i.kind.padEnd(19)} → ${(i.to + (i.room ? " room " + i.room : "") + (i.tent ? " tent " + i.tent : "")).padEnd(22)} X ${yn(i.x).padEnd(3)} click ${yn(i.click).padEnd(3)} tap ${yn(i.tap).padEnd(3)} glow ${yn(i.glow).padEnd(3)} ${i.size.join("x")}`);
 }
 console.log("\n== summary: passages by kind, and how many X, a click and the glow reach");
 const kinds = [...new Set(all.map(i => i.kind))];
-for (const k of kinds) { const g = all.filter(i => i.kind === k); console.log(`  ${k.padEnd(19)} ${String(g.length).padStart(4)}   X ${g.filter(i => i.x).length}   click ${g.filter(i => i.click).length}   glow ${g.filter(i => i.glow).length}`); }
-console.log(`  ${"all".padEnd(19)} ${String(all.length).padStart(4)}   X ${all.filter(i => i.x).length}   click ${all.filter(i => i.click).length}`);
+for (const k of kinds) { const g = all.filter(i => i.kind === k); console.log(`  ${k.padEnd(19)} ${String(g.length).padStart(4)}   X ${g.filter(i => i.x).length}   click ${g.filter(i => i.click).length}   tap ${g.filter(i => i.tap).length}   glow ${g.filter(i => i.glow).length}`); }
+console.log(`  ${"all".padEnd(19)} ${String(all.length).padStart(4)}   X ${all.filter(i => i.x).length}   click ${all.filter(i => i.click).length}   tap ${all.filter(i => i.tap).length}`);
 console.log(errs.length ? "page errors: " + errs.slice(0, 3).join(" | ") : "no page errors");
 await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`);
 process.exit(0);

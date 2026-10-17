@@ -860,7 +860,7 @@ function drawNow() {
   }
   showObjects();
   if (hoverOn) showHover();   // (the hover glow, over the new drawing: ticket 135)
-  if (padName || enterGlow || document.querySelector("#ways .aimed")) showEnterGlow();   // (the picture ✨ would go into: ticket 145)
+  if (scened) showEnterGlow();   // (the passage X, Enter or a tap would take, and the others within reach: tickets 145, 187)
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
@@ -882,7 +882,7 @@ function drawNow() {
   fitPic();
   if (move && !move.held && !treadLoop) treadLoop = requestAnimationFrame(treadTick);
   if (B.anim === "climbup" && scened && !climb && !drag && !entering && !climbLook) climbLook = setTimeout(startClimb, 0);   // (ticket 137)
-  if (padName && scened && marks.text !== bgShown.text && !marksLook) marksLook = setTimeout(measureMarks, 0);   // (ticket 145)
+  if (scened && marks.text !== bgShown.text && !marksLook) marksLook = setTimeout(measureMarks, 0);   // (tickets 145, 187: with any input, not only a controller)
 }
 // (ticket 123) While the friend treads water they are drawn again about 30
 // times a second: not while a drag draws them anyway, nor while the page is

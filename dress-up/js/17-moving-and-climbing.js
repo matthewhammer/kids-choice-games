@@ -93,7 +93,8 @@ const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
 // how far they have climbed (CLIMB_STROKE of their own units a stroke),
 // and they hold still while the arrows do.
 let climb = null, climbLook = 0, climbAnywhere = true;
-const CLIMB_SPEED = 70, CLIMB_REACH = 140, CLIMB_HAND = 300, CLIMB_STROKE = 160;
+// (ticket 187, Matthew: a ladder gone up as a passage climbed in slow motion, 70; ⬆ on the controller climbs at 300, "a fast, pleasing" pace: one pace now)
+const CLIMB_HAND = 300, CLIMB_SPEED = CLIMB_HAND, CLIMB_REACH = 140, CLIMB_STROKE = 160;
 // (ticket 174) a climbing hand's height above its shoulder, as a share of the
 // arm's length: reaching up (HI) and pulled down near the shoulder (LO); and
 // the share of a cycle a hand spends holding a rung and pulling (the rest
@@ -135,44 +136,75 @@ function startClimb() {
 // (ticket 145) A place's ladders and its pictures (and windows: a doorway
 // with a view of its own, a nested svg), in the picture's units, measured
 // after its drawing is mounted (never in draw(): it reads layout) and again
-// whenever the scene's text changes; only while a controller is in use,
-// which is all that needs them. marks.pics' box is the doorway's own
+// whenever the scene's text changes (ticket 187: with any input, not only a
+// controller: every passage glows when near). marks.pics' box is the doorway's own
 // bounds in its own units, for its glow.
 let marks = { text: null, ladders: [], pics: [] }, marksLook = 0;
 function measureMarks() {
   marksLook = 0;
   const node = bgShown.node, P = pic.getScreenCTM();
   if (!node || !P) return;
-  const Pinv = P.inverse(), ladders = [], pics = [];
+  // (ticket 187, Matthew 2026-10-17: "no more pictures vs passages:
+  // pictures are passages too") Every passage, of every kind, in one list
+  // (marks.pics, its old name): a picture or window, a door, a doorway or a
+  // sign with no mark, a ▼, a pit, a nav arrow's doorway, a ladder that is a
+  // way (a tree house's, the dungeon's trapdoor: the ladder stands for the
+  // doorway it leads to). Each with its kind, its box for the glow, and
+  // where the feet go to use it (spot, on the floor: under a door or a sign,
+  // a ladder's foot, a pit's middle, a nav arrow's place); a picture is
+  // reached by the chest, as before (passesNear).
+  const Pinv = P.inverse(), ladders = [], pics = [], F = sceneFrame;
+  const stage = r => { const a = new DOMPoint(r.x, r.y).matrixTransform(Pinv), b = new DOMPoint(r.x + r.width, r.y + r.height).matrixTransform(Pinv);
+    return { x0: Math.min(a.x, b.x), y0: Math.min(a.y, b.y), x1: Math.max(a.x, b.x), y1: Math.max(a.y, b.y) }; };
+  const floorTop = SCENE.ground + figYMin(F), floorBot = F.bottom, under = q => [(q.x0 + q.x1) / 2, clamp(q.y1, floorTop, floorBot)];
+  const bbox = el => { const b = el.getBBox(); return { x: b.x, y: b.y, width: b.width, height: b.height }; };
+  const laddered = new Set();   // (doorways a ladder leads into: the ladder is their passage)
   for (const el of node.querySelectorAll("[data-ladder]")) {
     const L = ladderAt(el, Pinv);
     if (!L) continue;
     ladders.push(L);
     // (ticket 173: a ladder that is a way somewhere glows, as pictures and doors do, and X climbs it)
     if (!L.door) continue;
-    const r = el.getBoundingClientRect(), M = el.getScreenCTM();
-    if (!r.width || !r.height || !M) continue;
-    const a = new DOMPoint(r.x, r.y).matrixTransform(Pinv), b = new DOMPoint(r.x + r.width, r.y + r.height).matrixTransform(Pinv), bb = el.getBBox();
-    pics.push({ x0: Math.min(a.x, b.x), y0: Math.min(a.y, b.y), x1: Math.max(a.x, b.x), y1: Math.max(a.y, b.y), el, box: { x: bb.x, y: bb.y, width: bb.width, height: bb.height }, ladder: true });
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    const pd = el.closest(".portal");
+    if (pd) laddered.add(pd);
+    else if (el.dataset.house) for (const q of node.querySelectorAll(`.portal[data-house="${CSS.escape(el.dataset.house)}"]`)) laddered.add(q);
+    pics.push({ ...stage(r), el, box: bbox(el), ladder: true, kind: "ladder", spot: [L.x, L.z] });
   }
   for (const d of node.querySelectorAll(".portal")) {
+    const dd = d.dataset;
+    if (laddered.has(d) || !(dd.to || dd.way || dd.pit)) continue;   // (a ladder's doorway; or one that leads nowhere)
     const view = d.querySelector(":scope > svg, :scope > image");
+    if (dd.pit) {   // (ticket 162: walked onto, it falls; through it, it is walked to)
+      const r = d.getBoundingClientRect(), [cx, cy] = dd.pit.split(" ").map(Number);
+      if (r.width && r.height) pics.push({ ...stage(r), el: d, box: bbox(d), kind: "pit", spot: [cx, cy] });
+      continue;
+    }
     // (ticket 147: a door glows too, its box its doorway's own: the first shape in it, not its sign)
     if (!view && d.hasAttribute("data-door")) {
       const shape = d.querySelector("path, rect"), M = d.getScreenCTM();
       if (!shape || !M) continue;
       const r = shape.getBoundingClientRect();
       if (!r.width || !r.height) continue;
-      const a = new DOMPoint(r.x, r.y).matrixTransform(Pinv), b = new DOMPoint(r.x + r.width, r.y + r.height).matrixTransform(Pinv);
       const Mi = M.inverse(), p = new DOMPoint(r.x, r.y).matrixTransform(Mi), q = new DOMPoint(r.x + r.width, r.y + r.height).matrixTransform(Mi);
-      const box = { x: Math.min(p.x, q.x), y: Math.min(p.y, q.y), width: Math.abs(q.x - p.x), height: Math.abs(q.y - p.y) };
-      pics.push({ x0: Math.min(a.x, b.x), y0: Math.min(a.y, b.y), x1: Math.max(a.x, b.x), y1: Math.max(a.y, b.y), el: d, box, door: true });
+      const box = { x: Math.min(p.x, q.x), y: Math.min(p.y, q.y), width: Math.abs(q.x - p.x), height: Math.abs(q.y - p.y) }, at = stage(r);
+      // (a nav arrow's doorway stands where its arrow is, and feet past it count as at it; a ▼ at the bottom edge, as the nav arrow S)
+      const w = dd.way && worldWaysAt.find(e => e[0] === dd.way);
+      if (dd.way && !w) continue;
+      const kind = dd.way ? "nav" : d.classList.contains("south-way") ? "south" : "door";
+      pics.push({ ...at, el: d, box, door: true, kind, spot: w ? [w[1], w[2]] : under(at), out: dd.way ? WAY_OUT[dd.way] : kind === "south" ? WAY_OUT.S : null });
       continue;
     }
-    if (!view) continue;
+    if (!view) {   // (a doorway or a sign with no mark of its own: its whole drawing, the feet under it)
+      const r = d.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      const at = stage(r);
+      pics.push({ ...at, el: d, box: bbox(d), kind: d.querySelector("text") ? "sign" : "doorway", spot: under(at) });
+      continue;
+    }
     const r = svgBox(view);
     if (!r.width || !r.height) continue;
-    const a = new DOMPoint(r.x, r.y).matrixTransform(Pinv), b = new DOMPoint(r.x + r.width, r.y + r.height).matrixTransform(Pinv);
     // (its glow's box: its frame, the doorway's own rects but the shadow
     // (see-through); else the view, a little larger. Not the doorway's
     // bounds: the scene inside a picture spills past it, hidden)
@@ -180,7 +212,7 @@ function measureMarks() {
     const vb = { x: view.x.baseVal.value, y: view.y.baseVal.value, width: view.width.baseVal.value, height: view.height.baseVal.value };
     const box = frames.length ? frames.reduce((u, f) => { const x = Math.min(u.x, f.x), y = Math.min(u.y, f.y); return { x, y, width: Math.max(u.x + u.width, f.x + f.width) - x, height: Math.max(u.y + u.height, f.y + f.height) - y }; })
                               : { x: vb.x - 0.04 * vb.width, y: vb.y - 0.04 * vb.height, width: 1.08 * vb.width, height: 1.08 * vb.height };
-    pics.push({ x0: Math.min(a.x, b.x), y0: Math.min(a.y, b.y), x1: Math.max(a.x, b.x), y1: Math.max(a.y, b.y), el: d, box });
+    pics.push({ ...stage(r), el: d, box, kind: "picture" });
   }
   marks = { text: bgShown.text, ladders, pics };
   showEnterGlow();
@@ -205,57 +237,72 @@ function mountLadder(L) {
   BG.figX = Math.round(L.x); BG.figY = Math.round(L.z - SCENE.ground + 2);
   climb = { place: climbPlace(BG), x: L.x, z: L.z + 2, top: L.top, door: L.door, hands: L.hands, start: performance.now(), done: false, through: false, manual: true, got: 0 };
 }
-// (ticket 145) The picture the controller's ✨ would go into: of those whose
-// box is within reach of the friend's chest (twice the chest's height: about an arm's length) and
-// whose bottom edge their feet are not far below (about their height, so
-// one standing well in front of a wall can't reach up into its picture),
-// the one whose middle is nearest. It glows: a rounded frame over the
-// picture, inside its doorway (so it is in front of the picture and behind
-// whatever stands nearer), kept while it stays the one.
+// (ticket 187) The passages within reach, nearest first, each scored by how
+// far it is over how far reach goes (below 1, within reach), so every kind
+// weighs against every other: a picture by the chest (within twice the
+// chest's height of it, about an arm's length, and the feet not far below
+// its bottom, about their height: ticket 145), every other passage by the
+// feet on the floor, in depth (floorNearness, as the nav arrows). The
+// nearest is the one: it glows, and X, Enter or the 🚪 button take it; the
+// others within reach glow dimmer (Matthew, 2026-10-17: "at most one is
+// highlighted as offering the go through nearest passage action; the others
+// that are also nearby can show up too, but dimmer"). Any input, not only a
+// controller: a tap goes through too.
 let enterAt = null, enterGlow = null;
-function enterTarget() {
+const passDims = new Map();   // (the dimmer glows: passage element -> its glow)
+function passesNear(reach = 1) {
   const BG = state.background, J = poseJoints, T = figureT;
-  if (!padName || BG.kind === "none" || !J || !J.arms.length || !J.legs.length || entering || marks.text !== bgShown.text) return null;
-  const at = (x, y) => [T.dx + T.k * x, T.dy + T.sg + T.k * (y - T.g)];
-  const mean = ps => [ps.reduce((s, p) => s + p[0], 0) / ps.length, ps.reduce((s, p) => s + p[1], 0) / ps.length];
-  const A = mean(J.arms.map(a => a.A)), H = mean(J.legs.map(l => l.H)), [cx, cy] = at((A[0] + H[0]) / 2, (A[1] + H[1]) / 2);
-  const torso = T.k * Math.hypot(A[0] - H[0], A[1] - H[1]), feet = Math.max(...J.legs.map(l => at(l.F[0], l.F[1])[1]));
-  // (each within reach scored by how far it is over how far reach goes, so a
-  // way and a picture can be weighed against each other: the lowest wins)
-  let best = null;
+  if (BG.kind === "none" || entering || marks.text !== bgShown.text) return [];
+  let chest = null;
+  if (J && J.arms.length && J.legs.length) {
+    const at = (x, y) => [T.dx + T.k * x, T.dy + T.sg + T.k * (y - T.g)];
+    const mean = ps => [ps.reduce((s, p) => s + p[0], 0) / ps.length, ps.reduce((s, p) => s + p[1], 0) / ps.length];
+    const A = mean(J.arms.map(a => a.A)), H = mean(J.legs.map(l => l.H)), [cx, cy] = at((A[0] + H[0]) / 2, (A[1] + H[1]) / 2);
+    chest = { cx, cy, torso: T.k * Math.hypot(A[0] - H[0], A[1] - H[1]), feet: Math.max(...J.legs.map(l => at(l.F[0], l.F[1])[1])) };
+  }
+  const out = [];
   for (const p of marks.pics) {
     if (!p.el.isConnected) continue;
-    // (ticket 185: a world square's way out is on the ground: near by the feet, on the floor, in depth: wayNearness)
-    if (p.el.dataset && p.el.dataset.way) {
-      const n = wayNearness(p.el.dataset.way);
-      if (n < 1 && (!best || n < best.n)) best = { n, p };
-      continue;
-    }
-    const d = Math.hypot(Math.max(p.x0 - cx, 0, cx - p.x1), Math.max(p.y0 - cy, 0, cy - p.y1));
-    if (d > 2 * torso || feet - p.y1 > 3.6 * torso) continue;
-    const n = Math.hypot((p.x0 + p.x1) / 2 - cx, (p.y0 + p.y1) / 2 - cy) / (2 * torso);
-    if (!best || n < best.n) best = { n, p };
+    let n;
+    if (p.kind === "picture") {
+      if (!chest) continue;
+      const { cx, cy, torso, feet } = chest, d = Math.hypot(Math.max(p.x0 - cx, 0, cx - p.x1), Math.max(p.y0 - cy, 0, cy - p.y1));
+      if (feet - p.y1 > 3.6 * torso) continue;
+      n = d / (2 * torso);
+    } else if (p.spot) n = floorNearness(p.spot[0], p.spot[1], p.out);
+    else continue;
+    if (n < reach) out.push({ p, n });
   }
-  return best && best.p;
+  return out.sort((a, b) => a.n - b.n);
+}
+function enterTarget() { const q = passesNear(); return q.length ? q[0].p : null; }
+// (a glow's rounded frame round a passage's box, inside its doorway: in front of it, behind whatever stands nearer)
+function passFrame(b, dim) {
+  const e = Math.max(2, 0.03 * Math.min(b.width, b.height)), r = 3 * e, at = `x="${f1(b.x - e)}" y="${f1(b.y - e)}" width="${f1(b.width + 2 * e)}" height="${f1(b.height + 2 * e)}" rx="${f1(r)}"`;
+  return dim ? `<rect ${at} fill="none" stroke="#ffd23f" stroke-opacity="0.5" stroke-width="3" stroke-dasharray="9 6" vector-effect="non-scaling-stroke"/>`
+             : `<rect ${at} fill="#fff6a0" fill-opacity="0.14" stroke="#ffd23f" stroke-opacity="0.75" stroke-width="7" vector-effect="non-scaling-stroke"/>` +
+               `<rect ${at} fill="none" stroke="#fffbe0" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
 }
 function showEnterGlow() {
-  const p = enterTarget();
+  if (marks.text !== bgShown.text && bgShown.node) return;   // (measured again in a moment: the glows kept till then)
+  const near = passesNear(), p = near.length ? near[0].p : null;
   enterAt = p;
-  // (a way out glows on its own arrow, over the picture: not a frame in the picture under it)
-  const way = p && p.el.dataset && p.el.dataset.way || null;
-  worldWaysAim(way);
-  if (way) { if (enterGlow) enterGlow.remove(); enterGlow = null; return; }
-  if (enterGlow && enterGlow.isConnected && p && enterGlow.parentNode === p.el) return;
+  // (a nav arrow's glow is its arrow over the picture: aimed, or near and dimmer)
+  worldWaysAim(p && p.kind === "nav" ? p.el.dataset.way : null);
+  const NS = "http://www.w3.org/2000/svg", put = (el, box, dim) => {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "enter-glow" + (dim ? " dim" : "")); g.setAttribute("pointer-events", "none");
+    g.innerHTML = passFrame(box, dim); el.append(g); return g;
+  };
+  // the dimmer ones
+  const dims = new Set(near.slice(1).map(q => q.p).filter(q => q.kind !== "nav"));
+  for (const [el, g] of passDims) if (!g.isConnected || ![...dims].some(q => q.el === el)) { g.remove(); passDims.delete(el); }
+  for (const q of dims) if (!passDims.has(q.el)) passDims.set(q.el, put(q.el, q.box, true));
+  // the one
+  if (!p || p.kind === "nav") { if (enterGlow) enterGlow.remove(); enterGlow = null; return; }
+  if (enterGlow && enterGlow.isConnected && enterGlow.parentNode === p.el) return;
   if (enterGlow) enterGlow.remove();
-  enterGlow = null;
-  if (!p) return;
-  const b = p.box, e = Math.max(2, 0.03 * Math.min(b.width, b.height)), r = 3 * e;
-  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  g.setAttribute("class", "enter-glow"); g.setAttribute("pointer-events", "none");
-  g.innerHTML = `<rect x="${f1(b.x - e)}" y="${f1(b.y - e)}" width="${f1(b.width + 2 * e)}" height="${f1(b.height + 2 * e)}" rx="${f1(r)}" fill="#fff6a0" fill-opacity="0.14" stroke="#ffd23f" stroke-opacity="0.75" stroke-width="7" vector-effect="non-scaling-stroke"/>` +
-                `<rect x="${f1(b.x - e)}" y="${f1(b.y - e)}" width="${f1(b.width + 2 * e)}" height="${f1(b.height + 2 * e)}" rx="${f1(r)}" fill="none" stroke="#fffbe0" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
-  p.el.append(g);
-  enterGlow = g;
+  enterGlow = put(p.el, p.box, false);
 }
 function enterPicture() {
   const p = enterAt;
@@ -264,6 +311,8 @@ function enterPicture() {
   if (climb && !climb.none) climb.through = true;   // (off the ladder, arriving: see draw)
   if (enterGlow) enterGlow.remove();
   enterGlow = null; enterAt = null;
+  for (const g of passDims.values()) g.remove();
+  passDims.clear();
   if (p.ladder) climbLadder(p.el);   // (ticket 173)
   else enterScene(p.el);
 }

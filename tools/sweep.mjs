@@ -27,6 +27,8 @@ const r = await send("Runtime.evaluate", { awaitPromise: true, returnByValue: tr
     for (const key of Object.keys(B)) if (/^castle(Cat|Horse)\\d+Lfo/.test(key)) B[key] = "none";
     state.costume.wingLfo = "none"; for (const key of Object.keys(state.visible || {})) if (key.startsWith("lfo_")) state.visible[key] = "none"; };
   const shot = async (name, set) => { reset(); set(state.background, state.costume); changed(); await tick();
+    // (ticket 187: a passage's glow is where the friend stands, not the scene: left out)
+    for (const g of document.querySelectorAll("#pic .enter-glow")) g.remove();
     out[name] = h(document.getElementById("pic").innerHTML.replace(/ begin="[^"]*"/g, "").replace(/-?[0-9.]+s infinite/g, "Xs infinite")); };
   const times = { fairyforest: ["fairyTime", ["day", "sunrise", "sunset", "night"]], campsite: ["campTime", Object.keys(CAMP_SKY)], tent: ["campTime", Object.keys(CAMP_SKY)],
                   waterfall: ["fallTime", Object.keys(FALL_TINT)], cave: ["fallTime", Object.keys(FALL_TINT)] };
