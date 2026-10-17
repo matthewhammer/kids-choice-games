@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.158 (2026-10-17)
+
+Everything in 0.0.157, with tree house rooms you can see into like the castle's.
+
+- **Square tree house rooms**: each room in the tree house now has a back wall, side walls going off toward you, a ceiling of rafters and a floor of boards, like the castle's rooms. The doors to the rope bridges are on the side walls, so the bunk beds, the kitchen counter, the bookcase and the keyboard no longer stand in front of them, and the side walls stop your friend as the castle's walls do.
+
 ## 0.0.157 (2026-10-17)
 
 Everything in 0.0.156, with pits that count as things you meet.

@@ -101,12 +101,13 @@ const figYMin = F => Math.max((F.top - F.ground) * 0.6, (F.back ?? -Infinity) - 
 const SOLID_DEPTH = 0.4, SOLID_MARGIN = 6;
 let wallsMemo = { text: undefined, kind: null, W: null };
 function castleWalls(B) {
-  if (B.kind !== "castleroom") return null;
+  if (B.kind !== "castleroom" && B.kind !== "treeroom") return null;   // (ticket 223: the tree house rooms are square rooms too)
   if (wallsMemo.text === bgShown.text && wallsMemo.kind === B.kind && bgShown.text) return wallsMemo.W;
   wallsMemo = { text: bgShown.text, kind: B.kind, W: castleWallsOf(B) };
   return wallsMemo.W;
 }
 function castleWallsOf(B) {
+  if (B.kind === "treeroom") { const { floor, bw, vy } = roomFrame(stageC()); return { back: floor, stairs: false, half: y => Math.max(0, bw * (y - vy) / (floor - vy)) }; }
   const style = castleOf(B).rooms[Math.round(B.castleRoom ?? 1) - 1], deep = style === "hallway" || style === "dining";
   const c = deep ? { ...stageC(), eye: 0.3 } : stageC(), { floor, bw, vy } = roomFrame(c);
   const back = vy + (floor - vy) / (1 + (deep ? HALL_STRETCHES * 0.8 : 0));
@@ -312,6 +313,8 @@ function solidMove(x0, y0, x, y) {
   // (inside a solid already: let them out, by any move that does not go deeper into it, nearer its middle. 0.0.152: any
   // move at all, as it was, once the soles swung with the feet (0.0.150) let a walk through everything: the front foot
   // swung into a cauldron, a rock, the couch, and the next step counted as getting out)
+  // (ticket 223: past a side wall already, a castle room's or a tree room's, come back from a door in it: any move toward the middle)
+  if (here && here.wall && Math.abs(x) <= Math.abs(x0)) return [x, y];
   if (here && !here.wall) {
     const cx = (here.x0 + here.x1) / 2, cz = (here.back + here.front) / 2;
     if (Math.abs(x - cx) >= Math.abs(x0 - cx) - 0.01 && Math.abs(g + y - cz) >= Math.abs(g + y0 - cz) - 0.01) return [x, y];

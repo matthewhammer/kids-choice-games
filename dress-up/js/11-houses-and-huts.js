@@ -317,35 +317,37 @@ const houseEmoji = (o, n) => {
 // a wooden sign, its words in the middle at (x, y)
 const plankSign = (x, y, k, text) => `<rect x="${f1(x - 52 * k)}" y="${f1(y - 18 * k)}" width="${f1(104 * k)}" height="${f1(36 * k)}" rx="${f1(5 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2.5 * k)}"/>` +
   `<text x="${f1(x)}" y="${f1(y + 7 * k)}" text-anchor="middle" font-size="${f1(20 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${text}</text>`;
-function waysSvg({ x0, x1, y0, W, H, k, P }, floor, links) {
+function waysSvg(c, floor, links) {
+  const { x0, x1, y0, W, H, k, P } = c;
   let t = "";
   const sides = { left: 0, right: 0 };
   for (const L of links) {
     const go = L.to < 0 ? `data-to="treehouse"` : `data-to="treeroom" data-house="${L.to + 1}"`, name = L.to < 0 ? "🌳 out" : `${L.label} ${L.to + 1}`;
     t += `<g class="portal" ${go}${L.way === "left" || L.way === "right" ? ` data-door=""` : ""}>`;
     if (L.way === "left" || L.way === "right") {
-      // a door in the side wall, the rope bridge going out through it
-      const sd = L.way === "left" ? -1 : 1, j = sides[L.way]++, cx = sd < 0 ? x0 + (60 + 120 * j) * k : x1 - (60 + 120 * j) * k;
-      const w = 84 * k, top = floor - 172 * k;
-      t += `<rect x="${f1(cx - w / 2)}" y="${f1(top)}" width="${f1(w)}" height="${f1(floor - top)}" fill="#a8dcf5"/>` +
-           `<circle cx="${f1(cx - 18 * k)}" cy="${f1(top + 26 * k)}" r="${f1(24 * k)}" fill="#4fb04f"/><circle cx="${f1(cx + 22 * k)}" cy="${f1(top + 16 * k)}" r="${f1(20 * k)}" fill="#3c9a40"/>` +
-           `<polygon points="${P(cx - w / 2, floor)} ${P(cx + w / 2, floor)} ${P(cx + sd * w * 0.2 + w * 0.12, floor - 70 * k)} ${P(cx + sd * w * 0.2 - w * 0.12, floor - 70 * k)}" fill="#8b5e34"/>` +
-           [0.25, 0.5, 0.75].map(u => `<line x1="${f1(cx - w / 2 + (sd * w * 0.2 + w * 0.38) * u)}" y1="${f1(floor - 70 * k * u)}" x2="${f1(cx + w / 2 + (sd * w * 0.2 - w * 0.38) * u)}" y2="${f1(floor - 70 * k * u)}" stroke="#5e3d22" stroke-width="${f1(2 * k)}"/>`).join("") +
-           [-1, 1].map(e => `<line x1="${f1(cx + e * w / 2)}" y1="${f1(floor - 45 * k)}" x2="${f1(cx + sd * w * 0.2 + e * w * 0.12)}" y2="${f1(floor - 100 * k)}" stroke="#d8c49a" stroke-width="${f1(2.5 * k)}"/>`).join("") +
-           // (ticket 216, Matthew: "let's show doors on the treehouse ... they open like the castle doors when we trigger them
-           // as a passage way, and we walk through them") a plank door, hinged on its outer side: it swings open as the
-           // passage is taken (walkInto: [data-leaf] to its data-open shape, the same commands; its planks and knob fade),
-           // the bridge behind it; shut again on coming back
-           (() => { const fx = cx - sd * w / 2, hx = cx + sd * w / 2, ox = hx - sd * w * 0.2;
-             const shut = `M${P(fx, floor)} L${P(fx, top)} L${P(hx, top)} L${P(hx, floor)} Z`, open = `M${P(ox, floor + 8 * k)} L${P(ox, top - 8 * k)} L${P(hx, top)} L${P(hx, floor)} Z`;
-             return `<g data-leaf="" data-open="${open}"><path d="${shut}" fill="#9a6838" stroke="#5e3d22" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>` +
-               [0.25, 0.5, 0.75].map(u => `<line x1="${f1(cx - w / 2 + w * u)}" y1="${f1(top + 4 * k)}" x2="${f1(cx - w / 2 + w * u)}" y2="${f1(floor - 2 * k)}" stroke="#6b4423" stroke-width="${f1(2 * k)}"/>`).join("") +
-               `<ellipse cx="${f1(fx + sd * 13 * k)}" cy="${f1(floor - 82 * k)}" rx="${f1(4.5 * k)}" ry="${f1(4.5 * k)}" fill="#e2c26a" stroke="#5e3d22" stroke-width="${f1(1.5 * k)}"/></g>`; })() +
-           `<rect x="${f1(cx - w / 2)}" y="${f1(top)}" width="${f1(w)}" height="${f1(floor - top)}" fill="none" stroke="#5e3d22" stroke-width="${f1(9 * k)}"/>` +
-           plankSign(cx, top - 26 * k, k, `${name} ${sd < 0 ? "⬅️" : "➡️"}`);
+      // (ticket 223) a door in the side wall, as a castle room's side doors are (roomSpace), the rope bridge going out
+      // through it: the first a side near the back corner, the second nearer us (TREE_DOOR_Z), its sign higher
+      const sd = L.way === "left" ? -1 : 1, j = Math.min(TREE_DOOR_Z.length - 1, sides[L.way]++), [z0, z1] = TREE_DOOR_Z[j];
+      const S = roomSpace(c), h = 172 * k, at = (z, y) => S.at(sd * S.bw, y, z), zm = (z0 + z1) / 2, km = k / (1 + zm);
+      const nb = at(z0, floor), nt = at(z0, floor - h), ft = at(z1, floor - h), fb = at(z1, floor);
+      const quad = (a, b, d, e) => `M${P(...a)} L${P(...b)} L${P(...d)} L${P(...e)} Z`, lerp = (p, q, u) => [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
+      const on = (u, v) => lerp(lerp(nt, ft, u), lerp(nb, fb, u), v);   // (u along the door from its near edge, v down it)
+      t += `<path d="${quad(nb, nt, ft, fb)}" fill="#a8dcf5"/>` +
+           [[0.3, 0.12, 22, "#4fb04f"], [0.7, 0.07, 18, "#3c9a40"]].map(([u, v, r, col]) => { const q = on(u, v); return `<circle cx="${f1(q[0])}" cy="${f1(q[1])}" r="${f1(r * km)}" fill="${col}"/>`; }).join("") +
+           `<path d="${quad(on(0, 1), on(0, 0.86), on(1, 0.86), on(1, 1))}" fill="#8b5e34"/>` +
+           [0.62, 0.74].map(v => { const a = on(0, v), b = on(1, v); return `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#d8c49a" stroke-width="${f1(2.5 * km)}"/>`; }).join("");
+      // (ticket 216: a plank door, swung open as the passage is taken (walkInto: [data-leaf] to its data-open shape,
+      // the same commands); hinged at its far edge, as the castle's are: open, a sliver there)
+      const zo = z1 - 0.12 * (z1 - z0), open = quad(at(zo, floor + 4 * k), at(zo, floor - h - 4 * k), ft, fb), knob = on(0.16, 0.52);
+      t += `<g data-leaf="" data-open="${open}"><path d="${quad(nb, nt, ft, fb)}" fill="#9a6838" stroke="#5e3d22" stroke-width="${f1(3 * km)}" stroke-linejoin="round"/>` +
+           [0.25, 0.5, 0.75].map(u => { const a = on(u, 0.02), b = on(u, 0.98); return `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#6b4423" stroke-width="${f1(2 * km)}"/>`; }).join("") +
+           `<ellipse cx="${f1(knob[0])}" cy="${f1(knob[1])}" rx="${f1(4.5 * km)}" ry="${f1(4.5 * km)}" fill="#e2c26a" stroke="#5e3d22" stroke-width="${f1(1.5 * km)}"/></g>` +
+           `<path d="${quad(nb, nt, ft, fb)}" fill="none" stroke="#5e3d22" stroke-width="${f1(9 * km)}" stroke-linejoin="round"/>`;
+      const sk = Math.max(0.85 * k, km), top = on(0.5, 0);
+      t += plankSign(Math.max(x0 + 56 * sk, Math.min(x1 - 56 * sk, top[0])), top[1] - 26 * sk - j * 46 * k, sk, `${name} ${sd < 0 ? "⬅️" : "➡️"}`);
     } else if (L.way === "down") {
       // a hatch in the floor, its lid up, the ladder's top poking out
-      const hx = x0 + W * 0.26, hy = floor + 72 * k;
+      const hx = (x0 + W * 0.26) * TREE_FIT, hy = floor + 72 * k;   // (ticket 223: toward the middle, with what stands at the back wall)
       t += `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 55 * k, hy - 74 * k)} ${P(hx - 55 * k, hy - 74 * k)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(3 * k)}"/>` +
            `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 76 * k, hy + 20 * k)} ${P(hx - 76 * k, hy + 20 * k)}" fill="#2a1a0e" stroke="#5e3d22" stroke-width="${f1(4 * k)}"/>` +
            // (ticket 199, Matthew: "some ladders don't animate (ones going down trap doors in tree house) ... let's make them all
@@ -356,10 +358,12 @@ function waysSvg({ x0, x1, y0, W, H, k, P }, floor, links) {
            plankSign(hx + 120 * k, hy - 30 * k, k, `${name} ⬇️`);
     } else {
       // a ladder up through a hole in the ceiling
-      const lx = x1 - W * 0.4;
-      t += `<ellipse cx="${f1(lx)}" cy="${f1(y0 + 6 * k)}" rx="${f1(40 * k)}" ry="${f1(12 * k)}" fill="#2a1a0e"/>` +
-           `<g data-ladder="1">` + [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(y0 + 2 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
-           [...Array(Math.floor((floor + 14 * k - y0) / (30 * k)))].map((_, r) => `<line x1="${f1(lx - 20 * k)}" y1="${f1(floor - r * 30 * k)}" x2="${f1(lx + 20 * k)}" y2="${f1(floor - r * 30 * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") + `</g>` +
+      // (ticket 223: toward the middle, with what stands at the back wall; up to the ceiling where it is over the
+      // ladder's foot, the square room's ceiling coming toward us from the back wall's top)
+      const lx = (x1 - W * 0.4) * TREE_FIT, { top: rt, vy } = roomFrame(c), cy = vy + (rt - vy) * (floor + 14 * k - vy) / (floor - vy);
+      t += `<ellipse cx="${f1(lx)}" cy="${f1(cy)}" rx="${f1(40 * k)}" ry="${f1(12 * k)}" fill="#2a1a0e"/>` +
+           `<g data-ladder="1">` + [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(cy - 4 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
+           [...Array(Math.floor((floor + 14 * k - cy) / (30 * k)))].map((_, r) => `<line x1="${f1(lx - 20 * k)}" y1="${f1(floor - r * 30 * k)}" x2="${f1(lx + 20 * k)}" y2="${f1(floor - r * 30 * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") + `</g>` +
            plankSign(lx, y0 + H * 0.24, k, `${name} ⬆️`);
     }
     t += `</g>`;
@@ -371,13 +375,35 @@ function waysSvg({ x0, x1, y0, W, H, k, P }, floor, links) {
 // mattress (at floor - 170) between the posts at its ends, facing us; the
 // reading nook's beanbag, across the top of it (its peak at floor - 60),
 // sunk 10 into it, as one sinks into a beanbag
+// (ticket 223, Matthew: "let's redesign the rooms to feature square interior walls, like other rooms from the castle,
+// to accommodate more doors") The tree house rooms are square rooms, as the castle's are (roomFrame, roomSpace): a back
+// wall, side walls going off toward us, a ceiling of rafters and a floor of boards in perspective, and the doors to the
+// rope bridges on the side walls, at two depths a side (TREE_DOOR_Z), never behind the furniture. What stands at the
+// back wall (the window, the pictures, the trunk and its limbs, the furniture and its things) is drawn TREE_FIT of its
+// size, toward the middle, about the back wall's foot, to fit between the side walls: treeFitText fits a part's
+// drawing so (inside each object, its depth with it, so the objects stay the scene's own: sceneObjects passes over an
+// object inside a transformed group), and the seats with it (SEATS.treeroom).
+const TREE_FIT = 0.72, TREE_DOOR_Z = [[-0.15, -0.03], [-0.32, -0.2]];
+function treeFitText(text, floor) {
+  const TF = `transform="translate(0 ${f1(floor)}) scale(${TREE_FIT}) translate(0 ${f1(-floor)})"`;
+  let out = "", inObj = false;
+  for (const seg of text.split(SEP)) {
+    if (!seg) continue;
+    const m = seg.match(/^<g data-obj="([^"]*)" data-z="([^"]*)">$/);
+    if (m) { const z = Number(m[2]); out += OPEN(`<g data-obj="${m[1]}" data-z="${Number.isFinite(z) ? f1(floor + (z - floor) * TREE_FIT) : m[2]}">`) + `<g ${TF}>`; inObj = true; }
+    else if (seg === "</g>" && inObj) { out += "</g>" + CLOSE; inObj = false; }
+    else out += inObj ? seg : SEP + `<g ${TF}>${seg}</g>` + SEP;
+  }
+  return out;
+}
 SEATS.treeroom = (c, B) => {
   const { x0, x1, g, W, k } = c, inside = Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1))), chosen = B["room" + inside];
-  const room = ROOMS[chosen] ? chosen : HOUSE_ROOMS[inside - 1], floor = g - 110 * k;
+  const room = ROOMS[chosen] ? chosen : HOUSE_ROOMS[inside - 1], floor = g - 110 * k, f = TREE_FIT;
   // (no seat on the bottom bunk: at their size there, a sitter's head went
   // through the top bunk)
-  if (room === "books") { const gx = x0 + W * 0.2;
-    return [{ name: "beanbag", x0: gx - 36 * k, x1: gx + 36 * k, y: floor - 50 * k, z: floor + 60 * k + 1, facing: ["front", "left", "right"] }]; }
+  // (ticket 223: where the beanbag is drawn, TREE_FIT toward the middle about the back wall's foot)
+  if (room === "books") { const gx = (x0 + W * 0.2) * f;
+    return [{ name: "beanbag", x0: gx - 36 * k * f, x1: gx + 36 * k * f, y: floor - 50 * k * f, z: floor + 60 * k * f + 1, facing: ["front", "left", "right"] }]; }
   return [];
 };
 function treeroomScene(c) {
@@ -386,32 +412,44 @@ function treeroomScene(c) {
   const room = ROOMS[chosen] ? chosen : HOUSE_ROOMS[inside - 1], ws = (o.windowSize ?? 100) / 100, things = o.toys ?? 10;
   const floor = g - 110 * k;
   const look = ROOM_LOOK[room];
-  let s = SEP + part("room-shell", [c.F, room], () => {
-    let t = all(look.planks[0]);
-    for (let i = 0; i < 22; i++) {   // the plank wall, a knot here and there
-      const x = x0 - 10 * k + i * W / 20;
-      t += `<rect x="${f1(x)}" y="${f1(y0 - pad)}" width="${f1(W / 20 - 3 * k)}" height="${f1(floor - y0 + pad)}" fill="${look.planks[i % 4]}"/>`;
-      if (R(i, 140) < 0.5) t += `<ellipse cx="${f1(x + W / 40)}" cy="${f1(y0 + H * R(i, 141) * 0.7)}" rx="${f1(5 * k)}" ry="${f1(8 * k)}" fill="#7a4f2a"/>`;
+  // (ticket 223) a square room, as a castle room is: the back wall's planks, the side walls' going off toward us, the
+  // ceiling's boards and rafters, and the floor's boards, all toward the eye's height (roomFrame)
+  const { top, bw, vy, out } = roomFrame(c);
+  let s = SEP + part("room-shell2", [c.F, room], () => {
+    const side = mix(look.planks[1], "#000000", 0.28), ceil = mix(look.planks[2], "#000000", 0.42), seam = mix(look.planks[0], "#000000", 0.5);
+    let t = all(mix(look.planks[3], "#000000", 0.35));
+    // the back wall: planks, a knot here and there
+    const n = 14, pw = 2 * bw / n;
+    for (let i = 0; i < n; i++) {
+      const x = -bw + i * pw;
+      t += `<rect x="${f1(x)}" y="${f1(top)}" width="${f1(pw - 3 * k)}" height="${f1(floor - top)}" fill="${look.planks[i % 4]}"/>`;
+      if (R(i, 140) < 0.5) t += `<ellipse cx="${f1(x + pw / 2)}" cy="${f1(top + (floor - top) * (0.15 + 0.7 * R(i, 141)))}" rx="${f1(5 * k)}" ry="${f1(8 * k)}" fill="#7a4f2a"/>`;
     }
-    // the roof slopes down over the corners, its rafters showing
+    // the side walls, their planks upright, nearer ones farther apart
     for (const sd of [-1, 1]) {
-      const ex = sd < 0 ? x0 - pad : x1 + pad, cx = sd < 0 ? x0 + W * 0.3 : x1 - W * 0.3;
-      t += `<polygon points="${P(ex, y0 + H * 0.36)} ${P(ex, y0 - pad)} ${P(cx, y0 - pad)} ${P(cx, y0)}" fill="#7a4f2a"/>`;
-      for (let j = 1; j < 5; j++) {
-        const u = j / 5;
-        t += `<line x1="${f1(ex + (cx - ex) * u)}" y1="${f1(y0 - pad)}" x2="${f1(ex + (cx - ex) * u)}" y2="${f1(y0 + H * 0.36 * (1 - u))}" stroke="#5e3d22" stroke-width="${f1(6 * k)}"/>`;
+      const [ax, ay] = out(sd * bw, top, y0 - pad), [bx, by] = out(sd * bw, floor, y1 + pad);
+      t += `<polygon points="${P(sd * bw, top)} ${P(ax, ay)} ${P(sd * (W + pad), y0 - pad)} ${P(sd * (W + pad), y1 + pad)} ${P(bx, by)} ${P(sd * bw, floor)}" fill="${side}"/>`;
+      for (let j = 1; j <= 12; j++) {
+        const x = sd * (bw + (W * 0.5 + pad - bw) * (j / 12) ** 1.7), f = Math.abs(x) / bw;
+        t += `<line x1="${f1(x)}" y1="${f1(vy + (top - vy) * f)}" x2="${f1(x)}" y2="${f1(vy + (floor - vy) * f)}" stroke="${seam}" stroke-width="${f1(2 * k * f)}" opacity="0.7"/>`;
       }
-      t += `<line x1="${f1(ex)}" y1="${f1(y0 + H * 0.36)}" x2="${f1(cx)}" y2="${f1(y0)}" stroke="#4a2e1a" stroke-width="${f1(12 * k)}"/>`;
     }
-    // floor boards toward the back wall
-    t += `<rect x="${f1(x0 - pad)}" y="${f1(floor)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - floor + pad)}" fill="${look.floor}"/>`;
-    for (let i = -14; i <= 14; i++)
-      t += `<line x1="${f1(i * W / 20)}" y1="${f1(floor)}" x2="${f1(i * W / 6)}" y2="${f1(y1 + pad)}" stroke="#7a4f2a" stroke-width="${f1(2 * k)}"/>`;
-    t += `<rect x="${f1(x0 - pad)}" y="${f1(floor - 6 * k)}" width="${f1(W + 2 * pad)}" height="${f1(10 * k)}" fill="#6b4423"/>`;
+    // the ceiling: boards toward us, rafters across
+    t += `<polygon points="${P(-bw, top)} ${P(bw, top)} ${P(...out(bw, top, y0 - pad))} ${P(...out(-bw, top, y0 - pad))}" fill="${ceil}"/>`;
+    for (let i = -7; i <= 7; i++) { const [ex, ey] = out(i * bw / 7, top, y0 - pad); t += `<line x1="${f1(i * bw / 7)}" y1="${f1(top)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="${seam}" stroke-width="${f1(1.5 * k)}" opacity="0.6"/>`; }
+    for (const f of [1.12, 1.35, 1.75, 2.5]) { const y = vy + (top - vy) * f; if (y < y0 - pad) break;
+      t += `<line x1="${f1(-W - pad)}" y1="${f1(y)}" x2="${f1(W + pad)}" y2="${f1(y)}" stroke="#5e3d22" stroke-width="${f1(10 * k * f)}"/>`; }
+    // the floor: boards toward the back wall, and across
+    t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(...out(bw, floor, y1 + pad))} ${P(...out(-bw, floor, y1 + pad))}" fill="${look.floor}"/>`;
+    for (let i = -10; i <= 10; i++) { const [ex, ey] = out(i * bw / 10, floor, y1 + pad); t += `<line x1="${f1(i * bw / 10)}" y1="${f1(floor)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="#7a4f2a" stroke-width="${f1(2 * k)}"/>`; }
+    t += floorRows(c, mix(look.floor, "#000000", 0.3));
+    // the corners, and a board along the foot of the back wall
+    for (const sd of [-1, 1]) t += `<line x1="${f1(sd * bw)}" y1="${f1(top)}" x2="${f1(sd * bw)}" y2="${f1(floor)}" stroke="${seam}" stroke-width="${f1(4 * k)}"/>`;
+    t += `<rect x="${f1(-bw)}" y="${f1(floor - 6 * k)}" width="${f1(2 * bw)}" height="${f1(10 * k)}" fill="#6b4423"/>`;
     return t;
   });
   // the window: its view and its frame, in its own units, sized by its group
-  s += OPEN(`<g ${tf(x0 + W * 0.27, y0 + H * 0.3, ws * k)}>`) + part("room-window", [look.window, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => {
+  s += OPEN(`<g ${tf((x0 + W * 0.27) * TREE_FIT, floor + (y0 + H * 0.3 - floor) * TREE_FIT, ws * k * TREE_FIT)}>`) + part("room-window", [look.window, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => {
     const round = look.window === "round";
     const shape = { round: `<circle cx="0" cy="0" r="80"/>`, square: `<rect x="-80" y="-70" width="160" height="140"/>`,
                     wide: `<rect x="-120" y="-55" width="240" height="110"/>`, arch: `<path d="M-60 70 V-20 A60 60 0 0 1 60 -20 V70 Z"/>` }[look.window];
@@ -445,15 +483,15 @@ function treeroomScene(c) {
   // behind everything: it crosses no trunk, and the ways drawn over it stay over it)
   const limb = ([x, y, sc, fl, a]) => `<use href="#bg-wallbranch" transform="translate(${f1(x)} ${f1(y)}) rotate(${a}) scale(${+(sc * k * fl).toFixed(3)} ${+(sc * k).toFixed(3)})"/>`;
   const onTrunk = ([x]) => Math.abs(x - look.trunk) < 100 * k;
-  s += SEP + part("room-tree", [c.F, room], () =>
+  s += SEP + part("room-tree", [c.F, room], () => treeFitText(
     `<defs><g id="bg-wallbranch"><ellipse cx="0" cy="0" rx="11" ry="15" fill="#2a1a0e"/>` +
     `<path d="M-2 -8 Q60 -24 140 -52 L142 -44 Q64 -10 -2 8 Z" fill="#6e4a2c" stroke="#3a2414" stroke-width="1.5"/>` +
     `</g></defs>` + look.branches.filter(b => !onTrunk(b)).map(limb).join("") +
-    obj("tree trunk", floor + 40 * k, braidSvg(look.trunk, y0 - pad, floor + 40 * k, 100 * k, k) + look.branches.filter(onTrunk).map(limb).join("")));
+    obj("tree trunk", floor + 40 * k, braidSvg(look.trunk, y0 - pad, floor + 40 * k, 100 * k, k) + look.branches.filter(onTrunk).map(limb).join("")), floor));
   // pictures on the far side of the wall from the window
-  s += SEP + picturesSvg(o, "treeroom", ROOM_PICTURES[room].map(([x, y, w]) => [x, y, w * k]), 1, i => `r${inside}pic${i + 1}`);
+  s += SEP + picturesSvg(o, "treeroom", ROOM_PICTURES[room].map(([x, y, w]) => [x * TREE_FIT, floor + (y - floor) * TREE_FIT, w * k * TREE_FIT]), 1, i => `r${inside}pic${i + 1}`);
   // the room's furniture and its things
-  s += SEP + part("room-" + room, [c.F, things], () => {
+  s += SEP + part("room-" + room, [c.F, things], () => treeFitText((() => {
     let t = "";
     if (room === "bunks") {
       const bx = x1 - W * 0.2, top = floor - 330 * k, mid = floor - 170 * k, w = 210 * k;
@@ -601,7 +639,7 @@ function treeroomScene(c) {
            `<rect x="${f1(tx - 110 * k)}" y="${f1(ty - 18 * k)}" width="${f1(26 * k)}" height="${f1(36 * k)}" rx="${f1(5 * k)}" fill="#8a6a1a"/></g></g>`);
     }
     return t;
-  });
+  })(), floor));
   // the ways out: a door to each house a rope bridge joins this one to, a
   // hatch down its ladder, a ladder up to the house above; each a doorway
   // (the doors are one object, at the back wall's foot, floor (ticket 192, Matthew: drawn as
