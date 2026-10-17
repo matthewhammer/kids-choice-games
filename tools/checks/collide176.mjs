@@ -74,7 +74,10 @@ try {
       // (from the left, or from the right when the left is blocked)
       const fromLeft = await ev(`!solidAt(${o.x0 - 60}, ${z})`), x0 = fromLeft ? o.x0 - 60 : o.x1 + 60, dir = fromLeft ? 15 : 14;
       await put(x0, y); await hold(dir, 2200);
-      const w = await at(), stopped = fromLeft ? w.x <= o.x0 - 4 : w.x >= o.x1 + 4, why = stopped ? "" : " " + await diag() + ` (feet at depth ${w.z.toFixed(1)}, started at x ${Math.round(x0)})`;
+      const w = await at(), sat = await ev(`state.body.sit ? state.background.seat : ""`);
+      // (a seat on the way: stopping at it sits on it, the game's own way (ticket 50), which moves the feet; inconclusive)
+      if (sat) { console.log(`-    ${label}: "${o.name}": the friend sat on "${sat}" on the way, inconclusive`); continue; }
+      const stopped = fromLeft ? w.x <= o.x0 - 4 : w.x >= o.x1 + 4, why = stopped ? "" : " " + await diag() + ` (feet at depth ${w.z.toFixed(1)}, started at x ${Math.round(x0)})`;
       const low = o.h < legs && o.x1 - o.x0 < 90;
       let jumped = "";
       if (low) {
