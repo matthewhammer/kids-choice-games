@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.144 (2026-10-17)
+
+Everything in 0.0.143, with bubbles to blow.
+
+- **🫧 Blow bubbles**, anywhere: hold 🫧 on the controller (beside select on the screen's controller, or the left trigger) or B on the keyboard, and bubbles stream out and float up.
+- **From the mouth, or either hand**, and in up to three bubble themes at once, each with its own colour, size, shine and sparkle: 🎮 Controls, "🫧 blowing bubbles". The themes are the same ones bubble space uses.
+
 ## 0.0.143 (2026-10-17)
 
 Everything in 0.0.142, with bubble space.
