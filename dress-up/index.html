@@ -9505,13 +9505,57 @@ function castleWallsOf(B) {
 // (read once a drawing, before the drawing mounts the place's scene: worked out afresh, not memoized on the scene's text)
 // (not the spiral stair's room: walking up it is going up the stairs, to its doors higher up)
 SCENE_BACK.castleroom = () => { const W = castleWallsOf(state.background); return W && !W.stairs ? W.back + 3 : -Infinity; };
-// (the solids here, made again only when the place or its seats change)
-let solidMemo = { text: undefined, kind: null, list: [] };
+// (ticket 176) The flat rooms' back walls: where each one's floor meets its
+// wall as the room is drawn (livingroomScene, treeroomScene, witchroomScene,
+// healerroomScene; the tent's far wall, tentScene), in front of which the
+// friend stops, as in the imagination
+for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["witchroom", 100], ["healerroom", 100], ["tent", 70]])
+  SCENE_BACK[kind] = () => SCENE.ground - up * (SCENE.bottom - SCENE.top) / 700 + 3;
+// (ticket 176) The things that stand in a place and can't be walked
+// through, by their name in the scene (the words before any comma or
+// number: "rock, left" and "toadstool 3" are a rock and a toadstool), each a
+// box under its drawing: across its drawing's width (a tree, a lamp or a
+// sign only its trunk or post: TRUNK of that width, at least 16 units,
+// under its middle), and from where it stands back as a seat's, by half
+// its height, at most SOLID_DEPTH of its width; its height is its drawing's
+// top above where it stands, so a low one (a rock, a log, a bush) is jumped
+// as a low seat is. Not solid: what one goes into or up (houses, huts,
+// doors, ladders, stairs), what is alive (people, animals), what hangs or
+// flies, what lies flat, any object hidden (objectsOff), a seat (already
+// one), and anything where one swims.
+const STANDING = new Set(["anvil", "armor", "barrels", "basket", "bookcase", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
+  "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
+  "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
+  "rock", "sand castle", "snake tank", "soup pot", "stone", "stove", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
+  "water barrel", "water trough", "well", "white bush", "worktable", "yellow bush"]);
+const TRUNKED = new Set(["tree", "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
+const TRUNK = 0.14, SWIM_PLACES = new Set(["lake", "underwater"]);
+const objBase = name => name.split(",")[0].replace(/\s+\d+$/, "").trim();
+function standingHere(B, seats) {
+  if (SWIM_PLACES.has(B.kind) || !bgShown.node) return [];
+  const off = objectsOff(B), k = (SCENE.bottom - SCENE.top) / 700, out = [];
+  for (const o of bgShown.objs) {
+    const base = objBase(o.name), trunk = TRUNKED.has(base);
+    if (!(trunk || STANDING.has(base)) || !Number.isFinite(o.z) || off.has(o.name) || seats.has(o.name)) continue;
+    let b = null;
+    try { b = o.node.getBBox(); } catch (e) { continue; }   // (Firefox throws for a drawing not shown)
+    if (!b || !(b.width > 0) || !(b.height > 0)) continue;
+    const mid = b.x + b.width / 2, w = trunk ? Math.min(b.width, Math.max(16 * k, TRUNK * b.width)) : b.width, h = Math.max(0, o.z - b.y);
+    out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front: o.z, h, standing: true });
+  }
+  return out;
+}
+// (the solids here, made again only when the place, its seats or its hidden objects change)
+let solidMemo = { text: undefined, kind: null, off: "", list: [] };
 function solidsHere() {
   const B = state.background;
   if (B.kind === "none") return [];
-  if (solidMemo.text !== bgShown.text || solidMemo.kind !== B.kind || !bgShown.text) solidMemo = { text: bgShown.text, kind: B.kind, list: seatsHere(B).map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
-    return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y }; }) };
+  const offKey = [...objectsOff(B)].join("|");
+  if (solidMemo.text !== bgShown.text || solidMemo.kind !== B.kind || solidMemo.off !== offKey || !bgShown.text) {
+    const seats = seatsHere(B);
+    solidMemo = { text: bgShown.text, kind: B.kind, off: offKey, list: seats.map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
+      return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y }; }).concat(standingHere(B, new Set(seats.map(t => t.name)))) };
+  }
   return solidMemo.list;
 }
 // the friend's legs, hip to foot, in the stage's units (for what a jump clears)
