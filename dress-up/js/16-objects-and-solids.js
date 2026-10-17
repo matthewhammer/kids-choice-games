@@ -208,6 +208,59 @@ function solidMove(x0, y0, x, y) {
   if (W && !here) { const h = W.half(g + y) - SOLID_MARGIN - 0.5, cx = clamp(x, -h, h); if (!solidAt(cx, g + y)) return [cx, y]; }
   return [x0, y0];
 }
+// (ticket 215, Matthew: "when the player clicks a picture, or another
+// passageway, we should plan a path for walking, swimming or climbing to it,
+// and do it in a natural way, avoiding obstacles in the room, and walking (or
+// swimming) around them"; "something very simple for now") A path for the
+// feet, in figX/figY terms, from (x0, y0) to (x1, y1): straight when nothing
+// stands in the way; else round the corners of the solids in the way (each
+// grown by the margin the feet keep, and PATH_PAD more), the shortest, deeper
+// counting 1/0.6 as far, as walking does. The solids are boxes on the floor
+// (solidsHere), so a corner each is enough; a castle room's side walls only
+// narrow toward the back, so a corner past them is left out, and a straight
+// line between two points inside stays inside. A solid they start or end in
+// is left out (let out, or let in). The points after the start, the end last;
+// just the end when no way round is found. walkPath keeps the last one made,
+// for showing it (ticket 217).
+const PATH_PAD = 5;
+let walkPath = null;
+function segBox(ax, az, bx, bz, x0, z0, x1, z1) {   // (does the segment pass through the box's inside? Liang-Barsky)
+  let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;
+  for (const [p, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dz, az - z0], [dz, z1 - az]]) {
+    if (p === 0) { if (q <= 0) return false; continue; }
+    const r = q / p;
+    if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; }
+  }
+  return t1 - t0 > 1e-6;
+}
+function planPath(x0, y0, x1, y1) {
+  const g = SCENE.ground, z0 = g + y0, z1 = g + y1, m = SOLID_MARGIN + PATH_PAD;
+  const inside = (o, x, z, e = 0) => x > o.x0 - SOLID_MARGIN - e && x < o.x1 + SOLID_MARGIN + e && z > o.back - e && z < o.front + e;
+  const solids = solidsHere().filter(o => !inside(o, x0, z0) && !inside(o, x1, z1));
+  const hits = (ax, az, bx, bz) => solids.some(o => segBox(ax, az, bx, bz, o.x0 - SOLID_MARGIN, o.back, o.x1 + SOLID_MARGIN, o.front));
+  if (!solids.length || !hits(x0, z0, x1, z1)) return [[x1, y1]];
+  const W = castleWalls(state.background), F = sceneFrame;
+  const free = (x, z) => !solids.some(o => inside(o, x, z, 1)) && (!W || Math.abs(x) < W.half(z) - SOLID_MARGIN) && x > F.left && x < F.right && z - g >= figYMin(F) && z <= F.bottom;
+  const pts = [[x0, z0], [x1, z1]];
+  for (const o of solids) for (const p of [[o.x0 - m, o.back - PATH_PAD], [o.x1 + m, o.back - PATH_PAD], [o.x0 - m, o.front + PATH_PAD], [o.x1 + m, o.front + PATH_PAD]]) if (free(...p)) pts.push(p);
+  const cost = (a, b) => Math.hypot(b[0] - a[0], (b[1] - a[1]) / 0.6), n = pts.length;
+  const dist = Array(n).fill(Infinity), prev = Array(n).fill(-1), done = Array(n).fill(false);
+  dist[0] = 0;
+  for (;;) {   // (Dijkstra over the corners each sees: a few dozen at most)
+    let u = -1;
+    for (let i = 0; i < n; i++) if (!done[i] && dist[i] < Infinity && (u < 0 || dist[i] < dist[u])) u = i;
+    if (u < 0 || u === 1) break;
+    done[u] = true;
+    for (let v = 0; v < n; v++) if (!done[v] && !hits(pts[u][0], pts[u][1], pts[v][0], pts[v][1])) {
+      const d = dist[u] + cost(pts[u], pts[v]);
+      if (d < dist[v]) { dist[v] = d; prev[v] = u; }
+    }
+  }
+  if (dist[1] === Infinity) return [[x1, y1]];
+  const out = [];
+  for (let v = 1; v > 0; v = prev[v]) out.unshift([pts[v][0], pts[v][1] - g]);
+  return out;
+}
 // (after a jump: landed inside a solid, out by its nearer side)
 function solidUnstick() {
   const B = state.background, x = B.figX ?? 0, z = SCENE.ground + (B.figY ?? 0), o = solidAt(x, z);

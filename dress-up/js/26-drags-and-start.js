@@ -848,8 +848,12 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null) {
   if (BG.seat) standUp();
   if (B.pose !== "stand" && walk) strikePose("stand");
   const fade = o => { for (const n of figShown) if (n.style) n.style.opacity = o; };
+  // (ticket 215) the way there, round what stands in it (planPath): a point at a time
+  const from = [BG.figX ?? 0, BG.figY ?? 0], path = walk ? planPath(from[0], from[1], tx, ty) : [[tx, ty]];
+  walkPath = { pts: [from, ...path], made: performance.now(), leg: 0 };
   // (deeper counts 1 / 0.6 as far, as the controller walks; a long way is walked faster, to take 2.5 s at most)
-  const dist = Math.hypot(tx - (BG.figX ?? 0), (ty - (BG.figY ?? 0)) / 0.6), speed = Math.max(PAD_SPEED.walk, dist / 2.5);
+  const dist = path.reduce((a, p, i) => { const q = i ? path[i - 1] : from; return a + Math.hypot(p[0] - q[0], (p[1] - q[1]) / 0.6); }, 0), speed = Math.max(PAD_SPEED.walk, dist / 2.5);
+  let leg = 0;
   let last = 0, phase = walk ? "walk" : "in", t0 = performance.now(), tIn = 0;
   const done = () => {
     for (const u of undo) u();
@@ -867,8 +871,9 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null) {
   const step = t => {
     const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
     if (phase === "walk") {
-      const dx = tx - (BG.figX ?? 0), dy = ty - (BG.figY ?? 0), d = Math.hypot(dx, dy / 0.6), sp = speed * dt;
-      if (d <= sp + 0.5 || t - t0 > WALK_IN_MAX) { BG.figX = tx; BG.figY = ty; phase = "in"; tIn = t; }
+      const [wx, wy] = path[leg], dx = wx - (BG.figX ?? 0), dy = wy - (BG.figY ?? 0), d = Math.hypot(dx, dy / 0.6), sp = speed * dt;
+      if ((d <= sp + 0.5) && leg < path.length - 1 && t - t0 <= WALK_IN_MAX) { BG.figX = wx; BG.figY = wy; walkPath.leg = ++leg; moved(); }
+      else if (d <= sp + 0.5 || t - t0 > WALK_IN_MAX) { BG.figX = tx; BG.figY = ty; phase = "in"; tIn = t; walkPath.leg = path.length; }
       else {
         const k = sp / d;
         BG.figX = Math.round(10 * ((BG.figX ?? 0) + dx * k)) / 10; BG.figY = Math.round(10 * ((BG.figY ?? 0) + dy * k)) / 10;
