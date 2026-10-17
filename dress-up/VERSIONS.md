@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.126 (2026-10-17)
+
+Everything in 0.0.125, with the pointer picking where to go, swimming there, and every ladder climbed.
+
+- **Point at a way out to pick it** (Matthew): move the pointer over a door, picture or sign, or near where an arrow to the next square would be, and it glows as the one to take, even when another is nearer. Click it, or press ✨ X or Enter, and your friend goes there and through. A picture far away is walked to first.
+- **Swimming there**: on the way to a way out through deep water, your friend swims instead of walking.
+- **The tree house's trapdoors are climbed down** (Matthew: they didn't animate): your friend climbs down the ladder into the hole, out of sight below its edge, to the room below, at the same good pace as climbing up.
+
 ## 0.0.125 (2026-10-17)
 
 Everything in 0.0.124, with the 🏞️ Background tab lighter while your friend moves.
