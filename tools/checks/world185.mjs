@@ -40,8 +40,18 @@ try {
   ok("a rock put there is kept in its square, and is there again after the pond and back", kept.inCell === 1 && kept.away === "lake" && kept.back.join() === "rock#a8634a", kept);
   const broken = JSON.parse(await ev(`(() => { delete state.world.cells["3,1"]; delete state.world.cells["2,0"]; changed(); return JSON.stringify(worldProblems(state.world).map(p => p.text)); })()`));
   ok("the wood path and the beach taken away: a way into an empty square, and the mountains cut off", broken.some(t => /empty square, D2/.test(t)) && broken.some(t => /mountain/.test(t) && /can't be reached/.test(t)), broken);
-  const marked = await ev(`(async () => { await new Promise(r => setTimeout(r, 300)); return document.querySelectorAll(".world-grid .world-cell.bad").length; })()`);
-  ok("and the squares the mistakes are about are marked", marked >= 2, marked);
+  // (Matthew, 2026-10-17: M finds the warnings distracting) hidden unless asked for: how many, near the top; the list and the red squares behind "show warnings"
+  const marked = JSON.parse(await ev(`(async () => { await new Promise(r => setTimeout(r, 300));
+    const look = () => ({ count: document.querySelector(".world-warn-count").textContent, chip: document.querySelector(".world-warn-chip").textContent,
+      red: document.querySelectorAll(".world-grid .world-cell.bad").length, listed: document.querySelector(".world-probs").hidden ? 0 : document.querySelectorAll(".world-probs .world-prob").length,
+      aboveGrid: !!(document.querySelector(".world-warn").compareDocumentPosition(document.querySelector(".world-grid")) & Node.DOCUMENT_POSITION_FOLLOWING) });
+    const hidden = look(); document.querySelector(".world-warn-chip").click(); await new Promise(r => setTimeout(r, 200));
+    const shown = look(); document.querySelector(".world-warn-chip").click(); await new Promise(r => setTimeout(r, 200));
+    return JSON.stringify({ hidden, shown, again: look(), kept: localStorage.getItem("dress-up-world-warnings") }); })()`));
+  const n = broken.length;
+  ok("the warnings hidden at first: how many, above the grid, no list, no red squares", marked.hidden.count === `⚠️ ${n} warnings` && marked.hidden.chip === "show warnings" && marked.hidden.red === 0 && marked.hidden.listed === 0 && marked.hidden.aboveGrid, marked.hidden);
+  ok("'show warnings': each listed, and the squares they are about red", marked.shown.chip === "hide warnings" && marked.shown.listed === n && marked.shown.red >= 2, marked.shown);
+  ok("and hidden again, which the browser remembers", marked.again.red === 0 && marked.again.listed === 0 && marked.kept === null, { again: marked.again, kept: marked.kept });
   // the ways out, in the picture: from the clearing (D3), E to the castle and back
   const ways = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldEnter("3,2"); await new Promise(r => setTimeout(r, 500));
     const w = [...document.querySelectorAll("#bg .way-out")]; return JSON.stringify({ ways: w.filter(e => e.dataset.way).map(e => e.dataset.way).sort(), door: w.every(e => e.hasAttribute("data-door")) }); })()`));

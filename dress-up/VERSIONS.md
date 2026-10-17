@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.107 (2026-10-17)
+
+Everything in 0.0.106, with the world designer's warnings out of the way.
+
+- **The world designer's warnings are hidden unless you ask for them** (M found them distracting). Near the top of 🗺️ World design, a line says how many there are; the **show warnings** chip lists them and marks their squares red, and **hide warnings** puts them away again. This browser remembers which; saves don't carry it.
+
 ## 0.0.106 (2026-10-17)
 
 Everything in 0.0.105, with the ways out found by your friend's feet.

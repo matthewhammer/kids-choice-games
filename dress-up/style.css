@@ -349,6 +349,8 @@
 .world-way.w-N { top: 1px; left: calc(50% - 4px); } .world-way.w-S { bottom: 1px; left: calc(50% - 4px); }
 .world-way.w-E { right: 1px; top: calc(50% - 4px); } .world-way.w-W { left: 1px; top: calc(50% - 4px); }
 .world-way.w-NE { top: 1px; right: 1px; } .world-way.w-NW { top: 1px; left: 1px; } .world-way.w-SE { bottom: 1px; right: 1px; } .world-way.w-SW { bottom: 1px; left: 1px; }
+.world-warn { align-items: center; gap: 8px; }
+.world-warn-count { font-size: 0.9em; }
 .world-prob { font-size: 0.85em; margin: 2px 0; padding-left: 1em; text-indent: -1em; }
 .world-prob::before { content: "• "; }
 .world-off { margin-top: 0.5rem; }

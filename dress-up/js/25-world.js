@@ -109,6 +109,18 @@ function worldEnter(key, side = null, draw = true) {
 // on its side toward the middle of the picture. A way that is a mistake,
 // leading nowhere, is grey, 🚧, and goes nowhere. A forest crossing shows
 // only its live ways (worldLiveWays).
+// (Matthew, 2026-10-17: M finds the warnings distracting) The World design
+// tab's warnings are hidden unless asked for: a chip near its top shows how
+// many there are, and "show warnings" lists them and marks their squares in
+// red. Whether they show is the browser's own (localStorage
+// "dress-up-world-warnings"), not the friend's, so not in saves.
+const WORLD_WARN_KEY = "dress-up-world-warnings";
+let worldWarnShown = false;
+try { worldWarnShown = localStorage.getItem(WORLD_WARN_KEY) === "1"; } catch (_) { /* (hidden) */ }
+function worldWarnShow(on) {
+  worldWarnShown = on;
+  try { if (on) localStorage.setItem(WORLD_WARN_KEY, "1"); else localStorage.removeItem(WORLD_WARN_KEY); } catch (_) { /* (for this visit only) */ }
+}
 // (Matthew, 2026-10-17: by the feet, not the whole body, and on the floor,
 // with depth and perspective) A way is a spot on the ground: N at the far
 // line, S at the near edge, E and W at the sides. How near the friend is to
