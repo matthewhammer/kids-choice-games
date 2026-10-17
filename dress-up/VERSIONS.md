@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.119 (2026-10-17)
+
+Everything in 0.0.118, with World design's warnings pointing at the fix.
+
+- **The red squares are the ones to change** (Matthew): with the warnings shown, a square is red when one of its ways out could put a warning right, not the square next to it.
+- **A way to take away is marked too** (Matthew): on its arrow, dotted with ✕, as when a way leads into an empty square. An arrow to turn on is dotted with ★, as before.
+
 ## 0.0.118 (2026-10-17)
 
 Everything in 0.0.117, with one way through everything that leads somewhere.
