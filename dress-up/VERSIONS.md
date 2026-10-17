@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.121 (2026-10-17)
+
+Everything in 0.0.120, with the spin into pictures fixed, and two new sliders for moving.
+
+- **Fixed: the spin into a picture and out of it** (Matthew): going in, your friend froze in place and you waited; coming out, some arms or legs were already standing there, not spinning. All of your friend spins now, in and out.
+- **🏃 Top running speed** (Matthew), in 🎮 Controls: from half as fast to two and a half times; 100 is as it was.
+- **🚀 Speeding up and slowing down** (Matthew), in 🎮 Controls: at 0, as before, your friend starts and stops at once; turned up, they take a moment to get going, and when you let go they slow down and stop, legs still going.
+
 ## 0.0.120 (2026-10-17)
 
 Everything in 0.0.119, with the tree house rooms' doors in their place.
