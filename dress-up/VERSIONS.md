@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.162 (2026-10-17)
+
+Everything in 0.0.161, with arrows instead of signs for the ways out.
+
+- **The old signs are gone**: the signs that used to link places together (in the forest clearing "🥾 path ⬇️" and "🧚 fairies ↗️", the castle's "🌲 clearing", the fairy forest's "🌲 clearing ➡️", and the signposts on the mountain trail, at the jungle waterfall, at the camp site and on the path through the woods) are gone. The ways between places are the world designer's now: walk near the edge of a place and its arrow shows where that way leads. For a sign that's always right, put a "🧭 sign with directions" in the place.
+- **Rooms show their way toward you with an arrow**: in the castle's rooms, the living room and the tree house's rooms, the way out toward you (at the bottom of the picture) was a small triangle, or a sign on a post in the king's room. Now it's an arrow like the world's, shown when your friend is near the bottom. Tap it, press X, or just keep walking down to go through.
+- **Each room's way toward you can lead nowhere**: in the castle designer and in each room's settings, a room's ⬇️ way toward you can lead to another room, out of the castle, or "🧱 nowhere". Leading nowhere, there's no arrow, and no way out there. The king's room, the dining room and the spiral stairs can lead nowhere now too.
+
 ## 0.0.161 (2026-10-17)
 
 Everything in 0.0.160, without the deep sea's school of fish.

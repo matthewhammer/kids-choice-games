@@ -228,10 +228,8 @@ function livingroomScene(c) {
       `<circle cx="0" cy="0" r="5" fill="#00000022"/></g></defs>` +
       [...Array(pillows)].map((_, i) => use("bg-pillow", -195 + (i % 5) * 97 + (i >= 5 ? 48 : 0), -165 + (i >= 5 ? 22 : 0), 1, 1, ` color="${["#f2c12e", "#e85d75", "#ffffff", "#8bc34a", "#ff8c42", "#9b59b6", "#00b894", "#e53935"][i % 8]}"`)).join("")) +
     CLOSE);
-  // (a door behind us, at the bottom of the picture, where it leads somewhere: out to the house and yard
-  // at first, Matthew 2026-10-17) (its ▼, toward us, in front of everything)
-  const back = behindSign(c, o.livingOut);
-  if (back) s += obj("sign", Infinity, back);
+  // (the way toward us, out to the house and yard at first, Matthew 2026-10-17: since ticket 233 a nav arrow, not
+  // drawn here: insideWays, 25-world.js)
   return s;
 }
 
@@ -668,10 +666,7 @@ function treeroomScene(c) {
   s += SEP + obj("dark", Infinity, part("room-dim", c.F, () => `<defs><radialGradient id="bg-dim" gradientUnits="userSpaceOnUse" cx="${f1((x0 + x1) / 2)}" cy="${f1(y0 + H * 0.42)}" r="${f1(0.62 * Math.hypot(W, H))}">` +
     `<stop offset="0.5" stop-color="#1a0f05" stop-opacity="0"/><stop offset="1" stop-color="#1a0f05" stop-opacity="0.5"/></radialGradient></defs>` +
     all("url(#bg-dim)").replace("<rect ", `<rect pointer-events="none" `)));
-  // (a door behind us, at the bottom of the picture, where it leads somewhere)
-  // (its sign in front of everything, at Infinity, as the living room's is)
-  const back = behindSign(c, o["treeBack" + inside]);
-  s += SEP + (back && obj("sign", Infinity, back));
+  // (the way toward us, where it leads somewhere: since ticket 233 a nav arrow, not drawn here: insideWays, 25-world.js)
   return s;
 }
 // Inside the witch's hut: log walls, herbs and a crooked shelf of potions,
@@ -1317,11 +1312,7 @@ function fairyforestScene(c) {
       : `<path d="${starPath("four", 6 * k)}" transform="translate(${f1(x)} ${f1(y)})" fill="#ffffff" opacity="0">` +
         lfoTimed(o, "fast", R(i, 1366), `<animate attributeName="opacity" values="0;0.9;0" dur="${(2 + R(i, 1365) * 2).toFixed(2)}s" begin="${(R(i, 1366) * 3).toFixed(2)}s" repeatCount="indefinite"/>`) + `</path>`;
   }).join("")));
-  // the way back to the clearing: a sign on a post, a doorway
-  // (a sign at the bottom, in front of everything, at Infinity, the doorway wrapped whole)
-  s += SEP + obj("sign", Infinity, part("fairy-back", c.F, () => `<g class="portal" data-to="clearing">` +
-    `<rect x="${f1(x1 - W * 0.07 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
-    plankSign(x1 - W * 0.07, y1 - 44 * k, k, "🌲 clearing ➡️") + `</g>`));
+  // (ticket 233: no 🌲 clearing ➡️ sign back; the world's ways are the nav arrows)
   // the light: a dusk glow, or the night's blue over everything
   // (over everything, the friend too: in front, at Infinity, named for its time)
   if (time !== "day") s += SEP + obj(night ? "dark" : time + " light", Infinity, part("fairy-light", [c.F, time], () =>

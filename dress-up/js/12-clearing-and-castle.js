@@ -34,11 +34,10 @@ function clearingScene(c) {
     }
     return `<defs>${FLOWER_DEFS}</defs>` + t;
   });
-  // the path toward us, out of the clearing to the path through the woods
-  // (and so to the trail): a doorway, flat on the ground, so painted before
-  // anything standing (its sign, below, is a doorway of its own)
-  s += SEP + part("clear-front-path", c.F, () => `<g class="portal" data-to="woodpath">` +
-    `<path d="M${P(-40 * k, y1 + pad)} L${P(40 * k, y1 + pad)} L${P(26 * k, near)} L${P(-26 * k, near)} Z" fill="#d9c08a"/></g>`);
+  // the path toward us, flat on the ground, so painted before anything standing (ticket 233: no longer a doorway of
+  // its own to the path through the woods; the way toward us is the world's, a nav arrow, where it leads somewhere)
+  s += SEP + part("clear-front-path", c.F, () =>
+    `<path d="M${P(-40 * k, y1 + pad)} L${P(40 * k, y1 + pad)} L${P(26 * k, near)} L${P(-26 * k, near)} Z" fill="#d9c08a"/>`);
   // the things far off, each its own piece, over the paths' far ends (each
   // an object, standing where its path ends: at its foot, at its size)
   const thingName = { seeCastle: "castle", seeTree: "tree house", seeHouse: "house", seeWitch: "witch hut", seeHealer: "healer hut" };
@@ -48,16 +47,10 @@ function clearingScene(c) {
     s += SEP + obj(thingName[T.key] || T.key, y + T.foot * z,
       (T.to ? `<g class="portal" data-to="${T.to}">` : "") + `<g ${tf(x, y, z)}>${T.draw(o, c)}</g>` + (T.to ? `</g>` : ""));
   }
-  // the sign beside the path toward us, a doorway too (see the path, above):
-  // at the frame's foot, in front of everything
-  s += SEP + obj("sign", Infinity, part("clear-front-sign", c.F, () => `<g class="portal" data-to="woodpath">` +
-    `<rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
-    plankSign(-W * 0.2, y1 - 44 * k, k, "🥾 path ⬇️") + `</g>`));
-  // and a sign on the right, to the fairy forest (an object: the sign and
-  // the toadstool at its foot, at the frame's foot, in front of everything)
-  s += SEP + obj("fairy sign", Infinity, part("clear-fairy-sign", c.F, () => `<g class="portal" data-to="fairyforest">` +
-    `<rect x="${f1(W * 0.24 - 4 * k)}" y="${f1(y1 - 50 * k)}" width="${f1(8 * k)}" height="${f1(70 * k + pad)}" fill="#6e4a2c"/>` +
-    plankSign(W * 0.24, y1 - 54 * k, k, "🧚 fairies ↗️") + toadstool(W * 0.24 + 30 * k, y1 + 4 * k, 0.6 * k) + `</g>`));
+  // (ticket 233, Matthew: "remove all of the signs that we added initially just to link in the old, primitive way --
+  // we've replaced that with the world designer UX now, and the UX it creates for the gameplay, with nav arrows, and
+  // always-correct signs that are optional") no 🥾 path ⬇️ sign toward us, no 🧚 fairies ↗️ sign: the world's ways
+  // are the nav arrows, and a sign with directions (🧭, a thing) says where they lead
   // near trees at the frame's edges, framing the clearing (the outer two
   // further back, the inner two nearer)
   s += SEP + part("clear-near-woods", c.F, () => byDepth([-1, 1].flatMap(sd => [[0, 0, 1.15], [1, 40, 0.8]].map(([j, dy, z]) =>
@@ -197,10 +190,7 @@ function castleScene(c) {
     `<path d="M-34 0 V-56 A34 34 0 0 1 34 -56 V0 Z" fill="#000000" opacity="0.01"/></g>` +
     `<rect x="${f1(W * 0.13 - 4 * k)}" y="${f1(bridgeEnd - 6 * k)}" width="${f1(8 * k)}" height="${f1(70 * k)}" fill="#6e4a2c"/>` +
     plankSign(W * 0.13, bridgeEnd - 10 * k, k, "🚪 inside") + `</g>`));
-  // (the sign back, at the frame's foot, in front of everything)
-  s += SEP + obj("sign", Infinity, part("castle-back", c.F, () => `<g class="portal" data-to="clearing">` +
-    `<rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
-    plankSign(-W * 0.2, y1 - 44 * k, k, "🌲 clearing") + `</g>`));
+  // (ticket 233: no 🌲 clearing sign back toward us; the world's ways are the nav arrows)
   // big trees at the frame's edges, framing the castle (the outer two
   // further back, the inner two nearer)
   s += SEP + part("castle-near-trees", c.F, () => `<defs>${oakDef("bg-castle-oak", 1)}</defs>` + byDepth([-1, 1].flatMap(sd => [[0, 0, 1.2], [1, 50, 0.85]].map(([j, dy, zz]) =>

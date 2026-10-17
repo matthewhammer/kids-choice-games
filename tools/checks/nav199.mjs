@@ -23,23 +23,29 @@ try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
-  // in the clearing (D4), standing in its middle: the wood path's sign far off, under the pointer
-  const at = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3"); B.figX = 0; B.figY = 0; await settle();
-    const s = marks.pics.find(p => p.kind === "sign" && p.el.dataset.to === "woodpath"); if (!s) return JSON.stringify({ none: marks.pics.map(p => p.kind + ":" + (p.el.dataset.to || "")) });
-    // (a point on the sign that is inside the picture: its box can reach past the picture's edge)
-    const r0 = (s.el.querySelector("rect") || s.el).getBoundingClientRect(), pr = pic.getBoundingClientRect();
-    const r = { left: Math.max(r0.left, pr.left + 4), right: Math.min(r0.right, pr.right - 4), top: Math.max(r0.top, pr.top + 4), bottom: Math.min(r0.bottom, pr.bottom - 4) };
-    r.width = r.right - r.left; r.height = r.bottom - r.top;
+  // in the clearing (D4), standing at its left: one of its far views (its own doorways) under the pointer, the one
+  // farthest from where any nav arrow would be, which the pointer near it would pick instead (ticket 233: it was the
+  // wood path's sign, gone; the witch's hut, tried first, is by the arrow NE)
+  const at = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3"); B.figX = -260; B.figY = 0; await settle();
+    const P0 = pic.getScreenCTM(), pr = pic.getBoundingClientRect(), navs = marks.pics.filter(p => p.kind === "nav" && p.spot).map(p => new DOMPoint(p.spot[0], p.spot[1]).matrixTransform(P0));
+    // (a point on each that is inside the picture: its box can reach past the picture's edge)
+    const mid = p => { const r0 = p.el.getBoundingClientRect(), r = { left: Math.max(r0.left, pr.left + 4), right: Math.min(r0.right, pr.right - 4), top: Math.max(r0.top, pr.top + 4), bottom: Math.min(r0.bottom, pr.bottom - 4) };
+      r.width = r.right - r.left; r.height = r.bottom - r.top; return r; };
+    const far = marks.pics.filter(p => p.kind !== "nav" && p.el.dataset.to && !p.el.dataset.to.endsWith("room")).map(p => { const r = mid(p), x = r.left + r.width / 2, y = r.top + r.height / 2;
+      return { p, r, d: Math.min(...navs.map(q => Math.hypot(q.x - x, q.y - y))) }; }).filter(o => o.r.width > 8 && o.r.height > 8).sort((a, b) => b.d - a.d)[0];
+    if (!far) return JSON.stringify({ none: marks.pics.map(p => p.kind + ":" + (p.el.dataset.to || "")) });
+    const s = far.p, r = far.r;
+    window.__farTo = s.el.dataset.to;
     const nearBefore = (enterTarget() || { el: null }).el === s.el;
     window.__pm = 0; pic.addEventListener("pointermove", () => window.__pm++);
     const P = pic.getScreenCTM(), e = marks.pics.find(p => p.kind === "nav" && p.el.dataset.way === "N"), es = new DOMPoint(e.spot[0], e.spot[1]).matrixTransform(P);
-    return JSON.stringify({ sx: r.left + r.width / 2, sy: r.top + r.height / 2, nearBefore, ex: es.x, ey: es.y }); })()`));
-  if (at.none) ok("the clearing's wood path sign found", false, at);
+    return JSON.stringify({ sx: r.left + r.width / 2, sy: r.top + r.height / 2, nearBefore, ex: es.x, ey: es.y, to: s.el.dataset.to, d: Math.round(far.d) }); })()`));
+  if (at.none) ok("the clearing's far views found", false, at);
   else {
     await move(at.sx, at.sy); await sleep(300);
-    const hov = JSON.parse(await ev(`(() => { const u = document.elementFromPoint(${at.sx}, ${at.sy}); return JSON.stringify({ it: !!enterAt && enterAt.el.dataset.to === "woodpath" && enterAt.kind === "sign", bright: !!enterGlow && !!enterGlow.parentNode && enterGlow.parentNode.dataset.to === "woodpath",
+    const hov = JSON.parse(await ev(`(() => { const u = document.elementFromPoint(${at.sx}, ${at.sy}); return JSON.stringify({ it: !!enterAt && enterAt.el.dataset.to === window.__farTo, bright: !!enterGlow && !!enterGlow.parentNode && enterGlow.parentNode.dataset.to === window.__farTo,
       pm: window.__pm, marksOk: marks.text === bgShown.text, hover: hoverPass ? hoverPass.kind + ":" + (hoverPass.el.dataset.to || hoverPass.el.dataset.way) : null, under: u ? u.tagName + (u.closest(".portal") ? "/portal:" + u.closest(".portal").dataset.to : "") + (u.closest("#figure") ? "/figure" : "") : null }); })()`));
-    ok("the pointer over the wood path's sign, far off: it is the bright one, X's to take", !at.nearBefore && hov.it && hov.bright, { at, hov });
+    ok(`the pointer over a far view (${at.to}), far off: it is the bright one, X's to take`, !at.nearBefore && hov.it && hov.bright, { at, hov });
     // (the friend moved aside first: standing in the middle, their head is over the arrow N's place, and the pointer on the friend is for dragging them)
     await ev(`(async () => { state.background.figX = -260; changed(); await new Promise(r => setTimeout(r, 300)); measureMarks(); return 1; })()`);
     await move(at.ex + 8, at.ey + 6); await sleep(300);
@@ -49,12 +55,12 @@ try {
       return JSON.stringify({ aimed: !!a && a.classList.contains("aimed"), opacity: a ? getComputedStyle(a).opacity : null, pm: window.__pm, hover: hoverPass ? hoverPass.kind : null, under: u ? u.tagName + "#" + (u.id || "") : null,
         marksOk: marks.text === bgShown.text, navs, probe: probe ? probe.kind + ":" + (probe.el.dataset.way || probe.el.dataset.to) : null }); })()`));
     ok("the pointer near where the nav arrow N would be: it shows, the one picked", navH.aimed && navH.opacity === "1", navH);
-    await ev(`(async () => { state.background.figX = 0; changed(); await new Promise(r => setTimeout(r, 300)); measureMarks(); return 1; })()`);
+    await ev(`(async () => { state.background.figX = -260; changed(); await new Promise(r => setTimeout(r, 300)); measureMarks(); return 1; })()`);
     await move(at.sx, at.sy); await sleep(200); await click(at.sx, at.sy);
     await sleep(350);
     const mid = JSON.parse(await ev(`JSON.stringify({ kind: state.background.kind, x: state.background.figX, y: state.background.figY, anim: state.body.anim })`));
-    const took = await until(`state.background.kind === "woodpath" && !entering`);
-    ok("a click on it: the friend walks to it first, then through to the wood path", mid.kind === "clearing" && (mid.x !== 0 || mid.y !== 0) && mid.anim === "walk" && took !== null, { mid, took });
+    const took = await until(`state.background.kind === ${JSON.stringify(at.to)} && !entering`);
+    ok(`a click on it: the friend walks to it first, then through to it (${at.to})`, mid.kind === "clearing" && (mid.x !== -260 || mid.y !== 0) && mid.anim === "walk" && took !== null, { mid, took });
   }
   // a picture far off in the living room: walked to, then flown into
   const lr = JSON.parse(await ev(`(async () => { ${H} B.kind = "livingroom"; B.figX = -330; B.figY = 60; await settle();

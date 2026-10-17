@@ -34,7 +34,7 @@ const r = await send("Runtime.evaluate", { awaitPromise: true, returnByValue: tr
       if (seen.has(el)) continue; seen.add(el);
       const view = el.querySelector(":scope > svg, :scope > image"), d = el.dataset;
       const kind = d.way ? "nav arrow" : d.pit ? "pit" : el.hasAttribute("data-ladder") ? (el.closest(".portal") || d.house ? "ladder (a way)" : "ladder") :
-                   view ? "picture" : el.classList.contains("south-way") ? "▼ sign" : el.querySelector("text") && !d.door ? "sign" : d.door ? "door" : "doorway (unmarked)";
+                   view ? "picture" : el.querySelector("text") && !d.door ? "sign" : d.door ? "door" : "doorway (unmarked)";
       const c = center(el), x = marks.pics.some(p => p.el === el), u = c[2] > 0 ? document.elementFromPoint(c[0], c[1]) : null;
       // (ticket 187: a tap where something stands in front of it, not the friend or a thing put there, goes through too)
       const tap = !!u && (u === el || el.contains(u) || (x && !u.closest("#figure, [data-drag], #ways")));

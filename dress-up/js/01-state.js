@@ -121,8 +121,13 @@ const hallDoorKey = (id, n, j) => "castleHallDoor" + n + "_" + j + id;
 const DOOR_MAX = 8, DOOR_JS = [...Array(DOOR_MAX)].map((_, j) => j + 1);
 const roomDoorMax = st => ({ hall: 8, long: 6 })[ROOM_KINDS[st]?.exits] ?? 4;
 const hallDoorDefault = (n, j) => String((n === 1 ? ["out", ...ROOM_NS.filter(m => m !== 1)] : [1, ...ROOM_NS.filter(m => m !== n && m !== 1)])[j - 1]);
-const wayOutDests = id => [["auto", "✨ the usual way"], ["out", "🏰 out of the castle"], ...roomChoices(id)];
-// (a door behind us, at the bottom of the picture, that we can't see: where it leads, if anywhere)
+// (ticket 233, Matthew: "each S exit of each room that has one can be: nothing, another castle room, outside of the
+// castle") a room whose way out is toward us (S: the king's room, the dining room, the spiral stairs; ROOM_S_OUT) may
+// lead nowhere too; another room's way out (an arch, a ladder) always leads somewhere
+const ROOM_S_OUT = ["side", "long", "spiral"];
+const wayOutDests = (id, n) => [["auto", "✨ the usual way"], ["none", "🧱 nowhere", b => !!n && ROOM_S_OUT.includes(ROOM_KINDS[roomStyleOf(b, id, n)]?.exits)],
+                                ["out", "🏰 out of the castle"], ...roomChoices(id)];
+// (the way toward us, at the bottom of the picture, a nav arrow when near: where it leads, if anywhere)
 const backDests = id => [["none", "🧱 nowhere"], ["out", "🏰 out of the castle"], ...roomChoices(id)];
 const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c2410c", "#1f2937"];
 // A castle's rooms: up to ROOM_MAX (13), each in a style. The styles are by who made
@@ -873,7 +878,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.161", released: "2026-10-17" };
+const VERSION = { number: "0.0.162", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

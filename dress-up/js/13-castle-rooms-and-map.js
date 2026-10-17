@@ -1829,17 +1829,20 @@ function hallDoors(c, doors) {
 // nowhere (or a room the castle doesn't have). Each exit has its kind, where
 // it leads, and the setting that says so (key: none when it is fixed).
 function wayOutOf(K, n) {
-  const v = K.hall[n - 1].out, st = K.rooms[n - 1];
+  const st = K.rooms[n - 1], S = ROOM_S_OUT.includes(ROOM_KINDS[st].exits);
+  // (ticket 233: nowhere only where the way out is toward us; a room changed to an arch's or a ladder's, the usual way)
+  const v = K.hall[n - 1].out === "none" && !S ? "auto" : K.hall[n - 1].out;
   if (v === "auto") { const trapAt = K.rooms.indexOf("trap") + 1;
     return ROOM_KINDS[st].exits === "ladder" && trapAt && trapAt !== n ? trapAt : n === 1 ? 0 : 1; }
   if (v === "out") return 0;
+  if (v === "none") return null;   // (ticket 233: a way toward us may lead nowhere)
   const r = Number(v); return r >= 1 && r <= K.rooms.length ? r : null;
 }
 function roomExits(K, n) {
   const st = K.rooms[n - 1], ex = ROOM_KINDS[st].exits, H = K.hall[n - 1], id = K.id, X = [];
   const dest = d => d === "out" ? 0 : Number(d) >= 1 && Number(d) <= K.rooms.length ? Number(d) : null;
   const signed = ex === "side" || ex === "long" || ex === "spiral";
-  if (ex !== "hall") X.push({ kind: { side: "sign", long: "sign", spiral: "sign", trap: "arch", ladder: "ladder", all: "arch" }[ex], to: wayOutOf(K, n), key: "castleOut" + n + id, way: true });
+  if (ex !== "hall") X.push({ kind: { side: "sign", long: "sign", spiral: "sign", trap: "arch", ladder: "ladder", all: "arch" }[ex], to: wayOutOf(K, n), key: "castleOut" + n + id, way: true, nowhere: H.out === "none" && signed });
   // (the door behind us, at the bottom of the picture: optional, in a room with no sign there already,
   // and never in a dungeon, a pit with no way in but from above)
   if (["hall", "trap", "all"].includes(ex)) { const v = H.back; X.push({ kind: "back", to: v === "none" ? null : dest(v), key: "castleBack" + n + id, nowhere: v === "none" }); }
@@ -1870,21 +1873,6 @@ function farWallDoor(c, label, attrs) {
     `<ellipse cx="${f1(cx)}" cy="${f1(fl - 2 * kf)}" rx="${f1(hw * 0.6)}" ry="${f1(3 * kf)}" fill="#ffcf6b" opacity="0.25"/>` +
     plankSign(cx, dt - 22 * k * HALL_SIGN_MIN, k * HALL_SIGN_MIN, label) + `</g>`;
 }
-// A way out toward us, through a passageway below the picture that we
-// can't see (Matthew, 2026-10-17: signs everywhere looked unnatural): a
-// small triangle at the bottom edge, pointing down, bobbing gently. Like a
-// door it glows when hovered or when the friend is near it (data-door: the
-// controller's glow, and X goes through), and says where it leads on
-// hover; its first shape, the triangle, is what the glow frames, and a wider
-// invisible box after it is easy to tap. (Its name is the old one: it was a sign on a post.)
-function bottomSign(c, x, label, attrs) {
-  const { k, y1 } = c, w = 30 * k, h = 18 * k, y = y1 - 30 * k, esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
-  return `<g class="portal south-way" data-door="1" ${attrs}><title>${esc(label)}</title>` +
-         `<g><animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(5 * k)};0 0" dur="1.8s" repeatCount="indefinite"/>` +
-         `<path d="M${f1(x - w)} ${f1(y - h)} L${f1(x + w)} ${f1(y - h)} L${f1(x)} ${f1(y + h * 0.8)} Z" fill="#fff4cf" fill-opacity="0.82" stroke="#6b4a24" stroke-width="${f1(2.2 * k)}" stroke-linejoin="round"/></g>` +
-         `<rect x="${f1(x - 2.2 * w)}" y="${f1(y - 2.6 * h)}" width="${f1(4.4 * w)}" height="${f1(3.6 * h)}" fill="#000000" opacity="0"/>` +
-         `<text class="south-label" x="${f1(x)}" y="${f1(y - h - 10 * k)}" text-anchor="middle" font-size="${f1(26 * k)}" font-family="sans-serif" font-weight="600" fill="#ffffff" stroke="#3b2a14" stroke-width="${f1(5 * k)}" paint-order="stroke">${esc(label)}</text></g>`;
-}
 function castleWays(c, K, n, style) {
   const { W, k } = c, { floor, bw } = roomFrame(c), S = roomSpace(c);
   const rooms = K.rooms, exits = ROOM_KINDS[style].exits, X = roomExits(K, n);
@@ -1892,13 +1880,11 @@ function castleWays(c, K, n, style) {
     : to ? { attrs: `data-to="castleroom" data-room="${to}"`, label: `${roomLabel(rooms[to - 1]).split(" ")[0]} ${to}` } : null;
   // (its way out, where it has one: castleOut; leading nowhere, it isn't there)
   const out = X[0] && X[0].way ? way(X[0].to) : null;
-  // (the door behind us, where it leads somewhere: a sign at the bottom, toward us)
-  // (ticket 99) All of this is drawn after the room, so all of it is objects: a sign at the bottom,
-  // toward us, always in front (Infinity); a door or an arch in a wall, the far end's arch, the dungeon's
-  // ladder, each at the depth where it meets the floor (a side door: its near edge), so the room's
-  // objects are sorted in front of it as they stand, and it is never drawn over a friend nearer than it
-  const B0 = X.find(x => x.kind === "back"), BL = B0 && B0.to !== null && way(B0.to), behind = BL ? obj("sign", Infinity, bottomSign(c, W * 0.4, BL.label, BL.attrs)) : "";
-  if (exits === "trap") return (out ? obj("way out", floor, archDoor(0, floor, k, out.label, out.attrs, 100, 180)) : "") + behind;
+  // (ticket 99) All of this is drawn after the room, so all of it is objects: a door or an arch in a wall,
+  // the far end's arch, the dungeon's ladder, each at the depth where it meets the floor (a side door: its
+  // near edge), so the room's objects are sorted in front of it as they stand, and it is never drawn over a
+  // friend nearer than it. (ticket 233) Its ways toward us are not drawn: nav arrows (castleSouthWays).
+  if (exits === "trap") return out ? obj("way out", floor, archDoor(0, floor, k, out.label, out.attrs, 100, 180)) : "";
   if (exits === "ladder")
     return out ? obj("ladder", floor + 10 * k, ladderUp(bw * 0.82, floor, roomFrame(c).top - 30 * k, k, X[0].to === 0 ? "🪜 up and out" : `🪜 up to ${out.label}`, out.attrs)) : "";
   const links = X.filter(x => x.kind === "arch").map(x => way(x.to)).filter(Boolean);
@@ -1907,10 +1893,9 @@ function castleWays(c, K, n, style) {
   const linkTo = X.filter(x => x.kind === "arch" && way(x.to)).map(x => x.to), doorNo = X.filter(x => x.kind === "door" && way(x.to)).map(x => x.j);
   // the hallway's: doors in its side walls, by turns left and right, two to each stretch of it
   // the king's room: its doors in its side walls, two to a side, between its back corners and the
-  // picture's edges (clear of all it holds); its way out a sign at the bottom, as the forest clearing's
-  // path, toward us (a door set to lead where the sign does is that sign)
+  // picture's edges (clear of all it holds); its way out toward us, a nav arrow (ticket 233; a door set to
+  // lead where that way does is that way)
   if (exits === "side" || exits === "long" || exits === "spiral") {
-    const { y1, pad } = c;
     // (the dining room's door in its far wall, where it leads somewhere)
     const FX = X.find(x => x.kind === "far"), FL = FX && FX.to !== null && way(FX.to), far = FL ? obj("far door", S.at(0, floor, HALL_STRETCHES * 0.8)[1], farWallDoor(c, FL.label, FL.attrs)) : "";
     // (a nearer door's sign, kept inside the picture, would sit on the farther one's: it goes above it;
@@ -1923,9 +1908,7 @@ function castleWays(c, K, n, style) {
       // their head and arm sticking out past its edge) a door flat on its side wall is behind anyone in the room: drawn
       // with the back wall (its foot, floor), as the long rooms' doors are, not at its near edge's depth
       : doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j;
-          return obj(`door ${doorNo[i]}`, floor, hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k)); }).join("")) + far +
-      (out ? obj("sign", Infinity, `<g class="portal" ${out.attrs}><rect x="${f1(-W * 0.2 - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
-      plankSign(-W * 0.2, y1 - 44 * k, k, `${out.label} ⬇️`) + `</g>`) : "");
+          return obj(`door ${doorNo[i]}`, floor, hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k)); }).join("")) + far;
   }
   if (exits === "hall") {
     // and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
@@ -1934,13 +1917,13 @@ function castleWays(c, K, n, style) {
     // (its doors one object, all as far as its nearest one's foot, at the hallway's mouth; the far end at its own floor)
     const A = hallFarArch(c), far = end ? obj("stairs", A.fl, `<g class="portal" data-door="" data-to="castleroom" data-room="${end}"><path d="${A.d}" fill="#000000" fill-opacity="0.01"/>` +
       plankSign(0, A.top - 22 * k * HALL_SIGN_MIN, k * HALL_SIGN_MIN, `${roomLabel(rooms[end - 1]).split(" ")[0]} ${end}`) + `</g>`) : "";
-    return (doors.length ? obj("doors", floor, hallDoors(c, doors)) : "") + far + behind;
+    return (doors.length ? obj("doors", floor, hallDoors(c, doors)) : "") + far;
   }
   // (the greenhouse: archways along its back wall, three either side of its middle; any more, as
   // with a castle of many rooms, doors in its stone side walls, in perspective, as the king's room's,
-  // two to a side; and any more still, signs at the bottom, toward us, as the king's room's way out)
+  // two to a side; and any more still, toward us, nav arrows (castleSouthWays, ticket 233))
   let t = "";
-  const back = links.slice(0, 6), more = links.slice(6, 10), signs = links.slice(10);
+  const back = links.slice(0, 6), more = links.slice(6, 10);
   back.forEach((L, i) => {
     const sd = i % 2 ? 1 : -1, j = Math.floor(i / 2);
     t += obj(`arch to room ${linkTo[i]}`, floor, archDoor(sd * (bw * 0.86 - j * 104 * k), floor, k, L.label, L.attrs, 76, 140));
@@ -1948,16 +1931,32 @@ function castleWays(c, K, n, style) {
   more.forEach((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.15 * j;
     // (ticket 223: on its wall, behind anyone in the room)
     t += obj(`door to room ${linkTo[6 + i]}`, floor, hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.11, z1, L.label, L.attrs, j * 46 * k)); });
-  signs.forEach((L, i) => { const x = (i % 2 ? 1 : -1) * W * (0.12 + 0.17 * Math.floor(i / 2));
-    t += obj(`sign to room ${linkTo[10 + i]}`, Infinity, bottomSign(c, x, L.label, L.attrs)); });
-  return t + behind;
+  return t;
+}
+// (ticket 233, Matthew: "each S exit of each room that has one can be: nothing, another castle room, outside of the
+// castle"; "rather than render a sign to indicate it and offer a click, we use the nav arrow UX now") A castle room's
+// ways toward us, S: its way behind us (a hallway's, the trap room's, the greenhouse's: castleBack), or its way out
+// where that is toward us (ROOM_S_OUT: castleOut); and a greenhouse's arches past the ten its walls hold, SW and SE
+// (then S, if free; a 13-room castle of no dungeons can have a third). Each where it leads somewhere: a nav arrow over
+// the picture, shown when the friend is near (insideWays, 25-world.js); leading nowhere, nothing at all.
+function castleSouthWays(K, n) {
+  const ex = ROOM_KINDS[K.rooms[n - 1]].exits, X = roomExits(K, n);
+  const way = to => to === 0 ? { to: "castle", attrs: `data-to="castle"`, label: "🏰 out" }
+    : { to: "castleroom", attrs: `data-to="castleroom" data-room="${to}"`, label: `${roomLabel(K.rooms[to - 1]).split(" ")[0]} ${to}` };
+  const S = X.find(x => x.kind === "back" || (x.way && ROOM_S_OUT.includes(ex))), out = S && S.to !== null ? [{ d: "S", ...way(S.to) }] : [];
+  if (ex === "all") {
+    const free = ["SW", "SE", "S"].filter(d => !out.some(w => w.d === d));
+    X.filter(x => x.kind === "arch" && x.to !== null).slice(10).forEach((x, i) => { if (free[i]) out.push({ d: free[i], ...way(x.to) }); });
+  }
+  return out;
 }
 // The castle as a map, for the castle designer: every way between its rooms
 // (the gate into room 1, then each room's exits: roomExits), what looks wrong
 // with it, and how to put each thing right. A way leading out of the castle
 // leads to 0; the gate leads from 0 into room 1.
-const EXIT_ICONS = { door: "🚪", sign: "🪧", arch: "🏛️", ladder: "🪜", stairs: "🌀", pit: "🕳️", gate: "🏰", back: "⬇️", far: "🚪" };
-const EXIT_WORDS = { door: "door", sign: "sign", arch: "archway", ladder: "ladder", stairs: "stairs", pit: "pit", gate: "gate", back: "door behind you", far: "door in the far wall" };
+// (ticket 233: a room's way toward us, S, is a nav arrow now, no sign: the king's room's way out, as any room's way behind us)
+const EXIT_ICONS = { door: "🚪", sign: "⬇️", arch: "🏛️", ladder: "🪜", stairs: "🌀", pit: "🕳️", gate: "🏰", back: "⬇️", far: "🚪" };
+const EXIT_WORDS = { door: "door", sign: "way toward us", arch: "archway", ladder: "ladder", stairs: "stairs", pit: "pit", gate: "gate", back: "way toward us", far: "door in the far wall" };
 function castleGraph(K) {
   const E = [{ from: 0, kind: "gate", to: 1, key: null }];
   K.rooms.forEach((_, i) => roomExits(K, i + 1).forEach(x => E.push({ from: i + 1, ...x })));
@@ -2114,17 +2113,8 @@ function castleroomScene(c) {
 }
 
 // Three places away from the woods: a mountain trail, a jungle waterfall,
-// and a camp site. A signpost on the trail points (a doorway each) to the
-// other two, and each of them has a sign back to the trail.
+// and a camp site. (ticket 233: their signposts, fixed links between them, are gone: the world's ways join them)
 const PINE_DEF = pineDef("bg-pine", 5);
-// a wooden signpost, its arrows doorways (each [text, to, side]), at (x, base)
-const signpost = (x, base, k, arrows) => `<rect x="${f1(x - 5 * k)}" y="${f1(base - 150 * k)}" width="${f1(10 * k)}" height="${f1(150 * k)}" fill="#6e4a2c"/>` +
-  arrows.map(([text, to, sd], i) => {
-    const y = base - (130 - i * 42) * k, w = 120 * k, x1 = sd > 0 ? x : x - w, tip = sd > 0 ? x + w + 16 * k : x - w - 16 * k;
-    return `<g class="portal" data-to="${to}"><polygon points="${P2(x1, y - 16 * k)} ${P2(x1 + w, y - 16 * k)} ${P2(sd > 0 ? tip : x1 + w, sd > 0 ? y : y - 16 * k)} ` +
-           `${P2(x1 + w, y + 16 * k)} ${P2(x1, y + 16 * k)} ${P2(sd > 0 ? x1 : tip, sd > 0 ? y + 16 * k : y)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2.5 * k)}"/>` +
-           `<text x="${f1(x1 + w / 2)}" y="${f1(y + 7 * k)}" text-anchor="middle" font-size="${f1(19 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${text}</text></g>`;
-  }).join("");
 const P2 = (x, y) => `${f1(x)},${f1(y)}`;
 // A snow cap on a peak, cut from the mountain's own two slopes: from the
 // peak (px, py) down each slope toward its neighbors (lx, ly) and (rx, ry)

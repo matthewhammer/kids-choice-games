@@ -68,9 +68,8 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
   ["woodpath", "🥾 path through the woods"], ["crossing", "🛤️ forest crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"]];
-// (where a door behind us can lead from a room outside the castle: any place but those found by a number of their own)
+// (where the way toward us can lead from a room outside the castle: any place but those found by a number of their own)
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
-const behindSign = (c, to) => { const P = to && to !== "none" && PLACES.find(p => p[0] === to); return P ? bottomSign(c, c.W * 0.4, P[1], `data-to="${to}"`) : ""; };
 const PLACE_GROUPS = [
   ["imagination", "💭 imagination", ["emptyroom", "bubblespace", "imagination"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains"]],
@@ -366,7 +365,7 @@ const TABS = [
     ["choice", "inside", "🏡 which tree house", [1, 2, 3, 4, 5, 6].map(n => [n, "🏡 " + n])],
     ...[1, 2, 3, 4, 5, 6].flatMap(n => [["choice", "room" + n, `🏡 ${n}: its room`, ROOM_CHOICES],
       ...[1, 2].map(i => ["choice", `r${n}pic${i}`, `🏡 ${n}: picture ${i} on its wall`, PICTURE_CHOICES]),
-      ["choice", "treeBack" + n, `🏡 ${n}: ⬇️ behind you (a door we can't see) leads to`, BEHIND_PLACES]]),
+      ["choice", "treeBack" + n, `🏡 ${n}: ⬇️ the way toward us leads to`, BEHIND_PLACES]]),
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
     ["range", "toys", "🧸 things in the room", 0, 24, 4, 20],
     // the mountain trail
@@ -443,8 +442,8 @@ const TABS = [
         ...DOOR_JS.map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
         ["choice", "castleFar" + n + id, "🚪 the door in its far wall leads to", backDests(id)],
         ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)],
-        ["choice", "castleOut" + n + id, "↩️ its way out leads to", wayOutDests(id)],
-        ["choice", "castleBack" + n + id, "⬇️ behind you (a door we can't see) leads to", backDests(id)]],
+        ["choice", "castleOut" + n + id, "↩️ its way out leads to", wayOutDests(id, n)],
+        ["choice", "castleBack" + n + id, "⬇️ the way toward us leads to", backDests(id)]],
         b => b.kind === "castleroom" && (b.castle ?? "N") === id && Math.round(b.castleRoom ?? 1) === n]),
       // (its residents, each kind in a box of its own, each one in its own box in that: RESIDENTS)
       ...Object.values(RESIDENTS).map(R => ["group", R.group[0] + id, R.group[1](id), [
@@ -472,7 +471,7 @@ const TABS = [
     ["color", "healerCatEyes", "🐈 the healer's cat: eyes", ["#22c55e", "#c6d43a", "#e0a800", "#3b82f6", "#f28c28"]],
     // the living room
     ["choice", "view", "🪟 outside the window", PICTURE_CHOICES],
-    ["choice", "livingOut", "⬇️ behind you (the door out, a ▼ at the bottom) leads to", BEHIND_PLACES],
+    ["choice", "livingOut", "⬇️ the way toward us (the door out) leads to", BEHIND_PLACES],
     ["range", "viewDetail", "🪟 outside the window: detail (0 = a blur, 100 = all of it)", 0, 100, 30, 100],
     ["range", "couchSize", "🛋️ couch size", 60, 140, 80, 120],
     ["range", "pillows", "🛋️ pillows", 0, 8, 2, 7],
@@ -984,7 +983,7 @@ function castleDesigner(part, key, box, syncs) {
     // what is picked: a way, and where it can lead; or a room, and its ways
     const e = picked?.way && E.find(x => pickOf(x) === picked.way);
     if (e) {
-      const opts = !e.key ? [] : e.key.startsWith("castleOut") ? wayOutDests(id) : e.key.startsWith("castleBack") || e.key.startsWith("castleFar") ? backDests(id) : e.key.startsWith("castleHallEnd") ? hallEnds(id) : hallDoorDests(id);
+      const opts = !e.key ? [] : e.key.startsWith("castleOut") ? wayOutDests(id, e.from) : e.key.startsWith("castleBack") || e.key.startsWith("castleFar") ? backDests(id) : e.key.startsWith("castleHallEnd") ? hallEnds(id) : hallDoorDests(id);
       edit.replaceChildren(el("span", {}, `${mapExitName(K, e)} leads to:`), ...(e.key ? opts.filter(([, , vis]) => !vis || vis(b)).map(([v, lab]) =>
         el("button", { "aria-pressed": String(B()[e.key]) === String(v), onclick: () => setWay(e, v) }, typeof lab === "function" ? lab(b) : lab))
         : [el("span", { class: "note" }, MAP_FIXED[e.kind] || "This way is fixed.")]));

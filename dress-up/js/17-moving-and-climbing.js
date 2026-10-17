@@ -192,8 +192,9 @@ function measureMarks() {
       // (a nav arrow's doorway stands where its arrow is, and feet past it count as at it; a ▼ at the bottom edge, as the nav arrow S)
       const w = dd.way && worldWaysAt.find(e => e[0] === dd.way);
       if (dd.way && !w) continue;
-      const kind = dd.way ? "nav" : d.classList.contains("south-way") ? "south" : "door";
-      pics.push({ ...at, el: d, box, door: true, kind, spot: w ? [w[1], w[2]] : under(at), out: dd.way ? WAY_OUT[dd.way] : kind === "south" ? WAY_OUT.S : null });
+      // (ticket 233: a way toward us out of a room, a nav arrow too, as the world's: insideWays)
+      const kind = dd.way ? "nav" : "door";
+      pics.push({ ...at, el: d, box, door: true, kind, spot: w ? [w[1], w[2]] : under(at), out: dd.way ? WAY_OUT[dd.way] : null });
       continue;
     }
     if (!view) {   // (a doorway or a sign with no mark of its own: its whole drawing, the feet under it)

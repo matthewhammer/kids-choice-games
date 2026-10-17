@@ -402,9 +402,6 @@
      door) glows under the pointer; a click goes through it */
   #bg .portal { cursor: pointer; }
   #bg .portal:hover { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f) brightness(1.08); }
-  /* (a way out below the picture: its words only on hover) */
-  #bg .south-way .south-label { opacity: 0; transition: opacity 0.15s; pointer-events: none; }
-  #bg .south-way:hover .south-label { opacity: 1; }
   /* (ticket 145) the picture the controller's ✨ would go into: its glow breathes */
   #bg .enter-glow { animation: enter-glow 1.3s ease-in-out infinite alternate; }
   @keyframes enter-glow { from { opacity: 0.45; } to { opacity: 1; } }
