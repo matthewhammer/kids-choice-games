@@ -278,10 +278,15 @@ const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa"
 // (ticket 185) The world: places laid on a grid, each joined to its
 // neighbours by the ways out on their shared sides (see 25-world.js). A
 // part of DEFAULTS, so that Load and the autosave keep it. Its first world
-// is today's, laid out: the clearing at the middle, the wood path north of
-// it and the mountains beyond, the fairy forest north-east, the castle
-// east, forest crossings joining the rest; the insides off the grid.
-const WORLD_DEFAULT = {"cols": 5, "rows": 5, "start": "2,2", "cells": {"2,0": {"kind": "mountains", "ways": ["S"]}, "0,1": {"kind": "witch", "ways": ["S", "E"]}, "1,1": {"kind": "cemetery", "ways": ["W", "S"]}, "2,1": {"kind": "woodpath", "ways": ["N", "S"]}, "3,1": {"kind": "fairyforest", "ways": ["SW"]}, "0,2": {"kind": "forest", "ways": ["N", "E"]}, "1,2": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "things": []}, "2,2": {"kind": "clearing", "ways": ["N", "NE", "E", "S", "W"]}, "3,2": {"kind": "castle", "ways": ["W", "S"]}, "0,3": {"kind": "lake", "ways": ["E", "S"]}, "1,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": false, "crossW": true, "crossNW": false, "things": []}, "2,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "things": []}, "3,3": {"kind": "house", "ways": ["N", "E", "S", "W"]}, "4,3": {"kind": "treehouse", "ways": ["W"]}, "0,4": {"kind": "beach", "ways": ["N"]}, "2,4": {"kind": "waterfall", "ways": ["N", "E"]}, "3,4": {"kind": "campsite", "ways": ["N", "W"]}}};
+// is today's, laid out (Matthew, 2026-10-17): the pond in the middle (C3),
+// the land across it a forest crossing (C2) to visit, not only to see; the
+// beach on the top edge (C1), looking out on water, the witch's woods and
+// the mountains either side; the clearing east of the pond, the wood path
+// and the fairy forest north of it, the castle east, the house and the
+// tree house south-east, the camp and the waterfall south-west; forest
+// crossings between; the friend starting at the clearing; the insides off
+// the grid.
+const WORLD_DEFAULT = {"cols": 5, "rows": 5, "start": "3,2", "cells": {"1,0": {"kind": "witch", "ways": ["E", "S"], "things": []}, "2,0": {"kind": "beach", "ways": ["E", "S", "W"], "things": []}, "3,0": {"kind": "mountains", "ways": ["S", "W"], "things": []}, "0,1": {"kind": "cemetery", "ways": ["E", "S"], "things": []}, "1,1": {"kind": "forest", "ways": ["N", "E", "S", "W"], "things": []}, "2,1": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossFloor": "#76843a", "crossBack": "sky", "things": []}, "3,1": {"kind": "woodpath", "ways": ["N", "S", "W"], "things": []}, "4,1": {"kind": "fairyforest", "ways": ["SW"], "things": []}, "0,2": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": false, "crossW": false, "crossNW": false, "crossFloor": "#76843a", "crossBack": "woods", "things": []}, "1,2": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossFloor": "#76843a", "crossBack": "mountains", "things": []}, "2,2": {"kind": "lake", "ways": ["N", "E", "S", "W"], "things": []}, "3,2": {"kind": "clearing", "ways": ["N", "NE", "E", "S", "W"], "things": []}, "4,2": {"kind": "castle", "ways": ["S", "W"], "things": []}, "1,3": {"kind": "campsite", "ways": ["N", "E", "S"], "things": []}, "2,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": false, "crossW": true, "crossNW": false, "crossFloor": "#76843a", "crossBack": "sky", "things": []}, "3,3": {"kind": "house", "ways": ["N", "E", "W"], "things": []}, "4,3": {"kind": "treehouse", "ways": ["N", "W"], "things": []}, "1,4": {"kind": "waterfall", "ways": ["N"], "things": []}}};
 const DEFAULTS = {
   world: WORLD_DEFAULT,
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
@@ -356,7 +361,7 @@ const DEFAULTS = {
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2, fallRate: 100, fallTime: "day",
                 caveGems: 16, gemShape: "four", gemSize: 100, gemBright: 90, gemTwinkle: 60,
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
-                crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", things: [],
+                crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossBack: "woods", things: [],
                 starShape: "mix", starSize: 100, starBright: 85, starTwinkle: 40,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
                 pic1: "lake", pic2: "beach", pic3: "livingroom", pic4: "forest", pic5: "treehouse", pic6: "underwater",
@@ -425,6 +430,16 @@ function upgradeInside(bg, saved) {
 // size (100 filled the stage); now 100 is the scene's own usual size
 // (SCENE_FIG). A friend saved at the old usual size gets the new usual
 // size; one sized on purpose keeps the size it had in its scene.
+// (ticket 185) the world as 0.0.99 to 0.0.102 laid it out, untouched (the
+// same places in the same squares, nothing put in any): the world laid out
+// again since 0.0.103 (the pond in the middle, the beach on the top edge)
+const WORLD_FIRST_LAYOUT = {"2,0":"mountains","0,1":"witch","1,1":"cemetery","2,1":"woodpath","3,1":"fairyforest","0,2":"forest","1,2":"crossing","2,2":"clearing",
+                            "3,2":"castle","0,3":"lake","1,3":"crossing","2,3":"crossing","3,3":"house","4,3":"treehouse","0,4":"beach","2,4":"waterfall","3,4":"campsite"};
+function upgradeWorld(next) {
+  const W = next.world, C = (W && W.cells) || {}, keys = Object.keys(C);
+  if (keys.length === Object.keys(WORLD_FIRST_LAYOUT).length && keys.every(k => WORLD_FIRST_LAYOUT[k] === C[k].kind) && keys.every(k => !(C[k].things || C[k].crossThings || []).length))
+    next.world = clone(WORLD_DEFAULT);
+}
 // (ticket 185) the things put in a place: since 0.0.100 every place's, as
 // things; in 0.0.98 and 0.0.99 only a forest crossing had them, as crossThings
 function upgradeThings(next, saved) {
@@ -770,6 +785,7 @@ try {
   upgradeInside(state.background, saved);
   upgradeFigSize(state.background, saved);
   upgradeThings(state, saved);
+  upgradeWorld(state);
   upgradeFace(state.face, saved.face);
   if (state.body.sit && state.body.pose === "stand") state.body.pose = "sit";   // (ticket 132)
   // pants length moved to the legs (leg length)
@@ -786,7 +802,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.102", released: "2026-10-17" };
+const VERSION = { number: "0.0.103", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

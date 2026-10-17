@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.103 (2026-10-17)
+
+Everything in 0.0.102, plus a forest crossing that looks farther, and the world laid out again.
+
+- **The forest crossing's paths meet nearer the middle of the picture** (Matthew: not so close to the bottom), its forest floor reaching farther back.
+- **🌄 Off in the distance**, three to choose from for each crossing: 🌲 tall trees and shafts of light (as before, but kept to the top of the picture), ☁️ sky, sun and clouds over the trees far off (as at the forest clearing), or ⛰️ mountains far off, snow on the far ones, and far pines.
+- **The world laid out again** (Matthew): the 🦆 pond in the middle, the land across the water a forest crossing you can walk to, not only see; the 🏖️ beach on the top edge, looking out on the water, the witch's woods and the mountain trail either side; the clearing east of the pond, the castle beyond it. A world you have not changed is laid out this way by itself; 🌍 the first world again (in 🗺️ World design) lays any world out this way.
+
 ## 0.0.102 (2026-10-17)
 
 Everything in 0.0.101, plus designing the world by hand.

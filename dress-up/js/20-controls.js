@@ -365,6 +365,7 @@ const TABS = [
     ["things", "things", "🪨 things to put here, then drag them where they go"],
     ["group", "crossPaths", "🛤️ the paths that meet here", CROSS_DIRS.map(([d, label]) => ["toggle", "cross" + d, label])],
     ["color", "crossFloor", "🌿 the forest floor", CROSS_FLOORS],
+    ["choice", "crossBack", "🌄 off in the distance", CROSS_BACKS],
     // the forest clearing: what is far off down its paths
     ["toggle", "seeHouse", "🏠 see the family house"],
     ["toggle", "seeTree", "🌳 see the tree house"],
@@ -667,7 +668,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["fallWidth", "mist", "fallRate", "fallTime"].map(key => ["background." + key, b => b.kind === "waterfall" || b.kind === "cave"])),
   ...Object.fromEntries(["caveGems", "gemShape", "gemSize", "gemBright", "gemTwinkle"].map(key => ["background." + key, b => b.kind === "cave"])),
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
-  ...Object.fromEntries(["crossPaths", "crossFloor"].map(key => ["background." + key, b => b.kind === "crossing"])),
+  ...Object.fromEntries(["crossPaths", "crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),
   "background.things": b => b.kind !== "none",
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
@@ -1044,7 +1045,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // then the square the friend is in: its ways out, the start, its
     // things; then the mistakes, and the places off the grid with their ids.
     const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away");
-    const sizes = el("div", { class: "row" }, [["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { onclick: () => worldResize(dc, dr) }, t)));
+    const sizes = el("div", { class: "row" }, [...[["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { onclick: () => worldResize(dc, dr) }, t)),
+      el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { state.world = clone(DEFAULTS.world); changed(); } } }, "🌍 the first world again")]);
     const here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
     const emojiOf = kind => placeName(kind).split(" ")[0];
     for (const kd of worldPalette()) {

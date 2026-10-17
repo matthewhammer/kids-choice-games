@@ -191,7 +191,7 @@
  },
  {
   "name": "world-ways-clearing",
-  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"2,2\"); await new Promise(r => setTimeout(r, 600));",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"3,2\"); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
  },
  {
@@ -202,6 +202,21 @@
  {
   "name": "world-design-v2",
   "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"2,2\"); tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); changed(); await new Promise(r => setTimeout(r, 600));",
+  "wait": 600
+ },
+ {
+  "name": "crossing-back-woods",
+  "js": "state.music.mute = true; const B = state.background; B.kind = \"crossing\"; for (const [dd] of CROSS_DIRS) B[\"cross\" + dd] = true; B.crossBack = \"woods\"; B.things = []; B.figX = 0; B.figY = -20; changed(); await new Promise(r => setTimeout(r, 600));",
+  "wait": 600
+ },
+ {
+  "name": "crossing-back-sky",
+  "js": "state.music.mute = true; const B = state.background; B.kind = \"crossing\"; for (const [dd] of CROSS_DIRS) B[\"cross\" + dd] = true; B.crossBack = \"sky\"; B.things = []; B.figX = 0; B.figY = -20; changed(); await new Promise(r => setTimeout(r, 600));",
+  "wait": 600
+ },
+ {
+  "name": "crossing-back-mountains",
+  "js": "state.music.mute = true; const B = state.background; B.kind = \"crossing\"; for (const [dd] of CROSS_DIRS) B[\"cross\" + dd] = true; B.crossBack = \"mountains\"; B.things = []; B.figX = 0; B.figY = -20; changed(); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
  }
 ]

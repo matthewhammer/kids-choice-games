@@ -877,27 +877,78 @@ function thingSvg(o, t, i) {
 function thingsLayer(c) {
   return (c.o.things || []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, JSON.stringify(t)], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
 }
+// (Matthew, 2026-10-17) The crossing's geometry, shared with its ways out in
+// the world (worldWaysSvg): its floor reaches far up the picture (far), the
+// paths meet a little below its middle (cy), and each path ends where it
+// leaves (ends), N and its two neighbours at the far line.
+function crossGeom({ x0, x1, y1, g, W, k, pad }) {
+  const far = g - 300 * k, cy = g - 190 * k;
+  return { far, cy, ends: { N: [0, far + 2 * k], NE: [W * 0.3, far + 2 * k], NW: [-W * 0.3, far + 2 * k], E: [x1 + pad, cy + 14 * k], W: [x0 - pad, cy + 14 * k],
+                            SE: [x1 + pad, y1 + 60 * k], SW: [x0 - pad, y1 + 60 * k], S: [0, y1 + 60 * k]} };
+}
+const CROSS_BACKS = [["woods", "🌲 tall trees and shafts of light"], ["sky", "☁️ sky, sun and clouds over the trees"], ["mountains", "⛰️ mountains far off"]];
 function crossingScene(c) {
-  const { x0, y0, x1, y1, g, W, H, k, pad, R, grad, all, land, o } = c;
-  const far = g - 170 * k, cy = g + 40 * k, floor = o.crossFloor || CROSS_FLOORS[0];
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o } = c;
+  const { far, cy, ends } = crossGeom(c), floor = o.crossFloor || CROSS_FLOORS[0], back = CROSS_BACKS.some(([v]) => v === o.crossBack) ? o.crossBack : "woods";
   const wAt = y => (14 + 190 * Math.max(0, Math.min(1.2, (y - far) / (y1 + 20 * k - far)))) * k;
-  // the far woods: pale trunks under a roof of leaves, the light coming down through them
-  let s = SEP + part("cross-back", c.F, () => {
-    let t = `<defs>${grad("bg-cross-sky", "#cfe9bd", "#f1f6d6", y0, far)}</defs>` + all("url(#bg-cross-sky)"), trees = "";
-    for (let i = 0; i < 30; i++) {
-      const x = x0 + W * (i + R(i, 501)) / 30, w = (6 + 7 * R(i, 502)) * k;
-      trees += `<rect x="${f1(x - w / 2)}" y="${f1(y0 - pad)}" width="${f1(w)}" height="${f1(far + 8 * k - y0 + pad)}" fill="#857560" opacity="0.65"/>`;
-    }
-    trees += `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(pad + H * 0.07)}" fill="#4a8650"/>`;
-    for (let i = 0; i < 32; i++) {
-      const x = x0 - 30 * k + (W + 60 * k) * i / 31, y = y0 + H * (0.05 + 0.1 * R(i, 503)), z = (50 + 40 * R(i, 504)) * k / 80;
-      trees += padSvg(Math.floor(R(i, 505) * 8), x, y, z * (R(i, 506) < 0.5 ? -1 : 1), z * 1.2, ["#5c9c63", "#4a8650", "#68a468"][i % 3]);
-    }
-    return t + obj("far trees", far - 6 * k, trees);
-  });
-  s += SEP + part("cross-beams", [c.F, sceneLfoKey(o, "slow")], () => obj("sunbeams", far - 6 * k, sunbeamsSvg("bg-cross-shaft", x0, W, k, y0 - 20 * k, g + 40 * k, 4, 91, -0.3, o)));
+  // off in the distance (crossBack), all of it above the floor's far line:
+  let s = "";
+  if (back === "woods") {
+    // tall trees, pale trunks under a roof of leaves, the light coming down through them
+    s += SEP + part("cross-back", [c.F, back], () => {
+      let t = `<defs>${grad("bg-cross-sky", "#cfe9bd", "#f1f6d6", y0, far)}</defs>` + all("url(#bg-cross-sky)"), trees = "";
+      for (let i = 0; i < 30; i++) {
+        const x = x0 + W * (i + R(i, 501)) / 30, w = (5 + 6 * R(i, 502)) * k;
+        trees += `<rect x="${f1(x - w / 2)}" y="${f1(y0 - pad)}" width="${f1(w)}" height="${f1(far + 8 * k - y0 + pad)}" fill="#857560" opacity="0.65"/>`;
+      }
+      trees += `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(pad + H * 0.05)}" fill="#4a8650"/>`;
+      for (let i = 0; i < 32; i++) {
+        const x = x0 - 30 * k + (W + 60 * k) * i / 31, y = y0 + H * (0.03 + 0.07 * R(i, 503)), z = (40 + 30 * R(i, 504)) * k / 80;
+        trees += padSvg(Math.floor(R(i, 505) * 8), x, y, z * (R(i, 506) < 0.5 ? -1 : 1), z * 1.2, ["#5c9c63", "#4a8650", "#68a468"][i % 3]);
+      }
+      return t + obj("far trees", far - 6 * k, trees);
+    });
+    s += SEP + part("cross-beams", [c.F, sceneLfoKey(o, "slow")], () => obj("sunbeams", far - 6 * k, sunbeamsSvg("bg-cross-shaft", x0, W, k, y0 - 20 * k, far + 20 * k, 4, 91, -0.3, o)));
+  } else if (back === "sky") {
+    // as at the forest clearing: the sky, the sun, drifting clouds, and the trees far off, each its own
+    s += SEP + part("cross-back", [c.F, back], () => `<defs>${grad("bg-cross-sky", "#6ec2f2", "#e8f6ff", y0, far)}</defs>` + all("url(#bg-cross-sky)") +
+      sunSvg(x1 - W * 0.16, y0 + H * 0.12, 26 * k) + land(far - 18 * k, 5, "#9ccf86", 0.4));
+    s += SEP + cloudsSvg(c, 3, 0.7, 520);
+    s += SEP + part("cross-far-trees", [c.F, back], () => {
+      let t = "";
+      for (let i = 0; i < 18; i++) {
+        const x = x0 + W * (i + 0.2 + 0.6 * R(i, 521)) / 18, y = far + 4 * k * R(i, 522), sc = k * (0.2 + 0.08 * R(i, 523));
+        t += i % 3 === 1 ? use("bg-cross-oak", x, y, sc) : use("bg-cross-pine", x, y, sc, sc, ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
+      }
+      return `<defs>${oakDef("bg-cross-oak", 1)}${pineDef("bg-cross-pine", 7)}</defs>` + obj("far woods", far, t);
+    });
+  } else {
+    // as at the camp site and on the mountain trail: the sky, the sun, clouds high up, mountains far off, snow on the far ones, and far pines
+    s += SEP + part("cross-back", [c.F, back], () => `<defs>${grad("bg-cross-sky", "#4f9fe0", "#e2f2ff", y0, far)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-cross-sky)") +
+      `<circle cx="${f1(x1 - W * 0.14)}" cy="${f1(y0 + H * 0.1)}" r="${f1(24 * k)}" fill="#fff6c8"/>`);
+    s += SEP + part("cross-clouds", [c.F, back, sceneLfoKey(o, "slow")], () => [0, 1, 2].map(i => driftingCloud(x0 + W * (0.15 + 0.32 * i), y0 + H * (0.05 + 0.04 * (i % 2)), k * 0.5, i, o)).join(""));
+    s += SEP + part("cross-peaks", [c.F, back], () => {
+      let t = "";
+      [[0, "#b6c6dc", 190, 9, true], [1, "#8ea3c0", 140, 7, true], [2, "#6d8296", 95, 6, false]].forEach(([r, fill, hgt, n, snow]) => {
+        const base = far + r * 6 * k, pts = [[x0 - pad, base]];
+        for (let i = 0; i <= n; i++) {
+          const x = x0 - 60 * k + (W + 120 * k) * i / n + 30 * k * (R(i + r * 10, 523) - 0.5);
+          pts.push([x - (W / n) * 0.45, base - hgt * k * (0.35 + 0.3 * R(i + r * 10, 524))], [x, base - hgt * k * (0.75 + 0.25 * R(i + r * 10, 525))]);
+        }
+        pts.push([x1 + pad, base], [x1 + pad, base + 30 * k], [x0 - pad, base + 30 * k]);
+        t += `<polygon points="${pts.map(([x, y]) => P2(x, y)).join(" ")}" fill="${fill}"/>`;
+        if (snow) for (let i = 2; i < pts.length - 3; i += 2) {
+          const [px, py] = pts[i], [lx, ly] = pts[i - 1], [rx, ry] = pts[i + 1];
+          t += snowCap(px, py, lx, ly, rx, ry, 0.24 * (base - py), i + r * 20);
+        }
+      });
+      let row = "";
+      for (let i = 0; i < 26; i++) row += use("bg-pine", x0 - 20 * k + (W + 40 * k) * i / 25, far + 14 * k + 4 * k * R(i, 526), k * (0.22 + 0.1 * R(i, 527)), k * (0.22 + 0.1 * R(i, 527)), ` color="${["#2f6e3a", "#3a7d44"][i % 2]}"`);
+      return t + `<defs>${PINE_DEF}</defs>` + obj("far pines", far + 14 * k, row);
+    });
+  }
   // the forest floor, lighter far off, and its leaf litter
-  s += SEP + part("cross-floor", [c.F, floor], () => {
+  s += SEP + part("cross-floor", [c.F, floor, far], () => {
     let t = `<defs>${grad("bg-cross-floor", mix(floor, "#ffffff", 0.18), floor, far, y1)}</defs>` + land(far, 5, "url(#bg-cross-floor)", 0.4);
     for (let i = 0; i < 60; i++) {
       const u = R(i, 507), y = far + (y1 - far) * u * u, x = x0 + W * R(i, 508), r = (2 + 4 * u) * k;
@@ -907,8 +958,6 @@ function crossingScene(c) {
   });
   // the paths: each from the meeting place to where it leaves, as wide as
   // its depth makes it; the meeting place itself, a worn patch
-  const ends = { N: [0, far + 2 * k], NE: [W * 0.3, far + 2 * k], NW: [-W * 0.3, far + 2 * k], E: [x1 + pad, cy + 14 * k], W: [x0 - pad, cy + 14 * k],
-                 SE: [x1 + pad, y1 + 60 * k], SW: [x0 - pad, y1 + 60 * k], S: [0, y1 + 60 * k] };
   const on = CROSS_DIRS.map(([d]) => d).filter(d => o["cross" + d]);
   s += SEP + part("cross-paths", [c.F, on.join(",")], () => {
     let t = "";

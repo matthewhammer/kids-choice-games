@@ -67,7 +67,7 @@ function worldProblems(W) {
 // What a square keeps of its place, as the Background tab edits it
 // (state.background), so the square opened is the square changed: its
 // things, any place's; and a forest crossing's paths and floor.
-const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor"];
+const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack"];
 const cellKeys = kind => kind === "crossing" ? ["things", ...CROSS_KEYS] : ["things"];
 // where the friend comes in, walking into a square from a side: just
 // inside that side, as if they had come through it (the stage's units, as
@@ -101,10 +101,13 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   if (!ways.length) return "";
   const meets = d => { const nb = worldNeighbour(W, W.at, d), other = W.cells[nb.key]; return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]) ? other : null; };
   const sig = ways.map(d => d + (meets(d) ? meets(d).kind : "-")).join();
-  return SEP + part("world-ways", [W.at, sig, x0, y0, x1, y1, g], () => {
-    const k = (y1 - y0) / 700, far = g - 150 * k, mid = g + 40 * k, esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  return SEP + part("world-ways", [W.at, B.kind, sig, x0, y0, x1, y1, g], () => {
+    const k = (y1 - y0) / 700, esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    // (a forest crossing's at its own paths' ends: crossGeom; any other place's at its far ground and sides)
+    const G = B.kind === "crossing" ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;
+    const far = G ? G.far + 10 * k : g - 150 * k, mid = G ? G.cy + 14 * k : g + 40 * k, side = G ? 0.6 : 0.55;
     const AT = { N: [0, far - 6 * k, -90], S: [0, y1 - 30 * k, 90], E: [x1 - 45 * k, mid, 0], W: [x0 + 45 * k, mid, 180],
-                 NE: [x1 * 0.55, far, -40], NW: [x0 * 0.55, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
+                 NE: [x1 * side, far, -40], NW: [x0 * side, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
     return ways.map(d => {
       const [x, y, a] = AT[d], to = meets(d), r = 28 * k, rad = a * Math.PI / 180, bx = 5 * k * Math.cos(rad), by = 5 * k * Math.sin(rad);
       const label = to ? `${WORLD_ARROWS[d]} ${placeName(to.kind)}` : `🚧 ${WORLD_ARROWS[d]} leads nowhere yet`;
@@ -155,7 +158,7 @@ const worldPalette = () => PLACES.map(([k]) => k).filter(k => k !== "none" && !I
 const worldUsualWays = kind => { const c = Object.values(WORLD_DEFAULT.cells).find(c => c.kind === kind); return c && c.ways ? [...c.ways] : ["E", "W"]; };
 function worldPut(key, kind) {
   const W = state.world;
-  W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], things: [] }
+  W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", things: [] }
                                      : { kind, ways: worldUsualWays(kind), things: [] };
   if (!W.start || !W.cells[W.start]) W.start = key;
   if (W.at === key) W.at = null;   // (the square the friend was in holds another place now)

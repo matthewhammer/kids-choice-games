@@ -37,29 +37,29 @@ try {
   await mouseDrag(await center("#chip-crossing"), await center('.world-grid [data-square="4,0"]'));
   let W = await world();
   ok("a forest crossing dragged from the palette onto E1", W.cells["4,0"] === "crossing", W.cells);
-  await mouseDrag(await center('.world-grid [data-square="4,0"]'), await center('.world-grid [data-square="4,1"]'));
+  await mouseDrag(await center('.world-grid [data-square="4,0"]'), await center('.world-grid [data-square="0,0"]'));
   W = await world();
-  ok("dragged from E1 to E2", W.cells["4,1"] === "crossing" && !W.cells["4,0"], W.cells);
-  await mouseDrag(await center('.world-grid [data-square="4,1"]'), await center(".world-trash"));
+  ok("dragged from E1 to A1", W.cells["0,0"] === "crossing" && !W.cells["4,0"], W.cells);
+  await mouseDrag(await center('.world-grid [data-square="0,0"]'), await center(".world-trash"));
   W = await world();
-  ok("and onto 🗑️: gone", !W.cells["4,1"] && Object.keys(W.cells).length === 17, Object.keys(W.cells).length);
+  ok("and onto 🗑️: gone", !W.cells["0,0"] && Object.keys(W.cells).length === 18, Object.keys(W.cells).length);
   const sizes = await ev(`(async () => { const b = [...document.querySelectorAll("#panel button, button")].filter(x => /column/.test(x.textContent)); b.find(x => /＋/.test(x.textContent)).click(); await new Promise(r => setTimeout(r, 200)); const wide = state.world.cols;
     [...document.querySelectorAll("button")].find(x => /－ column/.test(x.textContent)).click(); await new Promise(r => setTimeout(r, 200)); return JSON.stringify([wide, state.world.cols]); })()`);
   ok("＋ column, then － column", JSON.parse(sizes).join() === "6,5", sizes);
   // into the clearing's square, its way NE off and on
-  await click('.world-grid [data-square="2,2"]');
+  await click('.world-grid [data-square="3,2"]');
   W = await world();
-  ok("a tap on C3 goes to the clearing", W.at === "2,2", W.at);
+  ok("a tap on D3 goes to the clearing", W.at === "3,2", W.at);
   await click('.world-here button[title="NE"]');
   W = await world();
   ok("its way NE off: the fairy forest's way back has nothing to meet", W.problems.some(t => /fairy forest/.test(t) && /no way back|meets/.test(t)), W.problems);
   await click('.world-here button[title="NE"]');
   W = await world();
   ok("and on again: no mistakes", W.problems.length === 0, W.problems);
-  await click('.world-grid [data-square="3,2"]');
+  await click('.world-grid [data-square="4,2"]');
   await ev(`(() => { [...document.querySelectorAll(".world-here button")].find(b => /start here/.test(b.textContent)).click(); return 1; })()`); await sleep(300);
   W = await world();
-  ok("🏁 start here, in the castle's square (D3)", W.start === "3,2", W.start);
+  ok("🏁 start here, in the castle's square (E3)", W.start === "4,2", W.start);
   // a rock from the things palette into the picture
   await ev(`(() => { const b = [...document.querySelectorAll("button")].find(x => /^\\+ 🪨 rock/.test(x.textContent)); b.id = "add-rock"; return 1; })()`);
   const target = JSON.parse(await ev(`(() => { const p = new DOMPoint(120, 360).matrixTransform(pic.getScreenCTM()); return JSON.stringify([p.x, p.y]); })()`));
@@ -73,7 +73,7 @@ try {
   await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: tc[0], y: tc[1], button: "left", buttons: 0, clickCount: 1 }); await sleep(400);
   W = await world();
   ok("a tree tapped in", W.things.some(t => t[0] === "tree"), W.things);
-  const kept = await ev(`JSON.stringify((state.world.cells["3,2"].things || []).map(t => t.kind))`);
+  const kept = await ev(`JSON.stringify((state.world.cells["4,2"].things || []).map(t => t.kind))`);
   ok("and both kept in the castle's square", JSON.parse(kept).includes("rock") && JSON.parse(kept).includes("tree"), kept);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

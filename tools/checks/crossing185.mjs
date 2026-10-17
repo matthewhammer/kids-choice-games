@@ -58,6 +58,10 @@ try {
   ok("a drag moves the tree (right, and nearer)", after.x > before.x + 20 && after.z > before.z + 5, { before, after });
   const fig = JSON.parse(await ev(`JSON.stringify([state.background.figX, state.background.figY])`));
   ok("and not the friend", fig[0] === 0 && fig[1] === 120, fig);
+  // off in the distance: each backdrop its own (woods: shafts of light; sky: far woods under the sun; mountains: far pines below peaks)
+  const backs = JSON.parse(await ev(`(async () => { const out = {}; for (const b of ["woods", "sky", "mountains"]) { state.background.crossBack = b; changed(); await new Promise(r => setTimeout(r, 300));
+    out[b] = [...document.querySelectorAll("#bg [data-obj]")].map(e => e.getAttribute("data-obj")).filter(n => /sunbeams|far woods|far pines|far trees/.test(n)).join(); } return JSON.stringify(out); })()`));
+  ok("three backdrops, each its own", /sunbeams/.test(backs.woods) && /far woods/.test(backs.sky) && /far pines/.test(backs.mountains), backs);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

@@ -22,12 +22,12 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const first = JSON.parse(await ev(`(() => { state.music.mute = true; state.world = clone(DEFAULTS.world); changed();
     return JSON.stringify({ cells: Object.keys(state.world.cells).length, problems: worldProblems(state.world).map(p => p.text), off: worldOffGrid(state.world).map(o => o.id + ":" + o.kind) }); })()`));
-  ok("the first world: 17 places, no mistakes", first.cells === 17 && first.problems.length === 0, first.problems);
+  ok("the first world: 18 places, no mistakes", first.cells === 18 && first.problems.length === 0, first.problems);
   ok("its insides off the grid, each with an id", first.off.includes("inside 1:" + "witchroom") || first.off.some(o => /^inside \d+:livingroom$/.test(o)), first.off);
   // the tab
   const tab = JSON.parse(await ev(`(async () => { tab = TABS.findIndex(t => t[1] === "world"); showTab(); await new Promise(r => setTimeout(r, 300));
     return JSON.stringify({ squares: document.querySelectorAll(".world-grid > *").length, places: document.querySelectorAll(".world-grid button.world-cell").length, ok: !!document.querySelector(".world-probs") }); })()`));
-  ok("the World design tab: 25 squares, 17 places", tab.squares === 25 && tab.places === 17 && tab.ok, tab);
+  ok("the World design tab: 25 squares, 18 places", tab.squares === 25 && tab.places === 18 && tab.ok, tab);
   // into the crossing at B3 (1,2)
   const into = JSON.parse(await ev(`(async () => { document.querySelector('.world-grid [data-square="1,2"]').click(); await new Promise(r => setTimeout(r, 400));
     const B = state.background; return JSON.stringify({ kind: B.kind, at: state.world.at, ways: CROSS_DIRS.map(([d]) => d).filter(d => B["cross" + d]) }); })()`));
@@ -37,24 +37,24 @@ try {
     document.querySelector('.world-grid [data-square="2,2"]').click(); await new Promise(r => setTimeout(r, 300)); const away = state.background.kind;
     document.querySelector('.world-grid [data-square="1,2"]').click(); await new Promise(r => setTimeout(r, 300));
     return JSON.stringify({ inCell, away, back: (state.background.things || []).map(t => t.kind + t.tone) }); })()`));
-  ok("a rock put there is kept in its square, and is there again after the clearing and back", kept.inCell === 1 && kept.away === "clearing" && kept.back.join() === "rock#a8634a", kept);
-  const broken = JSON.parse(await ev(`(() => { delete state.world.cells["2,1"]; changed(); return JSON.stringify(worldProblems(state.world).map(p => p.text)); })()`));
-  ok("the wood path taken away: a way into an empty square, and the mountains cut off", broken.some(t => /empty square, C2/.test(t)) && broken.some(t => /mountain/.test(t) && /can't be reached/.test(t)), broken);
+  ok("a rock put there is kept in its square, and is there again after the pond and back", kept.inCell === 1 && kept.away === "lake" && kept.back.join() === "rock#a8634a", kept);
+  const broken = JSON.parse(await ev(`(() => { delete state.world.cells["3,1"]; delete state.world.cells["2,0"]; changed(); return JSON.stringify(worldProblems(state.world).map(p => p.text)); })()`));
+  ok("the wood path and the beach taken away: a way into an empty square, and the mountains cut off", broken.some(t => /empty square, D2/.test(t)) && broken.some(t => /mountain/.test(t) && /can't be reached/.test(t)), broken);
   const marked = await ev(`(async () => { await new Promise(r => setTimeout(r, 300)); return document.querySelectorAll(".world-grid .world-cell.bad").length; })()`);
   ok("and the squares the mistakes are about are marked", marked >= 2, marked);
-  // the ways out, in the picture: from the clearing (C3), E to the castle and back
-  const ways = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldEnter("2,2"); await new Promise(r => setTimeout(r, 500));
+  // the ways out, in the picture: from the clearing (D3), E to the castle and back
+  const ways = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldEnter("3,2"); await new Promise(r => setTimeout(r, 500));
     const w = [...document.querySelectorAll("#bg .way-out")]; return JSON.stringify({ ways: w.filter(e => e.dataset.way).map(e => e.dataset.way).sort(), door: w.every(e => e.hasAttribute("data-door")) }); })()`));
   ok("in the clearing, its ways out in the picture: N, NE, E, S, W, each a doorway", ways.ways.join() === "E,N,NE,S,W" && ways.door, ways);
   const walked = JSON.parse(await ev(`(async () => { document.querySelector('#bg [data-way="E"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    for (let i = 0; i < 60 && state.world.at === "2,2"; i++) await new Promise(r => setTimeout(r, 100));
+    for (let i = 0; i < 60 && state.world.at === "3,2"; i++) await new Promise(r => setTimeout(r, 100));
     await new Promise(r => setTimeout(r, 300)); const B = state.background;
     return JSON.stringify({ at: state.world.at, kind: B.kind, figX: B.figX, back: !document.getElementById("back").hidden }); })()`));
-  ok("through the way E: the castle (D3), come in from its west side, the back chip offered", walked.at === "3,2" && walked.kind === "castle" && walked.figX < -200 && walked.back, walked);
-  const back = JSON.parse(await ev(`(async () => { document.getElementById("back").click(); for (let i = 0; i < 60 && state.world.at !== "2,2"; i++) await new Promise(r => setTimeout(r, 100));
+  ok("through the way E: the castle (E3), come in from its west side, the back chip offered", walked.at === "4,2" && walked.kind === "castle" && walked.figX < -200 && walked.back, walked);
+  const back = JSON.parse(await ev(`(async () => { document.getElementById("back").click(); for (let i = 0; i < 60 && state.world.at !== "3,2"; i++) await new Promise(r => setTimeout(r, 100));
     await new Promise(r => setTimeout(r, 300)); return JSON.stringify({ at: state.world.at, kind: state.background.kind }); })()`));
-  ok("and the back chip brings them back to the clearing (C3)", back.at === "2,2" && back.kind === "clearing", back);
-  const nowhere = JSON.parse(await ev(`(async () => { delete state.world.cells["2,1"]; changed(); await new Promise(r => setTimeout(r, 300));
+  ok("and the back chip brings them back to the clearing (D3)", back.at === "3,2" && back.kind === "clearing", back);
+  const nowhere = JSON.parse(await ev(`(async () => { delete state.world.cells["3,1"]; changed(); await new Promise(r => setTimeout(r, 300));
     const n = [...document.querySelectorAll("#bg .way-out.nowhere")]; return JSON.stringify({ n: n.length, way: n.map(e => e.dataset.way || null), text: n.map(e => e.textContent).join(" ") }); })()`));
   ok("with the wood path gone, the way N is dimmed, 🚧, and goes nowhere", nowhere.n === 1 && nowhere.way[0] === null && /nowhere/.test(nowhere.text), nowhere);
   ok("no page errors", !errs.length, errs);
