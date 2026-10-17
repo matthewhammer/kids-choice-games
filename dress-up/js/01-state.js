@@ -21,7 +21,7 @@ const HOUSE_COLOR_DEFAULTS = {
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3, emptyroom: 0.3 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 99) The friend is smaller farther back and bigger nearer, as a
 // place draws what stands in it. A place's vanishing height is the y where
@@ -348,6 +348,7 @@ const DEFAULTS = {
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2, fallRate: 100, fallTime: "day",
                 caveGems: 16, gemShape: "four", gemSize: 100, gemBright: 90, gemTwinkle: 60,
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
+                crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossThings: [],
                 starShape: "mix", starSize: 100, starBright: 85, starTwinkle: 40,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
                 pic1: "lake", pic2: "beach", pic3: "livingroom", pic4: "forest", pic5: "treehouse", pic6: "underwater",

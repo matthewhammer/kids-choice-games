@@ -1080,7 +1080,7 @@ const TUNES = {
 const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
-                     tent: "lullaby", cave: "steppers", woodpath: "forest", castle: "castlewaltz", castleroom: "ballroom" };
+                     tent: "lullaby", cave: "steppers", woodpath: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom" };
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
 // the kinds of music, each with its tunes: the music tab's first row of
 // chips picks a kind, the second its tune
@@ -1370,6 +1370,7 @@ const SCENE_LFO_THINGS = {
   tent: { fast: "🔥 the campfire outside, ⭐ the stars at night", slow: "🏮 the tent's light" },
   cave: { fast: "💎 the gems sparkling", slow: "🔮 the crystals glowing" },
   woodpath: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☀️ the sunbeams" },
+  crossing: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☀️ the sunbeams" },
   castle: { fast: "🚩 the pennants, ☀️ the sun's rays", slow: "☁️ the clouds drifting" },
   "castleroom:king": TORCH_LFO_THINGS, "castleroom:trap": TORCH_LFO_THINGS, "castleroom:dungeon1": TORCH_LFO_THINGS,
   "castleroom:dungeon2": TORCH_LFO_THINGS, "castleroom:hallway": TORCH_LFO_THINGS,

@@ -162,7 +162,11 @@ pic.addEventListener("pointerdown", e => {
   const thing = onThing(e);
   if (thing && !onFigure(e)) {
     const p = picUnits(e), B = state.background, name = thing.dataset.drag;
-    drag = { thing: name, x0: B[name + "X"] ?? +(thing.dataset.x ?? 0), y0: B[name + "Y"] ?? +(thing.dataset.y ?? 0), px: p.x, py: p.y };
+    // (ticket 185: a forest crossing's thing, "cross:i", is crossThings[i], its feet at depth z)
+    const T = name.startsWith("cross:") ? (B.crossThings || [])[+name.slice(6)] : null;
+    if (name.startsWith("cross:") && !T) return;
+    drag = T ? { thing: name, cross: +name.slice(6), x0: T.x, y0: T.z - SCENE.ground, px: p.x, py: p.y }
+             : { thing: name, x0: B[name + "X"] ?? +(thing.dataset.x ?? 0), y0: B[name + "Y"] ?? +(thing.dataset.y ?? 0), px: p.x, py: p.y };
     pic.setPointerCapture(e.pointerId); picDragging = true;
     return;
   }
@@ -195,8 +199,10 @@ pic.addEventListener("pointermove", e => {
   if (drag.thing) {
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
-    B[drag.thing + "X"] = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right));
-    B[drag.thing + "Y"] = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
+    const x = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)), y = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
+    const T = drag.cross !== undefined && (B.crossThings || [])[drag.cross];
+    if (T) { T.x = x; T.z = SCENE.ground + y; }
+    else { B[drag.thing + "X"] = x; B[drag.thing + "Y"] = y; }
     dragChanged();
     return;
   }
@@ -608,7 +614,7 @@ if (touchPad.want) padLoop = requestAnimationFrame(padPoll);
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { imagination: [0, 70], emptyroom: [0, 70], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
+const ARRIVE = { crossing: [0, 40], imagination: [0, 70], emptyroom: [0, 70], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], castle: [-210, 30], castleroom: [0, 40] };
 // Where each trip through a doorway began, the last on top: the back chip
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.

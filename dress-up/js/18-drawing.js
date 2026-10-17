@@ -896,7 +896,7 @@ const PLACE_PHRASE = { imagination: "in 💭 our imagination", emptyroom: "in th
   cemetery: "in the 🌿 cemetery", lake: "at the 🦆 lake", house: "outside of the 🏠 house", treehouse: "near the 🌳 tree house",
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
   healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",
-  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", woodpath: "on the 🥾 path through the woods",
+  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", woodpath: "on the 🥾 path through the woods", crossing: "at the 🛤️ forest crossing",
   castle: b => `outside of ${castleOf(b).id}'s 🏰 castle`,
   castleroom: b => { const K = castleOf(b), n = Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1)));
     return `in the ${roomLabel(K.rooms[n - 1])} (room ${n} of ${K.id}'s castle)`; } };

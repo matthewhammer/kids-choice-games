@@ -825,9 +825,100 @@ function imaginationScene(c) {
   }).join(""));
   return s;
 }
+// (ticket 185, Matthew, 2026-10-17) The forest crossing: a blank place for
+// the world designer, a forest floor (olive green unless chosen) where up to
+// eight brown paths meet: N (ahead, into the far woods), NE and NW (ahead
+// and to the side), E and W (off the sides), S (toward us), SE and SW
+// (toward us and to the side). Each crossing says which it has (crossN ...
+// crossNW); a grid cell will say it for each crossing laid in it. Its things
+// (crossThings: rocks, bushes, trees and pines) stand where they were put,
+// each sized for its depth as the friend is, and drag as one piece. Each
+// thing is its own instance, { kind, x, z, seed, size, mirror }: what it is,
+// where its feet are, and its own parameters, which its drawing takes (so
+// two of a kind look different): mirror, for every kind (Matthew,
+// 2026-10-17), turning it left for right about its feet; and a rock's
+// colour, tone, from a small palette (his too). THING_PARAMS lists them per
+// kind ("all" for every kind), for the controls: a toggle, or colours.
+const CROSS_DIRS = [["N", "⬆️ ahead"], ["NE", "↗️ ahead, right"], ["E", "➡️ right"], ["SE", "↘️ toward us, right"],
+                    ["S", "⬇️ toward us"], ["SW", "↙️ toward us, left"], ["W", "⬅️ left"], ["NW", "↖️ ahead, left"]];
+const CROSS_PATH = "#8a5528", CROSS_PATH_EDGE = "#5f3a1a";
+const CROSS_FLOORS = ["#76843a", "#5f7a3a", "#8a9a4a", "#6b6b3a", "#4f6b3a", "#9a8a5a"];
+const ROCK_TONES = ["#8f8a80", "#b4afa4", "#6f8a94", "#c2a67a", "#a8634a", "#7f8a6a", "#4f4b48"];
+const THING_PARAMS = { all: [["mirror", "↔️ mirror", "toggle"]], rock: [["tone", "🎨", "color", ROCK_TONES]] };
+const thingParams = kind => [...THING_PARAMS.all, ...(THING_PARAMS[kind] || [])];
+const CROSS_THINGS = { rock: { label: "🪨 rock", size: 1 }, bush: { label: "🌿 bush", size: 1 }, tree: { label: "🌳 tree", size: 1 }, pine: { label: "🌲 pine", size: 1 } };
+// (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
+function crossThingSvg(o, t, i) {
+  const s = depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100, seed = t.seed ?? 900 + i;
+  const at = inner => `<g transform="translate(${f1(t.x)} ${f1(t.z)}) scale(${(t.mirror ? -s : s).toFixed(3)} ${s.toFixed(3)})">${inner}</g>`;
+  const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
+  const body = t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :
+               t.kind === "bush" ? at(bushSvg(0, 0, 70, seed)) :
+               t.kind === "pine" ? at(shadow(70) + pineTree(seed, { tiers: 6 })) :
+               at(shadow(90) + leafyTree(seed, { h: 380 }));
+  return `<g class="cross-thing" data-drag="cross:${i}" style="cursor: grab">${body}</g>`;
+}
+function crossingScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, grad, all, land, o } = c;
+  const far = g - 170 * k, cy = g + 40 * k, floor = o.crossFloor || CROSS_FLOORS[0];
+  const wAt = y => (14 + 190 * Math.max(0, Math.min(1.2, (y - far) / (y1 + 20 * k - far)))) * k;
+  // the far woods: pale trunks under a roof of leaves, the light coming down through them
+  let s = SEP + part("cross-back", c.F, () => {
+    let t = `<defs>${grad("bg-cross-sky", "#cfe9bd", "#f1f6d6", y0, far)}</defs>` + all("url(#bg-cross-sky)"), trees = "";
+    for (let i = 0; i < 30; i++) {
+      const x = x0 + W * (i + R(i, 501)) / 30, w = (6 + 7 * R(i, 502)) * k;
+      trees += `<rect x="${f1(x - w / 2)}" y="${f1(y0 - pad)}" width="${f1(w)}" height="${f1(far + 8 * k - y0 + pad)}" fill="#857560" opacity="0.65"/>`;
+    }
+    trees += `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(pad + H * 0.07)}" fill="#4a8650"/>`;
+    for (let i = 0; i < 32; i++) {
+      const x = x0 - 30 * k + (W + 60 * k) * i / 31, y = y0 + H * (0.05 + 0.1 * R(i, 503)), z = (50 + 40 * R(i, 504)) * k / 80;
+      trees += padSvg(Math.floor(R(i, 505) * 8), x, y, z * (R(i, 506) < 0.5 ? -1 : 1), z * 1.2, ["#5c9c63", "#4a8650", "#68a468"][i % 3]);
+    }
+    return t + obj("far trees", far - 6 * k, trees);
+  });
+  s += SEP + part("cross-beams", [c.F, sceneLfoKey(o, "slow")], () => obj("sunbeams", far - 6 * k, sunbeamsSvg("bg-cross-shaft", x0, W, k, y0 - 20 * k, g + 40 * k, 4, 91, -0.3, o)));
+  // the forest floor, lighter far off, and its leaf litter
+  s += SEP + part("cross-floor", [c.F, floor], () => {
+    let t = `<defs>${grad("bg-cross-floor", mix(floor, "#ffffff", 0.18), floor, far, y1)}</defs>` + land(far, 5, "url(#bg-cross-floor)", 0.4);
+    for (let i = 0; i < 60; i++) {
+      const u = R(i, 507), y = far + (y1 - far) * u * u, x = x0 + W * R(i, 508), r = (2 + 4 * u) * k;
+      t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r * 1.6)}" ry="${f1(r * 0.6)}" fill="${mix(floor, i % 2 ? "#3a2a10" : "#c8b060", 0.35)}" opacity="0.7"/>`;
+    }
+    return t;
+  });
+  // the paths: each from the meeting place to where it leaves, as wide as
+  // its depth makes it; the meeting place itself, a worn patch
+  const ends = { N: [0, far + 2 * k], NE: [W * 0.3, far + 2 * k], NW: [-W * 0.3, far + 2 * k], E: [x1 + pad, cy + 14 * k], W: [x0 - pad, cy + 14 * k],
+                 SE: [x1 + pad, y1 + 60 * k], SW: [x0 - pad, y1 + 60 * k], S: [0, y1 + 60 * k] };
+  const on = CROSS_DIRS.map(([d]) => d).filter(d => o["cross" + d]);
+  s += SEP + part("cross-paths", [c.F, on.join(",")], () => {
+    let t = "";
+    for (const d of on) {
+      const [ex, ey] = ends[d], dx = ex, dy = ey - cy, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+      const a = wAt(cy) * 0.5, b = wAt(Math.min(ey, y1 + 20 * k)) * 0.5;
+      t += `<path d="M${f1(nx * a)} ${f1(cy + ny * a)} L${f1(ex + nx * b)} ${f1(ey + ny * b)} L${f1(ex - nx * b)} ${f1(ey - ny * b)} L${f1(-nx * a)} ${f1(cy - ny * a)} Z" ` +
+           `fill="${CROSS_PATH}" stroke="${CROSS_PATH_EDGE}" stroke-width="${f1(2 * k)}" stroke-linejoin="round"/>`;
+      for (let i = 0; i < 9; i++) {
+        const u = (i + 0.5) / 9, px = ex * u + (R(i, 509 + d.length) - 0.5) * 0.6 * (a + (b - a) * u) * nx, py = cy + dy * u + (R(i, 510) - 0.5) * 0.3 * (a + (b - a) * u);
+        t += `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="${f1((3 + 3 * u) * k)}" ry="${f1((1.6 + 1.4 * u) * k)}" fill="${CROSS_PATH_EDGE}" opacity="0.55"/>`;
+      }
+    }
+    if (on.length) t += `<ellipse cx="0" cy="${f1(cy)}" rx="${f1(wAt(cy) * 0.95)}" ry="${f1(wAt(cy) * 0.36)}" fill="${CROSS_PATH}" stroke="${CROSS_PATH_EDGE}" stroke-width="${f1(2 * k)}"/>` +
+                         `<ellipse cx="0" cy="${f1(cy)}" rx="${f1(wAt(cy) * 0.8)}" ry="${f1(wAt(cy) * 0.28)}" fill="${CROSS_PATH}"/>`;
+    return t;
+  });
+  // the things put here, each an object at its own depth
+  const things = o.crossThings || [];
+  // (each its own piece: dragging one draws only that one again)
+  things.forEach((t, i) => { s += SEP + part("cross-thing-" + i, [c.F, t.kind, t.x, t.z, t.seed, t.size, !!t.mirror, t.tone || ""], () => obj(`${t.kind} ${i + 1}`, t.z, crossThingSvg(o, t, i))); });
+  // butterflies, as on the path through the woods
+  s += SEP + part("cross-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () =>
+    obj("butterflies", g - 50 * k, butterfliesSvg(c, [[x0 + W * 0.22, g - 60 * k, 1], [x0 + W * 0.74, g - 100 * k, 0.8]])));
+  return s;
+}
 const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene };
+                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width
