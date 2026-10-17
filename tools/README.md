@@ -15,4 +15,5 @@ They run on GitHub's computers, from [`.github/workflows/dress-up-tests.yml`](..
 | `fpsgate.mjs <port> <url> [cases]` | The frame-rate gate (ticket 152): the scenes that had trouble, walked with a fake controller and dragged with real mouse events, three runs each. `SLOW=1`, `BLACK=1` for the slow tiers. |
 | `audit160.mjs <port> <url> [cases]` | Every place, castle room style and tree-house room walked with the on-screen controller (ticket 160). |
 | `leak167.mjs <port> <url> <friend.json \| -> [rounds]` | Ticket 167, in Chrome: the duck pond fresh, after rounds of changes, after a reload, with what might grow counted (elements, listeners, heap, timers, animations, audio nodes). `-` is the default friend; a saved friend stays off this public repository. |
+| `speedlog.py <log url> [--since YYYY-MM-DD]` | The 🧪 and ⏱️ lines sent with 📮 (ticket 166), read back from the Fumola canister's log. |
 | `leakff.py <url> <friend.json \| -> [rounds]` | The same in Firefox. `CLEAR=1` adds the game's caches emptied and the music paused before the reload; `CONTROL=1` swims for as long instead of making changes. |
