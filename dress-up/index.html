@@ -878,6 +878,55 @@ function perfMeterTick(t) {
 // deleted after 60 days with no edits), read back as text from
 // <pad>/export/txt. To be replaced by a Fumola canister we control.
 const SPEED_PAD = "https://pad.riseup.net/p/LgBrn8VRzEJxrsmMW82I";
+// (Matthew, 2026-10-16, on 0.0.90: pauses going through a castle door and
+// into a pit, on his laptop's Firefox, where headless Chrome and Firefox
+// show none: the browser's own painting, which only his laptop can show)
+// ⏱️ time the next trip: armed, the next trip through a doorway (a click,
+// X, 🚪, walking onto a pit) records every frame from its start until
+// TRIP_TAIL ms after the friend has arrived and stands: its gap, the trip's
+// phase then (tripPhase, set as a trip goes on), and the game's own work in
+// it (drawing, building a place: tripWork); then a line to copy and paste,
+// as 🧪's: the long frames, each phase's frames, this computer.
+const TRIP_TAIL = 1500, TRIP_LONG = 50;
+let tripTimer = null, tripPhase = "";
+function tripArm(report) { tripTimer = { armed: true, report }; report("⏱️ ready: now go through a doorway (click a door or a pit, press X or 🚪, or walk onto a pit)…"); }
+// (the phase after "arriving", two frames on: the frame that builds the new place and the one that first paints it are "arriving")
+function tripNext(ph) { if (!tripTimer) { tripPhase = ph; return; } requestAnimationFrame(() => requestAnimationFrame(() => { if (tripPhase === "arriving") tripPhase = ph; })); }
+function tripWork(what, t) { const T = tripTimer; if (T && !T.armed && !T.done) T.work.push([t - T.t0, performance.now() - t, what]); }
+function tripStart(door, how) {
+  const T0 = tripTimer;
+  if (!T0 || !T0.armed) return;
+  const B = state.background, T = { report: T0.report, t0: performance.now(), how, frames: [], work: [], standAt: 0, done: false,
+    from: B.kind + (B.kind === "castleroom" ? " " + (B.castleRoom ?? 1) : ""), to: door.dataset.to + (door.dataset.room ? " " + door.dataset.room : "") };
+  tripTimer = T; tripPhase = how === "spin" ? "spinning" : "walking";
+  T.report("⏱️ timing this trip…");
+  let last = 0;
+  const f = t => {
+    if (tripTimer !== T) return;
+    if (last) T.frames.push([last - T.t0, t - last, tripPhase]);
+    last = t;
+    // (standing: not entering, not landing a jump, done fading or spinning in)
+    if (!entering && !isJump(state.body.anim) && !["arriving", "fading in", "spinning out"].includes(tripPhase)) { if (!T.standAt) { T.standAt = t; tripPhase = "arrived"; } }
+    else T.standAt = 0;
+    if (T.standAt && t - T.standAt > TRIP_TAIL) { T.done = true; tripReport(T); tripTimer = null; return; }
+    requestAnimationFrame(f);
+  };
+  requestAnimationFrame(f);
+}
+function tripReport(T) {
+  const F = T.frames, all = F.reduce((a, f) => a + f[1], 0) || 1, fps = n => Math.round(1000 * n.length / (n.reduce((a, f) => a + f[1], 0) || 1));
+  const workIn = (a, b) => T.work.filter(([t]) => t >= a - 1 && t < b);
+  const long = F.filter(f => f[1] > TRIP_LONG).map(([t, g, ph]) => { const w = workIn(t, t + g), ms = w.reduce((a, x) => a + x[1], 0), place = w.filter(x => x[2] === "building the place").reduce((a, x) => a + x[1], 0);
+    return { at: +(t / 1000).toFixed(2), ms: Math.round(g), phase: ph, game: Math.round(ms), place: Math.round(place) }; });
+  const phases = [...new Set(F.map(f => f[2]))].map(ph => { const n = F.filter(f => f[2] === ph); return { phase: ph, s: +(n.reduce((a, f) => a + f[1], 0) / 1000).toFixed(2), fps: fps(n), worst: Math.round(Math.max(...n.map(f => f[1]))) }; });
+  const ua = navigator.userAgent, browser = (ua.match(/(Firefox|Edg|Chrome|Safari)\/(\d+)/) || [, "a browser", ""]).slice(1).join(" ").trim();
+  const data = { v: VERSION.number, trip: `${T.from} > ${T.to}`, how: T.how, s: +(all / 1000).toFixed(2), frames: F.length, fps: fps(F), long, phases,
+                 game: Math.round(T.work.reduce((a, x) => a + x[1], 0)), browser, screen: `${screen.width}x${screen.height}`, dpr: devicePixelRatio,
+                 pic: (r => `${Math.round(r.width)}x${Math.round(r.height)}`)(pic.getBoundingClientRect()), found: { slow: slowFlag, choppy, slowMoving: PERF.slowMoving } };
+  T.report(`⏱️ Dress Up ${VERSION.number}, a trip from ${T.from} to ${T.to} (${T.how}): ${data.s} s, ${F.length} frames, ${data.fps} fps · ` +
+           (long.length ? `long frames: ${long.map(l => `${l.ms} ms at ${l.at} s (${l.phase}; the game's own work ${l.game} ms${l.place ? ", building the place " + l.place : ""})`).join(", ")}` : `no frame over ${TRIP_LONG} ms`) +
+           ` · ${phases.map(p => `${p.phase} ${p.fps} fps (longest ${p.worst} ms)`).join(", ")} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
+}
 async function speedCheck(report) {
   if (perfBusy) return;
   perfBusy = true;
@@ -1042,7 +1091,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.90", released: "2026-10-16" };
+const VERSION = { number: "0.0.91", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9379,6 +9428,7 @@ function showObjects() {
 // the scene's element, its pieces those of the last scene where their text
 // is the same (see SEP), the rest parsed
 function mountScene(text) {
+  const tMount = performance.now();   // (⏱️ a trip being timed)
   const NS = "http://www.w3.org/2000/svg", root = document.createElementNS(NS, "g"), stack = [root], kept = new Map();
   root.id = "bg";
   bgShown.parsed = 0;
@@ -9404,6 +9454,7 @@ function mountScene(text) {
     stack[stack.length - 1].append(node);
   }
   bgShown.kept = kept;
+  if (tripTimer) tripWork("building the place", tMount);
   return root;
 }
 // the figure's size and place in its scene (k about its feet, at y = g),
@@ -10326,6 +10377,7 @@ function stillPicMoved(t) {
 function draw() {
   const t = performance.now(), text = bgShown.text;
   drawNow();
+  if (tripTimer) tripWork("drawing", t);   // (⏱️ a trip being timed)
   if (bgShown.text !== text) return;
   const ms = performance.now() - t;
   slowAvg = slowN ? 0.9 * slowAvg + 0.1 * ms : ms;
@@ -13907,6 +13959,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const speedPad = el("a", { href: SPEED_PAD, target: "_blank", rel: "noopener", title: "A shared page anyone with its address can read and write: paste the line there" }, "📝 then paste it here");
     box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [speedBtn, speedCopy, speedPad]), speedOut,
       el("div", { class: "hint" }, "About 40 seconds, in the empty room and then swimming in the duck pond (moving, held still, then without one part at a time: the scenery, the friend's part under the water, the rings; its scenery as a still picture; with its music), then the empty room again, with the friend as they start, the same on every computer; then your friend and everything back as it was. Run it on two computers and compare the lines: the drawing times' ratio is how much slower one is.")]));
+    // (⏱️ time the next trip: a line to copy and paste, as 🧪's)
+    const tripOut = el("input", { type: "text", readonly: "", class: "padline", placeholder: "⏱️ the trip's timing shows here", onfocus: e => e.target.select() });
+    const tripCopy = el("button", { onclick: () => { tripOut.select(); try { navigator.clipboard.writeText(tripOut.value).then(() => { tripCopy.textContent = "📋 copied"; }, () => document.execCommand("copy")); } catch (e) { document.execCommand("copy"); } } }, "📋 copy");
+    const tripBtn = el("button", { onclick: () => { tripCopy.textContent = "📋 copy"; tripArm(t => { tripOut.value = t; }); } }, "⏱️ time the next trip");
+    const tripPad = el("a", { href: SPEED_PAD, target: "_blank", rel: "noopener", title: "A shared page anyone with its address can read and write: paste the line there" }, "📝 then paste it here");
+    box.append(el("div", { class: "perfrow" }, [el("div", { class: "row" }, [tripBtn, tripCopy, tripPad]), tripOut,
+      el("div", { class: "hint" }, "Press it, then go through a doorway: click a castle door or a pit, press X or 🚪, or walk onto a pit. Every frame is timed from the start of the trip until the friend has arrived and stood still a moment; the line says which frames were long, in which part of the trip (walking, stepping in, falling, arriving, landing), and how much of each was the game's own work.")]));
     if (!perfMeter.loop) perfMeter.loop = requestAnimationFrame(perfMeterTick);
     const rows = PERF_FEATURES.map(f => {
       const chip = el("button", { onclick: () => perfSet(f.id, !PERF[f.id]) }), here = el("div", { class: "hint" }), result = el("div", { class: "hint" });
@@ -14958,8 +15017,9 @@ function flyInto(box, arrive) {
                             step(0.85, 720, 1 - (1 - s) * 0.9), step(1, 1260, s), step(1, 1620, s * 0.2, 0)],
                            { duration: 2000, easing: "ease-in", fill: "forwards" });
   fly.onfinish = () => {
+    tripPhase = "arriving";
     arrive();
-    entering = false;
+    entering = false; tripNext("spinning out");
     changed();
     // landing: a quick spin out, slowing, to the friend's own size
     const there = document.getElementById("figure");
@@ -14970,7 +15030,7 @@ function flyInto(box, arrive) {
     land.style.transformBox = "fill-box";
     land.style.transformOrigin = "center bottom";
     land.animate([{ transform: "rotate(-360deg) scale(0.2)", opacity: 0 }, { transform: "rotate(0deg) scale(1)", opacity: 1 }],
-                 { duration: 600, easing: "ease-out" });
+                 { duration: 600, easing: "ease-out" }).onfinish = () => { if (tripPhase === "spinning out") tripPhase = "arrived"; };
   };
 }
 // (ticket 138, as actions since ticket 141) A game controller, through the
@@ -15275,6 +15335,7 @@ function enterScene(door) {
   };
   // (ticket 147, Matthew: the spin only for pictures and windows, "it's the most magical looking";
   // through any other way the friend walks, or, at a ladder's top, steps)
+  tripStart(door, view ? "spin" : door.dataset.pit ? "fall" : "walk");   // (⏱️)
   if (view) flyInto(svgBox(view), arrive);
   else if (door.dataset.pit) walkInto(door, () => { arrive(); landFall = true; }, true, "fall");   // (ticket 162)
   else walkInto(door, arrive, !(climb && climb.through));
@@ -15300,10 +15361,10 @@ function fallLand() {
   fig.replaceWith(w); w.append(fig);
   // (nothing drawn while they drop in, or the drawing would put them down at once: the controller waits,
   // as on a trip, and its wish is "none" already, so it asks for no drawing)
-  entering = true; padWant = "none";
+  entering = true; padWant = "none"; tripNext("dropping in");
   w.animate([{ transform: `translate(0px, ${f1(-1.6 * h)}px)` }, { transform: "translate(0px, 0px)" }], { duration: FALL_DROP_MS * 0.8, easing: "ease-in" })
    .onfinish = () => {
-    entering = false;
+    entering = false; tripPhase = "landing";
     // (the high jump's landing: its last part, the knees bending and straightening)
     const B = state.body, rate = Math.max(0.1, Number(B.jumpHighS ?? 75) || 100) / 100;
     startJump("none", "jumphigh"); jumpStart = performance.now() - JUMP_TIMES[1] / rate * 1000;
@@ -15323,8 +15384,9 @@ const WALK_IN_STEP = 30, WALK_IN_MS = 450, WALK_IN_MAX = 4000;
 // hidden below the hole's near rim (a clip that stays as the friend drops)
 function fallDown([cx, cy, rx, ry], then) {
   const B = state.body, NS = "http://www.w3.org/2000/svg";
-  B.anim = "fall"; B.facing = "front"; draw();
+  B.anim = "fall"; B.facing = "front"; tripPhase = "teetering"; draw();
   setTimeout(() => {
+    tripPhase = "falling";
     draw();
     const fig = document.getElementById("figure");
     if (!fig) { then(); return; }
@@ -15372,13 +15434,15 @@ function walkInto(door, arrive, walk = true, how = "step") {
   let last = 0, phase = walk ? "walk" : "in", t0 = performance.now(), tIn = 0;
   const done = () => {
     for (const u of undo) u();
+    tripPhase = "arriving";
     arrive();
     B.anim = "none"; B.facing = "front";   // (standing, in the place they came into, facing us)
     entering = false;
     changed();
     if (landFall) { fallLand(); return; }   // (ticket 162: from a pit, dropping in and landing; no fade)
+    tripNext("fading in");
     // (fading in where they arrive)
-    const t1 = performance.now(), f = t => { const u = Math.min(1, (t - t1) / WALK_IN_MS); if (!entering) fade(u < 1 ? u.toFixed(2) : ""); if (u < 1 && !entering) requestAnimationFrame(f); };
+    const t1 = performance.now(), f = t => { const u = Math.min(1, (t - t1) / WALK_IN_MS); if (!entering) fade(u < 1 ? u.toFixed(2) : ""); if (u < 1 && !entering) requestAnimationFrame(f); else if (tripPhase === "fading in") tripPhase = "arrived"; };
     fade("0"); requestAnimationFrame(f);
   };
   const step = t => {
@@ -15395,7 +15459,7 @@ function walkInto(door, arrive, walk = true, how = "step") {
     }
     if (phase === "in" && pit) { fallDown(pit, () => done()); return; }
     if (phase === "in") {
-      if (!tIn) tIn = t;
+      if (!tIn) { tIn = t; tripPhase = "stepping in"; }
       const u = Math.min(1, (t - tIn) / WALK_IN_MS);
       if (walk) { B.anim = "walk"; B.facing = face(ux, uy); }
       BG.figX = tx + ux * WALK_IN_STEP * u; BG.figY = ty + uy * WALK_IN_STEP * 0.6 * u;

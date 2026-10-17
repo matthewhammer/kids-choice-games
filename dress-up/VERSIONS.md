@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.91 (2026-10-16)
+
+Everything in 0.0.90, plus ⏱️ timing a trip, to find where it pauses.
+
+- **⏱️ time the next trip** (⚙️ Advanced, under 🧪; Matthew: pauses going through a castle door and into a pit, on his laptop, where our own tests show none): press it, then go through a doorway (click a door or a pit, press X or 🚪, or walk onto a pit). Every frame is timed, from the start of the trip until the friend has arrived and stood a moment; the line names the long frames, the part of the trip each fell in (walking, stepping in, teetering, falling, arriving, fading in, dropping in, landing), and how much of each was the game's own work (drawing, building the place) and so how much the browser's. 📋 copy, and 📝 paste it into the shared page.
+
 ## 0.0.90 (2026-10-16)
 
 Everything in 0.0.89, plus falling into the castle's pits (N's).
