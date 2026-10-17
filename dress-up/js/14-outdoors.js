@@ -853,7 +853,8 @@ const ROCK_TONES = ["#8f8a80", "#b4afa4", "#6f8a94", "#c2a67a", "#a8634a", "#7f8
 const LEAF_SETS = { summer: null, spring: ["#5f9e3a", "#74b04a", "#8cc45a", "#a3d46e", "#b8e080"], autumn: ["#9a3412", "#c2410c", "#d97706", "#eab308", "#b45309"],
                     blossom: ["#f9a8d4", "#f472b6", "#fbcfe8", "#ec4899", "#fce7f3"] };
 const THING_PARAMS = {
-  all: [["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
+  // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
+  all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
   rock: [["tone", "🎨", "color", ROCK_TONES]],
   tree: [["h", "📏", "choice", [[280, "short"], [380, "tall"], [480, "taller"]]], ["leaves", "🍂", "choice", [["summer", "summer"], ["spring", "spring"], ["autumn", "autumn"], ["blossom", "🌸 blossom"]]]],
   pine: [["tiers", "🌲 tiers", "choice", [[4, "4"], [5, "5"], [6, "6"], [7, "7"], [8, "8"]]]],
@@ -883,7 +884,7 @@ function thingSvg(o, t, i) {
                t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :
                // (a pine's needles are currentColor: the places give theirs a green; with none, it took the page's text colour, white in dark mode: Matthew's laptop)
                t.kind === "pine" ? at(shadow(70) + `<g color="${PINE_GREEN}">${pineTree(seed, { tiers: t.tiers ?? 6 })}</g>`) :
-               t.kind === "toadstool" ? at(toadstool(0, 0, 2.4, t.cap || TOADSTOOL_CAPS[0], !!t.glow)) :
+               t.kind === "toadstool" ? at(toadstool(0, 0, 1.3, t.cap || TOADSTOOL_CAPS[0], !!t.glow)) :   // (Matthew: 2.4 was too big)
                t.kind === "potion" ? at(shadow(22) + potionSvg(t.shape || "flask", 0, 0, 2.2, t.color || POTION_COLORS[5])) :
                t.kind === "skeleton" ? at(shadow(60) + skeletonSvg(0, -80 * 2.6, 2.6, "sit")) :
                t.kind === "sign" ? at(shadow(30) + `<rect x="-5" y="-150" width="10" height="150" fill="#6e4a2c"/>` + plankSign(0, -120, 1.3, xmlText(t.text ?? "hello!"))) :

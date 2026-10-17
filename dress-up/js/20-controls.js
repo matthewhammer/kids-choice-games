@@ -998,9 +998,16 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const n = el("span", { class: "hint" }), list = el("div", { class: "cross-list" });
     let shown = null;
     const rows = () => {
-      // (a thing's words are typed in place: not in the signature, or each key would build the row again, and the box lose the caret)
-      const T = state.background.things || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p, , how]) => how === "text" ? null : t[p] ?? null)]));
-      if (sig === shown) return;
+      // (a thing's words are typed, and its size slid, in place: not in the signature, or each key or step would
+      // build the row again, and the box lose the caret, the slider the finger; a slider not in hand follows its thing)
+      const T = state.background.things || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p, , how]) => how === "text" || how === "range" ? null : t[p] ?? null)]));
+      if (sig === shown) {
+        for (const r of list.querySelectorAll('input[type="range"][data-thing]')) {
+          const t = T[+r.dataset.thing], v = t && (t[r.dataset.param] ?? 100);
+          if (t && document.activeElement !== r && +r.value !== v) { r.value = String(v); r.nextElementSibling.textContent = v + "%"; }
+        }
+        return;
+      }
       shown = sig;
       list.replaceChildren(...T.map((t, i) => el("div", { class: "row" }, [
         el("span", { class: "name" }, `${(THING_KINDS[t.kind] || { label: t.kind }).label} ${i + 1}`),
@@ -1011,6 +1018,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             onclick: set(col) }, col === "none" ? "∅" : ""))];
           if (how === "choice") return [el("span", { class: "hint" }, label), ...opts.map(([v, name]) => el("button", { "aria-pressed": String(now === v), onclick: set(v) }, name))];
           if (how === "action") return [el("button", { onclick: () => { t[p] = opts(t); changed(); } }, label)];
+          if (how === "range") { const [lo, hi, st] = opts, shownAt = el("span", { class: "hint" }, `${now ?? 100}%`);
+            return [el("span", { class: "hint" }, label), el("input", { type: "range", min: String(lo), max: String(hi), step: String(st), value: String(now ?? 100), "aria-label": label, "data-thing": String(i), "data-param": p,
+              oninput: e => { t[p] = +e.target.value; shownAt.textContent = t[p] + "%"; changed(); } }), shownAt]; }
           if (how === "text") return [el("span", { class: "hint" }, label), el("input", { type: "text", maxlength: String(opts), size: String(opts), value: String(now ?? ""), "aria-label": label, oninput: e => { t[p] = e.target.value.slice(0, opts); changed(); } })];
           return [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)];
         }),

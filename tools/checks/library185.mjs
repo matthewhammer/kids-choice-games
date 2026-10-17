@@ -40,6 +40,13 @@ try {
   ok("a toadstool, a potion, a skeleton and a sign, each drawn with something to see", [toad, potion, skel, sign].every(t => t && t.w > 10 && t.h > 20 && t.html > 200), drawn);
   ok("each standing where it was put", /translate\(-250 370\)/.test(toad.tf) && /translate\(-80 380\)/.test(potion.tf) && /translate\(120 360\)/.test(skel.tf) && /translate\(280 350\)/.test(sign.tf), drawn.map(t => t && t.tf));
   ok("the toadstool's cap and the potion in their own colours, the sign's words on it", look.cap && look.red && look.words === "camp →", look);
+  // (Matthew, 2026-10-17) each thing rescaled by a slider in its row, from a good size of its own: the toadstool was too big
+  ok("the toadstool smaller than the tall potion beside it, at their own sizes", toad.h < potion.h, { toadstool: toad.h, potion: potion.h });
+  const sized = JSON.parse(await ev(`(async () => { const sliders = [...document.querySelectorAll('input[type="range"][data-param="size"]')], r = sliders[0];
+    const h = () => Math.round(document.querySelector('#bg [data-drag="thing:0"]').getBoundingClientRect().height), before = h();
+    r.value = "200"; r.dispatchEvent(new Event("input", { bubbles: true })); await new Promise(res => setTimeout(res, 400));
+    return JSON.stringify({ sliders: sliders.length, size: state.background.things[0].size, before, after: h(), same: r.isConnected, shows: r.nextElementSibling.textContent }); })()`));
+  ok("a size slider in each thing's row; the toadstool at 200% twice as tall, the slider still in hand", sized.sliders === 4 && sized.size === 200 && sized.after > sized.before * 1.7 && sized.same && sized.shows === "200%", sized);
   // a sign's words typed in its row: drawn as words, never markup; the caret stays
   const typed = JSON.parse(await ev(`(async () => { const box = [...document.querySelectorAll('input[type="text"]')].find(i => i.getAttribute("aria-label") === "✏️ its words");
     if (!box) return JSON.stringify({ box: false }); box.focus(); box.select(); return JSON.stringify({ box: true }); })()`));

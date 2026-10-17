@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.112 (2026-10-17)
+
+Everything in 0.0.111, with every thing's size yours to change.
+
+- **🔎 A size slider for every thing you put in a place** (Matthew), from a quarter of its size to three times it, in its row under 🗺️ World design. Each kind starts at a good size of its own.
+- **Toadstools start smaller**, about half as tall as before (Matthew: too big). The other things keep the sizes they had.
+
 ## 0.0.111 (2026-10-17)
 
 Everything in 0.0.110, with green pines.
