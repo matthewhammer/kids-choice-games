@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.97 (2026-10-17)
+
+Everything in 0.0.96, with the still pictures working again on a slow computer.
+
+- **Fixed:** on a slow computer, the places were drawn live again while the friend moved, not as still pictures (since 0.0.95). The fix for the white flashes waited for each picture to be fully ready in a way Chrome never finished, so no picture was ever used: the duck pond as still pictures in 0% of drawings on our test computer, where it was 99% before. Now that wait lasts at most a quarter of a second; the flash fix stays. Found by the speed check after 0.0.96 (🚧🐢 on that version).
+
 ## 0.0.96 (2026-10-17)
 
 Everything in 0.0.95, plus a sign when a version runs slow.
