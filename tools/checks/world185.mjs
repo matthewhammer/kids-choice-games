@@ -113,6 +113,22 @@ try {
     return JSON.stringify({ edge, inside, stillOff, hidden, shown, others, after }); })()`));
   ok("at B1 on the top edge: its ways N, NE and NW can't be turned on; E and S can", m189.edge.every(Boolean) && m189.inside.every(Boolean) && m189.stillOff, m189);
   ok("an off way that would put a warning right: starred only with the warnings shown, and on, the warning is gone", !m189.hidden && m189.shown && m189.others.join() === "N" && m189.after === 0, m189);
+  // (ticket 191) red where a fix is suggested, not its neighbour; and a way to take away marked ✕ (a way into an empty square)
+  const t191 = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
+    state.world = clone(DEFAULTS.world); worldEnter("3,2"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); worldWarnShow(true);
+    const btn = d => document.querySelector('.world-ways-out button[data-way="' + d + '"]'), red = () => [...document.querySelectorAll(".world-grid .world-cell.bad")].map(e => e.dataset.square).sort();
+    const fixAt = () => worldKeys(state.world).filter(k => { const t = worldWaysToToggle(state.world, k); return t.on.length + t.off.length > 0; }).sort();
+    // the clearing's way N off: its own square (turn N on) and the wood path's (or take its S away) are red; nothing else
+    state.world.cells["3,2"].ways = state.world.cells["3,2"].ways.filter(d => d !== "N"); changed(); await w(400);
+    const noBack = { red: red(), fixAt: fixAt(), starN: !!btn("N") && btn("N").classList.contains("way-suggest") };
+    // the wood path taken away: the clearing's way N leads into an empty square: ✕ on it
+    state.world = clone(DEFAULTS.world); worldEnter("3,2"); delete state.world.cells["3,1"]; changed(); await w(400);
+    const empty = { red: red(), fixAt: fixAt(), dropN: !!btn("N") && btn("N").classList.contains("way-suggest-off"), emptyRed: red().includes("3,1") };
+    btn("N").click(); await w(300); const afterN = worldProblems(state.world).filter(p => p.key === "3,2").length;
+    worldWarnShow(false); changed(); await w(100);
+    return JSON.stringify({ noBack, empty, afterN }); })()`));
+  ok("a way with no way back: red on the squares whose ways could put it right (D3 and D2), and those only", t191.noBack.red.join() === t191.noBack.fixAt.join() && t191.noBack.red.join() === "3,1,3,2" && t191.noBack.starN, t191.noBack);
+  ok("a way into an empty square: ✕ on it to take it away; red where a fix is, never the empty square", t191.empty.dropN && !t191.empty.emptyRed && t191.empty.red.join() === t191.empty.fixAt.join() && t191.afterN === 0, { ...t191.empty, afterN: t191.afterN });
   // a crossing's dead ends: no trail, no arrow, no mistake (Matthew: a crossing missing a passageway has no trail and no arrow that way)
   const dead = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldPut("0,0", "crossing"); worldEnter("0,0"); await new Promise(r => setTimeout(r, 400));
     const paths = () => document.querySelectorAll('#bg path[fill="' + CROSS_PATH + '"]').length, arrows = () => document.querySelectorAll("#bg .way-out").length;

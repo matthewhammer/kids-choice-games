@@ -49,20 +49,35 @@ function worldNames(W, theirs = true) {   // (theirs false: the names the places
 const worldName = (W, key) => worldNames(W)[key] || "";
 // (M, 2026-10-17: so there's no way to make that mistake) a way out of a square off the map's edge can't be turned on
 const worldOffMap = (W, key, d) => worldNeighbour(W, key, d).off;
-// (M) the ways out of a square that are off but, turned on, would put a
-// warning right: with it on, the world has fewer warnings (one meeting a
-// way that waits for it, or joining a square no one could reach; never one
-// into an empty square, which only trades one warning for another)
-function worldWaysToTurnOn(W, key) {
-  const cell = W.cells[key];
-  if (!cell) return [];
-  const now = worldProblems(W).length, out = [];
+// (M, 2026-10-17; ticket 191, Matthew: and "when taking away a passage
+// fixes the error -- especially when passages are placed that lead to empty
+// grid squares") The ways out of a square whose toggle would put a warning
+// right: off ones that, on, would leave fewer warnings (one meeting a way
+// that waits for it, or joining a square no one could reach), and on ones
+// that, taken away, would (one into an empty square, off the map, or to a
+// square with no way back). Never one that only trades one warning for
+// another.
+function worldWaysToToggle(W, key, now = worldProblems(W).length) {
+  const cell = W.cells[key], out = { on: [], off: [] };
+  if (!cell) return out;
+  const ways = worldWays(cell);
   for (const d of Object.keys(WORLD_DIRS)) {
-    if (worldWays(cell).includes(d) || worldOffMap(W, key, d)) continue;
-    const on = cell.kind === "crossing" ? { ...cell, ["cross" + d]: true } : { ...cell, ways: [...(cell.ways || []), d] };
-    if (worldProblems({ ...W, cells: { ...W.cells, [key]: on } }).length < now) out.push(d);
+    const isOn = ways.includes(d);
+    if (!isOn && worldOffMap(W, key, d)) continue;
+    const c2 = cell.kind === "crossing" ? { ...cell, ["cross" + d]: !isOn } : { ...cell, ways: isOn ? ways.filter(x => x !== d) : [...ways, d] };
+    if (worldProblems({ ...W, cells: { ...W.cells, [key]: c2 } }).length < now) out[isOn ? "off" : "on"].push(d);
   }
   return out;
+}
+const worldWaysToTurnOn = (W, key) => worldWaysToToggle(W, key).on;
+// (ticket 191: "the red square on the grid should correspond to the placement of the dotted red
+// suggestion", not its neighbour) the squares whose ways could put a warning right; and for a warning
+// no way can (a name twice, an inside on the grid, no start), its own square
+function worldFixSquares(W, P = worldProblems(W)) {
+  const now = P.length, red = new Set();
+  for (const key of worldKeys(W)) { const t = worldWaysToToggle(W, key, now); if (t.on.length || t.off.length) red.add(key); }
+  for (const p of P) if (!p.dir && !/can't be reached/.test(p.text) && p.key) red.add(p.key);
+  return red;
 }
 // the square the way d out of key leads to, if it meets a way back there; else null
 function worldMeets(W, key, d) {

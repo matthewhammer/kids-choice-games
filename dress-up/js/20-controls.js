@@ -1095,7 +1095,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const sig = JSON.stringify([W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown]);
       if (sig === shown) return;
       shown = sig;
-      const bad = new Set(worldWarnShown ? P.map(p => p.key) : []);
+      const bad = worldWarnShown ? worldFixSquares(W, P) : new Set();   // (ticket 191: red where a fix is suggested)
       grid.style.gridTemplateColumns = `repeat(${W.cols}, 1fr)`;
       grid.replaceChildren(...Array.from({ length: W.cols * W.rows }, (_, i) => {
         const key = (i % W.cols) + "," + Math.floor(i / W.cols), cell = W.cells[key];
@@ -1111,7 +1111,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       }));
       // the square the friend is in: its ways out (a forest crossing's are its paths), the start
       if (at && at.kind === state.background.kind) {
-        const ways = worldWays(at), suggest = worldWarnShown ? worldWaysToTurnOn(W, W.at) : [], toggle = d => () => {
+        const ways = worldWays(at), fix = worldWarnShown ? worldWaysToToggle(W, W.at) : { on: [], off: [] }, toggle = d => () => {
           if (at.kind === "crossing") state.background["cross" + d] = !state.background["cross" + d];   // (its paths, which worldKeep keeps in its square)
           else at.ways = ways.includes(d) ? ways.filter(x => x !== d) : [...ways, d].sort((x, y) => Object.keys(WORLD_DIRS).indexOf(x) - Object.keys(WORLD_DIRS).indexOf(y));
           changed();
@@ -1124,9 +1124,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           el("div", { class: "row world-ways-out" }, [el("span", { class: "hint" }, "ways out:"), ...Object.keys(WORLD_DIRS).map(d => {
             // (M, 2026-10-17) off the map's edge: can't be turned on (one on from before can still be turned off);
             // with the warnings shown, one off that would put a warning right, starred
-            const on = ways.includes(d), off = worldOffMap(W, W.at, d), hint = !on && worldWarnShown && suggest.includes(d);
-            return el("button", { "aria-pressed": String(on), title: off ? (on ? d + ": leads off the map; turn it off" : d + ": the edge of the map") : hint ? d + ": off, but on it would put a warning right" : d,
-                                  class: hint ? "way-suggest" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]); })]),
+            // (ticket 191) and one on that, taken away, would put a warning right: dotted too, ✕
+            const on = ways.includes(d), off = worldOffMap(W, W.at, d), hint = !on && fix.on.includes(d), drop = on && fix.off.includes(d);
+            return el("button", { "aria-pressed": String(on), title: drop ? d + ": on, but taking it away would put a warning right" : off ? (on ? d + ": leads off the map; turn it off" : d + ": the edge of the map") : hint ? d + ": off, but on it would put a warning right" : d,
+                                  class: hint ? "way-suggest" : drop ? "way-suggest-off" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]); })]),
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
       } else here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."));
       warnCount.textContent = P.length ? `⚠️ ${P.length} warning${P.length === 1 ? "" : "s"}` : "✅ no warnings";
