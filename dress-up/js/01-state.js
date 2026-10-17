@@ -19,7 +19,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // friend saves which it was sized in, figUnit; see upgradeFigSize.)
 // (ticket 50) where people can sit, per place: see seatsHere
 const SEATS = {};
-const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
+const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;

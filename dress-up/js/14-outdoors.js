@@ -914,11 +914,180 @@ const THING_PARAMS = {
   campfire: [["burning", "🔥 burning", "toggle"]],
   // (ticket 204, Matthew: "let the world designer choose fancy or simple"; ticket 206: simple unless upgraded, one by one)
   cauldron: [["fumes", "💨 fumes", "choice", [["simple", "simple"], ["fancy", "✨ fancy"]]]],
+  // (ticket 219) the sea things' own: colours, a shell's shape, a fish's bubbles, the chest open or shut, the anchor's chain
+  coral: [["color", "🎨", "color", CORAL_COLORS]],
+  shell: [["shape", "🐚", "choice", [["scallop", "scallop"], ["conch", "conch"], ["clam", "clam"]]], ["color", "🎨", "color", SHELL_COLORS]],
+  starfish: [["color", "🎨", "color", STAR_COLORS]],
+  seafish: [["color", "🎨", "color", SEAFISH_COLORS], ["bubbles", "🫧 bubbles", "toggle"]],
+  chest: [["open", "🔓 open", "toggle"]],
+  anchor: [["chain", "⛓️ broken chain", "toggle"]],
+  kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
+  seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
 const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
-                         campfire: { burning: true }, cauldron: { fumes: "simple" } };
+                         campfire: { burning: true }, cauldron: { fumes: "simple" },
+                         coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
+                         seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true },
+                         kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] } };
 const thingParams = kind => [...THING_PARAMS.all, ...(THING_PARAMS[kind] || [])];
+// (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
+// size and shininess (like stars we add or not, and controls over their color
+// and type)"; "these initial bubbles can be the default, simple, small kind")
+// A bubble at (cx, cy), radius r: a thin rim of its colour over a faint fill
+// of it, a shine (a highlight, 0 to 1), and, if asked, a sparkle on it (a
+// four-point star or a dot, of its own colour). The deep sea's fish and vent
+// blow the default; bubble space and blown bubbles (tickets 220, 221) set the
+// rest.
+const BUBBLE_DEFAULT = { color: "#e6f6ff", shine: 0.7, sparkle: "none", sparkleColor: "#ffffff" };
+function bubbleSvg(cx, cy, r, b = BUBBLE_DEFAULT) {
+  const c = b.color || BUBBLE_DEFAULT.color, sh = Math.max(0, Math.min(1, b.shine ?? 0.7));
+  let t = `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="${c}" fill-opacity="0.12" stroke="${c}" stroke-opacity="0.85" stroke-width="${f1(Math.max(0.6, r * 0.12))}"/>`;
+  if (sh > 0) t += `<ellipse cx="${f1(cx - r * 0.35)}" cy="${f1(cy - r * 0.38)}" rx="${f1(r * 0.28)}" ry="${f1(r * 0.18)}" fill="#ffffff" opacity="${(0.25 + 0.65 * sh).toFixed(2)}" transform="rotate(-35 ${f1(cx - r * 0.35)} ${f1(cy - r * 0.38)})"/>`;
+  if (b.sparkle === "star") { const x = cx + r * 0.3, y = cy - r * 0.45, a = r * 0.42, q = a * 0.22;
+    t += `<path d="M${f1(x)} ${f1(y - a)} L${f1(x + q)} ${f1(y - q)} L${f1(x + a)} ${f1(y)} L${f1(x + q)} ${f1(y + q)} L${f1(x)} ${f1(y + a)} L${f1(x - q)} ${f1(y + q)} L${f1(x - a)} ${f1(y)} L${f1(x - q)} ${f1(y - q)} Z" fill="${b.sparkleColor || "#ffffff"}"/>`; }
+  else if (b.sparkle === "dot") t += `<circle cx="${f1(cx + r * 0.3)}" cy="${f1(cy - r * 0.45)}" r="${f1(r * 0.16)}" fill="${b.sparkleColor || "#ffffff"}"/>`;
+  return t;
+}
+// n bubbles rising from (x, y) by h, each in turn (dur seconds a rise, begun
+// at a step of it), wobbling a little, fading out at the top, and again: out
+// of sight, gone, and the next one up. `seed` keeps their sizes the same
+// every drawing.
+function risingBubbles(x, y, n, h, dur, r, seed, b = BUBBLE_DEFAULT) {
+  const R = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
+  let t = "";
+  for (let i = 0; i < n; i++) {
+    const rr = r * (0.6 + 0.8 * R(seed + i, 1)), wob = (R(seed + i, 2) - 0.5) * 8 * r, begin = -(dur * i / n).toFixed(2);
+    t += `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(wob)} ${f1(-h * 0.5)};${f1(-wob * 0.5)} ${f1(-h)}" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>` +
+         `<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.8;1" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>` + bubbleSvg(x, y, rr, b) + `</g>`;
+  }
+  return t;
+}
+// (ticket 219) The 🐚 sea things, each drawn standing at (0, 0) in its own
+// units, as the other things are (thingSvg scales and places them).
+const CORAL_COLORS = ["#ff6f91", "#ff9f1c", "#c084fc", "#f43f5e", "#fde047", "#fb7185", "#f8fafc"];
+const SHELL_COLORS = ["#f8e1c7", "#f9a8d4", "#fde68a", "#e9d5ff", "#ffffff", "#fdba74"];
+const STAR_COLORS = ["#fb923c", "#f43f5e", "#a855f7", "#facc15", "#38bdf8"];
+const SEAFISH_COLORS = ["#ff9f1c", "#ffd23f", "#ff6f91", "#7bdff2", "#a3e635", "#c084fc"];
+const SEAPLANT_COLORS = ["#2f8f4e", "#4caf50", "#8bc34a", "#c0ca33", "#d4a017", "#e57373", "#ab47bc"];
+const seaR = (seed, j) => { const v = Math.sin(seed * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
+// coral: a branching stand, each branch splitting, round tips (its seed its shape)
+function coralSvg(seed, color) {
+  let t = "";
+  const branch = (x, y, a, len, w, depth, j) => {
+    const x2 = x + Math.cos(a) * len, y2 = y + Math.sin(a) * len;
+    t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x2)}" y2="${f1(y2)}" stroke="${color}" stroke-width="${f1(w)}" stroke-linecap="round"/>`;
+    if (depth <= 0) { t += `<circle cx="${f1(x2)}" cy="${f1(y2)}" r="${f1(w * 0.75)}" fill="${color}"/>`; return; }
+    for (const s of [-1, 1]) branch(x2, y2, a + s * (0.35 + 0.35 * seaR(seed, j * 7 + s + 3)), len * (0.62 + 0.18 * seaR(seed, j * 5 + s)), w * 0.72, depth - 1, j * 2 + (s > 0 ? 1 : 0));
+  };
+  for (let i = 0; i < 3; i++) branch((i - 1) * 14, 0, -Math.PI / 2 + (i - 1) * 0.45, 46 + 12 * seaR(seed, 90 + i), 11, 3, 1 + i);
+  return `<ellipse cx="0" cy="3" rx="40" ry="8" fill="#000000" opacity="0.18"/>` + t;
+}
+// a shell on the sand: a scallop (a fan, ribbed), a conch (a spiral cone), or a clam (two halves, a little open)
+function seaShellSvg(shape, color) {
+  const ink = mix(color, "#5b3a1a", 0.45);
+  if (shape === "conch") return `<ellipse cx="0" cy="2" rx="30" ry="6" fill="#000000" opacity="0.18"/>` +
+    `<path d="M-30 -6 Q-28 -30 0 -36 Q30 -30 34 -8 Q20 0 -30 -6 Z" fill="${color}" stroke="${ink}" stroke-width="2"/>` +
+    [0.3, 0.55, 0.78].map(u => `<path d="M${f1(-30 + 64 * u)} -6 Q${f1(-26 + 60 * u)} -24 ${f1(-14 + 40 * u)} -32" fill="none" stroke="${ink}" stroke-width="1.6" opacity="0.7"/>`).join("") +
+    `<path d="M-30 -6 L-42 -2 L-30 0 Z" fill="${color}" stroke="${ink}" stroke-width="1.6"/>`;
+  if (shape === "clam") return `<ellipse cx="0" cy="2" rx="28" ry="6" fill="#000000" opacity="0.18"/>` +
+    `<path d="M-26 -4 Q0 4 26 -4 Q20 -18 0 -20 Q-20 -18 -26 -4 Z" fill="${color}" stroke="${ink}" stroke-width="2"/>` +
+    `<path d="M-24 -8 Q0 -40 24 -8 Q0 -14 -24 -8 Z" fill="${mix(color, "#ffffff", 0.25)}" stroke="${ink}" stroke-width="2"/>` +
+    `<circle cx="0" cy="-10" r="4.5" fill="#fffaf0" stroke="#d1c4a8" stroke-width="1"/>`;
+  return `<ellipse cx="0" cy="2" rx="28" ry="6" fill="#000000" opacity="0.18"/>` +
+    `<path d="M0 0 L-26 -16 Q-22 -38 0 -42 Q22 -38 26 -16 Z" fill="${color}" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>` +
+    [-18, -9, 0, 9, 18].map(x => `<line x1="0" y1="-2" x2="${f1(x)}" y2="${f1(-36 + Math.abs(x) * 0.5)}" stroke="${ink}" stroke-width="1.5" opacity="0.7"/>`).join("") +
+    `<path d="M-7 0 L0 -6 L7 0 Z" fill="${color}" stroke="${ink}" stroke-width="1.5"/>`;
+}
+// a starfish lying on the sand, its arms curling a little, crawling slowly to and fro
+function starfishSvg(color, seed) {
+  const ink = mix(color, "#3b1a0a", 0.4);
+  let d = "";
+  for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 9 : 26; d += `${i ? "L" : "M"}${f1(Math.cos(a) * r)} ${f1(Math.sin(a) * r * 0.45 - 8)} `; }
+  const dots = [...Array(7)].map((_, i) => { const a = -Math.PI / 2 + i * 0.9, r = 5 + 12 * seaR(seed, i); return `<circle cx="${f1(Math.cos(a) * r)}" cy="${f1(Math.sin(a) * r * 0.45 - 8)}" r="1.6" fill="${mix(color, "#ffffff", 0.45)}"/>`; }).join("");
+  const span = 50 + 30 * seaR(seed, 20), dur = (16 + 8 * seaR(seed, 21)).toFixed(1);
+  return `<g><animateTransform attributeName="transform" type="translate" values="${f1(-span)} 0;${f1(span)} 0;${f1(-span)} 0" dur="${dur}s" repeatCount="indefinite"/>` +
+    `<ellipse cx="0" cy="2" rx="26" ry="5" fill="#000000" opacity="0.16"/>` +
+    `<g><animateTransform attributeName="transform" type="rotate" values="-8 0 -8;10 0 -8;-8 0 -8" dur="${(dur / 3).toFixed(1)}s" repeatCount="indefinite"/>` +
+    `<path d="${d}Z" fill="${color}" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>${dots}</g></g>`;
+}
+// a fish swimming round a loop over its spot: farther (higher, smaller) on the
+// way back, turning about at each end (its scale through zero: it turns in
+// depth), its tail wagging, and, if it blows them, bubbles rising from it
+function seaFishSvg(color, seed, bubbles = true) {
+  const ink = mix(color, "#202020", 0.45), dur = (10 + 6 * seaR(seed, 30)).toFixed(1), A = 90 + 40 * seaR(seed, 31), y0 = -150 - 40 * seaR(seed, 32);
+  // (round the loop: x = A cos θ, higher and smaller, farther, as sin θ grows; facing the way it goes, -sin θ: drawn
+  // facing right, so mirrored on the way back; between two points either side of an end the scale passes zero)
+  const N = 16, xs = [], sc = [];
+  for (let i = 0; i <= N; i++) { const th = 2 * Math.PI * i / N, sn = Math.sin(th), z = 1 - 0.22 * sn;
+    xs.push(`${f1(A * Math.cos(th))} ${f1(y0 - 34 * sn)}`); sc.push(`${((sn > 1e-9 ? -1 : 1) * z).toFixed(3)} ${z.toFixed(3)}`); }
+  const body = `<ellipse cx="0" cy="0" rx="26" ry="13" fill="${color}" stroke="${ink}" stroke-width="2"/>` +
+    `<g><animateTransform attributeName="transform" type="rotate" values="-18 -22 0;18 -22 0;-18 -22 0" dur="0.7s" repeatCount="indefinite"/>` +
+    `<path d="M-22 0 L-40 -13 L-40 13 Z" fill="${color}" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/></g>` +
+    `<path d="M-4 -12 Q4 -24 14 -11" fill="${mix(color, "#ffffff", 0.2)}" stroke="${ink}" stroke-width="1.5"/>` +
+    `<circle cx="13" cy="-3" r="4" fill="#ffffff"/><circle cx="14" cy="-3" r="2" fill="#111111"/>` +
+    `<path d="M24 3 Q20 6 17 4" fill="none" stroke="${ink}" stroke-width="1.5"/>`;
+  return `<ellipse cx="0" cy="2" rx="${f1(A * 0.5)}" ry="6" fill="#000000" opacity="0.08"/>` +
+    `<g><animateTransform attributeName="transform" type="translate" values="${xs.join(";")}" dur="${dur}s" repeatCount="indefinite"/>` +
+    `<g><animateTransform attributeName="transform" type="scale" values="${sc.join(";")}" dur="${dur}s" repeatCount="indefinite"/>${body}</g>` +
+    (bubbles ? risingBubbles(0, -14, 3, 150, 2.6, 4, seed) : "") + `</g>`;
+}
+// a treasure chest on the sand: the castle's chest of gold, lid up, coins spilling (or shut)
+function seaChestSvg(open) {
+  const gold = "#e8c33a";
+  return `<ellipse cx="0" cy="3" rx="54" ry="9" fill="#000000" opacity="0.2"/>` +
+    `<rect x="-40" y="-40" width="80" height="40" fill="#7a4f2a" stroke="#4a2e1a" stroke-width="2"/>` +
+    (open ? `<path d="M-40 -40 L-36 -76 L44 -76 L40 -40 Z" fill="#8b5e34" stroke="#4a2e1a" stroke-width="2"/>` +
+      [...Array(12)].map((_, j) => `<ellipse cx="${f1(-32 + 64 * seaR(j, 970))}" cy="${f1(-40 - 6 * seaR(j, 971))}" rx="6" ry="3" fill="${gold}" stroke="#9a7a12" stroke-width="1"/>`).join("") +
+      [...Array(5)].map((_, j) => `<ellipse cx="${f1(-48 - 26 * seaR(j, 972))}" cy="${f1(2 + 6 * seaR(j, 973))}" rx="6" ry="3" fill="${gold}" stroke="#9a7a12" stroke-width="1"/>`).join("")
+      : `<path d="M-42 -40 Q0 -62 42 -40 Z" fill="#8b5e34" stroke="#4a2e1a" stroke-width="2"/><rect x="-5" y="-46" width="10" height="12" fill="#c9a227" stroke="#6b5414" stroke-width="1"/>`) +
+    [-1, 1].map(e => `<rect x="${f1(-3 + e * 26)}" y="-40" width="6" height="40" fill="#c9a227"/>`).join("");
+}
+// an anchor half sunk in the sand, a length of chain still on its ring, broken off
+function anchorSvg(chain) {
+  const iron = "#56606a", ink = "#2e353b";
+  let t = `<ellipse cx="0" cy="3" rx="60" ry="8" fill="#000000" opacity="0.2"/>` +
+    `<g transform="rotate(-12 0 -40)"><rect x="-5" y="-110" width="10" height="104" fill="${iron}" stroke="${ink}" stroke-width="2"/>` +
+    `<rect x="-30" y="-96" width="60" height="9" rx="3" fill="${iron}" stroke="${ink}" stroke-width="2"/>` +
+    `<circle cx="0" cy="-118" r="10" fill="none" stroke="${iron}" stroke-width="6"/>` +
+    `<path d="M-46 -30 Q-40 0 0 -2 Q40 0 46 -30 L38 -26 Q34 -10 0 -10 Q-34 -10 -38 -26 Z" fill="${iron}" stroke="${ink}" stroke-width="2"/>` +
+    `<path d="M-46 -30 L-56 -40 L-40 -36 Z M46 -30 L56 -40 L40 -36 Z" fill="${iron}" stroke="${ink}" stroke-width="2"/></g>`;
+  if (chain) for (let i = 0; i < 6; i++) { const x = 14 + i * 13, y = -126 + i * 18 + (i % 2) * 3;
+    t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${i % 2 ? 4 : 8}" ry="${i % 2 ? 8 : 5}" fill="none" stroke="${iron}" stroke-width="3.5"/>`; }
+  if (chain) t += `<path d="M86 -18 l5 -4 l-1 6 l4 -2" fill="none" stroke="${ink}" stroke-width="2"/>`;   // (where it broke)
+  return t;
+}
+// the sea plants: kelp (tall ribbons with blades), sea grass (thin blades in a tuft), a sea fan (a lattice in a fan),
+// sea lettuce (round wavy leaves in a heap); kelp and grass sway with the scene's slow LFO
+function seaPlantSvg(kind, color, seed, o) {
+  const dark = mix(color, "#0b2a1a", 0.35);
+  if (kind === "seagrass") {
+    let t = "";
+    for (let i = 0; i < 9; i++) { const x = (i - 4) * 6, h = 70 + 50 * seaR(seed, i), bend = (seaR(seed, i + 20) - 0.5) * 30;
+      t += `<path d="M${f1(x - 2.5)} 0 Q${f1(x + bend)} ${f1(-h * 0.55)} ${f1(x + bend * 1.3)} ${f1(-h)} Q${f1(x + bend + 2)} ${f1(-h * 0.55)} ${f1(x + 2.5)} 0 Z" fill="${i % 2 ? color : dark}"/>`; }
+    return `<ellipse cx="0" cy="2" rx="34" ry="6" fill="#000000" opacity="0.16"/>` + swaying(o, t, 0, 0, 6, seaR(seed, 40), (4 + 2 * seaR(seed, 41)).toFixed(1));
+  }
+  if (kind === "seafan") {
+    let t = `<path d="M0 0 L-60 -110 Q0 -150 60 -110 Z" fill="${color}" opacity="0.28"/>`;
+    for (let i = 0; i <= 8; i++) { const a = -Math.PI / 2 + (i - 4) * 0.12; t += `<line x1="0" y1="0" x2="${f1(Math.cos(a) * 130)}" y2="${f1(Math.sin(a) * 130)}" stroke="${color}" stroke-width="3"/>`; }
+    for (let j = 1; j <= 4; j++) { const r = j * 30; t += `<path d="M${f1(Math.cos(-Math.PI / 2 - 0.48) * r)} ${f1(Math.sin(-Math.PI / 2 - 0.48) * r)} Q0 ${f1(-r * 1.08)} ${f1(Math.cos(-Math.PI / 2 + 0.48) * r)} ${f1(Math.sin(-Math.PI / 2 + 0.48) * r)}" fill="none" stroke="${color}" stroke-width="2"/>`; }
+    return `<ellipse cx="0" cy="2" rx="30" ry="6" fill="#000000" opacity="0.16"/>` + t + `<rect x="-4" y="-14" width="8" height="16" fill="${dark}"/>`;
+  }
+  if (kind === "sealettuce") {
+    let t = "";
+    for (let i = 0; i < 6; i++) { const x = (seaR(seed, i) - 0.5) * 50, y = -10 - 26 * seaR(seed, i + 10), r = 16 + 8 * seaR(seed, i + 20);
+      let d = ""; for (let j = 0; j <= 12; j++) { const a = j * Math.PI / 6, rr = r * (0.85 + 0.15 * Math.sin(j * 2.3 + i)); d += `${j ? "L" : "M"}${f1(x + Math.cos(a) * rr)} ${f1(y + Math.sin(a) * rr * 0.7)} `; }
+      t += `<path d="${d}Z" fill="${i % 2 ? color : mix(color, "#ffffff", 0.18)}" stroke="${dark}" stroke-width="1.5"/>`; }
+    return `<ellipse cx="0" cy="2" rx="36" ry="7" fill="#000000" opacity="0.16"/>` + t;
+  }
+  // kelp
+  let t = "";
+  for (let i = 0; i < 3; i++) { const x = (i - 1) * 12, h = 170 + 60 * seaR(seed, i); let d = `M${f1(x)} 0`, blades = "";
+    for (let j = 1; j <= 5; j++) { const yj = -h * j / 5, sd = (j + i) % 2 ? 1 : -1; d += ` Q${f1(x + sd * 12)} ${f1(-h * (j - 0.5) / 5)} ${f1(x)} ${f1(yj)}`;
+      blades += `<path d="M${f1(x)} ${f1(yj + 8)} q${f1(sd * 20)} -10 ${f1(sd * 26)} -26 q${f1(-sd * 8)} 16 ${f1(-sd * 26)} 26 Z" fill="${color}"/>`; }
+    t += `<path d="${d}" fill="none" stroke="${dark}" stroke-width="5" stroke-linecap="round"/>` + blades; }
+  return `<ellipse cx="0" cy="2" rx="30" ry="6" fill="#000000" opacity="0.16"/>` + swaying(o, t, 0, 0, 5, seaR(seed, 42), (5 + 2 * seaR(seed, 43)).toFixed(1));
+}
 // (ticket 185, v3: the object library) The things, in groups, each drawn by
 // a drawing the places already have (the fairy forest's toadstools, the
 // witch's potions, the deep dungeon's skeleton, the clearing's plank sign
@@ -927,13 +1096,19 @@ const thingParams = kind => [...THING_PARAMS.all, ...(THING_PARAMS[kind] || [])]
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
                       barrel: { label: "🛢️ barrel", size: 1, group: "camp" }, cauldron: { label: "🫕 cauldron", size: 1, group: "magic", moving: true },
                       potion: { label: "🧪 potion", size: 1, group: "magic" }, skeleton: { label: "💀 skeleton", size: 1, group: "spooky" }, sign: { label: "🪧 sign", size: 1, group: "signs" },
-                      signpost: { label: "🧭 sign with directions", size: 1, group: "signs" } };
+                      signpost: { label: "🧭 sign with directions", size: 1, group: "signs" },
+                      // (ticket 219) the 🐚 sea things, for the deep sea (and anywhere): the moving ones are counted as the campfire is
+                      coral: { label: "🪸 coral", size: 1, group: "sea" }, shell: { label: "🐚 shell", size: 1, group: "sea" },
+                      starfish: { label: "⭐ starfish", size: 1, group: "sea", moving: true }, seafish: { label: "🐟 fish", size: 1, group: "sea", moving: true },
+                      chest: { label: "💰 treasure chest", size: 1, group: "sea" }, anchor: { label: "⚓ anchor", size: 1, group: "sea" },
+                      kelp: { label: "🌿 kelp", size: 1, group: "sea", moving: true }, seagrass: { label: "🌾 sea grass", size: 1, group: "sea", moving: true },
+                      seafan: { label: "🪭 sea fan", size: 1, group: "sea" }, sealettuce: { label: "🥬 sea lettuce", size: 1, group: "sea" } };
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
 // (ticket 206, Matthew, after the Ubuntu laptop: every cauldron's fumes simple, unless its own 💨 fumes
 // are upgraded to ✨ fancy, one by one; 0.0.129's "auto" is simple now. Ticket 202's rule, cheap when
@@ -957,6 +1132,14 @@ function thingSvg(o, t, i) {
                t.kind === "skeleton" ? at(shadow(60) + skeletonSvg(0, -80 * 2.6, 2.6, "sit")) :
                t.kind === "signpost" ? at(`<g transform="scale(0.85)">${signpostSvg(signpostBoards(o, t))}</g>`) :
                t.kind === "sign" ? at(shadow(30) + `<rect x="-5" y="-150" width="10" height="150" fill="#6e4a2c"/>` + plankSign(0, -120, 1.3, xmlText(t.text ?? "hello!"))) :
+               // (ticket 219) the sea things
+               t.kind === "coral" ? at(coralSvg(seed, t.color || CORAL_COLORS[0])) :
+               t.kind === "shell" ? at(seaShellSvg(t.shape || "scallop", t.color || SHELL_COLORS[0])) :
+               t.kind === "starfish" ? at(starfishSvg(t.color || STAR_COLORS[0], seed)) :
+               t.kind === "seafish" ? at(seaFishSvg(t.color || SEAFISH_COLORS[0], seed, t.bubbles ?? true)) :
+               t.kind === "chest" ? at(seaChestSvg(t.open ?? true)) :
+               t.kind === "anchor" ? at(anchorSvg(t.chain ?? true)) :
+               ["kelp", "seagrass", "seafan", "sealettuce"].includes(t.kind) ? at(seaPlantSvg(t.kind, t.color || THING_DEFAULTS[t.kind].color, seed, o)) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
   return `<g class="thing" data-drag="thing:${i}" style="cursor: grab">${body}</g>`;
 }

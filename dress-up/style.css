@@ -402,6 +402,7 @@
 .world-chip { --sq: var(--panel); background: color-mix(in srgb, var(--sq) 26%, var(--panel)); }
 :is(.world-cell, .world-chip)[data-kind="sea"] { --sq: #2a9fd6; }
 :is(.world-cell, .world-chip)[data-kind="lake"] { --sq: #4cc0e6; }
+:is(.world-cell, .world-chip)[data-kind="deepsea"] { --sq: #1e40af; }   /* (ticket 219) */
 :is(.world-cell, .world-chip)[data-kind="waterfall"] { --sq: #24b0a0; }
 :is(.world-cell, .world-chip)[data-kind="beach"] { --sq: #e8c46a; }
 :is(.world-cell, .world-chip)[data-kind="forest"] { --sq: #2f8f3e; }

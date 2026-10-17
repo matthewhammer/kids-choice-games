@@ -139,7 +139,7 @@ const STANDING = new Set(["anvil", "armor", "barrels", "basket", "bookcase", "bo
   "rock", "sand castle", "snake tank", "soup pot", "stone", "stove", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
   "water barrel", "water trough", "well", "white bush", "worktable", "yellow bush"]);
 const TRUNKED = new Set(["tree", "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
-const TRUNK = 0.14, SWIM_PLACES = new Set(["lake", "underwater"]);
+const TRUNK = 0.14, SWIM_PLACES = new Set(["lake", "underwater", "deepsea"]);
 const objBase = name => name.split(",")[0].replace(/\s+\d+$/, "").trim();
 function standingHere(B, seats) {
   if (SWIM_PLACES.has(B.kind) || !bgShown.node) return [];

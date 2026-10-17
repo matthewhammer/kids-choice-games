@@ -34,10 +34,11 @@ const WORLD_UNNATURAL = { beach: ["N", "NE", "NW"], castle: ["N"], house: ["N"],
 const worldNoWay = (kind, d) => (WORLD_NO_WAY[kind] || []).includes(d);
 const worldNatural = (kind, d) => !worldNoWay(kind, d) && !(WORLD_UNNATURAL[kind] || []).includes(d);
 // (ticket 186) open water meets open water, and the beach's sea side (its N and corners), nothing else
-const SEA_SIDE = ["N", "NE", "NW"];
+const SEA_SIDE = ["N", "NE", "NW"], DEEP_WATER = new Set(["sea", "deepsea"]);
 function worldNaturalPair(a, d, b) {
   if (worldNoWay(a, d) || worldNoWay(b, WORLD_OPP[d])) return false;
-  if (a === "sea" || b === "sea") return (a === "sea" && b === "sea") || (a === "beach" && SEA_SIDE.includes(d)) || (b === "beach" && SEA_SIDE.includes(WORLD_OPP[d]));
+  // (ticket 219: the deep sea is deep water too: it meets open water and other deep sea any way, and nothing on land)
+  if (DEEP_WATER.has(a) || DEEP_WATER.has(b)) return (DEEP_WATER.has(a) && DEEP_WATER.has(b)) || (a === "beach" && b === "sea" && SEA_SIDE.includes(d)) || (b === "beach" && a === "sea" && SEA_SIDE.includes(WORLD_OPP[d]));
   return worldNatural(a, d) && worldNatural(b, WORLD_OPP[d]);
 }
 const worldWays = cell => !cell ? [] : (cell.kind === "crossing" ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : (cell.ways || [])).filter(d => !worldNoWay(cell.kind, d));

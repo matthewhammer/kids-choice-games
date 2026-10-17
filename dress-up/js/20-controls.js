@@ -59,7 +59,7 @@ const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
 const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
 // The places, and the kinds of place they are, for the Background tab's
 // two rows (as the music's): every place is of exactly one kind.
-const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"],
+const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
@@ -74,7 +74,7 @@ const behindSign = (c, to) => { const P = to && to !== "none" && PLACES.find(p =
 const PLACE_GROUPS = [
   ["imagination", "💭 imagination", ["emptyroom", "imagination"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains"]],
-  ["water", "💧 water", ["lake", "beach", "sea", "underwater", "waterfall"]],
+  ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],

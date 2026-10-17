@@ -181,6 +181,63 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     for (let i = 0; i < 16; i++)
       bubbles += `<circle cx="${f1(x0 + W * R(i, 17))}" cy="${f1(y0 + (g - y0) * R(i, 18))}" r="${f1((3 + 6 * R(i, 19)) * k)}" fill="none" stroke="#ffffff" stroke-width="${f1(1.5 * k)}" opacity="0.7"/>`;
     s += obj("bubbles", Infinity, bubbles);
+  } else if (kind === "deepsea") {
+    // (ticket 219, Matthew: "background system for 'deep sea', as a grid
+    // square and a background --- sandy bottom with objects to place") Deep
+    // water: blue fading to near black below; the light coming down in
+    // shafts that shimmer with the slow LFO; far ridges, dark; the sandy
+    // bottom, rippled; kelp swaying up both sides (the slow LFO), rocks; a
+    // little school of fish darting about with the quick LFO; and a vent in
+    // the sand on the left, bubbles rising from it (bubbleSvg, the bubbles'
+    // simple default). What is put here (the 🐚 sea things: coral, shells,
+    // starfish, fish, a chest, an anchor, sea plants) stands on the sand.
+    s += `<defs>${grad("bg-deep", "#1d6fa3", "#04152b", y0, y1)}</defs>` + all("url(#bg-deep)");
+    let rays = "";
+    for (let j = 0; j < 4; j++) {
+      const xt = x0 + W * (0.1 + 0.24 * j + 0.05 * R(j, 801)), wd = (50 + 40 * R(j, 802)) * k;
+      rays += `<polygon points="${P(xt, y0 - pad * 0.1)} ${P(xt + wd, y0 - pad * 0.1)} ${P(xt + wd * 0.4 + W * 0.07, g)} ${P(xt - wd * 0.6 + W * 0.07, g)}" fill="#bfe8ff" opacity="${(0.05 + 0.04 * R(j, 803)).toFixed(3)}"/>`;
+    }
+    s += `<g>${lfoTimed(opts, "slow", 0.3, `<animate attributeName="opacity" values="0.55;1;0.55" dur="7s" repeatCount="indefinite"/>`)}${rays}</g>`;
+    // far ridges, dark against the water, then the sandy bottom with its ripples and specks
+    s += land(g - 95 * k, 46, "#0b2a45", 0.8) + land(g - 60 * k, 30, "#11385a", 2.1) + land(g - 16 * k, 6, "#c2ad7c", 0.3);
+    for (let i = 0; i < 9; i++) {
+      const y = g + (8 + 22 * i) * k, x = x0 + W * R(i, 811);
+      s += `<path d="M${P(x - 70 * k, y)} Q${P(x - 35 * k, y - 6 * k)} ${P(x, y)} Q${P(x + 35 * k, y + 6 * k)} ${P(x + 70 * k, y)}" fill="none" stroke="#a8935f" stroke-width="${f1(2 * k)}" opacity="0.6"/>`;
+    }
+    for (let i = 0; i < 26; i++)
+      s += `<circle cx="${f1(x0 + W * R(i, 812))}" cy="${f1(g + 150 * k * R(i, 813))}" r="${f1((1.4 + 1.4 * R(i, 814)) * k)}" fill="#8f7c52"/>`;
+    // rocks at the sides (each an object)
+    for (let i = 0; i < 4; i++) { const x = side(i) * (W * 0.34 + W * 0.12 * R(i, 815)), y = g + (14 + 50 * R(i, 816)) * k;
+      s += obj(`rock, ${side(i) < 0 ? "left" : "right"} ${(i >> 1) + 1}`, y, rockSvg(x, y, (18 + 16 * R(i, 817)) * k, 830 + i, ["#3c5868", "#2f4a59", "#46626f"][i % 3])); }
+    // kelp swaying up both sides: tall ribbons with blades, a side's an object each
+    const kelp = ["", ""];
+    for (let i = 0; i < 10; i++) {
+      const sd = side(i), x = sd * (W * 0.2 + W * 0.28 * R(i, 818)), b = g + 30 * k * R(i, 819), h = (260 + 160 * R(i, 820)) * k;
+      let d = `M${P(x, b)}`, blades = "";
+      for (let j = 1; j <= 5; j++) {
+        const yj = b - h * j / 5, xj = x + (j % 2 ? 1 : -1) * 16 * k;
+        d += ` Q${P(xj, b - h * (j - 0.5) / 5)} ${P(x, yj)}`;
+        blades += `<path d="M${P(x, yj + 10 * k)} q${f1((j % 2 ? 1 : -1) * 26 * k)} ${f1(-14 * k)} ${f1((j % 2 ? 1 : -1) * 34 * k)} ${f1(-34 * k)} q${f1((j % 2 ? -1 : 1) * 10 * k)} ${f1(20 * k)} ${f1((j % 2 ? -1 : 1) * 34 * k)} ${f1(34 * k)} Z" fill="${i % 3 ? "#2f7a4a" : "#3b8f55"}" opacity="0.92"/>`;
+      }
+      kelp[i % 2] += swaying(opts, `<path d="${d}" fill="none" stroke="${i % 3 ? "#2a6b40" : "#35804c"}" stroke-width="${f1(7 * k)}" stroke-linecap="round"/>` + blades, x, b, 5, R(i, 821), (5 + 2 * R(i, 822)).toFixed(1));
+    }
+    s += obj("kelp, left", g + 24 * k, kelp[0]) + obj("kelp, right", g + 24 * k, kelp[1]);
+    // a little school of fish, darting about over the far ridges together (the quick LFO)
+    {
+      const cx = x0 + W * 0.62, cy = y0 + (g - y0) * 0.38;
+      let fish = "";
+      for (let i = 0; i < 9; i++) {
+        const fx = cx + (R(i, 823) - 0.5) * 120 * k, fy = cy + (R(i, 824) - 0.5) * 60 * k, c = ["#9fd8ff", "#cfeeff", "#ffd27a"][i % 3];
+        fish += `<ellipse cx="${f1(fx)}" cy="${f1(fy)}" rx="${f1(9 * k)}" ry="${f1(4 * k)}" fill="${c}"/><polygon points="${P(fx - 8 * k, fy)} ${P(fx - 15 * k, fy - 4 * k)} ${P(fx - 15 * k, fy + 4 * k)}" fill="${c}"/>`;
+      }
+      const loop = [[0, 0], [60, -20], [110, 6], [40, 30], [-50, 12], [0, 0]].map(([a, b]) => `${f1(a * k)} ${f1(b * k)}`).join(";");
+      s += obj("school of fish", g - 95 * k, `<g>${lfoTimed(opts, "fast", 0.1, `<animateTransform attributeName="transform" type="translate" values="${loop}" dur="3.2s" repeatCount="indefinite"/>`)}${fish}</g>`);
+    }
+    // a vent in the sand, on the left, bubbles rising from it
+    {
+      const vx = x0 + W * 0.16, vy = g + 40 * k;
+      s += obj("vent", vy, `<ellipse cx="${f1(vx)}" cy="${f1(vy)}" rx="${f1(16 * k)}" ry="${f1(5 * k)}" fill="#5f5236"/>` + risingBubbles(vx, vy - 4 * k, 6, (vy - y0) * 0.9, 4.2, 3.2 * k, 840));
+    }
   } else if (kind === "cemetery") {
     // The stag's stone, below its cross: a slab, a tall tapered pedestal,
     // and on it a light shield with a stag's head, lettering above and

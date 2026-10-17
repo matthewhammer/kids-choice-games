@@ -1077,7 +1077,7 @@ const TUNES = {
   }) },
 };
 // each background's own tune
-const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
+const SCENE_TUNE = { forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
                      tent: "lullaby", cave: "steppers", woodpath: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom" };
@@ -1352,6 +1352,7 @@ const SCENE_LFO_THINGS = {
   imagination: { fast: "🗺️ the map's dotted paths", slow: "✨ the room's glow" },
   forest: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☀️ the sunbeams" },
   underwater: { fast: "🐟 the fishes' tails", slow: "🌿 the seaweed swaying" },
+  deepsea: { fast: "🐟 the little fish darting", slow: "✨ the light shimmering, 🌿 the kelp swaying" },
   beach: { fast: "🚩 the sand castles' flags", slow: "🌴 the palm fronds swaying" },
   witch: { fast: "🔥 the witch's cauldron fire", slow: "🦇 the bats gliding" },
   cemetery: { fast: "🦋 the moths bobbing", wings: "🦋 the moths' wings", slow: "☁️ the clouds drifting" },
