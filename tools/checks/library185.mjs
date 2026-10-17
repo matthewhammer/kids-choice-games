@@ -26,8 +26,16 @@ try {
     const out = { chips: chips.map(b => b.textContent), first: items() };
     for (const b of chips) { b.click(); await new Promise(r => setTimeout(r, 100)); out[b.dataset.group] = items(); }
     chips[0].click(); return JSON.stringify(out); })()`));
-  ok("four groups, nature open at first: rock, bush, tree, pine, toadstool", groups.chips.length === 4 && groups.first.join() === "+ 🪨 rock,+ 🌿 bush,+ 🌳 tree,+ 🌲 pine,+ 🍄 toadstool", groups);
-  ok("magic: a potion; spooky: a skeleton; signs: a sign", groups.magic.join() === "+ 🧪 potion" && groups.spooky.join() === "+ 💀 skeleton" && groups.signs.join() === "+ 🪧 sign", groups);
+  ok("five groups, nature open at first: rock, bush, tree, pine, toadstool", groups.chips.length === 5 && groups.first.join() === "+ 🪨 rock,+ 🌿 bush,+ 🌳 tree,+ 🌲 pine,+ 🍄 toadstool", groups);
+  ok("camp: log, campfire, bench, barrel; magic: cauldron, potion; spooky: a skeleton; signs: a sign", groups.camp.join() === "+ 🪵 log,+ 🔥 campfire,+ 🪑 bench,+ 🛢️ barrel" && groups.magic.join() === "+ 🫕 cauldron,+ 🧪 potion" && groups.spooky.join() === "+ 💀 skeleton" && groups.signs.join() === "+ 🪧 sign", groups);
+  // (0.0.113) the drawings lifted out of the places: each drawn as a thing too, burning or not
+  const lifted = JSON.parse(await ev(`(async () => { const B = state.background, kinds = ["log", "campfire", "bench", "barrel", "cauldron"];
+    B.things = kinds.map((kind, i) => ({ kind, x: -300 + i * 150, z: 370, seed: 20 + i, size: 100, ...structuredClone(THING_DEFAULTS[kind] || {}) })); changed(); await new Promise(r => setTimeout(r, 500));
+    const look = i => { const e = document.querySelector('#bg [data-drag="thing:' + i + '"]'), r = e && e.getBoundingClientRect(); return e ? { w: Math.round(r.width), h: Math.round(r.height), anim: e.querySelectorAll("animate").length } : null; };
+    const all = kinds.map((_, i) => look(i)); B.things[1].burning = false; changed(); await new Promise(r => setTimeout(r, 300));
+    return JSON.stringify({ all, out: look(1) }); })()`));
+  ok("a log, a campfire, a bench, a barrel and a cauldron, each drawn as a thing", lifted.all.every(t => t && t.w > 10 && t.h > 10), lifted.all);
+  ok("the campfire's flames move; put out, they are gone", lifted.all[1].anim > 0 && lifted.out && lifted.out.anim === 0, { burning: lifted.all[1], out: lifted.out });
   // each new thing drawn, standing where it was put
   const drawn = JSON.parse(await ev(`(async () => { const B = state.background;
     B.things = [{ kind: "toadstool", x: -250, z: 370, seed: 1, size: 100, cap: "#7c3aed", glow: true }, { kind: "potion", x: -80, z: 380, seed: 2, size: 100, shape: "tall", color: "#e53935" },

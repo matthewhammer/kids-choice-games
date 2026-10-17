@@ -267,6 +267,31 @@ function starsSvg(o, n, xa, xb, ya, yb, k, R, seed) {
 SEATS.campsite = (c, B) => { const { g, k } = c, fx = 0, fy = g + 40 * k;
   return [[-150, 30, "left", "right"], [150, 30, "right", "left"]].map(([dx, dy, where, face]) =>
     ({ name: `log, ${where}`, x0: fx + (dx - 50) * k, x1: fx + (dx + 50) * k, y: fy + (dy - 14) * k, z: fy + (dy + 14) * k + 1, facing: [face] })); };
+// (ticket 185, v3: lifted out of the camp site, unchanged, for the object library) a log to sit on,
+// lying across, its middle at (x, y), its cut end to the right
+const logSvg = (x, y, k) => `<rect x="${f1(x - 50 * k)}" y="${f1(y - 14 * k)}" width="${f1(100 * k)}" height="${f1(28 * k)}" rx="${f1(14 * k)}" fill="#7a5232" stroke="#4a2e1a" stroke-width="${f1(2 * k)}"/>` +
+    `<ellipse cx="${f1(x + 50 * k)}" cy="${f1(y)}" rx="${f1(7 * k)}" ry="${f1(14 * k)}" fill="#c9a66b"/>`;
+// (lifted out of the camp site, unchanged) the campfire's ring of stones and its crossed wood, round (fx, fy)
+function campfireHearthSvg(fx, fy, k) {
+  const P = (x, y) => `${f1(x)} ${f1(y)}`;   // (as backgroundSvg's)
+  return [...Array(10)].map((_, i) => {
+    const a = i / 10 * 2 * Math.PI;
+    return `<ellipse cx="${f1(fx + 50 * k * Math.cos(a))}" cy="${f1(fy + 14 * k * Math.sin(a))}" rx="${f1(13 * k)}" ry="${f1(9 * k)}" fill="${["#8a8a8a", "#9c9c9c", "#7a7a7a"][i % 3]}" stroke="#555" stroke-width="${f1(k)}"/>`;
+  }).join("") + `<path d="M${P(fx - 34 * k, fy + 4 * k)} L${P(fx + 30 * k, fy - 10 * k)} M${P(fx + 34 * k, fy + 4 * k)} L${P(fx - 30 * k, fy - 10 * k)}" stroke="#5a3a1c" stroke-width="${f1(10 * k)}" stroke-linecap="round"/>`;
+}
+// (lifted out of the camp site, unchanged) its flames and sparks, at (0, 0), drawn up from there;
+// a warm glow round them at sunset and at night
+function campfireFlamesSvg(o, night, time) {
+      const flame = (x, top, w) => `M${x - w} 0 Q${x - w * 0.6} ${-top * 0.55} ${x} ${-top} Q${x + w * 0.6} ${-top * 0.55} ${x + w} 0 Z`;
+      // (its warm glow, at sunset and at night, breathing with the slow LFO)
+      return (night || time === "sunset" ? `<ellipse cx="0" cy="-30" rx="220" ry="140" fill="#ff9a3c" opacity="${night ? 0.18 : 0.1}">` +
+          sceneLfo(o, "slow", 0.2, "opacity", (v, amp) => ((night ? 0.18 : 0.1) * (1 + (0.25 + 0.6 * amp) * v)).toFixed(3)) + `</ellipse>` : "") +
+        [[-18, 80, 18, "#ff6a1a", 0.7], [16, 90, 18, "#ff6a1a", 0.85], [0, 120, 24, "#ff8c1a", 0.6], [-6, 70, 12, "#ffd23f", 0.5], [8, 76, 11, "#ffd23f", 0.65]].map(([x, top, w, col, d]) =>
+          `<path d="${flame(x, top, w)}" fill="${col}">${lfoTimed(o, "fast", (x + 20) / 40, `<animate attributeName="d" values="${flame(x, top, w)};${flame(x + 3, top * 0.75, w)};${flame(x - 2, top * 1.1, w)};${flame(x, top, w)}" dur="${d}s" repeatCount="indefinite"/>`)}</path>`).join("") +
+        [...Array(8)].map((_, i) => { const x = -20 + 40 * ((i * 37) % 10) / 10;
+          return `<circle cx="${x}" cy="-60" r="2.5" fill="#ffd23f"><animate attributeName="cy" values="-60;-220" dur="${(1.2 + (i % 4) * 0.35).toFixed(2)}s" begin="${(i * 0.3).toFixed(1)}s" repeatCount="indefinite"/>` +
+                 `<animate attributeName="opacity" values="1;0" dur="${(1.2 + (i % 4) * 0.35).toFixed(2)}s" begin="${(i * 0.3).toFixed(1)}s" repeatCount="indefinite"/></circle>`; }).join("");
+}
 function campsiteScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   const time = CAMP_SKY[o.campTime] ? o.campTime : "day", fire = o.fireOn ?? true, fz = (o.flameSize ?? 100) / 100;
@@ -307,8 +332,7 @@ function campsiteScene(c) {
   }).join(""));
   // logs to sit on, round the fire (each an object, at its underside)
   s += SEP + part("camp-logs", c.F, () => [[-150, 30, "left"], [150, 30, "right"], [0, 100, "near"]].map(([dx, dy, where]) =>
-    obj(`log, ${where}`, fy + (dy + 14) * k, `<rect x="${f1(fx + dx * k - 50 * k)}" y="${f1(fy + dy * k - 14 * k)}" width="${f1(100 * k)}" height="${f1(28 * k)}" rx="${f1(14 * k)}" fill="#7a5232" stroke="#4a2e1a" stroke-width="${f1(2 * k)}"/>` +
-    `<ellipse cx="${f1(fx + dx * k + 50 * k)}" cy="${f1(fy + dy * k)}" rx="${f1(7 * k)}" ry="${f1(14 * k)}" fill="#c9a66b"/>`)).join(""));
+    obj(`log, ${where}`, fy + (dy + 14) * k, logSvg(fx + dx * k, fy + dy * k, k))).join(""));
   // at night, the dark: in front of everything, the friend too, wherever
   // they stand; but the fire makes a pool of light round itself, clear at
   // the fire and dark far from it, so the fire stays bright and what stands
@@ -319,22 +343,9 @@ function campsiteScene(c) {
     all("url(#bg-camp-dark)").replace("<rect ", `<rect pointer-events="none" `)));
   // the fire: stones and wood; its flames, sparks and glow in a group that
   // grows with the slider (out: smoke); all one object, at the fire's foot
-  let campfire = SEP + part("camp-hearth", c.F, () => [...Array(10)].map((_, i) => {
-    const a = i / 10 * 2 * Math.PI;
-    return `<ellipse cx="${f1(fx + 50 * k * Math.cos(a))}" cy="${f1(fy + 14 * k * Math.sin(a))}" rx="${f1(13 * k)}" ry="${f1(9 * k)}" fill="${["#8a8a8a", "#9c9c9c", "#7a7a7a"][i % 3]}" stroke="#555" stroke-width="${f1(k)}"/>`;
-  }).join("") + `<path d="M${P(fx - 34 * k, fy + 4 * k)} L${P(fx + 30 * k, fy - 10 * k)} M${P(fx + 34 * k, fy + 4 * k)} L${P(fx - 30 * k, fy - 10 * k)}" stroke="#5a3a1c" stroke-width="${f1(10 * k)}" stroke-linecap="round"/>`);
+  let campfire = SEP + part("camp-hearth", c.F, () => campfireHearthSvg(fx, fy, k));
   if (fire) {
-    campfire += OPEN(`<g pointer-events="none" ${tf(fx, fy - 4 * k, fz * k)}>`) + part("camp-flames", [night, time, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => {
-      const flame = (x, top, w) => `M${x - w} 0 Q${x - w * 0.6} ${-top * 0.55} ${x} ${-top} Q${x + w * 0.6} ${-top * 0.55} ${x + w} 0 Z`;
-      // (its warm glow, at sunset and at night, breathing with the slow LFO)
-      return (night || time === "sunset" ? `<ellipse cx="0" cy="-30" rx="220" ry="140" fill="#ff9a3c" opacity="${night ? 0.18 : 0.1}">` +
-          sceneLfo(o, "slow", 0.2, "opacity", (v, amp) => ((night ? 0.18 : 0.1) * (1 + (0.25 + 0.6 * amp) * v)).toFixed(3)) + `</ellipse>` : "") +
-        [[-18, 80, 18, "#ff6a1a", 0.7], [16, 90, 18, "#ff6a1a", 0.85], [0, 120, 24, "#ff8c1a", 0.6], [-6, 70, 12, "#ffd23f", 0.5], [8, 76, 11, "#ffd23f", 0.65]].map(([x, top, w, col, d]) =>
-          `<path d="${flame(x, top, w)}" fill="${col}">${lfoTimed(o, "fast", (x + 20) / 40, `<animate attributeName="d" values="${flame(x, top, w)};${flame(x + 3, top * 0.75, w)};${flame(x - 2, top * 1.1, w)};${flame(x, top, w)}" dur="${d}s" repeatCount="indefinite"/>`)}</path>`).join("") +
-        [...Array(8)].map((_, i) => { const x = -20 + 40 * ((i * 37) % 10) / 10;
-          return `<circle cx="${x}" cy="-60" r="2.5" fill="#ffd23f"><animate attributeName="cy" values="-60;-220" dur="${(1.2 + (i % 4) * 0.35).toFixed(2)}s" begin="${(i * 0.3).toFixed(1)}s" repeatCount="indefinite"/>` +
-                 `<animate attributeName="opacity" values="1;0" dur="${(1.2 + (i % 4) * 0.35).toFixed(2)}s" begin="${(i * 0.3).toFixed(1)}s" repeatCount="indefinite"/></circle>`; }).join("");
-    }) + CLOSE;
+    campfire += OPEN(`<g pointer-events="none" ${tf(fx, fy - 4 * k, fz * k)}>`) + part("camp-flames", [night, time, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => campfireFlamesSvg(o, night, time)) + CLOSE;
   } else {
     campfire += SEP + part("camp-smoke", c.F, () => [0, 1, 2].map(i => `<circle cx="${f1(fx + (i - 1) * 8 * k)}" cy="${f1(fy - 20 * k)}" r="${f1(10 * k)}" fill="#9a9aa2" opacity="0.5">` +
       `<animate attributeName="cy" values="${f1(fy - 20 * k)};${f1(fy - 170 * k)}" dur="3s" begin="${i}s" repeatCount="indefinite"/>` +
@@ -862,18 +873,25 @@ const THING_PARAMS = {
   toadstool: [["cap", "🍄", "color", TOADSTOOL_CAPS], ["glow", "✨ glowing", "toggle"]],
   potion: [["shape", "🧪", "choice", [["flask", "flask"], ["tall", "tall"], ["jar", "jar"], ["vial", "vial"]]], ["color", "🎨", "color", POTION_COLORS]],
   sign: [["text", "✏️ its words", "text", 12]],
+  campfire: [["burning", "🔥 burning", "toggle"]],
 };
 const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },
-                         toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" } };
+                         toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
+                         campfire: { burning: true } };
 const thingParams = kind => [...THING_PARAMS.all, ...(THING_PARAMS[kind] || [])];
 // (ticket 185, v3: the object library) The things, in groups, each drawn by
 // a drawing the places already have (the fairy forest's toadstools, the
 // witch's potions, the deep dungeon's skeleton, the clearing's plank sign
 // on a post), none of them changed: a thing is that drawing standing on
-// the floor at its own depth, sized as the friend is there.
-const THING_GROUPS = [["nature", "🌲 nature"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"]];
+// the floor at its own depth, sized as the friend is there. (0.0.113) And
+// drawings lifted out of the places for it, each place's markup the same
+// as before, which the safety net checks: the camp site's log and campfire,
+// the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" },
+                      log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp" }, bench: { label: "🪑 bench", size: 1, group: "camp" },
+                      barrel: { label: "🛢️ barrel", size: 1, group: "camp" }, cauldron: { label: "🫕 cauldron", size: 1, group: "magic" },
                       potion: { label: "🧪 potion", size: 1, group: "magic" }, skeleton: { label: "💀 skeleton", size: 1, group: "spooky" }, sign: { label: "🪧 sign", size: 1, group: "signs" } };
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
 function thingSvg(o, t, i) {
@@ -884,6 +902,11 @@ function thingSvg(o, t, i) {
                t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :
                // (a pine's needles are currentColor: the places give theirs a green; with none, it took the page's text colour, white in dark mode: Matthew's laptop)
                t.kind === "pine" ? at(shadow(70) + `<g color="${PINE_GREEN}">${pineTree(seed, { tiers: t.tiers ?? 6 })}</g>`) :
+               t.kind === "log" ? at(logSvg(0, -14, 1)) :
+               t.kind === "campfire" ? at(campfireHearthSvg(0, 0, 1) + (t.burning ?? true ? `<g pointer-events="none" transform="translate(0 -4)">${campfireFlamesSvg(o, false, "day")}</g>` : "")) :
+               t.kind === "bench" ? at(shadow(110) + benchSvg(0, 0, 1)) :
+               t.kind === "barrel" ? at(shadow(40) + barrelSvg(0, 0, 2, 0, 0, 1, "#5e3d22")) :
+               t.kind === "cauldron" ? at(witchCauldronSvg(0, 0, 1, o, -420)) :
                t.kind === "toadstool" ? at(toadstool(0, 0, 1.3, t.cap || TOADSTOOL_CAPS[0], !!t.glow)) :   // (Matthew: 2.4 was too big)
                t.kind === "potion" ? at(shadow(22) + potionSvg(t.shape || "flask", 0, 0, 2.2, t.color || POTION_COLORS[5])) :
                t.kind === "skeleton" ? at(shadow(60) + skeletonSvg(0, -80 * 2.6, 2.6, "sit")) :

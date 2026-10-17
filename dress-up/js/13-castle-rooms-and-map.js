@@ -649,6 +649,10 @@ const SMITH = { skin: "#d39a6a", hair: "#3a2a1c", shirt: "#8a7a6a", legs: "#3e3a
 // and in front, a long worktable of bread, cheese, vegetables and a board,
 // where the other cook chops carrots, once a beat. Its doors are in its side
 // walls, as the king's room's are, and its way out a sign toward us.
+// (ticket 185, v3: lifted out of the castle kitchen, unchanged) a barrel standing at (bx + dx k, by + dy),
+// sc its size, two iron hoops; oakD its staves' edge
+const barrelSvg = (bx, by, k, dx, dy, sc, oakD) => `<rect x="${f1(bx + dx * k - 20 * k * sc)}" y="${f1(by + dy - 60 * k * sc)}" width="${f1(40 * k * sc)}" height="${f1(60 * k * sc)}" rx="${f1(10 * k)}" fill="#8a5a32" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>` +
+      [0.2, 0.8].map(u => `<line x1="${f1(bx + dx * k - 20 * k * sc)}" y1="${f1(by - 60 * k * sc * (1 - u))}" x2="${f1(bx + dx * k + 20 * k * sc)}" y2="${f1(by - 60 * k * sc * (1 - u))}" stroke="#3a3a44" stroke-width="${f1(3 * k)}"/>`).join("");
 function kitchenSvg(c, K) {
   const { y1, W, k, pad, R, P, o } = c, { at, Yh, floor, top, bw, vy } = roomSpace(c);
   const oak = "#7a5230", oakD = "#4e341d", oakL = "#a87548", copper = "#c46a32", copperD = "#8a4520";
@@ -714,8 +718,7 @@ function kitchenSvg(c, K) {
   // (the barrels one object, the sack another, both standing at by)
   { const [bx, by] = at(bw * 0.92, floor, -0.02), f = 1.02;
     let barrels = "";
-    for (const [dx, dy, sc] of [[-40, 0, 1], [0, 0, 1.1]]) barrels += `<rect x="${f1(bx + dx * k - 20 * k * sc)}" y="${f1(by + dy - 60 * k * sc)}" width="${f1(40 * k * sc)}" height="${f1(60 * k * sc)}" rx="${f1(10 * k)}" fill="#8a5a32" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>` +
-      [0.2, 0.8].map(u => `<line x1="${f1(bx + dx * k - 20 * k * sc)}" y1="${f1(by - 60 * k * sc * (1 - u))}" x2="${f1(bx + dx * k + 20 * k * sc)}" y2="${f1(by - 60 * k * sc * (1 - u))}" stroke="#3a3a44" stroke-width="${f1(3 * k)}"/>`).join("");
+    for (const [dx, dy, sc] of [[-40, 0, 1], [0, 0, 1.1]]) barrels += barrelSvg(bx, by, k, dx, dy, sc, oakD);
     t += obj("barrels", by, barrels) + obj("flour sack", by, `<path d="M${f1(bx - 96 * k)} ${f1(by)} Q${f1(bx - 104 * k)} ${f1(by - 40 * k)} ${f1(bx - 84 * k)} ${f1(by - 52 * k)} Q${f1(bx - 72 * k)} ${f1(by - 58 * k)} ${f1(bx - 62 * k)} ${f1(by - 50 * k)} Q${f1(bx - 52 * k)} ${f1(by - 36 * k)} ${f1(bx - 58 * k)} ${f1(by)} Z" fill="#efe6d2" stroke="#c9b993" stroke-width="${f1(1.5 * k)}"/>` +
          `<text x="${f1(bx - 77 * k)}" y="${f1(by - 18 * k)}" font-size="${f1(11 * k)}" text-anchor="middle" fill="#8a7a5a" font-family="serif">FLOUR</text>`); }
   // the cauldron cook: in front of the hearth, stirring the cauldron on its tripod over its little fire

@@ -1,6 +1,39 @@
 "use strict";
 // (ticket 178) Part 15 of 26 of the game's script, run in order by index.html.
 
+// (ticket 185, v3: lifted out of the picnic under the sea, unchanged) a bench: its plank 34 up, its two legs
+// splayed a little, standing at (x, y)
+const benchSvg = (x, y, k) => [-70, 70].map(a => `<line x1="${f1(x + a * k)}" y1="${f1(y - 60 * k)}" x2="${f1(x + a * 1.2 * k)}" y2="${f1(y)}" stroke="#7a5230" stroke-width="${f1(8 * k)}"/>`).join("") +
+           `<rect x="${f1(x - 120 * k)}" y="${f1(y - 34 * k)}" width="${f1(240 * k)}" height="${f1(10 * k)}" fill="#8b5a2b"/>`;
+// (ticket 185, v3: lifted out of the witch's woods, unchanged) her cauldron over its fire, standing at
+// (cx, b), bubbling green, a skull on the pot, its fumes a double helix rising to top
+function witchCauldronSvg(cx, b, k, opts, top) {
+  const P = (x, y) => `${f1(x)} ${f1(y)}`;   // (as backgroundSvg's)
+  const r = 46 * k, cy = b - 26 * k - r * 0.7;
+      // (the flames flicker, each at its own pace)
+      const flame = (t, top) => `M${P(cx + t * 26 * k - 10 * k, b - 14 * k)} Q${P(cx + t * 26 * k - 6 * k, b - 46 * k)} ${P(cx + t * 26 * k, b - top * k)} ` +
+                                `Q${P(cx + t * 26 * k + 6 * k, b - 46 * k)} ${P(cx + t * 26 * k + 10 * k, b - 14 * k)} Z`;
+  return [-1, 0, 1].map(t => `<path d="${flame(t, 60)}" fill="#ff8c1a">${lfoTimed(opts, "fast", (t + 1) / 3, `<animate attributeName="d" values="${flame(t, 60)};${flame(t, 44)};${flame(t, 66)};${flame(t, 60)}" dur="${(0.7 + 0.15 * (t + 1)).toFixed(2)}s" repeatCount="indefinite"/>`)}</path>` +
+             `<path d="M${P(cx + t * 26 * k - 5 * k, b - 14 * k)} Q${P(cx + t * 26 * k - 3 * k, b - 32 * k)} ${P(cx + t * 26 * k, b - 40 * k)} ` +
+             `Q${P(cx + t * 26 * k + 3 * k, b - 32 * k)} ${P(cx + t * 26 * k + 5 * k, b - 14 * k)} Z" fill="#ffd23f"/>`).join("") +
+           [-30, -10, 10, 30].map(t => `<line x1="${f1(cx + t * k)}" y1="${f1(b - 6 * k)}" x2="${f1(cx + t * 1.4 * k)}" y2="${f1(b - 16 * k)}" stroke="#5a3a1c" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`).join("") +
+           [-1, 1].map(sd => `<line x1="${f1(cx + sd * r * 0.7)}" y1="${f1(cy + r * 0.5)}" x2="${f1(cx + sd * r * 0.9)}" y2="${f1(b - 4 * k)}" stroke="#1b1b1f" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`).join("") +
+           `<path d="M${P(cx - r, cy)} Q${P(cx - r * 1.1, cy + r * 1.05)} ${P(cx, cy + r * 1.05)} Q${P(cx + r * 1.1, cy + r * 1.05)} ${P(cx + r, cy)} Z" fill="#26262c" stroke="#0e0e12" stroke-width="${f1(3 * k)}"/>` +
+           `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(r * 1.06)}" ry="${f1(r * 0.24)}" fill="#1b1b1f"/>` +
+           `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(r * 0.92)}" ry="${f1(r * 0.17)}" fill="#7bd33a"/>` +
+           // bubbles rising out of the brew and bursting, as inside her hut
+           [[-0.4, 7, 0.9], [0.1, 9, 1.3], [0.45, 6, 1.1], [-0.1, 5, 0.7], [0.3, 4, 1.6]].map(([dx, rr, d]) =>
+             `<circle cx="${f1(cx + dx * r)}" cy="${f1(cy)}" r="${f1(rr * k)}" fill="#a6e86a" stroke="#4f9a1f" stroke-width="${f1(1.5 * k)}">` +
+             `<animate attributeName="cy" values="${f1(cy)};${f1(cy - 30 * k)};${f1(cy)}" dur="${d}s" repeatCount="indefinite"/>` +
+             `<animate attributeName="r" values="${f1(rr * 0.4 * k)};${f1(rr * k)};0" dur="${d}s" repeatCount="indefinite"/></circle>`).join("") +
+           // a skull on the pot, red-eyed
+           `<path d="M${P(cx - 14 * k, cy + 30 * k)} Q${P(cx - 15 * k, cy + 12 * k)} ${P(cx, cy + 11 * k)} Q${P(cx + 15 * k, cy + 12 * k)} ${P(cx + 14 * k, cy + 30 * k)} ` +
+           `L${P(cx + 7 * k, cy + 33 * k)} L${P(cx + 6 * k, cy + 39 * k)} L${P(cx - 6 * k, cy + 39 * k)} L${P(cx - 7 * k, cy + 33 * k)} Z" fill="#3b3b44" stroke="#55555f" stroke-width="${f1(1.2 * k)}"/>` +
+           [-1, 1].map(sd => `<circle cx="${f1(cx + sd * 6 * k)}" cy="${f1(cy + 22 * k)}" r="${f1(3.6 * k)}" fill="#ff3b3b"/>`).join("") +
+           // the fumes: one green, one blue, a double helix turning as it
+           // rises, out past the top of the picture
+           helixSvg(cx, cy - 6 * k, top, 12 * k, 46 * k, k);
+}
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);
   // the same "random" every time, for a scene that holds still
@@ -123,8 +156,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
           // ...in its front fin, wrapped round the handle
           `<path d="M${T(16, -2)} Q${T(36, -8)} ${T(52, 4)} Q${T(38, 14)} ${T(16, 10)} Z" fill="#7d8ea0" stroke="#4d5b69" stroke-width="${f1(2.5 * k)}"/>`;
       };
-      s += obj("picnic bench", y, [-70, 70].map(a => `<line x1="${f1(x + a * k)}" y1="${f1(y - 60 * k)}" x2="${f1(x + a * 1.2 * k)}" y2="${f1(y)}" stroke="#7a5230" stroke-width="${f1(8 * k)}"/>`).join("") +
-           `<rect x="${f1(x - 120 * k)}" y="${f1(y - 34 * k)}" width="${f1(240 * k)}" height="${f1(10 * k)}" fill="#8b5a2b"/>`) +
+      s += obj("picnic bench", y, benchSvg(x, y, k)) +
            obj("shark, left", y, shark(-1)) + obj("shark, right", y, shark(1));
       let top = `<rect x="${f1(x - 100 * k)}" y="${f1(y - 74 * k)}" width="${f1(200 * k)}" height="${f1(16 * k)}" fill="#8b5a2b" stroke="#5a3a1c" stroke-width="${f1(2 * k)}"/>`;
       for (let i = 0; i < 10; i++)
@@ -484,30 +516,8 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // her cauldron on the right, bubbling green over a fire (an object, its
     // fire and fumes in it)
     {
-      const cx = Math.max(W * 0.32, 180 * k), b = g + 55 * k, r = 46 * k, cy = b - 26 * k - r * 0.7;
-      // (the flames flicker, each at its own pace)
-      const flame = (t, top) => `M${P(cx + t * 26 * k - 10 * k, b - 14 * k)} Q${P(cx + t * 26 * k - 6 * k, b - 46 * k)} ${P(cx + t * 26 * k, b - top * k)} ` +
-                                `Q${P(cx + t * 26 * k + 6 * k, b - 46 * k)} ${P(cx + t * 26 * k + 10 * k, b - 14 * k)} Z`;
-      s += obj("cauldron", b, [-1, 0, 1].map(t => `<path d="${flame(t, 60)}" fill="#ff8c1a">${lfoTimed(opts, "fast", (t + 1) / 3, `<animate attributeName="d" values="${flame(t, 60)};${flame(t, 44)};${flame(t, 66)};${flame(t, 60)}" dur="${(0.7 + 0.15 * (t + 1)).toFixed(2)}s" repeatCount="indefinite"/>`)}</path>` +
-             `<path d="M${P(cx + t * 26 * k - 5 * k, b - 14 * k)} Q${P(cx + t * 26 * k - 3 * k, b - 32 * k)} ${P(cx + t * 26 * k, b - 40 * k)} ` +
-             `Q${P(cx + t * 26 * k + 3 * k, b - 32 * k)} ${P(cx + t * 26 * k + 5 * k, b - 14 * k)} Z" fill="#ffd23f"/>`).join("") +
-           [-30, -10, 10, 30].map(t => `<line x1="${f1(cx + t * k)}" y1="${f1(b - 6 * k)}" x2="${f1(cx + t * 1.4 * k)}" y2="${f1(b - 16 * k)}" stroke="#5a3a1c" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`).join("") +
-           [-1, 1].map(sd => `<line x1="${f1(cx + sd * r * 0.7)}" y1="${f1(cy + r * 0.5)}" x2="${f1(cx + sd * r * 0.9)}" y2="${f1(b - 4 * k)}" stroke="#1b1b1f" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`).join("") +
-           `<path d="M${P(cx - r, cy)} Q${P(cx - r * 1.1, cy + r * 1.05)} ${P(cx, cy + r * 1.05)} Q${P(cx + r * 1.1, cy + r * 1.05)} ${P(cx + r, cy)} Z" fill="#26262c" stroke="#0e0e12" stroke-width="${f1(3 * k)}"/>` +
-           `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(r * 1.06)}" ry="${f1(r * 0.24)}" fill="#1b1b1f"/>` +
-           `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(r * 0.92)}" ry="${f1(r * 0.17)}" fill="#7bd33a"/>` +
-           // bubbles rising out of the brew and bursting, as inside her hut
-           [[-0.4, 7, 0.9], [0.1, 9, 1.3], [0.45, 6, 1.1], [-0.1, 5, 0.7], [0.3, 4, 1.6]].map(([dx, rr, d]) =>
-             `<circle cx="${f1(cx + dx * r)}" cy="${f1(cy)}" r="${f1(rr * k)}" fill="#a6e86a" stroke="#4f9a1f" stroke-width="${f1(1.5 * k)}">` +
-             `<animate attributeName="cy" values="${f1(cy)};${f1(cy - 30 * k)};${f1(cy)}" dur="${d}s" repeatCount="indefinite"/>` +
-             `<animate attributeName="r" values="${f1(rr * 0.4 * k)};${f1(rr * k)};0" dur="${d}s" repeatCount="indefinite"/></circle>`).join("") +
-           // a skull on the pot, red-eyed
-           `<path d="M${P(cx - 14 * k, cy + 30 * k)} Q${P(cx - 15 * k, cy + 12 * k)} ${P(cx, cy + 11 * k)} Q${P(cx + 15 * k, cy + 12 * k)} ${P(cx + 14 * k, cy + 30 * k)} ` +
-           `L${P(cx + 7 * k, cy + 33 * k)} L${P(cx + 6 * k, cy + 39 * k)} L${P(cx - 6 * k, cy + 39 * k)} L${P(cx - 7 * k, cy + 33 * k)} Z" fill="#3b3b44" stroke="#55555f" stroke-width="${f1(1.2 * k)}"/>` +
-           [-1, 1].map(sd => `<circle cx="${f1(cx + sd * 6 * k)}" cy="${f1(cy + 22 * k)}" r="${f1(3.6 * k)}" fill="#ff3b3b"/>`).join("") +
-           // the fumes: one green, one blue, a double helix turning as it
-           // rises, out past the top of the picture
-           helixSvg(cx, cy - 6 * k, y0 - 80 * k, 12 * k, 46 * k, k));
+      const cx = Math.max(W * 0.32, 180 * k), b = g + 55 * k;
+      s += obj("cauldron", b, witchCauldronSvg(cx, b, k, opts, y0 - 80 * k));
     }
   } else if (kind === "beach") {
     const { sea, shore } = beachLines({ g, k });

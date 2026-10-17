@@ -218,5 +218,10 @@
   "name": "crossing-back-mountains",
   "js": "state.music.mute = true; const B = state.background; B.kind = \"crossing\"; for (const [dd] of CROSS_DIRS) B[\"cross\" + dd] = true; B.crossBack = \"mountains\"; B.things = []; B.figX = 0; B.figY = -20; changed(); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
+ },
+ {
+  "name": "library-every-thing",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"3,2\"); const B = state.background; B.figX = 0; B.figY = 20; const kinds = Object.keys(THING_KINDS); B.things = kinds.map((kind, i) => ({ kind, x: -360 + (i % 7) * 120, z: i < 7 ? 300 : 395, seed: 11 + i, size: 100, ...structuredClone(THING_DEFAULTS[kind] || {}) })); changed(); await new Promise(r => setTimeout(r, 900));",
+  "wait": 900
  }
 ]
