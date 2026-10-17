@@ -573,6 +573,23 @@ function waysApart(ws, box, sc = 1) {
     if (!moved) break;
   }
   }
+  // (ticket 214, the twice-size check's overlaps: W between NW and SW, or N over E at a picture's corner, each pass
+  // pushing a side's arrow off one neighbour onto the other, ended over one of them) Last, a side's arrow still over
+  // another goes to the nearest place along its edge clear of every other (or, along its edge none, inward from it),
+  // seeing all of them at once; a corner's stays where it points.
+  const clear = w => ws.every(x => x === w || !overlap(rect(w), rect(x)));
+  for (const w of ws) {
+    if (!edge(w) || clear(w)) continue;
+    for (const k of across(w) ? ["x", "y"] : ["y", "x"]) {
+      const at = w[k], size = k === "x" ? box.width : box.height, lo = 22 * sc, hi = size - 22 * sc;
+      // (its box's reach along k from where it is: the places just before and just after each other arrow's box)
+      const rw = rect(w), i0 = k === "x" ? 0 : 1, before = at - rw[i0], after = rw[i0 + 2] - at;
+      const tries = [at, ...ws.filter(x => x !== w).flatMap(x => { const r = rect(x); return [r[i0] - WAY_GAP - after - 1, r[i0 + 2] + WAY_GAP + before + 1]; })]
+        .filter(v => v >= lo && v <= hi).sort((a, b) => Math.abs(a - at) - Math.abs(b - at));
+      const v = tries.find(v => { w[k] = v; const ok = clear(w); w[k] = at; return ok; });
+      if (v !== undefined) { w[k] = v; break; }
+    }
+  }
 }
 // a way out taken: the friend walks to it, then is in the square beside
 // it, come in from the side it leads to; the back chip can bring them back

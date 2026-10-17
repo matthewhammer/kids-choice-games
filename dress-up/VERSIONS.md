@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.163 (2026-10-17)
+
+Everything in 0.0.162, with big arrows that keep out of each other's way.
+
+- **Fixed: big arrows could cover each other**: with ♿'s "🧭 all arrows" on at a large size, an arrow on a side of the picture could end up over a corner's arrow (the left one over the bottom-left one, or the top one over the right one in a corner square). Now an arrow that still overlaps another moves to the nearest free place along its edge.
+
 ## 0.0.162 (2026-10-17)
 
 Everything in 0.0.161, with arrows instead of signs for the ways out.
