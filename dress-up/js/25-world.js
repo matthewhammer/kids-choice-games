@@ -369,6 +369,62 @@ function solidsHud() {
   ov.innerHTML = `<polyline class="back" points="${pts(line)}"/>` + walls.map(w => `<polyline class="wall" points="${pts(w)}"/>`).join("") +
     solids.map(o => `<polygon class="face" points="${pts(o.face)}"/><polygon points="${pts(o.q)}"/><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("");
 }
+// (ticket 221, Matthew: "a new 'create bubbles' action for the player, where
+// they can blow bubbles out of their mouth of any style (up to three at once)
+// in any scene, or either hand. They can choose which of the three places they
+// come from.") While 🫧 is held (the controller's, or B on the keyboard), a
+// bubble every BLOW_EVERY ms from the friend's mouth or chosen hand (the
+// mouth in the face's units, faceFrame; a hand, poseJoints; both through
+// figureT into the picture's units), the themes switched on taking turns
+// (bubble space's themes, bubbleSvg); each floats up and drifts, wobbling,
+// and is gone at the picture's top or after BLOW_LIFE. Drawn over the
+// picture in #access-layer, by blowTick, which runs while any are up.
+const BLOW_EVERY = 140, BLOW_LIFE = 7000;
+let blowPad = false, blowKey = false;
+const blowSim = { list: [], raf: 0, last: 0, next: 0, turn: 0, shown: "" };
+function blowGo() { if (!blowSim.raf) { blowSim.last = performance.now(); blowSim.raf = requestAnimationFrame(blowTick); } }
+function blowFrom() {
+  const B = state.body, T = figureT, J = poseJoints, at = (x, y) => [T.dx + T.k * x, T.dy + T.sg + T.k * (y - T.g)];
+  if (!J || !faceFrame) return null;
+  const dir = facingOf ? facingOf(B) : 0;
+  if (B.blowFrom === "left" || B.blowFrom === "right") {
+    const hs = J.arms.map(a => at(a.H[0], a.H[1])).sort((p, q) => p[0] - q[0]);
+    return hs.length ? (B.blowFrom === "left" ? hs[0] : hs[hs.length - 1]) : null;
+  }
+  const f = faceFrame; return at(f.tx + (100 + 38 * dir) * f.s, f.ty + 150 * f.s);
+}
+function blowTick(t) {
+  blowSim.raf = 0;
+  const layer = document.getElementById("access-layer"), Bg = state.background, F = sceneFrame, k = (F.bottom - F.top) / 700;
+  const dt = Math.min(0.05, Math.max(0, (t - blowSim.last) / 1000)); blowSim.last = t;
+  const holding = (blowPad || blowKey) && Bg.kind !== "none";
+  if (holding && t >= blowSim.next) {
+    const p = blowFrom(), themes = ["A", "B", "C"].filter(L => state.body["blow" + L]).map(L => ({ color: Bg["bubble" + L + "Color"], size: Bg["bubble" + L + "Size"] ?? 18,
+      shine: (Bg["bubble" + L + "Shine"] ?? 70) / 100, sparkle: Bg["bubble" + L + "Sparkle"] || "none", sparkleColor: Bg["bubble" + L + "SparkleColor"] || "#ffffff" }));
+    if (p && themes.length) {
+      const th = themes[blowSim.turn++ % themes.length], dir = facingOf ? facingOf(state.body) : 0, fromMouth = state.body.blowFrom !== "left" && state.body.blowFrom !== "right";
+      blowSim.list.push({ x: p[0], y: p[1], vx: ((fromMouth ? dir * 60 : 0) + (Math.random() - 0.5) * 50) * k, vy: (-40 - 40 * Math.random()) * k, r: th.size * k * (0.7 + 0.5 * Math.random()), th, born: t, ph: Math.random() * 6 });
+      if (blowSim.list.length > 90) blowSim.list.shift();
+    }
+    blowSim.next = t + BLOW_EVERY;
+  }
+  // up and drifting, wobbling; gone above the picture or when old
+  blowSim.list = blowSim.list.filter(b => {
+    b.vy += -8 * k * dt; b.vx *= Math.pow(0.6, dt);
+    b.x += (b.vx + Math.sin(t / 400 + b.ph) * 14 * k) * dt; b.y += b.vy * dt;
+    return b.y + b.r > F.top && t - b.born < BLOW_LIFE;
+  });
+  let ov = layer && layer.querySelector("svg.blown");
+  if (layer && blowSim.list.length) {
+    const M = pic.getScreenCTM(), box = layer.getBoundingClientRect();
+    if (M && box.width) {
+      if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "blown"); layer.append(ov); }
+      ov.innerHTML = blowSim.list.map(b => { const q = new DOMPoint(b.x, b.y).matrixTransform(M), age = (t - b.born) / BLOW_LIFE, fade = age > 0.8 ? (1 - age) / 0.2 : 1;
+        return `<g opacity="${fade.toFixed(2)}">${bubbleSvg(q.x - box.left, q.y - box.top, b.r * M.a, b.th)}</g>`; }).join("");
+    }
+  } else if (ov) ov.remove();
+  if (holding || blowSim.list.length) blowSim.raf = requestAnimationFrame(blowTick);
+}
 let pathShown = "";
 function pathHud() {
   const layer = document.getElementById("access-layer");

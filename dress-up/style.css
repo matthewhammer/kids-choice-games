@@ -483,6 +483,8 @@
 .way-arrow.always:not(.near):not(.aimed) { opacity: var(--arrow-dim, 0.45); pointer-events: auto; }
 .way-arrow.always:not(.near):not(.aimed) .way-tri::before { background: var(--arrow-color, #38bdf8); }
 .way-arrow.terse .way-words { display: none; }
+/* (ticket 221) 🫧 blown bubbles, over the picture */
+.blown { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 /* (ticket 220) 🫧 bubble space: a bubble that touches the friend swells and fades, about its own middle */
 #bubble-layer .bubin { transform-box: fill-box; transform-origin: center; }
 #bubble-layer .bubin.pop { animation: bub-pop 0.25s ease-out forwards; }

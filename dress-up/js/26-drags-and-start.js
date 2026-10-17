@@ -305,6 +305,13 @@ pic.addEventListener("click", e => {
                                          .sort((a, b) => (a.x1 - a.x0) * (a.y1 - a.y0) - (b.x1 - b.x0) * (b.y1 - b.y0))[0];
   if (hit) { enterAt = hit; enterPicture(); }
 });
+// (ticket 221) B held on the keyboard: bubbles, as 🫧 on the controller
+document.addEventListener("keydown", e => {
+  if ((e.key !== "b" && e.key !== "B") || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
+  blowKey = true; blowGo();
+});
+document.addEventListener("keyup", e => { if (e.key === "b" || e.key === "B") blowKey = false; });
+window.addEventListener("blur", () => { blowKey = false; });
 // (ticket 187) Enter: through the passage that glows, as X
 document.addEventListener("keydown", e => {
   if (e.key !== "Enter" || e.repeat || (e.target.closest && e.target.closest("input, textarea, select, button, [contenteditable]"))) return;
@@ -401,7 +408,8 @@ function flyInto(box, arrive) {
 // connected, never without one.
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
                      ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
-                     ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"]];
+                     ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"],
+                     ["bubbles", "🫧 blow bubbles (held)"]];   // (ticket 221)
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -522,6 +530,8 @@ function padPoll(t) {
   if (hit("jumpShort") && !onLadder) { startJump(B.anim, "jump"); changed(); }
   if (hit("jumpHigh") && !onLadder) { startJump(B.anim, "jumphigh"); changed(); }
   if (hit("enter")) enterPicture();   // (ticket 145)
+  blowPad = held("bubbles");   // (ticket 221: bubbles while it is held)
+  if (blowPad) blowGo();
   if (moving || coasting) {
     // (ticket 188: the speed they are told, reached at once, or over the ramp's time: a step toward it each frame)
     const top = padTop(isJump(B.anim) ? jumpPrev : B.anim), want = moving ? [vx * top, vy * top] : [0, 0];
@@ -661,7 +671,7 @@ function touchBuild() {
   dpad.addEventListener("contextmenu", e => e.preventDefault());
   const abxy = el("div", { class: "abxy pad", role: "group", "aria-label": "buttons" }, [btn("bx", 3, "X"), btn("by", 2, "Y"), btn("ba", 1, "A"), btn("bb", 0, "B")]);
   touchPad.el = el("div", { class: "touchpad", id: "touchpad", hidden: "" }, [
-    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, btn("sm", 8, "select")]),
+    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, btn("sm", 8, "select"), btn("sm", 6, "🫧")]),   // (ticket 221: blow bubbles)
     el("div", { class: "half r" }, [btn("sh", 5, "R"), btn("sm", 9, "start"), abxy])]);
   document.body.append(touchPad.el);
   touchPad.keys = "";

@@ -84,6 +84,33 @@ const groupOfPlace = v => v === "none" ? "none" : (PLACE_GROUPS.find(g => g[2].i
 console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g => g[2]).length === PLACES.length - 1,
                "every place is of exactly one kind");
 
+// (ticket 221) the bubble themes' settings, in 🏞️ Background (bubble space) and 🎮 Controls (blowing bubbles) alike: the
+// themes are the friend's bubbles wherever they are
+const BUBBLE_THEME_CTLS = [
+  ["group", "bubbleA", "🅰️ theme A", [
+    ["color", "bubbleAColor", "🅰️ colour", BUBBLE_COLORS],
+    ["range", "bubbleASize", "🅰️ size", 4, 60, 10, 30],
+    ["range", "bubbleAShine", "🅰️ shine", 0, 100, 40, 90],
+    ["choice", "bubbleASparkle", "🅰️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
+    ["color", "bubbleASparkleColor", "🅰️ sparkle colour", BUBBLE_COLORS],
+  ]],
+  ["group", "bubbleB", "🅱️ theme B", [
+    ["flip", "bubbleBOn", ["🅱️ theme B", "🅱️ theme B"]],
+    ["color", "bubbleBColor", "🅱️ colour", BUBBLE_COLORS],
+    ["range", "bubbleBSize", "🅱️ size", 4, 60, 10, 30],
+    ["range", "bubbleBShine", "🅱️ shine", 0, 100, 40, 90],
+    ["choice", "bubbleBSparkle", "🅱️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
+    ["color", "bubbleBSparkleColor", "🅱️ sparkle colour", BUBBLE_COLORS],
+  ]],
+  ["group", "bubbleC", "©️ theme C", [
+    ["flip", "bubbleCOn", ["©️ theme C", "©️ theme C"]],
+    ["color", "bubbleCColor", "©️ colour", BUBBLE_COLORS],
+    ["range", "bubbleCSize", "©️ size", 4, 60, 10, 30],
+    ["range", "bubbleCShine", "©️ shine", 0, 100, 40, 90],
+    ["choice", "bubbleCSparkle", "©️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
+    ["color", "bubbleCSparkleColor", "©️ sparkle colour", BUBBLE_COLORS],
+  ]],
+];
 const TABS = [
   // (ticket 129) whole poses, first (Matthew: top level, before the face)
   // (ticket 132: "Body", with poses, the way they face, and animations)
@@ -296,29 +323,7 @@ const TABS = [
     ["group", "bubbles", "🫧 bubble space", [
       ["range", "bubbleCount", "🫧 how many", 5, 80, 20, 40],
       ["range", "bubbleWind", "🌬️ wind", 0, 100, 20, 60],
-      ["group", "bubbleA", "🅰️ theme A", [
-        ["color", "bubbleAColor", "🅰️ colour", BUBBLE_COLORS],
-        ["range", "bubbleASize", "🅰️ size", 4, 60, 10, 30],
-        ["range", "bubbleAShine", "🅰️ shine", 0, 100, 40, 90],
-        ["choice", "bubbleASparkle", "🅰️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
-        ["color", "bubbleASparkleColor", "🅰️ sparkle colour", BUBBLE_COLORS],
-      ]],
-      ["group", "bubbleB", "🅱️ theme B", [
-        ["flip", "bubbleBOn", ["🅱️ theme B", "🅱️ theme B"]],
-        ["color", "bubbleBColor", "🅱️ colour", BUBBLE_COLORS],
-        ["range", "bubbleBSize", "🅱️ size", 4, 60, 10, 30],
-        ["range", "bubbleBShine", "🅱️ shine", 0, 100, 40, 90],
-        ["choice", "bubbleBSparkle", "🅱️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
-        ["color", "bubbleBSparkleColor", "🅱️ sparkle colour", BUBBLE_COLORS],
-      ]],
-      ["group", "bubbleC", "©️ theme C", [
-        ["flip", "bubbleCOn", ["©️ theme C", "©️ theme C"]],
-        ["color", "bubbleCColor", "©️ colour", BUBBLE_COLORS],
-        ["range", "bubbleCSize", "©️ size", 4, 60, 10, 30],
-        ["range", "bubbleCShine", "©️ shine", 0, 100, 40, 90],
-        ["choice", "bubbleCSparkle", "©️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
-        ["color", "bubbleCSparkleColor", "©️ sparkle colour", BUBBLE_COLORS],
-      ]],
+      ...BUBBLE_THEME_CTLS,
     ]],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)
     ["choice", "lfoFast", "〰️ quick things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
@@ -482,6 +487,14 @@ const TABS = [
   ]],
   ["🎮 Controls", "controls", [
     ["padmap", "map", "🎮 game controller"],
+    // (ticket 221, Matthew: "a new 'create bubbles' action for the player, where they can blow bubbles out of their
+    // mouth of any style (up to three at once) in any scene, or either hand. They can choose which of the three places
+    // they come from.") Held (🫧 on the controller, B on the keyboard): from the mouth or a hand, of the themes switched on here
+    ["of", "body", ["group", "blowing", "🫧 blowing bubbles", [
+      ["choice", "blowFrom", "from", [["mouth", "👄 mouth"], ["left", "🫲 left hand"], ["right", "🫱 right hand"]]],
+      ["flip", "blowA", ["🅰️ theme A", "🅰️ theme A"]], ["flip", "blowB", ["🅱️ theme B", "🅱️ theme B"]], ["flip", "blowC", ["©️ theme C", "©️ theme C"]],
+    ]]],
+    ["of", "background", ["group", "blowThemes", "🎨 the bubble themes", BUBBLE_THEME_CTLS.map(([kd, key, label, ctls]) => [kd, key, label, ctls.filter(c => c[0] !== "flip")])]],   // (the looks only: B and C on in bubble space is bubble space's)
     // (ticket 188, Matthew) how the friend moves: kept with the friend (body), not with a controller's buttons
     ["of", "body", ["group", "moving", "🏃 how your friend moves", [
       ["range", "runSpeed", "🏃 top running speed (100 = as it was)", 50, 250, 100, 100],
