@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.124 (2026-10-17)
+
+Everything in 0.0.123, plus open water.
+
+- **🌊 Open water**, a new place (Matthew): the sea all round, an island and a sail far off, your friend swimming wherever they go.
+- **The first world has a row of open water along its top**, beyond the beach (Matthew): the beach's way north goes out to sea, and the water squares join each other along the row. Everything else is a row further down. If your first world is untouched, it gets the new row too; one you have changed stays as you made it.
+- In 🔗 all passageways, open water joins only open water and the beach's sea side.
+
 ## 0.0.123 (2026-10-17)
 
 Everything in 0.0.122, plus M's all-passageways button.
