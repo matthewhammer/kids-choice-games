@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.123 (2026-10-17)
+
+Everything in 0.0.122, plus M's all-passageways button.
+
+- **🔗 All passageways** (M's idea), in 🗺️ World design: joins every pair of squares side by side (or corner to corner) where both places have room for a way that way. A forest crossing takes all eight; never into the beach's sea, through the back of the castle or the house, or off the wood path's sides. It says how many ways it added.
+- **The waterfall's north is the waterfall** (M): going north there is going into the falls, so it is no longer a way to the square above. In the first world, the waterfall now joins the forest crossing to its north-east instead.
+- **Fixed: 🌍 the first world again, pressed at a forest crossing**, gave the first world's crossing your crossing's paths, with a warning at once.
+
 ## 0.0.122 (2026-10-17)
 
 Everything in 0.0.121, plus M's light and dark switch.
