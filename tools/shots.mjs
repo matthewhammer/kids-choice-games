@@ -32,7 +32,9 @@ try {
     await sleep(c.wait ?? 1200);
     const shot = await send("Page.captureScreenshot", { format: "png" });
     writeFileSync(`${outdir}/${c.name}.png`, Buffer.from(shot.result.data, "base64"));
-    report.push(`${c.name}: ${r}`); console.log(`${c.name}: ${r}`);
+    // (a case may leave words of its own in window.__report: printed with its name, for an audit's numbers)
+    const said = await ev(`(() => { const r = window.__report; window.__report = undefined; return r === undefined ? "" : typeof r === "string" ? r : JSON.stringify(r); })()`);
+    report.push(`${c.name}: ${r}${said ? " " + said : ""}`); console.log(`${c.name}: ${r}${said ? " " + said : ""}`);
   }
   console.log("errors:", errs.length ? errs.slice(0, 4) : "none");
   writeFileSync(`${outdir}/shots.txt`, report.join("\n") + `\nerrors: ${errs.length ? errs.join("\n") : "none"}\n`);
