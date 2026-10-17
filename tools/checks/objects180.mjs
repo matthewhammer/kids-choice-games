@@ -41,6 +41,7 @@ try {
       await new Promise(r => setTimeout(r, 400));
       const pic = document.getElementById("pic"); pic.pauseAnimations(); pic.setCurrentTime(1);
       for (const n of figShown) if (n.style) n.style.visibility = "hidden";
+      for (const n of document.querySelectorAll("#mute, #max, .pad-btn, #hud, #touchpad, .measuring-note")) n.style.visibility = "hidden";   // (the buttons over the picture)
       const P = pic.getBoundingClientRect();
       const box = r => { const m = 8, x0 = Math.max(P.left, r.left - m), y0 = Math.max(P.top, r.top - m), x1 = Math.min(P.right, r.right + m), y1 = Math.min(P.bottom, r.bottom + m);
         return x1 - x0 >= 4 && y1 - y0 >= 4 ? { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } : null; };
@@ -57,7 +58,7 @@ try {
     }
     records.push({ kind, label, picture: `${slug(kind)}/place.webp`, objects });
     console.log(`${label}: ${objects.length} objects, ${objects.filter(o => o.picture).length} pictures`);
-    await ev(`(() => { document.getElementById("pic").unpauseAnimations(); for (const n of figShown) if (n.style) n.style.visibility = ""; return 1; })()`);
+    await ev(`(() => { document.getElementById("pic").unpauseAnimations(); for (const n of figShown) if (n.style) n.style.visibility = ""; for (const n of document.querySelectorAll("#mute, #max, .pad-btn, #hud, #touchpad")) n.style.visibility = ""; return 1; })()`);
   }
   writeFileSync(`${OUT}/objects.json`, JSON.stringify({ version, places: records }, null, 1));
   console.log(`${records.length} places, ${records.reduce((s, r) => s + r.objects.length, 0)} objects, on ${version}; errors: ${errs.length ? errs.slice(0, 3).join(" | ") : "none"}`);
