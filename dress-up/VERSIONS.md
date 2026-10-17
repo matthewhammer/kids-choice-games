@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.109 (2026-10-17)
+
+Everything in 0.0.108, with the tree rooms' toys back, things in every place's world square again, and the world's checks passing.
+
+- **Fixed: the tree rooms have their toys again.** Since 0.0.100 the 🧸 things-in-the-room slider and the things put in a place shared one setting: a tree room drew one toy instead of ten, and moving that slider could stop the picture drawing. The toys are their own setting now; a save from before keeps its number of toys.
+- **Fixed: the 🗺️ World design tab offers things to put in every place again**, not only in a tree room (the same mix-up hid them).
+- **The world designer's checks are up to date** with the world as it is now laid out, and say what they saw when one fails.
+
 ## 0.0.108 (2026-10-17)
 
 Everything in 0.0.107, with the warnings in two lists.

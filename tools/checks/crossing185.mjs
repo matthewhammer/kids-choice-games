@@ -49,7 +49,8 @@ try {
     return JSON.stringify({ changed: before !== after, autumn: after.includes("#c2410c") || after.includes("#d97706"), backAsBefore: back === before }); })()`));
   ok("a tree's leaves to autumn, and back to summer as it was", leaves.changed && leaves.autumn && leaves.backAsBefore, leaves);
   // a mouse drag on the tree's trunk moves it
-  const at = JSON.parse(await ev(`(() => { const e = document.querySelector('#bg [data-drag="thing:0"]'), r = e.getBoundingClientRect(); return JSON.stringify([r.left + r.width / 2, r.bottom - r.height * 0.12]); })()`));
+  // (on its trunk, a little above its feet: the box's middle missed a tree whose crown leans, and pressed the ground)
+  const at = JSON.parse(await ev(`(() => { const T = state.background.things[0], s = depthSize(state.background, T.z - SCENE.ground), p = new DOMPoint(T.x, T.z - 30 * s).matrixTransform(pic.getScreenCTM()); return JSON.stringify([p.x, p.y]); })()`));
   const before = JSON.parse(await ev(`JSON.stringify(state.background.things[0])`));
   // (what is under the press, top first, for a failure's report)
   const under = await ev(`(() => { const out = []; for (let e = document.elementFromPoint(${at[0]}, ${at[1]}); e && out.length < 7; e = e.parentElement)

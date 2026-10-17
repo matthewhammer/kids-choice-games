@@ -371,7 +371,7 @@ SEATS.treeroom = (c, B) => {
 function treeroomScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, all, o } = c;
   const inside = Math.max(1, Math.min(6, o.houses ?? 4, Math.round(o.inside ?? 1))), chosen = o["room" + inside];
-  const room = ROOMS[chosen] ? chosen : HOUSE_ROOMS[inside - 1], ws = (o.windowSize ?? 100) / 100, things = o.things ?? 10;
+  const room = ROOMS[chosen] ? chosen : HOUSE_ROOMS[inside - 1], ws = (o.windowSize ?? 100) / 100, things = o.toys ?? 10;
   const floor = g - 110 * k;
   const look = ROOM_LOOK[room];
   let s = SEP + part("room-shell", [c.F, room], () => {

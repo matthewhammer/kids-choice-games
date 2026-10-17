@@ -875,7 +875,7 @@ function thingSvg(o, t, i) {
 // piece, cached on what it holds, so dragging one draws only that one
 // again. From draw(), after the place's own (cached) drawing.
 function thingsLayer(c) {
-  return (c.o.things || []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, JSON.stringify(t)], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
+  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, JSON.stringify(t)], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
 }
 // (Matthew, 2026-10-17) The crossing's geometry, shared with its ways out in
 // the world (worldWaysSvg): its floor reaches far up the picture (far), the

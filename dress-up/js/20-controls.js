@@ -331,7 +331,7 @@ const TABS = [
       ...[1, 2].map(i => ["choice", `r${n}pic${i}`, `🏡 ${n}: picture ${i} on its wall`, PICTURE_CHOICES]),
       ["choice", "treeBack" + n, `🏡 ${n}: ⬇️ behind you (a door we can't see) leads to`, BEHIND_PLACES]]),
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
-    ["range", "things", "🧸 things in the room", 0, 24, 4, 20],
+    ["range", "toys", "🧸 things in the room", 0, 24, 4, 20],
     // the mountain trail
     ["range", "peakHeight", "🏔️ how high the peaks are", 50, 170, 70, 140],
     ["range", "mtClouds", "☁️ clouds", 0, 10, 2, 8],
@@ -723,7 +723,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
   "background.windowSize": b => b.kind === "treeroom",
-  "background.things": b => b.kind === "treeroom",
+  "background.toys": b => b.kind === "treeroom",
   "background.couchSize": b => b.kind === "livingroom",
   "background.view": b => b.kind === "livingroom",
   "background.viewDetail": b => b.kind === "livingroom",

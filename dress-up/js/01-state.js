@@ -352,7 +352,7 @@ const DEFAULTS = {
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
                 lfoFast: "D", lfoSlow: "E", lfoWings: "F",
                 inside: 1, room1: "bunks", room2: "kitchen", room3: "books", room4: "lookout", room5: "art", room6: "music",
-                windowSize: 100, things: 10,
+                windowSize: 100, toys: 10,
                 witchX: 150, witchY: 0, witchSize: 100, cauldronSize: 100, crows: 3, frogs: 4, snakes: 2,
                 healerSize: 100, healerCatFur: "#e8862a", healerCatWhite: "#ffffff", healerCatEyes: "#22c55e",
                 fairyTime: "day", mushrooms: 14, fairyHouseSeen: 100, fairyHouseLfo: "none",
@@ -442,12 +442,22 @@ function upgradeWorld(next) {
 }
 // (ticket 185) the things put in a place: since 0.0.100 every place's, as
 // things; in 0.0.98 and 0.0.99 only a forest crossing had them, as crossThings
+// (0.0.109) And the tree room's toy count, which shared the name: its
+// slider was "things" too, a number, so the defaults' second "things" (the
+// list) won, and the tree rooms drew one toy, not ten; it is "toys" now. A
+// save with a number for things gets it back as toys, and an empty list.
 function upgradeThings(next, saved) {
   const bg = next.background, sb = saved && saved.background;
   if (sb && Array.isArray(sb.crossThings) && !Array.isArray(sb.things)) bg.things = sb.crossThings;
   delete bg.crossThings;
-  for (const cell of Object.values((next.world && next.world.cells) || {}))
+  if (!Array.isArray(bg.things)) {
+    if (typeof bg.things === "number" && !(sb && "toys" in sb)) bg.toys = bg.things;
+    bg.things = [];
+  }
+  for (const cell of Object.values((next.world && next.world.cells) || {})) {
     if (Array.isArray(cell.crossThings)) { if (!Array.isArray(cell.things)) cell.things = cell.crossThings; delete cell.crossThings; }
+    if (!Array.isArray(cell.things)) cell.things = [];
+  }
 }
 function upgradeFigSize(bg, saved) {
   const old = saved && saved.background;
@@ -802,7 +812,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.108", released: "2026-10-17" };
+const VERSION = { number: "0.0.109", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
