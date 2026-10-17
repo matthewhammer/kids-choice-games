@@ -650,7 +650,12 @@ function treeroomScene(c) {
   s += SEP + part("room-ways", [c.F, links], () => {
     const down = ways(["down"]), up = ways(["up"]);
     const doors = ways(["left", "right"]);
-    return (doors.length ? obj("side doors", floor, waysSvg(c, floor, doors)) : "") + (down.length ? obj("hatch", floor + 92 * k, waysSvg(c, floor, down)) : "") +
+    // (ticket 238, Matthew: "we get (the main char) gets drawn below the ladder, the trap door flap, and we don't visibly
+    // go into the hole") the hatch (its lid up at the hole's far edge, the hole, the ladder's top) at the lid's foot, the
+    // hole's far edge (hy - 18), not its near one: anyone at the near edge, climbing down, or beside it is in front of
+    // it; only one standing behind the hole is behind its lid
+    return (doors.length ? obj("side doors", floor, waysSvg(c, floor, doors)) : "") +
+           (down.length ? obj("hatch", floor + 54 * k, waysSvg(c, floor, down)) : "") +
            (up.length ? obj("ladder up", floor + 14 * k, waysSvg(c, floor, up)) : "");
   });
   // which house this is: a sign hanging from the rafters

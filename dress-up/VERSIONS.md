@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.167 (2026-10-17)
+
+Everything in 0.0.166, with a climb down a trapdoor you can see.
+
+- **Fixed: climbing down a trapdoor, your friend went behind it**: in the tree house's rooms, going down the ladder through the trapdoor drew your friend behind the ladder and the open lid, so you couldn't see them go down. Now they're in front, and you see them go down into the hole, hidden below its near edge as they go. Standing behind the hole, they're still behind its lid.
+
 ## 0.0.166 (2026-10-17)
 
 Everything in 0.0.165, with tree house trapdoors you walk round.

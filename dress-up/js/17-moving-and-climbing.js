@@ -108,7 +108,8 @@ function ladderAt(el, Pinv) {
   const b = el.getBBox(), E = el.getScreenCTM(), m = Pinv && E ? Pinv.multiply(E) : null;
   if (!m || !b.height) return null;
   const at = (x, y) => new DOMPoint(x, y).matrixTransform(m), lo = at(b.x + b.width / 2, b.y + b.height), hi = at(b.x + b.width / 2, b.y);
-  const ob = el.closest("[data-obj]"), z = ob && Number.isFinite(Number(ob.dataset.z)) ? Number(ob.dataset.z) : lo.y;
+  // (ticket 238: a hatch's ladder, its foot at the hole's near edge, data-down, whatever depth its object is drawn at)
+  const ob = el.closest("[data-obj]"), z = el.dataset.down !== undefined ? +el.dataset.down : ob && Number.isFinite(Number(ob.dataset.z)) ? Number(ob.dataset.z) : lo.y;
   const p = el.closest(".portal"), house = el.dataset.house;
   const door = p ? { to: p.dataset.to, house: p.dataset.house, room: p.dataset.room, tent: p.dataset.tent } : house ? { to: "treeroom", house } : null;
   return { x: lo.x, z, top: Math.min(lo.y, hi.y), door, hands: el.dataset.top === "hands", down: el.dataset.down !== undefined ? +el.dataset.down : null };
