@@ -587,14 +587,16 @@ function changed() {
 let thingGroup = "nature";
 // (ticket 201, Matthew: N put fifteen or more cauldrons in one place, and the
 // Ubuntu laptop ground to a halt) Things that move (a cauldron: its flames,
-// bubbles and fumes, some seventy moving parts; a campfire, about twenty)
+// bubbles and fumes, about 240 moving parts, the fumes' spiral most of them;
+// measured on GitHub's computer, still: 0 cauldrons 60 frames a second, 5
+// 49, 10 25, 15 14; a campfire, about twenty)
 // are watched: after one is put in a place, and every ten seconds while the
 // things are listed, a second of this computer's frames (framesNow: the
 // browser's own pace of frames, cheap); below THING_FPS_MIN, or more than
 // THING_MOVING_MAX moving parts in the place's things, no more moving
 // things can be put there (their buttons greyed, 🐢), and the things moving
 // the most are marked, in their rows and in the picture, as the ones to take away.
-const THING_FPS_MIN = 48, THING_MOVING_MAX = 600;
+const THING_FPS_MIN = 48, THING_MOVING_MAX = 1000;   // (about four cauldrons: GitHub's computer near 50 there)
 let thingFps = null, thingFpsAt = 0, thingFpsBusy = false;
 const thingMoving = el => el.querySelectorAll("animate, animateTransform, animateMotion").length + (el.getAnimations ? el.getAnimations({ subtree: true }).length : 0);
 const thingsMovingNow = () => [...document.querySelectorAll('#bg [data-drag^="thing:"]')].map(el => ({ i: +el.dataset.drag.slice(6), el, n: thingMoving(el) }));

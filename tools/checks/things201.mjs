@@ -34,7 +34,7 @@ try {
     thingFps = null; B.things = []; changed();
     return JSON.stringify({ counts, busy, calm, slow }); })()`));
   console.log("  with 0, 5, 10, 15 cauldrons in the clearing (GitHub's Chrome): " + Object.entries(r.counts).map(([k, v]) => `${k}: ${v.fps} fps, ${v.moving} moving parts`).join(" · "));
-  ok("each cauldron about seventy moving parts", r.counts[5].moving >= 5 * 50 && r.counts[5].moving <= 5 * 100, r.counts);
+  ok("each cauldron about 240 moving parts (its fumes' spiral most of them), and the frames fall as they are added", r.counts[5].moving >= 5 * 150 && r.counts[5].moving <= 5 * 320 && r.counts[15].fps < r.counts[0].fps, r.counts);
   ok("15 cauldrons: no more things that move can be put there; the busiest marked, rows and picture; the note says why", r.busy.blocked && r.busy.rows >= 1 && r.busy.frames >= 1 && /moving parts|frames a second/.test(r.busy.note), r.busy);
   ok("taken away to 2: all as before", !r.calm.blocked && r.calm.rows === 0 && r.calm.frames === 0 && !r.calm.note, r.calm);
   ok("on a computer measuring 30 frames a second: blocked at 2, its note saying so", r.slow.blocked && /About 30 frames a second/.test(r.slow.note), r.slow);
