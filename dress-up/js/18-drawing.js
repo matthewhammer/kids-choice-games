@@ -828,7 +828,7 @@ function drawNow() {
   if (scened && bgText !== bgShown.text) { bgShown.node = mountScene(bgText); bgShown.text = bgText; bgShown.objs = sceneObjects(bgShown.node); bgShown.helix = true; }
   if (!scened) bgShown.objs = [];
   const scenery = scened ? SPEED_TEST.holder || bgShown.node : null;   // (🧪's test passes: SPEED_TEST)
-  for (const c of [...pic.childNodes]) if (c !== scenery) c.remove();
+  for (const c of [...pic.childNodes]) if (c !== scenery && !(c.classList && c.classList.contains("fig-spin"))) c.remove();   // (ticket 193: a spin's copy stays)
   for (const n of figShown) n.remove();   // (last time's friend, who may have stood inside the scene)
   if (scenery) {
     if (scenery.parentNode !== pic) pic.append(scenery);

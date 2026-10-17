@@ -37,7 +37,7 @@ try {
     const facing = body.facing;
     P.buttons[15].pressed = false; P.buttons[15].value = 0; P.buttons[runBtn].pressed = false; P.buttons[runBtn].value = 0;
     const held = xs.length;
-    for (let t = 0; t < 900; t += 50) { await w(50); push(); }
+    for (let t = 0; t < 1800; t += 50) { await w(50); push(); }   // (at 100 the stop takes PAD_RAMP, 1.2 s)
     return JSON.stringify({ xs, anims, held, facing, after: body.facing }); })()`).then(JSON.parse);
   const moved = r => r.xs[r.held - 1] - r.xs[0], coast = r => r.xs[r.xs.length - 1] - r.xs[r.held - 1];
   const step = (r, i) => r.xs[i + 1] - r.xs[i];
@@ -47,7 +47,7 @@ try {
   ok("top running speed 200: about twice as far as at 100", moved(fast) > 1.6 * moved(def) && moved(fast) < 2.4 * moved(def), { at100: moved(def), at200: moved(fast) });
   const ramp = await go(100, 100, true, 1500);
   ok("speeding up and slowing down at 100: slower at first than at full speed", step(ramp, 0) < 0.6 * step(ramp, ramp.held - 3), ramp.xs.slice(0, ramp.held));
-  ok("and let go, they coast on, legs still going, then stop", coast(ramp) > 20 && ramp.anims[ramp.held + 1] === "run" && ramp.xs[ramp.xs.length - 1] === ramp.xs[ramp.xs.length - 2] && ramp.after === ramp.facing, { coast: coast(ramp), anims: ramp.anims.slice(ramp.held - 1), facing: [ramp.facing, ramp.after] });
+  ok("and let go, they coast on, legs still going, then stop and stand", coast(ramp) > 20 && ramp.anims[ramp.held + 1] === "run" && ramp.xs[ramp.xs.length - 1] === ramp.xs[ramp.xs.length - 2] && ramp.anims[ramp.anims.length - 1] === "none" && ramp.after === ramp.facing, { coast: coast(ramp), anims: ramp.anims.slice(ramp.held - 1), facing: [ramp.facing, ramp.after] });
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
