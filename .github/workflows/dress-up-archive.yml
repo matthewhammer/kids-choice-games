@@ -36,9 +36,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        which: [main, control]
+        which: ${{ fromJSON(inputs.control && '["main", "control"]' || '["main"]') }}
     name: Pictures (${{ matrix.which }})
-    if: matrix.which == 'main' || inputs.control
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     steps:
