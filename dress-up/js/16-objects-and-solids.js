@@ -354,9 +354,15 @@ function planPath(x0, y0, x1, y1) {
   // (the boxes grown by the soles' reach either side, and their depth: the middle kept that far out)
   const [sx, sz] = feetSpan(), g = SCENE.ground, z0 = g + y0, z1 = g + y1, m = sx + PATH_PAD;
   const inside = (o, x, z, e = 0) => x > o.x0 - sx - e && x < o.x1 + sx + e && z > o.back - sz - e && z < o.front + sz + e;
-  const solids = solidsHere().filter(o => !inside(o, x0, z0) && !inside(o, x1, z1));
-  const hits = (ax, az, bx, bz) => solids.some(o => segBox(ax, az, bx, bz, o.x0 - sx, o.back - sz, o.x1 + sx, o.front + sz));
-  if (!solids.length || !hits(x0, z0, x1, z1)) return [[x1, y1]];
+  // (0.0.156: the soles' reach can touch a thing the walk starts or ends beside, the healer's soup pot, the bunk beds;
+  // such a thing was left out altogether, and the walk went straight through it. Left out now only when the middle of
+  // the feet is in it; touched, a leg from or to that end must miss its own box, not grown)
+  const rawIn = (o, x, z) => x > o.x0 && x < o.x1 && z > o.back && z < o.front;
+  const solids = solidsHere().filter(o => !rawIn(o, x0, z0) && !rawIn(o, x1, z1));
+  const nearA = new Set(solids.filter(o => inside(o, x0, z0))), nearB = new Set(solids.filter(o => inside(o, x1, z1)));
+  const hits = (ax, az, bx, bz, a = false, b = false) => solids.some(o => (a && nearA.has(o)) || (b && nearB.has(o))
+    ? segBox(ax, az, bx, bz, o.x0, o.back, o.x1, o.front) : segBox(ax, az, bx, bz, o.x0 - sx, o.back - sz, o.x1 + sx, o.front + sz));
+  if (!solids.length || !hits(x0, z0, x1, z1, true, true)) return [[x1, y1]];
   const W = castleWalls(state.background), F = sceneFrame;
   const free = (x, z) => !solids.some(o => inside(o, x, z, 1)) && (!W || Math.abs(x) < W.half(z) - sx) && x > F.left && x < F.right && z - g >= figYMin(F) && z <= F.bottom;
   const pts = [[x0, z0], [x1, z1]];
@@ -369,7 +375,7 @@ function planPath(x0, y0, x1, y1) {
     for (let i = 0; i < n; i++) if (!done[i] && dist[i] < Infinity && (u < 0 || dist[i] < dist[u])) u = i;
     if (u < 0 || u === 1) break;
     done[u] = true;
-    for (let v = 0; v < n; v++) if (!done[v] && !hits(pts[u][0], pts[u][1], pts[v][0], pts[v][1])) {
+    for (let v = 0; v < n; v++) if (!done[v] && !hits(pts[u][0], pts[u][1], pts[v][0], pts[v][1], u === 0 || v === 0, u === 1 || v === 1)) {
       const d = dist[u] + cost(pts[u], pts[v]);
       if (d < dist[v]) { dist[v] = d; prev[v] = u; }
     }

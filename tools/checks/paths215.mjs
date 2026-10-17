@@ -54,12 +54,16 @@ try {
     const boxes = solidsHere().map(o => o.name + " x " + Math.round(o.x0) + ".." + Math.round(o.x1) + " z " + Math.round(o.back - g) + ".." + Math.round(o.front - g));
     const from = B.kind, inSolid = [], t0 = performance.now(); let frames = 0;
     // (every frame's feet, while the walk lasts: a solid they started or end in does not count)
-    const S = solidsHere(), end = p.spot, startIn = o => ${c.x} > o.x0 - SOLID_MARGIN && ${c.x} < o.x1 + SOLID_MARGIN && g + ${c.y} > o.back && g + ${c.y} < o.front;
-    const endIn = o => end[0] > o.x0 - SOLID_MARGIN && end[0] < o.x1 + SOLID_MARGIN && end[1] > o.back && end[1] < o.front;
-    let watching = true;
-    // (0.0.151: not the step through the doorway at the end, tripPhase "stepping in": at a house's door, up its front step)
-    const look = () => { if (!watching) return; frames++; const x = B.figX ?? 0, z = g + (B.figY ?? 0); if (tripPhase === "stepping in") { requestAnimationFrame(look); return; }
-      for (const o of S) if (!startIn(o) && !endIn(o) && x > o.x0 - SOLID_MARGIN + 1 && x < o.x1 + SOLID_MARGIN - 1 && z > o.back + 1 && z < o.front - 1) inSolid.push(o.name + "@" + Math.round(x) + "," + Math.round(z - g));
+    // (0.0.156: judged as the game judges, by the friend's own boxes, the soles and the torso's, at each solid's heights,
+    // with 2 units' grace for a swinging foot; a solid they touch where they start or where the walk ends does not count)
+    const S = solidsHere(), touches = (o, x, z, e = 0) => youBoxes(x, z).some(s => s[3] > o.back + e && s[2] < o.front - e && solidBands(o).some(b => s[1] > b.x0 + e && s[0] < b.x1 - e && s[5] > b.lo && s[4] < b.hi));
+    const startIn = new Set(S.filter(o => touches(o, ${c.x}, g + ${c.y})));
+    let watching = true, endIn = null;
+    // (not the step through the doorway at the end, once the planned path is walked: at a house's door, up its front step)
+    const look = () => { if (!watching) return; frames++; const x = B.figX ?? 0, z = g + (B.figY ?? 0);
+      if (!endIn && walkPath && walkPath.pts.length) { const q = walkPath.pts[walkPath.pts.length - 1]; endIn = new Set(S.filter(o => touches(o, q[0], g + q[1]))); }
+      if (walkPath && walkPath.leg >= walkPath.pts.length - 1) { requestAnimationFrame(look); return; }
+      for (const o of S) if (!startIn.has(o) && !(endIn && endIn.has(o)) && touches(o, x, z, 2)) inSolid.push(o.name + "@" + Math.round(x) + "," + Math.round(z - g));
       requestAnimationFrame(look); };
     requestAnimationFrame(look);
     enterScene(p.el);
