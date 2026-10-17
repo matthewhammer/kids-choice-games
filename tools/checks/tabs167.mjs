@@ -17,6 +17,7 @@ async function run(tabIndex) {
     await send("Runtime.enable");
     await send("Emulation.setDeviceMetricsOverride", { width: 1203, height: 802, deviceScaleFactor: 1.875, mobile: false });
     await send("Page.navigate", { url }); await sleep(4000);
+    if (tabIndex >= await ev("TABS.length")) return null;   // (past the last tab)
     await ev(`(() => { window.__pad = { id: "Test Pad (STANDARD GAMEPAD)", index: 0, connected: true, mapping: "standard", axes: [0,0,0,0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
       Object.defineProperty(navigator, "getGamepads", { value: () => [window.__pad], configurable: true }); const e = new Event("gamepadconnected"); e.gamepad = window.__pad; window.dispatchEvent(e);
       state.background.kind = "lake"; choppy = false; slowFlag = false; PERF.slowMoving = true; tab = ${tabIndex}; showTab();
@@ -35,7 +36,7 @@ async function run(tabIndex) {
 let fails = 0;
 console.log(`Chrome, the duck pond, the default friend swimming, by the tab open (fresh page each):`);
 for (let i = 0; i < 18; i++) {
-  try { const r = await run(i); if (!r.name || String(r.name).startsWith("ERROR")) break;
+  try { const r = await run(i); if (!r) break;
     const ok = r.fps >= 50; if (!ok) fails++;
     console.log(`${ok ? "ok  " : "FAIL"} ${String(r.fps).padStart(5)} fps (${r.late}% late)  ${r.name}`); }
   catch (e) { fails++; console.log("FAIL", String(e).slice(0, 200)); break; }
