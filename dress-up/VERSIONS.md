@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.127 (2026-10-17)
+
+Everything in 0.0.126, with busy places kept smooth.
+
+- **🐢 A place can't be filled with more moving things than the computer can show smoothly** (Matthew, after N's fifteen cauldrons stopped the Ubuntu laptop): a cauldron or a campfire put in a place is followed by a quick check of how smoothly the picture still moves. When it gets too slow, or there are already many moving parts, the buttons for more moving things are greyed and a note says why.
+- **The busiest things are marked** with a dashed red frame, in their rows and in the picture: take one of those away and the place moves smoothly again.
+
 ## 0.0.126 (2026-10-17)
 
 Everything in 0.0.125, with the pointer picking where to go, swimming there, and every ladder climbed.
