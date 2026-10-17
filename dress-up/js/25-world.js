@@ -240,6 +240,11 @@ function floorAt(B, x, y) { const s = Math.max(0.05, depthSize(B, y - SCENE.grou
 // that stands on the floor (doors, signs, ladders, pits: passesNear).
 const PASS_MIN = 60;
 function floorNearness(x, y, o = null) {
+  // (0.0.159: a spot past the back limit, where the friend cannot go (the clearing's castle sign, its tree house's
+  // doorway), is measured at the limit: since 0.0.153's 🔭 shrinks a place's far edge so much, the depth between the
+  // limit and a spot beyond it, in the floor's own measure, had put such passages out of anyone's reach; passages187)
+  const yb = SCENE.ground + figYMin(sceneFrame);
+  if (y < yb) y = yb;
   const B = state.background, a = floorAt(B, x, y), f = floorAt(B, B.figX ?? 0, SCENE.ground + (B.figY ?? 0));
   const c = floorAt(B, 0, SCENE.ground + (ARRIVE[B.kind] || [0, 0])[1]);
   const at = i => o && o[i] && (f[i] - a[i]) * o[i] > 0 ? a[i] : f[i];
@@ -517,7 +522,8 @@ function waysApart(ws, box, sc = 1) {
   // another after the passes, a far arrow, shown only because ♿ shows every one, drops its words, just its triangle
   // (its words back when the friend comes near), and the passes run again)
   for (const w of ws) w.terse = false;
-  for (let round = 0; round < 2; round++) {
+  // (0.0.159: up to four rounds, not two: still over another after its partner dropped its words, a far arrow drops its own; at twice the size N kept three lines of words over S)
+  for (let round = 0; round < 4; round++) {
     if (round) {
       let dropped = false;
       for (let i = 0; i < ws.length; i++) for (let j = i + 1; j < ws.length; j++) if (overlap(rect(ws[i]), rect(ws[j]))) {

@@ -78,7 +78,8 @@ try {
       // (a seat on the way: stopping at it sits on it, the game's own way (ticket 50), which moves the feet; inconclusive)
       if (sat) { console.log(`-    ${label}: "${o.name}": the friend sat on "${sat}" on the way, inconclusive`); continue; }
       // (0.0.156: stopped before it, the middle of the feet short of its box; the soles, not a 6-unit margin, meet it now)
-      const stopped = fromLeft ? w.x < o.x0 : w.x > o.x1, why = stopped ? "" : " " + await diag() + ` (feet at depth ${w.z.toFixed(1)}, started at x ${Math.round(x0)})`;
+      // (at its edge counts: a sole on its line)
+      const stopped = fromLeft ? w.x <= o.x0 : w.x >= o.x1, why = stopped ? "" : " " + await diag() + ` (feet at depth ${w.z.toFixed(1)}, started at x ${Math.round(x0)})`;
       const low = o.h < legs && o.x1 - o.x0 < 90;
       let jumped = "";
       if (low) {
@@ -108,7 +109,7 @@ try {
     const o = S[0], y = (o.back + o.front) / 2 - await ev("SCENE.ground");
     await put(o.x0 - 60, y); await hold(15, 2200);
     const w = await at();
-    say(w.x < o.x0, `${label}: seat "${o.name}" ${o.x0.toFixed(0)}..${o.x1.toFixed(0)}: walking into it stopped at x ${w.x}`);
+    say(w.x <= o.x0, `${label}: seat "${o.name}" ${o.x0.toFixed(0)}..${o.x1.toFixed(0)}: walking into it stopped at x ${w.x}`);
   }
   if (errs.length) { fails++; console.log("FAIL page errors:", errs.slice(0, 4)); } else console.log("page errors: none");
   console.log(fails ? `${fails} FAILED` : "all ok");

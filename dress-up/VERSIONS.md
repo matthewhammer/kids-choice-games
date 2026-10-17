@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.159 (2026-10-17)
+
+Everything in 0.0.158, with far-off passages back within reach.
+
+- **Far passages work again**: in the forest clearing, standing as close as you can get to the castle's sign or the tree house's doorway, ✨ takes you through again. Since 0.0.153 made faraway things so much smaller, they had counted as out of reach.
+- **Big arrows keep apart**: with ♿'s arrows at twice their size, the far arrows now drop their words whenever that's what it takes to keep from covering each other.
+
 ## 0.0.158 (2026-10-17)
 
 Everything in 0.0.157, with tree house rooms you can see into like the castle's.
