@@ -211,15 +211,39 @@ function solidsHere() {
 const legReach = () => poseJoints && poseJoints.legs && poseJoints.legs.length
   ? figureT.k * Math.max(...poseJoints.legs.map(l => Math.hypot(l.F[0] - l.H[0], l.F[1] - l.H[1]))) : 100 * figureT.k;
 // what stops the friend's feet at (x, z): a wall, a solid, or null
+// (Matthew: "two small collision boxes under the current friend, not one ... Place one under each foot, about the
+// size of the foot"; "the more that they coincide with 'the bottom of a shoe' in size the more realistic the game play
+// will become") The friend meets things with the soles of their feet: a box under each foot, where it is drawn (its
+// middle from poseJoints' foot, at the friend's scale, figureT.k), as wide as the shoe seen this way (across, facing
+// us; its length, in profile: footR), a step deep. feetSoles(x, z): the two, were the feet at (x, z); feetSpan(): how
+// far they reach either side of the middle, and how deep.
+function feetSoles(x, z) {
+  const J = poseJoints, T = figureT;
+  if (!J || !J.legs || !J.legs.length || !T || !(T.k > 0)) return [[x - SOLID_MARGIN, x + SOLID_MARGIN, z - 3, z + 3]];
+  const prof = facingOf(state.body) !== 0, hw = T.k * Math.max(8, Math.min(45, (J.footR || 50) * (prof ? 0.6 : 0.42))), hd = Math.max(2.5, hw * 0.35);
+  return J.legs.map(l => { const fx = x + T.k * l.F[0]; return [fx - hw, fx + hw, z - hd, z + hd]; });
+}
+const feetSpan = () => { const S = feetSoles(0, 0); return [Math.max(...S.map(s => Math.max(-s[0], s[1]))), Math.max(...S.map(s => s[3]))]; };
+// (Matthew: "one final box, that coincides with the center of the torso, but narrower, to indicate that we can sometimes
+// squeeze -- Otherwise, the two feet can pass over a narrow pole, and we won't collide"; "the feet gap is the same gap as
+// the width of the box above them, for the torso -- it extends from the crotch through the head") Under the middle of
+// the torso, between the soles, a box as wide as the gap between them (none when they meet), as deep as a sole: a pole
+// that would pass between the feet meets it. youBoxes(x, z): the soles and it, all that solidAt tests.
+function torsoBox(x, S) {
+  if (S.length < 2) return null;
+  const [a, b] = S[0][0] <= S[1][0] ? [S[0], S[1]] : [S[1], S[0]], gap = b[0] - a[1];
+  return gap > 0.5 ? [x - gap / 2, x + gap / 2, a[2], a[3]] : null;
+}
+const youBoxes = (x, z) => { const S = feetSoles(x, z), t = torsoBox(x, S); return t ? S.concat([t]) : S; };
 function solidAt(x, z) {
-  const B = state.background, W = castleWalls(B);
-  if (W && Math.abs(x) > W.half(z) - SOLID_MARGIN) return { wall: true };
+  const B = state.background, W = castleWalls(B), S = youBoxes(x, z);
+  if (W && S.some(s => Math.max(Math.abs(s[0]), Math.abs(s[1])) > W.half(z))) return { wall: true };
   const sitting = state.body.sit && B.seat, a = state.body.anim, jumping = isJump(a);
   const clears = jumping ? (a === "jumphigh" ? 1 : 0.5) * legReach() : 0;
   for (const o of solidsHere()) {
     if (sitting && o.name === B.seat) continue;
     if (o.h < clears) continue;
-    if (x > o.x0 - SOLID_MARGIN && x < o.x1 + SOLID_MARGIN && z > o.back && z < o.front) return o;
+    if (S.some(s => s[1] > o.x0 && s[0] < o.x1 && s[3] > o.back && s[2] < o.front)) return o;   // (a sole, or the torso's box, over its box)
   }
   return null;
 }
@@ -239,7 +263,7 @@ function solidMove(x0, y0, x, y) {
   if (!solidAt(x0, g + y)) return [x0, y];
   // (a wall alone: the farthest across it lets them, at the new depth)
   const W = castleWalls(state.background);
-  if (W && !here) { const h = W.half(g + y) - SOLID_MARGIN - 0.5, cx = clamp(x, -h, h); if (!solidAt(cx, g + y)) return [cx, y]; }
+  if (W && !here) { const h = W.half(g + y) - feetSpan()[0] - 0.5, cx = clamp(x, -h, h); if (!solidAt(cx, g + y)) return [cx, y]; }
   return [x0, y0];
 }
 // (ticket 215, Matthew: "when the player clicks a picture, or another
@@ -268,15 +292,16 @@ function segBox(ax, az, bx, bz, x0, z0, x1, z1) {   // (does the segment pass th
   return t1 - t0 > 1e-6;
 }
 function planPath(x0, y0, x1, y1) {
-  const g = SCENE.ground, z0 = g + y0, z1 = g + y1, m = SOLID_MARGIN + PATH_PAD;
-  const inside = (o, x, z, e = 0) => x > o.x0 - SOLID_MARGIN - e && x < o.x1 + SOLID_MARGIN + e && z > o.back - e && z < o.front + e;
+  // (the boxes grown by the soles' reach either side, and their depth: the middle kept that far out)
+  const [sx, sz] = feetSpan(), g = SCENE.ground, z0 = g + y0, z1 = g + y1, m = sx + PATH_PAD;
+  const inside = (o, x, z, e = 0) => x > o.x0 - sx - e && x < o.x1 + sx + e && z > o.back - sz - e && z < o.front + sz + e;
   const solids = solidsHere().filter(o => !inside(o, x0, z0) && !inside(o, x1, z1));
-  const hits = (ax, az, bx, bz) => solids.some(o => segBox(ax, az, bx, bz, o.x0 - SOLID_MARGIN, o.back, o.x1 + SOLID_MARGIN, o.front));
+  const hits = (ax, az, bx, bz) => solids.some(o => segBox(ax, az, bx, bz, o.x0 - sx, o.back - sz, o.x1 + sx, o.front + sz));
   if (!solids.length || !hits(x0, z0, x1, z1)) return [[x1, y1]];
   const W = castleWalls(state.background), F = sceneFrame;
-  const free = (x, z) => !solids.some(o => inside(o, x, z, 1)) && (!W || Math.abs(x) < W.half(z) - SOLID_MARGIN) && x > F.left && x < F.right && z - g >= figYMin(F) && z <= F.bottom;
+  const free = (x, z) => !solids.some(o => inside(o, x, z, 1)) && (!W || Math.abs(x) < W.half(z) - sx) && x > F.left && x < F.right && z - g >= figYMin(F) && z <= F.bottom;
   const pts = [[x0, z0], [x1, z1]];
-  for (const o of solids) for (const p of [[o.x0 - m, o.back - PATH_PAD], [o.x1 + m, o.back - PATH_PAD], [o.x0 - m, o.front + PATH_PAD], [o.x1 + m, o.front + PATH_PAD]]) if (free(...p)) pts.push(p);
+  for (const o of solids) for (const p of [[o.x0 - m, o.back - sz - PATH_PAD], [o.x1 + m, o.back - sz - PATH_PAD], [o.x0 - m, o.front + sz + PATH_PAD], [o.x1 + m, o.front + sz + PATH_PAD]]) if (free(...p)) pts.push(p);
   const cost = (a, b) => Math.hypot(b[0] - a[0], (b[1] - a[1]) / 0.6), n = pts.length;
   const dist = Array(n).fill(Infinity), prev = Array(n).fill(-1), done = Array(n).fill(false);
   dist[0] = 0;
@@ -299,7 +324,7 @@ function planPath(x0, y0, x1, y1) {
 function solidUnstick() {
   const B = state.background, x = B.figX ?? 0, z = SCENE.ground + (B.figY ?? 0), o = solidAt(x, z);
   if (!o || o.wall) return;
-  B.figX = Math.round(x - o.x0 < o.x1 - x ? o.x0 - SOLID_MARGIN - 1 : o.x1 + SOLID_MARGIN + 1);
+  const sx = feetSpan()[0]; B.figX = Math.round(x - o.x0 < o.x1 - x ? o.x0 - sx - 1 : o.x1 + sx + 1);
 }
 
 // The parts of the body each with its own visibility: a slider each

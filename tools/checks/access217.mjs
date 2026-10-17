@@ -82,7 +82,7 @@ try {
   // the collision boxes: one drawn for each solid, gone when hidden
   const sol = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { showSolids: true });
     state.world = clone(DEFAULTS.world); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: 0, figY: 40 }); changed(); await w(500); changed(); await frames(3);
-    const ov = document.querySelector("#access-layer svg.solid-boxes"), n = solidsHere().length, drawn = ov ? ov.querySelectorAll("polygon:not(.face)").length : 0, names = ov ? [...ov.querySelectorAll("text")].map(t => t.textContent) : [];
+    const ov = document.querySelector("#access-layer svg.solid-boxes"), n = solidsHere().length, drawn = ov ? ov.querySelectorAll("[data-solid] polygon:not(.face)").length : 0, names = ov ? [...ov.querySelectorAll("text")].map(t => t.textContent) : [];
     A.showSolids = false; changed(); await frames(3); const gone = !document.querySelector("#access-layer svg.solid-boxes");
     return JSON.stringify({ n, drawn, names, gone }); })()`));
   ok("🟥 the collision boxes: one drawn for each solid in the living room, named", sol.n > 0 && sol.drawn === sol.n && sol.names.length === sol.n, sol);
@@ -93,10 +93,19 @@ try {
     const S = solidsHere(), couch = S.find(o => /couch/.test(o.name)) || S[0]; if (!couch) return JSON.stringify({ none: true });
     const x = (couch.x0 + couch.x1) / 2, y = couch.front - SCENE.ground + 4; B.figX = x; B.figY = y; changed(); await frames(2);
     const [mx, my] = solidMove(x, y, x, y - 30); changed(); await frames(3);
-    const ov = document.querySelector("#access-layer svg.solid-boxes"), you = ov && ov.querySelector(".you polygon");
-    const r = { youPts: !!(you && you.getAttribute("points")), stopped: my > y - 30, youHit: !!(ov && ov.querySelector(".you.hit")), boxHit: !!(ov && ov.querySelector('[data-solid].hit')), name: solidHit.name };
+    const ov = document.querySelector("#access-layer svg.solid-boxes"), you = ov ? [...ov.querySelectorAll(".you polygon")] : [];
+    // (Matthew: a box under each foot, the size of its sole; and the torso's, between them, as wide as their gap, from the crotch up through the head)
+    const S = feetSoles(0, 0), T = torsoBox(0, S), gap = S.length === 2 ? Math.max(S[0][0], S[1][0]) - Math.min(S[0][1], S[1][1]) : 0;
+    const face = you[3] && you[3].getAttribute("points") ? you[3].getAttribute("points").split(" ").map(p => +p.split(",")[1]) : [];
+    const pole = T ? [(T[0] + T[1]) / 2 - 1, (T[0] + T[1]) / 2 + 1] : null;
+    const r = { youPts: you.slice(0, 2).every(p => p.getAttribute("points")), soles: S.map(s => s.map(Math.round)), torso: T && T.map(Math.round), gap: Math.round(gap),
+      torsoFits: !T || Math.abs((T[1] - T[0]) - gap) < 0.5, poleMissesSoles: !pole || !S.some(s => s[1] > pole[0] && s[0] < pole[1]), poleMeetsTorso: !pole || (T[1] > pole[0] && T[0] < pole[1]),
+      faceTall: !T || (face.length === 4 && Math.max(...face) - Math.min(...face) > 40),
+      stopped: my > y - 30, youHit: !!(ov && ov.querySelector(".you.hit")), boxHit: !!(ov && ov.querySelector('[data-solid].hit')), name: solidHit.name };
     A.showSolids = false; changed(); return JSON.stringify(r); })()`));
-  ok("🟥 the friend's own box drawn, at their feet", !hit.none && hit.youPts, hit);
+  ok("🟥 the friend's own boxes drawn: one under each foot", !hit.none && hit.youPts && hit.soles.length === 2, hit);
+  ok("and the torso's, between the feet, as wide as their gap, standing from the crotch up through the head", !hit.none && hit.torsoFits && hit.faceTall, hit);
+  ok("a pole between the feet misses both soles, and meets the torso's box", !hit.none && hit.poleMissesSoles && hit.poleMeetsTorso, hit);
   ok("walked into the couch: stopped, and both boxes glow", !hit.none && hit.stopped && hit.youHit && hit.boxHit, hit);
   // (0.0.139, Matthew's bug: the boxes shifted the arrows onto each other's places, and vanished with a new square's arrows)
   const keep = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { allArrows: true, arrowSize: 150, gameFont: 150 }); await clearing(); await w(300);

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.150 (2026-10-17)
+
+Everything in 0.0.149, with your friend meeting things with their feet and body.
+
+- **A box under each foot**: your friend now bumps into things with the soles of their shoes, a little box under each foot, the size of the shoe, and one more under the middle of their body, as wide as the gap between their feet, so a thin pole can't pass between their legs. 🟥 collision boxes shows all three; the body's box stands from the hips up through the head.
+- **Through an edge facing it**: walking on into an edge, your friend now goes straight through it, still facing that way, instead of turning back to walk to the arrow's spot first. Tapping an arrow, they walk to it, then step through it the way it points.
+
 ## 0.0.149 (2026-10-17)
 
 Everything in 0.0.148, with every place's far edge where its ground ends.

@@ -357,7 +357,7 @@ function solidsHud() {
   if (!on) { if (ov) ov.remove(); solidsShown = ""; return; }
   const M = pic.getScreenCTM(), box = layer.getBoundingClientRect();
   if (!M || !box.width) return;
-  const F = sceneFrame, g = SCENE.ground, W = castleWalls(state.background), m = SOLID_MARGIN;
+  const F = sceneFrame, g = SCENE.ground, W = castleWalls(state.background), m = 0;   // (the soles have their own size now: a box as it is, no margin)
   const sc = (x, z) => { const q = new DOMPoint(x, z).matrixTransform(M); return [q.x - box.left, q.y - box.top]; };
   const pts = a => a.map(q => q.map(v => v.toFixed(1)).join(",")).join(" ");
   const back = g + figYMin(F), zs = Array.from({ length: 9 }, (_, i) => back + (F.bottom - back) * i / 8);
@@ -372,7 +372,7 @@ function solidsHud() {
     if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "solid-boxes"); layer.prepend(ov); }
     ov.innerHTML = `<polyline class="back" points="${pts(line)}"/>` + walls.map(w => `<polyline class="wall" points="${pts(w)}"/>`).join("") +
       solids.map(o => `<g data-solid="${xmlEsc(String(o.name))}"><polygon class="face" points="${pts(o.face)}"/><polygon points="${pts(o.q)}"/></g><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("") +
-      `<g class="you"><polygon/><text>friend</text></g>`;
+      `<g class="you"><polygon/><polygon/><polygon class="torso"/><polygon class="face torso"/><text>you</text></g>`;
     solidsHitShown = -1;
   }
   // (ticket 229, Matthew: "let's also show the collision box of the player, and let's animate ... the event of a
@@ -381,8 +381,15 @@ function solidsHud() {
   // as deep as a step; and on a collision (solidHit) it and the box it met (or the walls) glow and fade back, a CSS
   // animation as long as ♿'s glow fade, begun again while they keep pushing
   const Bg = state.background, fx = Bg.figX ?? 0, fz = g + (Bg.figY ?? 0), you = ov.querySelector(".you");
-  if (you) { const q = [[fx - m, fz - 6], [fx + m, fz - 6], [fx + m, fz + 6], [fx - m, fz + 6]].map(([x, z]) => sc(x, z));
-    you.firstChild.setAttribute("points", pts(q)); you.lastChild.setAttribute("x", (q[3][0] + 2).toFixed(1)); you.lastChild.setAttribute("y", (q[3][1] + 12).toFixed(1)); }
+  if (you) { const soles = feetSoles(fx, fz), polys = you.querySelectorAll("polygon"), foot = s => [[s[0], s[2]], [s[1], s[2]], [s[1], s[3]], [s[0], s[3]]].map(([x, z]) => sc(x, z));
+    // (Matthew: one under each foot, the size of its sole; and the torso's, as wide as the gap between them, its face
+    // standing from the crotch, the hips' joints, up through the head, the crown, as drawn: figureT, faceFrame)
+    for (let i = 0; i < 2; i++) polys[i].setAttribute("points", soles[i] ? pts(foot(soles[i])) : "");
+    const t = torsoBox(fx, soles), T = figureT, J = poseJoints, up = y => T.dy + T.sg + T.k * (y - T.g);
+    const crotch = J && J.legs && J.legs.length ? up(Math.max(...J.legs.map(l => l.H[1]))) : fz, crown = up(faceFrame.ty + headCrown(state.face) * faceFrame.s);
+    polys[2].setAttribute("points", t ? pts(foot(t)) : "");
+    polys[3].setAttribute("points", t ? pts([[t[0], crotch], [t[1], crotch], [t[1], crown], [t[0], crown]].map(([x, y]) => sc(x, y))) : "");
+    const q0 = sc(Math.min(...soles.map(s => s[0])), Math.max(...soles.map(s => s[3]))); you.lastChild.setAttribute("x", (q0[0] + 2).toFixed(1)); you.lastChild.setAttribute("y", (q0[1] + 12).toFixed(1)); }
   const A = state.access || DEFAULTS.access, fade = Math.max(100, A.glowFade ?? 800) + "ms";
   if (ov.style.getPropertyValue("--glow-fade") !== fade) ov.style.setProperty("--glow-fade", fade);
   if (solidHit.n !== solidsHitShown && solidHit.name && performance.now() - solidHit.t < 1000) {
@@ -531,12 +538,13 @@ function waysApart(ws, box, sc = 1) {
 }
 // a way out taken: the friend walks to it, then is in the square beside
 // it, come in from the side it leads to; the back chip can bring them back
-function worldWalk(door) {
+// (stepping through it its own way, facing it: east, to the right; here: from an edge, where they stand)
+function worldWalk(door, here = false) {
   const W = state.world, d = door.dataset.way, nb = worldNeighbour(W, W.at, d), other = W.cells[nb.key], B = state.background;
   if (nb.off || !other) return;
   const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: other.kind, worldAt: W.at };
   tripStart(door, "walk");
-  walkInto(door, () => { trips.push(from); worldEnter(nb.key, WORLD_OPP[d], false); });
+  walkInto(door, () => { trips.push(from); worldEnter(nb.key, WORLD_OPP[d], false); }, true, "step", null, { out: WORLD_DIRS[d], here });
 }
 // and back: the place edited where the friend is, kept in its square
 // (from changed() and settle(): cheap, and only for the place in use).

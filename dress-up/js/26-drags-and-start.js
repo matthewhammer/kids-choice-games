@@ -573,12 +573,14 @@ function padPoll(t) {
   padLoop = requestAnimationFrame(padPoll);
 }
 // (ticket 214) the way out at an edge: a world square's way (its nav arrow's doorway) that way, or at the bottom a ▼
+// (Matthew: "the animations on each edge look strange, we are turning and facing away from the edge we are initially
+// going into") taken from where they stand, on through the edge, facing it: not walked back to the doorway's spot first
 function edgeGo(d) {
   const node = bgShown.node;
   if (!node) return false;
   for (const c of d.length > 1 ? [d, d[0], d[1]] : [d]) {
     const door = node.querySelector(`.portal[data-way="${c}"]`) || (c === "S" ? node.querySelector(".portal.south-way") : null);
-    if (door) { enterScene(door); return true; }
+    if (door) { enterScene(door, true); return true; }
   }
   return false;
 }
@@ -718,8 +720,8 @@ const ARRIVE = { witchroom: [-170, 0], crossing: [0, -20], imagination: [0, 70],
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.
 const trips = [];
-function enterScene(door) {
-  if (door.dataset.way) { worldWalk(door); return; }   // (ticket 185: a way out of a world square, to the one beside it)
+function enterScene(door, here = false) {
+  if (door.dataset.way) { worldWalk(door, here); return; }   // (ticket 185: a way out of a world square, to the one beside it)
   const to = door.dataset.to, house = door.dataset.house, tent = door.dataset.tent, room = door.dataset.room, B = state.background;
   if (!SCENES[to] && !PICTURE_CHOICES.some(([kd]) => kd === to)) return;
   // (a picture's own box: the scene inside it spills past it, hidden)
@@ -846,7 +848,8 @@ function fallDown([cx, cy, rx, ry], then) {
       .onfinish = then;
   }, FALL_TEETER_MS);
 }
-function walkInto(door, arrive, walk = true, how = "step", lad = null) {
+// (opt.out: the way they step through, else on toward the doorway, or deeper; opt.here: from where they stand, not walking to it)
+function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {}) {
   const P = pic.getScreenCTM(), BG = state.background, B = state.body, F = sceneFrame;
   if (!P) return;
   entering = true;
@@ -855,10 +858,11 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null) {
   const pit = how === "fall" && door.dataset.pit ? door.dataset.pit.split(" ").map(Number) : null;
   // (a ladder (ticket 173): its foot, where a climb starts)
   const foot = lad ? { x: lad.x, y: lad.z + 2 } : pit ? { x: pit[0], y: pit[1] } : new DOMPoint(r.x + r.width / 2, r.y + r.height).matrixTransform(inv);
-  const tx = clamp(foot.x, F.left, F.right), ty = clamp(foot.y - SCENE.ground, figYMin(F), F.bottom - F.ground);
+  const tx = opt.here ? BG.figX ?? 0 : clamp(foot.x, F.left, F.right), ty = opt.here ? BG.figY ?? 0 : clamp(foot.y - SCENE.ground, figYMin(F), F.bottom - F.ground);
   // (the way in: on toward the doorway from where they stop; deeper into the place if it is straight ahead)
   let ux = foot.x - tx, uy = foot.y - (SCENE.ground + ty);
-  if (Math.hypot(ux, uy) < 12) { ux = 0; uy = -1; }
+  if (opt.out) [ux, uy] = opt.out;
+  else if (Math.hypot(ux, uy) < 12) { ux = 0; uy = -1; }
   const un = Math.hypot(ux, uy); ux /= un; uy /= un;
   const face = (vx, vy) => Math.abs(vx) > Math.abs(vy) ? (vx < 0 ? "left" : "right") : vy < 0 ? "back" : "front";
   // the door, opening
@@ -877,7 +881,7 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null) {
   if (B.pose !== "stand" && walk) strikePose("stand");
   const fade = o => { for (const n of figShown) if (n.style) n.style.opacity = o; };
   // (ticket 215) the way there, round what stands in it (planPath): a point at a time
-  const from = [BG.figX ?? 0, BG.figY ?? 0], path = walk ? planPath(from[0], from[1], tx, ty) : [[tx, ty]];
+  const from = [BG.figX ?? 0, BG.figY ?? 0], path = walk && !opt.here ? planPath(from[0], from[1], tx, ty) : [[tx, ty]];
   walkPath = { pts: [from, ...path], made: performance.now(), leg: 0 };
   // (deeper counts 1 / 0.6 as far, as the controller walks; a long way is walked faster, to take 2.5 s at most)
   const dist = path.reduce((a, p, i) => { const q = i ? path[i - 1] : from; return a + Math.hypot(p[0] - q[0], (p[1] - q[1]) / 0.6); }, 0), speed = Math.max(PAD_SPEED.walk, dist / 2.5);
