@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.143 (2026-10-17)
+
+Everything in 0.0.142, with bubble space.
+
+- **🫧 Bubble space**, a new place (with the empty room, in 💭 imagination): a room full of bubbles drifting in a gentle wind. Bubbles that touch stick together and float on as clumps, and any that touch your friend pop! New ones drift in, so the room stays full.
+- **Its settings** (🏞️ Background, in bubble space): how many bubbles, how windy, and up to three bubble themes, each with its own colour, size, shine and sparkle (a star or a dot, in a colour of its own).
+
 ## 0.0.142 (2026-10-17)
 
 Everything in 0.0.141, with big arrows that keep out of each other's way.
