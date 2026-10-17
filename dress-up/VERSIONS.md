@@ -2,7 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.95 (2026-10-17)
+
+Everything in 0.0.94, plus the 🏞️ Background tab fast again, no white flashes while moving, furniture that stands in the way, postcards, walking toward us on a slant, and a plain "please wait" while ⚙️ Advanced measures.
 
 - **Fixed:** with the 🏞️ Background tab open, moving the friend was slow everywhere, worst in the busy places (the duck pond at 2 to 15 frames a second instead of 60 on a test computer), and stayed slow until the page was reloaded, which opens the 🧍 Body tab again. The castle's room menus in that tab worked out the whole castle for every choice's name on every refresh; they now look up just the room they name.
 - **Fixed:** white flashes while walking or dragging (Matthew and the kids, since the still pictures became bitmaps in 0.0.93). On a computer the game finds slow, the place is drawn as still pictures while the friend moves, and a picture could be shown a frame before the browser had its pixels ready, so that frame was blank. A picture is now used only once it is ready to draw.
@@ -11,6 +13,7 @@ Each version lists the game's features as of that version. The newest version is
 - **The flat rooms have back walls:** in the 🛋️ living room, the 🪜 tree house's rooms, the 🧙 witch's hut, the 🌿 healer's hut and ⛺ a tent, the friend stops at the foot of the back wall, as in 💭 our imagination, instead of walking up it.
 - **Postcards** (💾 Save ▾ → "💌 Save a postcard"): your friend in their place, in a card's cream border, with something written under it, saved as one picture ready to send. The words start as the picture's own line ("feeling happy outside of N's castle"); type anything instead. A long message goes on two lines.
 - **Walking toward us on a slant** (Matthew: the controller's diagonals): holding down and left, or down and right, the friend faces us turned partway that way, body a little narrower, the far arm behind, the face looking that way, instead of turning all the way to the side. Straight sideways is still a side view, and walking away on a slant is as before.
+- **Ready, not on yet:** 📮 "send it to Matthew" beside the 🧪 and ⏱️ lines, which posts the line to a log of our own (ticket 166); it stays hidden until that log is running, and 📝 the shared pad works as before.
 
 ## 0.0.94 (2026-10-16)
 
