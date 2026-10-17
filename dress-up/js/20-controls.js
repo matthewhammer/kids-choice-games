@@ -401,7 +401,8 @@ const TABS = [
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castlePlaces" + n + id, "🍽️ places at table", 4, 18, 4, 18],
-        ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, DOOR_MAX, 0, 4, b => roomDoorMax(castleOf({ ...b, castle: id }).rooms[n - 1] ?? "king")],
+        // (ticket 197: the one room's style, not the whole castle built to read it, on every refresh)
+        ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, DOOR_MAX, 0, 4, b => roomDoorMax(roomStyleOf(b, id, n))],
         ...DOOR_JS.map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
         ["choice", "castleFar" + n + id, "🚪 the door in its far wall leads to", backDests(id)],
         ["choice", "castleHallEnd" + n + id, "🌀 the stairs at its end lead to", hallEnds(id)],
@@ -1267,8 +1268,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                 oninput: e => set(part, key, Number(e.target.value)) });
     box.append(input);
     // (with a limit of its own, from the settings, as a room's doors are: the slider stops there, and shows no more)
-    syncs.push(() => { const most = typeof limit === "function" ? limit(state[part]) : hi; input.max = most;
-                       input.value = Math.min(most, state[part][key]); val.textContent = Math.min(most, state[part][key]); });
+    syncs.push(() => { const most = typeof limit === "function" ? limit(state[part]) : hi, v = Math.min(most, state[part][key]);   // (ticket 197: written only when it changes)
+                       if (+input.max !== most) input.max = most; if (+input.value !== v) input.value = v; if (val.textContent !== String(v)) val.textContent = v; });
     // a part's see-through-ness can follow one of the mixer's LFOs: a chip
     // beside its name, a tap for the next (none, A, B, C)
     if (part === "visible" && VISIBLE_PARTS.includes(key) && !buildingHud) {
@@ -1423,7 +1424,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       row.append(b); return [v, b, ok, text];
     });
     box.append(row);
-    syncs.push(() => { for (const [v, b, ok, text] of bs) { b.setAttribute("aria-pressed", state[part][key] === v); if (ok) b.hidden = !ok(state[part]); if (typeof text === "function") b.textContent = text(state[part]); } });
+    // (ticket 197: written only when it changes: a write each refresh, for every chip of every door of every room, cost the Background tab most of its 26 ms)
+    syncs.push(() => { for (const [v, b, ok, text] of bs) {
+      const on = String(state[part][key] === v); if (b.getAttribute("aria-pressed") !== on) b.setAttribute("aria-pressed", on);
+      if (ok) { const h = !ok(state[part]); if (b.hidden !== h) b.hidden = h; }
+      if (typeof text === "function") { const t = text(state[part]); if (b.textContent !== t) b.textContent = t; } } });
   } else if (kind === "places") {
     // two rows, as the music's: the kind of place (or none), then that
     // kind's places, each in a dashed box with its name; picking a kind goes

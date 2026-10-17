@@ -94,8 +94,9 @@ const castleRoomCount = (b, id) => Math.max(1, Math.min(ROOM_MAX, Math.round(b["
 const roomStyleOf = (b, id, n) => {
   if (n > castleRoomCount(b, id)) return "king";
   const st = b["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1] ?? "king";
-  return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king";
+  return (roomStyleSet ||= new Set(CASTLE_ROOM_CHOICES.map(([v]) => v))).has(st) ? st : "king";   // (ticket 197: a set, not a search, as it runs for every room's every chip)
 };
+let roomStyleSet = null;
 const roomChoices = id => ROOM_NS.map(n => [String(n), b => `${roomLabel(roomStyleOf(b, id, n)).split(" ")[0]} room ${n}`, b => n <= castleRoomCount(b, id)]);
 const hallDoorDests = id => [["out", "🏰 out of the castle"], ...roomChoices(id)];
 const hallEnds = id => [["auto", "🌀 the first spiral stairs"], ...roomChoices(id), ["none", "🧱 nowhere"]];
