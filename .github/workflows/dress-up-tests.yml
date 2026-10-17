@@ -55,7 +55,9 @@ jobs:
           node tools/structure.mjs 9333 "$PAGE" out/structure-branch.json
           python3 tools/structure_diff.py out/structure-main.json out/structure-branch.json | tee -a out/safety-net.txt
       - name: The branch's own checks (tools/checks/*.mjs, each exiting 1 on a failure)
+        id: checks
         if: hashFiles('tools/checks/*.mjs') != ''
+        continue-on-error: true
         shell: bash
         run: |
           mkdir -p out/checks; s=0
@@ -99,6 +101,9 @@ jobs:
         with:
           name: chrome
           path: out/
+      - name: Fail the run if the branch's own checks failed (after everything else ran)
+        if: steps.checks.outcome == 'failure'
+        run: exit 1
   firefox:
     name: Firefox (the leak, ticket 167)
     runs-on: ubuntu-24.04
