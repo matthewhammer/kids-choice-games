@@ -456,7 +456,7 @@ function upgradeThings(next, saved) {
   }
   for (const cell of Object.values((next.world && next.world.cells) || {})) {
     if (Array.isArray(cell.crossThings)) { if (!Array.isArray(cell.things)) cell.things = cell.crossThings; delete cell.crossThings; }
-    if (!Array.isArray(cell.things)) cell.things = [];
+    if (cell.things !== undefined && !Array.isArray(cell.things)) cell.things = [];   // (one never given things stays so: a save loads back as it was)
   }
 }
 function upgradeFigSize(bg, saved) {

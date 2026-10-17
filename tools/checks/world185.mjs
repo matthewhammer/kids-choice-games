@@ -112,10 +112,10 @@ try {
     const B = state.background; B.kind = "treeroom"; changed(); await new Promise(r => setTimeout(r, 400));
     tab = TABS.findIndex(t => t.some && t.some(x => x === "background" || x === "bg")); if (tab < 0) tab = 0; showTab(); await new Promise(r => setTimeout(r, 300));
     B.toys = 4; changed(); await new Promise(r => setTimeout(r, 400));
-    const next = { background: { things: 7, toys: 10 }, world: { cells: { "0,0": { kind: "forest", things: 3 } } } }; upgradeThings(next, { background: { things: 7 } });
-    return JSON.stringify({ ...d, things: B.things, drawn: !!document.querySelector("#bg [data-obj]"), up: { toys: next.background.toys, things: next.background.things, cell: next.world.cells["0,0"].things } }); })()`));
+    const next = { background: { things: 7, toys: 10 }, world: { cells: { "0,0": { kind: "forest", things: 3 }, "1,0": { kind: "beach" } } } }; upgradeThings(next, { background: { things: 7 } });
+    return JSON.stringify({ ...d, things: B.things, drawn: !!document.querySelector("#bg [data-obj]"), up: { toys: next.background.toys, things: next.background.things, cell: next.world.cells["0,0"].things, untouched: !("things" in next.world.cells["1,0"]) } }); })()`));
   ok("the tree room's toys are their own setting (ten at first) and the things list stays a list", toys.toys === 10 && toys.list && Array.isArray(toys.things) && toys.drawn, toys);
-  ok("an older save's number of things comes back as toys, its things an empty list", toys.up.toys === 7 && Array.isArray(toys.up.things) && !toys.up.things.length && Array.isArray(toys.up.cell), toys.up);
+  ok("an older save's number of things comes back as toys, its things an empty list; a square never given things left as it was", toys.up.toys === 7 && Array.isArray(toys.up.things) && !toys.up.things.length && Array.isArray(toys.up.cell) && toys.up.untouched, toys.up);
   ok("the cemetery below given a way north: one trail and one arrow, S, and no warning about A1", dead.after.paths === 1 && dead.after.arrows === 1 && dead.after.way === "S" && dead.after.mistakes.length === 0, dead.after);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
