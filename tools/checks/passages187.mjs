@@ -31,7 +31,7 @@ try {
   const clearing = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,2"); await settle();
     const kinds = marks.pics.map(p => p.kind), out = [];
     // (it, or one just as near: two passages can end at one spot, as the clearing's old front path and its nav arrow S)
-    for (const p of marks.pics.filter(p => p.spot)) { await feetAt(p.spot); const t = enterTarget(), all = passesNear(Infinity), nOf = q => (all.find(e => e.p === q) || { n: Infinity }).n;
+    for (const p of marks.pics.filter(p => p.spot)) { await feetAt(p.spot); const t = enterTarget(), all = passesNear(Infinity), nOf = q => (all.find(e => e.p.el === q.el) || { n: Infinity }).n;   // (by element: the list is measured afresh as the friend moves)
       out.push({ kind: p.kind, to: p.el.dataset.to || p.el.dataset.way || "", it: !!t && (t.el === p.el || Math.abs(nOf(t) - nOf(p)) < 0.05), ...glows() }); }
     return JSON.stringify({ kinds, out }); })()`));
   ok("the clearing's passages, every kind in one list (signs, doorways, nav arrows...)", clearing.kinds.includes("nav") && clearing.kinds.some(k => k === "sign" || k === "doorway"), clearing.kinds);
