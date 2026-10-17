@@ -20,7 +20,8 @@ const H = `const w = ms => new Promise(r => setTimeout(r, ms)), B = state.backgr
   const frames = k => new Promise(r => { const f = () => (--k > 0 ? requestAnimationFrame(f) : r()); requestAnimationFrame(f); });
   const clearing = async () => { state.world = clone(DEFAULTS.world); worldEnter("3,3", null, false); B.figX = 0; B.figY = 0; changed(); await frames(4); };
   const arrows = () => [...document.querySelectorAll("#ways .way-arrow")];
-  const rect = el => { const r = [el.querySelector(".way-tri"), el.querySelector(".way-words")].map(e => e.getBoundingClientRect()); return [Math.min(r[0].left, r[1].left), Math.min(r[0].top, r[1].top), Math.max(r[0].right, r[1].right), Math.max(r[0].bottom, r[1].bottom)]; };`;
+  const rect = el => { const r = [el.querySelector(".way-tri"), el.querySelector(".way-words")].filter(e => getComputedStyle(e).display !== "none").map(e => e.getBoundingClientRect());   // (words dropped, ticket 227: not there)
+    if (r.length === 1) r.push(r[0]); return [Math.min(r[0].left, r[1].left), Math.min(r[0].top, r[1].top), Math.max(r[0].right, r[1].right), Math.max(r[0].bottom, r[1].bottom)]; };`;
 try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });

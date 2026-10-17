@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.142 (2026-10-17)
+
+Everything in 0.0.141, with big arrows that keep out of each other's way.
+
+- **🧭 all arrows, made big, in a small picture**: when there isn't room for every arrow's words, a far arrow shows just its triangle, so none lies over another; its words come back as your friend comes near.
+
 ## 0.0.141 (2026-10-17)
 
 Everything in 0.0.140, working again.

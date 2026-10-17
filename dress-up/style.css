@@ -482,6 +482,7 @@
 .way-arrow { scale: var(--arrow-scale, 1); }
 .way-arrow.always:not(.near):not(.aimed) { opacity: var(--arrow-dim, 0.45); pointer-events: auto; }
 .way-arrow.always:not(.near):not(.aimed) .way-tri::before { background: var(--arrow-color, #38bdf8); }
+.way-arrow.terse .way-words { display: none; }   /* (ticket 227: a far arrow with no room for its words, just its triangle) */
 /* (ticket 217) ♿ the planned path, over the picture while the walk lasts */
 .walk-path { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .walk-path polyline { fill: none; stroke: #fde047; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 9;

@@ -316,10 +316,11 @@ function worldWaysHud() {
     if (el.dataset.side !== side) el.dataset.side = side;
     if (el.classList.contains("near") !== near) el.classList.toggle("near", near);
     if (el.classList.contains("always") !== all) el.classList.toggle("always", all);
-    at.push({ d, el, x: left, y: top, a, side, shown: all || near || el.classList.contains("aimed") });
+    at.push({ d, el, x: left, y: top, a, side, shown: all || near || el.classList.contains("aimed"), far: all && !near && !el.classList.contains("aimed") });
   });
   waysApart(at.filter(w => w.shown), box, sc);
-  for (const w of at) { const l = w.x.toFixed(0) + "px", t = w.y.toFixed(0) + "px"; if (w.el.style.left !== l) w.el.style.left = l; if (w.el.style.top !== t) w.el.style.top = t; }
+  for (const w of at) { const l = w.x.toFixed(0) + "px", t = w.y.toFixed(0) + "px"; if (w.el.style.left !== l) w.el.style.left = l; if (w.el.style.top !== t) w.el.style.top = t;
+    if (w.el.classList.contains("terse") !== !!w.terse) w.el.classList.toggle("terse", !!w.terse); }
 }
 // (ticket 217, Matthew: "toggle to show the planned path each time it's created
 // and being executed in game") ♿ the planned path (walkPath, ticket 215) drawn
@@ -404,13 +405,27 @@ function waysApart(ws, box, sc = 1) {
   // (ticket 217: the words measured again when the game's word size changes; the arrows' size, sc, scales all of it)
   const fk = String((state.access || DEFAULTS.access).gameFont ?? 100);
   for (const w of ws) { if (!w.el.__words || w.el.__words[2] !== fk) { const t = w.el.querySelector(".way-words"); w.el.__words = t ? [t.offsetWidth, t.offsetHeight, fk] : [0, 0, fk]; } }
-  const rect = w => { const ww = w.el.__words[0] * sc, wh = w.el.__words[1] * sc, gap = 26 * sc, c = Math.cos(w.a * Math.PI / 180), s = Math.sin(w.a * Math.PI / 180), h = 22 * sc * (Math.abs(c) + Math.abs(s)), b = 5 * sc;
+  const rect = w => { const ww = w.terse ? 0 : w.el.__words[0] * sc, wh = w.terse ? 0 : w.el.__words[1] * sc, gap = 26 * sc, c = Math.cos(w.a * Math.PI / 180), s = Math.sin(w.a * Math.PI / 180), h = 22 * sc * (Math.abs(c) + Math.abs(s)), b = 5 * sc;
     const r = [w.x - h + Math.min(0, b * c), w.y - h + Math.min(0, b * s), w.x + h + Math.max(0, b * c), w.y + h + Math.max(0, b * s)];
     const t = w.side === "left" ? [w.x - gap - ww, w.y - wh / 2, w.x - gap, w.y + wh / 2] : w.side === "right" ? [w.x + gap, w.y - wh / 2, w.x + gap + ww, w.y + wh / 2] :
               w.side === "below" ? [w.x - ww / 2, w.y + gap, w.x + ww / 2, w.y + gap + wh] : [w.x - ww / 2, w.y - gap - wh, w.x + ww / 2, w.y - gap];
     return [Math.min(r[0], t[0]), Math.min(r[1], t[1]), Math.max(r[2], t[2]), Math.max(r[3], t[3])]; };
   const across = w => !(w.d === "E" || w.d === "W");   // (E and W slide up or down; the rest across)
   const edge = w => w.d.length === 1;                  // (a side's or the top's or bottom's: free to slide; a corner's stays where it points)
+  const overlap = (a, b) => Math.min(a[2], b[2]) - Math.max(a[0], b[0]) > -WAY_GAP && Math.min(a[3], b[3]) - Math.max(a[1], b[1]) > -WAY_GAP;
+  // (ticket 227: eight arrows, big, in a small picture do not all fit along its edges, however many passes; still over
+  // another after the passes, a far arrow, shown only because ♿ shows every one, drops its words, just its triangle
+  // (its words back when the friend comes near), and the passes run again)
+  for (const w of ws) w.terse = false;
+  for (let round = 0; round < 2; round++) {
+    if (round) {
+      let dropped = false;
+      for (let i = 0; i < ws.length; i++) for (let j = i + 1; j < ws.length; j++) if (overlap(rect(ws[i]), rect(ws[j]))) {
+        const f = [ws[j], ws[i]].find(w => w.far && !w.terse);
+        if (f) { f.terse = true; dropped = true; }
+      }
+      if (!dropped) break;
+    }
   for (let pass = 0; pass < 16; pass++) {   // (ticket 217: eight arrows at twice the size need more than four)
     let moved = false;
     for (let i = 0; i < ws.length; i++) for (let j = i + 1; j < ws.length; j++) {
@@ -426,6 +441,7 @@ function waysApart(ws, box, sc = 1) {
       }
     }
     if (!moved) break;
+  }
   }
 }
 // a way out taken: the friend walks to it, then is in the square beside
