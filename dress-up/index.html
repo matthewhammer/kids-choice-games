@@ -10281,7 +10281,8 @@ const SPEED_TEST = { holder: null, noUnder: false, noRings: false, noPic: false,
 // (Safari draws an svg picture again every frame) and at 60 as bitmaps; an
 // svg picture is the fallback where a bitmap can't be made (bitmapOk).
 const STILL_PIC_HOLD = 400, STILL_PARTS = 6, STILL_RES = "defs, linearGradient, radialGradient, pattern, clipPath, mask, filter, symbol, marker, style";
-const stillPic = { gen: 0, node: null, text: null, vb: null, bitmap: false, off: "", parts: new Map(), shown: [], on: false, onNode: null, glow: null, glowOf: null, bitmapOk: null, drawsOn: 0, draws: 0 };
+const stillPic = { gen: 0, node: null, text: null, vb: null, bitmap: false, off: "", parts: new Map(), shown: [], on: false, onNode: null, glow: null, glowOf: null, bitmapOk: null, drawsOn: 0, draws: 0,
+  painted: new WeakSet(), sceneHidden: false };   // (ticket 177: the pictures that have had a frame to paint; whether the scene is hidden)
 let stillPicUntil = 0, stillPicEnd = 0;
 const stillPicWanted = () => !!bgShown.node && sceneryStill() && !SPEED_TEST.holder && !SPEED_TEST.noPic;
 // (the parts' pictures, kept while the place, its frame and its hidden objects stay as they are)
@@ -10292,7 +10293,7 @@ function stillPicReset() {
   if (stillPic.node === bgShown.node && stillPic.text === bgShown.text && stillPic.vb === vb && stillPic.bitmap === bitmap && stillPic.size === size && stillPic.off === off) return;
   showStillPic(null);
   for (const p of stillPic.parts.values()) { if (p.img) p.img.remove(); if (p.url) URL.revokeObjectURL(p.url); }
-  Object.assign(stillPic, { gen: stillPic.gen + 1, node: bgShown.node, text: bgShown.text, vb, bitmap, size, off, parts: new Map(), shown: [] });
+  Object.assign(stillPic, { gen: stillPic.gen + 1, node: bgShown.node, text: bgShown.text, vb, bitmap, size, off, parts: new Map(), shown: [], painted: new WeakSet() });
 }
 // a part's picture: what the scene draws from just after object lo - 1 (from
 // its start, for 0) to just before object hi (to its end, for the last),
@@ -10405,7 +10406,7 @@ function stillLayers(farNode, behind, ahead) {
 // or off, written only when it changes
 function showStillPic(parts) {
   const node = bgShown.node;
-  if (stillPic.on && stillPic.onNode !== node) { stillPic.on = false; stillPic.shown = []; }
+  if (stillPic.on && stillPic.onNode !== node) { stillPic.on = false; stillPic.shown = []; stillPic.sceneHidden = false; }
   const want = parts ? parts.filter(Boolean).map(q => q.img) : [];
   if (want.length !== stillPic.shown.length || want.some((m, i) => m !== stillPic.shown[i])) {
     for (const m of stillPic.shown) if (!want.includes(m)) m.style.visibility = "hidden";
@@ -10413,7 +10414,22 @@ function showStillPic(parts) {
     stillPic.shown = want;
   }
   const on = !!parts;
-  if (on !== stillPic.on && node) { node.style.visibility = on ? "hidden" : ""; stillPic.on = on; stillPic.onNode = node; }
+  // (ticket 177) a picture shown for the first time may paint a frame late,
+  // on a browser that decodes it only then: the scene stays visible under it
+  // for that frame, and is hidden two frames on, so a late picture shows the
+  // scene, never the page's colour (a white flash while moving)
+  const fresh = on && want.some(m => !stillPic.painted.has(m));
+  if (node && (on !== stillPic.on || stillPic.sceneHidden !== (on && !fresh))) {
+    node.style.visibility = on && !fresh ? "hidden" : "";
+    stillPic.sceneHidden = on && !fresh; stillPic.on = on; stillPic.onNode = node;
+  }
+  if (fresh) {
+    const shownNow = stillPic.shown;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      for (const m of shownNow) stillPic.painted.add(m);
+      if (stillPic.on && stillPic.shown === shownNow && stillPic.onNode === node && node) { node.style.visibility = "hidden"; stillPic.sceneHidden = true; }
+    }));
+  }
   if (on) for (const n of figShown) if (n.style) n.style.visibility = "visible";
   // (the ✨ glow on a picture to go into: a copy over the part its picture is in)
   const g = on && enterGlow && enterGlow.isConnected ? enterGlow : null;
