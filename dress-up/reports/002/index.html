@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Kids' Computers</title>
+<style>
+  :root { --bg: #fbfaf7; --paper: #ffffff; --ink: #1f2328; --muted: #5b6470; --line: #e3e0d8; --accent: #6d28d9; --soft: #cbbcf0; --alt: #0f8b7d; --good: #15803d; --bad: #b91c1c; --link: #1d4ed8; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --alt: #2dd4bf; --good: #4ade80; --bad: #f87171; --link: #93c5fd; } }
+  :root[data-theme="dark"] { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --alt: #2dd4bf; --good: #4ade80; --bad: #f87171; --link: #93c5fd; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 2em; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 1.35em; margin: 48px 0 10px; padding-top: 8px; border-top: 2px solid var(--line); }
+  h3 { font-size: 1.08em; margin: 24px 0 6px; }
+  p, li { max-width: 72ch; }
+  .series { color: var(--muted); margin: 0 0 6px; font-size: 0.92em; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .headline { background: var(--paper); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 6px; }
+  .headline ol > li { margin: 8px 0; }
+  a { color: var(--link); text-underline-offset: 2px; }
+  a.ref code, code { font-size: 0.9em; }
+  code { background: color-mix(in srgb, var(--line) 50%, transparent); padding: 0 4px; border-radius: 4px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 18px 0; }
+  .kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .kpi .v { font-size: 1.7em; font-weight: 700; } .kpi .l { color: var(--muted); font-size: 0.9em; }
+  .good { color: var(--good); } .bad { color: var(--bad); }
+  figure { margin: 18px 0; } figcaption { color: var(--muted); font-size: 0.9em; margin-top: 6px; max-width: 72ch; }
+  svg.chart { width: 100%; height: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; }
+  svg.chart .grid { stroke: var(--line); } svg.chart .limit { stroke: var(--bad); stroke-dasharray: 4 3; }
+  svg.chart .tick { fill: var(--muted); font-size: 11px; } svg.chart .limitlabel { fill: var(--bad); }
+  svg.chart .lab { fill: var(--ink); font-size: 12px; }
+  svg.chart .b1 { fill: var(--accent); } svg.chart .b2 { fill: var(--alt); }
+  svg.chart .val1 { fill: var(--ink); font-size: 11px; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92em; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; } td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .note { color: var(--muted); font-size: 0.9em; }
+  .dated { border-left: 3px solid var(--soft); padding-left: 12px; }
+  ol.steps { list-style: none; padding-left: 0; } ol.steps li { margin: 12px 0; border-left: 3px solid var(--line); padding-left: 12px; }
+  .stepnum a { font-weight: 700; text-decoration: none; }
+  button.tk, button.theme { font: inherit; font-size: 0.8em; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; }
+  button.theme { position: fixed; top: 10px; right: 10px; }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../002/"><code><b>^du_report(</b>2<b>)</b></code></a> · 2026-10-16 · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after <a class="ref" href="../001/"><code><b>^du_report(</b>1<b>)</b></code></a></p>
+<h1>The kids' computers</h1>
+<p class="sub">Why was Messed Up Dress Up choppy on an Ubuntu laptop (Intel i7) and on an iPad, and pausing on Matthew's laptop, and what made it smooth? The evening of 2026-10-16, from 0.0.80 to 0.0.93, measured on each computer with the game's own 🧪 and carried back by hand.</p>
+
+<div class="headline" id="answers">
+<p><b>Short answers.</b> Each computer's figures are one run of the game's own 🧪 <i>this computer's speed</i> on it (<a href="#method">below</a>): each pass is 2 seconds of frames, so a few frames a second either way is noise.</p>
+<ol>
+<li><b>Smooth now: the duck pond swims at 58 frames a second on the Ubuntu laptop (27 as it is) and 60 on the iPad (22), with the place drawn as still bitmaps while the friend moves</b> (🧪 on 0.0.92, pass 10: the pictures 0.0.93 draws). 0.0.93 turns them on by itself once it finds a computer choppy, after about 4 to 6 seconds of moving in a busy place.</li>
+<li><b>Two computers, two causes.</b> On the Ubuntu laptop (Intel i7), in Firefox 136, the cost is the places' animations (the pond has 57): held still, the pond swims at 58. On the iPad (Safari) it is the scenery's shapes, drawn again every frame: held still 25, as an svg picture 24 (Safari, it seems, draws even a picture made of svg again every frame), as a bitmap 60.</li>
+<li><b>Matthew's laptop paused because of a stale mark.</b> Found choppy once, the mark was kept in the browser: every place was held still on every visit since, and the still pictures were built on every arrival, though its 🧪 ran every pass at 57 to 61 (0.0.91). Measured afresh on each visit since 0.0.92: "the pauses are gone".</li>
+<li><b>Only the computers themselves could tell.</b> Nothing we ran on Matthew's laptop reproduced the kids' computers: headless Chrome slowed down 2 times swam the pond at 55.7 where the Ubuntu laptop managed 36, headless Firefox at the Ubuntu laptop's screen at 60, and the trips that paused in Matthew's Firefox ran at 59 to 60 in both headless browsers. The numbers came from each computer, pasted into a public page.</li>
+</ol>
+</div>
+
+<div class="kpis">
+<div class="kpi"><div class="v good">27 → 58</div><div class="l">fps swimming in the duck pond on the Ubuntu laptop (Intel i7): as it is → as still bitmaps (🧪 on 0.0.92)</div></div>
+<div class="kpi"><div class="v good">22 → 60</div><div class="l">fps the same on the iPad</div></div>
+<div class="kpi"><div class="v">57–61</div><div class="l">fps in every 🧪 pass on Matthew's laptop, which was marked choppy (0.0.91)</div></div>
+<div class="kpi"><div class="v bad">36 vs 60</div><div class="l">fps the pond on the Ubuntu laptop (0.0.84) vs headless Firefox at its screen</div></div>
+</div>
+
+<h2 id="where">Where it stands</h2>
+<p>Every 🧪 pass on the three computers on 0.0.92, frames a second with the share of frames later than 25 ms. Green is 55 or more, the gate's bar (<a class="ref" href="../001/"><code><b>^du_report(</b>1<b>)</b></code></a>). "Pictures" is the share of the friend's drawings that had the still pictures on. A drawing of the friend takes 1.0 ms on all three: the game's own work is never the cost.</p>
+<div class="scroll"><table><tr><th>🧪 pass, on 0.0.92</th><th>Ubuntu, Intel i7</th><th>the iPad</th><th>Matthew's laptop</th></tr>
+<tr><td>a drawing (ms)</td><td class="n">1</td><td class="n">1</td><td class="n">1</td></tr>
+<tr><td>empty room, walking</td><td class="n good">58 <span class="note">(2% late)</span></td><td class="n bad">44 <span class="note">(6% late)</span></td><td class="n good">60 <span class="note">(1% late)</span></td></tr>
+<tr><td>duck pond, swimming</td><td class="n bad">27 <span class="note">(93% late)</span></td><td class="n bad">22 <span class="note">(100% late)</span></td><td class="n good">61 <span class="note">(0% late)</span></td></tr>
+<tr><td>held still</td><td class="n good">58 <span class="note">(2% late)</span></td><td class="n bad">25 <span class="note">(100% late)</span></td><td class="n good">60 <span class="note">(1% late)</span></td></tr>
+<tr><td>without its scenery</td><td class="n good">59 <span class="note">(0% late)</span></td><td class="n bad">47 <span class="note">(3% late)</span></td><td class="n good">60 <span class="note">(0% late)</span></td></tr>
+<tr><td>without the part under water</td><td class="n bad">34 <span class="note">(72% late)</span></td><td class="n bad">25 <span class="note">(100% late)</span></td><td class="n good">60 <span class="note">(0% late)</span></td></tr>
+<tr><td>without the rings</td><td class="n bad">34 <span class="note">(67% late)</span></td><td class="n bad">24 <span class="note">(100% late)</span></td><td class="n good">60 <span class="note">(0% late)</span></td></tr>
+<tr><td>without both</td><td class="n bad">37 <span class="note">(59% late)</span></td><td class="n bad">25 <span class="note">(100% late)</span></td><td class="n good">60 <span class="note">(0% late)</span></td></tr>
+<tr><td>still pictures, svg</td><td class="n good">59 <span class="note">(0% late)</span> <span class="note">pictures 99%</span></td><td class="n bad">24 <span class="note">(100% late)</span> <span class="note">pictures 99%</span></td><td class="n good">60 <span class="note">(0% late)</span> <span class="note">pictures 0%</span></td></tr>
+<tr><td>still pictures, bitmaps</td><td class="n good">58 <span class="note">(1% late)</span> <span class="note">pictures 100%</span></td><td class="n good">60 <span class="note">(0% late)</span> <span class="note">pictures 99%</span></td><td class="n good">61 <span class="note">(1% late)</span> <span class="note">pictures 0%</span></td></tr>
+<tr><td>with music</td><td class="n bad">29 <span class="note">(90% late)</span></td><td class="n bad">22 <span class="note">(100% late)</span></td><td class="n good">61 <span class="note">(1% late)</span></td></tr>
+<tr><td>the empty room after the pond</td><td class="n good">57 <span class="note">(2% late)</span></td><td class="n good">60 <span class="note">(0% late)</span></td><td class="n good">60 <span class="note">(0% late)</span></td></tr>
+</table></div>
+<p class="note">Bitmaps are what 0.0.93 draws by itself on a computer it finds choppy. A fast computer, such as Matthew's, is never found choppy and draws every place as it is, moving. Matthew's line came from 0.0.92 before its release (from the working copy), before 🧪's own fix was folded into it: there the held-still and picture passes did not hold still (pictures 0%; <a href="#wrong">below</a>).</p>
+
+<h2 id="passes">Two causes</h2>
+<figure id="fig-1">
+<svg viewBox="0 0 790 346" role="img" aria-labelledby="f1t" class="chart"><title id="f1t">The duck pond, frames a second, pass by pass, on the Ubuntu laptop and the iPad (🧪 on 0.0.92)</title>
+<line x1="300.0" y1="24" x2="300.0" y2="306" class="grid"/><text x="300.0" y="322" class="tick" text-anchor="middle">0</text>
+<line x1="410.0" y1="24" x2="410.0" y2="306" class="grid"/><text x="410.0" y="322" class="tick" text-anchor="middle">15</text>
+<line x1="520.0" y1="24" x2="520.0" y2="306" class="grid"/><text x="520.0" y="322" class="tick" text-anchor="middle">30</text>
+<line x1="630.0" y1="24" x2="630.0" y2="306" class="grid"/><text x="630.0" y="322" class="tick" text-anchor="middle">45</text>
+<line x1="740.0" y1="24" x2="740.0" y2="306" class="grid"/><text x="740.0" y="322" class="tick" text-anchor="middle">60</text>
+<line x1="703.3" y1="20" x2="703.3" y2="306" class="limit"/><text x="703.3" y="16" class="tick limitlabel" text-anchor="middle">55: the gate</text>
+<text x="292" y="54" class="lab" text-anchor="end">swimming, as it is</text>
+<rect x="300" y="34" width="198.0" height="16" class="b1"><title>Ubuntu laptop: 27 fps, 93% late</title></rect><text x="503.0" y="46" class="val1">27</text>
+<rect x="300" y="53" width="161.3" height="16" class="b2"><title>iPad: 22 fps, 100% late</title></rect><text x="466.3" y="65" class="val1">22</text>
+<text x="292" y="100" class="lab" text-anchor="end">held still (no animations)</text>
+<rect x="300" y="80" width="425.3" height="16" class="b1"><title>Ubuntu laptop: 58 fps, 2% late</title></rect><text x="730.3" y="92" class="val1">58</text>
+<rect x="300" y="99" width="183.3" height="16" class="b2"><title>iPad: 25 fps, 100% late</title></rect><text x="488.3" y="111" class="val1">25</text>
+<text x="292" y="146" class="lab" text-anchor="end">without its scenery</text>
+<rect x="300" y="126" width="432.7" height="16" class="b1"><title>Ubuntu laptop: 59 fps, 0% late</title></rect><text x="737.7" y="138" class="val1">59</text>
+<rect x="300" y="145" width="344.7" height="16" class="b2"><title>iPad: 47 fps, 3% late</title></rect><text x="649.7" y="157" class="val1">47</text>
+<text x="292" y="192" class="lab" text-anchor="end">without the rings and the part under water</text>
+<rect x="300" y="172" width="271.3" height="16" class="b1"><title>Ubuntu laptop: 37 fps, 59% late</title></rect><text x="576.3" y="184" class="val1">37</text>
+<rect x="300" y="191" width="183.3" height="16" class="b2"><title>iPad: 25 fps, 100% late</title></rect><text x="488.3" y="203" class="val1">25</text>
+<text x="292" y="238" class="lab" text-anchor="end">as still pictures, svg</text>
+<rect x="300" y="218" width="432.7" height="16" class="b1"><title>Ubuntu laptop: 59 fps, 0% late</title></rect><text x="737.7" y="230" class="val1">59</text>
+<rect x="300" y="237" width="176.0" height="16" class="b2"><title>iPad: 24 fps, 100% late</title></rect><text x="481.0" y="249" class="val1">24</text>
+<text x="292" y="284" class="lab" text-anchor="end">as still pictures, bitmaps (0.0.93)</text>
+<rect x="300" y="264" width="425.3" height="16" class="b1"><title>Ubuntu laptop: 58 fps, 1% late</title></rect><text x="730.3" y="276" class="val1">58</text>
+<rect x="300" y="283" width="440.0" height="16" class="b2"><title>iPad: 60 fps, 0% late</title></rect><text x="745.0" y="295" class="val1">60</text>
+<rect x="300" y="328" width="12" height="10" class="b1"/><text x="316" y="337" class="tick">Ubuntu laptop, Intel i7, Firefox 136</text><rect x="500" y="328" width="12" height="10" class="b2"/><text x="516" y="337" class="tick">the iPad, Safari</text>
+</svg>
+<figcaption>Figure 1. The duck pond, pass by pass, on the two kids' computers: 🧪 on 0.0.92, one run on each, each pass 2 seconds of the friend swimming across. Taking one part away at a time names the cost.</figcaption>
+</figure>
+<p><b>The Ubuntu laptop pays for the animations.</b> Held still (its 57 animations stopped: the five ducks swimming, ripples spreading and fading on the water, and the scenery's other small movements), the pond swims at 58, as it does without its scenery at all (59). The rings round the friend and their faint part under the water cost a little (27 → 37 without both) but not most. As far as we can tell, Firefox paints the picture again wherever anything in it moves, and in the pond something always does.</p>
+<p><b>The iPad pays for the shapes.</b> Held still, the pond swims at 25: there, the animations were never the cost. Without its scenery, 47. Drawn as one still picture made of svg, still 24: it seems Safari draws a picture made of svg again every frame, as if it were the scene itself. Drawn once into pixels, a bitmap, 60.</p>
+<p><b>Bitmaps answer both</b>, 58 and 60, so since 0.0.93 the still pictures are bitmaps everywhere: each part of the place (cut where the friend stands in it, so they still pass behind what stands nearer) drawn once into a canvas at the picture's own size on the screen, and made again if that size changes. A computer is found choppy in windows of 60 frames now (120 before), so the iPad gets them after about 5½ seconds of swimming, not 11, and the Ubuntu laptop after about 4½.</p>
+
+<h2 id="how">How it got here</h2>
+<p>From 15:01, when 0.0.80 was too slow everywhere on the Ubuntu laptop, even in the empty room, to 0.0.93 at 19:33. The releases on the way that bear on speed (the evening's others added doors, walls and pits: 0.0.88 to 0.0.90):</p>
+<div class="scroll"><table><tr><th>version</th><th>commit</th><th>what changed</th></tr><tr><td class="n">0.0.81</td><td class="n"><a href="https://github.com/matthewhammer/kids-choice-games/commit/c8af960"><code>c8af960</code></a></td><td>A step of movement only draws; on a slow computer, at most 30 drawings a second while moving.</td></tr><tr><td class="n">0.0.82</td><td class="n"><a href="https://github.com/matthewhammer/kids-choice-games/commit/d7fae25"><code>d7fae25</code></a></td><td>🧪 this computer&#x27;s speed: a line to compare computers by.</td></tr><tr><td class="n">0.0.83</td><td class="n"><a href="https://github.com/matthewhammer/kids-choice-games/commit/858f369"><code>858f369</code></a></td><td>On a slow computer (drawing over 6 ms) the places held still: their animations taken out.</td></tr><tr><td class="n">0.0.84</td><td class="n"><a href="https://github.com/matthewhammer/kids-choice-games/commit/151085a"><code>151085a</code></a></td><td>Also held still where moves come out choppy (frames late while moving), as the Ubuntu laptop&#x27;s did though it draws in 1 ms.</td></tr><tr><td class="n">0.0.86</td><td class="n"><a href="https://github.com/matthewhammer/kids-choice-games/commit/c49d6f2"><code>c49d6f2</code></a></td><td>🧪 takes the duck pond apart: the pond without one part at a time, and the empty room after the pond.</td></tr><tr><td class="n">0.0.87</td><td class="n"><a href="https://github.com/matthewhammer/kids-choice-games/commit/431d897"><code>431d897</code></a></td><td>On a slow computer, while the friend moves, the place drawn as still pictures (svg), cut where the friend goes.</td></tr><tr><td class="n">0.0.91</td><td class="n"><a href="https://github.com/matthewhammer/kids-choice-games/commit/51f13e1"><code>51f13e1</code></a></td><td>⏱️ time the next trip: every frame of a trip through a doorway, its phase, the game&#x27;s share.</td></tr><tr><td class="n">0.0.92</td><td class="n"><a href="https://github.com/matthewhammer/kids-choice-games/commit/119c5c6"><code>119c5c6</code></a></td><td>&quot;Choppy&quot; measured afresh each visit and on stronger evidence; 🧪&#x27;s held-still passes really held still.</td></tr><tr><td class="n">0.0.93</td><td class="n"><a href="https://github.com/matthewhammer/kids-choice-games/commit/eebaa60"><code>eebaa60</code></a></td><td>The still pictures as bitmaps; choppy found in windows of 60 frames, not 120.</td></tr></table></div>
+
+<h2 id="laptop">Matthew's laptop: the pauses</h2>
+<p>After 0.0.90, Matthew found the game slow on his own laptop, with pauses going through a castle door and into a pit, by a click and by walking onto one. We timed those four trips, frame by frame, in both headless browsers on the same laptop, at its own size (1203×802 at 1.875×), normally and as a computer found choppy:</p>
+<div class="scroll"><table><tr><th>trip (0.0.90)</th><th>Chrome</th><th>Chrome, as choppy</th><th>Firefox</th><th>Firefox, as choppy</th></tr>
+<tr><td>outside the castle, through its gate</td><td>60 fps</td><td>59 fps</td><td>59 fps</td><td>60 fps; 34 ms arriving</td></tr>
+<tr><td>a hallway's wooden door (it swings)</td><td>59 fps; 50 ms arriving</td><td>59 fps; 50 ms arriving, 67 ms the next frame</td><td>59 fps; 50 ms arriving (the browser)</td><td>59 fps; 83 ms arriving</td></tr>
+<tr><td>a pit, clicked</td><td>60 fps</td><td>60 fps</td><td>60 fps</td><td>59 fps; 50 ms walking</td></tr>
+<tr><td>a pit, walked onto</td><td>60 fps</td><td>60 fps</td><td>59 fps; 50 ms before the press (the browser)</td><td>60 fps</td></tr>
+</table></div>
+<p>No pauses. The only long frames are where the new place is built and first painted (34 to 83 ms, the game's part of them 13 to 16 ms). So the pauses were not the game's script, and headless browsers could not show the painting in a window. 0.0.91 added <b>⏱️ time the next trip</b> (⚙️ Advanced), to time a trip on the laptop itself.</p>
+<p>The answer came before the timer was needed. Matthew's 🧪 line on 0.0.91 said <code>"found": {"slow": false, "choppy": true}</code>, with every pass at 57 to 61. The mark, kept in the browser since 0.0.84 so that a slow computer would not flip back and forth, had been set once, perhaps while something heavy ran alongside, and stayed. It held every place still on every visit after, and it made 0.0.87's still pictures (svg then: the whole place copied, serialized and decoded) be built on every arrival somewhere new.</p>
+<p>0.0.92 measures it afresh on each visit (the old mark is cleared on load), only on stronger evidence (more than a quarter of the frames late in two windows in a row: the Ubuntu laptop's pond passes were 62 to 93% late, Matthew's worst pass 9%), and not during a trip, whose arrival is a long frame by nature. Tested with frames made late on purpose (the page kept busy in each frame, the drawing itself fast): never marked at full speed or 12 ms late a frame; marked after about 8 seconds at 30 ms late (about 4 since 0.0.93's shorter windows). On 0.0.92, Matthew: <i>"the pauses are gone"</i>.</p>
+
+<h2 id="proxies">What our stand-ins could not show</h2>
+<p>We tried to reproduce the kids' computers on Matthew's laptop first, as is cheaper, and could not:</p>
+<ul>
+<li><b>Headless Chrome slowed down</b> (its CPU throttled 2 times, the Ubuntu laptop's drawing measured against it): the pond at 55.7, where the Ubuntu laptop swam at 36 (0.0.84).</li>
+<li><b>Headless Firefox</b> (157, at the Ubuntu laptop's screen, 1440×810 at 2×): 60 in every pass.</li>
+<li><b>The trips</b> that paused in Matthew's Firefox window: 59 to 60 in both (<a href="#laptop">above</a>).</li>
+</ul>
+<p>Slowing the CPU slows the game's own script, which was never the cost (1.0 ms a drawing on every computer), and a headless browser does not paint as a window on a screen does. The costs were the painting's, and each browser's own (Firefox's with animations, Safari's with shapes): only the computers themselves could show them. So 🧪 grew passes that take one part away at a time, and its lines were carried back from each computer.</p>
+
+<h2 id="wrong">What we got wrong on the way</h2>
+<div class="dated">
+<p><b>🧪's "held still" never held still, until 0.0.92.</b> The pass marked the computer slow for its 2 seconds, but the game measures its drawing after every frame and takes the mark back when drawing is fast (under 2.5 ms on average): on the Ubuntu laptop, after one frame. So the Ubuntu laptop's "held still" (33 on 0.0.84, 31 on 0.0.86) was the pond moving, and we wrote down that holding still did not help there. It does: 58 (0.0.92). The passes now hold still with a switch of their own. (The iPad's 0.0.86 line was right: it was marked choppy then, which held the pond still anyway.)</p>
+<p><b>The first still pictures drew some scenery under the things standing in front of it</b> (0.0.87, before release): the castle's path below the bridge, a tree house room's door frame. Every standing thing was kept live over one picture of all the rest, but some of the rest is drawn after them. A pixel comparison of every place, the picture against the scene itself, caught it (0.64% and 0.61% of the pixels apart, against 0.0 to 0.3 elsewhere); the pictures are now cut where the friend goes in the drawing order, things and all.</p>
+<p><b>The choppy mark was kept forever</b> (0.0.84 to 0.0.91), as told <a href="#laptop">above</a>.</p>
+<p><b>Our own checks lost their footing</b> when 0.0.92 cleared kept marks on load: they had set the mark through the browser's storage, so they quietly checked no pictures at all, until a check showed none drawn. They set it in the page now.</p>
+<p><b>🧪 waited 4 seconds in each pass</b> (0.0.87 to 0.0.92) for a value the 0.0.87 rework had removed.</p>
+</div>
+
+<h2 id="gathering">How the measurements were gathered</h2>
+<p>On each computer, the game's ⚙️ Advanced tab: <b>🧪 this computer's speed</b> (about 40 seconds) or <b>⏱️ time the next trip</b>, then <b>📋 copy</b>, then <b>📝 then paste it here</b>, which opens a shared page: a <a href="https://pad.riseup.net/">Riseup pad</a>. We read it back from that page's plain-text export. The Ubuntu laptop has no easy way to reach Claude or Matthew's usual accounts, by design; a page that anyone can open was the bridge (0.0.83).</p>
+<p>What a line carries: the version, each pass's frames, the browser and its version, the platform, the screen's size and pixel ratio, the number of processor cores, the picture's size, and the computer's marks. Nothing typed, no names, no accounts. But together, screen, pixel ratio, cores and browser narrow down a device more than they need to.</p>
+<p>Its limits: the pad is <b>public</b> (its address is in the game's public source, and anyone with it can read and change it), <b>carried by hand</b> (one line at a time, by whoever holds the computer), and <b>short-lived</b> (deleted after 60 days with no edits). This report keeps a copy of the evening's lines (<a href="data/pad-2026-10-16.txt"><code>data/pad-2026-10-16.txt</code></a>).</p>
+
+<h2 id="canister">What we'd rather: a canister of our own</h2>
+<p>We would rather gather these lines with a canister we control (<a href="https://matthewhammer.org/hazel-work-notes/#ticket-166">ticket 166</a>): telemetry that keeps people's privacy and that they go on choosing to give. What we would want of it, for a later report to test:</p>
+<ul>
+<li><b>Opt-in, every time.</b> Nothing leaves the game unless someone presses the button, as now; nothing is sent in the background.</li>
+<li><b>Seen before sent.</b> The line shown is exactly what is sent, no more.</li>
+<li><b>Less in each line.</b> Sizes rounded, the browser's version to its major number; no identifier, no account, no address kept with a line.</li>
+<li><b>Readable by us, for reports; deletable.</b> Old lines expire; a line can be taken back by whoever sent it, with a key kept only in their own browser.</li>
+<li><b>Hard to flood.</b> A limit on lines per minute.</li>
+</ul>
+<p>Open questions, for Matthew: where it runs (the IC's main network costs cycles, paid from his identity; a local replica would not reach the Ubuntu laptop), and who may write to it (anyone with the game, as the pad now, or only the game itself).</p>
+
+<h2 id="next">What next</h2>
+<ol class="steps">
+<li id="step-1"><span class="stepnum"><a href="#step-1">1.</a></span> Run <b>🧪 on each kids' computer on 0.0.93</b>, to see the bitmaps turn on by themselves: swim in the pond a few seconds first, then the duck pond pass should read near 60 (<a href="https://matthewhammer.org/hazel-work-notes/#ticket-164">ticket 164</a>). <button class="tk" data-step="1">copy for a ticket</button></li>
+<li id="step-2"><span class="stepnum"><a href="#step-2">2.</a></span> <b>⏱️ time trips on the kids' computers</b> (a castle door, a pit), now that their places move smoothly: what is left is where a new place is built and first painted. <button class="tk" data-step="2">copy for a ticket</button></li>
+<li id="step-3"><span class="stepnum"><a href="#step-3">3.</a></span> Decide where the <b>telemetry canister</b> runs and who may write to it, then build its send beside 📋, opt-in and seen before sent (<a href="https://matthewhammer.org/hazel-work-notes/#ticket-166">ticket 166</a>). <button class="tk" data-step="3">copy for a ticket</button></li>
+<li id="step-4"><span class="stepnum"><a href="#step-4">4.</a></span> Try <b>a Safari stand-in on the laptop</b>: WebKit's own build for Linux at the iPad's size, to see whether it shows the iPad's 24 against 60; if it does, a case for it in the frame-rate gate. <button class="tk" data-step="4">copy for a ticket</button></li>
+<li id="step-5"><span class="stepnum"><a href="#step-5">5.</a></span> The audit of every place with the on-screen controller (<a href="https://matthewhammer.org/hazel-work-notes/#ticket-160">ticket 160</a>), and the checks into CI (<a href="https://matthewhammer.org/hazel-work-notes/#ticket-165">ticket 165</a>). <button class="tk" data-step="5">copy for a ticket</button></li>
+</ol>
+
+<h2 id="method">How this was put together</h2>
+<p><b>🧪 this computer's speed</b> is part of the game (⚙️ Advanced). It draws the friend 60 times and takes the median time of a drawing, then runs 14 passes of 2 seconds each: walking across the empty room, standing in place, swimming across the duck pond (moving; held still; without its scenery; without the friend's part under the water; without the rings; without both; as still pictures, svg; as still pictures, bitmaps; with its music), and the empty room again after the pond, then with its music (12 passes in 0.0.86, 14 since 0.0.87). The friend is moved by the game's own controller step; frames are counted with <code>requestAnimationFrame</code>; frames a second is their count over the time, "late" the share more than 25 ms apart. The line ends with its numbers as <code>DATA {…}</code>. Each computer's figures here are one run of it.</p>
+<p><b>The computers.</b> The Ubuntu laptop: an Intel i7, Firefox 136 on Ubuntu, 1440×810 at 2×, 4 cores. The iPad: Safari (reports itself as "Safari 605", "MacIntel"), 810×1080 at 2×, 4 cores. Matthew's laptop: Firefox 157 on Linux, 1203×802 at 1.875×, 20 cores. The kids' lines were pasted into the pad on 2026-10-16 (0.0.84 and 0.0.86 in the afternoon, 0.0.92 in the evening); Matthew's into the chat.</p>
+<p><b>On Matthew's laptop</b>, the headless runs: <code>trips_perf.mjs</code> (headless Chrome 155, with a CPU profile) and <code>tripsff.py</code> (headless Firefox 157, the page's code run from an added <code>&lt;script&gt;</code>), each trip from a fresh page; <code>choppy172.mjs</code> for the marking; <code>stillpic164.mjs</code> with <code>stillpic_diff.py</code> for the pictures against the scene. Every browser was pinned to 4 of the laptop's 20 threads, as the laptop crashes under load (the gate reads the same pinned: 10 of 10 at 59.3 to 60 on 0.0.86 both ways). Copies are in <a href="drivers/"><code>002/drivers/</code></a>. The frame-rate gate (<code>fpsgate.mjs</code>, <a class="ref" href="../001/"><code><b>^du_report(</b>1<b>)</b></code></a>) passed on every release here (10 cases on 0.0.86, 12 from 0.0.87, with a slow computer's duck pond added).</p>
+<p>The data is here twice: embedded in this page as JSON (<code>&lt;script type="application/json" id="report-data"&gt;</code> at its end: every line's numbers, the headless timings and checks, the versions and commits) and as files in <a href="data/"><code>002/data/</code></a>: <code>lines.json</code> (the pad's lines, each with its computer), <code>matthews-laptop.json</code>, <code>headless-and-checks.json</code>, <code>pad-2026-10-16.txt</code> (the pad as it was), and the gate's logs.</p>
+<p class="note">Builds: 0.0.84 <a href="https://github.com/matthewhammer/kids-choice-games/commit/151085a"><code>151085a</code></a>, 0.0.86 <a href="https://github.com/matthewhammer/kids-choice-games/commit/c49d6f2"><code>c49d6f2</code></a>, 0.0.87 <a href="https://github.com/matthewhammer/kids-choice-games/commit/431d897"><code>431d897</code></a>, 0.0.90 <a href="https://github.com/matthewhammer/kids-choice-games/commit/9958ca2"><code>9958ca2</code></a>, 0.0.91 <a href="https://github.com/matthewhammer/kids-choice-games/commit/51f13e1"><code>51f13e1</code></a>, 0.0.92 <a href="https://github.com/matthewhammer/kids-choice-games/commit/119c5c6"><code>119c5c6</code></a>, 0.0.93 <a href="https://github.com/matthewhammer/kids-choice-games/commit/eebaa60"><code>eebaa60</code></a>.</p>
+</main>
+<script type="application/json" id="report-data">{
+ "report": 2,
+ "series": "Dress Up reports",
+ "title": "The kids' computers",
+ "date": "2026-10-16",
+ "question": "Why was Messed Up Dress Up choppy on an Ubuntu laptop (Intel i7) and on an iPad, and pausing on Matthew's laptop, and what made it smooth?",
+ "measures": {
+  "🧪 line": "each pass walks or swims the friend across for 2 s with the game's own controller step; fps = frames counted / time; late = share of frames over 25 ms apart; ms = the game's own drawing, per drawing; pic = share of drawings with the still pictures on; one run of 🧪 per line",
+  "found": "the marks the computer had when 🧪 began: slow (drawing over 6 ms on average) and choppy (frames late while moving)"
+ },
+ "versions": [
+  {
+   "v": "0.0.81",
+   "commit": "c8af960",
+   "what": "A step of movement only draws; on a slow computer, at most 30 drawings a second while moving."
+  },
+  {
+   "v": "0.0.82",
+   "commit": "d7fae25",
+   "what": "🧪 this computer's speed: a line to compare computers by."
+  },
+  {
+   "v": "0.0.83",
+   "commit": "858f369",
+   "what": "On a slow computer (drawing over 6 ms) the places held still: their animations taken out."
+  },
+  {
+   "v": "0.0.84",
+   "commit": "151085a",
+   "what": "Also held still where moves come out choppy (frames late while moving), as the Ubuntu laptop's did though it draws in 1 ms."
+  },
+  {
+   "v": "0.0.86",
+   "commit": "c49d6f2",
+   "what": "🧪 takes the duck pond apart: the pond without one part at a time, and the empty room after the pond."
+  },
+  {
+   "v": "0.0.87",
+   "commit": "431d897",
+   "what": "On a slow computer, while the friend moves, the place drawn as still pictures (svg), cut where the friend goes."
+  },
+  {
+   "v": "0.0.91",
+   "commit": "51f13e1",
+   "what": "⏱️ time the next trip: every frame of a trip through a doorway, its phase, the game's share."
+  },
+  {
+   "v": "0.0.92",
+   "commit": "119c5c6",
+   "what": "\"Choppy\" measured afresh each visit and on stronger evidence; 🧪's held-still passes really held still."
+  },
+  {
+   "v": "0.0.93",
+   "commit": "eebaa60",
+   "what": "The still pictures as bitmaps; choppy found in windows of 60 frames, not 120."
+  }
+ ],
+ "devices": [
+  {
+   "device": "Ubuntu laptop (Intel i7)",
+   "v": "0.0.84",
+   "draw": 1,
+   "room": {
+    "fps": 57,
+    "worst": 50,
+    "late": 3,
+    "dps": 57,
+    "ms": 2.6
+   },
+   "inPlace": {
+    "fps": 58,
+    "worst": 34,
+    "late": 2,
+    "dps": 0,
+    "ms": null
+   },
+   "pond": {
+    "fps": 36,
+    "worst": 50,
+    "late": 62,
+    "dps": 36,
+    "ms": 3
+   },
+   "pondStill": {
+    "fps": 33,
+    "worst": 102,
+    "late": 67,
+    "dps": 33,
+    "ms": 2.9
+   },
+   "pondMusic": {
+    "fps": 26,
+    "worst": 52,
+    "late": 92,
+    "dps": 26,
+    "ms": 3.8
+   },
+   "browser": "Firefox 136",
+   "platform": "Linux x86_64",
+   "screen": "1440x810",
+   "dpr": 2,
+   "cores": 4,
+   "memory": null,
+   "pic": "876x648",
+   "found": {
+    "slow": true,
+    "choppy": false
+   }
+  },
+  {
+   "device": "iPad (Safari)",
+   "v": "0.0.86",
+   "draw": 1,
+   "room": {
+    "fps": 56,
+    "worst": 25,
+    "late": 0,
+    "dps": 56,
+    "ms": 0.9
+   },
+   "inPlace": {
+    "fps": 60,
+    "worst": 17,
+    "late": 0,
+    "dps": 0,
+    "ms": null
+   },
+   "pond": {
+    "fps": 22,
+    "worst": 51,
+    "late": 100,
+    "dps": 22,
+    "ms": 1.1
+   },
+   "pondStill": {
+    "fps": 32,
+    "worst": 36,
+    "late": 98,
+    "dps": 32,
+    "ms": 1
+   },
+   "pondNoScene": {
+    "fps": 41,
+    "worst": 30,
+    "late": 39,
+    "dps": 41,
+    "ms": 1.5
+   },
+   "pondNoUnder": {
+    "fps": 26,
+    "worst": 42,
+    "late": 100,
+    "dps": 26,
+    "ms": 0.8
+   },
+   "pondNoRings": {
+    "fps": 24,
+    "worst": 48,
+    "late": 100,
+    "dps": 24,
+    "ms": 0.9
+   },
+   "pondPicture": {
+    "fps": 29,
+    "worst": 39,
+    "late": 100,
+    "dps": 29,
+    "ms": 0.8
+   },
+   "pondMusic": {
+    "fps": 21,
+    "worst": 56,
+    "late": 100,
+    "dps": 21,
+    "ms": 1.1
+   },
+   "roomAfter": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 0.8
+   },
+   "roomAfterMusic": {
+    "fps": 60,
+    "worst": 17,
+    "late": 0,
+    "dps": 60,
+    "ms": 0.8
+   },
+   "browser": "Safari 605",
+   "platform": "MacIntel",
+   "screen": "810x1080",
+   "dpr": 2,
+   "cores": 4,
+   "memory": null,
+   "pic": "619x458",
+   "found": {
+    "slow": false,
+    "choppy": true
+   }
+  },
+  {
+   "device": "Ubuntu laptop (Intel i7)",
+   "v": "0.0.86",
+   "draw": 1,
+   "room": {
+    "fps": 53,
+    "worst": 153,
+    "late": 3,
+    "dps": 53,
+    "ms": 2.5
+   },
+   "inPlace": {
+    "fps": 59,
+    "worst": 17,
+    "late": 0,
+    "dps": 0,
+    "ms": null
+   },
+   "pond": {
+    "fps": 30,
+    "worst": 52,
+    "late": 87,
+    "dps": 30,
+    "ms": 3.2
+   },
+   "pondStill": {
+    "fps": 31,
+    "worst": 102,
+    "late": 74,
+    "dps": 31,
+    "ms": 2.9
+   },
+   "pondNoScene": {
+    "fps": 59,
+    "worst": 18,
+    "late": 0,
+    "dps": 59,
+    "ms": 3.4
+   },
+   "pondNoUnder": {
+    "fps": 33,
+    "worst": 68,
+    "late": 72,
+    "dps": 33,
+    "ms": 2.4
+   },
+   "pondNoRings": {
+    "fps": 30,
+    "worst": 67,
+    "late": 79,
+    "dps": 30,
+    "ms": 3.2
+   },
+   "pondPicture": {
+    "fps": 59,
+    "worst": 17,
+    "late": 0,
+    "dps": 59,
+    "ms": 2.9
+   },
+   "pondMusic": {
+    "fps": 29,
+    "worst": 51,
+    "late": 92,
+    "dps": 29,
+    "ms": 3.1
+   },
+   "roomAfter": {
+    "fps": 59,
+    "worst": 17,
+    "late": 0,
+    "dps": 59,
+    "ms": 2.8
+   },
+   "roomAfterMusic": {
+    "fps": 59,
+    "worst": 17,
+    "late": 0,
+    "dps": 59,
+    "ms": 2.5
+   },
+   "browser": "Firefox 136",
+   "platform": "Linux x86_64",
+   "screen": "1440x810",
+   "dpr": 2,
+   "cores": 4,
+   "memory": null,
+   "pic": "876x648",
+   "found": {
+    "slow": false,
+    "choppy": false
+   }
+  },
+  {
+   "device": "iPad (Safari)",
+   "v": "0.0.92",
+   "draw": 1,
+   "room": {
+    "fps": 44,
+    "worst": 27,
+    "late": 6,
+    "dps": 44,
+    "ms": 0.9
+   },
+   "inPlace": {
+    "fps": 60,
+    "worst": 24,
+    "late": 0,
+    "dps": 0,
+    "ms": null
+   },
+   "pond": {
+    "fps": 22,
+    "worst": 51,
+    "late": 100,
+    "dps": 22,
+    "ms": 1.3
+   },
+   "pondStill": {
+    "fps": 25,
+    "worst": 45,
+    "late": 100,
+    "dps": 25,
+    "ms": 0.7
+   },
+   "pondNoScene": {
+    "fps": 47,
+    "worst": 33,
+    "late": 3,
+    "dps": 47,
+    "ms": 1.4,
+    "pic": 0
+   },
+   "pondNoUnder": {
+    "fps": 25,
+    "worst": 45,
+    "late": 100,
+    "dps": 25,
+    "ms": 0.9,
+    "pic": 0
+   },
+   "pondNoRings": {
+    "fps": 24,
+    "worst": 46,
+    "late": 100,
+    "dps": 24,
+    "ms": 0.9,
+    "pic": 0
+   },
+   "pondPicture": {
+    "fps": 24,
+    "worst": 46,
+    "late": 100,
+    "dps": 24,
+    "ms": 0.9,
+    "pic": 99
+   },
+   "pondBitmap": {
+    "fps": 60,
+    "worst": 21,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.1,
+    "pic": 99
+   },
+   "bitmapOk": true,
+   "pondNoWater": {
+    "fps": 25,
+    "worst": 44,
+    "late": 100,
+    "dps": 25,
+    "ms": 0.7,
+    "pic": 0
+   },
+   "pondMusic": {
+    "fps": 22,
+    "worst": 51,
+    "late": 100,
+    "dps": 22,
+    "ms": 1.1
+   },
+   "roomAfter": {
+    "fps": 60,
+    "worst": 17,
+    "late": 0,
+    "dps": 60,
+    "ms": 0.8
+   },
+   "roomAfterMusic": {
+    "fps": 60,
+    "worst": 17,
+    "late": 0,
+    "dps": 60,
+    "ms": 0.8
+   },
+   "browser": "Safari 605",
+   "platform": "MacIntel",
+   "screen": "810x1080",
+   "dpr": 2,
+   "cores": 4,
+   "memory": null,
+   "pic": "539x399",
+   "found": {
+    "slow": false,
+    "choppy": false
+   }
+  },
+  {
+   "device": "Ubuntu laptop (Intel i7)",
+   "v": "0.0.92",
+   "draw": 1,
+   "room": {
+    "fps": 58,
+    "worst": 34,
+    "late": 2,
+    "dps": 58,
+    "ms": 2.5
+   },
+   "inPlace": {
+    "fps": 59,
+    "worst": 17,
+    "late": 0,
+    "dps": 0,
+    "ms": null
+   },
+   "pond": {
+    "fps": 27,
+    "worst": 68,
+    "late": 93,
+    "dps": 27,
+    "ms": 3.7
+   },
+   "pondStill": {
+    "fps": 58,
+    "worst": 34,
+    "late": 2,
+    "dps": 58,
+    "ms": 2.1
+   },
+   "pondNoScene": {
+    "fps": 59,
+    "worst": 17,
+    "late": 0,
+    "dps": 59,
+    "ms": 3.4,
+    "pic": 0
+   },
+   "pondNoUnder": {
+    "fps": 34,
+    "worst": 50,
+    "late": 72,
+    "dps": 34,
+    "ms": 2.7,
+    "pic": 0
+   },
+   "pondNoRings": {
+    "fps": 34,
+    "worst": 51,
+    "late": 67,
+    "dps": 34,
+    "ms": 2.9,
+    "pic": 0
+   },
+   "pondPicture": {
+    "fps": 59,
+    "worst": 17,
+    "late": 0,
+    "dps": 59,
+    "ms": 2.6,
+    "pic": 99
+   },
+   "pondBitmap": {
+    "fps": 58,
+    "worst": 34,
+    "late": 1,
+    "dps": 58,
+    "ms": 2.5,
+    "pic": 100
+   },
+   "bitmapOk": true,
+   "pondNoWater": {
+    "fps": 37,
+    "worst": 35,
+    "late": 59,
+    "dps": 37,
+    "ms": 2.6,
+    "pic": 0
+   },
+   "pondMusic": {
+    "fps": 29,
+    "worst": 52,
+    "late": 90,
+    "dps": 29,
+    "ms": 3.1
+   },
+   "roomAfter": {
+    "fps": 57,
+    "worst": 50,
+    "late": 2,
+    "dps": 57,
+    "ms": 2.5
+   },
+   "roomAfterMusic": {
+    "fps": 59,
+    "worst": 17,
+    "late": 0,
+    "dps": 59,
+    "ms": 2.7
+   },
+   "browser": "Firefox 136",
+   "platform": "Linux x86_64",
+   "screen": "1440x810",
+   "dpr": 2,
+   "cores": 4,
+   "memory": null,
+   "pic": "876x648",
+   "found": {
+    "slow": false,
+    "choppy": false
+   }
+  },
+  {
+   "device": "Matthew's laptop",
+   "source": "chat, 2026-10-16",
+   "v": "0.0.91",
+   "draw": 1,
+   "room": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.9
+   },
+   "inPlace": {
+    "fps": 70,
+    "worst": 33,
+    "late": 1,
+    "dps": 0,
+    "ms": null
+   },
+   "pond": {
+    "fps": 58,
+    "worst": 40,
+    "late": 4,
+    "dps": 58,
+    "ms": 2
+   },
+   "pondStill": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.8
+   },
+   "pondNoScene": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 2.4,
+    "pic": 0
+   },
+   "pondNoUnder": {
+    "fps": 61,
+    "worst": 18,
+    "late": 0,
+    "dps": 61,
+    "ms": 1.8,
+    "pic": 0
+   },
+   "pondNoRings": {
+    "fps": 58,
+    "worst": 71,
+    "late": 2,
+    "dps": 58,
+    "ms": 1.6,
+    "pic": 0
+   },
+   "pondPicture": {
+    "fps": 61,
+    "worst": 22,
+    "late": 0,
+    "dps": 61,
+    "ms": 1.9,
+    "pic": 99
+   },
+   "pondBitmap": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.8,
+    "pic": 100
+   },
+   "bitmapOk": true,
+   "pondNoWater": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.4,
+    "pic": 0
+   },
+   "pondMusic": {
+    "fps": 57,
+    "worst": 50,
+    "late": 9,
+    "dps": 57,
+    "ms": 1.9
+   },
+   "roomAfter": {
+    "fps": 60,
+    "worst": 33,
+    "late": 1,
+    "dps": 60,
+    "ms": 1.8
+   },
+   "roomAfterMusic": {
+    "fps": 61,
+    "worst": 18,
+    "late": 0,
+    "dps": 61,
+    "ms": 1.7
+   },
+   "browser": "Firefox 157",
+   "platform": "Linux x86_64",
+   "screen": "1203x802",
+   "dpr": 1.875,
+   "cores": 20,
+   "memory": null,
+   "pic": "617x456",
+   "found": {
+    "slow": false,
+    "choppy": true
+   }
+  },
+  {
+   "device": "Matthew's laptop",
+   "source": "chat, 2026-10-16 (localhost, before the release)",
+   "v": "0.0.92",
+   "draw": 1,
+   "room": {
+    "fps": 60,
+    "worst": 33,
+    "late": 1,
+    "dps": 60,
+    "ms": 1.3
+   },
+   "inPlace": {
+    "fps": 70,
+    "worst": 33,
+    "late": 1,
+    "dps": 0,
+    "ms": null
+   },
+   "pond": {
+    "fps": 61,
+    "worst": 18,
+    "late": 0,
+    "dps": 61,
+    "ms": 2.1
+   },
+   "pondStill": {
+    "fps": 60,
+    "worst": 33,
+    "late": 1,
+    "dps": 60,
+    "ms": 1.9
+   },
+   "pondNoScene": {
+    "fps": 60,
+    "worst": 17,
+    "late": 0,
+    "dps": 60,
+    "ms": 2.1,
+    "pic": 0
+   },
+   "pondNoUnder": {
+    "fps": 60,
+    "worst": 17,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.6,
+    "pic": 0
+   },
+   "pondNoRings": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.6,
+    "pic": 0
+   },
+   "pondPicture": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 2,
+    "pic": 0
+   },
+   "pondBitmap": {
+    "fps": 61,
+    "worst": 34,
+    "late": 1,
+    "dps": 61,
+    "ms": 2,
+    "pic": 0
+   },
+   "bitmapOk": true,
+   "pondNoWater": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.1,
+    "pic": 0
+   },
+   "pondMusic": {
+    "fps": 61,
+    "worst": 33,
+    "late": 1,
+    "dps": 61,
+    "ms": 2
+   },
+   "roomAfter": {
+    "fps": 60,
+    "worst": 17,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.4
+   },
+   "roomAfterMusic": {
+    "fps": 60,
+    "worst": 18,
+    "late": 0,
+    "dps": 60,
+    "ms": 1.4
+   },
+   "browser": "Firefox 157",
+   "platform": "Linux x86_64",
+   "screen": "1203x802",
+   "dpr": 1.875,
+   "cores": 20,
+   "memory": null,
+   "pic": "617x456",
+   "found": {
+    "slow": false,
+    "choppy": false
+   },
+   "note": "passes 5, 9, 10 not held still here (pic 0): the 🧪 bug fixed later in 0.0.92"
+  }
+ ],
+ "headless_and_checks": {
+  "what": "Trips through doorways timed frame by frame on Matthew's laptop in headless browsers, at his laptop's size (1203x802 CSS px at 1.875x), each browser pinned to 4 of the 20 threads; one run of each trip. gaps: frames longer than 34 ms, with what ran in them.",
+  "chrome_0_0_90": {
+   "tool": "trips_perf.mjs (Chrome 155, a CPU profile too)",
+   "normal": {
+    "gate": {
+     "fps": 60,
+     "long": []
+    },
+    "hallway": {
+     "fps": 59,
+     "long": [
+      {
+       "ms": 50,
+       "when": "arriving",
+       "game_ms": 16.4,
+       "note": "changed(): drawNow 15.8 incl. mountScene 4.5"
+      }
+     ]
+    },
+    "pitclick": {
+     "fps": 60,
+     "long": []
+    },
+    "pitwalk": {
+     "fps": 60,
+     "long": []
+    }
+   },
+   "choppy": {
+    "gate": {
+     "fps": 59,
+     "long": []
+    },
+    "hallway": {
+     "fps": 59,
+     "long": [
+      {
+       "ms": 50,
+       "when": "arriving",
+       "game_ms": 19.5
+      },
+      {
+       "ms": 67,
+       "when": "the next frame",
+       "game_ms": 0
+      }
+     ]
+    },
+    "pitclick": {
+     "fps": 60,
+     "long": []
+    },
+    "pitwalk": {
+     "fps": 60,
+     "long": []
+    }
+   }
+  },
+  "firefox_0_0_90": {
+   "tool": "tripsff.py (Firefox 157, headless, page code by injected <script>)",
+   "normal": {
+    "gate": {
+     "fps": 59,
+     "long": []
+    },
+    "hallway": {
+     "fps": 59,
+     "long": [
+      {
+       "ms": 50,
+       "when": "arriving (the browser)",
+       "game_ms": 0
+      }
+     ]
+    },
+    "pitclick": {
+     "fps": 60,
+     "long": []
+    },
+    "pitwalk": {
+     "fps": 59,
+     "long": [
+      {
+       "ms": 50,
+       "when": "before the press (the browser)",
+       "game_ms": 0
+      }
+     ]
+    }
+   },
+   "choppy": {
+    "gate": {
+     "fps": 60,
+     "long": [
+      {
+       "ms": 34,
+       "when": "arriving",
+       "game_ms": 13
+      }
+     ]
+    },
+    "hallway": {
+     "fps": 59,
+     "long": [
+      {
+       "ms": 83,
+       "when": "arriving",
+       "game_ms": 14
+      }
+     ]
+    },
+    "pitclick": {
+     "fps": 59,
+     "long": [
+      {
+       "ms": 50,
+       "when": "walking",
+       "game_ms": 2
+      }
+     ]
+    },
+    "pitwalk": {
+     "fps": 60,
+     "long": []
+    }
+   },
+   "choppy_then_walking": {
+    "gate": {
+     "fps": 60,
+     "long": []
+    },
+    "hallway": {
+     "fps": 59,
+     "long": [
+      {
+       "ms": 49,
+       "when": "arriving",
+       "game_ms": 13
+      },
+      {
+       "ms": 67,
+       "when": "arriving (the browser)",
+       "game_ms": 0
+      },
+      {
+       "ms": 49,
+       "when": "the first step after",
+       "game_ms": 6
+      }
+     ]
+    },
+    "pitclick": {
+     "fps": 60,
+     "long": [
+      {
+       "ms": 34,
+       "when": "walking after",
+       "game_ms": 2
+      }
+     ]
+    },
+    "pitwalk": {
+     "fps": 60,
+     "long": []
+    }
+   }
+  },
+  "choppy_marking": {
+   "what": "choppy172.mjs: headless Chrome, the duck pond walked with a fake controller in 2 s strokes; frames made late by busy work in each frame, the drawing still fast",
+   "0.0.92 (windows of 120 frames)": {
+    "0 ms busy": "never marked",
+    "12 ms busy": "never marked",
+    "30 ms busy": "marked after about 8 s"
+   },
+   "0.0.93 (windows of 60 frames)": {
+    "0 ms busy": "never marked",
+    "12 ms busy": "never marked",
+    "30 ms busy": "marked after about 4 s"
+   },
+   "stored mark": "a mark kept by an earlier version is cleared on load (0.0.92 on)"
+  },
+  "picture_checks": {
+   "what": "stillpic164.mjs + stillpic_diff.py: every place, a shot with the scene itself and one with the still pictures on, the share of pixels more than 48 apart in any channel",
+   "0.0.87 first try (objects live over one picture)": {
+    "castle": 0.64,
+    "treeroom": 0.61,
+    "others": "0.0-0.31"
+   },
+   "0.0.87 shipped (cut where the friend goes)": {
+    "all 24 places": "0.00-0.31 (after a 3% margin round the picture)",
+    "16 depths in 4 places + the glow": "0.00-0.12"
+   },
+   "0.0.93 bitmaps": {
+    "all 24 places": "0.03-0.25",
+    "16 depths in 4 places + the glow": "<= 0.15"
+   }
+  },
+  "proxies_before": {
+   "what": "attempts to reproduce the Ubuntu laptop's pond on Matthew's laptop (0.0.84-0.0.86, memory notes)",
+   "Ubuntu laptop (0.0.84)": 36,
+   "headless Chrome, CPU throttled 2x": 55.7,
+   "headless Firefox 157 at 1440x810@2x": 60
+  },
+  "pinned_gate": {
+   "what": "fpsgate.mjs on 0.0.86 at 1920x1080",
+   "unpinned": "10 of 10 at 59.3-60",
+   "pinned to 4 threads": "10 of 10 at 59.3-60"
+  }
+ }
+}</script>
+<script>
+(() => {
+  const b = document.getElementById("theme"), modes = ["auto", "light", "dark"], names = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
+  let m = "auto"; try { m = localStorage.getItem("theme") || "auto"; } catch (e) {}
+  const show = () => { b.textContent = names[m]; if (m === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", m); };
+  b.onclick = () => { m = modes[(modes.indexOf(m) + 1) % 3]; try { localStorage.setItem("theme", m); } catch (e) {} show(); };
+  show();
+  for (const t of document.querySelectorAll("button.tk")) t.onclick = () => {
+    const li = t.closest("li"), n = t.dataset.step, text = li.cloneNode(true);
+    text.querySelectorAll("button, .stepnum").forEach(e => e.remove());
+    const msg = `Mint a ticket for this step: Dress Up reports, ^du_report(2), What next, step ${n}: "${text.textContent.trim()}". ${location.href.split("#")[0]}#step-${n}`;
+    navigator.clipboard.writeText(msg).then(() => { t.textContent = "copied"; setTimeout(() => t.textContent = "copy for a ticket", 1500); });
+  };
+})();
+</script>
+</body>
+</html>

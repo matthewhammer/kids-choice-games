@@ -1,0 +1,210 @@
+{
+ "what": "Trips through doorways timed frame by frame on Matthew's laptop in headless browsers, at his laptop's size (1203x802 CSS px at 1.875x), each browser pinned to 4 of the 20 threads; one run of each trip. gaps: frames longer than 34 ms, with what ran in them.",
+ "chrome_0_0_90": {
+  "tool": "trips_perf.mjs (Chrome 155, a CPU profile too)",
+  "normal": {
+   "gate": {
+    "fps": 60,
+    "long": []
+   },
+   "hallway": {
+    "fps": 59,
+    "long": [
+     {
+      "ms": 50,
+      "when": "arriving",
+      "game_ms": 16.4,
+      "note": "changed(): drawNow 15.8 incl. mountScene 4.5"
+     }
+    ]
+   },
+   "pitclick": {
+    "fps": 60,
+    "long": []
+   },
+   "pitwalk": {
+    "fps": 60,
+    "long": []
+   }
+  },
+  "choppy": {
+   "gate": {
+    "fps": 59,
+    "long": []
+   },
+   "hallway": {
+    "fps": 59,
+    "long": [
+     {
+      "ms": 50,
+      "when": "arriving",
+      "game_ms": 19.5
+     },
+     {
+      "ms": 67,
+      "when": "the next frame",
+      "game_ms": 0
+     }
+    ]
+   },
+   "pitclick": {
+    "fps": 60,
+    "long": []
+   },
+   "pitwalk": {
+    "fps": 60,
+    "long": []
+   }
+  }
+ },
+ "firefox_0_0_90": {
+  "tool": "tripsff.py (Firefox 157, headless, page code by injected <script>)",
+  "normal": {
+   "gate": {
+    "fps": 59,
+    "long": []
+   },
+   "hallway": {
+    "fps": 59,
+    "long": [
+     {
+      "ms": 50,
+      "when": "arriving (the browser)",
+      "game_ms": 0
+     }
+    ]
+   },
+   "pitclick": {
+    "fps": 60,
+    "long": []
+   },
+   "pitwalk": {
+    "fps": 59,
+    "long": [
+     {
+      "ms": 50,
+      "when": "before the press (the browser)",
+      "game_ms": 0
+     }
+    ]
+   }
+  },
+  "choppy": {
+   "gate": {
+    "fps": 60,
+    "long": [
+     {
+      "ms": 34,
+      "when": "arriving",
+      "game_ms": 13
+     }
+    ]
+   },
+   "hallway": {
+    "fps": 59,
+    "long": [
+     {
+      "ms": 83,
+      "when": "arriving",
+      "game_ms": 14
+     }
+    ]
+   },
+   "pitclick": {
+    "fps": 59,
+    "long": [
+     {
+      "ms": 50,
+      "when": "walking",
+      "game_ms": 2
+     }
+    ]
+   },
+   "pitwalk": {
+    "fps": 60,
+    "long": []
+   }
+  },
+  "choppy_then_walking": {
+   "gate": {
+    "fps": 60,
+    "long": []
+   },
+   "hallway": {
+    "fps": 59,
+    "long": [
+     {
+      "ms": 49,
+      "when": "arriving",
+      "game_ms": 13
+     },
+     {
+      "ms": 67,
+      "when": "arriving (the browser)",
+      "game_ms": 0
+     },
+     {
+      "ms": 49,
+      "when": "the first step after",
+      "game_ms": 6
+     }
+    ]
+   },
+   "pitclick": {
+    "fps": 60,
+    "long": [
+     {
+      "ms": 34,
+      "when": "walking after",
+      "game_ms": 2
+     }
+    ]
+   },
+   "pitwalk": {
+    "fps": 60,
+    "long": []
+   }
+  }
+ },
+ "choppy_marking": {
+  "what": "choppy172.mjs: headless Chrome, the duck pond walked with a fake controller in 2 s strokes; frames made late by busy work in each frame, the drawing still fast",
+  "0.0.92 (windows of 120 frames)": {
+   "0 ms busy": "never marked",
+   "12 ms busy": "never marked",
+   "30 ms busy": "marked after about 8 s"
+  },
+  "0.0.93 (windows of 60 frames)": {
+   "0 ms busy": "never marked",
+   "12 ms busy": "never marked",
+   "30 ms busy": "marked after about 4 s"
+  },
+  "stored mark": "a mark kept by an earlier version is cleared on load (0.0.92 on)"
+ },
+ "picture_checks": {
+  "what": "stillpic164.mjs + stillpic_diff.py: every place, a shot with the scene itself and one with the still pictures on, the share of pixels more than 48 apart in any channel",
+  "0.0.87 first try (objects live over one picture)": {
+   "castle": 0.64,
+   "treeroom": 0.61,
+   "others": "0.0-0.31"
+  },
+  "0.0.87 shipped (cut where the friend goes)": {
+   "all 24 places": "0.00-0.31 (after a 3% margin round the picture)",
+   "16 depths in 4 places + the glow": "0.00-0.12"
+  },
+  "0.0.93 bitmaps": {
+   "all 24 places": "0.03-0.25",
+   "16 depths in 4 places + the glow": "<= 0.15"
+  }
+ },
+ "proxies_before": {
+  "what": "attempts to reproduce the Ubuntu laptop's pond on Matthew's laptop (0.0.84-0.0.86, memory notes)",
+  "Ubuntu laptop (0.0.84)": 36,
+  "headless Chrome, CPU throttled 2x": 55.7,
+  "headless Firefox 157 at 1440x810@2x": 60
+ },
+ "pinned_gate": {
+  "what": "fpsgate.mjs on 0.0.86 at 1920x1080",
+  "unpinned": "10 of 10 at 59.3-60",
+  "pinned to 4 threads": "10 of 10 at 59.3-60"
+ }
+}

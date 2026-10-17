@@ -1,0 +1,11 @@
+pass  🏰 outside the castle, walk               59.3 fps (runs 59.3, 59.3, 59.3; friend drawn 60.7/s; worst gap 33/33/33 ms; p95 gap 16.7/16.7/16.8 ms; draw 1.82/1.86/1.79 ms)
+pass  🏰 outside the castle, drag                 60 fps (runs 60, 59.7, 60; friend drawn 60/s; worst gap 17/33/17 ms; p95 gap 16.7/16.7/16.7 ms; draw 1.81/1.88/1.98 ms)
+pass  🧙 outside the witch's house, walk          60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.7/16.7/16.7 ms; draw 1.14/1.04/1.03 ms)
+pass  🧙 outside the witch's house, drag          60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.8/16.7/16.8 ms; draw 1.06/1.06/0.99 ms)
+pass  🧙 inside the witch's hut, walk             60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.8/16.7/16.7 ms; draw 1.23/1.29/1.26 ms)
+pass  🧙 inside the witch's hut, drag             60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.7/16.7/16.8 ms; draw 1.26/1.2/1.38 ms)
+pass  🌿 inside the healer's house, walk          60 fps (runs 60, 60, 60; friend drawn 60.7/s; worst gap 17/17/17 ms; p95 gap 16.8/16.7/16.8 ms; draw 1.39/1.4/1.42 ms)
+pass  🌿 inside the healer's house, drag          60 fps (runs 60, 60, 59.7; friend drawn 60.3/s; worst gap 17/17/33 ms; p95 gap 16.8/16.8/16.8 ms; draw 1.35/1.32/1.37 ms)
+pass  🦆 swimming in the duck pond, walk          60 fps (runs 60, 60, 59.7; friend drawn 60.7/s; worst gap 17/17/33 ms; p95 gap 16.7/16.7/16.7 ms; draw 1.43/1.55/1.54 ms)
+pass  🦆 swimming in the duck pond, drag          60 fps (runs 60, 60, 60; friend drawn 60.3/s; worst gap 17/17/17 ms; p95 gap 16.7/16.8/16.7 ms; draw 1.83/1.86/1.77 ms)
+all 10 at 55 fps or more.
