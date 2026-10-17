@@ -9,6 +9,7 @@ Each version lists the game's features as of that version. The newest version is
 - **While ⚙️ Advanced measures, it says so plainly** (Matthew): during 🧪 this computer's speed (about 40 seconds) and 📏 measure here, a notice over the game says to wait and touch nothing, with the seconds gone of about how long it takes and a bar filling up; 📋 copy, 📝 paste, 🧪, ⏱️, 📏 and the feature switches rest until it ends, so a half-done line can't be copied or a second measure started.
 - **What stands in a place is solid** (Matthew: "the objects in a room that one can't reasonably walk through"): tables, beds, wells, stoves, barrels, bookcases, rocks, bushes and the rest of what stands, and trees by their trunks, stop the friend, as the seats have since 0.0.89. The low ones (a rock, a log, a bush, a toadstool) can be jumped over, a short jump clearing the lowest. Houses, huts, doors and ladders stay open, and so do the animals and the people.
 - **The flat rooms have back walls:** in the 🛋️ living room, the 🪜 tree house's rooms, the 🧙 witch's hut, the 🌿 healer's hut and ⛺ a tent, the friend stops at the foot of the back wall, as in 💭 our imagination, instead of walking up it.
+- **Postcards** (💾 Save ▾ → "💌 Save a postcard"): your friend in their place, in a card's cream border, with something written under it, saved as one picture ready to send. The words start as the picture's own line ("feeling happy outside of N's castle"); type anything instead. A long message goes on two lines.
 
 ## 0.0.94 (2026-10-16)
 

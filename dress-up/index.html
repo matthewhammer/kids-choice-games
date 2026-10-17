@@ -59,6 +59,10 @@
               box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28); }
   .save-pop[hidden] { display: none; }
   .save-pop .formats, .save-pop .saved { margin-top: 0; }
+  /* (ticket 43) a postcard: what to write on it, and its button */
+  .save-pop .postcard { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center;
+                        border-top: 1px solid var(--line); padding-top: 8px; width: 100%; }
+  .save-pop .postcard input { font: inherit; padding: 4px 8px; border: 2px solid var(--line); border-radius: 8px; flex: 1 1 14em; min-width: 0; }
   /* the divider between the picture and the controls: drag it */
   .divider { position: sticky; top: 8px; height: calc(100vh - 16px); height: calc(100dvh - 16px); cursor: col-resize;
              touch-action: none; display: flex; align-items: center; justify-content: center; border-radius: 7px; outline: none; }
@@ -366,6 +370,11 @@
                 </div>
                 <button class="big" id="save" title="Saves the files checked above: a picture (.png), a drawing that prints at any size (.svg), and your friend's settings (.json) to load again later">💾 Save</button>
                 <div class="saved" id="saved" aria-live="polite"></div>
+                <div class="postcard">
+                  <label for="postcard-text">💌 a postcard that says</label>
+                  <input id="postcard-text" type="text" maxlength="90" placeholder="what to write on it">
+                  <button class="big" id="postcard" title="Saves one picture (.png): your friend in their place, in a card's border, with what you wrote under it">💌 Save a postcard</button>
+                </div>
               </div>
             </div>
             <button id="load" title="Load a friend you saved (.json)">📂 Load</button>
@@ -14603,7 +14612,12 @@ setSplit();
 // The save menu: its button opens and closes it; a click anywhere else, or
 // Escape, closes it. It stays open after a save, for the links to the files.
 const saveOpen = document.getElementById("save-open"), savePop = document.getElementById("save-pop");
-function setSavePop(on) { savePop.hidden = !on; saveOpen.setAttribute("aria-expanded", String(on)); }
+function setSavePop(on) {
+  savePop.hidden = !on; saveOpen.setAttribute("aria-expanded", String(on));
+  // (ticket 43) the postcard's words start as the picture's own line, until changed
+  const t = document.getElementById("postcard-text"), mood = document.getElementById("mood").textContent;
+  if (on && (!t.value || t.value === t.dataset.auto)) { t.value = mood; t.dataset.auto = mood; }
+}
 saveOpen.addEventListener("click", () => setSavePop(savePop.hidden));
 document.addEventListener("pointerdown", e => { if (!savePop.hidden && !e.target.closest(".save-menu")) setSavePop(false); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !savePop.hidden) setSavePop(false); });
@@ -14863,6 +14877,58 @@ document.getElementById("save").addEventListener("click", () => {
   };
   img.onerror = () => saved.append(" (the .png couldn't be drawn)");
   img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText);
+});
+// (ticket 43) A POSTCARD: the picture as Save draws its .png, in a card's
+// cream border with a thin frame round the picture, and a line written
+// under it (the picture's own line to start with, or whatever is typed),
+// as one .png ready to send: my-postcard-2026-10-16-21-55-04.png.
+function postcardBlob(caption) {
+  return new Promise((resolve, reject) => {
+    const pic = document.getElementById("pic"), vb = pic.viewBox.baseVal, scale = 1000 / vb.height;
+    const w = Math.round(vb.width * scale), h = 1000, pad = 48, band = caption ? 160 : 0;
+    const copy = pic.cloneNode(true);
+    copy.setAttribute("width", w); copy.setAttribute("height", h);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas"); c.width = w + 2 * pad; c.height = h + 2 * pad + band;
+      const g = c.getContext("2d");
+      g.fillStyle = "#fffdf7"; g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(img, pad, pad, w, h);
+      g.strokeStyle = "#d8cdb8"; g.lineWidth = 4; g.strokeRect(pad - 2, pad - 2, w + 4, h + 4);
+      if (caption) {
+        const font = px => `${px}px "Comic Sans MS", "Chalkboard SE", "Marker Felt", "Comic Neue", cursive`;
+        let px = 64; g.font = font(px);
+        // smaller until it fits, to a point; then two lines, split at the space nearest the middle
+        while (px > 36 && g.measureText(caption).width > w) { px -= 4; g.font = font(px); }
+        let lines = [caption];
+        if (g.measureText(caption).width > w) {
+          let at = -1;
+          for (let i = 0; i < caption.length; i++)
+            if (caption[i] === " " && (at < 0 || Math.abs(i - caption.length / 2) < Math.abs(at - caption.length / 2))) at = i;
+          if (at > 0) lines = [caption.slice(0, at), caption.slice(at + 1)];
+        }
+        g.fillStyle = "#3a2f28"; g.textAlign = "center"; g.textBaseline = "middle";
+        const mid = h + 2 * pad + band / 2 - pad / 2;
+        lines.forEach((l, k) => g.fillText(l, c.width / 2, mid + (k - (lines.length - 1) / 2) * px * 1.15, w));
+      }
+      c.toBlob(b => b ? resolve(b) : reject(new Error("no picture")), "image/png");
+    };
+    img.onerror = () => reject(new Error("the picture couldn't be drawn"));
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(copy));
+  });
+}
+document.getElementById("postcard").addEventListener("click", async () => {
+  const d = new Date(), two = n => String(n).padStart(2, "0");
+  const name = `my-postcard-${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}-` +
+               `${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}.png`;
+  const saved = document.getElementById("saved");
+  try {
+    const blob = await postcardBlob(document.getElementById("postcard-text").value.trim());
+    download(blob, name);
+    // (drawn after the click: a browser may not let the download through, so a link too)
+    saved.replaceChildren("Saved ", el("a", { href: URL.createObjectURL(blob), download: name, title: "save " + name }, "the postcard"),
+                          oneFile ? "" : " — not in your downloads? click it.");
+  } catch (e) { saved.replaceChildren("The postcard couldn't be drawn."); }
 });
 // LOAD: a saved .json (or a bare state object); anything it lacks keeps
 // its default, so friends saved before a feature existed still load.
