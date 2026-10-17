@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.115 (2026-10-17)
+
+Everything in 0.0.114, plus a sign with directions, and names for the squares.
+
+- **🧭 A sign with directions** (Matthew, for M, who likes signs), in the 🪧 signs group: a post with a board for each way out of the square, each saying where it goes. Choose its boards with the 🧭 chips in its row, from none to all eight. The boards can't turn, so where they are nailed says which way: the ways away from you high up, the ways across in the middle, the ways toward you low down, each on its own side of the post; straight ahead on top, straight back at the foot.
+- **✏️ Every square has a name**: its place's (with where it is, like A5, if another square has the same place), or one you give it in World design. The signs and the arrows say it. Two squares with the same name are a warning.
+
 ## 0.0.114 (2026-10-17)
 
 Everything in 0.0.113, with three fixes.
