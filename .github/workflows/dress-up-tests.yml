@@ -54,6 +54,15 @@ jobs:
           node tools/structure.mjs 9333 "$MAIN_PAGE" out/structure-main.json
           node tools/structure.mjs 9333 "$PAGE" out/structure-branch.json
           python3 tools/structure_diff.py out/structure-main.json out/structure-branch.json | tee -a out/safety-net.txt
+      - name: The branch's own checks (tools/checks/*.mjs, each exiting 1 on a failure)
+        if: hashFiles('tools/checks/*.mjs') != ''
+        shell: bash
+        run: |
+          mkdir -p out/checks; s=0
+          for f in tools/checks/*.mjs; do
+            node "$f" 9333 "$PAGE" | tee "out/checks/$(basename "$f" .mjs).txt" || s=1
+          done
+          exit $s
       - name: Pictures the branch asks for (tools/shots.json)
         if: hashFiles('tools/shots.json') != ''
         shell: bash
@@ -80,7 +89,8 @@ jobs:
         run: |
           {
             echo "## Chrome"
-            for f in out/*.txt; do
+            shopt -s nullglob
+            for f in out/*.txt out/checks/*.txt; do
               echo "### ${f#out/}"; echo '```'; tail -n 70 "$f"; echo '```'
             done
           } >> "$GITHUB_STEP_SUMMARY"
