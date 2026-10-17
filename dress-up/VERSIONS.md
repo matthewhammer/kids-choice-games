@@ -2,6 +2,17 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.132 (2026-10-17)
+
+Everything in 0.0.131, with a world designer that fills the screen.
+
+- **🗺️ World design, full screen**: a button at the top of the tab opens it over the whole window, as the music's does. On a wide screen the grid takes the left side, as tall as the window, and the square's controls sit beside it. ✕ or Escape go back to the game.
+- **The grid fills its room**: the squares grow to fit the space, in the usual two columns too, and their emojis and names grow with them.
+- **Each kind of square has its own colour**: water blue, the green places green, the witch's woods purple, the castle its stone grey, and so on, faint in light and dark. The places to drag above the grid have the same colours.
+- **A square with a warning, and the square you are in, have thick outlines**, red and blue, easy to see.
+- **When the picture shows a place that is not your square**, the tab says so at the top: that it is not in the world yet, or which square has it.
+- **The music's full screen is smaller and neater**: a slim bar at the top with ✕, and its controls side by side in cards instead of rows across the whole screen.
+
 ## 0.0.131 (2026-10-17)
 
 Everything in 0.0.130, with the way arrows kept apart.
