@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.138 (2026-10-17)
+
+Everything in 0.0.137, with the tune chooser neater on a phone.
+
+- **🎶 genre/track selection on a phone**: each row's name sits above its chips, so the chips have the whole width.
+
 ## 0.0.137 (2026-10-17)
 
 Everything in 0.0.136, with a neater tune chooser.

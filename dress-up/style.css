@@ -299,6 +299,7 @@
   .tunesctl > .chipset > .cap { margin: 0; font-size: 0.82em; line-height: 1.15; }
   .tunesctl .row { gap: 5px; }
   .tunesctl .row > button { padding: 3px 10px; font-size: 0.92em; border-radius: 10px; }
+  @media (max-width: 520px) { .tunesctl > .chipset { grid-template-columns: 1fr; row-gap: 3px; } }   /* (a phone: each row's name above it, the chips the width) */
   /* (ticket 99) a scene's objects: small chips, many to a line */
   .row.objs { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
   .row.objs button.obj { font-size: 0.78em; padding: 0 5px; line-height: 1.5; border-radius: 9px; }
