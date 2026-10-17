@@ -333,7 +333,7 @@ const DEFAULTS = {
   background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, objectsOff: {}, chickenLegs: false, legSize: 100, hutNear: 0,
                 // (standing in water: how see-through below the waist, and how big a wake: ticket 122)
                 waterSee: 70, waterWake: 100, waterTread: 100, seat: null,   // (ticket 50: the seat the friend sits on here, by name)
-                eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false,
+                eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false, cauldronFumes: "simple",
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,
                 houses: 4, bridges: 2, ladders: 3, leaves: 60, treeHouseSize: 100,
@@ -479,6 +479,9 @@ function upgradeThings(next, saved) {
     if (Array.isArray(cell.crossThings)) { if (!Array.isArray(cell.things)) cell.things = cell.crossThings; delete cell.crossThings; }
     if (cell.things !== undefined && !Array.isArray(cell.things)) cell.things = [];   // (one never given things stays so: a save loads back as it was)
   }
+  // (ticket 206: 0.0.129's cauldron fumes "auto" are simple now, the default)
+  const lists = [bg.things, ...Object.values((next.world && next.world.cells) || {}).map(c => c.things), ...Object.values((next.world && next.world.off) || {})];
+  for (const T of lists) if (Array.isArray(T)) for (const t of T) if (t && t.kind === "cauldron" && t.fumes === "auto") t.fumes = "simple";
 }
 function upgradeFigSize(bg, saved) {
   const old = saved && saved.background;

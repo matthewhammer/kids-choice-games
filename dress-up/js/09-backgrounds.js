@@ -101,16 +101,17 @@ function helixSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
 // (ticket 202, Matthew: "a simplified cauldron animation, with the same two
 // fume plumes, but each drawn as a single path with a small number of points
 // (and curves between), with a fat stroke color per curvy line") The fumes,
-// cheap: each plume one smooth path through thirteen points (Catmull-Rom, as
+// simple: each plume one smooth path through thirteen points (Catmull-Rom, as
 // cubic curves), turning as the full ones do: its shape at twelve moments of
 // the 2.4 s turn, as theirs (ticket 205; six before), one SMIL animation of
 // its d. (ticket 205, Matthew: closer to the full ones, "even if simpler")
-// Their depth too: a full plume's pieces swell and brighten as they come round
-// to the front, thin and fade at the back. Here the strand is thin and faint,
-// and a wide copy of it (a <use>, no animation of its own) is painted with a
-// band that repeats up the plume, bright where the strand is at the front:
-// the turn's phase grows evenly with height, so one turn's worth of band,
-// sliding up one turn's height every 2.4 s, stays on the front. Two moving
+// Their depth too, in part: a full plume's pieces brighten as they come round
+// to the front and fade at the back (and swell and thin). Here the strand is
+// painted with a band that repeats up it, bright where the strand is at the
+// front: the turn's phase grows evenly with height, so one turn's worth of
+// band, sliding up one turn's height every 2.4 s, stays on the front. The
+// swelling too (a wide copy over it, painted so) cost 13 to 16% of the frames
+// with 15 and 25 cauldrons on GitHub's computers; this, 3 to 7%. Two moving
 // parts a plume, where the full ones have some hundred and twenty.
 function helixCheapSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
   const n = Math.max(2, Math.ceil((bottom - top) / (13 * k))), K = 12, N = 13, turn = 2 * Math.PI * (bottom - top) / (0.42 * n);
@@ -124,19 +125,15 @@ function helixCheapSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff
     }
     return d;
   };
-  // (the band: at a height where the turn's phase is a, the strand is in front by sin(a); bright as its square, nothing at the back)
+  // (the band: at a height where the turn's phase is a, the strand is in front by sin(a): 0.9 there, 0.15 at the back, as the full ones)
   const band = si => [...Array(13)].map((_, i) => { const o = i / 12, front = (1 + Math.sin(2 * Math.PI * o + si * Math.PI)) / 2;
-    return `<stop offset="${o.toFixed(3)}" stop-color="${colors[si]}" stop-opacity="${(0.9 * front * front).toFixed(2)}"/>`; }).join("");
+    return `<stop offset="${o.toFixed(3)}" stop-color="${colors[si]}" stop-opacity="${(0.15 + 0.75 * front).toFixed(2)}"/>`; }).join("");
   const tag = `${f1(cx)}-${Math.round(bottom)}-${Math.round(top)}-${f1(k)}`;
-  return colors.map((c, si) => { const ds = [...Array(K + 1)].map((_, f) => pathAt(si, f)), id = `fume-${si}-${tag}`;
-    // (its stroke on a group around it: a <use> copy takes its paint from the <use>, which the path's own attributes would override)
-    return `<g stroke="${c}" stroke-opacity="0.3" stroke-width="${f1(2.5 * k)}" stroke-linecap="round" stroke-linejoin="round"><path id="${id}" d="${ds[0]}" fill="none">` +
-           `<animate attributeName="d" values="${ds.join(";")}" dur="2.4s" repeatCount="indefinite"/></path></g>`; }).join("") +
-         // (the wide copies after both strands, so the one in front where they cross is on top)
-         colors.map((c, si) => { const g = `fume-band-${si}-${tag}`;
+  return colors.map((c, si) => { const ds = [...Array(K + 1)].map((_, f) => pathAt(si, f)), id = `fume-${si}-${tag}`, g = `fume-band-${si}-${tag}`;
     return `<defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1="0" y1="${f1(bottom)}" x2="0" y2="${f1(bottom - turn)}">${band(si)}` +
            `<animateTransform attributeName="gradientTransform" type="translate" values="0 0;0 ${f1(-turn)}" dur="2.4s" repeatCount="indefinite"/></linearGradient></defs>` +
-           `<use href="#fume-${si}-${tag}" fill="none" stroke="url(#${g})" stroke-width="${f1(7.5 * k)}" stroke-linecap="round" stroke-linejoin="round"/>`; }).join("");
+           `<path id="${id}" d="${ds[0]}" fill="none" stroke="url(#${g})" stroke-width="${f1(5.5 * k)}" stroke-linecap="round" stroke-linejoin="round">` +
+           `<animate attributeName="d" values="${ds.join(";")}" dur="2.4s" repeatCount="indefinite"/></path>`; }).join("");
 }
 // (ticket 118) The fumes' widths and see-through-ness as Web Animations, one
 // per segment, started where the picture's clock is in its 2.4 s loop (the

@@ -48,10 +48,15 @@ try {
     await put(2); thingFps = null; changed(); await w(100); const still = look();
     const t0 = performance.now(); while (thingsLatch && performance.now() - t0 < 6000) await w(100); const opened = Math.round(performance.now() - t0); await w(200); const calm = look();
     thingFps = 30; changed(); await w(200); const slow = look();   // (as a slow computer measures: one cauldron's place too busy)
-    thingFps = null; B.things = []; changed();
-    return JSON.stringify({ tapped, still, opened, calm, slow }); })()`)));
+    // (ticket 206) in the witch's woods, her own cauldron upgraded and two simple ones put there, the computer slow: hers marked, not theirs
+    thingFps = null; B.things = []; changed(); worldEnter("1,1"); B.cauldronFumes = "fancy"; await put(2); thingFps = 30; changed(); await w(300);
+    const ownGlow = () => { const c = document.querySelector('#bg [data-obj="cauldron"]'); return !!c && !!c.querySelector(":scope > .cost-glow"); };
+    const hers = { ...look(), own: ownGlow() };
+    B.cauldronFumes = "simple"; changed(); await w(100); thingFps = 30; changed(); await w(300); const plain = { ...look(), own: ownGlow() };
+    thingFps = null; B.things = []; changed(); worldEnter("3,3"); await w(300);
+    return JSON.stringify({ tapped, still, opened, calm, slow, hers, plain }); })()`)));
   console.log("  with 0, 1, 5, 10, 15 cauldrons in the clearing (GitHub's Chrome): " + Object.entries(r.counts).map(([k, v]) => `${k}: ${v.fps} fps, ${v.moving} moving parts`).join(" · "));
-  ok("one cauldron about 240 moving parts (its fumes' spiral); from two on, drawn cheap, about fifteen each (ticket 202)", r.counts[1].moving >= 150 && r.counts[5].moving <= 5 * 30 && r.counts[15].moving <= 15 * 30, r.counts);
+  ok("every cauldron simple unless upgraded (ticket 206): under thirty moving parts each", r.counts[1].moving <= 30 && r.counts[5].moving <= 5 * 30 && r.counts[15].moving <= 15 * 30, r.counts);
   ok("60 campfires: no more things that move can be put there; the busiest marked, rows and picture; the note says why", r.busy.blocked && r.busy.rows >= 1 && r.busy.frames >= 1 && /moving parts|frames a second/.test(r.busy.note), r.busy);
   ok("(ticket 203) and every kind's button greyed, a thing that does not move too", r.busy.every && r.busy.shut, r.busy);
   ok("a real tap on the potion's button then: nothing put", r.tapAt && r.tapped === r.before, { tapAt: r.tapAt, before: r.before, after: r.tapped });
@@ -59,6 +64,8 @@ try {
   ok("measured smooth: open again", r.opened < 6000, r.opened);
   ok("taken away to 2: all as before", !r.calm.blocked && !r.calm.every && r.calm.rows === 0 && r.calm.frames === 0 && !r.calm.note, r.calm);
   ok("on a computer measuring 30 frames a second: blocked at 2, its note saying so", r.slow.blocked && /About 30 frames a second/.test(r.slow.note), r.slow);
+  ok("(ticket 206) her own cauldron upgraded, the computer slow: hers marked, the two simple ones put there not; the note says where to make it simple", r.hers.blocked && r.hers.own && r.hers.rows === 0 && /Background/.test(r.hers.note), r.hers);
+  ok("hers simple again: not marked; what is put there counts as before", !r.plain.own && r.plain.blocked && r.plain.rows >= 1, r.plain);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

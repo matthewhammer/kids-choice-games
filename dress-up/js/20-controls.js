@@ -305,6 +305,8 @@ const TABS = [
     ["range", "skullMax", "💀 skulls: biggest size (% of the usual; the smallest is the usual)", 100, 3000, 200, 500],
     ["range", "skullEye", "💀 skull eye size (the skulls grow to hold them)", 50, 500, 80, 200],
     ["range", "eyeGlow", "💀 skull eyes: red glow size", 0, 100, 40, 90],
+    // (ticket 206, Matthew: her cauldron simple, unless upgraded here; in her woods and in her hut)
+    ["choice", "cauldronFumes", "💨 her cauldron's fumes", [["simple", "simple"], ["fancy", "✨ fancy"]]],
     // the lake
     ["range", "ducks", "🦆 ducks", 0, 16, 2, 9],
     ["range", "duckSize", "🦆 duck size", 30, 300, 70, 160],
@@ -637,6 +639,9 @@ let thingFps = null, thingFpsAt = 0, thingFpsBusy = false;
 let thingsLatch = false, thingsMeasured = "";
 const thingMoving = el => el.querySelectorAll("animate, animateTransform, animateMotion").length + (el.getAnimations ? el.getAnimations({ subtree: true }).length : 0);
 const thingsMovingNow = () => [...document.querySelectorAll('#bg [data-drag^="thing:"]')].map(el => ({ i: +el.dataset.drag.slice(6), el, n: thingMoving(el) }));
+// (ticket 206, Matthew: "red dots for both mandatory and placed objects") the place's own cauldron (the
+// witch's, in her woods and her hut), its fumes upgraded to fancy: counted and marked as a thing put there is
+const ownMovingNow = () => state.background.cauldronFumes === "fancy" ? [...document.querySelectorAll('#bg [data-obj="cauldron"]')].map(el => ({ i: "own", el, n: thingMoving(el) })) : [];
 function framesNow(ms = 1000) {
   return new Promise(res => { let n = 0, done = false; const t0 = performance.now();
     const end = () => { if (done) return; done = true; res(Math.round(10 * n * 1000 / Math.max(1, performance.now() - t0)) / 10); };
@@ -710,6 +715,7 @@ const SHOWN_WHEN = {
   "background.skullMax": b => b.kind === "witch",
   "background.blinkApart": b => b.kind === "witch" && b.eyeRate > 0 && b.eyeGlow > 0,
   "background.skullEye": b => b.kind === "witch",
+  "background.cauldronFumes": b => b.kind === "witch" || b.kind === "witchroom",
   "background.ducks": b => b.kind === "lake",
   "background.duckSize": b => b.kind === "lake",
   "background.cattails": b => b.kind === "lake",
@@ -1116,11 +1122,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // (ticket 201) more moving things allowed here? and which move the most
     const slowNote = el("div", { class: "hint thing-slow", hidden: "" });
     const guard = () => {
-      if (thingsCheap(state.background) !== thingsCheapDrawn) { changed(); return; }   // (ticket 202: the cauldrons' fumes, cheap or not, as measured now)
-      const moving = thingsMovingNow(), total = moving.reduce((s, m) => s + m.n, 0), most = Math.max(0, ...moving.map(m => m.n));
+      const moving = [...thingsMovingNow(), ...ownMovingNow()], total = moving.reduce((s, m) => s + m.n, 0), most = Math.max(0, ...moving.map(m => m.n));
       const slow = thingFps != null && thingFps < THING_FPS_MIN && total > 0, over = total > THING_MOVING_MAX;
       // (ticket 203) shut once too busy; open again only when emptied, or measured smooth since the last change
-      const sig = JSON.stringify((state.background.things || []).map(t => [t.kind, t.fumes, t.burning]));   // (a cauldron made simple, a fire put out: measured again)
+      const sig = JSON.stringify([state.background.kind, state.background.cauldronFumes, (state.background.things || []).map(t => [t.kind, t.fumes, t.burning])]);   // (a cauldron made simple, a fire put out: measured again)
       if (slow || over) thingsLatch = true;
       else if (thingsLatch && (!total || (thingFps != null && thingFps >= THING_FPS_MIN + 4 && thingsMeasured === sig))) thingsLatch = false;
       if (thingsLatch && thingsMeasured !== sig && !thingFpsBusy) { const at = sig; thingCheck(() => { thingsMeasured = at; guard(); }); }
@@ -1140,7 +1145,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           m.el.append(w); }
         else if (!costly.has(m.i) && g) g.remove();
       }
-      const t = blocked ? `🐢 ${slow || thingFps != null && thingFps < THING_FPS_MIN + 4 ? `About ${Math.round(thingFps)} frames a second here` : `${total} moving parts in these things`}: nothing more can be put here until one of the things marked (they move the most) is taken away${costly.size && [...costly].some(i => ((state.background.things || [])[i] || {}).kind === "cauldron") ? ", or a cauldron's 💨 fumes made simple" : ""}.` : "";
+      // (what to do about it: take a marked thing away; a marked cauldron's fumes made simple; her own, in 🏞️ Background)
+      const T = state.background.things || [], fancy = [...costly].some(i => (T[i] || {}).kind === "cauldron" && T[i].fumes === "fancy");
+      const t = blocked ? `🐢 ${slow || thingFps != null && thingFps < THING_FPS_MIN + 4 ? `About ${Math.round(thingFps)} frames a second here` : `${total} moving parts here`}: nothing more can be put here until ` +
+        ([[...costly].some(i => i !== "own") && "one of the things marked (they move the most) is taken away", fancy && "a marked cauldron's 💨 fumes made simple",
+         costly.has("own") && "her cauldron (marked) made simple: 🏞️ Background, 💨 her cauldron's fumes"].filter(Boolean).join(", or ") || "it moves smoothly again") + "." : "";
       if (slowNote.textContent !== t) slowNote.textContent = t;
       if (slowNote.hidden !== !t) slowNote.hidden = !t;
     };
@@ -1161,7 +1170,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     box.append(groups, items, slowNote, el("div", { class: "row" }, [el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
     syncs.push(() => { const m = (state.background.things || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); guard();
       // (ticket 201: every ten seconds, while there are things here that move)
-      if (performance.now() - thingFpsAt > 10000 && box.isConnected && (state.background.things || []).some(x => (THING_KINDS[x.kind] || {}).moving)) thingCheck(guard); });
+      if (performance.now() - thingFpsAt > 10000 && box.isConnected && ((state.background.things || []).some(x => (THING_KINDS[x.kind] || {}).moving) || ownMovingNow().length)) thingCheck(guard); });
   }
   // (ticket 185, Matthew) 🗺️ World design: places laid out on a big grid,
   // each joined to its neighbours by the doors on their shared side (no door

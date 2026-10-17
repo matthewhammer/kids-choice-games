@@ -772,7 +772,8 @@ function witchroomScene(c) {
     [[-30, 0.9], [-5, 1.3], [22, 1.1], [40, 0.7]].map(([bx, d]) => `<circle cx="${bx}" cy="-124" r="6" fill="#b6ff7a" opacity="0.9">` +
       `<animate attributeName="cy" values="-120;-150;-120" dur="${d}s" repeatCount="indefinite"/><animate attributeName="r" values="3;8;0" dur="${d}s" repeatCount="indefinite"/></circle>`).join("") +
     "") + CLOSE +
-    SEP + part("wroom-fumes", [c.F, cz], () => helixSvg(-W * 0.22, floor + 50 * k - 128 * cz * k, y0 - 80 * k, 14 * cz * k, 50 * cz * k, k)));
+    // (ticket 206: simple unless upgraded in 🏞️ Background)
+    SEP + part("wroom-fumes", [c.F, cz, o.cauldronFumes === "fancy"], () => (o.cauldronFumes === "fancy" ? helixSvg : helixCheapSvg)(-W * 0.22, floor + 50 * k - 128 * cz * k, y0 - 80 * k, 14 * cz * k, 50 * cz * k, k)));
   // the witch: dragged anywhere (her place), her size her group's
   // (an object at her feet, where her place puts them)
   s += obj("witch", g + (o.witchY ?? 0), OPEN(`<g data-drag="witch" style="cursor: grab" ${tf(o.witchX ?? 150, g + (o.witchY ?? 0), wz * k)}>`) + part("wroom-witch", [], () => WITCH_SVG) + CLOSE);

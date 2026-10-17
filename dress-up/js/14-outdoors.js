@@ -912,12 +912,12 @@ const THING_PARAMS = {
   sign: [["text", "✏️ its words", "text", 12]],
   signpost: [["dirs", "🧭 boards", "dirs"]],
   campfire: [["burning", "🔥 burning", "toggle"]],
-  // (ticket 204, Matthew: "let the world designer choose fancy or simple"; auto is ticket 202's rule)
-  cauldron: [["fumes", "💨 fumes", "choice", [["auto", "auto"], ["fancy", "✨ fancy"], ["simple", "simple"]]]],
+  // (ticket 204, Matthew: "let the world designer choose fancy or simple"; ticket 206: simple unless upgraded, one by one)
+  cauldron: [["fumes", "💨 fumes", "choice", [["simple", "simple"], ["fancy", "✨ fancy"]]]],
 };
 const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
-                         campfire: { burning: true }, cauldron: { fumes: "auto" } };
+                         campfire: { burning: true }, cauldron: { fumes: "simple" } };
 const thingParams = kind => [...THING_PARAMS.all, ...(THING_PARAMS[kind] || [])];
 // (ticket 185, v3: the object library) The things, in groups, each drawn by
 // a drawing the places already have (the fairy forest's toadstools, the
@@ -935,16 +935,11 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       potion: { label: "🧪 potion", size: 1, group: "magic" }, skeleton: { label: "💀 skeleton", size: 1, group: "spooky" }, sign: { label: "🪧 sign", size: 1, group: "signs" },
                       signpost: { label: "🧭 sign with directions", size: 1, group: "signs" } };
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
-// (ticket 202) the cauldrons put in a place, drawn cheap when there are two or more, or one on a slow
-// computer (the scenery held still, or this place measured below THING_FPS_MIN: ticket 201); unless
-// one's own 💨 fumes say ✨ fancy or simple (ticket 204: then always that)
-let thingsCheapDrawn = false;
-function thingsCheap(o) {
-  const n = (Array.isArray(o.things) ? o.things : []).filter(t => t.kind === "cauldron").length;
-  return n >= 2 || (n >= 1 && (sceneryStill() || (typeof thingFps === "number" && thingFps < THING_FPS_MIN)));
-}
-const fumesCheap = (t, cheap) => t.fumes === "simple" || (t.fumes !== "fancy" && cheap);
-function thingSvg(o, t, i, cheap = false) {
+// (ticket 206, Matthew, after the Ubuntu laptop: every cauldron's fumes simple, unless its own 💨 fumes
+// are upgraded to ✨ fancy, one by one; 0.0.129's "auto" is simple now. Ticket 202's rule, cheap when
+// two or more or the computer slow, is gone: a fancy one too many is marked by the guard instead)
+const fumesCheap = t => t.fumes !== "fancy";
+function thingSvg(o, t, i) {
   const s = depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100, seed = t.seed ?? 900 + i;
   const at = inner => `<g transform="translate(${f1(t.x)} ${f1(t.z)}) scale(${(t.mirror ? -s : s).toFixed(3)} ${s.toFixed(3)})">${inner}</g>`;
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
@@ -956,7 +951,7 @@ function thingSvg(o, t, i, cheap = false) {
                t.kind === "campfire" ? at(campfireHearthSvg(0, 0, 1) + (t.burning ?? true ? `<g pointer-events="none" transform="translate(0 -4)">${campfireFlamesSvg(o, false, "day")}</g>` : "")) :
                t.kind === "bench" ? at(shadow(110) + benchSvg(0, 0, 1)) :
                t.kind === "barrel" ? at(shadow(40) + barrelSvg(0, 0, 2, 0, 0, 1, "#5e3d22")) :
-               t.kind === "cauldron" ? at(witchCauldronSvg(0, 0, 1, o, -420, fumesCheap(t, cheap))) :
+               t.kind === "cauldron" ? at(witchCauldronSvg(0, 0, 1, o, -420, fumesCheap(t))) :
                t.kind === "toadstool" ? at(toadstool(0, 0, 1.3, t.cap || TOADSTOOL_CAPS[0], !!t.glow)) :   // (Matthew: 2.4 was too big)
                t.kind === "potion" ? at(shadow(22) + potionSvg(t.shape || "flask", 0, 0, 2.2, t.color || POTION_COLORS[5])) :
                t.kind === "skeleton" ? at(shadow(60) + skeletonSvg(0, -80 * 2.6, 2.6, "sit")) :
@@ -971,8 +966,7 @@ function thingSvg(o, t, i, cheap = false) {
 // again. From draw(), after the place's own (cached) drawing.
 function thingsLayer(c) {
   // (a sign with directions also on the names of the squares it points to, which change elsewhere)
-  const cheap = thingsCheapDrawn = thingsCheap(c.o);
-  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : "", t.kind === "cauldron" && fumesCheap(t, cheap)], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i, cheap)))).join("");
+  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : ""], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
 }
 // (Matthew, 2026-10-17) The crossing's geometry, shared with its ways out in
 // the world (worldWaysSvg): its floor reaches far up the picture (far), the

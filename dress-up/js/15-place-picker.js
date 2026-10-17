@@ -517,7 +517,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // fire and fumes in it)
     {
       const cx = Math.max(W * 0.32, 180 * k), b = g + 55 * k;
-      s += obj("cauldron", b, witchCauldronSvg(cx, b, k, opts, y0 - 80 * k));
+      s += obj("cauldron", b, witchCauldronSvg(cx, b, k, opts, y0 - 80 * k, opts.cauldronFumes !== "fancy"));   // (ticket 206: simple unless upgraded in 🏞️ Background)
     }
   } else if (kind === "sea") {
     // (ticket 186, Matthew) open water, beyond the beach: the sky, the sea to
