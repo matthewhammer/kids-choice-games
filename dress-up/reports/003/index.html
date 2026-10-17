@@ -61,7 +61,7 @@
 <p><b>Short answers.</b> Each figure is one run on one of GitHub's computers (headless Chrome 155 or Firefox 157, no graphics card), so read them against each other, not against a kid's computer (<a href="#method">below</a>).</p>
 <ol>
 <li><b>It was the 🏞️ Background tab, not the pond.</b> With that tab open, the default friend swims the duck pond at 2.4 to 14.9 frames a second (Chrome, two runs); with any of the game's other 15 tabs open, at 60. Places are chosen and set in that tab, so it stays open after a trip to the pond, and every place is slow after; a reload opens the 🧍 Body tab again.</li>
-<li><b>Every refresh of that tab worked out the whole castle, over and over.</b> While the friend moves, the open tab's controls are refreshed a few times a second. On the Background tab a refresh took about 790 ms (0.5 ms on Body), two thirds of it naming the castle's room choices: for every door and hall end of every castle, each name built the whole castle first. On a branch, not released yet, each name looks up just its room: a refresh takes 25 ms, and the pond swims at 59.3 with the tab open.</li>
+<li><b>Every refresh of that tab worked out the whole castle, over and over.</b> While the friend moves, the open tab's controls are refreshed a few times a second. On the Background tab a refresh took about 790 ms (0.5 ms on Body), two thirds of it naming the castle's room choices: for every door and hall end of every castle, each name built the whole castle first. Since 0.0.95 (released 2026-10-17), each name looks up just its room: a refresh takes 25 ms, and the pond swims at 59.3 with the tab open.</li>
 <li><b>A session keeps a cache, not a leak.</b> After rounds of changes and a forced garbage collection, the page holds about 25,000 to 29,000 more nodes, in 28 to 31 parsed pictures, and 35 to 45 MB: the cache of pictures within pictures, which stops at 40. Our first counts, taken without a collection, looked like a leak (141,904 nodes, 11,775 listeners): most of it was waiting to be collected.</li>
 <li><b>Firefox still loses frames after a session, for a reason not found yet:</b> 58.5 frames a second fresh, 50.8 after two rounds of changes, against 60 for a control that only swam as long. Not the caches, not the music, not listeners.</li>
 <li><b>This time a stand-in could tell.</b> <a class="ref" href="../002/"><code><b>^du_report(</b>2<b>)</b></code></a> found the kids' computers' costs in each browser's painting, out of reach of a headless browser. This one is the game's own script, and a headless browser on GitHub shows it at once; 🧪 could not, as it runs from ⚙️ Advanced, never with the Background tab open.</li>
@@ -96,7 +96,7 @@
 
 <h2 id="why">Every refresh worked out the whole castle</h2>
 <p>A CPU profile of 4 seconds of swimming with each tab open (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39002226943">run 39002226943</a>): with 🧍 Body, the controls' refresh (<code>settle</code>, a few times a second while the friend moves) ran 15 times for 8 ms in all; with 🏞️ Background, 4 times for 3,162 ms, and the one full refresh (<code>changed</code>) 801 ms. Two thirds of everything sampled was one function: the name of a castle room choice, "dungeon room 4", which found the room's style by building the whole castle (<code>castleOf</code>: every room's exits, flags, residents) for that one name. The Background tab holds a menu of rooms for every door and hall end of every castle, 13 choices each, and every name was worked out afresh on every refresh.</p>
-<p><b>The fix</b> (branch <code>bgtab-167</code>, <code>ffa9c31</code>; not released): a name looks up its room by the same rule the castle's room list follows. With the Background tab open, a refresh now takes 25 ms (15 in 4 s, 372 ms), the pond swims at 59.3, and every tab passes a check that holds the pond at 50 or more with it open (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39002729428">run 39002729428</a>). The 25 ms left, against 0.5 on Body, is the tab's other controls (<a href="#step-2">step 2</a>).</p>
+<p><b>The fix</b> (<code>ffa9c31</code>, released in 0.0.95 on 2026-10-17): a name looks up its room by the same rule the castle's room list follows. With the Background tab open, a refresh now takes 25 ms (15 in 4 s, 372 ms), the pond swims at 59.3, and every tab passes a check that holds the pond at 50 or more with it open (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39002729428">run 39002729428</a>). The 25 ms left, against 0.5 on Body, is the tab's other controls (<a href="#step-2">step 2</a>).</p>
 
 <h2 id="session">What a session keeps</h2>
 <p>Before we knew it was the tab, we measured a session: the pond fresh, then after a round of changes (every place visited and walked a moment, trips through the castle's gate, into a pit and up a ladder, 60 changes of sliders, every tab clicked), twice, then after a reload, with what might grow counted.</p>
@@ -130,7 +130,7 @@
 
 <h2 id="next">What next</h2>
 <ol class="steps">
-<li id="step-1"><span class="stepnum"><a href="#step-1">1.</a></span> <b>Release the fix</b> (branch <code>bgtab-167</code>): then, on the kids' computers, the duck pond with the 🏞️ Background tab open. <button class="tk" data-step="1">copy for a ticket</button></li>
+<li id="step-1"><span class="stepnum"><a href="#step-1">1.</a></span> <b>Released</b> in 0.0.95 (2026-10-17). Left: on the kids' computers and in Firefox on Matthew's laptop, the duck pond with the 🏞️ Background tab open. <button class="tk" data-step="1">copy for a ticket</button></li>
 <li id="step-2"><span class="stepnum"><a href="#step-2">2.</a></span> <b>The Background tab's refresh, cheaper still:</b> 25 ms against 0.5 on Body, in its other controls' refreshes (lines 13428, 14268 and 14112 on 0.0.94); refresh what changed, or only the controls on screen. <button class="tk" data-step="2">copy for a ticket</button></li>
 <li id="step-3"><span class="stepnum"><a href="#step-3">3.</a></span> <b>Find Firefox's lost frames after a session:</b> a fresh Firefox for each case (not a reload, which runs at 30 there), and each part of a round on its own: the places, the trips, the sliders, the tabs. <button class="tk" data-step="3">copy for a ticket</button></li>
 <li id="step-4"><span class="stepnum"><a href="#step-4">4.</a></span> <b>Hold every tab at 60 in CI:</b> the per-tab check (<code>tabs167.mjs</code>) joins the checks every branch runs. <button class="tk" data-step="4">copy for a ticket</button></li>
@@ -148,7 +148,8 @@
   "commit": "6e264f9",
   "fix": {
    "branch": "bgtab-167",
-   "commit": "ffa9c31"
+   "commit": "ffa9c31",
+   "released": "0.0.95, 2026-10-17"
   }
  },
  "browsers": {
