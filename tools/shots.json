@@ -173,5 +173,10 @@
   "name": "crossing-N-SE-W",
   "js": "state.music.mute = true; const B = state.background; B.kind = \"crossing\"; for (const [dd] of CROSS_DIRS) B[\"cross\" + dd] = \"N SE W\".split(\" \").includes(dd); B.crossThings = [{ kind: \"tree\", x: -330, z: 352, seed: 911, size: 100, leaves: \"blossom\" }, { kind: \"tree\", x: 330, z: 356, seed: 912, size: 100, mirror: true, leaves: \"autumn\", h: 480 }, { kind: \"pine\", x: -120, z: 300, seed: 913, size: 100, tiers: 8 }, { kind: \"bush\", x: 210, z: 395, seed: 914, size: 100, flowers: \"#f472b6\" }, { kind: \"rock\", x: -230, z: 400, seed: 915, size: 100, tone: \"#c2a67a\" }, { kind: \"rock\", x: 90, z: 330, seed: 916, size: 100, mirror: true, tone: \"#6f8a94\" }]; changed(); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
+ },
+ {
+  "name": "south-way-livingroom",
+  "js": "state.music.mute = true; Object.assign(state.background, { kind: \"livingroom\", livingBack: \"forest\" }); changed(); await new Promise(r => setTimeout(r, 600));",
+  "wait": 600
  }
 ]

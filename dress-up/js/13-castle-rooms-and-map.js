@@ -1867,11 +1867,20 @@ function farWallDoor(c, label, attrs) {
     `<ellipse cx="${f1(cx)}" cy="${f1(fl - 2 * kf)}" rx="${f1(hw * 0.6)}" ry="${f1(3 * kf)}" fill="#ffcf6b" opacity="0.25"/>` +
     plankSign(cx, dt - 22 * k * HALL_SIGN_MIN, k * HALL_SIGN_MIN, label) + `</g>`;
 }
-// a sign at the bottom of the picture, toward us, on its post: a way through a door we can't see
+// A way out toward us, through a passageway below the picture that we
+// can't see (Matthew, 2026-10-17: signs everywhere looked unnatural): a
+// small triangle at the bottom edge, pointing down, bobbing gently. Like a
+// door it glows when hovered or when the friend is near it (data-door: the
+// controller's glow, and X goes through), and says where it leads on
+// hover; its first shape, the triangle, is what the glow frames, and a wider
+// invisible box after it is easy to tap. (Its name is the old one: it was a sign on a post.)
 function bottomSign(c, x, label, attrs) {
-  const { k, y1, pad } = c;
-  return `<g class="portal" ${attrs}><rect x="${f1(x - 4 * k)}" y="${f1(y1 - 40 * k)}" width="${f1(8 * k)}" height="${f1(60 * k + pad)}" fill="#6e4a2c"/>` +
-         plankSign(x, y1 - 44 * k, k, `${label} ⬇️`) + `</g>`;
+  const { k, y1 } = c, w = 30 * k, h = 18 * k, y = y1 - 30 * k, esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  return `<g class="portal south-way" data-door="1" ${attrs}><title>${esc(label)}</title>` +
+         `<g><animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(5 * k)};0 0" dur="1.8s" repeatCount="indefinite"/>` +
+         `<path d="M${f1(x - w)} ${f1(y - h)} L${f1(x + w)} ${f1(y - h)} L${f1(x)} ${f1(y + h * 0.8)} Z" fill="#fff4cf" fill-opacity="0.82" stroke="#6b4a24" stroke-width="${f1(2.2 * k)}" stroke-linejoin="round"/></g>` +
+         `<rect x="${f1(x - 2.2 * w)}" y="${f1(y - 2.6 * h)}" width="${f1(4.4 * w)}" height="${f1(3.6 * h)}" fill="#000000" opacity="0"/>` +
+         `<text class="south-label" x="${f1(x)}" y="${f1(y - h - 10 * k)}" text-anchor="middle" font-size="${f1(26 * k)}" font-family="sans-serif" font-weight="600" fill="#ffffff" stroke="#3b2a14" stroke-width="${f1(5 * k)}" paint-order="stroke">${esc(label)}</text></g>`;
 }
 function castleWays(c, K, n, style) {
   const { W, k } = c, { floor, bw } = roomFrame(c), S = roomSpace(c);
