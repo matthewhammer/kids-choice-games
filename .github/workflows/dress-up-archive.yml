@@ -1,0 +1,83 @@
+# (ticket 183) A day of Dress Up's pictures, made on GitHub's computers: the
+# archive's own tools (matthewhammer/dress-up-pictures, tools/) run on the
+# game at a commit, against the archive as published, so a picture the same
+# byte for byte as the latest earlier day's is a link to it, as on the laptop.
+# The day comes back as an artifact, a tar that keeps the links, to be added
+# to the archive by hand (source.json, days_index.mjs, commit, push).
+# Two runs: the game at main, the day itself; and the game at the commit of
+# the archive's latest day (a control), whose pictures should all be links if
+# GitHub's Chrome draws what the laptop's drew. No browser runs on the laptop
+# since 2026-10-16 (it froze during them).
+name: Dress Up pictures archive
+on:
+  push:
+    branches: ['archive-*']
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  DAY: 2026/10/17
+  TOOLS_REF: moves-183
+jobs:
+  day:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - which: main
+            game: origin/main
+          - which: control
+            game: 9958ca2717924c1431a38f94cd9ebba3faa98411
+    name: Pictures (${{ matrix.which }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The game, the archive as published (its tools from TOOLS_REF), Chrome
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/game" "${{ matrix.game }}"
+          git -C "$RUNNER_TEMP/game" log -1 --format='game: %H %s'
+          git clone -q --depth 1 https://github.com/matthewhammer/dress-up-pictures "$RUNNER_TEMP/pics"
+          git -C "$RUNNER_TEMP/pics" fetch -q --depth 1 origin "$TOOLS_REF"
+          git -C "$RUNNER_TEMP/pics" checkout -q FETCH_HEAD -- tools
+          ls "$RUNNER_TEMP/pics/2026/10"
+          (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
+            --remote-debugging-port=9333 --remote-allow-origins='*' --window-size=1920,1080 \
+            --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:9333/json/version | grep -i '"Browser"'
+          ffmpeg -version | head -1
+      - name: The day's pictures (archive.mjs)
+        run: |
+          mkdir -p out
+          node "$RUNNER_TEMP/pics/tools/archive.mjs" 9333 "file://$RUNNER_TEMP/game/dress-up/index.html" \
+            "$RUNNER_TEMP/pics/$DAY" "http://matthewhammer.org/dress-up-music/$DAY/index.html" | tee out/archive.txt
+      - name: Their thumbnails (thumbs.mjs)
+        run: node "$RUNNER_TEMP/pics/tools/thumbs.mjs" "$RUNNER_TEMP/pics/$DAY" | tail -5 | tee out/thumbs.txt
+      - name: Byte for byte against the latest earlier day
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/pics/$DAY"
+          {
+            echo "game: $(git -C "$RUNNER_TEMP/game" log -1 --format='%h %s')"
+            echo "Chrome: $(curl -sf http://127.0.0.1:9333/json/version | grep -o '"Browser": *"[^"]*"')"
+            for ext in png svg json; do
+              echo "$ext: $(find . -path ./thumbs -prune -o -name "*.$ext" -type l -print | wc -l) the same as the day before (links), $(find . -path ./thumbs -prune -o -name "*.$ext" -type f -print | wc -l) new or changed"
+            done
+            echo "new or changed pictures, by folder:"
+            find . -path ./thumbs -prune -o -name '*.png' -type f -print | cut -d/ -f2 | sort | uniq -c
+          } | tee "$GITHUB_WORKSPACE/out/bytes.txt"
+          cat "$GITHUB_WORKSPACE/out/bytes.txt" >> "$GITHUB_STEP_SUMMARY"
+      - name: The day as a tar (its links kept)
+        run: tar -C "$RUNNER_TEMP/pics" -cf "out/day-${{ matrix.which }}.tar" "$DAY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: day-${{ matrix.which }}
+          path: out/
+          compression-level: 0
