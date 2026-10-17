@@ -78,10 +78,18 @@ try {
   const layer = JSON.parse(await ev(`(async () => { ${H} Object.assign(B, { kind: "treeroom", houses: 6, inside: 2 }); await settle();
     const door = document.querySelector('#bg [data-obj="side doors"] .portal'); if (!door) return JSON.stringify({ none: [...document.querySelectorAll("#bg .portal")].map(d => d.dataset.to + ":" + (d.closest("[data-obj]") || { dataset: {} }).dataset.obj) });
     const p = marks.pics.find(q => q.el === door); await feetAt([p.spot[0], p.spot[1] + 20]);
+    // (ticket 207: the points where the friend is, found with the door hidden, a grid over where they overlap; then the
+    // door shown, each still the friend. One point at the friend's edge, as before, could be empty beside a pose or
+    // costume an earlier check left, the door rightly there: 0.0.124's speed run failed so)
     const f = document.getElementById("figure").getBoundingClientRect(), d = door.querySelector("rect").getBoundingClientRect();
-    const x = Math.max(f.left, d.left) + 4, y = (Math.max(f.top, d.top) + Math.min(f.bottom, d.bottom)) / 2, u = document.elementFromPoint(x, y);
-    return JSON.stringify({ overlap: x < Math.min(f.right, d.right), friendOnTop: !!u && !!u.closest("#figure"), what: u ? u.tagName + (u.closest("[data-obj]") ? "/" + u.closest("[data-obj]").dataset.obj : "") : null }); })()`));
-  ok("tree house room 2: the friend in front of its side door is drawn over it", !layer.none && layer.overlap && layer.friendOnTop, layer);
+    const L = Math.max(f.left, d.left), R = Math.min(f.right, d.right), T = Math.max(f.top, d.top), Bo = Math.min(f.bottom, d.bottom), pts = [];
+    for (let i = 1; i < 8; i++) for (let j = 1; j < 8; j++) pts.push([L + (R - L) * i / 8, T + (Bo - T) * j / 8]);
+    const on = ([x, y]) => { const u = document.elementFromPoint(x, y); return !!u && !!u.closest("#figure"); }, what = ([x, y]) => { const u = document.elementFromPoint(x, y); return u ? u.tagName + (u.closest("[data-obj]") ? "/" + u.closest("[data-obj]").dataset.obj : "") : null; };
+    const dob = door.closest("[data-obj]"); dob.style.visibility = "hidden"; const friendAt = pts.filter(on); dob.style.visibility = "";
+    const covered = friendAt.filter(q => !on(q)).map(q => what(q));
+    return JSON.stringify({ overlap: R > L && Bo > T, friendPoints: friendAt.length, covered, pose: state.body.pose, anim: state.body.anim, costume: state.costume && state.costume.kind, figSize: B.figSize }); })()`));
+  ok("tree house room 2: the friend in front of its side door is drawn over it", !layer.none && layer.overlap && layer.friendPoints >= 3 && !layer.covered.length, layer);
+  console.log("  (the friend there: " + JSON.stringify({ pose: layer.pose, anim: layer.anim, costume: layer.costume, figSize: layer.figSize, points: layer.friendPoints }) + ")");
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
