@@ -176,7 +176,7 @@
  },
  {
   "name": "south-way-livingroom",
-  "js": "state.music.mute = true; Object.assign(state.background, { kind: \"livingroom\", livingBack: \"forest\" }); changed(); await new Promise(r => setTimeout(r, 600));",
+  "js": "state.music.mute = true; Object.assign(state.background, { kind: \"livingroom\", livingOut: \"forest\" }); changed(); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
  },
  {

@@ -217,28 +217,54 @@ function worldWalk(door) {
   walkInto(door, () => { trips.push(from); worldEnter(nb.key, WORLD_OPP[d], false); });
 }
 // and back: the place edited where the friend is, kept in its square
-// (from changed() and settle(): cheap, and only for the square in use)
+// (from changed() and settle(): cheap, and only for the place in use).
+// (0.0.114, Matthew: a potion put in one square was in every square) A
+// place's own doorway (a sign, a door, a picture), the back chip and
+// Surprise me change the place without the world knowing, and the things
+// went along. So here, on every change, the place shown is given its home:
+// its square (the friend's; or, come by a place's own doorway, the square
+// of that place beside it, else the first), or, off the grid (an inside,
+// our imagination), its own list in W.off, by placeKey (a castle room, a
+// tree room or a tent by which one too). Come to a home, the things shown
+// are its own; staying, they are kept in it. With no square yet (a first
+// visit, after starting over, an older save), the place's things as they
+// are go into the square found for it.
+let worldHome = null;
+const placeKey = B => B.kind + (B.kind === "castleroom" ? ":" + castleOf(B).id + ":" + (B.castleRoom ?? 1) : B.kind === "treeroom" ? ":" + (B.inside ?? 1) : B.kind === "tent" ? ":" + (B.tent ?? 1) : "");
+function worldSquareFor(W, kind) {
+  const nb = W.at && W.cells[W.at] ? Object.keys(WORLD_DIRS).map(d => worldNeighbour(W, W.at, d)).find(n => !n.off && W.cells[n.key] && W.cells[n.key].kind === kind) : null;
+  return nb ? nb.key : worldKeys(W).find(k => W.cells[k].kind === kind) || null;
+}
 function worldKeep() {
   const W = state.world, B = state.background;
-  // (no square yet, as on a first visit, after starting over or loading an
-  // older save: the first holding the place shown, which the place's things
-  // and paths, as they are, are then kept in)
-  if (W && !W.at && B.kind !== "none") { const key = worldKeys(W).find(k => W.cells[k].kind === B.kind); if (key) W.at = key; }
-  const cell = W && W.at && W.cells[W.at];
-  if (!cell || cell.kind !== B.kind) { if (B.crossLive !== undefined) delete B.crossLive; return; }
-  for (const k of cellKeys(cell.kind)) if (JSON.stringify(cell[k]) !== JSON.stringify(B[k])) cell[k] = structuredClone(B[k]);
+  if (!W || !W.cells) return;
+  let cell = W.at && W.cells[W.at];
+  const adopting = !W.at;
+  if (B.kind !== "none" && (!cell || cell.kind !== B.kind)) { const key = worldSquareFor(W, B.kind); if (key) { W.at = key; cell = W.cells[key]; } }
+  const sq = !!cell && cell.kind === B.kind, home = B.kind === "none" ? null : sq ? "sq:" + W.at : "off:" + placeKey(B);
+  if (adopting) worldHome = home;
+  if (home !== worldHome) {   // (just come: the place's own things, never those of the place left)
+    worldHome = home;
+    if (sq) for (const k of cellKeys(cell.kind)) { const v = structuredClone(cell[k] ?? (k === "things" ? [] : DEFAULTS.background[k])); if (JSON.stringify(v) !== JSON.stringify(B[k])) B[k] = v; }
+    else if (home) { const v = structuredClone((W.off || {})[placeKey(B)] || []); if (JSON.stringify(v) !== JSON.stringify(B.things)) B.things = v; }
+  } else if (sq) {
+    for (const k of cellKeys(cell.kind)) if (JSON.stringify(cell[k]) !== JSON.stringify(B[k])) cell[k] = structuredClone(B[k]);
+  } else if (home) {
+    const pk = placeKey(B), T = Array.isArray(B.things) ? B.things : [], kept = (W.off || {})[pk] || [];
+    if (JSON.stringify(kept) !== JSON.stringify(T)) { W.off = W.off || {}; if (T.length) W.off[pk] = structuredClone(T); else delete W.off[pk]; }
+  }
   // (a crossing in its square draws the paths that lead somewhere: worldLiveWays,
   // as a setting of its own, so its cached drawing knows when they change)
-  if (cell.kind === "crossing") { const live = worldLiveWays(W, W.at).join(","); if (B.crossLive !== live) B.crossLive = live; }
+  if (sq && cell.kind === "crossing") { const live = worldLiveWays(W, W.at).join(","); if (B.crossLive !== live) B.crossLive = live; }
   else if (B.crossLive !== undefined) delete B.crossLive;
 }
 // A place chosen in the Background tab is that place's square: the first
 // square holding it (its things come with it); a place the world doesn't
-// have is no square, and has no things of its own.
+// have keeps its own things off the grid (worldKeep).
 function worldChoose(kind) {
   const W = state.world, key = worldKeys(W).find(k => W.cells[k].kind === kind), B = state.background;
   if (key) { W.at = key; for (const k of cellKeys(kind)) B[k] = structuredClone(W.cells[key][k] ?? (k === "things" ? [] : DEFAULTS.background[k])); }
-  else { W.at = null; B.things = []; }
+  // (a place off the grid: worldKeep gives it its own things, W.off's; the square the friend was in stays W.at)
 }
 // ---- the world designer's hands (v2): putting places in squares, moving
 // and taking them away, the grid's size, and a drag that works the same

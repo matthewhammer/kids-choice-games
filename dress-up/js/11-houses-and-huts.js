@@ -228,9 +228,9 @@ function livingroomScene(c) {
       `<circle cx="0" cy="0" r="5" fill="#00000022"/></g></defs>` +
       [...Array(pillows)].map((_, i) => use("bg-pillow", -195 + (i % 5) * 97 + (i >= 5 ? 48 : 0), -165 + (i >= 5 ? 22 : 0), 1, 1, ` color="${["#f2c12e", "#e85d75", "#ffffff", "#8bc34a", "#ff8c42", "#9b59b6", "#00b894", "#e53935"][i % 8]}"`)).join("")) +
     CLOSE);
-  // (a door behind us, at the bottom of the picture, where it leads somewhere)
-  // (its sign, toward us on its post, in front of everything)
-  const back = behindSign(c, o.livingBack);
+  // (a door behind us, at the bottom of the picture, where it leads somewhere: out to the house and yard
+  // at first, Matthew 2026-10-17) (its ▼, toward us, in front of everything)
+  const back = behindSign(c, o.livingOut);
   if (back) s += obj("sign", Infinity, back);
   return s;
 }

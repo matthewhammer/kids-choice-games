@@ -347,7 +347,7 @@ const DEFAULTS = {
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...ROOM_NS.map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
                    ...ROOM_NS.flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
                    ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
-                castleRoom: 1, livingBack: "none", ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["treeBack" + n, "none"])),
+                castleRoom: 1, livingOut: "house", ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["treeBack" + n, "none"])),
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
                 lfoFast: "D", lfoSlow: "E", lfoWings: "F",
@@ -425,6 +425,12 @@ DEFAULTS.rightShoe = Object.fromEntries(SHOE_OWN.map(k => [k, DEFAULTS.shoes[k]]
 function upgradeInside(bg, saved) {
   const old = saved && saved.background;
   if (old && old.room && old.inside === undefined) bg.inside = Math.max(1, ["bunks", "kitchen", "books", "lookout"].indexOf(old.room) + 1);
+  // (0.0.114, Matthew: the living room needs its ▼ back outside) "behind you"
+  // was livingBack, "nowhere" at first, and every save says so; it is
+  // livingOut now, the house and yard at first. A save that named a place
+  // there keeps it.
+  if (old && old.livingBack && old.livingBack !== "none" && old.livingOut === undefined) bg.livingOut = old.livingBack;
+  delete bg.livingBack;
 }
 // before 0.0.21 a figure's size in a background was a share of its full
 // size (100 filled the stage); now 100 is the scene's own usual size

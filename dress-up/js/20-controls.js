@@ -434,7 +434,7 @@ const TABS = [
     ["color", "healerCatEyes", "🐈 the healer's cat: eyes", ["#22c55e", "#c6d43a", "#e0a800", "#3b82f6", "#f28c28"]],
     // the living room
     ["choice", "view", "🪟 outside the window", PICTURE_CHOICES],
-    ["choice", "livingBack", "⬇️ behind you (a door we can't see) leads to", BEHIND_PLACES],
+    ["choice", "livingOut", "⬇️ behind you (the door out, a ▼ at the bottom) leads to", BEHIND_PLACES],
     ["range", "viewDetail", "🪟 outside the window: detail (0 = a blur, 100 = all of it)", 0, 100, 30, 100],
     ["range", "couchSize", "🛋️ couch size", 60, 140, 80, 120],
     ["range", "pillows", "🛋️ pillows", 0, 8, 2, 7],
@@ -720,7 +720,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["witchSize", "cauldronSize", "crows", "frogs", "snakes"].map(key => ["background." + key, b => b.kind === "witchroom"])),
   ...Object.fromEntries(["healerSize", "healerCatFur", "healerCatWhite", "healerCatEyes"].map(key => ["background." + key, b => b.kind === "healerroom"])),
   ...Object.fromEntries(["fairyTime", "mushrooms", "fairyHouseSeen", "fairyHouseLfo"].map(key => ["background." + key, b => b.kind === "fairyforest"])),
-  "background.livingBack": b => b.kind === "livingroom",
+  "background.livingOut": b => b.kind === "livingroom",
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["background.treeBack" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
