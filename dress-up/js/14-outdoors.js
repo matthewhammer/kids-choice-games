@@ -846,6 +846,8 @@ const CROSS_DIRS = [["N", "⬆️ ahead"], ["NE", "↗️ ahead, right"], ["E", 
                     ["S", "⬇️ toward us"], ["SW", "↙️ toward us, left"], ["W", "⬅️ left"], ["NW", "↖️ ahead, left"]];
 const CROSS_PATH = "#8a5528", CROSS_PATH_EDGE = "#5f3a1a";
 const CROSS_FLOORS = ["#76843a", "#5f7a3a", "#8a9a4a", "#6b6b3a", "#4f6b3a", "#9a8a5a"];
+const TOADSTOOL_CAPS = ["#d62828", "#f59e0b", "#7c3aed", "#2563eb", "#16a34a"];
+const xmlText = s => String(s).slice(0, 12).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const ROCK_TONES = ["#8f8a80", "#b4afa4", "#6f8a94", "#c2a67a", "#a8634a", "#7f8a6a", "#4f4b48"];
 const LEAF_SETS = { summer: null, spring: ["#5f9e3a", "#74b04a", "#8cc45a", "#a3d46e", "#b8e080"], autumn: ["#9a3412", "#c2410c", "#d97706", "#eab308", "#b45309"],
                     blossom: ["#f9a8d4", "#f472b6", "#fbcfe8", "#ec4899", "#fce7f3"] };
@@ -855,10 +857,22 @@ const THING_PARAMS = {
   tree: [["h", "📏", "choice", [[280, "short"], [380, "tall"], [480, "taller"]]], ["leaves", "🍂", "choice", [["summer", "summer"], ["spring", "spring"], ["autumn", "autumn"], ["blossom", "🌸 blossom"]]]],
   pine: [["tiers", "🌲 tiers", "choice", [[4, "4"], [5, "5"], [6, "6"], [7, "7"], [8, "8"]]]],
   bush: [["flowers", "🌸", "color", ["none", "#f472b6", "#fde047", "#ffffff", "#a78bfa", "#ef4444"]]],
+  toadstool: [["cap", "🍄", "color", TOADSTOOL_CAPS], ["glow", "✨ glowing", "toggle"]],
+  potion: [["shape", "🧪", "choice", [["flask", "flask"], ["tall", "tall"], ["jar", "jar"], ["vial", "vial"]]], ["color", "🎨", "color", POTION_COLORS]],
+  sign: [["text", "✏️ its words", "text", 12]],
 };
-const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" } };
+const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },
+                         toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" } };
 const thingParams = kind => [...THING_PARAMS.all, ...(THING_PARAMS[kind] || [])];
-const THING_KINDS = { rock: { label: "🪨 rock", size: 1 }, bush: { label: "🌿 bush", size: 1 }, tree: { label: "🌳 tree", size: 1 }, pine: { label: "🌲 pine", size: 1 } };
+// (ticket 185, v3: the object library) The things, in groups, each drawn by
+// a drawing the places already have (the fairy forest's toadstools, the
+// witch's potions, the deep dungeon's skeleton, the clearing's plank sign
+// on a post), none of them changed: a thing is that drawing standing on
+// the floor at its own depth, sized as the friend is there.
+const THING_GROUPS = [["nature", "🌲 nature"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"]];
+const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
+                      pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" },
+                      potion: { label: "🧪 potion", size: 1, group: "magic" }, skeleton: { label: "💀 skeleton", size: 1, group: "spooky" }, sign: { label: "🪧 sign", size: 1, group: "signs" } };
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
 function thingSvg(o, t, i) {
   const s = depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100, seed = t.seed ?? 900 + i;
@@ -867,6 +881,10 @@ function thingSvg(o, t, i) {
   const body = t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :
                t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :
                t.kind === "pine" ? at(shadow(70) + pineTree(seed, { tiers: t.tiers ?? 6 })) :
+               t.kind === "toadstool" ? at(toadstool(0, 0, 2.4, t.cap || TOADSTOOL_CAPS[0], !!t.glow)) :
+               t.kind === "potion" ? at(shadow(22) + potionSvg(t.shape || "flask", 0, 0, 2.2, t.color || POTION_COLORS[5])) :
+               t.kind === "skeleton" ? at(shadow(60) + skeletonSvg(0, -80 * 2.6, 2.6, "sit")) :
+               t.kind === "sign" ? at(shadow(30) + `<rect x="-5" y="-150" width="10" height="150" fill="#6e4a2c"/>` + plankSign(0, -120, 1.3, xmlText(t.text ?? "hello!"))) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
   return `<g class="thing" data-drag="thing:${i}" style="cursor: grab">${body}</g>`;
 }

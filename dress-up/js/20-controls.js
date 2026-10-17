@@ -577,6 +577,8 @@ function changed() {
   if (!hud.hidden && hudKey() !== hudShown) renderHud();
 }
 
+// (ticket 185, v3) the object library's group open, while the game is open
+let thingGroup = "nature";
 function el(tag, attrs = {}, kids = []) {
   const e = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -996,7 +998,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const n = el("span", { class: "hint" }), list = el("div", { class: "cross-list" });
     let shown = null;
     const rows = () => {
-      const T = state.background.things || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p]) => t[p] ?? null)]));
+      // (a thing's words are typed in place: not in the signature, or each key would build the row again, and the box lose the caret)
+      const T = state.background.things || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p, , how]) => how === "text" ? null : t[p] ?? null)]));
       if (sig === shown) return;
       shown = sig;
       list.replaceChildren(...T.map((t, i) => el("div", { class: "row" }, [
@@ -1008,6 +1011,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             onclick: set(col) }, col === "none" ? "∅" : ""))];
           if (how === "choice") return [el("span", { class: "hint" }, label), ...opts.map(([v, name]) => el("button", { "aria-pressed": String(now === v), onclick: set(v) }, name))];
           if (how === "action") return [el("button", { onclick: () => { t[p] = opts(t); changed(); } }, label)];
+          if (how === "text") return [el("span", { class: "hint" }, label), el("input", { type: "text", maxlength: String(opts), size: String(opts), value: String(now ?? ""), "aria-label": label, oninput: e => { t[p] = e.target.value.slice(0, opts); changed(); } })];
           return [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)];
         }),
         el("button", { onclick: () => { T.splice(i, 1); changed(); } }, "✖")])));
@@ -1027,8 +1031,15 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       pressDrag(b, () => T.label.split(" ")[0], { onTap: () => add(kd), onDrop: (under, ev) => { if (under && under.closest && under.closest("#pic")) add(kd, picUnits(ev)); } });
       return b;
     };
-    box.append(el("div", { class: "row" }, [...Object.entries(THING_KINDS).map(([kd, T]) => addButton(kd, T)),
-                                           el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
+    // (v3: the library in groups: a chip per group, its things' buttons under it; the group open is kept while the game is open)
+    const groups = el("div", { class: "row thing-groups" }), items = el("div", { class: "row thing-items" });
+    const showGroup = () => {
+      for (const b of groups.children) b.setAttribute("aria-pressed", String(b.dataset.group === thingGroup));
+      items.replaceChildren(...Object.entries(THING_KINDS).filter(([, T]) => T.group === thingGroup).map(([kd, T]) => addButton(kd, T)));
+    };
+    groups.append(...THING_GROUPS.map(([g, name]) => el("button", { "data-group": g, onclick: () => { thingGroup = g; showGroup(); } }, name)));
+    showGroup();
+    box.append(groups, items, el("div", { class: "row" }, [el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
     syncs.push(() => { const m = (state.background.things || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); });
   }
   // (ticket 185, Matthew) 🗺️ World design: places laid out on a big grid,
