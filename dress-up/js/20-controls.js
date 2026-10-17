@@ -1160,7 +1160,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const put = (node, text) => { if (node.textContent !== text) node.textContent = text; };
     const ver = el("span", { class: "hint" }), up = el("button", { class: "newer", hidden: "", onclick: () => document.getElementById("newer").click() });
     const meter = el("div", { class: "hint" });
-    box.append(el("div", { class: "row" }, [el("a", { href: "https://github.com/matthewhammer/kids-choice-games", target: "_blank", rel: "noopener" }, "💻 this game's code, on GitHub ↗")]),
+    // (ticket 194, M) light or dark
+    const themes = el("div", { class: "row theme-row" }, [el("span", { class: "hint" }, "light or dark:"), ...LOOKS.map(([t, label]) =>
+      el("button", { "data-theme-choice": t, "aria-pressed": String(themeNow() === t), onclick: () => { themeSet(t); for (const b of themes.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.themeChoice === t)); } }, label))]);
+    box.append(themes, el("div", { class: "row" }, [el("a", { href: "https://github.com/matthewhammer/kids-choice-games", target: "_blank", rel: "noopener" }, "💻 this game's code, on GitHub ↗")]),
                el("div", { class: "row" }, [ver, up]), meter,
                el("div", { class: "hint" }, "🚀 Kept off until they are fast: 60 frames a second, for everything the controller does, comes first. Switched on, each says how many it draws in this place; 📏 walks the friend here with it off, then on, and says what it costs on this computer."));
     perfMeter.node = meter;

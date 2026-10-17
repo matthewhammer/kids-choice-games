@@ -818,6 +818,16 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
+// (ticket 194, M) light or dark: auto (the system's), light or dark, this
+// browser's own (localStorage "dress-up-theme"), not the friend's, so not in
+// saves; set as early as the script runs, chosen in ⚙️ Advanced
+const LOOKS = [["auto", "🌗 auto"], ["light", "☀️ light"], ["dark", "🌙 dark"]];
+function themeNow() { try { const t = localStorage.getItem("dress-up-theme"); return t === "light" || t === "dark" ? t : "auto"; } catch (_) { return "auto"; } }
+function themeSet(t) {
+  if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
+}
+themeSet(themeNow());
 const VERSION = { number: "0.0.121", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);

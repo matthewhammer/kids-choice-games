@@ -4,11 +4,18 @@
           /* (ticket 170) the music tab's groups, each its own colour: the
              main controls, the whole tune's strip, the LFOs, the instruments */
           --mu-main: #e8f1ff; --mu-mix: #fff0d9; --mu-lfo: #f0e8ff; --mu-inst: #e4f6ea; }
+  /* (ticket 194, M: a light / dark switch, auto / light / dark, under ⚙️ Advanced)
+     dark when the switch says so, or says auto (no data-theme) and the system is dark */
+  :root { color-scheme: light dark; }
+  :root[data-theme="light"] { color-scheme: light; }
   @media (prefers-color-scheme: dark) {
-    :root { --ink: #eee; --muted: #aaa; --line: #444; --paper: #fffdf7; --bg: #1d1a26;
+    :root:not([data-theme="light"]) { --ink: #eee; --muted: #aaa; --line: #444; --paper: #fffdf7; --bg: #1d1a26;
             --panel: #29253a; --accent: #a78bfa; --accent-ink: #1d1a26;
             --mu-main: #1b2238; --mu-mix: #2c2416; --mu-lfo: #261c38; --mu-inst: #162a20; }
   }
+  :root[data-theme="dark"] { color-scheme: dark; --ink: #eee; --muted: #aaa; --line: #444; --paper: #fffdf7; --bg: #1d1a26;
+            --panel: #29253a; --accent: #a78bfa; --accent-ink: #1d1a26;
+            --mu-main: #1b2238; --mu-mix: #2c2416; --mu-lfo: #261c38; --mu-inst: #162a20; }
   * { box-sizing: border-box; }
   body { margin: 0; padding: 8px; background: var(--bg); color: var(--ink);
          font: 16px/1.35 system-ui, "Segoe UI", Roboto, sans-serif; }
