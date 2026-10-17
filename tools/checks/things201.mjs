@@ -23,19 +23,20 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
     state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3"); thingGroup = "magic"; tab = TABS.findIndex(t => t[1] === "world"); showTab(); await w(400);
-    const put = async k => { B.things = [...Array(k)].map((_, i) => ({ kind: "cauldron", x: -360 + (i % 8) * 100, z: 330 + Math.floor(i / 8) * 50, seed: 30 + i, size: 100 })); changed(); await w(600); };
+    const put = async (k, kind = "cauldron") => { B.things = [...Array(k)].map((_, i) => ({ kind, x: -360 + (i % 8) * 100, z: 330 + Math.floor(i / 8) * 50, seed: 30 + i, size: 100, ...structuredClone(THING_DEFAULTS[kind] || {}) })); changed(); await w(600); };
     const look = () => { const b = document.querySelector('.thing-items button[data-kind="cauldron"]'), note = document.querySelector(".thing-slow");
       return { blocked: !!b && b.disabled, rows: document.querySelectorAll(".cross-list .row.thing-costly").length, frames: document.querySelectorAll("#bg .cost-glow").length, note: note && !note.hidden ? note.textContent : "" }; };
     const counts = {};
-    for (const k of [0, 5, 10, 15]) { await put(k); const moving = thingsMovingNow().reduce((s, m) => s + m.n, 0); counts[k] = { fps: await framesNow(1500), moving }; }
-    const busy = look();
+    for (const k of [0, 1, 5, 10, 15]) { await put(k); const moving = thingsMovingNow().reduce((s, m) => s + m.n, 0); counts[k] = { fps: await framesNow(1500), moving }; }
+    // (since ticket 202 two or more cauldrons are drawn cheap: the guard's count is met with campfires, about twenty moving parts each)
+    await put(60, "campfire"); thingFps = null; changed(); await w(300); const busy = look();
     await put(2); thingFps = null; changed(); await w(200); const calm = look();
     thingFps = 30; changed(); await w(200); const slow = look();   // (as a slow computer measures: one cauldron's place too busy)
     thingFps = null; B.things = []; changed();
     return JSON.stringify({ counts, busy, calm, slow }); })()`));
-  console.log("  with 0, 5, 10, 15 cauldrons in the clearing (GitHub's Chrome): " + Object.entries(r.counts).map(([k, v]) => `${k}: ${v.fps} fps, ${v.moving} moving parts`).join(" · "));
-  ok("each cauldron about 240 moving parts (its fumes' spiral most of them), and the frames fall as they are added", r.counts[5].moving >= 5 * 150 && r.counts[5].moving <= 5 * 320 && r.counts[15].fps < r.counts[0].fps, r.counts);
-  ok("15 cauldrons: no more things that move can be put there; the busiest marked, rows and picture; the note says why", r.busy.blocked && r.busy.rows >= 1 && r.busy.frames >= 1 && /moving parts|frames a second/.test(r.busy.note), r.busy);
+  console.log("  with 0, 1, 5, 10, 15 cauldrons in the clearing (GitHub's Chrome): " + Object.entries(r.counts).map(([k, v]) => `${k}: ${v.fps} fps, ${v.moving} moving parts`).join(" · "));
+  ok("one cauldron about 240 moving parts (its fumes' spiral); from two on, drawn cheap, about fifteen each (ticket 202)", r.counts[1].moving >= 150 && r.counts[5].moving <= 5 * 30 && r.counts[15].moving <= 15 * 30, r.counts);
+  ok("60 campfires: no more things that move can be put there; the busiest marked, rows and picture; the note says why", r.busy.blocked && r.busy.rows >= 1 && r.busy.frames >= 1 && /moving parts|frames a second/.test(r.busy.note), r.busy);
   ok("taken away to 2: all as before", !r.calm.blocked && r.calm.rows === 0 && r.calm.frames === 0 && !r.calm.note, r.calm);
   ok("on a computer measuring 30 frames a second: blocked at 2, its note saying so", r.slow.blocked && /About 30 frames a second/.test(r.slow.note), r.slow);
   ok("no page errors", !errs.length, errs);

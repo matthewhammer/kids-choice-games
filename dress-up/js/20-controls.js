@@ -1108,6 +1108,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // (ticket 201) more moving things allowed here? and which move the most
     const slowNote = el("div", { class: "hint thing-slow", hidden: "" });
     const guard = () => {
+      if (thingsCheap(state.background) !== thingsCheapDrawn) { changed(); return; }   // (ticket 202: the cauldrons' fumes, cheap or not, as measured now)
       const moving = thingsMovingNow(), total = moving.reduce((s, m) => s + m.n, 0), most = Math.max(0, ...moving.map(m => m.n));
       const slow = thingFps != null && thingFps < THING_FPS_MIN && total > 0, blocked = slow || total > THING_MOVING_MAX;
       for (const b of items.querySelectorAll("button[data-kind]")) if ((THING_KINDS[b.dataset.kind] || {}).moving) {

@@ -98,6 +98,29 @@ function helixSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
   });
   return t;
 }
+// (ticket 202, Matthew: "a simplified cauldron animation, with the same two
+// fume plumes, but each drawn as a single path with a small number of points
+// (and curves between), with a fat stroke color per curvy line") The fumes,
+// cheap: each plume one smooth path through nine points (Catmull-Rom, as
+// cubic curves), a fat stroke in its colour, turning as the full ones do: its
+// shape at six moments of the 2.4 s turn, one SMIL animation of its d. Two
+// moving parts for the fumes, where the full ones have some two hundred.
+function helixCheapSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff"]) {
+  const n = Math.max(2, Math.ceil((bottom - top) / (13 * k))), K = 6, N = 9;
+  const pathAt = (si, f) => {
+    const pts = [...Array(N)].map((_, i) => { const u = i / (N - 1), a = u * n * 0.42 + si * Math.PI - 2 * Math.PI * f / K;
+      return [cx + (r0 + (r1 - r0) * u) * Math.cos(a), bottom - (bottom - top) * u]; });
+    let d = `M${f1(pts[0][0])} ${f1(pts[0][1])}`;
+    for (let i = 0; i < N - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(N - 1, i + 2)];
+      d += ` C${f1(p1[0] + (p2[0] - p0[0]) / 6)} ${f1(p1[1] + (p2[1] - p0[1]) / 6)} ${f1(p2[0] - (p3[0] - p1[0]) / 6)} ${f1(p2[1] - (p3[1] - p1[1]) / 6)} ${f1(p2[0])} ${f1(p2[1])}`;
+    }
+    return d;
+  };
+  return colors.map((c, si) => { const ds = [...Array(K + 1)].map((_, f) => pathAt(si, f));
+    return `<path d="${ds[0]}" fill="none" stroke="${c}" stroke-width="${f1(6 * k)}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.75">` +
+           `<animate attributeName="d" values="${ds.join(";")}" dur="2.4s" repeatCount="indefinite"/></path>`; }).join("");
+}
 // (ticket 118) The fumes' widths and see-through-ness as Web Animations, one
 // per segment, started where the picture's clock is in its 2.4 s loop (the
 // SMIL x1/x2 beside them run on that clock), so the two stay together.

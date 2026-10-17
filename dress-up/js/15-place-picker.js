@@ -7,7 +7,7 @@ const benchSvg = (x, y, k) => [-70, 70].map(a => `<line x1="${f1(x + a * k)}" y1
            `<rect x="${f1(x - 120 * k)}" y="${f1(y - 34 * k)}" width="${f1(240 * k)}" height="${f1(10 * k)}" fill="#8b5a2b"/>`;
 // (ticket 185, v3: lifted out of the witch's woods, unchanged) her cauldron over its fire, standing at
 // (cx, b), bubbling green, a skull on the pot, its fumes a double helix rising to top
-function witchCauldronSvg(cx, b, k, opts, top) {
+function witchCauldronSvg(cx, b, k, opts, top, cheap = false) {   // (ticket 202: cheap, the fumes as two plain plumes)
   const P = (x, y) => `${f1(x)} ${f1(y)}`;   // (as backgroundSvg's)
   const r = 46 * k, cy = b - 26 * k - r * 0.7;
       // (the flames flicker, each at its own pace)
@@ -32,7 +32,7 @@ function witchCauldronSvg(cx, b, k, opts, top) {
            [-1, 1].map(sd => `<circle cx="${f1(cx + sd * 6 * k)}" cy="${f1(cy + 22 * k)}" r="${f1(3.6 * k)}" fill="#ff3b3b"/>`).join("") +
            // the fumes: one green, one blue, a double helix turning as it
            // rises, out past the top of the picture
-           helixSvg(cx, cy - 6 * k, top, 12 * k, 46 * k, k);
+           (cheap ? helixCheapSvg : helixSvg)(cx, cy - 6 * k, top, 12 * k, 46 * k, k);
 }
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);

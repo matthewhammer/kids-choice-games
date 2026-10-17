@@ -233,5 +233,15 @@
   "name": "advanced-news",
   "js": "state.music.mute = true; tab = TABS.findIndex(t => t[1] === \"advanced\"); showTab(); for (let i = 0; i < 50 && !document.querySelector(\".news .news-card\"); i++) await new Promise(r => setTimeout(r, 100)); document.querySelector(\".news\").scrollIntoView({ block: \"start\" });",
   "wait": 400
+ },
+ {
+  "name": "cauldron-full",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"3,3\"); const B = state.background; B.figX = -330; B.figY = 40; B.things = [{ kind: \"cauldron\", x: 120, z: 370, seed: 31, size: 100 }]; changed(); await new Promise(r => setTimeout(r, 900));",
+  "wait": 900
+ },
+ {
+  "name": "cauldrons-cheap",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"3,3\"); const B = state.background; B.figX = -330; B.figY = 40; B.things = [0, 1, 2].map(i => ({ kind: \"cauldron\", x: -40 + i * 170, z: 370, seed: 31 + i, size: 100 })); changed(); await new Promise(r => setTimeout(r, 900));",
+  "wait": 900
  }
 ]
