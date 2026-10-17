@@ -1,0 +1,30 @@
+# (ticket 182) Pictures of the pages in shots/, made on GitHub's computers:
+# no browser runs on Matthew's laptop since 2026-10-16. Push a shot-* branch.
+name: Page pictures
+on:
+  push:
+    branches: ['shot-*']
+permissions:
+  contents: read
+jobs:
+  shots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Serve, start Chrome, take the pictures
+        run: |
+          (python3 -m http.server 8133 --bind 127.0.0.1 > /dev/null 2>&1 &)
+          (google-chrome --headless=new --mute-audio --no-first-run --remote-debugging-port=9333 --remote-allow-origins='*' \
+            --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && curl -sf http://127.0.0.1:8133/ > /dev/null && break; sleep 1; done
+          node tools/pageshot.mjs 9333 http://127.0.0.1:8133 out | tee out.txt
+          cat out.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shots
+          path: out/
