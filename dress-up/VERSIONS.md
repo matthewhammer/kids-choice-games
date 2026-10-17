@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.141 (2026-10-17)
+
+Everything in 0.0.140, working again.
+
+- **The game starts again**: 0.0.140 stopped while loading (a list of the sea things' colours was read before it was made). Everything in 0.0.140, the 🪸 deep sea and the 🐚 sea things, works now.
+
 ## 0.0.140 (2026-10-17)
 
 Everything in 0.0.139, with the deep sea.

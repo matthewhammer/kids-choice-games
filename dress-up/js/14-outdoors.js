@@ -900,6 +900,13 @@ function signpostBoards(o, t) {
 const ROCK_TONES = ["#8f8a80", "#b4afa4", "#6f8a94", "#c2a67a", "#a8634a", "#7f8a6a", "#4f4b48"];
 const LEAF_SETS = { summer: null, spring: ["#5f9e3a", "#74b04a", "#8cc45a", "#a3d46e", "#b8e080"], autumn: ["#9a3412", "#c2410c", "#d97706", "#eab308", "#b45309"],
                     blossom: ["#f9a8d4", "#f472b6", "#fbcfe8", "#ec4899", "#fce7f3"] };
+// (ticket 219: the sea things' colours, here before THING_PARAMS and THING_DEFAULTS read them: declared after, they
+// threw on loading, "Cannot access before initialization", and 0.0.140 stopped there)
+const CORAL_COLORS = ["#ff6f91", "#ff9f1c", "#c084fc", "#f43f5e", "#fde047", "#fb7185", "#f8fafc"];
+const SHELL_COLORS = ["#f8e1c7", "#f9a8d4", "#fde68a", "#e9d5ff", "#ffffff", "#fdba74"];
+const STAR_COLORS = ["#fb923c", "#f43f5e", "#a855f7", "#facc15", "#38bdf8"];
+const SEAFISH_COLORS = ["#ff9f1c", "#ffd23f", "#ff6f91", "#7bdff2", "#a3e635", "#c084fc"];
+const SEAPLANT_COLORS = ["#2f8f4e", "#4caf50", "#8bc34a", "#c0ca33", "#d4a017", "#e57373", "#ab47bc"];
 const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
@@ -965,11 +972,6 @@ function risingBubbles(x, y, n, h, dur, r, seed, b = BUBBLE_DEFAULT) {
 }
 // (ticket 219) The 🐚 sea things, each drawn standing at (0, 0) in its own
 // units, as the other things are (thingSvg scales and places them).
-const CORAL_COLORS = ["#ff6f91", "#ff9f1c", "#c084fc", "#f43f5e", "#fde047", "#fb7185", "#f8fafc"];
-const SHELL_COLORS = ["#f8e1c7", "#f9a8d4", "#fde68a", "#e9d5ff", "#ffffff", "#fdba74"];
-const STAR_COLORS = ["#fb923c", "#f43f5e", "#a855f7", "#facc15", "#38bdf8"];
-const SEAFISH_COLORS = ["#ff9f1c", "#ffd23f", "#ff6f91", "#7bdff2", "#a3e635", "#c084fc"];
-const SEAPLANT_COLORS = ["#2f8f4e", "#4caf50", "#8bc34a", "#c0ca33", "#d4a017", "#e57373", "#ab47bc"];
 const seaR = (seed, j) => { const v = Math.sin(seed * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
 // coral: a branching stand, each branch splitting, round tips (its seed its shape)
 function coralSvg(seed, color) {
