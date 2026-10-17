@@ -40,13 +40,16 @@ try {
     const hov = JSON.parse(await ev(`(() => { const u = document.elementFromPoint(${at.sx}, ${at.sy}); return JSON.stringify({ it: !!enterAt && enterAt.el.dataset.to === "woodpath" && enterAt.kind === "sign", bright: !!enterGlow && !!enterGlow.parentNode && enterGlow.parentNode.dataset.to === "woodpath",
       pm: window.__pm, marksOk: marks.text === bgShown.text, hover: hoverPass ? hoverPass.kind + ":" + (hoverPass.el.dataset.to || hoverPass.el.dataset.way) : null, under: u ? u.tagName + (u.closest(".portal") ? "/portal:" + u.closest(".portal").dataset.to : "") + (u.closest("#figure") ? "/figure" : "") : null }); })()`));
     ok("the pointer over the wood path's sign, far off: it is the bright one, X's to take", !at.nearBefore && hov.it && hov.bright, { at, hov });
-    await move(at.ex + 8, at.ey + 6); await sleep(300);   // (the arrow N, at the far end of the clearing: nothing over it there)
+    // (the friend moved aside first: standing in the middle, their head is over the arrow N's place, and the pointer on the friend is for dragging them)
+    await ev(`(async () => { state.background.figX = -260; changed(); await new Promise(r => setTimeout(r, 300)); measureMarks(); return 1; })()`);
+    await move(at.ex + 8, at.ey + 6); await sleep(300);
     const navH = JSON.parse(await ev(`(() => { const a = document.querySelector('#ways .way-arrow[data-way="N"]'), x = ${at.ex + 8}, y = ${at.ey + 6}, u = document.elementFromPoint(x, y), P = pic.getScreenCTM();
       const navs = marks.pics.filter(p => p.kind === "nav").map(p => { const s = new DOMPoint(p.spot[0], p.spot[1]).matrixTransform(P); return p.el.dataset.way + ":" + Math.round(Math.hypot(s.x - x, s.y - y)); });
       const probe = passUnderPointer({ target: u, clientX: x, clientY: y });
       return JSON.stringify({ aimed: !!a && a.classList.contains("aimed"), opacity: a ? getComputedStyle(a).opacity : null, pm: window.__pm, hover: hoverPass ? hoverPass.kind : null, under: u ? u.tagName + "#" + (u.id || "") : null,
         marksOk: marks.text === bgShown.text, navs, probe: probe ? probe.kind + ":" + (probe.el.dataset.way || probe.el.dataset.to) : null }); })()`));
     ok("the pointer near where the nav arrow N would be: it shows, the one picked", navH.aimed && navH.opacity === "1", navH);
+    await ev(`(async () => { state.background.figX = 0; changed(); await new Promise(r => setTimeout(r, 300)); measureMarks(); return 1; })()`);
     await move(at.sx, at.sy); await sleep(200); await click(at.sx, at.sy);
     await sleep(350);
     const mid = JSON.parse(await ev(`JSON.stringify({ kind: state.background.kind, x: state.background.figX, y: state.background.figY, anim: state.body.anim })`));
