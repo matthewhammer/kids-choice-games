@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.161 (2026-10-17)
+
+Everything in 0.0.160, without the deep sea's school of fish.
+
+- **No school of fish in the deep sea, for now**: the little school that slid round in a loop over the far ridges didn't look like fish swimming, so it's gone until it can be made to swim well. A "🐟 fish" you put in from the "🐚 sea" things still swims.
+
 ## 0.0.160 (2026-10-17)
 
 Everything in 0.0.159, with the game in view while you design its world.

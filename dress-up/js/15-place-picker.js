@@ -186,10 +186,9 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // square and a background --- sandy bottom with objects to place") Deep
     // water: blue fading to near black below; the light coming down in
     // shafts that shimmer with the slow LFO; far ridges, dark; the sandy
-    // bottom, rippled; kelp swaying up both sides (the slow LFO), rocks; a
-    // little school of fish darting about with the quick LFO; and a vent in
-    // the sand on the left, bubbles rising from it (bubbleSvg, the bubbles'
-    // simple default). What is put here (the 🐚 sea things: coral, shells,
+    // bottom, rippled; kelp swaying up both sides (the slow LFO), rocks (its
+    // school of fish dropped, ticket 234); and a vent in the sand on the left,
+    // bubbles rising from it (bubbleSvg, the bubbles' simple default). What is put here (the 🐚 sea things: coral, shells,
     // starfish, fish, a chest, an anchor, sea plants) stands on the sand.
     s += `<defs>${grad("bg-deep", "#1d6fa3", "#04152b", y0, y1)}</defs>` + all("url(#bg-deep)");
     let rays = "";
@@ -222,17 +221,9 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       kelp[i % 2] += swaying(opts, `<path d="${d}" fill="none" stroke="${i % 3 ? "#2a6b40" : "#35804c"}" stroke-width="${f1(7 * k)}" stroke-linecap="round"/>` + blades, x, b, 5, R(i, 821), (5 + 2 * R(i, 822)).toFixed(1));
     }
     s += obj("kelp, left", g + 24 * k, kelp[0]) + obj("kelp, right", g + 24 * k, kelp[1]);
-    // a little school of fish, darting about over the far ridges together (the quick LFO)
-    {
-      const cx = x0 + W * 0.62, cy = y0 + (g - y0) * 0.38;
-      let fish = "";
-      for (let i = 0; i < 9; i++) {
-        const fx = cx + (R(i, 823) - 0.5) * 120 * k, fy = cy + (R(i, 824) - 0.5) * 60 * k, c = ["#9fd8ff", "#cfeeff", "#ffd27a"][i % 3];
-        fish += `<ellipse cx="${f1(fx)}" cy="${f1(fy)}" rx="${f1(9 * k)}" ry="${f1(4 * k)}" fill="${c}"/><polygon points="${P(fx - 8 * k, fy)} ${P(fx - 15 * k, fy - 4 * k)} ${P(fx - 15 * k, fy + 4 * k)}" fill="${c}"/>`;
-      }
-      const loop = [[0, 0], [60, -20], [110, 6], [40, 30], [-50, 12], [0, 0]].map(([a, b]) => `${f1(a * k)} ${f1(b * k)}`).join(";");
-      s += obj("school of fish", g - 95 * k, `<g>${lfoTimed(opts, "fast", 0.1, `<animateTransform attributeName="transform" type="translate" values="${loop}" dur="3.2s" repeatCount="indefinite"/>`)}${fish}</g>`);
-    }
+    // (ticket 234, Matthew: "the animation for the school of fish in deep sea is really bad -- let's drop that feature of
+    // the background until we can animate a school of fish better") no school of fish (nine fish sliding round one loop
+    // together, over the far ridges: 0.0.160's 15-place-picker.js), until one moves well (ticket 235)
     // a vent in the sand, on the left, bubbles rising from it
     {
       const vx = x0 + W * 0.16, vy = g + 40 * k;

@@ -1,6 +1,6 @@
 // (ticket 219, Matthew) The 🪸 deep sea: a place in the background list and
 // the world designer's places, deep water meeting open water (and nothing on
-// land); its scene drawn, its light shimmering and its fish school moving
+// land); its scene drawn, its light shimmering (its fish school dropped: ticket 234)
 // (animations), its kelp, rocks, vent and bubbles; and each 🐚 sea thing put in
 // it drawn: coral, shells, a starfish crawling, a fish swimming round (and its
 // bubbles), a chest, an anchor and its chain, the four sea plants, two of them
@@ -39,8 +39,8 @@ try {
   const P = r.place, S = r.scene, T = Object.fromEntries(r.things.map(t => [t.kind, t]));
   ok("the deep sea is a place: in the list, in the water group once, among the world designer's places", P.inPlaces && P.inPalette && P.group === 1, P);
   ok("deep water meets open water and other deep sea; nothing on land", P.withSea && !P.withLand, P);
-  ok("its scene is drawn: the deep water, and things moving (the light, the fish school, the kelp, the bubbles)", S.deep && S.anims >= 8, S);
-  ok("its kelp, rocks, fish school and vent stand at their depths", ["kelp, left", "kelp, right", "school of fish", "vent"].every(nm => S.objs.includes(nm)) && S.objs.some(o => o.startsWith("rock")), S.objs);
+  ok("its scene is drawn: the deep water, and things moving (the light, the kelp, the bubbles)", S.deep && S.anims >= 7, S);
+  ok("its kelp, rocks and vent stand at their depths; no school of fish (ticket 234: dropped until one moves well)", ["kelp, left", "kelp, right", "vent"].every(nm => S.objs.includes(nm)) && S.objs.some(o => o.startsWith("rock")) && !S.objs.includes("school of fish"), S.objs);
   ok("every 🐚 sea thing drawn, each with a size", r.KINDS.every(k => T[k] && T[k].w > 10 && T[k].h > 10), r.things);
   ok("the starfish crawls (it moves to and fro)", T.starfish && T.starfish.anims >= 2, T.starfish);
   ok("the fish swims round (moving and turning) and blows bubbles", T.seafish && T.seafish.anims >= 4 && T.seafish.scale === 1 && T.seafish.circles >= 5, T.seafish);
