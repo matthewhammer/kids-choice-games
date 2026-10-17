@@ -4,31 +4,41 @@
 # byte for byte as the latest earlier day's is a link to it, as on the laptop.
 # The day comes back as an artifact, a tar that keeps the links, to be added
 # to the archive by hand (source.json, days_index.mjs, commit, push).
-# Two runs: the game at main, the day itself; and the game at the commit of
-# the archive's latest day (a control), whose pictures should all be links if
-# GitHub's Chrome draws what the laptop's drew. No browser runs on the laptop
-# since 2026-10-16 (it froze during them).
+# Run by hand (Actions, "Dress Up pictures archive", Run workflow): the day,
+# the game's commit, and a control if wanted, the game at the commit of the
+# archive's latest day, to see how many of its pictures come out the same.
+# No browser runs on the laptop since 2026-10-16 (it froze during them).
+# What the first run found (2026/10/17, ticket 183): GitHub's Chrome draws as
+# the laptop's did, but not byte for byte: of 349 pictures of 0.0.90, 264
+# the same, 73 off by a few anti-aliased pixels, and 12 caught at another
+# moment of an animation (which differs between any two runs).
 name: Dress Up pictures archive
 on:
-  push:
-    branches: ['archive-*']
   workflow_dispatch:
+    inputs:
+      day:
+        description: "The day's folder, YYYY/MM/DD (Mountain time)"
+        required: true
+      game:
+        description: "The game's commit"
+        default: origin/main
+      control:
+        description: "Also the game at the archive's latest day's commit"
+        type: boolean
+        default: false
 permissions:
   contents: read
 env:
-  DAY: 2026/10/17
-  TOOLS_REF: moves-183
+  DAY: ${{ inputs.day }}
+  TOOLS_REF: main
 jobs:
   day:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - which: main
-            game: origin/main
-          - which: control
-            game: 9958ca2717924c1431a38f94cd9ebba3faa98411
+        which: [main, control]
     name: Pictures (${{ matrix.which }})
+    if: matrix.which == 'main' || inputs.control
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     steps:
@@ -38,11 +48,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: The game, the archive as published (its tools from TOOLS_REF), Chrome
+      - name: The game, the archive as published (its tools from TOOLS_REF), Chrome, ffmpeg
+        shell: bash
         run: |
-          git worktree add --detach "$RUNNER_TEMP/game" "${{ matrix.game }}"
-          git -C "$RUNNER_TEMP/game" log -1 --format='game: %H %s'
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
           git clone -q --depth 1 https://github.com/matthewhammer/dress-up-pictures "$RUNNER_TEMP/pics"
+          GAME="${{ inputs.game }}"
+          [ "${{ matrix.which }}" = control ] && GAME=$(python3 -c "import json; print(json.load(open('$RUNNER_TEMP/pics/days.json'))[0]['commit'])")
+          git worktree add --detach "$RUNNER_TEMP/game" "$GAME"
+          git -C "$RUNNER_TEMP/game" log -1 --format='game: %H %s'
           git -C "$RUNNER_TEMP/pics" fetch -q --depth 1 origin "$TOOLS_REF"
           git -C "$RUNNER_TEMP/pics" checkout -q FETCH_HEAD -- tools
           ls "$RUNNER_TEMP/pics/2026/10"
@@ -53,11 +67,13 @@ jobs:
           curl -sf http://127.0.0.1:9333/json/version | grep -i '"Browser"'
           ffmpeg -version | head -1
       - name: The day's pictures (archive.mjs)
+        shell: bash
         run: |
           mkdir -p out
           node "$RUNNER_TEMP/pics/tools/archive.mjs" 9333 "file://$RUNNER_TEMP/game/dress-up/index.html" \
             "$RUNNER_TEMP/pics/$DAY" "http://matthewhammer.org/dress-up-music/$DAY/index.html" | tee out/archive.txt
       - name: Their thumbnails (thumbs.mjs)
+        shell: bash
         run: node "$RUNNER_TEMP/pics/tools/thumbs.mjs" "$RUNNER_TEMP/pics/$DAY" | tail -5 | tee out/thumbs.txt
       - name: Byte for byte against the latest earlier day
         shell: bash
