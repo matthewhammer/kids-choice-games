@@ -293,6 +293,12 @@
      kinds, then the kind's tunes), as the mixing board's master strip */
   .chipset { border: 2px dashed var(--line); border-radius: 12px; padding: 6px 8px; }
   .chipset + .chipset { margin-top: 6px; }
+  /* (ticket 226) 🎶 genre/track selection, compact: each row's name at its start, its chips tighter, no dashed boxes */
+  .tunesctl > .chipset { border: 0; padding: 0; display: grid; grid-template-columns: minmax(3.6em, auto) 1fr; align-items: center; column-gap: 8px; }
+  .tunesctl > .chipset + .chipset { margin-top: 6px; }
+  .tunesctl > .chipset > .cap { margin: 0; font-size: 0.82em; line-height: 1.15; }
+  .tunesctl .row { gap: 5px; }
+  .tunesctl .row > button { padding: 3px 10px; font-size: 0.92em; border-radius: 10px; }
   /* (ticket 99) a scene's objects: small chips, many to a line */
   .row.objs { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
   .row.objs button.obj { font-size: 0.78em; padding: 0 5px; line-height: 1.5; border-radius: 9px; }

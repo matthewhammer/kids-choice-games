@@ -465,7 +465,7 @@ const TABS = [
     ["flip", "mute", ["🔊 sound on: tap to mute", "🔇 muted: tap for sound"]],
     ["note", "now", nowPlaying],
     ["transport", "where", "⏯️ where the tune is"],
-    ["tunes", "track", "🎶 the kind of music, then the tune"],
+    ["tunes", "track", "🎶 genre/track selection"],   // (ticket 226, Matthew: "reduce that long text to 'genre/track selection'")
     ["range", "volume", "🔊 volume", 0, 100, 40, 80],
     ["range", "tempo", "🏃 tempo (% of the tune's own speed)", 25, 300, 80, 130],
     ["range", "transpose", "🎹 transpose (half steps: + higher, − lower)", -24, 24, -5, 5],
@@ -1450,7 +1450,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // read apart)
     const kinds = el("div", { class: "row" }), tunes = el("div", { class: "row" });
     const tuneCap = el("div", { class: "cap" });
-    const kindBox = el("div", { class: "chipset" }, [el("div", { class: "cap" }, "kind of music"), kinds]);
+    // (ticket 226, Matthew: compact, as the music's full screen: each row's name at its start, no dashed boxes)
+    box.classList.add("tunesctl");
+    const kindBox = el("div", { class: "chipset" }, [el("div", { class: "cap" }, "genre"), kinds]);
     const tuneBox = el("div", { class: "chipset" }, [tuneCap, tunes]);
     const kindBtns = [["scene", "🏞️ the scene's own"], ...TUNE_GROUPS.map(([g, text]) => [g, text])].map(([g, text]) => {
       const b = el("button", { onclick: () => {
@@ -1471,7 +1473,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         tuneBtns = list.map(id => [id, el("button", { onclick: () => set(part, key, id) }, TUNES[id].name)]);
         tunes.replaceChildren(...tuneBtns.map(([, b]) => b));
         tuneBox.hidden = !tuneBtns.length;
-        tuneCap.textContent = tuneBtns.length ? `tunes: ${TUNE_GROUPS.find(x => x[0] === g)[1]}` : "";
+        tuneCap.textContent = tuneBtns.length ? `track (${TUNE_GROUPS.find(x => x[0] === g)[1]})` : "";
       }
       for (const [v, b] of tuneBtns) b.setAttribute("aria-pressed", v === now);
     });
