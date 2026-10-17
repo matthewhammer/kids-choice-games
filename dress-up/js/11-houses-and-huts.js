@@ -709,7 +709,9 @@ function witchroomScene(c) {
   // the door back out to the woods, in the middle, as outside: red, braced
   s += SEP + part("wroom-door", c.F, () => {
     const w = 96 * k, top = floor - 196 * k;
-    return `<g class="portal" data-to="witch"><rect x="${f1(-w / 2 - 8 * k)}" y="${f1(top - 8 * k)}" width="${f1(w + 16 * k)}" height="${f1(floor - top + 8 * k)}" fill="#2a1a12"/>` +
+    // (0.0.114, Matthew: her door no longer glowed or worked: the friend arrived in front of it, and took
+    // the pointer; they arrive to one side now, ARRIVE.witchroom; and a door, data-door, so X glows it too)
+    return `<g class="portal" data-to="witch" data-door="1"><rect x="${f1(-w / 2 - 8 * k)}" y="${f1(top - 8 * k)}" width="${f1(w + 16 * k)}" height="${f1(floor - top + 8 * k)}" fill="#2a1a12"/>` +
            `<rect x="${f1(-w / 2)}" y="${f1(top)}" width="${f1(w)}" height="${f1(floor - top)}" fill="#c0392b" stroke="#4a1410" stroke-width="${f1(3 * k)}"/>` +
            `<path d="M${P(-w / 2 + 10 * k, top + 12 * k)} L${P(w / 2 - 10 * k, floor - 12 * k)} M${P(w / 2 - 10 * k, top + 12 * k)} L${P(-w / 2 + 10 * k, floor - 12 * k)}" stroke="#4a1410" stroke-width="${f1(6 * k)}"/>` +
            `<circle cx="${f1(w / 2 - 16 * k)}" cy="${f1(floor - 92 * k)}" r="${f1(5 * k)}" fill="#f2c230"/>` +

@@ -65,7 +65,8 @@ try {
     await ev(`(() => { document.querySelector('#bg .portal[data-to="witchroom"]').dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);
     await until(`state.background.kind === "witchroom" && !entering`);
     const inside = await where();
-    ok("through it: inside her hut", inside.kind === "witchroom", inside);
+    const stand = JSON.parse(await ev(`JSON.stringify([state.background.figX, state.background.figY])`));
+    ok("through it: inside her hut, the friend to one side of her door (not in front of it)", inside.kind === "witchroom" && stand[0] <= -120, { inside, stand });
     await sleep(600);
     const out = await doorAt("witch");
     const top = out ? await ev(under(out[0], out[1])) : null;
