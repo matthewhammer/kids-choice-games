@@ -100,12 +100,14 @@ try {
   // a crossing's dead ends: no trail, no arrow, no mistake (Matthew: a crossing missing a passageway has no trail and no arrow that way)
   const dead = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldPut("0,0", "crossing"); worldEnter("0,0"); await new Promise(r => setTimeout(r, 400));
     const paths = () => document.querySelectorAll('#bg path[fill="' + CROSS_PATH + '"]').length, arrows = () => document.querySelectorAll("#bg .way-out").length;
-    const before = { paths: paths(), arrows: arrows(), mistakes: worldProblems(state.world).filter(p => p.key === "0,0").length };
+    const about = () => worldProblems(state.world).filter(p => p.key === "0,0" || p.to === "0,0").map(p => (p.dir ? "way " : "") + p.text);
+    const before = { paths: paths(), arrows: arrows(), mistakes: about() };
     state.world.cells["0,1"].ways.push("N"); changed(); await new Promise(r => setTimeout(r, 400));
-    const after = { paths: paths(), arrows: arrows(), way: [...document.querySelectorAll("#bg .way-out")].map(e => e.dataset.way).join() };
+    const after = { paths: paths(), arrows: arrows(), way: [...document.querySelectorAll("#bg .way-out")].map(e => e.dataset.way).join(), mistakes: about() };
     return JSON.stringify({ before, after }); })()`));
-  ok("a crossing at A1 meeting nothing: no trail, no arrow, no mistake", dead.before.paths === 0 && dead.before.arrows === 0 && dead.before.mistakes === 0, dead.before);
-  ok("the cemetery below given a way north: one trail and one arrow, S", dead.after.paths === 1 && dead.after.arrows === 1 && dead.after.way === "S", dead.after);
+  // (its dead ends are no mistake; that nothing reaches it is: a square no one can get to)
+  ok("a crossing at A1 meeting nothing: no trail, no arrow, and its one warning that nothing reaches it", dead.before.paths === 0 && dead.before.arrows === 0 && dead.before.mistakes.length === 1 && /can't be reached/.test(dead.before.mistakes[0]), dead.before);
+  ok("the cemetery below given a way north: one trail and one arrow, S, and no warning about A1", dead.after.paths === 1 && dead.after.arrows === 1 && dead.after.way === "S" && dead.after.mistakes.length === 0, dead.after);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

@@ -18,6 +18,8 @@ try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
+  // (a crossing off the world's grid draws every path switched on; in a square, only those that lead somewhere, world185.mjs)
+  await ev(`(() => { state.world = { ...clone(DEFAULTS.world), at: null, cells: Object.fromEntries(Object.entries(DEFAULTS.world.cells).filter(([, c]) => c.kind !== "crossing")) }; return 1; })()`);
   const paths = async on => JSON.parse(await ev(`(async () => {
     state.music.mute = true; const B = state.background; B.kind = "crossing"; B.figX = 0; B.figY = 120;
     for (const [d] of CROSS_DIRS) B["cross" + d] = ${JSON.stringify(on)}.includes(d);
@@ -49,13 +51,17 @@ try {
   // a mouse drag on the tree's trunk moves it
   const at = JSON.parse(await ev(`(() => { const e = document.querySelector('#bg [data-drag="thing:0"]'), r = e.getBoundingClientRect(); return JSON.stringify([r.left + r.width / 2, r.bottom - r.height * 0.12]); })()`));
   const before = JSON.parse(await ev(`JSON.stringify(state.background.things[0])`));
+  // (what is under the press, top first, for a failure's report)
+  const under = await ev(`(() => { const out = []; for (let e = document.elementFromPoint(${at[0]}, ${at[1]}); e && out.length < 7; e = e.parentElement)
+    out.push(e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + (e.getAttribute("class") ? "." + e.getAttribute("class").replace(/ /g, ".") : "") + (e.dataset && e.dataset.drag ? "[drag=" + e.dataset.drag + "]" : "") + (e.dataset && e.dataset.obj ? "[obj=" + e.dataset.obj + "]" : ""));
+    return out.join(" < ") + " | at " + state.world.at + ", still " + (typeof sceneryStill === "function" ? sceneryStill() : "?"); })()`);
   await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: at[0], y: at[1] });
   await send("Input.dispatchMouseEvent", { type: "mousePressed", x: at[0], y: at[1], button: "left", buttons: 1, clickCount: 1 });
   for (let i = 1; i <= 10; i++) { await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: at[0] + 12 * i, y: at[1] + 4 * i, button: "left", buttons: 1 }); await sleep(30); }
   await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: at[0] + 120, y: at[1] + 40, button: "left", buttons: 0, clickCount: 1 });
   await sleep(300);
   const after = JSON.parse(await ev(`JSON.stringify(state.background.things[0])`));
-  ok("a drag moves the tree (right, and nearer)", after.x > before.x + 20 && after.z > before.z + 5, { before, after });
+  ok("a drag moves the tree (right, and nearer)", after.x > before.x + 20 && after.z > before.z + 5, { before, after, under });
   const fig = JSON.parse(await ev(`JSON.stringify([state.background.figX, state.background.figY])`));
   ok("and not the friend", fig[0] === 0 && fig[1] === 120, fig);
   // off in the distance: each backdrop its own (woods: shafts of light; sky: far woods under the sun; mountains: far pines below peaks)
