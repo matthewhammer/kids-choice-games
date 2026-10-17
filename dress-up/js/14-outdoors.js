@@ -1073,6 +1073,8 @@ const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, 
 // to 1 (past the frame's foot): its middle, its height and half its width
 // (for their drawings, and for a friend wading in them: WATER, ticket 122)
 const beachLines = ({ g, k }) => ({ sea: g - 170 * k, shore: g - 55 * k });
+// (ticket 186) open water's horizon: higher than the beach's, all the rest sea
+const seaHorizon = ({ g, k }) => g - 230 * k;
 const brookAt = ({ W, g, k, y1 }) => t => { const y = g - 62 * k + t * (y1 + 40 * k - (g - 62 * k));
   return [W * (0.2 + 0.2 * t) + W * 0.05 * Math.sin(t * Math.PI * 1.6), y, (8 + 70 * t * t) * k]; };
 // (ticket 50) seats in the places backgroundSvg draws itself, as it draws

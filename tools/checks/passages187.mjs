@@ -28,7 +28,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   // every passage in the clearing, and at each one's spot: it is the one, and nothing else glows bright
-  const clearing = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,2"); await settle();
+  const clearing = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3"); await settle();
     const kinds = marks.pics.map(p => p.kind), out = [];
     // (it, or one just as near: two passages can end at one spot, as the clearing's old front path and its nav arrow S)
     for (const p of marks.pics.filter(p => p.spot)) { await feetAt(p.spot); const t = enterTarget(), all = passesNear(Infinity), nOf = q => (all.find(e => e.p.el === q.el) || { n: Infinity }).n;   // (by element: the list is measured afresh as the friend moves)
@@ -40,14 +40,14 @@ try {
   const dimSeen = clearing.out.some(o => o.dim > 0);
   console.log(`  (dim glows seen at ${clearing.out.filter(o => o.dim > 0).length} of ${clearing.out.length} spots)`);
   // Enter takes the one that glows: the clearing's sign to the wood path
-  const sign = JSON.parse(await ev(`(async () => { ${H} worldEnter("3,2"); await settle(); const p = marks.pics.find(p => p.el.dataset.to === "woodpath" && p.kind === "sign");
+  const sign = JSON.parse(await ev(`(async () => { ${H} worldEnter("3,3"); await settle(); const p = marks.pics.find(p => p.el.dataset.to === "woodpath" && p.kind === "sign");
     if (!p) return JSON.stringify({ none: marks.pics.map(p => p.kind + ":" + (p.el.dataset.to || "")) });
     await feetAt(p.spot); const aimed = enterTarget() && enterTarget().el === p.el;
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
     const took = await until(() => B.kind === "woodpath" && !entering); return JSON.stringify({ kind: p.kind, aimed, took, now: B.kind }); })()`));
   ok("the clearing's sign to the wood path: aimed from its foot, and Enter takes it", sign.aimed && sign.took !== null, sign);
   // a tree house's ladder: X at its foot climbs it, at ⬆'s pace, and goes in
-  const tree = JSON.parse(await ev(`(async () => { ${H} worldEnter("4,3"); await settle(); const p = marks.pics.find(p => p.kind === "ladder");
+  const tree = JSON.parse(await ev(`(async () => { ${H} worldEnter("4,4"); await settle(); const p = marks.pics.find(p => p.kind === "ladder");
     if (!p) return JSON.stringify({ none: marks.pics.map(p => p.kind) });
     await feetAt(p.spot); const aimed = enterTarget() && enterTarget().el === p.el; const t0 = performance.now(); enterPicture();
     const took = await until(() => B.kind === "treeroom" && !entering, 12000); return JSON.stringify({ aimed, took, now: B.kind }); })()`));
@@ -60,11 +60,11 @@ try {
     const took = await until(() => (B.castleRoom !== from || B.kind !== "castleroom") && !entering, 12000); return JSON.stringify({ aimed, took, room: B.castleRoom, kind: B.kind }); })()`));
   ok("the dungeon's trapdoor ladder: aimed from its foot; X climbs it and goes through, within 6 s", trap.aimed && trap.took !== null && trap.took < 6000, trap);
   // the 🚪 button from the middle of the clearing: the nearest passage, walked to
-  const door = JSON.parse(await ev(`(async () => { ${H} worldEnter("3,2"); B.figX = 0; B.figY = 0; await settle(); const from = B.kind; padDoor();
+  const door = JSON.parse(await ev(`(async () => { ${H} worldEnter("3,3"); B.figX = 0; B.figY = 0; await settle(); const from = B.kind; padDoor();
     const took = await until(() => (B.kind !== from) && !entering, 9000); return JSON.stringify({ took, now: B.kind, at: state.world.at }); })()`));
   ok("the 🚪 button from the middle of the clearing: through the nearest passage", door.took !== null, door);
   // a click through the witch's fence, onto her hut behind it
-  const spot = JSON.parse(await ev(`(async () => { ${H} worldEnter("1,0"); B.figX = -300; B.figY = 60; await settle(); const d = document.querySelector('#bg .portal[data-to="witchroom"]');
+  const spot = JSON.parse(await ev(`(async () => { ${H} worldEnter("1,1"); B.figX = -300; B.figY = 60; await settle(); const d = document.querySelector('#bg .portal[data-to="witchroom"]');
     const s = d.querySelector("rect, path, polygon") || d, r = s.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, u = document.elementFromPoint(x, y);
     return JSON.stringify({ x, y, onIt: !!u && d.contains(u), what: u ? u.tagName + (u.closest("[data-obj]") ? "/" + u.closest("[data-obj]").dataset.obj : "") : null }); })()`));
   if (spot.x) {

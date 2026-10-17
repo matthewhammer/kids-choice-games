@@ -275,6 +275,8 @@ const WATER = {
   // the lake, from its far shore to its near one, but for the little beach
   lake: c => { const { horizon, shore } = lakeLines(c), [a, q, b] = lakeBeach(c, shore);
     return (x, y) => y > horizon && y < landY(c, shore, 5, 1.1, x) && y < (bowY(a, q, b, x) ?? Infinity); },
+  // (ticket 186) open water: all of it, from the horizon down
+  sea: c => { const hz = seaHorizon(c); return (x, y) => y > hz; },
   // the sea, from the horizon to the sand (the foam at its edge is sea too)
   beach: c => { const { sea, shore } = beachLines(c); return (x, y) => y > sea && y < landY(c, shore + 4 * c.k, 6, 1.4, x); },
   // the falls' pool, but where the near bank covers it

@@ -186,22 +186,22 @@
  },
  {
   "name": "world-design-tab-mistakes",
-  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); delete state.world.cells[\"2,1\"]; state.world.cells[\"4,0\"] = { kind: \"crossing\", crossN: true, crossS: true, crossW: true, crossThings: [] }; tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); changed(); await new Promise(r => setTimeout(r, 500));",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); delete state.world.cells[\"2,2\"]; state.world.cells[\"4,1\"] = { kind: \"crossing\", crossN: true, crossS: true, crossW: true, crossThings: [] }; tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); changed(); await new Promise(r => setTimeout(r, 500));",
   "wait": 500
  },
  {
   "name": "world-ways-clearing",
-  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"3,2\"); await new Promise(r => setTimeout(r, 600));",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"3,3\"); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
  },
  {
   "name": "world-ways-crossing-with-things",
-  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); state.world.cells[\"1,2\"].things = [{ kind: \"tree\", x: -300, z: 345, seed: 77, size: 100, leaves: \"autumn\" }, { kind: \"rock\", x: 200, z: 390, seed: 78, size: 100, tone: \"#c2a67a\" }]; worldEnter(\"1,2\"); await new Promise(r => setTimeout(r, 600));",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); state.world.cells[\"1,3\"].things = [{ kind: \"tree\", x: -300, z: 345, seed: 77, size: 100, leaves: \"autumn\" }, { kind: \"rock\", x: 200, z: 390, seed: 78, size: 100, tone: \"#c2a67a\" }]; worldEnter(\"1,3\"); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
  },
  {
   "name": "world-design-v2",
-  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"2,2\"); tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); changed(); await new Promise(r => setTimeout(r, 600));",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"2,3\"); tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); changed(); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
  },
  {
@@ -221,7 +221,12 @@
  },
  {
   "name": "library-every-thing",
-  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"3,2\"); const B = state.background; B.figX = 0; B.figY = 20; const kinds = Object.keys(THING_KINDS); B.things = kinds.map((kind, i) => ({ kind, x: -360 + (i % 7) * 120, z: i < 7 ? 300 : 395, seed: 11 + i, size: 100, ...structuredClone(THING_DEFAULTS[kind] || {}) })); changed(); await new Promise(r => setTimeout(r, 900));",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"3,3\"); const B = state.background; B.figX = 0; B.figY = 20; const kinds = Object.keys(THING_KINDS); B.things = kinds.map((kind, i) => ({ kind, x: -360 + (i % 7) * 120, z: i < 7 ? 300 : 395, seed: 11 + i, size: 100, ...structuredClone(THING_DEFAULTS[kind] || {}) })); changed(); await new Promise(r => setTimeout(r, 900));",
   "wait": 900
+ },
+ {
+  "name": "open-water",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"2,0\"); const B = state.background; B.figX = 60; B.figY = 40; changed(); await new Promise(r => setTimeout(r, 700));",
+  "wait": 700
  }
 ]

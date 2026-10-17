@@ -33,6 +33,13 @@ const WORLD_NO_WAY = { waterfall: ["N"] };
 const WORLD_UNNATURAL = { beach: ["N", "NE", "NW"], castle: ["N"], house: ["N"], woodpath: ["NE", "NW", "SE", "SW"] };
 const worldNoWay = (kind, d) => (WORLD_NO_WAY[kind] || []).includes(d);
 const worldNatural = (kind, d) => !worldNoWay(kind, d) && !(WORLD_UNNATURAL[kind] || []).includes(d);
+// (ticket 186) open water meets open water, and the beach's sea side (its N and corners), nothing else
+const SEA_SIDE = ["N", "NE", "NW"];
+function worldNaturalPair(a, d, b) {
+  if (worldNoWay(a, d) || worldNoWay(b, WORLD_OPP[d])) return false;
+  if (a === "sea" || b === "sea") return (a === "sea" && b === "sea") || (a === "beach" && SEA_SIDE.includes(d)) || (b === "beach" && SEA_SIDE.includes(WORLD_OPP[d]));
+  return worldNatural(a, d) && worldNatural(b, WORLD_OPP[d]);
+}
 const worldWays = cell => !cell ? [] : (cell.kind === "crossing" ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : (cell.ways || [])).filter(d => !worldNoWay(cell.kind, d));
 // (Matthew, 2026-10-17: a crossing missing a passageway has no trail and no
 // arrow that way) A forest crossing in the world shows only the paths that
@@ -93,7 +100,7 @@ function worldJoinAll(W) {
     if (INSIDE_KINDS.has(a.kind)) continue;
     for (const d of order) {
       const nb = worldNeighbour(W, key, d), b = W.cells[nb.key];
-      if (nb.off || !b || INSIDE_KINDS.has(b.kind) || !worldNatural(a.kind, d) || !worldNatural(b.kind, WORLD_OPP[d]) || worldWays(a).includes(d)) continue;
+      if (nb.off || !b || INSIDE_KINDS.has(b.kind) || !worldNaturalPair(a.kind, d, b.kind) || worldWays(a).includes(d)) continue;
       if (a.kind === "crossing") a["cross" + d] = true;
       else a.ways = order.filter(x => x === d || worldWays(a).includes(x));
       added++;

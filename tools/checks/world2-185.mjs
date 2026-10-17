@@ -48,34 +48,34 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1400, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   await ev(`(async () => { state.music.mute = true; state.world = clone(DEFAULTS.world); state.background.kind = "clearing"; state.world.at = null; changed(); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await new Promise(r => setTimeout(r, 400)); return 1; })()`);
-  // a crossing from the palette onto E1 (4,0), empty
+  // a crossing from the palette onto E2 (4,0), empty
   const chip = await ev(`(() => { const c = [...document.querySelectorAll(".world-palette .world-chip")].find(b => /forest crossing/.test(b.textContent)); c.id = "chip-crossing"; return 1; })()`);
-  await dragSel("the crossing chip onto E1", "#chip-crossing", '.world-grid [data-square="4,0"]');
+  await dragSel("the crossing chip onto E2", "#chip-crossing", '.world-grid [data-square="4,1"]');
   let W = await world();
-  ok("a forest crossing dragged from the palette onto E1", W.cells["4,0"] === "crossing", W.cells);
-  await dragSel("E1 onto A1", '.world-grid [data-square="4,0"]', '.world-grid [data-square="0,0"]');
+  ok("a forest crossing dragged from the palette onto E2", W.cells["4,1"] === "crossing", W.cells);
+  await dragSel("E2 onto A2", '.world-grid [data-square="4,1"]', '.world-grid [data-square="0,1"]');
   W = await world();
-  ok("dragged from E1 to A1", W.cells["0,0"] === "crossing" && !W.cells["4,0"], W.cells);
-  await dragSel("A1 onto 🗑️", '.world-grid [data-square="0,0"]', ".world-trash");
+  ok("dragged from E2 to A2", W.cells["0,1"] === "crossing" && !W.cells["4,1"], W.cells);
+  await dragSel("A2 onto 🗑️", '.world-grid [data-square="0,1"]', ".world-trash");
   W = await world();
-  ok("and onto 🗑️: gone", !W.cells["0,0"] && Object.keys(W.cells).length === 18, Object.keys(W.cells).length);
+  ok("and onto 🗑️: gone", !W.cells["0,1"] && Object.keys(W.cells).length === 23, Object.keys(W.cells).length);
   const sizes = await ev(`(async () => { const b = [...document.querySelectorAll("#panel button, button")].filter(x => /column/.test(x.textContent)); b.find(x => /＋/.test(x.textContent)).click(); await new Promise(r => setTimeout(r, 200)); const wide = state.world.cols;
     [...document.querySelectorAll("button")].find(x => /－ column/.test(x.textContent)).click(); await new Promise(r => setTimeout(r, 200)); return JSON.stringify([wide, state.world.cols]); })()`);
   ok("＋ column, then － column", JSON.parse(sizes).join() === "6,5", sizes);
   // into the clearing's square, its way NE off and on
-  await click('.world-grid [data-square="3,2"]');
+  await click('.world-grid [data-square="3,3"]');
   W = await world();
-  ok("a tap on D3 goes to the clearing", W.at === "3,2", W.at);
+  ok("a tap on D4 goes to the clearing", W.at === "3,3", W.at);
   await click('.world-here button[title="NE"]');
   W = await world();
   ok("its way NE off: the fairy forest's way back has nothing to meet", W.problems.some(t => /fairy forest/.test(t) && /no way back|meets/.test(t)), W.problems);
   await click('.world-here button[title="NE"]');
   W = await world();
   ok("and on again: no mistakes", W.problems.length === 0, W.problems);
-  await click('.world-grid [data-square="4,2"]');
+  await click('.world-grid [data-square="4,3"]');
   await ev(`(() => { [...document.querySelectorAll(".world-here button")].find(b => /start here/.test(b.textContent)).click(); return 1; })()`); await sleep(300);
   W = await world();
-  ok("🏁 start here, in the castle's square (E3)", W.start === "4,2", W.start);
+  ok("🏁 start here, in the castle's square (E4)", W.start === "4,3", W.start);
   // a rock from the things palette into the picture
   const seen = async () => JSON.parse(await ev(`JSON.stringify({ kind: state.background.kind, at: state.world.at, entering, things: (state.background.things || []).map(t => t.kind), cell: ((state.world.cells[state.world.at] || {}).things || []).map(t => t.kind) })`));
   const rocks = await ev(`(() => { const all = [...document.querySelectorAll("button")].filter(x => /^\\+ 🪨 rock/.test(x.textContent)), b = all.find(x => x.offsetParent); if (b) b.id = "add-rock"; return all.length + " found, " + all.filter(x => x.offsetParent).length + " shown"; })()`);
@@ -93,7 +93,7 @@ try {
   await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: tc[0], y: tc[1], button: "left", buttons: 0, clickCount: 1 }); await sleep(400);
   W = await world();
   ok("a tree tapped in", W.things.some(t => t[0] === "tree"), { things: W.things, press: te, now: await seen() });
-  const kept = await ev(`JSON.stringify((state.world.cells["4,2"].things || []).map(t => t.kind))`);
+  const kept = await ev(`JSON.stringify((state.world.cells["4,3"].things || []).map(t => t.kind))`);
   ok("and both kept in the castle's square", JSON.parse(kept).includes("rock") && JSON.parse(kept).includes("tree"), kept);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

@@ -19,7 +19,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // friend saves which it was sized in, figUnit; see upgradeFigSize.)
 // (ticket 50) where people can sit, per place: see seatsHere
 const SEATS = {};
-const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
+const SCENE_FIG = { forest: 0.45, underwater: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
@@ -286,7 +286,7 @@ const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa"
 // tree house south-east, the camp and the waterfall south-west; forest
 // crossings between; the friend starting at the clearing; the insides off
 // the grid.
-const WORLD_DEFAULT = {"cols": 5, "rows": 5, "start": "3,2", "cells": {"1,0": {"kind": "witch", "ways": ["E", "S"], "things": []}, "2,0": {"kind": "beach", "ways": ["E", "S", "W"], "things": []}, "3,0": {"kind": "mountains", "ways": ["S", "W"], "things": []}, "0,1": {"kind": "cemetery", "ways": ["E", "S"], "things": []}, "1,1": {"kind": "forest", "ways": ["N", "E", "S", "W"], "things": []}, "2,1": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossFloor": "#76843a", "crossBack": "sky", "things": []}, "3,1": {"kind": "woodpath", "ways": ["N", "S", "W"], "things": []}, "4,1": {"kind": "fairyforest", "ways": ["SW"], "things": []}, "0,2": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": false, "crossW": false, "crossNW": false, "crossFloor": "#76843a", "crossBack": "woods", "things": []}, "1,2": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossFloor": "#76843a", "crossBack": "mountains", "things": []}, "2,2": {"kind": "lake", "ways": ["N", "E", "S", "W"], "things": []}, "3,2": {"kind": "clearing", "ways": ["N", "NE", "E", "S", "W"], "things": []}, "4,2": {"kind": "castle", "ways": ["S", "W"], "things": []}, "1,3": {"kind": "campsite", "ways": ["N", "E"], "things": []}, "2,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": true, "crossW": true, "crossNW": false, "crossFloor": "#76843a", "crossBack": "sky", "things": []}, "3,3": {"kind": "house", "ways": ["N", "E", "W"], "things": []}, "4,3": {"kind": "treehouse", "ways": ["N", "W"], "things": []}, "1,4": {"kind": "waterfall", "ways": ["NE"], "things": []}}};
+const WORLD_DEFAULT = {"cols": 5, "rows": 6, "start": "3,3", "cells": {"0,0": {"kind": "sea", "ways": ["E"], "things": []}, "1,0": {"kind": "sea", "ways": ["E", "W"], "things": []}, "2,0": {"kind": "sea", "ways": ["E", "S", "W"], "things": []}, "3,0": {"kind": "sea", "ways": ["E", "W"], "things": []}, "4,0": {"kind": "sea", "ways": ["W"], "things": []}, "1,1": {"kind": "witch", "ways": ["E", "S"], "things": []}, "2,1": {"kind": "beach", "ways": ["N", "E", "S", "W"], "things": []}, "3,1": {"kind": "mountains", "ways": ["S", "W"], "things": []}, "0,2": {"kind": "cemetery", "ways": ["E", "S"], "things": []}, "1,2": {"kind": "forest", "ways": ["N", "E", "S", "W"], "things": []}, "2,2": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossFloor": "#76843a", "crossBack": "sky", "things": []}, "3,2": {"kind": "woodpath", "ways": ["N", "S", "W"], "things": []}, "4,2": {"kind": "fairyforest", "ways": ["SW"], "things": []}, "0,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": false, "crossW": false, "crossNW": false, "crossFloor": "#76843a", "crossBack": "woods", "things": []}, "1,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossFloor": "#76843a", "crossBack": "mountains", "things": []}, "2,3": {"kind": "lake", "ways": ["N", "E", "S", "W"], "things": []}, "3,3": {"kind": "clearing", "ways": ["N", "NE", "E", "S", "W"], "things": []}, "4,3": {"kind": "castle", "ways": ["S", "W"], "things": []}, "1,4": {"kind": "campsite", "ways": ["N", "E"], "things": []}, "2,4": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": true, "crossW": true, "crossNW": false, "crossFloor": "#76843a", "crossBack": "sky", "things": []}, "3,4": {"kind": "house", "ways": ["N", "E", "W"], "things": []}, "4,4": {"kind": "treehouse", "ways": ["N", "W"], "things": []}, "1,5": {"kind": "waterfall", "ways": ["NE"], "things": []}}};
 const DEFAULTS = {
   world: WORLD_DEFAULT,
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
@@ -441,9 +441,16 @@ function upgradeInside(bg, saved) {
 // again since 0.0.103 (the pond in the middle, the beach on the top edge)
 const WORLD_FIRST_LAYOUT = {"2,0":"mountains","0,1":"witch","1,1":"cemetery","2,1":"woodpath","3,1":"fairyforest","0,2":"forest","1,2":"crossing","2,2":"clearing",
                             "3,2":"castle","0,3":"lake","1,3":"crossing","2,3":"crossing","3,3":"house","4,3":"treehouse","0,4":"beach","2,4":"waterfall","3,4":"campsite"};
-// (ticket 195) and the first world as 0.0.103 to 0.0.122 laid it out, untouched: its waterfall's
-// only way was N, which is now the waterfall itself; it goes NE to the forest crossing (C4) instead
-const WORLD_DEFAULT_0103 = (() => { const W = structuredClone(WORLD_DEFAULT); W.cells["1,4"].ways = ["N"]; W.cells["1,3"].ways = ["N", "E", "S"]; W.cells["2,3"].crossSW = false; return W; })();
+// (ticket 186) the first world as 0.0.123 laid it out: today's without its top row of open water
+// (each square a row up), the beach with no way N
+const rowBy = (key, by) => key && key.replace(/,(\d+)$/, (_, r) => "," + (+r + by));
+const WORLD_DEFAULT_0123 = (() => { const W = structuredClone(WORLD_DEFAULT), cells = {};
+  for (const [k, c] of Object.entries(W.cells)) if (!/,0$/.test(k)) cells[rowBy(k, -1)] = c;
+  cells["2,0"].ways = cells["2,0"].ways.filter(d => d !== "N");
+  return { ...W, rows: W.rows - 1, start: rowBy(W.start, -1), cells }; })();
+// (ticket 195) and as 0.0.103 to 0.0.122 laid it out: its waterfall's only way was N, which is now
+// the waterfall itself; it goes NE to the forest crossing (C4, now C5) instead
+const WORLD_DEFAULT_0103 = (() => { const W = structuredClone(WORLD_DEFAULT_0123); W.cells["1,4"].ways = ["N"]; W.cells["1,3"].ways = ["N", "E", "S"]; W.cells["2,3"].crossSW = false; return W; })();
 const rawWays = c => c.kind === "crossing" ? ["N", "NE", "E", "SE", "S", "SW", "W", "NW"].filter(d => c["cross" + d]) : (c.ways || []);
 const sameWorld = (C, D) => Object.keys(C).length === Object.keys(D).length && Object.keys(D).every(k => C[k] && C[k].kind === D[k].kind &&
   rawWays(C[k]).join() === rawWays(D[k]).join() && !(C[k].things || []).length && !C[k].name);
@@ -451,7 +458,7 @@ function upgradeWorld(next) {
   const W = next.world, C = (W && W.cells) || {}, keys = Object.keys(C);
   if (keys.length === Object.keys(WORLD_FIRST_LAYOUT).length && keys.every(k => WORLD_FIRST_LAYOUT[k] === C[k].kind) && keys.every(k => !(C[k].things || C[k].crossThings || []).length))
     next.world = clone(WORLD_DEFAULT);
-  else if (sameWorld(C, WORLD_DEFAULT_0103.cells)) next.world = { ...clone(WORLD_DEFAULT), at: W.at, start: W.start };
+  else if (sameWorld(C, WORLD_DEFAULT_0103.cells) || sameWorld(C, WORLD_DEFAULT_0123.cells)) next.world = { ...clone(WORLD_DEFAULT), at: rowBy(W.at, 1), start: rowBy(W.start, 1) };
 }
 // (ticket 185) the things put in a place: since 0.0.100 every place's, as
 // things; in 0.0.98 and 0.0.99 only a forest crossing had them, as crossThings

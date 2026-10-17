@@ -519,6 +519,34 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       const cx = Math.max(W * 0.32, 180 * k), b = g + 55 * k;
       s += obj("cauldron", b, witchCauldronSvg(cx, b, k, opts, y0 - 80 * k));
     }
+  } else if (kind === "sea") {
+    // (ticket 186, Matthew) open water, beyond the beach: the sky, the sea to
+    // the horizon all round, the friend swimming; far off a sail and an
+    // island; waves smaller and closer together toward the horizon. Still,
+    // nothing moving but the friend (60 frames a second first)
+    const hz = seaHorizon({ g, k });
+    s += `<defs>${grad("bg-sea-sky", "#5fbdf2", "#d6f0ff", y0, hz)}${grad("bg-sea", "#2a9fd6", "#0f5e8e", hz, y1)}</defs>` + all("url(#bg-sea-sky)");
+    const sx = x1 - W * 0.2, sy = y0 + H * 0.15;
+    s += [...Array(12)].map((_, i) => { const a = i * Math.PI / 6;
+      return `<line x1="${f1(sx + 58 * k * Math.cos(a))}" y1="${f1(sy + 58 * k * Math.sin(a))}" x2="${f1(sx + 82 * k * Math.cos(a))}" y2="${f1(sy + 82 * k * Math.sin(a))}" ` +
+             `stroke="#ffd23f" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`; }).join("") +
+         `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(46 * k)}" fill="#ffd23f"/>`;
+    // the island, low on the horizon at the left, and a sail at the right
+    s += `<path d="M${P(x0 + W * 0.12, hz)} Q${P(x0 + W * 0.2, hz - 34 * k)} ${P(x0 + W * 0.27, hz - 22 * k)} Q${P(x0 + W * 0.31, hz - 30 * k)} ${P(x0 + W * 0.36, hz)} Z" fill="#4f8a4b"/>` +
+         `<path d="M${P(x0 + W * 0.25, hz - 22 * k)} l${f1(0)} ${f1(-26 * k)} M${P(x0 + W * 0.25, hz - 48 * k)} q${f1(-14 * k)} ${f1(2 * k)} ${f1(-20 * k)} ${f1(10 * k)} M${P(x0 + W * 0.25, hz - 48 * k)} q${f1(14 * k)} ${f1(2 * k)} ${f1(20 * k)} ${f1(10 * k)}" stroke="#2e6b2c" stroke-width="${f1(3 * k)}" fill="none"/>`;
+    const bx = x1 - W * 0.3, by = hz - 4 * k;
+    s += `<path d="M${P(bx - 16 * k, by)} L${P(bx + 16 * k, by)} L${P(bx + 11 * k, by + 6 * k)} L${P(bx - 11 * k, by + 6 * k)} Z" fill="#7a4b28"/>` +
+         `<path d="M${P(bx, by - 2 * k)} L${P(bx, by - 40 * k)} L${P(bx + 18 * k, by - 6 * k)} Z" fill="#ffffff"/>`;
+    // the sea, and its waves: rows of little arcs, nearer ones bigger and further apart
+    s += `<rect x="${f1(x0 - pad)}" y="${f1(hz)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - hz + pad)}" fill="url(#bg-sea)"/>` +
+         `<line x1="${f1(x0 - pad)}" y1="${f1(hz)}" x2="${f1(x1 + pad)}" y2="${f1(hz)}" stroke="#e8f6ff" stroke-width="${f1(1.5 * k)}" opacity="0.7"/>`;
+    for (let i = 0; i < 46; i++) {
+      const t = R(i, 61), y = hz + (y1 - hz + 20 * k) * t * t + 4 * k, x = x0 + W * R(i, 62), w = (5 + 22 * t) * k;
+      s += `<path d="M${P(x - w, y)} Q${P(x - w / 2, y - w * 0.35)} ${P(x, y)} Q${P(x + w / 2, y - w * 0.35)} ${P(x + w, y)}" fill="none" stroke="#ffffff" stroke-width="${f1((1 + 2 * t) * k)}" opacity="${(0.45 + 0.35 * t).toFixed(2)}"/>`;
+    }
+    // the sun's glitter on the water below it
+    for (let i = 0; i < 10; i++) { const y = hz + (8 + i * 9) * k * (1 + i * 0.25), w = (14 + i * 4) * k * R(i, 63);
+      s += `<line x1="${f1(sx - w)}" y1="${f1(y)}" x2="${f1(sx + w)}" y2="${f1(y)}" stroke="#fff6c8" stroke-width="${f1(2.5 * k)}" stroke-linecap="round" opacity="0.6"/>`; }
   } else if (kind === "beach") {
     const { sea, shore } = beachLines({ g, k });
     s += `<defs>${grad("bg-sky", "#5fbdf2", "#d6f0ff", y0, sea)}${grad("bg-ocean", "#1f86c4", "#4cc0e6", sea, shore)}</defs>` + all("url(#bg-sky)");

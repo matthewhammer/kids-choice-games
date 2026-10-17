@@ -30,14 +30,14 @@ try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
-  // a potion in the clearing (D3)
-  await ev(`(async () => { state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,2");
+  // a potion in the clearing (D4)
+  await ev(`(async () => { state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3");
     state.background.things = [{ kind: "potion", x: 60, z: 370, seed: 1, size: 100, shape: "flask", color: "#e53935" }]; changed(); await new Promise(r => setTimeout(r, 500)); return 1; })()`);
   // into the healer's hut by the clearing's own doorway
   await ev(`(() => { const d = document.querySelector('#bg .portal[data-to="healerroom"]'); d.dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);
   await until(`state.background.kind === "healerroom" && !entering`);
   let W = await where();
-  ok("through the clearing's own doorway into the healer's hut: the potion stays in the clearing", W.kind === "healerroom" && W.things.length === 0 && W.at === "3,2", W);
+  ok("through the clearing's own doorway into the healer's hut: the potion stays in the clearing", W.kind === "healerroom" && W.things.length === 0 && W.at === "3,3", W);
   await ev(`(async () => { state.background.things = [{ kind: "bush", x: -100, z: 380, seed: 2, size: 100 }]; changed(); await new Promise(r => setTimeout(r, 300)); return 1; })()`);
   W = await where();
   ok("a bush put in the hut is kept as the hut's, off the grid", W.off.healerroom && W.off.healerroom.join() === "bush", W);
@@ -46,18 +46,18 @@ try {
   await until(`state.background.kind === "clearing" && !entering`);
   W = await where();
   ok("back to the clearing by the back chip: its potion, not the hut's bush", W.kind === "clearing" && W.things.join() === "potion", W);
-  // by the clearing's own sign to the wood path, the square beside it (D2)
+  // by the clearing's own sign to the wood path, the square beside it (D3)
   await ev(`(() => { const d = document.querySelector('#bg .portal[data-to="woodpath"]'); d.dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);
   await until(`state.background.kind === "woodpath" && !entering`);
   W = await where();
-  ok("by the clearing's own sign to the wood path: its square, D2, with nothing in it", W.kind === "woodpath" && W.at === "3,1" && W.things.length === 0, W);
+  ok("by the clearing's own sign to the wood path: its square, D3, with nothing in it", W.kind === "woodpath" && W.at === "3,2" && W.things.length === 0, W);
   // and the hut again, its bush still there
-  await ev(`(async () => { worldEnter("3,2"); await new Promise(r => setTimeout(r, 300)); const d = document.querySelector('#bg .portal[data-to="healerroom"]'); d.dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);
+  await ev(`(async () => { worldEnter("3,3"); await new Promise(r => setTimeout(r, 300)); const d = document.querySelector('#bg .portal[data-to="healerroom"]'); d.dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);
   await until(`state.background.kind === "healerroom" && !entering`);
   W = await where();
   ok("the healer's hut again: its bush", W.kind === "healerroom" && W.things.join() === "bush", W);
-  // the witch's hut door, with a real mouse: in from her woods (B1), and out again
-  await ev(`(async () => { worldEnter("1,0"); await new Promise(r => setTimeout(r, 500)); return 1; })()`);
+  // the witch's hut door, with a real mouse: in from her woods (B2), and out again
+  await ev(`(async () => { worldEnter("1,1"); await new Promise(r => setTimeout(r, 500)); return 1; })()`);
   const inDoor = await doorAt("witchroom");
   ok("her woods have a door into her hut", !!inDoor, inDoor);
   if (inDoor) {

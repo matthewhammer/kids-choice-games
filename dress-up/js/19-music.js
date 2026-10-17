@@ -1077,7 +1077,7 @@ const TUNES = {
   }) },
 };
 // each background's own tune
-const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", witch: "witch", cemetery: "cemetery",
+const SCENE_TUNE = { forest: "forest", underwater: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
                      tent: "lullaby", cave: "steppers", woodpath: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom" };
