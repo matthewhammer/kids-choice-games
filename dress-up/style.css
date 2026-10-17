@@ -143,6 +143,8 @@
   .ctl > .lbl .val { color: var(--muted); font-weight: 400; }
   .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .row button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  /* (0.0.139) ♿'s chips say only what they are: lit while on */
+  #panel[data-part=access] button.flip[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   /* a menu for each hand, mirrored about a line down the middle */
   .ctl.pair:not([hidden]) { display: flex; }
   .pair > .side { flex: 1 1 0; min-width: 0; }
@@ -488,6 +490,7 @@
 /* (ticket 217) ♿ the collision boxes: the solids red, a castle room's walls amber, the floor's back limit violet */
 .solid-boxes { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .solid-boxes polygon { fill: rgba(239, 68, 68, 0.2); stroke: #ef4444; stroke-width: 2; stroke-dasharray: 6 4; }
+.solid-boxes polygon.face { fill: rgba(239, 68, 68, 0.08); stroke-width: 1.5; stroke-dasharray: 3 4; }
 .solid-boxes .wall { fill: none; stroke: #f59e0b; stroke-width: 3; stroke-dasharray: 8 5; }
 .solid-boxes .back { fill: none; stroke: #a855f7; stroke-width: 2; stroke-dasharray: 4 6; }
 .solid-boxes text { font: 600 11px sans-serif; fill: #fff; paint-order: stroke; stroke: #7f1d1d; stroke-width: 3px; }
