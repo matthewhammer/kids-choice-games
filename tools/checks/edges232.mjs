@@ -41,7 +41,8 @@ try {
     state.world = clone(DEFAULTS.world); worldPut("0,0", "crossing"); const cr = W().cells["0,0"]; cr.crossN = true; cr.crossW = true; worldTrimEdges(W());
     out.crossing = { N: cr.crossN, W: cr.crossW, warn: offWarn().length };
     return JSON.stringify(out); })()`));
-  ok("E6's fairy forest, put on the grid: none of its ways off the edge, and no warning of one", r.put.off.length === 0 && r.put.warn.length === 0 && r.put.ways.length > 0, r.put);
+  // (its usual way is SW alone, which leaves the grid from E6: it keeps none, and is a square nothing reaches, not a way off the map)
+  ok("E6's fairy forest, put on the grid: none of its ways off the edge, and no warning of one", r.put.off.length === 0 && r.put.warn.length === 0, r.put);
   ok("(its usual ways had some that would have gone off there)", r.usual.some(d => ["SW", "S", "SE", "E", "NE"].includes(d)), r.usual);
   ok("the castle moved into the bottom left corner: none of its ways off the edge", r.moved.kind === "castle" && r.moved.off.length === 0, r.moved);
   ok("a way east into a new column, the column taken away again: the way is gone with it", r.wide.cols === 6 && r.wide.off.length === 0 && r.narrow.cols === 5 && !r.narrow.ways.includes("E") && r.narrow.off.length === 0, { wide: r.wide, narrow: r.narrow });
