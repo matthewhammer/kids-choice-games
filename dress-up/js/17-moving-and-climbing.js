@@ -257,7 +257,8 @@ const passDims = new Map();   // (the dimmer glows: passage element -> its glow)
 // walking, or swimming, to it first)
 let hoverPass = null;
 function passUnderPointer(e) {
-  if (marks.text !== bgShown.text || !e.target || !e.target.closest || e.target.closest("#figure, [data-drag]")) return null;
+  // (not over the friend, or a thing put in the place: those are for dragging; a place's own movable scenery is no matter)
+  if (marks.text !== bgShown.text || !e.target || !e.target.closest || e.target.closest("#figure, [data-drag^='thing:']")) return null;
   const P = pic.getScreenCTM();
   if (!P) return null;
   let best = null;

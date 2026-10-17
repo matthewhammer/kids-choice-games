@@ -289,7 +289,7 @@ pic.addEventListener("pointermove", e => {
 pic.parentNode.addEventListener("pointerleave", () => { if (hoverPass) { hoverPass = null; showEnterGlow(); } });
 pic.addEventListener("click", e => {
   // (ticket 199: the one under the pointer, even far off: walked or swum to, and gone through)
-  if (hoverPass && !entering && e.target.closest && !e.target.closest("#figure, [data-drag]")) {
+  if (hoverPass && !entering && e.target.closest && !e.target.closest("#figure, [data-drag^='thing:']")) {
     const h = marks.pics.find(q => q.el === hoverPass.el && q.el.isConnected);
     if (h) { enterAt = h; hoverPass = null; enterPicture(); return; }
   }
