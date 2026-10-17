@@ -352,3 +352,8 @@
 .world-prob { font-size: 0.85em; margin: 2px 0; padding-left: 1em; text-indent: -1em; }
 .world-prob::before { content: "• "; }
 .world-off { margin-top: 0.5rem; }
+.world-palette { flex-wrap: wrap; gap: 4px; }
+.world-chip { font-size: 0.8em; padding: 2px 8px; cursor: grab; }
+.world-trash { border: 2px dashed var(--line, #ccc); border-radius: 8px; padding: 6px 10px; }
+.world-here { margin: 0.5rem 0; }
+.drag-ghost { position: fixed; z-index: 1000; pointer-events: none; transform: translate(-50%, -60%); font-size: 2.2em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }

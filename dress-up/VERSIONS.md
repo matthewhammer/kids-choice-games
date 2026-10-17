@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.102 (2026-10-17)
+
+Everything in 0.0.101, plus designing the world by hand.
+
+- **🗺️ World design, by hand** (Matthew): drag a place from the row of places onto a square of the grid (or tap it: the first empty square gets it); drag a square onto another to move it (two places swap), or onto 🗑️ to take it away; make the grid a column or row bigger or smaller, up to 12 by 12.
+- **The square you are in:** its ways out, each an arrow to turn on or off (a forest crossing's are its paths); 🏁 start here; and its things: drag a rock, bush, tree or pine straight into the picture, where you let go (or tap to add one), then drag it about.
+
 ## 0.0.101 (2026-10-17)
 
 Everything in 0.0.100, with two fixes.

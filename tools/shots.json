@@ -198,5 +198,10 @@
   "name": "world-ways-crossing-with-things",
   "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); state.world.cells[\"1,2\"].things = [{ kind: \"tree\", x: -300, z: 345, seed: 77, size: 100, leaves: \"autumn\" }, { kind: \"rock\", x: 200, z: 390, seed: 78, size: 100, tone: \"#c2a67a\" }]; worldEnter(\"1,2\"); await new Promise(r => setTimeout(r, 600));",
   "wait": 600
+ },
+ {
+  "name": "world-design-v2",
+  "js": "state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter(\"2,2\"); tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); changed(); await new Promise(r => setTimeout(r, 600));",
+  "wait": 600
  }
 ]

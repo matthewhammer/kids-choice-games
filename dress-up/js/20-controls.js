@@ -1011,12 +1011,22 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         }),
         el("button", { onclick: () => { T.splice(i, 1); changed(); } }, "✖")])));
     };
-    const add = kd => () => {
-      const B = state.background, T = B.things || (B.things = []), i = T.length;
-      T.push({ kind: kd, x: Math.round((((i * 0.37) % 1) - 0.5) * 520), z: Math.round(SCENE.ground + 10 + (i * 29) % 70), seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}) });
+    // (v2: dragged onto the picture, it stands where it was let go, kept within
+    // the ground the friend can stand on; tapped, near the middle, a little
+    // apart from the last)
+    const add = (kd, at = null) => {
+      const B = state.background, T = B.things || (B.things = []), i = T.length, F = sceneFrame;
+      const x = at ? Math.round(clamp(at.x, F.left, F.right)) : Math.round((((i * 0.37) % 1) - 0.5) * 520);
+      const z = at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
+      T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}) });
       changed();
     };
-    box.append(el("div", { class: "row" }, [...Object.entries(THING_KINDS).map(([kd, T]) => el("button", { onclick: add(kd) }, "+ " + T.label)),
+    const addButton = (kd, T) => {
+      const b = el("button", { title: "Drag into the picture, or tap" }, "+ " + T.label);
+      pressDrag(b, () => T.label.split(" ")[0], { onTap: () => add(kd), onDrop: (under, ev) => { if (under && under.closest && under.closest("#pic")) add(kd, picUnits(ev)); } });
+      return b;
+    };
+    box.append(el("div", { class: "row" }, [...Object.entries(THING_KINDS).map(([kd, T]) => addButton(kd, T)),
                                            el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
     syncs.push(() => { const m = (state.background.things || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); });
   }
@@ -1026,34 +1036,59 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // up with its partner, is a mistake to fix), and each filled from a library
   // of things. Its first piece is coming; for now the tab says what it will be.
   if (kind === "world") {
-    // the grid, a square per cell: its place, its ways out as marks on its
-    // edges, a mark when a mistake is about it, and where the friend is; a tap
-    // takes the friend there (and a crossing's settings come with them). Under
-    // it, the mistakes, and the places off the grid with their ids.
-    const grid = el("div", { class: "world-grid" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
+    // (v2) a palette of places to drag onto squares (a tap puts one in the
+    // first empty square); the grid, a square per cell: its place, its ways
+    // out as marks on its edges, a mark when a mistake is about it, where the
+    // friend is; a tap goes there, a drag moves it (onto another square:
+    // they swap) or takes it away (onto 🗑️); buttons for the grid's size;
+    // then the square the friend is in: its ways out, the start, its
+    // things; then the mistakes, and the places off the grid with their ids.
+    const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away");
+    const sizes = el("div", { class: "row" }, [["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { onclick: () => worldResize(dc, dr) }, t)));
+    const here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
+    const emojiOf = kind => placeName(kind).split(" ")[0];
+    for (const kd of worldPalette()) {
+      const chip = el("button", { class: "world-chip", title: "Drag " + placeName(kd) + " onto a square (or tap: the first empty square)" }, placeName(kd));
+      pressDrag(chip, () => emojiOf(kd), { onDrop: under => { const sq = under && under.closest && under.closest("[data-square]"); if (sq) worldPut(sq.dataset.square, kd); },
+        onTap: () => { const W = state.world; for (let r = 0; r < W.rows; r++) for (let c = 0; c < W.cols; c++) if (!W.cells[c + "," + r]) { worldPut(c + "," + r, kd); return; } } });
+      palette.append(chip);
+    }
     let shown = null;
     const render = () => {
-      const W = state.world, P = worldProblems(W), sig = JSON.stringify([W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c)]), P.length]);
+      const W = state.world, P = worldProblems(W), at = W.at && W.cells[W.at];
+      const sig = JSON.stringify([W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c)]), P.length]);
       if (sig === shown) return;
       shown = sig;
       const bad = new Set(P.map(p => p.key));
       grid.style.gridTemplateColumns = `repeat(${W.cols}, 1fr)`;
       grid.replaceChildren(...Array.from({ length: W.cols * W.rows }, (_, i) => {
         const key = (i % W.cols) + "," + Math.floor(i / W.cols), cell = W.cells[key];
-        if (!cell) return el("div", { class: "world-cell empty", title: squareName(key) + ": empty" }, squareName(key));
-        const name = placeName(cell.kind), [emoji, ...words] = name.split(" ");
-        const ways = worldWays(cell);
-        return el("button", { class: "world-cell" + (bad.has(key) ? " bad" : "") + (W.at === key ? " here" : "") + (W.start === key ? " start" : ""), "data-square": key,
-                              title: `${squareName(key)}: ${name}` + (ways.length ? ", ways out " + ways.map(d => WORLD_ARROWS[d]).join(" ") : ""),
-                              onclick: () => worldEnter(key) },
-                  [el("span", { class: "world-emoji" }, emoji), el("span", { class: "world-name" }, words.join(" ")), ...ways.map(d => el("span", { class: "world-way w-" + d }, ""))]);
+        if (!cell) return el("div", { class: "world-cell empty", title: squareName(key) + ": empty: drag a place here", "data-square": key }, squareName(key));
+        const name = placeName(cell.kind), [emoji, ...words] = name.split(" "), ways = worldWays(cell);
+        const b = el("button", { class: "world-cell" + (bad.has(key) ? " bad" : "") + (W.at === key ? " here" : "") + (W.start === key ? " start" : ""), "data-square": key,
+                                 title: `${squareName(key)}: ${name}` + (ways.length ? ", ways out " + ways.map(d => WORLD_ARROWS[d]).join(" ") : "") + ". Tap to go there; drag to move it.",
+                                 onclick: () => worldEnter(key) },
+                     [el("span", { class: "world-emoji" }, emoji), el("span", { class: "world-name" }, words.join(" ")), ...ways.map(d => el("span", { class: "world-way w-" + d }, ""))]);
+        pressDrag(b, () => emoji, { onDrop: under => { if (!under || !under.closest) return; if (under.closest(".world-trash")) worldRemove(key); else { const sq = under.closest("[data-square]"); if (sq) worldMove(key, sq.dataset.square); } } });
+        return b;
       }));
+      // the square the friend is in: its ways out (a forest crossing's are its paths), the start
+      if (at && at.kind === state.background.kind) {
+        const ways = worldWays(at), toggle = d => () => {
+          if (at.kind === "crossing") state.background["cross" + d] = !state.background["cross" + d];   // (its paths, which worldKeep keeps in its square)
+          else at.ways = ways.includes(d) ? ways.filter(x => x !== d) : [...ways, d].sort((x, y) => Object.keys(WORLD_DIRS).indexOf(x) - Object.keys(WORLD_DIRS).indexOf(y));
+          changed();
+        };
+        here.replaceChildren(el("div", { class: "cap" }, `📍 ${squareName(W.at)}: ${placeName(at.kind)}`),
+          el("div", { class: "row" }, [el("span", { class: "hint" }, "ways out:"), ...Object.keys(WORLD_DIRS).map(d => el("button", { "aria-pressed": String(ways.includes(d)), title: d, onclick: toggle(d) }, WORLD_ARROWS[d]))]),
+          el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
+      } else here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."));
       probs.replaceChildren(P.length ? el("div", { class: "cap" }, `⚠️ ${P.length} to put right`) : el("div", { class: "hint" }, "✅ Every way out meets a way back, and every place can be reached."),
                             ...P.map(p => el("div", { class: "world-prob" }, p.text)));
       off.replaceChildren("Off the grid: ", ...worldOffGrid(W).flatMap((o, i) => [i ? " · " : "", `${o.id}: ${placeName(o.kind)}` + (o.from ? ` (through ${placeName(W.cells[o.from].kind)}, ${squareName(o.from)})` : "")]));
     };
-    box.append(el("div", { class: "hint" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Tap a square to go there; a forest crossing changed there stays changed in its square."),
-               grid, probs, off);
+    box.append(el("div", { class: "hint" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."),
+               palette, grid, el("div", { class: "row" }, [trash]), sizes, here, control("background", ["things", "things", "🪨 things here: drag one into the picture, then about"]), probs, off);
     syncs.push(render);
   }
   // (ticket 155, Matthew) ⚙️ Advanced: the game's code on GitHub; its

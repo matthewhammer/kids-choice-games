@@ -146,3 +146,68 @@ function worldChoose(kind) {
   if (key) { W.at = key; for (const k of cellKeys(kind)) B[k] = structuredClone(W.cells[key][k] ?? (k === "things" ? [] : DEFAULTS.background[k])); }
   else { W.at = null; B.things = []; }
 }
+// ---- the world designer's hands (v2): putting places in squares, moving
+// and taking them away, the grid's size, and a drag that works the same
+// with a mouse and a finger
+// the places a square can hold: every place but the insides and those reached their own way
+const worldPalette = () => PLACES.map(([k]) => k).filter(k => k !== "none" && !INSIDE_KINDS.has(k) && !ELSEWHERE.includes(k));
+// a place's usual ways out, put in a square: as in the first world, else east and west
+const worldUsualWays = kind => { const c = Object.values(WORLD_DEFAULT.cells).find(c => c.kind === kind); return c && c.ways ? [...c.ways] : ["E", "W"]; };
+function worldPut(key, kind) {
+  const W = state.world;
+  W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], things: [] }
+                                     : { kind, ways: worldUsualWays(kind), things: [] };
+  if (!W.start || !W.cells[W.start]) W.start = key;
+  if (W.at === key) W.at = null;   // (the square the friend was in holds another place now)
+  changed();
+}
+// a square moved onto another: they swap, or it moves into the empty one; the start and the friend's square go with them
+function worldMove(from, to) {
+  const W = state.world;
+  if (from === to || !W.cells[from]) return;
+  const a = W.cells[from], b = W.cells[to], swap = k => k === from ? to : k === to && b ? from : k;
+  W.cells[to] = a; if (b) W.cells[from] = b; else delete W.cells[from];
+  W.start = swap(W.start); W.at = swap(W.at);
+  changed();
+}
+function worldRemove(key) {
+  const W = state.world;
+  delete W.cells[key];
+  if (W.at === key) W.at = null;
+  if (W.start === key) W.start = worldKeys(W)[0] || null;
+  changed();
+}
+// the grid one column or row bigger or smaller (up to 12 by 12; smaller only while that column or row is empty)
+function worldResize(dc, dr) {
+  const W = state.world, cols = W.cols + dc, rows = W.rows + dr;
+  if (cols < 1 || rows < 1 || cols > 12 || rows > 12) return;
+  if (worldKeys(W).some(k => { const [c, r] = k.split(",").map(Number); return c >= cols || r >= rows; })) return;
+  W.cols = cols; W.rows = rows;
+  changed();
+}
+// A press that becomes a drag after a few pixels: a ghost of it follows the
+// finger or the mouse, and on letting go, onDrop(the element under it, the
+// event); a press that never moved is a tap (onTap, or the element's own
+// click). The click after a drag is swallowed.
+function pressDrag(el, ghost, { onDrop, onTap = null }) {
+  el.style.touchAction = "none";
+  el.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    const x0 = e.clientX, y0 = e.clientY;
+    let g = null;
+    const move = ev => {
+      if (!g && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) { g = document.createElement("div"); g.className = "drag-ghost"; g.textContent = ghost(); document.body.append(g); }
+      if (g) { g.style.left = ev.clientX + "px"; g.style.top = ev.clientY + "px"; ev.preventDefault(); }
+    };
+    const up = ev => {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      if (g) {
+        g.remove();
+        const stop = c => { c.stopPropagation(); c.preventDefault(); };
+        el.addEventListener("click", stop, { capture: true, once: true }); setTimeout(() => el.removeEventListener("click", stop, { capture: true }), 0);
+        if (ev.type === "pointerup") onDrop(document.elementFromPoint(ev.clientX, ev.clientY), ev);
+      } else if (onTap && ev.type === "pointerup") onTap(ev);
+    };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+  });
+}
