@@ -20,12 +20,12 @@ let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 900)}`); if (!cond) bad++; };
 try {
   await send("Runtime.enable");
-  await send("Page.addScriptToEvaluateOnNewDocument", { source: `window.__pad = { id: "Test Pad (STANDARD GAMEPAD)", index: 0, connected: true, mapping: "standard", axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
-    window.__pads = []; Object.defineProperty(navigator, "getGamepads", { value: () => window.__pads, configurable: true });` });
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   // (a run: hold the right arrow, run held or not, for ms; then let go and watch for 900 ms; figX sampled every 50 ms)
   const go = (runSpeed, accel, run, ms) => ev(`(async () => {
+    if (!window.__pad) { window.__pad = { id: "Test Pad (STANDARD GAMEPAD)", index: 0, connected: true, mapping: "standard", axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
+      window.__pads = []; Object.defineProperty(navigator, "getGamepads", { value: () => window.__pads, configurable: true }); }
     const w = t => new Promise(r => setTimeout(r, t)), B = state.background, body = state.body, P = window.__pad;
     state.music.mute = true; B.kind = "emptyroom"; B.figX = -300; B.figY = 0; body.runSpeed = ${runSpeed}; body.accel = ${accel}; changed();
     window.__pads = [P]; { const e = new Event("gamepadconnected"); e.gamepad = P; window.dispatchEvent(e); }
