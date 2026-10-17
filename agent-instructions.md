@@ -319,7 +319,7 @@ A refactor must not change any drawing. Before and after each step, run:
   - A busy tune takes minutes to render (forest, 3 minutes of music, about 2). The manifest is written after each tune, and a re-run the same day keeps every recording whose fingerprint still matches, so a stopped run resumes.
   - With a release dir, real copies of the day's MP3s go there with a public page.
 
-The archive tools live in the archives' own repositories (`~/du-shots/tools/` links to them). The other test drivers live on Matthew's laptop, in `~/du-shots/tools/` (see the open questions).
+The archive tools live in the archives' own repositories (`~/du-shots/tools/` links to them). The safety net, the frame-rate gate, the audit, the leak tests and a picture taker live here, in [`tools/`](tools/README.md) (Matthew, 2026-10-16, ticket 165); the rest of the drivers are still on his laptop, in `~/du-shots/tools/`.
 
 ## Drawing gotchas, and a routine for finding them
 
@@ -344,6 +344,7 @@ Each picture is a hand-drawn illusion of depth, and a few kinds of slip break it
 - **Silence.** Every test browser runs muted: start headless Chrome with `--mute-audio`. A dispatched click counts as a user gesture and starts the music; one test once played through the laptop's speakers. In a visible browser, mute the game (🔇) before clicking anything. Test audio only at volume 0, or render it offline with `OfflineAudioContext` at 22 kHz or more (at 8 kHz the hi-hats render silent).
 - **Clean up.** Close every test browser and tab when you're done, and check that `pactl list short sink-inputs` is empty.
 - **One heavy job at a time.** The laptop this is developed on shuts down under load. Never run two browsers, or a browser and a build, at once.
+- **Test browsers run on GitHub's computers, not the laptop** (Matthew, 2026-10-16, after it froze four times that evening, each time during a headless browser run, pinned or not). Push the change to a branch other than `main`: [`.github/workflows/dress-up-tests.yml`](.github/workflows/dress-up-tests.yml) checks the page's script, runs the safety net against `main`, takes the pictures listed in `tools/shots.json`, and runs the gate, the audit and the leak tests, with a summary on the run's page (`gh run view <id> -R matthewhammer/kids-choice-games`) and the files as artifacts (`gh run download`). Its frame rates are a GitHub computer's: compare, don't gate on them.
 - **Pictures.**
   - A contact sheet beats one screenshot. In headless Chrome over the DevTools protocol, set the settings in `state` and call `changed()`. Then serialize `#pic` with its `<animate>` elements removed, and draw each into a canvas grid.
   - Evaluate with `Runtime.evaluate` after the page has loaded: it sees the page's top-level names (`state`, `changed`). WebDriver's script execution once did not.
@@ -361,5 +362,4 @@ Each picture is a hand-drawn illusion of depth, and a few kinds of slip break it
 
 ## Open questions for Matthew (delete once answered)
 
-1. Should the other test drivers (the safety net's `sweep.mjs` and `structure.mjs`, contact sheets, drag timing) move into the repository, as a `tools/` folder? They live outside it today, in `~/du-shots/tools/`. (The archive tools now live in the archive repositories.)
-2. Should the README link here, or leave it for agents to find?
+1. Should the README link here, or leave it for agents to find?
