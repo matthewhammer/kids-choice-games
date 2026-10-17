@@ -32,7 +32,7 @@ function witchCauldronSvg(cx, b, k, opts, top, cheap = false) {   // (ticket 202
            [-1, 1].map(sd => `<circle cx="${f1(cx + sd * 6 * k)}" cy="${f1(cy + 22 * k)}" r="${f1(3.6 * k)}" fill="#ff3b3b"/>`).join("") +
            // the fumes: one green, one blue, a double helix turning as it
            // rises, out past the top of the picture
-           (cheap ? helixCheapSvg : helixSvg)(cx, cy - 6 * k, top, 12 * k, 46 * k, k);
+           `<g class="fumes">${(cheap ? helixCheapSvg : helixSvg)(cx, cy - 6 * k, top, 12 * k, 46 * k, k)}</g>`;   // (ticket 214: .fumes, left out of the cauldron's collision box)
 }
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);

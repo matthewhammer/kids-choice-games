@@ -261,9 +261,10 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const k = (y1 - y0) / 700;
   // (a forest crossing's at its own paths' ends: crossGeom; any other place's at its far ground and sides)
   const G = B.kind === "crossing" ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;
-  // (ticket 214) the far ways (N, NE, NW) at the far line, or at the place's back limit where that is nearer: where the friend can stand
-  const backY = SCENE_BACK[B.kind] ? SCENE_BACK[B.kind](y0, y1) + 6 * k : -Infinity;
-  const far = Math.max(G ? G.far + 10 * k : g - 150 * k, backY), mid = Math.max(G ? G.cy + 14 * k : g + 40 * k, far + 30 * k), side = G ? 0.6 : 0.55;
+  // (0.0.151: 0.0.149 put the far ways (N, NE, NW) at the place's back limit where that was nearer; on a shallow floor,
+  // the witch's woods, or in a small window, they crowded the E and W arrows (arrows208), so they are at the far line
+  // again: a tap walks as far as the back limit, and walking on into the edge takes the way, wherever its arrow is)
+  const far = G ? G.far + 10 * k : g - 150 * k, mid = G ? G.cy + 14 * k : g + 40 * k, side = G ? 0.6 : 0.55;
   const AT = { N: [0, far - 6 * k, -90], S: [0, y1 - 30 * k, 90], E: [x1 - 45 * k, mid, 0], W: [x0 + 45 * k, mid, 180],
                NE: [x1 * side, far, -40], NW: [x0 * side, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
   worldWaysAt = ways.map(d => [d, ...AT[d], meets(d), meets(d) ? names[worldMeets(W, W.at, d)] : null]);

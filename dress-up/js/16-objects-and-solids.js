@@ -147,10 +147,13 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // one), and anything where one swims.
 const STANDING = new Set(["anvil", "armor", "barrels", "basket", "bookcase", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
-  "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
+  "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
   "rock", "sand castle", "snake tank", "soup pot", "stone", "stove", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
   "water barrel", "water trough", "well", "white bush", "worktable", "yellow bush"]);
 const TRUNKED = new Set(["tree", "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
+// (ticket 214's audit: the living room's plant had a box as wide as its leaves) a pot's plant stands on its pot: its foot,
+// as a trunk's is found, but however short
+const POTTED = new Set(["plant"]);
 const TRUNK = 0.14, SWIM_PLACES = new Set(["lake", "underwater", "deepsea"]);
 const objBase = name => name.split(",")[0].replace(/\s+\d+$/, "").trim();
 function standingHere(B, seats) {
@@ -159,9 +162,13 @@ function standingHere(B, seats) {
   // (its box in the friend's units, through the screen, as ladderAt does: the scene may sit in a nested svg of its own)
   const picEl = document.getElementById("pic"), P = picEl && picEl.getScreenCTM(), Pinv = P ? P.inverse() : null;
   for (const o of bgShown.objs) {
-    const base = objBase(o.name), trunk = TRUNKED.has(base);
+    const base = objBase(o.name), trunk = TRUNKED.has(base), potted = POTTED.has(base);
     if (!(trunk || STANDING.has(base)) || !Number.isFinite(o.z) || off.has(o.name) || seats.has(o.name)) continue;
     let b = null;
+    // (ticket 214's audit: a cauldron's box stood up past the picture's top, its fumes measured as the pot) what rises
+    // from a thing, .fumes, is no part of its box: hidden while it is measured
+    const fumes = [...o.node.querySelectorAll(".fumes")];
+    for (const f of fumes) f.style.display = "none";
     try {   // (Firefox throws for a drawing not shown)
       const r = o.node.getBBox(), E = o.node.getScreenCTM(), m = Pinv && E ? Pinv.multiply(E) : null;
       if (m && r.width > 0 && r.height > 0) {
@@ -170,26 +177,27 @@ function standingHere(B, seats) {
         b = { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
       }
     } catch (e) { continue; }
+    finally { for (const f of fumes) f.style.display = ""; }
     if (!b || !(b.width > 0) || !(b.height > 0)) continue;
     // (0.0.147, Matthew: "the sign post and trees each have a box that looks misaligned") a trunk or a post is not
     // always in the middle of its drawing: a canopy spreads to one side, a signpost's boards hang off its post. Its
     // box is where its tall parts reach its foot (the trunk, the post: each at least a quarter of its height, ending
     // in its lowest tenth, not as wide as the whole), else the middle, as before.
     let foot = null;
-    if (trunk && Pinv) {
+    if ((trunk || potted) && Pinv) {
       let fx0 = Infinity, fx1 = -Infinity;
       for (const sh of o.node.querySelectorAll("rect, path, polygon, polyline, line, ellipse")) {
         let r; try { r = sh.getBoundingClientRect(); } catch (e) { continue; }
         if (!r.width && !r.height) continue;
         const a = new DOMPoint(r.left, r.top).matrixTransform(Pinv), c = new DOMPoint(r.right, r.bottom).matrixTransform(Pinv);
         const sx0 = Math.min(a.x, c.x), sx1 = Math.max(a.x, c.x), sy0 = Math.min(a.y, c.y), sy1 = Math.max(a.y, c.y);
-        if (sy1 < b.y + 0.9 * b.height || sy1 - sy0 < 0.25 * b.height || sx1 - sx0 > 0.6 * b.width) continue;
+        if (sy1 < b.y + 0.9 * b.height || (trunk && sy1 - sy0 < 0.25 * b.height) || sx1 - sx0 > 0.6 * b.width) continue;
         fx0 = Math.min(fx0, sx0); fx1 = Math.max(fx1, sx1);
       }
       if (fx1 >= fx0) foot = [fx0, fx1];
     }
     const mid = foot ? (foot[0] + foot[1]) / 2 : b.x + b.width / 2, h = Math.max(0, o.z - b.y);
-    const w = foot ? Math.min(0.4 * b.width, Math.max(16 * k, foot[1] - foot[0])) : trunk ? Math.min(b.width, Math.max(16 * k, TRUNK * b.width)) : b.width;
+    const w = foot ? (potted ? foot[1] - foot[0] : Math.min(0.4 * b.width, Math.max(16 * k, foot[1] - foot[0]))) : trunk ? Math.min(b.width, Math.max(16 * k, TRUNK * b.width)) : b.width;
     out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front: o.z, h, standing: true });
   }
   return out;

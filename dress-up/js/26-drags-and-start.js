@@ -548,9 +548,11 @@ function padPoll(t) {
     // or W edges of the screen; Or their diagonals, to trigger the enter passage action") pushing on into an edge they
     // stand at, or a corner, takes the way out that way, if there is one: the corner's own, else either side's
     if (moving && !entering && !isJump(B.anim)) {
-      const atN = my <= figYMin(F) + 0.5 && vy < -0.3, atS = my >= F.bottom - F.ground - 0.5 && vy > 0.3, atW = mx <= F.left + 0.5 && vx < -0.3, atE = mx >= F.right - 0.5 && vx > 0.3;
-      const d = (atN ? "N" : atS ? "S" : "") + (atE ? "E" : atW ? "W" : "");
-      if (d && edgeGo(d)) { padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return; }
+      const yMin = figYMin(F), yMax = F.bottom - F.ground;
+      const atN = my <= yMin + 0.5 && vy < -0.3, atS = my >= yMax - 0.5 && vy > 0.3, atW = mx <= F.left + 0.5 && vx < -0.3, atE = mx >= F.right - 0.5 && vx > 0.3;
+      if ((atN || atS || atW || atE) && edgeGo(edgeWays(atN, atS, atW, atE, (mx - F.left) / Math.max(1, F.right - F.left), (my - yMin) / Math.max(1, yMax - yMin)))) {
+        padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return;
+      }
     }
     // (ticket 162: walking onto a pit's hole, not jumping, falls in)
     if (!isJump(B.anim) && !entering) { const pit = pitAt(mx, SCENE.ground + my); if (pit) enterScene(pit); }   // (the poll goes on: it must schedule itself again)
@@ -575,10 +577,24 @@ function padPoll(t) {
 // (ticket 214) the way out at an edge: a world square's way (its nav arrow's doorway) that way, or at the bottom a ▼
 // (Matthew: "the animations on each edge look strange, we are turning and facing away from the edge we are initially
 // going into") taken from where they stand, on through the edge, facing it: not walked back to the doorway's spot first
-function edgeGo(d) {
+// (Matthew: "if I walk into the corner that I'm facing (NW), I get a path plan to walk N, not NW"; "check each corner
+// passage can be triggered by colliding into that corner, up to some limit like 1/4 of the screen width away from the
+// corner") The ways to try, in order, pushing into an edge at u across the picture (0 its left side, 1 its right) and v
+// down its floor (0 the back limit, 1 the bottom): in a corner, its way, then either edge's; within EDGE_CORNER of a
+// corner along an edge (a quarter of the picture's width along the back limit or the bottom, of the floor's depth
+// along a side), the corner's way, then the edge's own; else the edge's own only.
+const EDGE_CORNER = 0.25;
+function edgeWays(atN, atS, atW, atE, u, v) {
+  const ns = atN ? "N" : atS ? "S" : "", we = atW ? "W" : atE ? "E" : "";
+  if (ns && we) return [ns + we, ns, we];
+  if (ns) { const c = u < EDGE_CORNER ? "W" : u > 1 - EDGE_CORNER ? "E" : ""; return c ? [ns + c, ns] : [ns]; }
+  const c = v < EDGE_CORNER ? "N" : v > 1 - EDGE_CORNER ? "S" : "";
+  return c ? [c + we, we] : [we];
+}
+function edgeGo(ways) {
   const node = bgShown.node;
   if (!node) return false;
-  for (const c of d.length > 1 ? [d, d[0], d[1]] : [d]) {
+  for (const c of ways) {
     const door = node.querySelector(`.portal[data-way="${c}"]`) || (c === "S" ? node.querySelector(".portal.south-way") : null);
     if (door) { enterScene(door, true); return true; }
   }

@@ -57,7 +57,8 @@ try {
     const S = solidsHere(), end = p.spot, startIn = o => ${c.x} > o.x0 - SOLID_MARGIN && ${c.x} < o.x1 + SOLID_MARGIN && g + ${c.y} > o.back && g + ${c.y} < o.front;
     const endIn = o => end[0] > o.x0 - SOLID_MARGIN && end[0] < o.x1 + SOLID_MARGIN && end[1] > o.back && end[1] < o.front;
     let watching = true;
-    const look = () => { if (!watching) return; frames++; const x = B.figX ?? 0, z = g + (B.figY ?? 0);
+    // (0.0.151: not the step through the doorway at the end, tripPhase "stepping in": at a house's door, up its front step)
+    const look = () => { if (!watching) return; frames++; const x = B.figX ?? 0, z = g + (B.figY ?? 0); if (tripPhase === "stepping in") { requestAnimationFrame(look); return; }
       for (const o of S) if (!startIn(o) && !endIn(o) && x > o.x0 - SOLID_MARGIN + 1 && x < o.x1 + SOLID_MARGIN - 1 && z > o.back + 1 && z < o.front - 1) inSolid.push(o.name + "@" + Math.round(x) + "," + Math.round(z - g));
       requestAnimationFrame(look); };
     requestAnimationFrame(look);

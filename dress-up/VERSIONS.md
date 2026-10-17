@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.151 (2026-10-17)
+
+Everything in 0.0.150, with corners that take you round the corner.
+
+- **Walk into a corner to go that way**: walking on into the far edge or the bottom near a corner (within a quarter of the picture's width of it), or into a side near the far edge or the bottom, now takes the corner's way out, NW, NE, SW or SE, if there is one, else the way straight ahead. In the middle of an edge it is the way straight ahead.
+- **The far arrows back where they were**: the ⬆️ arrows for the far ways (N, NE, NW) are back at the far line; down at the far edge, in a place with a shallow floor like the witch's woods, they crowded the side arrows.
+- **Truer boxes**: the witch's cauldron's box is the pot, not its fumes up to the sky; the living room's plant's box is its pot, not its leaves; and the small mushrooms on the path through the woods are solid too.
+
 ## 0.0.150 (2026-10-17)
 
 Everything in 0.0.149, with your friend meeting things with their feet and body.

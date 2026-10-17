@@ -20,10 +20,15 @@ const ev = async x => { const r = await send("Runtime.evaluate", { expression: x
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 1200)}`); if (!cond) bad++; };
 const until = async (cond, ms = 9000) => { for (let t = 0; t < ms; t += 100) { if (await ev(cond)) return t; await sleep(100); } return null; };
-// the friend stood near an edge of the clearing, then a direction held on the on-screen controller
-const tryEdge = async (place, x, y, buttons) => {
-  await ev(`(async () => { state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("${place}", null, false); state.body.anim = "none"; climb = null;
-    const B = state.background; B.figX = ${x}; B.figY = ${y}; changed(); await new Promise(r => setTimeout(r, 600)); touchWant(true);
+// the friend stood near an edge of a square, then a direction held on the on-screen controller; u, v: where, as
+// shares of the picture's width (0 its left) and of the floor's depth (0 the back limit), when x, y are null;
+// open: every way out of every square open (a crossing's paths too)
+const OPEN = `const DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  for (const c of Object.values(state.world.cells)) { if (c.kind === "crossing") for (const d of DIRS) c["cross" + d] = true; else c.ways = DIRS.filter(d => !worldNoWay(c.kind, d)); }`;
+const tryEdge = async (place, x, y, buttons, open = false, u = null, v = null) => {
+  await ev(`(async () => { state.music.mute = true; state.world = clone(DEFAULTS.world); ${open ? OPEN : ""} worldEnter("${place}", null, false); state.body.anim = "none"; climb = null;
+    const B = state.background; changed(); await new Promise(r => setTimeout(r, 300)); const F = sceneFrame, yMin = figYMin(F), yMax = F.bottom - F.ground;
+    B.figX = ${x ?? `F.left + ${u} * (F.right - F.left)`}; B.figY = ${y ?? `yMin + ${v} * (yMax - yMin)`}; changed(); await new Promise(r => setTimeout(r, 600)); touchWant(true);
     for (const b of ${JSON.stringify(buttons)}) { const p = touchPad.pad.buttons[b]; p.pressed = true; p.value = 1; } return 1; })()`);
   // (and which way they face as they go through: Matthew, "we are turning and facing away from the edge we are initially going into")
   const r = JSON.parse(await ev(`(async () => { const faced = [], t0 = performance.now();
@@ -51,6 +56,23 @@ try {
   ok("going through it, facing away from us, the way they walked", nn.faced.length > 0 && nn.faced.every(f => f === "back"), nn);
   const c = await tryEdge("3,3", 300, -40, [12, 15]);
   ok("in the clearing, walked on into its far right corner: through NE, or N or E", c.t !== null && ["4,2", "3,2", "4,3"].some(k => c.where.startsWith(k)), c);
+  // (Matthew: "if I walk into the corner that I'm facing (NW), I get a path plan to walk N, not NW"; "check each corner
+  // passage can be triggered by colliding into that corner, up to some limit like 1/4 of the screen width away from the corner")
+  const cross = await ev(`(() => { state.world = clone(DEFAULTS.world); const k = worldKeys(state.world).find(k => state.world.cells[k].kind === "crossing"); return k || null; })()`);
+  if (!cross) ok("a forest crossing in the first world, for the corners", false, null);
+  else {
+    const to = JSON.parse(await ev(`(() => { state.world = clone(DEFAULTS.world); ${OPEN} const o = {};
+      for (const d of DIRS) { const nb = worldNeighbour(state.world, "${cross}", d); o[d] = nb.off || !state.world.cells[nb.key] ? null : nb.key; } return JSON.stringify(o); })()`));
+    const N = 12, S = 13, W = 14, E = 15;
+    for (const [what, u, v, btn, want] of [
+      ["the back limit, an eighth of the width from the left", 0.12, 0, [N], "NW"], ["the back limit, an eighth from the right", 0.88, 0, [N], "NE"],
+      ["the back limit, in the middle", 0.5, 0, [N], "N"], ["the bottom, a tenth from the left", 0.1, 1, [S], "SW"], ["the bottom, a tenth from the right", 0.9, 1, [S], "SE"],
+      ["the left side, near the back", 0, 0.1, [W], "NW"], ["the right side, near the bottom", 1, 0.9, [E], "SE"], ["the left side, in the middle", 0, 0.5, [W], "W"]]) {
+      if (!to[want]) { console.log(`  (no ${want} square beside ${cross}: skipped ${what})`); continue; }
+      const r = await tryEdge(cross, null, null, btn, true, u, v);
+      ok(`in the crossing (${cross}), walked on into ${what}: through ${want}, to ${to[want]}`, r.t !== null && r.where.startsWith(to[want] + ":"), { ...r, want: to[want] });
+    }
+  }
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
