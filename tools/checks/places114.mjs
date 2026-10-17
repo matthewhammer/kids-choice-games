@@ -46,11 +46,12 @@ try {
   await until(`state.background.kind === "clearing" && !entering`);
   W = await where();
   ok("back to the clearing by the back chip: its potion, not the hut's bush", W.kind === "clearing" && W.things.join() === "potion", W);
-  // by the clearing's own sign to the wood path, the square beside it (D3)
-  await ev(`(() => { const d = document.querySelector('#bg .portal[data-to="woodpath"]'); d.dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);
-  await until(`state.background.kind === "woodpath" && !entering`);
+  // by the clearing's own doorway to the castle (its far view), the square beside it (E4)
+  // (ticket 233: the clearing's sign to the wood path, the old way this went, is gone)
+  await ev(`(() => { const d = document.querySelector('#bg .portal[data-to="castle"]'); d.dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);
+  await until(`state.background.kind === "castle" && !entering`);
   W = await where();
-  ok("by the clearing's own sign to the wood path: its square, D3, with nothing in it", W.kind === "woodpath" && W.at === "3,2" && W.things.length === 0, W);
+  ok("by the clearing's own doorway to the castle: its square, E4, with nothing in it", W.kind === "castle" && W.at === "4,3" && W.things.length === 0, W);
   // and the hut again, its bush still there
   await ev(`(async () => { worldEnter("3,3"); await new Promise(r => setTimeout(r, 300)); const d = document.querySelector('#bg .portal[data-to="healerroom"]'); d.dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);
   await until(`state.background.kind === "healerroom" && !entering`);

@@ -595,7 +595,7 @@ function edgeGo(ways) {
   const node = bgShown.node;
   if (!node) return false;
   for (const c of ways) {
-    const door = node.querySelector(`.portal[data-way="${c}"]`) || (c === "S" ? node.querySelector(".portal.south-way") : null);
+    const door = node.querySelector(`.portal[data-way="${c}"]`);   // (a world square's way, or a room's toward us: ticket 233)
     if (door) { enterScene(door, true); return true; }
   }
   return false;
@@ -737,7 +737,8 @@ const ARRIVE = { witchroom: [-170, 0], crossing: [0, -20], imagination: [0, 70],
 // the last trip went to.
 const trips = [];
 function enterScene(door, here = false) {
-  if (door.dataset.way) { worldWalk(door, here); return; }   // (ticket 185: a way out of a world square, to the one beside it)
+  // (ticket 185: a way out of a world square, to the one beside it; ticket 233: a room's way toward us has its own data-to)
+  if (door.dataset.way && !door.dataset.to) { worldWalk(door, here); return; }
   const to = door.dataset.to, house = door.dataset.house, tent = door.dataset.tent, room = door.dataset.room, B = state.background;
   if (!SCENES[to] && !PICTURE_CHOICES.some(([kd]) => kd === to)) return;
   // (a picture's own box: the scene inside it spills past it, hidden)
@@ -762,7 +763,7 @@ function enterScene(door, here = false) {
   if (pp) walkTo((pp.x0 + pp.x1) / 2, clamp(pp.y1, SCENE.ground + figYMin(sceneFrame), sceneFrame.bottom), () => flyInto(svgBox(view), arrive));
   else if (view) flyInto(svgBox(view), arrive);
   else if (door.dataset.pit) walkInto(door, () => { arrive(); landFall = true; }, true, "fall");   // (ticket 162)
-  else walkInto(door, arrive, !(climb && climb.through));
+  else walkInto(door, arrive, !(climb && climb.through), "step", null, door.dataset.way ? { out: WORLD_DIRS[door.dataset.way], here } : {});
 }
 // (ticket 199) to a spot on the floor, walking (swimming in deep water) as
 // walkInto does, a long way faster, 2.5 s at most; then on

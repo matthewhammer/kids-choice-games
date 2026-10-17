@@ -55,8 +55,7 @@ function mountainsScene(c) {
       ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`));
     return t;
   });
-  // the signpost by the trail: to the falls, and to the camp (an object, at its post's foot)
-  s += SEP + obj("signpost", g + 10 * k, part("mt-sign", c.F, () => signpost(-W * 0.2, g + 10 * k, k, [["💦 falls", "waterfall", -1], ["🏕️ camp", "campsite", 1], ["🌲 woods", "woodpath", 1]])));
+  // (ticket 233: its old signpost, fixed links to places, is gone; the world's ways are the nav arrows, and a sign with directions, 🧭, a thing, says where they lead)
   // birds, circling high up (an object at the depth of the ground under
   // them, the valley far off: behind anywhere one stands on the slope)
   if (birds > 0) s += SEP + obj("birds", valley, part("mt-birds", [c.F, birds, sceneLfoKey(o, "fast")], () => [...Array(birds)].map((_, i) => {
@@ -190,10 +189,7 @@ function waterfallScene(c) {
   // over them all the same)
   if (time !== "day") s += SEP + obj(time === "night" ? "dark" : "sunset light", Infinity, part("wf-tint", [c.F, time], () => all(FALL_TINT[time][0]).replace("<rect ", `<rect pointer-events="none" opacity="${FALL_TINT[time][1]}" `) +
     (time === "night" ? `<circle cx="${f1(-W * 0.32)}" cy="${f1(y0 + H * 0.12)}" r="${f1(26 * k)}" fill="#fff6d6" opacity="0.95"/><circle cx="${f1(-W * 0.32 + 10 * k)}" cy="${f1(y0 + H * 0.12 - 6 * k)}" r="${f1(22 * k)}" fill="#0b1030" opacity="0.35"/>` : "")));
-  // a sign back to the trail (an object, at its post's foot; painted after
-  // the light at sunset or at night, which leaves it bright, so then in
-  // front of everything)
-  s += SEP + obj("signpost", time !== "day" ? Infinity : g + 40 * k, part("wf-sign", c.F, () => signpost(W * 0.3, g + 40 * k, k, [["⛰️ trail", "mountains", 1]])));
+  // (ticket 233: its old signpost, fixed links to places, is gone; the world's ways are the nav arrows, and a sign with directions, 🧭, a thing, says where they lead)
   return s;
 }
 
@@ -373,8 +369,7 @@ function campsiteScene(c) {
         `<animate attributeName="opacity" values="0;0.75;0" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/>` +
         `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-40 * k)}" dur="2.4s" begin="${(i * 0.8).toFixed(1)}s" repeatCount="indefinite"/></path>`).join("");
   }));
-  // a sign back to the trail (an object, at its post's foot)
-  s += SEP + obj("signpost", g + 30 * k, part("camp-sign", c.F, () => signpost(W * 0.42, g + 30 * k, k, [["⛰️ trail", "mountains", -1]])));
+  // (ticket 233: its old signpost, fixed links to places, is gone; the world's ways are the nav arrows, and a sign with directions, 🧭, a thing, says where they lead)
   return s;
 }
 // Inside a tent at the camp site: its canvas all round, the same color as
@@ -755,9 +750,7 @@ function woodpathScene(c) {
     }
     return t;
   });
-  // the signpost: back to the clearing, on to the trail (an object, its
-  // arrows' doorways in it)
-  s += SEP + part("wp-sign", c.F, () => obj("signpost", g + 50 * k, signpost(W * 0.2, g + 50 * k, k, [["🌲 clearing", "clearing", 1], ["⛰️ trail", "mountains", 1]])));
+  // (ticket 233: its old signpost, fixed links to places, is gone; the world's ways are the nav arrows, and a sign with directions, 🧭, a thing, says where they lead)
   // butterflies, fluttering with the quick LFO (an object at the depth of
   // the ground under the nearer one)
   s += SEP + part("woodpath-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => obj("butterflies", g - 50 * k, butterfliesSvg(c, [[x0 + W * 0.18, g - 50 * k, 1], [x0 + W * 0.8, g - 90 * k, 1.1]])));

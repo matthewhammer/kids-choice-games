@@ -258,9 +258,35 @@ function wayNearness(d) {
 function worldWaysAim(d) {
   for (const el of document.querySelectorAll("#ways .way-arrow")) { const on = el.dataset.way === d; if (el.classList.contains("aimed") !== on) el.classList.toggle("aimed", on); }
 }
+// (ticket 233, Matthew: "the implicit exit on the S of some rooms was missing an indicator to the game player -- but
+// the nav arrows are the UX way we've chosen"; "rather than render a sign to indicate it and offer a click, we use the
+// nav arrow UX now") A place off the grid has ways toward us too: the living room's door out (livingOut), a tree room's
+// (treeBackN), a castle room's (castleSouthWays). Each that leads somewhere is a way as a world square's is, an
+// invisible doorway at the bottom edge (data-way, and its own data-to: enterScene goes there, not to a square beside)
+// and an arrow over the picture when the friend is near; one leading nowhere is not there at all.
+function insideWays(B) {
+  const to = kd => { const P = kd && kd !== "none" && PLACES.find(p => p[0] === kd); return P ? [{ d: "S", to: kd, attrs: `data-to="${kd}"`, label: P[1] }] : []; };
+  if (B.kind === "livingroom") return to(B.livingOut);
+  if (B.kind === "treeroom") return to(B["treeBack" + Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1)))]);
+  if (B.kind === "castleroom") { const K = castleOf(B); return castleSouthWays(K, Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)))); }
+  return [];
+}
+// (a way's doorway: invisible, and not tapped, the arrow over the picture is; its shape, the triangle, is what the glow frames)
+const wayTri = (x, y, a, k) => { const r = 28 * k;
+  return `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${a})"><path d="M${f1(-0.6 * r)} ${f1(-0.8 * r)} L${f1(0.9 * r)} 0 L${f1(-0.6 * r)} ${f1(0.8 * r)} Z" fill="#000000" opacity="0"/></g>`; };
+function insideWaysSvg(B, x0, y0, x1, y1) {
+  const IW = insideWays(B), k = (y1 - y0) / 700;
+  // (where the world's ways toward us are: worldWaysSvg's AT)
+  const AT = { S: [0, y1 - 30 * k, 90], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
+  worldWaysAt = IW.map(w => [w.d, ...AT[w.d], { kind: w.to }, w.label, w.attrs]);
+  worldWaysHud();
+  if (!IW.length) return "";
+  return SEP + part("inside-ways", [B.kind, IW.map(w => w.d + w.attrs).join(), x0, y0, x1, y1], () => worldWaysAt.map(([d, x, y, a, , , attrs]) =>
+    obj(`way ${d}`, Infinity, `<g class="portal way-out" data-door="1" data-way="${d}" ${attrs} pointer-events="none">${wayTri(x, y, a, k)}</g>`)).join(""));
+}
 function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const W = state.world, cell = W && W.at && W.cells[W.at];
-  if (!cell || cell.kind !== B.kind) { worldWaysAt = []; worldWaysHud(); return ""; }
+  if (!cell || cell.kind !== B.kind) return insideWaysSvg(B, x0, y0, x1, y1);
   const ways = worldLiveWays(W, W.at);
   const meets = d => { const key = worldMeets(W, W.at, d); return key ? W.cells[key] : null; }, names = worldNames(W);
   const k = (y1 - y0) / 700;
@@ -277,9 +303,7 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   if (!ways.length) return "";
   const sig = worldWaysAt.map(([d, , , , to, nm]) => d + (to ? to.kind + ":" + nm : "-")).join();
   return SEP + part("world-ways", [W.at, B.kind, sig, x0, y0, x1, y1, g], () => worldWaysAt.map(([d, x, y, a, to]) => {
-    const r = 28 * k;
-    // (invisible, and not tapped: the arrow over the picture is; its shape, the triangle, is what the glow frames)
-    const tri = `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${a})"><path d="M${f1(-0.6 * r)} ${f1(-0.8 * r)} L${f1(0.9 * r)} 0 L${f1(-0.6 * r)} ${f1(0.8 * r)} Z" fill="#000000" opacity="0"/></g>`;
+    const tri = wayTri(x, y, a, k);
     return obj(`way ${d}`, Infinity, to ? `<g class="portal way-out" data-door="1" data-way="${d}" pointer-events="none">${tri}</g>` : `<g class="way-out nowhere" pointer-events="none">${tri}</g>`);
   }).join(""));
 }

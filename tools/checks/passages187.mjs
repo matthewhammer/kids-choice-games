@@ -39,13 +39,14 @@ try {
   ok("and never more than one glows bright; others within reach dimmer", clearing.out.every(o => o.one <= 1), clearing.out.filter(o => o.one > 1));
   const dimSeen = clearing.out.some(o => o.dim > 0);
   console.log(`  (dim glows seen at ${clearing.out.filter(o => o.dim > 0).length} of ${clearing.out.length} spots)`);
-  // Enter takes the one that glows: the clearing's sign to the wood path
-  const sign = JSON.parse(await ev(`(async () => { ${H} worldEnter("3,3"); await settle(); const p = marks.pics.find(p => p.el.dataset.to === "woodpath" && p.kind === "sign");
-    if (!p) return JSON.stringify({ none: marks.pics.map(p => p.kind + ":" + (p.el.dataset.to || "")) });
+  // Enter takes the one that glows: the clearing's way toward us, S, a nav arrow, to the house and yard (D5)
+  // (ticket 233: the clearing's sign to the wood path, the old one taken here, is gone)
+  const sign = JSON.parse(await ev(`(async () => { ${H} worldEnter("3,3"); await settle(); const p = marks.pics.find(p => p.kind === "nav" && p.el.dataset.way === "S");
+    if (!p) return JSON.stringify({ none: marks.pics.map(p => p.kind + ":" + (p.el.dataset.to || p.el.dataset.way || "")) });
     await feetAt(p.spot); const aimed = enterTarget() && enterTarget().el === p.el;
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    const took = await until(() => B.kind === "woodpath" && !entering); return JSON.stringify({ kind: p.kind, aimed, took, now: B.kind }); })()`));
-  ok("the clearing's sign to the wood path: aimed from its foot, and Enter takes it", sign.aimed && sign.took !== null, sign);
+    const took = await until(() => B.kind === "house" && !entering); return JSON.stringify({ kind: p.kind, aimed, took, now: B.kind }); })()`));
+  ok("the clearing's way toward us, a nav arrow, to the house and yard: aimed at the bottom edge, and Enter takes it", sign.aimed && sign.took !== null, sign);
   // a tree house's ladder: X at its foot climbs it, at ⬆'s pace, and goes in
   const tree = JSON.parse(await ev(`(async () => { ${H} worldEnter("4,4"); B.houses = DEFAULTS.background.houses; /* (the tree's own number of houses, whatever a check before left) */ await settle(); const p = marks.pics.find(p => p.kind === "ladder");
     if (!p) return JSON.stringify({ none: marks.pics.map(p => p.kind) });
