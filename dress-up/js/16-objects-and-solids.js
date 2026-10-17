@@ -236,6 +236,13 @@ function standingHere(B, seats) {
   }
   return out;
 }
+// (ticket 237, Matthew: "collision detection should avoid walking over the trap doors in the floor of the tree houses")
+// a hole in the floor (a tree room's trapdoor: data-hole, its box on the floor), a solid as low as a step: the feet
+// don't walk onto it, a walk goes round it (planPath), a jump clears it, and ♿'s collision boxes show it; its ladder
+// down is taken from its near edge, as before
+const HOLE_H = 30;
+const holesHere = () => bgShown.node ? [...bgShown.node.querySelectorAll("[data-hole]")].map(el => {
+  const [x0, x1, back, front] = el.dataset.hole.split(" ").map(Number); return { name: "trapdoor", x0, x1, back, front, h: HOLE_H }; }) : [];
 // (the solids here, made again only when the place, its seats or its hidden objects change)
 let solidMemo = { text: undefined, kind: null, off: "", list: [] };
 function solidsHere() {
@@ -245,7 +252,7 @@ function solidsHere() {
   if (solidMemo.text !== bgShown.text || solidMemo.kind !== B.kind || solidMemo.off !== offKey || !bgShown.text) {
     const seats = seatsHere(B);
     solidMemo = { text: bgShown.text, kind: B.kind, off: offKey, list: seats.map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
-      return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y }; }).concat(standingHere(B, new Set(seats.map(t => t.name)))) };
+      return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y }; }).concat(standingHere(B, new Set(seats.map(t => t.name))), holesHere()) };
   }
   return solidMemo.list;
 }

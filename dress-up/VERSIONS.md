@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.166 (2026-10-17)
+
+Everything in 0.0.165, with tree house trapdoors you walk round.
+
+- **Fixed: walking over the trapdoors**: in the tree house's rooms, your friend walked right across the open trapdoor in the floor, and a walk to somewhere else went straight over it. Now the hole stops your friend at its edge, a walk goes round it, and "🧱 collision boxes" shows it. Its ladder down is taken from the hole's edge, as before, and a jump still clears it.
+
 ## 0.0.165 (2026-10-17)
 
 Everything in 0.0.164, with a school of fish back in the deep sea, swimming.

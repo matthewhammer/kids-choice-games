@@ -347,7 +347,9 @@ function waysSvg(c, floor, links) {
       // a hatch in the floor, its lid up, the ladder's top poking out
       const hx = (x0 + W * 0.26) * TREE_FIT, hy = floor + 72 * k;   // (ticket 223: toward the middle, with what stands at the back wall)
       t += `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 55 * k, hy - 74 * k)} ${P(hx - 55 * k, hy - 74 * k)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(3 * k)}"/>` +
-           `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 76 * k, hy + 20 * k)} ${P(hx - 76 * k, hy + 20 * k)}" fill="#2a1a0e" stroke="#5e3d22" stroke-width="${f1(4 * k)}"/>` +
+           // (ticket 237, Matthew: "collision detection should avoid walking over the trap doors in the floor of the tree
+           // houses") its hole, on the floor, a solid (data-hole: across, and back to front; solidsHere)
+           `<polygon data-hole="${f1(hx - 70 * k)} ${f1(hx + 70 * k)} ${f1(hy - 18 * k)} ${f1(hy + 20 * k)}" points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 76 * k, hy + 20 * k)} ${P(hx - 76 * k, hy + 20 * k)}" fill="#2a1a0e" stroke="#5e3d22" stroke-width="${f1(4 * k)}"/>` +
            // (ticket 199, Matthew: "some ladders don't animate (ones going down trap doors in tree house) ... let's make them all
            // animate") the ladder a ladder too, climbed down: data-down, the hole's near edge, below which the friend goes out of sight
            `<g data-ladder="1" data-down="${f1(hy + 20 * k)}">` +
