@@ -6,6 +6,7 @@ Each version lists the game's features as of that version. The newest version is
 
 - **Fixed:** with the 🏞️ Background tab open, moving the friend was slow everywhere, worst in the busy places (the duck pond at 2 to 15 frames a second instead of 60 on a test computer), and stayed slow until the page was reloaded, which opens the 🧍 Body tab again. The castle's room menus in that tab worked out the whole castle for every choice's name on every refresh; they now look up just the room they name.
 - **Fixed:** white flashes while walking or dragging (Matthew and the kids, since the still pictures became bitmaps in 0.0.93). On a computer the game finds slow, the place is drawn as still pictures while the friend moves, and a picture could be shown a frame before the browser had its pixels ready, so that frame was blank. A picture is now used only once it is ready to draw.
+- **While ⚙️ Advanced measures, it says so plainly** (Matthew): during 🧪 this computer's speed (about 40 seconds) and 📏 measure here, a notice over the game says to wait and touch nothing, with the seconds gone of about how long it takes and a bar filling up; 📋 copy, 📝 paste, 🧪, ⏱️, 📏 and the feature switches rest until it ends, so a half-done line can't be copied or a second measure started.
 
 ## 0.0.94 (2026-10-16)
 
