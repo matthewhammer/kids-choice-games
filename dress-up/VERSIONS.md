@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.139 (2026-10-17)
+
+Everything in 0.0.138, with ♿ Accessibility put right.
+
+- **The nav arrows stay in their places** with the collision boxes or the planned path shown. Before, showing the boxes moved every arrow onto another's place.
+- **The collision boxes stay shown** until you turn them off, from square to square. They used to vanish when you went to the next square.
+- **Each collision box shows its height** too, so it stands over the thing it is, not just on the floor in front of it.
+- **Short chips**: 🧭 all arrows, 👣 planned path, 🟥 collision boxes, each lit while it's on; and short slider names (arrow size, text size).
+
 ## 0.0.138 (2026-10-17)
 
 Everything in 0.0.137, with the tune chooser neater on a phone.
