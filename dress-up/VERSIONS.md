@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.105 (2026-10-17)
+
+Everything in 0.0.104, with the ways out showing only when you are near them.
+
+- **A way out's arrow shows only when your friend is near it** (Matthew), fading in as they come close and out as they leave; while it shows it is on top of everything, the back chip and the picture's buttons too, and a tap on it walks through. Hidden, it is in nobody's way.
+- **Its words on two short lines**, where it goes and the place's name, on the side toward the middle of the picture, so they stay on the screen (Matthew: they went off it).
+
 ## 0.0.104 (2026-10-17)
 
 Everything in 0.0.103, with tidier forest crossings.

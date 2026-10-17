@@ -357,3 +357,21 @@
 .world-trash { border: 2px dashed var(--line, #ccc); border-radius: 8px; padding: 6px 10px; }
 .world-here { margin: 0.5rem 0; }
 .drag-ghost { position: fixed; z-index: 1000; pointer-events: none; transform: translate(-50%, -60%); font-size: 2.2em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
+
+/* (ticket 185) the world square's ways out, over the picture and its buttons: each shown only while the friend is near it */
+.ways-layer { position: absolute; inset: 0; pointer-events: none; z-index: 35; overflow: hidden; }
+.way-arrow { position: absolute; left: 0; top: 0; width: 0; height: 0; padding: 0; border: 0; background: none; cursor: pointer;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.way-arrow.near { opacity: 1; pointer-events: auto; }
+.way-arrow .way-tri { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; transform: rotate(var(--a)); animation: way-bob 1.8s ease-in-out infinite; }
+.way-arrow .way-tri::before { content: ""; position: absolute; inset: 6px; clip-path: polygon(15% 5%, 98% 50%, 15% 95%); background: #fff4cf; filter: drop-shadow(0 0 2px #6b4a24) drop-shadow(0 0 1px #6b4a24); }
+.way-arrow.nowhere .way-tri::before { background: #d6d3d1; }
+.way-arrow.nowhere { cursor: default; }
+.way-arrow:hover .way-tri::before, .way-arrow:focus-visible .way-tri::before { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f); }
+@keyframes way-bob { 0%, 100% { translate: 0 0; } 50% { translate: calc(5px * cos(var(--a))) calc(5px * sin(var(--a))); } }
+.way-arrow .way-words { position: absolute; width: max-content; max-width: 7.5em; text-align: center; white-space: normal; line-height: 1.15;
+  font: 600 0.8rem/1.15 sans-serif; color: #fff; text-shadow: 0 0 3px #3b2a14, 0 0 3px #3b2a14, 0 0 2px #3b2a14; }
+.way-arrow[data-side="left"] .way-words { right: 26px; top: 50%; transform: translateY(-50%); text-align: right; }
+.way-arrow[data-side="right"] .way-words { left: 26px; top: 50%; transform: translateY(-50%); text-align: left; }
+.way-arrow[data-side="below"] .way-words { top: 26px; left: 50%; transform: translateX(-50%); }
+.way-arrow[data-side="above"] .way-words { bottom: 26px; left: 50%; transform: translateX(-50%); }

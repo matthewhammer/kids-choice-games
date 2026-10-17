@@ -95,39 +95,80 @@ function worldEnter(key, side = null, draw = true) {
   [B.figX, B.figY] = side ? WORLD_IN[side] : ARRIVE[cell.kind] || [0, 0];
   if (draw) changed();
 }
-// The ways out of the square the friend is in, in the picture (Matthew,
-// 2026-10-17: "how do I access those passageways in the game?"): a small
-// bobbing triangle at each, pointing out, as the ▼ toward us is: N at the
-// far end of the ground, S at the bottom, E and W at the sides, the four
-// between at the corners. Each a doorway (data-way: it glows when pointed
-// at or near the friend, X goes through, a click walks there) to the square
-// beside it; a way that is a mistake, leading nowhere, is dimmed, 🚧, and
-// goes nowhere. Drawn after the place, in front of everything; kept as a
-// piece of its own, as the place's own drawing does not know the world.
+// The ways out of the square the friend is in (Matthew, 2026-10-17: "how do
+// I access those passageways in the game?"; then: only when near them, and
+// on top of the picture's buttons; and their words on short lines, kept on
+// the screen). In the picture, each way is an invisible doorway (data-way)
+// at the edge it leads off: N at the far end of the ground, S at the
+// bottom, E and W at the sides, the four between at the corners. It is what
+// the friend walks to, what glows when they are near, what X goes through.
+// Over the picture and its buttons, in #ways, each way's arrow, a bobbing
+// triangle pointing out, shown only while the friend's feet are within
+// reach of it (WAY_NEAR): then it is on top, and a tap on it walks through;
+// hidden, it takes no taps. Its words, where it leads, on two short lines,
+// on its side toward the middle of the picture. A way that is a mistake,
+// leading nowhere, is grey, 🚧, and goes nowhere. A forest crossing shows
+// only its live ways (worldLiveWays).
+const WAY_NEAR = 190;   // (the stage's units: about two of the friend's strides)
+let worldWaysAt = [];   // (each way's [direction, x, y, angle, leads to], as last drawn)
 function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const W = state.world, cell = W && W.at && W.cells[W.at];
-  if (!cell || cell.kind !== B.kind) return "";
+  if (!cell || cell.kind !== B.kind) { worldWaysAt = []; worldWaysHud(); return ""; }
   const ways = worldLiveWays(W, W.at);
-  if (!ways.length) return "";
   const meets = d => { const nb = worldNeighbour(W, W.at, d), other = W.cells[nb.key]; return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]) ? other : null; };
-  const sig = ways.map(d => d + (meets(d) ? meets(d).kind : "-")).join();
-  return SEP + part("world-ways", [W.at, B.kind, sig, x0, y0, x1, y1, g], () => {
-    const k = (y1 - y0) / 700, esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
-    // (a forest crossing's at its own paths' ends: crossGeom; any other place's at its far ground and sides)
-    const G = B.kind === "crossing" ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;
-    const far = G ? G.far + 10 * k : g - 150 * k, mid = G ? G.cy + 14 * k : g + 40 * k, side = G ? 0.6 : 0.55;
-    const AT = { N: [0, far - 6 * k, -90], S: [0, y1 - 30 * k, 90], E: [x1 - 45 * k, mid, 0], W: [x0 + 45 * k, mid, 180],
-                 NE: [x1 * side, far, -40], NW: [x0 * side, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
-    return ways.map(d => {
-      const [x, y, a] = AT[d], to = meets(d), r = 28 * k, rad = a * Math.PI / 180, bx = 5 * k * Math.cos(rad), by = 5 * k * Math.sin(rad);
-      const label = to ? `${WORLD_ARROWS[d]} ${placeName(to.kind)}` : `🚧 ${WORLD_ARROWS[d]} leads nowhere yet`;
-      const tri = `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${a})"><path d="M${f1(-0.6 * r)} ${f1(-0.8 * r)} L${f1(0.9 * r)} 0 L${f1(-0.6 * r)} ${f1(0.8 * r)} Z" ` +
-                  `fill="${to ? "#fff4cf" : "#d6d3d1"}" fill-opacity="0.85" stroke="${to ? "#6b4a24" : "#78716c"}" stroke-width="${f1(2.2 * k)}" stroke-linejoin="round"/></g>`;
-      const inner = `<title>${esc(label)}</title><g>${to ? `<animateTransform attributeName="transform" type="translate" values="0 0;${f1(bx)} ${f1(by)};0 0" dur="1.8s" repeatCount="indefinite"/>` : ""}${tri}</g>` +
-                    `<rect x="${f1(x - 2 * r)}" y="${f1(y - 2 * r)}" width="${f1(4 * r)}" height="${f1(4 * r)}" fill="#000000" opacity="0"/>` +
-                    `<text class="south-label" x="${f1(x)}" y="${f1(y - 1.7 * r)}" text-anchor="middle" font-size="${f1(24 * k)}" font-family="sans-serif" font-weight="600" fill="#ffffff" stroke="#3b2a14" stroke-width="${f1(5 * k)}" paint-order="stroke">${esc(label)}</text>`;
-      return obj(`way ${d}`, Infinity, to ? `<g class="portal south-way way-out" data-door="1" data-way="${d}">${inner}</g>` : `<g class="south-way way-out nowhere" opacity="0.6">${inner}</g>`);
-    }).join("");
+  const k = (y1 - y0) / 700;
+  // (a forest crossing's at its own paths' ends: crossGeom; any other place's at its far ground and sides)
+  const G = B.kind === "crossing" ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;
+  const far = G ? G.far + 10 * k : g - 150 * k, mid = G ? G.cy + 14 * k : g + 40 * k, side = G ? 0.6 : 0.55;
+  const AT = { N: [0, far - 6 * k, -90], S: [0, y1 - 30 * k, 90], E: [x1 - 45 * k, mid, 0], W: [x0 + 45 * k, mid, 180],
+               NE: [x1 * side, far, -40], NW: [x0 * side, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
+  worldWaysAt = ways.map(d => [d, ...AT[d], meets(d)]);
+  worldWaysHud();
+  if (!ways.length) return "";
+  const sig = worldWaysAt.map(([d, , , , to]) => d + (to ? to.kind : "-")).join();
+  return SEP + part("world-ways", [W.at, B.kind, sig, x0, y0, x1, y1, g], () => worldWaysAt.map(([d, x, y, a, to]) => {
+    const r = 28 * k;
+    // (invisible, and not tapped: the arrow over the picture is; its shape, the triangle, is what the glow frames)
+    const tri = `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${a})"><path d="M${f1(-0.6 * r)} ${f1(-0.8 * r)} L${f1(0.9 * r)} 0 L${f1(-0.6 * r)} ${f1(0.8 * r)} Z" fill="#000000" opacity="0"/></g>`;
+    return obj(`way ${d}`, Infinity, to ? `<g class="portal way-out" data-door="1" data-way="${d}" pointer-events="none">${tri}</g>` : `<g class="way-out nowhere" pointer-events="none">${tri}</g>`);
+  }).join(""));
+}
+// The arrows over the picture: made again when the ways change, placed and
+// shown or hidden on every drawing (cheap: a few at most)
+let waysShown = null;
+function worldWaysHud() {
+  const layer = document.getElementById("ways");
+  if (!layer) return;
+  const sig = worldWaysAt.map(([d, , , , to]) => d + (to ? to.kind : "-")).join();
+  if (sig !== waysShown) {
+    waysShown = sig;
+    layer.replaceChildren(...worldWaysAt.map(([d, , , a, to]) => {
+      const b = document.createElement("button");
+      b.className = "way-arrow" + (to ? "" : " nowhere"); b.dataset.way = d; b.type = "button";
+      b.style.setProperty("--a", a + "deg");
+      b.setAttribute("aria-label", to ? `Go ${d}, to ${placeName(to.kind)}` : `The way ${d} leads nowhere yet`);
+      const tri = document.createElement("span"); tri.className = "way-tri";
+      const words = document.createElement("span"); words.className = "way-words";
+      words.append(to ? WORLD_ARROWS[d] : "🚧 " + WORLD_ARROWS[d], document.createElement("br"), to ? placeName(to.kind) : "nowhere yet");
+      b.append(tri, words);
+      b.addEventListener("click", () => { const p = to && bgShown.node && bgShown.node.querySelector(`.portal[data-way="${d}"]`); if (p && !entering) enterScene(p); });
+      return b;
+    }));
+  }
+  if (!worldWaysAt.length) return;
+  const M = pic.getScreenCTM(), box = layer.getBoundingClientRect(), B = state.background;
+  if (!M || !box.width) return;
+  const fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
+  worldWaysAt.forEach(([d, x, y, a], i) => {
+    const el = layer.children[i];
+    if (!el) return;
+    const p = new DOMPoint(x, y).matrixTransform(M), near = Math.hypot(x - fx, y - fz) < WAY_NEAR;
+    // (kept inside the picture, by its size)
+    const left = Math.max(22, Math.min(box.width - 22, p.x - box.left)), top = Math.max(22, Math.min(box.height - 22, p.y - box.top));
+    el.style.left = left.toFixed(0) + "px"; el.style.top = top.toFixed(0) + "px";
+    // (its words toward the middle: left of an arrow on the right, below one at the top...)
+    el.dataset.side = /E/.test(d) && !/W/.test(d) ? "left" : /W/.test(d) ? "right" : d === "N" ? "below" : "above";
+    if (el.classList.contains("near") !== near) el.classList.toggle("near", near);
   });
 }
 // a way out taken: the friend walks to it, then is in the square beside

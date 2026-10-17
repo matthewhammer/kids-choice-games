@@ -55,8 +55,20 @@ try {
     await new Promise(r => setTimeout(r, 300)); return JSON.stringify({ at: state.world.at, kind: state.background.kind }); })()`));
   ok("and the back chip brings them back to the clearing (D3)", back.at === "3,2" && back.kind === "clearing", back);
   const nowhere = JSON.parse(await ev(`(async () => { delete state.world.cells["3,1"]; changed(); await new Promise(r => setTimeout(r, 300));
-    const n = [...document.querySelectorAll("#bg .way-out.nowhere")]; return JSON.stringify({ n: n.length, way: n.map(e => e.dataset.way || null), text: n.map(e => e.textContent).join(" ") }); })()`));
+    const n = [...document.querySelectorAll("#bg .way-out.nowhere")], a = [...document.querySelectorAll("#ways .way-arrow.nowhere")];
+    return JSON.stringify({ n: n.length, way: n.map(e => e.dataset.way || null), text: a.map(e => e.textContent).join(" ") }); })()`));
   ok("with the wood path gone, the way N is dimmed, 🚧, and goes nowhere", nowhere.n === 1 && nowhere.way[0] === null && /nowhere/.test(nowhere.text), nowhere);
+  // the arrows over the picture: only when the friend is near one; then on top, and their words on the screen
+  const near = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldEnter("3,2"); const B = state.background; B.figX = 0; B.figY = 0; changed(); await new Promise(r => setTimeout(r, 500));
+    const shown = () => [...document.querySelectorAll("#ways .way-arrow.near")].map(e => e.dataset.way);
+    const middle = shown();
+    B.figX = 330; B.figY = 30; changed(); await new Promise(r => setTimeout(r, 500));
+    const east = shown(), a = document.querySelector('#ways .way-arrow[data-way="E"]'), r = a.querySelector(".way-tri").getBoundingClientRect(), box = document.getElementById("ways").getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2), w = a.querySelector(".way-words").getBoundingClientRect();
+    return JSON.stringify({ middle, east, opacity: getComputedStyle(a).opacity, onTop: !!(top && top.closest && top.closest('.way-arrow[data-way="E"]')),
+      wordsInside: w.left >= box.left - 1 && w.right <= box.right + 1 && w.top >= box.top - 1 && w.bottom <= box.bottom + 1, lines: Math.round(w.height / parseFloat(getComputedStyle(a.querySelector(".way-words")).lineHeight)) }); })()`));
+  ok("in the middle of the clearing, no arrow shows", near.middle.length === 0, near.middle);
+  ok("walked to its east edge: the arrow E shows, on top of everything there, its words on the screen in two lines or more", near.east.join() === "E" && near.opacity === "1" && near.onTop && near.wordsInside && near.lines >= 2, near);
   // a crossing's dead ends: no trail, no arrow, no mistake (Matthew: a crossing missing a passageway has no trail and no arrow that way)
   const dead = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldPut("0,0", "crossing"); worldEnter("0,0"); await new Promise(r => setTimeout(r, 400));
     const paths = () => document.querySelectorAll('#bg path[fill="' + CROSS_PATH + '"]').length, arrows = () => document.querySelectorAll("#bg .way-out").length;
