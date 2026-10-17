@@ -35,6 +35,23 @@ function worldLiveWays(W, key) {
 const placeName = kind => (PLACES.find(p => p[0] === kind) || [kind, kind])[1];
 // a square's name, as on a map: a letter for the column, a number for the row
 const squareName = key => { const [c, r] = key.split(",").map(Number); return String.fromCharCode(65 + c) + (r + 1); };
+// (Matthew, 2026-10-17) Every square has a name of its own, for the signs and
+// arrows that point to it: the designer's (cell.name), else its place's,
+// with where it is (A5) when another square holds that place too. Two
+// squares with one name is a warning (worldProblems).
+const WORLD_NAME_MAX = 24;
+function worldNames(W, theirs = true) {   // (theirs false: the names the places give, as the box's hint)
+  const keys = worldKeys(W), count = {};
+  for (const k of keys) { const kd = W.cells[k].kind; count[kd] = (count[kd] || 0) + 1; }
+  return Object.fromEntries(keys.map(k => { const c = W.cells[k], own = theirs ? String(c.name || "").trim().slice(0, WORLD_NAME_MAX) : "";
+    return [k, own || (count[c.kind] > 1 ? `${placeName(c.kind)} ${squareName(k)}` : placeName(c.kind))]; }));
+}
+const worldName = (W, key) => worldNames(W)[key] || "";
+// the square the way d out of key leads to, if it meets a way back there; else null
+function worldMeets(W, key, d) {
+  const nb = worldNeighbour(W, key, d), other = W.cells[nb.key];
+  return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]) ? nb.key : null;
+}
 const worldKeys = W => Object.keys(W.cells).sort((a, b) => { const [ac, ar] = a.split(",").map(Number), [bc, br] = b.split(",").map(Number); return ar - br || ac - bc; });
 function worldNeighbour(W, key, d) {
   const [c, r] = key.split(",").map(Number), [dx, dy] = WORLD_DIRS[d], nc = c + dx, nr = r + dy;
@@ -72,6 +89,11 @@ function worldProblems(W) {
   }
   if (seen.size) for (const key of worldKeys(W)) if (!seen.has(key) && !INSIDE_KINDS.has(W.cells[key].kind))
     P.push({ key, text: `${name(key)} can't be reached from where the friend starts (${squareName(W.start)}).` });
+  // two squares with one name: a sign could not say which it means
+  const names = worldNames(W), by = {};
+  for (const [k, nm] of Object.entries(names)) (by[nm.toLowerCase()] = by[nm.toLowerCase()] || []).push(k);
+  for (const ks of Object.values(by)) if (ks.length > 1)
+    P.push({ key: ks[0], to: ks[1], text: `${ks.length === 2 ? "Two" : ks.length} squares are named "${names[ks[0]]}": ${ks.map(squareName).join(", ")}. Give one a name of its own.` });
   return P;
 }
 // What a square keeps of its place, as the Background tab edits it
@@ -152,17 +174,17 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const W = state.world, cell = W && W.at && W.cells[W.at];
   if (!cell || cell.kind !== B.kind) { worldWaysAt = []; worldWaysHud(); return ""; }
   const ways = worldLiveWays(W, W.at);
-  const meets = d => { const nb = worldNeighbour(W, W.at, d), other = W.cells[nb.key]; return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]) ? other : null; };
+  const meets = d => { const key = worldMeets(W, W.at, d); return key ? W.cells[key] : null; }, names = worldNames(W);
   const k = (y1 - y0) / 700;
   // (a forest crossing's at its own paths' ends: crossGeom; any other place's at its far ground and sides)
   const G = B.kind === "crossing" ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;
   const far = G ? G.far + 10 * k : g - 150 * k, mid = G ? G.cy + 14 * k : g + 40 * k, side = G ? 0.6 : 0.55;
   const AT = { N: [0, far - 6 * k, -90], S: [0, y1 - 30 * k, 90], E: [x1 - 45 * k, mid, 0], W: [x0 + 45 * k, mid, 180],
                NE: [x1 * side, far, -40], NW: [x0 * side, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
-  worldWaysAt = ways.map(d => [d, ...AT[d], meets(d)]);
+  worldWaysAt = ways.map(d => [d, ...AT[d], meets(d), meets(d) ? names[worldMeets(W, W.at, d)] : null]);
   worldWaysHud();
   if (!ways.length) return "";
-  const sig = worldWaysAt.map(([d, , , , to]) => d + (to ? to.kind : "-")).join();
+  const sig = worldWaysAt.map(([d, , , , to, nm]) => d + (to ? to.kind + ":" + nm : "-")).join();
   return SEP + part("world-ways", [W.at, B.kind, sig, x0, y0, x1, y1, g], () => worldWaysAt.map(([d, x, y, a, to]) => {
     const r = 28 * k;
     // (invisible, and not tapped: the arrow over the picture is; its shape, the triangle, is what the glow frames)
@@ -176,17 +198,17 @@ let waysShown = null;
 function worldWaysHud() {
   const layer = document.getElementById("ways");
   if (!layer) return;
-  const sig = worldWaysAt.map(([d, , , , to]) => d + (to ? to.kind : "-")).join();
+  const sig = worldWaysAt.map(([d, , , , to, nm]) => d + (to ? to.kind + ":" + nm : "-")).join();
   if (sig !== waysShown) {
     waysShown = sig;
-    layer.replaceChildren(...worldWaysAt.map(([d, , , a, to]) => {
+    layer.replaceChildren(...worldWaysAt.map(([d, , , a, to, nm]) => {
       const b = document.createElement("button");
       b.className = "way-arrow" + (to ? "" : " nowhere"); b.dataset.way = d; b.type = "button";
       b.style.setProperty("--a", a + "deg");
-      b.setAttribute("aria-label", to ? `Go ${d}, to ${placeName(to.kind)}` : `The way ${d} leads nowhere yet`);
+      b.setAttribute("aria-label", to ? `Go ${d}, to ${nm}` : `The way ${d} leads nowhere yet`);
       const tri = document.createElement("span"); tri.className = "way-tri";
       const words = document.createElement("span"); words.className = "way-words";
-      words.append(to ? WORLD_ARROWS[d] : "🚧 " + WORLD_ARROWS[d], document.createElement("br"), to ? placeName(to.kind) : "nowhere yet");
+      words.append(to ? WORLD_ARROWS[d] : "🚧 " + WORLD_ARROWS[d], document.createElement("br"), to ? nm : "nowhere yet");
       b.append(tri, words);
       b.addEventListener("click", () => { const p = to && bgShown.node && bgShown.node.querySelector(`.portal[data-way="${d}"]`); if (p && !entering) enterScene(p); });
       return b;

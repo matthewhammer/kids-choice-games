@@ -1000,7 +1000,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const rows = () => {
       // (a thing's words are typed, and its size slid, in place: not in the signature, or each key or step would
       // build the row again, and the box lose the caret, the slider the finger; a slider not in hand follows its thing)
-      const T = state.background.things || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p, , how]) => how === "text" || how === "range" ? null : t[p] ?? null)]));
+      const T = state.background.things || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p, , how]) => how === "text" || how === "range" ? null : t[p] ?? null),
+                                                                              t.kind === "signpost" ? signWays(state.background).join() : ""]));
       if (sig === shown) {
         for (const r of list.querySelectorAll('input[type="range"][data-thing]')) {
           const t = T[+r.dataset.thing], v = t && (t[r.dataset.param] ?? 100);
@@ -1021,6 +1022,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           if (how === "range") { const [lo, hi, st] = opts, shownAt = el("span", { class: "hint" }, `${now ?? 100}%`);
             return [el("span", { class: "hint" }, label), el("input", { type: "range", min: String(lo), max: String(hi), step: String(st), value: String(now ?? 100), "aria-label": label, "data-thing": String(i), "data-param": p,
               oninput: e => { t[p] = +e.target.value; shownAt.textContent = t[p] + "%"; changed(); } }), shownAt]; }
+          // (a sign's boards: a chip per way this square has that meets a way back; all of them until some are chosen)
+          if (how === "dirs") { const ok = signWays(state.background), cur = t[p] ?? ok;
+            if (!ok.length) return [el("span", { class: "hint" }, label + ": no ways out here that meet a way back")];
+            return [el("span", { class: "hint" }, label), ...ok.map(d => el("button", { "aria-pressed": String(cur.includes(d)), title: d,
+              onclick: () => { const c = t[p] ?? ok; t[p] = Object.keys(WORLD_DIRS).filter(x => x === d ? !c.includes(d) : c.includes(x)); changed(); } }, WORLD_ARROWS[d]))]; }
           if (how === "text") return [el("span", { class: "hint" }, label), el("input", { type: "text", maxlength: String(opts), size: String(opts), value: String(now ?? ""), "aria-label": label, oninput: e => { t[p] = e.target.value.slice(0, opts); changed(); } })];
           return [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)];
         }),
@@ -1086,7 +1092,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     let shown = null;
     const render = () => {
       const W = state.world, P = worldProblems(W), at = W.at && W.cells[W.at];
-      const sig = JSON.stringify([W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c)]), P.map(p => p.text), worldWarnShown]);
+      const sig = JSON.stringify([W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown]);
       if (sig === shown) return;
       shown = sig;
       const bad = new Set(worldWarnShown ? P.map(p => p.key) : []);
@@ -1094,11 +1100,12 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       grid.replaceChildren(...Array.from({ length: W.cols * W.rows }, (_, i) => {
         const key = (i % W.cols) + "," + Math.floor(i / W.cols), cell = W.cells[key];
         if (!cell) return el("div", { class: "world-cell empty", title: squareName(key) + ": empty: drag a place here", "data-square": key }, squareName(key));
-        const name = placeName(cell.kind), [emoji, ...words] = name.split(" "), ways = worldLiveWays(W, key);
+        // (its words: the designer's name for it, if it has one, else its place's)
+        const name = placeName(cell.kind), [emoji, ...words] = name.split(" "), ways = worldLiveWays(W, key), own = String(cell.name || "").trim();
         const b = el("button", { class: "world-cell" + (bad.has(key) ? " bad" : "") + (W.at === key ? " here" : "") + (W.start === key ? " start" : ""), "data-square": key,
-                                 title: `${squareName(key)}: ${name}` + (ways.length ? ", ways out " + ways.map(d => WORLD_ARROWS[d]).join(" ") : "") + ". Tap to go there; drag to move it.",
+                                 title: `${squareName(key)}: ${own ? own + " (" + name + ")" : name}` + (ways.length ? ", ways out " + ways.map(d => WORLD_ARROWS[d]).join(" ") : "") + ". Tap to go there; drag to move it.",
                                  onclick: () => worldEnter(key) },
-                     [el("span", { class: "world-emoji" }, emoji), el("span", { class: "world-name" }, words.join(" ")), ...ways.map(d => el("span", { class: "world-way w-" + d }, ""))]);
+                     [el("span", { class: "world-emoji" }, emoji), el("span", { class: "world-name" }, own || words.join(" ")), ...ways.map(d => el("span", { class: "world-way w-" + d }, ""))]);
         pressDrag(b, () => emoji, { onDrop: under => { if (!under || !under.closest) return; if (under.closest(".world-trash")) worldRemove(key); else { const sq = under.closest("[data-square]"); if (sq) worldMove(key, sq.dataset.square); } } });
         return b;
       }));
@@ -1109,7 +1116,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           else at.ways = ways.includes(d) ? ways.filter(x => x !== d) : [...ways, d].sort((x, y) => Object.keys(WORLD_DIRS).indexOf(x) - Object.keys(WORLD_DIRS).indexOf(y));
           changed();
         };
-        here.replaceChildren(el("div", { class: "cap" }, `📍 ${squareName(W.at)}: ${placeName(at.kind)}`),
+        // (its name: typed, it is kept on Enter or leaving the box (not each key, or the panel built again would take the caret); emptied, the place's own again)
+        const nameBox = el("input", { type: "text", maxlength: String(WORLD_NAME_MAX), size: "18", value: String(at.name || ""), placeholder: worldNames(W, false)[W.at], "aria-label": "this square's name",
+          onchange: e => { const v = e.target.value.trim().slice(0, WORLD_NAME_MAX); if (v) at.name = v; else delete at.name; changed(); } });
+        here.replaceChildren(el("div", { class: "cap" }, `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
+          el("div", { class: "row" }, [el("span", { class: "hint" }, "✏️ its name on signs:"), nameBox]),
           el("div", { class: "row" }, [el("span", { class: "hint" }, "ways out:"), ...Object.keys(WORLD_DIRS).map(d => el("button", { "aria-pressed": String(ways.includes(d)), title: d, onclick: toggle(d) }, WORLD_ARROWS[d]))]),
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
       } else here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."));

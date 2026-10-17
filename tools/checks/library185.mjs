@@ -27,7 +27,7 @@ try {
     for (const b of chips) { b.click(); await new Promise(r => setTimeout(r, 100)); out[b.dataset.group] = items(); }
     chips[0].click(); return JSON.stringify(out); })()`));
   ok("five groups, nature open at first: rock, bush, tree, pine, toadstool", groups.chips.length === 5 && groups.first.join() === "+ 🪨 rock,+ 🌿 bush,+ 🌳 tree,+ 🌲 pine,+ 🍄 toadstool", groups);
-  ok("camp: log, campfire, bench, barrel; magic: cauldron, potion; spooky: a skeleton; signs: a sign", groups.camp.join() === "+ 🪵 log,+ 🔥 campfire,+ 🪑 bench,+ 🛢️ barrel" && groups.magic.join() === "+ 🫕 cauldron,+ 🧪 potion" && groups.spooky.join() === "+ 💀 skeleton" && groups.signs.join() === "+ 🪧 sign", groups);
+  ok("camp: log, campfire, bench, barrel; magic: cauldron, potion; spooky: a skeleton; signs: a sign", groups.camp.join() === "+ 🪵 log,+ 🔥 campfire,+ 🪑 bench,+ 🛢️ barrel" && groups.magic.join() === "+ 🫕 cauldron,+ 🧪 potion" && groups.spooky.join() === "+ 💀 skeleton" && groups.signs.join() === "+ 🪧 sign,+ 🧭 sign with directions", groups);
   // (0.0.113) the drawings lifted out of the places: each drawn as a thing too, burning or not
   const lifted = JSON.parse(await ev(`(async () => { const B = state.background, kinds = ["log", "campfire", "bench", "barrel", "cauldron"];
     B.things = kinds.map((kind, i) => ({ kind, x: -300 + i * 150, z: 370, seed: 20 + i, size: 100, ...structuredClone(THING_DEFAULTS[kind] || {}) })); changed(); await new Promise(r => setTimeout(r, 500));
@@ -71,6 +71,24 @@ try {
       const p = document.querySelector('#bg [data-drag="thing:0"] polygon'); return p ? getComputedStyle(p).fill : null; })()`);
   }
   ok("a pine is green, in a dark page and a light one", greens.dark === "rgb(47, 110, 58)" && greens.light === "rgb(47, 110, 58)", greens);
+  // (Matthew, 2026-10-17) a sign with directions: a board for each way chosen, named by the square it leads to; every square's name its own
+  const post = JSON.parse(await ev(`(async () => {
+    const C = { "1,1": { kind: "crossing", crossN: true, crossNE: true, crossE: true, crossSE: true, crossS: true, crossSW: true, crossW: true, crossNW: true, crossFloor: "#76843a", crossBack: "sky", things: [] },
+      "1,0": { kind: "beach", ways: ["S"], things: [] }, "2,0": { kind: "mountains", ways: ["SW"], things: [] }, "2,1": { kind: "castle", ways: ["W"], things: [] }, "2,2": { kind: "house", ways: ["NW"], things: [] },
+      "1,2": { kind: "lake", ways: ["N"], things: [] }, "0,2": { kind: "campsite", ways: ["NE"], things: [] }, "0,1": { kind: "forest", ways: ["E"], name: "Grandma's woods", things: [] }, "0,0": { kind: "witch", ways: ["SE"], things: [] } };
+    state.world = { cols: 3, rows: 3, start: "1,1", cells: C }; worldEnter("1,1");
+    const B = state.background; B.things = [{ kind: "signpost", x: 90, z: 380, seed: 1, size: 100 }]; changed(); await new Promise(r => setTimeout(r, 500));
+    const boards = () => [...document.querySelectorAll('#bg [data-drag="thing:0"] text')].map(e => e.textContent);
+    const all = boards(); B.things[0].dirs = ["N", "E", "S"]; changed(); await new Promise(r => setTimeout(r, 300));
+    const three = boards(); B.things[0].dirs = []; changed(); await new Promise(r => setTimeout(r, 300));
+    const none = boards(), chips = [...document.querySelectorAll(".cross-list button")].filter(b => /^(N|NE|E|SE|S|SW|W|NW)$/.test(b.title || "")).length;
+    state.world.cells["2,1"].name = "Grandma's woods"; changed(); await new Promise(r => setTimeout(r, 300));
+    const dup = worldProblems(state.world).filter(p => /named/.test(p.text)).map(p => p.text);
+    return JSON.stringify({ all, three, none, chips, dup, names: worldNames(state.world) }); })()`));
+  ok("a sign with directions in the middle square: eight boards, each the name of the square it leads to", post.all.length === 8 && post.all.some(t => /Grandma's woods/.test(t)) && post.all.some(t => /beach/.test(t)), post.all);
+  ok("three ways chosen: three boards; none: a bare post; a chip for each of the eight ways in its row", post.three.length === 3 && post.none.length === 0 && post.chips === 8, post);
+  ok("two squares given one name: a warning", post.dup.length === 1 && /Grandma's woods/.test(post.dup[0]), post.dup);
+  ok("a place's own name where it is the only one; the designer's where given", post.names["1,0"] === "🏖️ beach" && post.names["0,1"] === "Grandma's woods", post.names);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
