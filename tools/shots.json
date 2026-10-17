@@ -123,5 +123,40 @@
   "name": "postcard-long-message",
   "js": "state.background.kind = \"forest\"; changed(); await new Promise(r => setTimeout(r, 600)); const b = await postcardBlob(\"A very very long postcard message that goes on and on about the trees and the woods\"); const im = document.createElement('img'); im.src = URL.createObjectURL(b); im.style.cssText = 'position:fixed;inset:0;margin:auto;max-width:94vw;max-height:94vh;z-index:9999;box-shadow:0 0 0 100vmax rgba(0,0,0,0.55)'; document.body.append(im)",
   "wait": 1500
+ },
+ {
+  "name": "friend-facing-us",
+  "js": "state.background.kind = \"emptyroom\"",
+  "wait": 1200
+ },
+ {
+  "name": "friend-turned-right",
+  "js": "state.background.kind = \"emptyroom\"; state.body.turn = \"right\"",
+  "wait": 1200
+ },
+ {
+  "name": "friend-turned-left",
+  "js": "state.background.kind = \"emptyroom\"; state.body.turn = \"left\"",
+  "wait": 1200
+ },
+ {
+  "name": "friend-profile-right",
+  "js": "state.background.kind = \"emptyroom\"; state.body.facing = \"right\"",
+  "wait": 1200
+ },
+ {
+  "name": "friend-turned-right-walking",
+  "js": "state.background.kind = \"forest\"; state.body.turn = \"right\"; state.body.anim = \"walk\"",
+  "wait": 1200
+ },
+ {
+  "name": "fairy-turned-left",
+  "js": "state.background.kind = \"fairyforest\"; state.costume.kind = \"fairy\"; state.body.turn = \"left\"",
+  "wait": 1200
+ },
+ {
+  "name": "witch-turned-right",
+  "js": "state.background.kind = \"witch\"; state.costume.kind = \"witch\"; state.body.turn = \"right\"",
+  "wait": 1200
  }
 ]

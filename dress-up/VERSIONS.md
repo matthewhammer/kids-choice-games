@@ -10,6 +10,7 @@ Each version lists the game's features as of that version. The newest version is
 - **What stands in a place is solid** (Matthew: "the objects in a room that one can't reasonably walk through"): tables, beds, wells, stoves, barrels, bookcases, rocks, bushes and the rest of what stands, and trees by their trunks, stop the friend, as the seats have since 0.0.89. The low ones (a rock, a log, a bush, a toadstool) can be jumped over, a short jump clearing the lowest. Houses, huts, doors and ladders stay open, and so do the animals and the people.
 - **The flat rooms have back walls:** in the 🛋️ living room, the 🪜 tree house's rooms, the 🧙 witch's hut, the 🌿 healer's hut and ⛺ a tent, the friend stops at the foot of the back wall, as in 💭 our imagination, instead of walking up it.
 - **Postcards** (💾 Save ▾ → "💌 Save a postcard"): your friend in their place, in a card's cream border, with something written under it, saved as one picture ready to send. The words start as the picture's own line ("feeling happy outside of N's castle"); type anything instead. A long message goes on two lines.
+- **Walking toward us on a slant** (Matthew: the controller's diagonals): holding down and left, or down and right, the friend faces us turned partway that way, body a little narrower, the far arm behind, the face looking that way, instead of turning all the way to the side. Straight sideways is still a side view, and walking away on a slant is as before.
 
 ## 0.0.94 (2026-10-16)
 

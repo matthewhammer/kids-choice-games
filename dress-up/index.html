@@ -701,7 +701,10 @@ const DEFAULTS = {
            jumpShortH: 30, jumpShortS: 150, jumpHighH: 90, jumpHighS: 75,
            // (ticket 124) which way the friend faces (toward us, or in profile
            // to our left or right), and whether they sit
-           facing: "front", sit: false },
+           facing: "front", sit: false,
+           // (ticket 144) facing us but turned partway to our left or right
+           // (a controller's diagonal toward us), or not ("")
+           turn: "" },
   shirt: { style: "tee", collar: "v", width: 60, length: 150, color: "#5b8bd0", pattern: "plain",
            patternSize: 14, patternColor: "auto" },
   hands: { style: "round", different: false, size: 14, color: "skin", fingers: 5, alienFingers: 3, clawLen: 100, clawCount: 4, starPoints: 5, starAngle: 0,
@@ -2147,7 +2150,7 @@ function earSvg(kind, k, color, x0, y, s) {
 }
 // (ticket 124) in profile, the face's front edge from its middle, in the face's units
 const profileEdge = F => 80 * headWidth(F) * (1 + 0.12 * F.alien / 100) - 8;
-function faceSvg(F, ground, parts = false, dir = 0) {
+function faceSvg(F, ground, parts = false, dir = 0, turn = 0) {
   const b = F.burst, k = F.candy, r = F.rays, o = F.open;
   const rayLen = r === 0 ? 0 : idiv((15 + idiv(r * 6, 10)) * b, 100);
   const shown = k * b >= 2500 ? 40 : idiv(k * b * 40, 2500);
@@ -2198,7 +2201,10 @@ function faceSvg(F, ground, parts = false, dir = 0) {
   const sick = !dir || F.sick <= 0 ? "" :
     `<g transform="translate(100 ${f1(LY.mouthY)}) scale(${LY.mx.toFixed(3)} ${LY.my.toFixed(3)}) translate(-100 -150)">` +
     sickPile(F.sick, 150 + idiv(lower - 150, 2), 150 + (ground - LY.mouthY) / LY.my, 100 + dir * (profileEdge(F) - 4) / LY.mx, 0.4) + `</g>`;
-  return parts ? { under, eyes, over, sick } : under + eyes + over;
+  // (ticket 144) turned partway: the eyes, nose, brows and mouth slid the
+  // way they turn, the head's outline as it is
+  const slide = t => turn ? `<g transform="translate(${turn * 14} 0)">${t}</g>` : t;
+  return parts ? { under, eyes: slide(eyes), over: slide(over), sick } : under + slide(eyes) + slide(over);
 }
 
 // ===================== THE GHOST =====================
@@ -10265,6 +10271,12 @@ const lfoStamp = L => { const lf = lfoNow(L); return lf ? [lf.dur.toFixed(4), lf
 // (ticket 124) which way the friend faces: 0 toward us, -1 in profile to our
 // left, 1 to our right
 const facingOf = B => B.facing === "left" ? -1 : B.facing === "right" ? 1 : 0;
+// (ticket 144) facing us, turned partway: -1 to our left, 1 to our right, 0
+// not turned. The cheap three-quarter view: the drawing facing us, the
+// body narrower, the far arm behind it, the face's features slid the way
+// they turn. Only facing us; set by the controller's diagonals toward us,
+// and cleared wherever the facing is set otherwise.
+const turnOf = B => B.facing !== "front" ? 0 : B.turn === "left" ? -1 : B.turn === "right" ? 1 : 0;
 const POSE_KEYS = ["poseArmL", "poseArmR", "poseElbowL", "poseElbowR", "poseLegL", "poseLegR", "poseKneeL", "poseKneeR", "poseFootL", "poseFootR"];
 // (ticket 129) the pose menu: whole poses for the friend, each the pose's
 // own turns and bends (degrees, by side: L their left, on our right),
@@ -10298,7 +10310,7 @@ function strikePose(which) {
   if (which === "stand" || which === "sit") { F.closed = false; return; }
   // (a hug is seen from the side: facing us, they turn to our right)
   if (which === "hug") { F.closed = false; if (!facingOf(B)) B.facing = "right"; Object.assign(B, POSES.hug.pose); return; }
-  B.facing = "front";
+  B.facing = "front"; B.turn = "";
   let P = POSES[which];
   if (Array.isArray(P)) { const left = P.filter(d => d.name !== lastDance); P = left[Math.floor(Math.random() * left.length)]; lastDance = P.name; }
   Object.assign(B, P.pose);
@@ -10590,6 +10602,7 @@ function drawNow() {
   // way they face; the side nearer us is their -dir side (facing our right,
   // their right shoulder is toward us)
   const dir = facingOf(B), sitting = !!B.sit || B.pose === "hug";   // (ticket 136: a hug's legs are a sitter's)
+  const q = dir ? 0 : turnOf(B);   // (ticket 144: turned partway, the far side's sign)
   // (ticket 138) facing away from us: drawn as facing us (dir 0), but the
   // back of the head is hair, with no face on it, and what is on their back
   // (wings, a tail) is in front of them
@@ -10630,7 +10643,7 @@ function drawNow() {
     P = WC.fairyOutfit === "pants" ? { ...P, style: "pants", color: mix(fCol, "#000000", 0.28), pattern: "plain" }
                                    : { ...P, style: "dress", skirtLen: 58, color: fCol, ...pat };
   }
-  const w = dir ? SH.width * 0.62 : SH.width, L = SH.length;
+  const w = dir ? SH.width * 0.62 : q ? SH.width * 0.84 : SH.width, L = SH.length;
   const nw = Math.max(22, B.neckW / 2 + 6);           // the collar fits the neck
 
   // ARMS: from each shoulder, at the arms angle, to a hand. (ticket 99)
@@ -10643,7 +10656,8 @@ function drawNow() {
   // (in profile, both from the shoulder and to the front, `out`, the far one
   // held a little higher so both show)
   const arms = [1, -1].map(side => {
-    const A = dir ? [-dir * 3, 8] : [side * (w - 6), 8], out = dir || side;
+    // (turned partway, the far shoulder a little in: ticket 144)
+    const A = dir ? [-dir * 3, 8] : [side * (w - (side === q ? 14 : 6)), 8], out = dir || side;
     const turn = B.arms + poseT("Arm", side) + (dir ? (side === dir ? -14 : 4) : 0), bend = elbow + poseT("Elbow", side);
     if (!dir && turn === B.arms && bend === elbow) {
       if (!eb) return { side, out, A, H: [A[0] + side * armLen * Math.cos(a), A[1] + armLen * Math.sin(a)],
@@ -10658,7 +10672,9 @@ function drawNow() {
     return { side, out, A, E, H, angle: out > 0 ? turn - bend : 180 - turn + bend, joints: [A, E, H] };
   });
   // (in profile, the arm on our side is in front of the body, the other behind)
-  const farArms = dir ? arms.filter(x => x.side === dir) : arms, nearArms = dir ? arms.filter(x => x.side === -dir) : arms;
+  // (turned partway, as in profile: the far arm wholly behind, the near one in front: ticket 144)
+  const back = dir || q;
+  const farArms = back ? arms.filter(x => x.side === back) : arms, nearArms = back ? arms.filter(x => x.side === -back) : arms;
   // an arm's joints (shoulder, elbow, hand; or shoulder and hand), and its
   // sleeve's: the share `f` of the arm's length from the shoulder, round the elbow
   const armJoints = arm => arm.joints || [arm.A, arm.H];
@@ -11144,8 +11160,8 @@ function drawNow() {
   // it, a round fist)
   const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : state.hands, own = !suit && side < 0 ? rightHandOf(hands) : hands;
     return handSvg(H[0], H[1], angle, out, broomH && side > 0 ? { ...own, style: "round" } : own, skin); };
-  // (in profile, the far arm's sleeve over it, and its hand, behind the body)
-  if (dir && !winged) {
+  // (in profile, or turned partway, the far arm's sleeve over it, and its hand, behind the body)
+  if ((dir || q) && !winged) {
     if (sleeve > 0) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
     const farHandsAt = svg.length;
     for (const arm of farArms) svg += handOf(arm);
@@ -11213,7 +11229,7 @@ function drawNow() {
   const groundInFace = (ground - ty) / s;
   // (the eyes see-through on their own: an invisible head can keep its
   // eyes, floating)
-  const face = faceSvg(F, groundInFace, true, dir);
+  const face = faceSvg(F, groundInFace, true, dir, q);
   const inFace = t => `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">${t}</g>`;
   // (ticket 138: from behind, the head and its hair, no face)
   // (in a costume, the hood's back closed over the head: its ears, mane or
@@ -11281,8 +11297,8 @@ function drawNow() {
   // covers their tops, outline and all)
   // (a bird suit's wings stay behind the face, or they would hide it)
   const armsAt = svg.length;
-  if (!winged && dir) {
-    // (in profile, the arm on our side wholly in front of the body)
+  if (!winged && (dir || q)) {
+    // (in profile, or turned partway, the arm on our side wholly in front of the body)
     for (const arm of nearArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
     if (sleeve > 0) for (const arm of nearArms) svg += limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf);
     if (wrapStripes(C))
@@ -13627,7 +13643,8 @@ function set(part, key, value) {
   // the side turns a friend who faces us to our right
   if (part === "body" && key === "pose") strikePose(value);
   if (part === "body" && key === "anim" && ANIM_SIDEWAYS[value] && state.body.facing === "front") state.body.facing = "right";   // (away from us, they step in place: ticket 138)
-  if (part === "body" && key === "anim" && value === "climb") state.body.facing = "front";   // (the ladder is behind them, facing us)
+  if (part === "body" && key === "anim" && value === "climb") { state.body.facing = "front"; state.body.turn = ""; }   // (the ladder is behind them, facing us)
+  if (part === "body" && key === "facing") state.body.turn = "";   // (ticket 144: a chip's way, not turned)
   if (part === "body" && key === "anim" && value === "climbup") state.body.facing = "back";   // (up a place's ladder, facing it: ticket 138)
   if (part === "body" && key === "anim") climb = null;   // (ticket 137: a climb starts afresh)
   if (part === "body" && key === "anim" && isJump(value)) startJump("none", value);   // (ticket 138: once, then still)
@@ -15182,6 +15199,7 @@ function sitOn(t) {
   const B = state.background, body = state.body;
   body.sit = true; body.pose = "sit"; B.seat = t.name;
   if (t.facing && t.facing.length && !t.facing.includes(body.facing || "front")) body.facing = t.facing[0];
+  body.turn = "";   // (ticket 144: seated, not turned)
   const fx = B.figX ?? 0, m = Math.min(12, (t.x1 - t.x0) / 3);
   B.figX = Math.round(fx >= t.x0 + m && fx <= t.x1 - m ? fx : (t.x0 + t.x1) / 2);
   B.figY = Math.round(t.z - SCENE.ground);
@@ -15410,7 +15428,9 @@ function padPoll(t) {
     // (which way they face: a diagonal keeps the one of its two ways they faced, else the side one)
     const ax = Math.abs(vx), ay = Math.abs(vy), m = Math.max(ax, ay);
     const side = ax > 0.38 * m ? (vx < 0 ? "left" : "right") : null, depth = ay > 0.38 * m ? (vy < 0 ? "back" : "front") : null;
-    B.facing = !side ? depth : !depth ? side : B.facing === side || B.facing === depth ? B.facing : side;
+    // (ticket 144) a diagonal toward us: facing us, turned partway the side's way; away from us, as before
+    if (side && depth === "front") { B.facing = "front"; B.turn = side; }
+    else { B.facing = !side ? depth : !depth ? side : B.facing === side || B.facing === depth ? B.facing : side; B.turn = ""; }
     padMoving = true;
     moved();   // (ticket 163)
   } else if (padMoving) {
@@ -15654,7 +15674,7 @@ function climbLadder(el) {
 // hidden below the hole's near rim (a clip that stays as the friend drops)
 function fallDown([cx, cy, rx, ry], then) {
   const B = state.body, NS = "http://www.w3.org/2000/svg";
-  B.anim = "fall"; B.facing = "front"; tripPhase = "teetering"; draw();
+  B.anim = "fall"; B.facing = "front"; B.turn = ""; tripPhase = "teetering"; draw();
   setTimeout(() => {
     tripPhase = "falling";
     draw();
@@ -15707,7 +15727,7 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null) {
     for (const u of undo) u();
     tripPhase = "arriving";
     arrive();
-    B.anim = "none"; B.facing = "front";   // (standing, in the place they came into, facing us)
+    B.anim = "none"; B.facing = "front"; B.turn = "";   // (standing, in the place they came into, facing us)
     entering = false;
     changed();
     if (landFall) { fallLand(); return; }   // (ticket 162: from a pit, dropping in and landing; no fade)
@@ -15724,7 +15744,7 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null) {
       else {
         const k = sp / d;
         BG.figX = Math.round(10 * ((BG.figX ?? 0) + dx * k)) / 10; BG.figY = Math.round(10 * ((BG.figY ?? 0) + dy * k)) / 10;
-        B.anim = "walk"; B.facing = face(dx, dy);
+        B.anim = "walk"; B.facing = face(dx, dy); B.turn = "";
         moved();
       }
     }
@@ -15742,7 +15762,7 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null) {
     if (phase === "in") {
       if (!tIn) { tIn = t; tripPhase = "stepping in"; }
       const u = Math.min(1, (t - tIn) / WALK_IN_MS);
-      if (walk) { B.anim = "walk"; B.facing = face(ux, uy); }
+      if (walk) { B.anim = "walk"; B.facing = face(ux, uy); B.turn = ""; }
       BG.figX = tx + ux * WALK_IN_STEP * u; BG.figY = ty + uy * WALK_IN_STEP * 0.6 * u;
       draw(); fade((1 - u).toFixed(2));   // (drawn now, not as moved() may, later: the fade goes on what is drawn)
       if (u >= 1) { done(); return; }
