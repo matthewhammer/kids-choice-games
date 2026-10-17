@@ -30,7 +30,9 @@ try {
   // every passage in the clearing, and at each one's spot: it is the one, and nothing else glows bright
   const clearing = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,2"); await settle();
     const kinds = marks.pics.map(p => p.kind), out = [];
-    for (const p of marks.pics.filter(p => p.spot)) { await feetAt(p.spot); const t = enterTarget(); out.push({ kind: p.kind, to: p.el.dataset.to || p.el.dataset.way || "", it: !!t && (t.el === p.el || (!!t.spot && Math.hypot(t.spot[0] - p.spot[0], t.spot[1] - p.spot[1]) < 2)), ...glows() }); }
+    // (it, or one just as near: two passages can end at one spot, as the clearing's old front path and its nav arrow S)
+    for (const p of marks.pics.filter(p => p.spot)) { await feetAt(p.spot); const t = enterTarget(), all = passesNear(Infinity), nOf = q => (all.find(e => e.p === q) || { n: Infinity }).n;
+      out.push({ kind: p.kind, to: p.el.dataset.to || p.el.dataset.way || "", it: !!t && (t.el === p.el || Math.abs(nOf(t) - nOf(p)) < 0.05), ...glows() }); }
     return JSON.stringify({ kinds, out }); })()`));
   ok("the clearing's passages, every kind in one list (signs, doorways, nav arrows...)", clearing.kinds.includes("nav") && clearing.kinds.some(k => k === "sign" || k === "doorway"), clearing.kinds);
   ok("standing at each one's spot, it is the one X would take (or one standing at the very same spot)", clearing.out.every(o => o.it), clearing.out.filter(o => !o.it));
@@ -38,7 +40,7 @@ try {
   const dimSeen = clearing.out.some(o => o.dim > 0);
   console.log(`  (dim glows seen at ${clearing.out.filter(o => o.dim > 0).length} of ${clearing.out.length} spots)`);
   // Enter takes the one that glows: the clearing's sign to the wood path
-  const sign = JSON.parse(await ev(`(async () => { ${H} worldEnter("3,2"); await settle(); const p = marks.pics.find(p => p.el.dataset.to === "woodpath" && p.kind !== "nav");
+  const sign = JSON.parse(await ev(`(async () => { ${H} worldEnter("3,2"); await settle(); const p = marks.pics.find(p => p.el.dataset.to === "woodpath" && p.kind === "sign");
     if (!p) return JSON.stringify({ none: marks.pics.map(p => p.kind + ":" + (p.el.dataset.to || "")) });
     await feetAt(p.spot); const aimed = enterTarget() && enterTarget().el === p.el;
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
@@ -52,7 +54,7 @@ try {
   ok("a tree house's ladder: aimed from its foot; X climbs it and goes in", tree.aimed && tree.took !== null, tree);
   ok("climbed at ⬆'s pace: in the tree house within 6 s (slow motion took far longer)", tree.took !== null && tree.took < 6000, tree);
   // the dungeon's trapdoor ladder
-  const trap = JSON.parse(await ev(`(async () => { ${H} Object.assign(B, { kind: "castleroom", castle: "N", castleRoomsN: 6, castleRoom6N: "dungeon", castleRoom: 6, figX: 0, figY: 0 }); await settle();
+  const trap = JSON.parse(await ev(`(async () => { ${H} Object.assign(B, { kind: "castleroom", castle: "N", castleRoomsN: 6, castleRoom6N: "dungeon1", castleRoom: 6, figX: 0, figY: 0 }); await settle();
     const p = marks.pics.find(p => p.kind === "ladder"); if (!p) return JSON.stringify({ none: marks.pics.map(p => p.kind) });
     await feetAt(p.spot); const aimed = enterTarget() && enterTarget().el === p.el, from = B.castleRoom; enterPicture();
     const took = await until(() => (B.castleRoom !== from || B.kind !== "castleroom") && !entering, 12000); return JSON.stringify({ aimed, took, room: B.castleRoom, kind: B.kind }); })()`));

@@ -273,7 +273,9 @@ function passesNear(reach = 1) {
     else continue;
     if (n < reach) out.push({ p, n });
   }
-  return out.sort((a, b) => a.n - b.n);
+  // (a tie, as where a place's own old path and a nav arrow end at the same edge: the nav arrow, the world's
+  // way, wins; Matthew, 2026-10-17: slowly away from the places' own signs, toward the arrows)
+  return out.sort((a, b) => (a.n - b.n) || ((b.p.kind === "nav") - (a.p.kind === "nav")));
 }
 function enterTarget() { const q = passesNear(); return q.length ? q[0].p : null; }
 // (a glow's rounded frame round a passage's box, inside its doorway: in front of it, behind whatever stands nearer)
