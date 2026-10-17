@@ -158,5 +158,10 @@
   "name": "witch-turned-right",
   "js": "state.background.kind = \"witch\"; state.costume.kind = \"witch\"; state.body.turn = \"right\"",
   "wait": 1200
+ },
+ {
+  "name": "south-way-livingroom",
+  "js": "state.music.mute = true; Object.assign(state.background, { kind: \"livingroom\", livingBack: \"forest\" }); changed(); await new Promise(r => setTimeout(r, 600));",
+  "wait": 600
  }
 ]
