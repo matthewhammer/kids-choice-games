@@ -536,7 +536,10 @@ function treeroomScene(c) {
     `<defs><g id="bg-wallbranch"><ellipse cx="0" cy="0" rx="11" ry="15" fill="#2a1a0e"/>` +
     `<path d="M-2 -8 Q60 -24 140 -52 L142 -44 Q64 -10 -2 8 Z" fill="#6e4a2c" stroke="#3a2414" stroke-width="1.5"/>` +
     `</g></defs>` + look.branches.filter(b => !onTrunk(b)).map(limb).join("") +
-    obj("tree trunk", floor + 40 * k, braidSvg(look.trunk, y0 - pad, floor + 40 * k, 100 * k, k) + look.branches.filter(onTrunk).map(limb).join("")), floor));
+    // (ticket 243, Matthew, with a picture of room 4: "need more segments for this feature of this tree house room (NE
+    // corner) -- the tree's box is too big") the braid marked, data-trunk: the trunk's box its braid's alone, in bands
+    // up it (standingHere), not its whole drawing's with the limbs that leave it
+    obj("tree trunk", floor + 40 * k, `<g data-trunk="">` + braidSvg(look.trunk, y0 - pad, floor + 40 * k, 100 * k, k) + `</g>` + look.branches.filter(onTrunk).map(limb).join("")), floor));
   // pictures on the far side of the wall from the window, each where nothing stands in front of it (ticket 242: the
   // room the friend is in; one seen in a picture on a wall, smaller and drawn inside it, keeps its usual places)
   const slots0 = ROOM_PICTURES[room].map(([x, y, w]) => [x * TREE_FIT, floor + (y - floor) * TREE_FIT, w * k * TREE_FIT]);

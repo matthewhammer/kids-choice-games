@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.173 (2026-10-17)
+
+Everything in 0.0.172, with a tighter fit round the tree inside the tree house.
+
+- **Fixed: the tree inside the tree house blocked too much**: in the tree house's rooms, the tree's trunk stopped your friend in a big box covering its whole corner, branches and all. Now its boxes follow the trunk up from the floor, so you can walk right up beside it; "🧱 collision boxes" shows them.
+
 ## 0.0.172 (2026-10-17)
 
 Everything in 0.0.171, with pictures that hang clear of the ladders.
