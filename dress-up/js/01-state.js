@@ -275,7 +275,15 @@ const FAIRY_TUNICS = {
 const FAIRY_SHOES = [["slipper", "🩰 curly slippers"], ["petal", "🌸 petal shoes"], ["leaf", "🍃 leaf wraps"], ["sparkle", "✨ sparkle boots"], ["bare", "🌼 bare feet, flower anklets"]];
 const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa", "#ffffff"];
 
+// (ticket 185) The world: places laid on a grid, each joined to its
+// neighbours by the ways out on their shared sides (see 26-world.js). A
+// part of DEFAULTS, so that Load and the autosave keep it. Its first world
+// is today's, laid out: the clearing at the middle, the wood path north of
+// it and the mountains beyond, the fairy forest north-east, the castle
+// east, forest crossings joining the rest; the insides off the grid.
+const WORLD_DEFAULT = {"cols": 5, "rows": 5, "start": "2,2", "cells": {"2,0": {"kind": "mountains", "ways": ["S"]}, "0,1": {"kind": "witch", "ways": ["S", "E"]}, "1,1": {"kind": "cemetery", "ways": ["W", "S"]}, "2,1": {"kind": "woodpath", "ways": ["N", "S"]}, "3,1": {"kind": "fairyforest", "ways": ["SW"]}, "0,2": {"kind": "forest", "ways": ["N", "E"]}, "1,2": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossThings": []}, "2,2": {"kind": "clearing", "ways": ["N", "NE", "E", "S", "W"]}, "3,2": {"kind": "castle", "ways": ["W", "S"]}, "0,3": {"kind": "lake", "ways": ["E", "S"]}, "1,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": false, "crossSW": false, "crossW": true, "crossNW": false, "crossThings": []}, "2,3": {"kind": "crossing", "crossN": true, "crossNE": false, "crossE": true, "crossSE": false, "crossS": true, "crossSW": false, "crossW": true, "crossNW": false, "crossThings": []}, "3,3": {"kind": "house", "ways": ["N", "E", "S", "W"]}, "4,3": {"kind": "treehouse", "ways": ["W"]}, "0,4": {"kind": "beach", "ways": ["N"]}, "2,4": {"kind": "waterfall", "ways": ["N", "E"]}, "3,4": {"kind": "campsite", "ways": ["N", "W"]}}};
 const DEFAULTS = {
+  world: WORLD_DEFAULT,
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
            stars: false, hearts: false, xeyes: false, closed: false, unibrow: true, eyes: 50, sides: 0,
            rays: 0, teeth: 5, open: 0, teethStyle: "normal",
