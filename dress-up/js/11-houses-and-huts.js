@@ -592,13 +592,15 @@ function treeroomScene(c) {
   });
   // the ways out: a door to each house a rope bridge joins this one to, a
   // hatch down its ladder, a ladder up to the house above; each a doorway
-  // (the doors are in the side walls, and are not objects; the hatch is one, at its hole's
-  // front edge, hy + 20k = floor + 92k in waysSvg, and the ladder up another, at its foot,
-  // floor + 14k: each drawn by itself, in the order waysSvg draws them all)
+  // (the doors are one object, at the back wall's foot, floor (ticket 192, Matthew: drawn as
+  // scenery after the room's objects, they covered the friend standing in front of them); the
+  // hatch is one, at its hole's front edge, hy + 20k = floor + 92k in waysSvg, and the ladder up
+  // another, at its foot, floor + 14k: each drawn by itself, in the order waysSvg draws them all)
   const links = houseLinks(o, inside - 1), ways = way => links.filter(L => way.includes(L.way));
   s += SEP + part("room-ways", [c.F, links], () => {
     const down = ways(["down"]), up = ways(["up"]);
-    return waysSvg(c, floor, ways(["left", "right"])) + (down.length ? obj("hatch", floor + 92 * k, waysSvg(c, floor, down)) : "") +
+    const doors = ways(["left", "right"]);
+    return (doors.length ? obj("side doors", floor, waysSvg(c, floor, doors)) : "") + (down.length ? obj("hatch", floor + 92 * k, waysSvg(c, floor, down)) : "") +
            (up.length ? obj("ladder up", floor + 14 * k, waysSvg(c, floor, up)) : "");
   });
   // which house this is: a sign hanging from the rafters

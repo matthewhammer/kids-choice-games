@@ -74,6 +74,14 @@ try {
   }
   const went = JSON.parse(await ev(`(async () => { ${H} const took = await until(() => B.kind === "witchroom" && !entering, 9000); return JSON.stringify({ took, now: B.kind }); })()`));
   ok("a click on the witch's hut where her fence stands in front: into her hut", went.took !== null, { spot, went });
+  // (ticket 192, Matthew) in a tree house room, the friend standing in front of its side door is drawn over it, not under it
+  const layer = JSON.parse(await ev(`(async () => { ${H} Object.assign(B, { kind: "treeroom", houses: 6, inside: 2 }); await settle();
+    const door = document.querySelector('#bg [data-obj="side doors"] .portal'); if (!door) return JSON.stringify({ none: [...document.querySelectorAll("#bg .portal")].map(d => d.dataset.to + ":" + (d.closest("[data-obj]") || { dataset: {} }).dataset.obj) });
+    const p = marks.pics.find(q => q.el === door); await feetAt([p.spot[0], p.spot[1] + 20]);
+    const f = document.getElementById("figure").getBoundingClientRect(), d = door.querySelector("rect").getBoundingClientRect();
+    const x = Math.max(f.left, d.left) + 4, y = (Math.max(f.top, d.top) + Math.min(f.bottom, d.bottom)) / 2, u = document.elementFromPoint(x, y);
+    return JSON.stringify({ overlap: x < Math.min(f.right, d.right), friendOnTop: !!u && !!u.closest("#figure"), what: u ? u.tagName + (u.closest("[data-obj]") ? "/" + u.closest("[data-obj]").dataset.obj : "") : null }); })()`));
+  ok("tree house room 2: the friend in front of its side door is drawn over it", !layer.none && layer.overlap && layer.friendOnTop, layer);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
