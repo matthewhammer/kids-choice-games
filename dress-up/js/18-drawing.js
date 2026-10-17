@@ -876,7 +876,7 @@ function drawNow() {
     w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse"><rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/></clipPath>`;
     n.replaceWith(w); w.append(n);
   }
-  pathHud(); solidsHud(); accessApply(); bubbleRun();   // (ticket 220: bubble space's bubbles, moving while it is shown)   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)
+  worldWaysHud(); pathHud(); solidsHud(); accessApply(); bubbleRun();   // (0.0.145: the arrows placed again on every drawing too)   // (ticket 220: bubble space's bubbles, moving while it is shown)   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)
   if (scened) { stillPic.draws++; if (stills) stillPic.drawsOn++; }   // (for 🧪)
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was

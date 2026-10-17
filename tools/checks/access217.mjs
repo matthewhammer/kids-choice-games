@@ -97,6 +97,12 @@ try {
     return JSON.stringify({ same: before === after, before, after, still, firstIsArrow }); })()`));
   ok("with the collision boxes shown, every arrow stays where it was", keep.same && keep.firstIsArrow, keep);
   ok("and the boxes stay shown in the next square, till they are hidden", keep.still, keep);
+  // (0.0.145, Matthew's bug: into full screen, the arrows kept the smaller picture's places, all in its top left)
+  const fs = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { allArrows: true }); await clearing(); await w(300);
+    const E = () => { const e = arrows().find(el => el.dataset.way === "E"), lw = document.getElementById("ways").getBoundingClientRect().width; return e ? +(parseFloat(e.style.left) / lw).toFixed(3) : null; };
+    const before = E(); setBig(true, true); await w(700); const after = E(); setBig(false, true); await w(500); const back = E();
+    Object.assign(A, DEFAULTS.access); changed(); return JSON.stringify({ before, after, back }); })()`));
+  ok("into full screen and out, the E arrow stays at the picture's right edge (placed again for its new size)", fs.before > 0.85 && fs.after > 0.85 && fs.back > 0.85, fs);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

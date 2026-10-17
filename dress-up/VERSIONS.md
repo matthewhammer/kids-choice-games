@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.145 (2026-10-17)
+
+Everything in 0.0.144, with the arrows in their places in full screen.
+
+- **In full screen, the nav arrows (and the collision boxes and the planned path) move to their places** as the picture grows or shrinks. Before, going full screen left them where the smaller picture had them, bunched in its top left.
+
 ## 0.0.144 (2026-10-17)
 
 Everything in 0.0.143, with bubbles to blow.

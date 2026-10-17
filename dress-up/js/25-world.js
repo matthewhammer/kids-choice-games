@@ -425,7 +425,13 @@ function blowTick(t) {
   } else if (ov) ov.remove();
   if (holding || blowSim.list.length) blowSim.raf = requestAnimationFrame(blowTick);
 }
+// (0.0.145, Matthew: "into FS mode, need to reposition the accessibility help, not make it wrong, or make it
+// disappear") Over the picture, everything placed through the screen (the nav arrows, the collision boxes, the planned
+// path) is placed again whenever the picture changes size (full screen, the divider, a turned phone), once its new
+// size is laid out: the arrows had kept the smaller picture's places, all in its top left, till something was drawn.
 let pathShown = "";
+if (window.ResizeObserver && document.getElementById("pic"))   // (the element: the name pic is declared in a later part)
+  new ResizeObserver(() => { solidsShown = ""; pathShown = ""; worldWaysHud(); solidsHud(); pathHud(); }).observe(document.getElementById("pic"));
 function pathHud() {
   const layer = document.getElementById("access-layer");
   if (!layer) return;
