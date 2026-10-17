@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slow Until Reloaded</title>
+<style>
+  :root { --bg: #fbfaf7; --paper: #ffffff; --ink: #1f2328; --muted: #5b6470; --line: #e3e0d8; --accent: #6d28d9; --soft: #cbbcf0; --alt: #0f8b7d; --good: #15803d; --bad: #b91c1c; --link: #1d4ed8; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --alt: #2dd4bf; --good: #4ade80; --bad: #f87171; --link: #93c5fd; } }
+  :root[data-theme="dark"] { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --alt: #2dd4bf; --good: #4ade80; --bad: #f87171; --link: #93c5fd; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 2em; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 1.35em; margin: 48px 0 10px; padding-top: 8px; border-top: 2px solid var(--line); }
+  h3 { font-size: 1.08em; margin: 24px 0 6px; }
+  p, li { max-width: 72ch; }
+  .series { color: var(--muted); margin: 0 0 6px; font-size: 0.92em; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .headline { background: var(--paper); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 6px; }
+  .headline ol > li { margin: 8px 0; }
+  a { color: var(--link); text-underline-offset: 2px; }
+  a.ref code, code { font-size: 0.9em; }
+  code { background: color-mix(in srgb, var(--line) 50%, transparent); padding: 0 4px; border-radius: 4px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 18px 0; }
+  .kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .kpi .v { font-size: 1.7em; font-weight: 700; } .kpi .l { color: var(--muted); font-size: 0.9em; }
+  .good { color: var(--good); } .bad { color: var(--bad); }
+  figure { margin: 18px 0; } figcaption { color: var(--muted); font-size: 0.9em; margin-top: 6px; max-width: 72ch; }
+  svg.chart { width: 100%; height: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; }
+  svg.chart .grid { stroke: var(--line); } svg.chart .limit { stroke: var(--bad); stroke-dasharray: 4 3; }
+  svg.chart .tick { fill: var(--muted); font-size: 11px; } svg.chart .limitlabel { fill: var(--bad); }
+  svg.chart .lab { fill: var(--ink); font-size: 12px; }
+  svg.chart .b1 { fill: var(--accent); } svg.chart .b2 { fill: var(--alt); }
+  svg.chart .val1 { fill: var(--ink); font-size: 11px; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92em; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; } td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .note { color: var(--muted); font-size: 0.9em; }
+  .dated { border-left: 3px solid var(--soft); padding-left: 12px; }
+  ol.steps { list-style: none; padding-left: 0; } ol.steps li { margin: 12px 0; border-left: 3px solid var(--line); padding-left: 12px; }
+  .stepnum a { font-weight: 700; text-decoration: none; }
+  button.tk, button.theme { font: inherit; font-size: 0.8em; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; }
+  button.theme { position: fixed; top: 10px; right: 10px; }
+  .places { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .places figure { margin: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+  .places img { width: 100%; height: auto; display: block; border-radius: 8px; }
+  svg.chart .b0 { fill: var(--soft); } svg.chart .bad { fill: var(--bad); } svg.chart .good { fill: var(--good); }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../003/"><code><b>^du_report(</b>3<b>)</b></code></a> · 2026-10-16 · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after <a class="ref" href="../002/"><code><b>^du_report(</b>2<b>)</b></code></a></p>
+<h1>Slow until reloaded</h1>
+<p class="sub">Why did Messed Up Dress Up stay slow after the duck pond, in every place, until the page was reloaded (<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-167"><code><b>^ticket(</b>167<b>)</b></code></a>), and what else builds up in a session of play? Measured the night of 2026-10-16 on 0.0.94, on GitHub's computers: the series' first measurements made there, not on Matthew's laptop.</p>
+
+<div class="headline" id="answers">
+<p><b>Short answers.</b> Each figure is one run on one of GitHub's computers (headless Chrome 155 or Firefox 157, no graphics card), so read them against each other, not against a kid's computer (<a href="#method">below</a>).</p>
+<ol>
+<li><b>It was the 🏞️ Background tab, not the pond.</b> With that tab open, the default friend swims the duck pond at 2.4 to 14.9 frames a second (Chrome, two runs); with any of the game's other 15 tabs open, at 60. Places are chosen and set in that tab, so it stays open after a trip to the pond, and every place is slow after; a reload opens the 🧍 Body tab again.</li>
+<li><b>Every refresh of that tab worked out the whole castle, over and over.</b> While the friend moves, the open tab's controls are refreshed a few times a second. On the Background tab a refresh took about 790 ms (0.5 ms on Body), two thirds of it naming the castle's room choices: for every door and hall end of every castle, each name built the whole castle first. Since 0.0.95 (released 2026-10-17), each name looks up just its room: a refresh takes 25 ms, and the pond swims at 59.3 with the tab open.</li>
+<li><b>A session keeps a cache, not a leak.</b> After rounds of changes and a forced garbage collection, the page holds about 25,000 to 29,000 more nodes, in 28 to 31 parsed pictures, and 35 to 45 MB: the cache of pictures within pictures, which stops at 40. Our first counts, taken without a collection, looked like a leak (141,904 nodes, 11,775 listeners): most of it was waiting to be collected.</li>
+<li><b>Firefox still loses frames after a session, for a reason not found yet:</b> 58.5 frames a second fresh, 50.8 after two rounds of changes, against 60 for a control that only swam as long. Not the caches, not the music, not listeners.</li>
+<li><b>This time a stand-in could tell.</b> <a class="ref" href="../002/"><code><b>^du_report(</b>2<b>)</b></code></a> found the kids' computers' costs in each browser's painting, out of reach of a headless browser. This one is the game's own script, and a headless browser on GitHub shows it at once; 🧪 could not, as it runs from ⚙️ Advanced, never with the Background tab open.</li>
+</ol>
+</div>
+
+<div class="kpis">
+<div class="kpi"><div class="v good">2.4–14.9 → 59.3</div><div class="l">fps swimming in the duck pond with the 🏞️ Background tab open, before → after the fix (Chrome)</div></div>
+<div class="kpi"><div class="v">60</div><div class="l">fps with any other of the 16 tabs open, before the fix and after</div></div>
+<div class="kpi"><div class="v good">790 → 25 ms</div><div class="l">a refresh of the Background tab's controls (0.5 ms on 🧍 Body)</div></div>
+<div class="kpi"><div class="v bad">58.5 → 50.8</div><div class="l">fps in Firefox after two rounds of changes (a control that only swam: 60)</div></div>
+</div>
+
+<h2 id="places">The places that work hardest</h2>
+<div class="places">
+<figure><img src="pictures/duck-pond.svg" alt="The duck pond, moving: ducks swimming, ripples, the friend in the water" loading="lazy"><figcaption><b>🦆 The duck pond</b>, the place <a class="ref" href="../002/"><code><b>^du_report(</b>2<b>)</b></code></a> was about: 27 and 22 frames a second on the kids' computers as it was, 58 and 60 as still bitmaps (0.0.93), and where this report's slowdown was first seen. 37 animations move in it here.</figcaption></figure>
+<figure><img src="pictures/forest.svg" alt="The forest, moving" loading="lazy"><figcaption><b>🌲 The forest</b>: 51.3 frames a second walked with the on-screen controller on GitHub's Chrome, one of two places of 42 under 55 in the audit of every place (<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-160"><code><b>^ticket(</b>160<b>)</b></code></a>; every other place 60).</figcaption></figure>
+<figure><img src="pictures/imagination.webp" alt="Our imagination: framed pictures of other places on its walls" loading="lazy"><figcaption><b>💭 Our imagination</b>: 52.5, the other; its 22 framed pictures are whole places drawn small. (A still: its moving drawing is 1.7 MB.)</figcaption></figure>
+</div>
+<p class="note">The pictures move as the game does: they are the game's own drawings, from its picture archive of 2026-10-16 (0.0.90), with their animations. A GitHub computer has no graphics card, so its frame rates sit lower than a laptop's: these places are the hardest to draw, not too slow for a kid's computer.</p>
+
+<h2 id="tab">It was the tab</h2>
+<p>The question came from Matthew's laptop (0.0.94): a setting changed at the duck pond, and the game was slow there, and everywhere after, until a reload; and earlier from the Ubuntu laptop (Intel i7), where the empty room was as slow as the pond after a visit to it (<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-167"><code><b>^ticket(</b>167<b>)</b></code></a>). We first looked for what a session leaves behind (<a href="#session">below</a>); what answered it was simpler: the default friend swum across the pond for 4 seconds with each of the game's 16 tabs open in turn, a fresh page each time.</p>
+<figure id="fig-1"><svg class="chart" viewBox="0 0 760 146" role="img"><line class="grid" x1="230.0" y1="6" x2="230.0" y2="124"/><text class="tick" x="230.0" y="138" text-anchor="middle">0</text><line class="grid" x1="347.5" y1="6" x2="347.5" y2="124"/><text class="tick" x="347.5" y="138" text-anchor="middle">15</text><line class="grid" x1="465.0" y1="6" x2="465.0" y2="124"/><text class="tick" x="465.0" y="138" text-anchor="middle">30</text><line class="grid" x1="582.5" y1="6" x2="582.5" y2="124"/><text class="tick" x="582.5" y="138" text-anchor="middle">45</text><line class="grid" x1="700.0" y1="6" x2="700.0" y2="124"/><text class="tick" x="700.0" y="138" text-anchor="middle">60</text><line class="limit" x1="660.8" y1="2" x2="660.8" y2="124"/><text class="tick limitlabel" x="664.8" y="12">55: the gate</text><text class="lab" x="222" y="31" text-anchor="end">any of the other 15 tabs</text><rect class="b1" x="230" y="16" width="470.0" height="22" rx="3"/><text class="val1" x="705.0" y="31">60</text><text class="lab" x="222" y="59" text-anchor="end">🏞️ Background, run 1</text><rect class="bad" x="230" y="44" width="18.8" height="22" rx="3"/><text class="val1" x="253.8" y="59">2.4</text><text class="lab" x="222" y="87" text-anchor="end">🏞️ Background, run 2</text><rect class="bad" x="230" y="72" width="116.7" height="22" rx="3"/><text class="val1" x="351.7" y="87">14.9</text><text class="lab" x="222" y="115" text-anchor="end">🏞️ Background, fixed</text><rect class="good" x="230" y="100" width="464.5" height="22" rx="3"/><text class="val1" x="699.5" y="115">59.3</text></svg>
+<figcaption>Figure 1. The duck pond, swum by the default friend with a fake controller, frames a second with the tab open (Chrome 155 on GitHub, one run each: <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39001878021">run 39001878021</a>, <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39002226943">run 39002226943</a>, and the fix <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39002729428">run 39002729428</a>). Only the Background tab's runs differ: 2.4 and 14.9, then 59.3 fixed.</figcaption></figure>
+<div class="scroll"><table>
+<tr><th>tab open</th><th>Chrome, run 1</th><th>Chrome, run 2</th><th>Chrome, fixed</th><th>Firefox (relative)</th></tr>
+<tr><td>Body</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">60</td></tr><tr><td>Face</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">29.8</td></tr><tr><td>Eyes</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">32.2</td></tr><tr><td>Hair</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">31.1</td></tr><tr><td>Neck, arms & legs</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">32</td></tr><tr><td>Shirt</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">32</td></tr><tr><td>Hands</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">32.3</td></tr><tr><td>Pants</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">32.6</td></tr><tr><td>Swim & undies</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">32.3</td></tr><tr><td>Feet</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">32.5</td></tr><tr><td>Visibility</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">32.2</td></tr><tr><td>Costume</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">31.8</td></tr><tr><td>Background</td><td class="n" class="bad">2.4</td><td class="n" class="bad">14.9</td><td class="n good">59.3</td><td class="n" class="bad">7.7</td></tr><tr><td>Controls</td><td class="n">60</td><td class="n">60</td><td class="n">60</td><td class="n">31.5</td></tr><tr><td>Music</td><td class="n">–</td><td class="n">60</td><td class="n">60</td><td class="n">31.4</td></tr><tr><td>Advanced</td><td class="n">–</td><td class="n">60</td><td class="n">60</td><td class="n">32.1</td></tr>
+</table></div>
+<p class="note">Firefox: the first page load is 60; every page loaded after it in the same headless session runs on a 33 ms beat (about 30 frames a second), so only its column's rows compare with each other: there the Background tab is 7.7 against about 31 (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39003331635">run 39003331635</a>). Run 1 stopped after 14 tabs.</p>
+<p>Why only after the pond: the Background tab is where a place is chosen and its settings changed, so it is the tab left open after any trip made from it; the game keeps no open tab across a reload, which opens 🧍 Body. Slow until reloaded, in every place, more in the busy ones.</p>
+
+<h2 id="why">Every refresh worked out the whole castle</h2>
+<p>A CPU profile of 4 seconds of swimming with each tab open (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39002226943">run 39002226943</a>): with 🧍 Body, the controls' refresh (<code>settle</code>, a few times a second while the friend moves) ran 15 times for 8 ms in all; with 🏞️ Background, 4 times for 3,162 ms, and the one full refresh (<code>changed</code>) 801 ms. Two thirds of everything sampled was one function: the name of a castle room choice, "dungeon room 4", which found the room's style by building the whole castle (<code>castleOf</code>: every room's exits, flags, residents) for that one name. The Background tab holds a menu of rooms for every door and hall end of every castle, 13 choices each, and every name was worked out afresh on every refresh.</p>
+<p><b>The fix</b> (<code>ffa9c31</code>, released in 0.0.95 on 2026-10-17): a name looks up its room by the same rule the castle's room list follows. With the Background tab open, a refresh now takes 25 ms (15 in 4 s, 372 ms), the pond swims at 59.3, and every tab passes a check that holds the pond at 50 or more with it open (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39002729428">run 39002729428</a>). The 25 ms left, against 0.5 on Body, is the tab's other controls (<a href="#step-2">step 2</a>).</p>
+
+<h2 id="session">What a session keeps</h2>
+<p>Before we knew it was the tab, we measured a session: the pond fresh, then after a round of changes (every place visited and walked a moment, trips through the castle's gate, into a pit and up a ladder, 60 changes of sliders, every tab clicked), twice, then after a reload, with what might grow counted.</p>
+<div class="scroll"><table>
+<tr><th>Chrome, counted as found</th><th>fps</th><th>nodes</th><th>listeners</th><th>heap MB</th><th>rAF a frame</th><th>timers</th></tr>
+<tr><td>fresh</td><td class="n">60</td><td class="n">9,670</td><td class="n">135</td><td class="n">9.7</td><td class="n">3</td><td class="n">1</td></tr><tr><td>after round 1</td><td class="n">58.7</td><td class="n">50,480</td><td class="n">122</td><td class="n">74.2</td><td class="n">5</td><td class="n">2</td></tr><tr><td>after round 2</td><td class="n">56.2</td><td class="n">141,904</td><td class="n">11,775</td><td class="n">141.0</td><td class="n">5</td><td class="n">2</td></tr><tr><td>after a reload</td><td class="n">59.8</td><td class="n">13,955</td><td class="n">135</td><td class="n">32.0</td><td class="n">3</td><td class="n">1</td></tr>
+</table></div>
+<p class="note"><a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/38998791340">run 38998791340</a>; the game unchanged (0.0.94). These counts include what is waiting to be collected.</p>
+<p>It looked like a leak. Counted again after a forced garbage collection (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39003132453">run 39003132453</a>), most of it was garbage: listeners stay at 89 to 104, and what is kept is the cache of pictures within pictures (each a parsed document), at most 40 by design:</p>
+<div class="scroll"><table>
+<tr><th>after a collection</th><th>nodes</th><th>listeners</th><th>heap MB</th><th>documents</th><th>nodes, tabs clicked</th><th>listeners</th><th>heap MB</th></tr>
+<tr><td>fresh</td><td class="n">329</td><td class="n">89</td><td class="n">2.8</td><td class="n">1</td><td class="n">3,302</td><td class="n">89</td><td class="n">3.3</td></tr><tr><td>after round 1</td><td class="n">24,442</td><td class="n">89</td><td class="n">35.1</td><td class="n">29</td><td class="n">24,664</td><td class="n">104</td><td class="n">35.3</td></tr><tr><td>after round 2</td><td class="n">29,215</td><td class="n">89</td><td class="n">45.4</td><td class="n">32</td><td class="n">26,705</td><td class="n">104</td><td class="n">35.4</td></tr>
+</table></div>
+<p>What keeps running at an idle pond after a round of changes, counted by the line of the game that asked for it (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39001495740">run 39001495740</a>), per 2 seconds:</p>
+<div class="scroll"><table><tr><th>the game's line</th><th>before</th><th>after</th></tr><tr><td><code>frame@12541 (a tune's note loop)</code></td><td class="n">0</td><td class="n">121</td></tr><tr><td><code>perfMeterTick@865 (⚙️ Advanced's meter)</code></td><td class="n">0</td><td class="n">121</td></tr><tr><td><code>treadTick@11313 (treading water)</code></td><td class="n">0</td><td class="n">61</td></tr><tr><td><code>drawNow@11302</code></td><td class="n">0</td><td class="n">60</td></tr><tr><td><code>padPoll@15234 (the controller)</code></td><td class="n">120</td><td class="n">121</td></tr></table></div>
+<p>Each is there for a reason: a tune playing sends its notes every frame and every 25 ms; the ⚙️ Advanced tab's meter runs while that tab is open (the round ends on it); a friend in the water treads it. None is left over when its reason goes.</p>
+<figure id="fig-3"><svg class="chart" viewBox="0 0 760 258" role="img"><line class="grid" x1="230.0" y1="6" x2="230.0" y2="236"/><text class="tick" x="230.0" y="250" text-anchor="middle">0</text><line class="grid" x1="347.5" y1="6" x2="347.5" y2="236"/><text class="tick" x="347.5" y="250" text-anchor="middle">15</text><line class="grid" x1="465.0" y1="6" x2="465.0" y2="236"/><text class="tick" x="465.0" y="250" text-anchor="middle">30</text><line class="grid" x1="582.5" y1="6" x2="582.5" y2="236"/><text class="tick" x="582.5" y="250" text-anchor="middle">45</text><line class="grid" x1="700.0" y1="6" x2="700.0" y2="236"/><text class="tick" x="700.0" y="250" text-anchor="middle">60</text><line class="limit" x1="660.8" y1="2" x2="660.8" y2="236"/><text class="tick limitlabel" x="664.8" y="12">55: the gate</text><text class="lab" x="222" y="31" text-anchor="end">fresh</text><rect class="b1" x="230" y="16" width="458.2" height="22" rx="3"/><text class="val1" x="693.2" y="31">58.5</text><text class="lab" x="222" y="59" text-anchor="end">after round 1</text><rect class="b0" x="230" y="44" width="408.1" height="22" rx="3"/><text class="val1" x="643.1" y="59">52.1</text><text class="lab" x="222" y="87" text-anchor="end">after round 2</text><rect class="b0" x="230" y="72" width="397.9" height="22" rx="3"/><text class="val1" x="632.9" y="87">50.8</text><text class="lab" x="222" y="115" text-anchor="end">caches emptied</text><rect class="b0" x="230" y="100" width="397.9" height="22" rx="3"/><text class="val1" x="632.9" y="115">50.8</text><text class="lab" x="222" y="143" text-anchor="end">music paused too</text><rect class="b0" x="230" y="128" width="398.7" height="22" rx="3"/><text class="val1" x="633.7" y="143">50.9</text><text class="lab" x="222" y="171" text-anchor="end">control: fresh</text><rect class="b2" x="230" y="156" width="467.6" height="22" rx="3"/><text class="val1" x="702.6" y="171">59.7</text><text class="lab" x="222" y="199" text-anchor="end">control: after round 1</text><rect class="b2" x="230" y="184" width="470.0" height="22" rx="3"/><text class="val1" x="705.0" y="199">60</text><text class="lab" x="222" y="227" text-anchor="end">control: after round 2</text><rect class="b2" x="230" y="212" width="470.0" height="22" rx="3"/><text class="val1" x="705.0" y="227">60</text></svg>
+<figcaption>Figure 2. Firefox 157 on GitHub, the duck pond after rounds of changes and after taking away what might cost, against a control that only swam for as long (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/38998791340">run 38998791340</a>). Firefox loses about 8 frames a second to a session, and neither the caches nor the music give them back.</figcaption></figure>
+<p>That last is still open (<a href="#step-3">step 3</a>): Chrome loses less (60, 58.7, 56.2) and recovers on a reload (59.8); in Firefox a reload in a headless session runs at 30 on a 33 ms beat, so it cannot show whether a reload helps there.</p>
+
+<h2 id="proxies">What this changes in <a class="ref" href="../002/"><code><b>^du_report(</b>2<b>)</b></code></a></h2>
+<p><a class="ref" href="../002/"><code><b>^du_report(</b>2<b>)</b></code></a> found that only the kids' computers could show their costs, and that "the game's own work is never the cost" (a drawing takes 1.0 ms everywhere). Both hold for what it measured, the drawing and the painting. This slowdown was the game's own work, though not its drawing: the controls' refresh, which 🧪 never ran, as 🧪 lives on the ⚙️ Advanced tab. A headless browser shows that kind of cost at once, and since this evening every branch of the game is tried on GitHub's computers (<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-165"><code><b>^ticket(</b>165<b>)</b></code></a>: the safety net, the frame-rate gate, the audit of every place, and each branch's own checks), as no test browser runs on Matthew's laptop any more (it froze four times this evening, each time during one).</p>
+
+<h2 id="wrong">What we got wrong on the way</h2>
+<ul>
+<li><b>We counted before collecting.</b> 141,904 nodes and 11,775 listeners after two rounds, taken as a leak; after a forced collection, 29,215 and 89.</li>
+<li><b>Our first count of calls by line named its own wrapper</b> for every call (a stack trace's first frame); it now takes the first frame from the game's page.</li>
+<li><b>The per-tab test stopped at 14 tabs</b> the first time, missing Music and Advanced; the next asked for a 17th that does not exist, and failed on it.</li>
+<li><b>Firefox in one headless session</b> runs every page after the first at 30 frames a second: its per-tab numbers are relative only.</li>
+</ul>
+
+<h2 id="next">What next</h2>
+<ol class="steps">
+<li id="step-1"><span class="stepnum"><a href="#step-1">1.</a></span> <b>Released</b> in 0.0.95 (2026-10-17). Left: on the kids' computers and in Firefox on Matthew's laptop, the duck pond with the 🏞️ Background tab open. <button class="tk" data-step="1">copy for a ticket</button></li>
+<li id="step-2"><span class="stepnum"><a href="#step-2">2.</a></span> <b>The Background tab's refresh, cheaper still:</b> 25 ms against 0.5 on Body, in its other controls' refreshes (lines 13428, 14268 and 14112 on 0.0.94); refresh what changed, or only the controls on screen. Now <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-197"><code><b>^ticket(</b>197<b>)</b></code></a>. <button class="tk" data-step="2">copy for a ticket</button></li>
+<li id="step-3"><span class="stepnum"><a href="#step-3">3.</a></span> <b>Find Firefox's lost frames after a session:</b> a fresh Firefox for each case (not a reload, which runs at 30 there), and each part of a round on its own: the places, the trips, the sliders, the tabs. Now <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-198"><code><b>^ticket(</b>198<b>)</b></code></a>. <button class="tk" data-step="3">copy for a ticket</button></li>
+<li id="step-4"><span class="stepnum"><a href="#step-4">4.</a></span> <b>Hold every tab at 60 in CI:</b> the per-tab check (<code>tabs167.mjs</code>) joins the checks every branch runs. <button class="tk" data-step="4">copy for a ticket</button></li>
+<li id="step-5"><span class="stepnum"><a href="#step-5">5.</a></span> <b>Size the picture cache by memory too,</b> if 35 to 45 MB matters on the iPad: 🧪 could count it on each computer. <button class="tk" data-step="5">copy for a ticket</button></li>
+</ol>
+
+<h2 id="method">How this was put together</h2>
+<p><b>Where.</b> GitHub Actions' ubuntu-24.04 computers, through the game's own workflow (<code>.github/workflows/dress-up-tests.yml</code>, <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-165"><code><b>^ticket(</b>165<b>)</b></code></a>), on branches that change nothing in the game (<code>ci</code>, <code>diag-167</code>) and on the fix's branch (<code>bgtab-167</code>): Chrome 155.0.8059.39 and Firefox 157.0, headless, muted, no graphics card. The game is 0.0.94 (<code>6e264f9</code>) everywhere but the fix (<code>ffa9c31</code>). Every figure is one run, linked where it is shown.</p>
+<p><b>How.</b> The friend is moved by a fake standard controller (the game's own poll reads it), right then left, 2 seconds each, after a warm-up; frames are counted with <code>requestAnimationFrame</code>, "late" is more than 25 ms apart. At 1203×802 at 1.875× (Matthew's laptop's screen) for the per-tab and session runs. A round of changes is <code>leak167.mjs</code>'s churn (Chrome) or <code>leakff.py</code>'s (Firefox); counts are Chrome's own (<code>Performance.getMetrics</code>), collected first with <code>HeapProfiler.collectGarbage</code> in <code>leakgc167.mjs</code>; the profile is Chrome's sampling profiler at 0.2 ms (<code>bgprof167.mjs</code>), each function's own time; calls by line wrap <code>requestAnimationFrame</code>, the timers and <code>addEventListener</code> before the game's script runs (<code>diag167.mjs</code>). All are in <a href="drivers/">003/drivers/</a>.</p>
+<p><b>The data</b> is here twice: embedded in this page (<code>&lt;script type="application/json" id="report-data"&gt;</code>, at its end) and as files in <a href="data/">003/data/</a>: <code>runs.json</code> (every number here) and each run's output as a <code>.log</code>. The pictures are the game's picture archive's (<a href="https://matthewhammer.org/dress-up-pictures/">dress-up-pictures</a>, 2026/10/16, 0.0.90, <code>9958ca2</code>), copied into <a href="pictures/">003/pictures/</a>.</p>
+</main>
+<script type="application/json" id="report-data">{
+ "game": {
+  "version": "0.0.94",
+  "commit": "6e264f9",
+  "fix": {
+   "branch": "bgtab-167",
+   "commit": "ffa9c31",
+   "released": "0.0.95, 2026-10-17"
+  }
+ },
+ "browsers": {
+  "chrome": "Chrome 155.0.8059.39, headless, on GitHub's ubuntu-24.04 runners",
+  "firefox": "Firefox 157.0, headless, the same runners"
+ },
+ "pictures": {
+  "source": "dress-up-pictures 2026/10/16, game 0.0.90 (9958ca2), backgrounds-with-friend",
+  "duck-pond.svg": {
+   "bytes": 150232,
+   "animate": 37,
+   "animateTransform": 25
+  },
+  "forest.svg": {
+   "bytes": 104080
+  },
+  "imagination.webp": {
+   "note": "the archive's 480-wide thumbnail: its SVG is 1.7 MB, 22 pictures inside"
+  }
+ },
+ "tabs_chrome": {
+  "run_1": {
+   "run": 39001878021,
+   "commit": "13533b9",
+   "note": "14 tabs (it stopped there)",
+   "fps": {
+    "Body": 60,
+    "Face": 60,
+    "Eyes": 60,
+    "Hair": 60,
+    "Neck, arms & legs": 60,
+    "Shirt": 60,
+    "Hands": 60,
+    "Pants": 60,
+    "Swim & undies": 60,
+    "Feet": 60,
+    "Visibility": 60,
+    "Costume": 60,
+    "Background": 2.4,
+    "Controls": 60
+   }
+  },
+  "run_2": {
+   "run": 39002226943,
+   "commit": "d41eeaf",
+   "fps": {
+    "Body": 60,
+    "Face": 60,
+    "Eyes": 60,
+    "Hair": 60,
+    "Neck, arms & legs": 60,
+    "Shirt": 60,
+    "Hands": 60,
+    "Pants": 60,
+    "Swim & undies": 60,
+    "Feet": 60,
+    "Visibility": 60,
+    "Costume": 60,
+    "Background": 14.9,
+    "Controls": 60,
+    "Music": 60,
+    "Advanced": 60
+   }
+  },
+  "fixed": {
+   "run": 39002729428,
+   "commit": "ffa9c31 (bgtab-167)",
+   "fps": {
+    "Body": 60,
+    "Face": 60,
+    "Eyes": 60,
+    "Hair": 60,
+    "Neck, arms & legs": 60,
+    "Shirt": 60,
+    "Hands": 60,
+    "Pants": 60,
+    "Swim & undies": 60,
+    "Feet": 60,
+    "Visibility": 60,
+    "Costume": 60,
+    "Background": 59.3,
+    "Controls": 60,
+    "Music": 60,
+    "Advanced": 60
+   }
+  }
+ },
+ "tabs_firefox": {
+  "run": 39003331635,
+  "commit": "d10582e",
+  "note": "the first page is absolute; every later page load in the same headless session runs on a 33 ms beat (~30 fps): relative only",
+  "fps": {
+   "Body (first page)": 60,
+   "Face": 29.8,
+   "Eyes": 32.2,
+   "Hair": 31.1,
+   "Neck, arms & legs": 32,
+   "Shirt": 32,
+   "Hands": 32.3,
+   "Pants": 32.6,
+   "Swim & undies": 32.3,
+   "Feet": 32.5,
+   "Visibility": 32.2,
+   "Costume": 31.8,
+   "Background": 7.7,
+   "Controls": 31.5,
+   "Music": 31.4,
+   "Advanced": 32.1,
+   "Body, a tune playing": 36.7
+  }
+ },
+ "profile_chrome": {
+  "run": 39002226943,
+  "seconds": 4,
+  "body": {
+   "draw": [
+    245,
+    119
+   ],
+   "changed": [
+    3,
+    2
+   ],
+   "settle": [
+    15,
+    8
+   ],
+   "top": [
+    [
+     "(idle)",
+     3272
+    ],
+    [
+     "(program)",
+     637
+    ],
+    [
+     "drawNow@10449",
+     39
+    ]
+   ]
+  },
+  "background": {
+   "draw": [
+    57,
+    32
+   ],
+   "changed": [
+    1,
+    801
+   ],
+   "settle": [
+    4,
+    3162
+   ],
+   "top": [
+    [
+     "(anonymous)@468 (a room choice's name)",
+     2662,
+     "66%"
+    ],
+    [
+     "residentsOf@576",
+     172
+    ],
+    [
+     "(anonymous)@595 (inside castleOf)",
+     126
+    ],
+    [
+     "castleOf@585",
+     106
+    ]
+   ]
+  },
+  "background_fixed": {
+   "run": 39002729428,
+   "draw": [
+    243,
+    185
+   ],
+   "changed": [
+    8,
+    219
+   ],
+   "settle": [
+    15,
+    372
+   ],
+   "top": [
+    [
+     "(anonymous)@13428",
+     209
+    ],
+    [
+     "(anonymous)@14268",
+     127
+    ],
+    [
+     "(anonymous)@14112",
+     35
+    ]
+   ]
+  },
+  "units": "[calls, total ms] over 4 s of swimming"
+ },
+ "session_chrome": {
+  "run": 38998791340,
+  "commit": "60b6c20 (ci; game as main)",
+  "before_gc": [
+   [
+    "fresh",
+    {
+     "fps": 60,
+     "nodes": 9670,
+     "listeners": 135,
+     "heap_mb": 9.7,
+     "intervals": 1,
+     "raf_per_frame": 3
+    }
+   ],
+   [
+    "after round 1",
+    {
+     "fps": 58.7,
+     "nodes": 50480,
+     "listeners": 122,
+     "heap_mb": 74.2,
+     "intervals": 2,
+     "raf_per_frame": 5
+    }
+   ],
+   [
+    "after round 2",
+    {
+     "fps": 56.2,
+     "nodes": 141904,
+     "listeners": 11775,
+     "heap_mb": 141.0,
+     "intervals": 2,
+     "raf_per_frame": 5
+    }
+   ],
+   [
+    "after a reload",
+    {
+     "fps": 59.8,
+     "nodes": 13955,
+     "listeners": 135,
+     "heap_mb": 32.0,
+     "intervals": 1,
+     "raf_per_frame": 3
+    }
+   ]
+  ]
+ },
+ "session_chrome_after_gc": {
+  "run": 39003132453,
+  "commit": "02d31e9",
+  "on_body": [
+   [
+    "fresh",
+    329,
+    89,
+    2.8,
+    1
+   ],
+   [
+    "after round 1",
+    24442,
+    89,
+    35.1,
+    29
+   ],
+   [
+    "after round 2",
+    29215,
+    89,
+    45.4,
+    32
+   ]
+  ],
+  "clicking_every_tab": [
+   [
+    "fresh",
+    3302,
+    89,
+    3.3,
+    1
+   ],
+   [
+    "after round 1",
+    24664,
+    104,
+    35.3,
+    29
+   ],
+   [
+    "after round 2",
+    26705,
+    104,
+    35.4,
+    28
+   ]
+  ],
+  "columns": [
+   "when",
+   "nodes",
+   "listeners",
+   "heap MB",
+   "documents"
+  ]
+ },
+ "session_firefox": {
+  "run": 38998791340,
+  "rounds": [
+   [
+    "fresh",
+    58.5,
+    2
+   ],
+   [
+    "after round 1",
+    52.1,
+    13
+   ],
+   [
+    "after round 2",
+    50.8,
+    11
+   ],
+   [
+    "caches emptied, no reload",
+    50.8,
+    10
+   ],
+   [
+    "music paused too",
+    50.9,
+    11
+   ]
+  ],
+  "control": [
+   [
+    "fresh",
+    59.7,
+    0
+   ],
+   [
+    "after swimming, round 1",
+    60,
+    0
+   ],
+   [
+    "after swimming, round 2",
+    60,
+    0
+   ]
+  ],
+  "columns": [
+   "when",
+   "fps",
+   "% late"
+  ]
+ },
+ "calls_idle": {
+  "run": 39001495740,
+  "commit": "b23ec35",
+  "per_2_seconds_before_and_after": [
+   [
+    "frame@12541 (a tune's note loop)",
+    0,
+    121
+   ],
+   [
+    "perfMeterTick@865 (⚙️ Advanced's meter)",
+    0,
+    121
+   ],
+   [
+    "treadTick@11313 (treading water)",
+    0,
+    61
+   ],
+   [
+    "drawNow@11302",
+    0,
+    60
+   ],
+   [
+    "padPoll@15234 (the controller)",
+    120,
+    121
+   ]
+  ],
+  "intervals": [
+   [
+    "startTune@12539 (a tune's 25 ms timer)",
+    0,
+    1
+   ]
+  ]
+ },
+ "audit_chrome": {
+  "run": 38998791340,
+  "pass_60": 40,
+  "of": 42,
+  "under_55": [
+   [
+    "💭 our imagination",
+    52.5
+   ],
+   [
+    "🌲 forest",
+    51.3
+   ]
+  ]
+ }
+}</script>
+<script>
+(() => {
+  const b = document.getElementById("theme"), modes = ["auto", "light", "dark"], names = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
+  let m = "auto"; try { m = localStorage.getItem("theme") || "auto"; } catch (e) {}
+  const show = () => { b.textContent = names[m]; if (m === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", m); };
+  b.onclick = () => { m = modes[(modes.indexOf(m) + 1) % 3]; try { localStorage.setItem("theme", m); } catch (e) {} show(); };
+  show();
+  for (const t of document.querySelectorAll("button.tk")) t.onclick = () => {
+    const li = t.closest("li"), n = t.dataset.step, text = li.cloneNode(true);
+    text.querySelectorAll("button, .stepnum").forEach(e => e.remove());
+    const msg = `Mint a ticket for this step: Dress Up reports, ^du_report(3), What next, step ${n}: "${text.textContent.trim()}". ${location.href.split("#")[0]}#step-${n}`;
+    navigator.clipboard.writeText(msg).then(() => { t.textContent = "copied"; setTimeout(() => t.textContent = "copy for a ticket", 1500); });
+  };
+})();
+</script>
+</body>
+</html>
