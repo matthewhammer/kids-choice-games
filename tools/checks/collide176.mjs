@@ -34,16 +34,27 @@ try {
     window.__pad = { id: "Test Pad (STANDARD GAMEPAD)", index: 0, connected: true, mapping: "standard", axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
     Object.defineProperty(navigator, "getGamepads", { value: () => [window.__pad], configurable: true });
     const e = new Event("gamepadconnected"); e.gamepad = window.__pad; window.dispatchEvent(e); return 1; })()`);
-  // (an x with no solid across it at any depth, for walking straight back)
-  const clearX = () => ev(`(() => { const S = solidsHere(); return [0, -120, 120, -220, 220, -300, 300].find(x => !S.some(o => x > o.x0 - 20 && x < o.x1 + 20)) ?? null; })()`);
-  // 176: the flat rooms' back walls
+  // (an x with nothing across it at any depth, for walking straight back: no solid, ladder or doorway)
+  const clearX = () => ev(`(() => { const S = solidsHere(), P = document.getElementById("pic").getScreenCTM().inverse(), spans = [];
+    for (const el of bgShown.node.querySelectorAll("[data-ladder], .portal")) { const r = el.getBBox(), E = el.getScreenCTM(); if (!E) continue; const m = P.multiply(E);
+      const xs = [r.x, r.x + r.width].map(x => m.a * x + m.c * r.y + m.e); spans.push([Math.min(...xs) - 40, Math.max(...xs) + 40]); }
+    for (const o of S) spans.push([o.x0 - 25, o.x1 + 25]);
+    const xs = []; for (let d = 0; d <= 330; d += 15) xs.push(d, -d);
+    return xs.find(x => x > sceneFrame.left + 40 && x < sceneFrame.right - 40 && !spans.some(([a, b]) => x > a && x < b)) ?? null; })()`);
+  // (what stopped the friend, or let them through, for a failure's line)
+  const diag = () => ev(`JSON.stringify({ ahead: (o => o ? (o.wall ? "wall" : o.name) : null)(solidAt(state.background.figX, SCENE.ground + state.background.figY - 4)),
+    here: (o => o ? (o.wall ? "wall" : o.name) : null)(solidAt(state.background.figX, SCENE.ground + state.background.figY)),
+    anim: state.body.anim, sit: state.body.sit, seat: state.background.seat, climbing: !!climb, still: typeof stillPic !== "undefined" ? stillPic.parts.size : null })`);
+  // 176: the flat rooms' back walls: the limit itself (the controller, a drag and the place control all keep to figYMin), then a walk up to it
   for (const kind of ["livingroom", "treeroom", "witchroom", "healerroom", "tent"]) {
     await place({ kind });
-    const back = await ev("sceneFrame.back"), x = await clearX();
-    if (x === null) { say(false, `${kind}: no clear way to the back wall`); continue; }
+    const lim = JSON.parse(await ev(`JSON.stringify({ back: sceneFrame.back, deepest: SCENE.ground + figYMin(sceneFrame) })`));
+    say(Math.abs(lim.deepest - lim.back) < 0.5, `${kind}: the deepest the feet may go, ${lim.deepest.toFixed(1)}, is the back wall's foot, ${lim.back.toFixed(1)}`);
+    const x = await clearX();
+    if (x === null) { console.log(`-    ${kind}: no x clear of solids, ladders and doorways to walk up at`); continue; }
     await put(x, 40); await hold(12, 4500);   // up, to the back wall
-    const b = await at();
-    say(Math.abs(b.z - back) < 3, `${kind}: back wall's foot at ${back.toFixed(1)}, feet stopped at ${b.z.toFixed(1)} (x ${x})`);
+    const b = await at(), ok = Math.abs(b.z - lim.back) < 3;
+    say(ok, `${kind}: walking up at x ${x} stopped the feet at ${b.z.toFixed(1)}${ok ? "" : " " + await diag()}`);
   }
   // 176: the standing objects, place by place: the nearest walkable one, and a low one if there is one
   const legs = await ev("legReach()");
@@ -63,7 +74,7 @@ try {
       // (from the left, or from the right when the left is blocked)
       const fromLeft = await ev(`!solidAt(${o.x0 - 60}, ${z})`), x0 = fromLeft ? o.x0 - 60 : o.x1 + 60, dir = fromLeft ? 15 : 14;
       await put(x0, y); await hold(dir, 2200);
-      const w = await at(), stopped = fromLeft ? w.x <= o.x0 - 4 : w.x >= o.x1 + 4;
+      const w = await at(), stopped = fromLeft ? w.x <= o.x0 - 4 : w.x >= o.x1 + 4, why = stopped ? "" : " " + await diag() + ` (feet at depth ${w.z.toFixed(1)}, started at x ${Math.round(x0)})`;
       const low = o.h < legs && o.x1 - o.x0 < 90;
       let jumped = "";
       if (low) {
@@ -72,7 +83,7 @@ try {
         jumped = `; jumping high ${over ? "cleared it" : "did NOT clear it"} (x ${j.x})`;
         if (!over) { say(false, `${label}: "${o.name}" high jump`); }
       }
-      say(stopped, `${label}: "${o.name}" ${o.x0.toFixed(0)}..${o.x1.toFixed(0)} at depth ${o.back.toFixed(0)}..${o.front.toFixed(0)}, height ${o.h.toFixed(0)}: walking ${fromLeft ? "right" : "left"} into it stopped at x ${w.x}${jumped}`);
+      say(stopped, `${label}: "${o.name}" ${o.x0.toFixed(0)}..${o.x1.toFixed(0)} at depth ${o.back.toFixed(0)}..${o.front.toFixed(0)}, height ${o.h.toFixed(0)}: walking ${fromLeft ? "right" : "left"} into it stopped at x ${w.x}${why}${jumped}`);
     }
     console.log(`     ${label}: standing here: ${all.join("; ")}`);
   }
