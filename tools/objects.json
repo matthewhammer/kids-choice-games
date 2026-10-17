@@ -1,0 +1,2169 @@
+{
+ "version": "0.0.94",
+ "places": [
+  {
+   "kind": "emptyroom",
+   "label": "🔲 empty room",
+   "picture": "emptyroom/place.webp",
+   "objects": []
+  },
+  {
+   "kind": "imagination",
+   "label": "💭 our imagination",
+   "picture": "imagination/place.webp",
+   "objects": [
+    {
+     "name": "ladder 1",
+     "z": 268.5,
+     "picture": "imagination/ladder-1.webp"
+    },
+    {
+     "name": "ladder 2",
+     "z": 268.5,
+     "picture": "imagination/ladder-2.webp"
+    },
+    {
+     "name": "ladder 3",
+     "z": 268.5,
+     "picture": "imagination/ladder-3.webp"
+    },
+    {
+     "name": "ladder 4",
+     "z": 268.5,
+     "picture": "imagination/ladder-4.webp"
+    },
+    {
+     "name": "ladder 5",
+     "z": 268.5,
+     "picture": "imagination/ladder-5.webp"
+    },
+    {
+     "name": "ladder 6",
+     "z": 268.5,
+     "picture": "imagination/ladder-6.webp"
+    }
+   ]
+  },
+  {
+   "kind": "forest",
+   "label": "🌲 forest",
+   "picture": "forest/place.webp",
+   "objects": [
+    {
+     "name": "pines, far row",
+     "z": 234.1,
+     "picture": "forest/pines-far-row.webp"
+    },
+    {
+     "name": "pines, near row",
+     "z": 277.1,
+     "picture": "forest/pines-near-row.webp"
+    },
+    {
+     "name": "butterflies",
+     "z": 285.6,
+     "picture": "forest/butterflies.webp"
+    },
+    {
+     "name": "big tree, left, inner",
+     "z": 345.8,
+     "picture": "forest/big-tree-left-inner.webp"
+    },
+    {
+     "name": "big tree, right, inner",
+     "z": 345.8,
+     "picture": "forest/big-tree-right-inner.webp"
+    },
+    {
+     "name": "big tree, left, outer",
+     "z": 371.5,
+     "picture": "forest/big-tree-left-outer.webp"
+    },
+    {
+     "name": "big tree, right, outer",
+     "z": 371.5,
+     "picture": "forest/big-tree-right-outer.webp"
+    }
+   ]
+  },
+  {
+   "kind": "underwater",
+   "label": "🐠 underwater",
+   "picture": "underwater/place.webp",
+   "objects": [
+    {
+     "name": "orange fish",
+     "z": 259.9,
+     "picture": "underwater/orange-fish.webp"
+    },
+    {
+     "name": "yellow fish",
+     "z": 259.9,
+     "picture": "underwater/yellow-fish.webp"
+    },
+    {
+     "name": "pink fish",
+     "z": 259.9,
+     "picture": "underwater/pink-fish.webp"
+    },
+    {
+     "name": "blue fish",
+     "z": 259.9,
+     "picture": "underwater/blue-fish.webp"
+    },
+    {
+     "name": "seaweed, left",
+     "z": 337.2,
+     "picture": "underwater/seaweed-left.webp"
+    },
+    {
+     "name": "seaweed, right",
+     "z": 337.2,
+     "picture": "underwater/seaweed-right.webp"
+    },
+    {
+     "name": "rock, left 3",
+     "z": 340.6,
+     "picture": "underwater/rock-left-3.webp"
+    },
+    {
+     "name": "rock, left 2",
+     "z": 344.7,
+     "picture": "underwater/rock-left-2.webp"
+    },
+    {
+     "name": "shipwreck",
+     "z": 345.8,
+     "picture": "underwater/shipwreck.webp"
+    },
+    {
+     "name": "picnic bench",
+     "z": 345.8,
+     "picture": "underwater/picnic-bench.webp"
+    },
+    {
+     "name": "shark, left",
+     "z": 345.8,
+     "picture": "underwater/shark-left.webp"
+    },
+    {
+     "name": "shark, right",
+     "z": 345.8,
+     "picture": "underwater/shark-right.webp"
+    },
+    {
+     "name": "picnic table",
+     "z": 345.8,
+     "picture": "underwater/picnic-table.webp"
+    },
+    {
+     "name": "rock, right 2",
+     "z": 347.2,
+     "picture": "underwater/rock-right-2.webp"
+    },
+    {
+     "name": "rock, right 1",
+     "z": 358.9,
+     "picture": "underwater/rock-right-1.webp"
+    },
+    {
+     "name": "rock, left 1",
+     "z": 362.3,
+     "picture": "underwater/rock-left-1.webp"
+    },
+    {
+     "name": "bubbles",
+     "z": "front",
+     "picture": "underwater/bubbles.webp"
+    }
+   ]
+  },
+  {
+   "kind": "beach",
+   "label": "🏖️ beach",
+   "picture": "beach/place.webp",
+   "objects": [
+    {
+     "name": "beach chair, left",
+     "z": 328.6,
+     "picture": "beach/beach-chair-left.webp"
+    },
+    {
+     "name": "beach chair, right",
+     "z": 328.6,
+     "picture": "beach/beach-chair-right.webp"
+    },
+    {
+     "name": "umbrella, left",
+     "z": 337.2,
+     "picture": "beach/umbrella-left.webp"
+    },
+    {
+     "name": "umbrella, right",
+     "z": 337.2,
+     "picture": "beach/umbrella-right.webp"
+    },
+    {
+     "name": "palm tree, left",
+     "z": 354.4,
+     "picture": "beach/palm-tree-left.webp"
+    },
+    {
+     "name": "palm tree, right",
+     "z": 354.4,
+     "picture": "beach/palm-tree-right.webp"
+    },
+    {
+     "name": "sand castle, left",
+     "z": 358.6,
+     "picture": "beach/sand-castle-left.webp"
+    },
+    {
+     "name": "sand castle, right",
+     "z": 358.6,
+     "picture": "beach/sand-castle-right.webp"
+    }
+   ]
+  },
+  {
+   "kind": "witch",
+   "label": "🧙 witch's woods",
+   "picture": "witch/place.webp",
+   "objects": [
+    {
+     "name": "dead trees, far row",
+     "z": 212.6,
+     "picture": "witch/dead-trees-far-row.webp"
+    },
+    {
+     "name": "dead trees, near row",
+     "z": 245.3,
+     "picture": "witch/dead-trees-near-row.webp"
+    },
+    {
+     "name": "hut",
+     "z": 278.8,
+     "picture": "witch/hut.webp"
+    },
+    {
+     "name": "fence",
+     "z": 297.7,
+     "picture": "witch/fence.webp"
+    },
+    {
+     "name": "skulls",
+     "z": 297.7,
+     "picture": "witch/skulls.webp"
+    },
+    {
+     "name": "giant tree",
+     "z": 354.4,
+     "picture": "witch/giant-tree.webp"
+    },
+    {
+     "name": "tree, right",
+     "z": 354.4,
+     "picture": "witch/tree-right.webp"
+    },
+    {
+     "name": "skeleton, left",
+     "z": 364.7,
+     "picture": "witch/skeleton-left.webp"
+    },
+    {
+     "name": "cauldron",
+     "z": 367.2,
+     "picture": "witch/cauldron.webp"
+    },
+    {
+     "name": "skeleton, right",
+     "z": 376.7,
+     "picture": "witch/skeleton-right.webp"
+    },
+    {
+     "name": "skeleton, right edge",
+     "z": 380.1,
+     "picture": "witch/skeleton-right-edge.webp"
+    },
+    {
+     "name": "skeleton, left edge",
+     "z": 383.6,
+     "picture": "witch/skeleton-left-edge.webp"
+    }
+   ]
+  },
+  {
+   "kind": "cemetery",
+   "label": "🌿 cemetery",
+   "picture": "cemetery/place.webp",
+   "objects": [
+    {
+     "name": "far trees",
+     "z": 242.7,
+     "picture": "cemetery/far-trees.webp"
+    },
+    {
+     "name": "butterflies",
+     "z": 259.9,
+     "picture": "cemetery/butterflies.webp"
+    },
+    {
+     "name": "far stones",
+     "z": 275.3,
+     "picture": "cemetery/far-stones.webp"
+    },
+    {
+     "name": "yellow bush",
+     "z": 294.2,
+     "picture": "cemetery/yellow-bush.webp"
+    },
+    {
+     "name": "willow",
+     "z": 301.5,
+     "picture": "cemetery/willow.webp"
+    },
+    {
+     "name": "green bush",
+     "z": 318.3,
+     "picture": "cemetery/green-bush.webp"
+    },
+    {
+     "name": "headstone, left",
+     "z": 323.4,
+     "picture": "cemetery/headstone-left.webp"
+    },
+    {
+     "name": "cross",
+     "z": 325.2,
+     "picture": "cemetery/cross.webp"
+    },
+    {
+     "name": "headstone, right",
+     "z": 342.3,
+     "picture": "cemetery/headstone-right.webp"
+    },
+    {
+     "name": "stag stone",
+     "z": 345.8,
+     "picture": "cemetery/stag-stone.webp"
+    },
+    {
+     "name": "pink bush",
+     "z": 345.8,
+     "picture": "cemetery/pink-bush.webp"
+    },
+    {
+     "name": "white bush",
+     "z": 349.2,
+     "picture": "cemetery/white-bush.webp"
+    }
+   ]
+  },
+  {
+   "kind": "lake",
+   "label": "🦆 lake",
+   "picture": "lake/place.webp",
+   "objects": [
+    {
+     "name": "far wood",
+     "z": 105.3,
+     "picture": "lake/far-wood.webp"
+    },
+    {
+     "name": "duck 1",
+     "z": 125.8,
+     "picture": "lake/duck-1.webp"
+    },
+    {
+     "name": "duck 5",
+     "z": 142.9,
+     "picture": "lake/duck-5.webp"
+    },
+    {
+     "name": "duck 3",
+     "z": 167.2,
+     "picture": "lake/duck-3.webp"
+    },
+    {
+     "name": "duck 2",
+     "z": 192.6,
+     "picture": "lake/duck-2.webp"
+    },
+    {
+     "name": "duck 4",
+     "z": 198.8,
+     "picture": "lake/duck-4.webp"
+    },
+    {
+     "name": "cattails, left",
+     "z": 264.2,
+     "picture": "lake/cattails-left.webp"
+    },
+    {
+     "name": "cattails, right",
+     "z": 264.2,
+     "picture": "lake/cattails-right.webp"
+    }
+   ]
+  },
+  {
+   "kind": "house",
+   "label": "🏠 house and yard",
+   "picture": "house/place.webp",
+   "objects": [
+    {
+     "name": "house",
+     "z": 169.7,
+     "picture": "house/house.webp"
+    },
+    {
+     "name": "tree, left",
+     "z": 186.9,
+     "picture": "house/tree-left.webp"
+    },
+    {
+     "name": "tree, right",
+     "z": 195.5,
+     "picture": "house/tree-right.webp"
+    },
+    {
+     "name": "teddy",
+     "z": 217.9,
+     "picture": "house/teddy.webp"
+    },
+    {
+     "name": "wagon",
+     "z": 232.3,
+     "picture": "house/wagon.webp"
+    },
+    {
+     "name": "ball",
+     "z": 233.2,
+     "picture": "house/ball.webp"
+    },
+    {
+     "name": "blocks",
+     "z": 252.9,
+     "picture": "house/blocks.webp"
+    },
+    {
+     "name": "truck",
+     "z": 267,
+     "picture": "house/truck.webp"
+    },
+    {
+     "name": "butterflies",
+     "z": 268.5,
+     "picture": "house/butterflies.webp"
+    },
+    {
+     "name": "bucket",
+     "z": 364.2,
+     "picture": "house/bucket.webp"
+    }
+   ]
+  },
+  {
+   "kind": "treehouse",
+   "label": "🌳 tree house",
+   "picture": "treehouse/place.webp",
+   "objects": [
+    {
+     "name": "trees, far row",
+     "z": 214.4,
+     "picture": "treehouse/trees-far-row.webp"
+    },
+    {
+     "name": "butterflies",
+     "z": 268.5,
+     "picture": "treehouse/butterflies.webp"
+    },
+    {
+     "name": "trees, left",
+     "z": 287.4,
+     "picture": "treehouse/trees-left.webp"
+    },
+    {
+     "name": "trees, right",
+     "z": 287.4,
+     "picture": "treehouse/trees-right.webp"
+    },
+    {
+     "name": "bush, left 5",
+     "z": 307.9,
+     "picture": "treehouse/bush-left-5.webp"
+    },
+    {
+     "name": "bush, left 1",
+     "z": 309.4,
+     "picture": "treehouse/bush-left-1.webp"
+    },
+    {
+     "name": "bush, left 4",
+     "z": 314.2,
+     "picture": "treehouse/bush-left-4.webp"
+    },
+    {
+     "name": "bush, right 3",
+     "z": 315.5,
+     "picture": "treehouse/bush-right-3.webp"
+    },
+    {
+     "name": "tree house",
+     "z": 320,
+     "picture": "treehouse/tree-house.webp"
+    },
+    {
+     "name": "bush, left 8",
+     "z": 320.7,
+     "picture": "treehouse/bush-left-8.webp"
+    },
+    {
+     "name": "bush, right 1",
+     "z": 334.9,
+     "picture": "treehouse/bush-right-1.webp"
+    },
+    {
+     "name": "bush, left 6",
+     "z": 337.3,
+     "picture": "treehouse/bush-left-6.webp"
+    },
+    {
+     "name": "bush, right 2",
+     "z": 337.7,
+     "picture": "treehouse/bush-right-2.webp"
+    },
+    {
+     "name": "bush, left 3",
+     "z": 341.5,
+     "picture": "treehouse/bush-left-3.webp"
+    },
+    {
+     "name": "bush, left 2",
+     "z": 342.6,
+     "picture": "treehouse/bush-left-2.webp"
+    },
+    {
+     "name": "bush, right 8",
+     "z": 345.5,
+     "picture": "treehouse/bush-right-8.webp"
+    },
+    {
+     "name": "bush, left 7",
+     "z": 346.8,
+     "picture": "treehouse/bush-left-7.webp"
+    }
+   ]
+  },
+  {
+   "kind": "livingroom",
+   "label": "🛋️ living room",
+   "picture": "livingroom/place.webp",
+   "objects": [
+    {
+     "name": "lamp",
+     "z": 242.7,
+     "picture": "livingroom/lamp.webp"
+    },
+    {
+     "name": "plant",
+     "z": 259.9,
+     "picture": "livingroom/plant.webp"
+    },
+    {
+     "name": "couch",
+     "z": 285.6,
+     "picture": "livingroom/couch.webp"
+    }
+   ]
+  },
+  {
+   "kind": "witchroom",
+   "label": "🧙 inside the witch's hut",
+   "picture": "witchroom/place.webp",
+   "objects": [
+    {
+     "name": "snake tank",
+     "z": 253,
+     "picture": "witchroom/snake-tank.webp"
+    },
+    {
+     "name": "cauldron",
+     "z": 277.1,
+     "picture": "witchroom/cauldron.webp"
+    },
+    {
+     "name": "witch",
+     "z": 320,
+     "picture": "witchroom/witch.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "witchroom/dark.webp"
+    }
+   ]
+  },
+  {
+   "kind": "clearing",
+   "label": "🌲 forest clearing",
+   "picture": "clearing/place.webp",
+   "objects": [
+    {
+     "name": "far woods",
+     "z": 136.2,
+     "picture": "clearing/far-woods.webp"
+    },
+    {
+     "name": "castle",
+     "z": 204.9,
+     "picture": "clearing/castle.webp"
+    },
+    {
+     "name": "tree house",
+     "z": 205.3,
+     "picture": "clearing/tree-house.webp"
+    },
+    {
+     "name": "house",
+     "z": 226.6,
+     "picture": "clearing/house.webp"
+    },
+    {
+     "name": "witch hut",
+     "z": 252.3,
+     "picture": "clearing/witch-hut.webp"
+    },
+    {
+     "name": "healer hut",
+     "z": 271.2,
+     "picture": "clearing/healer-hut.webp"
+    },
+    {
+     "name": "butterflies",
+     "z": 345.8,
+     "picture": "clearing/butterflies.webp"
+    },
+    {
+     "name": "tree, left, outer",
+     "z": 354.4,
+     "picture": "clearing/tree-left-outer.webp"
+    },
+    {
+     "name": "tree, right, outer",
+     "z": 354.4,
+     "picture": "clearing/tree-right-outer.webp"
+    },
+    {
+     "name": "tree, left, inner",
+     "z": 388.7,
+     "picture": "clearing/tree-left-inner.webp"
+    },
+    {
+     "name": "tree, right, inner",
+     "z": 388.7,
+     "picture": "clearing/tree-right-inner.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "clearing/sign.webp"
+    },
+    {
+     "name": "fairy sign",
+     "z": "front",
+     "picture": "clearing/fairy-sign.webp"
+    }
+   ]
+  },
+  {
+   "kind": "healerroom",
+   "label": "🌿 inside the healer's hut",
+   "picture": "healerroom/place.webp",
+   "objects": [
+    {
+     "name": "potion shelves",
+     "z": 234.1,
+     "picture": "healerroom/potion-shelves.webp"
+    },
+    {
+     "name": "cat",
+     "z": 234.1,
+     "picture": "healerroom/cat.webp"
+    },
+    {
+     "name": "soup pot",
+     "z": 320,
+     "picture": "healerroom/soup-pot.webp"
+    },
+    {
+     "name": "healer",
+     "z": 320,
+     "picture": "healerroom/healer.webp"
+    },
+    {
+     "name": "tea table",
+     "z": 385.3,
+     "picture": "healerroom/tea-table.webp"
+    },
+    {
+     "name": "chair, left",
+     "z": 387,
+     "picture": "healerroom/chair-left.webp"
+    },
+    {
+     "name": "chair, right",
+     "z": 387,
+     "picture": "healerroom/chair-right.webp"
+    },
+    {
+     "name": "worktable",
+     "z": 392.1,
+     "picture": "healerroom/worktable.webp"
+    },
+    {
+     "name": "warm light",
+     "z": "front",
+     "picture": "healerroom/warm-light.webp"
+    }
+   ]
+  },
+  {
+   "kind": "fairyforest",
+   "label": "🧚 fairy forest",
+   "picture": "fairyforest/place.webp",
+   "objects": [
+    {
+     "name": "trees, far row",
+     "z": 196.3,
+     "picture": "fairyforest/trees-far-row.webp"
+    },
+    {
+     "name": "trees, near row",
+     "z": 230.7,
+     "picture": "fairyforest/trees-near-row.webp"
+    },
+    {
+     "name": "toadstool 11",
+     "z": 316.8,
+     "picture": "fairyforest/toadstool-11.webp"
+    },
+    {
+     "name": "toadstool 12",
+     "z": 317.5,
+     "picture": "fairyforest/toadstool-12.webp"
+    },
+    {
+     "name": "toadstool 10",
+     "z": 324,
+     "picture": "fairyforest/toadstool-10.webp"
+    },
+    {
+     "name": "bush",
+     "z": 325.2,
+     "picture": "fairyforest/bush.webp"
+    },
+    {
+     "name": "toadstool 13",
+     "z": 325.4,
+     "picture": "fairyforest/toadstool-13.webp"
+    },
+    {
+     "name": "toadstool 9",
+     "z": 333.6,
+     "picture": "fairyforest/toadstool-9.webp"
+    },
+    {
+     "name": "great tree",
+     "z": 337.2,
+     "picture": "fairyforest/great-tree.webp"
+    },
+    {
+     "name": "fairy house",
+     "z": 337.2,
+     "picture": "fairyforest/fairy-house.webp"
+    },
+    {
+     "name": "toadstool 14",
+     "z": 341.5,
+     "picture": "fairyforest/toadstool-14.webp"
+    },
+    {
+     "name": "toadstool 8",
+     "z": 349.4,
+     "picture": "fairyforest/toadstool-8.webp"
+    },
+    {
+     "name": "toadstool 1",
+     "z": 357.2,
+     "picture": "fairyforest/toadstool-1.webp"
+    },
+    {
+     "name": "toadstool 7",
+     "z": 370.6,
+     "picture": "fairyforest/toadstool-7.webp"
+    },
+    {
+     "name": "stone, left",
+     "z": 371.5,
+     "picture": "fairyforest/stone-left.webp"
+    },
+    {
+     "name": "toadstool 2",
+     "z": 371.7,
+     "picture": "fairyforest/toadstool-2.webp"
+    },
+    {
+     "name": "toadstool 6",
+     "z": 382.7,
+     "picture": "fairyforest/toadstool-6.webp"
+    },
+    {
+     "name": "toadstool 3",
+     "z": 386.7,
+     "picture": "fairyforest/toadstool-3.webp"
+    },
+    {
+     "name": "toadstool 5",
+     "z": 390.7,
+     "picture": "fairyforest/toadstool-5.webp"
+    },
+    {
+     "name": "toadstool 4",
+     "z": 391.7,
+     "picture": "fairyforest/toadstool-4.webp"
+    },
+    {
+     "name": "stone, right",
+     "z": 397.3,
+     "picture": "fairyforest/stone-right.webp"
+    },
+    {
+     "name": "sparkles",
+     "z": "front",
+     "picture": "fairyforest/sparkles.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "fairyforest/sign.webp"
+    }
+   ]
+  },
+  {
+   "kind": "mountains",
+   "label": "⛰️ mountain trail",
+   "picture": "mountains/place.webp",
+   "objects": [
+    {
+     "name": "birds",
+     "z": 191.2,
+     "picture": "mountains/birds.webp"
+    },
+    {
+     "name": "pine, right 1",
+     "z": 322.9,
+     "picture": "mountains/pine-right-1.webp"
+    },
+    {
+     "name": "pine, right 4",
+     "z": 326.6,
+     "picture": "mountains/pine-right-4.webp"
+    },
+    {
+     "name": "pine, right 2",
+     "z": 327.6,
+     "picture": "mountains/pine-right-2.webp"
+    },
+    {
+     "name": "signpost",
+     "z": 328.6,
+     "picture": "mountains/signpost.webp"
+    },
+    {
+     "name": "rock, left 5",
+     "z": 329.6,
+     "picture": "mountains/rock-left-5.webp"
+    },
+    {
+     "name": "pine, left 2",
+     "z": 330.2,
+     "picture": "mountains/pine-left-2.webp"
+    },
+    {
+     "name": "pine, left 3",
+     "z": 334,
+     "picture": "mountains/pine-left-3.webp"
+    },
+    {
+     "name": "rock, left 2",
+     "z": 338.2,
+     "picture": "mountains/rock-left-2.webp"
+    },
+    {
+     "name": "pine, right 3",
+     "z": 338.9,
+     "picture": "mountains/pine-right-3.webp"
+    },
+    {
+     "name": "pine, left 1",
+     "z": 339.1,
+     "picture": "mountains/pine-left-1.webp"
+    },
+    {
+     "name": "pine, left 4",
+     "z": 344.1,
+     "picture": "mountains/pine-left-4.webp"
+    },
+    {
+     "name": "rock, right 4",
+     "z": 349.1,
+     "picture": "mountains/rock-right-4.webp"
+    },
+    {
+     "name": "rock, left 4",
+     "z": 351,
+     "picture": "mountains/rock-left-4.webp"
+    },
+    {
+     "name": "rock, left 1",
+     "z": 351.7,
+     "picture": "mountains/rock-left-1.webp"
+    },
+    {
+     "name": "rock, left 3",
+     "z": 355.9,
+     "picture": "mountains/rock-left-3.webp"
+    },
+    {
+     "name": "rock, right 2",
+     "z": 364.1,
+     "picture": "mountains/rock-right-2.webp"
+    },
+    {
+     "name": "rock, right 3",
+     "z": 364.7,
+     "picture": "mountains/rock-right-3.webp"
+    },
+    {
+     "name": "rock, right 1",
+     "z": 369.1,
+     "picture": "mountains/rock-right-1.webp"
+    }
+   ]
+  },
+  {
+   "kind": "waterfall",
+   "label": "💦 jungle waterfall",
+   "picture": "waterfall/place.webp",
+   "objects": [
+    {
+     "name": "mist",
+     "z": 259.9,
+     "picture": "waterfall/mist.webp"
+    },
+    {
+     "name": "vines",
+     "z": 259.9,
+     "picture": "waterfall/vines.webp"
+    },
+    {
+     "name": "signpost",
+     "z": 354.4,
+     "picture": "waterfall/signpost.webp"
+    },
+    {
+     "name": "jungle tree, left",
+     "z": 371.5,
+     "picture": "waterfall/jungle-tree-left.webp"
+    },
+    {
+     "name": "jungle tree, right",
+     "z": 371.5,
+     "picture": "waterfall/jungle-tree-right.webp"
+    },
+    {
+     "name": "parrot 1",
+     "z": 371.5,
+     "picture": "waterfall/parrot-1.webp"
+    },
+    {
+     "name": "parrot 2",
+     "z": 371.5,
+     "picture": "waterfall/parrot-2.webp"
+    }
+   ]
+  },
+  {
+   "kind": "campsite",
+   "label": "🏕️ camp site",
+   "picture": "campsite/place.webp",
+   "objects": [
+    {
+     "name": "woods",
+     "z": 238.4,
+     "picture": "campsite/woods.webp"
+    },
+    {
+     "name": "orange tent",
+     "z": 285.6,
+     "picture": "campsite/orange-tent.webp"
+    },
+    {
+     "name": "blue tent",
+     "z": 290.8,
+     "picture": "campsite/blue-tent.webp"
+    },
+    {
+     "name": "signpost",
+     "z": 345.8,
+     "picture": "campsite/signpost.webp"
+    },
+    {
+     "name": "campfire",
+     "z": 354.4,
+     "picture": "campsite/campfire.webp"
+    },
+    {
+     "name": "log, left",
+     "z": 392.1,
+     "picture": "campsite/log-left.webp"
+    },
+    {
+     "name": "log, right",
+     "z": 392.1,
+     "picture": "campsite/log-right.webp"
+    },
+    {
+     "name": "log, near",
+     "z": 452.3,
+     "picture": null
+    }
+   ]
+  },
+  {
+   "kind": "tent",
+   "label": "⛺ inside a tent",
+   "picture": "tent/place.webp",
+   "objects": [
+    {
+     "name": "flashlight beam",
+     "z": 302.8,
+     "picture": "tent/flashlight-beam.webp"
+    }
+   ]
+  },
+  {
+   "kind": "cave",
+   "label": "🪨 cave behind the falls",
+   "picture": "cave/place.webp",
+   "objects": [
+    {
+     "name": "big stalagmite, left",
+     "z": 302.8,
+     "picture": "cave/big-stalagmite-left.webp"
+    },
+    {
+     "name": "small stalagmite, left",
+     "z": 302.8,
+     "picture": "cave/small-stalagmite-left.webp"
+    },
+    {
+     "name": "big stalagmite, right",
+     "z": 302.8,
+     "picture": "cave/big-stalagmite-right.webp"
+    },
+    {
+     "name": "small stalagmite, right",
+     "z": 302.8,
+     "picture": "cave/small-stalagmite-right.webp"
+    },
+    {
+     "name": "stalactites",
+     "z": 302.8,
+     "picture": "cave/stalactites.webp"
+    },
+    {
+     "name": "bats",
+     "z": 302.8,
+     "picture": "cave/bats.webp"
+    },
+    {
+     "name": "chest",
+     "z": 320,
+     "picture": "cave/chest.webp"
+    }
+   ]
+  },
+  {
+   "kind": "woodpath",
+   "label": "🥾 path through the woods",
+   "picture": "woodpath/place.webp",
+   "objects": [
+    {
+     "name": "far trees",
+     "z": 168.8,
+     "picture": "woodpath/far-trees.webp"
+    },
+    {
+     "name": "sunbeams",
+     "z": 168.8,
+     "picture": "woodpath/sunbeams.webp"
+    },
+    {
+     "name": "butterflies",
+     "z": 277.1,
+     "picture": "woodpath/butterflies.webp"
+    },
+    {
+     "name": "tree, left inner",
+     "z": 337.2,
+     "picture": "woodpath/tree-left-inner.webp"
+    },
+    {
+     "name": "tree, right inner",
+     "z": 345.8,
+     "picture": "woodpath/tree-right-inner.webp"
+    },
+    {
+     "name": "mushroom, right inner",
+     "z": 350.9,
+     "picture": "woodpath/mushroom-right-inner.webp"
+    },
+    {
+     "name": "mushroom, left inner",
+     "z": 354.4,
+     "picture": "woodpath/mushroom-left-inner.webp"
+    },
+    {
+     "name": "signpost",
+     "z": 362.9,
+     "picture": "woodpath/signpost.webp"
+    },
+    {
+     "name": "mushroom, right outer",
+     "z": 371.5,
+     "picture": "woodpath/mushroom-right-outer.webp"
+    },
+    {
+     "name": "tree, left outer",
+     "z": 380.1,
+     "picture": "woodpath/tree-left-outer.webp"
+    },
+    {
+     "name": "mushroom, left outer",
+     "z": 380.1,
+     "picture": "woodpath/mushroom-left-outer.webp"
+    },
+    {
+     "name": "tree, right outer",
+     "z": 388.7,
+     "picture": "woodpath/tree-right-outer.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castle",
+   "label": "🏰 castle",
+   "picture": "castle/place.webp",
+   "objects": [
+    {
+     "name": "trees, far row",
+     "z": 204.9,
+     "picture": "castle/trees-far-row.webp"
+    },
+    {
+     "name": "trees, near row",
+     "z": 239.3,
+     "picture": "castle/trees-near-row.webp"
+    },
+    {
+     "name": "castle",
+     "z": 290.8,
+     "picture": "castle/castle.webp"
+    },
+    {
+     "name": "gate",
+     "z": 290.8,
+     "picture": "castle/gate.webp"
+    },
+    {
+     "name": "well",
+     "z": 337.5,
+     "picture": "castle/well.webp"
+    },
+    {
+     "name": "hay cart",
+     "z": 358.3,
+     "picture": "castle/hay-cart.webp"
+    },
+    {
+     "name": "pennant, left",
+     "z": 370.2,
+     "picture": "castle/pennant-left.webp"
+    },
+    {
+     "name": "pennant, right",
+     "z": 370.2,
+     "picture": "castle/pennant-right.webp"
+    },
+    {
+     "name": "big tree, left, outer",
+     "z": 371.5,
+     "picture": "castle/big-tree-left-outer.webp"
+    },
+    {
+     "name": "big tree, right, outer",
+     "z": 371.5,
+     "picture": "castle/big-tree-right-outer.webp"
+    },
+    {
+     "name": "rock, left, inner",
+     "z": 372.3,
+     "picture": "castle/rock-left-inner.webp"
+    },
+    {
+     "name": "barrel, far",
+     "z": 376.7,
+     "picture": "castle/barrel-far.webp"
+    },
+    {
+     "name": "rock, right, outer",
+     "z": 379,
+     "picture": "castle/rock-right-outer.webp"
+    },
+    {
+     "name": "barrel, middle",
+     "z": 383.6,
+     "picture": "castle/barrel-middle.webp"
+    },
+    {
+     "name": "rock, right, inner",
+     "z": 390.4,
+     "picture": "castle/rock-right-inner.webp"
+    },
+    {
+     "name": "rock, left, outer",
+     "z": 390.6,
+     "picture": "castle/rock-left-outer.webp"
+    },
+    {
+     "name": "barrel, near",
+     "z": 392.1,
+     "picture": "castle/barrel-near.webp"
+    },
+    {
+     "name": "crate",
+     "z": 392.1,
+     "picture": "castle/crate.webp"
+    },
+    {
+     "name": "big tree, left, inner",
+     "z": 414.5,
+     "picture": "castle/big-tree-left-inner.webp"
+    },
+    {
+     "name": "big tree, right, inner",
+     "z": 414.5,
+     "picture": "castle/big-tree-right-inner.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "castle/sign.webp"
+    }
+   ]
+  },
+  {
+   "kind": "treeroom:1",
+   "label": "🪜 tree house room 1",
+   "picture": "treeroom-1/place.webp",
+   "objects": [
+    {
+     "name": "bunk beds",
+     "z": 234.1,
+     "picture": "treeroom-1/bunk-beds.webp"
+    },
+    {
+     "name": "ladder up",
+     "z": 237.5,
+     "picture": "treeroom-1/ladder-up.webp"
+    },
+    {
+     "name": "toy chest",
+     "z": 242.7,
+     "picture": "treeroom-1/toy-chest.webp"
+    },
+    {
+     "name": "tree trunk",
+     "z": 259.9,
+     "picture": "treeroom-1/tree-trunk.webp"
+    },
+    {
+     "name": "hatch",
+     "z": 304.5,
+     "picture": "treeroom-1/hatch.webp"
+    },
+    {
+     "name": "house sign",
+     "z": "front",
+     "picture": "treeroom-1/house-sign.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "treeroom-1/dark.webp"
+    }
+   ]
+  },
+  {
+   "kind": "treeroom:2",
+   "label": "🪜 tree house room 2",
+   "picture": "treeroom-2/place.webp",
+   "objects": [
+    {
+     "name": "counter",
+     "z": 234.1,
+     "picture": "treeroom-2/counter.webp"
+    },
+    {
+     "name": "stove",
+     "z": 234.1,
+     "picture": "treeroom-2/stove.webp"
+    },
+    {
+     "name": "tree trunk",
+     "z": 259.9,
+     "picture": "treeroom-2/tree-trunk.webp"
+    },
+    {
+     "name": "table",
+     "z": 297.7,
+     "picture": "treeroom-2/table.webp"
+    },
+    {
+     "name": "hatch",
+     "z": 304.5,
+     "picture": "treeroom-2/hatch.webp"
+    },
+    {
+     "name": "house sign",
+     "z": "front",
+     "picture": "treeroom-2/house-sign.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "treeroom-2/dark.webp"
+    }
+   ]
+  },
+  {
+   "kind": "treeroom:3",
+   "label": "🪜 tree house room 3",
+   "picture": "treeroom-3/place.webp",
+   "objects": [
+    {
+     "name": "bookcase",
+     "z": 242.7,
+     "picture": "treeroom-3/bookcase.webp"
+    },
+    {
+     "name": "tree trunk",
+     "z": 259.9,
+     "picture": "treeroom-3/tree-trunk.webp"
+    },
+    {
+     "name": "beanbag",
+     "z": 277.1,
+     "picture": "treeroom-3/beanbag.webp"
+    },
+    {
+     "name": "hatch",
+     "z": 304.5,
+     "picture": "treeroom-3/hatch.webp"
+    },
+    {
+     "name": "house sign",
+     "z": "front",
+     "picture": "treeroom-3/house-sign.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "treeroom-3/dark.webp"
+    }
+   ]
+  },
+  {
+   "kind": "treeroom:4",
+   "label": "🪜 tree house room 4",
+   "picture": "treeroom-4/place.webp",
+   "objects": [
+    {
+     "name": "telescope",
+     "z": 242.7,
+     "picture": "treeroom-4/telescope.webp"
+    },
+    {
+     "name": "tree trunk",
+     "z": 259.9,
+     "picture": "treeroom-4/tree-trunk.webp"
+    },
+    {
+     "name": "house sign",
+     "z": "front",
+     "picture": "treeroom-4/house-sign.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "treeroom-4/dark.webp"
+    }
+   ]
+  },
+  {
+   "kind": "treeroom:5",
+   "label": "🪜 tree house room 5",
+   "picture": "treeroom-5/place.webp",
+   "objects": [
+    {
+     "name": "ladder up",
+     "z": 237.5,
+     "picture": "treeroom-5/ladder-up.webp"
+    },
+    {
+     "name": "paint table",
+     "z": 244.4,
+     "picture": "treeroom-5/paint-table.webp"
+    },
+    {
+     "name": "easel",
+     "z": 251.3,
+     "picture": "treeroom-5/easel.webp"
+    },
+    {
+     "name": "tree trunk",
+     "z": 259.9,
+     "picture": "treeroom-5/tree-trunk.webp"
+    },
+    {
+     "name": "house sign",
+     "z": "front",
+     "picture": "treeroom-5/house-sign.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "treeroom-5/dark.webp"
+    }
+   ]
+  },
+  {
+   "kind": "treeroom:6",
+   "label": "🪜 tree house room 6",
+   "picture": "treeroom-6/place.webp",
+   "objects": [
+    {
+     "name": "drum kit",
+     "z": 237.5,
+     "picture": "treeroom-6/drum-kit.webp"
+    },
+    {
+     "name": "ladder up",
+     "z": 237.5,
+     "picture": "treeroom-6/ladder-up.webp"
+    },
+    {
+     "name": "keyboard",
+     "z": 242.7,
+     "picture": "treeroom-6/keyboard.webp"
+    },
+    {
+     "name": "tree trunk",
+     "z": 259.9,
+     "picture": "treeroom-6/tree-trunk.webp"
+    },
+    {
+     "name": "house sign",
+     "z": "front",
+     "picture": "treeroom-6/house-sign.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "treeroom-6/dark.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:king",
+   "label": "👑 king's room",
+   "picture": "castleroom-king/place.webp",
+   "objects": [
+    {
+     "name": "throne",
+     "z": 225.5,
+     "picture": "castleroom-king/throne.webp"
+    },
+    {
+     "name": "chandelier",
+     "z": 225.5,
+     "picture": "castleroom-king/chandelier.webp"
+    },
+    {
+     "name": "armor, left",
+     "z": 225.5,
+     "picture": "castleroom-king/armor-left.webp"
+    },
+    {
+     "name": "armor, right",
+     "z": 225.5,
+     "picture": "castleroom-king/armor-right.webp"
+    },
+    {
+     "name": "door 2",
+     "z": 254.1,
+     "picture": "castleroom-king/door-2.webp"
+    },
+    {
+     "name": "door 3",
+     "z": 254.1,
+     "picture": "castleroom-king/door-3.webp"
+    },
+    {
+     "name": "chest of gold",
+     "z": 268.5,
+     "picture": "castleroom-king/chest-of-gold.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "castleroom-king/sign.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:greenhouse",
+   "label": "🌿 greenhouse",
+   "picture": "castleroom-greenhouse/place.webp",
+   "objects": [
+    {
+     "name": "parrots",
+     "z": 225.5,
+     "picture": "castleroom-greenhouse/parrots.webp"
+    },
+    {
+     "name": "arch to room 1",
+     "z": 225.5,
+     "picture": "castleroom-greenhouse/arch-to-room-1.webp"
+    },
+    {
+     "name": "arch to room 2",
+     "z": 225.5,
+     "picture": "castleroom-greenhouse/arch-to-room-2.webp"
+    },
+    {
+     "name": "arch to room 3",
+     "z": 225.5,
+     "picture": "castleroom-greenhouse/arch-to-room-3.webp"
+    },
+    {
+     "name": "ferns",
+     "z": 230.7,
+     "picture": "castleroom-greenhouse/ferns.webp"
+    },
+    {
+     "name": "bird of paradise, right",
+     "z": 232.4,
+     "picture": "castleroom-greenhouse/bird-of-paradise-right.webp"
+    },
+    {
+     "name": "bird of paradise, left",
+     "z": 234.1,
+     "picture": "castleroom-greenhouse/bird-of-paradise-left.webp"
+    },
+    {
+     "name": "monstera, left",
+     "z": 237.5,
+     "picture": "castleroom-greenhouse/monstera-left.webp"
+    },
+    {
+     "name": "monstera, right",
+     "z": 239.3,
+     "picture": "castleroom-greenhouse/monstera-right.webp"
+    },
+    {
+     "name": "palm, left",
+     "z": 242.7,
+     "picture": "castleroom-greenhouse/palm-left.webp"
+    },
+    {
+     "name": "palm, right",
+     "z": 251.3,
+     "picture": "castleroom-greenhouse/palm-right.webp"
+    },
+    {
+     "name": "hibiscus, left",
+     "z": 285.6,
+     "picture": "castleroom-greenhouse/hibiscus-left.webp"
+    },
+    {
+     "name": "hibiscus, right",
+     "z": 289.1,
+     "picture": "castleroom-greenhouse/hibiscus-right.webp"
+    },
+    {
+     "name": "fountain",
+     "z": 320,
+     "picture": "castleroom-greenhouse/fountain.webp"
+    },
+    {
+     "name": "bromeliad, left",
+     "z": 354.4,
+     "picture": "castleroom-greenhouse/bromeliad-left.webp"
+    },
+    {
+     "name": "bromeliad, right",
+     "z": 354.4,
+     "picture": "castleroom-greenhouse/bromeliad-right.webp"
+    },
+    {
+     "name": "watering can",
+     "z": 388.7,
+     "picture": "castleroom-greenhouse/watering-can.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:trap",
+   "label": "🕳️ trap room",
+   "picture": "castleroom-trap/place.webp",
+   "objects": [
+    {
+     "name": "way out",
+     "z": 225.5,
+     "picture": "castleroom-trap/way-out.webp"
+    },
+    {
+     "name": "helmet",
+     "z": 285.6,
+     "picture": "castleroom-trap/helmet.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:dungeon1",
+   "label": "🗝️ dungeon",
+   "picture": "castleroom-dungeon1/place.webp",
+   "objects": [
+    {
+     "name": "ladder",
+     "z": 234.1,
+     "picture": "castleroom-dungeon1/ladder.webp"
+    },
+    {
+     "name": "bucket",
+     "z": 320,
+     "picture": "castleroom-dungeon1/bucket.webp"
+    },
+    {
+     "name": "rat",
+     "z": 345.8,
+     "picture": "castleroom-dungeon1/rat.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:dungeon2",
+   "label": "⛓️ deep dungeon",
+   "picture": "castleroom-dungeon2/place.webp",
+   "objects": [
+    {
+     "name": "cage",
+     "z": 225.5,
+     "picture": "castleroom-dungeon2/cage.webp"
+    },
+    {
+     "name": "ladder",
+     "z": 234.1,
+     "picture": "castleroom-dungeon2/ladder.webp"
+    },
+    {
+     "name": "mushrooms",
+     "z": 235,
+     "picture": "castleroom-dungeon2/mushrooms.webp"
+    },
+    {
+     "name": "candle",
+     "z": 297,
+     "picture": "castleroom-dungeon2/candle.webp"
+    },
+    {
+     "name": "cell",
+     "z": 354.4,
+     "picture": "castleroom-dungeon2/cell.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:hallway",
+   "label": "🕯️ hallway",
+   "picture": "castleroom-hallway/place.webp",
+   "objects": [
+    {
+     "name": "doors",
+     "z": 225.5,
+     "picture": "castleroom-hallway/doors.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:catroom",
+   "label": "🐈 cat room",
+   "picture": "castleroom-catroom/place.webp",
+   "objects": [
+    {
+     "name": "cat tree, left",
+     "z": 228.8,
+     "picture": "castleroom-catroom/cat-tree-left.webp"
+    },
+    {
+     "name": "cat tree, right",
+     "z": 228.8,
+     "picture": "castleroom-catroom/cat-tree-right.webp"
+    },
+    {
+     "name": "cat 2",
+     "z": 228.8,
+     "picture": "castleroom-catroom/cat-2.webp"
+    },
+    {
+     "name": "cat 5",
+     "z": 228.8,
+     "picture": "castleroom-catroom/cat-5.webp"
+    },
+    {
+     "name": "cat 3",
+     "z": 231.4,
+     "picture": "castleroom-catroom/cat-3.webp"
+    },
+    {
+     "name": "firewood",
+     "z": 241.6,
+     "picture": "castleroom-catroom/firewood.webp"
+    },
+    {
+     "name": "window seat",
+     "z": 241.6,
+     "picture": "castleroom-catroom/window-seat.webp"
+    },
+    {
+     "name": "cat 4",
+     "z": 241.6,
+     "picture": "castleroom-catroom/cat-4.webp"
+    },
+    {
+     "name": "bowls",
+     "z": 254.1,
+     "picture": "castleroom-catroom/bowls.webp"
+    },
+    {
+     "name": "door 2",
+     "z": 254.1,
+     "picture": "castleroom-catroom/door-2.webp"
+    },
+    {
+     "name": "door 3",
+     "z": 254.1,
+     "picture": "castleroom-catroom/door-3.webp"
+    },
+    {
+     "name": "cat 1",
+     "z": 258.7,
+     "picture": "castleroom-catroom/cat-1.webp"
+    },
+    {
+     "name": "lantern",
+     "z": 282.5,
+     "picture": "castleroom-catroom/lantern.webp"
+    },
+    {
+     "name": "yarn, yellow",
+     "z": 282.5,
+     "picture": "castleroom-catroom/yarn-yellow.webp"
+    },
+    {
+     "name": "basket",
+     "z": 295,
+     "picture": "castleroom-catroom/basket.webp"
+    },
+    {
+     "name": "cat 6",
+     "z": 295,
+     "picture": "castleroom-catroom/cat-6.webp"
+    },
+    {
+     "name": "toy mouse",
+     "z": 316.8,
+     "picture": "castleroom-catroom/toy-mouse.webp"
+    },
+    {
+     "name": "yarn, red",
+     "z": 343,
+     "picture": "castleroom-catroom/yarn-red.webp"
+    },
+    {
+     "name": "rope bridge",
+     "z": 343,
+     "picture": "castleroom-catroom/rope-bridge.webp"
+    },
+    {
+     "name": "box",
+     "z": 358.2,
+     "picture": "castleroom-catroom/box.webp"
+    },
+    {
+     "name": "yarn, green",
+     "z": 387.7,
+     "picture": "castleroom-catroom/yarn-green.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "castleroom-catroom/sign.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:stable",
+   "label": "🐴 stable",
+   "picture": "castleroom-stable/place.webp",
+   "objects": [
+    {
+     "name": "swallows",
+     "z": 225.5,
+     "picture": "castleroom-stable/swallows.webp"
+    },
+    {
+     "name": "horse 1",
+     "z": 227.2,
+     "picture": "castleroom-stable/horse-1.webp"
+    },
+    {
+     "name": "horse 2",
+     "z": 227.2,
+     "picture": "castleroom-stable/horse-2.webp"
+    },
+    {
+     "name": "horse 3",
+     "z": 227.2,
+     "picture": "castleroom-stable/horse-3.webp"
+    },
+    {
+     "name": "ladder",
+     "z": 251.9,
+     "picture": "castleroom-stable/ladder.webp"
+    },
+    {
+     "name": "door 2",
+     "z": 254.1,
+     "picture": "castleroom-stable/door-2.webp"
+    },
+    {
+     "name": "door 3",
+     "z": 254.1,
+     "picture": "castleroom-stable/door-3.webp"
+    },
+    {
+     "name": "hen, brown",
+     "z": 266.1,
+     "picture": "castleroom-stable/hen-brown.webp"
+    },
+    {
+     "name": "sunbeam",
+     "z": 279.6,
+     "picture": "castleroom-stable/sunbeam.webp"
+    },
+    {
+     "name": "water trough",
+     "z": 295,
+     "picture": "castleroom-stable/water-trough.webp"
+    },
+    {
+     "name": "buckets",
+     "z": 295,
+     "picture": "castleroom-stable/buckets.webp"
+    },
+    {
+     "name": "hen, white",
+     "z": 295,
+     "picture": "castleroom-stable/hen-white.webp"
+    },
+    {
+     "name": "hay heap",
+     "z": 333.6,
+     "picture": "castleroom-stable/hay-heap.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "castleroom-stable/sign.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:dining",
+   "label": "🍽️ dining room",
+   "picture": "castleroom-dining/place.webp",
+   "objects": [
+    {
+     "name": "chair, far end",
+     "z": 74.6,
+     "picture": "castleroom-dining/chair-far-end.webp"
+    },
+    {
+     "name": "chair, left 4",
+     "z": 88.3,
+     "picture": "castleroom-dining/chair-left-4.webp"
+    },
+    {
+     "name": "chair, right 4",
+     "z": 88.3,
+     "picture": "castleroom-dining/chair-right-4.webp"
+    },
+    {
+     "name": "candelabra 2",
+     "z": 95.9,
+     "picture": "castleroom-dining/candelabra-2.webp"
+    },
+    {
+     "name": "chair, left 3",
+     "z": 104.6,
+     "picture": "castleroom-dining/chair-left-3.webp"
+    },
+    {
+     "name": "chair, right 3",
+     "z": 104.6,
+     "picture": "castleroom-dining/chair-right-3.webp"
+    },
+    {
+     "name": "chair, left 2",
+     "z": 126.3,
+     "picture": "castleroom-dining/chair-left-2.webp"
+    },
+    {
+     "name": "chair, right 2",
+     "z": 126.3,
+     "picture": "castleroom-dining/chair-right-2.webp"
+    },
+    {
+     "name": "candelabra 1",
+     "z": 140.1,
+     "picture": "castleroom-dining/candelabra-1.webp"
+    },
+    {
+     "name": "chair, left 1",
+     "z": 156.6,
+     "picture": "castleroom-dining/chair-left-1.webp"
+    },
+    {
+     "name": "chair, right 1",
+     "z": 156.6,
+     "picture": "castleroom-dining/chair-right-1.webp"
+    },
+    {
+     "name": "table",
+     "z": 176.7,
+     "picture": "castleroom-dining/table.webp"
+    },
+    {
+     "name": "chair, near end",
+     "z": 206.8,
+     "picture": "castleroom-dining/chair-near-end.webp"
+    },
+    {
+     "name": "doors",
+     "z": 225.5,
+     "picture": "castleroom-dining/doors.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "castleroom-dining/dark.webp"
+    },
+    {
+     "name": "fire light",
+     "z": "front",
+     "picture": "castleroom-dining/fire-light.webp"
+    },
+    {
+     "name": "torches",
+     "z": "front",
+     "picture": "castleroom-dining/torches.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "castleroom-dining/sign.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:kitchen",
+   "label": "🍲 kitchen",
+   "picture": "castleroom-kitchen/place.webp",
+   "objects": [
+    {
+     "name": "oven",
+     "z": 225.5,
+     "picture": "castleroom-kitchen/oven.webp"
+    },
+    {
+     "name": "barrels",
+     "z": 228.8,
+     "picture": "castleroom-kitchen/barrels.webp"
+    },
+    {
+     "name": "flour sack",
+     "z": 228.8,
+     "picture": "castleroom-kitchen/flour-sack.webp"
+    },
+    {
+     "name": "cook, chopping",
+     "z": 243.5,
+     "picture": "castleroom-kitchen/cook-chopping.webp"
+    },
+    {
+     "name": "door 2",
+     "z": 254.1,
+     "picture": "castleroom-kitchen/door-2.webp"
+    },
+    {
+     "name": "door 3",
+     "z": 254.1,
+     "picture": "castleroom-kitchen/door-3.webp"
+    },
+    {
+     "name": "cauldron",
+     "z": 256.4,
+     "picture": "castleroom-kitchen/cauldron.webp"
+    },
+    {
+     "name": "cook, stirring",
+     "z": 256.4,
+     "picture": "castleroom-kitchen/cook-stirring.webp"
+    },
+    {
+     "name": "pots and pans",
+     "z": 266.1,
+     "picture": "castleroom-kitchen/pots-and-pans.webp"
+    },
+    {
+     "name": "worktable",
+     "z": 333.6,
+     "picture": "castleroom-kitchen/worktable.webp"
+    },
+    {
+     "name": "fire light",
+     "z": "front",
+     "picture": "castleroom-kitchen/fire-light.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "castleroom-kitchen/sign.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:smithy",
+   "label": "⚒️ smithy",
+   "picture": "castleroom-smithy/place.webp",
+   "objects": [
+    {
+     "name": "forge",
+     "z": 225.5,
+     "picture": "castleroom-smithy/forge.webp"
+    },
+    {
+     "name": "coal heap",
+     "z": 234.1,
+     "picture": "castleroom-smithy/coal-heap.webp"
+    },
+    {
+     "name": "door 2",
+     "z": 254.1,
+     "picture": "castleroom-smithy/door-2.webp"
+    },
+    {
+     "name": "door 3",
+     "z": 254.1,
+     "picture": "castleroom-smithy/door-3.webp"
+    },
+    {
+     "name": "anvil",
+     "z": 266.1,
+     "picture": "castleroom-smithy/anvil.webp"
+    },
+    {
+     "name": "smith",
+     "z": 266.1,
+     "picture": "castleroom-smithy/smith.webp"
+    },
+    {
+     "name": "water barrel",
+     "z": 316.8,
+     "picture": "castleroom-smithy/water-barrel.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "castleroom-smithy/dark.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "castleroom-smithy/sign.webp"
+    }
+   ]
+  },
+  {
+   "kind": "castleroom:spiral",
+   "label": "🌀 spiral staircase",
+   "picture": "castleroom-spiral/place.webp",
+   "objects": [
+    {
+     "name": "door 3",
+     "z": 56.7,
+     "picture": "castleroom-spiral/door-3.webp"
+    },
+    {
+     "name": "door 2",
+     "z": 148.8,
+     "picture": "castleroom-spiral/door-2.webp"
+    },
+    {
+     "name": "column",
+     "z": 263.3,
+     "picture": "castleroom-spiral/column.webp"
+    },
+    {
+     "name": "steps",
+     "z": 281.6,
+     "picture": "castleroom-spiral/steps.webp"
+    },
+    {
+     "name": "dark",
+     "z": "front",
+     "picture": "castleroom-spiral/dark.webp"
+    },
+    {
+     "name": "sign",
+     "z": "front",
+     "picture": "castleroom-spiral/sign.webp"
+    }
+   ]
+  }
+ ]
+}

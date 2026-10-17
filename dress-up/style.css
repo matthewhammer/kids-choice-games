@@ -1,0 +1,377 @@
+/* Messed Up Dress Up's style (ticket 178: it was in index.html) */
+  :root { --ink: #222; --muted: #666; --line: #d6d6d6; --paper: #fffdf7; --bg: #f3f0ff;
+          --panel: #ffffff; --accent: #7c3aed; --accent-ink: #fff;
+          /* (ticket 170) the music tab's groups, each its own colour: the
+             main controls, the whole tune's strip, the LFOs, the instruments */
+          --mu-main: #e8f1ff; --mu-mix: #fff0d9; --mu-lfo: #f0e8ff; --mu-inst: #e4f6ea; }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink: #eee; --muted: #aaa; --line: #444; --paper: #fffdf7; --bg: #1d1a26;
+            --panel: #29253a; --accent: #a78bfa; --accent-ink: #1d1a26;
+            --mu-main: #1b2238; --mu-mix: #2c2416; --mu-lfo: #261c38; --mu-inst: #162a20; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 8px; background: var(--bg); color: var(--ink);
+         font: 16px/1.35 system-ui, "Segoe UI", Roboto, sans-serif; }
+  /* (at the top of the controls, so the picture's column is all picture: ticket 116) */
+  h1 { margin: 0 0 6px; font-size: 1.3em; letter-spacing: 0.02em; }
+  /* (ticket 134) this version and when it came out; a newer one, as a chip to change to */
+  h1 .version { font-size: 0.6em; font-weight: 400; letter-spacing: 0; color: var(--muted, #888); white-space: nowrap; }
+  /* (ticket 184) this version came out slow (or with something to fix) on GitHub's computers, after it went live */
+  h1 .speed-mark { font-size: 0.6em; font-weight: 600; letter-spacing: 0; padding: 2px 10px; vertical-align: 0.15em; border-radius: 999px;
+                   background: #fde68a; color: #713f12; border: 1px solid #f59e0b; white-space: nowrap; text-decoration: none; }
+  h1 .newer { font-size: 0.6em; font-weight: 600; letter-spacing: 0; padding: 2px 10px; vertical-align: 0.15em;
+              background: var(--accent); color: var(--accent-ink); border-color: var(--accent); white-space: nowrap; }
+  /* The whole window: the picture's column, a divider to drag, the controls
+     (ticket 116: no more 1100px cap with margins either side). The
+     picture's column is as wide as the picture can use at the window's
+     height (setSplit), or where the divider was dragged to. */
+  .app { display: grid; grid-template-columns: minmax(240px, var(--split, 60%)) 14px minmax(0, 1fr); gap: 0 4px; }
+  @media (max-width: 760px) { .app { grid-template-columns: minmax(0, 1fr); } }
+  /* The picture, its caption and buttons always fit on the screen, so the
+     picture stays in view while the controls scroll; the picture takes all
+     the height its caption and buttons leave (fitPic sizes it) */
+  .stage { position: sticky; top: 8px; align-self: start; min-width: 0;
+           height: calc(100vh - 16px); height: calc(100dvh - 16px); display: flex; flex-direction: column; }
+  .pic-wrap { position: relative; flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .pic-area { flex: 1 1 0; min-height: 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+  .pic-box { position: relative; line-height: 0; max-width: 100%; }
+  svg#pic { display: block; width: 100%; height: auto; max-width: 100%;
+            background: var(--paper); border-radius: 18px; border: 2px solid var(--line);
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  /* the caption and the buttons, in one row under the picture */
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; padding-top: 6px; width: 100%; }
+  body.big .bar { display: none; }
+  .caption { text-align: center; font-size: 1.1em; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  /* saving, in a menu of its own: the kinds of file, the button, the links to what was saved */
+  .save-menu { position: relative; }
+  .save-pop { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 30;
+              width: max-content; max-width: min(92vw, 440px); display: flex; flex-direction: column; align-items: center; gap: 8px;
+              background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px;
+              box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28); }
+  .save-pop[hidden] { display: none; }
+  .save-pop .formats, .save-pop .saved { margin-top: 0; }
+  /* (ticket 43) a postcard: what to write on it, and its button */
+  .save-pop .postcard { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center;
+                        border-top: 1px solid var(--line); padding-top: 8px; width: 100%; }
+  .save-pop .postcard input { font: inherit; padding: 4px 8px; border: 2px solid var(--line); border-radius: 8px; flex: 1 1 14em; min-width: 0; }
+  /* the divider between the picture and the controls: drag it */
+  .divider { position: sticky; top: 8px; height: calc(100vh - 16px); height: calc(100dvh - 16px); cursor: col-resize;
+             touch-action: none; display: flex; align-items: center; justify-content: center; border-radius: 7px; outline: none; }
+  .divider::before { content: ""; width: 5px; height: 56px; border-radius: 3px; background: var(--line); }
+  .divider:hover::before, .divider:focus-visible::before, .divider.drag::before { background: var(--accent); height: 96px; }
+  body.dragging-split { cursor: col-resize; user-select: none; -webkit-user-select: none; }
+  @media (max-width: 760px) { .divider { display: none; } }
+  button { font: inherit; cursor: pointer; border-radius: 12px; border: 2px solid var(--line);
+           background: var(--panel); color: var(--ink); padding: 6px 12px; }
+  button.big { background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
+               font-weight: 600; padding: 8px 16px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tabs button { font-weight: 600; }
+  .tabs button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .ctl.master .name { font-weight: 700; }
+  .lfo-chip { font-size: 0.75em; padding: 1px 8px; margin-left: auto; margin-right: 8px; }
+  .ctl.master.mixed input, .ctl.master.mixed .name { opacity: 0.45; }
+  .ctl.master.mixed .val { font-style: italic; color: var(--muted); }
+  /* (ticket 159) the 🎵 Music tab full screen: the tune, where it is, the
+     tunes and the mixing board take the whole window; the picture, the
+     title and the other tabs hidden until ✕, Escape or leaving full screen */
+  body.music-big { overflow: hidden; }
+  body.music-big .stage, body.music-big .divider, body.music-big .side > h1, body.music-big #tabs { display: none; }
+  body.music-big .side { position: fixed; inset: 0; z-index: 30; overflow: auto; background: var(--bg);
+                         padding: 12px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
+  body.music-big .mixer { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  body.music-big .touchpad { display: none; }   /* (no friend to move here) */
+  /* (ticket 164) a still place, on a slow computer: no CSS animations in the scenery either (the fairies' wings) */
+  body.still-scenery #bg * { animation: none !important; }
+  /* (ticket 155) the ⚙️ advanced tab: a feature kept off until it is fast, a row each */
+  .perfrow { border-top: 1px dashed var(--line); padding: 8px 0 4px; margin-top: 6px; }
+  .perfrow .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .perfrow button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  /* (ticket 179) measuring: the controls that would disturb it rest, and a notice says to wait */
+  body.measuring .perfrow button:disabled, body.measuring .perfrow a.resting { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+  .measuring-note { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 60; width: min(92vw, 560px);
+                    background: var(--accent); color: var(--accent-ink); border-radius: 14px; padding: 12px 16px; text-align: center;
+                    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); font-size: 1.15em; }
+  .measuring-note[hidden] { display: none; }
+  .measuring-note .big { font-size: 1.25em; font-weight: 700; display: block; }
+  .measuring-note .bar { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.35); margin-top: 8px; overflow: hidden; }
+  .measuring-note .bar > i { display: block; height: 100%; width: 0; background: currentColor; }
+  .panel { background: var(--panel); border-radius: 18px; padding: 12px 14px; border: 2px solid var(--line); }
+  .ctl { margin: 10px 0; }
+  .ctl > .lbl { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .ctl > .lbl .val { color: var(--muted); font-weight: 400; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .row button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  /* a menu for each hand, mirrored about a line down the middle */
+  .ctl.pair:not([hidden]) { display: flex; }
+  .pair > .side { flex: 1 1 0; min-width: 0; }
+  .pair > .side:first-child { padding-right: 10px; }
+  .pair > .side:last-child { padding-left: 10px; border-left: 2px dashed var(--line); }
+  .pair > .side > .lbl { font-weight: 600; margin-bottom: 4px; }
+  .pair > .side:last-child > .lbl { text-align: right; }
+  .pair > .side:last-child .row { justify-content: flex-end; }
+  .swatch { width: 34px; height: 34px; border-radius: 50%; padding: 0; border: 3px solid var(--line); }
+  .swatch[aria-pressed=true] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
+  .swatch.skin { font-size: 0.6em; }
+  input[type=range] { width: 100%; height: 28px; accent-color: var(--accent); }
+  input[type=color] { width: 40px; height: 34px; border: none; padding: 0; background: none; }
+  .hint { color: var(--muted); font-size: 0.9em; }
+  .padmap { display: grid; gap: 4px; margin: 8px 0; }
+  .padrow { display: flex; gap: 8px; align-items: center; padding: 2px 6px; border-radius: 8px; }
+  .padrow .pbtn { min-width: 15em; }
+  .padrow .pwhich { min-width: 10em; color: var(--muted); }
+  .padteach { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; padding: 6px 8px; border-radius: 8px; outline: 2px solid #8b5cf6; }
+  .padask { font-weight: bold; }
+  .padline { width: 100%; max-width: 46em; font: inherit; font-size: 0.85em; margin: 4px 0; }
+  .padrow.down { outline: 2px solid #8b5cf6; background: color-mix(in srgb, #8b5cf6 14%, transparent); }
+  /* the figure's place in its scene: the stage in small, the figure a box */
+  svg.place { display: block; width: 100%; max-width: 240px; height: auto; touch-action: none; cursor: crosshair;
+              border-radius: 10px; border: 2px solid var(--line); }
+  svg.pad { width: 140px; height: 140px; display: block; touch-action: none; cursor: crosshair;
+            border-radius: 14px; border: 2px solid var(--line); }
+  /* On a phone the controls are below the picture, so the picture is
+     kept small and pinned at the top: a change shows while you make it. */
+  @media (max-width: 760px) {
+    body { padding-top: 8px; }
+    h1 .game-name, h1 .version { display: none; }   /* (a newer version's chip still shows: ticket 134) */
+    h1 { margin: 0; font-size: 1.1em; }
+    .stage { top: 0; z-index: 1; background: var(--bg); padding: 4px 0 8px; margin: 0 -8px; padding-inline: 8px; height: auto; }
+    .pic-wrap, .pic-area { flex: none; }
+    .actions { gap: 4px; flex-wrap: nowrap; }
+    .actions button { padding: 4px 6px; font-size: 0.85em; white-space: nowrap; }
+    .caption { font-size: 1em; }
+  }
+  .formats { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center; align-items: center;
+             margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .formats label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+  .saved { text-align: center; font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 1em; }
+  .saved a { color: inherit; font-weight: 600; margin: 0 4px; }
+  /* Full screen: the button at the picture's top right fills the window
+     with the picture, the controls hidden; again (an X then) or Escape
+     brings them back. */
+  .pic-wrap { position: relative; }
+  .max-btn { position: absolute; top: 8px; right: 8px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
+             background: var(--panel); opacity: 0.9; }
+  body.big { overflow: hidden; }
+  /* (the sticky stage is its own stacking context: raised, or the panel's
+     half-faded pins, each a layer of its own, paint over the full screen) */
+  body.big .stage { z-index: 20; }
+  body.big .app > :not(.stage) { visibility: hidden; }
+  body.big .pic-wrap { position: fixed; inset: 0; z-index: 10; background: var(--bg); padding: 8px;
+                      display: flex; flex-direction: column; gap: 8px; }
+  /* the music's quick mute, at the picture's other top corner */
+  .mute-btn { position: absolute; top: 8px; left: 8px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
+              background: var(--panel); opacity: 0.9; }
+  /* back through the last doorway, after a trip through one */
+  .back-btn { position: absolute; bottom: 8px; left: 8px; padding: 0 10px; font-size: 1.15em; line-height: 1.6;
+              background: var(--panel); opacity: 0.92; }
+  body.big .back-btn { bottom: auto; top: 8px; left: 124px; }
+  /* (ticket 170) in full screen, next to the mute: the music's controls,
+     full screen (✕ there comes back here) */
+  .mfs-btn { display: none; position: absolute; top: 8px; left: 66px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
+             background: var(--panel); opacity: 0.9; }
+  body.big .mfs-btn { display: block; }
+  body.big .mute-btn[hidden] + .mfs-btn { left: 8px; }
+  body.big .mute-btn[hidden] ~ .back-btn { left: 66px; }
+  /* (a phone: the way back on a row of its own, clear of the right corner's buttons) */
+  @media (max-width: 480px) { body.big .back-btn, body.big .mute-btn[hidden] ~ .back-btn { top: 52px; left: 8px; } }
+  /* (ticket 150) the on-screen controller, offered while no game controller
+     is connected: the button that shows it, at the picture's bottom right */
+  .pad-btn { position: absolute; bottom: 8px; right: 8px; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
+             background: var(--panel); opacity: 0.9; }
+  .pad-btn[hidden] { display: none; }
+  /* its two halves, in the screen's bottom corners, over everything: the
+     arrows and L and select on the left, the four buttons and R and start on
+     the right, as on a SNES controller. Only the controls take a touch; a
+     press never scrolls, zooms or selects. */
+  .touchpad { --tp: clamp(118px, 24vmin, 176px); position: fixed; inset: auto 0 0 0; z-index: 40; pointer-events: none;
+              display: flex; justify-content: space-between; align-items: flex-end;
+              padding: 0 max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+  .touchpad[hidden] { display: none; }
+  .touchpad .half { display: grid; gap: 6px; align-items: end; justify-items: center; }
+  .touchpad .half.l { grid-template-columns: auto auto; grid-template-areas: "sh ." "pad sm"; }
+  .touchpad .half.r { grid-template-columns: auto auto; grid-template-areas: ". sh" "sm pad"; }
+  .touchpad .sh { grid-area: sh; } .touchpad .sm { grid-area: sm; } .touchpad .pad { grid-area: pad; }
+  body.big .pad-btn { bottom: auto; top: 8px; right: 124px; }
+  .touchpad button, .touchpad .dpad { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none;
+                                      -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  .touchpad button { font: 600 calc(var(--tp) * 0.13)/1 sans-serif; color: #fff; border: 2px solid rgba(255, 255, 255, 0.55);
+                     background: rgba(40, 36, 56, 0.62); padding: 0; display: flex; flex-direction: column; align-items: center;
+                     justify-content: center; gap: 2px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+  .touchpad button small { font-size: 0.72em; font-weight: 400; line-height: 1; }
+  .touchpad button.down, .touchpad .dpad .arm.down { filter: brightness(1.45); transform: scale(0.94); }
+  .touchpad .sh { width: calc(var(--tp) * 0.62); height: calc(var(--tp) * 0.26); border-radius: 14px 14px 8px 8px; }
+  .touchpad .sm { width: calc(var(--tp) * 0.42); height: calc(var(--tp) * 0.2); border-radius: 99px; font-size: calc(var(--tp) * 0.09); }
+  /* the arrows: one cross, a press anywhere on it is a direction (a
+     diagonal too), and a finger slides from one to the next */
+  .touchpad .dpad { width: var(--tp); height: var(--tp); position: relative; border-radius: 50%; }
+  .touchpad .dpad .arm { position: absolute; background: rgba(40, 36, 56, 0.66); border: 2px solid rgba(255, 255, 255, 0.55);
+                         color: #fff; font-size: calc(var(--tp) * 0.13); display: flex; align-items: center; justify-content: center; }
+  .touchpad .dpad .arm.u { left: 34%; top: 0; width: 32%; height: 38%; border-radius: 8px 8px 0 0; border-bottom: none; }
+  .touchpad .dpad .arm.d { left: 34%; bottom: 0; width: 32%; height: 38%; border-radius: 0 0 8px 8px; border-top: none; }
+  .touchpad .dpad .arm.l { top: 34%; left: 0; width: 38%; height: 32%; border-radius: 8px 0 0 8px; border-right: none; }
+  .touchpad .dpad .arm.r { top: 34%; right: 0; width: 38%; height: 32%; border-radius: 0 8px 8px 0; border-left: none; }
+  .touchpad .dpad .hub { position: absolute; left: 34%; top: 34%; width: 32%; height: 32%; background: rgba(40, 36, 56, 0.66); }
+  /* the four buttons in their diamond, in the Super Famicom's colors */
+  .touchpad .abxy { width: var(--tp); height: var(--tp); position: relative; }
+  .touchpad .abxy button { position: absolute; width: 36%; height: 36%; border-radius: 50%; }
+  .touchpad .abxy .bx { left: 32%; top: 0; background: rgba(48, 92, 214, 0.82); }
+  .touchpad .abxy .by { left: 0; top: 32%; background: rgba(36, 150, 72, 0.82); }
+  .touchpad .abxy .ba { right: 0; top: 32%; background: rgba(214, 44, 44, 0.82); }
+  .touchpad .abxy .bb { left: 32%; bottom: 0; background: rgba(226, 178, 20, 0.86); }
+  .touchpad button.idle { opacity: 0.55; }
+  .ctl > p.now { margin: 0; color: var(--muted); }
+  /* the mixing board: a strip for each part, the whole tune's first */
+  .mixer { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 4px; }
+  .mixer p.now { margin: 0; color: var(--muted); }
+  .strip { border: 2px solid var(--line); border-radius: 12px; padding: 6px 8px; font-size: 0.85em; }
+  .strip.master { border-style: dashed; }
+  .strip.lfo { border-style: dotted; }
+  .mixer .quad { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 520px) { .mixer .quad { grid-template-columns: minmax(0, 1fr); } }
+  /* (ticket 170) the whole tune's strip and the LFOs two of the board's
+     columns wide (and two rows tall, the instruments beside them), so each
+     strip is as wide as an instrument's, not half the screen; one strip to
+     a row where the board is narrow */
+  .mixer { container-type: inline-size; }
+  @container (min-width: 408px) { .mixer .quad { grid-column: span 2; grid-row: span 2; } }
+  @container (min-width: 408px) and (max-width: 487px) { body.music-big .mixer .quad { grid-column: 1 / -1; } }
+  @container (max-width: 407px) { .mixer .quad { grid-template-columns: minmax(0, 1fr); } }
+  .strip { background: var(--mu-inst); }
+  .strip.master { background: var(--mu-mix); }
+  .strip.lfo { background: var(--mu-lfo); }
+  #panel[data-part=music] > .ctl:not(.mixctl) { background: var(--mu-main); border-radius: 12px; padding: 6px 10px; margin: 6px 0; }
+  /* the castle designer: a map of the castle's rooms and the ways between them */
+  .designer { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
+  .designer .map { height: 340px; border: 2px solid var(--line); border-radius: 12px; background: rgba(127, 127, 127, 0.08); }
+  .designer .note { color: var(--muted); font-size: 0.85em; margin: 0; }
+  .designer .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .designer ul.problems { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .designer ul.problems li { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+  /* a set of chips in a dashed box of its own, with its name (the music's
+     kinds, then the kind's tunes), as the mixing board's master strip */
+  .chipset { border: 2px dashed var(--line); border-radius: 12px; padding: 6px 8px; }
+  .chipset + .chipset { margin-top: 6px; }
+  /* (ticket 99) a scene's objects: small chips, many to a line */
+  .row.objs { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+  .row.objs button.obj { font-size: 0.78em; padding: 0 5px; line-height: 1.5; border-radius: 9px; }
+  .row.objs button.obj.off { opacity: 0.5; text-decoration: line-through; }
+  .row.objs .me { font-size: 0.95em; padding: 0 2px; }
+  .chipset > .cap { color: var(--muted); font-size: 0.85em; margin-bottom: 4px; }
+  /* a group of controls in its dashed box (the castle's look, its rooms, each room's own) */
+  .ctlgroup { margin: 10px 0; }
+  .ctlgroup > .ctl { margin: 8px 0; }
+  .ctlgroup.here { border-style: solid; border-color: var(--accent); }
+  .ctlgroup.here > .cap { color: var(--accent); font-weight: 600; }
+  .strip.dim { opacity: 0.45; }
+  .strip-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
+  .strip-name { flex: 1 1 auto; font-weight: 600; }
+  .strip-name small { color: var(--muted); font-weight: 400; }
+  .strip button.ms { padding: 1px 7px; font-size: 0.95em; }
+  .strip button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  /* a throw is held down: no text selection or long-press menu on a tablet */
+  .strip button.throw { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+  .knob { display: grid; grid-template-columns: 6.2em 1fr 3.8em; align-items: center; gap: 4px; }
+  .knob input[type=range] { height: 22px; }
+  .knob .val { color: var(--muted); text-align: right; font-size: 0.9em; }
+  /* a channel's move: its chips beside the name, how far it is moved on a line of its own */
+  .knob.move { grid-template-columns: 6.2em 1fr; }
+  .knob.move .row { display: flex; gap: 4px; flex-wrap: nowrap; }
+  .knob.move .row button { white-space: nowrap; flex-shrink: 0; }
+  .knob.move .val { grid-column: 1 / -1; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
+  .dot.on { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+  /* the transport: where the tune is, its sections marked under it */
+  /* where the tune is: one line that never wraps (the numbers keep their width) */
+  .ctl .pos { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; margin-top: 4px; }
+  .ctl .where { font-weight: 600; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .ctl .when { color: var(--muted); flex: none; font-variant-numeric: tabular-nums; }
+  .marks { display: flex; gap: 2px; margin-top: 2px; }
+  .marks span { height: 14px; border-radius: 4px; background: var(--line); color: var(--muted); font-size: 10px; line-height: 14px; text-align: center; overflow: hidden; }
+  .marks span.on { background: var(--accent); color: var(--accent-ink); }
+  .ctl.idle input[type=range], .ctl.idle .marks { opacity: 0.4; }
+  /* In full screen, a heads-up display of chosen controls: hidden until
+     its button is pressed; the scene's own controls and every pinned slider. */
+  .hud-btn { display: none; position: absolute; top: 8px; right: 66px; padding: 0 9px; font-size: 1.3em;
+             line-height: 1.45; background: var(--panel); opacity: 0.9; }
+  body.big .hud-btn { display: block; }
+  /* (below the picture, which shrinks to make room: it never covers the
+     figure or its face) */
+  .hud { flex: 0 0 auto; max-height: 40vh; overflow: auto; border-radius: 14px;
+         display: flex; flex-wrap: wrap; gap: 0 18px; padding: 6px 16px 10px;
+         background: rgba(24, 20, 36, 0.86); color: #fff; }
+  .hud[hidden] { display: none; }
+  .hud .ctl { flex: 1 1 220px; margin: 6px 0; }
+  .hud .ctl > .lbl .val { color: #ddd; }
+  .hud .empty { color: #ddd; padding: 8px 0; }
+  .pin { border: none; background: none; padding: 0; margin-right: 6px; font-size: 0.85em; opacity: 0.3;
+         cursor: pointer; vertical-align: baseline; }
+  .pin[aria-pressed=true] { opacity: 1; }
+  /* in the HUD, an eye on each slider folds it away to its name, and back
+     (it stays pinned) */
+  .eye { border: none; background: none; padding: 0; margin-right: 6px; font-size: 0.95em; cursor: pointer; }
+  .eye[aria-pressed=false] { opacity: 0.45; }
+  .hud .ctl.min { flex: 0 0 auto; }
+  .hud .ctl.min input, .hud .ctl.min .val { display: none; }
+  .hud .ctl.min > .lbl { margin: 0; }
+  .hud svg.place { max-width: 130px; }
+  .hud .ctl.min svg.place { display: none; }
+  /* a doorway into another scene (a picture, a window, a tree house, a
+     door) glows under the pointer; a click goes through it */
+  #bg .portal { cursor: pointer; }
+  #bg .portal:hover { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f) brightness(1.08); }
+  /* (a way out below the picture: its words only on hover) */
+  #bg .south-way .south-label { opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+  #bg .south-way:hover .south-label { opacity: 1; }
+  /* (ticket 145) the picture the controller's ✨ would go into: its glow breathes */
+  #bg .enter-glow { animation: enter-glow 1.3s ease-in-out infinite alternate; }
+  @keyframes enter-glow { from { opacity: 0.45; } to { opacity: 1; } }
+/* A fairy's wings flap, and their stars twinkle, by CSS, not SVG
+   animation: a drag pauses the picture's SVG animations (see pointerdown),
+   and the wings go on flapping through it, to fly. Each redraw starts them
+   in step with the clock (fairyPhase), so they never restart mid-flap. */
+@keyframes fairy-flap-l { 50% { transform: rotate(9deg); } }
+@keyframes fairy-flap-r { 50% { transform: rotate(-9deg); } }
+@keyframes fairy-twinkle { 50% { opacity: 0.2; } }
+
+/* (ticket 185) the world designer's grid */
+.world-grid { display: grid; gap: 4px; margin: 0.5rem 0; max-width: 34rem; }
+.world-cell { position: relative; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 2px; border-radius: 8px; border: 2px solid var(--line, #ccc); background: var(--card, #fff); font: inherit; font-size: 0.68em; line-height: 1.1; overflow: hidden; cursor: pointer; }
+.world-cell.empty { border-style: dashed; color: var(--muted, #888); background: transparent; cursor: default; }
+.world-cell.bad { border-color: #d9480f; background: #fff1e6; }
+.world-cell.here { outline: 3px solid #3b82f6; outline-offset: 1px; }
+.world-cell.start .world-emoji::after { content: " 🏁"; font-size: 0.7em; }
+.world-emoji { font-size: 1.7em; }
+.world-name { text-align: center; }
+.world-way { position: absolute; width: 8px; height: 8px; background: #8a5528; border-radius: 2px; }
+.world-way.w-N { top: 1px; left: calc(50% - 4px); } .world-way.w-S { bottom: 1px; left: calc(50% - 4px); }
+.world-way.w-E { right: 1px; top: calc(50% - 4px); } .world-way.w-W { left: 1px; top: calc(50% - 4px); }
+.world-way.w-NE { top: 1px; right: 1px; } .world-way.w-NW { top: 1px; left: 1px; } .world-way.w-SE { bottom: 1px; right: 1px; } .world-way.w-SW { bottom: 1px; left: 1px; }
+.world-prob { font-size: 0.85em; margin: 2px 0; padding-left: 1em; text-indent: -1em; }
+.world-prob::before { content: "• "; }
+.world-off { margin-top: 0.5rem; }
+.world-palette { flex-wrap: wrap; gap: 4px; }
+.world-chip { font-size: 0.8em; padding: 2px 8px; cursor: grab; }
+.world-trash { border: 2px dashed var(--line, #ccc); border-radius: 8px; padding: 6px 10px; }
+.world-here { margin: 0.5rem 0; }
+.drag-ghost { position: fixed; z-index: 1000; pointer-events: none; transform: translate(-50%, -60%); font-size: 2.2em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
+
+/* (ticket 185) the world square's ways out, over the picture and its buttons: each shown only while the friend is near it */
+.ways-layer { position: absolute; inset: 0; pointer-events: none; z-index: 35; overflow: hidden; }
+.way-arrow { position: absolute; left: 0; top: 0; width: 0; height: 0; padding: 0; border: 0; background: none; cursor: pointer;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.way-arrow.near { opacity: 1; pointer-events: auto; }
+.way-arrow .way-tri { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; transform: rotate(var(--a)); animation: way-bob 1.8s ease-in-out infinite; }
+.way-arrow .way-tri::before { content: ""; position: absolute; inset: 6px; clip-path: polygon(15% 5%, 98% 50%, 15% 95%); background: #fff4cf; filter: drop-shadow(0 0 2px #6b4a24) drop-shadow(0 0 1px #6b4a24); }
+.way-arrow.nowhere .way-tri::before { background: #d6d3d1; }
+.way-arrow.nowhere { cursor: default; }
+.way-arrow:hover .way-tri::before, .way-arrow:focus-visible .way-tri::before, .way-arrow.aimed .way-tri::before { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f) drop-shadow(0 0 14px #ffd23f); }
+@keyframes way-bob { 0%, 100% { translate: 0 0; } 50% { translate: calc(5px * cos(var(--a))) calc(5px * sin(var(--a))); } }
+.way-arrow .way-words { position: absolute; width: max-content; max-width: 7.5em; text-align: center; white-space: normal; line-height: 1.15;
+  font: 600 0.8rem/1.15 sans-serif; color: #fff; text-shadow: 0 0 3px #3b2a14, 0 0 3px #3b2a14, 0 0 2px #3b2a14; }
+.way-arrow[data-side="left"] .way-words { right: 26px; top: 50%; transform: translateY(-50%); text-align: right; }
+.way-arrow[data-side="right"] .way-words { left: 26px; top: 50%; transform: translateY(-50%); text-align: left; }
+.way-arrow[data-side="below"] .way-words { top: 26px; left: 50%; transform: translateX(-50%); }
+.way-arrow[data-side="above"] .way-words { bottom: 26px; left: 50%; transform: translateX(-50%); }

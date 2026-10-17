@@ -2,6 +2,98 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.106 (2026-10-17)
+
+Everything in 0.0.105, with the ways out found by your friend's feet.
+
+- **A way out is a spot on the ground, and which one is near goes by your friend's feet** (Matthew: by the arrow at the bottom of the wood path, X took the one at the top). Near and far are measured on the floor, with its depth: a step toward the back of a place covers more ground than one at the front, and walking past a way, toward its edge, still counts as at it. The front edge's way shows only once you walk down toward it, not from the middle.
+- **The way X would take glows on its own arrow**, over the picture, instead of a frame drawn in the picture under it.
+
+## 0.0.105 (2026-10-17)
+
+Everything in 0.0.104, with the ways out showing only when you are near them.
+
+- **A way out's arrow shows only when your friend is near it** (Matthew), fading in as they come close and out as they leave; while it shows it is on top of everything, the back chip and the picture's buttons too, and a tap on it walks through. Hidden, it is in nobody's way.
+- **Its words on two short lines**, where it goes and the place's name, on the side toward the middle of the picture, so they stay on the screen (Matthew: they went off it).
+
+## 0.0.104 (2026-10-17)
+
+Everything in 0.0.103, with tidier forest crossings.
+
+- **A forest crossing in the world shows only the paths that lead somewhere** (Matthew: one missing a passageway should have no trail, and no arrow, that way): a path switched on, with nothing beside it to meet, is not drawn, has no arrow, and is no longer listed as a mistake. Drop a crossing between places and it joins those that have a way toward it.
+- **The crossing's paths have no outlines** (Matthew: they looked sloppy where they met).
+
+## 0.0.103 (2026-10-17)
+
+Everything in 0.0.102, plus a forest crossing that looks farther, and the world laid out again.
+
+- **The forest crossing's paths meet nearer the middle of the picture** (Matthew: not so close to the bottom), its forest floor reaching farther back.
+- **🌄 Off in the distance**, three to choose from for each crossing: 🌲 tall trees and shafts of light (as before, but kept to the top of the picture), ☁️ sky, sun and clouds over the trees far off (as at the forest clearing), or ⛰️ mountains far off, snow on the far ones, and far pines.
+- **The world laid out again** (Matthew): the 🦆 pond in the middle, the land across the water a forest crossing you can walk to, not only see; the 🏖️ beach on the top edge, looking out on the water, the witch's woods and the mountain trail either side; the clearing east of the pond, the castle beyond it. A world you have not changed is laid out this way by itself; 🌍 the first world again (in 🗺️ World design) lays any world out this way.
+
+## 0.0.102 (2026-10-17)
+
+Everything in 0.0.101, plus designing the world by hand.
+
+- **🗺️ World design, by hand** (Matthew): drag a place from the row of places onto a square of the grid (or tap it: the first empty square gets it); drag a square onto another to move it (two places swap), or onto 🗑️ to take it away; make the grid a column or row bigger or smaller, up to 12 by 12.
+- **The square you are in:** its ways out, each an arrow to turn on or off (a forest crossing's are its paths); 🏁 start here; and its things: drag a rock, bush, tree or pine straight into the picture, where you let go (or tap to add one), then drag it about.
+
+## 0.0.101 (2026-10-17)
+
+Everything in 0.0.100, with two fixes.
+
+- **Fixed:** opening the game, its first picture could fail to draw until you touched something (0.0.99 and 0.0.100): the world's part of the game loaded after the part that draws the first picture, which needs it.
+- **Fixed:** adding a thing to a place, turning it around, changing its leaves or dragging it sometimes changed nothing in the picture until something else changed (since 0.0.98): the place's picture is kept between drawings, and a thing changed in place did not count as a change. Things are drawn apart from it now, each kept on its own.
+
+## 0.0.100 (2026-10-17)
+
+Everything in 0.0.99, plus walking from square to square, and things in every place.
+
+- **Ways out, in the picture** (Matthew: "how do I access those passageways in the game?"): in a place on the world's grid, a small bobbing triangle at each of its ways out, pointing out: ahead at the far end of the ground, toward us at the bottom, left and right at the sides, the ways between at the corners. Point at one to see where it goes; click it, or press X near it, and your friend walks through into the square beside it, coming in from that side. The back chip brings them back. A way that leads nowhere yet is grey, with 🚧.
+- **Things in every place**, not only the forest crossing: rocks, bushes, trees and pines to put anywhere and drag about, each place in the world keeping its own.
+- Choosing a place in 🏞️ Background takes your friend to its square in the world, with its things.
+
+## 0.0.99 (2026-10-17)
+
+Everything in 0.0.98, plus the world, on its grid.
+
+- **🗺️ World design shows the world** (Matthew): today's places laid out on a grid of squares, the forest clearing in the middle, joined to the squares beside them through the ways out on their shared sides (the little brown marks on each square's edges), with forest crossings between. Tap a square to go there; a forest crossing changed there (its paths, its floor, its things) stays changed in its square. Under the grid, anything to put right (a way out to an empty square, or to a place with no way back, or a place you can't get to), and the places inside others (the living room, the castle's rooms, the witch's hut...), which are off the grid.
+
+## 0.0.98 (2026-10-17)
+
+Everything in 0.0.97, plus a forest crossing to fill with things, a quieter way out toward us, and the start of a world to design.
+
+- **🛤️ A forest crossing** (Matthew: a blank place for the world designer, in 🌲 woods): a forest floor (olive green, or another colour) where up to eight brown paths meet: ahead, toward us, left, right, and the four ways between. Each path on or off.
+- **Things to put there:** 🪨 rocks, 🌿 bushes, 🌳 trees and 🌲 pines, each sized for how far back it stands, as your friend is; drag one to move it. Each is its own: ↔️ turn it around, 🎲 grow it another shape, and a rock's colour, a tree's height and leaves (summer, spring, autumn, 🌸 blossom), a pine's tiers, a bush's flowers.
+- **A way out toward us is a small ▼ at the bottom of the picture** now, gently bobbing, not a sign on a post (Matthew: signs everywhere looked unnatural): the castle rooms' ways behind you, the living room's and the tree rooms' door behind you. It glows when you point at it or when your friend is near, says where it goes when you point at it, and X goes through it, as through a door.
+- **🗺️ World design**, a new tab after the music: coming soon, a world to design on a grid of squares.
+- Behind the scenes: the game's code is in files of its own now, by section (it was one file of 15,850 lines); nothing changes in how it plays. Save and Load are checked on every change, a crossing and its things included.
+
+## 0.0.97 (2026-10-17)
+
+Everything in 0.0.96, with the still pictures working again on a slow computer.
+
+- **Fixed:** on a slow computer, the places were drawn live again while the friend moved, not as still pictures (since 0.0.95). The fix for the white flashes waited for each picture to be fully ready in a way Chrome never finished, so no picture was ever used: the duck pond as still pictures in 0% of drawings on our test computer, where it was 99% before. Now that wait lasts at most a quarter of a second; the flash fix stays. Found by the speed check after 0.0.96 (🚧🐢 on that version).
+
+## 0.0.96 (2026-10-17)
+
+Everything in 0.0.95, plus a sign when a version runs slow.
+
+- **🚧🐢 after the version number when it runs slow** (Matthew: deploy as soon as a version is made, so M and N can try it at once, and check its speed apart, so nobody has to): each new version goes out first, and then our test computer checks how fast it draws. If it came out slow, 🚧🐢 shows after its number (🚧 if something else needs fixing), and the next version fixes it. Nothing shows while it is being checked, or when it is fast enough.
+
+## 0.0.95 (2026-10-17)
+
+Everything in 0.0.94, plus the 🏞️ Background tab fast again, no white flashes while moving, furniture that stands in the way, postcards, walking toward us on a slant, and a plain "please wait" while ⚙️ Advanced measures.
+
+- **Fixed:** with the 🏞️ Background tab open, moving the friend was slow everywhere, worst in the busy places (the duck pond at 2 to 15 frames a second instead of 60 on a test computer), and stayed slow until the page was reloaded, which opens the 🧍 Body tab again. The castle's room menus in that tab worked out the whole castle for every choice's name on every refresh; they now look up just the room they name.
+- **Fixed:** white flashes while walking or dragging (Matthew and the kids, since the still pictures became bitmaps in 0.0.93). On a computer the game finds slow, the place is drawn as still pictures while the friend moves, and a picture could be shown a frame before the browser had its pixels ready, so that frame was blank. A picture is now used only once it is ready to draw.
+- **While ⚙️ Advanced measures, it says so plainly** (Matthew): during 🧪 this computer's speed (about 40 seconds) and 📏 measure here, a notice over the game says to wait and touch nothing, with the seconds gone of about how long it takes and a bar filling up; 📋 copy, 📝 paste, 🧪, ⏱️, 📏 and the feature switches rest until it ends, so a half-done line can't be copied or a second measure started.
+- **What stands in a place is solid** (Matthew: "the objects in a room that one can't reasonably walk through"): tables, beds, wells, stoves, barrels, bookcases, rocks, bushes and the rest of what stands, and trees by their trunks, stop the friend, as the seats have since 0.0.89. The low ones (a rock, a log, a bush, a toadstool) can be jumped over, a short jump clearing the lowest. Houses, huts, doors and ladders stay open, and so do the animals and the people.
+- **The flat rooms have back walls:** in the 🛋️ living room, the 🪜 tree house's rooms, the 🧙 witch's hut, the 🌿 healer's hut and ⛺ a tent, the friend stops at the foot of the back wall, as in 💭 our imagination, instead of walking up it.
+- **Postcards** (💾 Save ▾ → "💌 Save a postcard"): your friend in their place, in a card's cream border, with something written under it, saved as one picture ready to send. The words start as the picture's own line ("feeling happy outside of N's castle"); type anything instead. A long message goes on two lines.
+- **Walking toward us on a slant** (Matthew: the controller's diagonals): holding down and left, or down and right, the friend faces us turned partway that way, body a little narrower, the far arm behind, the face looking that way, instead of turning all the way to the side. Straight sideways is still a side view, and walking away on a slant is as before.
+- **Ready, not on yet:** 📮 "send it to Matthew" beside the 🧪 and ⏱️ lines, which posts the line to a log of our own (ticket 166); it stays hidden until that log is running, and 📝 the shared pad works as before.
+
 ## 0.0.94 (2026-10-16)
 
 Everything in 0.0.93, plus climbing that looks like climbing, and ladders you can click.
