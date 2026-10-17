@@ -467,6 +467,25 @@
 .way-arrow.near:not(.aimed) { opacity: 0.55; }
 /* (ticket 199) the one the pointer picks shows, near or not */
 .way-arrow.aimed { opacity: 1; pointer-events: auto; }
+/* (ticket 217) ♿ every arrow shown: a far one dimmer (--arrow-dim) and in its own colour (--arrow-color), the near
+   and aimed ones as before; all at --arrow-scale (the arrow's point stays where it is: it is the box's corner) */
+.way-arrow { scale: var(--arrow-scale, 1); }
+.way-arrow.always:not(.near):not(.aimed) { opacity: var(--arrow-dim, 0.45); pointer-events: auto; }
+.way-arrow.always:not(.near):not(.aimed) .way-tri::before { background: var(--arrow-color, #38bdf8); }
+/* (ticket 217) ♿ the planned path, over the picture while the walk lasts */
+.walk-path { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.walk-path polyline { fill: none; stroke: #fde047; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 9;
+  filter: drop-shadow(0 0 1.5px #3b2a14); }
+.walk-path circle { fill: #fde047; stroke: #3b2a14; stroke-width: 1.5; }
+.walk-path .walked { opacity: 0.35; }
+/* (ticket 217) ♿ the collision boxes: the solids red, a castle room's walls amber, the floor's back limit violet */
+.solid-boxes { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.solid-boxes polygon { fill: rgba(239, 68, 68, 0.2); stroke: #ef4444; stroke-width: 2; stroke-dasharray: 6 4; }
+.solid-boxes .wall { fill: none; stroke: #f59e0b; stroke-width: 3; stroke-dasharray: 8 5; }
+.solid-boxes .back { fill: none; stroke: #a855f7; stroke-width: 2; stroke-dasharray: 4 6; }
+.solid-boxes text { font: 600 11px sans-serif; fill: #fff; paint-order: stroke; stroke: #7f1d1d; stroke-width: 3px; }
+/* (ticket 217) ♿ the words in the game: each text in the place scaled about its own middle; the arrows' words too */
+body.game-font #bg text { transform-box: fill-box; transform-origin: center; scale: var(--game-font, 1); }
 .way-arrow .way-tri { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; transform: rotate(var(--a)); animation: way-bob 1.8s ease-in-out infinite; }
 .way-arrow .way-tri::before { content: ""; position: absolute; inset: 6px; clip-path: polygon(15% 5%, 98% 50%, 15% 95%); background: #fff4cf; filter: drop-shadow(0 0 2px #6b4a24) drop-shadow(0 0 1px #6b4a24); }
 .way-arrow.nowhere .way-tri::before { background: #d6d3d1; }
@@ -474,7 +493,7 @@
 .way-arrow:hover .way-tri::before, .way-arrow:focus-visible .way-tri::before, .way-arrow.aimed .way-tri::before { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f) drop-shadow(0 0 14px #ffd23f); }
 @keyframes way-bob { 0%, 100% { translate: 0 0; } 50% { translate: calc(5px * cos(var(--a))) calc(5px * sin(var(--a))); } }
 .way-arrow .way-words { position: absolute; width: max-content; max-width: 7.5em; text-align: center; white-space: normal; line-height: 1.15;
-  font: 600 0.8rem/1.15 sans-serif; color: #fff; text-shadow: 0 0 3px #3b2a14, 0 0 3px #3b2a14, 0 0 2px #3b2a14; }
+  font: 600 calc(0.8rem * var(--game-font, 1))/1.15 sans-serif; color: #fff; text-shadow: 0 0 3px #3b2a14, 0 0 3px #3b2a14, 0 0 2px #3b2a14; }
 .way-arrow[data-side="left"] .way-words { right: 26px; top: 50%; transform: translateY(-50%); text-align: right; }
 .way-arrow[data-side="right"] .way-words { left: 26px; top: 50%; transform: translateY(-50%); text-align: left; }
 .way-arrow[data-side="below"] .way-words { top: 26px; left: 50%; transform: translateX(-50%); }

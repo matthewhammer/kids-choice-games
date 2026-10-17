@@ -478,6 +478,17 @@ const TABS = [
     ["world", "grid", "🗺️ world design"],
   ]],
   // (ticket 155) last, where the GitHub chip was
+  // (ticket 217, Matthew) before Advanced: what helps a player see and read
+  ["♿ Accessibility", "access", [
+    ["flip", "allArrows", ["🧭 nav arrows: only the near ones (tap: show every one)", "🧭 nav arrows: every one shown (tap: only the near ones)"]],
+    ["range", "arrowDim", "🌗 how bright the far arrows are (%)", 10, 100, 45, 45],
+    ["color", "arrowColor", "🎨 the far arrows' colour", ["#38bdf8", "#a78bfa", "#f472b6", "#fb923c", "#4ade80", "#facc15", "#ffffff"]],
+    ["range", "arrowSize", "↕️ the nav arrows' size (100 = as they were)", 50, 250, 100, 100],
+    ["range", "gameFont", "🔤 the words in the game: signs, the arrows' words (100 = as they were)", 60, 250, 100, 100],
+    ["flip", "showPath", ["👣 the planned path: hidden (tap: show it)", "👣 the planned path: shown while walking (tap: hide it)"]],
+    // (Matthew, added: "show the collision boxes you are using for collision tests, if you can")
+    ["flip", "showSolids", ["🟥 collision boxes: hidden (tap: show them)", "🟥 collision boxes: shown (tap: hide them)"]],
+  ]],
   ["⚙️ Advanced", "advanced", [
     ["advanced", "perf", "⚙️ advanced"],
   ]],
@@ -665,6 +676,8 @@ function el(tag, attrs = {}, kids = []) {
 
 // Iris color and eye whites only mean something once there is an iris.
 const SHOWN_WHEN = {
+  // (ticket 217: the far arrows' brightness and colour, only while every arrow is shown)
+  "access.arrowDim": o => !!o.allArrows, "access.arrowColor": o => !!o.allArrows,
   "body.unpose": posed,
   "body.hugLift": b => b.pose === "hug",
   "face.irisColor": f => f.iris > 0,
