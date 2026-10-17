@@ -1,7 +1,8 @@
 // Pictures of the game for a branch: each case's JavaScript runs on the
 // defaults (music muted), then the page is shot as a PNG. For checking a
 // drawing where no browser can run (CI on GitHub's computers, ticket 165).
-// The cases are a JSON list: [{ "name": "...", "js": "...", "wait": ms }].
+// The cases are a JSON list: [{ "name": "...", "js": "...", "wait": ms }];
+// a case may name its own window, "w" and "h" (ticket 210), else W x H.
 //   node shots.mjs <devtools port> <url> <cases.json> <outdir>   env: W H DPR
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 const [dport, url, casesFile, outdir] = process.argv.slice(2);
@@ -23,7 +24,10 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: DPR, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   for (let i = 0; i < 40; i++) { if (await ev("typeof state") === "object") break; await sleep(250); }
+  let size = W + "x" + H;
   for (const c of cases) {
+    const want = (c.w || W) + "x" + (c.h || H);
+    if (want !== size) { size = want; await send("Emulation.setDeviceMetricsOverride", { width: c.w || W, height: c.h || H, deviceScaleFactor: DPR, mobile: false }); await sleep(600); }
     const r = await ev(`(async () => { state = clone(DEFAULTS); state.music.mute = true; ${c.js}; changed(); return "ok"; })()`);
     await sleep(c.wait ?? 1200);
     const shot = await send("Page.captureScreenshot", { format: "png" });
