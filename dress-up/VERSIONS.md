@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.113 (2026-10-17)
+
+Everything in 0.0.112, with more things in the library, taken from the places themselves.
+
+- **🏕️ A camp group of things**: a 🪵 log to sit on and a 🔥 campfire from the camp site (burning, or put out), a 🪑 bench from the picnic under the sea, and a 🛢️ barrel from the castle kitchen.
+- **🫕 The witch's cauldron**, bubbling green with its fumes twisting up, in the 🧪 magic group.
+- Each is the very drawing the place already had, lifted out so it can stand anywhere; those places look exactly as they did (checked picture by picture against 0.0.112 before release).
+
 ## 0.0.112 (2026-10-17)
 
 Everything in 0.0.111, with every thing's size yours to change.
