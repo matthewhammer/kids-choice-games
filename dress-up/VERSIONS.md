@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.155 (2026-10-17)
+
+Everything in 0.0.154, with a roomier world designer in full screen.
+
+- **The grid stays put**: in ⛶ full screen the world's grid stays on the left, as big as the window allows, while the controls on the right scroll past it; drag the bar between them to give either side more room (the browser remembers).
+- **Letters and numbers**: full screen, the columns are labelled A, B, C … and the rows 1, 2, 3 …, sized with the squares.
+- **A compass for the ways out**: a square's ways out are now a little 3×3 compass, with the square's own picture in the middle.
+- **Easier to read**: the name on signs box has room around it and bigger letters in full screen; with warnings shown, only this square's are listed, in a dotted box under its compass (the other squares are counted, and red on the grid); and the controls on the right are cards side by side, each thing in the square its own card.
+
 ## 0.0.154 (2026-10-17)
 
 Everything in 0.0.153, with a tidier ♿ Accessibility tab.

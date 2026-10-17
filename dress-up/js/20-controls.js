@@ -1300,7 +1300,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       shown = sig;
       const bad = worldWarnShown ? worldFixSquares(W, P) : new Set();   // (ticket 191: red where a fix is suggested)
       grid.style.setProperty("--cols", W.cols); grid.style.setProperty("--rows", W.rows);   // (ticket 210: the squares' size, from the room, in the stylesheet)
-      grid.replaceChildren(...Array.from({ length: W.cols * W.rows }, (_, i) => {
+      // (ticket 224, Matthew: "in FS mode for world design, let's show A, B, C ... and 1, 2, 3 as the row and column
+      // labels, with scaled font") the columns' letters over the grid and the rows' numbers beside it, as squareName
+      // names them (A1 at the top left), shown full screen only (.world-lab)
+      const lab = (cls, t) => el("div", { class: "world-lab " + cls, "aria-hidden": "true" }, t);
+      grid.replaceChildren(lab("corner", ""), ...Array.from({ length: W.cols }, (_, c) => lab("col", String.fromCharCode(65 + c))), ...Array.from({ length: W.cols * W.rows }, (_, i) => {
         const key = (i % W.cols) + "," + Math.floor(i / W.cols), cell = W.cells[key];
         if (!cell) return el("div", { class: "world-cell empty", title: squareName(key) + ": empty: drag a place here", "data-square": key }, squareName(key));
         // (its words: the designer's name for it, if it has one, else its place's)
@@ -1311,7 +1315,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                      [el("span", { class: "world-emoji" }, emoji), el("span", { class: "world-name" }, own || words.join(" ")), ...ways.map(d => el("span", { class: "world-way w-" + d }, ""))]);
         pressDrag(b, () => emoji, { onDrop: under => { if (!under || !under.closest) return; if (under.closest(".world-trash")) worldRemove(key); else { const sq = under.closest("[data-square]"); if (sq) worldMove(key, sq.dataset.square); } } });
         return b;
-      }));
+      }).flatMap((sq, i) => i % W.cols ? [sq] : [lab("row", String(i / W.cols + 1)), sq]));
       // the square the friend is in: its ways out (a forest crossing's are its paths), the start
       if (at && at.kind === state.background.kind) {
         const ways = worldWays(at), fix = worldWarnShown ? worldWaysToToggle(W, W.at) : { on: [], off: [] }, toggle = d => () => {
@@ -1322,20 +1326,33 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         // (its name: typed, it is kept on Enter or leaving the box (not each key, or the panel built again would take the caret); emptied, the place's own again)
         const nameBox = el("input", { type: "text", maxlength: String(WORLD_NAME_MAX), size: "18", value: String(at.name || ""), placeholder: worldNames(W, false)[W.at], "aria-label": "this square's name",
           onchange: e => { const v = e.target.value.trim().slice(0, WORLD_NAME_MAX); if (v) at.name = v; else delete at.name; changed(); } });
-        here.replaceChildren(el("div", { class: "cap" }, `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
-          el("div", { class: "row" }, [el("span", { class: "hint" }, "✏️ its name on signs:"), nameBox]),
-          el("div", { class: "row world-ways-out" }, [el("span", { class: "hint" }, "ways out:"), ...Object.keys(WORLD_DIRS).map(d => {
+        // (ticket 224, Matthew: "The N, NE, E, SE, S, etc buttons that toggle nav arrows for each grid square should be
+        // arranged in a little 9-cell grid (with the icon of the current square shown in the center of the 9)"; "name on
+        // signs field ... has no margin/padding around it, and should have more emphasis on this FS mode meaning larger
+        // font"; "when they are shown, ... the warnings below the nav arrow add/remove controls, not at the top of the
+        // panel -- and use some dotted sub-panel to organize them more. The errors for other squares can be hidden
+        // entirely until we make that the 'active square' to edit.") the ways out as a compass round the square's own
+        // emoji; its name box with room round it and in it; with the warnings shown, this square's in a dotted box
+        // under the compass, the other squares' only counted (their squares red on the grid)
+        const wayBtn = d => {
             // (M, 2026-10-17) off the map's edge: can't be turned on (one on from before can still be turned off);
             // with the warnings shown, one off that would put a warning right, starred
             // (ticket 191) and one on that, taken away, would put a warning right: dotted too, ✕
             const on = ways.includes(d), none = worldNoWay(at.kind, d), off = worldOffMap(W, W.at, d) || none, hint = !on && fix.on.includes(d), drop = on && fix.off.includes(d);
             return el("button", { "aria-pressed": String(on), title: drop ? d + ": on, but taking it away would put a warning right" : none ? d + ": the waterfall itself, not a way to the next square" : off ? (on ? d + ": leads off the map; turn it off" : d + ": the edge of the map") : hint ? d + ": off, but on it would put a warning right" : d,
-                                  class: hint ? "way-suggest" : drop ? "way-suggest-off" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]); })]),
+                                  class: hint ? "way-suggest" : drop ? "way-suggest-off" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]);
+        };
+        const mid = el("span", { class: "world-compass-mid", "data-kind": at.kind, title: placeName(at.kind) }, emojiOf(at.kind));
+        here.replaceChildren(el("div", { class: "cap" }, `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
+          el("label", { class: "row world-name-row" }, [el("span", { class: "hint" }, "✏️ its name on signs:"), nameBox]),
+          el("div", { class: "world-ways-out" }, [el("span", { class: "hint" }, "ways out:"),
+            el("div", { class: "world-compass" }, ["NW", "N", "NE", "W", null, "E", "SW", "S", "SE"].map(d => d ? wayBtn(d) : mid))]),
+          probs,
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
       } else {
         // (ticket 210, Matthew) the picture shows a place that is not the square the friend is in (one chosen in
         // 🏞️ Background, or not on the grid yet): say so, and where it is on the grid if it is there
-        here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."));
+        here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."), probs);
       }
       // (at the top of the tab, over the warnings, so it is seen)
       const kind = state.background.kind, onGrid = !(at && at.kind === kind) && worldPalette().includes(kind) ? Object.keys(W.cells).filter(k => W.cells[k].kind === kind) : null;
@@ -1349,16 +1366,35 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       probs.hidden = !worldWarnShown;
       const atKey = W.at && W.cells[W.at] ? W.at : null, mine = p => !!atKey && (p.key === atKey || p.to === atKey);
       const hereP = P.filter(mine), elseP = P.filter(p => !mine(p)), list = ps => ps.map(p => el("div", { class: "world-prob" }, p.text));
+      // (ticket 224: the other squares' only counted, their squares red on the grid: tapped, a square's own are listed)
       probs.replaceChildren(...(!P.length ? [el("div", { class: "hint" }, "✅ Every way out meets a way back, and every place can be reached.")] : [
         ...(atKey ? [el("div", { class: "world-probs-here" }, [el("div", { class: "cap" }, `📍 This square, ${squareName(atKey)}: ${hereP.length ? hereP.length : "nothing to put right"}`), ...list(hereP)])] : []),
-        ...(elseP.length ? [el("div", { class: "world-probs-else" }, [el("div", { class: "cap" }, `🗺️ ${atKey ? "Other squares" : "The squares"}: ${elseP.length}`), ...list(elseP)])] : [])]));
+        ...(elseP.length ? [el("div", { class: "world-probs-else", "data-count": String(elseP.length) }, [el("div", { class: "hint" },
+          `🗺️ ${atKey ? "Other squares" : "The squares"}: ${elseP.length}, red on the grid: tap one to see its own`)])] : [])]));
       off.replaceChildren("Off the grid: ", ...worldOffGrid(W).flatMap((o, i) => [i ? " · " : "", `${o.id}: ${placeName(o.kind)}` + (o.from ? ` (through ${placeName(W.cells[o.from].kind)}, ${squareName(o.from)})` : "")]));
     };
-    box.append(el("div", { class: "hint" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."),
-               el("div", { class: "world-layout" }, [
-                 // (ticket 210) the grid's side and the controls' side: one under the other in the tab, side by side full screen
-                 el("div", { class: "world-main" }, [notHere, warnings, probs, palette, gridWrap, el("div", { class: "row" }, [trash])]),
-                 el("div", { class: "world-side" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote]), here, control("background", ["things", "things", "🪨 things here: drag one into the picture, then about"]), off])]));
+    // (ticket 224, Matthew: "in FS mode for world designer, we want to let the user scroll the RHS (with controls and
+    // things to add) and the LHS (the grid of squares) stays in place, and maximal -- maybe also a dragger for LHS vs RHS
+    // size"; "all of the sub-panels of FS world designer should use the improved sub-panel design of the FS music panel
+    // (squar-ish sub-panels, next to each other, and organized into a grid of their own)") The grid's column (and 🗑️
+    // under it), a dragger, and the rest. In the tab, one under another in the old order (the stylesheet's order);
+    // full screen, the grid on the left, held in place as the right side scrolls past it, as large as the window
+    // allows, the dragger setting the split (kept in this browser), the rest as cards in a grid of their own.
+    const things = control("background", ["things", "things", "🪨 things here: drag one into the picture, then about"]);
+    things.classList.add("world-things");
+    const gridcol = el("div", { class: "world-gridcol" }, [gridWrap, el("div", { class: "row" }, [trash])]);
+    const split = el("div", { class: "world-split", role: "separator", "aria-orientation": "vertical", title: "Drag: more room for the grid, or for the controls" });
+    const layout = el("div", { class: "world-layout" }, [
+      el("div", { class: "world-rest" }, [notHere, warnings, palette, el("div", { class: "world-sizes" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
+      split, gridcol]);
+    try { const v = localStorage.getItem("dress-up-world-split"); if (v) layout.style.setProperty("--left", v); } catch (e) { /* (the usual split) */ }
+    split.addEventListener("pointerdown", e => {
+      e.preventDefault(); split.setPointerCapture(e.pointerId);
+      const move = ev => { const r = layout.getBoundingClientRect(); layout.style.setProperty("--left", clamp(100 * (ev.clientX - r.left) / r.width, 25, 80).toFixed(1) + "%"); };
+      const up = () => { split.removeEventListener("pointermove", move); try { localStorage.setItem("dress-up-world-split", layout.style.getPropertyValue("--left")); } catch (err) { /* (for this visit) */ } };
+      split.addEventListener("pointermove", move); split.addEventListener("pointerup", up, { once: true }); split.addEventListener("pointercancel", up, { once: true });
+    });
+    box.append(el("div", { class: "hint world-intro" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."), layout);
     syncs.push(render);
   }
   // (ticket 155, Matthew) ⚙️ Advanced: the game's code on GitHub; its

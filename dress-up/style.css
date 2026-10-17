@@ -111,17 +111,31 @@
      allows, and the square's controls beside it, scrolling on their own */
   body.world-big .world-grid { --grid-h: calc(100dvh - 190px); }
   body.world-big #panel > .ctl:not(:has(> button.worldbig)) > .lbl { display: none; }   /* (the bar names the tab) */
+  body.world-big .world-intro { display: none; }   /* (ticket 224: the grid as large as it can be; the bar names the tab) */
   @media (min-width: 900px) {
-    /* the grid alone on the left, all the window's height; the warnings, the places to drag and the square's controls
-       on the right, in their order (the two halves' boxes let their pieces be placed: display contents; the grid's
-       height goes to the last row, so the right side's rows stay their own height) */
-    body.world-big .world-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); grid-template-rows: repeat(10, min-content) 1fr;
-                                   column-gap: 18px; row-gap: 6px; align-items: start; }
-    body.world-big .world-main, body.world-big .world-side { display: contents; }
-    body.world-big :is(.world-main, .world-side) > * { grid-column: 2; }
-    body.world-big .world-main > .world-grid-wrap { grid-column: 1; grid-row: 1 / -1; }
-    body.world-big .world-grid { --grid-h: calc(100dvh - 130px); margin-top: 0; }
+    /* (ticket 224) the grid's column on the left, held in place (sticky, under the bar) as the right side scrolls past
+       it, as tall as the window allows and as wide as its side; the dragger between (--left, kept in this browser);
+       the rest on the right as cards in a grid of their own, as the music's */
+    body.world-big .world-layout { display: grid; grid-template-columns: minmax(260px, var(--left, 60%)) 12px minmax(300px, 1fr); column-gap: 8px; align-items: start; }
+    body.world-big .world-gridcol { grid-column: 1; grid-row: 1; position: sticky; top: 56px; }
+    body.world-big .world-split { display: block; grid-column: 2; grid-row: 1; position: sticky; top: 56px; height: calc(100dvh - 72px);
+                                  cursor: col-resize; touch-action: none; border-radius: 6px; background: var(--line); opacity: 0.45; }
+    body.world-big .world-split:hover, body.world-big .world-split:active { opacity: 1; }
+    body.world-big .world-rest { grid-column: 3; grid-row: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 8px; align-items: start; }
+    body.world-big .world-rest > :not([hidden]) { margin: 0; border: 2px solid var(--line); border-radius: 12px; padding: 8px 10px; background: var(--mu-main); }
+    body.world-big .world-rest > :is(.world-alert, .world-warn, .world-palette, .world-things, .world-off) { grid-column: 1 / -1; }
+    body.world-big .world-rest > .world-alert { border-color: #d97706; background: color-mix(in srgb, #f59e0b 18%, var(--panel)); }
+    body.world-big .world-grid { --grid-h: calc(100dvh - 120px); margin-top: 0; }
+    /* the things here, each its own card, side by side (Matthew: "especially for squares with lots of objects, each with their own controls") */
+    body.world-big .world-things .cross-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 8px; }
+    body.world-big .world-things .cross-list > .row { margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: var(--mu-inst); flex-wrap: wrap; align-content: flex-start; }
   }
+  /* (ticket 224) the columns' letters and the rows' numbers, full screen: a band the grid's size is reckoned with */
+  body.world-big .world-grid { --lab: 2.2rem; --cell: min(calc((100cqw - var(--lab) - var(--cols, 5) * var(--gap)) / var(--cols, 5)),
+                                                      calc((var(--grid-h) - var(--lab) - var(--rows, 6) * var(--gap)) / var(--rows, 6)));
+                               grid-template-columns: var(--lab) repeat(var(--cols, 5), var(--cell)); grid-template-rows: var(--lab); }
+  body.world-big .world-lab { display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--muted); font-size: clamp(12px, calc(var(--cell) * 0.16), 30px); }
+  body.world-big .world-name-row input { font-size: 1.25em; padding: 8px 12px; }
   /* (ticket 164) a still place, on a slow computer: no CSS animations in the scenery either (the fairies' wings) */
   body.still-scenery #bg * { animation: none !important; }
   /* (ticket 155) the ⚙️ advanced tab: a feature kept off until it is fast, a row each */
@@ -403,23 +417,23 @@
    floor, the witch's purple, the castle's stone), mixed faint into the panel's, so light and dark alike; the place
    chips over the grid the same, so a place looks the same in both. */
 .world-chip { --sq: var(--panel); background: color-mix(in srgb, var(--sq) 26%, var(--panel)); }
-:is(.world-cell, .world-chip)[data-kind="sea"] { --sq: #2a9fd6; }
-:is(.world-cell, .world-chip)[data-kind="lake"] { --sq: #4cc0e6; }
-:is(.world-cell, .world-chip)[data-kind="deepsea"] { --sq: #1e40af; }   /* (ticket 219) */
-:is(.world-cell, .world-chip)[data-kind="waterfall"] { --sq: #24b0a0; }
-:is(.world-cell, .world-chip)[data-kind="beach"] { --sq: #e8c46a; }
-:is(.world-cell, .world-chip)[data-kind="forest"] { --sq: #2f8f3e; }
-:is(.world-cell, .world-chip)[data-kind="clearing"] { --sq: #7cc35a; }
-:is(.world-cell, .world-chip)[data-kind="crossing"] { --sq: #76843a; }
-:is(.world-cell, .world-chip)[data-kind="woodpath"] { --sq: #5f8f3a; }
-:is(.world-cell, .world-chip)[data-kind="treehouse"] { --sq: #4f9a3a; }
-:is(.world-cell, .world-chip)[data-kind="house"] { --sq: #9cc95c; }
-:is(.world-cell, .world-chip)[data-kind="campsite"] { --sq: #c08a3e; }
-:is(.world-cell, .world-chip)[data-kind="witch"] { --sq: #6a2c91; }
-:is(.world-cell, .world-chip)[data-kind="cemetery"] { --sq: #77738f; }
-:is(.world-cell, .world-chip)[data-kind="mountains"] { --sq: #7f8c99; }
-:is(.world-cell, .world-chip)[data-kind="fairyforest"] { --sq: #e05aa8; }
-:is(.world-cell, .world-chip)[data-kind="castle"] { --sq: #9a9aaa; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="sea"] { --sq: #2a9fd6; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="lake"] { --sq: #4cc0e6; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="deepsea"] { --sq: #1e40af; }   /* (ticket 219) */
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="waterfall"] { --sq: #24b0a0; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="beach"] { --sq: #e8c46a; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="forest"] { --sq: #2f8f3e; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="clearing"] { --sq: #7cc35a; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="crossing"] { --sq: #76843a; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="woodpath"] { --sq: #5f8f3a; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="treehouse"] { --sq: #4f9a3a; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="house"] { --sq: #9cc95c; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="campsite"] { --sq: #c08a3e; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="witch"] { --sq: #6a2c91; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="cemetery"] { --sq: #77738f; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="mountains"] { --sq: #7f8c99; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="fairyforest"] { --sq: #e05aa8; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="castle"] { --sq: #9a9aaa; }
 .world-cell.bad { border-color: #d9480f; border-width: clamp(4px, calc(var(--cell) * 0.045), 8px); background: #fff1e6; color: #7c2d12; }
 /* (ticket 210, Matthew: "make the 'this square has an error' red outline stroke bigger. Same for 'this is the current
    square'") both thick, with the squares' size: the error's border, the current square's outline over its neighbours */
@@ -466,6 +480,23 @@
 .world-chip { font-size: 0.8em; padding: 2px 8px; cursor: grab; }
 .world-trash { border: 2px dashed var(--line, #ccc); border-radius: 8px; padding: 6px 10px; }
 .world-here { margin: 0.5rem 0; }
+/* (ticket 224) the tab's order, the grid's column among the rest (in the page they are the rest, the dragger, the grid's
+   column); the labels and the dragger full screen only */
+.world-layout { display: flex; flex-direction: column; }
+.world-rest { display: contents; }
+.world-rest > .world-alert { order: 1; } .world-rest > .world-warn { order: 2; } .world-rest > .world-palette { order: 3; } .world-gridcol { order: 4; }
+.world-rest > .world-sizes { order: 5; } .world-rest > .world-here { order: 6; } .world-rest > .world-things { order: 7; } .world-rest > .world-off { order: 8; }
+.world-split, .world-lab { display: none; }
+/* (ticket 224) the square's name, with room round it and in it; its ways out as a compass round its emoji; this square's warnings in a dotted box */
+.world-name-row { margin: 8px 0; gap: 8px; align-items: center; flex-wrap: wrap; }
+.world-name-row input { padding: 6px 10px; font-size: 1em; border-radius: 8px; border: 1px solid var(--line); }
+.world-ways-out { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.world-compass { display: grid; grid-template-columns: repeat(3, 2.6em); grid-auto-rows: 2.6em; gap: 4px; }
+.world-compass button { width: 100%; height: 100%; padding: 0; font-size: 1.1em; }
+.world-compass-mid { display: flex; align-items: center; justify-content: center; font-size: 1.6em; border-radius: 8px; border: 2px solid var(--line);
+                     --sq: var(--panel); background: color-mix(in srgb, var(--sq) 26%, var(--panel)); }
+body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-auto-rows: 3.2em; }
+.world-here .world-probs { border: 2px dotted var(--line); border-radius: 10px; padding: 6px 10px; margin: 8px 0; }
 .drag-ghost { position: fixed; z-index: 1000; pointer-events: none; transform: translate(-50%, -60%); font-size: 2.2em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
 
 /* (ticket 185) the world square's ways out, over the picture and its buttons: each shown only while the friend is near it */
