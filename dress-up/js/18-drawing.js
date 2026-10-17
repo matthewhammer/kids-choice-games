@@ -314,9 +314,11 @@ function drawNow() {
   if (climb && !climb.none && B.anim === "climbup" && scened && !poseHeld && !drag) {
     const tall = (ground - neckTop + 90) * figureT.k, all = Math.max(0.4 * (climb.z - climb.top), climb.z - climb.top - (climb.door ? 0.55 * tall : climb.hands ? 0.85 * tall : 0));
     // (ticket 145: by hand, as far as the controller has taken them; through a doorway at its top)
-    const got = climb.manual ? clamp(climb.got, 0, all) : Math.min(all, (performance.now() - climb.start) / 1000 * CLIMB_SPEED * figureT.k);
+    // (ticket 199: down a hatch's ladder, the lift goes below where they started, till they are out of sight, then through)
+    const got = climb.down ? Math.min(0, climb.got) : climb.manual ? clamp(climb.got, 0, all) : Math.min(all, (performance.now() - climb.start) / 1000 * CLIMB_SPEED * figureT.k);
     climb.all = all; climb.at = got;
-    if (climb.manual) { if (got >= all && climb.door && !climb.going) { climb.going = true; setTimeout(climbThrough, 250); } }
+    if (climb.down) { if (got <= -tall && climb.door && !climb.going) { climb.going = true; setTimeout(climbThrough, 100); } }
+    else if (climb.manual) { if (got >= all && climb.door && !climb.going) { climb.going = true; setTimeout(climbThrough, 250); } }
     else if (got >= all && !climb.done) { climb.done = true; if (climb.door) setTimeout(climbThrough, 250); }
     climbUp = got / figureT.k;
     figureT.g += climbUp;
@@ -830,6 +832,7 @@ function drawNow() {
   const scenery = scened ? SPEED_TEST.holder || bgShown.node : null;   // (🧪's test passes: SPEED_TEST)
   for (const c of [...pic.childNodes]) if (c !== scenery && !(c.classList && c.classList.contains("fig-spin"))) c.remove();   // (ticket 193: a spin's copy stays)
   for (const n of figShown) n.remove();   // (last time's friend, who may have stood inside the scene)
+  for (const w of pic.querySelectorAll("g.fig-clip")) w.remove();   // (ticket 199: and their clip, climbing down)
   if (scenery) {
     if (scenery.parentNode !== pic) pic.append(scenery);
     if (fresh.firstChild) pic.insertBefore(fresh.firstChild, scenery);   // the defs, before the scene
@@ -865,6 +868,14 @@ function drawNow() {
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
   if (figAway) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 193: a spin's copy is shown instead)
+  // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units
+  if (climb && climb.down && climb.clip != null && B.anim === "climbup") for (const n of figShown) {
+    if (n.nodeType !== 1 || !n.parentNode) continue;
+    const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), id = "fig-clip-" + Math.random().toString(36).slice(2, 8);
+    w.setAttribute("class", "fig-clip"); w.setAttribute("clip-path", `url(#${id})`);
+    w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse"><rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/></clipPath>`;
+    n.replaceWith(w); w.append(n);
+  }
   if (scened) { stillPic.draws++; if (stills) stillPic.drawsOn++; }   // (for 🧪)
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was

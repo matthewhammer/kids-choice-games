@@ -111,7 +111,7 @@ function ladderAt(el, Pinv) {
   const ob = el.closest("[data-obj]"), z = ob && Number.isFinite(Number(ob.dataset.z)) ? Number(ob.dataset.z) : lo.y;
   const p = el.closest(".portal"), house = el.dataset.house;
   const door = p ? { to: p.dataset.to, house: p.dataset.house, room: p.dataset.room, tent: p.dataset.tent } : house ? { to: "treeroom", house } : null;
-  return { x: lo.x, z, top: Math.min(lo.y, hi.y), door, hands: el.dataset.top === "hands" };
+  return { x: lo.x, z, top: Math.min(lo.y, hi.y), door, hands: el.dataset.top === "hands", down: el.dataset.down !== undefined ? +el.dataset.down : null };
 }
 function startClimb() {
   climbLook = 0;
@@ -250,6 +250,26 @@ function mountLadder(L) {
 // controller: a tap goes through too.
 let enterAt = null, enterGlow = null;
 const passDims = new Map();   // (the dimmer glows: passage element -> its glow)
+// (ticket 199, Matthew: "when we hover over where a passage's arrow would
+// appear ... use the pointer to offer that as an override": the pointer
+// over a passage, or near where a nav arrow would be, makes that one the
+// bright one, the nearest dimmer; X, Enter or a click take it, the friend
+// walking, or swimming, to it first)
+let hoverPass = null;
+function passUnderPointer(e) {
+  if (marks.text !== bgShown.text || !e.target || !e.target.closest || e.target.closest("#figure, [data-drag]")) return null;
+  const P = pic.getScreenCTM();
+  if (!P) return null;
+  let best = null;
+  for (const p of marks.pics) if (p.kind === "nav" && p.spot) {
+    const s = new DOMPoint(p.spot[0], p.spot[1]).matrixTransform(P), d = Math.hypot(s.x - e.clientX, s.y - e.clientY);
+    if (d < 44 && (!best || d < best.d)) best = { d, p };
+  }
+  if (best) return best.p;
+  const q = picUnits(e), m = 10 / Math.max(0.01, P.a);   // (nearly over: ten pixels round it)
+  return marks.pics.filter(p => p.kind !== "nav" && p.el.isConnected && q.x >= p.x0 - m && q.x <= p.x1 + m && q.y >= p.y0 - m && q.y <= p.y1 + m)
+                   .sort((a, b) => (a.x1 - a.x0) * (a.y1 - a.y0) - (b.x1 - b.x0) * (b.y1 - b.y0))[0] || null;
+}
 function passesNear(reach = 1) {
   const BG = state.background, J = poseJoints, T = figureT;
   if (BG.kind === "none" || entering || marks.text !== bgShown.text) return [];
@@ -287,7 +307,7 @@ function passFrame(b, dim) {
 }
 function showEnterGlow() {
   if (marks.text !== bgShown.text && bgShown.node) return;   // (measured again in a moment: the glows kept till then)
-  const near = passesNear(), p = near.length ? near[0].p : null;
+  const near = passesNear(), hover = hoverPass && marks.pics.find(q => q.el === hoverPass.el && q.el.isConnected), p = hover || (near.length ? near[0].p : null);
   enterAt = p;
   // (a nav arrow's glow is its arrow over the picture: aimed, or near and dimmer)
   worldWaysAim(p && p.kind === "nav" ? p.el.dataset.way : null);
@@ -297,7 +317,7 @@ function showEnterGlow() {
     g.innerHTML = passFrame(box, dim); el.append(g); return g;
   };
   // the dimmer ones
-  const dims = new Set(near.slice(1).map(q => q.p).filter(q => q.kind !== "nav"));
+  const dims = new Set(near.map(q => q.p).filter(q => q !== p && q.kind !== "nav"));
   for (const [el, g] of passDims) if (!g.isConnected || ![...dims].some(q => q.el === el)) { g.remove(); passDims.delete(el); }
   for (const q of dims) if (!passDims.has(q.el)) passDims.set(q.el, put(q.el, q.box, true));
   // the one

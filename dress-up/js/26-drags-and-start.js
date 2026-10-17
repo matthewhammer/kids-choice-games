@@ -280,7 +280,19 @@ pic.addEventListener("pointercancel", letGo);
 // and spinning, slowly and then fast, and lands in the new scene where a
 // friend starts, at the size they had.
 let entering = false;
+// (ticket 199) the pointer over a passage, or near where a nav arrow would be: the bright one
+pic.addEventListener("pointermove", e => {
+  if (e.buttons || drag || entering) return;
+  const h = passUnderPointer(e);
+  if ((h && h.el) !== (hoverPass && hoverPass.el)) { hoverPass = h; showEnterGlow(); }
+});
+pic.parentNode.addEventListener("pointerleave", () => { if (hoverPass) { hoverPass = null; showEnterGlow(); } });
 pic.addEventListener("click", e => {
+  // (ticket 199: the one under the pointer, even far off: walked or swum to, and gone through)
+  if (hoverPass && !entering && e.target.closest && !e.target.closest("#figure, [data-drag]")) {
+    const h = marks.pics.find(q => q.el === hoverPass.el && q.el.isConnected);
+    if (h) { enterAt = h; hoverPass = null; enterPicture(); return; }
+  }
   // (ticket 173: a ladder clicked is climbed, whether or not it is in a doorway)
   const ladder = !entering && e.target.closest && e.target.closest("#bg [data-ladder]");
   if (ladder) { climbLadder(ladder); return; }
@@ -478,7 +490,7 @@ function padPoll(t) {
     if (L) { mountLadder(L); padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return; }
   }
   if (onLadder && ud && !climb.manual) Object.assign(climb, { manual: true, got: climb.at ?? 0 });
-  if (onLadder && climb.manual && !entering) {
+  if (onLadder && climb.manual && !entering && !climb.down) {
     if (climb.got <= 0 && (ud > 0 || (!ud && Math.abs(vx) > 0.5))) { B.anim = "none"; climb = null; padWant = null; changed(); }
     else if (ud) { climb.got = clamp(climb.got - ud * CLIMB_HAND * (held("run") ? 1.8 : 1) * figureT.k * dt, 0, climb.all ?? Infinity); moved(); }
   }
@@ -693,9 +705,32 @@ function enterScene(door) {
   const lad = !view && !(climb && climb.through) ? ladderOf(door) : null;
   if (lad) { climbLadder(lad); return; }
   tripStart(door, view ? "spin" : door.dataset.pit ? "fall" : "walk");   // (⏱️)
-  if (view) flyInto(svgBox(view), arrive);
+  // (ticket 199) a picture out of reach: walked (or swum) to first, under it, then flown into
+  const far = view && !passesNear().some(q => q.p.el === door), pp = far && marks.pics.find(q => q.el === door);
+  if (pp) walkTo((pp.x0 + pp.x1) / 2, clamp(pp.y1, SCENE.ground + figYMin(sceneFrame), sceneFrame.bottom), () => flyInto(svgBox(view), arrive));
+  else if (view) flyInto(svgBox(view), arrive);
   else if (door.dataset.pit) walkInto(door, () => { arrive(); landFall = true; }, true, "fall");   // (ticket 162)
   else walkInto(door, arrive, !(climb && climb.through));
+}
+// (ticket 199) to a spot on the floor, walking (swimming in deep water) as
+// walkInto does, a long way faster, 2.5 s at most; then on
+function walkTo(x, y, then) {
+  const BG = state.background, B = state.body, F = sceneFrame;
+  const tx = clamp(x, F.left, F.right), ty = clamp(y - SCENE.ground, figYMin(F), F.bottom - F.ground);
+  entering = true;
+  if (BG.seat) standUp();
+  if (B.pose !== "stand") strikePose("stand");
+  const speed = Math.max(PAD_SPEED.walk, Math.hypot(tx - (BG.figX ?? 0), (ty - (BG.figY ?? 0)) / 0.6) / 2.5), t0 = performance.now();
+  let last = 0;
+  const step = t => {
+    const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
+    const dx = tx - (BG.figX ?? 0), dy = ty - (BG.figY ?? 0), d = Math.hypot(dx, dy / 0.6), sp = speed * dt;
+    if (d <= sp + 0.5 || t - t0 > WALK_IN_MAX) { BG.figX = tx; BG.figY = ty; B.anim = "none"; entering = false; draw(); then(); return; }
+    BG.figX = Math.round(10 * ((BG.figX ?? 0) + dx * sp / d)) / 10; BG.figY = Math.round(10 * ((BG.figY ?? 0) + dy * sp / d)) / 10;
+    B.anim = deepHere() ? "swim" : "walk"; B.facing = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : dy < 0 ? "back" : "front"; B.turn = "";
+    moved(); requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 // (ticket 162) A trap room's pits, from their [data-pit] (middle, half
 // widths): the one whose hole (PIT_EDGE of it, so a foot on the rim does not
@@ -831,11 +866,28 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null) {
       else {
         const k = sp / d;
         BG.figX = Math.round(10 * ((BG.figX ?? 0) + dx * k)) / 10; BG.figY = Math.round(10 * ((BG.figY ?? 0) + dy * k)) / 10;
-        B.anim = "walk"; B.facing = face(dx, dy); B.turn = "";
+        B.anim = deepHere() ? "swim" : "walk"; B.facing = face(dx, dy); B.turn = "";   // (ticket 199: swimming, in deep water)
         moved();
       }
     }
     if (phase === "in" && pit) { fallDown(pit, () => done()); return; }
+    if (phase === "in" && lad && lad.down != null) {
+      // (ticket 199) down a hatch's ladder: at its near edge, facing it, climbing down at ⬆'s pace,
+      // out of sight below the edge (draw cuts them off there), then through to the room below
+      for (const u of undo) u();
+      BG.figX = Math.round(lad.x); BG.figY = Math.round(lad.down - 4 - SCENE.ground);
+      B.facing = "back"; B.anim = "climbup"; padWant = null;
+      climb = { place: climbPlace(BG), x: lad.x, z: lad.down - 4, top: lad.top, door: lad.door, hands: false, start: performance.now(), done: false, through: false, manual: true, got: 0, down: true, clip: lad.down };
+      entering = false; tripPhase = "climbing down";
+      let lastD = 0;
+      const down = t2 => {
+        const dt2 = lastD ? Math.min(0.1, (t2 - lastD) / 1000) : 0; lastD = t2;
+        if (!climb || !climb.down || climb.going || state.body.anim !== "climbup") return;
+        climb.got -= CLIMB_HAND * figureT.k * dt2; draw(); requestAnimationFrame(down);
+      };
+      changed(); requestAnimationFrame(down);
+      return;
+    }
     if (phase === "in" && lad) {
       // (ticket 173: at the ladder's foot, facing it, up it as the 🧗 chip climbs)
       for (const u of undo) u();
@@ -849,7 +901,7 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null) {
     if (phase === "in") {
       if (!tIn) { tIn = t; tripPhase = "stepping in"; }
       const u = Math.min(1, (t - tIn) / WALK_IN_MS);
-      if (walk) { B.anim = "walk"; B.facing = face(ux, uy); B.turn = ""; }
+      if (walk) { B.anim = deepHere() ? "swim" : "walk"; B.facing = face(ux, uy); B.turn = ""; }
       BG.figX = tx + ux * WALK_IN_STEP * u; BG.figY = ty + uy * WALK_IN_STEP * 0.6 * u;
       draw(); fade((1 - u).toFixed(2));   // (drawn now, not as moved() may, later: the fade goes on what is drawn)
       if (u >= 1) { done(); return; }
