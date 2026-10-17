@@ -67,4 +67,4 @@ for r in places:
     lines.append("")
 open(out, "w").write("\n".join(lines))
 print(len(places), "places,", sum(len(r["objects"]) for r in places), "objects,",
-      sum(1 for r in places for o in r["objects"] if o.get("picture")), "pictures;", sum(1 for r in places if notes.get(r["label"])), "places kept their notes")
+      sum(1 for r in places for o in r["objects"] if o.get("picture")), "pictures;", sum(1 for r in places if any(l.strip() for l in notes.get(r["label"], []))), "places kept their notes")

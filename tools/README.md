@@ -11,6 +11,7 @@ They run on GitHub's computers, from [`.github/workflows/dress-up-tests.yml`](..
 | `structure.mjs <port> <url> <out.json>` | The safety net's other half: the defaults, the controls, every show-when rule over a set of castle states, `castleOf`. `structure_diff.py a b` compares two runs. |
 | `shots.mjs <port> <url> <cases.json> <outdir>` | A PNG of the game for each case, its JavaScript run on the defaults (music muted). A branch lists what it wants to see in `tools/shots.json`. |
 | `checks/*.mjs <port> <url>` | A branch's own checks, each run in CI and failing it with exit status 1 (a feature's behavior, such as `collide176.mjs`). |
+| `checks/objects180.mjs` and `objects_md.py` | OBJECTS.md's pictures: every place, and each object clipped from it, made on GitHub (`out/objects/` in the run's artifact); `objects_md.py` writes the doc from them (ticket 180). |
 | `fpsgate.mjs <port> <url> [cases]` | The frame-rate gate (ticket 152): the scenes that had trouble, walked with a fake controller and dragged with real mouse events, three runs each. `SLOW=1`, `BLACK=1` for the slow tiers. |
 | `audit160.mjs <port> <url> [cases]` | Every place, castle room style and tree-house room walked with the on-screen controller (ticket 160). |
 | `leak167.mjs <port> <url> <friend.json \| -> [rounds]` | Ticket 167, in Chrome: the duck pond fresh, after rounds of changes, after a reload, with what might grow counted (elements, listeners, heap, timers, animations, audio nodes). `-` is the default friend; a saved friend stays off this public repository. |
