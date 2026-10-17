@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 9 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 9 of 25 of the game's script, run in order by index.html.
 
 // ===================== BACKGROUNDS =====================
 // A scene behind the figure, in picture units: the frame runs from x0 to

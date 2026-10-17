@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 14 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 21 of 25 of the game's script, run in order by index.html.
 
 // ===================== THE PICTURE'S SIZE, AND THE DIVIDER =====================
 // (ticket 116) The picture is as large as its place allows, whatever its

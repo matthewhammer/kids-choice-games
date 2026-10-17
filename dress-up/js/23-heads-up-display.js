@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 16 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 23 of 25 of the game's script, run in order by index.html.
 
 // ===================== THE HEADS-UP DISPLAY =====================
 // In full screen, a strip of controls along the bottom, hidden until its

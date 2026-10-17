@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 15 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 22 of 25 of the game's script, run in order by index.html.
 
 // ===================== FULL SCREEN =====================
 // The picture fills the window, the controls hidden -- and the screen too,

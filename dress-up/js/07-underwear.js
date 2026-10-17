@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 7 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 7 of 25 of the game's script, run in order by index.html.
 
 // ===================== UNDERWEAR AND SWIMSUITS =====================
 // Cartoon garments over a plain body shape, in body units (as the shirt

@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 8 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 8 of 25 of the game's script, run in order by index.html.
 
 // ===================== THE BODY =====================
 // Body units: the collar's top at y = -20, centered on x = 0. Every part

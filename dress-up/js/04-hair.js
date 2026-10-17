@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 4 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 4 of 25 of the game's script, run in order by index.html.
 
 // ===================== HAIR (in face units) =====================
 // The Shoes and Hair hairdos, each placed by its crown on the top of the

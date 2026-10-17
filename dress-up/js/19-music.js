@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 12 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 19 of 25 of the game's script, run in order by index.html.
 
 // ===================== MUSIC =====================
 // Each background has a tune of its own, and any tune can play over any

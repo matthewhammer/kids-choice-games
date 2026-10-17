@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 3 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 3 of 25 of the game's script, run in order by index.html.
 
 // ===================== THE FACE (Kids' Choice, ported) =====================
 // Drawn in its own units: 0..200 across, the head a circle of radius 80

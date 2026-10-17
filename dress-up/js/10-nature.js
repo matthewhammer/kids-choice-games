@@ -1,5 +1,5 @@
 "use strict";
-// (ticket 178) Part 10 of 18 of the game's script, run in order by index.html.
+// (ticket 178) Part 10 of 25 of the game's script, run in order by index.html.
 
 // ---- the organic things every scene grows from: trees, pines, bushes,
 // grass and rocks, all in the tree house's style (limbs and leaf pads, no
