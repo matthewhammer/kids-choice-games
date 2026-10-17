@@ -728,7 +728,13 @@ function stillPart(lo, hi) {
     const loaded = new Promise(res => img.addEventListener("load", res, { once: true }));
     img.setAttribute("href", url);
     pre.src = url;
-    Promise.all([loaded, (img.decode ? img.decode() : pre.decode()).catch(() => {}), pre.decode().catch(() => {})])
+    // (0.0.97: the element's own decode() waits at most a quarter second. In
+    // Chrome it never settled, for an <image> not yet in the page, so no
+    // part was ever ready, and a slow computer drew its place live: the
+    // gate's still-pictures case, 0% of drawings with them in 0.0.95 and
+    // 0.0.96, 99% before. The kept Image's decode is the one that counts.)
+    const own = img.decode ? Promise.race([img.decode().catch(() => {}), new Promise(r => setTimeout(r, 250))]) : null;
+    Promise.all([loaded, own, pre.decode().catch(() => {})])
       .then(() => { if (gen === stillPic.gen && stillPic.parts.get(key) === p) { p.pre = pre; p.ready = true; } });
     node.append(img);   // (hidden, at the scene's end, until wanted)
     Object.assign(p, { img, url });
