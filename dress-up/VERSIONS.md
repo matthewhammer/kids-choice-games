@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.117 (2026-10-17)
+
+Everything in 0.0.116, with M's idea for the ways out in World design.
+
+- **A way out that would lead off the edge of the map can't be turned on** (M's idea): its arrow is greyed, so that mistake can't be made. One left on from before can still be turned off.
+- **With the warnings shown, an arrow that is off but would put a warning right is starred** ★ (M): this one is off, and maybe should be on.
+
 ## 0.0.116 (2026-10-17)
 
 Everything in 0.0.115, with the still pictures working again in Chrome.
