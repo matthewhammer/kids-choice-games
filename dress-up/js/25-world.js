@@ -55,8 +55,8 @@ function worldProblems(W) {
     for (const d of cell.kind === "crossing" ? worldLiveWays(W, key) : worldWays(cell)) {   // (a crossing's dead ends are no mistake: not drawn)
       const nb = worldNeighbour(W, key, d), other = W.cells[nb.key];
       if (nb.off) P.push({ key, dir: d, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} leads off the map.` });
-      else if (!other) P.push({ key, dir: d, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} leads to an empty square, ${squareName(nb.key)}.` });
-      else if (!worldWays(other).includes(WORLD_OPP[d])) P.push({ key, dir: d, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} meets ${name(nb.key)}, which has no way back ${WORLD_ARROWS[WORLD_OPP[d]]}.` });
+      else if (!other) P.push({ key, dir: d, to: nb.key, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} leads to an empty square, ${squareName(nb.key)}.` });
+      else if (!worldWays(other).includes(WORLD_OPP[d])) P.push({ key, dir: d, to: nb.key, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} meets ${name(nb.key)}, which has no way back ${WORLD_ARROWS[WORLD_OPP[d]]}.` });
     }
   }
   // every square reached from the friend's start, through ways that meet

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.108 (2026-10-17)
+
+Everything in 0.0.107, with the warnings in two lists.
+
+- **Shown, the world designer's warnings come in two lists** (Matthew: a lot of them can overwhelm): first 📍 the square your friend is in, its own and any way into it from beside it, then 🗺️ the other squares. Both stay hidden until you tap **show warnings**.
+
 ## 0.0.107 (2026-10-17)
 
 Everything in 0.0.106, with the world designer's warnings out of the way.

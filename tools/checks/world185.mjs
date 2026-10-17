@@ -46,11 +46,17 @@ try {
       red: document.querySelectorAll(".world-grid .world-cell.bad").length, listed: document.querySelector(".world-probs").hidden ? 0 : document.querySelectorAll(".world-probs .world-prob").length,
       aboveGrid: !!(document.querySelector(".world-warn").compareDocumentPosition(document.querySelector(".world-grid")) & Node.DOCUMENT_POSITION_FOLLOWING) });
     const hidden = look(); document.querySelector(".world-warn-chip").click(); await new Promise(r => setTimeout(r, 200));
-    const shown = look(); document.querySelector(".world-warn-chip").click(); await new Promise(r => setTimeout(r, 200));
-    return JSON.stringify({ hidden, shown, again: look(), kept: localStorage.getItem("dress-up-world-warnings") }); })()`));
+    const lists = () => ({ at: state.world.at, here: [...document.querySelectorAll(".world-probs-here .world-prob")].map(e => e.textContent), others: document.querySelectorAll(".world-probs-else .world-prob").length });
+    const shown = { ...look(), ...lists() };
+    document.querySelector('.world-grid [data-square="3,2"]').click(); await new Promise(r => setTimeout(r, 400));
+    const clearing = { ...look(), ...lists() }; document.querySelector(".world-warn-chip").click(); await new Promise(r => setTimeout(r, 200));
+    return JSON.stringify({ hidden, shown, clearing, again: look(), kept: localStorage.getItem("dress-up-world-warnings") }); })()`));
   const n = broken.length;
   ok("the warnings hidden at first: how many, above the grid, no list, no red squares", marked.hidden.count === `⚠️ ${n} warnings` && marked.hidden.chip === "show warnings" && marked.hidden.red === 0 && marked.hidden.listed === 0 && marked.hidden.aboveGrid, marked.hidden);
   ok("'show warnings': each listed, and the squares they are about red", marked.shown.chip === "hide warnings" && marked.shown.listed === n && marked.shown.red >= 2, marked.shown);
+  // (Matthew: a lot of them overwhelm) two lists: the square the friend is in, then the others
+  ok("in the crossing at B3, nothing to put right there: every warning under the other squares", marked.shown.at === "1,2" && marked.shown.here.length === 0 && marked.shown.others === n, marked.shown);
+  ok("in the clearing at D3: its way N into the empty D2 listed first, as this square's; the rest under the others", marked.clearing.at === "3,2" && marked.clearing.here.length >= 1 && marked.clearing.here.every(t => /D3/.test(t)) && marked.clearing.here.some(t => /empty square, D2/.test(t)) && marked.clearing.here.length + marked.clearing.others === n, marked.clearing);
   ok("and hidden again, which the browser remembers", marked.again.red === 0 && marked.again.listed === 0 && marked.kept === null, { again: marked.again, kept: marked.kept });
   // the ways out, in the picture: from the clearing (D3), E to the castle and back
   const ways = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldEnter("3,2"); await new Promise(r => setTimeout(r, 500));

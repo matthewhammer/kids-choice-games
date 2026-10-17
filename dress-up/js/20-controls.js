@@ -1045,7 +1045,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // then the square the friend is in: its ways out, the start, its
     // things; then the places off the grid with their ids. The mistakes are
     // near the top, only how many unless "show warnings" is on (M found them
-    // distracting): then listed, and their squares red (worldWarnShown).
+    // distracting): then listed, and their squares red (worldWarnShown); in
+    // two lists (Matthew: a lot of them overwhelm), those about the square
+    // the friend is in (its own, or a way into it: a warning's key or to),
+    // then those about the other squares.
     const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away");
     const sizes = el("div", { class: "row" }, [...[["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { onclick: () => worldResize(dc, dr) }, t)),
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { state.world = clone(DEFAULTS.world); changed(); } } }, "🌍 the first world again")]);
@@ -1062,7 +1065,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     let shown = null;
     const render = () => {
       const W = state.world, P = worldProblems(W), at = W.at && W.cells[W.at];
-      const sig = JSON.stringify([W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c)]), P.length, worldWarnShown]);
+      const sig = JSON.stringify([W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c)]), P.map(p => p.text), worldWarnShown]);
       if (sig === shown) return;
       shown = sig;
       const bad = new Set(worldWarnShown ? P.map(p => p.key) : []);
@@ -1093,8 +1096,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       warnChip.textContent = worldWarnShown ? "hide warnings" : "show warnings";
       warnChip.setAttribute("aria-pressed", String(worldWarnShown));
       probs.hidden = !worldWarnShown;
-      probs.replaceChildren(P.length ? el("div", { class: "cap" }, `⚠️ ${P.length} to put right`) : el("div", { class: "hint" }, "✅ Every way out meets a way back, and every place can be reached."),
-                            ...P.map(p => el("div", { class: "world-prob" }, p.text)));
+      const atKey = W.at && W.cells[W.at] ? W.at : null, mine = p => !!atKey && (p.key === atKey || p.to === atKey);
+      const hereP = P.filter(mine), elseP = P.filter(p => !mine(p)), list = ps => ps.map(p => el("div", { class: "world-prob" }, p.text));
+      probs.replaceChildren(...(!P.length ? [el("div", { class: "hint" }, "✅ Every way out meets a way back, and every place can be reached.")] : [
+        ...(atKey ? [el("div", { class: "world-probs-here" }, [el("div", { class: "cap" }, `📍 This square, ${squareName(atKey)}: ${hereP.length ? hereP.length : "nothing to put right"}`), ...list(hereP)])] : []),
+        ...(elseP.length ? [el("div", { class: "world-probs-else" }, [el("div", { class: "cap" }, `🗺️ ${atKey ? "Other squares" : "The squares"}: ${elseP.length}`), ...list(elseP)])] : [])]));
       off.replaceChildren("Off the grid: ", ...worldOffGrid(W).flatMap((o, i) => [i ? " · " : "", `${o.id}: ${placeName(o.kind)}` + (o.from ? ` (through ${placeName(W.cells[o.from].kind)}, ${squareName(o.from)})` : "")]));
     };
     box.append(el("div", { class: "hint" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."),
