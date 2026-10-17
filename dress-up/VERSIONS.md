@@ -2,6 +2,22 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.98 (2026-10-17)
+
+Everything in 0.0.97, plus a forest crossing to fill with things, a quieter way out toward us, and the start of a world to design.
+
+- **🛤️ A forest crossing** (Matthew: a blank place for the world designer, in 🌲 woods): a forest floor (olive green, or another colour) where up to eight brown paths meet: ahead, toward us, left, right, and the four ways between. Each path on or off.
+- **Things to put there:** 🪨 rocks, 🌿 bushes, 🌳 trees and 🌲 pines, each sized for how far back it stands, as your friend is; drag one to move it. Each is its own: ↔️ turn it around, 🎲 grow it another shape, and a rock's colour, a tree's height and leaves (summer, spring, autumn, 🌸 blossom), a pine's tiers, a bush's flowers.
+- **A way out toward us is a small ▼ at the bottom of the picture** now, gently bobbing, not a sign on a post (Matthew: signs everywhere looked unnatural): the castle rooms' ways behind you, the living room's and the tree rooms' door behind you. It glows when you point at it or when your friend is near, says where it goes when you point at it, and X goes through it, as through a door.
+- **🗺️ World design**, a new tab after the music: coming soon, a world to design on a grid of squares.
+- Behind the scenes: the game's code is in files of its own now, by section (it was one file of 15,850 lines); nothing changes in how it plays. Save and Load are checked on every change, a crossing and its things included.
+
+## 0.0.97 (2026-10-17)
+
+Everything in 0.0.96, with the still pictures working again on a slow computer.
+
+- **Fixed:** on a slow computer, the places were drawn live again while the friend moved, not as still pictures (since 0.0.95). The fix for the white flashes waited for each picture to be fully ready in a way Chrome never finished, so no picture was ever used: the duck pond as still pictures in 0% of drawings on our test computer, where it was 99% before. Now that wait lasts at most a quarter of a second; the flash fix stays. Found by the speed check after 0.0.96 (🚧🐢 on that version).
+
 ## 0.0.96 (2026-10-17)
 
 Everything in 0.0.95, plus a sign when a version runs slow.
