@@ -31,7 +31,7 @@ try {
     for (const [kind] of PLACES) {
       if (kind === "none" || out.length >= 6) continue;
       state.world = clone(DEFAULTS.world); state.world.at = null;
-      Object.assign(B, { kind, figX: 0, figY: 0 }); state.body.anim = "none"; climb = null; await settle();
+      Object.assign(B, { kind, inside: 1, figX: 0, figY: 0 }); state.body.anim = "none"; climb = null; await settle();
       const S = solidsHere(); if (!S.length) continue;
       const F = sceneFrame, ps = marks.pics.filter(p => ["door", "sign", "south", "doorway"].includes(p.kind) && p.spot);
       let found = null;
@@ -39,7 +39,7 @@ try {
         const x = F.left + (F.right - F.left) * i / 8, z = g + figYMin(F) + (F.bottom - g - figYMin(F)) * j / 5;
         if (solidAt(x, z) || p.spot[1] < g + figYMin(F)) continue;
         const crosses = S.some(o => segBox(x, z, p.spot[0], p.spot[1], o.x0 - SOLID_MARGIN, o.back, o.x1 + SOLID_MARGIN, o.front) && !(p.spot[0] > o.x0 - SOLID_MARGIN && p.spot[0] < o.x1 + SOLID_MARGIN && p.spot[1] > o.back && p.spot[1] < o.front));
-        if (crosses) found = { kind, idx: marks.pics.indexOf(p), what: p.kind + ":" + (p.el.dataset.to || ""), x: Math.round(x), y: Math.round(z - g) };
+        if (crosses) found = { kind, inside: B.inside ?? null, idx: marks.pics.indexOf(p), what: p.kind + ":" + (p.el.dataset.to || ""), x: Math.round(x), y: Math.round(z - g) };
       } if (found) break; }
       if (found) out.push(found);
     }
@@ -48,8 +48,10 @@ try {
   const walkOne = (c, planned) => ev(`(async () => { ${H}
     window.planPath = ${planned ? "window.__plan" : "(x0, y0, x1, y1) => [[x1, y1]]"};
     state.world = clone(DEFAULTS.world); state.world.at = null;
-    Object.assign(B, { kind: "${c.kind}", figX: ${c.x}, figY: ${c.y} }); state.body.anim = "none"; climb = null; await settle();
+    Object.assign(B, { kind: "${c.kind}", inside: ${c.inside ?? 1}, figX: ${c.x}, figY: ${c.y} }); state.body.anim = "none"; climb = null; await settle();
     const p = marks.pics[${c.idx}]; if (!p) return JSON.stringify({ none: true });
+    const F = sceneFrame, ask = planPath(${c.x}, ${c.y}, p.spot[0], p.spot[1] - g).map(q => q.map(Math.round));
+    const boxes = solidsHere().map(o => o.name + " x " + Math.round(o.x0) + ".." + Math.round(o.x1) + " z " + Math.round(o.back - g) + ".." + Math.round(o.front - g));
     const from = B.kind, inSolid = [], t0 = performance.now(); let frames = 0;
     // (every frame's feet, while the walk lasts: a solid they started or end in does not count)
     const S = solidsHere(), end = p.spot, startIn = o => ${c.x} > o.x0 - SOLID_MARGIN && ${c.x} < o.x1 + SOLID_MARGIN && g + ${c.y} > o.back && g + ${c.y} < o.front;
@@ -62,12 +64,14 @@ try {
     enterScene(p.el);
     for (let t = 0; t < 9000 && B.kind === from && (entering || t < 300); t += 100) await w(100);
     watching = false; await w(50);
-    const r = { through: B.kind !== from || !entering, frames, inSolid: [...new Set(inSolid)].slice(0, 6), plan: (walkPath && walkPath.pts || []).map(q => q.map(Math.round)) };
+    const r = { through: B.kind !== from || !entering, frames, inSolid: [...new Set(inSolid)].slice(0, 6), plan: (walkPath && walkPath.pts || []).map(q => q.map(Math.round)),
+      ask, boxes, frame: [F.left, F.right, Math.round(figYMin(F)), Math.round(F.bottom - g)].map(Math.round), spot: p.spot.map(Math.round) };
     window.planPath = window.__plan; return JSON.stringify(r); })()`);
   let seen = 0;
   for (const c of cases) {
     const straight = JSON.parse(await walkOne(c, false)), round = JSON.parse(await walkOne(c, true));
     if (straight.inSolid.length) seen++;
+    if (round.inSolid.length) console.log(`  (why) ${c.kind}: planPath said ${JSON.stringify(round.ask)}; solids ${round.boxes.join("; ")}; frame ${round.frame}; the passage's foot ${round.spot}`);
     console.log(`  ${c.kind}, to ${c.what} from ${c.x},${c.y}: straight through ${straight.inSolid.length ? straight.inSolid.join(" ") : "nothing"}; planned ${JSON.stringify(round.plan)}, ${round.frames} frames, in a solid ${round.inSolid.length ? round.inSolid.join(" ") : "never"}`);
     ok(`${c.kind}: the walk to ${c.what} goes round, never inside a solid`, !round.none && round.inSolid.length === 0, round);
     ok(`${c.kind}: and on through it`, round.through, round);
