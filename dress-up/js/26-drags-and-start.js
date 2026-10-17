@@ -544,6 +544,14 @@ function padPoll(t) {
                                Math.round(10 * clamp((BG.figY ?? 0) + padVel[1] * dt * 0.6, figYMin(F), F.bottom - F.ground)) / 10);
     if (mx === (BG.figX ?? 0) && my === (BG.figY ?? 0) && !moving) padVel = [0, 0];   // (stopped by a wall while coasting)
     BG.figX = mx; BG.figY = my;
+    // (ticket 214, Matthew: "all collision directions that correspond to: edge of the N 'back wall' (or horizon); E, S
+    // or W edges of the screen; Or their diagonals, to trigger the enter passage action") pushing on into an edge they
+    // stand at, or a corner, takes the way out that way, if there is one: the corner's own, else either side's
+    if (moving && !entering && !isJump(B.anim)) {
+      const atN = my <= figYMin(F) + 0.5 && vy < -0.3, atS = my >= F.bottom - F.ground - 0.5 && vy > 0.3, atW = mx <= F.left + 0.5 && vx < -0.3, atE = mx >= F.right - 0.5 && vx > 0.3;
+      const d = (atN ? "N" : atS ? "S" : "") + (atE ? "E" : atW ? "W" : "");
+      if (d && edgeGo(d)) { padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return; }
+    }
     // (ticket 162: walking onto a pit's hole, not jumping, falls in)
     if (!isJump(B.anim) && !entering) { const pit = pitAt(mx, SCENE.ground + my); if (pit) enterScene(pit); }   // (the poll goes on: it must schedule itself again)
     // (which way they face: a diagonal keeps the one of its two ways they faced, else the side one; coasting, as they were)
@@ -563,6 +571,16 @@ function padPoll(t) {
     changed();
   } else if (lit) changed();   // (the Controls tab shows which buttons are down)
   padLoop = requestAnimationFrame(padPoll);
+}
+// (ticket 214) the way out at an edge: a world square's way (its nav arrow's doorway) that way, or at the bottom a ▼
+function edgeGo(d) {
+  const node = bgShown.node;
+  if (!node) return false;
+  for (const c of d.length > 1 ? [d, d[0], d[1]] : [d]) {
+    const door = node.querySelector(`.portal[data-way="${c}"]`) || (c === "S" ? node.querySelector(".portal.south-way") : null);
+    if (door) { enterScene(door); return true; }
+  }
+  return false;
 }
 // (the passage nearest the friend, however far: walked to and gone through; ticket 187: every kind, measured as X's)
 function padDoor() {

@@ -121,6 +121,18 @@ SCENE_BACK.castleroom = () => { const W = castleWallsOf(state.background); retur
 // friend stops, as in the imagination
 for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["witchroom", 100], ["healerroom", 100], ["tent", 70]])
   SCENE_BACK[kind] = () => SCENE.ground - up * (SCENE.bottom - SCENE.top) / 700 + 3;
+// (ticket 214, Matthew: "the horz blue line in each scene is wrong, and always too high -- it doesn't correspond with
+// where we'd walk or run -- we'd need to fly") Each outdoor place's back limit at the far edge of its own ground, as
+// drawn (in the frame's units, k = its height / 700, as the scenes draw): the meadow's edge, the shore, a lake's far
+// side, the water's horizon, a fence, a moat, a house's wall. Without one, a place had the frame's stand-in, 60% of the
+// way up to the picture's top: among the trees and clouds. Each value is how far above the ground line (g) its far
+// edge is, from the scene's code where it says (the forest path's far ground, the crossing's far line, the beach's
+// sea, the lake's far shore, open water's horizon), else read from a picture of it (ticket 214's audit).
+const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 175, treehouse: 90, clearing: 140,
+                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, castle: 35,
+                    woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245 };
+for (const [kind, up] of Object.entries(SCENE_FAR))
+  SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
 // (ticket 176) The things that stand in a place and can't be walked
 // through, by their name in the scene (the words before any comma or
 // number: "rock, left" and "toadstool 3" are a rock and a toadstool), each a

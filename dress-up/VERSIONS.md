@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.149 (2026-10-17)
+
+Everything in 0.0.148, with every place's far edge where its ground ends.
+
+- **No more walking up into the sky**: in every outdoor place your friend now stops at the far edge of the ground (the meadow's edge, the shore, the lake's far side, the fence, the moat, the house), not high up among the trees and clouds. 🟥 collision boxes shows it as the dashed line.
+- **Walk into an edge to go that way**: in the world, walk on into the far edge, the picture's side or bottom, or a corner, and your friend goes through the way out that way, if there is one. The ⬆️ arrows now stand at that far edge, where you can reach them.
+
 ## 0.0.148 (2026-10-17)
 
 Everything in 0.0.147, with collisions you can see.

@@ -304,7 +304,7 @@ function drawNow() {
   const sizeSeat = scened ? seatNow() : null;
   figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
-  sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg, back: scened && SCENE_BACK[BG.kind] ? SCENE_BACK[BG.kind]() : -Infinity };
+  sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg, back: scened && SCENE_BACK[BG.kind] ? SCENE_BACK[BG.kind](top, bottom) : -Infinity };
   // (ticket 137) climbing a place's ladder: up it as time goes by (not while
   // dragged), at its depth (their feet are sorted there still), their
   // shadow left at its foot; to the top, or, up a doorway, till their head
