@@ -299,21 +299,86 @@ function worldWaysHud() {
   if (!worldWaysAt.length) return;
   const M = pic.getScreenCTM(), box = layer.getBoundingClientRect(), B = state.background;
   if (!M || !box.width) return;
+  // (ticket 217) ♿: every arrow shown (the far ones dimmer, in their own colour), their size, their words' size
+  const A = state.access || DEFAULTS.access, sc = (A.arrowSize ?? 100) / 100, all = !!A.allArrows, edge = 22 * sc;
+  const vars = [["--arrow-scale", String(sc)], ["--arrow-dim", String((A.arrowDim ?? 45) / 100)], ["--arrow-color", A.arrowColor || "#38bdf8"]];
+  for (const [k, v] of vars) if (layer.style.getPropertyValue(k) !== v) layer.style.setProperty(k, v);
   const at = [];
   worldWaysAt.forEach(([d, x, y, a], i) => {
     const el = layer.children[i];
     if (!el) return;
     const p = new DOMPoint(x, y).matrixTransform(M), near = wayNearness(d) < 1;
     // (kept inside the picture, by its size)
-    const left = Math.max(22, Math.min(box.width - 22, p.x - box.left)), top = Math.max(22, Math.min(box.height - 22, p.y - box.top));
+    const left = Math.max(edge, Math.min(box.width - edge, p.x - box.left)), top = Math.max(edge, Math.min(box.height - edge, p.y - box.top));
     // (its words toward the middle: left of an arrow on the right, below one at the top...)
     const side = /E/.test(d) && !/W/.test(d) ? "left" : /W/.test(d) ? "right" : d === "N" ? "below" : "above";
     if (el.dataset.side !== side) el.dataset.side = side;
     if (el.classList.contains("near") !== near) el.classList.toggle("near", near);
-    at.push({ d, el, x: left, y: top, a, side, shown: near || el.classList.contains("aimed") });
+    if (el.classList.contains("always") !== all) el.classList.toggle("always", all);
+    at.push({ d, el, x: left, y: top, a, side, shown: all || near || el.classList.contains("aimed") });
   });
-  waysApart(at.filter(w => w.shown), box);
+  waysApart(at.filter(w => w.shown), box, sc);
   for (const w of at) { const l = w.x.toFixed(0) + "px", t = w.y.toFixed(0) + "px"; if (w.el.style.left !== l) w.el.style.left = l; if (w.el.style.top !== t) w.el.style.top = t; }
+}
+// (ticket 217, Matthew: "toggle to show the planned path each time it's created
+// and being executed in game") ♿ the planned path (walkPath, ticket 215) drawn
+// over the picture while the walk to a passage lasts: dotted, its corners
+// marked, the part walked faded; gone when they arrive
+// (ticket 217) ♿ the words' size: a variable on the page, and the class that scales the place's words, only off 100
+let gameFontShown = null;
+function accessApply() {
+  const gf = ((state.access || DEFAULTS.access).gameFont ?? 100) / 100;
+  if (gf === gameFontShown) return;
+  gameFontShown = gf;
+  document.documentElement.style.setProperty("--game-font", String(gf));
+  document.body.classList.toggle("game-font", gf !== 1);
+}
+// (ticket 217, Matthew: "show the collision boxes you are using for collision tests, if you can") ♿ what the
+// friend's feet are kept out of, as solidAt tests it: each solid's box on the floor (grown by the margin the feet
+// keep, SOLID_MARGIN), named; a castle room's side walls (castleWalls: the half width at each depth); and the back
+// limit the feet stop at (figYMin: a back wall's foot, else the frame's). Drawn over the picture, in the picture's
+// own units through the screen; only when shown, and the page changed only when they move.
+let solidsShown = "";
+function solidsHud() {
+  const layer = document.getElementById("ways");
+  if (!layer) return;
+  const on = !!(state.access || DEFAULTS.access).showSolids && state.background.kind !== "none";
+  let ov = layer.querySelector("svg.solid-boxes");
+  if (!on) { if (ov) ov.remove(); solidsShown = ""; return; }
+  const M = pic.getScreenCTM(), box = layer.getBoundingClientRect();
+  if (!M || !box.width) return;
+  const F = sceneFrame, g = SCENE.ground, W = castleWalls(state.background), m = SOLID_MARGIN;
+  const sc = (x, z) => { const q = new DOMPoint(x, z).matrixTransform(M); return [q.x - box.left, q.y - box.top]; };
+  const pts = a => a.map(q => q.map(v => v.toFixed(1)).join(",")).join(" ");
+  const back = g + figYMin(F), zs = Array.from({ length: 9 }, (_, i) => back + (F.bottom - back) * i / 8);
+  const solids = solidsHere().map(o => ({ name: o.name, q: [[o.x0 - m, o.back], [o.x1 + m, o.back], [o.x1 + m, o.front], [o.x0 - m, o.front]].map(([x, z]) => sc(x, z)) }));
+  const walls = W ? [-1, 1].map(sd => zs.map(z => sc(sd * (W.half(z) - m), z))) : [];
+  const line = [sc(F.left, back), sc(F.right, back)];
+  const sig = JSON.stringify([solids.map(o => pts(o.q)), walls.map(pts), pts(line)]);
+  if (sig === solidsShown && ov) return;
+  solidsShown = sig;
+  if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "solid-boxes"); layer.prepend(ov); }
+  ov.innerHTML = `<polyline class="back" points="${pts(line)}"/>` + walls.map(w => `<polyline class="wall" points="${pts(w)}"/>`).join("") +
+    solids.map(o => `<polygon points="${pts(o.q)}"/><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("");
+}
+let pathShown = "";
+function pathHud() {
+  const layer = document.getElementById("ways");
+  if (!layer) return;
+  const A = state.access || DEFAULTS.access, P = walkPath, live = !!(A.showPath && P && entering && P.pts && P.pts.length > 1);
+  let ov = layer.querySelector("svg.walk-path");
+  if (!live) { if (ov) ov.remove(); pathShown = ""; return; }
+  const M = pic.getScreenCTM(), box = layer.getBoundingClientRect();
+  if (!M || !box.width) return;
+  const g = SCENE.ground, pts = P.pts.map(([x, y]) => { const q = new DOMPoint(x, g + y).matrixTransform(M); return [q.x - box.left, q.y - box.top]; });
+  const sig = pts.map(q => q.map(v => v.toFixed(0)).join(",")).join(" ") + "|" + P.leg;
+  if (sig === pathShown && ov) return;
+  pathShown = sig;
+  if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "walk-path"); layer.append(ov); }
+  const line = (a, cls) => a.length > 1 ? `<polyline class="${cls}" points="${a.map(q => q.map(v => v.toFixed(1)).join(",")).join(" ")}"/>` : "";
+  const leg = Math.min(P.leg ?? 0, pts.length - 1);
+  ov.innerHTML = line(pts.slice(0, leg + 1), "walked") + line(pts.slice(leg), "ahead") +
+    pts.slice(1).map((q, i) => `<circle class="${i < leg ? "walked" : "ahead"}" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="${i === pts.length - 2 ? 7 : 5}"/>`).join("");
 }
 // (ticket 208, Matthew: the arrows shown at once "often overlap each other in
 // the corners": E's and SE's, near the bottom right of a wide picture, where
@@ -327,24 +392,26 @@ function worldWaysHud() {
 // across), and reaches 5px further along the angle at the top of its bob
 // (way-bob); taken as a plain 44px, E still sat over SE by a few px.
 const WAY_GAP = 6;
-function waysApart(ws, box) {
+function waysApart(ws, box, sc = 1) {
   if (ws.length < 2) return;
-  for (const w of ws) { if (!w.el.__words) { const t = w.el.querySelector(".way-words"); w.el.__words = t ? [t.offsetWidth, t.offsetHeight] : [0, 0]; } }
-  const rect = w => { const [ww, wh] = w.el.__words, c = Math.cos(w.a * Math.PI / 180), s = Math.sin(w.a * Math.PI / 180), h = 22 * (Math.abs(c) + Math.abs(s));
-    const r = [w.x - h + Math.min(0, 5 * c), w.y - h + Math.min(0, 5 * s), w.x + h + Math.max(0, 5 * c), w.y + h + Math.max(0, 5 * s)];
-    const t = w.side === "left" ? [w.x - 26 - ww, w.y - wh / 2, w.x - 26, w.y + wh / 2] : w.side === "right" ? [w.x + 26, w.y - wh / 2, w.x + 26 + ww, w.y + wh / 2] :
-              w.side === "below" ? [w.x - ww / 2, w.y + 26, w.x + ww / 2, w.y + 26 + wh] : [w.x - ww / 2, w.y - 26 - wh, w.x + ww / 2, w.y - 26];
+  // (ticket 217: the words measured again when the game's word size changes; the arrows' size, sc, scales all of it)
+  const fk = String((state.access || DEFAULTS.access).gameFont ?? 100);
+  for (const w of ws) { if (!w.el.__words || w.el.__words[2] !== fk) { const t = w.el.querySelector(".way-words"); w.el.__words = t ? [t.offsetWidth, t.offsetHeight, fk] : [0, 0, fk]; } }
+  const rect = w => { const ww = w.el.__words[0] * sc, wh = w.el.__words[1] * sc, gap = 26 * sc, c = Math.cos(w.a * Math.PI / 180), s = Math.sin(w.a * Math.PI / 180), h = 22 * sc * (Math.abs(c) + Math.abs(s)), b = 5 * sc;
+    const r = [w.x - h + Math.min(0, b * c), w.y - h + Math.min(0, b * s), w.x + h + Math.max(0, b * c), w.y + h + Math.max(0, b * s)];
+    const t = w.side === "left" ? [w.x - gap - ww, w.y - wh / 2, w.x - gap, w.y + wh / 2] : w.side === "right" ? [w.x + gap, w.y - wh / 2, w.x + gap + ww, w.y + wh / 2] :
+              w.side === "below" ? [w.x - ww / 2, w.y + gap, w.x + ww / 2, w.y + gap + wh] : [w.x - ww / 2, w.y - gap - wh, w.x + ww / 2, w.y - gap];
     return [Math.min(r[0], t[0]), Math.min(r[1], t[1]), Math.max(r[2], t[2]), Math.max(r[3], t[3])]; };
   const across = w => !(w.d === "E" || w.d === "W");   // (E and W slide up or down; the rest across)
   const edge = w => w.d.length === 1;                  // (a side's or the top's or bottom's: free to slide; a corner's stays where it points)
-  for (let pass = 0; pass < 4; pass++) {
+  for (let pass = 0; pass < 16; pass++) {   // (ticket 217: eight arrows at twice the size need more than four)
     let moved = false;
     for (let i = 0; i < ws.length; i++) for (let j = i + 1; j < ws.length; j++) {
       const a = rect(ws[i]), b = rect(ws[j]), ox = Math.min(a[2], b[2]) - Math.max(a[0], b[0]), oy = Math.min(a[3], b[3]) - Math.max(a[1], b[1]);
       if (ox <= -WAY_GAP || oy <= -WAY_GAP) continue;
       // (which slides: a side's before a corner's; of two alike, the second; it goes away from the other, or toward the middle)
       for (const [m, o, rm, ro] of edge(ws[j]) || !edge(ws[i]) ? [[ws[j], ws[i], b, a], [ws[i], ws[j], a, b]] : [[ws[i], ws[j], a, b], [ws[j], ws[i], b, a]]) {
-        const h = across(m), lo = 22, hi = (h ? box.width : box.height) - 22, k = h ? "x" : "y";
+        const h = across(m), lo = 22 * sc, hi = (h ? box.width : box.height) - 22 * sc, k = h ? "x" : "y";
         const cm = h ? (rm[0] + rm[2]) / 2 : (rm[1] + rm[3]) / 2, co = h ? (ro[0] + ro[2]) / 2 : (ro[1] + ro[3]) / 2;
         const dir = cm !== co ? Math.sign(cm - co) : Math.sign((h ? box.width : box.height) / 2 - m[k]) || 1;
         const need = (h ? ox : oy) + WAY_GAP, to = Math.max(lo, Math.min(hi, m[k] + dir * need));
