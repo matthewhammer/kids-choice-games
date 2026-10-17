@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.122 (2026-10-17)
+
+Everything in 0.0.121, plus M's light and dark switch.
+
+- **🌗 Light or dark** (M's idea), at the top of ⚙️ Advanced: auto (as your computer is set), ☀️ light or 🌙 dark. This browser remembers it; saves don't carry it.
+
 ## 0.0.121 (2026-10-17)
 
 Everything in 0.0.120, with the spin into pictures fixed, and two new sliders for moving.
