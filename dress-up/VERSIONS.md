@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.114 (2026-10-17)
+
+Everything in 0.0.113, with three fixes.
+
+- **Fixed: things stay where you put them** (Matthew: the potion was on every square). Going through a place's own door, sign or picture, or back with the back chip, used to bring the things along. Now every place keeps its own, squares on the grid and the places inside them (a hut, a tent, a castle room) alike.
+- **The living room has a ▼ at the bottom, back out to the house and yard** (Matthew). Where it leads is still yours to choose under "⬇️ behind you"; a friend saved with it leading somewhere keeps that.
+- **Fixed: the witch's door works again** (Matthew: it no longer glowed or opened). The friend came into her hut standing right in front of it, so a click landed on them; they now come in beside it. The door also glows for the controller's X, as other doors do.
+
 ## 0.0.113 (2026-10-17)
 
 Everything in 0.0.112, with more things in the library, taken from the places themselves.
