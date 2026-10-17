@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.165 (2026-10-17)
+
+Everything in 0.0.164, with a school of fish back in the deep sea, swimming.
+
+- **A school of fish that swims**: the deep sea has its little school back, over the far ridges. Each fish now swims its own way round, a little behind the one ahead, turning to face where it's going and beating its tail, instead of all of them sliding about together as one block.
+
 ## 0.0.164 (2026-10-17)
 
 Everything in 0.0.163, with no ways off the edge of the world.

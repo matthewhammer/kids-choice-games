@@ -186,8 +186,8 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // square and a background --- sandy bottom with objects to place") Deep
     // water: blue fading to near black below; the light coming down in
     // shafts that shimmer with the slow LFO; far ridges, dark; the sandy
-    // bottom, rippled; kelp swaying up both sides (the slow LFO), rocks (its
-    // school of fish dropped, ticket 234); and a vent in the sand on the left,
+    // bottom, rippled; kelp swaying up both sides (the slow LFO), rocks; a
+    // school of fish swimming round over the ridges (ticket 235); and a vent in the sand on the left,
     // bubbles rising from it (bubbleSvg, the bubbles' simple default). What is put here (the 🐚 sea things: coral, shells,
     // starfish, fish, a chest, an anchor, sea plants) stands on the sand.
     s += `<defs>${grad("bg-deep", "#1d6fa3", "#04152b", y0, y1)}</defs>` + all("url(#bg-deep)");
@@ -221,9 +221,27 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       kelp[i % 2] += swaying(opts, `<path d="${d}" fill="none" stroke="${i % 3 ? "#2a6b40" : "#35804c"}" stroke-width="${f1(7 * k)}" stroke-linecap="round"/>` + blades, x, b, 5, R(i, 821), (5 + 2 * R(i, 822)).toFixed(1));
     }
     s += obj("kelp, left", g + 24 * k, kelp[0]) + obj("kelp, right", g + 24 * k, kelp[1]);
-    // (ticket 234, Matthew: "the animation for the school of fish in deep sea is really bad -- let's drop that feature of
-    // the background until we can animate a school of fish better") no school of fish (nine fish sliding round one loop
-    // together, over the far ridges: 0.0.160's 15-place-picker.js), until one moves well (ticket 235)
+    // (ticket 235: a school of fish that swims. Matthew, dropping 0.0.160's in ticket 234: "the animation for the school
+    // of fish in deep sea is really bad -- let's drop that feature of the background until we can animate a school of
+    // fish better"; that one slid nine fish round one loop as a block, none turning) Each fish follows one flat loop
+    // over the far ridges (animateMotion, rotate="auto": it faces the way it swims, round both turns), a little behind
+    // the one ahead and at its own place across the school, its tail beating; far off, so small and blue-grey. About
+    // 18 moving parts. Its fish are drawn pointing along +x, the way the motion faces them; a fish's top and bottom
+    // alike, so upside down on the way back it looks the same.
+    {
+      const cx = x0 + W * 0.52, cy = y0 + (g - y0) * 0.42, a = W * 0.3, b = 34 * k, z = 0.8 * k;
+      const loop = `M${P(cx - a, cy)} A${f1(a)} ${f1(b)} 0 1 1 ${P(cx + a, cy)} A${f1(a)} ${f1(b)} 0 1 1 ${P(cx - a, cy)} Z`;
+      let fish = "";
+      for (let i = 0; i < 9; i++) {
+        const lag = (i * 0.32 + 0.25 * R(i, 825)).toFixed(2), across = ((i % 3) - 1) * 13 * z + (R(i, 824) - 0.5) * 8 * z, back = Math.floor(i / 3) * 4 * z;
+        const c = ["#9fc6dd", "#b9d9ea", "#d7c48e"][i % 3], beat = (0.42 + 0.12 * R(i, 826)).toFixed(2);
+        fish += `<g><animateMotion path="${loop}" dur="16s" begin="-${lag}s" rotate="auto" repeatCount="indefinite"/><g transform="translate(${f1(-back)} ${f1(across)})">` +
+          `<g><animateTransform attributeName="transform" type="rotate" values="-22 ${f1(-8 * z)} 0;22 ${f1(-8 * z)} 0;-22 ${f1(-8 * z)} 0" dur="${beat}s" repeatCount="indefinite"/>` +
+          `<path d="M${f1(-7 * z)} 0 L${f1(-16 * z)} ${f1(-5 * z)} L${f1(-14 * z)} 0 L${f1(-16 * z)} ${f1(5 * z)} Z" fill="${c}"/></g>` +
+          `<ellipse cx="0" cy="0" rx="${f1(10 * z)}" ry="${f1(4 * z)}" fill="${c}"/><circle cx="${f1(6 * z)}" cy="0" r="${f1(1.1 * z)}" fill="#0b2a45"/></g></g>`;
+      }
+      s += obj("school of fish", g - 95 * k, `<g opacity="0.85">${fish}</g>`);
+    }
     // a vent in the sand, on the left, bubbles rising from it
     {
       const vx = x0 + W * 0.16, vy = g + 40 * k;
