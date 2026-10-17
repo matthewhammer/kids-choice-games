@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.130 (2026-10-17)
+
+Everything in 0.0.129, with every cauldron simple until you upgrade it.
+
+- **Every cauldron starts simple** (Matthew, after trying the witch's places on the Ubuntu laptop): the cauldrons you put in a place, and the witch's own cauldron in her woods and in her hut. Upgrade any one of them to ✨ fancy, one at a time: yours in its row in 🗺️ World design (💨 fumes), hers in 🏞️ Background (💨 her cauldron's fumes).
+- **The witch's own cauldron gets the red frame too**: when the place is too busy and her cauldron is fancy, it is marked like the things you put there, and the 🐢 note says where to make it simple.
+- **The simple fumes look more like the fancy ones**: they sway as smoothly, and each curl is bright where it comes round to the front and faint at the back, so the two plumes twist around each other.
+
 ## 0.0.129 (2026-10-17)
 
 Everything in 0.0.128, with cauldrons that cost less and busy places that stay shut.

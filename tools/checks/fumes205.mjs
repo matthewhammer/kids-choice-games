@@ -42,7 +42,7 @@ try {
   ok("the simple fumes: two strands, each twelve moments a turn", r.shape.strands === 2 && r.shape.moments.every(m => m === 13), r.shape);
   ok("each painted with a band, bright at the front, sliding up", r.shape.paint.length === 2 && r.shape.paint.every(u => /url\(/.test(u)) && r.shape.bands === 2, r.shape);
   ok("a cauldron so drawn: under thirty moving parts", r.shape.moving < 30, r.shape);
-  const med = a => { const b = [...a].sort((x, y) => x - y); return (b[(b.length - 1) >> 1] + b[b.length >> 1]) / 2; }, o = med(r.ab.old), m = med(r.ab.now);
+  const med = a => { const b = [...a].sort((x, y) => x - y); return Math.round(5 * (b[(b.length - 1) >> 1] + b[b.length >> 1])) / 10; }, o = med(r.ab.old), m = med(r.ab.now);
   console.log(`  15 cauldrons, simple fumes, taking turns (GitHub's Chrome): 0.0.129's ${r.ab.old.join(", ")} fps (median ${o}; ${r.ab.movingOld} moving parts) · these ${r.ab.now.join(", ")} fps (median ${m}; ${r.ab.movingNow} moving parts)`);
   ok("these no more than 10% fewer frames a second than 0.0.129's", m >= 0.9 * o, { old: r.ab.old, now: r.ab.now });
   ok("no page errors", !errs.length, errs);
