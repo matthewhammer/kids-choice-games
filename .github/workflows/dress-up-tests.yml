@@ -122,6 +122,13 @@ jobs:
           (python3 -m http.server 8133 --bind 127.0.0.1 > /dev/null 2>&1 &)
           for i in $(seq 30); do curl -sf "$PAGE" > /dev/null && break; sleep 1; done
           firefox --version
+      - name: The branch's own Firefox checks (tools/checks/*.py, each given the page)
+        if: hashFiles('tools/checks/*.py') != ''
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p out/checks
+          for f in tools/checks/*.py; do python3 "$f" "$PAGE" | tee "out/checks/$(basename "$f" .py).txt"; done
       - name: After rounds of changes; then the caches emptied, the music paused, a reload
         if: hashFiles('tools/checks/.only') == ''
         continue-on-error: true
@@ -138,7 +145,8 @@ jobs:
         run: |
           {
             echo "## Firefox"
-            for f in out/*.txt; do
+            shopt -s nullglob
+            for f in out/*.txt out/checks/*.txt; do
               echo "### ${f#out/}"; echo '```'; cat "$f"; echo '```'
             done
           } >> "$GITHUB_STEP_SUMMARY"
