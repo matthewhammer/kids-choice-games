@@ -511,6 +511,10 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 // name, in localStorage["dress-up-pads"], put back whenever it connects.
 DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4 };
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
+// (ticket 217, Matthew) ♿ Accessibility: every nav arrow shown, how bright the
+// far ones are and their colour (not the near ones' warm white), the arrows'
+// size, the size of the words in the game, and the planned path shown
+DEFAULTS.access = { allArrows: false, arrowDim: 45, arrowColor: "#38bdf8", arrowSize: 100, gameFont: 100, showPath: false };
 let state = clone(DEFAULTS);
 // (ticket 155, Matthew: "The priority is 60 FPS at all times, for all
 // actions that a game controller does in the scene.") What a background

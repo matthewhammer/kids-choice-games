@@ -22,7 +22,7 @@ function surpriseOne(part, [kind, key, , ...rest]) {
 }
 document.getElementById("surprise").addEventListener("click", () => {
   // (the music is not part of the surprise, nor what is see-through)
-  for (const [, part, ctls] of TABS.filter(t => t[1] !== "music" && t[1] !== "visible" && t[1] !== "controls" && t[1] !== "world" && t[1] !== "advanced"))
+  for (const [, part, ctls] of TABS.filter(t => t[1] !== "music" && t[1] !== "visible" && t[1] !== "controls" && t[1] !== "world" && t[1] !== "advanced" && t[1] !== "access"))
     for (const c of ctls) surpriseOne(part, c);
   if (state.body.pose === "hug") state.body.pose = "stand";   // (a hug needs someone to hug: ticket 136)
   state.background.cauldronFumes = "simple";   // (ticket 206: fancy fumes only when chosen; a slow computer stays smooth)
