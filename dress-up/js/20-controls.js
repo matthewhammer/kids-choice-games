@@ -628,6 +628,13 @@ function newsLoad(box) {
 // the most are marked, in their rows and in the picture, as the ones to take away.
 const THING_FPS_MIN = 48, THING_MOVING_MAX = 1000;   // (about four cauldrons: GitHub's computer near 50 there)
 let thingFps = null, thingFpsAt = 0, thingFpsBusy = false;
+// (ticket 203, Matthew: "when any kind of object has a red box around it, no
+// more objects of any kind can be added until the red box is resolved"; N
+// kept adding cauldrons past the marks) Too busy once, the place stays shut
+// (thingsLatch): every button greyed and adding refused (a drag too), till
+// it is emptied, or a fresh second of frames, measured after a thing is
+// taken away, is smooth again (THING_FPS_MIN and a little more)
+let thingsLatch = false, thingsMeasured = "";
 const thingMoving = el => el.querySelectorAll("animate, animateTransform, animateMotion").length + (el.getAnimations ? el.getAnimations({ subtree: true }).length : 0);
 const thingsMovingNow = () => [...document.querySelectorAll('#bg [data-drag^="thing:"]')].map(el => ({ i: +el.dataset.drag.slice(6), el, n: thingMoving(el) }));
 function framesNow(ms = 1000) {
@@ -1101,6 +1108,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const B = state.background, T = B.things || (B.things = []), i = T.length, F = sceneFrame;
       const x = at ? Math.round(clamp(at.x, F.left, F.right)) : Math.round((((i * 0.37) % 1) - 0.5) * 520);
       const z = at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
+      if (thingsLatch) return;   // (ticket 203: shut till the marked ones are dealt with)
       T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}) });
       changed();
       if ((THING_KINDS[kd] || {}).moving) thingCheck(guard);   // (ticket 201: how this computer takes it)
@@ -1110,10 +1118,16 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const guard = () => {
       if (thingsCheap(state.background) !== thingsCheapDrawn) { changed(); return; }   // (ticket 202: the cauldrons' fumes, cheap or not, as measured now)
       const moving = thingsMovingNow(), total = moving.reduce((s, m) => s + m.n, 0), most = Math.max(0, ...moving.map(m => m.n));
-      const slow = thingFps != null && thingFps < THING_FPS_MIN && total > 0, blocked = slow || total > THING_MOVING_MAX;
-      for (const b of items.querySelectorAll("button[data-kind]")) if ((THING_KINDS[b.dataset.kind] || {}).moving) {
+      const slow = thingFps != null && thingFps < THING_FPS_MIN && total > 0, over = total > THING_MOVING_MAX;
+      // (ticket 203) shut once too busy; open again only when emptied, or measured smooth since the last change
+      const sig = JSON.stringify((state.background.things || []).map(t => [t.kind, t.fumes, t.burning]));   // (a cauldron made simple, a fire put out: measured again)
+      if (slow || over) thingsLatch = true;
+      else if (thingsLatch && (!total || (thingFps != null && thingFps >= THING_FPS_MIN + 4 && thingsMeasured === sig))) thingsLatch = false;
+      if (thingsLatch && thingsMeasured !== sig && !thingFpsBusy) { const at = sig; thingCheck(() => { thingsMeasured = at; guard(); }); }
+      const blocked = thingsLatch;
+      for (const b of items.querySelectorAll("button[data-kind]")) {
         if (b.disabled !== blocked) b.disabled = blocked;
-        const t = blocked ? "🐢 No more things that move here: this place is already as busy as this computer can show smoothly. Take one away first." : "Drag into the picture, or tap";
+        const t = blocked ? "🐢 Nothing more here for now: this place is as busy as this computer can show smoothly. Take away one of the things marked first." : "Drag into the picture, or tap";
         if (b.title !== t) b.title = t;
       }
       const costly = new Set(blocked ? moving.filter(m => m.n > 0 && m.n >= most * 0.5).map(m => m.i) : []);
@@ -1126,7 +1140,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           m.el.append(w); }
         else if (!costly.has(m.i) && g) g.remove();
       }
-      const t = blocked ? `🐢 ${slow ? `About ${Math.round(thingFps)} frames a second here` : `${total} moving parts in these things`}: no more things that move. The ones marked move the most: take one away.` : "";
+      const t = blocked ? `🐢 ${slow || thingFps != null && thingFps < THING_FPS_MIN + 4 ? `About ${Math.round(thingFps)} frames a second here` : `${total} moving parts in these things`}: nothing more can be put here until one of the things marked (they move the most) is taken away${costly.size && [...costly].some(i => ((state.background.things || [])[i] || {}).kind === "cauldron") ? ", or a cauldron's 💨 fumes made simple" : ""}.` : "";
       if (slowNote.textContent !== t) slowNote.textContent = t;
       if (slowNote.hidden !== !t) slowNote.hidden = !t;
     };
