@@ -299,17 +299,60 @@ function worldWaysHud() {
   if (!worldWaysAt.length) return;
   const M = pic.getScreenCTM(), box = layer.getBoundingClientRect(), B = state.background;
   if (!M || !box.width) return;
+  const at = [];
   worldWaysAt.forEach(([d, x, y, a], i) => {
     const el = layer.children[i];
     if (!el) return;
     const p = new DOMPoint(x, y).matrixTransform(M), near = wayNearness(d) < 1;
     // (kept inside the picture, by its size)
     const left = Math.max(22, Math.min(box.width - 22, p.x - box.left)), top = Math.max(22, Math.min(box.height - 22, p.y - box.top));
-    el.style.left = left.toFixed(0) + "px"; el.style.top = top.toFixed(0) + "px";
     // (its words toward the middle: left of an arrow on the right, below one at the top...)
-    el.dataset.side = /E/.test(d) && !/W/.test(d) ? "left" : /W/.test(d) ? "right" : d === "N" ? "below" : "above";
+    const side = /E/.test(d) && !/W/.test(d) ? "left" : /W/.test(d) ? "right" : d === "N" ? "below" : "above";
+    if (el.dataset.side !== side) el.dataset.side = side;
     if (el.classList.contains("near") !== near) el.classList.toggle("near", near);
+    at.push({ d, el, x: left, y: top, a, side, shown: near || el.classList.contains("aimed") });
   });
+  waysApart(at.filter(w => w.shown), box);
+  for (const w of at) { const l = w.x.toFixed(0) + "px", t = w.y.toFixed(0) + "px"; if (w.el.style.left !== l) w.el.style.left = l; if (w.el.style.top !== t) w.el.style.top = t; }
+}
+// (ticket 208, Matthew: the arrows shown at once "often overlap each other in
+// the corners": E's and SE's, near the bottom right of a wide picture, where
+// the floor seen is short) Arrows shown together kept apart: where two would
+// overlap (the triangle and its words), one slides along its edge, away from
+// the other: an arrow on a side (E, W) up or down, one at the top or bottom
+// (N, S) or a corner's (along the floor's front or far edge) across; kept in
+// the picture. Measured by arithmetic, each one's words measured once (their
+// size is their text's): nothing read back from the page on a drawing. The
+// triangle's box is its 44px square turned to its angle (SE's: about 62px
+// across), and reaches 5px further along the angle at the top of its bob
+// (way-bob); taken as a plain 44px, E still sat over SE by a few px.
+const WAY_GAP = 6;
+function waysApart(ws, box) {
+  if (ws.length < 2) return;
+  for (const w of ws) { if (!w.el.__words) { const t = w.el.querySelector(".way-words"); w.el.__words = t ? [t.offsetWidth, t.offsetHeight] : [0, 0]; } }
+  const rect = w => { const [ww, wh] = w.el.__words, c = Math.cos(w.a * Math.PI / 180), s = Math.sin(w.a * Math.PI / 180), h = 22 * (Math.abs(c) + Math.abs(s));
+    const r = [w.x - h + Math.min(0, 5 * c), w.y - h + Math.min(0, 5 * s), w.x + h + Math.max(0, 5 * c), w.y + h + Math.max(0, 5 * s)];
+    const t = w.side === "left" ? [w.x - 26 - ww, w.y - wh / 2, w.x - 26, w.y + wh / 2] : w.side === "right" ? [w.x + 26, w.y - wh / 2, w.x + 26 + ww, w.y + wh / 2] :
+              w.side === "below" ? [w.x - ww / 2, w.y + 26, w.x + ww / 2, w.y + 26 + wh] : [w.x - ww / 2, w.y - 26 - wh, w.x + ww / 2, w.y - 26];
+    return [Math.min(r[0], t[0]), Math.min(r[1], t[1]), Math.max(r[2], t[2]), Math.max(r[3], t[3])]; };
+  const across = w => !(w.d === "E" || w.d === "W");   // (E and W slide up or down; the rest across)
+  const edge = w => w.d.length === 1;                  // (a side's or the top's or bottom's: free to slide; a corner's stays where it points)
+  for (let pass = 0; pass < 4; pass++) {
+    let moved = false;
+    for (let i = 0; i < ws.length; i++) for (let j = i + 1; j < ws.length; j++) {
+      const a = rect(ws[i]), b = rect(ws[j]), ox = Math.min(a[2], b[2]) - Math.max(a[0], b[0]), oy = Math.min(a[3], b[3]) - Math.max(a[1], b[1]);
+      if (ox <= -WAY_GAP || oy <= -WAY_GAP) continue;
+      // (which slides: a side's before a corner's; of two alike, the second; it goes away from the other, or toward the middle)
+      for (const [m, o, rm, ro] of edge(ws[j]) || !edge(ws[i]) ? [[ws[j], ws[i], b, a], [ws[i], ws[j], a, b]] : [[ws[i], ws[j], a, b], [ws[j], ws[i], b, a]]) {
+        const h = across(m), lo = 22, hi = (h ? box.width : box.height) - 22, k = h ? "x" : "y";
+        const cm = h ? (rm[0] + rm[2]) / 2 : (rm[1] + rm[3]) / 2, co = h ? (ro[0] + ro[2]) / 2 : (ro[1] + ro[3]) / 2;
+        const dir = cm !== co ? Math.sign(cm - co) : Math.sign((h ? box.width : box.height) / 2 - m[k]) || 1;
+        const need = (h ? ox : oy) + WAY_GAP, to = Math.max(lo, Math.min(hi, m[k] + dir * need));
+        if (Math.abs(to - m[k]) >= 1) { m[k] = to; moved = true; break; }
+      }
+    }
+    if (!moved) break;
+  }
 }
 // a way out taken: the friend walks to it, then is in the square beside
 // it, come in from the side it leads to; the back chip can bring them back
