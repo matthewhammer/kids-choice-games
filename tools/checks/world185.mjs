@@ -69,6 +69,18 @@ try {
       wordsInside: w.left >= box.left - 1 && w.right <= box.right + 1 && w.top >= box.top - 1 && w.bottom <= box.bottom + 1, lines: Math.round(w.height / parseFloat(getComputedStyle(a.querySelector(".way-words")).lineHeight)) }); })()`));
   ok("in the middle of the clearing, no arrow shows", near.middle.length === 0, near.middle);
   ok("walked to its east edge: the arrow E shows, on top of everything there, its words on the screen in two lines or more", near.east.join() === "E" && near.opacity === "1" && near.onTop && near.wordsInside && near.lines >= 2, near);
+  // (Matthew, 2026-10-17) the ways are on the floor: which is near, and which X takes, is judged by the feet, in depth.
+  // His wood path: by the arrow at the bottom, the top one was the one X would take.
+  const floor = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldEnter("3,1"); const B = state.background; padName = "a test controller";
+    const at = async (x, y) => { B.figX = x; B.figY = y; changed(); await new Promise(r => setTimeout(r, 500)); measureMarks();
+      const t = enterTarget(), aimed = [...document.querySelectorAll("#ways .way-arrow.aimed")].map(e => e.dataset.way);
+      return { near: [...document.querySelectorAll("#ways .way-arrow.near")].map(e => e.dataset.way), x: t && t.el.dataset.way || null, aimed, frame: !!document.querySelector("#bg .enter-glow") }; };
+    const r = { kind: B.kind, bottom: await at(0, 70), middle: await at(0, 0), far: await at(0, -140), past: await at(0, -250), west: await at(-340, 30) };
+    padName = ""; changed(); return JSON.stringify(r); })()`));
+  ok("the wood path (D2), feet by the bottom arrow: only S shows, and X takes S, its arrow glowing, no frame in the picture", floor.kind === "woodpath" && floor.bottom.near.join() === "S" && floor.bottom.x === "S" && floor.bottom.aimed.join() === "S" && !floor.bottom.frame, floor.bottom);
+  ok("in its middle, no way is near and X takes none", floor.middle.near.length === 0 && floor.middle.x === null && floor.middle.aimed.length === 0, floor.middle);
+  ok("walked to the far end of the path: N, and further back still N", floor.far.near.join() === "N" && floor.far.x === "N" && floor.past.near.join() === "N" && floor.past.x === "N", { far: floor.far, past: floor.past });
+  ok("at its west side: W", floor.west.near.join() === "W" && floor.west.x === "W", floor.west);
   // a crossing's dead ends: no trail, no arrow, no mistake (Matthew: a crossing missing a passageway has no trail and no arrow that way)
   const dead = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldPut("0,0", "crossing"); worldEnter("0,0"); await new Promise(r => setTimeout(r, 400));
     const paths = () => document.querySelectorAll('#bg path[fill="' + CROSS_PATH + '"]').length, arrows = () => document.querySelectorAll("#bg .way-out").length;

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.106 (2026-10-17)
+
+Everything in 0.0.105, with the ways out found by your friend's feet.
+
+- **A way out is a spot on the ground, and which one is near goes by your friend's feet** (Matthew: by the arrow at the bottom of the wood path, X took the one at the top). Near and far are measured on the floor, with its depth: a step toward the back of a place covers more ground than one at the front, and walking past a way, toward its edge, still counts as at it. The front edge's way shows only once you walk down toward it, not from the middle.
+- **The way X would take glows on its own arrow**, over the picture, instead of a frame drawn in the picture under it.
+
 ## 0.0.105 (2026-10-17)
 
 Everything in 0.0.104, with the ways out showing only when you are near them.

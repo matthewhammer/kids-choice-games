@@ -220,19 +220,31 @@ function enterTarget() {
   const mean = ps => [ps.reduce((s, p) => s + p[0], 0) / ps.length, ps.reduce((s, p) => s + p[1], 0) / ps.length];
   const A = mean(J.arms.map(a => a.A)), H = mean(J.legs.map(l => l.H)), [cx, cy] = at((A[0] + H[0]) / 2, (A[1] + H[1]) / 2);
   const torso = T.k * Math.hypot(A[0] - H[0], A[1] - H[1]), feet = Math.max(...J.legs.map(l => at(l.F[0], l.F[1])[1]));
+  // (each within reach scored by how far it is over how far reach goes, so a
+  // way and a picture can be weighed against each other: the lowest wins)
   let best = null;
   for (const p of marks.pics) {
     if (!p.el.isConnected) continue;
+    // (ticket 185: a world square's way out is on the ground: near by the feet, on the floor, in depth: wayNearness)
+    if (p.el.dataset && p.el.dataset.way) {
+      const n = wayNearness(p.el.dataset.way);
+      if (n < 1 && (!best || n < best.n)) best = { n, p };
+      continue;
+    }
     const d = Math.hypot(Math.max(p.x0 - cx, 0, cx - p.x1), Math.max(p.y0 - cy, 0, cy - p.y1));
     if (d > 2 * torso || feet - p.y1 > 3.6 * torso) continue;
-    const dc = Math.hypot((p.x0 + p.x1) / 2 - cx, (p.y0 + p.y1) / 2 - cy);
-    if (!best || dc < best.dc) best = { dc, p };
+    const n = Math.hypot((p.x0 + p.x1) / 2 - cx, (p.y0 + p.y1) / 2 - cy) / (2 * torso);
+    if (!best || n < best.n) best = { n, p };
   }
   return best && best.p;
 }
 function showEnterGlow() {
   const p = enterTarget();
   enterAt = p;
+  // (a way out glows on its own arrow, over the picture: not a frame in the picture under it)
+  const way = p && p.el.dataset && p.el.dataset.way || null;
+  worldWaysAim(way);
+  if (way) { if (enterGlow) enterGlow.remove(); enterGlow = null; return; }
   if (enterGlow && enterGlow.isConnected && p && enterGlow.parentNode === p.el) return;
   if (enterGlow) enterGlow.remove();
   enterGlow = null;

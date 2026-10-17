@@ -109,8 +109,33 @@ function worldEnter(key, side = null, draw = true) {
 // on its side toward the middle of the picture. A way that is a mistake,
 // leading nowhere, is grey, 🚧, and goes nowhere. A forest crossing shows
 // only its live ways (worldLiveWays).
-const WAY_NEAR = 190;   // (the stage's units: about two of the friend's strides)
+// (Matthew, 2026-10-17: by the feet, not the whole body, and on the floor,
+// with depth and perspective) A way is a spot on the ground: N at the far
+// line, S at the near edge, E and W at the sides. How near the friend is to
+// it is measured on the floor: the feet and the spot each taken where they
+// are on the ground, the perspective undone (floorAt: across by the size
+// a thing has there, away as the eye's distance at the arrival over it),
+// so a step toward the horizon covers more ground than one near us.
+// Near is within WAY_NEAR, or half the way's distance from the middle of
+// the floor if that is less (the near edge is only a step in front of
+// where the friend arrives: S would show from the middle). Feet gone past
+// a way, toward its edge, count as at it (wayNearness: below 1, near).
+const WAY_NEAR = 170, WAY_DEPTH = 500;   // (the floor's units: the stage's, at the place's arrival size)
+const WAY_OUT = { N: [0, 1], S: [0, -1], E: [1, 0], W: [-1, 0], NE: [1, 1], NW: [-1, 1], SE: [1, -1], SW: [-1, -1] };   // (outward, on the floor: across, away)
 let worldWaysAt = [];   // (each way's [direction, x, y, angle, leads to], as last drawn)
+function floorAt(B, x, y) { const s = Math.max(0.05, depthSize(B, y - SCENE.ground)); return [x / s, WAY_DEPTH / s]; }
+function wayNearness(d) {
+  const w = worldWaysAt.find(e => e[0] === d), B = state.background, o = WAY_OUT[d];
+  if (!w || !o) return Infinity;
+  const a = floorAt(B, w[1], w[2]), f = floorAt(B, B.figX ?? 0, SCENE.ground + (B.figY ?? 0));
+  const c = floorAt(B, 0, SCENE.ground + (ARRIVE[B.kind] || [0, 0])[1]);
+  const at = i => o[i] && (f[i] - a[i]) * o[i] > 0 ? a[i] : f[i];
+  return Math.hypot(at(0) - a[0], at(1) - a[1]) / Math.max(1, Math.min(WAY_NEAR, Math.hypot(a[0] - c[0], a[1] - c[1]) / 2));
+}
+// (the way X goes through, aimed at: its arrow glows, as a door's frame does)
+function worldWaysAim(d) {
+  for (const el of document.querySelectorAll("#ways .way-arrow")) { const on = el.dataset.way === d; if (el.classList.contains("aimed") !== on) el.classList.toggle("aimed", on); }
+}
 function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const W = state.world, cell = W && W.at && W.cells[W.at];
   if (!cell || cell.kind !== B.kind) { worldWaysAt = []; worldWaysHud(); return ""; }
@@ -158,11 +183,10 @@ function worldWaysHud() {
   if (!worldWaysAt.length) return;
   const M = pic.getScreenCTM(), box = layer.getBoundingClientRect(), B = state.background;
   if (!M || !box.width) return;
-  const fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
   worldWaysAt.forEach(([d, x, y, a], i) => {
     const el = layer.children[i];
     if (!el) return;
-    const p = new DOMPoint(x, y).matrixTransform(M), near = Math.hypot(x - fx, y - fz) < WAY_NEAR;
+    const p = new DOMPoint(x, y).matrixTransform(M), near = wayNearness(d) < 1;
     // (kept inside the picture, by its size)
     const left = Math.max(22, Math.min(box.width - 22, p.x - box.left)), top = Math.max(22, Math.min(box.height - 22, p.y - box.top));
     el.style.left = left.toFixed(0) + "px"; el.style.top = top.toFixed(0) + "px";

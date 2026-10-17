@@ -860,7 +860,7 @@ function drawNow() {
   }
   showObjects();
   if (hoverOn) showHover();   // (the hover glow, over the new drawing: ticket 135)
-  if (padName || enterGlow) showEnterGlow();   // (the picture ✨ would go into: ticket 145)
+  if (padName || enterGlow || document.querySelector("#ways .aimed")) showEnterGlow();   // (the picture ✨ would go into: ticket 145)
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
