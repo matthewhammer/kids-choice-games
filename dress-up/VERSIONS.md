@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.94 (2026-10-16)
+
+Everything in 0.0.93, plus climbing that looks like climbing, and ladders you can click.
+
+- **Hand over hand** (Matthew: the arms "should be taking turns grabbing upward, and pulling the body, but they just wave around"): climbing a ladder, one hand holds a rung and pulls while the body rises past it, the hand staying on its rung, then lets go and reaches up for the next while the other hand holds; both hold for a moment between. The legs step on the same rhythm. It keeps pace with the climb, by hand with the controller or on its own.
+- **Click a ladder and the friend climbs it** (Matthew: the walk to it was good, but the climb should be animated too): they walk to its foot and climb it, and through at the top where it leads somewhere (a tree's house, a dungeon's way up); a ladder that leads nowhere they climb and hold on at the top. Clicking a tree's house walks them to its ladder and up.
+- **Ladders that lead somewhere glow** when the friend comes near, as pictures and doors do, and X climbs them: the tree house's ladders outside, too.
+
 ## 0.0.93 (2026-10-16)
 
 Everything in 0.0.92, plus the still pictures as bitmaps, for the iPad.

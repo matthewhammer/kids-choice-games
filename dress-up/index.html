@@ -1091,7 +1091,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.93", released: "2026-10-16" };
+const VERSION = { number: "0.0.94", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -9742,6 +9742,11 @@ const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
 // and they hold still while the arrows do.
 let climb = null, climbLook = 0, climbAnywhere = true;
 const CLIMB_SPEED = 70, CLIMB_REACH = 140, CLIMB_HAND = 300, CLIMB_STROKE = 160;
+// (ticket 174) a climbing hand's height above its shoulder, as a share of the
+// arm's length: reaching up (HI) and pulled down near the shoulder (LO); and
+// the share of a cycle a hand spends holding a rung and pulling (the rest
+// it reaches up for the next)
+const CLIMB_HAND_HI = 0.92, CLIMB_HAND_LO = 0.25, CLIMB_PULL = 0.62;
 const climbPlace = BG => [BG.kind, BG.inside, BG.castleRoom, BG.tent].join(":");
 // (a [data-ladder] group, in the picture's own units, the friend's: through
 // the screen, as the scene may sit in a nested svg of its own; its depth is
@@ -9787,7 +9792,17 @@ function measureMarks() {
   const node = bgShown.node, P = pic.getScreenCTM();
   if (!node || !P) return;
   const Pinv = P.inverse(), ladders = [], pics = [];
-  for (const el of node.querySelectorAll("[data-ladder]")) { const L = ladderAt(el, Pinv); if (L) ladders.push(L); }
+  for (const el of node.querySelectorAll("[data-ladder]")) {
+    const L = ladderAt(el, Pinv);
+    if (!L) continue;
+    ladders.push(L);
+    // (ticket 173: a ladder that is a way somewhere glows, as pictures and doors do, and X climbs it)
+    if (!L.door) continue;
+    const r = el.getBoundingClientRect(), M = el.getScreenCTM();
+    if (!r.width || !r.height || !M) continue;
+    const a = new DOMPoint(r.x, r.y).matrixTransform(Pinv), b = new DOMPoint(r.x + r.width, r.y + r.height).matrixTransform(Pinv), bb = el.getBBox();
+    pics.push({ x0: Math.min(a.x, b.x), y0: Math.min(a.y, b.y), x1: Math.max(a.x, b.x), y1: Math.max(a.y, b.y), el, box: { x: bb.x, y: bb.y, width: bb.width, height: bb.height }, ladder: true });
+  }
   for (const d of node.querySelectorAll(".portal")) {
     const view = d.querySelector(":scope > svg, :scope > image");
     // (ticket 147: a door glows too, its box its doorway's own: the first shape in it, not its sign)
@@ -9881,10 +9896,12 @@ function showEnterGlow() {
 function enterPicture() {
   const p = enterAt;
   if (!p || !p.el.isConnected || entering) return;
+  if (p.ladder && climb && !climb.none) return;   // (on a ladder already: climbing it)
   if (climb && !climb.none) climb.through = true;   // (off the ladder, arriving: see draw)
   if (enterGlow) enterGlow.remove();
   enterGlow = null; enterAt = null;
-  enterScene(p.el);
+  if (p.ladder) climbLadder(p.el);   // (ticket 173)
+  else enterScene(p.el);
 }
 // (at the top of a ladder that is a doorway: through it, as a click would)
 function climbThrough() {
@@ -10032,9 +10049,33 @@ function moveNow() {
     // one; still while there is no ladder to climb, and holding on, still,
     // at its top (held: no more frames)
     if (!climb || climb.none) return treadNow();
-    const s = climb.manual ? Math.sin(2 * Math.PI * (climb.got || 0) / (CLIMB_STROKE * figureT.k)) : climb.done ? 0 : sin(1), up = side => -80 - (B.arms ?? 0) - lean(side);
-    return { ...both("Arm", sd => up(sd) + 30 * sd * s), ...both("Elbow", sd => 20 + 30 * Math.max(0, -sd * s)),
-             ...both("Leg", sd => 8 * Math.max(0, sd * s)), ...both("Knee", sd => 55 * Math.max(0, sd * s)), lift: 5 * Math.abs(s), held: climb.manual || climb.done };
+    // (ticket 174, Matthew: the arms "should be taking turns grabbing upward,
+    // and pulling the body, but they just wave around instead") Each hand in
+    // turn holds a rung while the body rises past it, its height above the
+    // shoulder falling from CLIMB_HAND_HI to CLIMB_HAND_LO of the arm's length
+    // exactly as far as the body rises, so the hand stays on the rung; then it
+    // lets go and reaches up for the next, in a quick arc a little out. The
+    // other hand is half a cycle behind: both hold for a moment between. A
+    // cycle is reckoned by how far they have climbed (climb.at), not by the
+    // clock, so the hands keep to the rungs at any speed, by hand or not, and
+    // stop with the climb. The legs step on the same cycle. Each arm's two
+    // bones from the shoulder to where its hand is, the elbow out (as posing
+    // by touch solves them: poseTo).
+    const J = poseJoints, al = J && J.armLen ? J.armLen : 120, half = al / 2, deg = r => r * 180 / Math.PI;
+    const rise = (climb.at || 0) / (figureT.k || 1), cyc = (CLIMB_HAND_HI - CLIMB_HAND_LO) * al / CLIMB_PULL, w = ((rise / cyc) % 1 + 1) % 1;
+    const hand = sd => {
+      const p = (w + (sd > 0 ? 0 : 0.5)) % 1;
+      let h, out;
+      if (p < CLIMB_PULL) { h = CLIMB_HAND_HI - (CLIMB_HAND_HI - CLIMB_HAND_LO) * p / CLIMB_PULL; out = 0.12; }
+      else { const q = (p - CLIMB_PULL) / (1 - CLIMB_PULL), e = q * q * (3 - 2 * q); h = CLIMB_HAND_LO + (CLIMB_HAND_HI - CLIMB_HAND_LO) * e; out = 0.12 + 0.22 * Math.sin(Math.PI * q); }
+      // (in the arm's own terms: x out from the body, y down; the hand above the shoulder)
+      const dx = out * al, dy = -h * al, d = Math.max(0.2 * half, Math.min(Math.hypot(dx, dy), 2 * half - 0.01));
+      const phi = deg(Math.atan2(dy, dx)), g = deg(Math.acos(d / (2 * half)));
+      return { up: phi + g, bend: 2 * g };
+    };
+    const hl = hand(1), hr = hand(-1), s = Math.sin(2 * Math.PI * w);
+    return { ArmL: hl.up - (B.arms ?? 0) - lean(1), ArmR: hr.up - (B.arms ?? 0) - lean(-1), ElbowL: hl.bend - (B.elbows ?? 0), ElbowR: hr.bend - (B.elbows ?? 0),
+             ...both("Leg", sd => 8 * Math.max(0, sd * s)), ...both("Knee", sd => 55 * Math.max(0, sd * s)), held: climb.manual || climb.done };
   }
   if (a === "climb") {
     // (ticket 137) seen from the side, the ladder in front of them: a hand
@@ -15000,6 +15041,9 @@ pic.addEventListener("pointercancel", letGo);
 // friend starts, at the size they had.
 let entering = false;
 pic.addEventListener("click", e => {
+  // (ticket 173: a ladder clicked is climbed, whether or not it is in a doorway)
+  const ladder = !entering && e.target.closest && e.target.closest("#bg [data-ladder]");
+  if (ladder) { climbLadder(ladder); return; }
   const door = !entering && e.target.closest && e.target.closest("#bg .portal");
   if (door) enterScene(door);
 });
@@ -15349,6 +15393,9 @@ function enterScene(door) {
   };
   // (ticket 147, Matthew: the spin only for pictures and windows, "it's the most magical looking";
   // through any other way the friend walks, or, at a ladder's top, steps)
+  // (ticket 173: a doorway reached by a ladder, a tree's house or a ladder's way up, is climbed to, unless the friend is through it already)
+  const lad = !view && !(climb && climb.through) ? ladderOf(door) : null;
+  if (lad) { climbLadder(lad); return; }
   tripStart(door, view ? "spin" : door.dataset.pit ? "fall" : "walk");   // (⏱️)
   if (view) flyInto(svgBox(view), arrive);
   else if (door.dataset.pit) walkInto(door, () => { arrive(); landFall = true; }, true, "fall");   // (ticket 162)
@@ -15393,6 +15440,26 @@ const FALL_TEETER_MS = 250, FALL_DROP_MS = 600;
 // for a handle yet); they step on into it, fading, and fade in where they
 // arrive. walk false: from a ladder's top, the step and the fade only.
 const WALK_IN_STEP = 30, WALK_IN_MS = 450, WALK_IN_MAX = 4000;
+// (ticket 173) The ladder that leads to a doorway: one inside it (a dungeon's
+// or a tree room's way up), or, for a tree's house, that tree's ladder
+// ([data-ladder][data-house], drawn apart from the house)
+function ladderOf(door) {
+  const inside = door.querySelector("[data-ladder]");
+  if (inside) return inside;
+  const house = door.dataset.house, node = bgShown.node;
+  return house && door.dataset.to === "treeroom" && node ? node.querySelector(`[data-ladder][data-house="${house}"]`) : null;
+}
+// (ticket 173, Matthew: clicking a ladder, the walk to it is good, "but we
+// should also animate the climb upward") To a ladder's foot on foot, as
+// through a doorway (walkInto), then up it as the 🧗 chip climbs (climb,
+// going on in draw), through at its top if it is a way somewhere
+// (climbThrough), else holding on up there.
+function climbLadder(el) {
+  if (entering || !el || !el.isConnected) return;
+  const P = pic.getScreenCTM(), L = P ? ladderAt(el, P.inverse()) : null;
+  if (!L) return;
+  walkInto(el, null, true, "climb", L);
+}
 // (ticket 162) Falling into a pit (cx, cy, rx, ry, its hole): facing us,
 // the arms flung up, a moment's teeter, then down into it, ever faster,
 // hidden below the hole's near rim (a clip that stays as the friend drops)
@@ -15414,14 +15481,15 @@ function fallDown([cx, cy, rx, ry], then) {
       .onfinish = then;
   }, FALL_TEETER_MS);
 }
-function walkInto(door, arrive, walk = true, how = "step") {
+function walkInto(door, arrive, walk = true, how = "step", lad = null) {
   const P = pic.getScreenCTM(), BG = state.background, B = state.body, F = sceneFrame;
   if (!P) return;
   entering = true;
   const inv = P.inverse(), shape = door.querySelector("path, rect") || door, r = shape.getBoundingClientRect();
   // (a pit: its hole's middle; any other doorway: its foot)
   const pit = how === "fall" && door.dataset.pit ? door.dataset.pit.split(" ").map(Number) : null;
-  const foot = pit ? { x: pit[0], y: pit[1] } : new DOMPoint(r.x + r.width / 2, r.y + r.height).matrixTransform(inv);
+  // (a ladder (ticket 173): its foot, where a climb starts)
+  const foot = lad ? { x: lad.x, y: lad.z + 2 } : pit ? { x: pit[0], y: pit[1] } : new DOMPoint(r.x + r.width / 2, r.y + r.height).matrixTransform(inv);
   const tx = clamp(foot.x, F.left, F.right), ty = clamp(foot.y - SCENE.ground, figYMin(F), F.bottom - F.ground);
   // (the way in: on toward the doorway from where they stop; deeper into the place if it is straight ahead)
   let ux = foot.x - tx, uy = foot.y - (SCENE.ground + ty);
@@ -15472,6 +15540,16 @@ function walkInto(door, arrive, walk = true, how = "step") {
       }
     }
     if (phase === "in" && pit) { fallDown(pit, () => done()); return; }
+    if (phase === "in" && lad) {
+      // (ticket 173: at the ladder's foot, facing it, up it as the 🧗 chip climbs)
+      for (const u of undo) u();
+      BG.figX = Math.round(lad.x); BG.figY = Math.round(lad.z - SCENE.ground + 2);
+      B.facing = "back"; B.anim = "climbup"; padWant = null;
+      climb = { place: climbPlace(BG), x: lad.x, z: lad.z + 2, top: lad.top, door: lad.door, hands: lad.hands, start: performance.now(), done: false, through: false };
+      entering = false; tripPhase = "climbing";
+      changed();
+      return;
+    }
     if (phase === "in") {
       if (!tIn) { tIn = t; tripPhase = "stepping in"; }
       const u = Math.min(1, (t - tIn) / WALK_IN_MS);
