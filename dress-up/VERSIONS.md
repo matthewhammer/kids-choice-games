@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.120 (2026-10-17)
+
+Everything in 0.0.119, with the tree house rooms' doors in their place.
+
+- **Fixed: in a tree house room, your friend standing in front of a side door is in front of it** (Matthew: the door was drawn over them, for a while now). The doors now stand at the back wall, as the hatch and the ladder up do.
+
 ## 0.0.119 (2026-10-17)
 
 Everything in 0.0.118, with World design's warnings pointing at the fix.
