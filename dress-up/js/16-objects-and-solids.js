@@ -264,7 +264,13 @@ function solidMove(x0, y0, x, y) {
   const g = SCENE.ground, hit = solidAt(x, g + y);
   if (!hit) return [x, y];
   const here = solidAt(x0, g + y0);
-  if (here && !here.wall) return [x, y];   // (inside a solid already: let them out)
+  // (inside a solid already: let them out, by any move that does not go deeper into it, nearer its middle. 0.0.152: any
+  // move at all, as it was, once the soles swung with the feet (0.0.150) let a walk through everything: the front foot
+  // swung into a cauldron, a rock, the couch, and the next step counted as getting out)
+  if (here && !here.wall) {
+    const cx = (here.x0 + here.x1) / 2, cz = (here.back + here.front) / 2;
+    if (Math.abs(x - cx) >= Math.abs(x0 - cx) - 0.01 && Math.abs(g + y - cz) >= Math.abs(g + y0 - cz) - 0.01) return [x, y];
+  }
   { const now = performance.now(), name = hit.wall ? "wall" : hit.name;
     if (name !== solidHit.name || now - solidHit.t > 120) solidHit = { name, n: solidHit.n + 1, t: now }; }
   if (!solidAt(x, g + y0)) return [x, y0];

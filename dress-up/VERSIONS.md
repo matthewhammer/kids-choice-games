@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.152 (2026-10-17)
+
+Everything in 0.0.151, with things solid again while you walk.
+
+- **No more walking through things**: since 0.0.150 your friend could walk right through a cauldron, a rock, a bush or the couch, because a foot swinging forward into it counted as already being inside it, and you may always walk out of something you are in. Now walking out has to take you away from it.
+
 ## 0.0.151 (2026-10-17)
 
 Everything in 0.0.150, with corners that take you round the corner.
