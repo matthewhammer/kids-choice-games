@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.148 (2026-10-17)
+
+Everything in 0.0.147, with collisions you can see.
+
+- **🟥 Your friend's own collision box**, at their feet, with the others.
+- **A bump glows**: when your friend walks into something, their box and the thing's box (or the wall) light up, half see-through, and fade back. How quickly they fade: ♿ Accessibility, ✨ glow fade.
+
 ## 0.0.147 (2026-10-17)
 
 Everything in 0.0.146, with trees and posts that stop you at their trunks.

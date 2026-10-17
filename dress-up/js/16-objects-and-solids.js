@@ -214,11 +214,15 @@ function solidAt(x, z) {
 // a move of the friend's feet from (x0, y0) to (x, y) (figX, figY): where
 // they end up, sliding along a wall or a solid they meet; inside one
 // already, any move that does not go deeper into it
+// (ticket 229) the last thing a move was stopped by (a solid's name, or "wall"), and when: ♿'s collision boxes glow it
+let solidHit = { name: null, n: 0, t: 0 };
 function solidMove(x0, y0, x, y) {
-  const g = SCENE.ground;
-  if (!solidAt(x, g + y)) return [x, y];
+  const g = SCENE.ground, hit = solidAt(x, g + y);
+  if (!hit) return [x, y];
   const here = solidAt(x0, g + y0);
   if (here && !here.wall) return [x, y];   // (inside a solid already: let them out)
+  { const now = performance.now(), name = hit.wall ? "wall" : hit.name;
+    if (name !== solidHit.name || now - solidHit.t > 120) solidHit = { name, n: solidHit.n + 1, t: now }; }
   if (!solidAt(x, g + y0)) return [x, y0];
   if (!solidAt(x0, g + y)) return [x0, y];
   // (a wall alone: the farthest across it lets them, at the new depth)

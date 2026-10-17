@@ -530,6 +530,7 @@ const TABS = [
     ["color", "arrowColor", "🎨 far arrows' colour", []],
     ["color", "pathColor", "🎨 path colour", []],
     ["color", "boxColor", "🎨 boxes' colour", []],
+    ["range", "glowFade", "✨ glow fade (ms)", 100, 3000, 800, 800],   // (ticket 229: a collision's glow, fading back in so long)
     ["range", "arrowSize", "↕️ arrow size", 50, 250, 100, 100],
     ["range", "gameFont", "🔤 text size", 60, 250, 100, 100],
   ]],
@@ -721,7 +722,7 @@ function el(tag, attrs = {}, kids = []) {
 // Iris color and eye whites only mean something once there is an iris.
 const SHOWN_WHEN = {
   // (ticket 217: the far arrows' brightness and colour, only while every arrow is shown)
-  "access.arrowDim": o => !!o.allArrows, "access.arrowColor": o => !!o.allArrows, "access.pathColor": o => !!o.showPath, "access.boxColor": o => !!o.showSolids,
+  "access.arrowDim": o => !!o.allArrows, "access.arrowColor": o => !!o.allArrows, "access.pathColor": o => !!o.showPath, "access.boxColor": o => !!o.showSolids, "access.glowFade": o => !!o.showSolids,
   "body.unpose": posed,
   "body.hugLift": b => b.pose === "hug",
   "face.irisColor": f => f.iris > 0,

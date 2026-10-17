@@ -365,12 +365,31 @@ function solidsHud() {
   const walls = W ? [-1, 1].map(sd => zs.map(z => sc(sd * (W.half(z) - m), z))) : [];
   const line = [sc(F.left, back), sc(F.right, back)];
   const sig = JSON.stringify([solids.map(o => pts(o.q) + pts(o.face)), walls.map(pts), pts(line)]);
-  if (sig === solidsShown && ov) return;
-  solidsShown = sig;
-  if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "solid-boxes"); layer.prepend(ov); }
-  ov.innerHTML = `<polyline class="back" points="${pts(line)}"/>` + walls.map(w => `<polyline class="wall" points="${pts(w)}"/>`).join("") +
-    solids.map(o => `<polygon class="face" points="${pts(o.face)}"/><polygon points="${pts(o.q)}"/><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("");
+  if (sig !== solidsShown || !ov) {
+    solidsShown = sig;
+    if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "solid-boxes"); layer.prepend(ov); }
+    ov.innerHTML = `<polyline class="back" points="${pts(line)}"/>` + walls.map(w => `<polyline class="wall" points="${pts(w)}"/>`).join("") +
+      solids.map(o => `<g data-solid="${xmlEsc(String(o.name))}"><polygon class="face" points="${pts(o.face)}"/><polygon points="${pts(o.q)}"/></g><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("") +
+      `<g class="you"><polygon/><text>friend</text></g>`;
+    solidsHitShown = -1;
+  }
+  // (ticket 229, Matthew: "let's also show the collision box of the player, and let's animate ... the event of a
+  // collision, by the two boxes glowing and then fading back to normal colors. Add fade rate") the friend's own box: to
+  // the game they are a point at their feet, kept out of each box by the margin, so a box that wide about their feet,
+  // as deep as a step; and on a collision (solidHit) it and the box it met (or the walls) glow and fade back, a CSS
+  // animation as long as ♿'s glow fade, begun again while they keep pushing
+  const Bg = state.background, fx = Bg.figX ?? 0, fz = g + (Bg.figY ?? 0), you = ov.querySelector(".you");
+  if (you) { const q = [[fx - m, fz - 6], [fx + m, fz - 6], [fx + m, fz + 6], [fx - m, fz + 6]].map(([x, z]) => sc(x, z));
+    you.firstChild.setAttribute("points", pts(q)); you.lastChild.setAttribute("x", (q[3][0] + 2).toFixed(1)); you.lastChild.setAttribute("y", (q[3][1] + 12).toFixed(1)); }
+  const A = state.access || DEFAULTS.access, fade = Math.max(100, A.glowFade ?? 800) + "ms";
+  if (ov.style.getPropertyValue("--glow-fade") !== fade) ov.style.setProperty("--glow-fade", fade);
+  if (solidHit.n !== solidsHitShown && solidHit.name && performance.now() - solidHit.t < 1000) {
+    solidsHitShown = solidHit.n;
+    const els = [you, ...(solidHit.name === "wall" ? ov.querySelectorAll(".wall") : ov.querySelectorAll(`[data-solid="${CSS.escape(xmlEsc(String(solidHit.name)))}"]`))];
+    for (const el of els) if (el) { el.classList.remove("hit"); void el.getBoundingClientRect(); el.classList.add("hit"); }
+  }
 }
+let solidsHitShown = -1;
 // (ticket 221, Matthew: "a new 'create bubbles' action for the player, where
 // they can blow bubbles out of their mouth of any style (up to three at once)
 // in any scene, or either hand. They can choose which of the three places they

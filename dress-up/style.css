@@ -501,6 +501,13 @@
 .solid-boxes polygon.face { fill: color-mix(in srgb, var(--box-color, #ef4444) 8%, transparent); stroke-width: 1.5; stroke-dasharray: 3 4; }
 .solid-boxes .wall { fill: none; stroke: #f59e0b; stroke-width: 3; stroke-dasharray: 8 5; }
 .solid-boxes .back { fill: none; stroke: #a855f7; stroke-width: 2; stroke-dasharray: 4 6; }
+/* (ticket 229) the friend's own box, and a collision's glow: the two boxes brighter and glowing, back in --glow-fade */
+.solid-boxes .you polygon { fill: color-mix(in srgb, var(--box-color, #ef4444) 30%, transparent); stroke: var(--box-color, #ef4444); stroke-width: 2; stroke-dasharray: none; }
+/* (Matthew: "when they glow, their interior temporarily becomes opaque, and then becomes transparent again", "maybe 50% opaque") */
+.solid-boxes .hit polygon, .solid-boxes polygon.hit { animation: solid-glow var(--glow-fade, 800ms) ease-out; }
+.solid-boxes polyline.hit { animation: wall-glow var(--glow-fade, 800ms) ease-out; }
+@keyframes solid-glow { 0% { fill: var(--box-color, #ef4444); fill-opacity: 0.5; stroke-width: 5; filter: drop-shadow(0 0 7px var(--box-color, #ef4444)); } }
+@keyframes wall-glow { 0% { stroke-width: 8; filter: drop-shadow(0 0 7px var(--box-color, #ef4444)); } }
 .solid-boxes text { font: 600 11px sans-serif; fill: #fff; paint-order: stroke; stroke: color-mix(in srgb, var(--box-color, #ef4444) 55%, #000); stroke-width: 3px; }
 /* (ticket 217) ♿ the words in the game: each text in the place scaled about its own middle; the arrows' words too */
 body.game-font #bg text { transform-box: fill-box; transform-origin: center; scale: var(--game-font, 1); }

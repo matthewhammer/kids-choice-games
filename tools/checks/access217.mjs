@@ -33,7 +33,7 @@ try {
     for (let i = 0; i < 5; i++) document.getElementById("surprise").click(); await new Promise(r => setTimeout(r, 300));
     const same = JSON.stringify(state.access) === before; state = clone(keep); changed(); await new Promise(r => setTimeout(r, 300));
     return JSON.stringify({ has: !!t, n: t ? t[2].length : 0, same, flipsFirst: !!t && t[2].slice(0, 3).every(c => c[0] === "flip") }); })()`));
-  ok("a ♿ Accessibility tab with its nine settings, its three toggles first", tab.has && tab.n === 9 && tab.flipsFirst, tab);
+  ok("a ♿ Accessibility tab with its ten settings, its three toggles first", tab.has && tab.n === 10 && tab.flipsFirst, tab);
   ok("Surprise me leaves it alone", tab.same, tab);
   // every arrow shown: off, none far shows; on, all, the far ones dim and coloured
   const all = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access); await clearing();
@@ -87,6 +87,17 @@ try {
     return JSON.stringify({ n, drawn, names, gone }); })()`));
   ok("🟥 the collision boxes: one drawn for each solid in the living room, named", sol.n > 0 && sol.drawn === sol.n && sol.names.length === sol.n, sol);
   ok("and gone when hidden", sol.gone, sol);
+  // (ticket 229) the friend's own box, and a collision: it and the box met glowing
+  const hit = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { showSolids: true });
+    state.world = clone(DEFAULTS.world); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: 0, figY: 90 }); changed(); await w(500); changed(); await frames(3);
+    const S = solidsHere(), couch = S.find(o => /couch/.test(o.name)) || S[0]; if (!couch) return JSON.stringify({ none: true });
+    const x = (couch.x0 + couch.x1) / 2, y = couch.front - SCENE.ground + 4; B.figX = x; B.figY = y; changed(); await frames(2);
+    const [mx, my] = solidMove(x, y, x, y - 30); changed(); await frames(3);
+    const ov = document.querySelector("#access-layer svg.solid-boxes"), you = ov && ov.querySelector(".you polygon");
+    const r = { youPts: !!(you && you.getAttribute("points")), stopped: my > y - 30, youHit: !!(ov && ov.querySelector(".you.hit")), boxHit: !!(ov && ov.querySelector('[data-solid].hit')), name: solidHit.name };
+    A.showSolids = false; changed(); return JSON.stringify(r); })()`));
+  ok("🟥 the friend's own box drawn, at their feet", !hit.none && hit.youPts, hit);
+  ok("walked into the couch: stopped, and both boxes glow", !hit.none && hit.stopped && hit.youHit && hit.boxHit, hit);
   // (0.0.139, Matthew's bug: the boxes shifted the arrows onto each other's places, and vanished with a new square's arrows)
   const keep = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { allArrows: true, arrowSize: 150, gameFont: 150 }); await clearing(); await w(300);
     const where = () => arrows().map(el => el.dataset.way + "@" + el.style.left + "," + el.style.top).join(" ");
