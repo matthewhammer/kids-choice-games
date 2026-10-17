@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.140 (2026-10-17)
+
+Everything in 0.0.139, with the deep sea.
+
+- **🪸 The deep sea**, a new place: deep blue water with light coming down in shimmering shafts, a sandy bottom, kelp swaying, rocks, a little school of fish darting about, and bubbles rising from a crack in the sand. Put it in the world from 🗺️ World design, next to open water or more deep sea.
+- **🐚 Sea things to put anywhere**: coral, shells (a scallop, a conch, a clam), a ⭐ starfish that crawls, a 🐟 fish that swims round and round and blows bubbles, a 💰 treasure chest, an ⚓ anchor with a broken chain, and sea plants: kelp and sea grass that sway, a sea fan and sea lettuce. Each in the colour and size you like, facing left or right.
+
 ## 0.0.139 (2026-10-17)
 
 Everything in 0.0.138, with ♿ Accessibility put right.
