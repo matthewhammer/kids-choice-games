@@ -1,58 +1,30 @@
 [
  {
-  "name": "music-full-1600x1000",
-  "w": 1600,
-  "h": 1000,
-  "js": "tab = TABS.findIndex(t => t[1] === \"music\"); showTab(); setMusicBig(true);",
-  "wait": 1500
- },
- {
-  "name": "music-full-1180x820",
-  "w": 1180,
-  "h": 820,
-  "js": "tab = TABS.findIndex(t => t[1] === \"music\"); showTab(); setMusicBig(true);",
-  "wait": 1500
- },
- {
-  "name": "music-full-390x844",
-  "w": 390,
-  "h": 844,
-  "js": "tab = TABS.findIndex(t => t[1] === \"music\"); showTab(); setMusicBig(true);",
-  "wait": 1500
- },
- {
-  "name": "world-1600x1000",
-  "w": 1600,
-  "h": 1000,
-  "js": "setMusicBig(false); tab = TABS.findIndex(t => t[1] === \"world\"); showTab();",
-  "wait": 1500
- },
- {
-  "name": "world-2000x1200",
+  "name": "world-2000x1200-warnings",
   "w": 2000,
   "h": 1200,
-  "js": "setMusicBig(false); tab = TABS.findIndex(t => t[1] === \"world\"); showTab();",
-  "wait": 1500
+  "wait": 1500,
+  "js": "setMusicBig(false); setWorldBig(false); state.world.cells[\"1,1\"].ways = [\"E\", \"S\", \"N\"]; worldEnter(\"2,2\"); worldWarnShow(true); tab = TABS.findIndex(t => t[1] === \"world\"); showTab();"
  },
  {
-  "name": "world-390x844",
-  "w": 390,
-  "h": 844,
-  "js": "setMusicBig(false); tab = TABS.findIndex(t => t[1] === \"world\"); showTab();",
-  "wait": 1500
- },
- {
-  "name": "world-2000x1200-dark",
-  "w": 2000,
-  "h": 1200,
-  "js": "setMusicBig(false); themeSet(\"dark\"); tab = TABS.findIndex(t => t[1] === \"world\"); showTab();",
-  "wait": 1500
- },
- {
-  "name": "music-full-1600x1000-dark",
+  "name": "world-1600x1000-unplaced",
   "w": 1600,
   "h": 1000,
-  "js": "tab = TABS.findIndex(t => t[1] === \"music\"); showTab(); setMusicBig(true);",
+  "wait": 1500,
+  "js": "setMusicBig(false); setWorldBig(false); delete state.world.cells[\"4,3\"]; state.background.kind = \"castle\"; tab = TABS.findIndex(t => t[1] === \"world\"); showTab();"
+ },
+ {
+  "name": "world-full-1600x1000-dark",
+  "w": 1600,
+  "h": 1000,
+  "js": "setMusicBig(false); setWorldBig(false); tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); setWorldBig(true);",
   "wait": 1500
+ },
+ {
+  "name": "world-full-1600x1000-unplaced",
+  "w": 1600,
+  "h": 1000,
+  "wait": 1500,
+  "js": "setMusicBig(false); setWorldBig(false); themeSet(\"light\"); delete state.world.cells[\"4,3\"]; state.background.kind = \"castle\"; tab = TABS.findIndex(t => t[1] === \"world\"); showTab(); setWorldBig(true);"
  }
 ]
