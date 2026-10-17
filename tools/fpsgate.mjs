@@ -9,6 +9,12 @@
 // Each case runs RUNS times (3) on one page load, after a warm-up; its fps is
 // the frames the page drew while moving over the time, and the case passes
 // when the median run is at least MIN (55). Exit status 1 if any case fails.
+// (2026-10-17, Matthew: keep 55, but retry a failed frame-rate case before
+// calling it a failure) A case below MIN on frame rate alone runs RUNS more
+// times, RETRIES times at most (1): a GitHub computer is shared, and one
+// case flickered between 53 and 60 fps from one release to the next with no
+// change to its drawing; a slow drawing is slow again, a hiccup is not. Each
+// failure says why: the frame rate, the still pictures, the drag.
 //   node fpsgate.mjs <devtools port> <url> [scene,...]
 //   env: MIN=55 RUNS=3 W=1280 H=800 DPR=1 OUT=<results.json> TWEAK=<js run after the scene is set up>
 //        MUSIC=1 (the music playing, in a muted browser; else muted in the game)
@@ -26,7 +32,7 @@
 // nothing else heavy alongside it: the numbers are only as steady as the laptop.
 import { writeFileSync } from "node:fs";
 const [dport, url, only] = process.argv.slice(2);
-const MIN = +(process.env.MIN || 55), RUNS = +(process.env.RUNS || 3), BLACK = !!process.env.BLACK, MINDRAWS = +(process.env.MINDRAWS || 28);
+const MIN = +(process.env.MIN || 55), RUNS = +(process.env.RUNS || 3), BLACK = !!process.env.BLACK, MINDRAWS = +(process.env.MINDRAWS || 28), RETRIES = +(process.env.RETRIES ?? 1);
 // (2026-10-16, measured: 🧪 this computer's speed, Dress Up 0.0.83, the default friend in the empty
 // room: the black laptop, Firefox 136, a drawing 1.0 ms; Matthew's laptop, Firefox 157, 1.0 ms; this
 // headless Chrome on Matthew's laptop, 0.6 ms. So the black laptop's main thread is about 1.7 times
@@ -141,15 +147,25 @@ for (const sc of SCENES) {
   await walk();   // (a warm-up of each, not counted)
   await drag();
   for (const [kind, fn] of [["walk", walk], ["drag", drag]]) {
-    const runs = [];
-    for (let i = 0; i < RUNS; i++) runs.push(await fn());
-    const fps = median(runs), took = kind === "drag" ? runs.every(r => r.held) : runs.every(r => r.anim !== undefined);
-    const dps = runs.map(r => r.dps).sort((a, b) => a - b)[Math.floor(runs.length / 2)];
-    const pics = runs.map(r => r.pics), stillsOk = !sc.stills || pics.every(v => v >= 80);   // (ticket 164: the pictures on for 80% of the drawings or more)
-    const pass = fps >= MIN && took && (!BLACK || dps >= MINDRAWS) && stillsOk;
-    results.push({ scene: sc.id, label: sc.label, kind, fps, dps, pass, runs });
+    let runs, fps, took, dps, pics, stillsOk, tries = 0;
+    const before = [];
+    for (;;) {
+      runs = [];
+      for (let i = 0; i < RUNS; i++) runs.push(await fn());
+      fps = median(runs); took = kind === "drag" ? runs.every(r => r.held) : runs.every(r => r.anim !== undefined);
+      dps = runs.map(r => r.dps).sort((a, b) => a - b)[Math.floor(runs.length / 2)];
+      pics = runs.map(r => r.pics); stillsOk = !sc.stills || pics.every(v => v >= 80);   // (ticket 164: the pictures on for 80% of the drawings or more)
+      const otherwise = took && (!BLACK || dps >= MINDRAWS) && stillsOk;
+      if (fps >= MIN || !otherwise || tries >= RETRIES) break;
+      console.log(`again ${(sc.label + ", " + kind).padEnd(40)} ${String(fps).padStart(5)} fps (runs ${runs.map(r => r.fps).join(", ")}; p95 gap ${runs.map(r => r.p95).join("/")} ms): below ${MIN}, once more`);
+      before.push(runs.map(r => r.fps)); tries++;
+    }
+    const why = [fps < MIN ? "frame rate" : null, !took ? "drag" : null, BLACK && dps < MINDRAWS ? "friend drawn too seldom" : null, !stillsOk ? "still pictures" : null].filter(Boolean);
+    const pass = !why.length;
+    results.push({ scene: sc.id, label: sc.label, kind, fps, dps, pass, why, runs, before });
     console.log(`${pass ? "pass" : "FAIL"}  ${(sc.label + ", " + kind).padEnd(40)} ${String(fps).padStart(5)} fps (runs ${runs.map(r => r.fps).join(", ")}; friend drawn ${dps}/s; worst gap ${runs.map(r => r.worst).join("/")} ms; p95 gap ${runs.map(r => r.p95).join("/")} ms; draw ${runs.map(r => r.drawMs).join("/")} ms)` +
-      (kind === "drag" && !took ? "  (the drag never took hold of the friend)" : "") + (sc.stills ? `  (still pictures in ${pics.join("/")}% of drawings${stillsOk ? "" : ": TOO FEW"})` : ""));
+      (kind === "drag" && !took ? "  (the drag never took hold of the friend)" : "") + (sc.stills ? `  (still pictures in ${pics.join("/")}% of drawings${stillsOk ? "" : ": TOO FEW"})` : "") +
+      (before.length ? `  (the first time: runs ${before.map(b => b.join(", ")).join("; ")})` : ""));
   }
   // (ticket 164: whether the place ended up held still, a slow or choppy computer)
   const stillNow = await ev(`typeof sceneryStill === "function" ? (sceneryStill() ? "held still (" + (slowFlag ? "slow" : "") + (choppy ? "choppy" : "") + ")" : "moving") : "?"`);
@@ -159,6 +175,8 @@ for (const sc of SCENES) {
   await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`);
 }
 const failed = results.filter(r => !r.pass);
-console.log(failed.length ? `${failed.length} of ${results.length} below ${MIN} fps: fix before releasing.` : `all ${results.length} at ${MIN} fps or more.`);
+const slow = failed.filter(r => r.why.includes("frame rate")).length, other = failed.length - slow, retried = results.filter(r => r.before.length).length;
+console.log(failed.length ? `${failed.length} of ${results.length} failed: ${slow} below ${MIN} fps` + (other ? `, ${other} for another reason (${[...new Set(failed.flatMap(r => r.why.filter(w => w !== "frame rate")))].join(", ")})` : "") + `: fix before releasing.`
+                          : `all ${results.length} at ${MIN} fps or more` + (retried ? ` (${retried} after once more)` : "") + ".");
 if (process.env.OUT) writeFileSync(process.env.OUT, JSON.stringify({ url, min: MIN, runs: RUNS, cpu: +(process.env.CPU || 1), size: [+(process.env.W || 1280), +(process.env.H || 800), +(process.env.DPR || 1)], when: new Date().toISOString(), results }, null, 1));
 process.exit(failed.length ? 1 : 0);

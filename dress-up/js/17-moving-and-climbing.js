@@ -746,7 +746,13 @@ function stillPart(lo, hi) {
     // gate's still-pictures case, 0% of drawings with them in 0.0.95 and
     // 0.0.96, 99% before. The kept Image's decode is the one that counts.)
     const own = img.decode ? Promise.race([img.decode().catch(() => {}), new Promise(r => setTimeout(r, 250))]) : null;
-    Promise.all([loaded, own, pre.decode().catch(() => {})])
+    // (0.0.116, Matthew: find why the still pictures never switch on in
+    // Chrome. stills164 on GitHub: both decodes finish, but Chrome never
+    // fires the <image>'s load, not in 3 s, so no part was ever ready: the
+    // gate's 0% since 0.0.95. Its load waits at most a quarter second too;
+    // the kept Image's decode, which does finish, still counts)
+    const loadedOrNot = Promise.race([loaded, new Promise(r => setTimeout(r, 250))]);
+    Promise.all([loadedOrNot, own, pre.decode().catch(() => {})])
       .then(() => { if (gen === stillPic.gen && stillPic.parts.get(key) === p) { p.pre = pre; p.ready = true; } });
     node.append(img);   // (hidden, at the scene's end, until wanted)
     Object.assign(p, { img, url });
