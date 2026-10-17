@@ -32,7 +32,7 @@ async function run(tabIndex) {
 }
 const count = await (async () => { const p = await (await fetch(`http://127.0.0.1:${dport}/json/new?about:blank`, { method: "PUT" })).json(); await fetch(`http://127.0.0.1:${dport}/json/close/${p.id}`); return 0; })();
 // (the number of tabs, read from a page)
-let tabs = 14;
+let tabs = 18;
 try { const r = await run(0); console.log(`Chrome, the duck pond, the default friend swimming, by the tab open (fresh page each):`); console.log(`  ${String(r.fps).padStart(5)} fps (${r.late}% late)  ${r.name}`); } catch (e) { console.log("stopped", String(e).slice(0, 200)); }
 for (let i = 1; i < tabs; i++) {
   try { const r = await run(i); if (!r.name || String(r.name).startsWith("ERROR")) break; console.log(`  ${String(r.fps).padStart(5)} fps (${r.late}% late)  ${r.name}`); }
