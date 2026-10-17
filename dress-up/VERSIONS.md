@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.128 (2026-10-17)
+
+Everything in 0.0.127, plus what's new, right in the game.
+
+- **📰 What's new, version by version** (for M), at the bottom of ⚙️ Advanced: every version of the game, newest first, with what changed in it. The one you are playing is marked "this one". It has a scroll bar of its own.
+
 ## 0.0.127 (2026-10-17)
 
 Everything in 0.0.126, with busy places kept smooth.
