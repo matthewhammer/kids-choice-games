@@ -980,14 +980,14 @@ async function speedCheck(report) {
     changed(); report("🧪 4 of 14: swimming in the duck pond…"); await wait(1200);
     const pond = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
     report("🧪 5 of 14: the duck pond held still…");
-    slowFlag = true; PERF.slowMoving = false; SPEED_TEST.noPic = true; changed(); await wait(800);   // (held still, not yet a picture: 0.0.86's pass)
+    SPEED_TEST.still = true; PERF.slowMoving = false; SPEED_TEST.noPic = true; changed(); await wait(800);   // (held still, not yet a picture: 0.0.86's pass)
     const pondStill = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
-    slowFlag = keep.slowFlag; PERF.slowMoving = true; SPEED_TEST.noPic = false;
+    SPEED_TEST.still = false; PERF.slowMoving = true; SPEED_TEST.noPic = false;
     // (0.0.86, Matthew: which part of the pond costs the frames; each pass
     // swims as the first, moving, with one part taken away: SPEED_TEST)
     const without = async (n, what, on, off) => {
       report(`🧪 ${n} of 14: the duck pond ${what}…`); on(); changed(); await wait(800);
-      for (let i = 0; i < 40 && stillPicWanted() && !stillPic.ready; i++) await wait(100);   // (a slow computer's picture, made)
+      for (let i = 0; i < 40 && stillPicWanted() && !(stillPic.parts.size && [...stillPic.parts.values()].every(q => q.ready)); i++) await wait(100);   // (a slow computer's pictures, made)
       stillPic.draws = stillPic.drawsOn = 0;
       const r = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
       if (stillPic.draws) r.pic = Math.round(100 * stillPic.drawsOn / stillPic.draws);   // (the share of drawings with the still picture)
@@ -1000,10 +1000,10 @@ async function speedCheck(report) {
     // (0.0.87: as held still, but the place a still picture while the friend
     // moves, as a slow computer now draws it (stillPic); 0.0.86's pass 9 made
     // the whole place one picture, the friend in front of everything)
-    const pondPicture = await without(9, "with its scenery a still picture", () => { slowFlag = true; PERF.slowMoving = false; }, () => { slowFlag = keep.slowFlag; PERF.slowMoving = true; });
+    const pondPicture = await without(9, "with its scenery a still picture", () => { SPEED_TEST.still = true; PERF.slowMoving = false; }, () => { SPEED_TEST.still = false; PERF.slowMoving = true; });
     // (0.0.87, for the iPad, where 9 helped nothing: the picture as a bitmap;
     // and both of the friend's water parts away at once)
-    const pondBitmap = await without(10, "with its scenery a still bitmap", () => { slowFlag = true; PERF.slowMoving = false; SPEED_TEST.bitmap = true; }, () => { slowFlag = keep.slowFlag; PERF.slowMoving = true; SPEED_TEST.bitmap = false; });
+    const pondBitmap = await without(10, "with its scenery a still bitmap", () => { SPEED_TEST.still = true; PERF.slowMoving = false; SPEED_TEST.bitmap = true; }, () => { SPEED_TEST.still = false; PERF.slowMoving = true; SPEED_TEST.bitmap = false; });
     const pondNoWater = await without(11, "without the rings and the part under water", () => { SPEED_TEST.noRings = SPEED_TEST.noUnder = true; }, () => { SPEED_TEST.noRings = SPEED_TEST.noUnder = false; });
     report("🧪 12 of 14: the duck pond with its music…");
     state.music.mute = false; changed(); await wait(1200);
@@ -1025,7 +1025,7 @@ async function speedCheck(report) {
     report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · without its scenery: ${p(pondNoScene)} · without the part under water: ${p(pondNoUnder)} · without the rings: ${p(pondNoRings)} · scenery a still picture: ${p(pondPicture)} · a still bitmap: ${p(pondBitmap)} · without the rings and the part under water: ${p(pondNoWater)} · with music: ${p(pondMusic)} · the empty room after the pond: ${p(roomAfter)}, with its music: ${p(roomAfterMusic)} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
   } finally {
     state = JSON.parse(saved);
-    Object.assign(SPEED_TEST, { holder: null, noUnder: false, noRings: false, noPic: false, bitmap: false });
+    Object.assign(SPEED_TEST, { holder: null, noUnder: false, noRings: false, noPic: false, bitmap: false, still: false });
     slowFlag = keep.slowFlag; choppy = keep.choppy; PERF.slowMoving = keep.slowMoving;
     moveSuspend = false; moveFrames = moveLate = 0;
     perfBusy = false;
@@ -1091,7 +1091,7 @@ function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(st
 // clicks it. Then the page loads the new version, at an address of its own
 // so no cache hands back the old one; the friend, the place and every other
 // setting are kept (saved as they always are, and read back on loading).
-const VERSION = { number: "0.0.91", released: "2026-10-16" };
+const VERSION = { number: "0.0.92", released: "2026-10-16" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -10184,27 +10184,33 @@ try { slowFlag = localStorage.getItem("dress-up-slow") === "1"; } catch (e) { /*
 // draws the friend in 1 ms, as fast as Matthew's laptop, yet the duck pond
 // was choppy there. Over each 120 frames of movement (moved(), the
 // controller's steps and a drag's frames; a gap over 250 ms is a pause,
-// not a frame), more than 10% later than 25 ms makes this computer choppy (a fast one has 0 to 3%),
-// and it stays so (kept in "dress-up-choppy"): with the places held still
-// its frames come back, and it would only flip back and forth.
-let choppy = false, moveFrameLast = 0, moveFrames = 0, moveLate = 0, moveSuspend = false;
-try { choppy = localStorage.getItem("dress-up-choppy") === "1"; } catch (e) { /* (measured afresh) */ }
+// not a frame), more than CHOPPY_LATE of them later than 25 ms, in
+// CHOPPY_WINDOWS such windows in a row, makes this computer choppy (the
+// black laptop's duck pond: 62 to 100% late; a fast one has 0 to 9%), and
+// it stays so for the visit: with the places held still its frames come
+// back, and it would only flip back and forth. Not across visits (0.0.92,
+// ticket 172): kept in the browser, one bad moment held Matthew's laptop
+// still on every visit after (its 🧪 on 0.0.91: 57 to 61 frames a second
+// in every pass, yet found choppy); each visit measures afresh. A trip
+// through a doorway does not count: its arrival's frame is long by nature.
+const CHOPPY_LATE = 0.25, CHOPPY_WINDOWS = 2;
+let choppy = false, moveFrameLast = 0, moveFrames = 0, moveLate = 0, moveSuspend = false, choppyRun = 0;
+try { localStorage.removeItem("dress-up-choppy"); } catch (e) { /* (nothing kept) */ }
 function noteMoveFrame(t) {
-  if (moveSuspend) return;   // (🧪 the speed check)
+  if (moveSuspend || entering) return;   // (🧪 the speed check; a trip)
   const g = t - moveFrameLast;
   moveFrameLast = t;
   if (g <= 0 || g > 250) return;
   moveFrames++;
   if (g > 25) moveLate++;
   if (moveFrames < 120) return;
-  if (!choppy && moveLate > 0.1 * moveFrames) {
-    choppy = true;
-    try { localStorage.setItem("dress-up-choppy", "1"); } catch (e) { /* (for this visit) */ }
-    setTimeout(changed, 0);
-  }
+  choppyRun = moveLate > CHOPPY_LATE * moveFrames ? choppyRun + 1 : 0;
+  if (!choppy && choppyRun >= CHOPPY_WINDOWS) { choppy = true; setTimeout(changed, 0); }
   moveFrames = moveLate = 0;
 }
-const sceneryStill = () => (slowFlag || choppy) && !PERF.slowMoving;
+// (SPEED_TEST.still: 🧪's passes held still; slowFlag would not do, as draw()
+// takes it back after one drawing on a computer that draws fast: 0.0.92)
+const sceneryStill = () => (SPEED_TEST.still || slowFlag || choppy) && !PERF.slowMoving;
 // (ticket 164, 0.0.86) 🧪's test passes, each taking one part of a place
 // away while the friend swims, to find what costs the black laptop its
 // frames: holder, a group drawn instead of the place's scenery (empty, or
@@ -10212,7 +10218,7 @@ const sceneryStill = () => (slowFlag || choppy) && !PERF.slowMoving;
 // noUnder, no faint copy of the friend under the water; noRings, no rings;
 // (0.0.87) noPic, no still picture (below); bitmap, the still picture as a
 // bitmap. Only the speed check sets them, and it puts them back.
-const SPEED_TEST = { holder: null, noUnder: false, noRings: false, noPic: false, bitmap: false };
+const SPEED_TEST = { holder: null, noUnder: false, noRings: false, noPic: false, bitmap: false, still: false };
 // (ticket 164, 0.0.87) On a slow computer, while the friend moves, the
 // place is drawn as still pictures. The black laptop's 🧪 (0.0.86) swam the
 // duck pond at 30 frames a second as it is, and at 59 with its scenery one

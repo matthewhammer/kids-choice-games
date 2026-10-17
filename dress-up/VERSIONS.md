@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.92 (2026-10-16)
+
+Everything in 0.0.91, plus a fast computer no longer stays "choppy".
+
+- **"Choppy" is measured afresh on every visit** (Matthew's laptop, 🧪 on 0.0.91: 57 to 61 frames a second in every pass, yet marked choppy): the mark was kept in the browser, so one bad moment held every place still on every visit after, and made the still pictures of 0.0.87 build on every arrival. Now a computer is choppy only for the visit it was measured in, and only when its frames come late (more than a quarter of them) for two stretches of 120 frames in a row while the friend moves; a trip through a doorway does not count (its arrival is a long frame by nature). The black laptop is found choppy again within seconds of moving in a busy place.
+- **🧪's held-still passes really hold still now**: passes 5 (held still), 9 (a still picture) and 10 (a still bitmap) marked the computer slow for their run, but on a computer that draws fast (the black laptop, Matthew's) the game took the mark back after one drawing, so those passes measured the place moving (the black laptop's pond on 0.0.86: 30 moving, 31 "held still"). They hold it still with a switch of their own now, and pass 9 and 10 say how many drawings had the pictures. And no 4-second wait in each pass.
+
 ## 0.0.91 (2026-10-16)
 
 Everything in 0.0.90, plus ⏱️ timing a trip, to find where it pauses.
