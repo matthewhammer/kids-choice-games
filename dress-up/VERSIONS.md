@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.99 (2026-10-17)
+
+Everything in 0.0.98, plus the world, on its grid.
+
+- **🗺️ World design shows the world** (Matthew): today's places laid out on a grid of squares, the forest clearing in the middle, joined to the squares beside them through the ways out on their shared sides (the little brown marks on each square's edges), with forest crossings between. Tap a square to go there; a forest crossing changed there (its paths, its floor, its things) stays changed in its square. Under the grid, anything to put right (a way out to an empty square, or to a place with no way back, or a place you can't get to), and the places inside others (the living room, the castle's rooms, the witch's hut...), which are off the grid.
+
 ## 0.0.98 (2026-10-17)
 
 Everything in 0.0.97, plus a forest crossing to fill with things, a quieter way out toward us, and the start of a world to design.
