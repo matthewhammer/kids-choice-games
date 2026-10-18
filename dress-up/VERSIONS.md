@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.176 (2026-10-17)
+
+Everything in 0.0.175, with a map on each tree house room's sign.
+
+- **Where am I in the tree?**: the sign in each tree house room, under its animal and number, now shows a small map of the whole tree house: the trunk, the houses, the rope bridges and the ladders, all in a few dark colors, with each house's number on it and a bright white circle round the house you are in. It follows the tree outside: the number of houses, bridges and ladders, the houses' sizes and animals.
+- The pictures on the room's walls keep out from behind the sign.
+
 ## 0.0.175 (2026-10-17)
 
 Everything in 0.0.174, with trapdoors and pits in three shapes.

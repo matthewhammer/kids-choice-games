@@ -454,7 +454,9 @@ function treeBusyMeasure() {
   // from one side wall to the other, and the trunk's reaches out along its limbs)
   for (const o of bgShown.objs) {
     const ladder = o.name === "hatch" || o.name === "ladder up";
-    if (ladder || o.name === "side doors" || STANDING.has(objBase(o.name)))
+    // (ticket 244: the house's sign, hanging in front of the wall, as a whole: its map made it tall)
+    if (o.name === "house sign") add(o.node, TREE_PIC_CLEAR);
+    else if (ladder || o.name === "side doors" || STANDING.has(objBase(o.name)))
       for (const sh of o.node.querySelectorAll("rect, path, polygon, polyline, line, ellipse, circle, use, image, text")) add(sh, ladder ? TREE_PIC_LADDER : TREE_PIC_CLEAR);
   }
   const win = bgShown.node.querySelector('.portal[data-to="treehouse"][clip-path]');
@@ -730,12 +732,18 @@ function treeroomScene(c) {
   // which house this is: a sign hanging from the rafters
   // (drawn after the room's objects, so it is in front of everything, an object at
   // Infinity, as the dark and the sign below are: the friend is always under it)
-  s += SEP + obj("house sign", Infinity, part("room-sign", [c.F, inside, houseEmoji(o, inside)], () => {
-    const sx = x1 - W * 0.14, sy = y0 + H * 0.12;
+  // (ticket 244) under its name, a map of the whole tree house, this house ringed in white (treeMapSvg): as wide as the
+  // room's corner leaves room for, the map as wide as the sign
+  const mapKey = [o.houses, o.bridges, o.ladders, o.treeHouseSize, ...treeHouses(o, Math.max(1, Math.min(6, o.houses ?? 4)), 1).map(h => [h.animal, h.look.cols])];
+  s += SEP + obj("house sign", Infinity, part("room-sign", [c.F, inside, houseEmoji(o, inside), mapKey], () => {
+    const sx = x1 - W * 0.14, sy = y0 + H * 0.12, hw = Math.max(46 * k, Math.min(76 * k, W * 0.14 - 4 * k));
+    const [bx, by, bw, bh] = TREE_MAP_BOX, m = (2 * hw - 14 * k) / bw, my = sy + 38 * k, mh = bh * m;
     // (hanging still on its ropes: no wind indoors)
-    return (`<path d="M${P(sx - 30 * k, sy - 60 * k)} L${P(sx - 30 * k, sy)} M${P(sx + 30 * k, sy - 60 * k)} L${P(sx + 30 * k, sy)}" stroke="#d8c49a" stroke-width="${f1(2 * k)}"/>` +
-           `<rect x="${f1(sx - 46 * k)}" y="${f1(sy - 4 * k)}" width="${f1(92 * k)}" height="${f1(40 * k)}" rx="${f1(5 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2.5 * k)}"/>` +
-           `<text x="${f1(sx)}" y="${f1(sy + 25 * k)}" text-anchor="middle" font-size="${f1(24 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${houseEmoji(o, inside)} ${inside}</text>`);
+    return (`<path d="M${P(sx - (hw - 16 * k), sy - 60 * k)} L${P(sx - (hw - 16 * k), sy)} M${P(sx + hw - 16 * k, sy - 60 * k)} L${P(sx + hw - 16 * k, sy)}" stroke="#d8c49a" stroke-width="${f1(2 * k)}"/>` +
+           `<rect x="${f1(sx - hw)}" y="${f1(sy - 4 * k)}" width="${f1(2 * hw)}" height="${f1(49 * k + mh)}" rx="${f1(5 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2.5 * k)}"/>` +
+           `<text x="${f1(sx)}" y="${f1(sy + 25 * k)}" text-anchor="middle" font-size="${f1(24 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${houseEmoji(o, inside)} ${inside}</text>` +
+           `<rect x="${f1(sx - hw + 7 * k)}" y="${f1(my)}" width="${f1(2 * hw - 14 * k)}" height="${f1(mh)}" rx="${f1(3 * k)}" fill="#c99d63" stroke="#5e3d22" stroke-width="${f1(1.5 * k)}"/>` +
+           `<g class="tree-map" ${tf(sx - hw + 7 * k - bx * m, my - by * m, m)}>${treeMapSvg(o, inside)}</g>`);
   }));
   // dim in here: darker toward the corners
   // (over everything, the friend too: in front, at Infinity)

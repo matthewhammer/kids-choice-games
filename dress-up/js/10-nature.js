@@ -112,14 +112,15 @@ const rockTop = (x, y, rad, seed) => { const r = seeded(seed), w = 1.2 + 0.2 * r
 // no house below it
 const LADDER_TO = [4, 5, 0, 1, -1, -1];
 // a tree house's cabin (its walls the color of its <use>) and an animal's eye
-const CABIN_DEFS = `<g id="bg-cabin">` +
-      `<rect x="-82" y="0" width="164" height="14" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
+// (the cabin's drawing by itself, too: the room sign's map draws it, ticket 244)
+const CABIN_SVG = `<rect x="-82" y="0" width="164" height="14" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
       [-80, -66, 66, 80].map(x => `<line x1="${x}" y1="0" x2="${x}" y2="-28" stroke="#8b5e34" stroke-width="4"/>`).join("") +
       `<path d="M-82 -28 H-52 M52 -28 H82" stroke="#8b5e34" stroke-width="4"/>` +
       `<rect x="-52" y="-100" width="104" height="100" fill="currentColor"/>` +
       [-88, -76, -64, -52, -40, -28, -16].map(y => `<line x1="-52" y1="${y}" x2="52" y2="${y}" stroke="#00000030" stroke-width="1.5"/>`).join("") +
       [-1, 1].map(sd => `<rect x="${sd * 34 - 11}" y="-78" width="22" height="24" fill="#bfe3f5" stroke="#ffffff" stroke-width="3"/>`).join("") +
-      `<path d="M-15 0 V-56 Q0 -72 15 -56 V0 Z" fill="#7a4b28" stroke="#4a2e1a" stroke-width="2"/><circle cx="9" cy="-28" r="2.5" fill="#f2c12e"/></g>` +
+      `<path d="M-15 0 V-56 Q0 -72 15 -56 V0 Z" fill="#7a4b28" stroke="#4a2e1a" stroke-width="2"/><circle cx="9" cy="-28" r="2.5" fill="#f2c12e"/>`;
+const CABIN_DEFS = `<g id="bg-cabin">${CABIN_SVG}</g>` +
       `<g id="bg-eye"><circle cx="0" cy="0" r="9" fill="#ffffff" stroke="#00000055" stroke-width="1.5"/><circle cx="1" cy="1" r="5" fill="#1f1a17"/><circle cx="-1.5" cy="-1.5" r="1.8" fill="#ffffff"/></g>`;
 // the room inside each tree house
 const HOUSE_ROOMS = ["bunks", "kitchen", "books", "lookout", "art", "music"];
@@ -161,19 +162,10 @@ function treeInner(c) {
   s += SEP + part("tree-branches", [], () => TREE_TIPS.map(([sx, sy, tx, ty, fx, fy]) =>
     `<path d="M${sx} ${sy} Q${f1((sx + tx) / 2)} ${f1(sy - 6)} ${tx} ${ty}" fill="none" stroke="#6e4a2c" stroke-width="13" stroke-linecap="round"/>` +
     `<path d="M${f1((sx + 2 * tx) / 3)} ${f1((sy + 2 * ty) / 3 - 4)} L${fx} ${fy}" fill="none" stroke="#6e4a2c" stroke-width="7" stroke-linecap="round"/>`).join(""));
-  s += SEP + part("tree-trunk", [n], () => {
-    let t = TREE_SLOTS.slice(0, n).map(([x, y]) => {
-      const sd = Math.sign(x), bx0 = sd * 40, by = y + 60;
-      return `<path d="M${bx0} ${by + 30} Q${f1(x * 0.5)} ${f1(by + 10)} ${f1(x - sd * 40)} ${f1(y + 14)}" fill="none" stroke="#6e4a2c" stroke-width="24" stroke-linecap="round"/>` +
-             `<line x1="${sd * 30}" y1="${by + 90}" x2="${f1(x - sd * 10)}" y2="${f1(y + 16)}" stroke="#6e4a2c" stroke-width="9" stroke-linecap="round"/>`;
-    }).join("");
-    // the trunk: five trunks braided, apart at the ground, one tree above
-    t += `<path d="M-90 -10 Q-140 -4 -175 12 M90 -10 Q140 -4 175 12" stroke="#6e4a2c" stroke-width="16" stroke-linecap="round" fill="none"/>` +
-         // (ticket 241, Matthew: "there's no collision info for the outside tree house tree trunk system") the braid
-         // marked, data-trunk: the tree house's box is its trunk's alone (standingHere), not its houses', bridges' or ladders'
-         `<g data-trunk="">` + braidSvg(0, -780, 10, 240, 1, { strands: 5, taper: 0.5, base: "#00000026" }) + `</g>`;
-    return t;
-  });
+  s += SEP + part("tree-trunk", [n], () =>
+    // (ticket 241, Matthew: "there's no collision info for the outside tree house tree trunk system") the braid
+    // marked, data-trunk: the tree house's box is its trunk's alone (standingHere), not its houses', bridges' or ladders'
+    treeLimbs(n) + treeRoots() + `<g data-trunk="">` + treeBraid() + `</g>`);
   // leaves: bonsai pads, eight shapes drawn once, each used again and
   // again, grown, flipped and colored by its <use> (0 leaves: bare)
   s += SEP + part("tree-pad-shapes", [], () => `<defs>${[...Array(8)].map((_, j) => padDef(`bg-pad${j}`, j)).join("")}</defs>`);
@@ -191,39 +183,80 @@ function treeInner(c) {
     `<g>${lfoTimed(o, "slow", 0.15, `<animateTransform attributeName="transform" type="rotate" values="-14 395 -346;14 395 -346;-14 395 -346" dur="2.6s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`)}` +
     `<path d="M375 -344 L372 -70 M415 -348 L418 -70" stroke="#d8c49a" stroke-width="3.5"/>` +
     `<rect data-swing-seat="" x="358" y="-72" width="74" height="12" rx="4" fill="#a0703f" stroke="#5e3d22" stroke-width="2"/></g>`);   // (ticket 240: the seat, found as it swings: swingNow)
-  s += SEP + part("tree-bridges", [n, bridges, hz], () => TREE_BRIDGES.filter(([a, b]) => a < n && b < n).slice(0, bridges).map(([a, b]) => {
-    const [ax, ay] = TREE_SLOTS[a], [bx, by] = TREE_SLOTS[b], sa = Math.sign(bx - ax) || 1;
-    // (a smaller house's platform is narrower)
-    const edge = j => 78 * (j >= 2 ? 0.85 : 1) * hz, p = [ax + sa * edge(a), ay], q = [bx - sa * edge(b), by], sag = 30 + 0.08 * Math.hypot(q[0] - p[0], q[1] - p[1]);
-    const m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2 + sag];
-    let t = `<path d="M${p[0]} ${p[1]} Q${f1(m[0])} ${f1(m[1])} ${q[0]} ${q[1]}" fill="none" stroke="#8b5e34" stroke-width="10" stroke-dasharray="7 3"/>` +
-            `<path d="M${p[0]} ${p[1] - 30} Q${f1(m[0])} ${f1(m[1] - 30)} ${q[0]} ${q[1] - 30}" fill="none" stroke="#d8c49a" stroke-width="3"/>`;
-    for (let i = 1; i < 10; i++) {
-      const u = i / 10, x = (1 - u) * (1 - u) * p[0] + 2 * u * (1 - u) * m[0] + u * u * q[0], y = (1 - u) * (1 - u) * p[1] + 2 * u * (1 - u) * m[1] + u * u * q[1];
-      t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x)}" y2="${f1(y - 30)}" stroke="#d8c49a" stroke-width="2"/>`;
-    }
-    return t;
-  }).join(""));
-  s += SEP + part("tree-ladders", [n, ladders, hz], () => TREE_SLOTS.slice(0, Math.min(n, ladders)).map(([x, y], i) => {
-    // a house's ladder goes down to the house below it, if there is one
-    const to = LADDER_TO[i], below = to >= 0 && to < n ? TREE_SLOTS[to][1] - 4 : 0;
-    const lx = x + Math.sign(x) * 52 * hz, top = y + 14 * hz;
-    let t = `<line x1="${lx - 12}" y1="${top}" x2="${lx - 12}" y2="${below}" stroke="#8b5e34" stroke-width="5"/><line x1="${lx + 12}" y1="${top}" x2="${lx + 12}" y2="${below}" stroke="#8b5e34" stroke-width="5"/>`;
-    for (let y2 = top + 18; y2 < below - 4; y2 += 22) t += `<line x1="${lx - 12}" y1="${y2}" x2="${lx + 12}" y2="${y2}" stroke="#a0703f" stroke-width="4"/>`;
+  s += SEP + part("tree-bridges", [n, bridges, hz], () => treeBridges(n, bridges, hz));
+  s += SEP + part("tree-ladders", [n, ladders, hz], () => TREE_SLOTS.slice(0, Math.min(n, ladders)).map((_, i) => {
     // (ticket 137: one down to the ground can be climbed, up to house i + 1;
     // one between houses is out of reach from the ground)
-    return below === 0 ? `<g data-ladder="1" data-house="${i + 1}">${t}</g>` : t;
+    const t = treeLadder(n, i, hz);
+    return t.ground ? `<g data-ladder="1" data-house="${i + 1}">${t.svg}</g>` : t.svg;
   }).join(""));
   // the houses: one drawing, its roof the color of its <use>
   s += SEP + part("tree-cabin", [], () => `<defs>${CABIN_DEFS}</defs>` +
-    "") + TREE_SLOTS.slice(0, n).map((slot, i) => [slot, i]).sort((u, v) => u[0][1] - v[0][1]).map(([[x, y, usual], i]) => {
-      // (the higher houses first: a lower one is nearer, in front of them)
-      const chosen = o["house" + (i + 1)], animal = HOUSE_ANIMALS.some(([v]) => v === chosen) ? chosen : usual, sc = (i >= 2 ? 0.85 : 1) * hz;
-      const look = houseLook(animal, o, i + 1);
-      return part("tree-house", [i, animal, look.cols, sc], () => `<g class="portal" data-to="treeroom" data-house="${i + 1}">` +
-        use("bg-cabin", x, y, sc, sc, ` color="${look.walls}"`) + `<g ${tf(x, y, sc)}>${look.head}</g></g>`);
-    }).join("");
+    "") + treeHouses(o, n, hz).map(({ x, y, i, animal, look, sc }) =>
+      part("tree-house", [i, animal, look.cols, sc], () => `<g class="portal" data-to="treeroom" data-house="${i + 1}">` +
+        use("bg-cabin", x, y, sc, sc, ` color="${look.walls}"`) + `<g ${tf(x, y, sc)}>${look.head}</g></g>`)).join("");
   return s;
+}
+// The tree's pieces, in its own units, for treeInner and for the map on a tree room's sign (ticket 244). The limbs out to
+// the first n houses' platforms:
+const treeLimbs = n => TREE_SLOTS.slice(0, n).map(([x, y]) => {
+  const sd = Math.sign(x), bx0 = sd * 40, by = y + 60;
+  return `<path d="M${bx0} ${by + 30} Q${f1(x * 0.5)} ${f1(by + 10)} ${f1(x - sd * 40)} ${f1(y + 14)}" fill="none" stroke="#6e4a2c" stroke-width="24" stroke-linecap="round"/>` +
+         `<line x1="${sd * 30}" y1="${by + 90}" x2="${f1(x - sd * 10)}" y2="${f1(y + 16)}" stroke="#6e4a2c" stroke-width="9" stroke-linecap="round"/>`;
+}).join("");
+// the trunk: five trunks braided, apart at the ground, one tree above; two roots out along the ground
+const treeRoots = () => `<path d="M-90 -10 Q-140 -4 -175 12 M90 -10 Q140 -4 175 12" stroke="#6e4a2c" stroke-width="16" stroke-linecap="round" fill="none"/>`;
+const treeBraid = () => braidSvg(0, -780, 10, 240, 1, { strands: 5, taper: 0.5, base: "#00000026" });
+// the rope bridges, the first `bridges` of TREE_BRIDGES between the n houses
+const treeBridges = (n, bridges, hz) => TREE_BRIDGES.filter(([a, b]) => a < n && b < n).slice(0, bridges).map(([a, b]) => {
+  const [ax, ay] = TREE_SLOTS[a], [bx, by] = TREE_SLOTS[b], sa = Math.sign(bx - ax) || 1;
+  // (a smaller house's platform is narrower)
+  const edge = j => 78 * (j >= 2 ? 0.85 : 1) * hz, p = [ax + sa * edge(a), ay], q = [bx - sa * edge(b), by], sag = 30 + 0.08 * Math.hypot(q[0] - p[0], q[1] - p[1]);
+  const m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2 + sag];
+  let t = `<path d="M${p[0]} ${p[1]} Q${f1(m[0])} ${f1(m[1])} ${q[0]} ${q[1]}" fill="none" stroke="#8b5e34" stroke-width="10" stroke-dasharray="7 3"/>` +
+          `<path d="M${p[0]} ${p[1] - 30} Q${f1(m[0])} ${f1(m[1] - 30)} ${q[0]} ${q[1] - 30}" fill="none" stroke="#d8c49a" stroke-width="3"/>`;
+  for (let i = 1; i < 10; i++) {
+    const u = i / 10, x = (1 - u) * (1 - u) * p[0] + 2 * u * (1 - u) * m[0] + u * u * q[0], y = (1 - u) * (1 - u) * p[1] + 2 * u * (1 - u) * m[1] + u * u * q[1];
+    t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x)}" y2="${f1(y - 30)}" stroke="#d8c49a" stroke-width="2"/>`;
+  }
+  return t;
+}).join("");
+// house i's ladder (0-based): down to the house below it, if there is one, or to the ground (then .ground)
+const treeLadder = (n, i, hz) => {
+  const [x, y] = TREE_SLOTS[i], to = LADDER_TO[i], below = to >= 0 && to < n ? TREE_SLOTS[to][1] - 4 : 0;
+  const lx = x + Math.sign(x) * 52 * hz, top = y + 14 * hz;
+  let t = `<line x1="${lx - 12}" y1="${top}" x2="${lx - 12}" y2="${below}" stroke="#8b5e34" stroke-width="5"/><line x1="${lx + 12}" y1="${top}" x2="${lx + 12}" y2="${below}" stroke="#8b5e34" stroke-width="5"/>`;
+  for (let y2 = top + 18; y2 < below - 4; y2 += 22) t += `<line x1="${lx - 12}" y1="${y2}" x2="${lx + 12}" y2="${y2}" stroke="#a0703f" stroke-width="4"/>`;
+  return { svg: t, ground: below === 0 };
+};
+// the n houses, each where it sits, its animal and its look, its size; the higher houses first: a lower one is
+// nearer, in front of them
+const treeHouses = (o, n, hz) => TREE_SLOTS.slice(0, n).map((slot, i) => [slot, i]).sort((u, v) => u[0][1] - v[0][1]).map(([[x, y, usual], i]) => {
+  const chosen = o["house" + (i + 1)], animal = HOUSE_ANIMALS.some(([v]) => v === chosen) ? chosen : usual;
+  return { x, y, i, animal, look: houseLook(animal, o, i + 1), sc: (i >= 2 ? 0.85 : 1) * hz };
+});
+// (ticket 244) a drawing as a silhouette in one color: its every fill and stroke that color, its eyes gone
+const silhouette = (svg, col) => svg.replace(/<use href="#bg-eye"[^>]*\/>/g, "").replace(/ (fill|stroke)="(?!none")[^"]*"/g, ` $1="${col}"`).replace(/ opacity="[^"]*"/g, "");
+// (ticket 244, Matthew: "on that sign, let's include a graphic that serves as a map for the person in the room -- it looks
+// like the treehouse, but in a few dark colors (not colorful) and maybe even reuses some of the tree house drawing logic.
+// The sign indicates, with a bright white circle, which of the 6 possible houses in the map graphic is the current
+// house") The tree outside, from the pieces treeInner draws it with, each piece in one dark color: the ground, the trunk
+// and its limbs, the bridges and ladders, and the houses, each numbered; a white ring round house `here` (1-based). In the
+// tree's units, cut to TREE_MAP_BOX: the trunk goes on up, out of it.
+const TREE_MAP_BOX = [-480, -640, 960, 670];
+function treeMapSvg(o, here) {
+  const n = Math.max(1, Math.min(6, o.houses ?? 4)), hz = (o.treeHouseSize ?? 100) / 100;
+  const bridges = o.bridges ?? 2, ladders = o.ladders ?? 3, [bx, by, bw, bh] = TREE_MAP_BOX;
+  let t = `<defs><clipPath id="bg-treemap"><rect x="${bx}" y="${by}" width="${bw}" height="${bh}"/></clipPath></defs><g clip-path="url(#bg-treemap)">` +
+          `<rect x="${bx}" y="10" width="${bw}" height="${by + bh - 10}" fill="#2c3318"/>` +
+          silhouette(treeLimbs(n) + treeRoots() + treeBraid(), "#3b2715") +
+          silhouette(treeBridges(n, bridges, hz) + TREE_SLOTS.slice(0, Math.min(n, ladders)).map((_, i) => treeLadder(n, i, hz).svg).join(""), "#4d3520");
+  const houses = treeHouses(o, n, hz);
+  t += houses.map(({ x, y, i, look, sc }) => silhouette(`<g ${tf(x, y, sc)}>${CABIN_SVG}${look.head}</g>`, "#1f140b") +
+    `<text x="${f1(x)}" y="${f1(y - 14 * sc)}" text-anchor="middle" font-size="${f1(92 * sc)}" font-weight="bold" fill="#e9d3a6" font-family="sans-serif">${i + 1}</text>`).join("");
+  const h = houses.find(u => u.i === here - 1);
+  if (h) t += [["#1f140b", 30], ["#ffffff", 16]].map(([col, w]) => `<circle data-here="${here}" cx="${f1(h.x)}" cy="${f1(h.y - 84 * h.sc)}" r="${f1(112 * h.sc)}" fill="none" stroke="${col}" stroke-width="${w}"/>`).join("");
+  return t + `</g>`;
 }
 // (ticket 50) the swing: its seat, 74 of the tree's units across (358 to
 // 432), its top 72 above the ground, as treeInner's "tree-swing" hangs it
