@@ -702,6 +702,8 @@ function perfMeterTick(t) {
 // across the room as the controller walks them: frames a second, the
 // longest pause between frames, drawings a second. (3) 2 s walking in
 // place, as with no background. Then everything as it was.
+// (4-14: the duck pond, each part of it away in turn, and music; 15-20, ticket 344: the bubble room, standing, walking
+// through it, its foam still, and with 1, 4 and 16 bubble makers)
 // (ticket 166) Where the speed lines are pasted for now: a public Etherpad
 // (Riseup's; anyone with the address can read and edit it, and it is
 // deleted after 60 days with no edits), read back as text from
@@ -778,7 +780,7 @@ function tripReport(T) {
 async function speedCheck(report) {
   if (perfBusy) return;
   perfBusy = true;
-  measuringNote("Measuring this computer's speed", 40);
+  measuringNote("Measuring this computer's speed", 62);
   const saved = JSON.stringify(state), wait = ms => new Promise(r => setTimeout(r, ms));
   const keep = { slowFlag, choppy, slowMoving: PERF.slowMoving };
   // (a pass: frames a second, the longest pause, the share of frames later
@@ -813,29 +815,29 @@ async function speedCheck(report) {
     let B = state.background, body = state.body;
     Object.assign(B, { kind: "emptyroom", figX: -150, figY: 0 }); body.anim = "none"; body.facing = "right";
     changed(); await wait(600);
-    report("🧪 1 of 14: drawing the friend…"); await wait(50);
+    report("🧪 1 of 20: drawing the friend…"); await wait(50);
     body.anim = "walk";
     const times = [];
     for (let i = 0; i < 60; i++) { const t = performance.now(); draw(); times.push(performance.now() - t); }
     times.sort((a, b) => a - b);
     const med = times[30];
-    report("🧪 2 of 14: walking across the empty room…"); await wait(300);
+    report("🧪 2 of 20: walking across the empty room…"); await wait(300);
     const room = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
-    report("🧪 3 of 14: walking in place…"); B.figX = 0; changed(); await wait(300);
+    report("🧪 3 of 20: walking in place…"); B.figX = 0; changed(); await wait(300);
     const inPlace = await frames(2000, null);
     // (ticket 164, Matthew: the duck pond, swimming across, as the controller swims them, in the water's middle row)
     B.kind = "lake"; B.figX = -150; body.anim = "swim";
     { const ys = []; for (let y = -200; y <= 86; y += 2) if (inWater(B, 0, SCENE.ground + y) && inWater(B, -150, SCENE.ground + y) && inWater(B, 150, SCENE.ground + y)) ys.push(y); B.figY = ys[ys.length >> 1] ?? 0; }
-    changed(); report("🧪 4 of 14: swimming in the duck pond…"); await wait(1200);
+    changed(); report("🧪 4 of 20: swimming in the duck pond…"); await wait(1200);
     const pond = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
-    report("🧪 5 of 14: the duck pond held still…");
+    report("🧪 5 of 20: the duck pond held still…");
     SPEED_TEST.still = true; PERF.slowMoving = false; SPEED_TEST.noPic = true; changed(); await wait(800);   // (held still, not yet a picture: 0.0.86's pass)
     const pondStill = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
     SPEED_TEST.still = false; PERF.slowMoving = true; SPEED_TEST.noPic = false;
     // (0.0.86, Matthew: which part of the pond costs the frames; each pass
     // swims as the first, moving, with one part taken away: SPEED_TEST)
     const without = async (n, what, on, off) => {
-      report(`🧪 ${n} of 14: the duck pond ${what}…`); on(); changed(); await wait(800);
+      report(`🧪 ${n} of 20: the duck pond ${what}…`); on(); changed(); await wait(800);
       for (let i = 0; i < 40 && stillPicWanted() && !(stillPic.parts.size && [...stillPic.parts.values()].every(q => q.ready)); i++) await wait(100);   // (a slow computer's pictures, made)
       stillPic.draws = stillPic.drawsOn = 0;
       const r = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
@@ -854,24 +856,43 @@ async function speedCheck(report) {
     // (and both of the friend's water parts away at once)
     const pondBitmap = await without(10, "with its scenery a still bitmap", () => { SPEED_TEST.still = true; PERF.slowMoving = false; }, () => { SPEED_TEST.still = false; PERF.slowMoving = true; });
     const pondNoWater = await without(11, "without the rings and the part under water", () => { SPEED_TEST.noRings = SPEED_TEST.noUnder = true; }, () => { SPEED_TEST.noRings = SPEED_TEST.noUnder = false; });
-    report("🧪 12 of 14: the duck pond with its music…");
+    report("🧪 12 of 20: the duck pond with its music…");
     state.music.mute = false; changed(); await wait(1200);
     const pondMusic = await frames(2000, across(B, body, PAD_SPEED.swim, "swim"));
     // (Matthew: after the pond, the empty room was as slow as the pond,
     // until the page was loaded again: the room once more, as the first
     // time, then with its music)
-    report("🧪 13 of 14: the empty room, after the pond…");
+    report("🧪 13 of 20: the empty room, after the pond…");
     state.music.mute = true; Object.assign(B, { kind: "emptyroom", figX: -150, figY: 0 }); body.anim = "walk"; body.facing = "right"; changed(); await wait(600);
     const roomAfter = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
-    report("🧪 14 of 14: the empty room after the pond, with its music…");
+    report("🧪 14 of 20: the empty room after the pond, with its music…");
     state.music.mute = false; changed(); await wait(1200);
     const roomAfterMusic = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));
+    // (ticket 344, Matthew: "let's add bubble room to the suite of tests that we automate with the advanced tab. I want to
+    // record some tests on the black laptop and ipad tonight") 🫧 the bubble room, as it starts: standing, then walking
+    // across near us through the bubbles stuck out into it (popping them), then the same with its foam still; then with 1, 4
+    // and 16 bubble makers along its floor, walking; and how many shapes its scene is
+    state.music.mute = true;
+    const maker = (i, n) => ({ kind: "bubblemaker", x: Math.round(-260 + 520 * (i + 0.5) / n), z: i % 2 ? 300 : 345, size: 100, rate: 4, theme: "A", color: MAKER_COLORS[i % MAKER_COLORS.length], mirror: i % 2 === 1 });
+    Object.assign(B, { kind: "bubbleroom", figX: -150, figY: 40, things: [] }); body.anim = "none"; body.facing = "right"; changed();
+    report("🧪 15 of 20: the bubble room, standing…"); await wait(1500);
+    const bubbleNodes = bgShown.node ? bgShown.node.querySelectorAll("*").length : null;
+    const bubbleStand = await frames(2000, null);
+    report("🧪 16 of 20: walking through the bubble room…"); ballPops.clear(); changed(); await wait(300);
+    const bubbleWalk = await frames(2000, across(B, body, PAD_SPEED.walk, "walk")); bubbleWalk.popped = ballPops.size;
+    report("🧪 17 of 20: the bubble room, its foam still…"); const moveWas = B.foamMove; B.foamMove = 0; ballPops.clear(); changed(); await wait(800);
+    const bubbleStill = await frames(2000, across(B, body, PAD_SPEED.walk, "walk")); B.foamMove = moveWas;
+    const withMakers = async (n, step) => { report(`🧪 ${step} of 20: the bubble room with ${n} bubble maker${n > 1 ? "s" : ""}…`);
+      B.things = Array.from({ length: n }, (_, i) => maker(i, n)); ballPops.clear(); changed(); await wait(1500);
+      const r = await frames(2000, across(B, body, PAD_SPEED.walk, "walk")); r.bubbles = makerSim.list.length; return r; };
+    const bubbleM1 = await withMakers(1, 18), bubbleM4 = await withMakers(4, 19), bubbleM16 = await withMakers(16, 20);
+    B.things = []; changed();
     const ua = navigator.userAgent, browser = (ua.match(/(Firefox|Edg|Chrome|Safari)\/(\d+)/) || [, "a browser", ""]).slice(1).join(" ").trim();
     const p = r => `${r.fps} fps (longest pause ${r.worst} ms, ${r.late}% late)`;
-    const data = { v: VERSION.number, draw: +med.toFixed(2), room, inPlace, pond, pondStill, pondNoScene, pondNoUnder, pondNoRings, pondPicture, pondBitmap, bitmapOk: stillPic.bitmapOk, pondNoWater, pondMusic, roomAfter, roomAfterMusic, browser, platform: navigator.platform || "",
+    const data = { v: VERSION.number, draw: +med.toFixed(2), room, inPlace, pond, pondStill, pondNoScene, pondNoUnder, pondNoRings, pondPicture, pondBitmap, bitmapOk: stillPic.bitmapOk, pondNoWater, pondMusic, roomAfter, roomAfterMusic, bubble: { nodes: bubbleNodes, stand: bubbleStand, walk: bubbleWalk, still: bubbleStill, m1: bubbleM1, m4: bubbleM4, m16: bubbleM16 }, browser, platform: navigator.platform || "",
                    screen: `${screen.width}x${screen.height}`, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency || null, memory: navigator.deviceMemory || null,
                    pic: (r => `${Math.round(r.width)}x${Math.round(r.height)}`)(pic.getBoundingClientRect()), found: { slow: keep.slowFlag, choppy: keep.choppy } };
-    report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · without its scenery: ${p(pondNoScene)} · without the part under water: ${p(pondNoUnder)} · without the rings: ${p(pondNoRings)} · scenery a still picture: ${p(pondPicture)} · a still bitmap: ${p(pondBitmap)} · without the rings and the part under water: ${p(pondNoWater)} · with music: ${p(pondMusic)} · the empty room after the pond: ${p(roomAfter)}, with its music: ${p(roomAfterMusic)} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
+    report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · without its scenery: ${p(pondNoScene)} · without the part under water: ${p(pondNoUnder)} · without the rings: ${p(pondNoRings)} · scenery a still picture: ${p(pondPicture)} · a still bitmap: ${p(pondBitmap)} · without the rings and the part under water: ${p(pondNoWater)} · with music: ${p(pondMusic)} · the empty room after the pond: ${p(roomAfter)}, with its music: ${p(roomAfterMusic)} · 🫧 the bubble room (${bubbleNodes} shapes), standing: ${bubbleStand.fps} fps, walking through it: ${p(bubbleWalk)}, its foam still: ${p(bubbleStill)}, with 1 bubble maker: ${p(bubbleM1)}, 4: ${p(bubbleM4)}, 16: ${p(bubbleM16)} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
   } finally {
     state = JSON.parse(saved);
     Object.assign(SPEED_TEST, { holder: null, noUnder: false, noRings: false, noPic: false, svg: false, still: false });
@@ -977,7 +998,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.241", released: "2026-10-18" };
+const VERSION = { number: "0.0.242", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.242 (2026-10-18)
+
+Everything in 0.0.241, with the bubble room in the speed test.
+
+- **"🧪 this computer's speed" (in ⚙️ Advanced) now tries the bubble room too**: six more passes, twenty in all, about a minute. The bubble room standing still, walking through it (popping the bubbles stuck out into it), with its foam still, and with 1, 4 and 16 bubble makers. Each pass reports frames a second, the longest pause and the share of late frames, in the line to copy, so different computers can be compared.
+
 ## 0.0.241 (2026-10-18)
 
 Everything in 0.0.240, with the bubble room's bubbles popping.
