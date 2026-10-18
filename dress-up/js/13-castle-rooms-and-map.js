@@ -110,10 +110,15 @@ function roomShell(c, tone, opts = {}) {
     t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((22 + 40 * u) * k)}" ry="${f1((6 + 14 * u) * k)}" fill="${R(i, 907) < 0.5 ? "#000000" : "#ffffff"}" opacity="0.06"/>`;
   }
   t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(...out(bw, floor, y1 + pad))} ${P(...out(-bw, floor, y1 + pad))}" fill="url(#bg-floorfade)"/>`;
-  if (opts.moss) t += wallObj("moss", [...Array(16)].map((_, i) => {   // moss along the foot of the walls (ticket 284: a wall object)
-    const x = -bw + 2 * bw * R(i, 910);
-    return `<ellipse cx="${f1(x)}" cy="${f1(floor - 3 * k)}" rx="${f1((14 + 18 * R(i, 911)) * k)}" ry="${f1((5 + 5 * R(i, 912)) * k)}" fill="${opts.moss}" opacity="0.8"/>`;
-  }).join(""));
+  // moss (ticket 284: a wall object; ticket 318: clumps of pads with wavy fingers, mossSvg, the room's kinds by turns): along
+  // the foot of the back wall, on the floor; here and there on the back wall, low; and on each side wall near its foot,
+  // smaller farther back, its fingers out into the room
+  if (opts.moss) { const { at } = roomSpace(c), kinds = ["haircap", "cushion", "windswept"], clump = (x, y, s, on, i) =>
+      `<g transform="translate(${f1(x)} ${f1(y)}) scale(${(on === "floor" && R(i, 912) < 0.5 ? -s : s).toFixed(3)} ${s.toFixed(3)})">${mossSvg(kinds[i % 3], 910 + i, { on, share: 0.45 })}</g>`;
+    t += wallObj("moss", [...Array(4)].map((_, i) => clump(-bw * 0.9 + 1.8 * bw * (i + 0.5) / 4 + (R(i, 910) - 0.5) * 0.15 * bw, floor + k, (0.34 + 0.14 * R(i, 911)) * k, "floor", i)).join("") +
+      [-0.55, 0.62].map((u, i) => clump(u * bw, floor - (34 + 30 * R(i, 913)) * k, 0.3 * k, "back", i + 4)).join("") +
+      [-1, 1].flatMap(sd => [-0.12, -0.32].map((z, j) => { const [x, y] = at(sd * bw, floor - 14 * k, z), i = 6 + (sd > 0 ? 2 : 0) + j;
+        return clump(x, y, 0.3 * k / (1 + z), sd < 0 ? "left" : "right", i); })).join("")); }
   // cobwebs in the top corners (ticket 284: wall objects, each its own)
   t += wallObj("cobweb, left", cobweb(-bw, top, 70 * k, 1, k)) + wallObj("cobweb, right", cobweb(bw, top, 70 * k, -1, k));
   return t;

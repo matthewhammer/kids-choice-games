@@ -2,6 +2,16 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.226 (2026-10-18)
+
+Everything in 0.0.225, with moss: pads with wavy fingers, in five kinds, on the walls and to place.
+
+- **🌱 Moss to place**, in 🏞️ Background's things, 🌲 nature: five kinds after real mosses, each its own shape, size and colours: 🟢 cushion (round pale domes, short and close), ⭐ haircap (tall spiky stems), 🟫 carpet (a low flat golden mat), 🪶 feather (fronds with a leaflet either side), 🌬️ windswept (tufts all leaning one way). Its pads are drawn shapes with ragged edges, a darker base and a lighter top; its fingers rise from them, swaying as the witch's cauldron's simple fumes do, lighter at their tips.
+- **"📍 on"**: the floor, the back wall, a left wall or a right wall. On a side wall its pads hug the wall and its fingers reach out into the room; on the back wall each pad is a whole patch stuck to the wall.
+- **"🟠 lobes at the tips"**: some of its fingers carry a little capsule at the top, as real mosses carry their spores (each kind a different share and size).
+- **"🎨"**: its kind's own colour (∅), or one of seven greens.
+- **The castle's trap room and dungeons have this moss** instead of the dark green smears that looked like slime: clumps along the foot of the back wall, a few on the back wall, and on each side wall near its foot.
+
 ## 0.0.225 (2026-10-18)
 
 Everything in 0.0.224, with three tree house rooms' wall things moved clear of the tree's trunk, and made objects.

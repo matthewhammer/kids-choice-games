@@ -326,3 +326,79 @@ function palmTrunkSvg(x, base, h, sd, k, rnd, lean = 0.18, n = 11) {
 // it inside is a seat, and none once less than half of it is left.
 SEATS.treehouse = (c, B) => { const ts = (B.treeSize ?? 100) / 100 * c.k, x0 = 358 * ts, x1 = Math.min(432 * ts, c.x1 - 10);
   return x1 - x0 < 37 * ts ? [] : [{ name: "swing", x0, x1, y: c.g - 72 * ts, z: c.g + 1, facing: ["front"] }]; };
+
+// (ticket 318, Matthew: "the moss looks like slime .. we need more like 'pads', with 'fingers' that reach up, with a
+// lighter, more bright color. And various styles"; "the pads should be polygons that we draw, not ovals"; "the fingers
+// have wavy structure, like the witches' cauldron simple version"; "the top of each wavy strand could have a lobe,
+// optionally, see pictures of real moss for guidance") Moss, after five real kinds: low pads, each a drawn polygon (a
+// darker base and a lighter top on it), and fingers rising from the pads' tops, each a wavy strand drawn as the
+// cauldron's simple fumes are (a smooth curve through points that sway side to side as they rise), some with a lobe at
+// the tip, as real mosses carry their spore capsules on stalks. Its feet at (0, 0), its own size about w across; the
+// same shape every time for a seed (seeded). Each kind's numbers:
+//   w, h: the clump's width and its pads' height;   pads: how many pads, overlapping;
+//   fingers, fh: how many fingers and how tall;      wave, waves: how far a finger sways, and how many times;
+//   lean: how far the fingers all lean (a share of their height, to the right);   fw: a finger's thickness;
+//   lobeShare, lobe: which share of the fingers carry a lobe, and its size;   side: little leaflets up each finger;
+//   color, tip, lobeColor: the pads' and the fingers' green, the light tips, and the lobes.
+// (Matthew: "let's have moss that can adapt to being on: floor/ground, L wall, back wall, R wall") o.on: "floor" (the
+// fingers up), "left" (on a left wall: its pads against the wall, the fingers out into the room, to the right), "right"
+// (the mirror), "back" (stuck on the back wall: each pad a whole ragged patch, the fingers shorter); o.share: the share of
+// its kind's fingers drawn (a scene's many clumps draw fewer, to stay cheap).
+const MOSS_STYLES = {
+  // pincushion moss (Leucobryum): round, pale, whitish green domes, short and close
+  cushion: { label: "🟢 cushion", w: 120, h: 36, pads: 3, fingers: 26, fh: 13, wave: 1.4, waves: 1, lean: 0, fw: 2.4, lobeShare: 0.2, lobe: 2.4, color: "#a6d873", tip: "#eaf8c4", lobeColor: "#f3e7a0" },
+  // haircap moss (Polytrichum): tall spiky stems, star-tipped, capsules on long stalks
+  haircap: { label: "⭐ haircap", w: 110, h: 22, pads: 2, fingers: 16, fh: 48, wave: 3, waves: 1.5, lean: 0, fw: 2.6, lobeShare: 0.6, lobe: 3.4, color: "#6fc74a", tip: "#ccf28e", lobeColor: "#e0a94a" },
+  // sheet moss (Hypnum): a low flat mat creeping along, golden green
+  carpet: { label: "🟫 carpet", w: 170, h: 14, pads: 4, fingers: 30, fh: 8, wave: 1.2, waves: 1, lean: 0.1, fw: 2, lobeShare: 0.12, lobe: 2, color: "#b0cc4e", tip: "#eef4a8", lobeColor: "#e8c660" },
+  // fern moss (Thuidium): feathery fronds, a leaflet either side up each
+  feather: { label: "🪶 feather", w: 130, h: 18, pads: 3, fingers: 12, fh: 34, wave: 4, waves: 1.2, lean: 0.15, fw: 2.2, side: true, lobeShare: 0.2, lobe: 2.6, color: "#8ad24f", tip: "#d8f69e", lobeColor: "#efcf6a" },
+  // rock cap moss (Dicranum): windswept tufts, every finger leaning the same way
+  windswept: { label: "🌬️ windswept", w: 120, h: 24, pads: 3, fingers: 18, fh: 30, wave: 2.4, waves: 1.5, lean: 0.55, fw: 2.3, lobeShare: 0.45, lobe: 2.8, color: "#82d24c", tip: "#dcf8a4", lobeColor: "#f2c25a" },
+};
+const MOSS_STYLE_CHOICES = Object.entries(MOSS_STYLES).map(([v, S]) => [v, S.label]);
+// (the colours a placed moss can take; "none" is its kind's own)
+const MOSS_COLORS = ["none", "#a6d873", "#6fc74a", "#b0cc4e", "#8ad24f", "#82d24c", "#c8e86a", "#5fc28a"];
+// a smooth path through points (as helixCheapSvg's strands: each piece a cubic from its neighbours)
+const smoothPath = pts => {
+  let d = `M${f1(pts[0][0])} ${f1(pts[0][1])}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    d += ` C${f1(p1[0] + (p2[0] - p0[0]) / 6)} ${f1(p1[1] + (p2[1] - p0[1]) / 6)} ${f1(p2[0] - (p3[0] - p1[0]) / 6)} ${f1(p2[1] - (p3[1] - p1[1]) / 6)} ${f1(p2[0])} ${f1(p2[1])}`;
+  }
+  return d;
+};
+const MOSS_ON = [["floor", "🟫 the floor"], ["back", "🧱 the back wall"], ["left", "⬅️ a left wall"], ["right", "➡️ a right wall"]];
+function mossSvg(style, seed, o = {}) {
+  const S = MOSS_STYLES[style] || MOSS_STYLES.cushion, r = seeded(seed), col = o.color && o.color !== "none" ? o.color : S.color, lobes = o.lobes ?? true;
+  const on = o.on || "floor", back = on === "back", nf = Math.max(3, Math.round(S.fingers * (o.share ?? 1))), fh = S.fh * (back ? 0.6 : 1);
+  const base = mix(col, "#000000", 0.22), stem = mix(col, S.tip, 0.25), P = (x, y) => `${f1(x)},${f1(y)}`;
+  // the pads: a dome each, its rim ragged, its bottom flat on the ground; a lighter dome on top of it, a little in from it
+  const pads = [...Array(S.pads)].map((_, i) => {
+    const cx = (i - (S.pads - 1) / 2) * S.w / S.pads * 0.86 + (r(i) - 0.5) * 8, pw = S.w / S.pads * (1.15 + 0.25 * r(i + 20)), ph = S.h * (0.75 + 0.35 * r(i + 40));
+    const edge = [...Array(13)].map((_, j) => { const a = Math.PI - Math.PI * j / 12, n = 0.86 + 0.24 * r(i * 31 + j);
+      return [cx + Math.cos(a) * pw / 2 * n, -Math.sin(a) * ph * n]; });
+    return { cx, pw, ph, edge };
+  });
+  // (on the back wall, each pad's lower half too, shallower, so it is a patch stuck to the wall, not a dome on the ground)
+  let t = (back ? pads.map(p => `<polygon points="${p.edge.map(([x, y]) => P(x, -y * 0.55)).join(" ")}" fill="${mix(base, "#000000", 0.12)}"/>`).join("") : "") +
+    pads.map(p => `<polygon points="${P(p.cx - p.pw / 2, 0)} ${p.edge.map(([x, y]) => P(x, y)).join(" ")} ${P(p.cx + p.pw / 2, 0)}" fill="${base}"/>`).join("") +
+    pads.map(p => `<polygon points="${p.edge.slice(2, 11).map(([x, y]) => P(p.cx + (x - p.cx) * 0.78 - 2, y * 0.84 - 1)).join(" ")}" fill="${col}"/>`).join("");
+  // the fingers: each from a point on its pad's top, rising, swaying, leaning; leaflets up it (feather); a lobe at its tip
+  let fingers = "", tips = "";
+  for (let j = 0; j < nf; j++) {
+    const p = pads[j % S.pads], a = Math.PI * (0.15 + 0.7 * r(j + 100)), bx = p.cx + Math.cos(a) * p.pw / 2 * 0.8, by = -Math.sin(a) * p.ph * 0.85;
+    const hh = fh * (0.6 + 0.6 * r(j + 200)), ph = 2 * Math.PI * r(j + 300), lean = (S.lean + (r(j + 400) - 0.5) * 0.25) * hh;
+    const pts = [...Array(7)].map((_, q) => { const u = q / 6; return [bx + lean * u * u + S.wave * Math.sin(u * S.waves * 2 * Math.PI + ph) * u, by - hh * u]; });
+    fingers += `<path d="${smoothPath(pts)}" fill="none" stroke="${stem}" stroke-width="${f1(S.fw)}" stroke-linecap="round"/>`;
+    // (its last third lighter, as a moss's tips are new growth)
+    tips += `<path d="${smoothPath(pts.slice(4))}" fill="none" stroke="${S.tip}" stroke-width="${f1(S.fw * 0.8)}" stroke-linecap="round"/>`;
+    if (S.side) for (const [q, sd] of [[2, -1], [3, 1], [4, -1], [5, 1]]) { const [x, y] = pts[q], l = S.fh * 0.16 * (1 - q / 8);
+      fingers += `<path d="M${P(x, y)} q${f1(sd * l * 0.6)} ${f1(-l * 0.2)} ${f1(sd * l)} ${f1(-l * 0.7)}" fill="none" stroke="${stem}" stroke-width="${f1(S.fw * 0.6)}" stroke-linecap="round"/>`; }
+    if (lobes && r(j + 500) < S.lobeShare) { const [x, y] = pts[6], l = S.lobe * (0.8 + 0.4 * r(j + 600)), dx = pts[6][0] - pts[5][0], dy = pts[6][1] - pts[5][1], an = Math.atan2(dx, -dy) * 180 / Math.PI;
+      // (a capsule: a little drawn polygon, longer than wide, along the finger's last direction)
+      tips += `<polygon points="${[[0, -l * 1.7], [l * 0.75, -l * 0.9], [l * 0.7, 0], [0, l * 0.45], [-l * 0.7, 0], [-l * 0.75, -l * 0.9]].map(([u, v]) => P(u, v)).join(" ")}" transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(an)})" fill="${S.lobeColor}" stroke="${mix(S.lobeColor, "#000000", 0.3)}" stroke-width="0.6"/>`; }
+  }
+  const all = t + fingers + tips;
+  return on === "left" ? `<g transform="rotate(90)">${all}</g>` : on === "right" ? `<g transform="rotate(-90)">${all}</g>` : all;
+}
