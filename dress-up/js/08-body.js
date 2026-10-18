@@ -580,7 +580,11 @@ function catWag(C, i) {
 // The music's clock, in seconds (lfoNow's): where the tune is while it
 // plays, else the page's own time. An LFO's wave is where this clock is,
 // round its cycle.
-const musicSeconds = () => playing && typeof audio !== "undefined" && audio
+// (ticket 198) The music's clock only while it runs: a tune "playing" in a suspended AudioContext (a page whose sound
+// cannot start; headless Firefox on GitHub, where it lost 10 frames a second after any first click) has a clock that
+// stands still, the picture's ran away from it, the gap was measured again every quarter second, and the whole scene
+// built again each time, ticket 117's way. Stopped, the page's own clock, which keeps the picture's pace.
+const musicSeconds = () => playing && typeof audio !== "undefined" && audio && audio.state === "running"
   ? playing.s0 * playing.sd + audio.currentTime - playing.t0 : performance.now() / 1000;
 // How far the picture's own clock (its animations') is ahead of the music's.
 // The two run at the same speed, so the gap stays put; but the picture's

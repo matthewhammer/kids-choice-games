@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.199 (2026-10-17)
+
+Everything in 0.0.198, with the music no longer slowing the pictures where its sound cannot start.
+
+- **Fixed**: where the music cannot start its sound (no sound device; Firefox on GitHub's computers), a tune counted as playing held its clock still, and the picture, timing its animations by it, was drawn again from scratch four times a second: Firefox lost about 10 frames a second after the first click or tap. The pictures now keep the page's own time while the sound is stopped.
+
 ## 0.0.198 (2026-10-17)
 
 Everything in 0.0.197, drawing less of what cannot be seen.

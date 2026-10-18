@@ -8,7 +8,7 @@ from an added <script> (WebDriver can't reach the page's lets). Pinned:
 taskset -c 0-3 nice -n 10 on the laptop. A friend file of "-" uses the default
 friend in the duck pond instead (as CI does: a saved friend stays off the
 public repository). geckodriver from $GECKOWEBDRIVER (GitHub's runners) or the PATH.
-  leakff.py <url> <friend.json | -> [rounds]   env: W H DPR LOG CONTROL CLEAR"""
+  leakff.py <url> <friend.json | -> [rounds]   env: W H DPR LOG CONTROL CLEAR PART NORELOAD"""
 import sys, os, time, json, subprocess, urllib.request
 url, friend = sys.argv[1], sys.argv[2]; rounds = int(sys.argv[3]) if len(sys.argv) > 3 else 1
 W, H, DPR = int(os.environ.get("W", 1203)), int(os.environ.get("H", 802)), os.environ.get("DPR", "1.875")
@@ -72,17 +72,37 @@ def measure(label):
     F = js("__F.on = false; const g = __F.gaps, s = g.reduce((a, b) => a + b, 0), q = g.slice().sort((a, b) => a - b), dn = movedDraws - __F.d; return { fps: +(1000 * g.length / s).toFixed(1), p95: Math.round(q[Math.floor(0.95 * (q.length - 1))]), worst: Math.round(q[q.length - 1]), late: Math.round(100 * g.filter(x => x > 25).length / g.length), drawMs: dn ? +((movedMs - __F.ms) / dn).toFixed(2) : null };")
     P = js('return { kind: state.background.kind, elements: document.getElementsByTagName("*").length, smil: document.querySelectorAll("animate, animateTransform, animateMotion, set").length, anims: document.getAnimations().length, choppy, still: sceneryStill(), caches: [PARTS.size, READS.size, TRIMMED.size, STILLS.size, SCENE_PARTS.size, bgShown.kept.size].join("/"), music: playing ? playing.id : null, audio: audio ? audio.state : null };')
     out(f"{label:26} [{heat()}] {F.get('fps')} fps (p95 {F.get('p95')} ms, worst {F.get('worst')}, {F.get('late')}% late), draw {F.get('drawMs')} ms · elements {P.get('elements')} · smil {P.get('smil')} · anims {P.get('anims')} · {P.get('kind')}{' CHOPPY' if P.get('choppy') else ''} · caches {P.get('caches')} · music {P.get('music')} ({P.get('audio')})")
-def churn():
+def churn_places():
     kinds = js('return PLACES.filter(([k]) => k !== "none").map(([k]) => k);')
     for k in kinds:
         js(f'Object.assign(state.background, {{ kind: {json.dumps(k)} }}); changed(); __pad.buttons[15].pressed = true; return 1;'); time.sleep(0.5); js("__pad.buttons.forEach(x => x.pressed = false); return 1;"); time.sleep(0.15)
+def churn_trips():
     js('Object.assign(state.background, { kind: "castle", castle: "N" }); changed(); return 1;'); time.sleep(0.4)
     js('enterScene([...bgShown.node.querySelectorAll(".portal[data-door]")].find(d => d.dataset.to === "castleroom")); return 1;'); time.sleep(5)
     js('Object.assign(state.background, { kind: "castleroom", castle: "N", castleRoom: 3 }); changed(); return 1;'); time.sleep(0.4)
     js('enterScene(bgShown.node.querySelector(".portal[data-pit]")); return 1;'); time.sleep(6.5)
     js('climbLadder(bgShown.node.querySelector("[data-ladder]")); return 1;'); time.sleep(9)
+def churn_sliders():
     for i in range(60): js(f'state.background.kind = "lake"; state.background.ducks = {1 + i % 13}; state.body.arms = {30 + i}; state.face.smile = {i % 50}; changed(); return 1;')
+def churn_tabs():
     js('const bs = [...document.querySelectorAll("#tabs button")]; let i = 0; const f = () => { if (i < bs.length) { bs[i++].click(); setTimeout(f, 120); } }; f(); return 1;'); time.sleep(4)
+# (ticket 198) a round's parts, each alone when PART names some (places, trips, sliders, tabs): which one costs Firefox its frames
+PARTS = {"places": churn_places, "trips": churn_trips, "sliders": churn_sliders, "tabs": churn_tabs}
+def churn_tab(i):
+    # (one tab alone, left open: tab:N, the panel's Nth, from 0)
+    t = js(f'const b = document.querySelectorAll("#tabs button")[{i}]; if (b) b.click(); return b ? b.textContent.trim() : null;'); time.sleep(1.5)
+    out(f"TAB {t}")
+def churn_tabs_back():
+    # (every tab, then back to the first: what a visit leaves behind, with the panel on a light tab)
+    churn_tabs(); churn_tab(0)
+def churn():
+    for k in (os.environ.get("PART") or ",".join(PARTS)).split(","):
+        k = k.strip()
+        if k.startswith("tab:"): churn_tab(int(k[4:]))
+        elif k == "tabs-back": churn_tabs_back()
+        elif k == "music": js("heard = true; musicSync(); return 1;"); time.sleep(1.5); out("MUSIC " + str(js("return playing ? playing.id + ' ' + audio.state : 'none';")))
+        elif k == "muted": js('state.music.mute = true; changed(); return 1;'); time.sleep(0.3)
+        else: PARTS[k]()
 try:
     req("POST", f"/session/{sid}/window/rect", {"width": W, "height": H})
     req("POST", f"/session/{sid}/url", {"url": url}); time.sleep(4)
@@ -103,8 +123,9 @@ try:
         measure("caches emptied, no reload")
         js("if (audio) audio.suspend(); return 1;"); time.sleep(0.5)
         measure("music paused too")
-    req("POST", f"/session/{sid}/refresh", {}); time.sleep(4); load_friend(); measure("after a reload")
-    time.sleep(15); measure("15 s after the reload")
+    if not os.environ.get("NORELOAD"):
+        req("POST", f"/session/{sid}/refresh", {}); time.sleep(4); load_friend(); measure("after a reload")
+        time.sleep(15); measure("15 s after the reload")
 finally:
     try: req("DELETE", f"/session/{sid}")
     except Exception: pass
