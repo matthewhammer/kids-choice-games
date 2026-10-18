@@ -736,7 +736,7 @@ function treeroomScene(c) {
   // room's corner leaves room for, the map as wide as the sign
   const mapKey = [o.houses, o.bridges, o.ladders, o.treeHouseSize, ...treeHouses(o, Math.max(1, Math.min(6, o.houses ?? 4)), 1).map(h => [h.animal, h.look.cols])];
   s += SEP + obj("house sign", Infinity, part("room-sign", [c.F, inside, houseEmoji(o, inside), mapKey], () => {
-    const sx = x1 - W * 0.14, sy = y0 + H * 0.12, hw = Math.max(46 * k, Math.min(64 * k, W * 0.14 - 4 * k));
+    const sx = x1 - W * 0.14, sy = y0 + H * 0.12, hw = Math.max(46 * k, Math.min(76 * k, W * 0.14 - 4 * k));
     const [bx, by, bw, bh] = TREE_MAP_BOX, m = (2 * hw - 14 * k) / bw, my = sy + 38 * k, mh = bh * m;
     // (hanging still on its ropes: no wind indoors)
     return (`<path d="M${P(sx - (hw - 16 * k), sy - 60 * k)} L${P(sx - (hw - 16 * k), sy)} M${P(sx + hw - 16 * k, sy - 60 * k)} L${P(sx + hw - 16 * k, sy)}" stroke="#d8c49a" stroke-width="${f1(2 * k)}"/>` +

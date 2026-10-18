@@ -253,7 +253,7 @@ function treeMapSvg(o, here) {
           silhouette(treeBridges(n, bridges, hz) + TREE_SLOTS.slice(0, Math.min(n, ladders)).map((_, i) => treeLadder(n, i, hz).svg).join(""), "#4d3520");
   const houses = treeHouses(o, n, hz);
   t += houses.map(({ x, y, i, look, sc }) => silhouette(`<g ${tf(x, y, sc)}>${CABIN_SVG}${look.head}</g>`, "#1f140b") +
-    `<text x="${f1(x)}" y="${f1(y - 24 * sc)}" text-anchor="middle" font-size="${f1(68 * sc)}" font-weight="bold" fill="#e9d3a6" font-family="sans-serif">${i + 1}</text>`).join("");
+    `<text x="${f1(x)}" y="${f1(y - 14 * sc)}" text-anchor="middle" font-size="${f1(92 * sc)}" font-weight="bold" fill="#e9d3a6" font-family="sans-serif">${i + 1}</text>`).join("");
   const h = houses.find(u => u.i === here - 1);
   if (h) t += [["#1f140b", 30], ["#ffffff", 16]].map(([col, w]) => `<circle data-here="${here}" cx="${f1(h.x)}" cy="${f1(h.y - 84 * h.sc)}" r="${f1(112 * h.sc)}" fill="none" stroke="${col}" stroke-width="${w}"/>`).join("");
   return t + `</g>`;
