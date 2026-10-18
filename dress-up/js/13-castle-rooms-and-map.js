@@ -1774,7 +1774,17 @@ function stableHorses(c, K, wags) {
   }).join("");
 }
 // (sk: its sign's size, when it is not the door's own: a hallway's farther doors keep signs big enough to read)
-function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0, sk = 0) {
+// (ticket 256, Matthew: "In the castle, it can just be a solid color indicating if the next room is bright or dim, or in
+// between") how light the room through a door is, as one color, seen as the door opens: from the room's own tone, its
+// walls' stone (a dungeon's dark, the greenhouse's pale), dark to lamplight; out of the castle (null), daylight
+const ROOM_LIGHT = { catroom: 0.62, stable: 0.5 };   // (the rooms of no tone: how light, 0 to 1)
+function roomLightBehind(kind) {
+  if (kind === null) return "#cfe6f5";
+  const tone = ROOM_KINDS[kind] && ROOM_KINDS[kind].tone, v = tone ? parseInt(tone.slice(1), 16) : 0;
+  const lum = tone ? (0.299 * (v >> 16) + 0.587 * ((v >> 8) & 255) + 0.114 * (v & 255)) / 255 : ROOM_LIGHT[kind] ?? 0.5;
+  return mix("#140d08", "#ffe3a0", clamp((lum - 0.32) / 0.48, 0, 1));
+}
+function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0, sk = 0, behind = "#140d08") {
   const { k } = c, S = roomSpace(c), { floor, bw } = S, h = 170 * k, rise = 46 * k;
   const at = (z, y) => S.at(sd * bw, y, z);   // (on its side wall)
   const zm = (z0 + z1) / 2, fm = 1 / (1 + zm), km = k * fm;
@@ -1795,7 +1805,7 @@ function hallSideDoor(c, sd, z0, z1, label, attrs, lift = 0, sk = 0) {
   const open = `M${P2(...ob)} L${P2(...ot)} Q${P2((ot[0] + ft[0]) / 2, (ot[1] + ft[1]) / 2)} ${P2(...ft)} L${P2(...fb)} Z`;
   return `<g class="portal" data-door="" ${attrs}>` +
     `<path d="${shape}" fill="none" stroke="${mix(ROOM_TONE.hallway, "#ffffff", 0.12)}" stroke-width="${f1(10 * km)}" stroke-linejoin="round"/>` +
-    `<path d="${shape}" fill="#140d08"/><path d="M${P2(...nb)} L${P2(...fb)}" stroke="#ffcf6b" stroke-opacity="0.35" stroke-width="${f1(4 * km)}"/>` +
+    `<path d="${shape}" fill="${behind}"/><path d="M${P2(...nb)} L${P2(...fb)}" stroke="#ffcf6b" stroke-opacity="0.35" stroke-width="${f1(4 * km)}"/>` +
     `<g data-leaf="" data-open="${open}">` +
     `<path d="${shape}" fill="#5a3a22" stroke="#2e1f12" stroke-width="${f1(Math.max(0.8, 3 * km))}" stroke-linejoin="round"/>` + planks +
     band(floor - h * 0.22) + band(floor - h * 0.78) +
@@ -1822,7 +1832,7 @@ function hallDoors(c, doors) {
     const A = hallSignAt(c, sd, z0, z1, sk); let y = A.y;
     for (const B of tops[sd]) if (Math.abs(A.x - B.x) < (A.w + B.w) / 2 + 4 * c.k && y + A.h / 2 > B.y - B.h / 2 - 4 * c.k) y = B.y - B.h / 2 - 4 * c.k - A.h / 2;
     tops[sd].push({ ...A, y });
-    return hallSideDoor(c, sd, z0, z1, L.label, L.attrs, A.y - y, sk);
+    return hallSideDoor(c, sd, z0, z1, L.label, L.attrs, A.y - y, sk, L.behind);
   }).join("");
 }
 // Where a castle room's ways lead, for the picture (castleWays) and the
@@ -1882,8 +1892,8 @@ function pitShapeOver(K, n) {
 function castleWays(c, K, n, style) {
   const { W, k } = c, { floor, bw } = roomFrame(c), S = roomSpace(c);
   const rooms = K.rooms, exits = ROOM_KINDS[style].exits, X = roomExits(K, n);
-  const way = to => to === 0 ? { attrs: `data-to="castle"`, label: "🏰 out" }
-    : to ? { attrs: `data-to="castleroom" data-room="${to}"`, label: `${roomLabel(rooms[to - 1]).split(" ")[0]} ${to}` } : null;
+  const way = to => to === 0 ? { attrs: `data-to="castle"`, label: "🏰 out", behind: roomLightBehind(null) }
+    : to ? { attrs: `data-to="castleroom" data-room="${to}"`, label: `${roomLabel(rooms[to - 1]).split(" ")[0]} ${to}`, behind: roomLightBehind(rooms[to - 1]) } : null;
   // (its way out, where it has one: castleOut; leading nowhere, it isn't there)
   const out = X[0] && X[0].way ? way(X[0].to) : null;
   // (ticket 99) All of this is drawn after the room, so all of it is objects: a door or an arch in a wall,
@@ -1915,7 +1925,7 @@ function castleWays(c, K, n, style) {
       // their head and arm sticking out past its edge) a door flat on its side wall is behind anyone in the room: drawn
       // with the back wall (its foot, floor), as the long rooms' doors are, not at its near edge's depth
       : doors.map((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.17 * j;
-          return obj(`door ${doorNo[i]}`, floor, hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k)); }).join("")) + far;
+          return obj(`door ${doorNo[i]}`, floor, hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.12, z1, L.label, L.attrs, j * 46 * k, 0, L.behind)); }).join("")) + far;
   }
   if (exits === "hall") {
     // and its far end, the foot of the spiral stairs, to the room its setting says (none: only to look at)
@@ -1937,7 +1947,7 @@ function castleWays(c, K, n, style) {
   });
   more.forEach((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.15 * j;
     // (ticket 223: on its wall, behind anyone in the room)
-    t += obj(`door to room ${linkTo[6 + i]}`, floor, hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.11, z1, L.label, L.attrs, j * 46 * k)); });
+    t += obj(`door to room ${linkTo[6 + i]}`, floor, hallSideDoor(c, i % 2 ? 1 : -1, z1 - 0.11, z1, L.label, L.attrs, j * 46 * k, 0, L.behind)); });
   return t;
 }
 // (ticket 233, Matthew: "each S exit of each room that has one can be: nothing, another castle room, outside of the

@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.182 (2026-10-17)
+
+Everything in 0.0.181, with doors that open as you come to them.
+
+- **Doors open when they glow**: in the tree house rooms and the castle, a door in a side wall swings open when your friend comes near it (when it glows), and swings shut again when they move away.
+- **What's behind**: through a tree house room's open door, the house across the bridge; through a castle door, the light of the room beyond, dark for a dungeon, bright for the greenhouse, and in between.
+- **Walk on through**: walking into the wall at an open door takes your friend through it.
+
 ## 0.0.181 (2026-10-17)
 
 Everything in 0.0.180, with fewer ways to end up inside things.

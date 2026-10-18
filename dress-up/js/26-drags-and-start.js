@@ -589,8 +589,12 @@ function padPoll(t) {
       padLoop = requestAnimationFrame(padPoll); return;
     }
     // (ticket 149: walls and solids stop them, and they slide along)
-    const [mx, my] = solidMove(BG.figX ?? 0, BG.figY ?? 0, Math.round(10 * clamp((BG.figX ?? 0) + padVel[0] * dt, F.left, F.right)) / 10,
-                               Math.round(10 * clamp((BG.figY ?? 0) + padVel[1] * dt * 0.6, figYMin(F), F.bottom - F.ground)) / 10);
+    const wantX = Math.round(10 * clamp((BG.figX ?? 0) + padVel[0] * dt, F.left, F.right)) / 10;
+    const [mx, my] = solidMove(BG.figX ?? 0, BG.figY ?? 0, wantX, Math.round(10 * clamp((BG.figY ?? 0) + padVel[1] * dt * 0.6, figYMin(F), F.bottom - F.ground)) / 10);
+    // (ticket 256: stopped by a side wall where the door in it stands open: through it)
+    if (moving && !entering && !isJump(B.anim) && Math.abs(mx - wantX) > 0.05 && solidHit.name === "wall" && performance.now() - solidHit.t < 250 && doorPushed(vx)) {
+      padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return;
+    }
     if (mx === (BG.figX ?? 0) && my === (BG.figY ?? 0) && !moving) padVel = [0, 0];   // (stopped by a wall while coasting)
     BG.figX = mx; BG.figY = my;
     // (ticket 214, Matthew: "all collision directions that correspond to: edge of the N 'back wall' (or horizon); E, S

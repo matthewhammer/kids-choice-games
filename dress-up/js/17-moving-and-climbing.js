@@ -390,12 +390,35 @@ function passFrame(b, dim) {
              : `<rect ${at} fill="#fff6a0" fill-opacity="0.14" stroke="#ffd23f" stroke-opacity="0.75" stroke-width="7" vector-effect="non-scaling-stroke"/>` +
                `<rect ${at} fill="none" stroke="#fffbe0" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
 }
+// (ticket 256, Matthew: "when we get close to a closed door on a side wall, in the tree house or the castle, let's have
+// it open and reveal what's behind it"; "when the door like this in the tree house is glowing, it should animate
+// opening. And when it unglows, it closes") A side wall's door (a [data-leaf] in a .portal[data-door]) swings open while
+// it is the one the glow is on, to its data-open shape as walkInto swings it, its planks and handle fading; and shut
+// again when the glow moves off it. glowLeaf: the door the glow has opened.
+let glowLeaf = null;
+const DOOR_SWING_S = 0.45;
+function doorSwing(leaf, open) {
+  if (!leaf || !leaf.isConnected || leaf.dataset.swung === (open ? "open" : "shut")) return;
+  leaf.dataset.swung = open ? "open" : "shut";
+  const wide = leaf.getAttribute("data-open");
+  for (const p of leaf.querySelectorAll("path")) {
+    for (const a of p.querySelectorAll("animate[data-swing]")) a.remove();
+    const shut = p.getAttribute("d"), a = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+    for (const [k, v] of [["attributeName", "d"], ["from", open ? shut : wide], ["to", open ? wide : shut], ["dur", DOOR_SWING_S + "s"], ["fill", "freeze"], ["begin", "indefinite"], ["data-swing", ""]]) a.setAttribute(k, v);
+    p.append(a);
+    try { a.beginElement(); } catch (e) { /* (an old browser: the door stays as it is) */ }
+  }
+  for (const n of leaf.querySelectorAll("line, ellipse")) { n.style.transition = `opacity ${DOOR_SWING_S}s`; n.style.opacity = open ? "0" : ""; }
+}
 function showEnterGlow() {
   if (marks.text !== bgShown.text && bgShown.node) return;   // (measured again in a moment: the glows kept till then)
   // (ticket 246: on a rope bridge, the house at the end they would go in at, alone)
   const be = bridgeEnd(), bp = be && marks.pics.find(q => q.el.isConnected && q.el.matches(`.portal[data-to="treeroom"][data-house="${be.house}"]`));
   const near = be ? [] : passesNear(), hover = !be && hoverPass && marks.pics.find(q => q.el === hoverPass.el && q.el.isConnected), p = be ? bp || null : hover || (near.length ? near[0].p : null);
   enterAt = p;
+  // (ticket 256: the door the glow is on open, the one it left shut)
+  const leaf = p && p.kind !== "nav" && p.el.matches && p.el.matches(".portal[data-door]") ? p.el.querySelector("[data-leaf]") : null;
+  if (leaf !== glowLeaf) { doorSwing(glowLeaf, false); glowLeaf = leaf; doorSwing(leaf, true); }
   // (a nav arrow's glow is its arrow over the picture: aimed, or near and dimmer)
   worldWaysAim(p && p.kind === "nav" ? p.el.dataset.way : null);
   const NS = "http://www.w3.org/2000/svg", put = (el, box, dim) => {
@@ -412,6 +435,21 @@ function showEnterGlow() {
   if (enterGlow && enterGlow.isConnected && enterGlow.parentNode === p.el) return;
   if (enterGlow) enterGlow.remove();
   enterGlow = put(p.el, p.box, false);
+}
+// (ticket 256, Matthew: "we can walk through an open door, by just colliding with it") walking on into a side wall at
+// the door the glow has opened in it, between its feet's depths, the way it faces: through it. The door's opening's
+// first and last points are its feet, near and far (its first shape, M near ... far Z), in the picture's units.
+function doorPushed(vx) {
+  const leaf = glowLeaf, door = leaf && leaf.isConnected && leaf.dataset.swung === "open" ? leaf.closest(".portal[data-door]") : null;
+  const shape = door && door.querySelector("path");
+  if (!shape || entering || Math.abs(vx) < 0.3) return false;
+  const M = pic.getScreenCTM(), E = shape.getScreenCTM(), n = (shape.getAttribute("d").match(/-?\d+(\.\d+)?/g) || []).map(Number);
+  if (!M || !E || n.length < 4) return false;
+  const T = M.inverse().multiply(E), pt = (x, y) => new DOMPoint(x, y).matrixTransform(T);
+  const near = pt(n[0], n[1]), far = pt(n[n.length - 2], n[n.length - 1]), B = state.background, z = SCENE.ground + (B.figY ?? 0), slack = 6;
+  if (Math.sign(vx) !== Math.sign(near.x) || z < Math.min(near.y, far.y) - slack || z > Math.max(near.y, far.y) + slack) return false;
+  enterScene(door);
+  return true;
 }
 function enterPicture() {
   // (ticket 246) on a rope bridge: along it to the end they face, and into the house there
