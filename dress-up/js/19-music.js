@@ -657,6 +657,14 @@ const TUNES = {
   superdub: { name: "🔥 turtle super-dub step", make: () => steppersTune({ bpm: 153, down: 12, ups: { "bass·bass": 12, "sonar·bell": 12, "tuneA·melodica": 24 } }),
     mix: { "kick·kick": { echo: 0 }, "drums·rim": { echo: 0 }, fx: { repeats: 70, time: 7, room: 186 },
            "tuneA·melodica": { knob: 100, pan: -4, rev: 68, level: -7, tone: 45 }, "chop·chop": { tone: 84, level: 6, echo: 81, pan: -4 } } },
+  // (ticket 346, Matthew: "mint another version of the turtle dub from these settings ... ▶ playing: 🐢 turtle steppers dub
+  // (112 beats a minute, down 13 half steps). Please add to track list") turtle steppers dub as he set it in his save of
+  // 2026-10-18 17:45: 112 beats a minute (152% of 74), 13 half steps down, his octave presses on the mixing board baked into
+  // the parts (the bass three octaves back up, the sonar's bell and the chop one, the first melodica one more down, the
+  // second three), and the rest of his board its own mix to start from, as the super-dub step's (ticket 263)
+  deepdub: { name: "🌊 turtle deep-dub", make: () => steppersTune({ bpm: 112, down: 13, ups: { "bass·bass": 36, "sonar·bell": 12, "chop·chop": 12, "tuneA·melodica": -12, "tuneB·melodica": -36 } }),
+    mix: { "bass·bass": { level: 9, rev: 41, tone: 17, echo: 39, knob: 10 }, "kick·kick": { echo: 0 }, "drums·rim": { echo: 0 }, fx: { repeats: 70, time: 7, room: 186 },
+           "tuneA·melodica": { knob: 100, pan: -4, rev: 68, level: -7, tone: 45 }, "chop·chop": { tone: 84, level: 6, echo: 81, pan: -4 } } },
   // (ticket 290, Matthew: "let's use the turtle dub step, but slowed down, and new melody and chords. the fire emoji one
   // please. 'super dub step' variation.") The bubble room's own: the super-dub step's groove and its octaves (its kick, rim,
   // hats, chop and bass, his presses on the board), slower, at 116 beats a minute, in A minor, its chords going round
@@ -1115,7 +1123,7 @@ function steppersTune({ bpm = 74, down = 0, ups = {}, chords = ["Em", "Em", "Am"
 // chips picks a kind, the second its tune
 const TUNE_GROUPS = [
   ["beats", "🥁 classic beats", ["bongobreak", "canyon", "skatepark"]],
-  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", "superdub", "bubbledub"]],   // (ticket 263: its super-dub step beside it; ticket 290: and the bubble room's)
+  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", "superdub", "deepdub", "bubbledub"]],   // (ticket 263: its super-dub step beside it; ticket 290: and the bubble room's)
   ["calypso", "🏖️ calypso", ["beach", "soca", "lullaby"]],
   ["house", "🏠 house", ["cushions"]],
   ["groove", "🕺 groove", ["bats", "vibes"]],

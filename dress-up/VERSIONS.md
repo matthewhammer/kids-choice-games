@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.244 (2026-10-18)
+
+Everything in 0.0.243, plus a new tune.
+
+- **🌊 turtle deep-dub**, among the 🌴 reggae tunes: turtle steppers dub as Matthew set it, at 112 beats a minute and 13 half steps down, the bass three octaves back up, the sonar's ping and the chop one, and both melodicas down low, with his mixing board as its own mix to start from.
+
 ## 0.0.243 (2026-10-18)
 
 Everything in 0.0.242, with the tree house's trunk boxed closer at its curvy base.
