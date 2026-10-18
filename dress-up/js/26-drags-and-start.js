@@ -172,6 +172,8 @@ pic.addEventListener("pointerdown", e => {
     // then takes the board's way, as its nav arrow does
     const board = e.target.closest && e.target.closest(".sign-board[data-way]");
     if (board) Object.assign(drag, { board: board.dataset.way, cx: e.clientX, cy: e.clientY, far: false });
+    // (ticket 284) pressed on a 🎚️ lever: as a board, a press let go before it has gone SIGN_DRAG_PX pulls it
+    else if (T && T.kind === "lever") Object.assign(drag, { lever: true, cx: e.clientX, cy: e.clientY, far: false });
     pic.setPointerCapture(e.pointerId); picDragging = true;
     return;
   }
@@ -227,7 +229,7 @@ pic.addEventListener("pointermove", e => {
   if (!drag) { hoverAt(e); walkSpotShow(e); return; }   // (ticket 251: the ground a click would walk to, glowing)
   if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
-    if (drag.board && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
+    if ((drag.board || drag.lever) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
     const x = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)), y = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
@@ -298,7 +300,7 @@ function dropOnSeat() {
 const SIGN_DRAG_PX = 6;
 const letGo = () => {
   if (dragFrame || dragTimer) dragDraw(true);   // (the last move, drawn before letting go)
-  const way = drag && drag.board && !drag.far ? drag.board : null;
+  const way = drag && drag.board && !drag.far ? drag.board : null, pull = drag && drag.lever && !drag.far ? drag.put : null;
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, placed = drag && drag.figure, put = drag && drag.put !== undefined;
@@ -309,7 +311,29 @@ const letGo = () => {
   if (placed) dropOnSeat();
   if (placed && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)
   if (way) { const p = bgShown.node && bgShown.node.querySelector(`.portal[data-way="${way}"]`); if (p && !entering) enterScene(p); }   // (ticket 280: a board's way, as its arrow's click)
+  if (pull !== null) leverPull(pull);   // (ticket 284)
 };
+// (ticket 284) A 🎚️ lever pulled: it flips over, and so does every 🕳️ trap door here it is wired to (its 🔗); the picture is
+// drawn with it over, and then its handle on the screen turns across from where it was, in LEVER_TURN ms
+const LEVER_TURN = 250;
+function leverPull(i) {
+  const B = state.background, T = (B.things || [])[i];
+  if (!T || T.kind !== "lever") return;
+  T.on = !T.on;
+  for (const d of B.things) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid)) d.open = !d.open;
+  changed();
+  const arm = bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${i}"] .lever-arm`);
+  if (!arm) return;
+  const [px, py] = arm.dataset.pivot.split(" ").map(Number), to = T.on ? LEVER_TILT : -LEVER_TILT, t0 = performance.now();
+  // (by frames, a timer standing in where frames do not come, as for a drag: it always ends at its new angle)
+  let raf = 0, tm = 0;
+  const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (!arm.isConnected) return;
+    const u = Math.min(1, (performance.now() - t0) / LEVER_TURN), e = 1 - (1 - u) * (1 - u);
+    arm.setAttribute("transform", `rotate(${f1(-to + 2 * to * e)} ${f1(px)} ${f1(py)})`);
+    if (u < 1) { raf = requestAnimationFrame(step); tm = setTimeout(step, 40); } };
+  arm.setAttribute("transform", `rotate(${-to} ${f1(px)} ${f1(py)})`);
+  raf = requestAnimationFrame(step); tm = setTimeout(step, 40);
+}
 pic.addEventListener("pointerup", letGo);
 // (ticket 133: a touch the browser takes over, as a scroll or a gesture, ends
 // the drag too, or the friend stays held)

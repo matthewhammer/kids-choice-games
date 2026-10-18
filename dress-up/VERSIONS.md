@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.209 (2026-10-18)
+
+Everything in 0.0.208, with levers to place, and trap doors they open and shut.
+
+- **🎚️ switches and traps**, a new group of things in 🏞️ Background: a **🎚️ lever** on a little stone post (the trap room's own lever on its front), and a **🕳️ trap door** in the floor. Tap a lever in the picture and it is pulled: its handle swings across, and every trap door it is wired to opens, or shuts again. Wire it in the lever's row of the things list, "🔗 it opens and shuts": a chip for each trap door in the place, by its number. Drag a lever to move it, as before; only a tap pulls it.
+- **🕳️ a trap door**: shut, planks over its opening in a ring of broken stone, and the friend walks across it; open, the trap room's pit, and the friend's feet keep out of it. Its own "🕳️ open", its opening's shape (■ square, ● circle, ▲ triangle, as the castle's pits), and "🔱 spikes inside".
+
 ## 0.0.208 (2026-10-18)
 
 Everything in 0.0.207, with any object of any place to put in any place.

@@ -1266,6 +1266,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             if (!ok.length) return [el("span", { class: "hint" }, label + ": no ways out here that meet a way back")];
             return [el("span", { class: "hint" }, label), ...ok.map(d => el("button", { "aria-pressed": String(cur.includes(d)), title: d,
               onclick: () => { const c = t[p] ?? ok; t[p] = Object.keys(WORLD_DIRS).filter(x => x === d ? !c.includes(d) : c.includes(x)); changed(); } }, WORLD_ARROWS[d]))]; }
+          // (ticket 284) a lever's 🔗: a chip for each trap door here, named by its number in this list; pressed, wired
+          if (how === "wires") { const all = state.background.things || [], doors = all.filter(x => x.kind === "trapdoor" && x.uid), cur = t[p] || [];
+            if (!doors.length) return [el("span", { class: "hint" }, label + ": put a 🕳️ trap door here first")];
+            return [el("span", { class: "hint" }, label), ...doors.map(d => el("button", { "aria-pressed": String(cur.includes(d.uid)),
+              onclick: () => { const c = t[p] || []; t[p] = c.includes(d.uid) ? c.filter(u => u !== d.uid) : [...c, d.uid]; changed(); } }, `🕳️ ${all.indexOf(d) + 1}`))]; }
           if (how === "text") return [el("span", { class: "hint" }, label), el("input", { type: "text", maxlength: String(opts), size: String(opts), value: String(now ?? ""), "aria-label": label, oninput: e => { t[p] = e.target.value.slice(0, opts); changed(); } })];
           return [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)];
         }),
@@ -1279,7 +1284,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const x = at ? Math.round(clamp(at.x, F.left, F.right)) : Math.round((((i * 0.37) % 1) - 0.5) * 520);
       const z = at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
       if (thingsLatch) return;   // (ticket 203: shut till the marked ones are dealt with)
-      T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}), ...extra });
+      T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}),
+               ...(kd === "trapdoor" ? { uid: "d" + Math.floor(Math.random() * 36 ** 6).toString(36) } : {}), ...extra });   // (ticket 284: a trap door's name for the levers wired to it)
       changed();
       if (thingMoves(T[T.length - 1])) thingCheck(guard);   // (ticket 201: how this computer takes it)
     };

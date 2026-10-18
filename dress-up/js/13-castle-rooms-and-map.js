@@ -183,6 +183,33 @@ const ladderUp = (x, floor, top, k, label, attrs, shape = "circle") => `<g class
     return `<line x1="${f1(x - hw)}" y1="${f1(y)}" x2="${f1(x + hw)}" y2="${f1(y)}" stroke="#8b5e34" stroke-width="${f1(5 * k)}"/>`; }).join("") + `</g>` +
   plankSign(x, floor - 200 * k, k, label) + `</g>`;
 
+// (ticket 284) the trap room's lever, shared with the 🎚️ lever a world designer
+// places: its plate (x, y, its top left), its pivot (px, py) and the end of its
+// handle (ex, ey), where the knob is; arm wraps the handle and the knob (a
+// placed lever turns them as it is pulled)
+function leverSvg(x, y, px, py, ex, ey, k, arm = s => s) {
+  return `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(26 * k)}" height="${f1(40 * k)}" fill="#3a3a44"/>` +
+    arm(`<line x1="${f1(px)}" y1="${f1(py)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="#6a6a76" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
+        `<circle cx="${f1(ex)}" cy="${f1(ey)}" r="${f1(7 * k)}" fill="#c0392b"/>`);
+}
+// (ticket 284) the trap room's pit, shared with the 🕳️ trap door: its opening
+// (shape sh, middle cx, cy, half widths rx, ry), dark inside, spikes glinting
+// in it (R and i as the trap room's, so its two pits differ), a rim of broken
+// stone; its ids from id
+function pitSvg(cx, cy, rx, ry, sh, k, R, i, id, spikes = true) {
+  const P = (x, y) => `${f1(x)} ${f1(y)}`;
+  return `<defs><radialGradient id="${id}" cx="0.5" cy="0.3" r="0.7"><stop offset="0" stop-color="#000000"/><stop offset="1" stop-color="#2a221c"/></radialGradient>` +
+    `<clipPath id="${id}c"><path d="${openingD(sh, cx, cy, rx, ry)}"/></clipPath></defs>` +
+    `<path d="${openingD(sh, cx, cy + 4 * k, rx + 14 * k, ry + 8 * k)}" fill="#4a4038"/>` +
+    `<path d="${openingD(sh, cx, cy, rx, ry)}" fill="url(#${id})"/>` +
+    (spikes ? `<g clip-path="url(#${id}c)">` + [...Array(11)].map((_, j) => {
+      const x = cx - rx * 0.85 + rx * 1.7 * j / 10, b = cy + ry * 0.9, h = (26 + 10 * R(j + i * 20, 920)) * k;
+      return `<polygon points="${P(x - 7 * k, b)} ${P(x, b - h)} ${P(x + 7 * k, b)}" fill="#8a8a96"/><line x1="${f1(x - 2 * k)}" y1="${f1(b - h * 0.8)}" x2="${f1(x - 4 * k)}" y2="${f1(b - 4 * k)}" stroke="#d8d8e4" stroke-width="${f1(1.5 * k)}"/>`;
+    }).join("") + `</g>` : "") +
+    pitRim(cx, cy, rx, ry, k, R, i);
+}
+const pitRim = (cx, cy, rx, ry, k, R, i) => [...Array(12)].map((_, j) => { const a = j / 12 * 2 * Math.PI, x = cx + Math.cos(a) * (rx + 6 * k), y = cy + Math.sin(a) * (ry + 4 * k);
+  return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((10 + 6 * R(j, 921 + i)) * k)}" ry="${f1(6 * k)}" fill="${R(j, 922) < 0.5 ? "#6b625a" : "#5a524a"}"/>`; }).join("");
 // The trap room: bare stone, two torches, a lever on the wall, and two pits
 // in the floor, spikes inside, each a drop into one of the castle's dungeons
 function trapRoomSvg(c, K, pits, shapes = K.pitShapes) {
@@ -190,9 +217,7 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes) {
   let t = roomShell(c, ROOM_TONE.trap, { moss: "#4f6b3a" });
   t += torchSvg(-bw * 0.62, floor - 210 * k, k, 0, c.o) + torchSvg(bw * 0.62, floor - 210 * k, k, 1, c.o);
   // a lever on the wall, and a warning carved over the pits
-  t += `<rect x="${f1(bw * 0.32)}" y="${f1(floor - 150 * k)}" width="${f1(26 * k)}" height="${f1(40 * k)}" fill="#3a3a44"/>` +
-       `<line x1="${f1(bw * 0.32 + 13 * k)}" y1="${f1(floor - 130 * k)}" x2="${f1(bw * 0.32 + 36 * k)}" y2="${f1(floor - 168 * k)}" stroke="#6a6a76" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
-       `<circle cx="${f1(bw * 0.32 + 36 * k)}" cy="${f1(floor - 168 * k)}" r="${f1(7 * k)}" fill="#c0392b"/>` +
+  t += leverSvg(bw * 0.32, floor - 150 * k, bw * 0.32 + 13 * k, floor - 130 * k, bw * 0.32 + 36 * k, floor - 168 * k, k) +
        `<rect x="${f1(-bw * 0.38)}" y="${f1(top + 40 * k)}" width="${f1(bw * 0.76)}" height="${f1(44 * k)}" rx="${f1(6 * k)}" fill="#3a3530" opacity="0.85"/>` +
        `<text x="0" y="${f1(top + 72 * k)}" text-anchor="middle" font-size="${f1(26 * k)}" font-weight="bold" fill="#f2c12e" font-family="sans-serif">⚠️ MIND THE FLOOR ⚠️</text>`;
   // the pits: dark holes in the floor, their rims of broken stone, rows of
@@ -202,16 +227,7 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes) {
     const id = `bg-pit${i}`;
     // (ticket 162: its hole, for falling in: its middle and its half widths, across and in depth)
     t += (to ? `<g class="portal" data-to="castleroom" data-room="${to}" data-pit="${f1(cx)} ${f1(cy)} ${f1(rx)} ${f1(ry)}" data-shape="${sh}">` : "<g>") +
-      `<defs><radialGradient id="${id}" cx="0.5" cy="0.3" r="0.7"><stop offset="0" stop-color="#000000"/><stop offset="1" stop-color="#2a221c"/></radialGradient>` +
-      `<clipPath id="${id}c"><path d="${openingD(sh, cx, cy, rx, ry)}"/></clipPath></defs>` +
-      `<path d="${openingD(sh, cx, cy + 4 * k, rx + 14 * k, ry + 8 * k)}" fill="#4a4038"/>` +
-      `<path d="${openingD(sh, cx, cy, rx, ry)}" fill="url(#${id})"/>` +
-      `<g clip-path="url(#${id}c)">` + [...Array(11)].map((_, j) => {
-        const x = cx - rx * 0.85 + rx * 1.7 * j / 10, b = cy + ry * 0.9, h = (26 + 10 * R(j + i * 20, 920)) * k;
-        return `<polygon points="${P(x - 7 * k, b)} ${P(x, b - h)} ${P(x + 7 * k, b)}" fill="#8a8a96"/><line x1="${f1(x - 2 * k)}" y1="${f1(b - h * 0.8)}" x2="${f1(x - 4 * k)}" y2="${f1(b - 4 * k)}" stroke="#d8d8e4" stroke-width="${f1(1.5 * k)}"/>`;
-      }).join("") + `</g>` +
-      [...Array(12)].map((_, j) => { const a = j / 12 * 2 * Math.PI, x = cx + Math.cos(a) * (rx + 6 * k), y = cy + Math.sin(a) * (ry + 4 * k);
-        return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((10 + 6 * R(j, 921 + i)) * k)}" ry="${f1(6 * k)}" fill="${R(j, 922) < 0.5 ? "#6b625a" : "#5a524a"}"/>`; }).join("") +
+      pitSvg(cx, cy, rx, ry, sh, k, R, i, id) +
       (to ? plankSign(cx, cy - ry - 34 * k, k, `🕳️ ${roomLabel(K.rooms[to - 1]).split(" ")[0]} ${to}`) : "") + `</g>`;
   });
   // a helmet someone dropped by the left pit, a sword by the right one

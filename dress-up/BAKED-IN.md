@@ -8,9 +8,9 @@ The audit of ticket 284 (Matthew, 2026-10-18: "audit each scene for objects that
 
 ## Next to make into objects, and placeable
 
-1. **The trap room's lever** (13:192): a switch to place, that moves when pressed, and that the world designer wires to what it does: trap doors opening and closing, for a start (Matthew's example).
+1. **The trap room's lever** (13:192): a switch to place, that moves when pressed, and that the world designer wires to what it does: trap doors opening and closing, for a start (Matthew's example). **Since 0.0.209 a thing to place**, the 🎚️ lever, drawn by the trap room's own `leverSvg`; the trap room's own lever is still drawn into its wall.
 2. **A wall torch** (trap room, dungeons, hallway, king's room: one shared drawing): a light that flickers with the LFO.
-3. **A pit, or a trap door in the floor** (the trap room's pits are already doorways with a shape setting): placed anywhere, a way down into another room, and what the lever opens and closes.
+3. **A pit, or a trap door in the floor** (the trap room's pits are already doorways with a shape setting): placed anywhere, a way down into another room, and what the lever opens and closes. **Since 0.0.209 a thing to place**, the 🕳️ trap door, the trap room's `pitSvg` when open; it leads nowhere yet (a way down is the next step).
 4. **A hanging lantern** (tree house room 3, the hut's rooms, the stable's post).
 5. **A rug** (the living room's, the healer's, the cat room's, the hut's: one shared drawing with colour themes): a flat thing.
 6. **A framed picture** (living room, tree rooms, the hut): already a doorway into its place; placing one places a doorway, so it needs a way back.

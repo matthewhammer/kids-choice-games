@@ -1033,6 +1033,9 @@ const THING_PARAMS = {
   seafish: [["color", "🎨", "color", SEAFISH_COLORS], ["bubbles", "🫧 bubbles", "toggle"]],
   chest: [["open", "🔓 open", "toggle"]],
   anchor: [["chain", "⛓️ broken chain", "toggle"]],
+  // (ticket 284) a lever's 🔗: the trap doors here it opens and shuts (by their uid); a trap door's own: open or shut, its shape, its spikes
+  lever: [["works", "🔗 it opens and shuts", "wires"]],
+  trapdoor: [["open", "🕳️ open", "toggle"], ["shape", "its opening", "choice", OPENING_SHAPES], ["spikes", "🔱 spikes inside", "toggle"]],
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
@@ -1040,7 +1043,7 @@ const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: 
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
-                         seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true },
+                         seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true }, lever: { on: false, works: [] }, trapdoor: { open: false, shape: "circle", spikes: true },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] } };
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
@@ -1203,7 +1206,7 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["places", "📦 from the places"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["works", "🎚️ switches and traps"], ["places", "📦 from the places"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
@@ -1216,6 +1219,8 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       chest: { label: "💰 treasure chest", size: 1, group: "sea" }, anchor: { label: "⚓ anchor", size: 1, group: "sea" },
                       kelp: { label: "🌿 kelp", size: 1, group: "sea", moving: true }, seagrass: { label: "🌾 sea grass", size: 1, group: "sea", moving: true },
                       seafan: { label: "🪭 sea fan", size: 1, group: "sea" }, sealettuce: { label: "🥬 sea lettuce", size: 1, group: "sea" },
+                      // (ticket 284) a 🎚️ lever, and 🕳️ trap doors it opens and shuts
+                      lever: { label: "🎚️ lever", size: 1, group: "works" }, trapdoor: { label: "🕳️ trap door", size: 1, group: "works" },
                       // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
                       lifted: { label: "📦 from a place", size: 1, group: "places" } };
 // (ticket 284, Matthew: "audit each scene for objects that we can offer as new placed objects ... The ticket would be
@@ -1284,6 +1289,32 @@ function liftCx(o) {
 const liftedThing = t => liftedOf(t.from || "").objs.get(t.name) || null;
 // (a thing moves, for the guard of ticket 201: by its kind, or a lifted one by what it holds)
 const thingMoves = t => t.kind === "lifted" ? !!(liftedThing(t) || {}).moves : !!(THING_KINDS[t.kind] || {}).moving;
+// (ticket 284, Matthew: "It would be fun to have placeable switches, animate moving them, and then let the world designer
+// wire up what they do -- open and close trap doors --- for a start") A 🎚️ lever on a little stone post, with the trap
+// room's own lever (leverSvg) on its front: its handle leans one way when off and the other when on; leverPull turns it
+// across. A 🕳️ trap door in the floor: shut, planks over its opening in a rim of broken stone (pitRim); open, the trap
+// room's pit (pitSvg), a hole the friend's feet keep out of (data-hole, as a tree room's, drawn in thingSvg in the
+// stage's units). Its depth among the objects is its back edge (thingDepth), so a friend standing on it shut is drawn over it.
+const LEVER_TILT = 31, LEVER_K = 1.6, LEVER_PIVOT = -96 + 20 * LEVER_K, TRAP_RX = 110, TRAP_RY = 34;
+function leverThingSvg(t) {
+  const k = LEVER_K, a = t.on ? LEVER_TILT : -LEVER_TILT;
+  return `<ellipse cx="0" cy="2" rx="40" ry="9" fill="#000000" opacity="0.18"/>` +
+    `<rect x="-26" y="-100" width="52" height="100" rx="4" fill="#6e6e7a"/><rect x="14" y="-100" width="12" height="100" fill="#5a5a66"/><rect x="-26" y="-100" width="52" height="9" rx="3" fill="#82828e"/>` +
+    leverSvg(-13 * k, -96, 0, LEVER_PIVOT, 0, LEVER_PIVOT - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="0 ${f1(LEVER_PIVOT)}" transform="rotate(${a} 0 ${f1(LEVER_PIVOT)})">${s}</g>`);
+}
+function trapdoorThingSvg(t, i) {
+  const id = `thing-pit-${t.uid || i}`, sh = t.shape || "circle", rx = TRAP_RX, ry = TRAP_RY, seed = t.seed ?? 900 + i;
+  const R = (a, b = 0) => { const v = Math.sin((a + seed) * 127.1 + b * 311.7) * 43758.5453; return v - Math.floor(v); };
+  if (t.open) return pitSvg(0, 0, rx, ry, sh, 1, R, 0, id, t.spikes ?? true);
+  const planks = [...Array(7)].map((_, j) => `<rect x="${f1(-rx + 2 * rx * j / 7)}" y="${f1(-ry - 2)}" width="${f1(2 * rx / 7 - 2)}" height="${f1(2 * ry + 4)}" fill="${j % 2 ? "#7a5230" : "#6e4a2c"}"/>`).join("");
+  return `<defs><clipPath id="${id}c"><path d="${openingD(sh, 0, 0, rx, ry)}"/></clipPath></defs>` +
+    `<path d="${openingD(sh, 0, 4, rx + 14, ry + 8)}" fill="#4a4038"/>` +
+    `<g clip-path="url(#${id}c)">${planks}<rect x="${-rx}" y="-4" width="${2 * rx}" height="8" fill="#4a3220"/></g>` +
+    `<path d="${openingD(sh, 0, 0, rx, ry)}" fill="none" stroke="#3a2a18" stroke-width="3"/><ellipse cx="0" cy="0" rx="11" ry="5" fill="none" stroke="#2a2a30" stroke-width="3"/>` +
+    pitRim(0, 0, rx, ry, 1, R, 0);
+}
+// (a thing's depth among the objects: where its feet are; a trap door's, its back edge)
+const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;
 const thingLabel = t => t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
 // (ticket 206, Matthew, after the Ubuntu laptop: every cauldron's fumes simple, unless its own 💨 fumes
@@ -1301,6 +1332,8 @@ function thingSvg(o, t, i) {
   const at = inner => `<g transform="translate(${f1(t.x)} ${f1(t.z)}) scale(${(t.mirror ? -s : s).toFixed(3)} ${s.toFixed(3)})">${inner}</g>`;
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
   const body = t.kind === "lifted" ? liftedBody(t, at) :
+               t.kind === "lever" ? at(leverThingSvg(t)) :
+               t.kind === "trapdoor" ? (t.open ? `<g data-hole="${f1(t.x - TRAP_RX * s)} ${f1(t.x + TRAP_RX * s)} ${f1(t.z - TRAP_RY * s)} ${f1(t.z + TRAP_RY * s)}">` : "<g>") + at(trapdoorThingSvg(t, i)) + "</g>" :
                t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :
                t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :
                // (a pine's needles are currentColor: the places give theirs a green; with none, it took the page's text colour, white in dark mode: Matthew's laptop)
@@ -1336,7 +1369,7 @@ function thingsLayer(c) {
   // That's the purpose of this slider -- it does not affect the static parts of the background, but it affects the
   // dynamic player, and placed objects") each sized by depthSize, so drawn again when the 🔭 setting moves its vanishing line
   const vanish = Math.round(10 * sceneVanish(c.o));
-  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : ""], () => obj(`${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
+  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : ""], () => obj(`${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");
 }
 // (Matthew, 2026-10-17) The crossing's geometry, shared with its ways out in
 // the world (worldWaysSvg): its floor reaches far up the picture (far), the
