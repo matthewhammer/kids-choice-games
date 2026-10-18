@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.227 (2026-10-18)
+
+Everything in 0.0.226, plus lichen, for M, to decorate rocks, castle walls and logs.
+
+- **🪨 Lichen to place**, in 🏞️ Background's things, 🌲 nature: five kinds after the forms real lichens take, all drawn shapes: 🟠 crust (a cracked orange crust of little tiles, with darker dots), 🍃 leafy rosette (lobed grey-green leaves round its middle, paler at their edges), 🏆 pixie cups (little trumpets on stalks), 💂 soldiers (grey-green stalks with bright red caps, some forked), 🧔 beard (pale strands hanging and branching, from where it is put: on a log, a rock's edge, a wall).
+- **"📍 on"**, as the moss's: the back wall (a flat lichen face on, as on a rock or a castle wall), the floor (lying flat), a left or right wall (flat lichen seen along the wall; standing lichen turned to grow out from it). A beard always hangs.
+- **"🎨"**: its kind's own colour (∅), or orange, yellow, grey green, pale green, bone, blue grey or red.
+
 ## 0.0.226 (2026-10-18)
 
 Everything in 0.0.225, with moss: pads with wavy fingers, in five kinds, on the walls and to place.

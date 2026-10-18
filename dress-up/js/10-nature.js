@@ -402,3 +402,77 @@ function mossSvg(style, seed, o = {}) {
   const all = t + fingers + tips;
   return on === "left" ? `<g transform="rotate(90)">${all}</g>` : on === "right" ? `<g transform="rotate(-90)">${all}</g>` : all;
 }
+
+// (ticket 319, M, through Matthew: "lichen options, for decorating rocks, or castle walls, or logs, etc.") Lichen, after
+// the three forms real lichens take (crustose, flat on what they grow on; foliose, leafy; fruticose, bushy or hanging),
+// five kinds, all drawn shapes (polygons and strands, as ticket 318's moss), the same every time for a seed. Each kind:
+//   form: "flat" (lies on the surface), "up" (stands up from it), "hang" (hangs down from it);
+//   w, h: its size;  n: how many pieces (tiles, lobes, stalks, strands);  color, tip: its colour and its tips'.
+// o.on as the moss's (MOSS_ON): a flat one is drawn face on on the back wall, foreshortened on the floor and on a side
+// wall; one standing up is turned on a side wall as the moss is, and shorter on the back wall; one hanging always hangs.
+const LICHEN_STYLES = {
+  // crustose (Caloplaca, Xanthoria): a cracked crust of little tiles, orange, with darker dots of fruit on it
+  crust: { label: "🟠 crust", form: "flat", w: 90, h: 52, n: 26, color: "#f08a2a", tip: "#c4561c" },
+  // foliose (Parmelia): a rosette of lobed leaves from its middle, grey green, paler at the edges
+  leafy: { label: "🍃 leafy rosette", form: "flat", w: 84, h: 76, n: 11, color: "#a8c49c", tip: "#dcead2" },
+  // Cladonia's pixie cups: little trumpets on stalks, on a crust of scales
+  cups: { label: "🏆 pixie cups", form: "up", w: 64, h: 40, n: 6, color: "#b6cc96", tip: "#8fa874" },
+  // British soldiers (Cladonia cristatella): grey green stalks with bright red caps
+  soldiers: { label: "💂 soldiers", form: "up", w: 60, h: 42, n: 7, color: "#aec48e", tip: "#e2342b" },
+  // Usnea, old man's beard: pale green strands hanging, branching, from where it grows
+  beard: { label: "🧔 beard", form: "hang", w: 54, h: 96, n: 11, color: "#c9dca0", tip: "#eef6d4" },
+};
+const LICHEN_STYLE_CHOICES = Object.entries(LICHEN_STYLES).map(([v, S]) => [v, S.label]);
+const LICHEN_COLORS = ["none", "#f08a2a", "#f2c94c", "#a8c49c", "#c9dca0", "#ece6cf", "#7fa8a0", "#e2342b"];
+// (an irregular polygon round (cx, cy), half widths rx and ry, its rim jagged by jag, from r's numbers from i0)
+const blobPts = (cx, cy, rx, ry, n, r, i0, jag = 0.25) => [...Array(n)].map((_, j) => { const a = 2 * Math.PI * j / n, m = 1 - jag / 2 + jag * r(i0 + j);
+  return `${f1(cx + Math.cos(a) * rx * m)},${f1(cy + Math.sin(a) * ry * m)}`; }).join(" ");
+function lichenSvg(style, seed, o = {}) {
+  const S = LICHEN_STYLES[style] || LICHEN_STYLES.crust, r = seeded(seed), col = o.color && o.color !== "none" ? o.color : S.color, on = o.on || (S.form === "flat" ? "back" : "floor");
+  const dark = mix(col, "#000000", 0.32), pale = mix(col, "#ffffff", 0.3), P = (x, y) => `${f1(x)},${f1(y)}`;
+  let t = "";
+  if (style === "crust") {
+    // (its patch, the cracks' colour; on it, tiles of crust, each a little polygon a shade of its own; dots of fruit)
+    t += `<polygon points="${blobPts(0, -S.h / 2, S.w / 2, S.h / 2, 18, r, 0, 0.35)}" fill="${dark}"/>`;
+    for (let i = 0; i < S.n; i++) { const a = 2 * Math.PI * r(i + 50), d = Math.sqrt(r(i + 80)) * 0.8, x = Math.cos(a) * S.w / 2 * d, y = -S.h / 2 + Math.sin(a) * S.h / 2 * d, s = 5 + 5 * r(i + 110);
+      t += `<polygon points="${blobPts(x, y, s, s * 0.8, 6, r, i * 7 + 140, 0.4)}" fill="${mix(col, "#ffffff", 0.25 * r(i + 200))}"/>`; }
+    for (let i = 0; i < 7; i++) { const a = 2 * Math.PI * r(i + 300), d = Math.sqrt(r(i + 320)) * 0.6, x = Math.cos(a) * S.w / 2 * d, y = -S.h / 2 + Math.sin(a) * S.h / 2 * d;
+      t += `<polygon points="${blobPts(x, y, 3, 2.6, 7, r, i * 7 + 340, 0.2)}" fill="${S.tip}"/>`; }
+  } else if (style === "leafy") {
+    // (lobes round its middle, each a leaf widening out to a scalloped tip, paler at its rim; its middle darker)
+    for (let i = 0; i < S.n; i++) { const a = 2 * Math.PI * (i + 0.3 * r(i)) / S.n, L = S.w / 2 * (0.65 + 0.35 * r(i + 30)), wd = L * 0.42, c = Math.cos(a), s = Math.sin(a);
+      const pt = (u, v) => P(c * u - s * v, -S.h / 2 + (s * u + c * v) * S.h / S.w);
+      t += `<polygon points="${[pt(0, -wd * 0.25), pt(L * 0.55, -wd * 0.55), pt(L * 0.85, -wd * 0.62), pt(L, -wd * 0.3), pt(L * 0.94, 0), pt(L, wd * 0.3), pt(L * 0.85, wd * 0.62), pt(L * 0.55, wd * 0.55), pt(0, wd * 0.25)].join(" ")}" fill="${col}" stroke="${S.tip}" stroke-width="1.6" stroke-linejoin="round"/>`; }
+    t += `<polygon points="${blobPts(0, -S.h / 2, S.w * 0.14, S.h * 0.14, 9, r, 400, 0.3)}" fill="${dark}"/>`;
+  } else if (style === "cups" || style === "soldiers") {
+    // (a crust of little scales at its foot; stalks rising from it, a little wavy; on each a cup (a trumpet, wider at its
+    // mouth, its inside darker) or a soldier's red cap (a ragged blob, some stalks forked in two))
+    const fh = S.h * (on === "back" ? 0.65 : 1);
+    for (let i = 0; i < 6; i++) t += `<polygon points="${blobPts((i - 2.5) * S.w / 7, -3, 7, 4, 6, r, i * 6, 0.4)}" fill="${mix(col, "#000000", 0.12 * r(i + 20))}"/>`;
+    for (let i = 0; i < S.n; i++) { const bx = (i - (S.n - 1) / 2) * S.w / S.n * 0.9 + (r(i + 40) - 0.5) * 6, hh = fh * (0.55 + 0.45 * r(i + 60)), sw = r(i + 80) - 0.5;
+      const pts = [...Array(5)].map((_, q) => { const u = q / 4; return [bx + sw * 6 * Math.sin(u * Math.PI), -3 - hh * u]; }), [tx, ty] = pts[4];
+      t += `<path d="${smoothPath(pts)}" fill="none" stroke="${mix(col, "#000000", 0.08)}" stroke-width="${style === "soldiers" ? 3.2 : 2.6}" stroke-linecap="round"/>`;
+      if (style === "cups") { const cw = 7 + 4 * r(i + 100), ch = 6 + 3 * r(i + 120);
+        t += `<polygon points="${P(tx - 1.6, ty + 1)} ${P(tx + 1.6, ty + 1)} ${P(tx + cw / 2, ty - ch)} ${P(tx - cw / 2, ty - ch)}" fill="${col}" stroke="${dark}" stroke-width="0.8"/>` +
+             `<polygon points="${blobPts(tx, ty - ch, cw / 2 - 0.6, 1.8, 8, r, i * 8 + 140, 0.1)}" fill="${S.tip}"/>`; }
+      else { const fork = r(i + 160) < 0.4;
+        for (const dx of fork ? [-3, 3] : [0]) { if (fork) t += `<path d="M${P(tx, ty)} L${P(tx + dx, ty - 5)}" stroke="${col}" stroke-width="2.4" stroke-linecap="round"/>`;
+          t += `<polygon points="${blobPts(tx + dx, ty - (fork ? 7 : 3), 3.6, 3.2, 8, r, i * 9 + dx + 200, 0.35)}" fill="${S.tip}" stroke="${mix(S.tip, "#000000", 0.3)}" stroke-width="0.6"/>`; } }
+    }
+  } else {
+    // (old man's beard: strands from where it hangs, down, swaying a little, branching, paler at their ends; hung from a
+    // point above its feet, so a beard put on a log or a rock's edge hangs from it)
+    const top = -S.h - 8;
+    for (let i = 0; i < S.n; i++) { const bx = (i - (S.n - 1) / 2) * S.w / S.n * 0.7, L = S.h * (0.55 + 0.45 * r(i + 20)), ph = 2 * Math.PI * r(i + 40);
+      const pts = [...Array(7)].map((_, q) => { const u = q / 6; return [bx * (1 + u * 0.5) + 3 * Math.sin(u * 3 * Math.PI + ph) * u, top + L * u]; });
+      t += `<path d="${smoothPath(pts)}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round"/>` +
+           `<path d="${smoothPath(pts.slice(4))}" fill="none" stroke="${S.tip}" stroke-width="1.2" stroke-linecap="round"/>`;
+      if (r(i + 60) < 0.6) { const [x, y] = pts[3], sd = r(i + 80) < 0.5 ? -1 : 1;
+        t += `<path d="M${P(x, y)} q${f1(sd * 4)} ${f1(6)} ${f1(sd * 3)} ${f1(L * 0.3)}" fill="none" stroke="${pale}" stroke-width="1.1" stroke-linecap="round"/>`; } }
+    t += `<polygon points="${blobPts(0, top, S.w * 0.22, 4, 8, r, 500, 0.3)}" fill="${dark}"/>`;
+  }
+  // (where it grows)
+  if (S.form === "flat") return on === "floor" ? `<g transform="scale(1 0.42)">${t}</g>` : on === "left" || on === "right" ? `<g transform="scale(0.5 1)">${t}</g>` : t;
+  if (S.form === "up") return on === "left" ? `<g transform="rotate(90)">${t}</g>` : on === "right" ? `<g transform="rotate(-90)">${t}</g>` : t;
+  return t;
+}
