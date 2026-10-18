@@ -324,6 +324,8 @@ const TABS = [
     ["group", "bubbles", "🫧 bubble space", [
       ["range", "bubbleCount", "🫧 how many", 5, 80, 20, 40],
       ["range", "bubbleWind", "🌬️ wind", 0, 100, 20, 60],
+      // (ticket 274) the bubbles' seed: the same seed, the same places, every time the place is drawn
+      ["action", "bubbleSeed", "🎲 other places for the bubbles", () => { state.background.bubbleSeed = 1 + Math.floor(Math.random() * 99999); }],
       ...BUBBLE_THEME_CTLS,
     ]],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)

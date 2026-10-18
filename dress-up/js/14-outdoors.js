@@ -808,7 +808,10 @@ function bubblespaceScene(c) {
 // drift on as a clump); and pops when it touches the friend (a quick swell
 // and fade), another drifting in from an edge a moment later, so the room
 // keeps its number. The themes take turns: A always, B and C when switched on.
-const bubbleSim = { list: [], bonds: [], layer: null, key: "", last: 0, raf: 0 };
+// (ticket 274) Where each bubble first appears, and how it first drifts, comes from the place's bubbleSeed (🎲 other
+// places for the bubbles) and its number alone, so the settings decide the picture; a popped one comes back in
+// turn, from the seed too. Held still (holdStill), they are not moved at all: touching ones are not even pushed apart.
+const bubbleSim = { list: [], bonds: [], layer: null, key: "", last: 0, raf: 0, seed: null, backs: 0 };
 const bubbleThemes = B => ["A", "B", "C"].filter(L => L === "A" || B["bubble" + L + "On"]).map(L => ({
   color: B["bubble" + L + "Color"], size: B["bubble" + L + "Size"] ?? 18, shine: (B["bubble" + L + "Shine"] ?? 70) / 100,
   sparkle: B["bubble" + L + "Sparkle"] || "none", sparkleColor: B["bubble" + L + "SparkleColor"] || "#ffffff" }));
@@ -823,16 +826,19 @@ function bubbleTick(t) {
   const layer = document.getElementById("bubble-layer"), F = sceneFrame, k = (F.bottom - F.top) / 700;
   if (!layer || !(F.right > F.left)) { bubbleSim.raf = requestAnimationFrame(bubbleTick); return; }
   const themes = bubbleThemes(B), n = Math.max(1, Math.min(80, Math.round(B.bubbleCount ?? 30))), key = JSON.stringify([n, themes, F.left, F.top, F.right, F.bottom]);
-  const rand = (a, b) => a + (b - a) * Math.random();
-  const spot = b => { b.x = rand(F.left + b.r, F.right - b.r); b.y = rand(F.top + b.r, F.bottom - b.r); b.vx = rand(-20, 20) * k; b.vy = rand(-20, 20) * k; };
+  const seed = B.bubbleSeed ?? 1, first = seeded(seed), again = seeded(seed + 0.5);
+  if (bubbleSim.seed !== seed) { bubbleSim.seed = seed; bubbleSim.list = []; bubbleSim.bonds = []; bubbleSim.backs = 0; }
+  const at = (i, j, a, b) => a + (b - a) * first(i * 4 + j), rand = (a, b) => a + (b - a) * again(bubbleSim.backs++);
+  const spot = (b, i) => { b.x = at(i, 0, F.left + b.r, F.right - b.r); b.y = at(i, 1, F.top + b.r, F.bottom - b.r); b.vx = at(i, 2, -20, 20) * k; b.vy = at(i, 3, -20, 20) * k; };
   if (key !== bubbleSim.key || layer !== bubbleSim.layer || layer.childNodes.length !== bubbleSim.list.length) {
     // (made again: the number, a theme, or the picture's size changed; those already there keep their places)
     const old = bubbleSim.list;
-    bubbleSim.list = Array.from({ length: n }, (_, i) => { const th = themes[i % themes.length], b = old[i] ? { ...old[i] } : {}; b.th = th; b.r = th.size * k; b.pop = 0; b.back = 0; if (!old[i]) spot(b); return b; });
+    bubbleSim.list = Array.from({ length: n }, (_, i) => { const th = themes[i % themes.length], b = old[i] ? { ...old[i] } : {}; b.th = th; b.r = th.size * k; b.pop = 0; b.back = 0; if (!old[i]) spot(b, i); return b; });
     bubbleSim.bonds = bubbleSim.bonds.filter(([i, j]) => i < n && j < n);
     layer.innerHTML = bubbleSim.list.map(b => `<g transform="translate(${f1(b.x)} ${f1(b.y)})"><g class="bubin">${bubbleSvg(0, 0, b.r, b.th)}</g></g>`).join("");
     bubbleSim.layer = layer; bubbleSim.key = key; bubbleSim.last = t;
   }
+  if (stillAt !== null) { bubbleSim.last = t; bubbleSim.raf = requestAnimationFrame(bubbleTick); return; }   // (held still: drawn where they are)
   const dt = Math.min(0.05, Math.max(0, (t - bubbleSim.last) / 1000)); bubbleSim.last = t;
   const L = bubbleSim.list, wind = (B.bubbleWind ?? 30) / 100, ang = t / 1000 * 0.13, wx = Math.cos(ang) * 90 * k * wind, wy = Math.sin(ang * 1.7) * 45 * k * wind;
   // the friend: their box in the picture's units, from the screen
@@ -841,7 +847,7 @@ function bubbleTick(t) {
   if (fig && P && state.body) { const r = fig.getBoundingClientRect(), inv = P.inverse(), a = new DOMPoint(r.left, r.top).matrixTransform(inv), c = new DOMPoint(r.right, r.bottom).matrixTransform(inv);
     if (r.width > 2) fr = [Math.min(a.x, c.x), Math.min(a.y, c.y), Math.max(a.x, c.x), Math.max(a.y, c.y)]; }
   L.forEach((b, i) => {
-    if (b.back) { if (t < b.back) return; b.back = 0; b.pop = 0; const sd = Math.floor(Math.random() * 4);   // (in again, from an edge)
+    if (b.back) { if (t < b.back) return; b.back = 0; b.pop = 0; const sd = Math.floor(rand(0, 4));   // (in again, from an edge)
       b.x = sd === 0 ? F.left + b.r : sd === 1 ? F.right - b.r : rand(F.left + b.r, F.right - b.r); b.y = sd === 2 ? F.top + b.r : sd === 3 ? F.bottom - b.r : rand(F.top + b.r, F.bottom - b.r);
       b.vx = rand(-15, 15) * k; b.vy = rand(-15, 15) * k; const el = layer.childNodes[i]; if (el) { el.style.display = ""; const inn = el.firstChild; if (inn) inn.classList.remove("pop"); } }
     if (b.pop) return;

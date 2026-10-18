@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.202 (2026-10-18)
+
+Everything in 0.0.201, with every picture decided by its settings.
+
+- **The same settings draw the same picture, every time** (for the picture archive, and for anything that draws a saved friend again): the animations' timing, the friend treading water, and where bubble space's bubbles start no longer depend on when the picture was drawn, or on how fast the computer is.
+- **"🎲 other places for the bubbles"** in 🫧 bubble space: the bubbles start somewhere new, and a saved friend keeps where they were.
+
 ## 0.0.201 (2026-10-17)
 
 Everything in 0.0.200, with every 🔬 overlay on in GitHub's tests, and what that found.

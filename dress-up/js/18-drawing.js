@@ -895,13 +895,17 @@ function drawNow() {
   // pits all look great, BTW -- that's the standard now") walking through a door in a side wall (doorClip, walkInto):
   // every piece of the friend cut off past the wall's line there, on the room's side only
   const clipSide = !!doorClip && entering, clipRect = figClipRect && entering ? figClipRect : null;   // (ticket 269: in through a house's door, only its opening seen)
+  // (ticket 274) each clip named by its shape and its turn, not by chance (Math.random), so the drawing is the same every time
+  let clipN = 0;
   if (((clipDown || clipUp) && B.anim === "climbup") || clipSide || clipRect) for (const n of figShown) {
     if (n.nodeType !== 1 || !n.parentNode) continue;
-    const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), id = "fig-clip-" + Math.random().toString(36).slice(2, 8);
-    w.setAttribute("class", "fig-clip"); w.setAttribute("clip-path", `url(#${id})`);
-    w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + (clipRect ? `<rect x="${f1(clipRect.x0)}" y="${f1(clipRect.y0)}" width="${f1(clipRect.x1 - clipRect.x0)}" height="${f1(clipRect.y1 - clipRect.y0)}"/>` : clipSide ? (doorClip.side < 0 ? `<rect x="${f1(doorClip.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + doorClip.x)}" height="8000"/>`)
+    const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), shape = (clipRect ? `<rect x="${f1(clipRect.x0)}" y="${f1(clipRect.y0)}" width="${f1(clipRect.x1 - clipRect.x0)}" height="${f1(clipRect.y1 - clipRect.y0)}"/>` : clipSide ? (doorClip.side < 0 ? `<rect x="${f1(doorClip.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + doorClip.x)}" height="8000"/>`)
       : clipDown ? `<rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/>`
-      : `<rect x="-4000" y="${f1(climb.clipUp)}" width="8000" height="8000"/>`) + `</clipPath>`;
+      : `<rect x="-4000" y="${f1(climb.clipUp)}" width="8000" height="8000"/>`);
+    let hx = 2166136261; for (let i = 0; i < shape.length; i++) hx = Math.imul(hx ^ shape.charCodeAt(i), 16777619);
+    const id = "fig-clip-" + (hx >>> 0).toString(36) + "-" + clipN++;
+    w.setAttribute("class", "fig-clip"); w.setAttribute("clip-path", `url(#${id})`);
+    w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + shape + `</clipPath>`;
     n.replaceWith(w); w.append(n);
   }
   worldWaysHud(); pathHud(); solidsHud(); madeOfHud(); accessApply(); bubbleRun();   // (0.0.145: the arrows placed again on every drawing too)   // (ticket 220: bubble space's bubbles, moving while it is shown)   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)

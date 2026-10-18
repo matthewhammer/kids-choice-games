@@ -901,7 +901,9 @@ function noteMoveFrame(t) {
 }
 // (SPEED_TEST.still: 🧪's passes held still; slowFlag would not do, as draw()
 // takes it back after one drawing on a computer that draws fast: 0.0.92)
-const sceneryStill = () => (SPEED_TEST.still || slowFlag || choppy) && !PERF.slowMoving;
+// (ticket 274) Held still (holdStill), never: a held picture is the full scene, whatever this computer's speed, so
+// the settings alone decide it.
+const sceneryStill = () => (SPEED_TEST.still || (stillAt === null && (slowFlag || choppy))) && !PERF.slowMoving;
 // (ticket 164, 0.0.86) 🧪's test passes, each taking one part of a place
 // away while the friend swims, to find what costs the black laptop its
 // frames: holder, a group drawn instead of the place's scenery (empty, or

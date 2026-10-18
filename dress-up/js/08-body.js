@@ -127,9 +127,21 @@ function toedFoot(x, y, side, sc, skin, T) {
 // A fairy's wings, behind her: for each side, from her back (just inside
 // the shoulder) out and up; in their style and color, fluttering (a slow
 // beat, both together) unless that is off
+// (ticket 274, Matthew: "the .json file should be self-determined, in the sense that it fully determines the .svg
+// output, and we get the one every time") The picture's clock, in seconds. Every animation phase drawn into the
+// picture (a CSS delay here, a SMIL begin in lfoBegin) and every step of bubble space's bubbles reads it, never
+// performance.now() itself. In play it is the page's clock; held (holdStill(t)), it stands at t, the picture's own
+// SVG clock with it, and the bubbles stay where their seed put them, so a save drawn held at 0 is the same SVG every
+// time. The picture archive draws every picture so; play never holds it.
+let stillAt = null;
+const picClock = () => stillAt ?? performance.now() / 1000;
+function holdStill(t = 0) {
+  stillAt = t; picGap = null;
+  const p = document.getElementById("pic"); if (p && p.pauseAnimations) { p.pauseAnimations(); p.setCurrentTime(t); }
+}
 // how far into its cycle (of `dur` seconds, begun `begin` seconds in) a CSS
 // animation is now, as the negative delay that starts it there
-const fairyPhase = (dur, begin = 0) => (-(((performance.now() / 1000 - begin) % dur + dur) % dur)).toFixed(3);
+const fairyPhase = (dur, begin = 0) => (-(((picClock() - begin) % dur + dur) % dur)).toFixed(3);
 // A flap with an LFO: the wing swings out as the LFO's wave rises, farther
 // the deeper it is (8 degrees at no depth, 15 at the mixer's usual depth,
 // 36 at full depth: more than the usual flap's 9, to beat with the music),
@@ -584,8 +596,9 @@ function catWag(C, i) {
 // cannot start; headless Firefox on GitHub, where it lost 10 frames a second after any first click) has a clock that
 // stands still, the picture's ran away from it, the gap was measured again every quarter second, and the whole scene
 // built again each time, ticket 117's way. Stopped, the page's own clock, which keeps the picture's pace.
-const musicSeconds = () => playing && typeof audio !== "undefined" && audio && audio.state === "running"
-  ? playing.s0 * playing.sd + audio.currentTime - playing.t0 : performance.now() / 1000;
+// (ticket 274) Held still, the picture's clock, whatever plays.
+const musicSeconds = () => stillAt === null && playing && typeof audio !== "undefined" && audio && audio.state === "running"
+  ? playing.s0 * playing.sd + audio.currentTime - playing.t0 : picClock();
 // How far the picture's own clock (its animations') is ahead of the music's.
 // The two run at the same speed, so the gap stays put; but the picture's
 // clock moves on only once a frame, and the music's all the time, so a gap

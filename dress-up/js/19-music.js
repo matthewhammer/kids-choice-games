@@ -1322,7 +1322,9 @@ function lfoNow(L) {
   const id = (playing && playing.id) || tuneOf(), song = id ? songOf(id) : null;
   const T = song ? song.T : { bpm: 100, lfos: {} }, o = song ? lfoOf(id, T, L) : LFO_DEFAULT[L];
   const sd = playing ? playing.sd : tunedStep(T), steps = o.beats * 4;
-  const nowStep = playing && typeof audio !== "undefined" && audio ? playing.s0 + (audio.currentTime - playing.t0) / playing.sd : performance.now() / 1000 / sd;
+  // (ticket 274) where the LFOs are (a walk's step, treading water, the scene's swaying): the picture's clock unless a
+  // tune sounds, and held still, the picture's clock whatever plays
+  const nowStep = stillAt === null && playing && typeof audio !== "undefined" && audio ? playing.s0 + (audio.currentTime - playing.t0) / playing.sd : picClock() / sd;
   return { dur: steps * sd, phase: ((nowStep / steps) % 1 + 1) % 1, shape: o.shape, amp: Math.min(1, o.depth / 12) };
 }
 // the parts that can follow one: drums tuned by their knob
