@@ -5,9 +5,10 @@ const once broke the whole page). Since ticket 178 the script is in parts,
 in the page's order, as one script, so a const declared in two parts is
 caught as before; and every part, and style.css, must carry the page's own
 version (VERSION.number), or a cached old part could meet a newer page.
+version.json beside the page must name the same number.
 
   check_script.py <page.html>"""
-import os, re, subprocess, sys, tempfile
+import json, os, re, subprocess, sys, tempfile
 page = sys.argv[1]
 base = os.path.dirname(os.path.abspath(page))
 html = open(page, encoding="utf-8").read()
@@ -35,6 +36,16 @@ if version:
     for ref in srcs + re.findall(r'<link[^>]*\bhref="([^"]+\.css[^"]*)"', html):
         if not ref.endswith("?v=" + v):
             print(f"{ref}: not ?v={v}, the page's version"); bad += 1
+    # (0.0.219 went out with an empty version.json: every open copy's update check read nothing)
+    vj = os.path.join(base, "version.json")
+    if os.path.exists(vj):
+        try:
+            n = json.load(open(vj, encoding="utf-8")).get("number")
+        except ValueError as e:
+            n = None; print(f"version.json: not JSON ({e})"); bad += 1
+        else:
+            if n != v:
+                print(f"version.json: number {n!r}, not {v}, the page's version"); bad += 1
 elif parts:
     print("no VERSION found in the script"); bad += 1
 sys.exit(1 if bad or not (parts or inline) else 0)
