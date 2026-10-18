@@ -99,6 +99,14 @@ const wanted = f => formatBoxes.some(b => b.value === f && b.checked);
 // start after the click has finished (the .png is drawn first). So the
 // .svg and .json start during the click, the .png right after, and each
 // file also gets a link under the buttons: a click on a link always works.
+// (ticket 275, Matthew: "another .json file format that's called a 'full snapshot' file, where we store the date and
+// time it was created --- that one is a super-set of the .json file format we want for the picture archive") The
+// .json Save writes is a full snapshot: the picture file, { app, version, state }, which alone decides the picture
+// (ticket 274), and "extra", fields that (1) do not decide the picture and (2) are there for the person who saved it:
+// when it was saved, and with which version of the game (the one that draws it the same again). Load never reads
+// "extra"; a tool keeps the picture file by dropping it, knowing none of its names (the picture archive keeps that).
+const snapshotFile = (d = new Date()) => ({ app: "dress-up", version: 1, extra: { saved: d.toISOString(), game: VERSION.number }, state });
+const pictureFile = file => { const { extra, saved, ...p } = file; return p; };   // (saved: a top-level time, before 0.0.203)
 document.getElementById("save").addEventListener("click", () => {
   if (!formatBoxes.some(b => b.checked)) { alert("Check at least one kind of file to save."); return; }
   const d = new Date(), two = n => String(n).padStart(2, "0");
@@ -132,7 +140,7 @@ document.getElementById("save").addEventListener("click", () => {
   };
   if (wanted("svg") || oneFile) give(new Blob([svgText], { type: "image/svg+xml" }), name + ".svg");
   if (wanted("json") || oneFile)
-    give(new Blob([JSON.stringify({ app: "dress-up", version: 1, saved: d.toISOString(), state }, null, 2)],
+    give(new Blob([JSON.stringify(snapshotFile(d), null, 2)],
                   { type: "application/json" }), name + ".json");
   if (!wanted("png") && !oneFile) return;
   const img = new Image();
@@ -198,7 +206,8 @@ document.getElementById("postcard").addEventListener("click", async () => {
   } catch (e) { saved.replaceChildren("The postcard couldn't be drawn."); }
 });
 // LOAD: a saved .json (or a bare state object); anything it lacks keeps
-// its default, so friends saved before a feature existed still load.
+// its default, so friends saved before a feature existed still load. Only its
+// state is read: never its extra fields (ticket 275), nor an older file's saved time.
 document.getElementById("load").addEventListener("click", () => document.getElementById("load-file").click());
 document.getElementById("load-file").addEventListener("change", async e => {
   const file = e.target.files[0];

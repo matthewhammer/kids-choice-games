@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.203 (2026-10-18)
+
+Everything in 0.0.202, with a saved friend's file saying when it was saved, apart from what draws the picture.
+
+- **💾 Save's .json** now keeps when it was saved and the game's version under "extra": things for whoever saved it, which never change the picture. Loading a friend reads only the settings, as before, and files saved by earlier versions still load.
+
 ## 0.0.202 (2026-10-18)
 
 Everything in 0.0.201, with every picture decided by its settings.
