@@ -564,6 +564,7 @@ function set(part, key, value) {
   if (part === "background" && key === "kind" && value !== state.background.kind) worldChoose(value);   // (ticket 185: a place is its square)
   const wasBare = state.background.kind === "none";
   state[part][key] = value;
+  if (part === "access" && key === "clickWalk") state.access.clickWalkOn = true;   // (0.0.188: turned on or off by the player: kept so, upgradeClickWalk)
   // (ticket 132) the Body tab: a pose, from scratch; an animation seen from
   // the side turns a friend who faces us to our right
   if (part === "body" && key === "pose") strikePose(value);

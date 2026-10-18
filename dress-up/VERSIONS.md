@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.188 (2026-10-17)
+
+Everything in 0.0.187, with the spiral staircase's doors in reach, and walking where you click on from the start.
+
+- **The spiral staircase**: the edges of where your friend can walk follow the stairs out to each door on its landings, so every door can be reached.
+- **👆 Walk where you click is on at first**: new friends have it on, and a friend saved while it was off by default gets it on once; turn it off in ♿ Accessibility if you like, and it stays off.
+
 ## 0.0.187 (2026-10-17)
 
 Everything in 0.0.186, with walking where you click.

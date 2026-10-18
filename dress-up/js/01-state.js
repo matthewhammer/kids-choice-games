@@ -416,6 +416,13 @@ const DEFAULTS = {
 const clone = o => JSON.parse(JSON.stringify(o));
 // before the nose views: a nose was a shape (or "none"), a direction and
 // one size
+// (0.0.188, Matthew: 👆 walk where you click "so helpful, let's have it on by default") a save from 0.0.187, the hour it
+// was off by default, comes back with it on, once; one turned off with its chip since is kept off (the chip marks it,
+// clickWalkOn: set)
+function upgradeClickWalk(next, saved) {
+  const A = next.access, S = saved && saved.access;
+  if (A && S && S.clickWalk === false && !S.clickWalkOn) A.clickWalk = true;
+}
 function upgradeFace(f, saved) {
   // before the teeth choice, teeth were the spikes, and 0 meant none
   if (saved && saved.teethStyle === undefined && saved.teeth !== undefined)
@@ -552,7 +559,7 @@ DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpos
 DEFAULTS.access = { allArrows: false, arrowDim: 45, arrowColor: "#38bdf8", arrowSize: 100, gameFont: 100, showPath: false, showSolids: false, pathColor: "#fde047", boxColor: "#ef4444", glowFade: 800,
                     pathWidth: 4, boxWidth: 2, boxFont: 11,   // (ticket 230: the path's and the boxes' lines, the boxes' names, in px)
                     showMadeOf: false, madeCats: {}, madeFont: 10, madeColor: "#ffffff", madeWidth: 2,
-                    clickWalk: false, clickWalkColor: "#22d3ee" };   // (ticket 251: 👆 walk where you click, and its glow's colour)   // (ticket 258: 🧩 what a place is made of; each kind's chip, MADE_CATS's when unset)
+                    clickWalk: true, clickWalkColor: "#22d3ee" };   // (ticket 251: 👆 walk where you click, and its glow's colour; on at first since 0.0.188, Matthew: "so helpful, let's have it on by default")   // (ticket 258: 🧩 what a place is made of; each kind's chip, MADE_CATS's when unset)
 for (const kd of [...NORTH_OUT, ...NORTH_ROOMS]) DEFAULTS.background["north_" + kd] = northDefault(kd);   // (ticket 214: each place's 🔭)
 let state = clone(DEFAULTS);
 // (ticket 155, Matthew: "The priority is 60 FPS at all times, for all
@@ -863,6 +870,7 @@ try {
   upgradeFigSize(state.background, saved);
   upgradeThings(state, saved);
   upgradeWorld(state);
+  upgradeClickWalk(state, saved);
   upgradeFace(state.face, saved.face);
   if (state.body.sit && state.body.pose === "stand") state.body.pose = "sit";   // (ticket 132)
   // pants length moved to the legs (leg length)
@@ -889,7 +897,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.187", released: "2026-10-17" };
+const VERSION = { number: "0.0.188", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

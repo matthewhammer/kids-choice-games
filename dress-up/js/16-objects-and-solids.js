@@ -110,8 +110,20 @@ function castleWallsOf(B) {
   if (B.kind === "treeroom") { const { floor, bw, vy } = roomFrame(stageC()); return { back: floor, stairs: false, half: y => Math.max(0, bw * (y - vy) / (floor - vy)) }; }
   const style = castleOf(B).rooms[Math.round(B.castleRoom ?? 1) - 1], deep = style === "hallway" || style === "dining";
   const c = deep ? { ...stageC(), eye: 0.3 } : stageC(), { floor, bw, vy } = roomFrame(c);
-  const back = vy + (floor - vy) / (1 + (deep ? HALL_STRETCHES * 0.8 : 0));
-  return { back, stairs: style === "spiral", half: y => Math.max(0, bw * (y - vy) / (floor - vy)) };
+  const back = vy + (floor - vy) / (1 + (deep ? HALL_STRETCHES * 0.8 : 0)), line = y => Math.max(0, bw * (y - vy) / (floor - vy));
+  // (ticket 253, Matthew: "the cut offs don't permit me to reach the doors! We may need more than 2 segments for those
+  // 'side' cut offs") the spiral staircase's sides follow its floor out to each door on its landings: a polyline through
+  // each door's foot (spiralDoorAt), out past it by a friend's reach, from the floor's front corners in to the top;
+  // never narrower than the straight sides
+  if (style === "spiral") {
+    // (its doors are up its stairs, above the eye's height: no point at the vanishing line, which pinched the sides between
+    // two landings; above the highest door, as wide as there)
+    const pts = [[floor, bw], ...[0, 1, 2, 3].map(j => { const d = spiralDoorAt(c, j); return [d.y, Math.abs(d.x) + 40 * c.k]; })].sort((a, b) => b[0] - a[0]);
+    const poly = y => { for (let i = 1; i < pts.length; i++) { const [ya, ha] = pts[i - 1], [yb, hb] = pts[i]; if (y <= ya && y >= yb) return ya === yb ? Math.max(ha, hb) : ha + (hb - ha) * (y - ya) / (yb - ya); }
+                        return y > pts[0][0] ? pts[0][1] : pts[pts.length - 1][1]; };
+    return { back, stairs: true, half: y => Math.max(line(y), poly(y)) };
+  }
+  return { back, stairs: false, half: line };
 }
 // (read once a drawing, before the drawing mounts the place's scene: worked out afresh, not memoized on the scene's text)
 // (not the spiral stair's room: walking up it is going up the stairs, to its doors higher up)
