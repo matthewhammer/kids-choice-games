@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.230 (2026-10-18)
+
+Everything in 0.0.229, with the trap doors' swing and the levers' rock that carry on through a redrawing.
+
+- **Fixed: no swing at all, in Firefox with music playing.** A lid swinging or a handle rocking was drawn on the room as it was when the lever was pulled; when the room was drawn again in the middle of it (in Firefox the music's clock can stand still while the picture's runs, and the game measures the gap between them again), the new drawing showed the end at once. Each swing now finds its lid and handle again in every drawing, and carries on.
+
 ## 0.0.229 (2026-10-18)
 
 Everything in 0.0.228, plus levers that glow when you point at them.

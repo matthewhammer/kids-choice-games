@@ -65,6 +65,8 @@ function mountScene(text) {
   }
   bgShown.kept = kept;
   if (tripTimer) tripWork("building the place", tMount);
+  // (ticket 322) a lever's handle or a lid swinging when the room is built again: carried on in it at once
+  if (typeof SWINGS !== "undefined") for (const sw of SWINGS.values()) sw.redo(root);
   return root;
 }
 // the figure's size and place in its scene (k about its feet, at y = g),

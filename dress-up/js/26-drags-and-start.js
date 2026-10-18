@@ -330,8 +330,8 @@ function leverPull(i) {
   const swung = [];
   for (const [j, d] of B.things.entries()) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid)) { d.open = !d.open; swung.push([j, d.open]); }
   changed();
-  turnArm(bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${i}"] .lever-arm`), T.on ? LEVER_TILT : -LEVER_TILT);
-  for (const [j, open] of swung) lidSwing(bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${j}"] .pit-lid`), open);   // (ticket 307)
+  turnArm(`[data-drag="thing:${i}"] .lever-arm`, T.on ? LEVER_TILT : -LEVER_TILT);
+  for (const [j, open] of swung) lidSwing(`[data-drag="thing:${j}"] .pit-lid`, open);   // (ticket 307)
 }
 // (ticket 305) The trap room's lever pulled: it flips over, and so does every pit it works (trapState); its handle turns across
 function roomLeverPull(side) {
@@ -342,43 +342,50 @@ function roomLeverPull(side) {
   B[key] = !leverDown(B, side, n, K.id);   // (ticket 307: never touched, it was down)
   changed();
   const up = !B[key], sd = side === "L" ? -1 : 1, now = trapState(B, n, K.id).open;
-  turnArm(bgShown.node && bgShown.node.querySelector(`[data-lever="${side}"] .lever-arm`), (up ? 1 : -1) * sd * LEVER_TILT);
-  for (const j of [0, 1]) if (now[j] !== was[j]) lidSwing(bgShown.node && bgShown.node.querySelector(`.pit-lid[data-pit-i="${j}"]`), now[j]);   // (ticket 307)
+  turnArm(`[data-lever="${side}"] .lever-arm`, (up ? 1 : -1) * sd * LEVER_TILT);
+  for (const j of [0, 1]) if (now[j] !== was[j]) lidSwing(`.pit-lid[data-pit-i="${j}"]`, now[j]);   // (ticket 307)
 }
-// (a lever's handle on the screen, turned across to its new angle `to` from the other side, in LEVER_TURN ms)
-function turnArm(arm, to) {
-  if (!arm) return;
-  const [px, py] = arm.dataset.pivot.split(" ").map(Number);
-  // (by frames, a timer standing in where frames do not come, as for a drag: it always ends at its new angle)
-  // (ticket 322: its clock starts at its first frame, not at the pull: a room slow to draw again, as the trap room with its
-  // moss, otherwise used up the turn before it was ever seen, and it jumped to its end)
-  let raf = 0, tm = 0, t0 = null;
-  const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (!arm.isConnected) return;
+// (ticket 322) A swing on the screen, found again each frame by its selector in the scene, not held as one element: the
+// room drawn again in the middle of it (in Firefox the music's clock can stand still while the picture's runs, so the
+// gap between them is measured again and the scene's text changes) gets the swing carried on in its new drawing, where
+// before the new drawing showed its end at once. One swing per selector: a new one stops the last. By frames, a timer
+// standing in where frames do not come, as for a drag; its clock starts at its first frame, not at the pull (a room slow
+// to draw again would otherwise use it up unseen). apply(el, u) draws it at u (0 to 1), and once more at 1 to end it.
+const SWINGS = new Map();
+function swingOn(sel, dur, apply) {
+  const was = SWINGS.get(sel); if (was) was.stop();
+  let raf = 0, tm = 0, t0 = null, done = false, lastU = 0;
+  // (redo: drawn again at once where it is, in a room just built (mountScene), not a frame later at its end)
+  const me = { stop: () => { done = true; cancelAnimationFrame(raf); clearTimeout(tm); }, redo: root => { const el = root.querySelector(sel); if (el) apply(el, lastU); } };
+  SWINGS.set(sel, me);
+  const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (done) return;
+    const el = bgShown.node && bgShown.node.querySelector(sel);
     const now = performance.now(); if (t0 === null) t0 = now;
-    const u = Math.min(1, (now - t0) / LEVER_TURN), a = u < 1 ? to - 2 * to * Math.exp(-5 * u) * Math.cos(3 * Math.PI * u) : to;   // (past it by a third, back, and still)
-    arm.setAttribute("transform", `rotate(${f1(a)} ${f1(px)} ${f1(py)})`);
-    if (u < 1) { raf = requestAnimationFrame(step); tm = setTimeout(step, 40); } };
-  arm.setAttribute("transform", `rotate(${-to} ${f1(px)} ${f1(py)})`);
+    const u = Math.min(1, (now - t0) / dur); lastU = u;
+    if (el) apply(el, u);
+    if (u < 1) { raf = requestAnimationFrame(step); tm = setTimeout(step, 40); } else { done = true; if (SWINGS.get(sel) === me) SWINGS.delete(sel); } };
+  const el = bgShown.node && bgShown.node.querySelector(sel);
+  if (el) apply(el, 0);
   raf = requestAnimationFrame(step); tm = setTimeout(step, 40);
 }
-// (ticket 307) a pit's lid swung on the screen, after the picture is drawn with it as it ends: open, from across the
-// opening down into the pit on its hinge (falling, faster as it goes), the shade deepening; shut, back up across it
-// (slowing as it lands); in PIT_SWING ms, by frames, a timer standing in where frames do not come (as turnArm)
+// (a lever's handle, found by sel, turned across to its new angle `to` from the other side, past it and rocking back
+// (ticket 307), in LEVER_TURN ms)
+function turnArm(sel, to) {
+  swingOn(sel, LEVER_TURN, (arm, u) => { const [px, py] = arm.dataset.pivot.split(" ").map(Number);
+    const a = u <= 0 ? -to : u < 1 ? to - 2 * to * Math.exp(-5 * u) * Math.cos(3 * Math.PI * u) : to;   // (past it by a third, back, and still)
+    arm.setAttribute("transform", `rotate(${f1(a)} ${f1(px)} ${f1(py)})`); });
+}
+// (ticket 307) a pit's lid, found by sel, swung on the screen, after the picture is drawn with it as it ends: open, from
+// across the opening down into the pit on its hinge (falling, faster as it goes), the shade deepening; shut, back up
+// across it (slowing as it lands); in PIT_SWING ms
 const PIT_SWING = 520;
-function lidSwing(lid, open) {
-  if (!lid) return;
-  const y0 = +lid.dataset.hinge, shade = lid.querySelector(".lid-shade");   // (ticket 322: its clock from its first frame, as turnArm's)
-  let t0 = null;
-  const at = s => { lid.setAttribute("transform", lidAt(y0, s)); if (shade) shade.setAttribute("opacity", (0.7 * (1 - s)).toFixed(2)); };
-  let raf = 0, tm = 0;
-  const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (!lid.isConnected) return;
-    const now = performance.now(); if (t0 === null) t0 = now;
-    const u = Math.min(1, (now - t0) / PIT_SWING);
-    if (u < 1) { at(Math.max(0.001, open ? 1 - u * u : 1 - (1 - u) * (1 - u))); raf = requestAnimationFrame(step); tm = setTimeout(step, 40); return; }
+function lidSwing(sel, open) {
+  swingOn(sel, PIT_SWING, (lid, u) => {
+    const y0 = +lid.dataset.hinge, shade = lid.querySelector(".lid-shade");
+    const at = s => { lid.setAttribute("transform", lidAt(y0, s)); if (shade) shade.setAttribute("opacity", (0.7 * (1 - s)).toFixed(2)); };
+    if (u < 1) { lid.removeAttribute("visibility"); at(Math.max(0.001, open ? 1 - u * u : 1 - (1 - u) * (1 - u))); return; }
     if (open) { at(0); lid.setAttribute("visibility", "hidden"); }
-    else { lid.removeAttribute("transform"); if (shade) shade.setAttribute("opacity", "0"); } };
-  lid.removeAttribute("visibility"); at(open ? 1 : 0.001);
-  raf = requestAnimationFrame(step); tm = setTimeout(step, 40);
+    else { lid.removeAttribute("transform"); if (shade) shade.setAttribute("opacity", "0"); } });
 }
 pic.addEventListener("pointerup", letGo);
 // (ticket 133: a touch the browser takes over, as a scroll or a gesture, ends
