@@ -219,7 +219,7 @@ function thingDragDraw(T) {
 }
 // One step per screen pixel, however big the picture is drawn.
 pic.addEventListener("pointermove", e => {
-  if (!drag) { hoverAt(e); return; }
+  if (!drag) { hoverAt(e); walkSpotShow(e); return; }   // (ticket 251: the ground a click would walk to, glowing)
   if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
     // kept in the scene, as the figure is
@@ -335,8 +335,50 @@ pic.addEventListener("click", e => {
   if (entering || !e.target.closest || e.target.closest("#figure, [data-drag], #ways") || marks.text !== bgShown.text) return;
   const q = picUnits(e), hit = marks.pics.filter(p => p.kind !== "nav" && p.el.isConnected && q.x >= p.x0 && q.x <= p.x1 && q.y >= p.y0 && q.y <= p.y1)
                                          .sort((a, b) => (a.x1 - a.x0) * (a.y1 - a.y0) - (b.x1 - b.x0) * (b.y1 - b.y0))[0];
-  if (hit) { enterAt = hit; enterPicture(); }
+  if (hit) { enterAt = hit; enterPicture(); return; }
+  // (ticket 251) on the ground, with 👆 walk where you click on: walked there, round what stands in the way
+  const spot = walkableAt(e);
+  if (spot) { walkSpotHide(); walkPlanned(spot.x, spot.z); }
 });
+// (ticket 251, Matthew: "accessibility toggle, and walk to click feature. When enabled, we show a glowing circle of some
+// custom color over any area on the ground that's 'walkable' when the cursor is over it. When clicked, we plan a path to
+// that point, and execute the path plan.") Where a click would walk the friend to: the floor under the pointer, when ♿
+// 👆 is on and they could stand there (inside the place's floor and its walls, not in a solid or over a pit), and the
+// pointer is on nothing that does its own thing (the friend, a thing put there, a passage or a ladder)
+function walkableAt(e) {
+  const BG = state.background, A = state.access || DEFAULTS.access;
+  if (!A.clickWalk || BG.kind === "none" || entering || drag || hoverPass) return null;
+  const t = e.target;
+  if (!t || !t.closest || !t.closest("#pic") || t.closest("#figure, [data-drag], .portal, [data-ladder], #ways")) return null;
+  const q = picUnits(e), F = sceneFrame, y = q.y - SCENE.ground;
+  if (q.x < F.left || q.x > F.right || y < figYMin(F) || q.y > F.bottom) return null;
+  if (solidAt(q.x, q.y) || pitAt(q.x, q.y)) return null;   // (walls too: solidAt's)
+  return { x: q.x, z: q.y };
+}
+// its glow: an ellipse on the floor there, as wide as the friend's step at that depth, in ♿'s colour, pulsing
+function walkSpotShow(e) {
+  const layer = document.getElementById("access-layer"), s = walkableAt(e);
+  let ov = layer && layer.querySelector("svg.walk-spot");
+  if (!layer || !s) { walkSpotHide(); return; }
+  const M = pic.getScreenCTM(), box = layer.getBoundingClientRect();
+  if (!M) return;
+  const c = new DOMPoint(s.x, s.z).matrixTransform(M), k = (SCENE.bottom - SCENE.top) / 700, rx = 34 * k * depthSize(state.background, s.z - SCENE.ground) * M.a;
+  if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "walk-spot"); ov.innerHTML = "<ellipse/>"; layer.append(ov); }
+  const el = ov.firstChild;
+  for (const [a, v] of [["cx", c.x - box.left], ["cy", c.y - box.top], ["rx", rx], ["ry", rx * 0.36]]) el.setAttribute(a, v.toFixed(1));
+  ov.style.setProperty("--spot", (state.access || DEFAULTS.access).clickWalkColor || "#22d3ee");
+}
+function walkSpotHide() { const ov = document.querySelector("#access-layer svg.walk-spot"); if (ov) ov.remove(); }
+pic.addEventListener("pointerleave", walkSpotHide);
+// (the walk: planned round what stands in the way, planPath, its legs walked one after another, walkTo; 👣 shows the plan)
+function walkPlanned(x, z) {
+  const BG = state.background, g = SCENE.ground;
+  bridgeOff();
+  const from = [BG.figX ?? 0, BG.figY ?? 0], path = planPath(from[0], from[1], x, z - g, 10);   // (the steps swing wider than the feet standing)
+  walkPath = { pts: [from, ...path], made: performance.now(), leg: 0 };
+  const leg = i => { if (i >= path.length) { state.body.anim = "none"; changed(); return; } walkPath.leg = i; walkTo(path[i][0], g + path[i][1], () => leg(i + 1)); };
+  leg(0);
+}
 // (ticket 221) B held on the keyboard: bubbles, as 🫧 on the controller
 document.addEventListener("keydown", e => {
   if ((e.key !== "b" && e.key !== "B") || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;

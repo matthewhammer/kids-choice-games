@@ -42,7 +42,7 @@ try {
   ok("a 🔬 Inspection tab (♿ Accessibility till 0.0.185): a row for each overlay (arrows, path, boxes, the boxes' a 🧱 brick wall, since ticket 258 🧩 what it's made of)",
      tab.has && tab.name === "🔬 Inspection" && JSON.stringify(tab.rows) === JSON.stringify(["allArrows", "showPath", "showSolids", "showMadeOf"]) && tab.brick, tab);
   ok("and a ♿ Accessibility tab: all arrows again (the same setting), then the words' size; every setting in one of the two",
-     !!tab.a11y && tab.a11y.name === "♿ Accessibility" && JSON.stringify(tab.a11y.rows) === JSON.stringify(["allArrows", null]) && tab.covered, tab);
+     !!tab.a11y && tab.a11y.name === "♿ Accessibility" && JSON.stringify(tab.a11y.rows) === JSON.stringify(["allArrows", null, "clickWalk"]) && tab.covered, tab);   // (ticket 251: 👆 walk where you click)
   const shown = JSON.parse(await ev(`(async () => { const keep = clone(state.access); const i = TABS.findIndex(t => t[1] === "access"); document.querySelectorAll("#tabs button")[i].click(); await new Promise(r => setTimeout(r, 300));
     const rowOf = k => [...document.querySelectorAll("#panel .accbox")].find(b => b.querySelector("button.flip") && b.querySelector("button.flip").textContent.includes(k));
     Object.assign(state.access, { allArrows: false, showSolids: true }); changed(); await new Promise(r => setTimeout(r, 200));

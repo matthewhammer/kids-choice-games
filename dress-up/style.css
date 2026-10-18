@@ -571,6 +571,11 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
 .made-legend { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); max-width: 70%; padding: 5px 9px; border-radius: 8px; background: rgba(0, 0, 0, 0.62);
   color: #ffffff; font: 600 11px/1.45 sans-serif; pointer-events: none; text-align: center; }
 .made-legend b { color: var(--c); }
+/* (ticket 251) 👆 the ground a click would walk to: a glowing ellipse in ♿'s colour, pulsing */
+.walk-spot { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.walk-spot ellipse { fill: color-mix(in srgb, var(--spot, #22d3ee) 35%, transparent); stroke: var(--spot, #22d3ee); stroke-width: 2.5px;
+  filter: drop-shadow(0 0 6px var(--spot, #22d3ee)); animation: walk-spot 1.1s ease-in-out infinite alternate; }
+@keyframes walk-spot { from { opacity: 0.55; } to { opacity: 1; } }
 .madecats { display: flex; flex-wrap: wrap; gap: 4px; width: 100%; }
 .madecats .flip.none-here { opacity: 0.45; }
 .solid-boxes .walk { fill: none; stroke: color-mix(in srgb, #10b981 35%, transparent); stroke-width: 12px; stroke-linecap: round; stroke-linejoin: round; }   /* (ticket 245: a rope bridge's way along it) */

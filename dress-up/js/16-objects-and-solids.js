@@ -391,9 +391,10 @@ function segBox(ax, az, bx, bz, x0, z0, x1, z1) {   // (does the segment pass th
   }
   return t1 - t0 > 1e-6;
 }
-function planPath(x0, y0, x1, y1) {
-  // (the boxes grown by the soles' reach either side, and their depth: the middle kept that far out)
-  const [sx, sz] = feetSpan(), g = SCENE.ground, z0 = g + y0, z1 = g + y1;
+function planPath(x0, y0, x1, y1, more = 0) {
+  // (the boxes grown by the soles' reach either side, and their depth: the middle kept that far out; `more` further, for
+  // a walk whose steps swing wider than the feet standing, ticket 251's)
+  const [sx0, sz] = feetSpan(), sx = sx0 + more, g = SCENE.ground, z0 = g + y0, z1 = g + y1;
   // (0.0.157, Matthew: "planned path goes through the pit --- they don't seem registered in the collision system, but
   // they should have their own status as something to avoid when planning a path") a trap room's pits, the holes one
   // falls into (pitsHere, PIT_EDGE of each), gone round too, unless the walk starts or ends in one; it is the middle of

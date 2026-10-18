@@ -548,6 +548,8 @@ const TABS = [
   ["♿ Accessibility", "access", [
     ["accbox", "allArrows", "🧭 all arrows", [["color", "arrowColor", "🎨"], ["range", "arrowDim", "🌗 brightness", 10, 100], ["range", "arrowSize", "↕️ size", 50, 250]]],
     ["accbox", null, "🔤 words in the game", [["range", "gameFont", "🔤 text size", 60, 250]]],
+    // (ticket 251) the ground under the pointer glowing where the friend can go, and a click there walks them to it
+    ["accbox", "clickWalk", "👆 walk where you click", [["color", "clickWalkColor", "🎨"]]],
   ]],
   ["⚙️ Advanced", "advanced", [
     ["advanced", "perf", "⚙️ advanced"],

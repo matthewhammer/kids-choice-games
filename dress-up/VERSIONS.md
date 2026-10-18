@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.187 (2026-10-17)
+
+Everything in 0.0.186, with walking where you click.
+
+- **👆 Walk where you click** (in ♿ Accessibility, with its own 🎨 colour): while it is on, the ground under the pointer glows where your friend can go, and a click there walks them to it, round anything in the way (turn on 👣 planned path in 🔬 Inspection to see the way they take). Clicking a door, a picture, your friend or a thing does what it always did.
+
 ## 0.0.186 (2026-10-17)
 
 Everything in 0.0.185, with the 🎵 Music tab laid out as cards.
