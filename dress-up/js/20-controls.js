@@ -339,7 +339,8 @@ const TABS = [
     // (ticket 290, for N) the bubble room's own: its foam on each of its walls, its floor and its ceiling, how far up (or out)
     // each goes, the foam's colour, how much it moves, another foam
     ["group", "bubbleroom", "🫧 the bubble room", [
-      ...FOAM_SURFACES.flatMap(([K, name, up]) => [["toggle", "foam" + K, `🫧 foam on the ${name}`], ["range", "foam" + K + "H", `${up ? "↕️ how high" : "↔️ how far out"}, on the ${name}`, 0, 100, 30, 100]]),
+      ...FOAM_SURFACES.flatMap(([K, name, up]) => [["toggle", "foam" + K, `🫧 foam on the ${name}`], ["range", "foam" + K + "H", `${up ? "↕️ how high" : "↔️ how far out"}, on the ${name}`, 0, 100, 30, 100],
+        ["range", "foam" + K + "Out", `🔵 bubbles stuck out into the room, from the ${name} (how many)`, 0, 100, 10, 60]]),
       ["color", "foamColor", "🎨 the foam's colour", BUBBLE_COLORS],
       ["toggle", "foamRainbow", "🌈 a rainbow sheen on the foam"],
       ["range", "foamMove", "〰️ how much the foam moves (0 = still)", 0, 100, 0, 60],

@@ -416,9 +416,12 @@ const DEFAULTS = {
                 bubbleAColor: "#9ad7ff", bubbleASize: 18, bubbleAShine: 70, bubbleASparkle: "none", bubbleASparkleColor: "#ffffff",
                 bubbleBOn: false, bubbleBColor: "#ffb3e6", bubbleBSize: 26, bubbleBShine: 85, bubbleBSparkle: "star", bubbleBSparkleColor: "#fff5b0",
                 // (ticket 290) the bubble room: foam on each wall (how high), on the floor and the ceiling (how far out), its colour,
-                // a rainbow sheen, how much it moves (still to start: a costly thing to draw), and its seed
+                // a rainbow sheen, how much it moves, and its seed
+                // (Matthew, 0.0.237: "the bubbles on the wall/floor should be dynamic, not static": moving from the start) and how many
+                // bubbles stick out from each surface into the room
                 foamBack: true, foamBackH: 70, foamLeft: true, foamLeftH: 55, foamRight: true, foamRightH: 55, foamFloor: true, foamFloorH: 100,
-                foamCeil: true, foamCeilH: 60, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 0, foamSeed: 1,
+                foamCeil: true, foamCeilH: 60, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 40, foamSeed: 1,
+                foamBackOut: 30, foamLeftOut: 30, foamRightOut: 30, foamFloorOut: 25, foamCeilOut: 20,
                 bubbleCOn: false, bubbleCColor: "#c8f7c5", bubbleCSize: 11, bubbleCShine: 60, bubbleCSparkle: "dot", bubbleCSparkleColor: "#ffffff",
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false, cauldronFumes: "simple",
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
@@ -972,7 +975,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.237", released: "2026-10-18" };
+const VERSION = { number: "0.0.238", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

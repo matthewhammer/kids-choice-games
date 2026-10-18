@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.238 (2026-10-18)
+
+Everything in 0.0.237, with the bubble room deeper and livelier, and bubble makers.
+
+- **Bubbles stuck out into the bubble room**: round bubbles stuck to the foam, sitting on the floor (with a soft shadow), standing out from the walls and hanging from the ceiling, now and then a smaller one stuck on a bigger one. The nearer ones pass in front of you and the farther ones behind. "🔵 bubbles stuck out into the room" sets how many come out of each wall, the floor and the ceiling.
+- **The foam moves from the start**: its bubbles drift and the stuck-out ones bob, a little. "〰️ how much the foam moves" still sets how much, down to still.
+- **🫧 Bubble makers to place**, in a new "🫧 bubbles" group of things to put in a place: a round toy bubble machine with a wheel of bubble rings turning on its front, a handle on top and a base. It blows bubbles out of its wheel wherever you put it, in any place: "🫧 bubbles a second", "🫧 its bubbles" (your bubble themes A, B or C), and its colour. The bubbles drift and float up, and pop when they touch you.
+
 ## 0.0.237 (2026-10-18)
 
 Everything in 0.0.236, plus a new kind of place, for N: 🫧 bubbles.

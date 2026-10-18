@@ -817,10 +817,13 @@ function bubblespaceScene(c) {
 // each a rim, a film and, on the bigger ones, a shine, laid flat on its surface in the room's perspective (a side wall's, the
 // floor's and the ceiling's foreshortened, a unit toward us a z of 1/800, as roomSpace lays things on the walls). With a
 // rainbow sheen, the rims take turns at three tints. 〰️ how much the foam moves: its bubbles in three sets, each drifting a
-// little its own way with the scene's slow LFO; still at 0, where it starts (a costly thing to draw: off unless asked for).
+// little its own way with the scene's slow LFO; still at 0 (Matthew: "dynamic, not static": moving from the start).
 // Each surface's foam is an object of its own. Bubble makers (🫧, a placed thing) blow bubbles into it, or anywhere.
 const FOAM_SURFACES = [["Back", "back wall", true], ["Left", "left wall", true], ["Right", "right wall", true], ["Floor", "floor", false], ["Ceil", "ceiling", false]];
+const foamMemo = new Map();
 function foamPack(seed, w, h, rMax, rMin) {
+  const mk = [seed, w, h, rMax, rMin].map(v => v.toFixed(2)).join();
+  if (foamMemo.has(mk)) return foamMemo.get(mk);
   // (each at a spot tried at random, as big as it can be there, up to rMax, without overlapping one already in: so each
   // touches its neighbours, and the gaps left fill with smaller and smaller ones, as foam's do)
   const R = seeded(seed), out = [], gap = rMin * 0.12;
@@ -830,6 +833,8 @@ function foamPack(seed, w, h, rMax, rMin) {
     for (const b of out) { const d = Math.hypot(b.x - x, b.y - y) - b.r - gap; if (d < r) { r = d; if (r < rMin) break; } }
     if (r >= rMin) out.push({ x, y, r, j: Math.floor(R(i * 3 + 2) * 3) });
   }
+  if (foamMemo.size > 40) foamMemo.clear();
+  foamMemo.set(mk, out);
   return out;
 }
 function bubbleroomScene(c) {
@@ -880,6 +885,60 @@ function bubbleroomScene(c) {
         const X = -bw + b.x, z = -b.y / 800, f = 1 / (1 + z), [ex, ey] = at(X, Y, z), q = f * f / 800;
         return bub(b.r, b.j, mat(f, 0, X * q, (Y - vy) * q, ex, ey)); }, 5 * k, 2 * k) + `</g>`;
     return K === "Floor" ? floorObj("foam, floor", body) : wallObj("foam, ceiling", body); });
+  // (ticket 290, Matthew: "each bubble on the floor and wall should have ones in the room that are stuck to it --- to create
+  // a richer psuedo 3d experience"; "each surface (wall, floor) has a frequency of spawning bubbles that are adjacent,
+  // sticking into the room's volume") Out of the foam, round bubbles stuck to it: from each of a surface's bigger bubbles,
+  // by its setting's chance (foam<K>Out), one half to all as big, touching the surface there, its body out in the room (on
+  // the floor sitting on it, on a wall standing out from it, under the ceiling hanging from it), drawn whole and round as a
+  // ball is, shaded as a bubble seen whole, in the room's perspective; now and then a smaller one stuck on it in turn. Sorted
+  // among the room's things by the floor under them, in bands (an object each), so the friend passes in front of and behind
+  // them; bobbing a little, a band at a time, when the foam moves.
+  const balls = [];
+  const fz = (X, z) => at(X, floor, z)[1];
+  for (const [K, si] of [["Back", 1], ["Left", 2], ["Right", 3], ["Floor", 4], ["Ceil", 5]]) {
+    const chance = (B["foam" + K + "Out"] ?? 0) / 100;
+    if (!(B["foam" + K] ?? true) || !(chance > 0)) continue;
+    const share = (B["foam" + K + "H"] ?? (K === "Floor" ? 100 : K === "Ceil" ? 60 : K === "Back" ? 70 : 55)) / 100, R2 = seeded(seed * 13 + si);
+    const list = K === "Back" ? foamPack(seed * 7 + 1, 2 * bw, wh * share, rMax, rMin) : K === "Left" || K === "Right" ? foamPack(seed * 7 + si, dSide, wh * share, rMax, rMin)
+               : foamPack(seed * 7 + si, 2 * bw, (K === "Floor" ? dFloor : dCeil) * share, rMax, rMin);
+    list.forEach((b, i) => {
+      if (b.r < 8 * k || R2(i * 4) >= chance) return;
+      const rho = b.r * (0.5 + 0.5 * R2(i * 4 + 1)), sd = K === "Left" ? -1 : 1;
+      // (its middle in the room: X across, Y up and down on the back wall's plane, d toward us in the room's units)
+      const C = K === "Back" ? [-bw + b.x, floor - b.y, rho] : K === "Left" || K === "Right" ? [sd * (bw - rho), floor - b.y, b.x]
+              : K === "Floor" ? [-bw + b.x, floor - rho, b.y] : [-bw + b.x, top + rho, b.y];
+      // (the way out of its surface into the room, for one stuck on it)
+      const N = K === "Back" ? [0, 0, 1] : K === "Left" || K === "Right" ? [-sd, 0, 0] : K === "Floor" ? [0, -1, 0] : [0, 1, 0];
+      const add = (c, r) => { const z = -c[2] / 800, [x, y] = at(c[0], c[1], z), f = 1 / (1 + z);
+        if (f > 0) balls.push({ x, y, r: r * f, j: b.j, d: c[2], fz: K === "Back" ? -Infinity : fz(c[0], z), K }); };
+      add(C, rho);
+      if (R2(i * 4 + 2) < 0.3) { const r2 = rho * (0.4 + 0.3 * R2(i * 4 + 3)), side = R2(i * 4 + 3) < 0.5 ? -1 : 1, t2 = rho + r2;
+        // (out from the first, slant: away from the surface and to one side)
+        const dir = N[0] || N[2] ? [N[0] * 0.7, -0.5 * side, N[2] * 0.7 + (N[0] ? 0.5 * side : 0)] : [0.6 * side, N[1] * 0.8, 0];
+        add([C[0] + dir[0] * t2, C[1] + dir[1] * t2, C[2] + dir[2] * t2], r2); }
+    });
+  }
+  if (balls.length) {
+    s += SEP + part("bubbleroom-balldefs", [tints], () => `<defs>` + tints.map((c, j) => `<radialGradient id="bg-ball-${j}" cx="0.36" cy="0.32" r="0.72">` +
+      `<stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="0.25" stop-color="#ffffff" stop-opacity="0.18"/><stop offset="0.7" stop-color="${c}" stop-opacity="0.16"/>` +
+      `<stop offset="0.93" stop-color="${c}" stop-opacity="0.55"/><stop offset="1" stop-color="${mix(c, "#5a7fb0", 0.3)}" stop-opacity="0.85"/></radialGradient>`).join("") + `</defs>`);
+    const ball = b => `<circle cx="${f1(b.x)}" cy="${f1(b.y)}" r="${f1(b.r)}" fill="url(#bg-ball-${b.j})" stroke="${tints[b.j]}" stroke-width="${f1(Math.max(0.7, b.r * 0.05))}"/>` +
+      `<ellipse cx="${f1(b.x + b.r * 0.38)}" cy="${f1(b.y + b.r * 0.42)}" rx="${f1(b.r * 0.2)}" ry="${f1(b.r * 0.09)}" fill="#ffffff" opacity="0.55" transform="rotate(-35 ${f1(b.x + b.r * 0.38)} ${f1(b.y + b.r * 0.42)})"/>`;
+    const shadow = b => b.K === "Floor" ? `<ellipse cx="${f1(b.x)}" cy="${f1(b.y + b.r * 0.98)}" rx="${f1(b.r * 0.8)}" ry="${f1(b.r * 0.18)}" fill="#3a5a8a" opacity="0.14"/>` : "";
+    const bob = (inner, n) => !move ? inner : `<g>${sceneLfo(o, "slow", (n * 0.17) % 1, "transform", (v, amp) => `0 ${f1(-3 * k * move * v * (0.5 + amp))}`,
+      `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-3 * k * move)};0 0" dur="${(3.5 + (n % 4) * 0.6).toFixed(1)}s" repeatCount="indefinite"/>`, "translate")}${inner}</g>`;
+    const ballKey = [c.F, ...FOAM_SURFACES.flatMap(([K]) => [B["foam" + K], B["foam" + K + "H"], B["foam" + K + "Out"]]), base, B.foamRainbow ?? true, move, move ? sceneLfoKey(o, "slow") : "", seed];
+    // (the back wall's against it, behind everything; the rest in bands by the floor under them, farther ones drawn first)
+    const back = balls.filter(b => b.K === "Back").sort((a, b) => a.d - b.d), rest = balls.filter(b => b.K !== "Back").sort((a, b) => a.fz - b.fz || a.d - b.d);
+    if (back.length) s += SEP + part("bubbleroom-balls-back", ballKey, () => wallObj("bubbles stuck out, back wall", bob(back.map(ball).join(""), 0)));
+    const bands = new Map();
+    // (six bands down the floor seen, from the back wall's foot to the picture's; those under the floor seen, near us, in the last)
+    const bandH = Math.max(20 * k, (y1 - floor) / 6);
+    for (const b of rest) { const n = Math.max(0, Math.min(5, Math.floor((b.fz - floor) / bandH))); if (!bands.has(n)) bands.set(n, []); bands.get(n).push(b); }
+    [...bands.entries()].forEach(([n, bs], i) => {
+      s += SEP + part("bubbleroom-balls-" + n, [...ballKey, n], () => obj(`bubbles stuck out ${i + 1}`, Math.max(...bs.map(b => b.fz)), bob(bs.map(b => shadow(b) + ball(b)).join(""), i + 1)));
+    });
+  }
   return s;
 }
 // The bubbles, as they move (in the picture's units): each drifts in the
@@ -896,6 +955,64 @@ const bubbleSim = { list: [], bonds: [], layer: null, key: "", last: 0, raf: 0, 
 const bubbleThemes = B => ["A", "B", "C"].filter(L => L === "A" || B["bubble" + L + "On"]).map(L => ({
   color: B["bubble" + L + "Color"], size: B["bubble" + L + "Size"] ?? 18, shine: (B["bubble" + L + "Shine"] ?? 70) / 100,
   sparkle: B["bubble" + L + "Sparkle"] || "none", sparkleColor: B["bubble" + L + "SparkleColor"] || "#ffffff" }));
+// (ticket 290, for N: "the bubble room's bubbles stream out of bubble makers"; "each with controls over how it makes bubbles
+// (the rate, the kind of bubble)") The bubbles from the bubble makers placed here, wherever here is: each maker blows its
+// rate of them a second out of its wheel, of its theme (the friend's bubble themes, A, B or C, as bubble space's), sized by
+// the maker; out its way (its right, or mirrored its left) and up, slowing, jostling a little, rising, then fading after a
+// few seconds; a bubble touching the friend pops. Seventy at most, the oldest going first. Drawn in a layer of their own over
+// the scene (#maker-bubbles); still while the picture is held still.
+const makerSim = { list: [], acc: {}, raf: 0, last: 0, n: 0, layer: null };
+const makerTheme = (B, L) => ({ color: B["bubble" + L + "Color"], size: B["bubble" + L + "Size"] ?? 18, shine: (B["bubble" + L + "Shine"] ?? 70) / 100,
+  sparkle: B["bubble" + L + "Sparkle"] || "none", sparkleColor: B["bubble" + L + "SparkleColor"] || "#ffffff" });
+function makerRun() {
+  const B = state.background, has = B.kind !== "none" && (B.things || []).some(t => t.kind === "bubblemaker");
+  if (!has) { if (makerSim.raf) cancelAnimationFrame(makerSim.raf); makerSim.raf = 0; makerSim.list = []; if (makerSim.layer) { makerSim.layer.remove(); makerSim.layer = null; } return; }
+  // (the same layer every drawing, its bubbles in it: a drawing takes everything but the scene out of the picture, and this
+  // puts it back, on top)
+  let L = makerSim.layer;
+  if (!L) { L = makerSim.layer = document.createElementNS("http://www.w3.org/2000/svg", "g"); L.id = "maker-bubbles"; L.setAttribute("pointer-events", "none"); makerSim.list = []; }
+  if (L.parentNode !== pic || pic.lastChild !== L) pic.append(L);
+  if (!makerSim.raf) { makerSim.last = 0; makerSim.raf = requestAnimationFrame(makerTick); }
+}
+function makerTick(t) {
+  makerSim.raf = 0;
+  const B = state.background, layer = makerSim.layer, F = sceneFrame, k = (F.bottom - F.top) / 700;
+  const makers = (B.things || []).map((d, i) => [d, i]).filter(([d]) => d.kind === "bubblemaker");
+  if (!makers.length || !layer || B.kind === "none") return;
+  const dt = makerSim.last ? Math.min(0.05, Math.max(0, (t - makerSim.last) / 1000)) : 0; makerSim.last = t;
+  if (stillAt !== null) { makerSim.raf = requestAnimationFrame(makerTick); return; }
+  const L = makerSim.list, rnd = () => { const v = Math.sin(++makerSim.n * 12.9898) * 43758.5453; return v - Math.floor(v); };
+  // each maker blows its share
+  for (const [d, i] of makers) {
+    const s = depthSize(B, d.z - SCENE.ground) * (d.size ?? 100) / 100, sd = d.mirror ? -1 : 1, rate = Math.max(1, Math.min(12, d.rate ?? 4));
+    makerSim.acc[i] = (makerSim.acc[i] || rnd()) + rate * dt;
+    while (makerSim.acc[i] >= 1) {
+      makerSim.acc[i] -= 1;
+      const th = makerTheme(B, d.theme || "A"), r = Math.max(2, (th.size / 18) * 11 * s * (0.75 + 0.5 * rnd()));
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      el.innerHTML = `<g class="bubin">${bubbleSvg(0, 0, r, th)}</g>`; layer.append(el);
+      L.push({ x: d.x + sd * MAKER_WHEEL.out[0] * s, y: d.z + MAKER_WHEEL.out[1] * s, vx: sd * (70 + 70 * rnd()) * s, vy: -(25 + 50 * rnd()) * s, r, el, born: t, life: 4500 + 3500 * rnd(), ph: rnd() * 6.28, s });
+      if (L.length > 70) { const o = L.shift(); o.el.remove(); }
+    }
+  }
+  // the friend: their box in the picture's units, from the screen
+  let fr = null;
+  const fig = document.getElementById("figure"), P = pic.getScreenCTM();
+  if (fig && P) { const rr = fig.getBoundingClientRect(), inv = P.inverse(), a = new DOMPoint(rr.left, rr.top).matrixTransform(inv), c = new DOMPoint(rr.right, rr.bottom).matrixTransform(inv);
+    if (rr.width > 2) fr = [Math.min(a.x, c.x), Math.min(a.y, c.y), Math.max(a.x, c.x), Math.max(a.y, c.y)]; }
+  for (let j = L.length - 1; j >= 0; j--) {
+    const b = L[j], age = t - b.born;
+    if (b.pop) { if (t - b.pop > 260) { b.el.remove(); L.splice(j, 1); } continue; }
+    if (age > b.life || b.y < F.top - 40 * k || b.x < F.left - 60 * k || b.x > F.right + 60 * k) { b.el.remove(); L.splice(j, 1); continue; }
+    const damp = Math.pow(0.5, dt), w = t / 1000 * 1.3 + b.ph;
+    b.vx = b.vx * damp + Math.cos(w) * 22 * b.s * dt; b.vy = b.vy * Math.pow(0.7, dt) - 14 * b.s * dt + Math.sin(w * 1.4) * 18 * b.s * dt;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (fr && age > 250 && b.x + b.r > fr[0] && b.x - b.r < fr[2] && b.y + b.r > fr[1] && b.y - b.r < fr[3]) { b.pop = t; if (b.el.firstChild) b.el.firstChild.classList.add("pop"); continue; }
+    const fade = Math.min(1, (b.life - age) / 600, age / 150);
+    b.el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`); b.el.setAttribute("opacity", fade.toFixed(2));
+  }
+  makerSim.raf = requestAnimationFrame(makerTick);
+}
 function bubbleRun() {
   if (state.background.kind !== "bubblespace") { if (bubbleSim.raf) cancelAnimationFrame(bubbleSim.raf); bubbleSim.raf = 0; bubbleSim.list = []; bubbleSim.bonds = []; bubbleSim.layer = null; bubbleSim.key = ""; return; }
   if (!bubbleSim.raf) bubbleSim.raf = requestAnimationFrame(bubbleTick);
@@ -1099,6 +1216,25 @@ const SHELL_COLORS = ["#f8e1c7", "#f9a8d4", "#fde68a", "#e9d5ff", "#ffffff", "#f
 const STAR_COLORS = ["#fb923c", "#f43f5e", "#a855f7", "#facc15", "#38bdf8"];
 const SEAFISH_COLORS = ["#ff9f1c", "#ffd23f", "#ff6f91", "#7bdff2", "#a3e635", "#c084fc"];
 const SEAPLANT_COLORS = ["#2f8f4e", "#4caf50", "#8bc34a", "#c0ca33", "#d4a017", "#e57373", "#ab47bc"];
+// (ticket 290, for N: "bubble makers: little boxes with turning wheels on the front, simplified to a few shapes at first";
+// his picture, a round toy bubble machine, a wheel of bubble rings turning on its front, a handle on top, a base under it)
+// A bubble maker, its foot at the origin, 100 of its units tall: its base, its round body in its colour, its wheel of six
+// rings turning on its front (faster the more bubbles a second it blows), its handle; MAKER_WHEEL, where its bubbles leave
+// the wheel (its right, the way it blows; mirrored, its left)
+const MAKER_COLORS = ["#ff7eb6", "#4fa3ff", "#ffd23f", "#5fd068", "#a77bff", "#ff8a3d"];
+const MAKER_WHEEL = { cx: 0, cy: -56, r: 26, out: [24, -70] };
+function bubbleMakerSvg(t) {
+  const col = t.color || MAKER_COLORS[0], dark = mix(col, "#000000", 0.35), lite = mix(col, "#ffffff", 0.45), { cx, cy, r } = MAKER_WHEEL;
+  const dur = Math.max(0.5, 8 / Math.max(1, t.rate ?? 4)).toFixed(2);
+  return `<rect x="-36" y="-14" width="72" height="14" rx="6" fill="${dark}"/><rect x="-22" y="-22" width="44" height="10" rx="4" fill="${dark}"/>` +
+    `<circle cx="0" cy="${cy}" r="40" fill="${col}" stroke="${dark}" stroke-width="3"/><path d="M-26 ${cy - 26} Q-36 ${cy - 6} -30 ${cy + 14}" fill="none" stroke="${lite}" stroke-width="5" stroke-linecap="round" opacity="0.8"/>` +
+    `<path d="M-18 ${cy - 37} Q0 ${cy - 70} 18 ${cy - 37}" fill="none" stroke="${dark}" stroke-width="7" stroke-linecap="round"/>` +
+    `<circle cx="${cx}" cy="${cy}" r="${r + 4}" fill="${lite}" stroke="${dark}" stroke-width="2.5"/>` +
+    `<g><animateTransform attributeName="transform" type="rotate" values="0 ${cx} ${cy};360 ${cx} ${cy}" dur="${dur}s" repeatCount="indefinite"/>` +
+    [0, 1, 2, 3, 4, 5].map(i => { const a = i * Math.PI / 3, x = cx + Math.cos(a) * (r - 8), y = cy + Math.sin(a) * (r - 8);
+      return `<line x1="${cx}" y1="${cy}" x2="${f1(x)}" y2="${f1(y)}" stroke="${dark}" stroke-width="2"/><circle cx="${f1(x)}" cy="${f1(y)}" r="7" fill="#ffffff" fill-opacity="0.35" stroke="#ffffff" stroke-width="2.5"/>`; }).join("") +
+    `</g><circle cx="${cx}" cy="${cy}" r="5" fill="${dark}"/>`;
+}
 const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
@@ -1130,6 +1266,8 @@ const THING_PARAMS = {
   lever: [["does", "🎚️ it", "choice", [["doors", "🕳️ opens and shuts trap doors"], ["boulder", "🪨 drops a boulder into them"]]], ["works", "🔗 its trap doors", "wires"],
           ["rock", "🪨 the boulder", "choice", BOULDER_TONES], ["knob", "🎨 its knob", "color", KNOB_COLORS]],
   trapdoor: [["open", "🕳️ open", "toggle"], ["shape", "its opening", "choice", OPENING_SHAPES], ["spikes", "🔱 spikes inside", "toggle"]],
+  // (ticket 290, for N) a bubble maker: how many bubbles a second, which of the friend's bubble themes it blows, its colour
+  bubblemaker: [["rate", "🫧 bubbles a second", "range", [1, 12, 1]], ["theme", "🫧 its bubbles", "choice", [["A", "🅰️ theme A"], ["B", "🅱️ theme B"], ["C", "©️ theme C"]]], ["color", "🎨", "color", MAKER_COLORS]],
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
@@ -1138,6 +1276,7 @@ const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: 
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
                          seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, trapdoor: { open: false, shape: "circle", spikes: true },
+                         bubblemaker: { rate: 4, theme: "A", color: MAKER_COLORS[0] },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] } };
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
@@ -1300,7 +1439,7 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["works", "🎚️ switches and traps"], ["places", "📦 from the places"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["places", "📦 from the places"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
@@ -1316,6 +1455,8 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       // (ticket 284) a 🎚️ lever, and 🕳️ trap doors it opens and shuts
                       lever: { label: "🎚️ lever", size: 1, group: "works" }, trapdoor: { label: "🕳️ trap door", size: 1, group: "works" },
                       // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
+                      // (ticket 290, for N) a 🫧 bubble maker, blowing bubbles wherever it is put
+                      bubblemaker: { label: "🫧 bubble maker", size: 1, group: "bubbles", moving: true },
                       lifted: { label: "📦 from a place", size: 1, group: "places" } };
 // (ticket 284, Matthew: "audit each scene for objects that we can offer as new placed objects ... The ticket would be
 // complete if we feel that every object in each scene is something that can also be placed") 📦 any object of any
@@ -1450,6 +1591,7 @@ function thingSvg(o, t, i) {
                t.kind === "starfish" ? at(starfishSvg(t.color || STAR_COLORS[0], seed)) :
                t.kind === "seafish" ? at(seaFishSvg(t.color || SEAFISH_COLORS[0], seed, t.bubbles ?? true)) :
                t.kind === "chest" ? at(seaChestSvg(t.open ?? true)) :
+               t.kind === "bubblemaker" ? at(shadow(40) + bubbleMakerSvg(t)) :   // (ticket 290)
                t.kind === "anchor" ? at(anchorSvg(t.chain ?? true)) :
                ["kelp", "seagrass", "seafan", "sealettuce"].includes(t.kind) ? at(seaPlantSvg(t.kind, t.color || THING_DEFAULTS[t.kind].color, seed, o)) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));

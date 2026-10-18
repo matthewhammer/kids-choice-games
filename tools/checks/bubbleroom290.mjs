@@ -1,6 +1,7 @@
 // (ticket 290, for N) The bubble room: a place of the 🫧 bubbles kind, with bubble space; its five surfaces each foamed, an
 // object each ("foam, back wall" ...), packed bubbles of many sizes (more small ones than big); each surface's foam gone
-// when switched off, and a wall's foam lower when its height is lower; the friend kept in by its walls. Exits 1 on a failure.
+// when switched off, and a wall's foam lower when its height is lower; the friend kept in by its walls; bubbles stuck out into
+// the room from its surfaces, the foam moving; a 🫧 bubble maker placed in it blowing bubbles. Exits 1 on a failure.
 //   node bubbleroom290.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -28,7 +29,12 @@ try {
     B.foamLeft = false; changed(); await w(200); const noLeft = objs();
     B.foamLeft = true; B.foamBackH = 70; changed();
     const group = PLACE_GROUPS.find(g => g[2].includes("bubbleroom")), walls = !!castleWalls(B);
-    return JSON.stringify({ all, n: sizes.length, big: sizes.filter(v => v > 20).length, small: sizes.filter(v => v < 8).length, top70, top30, noLeft, group: group && group[0], with: group && group[2], walls }); })()`));
+    for (const K of ["Back", "Left", "Right", "Floor", "Ceil"]) B["foam" + K + "Out"] = 30; changed(); await w(200);
+    const stuck = objs().filter(n => n.startsWith("bubbles stuck out")), moving = bgShown.node.querySelectorAll("[data-obj^='foam'] animateTransform, [data-obj^='foam'] animate").length;
+    B.things = [{ kind: "bubblemaker", x: -150, z: 330, size: 100, rate: 8, theme: "A", color: "#ff7eb6" }]; changed(); await w(1500);
+    const blown = document.querySelectorAll("#maker-bubbles > g").length, maker = !!bgShown.node.parentNode.querySelector(".thing") || !!document.querySelector("#pic .thing");
+    B.things = []; changed();
+    return JSON.stringify({ all, n: sizes.length, big: sizes.filter(v => v > 20).length, small: sizes.filter(v => v < 8).length, top70, top30, noLeft, group: group && group[0], with: group && group[2], walls, stuck, moving, blown, maker }); })()`));
   console.log(`  the bubble room: ${JSON.stringify(r)}`);
   ok("in the 🫧 bubbles kind of place, with bubble space", r.group === "bubbles" && r.with.includes("bubblespace"), r);
   ok("foam on all five surfaces, an object each", ["foam, back wall", "foam, left wall", "foam, right wall", "foam, floor", "foam, ceiling"].every(n => r.all.includes(n)), r);
@@ -36,6 +42,9 @@ try {
   ok("the back wall's foam lower at a lower height", r.top30 > r.top70, r);
   ok("the left wall's foam gone when it is switched off", !r.noLeft.includes("foam, left wall") && r.noLeft.includes("foam, right wall"), r);
   ok("a square room: walls the friend stays inside", r.walls, r);
+  ok("bubbles stuck out into the room from its surfaces: the back wall's, and in bands by depth", r.stuck.includes("bubbles stuck out, back wall") && r.stuck.length >= 3, r);
+  ok("its foam moving (Matthew: dynamic, not static)", r.moving > 0, r);
+  ok("a 🫧 bubble maker placed there blows bubbles", r.maker && r.blown >= 4, r);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
