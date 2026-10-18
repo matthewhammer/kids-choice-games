@@ -1217,6 +1217,20 @@ function doorTooLow(r, inv, foot) {
   const tall = youHeights().crown / figureT.k * (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, foot.y - SCENE.ground);
   return tall > 0.97 * open ? { tall, open, stretch: Math.max(40, 0.9 * tall) } : null;
 }
+// (ticket 216) a door's leaf swung open: each of its shapes to its data-open shape (the same commands), its planks and knob
+// (lines, ellipses) hidden; what puts it back as it was
+// (ticket 331: a tree house's door outside too, platformIn's, as the friend comes to it)
+function leafOpen(leaf) {
+  const to = leaf.getAttribute("data-open"), undo = [];
+  for (const p of leaf.querySelectorAll("path")) {
+    const a = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+    for (const [k, v] of [["attributeName", "d"], ["to", to], ["dur", "0.6s"], ["fill", "freeze"], ["begin", "indefinite"]]) a.setAttribute(k, v);
+    p.append(a); undo.push(() => a.remove());
+    try { a.beginElement(); } catch (e) { /* (an old browser: the door stays as it is) */ }
+  }
+  for (const n of leaf.querySelectorAll("line, ellipse")) { const o = n.style.opacity; n.style.opacity = "0"; undo.push(() => { n.style.opacity = o; }); }
+  return () => { for (const u of undo) u(); };
+}
 // (ticket 264) a door in a side wall being walked through: the wall's x there and which side it is on (-1 left), the
 // friend cut off past it (draw); none else
 let doorClip = null;
@@ -1256,16 +1270,7 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   const face = (vx, vy) => Math.abs(vx) > Math.abs(vy) ? (vx < 0 ? "left" : "right") : vy < 0 ? "back" : "front";
   // the door, opening
   const leaf = door.querySelector("[data-leaf]"), undo = [];
-  if (leaf) {
-    const to = leaf.getAttribute("data-open");
-    for (const p of leaf.querySelectorAll("path")) {
-      const a = document.createElementNS("http://www.w3.org/2000/svg", "animate");
-      for (const [k, v] of [["attributeName", "d"], ["to", to], ["dur", "0.6s"], ["fill", "freeze"], ["begin", "indefinite"]]) a.setAttribute(k, v);
-      p.append(a); undo.push(() => a.remove());
-      try { a.beginElement(); } catch (e) { /* (an old browser: the door stays as it is) */ }
-    }
-    for (const n of leaf.querySelectorAll("line, ellipse")) { const o = n.style.opacity; n.style.opacity = "0"; undo.push(() => { n.style.opacity = o; }); }
-  }
+  if (leaf) undo.push(leafOpen(leaf));
   if (BG.seat) standUp();
   if (B.pose !== "stand" && walk) strikePose("stand");
   const fade = o => { for (const n of figShown) if (n.style) n.style.opacity = o; };

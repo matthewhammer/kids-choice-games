@@ -175,17 +175,21 @@ let figClipRect = null;
 // (ticket 331: opt.x, from where along the platform, as off a bridge's end, else the ladder's top; opt.then, once in the room)
 function platformIn(house, opt = {}) {
   const B = state.background, body = state.body, i = house - 1, [hx] = TREE_SLOTS[i], hz = (B.treeHouseSize ?? 100) / 100;
-  const lx = opt.x ?? hx + Math.sign(hx) * 52 * hz;
+  const lx = opt.x ?? hx + Math.sign(hx) * 52 * hz, nearDoor = 36 * houseScale(i, hz);
   climb = null; entering = true; delete B.onBridge;
   B.onPlatform = { house, x: lx, back: 0 }; body.anim = "walk"; body.facing = lx > hx ? "left" : "right"; body.turn = "";
-  let last = 0, phase = "walk", t0 = 0;
+  let last = 0, phase = "walk", t0 = 0, opened = false;
+  // (ticket 331, Matthew: "whenever we enter a treehouse door, we could animate the door opening, like in the castle, but we
+  // don't") its door swung in as they come near it, open by the time they are at it
+  const open = () => { if (opened) return; opened = true; const L = bgShown.node && bgShown.node.querySelector(`.portal[data-house="${house}"] [data-cabin-leaf]`); if (L) leafOpen(L); };
   const step = t => {
     const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
     const o = B.onPlatform; if (!o || B.kind !== "treehouse") { entering = false; figClipRect = null; return; }
     if (phase === "walk") {
       const d = hx - o.x, sp = 70 * dt;   // (in the tree's units a second)
-      if (Math.abs(d) <= sp) { o.x = hx; phase = "in"; t0 = t; body.facing = "back"; }
+      if (Math.abs(d) <= sp) { o.x = hx; phase = "in"; t0 = t; body.facing = "back"; open(); }
       else o.x += Math.sign(d) * sp;
+      if (Math.abs(d) < nearDoor) open();
     } else {
       // (through the door: back into it, seen only inside its opening, the cabin's door, M-15 0 V-56 Q0 -72 15 -56 V0)
       const P = platformNow(), u = Math.min(1, (t - t0) / 700);

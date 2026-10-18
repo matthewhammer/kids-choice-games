@@ -130,14 +130,19 @@ const rockTop = (x, y, rad, seed) => { const r = seeded(seed), w = 1.2 + 0.2 * r
 const LADDER_TO = [4, 5, 0, 1, -1, -1];
 // a tree house's cabin (its walls the color of its <use>) and an animal's eye
 // (the cabin's drawing by itself, too: the room sign's map draws it, ticket 244)
-const CABIN_SVG = `<rect x="-82" y="0" width="164" height="14" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
+// (ticket 331: the door apart, CABIN_DOOR, so a house outside can draw its own and swing it open as the friend goes in)
+const CABIN_BODY = `<rect x="-82" y="0" width="164" height="14" fill="#8b5e34" stroke="#5e3d22" stroke-width="2"/>` +
       [-80, -66, 66, 80].map(x => `<line x1="${x}" y1="0" x2="${x}" y2="-28" stroke="#8b5e34" stroke-width="4"/>`).join("") +
       `<path d="M-82 -28 H-52 M52 -28 H82" stroke="#8b5e34" stroke-width="4"/>` +
       `<rect x="-52" y="-100" width="104" height="100" fill="currentColor"/>` +
       [-88, -76, -64, -52, -40, -28, -16].map(y => `<line x1="-52" y1="${y}" x2="52" y2="${y}" stroke="#00000030" stroke-width="1.5"/>`).join("") +
       [-1, 1].map(sd => `<rect x="${sd * 34 - 11}" y="-78" width="22" height="24" fill="#bfe3f5" stroke="#ffffff" stroke-width="3"/>`).join("") +
-      `<path d="M-15 0 V-56 Q0 -72 15 -56 V0 Z" fill="#7a4b28" stroke="#4a2e1a" stroke-width="2"/><circle cx="9" cy="-28" r="2.5" fill="#f2c12e"/>`;
-const CABIN_DEFS = `<g id="bg-cabin">${CABIN_SVG}</g>` +
+      "";
+// (its door: shut, and swung in, the same commands, data-open, as a castle door's leaf: walkInto's and platformIn's leafOpen)
+const CABIN_DOOR_D = "M-15 0 V-56 Q0 -72 15 -56 V0 Z", CABIN_DOOR_OPEN = "M-15 0 V-56 Q-12 -63 -8 -55 V-1 Z";
+const CABIN_DOOR = `<path d="${CABIN_DOOR_D}" fill="#7a4b28" stroke="#4a2e1a" stroke-width="2"/><ellipse cx="9" cy="-28" rx="2.5" ry="2.5" fill="#f2c12e"/>`;
+const CABIN_SVG = CABIN_BODY + CABIN_DOOR;
+const CABIN_DEFS = `<g id="bg-cabin">${CABIN_SVG}</g><g id="bg-cabin-body">${CABIN_BODY}<path d="${CABIN_DOOR_D}" fill="#24150b"/></g>` +
       `<g id="bg-eye"><circle cx="0" cy="0" r="9" fill="#ffffff" stroke="#00000055" stroke-width="1.5"/><circle cx="1" cy="1" r="5" fill="#1f1a17"/><circle cx="-1.5" cy="-1.5" r="1.8" fill="#ffffff"/></g>`;
 // the room inside each tree house
 const HOUSE_ROOMS = ["bunks", "kitchen", "books", "lookout", "art", "music"];
@@ -213,7 +218,7 @@ function treeInner(c) {
   s += SEP + part("tree-cabin", [], () => `<defs>${CABIN_DEFS}</defs>` +
     "") + treeHouses(o, n, hz).map(({ x, y, i, animal, look, sc }) =>
       part("tree-house", [i, animal, look.cols, sc], () => `<g class="portal" data-to="treeroom" data-house="${i + 1}">` +
-        use("bg-cabin", x, y, sc, sc, ` color="${look.walls}"`) + `<g ${tf(x, y, sc)}>${look.head}</g></g>`)).join("");
+        use("bg-cabin-body", x, y, sc, sc, ` color="${look.walls}"`) + `<g ${tf(x, y, sc)}><g data-cabin-leaf="" data-open="${CABIN_DOOR_OPEN}">${CABIN_DOOR}</g>${look.head}</g></g>`)).join("");
   return s;
 }
 // The tree's pieces, in its own units, for treeInner and for the map on a tree room's sign (ticket 244). The limbs out to

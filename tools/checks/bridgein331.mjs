@@ -2,7 +2,7 @@
 // the door --- we do it pretty well for the ladder climbs outside of the tree house, so can't we reuse that again?") At the
 // tree house, on the bridge from house 1 to house 4, a tap on house 4: along the bridge, the friend shrinking to house 4's
 // size (a higher house, 0.85 of house 1's), off its end onto house 4's platform, along it to the door, through the door cut
-// off at its opening (a clip, no fade), and in house 4's room, beside its door back to house 1. Exits 1 on a failure.
+// off at its opening (a clip, no fade), its door swung open as they come to it (0.0.236), and in house 4's room, beside its door back to house 1. Exits 1 on a failure.
 //   node bridgein331.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -25,21 +25,23 @@ try {
     const W = treeWalks().find(w => [w.a, w.b].sort().join() === "0,3"); if (!W) return JSON.stringify({ none: true });
     bridgeOn(W.j, W.a === 0 ? 0.1 : 0.9); changed(); await w(300);
     const house4 = bgShown.node.querySelector('.portal[data-to="treeroom"][data-house="4"]'); enterScene(house4);
-    const ks = [], xs = []; let clipped = false, faded = false; const t0 = performance.now();
+    const ks = [], xs = []; let clipped = false, faded = false, swungAt = null; const t0 = performance.now();
     while (performance.now() - t0 < 20000 && B.kind === "treehouse") { await w(40);
       if (B.onBridge) ks.push(+figureT.k.toFixed(4));
       if (B.onPlatform) xs.push(Math.round(B.onPlatform.x));
+      if (B.onPlatform && swungAt === null && bgShown.node.querySelector('.portal[data-house="4"] [data-cabin-leaf] animate')) swungAt = { x: Math.round(B.onPlatform.x), clipped };
       if (document.querySelector("#pic g.fig-clip") && B.onPlatform) clipped = true;
       const f = document.getElementById("figure"); if (B.onPlatform && f && f.style.opacity && +f.style.opacity < 0.9) faded = true; }
     await w(500);
     const d = bgShown.node.querySelector('.portal[data-door][data-house="1"]'), P = pic.getScreenCTM().inverse(), r = d && (d.querySelector("path, rect") || d).getBoundingClientRect();
     const doorX = r ? Math.round(new DOMPoint(r.x + r.width / 2, r.y).matrixTransform(P).x) : null;
-    return JSON.stringify({ k: [ks[0], ks[ks.length - 1]], nk: ks.length, xs: [xs[0], xs[xs.length - 1]], nx: xs.length, hx: TREE_SLOTS[3][0], edge: Math.round(TREE_SLOTS[3][0] - Math.sign(TREE_SLOTS[3][0] - TREE_SLOTS[0][0]) * 78 * 0.85), clipped, faded, now: B.kind + " " + B.inside, x: B.figX, doorX }); })()`));
+    return JSON.stringify({ k: [ks[0], ks[ks.length - 1]], nk: ks.length, xs: [xs[0], xs[xs.length - 1]], nx: xs.length, hx: TREE_SLOTS[3][0], edge: Math.round(TREE_SLOTS[3][0] - Math.sign(TREE_SLOTS[3][0] - TREE_SLOTS[0][0]) * 78 * 0.85), clipped, faded, swungAt, now: B.kind + " " + B.inside, x: B.figX, doorX }); })()`));
   console.log(`  house 1 to house 4 along the bridge: ${JSON.stringify(r)}`);
   if (r.none) ok("a bridge joins houses 1 and 4", false, r);
   else {
     ok("on the bridge, smaller toward house 4, a smaller house: at its end 0.85 of the size at house 1's", r.nk > 5 && Math.abs(r.k[1] / r.k[0] - 0.85) < 0.03, r);
     ok("off the bridge's end onto house 4's platform, and along it to the door, the house's middle", r.nx > 3 && Math.abs(r.xs[0] - r.edge) < 12 && r.xs[1] === r.hx, r);
+    ok("its door swung open as they came to it, before they went through", r.swungAt && !r.swungAt.clipped && r.swungAt.x !== r.hx, r);
     ok("through the door cut off at its opening, not faded", r.clipped && !r.faded, r);
     ok("and in house 4's room, on the side of its door back to house 1", r.now === "treeroom 4" && r.doorX !== null && Math.sign(r.x) === Math.sign(r.doorX), r);
   }

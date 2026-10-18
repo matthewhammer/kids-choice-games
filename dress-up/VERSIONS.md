@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.236 (2026-10-18)
+
+Everything in 0.0.235, with the tree houses' doors opening as you go in.
+
+- **A tree house's door swings open as you come to it**, outside, from the top of its ladder or the end of a bridge, the way the castle's doors swing open: then you go in through the open doorway.
+
 ## 0.0.235 (2026-10-18)
 
 Everything in 0.0.234, with going out through a tree room's door to a bridge seen in the doorway.
