@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.228 (2026-10-18)
+
+Everything in 0.0.227, with the trap doors' swing made sure to play.
+
+- **Fixed: a trap door's lid could change at once instead of swinging**, and a lever's handle could snap instead of rocking: each started its clock when the lever was pulled, before the room was drawn again, so in a room slow to draw (the trap room, since its moss) the swing could be over before it was ever seen. Each now starts when it is first drawn.
+
 ## 0.0.227 (2026-10-18)
 
 Everything in 0.0.226, plus lichen, for M, to decorate rocks, castle walls and logs.

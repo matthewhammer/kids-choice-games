@@ -348,11 +348,14 @@ function roomLeverPull(side) {
 // (a lever's handle on the screen, turned across to its new angle `to` from the other side, in LEVER_TURN ms)
 function turnArm(arm, to) {
   if (!arm) return;
-  const [px, py] = arm.dataset.pivot.split(" ").map(Number), t0 = performance.now();
+  const [px, py] = arm.dataset.pivot.split(" ").map(Number);
   // (by frames, a timer standing in where frames do not come, as for a drag: it always ends at its new angle)
-  let raf = 0, tm = 0;
+  // (ticket 322: its clock starts at its first frame, not at the pull: a room slow to draw again, as the trap room with its
+  // moss, otherwise used up the turn before it was ever seen, and it jumped to its end)
+  let raf = 0, tm = 0, t0 = null;
   const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (!arm.isConnected) return;
-    const u = Math.min(1, (performance.now() - t0) / LEVER_TURN), a = u < 1 ? to - 2 * to * Math.exp(-5 * u) * Math.cos(3 * Math.PI * u) : to;   // (past it by a third, back, and still)
+    const now = performance.now(); if (t0 === null) t0 = now;
+    const u = Math.min(1, (now - t0) / LEVER_TURN), a = u < 1 ? to - 2 * to * Math.exp(-5 * u) * Math.cos(3 * Math.PI * u) : to;   // (past it by a third, back, and still)
     arm.setAttribute("transform", `rotate(${f1(a)} ${f1(px)} ${f1(py)})`);
     if (u < 1) { raf = requestAnimationFrame(step); tm = setTimeout(step, 40); } };
   arm.setAttribute("transform", `rotate(${-to} ${f1(px)} ${f1(py)})`);
@@ -364,11 +367,13 @@ function turnArm(arm, to) {
 const PIT_SWING = 520;
 function lidSwing(lid, open) {
   if (!lid) return;
-  const y0 = +lid.dataset.hinge, shade = lid.querySelector(".lid-shade"), t0 = performance.now();
+  const y0 = +lid.dataset.hinge, shade = lid.querySelector(".lid-shade");   // (ticket 322: its clock from its first frame, as turnArm's)
+  let t0 = null;
   const at = s => { lid.setAttribute("transform", lidAt(y0, s)); if (shade) shade.setAttribute("opacity", (0.7 * (1 - s)).toFixed(2)); };
   let raf = 0, tm = 0;
   const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (!lid.isConnected) return;
-    const u = Math.min(1, (performance.now() - t0) / PIT_SWING);
+    const now = performance.now(); if (t0 === null) t0 = now;
+    const u = Math.min(1, (now - t0) / PIT_SWING);
     if (u < 1) { at(Math.max(0.001, open ? 1 - u * u : 1 - (1 - u) * (1 - u))); raf = requestAnimationFrame(step); tm = setTimeout(step, 40); return; }
     if (open) { at(0); lid.setAttribute("visibility", "hidden"); }
     else { lid.removeAttribute("transform"); if (shade) shade.setAttribute("opacity", "0"); } };
