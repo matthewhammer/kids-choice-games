@@ -1,6 +1,6 @@
 # Dress Up: what stands in each place
 
-The formal list of every place's objects (ticket 99), as of 0.0.94, at the default settings, each with its picture (ticket 180). A slider that adds things (more toys, more ducks, more chairs) adds objects.
+The formal list of every place's objects (ticket 99), as of 0.0.198, at the default settings, each with its picture (ticket 180). A slider that adds things (more toys, more ducks, more chairs) adds objects.
 
 - **Depth** is the y where a thing stands on the ground, in the stage's units: the ground line is at 320, and the friend's feet can be anywhere from about 11 (far) to 406 (near).
 - The friend is drawn behind every object deeper than their feet, and in front of the rest. **front** means in front of everything: the friend is always under it (darkness, light, steam, the sign toward us).
@@ -15,6 +15,14 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 (0.0.77, ticket 153.) Nothing stands here: the friend is in front of everything. Its back wall is solid, as the imagination's is.
 
 <img src="objects/emptyroom/place.webp" alt="🔲 empty room, as it starts" width="480">
+
+## 🫧 bubble space
+
+<img src="objects/bubblespace/place.webp" alt="🫧 bubble space, as it starts" width="480">
+
+| depth | object | picture |
+|---:|---|---|
+| front | bubbles | <img src="objects/bubblespace/bubbles.webp" alt="bubbles" height="72"> |
 
 ## 💭 our imagination
 
@@ -44,6 +52,11 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 345.8 | big tree, right, inner | <img src="objects/forest/big-tree-right-inner.webp" alt="big tree, right, inner" height="72"> |
 | 371.5 | big tree, left, outer | <img src="objects/forest/big-tree-left-outer.webp" alt="big tree, left, outer" height="72"> |
 | 371.5 | big tree, right, outer | <img src="objects/forest/big-tree-right-outer.webp" alt="big tree, right, outer" height="72"> |
+| front | way N | <img src="objects/forest/way-n.webp" alt="way N" height="72"> |
+| front | way NE | <img src="objects/forest/way-ne.webp" alt="way NE" height="72"> |
+| front | way E | <img src="objects/forest/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/forest/way-se.webp" alt="way SE" height="72"> |
+| front | way S | <img src="objects/forest/way-s.webp" alt="way S" height="72"> |
 
 ## 🐠 underwater
 
@@ -69,6 +82,23 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 362.3 | rock, left 1 | <img src="objects/underwater/rock-left-1.webp" alt="rock, left 1" height="72"> |
 | front | bubbles | <img src="objects/underwater/bubbles.webp" alt="bubbles" height="72"> |
 
+## 🪸 deep sea
+
+<img src="objects/deepsea/place.webp" alt="🪸 deep sea, as it starts" width="480">
+
+| depth | object | picture |
+|---:|---|---|
+| 238.4 | school of fish | <img src="objects/deepsea/school-of-fish.webp" alt="school of fish" height="72"> |
+| 340.6 | kelp, left | <img src="objects/deepsea/kelp-left.webp" alt="kelp, left" height="72"> |
+| 340.6 | kelp, right | <img src="objects/deepsea/kelp-right.webp" alt="kelp, right" height="72"> |
+| 342 | rock, left 2 | <img src="objects/deepsea/rock-left-2.webp" alt="rock, left 2" height="72"> |
+| 349.8 | rock, left 1 | <img src="objects/deepsea/rock-left-1.webp" alt="rock, left 1" height="72"> |
+| 354.4 | vent | <img src="objects/deepsea/vent.webp" alt="vent" height="72"> |
+| 354.5 | rock, right 2 | <img src="objects/deepsea/rock-right-2.webp" alt="rock, right 2" height="72"> |
+| 365.4 | rock, right 1 | <img src="objects/deepsea/rock-right-1.webp" alt="rock, right 1" height="72"> |
+| front | way E | <img src="objects/deepsea/way-e.webp" alt="way E" height="72"> |
+| front | way S | <img src="objects/deepsea/way-s.webp" alt="way S" height="72"> |
+
 ## 🏖️ beach
 
 <img src="objects/beach/place.webp" alt="🏖️ beach, as it starts" width="480">
@@ -83,6 +113,25 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 354.4 | palm tree, right | <img src="objects/beach/palm-tree-right.webp" alt="palm tree, right" height="72"> |
 | 358.6 | sand castle, left | <img src="objects/beach/sand-castle-left.webp" alt="sand castle, left" height="72"> |
 | 358.6 | sand castle, right | <img src="objects/beach/sand-castle-right.webp" alt="sand castle, right" height="72"> |
+| front | way N | <img src="objects/beach/way-n.webp" alt="way N" height="72"> |
+| front | way NE | <img src="objects/beach/way-ne.webp" alt="way NE" height="72"> |
+| front | way E | <img src="objects/beach/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/beach/way-se.webp" alt="way SE" height="72"> |
+| front | way S | <img src="objects/beach/way-s.webp" alt="way S" height="72"> |
+| front | way SW | <img src="objects/beach/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/beach/way-w.webp" alt="way W" height="72"> |
+| front | way NW | <img src="objects/beach/way-nw.webp" alt="way NW" height="72"> |
+
+## 🌊 open water
+
+<img src="objects/sea/place.webp" alt="🌊 open water, as it starts" width="480">
+
+| depth | object | picture |
+|---:|---|---|
+| front | way E | <img src="objects/sea/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/sea/way-se.webp" alt="way SE" height="72"> |
+| front | way SW | <img src="objects/sea/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/sea/way-w.webp" alt="way W" height="72"> |
 
 ## 🧙 witch's woods
 
@@ -102,6 +151,9 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 376.7 | skeleton, right | <img src="objects/witch/skeleton-right.webp" alt="skeleton, right" height="72"> |
 | 380.1 | skeleton, right edge | <img src="objects/witch/skeleton-right-edge.webp" alt="skeleton, right edge" height="72"> |
 | 383.6 | skeleton, left edge | <img src="objects/witch/skeleton-left-edge.webp" alt="skeleton, left edge" height="72"> |
+| front | way E | <img src="objects/witch/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/witch/way-se.webp" alt="way SE" height="72"> |
+| front | way S | <img src="objects/witch/way-s.webp" alt="way S" height="72"> |
 
 ## 🌿 cemetery
 
@@ -121,6 +173,11 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 345.8 | stag stone | <img src="objects/cemetery/stag-stone.webp" alt="stag stone" height="72"> |
 | 345.8 | pink bush | <img src="objects/cemetery/pink-bush.webp" alt="pink bush" height="72"> |
 | 349.2 | white bush | <img src="objects/cemetery/white-bush.webp" alt="white bush" height="72"> |
+| front | way N | <img src="objects/cemetery/way-n.webp" alt="way N" height="72"> |
+| front | way NE | <img src="objects/cemetery/way-ne.webp" alt="way NE" height="72"> |
+| front | way E | <img src="objects/cemetery/way-e.webp" alt="way E" height="72"> |
+| front | way W | <img src="objects/cemetery/way-w.webp" alt="way W" height="72"> |
+| front | way NW | <img src="objects/cemetery/way-nw.webp" alt="way NW" height="72"> |
 
 ## 🦆 lake
 
@@ -136,6 +193,13 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 198.8 | duck 4 | <img src="objects/lake/duck-4.webp" alt="duck 4" height="72"> |
 | 264.2 | cattails, left | <img src="objects/lake/cattails-left.webp" alt="cattails, left" height="72"> |
 | 264.2 | cattails, right | <img src="objects/lake/cattails-right.webp" alt="cattails, right" height="72"> |
+| front | way N | <img src="objects/lake/way-n.webp" alt="way N" height="72"> |
+| front | way E | <img src="objects/lake/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/lake/way-se.webp" alt="way SE" height="72"> |
+| front | way S | <img src="objects/lake/way-s.webp" alt="way S" height="72"> |
+| front | way SW | <img src="objects/lake/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/lake/way-w.webp" alt="way W" height="72"> |
+| front | way NW | <img src="objects/lake/way-nw.webp" alt="way NW" height="72"> |
 
 ## 🏠 house and yard
 
@@ -147,12 +211,22 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 186.9 | tree, left | <img src="objects/house/tree-left.webp" alt="tree, left" height="72"> |
 | 195.5 | tree, right | <img src="objects/house/tree-right.webp" alt="tree, right" height="72"> |
 | 217.9 | teddy | <img src="objects/house/teddy.webp" alt="teddy" height="72"> |
+| 220.1 | truck 2 | <img src="objects/house/truck-2.webp" alt="truck 2" height="72"> |
 | 232.3 | wagon | <img src="objects/house/wagon.webp" alt="wagon" height="72"> |
 | 233.2 | ball | <img src="objects/house/ball.webp" alt="ball" height="72"> |
 | 252.9 | blocks | <img src="objects/house/blocks.webp" alt="blocks" height="72"> |
 | 267 | truck | <img src="objects/house/truck.webp" alt="truck" height="72"> |
 | 268.5 | butterflies | <img src="objects/house/butterflies.webp" alt="butterflies" height="72"> |
+| 354.1 | ball 2 | <img src="objects/house/ball-2.webp" alt="ball 2" height="72"> |
 | 364.2 | bucket | <img src="objects/house/bucket.webp" alt="bucket" height="72"> |
+| front | way N | <img src="objects/house/way-n.webp" alt="way N" height="72"> |
+| front | way NE | <img src="objects/house/way-ne.webp" alt="way NE" height="72"> |
+| front | way E | <img src="objects/house/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/house/way-se.webp" alt="way SE" height="72"> |
+| front | way S | <img src="objects/house/way-s.webp" alt="way S" height="72"> |
+| front | way SW | <img src="objects/house/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/house/way-w.webp" alt="way W" height="72"> |
+| front | way NW | <img src="objects/house/way-nw.webp" alt="way NW" height="72"> |
 
 ## 🌳 tree house
 
@@ -177,6 +251,9 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 342.6 | bush, left 2 | <img src="objects/treehouse/bush-left-2.webp" alt="bush, left 2" height="72"> |
 | 345.5 | bush, right 8 | <img src="objects/treehouse/bush-right-8.webp" alt="bush, right 8" height="72"> |
 | 346.8 | bush, left 7 | <img src="objects/treehouse/bush-left-7.webp" alt="bush, left 7" height="72"> |
+| front | way S | <img src="objects/treehouse/way-s.webp" alt="way S" height="72"> |
+| front | way SW | <img src="objects/treehouse/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/treehouse/way-w.webp" alt="way W" height="72"> |
 
 ## 🛋️ living room
 
@@ -187,6 +264,7 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 242.7 | lamp | <img src="objects/livingroom/lamp.webp" alt="lamp" height="72"> |
 | 259.9 | plant | <img src="objects/livingroom/plant.webp" alt="plant" height="72"> |
 | 285.6 | couch | <img src="objects/livingroom/couch.webp" alt="couch" height="72"> |
+| front | way S | <img src="objects/livingroom/way-s.webp" alt="way S" height="72"> |
 
 ## 🧙 inside the witch's hut
 
@@ -216,8 +294,14 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 354.4 | tree, right, outer | <img src="objects/clearing/tree-right-outer.webp" alt="tree, right, outer" height="72"> |
 | 388.7 | tree, left, inner | <img src="objects/clearing/tree-left-inner.webp" alt="tree, left, inner" height="72"> |
 | 388.7 | tree, right, inner | <img src="objects/clearing/tree-right-inner.webp" alt="tree, right, inner" height="72"> |
-| front | sign | <img src="objects/clearing/sign.webp" alt="sign" height="72"> |
-| front | fairy sign | <img src="objects/clearing/fairy-sign.webp" alt="fairy sign" height="72"> |
+| front | way N | <img src="objects/clearing/way-n.webp" alt="way N" height="72"> |
+| front | way NE | <img src="objects/clearing/way-ne.webp" alt="way NE" height="72"> |
+| front | way E | <img src="objects/clearing/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/clearing/way-se.webp" alt="way SE" height="72"> |
+| front | way S | <img src="objects/clearing/way-s.webp" alt="way S" height="72"> |
+| front | way SW | <img src="objects/clearing/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/clearing/way-w.webp" alt="way W" height="72"> |
+| front | way NW | <img src="objects/clearing/way-nw.webp" alt="way NW" height="72"> |
 
 ## 🌿 inside the healer's hut
 
@@ -263,7 +347,10 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 391.7 | toadstool 4 | <img src="objects/fairyforest/toadstool-4.webp" alt="toadstool 4" height="72"> |
 | 397.3 | stone, right | <img src="objects/fairyforest/stone-right.webp" alt="stone, right" height="72"> |
 | front | sparkles | <img src="objects/fairyforest/sparkles.webp" alt="sparkles" height="72"> |
-| front | sign | <img src="objects/fairyforest/sign.webp" alt="sign" height="72"> |
+| front | way N | <img src="objects/fairyforest/way-n.webp" alt="way N" height="72"> |
+| front | way SW | <img src="objects/fairyforest/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/fairyforest/way-w.webp" alt="way W" height="72"> |
+| front | way NW | <img src="objects/fairyforest/way-nw.webp" alt="way NW" height="72"> |
 
 ## ⛰️ mountain trail
 
@@ -275,7 +362,6 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 322.9 | pine, right 1 | <img src="objects/mountains/pine-right-1.webp" alt="pine, right 1" height="72"> |
 | 326.6 | pine, right 4 | <img src="objects/mountains/pine-right-4.webp" alt="pine, right 4" height="72"> |
 | 327.6 | pine, right 2 | <img src="objects/mountains/pine-right-2.webp" alt="pine, right 2" height="72"> |
-| 328.6 | signpost | <img src="objects/mountains/signpost.webp" alt="signpost" height="72"> |
 | 329.6 | rock, left 5 | <img src="objects/mountains/rock-left-5.webp" alt="rock, left 5" height="72"> |
 | 330.2 | pine, left 2 | <img src="objects/mountains/pine-left-2.webp" alt="pine, left 2" height="72"> |
 | 334 | pine, left 3 | <img src="objects/mountains/pine-left-3.webp" alt="pine, left 3" height="72"> |
@@ -290,6 +376,11 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 364.1 | rock, right 2 | <img src="objects/mountains/rock-right-2.webp" alt="rock, right 2" height="72"> |
 | 364.7 | rock, right 3 | <img src="objects/mountains/rock-right-3.webp" alt="rock, right 3" height="72"> |
 | 369.1 | rock, right 1 | <img src="objects/mountains/rock-right-1.webp" alt="rock, right 1" height="72"> |
+| front | way E | <img src="objects/mountains/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/mountains/way-se.webp" alt="way SE" height="72"> |
+| front | way S | <img src="objects/mountains/way-s.webp" alt="way S" height="72"> |
+| front | way SW | <img src="objects/mountains/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/mountains/way-w.webp" alt="way W" height="72"> |
 
 ## 💦 jungle waterfall
 
@@ -299,11 +390,14 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 |---:|---|---|
 | 259.9 | mist | <img src="objects/waterfall/mist.webp" alt="mist" height="72"> |
 | 259.9 | vines | <img src="objects/waterfall/vines.webp" alt="vines" height="72"> |
-| 354.4 | signpost | <img src="objects/waterfall/signpost.webp" alt="signpost" height="72"> |
 | 371.5 | jungle tree, left | <img src="objects/waterfall/jungle-tree-left.webp" alt="jungle tree, left" height="72"> |
 | 371.5 | jungle tree, right | <img src="objects/waterfall/jungle-tree-right.webp" alt="jungle tree, right" height="72"> |
 | 371.5 | parrot 1 | <img src="objects/waterfall/parrot-1.webp" alt="parrot 1" height="72"> |
 | 371.5 | parrot 2 | <img src="objects/waterfall/parrot-2.webp" alt="parrot 2" height="72"> |
+| front | way NE | <img src="objects/waterfall/way-ne.webp" alt="way NE" height="72"> |
+| front | way E | <img src="objects/waterfall/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/waterfall/way-se.webp" alt="way SE" height="72"> |
+| front | way S | <img src="objects/waterfall/way-s.webp" alt="way S" height="72"> |
 
 ## 🏕️ camp site
 
@@ -314,11 +408,17 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 238.4 | woods | <img src="objects/campsite/woods.webp" alt="woods" height="72"> |
 | 285.6 | orange tent | <img src="objects/campsite/orange-tent.webp" alt="orange tent" height="72"> |
 | 290.8 | blue tent | <img src="objects/campsite/blue-tent.webp" alt="blue tent" height="72"> |
-| 345.8 | signpost | <img src="objects/campsite/signpost.webp" alt="signpost" height="72"> |
 | 354.4 | campfire | <img src="objects/campsite/campfire.webp" alt="campfire" height="72"> |
 | 392.1 | log, left | <img src="objects/campsite/log-left.webp" alt="log, left" height="72"> |
 | 392.1 | log, right | <img src="objects/campsite/log-right.webp" alt="log, right" height="72"> |
 | 452.3 | log, near |  |
+| front | way N | <img src="objects/campsite/way-n.webp" alt="way N" height="72"> |
+| front | way NE | <img src="objects/campsite/way-ne.webp" alt="way NE" height="72"> |
+| front | way E | <img src="objects/campsite/way-e.webp" alt="way E" height="72"> |
+| front | way SE | <img src="objects/campsite/way-se.webp" alt="way SE" height="72"> |
+| front | way S | <img src="objects/campsite/way-s.webp" alt="way S" height="72"> |
+| front | way SW | <img src="objects/campsite/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/campsite/way-w.webp" alt="way W" height="72"> |
 
 ## ⛺ inside a tent
 
@@ -355,11 +455,30 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 345.8 | tree, right inner | <img src="objects/woodpath/tree-right-inner.webp" alt="tree, right inner" height="72"> |
 | 350.9 | mushroom, right inner | <img src="objects/woodpath/mushroom-right-inner.webp" alt="mushroom, right inner" height="72"> |
 | 354.4 | mushroom, left inner | <img src="objects/woodpath/mushroom-left-inner.webp" alt="mushroom, left inner" height="72"> |
-| 362.9 | signpost | <img src="objects/woodpath/signpost.webp" alt="signpost" height="72"> |
 | 371.5 | mushroom, right outer | <img src="objects/woodpath/mushroom-right-outer.webp" alt="mushroom, right outer" height="72"> |
 | 380.1 | tree, left outer | <img src="objects/woodpath/tree-left-outer.webp" alt="tree, left outer" height="72"> |
 | 380.1 | mushroom, left outer | <img src="objects/woodpath/mushroom-left-outer.webp" alt="mushroom, left outer" height="72"> |
 | 388.7 | tree, right outer | <img src="objects/woodpath/tree-right-outer.webp" alt="tree, right outer" height="72"> |
+| front | way N | <img src="objects/woodpath/way-n.webp" alt="way N" height="72"> |
+| front | way NE | <img src="objects/woodpath/way-ne.webp" alt="way NE" height="72"> |
+| front | way E | <img src="objects/woodpath/way-e.webp" alt="way E" height="72"> |
+| front | way S | <img src="objects/woodpath/way-s.webp" alt="way S" height="72"> |
+| front | way W | <img src="objects/woodpath/way-w.webp" alt="way W" height="72"> |
+| front | way NW | <img src="objects/woodpath/way-nw.webp" alt="way NW" height="72"> |
+
+## 🛤️ forest crossing
+
+<img src="objects/crossing/place.webp" alt="🛤️ forest crossing, as it starts" width="480">
+
+| depth | object | picture |
+|---:|---|---|
+| 57.2 | far trees | <img src="objects/crossing/far-trees.webp" alt="far trees" height="72"> |
+| 57.2 | sunbeams | <img src="objects/crossing/sunbeams.webp" alt="sunbeams" height="72"> |
+| 277.1 | butterflies | <img src="objects/crossing/butterflies.webp" alt="butterflies" height="72"> |
+| front | way N | <img src="objects/crossing/way-n.webp" alt="way N" height="72"> |
+| front | way E | <img src="objects/crossing/way-e.webp" alt="way E" height="72"> |
+| front | way S | <img src="objects/crossing/way-s.webp" alt="way S" height="72"> |
+| front | way W | <img src="objects/crossing/way-w.webp" alt="way W" height="72"> |
 
 ## 🏰 castle
 
@@ -387,7 +506,9 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 392.1 | crate | <img src="objects/castle/crate.webp" alt="crate" height="72"> |
 | 414.5 | big tree, left, inner | <img src="objects/castle/big-tree-left-inner.webp" alt="big tree, left, inner" height="72"> |
 | 414.5 | big tree, right, inner | <img src="objects/castle/big-tree-right-inner.webp" alt="big tree, right, inner" height="72"> |
-| front | sign | <img src="objects/castle/sign.webp" alt="sign" height="72"> |
+| front | way S | <img src="objects/castle/way-s.webp" alt="way S" height="72"> |
+| front | way SW | <img src="objects/castle/way-sw.webp" alt="way SW" height="72"> |
+| front | way W | <img src="objects/castle/way-w.webp" alt="way W" height="72"> |
 
 ## 🪜 tree house room 1
 
@@ -395,11 +516,12 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 
 | depth | object | picture |
 |---:|---|---|
-| 234.1 | bunk beds | <img src="objects/treeroom-1/bunk-beds.webp" alt="bunk beds" height="72"> |
+| 225.5 | side doors | <img src="objects/treeroom-1/side-doors.webp" alt="side doors" height="72"> |
+| 231.7 | bunk beds | <img src="objects/treeroom-1/bunk-beds.webp" alt="bunk beds" height="72"> |
 | 237.5 | ladder up | <img src="objects/treeroom-1/ladder-up.webp" alt="ladder up" height="72"> |
-| 242.7 | toy chest | <img src="objects/treeroom-1/toy-chest.webp" alt="toy chest" height="72"> |
-| 259.9 | tree trunk | <img src="objects/treeroom-1/tree-trunk.webp" alt="tree trunk" height="72"> |
-| 304.5 | hatch | <img src="objects/treeroom-1/hatch.webp" alt="hatch" height="72"> |
+| 237.9 | toy chest | <img src="objects/treeroom-1/toy-chest.webp" alt="toy chest" height="72"> |
+| 250.3 | tree trunk | <img src="objects/treeroom-1/tree-trunk.webp" alt="tree trunk" height="72"> |
+| 271.9 | hatch | <img src="objects/treeroom-1/hatch.webp" alt="hatch" height="72"> |
 | front | house sign | <img src="objects/treeroom-1/house-sign.webp" alt="house sign" height="72"> |
 | front | dark | <img src="objects/treeroom-1/dark.webp" alt="dark" height="72"> |
 
@@ -409,11 +531,12 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 
 | depth | object | picture |
 |---:|---|---|
-| 234.1 | counter | <img src="objects/treeroom-2/counter.webp" alt="counter" height="72"> |
-| 234.1 | stove | <img src="objects/treeroom-2/stove.webp" alt="stove" height="72"> |
-| 259.9 | tree trunk | <img src="objects/treeroom-2/tree-trunk.webp" alt="tree trunk" height="72"> |
-| 297.7 | table | <img src="objects/treeroom-2/table.webp" alt="table" height="72"> |
-| 304.5 | hatch | <img src="objects/treeroom-2/hatch.webp" alt="hatch" height="72"> |
+| 225.5 | side doors | <img src="objects/treeroom-2/side-doors.webp" alt="side doors" height="72"> |
+| 231.7 | counter | <img src="objects/treeroom-2/counter.webp" alt="counter" height="72"> |
+| 231.7 | stove | <img src="objects/treeroom-2/stove.webp" alt="stove" height="72"> |
+| 250.3 | tree trunk | <img src="objects/treeroom-2/tree-trunk.webp" alt="tree trunk" height="72"> |
+| 271.9 | hatch | <img src="objects/treeroom-2/hatch.webp" alt="hatch" height="72"> |
+| 277.5 | table | <img src="objects/treeroom-2/table.webp" alt="table" height="72"> |
 | front | house sign | <img src="objects/treeroom-2/house-sign.webp" alt="house sign" height="72"> |
 | front | dark | <img src="objects/treeroom-2/dark.webp" alt="dark" height="72"> |
 
@@ -423,10 +546,11 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 
 | depth | object | picture |
 |---:|---|---|
-| 242.7 | bookcase | <img src="objects/treeroom-3/bookcase.webp" alt="bookcase" height="72"> |
-| 259.9 | tree trunk | <img src="objects/treeroom-3/tree-trunk.webp" alt="tree trunk" height="72"> |
-| 277.1 | beanbag | <img src="objects/treeroom-3/beanbag.webp" alt="beanbag" height="72"> |
-| 304.5 | hatch | <img src="objects/treeroom-3/hatch.webp" alt="hatch" height="72"> |
+| 225.5 | side doors | <img src="objects/treeroom-3/side-doors.webp" alt="side doors" height="72"> |
+| 237.9 | bookcase | <img src="objects/treeroom-3/bookcase.webp" alt="bookcase" height="72"> |
+| 250.3 | tree trunk | <img src="objects/treeroom-3/tree-trunk.webp" alt="tree trunk" height="72"> |
+| 262.7 | beanbag | <img src="objects/treeroom-3/beanbag.webp" alt="beanbag" height="72"> |
+| 271.9 | hatch | <img src="objects/treeroom-3/hatch.webp" alt="hatch" height="72"> |
 | front | house sign | <img src="objects/treeroom-3/house-sign.webp" alt="house sign" height="72"> |
 | front | dark | <img src="objects/treeroom-3/dark.webp" alt="dark" height="72"> |
 
@@ -436,8 +560,9 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 
 | depth | object | picture |
 |---:|---|---|
-| 242.7 | telescope | <img src="objects/treeroom-4/telescope.webp" alt="telescope" height="72"> |
-| 259.9 | tree trunk | <img src="objects/treeroom-4/tree-trunk.webp" alt="tree trunk" height="72"> |
+| 225.5 | side doors | <img src="objects/treeroom-4/side-doors.webp" alt="side doors" height="72"> |
+| 237.9 | telescope | <img src="objects/treeroom-4/telescope.webp" alt="telescope" height="72"> |
+| 250.3 | tree trunk | <img src="objects/treeroom-4/tree-trunk.webp" alt="tree trunk" height="72"> |
 | front | house sign | <img src="objects/treeroom-4/house-sign.webp" alt="house sign" height="72"> |
 | front | dark | <img src="objects/treeroom-4/dark.webp" alt="dark" height="72"> |
 
@@ -448,9 +573,9 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | depth | object | picture |
 |---:|---|---|
 | 237.5 | ladder up | <img src="objects/treeroom-5/ladder-up.webp" alt="ladder up" height="72"> |
-| 244.4 | paint table | <img src="objects/treeroom-5/paint-table.webp" alt="paint table" height="72"> |
-| 251.3 | easel | <img src="objects/treeroom-5/easel.webp" alt="easel" height="72"> |
-| 259.9 | tree trunk | <img src="objects/treeroom-5/tree-trunk.webp" alt="tree trunk" height="72"> |
+| 239.1 | paint table | <img src="objects/treeroom-5/paint-table.webp" alt="paint table" height="72"> |
+| 244.1 | easel | <img src="objects/treeroom-5/easel.webp" alt="easel" height="72"> |
+| 250.3 | tree trunk | <img src="objects/treeroom-5/tree-trunk.webp" alt="tree trunk" height="72"> |
 | front | house sign | <img src="objects/treeroom-5/house-sign.webp" alt="house sign" height="72"> |
 | front | dark | <img src="objects/treeroom-5/dark.webp" alt="dark" height="72"> |
 
@@ -460,10 +585,10 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 
 | depth | object | picture |
 |---:|---|---|
-| 237.5 | drum kit | <img src="objects/treeroom-6/drum-kit.webp" alt="drum kit" height="72"> |
+| 234.1 | drum kit | <img src="objects/treeroom-6/drum-kit.webp" alt="drum kit" height="72"> |
 | 237.5 | ladder up | <img src="objects/treeroom-6/ladder-up.webp" alt="ladder up" height="72"> |
-| 242.7 | keyboard | <img src="objects/treeroom-6/keyboard.webp" alt="keyboard" height="72"> |
-| 259.9 | tree trunk | <img src="objects/treeroom-6/tree-trunk.webp" alt="tree trunk" height="72"> |
+| 237.9 | keyboard | <img src="objects/treeroom-6/keyboard.webp" alt="keyboard" height="72"> |
+| 250.3 | tree trunk | <img src="objects/treeroom-6/tree-trunk.webp" alt="tree trunk" height="72"> |
 | front | house sign | <img src="objects/treeroom-6/house-sign.webp" alt="house sign" height="72"> |
 | front | dark | <img src="objects/treeroom-6/dark.webp" alt="dark" height="72"> |
 
@@ -477,10 +602,10 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 225.5 | chandelier | <img src="objects/castleroom-king/chandelier.webp" alt="chandelier" height="72"> |
 | 225.5 | armor, left | <img src="objects/castleroom-king/armor-left.webp" alt="armor, left" height="72"> |
 | 225.5 | armor, right | <img src="objects/castleroom-king/armor-right.webp" alt="armor, right" height="72"> |
-| 254.1 | door 2 | <img src="objects/castleroom-king/door-2.webp" alt="door 2" height="72"> |
-| 254.1 | door 3 | <img src="objects/castleroom-king/door-3.webp" alt="door 3" height="72"> |
+| 225.5 | door 2 | <img src="objects/castleroom-king/door-2.webp" alt="door 2" height="72"> |
+| 225.5 | door 3 | <img src="objects/castleroom-king/door-3.webp" alt="door 3" height="72"> |
 | 268.5 | chest of gold | <img src="objects/castleroom-king/chest-of-gold.webp" alt="chest of gold" height="72"> |
-| front | sign | <img src="objects/castleroom-king/sign.webp" alt="sign" height="72"> |
+| front | way S | <img src="objects/castleroom-king/way-s.webp" alt="way S" height="72"> |
 
 ## 🌿 greenhouse
 
@@ -551,6 +676,8 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 
 | depth | object | picture |
 |---:|---|---|
+| 225.5 | door 2 | <img src="objects/castleroom-catroom/door-2.webp" alt="door 2" height="72"> |
+| 225.5 | door 3 | <img src="objects/castleroom-catroom/door-3.webp" alt="door 3" height="72"> |
 | 228.8 | cat tree, left | <img src="objects/castleroom-catroom/cat-tree-left.webp" alt="cat tree, left" height="72"> |
 | 228.8 | cat tree, right | <img src="objects/castleroom-catroom/cat-tree-right.webp" alt="cat tree, right" height="72"> |
 | 228.8 | cat 2 | <img src="objects/castleroom-catroom/cat-2.webp" alt="cat 2" height="72"> |
@@ -560,8 +687,6 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 241.6 | window seat | <img src="objects/castleroom-catroom/window-seat.webp" alt="window seat" height="72"> |
 | 241.6 | cat 4 | <img src="objects/castleroom-catroom/cat-4.webp" alt="cat 4" height="72"> |
 | 254.1 | bowls | <img src="objects/castleroom-catroom/bowls.webp" alt="bowls" height="72"> |
-| 254.1 | door 2 | <img src="objects/castleroom-catroom/door-2.webp" alt="door 2" height="72"> |
-| 254.1 | door 3 | <img src="objects/castleroom-catroom/door-3.webp" alt="door 3" height="72"> |
 | 258.7 | cat 1 | <img src="objects/castleroom-catroom/cat-1.webp" alt="cat 1" height="72"> |
 | 282.5 | lantern | <img src="objects/castleroom-catroom/lantern.webp" alt="lantern" height="72"> |
 | 282.5 | yarn, yellow | <img src="objects/castleroom-catroom/yarn-yellow.webp" alt="yarn, yellow" height="72"> |
@@ -572,7 +697,7 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 343 | rope bridge | <img src="objects/castleroom-catroom/rope-bridge.webp" alt="rope bridge" height="72"> |
 | 358.2 | box | <img src="objects/castleroom-catroom/box.webp" alt="box" height="72"> |
 | 387.7 | yarn, green | <img src="objects/castleroom-catroom/yarn-green.webp" alt="yarn, green" height="72"> |
-| front | sign | <img src="objects/castleroom-catroom/sign.webp" alt="sign" height="72"> |
+| front | way S | <img src="objects/castleroom-catroom/way-s.webp" alt="way S" height="72"> |
 
 ## 🐴 stable
 
@@ -581,19 +706,19 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | depth | object | picture |
 |---:|---|---|
 | 225.5 | swallows | <img src="objects/castleroom-stable/swallows.webp" alt="swallows" height="72"> |
+| 225.5 | door 2 | <img src="objects/castleroom-stable/door-2.webp" alt="door 2" height="72"> |
+| 225.5 | door 3 | <img src="objects/castleroom-stable/door-3.webp" alt="door 3" height="72"> |
 | 227.2 | horse 1 | <img src="objects/castleroom-stable/horse-1.webp" alt="horse 1" height="72"> |
 | 227.2 | horse 2 | <img src="objects/castleroom-stable/horse-2.webp" alt="horse 2" height="72"> |
 | 227.2 | horse 3 | <img src="objects/castleroom-stable/horse-3.webp" alt="horse 3" height="72"> |
 | 251.9 | ladder | <img src="objects/castleroom-stable/ladder.webp" alt="ladder" height="72"> |
-| 254.1 | door 2 | <img src="objects/castleroom-stable/door-2.webp" alt="door 2" height="72"> |
-| 254.1 | door 3 | <img src="objects/castleroom-stable/door-3.webp" alt="door 3" height="72"> |
 | 266.1 | hen, brown | <img src="objects/castleroom-stable/hen-brown.webp" alt="hen, brown" height="72"> |
 | 279.6 | sunbeam | <img src="objects/castleroom-stable/sunbeam.webp" alt="sunbeam" height="72"> |
 | 295 | water trough | <img src="objects/castleroom-stable/water-trough.webp" alt="water trough" height="72"> |
 | 295 | buckets | <img src="objects/castleroom-stable/buckets.webp" alt="buckets" height="72"> |
 | 295 | hen, white | <img src="objects/castleroom-stable/hen-white.webp" alt="hen, white" height="72"> |
 | 333.6 | hay heap | <img src="objects/castleroom-stable/hay-heap.webp" alt="hay heap" height="72"> |
-| front | sign | <img src="objects/castleroom-stable/sign.webp" alt="sign" height="72"> |
+| front | way S | <img src="objects/castleroom-stable/way-s.webp" alt="way S" height="72"> |
 
 ## 🍽️ dining room
 
@@ -618,7 +743,7 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | front | dark | <img src="objects/castleroom-dining/dark.webp" alt="dark" height="72"> |
 | front | fire light | <img src="objects/castleroom-dining/fire-light.webp" alt="fire light" height="72"> |
 | front | torches | <img src="objects/castleroom-dining/torches.webp" alt="torches" height="72"> |
-| front | sign | <img src="objects/castleroom-dining/sign.webp" alt="sign" height="72"> |
+| front | way S | <img src="objects/castleroom-dining/way-s.webp" alt="way S" height="72"> |
 
 ## 🍲 kitchen
 
@@ -627,17 +752,17 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | depth | object | picture |
 |---:|---|---|
 | 225.5 | oven | <img src="objects/castleroom-kitchen/oven.webp" alt="oven" height="72"> |
+| 225.5 | door 2 | <img src="objects/castleroom-kitchen/door-2.webp" alt="door 2" height="72"> |
+| 225.5 | door 3 | <img src="objects/castleroom-kitchen/door-3.webp" alt="door 3" height="72"> |
 | 228.8 | barrels | <img src="objects/castleroom-kitchen/barrels.webp" alt="barrels" height="72"> |
 | 228.8 | flour sack | <img src="objects/castleroom-kitchen/flour-sack.webp" alt="flour sack" height="72"> |
 | 243.5 | cook, chopping | <img src="objects/castleroom-kitchen/cook-chopping.webp" alt="cook, chopping" height="72"> |
-| 254.1 | door 2 | <img src="objects/castleroom-kitchen/door-2.webp" alt="door 2" height="72"> |
-| 254.1 | door 3 | <img src="objects/castleroom-kitchen/door-3.webp" alt="door 3" height="72"> |
 | 256.4 | cauldron | <img src="objects/castleroom-kitchen/cauldron.webp" alt="cauldron" height="72"> |
 | 256.4 | cook, stirring | <img src="objects/castleroom-kitchen/cook-stirring.webp" alt="cook, stirring" height="72"> |
 | 266.1 | pots and pans | <img src="objects/castleroom-kitchen/pots-and-pans.webp" alt="pots and pans" height="72"> |
 | 333.6 | worktable | <img src="objects/castleroom-kitchen/worktable.webp" alt="worktable" height="72"> |
 | front | fire light | <img src="objects/castleroom-kitchen/fire-light.webp" alt="fire light" height="72"> |
-| front | sign | <img src="objects/castleroom-kitchen/sign.webp" alt="sign" height="72"> |
+| front | way S | <img src="objects/castleroom-kitchen/way-s.webp" alt="way S" height="72"> |
 
 ## ⚒️ smithy
 
@@ -646,14 +771,14 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | depth | object | picture |
 |---:|---|---|
 | 225.5 | forge | <img src="objects/castleroom-smithy/forge.webp" alt="forge" height="72"> |
+| 225.5 | door 2 | <img src="objects/castleroom-smithy/door-2.webp" alt="door 2" height="72"> |
+| 225.5 | door 3 | <img src="objects/castleroom-smithy/door-3.webp" alt="door 3" height="72"> |
 | 234.1 | coal heap | <img src="objects/castleroom-smithy/coal-heap.webp" alt="coal heap" height="72"> |
-| 254.1 | door 2 | <img src="objects/castleroom-smithy/door-2.webp" alt="door 2" height="72"> |
-| 254.1 | door 3 | <img src="objects/castleroom-smithy/door-3.webp" alt="door 3" height="72"> |
 | 266.1 | anvil | <img src="objects/castleroom-smithy/anvil.webp" alt="anvil" height="72"> |
 | 266.1 | smith | <img src="objects/castleroom-smithy/smith.webp" alt="smith" height="72"> |
 | 316.8 | water barrel | <img src="objects/castleroom-smithy/water-barrel.webp" alt="water barrel" height="72"> |
 | front | dark | <img src="objects/castleroom-smithy/dark.webp" alt="dark" height="72"> |
-| front | sign | <img src="objects/castleroom-smithy/sign.webp" alt="sign" height="72"> |
+| front | way S | <img src="objects/castleroom-smithy/way-s.webp" alt="way S" height="72"> |
 
 ## 🌀 spiral staircase
 
@@ -665,5 +790,6 @@ Made by `tools/checks/objects180.mjs` (on GitHub's computers: push a branch carr
 | 148.8 | door 2 | <img src="objects/castleroom-spiral/door-2.webp" alt="door 2" height="72"> |
 | 263.3 | column | <img src="objects/castleroom-spiral/column.webp" alt="column" height="72"> |
 | 281.6 | steps | <img src="objects/castleroom-spiral/steps.webp" alt="steps" height="72"> |
+| front | steps, in front | <img src="objects/castleroom-spiral/steps-in-front.webp" alt="steps, in front" height="72"> |
 | front | dark | <img src="objects/castleroom-spiral/dark.webp" alt="dark" height="72"> |
-| front | sign | <img src="objects/castleroom-spiral/sign.webp" alt="sign" height="72"> |
+| front | way S | <img src="objects/castleroom-spiral/way-s.webp" alt="way S" height="72"> |
