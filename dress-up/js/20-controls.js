@@ -69,7 +69,7 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
   ["woodpath", "🥾 path through the woods"], ["crossing", "🛤️ forest crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
   // (ticket 278, for M) the grass hut, and its three rooms
-  ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"]];
+  ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"], ["hutcenter", "🔥 the grass hut's center"]];
 // (where the way toward us can lead from a room outside the castle: any place but those found by a number of their own)
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const PLACE_GROUPS = [
@@ -80,7 +80,7 @@ const PLACE_GROUPS = [
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
-  ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion"]],
+  ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion", "hutcenter"]],
 ];
 const groupOfPlace = v => v === "none" ? "none" : (PLACE_GROUPS.find(g => g[2].includes(v)) || [null])[0];
 console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g => g[2]).length === PLACES.length - 1,
@@ -490,6 +490,9 @@ const TABS = [
     // (ticket 278) each living room's own colors: the house's, and the grass hut's
     ["color", "couchColor", "🛋️ couch color", COUCH_COLORS],
     ["choice", "rugColors", "🟠 rug colors", RUG_CHOICES],
+    // (ticket 282) the grass hut from outside: one hut, or a cluster of them, and a bigger one in the middle
+    ["range", "hutRooms", "🛖 huts in the cluster (its rooms)", 1, 6, 1, 6],
+    ["toggle", "hutCenter", "🔥 the hut center: a bigger hut in the middle, the way in"],
     ["color", "hutCouchColor", "🛋️ couch color", ["#7a5a3a", ...COUCH_COLORS.filter(x => x !== "#7a5a3a")]],
     ["choice", "hutRugColors", "🟠 rug colors", RUG_CHOICES],
     ["color", "hutBlanket", "🛏️ blanket color", ["#b8434f", "#2f6f86", "#5f7f3a", "#6a4c93", "#c98a2a", "#f6eedd"]],
@@ -909,6 +912,8 @@ const SHOWN_WHEN = {
   "background.hutRugColors": b => b.kind === "hutroom",
   "background.hutBlanket": b => b.kind === "hutbed",
   "background.hutPotion": b => b.kind === "hutpotion",
+  "background.hutRooms": b => b.kind === "hut",
+  "background.hutCenter": b => b.kind === "hut",
   "background.pictures": b => b.kind === "livingroom" || b.kind === "treeroom" || b.kind === "hutroom",
   "background.picDetail": b => (b.kind === "livingroom" || b.kind === "treeroom" || b.kind === "hutroom") && b.pictures > 0,
   "background.picSize": b => (b.kind === "livingroom" || b.kind === "hutroom") && b.pictures > 0,

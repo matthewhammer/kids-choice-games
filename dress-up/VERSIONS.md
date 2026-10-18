@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.207 (2026-10-18)
+
+Everything in 0.0.206, with the grass hut as a cluster of huts, and a hut center, for M.
+
+- **🛖 grass hut**: "🛖 huts in the cluster", 1 to 6: two stand side by side; three make a triad round the middle; four to six, a ring, each the same distance from the middle and from its neighbors. "🔥 the hut center" puts a bigger hut in the middle; its door shows between the front two when the number is even.
+- **🔥 the grass hut's center** (a new place): with the hut center on, every door of the cluster leads into it. It is a round room with a door to the bedroom, the living room and the potion room, and a fire in a ring of stones whose smoke rises to the hole at the top, where daylight falls in. Logs either side of the fire to sit on; the way toward us leads out. From the living room, the way toward us leads into the center.
+
 ## 0.0.206 (2026-10-18)
 
 Everything in 0.0.205, with the signpost's boards taking you where they point.

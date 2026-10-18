@@ -1067,7 +1067,7 @@ const TUNES = {
   }) },
 };
 // each background's own tune
-const SCENE_TUNE = { hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
+const SCENE_TUNE = { hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", hutcenter: "lullaby", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
                      tent: "lullaby", cave: "steppers", woodpath: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom" };
@@ -1385,6 +1385,7 @@ const SCENE_LFO_THINGS = {
   hutroom: { fast: "🎐 the wind chime", slow: "🏮 the lantern's glow" },
   hutbed: { fast: "🕯️ the candle's flame, ⭐ the stars", slow: "🪶 the dreamcatcher swaying" },
   hutpotion: { fast: "🔥 the fire, 🫧 the potion bubbling", slow: "🧪 the bottles glowing, 🌿 the herbs swaying" },
+  hutcenter: { fast: "🔥 the fire", slow: "💨 the smoke, ☀️ the light from the smoke hole, 🏮 the lanterns" },
   fairyforest: { fast: "✨ the fairy lights, ☀️ the sun's rays, ⭐ the stars", slow: "🏮 the lanterns swinging, ☁️ the clouds" },
   clearing: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☁️ the clouds drifting" },
   mountains: { fast: "🐦 the birds' wings", slow: "☁️ the clouds drifting" },

@@ -1716,17 +1716,19 @@ const hutLanternSvg = (c, x, off) => { const { y0, H, k, o, P } = c, y = y0 + H 
 // sticks, seen a little from above (its foot and its top bow toward us), lashed with two rings of twine; over it a dome
 // of thatch, wider than the wall, its eave hanging down over the wall's top all round; the thatch in rings up to the
 // peak, each a ragged fringe of grass; the tuft at the peak tied off with twine.
-function hutSvg() {
+// (ticket 282) sfx keeps its ids apart from another hut's drawn beside it; without a door (a hut of a cluster, not
+// its way in), a round window where the door would be.
+function hutSvg(sfx = "", door = true) {
   const RW = 64, RE = 94, DH = 104, AY = -18 - DH, bow = t => Math.sin(t);   // (t from 0, the right, round the front, to π, the left; the dome DH tall, its peak at AY)
   const wallAt = (t, y, b = 9) => [RW * Math.cos(t), y + b * bow(t)];
   const arc = (r, y, b, a = 0, z = Math.PI, n = 32) => [...Array(n + 1)].map((_, i) => { const t = a + (z - a) * i / n; return [r * Math.cos(t), y + b * Math.sin(t)]; });
   const pts = P => P.map(([x, y]) => `${f1(x)},${f1(y)}`).join(" ");
   const top = arc(RW, -14, 9), foot = arc(RW, 40, 9), wall = pts(top) + " " + pts(foot.slice().reverse());
-  let t = `<defs><linearGradient id="bg-hut-round" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000000" stop-opacity="0.35"/>` +
+  let t = `<defs><linearGradient id="bg-hut-round${sfx}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000000" stop-opacity="0.35"/>` +
     `<stop offset="0.3" stop-color="#000000" stop-opacity="0"/><stop offset="0.75" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.4"/></linearGradient>` +
-    `<radialGradient id="bg-hut-dome" cx="0.38" cy="0.3" r="0.8"><stop offset="0" stop-color="#d8d070"/><stop offset="0.6" stop-color="#b5ae48"/><stop offset="1" stop-color="#8f8a2e"/></radialGradient>` +
-    `<clipPath id="bg-hut-wall"><polygon points="${wall}"/></clipPath></defs>` +
-    `<ellipse cx="0" cy="46" rx="104" ry="14" fill="#000000" opacity="0.16"/><polygon points="${wall}" fill="#5a3a1e"/><g clip-path="url(#bg-hut-wall)">`;
+    `<radialGradient id="bg-hut-dome${sfx}" cx="0.38" cy="0.3" r="0.8"><stop offset="0" stop-color="#d8d070"/><stop offset="0.6" stop-color="#b5ae48"/><stop offset="1" stop-color="#8f8a2e"/></radialGradient>` +
+    `<clipPath id="bg-hut-wall${sfx}"><polygon points="${wall}"/></clipPath></defs>` +
+    `<ellipse cx="0" cy="46" rx="104" ry="14" fill="#000000" opacity="0.16"/><polygon points="${wall}" fill="#5a3a1e"/><g clip-path="url(#bg-hut-wall${sfx})">`;
   // the sticks, each at its angle round the front: narrower toward the sides, where the wall turns away
   for (let i = 0, n = 26; i < n; i++) {
     const tt = Math.PI * (i + 0.5) / n, [x, yt] = wallAt(tt, -14), [, yb] = wallAt(tt, 40), w = RW * Math.PI / n * Math.sin(tt);
@@ -1734,19 +1736,20 @@ function hutSvg() {
          `<line x1="${f1(x)}" y1="${f1(yt - 6)}" x2="${f1(x)}" y2="${f1(yb + 2)}" stroke="${HUT_STICKS[i % 4]}" stroke-width="${f1(Math.max(0.8, w - 1.1))}"/>`;
   }
   t += [2, 26].map(y => `<polyline points="${pts(arc(RW, y, 9))}" fill="none" stroke="#d8c48a" stroke-width="2.6"/>`).join("") +
-    `<rect x="-66" y="-30" width="132" height="90" fill="url(#bg-hut-round)"/></g>`;
+    `<rect x="-66" y="-30" width="132" height="90" fill="url(#bg-hut-round${sfx})"/></g>`;
   // the door, in the front of the wall, its foot on the wall's foot; a round little window, turned with the wall
-  const door = "M-18 49 V8 Q0 -6 18 8 V49 Z";
-  t += `<defs><clipPath id="bg-hut-door"><path d="${door}"/></clipPath></defs><path d="${door}" fill="#4a2e14"/><g clip-path="url(#bg-hut-door)">` +
+  const dp = "M-18 49 V8 Q0 -6 18 8 V49 Z";
+  if (door) t += `<defs><clipPath id="bg-hut-door${sfx}"><path d="${dp}"/></clipPath></defs><path d="${dp}" fill="#4a2e14"/><g clip-path="url(#bg-hut-door${sfx})">` +
     [-15, -9, -3, 3, 9].map((x, i) => `<rect x="${x}" y="-8" width="5.6" height="60" rx="2.6" fill="${HUT_STICKS[(i + 2) % 4]}" stroke="#5a3a1e" stroke-width="0.7"/>`).join("") +
     [16, 36].map(y => `<rect x="-19" y="${y}" width="38" height="4.5" rx="2" fill="#7a5230"/>`).join("") + `</g>` +
-    `<path d="${door}" fill="none" stroke="#4a2e14" stroke-width="2.5"/><circle cx="11" cy="27" r="2.6" fill="none" stroke="#d8c48a" stroke-width="1.4"/>`;
+    `<path d="${dp}" fill="none" stroke="#4a2e14" stroke-width="2.5"/><circle cx="11" cy="27" r="2.6" fill="none" stroke="#d8c48a" stroke-width="1.4"/>`;
+  else t += `<circle cx="0" cy="12" r="12" fill="#3a2614" stroke="#7a5230" stroke-width="3.5"/><path d="M-12 12 H12 M0 0 V24" stroke="#9a6a3c" stroke-width="2"/>`;
   { const tw = 0.95, [wx, wy] = wallAt(tw, 6), sx = Math.sin(tw);
     t += `<g transform="translate(${f1(wx)} ${f1(wy)}) scale(${sx.toFixed(3)} 1)"><circle r="9" fill="#3a2614" stroke="#7a5230" stroke-width="3"/><path d="M-9 0 H9 M0 -9 V9" stroke="#9a6a3c" stroke-width="1.8"/></g>`; }
   // the dome of thatch: wider than the wall, its eave hanging down over the wall's top
   const eaveFront = arc(RE, -18, 16), eaveBack = arc(RE, -18, -10, Math.PI, 2 * Math.PI);
   const kc = 0.5523, dome = `M${-RE} -18 C${-RE} ${f1(-18 - kc * DH)} ${f1(-kc * RE)} ${AY} 0 ${AY} C${f1(kc * RE)} ${AY} ${RE} ${f1(-18 - kc * DH)} ${RE} -18 ` + eaveFront.map(([x, y]) => `L${f1(x)} ${f1(y)}`).join(" ") + " Z";
-  t += `<path d="${dome}" fill="url(#bg-hut-dome)" stroke="#6e6a22" stroke-width="2"/>`;
+  t += `<path d="${dome}" fill="url(#bg-hut-dome${sfx})" stroke="#6e6a22" stroke-width="2"/>`;
   // the thatch in rings up to the peak, each a ragged fringe of grass hanging over the one below
   for (let j = 1; j <= 5; j++) {
     const v = j / 6, r = RE * Math.sqrt(1 - v * v) * 0.98, y = -18 - DH * v, b = 16 * (1 - v);
@@ -1761,6 +1764,21 @@ function hutSvg() {
   t += `<g transform="translate(0 ${AY})"><path d="M-8 4 Q-14 -18 -20 -24 M0 2 Q0 -22 2 -32 M8 4 Q14 -16 20 -22" stroke="#a8a23e" stroke-width="3.5" fill="none" stroke-linecap="round"/>` +
     `<rect x="-10" y="-2" width="20" height="7" rx="3" fill="#d8c48a" stroke="#8a7a4a" stroke-width="1"/></g>`;
   return t;
+}
+// (ticket 282, Matthew: "maybe the exterior should have the option of rendering a single cylinder + dome hut, or a
+// cluster of them forming a bigger structure"; "rotational symmetry when there are 3 huts (put into a triad formation),
+// or two huts side by side for two, and more rotational symmetry for 4+"; "center of the hut complex is another, larger
+// cylinder + dome -- it's a special room called 'hut center', not counted in the number of rooms, which go from 1--6")
+// Where each hut of the cluster stands, seen from above, in the hut's own units (hutSvg's): n huts round a ring, one at
+// the front when n is odd, two side by side there when it is even, the ring wide enough that neighbors' walls meet and
+// their eaves overlap; with the hut center in the middle, HUT_CENTER times as big, wide enough to clear it. dz is how
+// far back each stands (drawn HUT_TILT as far up), the list farthest first, as they are drawn.
+const HUT_CENTER = 1.3, HUT_TILT = 0.4;
+function hutCluster(n, center) {
+  const r = n === 1 && !center ? 0 : Math.max([0, 0, 62, 74, 88, 104, 122][n], center ? 150 : 0), L = [];
+  for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + 2 * Math.PI * (i + (n % 2 ? 0 : 0.5)) / n; L.push({ x: r * Math.cos(a), dz: r * Math.sin(a), sc: 1 }); }
+  if (center) L.push({ x: 0, dz: 0, sc: HUT_CENTER, center: true });
+  return L.sort((a, b) => b.dz - a.dz || a.x - b.x);
 }
 // outside: a meadow at the woods' edge, the hut in the middle, a path to its door, sticks piled for the fire
 function hutScene(c) {
@@ -1788,13 +1806,22 @@ function hutScene(c) {
     }
     return `<defs>${FLOWER_DEFS}</defs>` + t;
   });
-  // the hut, its door the way in (an object at its feet); its smoke rising from the peak, swaying with the slow LFO
-  const hz = 2.1 * k, hy = g - 30 * k;
-  s += SEP + obj("hut", hy + 49 * hz, `<g class="portal" data-to="hutroom"><g ${tf(0, hy, hz)}>${part("hut-building", [], hutSvg)}</g></g>` +
-    swaying(o, `<path d="M${P(4 * hz, hy - 150 * hz)} Q${P(-10 * hz, hy - 178 * hz)} ${P(6 * hz, hy - 204 * hz)} T${P(0, hy - 256 * hz)}" fill="none" stroke="#e4e4ea" stroke-width="${f1(9 * hz)}" stroke-linecap="round" opacity="0.55"/>`,
-      4 * hz, hy - 150 * hz, 6, 0.3));
+  // the hut, or its cluster, every door the way in (one object, at the nearest hut's feet); its smoke rising from the
+  // peak of the hut center, or of the farthest hut, swaying with the slow LFO
+  const L = hutCluster(Math.max(1, Math.min(6, Math.round(o.hutRooms ?? 1))), !!o.hutCenter), into = o.hutCenter ? "hutcenter" : "hutroom";
+  const near = Math.min(...L.map(h => h.dz)), wide = Math.max(...L.map(h => Math.abs(h.x) + 94 * h.sc));
+  // (its nearest foot where one hut's is, its tuft's top no higher: (49 + 154) of one hut's units at 2.1)
+  const Y = h => -h.dz * HUT_TILT, foot = Math.max(...L.map(h => Y(h) + 49 * h.sc)), tall = Math.max(...L.map(h => -Y(h) + 154 * h.sc));
+  const hz = Math.min(2.1, 300 / wide, 426 / (foot + tall)) * k, hy = g + 73 * k - foot * hz;
+  const top = L.find(h => h.center) || L[0], sx = (x, y) => P((top.x + x * top.sc) * hz, hy + (Y(top) + y * top.sc) * hz);
+  s += SEP + part("hut-building", [], () => `<defs><g id="bg-hut-one">${hutSvg()}</g><g id="bg-hut-plain">${hutSvg("-p", false)}</g></defs>`) +
+    obj("hut", hy + foot * hz, `<g ${tf(0, hy, hz)}>` + L.map(h => `<g class="portal" data-to="${h.center ? "hutcenter" : into}">` +
+      `<use href="#bg-hut-${h.center || h.dz <= near + 1 ? "one" : "plain"}" ${tf(h.x, Y(h), h.sc)}/></g>`).join("") + `</g>` +
+    swaying(o, `<path d="M${sx(4, -150)} Q${sx(-10, -178)} ${sx(6, -204)} T${sx(0, -256)}" fill="none" stroke="#e4e4ea" stroke-width="${f1(9 * hz * top.sc)}" stroke-linecap="round" opacity="0.55"/>`,
+      (top.x + 4 * top.sc) * hz, hy + (Y(top) - 150 * top.sc) * hz, 6, 0.3));
   // sticks piled for the fire, beside the hut (an object)
-  s += SEP + part("hut-woodpile", c.F, () => { const wx = W * 0.3, wy = g + 20 * k;
+  const aside = wide * hz > W * 0.3 - 80 * k;   // (ticket 282: a wide cluster's woodpile in front of it, to the right)
+  s += SEP + part("hut-woodpile", [c.F, aside], () => { const wx = W * (aside ? 0.36 : 0.3), wy = g + (aside ? 80 : 20) * k;
     let t = `<ellipse cx="${f1(wx)}" cy="${f1(wy + 4 * k)}" rx="${f1(70 * k)}" ry="${f1(10 * k)}" fill="#000000" opacity="0.15"/>`;
     for (let row = 0; row < 4; row++) for (let i = 0; i < 6 - row; i++) {
       const sx = wx + (i - (5 - row) / 2) * 22 * k, sy = wy - row * 15 * k;
@@ -1849,6 +1876,32 @@ function hutroomScene(c) {
   return s;
 }
 SEATS.hutroom = (c, B) => SEATS.livingroom(c, B);
+// (ticket 282) the hut center, the cluster's middle hut and its biggest, its way in when it has one: a round room with
+// a door to each of the others (the bedroom on the left, the living room at the back, the potion room on the right), a
+// fire in a ring of stones in the middle of the floor, logs either side of it to sit on (as the camp site's), its smoke
+// rising to the hole at the dome's peak, where the daylight falls in
+const HUT_FIRE = 30;   // (the fire's middle, below the ground line)
+function hutcenterScene(c) {
+  const { y0, g, W, k, pad, P, o } = c, fy = g + HUT_FIRE * k;
+  let s = SEP + hutShellSvg(c, "hutcenter");
+  // the daylight from the smoke hole, a pale shaft down to the fire, breathing with the slow LFO
+  s += SEP + part("hutcenter-light", [c.F, sceneLfoKey(o, "slow")], () => `<path d="M${P(-70 * k, y0 - pad)} L${P(70 * k, y0 - pad)} L${P(170 * k, fy)} L${P(-170 * k, fy)} Z" fill="#fff6c8" opacity="0.14" pointer-events="none">` +
+    sceneLfo(o, "slow", 0.1, "opacity", (v, amp) => (0.14 * (1 + (0.2 + 0.5 * amp) * v)).toFixed(3)) + `</path>`);
+  s += SEP + part("hutcenter-doors", c.F, () => hutDoorSvg(c, Math.PI + HUT_DOOR_TH, "hutbed", "🛏️ bedroom") + hutDoorSvg(c, 1.5 * Math.PI, "hutroom", "🛋️ living room") +
+    hutDoorSvg(c, 2 * Math.PI - HUT_DOOR_TH, "hutpotion", "🧪 potions"));
+  s += SEP + part("hutcenter-lanterns", [c.F, sceneLfoKey(o, "slow")], () => hutLanternSvg(c, -W * 0.3, 0) + hutLanternSvg(c, W * 0.3, 0.5));
+  // the smoke, rising from the fire to the hole, swaying with the slow LFO
+  s += SEP + swaying(o, `<path d="M${P(0, fy - 150 * k)} Q${P(-34 * k, fy - 270 * k)} ${P(12 * k, fy - 380 * k)} T${P(0, y0 - pad)}" fill="none" stroke="#e4e4ea" stroke-width="${f1(22 * k)}" stroke-linecap="round" opacity="0.3" pointer-events="none"/>`,
+    0, fy - 150 * k, 5, 0.2);
+  // the logs, then the fire (objects, standing on the floor)
+  s += SEP + [-1, 1].map(u => obj(u < 0 ? "log, left" : "log, right", fy + 44 * k, part(u < 0 ? "hutcenter-log-l" : "hutcenter-log-r", c.F, () => logSvg(150 * u * k, fy + 30 * k, k)))).join("");
+  s += SEP + obj("fire", fy + 14 * k, part("hutcenter-hearth", c.F, () => campfireHearthSvg(0, fy, k * 1.1)) +
+    OPEN(`<g pointer-events="none" ${tf(0, fy - 4 * k, k)}>`) + part("hutcenter-flames", [sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => campfireFlamesSvg(o, true, "night")) + CLOSE);
+  return s;
+}
+SEATS.hutcenter = (c, B) => { const { g, k } = c, fy = g + HUT_FIRE * k;
+  return [[-150, 30, "left", "right"], [150, 30, "right", "left"]].map(([dx, dy, where, face]) =>
+    ({ name: `log, ${where}`, x0: (dx - 50) * k, x1: (dx + 50) * k, y: fy + (dy - 14) * k, z: fy + (dy + 14) * k + 1, facing: [face] })); };
 // its bedroom: a bed of logs with a blanket in its own color, a stump beside it with a candle, a dreamcatcher over it,
 // a round window onto the night
 function hutbedScene(c) {

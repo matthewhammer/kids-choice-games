@@ -945,7 +945,7 @@ function treadTick(t) {
 const PLACE_PHRASE = { sea: "swimming in 🌊 open water", deepsea: "swimming in the 🪸 deep sea", bubblespace: "in 🫧 bubble space", imagination: "in 💭 our imagination", emptyroom: "in the 🔲 empty room", forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
   cemetery: "in the 🌿 cemetery", lake: "at the 🦆 lake", house: "outside of the 🏠 house", treehouse: "near the 🌳 tree house",
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
-  hut: "outside the 🛖 grass hut", hutroom: "in the 🛖 grass hut's living room", hutbed: "in the 🛖 grass hut's bedroom", hutpotion: "in the 🛖 grass hut's potion room",
+  hut: "outside the 🛖 grass hut", hutroom: "in the 🛖 grass hut's living room", hutbed: "in the 🛖 grass hut's bedroom", hutpotion: "in the 🛖 grass hut's potion room", hutcenter: "in the 🛖 grass hut's 🔥 center",
   healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",
   campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", woodpath: "on the 🥾 path through the woods", crossing: "at the 🛤️ forest crossing",
   castle: b => `outside of ${castleOf(b).id}'s 🏰 castle`,

@@ -20,7 +20,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // (ticket 50) where people can sit, per place: see seatsHere
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
-                    treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
+                    treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 99) The friend is smaller farther back and bigger nearer, as a
@@ -32,7 +32,7 @@ const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // kept between 0.3 and 1.5. A castle room's comes from its perspective
 // (roomFrame: the eye's height on the wall); rooms drawn flatter, with big
 // things at their back walls, vanish far above the picture.
-const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, hutroom: -60, hutbed: -60, hutpotion: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60 };
+const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, hutroom: -60, hutbed: -60, hutpotion: -60, hutcenter: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60 };
 // (ticket 214, Matthew: "this scene, and the forest clearing scene, and maybe others, should scale the player down more
 // dramatically as they go 'into' the scene (heading N)"; "each picture should have its own setting for how much we get
 // smaller as we move a certain number of fractions of picture N. north-ward scaling factor") Each place's 🔭 setting,
@@ -42,7 +42,7 @@ const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroo
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
                    "waterfall", "campsite", "cave", "castle", "woodpath", "crossing", "beach", "sea", "lake"];
-const NORTH_ROOMS = ["treeroom", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "tent", "imagination", "emptyroom", "bubblespace"];
+const NORTH_ROOMS = ["treeroom", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace"];
 const northDefault = kind => NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
   if (B.kind === "castleroom") {
@@ -407,7 +407,7 @@ const DEFAULTS = {
                 starShape: "mix", starSize: 100, starBright: 85, starTwinkle: 40,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
                 // (ticket 278) the living rooms' colors, the grass hut's blanket and potion
-                couchColor: "#2f6f86", rugColors: "blue", hutCouchColor: "#7a5a3a", hutRugColors: "straw", hutBlanket: "#b8434f", hutPotion: "#7c3aed",
+                couchColor: "#2f6f86", rugColors: "blue", hutCouchColor: "#7a5a3a", hutRugColors: "straw", hutBlanket: "#b8434f", hutPotion: "#7c3aed", hutRooms: 1, hutCenter: false,
                 pic1: "lake", pic2: "beach", pic3: "livingroom", pic4: "forest", pic5: "treehouse", pic6: "underwater",
                 view: "lake", viewDetail: 80,
                 // each tree house room's own two pictures
@@ -923,7 +923,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.206", released: "2026-10-18" };
+const VERSION = { number: "0.0.207", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
