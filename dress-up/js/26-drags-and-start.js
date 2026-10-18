@@ -1328,7 +1328,10 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   requestAnimationFrame(step);
 }
 const backBtn = document.getElementById("back");
-const sceneName = kd => (TABS.find(t => t[1] === "background")[2][0][3].find(([v]) => v === kd) || [kd, kd])[1];
+// (a place's name, from PLACES itself: until 0.0.233 it was read from the 🏞️ Background tab's first row, which since 0.0.213 is
+// the full-screen chip, so a trip that left a way back threw here and stopped, the friend stuck going in: Matthew, "stuck in
+// the climb into tree house animation")
+const sceneName = kd => (PLACES.find(([v]) => v === kd) || [kd, kd])[1];
 function backSync() {
   const last = trips[trips.length - 1], show = !!last && last.to === state.background.kind;
   backBtn.hidden = !show;

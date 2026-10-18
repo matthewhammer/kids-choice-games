@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.233 (2026-10-18)
+
+Everything in 0.0.232, with going into the tree house fixed.
+
+- **Fixed: going into a tree house (or anywhere that leaves a way back) could stop halfway**, the friend stuck climbing in. Since 0.0.213 the "⬅️ back" button looked up the place's name in the wrong row of 🏞️ Background, failed, and the trip stopped. It reads the places' own names now.
+
 ## 0.0.232 (2026-10-18)
 
 Everything in 0.0.231, with the levers, boulders and trap doors easier to see moving, and a speed for each.
