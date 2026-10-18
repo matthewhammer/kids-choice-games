@@ -35,12 +35,13 @@ try {
       d = bgShown.node.querySelector('.portal[data-door][data-to="treeroom"]'); if (d) room = i; }
     if (!d) return JSON.stringify({ none: true });
     const m = measure(d), to = +d.dataset.house; B.figX = m.foot[0] < 0 ? 200 : -200; await settle();
-    const seen = await through(d, () => B.inside === to);
-    return JSON.stringify({ room, to, ...m, seen, now: B.inside }); })()`));
+    // (since ticket 246 the door leads out onto the rope bridge to that house)
+    const seen = await through(d, () => B.kind === "treehouse" && !!B.onBridge);
+    return JSON.stringify({ room, to, ...m, seen, now: B.kind === "treehouse" && !!B.onBridge ? "bridge" : B.kind + " " + B.inside }); })()`));
   console.log(`  tree room ${tree.room}'s door to room ${tree.to}: opening ${tree.open}, the friend ${tree.low ? tree.low.tall + " tall there: too tall" : "fits"}; seen ${JSON.stringify(tree.seen)}`);
   if (tree.none) ok("a tree room with a door to a bridge found", false, tree);
-  else if (tree.low) ok("too tall for the tree room's door: walked, then crawled the last stretch and through, into the room beyond", tree.seen.includes("walk") && tree.seen.indexOf("crawl") > tree.seen.indexOf("walk") && tree.now === tree.to, tree);
-  else ok("(the friend fits the tree room's door at this size: walked through)", tree.seen.includes("walk") && !tree.seen.includes("crawl") && tree.now === tree.to, tree);
+  else if (tree.low) ok("too tall for the tree room's door: walked, then crawled the last stretch and through, out onto the bridge beyond", tree.seen.includes("walk") && tree.seen.indexOf("crawl") > tree.seen.indexOf("walk") && tree.now === "bridge", tree);
+  else ok("(the friend fits the tree room's door at this size: walked through)", tree.seen.includes("walk") && !tree.seen.includes("crawl") && tree.now === "bridge", tree);
   // a castle room's side door: walked through at the friend's own size; crawled at three times it
   const castle = JSON.parse(await ev(`(async () => { ${H} const out = {};
     for (const size of [100, 300]) {

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.179 (2026-10-17)
+
+Everything in 0.0.178, with the tree house rooms' bridge doors leading out onto the bridges.
+
+- **Out the door, across the bridge**: in a tree house room, the door to a rope bridge now takes your friend outside, onto that bridge, at their house's end. Walk them along it with ◀ and ▶ (at a small friend's pace); at the other end, keep pushing and they go into that house, just inside its door back to the bridge.
+- On a bridge, ✨ X, Enter or the 🚪 button walks them to the end they face and into the house there, and a tap on either end's house does the same; the house they would go into glows.
+
 ## 0.0.178 (2026-10-17)
 
 Everything in 0.0.177, with the tree house's rope bridges to walk on.

@@ -109,6 +109,7 @@ const climbPlace = BG => [BG.kind, BG.inside, BG.castleRoom, BG.tent].join(":");
 // tall as BRIDGE_TALL of the tree's units (the houses' doors are 72: they fit), in front of the tree; along it is the
 // only way to go, ⬆ and ⬇ only turning them; let go of over one, they are put on it.
 const BRIDGE_TALL = 60, BRIDGE_REACH = 24;   // (how near a bridge a friend let go of is put on it, in the stage's units)
+const BRIDGE_PACE = 0.5;   // (ticket 246: on a bridge, small, they go at half the controller's speed, a small friend's steps)
 function treeWalks(B = state.background) {
   if (B.kind !== "treehouse") return [];
   const n = Math.max(1, Math.min(6, B.houses ?? 4)), hz = (B.treeHouseSize ?? 100) / 100, s = (B.treeSize ?? 100) / 100 * (SCENE.bottom - SCENE.top) / 700, g = SCENE.ground;
@@ -154,6 +155,14 @@ function bridgeOff() {
   delete B.onBridge;
   B.figY = 0;
 }
+// (ticket 246) the end of the bridge they are on that they would go in at: the end they face along it, else the nearer;
+// the house there (1-based), and the one at its other end
+function bridgeEnd(at = bridgeNow()) {
+  if (!at) return null;
+  const f = state.body.facing, toRight = at.W.q[0] >= at.W.p[0];
+  const end = f === "right" ? (toRight ? 1 : 0) : f === "left" ? (toRight ? 0 : 1) : at.u < 0.5 ? 0 : 1;
+  return { j: at.j, end, house: (end ? at.W.b : at.W.a) + 1, other: (end ? at.W.a : at.W.b) + 1 };
+}
 // along the bridge they are on, ds (in the picture's units) toward the picture's right (or left, less than 0): at its
 // ends, they stop
 function bridgeStep(ds) {
@@ -166,13 +175,11 @@ function bridgeStep(ds) {
   bridgeOn(at.j, u);
   return true;
 }
-// (a place left, and come to again later, starts off the bridge: on the first drawing in a new place, the bridge
-// they were on is let go of)
-let bridgePlace = null;
+// (a place left, and come to again later, starts off the bridge: drawn anywhere but outside the tree house, the bridge
+// they were on is let go of; ticket 246: not by the world's square, which coming out of a room can set)
 function bridgeKeep() {
-  const B = state.background, here = climbPlace(B) + ":" + (state.world && state.world.at || "");
-  if (bridgePlace !== null && bridgePlace !== here && B.onBridge) delete B.onBridge;
-  bridgePlace = here;
+  const B = state.background;
+  if (B.onBridge && B.kind !== "treehouse") delete B.onBridge;
 }
 // (a [data-ladder] group, in the picture's own units, the friend's: through
 // the screen, as the scene may sit in a nested svg of its own; its depth is
@@ -385,7 +392,9 @@ function passFrame(b, dim) {
 }
 function showEnterGlow() {
   if (marks.text !== bgShown.text && bgShown.node) return;   // (measured again in a moment: the glows kept till then)
-  const near = passesNear(), hover = hoverPass && marks.pics.find(q => q.el === hoverPass.el && q.el.isConnected), p = hover || (near.length ? near[0].p : null);
+  // (ticket 246: on a rope bridge, the house at the end they would go in at, alone)
+  const be = bridgeEnd(), bp = be && marks.pics.find(q => q.el.isConnected && q.el.matches(`.portal[data-to="treeroom"][data-house="${be.house}"]`));
+  const near = be ? [] : passesNear(), hover = !be && hoverPass && marks.pics.find(q => q.el === hoverPass.el && q.el.isConnected), p = be ? bp || null : hover || (near.length ? near[0].p : null);
   enterAt = p;
   // (a nav arrow's glow is its arrow over the picture: aimed, or near and dimmer)
   worldWaysAim(p && p.kind === "nav" ? p.el.dataset.way : null);
@@ -405,6 +414,8 @@ function showEnterGlow() {
   enterGlow = put(p.el, p.box, false);
 }
 function enterPicture() {
+  // (ticket 246) on a rope bridge: along it to the end they face, and into the house there
+  if (!entering && bridgeNow()) { if (enterGlow) enterGlow.remove(); enterGlow = null; enterAt = null; bridgeGoIn(); return; }
   const p = enterAt;
   if (!p || !p.el.isConnected || entering) return;
   if (p.ladder && climb && !climb.none) return;   // (on a ladder already: climbing it)
