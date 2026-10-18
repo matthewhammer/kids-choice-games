@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.216 (2026-10-18)
+
+Everything in 0.0.215, with levers and trap doors that work together as soon as they are put in a place, for M.
+
+- **A lever and a trap door join each other** when they are put in the same place, whichever comes first: a new lever opens and shuts every trap door already there, and a new trap door joins every lever there.
+- **The lever's chips say whether each trap door is joined:** "🔗 🕳️ 4" when it opens and shuts with this lever, "➕ 🕳️ 4" when it does not; a tap joins it or unjoins it. (A trap door not joined looked much the same as one joined.)
+
 ## 0.0.215 (2026-10-18)
 
 Everything in 0.0.214, with a pop-up when a new version is out, for M, for those who want it.

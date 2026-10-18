@@ -1297,8 +1297,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           // (ticket 284) a lever's 🔗: a chip for each trap door here, named by its number in this list; pressed, wired
           if (how === "wires") { const all = state.background.things || [], doors = all.filter(x => x.kind === "trapdoor" && x.uid), cur = t[p] || [];
             if (!doors.length) return [el("span", { class: "hint" }, label + ": put a 🕳️ trap door here first")];
-            return [el("span", { class: "hint" }, label), ...doors.map(d => el("button", { "aria-pressed": String(cur.includes(d.uid)),
-              onclick: () => { const c = t[p] || []; t[p] = c.includes(d.uid) ? c.filter(u => u !== d.uid) : [...c, d.uid]; changed(); } }, `🕳️ ${all.indexOf(d) + 1}`))]; }
+            // (ticket 303, M: "they seem 'wired' together", and were not: a chip says which, 🔗 joined, ➕ not)
+            return [el("span", { class: "hint" }, label), ...doors.map(d => { const on = cur.includes(d.uid), n = all.indexOf(d) + 1;
+              return el("button", { "aria-pressed": String(on), title: on ? `🕳️ trap door ${n} opens and shuts with this lever: tap to unjoin it` : `🕳️ trap door ${n} is not joined to this lever: tap to join it`,
+                onclick: () => { const c = t[p] || []; t[p] = c.includes(d.uid) ? c.filter(u => u !== d.uid) : [...c, d.uid]; changed(); } }, `${on ? "🔗" : "➕"} 🕳️ ${n}`); })]; }
           if (how === "text") return [el("span", { class: "hint" }, label), el("input", { type: "text", maxlength: String(opts), size: String(opts), value: String(now ?? ""), "aria-label": label, oninput: e => { t[p] = e.target.value.slice(0, opts); changed(); } })];
           return [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)];
         }),
@@ -1314,6 +1316,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       if (thingsLatch) return;   // (ticket 203: shut till the marked ones are dealt with)
       T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}),
                ...(kd === "trapdoor" ? { uid: "d" + Math.floor(Math.random() * 36 ** 6).toString(36) } : {}), ...extra });   // (ticket 284: a trap door's name for the levers wired to it)
+      // (ticket 303, M: a lever and a trap door put in one place work together at once, whichever came first; a chip unjoins them)
+      const nu = T[T.length - 1];
+      if (kd === "lever") nu.works = T.filter(x => x.kind === "trapdoor" && x.uid).map(x => x.uid);
+      if (kd === "trapdoor") for (const L of T) if (L.kind === "lever") L.works = [...(L.works || []), nu.uid];
       changed();
       if (thingMoves(T[T.length - 1])) thingCheck(guard);   // (ticket 201: how this computer takes it)
     };
