@@ -48,6 +48,26 @@ const unmarked = svg => svg.replaceAll(SEP, "").replaceAll(' data-ladder="1"', "
 // (or a doorway, or a thing to drag) can have the friend stand in front of
 // it; one inside another object is part of that one.
 const obj = (name, z, svg) => OPEN(`<g data-obj="${name}" data-z="${Number.isFinite(z) ? f1(z) : "front"}">`) + svg + CLOSE;
+// (ticket 252, Matthew: "for each tree-house trap door (defined by two houses, stacked) we get to choose the opening:
+// triangle, square (current image), circle (like the pits in the castle). Same for the pits") An opening in a floor or
+// a ceiling, seen in perspective: its middle (cx, cy), half its width (rx) and half its depth (ry). A floor's far edge
+// is its top and the narrower; a ceiling's far edge is its bottom (ceiling). A triangle's point is at its far edge.
+const OPENING_SHAPES = [["square", "■ square"], ["circle", "● circle"], ["triangle", "▲ triangle"]];
+const openingShape = v => OPENING_SHAPES.some(([s]) => s === v) ? v : "square";
+function openingD(shape, cx, cy, rx, ry, ceiling = false) {
+  const far = ceiling ? cy + ry : cy - ry, near = ceiling ? cy - ry : cy + ry;
+  if (shape === "circle") return `M${f1(cx - rx)} ${f1(cy)} A${f1(rx)} ${f1(ry)} 0 1 0 ${f1(cx + rx)} ${f1(cy)} A${f1(rx)} ${f1(ry)} 0 1 0 ${f1(cx - rx)} ${f1(cy)} Z`;
+  if (shape === "triangle") return `M${f1(cx)} ${f1(far)} L${f1(cx + rx)} ${f1(near)} L${f1(cx - rx)} ${f1(near)} Z`;
+  return `M${f1(cx - 0.82 * rx)} ${f1(far)} L${f1(cx + 0.82 * rx)} ${f1(far)} L${f1(cx + rx)} ${f1(near)} L${f1(cx - rx)} ${f1(near)} Z`;
+}
+// (a point on the floor (x, z) over a floor's opening: its share of the way out, under 1 inside)
+function inOpening(shape, cx, cy, rx, ry, x, z) {
+  const u = (x - cx) / rx, v = (z - cy) / ry;
+  if (Math.abs(v) >= 1) return false;
+  if (shape === "circle") return u * u + v * v < 1;
+  if (shape === "triangle") return Math.abs(u) < (v + 1) / 2;   // (its point far, its base near)
+  return Math.abs(u) < 0.82 + 0.18 * (v + 1) / 2;
+}
 const byDepth = list => list.slice().sort((a, b) => (a[1] - b[1]) || 0).map(([name, z, svg]) => obj(name, z, svg)).join("");
 const PARTS = new Map();
 function part(name, inputs, build) {

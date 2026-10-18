@@ -401,13 +401,13 @@ function solidsHud() {
   const line = [sc(F.left, back), sc(F.right, back)];
   // (0.0.157) a trap room's pits: the hole one falls into (PIT_EDGE of it), which a planned walk goes round
   const pitsShown = pitsHere().map(q => { const c0 = sc(q.cx, q.cy), cx = sc(q.cx + PIT_EDGE * q.rx, q.cy), cz = sc(q.cx, q.cy + PIT_EDGE * q.ry);
-    return [...[c0[0], c0[1], Math.abs(cx[0] - c0[0]), Math.abs(cz[1] - c0[1])].map(v => +v.toFixed(1)), q.name]; });
+    return [...[c0[0], c0[1], Math.abs(cx[0] - c0[0]), Math.abs(cz[1] - c0[1])].map(v => +v.toFixed(1)), q.name, q.shape || "circle"]; });   // (ticket 252: by its opening's shape)
   const sig = JSON.stringify([solids.map(o => pts(o.q) + o.faces.map(pts).join("|")), walls.map(pts), pts(line), pitsShown]);
   if (sig !== solidsShown || !ov) {
     solidsShown = sig;
     if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "solid-boxes"); layer.prepend(ov); }
     ov.innerHTML = `<polyline class="back" points="${pts(line)}"/>` + walls.map(w => `<polyline class="wall" points="${pts(w)}"/>`).join("") +
-      pitsShown.map(([x, y, rx, ry, name]) => `<g data-solid="${xmlEsc(name)}"><ellipse class="pit" cx="${x}" cy="${y}" rx="${rx}" ry="${ry}"/></g><text x="${(x - rx + 4).toFixed(1)}" y="${(y + ry + 13).toFixed(1)}">${xmlEsc(name)}: falls in</text>`).join("") +
+      pitsShown.map(([x, y, rx, ry, name, sh]) => `<g data-solid="${xmlEsc(name)}"><path class="pit" d="${openingD(sh, x, y, rx, ry)}"/></g><text x="${(x - rx + 4).toFixed(1)}" y="${(y + ry + 13).toFixed(1)}">${xmlEsc(name)}: falls in</text>`).join("") +
       solids.map(o => `<g data-solid="${xmlEsc(String(o.name))}">${o.faces.map(f => `<polygon class="face" points="${pts(f)}"/>`).join("")}<polygon points="${pts(o.q)}"/></g><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name))}</text>`).join("") +
       `<g class="you"><polygon/><polygon/><polygon class="torso"/><polygon class="face torso"/><text>you</text></g>`;
     solidsHitShown = -1;

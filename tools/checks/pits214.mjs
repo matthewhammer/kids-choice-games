@@ -30,7 +30,7 @@ try {
     const plan = planPath(a[0], a[1] - g, b[0], b[1] - g).map(p => [p[0], p[1] + g]);
     // ♿'s boxes: each pit drawn, named
     Object.assign(state.access, { showSolids: true }); changed(); await new Promise(r => setTimeout(r, 300));
-    const drawn = P.map(p => !!document.querySelector('#access-layer svg.solid-boxes [data-solid="' + p.name + '"] ellipse.pit'));
+    const drawn = P.map(p => !!document.querySelector('#access-layer svg.solid-boxes [data-solid="' + p.name + '"] .pit'));
     state.access.showSolids = false; changed();
     return JSON.stringify({ names: P.map(p => p.name), straight: crosses([a, b]), plan: plan.map(p => p.map(Math.round)), planCrosses: crosses([a, ...plan]), drawn }); })()`));
   ok("the trap room's pits, each named by the room it leads to", !r.none && r.names.length >= 1 && r.names.every(nm => /^pit to room \d+$/.test(nm)), r);

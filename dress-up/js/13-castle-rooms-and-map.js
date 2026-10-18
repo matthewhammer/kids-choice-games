@@ -174,9 +174,10 @@ const chainSvg = (x, y, len, s) => [...Array(Math.max(1, Math.floor(len / (7 * s
 const shackle = (x, y, s) => `<rect x="${f1(x - 5 * s)}" y="${f1(y - 5 * s)}" width="${f1(10 * s)}" height="${f1(10 * s)}" fill="#3a3a44"/>` +
   `<circle cx="${f1(x)}" cy="${f1(y + 8 * s)}" r="${f1(6 * s)}" fill="none" stroke="#5a5a66" stroke-width="${f1(2.6 * s)}"/>`;
 // a ladder up to a hole in the ceiling, light falling through it
-const ladderUp = (x, floor, top, k, label, attrs) => `<g class="portal" ${attrs}>` +
+// (ticket 252: its opening's shape, the pit's above it)
+const ladderUp = (x, floor, top, k, label, attrs, shape = "circle") => `<g class="portal" ${attrs}>` +
   `<polygon points="${f1(x - 50 * k)},${f1(top)} ${f1(x + 50 * k)},${f1(top)} ${f1(x + 120 * k)},${f1(floor + 40 * k)} ${f1(x - 120 * k)},${f1(floor + 40 * k)}" fill="#fff6c8" opacity="0.12"/>` +
-  `<ellipse cx="${f1(x)}" cy="${f1(top)}" rx="${f1(56 * k)}" ry="${f1(14 * k)}" fill="#fff3c4" opacity="0.8"/>` +
+  `<path d="${openingD(shape, x, top, 56 * k, 14 * k, true)}" fill="#fff3c4" opacity="0.8"/>` +
   `<g data-ladder="1" data-up="${f1(top)}">` + [-1, 1].map(e => `<line x1="${f1(x + e * 22 * k)}" y1="${f1(top)}" x2="${f1(x + e * 30 * k)}" y2="${f1(floor + 10 * k)}" stroke="#6e4a2c" stroke-width="${f1(7 * k)}"/>`).join("") +   // (ticket 252: the opening's line)
   [...Array(9)].map((_, j) => { const u = (j + 0.5) / 9, y = top + (floor + 10 * k - top) * u, hw = (22 + 8 * u) * k;
     return `<line x1="${f1(x - hw)}" y1="${f1(y)}" x2="${f1(x + hw)}" y2="${f1(y)}" stroke="#8b5e34" stroke-width="${f1(5 * k)}"/>`; }).join("") + `</g>` +
@@ -197,14 +198,14 @@ function trapRoomSvg(c, K, pits) {
   // the pits: dark holes in the floor, their rims of broken stone, rows of
   // spikes glinting inside
   [-1, 1].forEach((sd, i) => {
-    const cx = sd * W * 0.2, cy = floor + (y1 - floor) * 0.5, rx = 110 * k, ry = 34 * k, to = pits[i];
+    const cx = sd * W * 0.2, cy = floor + (y1 - floor) * 0.5, rx = 110 * k, ry = 34 * k, to = pits[i], sh = K.pitShapes[i];   // (ticket 252: its opening's shape)
     const id = `bg-pit${i}`;
     // (ticket 162: its hole, for falling in: its middle and its half widths, across and in depth)
-    t += (to ? `<g class="portal" data-to="castleroom" data-room="${to}" data-pit="${f1(cx)} ${f1(cy)} ${f1(rx)} ${f1(ry)}">` : "<g>") +
+    t += (to ? `<g class="portal" data-to="castleroom" data-room="${to}" data-pit="${f1(cx)} ${f1(cy)} ${f1(rx)} ${f1(ry)}" data-shape="${sh}">` : "<g>") +
       `<defs><radialGradient id="${id}" cx="0.5" cy="0.3" r="0.7"><stop offset="0" stop-color="#000000"/><stop offset="1" stop-color="#2a221c"/></radialGradient>` +
-      `<clipPath id="${id}c"><ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}"/></clipPath></defs>` +
-      `<ellipse cx="${f1(cx)}" cy="${f1(cy + 4 * k)}" rx="${f1(rx + 14 * k)}" ry="${f1(ry + 8 * k)}" fill="#4a4038"/>` +
-      `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="url(#${id})"/>` +
+      `<clipPath id="${id}c"><path d="${openingD(sh, cx, cy, rx, ry)}"/></clipPath></defs>` +
+      `<path d="${openingD(sh, cx, cy + 4 * k, rx + 14 * k, ry + 8 * k)}" fill="#4a4038"/>` +
+      `<path d="${openingD(sh, cx, cy, rx, ry)}" fill="url(#${id})"/>` +
       `<g clip-path="url(#${id}c)">` + [...Array(11)].map((_, j) => {
         const x = cx - rx * 0.85 + rx * 1.7 * j / 10, b = cy + ry * 0.9, h = (26 + 10 * R(j + i * 20, 920)) * k;
         return `<polygon points="${P(x - 7 * k, b)} ${P(x, b - h)} ${P(x + 7 * k, b)}" fill="#8a8a96"/><line x1="${f1(x - 2 * k)}" y1="${f1(b - h * 0.8)}" x2="${f1(x - 4 * k)}" y2="${f1(b - 4 * k)}" stroke="#d8d8e4" stroke-width="${f1(1.5 * k)}"/>`;
@@ -1873,6 +1874,11 @@ function farWallDoor(c, label, attrs) {
     `<ellipse cx="${f1(cx)}" cy="${f1(fl - 2 * kf)}" rx="${f1(hw * 0.6)}" ry="${f1(3 * kf)}" fill="#ffcf6b" opacity="0.25"/>` +
     plankSign(cx, dt - 22 * k * HALL_SIGN_MIN, k * HALL_SIGN_MIN, label) + `</g>`;
 }
+// (ticket 252) the shape of the trap room's pit that falls into room n (the first pit's, if both do), else a circle
+function pitShapeOver(K, n) {
+  const d1 = K.rooms.indexOf("dungeon1") + 1, d2 = K.rooms.indexOf("dungeon2") + 1, i = [d1 || d2, d2 || d1].indexOf(n);
+  return K.pitShapes[i < 0 ? 0 : i] || "circle";
+}
 function castleWays(c, K, n, style) {
   const { W, k } = c, { floor, bw } = roomFrame(c), S = roomSpace(c);
   const rooms = K.rooms, exits = ROOM_KINDS[style].exits, X = roomExits(K, n);
@@ -1886,7 +1892,8 @@ function castleWays(c, K, n, style) {
   // friend nearer than it. (ticket 233) Its ways toward us are not drawn: nav arrows (castleSouthWays).
   if (exits === "trap") return out ? obj("way out", floor, archDoor(0, floor, k, out.label, out.attrs, 100, 180)) : "";
   if (exits === "ladder")
-    return out ? obj("ladder", floor + 10 * k, ladderUp(bw * 0.82, floor, roomFrame(c).top - 30 * k, k, X[0].to === 0 ? "🪜 up and out" : `🪜 up to ${out.label}`, out.attrs)) : "";
+    // (ticket 252: the dungeon's ceiling hole, the shape of the pit above it that falls into it)
+    return out ? obj("ladder", floor + 10 * k, ladderUp(bw * 0.82, floor, roomFrame(c).top - 30 * k, k, X[0].to === 0 ? "🪜 up and out" : `🪜 up to ${out.label}`, out.attrs, pitShapeOver(K, n))) : "";
   const links = X.filter(x => x.kind === "arch").map(x => way(x.to)).filter(Boolean);
   const doors = X.filter(x => x.kind === "door").map(x => way(x.to)).filter(Boolean);
   // (where each link leads, and each door's number, as the castle designer names it: their objects' names)

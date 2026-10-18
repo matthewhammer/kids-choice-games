@@ -347,10 +347,15 @@ function waysSvg(c, floor, links) {
     } else if (L.way === "down") {
       // a hatch in the floor, its lid up, the ladder's top poking out
       const hx = (x0 + W * 0.26) * TREE_FIT, hy = floor + 72 * k;   // (ticket 223: toward the middle, with what stands at the back wall)
-      t += `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 55 * k, hy - 74 * k)} ${P(hx - 55 * k, hy - 74 * k)}" fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(3 * k)}"/>` +
+      // (ticket 252: its opening's shape, this house's setting: the lid up at its far edge, and the hole)
+      const me = Math.max(1, Math.min(6, c.o.houses ?? 4, Math.round(c.o.inside ?? 1))), sh = openingShape(c.o["hatchShape" + me]);
+      const lid = { square: `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 55 * k, hy - 74 * k)} ${P(hx - 55 * k, hy - 74 * k)}"`,
+                    circle: `<ellipse cx="${f1(hx)}" cy="${f1(hy - 46 * k)}" rx="${f1(60 * k)}" ry="${f1(28 * k)}"`,
+                    triangle: `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx, hy - 78 * k)}"` }[sh];
+      t += lid + ` fill="#8b5e34" stroke="#5e3d22" stroke-width="${f1(3 * k)}"/>` +
            // (ticket 237, Matthew: "collision detection should avoid walking over the trap doors in the floor of the tree
            // houses") its hole, on the floor, a solid (data-hole: across, and back to front; solidsHere)
-           `<polygon data-hole="${f1(hx - 70 * k)} ${f1(hx + 70 * k)} ${f1(hy - 18 * k)} ${f1(hy + 20 * k)}" points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 76 * k, hy + 20 * k)} ${P(hx - 76 * k, hy + 20 * k)}" fill="#2a1a0e" stroke="#5e3d22" stroke-width="${f1(4 * k)}"/>` +
+           `<path data-hole="${f1(hx - 70 * k)} ${f1(hx + 70 * k)} ${f1(hy - 18 * k)} ${f1(hy + 20 * k)}" d="${openingD(sh, hx, hy + k, 76 * k, 19 * k)}" fill="#2a1a0e" stroke="#5e3d22" stroke-width="${f1(4 * k)}"/>` +
            // (ticket 199, Matthew: "some ladders don't animate (ones going down trap doors in tree house) ... let's make them all
            // animate") the ladder a ladder too, climbed down: data-down, the hole's near edge, below which the friend goes out of sight
            `<g data-ladder="1" data-down="${f1(hy + 20 * k)}">` +
@@ -362,7 +367,8 @@ function waysSvg(c, floor, links) {
       // (ticket 223: toward the middle, with what stands at the back wall; up to the ceiling where it is over the
       // ladder's foot, the square room's ceiling coming toward us from the back wall's top)
       const lx = (x1 - W * 0.4) * TREE_FIT, { top: rt, vy } = roomFrame(c), cy = vy + (rt - vy) * (floor + 14 * k - vy) / (floor - vy);
-      t += `<ellipse cx="${f1(lx)}" cy="${f1(cy)}" rx="${f1(40 * k)}" ry="${f1(12 * k)}" fill="#2a1a0e"/>` +
+      // (ticket 252: the opening of the trapdoor above, its house's setting, seen from below)
+      t += `<path d="${openingD(openingShape(c.o["hatchShape" + (L.to + 1)]), lx, cy, 40 * k, 12 * k, true)}" fill="#2a1a0e"/>` +
            // (ticket 252: data-up, the opening's line: climbing up, the friend is cut off above it)
            `<g data-ladder="1" data-up="${f1(cy)}">` + [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(cy - 4 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
            [...Array(Math.floor((floor + 14 * k - cy) / (30 * k)))].map((_, r) => `<line x1="${f1(lx - 20 * k)}" y1="${f1(floor - r * 30 * k)}" x2="${f1(lx + 20 * k)}" y2="${f1(floor - r * 30 * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") + `</g>` +

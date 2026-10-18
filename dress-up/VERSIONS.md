@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.175 (2026-10-17)
+
+Everything in 0.0.174, with trapdoors and pits in three shapes.
+
+- **Square, round or triangular**: each tree house's trapdoor can now have a "■ square", "● circle" or "▲ triangle" opening ("🕳️ its trapdoor's opening", in 🏞️ Background, in its room and the room below it), and so can each of the castle's trap room pits ("🕳️ the trap room's first pit: its opening", and the second). The hole, its lid, and the hole in the ceiling of the room below all take the same shape, and you fall into a pit by its real shape.
+
 ## 0.0.174 (2026-10-17)
 
 Everything in 0.0.173, with climbs up through the ceiling you can see.
