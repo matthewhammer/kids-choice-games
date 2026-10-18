@@ -2,6 +2,16 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.190 (2026-10-17)
+
+Everything in 0.0.189, with doors you walk through, not fade through.
+
+- **Through a door, not a fade**: a door in a side wall (the tree house rooms' doors to the bridges, the castle's side doors) opens as it glows and stays open while your friend goes through it, and they go out of sight past the doorway's edge, as down a trapdoor, instead of fading.
+- **On a bridge, the house you click**: clicking the house across the bridge takes your friend there, even standing near the house they came from.
+- **Down a ladder to the ground**: out of a tree house down its ladder, your friend comes out at the foot of that ladder, facing you.
+- **The world**: squares A4 and B5 are no longer joined, as Matthew meant.
+- **One big eyebrow** is off at first.
+
 ## 0.0.189 (2026-10-17)
 
 Everything in 0.0.188, with the world's grid easier to read.

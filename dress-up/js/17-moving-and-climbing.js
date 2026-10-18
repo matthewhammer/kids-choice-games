@@ -418,7 +418,9 @@ function showEnterGlow() {
   enterAt = p;
   // (ticket 256: the door the glow is on open, the one it left shut)
   const leaf = p && p.kind !== "nav" && p.el.matches && p.el.matches(".portal[data-door]") ? p.el.querySelector("[data-leaf]") : null;
-  if (leaf !== glowLeaf) { doorSwing(glowLeaf, false); glowLeaf = leaf; doorSwing(leaf, true); }
+  // (ticket 264, Matthew: "it opens and then shuts, and then I fade through the shut door") not shut while it is being
+  // walked through: the glow leaves it as the walk begins
+  if (leaf !== glowLeaf && !(entering && !leaf)) { doorSwing(glowLeaf, false); glowLeaf = leaf; doorSwing(leaf, true); }
   // (a nav arrow's glow is its arrow over the picture: aimed, or near and dimmer)
   worldWaysAim(p && p.kind === "nav" ? p.el.dataset.way : null);
   const NS = "http://www.w3.org/2000/svg", put = (el, box, dim) => {
@@ -452,8 +454,18 @@ function doorPushed(vx) {
   return true;
 }
 function enterPicture() {
-  // (ticket 246) on a rope bridge: along it to the end they face, and into the house there
-  if (!entering && bridgeNow()) { if (enterGlow) enterGlow.remove(); enterGlow = null; enterAt = null; bridgeGoIn(); return; }
+  // (ticket 246) on a rope bridge: along it to the end they face, and into the house there; (ticket 264, Matthew: "sometimes I
+  // click on the treehouse across the bridge, but it's overridden by still standing next to the current tree house ... We
+  // should favor the click target, not where are feet are") a house clicked (enterAt, set by the click) at one of its
+  // ends: that one
+  const onBr = !entering && bridgeNow();
+  if (onBr) {
+    const h = enterAt && enterAt.el && enterAt.el.dataset && enterAt.el.dataset.to === "treeroom" ? +enterAt.el.dataset.house - 1 : -1;
+    if (enterGlow) enterGlow.remove(); enterGlow = null; enterAt = null;
+    if (h === onBr.W.a || h === onBr.W.b) bridgeGoIn({ j: onBr.j, end: h === onBr.W.b ? 1 : 0, house: h + 1, other: (h === onBr.W.b ? onBr.W.a : onBr.W.b) + 1 });
+    else bridgeGoIn();
+    return;
+  }
   const p = enterAt;
   if (!p || !p.el.isConnected || entering) return;
   if (p.ladder && climb && !climb.none) return;   // (on a ladder already: climbing it)
@@ -469,7 +481,10 @@ function enterPicture() {
 function climbThrough() {
   const c = climb, node = bgShown.node;
   if (!c || !c.door || !node || entering || state.body.anim !== "climbup") return;
-  const door = node.querySelector(`.portal[data-to="${c.door.to}"]` + ["house", "room", "tent"].map(k => c.door[k] ? `[data-${k}="${c.door[k]}"]` : "").join(""));
+  // (ticket 264: down a hatch's ladder, its own way through, not another to the same place: a tree room's window leads
+  // outside too, and was taken, the friend coming out at the default spot)
+  const all = [...node.querySelectorAll(`.portal[data-to="${c.door.to}"]` + ["house", "room", "tent"].map(k => c.door[k] ? `[data-${k}="${c.door[k]}"]` : "").join(""))];
+  const door = (c.down && all.find(d => d.querySelector("[data-down]"))) || all[0];
   if (!door) return;
   c.through = true;
   enterScene(door);

@@ -28,6 +28,9 @@ try {
   console.log(`  the default world: ${r.cols} by ${r.rows}, ${r.n} squares, start ${r.start} (${r.startKind}), ${r.things} things put; ${JSON.stringify(r.kinds)}`);
   ok("his grid: 6 by 7, 31 squares, starting at the clearing (3,3), the things he put", r.cols === 6 && r.rows === 7 && r.n === 31 && r.start === "3,3" && r.startKind === "clearing" && r.things > 0, r);
   ok("a save still holding 0.0.183's world, untouched: his grid now", r.oldSame && r.oldNow === 31, r);
+  // (0.0.190: A4 and B5 not joined, his fix)
+  const ab = JSON.parse(await ev(`JSON.stringify({ a: worldLiveWays(DEFAULTS.world, "0,3"), b: worldLiveWays(DEFAULTS.world, "1,4") })`));
+  ok("A4 and B5 not joined (A4 no way SE, B5 no way NW)", !ab.a.includes("SE") && !ab.b.includes("NW"), ab);
   ok("a save whose world was changed: kept as it was", r.mineKept, r);
   // a fresh friend walks his world: the clearing, and a square of deep sea drawn
   const walk = JSON.parse(await ev(`(async () => { state = clone(DEFAULTS); state.music.mute = true; changed(); await new Promise(r => setTimeout(r, 500));

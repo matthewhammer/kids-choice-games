@@ -881,11 +881,16 @@ function drawNow() {
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units
   // (ticket 252) and climbing up through a ceiling's opening: cut off above it
   const clipDown = climb && climb.down && climb.clip != null, clipUp = climb && !climb.down && climb.clipUp != null && climb.door;
-  if ((clipDown || clipUp) && B.anim === "climbup") for (const n of figShown) {
+  // (ticket 264, Matthew: "we should clip the animation of walking through it, in the planned motion -- the trap doors and
+  // pits all look great, BTW -- that's the standard now") walking through a door in a side wall (doorClip, walkInto):
+  // every piece of the friend cut off past the wall's line there, on the room's side only
+  const clipSide = !!doorClip && entering;
+  if (((clipDown || clipUp) && B.anim === "climbup") || clipSide) for (const n of figShown) {
     if (n.nodeType !== 1 || !n.parentNode) continue;
     const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), id = "fig-clip-" + Math.random().toString(36).slice(2, 8);
     w.setAttribute("class", "fig-clip"); w.setAttribute("clip-path", `url(#${id})`);
-    w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + (clipDown ? `<rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/>`
+    w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + (clipSide ? (doorClip.side < 0 ? `<rect x="${f1(doorClip.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + doorClip.x)}" height="8000"/>`)
+      : clipDown ? `<rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/>`
       : `<rect x="-4000" y="${f1(climb.clipUp)}" width="8000" height="8000"/>`) + `</clipPath>`;
     n.replaceWith(w); w.append(n);
   }

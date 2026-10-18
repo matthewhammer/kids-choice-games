@@ -842,6 +842,10 @@ function enterScene(door, here = false) {
   // (a picture's own box: the scene inside it spills past it, hidden)
   const view = door.querySelector(":scope > svg, :scope > image");
   const from = { kind: B.kind, inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to };
+  // (ticket 264, Matthew: "when I come out of the treehouse from a ladder, I should respawn at the base of the ladder,
+  // facing the viewer/player") down a tree room's ladder to the ground: outside at that house's ladder's foot (treeLadder's
+  // place, through the tree's size), a step in front of it; facing us, as every arrival
+  const downTo = B.kind === "treeroom" && to === "treehouse" && door.querySelector("[data-down]") ? B.inside : null;
   const arrive = () => {
     trips.push(from);
     const [figX, figY] = ARRIVE[to] || [0, 0];
@@ -849,6 +853,8 @@ function enterScene(door, here = false) {
     if (house) B.inside = +house;
     if (tent) B.tent = +tent;
     if (room) B.castleRoom = +room;
+    if (downTo) { const i = downTo - 1, [x] = TREE_SLOTS[i], hz = (B.treeHouseSize ?? 100) / 100, s = (B.treeSize ?? 100) / 100 * (SCENE.bottom - SCENE.top) / 700;
+      B.figX = Math.round(clamp((x + Math.sign(x) * 52 * hz) * s, sceneFrame.left + 20, sceneFrame.right - 20)); B.figY = Math.round(8 * s); }
   };
   // (ticket 147, Matthew: the spin only for pictures and windows, "it's the most magical looking";
   // through any other way the friend walks, or, at a ladder's top, steps)
@@ -1055,6 +1061,9 @@ function doorTooLow(r, inv, foot) {
   const tall = youHeights().crown / figureT.k * (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, foot.y - SCENE.ground);
   return tall > 0.97 * open ? { tall, open, stretch: Math.max(40, 0.9 * tall) } : null;
 }
+// (ticket 264) a door in a side wall being walked through: the wall's x there and which side it is on (-1 left), the
+// friend cut off past it (draw); none else
+let doorClip = null;
 function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {}) {
   const P = pic.getScreenCTM(), BG = state.background, B = state.body, F = sceneFrame;
   if (!P) return;
@@ -1072,6 +1081,8 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   // stretch to its threshold, about a body's length, and the step through it, crawled, at a crawl's pace (not a world
   // way's or a room's way toward us, a ladder or a pit: those go their own ways)
   const low = walk && !lad && !pit && !opt.out && door.hasAttribute("data-door") ? doorTooLow(r, inv, foot) : null;
+  // (ticket 264) a door in a side wall (one with a leaf, off to a side of the room): which side, for the clip going through
+  const side = !lad && !pit && !opt.out && door.hasAttribute("data-door") && door.querySelector("[data-leaf]") && Math.abs(foot.x) > 60 ? Math.sign(foot.x) : 0;
   // (the way in: on toward the doorway from where they stop; deeper into the place if it is straight ahead)
   let ux = foot.x - tx, uy = foot.y - (SCENE.ground + ty);
   if (opt.out) [ux, uy] = opt.out;
@@ -1157,11 +1168,14 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
     }
     if (phase === "in") {
       if (!tIn) { tIn = t; tripPhase = "stepping in"; }
-      const u = Math.min(1, (t - tIn) / WALK_IN_MS);
+      if (side && !doorClip) doorClip = { x: foot.x, side: side };
+      // (ticket 264: through a door in a side wall, on past the wall's line, the friend cut off at it, not faded; a little
+      // longer, as far as their body is wide)
+      const u = Math.min(1, (t - tIn) / (side ? WALK_IN_MS * 2 : WALK_IN_MS)), step = side ? Math.max(WALK_IN_STEP, 120 * figureT.k) : WALK_IN_STEP;
       if (walk) { B.anim = low ? "crawl" : deepHere() ? "swim" : "walk"; B.facing = face(ux, uy); B.turn = ""; }
-      BG.figX = tx + ux * WALK_IN_STEP * u; BG.figY = ty + uy * WALK_IN_STEP * 0.6 * u;
-      draw(); fade((1 - u).toFixed(2));   // (drawn now, not as moved() may, later: the fade goes on what is drawn)
-      if (u >= 1) { done(); return; }
+      BG.figX = tx + ux * step * u; BG.figY = ty + uy * step * 0.6 * u;
+      draw(); if (!side) fade((1 - u).toFixed(2));   // (drawn now, not as moved() may, later: the fade goes on what is drawn)
+      if (u >= 1) { doorClip = null; done(); return; }
     }
     requestAnimationFrame(step);
   };
