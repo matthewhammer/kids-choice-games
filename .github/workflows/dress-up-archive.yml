@@ -47,6 +47,7 @@ jobs:
           curl -sf http://127.0.0.1:9333/json/version | grep -i '"Browser"'
           ffmpeg -version | head -1
       - name: The run's pictures (archive.mjs)
+        shell: bash
         run: |
           mkdir -p out
           node "$RUNNER_TEMP/pics/tools/archive.mjs" 9333 "file://$RUNNER_TEMP/game/dress-up/index.html" \
