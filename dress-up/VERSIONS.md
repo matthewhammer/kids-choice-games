@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.198 (2026-10-17)
+
+Everything in 0.0.197, drawing less of what cannot be seen.
+
+- **Fewer hidden drawings**: in each place, a tree, pine, leaf pad, bush's pad or flower more than 75% hidden behind what is drawn in front of it is left out: the far rows of trees in the forest, the castle and the fairy forest, the waterfall's far jungle, the tree house's leaves, its flowers behind the trunk (at the tree's size), the lake's far wood, each bush's and leafy tree's own pads. 675 fewer drawn across the places at their defaults (the waterfall 171, the busiest tree house 112, the clearing 103), each place's picture changing by under 2% of its pixels.
+
 ## 0.0.197 (2026-10-17)
 
 Everything in 0.0.196, with a new tune.

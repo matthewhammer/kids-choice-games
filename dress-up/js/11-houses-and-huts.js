@@ -32,11 +32,26 @@ function treehouseScene(c) {
     // (ticket 42) its ripples flowing down it, a little faster than the brook's
     t += flowRipples(sp, [...Array(14)].map((_, i) => 0.12 + 0.83 * i / 13), 2.2, hw => { const l = hw * 0.5;
       return `<path d="M${f1(-l)} 0 Q0 ${f1(-l * 0.25)} ${f1(l)} 0" fill="none" stroke="#ffffff" stroke-width="${f1(hw * 0.045)}" opacity="0.7"/>`; });
-    for (let i = 0; i < 48; i++) {  // flowers in the grass
-      const d = R(i, 220), x = x0 + W * R(i, 221), y = g - 22 * k + (y1 - g + 10 * k) * d;
+    return t;
+  });
+  // flowers in the grass (ticket 261, Matthew: "looks like we are wasting time drawing flowers behind the tree house
+  // tree?"): one more than 75% behind the trunk's dark core, at the tree's size now, left out; a part of their own, so
+  // the size slider builds only them again
+  s += SEP + part("tree-flowers", [c.F, ts], () => {
+    const { y1 } = c, sp = streamAt(c), z = ts * k, core = [[[-81.6 * z, g + 10 * z], [-48 * z, g - 780 * z], [48 * z, g - 780 * z], [81.6 * z, g + 10 * z]]];
+    const items = [];
+    for (let i = 0; i < 48; i++) {
+      const d = R(i, 220), x = x0 + W * R(i, 221), y = g - 22 * k + (y1 - g + 10 * k) * d, sc = k * (0.8 + 0.7 * d);
       if (inStream(sp, x, y, 8 * k)) continue;
-      t += use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.7 * d), k * (0.8 + 0.7 * d), ` color="${FLOWER_COLORS[i % 6]}"`);
+      // (a flower's box: its head, 16 wide, and its stem, 34 tall in all at its scale, standing on its foot)
+      items.push({ svg: use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, sc, sc, ` color="${FLOWER_COLORS[i % 6]}"`), shape: [[[x - 8 * sc, y - 34 * sc], [x + 8 * sc, y - 34 * sc], [x + 8 * sc, y + sc], [x - 8 * sc, y + sc]]] });
     }
+    return seenOnly(items, core);
+  });
+  s += SEP + part("tree-near", c.F, () => {
+    const { x1, y1, P } = c, side = c.side, sp = streamAt(c);
+    const tree = (i, x, y, sc) => i % 3 === 1 ? use("bg-woods-oak", x, y, sc * (R(i, 211) < 0.5 ? -1 : 1), sc)
+                                              : use("bg-pine", x, y, sc, sc, ` color="${["#2f6e3a", "#3a7d44", "#285e33"][i % 3]}"`);
     const near = ["", ""], stand = [];
     for (let i = 0; i < 12; i++)   // nearer ones, at the meadow's edge, left and right
       near[side(i) < 0 ? 0 : 1] += tree(i + 1, side(i) * (W * 0.2 + W * 0.32 * R(i, 214)), g - 42 * k + 8 * k * R(i, 215), k * (0.55 + 0.3 * R(i, 216)));
@@ -46,7 +61,7 @@ function treehouseScene(c) {
       if (inStream(sp, x, y, r * 1.4)) continue;   // (no bushes in the water)
       stand.push([`bush, ${side(i) < 0 ? "left" : "right"} ${Math.floor(i / 2) + 1}`, y, bushSvg(x, y, r * 1.4, 300 + i)]);
     }
-    return t + byDepth(stand);
+    return byDepth(stand);
   });
   // the tree, its leaves, houses, bridges and ladders: built in the tree's
   // units, so its size slider builds none of them again
@@ -1287,16 +1302,17 @@ function fairyforestScene(c) {
   s += SEP + part("fairy-woods", [c.F, time], () => {
     let t = `<defs>${pineDef("bg-fpine", 7)}${leafyTreeDef("bg-foak", 23, { greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#47a047", "#58b050"].map(tn), bark: tn("#6b4a2b") })}</defs>` +
             land(g - 160 * k, 8, tn("#a9d48e"), 0.4);
-    // (each row an object, standing at its trees' middle depth, base + 6k)
-    for (const [row, base, cols] of [[0, g - 150 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 110 * k, ["#2f6b3a", "#3c7d45"]]]) {
-      let r = "";
+    // (each row an object, standing at its trees' middle depth, base + 6k; ticket 261: a tree more than 75% hidden by
+    // the row in front and the grass drawn after, left out)
+    t += treeRows([[0, g - 150 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 110 * k, ["#2f6b3a", "#3c7d45"]]].map(([row, base, cols]) => {
+      const items = [];
       for (let i = 0, x = x0 - 50 * k; x < x1 + 50 * k; i++, x += (row ? 52 : 36) * k) {
-        const h = (row ? 150 : 100) * k * (0.8 + 0.4 * R(i, 1310 + row)), b = base + 12 * k * R(i, 1312 + row);
-        r += R(i, 1314 + row) < 0.6 ? use("bg-fpine", x, b, h / 200, h / 200, ` color="${tn(cols[i % 2])}"`)
-                                    : use("bg-foak", x, b, (h / 330) * (R(i, 1316) < 0.5 ? -1 : 1), h / 330);
+        const h = (row ? 150 : 100) * k * (0.8 + 0.4 * R(i, 1310 + row)), b = base + 12 * k * R(i, 1312 + row), sx = (h / 330) * (R(i, 1316) < 0.5 ? -1 : 1);
+        items.push(R(i, 1314 + row) < 0.6 ? { svg: use("bg-fpine", x, b, h / 200, h / 200, ` color="${tn(cols[i % 2])}"`), shape: useOutline("bg-fpine", x, b, h / 200) }
+                                          : { svg: use("bg-foak", x, b, sx, h / 330), shape: useOutline("bg-foak", x, b, sx, h / 330) });
       }
-      t += obj(row ? "trees, near row" : "trees, far row", base + 6 * k, r);
-    }
+      return [row ? "trees, near row" : "trees, far row", base + 6 * k, items];
+    }), [landCover(g - 70 * k, 6, k, x0 - pad, x1 + pad, y1 + pad)]);
     return t + land(g - 70 * k, 6, tn("#8bc56a"), 1.1) + land(g - 20 * k, 3, tn("#7cc25a"), 0.6);
   });
   // the great old tree, on the left: its crown, then a thick trunk with roots

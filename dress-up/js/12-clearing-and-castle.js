@@ -101,16 +101,17 @@ function castleScene(c) {
     t += land(g - 150 * k, 10, "#a9d48e", 0.4);
     // (pines and leafy trees, far ones paler; from the drawings every scene shares)
     t += `<defs>${pineDef("bg-far-pine", 9)}${leafyTreeDef("bg-far-oak", 17)}</defs>`;
-    // (each row an object, standing at its trees' middle depth)
-    for (const [row, base, cols] of [[0, g - 140 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 100 * k, ["#2f6b3a", "#3c7d45"]]]) {
-      let rt = "";
+    // (each row an object, standing at its trees' middle depth; ticket 261: a tree more than 75% hidden by the row in
+    // front and the grass drawn after, left out)
+    t += treeRows([[0, g - 140 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 100 * k, ["#2f6b3a", "#3c7d45"]]].map(([row, base, cols]) => {
+      const items = [];
       for (let i = 0, x = x0 - 50 * k; x < x1 + 50 * k; i++, x += (row ? 46 : 34) * k) {
-        const h = (row ? 120 : 84) * k * (0.8 + 0.4 * R(i, 420 + row)), b = base + 12 * k * R(i, 422 + row);
-        rt += R(i, 424 + row) < 0.7 ? use("bg-far-pine", x, b, h / 200, h / 200, ` color="${cols[i % 2]}"`)
-                                    : `<g opacity="${row ? 1 : 0.85}">${use("bg-far-oak", x, b, (h / 330) * (R(i, 426) < 0.5 ? -1 : 1), h / 330)}</g>`;
+        const h = (row ? 120 : 84) * k * (0.8 + 0.4 * R(i, 420 + row)), b = base + 12 * k * R(i, 422 + row), sx = (h / 330) * (R(i, 426) < 0.5 ? -1 : 1);
+        items.push(R(i, 424 + row) < 0.7 ? { svg: use("bg-far-pine", x, b, h / 200, h / 200, ` color="${cols[i % 2]}"`), shape: useOutline("bg-far-pine", x, b, h / 200) }
+                                         : { svg: `<g opacity="${row ? 1 : 0.85}">${use("bg-far-oak", x, b, sx, h / 330)}</g>`, shape: useOutline("bg-far-oak", x, b, sx, h / 330) });
       }
-      t += obj(row ? "trees, near row" : "trees, far row", base + 6 * k, rt);
-    }
+      return [row ? "trees, near row" : "trees, far row", base + 6 * k, items];
+    }), [landCover(g - 80 * k, 6, k, x0 - pad, x1 + pad, y1 + pad)]);
     return t + land(g - 80 * k, 6, "#8bc56a", 1.1) + land(g - 30 * k, 3, "#7cc25a", 0.6);
   });
   // the castle, from the same settings as the clearing's (an object, its

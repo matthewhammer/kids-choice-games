@@ -90,14 +90,19 @@ function waterfallScene(c) {
     // the far jungle: layers of leaf pads, a crown here and there standing up
     // out of them (the shared leafy tree)
     t += `<defs>${leafyTreeDef("bg-jungle-tree", 81, { wide: 1.3 })}</defs>`;
+    // (ticket 261: each of its pads and crowns more than 75% hidden by those in front of it and the cliff, left out;
+    // the columns kept, their tops the far jungle's skyline; the cliff's outline by its corners, inside its curves)
+    const jungle = [], box = (a, b, c2, d) => [[[a, b], [c2, b], [c2, d], [a, d]]];
     for (const [row, fill, yb, n] of [[0, "#5f9a6a", y0 + H * 0.3, 16], [1, "#3f8050", y0 + H * 0.42, 14]])
       for (let i = 0; i < n; i++) {
         const x = x0 - 20 * k + (W + 40 * k) * i / (n - 1), r = (40 + 25 * R(i + row * 20, 340)) * k, y = yb + 10 * k * R(i, 341);
-        t += `<rect x="${f1(x - r)}" y="${f1(y)}" width="${f1(2 * r)}" height="${f1(H)}" fill="${fill}"/>` +
-             padSvg(Math.floor(R(i + row * 30, 342) * 8), x, y + r * 0.3, (r / 95) * (R(i, 343) < 0.5 ? -1 : 1), r / 70, fill) +
-             padSvg(Math.floor(R(i + row * 30, 344) * 8), x + r * 0.3, y - r * 0.2, (r / 130), r / 90, mix(fill, "#ffffff", 0.08));
-        if (R(i + row * 40, 345) < 0.25) t += use("bg-jungle-tree", x, y + r * 0.6, r * 3 / 330, r * 3 / 330, ` color="${fill}"`);
+        const j1 = Math.floor(R(i + row * 30, 342) * 8), s1 = (r / 95) * (R(i, 343) < 0.5 ? -1 : 1), j2 = Math.floor(R(i + row * 30, 344) * 8);
+        jungle.push({ svg: `<rect x="${f1(x - r)}" y="${f1(y)}" width="${f1(2 * r)}" height="${f1(H)}" fill="${fill}"/>`, shape: box(x - r, y, x + r, y + H), keep: true },
+                    { svg: padSvg(j1, x, y + r * 0.3, s1, r / 70, fill), shape: padOutline(j1, x, y + r * 0.3, s1, r / 70) },
+                    { svg: padSvg(j2, x + r * 0.3, y - r * 0.2, (r / 130), r / 90, mix(fill, "#ffffff", 0.08)), shape: padOutline(j2, x + r * 0.3, y - r * 0.2, r / 130, r / 90) });
+        if (R(i + row * 40, 345) < 0.25) jungle.push({ svg: use("bg-jungle-tree", x, y + r * 0.6, r * 3 / 330, r * 3 / 330, ` color="${fill}"`), shape: useOutline("bg-jungle-tree", x, y + r * 0.6, r * 3 / 330) });
       }
+    t += seenOnly(jungle, [[[-W * 0.34, pool], [-W * 0.3, top + 40 * k], [-W * 0.06, top], [W * 0.08, top], [W * 0.3, top + 30 * k], [W * 0.36, pool]]]);
     // the cliff, mossy, the falls' lip at its top
     t += `<path d="M${P(-W * 0.34, pool)} L${P(-W * 0.3, top + 40 * k)} Q${P(-W * 0.2, top - 10 * k)} ${P(-W * 0.06, top)} L${P(W * 0.08, top)} Q${P(W * 0.22, top - 12 * k)} ${P(W * 0.3, top + 30 * k)} L${P(W * 0.36, pool)} Z" fill="#6e6a62"/>`;
     for (let i = 0; i < 14; i++) {

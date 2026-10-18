@@ -227,14 +227,16 @@ function lakeScene(c) {
     // (leaf pads behind, so the wood is thick, then leafy trees and a few pines)
     // (the wood one object, standing on the far shore)
     t += `<defs>${leafyTreeDef("bg-lake-oak", 41)}${pineDef("bg-lake-pine", 43)}</defs>`;
-    let wood = "";
-    for (let i = 0; i < 30; i++) wood += padSvg(Math.floor(R(i, 44) * 8), x0 - 30 * k + (W + 60 * k) * i / 29, horizon - 10 * k - 10 * k * R(i, 45), k * 0.42 * (R(i, 46) < 0.5 ? -1 : 1), k * 0.5, ["#2f6a32", "#356f33", "#2a5f2c"][i % 3]);
+    // (ticket 261: a pad or a tree more than 75% hidden by those in front of it, left out)
+    const wood = [];
+    for (let i = 0; i < 30; i++) { const j = Math.floor(R(i, 44) * 8), x = x0 - 30 * k + (W + 60 * k) * i / 29, y = horizon - 10 * k - 10 * k * R(i, 45), sx = k * 0.42 * (R(i, 46) < 0.5 ? -1 : 1);
+      wood.push({ svg: padSvg(j, x, y, sx, k * 0.5, ["#2f6a32", "#356f33", "#2a5f2c"][i % 3]), shape: padOutline(j, x, y, sx, k * 0.5) }); }
     for (let i = 0; i < 24; i++) {
-      const x = x0 - 20 * k + (W + 40 * k) * i / 23 + 12 * k * (R(i, 40) - 0.5), r = (22 + 18 * R(i, 41)) * k;
-      wood += R(i, 47) < 0.25 ? use("bg-lake-pine", x, horizon, r * 2.4 / 200, r * 2.4 / 200, ` color="${["#2f6e3a", "#356f33"][i % 2]}"`)
-                              : use("bg-lake-oak", x, horizon + 2 * k, (r * 2.2 / 330) * (R(i, 48) < 0.5 ? -1 : 1), r * 2.2 / 330);
+      const x = x0 - 20 * k + (W + 40 * k) * i / 23 + 12 * k * (R(i, 40) - 0.5), r = (22 + 18 * R(i, 41)) * k, sx = (r * 2.2 / 330) * (R(i, 48) < 0.5 ? -1 : 1);
+      wood.push(R(i, 47) < 0.25 ? { svg: use("bg-lake-pine", x, horizon, r * 2.4 / 200, r * 2.4 / 200, ` color="${["#2f6e3a", "#356f33"][i % 2]}"`), shape: useOutline("bg-lake-pine", x, horizon, r * 2.4 / 200) }
+                                : { svg: use("bg-lake-oak", x, horizon + 2 * k, sx, r * 2.2 / 330), shape: useOutline("bg-lake-oak", x, horizon + 2 * k, sx, r * 2.2 / 330) });
     }
-    t += obj("far wood", horizon, wood);
+    t += obj("far wood", horizon, seenOnly(wood, [[[x0 - pad, horizon], [x1 + pad, horizon], [x1 + pad, shore], [x0 - pad, shore]]]));
     t += `<rect x="${f1(x0 - pad)}" y="${f1(horizon)}" width="${f1(W + 2 * pad)}" height="${f1(shore - horizon + 14 * k)}" fill="url(#bg-lake)"/>`;
     for (let i = 0; i < 18; i++) {   // the sun on the water
       const d = R(i, 43), x = x0 + W * R(i, 42), y = horizon + (shore - horizon) * (0.08 + 0.84 * d), l = (6 + 14 * d) * k;
@@ -350,7 +352,7 @@ const FLOWER_DEFS = `<g id="bg-tulip" data-proc="tulip"><path d="M0 0 Q-2 -12 0 
 const FLOWER_COLORS = ["#e53935", "#ffffff", "#f7a8c8", "#f2c12e", "#9b59b6", "#ff8c42"];
 // (each id its own tree: a seed from its name)
 const idSeed = id => [...id].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 9973, 7);
-const oakDef = (id, s) => `<g id="${id}"><g transform="scale(${+s.toFixed(3)})">${leafyTree(idSeed(id))}</g></g>`;
+const oakDef = (id, s) => { const t = leafyTree(idSeed(id)); OUTLINE_OF.set(id, outlineAt(lastOutline, 0, 0, s)); return `<g id="${id}"><g transform="scale(${+s.toFixed(3)})">${t}</g></g>`; };
 
 // a brown house of two floors, the garage on its right, a driveway and a
 // stone walk, a tree each side, bushes, flowers and toys on the lawn
@@ -551,6 +553,55 @@ const TREE_TIPS = [...Array(14)].map((_, j) => {
   const sy = -190 - 28 * j, tx = sd * (130 + 340 * r(1)), ty = Math.max(-560, sy - 30 - 110 * r(2));
   return [sd * 38, sy, Math.round(tx), Math.round(ty), Math.round(tx * 0.75 + sd * 30), Math.max(-590, Math.round(ty - 50 - 40 * r(3)))];
 });
+// (ticket 261, Matthew: "check to see if we are drawing totally occluded objects -- remove them from the scene if they
+// are more than 75% occluded (rough approx is fine)") What a drawing covers, as plain polygons in its own units (a leaf
+// pad's outline; a pine's tiers and trunk; a leafy tree's trunk, limbs and pads), kept by its def's id for its <use>s
+// (OUTLINE_OF); and seenOnly, which leaves out a drawing more than 75% inside the ones drawn after it (and `over`, what
+// is drawn after them all), sampled over its polygons. tools/checks/occlude261.mjs measures what is left on the screen,
+// and cull261.mjs what leaving them out changes, pixel by pixel.
+const PAD_OUTLINE = [], OUTLINE_OF = new Map();
+let CULL_HIDDEN = true;   // (off: everything drawn, as before; tools/checks/cull261.mjs compares the two)
+const CULL_MOST = 0.75;   // (Matthew's: "more than 75% occluded")
+const outlineAt = (polys, x, y, sx = 1, sy = sx) => polys.map(P => P.map(([a, b]) => [x + a * sx, y + b * sy]));
+const useOutline = (id, x, y, s = 1, sy = s) => OUTLINE_OF.has(id) ? outlineAt(OUTLINE_OF.get(id), x, y, s, sy) : null;
+// (inside by the nonzero rule, as SVG fills a polygon by default: a pine's tier crosses itself, and is filled whole)
+const polyIn = (P, x, y) => { let w = 0;
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const xi = P[i][0], yi = P[i][1], xj = P[j][0], yj = P[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) w += yj > yi ? 1 : -1; }
+  return w !== 0; };
+const polyBox = P => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+  for (const [x, y] of P) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c, d]; };
+// (items: [{ svg, shape, keep }] in drawing order, shape a list of polygons or null (kept, covering nothing); keep: never
+// left out, but covering what is under it; their svgs, joined)
+function seenOnly(items, over = [], most = CULL_MOST) {
+  if (!CULL_HIDDEN) return items.map(it => it.svg).join("");
+  const all = items.map(it => it.shape ? { svg: it.svg, polys: it.shape.map(P => ({ P, b: polyBox(P) })) } : { svg: it.svg, polys: null });
+  for (const it of all) if (it.polys) it.b = it.polys.reduce((a, q) => [Math.min(a[0], q.b[0]), Math.min(a[1], q.b[1]), Math.max(a[2], q.b[2]), Math.max(a[3], q.b[3])], [Infinity, Infinity, -Infinity, -Infinity]);
+  const top = over.map(P => ({ P, b: polyBox(P) })), N = 6;
+  const hit = (q, x, y) => x >= q.b[0] && x <= q.b[2] && y >= q.b[1] && y <= q.b[3] && polyIn(q.P, x, y);
+  return all.filter((it, i) => {
+    if (!it.polys || items[i].keep) return true;
+    const B = it.b, near = q => q.b[0] < B[2] && q.b[2] > B[0] && q.b[1] < B[3] && q.b[3] > B[1];
+    const later = [...all.slice(i + 1).flatMap(o => o.polys && near(o) ? o.polys.filter(near) : []), ...top.filter(near)];
+    if (!later.length) return true;
+    // (sampled over each of its polygons' own boxes, about 100 points in all, those inside it counted: a pine is a
+    // spike and jagged bands, which a grid over its whole box would mostly miss)
+    // (kept as soon as more of it is seen than could ever be hidden enough: most drawings are plainly in view)
+    let seen = 0, hid = 0; const m = Math.max(2, Math.round(Math.sqrt(N * N * 2 / it.polys.length))), sure = (1 - most) * it.polys.length * m * m;
+    for (const q of it.polys) for (let a = 0; a < m; a++) for (let c = 0; c < m; c++) {
+      const x = q.b[0] + (a + 0.5) * (q.b[2] - q.b[0]) / m, y = q.b[1] + (c + 0.5) * (q.b[3] - q.b[1]) / m;
+      if (!polyIn(q.P, x, y)) continue;
+      seen++; if (later.some(o => hit(o, x, y))) hid++; else if (seen - hid > sure) return true;
+    }
+    return !seen || hid <= most * seen;
+  }).map(it => it.svg).join("");
+}
+// (ticket 261) rows of trees, far to near: each row an object ([name, z, items]), its trees ({ svg, shape }) more than
+// 75% hidden by the rows in front of it and by `over` (polygons drawn after them all) left out
+const treeRows = (rows, over = []) => rows.map(([name, z, items], r) =>
+  obj(name, z, seenOnly(items, [...rows.slice(r + 1).flatMap(q => q[2].flatMap(it => it.shape || [])), ...over]))).join("");
+// (what a scene's land(at, amp) covers for certain: below its wave's lowest crest)
+const landCover = (at, amp, k, x0, x1, bottom) => [[x0, at + amp * k], [x1, at + amp * k], [x1, bottom], [x0, bottom]];
 // a bonsai pad of leaves: a low cloud, a scalloped top over a flat bottom,
 // shaded beneath and lit on top whatever its color (currentColor)
 function padInner(j) {
@@ -565,6 +616,7 @@ function padInner(j) {
   const pts = a => a.map(([x, y]) => `${f1(x)},${f1(y)}`).join(" ");
   const shade = top.map(([x, y]) => [x, y * 0.3]);
   const lit = top.filter((_, i) => i > 4 && i < 30).map(([x, y]) => [x * 0.7 - w * 0.06, y * 0.85 - 4]);
+  PAD_OUTLINE[j] = [...top, ...bottom];   // (ticket 261)
   return `<polygon points="${pts([...top, ...bottom])}" fill="currentColor"/>` +
          `<polygon points="${pts([...shade, ...bottom])}" fill="#000000" opacity="0.2"/>` +
          `<polygon points="${pts(lit)}" fill="#ffffff" opacity="0.13"/>`;
@@ -572,4 +624,5 @@ function padInner(j) {
 const PAD_INNER = [...Array(8)].map((_, j) => padInner(j));
 function padDef(id, j) { return `<g id="${id}" data-proc="padDef">${PAD_INNER[j]}</g>`; }
 // a leaf pad anywhere: shape j (of 8), at (x, y), sx by sy, in a color
+const padOutline = (j, x, y, sx, sy) => outlineAt([PAD_OUTLINE[((j % 8) + 8) % 8]], x, y, sx, sy);   // (ticket 261)
 const padSvg = (j, x, y, sx, sy, color) => `<g data-proc="padSvg" transform="translate(${f1(x)} ${f1(y)}) scale(${sx.toFixed(3)} ${sy.toFixed(3)})" color="${color}">${PAD_INNER[((j % 8) + 8) % 8]}</g>`;

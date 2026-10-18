@@ -6,7 +6,8 @@
 // lollipops), each from its own seed, so no two are alike ----
 const seeded = seed => i => { const v = Math.sin(seed * 71.3 + i * 13.7) * 43758.5453; return v - Math.floor(v); };
 // a curved, tapering limb: from p0 by way of p1 to p2, w0 wide to w1
-const taperSvg = (p0, p1, p2, w0, w1, fill) => {
+// (ticket 261: its polygon, in its own units, onto `into` when given, for an outline)
+const taperSvg = (p0, p1, p2, w0, w1, fill, into) => {
   const L = [], Rr = [];
   for (let i = 0; i <= 8; i++) {
     const u = i / 8, x = (1 - u) * (1 - u) * p0[0] + 2 * u * (1 - u) * p1[0] + u * u * p2[0], y = (1 - u) * (1 - u) * p0[1] + 2 * u * (1 - u) * p1[1] + u * u * p2[1];
@@ -14,8 +15,12 @@ const taperSvg = (p0, p1, p2, w0, w1, fill) => {
     const w = (w0 + (w1 - w0) * u) / 2;
     L.push(`${f1(x - dy / d * w)},${f1(y + dx / d * w)}`); Rr.push(`${f1(x + dy / d * w)},${f1(y - dx / d * w)}`);
   }
-  return `<polygon points="${[...L, ...Rr.reverse()].join(" ")}" fill="${fill}"/>`;
+  const pts = [...L, ...Rr.reverse()];
+  if (into) into.push(pts.map(q => q.split(",").map(Number)));
+  return `<polygon points="${pts.join(" ")}" fill="${fill}"/>`;
 };
+// (ticket 261) the outline of the last tree, pine or bush drawn (leafyTree, pineTree, bushSvg), for its def's <use>s
+let lastOutline = [];
 // A broadleaf tree, in the old oak's units (its foot at 0, 0, about 330
 // tall): a trunk flaring at the roots, limbs forking up and out, and leaf
 // pads clustered at their tips, darker behind and lighter in front
@@ -23,10 +28,11 @@ function leafyTree(seed, o = {}) {
   const r = seeded(seed), H = o.h ?? 320, wide = o.wide ?? 1, bark = o.bark ?? "#6b4a2b", dk = mix(bark, "#000000", 0.35);
   const greens = o.greens ?? ["#285e2a", "#2f7d32", "#3a8a3c", "#47a047", "#58b050"];
   const limbs = [], tips = [];
+  const outline = [];
   const grow = (x, y, a, len, w, lvl, id) => {
     const bend = (r(id * 7 + 1) - 0.5) * 0.6, mx = x + Math.cos(a) * len * 0.5, my = y + Math.sin(a) * len * 0.5;
     const ex = mx + Math.cos(a + bend) * len * 0.5, ey = my + Math.sin(a + bend) * len * 0.5;
-    limbs.push(taperSvg([x, y], [mx, my], [ex, ey], w, w * 0.6, bark));
+    limbs.push(taperSvg([x, y], [mx, my], [ex, ey], w, w * 0.6, bark, outline));
     if (lvl === 0) { tips.push([ex, ey, len]); return; }
     const n = 2 + (r(id * 7 + 2) > 0.45 ? 1 : 0);
     for (let c = 0; c < n; c++) grow(ex, ey, a + bend + (c - (n - 1) / 2) * (0.55 + 0.3 * r(id * 7 + 3 + c)) * wide, len * (0.6 + 0.18 * r(id * 11 + c)), w * 0.6, lvl - 1, id * 3 + c + 1);
@@ -35,7 +41,7 @@ function leafyTree(seed, o = {}) {
   let t = `<ellipse cx="0" cy="2" rx="${f1(70 * wide)}" ry="11" fill="#000000" opacity="0.15"/>`;
   // roots, flaring into the ground
   for (const e of [-1, 1]) t += `<path d="M${f1(e * 10)} -24 Q${f1(e * 16)} -4 ${f1(e * (30 + 8 * r(2 + e)))} 2 L${f1(e * 6)} 2 Z" fill="${bark}"/>`;
-  t += taperSvg([0, 2], [top[0] * 0.4, -H * 0.24], top, 30, 19, bark);
+  t += taperSvg([0, 2], [top[0] * 0.4, -H * 0.24], top, 30, 19, bark, outline);
   for (let c = 0; c < 3; c++) grow(top[0], top[1], -Math.PI / 2 + (c - 1) * 0.7 * wide + (r(10 + c) - 0.5) * 0.3, H * (0.25 + 0.06 * r(20 + c)), 16, 1, c + 2);
   t += limbs.join("") + `<path d="M${f1(-4)} -20 Q${f1(top[0] * 0.3 - 6)} ${f1(-H * 0.22)} ${f1(top[0] - 4)} ${f1(top[1] + 10)}" fill="none" stroke="${dk}" stroke-width="3" opacity="0.5"/>`;
   // the leaves: a back layer over the crown, then a cluster at each tip
@@ -43,16 +49,20 @@ function leafyTree(seed, o = {}) {
   for (let i = 0; i < 4; i++) pads.push([top[0] + (r(30 + i) - 0.5) * 140 * wide, top[1] - 60 - 70 * r(34 + i), 0.55 + 0.2 * r(38 + i), 0]);
   tips.forEach(([x, y, len], i) => { pads.push([x + (r(40 + i) - 0.5) * 30, y - 16, 0.42 + 0.16 * r(50 + i), 1]); pads.push([x + (r(60 + i) - 0.5) * 40, y + 8, 0.36 + 0.14 * r(70 + i), 2]); });
   pads.sort((a, b) => a[3] - b[3] || a[1] - b[1]);
-  t += pads.map(([x, y, sc, layer], i) => padSvg(Math.floor(r(80 + i) * 8), x, y, sc * (r(90 + i) < 0.5 ? -1 : 1) * wide, sc, greens[Math.min(greens.length - 1, layer + Math.floor(r(100 + i) * 3))])).join("");
+  // (ticket 261: a pad hidden by the pads in front of it, more than 75%, left out)
+  const padItems = pads.map(([x, y, sc, layer], i) => { const j = Math.floor(r(80 + i) * 8), sx = sc * (r(90 + i) < 0.5 ? -1 : 1) * wide;
+    return { svg: padSvg(j, x, y, sx, sc, greens[Math.min(greens.length - 1, layer + Math.floor(r(100 + i) * 3))]), shape: padOutline(j, x, y, sx, sc) }; });
+  t += seenOnly(padItems);
+  lastOutline = [...outline, ...padItems.flatMap(p => p.shape)];
   return drawnBy("leafyTree", t);
 }
 // a tree's drawing under an id, for <use> (one drawing, many trees)
-const leafyTreeDef = (id, seed, o) => `<g id="${id}">${leafyTree(seed, o)}</g>`;
+const leafyTreeDef = (id, seed, o) => { const t = leafyTree(seed, o); OUTLINE_OF.set(id, lastOutline); return `<g id="${id}">${t}</g>`; };
 // A pine, in the old pine's units (its foot at 0, 0, 200 tall, 100 wide at
 // the bottom): a trunk, then tiers of drooping boughs, ragged at their
 // tips, darker underneath, in the color of its <use>
 function pineTree(seed, o = {}) {
-  const r = seeded(seed), n = o.tiers ?? 5;
+  const r = seeded(seed), n = o.tiers ?? 5, outline = [[[-6, -34], [6, -34], [6, 2], [-6, 2]]];
   let t = `<rect x="-6" y="-34" width="12" height="36" fill="#5e3d22"/>`;
   for (let j = 0; j < n; j++) {
     // (broad tiers, overlapping, each drooping to three soft points a side)
@@ -62,22 +72,29 @@ function pineTree(seed, o = {}) {
       right.push([x - hw / 6, y - 4 - 6 * r(j * 10 + q)], [x, y + 6 + 6 * r(j * 10 + q + 5) - 4 * v]); }
     const pts = [[0, tip], ...right, ...[...right].reverse().map(([x, yy]) => [-x * (0.94 + 0.1 * r(j + 40)), yy + 2 * (r(j + 41) - 0.5)])];
     const ps = pts.map(([x, yy]) => `${f1(x)},${f1(yy)}`).join(" ");
+    outline.push(pts);
     t += `<polygon points="${ps}" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>` +
          `<polygon points="${f1(-hw * 0.85)},${f1(y + 2)} ${f1(hw * 0.85)},${f1(y + 2)} ${f1(hw * 0.5)},${f1(y - th * 0.3)} ${f1(-hw * 0.5)},${f1(y - th * 0.3)}" fill="#000000" opacity="0.16"/>` +
          `<polygon points="0,${f1(tip + 4)} ${f1(-hw * 0.6)},${f1(y - th * 0.15)} ${f1(-hw * 0.18)},${f1(y - th * 0.5)}" fill="#ffffff" opacity="0.1"/>`;
   }
+  lastOutline = outline;
   return drawnBy("pineTree", t);
 }
-const pineDef = (id, seed = 1, o) => `<g id="${id}">${pineTree(seed, o)}</g>`;
+const pineDef = (id, seed = 1, o) => { const t = pineTree(seed, o); OUTLINE_OF.set(id, lastOutline); return `<g id="${id}">${t}</g>`; };
 // a bush: a low mound of leaf pads, darker at its foot, flowers on some
 const bushSvg = (x, y, rad, seed, o = {}) => {
   const r = seeded(seed), greens = o.greens ?? ["#285e2a", "#2f7d32", "#3a8a3c", "#4a9a46", "#5aad52"], sc = rad / 95;
   let t = `<ellipse cx="${f1(x)}" cy="${f1(y + 2 * sc)}" rx="${f1(rad * 1.1)}" ry="${f1(rad * 0.22)}" fill="#000000" opacity="0.16"/>`;
-  const n = 4 + Math.floor(r(1) * 3);
+  const n = 4 + Math.floor(r(1) * 3), outline = [], items = [];
   for (let i = 0; i < n; i++) {
     const u = (i + 0.5) / n, px = x + (u - 0.5) * rad * 1.3 + (r(10 + i) - 0.5) * rad * 0.3, py = y - rad * (0.15 + 0.5 * Math.sin(Math.PI * u)) * (0.7 + 0.5 * r(20 + i));
-    t += padSvg(Math.floor(r(30 + i) * 8), px, py, sc * (0.5 + 0.25 * r(40 + i)) * (r(50 + i) < 0.5 ? -1 : 1), sc * (0.6 + 0.3 * r(60 + i)), greens[Math.min(greens.length - 1, Math.floor(i / n * greens.length + r(70 + i)))]);
+    const j = Math.floor(r(30 + i) * 8), sx = sc * (0.5 + 0.25 * r(40 + i)) * (r(50 + i) < 0.5 ? -1 : 1), sy = sc * (0.6 + 0.3 * r(60 + i));
+    items.push({ svg: padSvg(j, px, py, sx, sy, greens[Math.min(greens.length - 1, Math.floor(i / n * greens.length + r(70 + i)))]), shape: padOutline(j, px, py, sx, sy) });
+    outline.push(...items[i].shape);
   }
+  // (ticket 261: a pad more than 75% hidden by the bush's pads in front of it, left out)
+  t += seenOnly(items);
+  lastOutline = outline;
   if (o.flowers) for (let i = 0; i < 6; i++) { const fx = x + (r(80 + i) - 0.5) * rad * 1.4, fy = y - rad * (0.2 + 0.6 * r(90 + i));
     t += `<circle cx="${f1(fx)}" cy="${f1(fy)}" r="${f1(rad * 0.07)}" fill="${o.flowers[i % o.flowers.length]}"/><circle cx="${f1(fx)}" cy="${f1(fy)}" r="${f1(rad * 0.025)}" fill="#fde047"/>`; }
   return drawnBy("bushSvg", t);
@@ -151,11 +168,12 @@ function treeInner(c) {
       tips.push([tx, ty], [fx, fy]);
     }
     tips.push([0, -1300], [-120, -1360], [120, -1350], [0, -1420]);
-    t += [...Array(Math.round(leaves * 0.8))].map((_, i) => {
-      const [x, y] = tips[i % tips.length], more = Math.floor(i / tips.length), sc = 1 + 1.1 * R(i, 233);
-      return use(`bg-pad${Math.floor(R(i, 234) * 8)}`, x + more * 70 * (R(i, 235) - 0.5) * 2, y + 10 - more * 50, sc * (R(i, 236) < 0.5 ? -1 : 1), sc,
-                 ` color="${["#2a6e2e", "#2f7d32", "#3c9a40", "#266b30", "#4fb04f"][Math.floor(R(i, 237) * 5)]}"`);
-    }).join("");
+    // (ticket 261: a pad more than 75% hidden by the pads drawn after it, left out)
+    t += seenOnly([...Array(Math.round(leaves * 0.8))].map((_, i) => {
+      const [x, y] = tips[i % tips.length], more = Math.floor(i / tips.length), sc = 1 + 1.1 * R(i, 233), j = Math.floor(R(i, 234) * 8);
+      const px = x + more * 70 * (R(i, 235) - 0.5) * 2, py = y + 10 - more * 50, sx = sc * (R(i, 236) < 0.5 ? -1 : 1);
+      return { svg: use(`bg-pad${j}`, px, py, sx, sc, ` color="${["#2a6e2e", "#2f7d32", "#3c9a40", "#266b30", "#4fb04f"][Math.floor(R(i, 237) * 5)]}"`), shape: padOutline(j, px, py, sx, sc) };
+    }));
     return t;
   });
   // more branches, up the trunk and out each side, a fork on each
@@ -171,11 +189,12 @@ function treeInner(c) {
   s += SEP + part("tree-pad-shapes", [], () => `<defs>${[...Array(8)].map((_, j) => padDef(`bg-pad${j}`, j)).join("")}</defs>`);
   s += SEP + part("tree-pads", [leaves], () => {
     const tips = TREE_TIPS.flatMap(([, , tx, ty, fx, fy]) => [[tx, ty], [fx, fy]]);
-    return [...Array(Math.round(leaves * 0.56))].map((_, i) => {
-      const [x, y] = tips[i % tips.length], more = Math.floor(i / tips.length), sc = 0.55 + 0.75 * R(i, 124);
-      return use(`bg-pad${Math.floor(R(i, 125) * 8)}`, x + more * 34 * (R(i, 126) - 0.5) * 2, y + 6 - more * 26, sc * (R(i, 127) < 0.5 ? -1 : 1), sc,
-                 ` color="${["#2f7d32", "#3c9a40", "#4fb04f", "#2a6e2e", "#5aa84a"][Math.floor(R(i, 128) * 5)]}"`);
-    }).join("");
+    // (ticket 261: a pad more than 75% hidden by the pads drawn after it, left out)
+    return seenOnly([...Array(Math.round(leaves * 0.56))].map((_, i) => {
+      const [x, y] = tips[i % tips.length], more = Math.floor(i / tips.length), sc = 0.55 + 0.75 * R(i, 124), j = Math.floor(R(i, 125) * 8);
+      const px = x + more * 34 * (R(i, 126) - 0.5) * 2, py = y + 6 - more * 26, sx = sc * (R(i, 127) < 0.5 ? -1 : 1);
+      return { svg: use(`bg-pad${j}`, px, py, sx, sc, ` color="${["#2f7d32", "#3c9a40", "#4fb04f", "#2a6e2e", "#5aa84a"][Math.floor(R(i, 128) * 5)]}"`), shape: padOutline(j, px, py, sx, sc) };
+    }));
   });
   s += SEP + part("tree-swing", [sceneLfoKey(o, "slow")], () =>
     `<path d="M30 -300 Q200 -330 430 -350" fill="none" stroke="#6e4a2c" stroke-width="16" stroke-linecap="round"/>` +

@@ -60,14 +60,25 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // the far wood: rows of pines
     s += `<defs>${pineDef("bg-wood-pine0", 51)}${pineDef("bg-wood-pine1", 53)}${leafyTreeDef("bg-wood-big0", 57, { wide: 1.25, h: 340 })}${leafyTreeDef("bg-wood-big1", 61, { wide: 1.2, h: 330 })}</defs>`;
     // (each row an object, standing at its trees' middle depth)
-    for (const [row, base, col] of [[0, g - 110 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 60 * k, ["#2f6b3a", "#3c7d45"]]]) {
-      let t = "";
+    // (ticket 261: a pine more than 75% hidden by what is drawn in front of it, the nearer row, the meadow and the big
+    // trees, left out; the big trees are placed here, drawn after)
+    const bigs = [0, 1, 2, 3].map(i => {
+      const sd = side(i), x = sd * Math.max(W / 2 - (i < 2 ? 70 : 200) * k, 170 * k), b = g + (i < 2 ? 60 : 30) * k;
+      const sc = i < 2 ? 1.15 : 0.9, z = 355 * k * sc / 330;
+      return [`big tree, ${sd < 0 ? "left" : "right"}${i < 2 ? ", outer" : ", inner"}`, b, use(`bg-wood-big${i % 2}`, x, b, z * -sd, z), useOutline(`bg-wood-big${i % 2}`, x, b, z * -sd, z)];
+    });
+    const meadow = [[x0 - pad, g - 20 * k], [x1 + pad, g - 20 * k], [x1 + pad, y1 + pad], [x0 - pad, y1 + pad]];
+    const rows = [[0, g - 110 * k, ["#4f8f5a", "#5c9c63"]], [1, g - 60 * k, ["#2f6b3a", "#3c7d45"]]].map(([row, base, col]) => {
+      const items = [];
       for (let i = 0, x = x0 - 50 * k; x < x1 + 50 * k; i++, x += (row ? 52 : 40) * k) {
-        const h = (row ? 210 : 150) * k * (0.8 + 0.4 * R(i, row)), b = base + 20 * k * R(i, row + 2);
-        t += use(`bg-wood-pine${i % 2}`, x, b, h / 200 * (R(i, row + 4) < 0.5 ? -1 : 1), h / 200, ` color="${col[i % 2]}"`);
+        const h = (row ? 210 : 150) * k * (0.8 + 0.4 * R(i, row)), b = base + 20 * k * R(i, row + 2), sx = h / 200 * (R(i, row + 4) < 0.5 ? -1 : 1);
+        items.push({ svg: use(`bg-wood-pine${i % 2}`, x, b, sx, h / 200, ` color="${col[i % 2]}"`), shape: useOutline(`bg-wood-pine${i % 2}`, x, b, sx, h / 200) });
       }
-      s += obj(row ? "pines, near row" : "pines, far row", base + 10 * k, t);
-    }
+      return [row, base, items];
+    });
+    const inFront = [meadow, ...bigs.flatMap(b => b[3] || [])];
+    for (const [row, base, items] of rows)
+      s += obj(row ? "pines, near row" : "pines, far row", base + 10 * k, seenOnly(items, row ? inFront : [...rows[1][2].flatMap(it => it.shape || []), ...inFront]));
     // sunbeams, slanting down through the trees onto the meadow: the sun is
     // far off and still, so they run parallel and keep their shapes; each
     // dims and brightens on its own as clouds go by the sun, now and then
@@ -84,11 +95,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // the butterflies, flying over the meadow (at the depth of the ground under the nearest)
     s += obj("butterflies", g - 40 * k, butterfliesSvg({ k, o: opts }, [[x0 + W * 0.16, g - 70 * k, 1.1], [x1 - W * 0.18, g - 110 * k, 1], [x1 - W * 0.34, g - 40 * k, 1.2]]));
     // big leafy trees at the sides, nearest of all (the outer two nearer still)
-    s += byDepth([0, 1, 2, 3].map(i => {
-      const sd = side(i), x = sd * Math.max(W / 2 - (i < 2 ? 70 : 200) * k, 170 * k), b = g + (i < 2 ? 60 : 30) * k;
-      const sc = i < 2 ? 1.15 : 0.9, z = 355 * k * sc / 330;
-      return [`big tree, ${sd < 0 ? "left" : "right"}${i < 2 ? ", outer" : ", inner"}`, b, use(`bg-wood-big${i % 2}`, x, b, z * -sd, z)];
-    }));
+    s += byDepth(bigs.map(b => b.slice(0, 3)));
   } else if (kind === "underwater") {
     s += `<defs>${grad("bg-sea", "#6fd6f2", "#0b4f7a", y0, y1)}</defs>` + all("url(#bg-sea)");
     for (let j = 0; j < 5; j++) {
