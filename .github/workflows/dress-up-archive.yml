@@ -1,0 +1,137 @@
+# (ticket 183) A run of Dress Up's archives, made on GitHub's computers: the
+# archives' own tools (matthewhammer/dress-up-pictures and dress-up-music,
+# tools/, at main) run in headless Chrome on the game at main. No browser
+# runs on the laptop since 2026-10-16 (it froze during them).
+# (ticket 272, 2026-10-18) Each archive keeps one folder, rewritten by every
+# run (pictures/: each drawing's SVG, settings and WebP thumbnail, no PNG;
+# music/: one MP3 per tune), and every run as a git tag. Each job starts from
+# its archive as published and uploads the run's folder as an artifact, a
+# tar; on the laptop, the archive's tools/add_run.sh checks it, commits it,
+# tags it and pushes. The run is named in Matthew's time (Mountain): a day's
+# first run YYYY/MM/DD, a later one that day YYYY/MM/DD/HH-MM.
+name: Dress Up archive
+on:
+  push:
+    branches: ['archive-*']
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  TZ: America/Denver
+jobs:
+  pictures:
+    name: Pictures (the game at main)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The game, the archive as published, Chrome; the run's name and source.json
+        shell: bash
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/game" origin/main
+          git -C "$RUNNER_TEMP/game" log -1 --format='game: %H %s'
+          git clone -q --depth 1 https://github.com/matthewhammer/dress-up-pictures "$RUNNER_TEMP/arch"
+          DAY=$(date +%Y/%m/%d); RUN=$DAY
+          if node -e 'const r = require(process.argv[1]), d = process.argv[2]; process.exit(r.some(x => x.run === d || x.run.startsWith(d + "/")) ? 0 : 1)' "$RUNNER_TEMP/arch/runs.json" "$DAY"; then RUN="$DAY/$(date +%H-%M)"; fi
+          echo "RUN=$RUN" >> "$GITHUB_ENV"; echo "run: $RUN ($(date))"
+          (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
+            --remote-debugging-port=9333 --remote-allow-origins='*' --window-size=1920,1080 \
+            --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done
+          B=$(curl -sf http://127.0.0.1:9333/json/version | grep -o '"Browser": *"[^"]*"' | cut -d'"' -f4)
+          V=$(grep -m1 -oE '^## [0-9]+\.[0-9]+\.[0-9]+' "$RUNNER_TEMP/game/dress-up/VERSIONS.md" | cut -c4-)
+          C=$(git -C "$RUNNER_TEMP/game" rev-parse HEAD)
+          printf '{\n "game": "Messed Up Dress Up",\n "version": "%s",\n "commit": "%s",\n "made_at": "%s",\n "made_on": "GitHub Actions, %s (matthewhammer/kids-choice-games run %s, ticket 272)"\n}\n' \
+            "$V" "$C" "$(date -Iseconds)" "$B" "$GITHUB_RUN_ID" > "$RUNNER_TEMP/source.json"
+          cat "$RUNNER_TEMP/source.json"
+      - name: The run's pictures (archive.mjs), thumbnails and all
+        shell: bash
+        run: |
+          mkdir -p out
+          node "$RUNNER_TEMP/arch/tools/archive.mjs" 9333 "file://$RUNNER_TEMP/game/dress-up/index.html" \
+            "$RUNNER_TEMP/arch/pictures" "$RUN" "$RUNNER_TEMP/source.json" | tee out/archive.txt
+      - name: Against the run before (what git will store)
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/arch" && git add -A pictures
+          {
+            echo "run: $RUN"
+            echo "game: $(git -C "$RUNNER_TEMP/game" log -1 --format='%h %s')"
+            for ext in svg json webp; do
+              echo "$ext: $(git ls-files -- "pictures/*.$ext" | wc -l) in all; changed or new or gone: $(git diff --cached --name-status -- "pictures/*.$ext" | cut -c1 | sort | uniq -c | tr -s ' \n' ' ')"
+            done
+            echo "new or changed drawings, by folder:"
+            git diff --cached --name-only --diff-filter=AM -- 'pictures/*.svg' | cut -d/ -f2 | sort | uniq -c
+          } | tee "$GITHUB_WORKSPACE/out/bytes.txt"
+          cat "$GITHUB_WORKSPACE/out/bytes.txt" >> "$GITHUB_STEP_SUMMARY"
+      - name: The run as a tar
+        run: |
+          tar -C "$RUNNER_TEMP/arch" -cf out/run.tar pictures
+          echo "$RUN" > out/run.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pictures
+          path: out/
+  music:
+    name: Music (the game at main)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The game, the archive as published, lame, Chrome; the run's name and source.json
+        shell: bash
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/game" origin/main
+          git -C "$RUNNER_TEMP/game" log -1 --format='game: %H %s'
+          git clone -q --depth 1 https://github.com/matthewhammer/dress-up-music "$RUNNER_TEMP/arch"
+          sudo apt-get update -qq && sudo apt-get install -y -qq lame > /dev/null && lame --version | head -1
+          DAY=$(date +%Y/%m/%d); RUN=$DAY
+          if node -e 'const r = require(process.argv[1]), d = process.argv[2]; process.exit(r.some(x => x.run === d || x.run.startsWith(d + "/")) ? 0 : 1)' "$RUNNER_TEMP/arch/runs.json" "$DAY"; then RUN="$DAY/$(date +%H-%M)"; fi
+          echo "RUN=$RUN" >> "$GITHUB_ENV"; echo "run: $RUN ($(date))"
+          (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
+            --remote-debugging-port=9333 --remote-allow-origins='*' --window-size=1920,1080 \
+            --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done
+          B=$(curl -sf http://127.0.0.1:9333/json/version | grep -o '"Browser": *"[^"]*"' | cut -d'"' -f4)
+          V=$(grep -m1 -oE '^## [0-9]+\.[0-9]+\.[0-9]+' "$RUNNER_TEMP/game/dress-up/VERSIONS.md" | cut -c4-)
+          C=$(git -C "$RUNNER_TEMP/game" rev-parse HEAD)
+          printf '{\n "game": "Messed Up Dress Up",\n "version": "%s",\n "commit": "%s",\n "made_at": "%s",\n "made_on": "GitHub Actions, %s (matthewhammer/kids-choice-games run %s, ticket 272)"\n}\n' \
+            "$V" "$C" "$(date -Iseconds)" "$B" "$GITHUB_RUN_ID" > "$RUNNER_TEMP/source.json"
+          cat "$RUNNER_TEMP/source.json"
+      - name: The run's tunes (music.mjs)
+        shell: bash
+        run: |
+          mkdir -p out
+          node "$RUNNER_TEMP/arch/tools/music.mjs" 9333 "file://$RUNNER_TEMP/game/dress-up/index.html" \
+            "$RUNNER_TEMP/arch" "$RUN" "$RUNNER_TEMP/source.json" | tee out/music.txt
+      - name: Against the run before (what git will store)
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/arch" && git add -A music
+          {
+            echo "run: $RUN"
+            echo "game: $(git -C "$RUNNER_TEMP/game" log -1 --format='%h %s')"
+            echo "tunes: $(git ls-files -- 'music/*.mp3' | wc -l); changed or new or gone: $(git diff --cached --name-status -- 'music/*.mp3' | cut -c1 | sort | uniq -c | tr -s ' \n' ' ')"
+            git diff --cached --name-status -- 'music/*.mp3'
+          } | tee "$GITHUB_WORKSPACE/out/bytes.txt"
+          cat "$GITHUB_WORKSPACE/out/bytes.txt" >> "$GITHUB_STEP_SUMMARY"
+      - name: The run as a tar
+        run: |
+          tar -C "$RUNNER_TEMP/arch" -cf out/run.tar music
+          echo "$RUN" > out/run.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music
+          path: out/
