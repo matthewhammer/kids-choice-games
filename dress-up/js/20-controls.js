@@ -1208,7 +1208,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         // (ticket 285, ^du_report(5)'s step 2: "what stands in the place is a card each, its picture clipped from the scene
         // (OBJECTS.md's), lit in the game while pointed at") its picture shows in the designer's full screen only
         const lit = (o, on) => { const g = bgShown.node && bgShown.node.querySelector(`[data-obj="${CSS.escape(o.name)}"]`); if (g) g.classList.toggle("obj-lit", on); };
-        chips = list.map(o => [o, el("button", { class: "obj", onpointerenter: () => lit(o, true), onpointerleave: () => lit(o, false), title: `${o.name}: stands at depth ${Number.isFinite(o.z) ? Math.round(o.z) : "in front of everything"} (the friend's feet are at ${Math.round(SCENE.ground)} on the ground line)`,
+        chips = list.map(o => [o, el("button", { class: "obj", onpointerenter: () => lit(o, true), onpointerleave: () => lit(o, false), "data-layer": o.layer || "stands", title: o.layer ? `${o.name}: on the ${o.layer}, always behind the friend, in nobody's way` : `${o.name}: stands at depth ${Number.isFinite(o.z) ? Math.round(o.z) : "in front of everything"} (the friend's feet are at ${Math.round(SCENE.ground)} on the ground line)`,
           onclick: () => { const all = { ...(B.objectsOff || {}) }, now = new Set(all[at] || []);
                            if (now.has(o.name)) now.delete(o.name); else now.add(o.name);
                            if (now.size) all[at] = [...now]; else delete all[at];

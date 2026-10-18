@@ -18,7 +18,7 @@ function sceneObjects(root) {
     for (let q = n.parentNode; q && q !== root; q = q.parentNode)
       if (q.hasAttribute("transform") || q.hasAttribute("data-obj") || q.hasAttribute("data-drag") || q.classList.contains("portal")) return false;
     return true;
-  }).map(n => ({ name: n.dataset.obj, z: objDepth(n), node: n }));
+  }).map(n => ({ name: n.dataset.obj, z: objDepth(n), node: n, layer: n.dataset.layer || null }));   // (ticket 284: wall, floor, or standing)
 }
 const objectAhead = feet => (bgShown.objs.find(o => o.z > feet) || {}).node || null;
 // which list of hidden objects a place keeps: a castle room's by its style,

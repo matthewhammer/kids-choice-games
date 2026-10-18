@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.217 (2026-10-18)
+
+Everything in 0.0.216, with what hangs on the walls and lies on the floor as objects too, beginning in the castle's trap room and dungeons.
+
+- **Wall and floor things are objects**, a kind of their own: listed in "👁️ what stands in the scene" (and ♿'s), hidden and shown with a tap, and put in other places with 📦, but always behind the friend and in nobody's way.
+- **🕳️ the trap room:** the two torches, the lever, the "⚠️ MIND THE FLOOR ⚠️" sign, the cobwebs and the moss on the walls, the sword on the floor (it had 2 objects; now 10).
+- **🗝️ the dungeon and ⛓️ the deep dungeon:** the barred window with its moonbeam, the torch, the chains hanging (with a skeleton in them when "💀 skeletons" asks for one), the shackles along the walls, the puddle and its drip, the straw and the bones on the floor, the cobwebs and the moss (the dungeon had 3 objects; now 14).
+
 ## 0.0.216 (2026-10-18)
 
 Everything in 0.0.215, with levers and trap doors that work together as soon as they are put in a place, for M.

@@ -110,12 +110,12 @@ function roomShell(c, tone, opts = {}) {
     t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((22 + 40 * u) * k)}" ry="${f1((6 + 14 * u) * k)}" fill="${R(i, 907) < 0.5 ? "#000000" : "#ffffff"}" opacity="0.06"/>`;
   }
   t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(...out(bw, floor, y1 + pad))} ${P(...out(-bw, floor, y1 + pad))}" fill="url(#bg-floorfade)"/>`;
-  if (opts.moss) for (let i = 0; i < 16; i++) {   // moss along the foot of the walls
+  if (opts.moss) t += wallObj("moss", [...Array(16)].map((_, i) => {   // moss along the foot of the walls (ticket 284: a wall object)
     const x = -bw + 2 * bw * R(i, 910);
-    t += `<ellipse cx="${f1(x)}" cy="${f1(floor - 3 * k)}" rx="${f1((14 + 18 * R(i, 911)) * k)}" ry="${f1((5 + 5 * R(i, 912)) * k)}" fill="${opts.moss}" opacity="0.8"/>`;
-  }
-  // cobwebs in the top corners
-  t += cobweb(-bw, top, 70 * k, 1, k) + cobweb(bw, top, 70 * k, -1, k);
+    return `<ellipse cx="${f1(x)}" cy="${f1(floor - 3 * k)}" rx="${f1((14 + 18 * R(i, 911)) * k)}" ry="${f1((5 + 5 * R(i, 912)) * k)}" fill="${opts.moss}" opacity="0.8"/>`;
+  }).join(""));
+  // cobwebs in the top corners (ticket 284: wall objects, each its own)
+  t += wallObj("cobweb, left", cobweb(-bw, top, 70 * k, 1, k)) + wallObj("cobweb, right", cobweb(bw, top, 70 * k, -1, k));
   return t;
 }
 // an arched doorway in the back wall, dark beyond, a sign over it
@@ -215,11 +215,11 @@ const pitRim = (cx, cy, rx, ry, k, R, i) => [...Array(12)].map((_, j) => { const
 function trapRoomSvg(c, K, pits, shapes = K.pitShapes) {
   const { x0, x1, y1, W, k, R, P } = c, { floor, top, bw, out } = roomFrame(c);
   let t = roomShell(c, ROOM_TONE.trap, { moss: "#4f6b3a" });
-  t += torchSvg(-bw * 0.62, floor - 210 * k, k, 0, c.o) + torchSvg(bw * 0.62, floor - 210 * k, k, 1, c.o);
+  t += wallObj("torch, left", torchSvg(-bw * 0.62, floor - 210 * k, k, 0, c.o)) + wallObj("torch, right", torchSvg(bw * 0.62, floor - 210 * k, k, 1, c.o));   // (ticket 284)
   // a lever on the wall, and a warning carved over the pits
-  t += leverSvg(bw * 0.32, floor - 150 * k, bw * 0.32 + 13 * k, floor - 130 * k, bw * 0.32 + 36 * k, floor - 168 * k, k) +
-       `<rect x="${f1(-bw * 0.38)}" y="${f1(top + 40 * k)}" width="${f1(bw * 0.76)}" height="${f1(44 * k)}" rx="${f1(6 * k)}" fill="#3a3530" opacity="0.85"/>` +
-       `<text x="0" y="${f1(top + 72 * k)}" text-anchor="middle" font-size="${f1(26 * k)}" font-weight="bold" fill="#f2c12e" font-family="sans-serif">⚠️ MIND THE FLOOR ⚠️</text>`;
+  t += wallObj("lever", leverSvg(bw * 0.32, floor - 150 * k, bw * 0.32 + 13 * k, floor - 130 * k, bw * 0.32 + 36 * k, floor - 168 * k, k)) +   // (ticket 284)
+       wallObj("warning sign", `<rect x="${f1(-bw * 0.38)}" y="${f1(top + 40 * k)}" width="${f1(bw * 0.76)}" height="${f1(44 * k)}" rx="${f1(6 * k)}" fill="#3a3530" opacity="0.85"/>` +
+       `<text x="0" y="${f1(top + 72 * k)}" text-anchor="middle" font-size="${f1(26 * k)}" font-weight="bold" fill="#f2c12e" font-family="sans-serif">⚠️ MIND THE FLOOR ⚠️</text>`);
   // the pits: dark holes in the floor, their rims of broken stone, rows of
   // spikes glinting inside
   [-1, 1].forEach((sd, i) => {
@@ -234,9 +234,9 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes) {
   // (the helmet an object, standing where its rim meets the floor; the pits
   // are holes in the floor, and the sword lies flat on it: neither stands,
   // so the sword is drawn first, under all that stands, the friend too)
-  t += `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.42)}" y2="${f1(floor + 110 * k)}" stroke="#c9ced6" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
+  t += floorObj("sword", `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.42)}" y2="${f1(floor + 110 * k)}" stroke="#c9ced6" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
        `<line x1="${f1(W * 0.33 - 5 * k)}" y1="${f1(floor + 118 * k)}" x2="${f1(W * 0.33 + 4 * k)}" y2="${f1(floor + 131 * k)}" stroke="#8b5e34" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
-       `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.31)}" y2="${f1(floor + 127 * k)}" stroke="#6e4a2c" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>` +
+       `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.31)}" y2="${f1(floor + 127 * k)}" stroke="#6e4a2c" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`) +   // (ticket 284: a floor object)
        obj("helmet", floor + 70 * k, `<path d="M${P(-W * 0.36, floor + 70 * k)} Q${P(-W * 0.36, floor + 40 * k)} ${P(-W * 0.33, floor + 40 * k)} Q${P(-W * 0.3, floor + 40 * k)} ${P(-W * 0.3, floor + 70 * k)} Z" fill="#9aa0aa" stroke="#5a5f6a" stroke-width="${f1(2 * k)}"/>`);
   return t;
 }
@@ -251,28 +251,28 @@ function dungeonSvg(c, K, deep, bones = 0) {
   let t = roomShell(c, deep ? ROOM_TONE.dungeon2 : ROOM_TONE.dungeon1, { moss: deep ? "#3f6b3a" : "#4a5a4a", floor: deep ? "#3a3e36" : "#45474e" });
   // the barred window, high in the back wall, and its beam of moonlight
   const wx = deep ? bw * 0.45 : -bw * 0.5, wy = top + 60 * k;
-  t += `<polygon points="${P(wx - 30 * k, wy + 30 * k)} ${P(wx + 30 * k, wy + 30 * k)} ${P(wx + 150 * k, floor + 90 * k)} ${P(wx - 20 * k, floor + 110 * k)}" fill="#cfe3ff" opacity="0.10"/>` +
+  t += wallObj("window", `<polygon points="${P(wx - 30 * k, wy + 30 * k)} ${P(wx + 30 * k, wy + 30 * k)} ${P(wx + 150 * k, floor + 90 * k)} ${P(wx - 20 * k, floor + 110 * k)}" fill="#cfe3ff" opacity="0.10"/>` +
        `<rect x="${f1(wx - 32 * k)}" y="${f1(wy - 24 * k)}" width="${f1(64 * k)}" height="${f1(52 * k)}" fill="#1b2840"/><circle cx="${f1(wx + 10 * k)}" cy="${f1(wy - 6 * k)}" r="${f1(10 * k)}" fill="#fff3c4"/>` +
        [...Array(5)].map((_, j) => `<line x1="${f1(wx - 26 * k + j * 13 * k)}" y1="${f1(wy - 24 * k)}" x2="${f1(wx - 26 * k + j * 13 * k)}" y2="${f1(wy + 28 * k)}" stroke="#3a3a44" stroke-width="${f1(4 * k)}"/>`).join("") +
-       `<rect x="${f1(wx - 32 * k)}" y="${f1(wy - 24 * k)}" width="${f1(64 * k)}" height="${f1(52 * k)}" fill="none" stroke="#2a2a32" stroke-width="${f1(5 * k)}"/>`;
-  t += torchSvg(deep ? -bw * 0.7 : bw * 0.7, floor - 200 * k, k, deep ? 2 : 1, c.o);
+       `<rect x="${f1(wx - 32 * k)}" y="${f1(wy - 24 * k)}" width="${f1(64 * k)}" height="${f1(52 * k)}" fill="none" stroke="#2a2a32" stroke-width="${f1(5 * k)}"/>`);   // (ticket 284: wall objects, the window with its moonbeam, the torch)
+  t += wallObj("torch", torchSvg(deep ? -bw * 0.7 : bw * 0.7, floor - 200 * k, k, deep ? 2 : 1, c.o));
   // skeletons hanging by their wrists from the back wall, chains to their shackles
   // (or, with none, the chains hanging empty, an open cuff at each end)
   const hung = deep ? [[-bw * 0.15, 1, bones >= 4]] : [[-bw * 0.05, 1.1, bones >= 1], [bw * 0.3, 1, bones >= 2]];
-  for (const [hx, z, shown] of hung) {
+  for (const [hi, [hx, z, shown]] of hung.entries()) {
     const s = 2.1 * k * z, hy = floor - 230 * k * z;
-    t += shackle(hx - 20 * s, hy - 40 * s, s) + shackle(hx + 20 * s, hy - 40 * s, s) + chainSvg(hx - 20 * s, hy - 32 * s, 14 * s, s) + chainSvg(hx + 20 * s, hy - 32 * s, 14 * s, s) +
-         (shown ? skeletonSvg(hx, hy, s, "hang") : [-1, 1].map(e => `<path d="M${f1(hx + e * 20 * s - 4 * s)} ${f1(hy - 18 * s)} a${f1(4 * s)} ${f1(4 * s)} 0 1 0 ${f1(8 * s)} 0" fill="none" stroke="#5a5a66" stroke-width="${f1(1.8 * s)}"/>`).join(""));
+    t += wallObj(hung.length > 1 ? `chains ${hi + 1}` : "chains", shackle(hx - 20 * s, hy - 40 * s, s) + shackle(hx + 20 * s, hy - 40 * s, s) + chainSvg(hx - 20 * s, hy - 32 * s, 14 * s, s) + chainSvg(hx + 20 * s, hy - 32 * s, 14 * s, s) +
+         (shown ? skeletonSvg(hx, hy, s, "hang") : [-1, 1].map(e => `<path d="M${f1(hx + e * 20 * s - 4 * s)} ${f1(hy - 18 * s)} a${f1(4 * s)} ${f1(4 * s)} 0 1 0 ${f1(8 * s)} 0" fill="none" stroke="#5a5a66" stroke-width="${f1(1.8 * s)}"/>`).join("")));   // (ticket 284: a wall object)
   }
   // empty shackles and chains along the walls
-  for (const sx of deep ? [-bw * 0.45, bw * 0.05] : [-bw * 0.75, bw * 0.55]) t += shackle(sx, floor - 150 * k, 2 * k) + chainSvg(sx, floor - 140 * k, 90 * k, 2 * k);
+  for (const [si, sx] of (deep ? [-bw * 0.45, bw * 0.05] : [-bw * 0.75, bw * 0.55]).entries()) t += wallObj(`shackles ${si + 1}`, shackle(sx, floor - 150 * k, 2 * k) + chainSvg(sx, floor - 140 * k, 90 * k, 2 * k));   // (ticket 284)
   // water dripping from the ceiling into a puddle
   // (flat on the floor, and the drop no object: drawn before all that stands, the friend too)
   const dx = deep ? -bw * 0.05 : bw * 0.1;
-  t += `<ellipse cx="${f1(dx)}" cy="${f1(floor + 40 * k)}" rx="${f1(50 * k)}" ry="${f1(10 * k)}" fill="#5f7fa0" opacity="0.5"/>` +
+  t += floorObj("puddle and drip", `<ellipse cx="${f1(dx)}" cy="${f1(floor + 40 * k)}" rx="${f1(50 * k)}" ry="${f1(10 * k)}" fill="#5f7fa0" opacity="0.5"/>` +
        `<ellipse cx="${f1(dx)}" cy="${f1(floor + 40 * k)}" rx="${f1(10 * k)}" ry="${f1(2 * k)}" fill="none" stroke="#cfe3ff" stroke-width="${f1(1.5 * k)}" opacity="0.7">` +
        `<animate attributeName="rx" values="${f1(4 * k)};${f1(40 * k)}" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="1.6s" repeatCount="indefinite"/></ellipse>` +
-       `<circle cx="${f1(dx)}" cy="${f1(top)}" r="${f1(3 * k)}" fill="#cfe3ff"><animate attributeName="cy" values="${f1(top)};${f1(floor + 40 * k)}" dur="1.6s" repeatCount="indefinite"/></circle>`;
+       `<circle cx="${f1(dx)}" cy="${f1(top)}" r="${f1(3 * k)}" fill="#cfe3ff"><animate attributeName="cy" values="${f1(top)};${f1(floor + 40 * k)}" dur="1.6s" repeatCount="indefinite"/></circle>`);   // (ticket 284: the drip falls into it)
   if (deep) {
     // a cage hanging from the ceiling, a skeleton curled inside
     // (an object, as a thing hung from the ceiling is: at the floor under it,
@@ -310,11 +310,14 @@ function dungeonSvg(c, K, deep, bones = 0) {
          `<ellipse cx="${f1(sx)}" cy="${f1(sy - 19 * s2)}" rx="${f1(2.6 * s2)}" ry="${f1(5 * s2)}" fill="#ffb53b"><animate attributeName="ry" values="${f1(5 * s2)};${f1(3.6 * s2)};${f1(5.4 * s2)};${f1(5 * s2)}" dur="0.9s" repeatCount="indefinite"/></ellipse>`);
   } else {
     // straw on the floor, a bucket, a rat, scattered bones
+    let straw = "";   // (ticket 284: a floor object)
     for (let i = 0; i < 30; i++) { const x = -W * 0.32 + 120 * k * R(i, 950), y = floor + (40 + 50 * R(i, 951)) * k, a = (R(i, 952) - 0.5) * 1.4, l = (18 + 14 * R(i, 953)) * k;
-      t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + Math.cos(a) * l)}" y2="${f1(y + Math.sin(a) * l * 0.4)}" stroke="${R(i, 954) < 0.5 ? "#d9b85c" : "#b8953e"}" stroke-width="${f1(2.5 * k)}" stroke-linecap="round"/>`; }
+      straw += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + Math.cos(a) * l)}" y2="${f1(y + Math.sin(a) * l * 0.4)}" stroke="${R(i, 954) < 0.5 ? "#d9b85c" : "#b8953e"}" stroke-width="${f1(2.5 * k)}" stroke-linecap="round"/>`; }
+    t += floorObj("straw", straw);
     // (the bones lie flat on the floor: drawn before what stands)
-    if (bones >= 1) for (let i = 0; i < 4; i++) { const x = W * (-0.1 + 0.12 * i), y = floor + (90 + 40 * R(i, 960)) * k, a = R(i, 961) * 3;
-      t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + Math.cos(a) * 26 * k)}" y2="${f1(y + Math.sin(a) * 8 * k)}" stroke="#efe8d6" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>`; }
+    if (bones >= 1) { let bn = ""; for (let i = 0; i < 4; i++) { const x = W * (-0.1 + 0.12 * i), y = floor + (90 + 40 * R(i, 960)) * k, a = R(i, 961) * 3;
+      bn += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + Math.cos(a) * 26 * k)}" y2="${f1(y + Math.sin(a) * 8 * k)}" stroke="#efe8d6" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>`; }
+      t += floorObj("bones", bn); }   // (ticket 284: a floor object)
     // (the bucket and the rat objects, each standing where its bottom meets the floor)
     t += obj("bucket", floor + 110 * k, `<path d="M${P(W * 0.18, floor + 60 * k)} L${P(W * 0.17, floor + 110 * k)} L${P(W * 0.25, floor + 110 * k)} L${P(W * 0.24, floor + 60 * k)} Z" fill="#6e4a2c"/>` +
          `<ellipse cx="${f1(W * 0.21)}" cy="${f1(floor + 60 * k)}" rx="${f1(W * 0.03)}" ry="${f1(6 * k)}" fill="#4a3a2a"/>` +

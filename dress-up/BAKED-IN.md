@@ -3,6 +3,7 @@
 The audit of ticket 284 (Matthew, 2026-10-18: "audit each scene for objects that we can offer as new placed objects"; "produce a list of things 'baked into' the background draw that aren't made into objects under the current inspection system, and work towards making each object show up that way, and be placeable").
 
 - [OBJECTS.md](OBJECTS.md) lists what **stands** in each place: its objects. Since 0.0.208, every one of them can be placed in any place: 🏞️ Background, the things' group **📦 from the places**. Ways out, doors and ladders are not offered.
+- **Since 0.0.217, wall and floor things are objects of their own kind** (`wallObj`, `floorObj`): the castle rooms' cobwebs and moss, and everything listed below for 🕳️ the trap room, 🗝️ the dungeon and ⛓️ the deep dungeon, are objects now.
 - **This page lists the rest:** things drawn into a place's background that are not objects, so they cannot be hidden with an 👁️ chip, seen by ♿'s inspection, or placed. Each is a step toward the ticket's end: every object in each scene is something that can also be placed.
 - As of 0.0.208, from a reading of each place's drawing code (nothing was run). **Where** is wall, hanging, flat (on the floor or the ground) or sky. **In the code** is the part of `js/` and the line, at that version: check it before relying on it. The sun, moon, stars and clouds of every outdoor place are left out.
 

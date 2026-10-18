@@ -708,4 +708,4 @@ let figShown = [];
 // (the objects are put in order by depth, nearest last, in the places they
 // held: a scene's later pieces, as a castle room's cats, drawn after the
 // room, then stand among its furniture; what is between them stays put)
-const objDepth = n => n.getAttribute("data-z") === "front" ? Infinity : Number(n.getAttribute("data-z"));
+const objDepth = n => n.getAttribute("data-z") === "front" ? Infinity : n.getAttribute("data-z") === "back" ? -Infinity : Number(n.getAttribute("data-z"));   // (ticket 284: back, a wall or floor thing)

@@ -1258,13 +1258,15 @@ function liftedOf(place) {
     const byId = new Map([...doc.querySelectorAll("[id]")].map(e => [e.id, e]));
     for (const g of doc.querySelectorAll("g[data-obj]")) {
       const name = g.getAttribute("data-obj"), z = Number(g.getAttribute("data-z"));
-      if (objs.has(name) || !Number.isFinite(z) || LIFT_SKIP.test(name) || g.parentElement.closest("[data-obj]")) continue;
+      if (objs.has(name) || z === Infinity || !(Number.isFinite(z) || z === -Infinity) || LIFT_SKIP.test(name) || g.parentElement.closest("[data-obj]")) continue;
       // (the definitions it uses outside itself, and the ones those use)
       const defs = [], seen = new Set(), scan = s => { for (const m of s.matchAll(/url\(#([^)"']+)\)|href="#([^"]+)"/g)) { const id = m[1] || m[2], d = byId.get(id);
         if (d && !seen.has(id) && !g.contains(d)) { seen.add(id); defs.push(d.outerHTML); scan(d.outerHTML); } } };
       const inner = g.innerHTML;
       scan(inner);
-      objs.set(name, { z, inner, defs: defs.length ? `<defs>${defs.join("")}</defs>` : "", s0: depthSize(B, z - SCENE.ground), cx: null, moves: /<animate/.test(inner) });
+      // (ticket 284: a wall or floor thing, at the back, is lifted from the ground line: it keeps its height above it)
+      const z0 = Number.isFinite(z) ? z : SCENE.ground;
+      objs.set(name, { z: z0, inner, defs: defs.length ? `<defs>${defs.join("")}</defs>` : "", s0: depthSize(B, z0 - SCENE.ground), cx: null, moves: /<animate/.test(inner) });
     }
   } catch (e) { console.warn("📦 could not take things from", place, e); }
   L = { B, objs };

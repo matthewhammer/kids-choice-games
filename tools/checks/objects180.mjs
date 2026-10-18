@@ -46,7 +46,7 @@ try {
       const box = r => { const m = 8, x0 = Math.max(P.left, r.left - m), y0 = Math.max(P.top, r.top - m), x1 = Math.min(P.right, r.right + m), y1 = Math.min(P.bottom, r.bottom + m);
         return x1 - x0 >= 4 && y1 - y0 >= 4 ? { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } : null; };
       return JSON.stringify({ pic: { x: P.left, y: P.top, width: P.width, height: P.height },
-        objects: bgShown.objs.map(o => ({ name: o.name, z: Number.isFinite(o.z) ? Math.round(o.z * 10) / 10 : "front", clip: box(o.node.getBoundingClientRect()) })) });
+        objects: bgShown.objs.map(o => ({ name: o.name, z: Number.isFinite(o.z) ? Math.round(o.z * 10) / 10 : o.z === -Infinity ? (o.layer || "back") : "front", clip: box(o.node.getBoundingClientRect()) })) });
     })()`));
     const dir = `${OUT}/${slug(kind)}`; mkdirSync(dir, { recursive: true });
     await shot(R.pic, `${dir}/place.webp`, 0.5);

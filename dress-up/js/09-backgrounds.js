@@ -48,6 +48,13 @@ const unmarked = svg => svg.replaceAll(SEP, "").replaceAll(' data-ladder="1"', "
 // (or a doorway, or a thing to drag) can have the friend stand in front of
 // it; one inside another object is part of that one.
 const obj = (name, z, svg) => OPEN(`<g data-obj="${name}" data-z="${Number.isFinite(z) ? f1(z) : "front"}">`) + svg + CLOSE;
+// (ticket 284, Matthew: "wall and floor things become another kind of object in our system") A thing hanging on a wall or
+// lying on the floor (a torch, a lever, a sign, cobwebs, moss, a sword dropped there) is an object too: named, in ♿'s list
+// with a 👁️ chip, hidden with it, lifted by 📦; but at the back (data-z "back", depth -Infinity): drawn where it is, the
+// friend always in front of it, and standing in nobody's way (no collision box: a standing object needs a depth). Its kind,
+// wall or floor, is its data-layer.
+const wallObj = (name, svg) => OPEN(`<g data-obj="${name}" data-z="back" data-layer="wall">`) + svg + CLOSE;
+const floorObj = (name, svg) => OPEN(`<g data-obj="${name}" data-z="back" data-layer="floor">`) + svg + CLOSE;
 // (ticket 252, Matthew: "for each tree-house trap door (defined by two houses, stacked) we get to choose the opening:
 // triangle, square (current image), circle (like the pits in the castle). Same for the pits") An opening in a floor or
 // a ceiling, seen in perspective: its middle (cx, cy), half its width (rx) and half its depth (ry). A floor's far edge
