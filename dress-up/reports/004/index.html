@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Folder, Every Run</title>
+<style>
+  :root { --bg: #fbfaf7; --paper: #ffffff; --ink: #1f2328; --muted: #5b6470; --line: #e3e0d8; --accent: #6d28d9; --soft: #cbbcf0; --alt: #0f8b7d; --good: #15803d; --bad: #b91c1c; --link: #1d4ed8; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --alt: #2dd4bf; --good: #4ade80; --bad: #f87171; --link: #93c5fd; } }
+  :root[data-theme="dark"] { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --alt: #2dd4bf; --good: #4ade80; --bad: #f87171; --link: #93c5fd; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 2em; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 1.35em; margin: 48px 0 10px; padding-top: 8px; border-top: 2px solid var(--line); }
+  h3 { font-size: 1.08em; margin: 24px 0 6px; }
+  p, li { max-width: 72ch; }
+  .series { color: var(--muted); margin: 0 0 6px; font-size: 0.92em; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .headline { background: var(--paper); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 6px; }
+  .headline ol > li { margin: 8px 0; }
+  a { color: var(--link); text-underline-offset: 2px; }
+  a.ref code, code { font-size: 0.9em; }
+  code { background: color-mix(in srgb, var(--line) 50%, transparent); padding: 0 4px; border-radius: 4px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 18px 0; }
+  .kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .kpi .v { font-size: 1.7em; font-weight: 700; } .kpi .l { color: var(--muted); font-size: 0.9em; }
+  .good { color: var(--good); } .bad { color: var(--bad); }
+  figure { margin: 18px 0; } figcaption { color: var(--muted); font-size: 0.9em; margin-top: 6px; max-width: 72ch; }
+  svg.chart { width: 100%; height: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; }
+  svg.chart .grid { stroke: var(--line); } svg.chart .tick { fill: var(--muted); font-size: 11px; }
+  svg.chart .lab { fill: var(--ink); font-size: 12px; } svg.chart .val1 { fill: var(--ink); font-size: 11px; font-weight: 600; }
+  svg.chart .b0 { fill: var(--soft); } svg.chart .b2 { fill: var(--alt); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92em; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; } td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .note { color: var(--muted); font-size: 0.9em; }
+  ol.steps { list-style: none; padding-left: 0; } ol.steps li { margin: 12px 0; border-left: 3px solid var(--line); padding-left: 12px; }
+  .stepnum a { font-weight: 700; text-decoration: none; }
+  button.tk, button.theme { font: inherit; font-size: 0.8em; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; }
+  button.theme { position: fixed; top: 10px; right: 10px; }
+  .pair { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+  .three { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+  .three img, .three canvas { width: 100%; height: auto; display: block; border-radius: 8px; background: #fff; }
+  .three span { display: block; color: var(--muted); font-size: 0.82em; margin-top: 3px; }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../004/"><code><b>^du_report(</b>4<b>)</b></code></a> · 2026-10-18 · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after <a class="ref" href="../003/"><code><b>^du_report(</b>3<b>)</b></code></a></p>
+<h1>One folder, every run</h1>
+<p class="sub">How can the game's picture archive keep a year or more of runs in one repository, and what did moving it show about the pictures themselves? The archive passed GitHub Pages' 1 GB after five runs; on 2026-10-18 it was moved to a new layout (<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-272"><code><b>^ticket(</b>272<b>)</b></code></a>). Measured that day, on the archives' own files and on GitHub's computers.</p>
+
+<div class="headline" id="answers">
+<p><b>Short answers.</b> Sizes are the archives' files, MB of 10<sup>6</sup> bytes; git's sizes are MiB. Each run is one run of the archive (<a href="#method">below</a>).</p>
+<ol>
+<li><b>The PNGs were most of it, and now there are none.</b> A run's PNGs (every picture 1920 wide) came to 185.1 to 396.9 MB, 88.2 to 369.3 MB of it new after the links to earlier runs. No PNG is kept now: a PNG is drawn from the SVG when someone asks for one, in their own browser.</li>
+<li><b>One folder, rewritten by every run, and every run a git tag.</b> Git stores a file once however many runs share it, and a file that changes a little as a small difference. The same five runs take 24.44 MiB this way, against 768 MiB on GitHub before; with today's sixth, 30.99 MiB. A run added 97.2 to 312.5 MiB to git before, and 1.62 to 9.78 MiB now. The site holds only the newest run: 132 MB, against 1.3 GB.</li>
+<li><b>The thumbnails are the same size,</b> 7.3 MB for 530 before and 7.4 MB for 530 now, drawn by Chrome from the SVG instead of by ffmpeg from the PNG. Every one changed once, today, with the encoder: about 7 of today's 7.6 MiB.</li>
+<li><b>The settings file did not decide its drawing.</b> Four things outside it changed every run, so the archive kept "changes" that were not changes: the settings file's own saved time (no settings file was ever the same as the run before's: 367 of 367 stored again on 10/17), animation phases read from the page's clocks, random choices (a figure's clip-path id), and bubble space's bubbles, a simulation that moves every frame. The archive holds the clocks and the random still now, and two runs of one game commit come out the same but for bubble space, a simulation whose bubbles move every frame. <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-274"><code><b>^ticket(</b>274<b>)</b></code></a> would put what decides a drawing in the file, and <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-275"><code><b>^ticket(</b>275<b>)</b></code></a> would mark the rest as extra.</li>
+<li><b>0.0.198's hidden drawings, left out, look the same.</b> The waterfall's SVG went from 183 to 116 KB and from 634 to 504 shapes, with the same 63 animations; 0.54% of its pixels differ. In the eight places compared, 0.05% to 1.48% differ.</li>
+</ol>
+</div>
+
+<div class="kpis">
+<div class="kpi"><div class="v good">397 → 0 MB</div><div class="l">PNGs in a run (530 pictures, 0.0.197 → 0.0.201)</div></div>
+<div class="kpi"><div class="v good">768 → 24 MiB</div><div class="l">the same five runs in git (GitHub's size before; packed now)</div></div>
+<div class="kpi"><div class="v">7.3 → 7.4 MB</div><div class="l">thumbnails for 530 pictures (ffmpeg → Chrome)</div></div>
+<div class="kpi"><div class="v good">183 → 116 KB</div><div class="l">the waterfall's SVG, 0.0.197 → 0.0.201; 0.54% of pixels differ</div></div>
+</div>
+
+<h2 id="places">The places that lost their hidden drawings</h2>
+<p>Released in 0.0.198 (2026-10-17): in each place, a tree, pine, leaf pad, bush's pad or flower more than 75% hidden behind what is drawn in front of it is left out. Each pair below is the game's own drawing at 0.0.197 and at 0.0.201, from the two runs of the archive either side, moving; the third picture is drawn here, by your browser, from the two: each still, with the pixels that differ in magenta over a faded copy.</p>
+<figure class="pair" data-before="pictures/waterfall-0.0.197.svg" data-after="pictures/waterfall-0.0.201.svg"><div class="three"><div><img src="pictures/waterfall-0.0.197.svg" alt="💦 The waterfall: its far jungle, 0.0.197" loading="lazy"><span>0.0.197 · 183 KB · 634 shapes</span></div><div><img src="pictures/waterfall-0.0.201.svg" alt="💦 The waterfall: its far jungle, 0.0.201" loading="lazy"><span>0.0.201 · 116 KB · 504 shapes</span></div><div><canvas width="480" height="356" aria-label="Where the two differ"></canvas><span>where they differ, still: 0.54% of pixels</span></div></div><figcaption><b>💦 The waterfall: its far jungle</b></figcaption></figure>
+<figure class="pair" data-before="pictures/clearing-0.0.197.svg" data-after="pictures/clearing-0.0.201.svg"><div class="three"><div><img src="pictures/clearing-0.0.197.svg" alt="🌳 The clearing, 0.0.197" loading="lazy"><span>0.0.197 · 335 KB · 1,476 shapes</span></div><div><img src="pictures/clearing-0.0.201.svg" alt="🌳 The clearing, 0.0.201" loading="lazy"><span>0.0.201 · 299 KB · 1,394 shapes</span></div><div><canvas width="480" height="356" aria-label="Where the two differ"></canvas><span>where they differ, still: 1.48% of pixels</span></div></div><figcaption><b>🌳 The clearing</b></figcaption></figure>
+<figure class="pair" data-before="pictures/treehouse-0.0.197.svg" data-after="pictures/treehouse-0.0.201.svg"><div class="three"><div><img src="pictures/treehouse-0.0.197.svg" alt="🌳 The tree house: its leaves and its flowers behind the trunk, 0.0.197" loading="lazy"><span>0.0.197 · 214 KB · 779 shapes</span></div><div><img src="pictures/treehouse-0.0.201.svg" alt="🌳 The tree house: its leaves and its flowers behind the trunk, 0.0.201" loading="lazy"><span>0.0.201 · 192 KB · 719 shapes</span></div><div><canvas width="480" height="356" aria-label="Where the two differ"></canvas><span>where they differ, still: 1.20% of pixels</span></div></div><figcaption><b>🌳 The tree house: its leaves and its flowers behind the trunk</b></figcaption></figure>
+<p>Where the magenta falls: on the edges of what was left out, which could show by up to a quarter (the far jungle beside the waterfall's cliff, the far rows of trees in the clearing, the tree house's leaves and the flowers at its foot), and on the ripples round the friend in the water, which move. The rest of each picture is the same, in 10% (the tree house) to 37% (the waterfall) fewer bytes.</p>
+<div class="scroll"><table><tr><th>place (with the friend)</th><th>SVG, 0.0.197 → 0.0.201</th><th>shapes drawn</th><th>animations</th><th>pixels that differ</th></tr><tr><td>waterfall</td><td class="n">183 → 116 KB (-37%)</td><td class="n">634 → 504</td><td class="n">63 → 63</td><td class="n">0.54%</td></tr><tr><td>clearing</td><td class="n">335 → 299 KB (-11%)</td><td class="n">1,476 → 1,394</td><td class="n">13 → 13</td><td class="n">1.48%</td></tr><tr><td>treehouse</td><td class="n">214 → 192 KB (-10%)</td><td class="n">779 → 719</td><td class="n">36 → 36</td><td class="n">1.20%</td></tr><tr><td>castle</td><td class="n">215 → 197 KB (-9%)</td><td class="n">1,020 → 980</td><td class="n">19 → 19</td><td class="n">0.17%</td></tr><tr><td>cemetery</td><td class="n">131 → 116 KB (-11%)</td><td class="n">719 → 692</td><td class="n">32 → 32</td><td class="n">0.05%</td></tr><tr><td>fairyforest</td><td class="n">135 → 126 KB (-7%)</td><td class="n">608 → 582</td><td class="n">32 → 32</td><td class="n">1.24%</td></tr><tr><td>forest</td><td class="n">106 → 100 KB (-6%)</td><td class="n">465 → 443</td><td class="n">16 → 16</td><td class="n">1.40%</td></tr><tr><td>house</td><td class="n">118 → 108 KB (-8%)</td><td class="n">442 → 424</td><td class="n">12 → 12</td><td class="n">–</td></tr><tr><td>lake</td><td class="n">154 → 149 KB (-3%)</td><td class="n">641 → 632</td><td class="n">37 → 37</td><td class="n">0.17%</td></tr><tr><td><b>all 39 places</b></td><td class="n"><b>5.84 → 5.47 MB (-6.4%)</b></td><td class="n"><b>22,341 → 21,907</b></td><td class="n">820 → 820</td><td></td></tr></table></div>
+<p class="note">Shapes drawn: the SVG's path, polygon, polyline, ellipse, circle, rect, line, use, text and image elements. The release notes count 675 fewer drawn across the places at their defaults; this count is of shapes in the 39 pictures with the friend, so the two differ. Between these two runs the game also changed where the friend arrives (0.0.200) and the music's timing (0.0.199), so a difference can be one of those. Pixels compared by Chrome 152 on Matthew's laptop, each picture still, 960 wide.</p>
+
+<h2 id="sizes">Where the space went</h2>
+<figure id="fig-1"><svg class="chart" viewBox="0 0 760 280" role="img" aria-label="What each run added to git, old archive against new"><line class="grid" x1="230.0" y1="6" x2="230.0" y2="260"/><text class="tick" x="230.0" y="274" text-anchor="middle">0 MiB</text><line class="grid" x1="347.5" y1="6" x2="347.5" y2="260"/><text class="tick" x="347.5" y="274" text-anchor="middle">80 MiB</text><line class="grid" x1="465.0" y1="6" x2="465.0" y2="260"/><text class="tick" x="465.0" y="274" text-anchor="middle">160 MiB</text><line class="grid" x1="582.5" y1="6" x2="582.5" y2="260"/><text class="tick" x="582.5" y="274" text-anchor="middle">240 MiB</text><line class="grid" x1="700.0" y1="6" x2="700.0" y2="260"/><text class="tick" x="700.0" y="274" text-anchor="middle">320 MiB</text><text class="lab" x="222" y="31" text-anchor="end">2026/10/15 · 0.0.36</text><rect class="b0" x="230" y="14" width="261.1" height="13" rx="2"/><text class="val1" x="496.1" y="25">177.8 (folder per run, PNGs)</text><rect class="b2" x="230" y="29" width="5.9" height="13" rx="2"/><text class="val1" x="240.9" y="40">4.0 (one folder, no PNG)</text><text class="lab" x="222" y="71" text-anchor="end">2026/10/15/20-44 · 0.0.55</text><rect class="b0" x="230" y="54" width="331.8" height="13" rx="2"/><text class="val1" x="566.8" y="65">225.9 (folder per run, PNGs)</text><rect class="b2" x="230" y="69" width="7.6" height="13" rx="2"/><text class="val1" x="242.6" y="80">5.2 (one folder, no PNG)</text><text class="lab" x="222" y="111" text-anchor="end">2026/10/16 · 0.0.90</text><rect class="b0" x="230" y="94" width="289.6" height="13" rx="2"/><text class="val1" x="524.6" y="105">197.2 (folder per run, PNGs)</text><rect class="b2" x="230" y="109" width="5.5" height="13" rx="2"/><text class="val1" x="240.5" y="120">3.7 (one folder, no PNG)</text><text class="lab" x="222" y="151" text-anchor="end">2026/10/17 · 0.0.94</text><rect class="b0" x="230" y="134" width="142.8" height="13" rx="2"/><text class="val1" x="377.8" y="145">97.2 (folder per run, PNGs)</text><rect class="b2" x="230" y="149" width="2.4" height="13" rx="2"/><text class="val1" x="237.4" y="160">1.6 (one folder, no PNG)</text><text class="lab" x="222" y="191" text-anchor="end">2026/10/17/22-28 · 0.0.197</text><rect class="b0" x="230" y="174" width="459.0" height="13" rx="2"/><text class="val1" x="694.0" y="185">312.5 (folder per run, PNGs)</text><rect class="b2" x="230" y="189" width="14.4" height="13" rx="2"/><text class="val1" x="249.4" y="200">9.8 (one folder, no PNG)</text><text class="lab" x="222" y="231" text-anchor="end">2026/10/18 · 0.0.201</text><text class="tick" x="234" y="225">(made after the move)</text><rect class="b2" x="230" y="229" width="11.2" height="13" rx="2"/><text class="val1" x="246.2" y="240">7.6 (one folder, no PNG)</text></svg>
+<figcaption>Figure 1. What each run added to git, the old archive (a folder per run, PNGs, unchanged files linked to the run before) against the new (one folder, no PNG). Old: on the laptop, its objects compressed one by one; GitHub, packing them, holds all five in 768 MiB. New: packed. The 2026/10/18 run includes about 7 MiB of thumbnails re-encoded once.</figcaption></figure>
+<div class="scroll"><table><tr><th>run</th><th>game</th><th>drawings</th><th>PNGs, the whole run</th><th>PNGs stored (not links)</th><th>SVGs</th><th>settings JSON</th><th>WebP thumbnails</th><th>added to git</th></tr><tr><td>2026/10/15</td><td>0.0.36</td><td class="n">266</td><td class="n">185.1 MB</td><td class="n">185.1 MB (266)</td><td class="n">35.9 MB</td><td class="n">6.6 MB</td><td class="n">3.8 MB</td><td class="n">177.8 MiB → 3.99 MiB</td></tr><tr><td>2026/10/15/20-44</td><td>0.0.55</td><td class="n">323</td><td class="n">241.2 MB</td><td class="n">241.2 MB (323)</td><td class="n">57.9 MB</td><td class="n">13.7 MB</td><td class="n">4.5 MB</td><td class="n">225.9 MiB → 5.19 MiB</td></tr><tr><td>2026/10/16</td><td>0.0.90</td><td class="n">349</td><td class="n">245.5 MB</td><td class="n">203.1 MB (297)</td><td class="n">69.2 MB</td><td class="n">14.9 MB</td><td class="n">4.8 MB</td><td class="n">197.2 MiB → 3.73 MiB</td></tr><tr><td>2026/10/17</td><td>0.0.94</td><td class="n">367</td><td class="n">260.9 MB</td><td class="n">88.2 MB (103)</td><td class="n">76.4 MB</td><td class="n">15.7 MB</td><td class="n">5.1 MB</td><td class="n">97.2 MiB → 1.62 MiB</td></tr><tr><td>2026/10/17/22-28</td><td>0.0.197</td><td class="n">530</td><td class="n">396.9 MB</td><td class="n">369.3 MB (495)</td><td class="n">99.0 MB</td><td class="n">37.2 MB</td><td class="n">7.3 MB</td><td class="n">312.5 MiB → 9.78 MiB</td></tr><tr><td>2026/10/18</td><td>0.0.201</td><td class="n">530</td><td class="n good">none</td><td class="n good">none</td><td class="n">92.5 MB</td><td class="n">37.5 MB</td><td class="n">7.4 MB</td><td class="n">7.6 MiB</td></tr></table></div>
+<p class="note">"The whole run" counts every file, links followed; "stored" counts only files that were not links to an earlier run. The first 10/15 run (0.0.36) survived only in git: the second (0.0.55) was written over it in the same folder; both are runs in the new archive.</p>
+
+<h2 id="layout">One folder, every run a tag</h2>
+<p>The new <a href="https://github.com/matthewhammer/dress-up-pictures">dress-up-pictures</a> keeps one folder, <code>pictures/</code>, replaced whole by each run: each drawing's SVG (animations and all), its settings in the game's save format (the game's 📂 Load opens them) and a 480-wide WebP thumbnail, with the run's manifest and page. Each run is a tag, <code>run-2026-10-18</code>; <code>runs.json</code> lists them. The site serves the newest run; the <a href="https://matthewhammer.org/hazel/dress-up/pictures.html">picture viewer</a> reads an earlier one from its tag, and GitHub shows a tag's files or gives it as a zip. The five runs before the move were replayed into it from the old archive's commits, so its history starts at 2026-10-15.</p>
+<p>The old archive is kept as it was, read-only, as <a href="https://github.com/matthewhammer/dress-up-pictures-2026-10-18">dress-up-pictures-2026-10-18</a>, PNGs and all; a link into its folders by day under the old name is sent there. The music archive, <a href="https://github.com/matthewhammer/dress-up-music">dress-up-music</a>, moved the same way: one copy of each tune, <code>music/&lt;tune&gt;.mp3</code>, each run a tag. Its second run (0.0.201) recorded one tune, the 🔥 turtle super-dub step; the other 28 had not changed since 0.0.42 and kept their files, so the run cost only the new tune's 1.5 MB.</p>
+<p>Runs are made on GitHub's computers (Chrome 155, headless), as no browser runs on Matthew's laptop since 2026-10-16; the laptop only adds a finished run, with no browser and no ffmpeg. A year of daily runs at today's 2 to 10 MiB a run would come to roughly 0.7 to 2 GB, under GitHub's 5 GB for a repository; the site stays one run's size.</p>
+
+<h2 id="thumbs">The thumbnails</h2>
+<p>Before, each thumbnail was made on the laptop from the 1920-wide PNG, scaled to 480 by ffmpeg (WebP, quality 72). Now Chrome draws the SVG 480 wide and encodes it (WebP, quality 0.72), in the same run that draws the pictures, so no PNG is made at all. For the 530 pictures of a run: 7.3 MB before, 7.4 MB now. All 530 differ in their bytes from the run before, once; from now on a thumbnail changes when its drawing does.</p>
+
+<h2 id="json">What the settings file does not decide</h2>
+<p>A drawing's settings file is meant to draw it again: Load it in the game at the run's version, and the same picture comes out. Moving the archive showed four things that changed between runs while the settings stayed the same:</p>
+<div class="scroll"><table><tr><th>what</th><th>where, in 0.0.201</th><th>what it did to the archive</th></tr>
+<tr><td>the saved time</td><td>24-surprise-save-start-over.js:135 writes saved: d.toISOString(); Load (line 208 on) never reads it</td><td>no settings file was ever byte-equal to an earlier run&#x27;s: 349 of 349 stored on 10/16, 367 of 367 on 10/17</td></tr><tr><td>animation phases from the page&#x27;s clocks</td><td>fairyPhase (08-body.js:132) from performance.now(); lfoBegin (08-body.js:614) from the picture&#x27;s SVG clock less musicSeconds() (08-body.js:587), the page&#x27;s clock when no tune sounds</td><td>an animated drawing came out different every run</td></tr><tr><td>random choices</td><td>a figure&#x27;s clip-path id, fig-clip- and six random letters (18-drawing.js:900); bubble space&#x27;s bubbles (14-outdoors.js:826)</td><td>the climbs and bubble space differed between two runs of one game commit; seeded, the climbs match</td></tr><tr><td>a simulation&#x27;s state</td><td>bubble space&#x27;s bubbles, moved every frame by bubbleTick (14-outdoors.js:819), timed by requestAnimationFrame</td><td>bubble space&#x27;s 6 pictures differed between two runs of one game commit even with the clocks held and the random seeded</td></tr>
+</table></div>
+<p>The old archive linked a file to the run before's only when the two were the same, byte for byte. Its counts show what got through: on 10/17, 103 of 367 PNGs were new (a still leaves the animations out), but 265 of 367 SVGs and 367 of 367 settings files.</p>
+<p><b>What the archive does now</b> (<code>archive.mjs</code>, 5d19609 and a73a50a): it leaves the saved time out of the settings it keeps (Load ignores it), holds the page's clocks at 0 before each picture, and gives the page a seeded random, started from the same seed before each picture. Two runs of one game commit, at once on GitHub, with the clocks held: 15 of 525 SVGs still differed (bubble space (6: plain, made of, collision boxes, each with and without the friend) and 9 climbs (clip-path ids)), and none of the settings files. Run again with the seeded random (the same two runs, again at once): the climbs now match too, and of 525 drawings only bubble space still differs, its 6 SVGs and their 6 thumbnails; every drawing&#x27;s settings file matched. Bubble space is a simulation: its bubbles move a little every frame, timed by the frame itself (requestAnimationFrame), so where they stand depends on how many frames ran before the picture was taken, and nothing in the settings says.</p>
+<p><b>Two kinds of file, proposed.</b> The game's own save should carry what decides the drawing, a random seed and a time origin for the phases, and for a simulation like bubble space either its state or a rule that draws it from the seed and the time, so that its file alone draws the same SVG every time (<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-274"><code><b>^ticket(</b>274<b>)</b></code></a>). Beside it, a <i>full snapshot</i>: the same file plus extra fields that do not decide the drawing and are there for the person who made the file, the date and time it was saved first among them (<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-275"><code><b>^ticket(</b>275<b>)</b></code></a>). The picture archive keeps the first kind and never stores a new time for an unchanged picture. Marked as extra in the format itself, the extra fields can be dropped by a tool that does not know their names. One more to look at: Load keeps the player's music volume and mute, not the file's.</p>
+
+<h2 id="wrong">What we got wrong on the way</h2>
+<ul>
+<li><b>We read the old links as "unchanged".</b> They only ever caught byte-equal files, and a settings file could never be one: its saved time saw to that.</li>
+<li><b>We first called 387 of 408 changed SVGs noise</b>, in a commit message, from a check that only knew CSS delays: it had found 21. The message was corrected within minutes; samples of the rest showed SMIL begins changed too, beside real changes.</li>
+<li><b>The workflow's first push went without the workflow:</b> a shell chain meant to stop at its first failure (<code>set -e</code>, inline) did not, and pushed the rest. Fixed at once; the one test run it started was cancelled.</li>
+<li><b>Matthew's laptop crashed</b> 30 seconds into this work, at a load of 0.16, during a two-second read of the archive: nothing was lost, and the work since ran one light step at a time.</li>
+</ul>
+
+<h2 id="next">What next</h2>
+<ol class="steps">
+<li id="step-1"><span class="stepnum"><a href="#step-1">1.</a></span> <b>A save file that fully draws its picture:</b> a random seed and a time origin in the file, read by the drawing instead of Math.random and the page's clocks, and bubble space's bubbles drawn from them (or kept in the file); then the archive's own stilling can go. Until then, the archive could hold the frames' time still too, for bubble space. Now <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-274"><code><b>^ticket(</b>274<b>)</b></code></a>. <button class="tk" data-step="1">copy for a ticket</button></li>
+<li id="step-2"><span class="stepnum"><a href="#step-2">2.</a></span> <b>The full snapshot,</b> with its extra fields marked as such (the saved time first), and the picture file without them. Now <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-275"><code><b>^ticket(</b>275<b>)</b></code></a>. <button class="tk" data-step="2">copy for a ticket</button></li>
+<li id="step-3"><span class="stepnum"><a href="#step-3">3.</a></span> <b>Runs without the laptop:</b> the workflow commits and tags its run itself, with a token that can write to the two archives (Matthew's to make); the laptop's step (a 140 MB download, <code>add_run.sh</code>) goes away. Now <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-276"><code><b>^ticket(</b>276<b>)</b></code></a>. <button class="tk" data-step="3">copy for a ticket</button></li>
+<li id="step-4"><span class="stepnum"><a href="#step-4">4.</a></span> <b>Watch the size:</b> each run's entry in <code>runs.json</code> says what it added to git, and the front page a running total, so the archive's growth is read, not guessed. Now <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-277"><code><b>^ticket(</b>277<b>)</b></code></a>. <button class="tk" data-step="4">copy for a ticket</button></li>
+</ol>
+
+<h2 id="method">How this was put together</h2>
+<p><b>Sizes.</b> The old archive's files from its last commit (<code>1d43134</code>) and, for the first 10/15 run, from git (<code>81c6e6c</code>, <code>git ls-tree -l</code>); "stored" leaves out symlinks. What a run added to git: <code>git rev-list --objects --disk-usage</code> between run commits, on the laptop (loose objects) for the old archive, packed (<code>git repack -ad</code>) for the new; GitHub's size from its API. The new archive's runs 1 to 5 are the old ones replayed (<code>tools/replay_dated_runs.mjs</code>); run 6 is <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39137062653">run 39137062653</a>, the game at <code>61e2efb</code> (0.0.201).</p>
+<p><b>Shapes and pixels.</b> Shapes are counted in each SVG by element name. Pixels: each pair drawn still (its animate elements and CSS animations taken out), 960 wide on white, by Chrome 152 in the desktop app on Matthew's laptop, both files from the published archives; a pixel differs when a channel differs by more than 16 of 255 (and, in the data, 48). The difference pictures on this page are drawn again by the reader's browser, the same way, 480 wide.</p>
+<p><b>Runs alike.</b> Two runs of one game commit at once on GitHub (<a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39138361693">run 39138361693</a>, <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/39138363460">run 39138363460</a>), then both run again with the seeded random; each run's files downloaded and compared one by one. (Each run also prints a fingerprint of all its files of a kind, but that takes in its manifest and source.json, which carry the run's own time, so it never matches.)</p>
+<p><b>The data</b> is here twice: embedded in this page (<code>&lt;script type="application/json" id="report-data"&gt;</code>) and as files in <a href="data/">004/data/</a>: <code>report.json</code> (every number here), with the measurements behind it. The page is built from it by <a href="drivers/build.py">004/drivers/build.py</a>. The pictures are the archives' (<a href="https://matthewhammer.org/dress-up-pictures-2026-10-18/">2026/10/17/22-28</a> and <a href="https://matthewhammer.org/dress-up-pictures/">2026/10/18</a>), copied into <a href="pictures/">004/pictures/</a>.</p>
+</main>
+<script type="application/json" id="report-data">{
+ "question": "How can the picture archive keep a year or more of runs in one repository, and what did moving it show about the pictures?",
+ "date": "2026-10-18",
+ "units": "MB = 10^6 bytes (file sizes); MiB = 2^20 bytes (git's sizes)",
+ "old_archive": {
+  "repo": "matthewhammer/dress-up-pictures-2026-10-18 (until 2026-10-18: dress-up-pictures)",
+  "layout": "a folder per run, YYYY/MM/DD[/HH-MM]; a file byte-equal to the latest earlier run's was a relative symlink to it",
+  "runs": [
+   {
+    "run": "2026/10/15",
+    "version": "0.0.36",
+    "old_commit": "58a9dc5",
+    "pictures": 266,
+    "png_mb": 185.1,
+    "png_stored": 266,
+    "png_stored_mb": 185.1,
+    "svg_mb": 35.9,
+    "svg_stored": 266,
+    "svg_stored_mb": 35.9,
+    "json_mb": 6.6,
+    "json_stored": 266,
+    "json_stored_mb": 6.6,
+    "webp_mb": 3.8,
+    "git_old_mib": 177.8,
+    "git_new_mib": 3.99
+   },
+   {
+    "run": "2026/10/15/20-44",
+    "version": "0.0.55",
+    "old_commit": "048e549",
+    "pictures": 323,
+    "png_mb": 241.2,
+    "png_stored": 323,
+    "png_stored_mb": 241.2,
+    "svg_mb": 57.9,
+    "svg_stored": 323,
+    "svg_stored_mb": 57.9,
+    "json_mb": 13.7,
+    "json_stored": 323,
+    "json_stored_mb": 13.7,
+    "webp_mb": 4.5,
+    "git_old_mib": 225.9,
+    "git_new_mib": 5.19
+   },
+   {
+    "run": "2026/10/16",
+    "version": "0.0.90",
+    "old_commit": "13cf0a6",
+    "pictures": 349,
+    "png_mb": 245.5,
+    "png_stored": 297,
+    "png_stored_mb": 203.1,
+    "svg_mb": 69.2,
+    "svg_stored": 342,
+    "svg_stored_mb": 69.1,
+    "json_mb": 14.9,
+    "json_stored": 349,
+    "json_stored_mb": 14.9,
+    "webp_mb": 4.8,
+    "git_old_mib": 197.2,
+    "git_new_mib": 3.73
+   },
+   {
+    "run": "2026/10/17",
+    "version": "0.0.94",
+    "old_commit": "8f02605",
+    "pictures": 367,
+    "png_mb": 260.9,
+    "png_stored": 103,
+    "png_stored_mb": 88.2,
+    "svg_mb": 76.4,
+    "svg_stored": 265,
+    "svg_stored_mb": 75.4,
+    "json_mb": 15.7,
+    "json_stored": 367,
+    "json_stored_mb": 15.7,
+    "webp_mb": 5.1,
+    "git_old_mib": 97.2,
+    "git_new_mib": 1.62
+   },
+   {
+    "run": "2026/10/17/22-28",
+    "version": "0.0.197",
+    "old_commit": "1d43134",
+    "pictures": 530,
+    "png_mb": 396.9,
+    "png_stored": 495,
+    "png_stored_mb": 369.3,
+    "svg_mb": 99.0,
+    "svg_stored": 524,
+    "svg_stored_mb": 99.0,
+    "json_mb": 37.2,
+    "json_stored": 530,
+    "json_stored_mb": 37.2,
+    "webp_mb": 7.3,
+    "git_old_mib": 312.5,
+    "git_new_mib": 9.78
+   }
+  ],
+  "thumbs_commit": {
+   "commit": "81c6e6c",
+   "git_old_mib": 3.6,
+   "note": "the 0.0.36 run's thumbnails, added after it"
+  },
+  "git_loose_total_mib": 1014.2,
+  "github_size_kib": 785982,
+  "site_mb": 1300,
+  "note": "git_old_mib: what each run's commit added to git on the laptop (git rev-list --objects --disk-usage), loose objects compressed one by one; GitHub packs them: 785,982 KiB (768 MiB) for all five runs"
+ },
+ "new_archive": {
+  "repo": "matthewhammer/dress-up-pictures",
+  "layout": "one folder, pictures/, rewritten by each run; each run a git tag run-YYYY-MM-DD[-HH-MM]",
+  "replayed_five_runs_packed_mib": 24.44,
+  "six_runs_packed_mib": 30.99,
+  "site_mb": 132,
+  "run_2026_10_18": {
+   "version": "0.0.201",
+   "game_commit": "61e2efb",
+   "github_run": 39137062653,
+   "drawings": 530,
+   "png": 0,
+   "svg_mb": 92.5,
+   "json_mb": 37.5,
+   "webp_mb": 7.4,
+   "git_new_mib": 7.6,
+   "git_new_note": "about 7.0 MiB of it the thumbnails, every one re-encoded once (ffmpeg -> Chrome)",
+   "changed_vs_0.0.197": {
+    "svg": 408,
+    "json": 3,
+    "webp": 530,
+    "of": 530
+   }
+  }
+ },
+ "thumbnails": {
+  "before": {
+   "how": "ffmpeg libwebp -quality 72, from the 1920-wide PNG scaled to 480",
+   "run": "2026/10/17/22-28",
+   "count": 530,
+   "mb": 7.3
+  },
+  "now": {
+   "how": "Chrome's canvas.toDataURL('image/webp', 0.72), the SVG drawn 480 wide",
+   "run": "2026/10/18",
+   "count": 530,
+   "mb": 7.4
+  }
+ },
+ "music": {
+  "repo": "matthewhammer/dress-up-music",
+  "layout": "music/<tune>.mp3, one copy each; each run a tag",
+  "runs": [
+   {
+    "run": "2026/10/15",
+    "version": "0.0.42",
+    "tunes": 28
+   },
+   {
+    "run": "2026/10/18",
+    "version": "0.0.201",
+    "tunes": 29,
+    "recorded": [
+     "superdub (🔥 turtle super-dub step, 75.29 s a loop, rendered in 31 s)"
+    ],
+    "kept": 28
+   }
+  ],
+  "git_mib": 62.4
+ },
+ "hidden_drawings": {
+  "release": "0.0.198 (2026-10-17): a tree, pine, leaf pad, bush's pad or flower more than 75% hidden behind what is drawn in front of it is left out; its notes count 675 fewer drawn across the places at their defaults",
+  "compared": "backgrounds-with-friend, run 2026/10/17/22-28 (0.0.197) against run 2026/10/18 (0.0.201); 0.0.199 to 0.0.201 also changed the music's timing, where the friend arrives, and the walk planner",
+  "columns": [
+   "place",
+   "bytes 0.0.197",
+   "elements",
+   "drawn shapes",
+   "animations",
+   "bytes 0.0.201",
+   "elements",
+   "drawn shapes",
+   "animations"
+  ],
+  "places": [
+   [
+    "waterfall",
+    183433,
+    915,
+    634,
+    63,
+    115900,
+    744,
+    504,
+    63
+   ],
+   [
+    "clearing",
+    335016,
+    1798,
+    1476,
+    13,
+    299047,
+    1695,
+    1394,
+    13
+   ],
+   [
+    "treehouse",
+    213655,
+    1093,
+    779,
+    36,
+    191847,
+    1022,
+    719,
+    36
+   ],
+   [
+    "castle",
+    215360,
+    1280,
+    1020,
+    19,
+    196751,
+    1225,
+    980,
+    19
+   ],
+   [
+    "cemetery",
+    130727,
+    933,
+    719,
+    32,
+    116131,
+    897,
+    692,
+    32
+   ],
+   [
+    "fairyforest",
+    134859,
+    818,
+    608,
+    32,
+    125831,
+    787,
+    582,
+    32
+   ],
+   [
+    "forest",
+    106187,
+    618,
+    465,
+    16,
+    100026,
+    593,
+    443,
+    16
+   ],
+   [
+    "house",
+    117607,
+    644,
+    442,
+    12,
+    107848,
+    620,
+    424,
+    12
+   ],
+   [
+    "castleroom--greenhouse",
+    211601,
+    1965,
+    1712,
+    24,
+    203518,
+    1945,
+    1697,
+    24
+   ],
+   [
+    "lake",
+    154354,
+    909,
+    641,
+    37,
+    149460,
+    897,
+    632,
+    37
+   ],
+   [
+    "livingroom",
+    469616,
+    909,
+    671,
+    19,
+    455298,
+    899,
+    664,
+    19
+   ],
+   [
+    "beach",
+    29880,
+    308,
+    206,
+    4,
+    29880,
+    308,
+    206,
+    4
+   ],
+   [
+    "bubblespace",
+    18849,
+    210,
+    112,
+    0,
+    18833,
+    210,
+    112,
+    0
+   ],
+   [
+    "campsite",
+    26197,
+    268,
+    149,
+    24,
+    26197,
+    268,
+    149,
+    24
+   ],
+   [
+    "castleroom--catroom",
+    115184,
+    1234,
+    1052,
+    54,
+    115184,
+    1234,
+    1052,
+    54
+   ],
+   [
+    "castleroom--dining",
+    77576,
+    826,
+    676,
+    35,
+    77576,
+    826,
+    676,
+    35
+   ],
+   [
+    "castleroom--dungeon1",
+    44840,
+    499,
+    443,
+    5,
+    44840,
+    499,
+    443,
+    5
+   ],
+   [
+    "castleroom--dungeon2",
+    44100,
+    503,
+    442,
+    6,
+    44100,
+    503,
+    442,
+    6
+   ],
+   [
+    "castleroom--hallway",
+    52630,
+    557,
+    482,
+    10,
+    52630,
+    557,
+    482,
+    10
+   ],
+   [
+    "castleroom--king",
+    50423,
+    554,
+    480,
+    8,
+    50423,
+    554,
+    480,
+    8
+   ],
+   [
+    "castleroom--kitchen",
+    60593,
+    666,
+    570,
+    11,
+    60593,
+    666,
+    570,
+    11
+   ],
+   [
+    "castleroom--smithy",
+    47829,
+    540,
+    453,
+    7,
+    47829,
+    540,
+    453,
+    7
+   ],
+   [
+    "castleroom--spiral",
+    139717,
+    1349,
+    1232,
+    6,
+    139717,
+    1349,
+    1232,
+    6
+   ],
+   [
+    "castleroom--stable",
+    109642,
+    1184,
+    1006,
+    58,
+    109642,
+    1184,
+    1006,
+    58
+   ],
+   [
+    "castleroom--trap",
+    44892,
+    508,
+    441,
+    4,
+    44892,
+    508,
+    441,
+    4
+   ],
+   [
+    "cave",
+    52337,
+    612,
+    313,
+    72,
+    52337,
+    612,
+    313,
+    72
+   ],
+   [
+    "crossing",
+    79197,
+    418,
+    297,
+    10,
+    79197,
+    418,
+    297,
+    10
+   ],
+   [
+    "deepsea",
+    37741,
+    369,
+    210,
+    41,
+    37741,
+    369,
+    210,
+    41
+   ],
+   [
+    "emptyroom",
+    9770,
+    87,
+    52,
+    0,
+    9770,
+    87,
+    52,
+    0
+   ],
+   [
+    "healerroom",
+    85792,
+    882,
+    798,
+    13,
+    85792,
+    882,
+    798,
+    13
+   ],
+   [
+    "imagination",
+    1822485,
+    453,
+    347,
+    13,
+    1665292,
+    453,
+    347,
+    13
+   ],
+   [
+    "mountains",
+    38023,
+    353,
+    222,
+    11,
+    38023,
+    353,
+    222,
+    11
+   ],
+   [
+    "tent",
+    19202,
+    181,
+    127,
+    4,
+    19202,
+    181,
+    127,
+    4
+   ],
+   [
+    "treeroom",
+    170655,
+    676,
+    556,
+    5,
+    164319,
+    676,
+    556,
+    5
+   ],
+   [
+    "underwater",
+    35099,
+    315,
+    209,
+    16,
+    35099,
+    315,
+    209,
+    16
+   ],
+   [
+    "witch",
+    185065,
+    1542,
+    1356,
+    51,
+    185065,
+    1542,
+    1356,
+    51
+   ],
+   [
+    "witchroom",
+    50304,
+    406,
+    292,
+    18,
+    50304,
+    406,
+    292,
+    18
+   ],
+   [
+    "woodpath",
+    78826,
+    425,
+    285,
+    11,
+    78826,
+    425,
+    285,
+    11
+   ],
+   [
+    "sea",
+    44017,
+    489,
+    366,
+    20,
+    44135,
+    491,
+    368,
+    20
+   ]
+  ],
+  "pixels": {
+   "how": "each SVG drawn still (animations removed), 960 wide, on white, by Chrome 152 on Matthew's laptop (the desktop app's browser); the share of pixels whose largest channel differs by more than 16 (and 48) of 255",
+   "pct": {
+    "castle": [
+     0.173,
+     0.08
+    ],
+    "cemetery": [
+     0.05,
+     0.02
+    ],
+    "clearing": [
+     1.483,
+     1.067
+    ],
+    "fairyforest": [
+     1.236,
+     0.89
+    ],
+    "forest": [
+     1.402,
+     0.771
+    ],
+    "lake": [
+     0.168,
+     0.089
+    ],
+    "treehouse": [
+     1.201,
+     0.828
+    ],
+    "waterfall": [
+     0.536,
+     0.232
+    ]
+   }
+  }
+ },
+ "not_in_the_json": [
+  {
+   "what": "the saved time",
+   "where": "24-surprise-save-start-over.js:135 writes saved: d.toISOString(); Load (line 208 on) never reads it",
+   "effect": "no settings file was ever byte-equal to an earlier run's: 349 of 349 stored on 10/16, 367 of 367 on 10/17"
+  },
+  {
+   "what": "animation phases from the page's clocks",
+   "where": "fairyPhase (08-body.js:132) from performance.now(); lfoBegin (08-body.js:614) from the picture's SVG clock less musicSeconds() (08-body.js:587), the page's clock when no tune sounds",
+   "effect": "an animated drawing came out different every run"
+  },
+  {
+   "what": "random choices",
+   "where": "a figure's clip-path id, fig-clip- and six random letters (18-drawing.js:900); bubble space's bubbles (14-outdoors.js:826)",
+   "effect": "the climbs and bubble space differed between two runs of one game commit; seeded, the climbs match"
+  },
+  {
+   "what": "a simulation's state",
+   "where": "bubble space's bubbles, moved every frame by bubbleTick (14-outdoors.js:819), timed by requestAnimationFrame",
+   "effect": "bubble space's 6 pictures differed between two runs of one game commit even with the clocks held and the random seeded"
+  }
+ ],
+ "old_dedup": {
+  "note": "stored (real files) of all, per kind: what the old archive's links saved",
+  "2026/10/16": {
+   "png": [
+    297,
+    349
+   ],
+   "svg": [
+    342,
+    349
+   ],
+   "json": [
+    349,
+    349
+   ]
+  },
+  "2026/10/17": {
+   "png": [
+    103,
+    367
+   ],
+   "svg": [
+    265,
+    367
+   ],
+   "json": [
+    367,
+    367
+   ]
+  },
+  "2026/10/17/22-28": {
+   "png": [
+    495,
+    530
+   ],
+   "svg": [
+    524,
+    530
+   ],
+   "json": [
+    530,
+    530
+   ]
+  }
+ },
+ "determinism": {
+  "how": "two runs of one game commit at once on GitHub, each printing a fingerprint of every svg, json and webp",
+  "clocks_held": {
+   "archive_commit": "5d19609",
+   "runs": [
+    39138361693,
+    39138363460
+   ],
+   "svg_differing": 15,
+   "of": 525,
+   "json_differing": 0,
+   "which": "bubble space (6: plain, made of, collision boxes, each with and without the friend) and 9 climbs (clip-path ids)"
+  },
+  "random_seeded": {
+   "archive_commit": "a73a50a",
+   "runs": [
+    39138361693,
+    39138363460
+   ],
+   "attempt": 2,
+   "svg_differing": 6,
+   "webp_differing": 6,
+   "of": 525,
+   "settings_differing": 0,
+   "result": "Run again with the seeded random (the same two runs, again at once): the climbs now match too, and of 525 drawings only bubble space still differs, its 6 SVGs and their 6 thumbnails; every drawing's settings file matched. Bubble space is a simulation: its bubbles move a little every frame, timed by the frame itself (requestAnimationFrame), so where they stand depends on how many frames ran before the picture was taken, and nothing in the settings says.",
+   "note": "compared file by file after downloading both runs; the printed fingerprints cover manifest.json and source.json too, which always differ (a run's own time), so they cannot match"
+  }
+ },
+ "github": {
+  "browser": "Chrome 155.0.8059.39, headless, GitHub's ubuntu-24.04 runners",
+  "workflow": "kids-choice-games .github/workflows/dress-up-archive.yml on branch archive-272"
+ },
+ "commits": {
+  "dress-up-pictures": {
+   "tools": "0d0efd9",
+   "clocks": "5d19609",
+   "random": "a73a50a",
+   "run-2026-10-18": "bdc3ff4"
+  },
+  "dress-up-music": {
+   "one copy per tune": "e963885",
+   "run-2026-10-18": "d3900f2"
+  },
+  "matthewhammer.github.io": {
+   "pictures viewer": "7302f18",
+   "music player": "f382598"
+  },
+  "kids-choice-games": {
+   "agent-instructions": "d32479c"
+  }
+ }
+}</script>
+<script>
+(() => {
+  const b = document.getElementById("theme"), modes = ["auto", "light", "dark"], names = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
+  let m = "auto"; try { m = localStorage.getItem("theme") || "auto"; } catch (e) {}
+  const show = () => { b.textContent = names[m]; if (m === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", m); };
+  b.onclick = () => { m = modes[(modes.indexOf(m) + 1) % 3]; try { localStorage.setItem("theme", m); } catch (e) {} show(); };
+  show();
+  for (const t of document.querySelectorAll("button.tk")) t.onclick = () => {
+    const li = t.closest("li"), n = t.dataset.step, text = li.cloneNode(true);
+    text.querySelectorAll("button, .stepnum").forEach(e => e.remove());
+    const msg = `Mint a ticket for this step: Dress Up reports, ^du_report(4), What next, step ${n}: "${text.textContent.trim()}". ${location.href.split("#")[0]}#step-${n}`;
+    navigator.clipboard.writeText(msg).then(() => { t.textContent = "copied"; setTimeout(() => t.textContent = "copy for a ticket", 1500); });
+  };
+  // (each pair's third picture: both drawings still, the pixels that differ in magenta over a faded copy of the newer)
+  const still = async (url, W) => {
+    const s = new DOMParser().parseFromString(await (await fetch(url)).text(), "image/svg+xml").documentElement;
+    for (const x of s.querySelectorAll("animate,animateTransform,animateMotion,set")) x.remove();
+    for (const x of s.querySelectorAll("[style*=animation]")) x.setAttribute("style", x.getAttribute("style").replace(/animation:[^;]*;?/g, ""));
+    const vb = s.viewBox.baseVal, H = Math.round(W * vb.height / vb.width); s.setAttribute("width", W); s.setAttribute("height", H);
+    const img = new Image(); img.src = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(s)], { type: "image/svg+xml" })); await img.decode();
+    const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, W, H); g.drawImage(img, 0, 0); return g.getImageData(0, 0, W, H);
+  };
+  const io = new IntersectionObserver(es => es.forEach(async e => {
+    if (!e.isIntersecting) return; io.unobserve(e.target);
+    const f = e.target, cv = f.querySelector("canvas");
+    try {
+      const a = await still(f.dataset.before, 480), b = await still(f.dataset.after, 480);
+      cv.width = b.width; cv.height = b.height; const out = cv.getContext("2d").createImageData(b.width, b.height);
+      for (let i = 0; i < b.data.length; i += 4) {
+        const d = Math.max(Math.abs(a.data[i] - b.data[i]), Math.abs(a.data[i + 1] - b.data[i + 1]), Math.abs(a.data[i + 2] - b.data[i + 2])) > 16;
+        out.data[i] = d ? 230 : 255 - (255 - b.data[i]) * 0.3; out.data[i + 1] = d ? 0 : 255 - (255 - b.data[i + 1]) * 0.3; out.data[i + 2] = d ? 160 : 255 - (255 - b.data[i + 2]) * 0.3; out.data[i + 3] = 255;
+      }
+      cv.getContext("2d").putImageData(out, 0, 0);
+    } catch (err) { cv.replaceWith(Object.assign(document.createElement("span"), { textContent: "(the difference could not be drawn here)" })); }
+  }), { rootMargin: "200px" });
+  document.querySelectorAll("figure.pair").forEach(f => io.observe(f));
+})();
+</script>
+</body>
+</html>
