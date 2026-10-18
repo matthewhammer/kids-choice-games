@@ -36,7 +36,7 @@ lines = [
     "",
     "- **Depth** is the y where a thing stands on the ground, in the stage's units: the ground line is at 320, and the friend's feet can be anywhere from about 11 (far) to 406 (near).",
     "- The friend is drawn behind every object deeper than their feet, and in front of the rest. **front** means in front of everything: the friend is always under it (darkness, light, steam, the sign toward us).",
-    "- Flat things on the ground and the backdrop (sky, far hills, back walls and what hangs on them) are not objects.",
+    "- Flat things on the ground and the backdrop (sky, far hills, back walls and what hangs on them) are not objects. What is drawn into a place but is not an object, the audit of ticket 284, is [BAKED-IN.md](BAKED-IN.md); since 0.0.208 every object here can be placed in any place (📦 from the places).",
     "- In the game each place shows this list in its background tab, with an 👁️ chip per object to hide or show it.",
     "- **The pictures:** each place as it starts, the friend hidden and its animations held still; each object clipped from that picture by its box on the screen, so what stands near it shows too. Drawn by GitHub's headless Chrome.",
     "",
