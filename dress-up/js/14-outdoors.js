@@ -1094,7 +1094,8 @@ function makerTick(t) {
       const th = makerTheme(B, d.theme || "A"), r = Math.max(2, (th.size / 18) * 11 * s * (0.75 + 0.5 * rnd()));
       const el = document.createElementNS("http://www.w3.org/2000/svg", "g");
       el.innerHTML = `<g class="bubin">${bubbleSvg(0, 0, r, th)}</g>`; layer.append(el);
-      L.push({ x: d.x + sd * MAKER_WHEEL.out[0] * s, y: d.z + MAKER_WHEEL.out[1] * s, vx: sd * (70 + 70 * rnd()) * s, vy: -(25 + 50 * rnd()) * s, r, el, born: t, life: 4500 + 3500 * rnd(), ph: rnd() * 6.28, s });
+      const Wh = makerShape(d).wheels, wo = Wh[(makerSim.n >> 1) % Wh.length].out;   // (from each wheel by turns)
+      L.push({ x: d.x + sd * wo[0] * s, y: d.z + wo[1] * s, vx: sd * (70 + 70 * rnd()) * s, vy: -(25 + 50 * rnd()) * s, r, el, born: t, life: 4500 + 3500 * rnd(), ph: rnd() * 6.28, s });
       if (L.length > 70) { const o = L.shift(); o.el.remove(); }
     }
   }
@@ -1319,22 +1320,37 @@ const SEAFISH_COLORS = ["#ff9f1c", "#ffd23f", "#ff6f91", "#7bdff2", "#a3e635", "
 const SEAPLANT_COLORS = ["#2f8f4e", "#4caf50", "#8bc34a", "#c0ca33", "#d4a017", "#e57373", "#ab47bc"];
 // (ticket 290, for N: "bubble makers: little boxes with turning wheels on the front, simplified to a few shapes at first";
 // his picture, a round toy bubble machine, a wheel of bubble rings turning on its front, a handle on top, a base under it)
-// A bubble maker, its foot at the origin, 100 of its units tall: its base, its round body in its colour, its wheel of six
-// rings turning on its front (faster the more bubbles a second it blows), its handle; MAKER_WHEEL, where its bubbles leave
-// the wheel (its right, the way it blows; mirrored, its left)
+// A bubble maker, its foot at the origin, about 100 of its units tall, in one of MAKER_SHAPES: ⭕ round (his picture: a
+// round body on a base, a handle on top), 📦 a box (the ticket's own words: a little box, its wheel on the front, on short
+// feet), 🗼 a tower (tall, two wheels one over the other, a little roof); in its colour; each wheel of six rings turning on
+// its front (faster the more bubbles a second it blows). Each shape's wheels (cx, cy, r) and where its bubbles leave them
+// (out: its right, the way it blows; mirrored, its left), for makerTick: from each wheel by turns.
 const MAKER_COLORS = ["#ff7eb6", "#4fa3ff", "#ffd23f", "#5fd068", "#a77bff", "#ff8a3d"];
-const MAKER_WHEEL = { cx: 0, cy: -56, r: 26, out: [24, -70] };
+const MAKER_SHAPES = {
+  round: { wheels: [{ cx: 0, cy: -56, r: 26, out: [24, -70] }] },
+  box: { wheels: [{ cx: 0, cy: -50, r: 24, out: [22, -62] }] },
+  tower: { wheels: [{ cx: 0, cy: -48, r: 18, out: [17, -56] }, { cx: 0, cy: -96, r: 18, out: [17, -104] }] },
+};
+const makerShape = t => MAKER_SHAPES[t.shape] || MAKER_SHAPES.round;
+const makerWheel = (cx, cy, r, dark, lite, dur) => `<circle cx="${cx}" cy="${cy}" r="${r + 4}" fill="${lite}" stroke="${dark}" stroke-width="2.5"/>` +
+  `<g><animateTransform attributeName="transform" type="rotate" values="0 ${cx} ${cy};360 ${cx} ${cy}" dur="${dur}s" repeatCount="indefinite"/>` +
+  [0, 1, 2, 3, 4, 5].map(i => { const a = i * Math.PI / 3, x = cx + Math.cos(a) * (r - 8 * r / 26), y = cy + Math.sin(a) * (r - 8 * r / 26), rr = 7 * Math.max(0.7, r / 26);
+    return `<line x1="${cx}" y1="${cy}" x2="${f1(x)}" y2="${f1(y)}" stroke="${dark}" stroke-width="2"/><circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(rr)}" fill="#ffffff" fill-opacity="0.35" stroke="#ffffff" stroke-width="2.5"/>`; }).join("") +
+  `</g><circle cx="${cx}" cy="${cy}" r="${f1(5 * Math.max(0.7, r / 26))}" fill="${dark}"/>`;
 function bubbleMakerSvg(t) {
-  const col = t.color || MAKER_COLORS[0], dark = mix(col, "#000000", 0.35), lite = mix(col, "#ffffff", 0.45), { cx, cy, r } = MAKER_WHEEL;
-  const dur = Math.max(0.5, 8 / Math.max(1, t.rate ?? 4)).toFixed(2);
+  const col = t.color || MAKER_COLORS[0], dark = mix(col, "#000000", 0.35), lite = mix(col, "#ffffff", 0.45), sh = t.shape || "round";
+  const dur = Math.max(0.5, 8 / Math.max(1, t.rate ?? 4)).toFixed(2), W = makerShape(t).wheels;
+  const wheels = W.map(w => makerWheel(w.cx, w.cy, w.r, dark, lite, dur)).join("");
+  if (sh === "box") return `<rect x="-38" y="-8" width="12" height="8" rx="2" fill="${dark}"/><rect x="26" y="-8" width="12" height="8" rx="2" fill="${dark}"/>` +
+    `<rect x="-44" y="-88" width="88" height="80" rx="10" fill="${col}" stroke="${dark}" stroke-width="3"/><path d="M-36 -80 V-24" stroke="${lite}" stroke-width="5" stroke-linecap="round" opacity="0.8"/>` +
+    `<rect x="-14" y="-100" width="28" height="12" rx="4" fill="${dark}"/>` + wheels;
+  if (sh === "tower") return `<rect x="-30" y="-12" width="60" height="12" rx="5" fill="${dark}"/>` +
+    `<rect x="-26" y="-124" width="52" height="112" rx="8" fill="${col}" stroke="${dark}" stroke-width="3"/><path d="M-19 -116 V-24" stroke="${lite}" stroke-width="4" stroke-linecap="round" opacity="0.8"/>` +
+    `<path d="M-32 -124 L0 -144 L32 -124 Z" fill="${dark}"/>` + wheels;
+  const { cy } = W[0];
   return `<rect x="-36" y="-14" width="72" height="14" rx="6" fill="${dark}"/><rect x="-22" y="-22" width="44" height="10" rx="4" fill="${dark}"/>` +
     `<circle cx="0" cy="${cy}" r="40" fill="${col}" stroke="${dark}" stroke-width="3"/><path d="M-26 ${cy - 26} Q-36 ${cy - 6} -30 ${cy + 14}" fill="none" stroke="${lite}" stroke-width="5" stroke-linecap="round" opacity="0.8"/>` +
-    `<path d="M-18 ${cy - 37} Q0 ${cy - 70} 18 ${cy - 37}" fill="none" stroke="${dark}" stroke-width="7" stroke-linecap="round"/>` +
-    `<circle cx="${cx}" cy="${cy}" r="${r + 4}" fill="${lite}" stroke="${dark}" stroke-width="2.5"/>` +
-    `<g><animateTransform attributeName="transform" type="rotate" values="0 ${cx} ${cy};360 ${cx} ${cy}" dur="${dur}s" repeatCount="indefinite"/>` +
-    [0, 1, 2, 3, 4, 5].map(i => { const a = i * Math.PI / 3, x = cx + Math.cos(a) * (r - 8), y = cy + Math.sin(a) * (r - 8);
-      return `<line x1="${cx}" y1="${cy}" x2="${f1(x)}" y2="${f1(y)}" stroke="${dark}" stroke-width="2"/><circle cx="${f1(x)}" cy="${f1(y)}" r="7" fill="#ffffff" fill-opacity="0.35" stroke="#ffffff" stroke-width="2.5"/>`; }).join("") +
-    `</g><circle cx="${cx}" cy="${cy}" r="5" fill="${dark}"/>`;
+    `<path d="M-18 ${cy - 37} Q0 ${cy - 70} 18 ${cy - 37}" fill="none" stroke="${dark}" stroke-width="7" stroke-linecap="round"/>` + wheels;
 }
 const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
@@ -1368,7 +1384,7 @@ const THING_PARAMS = {
           ["rock", "🪨 the boulder", "choice", BOULDER_TONES], ["knob", "🎨 its knob", "color", KNOB_COLORS]],
   trapdoor: [["open", "🕳️ open", "toggle"], ["shape", "its opening", "choice", OPENING_SHAPES], ["spikes", "🔱 spikes inside", "toggle"]],
   // (ticket 290, for N) a bubble maker: how many bubbles a second, which of the friend's bubble themes it blows, its colour
-  bubblemaker: [["rate", "🫧 bubbles a second", "range", [1, 12, 1]], ["theme", "🫧 its bubbles", "choice", [["A", "🅰️ theme A"], ["B", "🅱️ theme B"], ["C", "©️ theme C"]]], ["color", "🎨", "color", MAKER_COLORS]],
+  bubblemaker: [["shape", "🫧 its shape", "choice", [["round", "⭕ round"], ["box", "📦 a box"], ["tower", "🗼 a tower"]]], ["rate", "🫧 bubbles a second", "range", [1, 12, 1]], ["theme", "🫧 its bubbles", "choice", [["A", "🅰️ theme A"], ["B", "🅱️ theme B"], ["C", "©️ theme C"]]], ["color", "🎨", "color", MAKER_COLORS]],
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
@@ -1377,7 +1393,7 @@ const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: 
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
                          seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, trapdoor: { open: false, shape: "circle", spikes: true },
-                         bubblemaker: { rate: 4, theme: "A", color: MAKER_COLORS[0] },
+                         bubblemaker: { shape: "round", rate: 4, theme: "A", color: MAKER_COLORS[0] },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] } };
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,

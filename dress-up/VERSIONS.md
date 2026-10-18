@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.245 (2026-10-18)
+
+Everything in 0.0.244, with more bubble makers.
+
+- **🫧 Bubble makers in three shapes** ("🫧 its shape"): ⭕ round, as before; 📦 a box with its wheel on the front, on short feet; and 🗼 a tall tower with two wheels, one over the other, blowing bubbles from each in turn.
+
 ## 0.0.244 (2026-10-18)
 
 Everything in 0.0.243, plus a new tune.
