@@ -1,0 +1,86 @@
+# (ticket 183) A day of Dress Up's pictures, made on GitHub's computers: the
+# archive's own tools (matthewhammer/dress-up-pictures, tools/) run on the
+# game at a commit, against the archive as published, so a picture the same
+# byte for byte as the latest earlier run's is a link to it, as on the laptop.
+# The run comes back as an artifact, a tar that keeps the links, to be added
+# to the archive by hand (days_index.mjs, commit, push). No browser runs on
+# the laptop since 2026-10-16 (it froze during them).
+# (ticket 262) Each place three ways (as it is, with 🔬 🧩 what it is made of,
+# with 🔬 🧱 the collision boxes), and the run in Matthew's time (Mountain): a
+# day's first run is YYYY/MM/DD, a later one that day YYYY/MM/DD/HH-MM.
+name: Dress Up pictures archive
+on:
+  push:
+    branches: ['archive-*']
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  TOOLS_REF: runs-262
+  TZ: America/Denver
+jobs:
+  day:
+    name: Pictures (the game at main)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The game, the archive as published (its tools from TOOLS_REF), Chrome; the run's folder
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/game" origin/main
+          git -C "$RUNNER_TEMP/game" log -1 --format='game: %H %s'
+          git clone -q --depth 1 https://github.com/matthewhammer/dress-up-pictures "$RUNNER_TEMP/pics"
+          git -C "$RUNNER_TEMP/pics" fetch -q --depth 1 origin "$TOOLS_REF"
+          git -C "$RUNNER_TEMP/pics" checkout -q FETCH_HEAD -- tools
+          DAY=$(date +%Y/%m/%d); RUN=$DAY
+          [ -f "$RUNNER_TEMP/pics/$DAY/manifest.json" ] && RUN="$DAY/$(date +%H-%M)"
+          echo "RUN=$RUN" >> "$GITHUB_ENV"; echo "run: $RUN ($(date))"
+          (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
+            --remote-debugging-port=9333 --remote-allow-origins='*' --window-size=1920,1080 \
+            --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:9333/json/version | grep -i '"Browser"'
+          ffmpeg -version | head -1
+      - name: The run's pictures (archive.mjs)
+        run: |
+          mkdir -p out
+          node "$RUNNER_TEMP/pics/tools/archive.mjs" 9333 "file://$RUNNER_TEMP/game/dress-up/index.html" \
+            "$RUNNER_TEMP/pics/$RUN" "http://matthewhammer.org/dress-up-music/" | tee out/archive.txt
+      - name: Their thumbnails (thumbs.mjs), and source.json
+        run: |
+          node "$RUNNER_TEMP/pics/tools/thumbs.mjs" "$RUNNER_TEMP/pics/$RUN" | tail -5 | tee out/thumbs.txt
+          V=$(grep -m1 -oE '^## [0-9]+\.[0-9]+\.[0-9]+' "$RUNNER_TEMP/game/dress-up/VERSIONS.md" | cut -c4-)
+          C=$(git -C "$RUNNER_TEMP/game" rev-parse HEAD)
+          B=$(curl -sf http://127.0.0.1:9333/json/version | grep -o '"Browser": *"[^"]*"' | cut -d'"' -f4)
+          printf '{\n "game": "Messed Up Dress Up",\n "version": "%s",\n "commit": "%s",\n "made_at": "%s",\n "made_on": "GitHub Actions, %s (matthewhammer/kids-choice-games run %s, ticket 262)"\n}\n' \
+            "$V" "$C" "$(date -Iseconds)" "$B" "$GITHUB_RUN_ID" > "$RUNNER_TEMP/pics/$RUN/source.json"
+          cat "$RUNNER_TEMP/pics/$RUN/source.json"
+      - name: Byte for byte against the latest earlier run
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/pics/$RUN"
+          {
+            echo "run: $RUN"
+            echo "game: $(git -C "$RUNNER_TEMP/game" log -1 --format='%h %s')"
+            for ext in png svg json; do
+              echo "$ext: $(find . -path ./thumbs -prune -o -name "*.$ext" -type l -print | wc -l) the same as the run before (links), $(find . -path ./thumbs -prune -o -name "*.$ext" -type f -print | wc -l) new or changed"
+            done
+            echo "new or changed pictures, by folder:"
+            find . -path ./thumbs -prune -o -name '*.png' -type f -print | cut -d/ -f2 | sort | uniq -c
+          } | tee "$GITHUB_WORKSPACE/out/bytes.txt"
+          cat "$GITHUB_WORKSPACE/out/bytes.txt" >> "$GITHUB_STEP_SUMMARY"
+      - name: The run as a tar (its links kept)
+        run: |
+          tar -C "$RUNNER_TEMP/pics" -cf out/run.tar "$RUN"
+          echo "$RUN" > out/run.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: run
+          path: out/
+          compression-level: 0
