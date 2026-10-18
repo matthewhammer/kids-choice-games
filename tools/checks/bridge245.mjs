@@ -76,12 +76,14 @@ try {
   const up = await hold([12], 700), afterU = await now(), down = await hold([13], 700), afterD = await now();
   ok("⬆ turns them away from us, and they stay where they are", afterU.facing === "back" && !!afterU.on && Math.abs(afterU.on.u - afterL.on.u) < 1e-3 && up.every(s => s.anim !== "walk"), afterU);
   ok("⬇ turns them toward us, and they stay where they are", afterD.facing === "front" && !!afterD.on && Math.abs(afterD.on.u - afterL.on.u) < 1e-3, afterD);
-  // all the way: stopped at the end
-  const far = await hold([15], 6000), end = await now();
-  const toRight = JSON.parse(await ev(`JSON.stringify((() => { const W = treeWalks()[1]; return W.q[0] >= W.p[0] ? 1 : 0; })())`));
-  ok("walking on: stopped at the bridge's end, still on it", !!end.on && Math.abs(end.on.u - toRight) < 1e-3 && far.slice(-5).every(s => s.u === far[far.length - 1].u), end);
-  // ♿'s boxes: each bridge's way along it
-  const hud = JSON.parse(await ev(`(async () => { Object.assign(state.access, DEFAULTS.access, { showSolids: true }); changed(); await new Promise(r => setTimeout(r, 400));
+  // all the way: to the end, and (since ticket 246) pushing on there, into the house at that end
+  const house = JSON.parse(await ev(`JSON.stringify((() => { const W = treeWalks()[1]; return (W.q[0] >= W.p[0] ? W.b : W.a) + 1; })())`));
+  const far = await hold([15], 9000), end = await now(), inside = JSON.parse(await ev("JSON.stringify(state.background.inside)"));
+  const lastOn = far.filter(s => s.u !== null).pop();
+  ok("walking on: along to the bridge's end, and pushing on there, into the house at that end (ticket 246)", !!lastOn && lastOn.u > 0.99 && end.kind === "treeroom" && inside === house, { lastOn, end, inside, house });
+  // ♿'s boxes: each bridge's way along it (back outside, on the bridge)
+  const hud = JSON.parse(await ev(`(async () => { state.background.kind = "treehouse"; changed(); bridgeOn(1, 0.9); changed(); await new Promise(r => setTimeout(r, 300));
+    Object.assign(state.access, DEFAULTS.access, { showSolids: true }); changed(); await new Promise(r => setTimeout(r, 400));
     const ov = document.querySelector("#access-layer svg.solid-boxes"), M = pic.getScreenCTM(), box = document.getElementById("access-layer").getBoundingClientRect();
     const walks = [...ov.querySelectorAll("[data-walk]")].map(g => { const pts = g.querySelector("polyline.walk").getAttribute("points").split(" ").map(p => p.split(",").map(Number)); return { name: g.dataset.walk, pts }; });
     const far = treeWalks().map((W, i) => { const w = walks[i]; if (!w) return 999; return Math.max(...w.pts.map((p, j) => { const q = new DOMPoint(...walkAt(W, j / (w.pts.length - 1))).matrixTransform(M); return Math.hypot(q.x - box.left - p[0], q.y - box.top - p[1]); })); });
