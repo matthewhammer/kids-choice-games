@@ -9,6 +9,10 @@
 # tar; on the laptop, the archive's tools/add_run.sh checks it, commits it,
 # tags it and pushes. The run is named in Matthew's time (Mountain): a day's
 # first run YYYY/MM/DD, a later one that day YYYY/MM/DD/HH-MM.
+# (ticket 276) With the Actions secret ARCHIVE_TOKEN (a token that can write
+# to dress-up-pictures and dress-up-music), each job then adds its run itself:
+# a fresh clone of its archive, and the archive's own tools/add_run.sh, the
+# same checks and commit as on the laptop. Without it, the artifact as before.
 name: Dress Up archive
 on:
   push:
@@ -23,6 +27,8 @@ jobs:
     name: Pictures (the game at main)
     runs-on: ubuntu-24.04
     timeout-minutes: 150
+    env:
+      ARCHIVE_TOKEN: ${{ secrets.ARCHIVE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,10 +86,18 @@ jobs:
         with:
           name: pictures
           path: out/
+      - name: The run added to the archive, here (only with ARCHIVE_TOKEN)
+        if: env.ARCHIVE_TOKEN != ''
+        shell: bash
+        run: |
+          git clone -q --depth 1 "https://x-access-token:${ARCHIVE_TOKEN}@github.com/matthewhammer/dress-up-pictures" "$RUNNER_TEMP/land"
+          ADD_RUN_SCRATCH="$RUNNER_TEMP/scratch" "$RUNNER_TEMP/land/tools/add_run.sh" out | tee -a "$GITHUB_STEP_SUMMARY"
   music:
     name: Music (the game at main)
     runs-on: ubuntu-24.04
     timeout-minutes: 240
+    env:
+      ARCHIVE_TOKEN: ${{ secrets.ARCHIVE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -137,3 +151,9 @@ jobs:
         with:
           name: music
           path: out/
+      - name: The run added to the archive, here (only with ARCHIVE_TOKEN)
+        if: env.ARCHIVE_TOKEN != ''
+        shell: bash
+        run: |
+          git clone -q --depth 1 "https://x-access-token:${ARCHIVE_TOKEN}@github.com/matthewhammer/dress-up-music" "$RUNNER_TEMP/land"
+          ADD_RUN_SCRATCH="$RUNNER_TEMP/scratch" "$RUNNER_TEMP/land/tools/add_run.sh" out | tee -a "$GITHUB_STEP_SUMMARY"
