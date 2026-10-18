@@ -312,7 +312,9 @@ function drawNow() {
   if (climb && climb.place !== climbPlace(BG)) { if (climb.through) B.anim = "none"; climb = null; }
   let climbUp = 0;
   if (climb && !climb.none && B.anim === "climbup" && scened && !poseHeld && !drag) {
-    const tall = (ground - neckTop + 90) * figureT.k, all = Math.max(0.4 * (climb.z - climb.top), climb.z - climb.top - (climb.door ? 0.55 * tall : climb.hands ? 0.85 * tall : 0));
+    const tall = (ground - neckTop + 90) * figureT.k, all0 = Math.max(0.4 * (climb.z - climb.top), climb.z - climb.top - (climb.door ? 0.55 * tall : climb.hands ? 0.85 * tall : 0));
+    // (ticket 252: up through a ceiling's opening, on till the feet are past it, cut off above it as they go: no fade)
+    const all = climb.clipUp != null && climb.door ? Math.max(all0, climb.z - climb.clipUp + 6) : all0;
     // (ticket 145: by hand, as far as the controller has taken them; through a doorway at its top)
     // (ticket 199: down a hatch's ladder, the lift goes below where they started, till they are out of sight, then through)
     const got = climb.down ? Math.min(0, climb.got) : climb.manual ? clamp(climb.got, 0, all) : Math.min(all, (performance.now() - climb.start) / 1000 * CLIMB_SPEED * figureT.k);
@@ -870,11 +872,14 @@ function drawNow() {
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
   if (figAway) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 193: a spin's copy is shown instead)
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units
-  if (climb && climb.down && climb.clip != null && B.anim === "climbup") for (const n of figShown) {
+  // (ticket 252) and climbing up through a ceiling's opening: cut off above it
+  const clipDown = climb && climb.down && climb.clip != null, clipUp = climb && !climb.down && climb.clipUp != null && climb.door;
+  if ((clipDown || clipUp) && B.anim === "climbup") for (const n of figShown) {
     if (n.nodeType !== 1 || !n.parentNode) continue;
     const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), id = "fig-clip-" + Math.random().toString(36).slice(2, 8);
     w.setAttribute("class", "fig-clip"); w.setAttribute("clip-path", `url(#${id})`);
-    w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse"><rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/></clipPath>`;
+    w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + (clipDown ? `<rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/>`
+      : `<rect x="-4000" y="${f1(climb.clipUp)}" width="8000" height="8000"/>`) + `</clipPath>`;
     n.replaceWith(w); w.append(n);
   }
   worldWaysHud(); pathHud(); solidsHud(); accessApply(); bubbleRun();   // (0.0.145: the arrows placed again on every drawing too)   // (ticket 220: bubble space's bubbles, moving while it is shown)   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)

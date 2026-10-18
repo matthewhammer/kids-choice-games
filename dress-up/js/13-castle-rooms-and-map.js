@@ -177,7 +177,7 @@ const shackle = (x, y, s) => `<rect x="${f1(x - 5 * s)}" y="${f1(y - 5 * s)}" wi
 const ladderUp = (x, floor, top, k, label, attrs) => `<g class="portal" ${attrs}>` +
   `<polygon points="${f1(x - 50 * k)},${f1(top)} ${f1(x + 50 * k)},${f1(top)} ${f1(x + 120 * k)},${f1(floor + 40 * k)} ${f1(x - 120 * k)},${f1(floor + 40 * k)}" fill="#fff6c8" opacity="0.12"/>` +
   `<ellipse cx="${f1(x)}" cy="${f1(top)}" rx="${f1(56 * k)}" ry="${f1(14 * k)}" fill="#fff3c4" opacity="0.8"/>` +
-  `<g data-ladder="1">` + [-1, 1].map(e => `<line x1="${f1(x + e * 22 * k)}" y1="${f1(top)}" x2="${f1(x + e * 30 * k)}" y2="${f1(floor + 10 * k)}" stroke="#6e4a2c" stroke-width="${f1(7 * k)}"/>`).join("") +
+  `<g data-ladder="1" data-up="${f1(top)}">` + [-1, 1].map(e => `<line x1="${f1(x + e * 22 * k)}" y1="${f1(top)}" x2="${f1(x + e * 30 * k)}" y2="${f1(floor + 10 * k)}" stroke="#6e4a2c" stroke-width="${f1(7 * k)}"/>`).join("") +   // (ticket 252: the opening's line)
   [...Array(9)].map((_, j) => { const u = (j + 0.5) / 9, y = top + (floor + 10 * k - top) * u, hw = (22 + 8 * u) * k;
     return `<line x1="${f1(x - hw)}" y1="${f1(y)}" x2="${f1(x + hw)}" y2="${f1(y)}" stroke="#8b5e34" stroke-width="${f1(5 * k)}"/>`; }).join("") + `</g>` +
   plankSign(x, floor - 200 * k, k, label) + `</g>`;

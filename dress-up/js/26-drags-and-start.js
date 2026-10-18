@@ -1010,7 +1010,7 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
       for (const u of undo) u();
       BG.figX = Math.round(lad.x); BG.figY = Math.round(lad.z - SCENE.ground + 2);
       B.facing = "back"; B.anim = "climbup"; padWant = null;
-      climb = { place: climbPlace(BG), x: lad.x, z: lad.z + 2, top: lad.top, door: lad.door, hands: lad.hands, start: performance.now(), done: false, through: false };
+      climb = { place: climbPlace(BG), x: lad.x, z: lad.z + 2, top: lad.top, clipUp: lad.up ?? null, door: lad.door, hands: lad.hands, start: performance.now(), done: false, through: false };
       entering = false; tripPhase = "climbing";
       changed();
       return;

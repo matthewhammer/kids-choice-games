@@ -112,7 +112,9 @@ function ladderAt(el, Pinv) {
   const ob = el.closest("[data-obj]"), z = el.dataset.down !== undefined ? +el.dataset.down : ob && Number.isFinite(Number(ob.dataset.z)) ? Number(ob.dataset.z) : lo.y;
   const p = el.closest(".portal"), house = el.dataset.house;
   const door = p ? { to: p.dataset.to, house: p.dataset.house, room: p.dataset.room, tent: p.dataset.tent } : house ? { to: "treeroom", house } : null;
-  return { x: lo.x, z, top: Math.min(lo.y, hi.y), door, hands: el.dataset.top === "hands", down: el.dataset.down !== undefined ? +el.dataset.down : null };
+  // (ticket 252: a ladder up through a ceiling's opening, data-up: the opening's line, above which the climber is cut off)
+  return { x: lo.x, z, top: Math.min(lo.y, hi.y), door, hands: el.dataset.top === "hands", down: el.dataset.down !== undefined ? +el.dataset.down : null,
+           up: el.dataset.up !== undefined ? +el.dataset.up : null };
 }
 function startClimb() {
   climbLook = 0;
@@ -131,7 +133,7 @@ function startClimb() {
   if (!best || (!anywhere && best.d > CLIMB_REACH)) { climb = { none: true, far: !!best, place: climbPlace(BG) }; changed(); return; }
   BG.figX = Math.round(best.x); BG.figY = Math.round(best.z - SCENE.ground + 2);
   B.facing = "back";   // (facing the ladder, away from us: ticket 138)
-  climb = { place: climbPlace(BG), x: best.x, z: best.z + 2, top: best.top, door: best.door, hands: best.hands, start: performance.now(), done: false, through: false };
+  climb = { place: climbPlace(BG), x: best.x, z: best.z + 2, top: best.top, clipUp: best.up ?? null, door: best.door, hands: best.hands, start: performance.now(), done: false, through: false };
   changed();
 }
 // (ticket 145) A place's ladders and its pictures (and windows: a doorway
@@ -237,7 +239,7 @@ function mountLadder(L) {
   if (B.pose !== "stand") strikePose("stand");
   B.anim = "climbup"; B.facing = "back";
   BG.figX = Math.round(L.x); BG.figY = Math.round(L.z - SCENE.ground + 2);
-  climb = { place: climbPlace(BG), x: L.x, z: L.z + 2, top: L.top, door: L.door, hands: L.hands, start: performance.now(), done: false, through: false, manual: true, got: 0 };
+  climb = { place: climbPlace(BG), x: L.x, z: L.z + 2, top: L.top, clipUp: L.up ?? null, door: L.door, hands: L.hands, start: performance.now(), done: false, through: false, manual: true, got: 0 };
 }
 // (ticket 187) The passages within reach, nearest first, each scored by how
 // far it is over how far reach goes (below 1, within reach), so every kind

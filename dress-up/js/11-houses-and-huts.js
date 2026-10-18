@@ -363,7 +363,8 @@ function waysSvg(c, floor, links) {
       // ladder's foot, the square room's ceiling coming toward us from the back wall's top)
       const lx = (x1 - W * 0.4) * TREE_FIT, { top: rt, vy } = roomFrame(c), cy = vy + (rt - vy) * (floor + 14 * k - vy) / (floor - vy);
       t += `<ellipse cx="${f1(lx)}" cy="${f1(cy)}" rx="${f1(40 * k)}" ry="${f1(12 * k)}" fill="#2a1a0e"/>` +
-           `<g data-ladder="1">` + [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(cy - 4 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
+           // (ticket 252: data-up, the opening's line: climbing up, the friend is cut off above it)
+           `<g data-ladder="1" data-up="${f1(cy)}">` + [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(cy - 4 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
            [...Array(Math.floor((floor + 14 * k - cy) / (30 * k)))].map((_, r) => `<line x1="${f1(lx - 20 * k)}" y1="${f1(floor - r * 30 * k)}" x2="${f1(lx + 20 * k)}" y2="${f1(floor - r * 30 * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") + `</g>` +
            plankSign(lx, y0 + H * 0.24, k, `${name} ⬆️`);
     }
