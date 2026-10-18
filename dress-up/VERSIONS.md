@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.220 (2026-10-18)
+
+Everything in 0.0.219, and the game can tell you about it again.
+
+- **The game offers the newest version again.** 0.0.219 went out with an empty version file, so a game left open on an older version never said a new one was there. This version puts it back.
+
 ## 0.0.219 (2026-10-18)
 
 Everything in 0.0.218, with the orange tent's flashlight shining the right way.
