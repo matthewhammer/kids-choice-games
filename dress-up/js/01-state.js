@@ -923,7 +923,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.214", released: "2026-10-18" };
+const VERSION = { number: "0.0.215", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -963,17 +963,39 @@ async function checkVersion() {
     chip.textContent = "🆕 " + v.number;
     chip.title = "Version " + v.number + (v.released ? ", out " + v.released : "") + ": click to change to it. Your friend, the place and the settings stay as they are.";
     chip.hidden = false;
+    if (askNewOn()) askNew(v);   // (ticket 302)
   } catch (_) { /* offline, or no version.json here (a copy on this computer): nothing to offer */ }
+}
+// (ticket 302, M: a pop-up that says "a new version is available, would you like to switch?"; Matthew: off by default, a
+// toggle in ⚙️ Advanced) This browser's own, as light or dark is (localStorage "dress-up-ask-new"), not the friend's. Once
+// for each newer version offered (checkVersion offers each once): 🔄 switch loads it as the chip does; not now leaves the chip
+const askNewOn = () => { try { return localStorage.getItem("dress-up-ask-new") === "on"; } catch (_) { return false; } };
+function askNewSet(on) {
+  try { if (on) localStorage.setItem("dress-up-ask-new", "on"); else localStorage.removeItem("dress-up-ask-new"); } catch (_) { /* (for this visit) */ }
+  if (on && offered) askNew(offered); else if (!on) { const card = document.getElementById("ask-new"); if (card) card.remove(); }
+}
+function askNew(v) {
+  let card = document.getElementById("ask-new");
+  if (!card) { card = document.createElement("div"); card.id = "ask-new"; card.setAttribute("role", "dialog"); card.setAttribute("aria-label", "A new version"); document.body.append(card); }
+  const words = document.createElement("p"), which = document.createElement("p"), row = document.createElement("div"), yes = document.createElement("button"), no = document.createElement("button");
+  words.textContent = "🆕 A new version is available, would you like to switch?";
+  which.className = "hint"; which.textContent = "version " + v.number + (v.released ? ", out " + v.released : "") + " · your friend, the place and the settings stay as they are";
+  row.className = "row"; yes.textContent = "🔄 switch"; no.textContent = "not now";
+  yes.addEventListener("click", switchToOffered); no.addEventListener("click", () => card.remove());
+  row.append(yes, no); card.replaceChildren(words, which, row);
+  yes.focus({ preventScroll: true });
+}
+// (the chip's click, and the pop-up's 🔄 switch: the new version, at an address of its own so no cache hands back the old one)
+function switchToOffered() {
+  if (!offered) return;
+  persist();
+  location.replace(location.pathname + "?v=" + encodeURIComponent(offered.number) + location.hash);
 }
 function showVersion() {
   const el = document.getElementById("version");
   if (el) { el.textContent = VERSION.number + " · " + VERSION.released; el.title = "This is version " + VERSION.number + ", out " + VERSION.released + " (what changed: VERSIONS.md on GitHub)"; }
   const chip = document.getElementById("newer");
-  if (chip) chip.addEventListener("click", () => {
-    if (!offered) return;
-    persist();
-    location.replace(location.pathname + "?v=" + encodeURIComponent(offered.number) + location.hash);
-  });
+  if (chip) chip.addEventListener("click", switchToOffered);
   setTimeout(checkVersion, 5000);
   setInterval(checkVersion, 60000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) checkVersion(); });

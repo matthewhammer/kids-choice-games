@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.215 (2026-10-18)
+
+Everything in 0.0.214, with a pop-up when a new version is out, for M, for those who want it.
+
+- **"🔔 a pop-up when a new version is out"**, in ⚙️ Advanced, off at first: switched on, the moment a newer version comes out a pop-up asks "A new version is available, would you like to switch?". "🔄 switch" changes to it, keeping your friend, the place and the settings, as the 🆕 chip after the game's name always has; "not now" leaves the chip, and the pop-up does not ask again about that version. Each browser keeps its own choice, as it keeps light or dark.
+
 ## 0.0.214 (2026-10-18)
 
 Everything in 0.0.213, with the background designer's two sides sized by dragging, as the world designer's are.
