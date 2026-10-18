@@ -59,7 +59,7 @@ const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
 const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
 // The places, and the kinds of place they are, for the Background tab's
 // two rows (as the music's): every place is of exactly one kind.
-const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
+const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["bubbleroom", "🫧 the bubble room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
@@ -73,7 +73,9 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
 // (where the way toward us can lead from a room outside the castle: any place but those found by a number of their own)
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const PLACE_GROUPS = [
-  ["imagination", "💭 imagination", ["emptyroom", "bubblespace", "imagination"]],
+  ["imagination", "💭 imagination", ["emptyroom", "imagination"]],
+  // (ticket 290, for N: bubbles, a kind of place of its own: bubble space, moved here, and the bubble room)
+  ["bubbles", "🫧 bubbles", ["bubblespace", "bubbleroom"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains"]],
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
@@ -333,6 +335,15 @@ const TABS = [
       // (ticket 274) the bubbles' seed: the same seed, the same places, every time the place is drawn
       ["action", "bubbleSeed", "🎲 other places for the bubbles", () => { state.background.bubbleSeed = 1 + Math.floor(Math.random() * 99999); }],
       ...BUBBLE_THEME_CTLS,
+    ]],
+    // (ticket 290, for N) the bubble room's own: its foam on each of its walls, its floor and its ceiling, how far up (or out)
+    // each goes, the foam's colour, how much it moves, another foam
+    ["group", "bubbleroom", "🫧 the bubble room", [
+      ...FOAM_SURFACES.flatMap(([K, name, up]) => [["toggle", "foam" + K, `🫧 foam on the ${name}`], ["range", "foam" + K + "H", `${up ? "↕️ how high" : "↔️ how far out"}, on the ${name}`, 0, 100, 30, 100]]),
+      ["color", "foamColor", "🎨 the foam's colour", BUBBLE_COLORS],
+      ["toggle", "foamRainbow", "🌈 a rainbow sheen on the foam"],
+      ["range", "foamMove", "〰️ how much the foam moves (0 = still)", 0, 100, 0, 60],
+      ["action", "foamSeed", "🎲 another foam", () => { state.background.foamSeed = 1 + Math.floor(Math.random() * 99999); }],
     ]],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)
     ["choice", "lfoFast", "〰️ quick things in the scene move with", [["none", "their own pace"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
@@ -824,6 +835,7 @@ const SHOWN_WHEN = {
   "background.figPos": b => b.kind !== "none",
   "background.objectsOff": b => b.kind !== "none",
   "background.bubbles": b => b.kind === "bubblespace",   // (ticket 220)
+  "background.bubbleroom": b => b.kind === "bubbleroom",   // (ticket 290)
   "background.waterSee": b => !!waterHere(b), "background.waterWake": b => !!waterHere(b),
   "background.waterTread": b => !!waterHere(b) && !SHALLOW_WATER[b.kind],
   "background.chickenLegs": b => b.kind === "witch",

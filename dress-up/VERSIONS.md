@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.237 (2026-10-18)
+
+Everything in 0.0.236, plus a new kind of place, for N: 🫧 bubbles.
+
+- **🫧 bubbles, a kind of place of its own**, in 🏞️ Background: 🫧 bubble space has moved there from 💭 imagination, and beside it is a new place, the bubble room.
+- **🫧 The bubble room, made of bubbles**: its back wall, its side walls, its floor and its ceiling are covered in bubble foam, a few big bubbles and lots of smaller and smaller ones packed in between them, as real foam is, all drawn in the room's perspective.
+- **Its own controls, in "🫧 the bubble room"**: foam on or off on each wall, the floor and the ceiling, and how high it goes up each wall (or how far out on the floor and the ceiling); the foam's colour; a rainbow sheen; how much the foam moves (still to start with, since moving foam is a lot to draw); and 🎲 another foam.
+- Each surface's foam is an object of its own, so 🔬 Inspection names it and 👁️ can hide it.
+
 ## 0.0.236 (2026-10-18)
 
 Everything in 0.0.235, with the tree houses' doors opening as you go in.

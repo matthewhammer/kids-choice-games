@@ -1368,6 +1368,7 @@ function applyMix(instant = false) {
 const TORCH_LFO_THINGS = { fast: "🔥 the torches' flames", slow: "🔆 the torches' glow" };
 const SCENE_LFO_THINGS = {
   imagination: { fast: "🗺️ the map's dotted paths", slow: "✨ the room's glow" },
+  bubbleroom: { slow: "🫧 the foam, when it moves" },
   forest: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☀️ the sunbeams" },
   underwater: { fast: "🐟 the fishes' tails", slow: "🌿 the seaweed swaying" },
   deepsea: { fast: "🐟 the little fish darting", slow: "✨ the light shimmering, 🌿 the kelp swaying" },

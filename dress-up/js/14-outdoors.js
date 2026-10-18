@@ -810,6 +810,78 @@ function bubblespaceScene(c) {
     `<line x1="${f1(x0 - pad)}" y1="${f1(wall)}" x2="${f1(x0 + W + pad)}" y2="${f1(wall)}" stroke="#bdd0e4" stroke-width="${f1(2 * k)}"/>`) +
     SEP + obj("bubbles", Infinity, `<g id="bubble-layer"></g>`);
 }
+// (ticket 290, for N: a room "made of bubbles", "the look of fractal bubble foam, with sizes and placements chosen to mimic
+// that kind of pattern, on the walls and floors") The bubble room: a square room (roomFrame, as a tree room's), each of its
+// surfaces (FOAM_SURFACES: the back wall, the side walls, the floor, the ceiling) covered as far as its settings say in
+// bubble foam: a few big bubbles and more and more smaller ones packed into the gaps between them, as foam is (foamPack),
+// each a rim, a film and, on the bigger ones, a shine, laid flat on its surface in the room's perspective (a side wall's, the
+// floor's and the ceiling's foreshortened, a unit toward us a z of 1/800, as roomSpace lays things on the walls). With a
+// rainbow sheen, the rims take turns at three tints. 〰️ how much the foam moves: its bubbles in three sets, each drifting a
+// little its own way with the scene's slow LFO; still at 0, where it starts (a costly thing to draw: off unless asked for).
+// Each surface's foam is an object of its own. Bubble makers (🫧, a placed thing) blow bubbles into it, or anywhere.
+const FOAM_SURFACES = [["Back", "back wall", true], ["Left", "left wall", true], ["Right", "right wall", true], ["Floor", "floor", false], ["Ceil", "ceiling", false]];
+function foamPack(seed, w, h, rMax, rMin) {
+  // (each at a spot tried at random, as big as it can be there, up to rMax, without overlapping one already in: so each
+  // touches its neighbours, and the gaps left fill with smaller and smaller ones, as foam's do)
+  const R = seeded(seed), out = [], gap = rMin * 0.12;
+  for (let i = 0; i < 2600 && out.length < 260; i++) {
+    const x = R(i * 3) * w, y = R(i * 3 + 1) * h;
+    let r = rMax;
+    for (const b of out) { const d = Math.hypot(b.x - x, b.y - y) - b.r - gap; if (d < r) { r = d; if (r < rMin) break; } }
+    if (r >= rMin) out.push({ x, y, r, j: Math.floor(R(i * 3 + 2) * 3) });
+  }
+  return out;
+}
+function bubbleroomScene(c) {
+  const { x0, y0, y1, W, H, k, pad, P, o } = c, { floor, top, bw, vy, out } = roomFrame(c), wh = floor - top, B = o;   // (read through o: a change to one draws it again)
+  const base = B.foamColor || "#9ad7ff", tints = B.foamRainbow ?? true ? [base, mix(base, "#ff9ad8", 0.45), mix(base, "#b6f5a8", 0.45)] : [base, base, base];
+  const move = Math.max(0, Math.min(100, B.foamMove ?? 0)) / 100, seed = B.foamSeed ?? 1;
+  const at = (X, Y, z) => { const f = 1 / (1 + z); return [X * f, vy + (Y - vy) * f]; };
+  // (a bubble of radius r, in its surface's own units, about the origin; tf lays it on the surface)
+  // (the smallest a rim alone; bigger ones a light inside the rim; the biggest a shine too: fewer shapes to draw)
+  const bub = (r, j, tf) => `<g transform="${tf}"><circle r="${f1(r)}" fill="${tints[j]}" fill-opacity="0.2" stroke="${tints[j]}" stroke-width="${f1(Math.max(0.8, r * 0.1))}"/>` +
+    (r > 5 * k ? `<circle r="${f1(r * 0.9)}" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="${f1(Math.max(0.5, r * 0.04))}"/>` : "") +
+    (r > 9 * k ? `<ellipse cx="${f1(-r * 0.36)}" cy="${f1(-r * 0.38)}" rx="${f1(r * 0.26)}" ry="${f1(r * 0.15)}" fill="#ffffff" opacity="0.75" transform="rotate(-35 ${f1(-r * 0.36)} ${f1(-r * 0.38)})"/>` : "") + `</g>`;
+  const mat = (a, b, cc, d, e, f) => `matrix(${[a, b, cc, d].map(v => v.toFixed(4)).join(" ")} ${f1(e)} ${f1(f)})`;
+  // (in three sets, each drifting its own way when the foam moves)
+  const sets = (list, draw, dx, dy) => [0, 1, 2].map(j => { const inner = list.filter(b => b.j === j).map(draw).join("");
+    if (!move || !inner) return inner;
+    const ax = dx * move * (j - 1 || 0.7), ay = dy * move * (1 - j * 0.6);
+    return `<g>${sceneLfo(o, "slow", j / 3, "transform", (v, amp) => `${f1(ax * v * (0.5 + amp))} ${f1(ay * v * (0.5 + amp))}`,
+      `<animateTransform attributeName="transform" type="translate" values="0 0;${f1(ax)} ${f1(ay)};0 0" dur="${(5 + j * 1.7).toFixed(1)}s" repeatCount="indefinite"/>`, "translate")}${inner}</g>`; }).join("");
+  const rMax = 40 * k, rMin = 4 * k, clip = (id, pts) => `<defs><clipPath id="${id}"><polygon points="${pts}"/></clipPath></defs>`;
+  const fEdge = (W / 2 + pad) / bw, dSide = 800 * (1 - 1 / fEdge), fBot = (y1 + pad - vy) / (floor - vy), dFloor = 800 * (1 - 1 / fBot), fTop = (vy - (y0 - pad)) / (vy - top), dCeil = 800 * (1 - 1 / fTop);
+  let s = SEP + part("bubbleroom-shell", c.F, () => {
+    let t = `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="#d9ecfb"/>`;
+    t += `<rect x="${f1(-bw)}" y="${f1(top)}" width="${f1(2 * bw)}" height="${f1(wh)}" fill="#e6f3ff"/>`;
+    for (const sd of [-1, 1]) { const [ax, ay] = out(sd * bw, top, y0 - pad), [bx, by] = out(sd * bw, floor, y1 + pad);
+      t += `<polygon points="${P(sd * bw, top)} ${P(ax, ay)} ${P(sd * (W + pad), y0 - pad)} ${P(sd * (W + pad), y1 + pad)} ${P(bx, by)} ${P(sd * bw, floor)}" fill="#cfe3f6"/>`; }
+    t += `<polygon points="${P(-bw, top)} ${P(bw, top)} ${P(...out(bw, top, y0 - pad))} ${P(...out(-bw, top, y0 - pad))}" fill="#eef7ff"/>`;
+    t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(...out(bw, floor, y1 + pad))} ${P(...out(-bw, floor, y1 + pad))}" fill="#c4dcf3"/>`;
+    return t + [[-bw, top, -bw, floor], [bw, top, bw, floor], [-bw, floor, bw, floor], [-bw, top, bw, top]].map(([a, b, cc, d]) => `<line x1="${f1(a)}" y1="${f1(b)}" x2="${f1(cc)}" y2="${f1(d)}" stroke="#b3cde6" stroke-width="${f1(2 * k)}"/>`).join("");
+  });
+  const key = K => [c.F, B["foam" + K], B["foam" + K + "H"], base, B.foamRainbow ?? true, move, move ? sceneLfoKey(o, "slow") : "", seed];
+  // the back wall: from the floor up, as high as its setting
+  if (B.foamBack ?? true) s += SEP + part("bubbleroom-foam-back", key("Back"), () => { const h = wh * (B.foamBackH ?? 70) / 100;
+    return wallObj("foam, back wall", clip("bg-foam-back", `${P(-bw, top)} ${P(bw, top)} ${P(bw, floor)} ${P(-bw, floor)}`) + `<g clip-path="url(#bg-foam-back)">` +
+      sets(foamPack(seed * 7 + 1, 2 * bw, h, rMax, rMin), b => bub(b.r, b.j, `translate(${f1(-bw + b.x)} ${f1(floor - b.y)})`), 5 * k, 3 * k) + `</g>`); });
+  // the side walls: along each, from the back corner toward us, from the floor up
+  for (const [sd, K] of [[-1, "Left"], [1, "Right"]]) if (B["foam" + K] ?? true) s += SEP + part("bubbleroom-foam-" + K, key(K), () => {
+    const h = wh * (B["foam" + K + "H"] ?? 55) / 100, [ax, ay] = out(sd * bw, top, y0 - pad), [bx, by] = out(sd * bw, floor, y1 + pad);
+    return wallObj(`foam, ${sd < 0 ? "left" : "right"} wall`, clip("bg-foam-" + K, `${P(sd * bw, top)} ${P(ax, ay)} ${P(sd * (W + pad), y0 - pad)} ${P(sd * (W + pad), y1 + pad)} ${P(bx, by)} ${P(sd * bw, floor)}`) +
+      `<g clip-path="url(#bg-foam-${K})">` + sets(foamPack(seed * 7 + (sd < 0 ? 2 : 3), dSide, h, rMax, rMin), b => {
+        const z = -b.x / 800, f = 1 / (1 + z), Y = floor - b.y, [ex, ey] = at(sd * bw, Y, z), q = f * f / 800;
+        return bub(b.r, b.j, mat(sd * bw * q, (Y - vy) * q, 0, f, ex, ey)); }, 3 * k, 4 * k) + `</g>`); });
+  // the floor and the ceiling: out from the back wall toward us, as far as their settings
+  for (const [K, Y, D, nm] of [["Floor", floor, dFloor, "floor"], ["Ceil", top, dCeil, "ceiling"]]) if (B["foam" + K] ?? true) s += SEP + part("bubbleroom-foam-" + K, key(K), () => {
+    const d = D * (B["foam" + K + "H"] ?? (K === "Floor" ? 100 : 60)) / 100, edge = K === "Floor" ? y1 + pad : y0 - pad;
+    const body = clip("bg-foam-" + K, `${P(-bw, Y)} ${P(bw, Y)} ${P(...out(bw, Y, edge))} ${P(...out(-bw, Y, edge))}`) + `<g clip-path="url(#bg-foam-${K})">` +
+      sets(foamPack(seed * 7 + (K === "Floor" ? 4 : 5), 2 * bw, d, rMax, rMin), b => {
+        const X = -bw + b.x, z = -b.y / 800, f = 1 / (1 + z), [ex, ey] = at(X, Y, z), q = f * f / 800;
+        return bub(b.r, b.j, mat(f, 0, X * q, (Y - vy) * q, ex, ey)); }, 5 * k, 2 * k) + `</g>`;
+    return K === "Floor" ? floorObj("foam, floor", body) : wallObj("foam, ceiling", body); });
+  return s;
+}
 // The bubbles, as they move (in the picture's units): each drifts in the
 // room's wind, a breeze slowly turning about, its strength the 🌬️ wind
 // setting, with a little jostle of its own; bounces off the picture's edges;
@@ -1506,7 +1578,7 @@ function crossingScene(c) {
 }
 const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, hutcenter: hutcenterScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene };
+                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width
