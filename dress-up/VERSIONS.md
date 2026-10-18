@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.205 (2026-10-18)
+
+Everything in 0.0.204, with the grass hut round, outside and in, for M.
+
+- **🛖 grass hut**: a round wall of sticks under a dome of grass thatch that hangs out over it all round, the thatch in rings of fringe up to the tuft tied at the top.
+- **Inside the grass hut** (the living room, the bedroom, the potion room): round rooms. The wall of sticks curves round the floor under the dome's rafters; the twine, the potion room's shelves and its herbs' beam follow the curve, and the doors stand in it.
+
 ## 0.0.204 (2026-10-18)
 
 Everything in 0.0.203, with a grass hut for M: four new places.
