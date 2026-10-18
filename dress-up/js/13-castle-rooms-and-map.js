@@ -192,10 +192,10 @@ const ladderUp = (x, floor, top, k, label, attrs, shape = "circle") => `<g class
 // places: its plate (x, y, its top left), its pivot (px, py) and the end of its
 // handle (ex, ey), where the knob is; arm wraps the handle and the knob (a
 // placed lever turns them as it is pulled)
-function leverSvg(x, y, px, py, ex, ey, k, arm = s => s) {
+function leverSvg(x, y, px, py, ex, ey, k, arm = s => s, knob = "#c0392b") {   // (ticket 323: its knob's colour)
   return `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(26 * k)}" height="${f1(40 * k)}" fill="#3a3a44"/>` +
     arm(`<line x1="${f1(px)}" y1="${f1(py)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="#6a6a76" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
-        `<circle cx="${f1(ex)}" cy="${f1(ey)}" r="${f1(7 * k)}" fill="#c0392b"/>`);
+        `<circle cx="${f1(ex)}" cy="${f1(ey)}" r="${f1(7 * k)}" fill="${knob}"/>`);
 }
 // (ticket 284) the trap room's pit, shared with the 🕳️ trap door: its opening
 // (shape sh, middle cx, cy, half widths rx, ry), dark inside, spikes glinting
@@ -248,6 +248,12 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes, trap = null) {
     return wallObj(side === "L" ? "lever, left" : "lever, right", `<g data-lever="${side}" style="cursor: pointer">` +
       leverSvg(px - 13 * k, floor - 150 * k, px, py, px, py - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="${f1(px)} ${f1(py)}" transform="rotate(${a} ${f1(px)} ${f1(py)})">${s}</g>`) + `</g>`);
   }).join("") +
+       // (ticket 323) the boulder levers, blue-knobbed, under the red ones: each down when its boulder has fallen
+       (trap && trap.boulders ? [["L", -1], ["R", 1]].map(([side, sd]) => {
+         const px = sd * (bw * 0.32 + 13 * k), py = floor - 64 * k, a = (trap.boulders[side] ? -1 : 1) * sd * LEVER_TILT;
+         return wallObj(side === "L" ? "boulder lever, left" : "boulder lever, right", `<g data-lever="B${side}" style="cursor: pointer">` +
+           leverSvg(px - 13 * k, floor - 84 * k, px, py, px, py - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="${f1(px)} ${f1(py)}" transform="rotate(${a} ${f1(px)} ${f1(py)})">${s}</g>`, BOULDER_KNOB) + `</g>`);
+       }).join("") : "") +
        wallObj("warning sign", `<rect x="${f1(-bw * 0.38)}" y="${f1(top + 40 * k)}" width="${f1(bw * 0.76)}" height="${f1(44 * k)}" rx="${f1(6 * k)}" fill="#3a3530" opacity="0.85"/>` +
        `<text x="0" y="${f1(top + 72 * k)}" text-anchor="middle" font-size="${f1(26 * k)}" font-weight="bold" fill="#f2c12e" font-family="sans-serif">⚠️ MIND THE FLOOR ⚠️</text>`);
   // the pits: dark holes in the floor, their rims of broken stone, rows of
@@ -257,12 +263,19 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes, trap = null) {
     const id = `bg-pit${i}`;
     // (ticket 305) a pit not there is not drawn; a shut one is planks, no way down (no doorway, so no fall)
     if (trap && !trap.on[i]) return;
-    const open = !trap || trap.open[i], to = open ? pits[i] : null;
-    if (!open) { t += `<g>` + pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, false) + `</g>`; return; }   // (ticket 307: its lid across it)
+    const covered = !!(trap && trap.covered[i]), open = !trap || trap.open[i], to = open && !covered ? pits[i] : null;   // (ticket 323: a boulder in it, no way down)
+    // (ticket 323) its boulder, there while the room has boulder levers: in the hole when fallen (a rock standing there, so a
+    // solid), else up out of sight at the ceiling, where it falls from (boulderFall); data-drop: how far
+    const boulder = () => { if (!trap || !trap.boulders) return "";
+      const rad = rx * 0.8, base = cy + ry * 0.55, drop = base - top + 90 * k, sd = trap.seed * 7 + i;
+      const tone = trap.tone === "surprise" ? ROCK_TONES[Math.floor(seeded(trap.seed)(i + 50) * ROCK_TONES.length)] : trap.tone;
+      const g = `<g data-boulder="${i}" data-drop="${f1(drop)}"${covered ? "" : ` transform="translate(0 ${f1(-drop)})" visibility="hidden"`}>${rockSvg(cx, base, rad, sd, tone)}</g>`;
+      return covered ? obj(i ? "boulder, right" : "boulder, left", base, g) : g; };
+    if (!open) { t += `<g>` + pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, false) + `</g>` + boulder(); return; }   // (ticket 307: its lid across it)
     // (ticket 162: its hole, for falling in: its middle and its half widths, across and in depth)
     t += (to ? `<g class="portal" data-to="castleroom" data-room="${to}" data-pit="${f1(cx)} ${f1(cy)} ${f1(rx)} ${f1(ry)}" data-shape="${sh}">` : "<g>") +
       pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, true) +
-      (to ? plankSign(cx, cy - ry - 34 * k, k, `🕳️ ${roomLabel(K.rooms[to - 1]).split(" ")[0]} ${to}`) : "") + `</g>`;
+      (to ? plankSign(cx, cy - ry - 34 * k, k, `🕳️ ${roomLabel(K.rooms[to - 1]).split(" ")[0]} ${to}`) : "") + `</g>` + boulder();
   });
   // a helmet someone dropped by the left pit, a sword by the right one
   // (the helmet an object, standing where its rim meets the floor; the pits

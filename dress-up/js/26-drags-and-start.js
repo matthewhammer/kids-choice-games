@@ -327,14 +327,20 @@ function leverPull(i) {
   const B = state.background, T = (B.things || [])[i];
   if (!T || T.kind !== "lever") return;
   T.on = !T.on;
-  const swung = [];
-  for (const [j, d] of B.things.entries()) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid)) { d.open = !d.open; swung.push([j, d.open]); }
+  const swung = [], dropped = [];
+  // (ticket 323: a boulder lever drops a boulder into each of its trap doors as it goes over, and lifts it out as it comes back)
+  if (T.does === "boulder") { const seed = 1 + Math.floor(Math.random() * 999999);
+    for (const [j, d] of B.things.entries()) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid) && !!d.boulder !== T.on) { d.boulder = T.on; d.rock = T.rock || ROCK_TONES[0]; if (T.on) d.rockSeed = seed + j; dropped.push([j, d.boulder]); } }
+  else for (const [j, d] of B.things.entries()) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid)) { d.open = !d.open; swung.push([j, d.open]); }
   changed();
   turnArm(`[data-drag="thing:${i}"] .lever-arm`, T.on ? LEVER_TILT : -LEVER_TILT);
   for (const [j, open] of swung) lidSwing(`[data-drag="thing:${j}"] .pit-lid`, open);   // (ticket 307)
+  // (a boulder lifted out is drawn no more once it has gone: drawn again, held, for its rising; ticket 323)
+  for (const [j, down] of dropped) if (down) boulderFall(`[data-drag="thing:${j}"] [data-boulder]`, true);
 }
 // (ticket 305) The trap room's lever pulled: it flips over, and so does every pit it works (trapState); its handle turns across
 function roomLeverPull(side) {
+  if (side[0] === "B") return roomBoulderPull(side.slice(1));   // (ticket 323: a blue one)
   const B = state.background;
   if (B.kind !== "castleroom") return;
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = leverKey(side, n, K.id);
@@ -344,6 +350,30 @@ function roomLeverPull(side) {
   const up = !B[key], sd = side === "L" ? -1 : 1, now = trapState(B, n, K.id).open;
   turnArm(`[data-lever="${side}"] .lever-arm`, (up ? 1 : -1) * sd * LEVER_TILT);
   for (const j of [0, 1]) if (now[j] !== was[j]) lidSwing(`.pit-lid[data-pit-i="${j}"]`, now[j]);   // (ticket 307)
+}
+// (ticket 323) A trap room's boulder lever pulled: it flips over; each pit it works (by the room's wiring) has its boulder
+// fall from the ceiling into the hole, or rise away again. A new seed each time one falls: a new rock (its shape, and its
+// tone when the room's boulders are a surprise)
+function roomBoulderPull(side) {
+  const B = state.background;
+  if (B.kind !== "castleroom") return;
+  const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = boulderKey(side, n, K.id);
+  const was = trapState(B, n, K.id).covered;
+  B[key] = !B[key];
+  if (B[key]) B[boulderSeedKey(n, K.id)] = 1 + Math.floor(Math.random() * 999999);
+  changed();
+  const down = B[key], sd = side === "L" ? -1 : 1, now = trapState(B, n, K.id).covered;
+  turnArm(`[data-lever="B${side}"] .lever-arm`, (down ? -1 : 1) * sd * LEVER_TILT);
+  for (const j of [0, 1]) if (now[j] !== was[j]) boulderFall(`[data-boulder="${j}"]`, now[j]);
+}
+// (a boulder falling from the ceiling into its pit, faster as it falls, a little bounce as it lands; or rising away, slowly
+// at first, out of sight; in BOULDER_FALL ms, carried on through a redrawing as every swing is)
+const BOULDER_FALL = 720;
+function boulderFall(sel, down) {
+  swingOn(sel, BOULDER_FALL, (g, u) => { const H = +g.dataset.drop;
+    const y = down ? (u < 0.8 ? -H * (1 - (u / 0.8) ** 2) : -H * 0.05 * Math.sin(Math.PI * (u - 0.8) / 0.2)) : -H * u * u;
+    if (u < 1) { g.removeAttribute("visibility"); g.setAttribute("transform", `translate(0 ${f1(y)})`); return; }
+    if (down) g.removeAttribute("transform"); else { g.setAttribute("transform", `translate(0 ${f1(-H)})`); g.setAttribute("visibility", "hidden"); } });
 }
 // (ticket 322) A swing on the screen, found again each frame by its selector in the scene, not held as one element: the
 // room drawn again in the middle of it (in Firefox the music's clock can stand still while the picture's runs, so the

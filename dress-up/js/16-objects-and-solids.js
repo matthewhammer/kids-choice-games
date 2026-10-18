@@ -163,7 +163,7 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 const STANDING = new Set(["anvil", "armor", "barrels", "basket", "bookcase", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
-  "rock", "sand castle", "snake tank", "soup pot", "stone", "stove", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
+  "rock", "boulder", "sand castle", "snake tank", "soup pot", "stone", "stove", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
   "water barrel", "water trough", "well", "white bush", "worktable", "yellow bush"]);
 const TRUNKED = new Set(["tree", "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
 // (ticket 214's audit: the living room's plant had a box as wide as its leaves) a pot's plant stands on its pot: its foot,

@@ -453,6 +453,8 @@ const TABS = [
         // (ticket 305) each pit there or not, and how the two levers on its wall work them
         ["toggle", pitOnKey(1, n, id), "🕳️ the left pit"], ["toggle", pitOnKey(2, n, id), "🕳️ the right pit"],
         ["choice", leverWireKey(n, id), "🎚️ the levers work", LEVER_WIRES],
+        // (ticket 323, N's) the blue boulder levers, under the red ones, and their boulders' rock
+        ["toggle", boulderOnKey(n, id), "🪨 boulder levers (blue knobs): a boulder falls into a pit"], ["choice", boulderToneKey(n, id), "🪨 the boulders' rock", BOULDER_TONES],
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castlePlaces" + n + id, "🍽️ places at table", 4, 18, 4, 18],
@@ -894,7 +896,8 @@ const SHOWN_WHEN = {
               ...R.list.map((_, i) => ["background." + R.box[0] + (i + 1) + id, b => livesHere(R.room)(b) && i + 1 <= Math.round(b[R.count[0] + id] ?? R.count[2])])]),
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle], ["background.castleDesign" + id, atCastle],
             ...ROOM_NS.flatMap(n => [...[1, 2].map(i => ["background." + pitShapeKey(i, n, id), b => typeOf(b, n) === "trap"]),
-              ...[1, 2].map(i => ["background." + pitOnKey(i, n, id), b => typeOf(b, n) === "trap"]), ["background." + leverWireKey(n, id), b => typeOf(b, n) === "trap"],   // (ticket 305)   // (ticket 271: in a trap room's own box)
+              ...[1, 2].map(i => ["background." + pitOnKey(i, n, id), b => typeOf(b, n) === "trap"]), ["background." + leverWireKey(n, id), b => typeOf(b, n) === "trap"],
+              ["background." + boulderOnKey(n, id), b => typeOf(b, n) === "trap"], ["background." + boulderToneKey(n, id), b => typeOf(b, n) === "trap" && b[boulderOnKey(n, id)] !== false],   // (ticket 323)   // (ticket 305)   // (ticket 271: in a trap room's own box)
               ["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
               ["background.castleOut" + n + id, b => !isHall(b, n)], ["background.castleFar" + n + id, b => typeOf(b, n) === "dining"],

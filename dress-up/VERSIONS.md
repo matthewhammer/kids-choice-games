@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.231 (2026-10-18)
+
+Everything in 0.0.230, plus boulder levers, for N.
+
+- **🪨 Boulder levers in the trap room**: a second pair of levers under the first, with blue knobs. Pull one and a boulder falls from the ceiling into the pit it works (faster as it falls, with a little bounce), and the hole is covered: no way down, and the boulder stands in your way. Pull it again and the boulder rises away. They work the pits the same way the red levers do ("🎚️ the levers work"). A trap room's Background box says whether it has them ("🪨 boulder levers") and which rock its boulders are ("🪨 the boulders' rock": one of the rock colours, or 🎲 a surprise, a new rock each time one falls).
+- **Every 🎚️ lever you place chooses what it does** ("🎚️ it"): opens and shuts its trap doors, or drops a boulder into them; and its boulder's rock, and the colour of its knob ("🎨 its knob": red for trap doors and blue for boulders unless you choose another).
+
 ## 0.0.230 (2026-10-18)
 
 Everything in 0.0.229, with the trap doors' swing and the levers' rock that carry on through a redrawing.

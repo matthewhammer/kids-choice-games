@@ -254,9 +254,20 @@ function trapWiring(o, n, id) {
 // (ticket 307, Matthew: "let's have them closed by default now that we can open them with the switch") a lever never
 // touched is pulled down, so its pit is shut; one pulled is as it was set
 const leverDown = (o, side, n, id) => !!(o[leverKey(side, n, id)] ?? true);
+// (ticket 323, N, through Matthew: "another pair of levers, mounted under the current pair (let's use a distinct color for
+// the knob, like blue ...). In this case, the blue levers do not shut the doors, but rather let 'boulders' fall from the
+// ceiling of the room down to cover the holes") a trap room's boulder levers: a blue-knobbed pair under the red one (there
+// unless the room says not, boulderOnKey); each, pulled down, lets the boulder of the pit it works (by the room's wiring,
+// as the red pair) fall from the ceiling into the hole, which is then no way down; pulled up again, the boulder rises
+// away. The boulder's rock: a tone of the rocks put in places (ROCK_TONES), or a surprise; its shape, and a surprise's
+// tone, drawn from a seed set each time one falls (boulderSeedKey), so the settings decide the picture.
+const boulderOnKey = (n, id) => `castleBoulders${n}${id}`, boulderKey = (side, n, id) => `castleBoulder${side}_${n}${id}`;
+const boulderToneKey = (n, id) => `castleBoulderTone${n}${id}`, boulderSeedKey = (n, id) => `castleBoulderSeed${n}${id}`;
 function trapState(o, n, id) {
   const wire = trapWiring(o, n, id), levers = { L: leverDown(o, "L", n, id), R: leverDown(o, "R", n, id) };
-  return { wire, levers, on: [1, 2].map(i => o[pitOnKey(i, n, id)] !== false), open: [0, 1].map(i => !levers[wire[i]]) };
+  const boulders = o[boulderOnKey(n, id)] !== false ? { L: !!o[boulderKey("L", n, id)], R: !!o[boulderKey("R", n, id)] } : null;
+  return { wire, levers, on: [1, 2].map(i => o[pitOnKey(i, n, id)] !== false), open: [0, 1].map(i => !levers[wire[i]]),
+           boulders, covered: [0, 1].map(i => !!(boulders && boulders[wire[i]])), tone: o[boulderToneKey(n, id)] || "#8f8a80", seed: o[boulderSeedKey(n, id)] ?? 5 };
 }
 // (wired at random: drawn again each time the friend comes into the room, so each visit is a puzzle of its own)
 function trapReshuffle(B) {
@@ -410,7 +421,7 @@ const DEFAULTS = {
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
                    ...ROOM_NS.map(n => ["castleRoomTheme" + n + id, n % 2 ? "A" : "B"]),
-                   ...ROOM_NS.flatMap(n => [[pitOnKey(1, n, id), true], [pitOnKey(2, n, id), true], [leverWireKey(n, id), "normal"]]),   // (ticket 305)
+                   ...ROOM_NS.flatMap(n => [[pitOnKey(1, n, id), true], [pitOnKey(2, n, id), true], [leverWireKey(n, id), "normal"], [boulderOnKey(n, id), true], [boulderToneKey(n, id), "#8f8a80"]]),   // (ticket 305)
                    ...ROOM_NS.flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"], ["castleOut" + n + id, "auto"], ["castleBack" + n + id, "none"], ["castleFar" + n + id, "none"], ["castlePlaces" + n + id, 10],
                      ...DOOR_JS.map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...ROOM_NS.map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
@@ -951,7 +962,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.230", released: "2026-10-18" };
+const VERSION = { number: "0.0.231", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
