@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.191 (2026-10-17)
+
+Everything in 0.0.190, with clicks to walk queued up.
+
+- **👆 A queue of clicks**: while your friend walks to where you clicked, the ground still glows, and each click there is another walk, taken one after another, as many as you like. With 👣 planned path on, the walks are drawn by turns in its colour and a second, alt colour (🔬 Inspection). Moving with the controller ends the queue.
+- **Fixed**: in 🗺️ World design, the forest crossing's "🌄 off in the distance" chips now show the one you chose.
+
 ## 0.0.190 (2026-10-17)
 
 Everything in 0.0.189, with doors you walk through, not fade through.

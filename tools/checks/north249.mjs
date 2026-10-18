@@ -37,7 +37,9 @@ try {
   // the World design tab: the crossing's 🌄 choices
   const wd = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); tab = TABS.findIndex(t => t[1] === "world"); showTab(); changed(); await w(400);
     const btns = [...document.querySelectorAll("#panel .world-back-row button")]; const names = btns.map(b => b.dataset.back);
-    const sky = btns.find(b => b.dataset.back === "sky"); if (sky) sky.click(); await w(300); settle(); await w(200);
+    // (0.0.191: chosen twice, the second shown chosen too, without the panel built again: it was left showing the first)
+    const pick = v => { const b = [...document.querySelectorAll("#panel .world-back-row button")].find(b => b.dataset.back === v); if (b) b.click(); };
+    pick("mountains"); await w(200); pick("sky"); await w(300); settle(); await w(200);
     const after = [...document.querySelectorAll("#panel .world-back-row button")].find(b => b.dataset.back === "sky");
     return JSON.stringify({ names, now: state.background.crossBack, kept: state.world.cells[state.world.at].crossBack, pressed: after && after.getAttribute("aria-pressed") }); })()`));
   console.log(`  the World design tab at the crossing: ${JSON.stringify(wd)}`);

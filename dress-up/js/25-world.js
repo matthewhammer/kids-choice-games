@@ -364,7 +364,7 @@ function accessApply() {
   const A = state.access || DEFAULTS.access, al = document.getElementById("access-layer");
   if (al) for (const [k, v] of [["--path-color", A.pathColor || "#fde047"], ["--box-color", A.boxColor || "#ef4444"],
                                  ["--path-width", (A.pathWidth ?? 4) + "px"], ["--box-width", (A.boxWidth ?? 2) + "px"], ["--box-font", (A.boxFont ?? 11) + "px"],   // (ticket 230)
-                                 ["--made-color", A.madeColor || "#ffffff"], ["--made-width", (A.madeWidth ?? 2) + "px"], ["--made-font", (A.madeFont ?? 10) + "px"]])   // (ticket 258)
+                                 ["--path-alt", A.pathAltColor || "#c084fc"], ["--made-color", A.madeColor || "#ffffff"], ["--made-width", (A.madeWidth ?? 2) + "px"], ["--made-font", (A.madeFont ?? 10) + "px"]])   // (ticket 258)
     if (al.style.getPropertyValue(k) !== v) al.style.setProperty(k, v);
   const gf = (A.gameFont ?? 100) / 100;
   if (gf === gameFontShown) return;
@@ -599,8 +599,10 @@ function pathHud() {
   if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "walk-path"); layer.append(ov); }
   const line = (a, cls) => a.length > 1 ? `<polyline class="${cls}" points="${a.map(q => q.map(v => v.toFixed(1)).join(",")).join(" ")}"/>` : "";
   const leg = Math.min(P.leg ?? 0, pts.length - 1);
-  ov.innerHTML = line(pts.slice(0, leg + 1), "walked") + line(pts.slice(leg), "ahead") +
-    pts.slice(1).map((q, i) => `<circle class="${i < leg ? "walked" : "ahead"}" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="${i === pts.length - 2 ? 7 : 5}"/>`).join("");
+  // (ticket 266: a queue of clicks, each click's walk by turns in the path's colour and its alt colour)
+  const alt = i => P.segs && P.segs[i] % 2 ? " alt" : "";
+  ov.innerHTML = pts.slice(1).map((q, i) => line([pts[i], q], (i < leg ? "walked" : "ahead") + alt(i + 1))).join("") +
+    pts.slice(1).map((q, i) => `<circle class="${(i < leg ? "walked" : "ahead") + alt(i + 1)}" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="${i === pts.length - 2 || (P.segs && P.segs[i + 2] !== P.segs[i + 1]) ? 7 : 5}"/>`).join("");
 }
 // (ticket 208, Matthew: the arrows shown at once "often overlap each other in
 // the corners": E's and SE's, near the bottom right of a wide picture, where

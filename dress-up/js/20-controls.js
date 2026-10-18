@@ -534,7 +534,7 @@ const TABS = [
     // (ticket 230) each a row, accbox: its chip, and while it is on, its colour and its sizes beside it, boxed; the words'
     // size in a box of its own
     ["accbox", "allArrows", "🧭 all arrows", [["color", "arrowColor", "🎨"], ["range", "arrowDim", "🌗 brightness", 10, 100], ["range", "arrowSize", "↕️ size", 50, 250]]],
-    ["accbox", "showPath", "👣 planned path", [["color", "pathColor", "🎨"], ["range", "pathWidth", "✏️ line", 1, 12]]],
+    ["accbox", "showPath", "👣 planned path", [["color", "pathColor", "🎨"], ["color", "pathAltColor", "🎨 alt"], ["range", "pathWidth", "✏️ line", 1, 12]]],   // (ticket 266: a queue of clicks' walks by turns)
     ["accbox", "showSolids", "🧱 collision boxes", [["color", "boxColor", "🎨"], ["range", "boxWidth", "✏️ line", 1, 8], ["range", "boxFont", "🏷️ names", 8, 24],
       ["range", "glowFade", "✨ glow ms", 100, 3000]]],   // (ticket 229: a collision's glow, fading back in so long)
     // (ticket 258, Matthew: "a toggle that reveals a sub-panel of toggles, per category of object") each kind of thing a
@@ -1404,7 +1404,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           // the distance, here too (its square keeps it: CROSS_KEYS)
           ...(at.kind === "crossing" ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🌄 off in the distance:"),
             ...CROSS_BACKS.map(([v, name]) => el("button", { "aria-pressed": String((state.background.crossBack || "woods") === v), "data-back": v,
-              onclick: () => { state.background.crossBack = v; changed(); } }, name))])] : []),
+              // (Matthew, 0.0.191: "does change the background, but it stays stale when clicked": this panel is built
+              // again only when the world changes; the chips shown chosen as they are clicked)
+              onclick: e => { state.background.crossBack = v; for (const b of e.currentTarget.parentNode.querySelectorAll("[data-back]")) b.setAttribute("aria-pressed", String(b.dataset.back === v)); changed(); } }, name))])] : []),
           probs,
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
       } else {

@@ -330,6 +330,8 @@ pic.addEventListener("click", e => {
   if (ladder) { climbLadder(ladder); return; }
   const door = !entering && e.target.closest && e.target.closest("#bg .portal");
   if (door) { enterScene(door); return; }
+  // (ticket 266) walking to a click already: another click on the ground is queued after it
+  if (clickRun) { const spot = walkableAt(e); if (spot) walkPlanned(spot.x, spot.z); return; }
   // (ticket 187) a passage behind something standing in front of it (a fence, a bush, a sign's post):
   // through it too; never one behind the friend or a thing put there, which are for dragging
   if (entering || !e.target.closest || e.target.closest("#figure, [data-drag], #ways") || marks.text !== bgShown.text) return;
@@ -347,7 +349,7 @@ pic.addEventListener("click", e => {
 // pointer is on nothing that does its own thing (the friend, a thing put there, a passage or a ladder)
 function walkableAt(e) {
   const BG = state.background, A = state.access || DEFAULTS.access;
-  if (!A.clickWalk || BG.kind === "none" || entering || drag || hoverPass) return null;
+  if (!A.clickWalk || BG.kind === "none" || (entering && !clickRun) || drag || (hoverPass && !clickRun)) return null;   // (ticket 266: while walking to a click, more)
   const t = e.target;
   if (!t || !t.closest || !t.closest("#pic") || t.closest("#figure, [data-drag], .portal, [data-ladder], #ways")) return null;
   const q = picUnits(e), F = sceneFrame, y = q.y - SCENE.ground;
@@ -371,13 +373,33 @@ function walkSpotShow(e) {
 function walkSpotHide() { const ov = document.querySelector("#access-layer svg.walk-spot"); if (ov) ov.remove(); }
 pic.addEventListener("pointerleave", walkSpotHide);
 // (the walk: planned round what stands in the way, planPath, its legs walked one after another, walkTo; 👣 shows the plan)
+// (ticket 266, Matthew: "queue of clicks. when I click, I have to wait for the plan to animate before I can see my mouse
+// over and click again. let's lift that, and permit unlimited plans, that consist of multiple clicks"; "each segment
+// gets a distinct color -- so maybe we have two colors --- main color and alt color, and we alternate along the
+// multi-click plan when its shown") A click while walking to one before it: its own walk, planned from where that one
+// ends, added to the run (clickRun) and walked on after it, as many as are clicked; each click's points marked in
+// walkPath.segs (0, 1, 2...), 👣 drawing them by turns in its colour and its alt colour. The controller ends the run.
+let clickRun = null;
 function walkPlanned(x, z) {
   const BG = state.background, g = SCENE.ground;
+  if (clickRun) {
+    const [lx, ly] = clickRun.end, path = planPath(lx, ly, x, z - g, 10);
+    for (const p of path) { walkPath.pts.push(p); walkPath.segs.push(clickRun.n); }
+    clickRun.n++; clickRun.end = [x, z - g];
+    return;
+  }
   bridgeOff();
   const from = [BG.figX ?? 0, BG.figY ?? 0], path = planPath(from[0], from[1], x, z - g, 10);   // (the steps swing wider than the feet standing)
-  walkPath = { pts: [from, ...path], made: performance.now(), leg: 0 };
-  const leg = i => { if (i >= path.length) { state.body.anim = "none"; changed(); return; } walkPath.leg = i; walkTo(path[i][0], g + path[i][1], () => leg(i + 1)); };
-  leg(0);
+  const run = clickRun = { n: 1, end: [x, z - g] };
+  walkPath = { pts: [from, ...path], segs: [0, ...path.map(() => 0)], made: performance.now(), leg: 0 };
+  let k = 0;
+  const leg = () => {
+    if (clickRun !== run) { if (!entering) { state.body.anim = "none"; changed(); } return; }
+    if (++k >= walkPath.pts.length) { clickRun = null; state.body.anim = "none"; changed(); return; }
+    walkPath.leg = k - 1;
+    walkTo(walkPath.pts[k][0], g + walkPath.pts[k][1], leg);
+  };
+  leg();
 }
 // (ticket 221) B held on the keyboard: bubbles, as 🫧 on the controller
 document.addEventListener("keydown", e => {
@@ -589,6 +611,7 @@ function padPoll(t) {
     if (climb.got <= 0 && (ud > 0 || (!ud && Math.abs(vx) > 0.5))) { B.anim = "none"; climb = null; padWant = null; changed(); }
     else if (ud) { climb.got = clamp(climb.got - ud * CLIMB_HAND * (held("run") ? 1.8 : 1) * figureT.k * dt, 0, climb.all ?? Infinity); moved(); }
   }
+  if ((vx || vy) && clickRun) clickRun = null;   // (ticket 266: the controller takes over from a queue of clicks, after the step under way)
   const moving = !!(vx || vy) && BG.kind !== "none" && !entering && !drag && !onLadder;
   // (ticket 188: let go, still coasting to a stop, when speeding up and slowing down take time)
   const ramp = (state.body.accel ?? 0) / 100 * PAD_RAMP;
