@@ -2,6 +2,19 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.221 (2026-10-18)
+
+Everything in 0.0.220, plus seven more castle rooms whose wall and floor things are objects of their own.
+
+- **What hangs on the walls and lies on the floor, in seven more of the castle's rooms, is in ♿'s list of objects,** each with its 👁️ chip to hide it, and each can be placed anywhere from 🏞️ Background's **📦 from the places**. The friend is always in front of them.
+  - 🕯️ The hallway: its carpet, its three banners and its five torches.
+  - 🍽️ The dining room: its great fireplace.
+  - 🍲 The kitchen: its hearth, the strings of onions, garlic and herbs, the shelf of plates and the shelf of crocks.
+  - ⚒️ The smithy: the tools on their pegs, the rack of swords and the shield. In the smithy, the forge's glow now falls on the tools beside it.
+  - 🌀 The spiral staircase: its three arrow slits, each with its beam of light.
+  - 👑 The king's room: the stained-glass window, two banners, two crossed swords with their shields, two torches and the carpet.
+  - 🌿 The greenhouse: the moss, the fallen petals, the nine vines up its posts and the nine hanging from its roof.
+
 ## 0.0.220 (2026-10-18)
 
 Everything in 0.0.219, and the game can tell you about it again.

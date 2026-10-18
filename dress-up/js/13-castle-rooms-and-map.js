@@ -362,6 +362,7 @@ function hallwaySvg(c, K, R = {}) {
   // can't be a front object as the other rooms' dark is: the lit stairwell
   // is drawn over the night, and a front stairwell would cover the friend's
   // head, where it stands at the far end behind them)
+  // (ticket 284: its carpet, banners and torches are wall and floor objects, each drawn where it was)
   let t = roomShell(c, tone, {});
   // the corridor's cross-sections, going away: f is each one's size, from
   // the back wall's (1) toward the vanishing point (0, vy)
@@ -424,29 +425,33 @@ function hallwaySvg(c, K, R = {}) {
   // the carpet, from us, through the room, all the way down: its color the castle's, gold at its edges, a darker band inside them
   const cw = 72 * k, edge = (u, side) => { const x = side * cw * u, [nx] = out(x, floor, y1 + pad); return [[nx, y1 + pad], [x, floor], [x * fN, Y(floor, fN)]]; };
   const strip = u => { const L = edge(u, -1), Rr = edge(u, 1); return [...L, ...Rr.reverse()].map(([x, y]) => P(x, y)).join(" "); };
+  const mCarpet = t.length;
   t += `<polygon points="${strip(1)}" fill="${K.carpet}"/>` +
        `<polygon points="${strip(0.8)}" fill="none" stroke="${mix(K.carpet, "#000000", 0.35)}" stroke-width="${f1(5 * k)}"/>` +
        [-1, 1].map(sd => `<polyline points="${edge(1, sd).map(([x, y]) => P(x, y)).join(" ")}" fill="none" stroke="${gold}" stroke-width="${f1(4 * k)}"/>`).join("");
+  t = floorSince(t, mCarpet, "carpet");
   // along the walls, by turns: a torch on one side and a banner on the other, in each stretch of the corridor
   const lights = [];
   for (let i = 0; i < N - 1; i++) {
     const f = 1 / (1 + HALL_LIGHT_Z[i]), w = bw * f, kk = k * f, sd = i % 2 ? 1 : -1;   // (between the pairs of doors: hallDoor)
-    lights.push(torchSvg(sd * (w - 18 * kk), Y(floor - 220 * k, f), kk, i, c.o));
+    lights.push(wallObj(`torch ${i + 1}`, torchSvg(sd * (w - 18 * kk), Y(floor - 220 * k, f), kk, i, c.o)));
     // (the banner hangs from a pole jutting straight out of the wall across the corridor, so it
     // faces down the corridor, as drawn; the pole and its brace go back into the wall)
     const bx = -sd * (w - 34 * kk), by = Y(top + 40 * k, f), bwid = 50 * kk, bh = 180 * kk, u = 10 * kk, xw = -sd * w, xe = bx + sd * (bwid / 2 + 6 * kk);
+    const mBanner = t.length;
     t += castleFlagDefs(K, u) +
          `<path d="M${P(xw, by + 26 * kk)} L${P(xw + sd * 14 * kk, by)}" stroke="#4a3220" stroke-width="${f1(Math.max(0.6, 3 * kk))}"/>` +
          `<rect x="${f1(Math.min(xw, xe))}" y="${f1(by - 5 * kk)}" width="${f1(Math.abs(xe - xw))}" height="${f1(6 * kk)}" rx="${f1(2 * kk)}" fill="#5e3d22"/>` +
          `<circle cx="${f1(xe)}" cy="${f1(by - 2 * kk)}" r="${f1(4 * kk)}" fill="${gold}"/>` +
          `<path d="M${P(bx - bwid / 2, by)} H${f1(bx + bwid / 2)} V${f1(by + bh)} L${P(bx, by + bh - 24 * kk)} L${P(bx - bwid / 2, by + bh)} Z" fill="${castleFlagFill(K, i, u)}" stroke="${gold}" stroke-width="${f1(Math.max(0.6, 3 * kk))}"/>` +
          castleLetter(K, i, bx, by + 100 * kk, 34 * kk, "serif");
+    t = wallSince(t, mBanner, `banner ${i + 1}`);
   }
   // the stairwell's light, at the far end; or, at a dead end, a torch on its wall
-  if (deadEnd) lights.push(torchSvg(0, Y(floor - 220 * k, fN), k * fN * 1.4, 9, c.o));
+  if (deadEnd) lights.push(wallObj("torch at the far end", torchSvg(0, Y(floor - 220 * k, fN), k * fN * 1.4, 9, c.o)));
   else { const A = hallFarArch(c); lights.push(`<circle cx="0" cy="${f1(A.top + (A.fl - A.top) * 0.15)}" r="${f1((A.x1 - A.x0) * 0.75)}" fill="url(#bg-glow)" opacity="0.6"/>`); }
   // and a torch either side where the corridor opens, near us
-  for (const sd of [-1, 1]) lights.push(torchSvg(sd * bw * 1.12, floor - 250 * k, k * 1.1, 7 + (sd > 0 ? 1 : 0), c.o));
+  for (const sd of [-1, 1]) lights.push(wallObj(sd < 0 ? "torch, left" : "torch, right", torchSvg(sd * bw * 1.12, floor - 250 * k, k * 1.1, 7 + (sd > 0 ? 1 : 0), c.o)));
   // the dark: deeper toward the far end, the night over everything, then the torches' light and flames on top
   t += `<rect x="${f1(-bw)}" y="${f1(top)}" width="${f1(2 * bw)}" height="${f1(floor - top)}" fill="url(#hall-depth)"/>` +
        `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="#0b1030" opacity="0.5"/>`;
@@ -510,6 +515,7 @@ function diningRoomSvg(c, K, r = {}) {
     t += `<rect x="${f1(-w)}" y="${f1(tp)}" width="${f1(2 * w)}" height="${f1(fl - tp)}" fill="${mix(tone, "#000000", 0.22)}"/>`;
     for (let j = 1; j < 12; j++) { const y = Y(top + (floor - top) * j / 12, f);
       t += `<line x1="${f1(-w)}" y1="${f1(y)}" x2="${f1(w)}" y2="${f1(y)}" stroke="${mortar}" stroke-width="${f1(1.6 * kf)}" opacity="0.6"/>`; }
+    const mFire = t.length;
     t += `<rect x="${f1(-fw - 14 * kf)}" y="${f1(mt - 4 * kf)}" width="${f1(2 * fw + 28 * kf)}" height="${f1(fl - mt + 4 * kf)}" fill="${mix(tone, "#ffffff", 0.12)}"/>` +
          `<path d="M${P(-fw, fl)} V${f1(mt + fh * 0.35)} Q${P(0, mt + fh * 0.02)} ${P(fw, mt + fh * 0.35)} V${f1(fl)} Z" fill="#1a1008"/>` +
          `<rect x="${f1(-fw - 22 * kf)}" y="${f1(mt - 16 * kf)}" width="${f1(2 * fw + 44 * kf)}" height="${f1(12 * kf)}" fill="${mix(tone, "#ffffff", 0.22)}"/>` +
@@ -519,6 +525,7 @@ function diningRoomSvg(c, K, r = {}) {
       t += `<g transform="translate(${f1(bx)} ${f1(fl - 6 * kf)})"><path d="M${f1(-fw * 0.22)} 0 Q${f1(-fw * 0.2)} ${f1(-h * 0.6)} 0 ${f1(-h)} Q${f1(fw * 0.2)} ${f1(-h * 0.6)} ${f1(fw * 0.22)} 0 Z" fill="${j === 1 ? "#ffd05a" : "#ff8a2e"}">` +
         sceneLfo(o, "fast", (j * 0.31) % 1, "transform", (v, amp) => `1 ${(1 + (0.08 + 0.18 * amp) * v).toFixed(3)}`,
           `<animateTransform attributeName="transform" type="scale" values="1 1;1 1.12;1 0.92;1 1" dur="${(0.7 + 0.13 * j).toFixed(2)}s" repeatCount="indefinite"/>`, "scale") + `</path></g>`; });
+    t = wallSince(t, mFire, "fireplace");   // (ticket 284: a wall object; its glow is still the room's "fire light")
     fireLight = `<circle cx="0" cy="${f1(fl - fh * 0.4)}" r="${f1(fw * 2.2)}" fill="url(#bg-glow)">${sceneLfo(o, "slow", 0.5, "opacity", (v, amp) => (0.85 - (0.15 + 0.3 * amp) * (1 + v) / 2).toFixed(2), "")}</circle>`;
   }
   // the table, down the middle: one place at each end, the rest down its sides (the left side
@@ -708,6 +715,7 @@ function kitchenSvg(c, K) {
     t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(-2 * xa)}" height="${f1(18 * k * f)}" fill="${oak}" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>`; }
   // the great hearth, left of the middle: a stone arch, its fire, the dark behind it, a stone mantel
   const hx = -bw * 0.5, hw = 96 * k, hh = Yh(0.46), [hl, hb] = at(hx - hw, floor), [hr] = at(hx + hw, floor);
+  const mHearth = t.length;
   t += `<rect x="${f1(hl - 16 * k)}" y="${f1(hh - 30 * k)}" width="${f1(hr - hl + 32 * k)}" height="${f1(hb - hh + 30 * k)}" fill="${mix(ROOM_TONE.kitchen, "#ffffff", 0.12)}"/>` +
        `<path d="M${f1(hl)} ${f1(hb)} V${f1(hh + 30 * k)} Q${f1(hx)} ${f1(hh - 18 * k)} ${f1(hr)} ${f1(hh + 30 * k)} V${f1(hb)} Z" fill="#1e140c"/>` +
        `<rect x="${f1(hl - 26 * k)}" y="${f1(hh - 42 * k)}" width="${f1(hr - hl + 52 * k)}" height="${f1(14 * k)}" fill="${mix(ROOM_TONE.kitchen, "#ffffff", 0.22)}"/>` +
@@ -717,12 +725,15 @@ function kitchenSvg(c, K) {
     t += (`<g transform="translate(${f1(bx)} ${f1(hb - 8 * k)})"><path d="M${f1(-20 * k)} 0 Q${f1(-18 * k)} ${f1(-h * 0.6)} 0 ${f1(-h)} Q${f1(18 * k)} ${f1(-h * 0.6)} ${f1(20 * k)} 0 Z" fill="${j === 1 ? "#ffd05a" : "#ff8a2e"}">` +
       sceneLfo(o, "fast", (j * 0.31) % 1, "transform", (v, amp) => `1 ${(1 + (0.08 + 0.18 * amp) * v).toFixed(3)}`,
         `<animateTransform attributeName="transform" type="scale" values="1 1;1 1.12;1 0.92;1 1" dur="${(0.7 + 0.13 * j).toFixed(2)}s" repeatCount="indefinite"/>`, "scale") + `</path></g>`); });
+  t = wallSince(t, mHearth, "hearth");   // (ticket 284: a wall object; its glow is still the room's "fire light")
   fireLight = `<circle cx="${f1(hx)}" cy="${f1(hb - 40 * k)}" r="${f1(150 * k)}" fill="url(#bg-fireglow)">${sceneLfo(o, "slow", 0.2, "opacity", (v, amp) => (0.9 - (0.15 + 0.3 * amp) * (1 + v) / 2).toFixed(2), "")}</circle>`;
   // strings of onions and garlic, and bunches of herbs, hung along the mantel
+  const mStrings = t.length;
   for (let i = 0; i < 6; i++) { const x = hl - 10 * k + (hr - hl + 20 * k) * (i + 0.5) / 6, y = hh - 28 * k, kind = i % 3;
     t += `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x)}" y2="${f1(y + 44 * k)}" stroke="#8a6a3a" stroke-width="${f1(1.5 * k)}"/>` +
          (kind === 2 ? `<path d="M${f1(x)} ${f1(y + 40 * k)} l${f1(-9 * k)} ${f1(22 * k)} M${f1(x)} ${f1(y + 40 * k)} l0 ${f1(26 * k)} M${f1(x)} ${f1(y + 40 * k)} l${f1(9 * k)} ${f1(22 * k)}" stroke="#4f8a3a" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`
            : [0, 1, 2, 3].map(j => `<ellipse cx="${f1(x + (j % 2 ? 5 : -5) * k)}" cy="${f1(y + (14 + 9 * j) * k)}" rx="${f1(7 * k)}" ry="${f1(6 * k)}" fill="${kind ? "#f1e6cf" : "#c98a3a"}" stroke="${kind ? "#cbbd9e" : "#8a5a20"}" stroke-width="${f1(1 * k)}"/>`).join("")); }
+  t = wallSince(t, mStrings, "onions, garlic and herbs");   // (ticket 284: a wall object)
   // the bread oven, right of the middle: a dome of brick, its mouth aglow, loaves on its sill
   // (an object, standing against the back wall, at its foot; its glow inside
   // its mouth, high in it, where the worktable in front leaves it to be seen)
@@ -737,11 +748,12 @@ function kitchenSvg(c, K) {
        [-0.7, -0.45, 0.5, 0.75].map(u => `<ellipse cx="${f1(ox + u * orad)}" cy="${f1(ob - 81 * k)}" rx="${f1(13 * k)}" ry="${f1(8 * k)}" fill="#d9a05a" stroke="#a8702e" stroke-width="${f1(1.2 * k)}"/>` +
          `<path d="M${f1(ox + u * orad - 6 * k)} ${f1(ob - 84 * k)} l${f1(4 * k)} ${f1(-3 * k)} M${f1(ox + u * orad + 1 * k)} ${f1(ob - 85 * k)} l${f1(4 * k)} ${f1(-3 * k)}" stroke="#a8702e" stroke-width="${f1(1.2 * k)}"/>`).join(""));
   // shelves on the back wall between them: crocks, plates on edge, jars
-  for (const [yy, kind] of [[Yh(0.72), "plates"], [Yh(0.56), "crocks"]]) { const xa = -bw * 0.12, xb = bw * 0.3;
+  for (const [yy, kind] of [[Yh(0.72), "plates"], [Yh(0.56), "crocks"]]) { const xa = -bw * 0.12, xb = bw * 0.3, mShelf = t.length;   // (ticket 284: each shelf a wall object)
     t += `<rect x="${f1(xa)}" y="${f1(yy)}" width="${f1(xb - xa)}" height="${f1(7 * k)}" fill="${oak}" stroke="${oakD}" stroke-width="${f1(1 * k)}"/>`;
     for (let i = 0; i < 6; i++) { const x = xa + (xb - xa) * (i + 0.5) / 6;
       t += kind === "plates" ? `<ellipse cx="${f1(x)}" cy="${f1(yy - 15 * k)}" rx="${f1(13 * k)}" ry="${f1(15 * k)}" fill="#f4efe4" stroke="#5a7ab0" stroke-width="${f1(2 * k)}"/><circle cx="${f1(x)}" cy="${f1(yy - 15 * k)}" r="${f1(6 * k)}" fill="none" stroke="#5a7ab0" stroke-width="${f1(1.2 * k)}"/>`
-        : `<path d="M${f1(x - 10 * k)} ${f1(yy)} Q${f1(x - 14 * k)} ${f1(yy - 18 * k)} ${f1(x - 7 * k)} ${f1(yy - 26 * k)} H${f1(x + 7 * k)} Q${f1(x + 14 * k)} ${f1(yy - 18 * k)} ${f1(x + 10 * k)} ${f1(yy)} Z" fill="${["#c98a5a", "#8aa0b8", "#d8c08a"][i % 3]}" stroke="${oakD}" stroke-width="${f1(1 * k)}"/>`; } }
+        : `<path d="M${f1(x - 10 * k)} ${f1(yy)} Q${f1(x - 14 * k)} ${f1(yy - 18 * k)} ${f1(x - 7 * k)} ${f1(yy - 26 * k)} H${f1(x + 7 * k)} Q${f1(x + 14 * k)} ${f1(yy - 18 * k)} ${f1(x + 10 * k)} ${f1(yy)} Z" fill="${["#c98a5a", "#8aa0b8", "#d8c08a"][i % 3]}" stroke="${oakD}" stroke-width="${f1(1 * k)}"/>`; }
+    t = wallSince(t, mShelf, `shelf of ${kind}`); }
   // copper pots and pans on hooks along a rack hung from the middle beam
   // (one object, hung from the ceiling: at the floor under the rack)
   { const z = -0.2, f = 1 / (1 + z), [ra, ry] = at(-bw * 0.42, top + 70 * k, z), [rb] = at(bw * 0.42, top + 70 * k, z), [, by] = at(0, top + 44 * k, z);
@@ -840,18 +852,24 @@ function smithySvg(c, K) {
          lfoTimed(o, "slow", 0.3, `<animateTransform attributeName="transform" type="rotate" values="0 ${f1(bx + 40 * k)} ${f1(by - 4 * k)};-9 ${f1(bx + 40 * k)} ${f1(by - 4 * k)};0 ${f1(bx + 40 * k)} ${f1(by - 4 * k)}" dur="3.2s" repeatCount="indefinite"/>`) + `</g>`; }
   t += obj("forge", fb, forge + forgeLight);
   // the wall's right: tongs, hammers and horseshoes on pegs; a rack of swords; a round shield
+  const mTools = t.length;   // (ticket 284: the tools, the rack of swords and the shield, each a wall object)
   { const y = Yh(0.62);
     t += `<rect x="${f1(bw * 0.05)}" y="${f1(y)}" width="${f1(bw * 0.5)}" height="${f1(8 * k)}" fill="${oak}"/>`;
     for (let i = 0; i < 7; i++) { const x = bw * 0.1 + bw * 0.42 * i / 6;
       t += i % 3 === 0 ? `<path d="M${f1(x - 3 * k)} ${f1(y + 8 * k)} L${f1(x - 8 * k)} ${f1(y + 70 * k)} M${f1(x + 3 * k)} ${f1(y + 8 * k)} L${f1(x + 8 * k)} ${f1(y + 70 * k)}" stroke="${iron}" stroke-width="${f1(3 * k)}" stroke-linecap="round"/>`
         : i % 3 === 1 ? `<line x1="${f1(x)}" y1="${f1(y + 8 * k)}" x2="${f1(x)}" y2="${f1(y + 58 * k)}" stroke="#6b4426" stroke-width="${f1(4 * k)}"/><rect x="${f1(x - 10 * k)}" y="${f1(y + 54 * k)}" width="${f1(20 * k)}" height="${f1(12 * k)}" rx="${f1(2 * k)}" fill="${iron}"/>`
         : `<path d="M${f1(x - 11 * k)} ${f1(y + 40 * k)} A${f1(11 * k)} ${f1(13 * k)} 0 1 1 ${f1(x + 11 * k)} ${f1(y + 40 * k)}" fill="none" stroke="${ironL}" stroke-width="${f1(5 * k)}"/>`; } }
+  t = wallSince(t, mTools, "tools on pegs");
+  const mSwords = t.length;
   { const rx = bw * 0.78, ry = Yh(0.3);
     t += `<rect x="${f1(rx - 50 * k)}" y="${f1(ry)}" width="${f1(100 * k)}" height="${f1(8 * k)}" fill="${oak}"/><rect x="${f1(rx - 50 * k)}" y="${f1(ry + 90 * k)}" width="${f1(100 * k)}" height="${f1(8 * k)}" fill="${oak}"/>`;
     for (const dx of [-30, 0, 30]) t += `<path d="M${f1(rx + dx * k)} ${f1(ry - 40 * k)} L${f1(rx + dx * k - 4 * k)} ${f1(ry + 110 * k)} L${f1(rx + dx * k + 4 * k)} ${f1(ry + 110 * k)} Z" fill="#c9ced6" stroke="#6a707c" stroke-width="${f1(1 * k)}"/>` +
       `<rect x="${f1(rx + dx * k - 12 * k)}" y="${f1(ry - 44 * k)}" width="${f1(24 * k)}" height="${f1(5 * k)}" fill="#8a6a2a"/><rect x="${f1(rx + dx * k - 2.5 * k)}" y="${f1(ry - 64 * k)}" width="${f1(5 * k)}" height="${f1(20 * k)}" fill="#5a3a20"/>`;
+    t = wallSince(t, mSwords, "rack of swords");
+    const mShield = t.length;
     const [sx, sy] = at(bw * 0.4, Yh(0.32));
-    t += `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(34 * k)}" fill="${castleFlagFill(K, 0, 8 * k)}" stroke="#8a8f9a" stroke-width="${f1(5 * k)}"/><circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(8 * k)}" fill="#c9ced6"/>`; }
+    t += `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(34 * k)}" fill="${castleFlagFill(K, 0, 8 * k)}" stroke="#8a8f9a" stroke-width="${f1(5 * k)}"/><circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(8 * k)}" fill="#c9ced6"/>`;
+    t = wallSince(t, mShield, "shield"); }
   // a heap of coal by the forge (an object, at its foot)
   { const [cx, cy] = at(fx + fw + 40 * k, floor, -0.05);
     t += obj("coal heap", cy, `<path d="M${f1(cx - 50 * k)} ${f1(cy)} Q${f1(cx - 30 * k)} ${f1(cy - 40 * k)} ${f1(cx)} ${f1(cy - 44 * k)} Q${f1(cx + 34 * k)} ${f1(cy - 36 * k)} ${f1(cx + 50 * k)} ${f1(cy)} Z" fill="#1c1c22"/>` +
@@ -944,9 +962,12 @@ function spiralSvg(c, K) {
       t += `<line x1="${f1(x)}" y1="${f1(yy)}" x2="${f1(x)}" y2="${f1(yy - 30 * k)}" stroke="${mortar}" stroke-width="${f1(1.6 * k)}" opacity="0.55"/>`; }
   }
   // arrow slits high in the wall, their light slanting down; torches on the wall by the steps
+  let slit = 0;   // (ticket 284: each slit and its beam a wall object)
   for (const [x, y] of [[-W * 0.3, Yf - 330 * k], [W * 0.28, Yf - 230 * k], [-W * 0.05, Yf - 470 * k]]) {
+    const mSlit = t.length;
     t += `<rect x="${f1(x - 6 * k)}" y="${f1(y - 40 * k)}" width="${f1(12 * k)}" height="${f1(80 * k)}" rx="${f1(5 * k)}" fill="#cfe9ff" stroke="${mortar}" stroke-width="${f1(4 * k)}"/>` +
          `<polygon points="${f1(x - 6 * k)},${f1(y - 30 * k)} ${f1(x + 6 * k)},${f1(y - 30 * k)} ${f1(x + 90 * k)},${f1(y + 170 * k)} ${f1(x + 40 * k)},${f1(y + 190 * k)}" fill="url(#bg-slitbeam)"/>`;
+    t = wallSince(t, mSlit, `arrow slit ${++slit}`);
   }
   // the floor, round as the tower is (the wall's circle, at the steps' foot), and on toward us where the
   // front is cut away; its flagstones radiating from the column, to the wall behind
@@ -1003,32 +1024,40 @@ function kingRoomSvg(c, K) {
   let t = roomShell(c, ROOM_TONE.king, {}) + castleFlagDefs(K, 12 * k);
   // the stained-glass window high in the middle, its panes in colors
   const wy = top + 30 * k, ww = 90 * k, wh = 120 * k;
+  const mWindow = t.length;   // (ticket 284: the window, banners, trophies, torches and carpet: wall and floor objects)
   t += `<path d="M${P(-ww / 2, wy + wh)} V${f1(wy + ww / 2)} A${f1(ww / 2)} ${f1(ww / 2)} 0 0 1 ${P(ww / 2, wy + ww / 2)} V${f1(wy + wh)} Z" fill="#2a3a5a" stroke="#3a3530" stroke-width="${f1(8 * k)}"/>` +
        [...Array(12)].map((_, j) => { const cx = -ww / 2 + ww * ((j % 3) + 0.5) / 3, cy = wy + ww / 2 + (wh - ww / 2) * (Math.floor(j / 3) + 0.5) / 4;
          return `<rect x="${f1(cx - ww / 7)}" y="${f1(cy - (wh - ww / 2) / 9)}" width="${f1(ww * 2 / 7)}" height="${f1((wh - ww / 2) * 2 / 9)}" fill="${["#e53935", "#3b82f6", "#f2c12e", "#22c55e", "#9b59b6"][(j * 7) % 5]}" opacity="0.85"/>`; }).join("") +
        `<circle cx="0" cy="${f1(wy + ww / 2)}" r="${f1(ww / 4)}" fill="${flag}" opacity="0.9"/>`;
+  t = wallSince(t, mWindow, "stained-glass window");
   // banners either side, the owner's color, a gold crown and the owner's letter
   for (const [i, sd] of [-1, 1].entries()) {
     const bx = sd * bw * 0.42, by = top + 20 * k, bwid = 70 * k, bh = 220 * k;
+    const mBanner = t.length;
     t += `<rect x="${f1(bx - bwid / 2 - 6 * k)}" y="${f1(by - 6 * k)}" width="${f1(bwid + 12 * k)}" height="${f1(8 * k)}" rx="${f1(3 * k)}" fill="#5e3d22"/>` +
          `<path d="M${P(bx - bwid / 2, by)} H${f1(bx + bwid / 2)} V${f1(by + bh)} L${P(bx, by + bh - 30 * k)} L${P(bx - bwid / 2, by + bh)} Z" fill="${castleFlagFill(K, i, 12 * k)}" stroke="${gold}" stroke-width="${f1(4 * k)}"/>` +
          `<path d="M${P(bx - 20 * k, by + 70 * k)} L${P(bx - 20 * k, by + 46 * k)} L${P(bx - 10 * k, by + 58 * k)} L${P(bx, by + 40 * k)} L${P(bx + 10 * k, by + 58 * k)} L${P(bx + 20 * k, by + 46 * k)} L${P(bx + 20 * k, by + 70 * k)} Z" fill="${gold}" stroke="#7a5a0a" stroke-width="${f1(2.5 * k)}" stroke-linejoin="round"/>` +
          castleLetter(K, i, bx, by + 130 * k, 44 * k, "serif");
+    t = wallSince(t, mBanner, sd < 0 ? "banner, left" : "banner, right");
   }
   // crossed swords and a shield on the wall, either side of the window
   for (const sd of [-1, 1]) {
     const sx = sd * bw * 0.2, sy = top + 120 * k;
+    const mTrophy = t.length;
     t += [-1, 1].map(e => `<line x1="${f1(sx - e * 34 * k)}" y1="${f1(sy - 34 * k)}" x2="${f1(sx + e * 34 * k)}" y2="${f1(sy + 34 * k)}" stroke="#c8ccd6" stroke-width="${f1(5 * k)}"/>` +
            `<line x1="${f1(sx + e * 22 * k)}" y1="${f1(sy + 18 * k)}" x2="${f1(sx + e * 38 * k)}" y2="${f1(sy + 30 * k)}" stroke="${gold}" stroke-width="${f1(6 * k)}"/>`).join("") +
          `<path d="M${P(sx - 22 * k, sy - 22 * k)} H${f1(sx + 22 * k)} V${f1(sy + 6 * k)} Q${P(sx + 22 * k, sy + 30 * k)} ${P(sx, sy + 38 * k)} Q${P(sx - 22 * k, sy + 30 * k)} ${P(sx - 22 * k, sy + 6 * k)} Z" fill="${sd < 0 ? K.flagA : K.flagB}" stroke="${gold}" stroke-width="${f1(3 * k)}"/>`;
+    t = wallSince(t, mTrophy, sd < 0 ? "crossed swords, left" : "crossed swords, right");
   }
   // the torches on the back wall (drawn with the wall, before all that stands in the room, so
   // a friend standing among its things is never under them: ticket 99)
-  t += torchSvg(-bw * 0.66, floor - 300 * k, k, 0, c.o) + torchSvg(bw * 0.66, floor - 300 * k, k, 1, c.o);
+  t += wallObj("torch, left", torchSvg(-bw * 0.66, floor - 300 * k, k, 0, c.o)) + wallObj("torch, right", torchSvg(bw * 0.66, floor - 300 * k, k, 1, c.o));
   // the carpet, gold-edged, from us to the dais, in its color theme's carpet color
+  const mCarpet = t.length;
   const [ca, cy] = out(-60 * k, floor, y1 + 40 * k);
   t += `<polygon points="${P(-60 * k, floor - 2 * k)} ${P(60 * k, floor - 2 * k)} ${P(-ca, cy)} ${P(ca, cy)}" fill="${K.carpet}"/>` +
        `<polygon points="${P(-60 * k, floor - 2 * k)} ${P(60 * k, floor - 2 * k)} ${P(-ca, cy)} ${P(ca, cy)}" fill="none" stroke="${gold}" stroke-width="${f1(4 * k)}"/>`;
+  t = floorSince(t, mCarpet, "carpet");
   // the dais, its steps, and the throne: tall-backed, gold, red velvet, a crown on top
   // (one object, standing at the dais's foot, against the back wall: ticket 99)
   let throne = "";
@@ -1128,10 +1157,14 @@ function greenhouseSvg(c, K) {
   t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(...out(bw, floor, y1 + pad))} ${P(...out(-bw, floor, y1 + pad))}" fill="#c9b79a"/>`;
   for (let i = -6; i <= 6; i++) { const [ex, ey] = out(i * bw / 6, floor, y1 + pad); t += `<line x1="${f1(i * bw / 6)}" y1="${f1(floor)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="#a8977c" stroke-width="${f1(2 * k)}"/>`; }
   t += floorRows(c, "#a8977c", 0.09);
+  const mMoss = t.length;   // (ticket 284: the moss and the petals floor objects, each vine a wall object)
   for (let i = 0; i < 26; i++) { const u = R(i, 983), x = (R(i, 984) - 0.5) * 2.6 * bw * (1 + u), y = floor + (y1 - floor) * u * u + 8 * k;
     t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((8 + 16 * u) * k)}" ry="${f1((3 + 6 * u) * k)}" fill="#6f9a4a" opacity="0.5"/>`; }
+  t = floorSince(t, mMoss, "moss");
   // petals fallen on the floor (flat: drawn with the floor, before all that stands on it, ticket 99)
+  const mPetals = t.length;
   for (let i = 0; i < 20; i++) t += `<ellipse cx="${f1((R(i, 994) - 0.5) * W * 0.9)}" cy="${f1(floor + (40 + 200 * R(i, 995)) * k)}" rx="${f1(3 * k)}" ry="${f1(2 * k)}" fill="${["#f472b6", "#fb7185", "#e11d48"][i % 3]}" opacity="0.8"/>`;
+  t = floorSince(t, mPetals, "fallen petals");
   // vines up every back post and along the top, leaves and flowers on them
   const vine = (x, ya, yb, seed) => {
     let d = `M${P(x, yb)}`, lv = "";
@@ -1142,12 +1175,12 @@ function greenhouseSvg(c, K) {
     }
     return drawnBy("vine", `<path d="${d}" fill="none" stroke="#3f6b2a" stroke-width="${f1(3 * k)}"/>` + lv);
   };
-  for (let i = 0; i <= 8; i++) t += vine(-bw + 2 * bw * i / 8, top + 10 * k, floor, i * 3);
+  for (let i = 0; i <= 8; i++) t += wallObj(`vine ${i + 1}`, vine(-bw + 2 * bw * i / 8, top + 10 * k, floor, i * 3));
   for (let i = 0; i < 9; i++) {   // vines hanging from the roof's edge
     const x = -bw + 2 * bw * (i + 0.5) / 9, len = (50 + 70 * R(i, 985)) * k;
     let lv = `<path d="M${P(x, top)} Q${P(x + 10 * k, top + len / 2)} ${P(x, top + len)}" fill="none" stroke="#3f6b2a" stroke-width="${f1(2 * k)}"/>`;
     for (let j = 1; j < 6; j++) { const y = top + len * j / 6, lx = x + 6 * k * Math.sin(j * 1.7); lv += `<ellipse cx="${f1(lx)}" cy="${f1(y)}" rx="${f1(7 * k)}" ry="${f1(3.5 * k)}" transform="rotate(${j % 2 ? 35 : -35} ${f1(lx)} ${f1(y)})" fill="${leaf[(i + j) % 5]}"/>`; }
-    t += lv;
+    t += wallObj(`hanging vine ${i + 1}`, lv);
   }
   // glass parrots flying by the vines near the roof, each on its own slow loop
   const parrot = (x, y, s, sd, col, i) => `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(sd * 30 * k)} ${f1(-12 * k)};${f1(sd * 60 * k)} 0;${f1(sd * 30 * k)} ${f1(10 * k)};0 0" dur="${7 + i * 2}s" repeatCount="indefinite"/>` +

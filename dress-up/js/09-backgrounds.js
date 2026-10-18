@@ -55,6 +55,8 @@ const obj = (name, z, svg) => OPEN(`<g data-obj="${name}" data-z="${Number.isFin
 // wall or floor, is its data-layer.
 const wallObj = (name, svg) => OPEN(`<g data-obj="${name}" data-z="back" data-layer="wall">`) + svg + CLOSE;
 const floorObj = (name, svg) => OPEN(`<g data-obj="${name}" data-z="back" data-layer="floor">`) + svg + CLOSE;
+// (the same round what a drawing added to its text t since it was m long: a thing drawn by statements of its own, wrapped where it is)
+const wallSince = (t, m, name) => t.slice(0, m) + wallObj(name, t.slice(m)), floorSince = (t, m, name) => t.slice(0, m) + floorObj(name, t.slice(m));
 // (ticket 252, Matthew: "for each tree-house trap door (defined by two houses, stacked) we get to choose the opening:
 // triangle, square (current image), circle (like the pits in the castle). Same for the pits") An opening in a floor or
 // a ceiling, seen in perspective: its middle (cx, cy), half its width (rx) and half its depth (ry). A floor's far edge

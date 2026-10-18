@@ -4,6 +4,7 @@ The audit of ticket 284 (Matthew, 2026-10-18: "audit each scene for objects that
 
 - [OBJECTS.md](OBJECTS.md) lists what **stands** in each place: its objects. Since 0.0.208, every one of them can be placed in any place: 🏞️ Background, the things' group **📦 from the places**. Ways out, doors and ladders are not offered.
 - **Since 0.0.217, wall and floor things are objects of their own kind** (`wallObj`, `floorObj`): the castle rooms' cobwebs and moss, and everything listed below for 🕳️ the trap room, 🗝️ the dungeon and ⛓️ the deep dungeon, are objects now.
+- **Since 0.0.221, seven more castle rooms** (the hallway, the dining room, the kitchen, the smithy, the spiral staircase, the king's room, the greenhouse): their rows below now say what is still drawn in, and what became an object. A thing drawn by statements of its own is wrapped where it is drawn (`wallSince`, `floorSince`).
 - **This page lists the rest:** things drawn into a place's background that are not objects, so they cannot be hidden with an 👁️ chip, seen by ♿'s inspection, or placed. Each is a step toward the ticket's end: every object in each scene is something that can also be placed.
 - As of 0.0.208, from a reading of each place's drawing code (nothing was run). **Where** is wall, hanging, flat (on the floor or the ground) or sky. **In the code** is the part of `js/` and the line, at that version: check it before relying on it. The sun, moon, stars and clouds of every outdoor place are left out.
 
@@ -94,13 +95,13 @@ The castle's rooms
 | 🕳️ trap room | two torches; **the lever**; the "⚠️ MIND THE FLOOR ⚠️" plaque; two spiked pits (doorways) with their 🕳️ signs; a dropped sword | wall, flat | the torches | 13:191-217 |
 | 🗝️ dungeon | a barred window and its moonbeam; a torch; shackles and chains, with two hanging skeletons (with 🦴 at 1 and 2 or more); empty chains; a drip and its puddle; straw; scattered bones | wall, flat | the torch, the drip | 13:236-299 |
 | ⛓️ deep dungeon | the window, the torch and the drip, as in the dungeon; a hanging skeleton (🦴 at 4 or more) and its chains | wall | yes | 13:236-251 |
-| 🕯️ hallway | the carpet; three banners on poles; the torches (two along the walls, two at its mouth, one more at a dead end); the stairwell at its far end, or the dead-end wall | flat, hanging, wall | the torches | 13:348-411 |
-| 🍽️ dining room | the great fireplace and its fire | wall | yes | 13:465 |
-| 🍲 kitchen | the hearth with its fire and mantel; strings of onions, garlic and herbs; shelves of plates and crocks; the beams | wall, hanging | the fire | 13:668-701 |
-| ⚒️ smithy | tongs, hammers and horseshoes on pegs; a rack of three swords; a round shield; soot and timbers | wall | | 13:781-804 |
-| 🌀 spiral staircase | three arrow slits and their beams of light; the steps behind the column; the round floor | wall, flat | | 13:908-937 |
-| 👑 king's room | the stained-glass window; two banners; two trophies of crossed swords and a shield; two torches; the carpet | wall, hanging, flat | the torches | 13:966-990 |
-| 🌿 greenhouse | vines up 9 posts, and 9 hanging from the roof; moss and fallen petals; the sky and the trees beyond the glass | wall, hanging, flat | the trees | 13:1050-1108 |
+| 🕯️ hallway | the stairwell at its far end, or the dead-end wall (since 0.0.221, objects: the carpet, three banners, five torches) | wall | | 13:380-450 |
+| 🍽️ dining room | nothing (since 0.0.221, an object: the great fireplace and its fire) | | | |
+| 🍲 kitchen | the beams (since 0.0.221, objects: the hearth with its fire and mantel, the strings of onions, garlic and herbs, the shelf of plates, the shelf of crocks) | wall | | 13:710 |
+| ⚒️ smithy | soot and timbers (since 0.0.221, objects: the tools on pegs, the rack of swords, the shield) | wall | | 13:830 |
+| 🌀 spiral staircase | the steps behind the column; the round floor (since 0.0.221, objects: three arrow slits and their beams) | wall, flat | | 13:950-980 |
+| 👑 king's room | nothing (since 0.0.221, objects: the stained-glass window, two banners, two crossed swords and shields, two torches, the carpet) | | | |
+| 🌿 greenhouse | the sky and the trees beyond the glass (since 0.0.221, objects: the moss, the fallen petals, nine vines up the posts, nine hanging from the roof) | backdrop | the trees | 13:1090 |
 | 🐈 cat room | a braided rug and the bowls' mat; the fireplace (chimney breast, hearth, fire, sparks); the mantel's two candles and clock, and the royal cat's portrait; the arched window and its curtains; the high walkway, the cat flap with its "🐾 out" sign, a dangling feather toy; the castle's banner; six shelves on the side walls | flat, wall | the fire, the clock, the toy | 13:1342-1471 |
 | 🐴 stable | a round window, ceiling beams, posts; four stalls (hay nets, top doors open, half doors, their "🐴 n" plates, buckets, blankets); the hay loft and its bales; a lantern on the middle post; six horseshoes, two saddles and a bridle; straw on the floor | wall, flat | the lantern | 13:1653-1727 |
 
