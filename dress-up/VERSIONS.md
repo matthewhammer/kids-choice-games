@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.177 (2026-10-17)
+
+Everything in 0.0.176, with every house's number on the sign's map in full view.
+
+- **Each number on the map shows**: a lower house on the map no longer covers part of the number of the house above it (house 4's, under house 2).
+
 ## 0.0.176 (2026-10-17)
 
 Everything in 0.0.175, with a map on each tree house room's sign.

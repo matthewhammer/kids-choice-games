@@ -45,8 +45,10 @@ try {
         for (const a of ["fill", "stroke"]) { const v = el.getAttribute(a); if (v && v !== "none") colors.add(v); } }
       const light = [...colors].filter(c => lum(c) > 80);
       const S = [SCENE.left, SCENE.top, -SCENE.left, SCENE.bottom];
+      // (each number drawn after every house: a lower house, drawn later, would cover the number of the one above it)
+      const kids = [...map.querySelectorAll("g[transform], text")], lastHouse = kids.findLastIndex(e => e.tagName === "g"), firstNum = kids.findIndex(e => e.tagName === "text");
       out.push({ houses, room: i, board, mapBox, nums: nums.map(t => t.n).sort(), ring, ringed, mine: !!mine, colors: [...colors], light,
-        inBoard: within(mapBox, board, 2), inPic: within(board, S, 0) });
+        inBoard: within(mapBox, board, 2), inPic: within(board, S, 0), numsOnTop: firstNum > lastHouse });
     }
     return JSON.stringify(out); })()`));
   for (const r of rooms) console.log(`  ${r.houses} houses, room ${r.room}: ${r.none ? "no map" : `sign ${JSON.stringify(r.board)}, map ${JSON.stringify(r.mapBox)}, houses ${r.nums.join("")}, ringed ${r.ringed.join("") || "none"}, colors ${r.colors.join(" ")}`}`);
@@ -54,6 +56,7 @@ try {
   const has = rooms.filter(r => !r.none);
   ok("the map a numbered house for each house in the tree, no more", has.every(r => r.nums.join() === [...Array(r.houses)].map((_, j) => j + 1).join()), has.map(r => [r.houses, r.room, r.nums]));
   ok("a white ring round this house's number, and no other's", has.every(r => r.ring && r.ringed.length === 1 && r.ringed[0] === r.room), has.map(r => [r.houses, r.room, r.ringed]));
+  ok("each house's number drawn after all the houses: none covered by a house below", has.every(r => r.numsOnTop), has.filter(r => !r.numsOnTop).map(r => [r.houses, r.room]));
   ok("the map drawn in dark colors only (its numbers and ring apart)", has.every(r => !r.light.length && r.colors.length >= 3 && r.colors.length <= 6), has.map(r => r.colors));
   ok("the map on the sign, and the sign inside the picture", has.every(r => r.inBoard && r.inPic), has.filter(r => !r.inBoard || !r.inPic));
   ok("no page errors", !errs.length, errs);
