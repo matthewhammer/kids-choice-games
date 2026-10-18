@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.208 (2026-10-18)
+
+Everything in 0.0.207, with any object of any place to put in any place.
+
+- **📦 from the places**, a new group of things in 🏞️ Background: choose a place from the list, and every object standing there has a button of its own: the kitchen's oven, the smithy's anvil, the king's throne, the beach's umbrellas, the drum kit in the tree house's music room, and so on, from 49 places. Tap one, or drag it into the picture: it stands at its new spot, sized for how far back it is, with "🔎 size" and "↔️ mirror" like every other thing, and it stops the friend's feet as it does at home. Ways out, doors and ladders are not offered, and a doorway drawn on a thing leads nowhere. A few things only look right where they are drawn: the stable's horse is just its head over its stall door.
+
 ## 0.0.207 (2026-10-18)
 
 Everything in 0.0.206, with the grass hut as a cluster of huts, and a hut center, for M.

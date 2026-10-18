@@ -1042,7 +1042,7 @@ const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: 
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
                          seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] } };
-const thingParams = kind => [...THING_PARAMS.all, ...(THING_PARAMS[kind] || [])];
+const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
 // size and shininess (like stars we add or not, and controls over their color
 // and type)"; "these initial bubbles can be the default, simple, small kind")
@@ -1203,7 +1203,7 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["places", "📦 from the places"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
@@ -1215,17 +1215,93 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       starfish: { label: "⭐ starfish", size: 1, group: "sea", moving: true }, seafish: { label: "🐟 fish", size: 1, group: "sea", moving: true },
                       chest: { label: "💰 treasure chest", size: 1, group: "sea" }, anchor: { label: "⚓ anchor", size: 1, group: "sea" },
                       kelp: { label: "🌿 kelp", size: 1, group: "sea", moving: true }, seagrass: { label: "🌾 sea grass", size: 1, group: "sea", moving: true },
-                      seafan: { label: "🪭 sea fan", size: 1, group: "sea" }, sealettuce: { label: "🥬 sea lettuce", size: 1, group: "sea" } };
+                      seafan: { label: "🪭 sea fan", size: 1, group: "sea" }, sealettuce: { label: "🥬 sea lettuce", size: 1, group: "sea" },
+                      // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
+                      lifted: { label: "📦 from a place", size: 1, group: "places" } };
+// (ticket 284, Matthew: "audit each scene for objects that we can offer as new placed objects ... The ticket would be
+// complete if we feel that every object in each scene is something that can also be placed") 📦 any object of any
+// place, put in any place: { kind: "lifted", from: <a place>, name: <its object's name> }. Lifted from that place's own
+// drawing at its defaults (as OBJECTS.md shows it), with the definitions it uses (ids prefixed by the place), and drawn
+// as a thing at its new spot, scaled from the size it had at its own depth there to the size here. It keeps its name,
+// so it meets the friend as it does at home (STANDING, TRUNKED: by name). A place is a kind, or "castleroom:<style>" or
+// "treeroom:<n>", as tools/checks/objects180.mjs names them. Ways, doors and ladders are not offered, and any doorway
+// painted inside one comes inert (as in a picture: painted-portal), so a lifted thing is never a way out.
+const LIFT_SKIP = /^(way\b|doors?\b|side doors|arch to room|hatch|ladder|house sign|stairs|steps)/;
+const LIFT_INERT = / data-(ladder|hole|pit|door|way|house|down|to|leaf)="[^"]*"/g;
+const liftPlaces = () => [...PLACES.filter(([k]) => !["none", "castleroom", "treeroom"].includes(k)),
+  ...[1, 2, 3, 4, 5, 6].map(r => [`treeroom:${r}`, `🪜 tree house room ${r}`]), ...Object.entries(ROOM_KINDS).map(([st, R]) => [`castleroom:${st}`, R.label])];
+const liftPlaceLabel = place => (liftPlaces().find(([k]) => k === place) || [0, place])[1];
+// (the place the friend is in, named as a lift place is)
+const liftPlaceHere = B => B.kind === "castleroom" ? `castleroom:${(castleOf(B).rooms[Math.round(B.castleRoom ?? 1) - 1] || "king")}` : B.kind === "treeroom" ? `treeroom:${Math.round(B.inside ?? 1)}` : B.kind;
+function liftSettings(place) {
+  const B = structuredClone(DEFAULTS.background), [kind, sub] = place.split(":");
+  if (kind === "castleroom") Object.assign(B, { kind, castle: "N", castleRoomsN: 6, castleRoom6N: sub, castleRoom: 6 });
+  else if (kind === "treeroom") Object.assign(B, { kind, houses: 6, inside: +sub });
+  else B.kind = kind;
+  B.things = [];
+  return B;
+}
+const LIFTED = new Map();
+function liftedOf(place) {
+  let L = LIFTED.get(place);
+  if (L) return L;
+  const B = liftSettings(place), objs = new Map();
+  try {
+    const full = prefixIds(unmarked(backgroundSvg(B.kind, SCENE.left, SCENE.top, -SCENE.left, SCENE.bottom, SCENE.ground, sceneOpts(B))), `L${place.replace(/[^a-z0-9]/gi, "")}-`)
+      .replaceAll('class="portal"', 'class="painted-portal"').replace(LIFT_INERT, "");
+    const doc = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${full}</svg>`, "image/svg+xml").documentElement;
+    const byId = new Map([...doc.querySelectorAll("[id]")].map(e => [e.id, e]));
+    for (const g of doc.querySelectorAll("g[data-obj]")) {
+      const name = g.getAttribute("data-obj"), z = Number(g.getAttribute("data-z"));
+      if (objs.has(name) || !Number.isFinite(z) || LIFT_SKIP.test(name) || g.parentElement.closest("[data-obj]")) continue;
+      // (the definitions it uses outside itself, and the ones those use)
+      const defs = [], seen = new Set(), scan = s => { for (const m of s.matchAll(/url\(#([^)"']+)\)|href="#([^"]+)"/g)) { const id = m[1] || m[2], d = byId.get(id);
+        if (d && !seen.has(id) && !g.contains(d)) { seen.add(id); defs.push(d.outerHTML); scan(d.outerHTML); } } };
+      const inner = g.innerHTML;
+      scan(inner);
+      objs.set(name, { z, inner, defs: defs.length ? `<defs>${defs.join("")}</defs>` : "", s0: depthSize(B, z - SCENE.ground), cx: null, moves: /<animate/.test(inner) });
+    }
+  } catch (e) { console.warn("📦 could not take things from", place, e); }
+  L = { B, objs };
+  LIFTED.set(place, L);
+  return L;
+}
+// (its middle, across: measured once, drawn alone in a hidden svg)
+function liftCx(o) {
+  if (o.cx != null) return o.cx;
+  let cx = 0;
+  try {
+    let m = document.getElementById("lift-measure");
+    if (!m) { m = document.createElementNS("http://www.w3.org/2000/svg", "svg"); m.id = "lift-measure"; m.setAttribute("aria-hidden", "true");
+      m.setAttribute("style", "position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: hidden; visibility: hidden; pointer-events: none"); document.body.append(m); }
+    m.innerHTML = o.defs + `<g>${o.inner}</g>`;
+    const b = m.lastElementChild.getBBox();
+    cx = b.x + b.width / 2;
+    m.innerHTML = "";
+  } catch (e) {}
+  return o.cx = cx;
+}
+const liftedThing = t => liftedOf(t.from || "").objs.get(t.name) || null;
+// (a thing moves, for the guard of ticket 201: by its kind, or a lifted one by what it holds)
+const thingMoves = t => t.kind === "lifted" ? !!(liftedThing(t) || {}).moves : !!(THING_KINDS[t.kind] || {}).moving;
+const thingLabel = t => t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
 // (ticket 206, Matthew, after the Ubuntu laptop: every cauldron's fumes simple, unless its own 💨 fumes
 // are upgraded to ✨ fancy, one by one; 0.0.129's "auto" is simple now. Ticket 202's rule, cheap when
 // two or more or the computer slow, is gone: a fancy one too many is marked by the guard instead)
 const fumesCheap = t => t.fumes !== "fancy";
+// (ticket 284) a lifted object, moved so the middle of its foot is at 0, 0, at the size it had at home
+function liftedBody(t, at) {
+  const L = liftedThing(t);
+  if (!L) return at(`<text x="0" y="-10" font-size="40" text-anchor="middle">📦</text>`);   // (its place no longer has it: still here, to take away)
+  return at(`<g transform="scale(${(1 / L.s0).toFixed(4)}) translate(${f1(-liftCx(L))} ${f1(-L.z)})">${L.defs}${L.inner}</g>`);
+}
 function thingSvg(o, t, i) {
   const s = depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100, seed = t.seed ?? 900 + i;
   const at = inner => `<g transform="translate(${f1(t.x)} ${f1(t.z)}) scale(${(t.mirror ? -s : s).toFixed(3)} ${s.toFixed(3)})">${inner}</g>`;
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
-  const body = t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :
+  const body = t.kind === "lifted" ? liftedBody(t, at) :
+               t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :
                t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :
                // (a pine's needles are currentColor: the places give theirs a green; with none, it took the page's text colour, white in dark mode: Matthew's laptop)
                t.kind === "pine" ? at(shadow(70) + `<g color="${PINE_GREEN}">${pineTree(seed, { tiers: t.tiers ?? 6 })}</g>`) :
@@ -1260,7 +1336,7 @@ function thingsLayer(c) {
   // That's the purpose of this slider -- it does not affect the static parts of the background, but it affects the
   // dynamic player, and placed objects") each sized by depthSize, so drawn again when the 🔭 setting moves its vanishing line
   const vanish = Math.round(10 * sceneVanish(c.o));
-  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : ""], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
+  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : ""], () => obj(`${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
 }
 // (Matthew, 2026-10-17) The crossing's geometry, shared with its ways out in
 // the world (worldWaysSvg): its floor reaches far up the picture (far), the

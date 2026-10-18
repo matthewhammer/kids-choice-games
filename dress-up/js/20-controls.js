@@ -680,7 +680,7 @@ function changed() {
 }
 
 // (ticket 185, v3) the object library's group open, while the game is open
-let thingGroup = "nature";
+let thingGroup = "nature", liftPlace = null;   // (ticket 284: the place 📦 takes from, once chosen)
 // (ticket 200) VERSIONS.md as cards: a version's heading (its number and
 // date), its paragraphs and its points, **bold**, `code` and [links] as such,
 // all else as text; fetched once (afresh) and kept while the game is open
@@ -1250,7 +1250,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       }
       shown = sig;
       list.replaceChildren(...T.map((t, i) => el("div", { class: "row" }, [
-        el("span", { class: "name" }, `${(THING_KINDS[t.kind] || { label: t.kind }).label} ${i + 1}`),
+        el("span", { class: "name" }, `${thingLabel(t)} ${i + 1}`),
         ...thingParams(t.kind).flatMap(([p, label, how, opts]) => {
           const now = t[p] ?? (THING_DEFAULTS[t.kind] || {})[p], set = v => () => { t[p] = v; changed(); };
           if (how === "color") return [el("span", { class: "hint" }, label), ...opts.map(col => el("button", { title: col, "aria-pressed": String((now ?? opts[0]) === col),
@@ -1274,14 +1274,14 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // (v2: dragged onto the picture, it stands where it was let go, kept within
     // the ground the friend can stand on; tapped, near the middle, a little
     // apart from the last)
-    const add = (kd, at = null) => {
+    const add = (kd, at = null, extra = {}) => {
       const B = state.background, T = B.things || (B.things = []), i = T.length, F = sceneFrame;
       const x = at ? Math.round(clamp(at.x, F.left, F.right)) : Math.round((((i * 0.37) % 1) - 0.5) * 520);
       const z = at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
       if (thingsLatch) return;   // (ticket 203: shut till the marked ones are dealt with)
-      T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}) });
+      T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}), ...extra });
       changed();
-      if ((THING_KINDS[kd] || {}).moving) thingCheck(guard);   // (ticket 201: how this computer takes it)
+      if (thingMoves(T[T.length - 1])) thingCheck(guard);   // (ticket 201: how this computer takes it)
     };
     // (ticket 201) more moving things allowed here? and which move the most
     const slowNote = el("div", { class: "hint thing-slow", hidden: "" });
@@ -1317,16 +1317,24 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       if (slowNote.textContent !== t) slowNote.textContent = t;
       if (slowNote.hidden !== !t) slowNote.hidden = !t;
     };
-    const addButton = (kd, T) => {
+    const addButton = (kd, T, extra = {}) => {
       const b = el("button", { title: "Drag into the picture, or tap", "data-kind": kd }, "+ " + T.label);
-      pressDrag(b, () => T.label.split(" ")[0], { onTap: () => add(kd), onDrop: (under, ev) => { if (under && under.closest && under.closest("#pic")) add(kd, picUnits(ev)); } });
+      pressDrag(b, () => T.label.split(" ")[0], { onTap: () => add(kd, null, extra), onDrop: (under, ev) => { if (under && under.closest && under.closest("#pic")) add(kd, picUnits(ev), extra); } });
       return b;
     };
     // (v3: the library in groups: a chip per group, its things' buttons under it; the group open is kept while the game is open)
     const groups = el("div", { class: "row thing-groups" }), items = el("div", { class: "row thing-items" });
     const showGroup = () => {
       for (const b of groups.children) b.setAttribute("aria-pressed", String(b.dataset.group === thingGroup));
-      items.replaceChildren(...Object.entries(THING_KINDS).filter(([, T]) => T.group === thingGroup).map(([kd, T]) => addButton(kd, T)));
+      if (thingGroup === "places") {
+        // (ticket 284) 📦 every object of a place, chosen from a list of the places; the one the friend is in first
+        const P = liftPlaces(), here = liftPlaceHere(state.background), cur = P.some(([k]) => k === liftPlace) ? liftPlace : [here, ...P.map(([k]) => k)].find(k => P.some(([q]) => q === k) && liftedOf(k).objs.size) || "forest";   // (here, if anything stands here; else the first place that has something)
+        const pick = el("select", { "aria-label": "📦 the place to take from", onchange: e => { liftPlace = e.target.value; showGroup(); } },
+          P.map(([k, label]) => el("option", k === cur ? { value: k, selected: "" } : { value: k }, label)));
+        const names = [...liftedOf(cur).objs.keys()];
+        items.replaceChildren(el("span", { class: "hint" }, "📦 from"), pick,
+          ...(names.length ? names.map(name => addButton("lifted", { label: "📦 " + name }, { from: cur, name })) : [el("span", { class: "hint" }, "nothing standing here to take: choose another place")]));
+      } else items.replaceChildren(...Object.entries(THING_KINDS).filter(([, T]) => T.group === thingGroup).map(([kd, T]) => addButton(kd, T)));
       if (typeof guard === "function") guard();
     };
     groups.append(...THING_GROUPS.map(([g, name]) => el("button", { "data-group": g, onclick: () => { thingGroup = g; showGroup(); } }, name)));
@@ -1334,7 +1342,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     box.append(groups, items, slowNote, el("div", { class: "row" }, [el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
     syncs.push(() => { const m = (state.background.things || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); guard();
       // (ticket 201: every ten seconds, while there are things here that move)
-      if (performance.now() - thingFpsAt > 10000 && box.isConnected && ((state.background.things || []).some(x => (THING_KINDS[x.kind] || {}).moving) || ownMovingNow().length)) thingCheck(guard); });
+      if (performance.now() - thingFpsAt > 10000 && box.isConnected && ((state.background.things || []).some(thingMoves) || ownMovingNow().length)) thingCheck(guard); });
   }
   // (ticket 185, Matthew) 🗺️ World design: places laid out on a big grid,
   // each joined to its neighbours by the doors on their shared side (no door
