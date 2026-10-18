@@ -320,6 +320,9 @@ function waysSvg(c, floor, links) {
   const { x0, x1, y0, W, H, k, P } = c;
   let t = "";
   const sides = { left: 0, right: 0 };
+  // (ticket 247: the houses the bridges lead to, as they look outside; the eyes' drawing, for their heads)
+  const houses = treeHouses(c.o, Math.max(1, Math.min(6, c.o.houses ?? 4)), (c.o.treeHouseSize ?? 100) / 100);
+  if (links.some(L => L.way === "left" || L.way === "right")) t += `<defs>${CABIN_DEFS}</defs>`;
   for (const L of links) {
     const go = L.to < 0 ? `data-to="treehouse"` : `data-to="treeroom" data-house="${L.to + 1}"`, name = L.to < 0 ? "🌳 out" : `${L.label} ${L.to + 1}`;
     t += `<g class="portal" ${go}${L.way === "left" || L.way === "right" ? ` data-door=""` : ""}>`;
@@ -331,10 +334,26 @@ function waysSvg(c, floor, links) {
       const nb = at(z0, floor), nt = at(z0, floor - h), ft = at(z1, floor - h), fb = at(z1, floor);
       const quad = (a, b, d, e) => `M${P(...a)} L${P(...b)} L${P(...d)} L${P(...e)} Z`, lerp = (p, q, u) => [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
       const on = (u, v) => lerp(lerp(nt, ft, u), lerp(nb, fb, u), v);   // (u along the door from its near edge, v down it)
-      t += `<path d="${quad(nb, nt, ft, fb)}" fill="#a8dcf5"/>` +
-           [[0.3, 0.12, 22, "#4fb04f"], [0.7, 0.07, 18, "#3c9a40"]].map(([u, v, r, col]) => { const q = on(u, v); return `<circle cx="${f1(q[0])}" cy="${f1(q[1])}" r="${f1(r * km)}" fill="${col}"/>`; }).join("") +
-           `<path d="${quad(on(0, 1), on(0, 0.86), on(1, 0.86), on(1, 1))}" fill="#8b5e34"/>` +
-           [0.62, 0.74].map(v => { const a = on(0, v), b = on(1, v); return `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#d8c49a" stroke-width="${f1(2.5 * km)}"/>`; }).join("");
+      // (ticket 247, Matthew: "enhance the picture we see out the doors of the tree house that are for bridges, so they
+      // resemble the target of the bridge") seen through it as it opens: the house the bridge leads to, as it looks
+      // outside (its animal, its colors: houseLook, as the tree draws it), upright, at the far end of the bridge's planks
+      // and ropes, which run out to it from the threshold; leaves and sky behind; all inside the doorway
+      const vid = `bg-doorview-${L.to + 1}-${sd < 0 ? "l" : "r"}`, tgt = houses.find(u => u.i === L.to);
+      const wd = Math.abs(on(1, 0.5)[0] - on(0, 0.5)[0]), top0 = on(0.5, 0)[1], cx = on(0.5, 0.5)[0], py = on(0.5, 0.6)[1];
+      const hs = Math.max(0.01, Math.min(0.62 * wd / 170, 0.9 * (py - top0) / 245)), pw = 62 * hs, ry = py - 30 * hs;
+      // (left to right on the screen: on the right-hand wall a door's near edge, u = 0, is its right one)
+      const lr = (a, b) => a[0] <= b[0] ? [a, b] : [b, a], near = lr(on(0, 1), on(1, 1)), rails = lr(on(0, 0.7), on(1, 0.7));
+      const far = [[cx - pw, py + 14 * hs], [cx + pw, py + 14 * hs]], mixP = (u, a, b) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+      // (its clip defined after it: a door's first shape is its opening, which walkInto measures, and one in a clipPath has no box)
+      t += `<g data-view="${L.to + 1}" clip-path="url(#${vid})">` +
+           `<path d="${quad(nb, nt, ft, fb)}" fill="#a8dcf5"/>` +
+           [[0.3, 0.12, 22, "#4fb04f"], [0.7, 0.07, 18, "#3c9a40"], [0.12, 0.3, 16, "#3c9a40"], [0.9, 0.34, 15, "#4fb04f"]].map(([u, v, r, col]) => { const q = on(u, v); return `<circle cx="${f1(q[0])}" cy="${f1(q[1])}" r="${f1(r * km)}" fill="${col}"/>`; }).join("") +
+           (tgt ? `<g ${tf(cx, py, hs)}><g color="${tgt.look.walls}">${CABIN_SVG}</g>${tgt.look.head}</g>` : "") +
+           // (the bridge: its deck from the threshold out to the house's platform, planks across it closer together farther off)
+           `<path d="M${P(...near[0])} L${P(...near[1])} L${P(...far[1])} L${P(...far[0])} Z" fill="#8b5e34"/>` +
+           [0.2, 0.38, 0.53, 0.65, 0.75, 0.83, 0.9].map(u => { const a = mixP(u, far[0], near[0]), b = mixP(u, far[1], near[1]); return `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#5e3d22" stroke-width="${f1(1.5 * km)}"/>`; }).join("") +
+           [[rails[0], [cx - pw, ry]], [rails[1], [cx + pw, ry]]].map(([a, b]) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#d8c49a" stroke-width="${f1(2.5 * km)}"/>`).join("") + `</g>` +
+           `<defs><clipPath id="${vid}"><path d="${quad(nb, nt, ft, fb)}"/></clipPath></defs>`;
       // (ticket 216: a plank door, swung open as the passage is taken (walkInto: [data-leaf] to its data-open shape,
       // the same commands); hinged at its far edge, as the castle's are: open, a sliver there)
       const zo = z1 - 0.12 * (z1 - z0), open = quad(at(zo, floor + 4 * k), at(zo, floor - h - 4 * k), ft, fb), knob = on(0.16, 0.52);
@@ -718,7 +737,9 @@ function treeroomScene(c) {
   // hatch is one, at its hole's front edge, hy + 20k = floor + 92k in waysSvg, and the ladder up
   // another, at its foot, floor + 14k: each drawn by itself, in the order waysSvg draws them all)
   const links = houseLinks(o, inside - 1), ways = way => links.filter(L => way.includes(L.way));
-  s += SEP + part("room-ways", [c.F, links, [1, 2, 3, 4, 5, 6].map(n => o["hatchShape" + n]).join()], () => {   // (ticket 252: its trapdoors' shapes, here and above)
+  // (the houses' looks: their animals, their colors, the sign's map's and the bridge doors' views; tickets 244, 247)
+  const looksKey = [o.houses, o.bridges, o.ladders, o.treeHouseSize, ...treeHouses(o, Math.max(1, Math.min(6, o.houses ?? 4)), 1).map(h => [h.animal, h.look.cols])];
+  s += SEP + part("room-ways", [c.F, links, [1, 2, 3, 4, 5, 6].map(n => o["hatchShape" + n]).join(), looksKey], () => {   // (ticket 252: its trapdoors' shapes, here and above)
     const down = ways(["down"]), up = ways(["up"]);
     const doors = ways(["left", "right"]);
     // (ticket 238, Matthew: "we get (the main char) gets drawn below the ladder, the trap door flap, and we don't visibly
@@ -734,8 +755,7 @@ function treeroomScene(c) {
   // Infinity, as the dark and the sign below are: the friend is always under it)
   // (ticket 244) under its name, a map of the whole tree house, this house ringed in white (treeMapSvg): as wide as the
   // room's corner leaves room for, the map as wide as the sign
-  const mapKey = [o.houses, o.bridges, o.ladders, o.treeHouseSize, ...treeHouses(o, Math.max(1, Math.min(6, o.houses ?? 4)), 1).map(h => [h.animal, h.look.cols])];
-  s += SEP + obj("house sign", Infinity, part("room-sign", [c.F, inside, houseEmoji(o, inside), mapKey], () => {
+  s += SEP + obj("house sign", Infinity, part("room-sign", [c.F, inside, houseEmoji(o, inside), looksKey], () => {
     const sx = x1 - W * 0.14, sy = y0 + H * 0.12, hw = Math.max(46 * k, Math.min(76 * k, W * 0.14 - 4 * k));
     const [bx, by, bw, bh] = TREE_MAP_BOX, m = (2 * hw - 14 * k) / bw, my = sy + 38 * k, mh = bh * m;
     // (hanging still on its ropes: no wind indoors)

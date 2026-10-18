@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.180 (2026-10-17)
+
+Everything in 0.0.179, with a view of where each bridge door leads.
+
+- **Through the bridge doors**: in a tree house room, as a door to a rope bridge swings open, you see the house it leads to, its animal and its colors as it looks outside, at the far end of the bridge, the bridge's planks and ropes running out to it. Change that house's animal and the view changes too.
+
 ## 0.0.179 (2026-10-17)
 
 Everything in 0.0.178, with the tree house rooms' bridge doors leading out onto the bridges.
