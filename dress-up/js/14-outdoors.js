@@ -862,7 +862,21 @@ function bubbleroomScene(c) {
     if (r >= 6 * k && r < 12 * k && v > 1 - 0.04 * move && n.pop < 4) { n.pop++; const d = (7 + 8 * L(i * 2 + 1)).toFixed(1);
       return `<animateTransform attributeName="transform" type="scale" values="1;1;0.05;0.05;1" keyTimes="0;0.72;0.75;0.8;1" dur="${d}s" begin="-${(+d * L(i * 2 + 1)).toFixed(1)}s" repeatCount="indefinite"/>`; }
     return ""; };
-  const sets = (list, draw, seedK) => list.map((b, i) => draw(b, lifeOf(seedK, i, b.r))).join("");
+  // (ticket 290, Matthew: "bubble room with one bubble machine is stressing my modern laptop") What does not move is drawn
+  // once as a picture: an <image> of a little SVG document of its own (a data: URL, so the still pictures can show it too),
+  // which the browser paints as a copy of itself, not as its thousands of see-through shapes, each time something moving
+  // over it (a breathing bubble, a maker's, the friend) is drawn again; what moves stays live over it
+  // (each only as big as the part of it inside the picture: the picture's frame overscans far past what is seen, and a
+  // picture is kept in memory at the size it is drawn)
+  const asImage = (inner, box, defs = "") => { if (!inner) return "";
+    const ax = Math.max(box[0], x0 - 2), ay = Math.max(box[1], y0 - 2), ax1 = Math.min(box[0] + box[2], x0 + W + 2), ay1 = Math.min(box[1] + box[3], y1 + 2);
+    if (!(ax1 > ax && ay1 > ay)) return "";
+    const [bx, by, bwd, bht] = [ax, ay, ax1 - ax, ay1 - ay].map(v => +f1(v));
+    const doc = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${bx} ${by} ${bwd} ${bht}" width="${bwd}" height="${bht}">${defs}${inner}</svg>`.replace(/"/g, "'");
+    return `<image x="${bx}" y="${by}" width="${bwd}" height="${bht}" preserveAspectRatio="none" href="data:image/svg+xml;charset=utf-8,${doc.replace(/%/g, "%25").replace(/#/g, "%23").replace(/</g, "%3C").replace(/>/g, "%3E")}"/>`; };
+  const sets = (list, draw, seedK, box) => { let still = "", live = "";
+    list.forEach((b, i) => { const life = lifeOf(seedK, i, b.r); if (life) live += draw(b, life); else still += draw(b, ""); });
+    return asImage(still, box) + live; };
   const rMax = 40 * k, rMin = 4 * k, clip = (id, pts) => `<defs><clipPath id="${id}"><polygon points="${pts}"/></clipPath></defs>`;
   const fEdge = (W / 2 + pad) / bw, dSide = 800 * (1 - 1 / fEdge), fBot = (y1 + pad - vy) / (floor - vy), dFloor = 800 * (1 - 1 / fBot), fTop = (vy - (y0 - pad)) / (vy - top), dCeil = 800 * (1 - 1 / fTop);
   let s = SEP + part("bubbleroom-shell", c.F, () => {
@@ -878,21 +892,21 @@ function bubbleroomScene(c) {
   // the back wall: from the floor up, as high as its setting
   if (B.foamBack ?? true) s += SEP + part("bubbleroom-foam-back", key("Back"), () => { const h = wh * (B.foamBackH ?? 70) / 100;
     return wallObj("foam, back wall", clip("bg-foam-back", `${P(-bw, top)} ${P(bw, top)} ${P(bw, floor)} ${P(-bw, floor)}`) + `<g clip-path="url(#bg-foam-back)">` +
-      sets(foamPack(seed * 7 + 1, 2 * bw, h, rMax, rMin), (b, life) => bub(b.r, b.j, `translate(${f1(-bw + b.x)} ${f1(floor - b.y)})`, life), 1) + `</g>`); });
+      sets(foamPack(seed * 7 + 1, 2 * bw, h, rMax, rMin), (b, life) => bub(b.r, b.j, `translate(${f1(-bw + b.x)} ${f1(floor - b.y)})`, life), 1, [-bw, top, 2 * bw, wh]) + `</g>`); });
   // the side walls: along each, from the back corner toward us, from the floor up
   for (const [sd, K] of [[-1, "Left"], [1, "Right"]]) if (B["foam" + K] ?? true) s += SEP + part("bubbleroom-foam-" + K, key(K), () => {
     const h = wh * (B["foam" + K + "H"] ?? 55) / 100, [ax, ay] = out(sd * bw, top, y0 - pad), [bx, by] = out(sd * bw, floor, y1 + pad);
     return wallObj(`foam, ${sd < 0 ? "left" : "right"} wall`, clip("bg-foam-" + K, `${P(sd * bw, top)} ${P(ax, ay)} ${P(sd * (W + pad), y0 - pad)} ${P(sd * (W + pad), y1 + pad)} ${P(bx, by)} ${P(sd * bw, floor)}`) +
       `<g clip-path="url(#bg-foam-${K})">` + sets(foamPack(seed * 7 + (sd < 0 ? 2 : 3), dSide, h, rMax, rMin), (b, life) => {
         const z = -b.x / 800, f = 1 / (1 + z), Y = floor - b.y, [ex, ey] = at(sd * bw, Y, z), q = f * f / 800;
-        return bub(b.r, b.j, mat(sd * bw * q, (Y - vy) * q, 0, f, ex, ey), life); }, sd < 0 ? 2 : 3) + `</g>`); });
+        return bub(b.r, b.j, mat(sd * bw * q, (Y - vy) * q, 0, f, ex, ey), life); }, sd < 0 ? 2 : 3, sd < 0 ? [x0 - pad, y0 - pad, -bw - x0 + pad, H + 2 * pad] : [bw, y0 - pad, x0 + W + pad - bw, H + 2 * pad]) + `</g>`); });
   // the floor and the ceiling: out from the back wall toward us, as far as their settings
   for (const [K, Y, D, nm] of [["Floor", floor, dFloor, "floor"], ["Ceil", top, dCeil, "ceiling"]]) if (B["foam" + K] ?? true) s += SEP + part("bubbleroom-foam-" + K, key(K), () => {
     const d = D * (B["foam" + K + "H"] ?? (K === "Floor" ? 100 : 60)) / 100, edge = K === "Floor" ? y1 + pad : y0 - pad;
     const body = clip("bg-foam-" + K, `${P(-bw, Y)} ${P(bw, Y)} ${P(...out(bw, Y, edge))} ${P(...out(-bw, Y, edge))}`) + `<g clip-path="url(#bg-foam-${K})">` +
       sets(foamPack(seed * 7 + (K === "Floor" ? 4 : 5), 2 * bw, d, rMax, rMin), (b, life) => {
         const X = -bw + b.x, z = -b.y / 800, f = 1 / (1 + z), [ex, ey] = at(X, Y, z), q = f * f / 800;
-        return bub(b.r, b.j, mat(f, 0, X * q, (Y - vy) * q, ex, ey), life); }, K === "Floor" ? 4 : 5) + `</g>`;
+        return bub(b.r, b.j, mat(f, 0, X * q, (Y - vy) * q, ex, ey), life); }, K === "Floor" ? 4 : 5, K === "Floor" ? [x0 - pad, floor, W + 2 * pad, y1 + pad - floor] : [x0 - pad, y0 - pad, W + 2 * pad, top - y0 + pad]) + `</g>`;
     return K === "Floor" ? floorObj("foam, floor", body) : wallObj("foam, ceiling", body); });
   // (ticket 290, Matthew: "each bubble on the floor and wall should have ones in the room that are stuck to it --- to create
   // a richer psuedo 3d experience"; "each surface (wall, floor) has a frequency of spawning bubbles that are adjacent,
@@ -934,8 +948,9 @@ function bubbleroomScene(c) {
     // (each about its own middle, so some of the big ones, when the foam moves, can swell and shrink a little, each its own way
     // in: forty at most)
     let breathing = 0;
-    const ball = (b, i) => { const life = move && b.r >= 12 * k && breathing < 40 && seeded(seed * 17 + 3)(i) < 0.4 * move && ++breathing ? lfoTimed(o, "slow", seeded(seed * 17 + 4)(i),
+    const ballLife = (b, i) => move && b.r >= 12 * k && breathing < 40 && seeded(seed * 17 + 3)(i) < 0.4 * move && ++breathing ? lfoTimed(o, "slow", seeded(seed * 17 + 4)(i),
         `<animateTransform attributeName="transform" type="scale" values="1;1.07;0.95;1" dur="${(3.5 + 2 * seeded(seed * 17 + 4)(i)).toFixed(1)}s" repeatCount="indefinite"/>`) : "";
+    const ball = (b, life) => {
       return `<g transform="translate(${f1(b.x)} ${f1(b.y)})"><g>${life}<circle r="${f1(b.r)}" fill="url(#bg-ball-${b.j})" stroke="${tints[b.j]}" stroke-width="${f1(Math.max(0.7, b.r * 0.05))}"/>` +
         (b.r > 8 * k ? `<ellipse cx="${f1(b.r * 0.38)}" cy="${f1(b.r * 0.42)}" rx="${f1(b.r * 0.2)}" ry="${f1(b.r * 0.09)}" fill="#ffffff" opacity="0.55" transform="rotate(-35 ${f1(b.r * 0.38)} ${f1(b.r * 0.42)})"/>` : "") + `</g></g>`; };
     const shadow = b => b.K === "Floor" ? `<ellipse cx="${f1(b.x)}" cy="${f1(b.y + b.r * 0.98)}" rx="${f1(b.r * 0.8)}" ry="${f1(b.r * 0.18)}" fill="#3a5a8a" opacity="0.14"/>` : "";
@@ -944,13 +959,19 @@ function bubbleroomScene(c) {
     const ballKey = [c.F, ...FOAM_SURFACES.flatMap(([K]) => [B["foam" + K], B["foam" + K + "H"], B["foam" + K + "Out"]]), base, B.foamRainbow ?? true, move, move ? sceneLfoKey(o, "slow") : "", seed];
     // (the back wall's against it, behind everything; the rest in bands by the floor under them, farther ones drawn first)
     const back = balls.filter(b => b.K === "Back").sort((a, b) => a.d - b.d), rest = balls.filter(b => b.K !== "Back").sort((a, b) => a.fz - b.fz || a.d - b.d);
-    if (back.length) s += SEP + part("bubbleroom-balls-back", ballKey, () => wallObj("bubbles stuck out, back wall", bob(back.map((b, i) => ball(b, i)).join(""), 0)));
+    // (each lot: the still ones one picture, over the room's own extent of them, their gradients in it; the moving ones live)
+    const ballDefs = `<defs>` + tints.map((cc, j) => `<radialGradient id="bg-ball-${j}" cx="0.36" cy="0.32" r="0.72"><stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="0.25" stop-color="#ffffff" stop-opacity="0.18"/><stop offset="0.7" stop-color="${cc}" stop-opacity="0.16"/><stop offset="0.93" stop-color="${cc}" stop-opacity="0.55"/><stop offset="1" stop-color="${mix(cc, "#5a7fb0", 0.3)}" stop-opacity="0.85"/></radialGradient>`).join("") + `</defs>`;
+    const lot = (bs, i0) => { let still = "", live = "", x0b = Infinity, y0b = Infinity, x1b = -Infinity, y1b = -Infinity;
+      bs.forEach((b, j) => { const life = ballLife(b, i0 + j), svg = shadow(b) + ball(b, life);
+        if (life) live += svg; else { still += svg; x0b = Math.min(x0b, b.x - b.r - 2); y0b = Math.min(y0b, b.y - b.r - 2); x1b = Math.max(x1b, b.x + b.r + 2); y1b = Math.max(y1b, b.y + b.r * 1.2 + 2); } });
+      return (still ? asImage(still, [x0b, y0b, x1b - x0b, y1b - y0b], ballDefs) : "") + live; };
+    if (back.length) s += SEP + part("bubbleroom-balls-back", ballKey, () => wallObj("bubbles stuck out, back wall", bob(lot(back, 0), 0)));
     const bands = new Map();
     // (six bands down the floor seen, from the back wall's foot to the picture's; those under the floor seen, near us, in the last)
     const bandH = Math.max(20 * k, (y1 - floor) / 6);
     for (const b of rest) { const n = Math.max(0, Math.min(5, Math.floor((b.fz - floor) / bandH))); if (!bands.has(n)) bands.set(n, []); bands.get(n).push(b); }
     [...bands.entries()].forEach(([n, bs], i) => {
-      s += SEP + part("bubbleroom-balls-" + n, [...ballKey, n], () => obj(`bubbles stuck out ${i + 1}`, Math.max(...bs.map(b => b.fz)), bob(bs.map((b, j) => shadow(b) + ball(b, 1000 * (n + 1) + j)).join(""), i + 1)));
+      s += SEP + part("bubbleroom-balls-" + n, [...ballKey, n], () => obj(`bubbles stuck out ${i + 1}`, Math.max(...bs.map(b => b.fz)), bob(lot(bs, 1000 * (n + 1)), i + 1)));
     });
   }
   return s;
@@ -976,6 +997,10 @@ const bubbleThemes = B => ["A", "B", "C"].filter(L => L === "A" || B["bubble" + 
 // few seconds; a bubble touching the friend pops. Seventy at most, the oldest going first. Drawn in a layer of their own over
 // the scene (#maker-bubbles); still while the picture is held still.
 const makerSim = { list: [], acc: {}, raf: 0, last: 0, n: 0, layer: null };
+// (the friend's box, standing, in the picture's units: their feet's middle, as tall as they stand, a little over a third of
+// that across, from figureT; ticket 290)
+const friendBox = () => { const T = figureT; if (!(T && T.k > 0)) return null; const h = (T.base || 400) * T.k, x = T.dx, y = T.sg + T.dy;
+  return [x - 0.28 * h, y - h, x + 0.28 * h, y]; };
 const makerTheme = (B, L) => ({ color: B["bubble" + L + "Color"], size: B["bubble" + L + "Size"] ?? 18, shine: (B["bubble" + L + "Shine"] ?? 70) / 100,
   sparkle: B["bubble" + L + "Sparkle"] || "none", sparkleColor: B["bubble" + L + "SparkleColor"] || "#ffffff" });
 function makerRun() {
@@ -1009,11 +1034,9 @@ function makerTick(t) {
       if (L.length > 70) { const o = L.shift(); o.el.remove(); }
     }
   }
-  // the friend: their box in the picture's units, from the screen
-  let fr = null;
-  const fig = document.getElementById("figure"), P = pic.getScreenCTM();
-  if (fig && P) { const rr = fig.getBoundingClientRect(), inv = P.inverse(), a = new DOMPoint(rr.left, rr.top).matrixTransform(inv), c = new DOMPoint(rr.right, rr.bottom).matrixTransform(inv);
-    if (rr.width > 2) fr = [Math.min(a.x, c.x), Math.min(a.y, c.y), Math.max(a.x, c.x), Math.max(a.y, c.y)]; }
+  // the friend: their box in the picture's units, from where they are drawn (figureT), not read back from the screen: a read
+  // each frame made the browser lay the whole picture out again, thousands of shapes in the bubble room
+  const fr = friendBox();
   for (let j = L.length - 1; j >= 0; j--) {
     const b = L[j], age = t - b.born;
     if (b.pop) { if (t - b.pop > 260) { b.el.remove(); L.splice(j, 1); } continue; }

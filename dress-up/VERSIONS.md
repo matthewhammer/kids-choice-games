@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.240 (2026-10-18)
+
+Everything in 0.0.239, with the bubble room much lighter to draw.
+
+- **The bubble room is far less work for the computer**: the foam that stays still is drawn once as a picture for each wall, the floor and the ceiling (and for each row of stuck-out bubbles), and only the bubbles that move are drawn again as they move. The room went from about 7,600 shapes on the page to about 900, and looks the same.
+- **Bubble makers no longer make the browser measure the whole picture every frame** to see whether their bubbles touch you: where you are comes from where you are drawn.
+
 ## 0.0.239 (2026-10-18)
 
 Everything in 0.0.238, with the bubble room alive and its own music.
