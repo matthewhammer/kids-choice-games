@@ -248,6 +248,8 @@ const castleOf = o => {
              doors: [...Array(Math.max(0, Math.min(roomDoorMax(o["castleRoom" + n + id] ?? CASTLE_ROOMS[id][n - 1] ?? "king"), Math.round(o["castleHallDoors" + n + id] ?? 3))))].map((_, j) => String(o[hallDoorKey(id, n, j + 1)] ?? hallDoorDefault(n, j + 1))),
              end: String(o["castleHallEnd" + n + id] ?? "auto"), out: String(o["castleOut" + n + id] ?? "auto"), back: String(o["castleBack" + n + id] ?? "none"), far: String(o["castleFar" + n + id] ?? "none") })),
            levels: Math.max(1, Math.min(5, Math.round(o["castleLevels" + id] ?? d.levels))),
+           // (ticket 252: the trap room's two pits' openings, the same in the dungeons' ceilings below them)
+           pitShapes: [1, 2].map(i => openingShape(o["castlePitShape" + i + id] ?? "circle")),
            stone: o["castleStone" + id] ?? d.stone, trees: Math.max(0, Math.round(o["castleTrees" + id] ?? d.trees)),
            moat: Math.max(0, (o["castleMoat" + id] ?? d.moat) / 100),
            rooms: [...Array(Math.max(1, Math.min(ROOM_MAX, Math.round(o["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].map((_, i) => {
@@ -364,7 +366,7 @@ const DEFAULTS = {
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,
                 houses: 4, bridges: 2, ladders: 3, leaves: 60, treeHouseSize: 100,
                 castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
-                  [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
+                  [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castlePitShape1" + id, "circle"], ["castlePitShape2" + id, "circle"], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
                    ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleRoof" + id, CASTLE_ROOF_DEFAULTS[id]], ["castleCarpet" + id, CASTLE_CARPETS[0]],
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
@@ -375,6 +377,7 @@ const DEFAULTS = {
                    ...ROOM_NS.flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
                    ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
                 castleRoom: 1, livingOut: "house", ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["treeBack" + n, "none"])),
+                ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShape" + n, "square"])),   // (ticket 252: each tree house's trapdoor's opening)
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
                 lfoFast: "D", lfoSlow: "E", lfoWings: "F",
@@ -878,7 +881,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.174", released: "2026-10-17" };
+const VERSION = { number: "0.0.175", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

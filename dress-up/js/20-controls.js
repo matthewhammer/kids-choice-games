@@ -365,7 +365,8 @@ const TABS = [
     ["choice", "inside", "🏡 which tree house", [1, 2, 3, 4, 5, 6].map(n => [n, "🏡 " + n])],
     ...[1, 2, 3, 4, 5, 6].flatMap(n => [["choice", "room" + n, `🏡 ${n}: its room`, ROOM_CHOICES],
       ...[1, 2].map(i => ["choice", `r${n}pic${i}`, `🏡 ${n}: picture ${i} on its wall`, PICTURE_CHOICES]),
-      ["choice", "treeBack" + n, `🏡 ${n}: ⬇️ the way toward us leads to`, BEHIND_PLACES]]),
+      ["choice", "treeBack" + n, `🏡 ${n}: ⬇️ the way toward us leads to`, BEHIND_PLACES],
+      ["choice", "hatchShape" + n, `🏡 ${n}: 🕳️ its trapdoor's opening`, OPENING_SHAPES]]),   // (ticket 252)
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
     ["range", "toys", "🧸 things in the room", 0, 24, 4, 20],
     // the mountain trail
@@ -431,7 +432,10 @@ const TABS = [
       ["group", "castleRoomList" + id, `🚪 ${id}'s castle: its rooms`, [
         ["castlejump", "castleGo" + id, "🚶 go straight to"],
         ["range", "castleRooms" + id, "🚪 how many rooms", 1, ROOM_MAX, 1, 6],
-        ["castledesigner", "castleDesign" + id, "🗺️ castle designer"]]],
+        ["castledesigner", "castleDesign" + id, "🗺️ castle designer"],
+        // (ticket 252) the trap room's pits' openings, as the dungeons' ceilings below them have them too
+        ["choice", "castlePitShape1" + id, "🕳️ the trap room's first pit: its opening", OPENING_SHAPES],
+        ["choice", "castlePitShape2" + id, "🕳️ the trap room's second pit: its opening", OPENING_SHAPES]]],
       ...ROOM_NS.map(n => ["group", "castleRoomBox" + n + id, `🚪 ${id}'s castle: room ${n}`, [
         ["choice", "castleRoom" + n + id, `🚪 room ${n} is`, CASTLE_ROOM_CHOICES],
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
@@ -836,6 +840,8 @@ const SHOWN_WHEN = {
             ...Object.values(RESIDENTS).flatMap(R => [["background." + R.group[0] + id, livesHere(R.room)],
               ...R.list.map((_, i) => ["background." + R.box[0] + (i + 1) + id, b => livesHere(R.room)(b) && i + 1 <= Math.round(b[R.count[0] + id] ?? R.count[2])])]),
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle], ["background.castleDesign" + id, atCastle],
+            // (ticket 252: in the trap room, or a dungeon below it)
+            ...[1, 2].map(i => ["background.castlePitShape" + i + id, b => atCastle(b) && b.kind === "castleroom" && ["trap", "ladder"].includes(ROOM_KINDS[typeOf(b, Math.round(b.castleRoom ?? 1))]?.exits)]),
             ...ROOM_NS.flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
               ["background.castleOut" + n + id, b => !isHall(b, n)], ["background.castleFar" + n + id, b => typeOf(b, n) === "dining"],
@@ -854,6 +860,9 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["fairyTime", "mushrooms", "fairyHouseSeen", "fairyHouseLfo"].map(key => ["background." + key, b => b.kind === "fairyforest"])),
   "background.livingOut": b => b.kind === "livingroom",
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["background.treeBack" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n])),
+  // (ticket 252: a trapdoor's opening, in its house, and in the house below, whose ceiling it is)
+  ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["background.hatchShape" + n, b => { if (b.kind !== "treeroom") return false; const i = Math.round(b.inside ?? 1);
+    return (i === n && houseLinks(b, n - 1).some(L => L.way === "down")) || houseLinks(b, i - 1).some(L => L.way === "up" && L.to === n - 1); }])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
   "background.windowSize": b => b.kind === "treeroom",
