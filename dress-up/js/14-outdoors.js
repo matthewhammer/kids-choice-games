@@ -1368,7 +1368,7 @@ function crossingScene(c) {
     obj("butterflies", g - 50 * k, butterfliesSvg(c, [[x0 + W * 0.22, g - 60 * k, 1], [x0 + W * 0.74, g - 100 * k, 0.8]])));
   return s;
 }
-const SCENES = { lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
+const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
                  tent: tentScene, cave: caveScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and

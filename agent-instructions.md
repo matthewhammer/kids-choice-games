@@ -319,6 +319,8 @@ Sitting (`legBase`): facing us, the thighs come toward us and are drawn short (0
 
 Each kind of thing has one table. Add an entry there, and the rest follows from it. Check every change with the safety net, below.
 
+**The 🛖 grass hut and its rooms** (ticket 278, for M): `hutScene` outside (`hutSvg`, in its own units as `healerSvg` is), and three rooms in one shell, `hutShellSvg` (grass ceiling and rafters, walls of upright sticks lashed with twine, an earth floor with straw; their floors at `HUT_UP`), joined by stick doors (`hutDoorSvg`): the living room (`hutroomScene`) to the bedroom (`hutbedScene`) and the potion room (`hutpotionScene`), each back to it, and the living room's way out toward us to the hut (`insideWays`). The living room's couch and rug are the house's (`couchSvg`, `rugSvg`), each room with its own colors (`couchColor`/`rugColors`; `hutCouchColor`/`hutRugColors`); at its first colors the house's draws as it always did. A new room in a hut: `hutShellSvg` and doors in its wall, then the place's tables, as below.
+
 **The 🔲 empty room** (ticket 153, Matthew): the imagination's room with nothing in it (`emptyroomScene`: a wall, a floor and the line between them, no objects, no animation, no tune), in the imagination's group, with its solid back wall (`SCENE_BACK`). It is for trying the controls on a slow computer (the black laptop, N's), and the baseline for the frame-rate gate: if it drops frames, the friend is the cost, not the place. Keep it empty.
 
 **A place.** Add one line in each of these:

@@ -2,6 +2,16 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.204 (2026-10-18)
+
+Everything in 0.0.203, with a grass hut for M: four new places.
+
+- **🛖 grass hut**: a round hut of upright sticks under a grass roof, its tuft tied off at the top, smoke rising, sticks piled for the fire, butterflies over the meadow. Its stick door goes inside.
+- **🛋️ inside the grass hut**: a living room with the living room's couch and rug, in the hut's stick walls under its grass ceiling, a wind chime and a lantern, a window with its view. Its doors lead to the bedroom and the potion room; the way toward us goes back out.
+- **🛏️ the grass hut's bedroom**: a bed of logs ("🛏️ blanket color"), a candle on a stump, a dreamcatcher, a round window onto the night sky.
+- **🧪 the grass hut's potion room**: a cauldron bubbling over its fire ("🧪 the potion's color"), shelves of glowing bottles, herbs drying, a table with a mortar, a pestle and a book of recipes.
+- **"🛋️ couch color" and "🟠 rug colors"** for both living rooms, the house's and the hut's, each its own.
+
 ## 0.0.203 (2026-10-18)
 
 Everything in 0.0.202, with a saved friend's file saying when it was saved, apart from what draws the picture.

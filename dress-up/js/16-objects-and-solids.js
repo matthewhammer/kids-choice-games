@@ -132,7 +132,7 @@ SCENE_BACK.castleroom = () => { const W = castleWallsOf(state.background); retur
 // wall as the room is drawn (livingroomScene, treeroomScene, witchroomScene,
 // healerroomScene; the tent's far wall, tentScene), in front of which the
 // friend stops, as in the imagination
-for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["witchroom", 100], ["healerroom", 100], ["tent", 70]])
+for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["witchroom", 100], ["healerroom", 100], ["tent", 70], ["hutroom", HUT_UP], ["hutbed", HUT_UP], ["hutpotion", HUT_UP]])
   SCENE_BACK[kind] = () => SCENE.ground - up * (SCENE.bottom - SCENE.top) / 700 + 3;
 // (ticket 214, Matthew: "the horz blue line in each scene is wrong, and always too high -- it doesn't correspond with
 // where we'd walk or run -- we'd need to fly") Each outdoor place's back limit at the far edge of its own ground, as
@@ -143,7 +143,7 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["witchroom", 
 // sea, the lake's far shore, open water's horizon), else read from a picture of it (ticket 214's audit).
 const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 175, treehouse: 90, clearing: 140,
                     fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, castle: 35,
-                    woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245 };
+                    woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
 // (ticket 176) The things that stand in a place and can't be walked

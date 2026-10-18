@@ -67,7 +67,9 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
-  ["woodpath", "🥾 path through the woods"], ["crossing", "🛤️ forest crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"]];
+  ["woodpath", "🥾 path through the woods"], ["crossing", "🛤️ forest crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
+  // (ticket 278, for M) the grass hut, and its three rooms
+  ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"]];
 // (where the way toward us can lead from a room outside the castle: any place but those found by a number of their own)
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const PLACE_GROUPS = [
@@ -78,6 +80,7 @@ const PLACE_GROUPS = [
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
+  ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion"]],
 ];
 const groupOfPlace = v => v === "none" ? "none" : (PLACE_GROUPS.find(g => g[2].includes(v)) || [null])[0];
 console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g => g[2]).length === PLACES.length - 1,
@@ -484,6 +487,13 @@ const TABS = [
     ["range", "viewDetail", "🪟 outside the window: detail (0 = a blur, 100 = all of it)", 0, 100, 30, 100],
     ["range", "couchSize", "🛋️ couch size", 60, 140, 80, 120],
     ["range", "pillows", "🛋️ pillows", 0, 8, 2, 7],
+    // (ticket 278) each living room's own colors: the house's, and the grass hut's
+    ["color", "couchColor", "🛋️ couch color", COUCH_COLORS],
+    ["choice", "rugColors", "🟠 rug colors", RUG_CHOICES],
+    ["color", "hutCouchColor", "🛋️ couch color", ["#7a5a3a", ...COUCH_COLORS.filter(x => x !== "#7a5a3a")]],
+    ["choice", "hutRugColors", "🟠 rug colors", RUG_CHOICES],
+    ["color", "hutBlanket", "🛏️ blanket color", ["#b8434f", "#2f6f86", "#5f7f3a", "#6a4c93", "#c98a2a", "#f6eedd"]],
+    ["color", "hutPotion", "🧪 the potion's color", ["#7c3aed", "#22c55e", "#ef4444", "#3b82f6", "#f59e0b", "#ec4899"]],
     // pictures on the walls, of the other scenes
     ["range", "pictures", "🖼️ pictures on the wall", 0, 6, 1, 6],
     ["range", "picDetail", "🖼️ picture detail (0 = a blur, 100 = all of it)", 0, 100, 20, 100],
@@ -889,15 +899,21 @@ const SHOWN_WHEN = {
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
   "background.windowSize": b => b.kind === "treeroom",
   "background.toys": b => b.kind === "treeroom",
-  "background.couchSize": b => b.kind === "livingroom",
-  "background.view": b => b.kind === "livingroom",
-  "background.viewDetail": b => b.kind === "livingroom",
-  "background.pillows": b => b.kind === "livingroom",
-  "background.pictures": b => b.kind === "livingroom" || b.kind === "treeroom",
-  "background.picDetail": b => (b.kind === "livingroom" || b.kind === "treeroom") && b.pictures > 0,
-  "background.picSize": b => b.kind === "livingroom" && b.pictures > 0,
-  "background.pic1": b => b.kind === "livingroom" && b.pictures >= 1,
-  "background.pic2": b => b.kind === "livingroom" && b.pictures >= 2,
+  "background.couchSize": b => b.kind === "livingroom" || b.kind === "hutroom",
+  "background.view": b => b.kind === "livingroom" || b.kind === "hutroom",
+  "background.viewDetail": b => b.kind === "livingroom" || b.kind === "hutroom",
+  "background.pillows": b => b.kind === "livingroom" || b.kind === "hutroom",
+  "background.couchColor": b => b.kind === "livingroom",
+  "background.rugColors": b => b.kind === "livingroom",
+  "background.hutCouchColor": b => b.kind === "hutroom",
+  "background.hutRugColors": b => b.kind === "hutroom",
+  "background.hutBlanket": b => b.kind === "hutbed",
+  "background.hutPotion": b => b.kind === "hutpotion",
+  "background.pictures": b => b.kind === "livingroom" || b.kind === "treeroom" || b.kind === "hutroom",
+  "background.picDetail": b => (b.kind === "livingroom" || b.kind === "treeroom" || b.kind === "hutroom") && b.pictures > 0,
+  "background.picSize": b => (b.kind === "livingroom" || b.kind === "hutroom") && b.pictures > 0,
+  "background.pic1": b => (b.kind === "livingroom" || b.kind === "hutroom") && b.pictures >= 1,
+  "background.pic2": b => (b.kind === "livingroom" || b.kind === "hutroom") && b.pictures >= 2,
   "background.pic3": b => b.kind === "livingroom" && b.pictures >= 3,
   "background.pic4": b => b.kind === "livingroom" && b.pictures >= 4,
   "background.pic5": b => b.kind === "livingroom" && b.pictures >= 5,
