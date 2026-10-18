@@ -83,7 +83,9 @@ for (const c of CASES) {
       const r = await ev(`__stop()`);
       await sleep(300);
       // (moved either way: arrived beside something, a step toward it is rightly blocked, ticket 184)
-      return { ...r, moved: Math.max(Math.abs(x1 - x0), Math.abs(x2 - x1)) };
+      // (a reading that came back empty, once, in 0.0.201's run: the stable, which walks both ways when probed, then counted
+      // by the way it did move)
+      return { ...r, moved: Math.max(Math.abs(x1 - x0), Number.isFinite(x2) ? Math.abs(x2 - x1) : 0) };
     };
     await walk();   // (a warm-up, not counted)
     const runs = []; for (let i = 0; i < RUNS; i++) runs.push(await walk());
