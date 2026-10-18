@@ -1420,12 +1420,15 @@ function catRoomSvg(c, K) {
     if (i < 10) for (let j = 0; j < 3; j++) { const z = -(0.05 + 0.22 * j + 0.15 * R(i + 20, 1210 + j)), [ax, ay] = at(i * bw / 10, floor, z), [bx] = at((i + 1) * bw / 10, floor, z);
       t += `<line x1="${f1(ax)}" y1="${f1(ay)}" x2="${f1(bx)}" y2="${f1(ay)}" stroke="#7c4c26" stroke-width="${f1(1.4 * k / (1 + z))}"/>`; } }
   t += pg([at(-bw, floor), at(bw, floor), at(bw, floor, -0.04), at(-bw, floor, -0.04)], "#000000", ` opacity="0.22"`);
+  const mRug = t.length;   // (ticket 284: the rug, the fireplace, the mantel, the portrait, the window, the feather toy, the banner, the shelves and the bowls' mat, each a wall or floor object)
   // the rug: braided rings in the room's colors, from the back of the room nearly to us
   { const ra = at(0, floor, -0.08)[1], rb = at(0, floor, -0.55)[1], rcy = (ra + rb) / 2, rry = (rb - ra) / 2, rrx = 0.78 * bw * 1.4;
     const cols = [K.flagA, "#efe2c4", K.flagB, K.carpet, "#efe2c4", K.flagA, K.flagB, "#efe2c4"];
     t += `<ellipse cx="0" cy="${f1(rcy + 4 * k)}" rx="${f1(rrx)}" ry="${f1(rry)}" fill="#000000" opacity="0.2"/>`;
     cols.forEach((col, i) => { const u = 1 - i / cols.length;
       t += `<ellipse cx="0" cy="${f1(rcy)}" rx="${f1(rrx * u)}" ry="${f1(rry * u)}" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="${f1(2.2 * k)}" stroke-dasharray="${f1(6 * k)} ${f1(3 * k)}"/>`; }); }
+  t = floorSince(t, mRug, "rug");
+  const mFire = t.length;
   // the fireplace: a chimney breast of round stones, standing out a little from the wall, to the ceiling
   const hw = 0.2 * bw, fz = -0.04, [cxa] = at(FX - hw, top, fz), [cxb] = at(FX + hw, top, fz), cyt = at(0, top, fz)[1], cyb = at(0, floor, fz)[1];
   t += pg([at(FX + hw, top), at(FX + hw, top, fz), at(FX + hw, floor, fz), at(FX + hw, floor)], "#4e4640");
@@ -1458,6 +1461,9 @@ function catRoomSvg(c, K) {
   for (let j = 0; j < 5; j++) { const sx = fx + (R(j, 1230) - 0.5) * fbw * 0.6, d = (1.4 + 0.5 * R(j, 1231)).toFixed(2);
     t += `<circle cx="${f1(sx)}" cy="${f1(fy - fbh * 0.5)}" r="${f1(1.6 * k)}" fill="#ffd166"><animate attributeName="cy" values="${f1(fy - fbh * 0.4)};${f1(fy - fbh * 0.95)}" dur="${d}s" begin="-${(R(j, 1232) * 2).toFixed(2)}s" repeatCount="indefinite"/>` +
          `<animate attributeName="opacity" values="1;0" dur="${d}s" begin="-${(R(j, 1232) * 2).toFixed(2)}s" repeatCount="indefinite"/></circle>`; }
+  t = wallSince(t, mFire, "fireplace");
+  const mMantel = t.length;
+  let mPortrait = 0;
   // the mantel, a thick beam, two candles and a little clock on it; over it, a royal cat's portrait
   { const ma = FX - hw - 0.03 * bw, mb = FX + hw + 0.04 * bw, Ym = Yh(0.36);
     t += pg([at(ma, Ym, -0.02), at(mb, Ym, -0.02), at(mb, Ym, -0.09), at(ma, Ym, -0.09)], "#9a6a3a") +
@@ -1472,12 +1478,15 @@ function catRoomSvg(c, K) {
            `<circle cx="${f1(cx)}" cy="${f1(cy - 15 * k)}" r="${f1(7.5 * k)}" fill="#fff6dc" stroke="${gold}" stroke-width="${f1(1.2 * k)}"/>` +
            `<line x1="${f1(cx)}" y1="${f1(cy - 15 * k)}" x2="${f1(cx)}" y2="${f1(cy - 20 * k)}" stroke="#1f1f22" stroke-width="${f1(1 * k)}"/>` +
            `<line x1="${f1(cx)}" y1="${f1(cy - 15 * k)}" x2="${f1(cx + 4 * k)}" y2="${f1(cy - 14 * k)}" stroke="#1f1f22" stroke-width="${f1(1 * k)}"><animateTransform attributeName="transform" type="rotate" values="0 ${f1(cx)} ${f1(cy - 15 * k)};360 ${f1(cx)} ${f1(cy - 15 * k)}" dur="60s" repeatCount="indefinite"/></line>`; }
+    t = wallSince(t, mMantel, "mantel"); mPortrait = t.length;
     const [px, py] = at(FX, Yh(0.58), fz), pw2 = 0.28 * bw * ff, ph = 0.22 * wh * ff;
     t += `<rect x="${f1(px - pw2 / 2 - 6 * k)}" y="${f1(py - ph / 2 - 6 * k)}" width="${f1(pw2 + 12 * k)}" height="${f1(ph + 12 * k)}" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(2 * k)}"/>` +
          `<rect x="${f1(px - pw2 / 2)}" y="${f1(py - ph / 2)}" width="${f1(pw2)}" height="${f1(ph)}" fill="#2f4a3a"/>` +
          `<path d="M${P(px - pw2 / 2, py + ph / 2)} Q${P(px, py + ph * 0.1)} ${P(px + pw2 / 2, py + ph / 2)} Z" fill="${K.flagA}" opacity="0.85"/>` +
          `<g transform="translate(${f1(px)} ${f1(py + ph * 0.42)}) scale(${(ph / 92).toFixed(3)})">${shoulderCat(4, { catFur: "#9ca3af", catWhite: "#ffffff", catEyes: "#e0a800", catNose: "#f4a0b0" }, false, true)}` +
          `<path d="M-14 -60 L-14 -70 L-8 -64 L-3 -73 L2 -64 L8 -70 L8 -60 Z" fill="${gold}" stroke="#9a7a12" stroke-width="1"/></g>`; }
+  t = wallSince(t, mPortrait, "portrait");
+  const mWindow = t.length;
   // (the window seat, drawn with the room's standing things, below: ticket 99)
   let seat = "";
   // the window: an arch onto the evening, a crescent moon, stars, far hills;
@@ -1515,6 +1524,8 @@ function catRoomSvg(c, K) {
     for (const [X, col] of [[sa + 0.06 * bw, K.flagA], [sb - 0.06 * bw, "#efe2c4"]]) { const [cx, cy] = at(X, Ys - 8 * k, -0.03);
       seat += `<rect x="${f1(cx - 14 * k)}" y="${f1(cy - 22 * k)}" width="${f1(28 * k)}" height="${f1(24 * k)}" rx="${f1(8 * k)}" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="${f1(1.4 * k)}"/>` +
            `<circle cx="${f1(cx)}" cy="${f1(cy - 10 * k)}" r="${f1(2 * k)}" fill="${mix(col, "#000000", 0.3)}"/>`; } }
+  t = wallSince(t, mWindow, "window");
+  let mToy = 0;
   // the high walkway, across the back wall under the ceiling, on brackets, its edge a rail of little posts;
   // a cat flap in the wall at its end, and a feather toy dangling from it
   { const Yw = Yh(0.84), wa = -0.98 * bw, wb = 0.98 * bw;
@@ -1529,18 +1540,22 @@ function catRoomSvg(c, K) {
          `<path d="M${P(fx2 - fw + 3 * k, fy2 - 32 * k)} H${f1(fx2 + fw - 3 * k)} V${f1(fy2 - 2 * k)} H${f1(fx2 - fw + 3 * k)} Z" fill="${K.flagB}" opacity="0.85"><animateTransform attributeName="transform" type="skewX" values="0;3;0;-2;0" dur="5s" repeatCount="indefinite"/></path>` +
          `<rect x="${f1(fx2 - 16 * k)}" y="${f1(fy2 - 66 * k)}" width="${f1(32 * k)}" height="${f1(13 * k)}" rx="${f1(3 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(1.2 * k)}"/>` +
          `<text x="${f1(fx2)}" y="${f1(fy2 - 56.5 * k)}" text-anchor="middle" font-size="${f1(9 * k)}" font-family="sans-serif" fill="#fff8e7">🐾 out</text>`;
+    mToy = t.length;
     const [tx, ty] = at(-0.2 * bw, Yw + 8 * k, -0.07), sl = 70 * k;
     t += `<g>${sceneLfo(c.o, "slow", 0.3, "transform", (v, amp) => `${f1((5 + 12 * amp) * v)} ${f1(tx)} ${f1(ty)}`,
            `<animateTransform attributeName="transform" type="rotate" values="-8 ${f1(tx)} ${f1(ty)};9 ${f1(tx)} ${f1(ty)};-8 ${f1(tx)} ${f1(ty)}" dur="3.1s" repeatCount="indefinite"/>`)}` +
          `<line x1="${f1(tx)}" y1="${f1(ty)}" x2="${f1(tx)}" y2="${f1(ty + sl)}" stroke="#e8e0d0" stroke-width="${f1(0.8 * k)}"/>` +
          `<path d="M${P(tx, ty + sl)} q${f1(-7 * k)} ${f1(12 * k)} ${f1(-2 * k)} ${f1(26 * k)} q${f1(8 * k)} ${f1(-12 * k)} ${f1(2 * k)} ${f1(-26 * k)} Z" fill="#3fb6c8"/>` +
          `<path d="M${P(tx + 1 * k, ty + sl)} q${f1(8 * k)} ${f1(10 * k)} ${f1(3 * k)} ${f1(22 * k)} q${f1(-6 * k)} ${f1(-10 * k)} ${f1(-3 * k)} ${f1(-22 * k)} Z" fill="#f2c12e"/></g>`; }
+  t = wallSince(t, mToy, "feather toy");
+  const mBanner = t.length;
   // the castle's banner, its letter, hanging from the walkway in the middle
   { const [bx, by] = at(0, Yh(0.84) + 8 * k, -0.01), bwid = 0.22 * bw, bh = 0.3 * wh;
     t += castleFlagDefs(K, 10 * k) + `<path d="M${P(bx - bwid / 2, by)} H${f1(bx + bwid / 2)} V${f1(by + bh)} L${P(bx, by + bh - 24 * k)} L${P(bx - bwid / 2, by + bh)} Z" fill="${castleFlagFill(K, 0, 10 * k)}" stroke="${gold}" stroke-width="${f1(3 * k)}"/>` +
          castleLetter(K, 0, bx, by + bh * 0.48, 40 * k, "serif") +
          `<g transform="translate(${f1(bx)} ${f1(by + bh * 0.82)}) scale(${(k * 0.9).toFixed(3)})">` +
          [[-6, -6], [6, -6], [-10, 2], [10, 2]].map(([dx, dy]) => `<ellipse cx="${dx}" cy="${dy}" rx="3.2" ry="4" fill="${gold}"/>`).join("") + `<ellipse cx="0" cy="8" rx="8" ry="6.5" fill="${gold}"/></g>`; }
+  t = wallSince(t, mBanner, "banner");
   // the shelves stepping up the side walls, toward us, to the walkway's ends
   const sideShelf = (sd, z0, z1, Y) => { const d = 0.07 * bw, th = 8 * k, Xw = sd * bw, Xo = sd * (bw - d);
     return pg([at(Xw, Y + th, z0), at(Xw, Y + th, z1), at(Xo, Y + th, z1), at(Xo, Y + th, z0)], "#6b4527") +
@@ -1548,10 +1563,12 @@ function catRoomSvg(c, K) {
       pg([at(Xw, Y, z1), at(Xo, Y, z1), at(Xo, Y + th, z1), at(Xw, Y + th, z1)], woodD) +
       [z0 + (z1 - z0) * 0.25, z0 + (z1 - z0) * 0.75].map(z => { const [a, b] = [at(Xw, Y + th, z), at(Xo, Y + th, z)], [cx, cy] = at(Xw, Y + th + 22 * k, z);
         return `<path d="M${P(...a)} L${P(...b)} L${P(cx, cy)} Z" fill="${beam}"/>`; }).join(""); };
-  for (const sd of [-1, 1]) t += sideShelf(sd, -0.04, -0.14, Yh(0.8)) + sideShelf(sd, -0.2, -0.3, Yh(0.76)) + sideShelf(sd, -0.36, -0.46, Yh(0.68));
+  for (const sd of [-1, 1]) t += [[-0.04, -0.14, Yh(0.8)], [-0.2, -0.3, Yh(0.76)], [-0.36, -0.46, Yh(0.68)]].map(([z0, z1, Y], j) => wallObj(`shelf, ${sd < 0 ? "left" : "right"} ${j + 1}`, sideShelf(sd, z0, z1, Y))).join("");
+  const mMat = t.length;
   // (the bowls' mat, flat on the floor)
   { const [bx, by] = at(0.64 * bw, floor, -0.15), s = k / 0.85;
     t += `<rect x="${f1(bx - 34 * s)}" y="${f1(by - 6 * s)}" width="${f1(68 * s)}" height="${f1(14 * s)}" rx="${f1(4 * s)}" fill="${K.flagB}" opacity="0.85"/>`; }
+  t = floorSince(t, mMat, "mat for the bowls");
   // (ticket 99) all that stands in the room, after all of its walls, floor and what is on them: each
   // an object at its foot, so the cats (drawn after the room) are sorted in among them by depth and
   // never land under a wall, a shelf or the walkway
@@ -1733,9 +1750,11 @@ function stableSvg(c, K) {
   t += `<defs><linearGradient id="bg-beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4" stop-opacity="0.38"/><stop offset="1" stop-color="#fff3c4" stop-opacity="0.04"/></linearGradient></defs>`;
   // the round window high in the back wall, the sky through it; sunbeams down through the dust
   const [ox, oy] = at(0, Yh(0.88)), orr = 0.09 * bw;
+  const mWindow = t.length;   // (ticket 284: the round window, the stalls, the hay loft, the lantern, the horseshoes, the saddles, the bridle and the straw, each a wall or floor object)
   t += `<circle cx="${f1(ox)}" cy="${f1(oy)}" r="${f1(orr + 9 * k)}" fill="#8f8676"/><circle cx="${f1(ox)}" cy="${f1(oy)}" r="${f1(orr)}" fill="#bfe6ff"/>` +
        `<circle cx="${f1(ox - orr * 0.3)}" cy="${f1(oy + orr * 0.2)}" r="${f1(orr * 0.35)}" fill="#ffffff" opacity="0.85"/>` +
        `<line x1="${f1(ox - orr)}" y1="${f1(oy)}" x2="${f1(ox + orr)}" y2="${f1(oy)}" stroke="${oakD}" stroke-width="${f1(4 * k)}"/><line x1="${f1(ox)}" y1="${f1(oy - orr)}" x2="${f1(ox)}" y2="${f1(oy + orr)}" stroke="${oakD}" stroke-width="${f1(4 * k)}"/>`;
+  t = wallSince(t, mWindow, "round window");
   // the beams across the ceiling, under the vault
   for (const z of [0, -0.18, -0.38]) { const f = 1 / (1 + z), [xa, ya] = at(-bw, top + 30 * k, z);
     t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(-2 * xa)}" height="${f1(18 * k * f)}" fill="${oak}" stroke="${oakD}" stroke-width="${f1(1.5 * k)}"/>`; }
@@ -1747,6 +1766,7 @@ function stableSvg(c, K) {
     if (Math.abs(u) < 0.9) for (const sd of [-1, 1]) t += `<line x1="${f1((xa + xb) / 2)}" y1="${f1(ya + 34 * k)}" x2="${f1((xa + xb) / 2 + sd * 30 * k)}" y2="${f1(ya + 4 * k)}" stroke="${oak}" stroke-width="${f1(6 * k)}"/>`; }
   // each stall: the dark inside, a hay net, the lintel, the top door swung open, the half door
   bays.forEach((X, j) => {
+    const mStall = t.length;
     const [xa, ya] = at(X - hb, lintel, 0), [xb, yb] = at(X + hb, doorTop, 0);
     t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(xb - xa)}" height="${f1(yb - ya)}" fill="#24180e"/>`;
     for (let i = 1; i < 5; i++) t += `<line x1="${f1(xa + (xb - xa) * i / 5)}" y1="${f1(ya)}" x2="${f1(xa + (xb - xa) * i / 5)}" y2="${f1(yb)}" stroke="#3a2818" stroke-width="${f1(1 * k)}"/>`;
@@ -1777,7 +1797,9 @@ function stableSvg(c, K) {
     // (an empty stall: a blanket in the castle's colors over its door)
     if (!has.has(j)) t += `<path d="M${P(da + 8 * k, dt - 4 * k)} H${f1(db - 8 * k)} V${f1(dt + 48 * k)} Q${P((da + db) / 2, dt + 60 * k)} ${P(da + 8 * k, dt + 48 * k)} Z" fill="${castleFlagFill(K, j, 8 * k)}" stroke="${mix(K.flagA, "#000000", 0.35)}" stroke-width="${f1(1.2 * k)}"/>` +
       `<path d="M${P(da + 8 * k, dt + 40 * k)} Q${P((da + db) / 2, dt + 52 * k)} ${P(db - 8 * k, dt + 40 * k)}" fill="none" stroke="#e8b923" stroke-width="${f1(2 * k)}"/>`;
+    t = wallSince(t, mStall, `stall ${n}`);
   });
+  const mLoft = t.length;
   // the hay loft over the stalls: bales on it, its edge, straw hanging off it, a ladder up
   for (let i = 0; i < 9; i++) { if (i === 4) continue; const X = -0.9 * bw + 1.8 * bw * i / 8, [ba, bt] = at(X - 0.09 * bw, loftY - 34 * k, -0.04), [bb, bbm] = at(X + 0.09 * bw, loftY - 6 * k, -0.04);
     t += `<rect x="${f1(ba)}" y="${f1(bt)}" width="${f1(bb - ba)}" height="${f1(bbm - bt)}" rx="${f1(3 * k)}" fill="${i % 2 ? straw : mix(straw, "#a07a30", 0.25)}" stroke="${strawD}" stroke-width="${f1(1.2 * k)}"/>` +
@@ -1787,27 +1809,38 @@ function stableSvg(c, K) {
        pg([at(-bw, loftY - 12 * k, -0.12), at(bw, loftY - 12 * k, -0.12), at(bw, loftY, -0.12), at(-bw, loftY, -0.12)], oak, ` stroke="${oakD}" stroke-width="${f1(1.2 * k)}"`);
   for (let i = 0; i < 46; i++) { const X = -bw + 2 * bw * (i + 0.5) / 46, [sx, sy] = at(X, loftY, -0.12), l = (6 + 16 * R(i, 1303)) * k;
     t += `<path d="M${f1(sx)} ${f1(sy)} q${f1((R(i, 1304) - 0.5) * 8 * k)} ${f1(l * 0.6)} ${f1((R(i, 1305) - 0.5) * 10 * k)} ${f1(l)}" fill="none" stroke="${i % 3 ? straw : strawD}" stroke-width="${f1(1.3 * k)}"/>`; }
+  t = wallSince(t, mLoft, "hay loft");
+  const mLantern = t.length;
   // a lantern on the middle post
   { const [lx, ly] = at(0, Yh(0.56), -0.02), s = k;
     t += `<circle cx="${f1(lx)}" cy="${f1(ly)}" r="${f1(55 * s)}" fill="url(#bg-glow)"/><path d="M${P(lx, ly - 24 * s)} v${f1(6 * s)}" stroke="${iron}" stroke-width="${f1(2 * s)}"/>` +
          `<path d="M${P(lx - 9 * s, ly - 14 * s)} L${P(lx + 9 * s, ly - 14 * s)} L${P(lx + 7 * s, ly + 12 * s)} L${P(lx - 7 * s, ly + 12 * s)} Z" fill="#ffe7a8" stroke="${iron}" stroke-width="${f1(2 * s)}"/>` +
          `<path d="M${P(lx - 12 * s, ly - 14 * s)} L${P(lx, ly - 22 * s)} L${P(lx + 12 * s, ly - 14 * s)} Z" fill="${iron}"/>` +
          `<ellipse cx="${f1(lx)}" cy="${f1(ly)}" rx="${f1(2.4 * s)}" ry="${f1(4.5 * s)}" fill="#ff9a2e"><animate attributeName="ry" values="${f1(4.5 * s)};${f1(3.4 * s)};${f1(5 * s)};${f1(4.5 * s)}" dur="1.1s" repeatCount="indefinite"/></ellipse>`; }
+  t = wallSince(t, mLantern, "lantern");
   // the side walls, above their doors: horseshoes nailed up in a row (for luck, ends up), saddles on racks, bridles on pegs
   // (each laid flat on its wall in perspective: onWall)
+  const mShoes = t.length;
   for (let j = 0; j < 6; j++)
     t += `<g transform="${onWall(-1, Yh(0.74), -0.05 - 0.055 * j)}"><path d="M-7 -8 Q-8 9 0 9 Q8 9 7 -8" fill="none" stroke="#7d8590" stroke-width="4" stroke-linecap="round"/>` +
          `<circle cx="0" cy="-12" r="1.4" fill="${iron}"/></g>`;
+  t = wallSince(t, mShoes, "horseshoes");
+  const mSaddles = t.length;
   for (const [z, col] of [[-0.09, "#7a3e1e"], [-0.25, "#4a2a16"]])
     t += `<g transform="${onWall(1, Yh(0.72), z)}"><rect x="-2" y="-4" width="16" height="5" fill="${oakD}"/>` +
          `<path d="M-22 0 Q-10 -14 2 -6 Q14 -16 20 -2 L14 18 L-18 18 Z" fill="${col}" stroke="#2a160a" stroke-width="1"/>` +
          `<path d="M-4 18 v14 M-9 34 q5 -6 10 0" fill="none" stroke="#9aa3ad" stroke-width="1.6"/></g>`;
+  t = wallSince(t, mSaddles, "saddles");
+  const mBridle = t.length;
   t += `<g transform="${onWall(1, Yh(0.78), -0.17)}"><circle cx="0" cy="0" r="2" fill="${iron}"/>` +
        `<path d="M0 0 q-12 18 -2 40 M0 0 q10 20 2 40 M-6 26 h12" fill="none" stroke="#6b3a1a" stroke-width="2"/>` +
        `<circle cx="0" cy="42" r="3" fill="none" stroke="#9aa3ad" stroke-width="1.5"/></g>`;
+  t = wallSince(t, mBridle, "bridle");
+  const mStraw = t.length;
   // straw all over the floor, the more toward the stalls
   for (let i = 0; i < 150; i++) { const z = -0.62 * Math.pow(R(i, 1310), 1.6), X = (R(i, 1311) - 0.5) * 2 * bw, [sx, sy] = at(X, floor, z), s = k / (1 + z), a = R(i, 1312) * Math.PI;
     t += `<line x1="${f1(sx)}" y1="${f1(sy)}" x2="${f1(sx + Math.cos(a) * 9 * s)}" y2="${f1(sy + Math.sin(a) * 2.5 * s)}" stroke="${R(i, 1313) < 0.6 ? straw : strawD}" stroke-width="${f1(1.2 * s)}" opacity="0.9"/>`; }
+  t = floorSince(t, mStraw, "straw");
   // (ticket 99) all that stands in the room, after its walls, floor and what is on them: each an
   // object at its foot, so the horses (drawn after the room) are sorted in among them by depth
   // the ladder up to the loft, standing on the floor by the left wall

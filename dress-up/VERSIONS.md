@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.223 (2026-10-18)
+
+Everything in 0.0.222, plus the last two castle rooms whose wall and floor things are objects of their own: now every room of the castle lists them.
+
+- **What hangs on the walls and lies on the floor is in ♿'s list of objects** in two more of the castle's rooms, each with its 👁️ chip to hide it and placeable anywhere from 🏞️ Background's **📦 from the places**; the friend is always in front of them.
+  - 🐈 The cat room: its rug, its fireplace, the mantel with its candles and clock, the royal cat's portrait, the window with its curtains, the feather toy, the banner, the six shelves up the side walls and the mat for the bowls.
+  - 🐴 The stable: its round window, each of its four stalls, the hay loft with its bales, the lantern on the middle post, the horseshoes, the saddles, the bridle and the straw on the floor.
+
 ## 0.0.222 (2026-10-18)
 
 Everything in 0.0.221, plus pits and trap doors that swing open and shut, and levers that rock.
