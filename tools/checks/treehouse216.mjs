@@ -65,8 +65,9 @@ try {
       window.__to = d.dataset.house; enterScene(d); return d.dataset.house; })()`);
     const tOpen = await until(`!!(bgShown.node && bgShown.node.querySelector('.portal[data-door] [data-leaf] path animate'))`, 3000);
     ok("the door in the side wall swings open as it is taken", tOpen !== null, { tOpen });
-    const tThrough = await until(`String(state.background.inside) === String(window.__to)`, 9000);
-    ok("and the friend goes through, to the next house", tThrough !== null, { to, inside: await ev("String(state.background.inside)") });
+    // (since ticket 246: out onto the rope bridge to that house, outside)
+    const tThrough = await until(`state.background.kind === "treehouse" && !!state.background.onBridge`, 9000);
+    ok("and the friend goes through, out onto the rope bridge to the next house", tThrough !== null, { to, kind: await ev("state.background.kind"), on: await ev("JSON.stringify(state.background.onBridge || null)") });
   }
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

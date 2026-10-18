@@ -580,9 +580,12 @@ function padPoll(t) {
     const F = sceneFrame;
     // (ticket 245) on a rope bridge: along it, as far as its ends, facing the way they go
     if (onBr) {
-      bridgeStep(padVel[0] * dt);
+      bridgeStep(padVel[0] * dt * BRIDGE_PACE);
       if (moving) { B.facing = vx < 0 ? "left" : "right"; B.turn = ""; }
       padMoving = true; moved();
+      // (ticket 246) at an end, pushing on toward it: into the house there, through its door to this bridge
+      const at = bridgeNow(), be = at && moving && Math.abs(vx) > 0.5 ? bridgeEnd(at) : null;
+      if (be && Math.abs(at.u - be.end) < 1e-4) { padMoving = false; bridgeIn(be); }
       padLoop = requestAnimationFrame(padPoll); return;
     }
     // (ticket 149: walls and solids stop them, and they slide along)
@@ -801,6 +804,24 @@ function enterScene(door, here = false) {
   // (ticket 147, Matthew: the spin only for pictures and windows, "it's the most magical looking";
   // through any other way the friend walks, or, at a ladder's top, steps)
   // (ticket 173: a doorway reached by a ladder, a tree's house or a ladder's way up, is climbed to, unless the friend is through it already)
+  // (ticket 246, Matthew: "a transition on bridges where a door passageway that leads to a bridge transitions outside of
+  // the treehouse, and lets the game player walk along that curved route, to the other side") a tree room's door to a
+  // rope bridge leads out onto the bridge, outside, at this house's end; and on a bridge, its houses are gone into at its
+  // ends, walked to along it
+  if (B.kind === "treeroom" && to === "treeroom" && door.dataset.door !== undefined && house) {
+    const here = B.inside, there = +house;
+    tripStart(door, "walk");
+    walkInto(door, () => {
+      trips.push(from);
+      B.kind = "treehouse";
+      const W = treeWalks(B).find(w => (w.a === here - 1 && w.b === there - 1) || (w.a === there - 1 && w.b === here - 1));
+      if (W) bridgeOn(W.j, W.a === here - 1 ? 0 : 1);
+      else { const [fx, fy] = ARRIVE.treehouse || [0, 0]; Object.assign(B, { figX: fx, figY: fy }); }
+    }, !(climb && climb.through), "step");
+    return;
+  }
+  const onBr = bridgeNow();
+  if (onBr && to === "treeroom" && house && [onBr.W.a, onBr.W.b].includes(+house - 1)) { bridgeGoIn({ j: onBr.j, end: onBr.W.b === +house - 1 ? 1 : 0, house: +house, other: (onBr.W.b === +house - 1 ? onBr.W.a : onBr.W.b) + 1 }); return; }
   const lad = !view && !(climb && climb.through) ? ladderOf(door) : null;
   if (lad) { climbLadder(lad); return; }
   tripStart(door, view ? "spin" : door.dataset.pit ? "fall" : "walk");   // (⏱️)
@@ -810,6 +831,55 @@ function enterScene(door, here = false) {
   else if (view) flyInto(svgBox(view), arrive);
   else if (door.dataset.pit) walkInto(door, () => { arrive(); landFall = true; }, true, "fall");   // (ticket 162)
   else walkInto(door, arrive, !(climb && climb.through), "step", null, door.dataset.way ? { out: WORLD_DIRS[door.dataset.way], here } : {});
+}
+// (ticket 246) along the rope bridge they are on, to its end (0 or 1), walking (3 s at most), then on
+function bridgeWalkTo(end, then) {
+  const at = bridgeNow();
+  if (!at) return;
+  const B = state.body, { W } = at, dir = (end ? 1 : -1) * (W.q[0] >= W.p[0] ? 1 : -1);
+  let len = 0;
+  for (let i = 0, prev = walkAt(W, at.u); i < 20; i++) { const q = walkAt(W, at.u + (end - at.u) * (i + 1) / 20); len += Math.hypot(q[0] - prev[0], q[1] - prev[1]); prev = q; }
+  const speed = Math.max(PAD_SPEED.walk * BRIDGE_PACE, len / 3);
+  entering = true; padWant = null;
+  if (state.background.seat) standUp();
+  if (B.pose !== "stand") strikePose("stand");
+  let last = 0;
+  const step = t => {
+    const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
+    const a = bridgeNow();
+    if (!a) { B.anim = "none"; entering = false; changed(); return; }
+    if (Math.abs(a.u - end) < 1e-4) { B.anim = "none"; entering = false; then(); return; }
+    bridgeStep(dir * speed * dt);
+    B.anim = "walk"; B.facing = dir < 0 ? "left" : "right"; B.turn = "";
+    moved(); requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+// (ticket 246) at a bridge's end, into the house there: its room, just inside its door to the bridge they came along,
+// facing us, fading in, as through any door
+function bridgeIn(be) {
+  const B = state.background, body = state.body;
+  trips.push({ kind: B.kind, inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to: "treeroom" });
+  delete B.onBridge;
+  const [fx, fy] = ARRIVE.treeroom || [0, 0];
+  Object.assign(B, { kind: "treeroom", inside: be.house, figX: fx, figY: fy });
+  body.anim = "none"; body.facing = "front"; body.turn = ""; padWant = null;
+  changed();
+  // (a step into the room from the door's foot, toward its middle)
+  const d = bgShown.node && bgShown.node.querySelector(`.portal[data-door][data-house="${be.other}"]`), P = pic.getScreenCTM(), F = sceneFrame;
+  if (d && P) {
+    const r = (d.querySelector("path, rect") || d).getBoundingClientRect(), foot = new DOMPoint(r.x + r.width / 2, r.y + r.height).matrixTransform(P.inverse());
+    B.figX = Math.round(clamp(foot.x * 0.8, F.left, F.right)); B.figY = Math.round(clamp(foot.y - SCENE.ground, figYMin(F), F.bottom - SCENE.ground));
+    changed();
+  }
+  const fade = o => { for (const n of figShown) if (n.style) n.style.opacity = o; };
+  const t1 = performance.now(), f = t => { const u = Math.min(1, (t - t1) / WALK_IN_MS); if (!entering) fade(u < 1 ? u.toFixed(2) : ""); if (u < 1 && !entering) requestAnimationFrame(f); };
+  fade("0"); requestAnimationFrame(f);
+}
+// (ticket 246) along the bridge to the end they would go in at (bridgeEnd), and into the house there
+function bridgeGoIn(be = bridgeEnd()) {
+  if (!be || entering) return;
+  bridgeWalkTo(be.end, () => bridgeIn(be));
 }
 // (ticket 199) to a spot on the floor, walking (swimming in deep water) as
 // walkInto does, a long way faster, 2.5 s at most; then on
