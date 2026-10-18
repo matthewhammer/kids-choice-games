@@ -186,6 +186,8 @@
   .row button[aria-pressed=true], .world-compass button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   /* (0.0.139) ♿'s chips say only what they are: lit while on */
   #panel[data-part=access] button.flip[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  /* (ticket 285) any flip whose two words are the same is such a chip too: the bubble themes' on and off, the blowing themes */
+  button.flip.lit[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   /* a menu for each hand, mirrored about a line down the middle */
   .ctl.pair:not([hidden]) { display: flex; }
   .pair > .side { flex: 1 1 0; min-width: 0; }

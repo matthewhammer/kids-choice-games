@@ -90,27 +90,27 @@ console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g 
 // themes are the friend's bubbles wherever they are
 const BUBBLE_THEME_CTLS = [
   ["group", "bubbleA", "🅰️ theme A", [
-    ["color", "bubbleAColor", "🅰️ colour", BUBBLE_COLORS],
+    ["color", "bubbleAColor", "🅰️ color", BUBBLE_COLORS],
     ["range", "bubbleASize", "🅰️ size", 4, 60, 10, 30],
     ["range", "bubbleAShine", "🅰️ shine", 0, 100, 40, 90],
     ["choice", "bubbleASparkle", "🅰️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
-    ["color", "bubbleASparkleColor", "🅰️ sparkle colour", BUBBLE_COLORS],
+    ["color", "bubbleASparkleColor", "🅰️ sparkle color", BUBBLE_COLORS],
   ]],
   ["group", "bubbleB", "🅱️ theme B", [
     ["flip", "bubbleBOn", ["🅱️ theme B", "🅱️ theme B"]],
-    ["color", "bubbleBColor", "🅱️ colour", BUBBLE_COLORS],
+    ["color", "bubbleBColor", "🅱️ color", BUBBLE_COLORS],
     ["range", "bubbleBSize", "🅱️ size", 4, 60, 10, 30],
     ["range", "bubbleBShine", "🅱️ shine", 0, 100, 40, 90],
     ["choice", "bubbleBSparkle", "🅱️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
-    ["color", "bubbleBSparkleColor", "🅱️ sparkle colour", BUBBLE_COLORS],
+    ["color", "bubbleBSparkleColor", "🅱️ sparkle color", BUBBLE_COLORS],
   ]],
   ["group", "bubbleC", "©️ theme C", [
     ["flip", "bubbleCOn", ["©️ theme C", "©️ theme C"]],
-    ["color", "bubbleCColor", "©️ colour", BUBBLE_COLORS],
+    ["color", "bubbleCColor", "©️ color", BUBBLE_COLORS],
     ["range", "bubbleCSize", "©️ size", 4, 60, 10, 30],
     ["range", "bubbleCShine", "©️ shine", 0, 100, 40, 90],
     ["choice", "bubbleCSparkle", "©️ sparkle", [["none", "none"], ["star", "⭐ star"], ["dot", "• dot"]]],
-    ["color", "bubbleCSparkleColor", "©️ sparkle colour", BUBBLE_COLORS],
+    ["color", "bubbleCSparkleColor", "©️ sparkle color", BUBBLE_COLORS],
   ]],
 ];
 const TABS = [
@@ -356,7 +356,8 @@ const TABS = [
     ["range", "houseSize", "🏠 house size", 50, 130, 80, 115],
     ["range", "treeSize", "🌳 tree size", 40, 200, 70, 150],
     ["range", "treeHouseSize", "🏡 tree house size", 50, 250, 80, 160],
-    ["range", "toys", "🧸 toys on the lawn", 0, 16, 2, 10],
+    // (ticket 285, ^du_report(5)'s finding: one setting in two rows, and SHOWN_WHEN has one rule per key, so the house's never showed)
+    ["of", "background", ["range", "toys", "🧸 toys on the lawn", 0, 16, 2, 10], b => b.kind === "house"],
     ["range", "flowers", "🌷 flowers", 0, 48, 6, 36],
     // the tree house
     ["range", "houses", "🏡 houses in the tree", 1, 6, 2, 6],
@@ -373,7 +374,7 @@ const TABS = [
       ["choice", "treeBack" + n, `🏡 ${n}: ⬇️ the way toward us leads to`, BEHIND_PLACES],
       ["choice", "hatchShape" + n, `🏡 ${n}: 🕳️ its trapdoor's opening`, OPENING_SHAPES]]),   // (ticket 252)
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
-    ["range", "toys", "🧸 things in the room", 0, 24, 4, 20],
+    ["of", "background", ["range", "toys", "🧸 things in the room", 0, 24, 4, 20], b => b.kind === "treeroom"],   // (ticket 285: its own rule, as the house's)
     // the mountain trail
     ["range", "peakHeight", "🏔️ how high the peaks are", 50, 170, 70, 140],
     ["range", "mtClouds", "☁️ clouds", 0, 10, 2, 8],
@@ -821,7 +822,6 @@ const SHOWN_WHEN = {
   "background.houseSize": b => b.kind === "house",
   "background.treeSize": b => b.kind === "house" || b.kind === "treehouse",
   "background.treeHouseSize": b => b.kind === "treehouse",
-  "background.toys": b => b.kind === "house",
   "background.flowers": b => b.kind === "house",
   "background.houses": b => b.kind === "treehouse",
   "background.bridges": b => b.kind === "treehouse",
@@ -901,7 +901,6 @@ const SHOWN_WHEN = {
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
   "background.windowSize": b => b.kind === "treeroom",
-  "background.toys": b => b.kind === "treeroom",
   "background.couchSize": b => b.kind === "livingroom" || b.kind === "hutroom",
   "background.view": b => b.kind === "livingroom" || b.kind === "hutroom",
   "background.viewDetail": b => b.kind === "livingroom" || b.kind === "hutroom",
@@ -1135,7 +1134,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         continue;
       }
       if (k2 === "color") {
-        const inp = el("input", { type: "color", title: lab2 + " colour", oninput: e => set(part, key2, e.target.value) });
+        const inp = el("input", { type: "color", title: lab2 + " color", oninput: e => set(part, key2, e.target.value) });
         more.append(el("label", { class: "accitem" }, [lab2, inp]));
         syncs.push(() => { if (inp.value !== now()) inp.value = now(); });
       } else {
@@ -1354,7 +1353,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // each joined to its neighbours by the doors on their shared side (no door
   // wired by hand; a door with no place beside it, or one that does not line
   // up with its partner, is a mistake to fix), and each filled from a library
-  // of things. Its first piece is coming; for now the tab says what it will be.
+  // of things.
   if (kind === "world") {
     // (v2) a palette of places to drag onto squares (a tap puts one in the
     // first empty square); the grid, a square per cell: its place, its ways
@@ -1755,7 +1754,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     syncs.push(() => { p.textContent = label(); });
   } else if (kind === "flip") {
     // one chip that says which way it is now; a tap turns it the other way
-    const b = el("button", { class: "flip", onclick: () => set(part, key, !state[part][key]) });
+    // (ticket 285, ^du_report(5): the bubble themes' on and off looked the same) a flip whose two words are the same says only
+    // what it is, and is lit while on, as ♿'s chips are
+    const b = el("button", { class: "flip" + (label[0] === label[1] ? " lit" : ""), onclick: () => set(part, key, !state[part][key]) });
     lbl.remove();
     box.append(b);
     syncs.push(() => { b.textContent = label[state[part][key] ? 1 : 0];

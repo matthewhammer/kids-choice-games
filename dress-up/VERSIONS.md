@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.211 (2026-10-18)
+
+Everything in 0.0.210, with the three things the Dress Up report on the designers (^du_report(5)) found on the way.
+
+- **Fixed: the house's "🧸 toys on the lawn" never showed.** It shared its setting with the tree house rooms' "🧸 things in the room", and only the rooms' rule counted: at the house there was no slider, and inside the tree house there were two. Now each shows in its own place.
+- **Fixed: the bubble themes' on and off looked the same.** "🅱️ theme B" and "©️ theme C" (and the three themes of "🫧 blowing bubbles") light up while they are on, as the ♿ chips do.
+- The bubbles' colors say "color", as the rest of the game does.
+
 ## 0.0.210 (2026-10-18)
 
 Everything in 0.0.209, with the nav bar that Matthew's pages share.

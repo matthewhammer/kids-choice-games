@@ -1525,7 +1525,7 @@ function mixerBox(box) {
       el("div", { class: "strip-top" }, [throwButton("🌊 throw everything", "all"),
         el("button", { class: "ms", onclick: () => { if (state.music.mix) delete state.music.mix[id]; mixChanged(); build(); } }, "↺ reset the mix")]),
     ]);
-    // the three LFOs: each its speed, shape and depth, and what follows it
+    // the LFOs (seven, A to G: LFO_NAMES): each its speed, shape and depth, and what follows it
     // now (drums, and the friend's parts); with the whole tune's strip, a
     // square of four before the parts
     const lfoStrips = LFO_NAMES.map(L => {
