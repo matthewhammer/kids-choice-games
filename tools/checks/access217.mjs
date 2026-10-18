@@ -18,7 +18,7 @@ let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 1200)}`); if (!cond) bad++; };
 const H = `const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, A = state.access, g = SCENE.ground;
   const frames = k => new Promise(r => { const f = () => (--k > 0 ? requestAnimationFrame(f) : r()); requestAnimationFrame(f); });
-  const clearing = async () => { state.world = clone(DEFAULTS.world); worldEnter("3,3", null, false); B.figX = 0; B.figY = 0; changed(); await frames(4); };
+  const clearing = async () => { state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3", null, false); B.figX = 0; B.figY = 0; changed(); await frames(4); };
   const arrows = () => [...document.querySelectorAll("#ways .way-arrow")];
   const rect = el => { const r = [el.querySelector(".way-tri"), el.querySelector(".way-words")].filter(e => getComputedStyle(e).display !== "none").map(e => e.getBoundingClientRect());   // (words dropped, ticket 227: not there)
     if (r.length === 1) r.push(r[0]); return [Math.min(r[0].left, r[1].left), Math.min(r[0].top, r[1].top), Math.max(r[0].right, r[1].right), Math.max(r[0].bottom, r[1].bottom)]; };`;
@@ -36,8 +36,8 @@ try {
     const rows = t ? t[2].filter(c => c[0] === "accbox") : [], keys = rows.flatMap(c => [c[1], ...c[3].map(i => i[1])]).filter(Boolean);
     const boxes = [...document.querySelectorAll("#panel .accbox")];
     return JSON.stringify({ has: !!t, rows: rows.map(c => c[1]), covered: Object.keys(DEFAULTS.access).every(k => keys.includes(k)), same, brick: rows.some(c => c[2].startsWith("🧱")) }); })()`));
-  ok("a ♿ Accessibility tab: a row for each overlay (arrows, path, boxes, the boxes' a 🧱 brick wall), then the words' size, every setting in one of them",
-     tab.has && JSON.stringify(tab.rows) === JSON.stringify(["allArrows", "showPath", "showSolids", null]) && tab.covered && tab.brick, tab);
+  ok("a ♿ Accessibility tab: a row for each overlay (arrows, path, boxes, the boxes' a 🧱 brick wall, since ticket 258 🧩 what it's made of), then the words' size, every setting in one of them",
+     tab.has && JSON.stringify(tab.rows) === JSON.stringify(["allArrows", "showPath", "showSolids", "showMadeOf", null]) && tab.covered && tab.brick, tab);
   const shown = JSON.parse(await ev(`(async () => { const keep = clone(state.access); const i = TABS.findIndex(t => t[1] === "access"); document.querySelectorAll("#tabs button")[i].click(); await new Promise(r => setTimeout(r, 300));
     const rowOf = k => [...document.querySelectorAll("#panel .accbox")].find(b => b.querySelector("button.flip") && b.querySelector("button.flip").textContent.includes(k));
     Object.assign(state.access, { allArrows: false, showSolids: true }); changed(); await new Promise(r => setTimeout(r, 200));
@@ -64,7 +64,7 @@ try {
   for (const [W, Ht] of [[1600, 1000], [2400, 1000], [1180, 820]]) {
     await send("Emulation.setDeviceMetricsOverride", { width: W, height: Ht, deviceScaleFactor: 1, mobile: false }); await sleep(600);
     const big = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { allArrows: true, arrowSize: 200 });
-      state.world = clone(DEFAULTS.world); const DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+      state.world = clone(WORLD_DEFAULT_0183); const DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
       for (const c of Object.values(state.world.cells)) { if (c.kind === "crossing") for (const d of DIRS) c["cross" + d] = true; else c.ways = DIRS.filter(d => !worldNoWay(c.kind, d)); }
       const over = [], scales = new Set();
       for (const key of ["3,3", "1,1", "2,3"]) { worldEnter(key, null, false); B.figX = 0; B.figY = 0; changed(); await frames(4);
@@ -83,7 +83,7 @@ try {
   ok("the words in the game at twice the size: a sign's words grow", !font.none && font.cls && font.h1 > 1.6 * font.h0, font);
   // the planned path: shown while walking to a passage, gone after
   const path = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { showPath: true });
-    state.world = clone(DEFAULTS.world); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: -300, figY: 60 }); changed(); await w(450); measureMarks();
+    state.world = clone(WORLD_DEFAULT_0183); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: -300, figY: 60 }); changed(); await w(450); measureMarks();
     // (one that is walked to: the way south, else the farthest passage; a picture within reach is flown into, no walk)
     const far = q => Math.abs((q.x0 + q.x1) / 2 - B.figX), p = marks.pics.find(q => q.kind === "nav" && q.el.dataset.way === "S") || [...marks.pics].sort((a, b) => far(b) - far(a))[0]; if (!p) return JSON.stringify({ none: true });
     const from = B.kind; enterScene(p.el); let seen = 0, lines = 0;
@@ -94,7 +94,7 @@ try {
   ok("and gone once they are there", !path.after, path);
   // the collision boxes: one drawn for each solid, gone when hidden
   const sol = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { showSolids: true });
-    state.world = clone(DEFAULTS.world); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: 0, figY: 40 }); changed(); await w(500); changed(); await frames(3);
+    state.world = clone(WORLD_DEFAULT_0183); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: 0, figY: 40 }); changed(); await w(500); changed(); await frames(3);
     const ov = document.querySelector("#access-layer svg.solid-boxes"), n = solidsHere().length, drawn = ov ? ov.querySelectorAll("[data-solid] polygon:not(.face)").length : 0, names = ov ? [...ov.querySelectorAll(":scope > text")].map(t => t.textContent) : [];
     A.showSolids = false; changed(); await frames(3); const gone = !document.querySelector("#access-layer svg.solid-boxes");
     return JSON.stringify({ n, drawn, names, gone }); })()`));
@@ -102,7 +102,7 @@ try {
   ok("and gone when hidden", sol.gone, sol);
   // (ticket 229) the friend's own box, and a collision: it and the box met glowing
   const hit = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access, { showSolids: true });
-    state.world = clone(DEFAULTS.world); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: 0, figY: 90 }); changed(); await w(500); changed(); await frames(3);
+    state.world = clone(WORLD_DEFAULT_0183); state.world.at = null; Object.assign(B, { kind: "livingroom", figX: 0, figY: 90 }); changed(); await w(500); changed(); await frames(3);
     const S = solidsHere(), couch = S.find(o => /couch/.test(o.name)) || S[0]; if (!couch) return JSON.stringify({ none: true });
     // (facing us, whatever a step before left: facing a side, one foot stands behind the other and their soles overlap)
     state.body.facing = "front"; state.body.anim = "none";

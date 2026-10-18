@@ -19,7 +19,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   // (a crossing off the world's grid draws every path switched on; in a square, only those that lead somewhere, world185.mjs)
-  await ev(`(() => { state.world = { ...clone(DEFAULTS.world), at: null, cells: Object.fromEntries(Object.entries(DEFAULTS.world.cells).filter(([, c]) => c.kind !== "crossing")) }; return 1; })()`);
+  await ev(`(() => { state.world = { ...clone(WORLD_DEFAULT_0183), at: null, cells: Object.fromEntries(Object.entries(WORLD_DEFAULT_0183.cells).filter(([, c]) => c.kind !== "crossing")) }; return 1; })()`);
   const paths = async on => JSON.parse(await ev(`(async () => {
     state.music.mute = true; const B = state.background; B.kind = "crossing"; B.figX = 0; B.figY = 120;
     for (const [d] of CROSS_DIRS) B["cross" + d] = ${JSON.stringify(on)}.includes(d);

@@ -45,7 +45,7 @@ try {
   await send("Runtime.enable");
   await metrics(1600, 1000);
   await send("Page.navigate", { url }); await sleep(4000);
-  await ev(`(async () => { localStorage.removeItem("dress-up-world-view"); worldViewHidden = false; state.music.mute = true; state.world = clone(DEFAULTS.world); worldChoose(state.background.kind);
+  await ev(`(async () => { localStorage.removeItem("dress-up-world-view"); worldViewHidden = false; state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldChoose(state.background.kind);
     worldEnter("3,3", null, false); tab = TABS.findIndex(t => t[1] === "world"); showTab(); setWorldBig(true); await new Promise(r => setTimeout(r, 900)); return 1; })()`);
   const a = await where();
   ok("full screen: the picture in the right side's first card, the 👁️ lit (shown by default)", a.connected && a.inView && a.flag && !a.folded && a.eye === "true" && a.kept === null, a);

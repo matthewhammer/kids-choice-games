@@ -533,6 +533,9 @@ const TABS = [
     ["accbox", "showPath", "👣 planned path", [["color", "pathColor", "🎨"], ["range", "pathWidth", "✏️ line", 1, 12]]],
     ["accbox", "showSolids", "🧱 collision boxes", [["color", "boxColor", "🎨"], ["range", "boxWidth", "✏️ line", 1, 8], ["range", "boxFont", "🏷️ names", 8, 24],
       ["range", "glowFade", "✨ glow ms", 100, 3000]]],   // (ticket 229: a collision's glow, fading back in so long)
+    // (ticket 258, Matthew: "a toggle that reveals a sub-panel of toggles, per category of object") each kind of thing a
+    // chip of its own, with how many are here (madeOfHud)
+    ["accbox", "showMadeOf", "🧩 what it's made of", [["cats", "madeCats"], ["range", "madeFont", "🏷️ names", 8, 20]]],
     ["accbox", null, "🔤 words in the game", [["range", "gameFont", "🔤 text size", 60, 250]]],
   ]],
   ["⚙️ Advanced", "advanced", [
@@ -1064,6 +1067,18 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const chip = key ? el("button", { class: "flip", onclick: () => set(part, key, !state[part][key]) }, [label]) : el("span", { class: "cap" }, [label]);
     for (const [k2, key2, lab2, lo, hi] of rest[0]) {
       const now = () => state[part][key2] ?? DEFAULTS[part][key2];
+      if (k2 === "cats") {
+        // (ticket 258) a chip per kind (MADE_CATS), on or off, with how many are in the place now
+        const box = el("div", { class: "madecats" });
+        for (const [cat, name] of MADE_CATS) {
+          const n = el("span", { class: "val" }), b = el("button", { class: "flip", onclick: () => set(part, key2, { ...(state[part][key2] || {}), [cat]: !madeCatOn(cat) }) }, [name, " ", n]);
+          box.append(b);
+          syncs.push(() => { const on = madeCatOn(cat), c = madeCounts[cat] || 0, txt = "×" + c; if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", on);
+            if (n.textContent !== txt) n.textContent = txt; b.classList.toggle("none-here", !c); });
+        }
+        more.append(box);
+        continue;
+      }
       if (k2 === "color") {
         const inp = el("input", { type: "color", title: lab2 + " colour", oninput: e => set(part, key2, e.target.value) });
         more.append(el("label", { class: "accitem" }, [lab2, inp]));

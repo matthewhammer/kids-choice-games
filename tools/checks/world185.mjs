@@ -21,7 +21,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   // (the place shown takes its square's settings, as 🌍 the first world again does: whatever an earlier check left in this browser)
-  const first = JSON.parse(await ev(`(() => { state.music.mute = true; state.world = clone(DEFAULTS.world); worldChoose(state.background.kind); changed();
+  const first = JSON.parse(await ev(`(() => { state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldChoose(state.background.kind); changed();
     return JSON.stringify({ cells: Object.keys(state.world.cells).length, problems: worldProblems(state.world).map(p => p.text), off: worldOffGrid(state.world).map(o => o.id + ":" + o.kind) }); })()`));
   ok("the first world: 23 places (a top row of 5 of open water, ticket 186), no mistakes", first.cells === 23 && first.problems.length === 0, first.problems);
   ok("its insides off the grid, each with an id", first.off.includes("inside 1:" + "witchroom") || first.off.some(o => /^inside \d+:livingroom$/.test(o)), first.off);
@@ -63,7 +63,7 @@ try {
   ok("in the clearing at D4: its way N into the empty D3 listed first, as this square's; the rest under the others", marked.clearing.at === "3,3" && marked.clearing.here.length >= 1 && marked.clearing.here.every(t => /D4/.test(t)) && marked.clearing.here.some(t => /empty square, D3/.test(t)) && marked.clearing.here.length + marked.clearing.others === n, marked.clearing);
   ok("and hidden again, which the browser remembers", marked.again.red === 0 && marked.again.listed === 0 && marked.kept === null, { again: marked.again, kept: marked.kept });
   // the ways out, in the picture: from the clearing (D4), E to the castle and back
-  const ways = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldEnter("3,3"); await new Promise(r => setTimeout(r, 500));
+  const ways = JSON.parse(await ev(`(async () => { state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); await new Promise(r => setTimeout(r, 500));
     const w = [...document.querySelectorAll("#bg .way-out")]; return JSON.stringify({ ways: w.filter(e => e.dataset.way).map(e => e.dataset.way).sort(), door: w.every(e => e.hasAttribute("data-door")) }); })()`));
   ok("in the clearing, its ways out in the picture: N, NE, E, S, W, each a doorway", ways.ways.join() === "E,N,NE,S,W" && ways.door, ways);
   const walked = JSON.parse(await ev(`(async () => { document.querySelector('#bg [data-way="E"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -79,7 +79,7 @@ try {
     return JSON.stringify({ n: n.length, way: n.map(e => e.dataset.way || null), text: a.map(e => e.textContent).join(" ") }); })()`));
   ok("with the wood path gone, the way N is dimmed, 🚧, and goes nowhere", nowhere.n === 1 && nowhere.way[0] === null && /nowhere/.test(nowhere.text), nowhere);
   // the arrows over the picture: only when the friend is near one; then on top, and their words on the screen
-  const near = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldEnter("3,3"); const B = state.background; B.figX = 0; B.figY = 0; changed(); await new Promise(r => setTimeout(r, 500));
+  const near = JSON.parse(await ev(`(async () => { state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); const B = state.background; B.figX = 0; B.figY = 0; changed(); await new Promise(r => setTimeout(r, 500));
     const shown = () => [...document.querySelectorAll("#ways .way-arrow.near")].map(e => e.dataset.way);
     const middle = shown();
     B.figX = 330; B.figY = 30; changed(); await new Promise(r => setTimeout(r, 500));
@@ -91,7 +91,7 @@ try {
   ok("walked to its east edge: the arrow E shows, on top of everything there, its words on the screen in two lines or more", near.east.join() === "E" && near.opacity === "1" && near.onTop && near.wordsInside && near.lines >= 2, near);
   // (Matthew, 2026-10-17) the ways are on the floor: which is near, and which X takes, is judged by the feet, in depth.
   // His wood path: by the arrow at the bottom, the top one was the one X would take.
-  const floor = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldEnter("3,2"); const B = state.background; padName = "a test controller";
+  const floor = JSON.parse(await ev(`(async () => { state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,2"); const B = state.background; padName = "a test controller";
     const at = async (x, y) => { B.figX = x; B.figY = y; changed(); await new Promise(r => setTimeout(r, 500)); measureMarks();
       const t = enterTarget(), aimed = [...document.querySelectorAll("#ways .way-arrow.aimed")].map(e => e.dataset.way);
       return { near: [...document.querySelectorAll("#ways .way-arrow.near")].map(e => e.dataset.way), x: t && t.el.dataset.way || null, aimed, frame: !!document.querySelector("#bg .enter-glow") }; };
@@ -103,7 +103,7 @@ try {
   ok("at its west side: W", floor.west.near.join() === "W" && floor.west.x === "W", floor.west);
   // (ticket 189, M) a way off the map's edge can't be turned on; an off way that would put a warning right is starred, with the warnings shown
   const m189 = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
-    state.world = clone(DEFAULTS.world); worldEnter("1,0"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await w(400);
+    state.world = clone(WORLD_DEFAULT_0183); worldEnter("1,0"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await w(400);
     const btn = d => document.querySelector('.world-ways-out button[data-way="' + d + '"]');
     const edge = ["N", "NE", "NW"].map(d => !!btn(d) && btn(d).disabled), inside = ["E", "S"].map(d => !!btn(d) && !btn(d).disabled);
     btn("N").click(); await w(200); const stillOff = !state.world.cells["1,0"].ways.includes("N");
@@ -119,14 +119,14 @@ try {
   ok("an off way that would put a warning right: starred only with the warnings shown, and on, the warning is gone", !m189.hidden && m189.shown && m189.others.join() === "N" && m189.after === 0, m189);
   // (ticket 191) red where a fix is suggested, not its neighbour; and a way to take away marked ✕ (a way into an empty square)
   const t191 = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
-    state.world = clone(DEFAULTS.world); worldEnter("3,3"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); worldWarnShow(true);
+    state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); worldWarnShow(true);
     const btn = d => document.querySelector('.world-ways-out button[data-way="' + d + '"]'), red = () => [...document.querySelectorAll(".world-grid .world-cell.bad")].map(e => e.dataset.square).sort();
     const fixAt = () => worldKeys(state.world).filter(k => { const t = worldWaysToToggle(state.world, k); return t.on.length + t.off.length > 0; }).sort();
     // the clearing's way N off: its own square (turn N on) and the wood path's (or take its S away) are red; nothing else
     state.world.cells["3,3"].ways = state.world.cells["3,3"].ways.filter(d => d !== "N"); changed(); await w(400);
     const noBack = { red: red(), fixAt: fixAt(), starN: !!btn("N") && btn("N").classList.contains("way-suggest") };
     // the wood path taken away: the clearing's way N leads into an empty square: ✕ on it
-    state.world = clone(DEFAULTS.world); worldEnter("3,3"); delete state.world.cells["3,2"]; changed(); await w(400);
+    state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); delete state.world.cells["3,2"]; changed(); await w(400);
     const empty = { red: red(), fixAt: fixAt(), dropN: !!btn("N") && btn("N").classList.contains("way-suggest-off"), emptyRed: red().includes("3,2") };
     btn("N").click(); await w(300); const afterN = worldProblems(state.world).filter(p => p.key === "3,3").length;
     worldWarnShow(false); changed(); await w(100);
@@ -135,7 +135,7 @@ try {
   ok("a way into an empty square: ✕ on it to take it away; red where a fix is, never the empty square", t191.empty.dropN && !t191.empty.emptyRed && t191.empty.red.join() === t191.empty.fixAt.join() && t191.afterN === 0, { ...t191.empty, afterN: t191.afterN });
   // (ticket 195, M) 🔗 all passageways; the waterfall's north is the waterfall itself
   const t195 = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
-    state.world = clone(DEFAULTS.world); worldEnter("1,5"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await w(400);
+    state.world = clone(WORLD_DEFAULT_0183); worldEnter("1,5"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await w(400);
     const btn = d => document.querySelector('.world-ways-out button[data-way="' + d + '"]');
     const waterN = !!btn("N") && btn("N").disabled, first = worldProblems(state.world).length;
     const kept = { kind: "waterfall", ways: ["N", "NE"] }, ignored = worldWays(kept).join();
@@ -147,13 +147,14 @@ try {
       crossing: worldWays(C["1,3"]).join(), note: join.nextElementSibling ? join.nextElementSibling.textContent : "" };
     const again = (join.click(), await w(200), join.nextElementSibling.textContent);
     const old = { world: structuredClone(WORLD_DEFAULT_0103) }, mid = { world: { ...structuredClone(WORLD_DEFAULT_0123), at: "3,2" } }; upgradeWorld(old); upgradeWorld(mid);
-    return JSON.stringify({ ...out, again, up: JSON.stringify(old.world.cells) === JSON.stringify(WORLD_DEFAULT.cells) && JSON.stringify(mid.world.cells) === JSON.stringify(WORLD_DEFAULT.cells) && mid.world.at === "3,3" }); })()`));
+    // (ticket 260: today's is Matthew's world; an untouched earlier one comes back as it, from its start, not a row down)
+    return JSON.stringify({ ...out, again, up: JSON.stringify(old.world.cells) === JSON.stringify(WORLD_DEFAULT.cells) && JSON.stringify(mid.world.cells) === JSON.stringify(WORLD_DEFAULT.cells) && !mid.world.at }); })()`));
   ok("the waterfall (B6): its way N can't be turned on, the waterfall itself; one kept from before is ignored; the first world has no warnings", t195.waterN && t195.ignored === "NE" && t195.first === 0, t195);
   ok("🔗 all passageways: diagonals too (forest B3 NE, beach C2 SW); the beach (C2) to the open water above it, never the witch's woods or the mountains; never the waterfall's north; no warnings", t195.diag && t195.noSea && t195.noFallN && t195.after === 0 && /added/.test(t195.note), t195);
   ok("the crossing at B4 joined to each neighbour it can (all but the empty A5), and a second press adds nothing", t195.crossing === "N,NE,E,SE,S,W,NW" && /every neighbour/.test(t195.again), t195);
-  ok("an untouched first world from 0.0.103 to 0.0.122, or from 0.0.123, comes back as today's (the friend's square a row down)", t195.up, t195.up);
+  ok("an untouched first world from 0.0.103 to 0.0.122, or from 0.0.123, comes back as today's (since ticket 260 Matthew's world, from its start)", t195.up, t195.up);
   // a crossing's dead ends: no trail, no arrow, no mistake (Matthew: a crossing missing a passageway has no trail and no arrow that way)
-  const dead = JSON.parse(await ev(`(async () => { state.world = clone(DEFAULTS.world); worldPut("0,1", "crossing"); worldEnter("0,1"); await new Promise(r => setTimeout(r, 400));
+  const dead = JSON.parse(await ev(`(async () => { state.world = clone(WORLD_DEFAULT_0183); worldPut("0,1", "crossing"); worldEnter("0,1"); await new Promise(r => setTimeout(r, 400));
     const paths = () => document.querySelectorAll('#bg path[fill="' + CROSS_PATH + '"]').length, arrows = () => document.querySelectorAll("#bg .way-out").length;
     const about = () => worldProblems(state.world).filter(p => p.key === "0,1" || p.to === "0,1").map(p => (p.dir ? "way " : "") + p.text);
     const before = { paths: paths(), arrows: arrows(), mistakes: about() };

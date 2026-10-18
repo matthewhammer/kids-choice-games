@@ -26,7 +26,7 @@ const until = async (cond, ms = 9000) => { for (let t = 0; t < ms; t += 100) { i
 const OPEN = `const DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
   for (const c of Object.values(state.world.cells)) { if (c.kind === "crossing") for (const d of DIRS) c["cross" + d] = true; else c.ways = DIRS.filter(d => !worldNoWay(c.kind, d)); }`;
 const tryEdge = async (place, x, y, buttons, open = false, u = null, v = null) => {
-  await ev(`(async () => { state.music.mute = true; state.world = clone(DEFAULTS.world); ${open ? OPEN : ""} worldEnter("${place}", null, false); state.body.anim = "none"; climb = null;
+  await ev(`(async () => { state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); ${open ? OPEN : ""} worldEnter("${place}", null, false); state.body.anim = "none"; climb = null;
     const B = state.background; changed(); await new Promise(r => setTimeout(r, 300)); const F = sceneFrame, yMin = figYMin(F), yMax = F.bottom - F.ground;
     B.figX = ${x ?? `F.left + ${u} * (F.right - F.left)`}; B.figY = ${y ?? `yMin + ${v} * (yMax - yMin)`}; changed(); await new Promise(r => setTimeout(r, 600)); touchWant(true);
     for (const b of ${JSON.stringify(buttons)}) { const p = touchPad.pad.buttons[b]; p.pressed = true; p.value = 1; } return 1; })()`);
@@ -69,10 +69,10 @@ try {
   ok("in the clearing, walked on into its far right corner: through NE, or N or E", c.t !== null && ["4,2", "3,2", "4,3"].some(k => c.where.startsWith(k)), c);
   // (Matthew: "if I walk into the corner that I'm facing (NW), I get a path plan to walk N, not NW"; "check each corner
   // passage can be triggered by colliding into that corner, up to some limit like 1/4 of the screen width away from the corner")
-  const cross = await ev(`(() => { state.world = clone(DEFAULTS.world); const k = worldKeys(state.world).find(k => state.world.cells[k].kind === "crossing"); return k || null; })()`);
+  const cross = await ev(`(() => { state.world = clone(WORLD_DEFAULT_0183); const k = worldKeys(state.world).find(k => state.world.cells[k].kind === "crossing"); return k || null; })()`);
   if (!cross) ok("a forest crossing in the first world, for the corners", false, null);
   else {
-    const to = JSON.parse(await ev(`(() => { state.world = clone(DEFAULTS.world); ${OPEN} const o = {};
+    const to = JSON.parse(await ev(`(() => { state.world = clone(WORLD_DEFAULT_0183); ${OPEN} const o = {};
       for (const d of DIRS) { const nb = worldNeighbour(state.world, "${cross}", d); o[d] = nb.off || !state.world.cells[nb.key] ? null : nb.key; } return JSON.stringify(o); })()`));
     const N = 12, S = 13, W = 14, E = 15;
     for (const [what, u, v, btn, want] of [

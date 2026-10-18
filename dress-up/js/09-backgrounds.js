@@ -344,8 +344,8 @@ const inStream = (sp, x, y, margin) => {
   return false;
 };
 // flowers: a tulip and a daisy, colored by their <use>
-const FLOWER_DEFS = `<g id="bg-tulip"><path d="M0 0 Q-2 -12 0 -22" stroke="#3f8a3a" stroke-width="2" fill="none"/><path d="M-6 -30 L-6 -20 Q0 -15 6 -20 L6 -30 L3 -25 L0 -31 L-3 -25 Z" fill="currentColor"/></g>` +
-  `<g id="bg-daisy"><path d="M0 0 V-20" stroke="#3f8a3a" stroke-width="2"/>` + [...Array(8)].map((_, i) => `<ellipse cx="0" cy="-27" rx="2.4" ry="6" fill="currentColor" transform="rotate(${i * 45} 0 -22)"/>`).join("") +
+const FLOWER_DEFS = `<g id="bg-tulip" data-proc="tulip"><path d="M0 0 Q-2 -12 0 -22" stroke="#3f8a3a" stroke-width="2" fill="none"/><path d="M-6 -30 L-6 -20 Q0 -15 6 -20 L6 -30 L3 -25 L0 -31 L-3 -25 Z" fill="currentColor"/></g>` +
+  `<g id="bg-daisy" data-proc="daisy"><path d="M0 0 V-20" stroke="#3f8a3a" stroke-width="2"/>` + [...Array(8)].map((_, i) => `<ellipse cx="0" cy="-27" rx="2.4" ry="6" fill="currentColor" transform="rotate(${i * 45} 0 -22)"/>`).join("") +
   `<circle cx="0" cy="-22" r="3" fill="#f2c12e"/></g>`;
 const FLOWER_COLORS = ["#e53935", "#ffffff", "#f7a8c8", "#f2c12e", "#9b59b6", "#ff8c42"];
 // (each id its own tree: a seed from its name)
@@ -570,6 +570,6 @@ function padInner(j) {
          `<polygon points="${pts(lit)}" fill="#ffffff" opacity="0.13"/>`;
 }
 const PAD_INNER = [...Array(8)].map((_, j) => padInner(j));
-function padDef(id, j) { return `<g id="${id}">${PAD_INNER[j]}</g>`; }
+function padDef(id, j) { return `<g id="${id}" data-proc="padDef">${PAD_INNER[j]}</g>`; }
 // a leaf pad anywhere: shape j (of 8), at (x, y), sx by sy, in a color
-const padSvg = (j, x, y, sx, sy, color) => `<g transform="translate(${f1(x)} ${f1(y)}) scale(${sx.toFixed(3)} ${sy.toFixed(3)})" color="${color}">${PAD_INNER[((j % 8) + 8) % 8]}</g>`;
+const padSvg = (j, x, y, sx, sy, color) => `<g data-proc="padSvg" transform="translate(${f1(x)} ${f1(y)}) scale(${sx.toFixed(3)} ${sy.toFixed(3)})" color="${color}">${PAD_INNER[((j % 8) + 8) % 8]}</g>`;

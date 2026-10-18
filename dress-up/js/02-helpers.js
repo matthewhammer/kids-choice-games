@@ -26,6 +26,9 @@ const growPoly = (ps, d) => {
 };
 function hexToRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
 function rgbToHex([r, g, b]) { return "#" + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, "0")).join(""); }
+// (ticket 258) a drawing marked with the procedure that drew it, for ♿ 🧩 what it's made of (madeOfHud): a group, its
+// data-proc that name; nothing else changes
+const drawnBy = (name, svg) => `<g data-proc="${name}">${svg}</g>`;
 const mix = (h, to, t) => { const a = hexToRgb(h), b = hexToRgb(to); return rgbToHex(a.map((v, i) => v + (b[i] - v) * t)); };
 const darker = h => mix(h, "#000000", 0.45);
 const lighter = h => mix(h, "#ffffff", 0.45);

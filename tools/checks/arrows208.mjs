@@ -48,7 +48,7 @@ try {
       // his witch's woods: ways E (the beach) and SE (the C3 crossing, its NW opened to meet it)
       his[`${label(size)} ${mode}`] = JSON.parse(await ev(`(async () => { ${H}
         window.waysApart = ${mode === "on" ? "window.__apart" : "() => {}"};
-        state.world = clone(DEFAULTS.world); state.world.cells["1,1"].ways = ["E", "SE"]; state.world.cells["2,2"].crossNW = true;
+        state.world = clone(WORLD_DEFAULT_0183); state.world.cells["1,1"].ways = ["E", "SE"]; state.world.cells["2,2"].crossNW = true;
         worldEnter("1,1", null, false); changed(); await frames(3);
         const by = Object.fromEntries(worldWaysAt.map(e => [e[0], e])), out = { ways: Object.keys(by), spots: 0, together: 0, overlaps: [], box: null, at: null };
         if (!by.E || !by.SE) return JSON.stringify(out);
@@ -63,7 +63,7 @@ try {
       // every way open in every place, one square of each kind
       all[`${label(size)} ${mode}`] = JSON.parse(await ev(`(async () => { ${H}
         window.waysApart = ${mode === "on" ? "window.__apart" : "() => {}"};
-        const W = state.world = clone(DEFAULTS.world), DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"], kinds = new Set(), keys = [];
+        const W = state.world = clone(WORLD_DEFAULT_0183), DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"], kinds = new Set(), keys = [];
         for (const [key, c] of Object.entries(W.cells)) {
           if (c.kind === "crossing") for (const d of DIRS) c["cross" + d] = true; else c.ways = DIRS.filter(d => !worldNoWay(c.kind, d));
           if (!kinds.has(c.kind)) { kinds.add(c.kind); keys.push(key); }

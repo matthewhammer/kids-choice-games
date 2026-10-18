@@ -19,7 +19,8 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
-    state.music.mute = true; state.world = clone(DEFAULTS.world); worldChoose(B.kind); changed();
+    state.music.mute = true; // (ticket 260: the first world, 0.0.183's, since Matthew's is the default)
+    state.world = clone(WORLD_DEFAULT_0183); worldChoose(B.kind); changed();
     const row = [0, 1, 2, 3, 4].map(c => state.world.cells[c + ",0"] && state.world.cells[c + ",0"].kind);
     worldEnter("2,1"); await w(400); const beachWays = worldLiveWays(state.world, "2,1"), toSea = (worldWaysAt.find(e => e[0] === "N") || [])[4];
     worldEnter("2,0"); await w(500);

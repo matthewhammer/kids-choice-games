@@ -20,7 +20,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
-    state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3");
+    state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3");
     const put = async k => { B.things = [...Array(k)].map((_, i) => ({ kind: "cauldron", x: -260 + i * 170, z: 360, seed: 30 + i, size: 100 })); changed(); await w(500); };
     const look = () => [...document.querySelectorAll('#bg [data-drag^="thing:"]')].map(el => ({ full: el.querySelectorAll("[data-helix]").length, plumes: el.querySelectorAll('path > animate[attributeName="d"]').length, moving: thingMoving(el) }));
     await put(1); const one = look();

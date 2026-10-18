@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.184 (2026-10-17)
+
+Everything in 0.0.183, with a look at what each place is made of, and a new world.
+
+- **♿ 🧩 What it's made of**: in ♿ Accessibility, turn it on to see every object in the place boxed and named, and its plants boxed and named by the drawing that made them (leafyTree, pineTree, bushSvg, fern, palm...), a tree's leaf pads inside the tree. Each kind has its own chip to show or hide it, with how many are in the place now; leaf pads and grass start hidden, as there are so many. A legend under the picture counts them.
+- **A new world**: a new friend starts in Matthew's world: six squares across, seven down, the clearing in the middle, deep sea down the west side and open water along the top, with the things he put in its squares. A saved friend still in the old world, as it was, moves to the new one.
+
 ## 0.0.183 (2026-10-17)
 
 Everything in 0.0.182, with new palm trees in the castle's greenhouse.

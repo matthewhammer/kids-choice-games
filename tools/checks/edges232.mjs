@@ -22,23 +22,23 @@ try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
-  const r = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); changed(); const out = {};
+  const r = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); changed(); const out = {};
     // his case: a fairy forest put in E6, the grid's bottom right corner
     out.usual = worldUsualWays("fairyforest");
     worldPut("4,5", "fairyforest"); out.put = { ways: worldWays(W().cells["4,5"]), off: off("4,5"), warn: offWarn() };
     // a square moved into a corner: the castle (E4) to A6
     worldMove("4,3", "0,5"); out.moved = { kind: W().cells["0,5"].kind, ways: worldWays(W().cells["0,5"]), off: off("0,5") };
     // a grid made smaller: a column more, a way east into it from E1 (open water), the column taken away again
-    state.world = clone(DEFAULTS.world); worldResize(1, 0); const e1 = W().cells["4,0"]; e1.ways = [...new Set([...e1.ways, "E"])]; out.wide = { cols: W().cols, off: off("4,0") };
+    state.world = clone(WORLD_DEFAULT_0183); worldResize(1, 0); const e1 = W().cells["4,0"]; e1.ways = [...new Set([...e1.ways, "E"])]; out.wide = { cols: W().cols, off: off("4,0") };
     worldResize(-1, 0); out.narrow = { cols: W().cols, ways: worldWays(W().cells["4,0"]), off: off("4,0") };
     // a world from before, with a way off the map: 🔗 all passageways takes it away and says so
-    state.world = clone(DEFAULTS.world); W().cells["4,5"] = { kind: "fairyforest", ways: ["N", "NW", "SW", "SE", "E"], things: [] }; changed();
+    state.world = clone(WORLD_DEFAULT_0183); W().cells["4,5"] = { kind: "fairyforest", ways: ["N", "NW", "SW", "SE", "E"], things: [] }; changed();
     out.before = { off: off("4,5"), warn: offWarn().length };
     tab = TABS.findIndex(t => t[1] === "world"); showTab(); await new Promise(r => setTimeout(r, 300));
     const btn = [...document.querySelectorAll("#panel button")].find(b => /all passageways/.test(b.textContent)); btn.click(); await new Promise(r => setTimeout(r, 300));
     out.after = { off: off("4,5"), warn: offWarn(), note: btn.nextElementSibling ? btn.nextElementSibling.textContent : null };
     // a crossing's dead ends stay its look: one put in A1, its paths N and W off the map, kept and not warned of
-    state.world = clone(DEFAULTS.world); worldPut("0,0", "crossing"); const cr = W().cells["0,0"]; cr.crossN = true; cr.crossW = true; worldTrimEdges(W());
+    state.world = clone(WORLD_DEFAULT_0183); worldPut("0,0", "crossing"); const cr = W().cells["0,0"]; cr.crossN = true; cr.crossW = true; worldTrimEdges(W());
     out.crossing = { N: cr.crossN, W: cr.crossW, warn: offWarn().length };
     return JSON.stringify(out); })()`));
   // (its usual way is SW alone, which leaves the grid from E6: it keeps none, and is a square nothing reaches, not a way off the map)

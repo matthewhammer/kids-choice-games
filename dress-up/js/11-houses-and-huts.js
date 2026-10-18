@@ -1508,7 +1508,7 @@ function castleSvg(K = castleOf({})) {
   const tiles = (cx, base, hw, h) => [0.3, 0.55, 0.78].map(u => `<line x1="${f1(cx - hw * (1 - u))}" y1="${f1(base - h * u)}" x2="${f1(cx + hw * (1 - u))}" y2="${f1(base - h * u)}" stroke="${darker(K.roof)}" stroke-width="2"/>`).join("") +
     `<polygon points="${f1(cx - hw)},${base} ${cx},${base - h} ${f1(cx - hw * 0.35)},${base}" fill="#ffffff" opacity="0.12"/>`;
   // ivy climbing a corner
-  const ivy = (x, y, h, sd) => [...Array(Math.floor(h / 9))].map((_, j) => `<circle cx="${f1(x + sd * (4 + 6 * r(j, 7 + sd)))}" cy="${f1(y - j * 9)}" r="${f1(5 + 3 * r(j, 9))}" fill="${["#3c8a3e", "#2f7d32", "#4a9a46"][j % 3]}"/>`).join("");
+  const ivy = (x, y, h, sd) => drawnBy("ivy", [...Array(Math.floor(h / 9))].map((_, j) => `<circle cx="${f1(x + sd * (4 + 6 * r(j, 7 + sd)))}" cy="${f1(y - j * 9)}" r="${f1(5 + 3 * r(j, 9))}" fill="${["#3c8a3e", "#2f7d32", "#4a9a46"][j % 3]}"/>`).join(""));
   // lily pads and reeds on the moat
   const pads = m <= 0 ? "" : [...Array(7)].map((_, i) => { const a = Math.PI * (0.15 + 0.7 * r(i, 11)), x = Math.cos(a) * rx * 0.86 * (r(i, 12) < 0.5 ? -1 : 1), y = cy + Math.sin(a) * ry * 0.7;
       if (Math.abs(x) < 50) return "";

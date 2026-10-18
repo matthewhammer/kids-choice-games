@@ -28,7 +28,7 @@ try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
-  await ev(`(() => { state.music.mute = true; state.world = clone(DEFAULTS.world); state.world.at = null; return 1; })()`);
+  await ev(`(() => { state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); state.world.at = null; return 1; })()`);
   // the old link signs: gone from every place that had them; a place's own doorways (the clearing's far views, the
   // castle's gate, the camp's tent, the falls' cave) are not signs and stay
   const old = JSON.parse(await ev(`(async () => { ${H} const out = {};

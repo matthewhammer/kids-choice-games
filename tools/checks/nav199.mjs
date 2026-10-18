@@ -26,7 +26,7 @@ try {
   // in the clearing (D4), standing at its left: one of its far views (its own doorways) under the pointer, the one
   // farthest from where any nav arrow would be, which the pointer near it would pick instead (ticket 233: it was the
   // wood path's sign, gone; the witch's hut, tried first, is by the arrow NE)
-  const at = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3"); B.figX = -260; B.figY = 0; await settle();
+  const at = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); B.figX = -260; B.figY = 0; await settle();
     const P0 = pic.getScreenCTM(), pr = pic.getBoundingClientRect(), navs = marks.pics.filter(p => p.kind === "nav" && p.spot).map(p => new DOMPoint(p.spot[0], p.spot[1]).matrixTransform(P0));
     // (a point on each that is inside the picture: its box can reach past the picture's edge)
     const mid = p => { const r0 = p.el.getBoundingClientRect(), r = { left: Math.max(r0.left, pr.left + 4), right: Math.min(r0.right, pr.right - 4), top: Math.max(r0.top, pr.top + 4), bottom: Math.min(r0.bottom, pr.bottom - 4) };

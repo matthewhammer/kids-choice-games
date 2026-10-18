@@ -218,7 +218,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
         d += ` Q${P(xj, b - h * (j - 0.5) / 5)} ${P(x, yj)}`;
         blades += `<path d="M${P(x, yj + 10 * k)} q${f1((j % 2 ? 1 : -1) * 26 * k)} ${f1(-14 * k)} ${f1((j % 2 ? 1 : -1) * 34 * k)} ${f1(-34 * k)} q${f1((j % 2 ? -1 : 1) * 10 * k)} ${f1(20 * k)} ${f1((j % 2 ? -1 : 1) * 34 * k)} ${f1(34 * k)} Z" fill="${i % 3 ? "#2f7a4a" : "#3b8f55"}" opacity="0.92"/>`;
       }
-      kelp[i % 2] += swaying(opts, `<path d="${d}" fill="none" stroke="${i % 3 ? "#2a6b40" : "#35804c"}" stroke-width="${f1(7 * k)}" stroke-linecap="round"/>` + blades, x, b, 5, R(i, 821), (5 + 2 * R(i, 822)).toFixed(1));
+      kelp[i % 2] += drawnBy("kelp", swaying(opts, `<path d="${d}" fill="none" stroke="${i % 3 ? "#2a6b40" : "#35804c"}" stroke-width="${f1(7 * k)}" stroke-linecap="round"/>` + blades, x, b, 5, R(i, 821), (5 + 2 * R(i, 822)).toFixed(1)));   // (ticket 258)
     }
     s += obj("kelp, left", g + 24 * k, kelp[0]) + obj("kelp, right", g + 24 * k, kelp[1]);
     // (ticket 235: a school of fish that swims. Matthew, dropping 0.0.160's in ticket 234: "the animation for the school
@@ -654,7 +654,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       }
       palm += swaying(opts, fronds, tx, ty, 4, sd < 0 ? 0.1 : 0.6, 6);
       palm += [[-8, 10], [8, 12], [0, 20]].map(([dx, dy]) => `<circle cx="${f1(tx + dx * k)}" cy="${f1(ty + dy * k)}" r="${f1(9 * k)}" fill="#6b4a2b"/>`).join("");
-      s += obj(`palm tree, ${sd < 0 ? "left" : "right"}`, by, palm);
+      s += obj(`palm tree, ${sd < 0 ? "left" : "right"}`, by, drawnBy("beachPalm", palm));   // (ticket 258)
     }
     // a striped umbrella over a beach chair on each side (objects: the
     // umbrella at its pole's foot, the chair at its legs')

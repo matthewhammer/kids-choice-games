@@ -44,7 +44,7 @@ function leafyTree(seed, o = {}) {
   tips.forEach(([x, y, len], i) => { pads.push([x + (r(40 + i) - 0.5) * 30, y - 16, 0.42 + 0.16 * r(50 + i), 1]); pads.push([x + (r(60 + i) - 0.5) * 40, y + 8, 0.36 + 0.14 * r(70 + i), 2]); });
   pads.sort((a, b) => a[3] - b[3] || a[1] - b[1]);
   t += pads.map(([x, y, sc, layer], i) => padSvg(Math.floor(r(80 + i) * 8), x, y, sc * (r(90 + i) < 0.5 ? -1 : 1) * wide, sc, greens[Math.min(greens.length - 1, layer + Math.floor(r(100 + i) * 3))])).join("");
-  return t;
+  return drawnBy("leafyTree", t);
 }
 // a tree's drawing under an id, for <use> (one drawing, many trees)
 const leafyTreeDef = (id, seed, o) => `<g id="${id}">${leafyTree(seed, o)}</g>`;
@@ -66,7 +66,7 @@ function pineTree(seed, o = {}) {
          `<polygon points="${f1(-hw * 0.85)},${f1(y + 2)} ${f1(hw * 0.85)},${f1(y + 2)} ${f1(hw * 0.5)},${f1(y - th * 0.3)} ${f1(-hw * 0.5)},${f1(y - th * 0.3)}" fill="#000000" opacity="0.16"/>` +
          `<polygon points="0,${f1(tip + 4)} ${f1(-hw * 0.6)},${f1(y - th * 0.15)} ${f1(-hw * 0.18)},${f1(y - th * 0.5)}" fill="#ffffff" opacity="0.1"/>`;
   }
-  return t;
+  return drawnBy("pineTree", t);
 }
 const pineDef = (id, seed = 1, o) => `<g id="${id}">${pineTree(seed, o)}</g>`;
 // a bush: a low mound of leaf pads, darker at its foot, flowers on some
@@ -80,13 +80,13 @@ const bushSvg = (x, y, rad, seed, o = {}) => {
   }
   if (o.flowers) for (let i = 0; i < 6; i++) { const fx = x + (r(80 + i) - 0.5) * rad * 1.4, fy = y - rad * (0.2 + 0.6 * r(90 + i));
     t += `<circle cx="${f1(fx)}" cy="${f1(fy)}" r="${f1(rad * 0.07)}" fill="${o.flowers[i % o.flowers.length]}"/><circle cx="${f1(fx)}" cy="${f1(fy)}" r="${f1(rad * 0.025)}" fill="#fde047"/>`; }
-  return t;
+  return drawnBy("bushSvg", t);
 };
 // a tuft of grass: blades from one root, each leaning its own way
 const grassTuft = (x, y, h, seed, col = "#4f9a3a", wd = 2) => {
   const r = seeded(seed), lit = mix(col, "#ffffff", 0.25), n = 5 + Math.floor(r(1) * 3);
-  return [...Array(n)].map((_, i) => { const lean = (i / (n - 1) - 0.5) * 1.2 + (r(10 + i) - 0.5) * 0.4, hh = h * (0.6 + 0.4 * r(20 + i));
-    return `<path d="M${f1(x + (i - n / 2) * wd * 0.6)} ${f1(y)} Q${f1(x + lean * hh * 0.25)} ${f1(y - hh * 0.6)} ${f1(x + lean * hh * 0.6)} ${f1(y - hh)}" fill="none" stroke="${i % 2 ? lit : col}" stroke-width="${f1(wd)}" stroke-linecap="round"/>`; }).join("");
+  return drawnBy("grassTuft", [...Array(n)].map((_, i) => { const lean = (i / (n - 1) - 0.5) * 1.2 + (r(10 + i) - 0.5) * 0.4, hh = h * (0.6 + 0.4 * r(20 + i));
+    return `<path d="M${f1(x + (i - n / 2) * wd * 0.6)} ${f1(y)} Q${f1(x + lean * hh * 0.25)} ${f1(y - hh * 0.6)} ${f1(x + lean * hh * 0.6)} ${f1(y - hh)}" fill="none" stroke="${i % 2 ? lit : col}" stroke-width="${f1(wd)}" stroke-linecap="round"/>`; }).join(""));
 };
 // a rock: an irregular stone, flat where it sits, its top lit, a crack
 const rockSvg = (x, y, rad, seed, tone = "#9a9488") => {
@@ -297,7 +297,7 @@ function palmTrunkSvg(x, base, h, sd, k, rnd, lean = 0.18, n = 11) {
   // (the spine: four straight pieces along the curve, unseen, each as wide as the trunk at its middle)
   t += `<g data-spine-of="palm" pointer-events="none">` + [0, 1, 2, 3].map(i => { const [ax, ay] = at(i / 4), [bx, by] = at((i + 1) / 4);
     return `<path data-spine="" data-bands="${PALM_BANDS}" d="M${f1(ax)} ${f1(ay)} L${f1(bx)} ${f1(by)}" fill="none" stroke="transparent" stroke-width="${f1(2 * half((i + 0.5) / 4))}"/>`; }).join("") + `</g>`;
-  return { svg: t, top: at(1) };
+  return { svg: drawnBy("palmTrunkSvg", t), top: at(1) };
 }
 // (ticket 50) the swing: its seat, 74 of the tree's units across (358 to
 // 432), its top 72 above the ground, as treeInner's "tree-swing" hangs it

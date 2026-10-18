@@ -31,7 +31,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   // a potion in the clearing (D4)
-  await ev(`(async () => { state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3");
+  await ev(`(async () => { state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3");
     state.background.things = [{ kind: "potion", x: 60, z: 370, seed: 1, size: 100, shape: "flask", color: "#e53935" }]; changed(); await new Promise(r => setTimeout(r, 500)); return 1; })()`);
   // into the healer's hut by the clearing's own doorway
   await ev(`(() => { const d = document.querySelector('#bg .portal[data-to="healerroom"]'); d.dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);

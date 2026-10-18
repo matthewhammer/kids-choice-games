@@ -25,7 +25,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
-    state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3"); B.figX = -400;
+    state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); B.figX = -400;
     B.things = [{ kind: "cauldron", x: 100, z: 370, seed: 31, size: 100, fumes: "simple" }]; changed(); await w(600);
     const c = document.querySelector('#bg [data-drag="thing:0"]'), strands = [...c.querySelectorAll('path[id^="fume-"] > animate[attributeName="d"]')];
     const shape = { strands: strands.length, moments: strands.map(a => a.getAttribute("values").split(";").length), paint: strands.map(a => a.parentElement.getAttribute("stroke") || ""),

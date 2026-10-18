@@ -441,6 +441,73 @@ function solidsHud() {
   }
 }
 let solidsHitShown = -1;
+// (ticket 258, Matthew: "under accessibility (using that word as a pun now, and using that panel because it also has
+// collision box controls) ... showing all of the 'objects' that are baked into the background options, with their
+// bounding box and label. OBJECTS.md content should appear, right? I'm very curious to see how the decomposition into
+// re-usable procedures visually represented, even if those objects are not positionable, and are fixed in the scene.
+// Let's start with all plants, in all scenes"; "maybe this toggle should really be a toggle that reveals a sub-panel of
+// toggles, per category of object") ♿ 🧩 what a place is made of: its objects (its objects list, OBJECTS.md's: each
+// obj() and its name), each boxed and named; and its plants, each boxed and named by the procedure that drew it (its
+// drawing's [data-proc], drawnBy; a <use> by the drawing it uses), nested as they are drawn (a tree's leaf pads inside
+// the tree); each kind a toggle of its own (MADE_CATS, access.madeCats), with how many are here (madeCounts); a legend.
+const MADE_CATS = [["objects", "🧩 objects (each place's list)", true], ["trees", "🌳 leafy trees", true], ["pines", "🌲 pines", true],
+                   ["palms", "🌴 palms", true], ["bushes", "🌿 bushes", true], ["flowers", "🌷 flowers", true], ["leafy", "🍀 ferns, vines and leaves", true],
+                   ["pads", "🍃 leaf pads", false], ["grass", "🌾 grass", false]];
+// (each procedure's kind)
+const PROC_CAT = { leafyTree: "trees", pineTree: "pines", palm: "palms", palmTrunkSvg: "palms", beachPalm: "palms", bushSvg: "bushes", hibiscus: "bushes",
+                   tulip: "flowers", daisy: "flowers", paradise: "flowers", fern: "leafy", monstera: "leafy", vine: "leafy", ivy: "leafy", kelp: "leafy",
+                   lilyPads: "leafy", padSvg: "pads", padDef: "pads", grassTuft: "grass" };
+const madeCatOn = cat => { const m = (state.access || DEFAULTS.access).madeCats || {}; return cat in m ? !!m[cat] : !!(MADE_CATS.find(c => c[0] === cat) || [])[2]; };
+let madeShown = "", madeCounts = {};
+const procHue = name => [...name].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 360, 17);
+// (a <use>'s procedure: the one its drawing is, or holds)
+const useProc = el => { const id = (el.getAttribute("href") || el.getAttribute("xlink:href") || "").slice(1), d = id && document.getElementById(id);
+  if (!d) return null; if (d.dataset.proc) return d.dataset.proc; const q = d.querySelector("[data-proc]"); return q ? q.dataset.proc : null; };
+function madeOfHud() {
+  const layer = document.getElementById("access-layer");
+  if (!layer) return;
+  const A = state.access || DEFAULTS.access, node = bgShown.node, on = !!A.showMadeOf && !!node && state.background.kind !== "none";
+  let ov = layer.querySelector("svg.made-of"), leg = layer.querySelector(".made-legend");
+  if (!on) { if (ov) ov.remove(); if (leg) leg.remove(); madeShown = ""; return; }
+  const box = layer.getBoundingClientRect();
+  if (!box.width) return;
+  const cats = MADE_CATS.map(c => c[0]).filter(madeCatOn), sig = [box.width, box.height, cats.join(), A.madeFont ?? 10].join("|");
+  if (ov && madeShown === sig && ov.dataset.text === String(bgShown.text.length) && madeOfHud.text === bgShown.text) return;
+  madeShown = sig; madeOfHud.text = bgShown.text;
+  // (a box on the screen, in the layer's own units, cut to it; none when it is not seen)
+  const cut = el => { const r = el.getBoundingClientRect(); const x0 = Math.max(0, r.left - box.left), y0 = Math.max(0, r.top - box.top), x1 = Math.min(box.width, r.right - box.left), y1 = Math.min(box.height, r.bottom - box.top);
+    return x1 - x0 > 1 && y1 - y0 > 1 ? [x0, y0, x1, y1] : null; };
+  const rect = (q, cls, style = "") => `<rect class="${cls}"${style} x="${q[0].toFixed(1)}" y="${q[1].toFixed(1)}" width="${(q[2] - q[0]).toFixed(1)}" height="${(q[3] - q[1]).toFixed(1)}"/>`;
+  const label = (q, text, style = "") => q[2] - q[0] >= 36 && q[3] - q[1] >= 14 ? `<text${style} x="${(q[0] + 3).toFixed(1)}" y="${(q[1] + 11).toFixed(1)}">${xmlEsc(text)}</text>` : "";
+  let t = "";
+  const counts = {}, procs = {};
+  // the plants, each by its procedure
+  for (const el of node.querySelectorAll("[data-proc], use")) {
+    if (el.closest(PROC_HIDDEN)) continue;
+    const name = el.tagName.toLowerCase() === "use" ? useProc(el) : el.dataset.proc, cat = name && PROC_CAT[name];
+    if (!cat) continue;
+    const q = cut(el);
+    if (!q) continue;
+    counts[cat] = (counts[cat] || 0) + 1; procs[name] = (procs[name] || 0) + 1;
+    if (!cats.includes(cat)) continue;
+    const st = ` style="--c:hsl(${procHue(name)} 85% 62%)"`;
+    t += `<g class="proc">` + rect(q, "", st) + label(q, name, st) + `</g>`;
+  }
+  // the objects, OBJECTS.md's
+  counts.objects = 0;
+  for (const o of bgShown.objs) { const q = cut(o.node); if (!q) continue; counts.objects++;
+    if (cats.includes("objects")) t += `<g class="obj">` + rect(q, "under") + rect(q, "") + label(q, o.name) + `</g>`; }
+  madeCounts = counts;
+  if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "made-of"); layer.prepend(ov); }
+  ov.dataset.text = String(bgShown.text.length);
+  ov.style.setProperty("--made-font", (A.madeFont ?? 10) + "px");
+  ov.innerHTML = t;
+  if (!leg) { leg = document.createElement("div"); leg.className = "made-legend"; layer.append(leg); }
+  const shown = Object.entries(procs).filter(([nm]) => cats.includes(PROC_CAT[nm])).sort((a, b) => b[1] - a[1]);
+  leg.innerHTML = `🧩 ${counts.objects} objects` + (shown.length ? " · drawn by: " + shown.map(([nm, n]) => `<b style="--c:hsl(${procHue(nm)} 85% 62%)">${xmlEsc(nm)}</b> ×${n}`).join(" · ") : "");
+  for (const f of syncs) f();   // (the ♿ panel's counts)
+}
+const PROC_HIDDEN = "defs, clipPath, mask, pattern, symbol";
 // (ticket 240) ♿'s collision boxes at the tree house: every frame while they show, the swing's box turned about its
 // hook as the seat hangs now, and the friend's boxes with it while they sit on it (the drawing's swing is a SMIL
 // animation, running between drawings: so its own loop, stopping when the boxes, the swing or the place go)
@@ -516,7 +583,7 @@ function blowTick(t) {
 // size is laid out: the arrows had kept the smaller picture's places, all in its top left, till something was drawn.
 let pathShown = "";
 if (window.ResizeObserver && document.getElementById("pic"))   // (the element: the name pic is declared in a later part)
-  new ResizeObserver(() => { solidsShown = ""; pathShown = ""; worldWaysHud(); solidsHud(); pathHud(); }).observe(document.getElementById("pic"));
+  new ResizeObserver(() => { solidsShown = ""; pathShown = ""; madeShown = ""; worldWaysHud(); solidsHud(); pathHud(); madeOfHud(); }).observe(document.getElementById("pic"));
 function pathHud() {
   const layer = document.getElementById("access-layer");
   if (!layer) return;

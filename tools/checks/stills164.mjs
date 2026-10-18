@@ -23,7 +23,7 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => {
     const wait = ms => new Promise(res => setTimeout(res, ms)), frame = () => new Promise(res => requestAnimationFrame(res));
-    state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("2,2"); choppy = true; changed(); await wait(800);
+    state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("2,2"); choppy = true; changed(); await wait(800);
     // (moving, as the controller moves them, for two seconds: the pictures made, then used)
     const move = async ms => { const t0 = performance.now(); let i = 0; while (performance.now() - t0 < ms) { state.background.figX = Math.round(60 * Math.sin(i++ / 20)); moved(); await frame(); } };
     stillPic.draws = stillPic.drawsOn = 0; await move(2000);

@@ -22,7 +22,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   const at = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
-    state.music.mute = true; state.world = clone(DEFAULTS.world); const key = Object.keys(state.world.cells).find(k => state.world.cells[k].kind === "forest"); worldEnter(key); await w(400);
+    state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); const key = Object.keys(state.world.cells).find(k => state.world.cells[k].kind === "forest"); worldEnter(key); await w(400);
     B.things = ${JSON.stringify(ROCKS)}.map(([x, z], i) => ({ kind: "rock", x, z, seed: 900 + i, size: 100, mirror: false, tone: ROCK_TONES[i % ROCK_TONES.length] })); changed(); await w(600);
     window.__draws = 0; const d0 = draw; window.draw = function (...a) { window.__draws++; return d0.apply(this, a); };
     // (a point on rock 7 where it is the topmost thing: rocks overlap, and the press takes what is on top)
@@ -37,7 +37,8 @@ try {
   let mid = null;
   for (let i = 1; i <= 150; i++) {
     await mouse("mouseMoved", at.x + i * 1.2, at.y + i * 0.4, 1); await sleep(16);
-    if (i === 75) mid = JSON.parse(await ev(`(() => { const el = bgShown.node.querySelector('[data-drag="thing:6"]'), h = el && el.closest("[data-obj]"); return JSON.stringify({ tf: h && h.getAttribute("transform"), t: [state.background.things[6].x, state.background.things[6].z] }); })()`));
+    // (sampled over a stretch of the drag: between a redraw, every THING_DRAG_DRAW, and the next move the drawing is plain)
+    if (i >= 70 && i <= 90 && !(mid && mid.tf)) mid = JSON.parse(await ev(`(() => { const el = bgShown.node.querySelector('[data-drag="thing:6"]'), h = el && el.closest("[data-obj]"); return JSON.stringify({ tf: h && h.getAttribute("transform"), t: [state.background.things[6].x, state.background.things[6].z] }); })()`));
   }
   const during = await ev("window.__draws");
   await mouse("mouseReleased", at.x + 180, at.y + 60, 0); await sleep(500);

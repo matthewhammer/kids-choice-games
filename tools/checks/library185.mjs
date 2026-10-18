@@ -21,7 +21,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1400, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   // the World design tab, in the clearing's square
-  const groups = JSON.parse(await ev(`(async () => { state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,2"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await new Promise(r => setTimeout(r, 500));
+  const groups = JSON.parse(await ev(`(async () => { state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,2"); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await new Promise(r => setTimeout(r, 500));
     const chips = [...document.querySelectorAll(".thing-groups button")], items = () => [...document.querySelectorAll(".thing-items button")].map(b => b.textContent);
     const out = { chips: chips.map(b => b.textContent), first: items() };
     for (const b of chips) { b.click(); await new Promise(r => setTimeout(r, 100)); out[b.dataset.group] = items(); }

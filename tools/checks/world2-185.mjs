@@ -47,7 +47,7 @@ try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1400, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
-  await ev(`(async () => { state.music.mute = true; state.world = clone(DEFAULTS.world); state.background.kind = "clearing"; state.world.at = null; changed(); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await new Promise(r => setTimeout(r, 400)); return 1; })()`);
+  await ev(`(async () => { state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); state.background.kind = "clearing"; state.world.at = null; changed(); tab = TABS.findIndex(t => t[1] === "world"); showTab(); await new Promise(r => setTimeout(r, 400)); return 1; })()`);
   // a crossing from the palette onto E2 (4,0), empty
   const chip = await ev(`(() => { const c = [...document.querySelectorAll(".world-palette .world-chip")].find(b => /forest crossing/.test(b.textContent)); c.id = "chip-crossing"; return 1; })()`);
   await dragSel("the crossing chip onto E2", "#chip-crossing", '.world-grid [data-square="4,1"]');

@@ -25,7 +25,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
-    state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3"); thingGroup = "magic"; tab = TABS.findIndex(t => t[1] === "world"); showTab(); await w(400);
+    state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); thingGroup = "magic"; tab = TABS.findIndex(t => t[1] === "world"); showTab(); await w(400);
     const put = async (k, kind = "cauldron") => { B.things = [...Array(k)].map((_, i) => ({ kind, x: -360 + (i % 8) * 100, z: 330 + Math.floor(i / 8) * 50, seed: 30 + i, size: 100, ...structuredClone(THING_DEFAULTS[kind] || {}) })); changed(); await w(600); };
     const look = () => { const b = document.querySelector('.thing-items button[data-kind="cauldron"]'), note = document.querySelector(".thing-slow");
       const all = [...document.querySelectorAll(".thing-items button[data-kind]")];

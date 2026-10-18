@@ -1075,7 +1075,7 @@ function greenhouseSvg(c, K) {
         lv += `<ellipse cx="${f1(lx)}" cy="${f1(ly)}" rx="${f1(8 * k)}" ry="${f1(4 * k)}" transform="rotate(${f1(rot)} ${f1(lx)} ${f1(ly)})" fill="${leaf[(j + seed) % 5]}"/>`; }
       if ((j + seed) % 4 === 0) lv += `<circle cx="${f1(x + dx)}" cy="${f1(y)}" r="${f1(4 * k)}" fill="${["#f472b6", "#c084fc", "#fb7185"][(j + seed) % 3]}"/><circle cx="${f1(x + dx)}" cy="${f1(y)}" r="${f1(1.5 * k)}" fill="#fde047"/>`;
     }
-    return `<path d="${d}" fill="none" stroke="#3f6b2a" stroke-width="${f1(3 * k)}"/>` + lv;
+    return drawnBy("vine", `<path d="${d}" fill="none" stroke="#3f6b2a" stroke-width="${f1(3 * k)}"/>` + lv);
   };
   for (let i = 0; i <= 8; i++) t += vine(-bw + 2 * bw * i / 8, top + 10 * k, floor, i * 3);
   for (let i = 0; i < 9; i++) {   // vines hanging from the roof's edge
@@ -1108,12 +1108,12 @@ function greenhouseSvg(c, K) {
       for (let j = 1; j < 9; j++) { const u = j / 9, qx = (1 - u) * (1 - u) * tx + 2 * u * (1 - u) * mx + u * u * ex, qy = (1 - u) * (1 - u) * ty + 2 * u * (1 - u) * my + u * u * ey;
         for (const e of [-1, 1]) s2 += `<line x1="${f1(qx)}" y1="${f1(qy)}" x2="${f1(qx + e * 6 * k + Math.cos(a) * 8 * k)}" y2="${f1(qy + 14 * k * (1 - u * 0.5))}" stroke="${leaf[(f + j) % 5]}" stroke-width="${f1(3.5 * k)}" stroke-linecap="round"/>`; }
     }
-    return s2 + `<circle cx="${f1(tx)}" cy="${f1(ty + 6 * k)}" r="${f1(6 * k)}" fill="#6b4a2b"/><circle cx="${f1(tx + 8 * k)}" cy="${f1(ty + 8 * k)}" r="${f1(5 * k)}" fill="#6b4a2b"/>`;
+    return drawnBy("palm", s2 + `<circle cx="${f1(tx)}" cy="${f1(ty + 6 * k)}" r="${f1(6 * k)}" fill="#6b4a2b"/><circle cx="${f1(tx + 8 * k)}" cy="${f1(ty + 8 * k)}" r="${f1(5 * k)}" fill="#6b4a2b"/>`);
   };
   // a monstera leaf: a big heart with slits and holes
   // (its slits cut in from the leaf's own edge: drawn from past it, kept inside the leaf)
   const MONSTERA_LEAF = "M0 0 C-30 -10 -44 -50 -20 -70 C-8 -80 0 -72 0 -66 C0 -72 8 -80 20 -70 C44 -50 30 -10 0 0 Z";
-  const monstera = (x, y, s, rot, col) => `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(rot)}) scale(${s.toFixed(3)})">` +
+  const monstera = (x, y, s, rot, col) => `<g data-proc="monstera" transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(rot)}) scale(${s.toFixed(3)})">` +
     `<path d="${MONSTERA_LEAF}" fill="${col}"/>` +
     `<path d="M0 0 V-64" stroke="#1f5a22" stroke-width="2"/>` +
     `<clipPath id="bg-monstera-leaf"><path d="${MONSTERA_LEAF}"/></clipPath><g clip-path="url(#bg-monstera-leaf)">` +
@@ -1125,7 +1125,7 @@ function greenhouseSvg(c, K) {
     let fr = `<path d="M${P(x, y)} Q${P(mx, my)} ${P(ex, ey)}" fill="none" stroke="#2f7d32" stroke-width="${f1(2 * s)}"/>`;
     for (let j = 1; j < 8; j++) { const u = j / 8, qx = (1 - u) * (1 - u) * x + 2 * u * (1 - u) * mx + u * u * ex, qy = (1 - u) * (1 - u) * y + 2 * u * (1 - u) * my + u * u * ey;
       fr += `<ellipse cx="${f1(qx)}" cy="${f1(qy)}" rx="${f1(6 * s * (1 - u * 0.6))}" ry="${f1(2.2 * s)}" transform="rotate(${f1(a * 57.3 + 90)} ${f1(qx)} ${f1(qy)})" fill="${leaf[(f + j) % 5]}"/>`; }
-    return fr; }).join("");
+    return drawnBy("fern", fr); }).join("");
   // a hibiscus bush: a mound of leaves, red and pink flowers with gold centers
   const hibiscus = (x, y, s, seed) => {
     let b = `<ellipse cx="${f1(x)}" cy="${f1(y - 26 * s)}" rx="${f1(54 * s)}" ry="${f1(32 * s)}" fill="#2f7d32"/>`;
@@ -1133,13 +1133,13 @@ function greenhouseSvg(c, K) {
     for (let i = 0; i < 6; i++) { const fx = x + (R(seed + i, 992) - 0.5) * 90 * s, fy = y - 14 * s - 44 * s * R(seed + i, 993), col = ["#e11d48", "#f43f5e", "#fb7185"][i % 3];
       b += [0, 1, 2, 3, 4].map(p => { const a = p * 72 * Math.PI / 180; return `<ellipse cx="${f1(fx + Math.cos(a) * 6 * s)}" cy="${f1(fy + Math.sin(a) * 6 * s)}" rx="${f1(6 * s)}" ry="${f1(4.5 * s)}" transform="rotate(${p * 72} ${f1(fx + Math.cos(a) * 6 * s)} ${f1(fy + Math.sin(a) * 6 * s)})" fill="${col}"/>`; }).join("") +
            `<circle cx="${f1(fx)}" cy="${f1(fy)}" r="${f1(2.5 * s)}" fill="#fde047"/>`; }
-    return b;
+    return drawnBy("hibiscus", b);
   };
   // a bird of paradise: a stalk, a beak of orange and blue
-  const paradise = (x, y, s) => `<path d="M${P(x, y)} V${f1(y - 80 * s)}" stroke="#2f6e2a" stroke-width="${f1(3 * s)}"/>` +
+  const paradise = (x, y, s) => drawnBy("paradise", `<path d="M${P(x, y)} V${f1(y - 80 * s)}" stroke="#2f6e2a" stroke-width="${f1(3 * s)}"/>` +
     `<path d="M${P(x, y - 80 * s)} L${P(x + 34 * s, y - 86 * s)} L${P(x + 6 * s, y - 74 * s)} Z" fill="#1d4ed8"/>` +
     [0, 1, 2].map(j => `<path d="M${P(x + 8 * s, y - 82 * s)} L${P(x + 14 * s + j * 6 * s, y - 112 * s + j * 6 * s)} L${P(x + 14 * s, y - 84 * s)} Z" fill="${j ? "#f97316" : "#fb923c"}"/>`).join("") +
-    `<path d="M${P(x, y - 30 * s)} Q${P(x - 30 * s, y - 60 * s)} ${P(x - 40 * s, y - 40 * s)} Q${P(x - 20 * s, y - 34 * s)} ${P(x, y - 30 * s)} Z" fill="#3c8a3e"/>`;
+    `<path d="M${P(x, y - 30 * s)} Q${P(x - 30 * s, y - 60 * s)} ${P(x - 40 * s, y - 40 * s)} Q${P(x - 20 * s, y - 34 * s)} ${P(x, y - 30 * s)} Z" fill="#3c8a3e"/>`);
   // a pot, terracotta, its rim lighter
   const pot = (x, y, s) => `<path d="M${P(x - 26 * s, y - 40 * s)} L${P(x - 20 * s, y)} L${P(x + 20 * s, y)} L${P(x + 26 * s, y - 40 * s)} Z" fill="#c2652f"/>` +
     `<rect x="${f1(x - 30 * s)}" y="${f1(y - 48 * s)}" width="${f1(60 * s)}" height="${f1(10 * s)}" rx="${f1(3 * s)}" fill="#d97c45"/>`;

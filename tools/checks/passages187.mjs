@@ -28,7 +28,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   // every passage in the clearing, and at each one's spot: it is the one, and nothing else glows bright
-  const clearing = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(DEFAULTS.world); worldEnter("3,3"); await settle();
+  const clearing = JSON.parse(await ev(`(async () => { ${H} state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); await settle();
     const kinds = marks.pics.map(p => p.kind), out = [];
     // (it, or one just as near: two passages can end at one spot, as the clearing's old front path and its nav arrow S)
     // (ticket 214: and then a moment more, the game settling the friend where they can stand: put straight at the far
