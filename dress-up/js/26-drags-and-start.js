@@ -1056,24 +1056,20 @@ function bridgeWalkTo(end, then) {
 }
 // (ticket 246) at a bridge's end, into the house there: its room, just inside its door to the bridge they came along,
 // facing us, fading in, as through any door
+// (ticket 331, Matthew: "when we walk across the bridge by click, we animate the walk, but then we do not animate going into
+// the door --- we do it pretty well for the ladder climbs outside of the tree house, so can't we reuse that again?") off the
+// bridge's end onto the house's platform, along it to the door and back through it, seen only inside the doorway, as from
+// the ladder's top (platformIn)
 function bridgeIn(be) {
-  const B = state.background, body = state.body;
-  trips.push({ kind: B.kind, inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to: "treeroom" });
-  delete B.onBridge;
-  const [fx, fy] = ARRIVE.treeroom || [0, 0];
-  Object.assign(B, { kind: "treeroom", inside: be.house, figX: fx, figY: fy });
-  body.anim = "none"; body.facing = "front"; body.turn = ""; padWant = null;
-  changed();
-  // (a step into the room from the door's foot, toward its middle)
-  const d = bgShown.node && bgShown.node.querySelector(`.portal[data-door][data-house="${be.other}"]`), P = pic.getScreenCTM(), F = sceneFrame;
-  if (d && P) {
+  const at = bridgeNow();
+  platformIn(be.house, { x: at ? at.x / at.W.s : undefined, then: () => {
+    // (a step into the room from the door's foot, toward its middle)
+    const B = state.background, d = bgShown.node && bgShown.node.querySelector(`.portal[data-door][data-house="${be.other}"]`), P = pic.getScreenCTM(), F = sceneFrame;
+    if (!d || !P) return;
     const r = (d.querySelector("path, rect") || d).getBoundingClientRect(), foot = new DOMPoint(r.x + r.width / 2, r.y + r.height).matrixTransform(P.inverse());
     B.figX = Math.round(clamp(foot.x * 0.8, F.left, F.right)); B.figY = Math.round(clamp(foot.y - SCENE.ground, figYMin(F), F.bottom - SCENE.ground));
     changed();
-  }
-  const fade = o => { for (const n of figShown) if (n.style) n.style.opacity = o; };
-  const t1 = performance.now(), f = t => { const u = Math.min(1, (t - t1) / WALK_IN_MS); if (!entering) fade(u < 1 ? u.toFixed(2) : ""); if (u < 1 && !entering) requestAnimationFrame(f); };
-  fade("0"); requestAnimationFrame(f);
+  } });
 }
 // (ticket 246) along the bridge to the end they would go in at (bridgeEnd), and into the house there
 function bridgeGoIn(be = bridgeEnd()) {
@@ -1211,6 +1207,7 @@ let doorClip = null;
 function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {}) {
   const P = pic.getScreenCTM(), BG = state.background, B = state.body, F = sceneFrame;
   if (!P) return;
+  doorClip = null;   // (ticket 331: none left over from a trip cut short, whose doorway this one would keep)
   bridgeOff();   // (ticket 245: from a rope bridge, down at its foot first)
   entering = true;
   const inv = P.inverse(), shape = door.querySelector("path, rect") || door, r = shape.getBoundingClientRect();
@@ -1274,6 +1271,10 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
     const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
     if (phase === "walk") {
       const crawling = !!low && Math.hypot(tx - (BG.figX ?? 0), (ty - (BG.figY ?? 0)) / 0.6) < low.stretch;
+      // (ticket 331, Matthew: "crawling out of a small door looks okay, except we aren't clipping yet") a crawl reaches a body's
+      // length ahead of the feet, so through a door in a side wall its head is past the wall's line before the step in: cut
+      // off there from the moment the crawl begins, as the step in is
+      if (crawling && side && !doorClip) doorClip = { x: foot.x, side };
       const [wx, wy] = path[leg], dx = wx - (BG.figX ?? 0), dy = wy - (BG.figY ?? 0), d = Math.hypot(dx, dy / 0.6), sp = (crawling ? CRAWL_IN_PACE : 1) * speed * dt;
       if ((d <= sp + 0.5) && leg < path.length - 1 && t - t0 <= WALK_IN_MAX) { BG.figX = wx; BG.figY = wy; walkPath.leg = ++leg; moved(); }
       else if (d <= sp + 0.5 || t - t0 > WALK_IN_MAX) { BG.figX = tx; BG.figY = ty; phase = "in"; tIn = t; walkPath.leg = path.length; }

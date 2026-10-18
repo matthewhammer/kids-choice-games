@@ -121,6 +121,9 @@ function treeWalks(B = state.background) {
 }
 // the point u of the way along a walkway, and which way it runs there (not of unit length)
 const walkAt = (W, u) => [0, 1].map(i => (1 - u) * (1 - u) * W.p[i] + 2 * u * (1 - u) * W.m[i] + u * u * W.q[i]);
+// (ticket 331, Matthew: "we should animate a part of walking on the bridge ... where we meet the scale of the destination tree
+// house before going inside the door") the friend's size along a bridge, from the one house's to the other's
+const bridgeScale = (W, u) => houseScale(W.a, W.hz) * (1 - u) + houseScale(W.b, W.hz) * u;
 const walkDir = (W, u) => [0, 1].map(i => 2 * (1 - u) * (W.m[i] - W.p[i]) + 2 * u * (W.q[i] - W.m[i]));
 // where the friend is on a bridge, if they are on one: its walkway, how far along, and the point there
 function bridgeNow() {
@@ -166,12 +169,13 @@ function platformNow() {
   if (!o || B.kind !== "treehouse") return null;
   const i = o.house - 1, [hx, hy] = TREE_SLOTS[i] || [], hz = (B.treeHouseSize ?? 100) / 100, s = (B.treeSize ?? 100) / 100 * (SCENE.bottom - SCENE.top) / 700;
   if (hx === undefined) return null;
-  return { x: o.x * s, y: SCENE.ground + (hy + (o.back || 0)) * s, s, hz, hx, hy, sc: (i >= 2 ? 0.85 : 1) * hz };
+  return { x: o.x * s, y: SCENE.ground + (hy + (o.back || 0)) * s, s, hz, hx, hy, sc: houseScale(i, hz) };
 }
 let figClipRect = null;
-function platformIn(house) {
+// (ticket 331: opt.x, from where along the platform, as off a bridge's end, else the ladder's top; opt.then, once in the room)
+function platformIn(house, opt = {}) {
   const B = state.background, body = state.body, i = house - 1, [hx] = TREE_SLOTS[i], hz = (B.treeHouseSize ?? 100) / 100;
-  const lx = hx + Math.sign(hx) * 52 * hz;
+  const lx = opt.x ?? hx + Math.sign(hx) * 52 * hz;
   climb = null; entering = true; delete B.onBridge;
   B.onPlatform = { house, x: lx, back: 0 }; body.anim = "walk"; body.facing = lx > hx ? "left" : "right"; body.turn = "";
   let last = 0, phase = "walk", t0 = 0;
@@ -193,6 +197,7 @@ function platformIn(house) {
         const [fx, fy] = ARRIVE.treeroom || [0, 0];
         Object.assign(B, { kind: "treeroom", inside: house, figX: fx, figY: fy }); body.anim = "none"; body.facing = "front"; padWant = null;
         changed();
+        if (opt.then) opt.then();
         const fade = q => { for (const n of figShown) if (n.style) n.style.opacity = q; };
         const t1 = performance.now(), f = tt => { const v = Math.min(1, (tt - t1) / WALK_IN_MS); if (!entering) fade(v < 1 ? v.toFixed(2) : ""); if (v < 1 && !entering) requestAnimationFrame(f); };
         fade("0"); requestAnimationFrame(f);

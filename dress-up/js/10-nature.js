@@ -239,10 +239,12 @@ const treeBridges = (n, bridges, hz) => TREE_BRIDGES.filter(([a, b]) => a < n &&
 }).join("");
 // a bridge's deck, from house a's platform's edge (p) to house b's (q), sagging between them: a quadratic through m (the
 // walkways, ticket 245, follow it)
+// (a house's size, as a share of the tree's: the higher ones, 3 and up, smaller; ticket 331, the friend on a bridge sized by it too)
+const houseScale = (i, hz) => (i >= 2 ? 0.85 : 1) * hz;
 const treeBridgeCurve = (a, b, hz) => {
   const [ax, ay] = TREE_SLOTS[a], [bx, by] = TREE_SLOTS[b], sa = Math.sign(bx - ax) || 1;
   // (a smaller house's platform is narrower)
-  const edge = j => 78 * (j >= 2 ? 0.85 : 1) * hz, p = [ax + sa * edge(a), ay], q = [bx - sa * edge(b), by], sag = 30 + 0.08 * Math.hypot(q[0] - p[0], q[1] - p[1]);
+  const edge = j => 78 * houseScale(j, hz), p = [ax + sa * edge(a), ay], q = [bx - sa * edge(b), by], sag = 30 + 0.08 * Math.hypot(q[0] - p[0], q[1] - p[1]);
   return { p, q, m: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2 + sag] };
 };
 // house i's ladder (0-based): down to the house below it, if there is one, or to the ground (then .ground)
@@ -257,7 +259,7 @@ const treeLadder = (n, i, hz) => {
 // nearer, in front of them
 const treeHouses = (o, n, hz) => TREE_SLOTS.slice(0, n).map((slot, i) => [slot, i]).sort((u, v) => u[0][1] - v[0][1]).map(([[x, y, usual], i]) => {
   const chosen = o["house" + (i + 1)], animal = HOUSE_ANIMALS.some(([v]) => v === chosen) ? chosen : usual;
-  return { x, y, i, animal, look: houseLook(animal, o, i + 1), sc: (i >= 2 ? 0.85 : 1) * hz };
+  return { x, y, i, animal, look: houseLook(animal, o, i + 1), sc: houseScale(i, hz) };
 });
 // (ticket 244) a drawing as a silhouette in one color: its every fill and stroke that color, its eyes gone
 const silhouette = (svg, col) => svg.replace(/<use href="#bg-eye"[^>]*\/>/g, "").replace(/ (fill|stroke)="(?!none")[^"]*"/g, ` $1="${col}"`).replace(/ opacity="[^"]*"/g, "");

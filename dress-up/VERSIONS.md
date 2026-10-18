@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.234 (2026-10-18)
+
+Everything in 0.0.233, with the tree house's doors to its bridges walked through properly.
+
+- **Crawling out through a small door to a bridge, you are cut off at the doorway** from the moment you start to crawl, as the trap doors and ladders cut you off, instead of being drawn whole over the wall beside it.
+- **At the end of a bridge, outside, you walk in through the house's door**: off the bridge onto the house's porch, along it to the door, and back through the door, seen only inside the doorway, as at the top of a ladder. Then you are in its room, beside the door to the bridge you came along.
+- **On a bridge you grow or shrink toward the size of the house at its other end**: the higher houses are drawn smaller, so on a bridge up to one you get smaller as you go, and you fit its door.
+
 ## 0.0.233 (2026-10-18)
 
 Everything in 0.0.232, with going into the tree house fixed.
