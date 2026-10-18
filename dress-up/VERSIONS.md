@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.186 (2026-10-17)
+
+Everything in 0.0.185, with the 🎵 Music tab laid out as cards.
+
+- **Music as cards**: in its usual view too, the Music tab's controls are cards side by side (two across in the side column), as in full screen; the tune picker and the mixing board go across.
+- **The first row**: 🔊 sound and ▶ what's playing one over the other, ⏯️ where the tune is beside them, filling the rest of the row, in both views.
+
 ## 0.0.185 (2026-10-17)
 
 Everything in 0.0.184, with 🔭 sizing what moves, the forest crossing's settings where you design the world, and two tabs for looking closer.

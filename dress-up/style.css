@@ -103,10 +103,19 @@
   body.music-big #panel > .ctl:has(> button.musicbig)::before { content: "🎵 Music"; font-weight: 700; font-size: 1.1em; margin-right: auto; }
   body.world-big #panel > .ctl:has(> button.worldbig)::before { content: "🗺️ World design"; font-weight: 700; font-size: 1.1em; margin-right: auto; }
   body.music-big button.musicbig, body.world-big button.worldbig { padding: 3px 12px; font-size: 0.9em; }
-  body.music-big #panel[data-part=music] { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 8px; align-items: start; }
-  body.music-big #panel[data-part=music] > .ctl { margin: 0; }
-  body.music-big #panel[data-part=music] > .ctl:has(> button.musicbig), body.music-big #panel[data-part=music] > .mixctl,
-  body.music-big #panel[data-part=music] > .ctl:has(.chipset) { grid-column: 1 / -1; }
+  body.music-big #panel[data-part=music] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 8px; }
+  /* (ticket 250, Matthew: "let's use these UX improvements in the non-FS mode of Music panel. Also, in this FS mode, the song
+     progress sub-panel ... can extend to fill the rest of the row"; "maybe stack the first two subpanels vertically -- they
+     are each rather short") its controls as cards in a grid in both views, the side column's width or the window's; the
+     full screen chip, the tune picker and the mixing board across it; where there are two columns or more, 🔊 and ▶ one
+     over the other in the first, ⏯️ where the tune is beside them to the row's end */
+  #panel[data-part=music] { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 6px 8px; align-items: start; container-type: inline-size; }
+  #panel[data-part=music] > .ctl:has(> button.musicbig), #panel[data-part=music] > .mixctl, #panel[data-part=music] > .ctl:has(.chipset) { grid-column: 1 / -1; }
+  @container (min-width: 386px) {
+    #panel[data-part=music] > .ctl[data-key=mute] { grid-column: 1; grid-row: 2; }
+    #panel[data-part=music] > .ctl[data-key=now] { grid-column: 1; grid-row: 3; }
+    #panel[data-part=music] > .ctl[data-key=where] { grid-column: 2 / -1; grid-row: 2 / span 2; align-self: stretch; }
+  }
   /* (ticket 210) the world designer full screen: on a wide window the grid on the left, as tall as the window
      allows, and the square's controls beside it, scrolling on their own */
   body.world-big .world-grid { --grid-h: calc(100dvh - 190px); }
@@ -315,7 +324,7 @@
   .strip { background: var(--mu-inst); }
   .strip.master { background: var(--mu-mix); }
   .strip.lfo { background: var(--mu-lfo); }
-  #panel[data-part=music] > .ctl:not(.mixctl) { background: var(--mu-main); border-radius: 12px; padding: 6px 10px; margin: 6px 0; }
+  #panel[data-part=music] > .ctl:not(.mixctl) { background: var(--mu-main); border-radius: 12px; padding: 6px 10px; margin: 0; }   /* (ticket 250: cards in a grid, its gap between them) */
   /* the castle designer: a map of the castle's rooms and the ways between them */
   .designer { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
   .designer .map { height: 340px; border: 2px solid var(--line); border-radius: 12px; background: rgba(127, 127, 127, 0.08); }

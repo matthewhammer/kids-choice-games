@@ -1121,7 +1121,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   const val = el("span", { class: "val" });
   const name = el("span", { class: "name" }, [label]);
   const lbl = el("div", { class: "lbl" }, [el("span", {}, [name]), val]);
-  const box = el("div", { class: "ctl" }, [lbl]);
+  const box = el("div", { class: "ctl", ...(typeof key === "string" ? { "data-key": key } : {}) }, [lbl]);   // (ticket 250: placed by its key: the Music tab's first cards)
   if ((kind === "range" || kind === "turn" || kind === "place" || kind === "master") && buildingHud) {
     const id = part + "." + key, eye = el("button", { class: "eye", title: "Fold this slider away, or open it (it stays pinned)",
                                                        onclick: () => { toggleMin(id); } }, "👁️");
