@@ -1368,7 +1368,8 @@ function thingSvg(o, t, i) {
                t.kind === "anchor" ? at(anchorSvg(t.chain ?? true)) :
                ["kelp", "seagrass", "seafan", "sealettuce"].includes(t.kind) ? at(seaPlantSvg(t.kind, t.color || THING_DEFAULTS[t.kind].color, seed, o)) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
-  return `<g class="thing" data-drag="thing:${i}" style="cursor: grab">${body}</g>`;
+  // (ticket 324: a lever marked, so it glows under the pointer as the trap room's do)
+  return `<g class="thing" data-drag="thing:${i}"${t.kind === "lever" ? ' data-lever-thing=""' : ""} style="cursor: grab">${body}</g>`;
 }
 // (ticket 185) The things put in a place, any place: each an object at its
 // own depth, so the friend goes behind or in front of it; each its own

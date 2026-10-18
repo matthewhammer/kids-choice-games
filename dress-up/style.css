@@ -446,6 +446,10 @@
   /* a doorway into another scene (a picture, a window, a tree house, a
      door) glows under the pointer; a click goes through it */
   #bg .portal { cursor: pointer; }
+  /* (ticket 324, Matthew: "levers glow when we hover over them") a lever under the pointer, the trap room's or one put there,
+     glows warm, as a torch's light: a filter only while hovered, so it costs nothing the rest of the time */
+  #bg [data-lever]:hover, #bg [data-lever-thing]:hover { filter: drop-shadow(0 0 3px rgba(255, 214, 120, 0.95)) drop-shadow(0 0 9px rgba(255, 190, 80, 0.7)); }
+  #bg [data-lever-thing] { cursor: pointer; }
   #bg .portal:hover { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f) brightness(1.08); }
   /* (ticket 145) the picture the controller's ✨ would go into: its glow breathes */
   #bg .enter-glow { animation: enter-glow 1.3s ease-in-out infinite alternate; }

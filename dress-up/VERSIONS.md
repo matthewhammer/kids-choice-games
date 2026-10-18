@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.229 (2026-10-18)
+
+Everything in 0.0.228, plus levers that glow when you point at them.
+
+- **A lever glows under the pointer**, warm, as a torch's light: the trap room's levers and every 🎚️ lever you place. Point at one to see it is something to pull.
+
 ## 0.0.228 (2026-10-18)
 
 Everything in 0.0.227, with the trap doors' swing made sure to play.
