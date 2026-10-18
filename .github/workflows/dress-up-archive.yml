@@ -65,6 +65,8 @@ jobs:
             for ext in svg json webp; do
               echo "$ext: $(git ls-files -- "pictures/*.$ext" | wc -l) in all; changed or new or gone: $(git diff --cached --name-status -- "pictures/*.$ext" | cut -c1 | sort | uniq -c | tr -s ' \n' ' ')"
             done
+            # (two runs of one game commit should agree here: a drawing's bytes no longer depend on the clock)
+            for ext in svg json webp; do echo "fingerprint of every $ext: $(git ls-files -s -- "pictures/*.$ext" | sha256sum | cut -c1-16)"; done
             echo "new or changed drawings, by folder:"
             git diff --cached --name-only --diff-filter=AM -- 'pictures/*.svg' | cut -d/ -f2 | sort | uniq -c
           } | tee "$GITHUB_WORKSPACE/out/bytes.txt"
