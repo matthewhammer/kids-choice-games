@@ -144,7 +144,7 @@ const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c
 const ROOM_KINDS = {
   king: { label: "👑 king's room", by: "N", exits: "side", tone: "#a9a2b4", draw: (c, K) => kingRoomSvg(c, K) },
   greenhouse: { label: "🌿 greenhouse", by: "N", exits: "all", tone: "#c9c3b0", draw: (c, K) => greenhouseSvg(c, K) },
-  trap: { label: "🕳️ trap room", by: "N", exits: "trap", tone: "#8f8a96", draw: (c, K, r) => trapRoomSvg(c, K, r.pits) },
+  trap: { label: "🕳️ trap room", by: "N", exits: "trap", tone: "#8f8a96", draw: (c, K, r) => trapRoomSvg(c, K, r.pits, r.pitShapes) },
   dungeon1: { label: "🗝️ dungeon", by: "N", exits: "ladder", tone: "#6c6f7a", draw: (c, K, r) => dungeonSvg(c, K, false, r.bones) },
   dungeon2: { label: "⛓️ deep dungeon", by: "N", exits: "ladder", tone: "#5d6b62", draw: (c, K, r) => dungeonSvg(c, K, true, r.bones) },
   hallway: { label: "🕯️ hallway", by: "N", exits: "hall", tone: "#8a8597", draw: (c, K, R) => hallwaySvg(c, K, R) },
@@ -234,6 +234,8 @@ const roomLabel = st => (CASTLE_ROOM_CHOICES.find(([v]) => v === st) || [st, st]
 const ROOM_BONES = { dungeon1: 2, dungeon2: 4 };
 const roomBonesKey = (id, n, st) => "castleBones" + n + id + st;
 const CASTLE_ROOMS = { N: ["king", "greenhouse", "trap", "dungeon1", "dungeon2"], M: ["greenhouse", "king"], D: ["king", "trap", "dungeon1"] };
+// (ticket 271) a trap room's pit's opening, by its castle and its room: pit i (1, 2) of room n
+const pitShapeKey = (i, n, id) => `castlePit${i}_${n}${id}`;
 const castleOf = o => {
   const id = CASTLE_DEFAULTS[o.castle] ? o.castle : "N", d = CASTLE_DEFAULTS[id];
   const fl = CASTLE_FLAG_DEFAULTS[id], flagA = o["castleFlagA" + id] ?? fl[0];
@@ -249,7 +251,10 @@ const castleOf = o => {
              end: String(o["castleHallEnd" + n + id] ?? "auto"), out: String(o["castleOut" + n + id] ?? "auto"), back: String(o["castleBack" + n + id] ?? "none"), far: String(o["castleFar" + n + id] ?? "none") })),
            levels: Math.max(1, Math.min(5, Math.round(o["castleLevels" + id] ?? d.levels))),
            // (ticket 252: the trap room's two pits' openings, the same in the dungeons' ceilings below them)
+           // (ticket 271, Matthew: "the trap room pit style is a property of the room number, not all pit rooms") each room's own:
+           // pitShapesAt[n - 1], the castle's old setting where a room has none of its own
            pitShapes: [1, 2].map(i => openingShape(o["castlePitShape" + i + id] ?? "circle")),
+           pitShapesAt: ROOM_NS.map(n => [1, 2].map(i => openingShape(o[pitShapeKey(i, n, id)] ?? o["castlePitShape" + i + id] ?? "circle"))),
            stone: o["castleStone" + id] ?? d.stone, trees: Math.max(0, Math.round(o["castleTrees" + id] ?? d.trees)),
            moat: Math.max(0, (o["castleMoat" + id] ?? d.moat) / 100),
            rooms: [...Array(Math.max(1, Math.min(ROOM_MAX, Math.round(o["castleRooms" + id] ?? CASTLE_ROOMS[id].length))))].map((_, i) => {
@@ -372,7 +377,8 @@ const DEFAULTS = {
                 houseSize: 100, treeSize: 100, toys: 6, flowers: 18,
                 houses: 4, bridges: 2, ladders: 3, leaves: 60, treeHouseSize: 100,
                 castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
-                  [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castlePitShape1" + id, "circle"], ["castlePitShape2" + id, "circle"], ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
+                  [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castlePitShape1" + id, "circle"], ["castlePitShape2" + id, "circle"],
+                  ...ROOM_NS.flatMap(n => [1, 2].map(i => [pitShapeKey(i, n, id), "circle"])),   // (ticket 271: each room's own) ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
                    ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleRoof" + id, CASTLE_ROOF_DEFAULTS[id]], ["castleCarpet" + id, CASTLE_CARPETS[0]],
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
@@ -421,6 +427,13 @@ const clone = o => JSON.parse(JSON.stringify(o));
 // (0.0.188, Matthew: 👆 walk where you click "so helpful, let's have it on by default") a save from 0.0.187, the hour it
 // was off by default, comes back with it on, once; one turned off with its chip since is kept off (the chip marks it,
 // clickWalkOn: set)
+// (ticket 271) a save from 0.0.175 to 0.0.195, its pits' shapes one setting for the whole castle: each room's own now
+function upgradePitShapes(next, saved) {
+  const B = next.background, S = saved && saved.background;
+  if (!B || !S) return;
+  for (const [id] of CASTLES) for (const i of [1, 2]) { const v = S["castlePitShape" + i + id]; if (v === undefined) continue;
+    for (const n of ROOM_NS) if (S[pitShapeKey(i, n, id)] === undefined) B[pitShapeKey(i, n, id)] = v; }
+}
 function upgradeClickWalk(next, saved) {
   const A = next.access, S = saved && saved.access;
   if (A && S && S.clickWalk === false && !S.clickWalkOn) A.clickWalk = true;
@@ -873,6 +886,7 @@ try {
   upgradeThings(state, saved);
   upgradeWorld(state);
   upgradeClickWalk(state, saved);
+  upgradePitShapes(state, saved);
   upgradeFace(state.face, saved.face);
   if (state.body.sit && state.body.pose === "stand") state.body.pose = "sit";   // (ticket 132)
   // pants length moved to the legs (leg length)
@@ -899,7 +913,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.195", released: "2026-10-17" };
+const VERSION = { number: "0.0.196", released: "2026-10-17" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

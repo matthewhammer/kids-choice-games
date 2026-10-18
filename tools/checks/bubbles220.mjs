@@ -29,7 +29,11 @@ try {
     const moved = bubbleSim.list.filter((b, i) => at0[i] && Math.hypot(b.x - at0[i][0], b.y - at0[i][1]) > 3).length, bonds = bubbleSim.bonds.length;
     // (one put on the friend: it pops, and comes back later)
     const fig = document.getElementById("figure").getBoundingClientRect(), inv = pic.getScreenCTM().inverse(), mid = new DOMPoint(fig.left + fig.width / 2, fig.top + fig.height / 2).matrixTransform(inv);
-    const b0 = bubbleSim.list[0]; b0.x = mid.x; b0.y = mid.y; b0.vx = b0.vy = 0; await w(150);
+    // (one not popped already and waiting to come back in, which cannot pop again till it is: bubble 0 often had, drifting
+    // into the friend in the wait before)
+    // (and let go of its clump: a bond's spring pulled it back off the friend before the pop could be tested)
+    const i0 = Math.max(0, bubbleSim.list.findIndex(b => !b.pop && !b.back)), b0 = bubbleSim.list[i0];
+    bubbleSim.bonds = bubbleSim.bonds.filter(([p, q]) => p !== i0 && q !== i0); b0.x = mid.x; b0.y = mid.y; b0.vx = b0.vy = 0; await w(150);
     const popped = !!b0.pop; await w(1800); const back = !b0.pop && !b0.back;
     // (theme B on: it takes turns with A)
     B.bubbleBOn = true; changed(); await w(500);

@@ -435,11 +435,12 @@ const TABS = [
         ["castlejump", "castleGo" + id, "🚶 go straight to"],
         ["range", "castleRooms" + id, "🚪 how many rooms", 1, ROOM_MAX, 1, 6],
         ["castledesigner", "castleDesign" + id, "🗺️ castle designer"],
-        // (ticket 252) the trap room's pits' openings, as the dungeons' ceilings below them have them too
-        ["choice", "castlePitShape1" + id, "🕳️ the trap room's first pit: its opening", OPENING_SHAPES],
-        ["choice", "castlePitShape2" + id, "🕳️ the trap room's second pit: its opening", OPENING_SHAPES]]],
+      ]],
       ...ROOM_NS.map(n => ["group", "castleRoomBox" + n + id, `🚪 ${id}'s castle: room ${n}`, [
         ["choice", "castleRoom" + n + id, `🚪 room ${n} is`, CASTLE_ROOM_CHOICES],
+        // (ticket 252) a trap room's pits' openings, as the dungeons' ceilings below them have them too; (ticket 271) this room's
+        ["choice", pitShapeKey(1, n, id), "🕳️ its first pit: its opening", OPENING_SHAPES],
+        ["choice", pitShapeKey(2, n, id), "🕳️ its second pit: its opening", OPENING_SHAPES],
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castlePlaces" + n + id, "🍽️ places at table", 4, 18, 4, 18],
@@ -857,9 +858,8 @@ const SHOWN_WHEN = {
             ...Object.values(RESIDENTS).flatMap(R => [["background." + R.group[0] + id, livesHere(R.room)],
               ...R.list.map((_, i) => ["background." + R.box[0] + (i + 1) + id, b => livesHere(R.room)(b) && i + 1 <= Math.round(b[R.count[0] + id] ?? R.count[2])])]),
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle], ["background.castleDesign" + id, atCastle],
-            // (ticket 252: in the trap room, or a dungeon below it)
-            ...[1, 2].map(i => ["background.castlePitShape" + i + id, b => atCastle(b) && b.kind === "castleroom" && ["trap", "ladder"].includes(ROOM_KINDS[typeOf(b, Math.round(b.castleRoom ?? 1))]?.exits)]),
-            ...ROOM_NS.flatMap(n => [["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
+            ...ROOM_NS.flatMap(n => [...[1, 2].map(i => ["background." + pitShapeKey(i, n, id), b => typeOf(b, n) === "trap"]),   // (ticket 271: in a trap room's own box)
+              ["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
               ["background.castleOut" + n + id, b => !isHall(b, n)], ["background.castleFar" + n + id, b => typeOf(b, n) === "dining"],
               // (the door behind us: where a room has no sign at the bottom already; never a dungeon, a pit with no way in but from above)

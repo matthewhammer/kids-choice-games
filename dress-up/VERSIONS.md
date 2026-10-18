@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.196 (2026-10-17)
+
+Everything in 0.0.195, with each trap room's pits its own.
+
+- **Each trap room's pits**: the shape of a trap room's pits (square, round or triangular) is that room's, set in its own 🚪 room box in 🏞️ Background, so two trap rooms in a castle can differ; a chip changes the room at once. A friend saved with the castle-wide setting keeps it in each room.
+- **Fixed**: with 🔬 collision boxes on, opening the game no longer throws an error before it has finished loading.
+
 ## 0.0.195 (2026-10-17)
 
 Everything in 0.0.194, with the way into a tree house from its ladder.

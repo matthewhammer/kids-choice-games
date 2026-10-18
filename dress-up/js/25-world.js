@@ -583,7 +583,9 @@ function blowTick(t) {
 // size is laid out: the arrows had kept the smaller picture's places, all in its top left, till something was drawn.
 let pathShown = "";
 if (window.ResizeObserver && document.getElementById("pic"))   // (the element: the name pic is declared in a later part)
-  new ResizeObserver(() => { solidsShown = ""; pathShown = ""; madeShown = ""; worldWaysHud(); solidsHud(); pathHud(); madeOfHud(); }).observe(document.getElementById("pic"));
+  // (a resize as the page loads comes before the later parts have run: pitsHere, in 26, was not defined yet, and with ♿'s
+  // collision boxes on from a save it threw; nothing to place again till they have)
+  new ResizeObserver(() => { if (typeof pitsHere !== "function") return; solidsShown = ""; pathShown = ""; madeShown = ""; worldWaysHud(); solidsHud(); pathHud(); madeOfHud(); }).observe(document.getElementById("pic"));
 function pathHud() {
   const layer = document.getElementById("access-layer");
   if (!layer) return;

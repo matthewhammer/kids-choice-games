@@ -41,13 +41,13 @@ try {
     ok(`a tree house's trapdoor, ${sh}: its hole and lid ${sh}, and the ceiling of the room below (house ${tree.below}) too`, r.hole === sh && r.lid === sh && r.below === sh, r);
   }
   ok("its setting shown in its own house and the house below, nowhere else", Object.values(tree.shapes).every(r => r.shownHere && r.shownBelow && !r.shownElse), tree.shapes);
-  const pits = JSON.parse(await ev(`(async () => { ${H} Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: 0, figY: 60, things: [], castlePitShape1N: "square", castlePitShape2N: "triangle" }); changed(); await w(500);
+  const pits = JSON.parse(await ev(`(async () => { ${H} Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: 0, figY: 60, things: [], castlePit1_3N: "square", castlePit2_3N: "triangle" }); changed(); await w(500);
     const P = pitsHere(), drawn = [...bgShown.node.querySelectorAll(".portal[data-pit]")].map(el => ({ shape: el.dataset.shape, hole: kindOf(el.querySelector('path[fill^="url"]')?.getAttribute("d")) }));
     const at = (q, u, v) => overPit(q, q.cx + u * PIT_EDGE * q.rx, q.cy + v * PIT_EDGE * q.ry);
     const falls = { squareCorner: at(P[0], 0.75, 0.75), squareOut: at(P[0], 1.05, 0), triangleIn: at(P[1], 0.2, 0.5), triangleSide: at(P[1], 0.6, -0.5) };
     const dun = {}; for (const r of [4, 5]) { B.castleRoom = r; changed(); await w(400); const hole = bgShown.node.querySelector('[data-obj="ladder"] path[fill="#fff3c4"]'); dun[r] = kindOf(hole && hole.getAttribute("d")); }
-    B.castleRoom = 3; const shownTrap = SHOWN_WHEN["background.castlePitShape1N"](B); B.castleRoom = 1; const shownKing = SHOWN_WHEN["background.castlePitShape1N"](B);
-    Object.assign(B, { castlePitShape1N: "circle", castlePitShape2N: "circle" }); changed();
+    B.castleRoom = 3; const shownTrap = SHOWN_WHEN["background.castlePit1_3N"](B) && SHOWN_WHEN["background.castleRoomBox3N"](B); B.castleRoom = 1; const shownKing = SHOWN_WHEN["background.castlePit1_3N"](B) && SHOWN_WHEN["background.castleRoomBox3N"](B);
+    Object.assign(B, { castlePit1_3N: "circle", castlePit2_3N: "circle" }); changed();
     return JSON.stringify({ drawn, falls, dun, shownTrap, shownKing }); })()`));
   ok("the trap room's pits drawn square and triangle, as set", pits.drawn.length === 2 && pits.drawn[0].shape === "square" && pits.drawn[0].hole === "square" && pits.drawn[1].shape === "triangle" && pits.drawn[1].hole === "triangle", pits.drawn);
   ok("a fall follows the shape: inside a square's corner falls, past its side not; inside the triangle falls, beside its point not", pits.falls.squareCorner && !pits.falls.squareOut && pits.falls.triangleIn && !pits.falls.triangleSide, pits.falls);

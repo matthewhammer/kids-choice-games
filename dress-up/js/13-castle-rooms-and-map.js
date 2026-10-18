@@ -185,7 +185,7 @@ const ladderUp = (x, floor, top, k, label, attrs, shape = "circle") => `<g class
 
 // The trap room: bare stone, two torches, a lever on the wall, and two pits
 // in the floor, spikes inside, each a drop into one of the castle's dungeons
-function trapRoomSvg(c, K, pits) {
+function trapRoomSvg(c, K, pits, shapes = K.pitShapes) {
   const { x0, x1, y1, W, k, R, P } = c, { floor, top, bw, out } = roomFrame(c);
   let t = roomShell(c, ROOM_TONE.trap, { moss: "#4f6b3a" });
   t += torchSvg(-bw * 0.62, floor - 210 * k, k, 0, c.o) + torchSvg(bw * 0.62, floor - 210 * k, k, 1, c.o);
@@ -198,7 +198,7 @@ function trapRoomSvg(c, K, pits) {
   // the pits: dark holes in the floor, their rims of broken stone, rows of
   // spikes glinting inside
   [-1, 1].forEach((sd, i) => {
-    const cx = sd * W * 0.2, cy = floor + (y1 - floor) * 0.5, rx = 110 * k, ry = 34 * k, to = pits[i], sh = K.pitShapes[i];   // (ticket 252: its opening's shape)
+    const cx = sd * W * 0.2, cy = floor + (y1 - floor) * 0.5, rx = 110 * k, ry = 34 * k, to = pits[i], sh = shapes[i];   // (ticket 252: its opening's shape; ticket 271: this room's)
     const id = `bg-pit${i}`;
     // (ticket 162: its hole, for falling in: its middle and its half widths, across and in depth)
     t += (to ? `<g class="portal" data-to="castleroom" data-room="${to}" data-pit="${f1(cx)} ${f1(cy)} ${f1(rx)} ${f1(ry)}" data-shape="${sh}">` : "<g>") +
@@ -1911,9 +1911,10 @@ function farWallDoor(c, label, attrs) {
     plankSign(cx, dt - 22 * k * HALL_SIGN_MIN, k * HALL_SIGN_MIN, label) + `</g>`;
 }
 // (ticket 252) the shape of the trap room's pit that falls into room n (the first pit's, if both do), else a circle
+// (ticket 271: the trap room's own shapes, the first trap room's if there are more: every trap room's pits fall there)
 function pitShapeOver(K, n) {
-  const d1 = K.rooms.indexOf("dungeon1") + 1, d2 = K.rooms.indexOf("dungeon2") + 1, i = [d1 || d2, d2 || d1].indexOf(n);
-  return K.pitShapes[i < 0 ? 0 : i] || "circle";
+  const d1 = K.rooms.indexOf("dungeon1") + 1, d2 = K.rooms.indexOf("dungeon2") + 1, i = [d1 || d2, d2 || d1].indexOf(n), t = K.rooms.indexOf("trap") + 1;
+  return (t ? K.pitShapesAt[t - 1] : K.pitShapes)[i < 0 ? 0 : i] || "circle";
 }
 function castleWays(c, K, n, style) {
   const { W, k } = c, { floor, bw } = roomFrame(c), S = roomSpace(c);
@@ -2140,8 +2141,9 @@ function castleroomScene(c) {
   if (K.roomTheme[n - 1] === "B") K = { ...K, ...K.themeB };
   const hallEnd = style === "hallway" && K.hall[n - 1].end === "none" ? "none" : "";
   const places = style === "dining" ? K.places[n - 1] : 0;
-  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places });
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,
+  const pitShapes = K.pitShapesAt[n - 1];   // (ticket 271: this room's own; keyed, so a chip draws it again at once)
+  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places, pitShapes });
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,
                                   SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)
