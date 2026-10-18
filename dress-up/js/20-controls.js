@@ -576,6 +576,9 @@ const TABS = [
     ["accbox", "showPath", "👣 planned path", [["color", "pathColor", "🎨"], ["color", "pathAltColor", "🎨 alt"], ["range", "pathWidth", "✏️ line", 1, 12]]],   // (ticket 266: a queue of clicks' walks by turns)
     ["accbox", "showSolids", "🧱 collision boxes", [["color", "boxColor", "🎨"], ["range", "boxWidth", "✏️ line", 1, 8], ["range", "boxFont", "🏷️ names", 8, 24],
       ["range", "glowFade", "✨ glow ms", 100, 3000]]],   // (ticket 229: a collision's glow, fading back in so long)
+    // (ticket 290, Matthew: "We could have a new sub-cat for bubble collisions -- they are all circles right!") the bubble
+    // room's stuck-out bubbles, each a circle that pops when the friend walks into it
+    ["accbox", "showBubbleHits", "🫧 bubbles that pop (circles)", [["color", "bubbleHitColor", "🎨"]]],
     // (ticket 258, Matthew: "a toggle that reveals a sub-panel of toggles, per category of object") each kind of thing a
     // chip of its own, with how many are here (madeOfHud)
     // (Matthew: "let's give 'what its made of' boxes the same stroke and color controls and the other inspection toggles")

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.241 (2026-10-18)
+
+Everything in 0.0.240, with the bubble room's bubbles popping.
+
+- **Walk into the bubbles stuck out into the bubble room and they pop**: the ones your body is in, at your depth, swell and vanish, and grow back nine to fifteen seconds later.
+- **🫧 bubbles that pop (circles)**, in 🔬 Inspection: each of those bubbles drawn as a circle, in a colour of your choosing, so you can see what you will pop.
+
 ## 0.0.240 (2026-10-18)
 
 Everything in 0.0.239, with the bubble room much lighter to draw.

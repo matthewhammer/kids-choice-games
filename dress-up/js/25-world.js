@@ -384,6 +384,24 @@ function accessApply() {
 // arrows' (#ways), whose children are its arrows by index, the boxes put first shifted every arrow onto another's
 // place, and each new square's arrows replaced the layer, boxes and all.
 let solidsShown = "";
+// (ticket 290) 🫧 the bubble room's bubbles that pop, as circles: each stuck-out one not popped now, dashed, in its colour
+let bubbleHitsShown = "";
+function bubbleHitsHud() {
+  const layer = document.getElementById("access-layer");
+  if (!layer) return;
+  const A = state.access || DEFAULTS.access, on = !!A.showBubbleHits && state.background.kind === "bubbleroom" && roomBalls && roomBalls.list.length;
+  let ov = layer.querySelector("svg.bubble-hits");
+  if (!on) { if (ov) ov.remove(); bubbleHitsShown = ""; return; }
+  const M = pic.getScreenCTM(), box = layer.getBoundingClientRect();
+  if (!M || !box.width) return;
+  const sc = (x, y) => { const q = new DOMPoint(x, y).matrixTransform(M); return [q.x - box.left, q.y - box.top]; }, s1 = Math.hypot(M.a, M.b);
+  const live = roomBalls.list.filter(b => !ballPops.has(b.id)), sig = [live.length, M.a, M.e, M.f, A.bubbleHitColor].join();
+  if (sig === bubbleHitsShown && ov) return;
+  bubbleHitsShown = sig;
+  if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "bubble-hits"); layer.append(ov); }
+  ov.innerHTML = live.map(b => { const [x, y] = sc(b.x, b.y); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(b.r * s1).toFixed(1)}"/>`; }).join("");
+  ov.setAttribute("style", `position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;fill:none;stroke:${A.bubbleHitColor || "#38bdf8"};stroke-width:1.5;stroke-dasharray:4 3`);
+}
 function solidsHud() {
   const layer = document.getElementById("access-layer");
   if (!layer) return;

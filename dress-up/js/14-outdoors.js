@@ -868,12 +868,14 @@ function bubbleroomScene(c) {
   // over it (a breathing bubble, a maker's, the friend) is drawn again; what moves stays live over it
   // (each only as big as the part of it inside the picture: the picture's frame overscans far past what is seen, and a
   // picture is kept in memory at the size it is drawn)
-  const asImage = (inner, box, defs = "") => { if (!inner) return "";
+  const imageOf = (inner, box, defs = "") => {
     const ax = Math.max(box[0], x0 - 2), ay = Math.max(box[1], y0 - 2), ax1 = Math.min(box[0] + box[2], x0 + W + 2), ay1 = Math.min(box[1] + box[3], y1 + 2);
-    if (!(ax1 > ax && ay1 > ay)) return "";
+    if (!(ax1 > ax && ay1 > ay)) return null;
     const [bx, by, bwd, bht] = [ax, ay, ax1 - ax, ay1 - ay].map(v => +f1(v));
     const doc = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${bx} ${by} ${bwd} ${bht}" width="${bwd}" height="${bht}">${defs}${inner}</svg>`.replace(/"/g, "'");
-    return `<image x="${bx}" y="${by}" width="${bwd}" height="${bht}" preserveAspectRatio="none" href="data:image/svg+xml;charset=utf-8,${doc.replace(/%/g, "%25").replace(/#/g, "%23").replace(/</g, "%3C").replace(/>/g, "%3E")}"/>`; };
+    return { bx, by, bwd, bht, href: "data:image/svg+xml;charset=utf-8," + doc.replace(/%/g, "%25").replace(/#/g, "%23").replace(/</g, "%3C").replace(/>/g, "%3E") }; };
+  const asImage = (inner, box, defs = "") => { const m = inner && imageOf(inner, box, defs);
+    return m ? `<image x="${m.bx}" y="${m.by}" width="${m.bwd}" height="${m.bht}" preserveAspectRatio="none" href="${m.href}"/>` : ""; };
   const sets = (list, draw, seedK, box) => { let still = "", live = "";
     list.forEach((b, i) => { const life = lifeOf(seedK, i, b.r); if (life) live += draw(b, life); else still += draw(b, ""); });
     return asImage(still, box) + live; };
@@ -932,8 +934,9 @@ function bubbleroomScene(c) {
               : K === "Floor" ? [-bw + b.x, floor - rho, b.y] : [-bw + b.x, top + rho, b.y];
       // (the way out of its surface into the room, for one stuck on it)
       const N = K === "Back" ? [0, 0, 1] : K === "Left" || K === "Right" ? [-sd, 0, 0] : K === "Floor" ? [0, -1, 0] : [0, 1, 0];
+      // (dz: how far the ball reaches toward us and away, as the floor shows depth, for whether the friend is in it)
       const add = (c, r) => { const z = -c[2] / 800, [x, y] = at(c[0], c[1], z), f = 1 / (1 + z);
-        if (f > 0) balls.push({ x, y, r: r * f, j: b.j, d: c[2], fz: K === "Back" ? -Infinity : fz(c[0], z), K }); };
+        if (f > 0) balls.push({ x, y, r: r * f, j: b.j, d: c[2], fz: K === "Back" ? -Infinity : fz(c[0], z), fzHit: fz(c[0], z), dz: (floor - vy) * f * f * r / 800, K }); };
       add(C, rho);
       if (R2(i * 4 + 2) < 0.3) { const r2 = rho * (0.4 + 0.3 * R2(i * 4 + 3)), side = R2(i * 4 + 3) < 0.5 ? -1 : 1, t2 = rho + r2;
         // (out from the first, slant: away from the surface and to one side)
@@ -961,19 +964,31 @@ function bubbleroomScene(c) {
     const back = balls.filter(b => b.K === "Back").sort((a, b) => a.d - b.d), rest = balls.filter(b => b.K !== "Back").sort((a, b) => a.fz - b.fz || a.d - b.d);
     // (each lot: the still ones one picture, over the room's own extent of them, their gradients in it; the moving ones live)
     const ballDefs = `<defs>` + tints.map((cc, j) => `<radialGradient id="bg-ball-${j}" cx="0.36" cy="0.32" r="0.72"><stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="0.25" stop-color="#ffffff" stop-opacity="0.18"/><stop offset="0.7" stop-color="${cc}" stop-opacity="0.16"/><stop offset="0.93" stop-color="${cc}" stop-opacity="0.55"/><stop offset="1" stop-color="${mix(cc, "#5a7fb0", 0.3)}" stop-opacity="0.85"/></radialGradient>`).join("") + `</defs>`;
-    const lot = (bs, i0) => { let still = "", live = "", x0b = Infinity, y0b = Infinity, x1b = -Infinity, y1b = -Infinity;
-      bs.forEach((b, j) => { const life = ballLife(b, i0 + j), svg = shadow(b) + ball(b, life);
-        if (life) live += svg; else { still += svg; x0b = Math.min(x0b, b.x - b.r - 2); y0b = Math.min(y0b, b.y - b.r - 2); x1b = Math.max(x1b, b.x + b.r + 2); y1b = Math.max(y1b, b.y + b.r * 1.2 + 2); } });
-      return (still ? asImage(still, [x0b, y0b, x1b - x0b, y1b - y0b], ballDefs) : "") + live; };
-    if (back.length) s += SEP + part("bubbleroom-balls-back", ballKey, () => wallObj("bubbles stuck out, back wall", bob(lot(back, 0), 0)));
+    // (the back wall's against it, behind everything; the rest in bands by the floor under them; ids, and which of them
+    // move, fixed here in one order for every drawing, so a lot drawn again with one popped picks the same ones)
     const bands = new Map();
     // (six bands down the floor seen, from the back wall's foot to the picture's; those under the floor seen, near us, in the last)
     const bandH = Math.max(20 * k, (y1 - floor) / 6);
     for (const b of rest) { const n = Math.max(0, Math.min(5, Math.floor((b.fz - floor) / bandH))); if (!bands.has(n)) bands.set(n, []); bands.get(n).push(b); }
-    [...bands.entries()].forEach(([n, bs], i) => {
-      s += SEP + part("bubbleroom-balls-" + n, [...ballKey, n], () => obj(`bubbles stuck out ${i + 1}`, Math.max(...bs.map(b => b.fz)), bob(lot(bs, 1000 * (n + 1)), i + 1)));
+    const lots = [];
+    if (back.length) lots.push(["bubbles stuck out, back wall", back, "back"]);
+    [...bands.entries()].forEach(([n, bs], i) => lots.push([`bubbles stuck out ${i + 1}`, bs, n]));
+    lots.forEach(([name, bs, n], li) => bs.forEach((b, j) => { b.id = li + "." + j; b.obj = name; b.life = ballLife(b, 1000 * li + j); }));
+    // (a lot's still ones one picture, over the extent of all of them (popped or not, so it keeps its place), its gradients in
+    // it; the moving ones live, each marked to be hidden when popped; ticket 290, ballTick)
+    const lotBox = bs => { let x0b = Infinity, y0b = Infinity, x1b = -Infinity, y1b = -Infinity;
+      for (const b of bs) if (!b.life) { x0b = Math.min(x0b, b.x - b.r - 2); y0b = Math.min(y0b, b.y - b.r - 2); x1b = Math.max(x1b, b.x + b.r + 2); y1b = Math.max(y1b, b.y + b.r * 1.2 + 2); }
+      return x0b < Infinity ? [x0b, y0b, x1b - x0b, y1b - y0b] : null; };
+    const lotStill = bs => bs.filter(b => !b.life && !ballPops.has(b.id)).map(b => shadow(b) + ball(b, "")).join("") || " ";
+    const lot = bs => { const box = lotBox(bs), popped = bs.filter(b => ballPops.has(b.id)).map(b => b.id).join(",");
+      return (box ? asImage(lotStill(bs), box, ballDefs).replace("<image ", `<image data-pops="${popped}" `) : "") + bs.filter(b => b.life).map(b => `<g data-ball="${b.id}"${ballPops.has(b.id) ? ' style="display:none"' : ""}>${shadow(b) + ball(b, b.life)}</g>`).join(""); };
+    lots.forEach(([name, bs, n], li) => {
+      s += SEP + part("bubbleroom-balls-" + n, [...ballKey, n], () => n === "back" ? wallObj(name, bob(lot(bs), 0)) : obj(name, Math.max(...bs.map(b => b.fz)), bob(lot(bs), li)));
     });
-  }
+    // (the room as drawn, for popping its bubbles: not a picture of the room, which has a depth of its own)
+    if (o.depth === undefined) roomBalls = { list: lots.flatMap(([, bs]) => bs), tints, k, lots: new Map(lots.map(([name, bs]) => [name, bs])),
+      href: name => { const bs = roomBalls.lots.get(name), box = bs && lotBox(bs), m = box && imageOf(lotStill(bs), box, ballDefs); return m ? m.href : null; } };
+  } else if (o.depth === undefined) roomBalls = null;
   return s;
 }
 // The bubbles, as they move (in the picture's units): each drifts in the
@@ -997,6 +1012,55 @@ const bubbleThemes = B => ["A", "B", "C"].filter(L => L === "A" || B["bubble" + 
 // few seconds; a bubble touching the friend pops. Seventy at most, the oldest going first. Drawn in a layer of their own over
 // the scene (#maker-bubbles); still while the picture is held still.
 const makerSim = { list: [], acc: {}, raf: 0, last: 0, n: 0, layer: null };
+// (ticket 290, Matthew: "the ones that extend into the room don't pop when we walk through them.. That's the critical
+// path"; "We could have a new sub-cat for bubble collisions -- they are all circles right!") The bubble room's stuck-out
+// bubbles as colliders of their own, circles: roomBalls, each one's middle and size on the screen, how far it reaches in
+// depth (dz) and the floor under it (fzHit), its lot and id, as the room was last drawn (bubbleroomScene). One the friend's
+// body is in, at their depth, pops (a swell and gone, as bubble space's), and grows back nine to fifteen seconds later;
+// popped, its lot's still picture is drawn again without it (and a moving one hidden), on the page as it is, not in the
+// scene's text, so nothing else is built again. 🔬 Inspection's "🫧 bubbles that pop" shows the circles.
+let roomBalls = null;
+const ballPops = new Map(), ballSim = { raf: 0, layer: null, touched: new Set(), n: 0 };
+function ballRun() {
+  const on = state.background.kind === "bubbleroom" && roomBalls && roomBalls.list.length;
+  if (!on) { if (ballSim.raf) cancelAnimationFrame(ballSim.raf); ballSim.raf = 0; if (ballSim.layer) { ballSim.layer.remove(); ballSim.layer = null; } return; }
+  if (!ballSim.layer) { const L = ballSim.layer = document.createElementNS("http://www.w3.org/2000/svg", "g"); L.id = "ball-pops"; L.setAttribute("pointer-events", "none"); }
+  if (ballSim.layer.parentNode !== pic) pic.append(ballSim.layer);
+  for (const name of ballSim.touched) ballApply(name, false);   // (a lot built again since: as it is now)
+  if (!ballSim.raf) ballSim.raf = requestAnimationFrame(ballTick);
+}
+// a lot's bubbles shown as they are now: its picture without the popped ones, its moving ones hidden when popped
+function ballApply(name, force = true) {
+  const R = roomBalls, bs = R && R.lots.get(name), g = bs && bgShown.node && bgShown.node.querySelector(`[data-obj="${name}"]`);
+  if (!g) return;
+  const key = bs.filter(b => ballPops.has(b.id)).map(b => b.id).join(",");
+  const img = g.querySelector("image");
+  if (img && (force || img.dataset.pops !== key) && (img.dataset.pops ?? "") !== key) { const h = R.href(name); if (h) img.setAttribute("href", h); img.dataset.pops = key; }
+  for (const b of bs) if (b.life) { const el = g.querySelector(`[data-ball="${b.id}"]`), d = ballPops.has(b.id) ? "none" : ""; if (el && el.style.display !== d) el.style.display = d; }
+}
+function ballTick(t) {
+  ballSim.raf = 0;
+  const R = roomBalls;
+  if (state.background.kind !== "bubbleroom" || !R) return;
+  const changed = new Set();
+  for (const [id, p] of ballPops) if (t >= p.back) { ballPops.delete(id); changed.add(p.obj); }
+  // (the friend's body, a little narrower than their reach, from where they are drawn; not while the picture is held still)
+  const fr = stillAt === null ? friendBox() : null;
+  if (fr) {
+    const feet = fr[3], cx = (fr[0] + fr[2]) / 2, half = (fr[2] - fr[0]) * 0.36;
+    for (const b of R.list) {
+      if (ballPops.has(b.id) || b.x + b.r < cx - half || b.x - b.r > cx + half || b.y + b.r < fr[1] || b.y - b.r > feet) continue;
+      if (Math.abs(b.fzHit - feet) > b.dz + 4 * R.k) continue;
+      const v = Math.sin(++ballSim.n * 12.9898) * 43758.5453;
+      ballPops.set(b.id, { at: t, back: t + 9000 + 6000 * (v - Math.floor(v)), obj: b.obj }); changed.add(b.obj); ballSim.touched.add(b.obj);
+      // (the pop: a copy of it swelling and gone, over everything, a quarter second)
+      if (ballSim.layer) { const el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
+        el.innerHTML = `<g class="bubin pop">${bubbleSvg(0, 0, b.r, { color: R.tints[b.j], shine: 0.7 })}</g>`; ballSim.layer.append(el); setTimeout(() => el.remove(), 320); }
+    }
+  }
+  for (const name of changed) ballApply(name);
+  ballSim.raf = requestAnimationFrame(ballTick);
+}
 // (the friend's box, standing, in the picture's units: their feet's middle, as tall as they stand, a little over a third of
 // that across, from figureT; ticket 290)
 const friendBox = () => { const T = figureT; if (!(T && T.k > 0)) return null; const h = (T.base || 400) * T.k, x = T.dx, y = T.sg + T.dy;
