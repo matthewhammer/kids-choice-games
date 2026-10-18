@@ -155,6 +155,54 @@ function bridgeOff() {
   delete B.onBridge;
   B.figY = 0;
 }
+// (ticket 269, Matthew: "when I climb to the top of the external tree house ladder, it looks great --- but then I get to
+// the top and there's no motion plan of walking to the door, and walking through it (it's fine for it to open magically
+// as we get to the top of the stairs), but the animation, again, of going through the doorway, with clipping, is very
+// compelling") At a house's ladder's top: on its platform (B.onPlatform: the house, and where along it, in the tree's
+// units), the friend the tree's size as on a bridge (BRIDGE_TALL), walked along to the door, then through it, seen only
+// inside the doorway as they go (figClipRect), and in the room, fading in.
+function platformNow() {
+  const B = state.background, o = B.onPlatform;
+  if (!o || B.kind !== "treehouse") return null;
+  const i = o.house - 1, [hx, hy] = TREE_SLOTS[i] || [], hz = (B.treeHouseSize ?? 100) / 100, s = (B.treeSize ?? 100) / 100 * (SCENE.bottom - SCENE.top) / 700;
+  if (hx === undefined) return null;
+  return { x: o.x * s, y: SCENE.ground + (hy + (o.back || 0)) * s, s, hz, hx, hy, sc: (i >= 2 ? 0.85 : 1) * hz };
+}
+let figClipRect = null;
+function platformIn(house) {
+  const B = state.background, body = state.body, i = house - 1, [hx] = TREE_SLOTS[i], hz = (B.treeHouseSize ?? 100) / 100;
+  const lx = hx + Math.sign(hx) * 52 * hz;
+  climb = null; entering = true; delete B.onBridge;
+  B.onPlatform = { house, x: lx, back: 0 }; body.anim = "walk"; body.facing = lx > hx ? "left" : "right"; body.turn = "";
+  let last = 0, phase = "walk", t0 = 0;
+  const step = t => {
+    const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
+    const o = B.onPlatform; if (!o || B.kind !== "treehouse") { entering = false; figClipRect = null; return; }
+    if (phase === "walk") {
+      const d = hx - o.x, sp = 70 * dt;   // (in the tree's units a second)
+      if (Math.abs(d) <= sp) { o.x = hx; phase = "in"; t0 = t; body.facing = "back"; }
+      else o.x += Math.sign(d) * sp;
+    } else {
+      // (through the door: back into it, seen only inside its opening, the cabin's door, M-15 0 V-56 Q0 -72 15 -56 V0)
+      const P = platformNow(), u = Math.min(1, (t - t0) / 700);
+      figClipRect = { x0: (hx - 15 * P.sc) * P.s, x1: (hx + 15 * P.sc) * P.s, y0: SCENE.ground + (P.hy - 66 * P.sc) * P.s, y1: SCENE.ground + P.hy * P.s };
+      o.back = -10 * P.sc * u;
+      if (u >= 1) {
+        figClipRect = null; delete B.onPlatform; entering = false;
+        trips.push({ kind: "treehouse", inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to: "treeroom" });
+        const [fx, fy] = ARRIVE.treeroom || [0, 0];
+        Object.assign(B, { kind: "treeroom", inside: house, figX: fx, figY: fy }); body.anim = "none"; body.facing = "front"; padWant = null;
+        changed();
+        const fade = q => { for (const n of figShown) if (n.style) n.style.opacity = q; };
+        const t1 = performance.now(), f = tt => { const v = Math.min(1, (tt - t1) / WALK_IN_MS); if (!entering) fade(v < 1 ? v.toFixed(2) : ""); if (v < 1 && !entering) requestAnimationFrame(f); };
+        fade("0"); requestAnimationFrame(f);
+        return;
+      }
+    }
+    moved(); requestAnimationFrame(step);
+  };
+  changed(); requestAnimationFrame(step);
+}
 // (ticket 246) the end of the bridge they are on that they would go in at: the end they face along it, else the nearer;
 // the house there (1-based), and the one at its other end
 function bridgeEnd(at = bridgeNow()) {
@@ -180,6 +228,7 @@ function bridgeStep(ds) {
 function bridgeKeep() {
   const B = state.background;
   if (B.onBridge && B.kind !== "treehouse") delete B.onBridge;
+  if (B.onPlatform && (B.kind !== "treehouse" || !entering)) delete B.onPlatform;   // (ticket 269: only on the way in)
 }
 // (a [data-ladder] group, in the picture's own units, the friend's: through
 // the screen, as the scene may sit in a nested svg of its own; its depth is
@@ -494,6 +543,8 @@ function enterPicture() {
 function climbThrough() {
   const c = climb, node = bgShown.node;
   if (!c || !c.door || !node || entering || state.body.anim !== "climbup") return;
+  // (ticket 269) up a tree house's ladder from the ground: onto its platform, along it to the door, and in
+  if (state.background.kind === "treehouse" && c.door.to === "treeroom" && c.door.house && !c.down) { platformIn(+c.door.house); return; }
   // (ticket 264: down a hatch's ladder, its own way through, not another to the same place: a tree room's window leads
   // outside too, and was taken, the friend coming out at the default spot)
   const all = [...node.querySelectorAll(`.portal[data-to="${c.door.to}"]` + ["house", "room", "tent"].map(k => c.door[k] ? `[data-${k}="${c.door[k]}"]` : "").join(""))];

@@ -284,7 +284,8 @@ function drawNow() {
   // shoulders, never below the waist; Matthew: the arms should be in the water)
   // (ticket 245: on a rope bridge, outside the tree house, high over the stream: never in it)
   if (scened) bridgeKeep();
-  const onBr = scened ? bridgeNow() : null;
+  // (ticket 269: on a house's platform, on the way in from its ladder, as on a bridge)
+  const onBr = scened ? bridgeNow() || platformNow() : null;
   const wet = scened && !onBr && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)),
         wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : tread ? Math.max(12, Math.min(L, 8 + 0.5 * armLen)) : L;
   const gStand = poseHeld && scened ? poseHeld.g : wet ? wl : ground;
@@ -307,7 +308,7 @@ function drawNow() {
   const sizeSeat = scened ? seatNow() : null;
   // (ticket 245) on a rope bridge: their feet on its deck, as tall as BRIDGE_TALL of the tree's units (times their
   // slider's share), whatever their shape
-  figureT = onBr ? { k: (BG.figSize ?? 100) / 100 * BRIDGE_TALL * onBr.W.s * onBr.W.hz / Math.max(1, ground - neckTop + 90), dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
+  figureT = onBr ? { k: (BG.figSize ?? 100) / 100 * BRIDGE_TALL * (onBr.W ? onBr.W.s * onBr.W.hz : onBr.s * onBr.hz) / Math.max(1, ground - neckTop + 90), dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
           // (ticket 270: up the spiral staircase, their size the floor's straight below their step, not the screen's height)
           : scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : (BG.kind === "castleroom" && castleWallsOf(BG).stairs ? spiralFloorY(BG.figX ?? 0, BG.figY ?? 0) : null) ?? BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
@@ -889,12 +890,12 @@ function drawNow() {
   // (ticket 264, Matthew: "we should clip the animation of walking through it, in the planned motion -- the trap doors and
   // pits all look great, BTW -- that's the standard now") walking through a door in a side wall (doorClip, walkInto):
   // every piece of the friend cut off past the wall's line there, on the room's side only
-  const clipSide = !!doorClip && entering;
-  if (((clipDown || clipUp) && B.anim === "climbup") || clipSide) for (const n of figShown) {
+  const clipSide = !!doorClip && entering, clipRect = figClipRect && entering ? figClipRect : null;   // (ticket 269: in through a house's door, only its opening seen)
+  if (((clipDown || clipUp) && B.anim === "climbup") || clipSide || clipRect) for (const n of figShown) {
     if (n.nodeType !== 1 || !n.parentNode) continue;
     const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), id = "fig-clip-" + Math.random().toString(36).slice(2, 8);
     w.setAttribute("class", "fig-clip"); w.setAttribute("clip-path", `url(#${id})`);
-    w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + (clipSide ? (doorClip.side < 0 ? `<rect x="${f1(doorClip.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + doorClip.x)}" height="8000"/>`)
+    w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + (clipRect ? `<rect x="${f1(clipRect.x0)}" y="${f1(clipRect.y0)}" width="${f1(clipRect.x1 - clipRect.x0)}" height="${f1(clipRect.y1 - clipRect.y0)}"/>` : clipSide ? (doorClip.side < 0 ? `<rect x="${f1(doorClip.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + doorClip.x)}" height="8000"/>`)
       : clipDown ? `<rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/>`
       : `<rect x="-4000" y="${f1(climb.clipUp)}" width="8000" height="8000"/>`) + `</clipPath>`;
     n.replaceWith(w); w.append(n);

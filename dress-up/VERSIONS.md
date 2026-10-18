@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.195 (2026-10-17)
+
+Everything in 0.0.194, with the way into a tree house from its ladder.
+
+- **Up the ladder and in at the door**: climbing a tree house's ladder from the ground, at the top your friend steps onto the house's platform (the tree's size, as on the bridges), walks along it to the door, and goes in through it, out of sight past its frame, into the room.
+
 ## 0.0.194 (2026-10-17)
 
 Everything in 0.0.193, with your friend their size up the spiral staircase.
