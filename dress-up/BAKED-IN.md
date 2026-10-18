@@ -4,8 +4,9 @@ The audit of ticket 284 (Matthew, 2026-10-18: "audit each scene for objects that
 
 - [OBJECTS.md](OBJECTS.md) lists what **stands** in each place: its objects. Since 0.0.208, every one of them can be placed in any place: 🏞️ Background, the things' group **📦 from the places**. Ways out, doors and ladders are not offered.
 - **Since 0.0.217, wall and floor things are objects of their own kind** (`wallObj`, `floorObj`): the castle rooms' cobwebs and moss, and everything listed below for 🕳️ the trap room, 🗝️ the dungeon and ⛓️ the deep dungeon, are objects now.
+- **Since 0.0.224, the living room, the witch's and the healer's huts, and part of the tree house rooms** (their rows below). Held back for Matthew: tree room 2's shelves of jars, room 4's treasure map and pennants, room 6's records: as objects they go behind the tree trunk, which hides most of the jars.
 - **Since 0.0.221, seven more castle rooms, and since 0.0.223 the cat room and the stable: every room of the castle** (the hallway, the dining room, the kitchen, the smithy, the spiral staircase, the king's room, the greenhouse, the cat room, the stable): their rows below now say what is still drawn in, and what became an object. A thing drawn by statements of its own is wrapped where it is drawn (`wallSince`, `floorSince`).
-- **This page lists the rest:** things drawn into a place's background that are not objects, so they cannot be hidden with an 👁️ chip, seen by ♿'s inspection, or placed. Each is a step toward the ticket's end: every object in each scene is something that can also be placed.
+- **This page lists the rest:** things drawn into a place's background that are not objects, so they cannot be hidden with an 👁️ chip, seen by 🔬 Inspection, or placed. Each is a step toward the ticket's end: every object in each scene is something that can also be placed.
 - As of 0.0.208, from a reading of each place's drawing code (nothing was run). **Where** is wall, hanging, flat (on the floor or the ground) or sky. **In the code** is the part of `js/` and the line, at that version: check it before relying on it. The sun, moon, stars and clouds of every outdoor place are left out.
 
 ## Next to make into objects, and placeable
@@ -68,15 +69,15 @@ Inside
 
 | place | drawn in, not an object | where | moves | in the code |
 |---|---|---|---|---|
-| 🪜 every tree house room | the window and the swaying limb outside it (a doorway); limbs coming out of the wall; pictures (doorways) | wall | the limb | 11:563-606 |
+| 🪜 every tree house room | the window and the swaying limb outside it (a doorway); pictures (doorways) (since 0.0.224, objects: the limbs coming out of the walls) | wall | the limb | 11:563-606 |
 | 🪜 tree house room 2, the kitchen | shelves of 10 jars | wall | | 11:645 |
-| 🪜 tree house room 3, the books | a lantern on a cord (not an object on purpose, its comment says) | hanging | | 11:688 |
+| 🪜 tree house room 3, the books | nothing (since 0.0.224, an object: the lantern on its cord) | | | |
 | 🪜 tree house room 4, the lookout | a treasure map with its X; pennant bunting (10) | wall, hanging | | 11:749, 11:753 |
-| 🪜 tree house room 5, the art room | paint spills (5); pinned drawings (with more than 10 toys) | flat, wall | | 11:697, 11:716 |
+| 🪜 tree house room 5, the art room | nothing (since 0.0.224, objects: the paint spills; the pinned drawings, with more than 10 things) | | | |
 | 🪜 tree house room 6, the music room | 10 records | wall | | 11:725 |
-| 🛋️ living room | a round rug; a wall clock with its pendulum; the window and its view (a doorway), curtains, rod and sill; pictures (doorways) | flat, wall | the clock | 11:195-255 |
-| 🧙 inside the witch's hut | a round window with the moon, and two windows onto the woods; a beam of hanging herbs, and cobwebs; a crooked shelf of 7 potions; the red door with its "🌲 out" sign (a doorway); a shelf of frogs in jars; crows in hanging cages (3, not objects on purpose) | wall, hanging | the crows | 11:859-912 |
-| 🌿 inside the healer's hut | a braided rug; a round window and its sunbeam on the floor; herb bundles from the beam; the stone fireplace, its mantel with 2 candles, 3 jars and a heart; the arched door with its "🌲 out" sign (a doorway) | flat, wall, hanging | | 11:1072-1126 |
+| 🛋️ living room | the window's view (a doorway); pictures (doorways) (since 0.0.224, objects: the rug, the wall clock, the window's frame with its curtains, rod and sill) | wall | | 11:240 |
+| 🧙 inside the witch's hut | the red door with its "🌲 out" sign (a doorway) (since 0.0.224, objects: the round window, two windows, the herbs on the beam, two cobwebs, the shelf of potions, the frogs in jars, the crows in their cages) | wall | | 11:900 |
+| 🌿 inside the healer's hut | the arched door with its "🌲 out" sign (a doorway) (since 0.0.224, objects: the rug, the round window and its sunbeam, the herbs, the fireplace, the things on its mantel) | wall | | 11:1140 |
 | ⛺ inside a tent | two mesh windows; the open door onto the camp and its rolled flaps (a doorway); tent 1: two sleeping bags and the flashlight (only its beam is an object); tent 2: a teddy on a blanket, a pile of books; tent 3: a map, binoculars, a backpack | wall, flat | the flaps | 14:414-511 |
 | 🪨 cave behind the falls | the falls from behind and the mist (a doorway); gems and three glowing crystals; light shafts, a wet patch, pebbles | wall, flat | yes | 14:572-629 |
 | 💭 our imagination | the map board, the columns' names, the dotted lines, the framed pictures (doorways) | wall | yes | 14:909-917 |

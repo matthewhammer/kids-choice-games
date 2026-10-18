@@ -258,7 +258,7 @@ function standingHere(B, seats) {
 }
 // (ticket 237, Matthew: "collision detection should avoid walking over the trap doors in the floor of the tree houses")
 // a hole in the floor (a tree room's trapdoor: data-hole, its box on the floor), a solid as low as a step: the feet
-// don't walk onto it, a walk goes round it (planPath), a jump clears it, and ♿'s collision boxes show it; its ladder
+// don't walk onto it, a walk goes round it (planPath), a jump clears it, and 🔬 Inspection's collision boxes show it; its ladder
 // down is taken from its near edge, as before
 const HOLE_H = 30;
 const holesHere = () => bgShown.node ? [...bgShown.node.querySelectorAll("[data-hole]")].map(el => {
@@ -320,7 +320,7 @@ const solidBands = o => o.bands || [{ x0: o.x0, x1: o.x1, lo: 0, hi: o.h > 0 ? o
 // either") The tree house's swing as it is now, read from its drawing (its seat's group is turned by the swing's own
 // animation, which the screen matrix includes): the angle it hangs at, its hook on the screen, and how far its seat is
 // from where it hangs at rest, across, in the stage's units. Its box (a seat's, solidsHere) is met where the seat is;
-// ♿'s collision boxes turn its box, and the friend's on it, about the hook (swingHud).
+// 🔬 Inspection's collision boxes turn its box, and the friend's on it, about the hook (swingHud).
 const SWING_HOOK = [395, -346], SWING_SEAT = [395, -66];   // (in the tree's units: treeInner's "tree-swing")
 function swingNow() {
   const seat = state.background.kind === "treehouse" && bgShown.node ? bgShown.node.querySelector("[data-swing-seat]") : null, g = seat && seat.parentNode;
@@ -351,7 +351,7 @@ function solidAt(x, z, all = false) {
 // a move of the friend's feet from (x0, y0) to (x, y) (figX, figY): where
 // they end up, sliding along a wall or a solid they meet; inside one
 // already, any move that does not go deeper into it
-// (ticket 229) the last thing a move was stopped by (a solid's name, or "wall"), and when: ♿'s collision boxes glow it
+// (ticket 229) the last thing a move was stopped by (a solid's name, or "wall"), and when: 🔬 Inspection's collision boxes glow it
 let solidHit = { name: null, n: 0, t: 0 };
 function solidMove(x0, y0, x, y) {
   const g = SCENE.ground, hit = solidAt(x, g + y);

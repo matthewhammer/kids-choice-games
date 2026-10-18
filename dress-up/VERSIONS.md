@@ -2,11 +2,22 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.224 (2026-10-18)
+
+Everything in 0.0.223, plus wall and floor things as objects in the living room, the witch's and the healer's huts, and the tree house rooms.
+
+- **What hangs on the walls and lies on the floor is in 🔬 Inspection's list of objects** in more places, each with its 👁️ chip to hide it and placeable anywhere from 🏞️ Background's **📦 from the places**; the friend is always in front of them.
+  - 🛋️ The living room: the rug, the wall clock, and the window's frame with its curtains (its view is still the way through it).
+  - 🧙 Inside the witch's hut: the round window, the window either side of the door, the herbs on the beam, two cobwebs, the shelf of potions, the frogs in jars, and each crow in its cage.
+  - 🌿 Inside the healer's hut: the rug, the round window and its sunbeam, the herbs on the beam, the fireplace, and the candles, jars and heart on its mantel.
+  - 🪜 The tree house rooms: the tree's limbs coming out through the walls, the books room's lantern, and the art room's paint spills (and its pinned drawings, when there are more than ten things).
+- In earlier notes, "♿'s list of objects" meant 🔬 Inspection's: it is written so now.
+
 ## 0.0.223 (2026-10-18)
 
 Everything in 0.0.222, plus the last two castle rooms whose wall and floor things are objects of their own: now every room of the castle lists them.
 
-- **What hangs on the walls and lies on the floor is in ♿'s list of objects** in two more of the castle's rooms, each with its 👁️ chip to hide it and placeable anywhere from 🏞️ Background's **📦 from the places**; the friend is always in front of them.
+- **What hangs on the walls and lies on the floor is in 🔬 Inspection's list of objects** in two more of the castle's rooms, each with its 👁️ chip to hide it and placeable anywhere from 🏞️ Background's **📦 from the places**; the friend is always in front of them.
   - 🐈 The cat room: its rug, its fireplace, the mantel with its candles and clock, the royal cat's portrait, the window with its curtains, the feather toy, the banner, the six shelves up the side walls and the mat for the bowls.
   - 🐴 The stable: its round window, each of its four stalls, the hay loft with its bales, the lantern on the middle post, the horseshoes, the saddles, the bridle and the straw on the floor.
 
@@ -23,7 +34,7 @@ Everything in 0.0.221, plus pits and trap doors that swing open and shut, and le
 
 Everything in 0.0.220, plus seven more castle rooms whose wall and floor things are objects of their own.
 
-- **What hangs on the walls and lies on the floor, in seven more of the castle's rooms, is in ♿'s list of objects,** each with its 👁️ chip to hide it, and each can be placed anywhere from 🏞️ Background's **📦 from the places**. The friend is always in front of them.
+- **What hangs on the walls and lies on the floor, in seven more of the castle's rooms, is in 🔬 Inspection's list of objects,** each with its 👁️ chip to hide it, and each can be placed anywhere from 🏞️ Background's **📦 from the places**. The friend is always in front of them.
   - 🕯️ The hallway: its carpet, its three banners and its five torches.
   - 🍽️ The dining room: its great fireplace.
   - 🍲 The kitchen: its hearth, the strings of onions, garlic and herbs, the shelf of plates and the shelf of crocks.
@@ -57,7 +68,7 @@ Everything in 0.0.217, with the trap room's two pits and two levers set up in th
 
 Everything in 0.0.216, with what hangs on the walls and lies on the floor as objects too, beginning in the castle's trap room and dungeons.
 
-- **Wall and floor things are objects**, a kind of their own: listed in "👁️ what stands in the scene" (and ♿'s), hidden and shown with a tap, and put in other places with 📦, but always behind the friend and in nobody's way.
+- **Wall and floor things are objects**, a kind of their own: listed in "👁️ what stands in the scene" (and 🔬 Inspection's), hidden and shown with a tap, and put in other places with 📦, but always behind the friend and in nobody's way.
 - **🕳️ the trap room:** the two torches, the lever, the "⚠️ MIND THE FLOOR ⚠️" sign, the cobwebs and the moss on the walls, the sword on the floor (it had 2 objects; now 10).
 - **🗝️ the dungeon and ⛓️ the deep dungeon:** the barred window with its moonbeam, the torch, the chains hanging (with a skeleton in them when "💀 skeletons" asks for one), the shackles along the walls, the puddle and its drip, the straw and the bones on the floor, the cobwebs and the moss (the dungeon had 3 objects; now 14).
 

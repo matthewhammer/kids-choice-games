@@ -49,7 +49,7 @@ const unmarked = svg => svg.replaceAll(SEP, "").replaceAll(' data-ladder="1"', "
 // it; one inside another object is part of that one.
 const obj = (name, z, svg) => OPEN(`<g data-obj="${name}" data-z="${Number.isFinite(z) ? f1(z) : "front"}">`) + svg + CLOSE;
 // (ticket 284, Matthew: "wall and floor things become another kind of object in our system") A thing hanging on a wall or
-// lying on the floor (a torch, a lever, a sign, cobwebs, moss, a sword dropped there) is an object too: named, in ♿'s list
+// lying on the floor (a torch, a lever, a sign, cobwebs, moss, a sword dropped there) is an object too: named, in 🔬 Inspection's list
 // with a 👁️ chip, hidden with it, lifted by 📦; but at the back (data-z "back", depth -Infinity): drawn where it is, the
 // friend always in front of it, and standing in nobody's way (no collision box: a standing object needs a depth). Its kind,
 // wall or floor, is its data-layer.
