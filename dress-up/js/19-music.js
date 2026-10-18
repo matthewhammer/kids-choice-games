@@ -657,6 +657,19 @@ const TUNES = {
   superdub: { name: "🔥 turtle super-dub step", make: () => steppersTune({ bpm: 153, down: 12, ups: { "bass·bass": 12, "sonar·bell": 12, "tuneA·melodica": 24 } }),
     mix: { "kick·kick": { echo: 0 }, "drums·rim": { echo: 0 }, fx: { repeats: 70, time: 7, room: 186 },
            "tuneA·melodica": { knob: 100, pan: -4, rev: 68, level: -7, tone: 45 }, "chop·chop": { tone: 84, level: 6, echo: 81, pan: -4 } } },
+  // (ticket 290, Matthew: "let's use the turtle dub step, but slowed down, and new melody and chords. the fire emoji one
+  // please. 'super dub step' variation.") The bubble room's own: the super-dub step's groove and its octaves (its kick, rim,
+  // hats, chop and bass, his presses on the board), slower, at 116 beats a minute, in A minor, its chords going round
+  // through F, C and G to a bright E at the end of each eight bars, with tunes of its own, a sonar's ping and bubbles to fit
+  bubbledub: { name: "🫧 bubble super-dub step", make: () => steppersTune({ bpm: 116, down: 12, ups: { "bass·bass": 12, "sonar·bell": 12, "tuneA·melodica": 24 },
+      chords: ["Am", "F", "C", "G", "Am", "F", "G", "E"], lines: {
+        sonar: "A6:1 r:63 E6:1 r:63",
+        tuneA: "r:4 A4:2 C5:2 E5:4 A5:4 | A5:4 G5:2 F5:2 C5:8 | r:4 E5:2 G5:2 C6:6 B5:2 | B5:4 A5:2 G5:2 D5:8 | " +
+               "r:4 C6:2 B5:2 A5:4 E5:4 | F5:4 A5:4 C6:8 | B5:4 D6:4 G5:4 B5:4 | G#5:8 E5:4 r:4",
+        tuneB: "E5:4 r:4 A5:4 r:4 | C6:8 A5:4 F5:4 | G5:4 r:4 E5:4 G5:4 | D6:8 B5:8 | A5:4 C6:4 E6:8 | D6:4 C6:4 A5:8 | B5:4 G5:4 D5:8 | B4:4 E5:4 G#5:8",
+        bubbles: "r:9 A6:1 r:21 E6:1 r:17 C7:1 r:33 G6:1 r:11 B6:1 r:32" } }),
+    mix: { "kick·kick": { echo: 0 }, "drums·rim": { echo: 0 }, fx: { repeats: 70, time: 7, room: 186 },
+           "tuneA·melodica": { knob: 100, pan: -4, rev: 68, level: -7, tone: 45 }, "chop·chop": { tone: 84, level: 6, echo: 81, pan: -4 } } },
   lullaby: { name: "🎐 steel-pan lullaby", make: () => {
     const chords = ["F", "Dm", "Bb", "C", "F", "Dm", "Bb", "C"];
     return { bpm: 84, room: 2.5, level: 1, parts: [
@@ -1070,13 +1083,14 @@ const TUNES = {
 const SCENE_TUNE = { hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", hutcenter: "lullaby", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
-                     tent: "lullaby", cave: "steppers", woodpath: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom" };
+                     tent: "lullaby", cave: "steppers", woodpath: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom",
+                     bubbleroom: "bubbledub" };   // (ticket 290: the bubble room's own, 🫧 bubble super-dub step; Matthew: "oh there no music and no LFO?")
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
 // the kinds of music, each with its tunes: the music tab's first row of
 // turtle steppers dub, and (ticket 263) its super-dub step: at another tempo, `down` half steps lower, each pitched part
 // `ups` (by its mixing-board channel, name·inst) back up from there; a drum keeps its pitch, as transposing leaves it
-function steppersTune({ bpm = 74, down = 0, ups = {} } = {}) {
-    const chords = ["Em", "Em", "Am", "Em", "C", "D", "Em", "Em"];
+// (ticket 290: and its chords, and its tunes, its sonar's ping and its bubbles, `lines`, of its own: the bubble room's)
+function steppersTune({ bpm = 74, down = 0, ups = {}, chords = ["Em", "Em", "Am", "Em", "C", "D", "Em", "Em"], lines = {} } = {}) {
     const T = { bpm, swing: 0.15, room: 3, echoSteps: 3, level: 0.85, parts: [
       { name: "kick", inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
       { name: "drums", inst: "rim", level: 0.7, rev: 0.3, echo: 0.3, line: hitsOf("........x.......") },
@@ -1084,13 +1098,13 @@ function steppersTune({ bpm = 74, down = 0, ups = {} } = {}) {
       { name: "chop", inst: "chop", echo: 0.5, rev: 0.2, line: stabsOf(chords, 16, [4, 12], 1, 4) },
       { name: "bass", inst: "bass", line: bassOf(chords, 16, [[0, 0, 3], [4, 0, 2], [6, 7, 2], [8, 0, 3], [12, 12, 2], [14, 10, 2]], 2) },
       // a ping, like sonar, far off in the echo
-      { name: "sonar", inst: "bell", level: 0.35, rev: 0.5, echo: 0.6, line: lineOf("E6:1 r:63 B5:1 r:63") },
-      { name: "tuneA", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(
+      { name: "sonar", inst: "bell", level: 0.35, rev: 0.5, echo: 0.6, line: lineOf(lines.sonar || "E6:1 r:63 B5:1 r:63") },
+      { name: "tuneA", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(lines.tuneA ||
         "r:8 B4:2 D5:2 E5:4 | G5:4 E5:4 r:8 | r:8 C5:2 E5:2 A5:4 | G5:2 F#5:2 E5:4 r:8 | " +
         "r:4 G5:4 E5:4 C5:4 | D5:4 F#5:4 A5:8 | B5:8 G5:4 E5:4 | E5:12 r:4") },
-      { name: "tuneB", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(
+      { name: "tuneB", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(lines.tuneB ||
         "E5:4 r:4 G5:4 r:4 | B5:8 r:8 | A5:4 r:4 C6:4 r:4 | B5:4 G5:4 E5:8 | E5:4 G5:4 C6:8 | D6:4 A5:4 F#5:8 | G5:4 F#5:4 E5:8 | r:16") },
-      { name: "bubbles", inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf("r:9 E6:1 r:21 B6:1 r:17 G6:1 r:33 D6:1 r:11 A6:1 r:32") },
+      { name: "bubbles", inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf(lines.bubbles || "r:9 E6:1 r:21 B6:1 r:17 G6:1 r:33 D6:1 r:11 A6:1 r:32") },
     ], form: [
       S(8, "kick bass sonar"), S(8, "kick bass sonar drums chop"), S(8, "kick bass sonar drums chop tuneA bubbles"),
       S(8, "kick bass sonar chop"), S(8, "kick bass sonar drums chop tuneB bubbles"), S(8, "kick bass sonar drums chop tuneA bubbles"),
@@ -1101,7 +1115,7 @@ function steppersTune({ bpm = 74, down = 0, ups = {} } = {}) {
 // chips picks a kind, the second its tune
 const TUNE_GROUPS = [
   ["beats", "🥁 classic beats", ["bongobreak", "canyon", "skatepark"]],
-  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", "superdub"]],   // (ticket 263: its super-dub step beside it)
+  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", "superdub", "bubbledub"]],   // (ticket 263: its super-dub step beside it; ticket 290: and the bubble room's)
   ["calypso", "🏖️ calypso", ["beach", "soca", "lullaby"]],
   ["house", "🏠 house", ["cushions"]],
   ["groove", "🕺 groove", ["bats", "vibes"]],

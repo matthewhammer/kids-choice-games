@@ -34,7 +34,8 @@ try {
     B.things = [{ kind: "bubblemaker", x: -150, z: 330, size: 100, rate: 8, theme: "A", color: "#ff7eb6" }]; changed(); await w(1500);
     const blown = document.querySelectorAll("#maker-bubbles > g").length, maker = !!bgShown.node.parentNode.querySelector(".thing") || !!document.querySelector("#pic .thing");
     B.things = []; changed();
-    return JSON.stringify({ all, n: sizes.length, big: sizes.filter(v => v > 20).length, small: sizes.filter(v => v < 8).length, top70, top30, noLeft, group: group && group[0], with: group && group[2], walls, stuck, moving, blown, maker }); })()`));
+    const track = state.music.track; state.music.track = "scene"; const tune = tuneOf(), song = songOf("bubbledub"); state.music.track = track;
+    return JSON.stringify({ all, n: sizes.length, big: sizes.filter(v => v > 20).length, small: sizes.filter(v => v < 8).length, top70, top30, noLeft, group: group && group[0], with: group && group[2], walls, stuck, moving, blown, maker, tune, bpm: song && song.T.bpm, steps: song && song.steps }); })()`));
   console.log(`  the bubble room: ${JSON.stringify(r)}`);
   ok("in the 🫧 bubbles kind of place, with bubble space", r.group === "bubbles" && r.with.includes("bubblespace"), r);
   ok("foam on all five surfaces, an object each", ["foam, back wall", "foam, left wall", "foam, right wall", "foam, floor", "foam, ceiling"].every(n => r.all.includes(n)), r);
@@ -45,6 +46,7 @@ try {
   ok("bubbles stuck out into the room from its surfaces: the back wall's, and in bands by depth", r.stuck.includes("bubbles stuck out, back wall") && r.stuck.length >= 3, r);
   ok("its foam moving (Matthew: dynamic, not static)", r.moving > 0, r);
   ok("a 🫧 bubble maker placed there blows bubbles", r.maker && r.blown >= 4, r);
+  ok("its own tune, the 🫧 bubble super-dub step, slower than the 🔥 one (153)", r.tune === "bubbledub" && r.bpm < 153 && r.steps > 0, r);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

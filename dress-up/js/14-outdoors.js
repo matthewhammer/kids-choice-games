@@ -816,8 +816,8 @@ function bubblespaceScene(c) {
 // bubble foam: a few big bubbles and more and more smaller ones packed into the gaps between them, as foam is (foamPack),
 // each a rim, a film and, on the bigger ones, a shine, laid flat on its surface in the room's perspective (a side wall's, the
 // floor's and the ceiling's foreshortened, a unit toward us a z of 1/800, as roomSpace lays things on the walls). With a
-// rainbow sheen, the rims take turns at three tints. 〰️ how much the foam moves: its bubbles in three sets, each drifting a
-// little its own way with the scene's slow LFO; still at 0 (Matthew: "dynamic, not static": moving from the start).
+// rainbow sheen, the rims take turns at three tints. 〰️ how much the foam moves: some of its bubbles breathing, a few popping
+// and growing back (lifeOf); still at 0 (Matthew: "dynamic, not static": moving from the start).
 // Each surface's foam is an object of its own. Bubble makers (🫧, a placed thing) blow bubbles into it, or anywhere.
 const FOAM_SURFACES = [["Back", "back wall", true], ["Left", "left wall", true], ["Right", "right wall", true], ["Floor", "floor", false], ["Ceil", "ceiling", false]];
 const foamMemo = new Map();
@@ -844,16 +844,25 @@ function bubbleroomScene(c) {
   const at = (X, Y, z) => { const f = 1 / (1 + z); return [X * f, vy + (Y - vy) * f]; };
   // (a bubble of radius r, in its surface's own units, about the origin; tf lays it on the surface)
   // (the smallest a rim alone; bigger ones a light inside the rim; the biggest a shine too: fewer shapes to draw)
-  const bub = (r, j, tf) => `<g transform="${tf}"><circle r="${f1(r)}" fill="${tints[j]}" fill-opacity="0.2" stroke="${tints[j]}" stroke-width="${f1(Math.max(0.8, r * 0.1))}"/>` +
+  const bub = (r, j, tf, life = "") => `<g transform="${tf}">${life ? `<g>${life}` : ""}<circle r="${f1(r)}" fill="${tints[j]}" fill-opacity="0.2" stroke="${tints[j]}" stroke-width="${f1(Math.max(0.8, r * 0.1))}"/>` +
     (r > 5 * k ? `<circle r="${f1(r * 0.9)}" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="${f1(Math.max(0.5, r * 0.04))}"/>` : "") +
-    (r > 9 * k ? `<ellipse cx="${f1(-r * 0.36)}" cy="${f1(-r * 0.38)}" rx="${f1(r * 0.26)}" ry="${f1(r * 0.15)}" fill="#ffffff" opacity="0.75" transform="rotate(-35 ${f1(-r * 0.36)} ${f1(-r * 0.38)})"/>` : "") + `</g>`;
+    (r > 9 * k ? `<ellipse cx="${f1(-r * 0.36)}" cy="${f1(-r * 0.38)}" rx="${f1(r * 0.26)}" ry="${f1(r * 0.15)}" fill="#ffffff" opacity="0.75" transform="rotate(-35 ${f1(-r * 0.36)} ${f1(-r * 0.38)})"/>` : "") + (life ? `</g>` : "") + `</g>`;
   const mat = (a, b, cc, d, e, f) => `matrix(${[a, b, cc, d].map(v => v.toFixed(4)).join(" ")} ${f1(e)} ${f1(f)})`;
-  // (in three sets, each drifting its own way when the foam moves)
-  const sets = (list, draw, dx, dy) => [0, 1, 2].map(j => { const inner = list.filter(b => b.j === j).map(draw).join("");
-    if (!move || !inner) return inner;
-    const ax = dx * move * (j - 1 || 0.7), ay = dy * move * (1 - j * 0.6);
-    return `<g>${sceneLfo(o, "slow", j / 3, "transform", (v, amp) => `${f1(ax * v * (0.5 + amp))} ${f1(ay * v * (0.5 + amp))}`,
-      `<animateTransform attributeName="transform" type="translate" values="0 0;${f1(ax)} ${f1(ay)};0 0" dur="${(5 + j * 1.7).toFixed(1)}s" repeatCount="indefinite"/>`, "translate")}${inner}</g>`; }).join("");
+  // (ticket 290, Matthew on 0.0.238: "there's no dynamic aspect to the walls or floor --- Can we fix that without getting a
+  // huge performance penalty?") Not the whole foam sliding (a few units, too little to see, and all of it drawn again every
+  // frame): some of its bubbles, each on its own, breathing in and out with the slow LFO (each its own way in, its own
+  // depth), and a few popping and growing back now and then, each drawing again only where it is; how many, 〰️ how much the
+  // foam moves: up to half of the big ones breathing (16 at most a surface), and one in twenty-five of the middling ones
+  // popping (4 at most): some 120 moving in all, each over a small patch (a whole surface moving was all of it drawn again
+  // every frame)
+  const lives = {};
+  const lifeOf = (seedK, i, r) => { if (!move) return ""; const L = seeded(seedK * 31 + 7), v = L(i * 2), n = lives[seedK] || (lives[seedK] = { breathe: 0, pop: 0 });
+    if (r >= 12 * k && v < 0.5 * move && n.breathe < 16) { n.breathe++; const a = (0.05 + 0.07 * L(i * 2 + 1)).toFixed(3);
+      return lfoTimed(o, "slow", L(i * 2 + 1), `<animateTransform attributeName="transform" type="scale" values="1;${(1 + +a).toFixed(3)};${(1 - +a).toFixed(3)};1" dur="${(3 + 3 * L(i * 2 + 1)).toFixed(1)}s" begin="-${(6 * v).toFixed(1)}s" repeatCount="indefinite"/>`); }
+    if (r >= 6 * k && r < 12 * k && v > 1 - 0.04 * move && n.pop < 4) { n.pop++; const d = (7 + 8 * L(i * 2 + 1)).toFixed(1);
+      return `<animateTransform attributeName="transform" type="scale" values="1;1;0.05;0.05;1" keyTimes="0;0.72;0.75;0.8;1" dur="${d}s" begin="-${(+d * L(i * 2 + 1)).toFixed(1)}s" repeatCount="indefinite"/>`; }
+    return ""; };
+  const sets = (list, draw, seedK) => list.map((b, i) => draw(b, lifeOf(seedK, i, b.r))).join("");
   const rMax = 40 * k, rMin = 4 * k, clip = (id, pts) => `<defs><clipPath id="${id}"><polygon points="${pts}"/></clipPath></defs>`;
   const fEdge = (W / 2 + pad) / bw, dSide = 800 * (1 - 1 / fEdge), fBot = (y1 + pad - vy) / (floor - vy), dFloor = 800 * (1 - 1 / fBot), fTop = (vy - (y0 - pad)) / (vy - top), dCeil = 800 * (1 - 1 / fTop);
   let s = SEP + part("bubbleroom-shell", c.F, () => {
@@ -869,21 +878,21 @@ function bubbleroomScene(c) {
   // the back wall: from the floor up, as high as its setting
   if (B.foamBack ?? true) s += SEP + part("bubbleroom-foam-back", key("Back"), () => { const h = wh * (B.foamBackH ?? 70) / 100;
     return wallObj("foam, back wall", clip("bg-foam-back", `${P(-bw, top)} ${P(bw, top)} ${P(bw, floor)} ${P(-bw, floor)}`) + `<g clip-path="url(#bg-foam-back)">` +
-      sets(foamPack(seed * 7 + 1, 2 * bw, h, rMax, rMin), b => bub(b.r, b.j, `translate(${f1(-bw + b.x)} ${f1(floor - b.y)})`), 5 * k, 3 * k) + `</g>`); });
+      sets(foamPack(seed * 7 + 1, 2 * bw, h, rMax, rMin), (b, life) => bub(b.r, b.j, `translate(${f1(-bw + b.x)} ${f1(floor - b.y)})`, life), 1) + `</g>`); });
   // the side walls: along each, from the back corner toward us, from the floor up
   for (const [sd, K] of [[-1, "Left"], [1, "Right"]]) if (B["foam" + K] ?? true) s += SEP + part("bubbleroom-foam-" + K, key(K), () => {
     const h = wh * (B["foam" + K + "H"] ?? 55) / 100, [ax, ay] = out(sd * bw, top, y0 - pad), [bx, by] = out(sd * bw, floor, y1 + pad);
     return wallObj(`foam, ${sd < 0 ? "left" : "right"} wall`, clip("bg-foam-" + K, `${P(sd * bw, top)} ${P(ax, ay)} ${P(sd * (W + pad), y0 - pad)} ${P(sd * (W + pad), y1 + pad)} ${P(bx, by)} ${P(sd * bw, floor)}`) +
-      `<g clip-path="url(#bg-foam-${K})">` + sets(foamPack(seed * 7 + (sd < 0 ? 2 : 3), dSide, h, rMax, rMin), b => {
+      `<g clip-path="url(#bg-foam-${K})">` + sets(foamPack(seed * 7 + (sd < 0 ? 2 : 3), dSide, h, rMax, rMin), (b, life) => {
         const z = -b.x / 800, f = 1 / (1 + z), Y = floor - b.y, [ex, ey] = at(sd * bw, Y, z), q = f * f / 800;
-        return bub(b.r, b.j, mat(sd * bw * q, (Y - vy) * q, 0, f, ex, ey)); }, 3 * k, 4 * k) + `</g>`); });
+        return bub(b.r, b.j, mat(sd * bw * q, (Y - vy) * q, 0, f, ex, ey), life); }, sd < 0 ? 2 : 3) + `</g>`); });
   // the floor and the ceiling: out from the back wall toward us, as far as their settings
   for (const [K, Y, D, nm] of [["Floor", floor, dFloor, "floor"], ["Ceil", top, dCeil, "ceiling"]]) if (B["foam" + K] ?? true) s += SEP + part("bubbleroom-foam-" + K, key(K), () => {
     const d = D * (B["foam" + K + "H"] ?? (K === "Floor" ? 100 : 60)) / 100, edge = K === "Floor" ? y1 + pad : y0 - pad;
     const body = clip("bg-foam-" + K, `${P(-bw, Y)} ${P(bw, Y)} ${P(...out(bw, Y, edge))} ${P(...out(-bw, Y, edge))}`) + `<g clip-path="url(#bg-foam-${K})">` +
-      sets(foamPack(seed * 7 + (K === "Floor" ? 4 : 5), 2 * bw, d, rMax, rMin), b => {
+      sets(foamPack(seed * 7 + (K === "Floor" ? 4 : 5), 2 * bw, d, rMax, rMin), (b, life) => {
         const X = -bw + b.x, z = -b.y / 800, f = 1 / (1 + z), [ex, ey] = at(X, Y, z), q = f * f / 800;
-        return bub(b.r, b.j, mat(f, 0, X * q, (Y - vy) * q, ex, ey)); }, 5 * k, 2 * k) + `</g>`;
+        return bub(b.r, b.j, mat(f, 0, X * q, (Y - vy) * q, ex, ey), life); }, K === "Floor" ? 4 : 5) + `</g>`;
     return K === "Floor" ? floorObj("foam, floor", body) : wallObj("foam, ceiling", body); });
   // (ticket 290, Matthew: "each bubble on the floor and wall should have ones in the room that are stuck to it --- to create
   // a richer psuedo 3d experience"; "each surface (wall, floor) has a frequency of spawning bubbles that are adjacent,
@@ -922,21 +931,26 @@ function bubbleroomScene(c) {
     s += SEP + part("bubbleroom-balldefs", [tints], () => `<defs>` + tints.map((c, j) => `<radialGradient id="bg-ball-${j}" cx="0.36" cy="0.32" r="0.72">` +
       `<stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="0.25" stop-color="#ffffff" stop-opacity="0.18"/><stop offset="0.7" stop-color="${c}" stop-opacity="0.16"/>` +
       `<stop offset="0.93" stop-color="${c}" stop-opacity="0.55"/><stop offset="1" stop-color="${mix(c, "#5a7fb0", 0.3)}" stop-opacity="0.85"/></radialGradient>`).join("") + `</defs>`);
-    const ball = b => `<circle cx="${f1(b.x)}" cy="${f1(b.y)}" r="${f1(b.r)}" fill="url(#bg-ball-${b.j})" stroke="${tints[b.j]}" stroke-width="${f1(Math.max(0.7, b.r * 0.05))}"/>` +
-      `<ellipse cx="${f1(b.x + b.r * 0.38)}" cy="${f1(b.y + b.r * 0.42)}" rx="${f1(b.r * 0.2)}" ry="${f1(b.r * 0.09)}" fill="#ffffff" opacity="0.55" transform="rotate(-35 ${f1(b.x + b.r * 0.38)} ${f1(b.y + b.r * 0.42)})"/>`;
+    // (each about its own middle, so some of the big ones, when the foam moves, can swell and shrink a little, each its own way
+    // in: forty at most)
+    let breathing = 0;
+    const ball = (b, i) => { const life = move && b.r >= 12 * k && breathing < 40 && seeded(seed * 17 + 3)(i) < 0.4 * move && ++breathing ? lfoTimed(o, "slow", seeded(seed * 17 + 4)(i),
+        `<animateTransform attributeName="transform" type="scale" values="1;1.07;0.95;1" dur="${(3.5 + 2 * seeded(seed * 17 + 4)(i)).toFixed(1)}s" repeatCount="indefinite"/>`) : "";
+      return `<g transform="translate(${f1(b.x)} ${f1(b.y)})"><g>${life}<circle r="${f1(b.r)}" fill="url(#bg-ball-${b.j})" stroke="${tints[b.j]}" stroke-width="${f1(Math.max(0.7, b.r * 0.05))}"/>` +
+        (b.r > 8 * k ? `<ellipse cx="${f1(b.r * 0.38)}" cy="${f1(b.r * 0.42)}" rx="${f1(b.r * 0.2)}" ry="${f1(b.r * 0.09)}" fill="#ffffff" opacity="0.55" transform="rotate(-35 ${f1(b.r * 0.38)} ${f1(b.r * 0.42)})"/>` : "") + `</g></g>`; };
     const shadow = b => b.K === "Floor" ? `<ellipse cx="${f1(b.x)}" cy="${f1(b.y + b.r * 0.98)}" rx="${f1(b.r * 0.8)}" ry="${f1(b.r * 0.18)}" fill="#3a5a8a" opacity="0.14"/>` : "";
-    const bob = (inner, n) => !move ? inner : `<g>${sceneLfo(o, "slow", (n * 0.17) % 1, "transform", (v, amp) => `0 ${f1(-3 * k * move * v * (0.5 + amp))}`,
-      `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-3 * k * move)};0 0" dur="${(3.5 + (n % 4) * 0.6).toFixed(1)}s" repeatCount="indefinite"/>`, "translate")}${inner}</g>`;
+    const bob = (inner, n) => !move ? inner : `<g>${sceneLfo(o, "slow", (n * 0.17) % 1, "transform", (v, amp) => `0 ${f1(-6 * k * move * v * (0.5 + amp))}`,
+      `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-6 * k * move)};0 0" dur="${(3.5 + (n % 4) * 0.6).toFixed(1)}s" repeatCount="indefinite"/>`, "translate")}${inner}</g>`;
     const ballKey = [c.F, ...FOAM_SURFACES.flatMap(([K]) => [B["foam" + K], B["foam" + K + "H"], B["foam" + K + "Out"]]), base, B.foamRainbow ?? true, move, move ? sceneLfoKey(o, "slow") : "", seed];
     // (the back wall's against it, behind everything; the rest in bands by the floor under them, farther ones drawn first)
     const back = balls.filter(b => b.K === "Back").sort((a, b) => a.d - b.d), rest = balls.filter(b => b.K !== "Back").sort((a, b) => a.fz - b.fz || a.d - b.d);
-    if (back.length) s += SEP + part("bubbleroom-balls-back", ballKey, () => wallObj("bubbles stuck out, back wall", bob(back.map(ball).join(""), 0)));
+    if (back.length) s += SEP + part("bubbleroom-balls-back", ballKey, () => wallObj("bubbles stuck out, back wall", bob(back.map((b, i) => ball(b, i)).join(""), 0)));
     const bands = new Map();
     // (six bands down the floor seen, from the back wall's foot to the picture's; those under the floor seen, near us, in the last)
     const bandH = Math.max(20 * k, (y1 - floor) / 6);
     for (const b of rest) { const n = Math.max(0, Math.min(5, Math.floor((b.fz - floor) / bandH))); if (!bands.has(n)) bands.set(n, []); bands.get(n).push(b); }
     [...bands.entries()].forEach(([n, bs], i) => {
-      s += SEP + part("bubbleroom-balls-" + n, [...ballKey, n], () => obj(`bubbles stuck out ${i + 1}`, Math.max(...bs.map(b => b.fz)), bob(bs.map(b => shadow(b) + ball(b)).join(""), i + 1)));
+      s += SEP + part("bubbleroom-balls-" + n, [...ballKey, n], () => obj(`bubbles stuck out ${i + 1}`, Math.max(...bs.map(b => b.fz)), bob(bs.map((b, j) => shadow(b) + ball(b, 1000 * (n + 1) + j)).join(""), i + 1)));
     });
   }
   return s;

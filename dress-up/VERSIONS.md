@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.239 (2026-10-18)
+
+Everything in 0.0.238, with the bubble room alive and its own music.
+
+- **The bubble room's foam is alive**: some of its big bubbles breathe in and out, each in its own time (with the scene's slow LFO), a few pop and grow back now and then, and the stuck-out bubbles bob and swell. Only those bubbles are drawn again as they move, not the whole room, so it stays quick.
+- **New bubble room settings to start from**, Matthew's own: foam high up the walls and far out on the floor and the ceiling, lots of bubbles stuck out into the room, and the foam moving a good deal.
+- **🫧 bubble super-dub step, the bubble room's own tune**, among the 🌴 reggae tunes: the 🔥 turtle super-dub step's groove, slower (116 beats a minute instead of 153), with new chords and new tunes.
+
 ## 0.0.238 (2026-10-18)
 
 Everything in 0.0.237, with the bubble room deeper and livelier, and bubble makers.

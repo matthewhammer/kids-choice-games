@@ -419,9 +419,10 @@ const DEFAULTS = {
                 // a rainbow sheen, how much it moves, and its seed
                 // (Matthew, 0.0.237: "the bubbles on the wall/floor should be dynamic, not static": moving from the start) and how many
                 // bubbles stick out from each surface into the room
-                foamBack: true, foamBackH: 70, foamLeft: true, foamLeftH: 55, foamRight: true, foamRightH: 55, foamFloor: true, foamFloorH: 100,
-                foamCeil: true, foamCeilH: 60, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 40, foamSeed: 1,
-                foamBackOut: 30, foamLeftOut: 30, foamRightOut: 30, foamFloorOut: 25, foamCeilOut: 20,
+                // (Matthew's own, from his save of 16:56 on 0.0.238: "these are good for the bubble room defaults")
+                foamBack: true, foamBackH: 98, foamLeft: true, foamLeftH: 84, foamRight: true, foamRightH: 82, foamFloor: true, foamFloorH: 86,
+                foamCeil: true, foamCeilH: 95, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 88, foamSeed: 58909,
+                foamBackOut: 94, foamLeftOut: 82, foamRightOut: 82, foamFloorOut: 94, foamCeilOut: 20,
                 bubbleCOn: false, bubbleCColor: "#c8f7c5", bubbleCSize: 11, bubbleCShine: 60, bubbleCSparkle: "dot", bubbleCSparkleColor: "#ffffff",
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false, cauldronFumes: "simple",
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
@@ -975,7 +976,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.238", released: "2026-10-18" };
+const VERSION = { number: "0.0.239", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
