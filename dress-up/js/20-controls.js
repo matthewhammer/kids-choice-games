@@ -1222,10 +1222,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   }
   // (ticket 159, Matthew) the music, full screen: this tab's controls take
   // the whole window, and the screen where the browser allows (setMusicBig)
-  if (kind === "musicbig") box.append(el("button", { class: "musicbig", onclick: () => setMusicBig(!document.body.classList.contains("music-big")) },
+  if (kind === "musicbig") box.append(el("button", { class: "musicbig designer-chip", onclick: () => setMusicBig(!document.body.classList.contains("music-big")) },
                                          document.body.classList.contains("music-big") ? MUSIC_BIG[1] : MUSIC_BIG[0]));
   // (ticket 210, Matthew) the world designer full screen, as the music's (setWorldBig)
-  if (kind === "worldbig") box.append(el("button", { class: "worldbig", onclick: () => setWorldBig(!document.body.classList.contains("world-big")) },
+  if (kind === "worldbig") box.append(el("button", { class: "worldbig designer-chip", onclick: () => setWorldBig(!document.body.classList.contains("world-big")) },
                                          document.body.classList.contains("world-big") ? WORLD_BIG[1] : WORLD_BIG[0]));
   // (ticket 185) the forest crossing's things: a button for each kind puts
   // one in, at a free spot near the meeting place; drag it from there in

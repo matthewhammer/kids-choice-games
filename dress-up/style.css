@@ -84,25 +84,33 @@
      tunes and the mixing board take the whole window; the picture, the
      title and the other tabs hidden until ✕, Escape or leaving full screen */
   /* (ticket 210) and the 🗺️ World design tab full screen, the same way (world-big) */
-  body.music-big, body.world-big { overflow: hidden; }
-  body.music-big .stage, body.music-big .divider, body.music-big .side > h1, body.music-big #tabs,
-  body.world-big .stage, body.world-big .divider, body.world-big .side > h1, body.world-big #tabs { display: none; }
-  body.music-big .side, body.world-big .side { position: fixed; inset: 0; z-index: 30; overflow: auto; background: var(--bg);
+  /* (ticket 285, ^du_report(5)'s step 1) Three pieces for every tab, the two full screens first. The designer's shell:
+     body.designer-big (with the designer's own class) is a tab full screen under a slim bar (22-full-screen.js,
+     designerShell). A box: one thing you can see or hear, its name once, nesting by boxes alone (.box, .boxes for a grid
+     of them). The one-line row: its label, its control, its value (.row1; the music's .knob is one). Their sizes are
+     the tokens below, so a card, a strip and a knob are one size wherever they are. */
+  :root { --box-line: 2px solid var(--line); --box-radius: 12px; --box-pad: 8px 10px; --box-gap: 8px; --box-min: 280px; --row-label: 6.2em; --row-value: 3.8em; }
+  .box { border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--box-tint, var(--mu-main)); }
+  .boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
+  .row1 { display: grid; grid-template-columns: var(--row-label) 1fr var(--row-value); align-items: center; gap: 4px; }
+  body.designer-big { overflow: hidden; }
+  body.designer-big .stage, body.designer-big .divider, body.designer-big .side > h1, body.designer-big #tabs { display: none; }
+  body.designer-big .side { position: fixed; inset: 0; z-index: 30; overflow: auto; background: var(--bg);
                          padding: 12px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
   body.music-big .mixer { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-  body.music-big .touchpad, body.world-big .touchpad { display: none; }   /* (no friend to move here) */
+  body.designer-big .touchpad { display: none; }   /* (no friend to move here) */
   /* (ticket 210, Matthew: the music full screen "especially large and over-stated"; full screens "more compact, and
      sleek looking") Both tabs' full screens: a slim bar across the top (the tab's name, and ✕ back to the game, small),
      the panel's own frame gone, and the music's controls as cards in columns, not a row each the window's width */
-  body.music-big .side, body.world-big .side { padding-top: 0; }
-  body.music-big #panel, body.world-big #panel { background: transparent; border: 0; padding: 0; border-radius: 0; }
-  body.music-big #panel > .ctl:has(> button.musicbig), body.world-big #panel > .ctl:has(> button.worldbig) {
+  body.designer-big .side { padding-top: 0; }
+  body.designer-big #panel { background: transparent; border: 0; padding: 0; border-radius: 0; }
+  body.designer-big #panel > .ctl:has(> button.designer-chip) {
     position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 8px 2px;
     background: var(--bg); border-bottom: 1px solid var(--line); border-radius: 0; }
-  body.music-big #panel > .ctl:has(> button.musicbig) > .lbl, body.world-big #panel > .ctl:has(> button.worldbig) > .lbl { display: none; }
+  body.designer-big #panel > .ctl:has(> button.designer-chip) > .lbl { display: none; }
   body.music-big #panel > .ctl:has(> button.musicbig)::before { content: "🎵 Music"; font-weight: 700; font-size: 1.1em; margin-right: auto; }
   body.world-big #panel > .ctl:has(> button.worldbig)::before { content: "🗺️ World design"; font-weight: 700; font-size: 1.1em; margin-right: auto; }
-  body.music-big button.musicbig, body.world-big button.worldbig { padding: 3px 12px; font-size: 0.9em; }
+  body.designer-big button.designer-chip { padding: 3px 12px; font-size: 0.9em; }
   body.music-big #panel[data-part=music] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 8px; }
   /* (ticket 250, Matthew: "let's use these UX improvements in the non-FS mode of Music panel. Also, in this FS mode, the song
      progress sub-panel ... can extend to fill the rest of the row"; "maybe stack the first two subpanels vertically -- they
@@ -130,8 +138,8 @@
     body.world-big .world-split { display: block; grid-column: 2; grid-row: 1; position: sticky; top: 56px; height: calc(100dvh - 72px);
                                   cursor: col-resize; touch-action: none; border-radius: 6px; background: var(--line); opacity: 0.45; }
     body.world-big .world-split:hover, body.world-big .world-split:active { opacity: 1; }
-    body.world-big .world-rest { grid-column: 3; grid-row: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 8px; align-items: start; }
-    body.world-big .world-rest > :not([hidden]) { margin: 0; border: 2px solid var(--line); border-radius: 12px; padding: 8px 10px; background: var(--mu-main); }
+    body.world-big .world-rest { grid-column: 3; grid-row: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }   /* (as .boxes) */
+    body.world-big .world-rest > :not([hidden]) { margin: 0; border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--mu-main); }   /* (each a .box) */
     body.world-big .world-rest > :is(.world-alert, .world-warn, .world-palette, .world-things, .world-off) { grid-column: 1 / -1; }
     body.world-big .world-rest > .world-alert { border-color: #d97706; background: color-mix(in srgb, #f59e0b 18%, var(--panel)); }
     /* (ticket 231's check: the grid's column, 🗑️ under it, no taller than the window under the bar, or at the end of
@@ -310,7 +318,7 @@
   /* the mixing board: a strip for each part, the whole tune's first */
   .mixer { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 4px; }
   .mixer p.now { margin: 0; color: var(--muted); }
-  .strip { border: 2px solid var(--line); border-radius: 12px; padding: 6px 8px; font-size: 0.85em; }
+  .strip { border: var(--box-line); border-radius: var(--box-radius); padding: 6px 8px; font-size: 0.85em; }
   .strip.master { border-style: dashed; }
   .strip.lfo { border-style: dotted; }
   .mixer .quad { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -326,7 +334,7 @@
   .strip { background: var(--mu-inst); }
   .strip.master { background: var(--mu-mix); }
   .strip.lfo { background: var(--mu-lfo); }
-  #panel[data-part=music] > .ctl:not(.mixctl) { background: var(--mu-main); border-radius: 12px; padding: 6px 10px; margin: 0; }   /* (ticket 250: cards in a grid, its gap between them) */
+  #panel[data-part=music] > .ctl:not(.mixctl) { background: var(--mu-main); border-radius: var(--box-radius); padding: 6px 10px; margin: 0; }   /* (ticket 250: cards in a grid, its gap between them) */
   /* the castle designer: a map of the castle's rooms and the ways between them */
   .designer { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
   .designer .map { height: 340px; border: 2px solid var(--line); border-radius: 12px; background: rgba(127, 127, 127, 0.08); }
@@ -364,11 +372,11 @@
   .strip button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   /* a throw is held down: no text selection or long-press menu on a tablet */
   .strip button.throw { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
-  .knob { display: grid; grid-template-columns: 6.2em 1fr 3.8em; align-items: center; gap: 4px; }
+  .knob { display: grid; grid-template-columns: var(--row-label) 1fr var(--row-value); align-items: center; gap: 4px; }   /* (a .row1) */
   .knob input[type=range] { height: 22px; }
   .knob .val { color: var(--muted); text-align: right; font-size: 0.9em; }
   /* a channel's move: its chips beside the name, how far it is moved on a line of its own */
-  .knob.move { grid-template-columns: 6.2em 1fr; }
+  .knob.move { grid-template-columns: var(--row-label) 1fr; }
   .knob.move .row { display: flex; gap: 4px; flex-wrap: nowrap; }
   .knob.move .row button { white-space: nowrap; flex-shrink: 0; }
   .knob.move .val { grid-column: 1 / -1; }

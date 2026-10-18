@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.212 (2026-10-18)
+
+Everything in 0.0.211, looking the same: the 🎵 Music and 🗺️ World design full screens are now built from pieces every tab will share, a box for each thing, a row on one line, and the full screen itself, the first step of laying out every panel as those two are (^du_report(5)).
+
 ## 0.0.211 (2026-10-18)
 
 Everything in 0.0.210, with the three things the Dress Up report on the designers (^du_report(5)) found on the way.

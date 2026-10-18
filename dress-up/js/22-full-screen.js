@@ -39,18 +39,12 @@ function setMusicBig(on, leaving) {
     setBig(false, true);
     if (tab !== musicTab) { tab = musicTab; showTab(); }
   }
-  document.body.classList.toggle("music-big", on);
-  for (const b of document.querySelectorAll("button.musicbig")) b.textContent = MUSIC_BIG[on ? 1 : 0];
-  if (on) document.querySelector(".side").scrollTop = 0;
+  designerShell("music", on);
   const from = on ? null : musicFrom;
   if (!on) musicFrom = null;
   if (from && from.tab !== tab) { tab = from.tab; showTab(); }
   if (from && !leaving) { setBig(true); if (from.hud) setHud(true); return; }
-  try {
-    if (on && document.documentElement.requestFullscreen && !document.fullscreenElement)
-      document.documentElement.requestFullscreen().catch(() => {});
-    else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  } catch (e) { /* the window-filling controls are enough */ }
+  designerScreen(on);
 }
 // (ticket 210, Matthew: "full screen mode for world designer, follow the music
 // panel for a model") The 🗺️ World design tab full screen, as the music's:
@@ -58,16 +52,30 @@ function setMusicBig(on, leaving) {
 // screen where the browser allows; ✕, Escape or leaving the browser's full
 // screen bring the game back.
 const WORLD_BIG = ["⛶ the world designer, full screen", "✕ back to the game"];
-function setWorldBig(on) {
-  document.body.classList.toggle("world-big", on);
-  for (const b of document.querySelectorAll("button.worldbig")) b.textContent = WORLD_BIG[on ? 1 : 0];
+// (ticket 285, ^du_report(5)'s step 1: "the designer's shell the two full screens share") A tab full screen as a designer:
+// body.designer-big, with the designer's own class (music-big, world-big); its controls the whole window under a slim
+// bar that names the tab, its chip there saying ✕ back; ✕, Escape or leaving the browser's full screen going back.
+// DESIGNERS: each one's class, its chip's class (also designer-chip, which the bar's CSS keys on) and words.
+const DESIGNERS = { music: { cls: "music-big", chip: "musicbig", words: MUSIC_BIG }, world: { cls: "world-big", chip: "worldbig", words: WORLD_BIG } };
+function designerShell(name, on) {
+  const D = DESIGNERS[name];
+  document.body.classList.toggle(D.cls, on);
+  document.body.classList.toggle("designer-big", Object.values(DESIGNERS).some(x => document.body.classList.contains(x.cls)));
+  for (const b of document.querySelectorAll("button." + D.chip)) b.textContent = D.words[on ? 1 : 0];
   if (on) document.querySelector(".side").scrollTop = 0;
-  placePic();
+}
+// (the screen too, where the browser allows: the window-filling designer is enough where it does not)
+function designerScreen(on) {
   try {
     if (on && document.documentElement.requestFullscreen && !document.fullscreenElement)
       document.documentElement.requestFullscreen().catch(() => {});
     else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
   } catch (e) { /* the window-filling designer is enough */ }
+}
+function setWorldBig(on) {
+  designerShell("world", on);
+  placePic();
+  designerScreen(on);
 }
 // (ticket 231, Matthew: "show the in-game view as the first sub-panel, the full width of the RHS of the full screen
 // view. Then a way to scroll the panels below and keep that in-game view fixed. An eye-ball to hide it ... off by
