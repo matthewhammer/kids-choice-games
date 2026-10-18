@@ -267,8 +267,8 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes, trap = null) {
     // (ticket 323) its boulder, there while the room has boulder levers: in the hole when fallen (a rock standing there, so a
     // solid), else up out of sight at the ceiling, where it falls from (boulderFall); data-drop: how far
     const boulder = () => { if (!trap || !trap.boulders) return "";
-      const rad = rx * 0.8, base = cy + ry * 0.55, drop = base - top + 90 * k, sd = trap.seed * 7 + i;
-      const tone = trap.tone === "surprise" ? ROCK_TONES[Math.floor(seeded(trap.seed)(i + 50) * ROCK_TONES.length)] : trap.tone;
+      const rad = rx * 0.8, base = cy + ry * 0.55, drop = base - top + 90 * k, sd = trap.seeds[i] * 7 + i;   // (ticket 328: its own seed)
+      const tone = trap.tone === "surprise" ? ROCK_TONES[Math.floor(seeded(trap.seeds[i])(i + 50) * ROCK_TONES.length)] : trap.tone;
       const g = `<g data-boulder="${i}" data-drop="${f1(drop)}"${covered ? "" : ` transform="translate(0 ${f1(-drop)})" visibility="hidden"`}>${rockSvg(cx, base, rad, sd, tone)}</g>`;
       return covered ? obj(i ? "boulder, right" : "boulder, left", base, g) : g; };
     if (!open) { t += `<g>` + pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, false) + `</g>` + boulder(); return; }   // (ticket 307: its lid across it)

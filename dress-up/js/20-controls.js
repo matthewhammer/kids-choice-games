@@ -455,6 +455,8 @@ const TABS = [
         ["choice", leverWireKey(n, id), "🎚️ the levers work", LEVER_WIRES],
         // (ticket 323, N's) the blue boulder levers, under the red ones, and their boulders' rock
         ["toggle", boulderOnKey(n, id), "🪨 boulder levers (blue knobs): a boulder falls into a pit"], ["choice", boulderToneKey(n, id), "🪨 the boulders' rock", BOULDER_TONES],
+        // (ticket 328) how fast each moves: a share of its usual time, faster above 100
+        ["range", leverSpeedKey(n, id), "🎚️ how fast the levers move", 25, 300, 50, 200], ["range", boulderSpeedKey(n, id), "🪨 how fast the boulders fall", 25, 300, 50, 200], ["range", lidSpeedKey(n, id), "🕳️ how fast the trap doors swing", 25, 300, 50, 200],
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castlePlaces" + n + id, "🍽️ places at table", 4, 18, 4, 18],
@@ -897,7 +899,8 @@ const SHOWN_WHEN = {
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle], ["background.castleDesign" + id, atCastle],
             ...ROOM_NS.flatMap(n => [...[1, 2].map(i => ["background." + pitShapeKey(i, n, id), b => typeOf(b, n) === "trap"]),
               ...[1, 2].map(i => ["background." + pitOnKey(i, n, id), b => typeOf(b, n) === "trap"]), ["background." + leverWireKey(n, id), b => typeOf(b, n) === "trap"],
-              ["background." + boulderOnKey(n, id), b => typeOf(b, n) === "trap"], ["background." + boulderToneKey(n, id), b => typeOf(b, n) === "trap" && b[boulderOnKey(n, id)] !== false],   // (ticket 323)   // (ticket 305)   // (ticket 271: in a trap room's own box)
+              ["background." + boulderOnKey(n, id), b => typeOf(b, n) === "trap"], ["background." + boulderToneKey(n, id), b => typeOf(b, n) === "trap" && b[boulderOnKey(n, id)] !== false],   // (ticket 323)
+              ["background." + leverSpeedKey(n, id), b => typeOf(b, n) === "trap"], ["background." + lidSpeedKey(n, id), b => typeOf(b, n) === "trap"], ["background." + boulderSpeedKey(n, id), b => typeOf(b, n) === "trap" && b[boulderOnKey(n, id)] !== false],   // (ticket 328)   // (ticket 305)   // (ticket 271: in a trap room's own box)
               ["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
               ["background.castleOut" + n + id, b => !isHall(b, n)], ["background.castleFar" + n + id, b => typeOf(b, n) === "dining"],

@@ -322,7 +322,7 @@ const letGo = () => {
 // (ticket 284) A 🎚️ lever pulled: it flips over, and so does every 🕳️ trap door here it is wired to (its 🔗); the picture is
 // drawn with it over, and then its handle on the screen turns across from where it was, in LEVER_TURN ms
 // (ticket 307, Matthew: "the switch should animate too -- rocking back and forth somehow": it swings past and rocks back, settling)
-const LEVER_TURN = 900;
+const LEVER_TURN = 1400;   // (ticket 328: slower, to be seen; 900 till 0.0.231)
 function leverPull(i) {
   const B = state.background, T = (B.things || [])[i];
   if (!T || T.kind !== "lever") return;
@@ -347,9 +347,9 @@ function roomLeverPull(side) {
   const was = trapState(B, n, K.id).open;
   B[key] = !leverDown(B, side, n, K.id);   // (ticket 307: never touched, it was down)
   changed();
-  const up = !B[key], sd = side === "L" ? -1 : 1, now = trapState(B, n, K.id).open;
-  turnArm(`[data-lever="${side}"] .lever-arm`, (up ? 1 : -1) * sd * LEVER_TILT);
-  for (const j of [0, 1]) if (now[j] !== was[j]) lidSwing(`.pit-lid[data-pit-i="${j}"]`, now[j]);   // (ticket 307)
+  const up = !B[key], sd = side === "L" ? -1 : 1, T = trapState(B, n, K.id), now = T.open;
+  turnArm(`[data-lever="${side}"] .lever-arm`, (up ? 1 : -1) * sd * LEVER_TILT, LEVER_TURN * 100 / T.speed.lever);   // (ticket 328: the room's speeds)
+  for (const j of [0, 1]) if (now[j] !== was[j]) lidSwing(`.pit-lid[data-pit-i="${j}"]`, now[j], PIT_SWING * 100 / T.speed.lid);   // (ticket 307)
 }
 // (ticket 323) A trap room's boulder lever pulled: it flips over; each pit it works (by the room's wiring) has its boulder
 // fall from the ceiling into the hole, or rise away again. A new seed each time one falls: a new rock (its shape, and its
@@ -360,17 +360,19 @@ function roomBoulderPull(side) {
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = boulderKey(side, n, K.id);
   const was = trapState(B, n, K.id).covered;
   B[key] = !B[key];
-  if (B[key]) B[boulderSeedKey(n, K.id)] = 1 + Math.floor(Math.random() * 999999);
+  // (ticket 328: a new rock only for a pit whose boulder falls now, each its own seed)
+  const now = trapState(B, n, K.id).covered;
+  for (const j of [0, 1]) if (now[j] && !was[j]) B[boulderSeedKey(j, n, K.id)] = 1 + Math.floor(Math.random() * 999999);
   changed();
-  const down = B[key], sd = side === "L" ? -1 : 1, now = trapState(B, n, K.id).covered;
-  turnArm(`[data-lever="B${side}"] .lever-arm`, (down ? -1 : 1) * sd * LEVER_TILT);
-  for (const j of [0, 1]) if (now[j] !== was[j]) boulderFall(`[data-boulder="${j}"]`, now[j]);
+  const down = B[key], sd = side === "L" ? -1 : 1, sp = trapState(B, n, K.id).speed;
+  turnArm(`[data-lever="B${side}"] .lever-arm`, (down ? -1 : 1) * sd * LEVER_TILT, LEVER_TURN * 100 / sp.lever);
+  for (const j of [0, 1]) if (now[j] !== was[j]) boulderFall(`[data-boulder="${j}"]`, now[j], BOULDER_FALL * 100 / sp.boulder);
 }
 // (a boulder falling from the ceiling into its pit, faster as it falls, a little bounce as it lands; or rising away, slowly
 // at first, out of sight; in BOULDER_FALL ms, carried on through a redrawing as every swing is)
-const BOULDER_FALL = 720;
-function boulderFall(sel, down) {
-  swingOn(sel, BOULDER_FALL, (g, u) => { const H = +g.dataset.drop;
+const BOULDER_FALL = 1300;   // (ticket 328: slower, to be seen; 720 in 0.0.231)
+function boulderFall(sel, down, dur = BOULDER_FALL) {
+  swingOn(sel, dur, (g, u) => { const H = +g.dataset.drop;
     const y = down ? (u < 0.8 ? -H * (1 - (u / 0.8) ** 2) : -H * 0.05 * Math.sin(Math.PI * (u - 0.8) / 0.2)) : -H * u * u;
     if (u < 1) { g.removeAttribute("visibility"); g.setAttribute("transform", `translate(0 ${f1(y)})`); return; }
     if (down) g.removeAttribute("transform"); else { g.setAttribute("transform", `translate(0 ${f1(-H)})`); g.setAttribute("visibility", "hidden"); } });
@@ -400,17 +402,17 @@ function swingOn(sel, dur, apply) {
 }
 // (a lever's handle, found by sel, turned across to its new angle `to` from the other side, past it and rocking back
 // (ticket 307), in LEVER_TURN ms)
-function turnArm(sel, to) {
-  swingOn(sel, LEVER_TURN, (arm, u) => { const [px, py] = arm.dataset.pivot.split(" ").map(Number);
+function turnArm(sel, to, dur = LEVER_TURN) {
+  swingOn(sel, dur, (arm, u) => { const [px, py] = arm.dataset.pivot.split(" ").map(Number);
     const a = u <= 0 ? -to : u < 1 ? to - 2 * to * Math.exp(-5 * u) * Math.cos(3 * Math.PI * u) : to;   // (past it by a third, back, and still)
     arm.setAttribute("transform", `rotate(${f1(a)} ${f1(px)} ${f1(py)})`); });
 }
 // (ticket 307) a pit's lid, found by sel, swung on the screen, after the picture is drawn with it as it ends: open, from
 // across the opening down into the pit on its hinge (falling, faster as it goes), the shade deepening; shut, back up
 // across it (slowing as it lands); in PIT_SWING ms
-const PIT_SWING = 520;
-function lidSwing(sel, open) {
-  swingOn(sel, PIT_SWING, (lid, u) => {
+const PIT_SWING = 800;   // (ticket 328: slower, to be seen; 520 till 0.0.231)
+function lidSwing(sel, open, dur = PIT_SWING) {
+  swingOn(sel, dur, (lid, u) => {
     const y0 = +lid.dataset.hinge, shade = lid.querySelector(".lid-shade");
     const at = s => { lid.setAttribute("transform", lidAt(y0, s)); if (shade) shade.setAttribute("opacity", (0.7 * (1 - s)).toFixed(2)); };
     if (u < 1) { lid.removeAttribute("visibility"); at(Math.max(0.001, open ? 1 - u * u : 1 - (1 - u) * (1 - u))); return; }

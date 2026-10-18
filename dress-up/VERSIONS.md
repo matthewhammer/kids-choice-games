@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.232 (2026-10-18)
+
+Everything in 0.0.231, with the levers, boulders and trap doors easier to see moving, and a speed for each.
+
+- **Slower, so you can see them**: a lever's handle now takes about a second and a half to swing over and rock still, a boulder about a second and a third to fall from the ceiling and bounce into its pit, and a trap door's lid most of a second to swing.
+- **A speed for each, in the trap room's box**: "🎚️ how fast the levers move", "🪨 how fast the boulders fall" and "🕳️ how fast the trap doors swing", from a quarter of the speed to three times as fast.
+- **Fixed: pulling the right boulder lever changed the left pit's rock.** Each pit's boulder now keeps its own rock until it falls again.
+
 ## 0.0.231 (2026-10-18)
 
 Everything in 0.0.230, plus boulder levers, for N.

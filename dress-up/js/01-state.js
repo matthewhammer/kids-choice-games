@@ -262,12 +262,18 @@ const leverDown = (o, side, n, id) => !!(o[leverKey(side, n, id)] ?? true);
 // away. The boulder's rock: a tone of the rocks put in places (ROCK_TONES), or a surprise; its shape, and a surprise's
 // tone, drawn from a seed set each time one falls (boulderSeedKey), so the settings decide the picture.
 const boulderOnKey = (n, id) => `castleBoulders${n}${id}`, boulderKey = (side, n, id) => `castleBoulder${side}_${n}${id}`;
-const boulderToneKey = (n, id) => `castleBoulderTone${n}${id}`, boulderSeedKey = (n, id) => `castleBoulderSeed${n}${id}`;
+// (ticket 328: a seed for each pit's boulder, set only when that boulder falls: one for the room made the right lever's
+// boulder draw the left one anew, Matthew: "switching the R switch replaces the L rock")
+const boulderToneKey = (n, id) => `castleBoulderTone${n}${id}`, boulderSeedKey = (i, n, id) => `castleBoulderSeed${i}_${n}${id}`;
+// (ticket 328, Matthew: "params in the room for each, in terms of animation speed") how fast its levers move, its boulders
+// fall and its trap doors swing: a share of each one's usual time (100), faster above
+const leverSpeedKey = (n, id) => `castleLeverSpeed${n}${id}`, boulderSpeedKey = (n, id) => `castleBoulderSpeed${n}${id}`, lidSpeedKey = (n, id) => `castleLidSpeed${n}${id}`;
 function trapState(o, n, id) {
   const wire = trapWiring(o, n, id), levers = { L: leverDown(o, "L", n, id), R: leverDown(o, "R", n, id) };
   const boulders = o[boulderOnKey(n, id)] !== false ? { L: !!o[boulderKey("L", n, id)], R: !!o[boulderKey("R", n, id)] } : null;
   return { wire, levers, on: [1, 2].map(i => o[pitOnKey(i, n, id)] !== false), open: [0, 1].map(i => !levers[wire[i]]),
-           boulders, covered: [0, 1].map(i => !!(boulders && boulders[wire[i]])), tone: o[boulderToneKey(n, id)] || "#8f8a80", seed: o[boulderSeedKey(n, id)] ?? 5 };
+           boulders, covered: [0, 1].map(i => !!(boulders && boulders[wire[i]])), tone: o[boulderToneKey(n, id)] || "#8f8a80", seeds: [0, 1].map(i => o[boulderSeedKey(i, n, id)] ?? 5 + i),
+           speed: { lever: o[leverSpeedKey(n, id)] || 100, boulder: o[boulderSpeedKey(n, id)] || 100, lid: o[lidSpeedKey(n, id)] || 100 } };
 }
 // (wired at random: drawn again each time the friend comes into the room, so each visit is a puzzle of its own)
 function trapReshuffle(B) {
@@ -421,7 +427,7 @@ const DEFAULTS = {
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
                    ...ROOM_NS.map(n => ["castleRoomTheme" + n + id, n % 2 ? "A" : "B"]),
-                   ...ROOM_NS.flatMap(n => [[pitOnKey(1, n, id), true], [pitOnKey(2, n, id), true], [leverWireKey(n, id), "normal"], [boulderOnKey(n, id), true], [boulderToneKey(n, id), "#8f8a80"]]),   // (ticket 305)
+                   ...ROOM_NS.flatMap(n => [[pitOnKey(1, n, id), true], [pitOnKey(2, n, id), true], [leverWireKey(n, id), "normal"], [boulderOnKey(n, id), true], [boulderToneKey(n, id), "#8f8a80"], [leverSpeedKey(n, id), 100], [boulderSpeedKey(n, id), 100], [lidSpeedKey(n, id), 100]]),   // (ticket 305)
                    ...ROOM_NS.flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"], ["castleOut" + n + id, "auto"], ["castleBack" + n + id, "none"], ["castleFar" + n + id, "none"], ["castlePlaces" + n + id, 10],
                      ...DOOR_JS.map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...ROOM_NS.map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
@@ -962,7 +968,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.231", released: "2026-10-18" };
+const VERSION = { number: "0.0.232", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
