@@ -1,0 +1,124 @@
+<!-- ^du_report(5)'s "after" mockups: static HTML in the game's own dark colors, boxes within boxes. Included by build.py. -->
+<style>
+  .mk { --bg: #1d1a26; --panel: #29253a; --panel2: #322d47; --panel3: #3a3452; --line: #4a4560; --ink: #eee; --muted: #aaa; --accent: #a78bfa;
+        background: var(--bg); color: var(--ink); border-radius: 14px; padding: 10px; font: 13px/1.35 system-ui, sans-serif; overflow: hidden; }
+  .mk * { box-sizing: border-box; }
+  .mk .bar { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 8px; font-weight: 700; }
+  .mk .bar small { font-weight: 400; color: var(--muted); }
+  .mk .x { border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; font-size: 11px; font-weight: 400; color: var(--muted); }
+  .mk .box { background: var(--panel); border-radius: 10px; padding: 8px; }
+  .mk .box .box { background: var(--panel2); }
+  .mk .box .box .box { background: var(--panel3); }
+  .mk .hd { font-weight: 700; margin: 0 0 6px; display: flex; align-items: center; gap: 6px; }
+  .mk .hd .r { margin-left: auto; font-weight: 400; color: var(--muted); font-size: 11px; }
+  .mk .grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(var(--min, 150px), 1fr)); }
+  .mk .row { display: grid; grid-template-columns: 1fr 1.1fr auto; align-items: center; gap: 6px; margin: 3px 0; }
+  .mk .row .v { color: var(--muted); font-size: 11px; min-width: 2.2em; text-align: right; }
+  .mk .sl { height: 5px; border-radius: 3px; background: #555; position: relative; }
+  .mk .sl i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--accent); }
+  .mk .sl b { position: absolute; top: -4px; width: 13px; height: 13px; border-radius: 50%; background: var(--accent); }
+  .mk .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .mk .chip { border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; font-size: 12px; color: var(--ink); background: transparent; }
+  .mk .chip.on { background: var(--accent); color: #1d1a26; border-color: var(--accent); }
+  .mk .sw { display: flex; gap: 4px; flex-wrap: wrap; }
+  .mk .sw span { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; }
+  .mk .sw span.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .mk .two { display: grid; gap: 8px; grid-template-columns: 1.55fr 1fr; }
+  .mk .tiles { display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); }
+  .mk .tile { border-radius: 7px; overflow: hidden; background: var(--panel3); font-size: 10px; text-align: center; padding-bottom: 2px; border: 2px solid transparent; }
+  .mk .tile img { width: 100%; display: block; aspect-ratio: 4 / 3; object-fit: cover; }
+  .mk .tile.on { border-color: var(--accent); }
+  .mk .view img, .mk .view object { width: 100%; display: block; border-radius: 8px; background: #bfe6ff; }
+  .mk .obj { display: flex; align-items: center; gap: 6px; }
+  .mk .obj .eye { font-size: 12px; opacity: 0.9; }
+  .mk .obj.off { opacity: 0.45; }
+  .mk .note { color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .mk .toggle { width: 30px; height: 17px; border-radius: 999px; background: #555; position: relative; flex: none; }
+  .mk .toggle.on { background: var(--accent); }
+  .mk .toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; }
+  .mk .toggle.on::after { left: 15px; }
+  .mk .theme { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; }
+  .mk .roomchip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 8px; padding: 2px 6px; font-size: 12px; }
+  .mk .pair { display: inline-flex; border-radius: 4px; overflow: hidden; }
+  .mk .pair i { width: 10px; height: 14px; display: block; }
+</style>
+
+<!-- MOCKUP castle -->
+<div class="mk" id="mk-castle">
+  <div class="box">
+    <div class="hd">🎨 N's castle: its colors <span class="r">two themes; each room that takes one shows which</span></div>
+    <div class="grid" style="--min: 260px"><div class="box"><div class="hd"><svg width="46" height="30" viewBox="0 0 46 30"><path d="M4 2 V28" stroke="#888" stroke-width="2"/><path d="M5 3 H40 L34 10 L40 17 H5 Z" fill="#e53935"/><path d="M5 10 H40 L37 13.5 L40 17 H5 Z" fill="#ffffff"/></svg> A <span class="r">its flags outside, and rooms 1, 3, 5 …</span></div><div class="theme"><span>🚩 color 1</span><div class="sw"><span class="on" style="background:#e53935"></span><span style="background:#f2c12e"></span><span style="background:#3b82f6"></span><span style="background:#22c55e"></span><span style="background:#6a2c91"></span><span style="background:#f472b6"></span><span style="background:#f97316"></span><span style="background:#ffffff"></span><span style="background:#1f1f22"></span></div><span>🚩 color 2</span><div class="sw"><span style="background:#e53935"></span><span style="background:#f2c12e"></span><span style="background:#3b82f6"></span><span style="background:#22c55e"></span><span style="background:#6a2c91"></span><span style="background:#f472b6"></span><span style="background:#f97316"></span><span class="on" style="background:#ffffff"></span><span style="background:#1f1f22"></span></div><span>🚩 together</span><div class="chips"><span class="chip on">↔️ in turn</span><span class="chip">▥ stripes</span><span class="chip">▦ checkers</span></div><span>🟥 carpet</span><div class="sw"><span class="on" style="background:#a3122a"></span><span style="background:#1e3a8a"></span><span style="background:#14532d"></span><span style="background:#6a2c91"></span><span style="background:#7c2d12"></span><span style="background:#d4a017"></span><span style="background:#1f1f22"></span></div></div></div><div class="box"><div class="hd"><svg width="46" height="30" viewBox="0 0 46 30"><path d="M4 2 V28" stroke="#888" stroke-width="2"/><path d="M5 3 H40 L34 10 L40 17 H5 Z" fill="#ffffff"/><path d="M5 10 H40 L37 13.5 L40 17 H5 Z" fill="#e53935"/></svg> B <span class="r">rooms 2, 4 …: A, its colors swapped</span></div><div class="theme"><span>🚩 color 1</span><div class="sw"><span style="background:#e53935"></span><span style="background:#f2c12e"></span><span style="background:#3b82f6"></span><span style="background:#22c55e"></span><span style="background:#6a2c91"></span><span style="background:#f472b6"></span><span style="background:#f97316"></span><span class="on" style="background:#ffffff"></span><span style="background:#1f1f22"></span></div><span>🚩 color 2</span><div class="sw"><span class="on" style="background:#e53935"></span><span style="background:#f2c12e"></span><span style="background:#3b82f6"></span><span style="background:#22c55e"></span><span style="background:#6a2c91"></span><span style="background:#f472b6"></span><span style="background:#f97316"></span><span style="background:#ffffff"></span><span style="background:#1f1f22"></span></div><span>🚩 together</span><div class="chips"><span class="chip on">↔️ in turn</span><span class="chip">▥ stripes</span><span class="chip">▦ checkers</span></div><span>🟥 carpet</span><div class="sw"><span style="background:#a3122a"></span><span style="background:#1e3a8a"></span><span style="background:#14532d"></span><span style="background:#6a2c91"></span><span style="background:#7c2d12"></span><span style="background:#d4a017"></span><span style="background:#1f1f22"></span></div></div></div></div>
+    <div class="box" style="margin-top: 8px"><div class="hd">🚪 its rooms <span class="r">tap a room's flag to give it the other theme</span></div>
+      <div class="chips"><span class="roomchip">👑 1 king's room <span class="pair"><i style="background:#e53935"></i><i style="background:#ffffff"></i></span> A</span><span class="roomchip" style="opacity:0.6">🌿 2 greenhouse · its own</span><span class="roomchip" style="opacity:0.6">🕳️ 3 trap room · its own</span><span class="roomchip" style="opacity:0.6">🗝️ 4 dungeon · its own</span><span class="roomchip" style="opacity:0.6">⛓️ 5 deep dungeon · its own</span></div><div class="note">Only rooms with doors of their own (the king's room, hallways, the dining room, the spiral stairs) take a theme; the others keep their own colors, and say so.</div></div>
+  </div>
+</div>
+
+<!-- MOCKUP bubbles -->
+<div class="mk" id="mk-bubbles">
+  <div class="box">
+    <div class="hd">🫧 bubble themes <span class="r">the same three in 🫧 bubble space and in 🎮 blowing bubbles</span></div>
+    <div class="grid" style="--min: 170px">
+      <div class="box"><div class="hd"><svg width="34" height="34" viewBox="-17 -17 34 34"><circle r="14" fill="#9ad7ff" fill-opacity="0.35" stroke="#9ad7ff" stroke-width="2"/><ellipse cx="-5" cy="-6" rx="4" ry="2.5" fill="#fff" opacity="0.7"/></svg> A <span class="r">always</span></div>
+        <div class="sw"><span class="on" style="background:#9ad7ff"></span><span style="background:#ffb3e6"></span><span style="background:#c8f7c5"></span><span style="background:#fff3a3"></span><span style="background:#d7c4ff"></span><span style="background:#ffffff"></span><span style="background:#ffc9a3"></span></div>
+        <div class="row"><span>🔎 size</span><div class="sl"><i style="width:30%"></i><b style="left:28%"></b></div><span class="v">18</span></div>
+        <div class="row"><span>✨ shine</span><div class="sl"><i style="width:70%"></i><b style="left:66%"></b></div><span class="v">70</span></div>
+        <div class="chips"><span class="chip on">none</span><span class="chip">⭐</span><span class="chip">•</span></div></div>
+      <div class="box"><div class="hd"><svg width="34" height="34" viewBox="-17 -17 34 34"><circle r="15" fill="#ffb3e6" fill-opacity="0.35" stroke="#ffb3e6" stroke-width="2"/><ellipse cx="-5" cy="-6" rx="4.5" ry="2.8" fill="#fff" opacity="0.8"/><text x="6" y="2" font-size="9">⭐</text></svg> B <span class="toggle on" style="margin-left:auto"></span></div>
+        <div class="sw"><span style="background:#9ad7ff"></span><span class="on" style="background:#ffb3e6"></span><span style="background:#c8f7c5"></span><span style="background:#fff3a3"></span><span style="background:#d7c4ff"></span><span style="background:#ffffff"></span><span style="background:#ffc9a3"></span></div>
+        <div class="row"><span>🔎 size</span><div class="sl"><i style="width:43%"></i><b style="left:40%"></b></div><span class="v">26</span></div>
+        <div class="row"><span>✨ shine</span><div class="sl"><i style="width:85%"></i><b style="left:81%"></b></div><span class="v">85</span></div>
+        <div class="chips"><span class="chip">none</span><span class="chip on">⭐</span><span class="chip">•</span><span class="sw"><span class="on" style="background:#fff5b0"></span></span></div></div>
+      <div class="box" style="opacity: 0.55"><div class="hd"><svg width="34" height="34" viewBox="-17 -17 34 34"><circle r="9" fill="#c8f7c5" fill-opacity="0.35" stroke="#c8f7c5" stroke-width="2"/></svg> C <span class="toggle" style="margin-left:auto"></span></div>
+        <div class="note">off: switch it on to add bubbles of its own</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MOCKUP background designer -->
+<div class="mk" id="mk-background">
+  <div class="bar"><span>🏞️ Background designer <small>· 🦆 lake</small></span><span class="x">✕ back to the game</span></div>
+  <div class="two">
+    <div class="grid" style="--min: 100%">
+      <div class="box"><div class="hd">🗺️ the place <span class="r">every place, as it looks</span></div>
+        <div class="tiles">
+          <div class="tile"><img src="pictures/places/forest.webp" alt="">🌲 forest</div><div class="tile"><img src="pictures/places/clearing.webp" alt="">🌲 clearing</div>
+          <div class="tile"><img src="pictures/places/woodpath.webp" alt="">🥾 path</div><div class="tile"><img src="pictures/places/crossing.webp" alt="">🛤️ crossing</div>
+          <div class="tile"><img src="pictures/places/mountains.webp" alt="">⛰️ trail</div><div class="tile"><img src="pictures/places/fairyforest.webp" alt="">🧚 fairies</div>
+          <div class="tile on"><img src="pictures/places/lake.webp" alt="">🦆 lake</div><div class="tile"><img src="pictures/places/beach.webp" alt="">🏖️ beach</div>
+          <div class="tile"><img src="pictures/places/waterfall.webp" alt="">💦 waterfall</div><div class="tile"><img src="pictures/places/castle.webp" alt="">🏰 castle</div>
+        </div></div>
+      <div class="grid" style="--min: 210px">
+        <div class="box"><div class="hd">🦆 the lake itself</div>
+          <div class="row"><span>🦆 ducks</span><div class="sl"><i style="width:31%"></i><b style="left:28%"></b></div><span class="v">5</span></div>
+          <div class="row"><span>🦆 duck size</span><div class="sl"><i style="width:26%"></i><b style="left:23%"></b></div><span class="v">100</span></div>
+          <div class="row"><span>🌾 cattails</span><div class="sl"><i style="width:35%"></i><b style="left:32%"></b></div><span class="v">14</span></div>
+          <div class="row"><span>☁️ clouds</span><div class="sl"><i style="width:40%"></i><b style="left:37%"></b></div><span class="v">4</span></div>
+          <div class="row"><span>☁️ cloud size</span><div class="sl"><i style="width:29%"></i><b style="left:26%"></b></div><span class="v">100</span></div></div>
+        <div class="box"><div class="hd">🧍 the friend here</div>
+          <div class="row"><span>size in the scene</span><div class="sl"><i style="width:30%"></i><b style="left:27%"></b></div><span class="v">100</span></div>
+          <div class="row"><span>🔭 smaller north</span><div class="sl"><i style="width:50%"></i><b style="left:47%"></b></div><span class="v">40</span></div>
+          <div class="note">drag the friend in the view to place them</div></div>
+      </div>
+      <div class="box"><div class="hd">👁️ what stands here, back to front <span class="r">each lit in the view while pointed at; tap to hide</span></div>
+        <div class="grid" style="--min: 92px">
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/far-wood.webp" alt="" style="height:44px">far wood</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/duck-1.webp" alt="" style="height:44px">duck 1</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/duck-5.webp" alt="" style="height:44px">duck 5</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/duck-3.webp" alt="" style="height:44px">duck 3</div>
+          <div class="box obj off" style="flex-direction:column"><img src="pictures/objects/duck-2.webp" alt="" style="height:44px">🙈 duck 2</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/duck-4.webp" alt="" style="height:44px">duck 4</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/cattails-left.webp" alt="" style="height:44px">cattails, left</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/cattails-right.webp" alt="" style="height:44px">cattails, right</div>
+        </div></div>
+      <div class="grid" style="--min: 210px">
+        <div class="box"><div class="hd">🧭 its ways <span class="r">from 🗺️ World design</span></div><div class="chips"><span class="chip">⬆️ N</span><span class="chip">➡️ E</span><span class="chip">↘️ SE</span><span class="chip">⬇️ S</span><span class="chip">↙️ SW</span><span class="chip">⬅️ W</span><span class="chip">↖️ NW</span></div></div>
+        <div class="box"><div class="hd">🎵 here</div><div class="chips"><span class="chip on">🦆 duck-pond dash</span></div><div class="note">〰️ quick: ☀️ the sun's rays, 🦆 the ducks bobbing · slow: ☁️ the clouds drifting</div></div>
+      </div>
+    </div>
+    <div class="grid" style="--min: 100%; align-content: start">
+      <div class="box view"><div class="hd">👁️ 📺 the game <span class="r">live</span></div><img src="pictures/lake-view.svg" alt="The lake, as the game draws it"></div>
+      <div class="box"><div class="hd">🔬 overlays</div><div class="chips"><span class="chip">🧩 made of</span><span class="chip">🧱 collision boxes</span><span class="chip">🧭 arrows</span></div></div>
+      <div class="box"><div class="hd">🖼️ the archive <span class="r">this place, run by run</span></div><div class="note">2026/10/18 · 0.0.201 ▸ 2026/10/17 · 0.0.197 ▸ …</div></div>
+    </div>
+  </div>
+</div>

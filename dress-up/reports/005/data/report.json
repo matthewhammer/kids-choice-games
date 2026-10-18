@@ -1,0 +1,350 @@
+{
+ "question": "What did the two full-screen designers (🎵 Music, 🗺️ World design) do, the same way, that the rest of Dress Up's panels do not, and should every panel move to it?",
+ "date": "2026-10-18",
+ "game": {
+  "version": "0.0.204",
+  "commit": "6e787a8"
+ },
+ "how": "a read-only survey of the panels' code (js/20-controls.js TABS and SHOWN_WHEN, js/22-full-screen.js, style.css), with TABS walked and SHOWN_WHEN run in node on the game's own parts at their defaults, as tools/check_load.mjs runs them; the pictures from the game in the desktop app's browser",
+ "designers": {
+  "full_screen_tabs": [
+   "🎵 Music",
+   "🗺️ World design"
+  ],
+  "of_tabs": 19,
+  "shared": [
+   [
+    "one way in, one way out",
+    "each tab's first row is a full-screen chip (\"⛶ the music, full screen\", \"⛶ the world designer, full screen\"); ✕, Escape or leaving the browser's full screen all go back",
+    "js/22-full-screen.js:33, 60, 110-119"
+   ],
+   [
+    "the page cleared",
+    "the picture's stage, the divider, the title and the 19 tabs hidden; the side panel the whole window",
+    "style.css:87-93"
+   ],
+   [
+    "a slim bar",
+    "the tab's name and a small ✕ back, the panel's frame gone (ticket 210: the music full screen was \"especially large and over-stated\"; full screens \"more compact, and sleek looking\")",
+    "style.css:94-105"
+   ],
+   [
+    "cards in a grid",
+    "auto-fill grids, 330 px (Music) and 280 px (World) wide at least, 8 px apart; wide things span the row",
+    "style.css:106, 113, 133-135"
+   ],
+   [
+    "boxes within boxes",
+    "the mixer's strips, and the square's things, each a card inside the card",
+    "style.css:311-326, 140-142"
+   ],
+   [
+    "kinds by tint",
+    "--mu-main, --mu-mix, --mu-lfo, --mu-inst; a world square tinted by its place",
+    "style.css:4-18, 435-460"
+   ],
+   [
+    "fewer words",
+    "a row's label hidden where the bar names the tab; the tune picker without dashed boxes",
+    "style.css:122-123, 339-345"
+   ],
+   [
+    "emoji first",
+    "every bar, card and strip named emoji first",
+    "agent-instructions.md:78"
+   ],
+   [
+    "one column when narrow",
+    "the grids fold to one column; the world's split, cards and in-game view only from 900 px",
+    "style.css:114-124, 154"
+   ],
+   [
+    "a row on one line",
+    "a knob: its label (6.2em), the slider, its value (3.8em)",
+    "style.css:365-372"
+   ],
+   [
+    "the game as its first card (World)",
+    "the live picture moved into the right side's first card, sticky, folded away by its 👁️ (ticket 231)",
+    "js/22-full-screen.js:84-108"
+   ],
+   [
+    "remembered in the browser",
+    "the world's split, its view folded or not, its warnings shown or not",
+    "js/20-controls.js:1478; js/22-full-screen.js:79-105; js/25-world.js:208-219"
+   ],
+   [
+    "the music's look, carried back",
+    "ticket 250 gave the Music tab outside full screen the same cards",
+    "style.css:107-111"
+   ]
+  ],
+  "differences": [
+   "Music opens from the game's full screen (🎚️) as well as its tab; World only from its tab",
+   "Music hides the picture; World shows it as a card, from 900 px wide only",
+   "World keeps three things in the browser; Music none"
+  ],
+  "unfinished": [
+   "the in-game view only on windows 900 px wide or more",
+   "the 56 px bar's height written into the CSS and fitPic",
+   "stale comments (the world designer's \"first piece is coming\"; \"the three LFOs\" where there are seven; the tunes picker's dashed boxes) and two stale lines in agent-instructions.md (.world-main and .world-side; the letters \"full screen only\")"
+  ]
+ },
+ "background": {
+  "rows": 1337,
+  "groups": 100,
+  "depth": 2,
+  "top_level_entries": 286,
+  "by_kind": {
+   "choice": 790,
+   "range": 329,
+   "color": 194,
+   "toggle": 8,
+   "flip": 3,
+   "action": 1,
+   "special": 12
+  },
+  "from": {
+   "the three castles": 1087,
+   "the tree house": 97,
+   "🔭 smaller going north, one per place": 30,
+   "bubble space": 20,
+   "everything else": 103
+  },
+  "shown": [
+   [
+    "🌲 forest",
+    9,
+    0,
+    40
+   ],
+   [
+    "🏰 castle (N's, outside)",
+    50,
+    10,
+    258
+   ],
+   [
+    "🛋️ living room",
+    22,
+    0,
+    134
+   ],
+   [
+    "🫧 bubble space",
+    27,
+    4,
+    null
+   ],
+   [
+    "🚪 castle room 1",
+    27,
+    6,
+    null
+   ],
+   [
+    "🌲 forest clearing",
+    24,
+    3,
+    null
+   ],
+   [
+    "🌳 tree house",
+    22,
+    0,
+    null
+   ],
+   [
+    "🦆 lake",
+    17,
+    0,
+    null
+   ],
+   [
+    "🧙 witch's woods",
+    17,
+    0,
+    null
+   ],
+   [
+    "🏠 house and yard",
+    13,
+    0,
+    null
+   ]
+  ],
+  "shown_columns": [
+   "place",
+   "rows shown",
+   "groups",
+   "chips (where counted)"
+  ]
+ },
+ "tabs": [
+  [
+   "🧍 Body",
+   8,
+   1,
+   7
+  ],
+  [
+   "😀 Face",
+   31,
+   0,
+   22
+  ],
+  [
+   "👁 Eyes",
+   15,
+   0,
+   13
+  ],
+  [
+   "💇 Hair",
+   4,
+   0,
+   4
+  ],
+  [
+   "🦒 Neck, arms & legs",
+   12,
+   0,
+   11
+  ],
+  [
+   "👕 Shirt",
+   8,
+   0,
+   6
+  ],
+  [
+   "🖐 Hands",
+   15,
+   0,
+   4
+  ],
+  [
+   "👖 Pants",
+   6,
+   0,
+   3
+  ],
+  [
+   "🩱 Swim & undies",
+   7,
+   0,
+   1
+  ],
+  [
+   "👟 Feet",
+   8,
+   0,
+   4
+  ],
+  [
+   "👻 Visibility",
+   9,
+   0,
+   9
+  ],
+  [
+   "🐯 Costume",
+   46,
+   0,
+   1
+  ],
+  [
+   "🏞️ Background",
+   1337,
+   100,
+   "9 to 50"
+  ],
+  [
+   "🎮 Controls",
+   22,
+   6,
+   22
+  ],
+  [
+   "🎵 Music",
+   10,
+   0,
+   10
+  ],
+  [
+   "🗺️ World design",
+   2,
+   0,
+   2
+  ],
+  [
+   "🔬 Inspection",
+   4,
+   0,
+   4
+  ],
+  [
+   "♿ Accessibility",
+   3,
+   0,
+   3
+  ],
+  [
+   "⚙️ Advanced",
+   1,
+   0,
+   1
+  ]
+ ],
+ "tabs_columns": [
+  "tab",
+  "rows declared",
+  "groups",
+  "rows shown at the defaults"
+ ],
+ "castle_themes": {
+  "themes": "A and B; each two flag colors, how they go (↔️ in turn, ▥ stripes, ▦ checkers) and a carpet; A is the castle's own, its flags outside too; B starts as A swapped; rooms take A and B in turn",
+  "where_set": "\"🎨 X's castle: its color themes\", two groups of 4 rows",
+  "where_chosen": "\"🎨 its colors\" (🎨 theme A / 🎨 theme B), in the box of each room with doors of its own (hallways, side, long and spiral rooms); castle N's default rooms: only the king's room",
+  "seen": "the room's chip says \"theme A\" or \"theme B\", no colors; the colors are in another group, higher up"
+ },
+ "bubble_themes": {
+  "rows": "three groups (A always; B and C each with an on/off flip), five rows each: colour, size, shine, sparkle, sparkle colour",
+  "where": "🏞️ Background (bubble space: 20 rows, 4 groups) and 🎮 Controls (the looks only; B and C's on/off there is blowB/blowC, apart from bubble space's bubbleBOn/bubbleCOn)",
+  "flip_bug": "a theme's on/off is a flip whose two labels are the same (\"🅱️ theme B\"), and the stylesheet shows a pressed button only inside rows and a few other places, so nothing visible changes between on and off"
+ },
+ "found": [
+  [
+   "the house's 🧸 toys slider never shows",
+   "\"toys\" is the key of two rows (🧸 toys on the lawn, at the house; 🧸 things in the room, inside the tree house) and SHOWN_WHEN defines background.toys twice; the second (inside the tree house) wins, so at the house the slider is hidden, and inside the tree house both show, for the same setting",
+   "js/20-controls.js:359, 376, 821, 901"
+  ],
+  [
+   "the bubble themes' on/off shows nothing",
+   "see above",
+   "js/20-controls.js:100, 108, 515; style.css:186"
+  ],
+  [
+   "long labels with instructions in them",
+   "\"🔭 smaller going north (% for each tenth of the picture)\", \"💀 skulls: biggest size (% of the usual; the smallest is the usual)\", \"… detail (0 = a blur, 100 = all of it)\"",
+   "js/20-controls.js:318, 344, 487"
+  ],
+  [
+   "colour and color",
+   "the bubble rows say colour; the rest of the game color",
+   "js/20-controls.js:93-113"
+  ]
+ ],
+ "pictures": {
+  "before": [
+   "before-background-wide.jpg",
+   "before-background-narrow.jpg",
+   "before-castle-theme.png",
+   "before-bubble-themes.jpg",
+   "before-music.jpg",
+   "before-world-designer.jpg"
+  ],
+  "taken": "the game 0.0.204 at http://localhost:8133/, in the desktop app's browser (Chrome 152): wide ones at 1280 x 800 shown in a narrower pane, so smaller; narrow ones at the pane's own width",
+  "after": "mockups drawn in this page (HTML, the game's own dark colors); the lake's objects are OBJECTS.md's pictures, the places the picture archive's thumbnails"
+ }
+}

@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Always Be Knolling</title>
+<style>
+  :root { --bg: #fbfaf7; --paper: #ffffff; --ink: #1f2328; --muted: #5b6470; --line: #e3e0d8; --accent: #6d28d9; --soft: #cbbcf0; --alt: #0f8b7d; --good: #15803d; --bad: #b91c1c; --link: #1d4ed8; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --alt: #2dd4bf; --good: #4ade80; --bad: #f87171; --link: #93c5fd; } }
+  :root[data-theme="dark"] { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --soft: #5b4a8a; --alt: #2dd4bf; --good: #4ade80; --bad: #f87171; --link: #93c5fd; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 2em; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 1.35em; margin: 48px 0 10px; padding-top: 8px; border-top: 2px solid var(--line); }
+  h3 { font-size: 1.08em; margin: 24px 0 6px; }
+  p, li { max-width: 76ch; }
+  .series { color: var(--muted); margin: 0 0 6px; font-size: 0.92em; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .headline { background: var(--paper); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 6px; }
+  .headline ol > li { margin: 8px 0; }
+  a { color: var(--link); text-underline-offset: 2px; }
+  code { font-size: 0.86em; background: color-mix(in srgb, var(--line) 50%, transparent); padding: 0 4px; border-radius: 4px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 18px 0; }
+  .kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .kpi .v { font-size: 1.7em; font-weight: 700; } .kpi .l { color: var(--muted); font-size: 0.9em; }
+  figure { margin: 18px 0; } figcaption { color: var(--muted); font-size: 0.9em; margin-top: 6px; max-width: 76ch; }
+  svg.chart { width: 100%; height: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; }
+  svg.chart .grid { stroke: var(--line); } svg.chart .tick { fill: var(--muted); font-size: 11px; } svg.chart .lab { fill: var(--ink); font-size: 12px; }
+  svg.chart .val1 { fill: var(--ink); font-size: 11px; font-weight: 600; } svg.chart .b1 { fill: var(--accent); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9em; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; } td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .note { color: var(--muted); font-size: 0.9em; }
+  .ba { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 14px; align-items: start; }
+  .ba > div > h4 { margin: 0 0 6px; font-size: 0.95em; color: var(--muted); }
+  .ba img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); display: block; }
+  @media (max-width: 760px) { .ba { grid-template-columns: 1fr; } }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .shots img { width: 100%; border-radius: 10px; border: 1px solid var(--line); display: block; }
+  .rules { counter-reset: r; list-style: none; padding: 0; }
+  .rules li { counter-increment: r; margin: 10px 0; padding-left: 2.6em; position: relative; }
+  .rules li::before { content: "R" counter(r); position: absolute; left: 0; font-weight: 700; color: var(--accent); }
+  ol.steps { list-style: none; padding-left: 0; } ol.steps li { margin: 12px 0; border-left: 3px solid var(--line); padding-left: 12px; }
+  .stepnum a { font-weight: 700; text-decoration: none; }
+  button.tk, button.theme { font: inherit; font-size: 0.8em; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; }
+  button.theme { position: fixed; top: 10px; right: 10px; z-index: 9; }
+</style>
+<style>
+  .mk { --bg: #1d1a26; --panel: #29253a; --panel2: #322d47; --panel3: #3a3452; --line: #4a4560; --ink: #eee; --muted: #aaa; --accent: #a78bfa;
+        background: var(--bg); color: var(--ink); border-radius: 14px; padding: 10px; font: 13px/1.35 system-ui, sans-serif; overflow: hidden; }
+  .mk * { box-sizing: border-box; }
+  .mk .bar { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 8px; font-weight: 700; }
+  .mk .bar small { font-weight: 400; color: var(--muted); }
+  .mk .x { border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; font-size: 11px; font-weight: 400; color: var(--muted); }
+  .mk .box { background: var(--panel); border-radius: 10px; padding: 8px; }
+  .mk .box .box { background: var(--panel2); }
+  .mk .box .box .box { background: var(--panel3); }
+  .mk .hd { font-weight: 700; margin: 0 0 6px; display: flex; align-items: center; gap: 6px; }
+  .mk .hd .r { margin-left: auto; font-weight: 400; color: var(--muted); font-size: 11px; }
+  .mk .grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(var(--min, 150px), 1fr)); }
+  .mk .row { display: grid; grid-template-columns: 1fr 1.1fr auto; align-items: center; gap: 6px; margin: 3px 0; }
+  .mk .row .v { color: var(--muted); font-size: 11px; min-width: 2.2em; text-align: right; }
+  .mk .sl { height: 5px; border-radius: 3px; background: #555; position: relative; }
+  .mk .sl i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--accent); }
+  .mk .sl b { position: absolute; top: -4px; width: 13px; height: 13px; border-radius: 50%; background: var(--accent); }
+  .mk .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .mk .chip { border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; font-size: 12px; color: var(--ink); background: transparent; }
+  .mk .chip.on { background: var(--accent); color: #1d1a26; border-color: var(--accent); }
+  .mk .sw { display: flex; gap: 4px; flex-wrap: wrap; }
+  .mk .sw span { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; }
+  .mk .sw span.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .mk .two { display: grid; gap: 8px; grid-template-columns: 1.55fr 1fr; }
+  .mk .tiles { display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); }
+  .mk .tile { border-radius: 7px; overflow: hidden; background: var(--panel3); font-size: 10px; text-align: center; padding-bottom: 2px; border: 2px solid transparent; }
+  .mk .tile img { width: 100%; display: block; aspect-ratio: 4 / 3; object-fit: cover; }
+  .mk .tile.on { border-color: var(--accent); }
+  .mk .view img, .mk .view object { width: 100%; display: block; border-radius: 8px; background: #bfe6ff; }
+  .mk .obj { display: flex; align-items: center; gap: 6px; }
+  .mk .obj .eye { font-size: 12px; opacity: 0.9; }
+  .mk .obj.off { opacity: 0.45; }
+  .mk .note { color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .mk .toggle { width: 30px; height: 17px; border-radius: 999px; background: #555; position: relative; flex: none; }
+  .mk .toggle.on { background: var(--accent); }
+  .mk .toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; }
+  .mk .toggle.on::after { left: 15px; }
+  .mk .theme { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; }
+  .mk .roomchip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 8px; padding: 2px 6px; font-size: 12px; }
+  .mk .pair { display: inline-flex; border-radius: 4px; overflow: hidden; }
+  .mk .pair i { width: 10px; height: 14px; display: block; }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../005/"><code><b>^du_report(</b>5<b>)</b></code></a> · 2026-10-18 · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after <a class="ref" href="../004/"><code><b>^du_report(</b>4<b>)</b></code></a></p>
+<h1>Always be knolling</h1>
+<p class="sub">What did the two full-screen designers, 🎵 Music and 🗺️ World design, do the same way that the rest of Dress Up's panels do not, and should every panel move to it? Read from the game's code at 0.0.204 (every row each tab declares, and which a player sees in each place), with pictures of the panels as they are and mockups of what they could be (<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-279"><code><b>^ticket(</b>279<b>)</b></code></a>).</p>
+
+<div class="headline" id="answers">
+<p><b>Short answers.</b></p>
+<ol>
+<li><b>The two designers share one way of laying out a panel,</b> 13 choices in all: one way in and out, the rest of the page cleared, a slim bar, cards in a grid, boxes within boxes, kinds told apart by a faint tint, fewer words, and a row on one line. The world designer adds the game itself as its first card. Each choice was asked for along the way (tickets 159, 210, 224, 226, 231, 250), and none of it has reached the other 17 tabs.</li>
+<li><b>The 🏞️ Background tab is the biggest of them by far:</b> 1,337 rows in 100 groups, 81% of them the three castles' rooms. In a place, a player sees 9 rows (the forest) to 50 (outside a castle), one under the other in a narrow column, the groups as dashed boxes.</li>
+<li><b>The proposal: one approach for every panel,</b> nine rules (<a href="#global">below</a>): a box for each thing you can see or hear, named once; nesting shown by boxes inside boxes alone; everything laid out in plain view, in order (knolled); the thing shown, not just named; and every big tab a designer with the game as its first card, its boxes mirroring what is in the picture.</li>
+<li><b>Three before and afters:</b> the castle's color themes (one decision in one place, its colors shown), the bubble themes (three cards, each with its bubble drawn), and a full-screen 🏞️ Background designer (the game as its first card; the place picked from pictures of the places; what stands in the place as a card each, with its picture).</li>
+<li><b>Found on the way:</b> the house's 🧸 toys slider never shows (two rows share a key), and the bubble themes' on/off switches look the same on and off.</li>
+</ol>
+</div>
+
+<div class="kpis">
+<div class="kpi"><div class="v">2 of 19</div><div class="l">tabs with a full screen of their own (🎵 Music, 🗺️ World design)</div></div>
+<div class="kpi"><div class="v">1,337</div><div class="l">rows declared in 🏞️ Background, in 100 groups</div></div>
+<div class="kpi"><div class="v">9–50</div><div class="l">of them a player sees in one place (the forest; outside a castle)</div></div>
+<div class="kpi"><div class="v">13</div><div class="l">choices the two designers make alike</div></div>
+</div>
+
+<h2 id="principles">Four ideas</h2>
+<p><b>Knolling.</b> Laying out the things you are working with, at right angles, grouped by kind, all in plain view. The word is said to come from Frank Gehry's furniture shop in 1987, where Andrew Kromelow squared up the tools that way. The artist Tom Sachs made "always be knolling" a rule of his studio: put away what you are not using, group what you are, and lay it out so that you can see all of it. For a panel: each thing's controls together, in its own place, aligned with its neighbours, nothing hidden in a list that scrolls past.</p>
+<p><b>Boxes within boxes, with little visual noise.</b> Sub-structure should be visible as structure: a part of a thing sits in a box inside that thing's box, and that is all the decoration it needs. No dashed borders, no repeated names, no instructions in a label.</p>
+<p><b>Fractal organization.</b> The same shapes at every scale: a tab is a box of boxes, a box is a box of rows, a row a line of chips. Learn one level and you can read them all; zooming in or out changes the scale, not the rules.</p>
+<p><b>Mirror worlds.</b> David Gelernter's <i>Mirror Worlds</i> (1991), subtitled "the day software puts the universe in a shoebox", imagines software models of the world that you can look into whole and then zoom into, part by part: a view he called topsight. The world designer is a small one already: the game's world as a grid of squares, each a picture of its place, and the game itself in a card beside it. A designer for each panel would mirror what that panel changes: the place, the friend, the music.</p>
+
+<h2 id="designers">What the two designers do alike</h2>
+<div class="shots"><img src="pictures/before-music.jpg" alt="The music full screen: a slim bar, cards in a grid, the mixing board's strips as cards"><img src="pictures/before-world-designer.jpg" alt="The world designer full screen: the grid of places on the left, the game and the cards on the right"></div>
+<p class="note">🎵 Music and 🗺️ World design, full screen, at 1280 × 800 (0.0.204; shown smaller here). Each has a slim bar with ✕ back; the music's mixing board is a card of cards, its strips tinted by kind; the world designer's grid is a picture of each place, and its first card on the right is the game itself.</p>
+<div class="scroll"><table><tr><th>choice</th><th>what it is</th><th>where</th></tr><tr><td>one way in, one way out</td><td>each tab&#x27;s first row is a full-screen chip (&quot;⛶ the music, full screen&quot;, &quot;⛶ the world designer, full screen&quot;); ✕, Escape or leaving the browser&#x27;s full screen all go back</td><td><code>js/22-full-screen.js:33, 60, 110-119</code></td></tr><tr><td>the page cleared</td><td>the picture&#x27;s stage, the divider, the title and the 19 tabs hidden; the side panel the whole window</td><td><code>style.css:87-93</code></td></tr><tr><td>a slim bar</td><td>the tab&#x27;s name and a small ✕ back, the panel&#x27;s frame gone (ticket 210: the music full screen was &quot;especially large and over-stated&quot;; full screens &quot;more compact, and sleek looking&quot;)</td><td><code>style.css:94-105</code></td></tr><tr><td>cards in a grid</td><td>auto-fill grids, 330 px (Music) and 280 px (World) wide at least, 8 px apart; wide things span the row</td><td><code>style.css:106, 113, 133-135</code></td></tr><tr><td>boxes within boxes</td><td>the mixer&#x27;s strips, and the square&#x27;s things, each a card inside the card</td><td><code>style.css:311-326, 140-142</code></td></tr><tr><td>kinds by tint</td><td>--mu-main, --mu-mix, --mu-lfo, --mu-inst; a world square tinted by its place</td><td><code>style.css:4-18, 435-460</code></td></tr><tr><td>fewer words</td><td>a row&#x27;s label hidden where the bar names the tab; the tune picker without dashed boxes</td><td><code>style.css:122-123, 339-345</code></td></tr><tr><td>emoji first</td><td>every bar, card and strip named emoji first</td><td><code>agent-instructions.md:78</code></td></tr><tr><td>one column when narrow</td><td>the grids fold to one column; the world&#x27;s split, cards and in-game view only from 900 px</td><td><code>style.css:114-124, 154</code></td></tr><tr><td>a row on one line</td><td>a knob: its label (6.2em), the slider, its value (3.8em)</td><td><code>style.css:365-372</code></td></tr><tr><td>the game as its first card (World)</td><td>the live picture moved into the right side&#x27;s first card, sticky, folded away by its 👁️ (ticket 231)</td><td><code>js/22-full-screen.js:84-108</code></td></tr><tr><td>remembered in the browser</td><td>the world&#x27;s split, its view folded or not, its warnings shown or not</td><td><code>js/20-controls.js:1478; js/22-full-screen.js:79-105; js/25-world.js:208-219</code></td></tr><tr><td>the music&#x27;s look, carried back</td><td>ticket 250 gave the Music tab outside full screen the same cards</td><td><code>style.css:107-111</code></td></tr></table></div>
+<p><b>Where they differ:</b> Music opens from the game&#x27;s full screen (🎚️) as well as its tab; World only from its tab; Music hides the picture; World shows it as a card, from 900 px wide only; World keeps three things in the browser; Music none. <b>Left unfinished:</b> the in-game view only on windows 900 px wide or more; the 56 px bar&#x27;s height written into the CSS and fitPic; stale comments (the world designer&#x27;s &quot;first piece is coming&quot;; &quot;the three LFOs&quot; where there are seven; the tunes picker&#x27;s dashed boxes) and two stale lines in agent-instructions.md (.world-main and .world-side; the letters &quot;full screen only&quot;).</p>
+
+<h2 id="panels">The panels as they are</h2>
+<div class="shots"><img src="pictures/before-background-wide.jpg" alt="The game at 1280 wide: the picture, and the Background tab in a narrow column under 19 tab buttons"><img src="pictures/before-background-narrow.jpg" alt="The Background tab's rows in the forest, on a narrow window"></div>
+<p class="note">The 🏞️ Background tab in the forest, at 1280 × 800 (left, smaller) and on a narrow window (right): under the 19 tabs, the kinds of place and the places as chips in dashed boxes, then one row under another.</p>
+<figure id="fig-1"><svg class="chart" viewBox="0 0 760 300" role="img" aria-label="Rows a player sees in the Background tab, by place"><line class="grid" x1="230.0" y1="6" x2="230.0" y2="280"/><text class="tick" x="230.0" y="294" text-anchor="middle">0</text><line class="grid" x1="324.0" y1="6" x2="324.0" y2="280"/><text class="tick" x="324.0" y="294" text-anchor="middle">10</text><line class="grid" x1="418.0" y1="6" x2="418.0" y2="280"/><text class="tick" x="418.0" y="294" text-anchor="middle">20</text><line class="grid" x1="512.0" y1="6" x2="512.0" y2="280"/><text class="tick" x="512.0" y="294" text-anchor="middle">30</text><line class="grid" x1="606.0" y1="6" x2="606.0" y2="280"/><text class="tick" x="606.0" y="294" text-anchor="middle">40</text><line class="grid" x1="700.0" y1="6" x2="700.0" y2="280"/><text class="tick" x="700.0" y="294" text-anchor="middle">50</text><text class="lab" x="222" y="28" text-anchor="end">🌲 forest</text><rect class="b1" x="230" y="14" width="84.6" height="18" rx="3"/><text class="val1" x="319.6" y="28">9 rows</text><text class="lab" x="222" y="54" text-anchor="end">🏰 castle (N&#x27;s, outside)</text><rect class="b1" x="230" y="40" width="470.0" height="18" rx="3"/><text class="val1" x="705.0" y="54">50 rows, 10 groups</text><text class="lab" x="222" y="80" text-anchor="end">🛋️ living room</text><rect class="b1" x="230" y="66" width="206.8" height="18" rx="3"/><text class="val1" x="441.8" y="80">22 rows</text><text class="lab" x="222" y="106" text-anchor="end">🫧 bubble space</text><rect class="b1" x="230" y="92" width="253.8" height="18" rx="3"/><text class="val1" x="488.8" y="106">27 rows, 4 groups</text><text class="lab" x="222" y="132" text-anchor="end">🚪 castle room 1</text><rect class="b1" x="230" y="118" width="253.8" height="18" rx="3"/><text class="val1" x="488.8" y="132">27 rows, 6 groups</text><text class="lab" x="222" y="158" text-anchor="end">🌲 forest clearing</text><rect class="b1" x="230" y="144" width="225.6" height="18" rx="3"/><text class="val1" x="460.6" y="158">24 rows, 3 groups</text><text class="lab" x="222" y="184" text-anchor="end">🌳 tree house</text><rect class="b1" x="230" y="170" width="206.8" height="18" rx="3"/><text class="val1" x="441.8" y="184">22 rows</text><text class="lab" x="222" y="210" text-anchor="end">🦆 lake</text><rect class="b1" x="230" y="196" width="159.8" height="18" rx="3"/><text class="val1" x="394.8" y="210">17 rows</text><text class="lab" x="222" y="236" text-anchor="end">🧙 witch&#x27;s woods</text><rect class="b1" x="230" y="222" width="159.8" height="18" rx="3"/><text class="val1" x="394.8" y="236">17 rows</text><text class="lab" x="222" y="262" text-anchor="end">🏠 house and yard</text><rect class="b1" x="230" y="248" width="122.2" height="18" rx="3"/><text class="val1" x="357.2" y="262">13 rows</text></svg><figcaption>Figure 1. Rows of 🏞️ Background a player sees in each place, at the game's defaults (0.0.204; SHOWN_WHEN run on the defaults, each place in turn). Outside a castle, 50 rows in 10 groups and about 258 chips.</figcaption></figure>
+<div class="scroll"><table><tr><th>where Background's 1,337 rows come from</th><th>rows</th><th>share</th></tr><tr><td>the three castles</td><td class="n">1,087</td><td class="n">81%</td></tr><tr><td>the tree house</td><td class="n">97</td><td class="n">7%</td></tr><tr><td>🔭 smaller going north, one per place</td><td class="n">30</td><td class="n">2%</td></tr><tr><td>bubble space</td><td class="n">20</td><td class="n">1%</td></tr><tr><td>everything else</td><td class="n">103</td><td class="n">8%</td></tr></table></div>
+<h3>Every tab</h3>
+<div class="scroll"><table><tr><th>tab</th><th>rows declared</th><th>groups</th><th>shown at the defaults</th></tr><tr><td>🧍 Body</td><td class="n">8</td><td class="n">1</td><td class="n">7</td></tr><tr><td>😀 Face</td><td class="n">31</td><td class="n">0</td><td class="n">22</td></tr><tr><td>👁 Eyes</td><td class="n">15</td><td class="n">0</td><td class="n">13</td></tr><tr><td>💇 Hair</td><td class="n">4</td><td class="n">0</td><td class="n">4</td></tr><tr><td>🦒 Neck, arms &amp; legs</td><td class="n">12</td><td class="n">0</td><td class="n">11</td></tr><tr><td>👕 Shirt</td><td class="n">8</td><td class="n">0</td><td class="n">6</td></tr><tr><td>🖐 Hands</td><td class="n">15</td><td class="n">0</td><td class="n">4</td></tr><tr><td>👖 Pants</td><td class="n">6</td><td class="n">0</td><td class="n">3</td></tr><tr><td>🩱 Swim &amp; undies</td><td class="n">7</td><td class="n">0</td><td class="n">1</td></tr><tr><td>👟 Feet</td><td class="n">8</td><td class="n">0</td><td class="n">4</td></tr><tr><td>👻 Visibility</td><td class="n">9</td><td class="n">0</td><td class="n">9</td></tr><tr><td>🐯 Costume</td><td class="n">46</td><td class="n">0</td><td class="n">1</td></tr><tr><td>🎮 Controls</td><td class="n">22</td><td class="n">6</td><td class="n">22</td></tr><tr><td>🎵 Music</td><td class="n">10</td><td class="n">0</td><td class="n">10</td></tr><tr><td>🗺️ World design</td><td class="n">2</td><td class="n">0</td><td class="n">2</td></tr><tr><td>🔬 Inspection</td><td class="n">4</td><td class="n">0</td><td class="n">4</td></tr><tr><td>♿ Accessibility</td><td class="n">3</td><td class="n">0</td><td class="n">3</td></tr><tr><td>⚙️ Advanced</td><td class="n">1</td><td class="n">0</td><td class="n">1</td></tr><tr><td>🏞️ Background</td><td class="n">1,337</td><td class="n">100</td><td class="n">9 to 50</td></tr></table></div>
+<p class="note">🎵 Music's 10 rows include the mixing board, about 120 controls for a tune of 14 parts; 🗺️ World design's 2 include the whole designer.</p>
+
+<h2 id="after">Before and after</h2>
+<h3 id="castle">The castle's color themes</h3>
+<p>A castle has two themes, A and B: each two flag colors, how they go together (↔️ in turn, ▥ stripes, ▦ checkers) and a carpet. A is the castle's own, its flags outside too; B starts as A with its colors swapped. Today the colors are set in one group ("🎨 N's castle: its color themes", 8 rows), and each room that takes a theme chooses one in its own box, by name: "🎨 theme A" or "🎨 theme B", with no color to see. One decision in two places. After: the two themes side by side, each drawn as its flag; each room shows its theme as its flag's two colors, and a tap swaps it; the rooms that keep their own colors say so.</p>
+<div class="ba"><div><h4>before (castle N, room 1)</h4><img src="pictures/before-castle-theme.png" alt="A room's box: its colors, theme A or theme B, as words"></div><div><h4>after</h4><div class="mk" id="mk-castle">
+  <div class="box">
+    <div class="hd">🎨 N's castle: its colors <span class="r">two themes; each room that takes one shows which</span></div>
+    <div class="grid" style="--min: 260px"><div class="box"><div class="hd"><svg width="46" height="30" viewBox="0 0 46 30"><path d="M4 2 V28" stroke="#888" stroke-width="2"/><path d="M5 3 H40 L34 10 L40 17 H5 Z" fill="#e53935"/><path d="M5 10 H40 L37 13.5 L40 17 H5 Z" fill="#ffffff"/></svg> A <span class="r">its flags outside, and rooms 1, 3, 5 …</span></div><div class="theme"><span>🚩 color 1</span><div class="sw"><span class="on" style="background:#e53935"></span><span style="background:#f2c12e"></span><span style="background:#3b82f6"></span><span style="background:#22c55e"></span><span style="background:#6a2c91"></span><span style="background:#f472b6"></span><span style="background:#f97316"></span><span style="background:#ffffff"></span><span style="background:#1f1f22"></span></div><span>🚩 color 2</span><div class="sw"><span style="background:#e53935"></span><span style="background:#f2c12e"></span><span style="background:#3b82f6"></span><span style="background:#22c55e"></span><span style="background:#6a2c91"></span><span style="background:#f472b6"></span><span style="background:#f97316"></span><span class="on" style="background:#ffffff"></span><span style="background:#1f1f22"></span></div><span>🚩 together</span><div class="chips"><span class="chip on">↔️ in turn</span><span class="chip">▥ stripes</span><span class="chip">▦ checkers</span></div><span>🟥 carpet</span><div class="sw"><span class="on" style="background:#a3122a"></span><span style="background:#1e3a8a"></span><span style="background:#14532d"></span><span style="background:#6a2c91"></span><span style="background:#7c2d12"></span><span style="background:#d4a017"></span><span style="background:#1f1f22"></span></div></div></div><div class="box"><div class="hd"><svg width="46" height="30" viewBox="0 0 46 30"><path d="M4 2 V28" stroke="#888" stroke-width="2"/><path d="M5 3 H40 L34 10 L40 17 H5 Z" fill="#ffffff"/><path d="M5 10 H40 L37 13.5 L40 17 H5 Z" fill="#e53935"/></svg> B <span class="r">rooms 2, 4 …: A, its colors swapped</span></div><div class="theme"><span>🚩 color 1</span><div class="sw"><span style="background:#e53935"></span><span style="background:#f2c12e"></span><span style="background:#3b82f6"></span><span style="background:#22c55e"></span><span style="background:#6a2c91"></span><span style="background:#f472b6"></span><span style="background:#f97316"></span><span class="on" style="background:#ffffff"></span><span style="background:#1f1f22"></span></div><span>🚩 color 2</span><div class="sw"><span class="on" style="background:#e53935"></span><span style="background:#f2c12e"></span><span style="background:#3b82f6"></span><span style="background:#22c55e"></span><span style="background:#6a2c91"></span><span style="background:#f472b6"></span><span style="background:#f97316"></span><span style="background:#ffffff"></span><span style="background:#1f1f22"></span></div><span>🚩 together</span><div class="chips"><span class="chip on">↔️ in turn</span><span class="chip">▥ stripes</span><span class="chip">▦ checkers</span></div><span>🟥 carpet</span><div class="sw"><span style="background:#a3122a"></span><span style="background:#1e3a8a"></span><span style="background:#14532d"></span><span style="background:#6a2c91"></span><span style="background:#7c2d12"></span><span style="background:#d4a017"></span><span style="background:#1f1f22"></span></div></div></div></div>
+    <div class="box" style="margin-top: 8px"><div class="hd">🚪 its rooms <span class="r">tap a room's flag to give it the other theme</span></div>
+      <div class="chips"><span class="roomchip">👑 1 king's room <span class="pair"><i style="background:#e53935"></i><i style="background:#ffffff"></i></span> A</span><span class="roomchip" style="opacity:0.6">🌿 2 greenhouse · its own</span><span class="roomchip" style="opacity:0.6">🕳️ 3 trap room · its own</span><span class="roomchip" style="opacity:0.6">🗝️ 4 dungeon · its own</span><span class="roomchip" style="opacity:0.6">⛓️ 5 deep dungeon · its own</span></div><div class="note">Only rooms with doors of their own (the king's room, hallways, the dining room, the spiral stairs) take a theme; the others keep their own colors, and say so.</div></div>
+  </div>
+</div>
+
+</div></div>
+<h3 id="bubbles">The bubble themes</h3>
+<p>Three themes, A (always) and B and C (each switched on or off), five rows each: colour, size, shine, sparkle, sparkle colour. They are in 🏞️ Background, for bubble space (20 rows, 4 groups), and again in 🎮 Controls, for blowing bubbles, where B and C have a second, separate on and off. Every label repeats its theme's letter ("🅱️ colour", "🅱️ size"), and the on and off switch is a chip named "🅱️ theme B" both ways that looks the same on and off. After: three cards side by side, each headed by its bubble, drawn from its settings; its switch at its corner; no letter repeated inside.</p>
+<div class="ba"><div><h4>before (bubble space, theme B on)</h4><img src="pictures/before-bubble-themes.jpg" alt="Theme A's last rows and theme B's first, stacked in dashed boxes"></div><div><h4>after</h4><div class="mk" id="mk-bubbles">
+  <div class="box">
+    <div class="hd">🫧 bubble themes <span class="r">the same three in 🫧 bubble space and in 🎮 blowing bubbles</span></div>
+    <div class="grid" style="--min: 170px">
+      <div class="box"><div class="hd"><svg width="34" height="34" viewBox="-17 -17 34 34"><circle r="14" fill="#9ad7ff" fill-opacity="0.35" stroke="#9ad7ff" stroke-width="2"/><ellipse cx="-5" cy="-6" rx="4" ry="2.5" fill="#fff" opacity="0.7"/></svg> A <span class="r">always</span></div>
+        <div class="sw"><span class="on" style="background:#9ad7ff"></span><span style="background:#ffb3e6"></span><span style="background:#c8f7c5"></span><span style="background:#fff3a3"></span><span style="background:#d7c4ff"></span><span style="background:#ffffff"></span><span style="background:#ffc9a3"></span></div>
+        <div class="row"><span>🔎 size</span><div class="sl"><i style="width:30%"></i><b style="left:28%"></b></div><span class="v">18</span></div>
+        <div class="row"><span>✨ shine</span><div class="sl"><i style="width:70%"></i><b style="left:66%"></b></div><span class="v">70</span></div>
+        <div class="chips"><span class="chip on">none</span><span class="chip">⭐</span><span class="chip">•</span></div></div>
+      <div class="box"><div class="hd"><svg width="34" height="34" viewBox="-17 -17 34 34"><circle r="15" fill="#ffb3e6" fill-opacity="0.35" stroke="#ffb3e6" stroke-width="2"/><ellipse cx="-5" cy="-6" rx="4.5" ry="2.8" fill="#fff" opacity="0.8"/><text x="6" y="2" font-size="9">⭐</text></svg> B <span class="toggle on" style="margin-left:auto"></span></div>
+        <div class="sw"><span style="background:#9ad7ff"></span><span class="on" style="background:#ffb3e6"></span><span style="background:#c8f7c5"></span><span style="background:#fff3a3"></span><span style="background:#d7c4ff"></span><span style="background:#ffffff"></span><span style="background:#ffc9a3"></span></div>
+        <div class="row"><span>🔎 size</span><div class="sl"><i style="width:43%"></i><b style="left:40%"></b></div><span class="v">26</span></div>
+        <div class="row"><span>✨ shine</span><div class="sl"><i style="width:85%"></i><b style="left:81%"></b></div><span class="v">85</span></div>
+        <div class="chips"><span class="chip">none</span><span class="chip on">⭐</span><span class="chip">•</span><span class="sw"><span class="on" style="background:#fff5b0"></span></span></div></div>
+      <div class="box" style="opacity: 0.55"><div class="hd"><svg width="34" height="34" viewBox="-17 -17 34 34"><circle r="9" fill="#c8f7c5" fill-opacity="0.35" stroke="#c8f7c5" stroke-width="2"/></svg> C <span class="toggle" style="margin-left:auto"></span></div>
+        <div class="note">off: switch it on to add bubbles of its own</div></div>
+    </div>
+  </div>
+</div>
+
+</div></div>
+<h3 id="background">🏞️ Background, as a designer</h3>
+<p>The world designer, made for one place: the same slim bar and ✕ back, the game as the first card on the right, and on the left the place's boxes, each mirroring something in the picture. The place is picked from pictures of the places (the picture archive's), grouped by kind; the place's own settings are one box; what stands in the place is a card each, its picture clipped from the scene (OBJECTS.md's), lit in the game while pointed at (the 🔬 overlays already outline each one) and hidden with a tap; the friend here, the place's ways and its music are a box each. The side panel keeps the same boxes, smaller, for quick changes during play.</p>
+<div class="ba"><div><h4>before (the forest's rows; the lake has 17)</h4><img src="pictures/before-background-narrow.jpg" alt="The Background tab's rows in the forest, one under another"></div><div><h4>after (the lake, full screen)</h4><div class="mk" id="mk-background">
+  <div class="bar"><span>🏞️ Background designer <small>· 🦆 lake</small></span><span class="x">✕ back to the game</span></div>
+  <div class="two">
+    <div class="grid" style="--min: 100%">
+      <div class="box"><div class="hd">🗺️ the place <span class="r">every place, as it looks</span></div>
+        <div class="tiles">
+          <div class="tile"><img src="pictures/places/forest.webp" alt="">🌲 forest</div><div class="tile"><img src="pictures/places/clearing.webp" alt="">🌲 clearing</div>
+          <div class="tile"><img src="pictures/places/woodpath.webp" alt="">🥾 path</div><div class="tile"><img src="pictures/places/crossing.webp" alt="">🛤️ crossing</div>
+          <div class="tile"><img src="pictures/places/mountains.webp" alt="">⛰️ trail</div><div class="tile"><img src="pictures/places/fairyforest.webp" alt="">🧚 fairies</div>
+          <div class="tile on"><img src="pictures/places/lake.webp" alt="">🦆 lake</div><div class="tile"><img src="pictures/places/beach.webp" alt="">🏖️ beach</div>
+          <div class="tile"><img src="pictures/places/waterfall.webp" alt="">💦 waterfall</div><div class="tile"><img src="pictures/places/castle.webp" alt="">🏰 castle</div>
+        </div></div>
+      <div class="grid" style="--min: 210px">
+        <div class="box"><div class="hd">🦆 the lake itself</div>
+          <div class="row"><span>🦆 ducks</span><div class="sl"><i style="width:31%"></i><b style="left:28%"></b></div><span class="v">5</span></div>
+          <div class="row"><span>🦆 duck size</span><div class="sl"><i style="width:26%"></i><b style="left:23%"></b></div><span class="v">100</span></div>
+          <div class="row"><span>🌾 cattails</span><div class="sl"><i style="width:35%"></i><b style="left:32%"></b></div><span class="v">14</span></div>
+          <div class="row"><span>☁️ clouds</span><div class="sl"><i style="width:40%"></i><b style="left:37%"></b></div><span class="v">4</span></div>
+          <div class="row"><span>☁️ cloud size</span><div class="sl"><i style="width:29%"></i><b style="left:26%"></b></div><span class="v">100</span></div></div>
+        <div class="box"><div class="hd">🧍 the friend here</div>
+          <div class="row"><span>size in the scene</span><div class="sl"><i style="width:30%"></i><b style="left:27%"></b></div><span class="v">100</span></div>
+          <div class="row"><span>🔭 smaller north</span><div class="sl"><i style="width:50%"></i><b style="left:47%"></b></div><span class="v">40</span></div>
+          <div class="note">drag the friend in the view to place them</div></div>
+      </div>
+      <div class="box"><div class="hd">👁️ what stands here, back to front <span class="r">each lit in the view while pointed at; tap to hide</span></div>
+        <div class="grid" style="--min: 92px">
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/far-wood.webp" alt="" style="height:44px">far wood</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/duck-1.webp" alt="" style="height:44px">duck 1</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/duck-5.webp" alt="" style="height:44px">duck 5</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/duck-3.webp" alt="" style="height:44px">duck 3</div>
+          <div class="box obj off" style="flex-direction:column"><img src="pictures/objects/duck-2.webp" alt="" style="height:44px">🙈 duck 2</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/duck-4.webp" alt="" style="height:44px">duck 4</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/cattails-left.webp" alt="" style="height:44px">cattails, left</div>
+          <div class="box obj" style="flex-direction:column"><img src="pictures/objects/cattails-right.webp" alt="" style="height:44px">cattails, right</div>
+        </div></div>
+      <div class="grid" style="--min: 210px">
+        <div class="box"><div class="hd">🧭 its ways <span class="r">from 🗺️ World design</span></div><div class="chips"><span class="chip">⬆️ N</span><span class="chip">➡️ E</span><span class="chip">↘️ SE</span><span class="chip">⬇️ S</span><span class="chip">↙️ SW</span><span class="chip">⬅️ W</span><span class="chip">↖️ NW</span></div></div>
+        <div class="box"><div class="hd">🎵 here</div><div class="chips"><span class="chip on">🦆 duck-pond dash</span></div><div class="note">〰️ quick: ☀️ the sun's rays, 🦆 the ducks bobbing · slow: ☁️ the clouds drifting</div></div>
+      </div>
+    </div>
+    <div class="grid" style="--min: 100%; align-content: start">
+      <div class="box view"><div class="hd">👁️ 📺 the game <span class="r">live</span></div><img src="pictures/lake-view.svg" alt="The lake, as the game draws it"></div>
+      <div class="box"><div class="hd">🔬 overlays</div><div class="chips"><span class="chip">🧩 made of</span><span class="chip">🧱 collision boxes</span><span class="chip">🧭 arrows</span></div></div>
+      <div class="box"><div class="hd">🖼️ the archive <span class="r">this place, run by run</span></div><div class="note">2026/10/18 · 0.0.201 ▸ 2026/10/17 · 0.0.197 ▸ …</div></div>
+    </div>
+  </div>
+</div>
+</div></div>
+<p class="note">The mockups are drawn in this page, in the game's own dark colors; their settings, defaults, objects and tune are the lake's and castle N's as the game has them at 0.0.204. The live game card is the lake's archived picture.</p>
+
+<h2 id="global">A global shift: the rules</h2>
+<ol class="rules">
+<li><b>A box for each thing you can see or hear</b>: a place, a thing standing in it, a part of the friend, a channel, a theme. Its name once, at its top, emoji first; nothing inside repeats it (no "🅱️ colour" inside theme B).</li>
+<li><b>Nesting by boxes alone</b>: each level a shade lighter than the one it is in, no dashed lines; kinds told apart by a faint tint, as the music's strips and the world's squares are.</li>
+<li><b>Knolled</b>: boxes in a grid, things of a kind the same size and lined up, everything a box holds in plain view. A 👁️ fold only for the big ones, remembered in the browser, as the world's view is.</li>
+<li><b>A row on one line</b>: its emoji and two or three words, its control, its value, the music's knob as the model. What a label explains today ("% for each tenth of the picture", "0 = a blur") moves into a hint shown on pointing.</li>
+<li><b>Show the thing</b>: a color as a swatch, a theme as what it draws (a bubble, a flag), a place as its picture, a thing standing in a place as its own picture.</li>
+<li><b>One decision, one place</b>: a theme chosen where its colors are set, or its colors shown where it is chosen; a setting used in two tabs is one box shown in both, and one setting, not two.</li>
+<li><b>Mirror the picture</b>: every big tab a designer that opens with the game as its first card; each box mirrors something in it; pointing at a box lights its thing in the game, and pointing at a thing in the game finds its box.</li>
+<li><b>The same at every scale</b>: tab, designer, box, box inside it, row, chip; the side panel is the designer's boxes, smaller, not a different layout.</li>
+<li><b>Keep it fast</b>: a box is built once and refreshed by what it shows, and show-when rules stay lookups (ticket 167: the Background tab's refresh once held swimming at 2 to 15 frames a second).</li>
+</ol>
+<p>In code, three pieces carry all of it: a box (its name, its tint, its fold, its grid of what it holds), the row the music's knobs already are, and the designer's shell the two full screens share (the bar, ✕, the cleared page, the game card). TABS would say which boxes a tab has, and SHOWN_WHEN would show and hide whole boxes as it shows and hides rows now.</p>
+
+<h2 id="found">Found on the way</h2>
+<ul><li><b>the house&#x27;s 🧸 toys slider never shows.</b> &quot;toys&quot; is the key of two rows (🧸 toys on the lawn, at the house; 🧸 things in the room, inside the tree house) and SHOWN_WHEN defines background.toys twice; the second (inside the tree house) wins, so at the house the slider is hidden, and inside the tree house both show, for the same setting (<code>js/20-controls.js:359, 376, 821, 901</code>)</li><li><b>the bubble themes&#x27; on/off shows nothing.</b> see above (<code>js/20-controls.js:100, 108, 515; style.css:186</code>)</li><li><b>long labels with instructions in them.</b> &quot;🔭 smaller going north (% for each tenth of the picture)&quot;, &quot;💀 skulls: biggest size (% of the usual; the smallest is the usual)&quot;, &quot;… detail (0 = a blur, 100 = all of it)&quot; (<code>js/20-controls.js:318, 344, 487</code>)</li><li><b>colour and color.</b> the bubble rows say colour; the rest of the game color (<code>js/20-controls.js:93-113</code>)</li></ul>
+
+<h2 id="next">What next</h2>
+<ol class="steps">
+<li id="step-1"><span class="stepnum"><a href="#step-1">1.</a></span> <b>The pieces:</b> a box, the one-line row and the designer's shell, shared by every tab (CSS tokens for the shades and tints; TABS rows grouped into boxes); the two full screens moved onto them, the same as they look now. <button class="tk" data-step="1">copy for a ticket</button></li>
+<li id="step-2"><span class="stepnum"><a href="#step-2">2.</a></span> <b>🏞️ Background as a designer:</b> full screen with the game as its first card; the places as pictures; the place's own box; what stands in it as cards with their pictures, lit in the game while pointed at; the friend, the ways and the music each a box. <button class="tk" data-step="2">copy for a ticket</button></li>
+<li id="step-3"><span class="stepnum"><a href="#step-3">3.</a></span> <b>The castle's themes in one place:</b> both drawn as flags; each room's theme shown by its colors and swapped with a tap; the rooms that keep their own colors saying so. <button class="tk" data-step="3">copy for a ticket</button></li>
+<li id="step-4"><span class="stepnum"><a href="#step-4">4.</a></span> <b>The bubble themes as three cards</b>, each with its bubble drawn; their on and off visible (a bug today); one on and off for each theme, or two plainly named. <button class="tk" data-step="4">copy for a ticket</button></li>
+<li id="step-5"><span class="stepnum"><a href="#step-5">5.</a></span> <b>Fixed: the house's 🧸 toys</b>, two rows sharing a key, its slider never shown at the house. <button class="tk" data-step="5">copy for a ticket</button></li>
+<li id="step-6"><span class="stepnum"><a href="#step-6">6.</a></span> <b>The other tabs, biggest first:</b> 🐯 Costume (46 rows), 😀 Face (31), 🎮 Controls (22), 👁 Eyes and 🖐 Hands (15 each), and the rest; each as its boxes, then, where it has many, a designer of its own. <button class="tk" data-step="6">copy for a ticket</button></li>
+<li id="step-7"><span class="stepnum"><a href="#step-7">7.</a></span> <b>Tidy what the survey found stale:</b> three comments and two lines of agent-instructions.md about the full screens; "colour" and "color". <button class="tk" data-step="7">copy for a ticket</button></li>
+<li id="step-8"><span class="stepnum"><a href="#step-8">8.</a></span> <b>Measure the full-screen designer's speed</b> (ticket 289, not measured for this report): many place pictures at once were slow on the black laptop, so before step 2 is built, its place pictures drawn live, as still pictures and as bitmaps, and the friend's walk and drag with the designer open, at normal speed and on the slow tiers. The numbers come back here as a dated note. <button class="tk" data-step="8">copy for a ticket</button></li>
+</ol>
+
+<h2 id="wrong">What we got wrong on the way</h2>
+<ul>
+<li><b>Our first background mockup invented the forest's settings</b> (clouds, trees, flowers, day and night): the forest has none of its own. The mockup is the lake now, with the lake's real five.</li>
+<li><b>Our first castle mockup gave every room a theme;</b> only rooms with doors of their own take one (castle N, at its defaults: the king's room alone).</li>
+</ul>
+
+<h2 id="method">How this was put together</h2>
+<p><b>The code.</b> a read-only survey of the panels&#x27; code (js/20-controls.js TABS and SHOWN_WHEN, js/22-full-screen.js, style.css), with TABS walked and SHOWN_WHEN run in node on the game&#x27;s own parts at their defaults, as tools/check_load.mjs runs them; the pictures from the game in the desktop app&#x27;s browser. The game is 0.0.204 (<code>6e787a8</code>). Rows declared: TABS walked, groups expanded; rows shown: SHOWN_WHEN run with each place set as the background, everything else at its defaults (two kinds of row, things standing in a place and seats, hide themselves when they have nothing to list).</p>
+<p><b>The pictures.</b> the game 0.0.204 at http://localhost:8133/, in the desktop app&#x27;s browser (Chrome 152): wide ones at 1280 x 800 shown in a narrower pane, so smaller; narrow ones at the pane&#x27;s own width. mockups drawn in this page (HTML, the game&#x27;s own dark colors); the lake&#x27;s objects are OBJECTS.md&#x27;s pictures, the places the picture archive&#x27;s thumbnails.</p>
+<p><b>The data</b> is here twice: embedded in this page (<code>&lt;script type="application/json" id="report-data"&gt;</code>) and as <a href="data/report.json">005/data/report.json</a>. The page is built from it and from the mockups by <a href="drivers/build.py">005/drivers/build.py</a>.</p>
+</main>
+<script type="application/json" id="report-data">{
+ "question": "What did the two full-screen designers (🎵 Music, 🗺️ World design) do, the same way, that the rest of Dress Up's panels do not, and should every panel move to it?",
+ "date": "2026-10-18",
+ "game": {
+  "version": "0.0.204",
+  "commit": "6e787a8"
+ },
+ "how": "a read-only survey of the panels' code (js/20-controls.js TABS and SHOWN_WHEN, js/22-full-screen.js, style.css), with TABS walked and SHOWN_WHEN run in node on the game's own parts at their defaults, as tools/check_load.mjs runs them; the pictures from the game in the desktop app's browser",
+ "designers": {
+  "full_screen_tabs": [
+   "🎵 Music",
+   "🗺️ World design"
+  ],
+  "of_tabs": 19,
+  "shared": [
+   [
+    "one way in, one way out",
+    "each tab's first row is a full-screen chip (\"⛶ the music, full screen\", \"⛶ the world designer, full screen\"); ✕, Escape or leaving the browser's full screen all go back",
+    "js/22-full-screen.js:33, 60, 110-119"
+   ],
+   [
+    "the page cleared",
+    "the picture's stage, the divider, the title and the 19 tabs hidden; the side panel the whole window",
+    "style.css:87-93"
+   ],
+   [
+    "a slim bar",
+    "the tab's name and a small ✕ back, the panel's frame gone (ticket 210: the music full screen was \"especially large and over-stated\"; full screens \"more compact, and sleek looking\")",
+    "style.css:94-105"
+   ],
+   [
+    "cards in a grid",
+    "auto-fill grids, 330 px (Music) and 280 px (World) wide at least, 8 px apart; wide things span the row",
+    "style.css:106, 113, 133-135"
+   ],
+   [
+    "boxes within boxes",
+    "the mixer's strips, and the square's things, each a card inside the card",
+    "style.css:311-326, 140-142"
+   ],
+   [
+    "kinds by tint",
+    "--mu-main, --mu-mix, --mu-lfo, --mu-inst; a world square tinted by its place",
+    "style.css:4-18, 435-460"
+   ],
+   [
+    "fewer words",
+    "a row's label hidden where the bar names the tab; the tune picker without dashed boxes",
+    "style.css:122-123, 339-345"
+   ],
+   [
+    "emoji first",
+    "every bar, card and strip named emoji first",
+    "agent-instructions.md:78"
+   ],
+   [
+    "one column when narrow",
+    "the grids fold to one column; the world's split, cards and in-game view only from 900 px",
+    "style.css:114-124, 154"
+   ],
+   [
+    "a row on one line",
+    "a knob: its label (6.2em), the slider, its value (3.8em)",
+    "style.css:365-372"
+   ],
+   [
+    "the game as its first card (World)",
+    "the live picture moved into the right side's first card, sticky, folded away by its 👁️ (ticket 231)",
+    "js/22-full-screen.js:84-108"
+   ],
+   [
+    "remembered in the browser",
+    "the world's split, its view folded or not, its warnings shown or not",
+    "js/20-controls.js:1478; js/22-full-screen.js:79-105; js/25-world.js:208-219"
+   ],
+   [
+    "the music's look, carried back",
+    "ticket 250 gave the Music tab outside full screen the same cards",
+    "style.css:107-111"
+   ]
+  ],
+  "differences": [
+   "Music opens from the game's full screen (🎚️) as well as its tab; World only from its tab",
+   "Music hides the picture; World shows it as a card, from 900 px wide only",
+   "World keeps three things in the browser; Music none"
+  ],
+  "unfinished": [
+   "the in-game view only on windows 900 px wide or more",
+   "the 56 px bar's height written into the CSS and fitPic",
+   "stale comments (the world designer's \"first piece is coming\"; \"the three LFOs\" where there are seven; the tunes picker's dashed boxes) and two stale lines in agent-instructions.md (.world-main and .world-side; the letters \"full screen only\")"
+  ]
+ },
+ "background": {
+  "rows": 1337,
+  "groups": 100,
+  "depth": 2,
+  "top_level_entries": 286,
+  "by_kind": {
+   "choice": 790,
+   "range": 329,
+   "color": 194,
+   "toggle": 8,
+   "flip": 3,
+   "action": 1,
+   "special": 12
+  },
+  "from": {
+   "the three castles": 1087,
+   "the tree house": 97,
+   "🔭 smaller going north, one per place": 30,
+   "bubble space": 20,
+   "everything else": 103
+  },
+  "shown": [
+   [
+    "🌲 forest",
+    9,
+    0,
+    40
+   ],
+   [
+    "🏰 castle (N's, outside)",
+    50,
+    10,
+    258
+   ],
+   [
+    "🛋️ living room",
+    22,
+    0,
+    134
+   ],
+   [
+    "🫧 bubble space",
+    27,
+    4,
+    null
+   ],
+   [
+    "🚪 castle room 1",
+    27,
+    6,
+    null
+   ],
+   [
+    "🌲 forest clearing",
+    24,
+    3,
+    null
+   ],
+   [
+    "🌳 tree house",
+    22,
+    0,
+    null
+   ],
+   [
+    "🦆 lake",
+    17,
+    0,
+    null
+   ],
+   [
+    "🧙 witch's woods",
+    17,
+    0,
+    null
+   ],
+   [
+    "🏠 house and yard",
+    13,
+    0,
+    null
+   ]
+  ],
+  "shown_columns": [
+   "place",
+   "rows shown",
+   "groups",
+   "chips (where counted)"
+  ]
+ },
+ "tabs": [
+  [
+   "🧍 Body",
+   8,
+   1,
+   7
+  ],
+  [
+   "😀 Face",
+   31,
+   0,
+   22
+  ],
+  [
+   "👁 Eyes",
+   15,
+   0,
+   13
+  ],
+  [
+   "💇 Hair",
+   4,
+   0,
+   4
+  ],
+  [
+   "🦒 Neck, arms & legs",
+   12,
+   0,
+   11
+  ],
+  [
+   "👕 Shirt",
+   8,
+   0,
+   6
+  ],
+  [
+   "🖐 Hands",
+   15,
+   0,
+   4
+  ],
+  [
+   "👖 Pants",
+   6,
+   0,
+   3
+  ],
+  [
+   "🩱 Swim & undies",
+   7,
+   0,
+   1
+  ],
+  [
+   "👟 Feet",
+   8,
+   0,
+   4
+  ],
+  [
+   "👻 Visibility",
+   9,
+   0,
+   9
+  ],
+  [
+   "🐯 Costume",
+   46,
+   0,
+   1
+  ],
+  [
+   "🏞️ Background",
+   1337,
+   100,
+   "9 to 50"
+  ],
+  [
+   "🎮 Controls",
+   22,
+   6,
+   22
+  ],
+  [
+   "🎵 Music",
+   10,
+   0,
+   10
+  ],
+  [
+   "🗺️ World design",
+   2,
+   0,
+   2
+  ],
+  [
+   "🔬 Inspection",
+   4,
+   0,
+   4
+  ],
+  [
+   "♿ Accessibility",
+   3,
+   0,
+   3
+  ],
+  [
+   "⚙️ Advanced",
+   1,
+   0,
+   1
+  ]
+ ],
+ "tabs_columns": [
+  "tab",
+  "rows declared",
+  "groups",
+  "rows shown at the defaults"
+ ],
+ "castle_themes": {
+  "themes": "A and B; each two flag colors, how they go (↔️ in turn, ▥ stripes, ▦ checkers) and a carpet; A is the castle's own, its flags outside too; B starts as A swapped; rooms take A and B in turn",
+  "where_set": "\"🎨 X's castle: its color themes\", two groups of 4 rows",
+  "where_chosen": "\"🎨 its colors\" (🎨 theme A / 🎨 theme B), in the box of each room with doors of its own (hallways, side, long and spiral rooms); castle N's default rooms: only the king's room",
+  "seen": "the room's chip says \"theme A\" or \"theme B\", no colors; the colors are in another group, higher up"
+ },
+ "bubble_themes": {
+  "rows": "three groups (A always; B and C each with an on/off flip), five rows each: colour, size, shine, sparkle, sparkle colour",
+  "where": "🏞️ Background (bubble space: 20 rows, 4 groups) and 🎮 Controls (the looks only; B and C's on/off there is blowB/blowC, apart from bubble space's bubbleBOn/bubbleCOn)",
+  "flip_bug": "a theme's on/off is a flip whose two labels are the same (\"🅱️ theme B\"), and the stylesheet shows a pressed button only inside rows and a few other places, so nothing visible changes between on and off"
+ },
+ "found": [
+  [
+   "the house's 🧸 toys slider never shows",
+   "\"toys\" is the key of two rows (🧸 toys on the lawn, at the house; 🧸 things in the room, inside the tree house) and SHOWN_WHEN defines background.toys twice; the second (inside the tree house) wins, so at the house the slider is hidden, and inside the tree house both show, for the same setting",
+   "js/20-controls.js:359, 376, 821, 901"
+  ],
+  [
+   "the bubble themes' on/off shows nothing",
+   "see above",
+   "js/20-controls.js:100, 108, 515; style.css:186"
+  ],
+  [
+   "long labels with instructions in them",
+   "\"🔭 smaller going north (% for each tenth of the picture)\", \"💀 skulls: biggest size (% of the usual; the smallest is the usual)\", \"… detail (0 = a blur, 100 = all of it)\"",
+   "js/20-controls.js:318, 344, 487"
+  ],
+  [
+   "colour and color",
+   "the bubble rows say colour; the rest of the game color",
+   "js/20-controls.js:93-113"
+  ]
+ ],
+ "pictures": {
+  "before": [
+   "before-background-wide.jpg",
+   "before-background-narrow.jpg",
+   "before-castle-theme.png",
+   "before-bubble-themes.jpg",
+   "before-music.jpg",
+   "before-world-designer.jpg"
+  ],
+  "taken": "the game 0.0.204 at http://localhost:8133/, in the desktop app's browser (Chrome 152): wide ones at 1280 x 800 shown in a narrower pane, so smaller; narrow ones at the pane's own width",
+  "after": "mockups drawn in this page (HTML, the game's own dark colors); the lake's objects are OBJECTS.md's pictures, the places the picture archive's thumbnails"
+ }
+}</script>
+<script>
+(() => {
+  const b = document.getElementById("theme"), modes = ["auto", "light", "dark"], names = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
+  let m = "auto"; try { m = localStorage.getItem("theme") || "auto"; } catch (e) {}
+  const show = () => { b.textContent = names[m]; if (m === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", m); };
+  b.onclick = () => { m = modes[(modes.indexOf(m) + 1) % 3]; try { localStorage.setItem("theme", m); } catch (e) {} show(); };
+  show();
+  for (const t of document.querySelectorAll("button.tk")) t.onclick = () => {
+    const li = t.closest("li"), n = t.dataset.step, text = li.cloneNode(true);
+    text.querySelectorAll("button, .stepnum").forEach(e => e.remove());
+    const msg = `Mint a ticket for this step: Dress Up reports, ^du_report(5), What next, step ${n}: "${text.textContent.trim()}". ${location.href.split("#")[0]}#step-${n}`;
+    navigator.clipboard.writeText(msg).then(() => { t.textContent = "copied"; setTimeout(() => t.textContent = "copy for a ticket", 1500); });
+  };
+})();
+</script>
+</body>
+</html>
