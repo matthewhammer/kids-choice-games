@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.219 (2026-10-18)
+
+Everything in 0.0.218, with the orange tent's flashlight shining the right way.
+
+- **The flashlight's beam comes out of its lens**, the yellow end, along its shaft, up and to the right. (It came out of the bottom, toward the door.)
+- **Where the beam meets the tent's wall, an oval of light** on the canvas, narrow across and tall as the wall goes away from us, brightest in the middle; brighter at night.
+
 ## 0.0.218 (2026-10-18)
 
 Everything in 0.0.217, with the trap room's two pits and two levers set up in the background settings.

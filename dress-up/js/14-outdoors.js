@@ -486,10 +486,13 @@ function sleepingBag({ k, back, out, y1 }, xa, xb, color) {
          // a pillow at its far end
          `<ellipse cx="${f1((xa + xb) / 2)}" cy="${f1(fy + 2 * k)}" rx="${f1(Math.abs(xb - xa) * 0.38)}" ry="${f1(11 * k)}" fill="#f4f1ea" stroke="#c9c4b8" stroke-width="${f1(1.5 * k)}"/>`;
 }
+// where the orange tent's flashlight lies, on the far end of the purple sleeping bag, its lens (the yellow end) up and to the right,
+// for the flashlight and its beam alike (ticket 306, Matthew: the beam came out of its tail)
+const tentFlashlightAt = G => `translate(${f1(G.W * 0.27)} ${f1(G.g - 20 * G.k)}) rotate(-25) scale(${G.k.toFixed(3)})`;
 const TENT_THINGS = [
   // orange: two sleeping bags, a flashlight on one
   G => sleepingBag(G, -G.half * 0.88, -G.half * 0.42, "#c0392b") + sleepingBag(G, G.half * 0.42, G.half * 0.88, "#7d3c98") +
-    `<g transform="translate(${f1(G.W * 0.27)} ${f1(G.g - 20 * G.k)}) rotate(-25) scale(${G.k.toFixed(3)})"><rect x="-24" y="-7" width="40" height="14" rx="4" fill="#3a3a3a"/>` +
+    `<g transform="${tentFlashlightAt(G)}"><rect x="-24" y="-7" width="40" height="14" rx="4" fill="#3a3a3a"/>` +
     `<rect x="14" y="-10" width="12" height="20" rx="3" fill="#f2c12e"/><rect x="-14" y="-3" width="8" height="6" rx="1" fill="#e53935"/></g>`,
   // blue: a teddy bear on a blanket, a pile of books
   G => {
@@ -525,8 +528,14 @@ const TENT_THINGS = [
 // what glows in each tent, over the night: the flashlight's beam, the
 // lantern, the jar of fireflies
 const TENT_GLOW = [
-  G => `<polygon points="${P2(G.W * 0.27 - 26 * G.k, G.g - 34 * G.k)} ${P2(G.W * 0.27 - 18 * G.k, G.g - 10 * G.k)} ${P2(G.W * 0.06, G.back - 40 * G.k)} ${P2(G.W * 0.12, G.back - 110 * G.k)}" ` +
-       `fill="#fff3a8" opacity="${G.night ? 0.35 : 0.15}" pointer-events="none"/>`,
+  // (out of its lens, the yellow end, along its shaft, widening: drawn where the flashlight is, so the two turn together;
+  // and where it meets the tent's side wall, an oval of light on the canvas, narrow across and tall, as the wall goes
+  // away from us: the beam's end, seen from the side, brightest in the middle. Matthew: "project an oval up there,
+  // stretched to look psuedo 3d")
+  G => `<defs><radialGradient id="bg-tent-spot"><stop offset="0" stop-color="#fffbe0" stop-opacity="0.95"/><stop offset="0.6" stop-color="#fff3a8" stop-opacity="0.7"/>` +
+       `<stop offset="1" stop-color="#fff3a8" stop-opacity="0"/></radialGradient></defs>` +
+       `<g transform="${tentFlashlightAt(G)}"><polygon points="26,-9 26,9 186,60 186,-60" fill="#fff3a8" opacity="${G.night ? 0.35 : 0.15}" pointer-events="none"/>` +
+       `<ellipse cx="186" cy="0" rx="24" ry="66" fill="url(#bg-tent-spot)" opacity="${G.night ? 0.8 : 0.45}" pointer-events="none"/></g>`,
   G => {
     const { k, W, y0, H } = G, lx = -W * 0.17, ly = y0 + H * 0.17;
     return `<line x1="${f1(lx)}" y1="${f1(y0 - 10 * k)}" x2="${f1(lx)}" y2="${f1(ly - 22 * k)}" stroke="#333" stroke-width="${f1(2 * k)}"/>` +
