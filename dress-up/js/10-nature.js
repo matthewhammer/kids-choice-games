@@ -188,7 +188,9 @@ function treeInner(c) {
   s += SEP + part("tree-trunk", [n], () =>
     // (ticket 241, Matthew: "there's no collision info for the outside tree house tree trunk system") the braid
     // marked, data-trunk: the tree house's box is its trunk's alone (standingHere), not its houses', bridges' or ladders'
-    treeLimbs(n) + treeRoots() + `<g data-trunk="">` + treeBraid() + `</g>`);
+    // (ticket 345, Matthew: "the base of the tree house trunk system is very, very curvy -- it's good, but we need more
+    // fine-grained boxes there in collision info") and five bands more in its lowest third, data-base (trunkBands)
+    treeLimbs(n) + treeRoots() + `<g data-trunk="" data-base="5">` + treeBraid() + `</g>`);
   // leaves: bonsai pads, eight shapes drawn once, each used again and
   // again, grown, flipped and colored by its <use> (0 leaves: bare)
   s += SEP + part("tree-pad-shapes", [], () => `<defs>${[...Array(8)].map((_, j) => padDef(`bg-pad${j}`, j)).join("")}</defs>`);

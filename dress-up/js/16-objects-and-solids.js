@@ -182,8 +182,10 @@ function boxThrough(r, m) {
 // (the tall shapes standingHere found) followed along their length (getPointAtLength, through each one's matrix; a
 // stroked one grown by half its stroke), so a palm's leaning trunk has its boxes leaning with it. Each band: x0, x1,
 // and lo, hi, its heights above the ground where the thing stands (z).
-const TRUNK_BANDS = 5;
-function trunkBands(parts, z, n = TRUNK_BANDS) {
+// (ticket 345) base: that many bands more in its lowest third (BASE_SHARE), where a trunk spreads at its foot (the tree
+// house's braid curving out to the ground), the rest of it in n - 1
+const TRUNK_BANDS = 5, BASE_SHARE = 1 / 3;
+function trunkBands(parts, z, n = TRUNK_BANDS, base = 0) {
   const pts = [];
   for (const [sh, m] of parts) {
     let L = 0; try { L = sh.getTotalLength(); } catch (e) { continue; }
@@ -192,8 +194,10 @@ function trunkBands(parts, z, n = TRUNK_BANDS) {
   }
   if (pts.length < 2) return null;
   const top = Math.min(...pts.map(p => p[1] - p[2])), bot = Math.max(z, ...pts.map(p => p[1])), out = [];
-  for (let i = 0; i < n; i++) {
-    const yA = top + (bot - top) * i / n, yB = top + (bot - top) * (i + 1) / n, inb = pts.filter(p => p[1] + p[2] >= yA && p[1] - p[2] <= yB);
+  const cut = base ? bot - (bot - top) * BASE_SHARE : bot, up = base ? n - 1 : n;
+  const edges = [...Array(up + 1)].map((_, i) => top + (cut - top) * i / up).concat([...Array(base)].map((_, i) => cut + (bot - cut) * (i + 1) / base));
+  for (let i = 0; i + 1 < edges.length; i++) {
+    const yA = edges[i], yB = edges[i + 1], inb = pts.filter(p => p[1] + p[2] >= yA && p[1] - p[2] <= yB);
     if (inb.length) out.push({ x0: Math.min(...inb.map(p => p[0] - p[2])), x1: Math.max(...inb.map(p => p[0] + p[2])), lo: Math.max(0, z - yB), hi: z - yA });
   }
   return out.length ? out : null;
@@ -247,7 +251,7 @@ function standingHere(B, seats) {
       }
       if (parts.length) {
         foot = [Math.min(...parts.map(p => p[2].x)), Math.max(...parts.map(p => p[2].x + p[2].width))];
-        if (trunk) bands = trunkBands(parts, o.z);
+        if (trunk) bands = trunkBands(parts, o.z, TRUNK_BANDS, marked ? +marked.dataset.base || 0 : 0);
       }
     }
     // (a trunk's foot is its lowest band's width, the part on the ground)
@@ -343,7 +347,11 @@ function solidAt(x, z, all = false) {
     const o = sw && o0.name === "swing" ? { ...o0, x0: o0.x0 + sw.dx, x1: o0.x1 + sw.dx } : o0;   // (ticket 240: where the seat is now)
     if (sitting && o.name === B.seat) continue;
     if (o.h < clears) continue;
-    if (S.some(s => s[3] > o.back && s[2] < o.front && solidBands(o).some(b => s[1] > b.x0 && s[0] < b.x1 && s[5] > b.lo && s[4] < b.hi))) {   // (a sole, or the torso's box, over one of its boxes, at its heights)
+    // (ticket 345: a trunk's bands met where they are drawn: a sole deep in its footprint, behind its foot, is level on the
+    // screen with the trunk that much higher up, so it is measured against the band there, as the eye sees it; the tree
+    // house's braid curving out at the ground no longer stops a friend standing beside it, further back)
+    if (S.some(s => { if (!(s[3] > o.back && s[2] < o.front)) return false; const up = o.bands ? Math.max(0, o.front - (s[2] + s[3]) / 2) : 0;
+        return solidBands(o).some(b => s[1] > b.x0 && s[0] < b.x1 && s[5] + up > b.lo && s[4] + up < b.hi); })) {   // (a sole, or the torso's box, over one of its boxes, at its heights)
       if (!all) return o;
       list.push(o);
     }

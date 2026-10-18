@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.243 (2026-10-18)
+
+Everything in 0.0.242, with the tree house's trunk boxed closer at its curvy base.
+
+- **Walk closer round the foot of the tree house's trunk**: its curvy base now has five collision boxes of its own (nine up the whole trunk, was five), each as wide as the trunk is at that height. Standing a little behind its foot, you are measured against the trunk where it looks level with your feet, not against its roots spreading out at the front, so the space beside it is yours to walk.
+
 ## 0.0.242 (2026-10-18)
 
 Everything in 0.0.241, with the bubble room in the speed test.
