@@ -145,7 +145,6 @@ function bridgeOn(j, u) {
   const B = state.background, W = treeWalks(B)[j];
   if (!W) return;
   u = clamp(u, 0, 1); B.onBridge = { j, u: +u.toFixed(4) };
-  bridgePlace = bridgeHere(B);   // (put on it here: kept on the drawing to come, in a place just come to too: ticket 246)
   const [x, y] = walkAt(W, u); B.figX = +x.toFixed(1); B.figY = +(y - SCENE.ground).toFixed(1);
   if (B.seat) { state.body.sit = false; B.seat = null; }
 }
@@ -176,14 +175,11 @@ function bridgeStep(ds) {
   bridgeOn(at.j, u);
   return true;
 }
-// (a place left, and come to again later, starts off the bridge: on the first drawing in a new place, the bridge
-// they were on is let go of)
-let bridgePlace = null;
-const bridgeHere = B => climbPlace(B) + ":" + (state.world && state.world.at || "");
+// (a place left, and come to again later, starts off the bridge: drawn anywhere but outside the tree house, the bridge
+// they were on is let go of; ticket 246: not by the world's square, which coming out of a room can set)
 function bridgeKeep() {
-  const B = state.background, here = bridgeHere(B);
-  if (bridgePlace !== null && bridgePlace !== here && B.onBridge) delete B.onBridge;
-  bridgePlace = here;
+  const B = state.background;
+  if (B.onBridge && B.kind !== "treehouse") delete B.onBridge;
 }
 // (a [data-ladder] group, in the picture's own units, the friend's: through
 // the screen, as the scene may sit in a nested svg of its own; its depth is
