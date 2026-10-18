@@ -646,27 +646,17 @@ const TUNES = {
       S(8, "bass bubbles drums organ"), S(8, "bass bubbles drums organ panB"), S(8, "bass bubbles drums organ panA"),
     ] };
   } },
-  steppers: { name: "🐢 turtle steppers dub", make: () => {
-    const chords = ["Em", "Em", "Am", "Em", "C", "D", "Em", "Em"];
-    return { bpm: 74, swing: 0.15, room: 3, echoSteps: 3, level: 0.85, parts: [
-      { name: "kick", inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
-      { name: "drums", inst: "rim", level: 0.7, rev: 0.3, echo: 0.3, line: hitsOf("........x.......") },
-      { name: "drums", inst: "hat", level: 0.5, line: hitsOf("..x...x...x...x.") },
-      { name: "chop", inst: "chop", echo: 0.5, rev: 0.2, line: stabsOf(chords, 16, [4, 12], 1, 4) },
-      { name: "bass", inst: "bass", line: bassOf(chords, 16, [[0, 0, 3], [4, 0, 2], [6, 7, 2], [8, 0, 3], [12, 12, 2], [14, 10, 2]], 2) },
-      // a ping, like sonar, far off in the echo
-      { name: "sonar", inst: "bell", level: 0.35, rev: 0.5, echo: 0.6, line: lineOf("E6:1 r:63 B5:1 r:63") },
-      { name: "tuneA", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(
-        "r:8 B4:2 D5:2 E5:4 | G5:4 E5:4 r:8 | r:8 C5:2 E5:2 A5:4 | G5:2 F#5:2 E5:4 r:8 | " +
-        "r:4 G5:4 E5:4 C5:4 | D5:4 F#5:4 A5:8 | B5:8 G5:4 E5:4 | E5:12 r:4") },
-      { name: "tuneB", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(
-        "E5:4 r:4 G5:4 r:4 | B5:8 r:8 | A5:4 r:4 C6:4 r:4 | B5:4 G5:4 E5:8 | E5:4 G5:4 C6:8 | D6:4 A5:4 F#5:8 | G5:4 F#5:4 E5:8 | r:16") },
-      { name: "bubbles", inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf("r:9 E6:1 r:21 B6:1 r:17 G6:1 r:33 D6:1 r:11 A6:1 r:32") },
-    ], form: [
-      S(8, "kick bass sonar"), S(8, "kick bass sonar drums chop"), S(8, "kick bass sonar drums chop tuneA bubbles"),
-      S(8, "kick bass sonar chop"), S(8, "kick bass sonar drums chop tuneB bubbles"), S(8, "kick bass sonar drums chop tuneA bubbles"),
-    ] };
-  } },
+  steppers: { name: "🐢 turtle steppers dub", make: () => steppersTune() },
+  // (ticket 263, Matthew: "One new track for music -- 'turtle super-dub step', based on the last .json file I shared with
+  // you ... I tweaked the settings, and am currently playing: ▶ playing: 🐢 turtle steppers dub (153 beats a minute, down
+  // 12 half steps). Please use those settings for a new version of that song, with a new title, in the track list, same
+  // category. use fire emoji as the emoji.") turtle steppers dub as he set it in his save of 2026-10-17 20:09: 153 beats
+  // a minute (207% of 74), an octave down, his octave presses on the mixing board baked into the parts (the bass, the
+  // sonar's bell and the first melodica back up from there), and the rest of his board its own mix to start from (mix:
+  // copied into the player's own at their first change, chan)
+  superdub: { name: "🔥 turtle super-dub step", make: () => steppersTune({ bpm: 153, down: 12, ups: { "bass·bass": 12, "sonar·bell": 12, "tuneA·melodica": 24 } }),
+    mix: { "kick·kick": { echo: 0 }, "drums·rim": { echo: 0 }, fx: { repeats: 70, time: 7, room: 186 },
+           "tuneA·melodica": { knob: 100, pan: -4, rev: 68, level: -7, tone: 45 }, "chop·chop": { tone: 84, level: 6, echo: 81, pan: -4 } } },
   lullaby: { name: "🎐 steel-pan lullaby", make: () => {
     const chords = ["F", "Dm", "Bb", "C", "F", "Dm", "Bb", "C"];
     return { bpm: 84, room: 2.5, level: 1, parts: [
@@ -1083,10 +1073,35 @@ const SCENE_TUNE = { forest: "forest", underwater: "underwater", deepsea: "under
                      tent: "lullaby", cave: "steppers", woodpath: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom" };
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
 // the kinds of music, each with its tunes: the music tab's first row of
+// turtle steppers dub, and (ticket 263) its super-dub step: at another tempo, `down` half steps lower, each pitched part
+// `ups` (by its mixing-board channel, name·inst) back up from there; a drum keeps its pitch, as transposing leaves it
+function steppersTune({ bpm = 74, down = 0, ups = {} } = {}) {
+    const chords = ["Em", "Em", "Am", "Em", "C", "D", "Em", "Em"];
+    const T = { bpm, swing: 0.15, room: 3, echoSteps: 3, level: 0.85, parts: [
+      { name: "kick", inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
+      { name: "drums", inst: "rim", level: 0.7, rev: 0.3, echo: 0.3, line: hitsOf("........x.......") },
+      { name: "drums", inst: "hat", level: 0.5, line: hitsOf("..x...x...x...x.") },
+      { name: "chop", inst: "chop", echo: 0.5, rev: 0.2, line: stabsOf(chords, 16, [4, 12], 1, 4) },
+      { name: "bass", inst: "bass", line: bassOf(chords, 16, [[0, 0, 3], [4, 0, 2], [6, 7, 2], [8, 0, 3], [12, 12, 2], [14, 10, 2]], 2) },
+      // a ping, like sonar, far off in the echo
+      { name: "sonar", inst: "bell", level: 0.35, rev: 0.5, echo: 0.6, line: lineOf("E6:1 r:63 B5:1 r:63") },
+      { name: "tuneA", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(
+        "r:8 B4:2 D5:2 E5:4 | G5:4 E5:4 r:8 | r:8 C5:2 E5:2 A5:4 | G5:2 F#5:2 E5:4 r:8 | " +
+        "r:4 G5:4 E5:4 C5:4 | D5:4 F#5:4 A5:8 | B5:8 G5:4 E5:4 | E5:12 r:4") },
+      { name: "tuneB", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(
+        "E5:4 r:4 G5:4 r:4 | B5:8 r:8 | A5:4 r:4 C6:4 r:4 | B5:4 G5:4 E5:8 | E5:4 G5:4 C6:8 | D6:4 A5:4 F#5:8 | G5:4 F#5:4 E5:8 | r:16") },
+      { name: "bubbles", inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf("r:9 E6:1 r:21 B6:1 r:17 G6:1 r:33 D6:1 r:11 A6:1 r:32") },
+    ], form: [
+      S(8, "kick bass sonar"), S(8, "kick bass sonar drums chop"), S(8, "kick bass sonar drums chop tuneA bubbles"),
+      S(8, "kick bass sonar chop"), S(8, "kick bass sonar drums chop tuneB bubbles"), S(8, "kick bass sonar drums chop tuneA bubbles"),
+    ] };
+    if (down || Object.keys(ups).length) for (const q of T.parts) if (!PERCUSSION.has(q.inst)) q.shift = -down + (ups[q.name + "·" + q.inst] || 0);
+    return T;
+}
 // chips picks a kind, the second its tune
 const TUNE_GROUPS = [
   ["beats", "🥁 classic beats", ["bongobreak", "canyon", "skatepark"]],
-  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers"]],
+  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", "superdub"]],   // (ticket 263: its super-dub step beside it)
   ["calypso", "🏖️ calypso", ["beach", "soca", "lullaby"]],
   ["house", "🏠 house", ["cushions"]],
   ["groove", "🕺 groove", ["bats", "vibes"]],
@@ -1254,9 +1269,10 @@ function stopTune() {
 // echo and the room, and a tone; and for the whole tune, the echo's
 // repeats and time and the room's level. Kept for each tune, with the friend.
 const channelKey = p => p.name + "·" + p.inst;
-const mixOf = id => (state.music.mix || {})[id] || {};
+// (ticket 263: a tune's own mix to start from, TUNES[id].mix, till the player changes it: then theirs, from it)
+const mixOf = id => (state.music.mix || {})[id] || (TUNES[id] && TUNES[id].mix) || {};
 function chan(id, key) {
-  const mix = state.music.mix || (state.music.mix = {}), t = mix[id] || (mix[id] = {});
+  const mix = state.music.mix || (state.music.mix = {}), t = mix[id] || (mix[id] = structuredClone((TUNES[id] && TUNES[id].mix) || {}));
   return t[key] || (t[key] = {});
 }
 // --- the LFOs: seven waves, A to G, that a drum's pitch can follow,

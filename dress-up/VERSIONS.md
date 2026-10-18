@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.197 (2026-10-17)
+
+Everything in 0.0.196, with a new tune.
+
+- **🔥 turtle super-dub step**: a new tune in 🌴 reggae, after 🐢 turtle steppers dub: the same tune at 153 beats a minute, an octave down, with the bass, the sonar's bell and the first melodica back up where Matthew set them, and his mixing board (the echoes, the room, the melodica and the chop) to start from. Changing one thing on its board keeps the rest of his.
+
 ## 0.0.196 (2026-10-17)
 
 Everything in 0.0.195, with each trap room's pits its own.
