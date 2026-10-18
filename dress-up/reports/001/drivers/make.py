@@ -137,7 +137,7 @@ page = f"""<!doctype html>
 <body>
 <button class="theme" id="theme" title="Light or dark">◐ Auto</button>
 <main>
-<p class="series"><a href="../">Dress Up reports</a> · {chip(1)} · 2026-10-16 · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, a game made with M and N</p>
+<p class="series"><a href="../">Dress Up reports</a> · {chip(1)} · 2026-10-16 · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N</p>
 <h1>60 frames a second, and what checks it</h1>
 <p class="sub">Does Messed Up Dress Up hold 60 frames a second for what a game controller does in a place? How much of that do our tests check, and where do they run? From Matthew's rule, made on 2026-10-16 after the castle and 💭 our imagination dropped frames: "The priority is 60 FPS at all times, for all actions that a game controller does in the scene."</p>
 
@@ -272,7 +272,7 @@ index = f"""<!doctype html>
 <button class="theme" id="theme" title="Light or dark">◐ Auto</button>
 <main>
 <h1>Dress Up reports</h1>
-<p class="sub">Reports on <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, the plain-JavaScript game made with M and N, where features are tried with real players before they are rebuilt as livelits in Hazel. Each report takes one question and answers it with measurements. The first rule they measure: 60 frames a second for everything a game controller does. (Hazel's own series is the <a href="https://matthewhammer.org/hazel/performance-analysis/">Hazel performance analysis</a>.)</p>
+<p class="sub">Reports on <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, the plain-JavaScript game made with M and N, where features are tried with real players before they are rebuilt as livelits in Hazel. Each report takes one question and answers it with measurements. The first rule they measure: 60 frames a second for everything a game controller does. (Hazel's own series is the <a href="https://matthewhammer.org/hazel/performance-analysis/">Hazel performance analysis</a>.)</p>
 {card}
 </main>
 <script>

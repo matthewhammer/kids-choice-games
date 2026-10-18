@@ -124,7 +124,7 @@ page = f'''<!doctype html>
 <body>
 <button class="theme" id="theme" title="Light or dark">◐ Auto</button>
 <main>
-<p class="series"><a href="../">Dress Up reports</a> · {ref(4)} · 2026-10-18 · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(3)}</p>
+<p class="series"><a href="../">Dress Up reports</a> · {ref(4)} · 2026-10-18 · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(3)}</p>
 <h1>One folder, every run</h1>
 <p class="sub">How can the game's picture archive keep a year or more of runs in one repository, and what did moving it show about the pictures themselves? The archive passed GitHub Pages' 1 GB after five runs; on 2026-10-18 it was moved to a new layout ({ref(272, "ticket")}). Measured that day, on the archives' own files and on GitHub's computers.</p>
 

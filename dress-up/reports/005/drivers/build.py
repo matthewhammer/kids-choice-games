@@ -88,7 +88,7 @@ page = f'''<!doctype html>
 <body>
 <button class="theme" id="theme" title="Light or dark">◐ Auto</button>
 <main>
-<p class="series"><a href="../">Dress Up reports</a> · {ref(5)} · 2026-10-18 · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(4)}</p>
+<p class="series"><a href="../">Dress Up reports</a> · {ref(5)} · 2026-10-18 · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(4)}</p>
 <h1>Always be knolling</h1>
 <p class="sub">What did the two full-screen designers, 🎵 Music and 🗺️ World design, do the same way that the rest of Dress Up's panels do not, and should every panel move to it? Read from the game's code at 0.0.204 (every row each tab declares, and which a player sees in each place), with pictures of the panels as they are and mockups of what they could be ({ref(279, "ticket")}).</p>
 
