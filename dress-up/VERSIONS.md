@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.214 (2026-10-18)
+
+Everything in 0.0.213, with the background designer's two sides sized by dragging, as the world designer's are.
+
+- **The bar between the boxes and the game**, in ⛶ the background designer, full screen: drag it for more room for the boxes or for the game. This browser keeps where it was left, apart from the world designer's.
+
 ## 0.0.213 (2026-10-18)
 
 Everything in 0.0.212, with 🏞️ Background as a designer, full screen, as 🗺️ World design is.

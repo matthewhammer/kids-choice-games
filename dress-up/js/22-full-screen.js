@@ -90,7 +90,11 @@ function setBgBig(on) {
 function bgLayout(panel) {
   const kids = [...panel.children], bar = kids.find(c => c.querySelector(":scope > button.designer-chip")), view = kids.find(c => c.querySelector(":scope > .bg-view"));
   const boxes = el("div", { class: "bg-boxes" }, kids.filter(c => c !== bar && c !== view));
-  panel.replaceChildren(...(bar ? [bar] : []), el("div", { class: "bg-layout" }, [boxes, el("div", { class: "bg-viewcol" }, view ? [view] : [])]));
+  // (Matthew: "no drag between LHS and RHS -- that's a key feature of world designer": the same dragger, kept apart from the world's)
+  const split = el("div", { class: "world-split bg-split", role: "separator", "aria-orientation": "vertical", title: "Drag: more room for the boxes, or for the game" });
+  const layout = el("div", { class: "bg-layout" }, [boxes, split, el("div", { class: "bg-viewcol" }, view ? [view] : [])]);
+  designerSplit(layout, split, "dress-up-bg-split");
+  panel.replaceChildren(...(bar ? [bar] : []), layout);
 }
 // (a place's picture, the picture archive's thumbnail of it with the friend; the castle's rooms by the room shown now, or the king's)
 const PICTURES_SITE = "https://matthewhammer.org/dress-up-pictures/pictures/thumbs/backgrounds-with-friend/";

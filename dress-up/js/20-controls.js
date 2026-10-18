@@ -751,6 +751,17 @@ function thingCheck(then) {
   thingFpsBusy = true;
   setTimeout(() => framesNow().then(fps => { thingFps = fps; thingFpsAt = performance.now(); thingFpsBusy = false; if (then) then(); }), 300);
 }
+// (ticket 224: the world designer's; ticket 285, Matthew: the background designer's too, "a key feature of world designer")
+// The dragger between a designer's two sides: its --left, a share of the layout's width, kept in this browser under key
+function designerSplit(layout, split, key) {
+  try { const v = localStorage.getItem(key); if (v) layout.style.setProperty("--left", v); } catch (e) { /* (the usual split) */ }
+  split.addEventListener("pointerdown", e => {
+    e.preventDefault(); split.setPointerCapture(e.pointerId);
+    const move = ev => { const r = layout.getBoundingClientRect(); layout.style.setProperty("--left", clamp(100 * (ev.clientX - r.left) / r.width, 25, 80).toFixed(1) + "%"); };
+    const up = () => { split.removeEventListener("pointermove", move); try { localStorage.setItem(key, layout.style.getPropertyValue("--left")); } catch (err) { /* (for this visit) */ } };
+    split.addEventListener("pointermove", move); split.addEventListener("pointerup", up, { once: true }); split.addEventListener("pointercancel", up, { once: true });
+  });
+}
 function el(tag, attrs = {}, kids = []) {
   const e = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -1511,13 +1522,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const layout = el("div", { class: "world-layout" }, [
       el("div", { class: "world-rest" }, [view, notHere, warnings, palette, el("div", { class: "world-sizes" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
       split, gridcol]);
-    try { const v = localStorage.getItem("dress-up-world-split"); if (v) layout.style.setProperty("--left", v); } catch (e) { /* (the usual split) */ }
-    split.addEventListener("pointerdown", e => {
-      e.preventDefault(); split.setPointerCapture(e.pointerId);
-      const move = ev => { const r = layout.getBoundingClientRect(); layout.style.setProperty("--left", clamp(100 * (ev.clientX - r.left) / r.width, 25, 80).toFixed(1) + "%"); };
-      const up = () => { split.removeEventListener("pointermove", move); try { localStorage.setItem("dress-up-world-split", layout.style.getPropertyValue("--left")); } catch (err) { /* (for this visit) */ } };
-      split.addEventListener("pointermove", move); split.addEventListener("pointerup", up, { once: true }); split.addEventListener("pointercancel", up, { once: true });
-    });
+    designerSplit(layout, split, "dress-up-world-split");
     box.append(el("div", { class: "hint world-intro" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."), layout);
     syncs.push(render);
   }
