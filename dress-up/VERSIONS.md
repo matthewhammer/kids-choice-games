@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.194 (2026-10-17)
+
+Everything in 0.0.193, with your friend their size up the spiral staircase.
+
+- **Up the stairs, not far away**: climbing the spiral staircase, your friend keeps the size of where they stand on the steps (a step at the back smaller, one in front bigger), instead of shrinking the higher they go.
+
 ## 0.0.193 (2026-10-17)
 
 Everything in 0.0.192, with the spiral staircase whole.

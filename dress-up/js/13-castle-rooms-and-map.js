@@ -873,6 +873,15 @@ function spiralPath(x0, y0, x1, y1) {
   pts.push(on(b), [x1, y1]);
   return pts;
 }
+// (ticket 270) up the spiral staircase, where the friend's size is reckoned from: the floor straight below their place on
+// the steps (the step's depth, as the turn's front or back), in figY terms; null on the floor, below the steps' foot
+function spiralFloorY(x, y) {
+  const G = spiralGeom(stageC()), g = SCENE.ground, k = stageC().k;
+  if (g + y > G.Yf - 20 * k) return null;
+  let best = G.th0, bd = Infinity, r = (G.r0 + G.R) / 2;
+  for (let th = G.th0; th <= G.th0 + 4.6 * Math.PI; th += 0.02) { const [px, py] = G.pt(r, th, G.lvl(th)), d = Math.hypot(px - x, py - (g + y)); if (d < bd) { bd = d; best = th; } }
+  return G.pt(r, best, G.Yf)[1] - g;
+}
 // where door j (from 0) comes out onto the steps: at the wall, at its step's height, smaller the farther back
 const SPIRAL_DOORS = [1.12, 1.86, 2.95, 3.72].map(u => u * Math.PI);
 function spiralDoorAt(c, j) {

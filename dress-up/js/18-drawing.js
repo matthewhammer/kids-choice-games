@@ -308,7 +308,8 @@ function drawNow() {
   // (ticket 245) on a rope bridge: their feet on its deck, as tall as BRIDGE_TALL of the tree's units (times their
   // slider's share), whatever their shape
   figureT = onBr ? { k: (BG.figSize ?? 100) / 100 * BRIDGE_TALL * onBr.W.s * onBr.W.hz / Math.max(1, ground - neckTop + 90), dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
-          : scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
+          // (ticket 270: up the spiral staircase, their size the floor's straight below their step, not the screen's height)
+          : scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : (BG.kind === "castleroom" && castleWallsOf(BG).stairs ? spiralFloorY(BG.figX ?? 0, BG.figY ?? 0) : null) ?? BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg, back: scened && SCENE_BACK[BG.kind] ? SCENE_BACK[BG.kind](top, bottom) : -Infinity };
   // (ticket 137) climbing a place's ladder: up it as time goes by (not while
