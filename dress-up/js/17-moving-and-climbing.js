@@ -261,7 +261,17 @@ function measureMarks() {
     const view = d.querySelector(":scope > svg, :scope > image");
     if (dd.pit) {   // (ticket 162: walked onto, it falls; through it, it is walked to)
       const r = d.getBoundingClientRect(), [cx, cy] = dd.pit.split(" ").map(Number);
-      if (r.width && r.height) pics.push({ ...stage(r), el: d, box: bbox(d), kind: "pit", spot: [cx, cy] });
+      // (ticket 267, Matthew: "let's limit the pit click hover-over box to have two separate boxes: pit itself (maybe even
+      // an oval for it) sign above it. the combination is so large, I can't find anywhere else to click on the floor") two
+      // marks: its hole (glowing in its opening's own shape) and its sign, each its own box; the floor round them free
+      const [, , rx, ry] = dd.pit.split(" ").map(Number), k = (SCENE.bottom - SCENE.top) / 700, sh = openingShape(dd.shape || "circle");
+      if (r.width && r.height) {
+        pics.push({ x0: cx - rx, y0: cy - ry, x1: cx + rx, y1: cy + ry, el: d, box: { x: cx - rx, y: cy - ry, width: 2 * rx, height: 2 * ry }, outline: openingD(sh, cx, cy, rx * 1.12, ry * 1.25), kind: "pit", spot: [cx, cy],
+                    within: (x, y, m = 0) => inOpening(sh, cx, cy, rx + m, ry + m, x, y) });   // (a pointer over its hole: in its shape, not its box's corners)
+        const t = d.querySelector("text"), sg = t && t.previousElementSibling;
+        if (t && sg && sg.tagName.toLowerCase() === "rect") { const a = sg.getBoundingClientRect(), bb = sg.getBBox();
+          pics.push({ ...stage(a), el: d, box: { x: bb.x, y: bb.y, width: bb.width, height: bb.height }, kind: "pit", spot: [cx, cy] }); }
+      }
       continue;
     }
     // (ticket 147: a door glows too, its box its doorway's own: the first shape in it, not its sign)
@@ -352,7 +362,7 @@ function passUnderPointer(e) {
   }
   if (best) return best.p;
   const q = picUnits(e), m = 10 / Math.max(0.01, P.a);   // (nearly over: ten pixels round it)
-  return marks.pics.filter(p => p.kind !== "nav" && p.el.isConnected && q.x >= p.x0 - m && q.x <= p.x1 + m && q.y >= p.y0 - m && q.y <= p.y1 + m)
+  return marks.pics.filter(p => p.kind !== "nav" && p.el.isConnected && (p.within ? p.within(q.x, q.y, m) : q.x >= p.x0 - m && q.x <= p.x1 + m && q.y >= p.y0 - m && q.y <= p.y1 + m))
                    .sort((a, b) => (a.x1 - a.x0) * (a.y1 - a.y0) - (b.x1 - b.x0) * (b.y1 - b.y0))[0] || null;
 }
 function passesNear(reach = 1) {
@@ -384,7 +394,10 @@ function passesNear(reach = 1) {
 }
 function enterTarget() { const q = passesNear(); return q.length ? q[0].p : null; }
 // (a glow's rounded frame round a passage's box, inside its doorway: in front of it, behind whatever stands nearer)
-function passFrame(b, dim) {
+function passFrame(b, dim, outline) {
+  // (ticket 267: a pit's hole glows in its own shape)
+  if (outline) return dim ? `<path d="${outline}" fill="none" stroke="#ffd23f" stroke-opacity="0.5" stroke-width="3" stroke-dasharray="9 6" vector-effect="non-scaling-stroke"/>`
+    : `<path d="${outline}" fill="#fff6a0" fill-opacity="0.14" stroke="#ffd23f" stroke-opacity="0.75" stroke-width="7" vector-effect="non-scaling-stroke"/><path d="${outline}" fill="none" stroke="#fffbe0" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
   const e = Math.max(2, 0.03 * Math.min(b.width, b.height)), r = 3 * e, at = `x="${f1(b.x - e)}" y="${f1(b.y - e)}" width="${f1(b.width + 2 * e)}" height="${f1(b.height + 2 * e)}" rx="${f1(r)}"`;
   return dim ? `<rect ${at} fill="none" stroke="#ffd23f" stroke-opacity="0.5" stroke-width="3" stroke-dasharray="9 6" vector-effect="non-scaling-stroke"/>`
              : `<rect ${at} fill="#fff6a0" fill-opacity="0.14" stroke="#ffd23f" stroke-opacity="0.75" stroke-width="7" vector-effect="non-scaling-stroke"/>` +
@@ -423,20 +436,20 @@ function showEnterGlow() {
   if (leaf !== glowLeaf && !(entering && !leaf)) { doorSwing(glowLeaf, false); glowLeaf = leaf; doorSwing(leaf, true); }
   // (a nav arrow's glow is its arrow over the picture: aimed, or near and dimmer)
   worldWaysAim(p && p.kind === "nav" ? p.el.dataset.way : null);
-  const NS = "http://www.w3.org/2000/svg", put = (el, box, dim) => {
+  const NS = "http://www.w3.org/2000/svg", put = (el, box, dim, outline) => {
     const g = document.createElementNS(NS, "g");
     g.setAttribute("class", "enter-glow" + (dim ? " dim" : "")); g.setAttribute("pointer-events", "none");
-    g.innerHTML = passFrame(box, dim); el.append(g); return g;
+    g.innerHTML = passFrame(box, dim, outline); el.append(g); return g;
   };
   // the dimmer ones
   const dims = new Set(near.map(q => q.p).filter(q => q !== p && q.kind !== "nav"));
   for (const [el, g] of passDims) if (!g.isConnected || ![...dims].some(q => q.el === el)) { g.remove(); passDims.delete(el); }
-  for (const q of dims) if (!passDims.has(q.el)) passDims.set(q.el, put(q.el, q.box, true));
+  for (const q of dims) if (!passDims.has(q.el)) passDims.set(q.el, put(q.el, q.box, true, q.outline));
   // the one
   if (!p || p.kind === "nav") { if (enterGlow) enterGlow.remove(); enterGlow = null; return; }
   if (enterGlow && enterGlow.isConnected && enterGlow.parentNode === p.el) return;
   if (enterGlow) enterGlow.remove();
-  enterGlow = put(p.el, p.box, false);
+  enterGlow = put(p.el, p.box, false, p.outline);
 }
 // (ticket 256, Matthew: "we can walk through an open door, by just colliding with it") walking on into a side wall at
 // the door the glow has opened in it, between its feet's depths, the way it faces: through it. The door's opening's

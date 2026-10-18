@@ -335,7 +335,7 @@ pic.addEventListener("click", e => {
   // (ticket 187) a passage behind something standing in front of it (a fence, a bush, a sign's post):
   // through it too; never one behind the friend or a thing put there, which are for dragging
   if (entering || !e.target.closest || e.target.closest("#figure, [data-drag], #ways") || marks.text !== bgShown.text) return;
-  const q = picUnits(e), hit = marks.pics.filter(p => p.kind !== "nav" && p.el.isConnected && q.x >= p.x0 && q.x <= p.x1 && q.y >= p.y0 && q.y <= p.y1)
+  const q = picUnits(e), hit = marks.pics.filter(p => p.kind !== "nav" && p.el.isConnected && (p.within ? p.within(q.x, q.y) : q.x >= p.x0 && q.x <= p.x1 && q.y >= p.y0 && q.y <= p.y1))
                                          .sort((a, b) => (a.x1 - a.x0) * (a.y1 - a.y0) - (b.x1 - b.x0) * (b.y1 - b.y0))[0];
   if (hit) { enterAt = hit; enterPicture(); return; }
   // (ticket 251) on the ground, with 👆 walk where you click on: walked there, round what stands in the way

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.192 (2026-10-17)
+
+Everything in 0.0.191, with room to click round the trap room's pits.
+
+- **The pits' glow**: a pit in the trap room glows in its own shape (its round, square or triangular opening), and its sign glows apart; pointing or clicking only on the hole or the sign takes it, so the floor round them is yours to click and walk about.
+
 ## 0.0.191 (2026-10-17)
 
 Everything in 0.0.190, with clicks to walk queued up.
