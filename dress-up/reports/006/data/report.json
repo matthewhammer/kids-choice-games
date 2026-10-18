@@ -1,0 +1,299 @@
+{
+ "question": "How do Messed Up Dress Up, and the way it is being made, compare with the adventure-game engines and editors of the late 1980s and early 1990s (Sierra's AGI and SCI, LucasArts' SCUMM, and the Hugo games): what did they have that we have again, what made their making hard, which of those difficulties we meet again now, and which of ours are new?",
+ "date": "2026-10-18",
+ "game": {
+  "version": "0.0.232",
+  "versions": 232,
+  "first": "2026-10-12",
+  "pictures": {
+   "run": "2026-10-18 09:49 MDT",
+   "version": "0.0.203"
+  }
+ },
+ "engines": [
+  [
+   "AGI",
+   "Sierra On-Line, 1984 to 1989",
+   "Pictures stored as drawing commands (lines and fills), replayed onto a visible screen and an invisible priority screen at once; the priority screen in 12 bands (colours 4 to 15) saying what is in front, and control lines (colours 0 to 3, black a wall) saying where one may walk. 16 colours.",
+   "A typed parser",
+   "In-house tools; today's fans draw AGI pictures with Lance Ewing's PicEdit, whose priority view shows the bands and lines",
+   [
+    "agi-pic",
+    "agi-priority",
+    "agi-making"
+   ]
+  ],
+  [
+   "SCI0, SCI1",
+   "Sierra On-Line, 1988; SCI1 from King's Quest V, 1990",
+   "SCI0 kept the vector pictures (320 by 190) and the priority screen, and added a control image (white a wall). SCI1 brought 256-colour VGA and pictures painted by hand and scanned in, with an icon interface. King's Quest V wanted 640 KB of memory and 1.2 MB floppy disks; a 16-colour edition was made for weaker PCs.",
+   "Typed (SCI0); icons and pointing (SCI1)",
+   "In-house picture, view and room tools",
+   [
+    "sci-pics",
+    "kq5",
+    "sci"
+   ]
+  ],
+  [
+   "SCUMM",
+   "Lucasfilm Games and LucasArts, 1987 (Maniac Mansion, on the Commodore 64) to 1998",
+   "A scripting language and its interpreter (SPUTM), redesigned from one game to the next (again for Indiana Jones, again from scratch for The Secret of Monkey Island). Rooms with walk boxes; iMUSE (1991), music that branches and loops at markers to follow the player. Left in 1998 for GrimE, with Lua.",
+   "Verbs and pointing; walking to a click",
+   "FLEM placed and named the objects in a room and set clipping planes; MMUCUS compiled a room and its objects into one file, so scripters could change things without rebuilding the room; SPIT for fonts; BYLE, then CYST, for animating and scaling the characters",
+   [
+    "scumm",
+    "pagetable",
+    "imuse"
+   ]
+  ],
+  [
+   "Hugo",
+   "Gray Design Associates (David P. Gray), 1990 to 1991, shareware",
+   "Hugo's House of Horrors and its sequels: a graphic adventure with a typed parser, much like Sierra's AGI games; the DOS version free to share.",
+   "A typed parser",
+   "Its own engine (called Hugo in ScummVM)",
+   [
+    "hugo",
+    "hugo-scummvm"
+   ]
+  ]
+ ],
+ "footnotes": "Other engines of the era, named here from memory and not checked against sources for this report: Westwood's engine for The Legend of Kyrandia, Revolution's Virtual Theatre (Lure of the Temptress, Beneath a Steel Sky), Coktel Vision's Gob engine, Adventure Soft's AGOS (Simon the Sorcerer), and, later, Adventure Game Studio (1997).",
+ "rows": [
+  [
+   "What stands in front of what",
+   "AGI's priority screen, in 12 bands, painted with the picture; SCI's priority screen",
+   "Every thing standing in a place is an object with a depth, and the friend is drawn behind whatever stands nearer than their feet (ticket 99); since today, what hangs on walls and lies on floors is an object too, always behind the friend (ticket 284)",
+   "same"
+  ],
+  [
+   "Where one may walk",
+   "AGI's control lines; SCI's control image; SCUMM's walk boxes",
+   "Collision boxes for walls and what stands; the back line (refined in ticket 310); pits and trap doors that keep the feet out",
+   "same"
+  ],
+  [
+   "Getting there",
+   "SCUMM: walking to a click was in the point-and-click design from the start",
+   "👆 Walk where you click (ticket 251) plans a path round what stands in the way; the controller on the screen; real game controllers",
+   "same"
+  ],
+  [
+   "Rooms and what is in them",
+   "FLEM placed and named objects in a room; MMUCUS made quick changes possible without rebuilding the room",
+   "📦 placing any thing in any place; 🔬 Inspection's list of a place's objects; 🗺️ World design's grid of places joined by their ways",
+   "same, but live"
+  ],
+  [
+   "The pictures",
+   "AGI: drawing commands, replayed; SCI1: painted by hand and scanned (from 1990)",
+   "Drawings written as code (SVG), as AGI's were, so every part of a picture can be a setting, an object, placed or hidden; the picture archive keeps every version",
+   "AGI's way, taken further"
+  ],
+  [
+   "Music",
+   "SCI0: a sound's samples at most 64 KB; iMUSE (1991): music that follows the player",
+   "🎵 the music designer; the scenes' movements (swaying, flickering) kept in time with the tune's LFOs",
+   "same idea, new form"
+  ],
+  [
+   "Slow machines",
+   "640 KB, floppy disks, a 16-colour edition of King's Quest V for weaker PCs",
+   "60 frames a second first (the black laptop, the iPad): a slow computer shows the places as still pictures while the friend moves (ticket 164); costly effects off unless switched on (⚙️ Advanced)",
+   "same"
+  ],
+  [
+   "Many platforms",
+   "Ports to the Commodore 64, Amiga, Atari ST, Mac, FM Towns",
+   "Browsers, which differ: today's trap doors swung in Chrome and not in Firefox (ticket 322); computers, tablets and phones",
+   "same"
+  ],
+  [
+   "The engine changing under the games",
+   "SCUMM rebuilt for Indiana Jones and again for Monkey Island; SCI0 to SCI1",
+   "232 versions in a week (0.0.1 on 2026-10-12), each live within minutes",
+   "same, much faster"
+  ],
+  [
+   "Knowing how it all works",
+   "Much of SCUMM undocumented; new hires spent a week at \"SCUMM University\"",
+   "agent-instructions.md, kept in step with every change; the dashboard of tickets; this series of reports",
+   "same need, written down"
+  ],
+  [
+   "Playtesting",
+   "Testers, then players, months later",
+   "The players are the designers: M and N try a version the afternoon they asked for it; checks run on GitHub's computers after each release",
+   "new"
+  ]
+ ],
+ "new": [
+  [
+   "The designers are the players.",
+   "M and N ask for a thing (a moss, a boulder lever, a bubble that bursts into smaller ones), and it is in the game that afternoon. In 1990 a design was decided by a designer, built for a year, and met players on floppy disks."
+  ],
+  [
+   "The programmer works from their words.",
+   "An AI (Claude) writes the code from what Matthew relays, in plain words, and releases it; Matthew decides. The cost of trying an idea is minutes, so ideas get tried rather than argued about."
+  ],
+  [
+   "The game is its own editor.",
+   "FLEM and MMUCUS were tools beside a compiled game; 🏞️ Background and 🗺️ World design are the running game, and a change shows at once in the picture the player is in."
+  ],
+  [
+   "Nothing to install.",
+   "The game is a web page; a release is a push, live in about a minute, on any computer with a browser."
+  ],
+  [
+   "Every thing is a thing.",
+   "Since today, everything a place draws is meant to be an object you can see in 🔬 Inspection, hide and place elsewhere (ticket 284); a picture's settings decide it exactly, seeds included (ticket 274)."
+  ],
+  [
+   "It is a prototype.",
+   "Dress Up is where Hazel's user-defined livelits are tried first: what works here, as the best experience when nothing stands in the way, is then built in Hazel."
+  ]
+ ],
+ "hugo": [
+  [
+   "How you play",
+   "Typing (\"get key\", \"open door\") to a parser, as in Sierra's AGI games",
+   "Pointing, walking, dragging; a game controller; no typing"
+  ],
+  [
+   "The places",
+   "A haunted house, in EGA pictures",
+   "Houses, a castle of rooms, woods, the sea and more, drawn with depth and movement"
+  ],
+  [
+   "A goal",
+   "Find Penelope in the house, by solving its puzzles; an ending",
+   "None yet: you dress up a friend and go where you like"
+  ],
+  [
+   "Things you carry",
+   "An inventory, used on the puzzles",
+   "None yet"
+  ],
+  [
+   "People",
+   "Characters in the house",
+   "Cooks, a smith, a witch, a healer, who work but do not talk"
+  ],
+  [
+   "Making your own",
+   "No",
+   "Yes: places, things, a world, music"
+  ]
+ ],
+ "next": [
+  [
+   "Things you carry",
+   "an inventory, and using a thing on a thing (a key on a door, a bucket on a fire), the oldest machinery of these games"
+  ],
+  [
+   "Puzzles from what we have",
+   "levers, trap doors and boulders (ticket 323) wired to a goal in a place (\"get the crown out of the trap room\")"
+  ],
+  [
+   "Depth and walking, drawn",
+   "🔬 Inspection showing a place's depths and where one may walk as Sierra's priority and control screens did, and 🏞️ Background letting a designer paint them"
+  ],
+  [
+   "People who talk",
+   "the cooks, the witch and the healer answering, the player choosing what to say"
+  ],
+  [
+   "A beginning and an end",
+   "a world with a goal and a way to finish it, set in 🗺️ World design"
+  ],
+  [
+   "Rules",
+   "small scripts (\"when the friend picks up the key, open the door\"), in the game first, then as Hazel livelits, as SCUMM's scripts were to its rooms"
+  ],
+  [
+   "A world to share",
+   "a world saved as a file another player can open, as shareware once passed from hand to hand"
+  ]
+ ],
+ "unknown": [
+  "How SCUMM's walk boxes were drawn and stored: the sources found name them (ScummVM fixes them for the Commodore 64 Maniac Mansion) but do not describe the tools.",
+  "Sierra's own scanning pipeline for the painted VGA backgrounds: the sources describe it only in general (a 2015 trailer; an art director's biography).",
+  "The footnote engines above: named from memory, not checked."
+ ],
+ "sources": {
+  "agi-pic": [
+   "AGI Wiki: Picture Resource",
+   "https://agiwiki.sierrahelp.com/index.php/AGI_Picture_Resource"
+  ],
+  "agi-priority": [
+   "AGI Wiki: An Explanation of AGI Priority Screens",
+   "https://agiwiki.sierrahelp.com/index.php/An_Explanation_of_AGI_Priority_Screens"
+  ],
+  "agi-making": [
+   "AGI Wiki: The Making of an AGI Background Picture",
+   "https://www.agiwiki.sierrahelp.com/index.php/The_Making_of_an_AGI_Background_Picture"
+  ],
+  "agi-visual": [
+   "AGI Wiki: Visual vs Priority (Vortex tutorials)",
+   "https://agiwiki.sierrahelp.com/index.php/Vortex_AGI_Tutorials:_Visual_vs_Priority"
+  ],
+  "sci-pics": [
+   "Sierra Wiki: SCI Studio Tutorial, Chapter 6, Editing Pics",
+   "https://wiki.sierrahelp.com/index.php/SCI_Studio_Tutorial_Chapter_6_-_Editing_Pics"
+  ],
+  "sci": [
+   "Wikipedia: Sierra Creative Interpreter",
+   "https://en.wikipedia.org/wiki/Sierra_Creative_Interpreter"
+  ],
+  "kq5": [
+   "Wikipedia: King's Quest V",
+   "https://en.wikipedia.org/wiki/King%27s_Quest_V"
+  ],
+  "bill-davis": [
+   "Wikipedia: Bill Davis (artist)",
+   "https://en.wikipedia.org/wiki/Bill_Davis_(artist)"
+  ],
+  "scumm": [
+   "Wikipedia: SCUMM",
+   "https://en.wikipedia.org/wiki/SCUMM"
+  ],
+  "pagetable": [
+   "pagetable.com: The Mansion, Technical Aspects",
+   "https://www.pagetable.com/?p=603"
+  ],
+  "imuse": [
+   "Wikipedia: iMUSE",
+   "https://en.wikipedia.org/wiki/IMUSE"
+  ],
+  "lucasfilm": [
+   "Wikipedia: Lucasfilm Games",
+   "https://en.wikipedia.org/wiki/Lucasfilm_Games"
+  ],
+  "mi2": [
+   "Wikipedia: Monkey Island 2: LeChuck's Revenge",
+   "https://en.wikipedia.org/wiki/Monkey_Island_2:_LeChuck%27s_Revenge"
+  ],
+  "gilbert-hmh": [
+   "Handmade Con 2015: Ron Gilbert (talk notes)",
+   "https://guide.handmadehero.org/hmcon/2015/05/"
+  ],
+  "hugo": [
+   "Wikipedia: Hugo's House of Horrors",
+   "https://en.wikipedia.org/wiki/Hugo%27s_House_of_Horrors"
+  ],
+  "hugo-scummvm": [
+   "ScummVM Wiki: Hugo's House of Horrors",
+   "https://wiki.scummvm.org/index.php/Hugo's_House_of_Horrors"
+  ],
+  "hugo-pcg": [
+   "PC Gamer: Looking back at Hugo's House of Horrors",
+   "https://www.pcgamer.com/looking-back-at-hugos-house-of-horrors"
+  ]
+ },
+ "editor_note": [
+  "Matthew",
+  "2026-10-18",
+  "I appreciate getting reminded that we don't have all of the ingredients of a game, or even a game maker, yet. We need more ability to script events, add special items with special events attached, and write a story that the NP[C]s help create -- they are still just standins for that. Thank you."
+ ]
+}
