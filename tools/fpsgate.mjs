@@ -123,7 +123,13 @@ for (const sc of SCENES) {
       // (grabHigh: a quarter of the way down from the shoulders: a slow computer draws no part under the water, so a swimmer's middle is not there to press)
       if (${!!sc.grabHigh}) { const a = J.arms.map(a => a.A), A = a.reduce((s, p) => [s[0] + p[0] / a.length, s[1] + p[1] / a.length], [0, 0]); m[0] = A[0] + 0.25 * (m[0] - A[0]); m[1] = A[1] + 0.25 * (m[1] - A[1]); }
       const [sx, sy] = at(m[0], m[1]), M = pic.getScreenCTM(), p = new DOMPoint(sx, sy).matrixTransform(M);
-      return [p.x, p.y, M.a]; })()`);
+      // (long run, 2026-10-17: treading water, the hands sweep across the body's middle, and a press there took a hand,
+      // posing it, "the drag never took hold of the friend", every speed run since 0.0.160: the nearest point to it that a
+      // press takes the friend by, not a joint, the face or a thing)
+      let best = [p.x, p.y], bd = Infinity;
+      for (let dx = -48; dx <= 48; dx += 4) for (let dy = -48; dy <= 48; dy += 4) { const e = { clientX: p.x + dx, clientY: p.y + dy, pointerType: "mouse", isPrimary: true }, d = Math.hypot(dx, dy);
+        if (d < bd && onFigure(e) && !onJoint(e) && !onFace(e) && !onThing(e)) { bd = d; best = [p.x + dx, p.y + dy]; } }
+      return [best[0], best[1], M.a]; })()`);
     const span = 200 * ppu, mouse = (type, x, y) => send("Input.dispatchMouseEvent", { type, x, y, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: 1 });
     await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: x0, y: y0 });
     await mouse("mousePressed", x0, y0);
