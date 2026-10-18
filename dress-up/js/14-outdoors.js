@@ -981,11 +981,13 @@ function signpostSvg(boards) {
     const [side, y] = SIGN_AT[d], words = `${WORLD_ARROWS[d]} ${label}`, n = [...words].length, want = n * 7.6 + 20, w = Math.min(156, Math.max(64, want)), h = 28;
     const text = (x, anchor) => `<text x="${f1(x)}" y="${f1(y + 5)}" text-anchor="${anchor}" font-size="14" font-weight="bold" fill="#fff8e7" font-family="sans-serif"` +
       (want > w ? ` textLength="${f1(w - 20)}" lengthAdjust="spacingAndGlyphs"` : "") + `>${xmlEsc(words)}</text>`;
+    // (ticket 280) each board a group that says its way: a click on it takes that way, as the nav arrow does
+    s += `<g class="sign-board" data-way="${d}">`;
     if (!side) { s += `<rect x="${f1(-w / 2)}" y="${f1(y - h / 2)}" width="${f1(w)}" height="${h}" rx="5" fill="#a0703f" stroke="#5e3d22" stroke-width="2.5"/>` + text(0, "middle") +
-                      `<circle cx="0" cy="${f1(y)}" r="2" fill="#3a2a1a" opacity="0.6"/>`; continue; }
+                      `<circle cx="0" cy="${f1(y)}" r="2" fill="#3a2a1a" opacity="0.6"/></g>`; continue; }
     const x0 = side * 5, x1 = side * (5 + w), tip = side * (5 + w + 14);
     s += `<g transform="rotate(${SIGN_TILT[d]} 0 ${y})"><polygon points="${f1(x0)},${f1(y - h / 2)} ${f1(x1)},${f1(y - h / 2)} ${f1(tip)},${y} ${f1(x1)},${f1(y + h / 2)} ${f1(x0)},${f1(y + h / 2)}" fill="#a0703f" stroke="#5e3d22" stroke-width="2.5" stroke-linejoin="round"/>` +
-         text((x0 + x1) / 2, "middle") + `<circle cx="${f1(side * 11)}" cy="${y}" r="2" fill="#3a2a1a" opacity="0.6"/></g>`;
+         text((x0 + x1) / 2, "middle") + `<circle cx="${f1(side * 11)}" cy="${y}" r="2" fill="#3a2a1a" opacity="0.6"/></g></g>`;
   }
   return s;
 }

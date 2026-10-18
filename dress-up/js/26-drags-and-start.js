@@ -167,6 +167,11 @@ pic.addEventListener("pointerdown", e => {
     if (name.startsWith("thing:") && !T) return;
     drag = T ? { thing: name, put: +name.slice(6), x0: T.x, y0: T.z - SCENE.ground, px: p.x, py: p.y, drawn: { x: T.x, z: T.z } }
              : { thing: name, x0: B[name + "X"] ?? +(thing.dataset.x ?? 0), y0: B[name + "Y"] ?? +(thing.dataset.y ?? 0), px: p.x, py: p.y };
+    // (ticket 280, Matthew: "click is a nav action, and drag is still moving the sign post") pressed on a signpost's board:
+    // its way, and where the press began; it moves only once the pointer has gone SIGN_DRAG_PX, and a press let go before
+    // then takes the board's way, as its nav arrow does
+    const board = e.target.closest && e.target.closest(".sign-board[data-way]");
+    if (board) Object.assign(drag, { board: board.dataset.way, cx: e.clientX, cy: e.clientY, far: false });
     pic.setPointerCapture(e.pointerId); picDragging = true;
     return;
   }
@@ -222,6 +227,7 @@ pic.addEventListener("pointermove", e => {
   if (!drag) { hoverAt(e); walkSpotShow(e); return; }   // (ticket 251: the ground a click would walk to, glowing)
   if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
+    if (drag.board && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
     const x = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)), y = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
@@ -289,8 +295,10 @@ function dropOnSeat() {
   if (t && (!was || was.name !== t.name)) sitOn(t);
   else if (!t && was) { state.body.sit = false; B.seat = null; changed(); }
 }
+const SIGN_DRAG_PX = 6;
 const letGo = () => {
   if (dragFrame || dragTimer) dragDraw(true);   // (the last move, drawn before letting go)
+  const way = drag && drag.board && !drag.far ? drag.board : null;
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, placed = drag && drag.figure, put = drag && drag.put !== undefined;
@@ -300,6 +308,7 @@ const letGo = () => {
   if (posing) { poseHeld = null; changed(); }
   if (placed) dropOnSeat();
   if (placed && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)
+  if (way) { const p = bgShown.node && bgShown.node.querySelector(`.portal[data-way="${way}"]`); if (p && !entering) enterScene(p); }   // (ticket 280: a board's way, as its arrow's click)
 };
 pic.addEventListener("pointerup", letGo);
 // (ticket 133: a touch the browser takes over, as a scroll or a gesture, ends

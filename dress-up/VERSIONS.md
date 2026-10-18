@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.206 (2026-10-18)
+
+Everything in 0.0.205, with the signpost's boards taking you where they point.
+
+- **🧭 sign with directions**: tap a board and the friend goes that way, as with the arrow at the picture's edge. Dragging the signpost by a board still moves it.
+
 ## 0.0.205 (2026-10-18)
 
 Everything in 0.0.204, with the grass hut round, outside and in, for M.
