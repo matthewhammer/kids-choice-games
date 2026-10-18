@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.200 (2026-10-17)
+
+Everything in 0.0.199, with no arriving inside things.
+
+- **Fixed**: arriving in a place, the friend no longer stands inside something: the healer's hut put them inside the tea table, and the tree house picked from the menu inside its trunk, where walking toward its middle could not get them out. Arriving inside anything, they are moved beside it, the nearest clear spot.
+
 ## 0.0.199 (2026-10-17)
 
 Everything in 0.0.198, with the music no longer slowing the pictures where its sound cannot start.

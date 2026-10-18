@@ -74,14 +74,16 @@ for (const c of CASES) {
       await send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", buttons: 0, clickCount: 1 });
     };
     const walk = async () => {
-      await ev(`[state.background.figX, state.background.figY] = ARRIVE[state.background.kind] || [0, 0]; changed(); "ok"`); await sleep(150);
+      // (as the game puts them there, settled out of what they arrive in, ticket 184)
+      await ev(`[state.background.figX, state.background.figY] = ARRIVE[state.background.kind] || [0, 0]; if (typeof arriveSettle !== "undefined") arriveSettle = true; changed(); "ok"`); await sleep(250);
       const x0 = await ev(`Math.round(state.background.figX ?? 0)`);
       await ev(`__start(); "go"`);
       await hold("right", 1200); const x1 = await ev(`Math.round(state.background.figX ?? 0)`);
-      await hold("left", 1200); await hold("up", 600); await hold("down", 600);
+      await hold("left", 1200); const x2 = await ev(`Math.round(state.background.figX ?? 0)`); await hold("up", 600); await hold("down", 600);
       const r = await ev(`__stop()`);
       await sleep(300);
-      return { ...r, moved: x1 - x0 };
+      // (moved either way: arrived beside something, a step toward it is rightly blocked, ticket 184)
+      return { ...r, moved: Math.max(Math.abs(x1 - x0), Math.abs(x2 - x1)) };
     };
     await walk();   // (a warm-up, not counted)
     const runs = []; for (let i = 0; i < RUNS; i++) runs.push(await walk());

@@ -872,7 +872,7 @@ function enterScene(door, here = false) {
   const arrive = () => {
     trips.push(from);
     const [figX, figY] = ARRIVE[to] || [0, 0];
-    Object.assign(B, { kind: to, figX, figY });
+    Object.assign(B, { kind: to, figX, figY }); arriveSettle = true;
     if (house) B.inside = +house;
     if (tent) B.tent = +tent;
     if (room) B.castleRoom = +room;

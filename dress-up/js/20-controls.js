@@ -592,7 +592,7 @@ function set(part, key, value) {
   if (part === "background" && key === "tent" && value > (state.background.tents ?? 2)) state.background.tents = value;
   if (part === "background" && key === "tents" && value > 0 && (state.background.tent ?? 1) > value) state.background.tent = value;
   // arriving at a place lands the friend on its ground (not in the fire)
-  if (part === "background" && key === "kind") [state.background.figX, state.background.figY] = ARRIVE[value] || [0, 0];
+  if (part === "background" && key === "kind") { [state.background.figX, state.background.figY] = ARRIVE[value] || [0, 0]; arriveSettle = true; }
   // different hands start alike; then each changes on its own
   if (part === "hands" && key === "different" && value)
     for (const k of HAND_OWN) state.rightHand[k] = state.hands[k];
@@ -989,7 +989,7 @@ function castleDesigner(part, key, box, syncs) {
   box.append(toggle, panel);
   const eid = e => `e${e.from}-${e.kind}${e.j ?? e.i ?? ""}${e.way ? "w" : ""}`;
   const pickOf = e => e.key || eid(e);
-  const go = n => { const b = B(); if (n) { b.kind = "castleroom"; b.castleRoom = n; } else b.kind = "castle"; [b.figX, b.figY] = ARRIVE[b.kind] || [0, 0]; changed(); };
+  const go = n => { const b = B(); if (n) { b.kind = "castleroom"; b.castleRoom = n; } else b.kind = "castle"; [b.figX, b.figY] = ARRIVE[b.kind] || [0, 0]; arriveSettle = true; changed(); };
   const setWay = (e, v) => {
     const b = B(); b[e.key] = v;
     if (twoWay) { const K = castleOf({ ...b, castle: id }), x = roomExits(K, e.from).find(x => x.key === e.key); if (x && x.to) mapWayBack(b, id, e.from, x.to); }
@@ -1147,7 +1147,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const B = state[part], K = castleOf(B), here = B.kind === "castle" ? 0 : B.kind === "castleroom" ? Math.round(B.castleRoom ?? 1) : -1;
       row.replaceChildren(...[0, ...K.rooms.map((_, i) => i + 1)].map(n => el("button", { "aria-pressed": n === here, onclick: () => {
         if (n) { B.kind = "castleroom"; B.castleRoom = n; } else B.kind = "castle";
-        [B.figX, B.figY] = ARRIVE[B.kind] || [0, 0];
+        [B.figX, B.figY] = ARRIVE[B.kind] || [0, 0]; arriveSettle = true;
         changed();
       } }, n ? `${roomLabel(K.rooms[n - 1]).split(" ")[0]} ${n}` : "🏰 outside")));
     });

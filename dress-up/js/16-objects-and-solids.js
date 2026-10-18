@@ -455,6 +455,11 @@ function planPath(x0, y0, x1, y1, more = 0) {
 // jump stopped in the air by a tree just past a mushroom came down inside the mushroom, and its nearer edge was inside
 // the tree)
 // (at most `most` across: a walk's stop is settled a step at most, never carried off past what it stood between)
+// (ticket 184, the controller audit: the friend arrived inside the healer's tea table, and in the tree house picked
+// from the menu inside its trunk, x 0, where a step toward the middle never let them out) Set wherever the friend is
+// put where a place says they arrive (ARRIVE); draw, once the new place is on the screen, moves them out of what they
+// stand in, the nearest spot across that is clear.
+let arriveSettle = false;
 function solidUnstick(most = 400) {
   const B = state.background, x = B.figX ?? 0, z = SCENE.ground + (B.figY ?? 0), o = solidAt(x, z);
   if (!o || o.wall) return;

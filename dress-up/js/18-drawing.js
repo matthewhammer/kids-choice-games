@@ -847,6 +847,10 @@ function drawNow() {
     if (scenery.parentNode !== pic) pic.append(scenery);
     if (fresh.firstChild) pic.insertBefore(fresh.firstChild, scenery);   // the defs, before the scene
   }
+  // (ticket 184: arrived inside something, out of it, once the place is on the screen to measure)
+  // (not on a bridge or a platform, sitting or climbing: those stand where they stand)
+  if (arriveSettle && scened) { arriveSettle = false;
+    if (!state.body.sit && !BG.onBridge && !BG.onPlatform && !climb) { const was = BG.figX; solidUnstick(400); if (BG.figX !== was) setTimeout(changed, 0); } }
   // the friend, among the scene's objects by depth (ticket 99): just before
   // the first standing nearer than their feet, or in front of everything
   figShown = [...fresh.childNodes];

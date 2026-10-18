@@ -188,7 +188,7 @@ function worldEnter(key, side = null, draw = true) {
   const B = state.background;
   B.kind = cell.kind;
   for (const k of cellKeys(cell.kind)) B[k] = structuredClone(cell[k] ?? (k === "things" ? [] : DEFAULTS.background[k]));
-  [B.figX, B.figY] = side ? WORLD_IN[side] : ARRIVE[cell.kind] || [0, 0];
+  [B.figX, B.figY] = side ? WORLD_IN[side] : ARRIVE[cell.kind] || [0, 0]; arriveSettle = true;
   if (draw) changed();
 }
 // The ways out of the square the friend is in (Matthew, 2026-10-17: "how do
