@@ -159,6 +159,9 @@ pic.addEventListener("pointerdown", e => {
     changed();   // (the ring)
     return;
   }
+  // (ticket 305) the trap room's levers, on its wall: as a placed lever, a press let go before SIGN_DRAG_PX pulls one
+  const roomLever = !onFigure(e) && e.target.closest && e.target.closest("[data-lever]");
+  if (roomLever) { drag = { roomLever: roomLever.dataset.lever, cx: e.clientX, cy: e.clientY, far: false }; pic.setPointerCapture(e.pointerId); picDragging = true; return; }
   const thing = onThing(e);
   if (thing && !onFigure(e)) {
     const p = picUnits(e), B = state.background, name = thing.dataset.drag;
@@ -227,6 +230,7 @@ function thingDragDraw(T) {
 // One step per screen pixel, however big the picture is drawn.
 pic.addEventListener("pointermove", e => {
   if (!drag) { hoverAt(e); walkSpotShow(e); return; }   // (ticket 251: the ground a click would walk to, glowing)
+  if (drag.roomLever) { if (!drag.far && Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) >= SIGN_DRAG_PX) drag.far = true; return; }   // (ticket 305)
   if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
     if ((drag.board || drag.lever) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
@@ -301,6 +305,7 @@ const SIGN_DRAG_PX = 6;
 const letGo = () => {
   if (dragFrame || dragTimer) dragDraw(true);   // (the last move, drawn before letting go)
   const way = drag && drag.board && !drag.far ? drag.board : null, pull = drag && drag.lever && !drag.far ? drag.put : null;
+  const pullRoom = drag && drag.roomLever && !drag.far ? drag.roomLever : null;   // (ticket 305)
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, placed = drag && drag.figure, put = drag && drag.put !== undefined;
@@ -312,6 +317,7 @@ const letGo = () => {
   if (placed && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)
   if (way) { const p = bgShown.node && bgShown.node.querySelector(`.portal[data-way="${way}"]`); if (p && !entering) enterScene(p); }   // (ticket 280: a board's way, as its arrow's click)
   if (pull !== null) leverPull(pull);   // (ticket 284)
+  if (pullRoom) roomLeverPull(pullRoom);   // (ticket 305)
 };
 // (ticket 284) A 🎚️ lever pulled: it flips over, and so does every 🕳️ trap door here it is wired to (its 🔗); the picture is
 // drawn with it over, and then its handle on the screen turns across from where it was, in LEVER_TURN ms
@@ -322,9 +328,22 @@ function leverPull(i) {
   T.on = !T.on;
   for (const d of B.things) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid)) d.open = !d.open;
   changed();
-  const arm = bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${i}"] .lever-arm`);
+  turnArm(bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${i}"] .lever-arm`), T.on ? LEVER_TILT : -LEVER_TILT);
+}
+// (ticket 305) The trap room's lever pulled: it flips over, and so does every pit it works (trapState); its handle turns across
+function roomLeverPull(side) {
+  const B = state.background;
+  if (B.kind !== "castleroom") return;
+  const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = leverKey(side, n, K.id);
+  B[key] = !B[key];
+  changed();
+  const up = !B[key], sd = side === "L" ? -1 : 1;
+  turnArm(bgShown.node && bgShown.node.querySelector(`[data-lever="${side}"] .lever-arm`), (up ? 1 : -1) * sd * LEVER_TILT);
+}
+// (a lever's handle on the screen, turned across to its new angle `to` from the other side, in LEVER_TURN ms)
+function turnArm(arm, to) {
   if (!arm) return;
-  const [px, py] = arm.dataset.pivot.split(" ").map(Number), to = T.on ? LEVER_TILT : -LEVER_TILT, t0 = performance.now();
+  const [px, py] = arm.dataset.pivot.split(" ").map(Number), t0 = performance.now();
   // (by frames, a timer standing in where frames do not come, as for a drag: it always ends at its new angle)
   let raf = 0, tm = 0;
   const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (!arm.isConnected) return;
@@ -911,6 +930,7 @@ function enterScene(door, here = false) {
     if (house) B.inside = +house;
     if (tent) B.tent = +tent;
     if (room) B.castleRoom = +room;
+    if (to === "castleroom") trapReshuffle(B);   // (ticket 305)
     if (downTo) { const i = downTo - 1, [x] = TREE_SLOTS[i], hz = (B.treeHouseSize ?? 100) / 100, s = (B.treeSize ?? 100) / 100 * (SCENE.bottom - SCENE.top) / 700;
       B.figX = Math.round(clamp((x + Math.sign(x) * 52 * hz) * s, sceneFrame.left + 20, sceneFrame.right - 20)); B.figY = Math.round(8 * s); }
   };

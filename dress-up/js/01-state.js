@@ -144,7 +144,7 @@ const CASTLE_ROOFS = ["#3b5ea8", "#b91c1c", "#2f6e3a", "#5a5f6e", "#7c3aed", "#c
 const ROOM_KINDS = {
   king: { label: "👑 king's room", by: "N", exits: "side", tone: "#a9a2b4", draw: (c, K) => kingRoomSvg(c, K) },
   greenhouse: { label: "🌿 greenhouse", by: "N", exits: "all", tone: "#c9c3b0", draw: (c, K) => greenhouseSvg(c, K) },
-  trap: { label: "🕳️ trap room", by: "N", exits: "trap", tone: "#8f8a96", draw: (c, K, r) => trapRoomSvg(c, K, r.pits, r.pitShapes) },
+  trap: { label: "🕳️ trap room", by: "N", exits: "trap", tone: "#8f8a96", draw: (c, K, r) => trapRoomSvg(c, K, r.pits, r.pitShapes, r.trap) },
   dungeon1: { label: "🗝️ dungeon", by: "N", exits: "ladder", tone: "#6c6f7a", draw: (c, K, r) => dungeonSvg(c, K, false, r.bones) },
   dungeon2: { label: "⛓️ deep dungeon", by: "N", exits: "ladder", tone: "#5d6b62", draw: (c, K, r) => dungeonSvg(c, K, true, r.bones) },
   hallway: { label: "🕯️ hallway", by: "N", exits: "hall", tone: "#8a8597", draw: (c, K, R) => hallwaySvg(c, K, R) },
@@ -236,6 +236,30 @@ const roomBonesKey = (id, n, st) => "castleBones" + n + id + st;
 const CASTLE_ROOMS = { N: ["king", "greenhouse", "trap", "dungeon1", "dungeon2"], M: ["greenhouse", "king"], D: ["king", "trap", "dungeon1"] };
 // (ticket 271) a trap room's pit's opening, by its castle and its room: pit i (1, 2) of room n
 const pitShapeKey = (i, n, id) => `castlePit${i}_${n}${id}`;
+// (ticket 305, Matthew: "up to two pits L and R (toggle for that in the background settings). and two levers, L and R. and wired
+// up either normal, or reversed, or random (potentially one lever for two pits)") A trap room's own, by its room number, as its
+// pits' shapes are: each pit there or not; each lever pulled or not; how the levers work the pits; and, wired at random, a seed
+// drawn again each time the friend comes in (trapReshuffle). A pit opens when the lever working it is up, and shuts, planks over
+// it, when that lever is pulled.
+const pitOnKey = (i, n, id) => `castlePitOn${i}_${n}${id}`, leverKey = (side, n, id) => `castleLever${side}_${n}${id}`;
+const leverWireKey = (n, id) => `castleLeverWire${n}${id}`, leverSeedKey = (n, id) => `castleLeverSeed${n}${id}`;
+const LEVER_WIRES = [["normal", "↕️ normal: each its own side's pit"], ["reversed", "🔀 reversed: each the other side's"], ["random", "🎲 random, new each time you come in"]];
+// which lever works each pit, the left and the right: "L" or "R" (at random, perhaps one lever for both)
+function trapWiring(o, n, id) {
+  const mode = o[leverWireKey(n, id)] || "normal";
+  if (mode === "reversed") return ["R", "L"];
+  if (mode === "random") { const r = seeded(o[leverSeedKey(n, id)] ?? 1); return [0, 1].map(i => r(i) < 0.5 ? "L" : "R"); }
+  return ["L", "R"];
+}
+function trapState(o, n, id) {
+  const wire = trapWiring(o, n, id), levers = { L: !!o[leverKey("L", n, id)], R: !!o[leverKey("R", n, id)] };
+  return { wire, levers, on: [1, 2].map(i => o[pitOnKey(i, n, id)] !== false), open: [0, 1].map(i => !levers[wire[i]]) };
+}
+// (wired at random: drawn again each time the friend comes into the room, so each visit is a puzzle of its own)
+function trapReshuffle(B) {
+  const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
+  if (K.rooms[n - 1] === "trap" && B[leverWireKey(n, K.id)] === "random") B[leverSeedKey(n, K.id)] = 1 + Math.floor(Math.random() * 999999);
+}
 const castleOf = o => {
   const id = CASTLE_DEFAULTS[o.castle] ? o.castle : "N", d = CASTLE_DEFAULTS[id];
   const fl = CASTLE_FLAG_DEFAULTS[id], flagA = o["castleFlagA" + id] ?? fl[0];
@@ -383,6 +407,7 @@ const DEFAULTS = {
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
                    ...ROOM_NS.map(n => ["castleRoomTheme" + n + id, n % 2 ? "A" : "B"]),
+                   ...ROOM_NS.flatMap(n => [[pitOnKey(1, n, id), true], [pitOnKey(2, n, id), true], [leverWireKey(n, id), "normal"]]),   // (ticket 305)
                    ...ROOM_NS.flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"], ["castleOut" + n + id, "auto"], ["castleBack" + n + id, "none"], ["castleFar" + n + id, "none"], ["castlePlaces" + n + id, 10],
                      ...DOOR_JS.map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...ROOM_NS.map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
@@ -923,7 +948,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.217", released: "2026-10-18" };
+const VERSION = { number: "0.0.218", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

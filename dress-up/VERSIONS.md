@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.218 (2026-10-18)
+
+Everything in 0.0.217, with the trap room's two pits and two levers set up in the background settings.
+
+- **🕳️ the left pit and 🕳️ the right pit**, each on or off in the trap room's settings: a room with one pit, or none.
+- **Two levers, left and right**, on the back wall: pull one and the pit it works shuts, a wooden hatch over it, and you walk over it; pull it back and the pit opens again.
+- **"🎚️ the levers work"**: ↕️ normal, each lever its own side's pit; 🔀 reversed, each lever the other side's; or 🎲 random, new each time you come into the room, so one lever may work both pits and the other nothing.
+
 ## 0.0.217 (2026-10-18)
 
 Everything in 0.0.216, with what hangs on the walls and lies on the floor as objects too, beginning in the castle's trap room and dungeons.

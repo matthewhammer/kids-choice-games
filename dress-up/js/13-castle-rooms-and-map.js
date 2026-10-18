@@ -208,23 +208,42 @@ function pitSvg(cx, cy, rx, ry, sh, k, R, i, id, spikes = true) {
     }).join("") + `</g>` : "") +
     pitRim(cx, cy, rx, ry, k, R, i);
 }
+// (ticket 305) a pit shut, as a trap door is: planks over its opening, a bar across, an iron ring, in its rim of broken stone
+function hatchSvg(cx, cy, rx, ry, sh, k, R, i, id) {
+  const planks = [...Array(7)].map((_, j) => `<rect x="${f1(cx - rx + 2 * rx * j / 7)}" y="${f1(cy - ry - 2 * k)}" width="${f1(2 * rx / 7 - 2 * k)}" height="${f1(2 * ry + 4 * k)}" fill="${j % 2 ? "#7a5230" : "#6e4a2c"}"/>`).join("");
+  return `<defs><clipPath id="${id}c"><path d="${openingD(sh, cx, cy, rx, ry)}"/></clipPath></defs>` +
+    `<path d="${openingD(sh, cx, cy + 4 * k, rx + 14 * k, ry + 8 * k)}" fill="#4a4038"/>` +
+    `<g clip-path="url(#${id}c)">${planks}<rect x="${f1(cx - rx)}" y="${f1(cy - 4 * k)}" width="${f1(2 * rx)}" height="${f1(8 * k)}" fill="#4a3220"/></g>` +
+    `<path d="${openingD(sh, cx, cy, rx, ry)}" fill="none" stroke="#3a2a18" stroke-width="${f1(3 * k)}"/><ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(11 * k)}" ry="${f1(5 * k)}" fill="none" stroke="#2a2a30" stroke-width="${f1(3 * k)}"/>` +
+    pitRim(cx, cy, rx, ry, k, R, i);
+}
 const pitRim = (cx, cy, rx, ry, k, R, i) => [...Array(12)].map((_, j) => { const a = j / 12 * 2 * Math.PI, x = cx + Math.cos(a) * (rx + 6 * k), y = cy + Math.sin(a) * (ry + 4 * k);
   return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((10 + 6 * R(j, 921 + i)) * k)}" ry="${f1(6 * k)}" fill="${R(j, 922) < 0.5 ? "#6b625a" : "#5a524a"}"/>`; }).join("");
 // The trap room: bare stone, two torches, a lever on the wall, and two pits
 // in the floor, spikes inside, each a drop into one of the castle's dungeons
-function trapRoomSvg(c, K, pits, shapes = K.pitShapes) {
+function trapRoomSvg(c, K, pits, shapes = K.pitShapes, trap = null) {
   const { x0, x1, y1, W, k, R, P } = c, { floor, top, bw, out } = roomFrame(c);
   let t = roomShell(c, ROOM_TONE.trap, { moss: "#4f6b3a" });
   t += wallObj("torch, left", torchSvg(-bw * 0.62, floor - 210 * k, k, 0, c.o)) + wallObj("torch, right", torchSvg(bw * 0.62, floor - 210 * k, k, 1, c.o));   // (ticket 284)
   // a lever on the wall, and a warning carved over the pits
-  t += wallObj("lever", leverSvg(bw * 0.32, floor - 150 * k, bw * 0.32 + 13 * k, floor - 130 * k, bw * 0.32 + 36 * k, floor - 168 * k, k)) +   // (ticket 284)
+  // (ticket 305) two levers, left and right, each tapped to pull it: its handle up (its pit open) or pulled down (its pit shut);
+  // the left the right's mirror; each a wall object marked data-lever, its handle a .lever-arm turned by turnArm
+  t += [["L", -1], ["R", 1]].map(([side, sd]) => {
+    const px = sd * (bw * 0.32 + 13 * k), py = floor - 130 * k, up = trap ? !trap.levers[side] : true, a = (up ? 1 : -1) * sd * LEVER_TILT;
+    return wallObj(side === "L" ? "lever, left" : "lever, right", `<g data-lever="${side}" style="cursor: pointer">` +
+      leverSvg(px - 13 * k, floor - 150 * k, px, py, px, py - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="${f1(px)} ${f1(py)}" transform="rotate(${a} ${f1(px)} ${f1(py)})">${s}</g>`) + `</g>`);
+  }).join("") +
        wallObj("warning sign", `<rect x="${f1(-bw * 0.38)}" y="${f1(top + 40 * k)}" width="${f1(bw * 0.76)}" height="${f1(44 * k)}" rx="${f1(6 * k)}" fill="#3a3530" opacity="0.85"/>` +
        `<text x="0" y="${f1(top + 72 * k)}" text-anchor="middle" font-size="${f1(26 * k)}" font-weight="bold" fill="#f2c12e" font-family="sans-serif">⚠️ MIND THE FLOOR ⚠️</text>`);
   // the pits: dark holes in the floor, their rims of broken stone, rows of
   // spikes glinting inside
   [-1, 1].forEach((sd, i) => {
-    const cx = sd * W * 0.2, cy = floor + (y1 - floor) * 0.5, rx = 110 * k, ry = 34 * k, to = pits[i], sh = shapes[i];   // (ticket 252: its opening's shape; ticket 271: this room's)
+    const cx = sd * W * 0.2, cy = floor + (y1 - floor) * 0.5, rx = 110 * k, ry = 34 * k, sh = shapes[i];   // (ticket 252: its opening's shape; ticket 271: this room's)
     const id = `bg-pit${i}`;
+    // (ticket 305) a pit not there is not drawn; a shut one is planks, no way down (no doorway, so no fall)
+    if (trap && !trap.on[i]) return;
+    const open = !trap || trap.open[i], to = open ? pits[i] : null;
+    if (!open) { t += `<g>` + hatchSvg(cx, cy, rx, ry, sh, k, R, i, id) + `</g>`; return; }
     // (ticket 162: its hole, for falling in: its middle and its half widths, across and in depth)
     t += (to ? `<g class="portal" data-to="castleroom" data-room="${to}" data-pit="${f1(cx)} ${f1(cy)} ${f1(rx)} ${f1(ry)}" data-shape="${sh}">` : "<g>") +
       pitSvg(cx, cy, rx, ry, sh, k, R, i, id) +
@@ -2161,8 +2180,9 @@ function castleroomScene(c) {
   const hallEnd = style === "hallway" && K.hall[n - 1].end === "none" ? "none" : "";
   const places = style === "dining" ? K.places[n - 1] : 0;
   const pitShapes = K.pitShapesAt[n - 1];   // (ticket 271: this room's own; keyed, so a chip draws it again at once)
-  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places, pitShapes });
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,
+  const trap = style === "trap" ? trapState(o, n, K.id) : null;   // (ticket 305: its pits and levers)
+  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places, pitShapes, trap });
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() + JSON.stringify(trap) : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,
                                   SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)

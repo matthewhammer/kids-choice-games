@@ -1308,12 +1308,7 @@ function trapdoorThingSvg(t, i) {
   const id = `thing-pit-${t.uid || i}`, sh = t.shape || "circle", rx = TRAP_RX, ry = TRAP_RY, seed = t.seed ?? 900 + i;
   const R = (a, b = 0) => { const v = Math.sin((a + seed) * 127.1 + b * 311.7) * 43758.5453; return v - Math.floor(v); };
   if (t.open) return pitSvg(0, 0, rx, ry, sh, 1, R, 0, id, t.spikes ?? true);
-  const planks = [...Array(7)].map((_, j) => `<rect x="${f1(-rx + 2 * rx * j / 7)}" y="${f1(-ry - 2)}" width="${f1(2 * rx / 7 - 2)}" height="${f1(2 * ry + 4)}" fill="${j % 2 ? "#7a5230" : "#6e4a2c"}"/>`).join("");
-  return `<defs><clipPath id="${id}c"><path d="${openingD(sh, 0, 0, rx, ry)}"/></clipPath></defs>` +
-    `<path d="${openingD(sh, 0, 4, rx + 14, ry + 8)}" fill="#4a4038"/>` +
-    `<g clip-path="url(#${id}c)">${planks}<rect x="${-rx}" y="-4" width="${2 * rx}" height="8" fill="#4a3220"/></g>` +
-    `<path d="${openingD(sh, 0, 0, rx, ry)}" fill="none" stroke="#3a2a18" stroke-width="3"/><ellipse cx="0" cy="0" rx="11" ry="5" fill="none" stroke="#2a2a30" stroke-width="3"/>` +
-    pitRim(0, 0, rx, ry, 1, R, 0);
+  return hatchSvg(0, 0, rx, ry, sh, 1, R, 0, id);   // (ticket 305: the trap room's pits, shut, are drawn so too)
 }
 // (a thing's depth among the objects: where its feet are; a trap door's, its back edge)
 const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;
