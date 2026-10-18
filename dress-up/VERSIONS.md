@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.189 (2026-10-17)
+
+Everything in 0.0.188, with the world's grid easier to read.
+
+- **🗺️ World design's letters and numbers**: in the tab too, not only full screen, the columns' letters and the rows' numbers are round the grid, big enough to read, and an empty square's own name (F3) is as big.
+
 ## 0.0.188 (2026-10-17)
 
 Everything in 0.0.187, with the spiral staircase's doors in reach, and walking where you click on from the start.

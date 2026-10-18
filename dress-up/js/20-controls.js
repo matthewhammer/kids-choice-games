@@ -1355,7 +1355,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       grid.style.setProperty("--cols", W.cols); grid.style.setProperty("--rows", W.rows);   // (ticket 210: the squares' size, from the room, in the stylesheet)
       // (ticket 224, Matthew: "in FS mode for world design, let's show A, B, C ... and 1, 2, 3 as the row and column
       // labels, with scaled font") the columns' letters over the grid and the rows' numbers beside it, as squareName
-      // names them (A1 at the top left), shown full screen only (.world-lab)
+      // names them (A1 at the top left) (.world-lab; full screen only till ticket 255, now in the tab too)
       const lab = (cls, t) => el("div", { class: "world-lab " + cls, "aria-hidden": "true" }, t);
       grid.replaceChildren(lab("corner", ""), ...Array.from({ length: W.cols }, (_, c) => lab("col", String.fromCharCode(65 + c))), ...Array.from({ length: W.cols * W.rows }, (_, i) => {
         const key = (i % W.cols) + "," + Math.floor(i / W.cols), cell = W.cells[key];
