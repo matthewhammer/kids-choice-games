@@ -41,7 +41,7 @@ try {
     ok(`a tree house's trapdoor, ${sh}: its hole and lid ${sh}, and the ceiling of the room below (house ${tree.below}) too`, r.hole === sh && r.lid === sh && r.below === sh, r);
   }
   ok("its setting shown in its own house and the house below, nowhere else", Object.values(tree.shapes).every(r => r.shownHere && r.shownBelow && !r.shownElse), tree.shapes);
-  const pits = JSON.parse(await ev(`(async () => { ${H} Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: 0, figY: 60, things: [], castlePit1_3N: "square", castlePit2_3N: "triangle" }); changed(); await w(500);
+  const pits = JSON.parse(await ev(`(async () => { ${H} Object.assign(B, { kind: "castleroom", castle: "N", castleLeverL_3N: false, castleLeverR_3N: false, castleRoom: 3, figX: 0, figY: 60, things: [], castlePit1_3N: "square", castlePit2_3N: "triangle" }); changed(); await w(500);
     const P = pitsHere(), drawn = [...bgShown.node.querySelectorAll(".portal[data-pit]")].map(el => ({ shape: el.dataset.shape, hole: kindOf(el.querySelector('path[fill^="url"]')?.getAttribute("d")) }));
     const at = (q, u, v) => overPit(q, q.cx + u * PIT_EDGE * q.rx, q.cy + v * PIT_EDGE * q.ry);
     const falls = { squareCorner: at(P[0], 0.75, 0.75), squareOut: at(P[0], 1.05, 0), triangleIn: at(P[1], 0.2, 0.5), triangleSide: at(P[1], 0.6, -0.5) };

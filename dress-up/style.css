@@ -98,7 +98,7 @@
   body.designer-big .side { position: fixed; inset: 0; z-index: 30; overflow: auto; background: var(--bg);
                          padding: 12px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
   body.music-big .mixer { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-  body.designer-big .touchpad { display: none; }   /* (no friend to move here) */
+  body.designer-big:not(.pic-in-world) .touchpad { display: none; }   /* (the music: no friend to move there; the world and background designers show the game, so its controller too) */
   /* (ticket 210, Matthew: the music full screen "especially large and over-stated"; full screens "more compact, and
      sleek looking") Both tabs' full screens: a slim bar across the top (the tab's name, and ✕ back to the game, small),
      the panel's own frame gone, and the music's controls as cards in columns, not a row each the window's width */

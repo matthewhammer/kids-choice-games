@@ -321,24 +321,29 @@ const letGo = () => {
 };
 // (ticket 284) A 🎚️ lever pulled: it flips over, and so does every 🕳️ trap door here it is wired to (its 🔗); the picture is
 // drawn with it over, and then its handle on the screen turns across from where it was, in LEVER_TURN ms
-const LEVER_TURN = 250;
+// (ticket 307, Matthew: "the switch should animate too -- rocking back and forth somehow": it swings past and rocks back, settling)
+const LEVER_TURN = 900;
 function leverPull(i) {
   const B = state.background, T = (B.things || [])[i];
   if (!T || T.kind !== "lever") return;
   T.on = !T.on;
-  for (const d of B.things) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid)) d.open = !d.open;
+  const swung = [];
+  for (const [j, d] of B.things.entries()) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid)) { d.open = !d.open; swung.push([j, d.open]); }
   changed();
   turnArm(bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${i}"] .lever-arm`), T.on ? LEVER_TILT : -LEVER_TILT);
+  for (const [j, open] of swung) lidSwing(bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${j}"] .pit-lid`), open);   // (ticket 307)
 }
 // (ticket 305) The trap room's lever pulled: it flips over, and so does every pit it works (trapState); its handle turns across
 function roomLeverPull(side) {
   const B = state.background;
   if (B.kind !== "castleroom") return;
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = leverKey(side, n, K.id);
-  B[key] = !B[key];
+  const was = trapState(B, n, K.id).open;
+  B[key] = !leverDown(B, side, n, K.id);   // (ticket 307: never touched, it was down)
   changed();
-  const up = !B[key], sd = side === "L" ? -1 : 1;
+  const up = !B[key], sd = side === "L" ? -1 : 1, now = trapState(B, n, K.id).open;
   turnArm(bgShown.node && bgShown.node.querySelector(`[data-lever="${side}"] .lever-arm`), (up ? 1 : -1) * sd * LEVER_TILT);
+  for (const j of [0, 1]) if (now[j] !== was[j]) lidSwing(bgShown.node && bgShown.node.querySelector(`.pit-lid[data-pit-i="${j}"]`), now[j]);   // (ticket 307)
 }
 // (a lever's handle on the screen, turned across to its new angle `to` from the other side, in LEVER_TURN ms)
 function turnArm(arm, to) {
@@ -347,10 +352,27 @@ function turnArm(arm, to) {
   // (by frames, a timer standing in where frames do not come, as for a drag: it always ends at its new angle)
   let raf = 0, tm = 0;
   const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (!arm.isConnected) return;
-    const u = Math.min(1, (performance.now() - t0) / LEVER_TURN), e = 1 - (1 - u) * (1 - u);
-    arm.setAttribute("transform", `rotate(${f1(-to + 2 * to * e)} ${f1(px)} ${f1(py)})`);
+    const u = Math.min(1, (performance.now() - t0) / LEVER_TURN), a = u < 1 ? to - 2 * to * Math.exp(-5 * u) * Math.cos(3 * Math.PI * u) : to;   // (past it by a third, back, and still)
+    arm.setAttribute("transform", `rotate(${f1(a)} ${f1(px)} ${f1(py)})`);
     if (u < 1) { raf = requestAnimationFrame(step); tm = setTimeout(step, 40); } };
   arm.setAttribute("transform", `rotate(${-to} ${f1(px)} ${f1(py)})`);
+  raf = requestAnimationFrame(step); tm = setTimeout(step, 40);
+}
+// (ticket 307) a pit's lid swung on the screen, after the picture is drawn with it as it ends: open, from across the
+// opening down into the pit on its hinge (falling, faster as it goes), the shade deepening; shut, back up across it
+// (slowing as it lands); in PIT_SWING ms, by frames, a timer standing in where frames do not come (as turnArm)
+const PIT_SWING = 520;
+function lidSwing(lid, open) {
+  if (!lid) return;
+  const y0 = +lid.dataset.hinge, shade = lid.querySelector(".lid-shade"), t0 = performance.now();
+  const at = s => { lid.setAttribute("transform", lidAt(y0, s)); if (shade) shade.setAttribute("opacity", (0.7 * (1 - s)).toFixed(2)); };
+  let raf = 0, tm = 0;
+  const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (!lid.isConnected) return;
+    const u = Math.min(1, (performance.now() - t0) / PIT_SWING);
+    if (u < 1) { at(Math.max(0.001, open ? 1 - u * u : 1 - (1 - u) * (1 - u))); raf = requestAnimationFrame(step); tm = setTimeout(step, 40); return; }
+    if (open) { at(0); lid.setAttribute("visibility", "hidden"); }
+    else { lid.removeAttribute("transform"); if (shade) shade.setAttribute("opacity", "0"); } };
+  lid.removeAttribute("visibility"); at(open ? 1 : 0.001);
   raf = requestAnimationFrame(step); tm = setTimeout(step, 40);
 }
 pic.addEventListener("pointerup", letGo);

@@ -21,7 +21,7 @@ try {
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
     state.music.mute = true; state.world.at = null; climb = null;
     const shapes = () => [...bgShown.node.querySelectorAll(".portal[data-pit]")].map(p => p.dataset.shape);
-    Object.assign(B, { kind: "castleroom", castle: "N", castleRoomsN: 6, castleRoom6N: "trap", castlePit1_3N: "square", castlePit2_3N: "triangle", figX: 0, figY: 60, things: [] });
+    Object.assign(B, { kind: "castleroom", castle: "N", castleLeverL_3N: false, castleLeverR_3N: false, castleLeverL_6N: false, castleLeverR_6N: false, castleRoomsN: 6, castleRoom6N: "trap", castlePit1_3N: "square", castlePit2_3N: "triangle", figX: 0, figY: 60, things: [] });
     B.castleRoom = 3; changed(); await w(500); const three = shapes();
     B.castleRoom = 6; changed(); await w(500); const six = shapes();
     // (in room 3, its chip pressed: the Background tab's room 3 box)

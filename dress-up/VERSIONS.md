@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.222 (2026-10-18)
+
+Everything in 0.0.221, plus pits and trap doors that swing open and shut, and levers that rock.
+
+- **A pit or a trap door opens and shuts as you watch.** Pull its lever and its lid of planks swings down into the pit on its far edge, faster as it falls, darker as it goes down; pull it again and the lid swings back up across the opening. The trap room's pits and the 🕳️ trap doors you place both do it.
+- **The trap room's pits start shut.** Both levers start pulled down, so each pit has its lid across it until you pull its lever up. A lever you had already set stays as it was.
+- **A lever rocks when it is pulled**: its handle swings across, past where it stops, and rocks back and forth until it settles.
+- **Fixed: the controller on the screen in the full-screen designers.** In the full-screen 🏞️ Background designer and 🗺️ World design, where the game is shown beside the boxes, the controller on the screen was hidden, so its arrows could not move your friend. It shows there now (but not in the full-screen 🎵 music, where there is no friend to move).
+
 ## 0.0.221 (2026-10-18)
 
 Everything in 0.0.220, plus seven more castle rooms whose wall and floor things are objects of their own.

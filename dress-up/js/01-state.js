@@ -251,8 +251,11 @@ function trapWiring(o, n, id) {
   if (mode === "random") { const r = seeded(o[leverSeedKey(n, id)] ?? 1); return [0, 1].map(i => r(i) < 0.5 ? "L" : "R"); }
   return ["L", "R"];
 }
+// (ticket 307, Matthew: "let's have them closed by default now that we can open them with the switch") a lever never
+// touched is pulled down, so its pit is shut; one pulled is as it was set
+const leverDown = (o, side, n, id) => !!(o[leverKey(side, n, id)] ?? true);
 function trapState(o, n, id) {
-  const wire = trapWiring(o, n, id), levers = { L: !!o[leverKey("L", n, id)], R: !!o[leverKey("R", n, id)] };
+  const wire = trapWiring(o, n, id), levers = { L: leverDown(o, "L", n, id), R: leverDown(o, "R", n, id) };
   return { wire, levers, on: [1, 2].map(i => o[pitOnKey(i, n, id)] !== false), open: [0, 1].map(i => !levers[wire[i]]) };
 }
 // (wired at random: drawn again each time the friend comes into the room, so each visit is a puzzle of its own)
@@ -948,7 +951,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.221", released: "2026-10-18" };
+const VERSION = { number: "0.0.222", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

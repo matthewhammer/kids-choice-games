@@ -17,7 +17,7 @@ const ev = async x => { const r = await send("Runtime.evaluate", { expression: x
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 1200)}`); if (!cond) bad++; };
 const ROOM = `state.music.mute = true; state.world.at = null; state.body.anim = "none"; climb = null;
-  Object.assign(state.background, { kind: "castleroom", castle: "N", castleRoom: 3, castleRoom3N: "trap", figX: 0, figY: 60 }); changed(); await new Promise(r => setTimeout(r, 900));`;
+  Object.assign(state.background, { kind: "castleroom", castle: "N", castleLeverL_3N: false, castleLeverR_3N: false, castleRoom: 3, castleRoom3N: "trap", figX: 0, figY: 60 }); changed(); await new Promise(r => setTimeout(r, 900));`;
 try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });

@@ -196,7 +196,7 @@ function leverSvg(x, y, px, py, ex, ey, k, arm = s => s) {
 // (shape sh, middle cx, cy, half widths rx, ry), dark inside, spikes glinting
 // in it (R and i as the trap room's, so its two pits differ), a rim of broken
 // stone; its ids from id
-function pitSvg(cx, cy, rx, ry, sh, k, R, i, id, spikes = true) {
+function pitHole(cx, cy, rx, ry, sh, k, R, i, id, spikes = true) {
   const P = (x, y) => `${f1(x)} ${f1(y)}`;
   return `<defs><radialGradient id="${id}" cx="0.5" cy="0.3" r="0.7"><stop offset="0" stop-color="#000000"/><stop offset="1" stop-color="#2a221c"/></radialGradient>` +
     `<clipPath id="${id}c"><path d="${openingD(sh, cx, cy, rx, ry)}"/></clipPath></defs>` +
@@ -205,16 +205,26 @@ function pitSvg(cx, cy, rx, ry, sh, k, R, i, id, spikes = true) {
     (spikes ? `<g clip-path="url(#${id}c)">` + [...Array(11)].map((_, j) => {
       const x = cx - rx * 0.85 + rx * 1.7 * j / 10, b = cy + ry * 0.9, h = (26 + 10 * R(j + i * 20, 920)) * k;
       return `<polygon points="${P(x - 7 * k, b)} ${P(x, b - h)} ${P(x + 7 * k, b)}" fill="#8a8a96"/><line x1="${f1(x - 2 * k)}" y1="${f1(b - h * 0.8)}" x2="${f1(x - 4 * k)}" y2="${f1(b - 4 * k)}" stroke="#d8d8e4" stroke-width="${f1(1.5 * k)}"/>`;
-    }).join("") + `</g>` : "") +
-    pitRim(cx, cy, rx, ry, k, R, i);
+    }).join("") + `</g>` : "");
 }
-// (ticket 305) a pit shut, as a trap door is: planks over its opening, a bar across, an iron ring, in its rim of broken stone
-function hatchSvg(cx, cy, rx, ry, sh, k, R, i, id) {
+// (ticket 305) a pit's lid, shut, as a trap door is: planks over its opening, a bar across, an iron ring (its rim of broken
+// stone is pitLidSvg's); (ticket 307) its own clip, and a shade over it, deepened as it swings down into the dark (lidSwing)
+function lidSvg(cx, cy, rx, ry, sh, k, id) {
   const planks = [...Array(7)].map((_, j) => `<rect x="${f1(cx - rx + 2 * rx * j / 7)}" y="${f1(cy - ry - 2 * k)}" width="${f1(2 * rx / 7 - 2 * k)}" height="${f1(2 * ry + 4 * k)}" fill="${j % 2 ? "#7a5230" : "#6e4a2c"}"/>`).join("");
-  return `<defs><clipPath id="${id}c"><path d="${openingD(sh, cx, cy, rx, ry)}"/></clipPath></defs>` +
-    `<path d="${openingD(sh, cx, cy + 4 * k, rx + 14 * k, ry + 8 * k)}" fill="#4a4038"/>` +
-    `<g clip-path="url(#${id}c)">${planks}<rect x="${f1(cx - rx)}" y="${f1(cy - 4 * k)}" width="${f1(2 * rx)}" height="${f1(8 * k)}" fill="#4a3220"/></g>` +
+  return `<defs><clipPath id="${id}l"><path d="${openingD(sh, cx, cy, rx, ry)}"/></clipPath></defs>` +
+    `<g clip-path="url(#${id}l)">${planks}<rect x="${f1(cx - rx)}" y="${f1(cy - 4 * k)}" width="${f1(2 * rx)}" height="${f1(8 * k)}" fill="#4a3220"/></g>` +
     `<path d="${openingD(sh, cx, cy, rx, ry)}" fill="none" stroke="#3a2a18" stroke-width="${f1(3 * k)}"/><ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(11 * k)}" ry="${f1(5 * k)}" fill="none" stroke="#2a2a30" stroke-width="${f1(3 * k)}"/>` +
+    `<path class="lid-shade" d="${openingD(sh, cx, cy, rx, ry)}" fill="#000000" opacity="0"/>`;
+}
+// (ticket 307, Matthew: "pit open and close work via switch -- let's animate it, like the doors opening and closing are
+// now") A pit with its lid: the hole always drawn (pitHole), the lid over it, the rim of broken stone over both. Shut,
+// the lid lies across the opening; open, it has swung down on its hinge, the opening's far edge, into the pit, out of
+// sight (folded flat against the hinge, lidAt(y0, 0), and hidden). lidSwing turns it between the two when a lever is pulled.
+const lidAt = (y0, s) => `matrix(1 0 0 ${s.toFixed(3)} 0 ${f1(y0 * (1 - s))})`;
+function pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, open, spikes = true) {
+  const y0 = cy - ry;
+  return pitHole(cx, cy, rx, ry, sh, k, R, i, id, spikes) +
+    `<g class="pit-lid" data-pit-i="${i}" data-hinge="${f1(y0)}"${open ? ` transform="${lidAt(y0, 0)}" visibility="hidden"` : ""}>` + lidSvg(cx, cy, rx, ry, sh, k, id) + `</g>` +
     pitRim(cx, cy, rx, ry, k, R, i);
 }
 const pitRim = (cx, cy, rx, ry, k, R, i) => [...Array(12)].map((_, j) => { const a = j / 12 * 2 * Math.PI, x = cx + Math.cos(a) * (rx + 6 * k), y = cy + Math.sin(a) * (ry + 4 * k);
@@ -243,10 +253,10 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes, trap = null) {
     // (ticket 305) a pit not there is not drawn; a shut one is planks, no way down (no doorway, so no fall)
     if (trap && !trap.on[i]) return;
     const open = !trap || trap.open[i], to = open ? pits[i] : null;
-    if (!open) { t += `<g>` + hatchSvg(cx, cy, rx, ry, sh, k, R, i, id) + `</g>`; return; }
+    if (!open) { t += `<g>` + pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, false) + `</g>`; return; }   // (ticket 307: its lid across it)
     // (ticket 162: its hole, for falling in: its middle and its half widths, across and in depth)
     t += (to ? `<g class="portal" data-to="castleroom" data-room="${to}" data-pit="${f1(cx)} ${f1(cy)} ${f1(rx)} ${f1(ry)}" data-shape="${sh}">` : "<g>") +
-      pitSvg(cx, cy, rx, ry, sh, k, R, i, id) +
+      pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, true) +
       (to ? plankSign(cx, cy - ry - 34 * k, k, `🕳️ ${roomLabel(K.rooms[to - 1]).split(" ")[0]} ${to}`) : "") + `</g>`;
   });
   // a helmet someone dropped by the left pit, a sword by the right one

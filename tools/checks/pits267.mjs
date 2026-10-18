@@ -21,7 +21,7 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
     state.music.mute = true; state.world.at = null; climb = null;
-    Object.assign(B, { kind: "castleroom", castle: "N", figX: 0, figY: 20, things: [] }); B.castleRoom = castleOf(B).rooms.indexOf("trap") + 1; changed(); await w(600); measureMarks();
+    Object.assign(B, { kind: "castleroom", castle: "N", castleLeverL_3N: false, castleLeverR_3N: false, figX: 0, figY: 20, things: [] }); B.castleRoom = castleOf(B).rooms.indexOf("trap") + 1; changed(); await w(600); measureMarks();
     const pits = marks.pics.filter(q => q.kind === "pit"), round = q => [q.x0, q.y0, q.x1, q.y1].map(Math.round);
     const p0 = bgShown.node.querySelector(".portal[data-pit]"), [cx, cy, rx, ry] = p0.dataset.pit.split(" ").map(Number), mine = pits.filter(q => q.el === p0);
     const hole = mine.find(q => q.outline), sign = mine.find(q => !q.outline);
