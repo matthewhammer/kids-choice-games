@@ -1,12 +1,10 @@
 {
  "0.0.201": {
-  "result": "broken",
-  "failed": [
-   "the checks"
-  ],
+  "result": "ok",
+  "failed": [],
   "commit": "dbca75bd56f5515db2bb89d6ac11826068c6b239",
   "run": "https://github.com/matthewhammer/kids-choice-games/actions/runs/39100712067",
-  "checked": "2026-10-18T06:45Z",
+  "checked": "2026-10-18T08:44Z",
   "inspect": true
  },
  "0.0.198": {
