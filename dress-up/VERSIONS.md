@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.193 (2026-10-17)
+
+Everything in 0.0.192, with the spiral staircase whole.
+
+- **The spiral staircase, drawn all the way round**: the front of each turn above, the steps coming toward you, is there now, not cut away; a step in front of your friend turns see-through while it would hide them.
+- **Up the middle of the steps**: walking to a door up the stairs, your friend goes round along the middle of the steps, not along the wall's edge.
+
 ## 0.0.192 (2026-10-17)
 
 Everything in 0.0.191, with room to click round the trap room's pits.

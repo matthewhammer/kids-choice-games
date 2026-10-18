@@ -581,6 +581,8 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
 .made-legend { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); max-width: 70%; padding: 5px 9px; border-radius: 8px; background: rgba(0, 0, 0, 0.62);
   color: #ffffff; font: 600 11px/1.45 sans-serif; pointer-events: none; text-align: center; }
 .made-legend b { color: var(--c); }
+[data-front-step] { transition: opacity 0.25s; }
+[data-front-step].seen-through { opacity: 0.3; }   /* (ticket 268: a spiral step in front of the friend, seen through) */
 /* (ticket 251) 👆 the ground a click would walk to: a glowing ellipse in ♿'s colour, pulsing */
 .walk-spot { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .walk-spot ellipse { fill: color-mix(in srgb, var(--spot, #22d3ee) 35%, transparent); stroke: var(--spot, #22d3ee); stroke-width: 2.5px;

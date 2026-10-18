@@ -871,6 +871,10 @@ function drawNow() {
     else pic.append(...rest);
   }
   showObjects();
+  // (ticket 268) the spiral staircase's steps in front of the friend: each one that covers them seen through, while it does
+  if (scened && BG.kind === "castleroom" && scenery) { const steps = scenery.querySelectorAll("[data-front-step]"), f = steps.length && document.getElementById("figure");
+    if (f) { const r = f.getBoundingClientRect(); for (const st of steps) { const q = st.getBoundingClientRect(), over = q.right > r.left && q.left < r.right && q.bottom > r.top && q.top < r.bottom;
+      if (st.classList.contains("seen-through") !== over) st.classList.toggle("seen-through", over); } } }
   if (scened && BG.kind === "treeroom") treeBusyMeasure();   // (ticket 242: where its pictures can hang, measured once a room is drawn)
   if (hoverOn) showHover();   // (the hover glow, over the new drawing: ticket 135)
   if (scened) showEnterGlow();   // (the passage X, Enter or a tap would take, and the others within reach: tickets 145, 187)

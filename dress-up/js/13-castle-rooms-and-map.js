@@ -861,6 +861,18 @@ function spiralGeom(c) {
   const pt = (r, th, y) => [r * Math.cos(th), y + r * sq * Math.sin(th)];
   return { Yf, R, r0, sq, th0, rise, lvl, pt };
 }
+// (ticket 268, Matthew: "the motion plan for the spiral stairs needs work. it should follow the center of the stairs,
+// not the farthest edge") a walk on the stairs, in figX/figY terms: along the steps' middle line (halfway from the column
+// to the wall), turning with them from the angle nearest where it starts to the one nearest where it goes, then there
+function spiralPath(x0, y0, x1, y1) {
+  const G = spiralGeom(stageC()), g = SCENE.ground, rm = (G.r0 + G.R) / 2;
+  const on = th => { const [x, y] = G.pt(rm, th, G.lvl(th)); return [x, y - g]; };
+  const angleOf = (x, y) => { let best = G.th0, bd = Infinity; for (let th = G.th0; th <= G.th0 + 4.6 * Math.PI; th += 0.02) { const [px, py] = on(th), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = th; } } return best; };
+  const a = angleOf(x0, y0), b = angleOf(x1, y1), pts = [], dir = Math.sign(b - a) || 1;
+  for (let th = a + dir * 0.18; dir * (b - th) > 0.12; th += dir * 0.18) pts.push(on(th));
+  pts.push(on(b), [x1, y1]);
+  return pts;
+}
 // where door j (from 0) comes out onto the steps: at the wall, at its step's height, smaller the farther back
 const SPIRAL_DOORS = [1.12, 1.86, 2.95, 3.72].map(u => u * Math.PI);
 function spiralDoorAt(c, j) {
@@ -900,14 +912,18 @@ function spiralSvg(c, K) {
   for (const sd of [-1, 1]) t += `<rect x="${f1(sd > 0 ? Rw : -Rw - 30 * k)}" y="${f1(fy - 6 * k)}" width="${f1(30 * k)}" height="${f1(c.y1 + pad - fy)}" fill="${mix(tone, "#000000", 0.3)}"/>`;
   // the steps: wedges from the column out to the wall, each a step higher; the front of each turn above
   // the first cut away (as the wall is); those behind the column first, then the column, then those in front
-  const step = Math.PI / 10, top = y0 - pad, back = [], front = [];
+  const step = Math.PI / 10, top = y0 - pad, back = [], front = [], overhead = [];
   for (let th = G.th0; lvl(th) > top - 40 * k; th += step) {
     const a = th, b = th + step, ya = lvl(a), yb = lvl(b), sn = Math.sin((a + b) / 2);
-    if (sn > 0.2 && ya < Yf - 40 * k) continue;
+    // (ticket 268, Matthew: "We see the back half of a screw, and the front half is missing. let's draw it all, and if we
+    // have to make certain parts transparent while we are occluded by them temporarily, we can") the upper turns' front
+    // steps too, over everything (an object at Infinity), each marked: seen through where it covers the friend (draw)
+    const upper = sn > 0.2 && ya < Yf - 40 * k;
     const shade = mix(tone, "#ffffff", 0.18 - 0.12 * Math.min(1, (Yf - ya) / (420 * k)));
     const tread = `<polygon points="${[pt(r0, a, ya), pt(R, a, ya), pt(R, b, ya), pt(r0, b, ya)].map(p => P(...p)).join(" ")}" fill="${shade}" stroke="${mortar}" stroke-width="${f1(1.2 * k)}"/>` +
       `<polygon points="${[pt(r0, b, ya), pt(R, b, ya), pt(R, b, yb), pt(r0, b, yb)].map(p => P(...p)).join(" ")}" fill="${mix(tone, "#000000", 0.25)}" stroke="${mortar}" stroke-width="${f1(1 * k)}"/>`;
-    (sn > 0 ? front : back).push({ y: ya, s: tread, low: th < Math.PI });
+    if (upper) overhead.push({ y: ya, s: `<g data-front-step="">${tread}</g>` });
+    else (sn > 0 ? front : back).push({ y: ya, s: tread, low: th < Math.PI });
   }
   // (ticket 99: the steps behind the column climb the back wall, behind
   // anywhere one stands, so they are not an object; the column is one,
@@ -923,6 +939,8 @@ function spiralSvg(c, K) {
        [...Array(14)].map((_, i) => `<path d="M${f1(-r0)} ${f1(Yf - i * 44 * k)} Q0 ${f1(Yf - i * 44 * k + 6 * k)} ${f1(r0)} ${f1(Yf - i * 44 * k)}" fill="none" stroke="${mortar}" stroke-width="${f1(1.5 * k)}" opacity="0.6"/>`).join("") + torches);
   const ahead = front.sort((a, b) => a.y - b.y);
   t += ahead.filter(x => !x.low).map(x => x.s).join("") + obj("steps", pt(R, (G.th0 + Math.PI) / 2, Yf)[1], ahead.filter(x => x.low).map(x => x.s).join(""));
+  // (ticket 268) the front of the turns above, nearest us, the higher ones first
+  if (overhead.length) t += obj("steps, in front", Infinity, overhead.sort((a, b) => a.y - b.y).map(x => x.s).join(""));
   // the dark, deeper as it rises (a front object: over the friend wherever they stand)
   t += obj("dark", Infinity, `<linearGradient id="bg-towerdark" x1="0" y1="${f1(top)}" x2="0" y2="${f1(Yf)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#05040a" stop-opacity="0.55"/><stop offset="1" stop-color="#05040a" stop-opacity="0.1"/></linearGradient>` +
        `<rect x="${f1(x0 - pad)}" y="${f1(top)}" width="${f1(W + 2 * pad)}" height="${f1(Yf - top + 60 * k)}" fill="url(#bg-towerdark)"/>`);

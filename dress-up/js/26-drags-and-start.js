@@ -1128,7 +1128,9 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   if (B.pose !== "stand" && walk) strikePose("stand");
   const fade = o => { for (const n of figShown) if (n.style) n.style.opacity = o; };
   // (ticket 215) the way there, round what stands in it (planPath): a point at a time
-  const from = [BG.figX ?? 0, BG.figY ?? 0], path = walk && !opt.here ? planPath(from[0], from[1], tx, ty) : [[tx, ty]];
+  // (ticket 268: in the spiral staircase, up or down along its steps' middle)
+  const spiral = BG.kind === "castleroom" && castleWallsOf(BG).stairs;
+  const from = [BG.figX ?? 0, BG.figY ?? 0], path = walk && !opt.here ? (spiral ? spiralPath(from[0], from[1], tx, ty) : planPath(from[0], from[1], tx, ty)) : [[tx, ty]];
   walkPath = { pts: [from, ...path], made: performance.now(), leg: 0 };
   // (deeper counts 1 / 0.6 as far, as the controller walks; a long way is walked faster, to take 2.5 s at most)
   const dist = path.reduce((a, p, i) => { const q = i ? path[i - 1] : from; return a + Math.hypot(p[0] - q[0], (p[1] - q[1]) / 0.6); }, 0), speed = Math.max(PAD_SPEED.walk, dist / 2.5);
