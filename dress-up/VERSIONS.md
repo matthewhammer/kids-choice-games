@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.183 (2026-10-17)
+
+Everything in 0.0.182, with new palm trees in the castle's greenhouse.
+
+- **Greenhouse palms**: their trunks are now stacked segments, leaning and narrowing as they go up, each one of four shapes (a flared collar, a barrel, a notch where a leaf grew, a dome), with a root flare at the ground, instead of a pile of ovals.
+- **Bumping into them**: each palm's trunk is eight boxes stacked up it, leaning as it leans (see them with ♿'s collision boxes), so your friend stops where the trunk really is.
+
 ## 0.0.182 (2026-10-17)
 
 Everything in 0.0.181, with doors that open as you come to them.

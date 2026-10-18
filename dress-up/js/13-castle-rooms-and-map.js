@@ -1096,12 +1096,11 @@ function greenhouseSvg(c, K) {
     `<path d="M-20 -4 Q0 -12 20 -6" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.8"/></g></g>`;
   // (ticket 99: flying by the back wall, at the depth of the floor under them there)
   t += obj("parrots", floor, parrot(-bw * 0.55, top + 60 * k, 1.1 * k, 1, "#22d3ee", 0) + parrot(bw * 0.45, top + 40 * k, 1.0 * k, -1, "#a3e635", 1) + parrot(-bw * 0.05, top + 110 * k, 0.8 * k, 1, "#f472b6", 2));
-  // a palm: a curving trunk of rings, fronds of leaflets arching out
+  // a palm: a curving trunk of stacked segments (palmTrunkSvg, ticket 257), fronds of leaflets arching out
   const palm = (x, base, h, sd, seed) => {
-    let s2 = "";
-    const tx = x + sd * h * 0.18, ty = base - h;
-    for (let j = 0; j < 12; j++) { const u = j / 12, px = x + sd * h * 0.18 * u * u, py = base - h * u, w = (16 - 6 * u) * k;
-      s2 += `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="${f1(w)}" ry="${f1(7 * k)}" fill="${j % 2 ? "#8b6a3e" : "#7a5a32"}"/>`; }
+    const trunk = palmTrunkSvg(x, base, h, sd, k, j => R(seed + j, 985));
+    let s2 = trunk.svg;
+    const [tx, ty] = trunk.top;
     for (let f = 0; f < 7; f++) {
       const a = -Math.PI + (f + 0.5) * Math.PI / 7 + (R(seed + f, 986) - 0.5) * 0.3, len = (90 + 40 * R(seed + f, 987)) * k;
       const ex = tx + Math.cos(a) * len, ey = ty + Math.sin(a) * len * 0.6 + len * 0.35, mx = tx + Math.cos(a) * len * 0.5, my = ty + Math.sin(a) * len * 0.7 - 10 * k;

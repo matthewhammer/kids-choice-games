@@ -264,6 +264,41 @@ function treeMapSvg(o, here) {
   if (h) t += [["#1f140b", 30], ["#ffffff", 16]].map(([col, w]) => `<circle data-here="${here}" cx="${f1(h.x)}" cy="${f1(h.y - 84 * h.sc)}" r="${f1(112 * h.sc)}" fill="none" stroke="${col}" stroke-width="${w}"/>`).join("");
   return t + `</g>`;
 }
+// (ticket 257, Matthew: "the palm trees in the castle's green house need more segments for collision detection -- and we
+// should improve the image -- it looks pretty sloppy -- let's have a palm tree segment system, with 3 or 4 variations of
+// shapes, and stack them, not use ovals") A palm's trunk: n segments stacked along its curve from its foot (x, base) up
+// h, leaning toward sd (lean of h across at the top, bending more as it goes up), each of one of PALM_SEGS's shapes,
+// turned to the trunk's way there, narrowing as it goes up; drawn from the top down, so each segment's lip is over the
+// foot of the one above it; a root flare at the ground. Its spine (data-spine: straight pieces along the curve, each
+// as wide as the trunk there, unseen) is what its collision bands are measured by (standingHere), PALM_BANDS of them.
+// Returns its drawing and the top of the trunk, where its crown goes. rnd(j): a seeded number in [0, 1) for segment j.
+const PALM_BANDS = 8;
+// (each a segment's outline: a its foot's half-width, b its top's, s its height; its foot at 0, its top at -s)
+const PALM_SEGS = [
+  (a, b, s) => `M${-a} 0 L${-0.92 * b} ${-0.8 * s} L${-1.14 * b} ${-s} L${1.14 * b} ${-s} L${0.92 * b} ${-0.8 * s} L${a} 0 Z`,   // a collar, its lip flared
+  (a, b, s) => `M${-a} 0 Q${-1.16 * a} ${-0.5 * s} ${-b} ${-s} L${b} ${-s} Q${1.16 * a} ${-0.5 * s} ${a} 0 Z`,   // a barrel
+  (a, b, s) => `M${-a} 0 L${-b} ${-s} L${-0.3 * b} ${-s} L0 ${-0.82 * s} L${0.3 * b} ${-s} L${b} ${-s} L${a} 0 Z`,   // notched, a leaf's scar
+  (a, b, s) => `M${-a} 0 L${-1.06 * b} ${-0.9 * s} Q0 ${-1.14 * s} ${1.06 * b} ${-0.9 * s} L${a} 0 Z`,   // domed
+].map(f => (a, b, s) => f(a, b, s).replace(/-?\d+(\.\d+)?(e-?\d+)?/g, v => f1(+v)));
+function palmTrunkSvg(x, base, h, sd, k, rnd, lean = 0.18, n = 11) {
+  const at = u => [x + sd * h * lean * u * u, base - h * u], turn = u => Math.atan2(sd * 2 * lean * u, 1) * 180 / Math.PI;
+  const half = u => (17 - 7 * u) * k, s = h / n * 1.2;
+  const flare = half(0.06);
+  let t = `<path d="M${f1(x - 28 * k)} ${f1(base + 2 * k)} Q${f1(x - 15 * k)} ${f1(base - 6 * k)} ${f1(x - flare)} ${f1(base - 24 * k)} L${f1(x + flare)} ${f1(base - 24 * k)} Q${f1(x + 15 * k)} ${f1(base - 6 * k)} ${f1(x + 28 * k)} ${f1(base + 2 * k)} Z" fill="#6a4a28" stroke="#4e3519" stroke-width="${f1(1.4 * k)}"/>`;
+  for (let j = n - 1; j >= 0; j--) {
+    const u = j / n, [px, py] = at(u), a = half(u), b = half(Math.min(1, (j + 1.2) / n)), shape = PALM_SEGS[Math.floor(rnd(j) * PALM_SEGS.length) % PALM_SEGS.length];
+    const fill = ["#8b6a3e", "#7d5d34", "#94744a"][j % 3];
+    t += `<g transform="translate(${f1(px)} ${f1(py)}) rotate(${f1(turn(u + 0.5 / n))})">` +
+         `<path d="${shape(a, b, s)}" fill="${fill}" stroke="#4e3519" stroke-width="${f1(1.4 * k)}" stroke-linejoin="round"/>` +
+         // (its round side catching the light, and the ring where its leaf grew)
+         `<path d="M${f1(-0.55 * a)} ${f1(-0.12 * s)} L${f1(-0.55 * b)} ${f1(-0.74 * s)}" stroke="#b9925e" stroke-width="${f1(2.2 * k)}" stroke-linecap="round" opacity="0.6"/>` +
+         `<path d="M${f1(-0.9 * b)} ${f1(-0.78 * s)} Q0 ${f1(-0.68 * s)} ${f1(0.9 * b)} ${f1(-0.78 * s)}" fill="none" stroke="#5a3d1f" stroke-width="${f1(1.1 * k)}" opacity="0.7"/></g>`;
+  }
+  // (the spine: four straight pieces along the curve, unseen, each as wide as the trunk at its middle)
+  t += `<g data-spine-of="palm" pointer-events="none">` + [0, 1, 2, 3].map(i => { const [ax, ay] = at(i / 4), [bx, by] = at((i + 1) / 4);
+    return `<path data-spine="" data-bands="${PALM_BANDS}" d="M${f1(ax)} ${f1(ay)} L${f1(bx)} ${f1(by)}" fill="none" stroke="transparent" stroke-width="${f1(2 * half((i + 0.5) / 4))}"/>`; }).join("") + `</g>`;
+  return { svg: t, top: at(1) };
+}
 // (ticket 50) the swing: its seat, 74 of the tree's units across (358 to
 // 432), its top 72 above the ground, as treeInner's "tree-swing" hangs it
 // at rest, in the tree's group (its size the tree's slider's); a sitter is

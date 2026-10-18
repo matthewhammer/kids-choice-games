@@ -169,7 +169,7 @@ function boxThrough(r, m) {
 // stroked one grown by half its stroke), so a palm's leaning trunk has its boxes leaning with it. Each band: x0, x1,
 // and lo, hi, its heights above the ground where the thing stands (z).
 const TRUNK_BANDS = 5;
-function trunkBands(parts, z) {
+function trunkBands(parts, z, n = TRUNK_BANDS) {
   const pts = [];
   for (const [sh, m] of parts) {
     let L = 0; try { L = sh.getTotalLength(); } catch (e) { continue; }
@@ -178,8 +178,8 @@ function trunkBands(parts, z) {
   }
   if (pts.length < 2) return null;
   const top = Math.min(...pts.map(p => p[1] - p[2])), bot = Math.max(z, ...pts.map(p => p[1])), out = [];
-  for (let i = 0; i < TRUNK_BANDS; i++) {
-    const yA = top + (bot - top) * i / TRUNK_BANDS, yB = top + (bot - top) * (i + 1) / TRUNK_BANDS, inb = pts.filter(p => p[1] + p[2] >= yA && p[1] - p[2] <= yB);
+  for (let i = 0; i < n; i++) {
+    const yA = top + (bot - top) * i / n, yB = top + (bot - top) * (i + 1) / n, inb = pts.filter(p => p[1] + p[2] >= yA && p[1] - p[2] <= yB);
     if (inb.length) out.push({ x0: Math.min(...inb.map(p => p[0] - p[2])), x1: Math.max(...inb.map(p => p[0] + p[2])), lo: Math.max(0, z - yB), hi: z - yA });
   }
   return out.length ? out : null;
@@ -216,7 +216,13 @@ function standingHere(B, seats) {
     // (0.0.153: each part measured as the whole is, its own box through its own matrix: the beach's palms, a trunk drawn
     // as one stroked curve, were missed through the screen's boxes, and stood on their crowns' middles)
     let foot = null, bands = null;
-    if ((trunk || potted) && Pinv) {
+    // (ticket 257) a drawing that gives its trunk's spine ([data-spine]: pieces along it, each as wide as the trunk there,
+    // as a palm's stacked segments do) is measured by it, in as many bands as it asks (data-bands)
+    const spines = trunk && Pinv ? [...o.node.querySelectorAll("[data-spine]")] : [];
+    if (spines.length) {
+      const parts = []; for (const sh of spines) { try { const E = sh.getScreenCTM(); if (E) parts.push([sh, Pinv.multiply(E)]); } catch (e) { /* (not shown) */ } }
+      bands = parts.length ? trunkBands(parts, o.z, +spines[0].dataset.bands || TRUNK_BANDS) : null;
+    } else if ((trunk || potted) && Pinv) {
       const parts = [];
       for (const sh of root.querySelectorAll("rect, path, polygon, polyline, line, ellipse")) {
         let m, q;
