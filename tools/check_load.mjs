@@ -4,7 +4,7 @@
 //   node tools/check_load.mjs dress-up/index.html
 import fs from "node:fs"; import vm from "node:vm"; import path from "node:path";
 const page = process.argv[2], base = path.dirname(page), html = fs.readFileSync(page, "utf8");
-const parts = [...html.matchAll(/<script src="([^"?]+)/g)].map(m => m[1]);
+const parts = [...html.matchAll(/<script src="([^"?]+)/g)].map(m => m[1]).filter(p => !/^https?:/.test(p));   // (ticket 296: the nav bar's script is not a part)
 const stub = () => { const f = function () { return P; }; const P = new Proxy(f, {
   get: (t, k) => k === Symbol.toPrimitive ? (() => 0) : k === "length" ? 0 : k === Symbol.iterator ? function* () {} : k === "then" ? undefined : P,
   set: () => true, apply: () => P, construct: () => P, has: () => true }); return P; };

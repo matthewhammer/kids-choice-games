@@ -91,6 +91,7 @@ page = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- nav: begin --><meta name="theme-support" content="data-theme"><script src="https://matthewhammer.org/nav/nav.js"></script><!-- nav: end -->
 <script>try {{ var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); }} catch (e) {{}}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>60 Frames a Second</title>
@@ -248,6 +249,7 @@ index = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- nav: begin --><meta name="theme-support" content="data-theme"><script src="https://matthewhammer.org/nav/nav.js"></script><!-- nav: end -->
 <script>try {{ var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); }} catch (e) {{}}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dress Up Reports</title>

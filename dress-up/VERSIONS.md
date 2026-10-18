@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.210 (2026-10-18)
+
+Everything in 0.0.209, with the nav bar that Matthew's pages share.
+
+- **» at the bottom left** opens the pages' nav bar: one outline of matthewhammer.org, fumola.org and adapton.org, with this game in it under Messed Up Dress Up, and at its top the choice of ◐ auto, ☀ light or ☾ dark for the pages around the game. Here it starts hidden each visit, so the picture keeps the whole window, and the game keeps its own colours; « hides it again. The Dress Up reports have the bar too, shown.
+
 ## 0.0.209 (2026-10-18)
 
 Everything in 0.0.208, with levers to place, and trap doors they open and shut.

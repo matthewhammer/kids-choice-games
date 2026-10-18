@@ -12,7 +12,7 @@ page = sys.argv[1]
 base = os.path.dirname(os.path.abspath(page))
 html = open(page, encoding="utf-8").read()
 inline = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S)
-srcs = re.findall(r'<script[^>]*\bsrc="([^"]+)"', html)
+srcs = [s for s in re.findall(r'<script[^>]*\bsrc="([^"]+)"', html) if not s.startswith(("http://", "https://"))]   # (ticket 296: the nav bar's script is not a part of the game)
 parts = []
 for s in srcs:
     path = os.path.join(base, s.split("?")[0])
