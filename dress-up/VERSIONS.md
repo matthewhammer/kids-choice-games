@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.178 (2026-10-17)
+
+Everything in 0.0.177, with the tree house's rope bridges to walk on.
+
+- **Walk the rope bridges**: at the tree house, drag your friend up until their feet are on one of the rope bridges, and they stand on it, small enough to fit the houses' doors, in front of the tree. With the controller, ◀ and ▶ walk them along the bridge, down its sag and up again, as far as its ends; ⬆ and ⬇ only turn them, away from you or toward you. Drag them down to the ground to get off.
+- **♿ collision boxes**: each bridge's way along it is shown as a green path.
+
 ## 0.0.177 (2026-10-17)
 
 Everything in 0.0.176, with every house's number on the sign's map in full view.

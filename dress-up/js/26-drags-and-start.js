@@ -235,9 +235,14 @@ pic.addEventListener("pointermove", e => {
     // kept in the scene: its feet within the frame, from the frame's top
     // half down to just below the ground
     const p = picUnits(e), F = sceneFrame, BG = state.background;
+    // (ticket 245) their feet over a rope bridge, outside the tree house: on it; off it again, where they are put
+    const rx = drag.x0 + p.x - drag.px, ry = drag.y0 + p.y - drag.py;
+    const br = BG.kind === "treehouse" ? nearBridge(rx, SCENE.ground + ry, BRIDGE_REACH * (SCENE.bottom - SCENE.top) / 700) : null;
+    if (br) { bridgeOn(br.j, br.u); dragChanged(); return; }
+    const x = Math.round(clamp(rx, F.left, F.right)), y = Math.round(clamp(ry, figYMin(F), F.bottom - F.ground));
+    if (BG.onBridge) { delete BG.onBridge; BG.figX = x; BG.figY = y; }
     // (ticket 149: walls and solids stop a dragged friend too, who slides along them)
-    [BG.figX, BG.figY] = solidMove(BG.figX ?? 0, BG.figY ?? 0, Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)),
-                                   Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground)));
+    else [BG.figX, BG.figY] = solidMove(BG.figX ?? 0, BG.figY ?? 0, x, y);
     dragChanged();
     return;
   }
@@ -278,7 +283,7 @@ function standUp() {
 // in front of it, sits on it; one sitting on a seat and let go of elsewhere
 // stands up)
 function dropOnSeat() {
-  const B = state.background; if (B.kind === "none") return;
+  const B = state.background; if (B.kind === "none" || B.onBridge) return;   // (ticket 245: on a bridge, no seat)
   const x = B.figX ?? 0, y = SCENE.ground + (B.figY ?? 0), was = seatNow();
   const t = seatsHere(B).find(t => x >= t.x0 && x <= t.x1 && y >= t.y - 10 && y <= t.z + 18);
   if (t && (!was || was.name !== t.name)) sitOn(t);
@@ -516,6 +521,13 @@ function padPoll(t) {
   const len = Math.hypot(vx, vy);
   if (len > 1) { vx /= len; vy /= len; }
   const onLadder = B.anim === "climbup" && climb && !climb.none;
+  // (ticket 245) on a rope bridge, ⬆ and ⬇ only turn them, away from us and toward us: they stay where they are
+  const onBr = !onLadder && !drag && !entering ? bridgeNow() : null;
+  if (onBr && Math.abs(vy) > 0.5 && Math.abs(vx) < 0.75 * Math.abs(vy)) {
+    const f = vy < 0 ? "back" : "front";
+    if (B.facing !== f || B.turn) { B.facing = f; B.turn = ""; changed(); }
+    vx = 0; vy = 0;
+  }
   // (ticket 145) a ladder by hand: at its foot, up gets on it; on it, up and
   // down climb (a chip's climb too, taken over), and down at its foot, or an
   // arrow to the side there, steps off
@@ -524,7 +536,7 @@ function padPoll(t) {
   // that's backwards") A hatch's ladder (a tree house's trapdoor: down) is taken with ⬇, standing at the hatch,
   // and goes down it as a tap or X does (walkInto: the climb down, cut off below the hatch's near edge, as the
   // trap room's pits cut them off); ⬆ mounts only a ladder that goes up.
-  if (!onLadder && ud && BG.kind !== "none" && !entering && !drag && !isJump(B.anim)) {
+  if (!onLadder && !onBr && ud && BG.kind !== "none" && !entering && !drag && !isJump(B.anim)) {
     const L = ladderNear(), fx = BG.figX ?? 0, fz = SCENE.ground + (BG.figY ?? 0), k = figureT.k;
     const atHatch = L && L.down != null && L.door && Math.abs(L.x - fx) < Math.max(20, 70 * k) && Math.abs(L.z - fz) < Math.max(14, 50 * k);
     if (ud > 0 && atHatch && L.el) { climbLadder(L.el); padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return; }
@@ -566,6 +578,13 @@ function padPoll(t) {
     else { const step = padTop("run") / ramp * dt, ex = want[0] - padVel[0], ey = want[1] - padVel[1], e = Math.hypot(ex, ey);
            padVel = e <= step ? want : [padVel[0] + ex / e * step, padVel[1] + ey / e * step]; }
     const F = sceneFrame;
+    // (ticket 245) on a rope bridge: along it, as far as its ends, facing the way they go
+    if (onBr) {
+      bridgeStep(padVel[0] * dt);
+      if (moving) { B.facing = vx < 0 ? "left" : "right"; B.turn = ""; }
+      padMoving = true; moved();
+      padLoop = requestAnimationFrame(padPoll); return;
+    }
     // (ticket 149: walls and solids stop them, and they slide along)
     const [mx, my] = solidMove(BG.figX ?? 0, BG.figY ?? 0, Math.round(10 * clamp((BG.figX ?? 0) + padVel[0] * dt, F.left, F.right)) / 10,
                                Math.round(10 * clamp((BG.figY ?? 0) + padVel[1] * dt * 0.6, figYMin(F), F.bottom - F.ground)) / 10);
@@ -795,6 +814,7 @@ function enterScene(door, here = false) {
 // (ticket 199) to a spot on the floor, walking (swimming in deep water) as
 // walkInto does, a long way faster, 2.5 s at most; then on
 function walkTo(x, y, then) {
+  bridgeOff();   // (ticket 245: from a rope bridge, down at its foot first)
   const BG = state.background, B = state.body, F = sceneFrame;
   const tx = clamp(x, F.left, F.right), ty = clamp(y - SCENE.ground, figYMin(F), F.bottom - F.ground);
   entering = true;
@@ -919,6 +939,7 @@ function doorTooLow(r, inv, foot) {
 function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {}) {
   const P = pic.getScreenCTM(), BG = state.background, B = state.body, F = sceneFrame;
   if (!P) return;
+  bridgeOff();   // (ticket 245: from a rope bridge, down at its foot first)
   entering = true;
   const inv = P.inverse(), shape = door.querySelector("path, rect") || door, r = shape.getBoundingClientRect();
   // (a pit: its hole's middle; any other doorway: its foot)

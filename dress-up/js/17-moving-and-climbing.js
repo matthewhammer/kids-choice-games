@@ -101,6 +101,79 @@ const CLIMB_HAND = 300, CLIMB_SPEED = CLIMB_HAND, CLIMB_REACH = 140, CLIMB_STROK
 // it reaches up for the next)
 const CLIMB_HAND_HI = 0.92, CLIMB_HAND_LO = 0.25, CLIMB_PULL = 0.62;
 const climbPlace = BG => [BG.kind, BG.inside, BG.castleRoom, BG.tent].join(":");
+// (ticket 245, Matthew: "some logic for walking across bridges, on the outside of the tree house, with the correct figure
+// size, and collision boxes ... that indicate the curved path that's allowed -- it's very linear in this case, and no N/S
+// is permitted, except to re-orient the pose") The tree house's rope bridges as walkways, outside: each one's deck from
+// house a's end (p, u = 0) to house b's (q, u = 1), sagging through m (treeBridgeCurve), in the picture's units, and s,
+// the tree's units' size there. A friend on one (B.onBridge, { j, u }: which, how far along) stands on its deck, as
+// tall as BRIDGE_TALL of the tree's units (the houses' doors are 72: they fit), in front of the tree; along it is the
+// only way to go, ⬆ and ⬇ only turning them; let go of over one, they are put on it.
+const BRIDGE_TALL = 60, BRIDGE_REACH = 24;   // (how near a bridge a friend let go of is put on it, in the stage's units)
+function treeWalks(B = state.background) {
+  if (B.kind !== "treehouse") return [];
+  const n = Math.max(1, Math.min(6, B.houses ?? 4)), hz = (B.treeHouseSize ?? 100) / 100, s = (B.treeSize ?? 100) / 100 * (SCENE.bottom - SCENE.top) / 700, g = SCENE.ground;
+  const at = ([x, y]) => [x * s, g + y * s];
+  return TREE_BRIDGES.filter(([a, b]) => a < n && b < n).slice(0, B.bridges ?? 2).map(([a, b], j) => {
+    const { p, m, q } = treeBridgeCurve(a, b, hz);
+    return { j, a, b, p: at(p), m: at(m), q: at(q), s, hz };
+  });
+}
+// the point u of the way along a walkway, and which way it runs there (not of unit length)
+const walkAt = (W, u) => [0, 1].map(i => (1 - u) * (1 - u) * W.p[i] + 2 * u * (1 - u) * W.m[i] + u * u * W.q[i]);
+const walkDir = (W, u) => [0, 1].map(i => 2 * (1 - u) * (W.m[i] - W.p[i]) + 2 * u * (W.q[i] - W.m[i]));
+// where the friend is on a bridge, if they are on one: its walkway, how far along, and the point there
+function bridgeNow() {
+  const B = state.background, o = B.onBridge;
+  if (!o || B.kind !== "treehouse") return null;
+  const W = treeWalks(B)[o.j];
+  if (!W) return null;
+  const u = clamp(+o.u || 0, 0, 1), [x, y] = walkAt(W, u);
+  return { W, j: o.j, u, x, y };
+}
+// the bridge nearest (x, y), and how far along it, if one is within reach of it
+function nearBridge(x, y, reach) {
+  let best = null;
+  for (const W of treeWalks()) for (let i = 0; i <= 60; i++) {
+    const u = i / 60, [px, py] = walkAt(W, u), d = Math.hypot(px - x, py - y);
+    if (d <= reach && (!best || d < best.d)) best = { j: W.j, u, d };
+  }
+  return best;
+}
+// onto bridge j, u of the way along (the friend's feet there: figX, figY), or off whichever they are on
+function bridgeOn(j, u) {
+  const B = state.background, W = treeWalks(B)[j];
+  if (!W) return;
+  u = clamp(u, 0, 1); B.onBridge = { j, u: +u.toFixed(4) };
+  const [x, y] = walkAt(W, u); B.figX = +x.toFixed(1); B.figY = +(y - SCENE.ground).toFixed(1);
+  if (B.seat) { state.body.sit = false; B.seat = null; }
+}
+// (off it, at its foot: below where they were, on the ground the tree stands on)
+function bridgeOff() {
+  const B = state.background;
+  if (!B.onBridge) return;
+  delete B.onBridge;
+  B.figY = 0;
+}
+// along the bridge they are on, ds (in the picture's units) toward the picture's right (or left, less than 0): at its
+// ends, they stop
+function bridgeStep(ds) {
+  const at = bridgeNow();
+  if (!at) return false;
+  const { W } = at, toRight = W.q[0] >= W.p[0] ? 1 : -1;
+  let u = at.u;
+  // (a few small steps along the curve: its length per u changes along it)
+  for (let i = 0; i < 4; i++) { const [dx, dy] = walkDir(W, u); u = clamp(u + toRight * ds / 4 / Math.max(1e-6, Math.hypot(dx, dy)), 0, 1); }
+  bridgeOn(at.j, u);
+  return true;
+}
+// (a place left, and come to again later, starts off the bridge: on the first drawing in a new place, the bridge
+// they were on is let go of)
+let bridgePlace = null;
+function bridgeKeep() {
+  const B = state.background, here = climbPlace(B) + ":" + (state.world && state.world.at || "");
+  if (bridgePlace !== null && bridgePlace !== here && B.onBridge) delete B.onBridge;
+  bridgePlace = here;
+}
 // (a [data-ladder] group, in the picture's own units, the friend's: through
 // the screen, as the scene may sit in a nested svg of its own; its depth is
 // the object it is in, else its foot; and the doorway it is, if it is one)
@@ -119,7 +192,7 @@ function ladderAt(el, Pinv) {
 function startClimb() {
   climbLook = 0;
   const B = state.body, BG = state.background, node = bgShown.node;
-  if (B.anim !== "climbup" || drag || entering || BG.kind === "none" || !node || climb) return;
+  if (B.anim !== "climbup" || drag || entering || BG.kind === "none" || !node || climb || bridgeNow()) return;   // (ticket 245: none on a bridge)
   const fx = BG.figX ?? 0, fz = SCENE.ground + (BG.figY ?? 0), P = pic.getScreenCTM(), Pinv = P ? P.inverse() : null;
   let best = null;
   for (const el of node.querySelectorAll("[data-ladder]")) {
