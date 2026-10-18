@@ -548,6 +548,8 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
 .solid-boxes .wall { fill: none; stroke: #f59e0b; stroke-width: 3; stroke-dasharray: 8 5; }
 .solid-boxes .pit { fill: color-mix(in srgb, #f97316 18%, transparent); stroke: #f97316; stroke-width: var(--box-width, 2px); stroke-dasharray: 5 4; }   /* (0.0.157: a pit's hole, gone round) */
 .solid-boxes .back { fill: none; stroke: #a855f7; stroke-width: 2; stroke-dasharray: 4 6; }
+.solid-boxes .walk { fill: none; stroke: color-mix(in srgb, #10b981 35%, transparent); stroke-width: 12px; stroke-linecap: round; stroke-linejoin: round; }   /* (ticket 245: a rope bridge's way along it) */
+.solid-boxes .walk-mid { fill: none; stroke: #10b981; stroke-width: 2px; stroke-dasharray: 8 5; }
 /* (ticket 229) the friend's own box, and a collision's glow: the two boxes brighter and glowing, back in --glow-fade */
 .solid-boxes .you polygon { fill: color-mix(in srgb, var(--box-color, #ef4444) 30%, transparent); stroke: var(--box-color, #ef4444); stroke-width: var(--box-width, 2px); stroke-dasharray: none; }
 /* (Matthew: "when they glow, their interior temporarily becomes opaque, and then becomes transparent again", "maybe 50% opaque") */

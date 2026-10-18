@@ -209,10 +209,7 @@ const treeRoots = () => `<path d="M-90 -10 Q-140 -4 -175 12 M90 -10 Q140 -4 175 
 const treeBraid = () => braidSvg(0, -780, 10, 240, 1, { strands: 5, taper: 0.5, base: "#00000026" });
 // the rope bridges, the first `bridges` of TREE_BRIDGES between the n houses
 const treeBridges = (n, bridges, hz) => TREE_BRIDGES.filter(([a, b]) => a < n && b < n).slice(0, bridges).map(([a, b]) => {
-  const [ax, ay] = TREE_SLOTS[a], [bx, by] = TREE_SLOTS[b], sa = Math.sign(bx - ax) || 1;
-  // (a smaller house's platform is narrower)
-  const edge = j => 78 * (j >= 2 ? 0.85 : 1) * hz, p = [ax + sa * edge(a), ay], q = [bx - sa * edge(b), by], sag = 30 + 0.08 * Math.hypot(q[0] - p[0], q[1] - p[1]);
-  const m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2 + sag];
+  const { p, m, q } = treeBridgeCurve(a, b, hz);
   let t = `<path d="M${p[0]} ${p[1]} Q${f1(m[0])} ${f1(m[1])} ${q[0]} ${q[1]}" fill="none" stroke="#8b5e34" stroke-width="10" stroke-dasharray="7 3"/>` +
           `<path d="M${p[0]} ${p[1] - 30} Q${f1(m[0])} ${f1(m[1] - 30)} ${q[0]} ${q[1] - 30}" fill="none" stroke="#d8c49a" stroke-width="3"/>`;
   for (let i = 1; i < 10; i++) {
@@ -221,6 +218,14 @@ const treeBridges = (n, bridges, hz) => TREE_BRIDGES.filter(([a, b]) => a < n &&
   }
   return t;
 }).join("");
+// a bridge's deck, from house a's platform's edge (p) to house b's (q), sagging between them: a quadratic through m (the
+// walkways, ticket 245, follow it)
+const treeBridgeCurve = (a, b, hz) => {
+  const [ax, ay] = TREE_SLOTS[a], [bx, by] = TREE_SLOTS[b], sa = Math.sign(bx - ax) || 1;
+  // (a smaller house's platform is narrower)
+  const edge = j => 78 * (j >= 2 ? 0.85 : 1) * hz, p = [ax + sa * edge(a), ay], q = [bx - sa * edge(b), by], sag = 30 + 0.08 * Math.hypot(q[0] - p[0], q[1] - p[1]);
+  return { p, q, m: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2 + sag] };
+};
 // house i's ladder (0-based): down to the house below it, if there is one, or to the ground (then .ground)
 const treeLadder = (n, i, hz) => {
   const [x, y] = TREE_SLOTS[i], to = LADDER_TO[i], below = to >= 0 && to < n ? TREE_SLOTS[to][1] - 4 : 0;

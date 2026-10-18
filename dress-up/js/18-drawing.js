@@ -282,7 +282,10 @@ function drawNow() {
   // (treading, they are in deeper: the water up to half an arm below the
   // shoulders, so even short arms sweep under it, never above the
   // shoulders, never below the waist; Matthew: the arms should be in the water)
-  const wet = scened && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)),
+  // (ticket 245: on a rope bridge, outside the tree house, high over the stream: never in it)
+  if (scened) bridgeKeep();
+  const onBr = scened ? bridgeNow() : null;
+  const wet = scened && !onBr && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)),
         wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : tread ? Math.max(12, Math.min(L, 8 + 0.5 * armLen)) : L;
   const gStand = poseHeld && scened ? poseHeld.g : wet ? wl : ground;
   // (ticket 132) an animation lifts the friend (a step, a bound, a pull up
@@ -302,7 +305,10 @@ function drawNow() {
   const rotTf = rot ? ` rotate(${rot} 0 ${f1(L)})` : "";
   // (seated, sized by the seat's depth, not by where their feet hang: ticket 50)
   const sizeSeat = scened ? seatNow() : null;
-  figureT = scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
+  // (ticket 245) on a rope bridge: their feet on its deck, as tall as BRIDGE_TALL of the tree's units (times their
+  // slider's share), whatever their shape
+  figureT = onBr ? { k: (BG.figSize ?? 100) / 100 * BRIDGE_TALL * onBr.W.s * onBr.W.hz / Math.max(1, ground - neckTop + 90), dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
+          : scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg, back: scened && SCENE_BACK[BG.kind] ? SCENE_BACK[BG.kind](top, bottom) : -Infinity };
   // (ticket 137) climbing a place's ladder: up it as time goes by (not while
@@ -844,11 +850,12 @@ function drawNow() {
   figShown = [...fresh.childNodes];
   // (seated, they are sorted at the seat's own depth: ticket 50)
   const onSeat = scenery && !poseHeld ? seatNow() : null;
-  const feetZ = onSeat ? onSeat.z : figureT.sg + figureT.dy;
+  // (ticket 245: on a bridge, just in front of the tree house, all of them: the far arm too)
+  const feetZ = onSeat ? onSeat.z : onBr ? SCENE.ground + 0.5 : figureT.sg + figureT.dy;
   // (ticket 130: the far arm, when it is apart, a body's depth farther back:
   // before the first thing standing nearer than that, so behind the rest)
   const farNode = figShown.find(n => n.id === "figure-far"), rest = figShown.filter(n => n !== farNode);
-  const behind = farNode && scenery && !SPEED_TEST.holder ? objectAhead(feetZ - 26 * figureT.k) : null;
+  const behind = farNode && scenery && !SPEED_TEST.holder ? objectAhead(onBr ? feetZ : feetZ - 26 * figureT.k) : null;
   const ahead = scenery && !SPEED_TEST.holder ? objectAhead(feetZ) : null;
   // (ticket 164: on a slow computer, while the friend moves, the scene as
   // still pictures at its end, cut where the friend goes, the friend between)
