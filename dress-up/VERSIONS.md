@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.225 (2026-10-18)
+
+Everything in 0.0.224, with three tree house rooms' wall things moved clear of the tree's trunk, and made objects.
+
+- **Clear of the trunk, laid out neatly**, and in 🔬 Inspection's list of objects with a 👁️ chip each, placeable from 🏞️ Background's **📦 from the places**; the friend is always in front of them:
+  - 🍳 The kitchen's jars: on shelves on the wall between the stove and the trunk, five to a shelf, one shelf under another (more shelves when there are more jars). They were behind the trunk, drawn over it.
+  - 🔭 The lookout's treasure map: left of the trunk, and above the floor (its bottom edge dipped below it). Its pennants: their cord is tied to the trunk now, instead of running behind it.
+  - 🎵 The music room's records: four to a row, between the ladder and the trunk.
+
 ## 0.0.224 (2026-10-18)
 
 Everything in 0.0.223, plus wall and floor things as objects in the living room, the witch's and the healer's huts, and the tree house rooms.

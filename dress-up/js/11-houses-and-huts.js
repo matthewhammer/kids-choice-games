@@ -448,6 +448,8 @@ function waysSvg(c, floor, links) {
 // drawing so (inside each object, its depth with it, so the objects stay the scene's own: sceneObjects passes over an
 // object inside a transformed group), and the seats with it (SEATS.treeroom).
 const TREE_FIT = 0.72, TREE_DOOR_Z = [[-0.15, -0.03], [-0.32, -0.2]];
+// (ticket 284) how far from the trunk's middle what hangs on the wall beside it stops: its braid's half width and a little
+const TREE_CLEAR = 100;
 function treeFitText(text, floor) {
   const TF = `transform="translate(0 ${f1(floor)}) scale(${TREE_FIT}) translate(0 ${f1(-floor)})"`;
   let out = "", inObj = false;
@@ -645,15 +647,20 @@ function treeroomScene(c) {
       t += `<defs>${toyDefs}</defs>` + obj("bunk beds", floor + 10 * k, bed) + obj("toy chest", floor + 20 * k, chest);
     } else if (room === "kitchen") {
       const cx = x0 + W * 0.05, top = floor - 120 * k;
-      // shelves of jars above the counter
-      // (on the wall: drawn before the objects, which they cross none of)
-      const sy = [y0 + H * 0.52, y0 + H * 0.36], jx = x1 - W * 0.36;
-      t += sy.map(y => `<rect x="${f1(jx)}" y="${f1(y)}" width="${f1(W * 0.3)}" height="${f1(8 * k)}" fill="#6e4a2c"/>`).join("") +
+      // shelves of jars
+      // (ticket 284, Matthew: "Move the jars, map, pennants and records clear of the trunk, then make them objects";
+      // "always be knolling") on the wall between the stove and the trunk, clear of both: five jars a shelf, shelf under
+      // shelf, as many shelves as the jars need (two to four), the column ending TREE_CLEAR short of the trunk's braid;
+      // a wall object, behind the friend and all that stands
+      const per = 5, rows = Math.max(2, Math.min(4, Math.ceil(things / per))), sw = 28 * k + (per - 1) * W * 0.032 + 20 * k, jx = look.trunk - TREE_CLEAR * k - sw;
+      const sy = [...Array(rows)].map((_, j) => y0 + H * (0.36 + 0.107 * j)), mJars = t.length;
+      t += sy.map(y => `<rect x="${f1(jx)}" y="${f1(y)}" width="${f1(sw)}" height="${f1(8 * k)}" fill="#6e4a2c"/>`).join("") +
            [...Array(things)].map((_, i) => {
-             const row = Math.floor(i / 9) % 2, x = jx + 14 * k + (i % 9) * W * 0.032, y = sy[row], h = (26 + 14 * R(i, 150)) * k;
+             const row = Math.floor(i / per) % rows, x = jx + 14 * k + (i % per) * W * 0.032, y = sy[row], h = (26 + 14 * R(i, 150)) * k;
              return `<rect x="${f1(x)}" y="${f1(y - h)}" width="${f1(20 * k)}" height="${f1(h)}" rx="${f1(4 * k)}" fill="${["#e8c870", "#c0504d", "#7cb342", "#f2a65a", "#8e6bbf"][i % 5]}" opacity="0.9" stroke="#ffffff" stroke-width="${f1(1.5 * k)}"/>` +
                     `<rect x="${f1(x - 1 * k)}" y="${f1(y - h - 6 * k)}" width="${f1(22 * k)}" height="${f1(7 * k)}" fill="#8b5e34"/>`;
            }).join("");
+      t = wallSince(t, mJars, "shelves of jars");
       // (the counter and the stove each an object, both down to top + 130k, floor + 10k)
       t += obj("counter", floor + 10 * k, `<rect x="${f1(cx)}" y="${f1(top)}" width="${f1(W * 0.34)}" height="${f1(130 * k)}" fill="#7a4f2a"/>` +
            `<rect x="${f1(cx - 8 * k)}" y="${f1(top - 12 * k)}" width="${f1(W * 0.34 + 16 * k)}" height="${f1(14 * k)}" fill="#d9c7a8"/>` +
@@ -724,12 +731,14 @@ function treeroomScene(c) {
     } else if (room === "music") {
       // a drum kit, a keyboard on its stand, records on the wall (the
       // things), and notes in the air
-      // (the records, on the wall: drawn before the objects, which they cross none of)
-      t += [...Array(things)].map((_, i) => {
-        const x = 150 + (i % 6) * 40 * k, y = y0 + H * 0.14 + Math.floor(i / 6) * 42 * k;
+      // (the records, on the wall: ticket 284, four a row, the last ending TREE_CLEAR short of the trunk's braid, clear of
+      // the ladder; a wall object, behind the friend and all that stands)
+      const recs = [...Array(things)].map((_, i) => {
+        const x = look.trunk - TREE_CLEAR * k - 17 * k - (3 - (i % 4)) * 40 * k, y = y0 + H * 0.14 + (Math.floor(i / 4) % 5) * 42 * k;
         return `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(17 * k)}" fill="#1f1f22"/><circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(11 * k)}" fill="none" stroke="#333" stroke-width="${f1(k)}"/>` +
                `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(5.5 * k)}" fill="${["#e53935", "#f2c12e", "#3b7dd8", "#27ae60", "#ff8c42", "#e85d75"][i % 6]}"/>`;
       }).join("");
+      if (recs) t += wallObj("records", recs);
       // (the drum kit an object, its stands and drum down to dy; the keyboard another, its
       // stand down to floor + 20k, the notes over it with it)
       const dx = x1 - W * 0.26, dy = floor + 14 * k;
@@ -749,17 +758,20 @@ function treeroomScene(c) {
            [[-60, -150, "♪"], [-10, -190, "♫"], [40, -160, "♪"]].map(([nx, ny, ch]) => `<text x="${f1(kx + nx * k)}" y="${f1(ky + ny * k)}" font-size="${f1(30 * k)}" fill="#f2c12e">${ch}</text>`).join(""));
     } else {
       // the lookout: a telescope at the window, a map, and pennants overhead
-      // (the map and the pennants, on the wall: drawn before the telescope, which they do not cross)
-      const mx = x1 - W * 0.3, my = y0 + H * 0.55;
+      // (the map and the pennants, on the wall: drawn before the telescope, which they do not cross; ticket 284: wall objects,
+      // the map clear of the trunk and above the floor, the pennants' cord tied at the trunk)
+      const mx = look.trunk - TREE_CLEAR * k - 170 * k, my = floor - 40 * k - 120 * k, mMap = t.length;
       t += `<rect x="${f1(mx)}" y="${f1(my)}" width="${f1(170 * k)}" height="${f1(120 * k)}" fill="#f3e3b8" stroke="#a0703f" stroke-width="${f1(3 * k)}"/>` +
            `<path d="M${P(mx + 20 * k, my + 90 * k)} Q${P(mx + 60 * k, my + 30 * k)} ${P(mx + 100 * k, my + 70 * k)} T${P(mx + 150 * k, my + 30 * k)}" fill="none" stroke="#c0392b" stroke-width="${f1(3 * k)}" stroke-dasharray="${f1(6 * k)} ${f1(5 * k)}"/>` +
            `<text x="${f1(mx + 140 * k)}" y="${f1(my + 40 * k)}" font-size="${f1(26 * k)}" fill="#c0392b" font-weight="bold">X</text>`;
-      const n = Math.max(things, 1), a = x0 + W * 0.04, b = x1 - W * 0.04, top = y0 + H * 0.06;
-      t += `<path d="M${P(a, top)} Q${P(0, top + 60 * k)} ${P(b, top)}" fill="none" stroke="#555" stroke-width="${f1(2 * k)}"/>` +
+      t = wallSince(t, mMap, "treasure map");
+      const n = Math.max(things, 1), a = x0 + W * 0.04, b = look.trunk - TREE_CLEAR * k, top = y0 + H * 0.06, mPennants = t.length;
+      t += `<path d="M${P(a, top)} Q${P((a + b) / 2, top + 60 * k)} ${P(b, top)}" fill="none" stroke="#555" stroke-width="${f1(2 * k)}"/>` +
            [...Array(things)].map((_, i) => {
              const u = (i + 0.5) / n, x = a + (b - a) * u, y = (1 - u) * (1 - u) * top + 2 * u * (1 - u) * (top + 60 * k) + u * u * top;
              return `<polygon points="${P(x - 14 * k, y)} ${P(x + 14 * k, y)} ${P(x, y + 34 * k)}" fill="${["#e53935", "#f2c12e", "#2e86de", "#27ae60", "#8e44ad"][i % 5]}"/>`;
            }).join("");
+      t = wallSince(t, mPennants, "pennants");
       // (the telescope an object, its tripod's feet at floor + 20k (its mirroring group
       // keeps every y); the map is on the wall, and the pennants are strung along it)
       const tx = x0 + W * 0.3, ty = floor - 150 * k;
