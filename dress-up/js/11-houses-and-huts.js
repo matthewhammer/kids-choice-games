@@ -341,7 +341,9 @@ function waysSvg(c, floor, links) {
       const vid = `bg-doorview-${L.to + 1}-${sd < 0 ? "l" : "r"}`, tgt = houses.find(u => u.i === L.to);
       const wd = Math.abs(on(1, 0.5)[0] - on(0, 0.5)[0]), top0 = on(0.5, 0)[1], cx = on(0.5, 0.5)[0], py = on(0.5, 0.6)[1];
       const hs = Math.max(0.01, Math.min(0.62 * wd / 170, 0.9 * (py - top0) / 245)), pw = 62 * hs, ry = py - 30 * hs;
-      const near = [on(0, 1), on(1, 1)], far = [[cx - pw, py + 14 * hs], [cx + pw, py + 14 * hs]], mixP = (u, a, b) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+      // (left to right on the screen: on the right-hand wall a door's near edge, u = 0, is its right one)
+      const lr = (a, b) => a[0] <= b[0] ? [a, b] : [b, a], near = lr(on(0, 1), on(1, 1)), rails = lr(on(0, 0.7), on(1, 0.7));
+      const far = [[cx - pw, py + 14 * hs], [cx + pw, py + 14 * hs]], mixP = (u, a, b) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
       // (its clip defined after it: a door's first shape is its opening, which walkInto measures, and one in a clipPath has no box)
       t += `<g data-view="${L.to + 1}" clip-path="url(#${vid})">` +
            `<path d="${quad(nb, nt, ft, fb)}" fill="#a8dcf5"/>` +
@@ -350,7 +352,7 @@ function waysSvg(c, floor, links) {
            // (the bridge: its deck from the threshold out to the house's platform, planks across it closer together farther off)
            `<path d="M${P(...near[0])} L${P(...near[1])} L${P(...far[1])} L${P(...far[0])} Z" fill="#8b5e34"/>` +
            [0.2, 0.38, 0.53, 0.65, 0.75, 0.83, 0.9].map(u => { const a = mixP(u, far[0], near[0]), b = mixP(u, far[1], near[1]); return `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#5e3d22" stroke-width="${f1(1.5 * km)}"/>`; }).join("") +
-           [[on(0, 0.7), [cx - pw, ry]], [on(1, 0.7), [cx + pw, ry]]].map(([a, b]) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#d8c49a" stroke-width="${f1(2.5 * km)}"/>`).join("") + `</g>` +
+           [[rails[0], [cx - pw, ry]], [rails[1], [cx + pw, ry]]].map(([a, b]) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#d8c49a" stroke-width="${f1(2.5 * km)}"/>`).join("") + `</g>` +
            `<defs><clipPath id="${vid}"><path d="${quad(nb, nt, ft, fb)}"/></clipPath></defs>`;
       // (ticket 216: a plank door, swung open as the passage is taken (walkInto: [data-leaf] to its data-open shape,
       // the same commands); hinged at its far edge, as the castle's are: open, a sliver there)
