@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.246 (2026-10-18)
+
+Everything in 0.0.245, with the world designer and the places more alike.
+
+- **Every place can go into the world**, the abstract ones too: our imagination, the empty room, bubble space and the bubble room are now in 🗺️ World design's places. The places there are sorted by kind, as 🏞️ Background sorts them, each kind on a line of its own with its name.
+- **A square taken away is not lost**: dropped on 🗑️, it waits in a new list, "🫥 unreachable in this world design", just as it was: its place, its name, its ways out, the things put in it, a forest crossing's paths. Drag it back onto any square (whatever is there takes its turn in the list), or tap it to put it back where it was (or in the first empty square). Drop one from the list on 🗑️ to forget it for good.
+
 ## 0.0.245 (2026-10-18)
 
 Everything in 0.0.244, with more bubble makers.

@@ -1428,7 +1428,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // two lists (Matthew: a lot of them overwhelm), those about the square
     // the friend is in (its own, or a way into it: a warning's key or to),
     // then those about the other squares.
-    const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), gridWrap = el("div", { class: "world-grid-wrap" }, [grid]), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away");
+    const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), gridWrap = el("div", { class: "world-grid-wrap" }, [grid]), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away (it waits below, unreachable, to be put back)"), unreach = el("div", { class: "world-unreach" });
     const sizes = el("div", { class: "row" }, [...[["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { onclick: () => worldResize(dc, dr) }, t)),
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { state.world = clone(DEFAULTS.world); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
     const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
@@ -1440,16 +1440,24 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const warnCount = el("span", { class: "world-warn-count" }), warnChip = el("button", { class: "world-warn-chip", onclick: () => { worldWarnShow(!worldWarnShown); shown = null; render(); } });
     const warnings = el("div", { class: "row world-warn" }, [warnCount, warnChip]);
     const emojiOf = kind => placeName(kind).split(" ")[0];
-    for (const kd of worldPalette()) {
-      const chip = el("button", { class: "world-chip", "data-kind": kd, title: "Drag " + placeName(kd) + " onto a square (or tap: the first empty square)" }, placeName(kd));
-      pressDrag(chip, () => emojiOf(kd), { onDrop: under => { const sq = under && under.closest && under.closest("[data-square]"); if (sq) worldPut(sq.dataset.square, kd); },
-        onTap: () => { const W = state.world; for (let r = 0; r < W.rows; r++) for (let c = 0; c < W.cols; c++) if (!W.cells[c + "," + r]) { worldPut(c + "," + r, kd); return; } } });
-      palette.append(chip);
+    // (ticket 300: by kind, as 🏞️ Background sorts them, each kind's places together)
+    const pal = worldPalette();
+    for (const [, gname, kinds] of PLACE_GROUPS) {
+      const here = kinds.filter(kd => pal.includes(kd));
+      if (!here.length) continue;
+      const row = el("div", { class: "world-palette-kind" }, [el("span", { class: "world-palette-name" }, gname)]);
+      for (const kd of here) {
+        const chip = el("button", { class: "world-chip", "data-kind": kd, title: "Drag " + placeName(kd) + " onto a square (or tap: the first empty square)" }, placeName(kd));
+        pressDrag(chip, () => emojiOf(kd), { onDrop: under => { const sq = under && under.closest && under.closest("[data-square]"); if (sq) worldPut(sq.dataset.square, kd); },
+          onTap: () => { const W = state.world; for (let r = 0; r < W.rows; r++) for (let c = 0; c < W.cols; c++) if (!W.cells[c + "," + r]) { worldPut(c + "," + r, kd); return; } } });
+        row.append(chip);
+      }
+      palette.append(row);
     }
     let shown = null;
     const render = () => {
       const W = state.world, P = worldProblems(W), at = W.at && W.cells[W.at];
-      const sig = JSON.stringify([state.background.kind, W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown]);
+      const sig = JSON.stringify([state.background.kind, W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown, (W.unreachable || []).map(u => [u.kind, u.from, u.name || ""])]);
       if (sig === shown) return;
       shown = sig;
       const bad = worldWarnShown ? worldFixSquares(W, P) : new Set();   // (ticket 191: red where a fix is suggested)
@@ -1532,6 +1540,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         ...(atKey ? [el("div", { class: "world-probs-here" }, [el("div", { class: "cap" }, `📍 This square, ${squareName(atKey)}: ${hereP.length ? hereP.length : "nothing to put right"}`), ...list(hereP)])] : []),
         ...(elseP.length ? [el("div", { class: "world-probs-else", "data-count": String(elseP.length) }, [el("div", { class: "hint" },
           `🗺️ ${atKey ? "Other squares" : "The squares"}: ${elseP.length}, red on the grid: tap one to see its own`)])] : [])]));
+      // (ticket 300) the squares taken away, unreachable: each a chip to drag back onto a square (tap: the first empty one), or onto 🗑️ to forget it
+      const U = W.unreachable || [];
+      unreach.replaceChildren(...(U.length ? [el("div", { class: "hint" }, `🫥 unreachable in this world design (${U.length}): taken away, kept as they were; drag one back onto a square, or tap it`),
+        el("div", { class: "row" }, U.map((u, i) => { const [emoji, ...words] = placeName(u.kind).split(" "), own = String(u.name || "").trim();
+          const chip = el("button", { class: "world-chip", title: `${own || words.join(" ")}, from ${squareName(u.from)}: drag onto a square to put it back (tap: the first empty square); onto 🗑️ to forget it` }, `${emoji} ${own || words.join(" ")} (was ${squareName(u.from)})`);
+          pressDrag(chip, () => emoji, { onDrop: under => { if (!under || !under.closest) return; if (under.closest(".world-trash")) worldForget(i); else { const sq = under.closest("[data-square]"); if (sq) worldRestore(i, sq.dataset.square); } }, onTap: () => worldRestore(i) });
+          return chip; }))] : []));
       off.replaceChildren("Off the grid: ", ...worldOffGrid(W).flatMap((o, i) => [i ? " · " : "", `${o.id}: ${placeName(o.kind)}` + (o.from ? ` (through ${placeName(W.cells[o.from].kind)}, ${squareName(o.from)})` : "")]));
     };
     // (ticket 224, Matthew: "in FS mode for world designer, we want to let the user scroll the RHS (with controls and
@@ -1543,7 +1558,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // allows, the dragger setting the split (kept in this browser), the rest as cards in a grid of their own.
     const things = control("background", ["things", "things", "🪨 things here: drag one into the picture, then about"]);
     things.classList.add("world-things");
-    const gridcol = el("div", { class: "world-gridcol" }, [gridWrap, el("div", { class: "row" }, [trash])]);
+    const gridcol = el("div", { class: "world-gridcol" }, [gridWrap, el("div", { class: "row" }, [trash]), unreach]);
     const split = el("div", { class: "world-split", role: "separator", "aria-orientation": "vertical", title: "Drag: more room for the grid, or for the controls" });
     // (ticket 231, Matthew: "show the in-game view as the first sub-panel, the full width of the RHS of the full screen
     // view") full screen, the right side's first card: the picture itself, put in it by placePic, held in place as the

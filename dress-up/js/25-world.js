@@ -764,7 +764,9 @@ function worldChoose(kind) {
 // and taking them away, the grid's size, and a drag that works the same
 // with a mouse and a finger
 // the places a square can hold: every place but the insides and those reached their own way
-const worldPalette = () => PLACES.map(([k]) => k).filter(k => k !== "none" && !INSIDE_KINDS.has(k) && !ELSEWHERE.includes(k));
+// (ticket 300, Matthew: "every background is categorized and available for a world design, even the very abstract ones")
+// every place but the insides, which come with their outsides: our imagination, the empty room and the bubble places too
+const worldPalette = () => PLACES.map(([k]) => k).filter(k => k !== "none" && !INSIDE_KINDS.has(k));
 // a place's usual ways out, put in a square: as in the first world, else east and west
 const worldUsualWays = kind => { const c = Object.values(WORLD_DEFAULT.cells).find(c => c.kind === kind); return c && c.ways ? [...c.ways] : ["E", "W"]; };
 // (ticket 232, Matthew: "'all passageways' does not respect the edge of the grid ... and it introduces issues that can
@@ -800,13 +802,38 @@ function worldMove(from, to) {
   W.start = swap(W.start); W.at = swap(W.at);
   changed();
 }
+// (ticket 300, Matthew: "removing a grid square does not remove its instance from the world: it goes into a list of
+// instances 'unreachable in the current world design' (unreachable, for short), from which it can be put back into the
+// grid without setting again what makes it differ from the template") a square taken away waits in W.unreachable as it
+// was (its place, its ways, its things, its name, a crossing's paths; where it was), the newest last, 24 at most
+const WORLD_UNREACHABLE_MAX = 24;
 function worldRemove(key) {
-  const W = state.world;
+  const W = state.world, cell = W.cells[key];
+  if (!cell) return;
+  W.unreachable = [...(W.unreachable || []), { ...structuredClone(cell), from: key }].slice(-WORLD_UNREACHABLE_MAX);
   delete W.cells[key];
   if (W.at === key) W.at = null;
   if (W.start === key) W.start = worldKeys(W)[0] || null;
   changed();
 }
+// one put back: into the square given (whatever was there waits in its place), else its own if that is empty, else the
+// first empty one; none empty, it stays
+function worldRestore(i, key = null) {
+  const W = state.world, U = W.unreachable || [], u = U[i];
+  if (!u) return;
+  if (!key && u.from && !W.cells[u.from] && (([c, r]) => c < W.cols && r < W.rows)(u.from.split(",").map(Number))) key = u.from;
+  if (!key) { outer: for (let r = 0; r < W.rows; r++) for (let c = 0; c < W.cols; c++) if (!W.cells[c + "," + r]) { key = c + "," + r; break outer; } }
+  if (!key) return;
+  const { from, ...cell } = u, was = W.cells[key];
+  W.unreachable = U.filter((_, j) => j !== i).concat(was ? [{ ...structuredClone(was), from: key }] : []);
+  W.cells[key] = cell;
+  worldTrimEdges(W, [key]);
+  if (!W.start || !W.cells[W.start]) W.start = key;
+  if (W.at === key) W.at = null;
+  changed();
+}
+// and one forgotten for good
+function worldForget(i) { const W = state.world; W.unreachable = (W.unreachable || []).filter((_, j) => j !== i); changed(); }
 // the grid one column or row bigger or smaller (up to 12 by 12; smaller only while that column or row is empty)
 function worldResize(dc, dr) {
   const W = state.world, cols = W.cols + dc, rows = W.rows + dr;

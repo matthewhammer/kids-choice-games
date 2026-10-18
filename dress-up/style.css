@@ -541,6 +541,9 @@
 .world-prob::before { content: "• "; }
 .world-off { margin-top: 0.5rem; }
 .world-palette { flex-wrap: wrap; gap: 4px; }
+/* (ticket 300) the palette by kind of place, a line each, its name first */
+.world-palette-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; width: 100%; }
+.world-palette-name { font-size: 0.8em; opacity: 0.75; margin-right: 2px; white-space: nowrap; }
 .world-chip { font-size: 0.8em; padding: 2px 8px; cursor: grab; }
 .world-trash { border: 2px dashed var(--line, #ccc); border-radius: 8px; padding: 6px 10px; }
 .world-here { margin: 0.5rem 0; }
