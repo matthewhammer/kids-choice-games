@@ -23,7 +23,7 @@ const NOW = `(() => { const B = state.background, T = figureT, f = document.getE
   const r = f.getBoundingClientRect(), a = new DOMPoint(r.left, r.top).matrixTransform(P), b = new DOMPoint(r.right, r.bottom).matrixTransform(P);
   const at = bridgeNow(), tree = bgShown.node.querySelector('[data-obj="tree house"]');
   return { on: B.onBridge ? { ...B.onBridge } : null, x: +(B.figX ?? 0).toFixed(1), y: +(B.figY ?? 0).toFixed(1), feet: [+T.dx.toFixed(1), +(T.sg + T.dy).toFixed(1)], k: +T.k.toFixed(4),
-    tall: +(b.y - a.y).toFixed(1), facing: B.facing, turn: B.turn || "", curve: at ? [+at.x.toFixed(1), +at.y.toFixed(1)] : null,
+    tall: +(b.y - a.y).toFixed(1), facing: state.body.facing, turn: state.body.turn || "", curve: at ? [+at.x.toFixed(1), +at.y.toFixed(1)] : null,
     door: at ? +(72 * at.W.s * at.W.hz).toFixed(1) : null, afterTree: !!(tree && (tree.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING)), kind: B.kind }; })()`;
 const now = async () => JSON.parse(await ev(`JSON.stringify(${NOW})`));
 // (holding the on-screen controller's buttons a while, the friend's place sampled as they go)
@@ -36,10 +36,11 @@ const hold = async (buttons, ms) => JSON.parse(await ev(`(async () => { touchWan
 const dragBy = async (p, dx, dy) => { await mouse("mouseMoved", p[0], p[1]); await mouse("mousePressed", p[0], p[1], 1);
   for (let i = 1; i <= 30; i++) { await mouse("mouseMoved", p[0] + dx * i / 30, p[1] + dy * i / 30, 1); await sleep(20); }
   await mouse("mouseReleased", p[0] + dx, p[1] + dy, 0); await sleep(600); };
-// (a point on the friend where they are the topmost thing, and the screen's offset from their feet to a picture point)
+// (a point on the friend where a press moves them: they are the topmost thing there, and it is not on a joint, which a
+// press would pose, nor on the face; nearest their middle; and the screen's offset from their feet to a picture point)
 const grab = async (tx, ty) => JSON.parse(await ev(`(() => { const B = state.background, M = pic.getScreenCTM(), f = document.getElementById("figure"), r = f.getBoundingClientRect();
-  let p = null; for (const [u, v] of [[0.5, 0.45], [0.5, 0.35], [0.5, 0.55], [0.4, 0.45], [0.6, 0.45], [0.5, 0.25]]) { const x = r.left + r.width * u, y = r.top + r.height * v, el = document.elementFromPoint(x, y);
-    if (el && el.closest("#figure")) { p = [x, y]; break; } }
+  let p = null, best = Infinity; for (let i = 0; i <= 12; i++) for (let j = 0; j <= 16; j++) { const x = r.left + r.width * i / 12, y = r.top + r.height * j / 16, e = { clientX: x, clientY: y, pointerType: "mouse" };
+    const d = Math.hypot(i / 12 - 0.5, j / 16 - 0.5); if (d < best && onFigure(e) && !onJoint(e) && !onFace(e)) { best = d; p = [x, y]; } }
   const s = (x, y) => { const q = new DOMPoint(x, y).matrixTransform(M); return [q.x, q.y]; }, foot = s(figureT.dx, figureT.sg + figureT.dy), to = s(${tx}, ${ty});
   return JSON.stringify({ p, d: [to[0] - foot[0], to[1] - foot[1]] }); })()`));
 try {
