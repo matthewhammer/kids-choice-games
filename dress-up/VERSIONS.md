@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.181 (2026-10-17)
+
+Everything in 0.0.180, with fewer ways to end up inside things.
+
+- **No more stuck in a mushroom**: a high jump that something tall stops in the air no longer leaves your friend inside the small thing they came down on; they step out, back the way they came.
+- **Walls of things stay walls**: with one foot in a toy chest, walking on no longer takes your friend into the tree trunk beyond it, and when a walk stops with a foot just inside something, they step back out of it.
+- **Walks go round the whole trunk**: a walk to a door goes round the tree house's trunk as wide as it is above its foot, not only at the ground.
+
 ## 0.0.180 (2026-10-17)
 
 Everything in 0.0.179, with a view of where each bridge door leads.

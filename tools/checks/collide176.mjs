@@ -40,7 +40,9 @@ try {
       const xs = [r.x, r.x + r.width].map(x => m.a * x + m.c * r.y + m.e); spans.push([Math.min(...xs) - 40, Math.max(...xs) + 40]); }
     for (const o of S) spans.push([o.x0 - 25, o.x1 + 25]);
     const xs = []; for (let d = 0; d <= 330; d += 15) xs.push(d, -d);
-    return xs.find(x => x > sceneFrame.left + 40 && x < sceneFrame.right - 40 && !spans.some(([a, b]) => x > a && x < b)) ?? null; })()`);
+    // (ticket 248: inside the side walls at the back, where a square room's side walls stand in nearer: the walk up meets the back wall, not a side one)
+    const W = castleWalls(state.background), back = SCENE.ground + figYMin(sceneFrame), inWalls = x => !W || Math.abs(x) < W.half(back) - 40;
+    return xs.find(x => x > sceneFrame.left + 40 && x < sceneFrame.right - 40 && inWalls(x) && !spans.some(([a, b]) => x > a && x < b)) ?? null; })()`);
   // (what stopped the friend, or let them through, for a failure's line)
   const diag = () => ev(`JSON.stringify({ ahead: (o => o ? (o.wall ? "wall" : o.name) : null)(solidAt(state.background.figX, SCENE.ground + state.background.figY - 4)),
     here: (o => o ? (o.wall ? "wall" : o.name) : null)(solidAt(state.background.figX, SCENE.ground + state.background.figY)),
@@ -48,6 +50,8 @@ try {
   // 176: the flat rooms' back walls: the limit itself (the controller, a drag and the place control all keep to figYMin), then a walk up to it
   for (const kind of ["livingroom", "treeroom", "witchroom", "healerroom", "tent"]) {
     await place({ kind });
+    // (ticket 248: a tree room with an x clear of its things, ladders and doors, inside its side walls at the back)
+    if (kind === "treeroom") for (let i = 1; i <= 6 && (await clearX()) === null; i++) await place({ kind, houses: 6, inside: i });
     const lim = JSON.parse(await ev(`JSON.stringify({ back: sceneFrame.back, deepest: SCENE.ground + figYMin(sceneFrame) })`));
     say(Math.abs(lim.deepest - lim.back) < 0.5, `${kind}: the deepest the feet may go, ${lim.deepest.toFixed(1)}, is the back wall's foot, ${lim.back.toFixed(1)}`);
     const x = await clearX();
@@ -64,11 +68,16 @@ try {
                     { kind: "castleroom", castle: "N", castleRoom: 1, castleRoom1N: "kitchen" }]) {
     await place(bg);
     const label = bg.kind + (bg.castleRoom1N ? " " + bg.castleRoom1N : "");
+    // (ticket 248: nothing too tall to jump just past it, the way it would be jumped: a tree just past woodpath's right
+    // mushroom stops a jump in the air, and it comes down inside the mushroom, then out of it, back the way it came)
     const S = JSON.parse(await ev(`JSON.stringify(solidsHere().filter(o => o.standing && o.x1 - o.x0 > 8 && o.front > SCENE.ground + figYMin(sceneFrame) + 4
-      && o.front < sceneFrame.bottom - 4 && o.x0 - 70 > sceneFrame.left && o.x1 + 70 < sceneFrame.right).sort((a, b) => b.front - a.front))`));
+      && o.front < sceneFrame.bottom - 4 && o.x0 - 70 > sceneFrame.left && o.x1 + 70 < sceneFrame.right).sort((a, b) => b.front - a.front)
+      .map(o => { const z = (o.back + o.front) / 2, fromLeft = !solidAt(o.x0 - 60, z), sx = feetSpan()[0], tall = legReach(), [a, b] = fromLeft ? [o.x1, o.x1 + sx + 60] : [o.x0 - sx - 60, o.x0];
+        const room = !solidsHere().some(s => s !== o && s.h >= tall && s.x0 < b && s.x1 > a && s.back < z + sx && s.front > z - sx); return { ...o, room }; }))`));
     const all = JSON.parse(await ev(`JSON.stringify(solidsHere().filter(o => o.standing).map(o => o.name))`));
     if (!S.length) { console.log(`-    ${label}: no standing object to walk into (${all.length} standing: ${all.join("; ") || "none"})`); continue; }
-    const picks = [S[0], S.find(o => o !== S[0] && o.h < legs && o.x1 - o.x0 < 90)].filter(Boolean);
+    const picks = [S[0], S.find(o => o !== S[0] && o.h < legs && o.x1 - o.x0 < 90 && o.room)].filter(Boolean);
+    for (const o of S.filter(o => o.h < legs && o.x1 - o.x0 < 90 && !o.room)) console.log(`-    ${label}: "${o.name}": something too tall to jump just past it, its high jump not tried`);
     for (const o of picks) {
       const z = (o.back + o.front) / 2, y = z - await ev("SCENE.ground");
       // (from the left, or from the right when the left is blocked)
@@ -80,7 +89,7 @@ try {
       // (0.0.156: stopped before it, the middle of the feet short of its box; the soles, not a 6-unit margin, meet it now)
       // (at its edge counts: a sole on its line)
       const stopped = fromLeft ? w.x <= o.x0 : w.x >= o.x1, why = stopped ? "" : " " + await diag() + ` (feet at depth ${w.z.toFixed(1)}, started at x ${Math.round(x0)})`;
-      const low = o.h < legs && o.x1 - o.x0 < 90;
+      const low = o.h < legs && o.x1 - o.x0 < 90 && o.room;
       let jumped = "";
       if (low) {
         await put(x0, y); await hold(dir, 2200, "jumpHigh");

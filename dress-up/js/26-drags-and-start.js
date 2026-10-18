@@ -618,6 +618,9 @@ function padPoll(t) {
     // (stopped: on a seat if they were put down by one; up a ladder within reach, climbing)
     padMoving = false;
     dropOnSeat();
+    // (ticket 248: standing, their feet planted apart as a step's are not: a foot that reached into a thing as they
+    // walked is in it now; out of it, back the way they came)
+    if (!state.body.sit && !BG.onBridge && BG.kind !== "none") solidUnstick(Math.max(8, feetSpan()[0]));
     if (B.anim === "climbup") { climb = null; climbAnywhere = false; }
     changed();
   } else if (lit) changed();   // (the Controls tab shows which buttons are down)

@@ -311,18 +311,24 @@ function swingNow() {
   const Si = S.inverse(), at = (m, [x, y]) => new DOMPoint(x, y).matrixTransform(m), stage = q => q.matrixTransform(Si);
   return { deg: (Math.atan2(M.b, M.a) - Math.atan2(P.b, P.a)) * 180 / Math.PI, hook: at(P, SWING_HOOK), dx: stage(at(M, SWING_SEAT)).x - stage(at(P, SWING_SEAT)).x };
 }
-function solidAt(x, z) {
+// (ticket 248: all, every one, and whether past a wall: { wall, list }; solidMove lets the friend out of the ones they
+// are in, and into no other)
+function solidAt(x, z, all = false) {
   const B = state.background, W = castleWalls(B), S = youBoxes(x, z), sw = B.kind === "treehouse" ? swingNow() : null;
-  if (W && S.some(s => Math.max(Math.abs(s[0]), Math.abs(s[1])) > W.half(z))) return { wall: true };
+  const wall = !!(W && S.some(s => Math.max(Math.abs(s[0]), Math.abs(s[1])) > W.half(z)));
+  if (wall && !all) return { wall: true };
   const sitting = state.body.sit && B.seat, a = state.body.anim, jumping = isJump(a);
-  const clears = jumping ? (a === "jumphigh" ? 1 : 0.5) * legReach() : 0;
+  const clears = jumping ? (a === "jumphigh" ? 1 : 0.5) * legReach() : 0, list = [];
   for (const o0 of solidsHere()) {
     const o = sw && o0.name === "swing" ? { ...o0, x0: o0.x0 + sw.dx, x1: o0.x1 + sw.dx } : o0;   // (ticket 240: where the seat is now)
     if (sitting && o.name === B.seat) continue;
     if (o.h < clears) continue;
-    if (S.some(s => s[3] > o.back && s[2] < o.front && solidBands(o).some(b => s[1] > b.x0 && s[0] < b.x1 && s[5] > b.lo && s[4] < b.hi))) return o;   // (a sole, or the torso's box, over one of its boxes, at its heights)
+    if (S.some(s => s[3] > o.back && s[2] < o.front && solidBands(o).some(b => s[1] > b.x0 && s[0] < b.x1 && s[5] > b.lo && s[4] < b.hi))) {   // (a sole, or the torso's box, over one of its boxes, at its heights)
+      if (!all) return o;
+      list.push(o);
+    }
   }
-  return null;
+  return all ? { wall, list } : null;
 }
 // a move of the friend's feet from (x0, y0) to (x, y) (figX, figY): where
 // they end up, sliding along a wall or a solid they meet; inside one
@@ -332,23 +338,26 @@ let solidHit = { name: null, n: 0, t: 0 };
 function solidMove(x0, y0, x, y) {
   const g = SCENE.ground, hit = solidAt(x, g + y);
   if (!hit) return [x, y];
-  const here = solidAt(x0, g + y0);
+  const was = solidAt(x0, g + y0, true);
   // (inside a solid already: let them out, by any move that does not go deeper into it, nearer its middle. 0.0.152: any
   // move at all, as it was, once the soles swung with the feet (0.0.150) let a walk through everything: the front foot
   // swung into a cauldron, a rock, the couch, and the next step counted as getting out)
   // (ticket 223: past a side wall already, a castle room's or a tree room's, come back from a door in it: any move toward the middle)
-  if (here && here.wall && Math.abs(x) <= Math.abs(x0)) return [x, y];
-  if (here && !here.wall) {
-    const cx = (here.x0 + here.x1) / 2, cz = (here.back + here.front) / 2;
-    if (Math.abs(x - cx) >= Math.abs(x0 - cx) - 0.01 && Math.abs(g + y - cz) >= Math.abs(g + y0 - cz) - 0.01) return [x, y];
-  }
+  // (ticket 248: out of every one they are in, and into no other: one foot inside a toy chest let a walk on into the tree
+  // trunk beyond it, the move counted as getting out of the chest)
+  const deeper = (o, xx, yy) => { const cx = (o.x0 + o.x1) / 2, cz = (o.back + o.front) / 2;
+    return Math.abs(xx - cx) < Math.abs(x0 - cx) - 0.01 || Math.abs(g + yy - cz) < Math.abs(g + y0 - cz) - 0.01; };
+  const ok = (xx, yy) => { const now = solidAt(xx, g + yy, true);
+    if (now.wall && !(was.wall && Math.abs(xx) <= Math.abs(x0))) return false;
+    return now.list.every(o => was.list.some(p => p.name === o.name) && !deeper(o, xx, yy)); };
+  if ((was.wall || was.list.length) && ok(x, y)) return [x, y];
   { const now = performance.now(), name = hit.wall ? "wall" : hit.name;
     if (name !== solidHit.name || now - solidHit.t > 120) solidHit = { name, n: solidHit.n + 1, t: now }; }
-  if (!solidAt(x, g + y0)) return [x, y0];
-  if (!solidAt(x0, g + y)) return [x0, y];
+  if (ok(x, y0)) return [x, y0];
+  if (ok(x0, y)) return [x0, y];
   // (a wall alone: the farthest across it lets them, at the new depth)
   const W = castleWalls(state.background);
-  if (W && !here) { const h = W.half(g + y) - feetSpan()[0] - 0.5, cx = clamp(x, -h, h); if (!solidAt(cx, g + y)) return [cx, y]; }
+  if (W && !was.wall && !was.list.length) { const h = W.half(g + y) - feetSpan()[0] - 0.5, cx = clamp(x, -h, h); if (ok(cx, y)) return [cx, y]; }
   return [x0, y0];
 }
 // (ticket 215, Matthew: "when the player clicks a picture, or another
@@ -390,7 +399,11 @@ function planPath(x0, y0, x1, y1) {
   // the feet is in it; touched, a leg from or to that end must miss its own box, not grown)
   const rawIn = (o, x, z) => x > o.x0 && x < o.x1 && z > o.back && z < o.front;
   const pits = pitsHere().map(q => ({ name: "pit", pit: true, x0: q.cx - PIT_EDGE * q.rx, x1: q.cx + PIT_EDGE * q.rx, back: q.cy - PIT_EDGE * q.ry, front: q.cy + PIT_EDGE * q.ry }));
-  const solids = solidsHere().concat(pits).filter(o => !rawIn(o, x0, z0) && !rawIn(o, x1, z1));
+  // (ticket 248: each across as wide as its boxes up to the friend's crown, as walking meets them, not its foot's alone: a
+  // tree's trunk wider above its foot, the tree house's, had a planned walk brush through it)
+  const crown = youHeights().crown, wide = o => { const bs = solidBands(o).filter(b => b.lo < crown);
+    return bs.length ? { ...o, x0: Math.min(o.x0, ...bs.map(b => b.x0)), x1: Math.max(o.x1, ...bs.map(b => b.x1)) } : o; };
+  const solids = solidsHere().map(wide).concat(pits).filter(o => !rawIn(o, x0, z0) && !rawIn(o, x1, z1));
   const nearA = new Set(solids.filter(o => inside(o, x0, z0))), nearB = new Set(solids.filter(o => inside(o, x1, z1)));
   const hits = (ax, az, bx, bz, a = false, b = false) => solids.some(o => (a && nearA.has(o)) || (b && nearB.has(o))
     ? segBox(ax, az, bx, bz, o.x0, o.back, o.x1, o.front) : segBox(ax, az, bx, bz, o.x0 - gx(o), o.back - gz(o), o.x1 + gx(o), o.front + gz(o)));
@@ -418,11 +431,17 @@ function planPath(x0, y0, x1, y1) {
   for (let v = 1; v > 0; v = prev[v]) out.unshift([pts[v][0], pts[v][1] - g]);
   return out;
 }
-// (after a jump: landed inside a solid, out by its nearer side)
-function solidUnstick() {
+// (after a jump: landed inside a solid, out of it)
+// (ticket 248: the nearest spot across that is clear of every solid, back the way they came first when as near: a high
+// jump stopped in the air by a tree just past a mushroom came down inside the mushroom, and its nearer edge was inside
+// the tree)
+// (at most `most` across: a walk's stop is settled a step at most, never carried off past what it stood between)
+function solidUnstick(most = 400) {
   const B = state.background, x = B.figX ?? 0, z = SCENE.ground + (B.figY ?? 0), o = solidAt(x, z);
   if (!o || o.wall) return;
-  const sx = feetSpan()[0]; B.figX = Math.round(x - o.x0 < o.x1 - x ? o.x0 - sx - 1 : o.x1 + sx + 1);
+  const F = sceneFrame, f = state.body.facing, back = f === "left" ? 1 : f === "right" ? -1 : x - o.x0 < o.x1 - x ? -1 : 1;
+  for (let d = 1; d <= most; d++) for (const xx of [x + back * d, x - back * d])
+    if (xx > F.left && xx < F.right && !solidAt(xx, z)) { B.figX = Math.round(xx + Math.sign(xx - x)); return; }
 }
 
 // The parts of the body each with its own visibility: a slider each
