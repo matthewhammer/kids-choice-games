@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.174 (2026-10-17)
+
+Everything in 0.0.173, with climbs up through the ceiling you can see.
+
+- **Climbing up, through the hole**: going up a ladder through the ceiling (in the tree house's rooms, and out of the castle's dungeons) your friend used to fade away near the top. Now they climb on up into the hole, hidden above its edge as they go, as they already do climbing down through a trapdoor.
+
 ## 0.0.173 (2026-10-17)
 
 Everything in 0.0.172, with a tighter fit round the tree inside the tree house.
