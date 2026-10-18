@@ -825,10 +825,10 @@ let pitMemo = { text: undefined, pits: [] };
 function pitsHere() {
   if (pitMemo.text !== bgShown.text) pitMemo = { text: bgShown.text, pits: bgShown.node ? [...bgShown.node.querySelectorAll(".portal[data-pit]")].map(el => {
     const [cx, cy, rx, ry] = el.dataset.pit.split(" ").map(Number), room = el.dataset.room;
-    return { el, cx, cy, rx, ry, name: room ? `pit to room ${room}` : "pit" }; }) : [] };
+    return { el, cx, cy, rx, ry, shape: openingShape(el.dataset.shape || "circle"), name: room ? `pit to room ${room}` : "pit" }; }) : [] };
   return pitMemo.pits;
 }
-const overPit = (q, x, z) => ((x - q.cx) / (PIT_EDGE * q.rx)) ** 2 + ((z - q.cy) / (PIT_EDGE * q.ry)) ** 2 < 1;
+const overPit = (q, x, z) => inOpening(q.shape || "circle", q.cx, q.cy, PIT_EDGE * q.rx, PIT_EDGE * q.ry, x, z);   // (ticket 252: by its opening's shape)
 function pitAt(x, z) {
   const P = pitsHere();
   if (!P.length) return null;
