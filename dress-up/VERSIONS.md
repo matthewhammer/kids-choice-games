@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.201 (2026-10-17)
+
+Everything in 0.0.200, with every 🔬 overlay on in GitHub's tests, and what that found.
+
+- **index.html#inspect**: the game opened so starts with every 🔬 overlay on (all the arrows, the planned path, the collision boxes, what each place is made of). GitHub's tests now open it so, every check, picture and frame-rate run: the overlays always tested, the pictures showing them. With them on, the frame-rate gate still passes everywhere; drawing takes about a quarter longer (a median of 28% more, under a millisecond a frame).
+- **Fixed**: with 🧭 every arrow shown, pointing at an arrow lights it as the one to take; it stayed dim.
+- **Fixed**: with 🧩 what it's made of shown, the guard against too many moving things stays shut until measured again, as it should; the overlay's redraw was reopening it.
+- **A planned walk keeps a little more room** round what stands in the way: a foot could graze a corner on a slow computer.
+
 ## 0.0.200 (2026-10-17)
 
 Everything in 0.0.199, with no arriving inside things.

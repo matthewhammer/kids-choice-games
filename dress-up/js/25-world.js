@@ -505,7 +505,7 @@ function madeOfHud() {
   if (!leg) { leg = document.createElement("div"); leg.className = "made-legend"; layer.append(leg); }
   const shown = Object.entries(procs).filter(([nm]) => cats.includes(PROC_CAT[nm])).sort((a, b) => b[1] - a[1]);
   leg.innerHTML = `🧩 ${counts.objects} objects` + (shown.length ? " · drawn by: " + shown.map(([nm, n]) => `<b style="--c:hsl(${procHue(nm)} 85% 62%)">${xmlEsc(nm)}</b> ×${n}`).join(" · ") : "");
-  for (const f of syncs) f();   // (the ♿ panel's counts)
+  for (const f of madeSyncs) f(); for (const f of hudMadeSyncs) f();   // (the 🔬 chips' counts, and nothing else: ticket 236)
 }
 const PROC_HIDDEN = "defs, clipPath, mask, pattern, symbol";
 // (ticket 240) ♿'s collision boxes at the tree house: every frame while they show, the swing's box turned about its

@@ -392,7 +392,7 @@ function solidMove(x0, y0, x, y) {
 // is left out (let out, or let in). The points after the start, the end last;
 // just the end when no way round is found. walkPath keeps the last one made,
 // for showing it (ticket 217).
-const PATH_PAD = 5;
+const PATH_PAD = 9;   // (5 till 0.0.201: a swinging foot grazed a cauldron's corner on a slow frame, ticket 236's run)
 let walkPath = null;
 function segBox(ax, az, bx, bz, x0, z0, x1, z1) {   // (does the segment pass through the box's inside? Liang-Barsky)
   let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;

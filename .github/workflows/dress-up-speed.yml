@@ -24,7 +24,8 @@ concurrency:
   group: dress-up-speed
   cancel-in-progress: false
 env:
-  PAGE: http://127.0.0.1:8133/dress-up/index.html
+  # (ticket 236, Matthew: "Turn on the accessibility features during all tests") #inspect: every 🔬 overlay on from the start
+  PAGE: http://127.0.0.1:8133/dress-up/index.html#inspect
   TAG: ${{ inputs.tag || github.ref_name }}
 jobs:
   chrome:

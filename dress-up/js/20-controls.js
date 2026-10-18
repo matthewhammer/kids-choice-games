@@ -559,6 +559,9 @@ const TABS = [
 
 let tab = 0;
 let syncs = [];   // each control's refresh, run after every change
+// (ticket 236: the 🧩 chips' counts alone, which madeOfHud refreshes from inside a drawing: all of syncs there re-ran
+// every control's refresh, the things guard's among them, clearing its latch whenever what a place is made of was shown)
+let madeSyncs = [], hudMadeSyncs = [];   // (the pinned controls' own, renderHud's)
 let hudSyncs = [];   // ...and the full-screen controls'
 
 function set(part, key, value) {
@@ -1101,8 +1104,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         for (const [cat, name] of MADE_CATS) {
           const n = el("span", { class: "val" }), b = el("button", { class: "flip", onclick: () => set(part, key2, { ...(state[part][key2] || {}), [cat]: !madeCatOn(cat) }) }, [name, " ", n]);
           box.append(b);
-          syncs.push(() => { const on = madeCatOn(cat), c = madeCounts[cat] || 0, txt = "×" + c; if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", on);
-            if (n.textContent !== txt) n.textContent = txt; b.classList.toggle("none-here", !c); });
+          const f = () => { const on = madeCatOn(cat), c = madeCounts[cat] || 0, txt = "×" + c; if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", on);
+            if (n.textContent !== txt) n.textContent = txt; b.classList.toggle("none-here", !c); };
+          syncs.push(f); madeSyncs.push(f);
         }
         more.append(box);
         continue;
@@ -1865,7 +1869,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
 }
 
 function showTab() {
-  syncs = []; mixLights = null;
+  syncs = []; madeSyncs = []; mixLights = null;
   const tabs = document.getElementById("tabs"), panel = document.getElementById("panel");
   tabs.replaceChildren(...TABS.map(([name], i) =>
     el("button", { "aria-pressed": i === tab, onclick: () => { tab = i; showTab(); } }, name)));

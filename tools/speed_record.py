@@ -23,6 +23,9 @@ if any(o == "cancelled" for o in (checks, gate, gate_slow)) and result == "ok":
     result = "unknown"
 data[version] = {"result": result, "failed": failed, "commit": commit, "run": run,
                  "checked": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")}
+# (ticket 236) a run with every 🔬 overlay on (the page opened at #inspect): its frame rates include the overlays' cost
+if "#inspect" in os.environ.get("PAGE", ""):
+    data[version]["inspect"] = True
 key = lambda v: [int(x) for x in v.split(".")]
 data = {v: data[v] for v in sorted(data, key=key, reverse=True)[:60]}
 with open(path, "w") as f:

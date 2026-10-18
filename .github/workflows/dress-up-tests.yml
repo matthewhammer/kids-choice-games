@@ -18,8 +18,9 @@ concurrency:
   group: dress-up-tests-${{ github.ref }}
   cancel-in-progress: true
 env:
-  PAGE: http://127.0.0.1:8133/dress-up/index.html
-  MAIN_PAGE: http://127.0.0.1:8133/main/dress-up/index.html
+  # (ticket 236, Matthew: "Turn on the accessibility features during all tests") #inspect: every 🔬 overlay on from the start
+  PAGE: http://127.0.0.1:8133/dress-up/index.html#inspect
+  MAIN_PAGE: http://127.0.0.1:8133/main/dress-up/index.html#inspect
 jobs:
   chrome:
     name: Chrome (script, safety net, pictures, gate, audit, leak)

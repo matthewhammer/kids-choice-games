@@ -12,8 +12,8 @@ let hudShown = "";
 function renderHud() {
   if (hud.hidden) return;
   hudShown = hudKey();
-  const saved = syncs;
-  syncs = [];
+  const saved = syncs, savedMade = madeSyncs;
+  syncs = []; madeSyncs = [];
   buildingHud = true;
   const boxes = [];
   if (state.background.kind !== "none")
@@ -42,14 +42,14 @@ function renderHud() {
   // (only when there is nothing else: a scene always has its size and place)
   buildingHud = false;
   hud.replaceChildren(...boxes);
-  hudSyncs = syncs;
-  syncs = saved;
+  hudSyncs = syncs; hudMadeSyncs = madeSyncs;
+  syncs = saved; madeSyncs = savedMade;
   for (const f of hudSyncs) f();
 }
 function setHud(on) {
   hud.hidden = !on;
   hudBtn.setAttribute("aria-pressed", on);
-  if (on) renderHud(); else { hud.replaceChildren(); hudSyncs = []; }
+  if (on) renderHud(); else { hud.replaceChildren(); hudSyncs = []; hudMadeSyncs = []; }
 }
 hudBtn.addEventListener("click", () => setHud(hud.hidden));
 document.getElementById("music-fs").addEventListener("click", () => setMusicBig(true));

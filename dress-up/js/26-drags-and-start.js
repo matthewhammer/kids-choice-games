@@ -313,7 +313,9 @@ pic.addEventListener("pointercancel", letGo);
 // friend starts, at the size they had.
 let entering = false;
 // (ticket 199) the pointer over a passage, or near where a nav arrow would be: the bright one
-pic.addEventListener("pointermove", e => {
+// (ticket 236: on the picture's box, not the picture alone: with 🧭 every arrow shown, the pointer on an arrow is over the
+// arrow, not the picture, and it stayed dim, never the one picked)
+pic.parentNode.addEventListener("pointermove", e => {
   if (e.buttons || drag || entering) return;
   const h = passUnderPointer(e);
   if ((h && h.el) !== (hoverPass && hoverPass.el)) { hoverPass = h; showEnterGlow(); }
