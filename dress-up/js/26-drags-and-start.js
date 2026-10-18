@@ -1016,7 +1016,7 @@ function enterScene(door, here = false) {
       const W = treeWalks(B).find(w => (w.a === here - 1 && w.b === there - 1) || (w.a === there - 1 && w.b === here - 1));
       if (W) bridgeOn(W.j, W.a === here - 1 ? 0 : 1);
       else { const [fx, fy] = ARRIVE.treehouse || [0, 0]; Object.assign(B, { figX: fx, figY: fy }); }
-    }, !(climb && climb.through), "step");
+    }, !(climb && climb.through), "step", null, { doorView: true });
     return;
   }
   const onBr = bridgeNow();
@@ -1195,6 +1195,22 @@ function fallDown([cx, cy, rx, ry], then) {
 // (ticket 239) a doorway too low for the friend: their crown, standing at its depth (their size there), over 0.97 of its
 // opening (its first shape, r on the screen, from the top to its foot); then how far before its threshold they crawl
 const CRAWL_IN_PACE = 0.55;
+// (ticket 331) out through a tree room's door to a bridge: the crawl through it, shrinking; standing up beyond it; the walk
+// along the bridge drawn there; and how far along it they go, from and to (a share of the way to its far house)
+const DOOR_OUT_MS = 1300, DOOR_STAND_MS = 350, DOOR_DECK_MS = 1200, DOOR_DECK = [0.12, 0.45];
+// (ticket 331) the picture seen through a tree room's door to a bridge (shape, its opening, as waysSvg draws it), in the
+// picture's units: deck(u), a point u of the way along the bridge drawn there, from the threshold's middle to the far
+// house's door; tall(u), the friend's height there, as wide as its deck there, to their height at the far house (as tall
+// as BRIDGE_TALL of its size, as outside); and its opening, to be seen inside of (svg)
+function doorViewOf(shape) {
+  const M = pic.getScreenCTM(), S = shape.getScreenCTM && shape.getScreenCTM(), n = (shape.getAttribute("d") || "").match(/-?\d*\.?\d+(?:e-?\d+)?/g);
+  if (!M || !S || !n || n.length < 8) return null;
+  const m = M.inverse().multiply(S), q = [0, 2, 4, 6].map(i => { const p = new DOMPoint(+n[i], +n[i + 1]).matrixTransform(m); return [p.x, p.y]; });
+  const G = doorViewGeom(...q), [nx, ny] = G.on(0.5, 1), nearW = Math.abs(G.near[1][0] - G.near[0][0]), farW = 2 * G.pw;
+  const tallFar = BRIDGE_TALL * G.hs * (state.background.figSize ?? 100) / 100;
+  return { deck: u => [nx + (G.cx - nx) * u, ny + (G.py - ny) * u], tall: u => tallFar * (nearW + (farW - nearW) * u) / farW,
+           svg: `<path d="M${q.map(p => p.map(f1).join(" ")).join(" L")} Z"/>` };
+}
 function doorTooLow(r, inv, foot) {
   const BG = state.background, top = new DOMPoint(r.x, r.y).matrixTransform(inv).y, open = foot.y - top;
   if (!(open > 0) || !(figureT.k > 0)) return null;
@@ -1204,10 +1220,13 @@ function doorTooLow(r, inv, foot) {
 // (ticket 264) a door in a side wall being walked through: the wall's x there and which side it is on (-1 left), the
 // friend cut off past it (draw); none else
 let doorClip = null;
+// (ticket 331) out through a tree room's door to a bridge, the friend drawn in the picture seen through the doorway: their
+// feet (x, y, in the picture's units), their size (k), and the depth they are sorted at (z, the door's); none else (draw)
+let figOver = null;
 function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {}) {
   const P = pic.getScreenCTM(), BG = state.background, B = state.body, F = sceneFrame;
   if (!P) return;
-  doorClip = null;   // (ticket 331: none left over from a trip cut short, whose doorway this one would keep)
+  doorClip = null; figOver = null; figClipRect = null;   // (ticket 331: none left over from a trip cut short, whose doorway this one would keep)
   bridgeOff();   // (ticket 245: from a rope bridge, down at its foot first)
   entering = true;
   const inv = P.inverse(), shape = door.querySelector("path, rect") || door, r = shape.getBoundingClientRect();
@@ -1224,6 +1243,11 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   const low = walk && !lad && !pit && !opt.out && door.hasAttribute("data-door") ? doorTooLow(r, inv, foot) : null;
   // (ticket 264) a door in a side wall (one with a leaf, off to a side of the room): which side, for the clip going through
   const side = !lad && !pit && !opt.out && door.hasAttribute("data-door") && door.querySelector("[data-leaf]") && Math.abs(foot.x) > 60 ? Math.sign(foot.x) : 0;
+  // (ticket 331, Matthew: "We need to make the scale down extreme to match how we draw the tree house outside the door, which
+  // is very shrunk down"; "we should do that gradually as we crawl out, and onto the bridge -- we should animate a part of
+  // walking on the bridge (after standing up, post crawl)") a tree room's door to a bridge: out into the picture seen
+  // through it, shrinking to the size of the bridge drawn there, then up and along a part of it, smaller still; then out
+  const V = opt.doorView && side ? doorViewOf(shape) : null;
   // (the way in: on toward the doorway from where they stop; deeper into the place if it is straight ahead)
   let ux = foot.x - tx, uy = foot.y - (SCENE.ground + ty);
   if (opt.out) [ux, uy] = opt.out;
@@ -1312,6 +1336,25 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
       entering = false; tripPhase = "climbing";
       changed();
       return;
+    }
+    if (phase === "in" && V) {
+      // (through the doorway crawling (walking, through one tall enough), shrinking to the size of the bridge beyond it, a
+      // little way onto it; seen on the room's side of the wall's line and, past it, inside the doorway; there they stand,
+      // face along it, away from us, and walk a part of it, smaller as they go, seen only inside the doorway)
+      if (!tIn) tIn = t;
+      if (!V.from) { tripPhase = "stepping in";
+        Object.assign(V, { k0: figureT.k, H: figureT.base || 1, from: [BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)], face: B.facing === "left" || B.facing === "right" ? B.facing : side < 0 ? "left" : "right",
+          room: side < 0 ? `<rect x="${f1(foot.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + foot.x)}" height="8000"/>` }); }
+      const e = t - tIn, at = (p, k, anim, facing, clip) => { figOver = { x: p[0], y: p[1], k, z: foot.y }; B.anim = anim; B.facing = facing; B.turn = ""; figClipRect = { svg: clip }; };
+      if (e < DOOR_OUT_MS) {
+        const u = e / DOOR_OUT_MS, s = u * u * (3 - 2 * u), p = V.deck(DOOR_DECK[0]), k1 = V.tall(DOOR_DECK[0]) / V.H;
+        at([V.from[0] + (p[0] - V.from[0]) * s, V.from[1] + (p[1] - V.from[1]) * s], V.k0 * Math.pow(k1 / V.k0, s), low ? "crawl" : "walk", V.face, V.room + V.svg);
+      } else if (e < DOOR_OUT_MS + DOOR_STAND_MS) at(V.deck(DOOR_DECK[0]), V.tall(DOOR_DECK[0]) / V.H, "none", "back", V.svg);
+      else if (e < DOOR_OUT_MS + DOOR_STAND_MS + DOOR_DECK_MS) {
+        const u = DOOR_DECK[0] + (DOOR_DECK[1] - DOOR_DECK[0]) * (e - DOOR_OUT_MS - DOOR_STAND_MS) / DOOR_DECK_MS;
+        at(V.deck(u), V.tall(u) / V.H, "walk", "back", V.svg);
+      } else { figOver = null; figClipRect = null; doorClip = null; done(); return; }
+      draw(); requestAnimationFrame(step); return;
     }
     if (phase === "in") {
       if (!tIn) { tIn = t; tripPhase = "stepping in"; }

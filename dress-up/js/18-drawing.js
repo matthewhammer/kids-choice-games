@@ -286,7 +286,7 @@ function drawNow() {
   if (scened) bridgeKeep();
   // (ticket 269: on a house's platform, on the way in from its ladder, as on a bridge)
   const onBr = scened ? bridgeNow() || platformNow() : null;
-  const wet = scened && !onBr && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)),
+  const wet = scened && !onBr && !figOver && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)),
         wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : tread ? Math.max(12, Math.min(L, 8 + 0.5 * armLen)) : L;
   const gStand = poseHeld && scened ? poseHeld.g : wet ? wl : ground;
   // (ticket 132) an animation lifts the friend (a step, a bound, a pull up
@@ -306,12 +306,15 @@ function drawNow() {
   const rotTf = rot ? ` rotate(${rot} 0 ${f1(L)})` : "";
   // (seated, sized by the seat's depth, not by where their feet hang: ticket 50)
   const sizeSeat = scened ? seatNow() : null;
+  // (ticket 331: out through a tree room's door to a bridge, in the picture seen through it: figOver, where and how big)
   // (ticket 245) on a rope bridge: their feet on its deck, as tall as BRIDGE_TALL of the tree's units (times their
   // slider's share), whatever their shape
-  figureT = onBr ? { k: (BG.figSize ?? 100) / 100 * BRIDGE_TALL * (onBr.W ? onBr.W.s * bridgeScale(onBr.W, onBr.u) : onBr.s * onBr.sc) / Math.max(1, ground - neckTop + 90), dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
+  figureT = figOver && scened ? { k: figOver.k, dx: figOver.x, dy: figOver.y - SCENE.ground, g: gFig, sg: SCENE.ground }
+          : onBr ? { k: (BG.figSize ?? 100) / 100 * BRIDGE_TALL * (onBr.W ? onBr.W.s * bridgeScale(onBr.W, onBr.u) : onBr.s * onBr.sc) / Math.max(1, ground - neckTop + 90), dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
           // (ticket 270: up the spiral staircase, their size the floor's straight below their step, not the screen's height)
           : scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : (BG.kind === "castleroom" && castleWallsOf(BG).stairs ? spiralFloorY(BG.figX ?? 0, BG.figY ?? 0) : null) ?? BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
+  figureT.base = Math.max(1, ground - neckTop + 90);   // (ticket 331: their height standing, in their own units, that a size in the picture's divides)
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg, back: scened && SCENE_BACK[BG.kind] ? SCENE_BACK[BG.kind](top, bottom) : -Infinity };
   // (ticket 137) climbing a place's ladder: up it as time goes by (not while
   // dragged), at its depth (their feet are sorted there still), their
@@ -857,11 +860,11 @@ function drawNow() {
   // (seated, they are sorted at the seat's own depth: ticket 50)
   const onSeat = scenery && !poseHeld ? seatNow() : null;
   // (ticket 245: on a bridge, just in front of the tree house, all of them: the far arm too)
-  const feetZ = onSeat ? onSeat.z : onBr ? SCENE.ground + 0.5 : figureT.sg + figureT.dy;
+  const feetZ = onSeat ? onSeat.z : figOver && scened ? figOver.z : onBr ? SCENE.ground + 0.5 : figureT.sg + figureT.dy;   // (ticket 331: out a door, at the door's depth)
   // (ticket 130: the far arm, when it is apart, a body's depth farther back:
   // before the first thing standing nearer than that, so behind the rest)
   const farNode = figShown.find(n => n.id === "figure-far"), rest = figShown.filter(n => n !== farNode);
-  const behind = farNode && scenery && !SPEED_TEST.holder ? objectAhead(onBr ? feetZ : feetZ - 26 * figureT.k) : null;
+  const behind = farNode && scenery && !SPEED_TEST.holder ? objectAhead(onBr || figOver ? feetZ : feetZ - 26 * figureT.k) : null;
   const ahead = scenery && !SPEED_TEST.holder ? objectAhead(feetZ) : null;
   // (ticket 164: on a slow computer, while the friend moves, the scene as
   // still pictures at its end, cut where the friend goes, the friend between)
@@ -899,7 +902,7 @@ function drawNow() {
   let clipN = 0;
   if (((clipDown || clipUp) && B.anim === "climbup") || clipSide || clipRect) for (const n of figShown) {
     if (n.nodeType !== 1 || !n.parentNode) continue;
-    const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), shape = (clipRect ? `<rect x="${f1(clipRect.x0)}" y="${f1(clipRect.y0)}" width="${f1(clipRect.x1 - clipRect.x0)}" height="${f1(clipRect.y1 - clipRect.y0)}"/>` : clipSide ? (doorClip.side < 0 ? `<rect x="${f1(doorClip.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + doorClip.x)}" height="8000"/>`)
+    const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), shape = (clipRect ? clipRect.svg || `<rect x="${f1(clipRect.x0)}" y="${f1(clipRect.y0)}" width="${f1(clipRect.x1 - clipRect.x0)}" height="${f1(clipRect.y1 - clipRect.y0)}"/>` : clipSide ? (doorClip.side < 0 ? `<rect x="${f1(doorClip.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + doorClip.x)}" height="8000"/>`)
       : clipDown ? `<rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/>`
       : `<rect x="-4000" y="${f1(climb.clipUp)}" width="8000" height="8000"/>`);
     let hx = 2166136261; for (let i = 0; i < shape.length; i++) hx = Math.imul(hx ^ shape.charCodeAt(i), 16777619);

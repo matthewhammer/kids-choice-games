@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.235 (2026-10-18)
+
+Everything in 0.0.234, with going out through a tree room's door to a bridge seen in the doorway.
+
+- **Out through a tree room's door to a bridge, you shrink as you crawl through**, down to the size of the little bridge and house seen through the doorway, so you match the picture out there. Then you stand up, turn away from us, and walk a little way along that bridge, smaller as you go, seen only inside the doorway. Then you are outside, on the bridge itself, to walk the rest of the way.
+
 ## 0.0.234 (2026-10-18)
 
 Everything in 0.0.233, with the tree house's doors to its bridges walked through properly.

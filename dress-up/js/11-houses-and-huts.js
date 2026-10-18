@@ -353,6 +353,18 @@ const houseEmoji = (o, n) => {
 // a wooden sign, its words in the middle at (x, y)
 const plankSign = (x, y, k, text) => `<rect x="${f1(x - 52 * k)}" y="${f1(y - 18 * k)}" width="${f1(104 * k)}" height="${f1(36 * k)}" rx="${f1(5 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2.5 * k)}"/>` +
   `<text x="${f1(x)}" y="${f1(y + 7 * k)}" text-anchor="middle" font-size="${f1(20 * k)}" font-weight="bold" fill="#fff8e7" font-family="sans-serif">${text}</text>`;
+// (ticket 247) the picture seen through a tree room's door to a bridge, in its opening nb nt ft fb (near edge's foot and
+// top, far edge's top and foot): on(u, v), a point u along the door from its near edge and v down it; the far house drawn
+// upright at (cx, py), hs its size; the bridge's deck from the threshold (near, left to right on the screen) out to it (far),
+// its rails ending at ry. (ticket 331: walkInto measures the same, to walk the friend out along it)
+function doorViewGeom(nb, nt, ft, fb) {
+  const lerp = (p, q, u) => [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u], on = (u, v) => lerp(lerp(nt, ft, u), lerp(nb, fb, u), v);
+  const wd = Math.abs(on(1, 0.5)[0] - on(0, 0.5)[0]), top0 = on(0.5, 0)[1], cx = on(0.5, 0.5)[0], py = on(0.5, 0.6)[1];
+  const hs = Math.max(0.01, Math.min(0.62 * wd / 170, 0.9 * (py - top0) / 245)), pw = 62 * hs, ry = py - 30 * hs;
+  // (left to right on the screen: on the right-hand wall a door's near edge, u = 0, is its right one)
+  const lr = (a, b) => a[0] <= b[0] ? [a, b] : [b, a], near = lr(on(0, 1), on(1, 1)), rails = lr(on(0, 0.7), on(1, 0.7));
+  return { on, wd, top0, cx, py, hs, pw, ry, near, rails, far: [[cx - pw, py + 14 * hs], [cx + pw, py + 14 * hs]] };
+}
 function waysSvg(c, floor, links) {
   const { x0, x1, y0, W, H, k, P } = c;
   let t = "";
@@ -370,17 +382,12 @@ function waysSvg(c, floor, links) {
       const S = roomSpace(c), h = 172 * k, at = (z, y) => S.at(sd * S.bw, y, z), zm = (z0 + z1) / 2, km = k / (1 + zm);
       const nb = at(z0, floor), nt = at(z0, floor - h), ft = at(z1, floor - h), fb = at(z1, floor);
       const quad = (a, b, d, e) => `M${P(...a)} L${P(...b)} L${P(...d)} L${P(...e)} Z`, lerp = (p, q, u) => [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
-      const on = (u, v) => lerp(lerp(nt, ft, u), lerp(nb, fb, u), v);   // (u along the door from its near edge, v down it)
       // (ticket 247, Matthew: "enhance the picture we see out the doors of the tree house that are for bridges, so they
       // resemble the target of the bridge") seen through it as it opens: the house the bridge leads to, as it looks
       // outside (its animal, its colors: houseLook, as the tree draws it), upright, at the far end of the bridge's planks
       // and ropes, which run out to it from the threshold; leaves and sky behind; all inside the doorway
       const vid = `bg-doorview-${L.to + 1}-${sd < 0 ? "l" : "r"}`, tgt = houses.find(u => u.i === L.to);
-      const wd = Math.abs(on(1, 0.5)[0] - on(0, 0.5)[0]), top0 = on(0.5, 0)[1], cx = on(0.5, 0.5)[0], py = on(0.5, 0.6)[1];
-      const hs = Math.max(0.01, Math.min(0.62 * wd / 170, 0.9 * (py - top0) / 245)), pw = 62 * hs, ry = py - 30 * hs;
-      // (left to right on the screen: on the right-hand wall a door's near edge, u = 0, is its right one)
-      const lr = (a, b) => a[0] <= b[0] ? [a, b] : [b, a], near = lr(on(0, 1), on(1, 1)), rails = lr(on(0, 0.7), on(1, 0.7));
-      const far = [[cx - pw, py + 14 * hs], [cx + pw, py + 14 * hs]], mixP = (u, a, b) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+      const { on, cx, py, hs, pw, ry, near, rails, far } = doorViewGeom(nb, nt, ft, fb), mixP = (u, a, b) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
       // (its clip defined after it: a door's first shape is its opening, which walkInto measures, and one in a clipPath has no box)
       t += `<g data-view="${L.to + 1}" clip-path="url(#${vid})">` +
            `<path d="${quad(nb, nt, ft, fb)}" fill="#a8dcf5"/>` +
