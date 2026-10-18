@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.185 (2026-10-17)
+
+Everything in 0.0.184, with 🔭 sizing what moves, the forest crossing's settings where you design the world, and two tabs for looking closer.
+
+- **🔭 smaller going north**: moving it now resizes your friend and the things you put in a place, as you drag it; the place's own drawing stays as it is.
+- **The forest crossing**: its "🌄 off in the distance" (tall trees, sky and clouds, or mountains) can be chosen in 🗺️ World design too, and in 🏞️ Background its paths are a compass, like the world designer's ways out, with nothing in the middle.
+- **🔬 Inspection** (♿ Accessibility until now): all arrows, the planned path, collision boxes, and 🧩 what it's made of, which now has its own 🎨 colour, ✏️ line and 🏷️ names size like the others.
+- **♿ Accessibility**: a tab of its own with the size of the words in the game, and all arrows (the same setting as in Inspection).
+
 ## 0.0.184 (2026-10-17)
 
 Everything in 0.0.183, with a look at what each place is made of, and a new world.

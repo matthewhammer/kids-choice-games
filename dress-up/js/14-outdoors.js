@@ -1243,7 +1243,11 @@ function thingSvg(o, t, i) {
 // again. From draw(), after the place's own (cached) drawing.
 function thingsLayer(c) {
   // (a sign with directions also on the names of the squares it points to, which change elsewhere)
-  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : ""], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
+  // (ticket 249, Matthew: "rescale the placed objects when I drag the 'smaller going north' slider, including the main char.
+  // That's the purpose of this slider -- it does not affect the static parts of the background, but it affects the
+  // dynamic player, and placed objects") each sized by depthSize, so drawn again when the 🔭 setting moves its vanishing line
+  const vanish = Math.round(10 * sceneVanish(c.o));
+  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : ""], () => obj(`${t.kind} ${i + 1}`, t.z, thingSvg(c.o, t, i)))).join("");
 }
 // (Matthew, 2026-10-17) The crossing's geometry, shared with its ways out in
 // the world (worldWaysSvg): its floor reaches far up the picture (far), the

@@ -363,7 +363,8 @@ let gameFontShown = null;
 function accessApply() {
   const A = state.access || DEFAULTS.access, al = document.getElementById("access-layer");
   if (al) for (const [k, v] of [["--path-color", A.pathColor || "#fde047"], ["--box-color", A.boxColor || "#ef4444"],
-                                 ["--path-width", (A.pathWidth ?? 4) + "px"], ["--box-width", (A.boxWidth ?? 2) + "px"], ["--box-font", (A.boxFont ?? 11) + "px"]])   // (ticket 230)
+                                 ["--path-width", (A.pathWidth ?? 4) + "px"], ["--box-width", (A.boxWidth ?? 2) + "px"], ["--box-font", (A.boxFont ?? 11) + "px"],   // (ticket 230)
+                                 ["--made-color", A.madeColor || "#ffffff"], ["--made-width", (A.madeWidth ?? 2) + "px"], ["--made-font", (A.madeFont ?? 10) + "px"]])   // (ticket 258)
     if (al.style.getPropertyValue(k) !== v) al.style.setProperty(k, v);
   const gf = (A.gameFont ?? 100) / 100;
   if (gf === gameFontShown) return;
@@ -471,7 +472,7 @@ function madeOfHud() {
   if (!on) { if (ov) ov.remove(); if (leg) leg.remove(); madeShown = ""; return; }
   const box = layer.getBoundingClientRect();
   if (!box.width) return;
-  const cats = MADE_CATS.map(c => c[0]).filter(madeCatOn), sig = [box.width, box.height, cats.join(), A.madeFont ?? 10].join("|");
+  const cats = MADE_CATS.map(c => c[0]).filter(madeCatOn), sig = [box.width, box.height, cats.join()].join("|");   // (its colour, line and names' size: CSS, accessApply)
   if (ov && madeShown === sig && ov.dataset.text === String(bgShown.text.length) && madeOfHud.text === bgShown.text) return;
   madeShown = sig; madeOfHud.text = bgShown.text;
   // (a box on the screen, in the layer's own units, cut to it; none when it is not seen)
@@ -500,7 +501,6 @@ function madeOfHud() {
   madeCounts = counts;
   if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "made-of"); layer.prepend(ov); }
   ov.dataset.text = String(bgShown.text.length);
-  ov.style.setProperty("--made-font", (A.madeFont ?? 10) + "px");
   ov.innerHTML = t;
   if (!leg) { leg = document.createElement("div"); leg.className = "made-legend"; layer.append(leg); }
   const shown = Object.entries(procs).filter(([nm]) => cats.includes(PROC_CAT[nm])).sort((a, b) => b[1] - a[1]);

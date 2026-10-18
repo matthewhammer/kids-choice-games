@@ -511,6 +511,8 @@
 .world-compass-mid { display: flex; align-items: center; justify-content: center; font-size: 1.6em; border-radius: 8px; border: 2px solid var(--line);
                      --sq: var(--panel); background: color-mix(in srgb, var(--sq) 26%, var(--panel)); }
 body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-auto-rows: 3.2em; }
+.world-compass-mid.empty { border-style: dashed; opacity: 0.5; }   /* (ticket 249: a crossing's paths, round nothing) */
+.world-back-row { flex-wrap: wrap; gap: 4px; }
 .world-here .world-probs { border: 2px dotted var(--line); border-radius: 10px; padding: 6px 10px; margin: 8px 0; }
 .drag-ghost { position: fixed; z-index: 1000; pointer-events: none; transform: translate(-50%, -60%); font-size: 2.2em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
 
@@ -551,10 +553,11 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
 /* (ticket 258) ♿ 🧩 what a place is made of: its objects, white dashed; its plants, each in its procedure's colour */
 .made-of { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
 .made-of rect { fill: none; }
-.made-of .obj rect { stroke: #ffffff; stroke-width: 1.5px; stroke-dasharray: 6 3; }
-.made-of .obj rect.under { stroke: #000000; stroke-width: 3.5px; stroke-dasharray: none; opacity: 0.35; }
-.made-of .proc rect { fill: color-mix(in srgb, var(--c) 8%, transparent); stroke: var(--c); stroke-width: 1.2px; }
-.made-of text { font: 600 var(--made-font, 10px) sans-serif; fill: #ffffff; paint-order: stroke; stroke: #000000; stroke-width: 2.5px; }
+/* (its colour and line, 🔬 Inspection's controls: --made-color, --made-width, 2 at first; the plants keep their procedures' colours) */
+.made-of .obj rect { stroke: var(--made-color, #ffffff); stroke-width: calc(0.75 * var(--made-width, 2px)); stroke-dasharray: 6 3; }
+.made-of .obj rect.under { stroke: #000000; stroke-width: calc(1.75 * var(--made-width, 2px)); stroke-dasharray: none; opacity: 0.35; }
+.made-of .proc rect { fill: color-mix(in srgb, var(--c) 8%, transparent); stroke: var(--c); stroke-width: calc(0.6 * var(--made-width, 2px)); }
+.made-of text { font: 600 var(--made-font, 10px) sans-serif; fill: var(--made-color, #ffffff); paint-order: stroke; stroke: #000000; stroke-width: 2.5px; }
 .made-of .proc text { fill: var(--c); }
 .made-legend { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); max-width: 70%; padding: 5px 9px; border-radius: 8px; background: rgba(0, 0, 0, 0.62);
   color: #ffffff; font: 600 11px/1.45 sans-serif; pointer-events: none; text-align: center; }

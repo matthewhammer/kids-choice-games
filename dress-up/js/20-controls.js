@@ -400,7 +400,9 @@ const TABS = [
     ["choice", "tent", "⛺ which tent", CAMP_TENTS.map((T, i) => [i + 1, `⛺ ${i + 1}: ${T.name}`])],
     // (ticket 185) the things put in any place; and the forest crossing: which paths meet, its floor
     ["things", "things", "🪨 things to put here, then drag them where they go"],
-    ["group", "crossPaths", "🛤️ the paths that meet here", CROSS_DIRS.map(([d, label]) => ["toggle", "cross" + d, label])],
+    // (ticket 249, Matthew: "for the toggles for N/S/E/W, etc.... use the UX we made for world designer, with the 9 cells -- the
+    // center cell be empty in this case") as the world designer's ways out, round an empty middle
+    ["compass", "crossPaths", "🛤️ the paths that meet here", "cross"],
     ["color", "crossFloor", "🌿 the forest floor", CROSS_FLOORS],
     ["choice", "crossBack", "🌄 off in the distance", CROSS_BACKS],
     // the forest clearing: what is far off down its paths
@@ -525,7 +527,9 @@ const TABS = [
   ]],
   // (ticket 155) last, where the GitHub chip was
   // (ticket 217, Matthew) before Advanced: what helps a player see and read
-  ["♿ Accessibility", "access", [
+  // (Matthew, 2026-10-17: "lets change accessibility emoji to a microscope emoji"; then: "Let's rename it --- 'inspection',
+  // since that's the new scope and use case": it shows what places are made of, ticket 258, as well as helping a player)
+  ["🔬 Inspection", "access", [
     // (These overlays are for showing someone new to video games how it works, and for showing a problem as it is seen.)
     // (ticket 230) each a row, accbox: its chip, and while it is on, its colour and its sizes beside it, boxed; the words'
     // size in a box of its own
@@ -535,7 +539,14 @@ const TABS = [
       ["range", "glowFade", "✨ glow ms", 100, 3000]]],   // (ticket 229: a collision's glow, fading back in so long)
     // (ticket 258, Matthew: "a toggle that reveals a sub-panel of toggles, per category of object") each kind of thing a
     // chip of its own, with how many are here (madeOfHud)
-    ["accbox", "showMadeOf", "🧩 what it's made of", [["cats", "madeCats"], ["range", "madeFont", "🏷️ names", 8, 20]]],
+    // (Matthew: "let's give 'what its made of' boxes the same stroke and color controls and the other inspection toggles")
+    ["accbox", "showMadeOf", "🧩 what it's made of", [["color", "madeColor", "🎨"], ["range", "madeWidth", "✏️ line", 1, 8], ["range", "madeFont", "🏷️ names", 8, 20], ["cats", "madeCats"]]],
+  ]],
+  // (Matthew, 2026-10-17: "move 'words in the game' to a new 'accessibility' chip that only has that, for now, and another
+  // copy of the 'all arrows' chip, since that's also useful --- it's the same setting, duplicated") the same settings
+  // (state.access) as 🔬 Inspection's: all arrows in both
+  ["♿ Accessibility", "access", [
+    ["accbox", "allArrows", "🧭 all arrows", [["color", "arrowColor", "🎨"], ["range", "arrowDim", "🌗 brightness", 10, 100], ["range", "arrowSize", "↕️ size", 50, 250]]],
     ["accbox", null, "🔤 words in the game", [["range", "gameFont", "🔤 text size", 60, 250]]],
   ]],
   ["⚙️ Advanced", "advanced", [
@@ -1048,6 +1059,20 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // settings are that tab's: the ghost's see-through-ness is the
   // visibility panel's)
   if (kind === "of") return control(key, label, { when: rest[0] ? () => rest[0](state[part]) : null });
+  // (ticket 249) a compass: a toggle each way (key prefix + direction), NW N NE / W · E / SW S SE, its middle empty, as
+  // the world designer's ways out
+  if (kind === "compass") {
+    const pre = rest[0], names = Object.fromEntries(CROSS_DIRS);
+    const box = el("div", { class: "world-compass" }, ["NW", "N", "NE", "W", null, "E", "SW", "S", "SE"].map(d => {
+      if (!d) return el("span", { class: "world-compass-mid empty" }, "");
+      const b = el("button", { "data-way": d, title: names[d] || d, onclick: () => set(part, pre + d, !state[part][pre + d]) }, WORLD_ARROWS[d]);
+      syncs.push(() => { const on = String(!!state[part][pre + d]); if (b.getAttribute("aria-pressed") !== on) b.setAttribute("aria-pressed", on); });
+      return b; }));
+    const g = el("div", { class: "chipset ctlgroup compass-group", "data-key": key }, [el("div", { class: "cap" }, [label]), box]);
+    const when = SHOWN_WHEN[part + "." + key];
+    if (when) syncs.push(() => { g.hidden = !when(state[part]); });
+    return g;
+  }
   // a group: its controls in a dashed box with its name, shown or hidden together
   // (and, with a test, marked when it holds: the castle room you are in)
   if (kind === "group") {
@@ -1372,6 +1397,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           el("label", { class: "row world-name-row" }, [el("span", { class: "hint" }, "✏️ its name on signs:"), nameBox]),
           el("div", { class: "world-ways-out" }, [el("span", { class: "hint" }, "ways out:"),
             el("div", { class: "world-compass" }, ["NW", "N", "NE", "W", null, "E", "SW", "S", "SE"].map(d => d ? wayBtn(d) : mid))]),
+          // (ticket 249, Matthew: "expose the three far away options to the world designer") a forest crossing's 🌄 off in
+          // the distance, here too (its square keeps it: CROSS_KEYS)
+          ...(at.kind === "crossing" ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🌄 off in the distance:"),
+            ...CROSS_BACKS.map(([v, name]) => el("button", { "aria-pressed": String((state.background.crossBack || "woods") === v), "data-back": v,
+              onclick: () => { state.background.crossBack = v; changed(); } }, name))])] : []),
           probs,
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
       } else {
