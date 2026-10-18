@@ -56,7 +56,10 @@ const WORLD_BIG = ["⛶ the world designer, full screen", "✕ back to the game"
 // body.designer-big, with the designer's own class (music-big, world-big); its controls the whole window under a slim
 // bar that names the tab, its chip there saying ✕ back; ✕, Escape or leaving the browser's full screen going back.
 // DESIGNERS: each one's class, its chip's class (also designer-chip, which the bar's CSS keys on) and words.
-const DESIGNERS = { music: { cls: "music-big", chip: "musicbig", words: MUSIC_BIG }, world: { cls: "world-big", chip: "worldbig", words: WORLD_BIG } };
+// (ticket 285, ^du_report(5)'s step 2) and 🏞️ Background as a designer, made for one place (setBgBig)
+const BG_BIG = ["⛶ the background designer, full screen", "✕ back to the game"];
+const DESIGNERS = { music: { cls: "music-big", chip: "musicbig", words: MUSIC_BIG }, world: { cls: "world-big", chip: "worldbig", words: WORLD_BIG },
+                    background: { cls: "bg-big", chip: "bgbig", words: BG_BIG } };
 function designerShell(name, on) {
   const D = DESIGNERS[name];
   document.body.classList.toggle(D.cls, on);
@@ -77,6 +80,23 @@ function setWorldBig(on) {
   placePic();
   designerScreen(on);
 }
+function setBgBig(on) {
+  designerShell("background", on);
+  placePic();
+  designerScreen(on);
+}
+// (ticket 285) The Background tab's rows, once built, in the designer's two columns: its boxes (.bg-boxes), and beside them
+// the game's card (.bg-viewcol); outside the full screen the two are display: contents, and the tab is as it always was
+function bgLayout(panel) {
+  const kids = [...panel.children], bar = kids.find(c => c.querySelector(":scope > button.designer-chip")), view = kids.find(c => c.querySelector(":scope > .bg-view"));
+  const boxes = el("div", { class: "bg-boxes" }, kids.filter(c => c !== bar && c !== view));
+  panel.replaceChildren(...(bar ? [bar] : []), el("div", { class: "bg-layout" }, [boxes, el("div", { class: "bg-viewcol" }, view ? [view] : [])]));
+}
+// (a place's picture, the picture archive's thumbnail of it with the friend; the castle's rooms by the room shown now, or the king's)
+const PICTURES_SITE = "https://matthewhammer.org/dress-up-pictures/pictures/thumbs/backgrounds-with-friend/";
+const placeThumb = id => PICTURES_SITE + (id === "castleroom" ? "castleroom--" + (state.background.kind === "castleroom" ? objPlace(state.background).split(":")[1] : "king") : id) + ".webp";
+// (an object's picture, OBJECTS.md's, clipped from its place: dress-up/objects/<place>/<name>.webp)
+const objPicture = (at, name) => `objects/${at.replace(":", "-")}/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.webp`;
 // (ticket 231, Matthew: "show the in-game view as the first sub-panel, the full width of the RHS of the full screen
 // view. Then a way to scroll the panels below and keep that in-game view fixed. An eye-ball to hide it ... off by
 // default, so we are showing it by default") The world designer full screen, on a wide window: the picture itself
@@ -90,9 +110,10 @@ const picBoxEl = document.querySelector(".pic-box"), picHome = document.querySel
 let worldViewHidden = false, picSlot = null;
 try { worldViewHidden = localStorage.getItem(WORLD_VIEW_KEY) === "hidden"; } catch (e) { /* (shown) */ }
 function placePic() {
-  const box = picBoxEl, home = picHome, slot = document.querySelector(".world-view-pic");
+  // (ticket 285: the world designer's card, or the background designer's)
+  const bg = document.body.classList.contains("bg-big"), box = picBoxEl, home = picHome, slot = document.querySelector(bg ? ".bg-view-pic" : ".world-view-pic");
   if (!box || !home) return;
-  const into = document.body.classList.contains("world-big") && worldWide.matches && !worldViewHidden && slot ? slot : null;
+  const into = (bg || document.body.classList.contains("world-big")) && worldWide.matches && !worldViewHidden && slot ? slot : null;
   if (into !== picSlot && picAreaWatch) { if (picSlot) picAreaWatch.unobserve(picSlot); if (into) picAreaWatch.observe(into); }
   picSlot = into;
   if (into && box.parentNode !== into) into.append(box);
@@ -117,6 +138,7 @@ function worldViewShow(on) {
 worldWide.addEventListener("change", placePic);
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && document.body.classList.contains("world-big")) setWorldBig(false);
+  if (e.key === "Escape" && document.body.classList.contains("bg-big")) setBgBig(false);
   if (e.key === "Escape" && document.body.classList.contains("big")) setBig(false);
   if (e.key === "Escape" && document.body.classList.contains("music-big")) setMusicBig(false);
 });
@@ -124,4 +146,5 @@ document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement && document.body.classList.contains("big")) setBig(false);
   if (!document.fullscreenElement && document.body.classList.contains("music-big")) setMusicBig(false, true);
   if (!document.fullscreenElement && document.body.classList.contains("world-big")) setWorldBig(false);
+  if (!document.fullscreenElement && document.body.classList.contains("bg-big")) setBgBig(false);
 });

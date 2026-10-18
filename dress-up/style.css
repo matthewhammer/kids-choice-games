@@ -165,6 +165,25 @@
     body.world-big .world-rest > .world-view:not(.folded) { position: sticky; top: 56px; z-index: 4; }
     body.world-big .world-rest > .world-view:not(.folded)::before { content: ""; position: absolute; left: -2px; right: -2px; bottom: 100%; height: 16px; background: var(--bg); }
   }
+  /* (ticket 285, ^du_report(5)'s step 2) 🏞️ Background, as a designer. Outside its full screen its two columns are not
+     there (display: contents), the tab as it always was, and its pictures hidden, so never fetched. Full screen: the
+     place's boxes in a grid on the left, each a .box, the wide ones across it; the game the first card on the right,
+     held under the bar; the places and what stands in them as pictures; an object lit in the game while pointed at */
+  .bg-layout, .bg-boxes, .bg-viewcol { display: contents; }
+  .place-thumb, .obj-pic { display: none; }
+  [data-obj].obj-lit { filter: drop-shadow(0 0 6px #ffd54a) drop-shadow(0 0 2px #ffd54a); }
+  body.bg-big #panel > .ctl:has(> button.designer-chip)::before { content: "🏞️ Background designer"; font-weight: 700; font-size: 1.1em; margin-right: auto; }
+  body.bg-big .bg-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 38%); gap: var(--box-gap); align-items: start; }
+  body.bg-big .bg-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
+  body.bg-big .bg-boxes > :not([hidden]) { margin: 0; border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--mu-main); }
+  body.bg-big .bg-boxes > :is(.ctl[data-key=kind], .ctl[data-key=objectsOff], .ctl[data-key=things], .ctlgroup) { grid-column: 1 / -1; }
+  body.bg-big .bg-viewcol { display: block; position: sticky; top: 56px; }
+  body.bg-big .bg-view { display: block; }
+  body.bg-big .place-thumb { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; margin-bottom: 4px; }
+  body.bg-big .ctl[data-key=kind] .row > button:has(.place-thumb) { width: 132px; padding: 4px; font-size: 0.85em; display: flex; flex-direction: column; align-items: stretch; }
+  body.bg-big .obj-pic { display: block; width: 100%; height: 60px; object-fit: contain; margin-bottom: 2px; }
+  body.bg-big .row.objs button.obj:has(.obj-pic) { width: 100px; display: inline-flex; flex-direction: column; align-items: center; padding: 4px; line-height: 1.25; }
+  @media (max-width: 899px) { body.bg-big .bg-layout { grid-template-columns: minmax(0, 1fr); } body.bg-big .bg-viewcol { display: none; } }   /* (the game's card from 900 px, as the world designer's) */
   .world-view-head { gap: 6px; align-items: center; margin-bottom: 6px; }
   .world-view-head .eye { font-size: 1.2em; margin: 0; }
   .world-view.folded .world-view-head { margin-bottom: 0; }

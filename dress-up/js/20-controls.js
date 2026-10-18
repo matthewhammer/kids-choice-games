@@ -312,6 +312,9 @@ const TABS = [
     ["color", "fairyShoeColor", "🧚 shoes' color", FAIRY_SHOE_COLORS],
   ]],
   ["🏞️ Background", "background", [
+    // (ticket 285, ^du_report(5)'s step 2) 🏞️ Background as a designer: its full screen, and the game as its first card there
+    ["bgbig", "big", "⛶ full screen"],
+    ["bgview", "designerView", ""],   // (its own key: "view" is the living room window's, shown only there)
     ["places", "kind", "background", PLACES],
     ["range", "figSize", "🧍 size in the scene", 10, 1000, 100, 100],
     // (ticket 214) each place's own: how much smaller going north (Surprise me leaves it as it is)
@@ -1191,11 +1194,15 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const sig = at + "|" + list.map(o => o.name + "@" + o.z).join("|");
       if (sig !== shown) {
         shown = sig;
-        chips = list.map(o => [o, el("button", { class: "obj", title: `${o.name}: stands at depth ${Number.isFinite(o.z) ? Math.round(o.z) : "in front of everything"} (the friend's feet are at ${Math.round(SCENE.ground)} on the ground line)`,
+        // (ticket 285, ^du_report(5)'s step 2: "what stands in the place is a card each, its picture clipped from the scene
+        // (OBJECTS.md's), lit in the game while pointed at") its picture shows in the designer's full screen only
+        const lit = (o, on) => { const g = bgShown.node && bgShown.node.querySelector(`[data-obj="${CSS.escape(o.name)}"]`); if (g) g.classList.toggle("obj-lit", on); };
+        chips = list.map(o => [o, el("button", { class: "obj", onpointerenter: () => lit(o, true), onpointerleave: () => lit(o, false), title: `${o.name}: stands at depth ${Number.isFinite(o.z) ? Math.round(o.z) : "in front of everything"} (the friend's feet are at ${Math.round(SCENE.ground)} on the ground line)`,
           onclick: () => { const all = { ...(B.objectsOff || {}) }, now = new Set(all[at] || []);
                            if (now.has(o.name)) now.delete(o.name); else now.add(o.name);
                            if (now.size) all[at] = [...now]; else delete all[at];
-                           B.objectsOff = all; changed(); } }, [el("span", { class: "eye" }), " " + o.name])]);
+                           B.objectsOff = all; changed(); } }, [el("img", { class: "obj-pic", src: objPicture(at, o.name), alt: "", loading: "lazy", onerror: e => e.target.remove() }),
+                                                               el("span", { class: "eye" }), " " + o.name])]);
         row.replaceChildren(...chips.map(([, b]) => b));
       }
       for (const [o, b] of chips) { const hid = off.has(o.name); b.querySelector(".eye").textContent = hid ? "🙈" : "👁️"; b.classList.toggle("off", hid); b.setAttribute("aria-pressed", !hid); }
@@ -1227,6 +1234,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // (ticket 210, Matthew) the world designer full screen, as the music's (setWorldBig)
   if (kind === "worldbig") box.append(el("button", { class: "worldbig designer-chip", onclick: () => setWorldBig(!document.body.classList.contains("world-big")) },
                                          document.body.classList.contains("world-big") ? WORLD_BIG[1] : WORLD_BIG[0]));
+  // (ticket 285, ^du_report(5)'s step 2) 🏞️ Background, as a designer: full screen as the world designer is (setBgBig)
+  if (kind === "bgbig") box.append(el("button", { class: "bgbig designer-chip", onclick: () => setBgBig(!document.body.classList.contains("bg-big")) },
+                                      document.body.classList.contains("bg-big") ? BG_BIG[1] : BG_BIG[0]));
+  // and its first card, the game itself (placePic puts the picture in it), folded by its 👁️ as the world designer's is
+  if (kind === "bgview") {
+    const view = el("div", { class: "world-view bg-view" }, [el("div", { class: "row world-view-head" }, [
+      el("button", { class: "eye", onclick: () => worldViewShow(worldViewHidden) }, "👁️"), el("span", { class: "hint" }, "📺 the game")]), el("div", { class: "bg-view-pic" })]);
+    worldViewMark(view);
+    box.querySelector(".lbl")?.remove();
+    box.append(view);
+  }
   // (ticket 185) the forest crossing's things: a button for each kind puts
   // one in, at a free spot near the meeting place; drag it from there in
   // the picture; one more takes them all away. Under them, a row for each
@@ -1813,7 +1831,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       if (g !== shownKind) {
         shownKind = g;
         const list = g && g !== "none" ? PLACE_GROUPS.find(x => x[0] === g)[2] : [];
-        placeBtns = list.map(id => [id, el("button", { onclick: () => set(part, key, id) }, label(id))]);
+        // (ticket 285: "the place is picked from pictures of the places (the picture archive's)", in the designer's full screen)
+        placeBtns = list.map(id => [id, el("button", { onclick: () => set(part, key, id) }, [el("img", { class: "place-thumb", src: placeThumb(id), alt: "", loading: "lazy",
+                                                                                                 onerror: e => e.target.remove() }), label(id)])]);
         places.replaceChildren(...placeBtns.map(([, b]) => b));
         placeBox.hidden = !placeBtns.length;
         placeCap.textContent = placeBtns.length ? `places: ${PLACE_GROUPS.find(x => x[0] === g)[1]}` : "";
@@ -1914,6 +1934,7 @@ function showTab() {
   const [, part, ctls] = TABS[tab];
   panel.dataset.part = part;
   panel.replaceChildren(...ctls.map(c => control(part, c)));
+  if (part === "background") bgLayout(panel);   // (ticket 285)
   placePic();   // (ticket 231: the world designer's view built again, or gone with its tab)
   changed();
 }

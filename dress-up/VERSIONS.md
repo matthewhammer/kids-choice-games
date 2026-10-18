@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.213 (2026-10-18)
+
+Everything in 0.0.212, with 🏞️ Background as a designer, full screen, as 🗺️ World design is.
+
+- **⛶ the background designer, full screen**, the first row of 🏞️ Background: the place's settings as boxes in a grid on the left, the game itself as the first card on the right, live, held in place while the boxes scroll (its 👁️ folds it away, as the world designer's does), and ✕, Escape or leaving the browser's full screen goes back.
+- **The places as pictures:** in the full screen, each place to choose shows what it looks like, from the picture archive.
+- **What stands in the place, as pictures:** each thing in "👁️ what stands in the scene" shows its picture, and lights up in the game while you point at it; a tap still hides it or shows it again.
+- Outside the full screen, 🏞️ Background is as it was.
+
 ## 0.0.212 (2026-10-18)
 
 Everything in 0.0.211, looking the same: the 🎵 Music and 🗺️ World design full screens are now built from pieces every tab will share, a box for each thing, a row on one line, and the full screen itself, the first step of laying out every panel as those two are (^du_report(5)).

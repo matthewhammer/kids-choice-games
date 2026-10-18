@@ -27,7 +27,7 @@ function fitPic() {
   const big = document.body.classList.contains("big"), view = document.body.classList.contains("pic-in-world"), narrow = narrowMedia.matches && !big && !view;
   if (!picAreaSize || picAreaSize.big !== big || picAreaSize.narrow !== narrow || picAreaSize.view !== view || !picAreaWatch) {
     // (the caption and buttons under it, in the same area, take their share of its height)
-    const bar = big ? null : area.querySelector(".bar"), slot = view ? document.querySelector(".world-view-pic") : null;
+    const bar = big ? null : area.querySelector(".bar"), slot = view ? document.querySelector(document.body.classList.contains("bg-big") ? ".bg-view-pic" : ".world-view-pic") : null;   // (ticket 285: whichever designer's card holds it)
     // (ticket 231) in the world designer's right side (placePic): its card's width, and at most 60% of the window
     // under the bar (56px, as the stylesheet's), so the cards below it keep room to scroll
     picAreaSize = slot ? { big, narrow, view, W: slot.clientWidth, H: (window.innerHeight - 56) * 0.6 }
