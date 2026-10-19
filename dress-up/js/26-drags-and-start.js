@@ -1573,6 +1573,9 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   };
   const step = t => {
     const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
+    // (ticket 378) no leg to walk: a plan that found no way (planPath's empty list) threw here, its frames stopped, and entering stayed
+    // set, every passage dead after it; with no way to walk, they go through from where they are, as a trip did before walks were planned
+    if (phase === "walk" && !path[leg]) { BG.figX = tx; BG.figY = ty; phase = "in"; tIn = t; walkPath.leg = path.length; }
     if (phase === "walk") {
       const crawling = !!low && Math.hypot(tx - (BG.figX ?? 0), (ty - (BG.figY ?? 0)) / 0.6) < low.stretch;
       // (ticket 331, Matthew: "crawling out of a small door looks okay, except we aren't clipping yet") a crawl reaches a body's

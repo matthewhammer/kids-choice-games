@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.317 (2026-10-19)
+
+Everything in 0.0.316, with no click on a doorway that leaves the doorways dead.
+
+- **🚪 A doorway with no way to walk to it still takes you through**: when no path could be found to a doorway you clicked, the walk stopped before it began and from then on no doorway would take a click; now your friend goes through anyway.
+
 ## 0.0.316 (2026-10-19)
 
 Everything in 0.0.315, with levers that leave the passages working.
