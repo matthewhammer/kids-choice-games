@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.308 (2026-10-19)
+
+Everything in 0.0.307, with four new turtle steppers dubs to try in place of D.
+
+- **🐢 Turtle steppers dub D-1 to D-4**, in 🌴 reggae right after D, each a candidate to replace it: D-1, steppers, four on the floor (D minor, fast); D-2, rub-a-dub, lilting (D major); D-3, the drum break, made plain (E minor); D-4, heartbeat, hand drums (A minor, slow). D stays until one is picked.
+
 ## 0.0.307 (2026-10-18)
 
 Everything in 0.0.306, with bubble makers that cost less.

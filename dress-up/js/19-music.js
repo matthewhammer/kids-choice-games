@@ -495,6 +495,28 @@ const TURTLE_DUB = {
        tunes: [[[8, 2, 4], [12, 4, 4], [16, 3, 4], [20, 2, 4], [24, 0, 8]], [[0, 4, 4], [4, 6, 4], [8, 5, 8], [16, 4, 4], [20, 2, 4], [24, 4, 8]]],
        form: [S(8, "kick bass sonar"), S(8, "kick bass sonar drums chop"), S(8, "kick bass sonar drums chop tuneA bubbles"),
               S(4, "break"), S(8, "kick bass sonar drums chop tuneB bubbles"), S(8, "kick bass sonar drums chop tuneA bubbles"), S(4, "break kick bass")] },
+  // (ticket 374, Matthew: "turtle stepper's dub D is awlful -- the others -- A, B, C are great. Let's make several replacement
+  // candidates"; "just add them as D-1, D-2, etc") Four in A to C's way, plain chords (triads, a 7th to turn home: D's ninths made
+  // its chops and tunes muddy) and drums each style keeps (no racing fives and sevens), named D-1 to D-4 beside D till he picks
+  D1: { label: "D-1", what: "steppers, four on the floor", bpm: 136, chords: ["Dm", "Dm", "Bb", "C", "Dm", "Dm", "Gm", "A7"], sonar: "D6:1 r:63 A5:1 r:63",
+        drums: { kick: "x...x...x...x...", rim: "....x.......x...", hat: "..x...x...x...x.", extra: [["shaker", "x.xxx.xxx.xxx.xx", 0.3]] },
+        bassPat: [[0, 0, 2], [3, 0, 1], [4, 7, 2], [7, 0, 1], [8, 12, 2], [11, 7, 1], [12, 10, 2], [14, 7, 2]], chop: [2, 6, 10, 14],
+        tunes: [[[0, 2, 4], [4, 3, 4], [8, 4, 6], [14, 3, 2], [16, 2, 4], [20, 1, 4], [24, 2, 8]], [[0, 5, 4], [4, 4, 4], [8, 3, 8], [16, 4, 2], [18, 3, 2], [20, 2, 4], [24, 0, 8]]] },
+  D2: { label: "D-2", what: "rub-a-dub, lilting", bpm: 96, swing: 0.25, chords: ["D", "G", "A", "D", "Bm", "G", "A", "A"], sonar: "D6:1 r:63 A5:1 r:63",
+        drums: { kick: "x.......x.......", rim: "....x.......x...", hat: "x.x.x.x.x.x.x.x.", extra: [["shaker", "..x...x...x...x.", 0.3], ["cowbell", "x...............", 0.18]] },
+        bassPat: [[0, 0, 3], [3, 7, 1], [4, 12, 2], [6, 7, 2], [8, 0, 3], [11, 7, 1], [12, 12, 2], [14, 7, 2]], chop: [4, 7, 12, 15],
+        tunes: [[[0, 0, 2], [2, 1, 2], [4, 2, 4], [8, 3, 4], [12, 2, 4], [16, 1, 2], [18, 2, 2], [20, 3, 4], [24, 4, 8]], [[0, 4, 4], [4, 3, 2], [6, 2, 2], [8, 1, 8], [16, 2, 4], [20, 1, 4], [24, 0, 8]]] },
+  D3: { label: "D-3", what: "the drum break, made plain", bpm: 92, chords: ["Em", "Am", "Em", "B7", "Am", "Am", "Em", "B7"], sonar: "E6:1 r:63 B5:1 r:63",
+        drums: { kick: "x.....x.x.......", rim: "....x.......x...", hat: "..x...x...x.x.x.",
+                 break: [["snare", "....x.......x.......x...x.x.xxxx", 0.5], ["rim", "x.x.x.x.x.x.x.x.", 0.45], ["kick", "x.......x.......x.......x.x.....", 0.8]] },
+        bassPat: [[0, 0, 2], [3, 7, 1], [6, 0, 1], [7, 12, 1], [10, 0, 2], [13, 10, 1], [14, 7, 2]],
+        tunes: [[[8, 2, 4], [12, 4, 4], [16, 3, 4], [20, 2, 4], [24, 0, 8]], [[0, 4, 4], [4, 5, 4], [8, 4, 8], [16, 3, 4], [20, 2, 4], [24, 3, 8]]],
+        form: [S(8, "kick bass sonar"), S(8, "kick bass sonar drums chop"), S(8, "kick bass sonar drums chop tuneA bubbles"),
+               S(4, "break"), S(8, "kick bass sonar drums chop tuneB bubbles"), S(8, "kick bass sonar drums chop tuneA bubbles"), S(4, "break kick bass")] },
+  D4: { label: "D-4", what: "heartbeat, hand drums", bpm: 76, swing: 0.1, chords: ["Am", "Am", "Em", "Em", "F", "G", "Am", "Am"], sonar: "A5:1 r:63 E6:1 r:63",
+        drums: { kick: "x.x.....x.x.....", rim: "............x...", hat: "x...x...x...x...", extra: [["conga", "....x.xx....x.x.", 0.45, 62], ["shaker", "..x...x...x...x.", 0.28]] },
+        bassPat: [[0, 0, 4], [4, 7, 4], [8, 0, 4], [12, 10, 2], [14, 7, 2]], chop: [6, 14],
+        tunes: [[[0, 2, 8], [8, 3, 8], [16, 4, 6], [22, 3, 2], [24, 2, 8]], [[0, 3, 4], [4, 2, 4], [8, 1, 8], [16, 2, 4], [20, 3, 4], [24, 0, 8]]] },
 };
 const turtleDub = v => { const c = TURTLE_DUB[v];
   return steppersTune({ bpm: c.bpm, chords: c.chords, lines: { sonar: c.sonar, bubbles: "r:9 " + c.sonar.split(" ")[0].replace(/[0-9]/, "7") + " r:21 " + c.sonar.split(" ")[2] + " r:17 " + c.sonar.split(" ")[0] + " r:33 " + c.sonar.split(" ")[2] + " r:44" },
@@ -815,8 +837,8 @@ const TUNES = {
   } },
   // The spooky waltz, funked, five ways (Matthew picks): see witchFunk
   ...Object.fromEntries(Object.entries(WITCH_FUNK).map(([v, c]) => ["witchfunk" + v, { name: `🧙 funked waltz ${v}: ${c.what}`, make: () => witchFunk(v) }])),
-  // (ticket 301: the couch-cushion raves, A to E, for M; and the turtle steppers dubs, A to D)
-  ...Object.fromEntries(Object.entries(TURTLE_DUB).map(([v, c]) => ["steppers" + v, { name: `🐢 turtle steppers dub ${v}: ${c.what}`, make: () => turtleDub(v), mix: DUB_LOW }])),
+  // (ticket 301: the couch-cushion raves, A to E, for M; and the turtle steppers dubs, A to D; ticket 374: D-1 to D-4 beside D)
+  ...Object.fromEntries(Object.entries(TURTLE_DUB).map(([v, c]) => ["steppers" + v, { name: `🐢 turtle steppers dub ${c.label || v}: ${c.what}`, make: () => turtleDub(v), mix: DUB_LOW }])),
   ...Object.fromEntries(Object.entries(CUSHION_RAVE).map(([v, c]) => ["cushions" + v, { name: `🛋️ couch-cushion rave ${v}: ${c.what}`, make: () => cushionRave(v), mix: raveMix(v) }])),
   // Peaceful waltzes: three beats a bar (12 steps), oom-pah-pah under a
   // tune, two eight-bar halves, each with its own chords
@@ -1233,7 +1255,7 @@ function steppersTune({ bpm = 74, down = 0, ups = {}, chords = ["Em", "Em", "Am"
 // chips picks a kind, the second its tune
 const TUNE_GROUPS = [
   ["beats", "🥁 classic beats", ["bongobreak", "canyon", "skatepark"]],
-  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", ..."ABCD".split("").map(v => "steppers" + v), "superdub", "deepdub", "bubbledub"]],   // (ticket 263: its super-dub step beside it; ticket 290: and the bubble room's)
+  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", ...Object.keys(TURTLE_DUB).map(v => "steppers" + v), "superdub", "deepdub", "bubbledub"]],   // (ticket 263: its super-dub step beside it; ticket 290: and the bubble room's)
   ["calypso", "🏖️ calypso", ["beach", "soca", "lullaby"]],
   ["house", "🏠 house", ["cushions", ..."ABCDE".split("").map(v => "cushions" + v)]],   // (ticket 301: and its five versions)
   ["groove", "🕺 groove", ["bats", "batsremix", "vibes"]],
@@ -1270,7 +1292,7 @@ const TUNE_KEYS = {
   forest: "G major", beach: "C major", soca: "D major", roots: "G major", underwater: "A minor", steppers: "E minor",
   superdub: "E minor", deepdub: "Eb minor", bubbledub: "A minor", lullaby: "F major", witch: "D minor", witchfunkA: "D minor",
   witchfunkB: "D minor", witchfunkC: "D minor", witchfunkD: "D minor", witchfunkE: "D minor", steppersA: "A minor", steppersB: "G major",
-  steppersC: "F major", steppersD: "E major", cushionsA: "D major", cushionsB: "C major", cushionsC: "E major", cushionsD: "G major",
+  steppersC: "F major", steppersD: "E major", steppersD1: "D minor", steppersD2: "D major", steppersD3: "E minor", steppersD4: "A minor", cushionsA: "D major", cushionsB: "C major", cushionsC: "E major", cushionsD: "G major",
   cushionsE: "A major", castlewaltz: "G major", ballroom: "D major", healerwaltz: "F major", bats: "C minor", treechase: "A minor",
   duckdash: "F major", cushions: "E minor", housechase: "D minor", harpsichord: "D minor", vibes: "A minor", spiders: "E minor",
   cemetery: "F major", bongobreak: "E minor", canyon: "D minor", skatepark: "A minor" };

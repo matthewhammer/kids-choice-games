@@ -28,8 +28,8 @@ try {
     return JSON.stringify({ group: g[2], name: TUNES.superdub.name, bpm: T.bpm, steppersBpm: S.bpm, parts: T.parts.length === S.parts.length, shift, mixBefore: JSON.parse(before),
       kept: after["tuneA·melodica"] && after["tuneA·melodica"].level === -7 && after["chop·chop"].level === 3 && after["chop·chop"].echo === 81 && after.fx.repeats === 70, now: nowPlaying() }); })()`));
   console.log(`  ${r.name}: ${r.bpm} bpm; shifts ${JSON.stringify(r.shift)}; ${r.now}`);
-  // (ticket 369: steppers dub A-D, ticket 301, came between them since; after them all, then)
-  ok("in 🌴 reggae, after turtle steppers dub (and its A-D), named with 🔥", r.group.indexOf("superdub") > r.group.indexOf("steppers") && r.group.slice(r.group.indexOf("steppers") + 1, r.group.indexOf("superdub")).every(g => /^steppers[A-Z]$/.test(g)) && /^🔥 turtle super-dub step$/.test(r.name), r);
+  // (ticket 369: steppers dub A-D, ticket 301, came between them since; after them all, then; ticket 374: and D-1 to D-4)
+  ok("in 🌴 reggae, after turtle steppers dub (and its A-D), named with 🔥", r.group.indexOf("superdub") > r.group.indexOf("steppers") && r.group.slice(r.group.indexOf("steppers") + 1, r.group.indexOf("superdub")).every(g => /^steppers[A-Z]\d?$/.test(g)) && /^🔥 turtle super-dub step$/.test(r.name), r);
   ok("153 beats a minute at the tempo slider's 100, the same parts as turtle steppers dub (at 74)", r.bpm === 153 && r.steppersBpm === 74 && r.parts, r);
   ok("an octave down, the bass, the sonar and the first melodica back up as he set them, the drums as they were", r.shift["bass·bass"] === 0 && r.shift["sonar·bell"] === 0 && r.shift["tuneA·melodica"] === 12 && r.shift["tuneB·melodica"] === -12 && r.shift["chop·chop"] === -12 && r.shift["kick·kick"] === 0 && r.shift["drums·rim"] === 0, r.shift);
   ok("his mixing board its own to start from", r.mixBefore["tuneA·melodica"].level === -7 && r.mixBefore.fx.room === 186, r.mixBefore);
