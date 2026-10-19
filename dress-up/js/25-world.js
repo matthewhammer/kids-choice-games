@@ -751,7 +751,45 @@ function worldKeep() {
   // as a setting of its own, so its cached drawing knows when they change)
   if (sq && cell.kind === "crossing") { const live = worldLiveWays(W, W.at).join(","); if (B.crossLive !== live) B.crossLive = live; }
   else if (B.crossLive !== undefined) delete B.crossLive;
+  instanceKeep(W);
 }
+// (ticket 300, part 4, Matthew: "each background has instances ..., each with its own settings, independent of the other
+// instances. In 🏞️ Background, choose whether the change is to the template (each background's default instance) or to a
+// specific instance we have named") A square is an instance of its place: its own settings (cell.own) over the place's,
+// the template (state.background's own). The square the friend is in (or whose inside they are in: a castle's rooms are
+// its castle's) is shown as itself: its own put into state.background, what they replaced kept aside (W.tpl) to put back
+// on leaving (W.applied: the square shown so). A change made there (a slider, a choice, 🎲, a lever pulled, 👁️), seen as a
+// setting different from the drawing before (instanceLast), goes where 🏞️ Background's "✏️ changes here go to" says
+// (instEdit): 📍 only this square, into its own; 🧩 the template (the start), into the place's own, and a setting this
+// square had of its own follows the template again. ↺ (instanceReset) puts the square back to the template. What is not
+// a setting of the place is never an instance's: where the friend is, their size, what they sit on, the square's things
+// and a crossing's paths (cellKeys: the square's already), the music's LFOs, the choice itself.
+const INSTANCE_SKIP = new Set(["kind", "figX", "figY", "figSize", "figUnit", "seat", "things", "onBridge", "onPlatform", "inside", "castleRoom", "tent", "crossLive", "lfoFast", "lfoSlow", "lfoWings", "instEdit", "big", "designerView", ...CROSS_KEYS]);
+let instanceLast = null, instanceState = null;
+const instanceOf = W => { const B = state.background, cell = W && W.at && W.cells[W.at];
+  return cell && (cell.kind === B.kind || (INSIDES[cell.kind] || []).includes(B.kind)) ? W.at : null; };
+function instanceUnapply(W) { const B = state.background; for (const [k, v] of Object.entries(W.tpl || {})) { if (v === undefined) delete B[k]; else B[k] = structuredClone(v); } W.tpl = {}; W.applied = null; }
+function instanceApply(W, key) {
+  const B = state.background, cell = key && W.cells[key];
+  W.tpl = {}; W.applied = key || null;
+  if (cell) for (const [k, v] of Object.entries(cell.own || {})) { W.tpl[k] = B[k] === undefined ? undefined : structuredClone(B[k]); B[k] = structuredClone(v); }
+}
+const instanceSnap = () => { const B = state.background, o = {}; for (const k of Object.keys(B)) if (!INSTANCE_SKIP.has(k)) o[k] = JSON.stringify(B[k]); return o; };
+function instanceKeep(W) {
+  const B = state.background, key = instanceOf(W);
+  if (instanceState !== state) { instanceState = state; instanceLast = null; }   // (a save loaded, or started over: what was set is no change)
+  if ((W.applied || null) !== key) { instanceUnapply(W); instanceApply(W, key); instanceLast = instanceSnap(); return; }
+  const now = instanceSnap(), cell = key && W.cells[key];
+  if (instanceLast && cell) for (const k of new Set([...Object.keys(now), ...Object.keys(instanceLast)])) {
+    if (now[k] === instanceLast[k]) continue;
+    const was = instanceLast[k] === undefined ? undefined : JSON.parse(instanceLast[k]);
+    if ((B.instEdit || "template") === "instance") { cell.own = cell.own || {}; W.tpl = W.tpl || {}; if (!(k in W.tpl)) W.tpl[k] = was; cell.own[k] = B[k] === undefined ? null : structuredClone(B[k]); }
+    else if (cell.own && k in cell.own) { delete cell.own[k]; if (W.tpl) delete W.tpl[k]; }
+  }
+  instanceLast = now;
+}
+// (this square's own settings gone: the template's again)
+function instanceReset() { const W = state.world, key = W && W.applied, cell = key && W.cells[key]; if (!cell) return; instanceUnapply(W); cell.own = {}; instanceApply(W, key); instanceLast = instanceSnap(); }
 // A place chosen in the Background tab is that place's square: the first
 // square holding it (its things come with it); a place the world doesn't
 // have keeps its own things off the grid (worldKeep).

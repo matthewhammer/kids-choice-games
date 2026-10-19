@@ -318,6 +318,10 @@ const TABS = [
     ["bgbig", "big", "⛶ full screen"],
     ["bgview", "designerView", ""],   // (its own key: "view" is the living room window's, shown only there)
     ["places", "kind", "background", PLACES],
+    // (ticket 300) in a square of the world: where a change made here goes (the place's template, every one of it that has
+    // no setting of its own; or this square alone), and this square back to the template
+    ["choice", "instEdit", "✏️ changes here go to", [["template", "🧩 the template: every square of this place"], ["instance", "📍 only this square"]]],
+    ["action", "instReset", "↺ this square back to the template (its own settings gone)", () => instanceReset()],
     ["range", "figSize", "🧍 size in the scene", 10, 1000, 100, 100],
     // (ticket 214) each place's own: how much smaller going north (Surprise me leaves it as it is)
     ...[...NORTH_OUT, ...NORTH_ROOMS].map(kd => ["range", "north_" + kd, "🔭 smaller going north (% for each tenth of the picture)", 0, 80, northDefault(kd), northDefault(kd)]),
@@ -840,6 +844,8 @@ const SHOWN_WHEN = {
   "background.objectsOff": b => b.kind !== "none",
   "background.bubbles": b => b.kind === "bubblespace",   // (ticket 220)
   "background.bubbleroom": b => b.kind === "bubbleroom",   // (ticket 290)
+  "background.instEdit": b => !!instanceOf(state.world),   // (ticket 300)
+  "background.instReset": b => { const W = state.world, k = instanceOf(W); return !!(k && W.cells[k] && W.cells[k].own && Object.keys(W.cells[k].own).length); },
   "background.waterSee": b => !!waterHere(b), "background.waterWake": b => !!waterHere(b),
   "background.waterTread": b => !!waterHere(b) && !SHALLOW_WATER[b.kind],
   "background.chickenLegs": b => b.kind === "witch",
@@ -1430,7 +1436,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // then those about the other squares.
     const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), gridWrap = el("div", { class: "world-grid-wrap" }, [grid]), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away (it waits below, unreachable, to be put back)"), unreach = el("div", { class: "world-unreach" });
     const sizes = el("div", { class: "row" }, [...[["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { onclick: () => worldResize(dc, dr) }, t)),
-      el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { state.world = clone(DEFAULTS.world); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
+      el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { instanceUnapply(state.world); state.world = clone(DEFAULTS.world); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
     const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
     // (ticket 195, M) every neighbour joined that can be
     const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself), and take away every way that leads off the map's edge",

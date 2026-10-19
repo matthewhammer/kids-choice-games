@@ -423,6 +423,7 @@ const DEFAULTS = {
                 foamBack: true, foamBackH: 98, foamLeft: true, foamLeftH: 84, foamRight: true, foamRightH: 82, foamFloor: true, foamFloorH: 86,
                 foamCeil: true, foamCeilH: 95, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 88, foamSeed: 58909,
                 foamBackOut: 94, foamLeftOut: 82, foamRightOut: 82, foamFloorOut: 94, foamCeilOut: 20,
+                instEdit: "template",   // (ticket 300: in a world square, changes go to the place's template, or 📍 only that square)
                 bubbleCOn: false, bubbleCColor: "#c8f7c5", bubbleCSize: 11, bubbleCShine: 60, bubbleCSparkle: "dot", bubbleCSparkleColor: "#ffffff",
                 eyeRate: 30, eyeGlow: 70, skullMax: 300, skullEye: 100, blinkApart: false, cauldronFumes: "simple",
                 ducks: 5, duckSize: 100, cattails: 14, clouds: 4, cloudSize: 100,
@@ -998,7 +999,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.246", released: "2026-10-18" };
+const VERSION = { number: "0.0.247", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

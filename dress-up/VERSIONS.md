@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.247 (2026-10-18)
+
+Everything in 0.0.246, with each square of the world a place of its own.
+
+- **Each square of the world can have settings of its own**: in 🏞️ Background, in a square of the world, "✏️ changes here go to" chooses "🧩 the template", every square of that place (as it has always been, and where it starts), or "📍 only this square". Set a lake's ducks with 📍 and only that lake changes; the other lakes keep the template's. A castle's rooms are its own castle's.
+- **↺ this square back to the template** takes a square's own settings away, so it follows the template again. Changing the template from a square that has a setting of its own makes that square follow the template for it again.
+- A square taken away and put back keeps its own settings too.
+
 ## 0.0.246 (2026-10-18)
 
 Everything in 0.0.245, with the world designer and the places more alike.
