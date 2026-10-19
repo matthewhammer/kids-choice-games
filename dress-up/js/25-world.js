@@ -384,6 +384,38 @@ function accessApply() {
 // arrows' (#ways), whose children are its arrows by index, the boxes put first shifted every arrow onto another's
 // place, and each new square's arrows replaced the layer, boxes and all.
 let solidsShown = "";
+// (ticket 283, Matthew: "The water effect is really good, at the castle moat, and the tree house stream, etc." but nothing showed
+// what makes it; "Let's try to represent the internal game logic on screen, and let's give toggles to prevent it from getting
+// overwhelming") 💧 where the friend is in water here (WATER: wading to the knees in a stream or a brook, SHALLOW_WATER; in
+// to the waist, or swimming, anywhere else): the place's own test sampled in rows across the picture once a drawing of the
+// place, the runs in it drawn as bands, in the toggle's colour, with what it means written on it
+let waterShown = "", waterHudRuns = { key: "", runs: [] };
+function waterHud() {
+  const layer = document.getElementById("access-layer");
+  if (!layer) return;
+  const A = state.access || DEFAULTS.access, B = state.background, at = A.showWater && B.kind !== "none" ? waterHere(B) : null;
+  let ov = layer.querySelector("svg.water-hud");
+  if (!at) { if (ov) ov.remove(); waterShown = ""; return; }
+  const M = pic.getScreenCTM(), box = layer.getBoundingClientRect(), F = sceneFrame;
+  if (!M || !box.width) return;
+  const key = [bgShown.text && bgShown.text.length, B.kind, F.left, F.top, F.right, F.bottom].join();
+  if (waterHudRuns.key !== key) {   // (rows 5 apart, each its runs of points in the water, across the picture)
+    const step = 5, runs = [];
+    for (let y = F.top; y <= F.bottom; y += step) { let x0 = null;
+      for (let x = F.left; x <= F.right + 3; x += 3) { const w = x <= F.right && at(x, y);
+        if (w && x0 === null) x0 = x; else if (!w && x0 !== null) { runs.push([x0, y, x - x0]); x0 = null; } } }
+    waterHudRuns = { key, runs, step };
+  }
+  const sig = [key, M.a, M.e, M.f, A.waterColor].join();
+  if (sig === waterShown && ov) return;
+  waterShown = sig;
+  if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "water-hud"); layer.append(ov); }
+  const s1 = Math.hypot(M.a, M.b), col = A.waterColor || "#38bdf8", sc = (x, y) => { const q = new DOMPoint(x, y).matrixTransform(M); return [q.x - box.left, q.y - box.top]; };
+  const bands = waterHudRuns.runs.map(([x, y, w]) => { const [px, py] = sc(x, y); return `<rect x="${px.toFixed(1)}" y="${(py - waterHudRuns.step * s1 / 2).toFixed(1)}" width="${(w * s1).toFixed(1)}" height="${(waterHudRuns.step * s1 + 0.6).toFixed(1)}"/>`; }).join("");
+  const top = waterHudRuns.runs[0], [lx, ly] = top ? sc(top[0], top[1]) : [0, 0];
+  ov.setAttribute("style", "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible");
+  ov.innerHTML = `<g fill="${col}" fill-opacity="0.28">${bands}</g>` + (top ? `<text x="${lx.toFixed(1)}" y="${(ly - 4).toFixed(1)}" font-size="${A.boxFont || 11}" font-weight="bold" fill="${col}" stroke="#000" stroke-width="0.6" paint-order="stroke">💧 ${SHALLOW_WATER[B.kind] ? "water: wading, to the knees" : "water: in to the waist, or swimming where it is deep"}</text>` : "");
+}
 // (ticket 290) 🫧 the bubble room's bubbles that pop, as circles: each stuck-out one not popped now, dashed, in its colour
 let bubbleHitsShown = "";
 function bubbleHitsHud() {

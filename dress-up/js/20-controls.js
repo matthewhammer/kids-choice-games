@@ -583,6 +583,8 @@ const TABS = [
     // (ticket 290, Matthew: "We could have a new sub-cat for bubble collisions -- they are all circles right!") the bubble
     // room's stuck-out bubbles, each a circle that pops when the friend walks into it
     ["accbox", "showBubbleHits", "🫧 bubbles that pop (circles)", [["color", "bubbleHitColor", "🎨"]]],
+    // (ticket 283) the game's own rules, each a toggle: where the friend is in water (not a collision box: a test of its own)
+    ["accbox", "showWater", "💧 water (where you wade or swim)", [["color", "waterColor", "🎨"]]],
     // (ticket 258, Matthew: "a toggle that reveals a sub-panel of toggles, per category of object") each kind of thing a
     // chip of its own, with how many are here (madeOfHud)
     // (Matthew: "let's give 'what its made of' boxes the same stroke and color controls and the other inspection toggles")

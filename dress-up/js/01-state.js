@@ -631,13 +631,14 @@ DEFAULTS.access = { allArrows: false, arrowDim: 45, arrowColor: "#38bdf8", arrow
                     pathWidth: 4, boxWidth: 2, boxFont: 11,   // (ticket 230: the path's and the boxes' lines, the boxes' names, in px)
                     showMadeOf: false, madeCats: {}, madeFont: 10, madeColor: "#ffffff", madeWidth: 2,
                     clickWalk: true, clickWalkColor: "#22d3ee", pathAltColor: "#c084fc",
-                    showBubbleHits: false, bubbleHitColor: "#38bdf8" };   // (ticket 290: 🫧 the bubble room's bubbles that pop, as circles)   // (ticket 251: 👆 walk where you click, and its glow's colour; on at first since 0.0.188, Matthew: "so helpful, let's have it on by default")   // (ticket 258: 🧩 what a place is made of; each kind's chip, MADE_CATS's when unset)
+                    showBubbleHits: false, bubbleHitColor: "#38bdf8",   // (ticket 290: 🫧 the bubble room's bubbles that pop, as circles)
+                    showWater: false, waterColor: "#22d3ee" };   // (ticket 283: 💧 where the friend is in water)   // (ticket 251: 👆 walk where you click, and its glow's colour; on at first since 0.0.188, Matthew: "so helpful, let's have it on by default")   // (ticket 258: 🧩 what a place is made of; each kind's chip, MADE_CATS's when unset)
 // (ticket 236, Matthew: "Turn on the accessibility features during all tests, because: * we want them to always work.
 // * the screenshots may be more informative.") A page opened at index.html#inspect starts with every 🔬 overlay on: all
 // the arrows, the planned path, the collision boxes and what each place is made of; as its defaults (so a check that
 // starts over keeps them) and over a saved friend's settings. CI's runs open the game so; a check can still turn one off.
 const INSPECT_ALL = (() => { try { return /(^#|&)inspect(&|$)/.test(location.hash); } catch (_) { return false; } })();
-const INSPECT_ON = { allArrows: true, showPath: true, showSolids: true, showMadeOf: true, showBubbleHits: true };
+const INSPECT_ON = { allArrows: true, showPath: true, showSolids: true, showMadeOf: true, showBubbleHits: true, showWater: true };
 if (INSPECT_ALL) Object.assign(DEFAULTS.access, INSPECT_ON);
 for (const kd of [...NORTH_OUT, ...NORTH_ROOMS]) DEFAULTS.background["north_" + kd] = northDefault(kd);   // (ticket 214: each place's 🔭)
 let state = clone(DEFAULTS);
@@ -999,7 +1000,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.253", released: "2026-10-18" };
+const VERSION = { number: "0.0.254", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

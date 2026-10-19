@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.254 (2026-10-18)
+
+Everything in 0.0.253, with the water shown in 🔬 Inspection.
+
+- **💧 water (where you wade or swim)**, a new toggle in 🔬 Inspection: the water in a place drawn over it, with what it means: wading to the knees in the tree house's stream and the cemetery's brook, in to the waist (or swimming where it is deep) in the moat, the lake, the sea and the falls' pool. It is not a collision box, it is a rule of its own, so it has a toggle of its own.
+- Also out since 0.0.252, and not noted then: more outdoor things you can see, hide and place: the forest's sunbeams and flowers; the flowers in the clearing, at the tree house and at the grass hut; the castle's birds and its flowers and grass; the fairy forest's flowers and grass; the grass hut's butterflies.
+
 ## 0.0.253 (2026-10-18)
 
 Everything in 0.0.252, with the trap room's levers working by touch.
