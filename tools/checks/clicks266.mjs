@@ -22,7 +22,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   const at = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
-    state.music.mute = true; state.world.at = null; climb = null; Object.assign(state.access, { clickWalk: true, showPath: true });
+    state.music.mute = true; state.world.at = null; climb = null; Object.assign(state.access, { clickWalk: true, showPath: true, clickPlan: "queue" });   /* (ticket 369: a click while walking replaces the walk at first since ticket 294; queueing is ♿ 👆's choice) */
     Object.assign(B, { kind: "emptyroom", figX: -300, figY: 40, things: [] }); changed(); await w(500);
     const M = pic.getScreenCTM(), g = SCENE.ground, scr = (x, y) => { const q = new DOMPoint(x, g + y).matrixTransform(M); return [q.x, q.y]; };
     return JSON.stringify({ a: scr(0, 60), b: scr(250, 20), c: scr(100, 45), end: [100, 45] }); })()`));

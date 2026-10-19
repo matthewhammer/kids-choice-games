@@ -63,7 +63,9 @@ try {
     const look = () => { if (!watching) return; frames++; const x = B.figX ?? 0, z = g + (B.figY ?? 0);
       if (!endIn && walkPath && walkPath.pts.length) { const q = walkPath.pts[walkPath.pts.length - 1]; endIn = new Set(S.filter(o => touches(o, q[0], g + q[1]))); }
       if (walkPath && walkPath.leg >= walkPath.pts.length - 1) { requestAnimationFrame(look); return; }
-      for (const o of S) if (!startIn.has(o) && !(endIn && endIn.has(o)) && touches(o, x, z, 2)) inSolid.push(o.name + "@" + Math.round(x) + "," + Math.round(z - g));
+      // (ticket 369: nor one touched turning where they start, within 6 units of it: turned to walk, in profile, the feet reach a unit further)
+      const atStart = Math.hypot(x - ${c.x}, z - g - ${c.y}) < 6;
+      for (const o of S) if (!startIn.has(o) && !(endIn && endIn.has(o)) && !atStart && touches(o, x, z, 2)) inSolid.push(o.name + "@" + Math.round(x) + "," + Math.round(z - g));
       requestAnimationFrame(look); };
     requestAnimationFrame(look);
     enterScene(p.el);

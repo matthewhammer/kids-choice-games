@@ -23,6 +23,8 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
     state.world.at = null; climb = null; state.music.mute = false;
+    /* (ticket 369: since ticket 316 a lever pressed with 👆 on is walked to first, and pull 1 ended before the friend got there;
+       ⚙️ 🎚️ pull levers from where you stand, ticket 364, pulls at once, as this check was written for) */ state.access.leverFar = true;
     for (const k of Object.keys(B)) if (/^castleLever[LR]_/.test(k)) delete B[k];
     Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: 160, figY: 70, things: [] }); changed(); await w(800);
     window.__mounts = 0; const m0 = mountScene; mountScene = function (...a) { window.__mounts++; return m0.apply(this, a); };

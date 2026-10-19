@@ -70,6 +70,7 @@ jobs:
         run: |
           mkdir -p out/checks; s=0
           for f in tools/checks/*.mjs; do
+            if [ -f tools/fresh.mjs ]; then node tools/fresh.mjs 9333 http://127.0.0.1:8133 || true; fi   # (ticket 369: each check from a fresh visitor's saved state)
             node "$f" 9333 "$PAGE" | tee "out/checks/$(basename "$f" .mjs).txt" || s=1
           done
           exit $s

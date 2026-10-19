@@ -24,9 +24,11 @@ try {
     const chest = solidsHere().find(o => o.name === "chest of gold"), body = inPic(document.querySelector('#bg [data-obj="chest of gold"] rect'));
     const coins = inPic(document.querySelector('#bg [data-obj="chest of gold"] .flat'));
     // (rocks with shadows: each box narrower than its drawing, shadow and all)
-    B.kind = "forest"; changed(); await w(500); draw();
-    const rocks = solidsHere().filter(o => /^rock/.test(o.name)).map(o => { const g = document.querySelector('#bg [data-obj="' + o.name + '"]'), sh = g && g.querySelector('ellipse[fill="#000"], ellipse[fill="#000000"]');
-      return sh ? { name: o.name, box: Math.round(o.x1 - o.x0), all: Math.round(inPic(g)[1] - inPic(g)[0]) } : null; }).filter(Boolean);
+    // (ticket 369: the forest has no rocks at its defaults now; every place that has them, then)
+    const rocks = [];
+    for (const kd of ["mountains", "waterfall", "castle", "underwater"]) { B.kind = kd; changed(); await w(500); draw();
+      rocks.push(...solidsHere().filter(o => /^rock/.test(o.name)).map(o => { const g = document.querySelector('#bg [data-obj="' + o.name + '"]'), sh = g && g.querySelector('ellipse[fill="#000"], ellipse[fill="#000000"]');
+        return sh ? { name: kd + ": " + o.name, box: Math.round(o.x1 - o.x0), all: Math.round(inPic(g)[1] - inPic(g)[0]) } : null; }).filter(Boolean)); }
     B.figX = 0; changed();
     return JSON.stringify({ chest: [Math.round(chest.x0), Math.round(chest.x1)], body: body.map(Math.round), coins: coins.map(Math.round), rocks }); })()`));
   console.log(`  ${JSON.stringify(r)}`);
