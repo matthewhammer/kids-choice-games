@@ -609,7 +609,7 @@ function walkPlanned(x, z, then = null) {
     if (clickRun !== run) { if (!entering) { state.body.anim = "none"; changed(); } return; }
     if (++k >= walkPath.pts.length) { const done = run.then; clickRun = null; state.body.anim = "none"; changed(); if (done) done(); return; }
     walkPath.leg = k - 1;
-    walkTo(walkPath.pts[k][0], g + walkPath.pts[k][1], leg);
+    walkTo(walkPath.pts[k][0], g + walkPath.pts[k][1], leg, k < walkPath.pts.length - 1);   // (ticket 321: more legs to come, walked on without a stop)
   };
   leg();
 }
@@ -1272,8 +1272,12 @@ function bridgeGoIn(be = bridgeEnd()) {
 // (ticket 199) to a spot on the floor, walking (swimming in deep water) as
 // walkInto does, a long way faster, 2.5 s at most; then on
 // (ticket 294: a walk stopped, a new one in its place, is stopped by walkStop going on: its steps end where they are)
+// (ticket 321, Matthew: "there's a bouncing and flashing visually (on the path itself only) when we do multi-segment paths
+// ... each time we reach a new segment, there's a visual interruption": each leg ended the walk, standing still and not
+// walking for a drawing, so 👣's path was taken down and put up again and the friend stood a moment) more: another leg
+// follows, so this one hands straight on to it, still walking
 let walkStop = 0;
-function walkTo(x, y, then) {
+function walkTo(x, y, then, more = false) {
   bridgeOff();   // (ticket 245: from a rope bridge, down at its foot first)
   const BG = state.background, B = state.body, F = sceneFrame;
   const tx = clamp(x, F.left, F.right), ty = clamp(y - SCENE.ground, figYMin(F), F.bottom - F.ground);
@@ -1287,7 +1291,7 @@ function walkTo(x, y, then) {
     if (walkStop !== stop) return;   // (ticket 294: stopped, a new walk in its place)
     const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
     const dx = tx - (BG.figX ?? 0), dy = ty - (BG.figY ?? 0), d = Math.hypot(dx, dy / 0.6), sp = speed * dt;
-    if (d <= sp + 0.5 || t - t0 > WALK_IN_MAX) { BG.figX = tx; BG.figY = ty; B.anim = "none"; entering = false; draw(); then(); return; }
+    if (d <= sp + 0.5 || t - t0 > WALK_IN_MAX) { BG.figX = tx; BG.figY = ty; if (more) { then(); return; } B.anim = "none"; entering = false; draw(); then(); return; }
     BG.figX = Math.round(10 * ((BG.figX ?? 0) + dx * sp / d)) / 10; BG.figY = Math.round(10 * ((BG.figY ?? 0) + dy * sp / d)) / 10;
     B.anim = deepHere() ? "swim" : "walk"; B.facing = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : dy < 0 ? "back" : "front"; B.turn = "";
     moved(); requestAnimationFrame(step);

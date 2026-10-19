@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.274 (2026-10-18)
+
+Everything in 0.0.273, with smoother planned walks.
+
+- **Fixed: a walk round things stopped for a moment at each turn**: walking to a click by a path of several legs (round pits, furniture), your friend stood still for a moment at each bend, and with 🔬's 👣 planned path shown, the path flashed off and on. Now they walk straight on from leg to leg, and the path stays up.
+
 ## 0.0.273 (2026-10-18)
 
 Everything in 0.0.272, with the trap room's things in detail.
