@@ -943,7 +943,9 @@ const SHOWN_WHEN = {
             ...ROOM_NS.map(n => ["background.castleRoomTheme" + n + id, b => OWN_EXIT_ROOMS.includes(typeOf(b, n))]),
             // (its residents: where they live, and as many as there are)
             ...Object.values(RESIDENTS).flatMap(R => [["background." + R.group[0] + id, livesHere(R.room)],
-              ...R.list.map((_, i) => ["background." + R.box[0] + (i + 1) + id, b => livesHere(R.room)(b) && i + 1 <= Math.round(b[R.count[0] + id] ?? R.count[2])])]),
+              ...R.list.map((_, i) => ["background." + R.box[0] + (i + 1) + id, b => livesHere(R.room)(b) && i + 1 <= Math.round(b[R.count[0] + id] ?? R.count[2])]),
+              // (ticket 293: a field shown only when its sixth says, by the resident's settings: a throne's cat's, while it has one)
+              ...R.list.flatMap((_, i) => R.fields.filter(f => f[5]).map(f => ["background." + R.key + (i + 1) + f[0] + id, b => !!f[5](residentsOf(R, b, id)[i] || {})]))]),
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle], ["background.castleDesign" + id, atCastle],
             ...ROOM_NS.flatMap(n => [...[1, 2].map(i => ["background." + pitShapeKey(i, n, id), b => typeOf(b, n) === "trap"]),
               ...[1, 2].map(i => ["background." + pitOnKey(i, n, id), b => typeOf(b, n) === "trap"]), ["background." + leverWireKey(n, id), b => typeOf(b, n) === "trap"],

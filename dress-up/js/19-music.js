@@ -1448,7 +1448,7 @@ const LFO_FOLLOWERS = [
   () => state.costume.kind === "fairy" && state.costume.wingFlutter !== false && LFO_NAMES.includes(state.costume.wingLfo) ? [[state.costume.wingLfo, "🧚 fairy wings"]] : [],
   () => state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo) ? [[state.background.fairyHouseLfo, "🏡 fairy house"]] : [],
   // (the castle's residents in the room the friend is in)
-  () => residentsHereNow().flatMap(([R, list]) => list.flatMap((one, i) => LFO_NAMES.includes(one.lfo) ? [[one.lfo, R.follows(i)]] : [])),
+  () => residentsHereNow().flatMap(([R, list]) => list.flatMap((one, i) => LFO_NAMES.includes(one.lfo) && (!R.followsIf || R.followsIf(one)) ? [[one.lfo, R.follows(i)]] : [])),   // (ticket 293: a throne's cat's tail, while it has one)
   // (the scene's quick things, its slow things and its wings)
   () => ["fast", "slow", "wings"].flatMap(pace => { const B = state.background, th = sceneLfoThings(B)[pace], L = th && sceneLfoName(B, pace); return L ? [[L, th]] : []; }),
 ];

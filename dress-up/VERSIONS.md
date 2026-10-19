@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.262 (2026-10-18)
+
+Everything in 0.0.261, with up to six thrones in each king's room.
+
+- **👑 Thrones**: each castle's king's room now has a king's throne and a queen's to start with, one in the castle's theme A and one in its theme B (the velvet in that theme's carpet color, a crest in its flag color), and up to six across the dais (🏞️ Background, in the castle's settings: "👑 how many thrones"). Each throne has its own size and theme, and each is a seat you can sit on.
+- **🐈 A cat on a throne**: any throne can have a cat, sitting, curled up asleep or pacing along the seat, with all the cat room's own settings (fur, tuxedo white, eyes, size, and its tail wag, with an LFO or its own).
+
 ## 0.0.261 (2026-10-18)
 
 Everything in 0.0.260, with leaky diving suits and a riveted helmet.

@@ -204,14 +204,33 @@ const horseKey = (id, j, what) => "castleHorse" + j + what + id;
 // the "none" choice's name, and its default, from the kind's list]). From
 // this come the settings' keys and defaults (DEFAULTS), castleOf's lists, the
 // controls (TABS), when they show (SHOWN_WHEN) and the mixing board's names.
+// (a cat's settings, the cat room's and a throne's cat's alike: ticket 293)
+const CAT_FIELDS = [["Fur", "color", "🐈 its fur", CAT_FURS, d => d.fur], ["White", "color", "🤍 tuxedo white (muzzle and bib)", CAT_WHITES, d => d.white],
+                    ["Eyes", "color", "👀 its eyes", CAT_EYES, d => d.eyes], ["Pose", "choice", "🐾 it is", CAT_POSES, d => d.pose],
+                    ["Spot", "choice", "📍 where it is", CAT_SPOTS, d => d.spot], ["Size", "range", "📏 its size", [20, 300, 80, 120], () => 100],
+                    ["Lfo", "lfo", "〰️ its tail wags with", "its own wag", () => "D"], ["Offset", "range", "↪️ how far into the wag it starts (%)", [0, 99, 0, 99], d => d.offset]];
+// (ticket 293, Matthew: "Each king's room permits up to 6 thrones, each with a size and a theme control. The default,
+// going forward, is 2 (a king's and a queen's), in theme A and theme B"; "🐈 has a cat ... and with a cat, all of the
+// cat's options"; "please try to reuse code where possible --- these are the same controls as the cat room") A throne's
+// own settings, then its cat's: the cat room's own (but where it sits: on the throne), shown while it has one (a field's
+// sixth, when it shows); the cat's size is CatSize, the throne's Size
+const KING_THRONES = [
+  { theme: "A", cat: "none", fur: "#e8862a", white: "#ffffff", eyes: "#22c55e", pose: "sit", offset: 12 },
+  { theme: "B", cat: "none", fur: "#1f1f22", white: "#ffffff", eyes: "#c6d43a", pose: "sleep", offset: 57 },
+  { theme: "A", cat: "none", fur: "#6f6f7d", white: "off", eyes: "#e0a800", pose: "sit", offset: 33 },
+  { theme: "B", cat: "none", fur: "#ffffff", white: "off", eyes: "#3b82f6", pose: "walk", offset: 81 },
+  { theme: "A", cat: "none", fur: "#6b4226", white: "#f7ead8", eyes: "#f28c28", pose: "sleep", offset: 5 },
+  { theme: "B", cat: "none", fur: "#d9b38c", white: "#ffffff", eyes: "#3b82f6", pose: "sit", offset: 46 }];
 const RESIDENTS = {
   cats: { room: "catroom", key: "castleCat", list: CAT_ROOM_CATS, count: ["castleCats", 8, CAT_ROOM_COUNT],
           group: ["castleCatList", id => `🐈 ${id}'s castle: its cats, in its cat room`, "🐈 how many cats"], box: ["castleCatBox", j => `🐈 cat ${j}`],
-          follows: i => `🐈 cat ${i + 1}'s tail`,
-          fields: [["Fur", "color", "🐈 its fur", CAT_FURS, d => d.fur], ["White", "color", "🤍 tuxedo white (muzzle and bib)", CAT_WHITES, d => d.white],
-                   ["Eyes", "color", "👀 its eyes", CAT_EYES, d => d.eyes], ["Pose", "choice", "🐾 it is", CAT_POSES, d => d.pose],
-                   ["Spot", "choice", "📍 where it is", CAT_SPOTS, d => d.spot], ["Size", "range", "📏 its size", [20, 300, 80, 120], () => 100],
-                   ["Lfo", "lfo", "〰️ its tail wags with", "its own wag", () => "D"], ["Offset", "range", "↪️ how far into the wag it starts (%)", [0, 99, 0, 99], d => d.offset]] },
+          follows: i => `🐈 cat ${i + 1}'s tail`, fields: CAT_FIELDS },
+  thrones: { room: "king", key: "castleThrone", list: KING_THRONES, count: ["castleThrones", 6, 2],
+             group: ["castleThroneList", id => `👑 ${id}'s castle: its thrones, in its king's room`, "👑 how many thrones"], box: ["castleThroneBox", j => `👑 throne ${j}`],
+             follows: i => `🐈 throne ${i + 1}'s cat's tail`, followsIf: one => one.cat === "cat",
+             fields: [["Size", "range", "📏 its size", [40, 200, 70, 140], () => 100], ["Theme", "choice", "🎨 its colors", THEMES, d => d.theme],
+                      ["Cat", "choice", "🐈 a cat on it", [["none", "no cat"], ["cat", "🐈 a cat"]], d => d.cat],
+                      ...CAT_FIELDS.filter(f => f[0] !== "Spot").map(f => f[0] === "Size" ? ["CatSize", f[1], "📏 the cat's size", f[3], f[4], one => one.cat === "cat"] : [...f, one => one.cat === "cat"])] },
   horses: { room: "stable", key: "castleHorse", list: STABLE_HORSES, count: ["castleHorses", 4, STABLE_HORSE_COUNT],
             group: ["castleHorseList", id => `🐴 ${id}'s castle: its horses, in its stable`, "🐴 how many horses"], box: ["castleHorseBox", j => `🐴 horse ${j}`],
             follows: i => `🐴 horse ${i + 1}'s nod`,
@@ -1002,7 +1021,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.261", released: "2026-10-18" };
+const VERSION = { number: "0.0.262", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

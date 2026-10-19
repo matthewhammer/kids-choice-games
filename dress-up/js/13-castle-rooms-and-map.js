@@ -1046,6 +1046,57 @@ function spiralSvg(c, K) {
 // owner's color, crossed swords and shields, a stained-glass window, a
 // chandelier, suits of armor at the sides, a chest of gold; and through its
 // open door, the hallway outside, torches going off along it
+// (ticket 293) The king's room's thrones, up to six, across its dais, each its own size (fitted to the back wall, the
+// more of them the closer, and smaller when they would touch) and in its color theme's (A, or B: the velvet the theme's
+// carpet color, a crest in its first flag color); throneLayout says where each stands and how big it is (for the
+// drawing and the seats alike)
+function throneLayout(c, K) {
+  const { k } = c, { floor, bw } = roomFrame(c), T = K.thrones || [], n = T.length, most = Math.max(1, ...T.map(t => t.size / 100));
+  const gap = n > 1 ? Math.min(125 * k * most, (1.7 * bw - 112 * k * most) / (n - 1)) : 0, fit = n > 1 ? Math.min(1, gap / (118 * k * most)) : 1;
+  return T.map((t, i) => ({ ...t, x: (i - (n - 1) / 2) * gap, s: fit * t.size / 100, floor, ty: floor - 42 * k }));
+}
+// one throne: tall-backed, gold, its velvet and crest in its theme's colors, a crown on top; at (0, floor), at its size
+function throneSvg(c, velvet, crest) {
+  const { k, P } = c, { floor } = roomFrame(c), gold = "#e8b923", red = velvet, ty = floor - 42 * k;
+  let t = "";
+  t += `<path d="M${P(-46 * k, ty)} V${f1(ty - 150 * k)} Q${P(-46 * k, ty - 200 * k)} ${P(0, ty - 214 * k)} Q${P(46 * k, ty - 200 * k)} ${P(46 * k, ty - 150 * k)} V${f1(ty)} Z" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(3 * k)}"/>` +
+       `<path d="M${P(-32 * k, ty - 40 * k)} V${f1(ty - 146 * k)} Q${P(-32 * k, ty - 184 * k)} ${P(0, ty - 194 * k)} Q${P(32 * k, ty - 184 * k)} ${P(32 * k, ty - 146 * k)} V${f1(ty - 40 * k)} Z" fill="${red}"/>` +
+       [...Array(6)].map((_, j) => `<circle cx="${f1(-18 * k + (j % 2) * 36 * k)}" cy="${f1(ty - 70 * k - Math.floor(j / 2) * 34 * k)}" r="${f1(2.5 * k)}" fill="${gold}"/>`).join("") +
+       `<path d="M${P(-22 * k, ty - 214 * k)} L${P(-22 * k, ty - 236 * k)} L${P(-11 * k, ty - 226 * k)} L${P(0, ty - 244 * k)} L${P(11 * k, ty - 226 * k)} L${P(22 * k, ty - 236 * k)} L${P(22 * k, ty - 214 * k)} Z" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(2 * k)}"/>` +
+       [-11, 0, 11].map(x => `<circle cx="${f1(x * k)}" cy="${f1(ty - 230 * k + (x ? 4 * k : -6 * k))}" r="${f1(3 * k)}" fill="${["#e53935", "#3b82f6", "#22c55e"][(x / 11 + 1) | 0]}"/>`).join("") +
+       `<rect x="${f1(-56 * k)}" y="${f1(ty - 40 * k)}" width="${f1(112 * k)}" height="${f1(22 * k)}" rx="${f1(6 * k)}" fill="${red}" stroke="${gold}" stroke-width="${f1(3 * k)}"/>` +
+       [-1, 1].map(e => `<rect x="${f1(e * 56 * k - (e < 0 ? 0 : 14 * k))}" y="${f1(ty - 74 * k)}" width="${f1(14 * k)}" height="${f1(74 * k)}" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(2 * k)}"/>` +
+         `<circle cx="${f1(e * 56 * k + (e < 0 ? 7 * k : -7 * k))}" cy="${f1(ty - 78 * k)}" r="${f1(10 * k)}" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(2 * k)}"/>`).join("");
+  t += `<circle cx="0" cy="${f1(ty - 172 * k)}" r="${f1(12 * k)}" fill="${crest}" stroke="${gold}" stroke-width="${f1(3 * k)}"/>`;
+  return t;
+}
+function kingThrones(c, K, wags) {
+  const { k } = c, L = throneLayout(c, K), floor = roomFrame(c).floor;
+  if (!L.length) return "";
+  const xs = L.map(t => t.x), half = Math.max(...L.map(t => t.s)) * 95 * k;
+  // the dais, as wide as its thrones, its three steps
+  let dais = "";
+  for (let j = 0; j < 3; j++) { const w = Math.max(...xs) - Math.min(...xs) + 2 * half - j * 30 * k, y = floor - j * 14 * k;
+    dais += `<rect x="${f1(-w / 2)}" y="${f1(y - 14 * k)}" width="${f1(w)}" height="${f1(14 * k)}" fill="${mix("#8a7f72", "#ffffff", 0.1 * j)}" stroke="#5a5048" stroke-width="${f1(1.5 * k)}"/>`; }
+  let t = floorObj("dais", dais);
+  L.forEach((th, i) => {
+    const theme = th.theme === "B" ? K.themeB : K.themeA || K, s = th.s, at = inner => `<g transform="translate(${f1(th.x)} ${f1(floor)}) scale(${s.toFixed(3)}) translate(0 ${f1(-floor)})">${inner}</g>`;
+    let svg = at(throneSvg(c, theme.carpet, theme.flagA));
+    // its cat, on its seat: sitting, curled up asleep, or pacing to and fro along it (the cat room's own drawings)
+    if (th.cat === "cat") {
+      const W = wags[i], WC = { catFur: th.fur, catWhite: th.white, catEyes: th.eyes, catNose: "#f4a0b0" }, cs = 0.85 * k * s * th.catsize / 100;
+      const sx = th.x, sy = floor - 82 * k * s, cat = (inner, dy = 0) => `<g transform="translate(${f1(sx)} ${f1(sy + dy)}) scale(${cs.toFixed(3)})">${inner}</g>`;
+      if (th.pose === "sleep") svg += cat(sleepingCat(WC, W, i + 10));
+      else if (th.pose === "walk") { const u = Math.max(8, 40 * k * s / cs), dur = (2 * u / 26).toFixed(2), b = `-${((i * 1.3) % +dur).toFixed(2)}s`;
+        svg += cat(`<g><animateTransform attributeName="transform" type="translate" values="${f1(-u)} 0;${f1(u)} 0;${f1(-u)} 0" dur="${dur}s" begin="${b}" repeatCount="indefinite"/>` +
+          `<g><animateTransform attributeName="transform" type="scale" values="1 1;-1 1" keyTimes="0;0.5" calcMode="discrete" dur="${dur}s" begin="${b}" repeatCount="indefinite"/>${walkingCat(WC, W, i + 10)}</g></g>`); }
+      else svg += cat(shoulderCat(4, WC, W, true), 7 * cs);
+    }
+    t += obj(`throne ${i + 1}`, floor, svg);
+  });
+  return t;
+}
+
 function kingRoomSvg(c, K) {
   const { x0, x1, y1, W, k, R, P } = c, { floor, top, bw, vy, out } = roomFrame(c);
   const flag = K.flagA, gold = "#e8b923", red = "#a3122a";
@@ -1086,21 +1137,7 @@ function kingRoomSvg(c, K) {
   t += `<polygon points="${P(-60 * k, floor - 2 * k)} ${P(60 * k, floor - 2 * k)} ${P(-ca, cy)} ${P(ca, cy)}" fill="${K.carpet}"/>` +
        `<polygon points="${P(-60 * k, floor - 2 * k)} ${P(60 * k, floor - 2 * k)} ${P(-ca, cy)} ${P(ca, cy)}" fill="none" stroke="${gold}" stroke-width="${f1(4 * k)}"/>`;
   t = floorSince(t, mCarpet, "carpet");
-  // the dais, its steps, and the throne: tall-backed, gold, red velvet, a crown on top
-  // (one object, standing at the dais's foot, against the back wall: ticket 99)
-  let throne = "";
-  for (let j = 0; j < 3; j++) { const w = (190 - j * 30) * k, y = floor - j * 14 * k;
-    throne += `<rect x="${f1(-w / 2)}" y="${f1(y - 14 * k)}" width="${f1(w)}" height="${f1(14 * k)}" fill="${mix("#8a7f72", "#ffffff", 0.1 * j)}" stroke="#5a5048" stroke-width="${f1(1.5 * k)}"/>`; }
-  const ty = floor - 42 * k;
-  throne += `<path d="M${P(-46 * k, ty)} V${f1(ty - 150 * k)} Q${P(-46 * k, ty - 200 * k)} ${P(0, ty - 214 * k)} Q${P(46 * k, ty - 200 * k)} ${P(46 * k, ty - 150 * k)} V${f1(ty)} Z" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(3 * k)}"/>` +
-       `<path d="M${P(-32 * k, ty - 40 * k)} V${f1(ty - 146 * k)} Q${P(-32 * k, ty - 184 * k)} ${P(0, ty - 194 * k)} Q${P(32 * k, ty - 184 * k)} ${P(32 * k, ty - 146 * k)} V${f1(ty - 40 * k)} Z" fill="${red}"/>` +
-       [...Array(6)].map((_, j) => `<circle cx="${f1(-18 * k + (j % 2) * 36 * k)}" cy="${f1(ty - 70 * k - Math.floor(j / 2) * 34 * k)}" r="${f1(2.5 * k)}" fill="${gold}"/>`).join("") +
-       `<path d="M${P(-22 * k, ty - 214 * k)} L${P(-22 * k, ty - 236 * k)} L${P(-11 * k, ty - 226 * k)} L${P(0, ty - 244 * k)} L${P(11 * k, ty - 226 * k)} L${P(22 * k, ty - 236 * k)} L${P(22 * k, ty - 214 * k)} Z" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(2 * k)}"/>` +
-       [-11, 0, 11].map(x => `<circle cx="${f1(x * k)}" cy="${f1(ty - 230 * k + (x ? 4 * k : -6 * k))}" r="${f1(3 * k)}" fill="${["#e53935", "#3b82f6", "#22c55e"][(x / 11 + 1) | 0]}"/>`).join("") +
-       `<rect x="${f1(-56 * k)}" y="${f1(ty - 40 * k)}" width="${f1(112 * k)}" height="${f1(22 * k)}" rx="${f1(6 * k)}" fill="${red}" stroke="${gold}" stroke-width="${f1(3 * k)}"/>` +
-       [-1, 1].map(e => `<rect x="${f1(e * 56 * k - (e < 0 ? 0 : 14 * k))}" y="${f1(ty - 74 * k)}" width="${f1(14 * k)}" height="${f1(74 * k)}" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(2 * k)}"/>` +
-         `<circle cx="${f1(e * 56 * k + (e < 0 ? 7 * k : -7 * k))}" cy="${f1(ty - 78 * k)}" r="${f1(10 * k)}" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(2 * k)}"/>`).join("");
-  t += obj("throne", floor, throne);
+  // (ticket 293: the dais and its thrones, and their cats, are a part of their own: kingThrones)
   // the chandelier: a gold ring of candles on chains, the flames flickering
   // (hung as far back as it is drawn, at the back wall's size: its depth the floor's there)
   const chy = top - 10 * k;
@@ -2247,8 +2284,8 @@ const ROOM_SEATS = {
             ...[-1, 1].flatMap(sd => [...Array(D.sides[sd < 0 ? 0 : 1])].map((_, j) => { const [xi, xo] = D.seatX(sd);
               return seat(`chair, ${sd < 0 ? "left" : "right"} ${j + 1}`, D.zOf(sd, j), xi, xo - sd * 4 * k, [sd < 0 ? "right" : "left"]); }))];
   },
-  king: c => { const { k } = c, { floor } = roomFrame(c), ty = floor - 42 * k;
-    return [{ name: "throne", x0: -42 * k, x1: 42 * k, y: ty - 40 * k, z: floor + 1, facing: ["front"] }]; },
+  // (ticket 293: each throne, where it stands and at its size)
+  king: (c, K) => throneLayout(c, K).map((t, i) => ({ name: `throne ${i + 1}`, x0: t.x - 42 * c.k * t.s, x1: t.x + 42 * c.k * t.s, y: t.floor - 82 * c.k * t.s, z: t.floor + 1, facing: ["front"] })),
   catroom: c => { const { k } = c, { at, Yh, WX, bw, floor } = catRoomPlaces(c), sa = WX - 0.27 * bw, sb = WX + 0.27 * bw, Ys = Yh(0.22), z = -0.045;
     return [{ name: "window seat", x0: at(sa + 0.01 * bw, Ys, z)[0], x1: at(sb - 0.01 * bw, Ys, z)[0], y: at(0, Ys - 6.5 * k, z)[1], z: at(0, floor, -0.09)[1] + 1, facing: ["front"] }]; },
   spiral: c => { const { Yf, R, r0, th0, lvl, pt } = spiralGeom(c), step = Math.PI / 10, ra = r0 + (R - r0) * 0.25, rb = r0 + (R - r0) * 0.75;
@@ -2270,6 +2307,8 @@ function castleroomScene(c) {
   const bones = K.bones[n - 1][style] ?? 0;
   if (style === "hallway" || style === "dining") c = { ...c, eye: 0.3 };
   // (in its own color theme)
+  // (ticket 293: theme A's colors kept too, for a throne in theme A in a room in theme B)
+  K = { ...K, themeA: { flagA: K.flagA, flagB: K.flagB, carpet: K.carpet } };
   if (K.roomTheme[n - 1] === "B") K = { ...K, ...K.themeB };
   const hallEnd = style === "hallway" && K.hall[n - 1].end === "none" ? "none" : "";
   const places = style === "dining" ? K.places[n - 1] : 0;
@@ -2282,6 +2321,10 @@ function castleroomScene(c) {
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)
     const wags = K.cats.map(catWag);
     s += SEP + part("croom-cats", [c.F, K.id, JSON.stringify(K.cats), wags.map(W => W.key).join("|")], () => catRoomCats(c, K, wags)); }
+  // (ticket 293: the king's room's thrones, likewise, and their cats, each cat wagging with its own wag)
+  if (style === "king") { for (const T of K.thrones) if (T.cat === "cat") void o["lfo:" + T.lfo];
+    const wags = K.thrones.map((T, i) => catWag(T, i + 10));
+    s += SEP + part("croom-thrones", [c.F, K.id, JSON.stringify(K.thrones), JSON.stringify(K.themeA), JSON.stringify(K.themeB), wags.map(W => W.key).join("|")], () => kingThrones(c, K, wags)); }
   // (the stable's horses, likewise, each nodding with its own wag)
   if (style === "stable") { for (const Hh of K.horses) void o["lfo:" + Hh.lfo];
     const wags = K.horses.map(catWag);
