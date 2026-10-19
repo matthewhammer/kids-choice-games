@@ -297,8 +297,10 @@ function drawNow() {
   if (scened) bridgeKeep();
   // (ticket 269: on a house's platform, on the way in from its ladder, as on a bridge)
   const onBr = scened ? bridgeNow() || platformNow() : null;
+  // (ticket 287: swimming flat, the waterline move.float of the body's half width above the hips, the turn's middle)
+  const swimming = !!(move && move.swim);
   const wet = scened && !onBr && !figOver && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)),
-        wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : tread ? Math.max(12, Math.min(L, 8 + 0.5 * armLen)) : L;
+        wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : swimming ? L - (move.float ?? 0) * w : tread ? Math.max(12, Math.min(L, 8 + 0.5 * armLen)) : L;
   const gStand = poseHeld && scened ? poseHeld.g : wet ? wl : ground;
   // (ticket 132) an animation lifts the friend (a step, a bound, a pull up
   // the ladder); crawling turns them about the hips (rot), and they rest on
@@ -308,7 +310,7 @@ function drawNow() {
   // the picture toward us or away, the back that deep, seen short: crawlShape)
   Object.assign(poseJoints, { turn: rot, L, crawl: rot ? "side" : squash ? (away ? "away" : "toward") : null, depth: squash ? squash * (L + 20) : 0 });
   let gFig = gStand;
-  if (rot) {
+  if (rot && !swimming) {
     const a = rot * Math.PI / 180, turned = ([x, y]) => L + x * Math.sin(a) + (y - L) * Math.cos(a);
     gFig = Math.max(...arms.map(x => turned(x.H) + 10), ...[1, -1].map(sd => turned(kneeAt(sd)) + B.legW / 2), ...[1, -1].map(sd => turned(footAt(sd)) + 8));
   } else if (move && move.lift && !wet && !poseHeld) gFig = gStand + move.lift;
@@ -317,7 +319,8 @@ function drawNow() {
   // whose ground was kept as it was
   const hugLift = B.pose === "hug" && !rot && !wet ? LL * Math.max(0, Number(B.hugLift ?? 50) || 0) / 100 : 0;
   if (hugLift && !poseHeld) gFig += hugLift;
-  const rotTf = rot ? ` rotate(${rot} 0 ${f1(L)})` : "";
+  // (ticket 287: swimming, turned inside the waterline, which stays level: below, in the water)
+  const rotTf = rot && !swimming ? ` rotate(${rot} 0 ${f1(L)})` : "";
   // (seated, sized by the seat's depth, not by where their feet hang: ticket 50)
   const sizeSeat = scened ? seatNow() : null;
   // (ticket 331: out through a tree room's door to a bridge, in the picture seen through it: figOver, where and how big)
@@ -856,7 +859,8 @@ function drawNow() {
     const R = Math.min(420, (hw + 80 + Math.min(220 * wake, most)) * T.k), down = (Math.max(ground, feetY + 40) - wl + 30) * T.k;
     const water = waterRuns(BG, bgText, Math.round(sx - R), Math.round(sx + R), Math.round(sy - 0.2 * R - 12), Math.round(sy + down))
       .map(([x, y, w]) => `<rect x="${f1((x - sx) / T.k)}" y="${f1((y - sy) / T.k + T.g)}" width="${f1(w / T.k)}" height="${f1(2 / T.k + 0.6)}"/>`).join("");
-    svg = svg.slice(0, figAt) + wading(BG, svg.slice(figAt), wl, hw, most, tread ? tread.bob : 0, water);
+    const inner = swimming && rot ? `<g transform="rotate(${rot} 0 ${f1(L)})">${svg.slice(figAt)}</g>` : svg.slice(figAt);
+    svg = svg.slice(0, figAt) + wading(BG, inner, wl, hw, most, tread ? tread.bob : 0, water);
     // (ticket 143) a splash where a jump leaves the water or comes back in:
     // drops thrown up and out in a crown, falling and fading
     if (tread && tread.splash) {

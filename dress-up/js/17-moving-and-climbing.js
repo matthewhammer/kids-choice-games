@@ -71,6 +71,10 @@ function treadStroke(amt, u) {
 const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"], ["jump", "🐸 short, fast jump"], ["jumphigh", "🦘 high, slow jump"], ["crouch", "🧎 crouching down"]];
 // (walking, running and crawling are seen from the side: chosen facing us, the friend turns to our right)
 const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
+// (ticket 287) swimming flat, from the side: how far the friend is turned about the hips, short of lying level, so the
+// head rides higher than the feet and the face looks ahead; and the waterline, that share of the body's half width
+// above the hips (0: through them; below 0, more of them above the water)
+const SWIM_TILT = 76, SWIM_FLOAT = 0, SWIM_REACH = 50;
 // (ticket 137) Climbing a ladder that stands in the place ("🧗 climbing"):
 // the friend goes to the ladder nearest them, just in front of it at its
 // depth, facing it (away from us), and climbs it, CLIMB_SPEED stage units a second at the
@@ -631,6 +635,21 @@ function moveNow() {
   const u = lfoNow("B").phase, T = 2 * Math.PI, sin = f => Math.sin(T * u * f), cos = f => Math.cos(T * u * f);
   const dir = facingOf(B), lean = side => dir ? (side === dir ? -14 : 4) : 0;
   const both = (k, f) => ({ [k + "L"]: f(1), [k + "R"]: f(-1) });
+  // (ticket 287, Matthew: "the current swim is for upright treading, not horz motion"; "let's use what we learned about
+  // pose in crawling for swimming --- Now, our limbs are out in front, fully, and behind us, fully, and flapping")
+  // Swimming through deep water ("swim"; "swimfast", running, twice as quick), from the side: turned about the hips to
+  // lie along the surface (rot, as the crawl turns: SWIM_TILT), the arms straight, windmilling half a turn apart, each
+  // from fully in front (overhead) down under the body and back to the hip, then up over the back and in front again
+  // (the front crawl); the legs straight back from the hips, kicking in turn twice a stroke, the toes pointed. Still in
+  // the water, they tread, upright, as before.
+  if ((a === "swim" || a === "swimfast") && dir && !poseHeld && deepHere()) {
+    const p = a === "swimfast" ? (2 * u) % 1 : u, k = Math.sin(4 * Math.PI * p), t0 = (B.knees ?? 0) / 2, b0 = B.knees ?? 0;
+    // (the hand goes in ahead of the head and a little below it, SWIM_REACH short of overhead, where the big head
+    // hid it, and comes out past the hip, a little up, as a swimmer's does)
+    return { ...both("Arm", sd => -90 + SWIM_REACH + 360 * ((p + (sd === dir ? 0 : 0.5)) % 1) - (B.arms ?? 0) - lean(sd)), ...both("Elbow", () => -(B.elbows ?? 0)),
+             ...both("Leg", sd => 14 * sd * k - t0), ...both("Knee", sd => 14 * Math.max(0, sd * k) - b0), ...both("Foot", () => -70),
+             rot: SWIM_TILT * dir, float: SWIM_FLOAT, swim: true };
+  }
   if (a === "swim") return treadNow() || treadStroke(1, u);
   // (ticket 141) swimming fast (the controller's run, in water): the stroke twice as quick
   if (a === "swimfast") return { ...treadStroke(1, (2 * u) % 1), water: true };

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.258 (2026-10-18)
+
+Everything in 0.0.257, with real swimming, from the side.
+
+- **Swimming for real**: moving through deep water (and faster when you run), the friend swims flat along the surface instead of treading upright: head up and looking ahead, the arms windmilling in turn (up out of the water, over, into the water ahead of the chin, and back), the legs stretched out behind, kicking. Holding still in the water, they tread, upright, as before. Toward you and away from you are next.
+
 ## 0.0.257 (2026-10-18)
 
 Everything in 0.0.256, with crawling hands on the floor, knees, and collision boxes that crawl too.
