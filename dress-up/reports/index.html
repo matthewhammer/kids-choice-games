@@ -28,29 +28,29 @@
 <main>
 <h1>Dress Up reports</h1>
 <p class="sub">Reports on <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, the plain-JavaScript game made with M and N, where features are tried with real players before they are rebuilt as livelits in Hazel. Each report takes one question and answers it with measurements. The first rule they measure: 60 frames a second for everything a game controller does. (Hazel's own series is the <a href="https://matthewhammer.org/hazel/performance-analysis/">Hazel performance analysis</a>.)</p>
-<a class="card" href="001/"><svg viewBox="0 0 120 70" class="thumb" aria-hidden="true">
-<rect x="6" y="12" width="32.4" height="14" class="b0"/><rect x="6" y="30" width="107.5" height="14" class="b1"/>
-<line x1="105.0" y1="6" x2="105.0" y2="52" class="limit"/><text x="6" y="64" class="t">18 → 59.7 fps</text></svg>
-<div><div class="n"><code><b>^du_report(</b>1<b>)</b></code> · 2026-10-16</div><div class="h">60 frames a second, and what checks it</div>
-<div class="q">Does the game hold 60 frames a second for what a controller does? Every measured case does on 0.0.78 (59.3 to 60); the measuring covers 2 of 8 kinds of action in 7 of 24 places, and none of it runs in CI yet.</div></div></a>
-<a class="card" href="002/"><svg viewBox="0 0 120 70" class="thumb" aria-hidden="true">
-<rect x="6" y="6" width="45.9" height="11" class="b0"/><rect x="6" y="19" width="98.6" height="11" class="b1"/>
-<rect x="6" y="36" width="37.4" height="11" class="b0"/><rect x="6" y="49" width="102" height="11" class="b1"/>
-<line x1="99.5" y1="2" x2="99.5" y2="62" class="limit"/><text x="6" y="69" class="t">27→58 · 22→60 fps</text></svg>
-<div><div class="n"><code><b>^du_report(</b>2<b>)</b></code> · 2026-10-16</div><div class="h">The kids' computers</div>
-<div class="q">Why was the game choppy on an Ubuntu laptop (Intel i7) and an iPad, and pausing on Matthew's laptop? Two causes (Firefox's animations, Safari's shapes) answered by still bitmaps: the duck pond 27 → 58 and 22 → 60; and a stale "choppy" mark on Matthew's laptop. Measured on each computer, pasted into a public pad.</div></div></a>
-<a class="card" href="003/"><img class="thumb pic" src="003/pictures/duck-pond.svg" alt="" aria-hidden="true">
-<div><div class="n"><code><b>^du_report(</b>3<b>)</b></code> · 2026-10-16</div><div class="h">Slow until reloaded</div>
-<div class="q">Why did the game stay slow after the duck pond, everywhere, until a reload? The 🏞️ Background tab: with it open the pond swam at 2.4 to 14.9 frames a second, its controls working out the whole castle on every refresh (790 ms); fixed on a branch, 59.3. And what a session keeps: a bounded cache, not a leak. The series' first measurements on GitHub's computers.</div></div></a>
-<a class="card" href="004/"><img class="thumb pic" src="004/pictures/waterfall-0.0.201.svg" alt="" aria-hidden="true">
-<div><div class="n"><code><b>^du_report(</b>4<b>)</b></code> · 2026-10-18</div><div class="h">One folder, every run</div>
-<div class="q">How can the picture archive keep a year of runs in one repository? No PNGs (a run's were 185 to 397 MB), one folder rewritten by every run and every run a git tag: the same five runs in 24 MiB, against 768. And what moving it showed: the settings file did not decide its drawing (a saved time, the page's clocks, random choices), and 0.0.198's hidden drawings left out look the same, the waterfall 183 to 116 KB.</div></div></a>
 <a class="card" href="006/"><img class="thumb pic" src="006/pictures/trap-room-boxes.svg" alt="" aria-hidden="true">
 <div><div class="n"><code><b>^du_report(</b>6<b>)</b></code> · 2026-10-18</div><div class="h">Then and now</div>
 <div class="q">Messed Up Dress Up beside the adventure-game engines of 1984 to 1993: Sierra's AGI and SCI, LucasArts' SCUMM, the Hugo games. The same layers behind a picture (priority, control; our depths and collision boxes); of their eleven hard problems we meet nine again, faster; what is new now; Hugo's House of Horrors, and what it would take to be a game like it.</div></div></a>
 <a class="card" href="005/"><img class="thumb pic" src="005/pictures/lake-view.svg" alt="" aria-hidden="true">
 <div><div class="n"><code><b>^du_report(</b>5<b>)</b></code> · 2026-10-18</div><div class="h">Always be knolling</div>
 <div class="q">What did the two full-screen designers (🎵 Music, 🗺️ World design) do alike that the other 17 tabs do not? Thirteen choices, from a slim bar to boxes within boxes and the game as the first card. 🏞️ Background alone declares 1,337 rows; a player sees 9 to 50 in one place. A proposal for every panel, nine rules, with before and afters for the castle's themes, the bubble themes and a full-screen background designer.</div></div></a>
+<a class="card" href="004/"><img class="thumb pic" src="004/pictures/waterfall-0.0.201.svg" alt="" aria-hidden="true">
+<div><div class="n"><code><b>^du_report(</b>4<b>)</b></code> · 2026-10-18</div><div class="h">One folder, every run</div>
+<div class="q">How can the picture archive keep a year of runs in one repository? No PNGs (a run's were 185 to 397 MB), one folder rewritten by every run and every run a git tag: the same five runs in 24 MiB, against 768. And what moving it showed: the settings file did not decide its drawing (a saved time, the page's clocks, random choices), and 0.0.198's hidden drawings left out look the same, the waterfall 183 to 116 KB.</div></div></a>
+<a class="card" href="003/"><img class="thumb pic" src="003/pictures/duck-pond.svg" alt="" aria-hidden="true">
+<div><div class="n"><code><b>^du_report(</b>3<b>)</b></code> · 2026-10-16</div><div class="h">Slow until reloaded</div>
+<div class="q">Why did the game stay slow after the duck pond, everywhere, until a reload? The 🏞️ Background tab: with it open the pond swam at 2.4 to 14.9 frames a second, its controls working out the whole castle on every refresh (790 ms); fixed on a branch, 59.3. And what a session keeps: a bounded cache, not a leak. The series' first measurements on GitHub's computers.</div></div></a>
+<a class="card" href="002/"><svg viewBox="0 0 120 70" class="thumb" aria-hidden="true">
+<rect x="6" y="6" width="45.9" height="11" class="b0"/><rect x="6" y="19" width="98.6" height="11" class="b1"/>
+<rect x="6" y="36" width="37.4" height="11" class="b0"/><rect x="6" y="49" width="102" height="11" class="b1"/>
+<line x1="99.5" y1="2" x2="99.5" y2="62" class="limit"/><text x="6" y="69" class="t">27→58 · 22→60 fps</text></svg>
+<div><div class="n"><code><b>^du_report(</b>2<b>)</b></code> · 2026-10-16</div><div class="h">The kids' computers</div>
+<div class="q">Why was the game choppy on an Ubuntu laptop (Intel i7) and an iPad, and pausing on Matthew's laptop? Two causes (Firefox's animations, Safari's shapes) answered by still bitmaps: the duck pond 27 → 58 and 22 → 60; and a stale "choppy" mark on Matthew's laptop. Measured on each computer, pasted into a public pad.</div></div></a>
+<a class="card" href="001/"><svg viewBox="0 0 120 70" class="thumb" aria-hidden="true">
+<rect x="6" y="12" width="32.4" height="14" class="b0"/><rect x="6" y="30" width="107.5" height="14" class="b1"/>
+<line x1="105.0" y1="6" x2="105.0" y2="52" class="limit"/><text x="6" y="64" class="t">18 → 59.7 fps</text></svg>
+<div><div class="n"><code><b>^du_report(</b>1<b>)</b></code> · 2026-10-16</div><div class="h">60 frames a second, and what checks it</div>
+<div class="q">Does the game hold 60 frames a second for what a controller does? Every measured case does on 0.0.78 (59.3 to 60); the measuring covers 2 of 8 kinds of action in 7 of 24 places, and none of it runs in CI yet.</div></div></a>
 </main>
 <script>
 (() => { const b = document.getElementById("theme"), modes = ["auto", "light", "dark"], names = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
