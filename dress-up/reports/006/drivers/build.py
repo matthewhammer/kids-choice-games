@@ -39,7 +39,7 @@ FIG2 = '''<svg class="chart" viewBox="0 0 760 300" role="img" aria-label="The la
 <g transform="translate(500 208)"><rect class="l" width="220" height="80" rx="6"/><text class="s" x="10" y="20">collision boxes, back line</text><path class="c" d="M15 42 H205" stroke-dasharray="6 4"/><rect class="c" x="40" y="48" width="40" height="22"/><rect class="c" x="130" y="50" width="50" height="20"/></g>
 </svg>'''
 body = f'''<main>
-<p class="series">Dress Up reports · {ref(6)} · {D["date"]} · about Messed Up Dress Up, a game made with M and N · after {ref(5)}</p>
+<p class="series"><a href="../">Dress Up reports</a> · {ref(6)} · {D["date"]} · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(5)}</p>
 <h1>Then and now</h1>
 <p class="sub">{E(D["question"])} The game at {G["version"]}; written from the sources listed at the end, and from the game's code and history (^ticket(295)).</p>
 <div class="headline"><b>Short answers.</b>

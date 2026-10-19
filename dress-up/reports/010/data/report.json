@@ -1,0 +1,308 @@
+{
+ "question": "How is the friend drawn in each pose, and how did each pose come to look as it does now?",
+ "date": "2026-10-18",
+ "game": {
+  "version": "0.0.305",
+  "lines": 22830,
+  "parts": 26
+ },
+ "trigger": "Matthew, ticket 356: \"let's do a report about how to draw each pose. Let's include lots of examples of past approaches compared to now.\"",
+ "versions": [
+  [
+   "v0030",
+   "0.0.30"
+  ],
+  [
+   "v0060",
+   "0.0.60"
+  ],
+  [
+   "v0090",
+   "0.0.90"
+  ],
+  [
+   "v0150",
+   "0.0.150"
+  ],
+  [
+   "v0197",
+   "0.0.197"
+  ],
+  [
+   "v0250",
+   "0.0.250"
+  ],
+  [
+   "v0303",
+   "0.0.303"
+  ]
+ ],
+ "poses": [
+  [
+   "_default",
+   "Standing, toward us",
+   "One skeleton, drawn by joints (ticket 99): shoulders, elbows, hands, hips, knees, feet, each limb a line through its joints. Every pose below is this skeleton with angles set; nothing is a picture of its own."
+  ],
+  [
+   "facing--back",
+   "Away from us",
+   "Ticket 138: drawn as facing us, but the head has no face and the hair covers its back; worn things on the back (wings, a tail, the tank) drawn last, over the body."
+  ],
+  [
+   "facing--left",
+   "In profile",
+   "Ticket 124: the body narrower, the arms from the shoulder and the legs from under the hip, pointing the way they face; the far arm and leg behind the body, the near ones in front; the face's near half moved to the front edge."
+  ],
+  [
+   "anim--walk",
+   "Walking",
+   "Ticket 132: an animation is the pose's angles plus a turn of each joint for this moment of the stride, in time with the music's LFO; chosen facing us, the friend turns to the side. Ticket 309: the knee leads and the foot follows (WALK_LAG)."
+  ],
+  [
+   "anim--run",
+   "Running",
+   "Ticket 132: the walk's stride, longer and faster, the arms pumping, the body leaning in."
+  ],
+  [
+   "anim--stairs",
+   "On stairs",
+   "Ticket 308: a step up or down each stride, one foot higher than the other, turned to the side as walking is."
+  ],
+  [
+   "anim--crawl",
+   "Crawling, in profile",
+   "Ticket 146 put crawling on the controller. From the side it was on all fours from the first: the body level, turned about the hips, the hands and knees on the floor, the far arm and leg behind. Ticket 371: what lies on the back (the tank) turns with it."
+  ],
+  [
+   "anim--crawl-front",
+   "Crawling, toward us",
+   "From 0.0.90 to 0.0.250 this was the standing body with the knees bent out and the arms held out, floating over its shadow (a crouch, really). Ticket 286 (0.0.256 and 0.0.257) put it on the floor: the face low, the arms straight down beside it to hands flat on the floor, the knees between them, a little of the back rising behind the head. Ticket 371: the tank shows over that back, not on the belly."
+  ],
+  [
+   "anim--crawl-back",
+   "Crawling, away",
+   "The same floating crouch from behind until ticket 286. Now the back is seen short, in front of the hanging hair, the soles showing, standing on the legs as drawn, the arms straight down to the floor. Ticket 371: the tank lies along the back, squashed with it."
+  ],
+  [
+   "anim--crouch",
+   "Crouching",
+   "The knees bent out (ticket 99's knees) and the body lowered; the controller's crouch."
+  ],
+  [
+   "anim--swim",
+   "Swimming",
+   "Ticket 123: treading water, the arms sculling and the legs kicking in turn, bobbing to the music; ticket 287: swimming flat in deep water, turned about the hips, the head and arms coming over the waterline."
+  ],
+  [
+   "anim--climb",
+   "Climbing",
+   "Ticket 137: up a place's ladder, hand over hand, a rung a stride (ticket 173), facing it; the ladder drawn behind them."
+  ],
+  [
+   "pose--sit",
+   "Sitting",
+   "Tickets 50 and 124: the thighs come toward us, the shins hang; on a seat the friend is sized and sorted at the seat's depth."
+  ],
+  [
+   "pose--meditate",
+   "Cross-legged",
+   "Ticket 129: each thigh out and a little down, each shin back across the other, the soles up, the hands together in the lap, the eyes closed."
+  ],
+  [
+   "pose--dance",
+   "Dancing",
+   "Ticket 129: one of a set of dance poses at random, never the last one again."
+  ],
+  [
+   "pose--hug",
+   "Jumping up into a hug",
+   "Ticket 136: the legs of a sitter, the arms forward round a neck, held up off the ground; ticket 130: the far arm and leg drawn apart, a body's depth behind, so they can go behind the one hugged."
+  ],
+  [
+   "pose--lie",
+   "Lying down",
+   "Ticket 299: the whole friend turned a quarter about the hips onto the back, the head to either side."
+  ]
+ ],
+ "grid": {
+  "v0030": {
+   "_default": "drawn",
+   "facing--back": "same as standing",
+   "facing--left": "same as standing",
+   "anim--walk": "same as standing",
+   "anim--run": "same as standing",
+   "anim--stairs": "same as standing",
+   "anim--crawl": "same as standing",
+   "anim--crouch": "same as standing",
+   "anim--swim": "same as standing",
+   "anim--climb": "same as standing",
+   "pose--sit": "same as standing",
+   "pose--meditate": "same as standing",
+   "pose--dance": "same as standing",
+   "pose--hug": "same as standing",
+   "pose--lie": "same as standing",
+   "anim--crawl-front": "same as standing",
+   "anim--crawl-back": "same as standing"
+  },
+  "v0060": {
+   "_default": "drawn",
+   "facing--back": "same as standing",
+   "facing--left": "drawn",
+   "anim--walk": "same as standing",
+   "anim--run": "same as standing",
+   "anim--stairs": "same as standing",
+   "anim--crawl": "same as standing",
+   "anim--crouch": "same as standing",
+   "anim--swim": "same as standing",
+   "anim--climb": "same as standing",
+   "pose--sit": "same as standing",
+   "pose--meditate": "same as standing",
+   "pose--dance": "same as standing",
+   "pose--hug": "same as standing",
+   "pose--lie": "same as standing",
+   "anim--crawl-front": "same as standing",
+   "anim--crawl-back": "same as standing"
+  },
+  "v0090": {
+   "_default": "drawn",
+   "facing--back": "drawn",
+   "facing--left": "drawn",
+   "anim--walk": "drawn",
+   "anim--run": "drawn",
+   "anim--stairs": "same as standing",
+   "anim--crawl": "drawn",
+   "anim--crouch": "drawn",
+   "anim--swim": "drawn",
+   "anim--climb": "drawn",
+   "pose--sit": "drawn",
+   "pose--meditate": "drawn",
+   "pose--dance": "drawn",
+   "pose--hug": "drawn",
+   "pose--lie": "missing",
+   "anim--crawl-front": "drawn",
+   "anim--crawl-back": "drawn"
+  },
+  "v0150": {
+   "_default": "drawn",
+   "facing--back": "drawn",
+   "facing--left": "drawn",
+   "anim--walk": "drawn",
+   "anim--run": "drawn",
+   "anim--stairs": "same as standing",
+   "anim--crawl": "drawn",
+   "anim--crouch": "drawn",
+   "anim--swim": "drawn",
+   "anim--climb": "drawn",
+   "pose--sit": "drawn",
+   "pose--meditate": "drawn",
+   "pose--dance": "drawn",
+   "pose--hug": "drawn",
+   "pose--lie": "missing",
+   "anim--crawl-front": "drawn",
+   "anim--crawl-back": "drawn"
+  },
+  "v0197": {
+   "_default": "drawn",
+   "facing--back": "drawn",
+   "facing--left": "drawn",
+   "anim--walk": "drawn",
+   "anim--run": "drawn",
+   "anim--stairs": "same as standing",
+   "anim--crawl": "drawn",
+   "anim--crouch": "drawn",
+   "anim--swim": "drawn",
+   "anim--climb": "drawn",
+   "pose--sit": "drawn",
+   "pose--meditate": "drawn",
+   "pose--dance": "drawn",
+   "pose--hug": "drawn",
+   "pose--lie": "missing",
+   "anim--crawl-front": "drawn",
+   "anim--crawl-back": "drawn"
+  },
+  "v0250": {
+   "_default": "drawn",
+   "facing--back": "drawn",
+   "facing--left": "drawn",
+   "anim--walk": "drawn",
+   "anim--run": "drawn",
+   "anim--stairs": "same as standing",
+   "anim--crawl": "drawn",
+   "anim--crouch": "drawn",
+   "anim--swim": "drawn",
+   "anim--climb": "drawn",
+   "pose--sit": "drawn",
+   "pose--meditate": "drawn",
+   "pose--dance": "drawn",
+   "pose--hug": "drawn",
+   "pose--lie": "missing",
+   "anim--crawl-front": "drawn",
+   "anim--crawl-back": "drawn"
+  },
+  "v0303": {
+   "_default": "drawn",
+   "facing--back": "drawn",
+   "facing--left": "drawn",
+   "anim--walk": "drawn",
+   "anim--run": "drawn",
+   "anim--stairs": "drawn",
+   "anim--crawl": "drawn",
+   "anim--crouch": "drawn",
+   "anim--swim": "drawn",
+   "anim--climb": "drawn",
+   "pose--sit": "drawn",
+   "pose--meditate": "drawn",
+   "pose--dance": "drawn",
+   "pose--hug": "drawn",
+   "pose--lie": "drawn",
+   "anim--crawl-front": "drawn",
+   "anim--crawl-back": "drawn"
+  }
+ },
+ "found": [
+  [
+   "The picture archive never drew three poses",
+   "It set each pose by itself (the body's pose to \"sit\"), but a pose's limbs come from strikePose, which only the Body tab's own control calls: so sit, meditate and dance were archived standing at every run since the poses began (and the hug at the early runs). Its tool now sets each setting as a tap does (the game's set()), from the next run on (dress-up-pictures 94f7933); the first such run (run-2026-10-18-23-14, the game at 0.0.304) draws all five poses, each different from standing."
+  ],
+  [
+   "What lies on the back has to turn with the back",
+   "Crawling toward us the back is turned up over the head, and the tank stayed hanging, on the belly (ticket 371, fixed in 0.0.303); the old diving suit's hose turned with the head when lying, crawling sideways or swimming flat, and is now kept rising."
+  ],
+  [
+   "One body, one scale",
+   "Outside on the tree house's bridges the friend was set to one height whatever their shape (ticket 352, fixed in 0.0.302)."
+  ],
+  [
+   "Lying down and the stairs are new since 0.0.250",
+   "and crawling changed most: from kneeling with arms out to all fours."
+  ]
+ ],
+ "next": [
+  [
+   "A sheet of every pose in the picture archive",
+   "each run's poses side by side, as this report's gallery, so a change to a pose shows the next morning"
+  ],
+  [
+   "Every pose facing each way",
+   "the gallery here is toward us or to the side; away and three-quarter views of each pose, for the audit ticket 371 began"
+  ],
+  [
+   "A pose check from the archive",
+   "a check that each pose's picture differs from standing, so a pose that silently draws standing (as the archive's did) fails at once"
+  ]
+ ],
+ "sources": {
+  "archive": [
+   "The picture archive's runs (dress-up-pictures), with the tool fixed tonight",
+   "https://github.com/matthewhammer/dress-up-pictures"
+  ],
+  "versions": [
+   "Each version's game, from its release tag (dress-up-0.0.30 to 0.0.303)",
+   "https://github.com/matthewhammer/kids-choice-games/tags"
+  ],
+  "instructions": [
+   "agent-instructions.md: the friend's joints, the Body tab, facing and sitting",
+   "https://github.com/matthewhammer/kids-choice-games/blob/main/agent-instructions.md"
+  ]
+ }
+}

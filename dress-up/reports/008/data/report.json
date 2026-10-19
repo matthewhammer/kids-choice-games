@@ -1,0 +1,284 @@
+{
+ "question": "How could all of Messed Up Dress Up's current features move to Hazel, piece by piece: what would two months of work bring over, what would three, and what has to be decided first?",
+ "date": "2026-10-18",
+ "game": {
+  "version": "0.0.289",
+  "versions": 289,
+  "first": "2026-10-12",
+  "lines": 22407,
+  "parts": 26,
+  "checks": 130
+ },
+ "inventory": [
+  [
+   "The friend",
+   "03 face, 04 hair, 05 ghost, 06 costumes, 07 underwear, 08 body",
+   2350,
+   "the face, hair, body, clothes, shoes, costumes, see-through layers: a picture from the settings",
+   "SVG text built by string functions; settings in one state object",
+   "pure"
+  ],
+  [
+   "Poses and moves",
+   "17 moving and climbing (moveNow, the rig), part of 18 drawing",
+   1700,
+   "the pose rig, each animation's pose at a phase (walk, crawl, swim, climb, sit, lie, balance)",
+   "a phase from the music's clock (LFO B), the rig's joint maths",
+   "pure"
+  ],
+  [
+   "The places",
+   "09 backgrounds, 10 nature, 11 houses and huts, 12 clearing and castle, 13 castle rooms and map, 14 outdoors, 15 place picker",
+   8650,
+   "about 40 places, castle rooms and tree rooms, each drawn from its settings; each thing standing there an object with a depth",
+   "SVG text; obj(name, depth, svg) for the depth sort; part() caches keyed on the settings read",
+   "pure"
+  ],
+  [
+   "Drawing a frame",
+   "18 drawing",
+   1070,
+   "the friend among the place's objects, by depth; the scene cache; still pictures on slow computers",
+   "the DOM (mounting, measuring), requestAnimationFrame",
+   "runtime"
+  ],
+  [
+   "Things in the way and walking",
+   "16 objects and solids, 26 drags and start (walks)",
+   2400,
+   "collision boxes and ovals, the back line, planned walks round them, the controller's steps",
+   "boxes MEASURED from the drawn picture (getBBox, getScreenCTM: 50 calls), then pure geometry",
+   "runtime"
+  ],
+  [
+   "The music",
+   "19 music",
+   1850,
+   "60 tunes as data (chords, parts, forms), the mixing board, LFOs the scenes follow",
+   "WebAudio for the sound; the tunes and the board are pure data",
+   "runtime"
+  ],
+  [
+   "The world and its settings UI",
+   "20 controls, 25 world, 21 to 24",
+   3600,
+   "every setting's control (1,337 rows in Background alone), the world designer, saves",
+   "the DOM, localStorage, files",
+   "tool"
+  ],
+  [
+   "Input",
+   "26 drags and start (the rest), 22 full screen",
+   1100,
+   "pointer drags of joints and things, a game controller and the on-screen one, keys",
+   "DOM events, the Gamepad API, 60 polls a second",
+   "runtime"
+  ],
+  [
+   "The checks and archives",
+   "tools/ (130 checks), dress-up-pictures, dress-up-music",
+   0,
+   "the picture archive (every place, the friend in it, as SVG plus its settings), the music archive, the speed gate",
+   "headless browsers driving the game",
+   "tool"
+  ]
+ ],
+ "has": [
+  [
+   "User-defined livelits",
+   "init, view and update, with splices (splice_new, splice_set, splice_eval): a livelit's model and its GUI, in the editor (integration branches, PR #2597 and #2635; not on dev)"
+  ],
+  [
+   "The Livelit Playground",
+   "slides already port pieces of the friend from this game: Polygons, Shirt and Pants, Shoes and Hair, Kids' Choice, the 1990s Face; each a picture built as SVG text from a model"
+  ],
+  [
+   "Pictures as values",
+   "SVG is text Hazel can build: floats with +. and friends, to_fixed for numbers, strings, lists of shapes drawn in order"
+  ],
+  [
+   "Types",
+   "records, labelled tuples, sums, System F over values (typfun, explicit @<T>); Modules II for libraries. No type application (no M(a) for a type constructor M)"
+  ],
+  [
+   "Speed",
+   "a livelit release about 0.13 to 0.5 s on the faster branch (#2635) after this month's work (from 4.6 s), against under a millisecond for this game to draw the friend and 16 ms for a frame at 60 fps"
+  ]
+ ],
+ "lacks": [
+  [
+   "A clock",
+   "walking, swimming, swaying scenery: a pose at a phase every frame",
+   "keep SMIL animations in the drawn SVG (they are text, and play without Hazel: the places' code writes animations in about 150 places today); per-frame motion stays in JS until a view can be fed time cheaply"
+  ],
+  [
+   "Per-frame speed",
+   "60 frames a second leaves 16 ms; a Hazel evaluation of a view is 100 times that today",
+   "Hazel computes what a frame shows only when settings change; the JS loop moves the friend and plays the SMIL in between"
+  ],
+  [
+   "Measuring a drawn picture",
+   "collision boxes are measured from the DOM (getBBox) after drawing",
+   "compute each object's box from its geometry in the same function that draws it: a better design anyway, and testable"
+  ],
+  [
+   "Sound",
+   "WebAudio has no Hazel binding",
+   "the tunes as Hazel data (they already are data), played by the JS synthesizer"
+  ],
+  [
+   "Imports between slides",
+   "a library module is copied into each slide",
+   "one program per piece, or a library mechanism first"
+  ],
+  [
+   "A big program in the editor",
+   "22,000 lines of JS is perhaps 15,000 of Hazel",
+   "measure the editor's statics on a program that size early (the statics scaling probe of 10-09 found about 1.4 times the work on the slides, not re-analysis)"
+  ]
+ ],
+ "two": [
+  [
+   "1",
+   "The settings as Hazel types: body, face, hair, clothes, background, as records with their defaults; a save's JSON read into them",
+   "every saved settings file in the picture archive parses and prints back the same",
+   ""
+  ],
+  [
+   "2-3",
+   "The friend's drawing: face, hair, body, clothes, shoes, as functions from settings to SVG text, ported part by part (03 to 08)",
+   "the archive's body, face, hair, shirt, pants, feet and costume pictures: same settings, same SVG, byte for byte",
+   ""
+  ],
+  [
+   "4",
+   "The pose rig and every animation's pose at a given phase (moveNow): pure maths",
+   "the archive's moves pictures, and poseJoints at sampled phases",
+   ""
+  ],
+  [
+   "5-7",
+   "The places, ten a week, the simplest first (the empty room, bubble space, the tent) to the castle's rooms; each thing an object with its depth",
+   "the archive's backgrounds pictures, place by place",
+   ""
+  ],
+  [
+   "8",
+   "The friend among a place's objects by depth: one picture of a frame, held still",
+   "backgrounds-with-friend, held at time 0",
+   "the frame loop, input, collisions, walking, music, the controls, the world designer, saves"
+  ]
+ ],
+ "three": [
+  [
+   "1-8",
+   "As the two-month plan, at a gentler pace where the castle rooms need it",
+   "as above",
+   ""
+  ],
+  [
+   "9",
+   "Collision boxes computed from geometry, in the drawing functions, then the planner (planPath is pure already)",
+   "the archive's collision-box pictures; the planned-walk sweeps of tickets 332 and 358",
+   ""
+  ],
+  [
+   "10",
+   "The tunes and the mixing board as Hazel data; the scenes' LFO followers",
+   "the music archive's settings; the JS synthesizer plays the Hazel tunes and the MP3s match",
+   ""
+  ],
+  [
+   "11",
+   "The world designer as a livelit: the grid of places, their ways, each square's settings",
+   "a world saved in the game opens in the livelit and back",
+   ""
+  ],
+  [
+   "12",
+   "The settings' controls as livelit GUIs, Background first, the knolling of ^du_report(5) as their design",
+   "a few hundred settings round-trip",
+   "the frame loop, input, WebAudio, the archives' tools"
+  ]
+ ],
+ "risks": [
+  [
+   "Speed",
+   "the friend's picture alone is a large view; if a release stays near half a second, a slider drag in Hazel feels slow next to the game's",
+   "measure the friend's drawing in Hazel in week 2, before porting further; ^report(1)'s series has the method"
+  ],
+  [
+   "Size",
+   "the places are 8,650 lines; ported straight they may strain the editor",
+   "a place per program, joined only by the settings types"
+  ],
+  [
+   "Drift",
+   "the game keeps growing nightly (289 versions in a week); a port chases a moving target",
+   "freeze a version to port (0.0.289) and log what changes after it, or port only pieces the children have settled"
+  ],
+  [
+   "The 60 fps rule",
+   "nothing that runs per frame should go through Hazel's evaluator yet",
+   "Hazel decides what is drawn; JS moves it"
+  ]
+ ],
+ "decide": [
+  [
+   "What \"ported\" means",
+   "draws the same picture from the same settings (the oracle can check it), or runs the whole game in Hazel (needs a clock, input and sound Hazel lacks)"
+  ],
+  [
+   "Where the Hazel code lives",
+   "Playground slides, one piece each, or a library module and one program; slides cannot import each other yet"
+  ],
+  [
+   "Which version to port",
+   "a frozen one, with the changes after it logged, or the moving game"
+  ],
+  [
+   "Who plays the Hazel version",
+   "the children, in the editor, or only the archive's oracle until the pieces join"
+  ]
+ ],
+ "next": [
+  [
+   "Decide what ported means",
+   "the oracle (same settings, same SVG) or the whole game; this report assumes the oracle for two months"
+  ],
+  [
+   "Measure first",
+   "port the face alone (03 face, 431 lines) and time a release of its view in Hazel, before any schedule is believed"
+  ],
+  [
+   "Compute boxes from geometry",
+   "move collision boxes from DOM measuring into the drawing functions in the JS game first (it helps the game, and makes the port pure)"
+  ],
+  [
+   "Freeze a version",
+   "tag the version to port (dress-up-0.0.289) and keep a log of what changes after it"
+  ],
+  [
+   "One program per place",
+   "try the empty room, bubble space and the tent as three small programs sharing the settings types"
+  ],
+  [
+   "Keep the JS as the engine",
+   "the frame loop, input and sound stay JS; Hazel supplies the pictures, as a livelit's view does"
+  ]
+ ],
+ "sources": {
+  "livelits": [
+   "Cyrus Omar, David Moon, Andrew Blinn, Ian Voysey, Nick Collins, Ravi Chugh. Filling Typed Holes with Live GUIs. PLDI 2021.",
+   "https://doi.org/10.1145/3453483.3454059"
+  ],
+  "hazelnut": [
+   "Cyrus Omar, Ian Voysey, Michael Hilton, Jonathan Aldrich, Matthew A. Hammer. Hazelnut: A Bidirectionally Typed Structure Editor Calculus. POPL 2017.",
+   "https://doi.org/10.1145/3009837.3009900"
+  ],
+  "perf": [
+   "Hazel performance analysis series (matthewhammer.org/hazel/performance-analysis/)",
+   "https://matthewhammer.org/hazel/performance-analysis/"
+  ]
+ }
+}

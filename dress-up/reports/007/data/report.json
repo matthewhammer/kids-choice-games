@@ -1,0 +1,438 @@
+{
+ "question": "Matthew's hypothesis: M extends the game for social stories, about the whole system; N extends it for stress tests, of the whole system. Does the record of their requests bear that out?",
+ "date": "2026-10-18",
+ "game": {
+  "version": "0.0.282",
+  "first": "2026-10-12",
+  "pictures": {
+   "run": "2026-10-18 09:49 MDT",
+   "version": "0.0.203"
+  }
+ },
+ "tickets": [
+  [
+   67,
+   "M N",
+   "10-14",
+   "three castles, each child's own (N's, M's, and one for D), with rooms",
+   "story",
+   "castles, places",
+   "the castle designer and its seven room kinds"
+  ],
+  [
+   72,
+   "M",
+   "10-14",
+   "castle colours: banners in two colours, the owner's letter always readable (M's gold letter on a gold banner did not show)",
+   "story",
+   "castles, drawing",
+   "a contrast rule for the letter"
+  ],
+  [
+   73,
+   "M",
+   "10-14",
+   "no skeletons unless asked for: the dungeons were too scary for M",
+   "story",
+   "castles, content",
+   "a slider per dungeon, starting at 0; a design rule (nothing scary unless asked for)"
+  ],
+  [
+   99,
+   "M",
+   "10-15",
+   "a drawing fault M caught (the lantern), then a pass over all such faults",
+   "fix",
+   "drawing",
+   "a sweep of lines past their shapes"
+  ],
+  [
+   108,
+   "M",
+   "10-15",
+   "a hallway whose stairs lead nowhere ends in a wall",
+   "build",
+   "castles",
+   "a wall drawn where the stairs were"
+  ],
+  [
+   110,
+   "M",
+   "10-15",
+   "a dining room: a long table, 4 to 18 places at it, torches, candles, chandeliers",
+   "story",
+   "castles",
+   "a new room kind, drawn in perspective"
+  ],
+  [
+   113,
+   "M",
+   "10-15",
+   "eight ways out of the hallway and the dining room",
+   "build",
+   "castles, world",
+   "side doors to 3 a side, far and near walls"
+  ],
+  [
+   116,
+   "M",
+   "10-15",
+   "doors closer, signs bigger, the screen used to the full",
+   "tool",
+   "UI",
+   "the viewport, the save submenu"
+  ],
+  [
+   125,
+   "M",
+   "10-15",
+   "ears, in every view: three shapes and a size",
+   "story",
+   "character",
+   "ears facing us and in profile, under hair and hoods"
+  ],
+  [
+   150,
+   "M",
+   "10-16",
+   "an on-screen controller: the iPad has no USB port for the game controller",
+   "device",
+   "controller, touch",
+   "a pad drawn on the screen, as a real pad to the game"
+  ],
+  [
+   189,
+   "M",
+   "10-17",
+   "in World design, ways off the map can't be turned on; a way that would fix a warning is starred",
+   "tool",
+   "world designer",
+   "the designer's arrows"
+  ],
+  [
+   194,
+   "M",
+   "10-17",
+   "a light / dark switch",
+   "tool",
+   "UI",
+   "a dark theme over the whole game"
+  ],
+  [
+   195,
+   "M",
+   "10-17",
+   "an \"all passageways\" button in World design",
+   "tool",
+   "world designer",
+   "joining every pair of neighbouring squares that both have the way"
+  ],
+  [
+   200,
+   "M",
+   "10-17",
+   "what's new, in the game: every version's notes, so M can read the recent features as we work",
+   "tool",
+   "UI, releases",
+   "VERSIONS.md in ⚙️ Advanced"
+  ],
+  [
+   278,
+   "M",
+   "10-18",
+   "a grass hut: outside, and a living room, a bedroom and a potion room inside",
+   "story",
+   "places",
+   "four new places (0.0.203)"
+  ],
+  [
+   281,
+   "M",
+   "10-18",
+   "the grass hut round, inside and out",
+   "story",
+   "places, drawing",
+   "round rooms: a wall curving round a flat floor"
+  ],
+  [
+   282,
+   "M",
+   "10-18",
+   "a cluster of grass huts, one to six rooms, with a hut center",
+   "story",
+   "places",
+   "huts in pairs, triads and rings"
+  ],
+  [
+   301,
+   "M",
+   "10-18",
+   "more couch-cushion raves, and more turtle steppers dubs, upbeat",
+   "music",
+   "music",
+   "nine new tracks"
+  ],
+  [
+   302,
+   "M",
+   "10-18",
+   "a pop-up when a new version is out",
+   "tool",
+   "UI, releases",
+   "a version check, off unless switched on"
+  ],
+  [
+   303,
+   "M",
+   "10-18",
+   "a lever wired to a trap door does not open it",
+   "fix",
+   "objects, levers",
+   "a wiring bug: levers and trap doors now join in either order"
+  ],
+  [
+   319,
+   "M",
+   "10-18",
+   "lichen, to decorate rocks, castle walls and logs",
+   "story",
+   "objects",
+   "lichen after moss, placeable"
+  ],
+  [
+   350,
+   "M",
+   "10-18",
+   "the trap room's levers do nothing to a touch on M's iPad",
+   "device",
+   "touch, levers",
+   "a touch event dropped between pointerdown and touchstart"
+  ],
+  [
+   49,
+   "N",
+   "10-14",
+   "new places behind the camp, the falls and the clearing: inside every tent, the cave behind the waterfall",
+   "explore",
+   "places",
+   "tents and a cave, each a place with its own way in and out"
+  ],
+  [
+   50,
+   "N",
+   "10-14",
+   "where feet can stand in each place (rivers, the pool, the campfire)",
+   "edge",
+   "collisions",
+   "the first ground shapes: the start of the collision system"
+  ],
+  [
+   51,
+   "N",
+   "10-14",
+   "a visibility panel: each body part see-through, invisible, or a ghost",
+   "character",
+   "character",
+   "per-part see-through layers"
+  ],
+  [
+   154,
+   "N",
+   "10-16",
+   "our imagination too slow to walk in on the black laptop (N's old laptop)",
+   "device",
+   "performance",
+   "the speed gate's slow tier; ^du_report(2)"
+  ],
+  [
+   162,
+   "N",
+   "10-16",
+   "falling into the castle's pits, landing in the dungeon below",
+   "edge",
+   "castles, animation, controller",
+   "a fall and a landing, pits as holes"
+  ],
+  [
+   201,
+   "N",
+   "10-17",
+   "N put as many cauldrons as he could in a place, and the black laptop ground to a halt",
+   "stress",
+   "performance, world designer",
+   "a frame-rate watch per thing, red boxes on the costliest"
+  ],
+  [
+   203,
+   "N",
+   "10-17",
+   "N ignored the red boxes and kept adding cauldrons until it froze again",
+   "stress",
+   "performance, world designer",
+   "a latch: nothing more added while a red box stands"
+  ],
+  [
+   271,
+   "N",
+   "10-17",
+   "a trap room's pit shapes belong to that room (a bug in N's room 3)",
+   "fix",
+   "castles",
+   "pit shapes per room"
+  ],
+  [
+   290,
+   "N",
+   "10-18",
+   "bubbles: a place group, and a room made of bubble foam",
+   "stress",
+   "places, drawing, performance",
+   "521 animations at first, about 140 after"
+  ],
+  [
+   323,
+   "N",
+   "10-18",
+   "boulder levers: boulders fall from the ceiling onto the pits",
+   "edge",
+   "castles, levers, animation",
+   "boulders, then their speeds (ticket 328) and fallen rocks to move (ticket 338)"
+  ],
+  [
+   349,
+   "N",
+   "10-18",
+   "hit by a falling boulder, the friend bursts into rainbow bubbles and comes back",
+   "edge",
+   "character, animation",
+   "the burst and the return"
+  ],
+  [
+   364,
+   "N",
+   "10-18",
+   "pull the levers without walking to them, to stand where the boulder falls",
+   "edge",
+   "levers, settings",
+   "an Advanced toggle restoring the old pull"
+  ]
+ ],
+ "kinds": {
+  "story": "a story, a home, or something of one's own",
+  "build": "more to build with",
+  "tool": "the tools and the screen",
+  "device": "working on their own device",
+  "fix": "a fault they found",
+  "music": "music",
+  "explore": "new places to explore",
+  "edge": "rules pushed to their edges: falling, boulders, being hit",
+  "stress": "load: as many as possible, until it breaks",
+  "character": "the character itself"
+ },
+ "excluded": [
+  [
+   95,
+   "names the rule that the children are M and N in public writing"
+  ],
+  [
+   104,
+   "mentions them (a night's work while they gave no suggestions)"
+  ],
+  [
+   106,
+   "the same"
+  ],
+  [
+   119,
+   "a page about the game and them"
+  ],
+  [
+   157,
+   "^du_report(N), the syntax"
+  ],
+  [
+   168,
+   "the same"
+  ],
+  [
+   175,
+   "about their devices, after the fact"
+  ],
+  [
+   184,
+   "the release cadence, for their creative loop"
+  ],
+  [
+   212,
+   "N the compass point"
+  ],
+  [
+   214,
+   "the same"
+  ],
+  [
+   224,
+   "the same"
+  ],
+  [
+   245,
+   "the same"
+  ],
+  [
+   246,
+   "the same"
+  ],
+  [
+   249,
+   "the same"
+  ],
+  [
+   312,
+   "the same"
+  ],
+  [
+   339,
+   "this report"
+  ]
+ ],
+ "sources": {
+  "druin": [
+   "Allison Druin. Cooperative inquiry: developing new technologies for children with children. CHI 1999.",
+   "https://doi.org/10.1145/302979.303166"
+  ],
+  "scaife": [
+   "Mike Scaife, Yvonne Rogers, Frances Aldrich, Matt Davies. Designing for or designing with? Informant design for interactive learning environments. CHI 1997.",
+   "https://doi.org/10.1145/258549.258789"
+  ],
+  "miller": [
+   "Barton P. Miller, Lars Fredriksen, Bryan So. An empirical study of the reliability of UNIX utilities. Communications of the ACM 33(12), 1990.",
+   "https://doi.org/10.1145/96267.96279"
+  ]
+ },
+ "next": [
+  [
+   "Ask them",
+   "show M and N this report's two readings (stories and tools; load and consequences) and ask each, in their words, what they were after; add their answers as a dated note, which the record alone cannot give"
+  ],
+  [
+   "Say who asked, when a ticket is made",
+   "a \"from\" field on the dashboard's tickets (M, N, Matthew), so the next count needs no search and has no compass-point false matches"
+  ],
+  [
+   "N's stresses as checks",
+   "his cauldron flood (ticket 201, ticket 203), the bubble room (ticket 290) and standing under a boulder (ticket 349) as speed-gate cases, so what N found stays found"
+  ],
+  [
+   "M's stories as a game",
+   "the dining room, the hut village and the castles as settings for ^du_report(6)'s missing pieces: people who talk, things to carry, a goal"
+  ],
+  [
+   "M's tools next",
+   "her World design requests (ticket 189, ticket 195) point at the full-screen designers (ticket 285, ticket 365): ask her to try them first"
+  ],
+  [
+   "Count again later",
+   "the same reading at version 0.1, to see whether the two strands hold as the game grows"
+  ]
+ ]
+}

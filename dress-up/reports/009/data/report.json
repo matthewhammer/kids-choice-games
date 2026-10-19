@@ -1,0 +1,256 @@
+{
+ "question": "How big is the friend in each view of a place, against the doors they go through, and how do we keep one friend the same size inside and out when the player shapes the friend?",
+ "date": "2026-10-18",
+ "game": {
+  "version": "0.0.303",
+  "versions": 303,
+  "first": "2026-10-12",
+  "lines": 22743,
+  "parts": 26,
+  "checks": 139
+ },
+ "trigger": "Matthew, ticket 352: \"we crawl when we run out of tree houses, but on the exterior view, we are tall enough to go into the doors -- and quite small --- Fix this misalignment, and draft a report about the larger issue -- getting scale to be aligned; a special challenge for user-controlled characters.\" Then: \"we need to bring background params and characters into alignment, focusing first on the default, and version that's 1.5 bigger, like an adult, and 0.5 size, like a small child.\"",
+ "views": [
+  [
+   "A place, the friend on its floor",
+   "a scale on the friend's own body: the place's figure size (SCENE_FIG), times how far back they stand (depthSize), times the size slider",
+   "yes: long legs make a taller friend",
+   "every place, inside and out"
+  ],
+  [
+   "Sitting",
+   "as standing, at the seat's depth, not where the feet hang",
+   "yes",
+   "every seat"
+  ],
+  [
+   "Up the spiral stair",
+   "the floor's straight below their step",
+   "yes",
+   "the castle's spiral room"
+  ],
+  [
+   "The tree's porches and rope bridges, outside",
+   "till 0.0.302: BRIDGE_TALL (60 of the tree's units) whatever their shape; now 70 for the default friend and in proportion for any other (over BRIDGE_BASE, 452, the default's height in its own units)",
+   "till 0.0.302 no; now yes",
+   "the tree house"
+  ],
+  [
+   "The picture through a tree room's door to a bridge",
+   "the same rule as the bridge, shrinking along the deck",
+   "till 0.0.302 no; now yes",
+   "the tree rooms"
+  ],
+  [
+   "A door: walk or crawl",
+   "doorTooLow: crawl when their crown, at the door's depth, is over 0.97 of its opening",
+   "yes",
+   "every door with a shape (data-door); the cabin doors outside since 0.0.302"
+  ]
+ ],
+ "before": [
+  [
+   "A tree room's door to a bridge (inside)",
+   1.27,
+   0.9,
+   "the door 172 tall, now 246"
+  ],
+  [
+   "A cabin's door from its porch (outside)",
+   0.76,
+   0.89,
+   "the friend 60 tall whatever their shape, now 70 for the default and in proportion"
+  ],
+  [
+   "The witch's room's door out",
+   1.1,
+   0.9,
+   "196 tall, now 242"
+  ],
+  [
+   "The greenhouse's arches",
+   1.04,
+   0.89,
+   "140 tall, now 164"
+  ]
+ ],
+ "doors": [
+  [
+   "the castle's gate",
+   "castle",
+   0.91
+  ],
+  [
+   "a castle room's side doors (king, kitchen, stable, smithy, cat room)",
+   "castle rooms",
+   0.68
+  ],
+  [
+   "the trap room's door",
+   "castle rooms",
+   0.81
+  ],
+  [
+   "the hallway's doors",
+   "castle rooms",
+   0.77
+  ],
+  [
+   "the dining room's doors",
+   "castle rooms",
+   0.77
+  ],
+  [
+   "the greenhouse's arches",
+   "castle rooms",
+   0.89
+  ],
+  [
+   "the spiral stair's lower door",
+   "castle rooms",
+   0.81
+  ],
+  [
+   "the spiral stair's door at the top",
+   "castle rooms",
+   0.29
+  ],
+  [
+   "a tree room's door to the next house",
+   "tree rooms",
+   0.9
+  ],
+  [
+   "a cabin's door, from its porch",
+   "tree house",
+   0.89
+  ],
+  [
+   "the witch's room's door out",
+   "witch's room",
+   0.9
+  ],
+  [
+   "the house's front door",
+   "house",
+   0.22
+  ],
+  [
+   "the far little house, from the clearing",
+   "clearing",
+   2.41
+  ]
+ ],
+ "shapes": [
+  [
+   "the default (legs 140, size 100)",
+   0.9,
+   0.89
+  ],
+  [
+   "an adult (size 150)",
+   1.34,
+   1.34
+  ],
+  [
+   "a small child (size 50)",
+   0.45,
+   0.45
+  ],
+  [
+   "short legs (legs 100)",
+   0.81,
+   0.81
+  ]
+ ],
+ "hard": [
+  [
+   "A game's character is a known sprite",
+   "Doors, ledges and bridges are drawn for one known height; a different character means new art, checked by eye."
+  ],
+  [
+   "Here the body is the player's",
+   "Legs from short to very long, a head, arms and a size slider: the height is a setting, so every door has to be judged at run time, against the body as it is now."
+  ],
+  [
+   "And each view has its own camera",
+   "The rooms draw in perspective, the tree outside as a flat picture with its own scale, a far view smaller still: a rule like 'the friend is 60 tall here' silently drops the body's shape, as the bridges did."
+  ],
+  [
+   "So the doors are sized to a reference, and the rule decides",
+   "One reference body (the default), doors made for it (it takes 0.68 to 0.91 of each), and one rule for every door, inside and out (crawl over 0.97); every other body follows from its own height."
+  ]
+ ],
+ "choices": [
+  [
+   "Normalize: one height for everyone in a view",
+   "Simple, and every door fits everyone",
+   "Throws away the player's shaping; what the bridges did, and what Matthew saw as wrong"
+  ],
+  [
+   "Scale with the body, and let each door judge (chosen)",
+   "The shape counts everywhere; the same friend crawls through the same doors inside and out",
+   "Doors must be sized to a reference; a tall friend crawls a lot"
+  ],
+  [
+   "Stoop between walking and crawling",
+   "A friend a little too tall (0.97 to 1.15 of a door) ducks rather than drops to all fours",
+   "A new animation; worth it if a tall friend crawls too often"
+  ],
+  [
+   "Doors that grow with the friend",
+   "Never a squeeze",
+   "Doors change size when the friend does; the place stops being a place"
+  ]
+ ],
+ "left": [
+  [
+   "The house's front door: 0.22 of it",
+   "The house is drawn as a flat picture, its own size, while the friend gets the perspective of where they stand: at its door they reach a fifth of the way up. Changing it means scaling the house scene, a design call left to Matthew."
+  ],
+  [
+   "The witch's hut, the cave, the tents, the grass hut: no door to judge outside",
+   "Each is entered as a whole picture, so nobody crawls in from outside; inside, their doors out are made for the default. An adult walks in and crawls out."
+  ],
+  [
+   "The clearing's far little house: 2.41",
+   "A far view: walking to it is a trip there, not a squeeze; exempted from the rule."
+  ]
+ ],
+ "next": [
+  [
+   "Decide the house scene's scale",
+   "the house drawn at the friend's scale where its door stands (smaller on the screen), or left as a picture; either way, a check in the series of tools/checks/scale352.mjs"
+  ],
+  [
+   "The outside pictures with no door shape",
+   "give the witch's hut, the tents and the cave a door shape to judge, so an adult crawls in as they crawl out"
+  ],
+  [
+   "The three reference friends as a 🔬 preset",
+   "default, adult and child a tap apart, for checking a new place or door by eye"
+  ],
+  [
+   "A stoop",
+   "if the adult crawls too often to feel right, a ducking walk for 0.97 to 1.15 of a door"
+  ],
+  [
+   "Every new door sized to the default",
+   "a line in the agent instructions (written), and scale352 extended to each new door"
+  ]
+ ],
+ "sources": {
+  "fix": [
+   "Dress Up 0.0.302: one scale for the friend inside the tree house and out (ticket 352)",
+   "https://github.com/matthewhammer/kids-choice-games/blob/main/dress-up/VERSIONS.md"
+  ],
+  "check": [
+   "tools/checks/scale352.mjs: the default, adult, child and short legs against the cabin's door and the room's door",
+   "https://github.com/matthewhammer/kids-choice-games/blob/main/tools/checks/scale352.mjs"
+  ],
+  "doortoolow": [
+   "doorTooLow and walkInto (ticket 239), js/26-drags-and-start.js",
+   "https://github.com/matthewhammer/kids-choice-games/blob/main/dress-up/js/26-drags-and-start.js"
+  ]
+ }
+}
