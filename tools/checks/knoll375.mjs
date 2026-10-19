@@ -23,7 +23,7 @@ try {
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); state = clone(DEFAULTS); state.music.mute = true; state.world.at = null; changed();
     const P = document.getElementById("panel"), vis = e => e.offsetParent !== null, out = { tabs: [] };
     for (let i = 0; i < TABS.length; i++) { tab = i; showTab(); await w(250); const name = TABS[i][0], boxed = !!TAB_BOXES[name];
-      const ctls = [...P.querySelectorAll(".ctl")].filter(vis), loose = boxed ? ctls.filter(c => !c.closest(".tabbox")).length : null;
+      const ctls = [...P.querySelectorAll(".ctl")].filter(vis).filter(c => !c.classList.contains("tab-bar")), loose = boxed ? ctls.filter(c => !c.closest(".tabbox")).length : null;   // (the ⛶ chip's bar, the way in, not a row)
       const dashed = [...P.querySelectorAll("*")].filter(e => vis(e) && /dashed/.test(getComputedStyle(e).borderTopStyle + getComputedStyle(e).borderLeftStyle)).length;
       out.tabs.push({ name, boxed, boxes: P.querySelectorAll(".tabbox:not([hidden])").length, loose, dashed, over: P.scrollWidth - P.clientWidth }); }
     tab = TABS.findIndex(t => t[0].includes("Neck")); showTab(); await w(250);
@@ -41,6 +41,11 @@ try {
     tab = TABS.findIndex(t => t[1] === "controls"); showTab(); await w(300);
     out.themes = [...P.querySelectorAll(".ctlgroup .cap > .cap-pic")].filter(sv => sv.childElementCount > 0).length;
     out.themeNames = [...P.querySelectorAll(".ctlgroup")].filter(g => /theme A/.test((g.querySelector(":scope > .cap") || {}).textContent || "")).map(g => [...g.querySelectorAll(":scope > .ctl .name")].map(n => n.textContent)).flat();
+    // (0.0.315) every other tab a designer: 😀 Face full screen with the game beside its boxes; Escape back, the game home
+    tab = TABS.findIndex(t => t[0].includes("Face")); showTab(); await w(300); document.querySelector("#panel .tab-bar button").click(); await w(600);
+    out.fs = { big: document.body.classList.contains("tab-big"), gameIn: !!document.querySelector(".tab-view-pic .pic-box") || !matchMedia("(min-width: 900px)").matches, cols: getComputedStyle(document.querySelector(".tabboxes")).gridTemplateColumns.split(" ").length };
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); await w(400);
+    out.fs.back = !document.body.classList.contains("tab-big") && !!document.querySelector(".pic-area .pic-box");
     state = clone(DEFAULTS); changed(); return JSON.stringify(out); })()`));
   for (const t of r.tabs) console.log("  " + JSON.stringify(t));
   const boxed = r.tabs.filter(t => t.boxed);
@@ -53,6 +58,7 @@ try {
   ok("🏞️ Background's side panel in boxes by thing: the place, the lake's own, the friend here, what stands, things", ["🗺️ the place", "🧍 the friend here", "👁️ what stands here", "🪨 things to put here"].every(n => r.bg.includes(n)) && r.bg.some(n => /lake/.test(n)), r.bg);
   ok("⚙️ Advanced in boxes (5 or more), its long accounts folded under ℹ️", r.adv.boxes >= 5 && r.adv.folds >= 2, r.adv);
   ok("the bubble themes each drawn by its name (3), theme A's rows not repeating 🅰️", r.themes === 3 && r.themeNames.length && r.themeNames.every(n => !/🅰/.test(n)), r);
+  ok("😀 Face a designer: full screen, the game beside its boxes (a grid of 2 or more), Escape back with the game home", r.fs.big && r.fs.gameIn && r.fs.cols >= 2 && r.fs.back, r.fs);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

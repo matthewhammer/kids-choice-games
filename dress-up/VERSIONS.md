@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.315 (2026-10-19)
+
+Everything in 0.0.314, with every tab able to open full screen beside the game.
+
+- **⛶ Every tab full screen, beside the game**: the friend's tabs, Controls, Inspection, Accessibility and Advanced each open full screen with ⛶, as Music, World design and Background do: their boxes side by side on the left, the game itself on the right to watch as you change things (from a window 900 pixels wide), the bar between them dragged to share the room; ✕ or Escape back.
+
 ## 0.0.314 (2026-10-19)
 
 Everything in 0.0.313, with the Inspection and Accessibility switches side by side.

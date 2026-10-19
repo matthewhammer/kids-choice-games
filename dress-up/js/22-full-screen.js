@@ -58,8 +58,9 @@ const WORLD_BIG = ["⛶ the world designer, full screen", "✕ back to the game"
 // DESIGNERS: each one's class, its chip's class (also designer-chip, which the bar's CSS keys on) and words.
 // (ticket 285, ^du_report(5)'s step 2) and 🏞️ Background as a designer, made for one place (setBgBig)
 const BG_BIG = ["⛶ the background designer, full screen", "✕ back to the game"];
+const TAB_BIG = ["⛶ full screen", "✕ back to the game"];   // (ticket 375: every other tab, a designer the same way)
 const DESIGNERS = { music: { cls: "music-big", chip: "musicbig", words: MUSIC_BIG }, world: { cls: "world-big", chip: "worldbig", words: WORLD_BIG },
-                    background: { cls: "bg-big", chip: "bgbig", words: BG_BIG } };
+                    background: { cls: "bg-big", chip: "bgbig", words: BG_BIG }, tab: { cls: "tab-big", chip: "tabbig", words: TAB_BIG } };
 function designerShell(name, on) {
   const D = DESIGNERS[name];
   document.body.classList.toggle(D.cls, on);
@@ -84,6 +85,27 @@ function setBgBig(on) {
   designerShell("background", on);
   placePic();
   designerScreen(on);
+}
+function setTabBig(on) {
+  designerShell("tab", on);
+  placePic();
+  designerScreen(on);
+}
+// (ticket 375, ^du_report(5)'s rules 7 and 8: every big tab a designer that opens with the game as its first card; the side panel the
+// designer's boxes, smaller, not a different layout) A tab without a designer of its own, once laid out: its ⛶ chip first (the one way
+// in, as the music's, the world's and the background's), then its content and, beside it in the full screen, the game's card (placePic
+// puts the picture in it) with the dragger between; outside the full screen the two columns are display: contents, the panel as it was
+function tabDesigner(panel, name) {
+  const kids = [...panel.children];
+  const chip = el("button", { class: "tabbig designer-chip", onclick: () => setTabBig(!document.body.classList.contains("tab-big")) }, document.body.classList.contains("tab-big") ? TAB_BIG[1] : TAB_BIG[0]);
+  const bar = el("div", { class: "ctl tab-bar", "data-name": name }, [chip]);
+  const view = el("div", { class: "world-view tab-view" }, [el("div", { class: "row world-view-head" }, [
+    el("button", { class: "eye", onclick: () => worldViewShow(worldViewHidden) }, "👁️"), el("span", { class: "hint" }, "📺 the game")]), el("div", { class: "tab-view-pic" })]);
+  worldViewMark(view);
+  const split = el("div", { class: "world-split tab-split", role: "separator", "aria-orientation": "vertical", title: "Drag: more room for the boxes, or for the game" });
+  const layout = el("div", { class: "tab-layout" }, [el("div", { class: "tab-content" }, kids), split, el("div", { class: "tab-viewcol" }, [view])]);
+  designerSplit(layout, split, "dress-up-tab-split");
+  panel.replaceChildren(bar, layout);
 }
 // (ticket 375) ⚙️ Advanced, one long row of seventeen parts till now, in boxes: 🌗 the look, 🏠 this game (its page, its code, its
 // version), 🎮 playing (a pop-up for new versions, the levers), 🧪 tests and timing, 🚀 effects kept off till fast (its long note a
@@ -267,9 +289,9 @@ let worldViewHidden = false, picSlot = null;
 try { worldViewHidden = localStorage.getItem(WORLD_VIEW_KEY) === "hidden"; } catch (e) { /* (shown) */ }
 function placePic() {
   // (ticket 285: the world designer's card, or the background designer's)
-  const bg = document.body.classList.contains("bg-big"), box = picBoxEl, home = picHome, slot = document.querySelector(bg ? ".bg-view-pic" : ".world-view-pic");
+  const bg = document.body.classList.contains("bg-big"), tb = document.body.classList.contains("tab-big"), box = picBoxEl, home = picHome, slot = document.querySelector(bg ? ".bg-view-pic" : tb ? ".tab-view-pic" : ".world-view-pic");
   if (!box || !home) return;
-  const into = (bg || document.body.classList.contains("world-big")) && worldWide.matches && !worldViewHidden && slot ? slot : null;
+  const into = (bg || tb || document.body.classList.contains("world-big")) && worldWide.matches && !worldViewHidden && slot ? slot : null;
   if (into !== picSlot && picAreaWatch) { if (picSlot) picAreaWatch.unobserve(picSlot); if (into) picAreaWatch.observe(into); }
   picSlot = into;
   if (into && box.parentNode !== into) into.append(box);
@@ -295,6 +317,7 @@ worldWide.addEventListener("change", placePic);
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && document.body.classList.contains("world-big")) setWorldBig(false);
   if (e.key === "Escape" && document.body.classList.contains("bg-big")) setBgBig(false);
+  if (e.key === "Escape" && document.body.classList.contains("tab-big")) setTabBig(false);
   if (e.key === "Escape" && document.body.classList.contains("big")) setBig(false);
   if (e.key === "Escape" && document.body.classList.contains("music-big")) setMusicBig(false);
 });

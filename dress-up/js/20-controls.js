@@ -2114,6 +2114,9 @@ function showTab() {
   else if (part === "advanced") advLayout(panel);   // (ticket 375)
   else boxLayout(panel, TABS[tab][0], ctls);   // (ticket 375: its rows in boxes, as the designers' are)
   tidyGroups(panel);   // (ticket 375: and every group in it named once, a bubble theme drawn)
+  // (ticket 375) every tab without a designer of its own is one (tabDesigner); one with its own leaves the generic full screen
+  if (!["music", "world", "background"].includes(part)) tabDesigner(panel, TABS[tab][0]);
+  else if (document.body.classList.contains("tab-big")) setTabBig(false);
   placePic();   // (ticket 231: the world designer's view built again, or gone with its tab)
   changed();
 }
