@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.306 (2026-10-18)
+
+Everything in 0.0.305, with the bubble room's foam still at the start.
+
+- **🫧 The bubble room's foam starts still**: its moving foam was what made the room slow (in Firefox about 19 frames a second, against 50 or more with it still), not the bubble makers put in it. It still moves if you want it to: 🏞️ Background, 〰️ how much the foam moves, which now says what moving costs. A saved friend whose foam moved by default is made still once; an amount you chose is kept.
+- **🐢 When the bubble room gets too slow for more things, it says the foam costs the most**, and how to still it, before it asks for a thing to be taken away.
+
 ## 0.0.305 (2026-10-18)
 
 Everything in 0.0.304, with walking into things stopping in front of them.

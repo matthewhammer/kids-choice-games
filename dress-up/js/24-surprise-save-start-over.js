@@ -224,6 +224,7 @@ document.getElementById("load-file").addEventListener("change", async e => {
     upgradeFeet(next, saved);
     upgradeInside(next.background, saved);
     upgradeFigSize(next.background, saved);
+    upgradeFoamMove(next.background, saved);
     upgradeThings(next, saved);
     upgradeWorld(next);
     upgradeClickWalk(next, saved);

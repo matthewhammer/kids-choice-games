@@ -461,7 +461,7 @@ const DEFAULTS = {
                 // bubbles stick out from each surface into the room
                 // (Matthew's own, from his save of 16:56 on 0.0.238: "these are good for the bubble room defaults")
                 foamBack: true, foamBackH: 98, foamLeft: true, foamLeftH: 84, foamRight: true, foamRightH: 82, foamFloor: true, foamFloorH: 86,
-                foamCeil: true, foamCeilH: 95, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 88, foamSeed: 58909, foamStick: 30, bubbleStick: 30, bubbleFloorWobble: 60,   // (foamStick, bubbleStick: ticket 341; bubbleFloorWobble: 343)
+                foamCeil: true, foamCeilH: 95, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 0, foamSeed: 58909, foamStick: 30, bubbleStick: 30, bubbleFloorWobble: 60,   // (foamStick, bubbleStick: ticket 341; bubbleFloorWobble: 343)
                 foamBackOut: 94, foamLeftOut: 82, foamRightOut: 82, foamFloorOut: 94, foamCeilOut: 20,
                 instEdit: "template", thingsSolid: true,   // (ticket 283: placed things in the way)   // (ticket 300: in a world square, changes go to the place's template, or 📍 only that square)
                 bubbleCOn: false, bubbleCColor: "#c8f7c5", bubbleCSize: 11, bubbleCShine: 60, bubbleCSparkle: "dot", bubbleCSparkleColor: "#ffffff",
@@ -640,6 +640,15 @@ function upgradeThings(next, saved) {
   // (ticket 206: 0.0.129's cauldron fumes "auto" are simple now, the default)
   const lists = [bg.things, ...Object.values((next.world && next.world.cells) || {}).map(c => c.things), ...Object.values((next.world && next.world.off) || {})];
   for (const T of lists) if (Array.isArray(T)) for (const t of T) if (t && t.kind === "cauldron" && t.fumes === "auto") t.fumes = "simple";
+}
+// (ticket 340, Matthew 2026-10-18 23:39: one bubble maker in the bubble room, "About 19 frames a second here", in Firefox) The
+// cost was the room's own moving foam, not the maker: held still, the same room ran at 52 frames a second and more there. A costly
+// effect is off at the start (his rule, 10-16), so the foam is still by default since 0.0.306; a save still at the old default
+// (88) is made still once (foamMoveSince marks it done), and an amount chosen since is kept
+function upgradeFoamMove(bg, saved) {
+  const old = saved && saved.background;
+  if (old && old.foamMoveSince === undefined && old.foamMove === 88) bg.foamMove = 0;
+  bg.foamMoveSince = 306;
 }
 function upgradeFigSize(bg, saved) {
   const old = saved && saved.background;
@@ -921,14 +930,15 @@ async function speedCheck(report) {
     // and 16 bubble makers along its floor, walking; and how many shapes its scene is
     state.music.mute = true;
     const maker = (i, n) => ({ kind: "bubblemaker", x: Math.round(-260 + 520 * (i + 0.5) / n), z: i % 2 ? 300 : 345, size: 100, rate: 4, theme: "A", color: MAKER_COLORS[i % MAKER_COLORS.length], mirror: i % 2 === 1 });
-    Object.assign(B, { kind: "bubbleroom", figX: -150, figY: 40, things: [] }); body.anim = "none"; body.facing = "right"; changed();
+    // (since 0.0.306 the foam is still at the start, ticket 340: moving, as it was, for the first two passes; still for the rest)
+    Object.assign(B, { kind: "bubbleroom", figX: -150, figY: 40, things: [], foamMove: 88 }); body.anim = "none"; body.facing = "right"; changed();
     report("🧪 15 of 20: the bubble room, standing…"); await wait(1500);
     const bubbleNodes = bgShown.node ? bgShown.node.querySelectorAll("*").length : null;
     const bubbleStand = await frames(2000, null);
     report("🧪 16 of 20: walking through the bubble room…"); ballPops.clear(); changed(); await wait(300);
     const bubbleWalk = await frames(2000, across(B, body, PAD_SPEED.walk, "walk")); bubbleWalk.popped = ballPops.size;
-    report("🧪 17 of 20: the bubble room, its foam still…"); const moveWas = B.foamMove; B.foamMove = 0; ballPops.clear(); changed(); await wait(800);
-    const bubbleStill = await frames(2000, across(B, body, PAD_SPEED.walk, "walk")); B.foamMove = moveWas;
+    report("🧪 17 of 20: the bubble room, its foam still…"); B.foamMove = 0; ballPops.clear(); changed(); await wait(800);
+    const bubbleStill = await frames(2000, across(B, body, PAD_SPEED.walk, "walk"));   // (and the makers' passes with it still: what they cost alone)
     const withMakers = async (n, step) => { report(`🧪 ${step} of 20: the bubble room with ${n} bubble maker${n > 1 ? "s" : ""}…`);
       B.things = Array.from({ length: n }, (_, i) => maker(i, n)); ballPops.clear(); changed(); await wait(1500);
       const r = await frames(2000, across(B, body, PAD_SPEED.walk, "walk")); r.bubbles = makerSim.list.length; return r; };
@@ -1014,6 +1024,7 @@ try {
   upgradeFeet(state, saved);
   upgradeInside(state.background, saved);
   upgradeFigSize(state.background, saved);
+  upgradeFoamMove(state.background, saved);
   upgradeThings(state, saved);
   upgradeWorld(state);
   upgradeClickWalk(state, saved);
@@ -1045,7 +1056,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.305", released: "2026-10-18" };
+const VERSION = { number: "0.0.306", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

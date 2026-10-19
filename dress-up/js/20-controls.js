@@ -382,7 +382,7 @@ const TABS = [
         ["range", "foam" + K + "Out", `🔵 bubbles stuck out into the room, from the ${name} (how many)`, 0, 100, 10, 60]]),
       ["color", "foamColor", "🎨 the foam's colour", BUBBLE_COLORS],
       ["toggle", "foamRainbow", "🌈 a rainbow sheen on the foam"],
-      ["range", "foamMove", "〰️ how much the foam moves (0 = still)", 0, 100, 0, 60],
+      ["range", "foamMove", "〰️ how much the foam moves (0 = still, as it starts: moving foam is costly, in Firefox about 19 frames a second against 50 or more still)", 0, 100, 0, 60],
       ["range", "foamStick", "🫧 how often moving bubbles stick to the bubbles standing out (0 = never)", 0, 100, 10, 70],   // (ticket 341)
       ["range", "bubbleFloorWobble", "〰️ how much the bubbles move under you (0 = still)", 0, 100, 20, 90],   // (ticket 343)
       ["action", "foamSeed", "🎲 another foam", () => { state.background.foamSeed = 1 + Math.floor(Math.random() * 99999); }],
@@ -1448,7 +1448,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const moving = [...thingsMovingNow(), ...ownMovingNow()], total = moving.reduce((s, m) => s + m.n, 0), most = Math.max(0, ...moving.map(m => m.n));
       const slow = thingFps != null && thingFps < THING_FPS_MIN && total > 0, over = total > THING_MOVING_MAX;
       // (ticket 203) shut once too busy; open again only when emptied, or measured smooth since the last change
-      const sig = JSON.stringify([state.background.kind, state.background.cauldronFumes, (state.background.things || []).map(t => [t.kind, t.fumes, t.burning])]);   // (a cauldron made simple, a fire put out: measured again)
+      const sig = JSON.stringify([state.background.kind, state.background.cauldronFumes, state.background.kind === "bubbleroom" ? state.background.foamMove ?? 0 : 0, (state.background.things || []).map(t => [t.kind, t.fumes, t.burning])]);   // (a cauldron made simple, a fire put out: measured again)
       if (slow || over) thingsLatch = true;
       else if (thingsLatch && (!total || (thingFps != null && thingFps >= THING_FPS_MIN + 4 && thingsMeasured === sig))) thingsLatch = false;
       if (thingsLatch && thingsMeasured !== sig && !thingFpsBusy) { const at = sig; thingCheck(() => { thingsMeasured = at; guard(); }); }
@@ -1470,8 +1470,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       }
       // (what to do about it: take a marked thing away; a marked cauldron's fumes made simple; her own, in 🏞️ Background)
       const T = state.background.things || [], fancy = [...costly].some(i => (T[i] || {}).kind === "cauldron" && T[i].fumes === "fancy");
+      // (ticket 340: in the bubble room its own moving foam costs more than any thing put there)
+      const foam = state.background.kind === "bubbleroom" && (state.background.foamMove ?? 0) > 0;
       const t = blocked ? `🐢 ${slow || thingFps != null && thingFps < THING_FPS_MIN + 4 ? `About ${Math.round(thingFps)} frames a second here` : `${total} moving parts here`}: nothing more can be put here until ` +
-        ([[...costly].some(i => i !== "own") && "one of the things marked (they move the most) is taken away", fancy && "a marked cauldron's 💨 fumes made simple",
+        ([foam && "the foam is made still (it costs the most here: 🏞️ Background, 〰️ how much the foam moves, to 0)", [...costly].some(i => i !== "own") && "one of the things marked (they move the most) is taken away", fancy && "a marked cauldron's 💨 fumes made simple",
          costly.has("own") && "her cauldron (marked) made simple: 🏞️ Background, 💨 her cauldron's fumes"].filter(Boolean).join(", or ") || "it moves smoothly again") + "." : "";
       if (slowNote.textContent !== t) slowNote.textContent = t;
       if (slowNote.hidden !== !t) slowNote.hidden = !t;
