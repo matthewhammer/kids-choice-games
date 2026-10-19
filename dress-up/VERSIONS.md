@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.275 (2026-10-18)
+
+Everything in 0.0.274, with a way to the game's page.
+
+- **⚙️ Advanced links to the game's page**, matthewhammer.org/hazel/dress-up/, with its music, its pictures and its reports, beside the link to its code.
+
 ## 0.0.274 (2026-10-18)
 
 Everything in 0.0.273, with smoother planned walks.

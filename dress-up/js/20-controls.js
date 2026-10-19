@@ -1655,7 +1655,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // (ticket 194, M) light or dark
     const themes = el("div", { class: "row theme-row" }, [el("span", { class: "hint" }, "light or dark:"), ...LOOKS.map(([t, label]) =>
       el("button", { "data-theme-choice": t, "aria-pressed": String(themeNow() === t), onclick: () => { themeSet(t); for (const b of themes.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.themeChoice === t)); } }, label))]);
-    box.append(themes, el("div", { class: "row" }, [el("a", { href: "https://github.com/matthewhammer/kids-choice-games", target: "_blank", rel: "noopener" }, "💻 this game's code, on GitHub ↗")]),
+    // (ticket 325, Matthew: "advanced panel links to matthewhammer.org/hazel/dress-up page") the game's own page: its music, pictures and reports
+    box.append(themes, el("div", { class: "row" }, [el("a", { href: "https://matthewhammer.org/hazel/dress-up/", target: "_blank", rel: "noopener" }, "🏠 this game's page: its music, pictures and reports ↗")]),
+               el("div", { class: "row" }, [el("a", { href: "https://github.com/matthewhammer/kids-choice-games", target: "_blank", rel: "noopener" }, "💻 this game's code, on GitHub ↗")]),
                el("div", { class: "row" }, [ver, up]),
                // (ticket 302, M) a pop-up when a new version is out: off unless switched on here, this browser's own
                (() => { const b = el("button", { class: "ask-new-toggle", "aria-pressed": String(askNewOn()), onclick: () => { askNewSet(!askNewOn()); b.setAttribute("aria-pressed", String(askNewOn())); } },
