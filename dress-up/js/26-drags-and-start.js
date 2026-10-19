@@ -635,7 +635,7 @@ let clickRun = null;
 // in profile spreads the soles about 22 + 0.44 of the legs' length (the friend's own units: 84 for the default, legs 140)
 // either side, against 49 standing toward us and 22 in profile, so a walk planned from a stance kept the stance's reach (or
 // 10 more) and brushed a cauldron, a big root, with a foot; the stride's reach at the friend's size now, whatever the stance
-const strideMore = () => Math.max(10, (22 + 0.44 * (state.body.legLen ?? 140)) * (figureT.k || 1) - feetSpan()[0]);
+const strideMore = () => Math.max(10, stridePlus());   // (stridePlus: 16's, solidMove's too)
 function planWalk(x0, y0, x1, y1, more = 0) {
   const P = planPath(x0, y0, x1, y1, more), BG = state.background;
   if (BG.kind !== "castleroom" || !castleWallsOf(BG).stairs) return P;

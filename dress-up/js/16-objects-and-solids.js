@@ -537,7 +537,26 @@ function solidAt(x, z, all = false) {
 // (ticket 229) the last thing a move was stopped by (a solid's name, or "wall"), and when: 🔬 Inspection's collision boxes glow it
 let solidHit = { name: null, n: 0, t: 0 };
 function solidMove(x0, y0, x, y) {
-  const g = SCENE.ground, hit = solidAt(x, g + y);
+  const g = SCENE.ground;
+  // (ticket 369, the speed run's collide176: walking into a small stone the friend crept 4 to 9 units into it: at the moments
+  // of a stride when neither foot touched it, a step went through, then the front foot swung into it, again and again. A
+  // step across is also tried with the feet where the stride's front foot reaches (its reach at the friend's size, as
+  // planned walks keep: stridePlus), and refused when that meets something they are not already in)
+  let hit = solidAt(x, g + y);
+  const dx = x - x0, walking = Math.abs(dx) > 1e-6 && !isJump(state.body.anim);   // (any step across but a jump's: the pad walks with body.anim "none", drawn from the pad)
+  if (!hit && walking) {
+    // (the feet as they are, moved on till the front one is where the stride's front foot reaches: 0.45 of its widest, which is
+    // the foot behind; measured in the witch's room, 25 ahead against 51 behind)
+    const bx = youBoxes(x, g + y), front = dx < 0 ? x - Math.min(...bx.map(q => q[0])) : Math.max(...bx.map(q => q[1])) - x;
+    const was0 = solidAt(x0, g + y0, true), lead = solidAt(x + Math.sign(dx) * Math.max(0, 0.45 * strideReach() - front), g + y);
+    if (lead && !lead.wall && !was0.list.some(o => o.name === lead.name)) {   // (the step across refused outright: the fallbacks below
+      // test only where the feet are now, which is clear, and let it through)
+      const now = performance.now(); if (lead.name !== solidHit.name || now - solidHit.t > 120) solidHit = { name: lead.name, n: solidHit.n + 1, t: now };
+      return solidAt(x0, g + y) ? [x0, y0] : [x0, y]; }
+    // (and in one already, by a swung foot, not a step across further into it, toward its middle, even at a moment no foot
+    // touches it: the depth kept, the step across refused; away from it, as any step)
+    else if (was0.list.some(o => Math.abs(x - (o.x0 + o.x1) / 2) < Math.abs(x0 - (o.x0 + o.x1) / 2) - 0.01)) return [x0, y];
+  }
   if (!hit) return [x, y];
   const was = solidAt(x0, g + y0, true);
   // (inside a solid already: let them out, by any move that does not go deeper into it, nearer its middle. 0.0.152: any
@@ -586,6 +605,10 @@ function segBox(ax, az, bx, bz, x0, z0, x1, z1) {   // (does the segment pass th
   }
   return t1 - t0 > 1e-6;
 }
+// (ticket 369) how much further the stride's front foot reaches than the feet as they stand now (the friend's own units: 22 + 0.44
+// of the legs' length, at their size), for solidMove's step across
+const strideReach = () => (22 + 0.44 * (state.body.legLen ?? 140)) * (figureT.k || 1);
+const stridePlus = () => Math.max(0, (22 + 0.44 * (state.body.legLen ?? 140)) * (figureT.k || 1) - feetSpan()[0]);
 function planPath(x0, y0, x1, y1, more = 0) {
   // (the boxes grown by the soles' reach either side, and their depth: the middle kept that far out; `more` further, for
   // a walk whose steps swing wider than the feet standing, ticket 251's)

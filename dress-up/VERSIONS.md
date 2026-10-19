@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.305 (2026-10-18)
+
+Everything in 0.0.304, with walking into things stopping in front of them.
+
+- **🪨 Walking into a stone, a bush or a table, you stop in front of it**: before, holding the way into a small thing let your feet creep a few steps into it as they swung.
+
 ## 0.0.304 (2026-10-18)
 
 Everything in 0.0.303, with a new remix and tidier walks.
