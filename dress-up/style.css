@@ -45,6 +45,10 @@
   svg#pic { display: block; width: 100%; height: auto; max-width: 100%;
             background: var(--paper); border-radius: 18px; border: 2px solid var(--line);
             user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  /* (ticket 340) the makers' bubbles, in a picture of their own over the scene's, inside its border (the box is the picture's;
+     makerOver keeps its viewBox the scene's); its own layer, so a bubble moving draws it alone again */
+  #pic-over { position: absolute; left: 2px; top: 2px; width: calc(100% - 4px); height: calc(100% - 4px);
+              pointer-events: none; overflow: hidden; border-radius: 16px; will-change: transform; }
   /* the caption and the buttons, in one row under the picture */
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; padding-top: 6px; width: 100%; }
   body.big .bar { display: none; }

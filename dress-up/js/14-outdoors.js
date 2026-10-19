@@ -1021,8 +1021,25 @@ const bubbleThemes = B => ["A", "B", "C"].filter(L => L === "A" || B["bubble" + 
 // rate of them a second out of its wheel, of its theme (the friend's bubble themes, A, B or C, as bubble space's), sized by
 // the maker; out its way (its right, or mirrored its left) and up, slowing, jostling a little, rising, then fading after a
 // few seconds; a bubble touching the friend pops. Seventy at most, the oldest going first. Drawn in a layer of their own over
-// the scene (#maker-bubbles); still while the picture is held still.
+// the scene (#maker-bubbles; since ticket 340 in a picture of its own over it, #pic-over); still while the picture is held still.
 const makerSim = { list: [], acc: {}, raf: 0, last: 0, n: 0, layer: null };
+// (ticket 340, Matthew: "bubble room with one bubble machine is stressing my modern laptop"; a kid "pressing +bubble machine
+// until it breaks") Two ways they scale. budget: all the makers here blow MAKER_BUDGET bubbles a second between them, each
+// its share of its own rate, so seventy in the air are seventy, not a stream made and thrown away at the cap (256 makers
+// blew 1,024 a second, each built, put in the picture and taken out again). overlay: their layer is in a picture of its own
+// over the scene's (#pic-over, its viewBox the scene's), so a bubble moving draws only that picture again, not the
+// thousands of shapes under it.
+const MAKER_LEVERS = { budget: true, overlay: true }, MAKER_BUDGET = 12;
+// (the picture over the scene's: inside its border, placed by style.css, its viewBox the scene's; no reads in a frame)
+function makerOver() {
+  let O = document.getElementById("pic-over");
+  if (!O) {
+    O = document.createElementNS("http://www.w3.org/2000/svg", "svg"); O.id = "pic-over"; O.setAttribute("aria-hidden", "true"); O.setAttribute("pointer-events", "none");
+    pic.after(O);
+  }
+  const vb = pic.getAttribute("viewBox"); if (vb && O.getAttribute("viewBox") !== vb) O.setAttribute("viewBox", vb);
+  return O;
+}
 // (ticket 290, Matthew: "the ones that extend into the room don't pop when we walk through them.. That's the critical
 // path"; "We could have a new sub-cat for bubble collisions -- they are all circles right!") The bubble room's stuck-out
 // bubbles as colliders of their own, circles: roomBalls, each one's middle and size on the screen, how far it reaches in
@@ -1080,12 +1097,13 @@ const makerTheme = (B, L) => ({ color: B["bubble" + L + "Color"], size: B["bubbl
   sparkle: B["bubble" + L + "Sparkle"] || "none", sparkleColor: B["bubble" + L + "SparkleColor"] || "#ffffff" });
 function makerRun() {
   const B = state.background, has = B.kind !== "none" && (B.things || []).some(t => t.kind === "bubblemaker");
-  if (!has) { if (makerSim.raf) cancelAnimationFrame(makerSim.raf); makerSim.raf = 0; makerSim.list = []; if (makerSim.layer) { makerSim.layer.remove(); makerSim.layer = null; } return; }
+  if (!has) { if (makerSim.raf) cancelAnimationFrame(makerSim.raf); makerSim.raf = 0; makerSim.list = []; if (makerSim.layer) { makerSim.layer.remove(); makerSim.layer = null; } const O = document.getElementById("pic-over"); if (O) O.style.display = "none"; return; }
   // (the same layer every drawing, its bubbles in it: a drawing takes everything but the scene out of the picture, and this
   // puts it back, on top)
   let L = makerSim.layer;
   if (!L) { L = makerSim.layer = document.createElementNS("http://www.w3.org/2000/svg", "g"); L.id = "maker-bubbles"; L.setAttribute("pointer-events", "none"); makerSim.list = []; }
-  if (L.parentNode !== pic || pic.lastChild !== L) pic.append(L);
+  if (MAKER_LEVERS.overlay) { const O = makerOver(); if (O.style.display) O.style.display = ""; if (L.parentNode !== O) O.append(L); }
+  else { const O = document.getElementById("pic-over"); if (O) O.style.display = "none"; if (L.parentNode !== pic || pic.lastChild !== L) pic.append(L); }
   if (!makerSim.raf) { makerSim.last = 0; makerSim.raf = requestAnimationFrame(makerTick); }
 }
 function makerTick(t) {
@@ -1096,9 +1114,11 @@ function makerTick(t) {
   const dt = makerSim.last ? Math.min(0.05, Math.max(0, (t - makerSim.last) / 1000)) : 0; makerSim.last = t;
   if (stillAt !== null) { makerSim.raf = requestAnimationFrame(makerTick); return; }
   const L = makerSim.list, rnd = () => { const v = Math.sin(++makerSim.n * 12.9898) * 43758.5453; return v - Math.floor(v); };
-  // each maker blows its share
+  if (MAKER_LEVERS.overlay) makerOver();   // (the scene's viewBox, if it moved)
+  // each maker blows its share (ticket 340: of MAKER_BUDGET a second between them all)
+  const rateOf = d => Math.max(1, Math.min(12, d.rate ?? 4)), want = makers.reduce((a, [d]) => a + rateOf(d), 0), share = MAKER_LEVERS.budget ? Math.min(1, MAKER_BUDGET / want) : 1;
   for (const [d, i] of makers) {
-    const s = depthSize(B, d.z - SCENE.ground) * (d.size ?? 100) / 100, sd = d.mirror ? -1 : 1, rate = Math.max(1, Math.min(12, d.rate ?? 4));
+    const s = depthSize(B, d.z - SCENE.ground) * (d.size ?? 100) / 100, sd = d.mirror ? -1 : 1, rate = rateOf(d) * share;
     makerSim.acc[i] = (makerSim.acc[i] || rnd()) + rate * dt;
     while (makerSim.acc[i] >= 1) {
       makerSim.acc[i] -= 1;

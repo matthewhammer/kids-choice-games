@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.307 (2026-10-18)
+
+Everything in 0.0.306, with bubble makers that cost less.
+
+- **🫧 Many bubble makers together stay smoother**: all the makers in a place now share twelve bubbles a second between them (before, each blew its own, and with many makers most were made only to vanish at once), and their bubbles float in a layer of their own over the picture, so moving them no longer redraws the whole place. On a slow computer, sixteen makers walked at 53 frames a second instead of 37.
+
 ## 0.0.306 (2026-10-18)
 
 Everything in 0.0.305, with the bubble room's foam still at the start.
