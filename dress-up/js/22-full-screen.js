@@ -117,7 +117,21 @@ function advLayout(panel) {
 // (🅰️ theme A's rows were "🅰️ color", "🅰️ size"), and a bubble theme's group shows its bubble by its name, drawn from its settings
 // (the report's "show the thing": a theme as what it draws)
 const LEAD_MARK = /^[\p{Extended_Pictographic}\u200D\uFE0F\u20E3]+\s*/u;
+// (a castle's theme as a little flag on its pole, its carpet a strip under it, kept in step with its settings)
+function themeFlag(id, theme, big) {
+  const sv = document.createElementNS("http://www.w3.org/2000/svg", "svg"); sv.setAttribute("viewBox", "0 0 30 30"); sv.setAttribute("aria-hidden", "true"); sv.setAttribute("class", big ? "flag-pic" : "flag-chip");
+  let was = "";
+  syncs.push(() => { const K = castleOf({ ...state.background, castle: id }), T = theme === "B" ? { id, ...K.themeB } : { id, theme: "A", flagA: K.flagA, flagB: K.flagB, flagStyle: K.flagStyle, carpet: K.carpet };
+    const k = JSON.stringify(T); if (k === was) return; was = k;
+    sv.innerHTML = castleFlagDefs(T, 3) + `<rect x="3" y="25" width="24" height="4" rx="1" fill="${T.carpet}"/><line x1="6" y1="2" x2="6" y2="24" stroke="#8a8f9a" stroke-width="1.6"/>` +
+      (T.flagStyle === "alternate" ? `<path d="M7 3 H27 V10 H7 Z" fill="${T.flagA}"/><path d="M7 10 H27 V17 L17 13 L7 17 Z" fill="${T.flagB}"/><path d="M7 3 H27 V17 L17 13 L7 17 Z" fill="none" stroke="#555" stroke-width="0.6"/>`   // (in turn: both, one over the other)
+        : `<path d="M7 3 H27 V17 L17 13 L7 17 Z" fill="${castleFlagFill(T, 0, 3)}" stroke="#555" stroke-width="0.6"/>`); });
+  return sv;
+}
 function tidyGroups(panel) {
+  // (each room's "🎨 its colors": its two chips each with its theme's flag, so the choice shows what it chooses: one decision, seen)
+  for (const r of panel.querySelectorAll('.ctl[data-key^="castleRoomTheme"]')) { const id = r.dataset.key.slice(-1);
+    for (const b of r.querySelectorAll(":scope > .row > button")) { const t = /theme B/.test(b.textContent) ? "B" : /theme A/.test(b.textContent) ? "A" : null; if (t) b.prepend(themeFlag(id, t, 0)); } }
   for (const g of panel.querySelectorAll(".chipset.ctlgroup")) {
     const cap = g.querySelector(":scope > .cap"); if (!cap) continue;
     const ct = cap.textContent.trim(), mark = (ct.match(LEAD_MARK) || [""])[0].trim(), word = ct.split(" ").pop();
@@ -128,6 +142,9 @@ function tidyGroups(panel) {
       if (m) t = m[1];
       if (t && t !== n.textContent) n.textContent = t;
     }
+    // (the report's step 3, a castle's themes: each drawn as its flag, its carpet under it, by its name)
+    const flagRow = g.querySelector(':scope > .ctl[data-key^="castleFlagA"]'), fm = flagRow && flagRow.dataset.key.match(/^castleFlagA(_B)?([A-Z])$/);
+    if (fm) { const pic = themeFlag(fm[2], fm[1] ? "B" : "A", 1); pic.classList.add("cap-pic"); cap.prepend(pic); }
     const first = g.querySelector(':scope > .ctl[data-key$="Color"]'), L = first && (first.dataset.key.match(/^bubble([ABC])Color$/) || [])[1];
     if (L && typeof makerTheme === "function" && typeof bubbleSvg === "function") {
       const sv = document.createElementNS("http://www.w3.org/2000/svg", "svg"); sv.setAttribute("viewBox", "-15 -15 30 30"); sv.setAttribute("class", "cap-pic"); sv.setAttribute("aria-hidden", "true");

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.313 (2026-10-19)
+
+Everything in 0.0.312, with the castle's color themes shown as flags.
+
+- **🚩 A castle's two color themes as flags**: each theme shows its flag and carpet by its name, as you set them; and in each room, the 🎨 theme A and theme B chips show their flags, so you see the colors you are choosing.
+
 ## 0.0.312 (2026-10-19)
 
 Everything in 0.0.311, with each thing you put in a place as a card.

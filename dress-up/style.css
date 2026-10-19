@@ -127,6 +127,7 @@
   .thingcard > .tline > .hint:first-child { min-width: 1.6em; }
   details.how > summary { cursor: pointer; color: var(--muted); font-size: 0.85em; margin: 2px 0; }   /* (ticket 375: a long account folded, open on a tap) */
   .cap > .cap-pic { width: 2.4em; height: 2.4em; vertical-align: -0.85em; margin-right: 6px; }   /* (a bubble theme's bubble, by its name) */
+  button > .flag-chip { width: 1.4em; height: 1.4em; vertical-align: -0.35em; margin-right: 3px; }   /* (a room's theme chip, its flag) */
   /* (knolled) a group of groups, like things (the three bubble themes): side by side, the same size, as wide as there is room */
   .ctlgroup:has(> .ctlgroup) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: var(--box-gap); align-items: start; }
   .ctlgroup:has(> .ctlgroup) > :not(.ctlgroup) { grid-column: 1 / -1; }
