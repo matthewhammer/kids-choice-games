@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.289 (2026-10-18)
+
+Everything in 0.0.288, with more things in your way, as they should be.
+
+- **🐠 Under the sea, the seaweed, kelp, coral and bigger shells each have a small box at their foot**, so you weave among them, and the rocks and the shipwreck are in your way too.
+- **Things that had no box now have one**: the forest's and the castle's big trees, the witch's giant tree, the cemetery's headstones, cross and stag stone, the cave's stalagmites, the hut's woodpile, the trap room's helmet, the greenhouse's plants and watering can, and the toys on the house's lawn.
+- **🪜 Every ladder has a box at its foot**, so a walk goes round a ladder it isn't climbing; climbing it works as before.
+
 ## 0.0.288 (2026-10-18)
 
 Everything in 0.0.287, with the castle's birds flying.

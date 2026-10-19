@@ -168,16 +168,25 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // flies, what lies flat, any object hidden (objectsOff), a seat (already
 // one), and anything where one swims.
 // (ticket 284: the grass hut bedroom's bed and stump too, Matthew: "hut objects are all missing collision boxes?")
-const STANDING = new Set(["palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
+// (ticket 358: and what the audit found standing with no box: the cemetery's stones, the cave's stalagmites, the hut's woodpile
+// and the hut center's fire, the trap room's helmet, the greenhouse's watering can, the house's toys, a chair not sat on, the
+// sea floor's wreck and vent)
+const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "woodpile", "helmet", "watering can", "teddy", "truck", "blocks", "chair", "shipwreck", "vent", "palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
   "rock", "boulder", "sand castle", "snake tank", "soup pot", "stone", "stove", "stump", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
   "water barrel", "water trough", "well", "white bush", "worktable", "yellow bush"]);
-const TRUNKED = new Set(["deadtree", "skullstake", "tree", "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
+const TRUNKED = new Set(["big tree", "giant tree", "deadtree", "skullstake", "tree",   // (big tree, giant tree: ticket 358)
+   "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
 // (ticket 214's audit: the living room's plant had a box as wide as its leaves) a pot's plant stands on its pot: its foot,
 // as a trunk's is found, but however short
-const POTTED = new Set(["plant"]);
-const TRUNK = 0.14, SWIM_PLACES = new Set(["lake", "underwater", "deepsea"]);
+const POTTED = new Set(["plant", "bird of paradise", "monstera", "hibiscus", "bromeliad"]);   // (ticket 358: the greenhouse's, in their pots; not the hut center's fire, whose drawing is its light on the floor too, 378 wide)
+// (ticket 358, Matthew: "most deep sea objects should have a very small collision box. Each plant extending upwards, but also
+// shells beyond a certain small size --- It can be a very small box in all cases, but it will help the motion planning and
+// execution look more natural") the sea floor's plants and big shells: a small box at the foot, a quarter of the drawing's
+// width (6 to 22 units), 8 deep, 40 high at most; a shell narrower than SMALL_SHELL none (walked over)
+const SMALL_BOX = new Set(["kelp", "seaweed", "coral", "shell", "seagrass", "seafan", "sealettuce"]), SMALL_SHELL = 26;
+const TRUNK = 0.14, SWIM_PLACES = new Set(["lake"]);   // (ticket 358: under the sea the friend walks the sea floor, so its things stand in the way)
 const objBase = name => name.split(",")[0].replace(/\s+\d+$/, "").trim();
 // a box (x, y, width, height) through a matrix, as the box round its four corners
 function boxThrough(r, m) {
@@ -226,7 +235,8 @@ function standingHere(B, seats) {
     // (ticket 241) a drawing that marks its trunk (data-trunk: the tree house's braid) is a trunk, measured by it alone
     const marked = o.node.querySelector("[data-trunk]"), root = marked || o.node;
     const base = objBase(o.name), trunk = TRUNKED.has(base) || !!marked, potted = POTTED.has(base);
-    if (!(trunk || STANDING.has(base)) || !Number.isFinite(o.z) || off.has(o.name) || seats.has(o.name)) continue;
+    const small = SMALL_BOX.has(base);
+    if (!(trunk || small || POTTED.has(base) || STANDING.has(base)) || !Number.isFinite(o.z) || off.has(o.name) || seats.has(o.name)) continue;
     let b = null;
     // (ticket 214's audit: a cauldron's box stood up past the picture's top, its fumes measured as the pot) what rises
     // from a thing, .fumes, is no part of its box: hidden while it is measured
@@ -246,6 +256,9 @@ function standingHere(B, seats) {
     } catch (e) { continue; }
     finally { for (const f of fumes) f.style.display = ""; }
     if (!b || !(b.width > 0) || !(b.height > 0)) continue;
+    if (small) { if (base === "shell" && b.width < SMALL_SHELL * k) continue;   // (ticket 358: a small box at its foot, or none)
+      const w = clamp(0.25 * b.width, 6 * k, 22 * k), mid = b.x + b.width / 2;
+      out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - 8 * k, front: o.z, h: Math.min(40 * k, Math.max(0, o.z - b.y)), standing: true, small: true }); continue; }
     // (0.0.147, Matthew: "the sign post and trees each have a box that looks misaligned") a trunk or a post is not
     // always in the middle of its drawing: a canopy spreads to one side, a signpost's boards hang off its post. Its
     // box is where its tall parts reach its foot (the trunk, the post: each at least a quarter of its height, ending
@@ -279,6 +292,24 @@ function standingHere(B, seats) {
     const w = foot ? (potted ? foot[1] - foot[0] : Math.min(0.4 * b.width, Math.max(16 * k, foot[1] - foot[0]))) : trunk ? Math.min(b.width, Math.max(16 * k, TRUNK * b.width)) : b.width;
     out.push(...solidParts(base, { name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front: o.z, h, standing: true, ...(bands ? { bands } : {}) }, k));
   }
+  return out.concat(laddersHere());
+}
+// (ticket 358, Matthew: "ladders in the tree house scene should have collision boxes near the base but do not. All ladders
+// probably") Every ladder (but a hatch's, whose hole is in the way already) a box at its foot, as wide as it is there (8 to 70
+// units) and 10 deep, ending 2 short of its foot: a climb puts the friend just in front of the foot (startClimb: z + 2), so a
+// ladder is gone round by a walk and still climbed
+function laddersHere() {
+  const node = bgShown.node, picEl = document.getElementById("pic"), P = picEl && picEl.getScreenCTM();
+  if (!node || !P || typeof ladderAt !== "function") return [];
+  const Pinv = P.inverse(), k = (SCENE.bottom - SCENE.top) / 700, out = [];
+  node.querySelectorAll("[data-ladder]").forEach((el, i) => {
+    if (el.dataset.down !== undefined) return;
+    let q = null; try { const E = el.getScreenCTM(); q = E && boxThrough(el.getBBox(), Pinv.multiply(E)); } catch (e) { return; }
+    const L = q && q.width > 0 ? ladderAt(el, Pinv) : null;
+    if (!L || !Number.isFinite(L.z)) return;
+    const w = clamp(q.width, 8 * k, 70 * k);
+    out.push({ name: `ladder ${i + 1}`, x0: L.x - w / 2, x1: L.x + w / 2, back: L.z - 12 * k, front: L.z - 2, h: Math.max(20 * k, L.z - L.top), standing: true, ladder: true });
+  });
   return out;
 }
 // (ticket 337, Matthew: "round / oval objects get oval collision regions, not 'boxes'; let's have tables be precise, in
@@ -364,7 +395,7 @@ function solidsHere() {
   }
   return solidMemo.list;
 }
-const LANE_MIN = 16;
+const LANE_MIN = 24;   // (16 till 0.0.288: ticket 358 found a 17-unit pocket behind the cave's small stalagmite, walled in by the big one and the picture's edge)
 // the friend's legs, hip to foot, in the stage's units (for what a jump clears)
 const legReach = () => poseJoints && poseJoints.legs && poseJoints.legs.length
   ? figureT.k * Math.max(...poseJoints.legs.map(l => Math.hypot(l.F[0] - l.H[0], l.F[1] - l.H[1]))) : 100 * figureT.k;
