@@ -235,18 +235,35 @@ function trunkBands(parts, z, n = TRUNK_BANDS, base = 0) {
 // takes them out of the way when off. More kinds of thing stand in the way since (a bench, a barrel, a skeleton, an anchor,
 // a bubble maker, a lever, coral)
 const isPlaced = o => !!(o.node.closest && o.node.closest('[data-drag^="thing:"]')) || !!o.node.querySelector('[data-drag^="thing:"]');
+// (ticket 381, ^du_report(12)'s next step 2: "measure a placed thing's boxes once and keep them by its kind, place and size, so a
+// scene built again does not measure every maker through the screen (standingHere: 42 ms at 256 makers, on every tap that adds one)")
+// A placed thing's boxes, kept under what its drawing is made from (the picture's frame, the place, 🔭's vanishing line, the thing
+// itself, a signpost's boards): the same drawing in the same place has the same boxes; only a new or changed thing is measured
+const STANDING_KEPT = new Map();
 function standingHere(B, seats) {
   if (SWIM_PLACES.has(B.kind) || !bgShown.node) return [];
   const off = objectsOff(B), k = (SCENE.bottom - SCENE.top) / 700, out = [];
   // (its box in the friend's units, through the screen, as ladderAt does: the scene may sit in a nested svg of its own)
   const picEl = document.getElementById("pic"), P = picEl && picEl.getScreenCTM(), Pinv = P ? P.inverse() : null;
+  const frame = [SCENE.left, SCENE.top, SCENE.bottom, SCENE.ground, B.kind, Math.round(10 * sceneVanish(B))];
+  const keptKey = o => { const dg = o.node.querySelector('[data-drag^="thing:"]') || (o.node.closest && o.node.closest('[data-drag^="thing:"]')), t = dg && (B.things || [])[+dg.dataset.drag.slice(6)];
+    return t ? JSON.stringify([frame, t, t.kind === "signpost" ? signpostBoards(B, t) : ""]) : null; };
   for (const o of bgShown.objs) {
     if (B.thingsSolid === false && isPlaced(o)) continue;
+    if (off.has(o.name) || seats.has(o.name)) continue;
+    const key = keptKey(o), kept = key && STANDING_KEPT.get(key);
+    if (kept) { out.push(...kept.map(b => ({ ...b, name: o.name }))); continue; }
+    const from = out.length;
+    measureStanding(o);
+    if (key) { if (STANDING_KEPT.size > 2000) STANDING_KEPT.clear(); STANDING_KEPT.set(key, out.slice(from)); }
+  }
+  return out.concat(laddersHere());
+  function measureStanding(o) {
     // (ticket 241) a drawing that marks its trunk (data-trunk: the tree house's braid) is a trunk, measured by it alone
     const marked = o.node.querySelector("[data-trunk]"), root = marked || o.node;
     const base = objBase(o.name), trunk = TRUNKED.has(base) || !!marked, potted = POTTED.has(base);
     const small = SMALL_BOX.has(base);
-    if (!(trunk || small || POTTED.has(base) || STANDING.has(base)) || !Number.isFinite(o.z) || off.has(o.name) || seats.has(o.name)) continue;
+    if (!(trunk || small || POTTED.has(base) || STANDING.has(base)) || !Number.isFinite(o.z)) return;
     let b = null;
     // (ticket 214's audit: a cauldron's box stood up past the picture's top, its fumes measured as the pot) what rises
     // from a thing, .fumes, is no part of its box: hidden while it is measured
@@ -265,12 +282,12 @@ function standingHere(B, seats) {
         // (ticket 355: a trunk's whole object, its foot in the floor too, which a marked trunk's own shapes leave out: how far down it is drawn)
         if (trunk && marked) { const E2 = o.node.getScreenCTM(), m2 = E2 && Pinv.multiply(E2), q2 = m2 && boxThrough(o.node.getBBox(), m2); if (q2) b.bottom = q2.y + q2.height; }
       }
-    } catch (e) { continue; }
+    } catch (e) { return; }
     finally { for (const f of fumes) f.style.display = ""; }
-    if (!b || !(b.width > 0) || !(b.height > 0)) continue;
-    if (small) { if (base === "shell" && b.width < SMALL_SHELL * k) continue;   // (ticket 358: a small box at its foot, or none)
+    if (!b || !(b.width > 0) || !(b.height > 0)) return;
+    if (small) { if (base === "shell" && b.width < SMALL_SHELL * k) return;   // (ticket 358: a small box at its foot, or none)
       const w = clamp(0.25 * b.width, 6 * k, 22 * k), mid = b.x + b.width / 2;
-      out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - 8 * k, front: o.z, h: Math.min(40 * k, Math.max(0, o.z - b.y)), standing: true, small: true }); continue; }
+      out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - 8 * k, front: o.z, h: Math.min(40 * k, Math.max(0, o.z - b.y)), standing: true, small: true }); return; }
     // (0.0.147, Matthew: "the sign post and trees each have a box that looks misaligned") a trunk or a post is not
     // always in the middle of its drawing: a canopy spreads to one side, a signpost's boards hang off its post. Its
     // box is where its tall parts reach its foot (the trunk, the post: each at least a quarter of its height, ending
@@ -309,7 +326,6 @@ function standingHere(B, seats) {
     const front = trunk && Number.isFinite(drawnBot) ? Math.min(Math.max(o.z, drawnBot), o.z + 0.5 * w) : o.z;   // (at most half its width further: a giant's roots are not its trunk)
     out.push(...solidParts(base, { name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front, h, standing: true, ...(bands ? { bands } : {}) }, k));
   }
-  return out.concat(laddersHere());
 }
 // (ticket 358, Matthew: "ladders in the tree house scene should have collision boxes near the base but do not. All ladders
 // probably") Every ladder (but a hatch's, whose hole is in the way already) a box at its foot, as wide as it is there (8 to 70

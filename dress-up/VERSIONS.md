@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.331 (2026-10-19)
+
+Everything in 0.0.330, with adding a thing to a full place quick again.
+
+- **🫧 Adding the 257th bubble maker no longer stalls**: the game worked out where every thing in the place stands, one by one through the screen, each time one was added. Now it remembers each thing's spot and only works out the new one: with 256 makers, adding one takes about a tenth of the time.
+
 ## 0.0.330 (2026-10-19)
 
 Everything in 0.0.329, with a place full of things drawn with less work.
