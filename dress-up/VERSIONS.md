@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.344 (2026-10-19)
+
+Everything in 0.0.343, with the far arrows quick to show again.
+
+- **Fixed: with ♿ "🧭 all arrows" on, the far arrows came in slowly** (ticket 424): since 0.0.335 they took half a second to show, held almost hidden most of that time, as an arrow takes to fade away. Now they show as quickly as a near one, and still fade slowly when you switch them off.
+
 ## 0.0.343 (2026-10-19)
 
 Everything in 0.0.342, with elbows and knees that bend toward you and away.

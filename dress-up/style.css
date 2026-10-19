@@ -685,7 +685,9 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
   opacity: 0; pointer-events: none;
   /* (ticket 404) going away takes ♿'s --label-stay (500 ms by default, twice the old 250), held near full before it fades */
   transition: opacity var(--label-stay, 500ms) cubic-bezier(0.8, 0, 1, 1); }
-.way-arrow.near, .way-arrow.aimed { transition: opacity 0.25s; }
+/* (ticket 424) coming in, quickly: near, aimed, or shown by ♿'s 🧭 all arrows (.always; since 0.0.335 those came in on the slow
+   curve meant for going away). Going away, the class taken off, takes the slow fade above */
+.way-arrow.near, .way-arrow.aimed, .way-arrow.always { transition: opacity 0.25s; }
 .way-arrow.near { opacity: 1; pointer-events: auto; }
 /* (ticket 187) near but not the one X, Enter or a tap would take: dimmer */
 .way-arrow.near:not(.aimed) { opacity: 0.55; }
