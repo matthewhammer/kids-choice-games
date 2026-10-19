@@ -810,6 +810,7 @@ function emptyroomScene(c) {
 // layer for the bubbles, in front of everything; bubbleTick moves them each
 // frame while the place is shown (bubbleRun, from draw()).
 const BUBBLE_COLORS = ["#9ad7ff", "#ffb3e6", "#c8f7c5", "#fff3a3", "#d7c4ff", "#ffffff", "#ffc9a3"];
+const BUBBLE_POP_INSTS = [["bubble", "🫧 bloop"], ["pizz", "🎻 pluck"], ["musicbox", "🎶 music box"], ["bell", "🔔 bell"], ["zap", "⚡ zap"]];
 function bubblespaceScene(c) {
   const { x0, y1, g, W, k, pad, all } = c, wall = imaginationWall(g, k);
   return SEP + part("bubblespace", c.F, () => all("#f6fbff") +
@@ -1008,7 +1009,7 @@ function bubbleroomScene(c) {
 // (ticket 274) Where each bubble first appears, and how it first drifts, comes from the place's bubbleSeed (🎲 other
 // places for the bubbles) and its number alone, so the settings decide the picture; a popped one comes back in
 // turn, from the seed too. Held still (holdStill), they are not moved at all: touching ones are not even pushed apart.
-const bubbleSim = { list: [], bonds: [], layer: null, key: "", last: 0, raf: 0, seed: null, backs: 0 };
+const bubbleSim = { list: [], bonds: [], layer: null, key: "", last: 0, raf: 0, seed: null, backs: 0, kids: [], kidLayer: null };   // (kids, kidLayer: ticket 329)
 const bubbleThemes = B => ["A", "B", "C"].filter(L => L === "A" || B["bubble" + L + "On"]).map(L => ({
   color: B["bubble" + L + "Color"], size: B["bubble" + L + "Size"] ?? 18, shine: (B["bubble" + L + "Shine"] ?? 70) / 100,
   sparkle: B["bubble" + L + "Sparkle"] || "none", sparkleColor: B["bubble" + L + "SparkleColor"] || "#ffffff" }));
@@ -1123,7 +1124,7 @@ function makerTick(t) {
   makerSim.raf = requestAnimationFrame(makerTick);
 }
 function bubbleRun() {
-  if (state.background.kind !== "bubblespace") { if (bubbleSim.raf) cancelAnimationFrame(bubbleSim.raf); bubbleSim.raf = 0; bubbleSim.list = []; bubbleSim.bonds = []; bubbleSim.layer = null; bubbleSim.key = ""; return; }
+  if (state.background.kind !== "bubblespace") { if (bubbleSim.raf) cancelAnimationFrame(bubbleSim.raf); bubbleSim.raf = 0; bubbleSim.list = []; bubbleSim.bonds = []; bubbleSim.layer = null; bubbleSim.key = ""; bubbleKidsClear(); return; }
   if (!bubbleSim.raf) bubbleSim.raf = requestAnimationFrame(bubbleTick);
 }
 function bubbleTick(t) {
@@ -1132,15 +1133,18 @@ function bubbleTick(t) {
   if (B.kind !== "bubblespace") return;
   const layer = document.getElementById("bubble-layer"), F = sceneFrame, k = (F.bottom - F.top) / 700;
   if (!layer || !(F.right > F.left)) { bubbleSim.raf = requestAnimationFrame(bubbleTick); return; }
-  const themes = bubbleThemes(B), n = Math.max(1, Math.min(80, Math.round(B.bubbleCount ?? 30))), key = JSON.stringify([n, themes, F.left, F.top, F.right, F.bottom]);
-  const seed = B.bubbleSeed ?? 1, first = seeded(seed), again = seeded(seed + 0.5);
-  if (bubbleSim.seed !== seed) { bubbleSim.seed = seed; bubbleSim.list = []; bubbleSim.bonds = []; bubbleSim.backs = 0; }
+  const themes = bubbleThemes(B), n = Math.max(1, Math.min(80, Math.round(B.bubbleCount ?? 30))), depthAmt = Math.max(0, Math.min(100, B.bubbleDepth ?? 70)) / 100;
+  const key = JSON.stringify([n, themes, depthAmt, F.left, F.top, F.right, F.bottom]);
+  const seed = B.bubbleSeed ?? 1, first = seeded(seed), again = seeded(seed + 0.5), deep = seeded(seed + 0.25);
+  if (bubbleSim.seed !== seed) { bubbleSim.seed = seed; bubbleSim.list = []; bubbleSim.bonds = []; bubbleSim.backs = 0; bubbleKidsClear(); }
+  // (ticket 329) how far back each is (0 near, 1 far), the farthest first, so drawn behind; a far one smaller and slower
+  const depths = Array.from({ length: n }, (_, i) => deep(i)).sort((a, b) => b - a), near = d => 1 - 0.6 * depthAmt * d;
   const at = (i, j, a, b) => a + (b - a) * first(i * 4 + j), rand = (a, b) => a + (b - a) * again(bubbleSim.backs++);
   const spot = (b, i) => { b.x = at(i, 0, F.left + b.r, F.right - b.r); b.y = at(i, 1, F.top + b.r, F.bottom - b.r); b.vx = at(i, 2, -20, 20) * k; b.vy = at(i, 3, -20, 20) * k; };
   if (key !== bubbleSim.key || layer !== bubbleSim.layer || layer.childNodes.length !== bubbleSim.list.length) {
     // (made again: the number, a theme, or the picture's size changed; those already there keep their places)
     const old = bubbleSim.list;
-    bubbleSim.list = Array.from({ length: n }, (_, i) => { const th = themes[i % themes.length], b = old[i] ? { ...old[i] } : {}; b.th = th; b.r = th.size * k; b.pop = 0; b.back = 0; if (!old[i]) spot(b, i); return b; });
+    bubbleSim.list = Array.from({ length: n }, (_, i) => { const th = themes[i % themes.length], b = old[i] ? { ...old[i] } : {}; b.th = th; b.d = depths[i]; b.sc = near(b.d); b.r = th.size * k * b.sc; b.pop = 0; b.back = 0; if (!old[i]) spot(b, i); return b; });
     bubbleSim.bonds = bubbleSim.bonds.filter(([i, j]) => i < n && j < n);
     layer.innerHTML = bubbleSim.list.map(b => `<g transform="translate(${f1(b.x)} ${f1(b.y)})"><g class="bubin">${bubbleSvg(0, 0, b.r, b.th)}</g></g>`).join("");
     bubbleSim.layer = layer; bubbleSim.key = key; bubbleSim.last = t;
@@ -1160,7 +1164,7 @@ function bubbleTick(t) {
     if (b.pop) return;
     // (the breeze, and a jostle of its own that turns slowly)
     const j = t / 1000 * (0.7 + 0.05 * (i % 7)) + i * 1.3;
-    b.vx += (wx + Math.cos(j) * 30 * k * (0.3 + wind)) * dt; b.vy += (wy + Math.sin(j * 1.3) * 30 * k * (0.3 + wind)) * dt;
+    b.vx += (wx + Math.cos(j) * 30 * k * (0.3 + wind)) * b.sc * dt; b.vy += (wy + Math.sin(j * 1.3) * 30 * k * (0.3 + wind)) * b.sc * dt;
     const damp = Math.pow(0.55, dt); b.vx *= damp; b.vy *= damp;
   });
   // stuck together: each bond kept at its length, both moving together
@@ -1175,7 +1179,7 @@ function bubbleTick(t) {
   // touching: they stick (a new bond), at most five to a bubble
   const deg = new Array(L.length).fill(0); for (const [i, j] of bubbleSim.bonds) { deg[i]++; deg[j]++; }
   for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
-    const a = L[i], b = L[j]; if (a.pop || b.pop || a.back || b.back) continue;
+    const a = L[i], b = L[j]; if (a.pop || b.pop || a.back || b.back || Math.abs(a.d - b.d) > BUBBLE_TOUCH_DEPTH) continue;   // (ticket 329: one far behind another passes it by)
     const dx = b.x - a.x, dy = b.y - a.y, rr = a.r + b.r;
     if (Math.abs(dx) > rr || Math.abs(dy) > rr || dx * dx + dy * dy > rr * rr) continue;
     if (!bonded.has(i + "," + j) && deg[i] < 5 && deg[j] < 5) { bubbleSim.bonds.push([i, j, rr * 0.96]); deg[i]++; deg[j]++; bonded.add(i + "," + j); }
@@ -1189,13 +1193,89 @@ function bubbleTick(t) {
     if (b.y < F.top + b.r) { b.y = F.top + b.r; b.vy = Math.abs(b.vy) * 0.6; } else if (b.y > F.bottom - b.r) { b.y = F.bottom - b.r; b.vy = -Math.abs(b.vy) * 0.6; }
     const el = layer.childNodes[i];
     if (fr && b.x + b.r > fr[0] && b.x - b.r < fr[2] && b.y + b.r > fr[1] && b.y - b.r < fr[3]) {
-      b.pop = t; b.back = t + 1400; bubbleSim.bonds = bubbleSim.bonds.filter(([p, q]) => p !== i && q !== i);
+      b.pop = t; b.back = t + 1400; bubbleSim.bonds = bubbleSim.bonds.filter(([p, q]) => p !== i && q !== i); bubblePopped(b, 0, k, rand);
       if (el && el.firstChild) { el.firstChild.classList.add("pop"); setTimeout(() => { if (b.pop && el.isConnected) el.style.display = "none"; }, 260); }
       return;
     }
     if (el) el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
   });
+  bubbleKidsTick(t, dt, layer, F, k, fr, wx, wy, wind, rand);
   bubbleSim.raf = requestAnimationFrame(bubbleTick);
+}
+// (ticket 329, Matthew: "when we 'pop' a bubble in bubble space: the likelihood of creating new, smaller bubbles (0 to
+// 100); the number of new, smaller bubbles, on average -- same style as the popped bubble, for now", and "some more
+// 'popping' animation, like the 'face head lines' that stick out of the face, or the rays that come out of the sun, but
+// temporarily, and animated as getting big and disappearing, all around the popped bubble", with an optional sound) A pop:
+// its lines (bubblePopRays), its sound (bubblePopSound), and, as likely as 💥 says, about 🫧 smaller bubbles of its own
+// style flung out from it at its depth (bubbleSim.kids, in a layer of their own just after the bubbles', so the bubbles'
+// own layer keeps one child a bubble). They drift on the same wind, pop on the friend too (and burst once more, no
+// further), and fade out after a few seconds.
+const BUBBLE_TOUCH_DEPTH = 0.2, BUBBLE_KIDS_MAX = 60, BUBBLE_KID_GENS = 2;
+function bubbleKidsClear() { for (const c of bubbleSim.kids || []) c.el.remove(); bubbleSim.kids = []; }
+function bubbleKidLayer(layer) {
+  let K = bubbleSim.kidLayer;
+  if (!K) { K = bubbleSim.kidLayer = document.createElementNS("http://www.w3.org/2000/svg", "g"); K.id = "bubble-kids"; K.setAttribute("pointer-events", "none"); }
+  if (K.previousSibling !== layer) layer.after(K);
+  return K;
+}
+function bubblePopped(b, gen, k, rand) {
+  const B = state.background, layer = bubbleSim.layer; if (!layer) return;
+  const K = bubbleKidLayer(layer);
+  if (B.bubbleRays !== false) bubblePopRays(K, b.x, b.y, b.r, b.th);
+  bubblePopSound(b.r / k);
+  const kids = bubbleSim.kids || (bubbleSim.kids = []);
+  if (gen >= BUBBLE_KID_GENS || rand(0, 100) >= (B.bubbleBurst ?? 40)) return;
+  const avg = Math.max(1, Math.min(8, B.bubbleBurstCount ?? 3)), many = Math.max(1, Math.min(12, Math.round(avg * rand(0.5, 1.5)))), turn = rand(0, 6.283);
+  for (let j = 0; j < many && kids.length < BUBBLE_KIDS_MAX; j++) {
+    const r = b.r * rand(0.35, 0.55); if (r < 1.5 * k) break;
+    const a = turn + j * 6.283 / many + rand(-0.3, 0.3), v = rand(60, 110) * k * b.sc, el = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    el.innerHTML = `<g class="bubin">${bubbleSvg(0, 0, r, b.th)}</g>`; K.append(el);
+    kids.push({ x: b.x + Math.cos(a) * b.r * 0.5, y: b.y + Math.sin(a) * b.r * 0.5, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r, th: b.th, d: b.d, sc: b.sc,
+                born: bubbleSim.last, life: rand(4000, 7000), gen: gen + 1, el });
+  }
+}
+function bubbleKidsTick(t, dt, layer, F, k, fr, wx, wy, wind, rand) {
+  const kids = bubbleSim.kids; if (!kids || !kids.length) return;
+  bubbleKidLayer(layer);
+  for (let i = kids.length - 1; i >= 0; i--) {
+    const c = kids[i], age = t - c.born;
+    if (c.pop) { if (t - c.pop > 260) { c.el.remove(); kids.splice(i, 1); } continue; }
+    if (age > c.life) { c.el.remove(); kids.splice(i, 1); continue; }
+    const j = t / 1000 * 0.9 + i * 1.7;
+    c.vx += (wx + Math.cos(j) * 30 * k * (0.3 + wind)) * c.sc * dt; c.vy += (wy + Math.sin(j * 1.3) * 30 * k * (0.3 + wind)) * c.sc * dt;
+    const damp = Math.pow(0.4, dt); c.vx *= damp; c.vy *= damp;
+    c.x = Math.max(F.left + c.r, Math.min(F.right - c.r, c.x + c.vx * dt)); c.y = Math.max(F.top + c.r, Math.min(F.bottom - c.r, c.y + c.vy * dt));
+    // (born on the friend, each pops on them only once it has been clear of them: walk into it again)
+    const on = fr && c.x + c.r > fr[0] && c.x - c.r < fr[2] && c.y + c.r > fr[1] && c.y - c.r < fr[3];
+    if (fr && !on) c.clear = true;   // (a frame with no friend to measure is not one clear of them)
+    else if (c.clear) { c.pop = t; if (c.el.firstChild) c.el.firstChild.classList.add("pop"); bubblePopped(c, c.gen, k, rand); continue; }
+    c.el.setAttribute("transform", `translate(${f1(c.x)} ${f1(c.y)})`);
+    c.el.setAttribute("opacity", Math.min(1, (c.life - age) / 700, age / 120).toFixed(2));
+  }
+}
+// the lines: ten, all round, just out from its rim, growing and gone (CSS: .pop-rays), in its colour
+function bubblePopRays(K, x, y, r, th) {
+  // (a shade darker than the bubble, so a pale bubble's lines still show on bubble space's pale wall)
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g"), c = (th && th.color) || BUBBLE_DEFAULT.color, w = Math.max(1, r * 0.15);
+  let t = "";
+  for (let i = 0; i < 10; i++) { const a = i * 0.6283 + 0.3, ca = Math.cos(a), sa = Math.sin(a);
+    t += `<line x1="${f1(ca * r * 1.2)}" y1="${f1(sa * r * 1.2)}" x2="${f1(ca * r * 1.9)}" y2="${f1(sa * r * 1.9)}"/>`; }
+  g.setAttribute("transform", `translate(${f1(x)} ${f1(y)})`);
+  g.innerHTML = `<g class="pop-rays" stroke="${c}" style="stroke: color-mix(in srgb, ${c} 65%, #2f5f86)" stroke-width="${f1(w)}" stroke-linecap="round">${t}</g>`;
+  K.append(g); setTimeout(() => g.remove(), 460);
+}
+// the sound: 🔊 how loud (0, none; and none while the music is muted), on 🎹 an instrument of the music's, at 🎵 a pitch
+// (a smaller bubble higher: an octave each time it halves) with ✨ its knob; at most one in 40 ms, so a burst is not a roar
+let bubblePopLast = 0;
+function bubblePopSound(size) {
+  const B = state.background, vol = Math.max(0, Math.min(100, B.bubblePopVol ?? 40)) / 100, now = performance.now();
+  if (vol <= 0 || state.music.mute || now - bubblePopLast < 40 || typeof audioReady !== "function" || !audioReady() || !tapeOut) return;
+  bubblePopLast = now;
+  const inst = INSTRUMENTS[B.bubblePopInst] ? B.bubblePopInst : "bubble", t = audio.currentTime + 0.01;
+  const m = Math.max(48, Math.min(108, Math.round(84 + (B.bubblePopPitch ?? 0) + 12 * Math.log2(18 / Math.max(2, size)))));
+  const out = gainOf(audio, tapeOut, 0.8 * vol);
+  INSTRUMENTS[inst](audio, out, t, m, 0.25, 1, B.bubblePopKnob ?? 50);
+  setTimeout(() => out.disconnect(), 4000);
 }
 function imaginationScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, all, o } = c;

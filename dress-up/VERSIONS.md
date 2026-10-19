@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.277 (2026-10-18)
+
+Everything in 0.0.276, with bubble space's pops bursting.
+
+- **🫧 Bubble space has depth**: bubbles are smaller and slower farther back, the far ones drawn behind (🔭 how much, in 🏞️ Background; 0 is all one size, as before). Only bubbles at about the same depth stick together.
+- **💥 A pop can burst into smaller bubbles** of the same style, flung out from it: how likely (0 to 100) and how many, about (1 to 8). They drift on the room's wind and fade after a few seconds, and pop when the friend walks into them again.
+- **✨ Lines shoot out from a pop**, all around it, like the sun's rays, growing and gone.
+- **🔊 A pop has a sound**, with settings of its own: how loud (0 for none; silent while the music is muted), its instrument (🫧 bloop, 🎻 pluck, 🎶 music box, 🔔 bell, ⚡ zap), its pitch (smaller bubbles higher), and the instrument's knob.
+
 ## 0.0.276 (2026-10-18)
 
 Everything in 0.0.275, with the new tracks starting from Matthew's mix.

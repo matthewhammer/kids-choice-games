@@ -361,6 +361,16 @@ const TABS = [
       ["range", "bubbleWind", "🌬️ wind", 0, 100, 20, 60],
       // (ticket 274) the bubbles' seed: the same seed, the same places, every time the place is drawn
       ["action", "bubbleSeed", "🎲 other places for the bubbles", () => { state.background.bubbleSeed = 1 + Math.floor(Math.random() * 99999); }],
+      // (ticket 329, Matthew) the bubbles smaller farther back; a pop's smaller bubbles, in its style; lines out from it, as
+      // the sun's rays, growing and gone; and its sound, with an instrument's settings as the mixing board's
+      ["range", "bubbleDepth", "🔭 smaller farther back (0 = all one size)", 0, 100, 40, 90],
+      ["range", "bubbleBurst", "💥 how likely a pop makes smaller bubbles", 0, 100, 20, 80],
+      ["range", "bubbleBurstCount", "🫧 how many smaller bubbles, about", 1, 8, 2, 5],
+      ["toggle", "bubbleRays", "✨ lines out from a pop"],
+      ["range", "bubblePopVol", "🔊 a pop's sound (0 = none)", 0, 100, 20, 70],
+      ["choice", "bubblePopInst", "🎹 the pop's instrument", BUBBLE_POP_INSTS],
+      ["range", "bubblePopPitch", "🎵 the pop's pitch (half steps; smaller bubbles higher)", -12, 12, -5, 5],
+      ["range", "bubblePopKnob", "✨ the instrument's knob (bloop, ring, fall)", 0, 100, 20, 80],
       ...BUBBLE_THEME_CTLS,
     ]],
     // (ticket 290, for N) the bubble room's own: its foam on each of its walls, its floor and its ceiling, how far up (or out)
@@ -884,6 +894,8 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["leverShine", "leverShineColor", "leverFlicker"].map(k => ["background." + k, b => (b.kind === "castleroom" && roomHereNowOf(b)[1] === "trap") || (b.things || []).some(t => t.kind === "lever")])),   // (ticket 317)
   "background.objectsOff": b => b.kind !== "none",
   "background.bubbles": b => b.kind === "bubblespace",   // (ticket 220)
+  "background.bubbleBurstCount": b => (b.bubbleBurst ?? 40) > 0,   // (ticket 329)
+  "background.bubblePopInst": b => (b.bubblePopVol ?? 40) > 0, "background.bubblePopPitch": b => (b.bubblePopVol ?? 40) > 0, "background.bubblePopKnob": b => (b.bubblePopVol ?? 40) > 0,
   "background.bubbleroom": b => b.kind === "bubbleroom",   // (ticket 290)
   "background.instEdit": b => !!instanceOf(state.world),   // (ticket 300)
   "background.instReset": b => { const W = state.world, k = instanceOf(W); return !!(k && W.cells[k] && W.cells[k].own && Object.keys(W.cells[k].own).length); },

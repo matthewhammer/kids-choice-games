@@ -438,6 +438,9 @@ const DEFAULTS = {
                 waterSee: 70, waterWake: 100, waterTread: 100, seat: null,   // (ticket 50: the seat the friend sits on here, by name)
                 // (ticket 220) 🫧 bubble space: how many, the wind, and themes A (always), B and C (when on)
                 bubbleCount: 30, bubbleWind: 30, bubbleSeed: 1,   // (ticket 274: where the bubbles first are, from this)
+                // (ticket 329) smaller farther back; a pop's smaller bubbles (how likely, how many), its lines, its sound
+                bubbleDepth: 70, bubbleBurst: 40, bubbleBurstCount: 3, bubbleRays: true,
+                bubblePopVol: 40, bubblePopInst: "bubble", bubblePopPitch: 0, bubblePopKnob: 50,
                 bubbleAColor: "#9ad7ff", bubbleASize: 18, bubbleAShine: 70, bubbleASparkle: "none", bubbleASparkleColor: "#ffffff",
                 bubbleBOn: false, bubbleBColor: "#ffb3e6", bubbleBSize: 26, bubbleBShine: 85, bubbleBSparkle: "star", bubbleBSparkleColor: "#fff5b0",
                 // (ticket 290) the bubble room: foam on each wall (how high), on the floor and the ceiling (how far out), its colour,
@@ -1027,7 +1030,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.276", released: "2026-10-18" };
+const VERSION = { number: "0.0.277", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
