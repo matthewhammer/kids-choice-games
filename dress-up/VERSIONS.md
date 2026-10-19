@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.312 (2026-10-19)
+
+Everything in 0.0.311, with each thing you put in a place as a card.
+
+- **🪨 Things you put in a place as cards**: each with its picture, its name and ✖ at the top, its buttons together, and a line for each setting; the cards side by side when there is room, instead of one long row each.
+
 ## 0.0.311 (2026-10-19)
 
 Everything in 0.0.310, with the Background, Controls and Advanced tabs in boxes too.

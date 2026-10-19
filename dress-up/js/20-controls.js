@@ -1384,6 +1384,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // thing: its own parameters (thingParams: ↔️ mirror for all, a rock's
   // colours as swatches), and ✖ to take it away.
   if (kind === "things") {
+    // (ticket 375: a thing's picture on its card, its drawing in the scene copied once the scene is drawn: the report's "show the thing")
+    const thingPic = i => { const sv = document.createElementNS("http://www.w3.org/2000/svg", "svg"); sv.setAttribute("class", "tpic"); sv.setAttribute("aria-hidden", "true");
+      setTimeout(() => { const g = document.querySelector(`#bg [data-drag="thing:${i}"]`); if (!g || !sv.isConnected) return;
+        try { const b = g.getBBox(); if (!(b.width > 0 && b.height > 0)) return; const c = g.cloneNode(true); c.removeAttribute("transform"); c.removeAttribute("data-drag");
+          for (const e of [c, ...c.querySelectorAll("[id]")]) e.removeAttribute("id"); for (const e of c.querySelectorAll(".cost-glow, animate, animateTransform, animateMotion")) e.remove();
+          const m = Math.max(b.width, b.height) * 0.08; sv.setAttribute("viewBox", `${b.x - m} ${b.y - m} ${b.width + 2 * m} ${b.height + 2 * m}`); sv.replaceChildren(c); } catch (e) { /* (not drawn) */ } }, 60);
+      return sv; };
     const n = el("span", { class: "hint" }), list = el("div", { class: "cross-list" });
     let shown = null;
     const rows = () => {
@@ -1399,9 +1406,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         return;
       }
       shown = sig;
-      list.replaceChildren(...T.map((t, i) => el("div", { class: "row" }, [
-        el("span", { class: "name" }, `${thingLabel(t)} ${i + 1}`),
-        ...thingParams(t.kind).flatMap(([p, label, how, opts]) => {
+      // (ticket 375, Matthew 10-18 13:49: "If we go deep enough, there's a lack of [knolling] here (see the individual objects placed in
+      // scene controls)") Each thing put here a card, the same size as its neighbours in a grid: its picture (its drawing in the scene),
+      // its name once and ✖ at its top; its one-tap actions and switches as a line of chips; each other setting a line of its own
+      const partsFor = (t, i, [p, label, how, opts]) => {
           const now = t[p] ?? (THING_DEFAULTS[t.kind] || {})[p], set = v => () => { t[p] = v; changed(); };
           if (how === "color") return [el("span", { class: "hint" }, label), ...opts.map(col => el("button", { title: col, "aria-pressed": String((now ?? opts[0]) === col),
             style: col === "none" ? "width: 1.6em; height: 1.6em; padding: 0; border-radius: 50%;" : `background: ${col}; width: 1.6em; height: 1.6em; padding: 0; border-radius: 50%;`,
@@ -1425,8 +1433,12 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                 onclick: () => { const c = t[p] || []; t[p] = c.includes(d.uid) ? c.filter(u => u !== d.uid) : [...c, d.uid]; changed(); } }, `${on ? "🔗" : "➕"} 🕳️ ${n}`); })]; }
           if (how === "text") return [el("span", { class: "hint" }, label), el("input", { type: "text", maxlength: String(opts), size: String(opts), value: String(now ?? ""), "aria-label": label, oninput: e => { t[p] = e.target.value.slice(0, opts); changed(); } })];
           return [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)];
-        }),
-        el("button", { onclick: () => { T.splice(i, 1); changed(); } }, "✖")])));
+      };
+      list.replaceChildren(...T.map((t, i) => { const chips = [], lines = [];
+        for (const q of thingParams(t.kind)) { const parts = partsFor(t, i, q), how = q[2];
+          if (["color", "choice", "range", "dirs", "wires", "text"].includes(how)) lines.push(el("div", { class: "tline tline-" + how }, parts)); else chips.push(...parts); }
+        return el("div", { class: "row thingcard" }, [el("div", { class: "thead" }, [thingPic(i), el("span", { class: "name" }, `${thingLabel(t)} ${i + 1}`),
+          el("button", { class: "tdel", title: "Take it away", onclick: () => { T.splice(i, 1); changed(); } }, "✖")]), ...(chips.length ? [el("div", { class: "tline tchips" }, chips)] : []), ...lines]); }));
     };
     // (v2: dragged onto the picture, it stands where it was let go, kept within
     // the ground the friend can stand on; tapped, near the middle, a little
