@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.250 (2026-10-18)
+
+Everything in 0.0.249, with some of the outdoors' things as things of their own.
+
+- **Outdoors, more things to see, hide and place**: the open water's island, sailboat and sun glitter; the beach's two striped blankets; the witch's woods' bats; the yard's frisbee and rope; the lake's lily pads.
+
 ## 0.0.249 (2026-10-18)
 
 Everything in 0.0.248, with three more places made of things of their own.

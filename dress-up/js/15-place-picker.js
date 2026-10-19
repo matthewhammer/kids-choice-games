@@ -408,6 +408,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     s += `<circle cx="${f1(mx)}" cy="${f1(my)}" r="${f1(44 * k)}" fill="#fff3c4"/>` +
          `<circle cx="${f1(mx + 14 * k)}" cy="${f1(my - 8 * k)}" r="${f1(9 * k)}" fill="#efe0a8"/>` +
          `<circle cx="${f1(mx - 16 * k)}" cy="${f1(my + 12 * k)}" r="${f1(6 * k)}" fill="#efe0a8"/>`;
+    const mBats = s.length;   // (ticket 284: the four bats one object, flying)
     for (let i = 0; i < 4; i++) {
       // a bat: two scalloped wings and a small body
       const bx = x0 + W * (0.12 + 0.2 * i + 0.06 * R(i, 30)), by = y0 + H * (0.08 + 0.18 * R(i, 31)), b = (14 + 6 * R(i, 32)) * k;
@@ -418,6 +419,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
            `Q${P(bx + b * 0.15, by + b * 0.05)} ${P(bx + b * 0.3, by + b * 0.3)} Q${P(bx + b * 0.5, by + 0.02 * b)} ${P(bx + b * 0.75, by + b * 0.25)} ` +
            `Q${P(bx + b * 0.9, by + b * 0.05)} ${P(bx + b * 1.2, by - b * 0.2)} Q${P(bx + b * 0.5, by - b * 0.6)} ${P(bx, by)} Z" fill="#1a1426"/></g>`;
     }
+    s = wallSince(s, mBats, "bats");
     s += land(g - 150 * k, 30, "#3a2c4f", 0.7);
     // Dead trees, each grown from its own seed: a trunk, then limbs that
     // fork two or three ways, bending as they go, thinner each time. A
@@ -604,12 +606,15 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       return `<line x1="${f1(sx + 58 * k * Math.cos(a))}" y1="${f1(sy + 58 * k * Math.sin(a))}" x2="${f1(sx + 82 * k * Math.cos(a))}" y2="${f1(sy + 82 * k * Math.sin(a))}" ` +
              `stroke="#ffd23f" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`; }).join("") +
          `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(46 * k)}" fill="#ffd23f"/>`;
-    // the island, low on the horizon at the left, and a sail at the right
+    // the island, low on the horizon at the left, and a sail at the right (ticket 284: each an object of its own, far off)
+    const mIsle = s.length;
     s += `<path d="M${P(x0 + W * 0.12, hz)} Q${P(x0 + W * 0.2, hz - 34 * k)} ${P(x0 + W * 0.27, hz - 22 * k)} Q${P(x0 + W * 0.31, hz - 30 * k)} ${P(x0 + W * 0.36, hz)} Z" fill="#4f8a4b"/>` +
          `<path d="M${P(x0 + W * 0.25, hz - 22 * k)} l${f1(0)} ${f1(-26 * k)} M${P(x0 + W * 0.25, hz - 48 * k)} q${f1(-14 * k)} ${f1(2 * k)} ${f1(-20 * k)} ${f1(10 * k)} M${P(x0 + W * 0.25, hz - 48 * k)} q${f1(14 * k)} ${f1(2 * k)} ${f1(20 * k)} ${f1(10 * k)}" stroke="#2e6b2c" stroke-width="${f1(3 * k)}" fill="none"/>`;
-    const bx = x1 - W * 0.3, by = hz - 4 * k;
+    s = wallSince(s, mIsle, "island");
+    const bx = x1 - W * 0.3, by = hz - 4 * k, mBoat = s.length;
     s += `<path d="M${P(bx - 16 * k, by)} L${P(bx + 16 * k, by)} L${P(bx + 11 * k, by + 6 * k)} L${P(bx - 11 * k, by + 6 * k)} Z" fill="#7a4b28"/>` +
          `<path d="M${P(bx, by - 2 * k)} L${P(bx, by - 40 * k)} L${P(bx + 18 * k, by - 6 * k)} Z" fill="#ffffff"/>`;
+    s = wallSince(s, mBoat, "sailboat");
     // the sea, and its waves: rows of little arcs, nearer ones bigger and further apart
     s += `<rect x="${f1(x0 - pad)}" y="${f1(hz)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - hz + pad)}" fill="url(#bg-sea)"/>` +
          `<line x1="${f1(x0 - pad)}" y1="${f1(hz)}" x2="${f1(x1 + pad)}" y2="${f1(hz)}" stroke="#e8f6ff" stroke-width="${f1(1.5 * k)}" opacity="0.7"/>`;
@@ -618,8 +623,10 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       s += `<path d="M${P(x - w, y)} Q${P(x - w / 2, y - w * 0.35)} ${P(x, y)} Q${P(x + w / 2, y - w * 0.35)} ${P(x + w, y)}" fill="none" stroke="#ffffff" stroke-width="${f1((1 + 2 * t) * k)}" opacity="${(0.45 + 0.35 * t).toFixed(2)}"/>`;
     }
     // the sun's glitter on the water below it
+    const mGlit = s.length;
     for (let i = 0; i < 10; i++) { const y = hz + (8 + i * 9) * k * (1 + i * 0.25), w = (14 + i * 4) * k * R(i, 63);
       s += `<line x1="${f1(sx - w)}" y1="${f1(y)}" x2="${f1(sx + w)}" y2="${f1(y)}" stroke="#fff6c8" stroke-width="${f1(2.5 * k)}" stroke-linecap="round" opacity="0.6"/>`; }
+    s = floorSince(s, mGlit, "sun glitter");
   } else if (kind === "beach") {
     const { sea, shore } = beachLines({ g, k });
     s += `<defs>${grad("bg-sky", "#5fbdf2", "#d6f0ff", y0, sea)}${grad("bg-ocean", "#1f86c4", "#4cc0e6", sea, shore)}</defs>` + all("url(#bg-sky)");
@@ -638,10 +645,12 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // (the sand's wave, 6 and 1.4, is WATER's too: the foam counts as sea)
     s += land(shore - 4 * k, 6, "#ffffff", 0.9) + land(shore + 4 * k, 6, "#f3dca5", 1.4);
     // blankets on the sand, striped (flat: drawn before what stands, ticket 99)
+    // (ticket 284: each an object of its own, on the sand)
     for (const [sd, ca, cb, dy] of [[-1, "#8e44ad", "#ffd23f", 70], [1, "#2ecc71", "#ffffff", 95]]) {
-      const x = sd * W * 0.2, y = g + dy * k, w = 150 * k, h = 42 * k;
+      const x = sd * W * 0.2, y = g + dy * k, w = 150 * k, h = 42 * k, mBl = s.length;
       for (let j = 0; j < 6; j++)
         s += `<polygon points="${P(x - w / 2 + j * w / 6 + 14 * k, y - h)} ${P(x - w / 2 + (j + 1) * w / 6 + 14 * k, y - h)} ${P(x - w / 2 + (j + 1) * w / 6, y)} ${P(x - w / 2 + j * w / 6, y)}" fill="${j % 2 ? cb : ca}"/>`;
+      s = floorSince(s, mBl, sd < 0 ? "beach blanket, left" : "beach blanket, right");
     }
     // palm trees at the sides (each an object, standing at its foot)
     for (const sd of [-1, 1]) {

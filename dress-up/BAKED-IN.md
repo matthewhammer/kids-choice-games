@@ -45,15 +45,15 @@ Outdoors
 | 🌲 forest | meadow flowers (26) | flat | | 15:90 |
 | 🐠 underwater, 🪸 deep sea | light rays | sky | deep sea | 15:102, 15:201 |
 | 🐠 underwater, 🪸 deep sea | sand specks; the deep sea's sand ripples | flat | | 15:110, 15:208 |
-| 🏖️ beach | two striped blankets | flat | | 15:640 |
+| 🏖️ beach | (since 0.0.250, objects: the two striped blankets) | flat | | 15:640 |
 | 🏖️ beach | waves and foam | flat | | 15:632 |
-| 🌊 open water | an island with a palm; a sailboat | sky | | 15:607, 15:610 |
-| 🌊 open water | sun glitter on the water | flat | | 15:620 |
-| 🧙 witch's woods | four bats | sky | yes | 15:412 |
+| 🌊 open water | (since 0.0.250, objects: the island with its palm, the sailboat) | sky | | 15:607, 15:610 |
+| 🌊 open water | (since 0.0.250, an object: the sun glitter on the water) | flat | | 15:620 |
+| 🧙 witch's woods | (since 0.0.250, an object: the four bats) | sky | yes | 15:412 |
 | 🧙 witch's woods | grass tufts (22) | flat | | 15:516 |
 | 🌿 cemetery | the brook with its ripples; stones along it (7); flowers (46) | flat | the brook | 15:338, 15:339, 15:362 |
-| 🦆 lake | lily pads (7, some in flower); a little beach, pebbles, grass tufts; sun glints | flat | | 09:241-260 |
-| 🏠 house and yard | the driveway and stone walk; a frisbee and a rope (toys 7 and 8, flat on purpose) | flat | | 09:419, 09:463 |
+| 🦆 lake | a little beach, pebbles, grass tufts; sun glints (since 0.0.250, an object: the lily pads) | flat | | 09:241-260 |
+| 🏠 house and yard | the driveway and stone walk (since 0.0.250, objects: the frisbee and the rope, lying flat) | flat | | 09:419, 09:463 |
 | 🌳 tree house | the stream with its ripples; flowers (48) | flat | the stream | 11:26, 11:37 |
 | 🌲 forest clearing | the paths to each far thing, the front path; flowers (40) | flat | | 12:22-37 |
 | 🧚 fairy forest | the grass inside the ring; flowers and tufts (34) | flat | | 11:1424, 11:1430 |

@@ -251,11 +251,13 @@ function lakeScene(c) {
       const d = R(i, 43), x = x0 + W * R(i, 42), y = horizon + (shore - horizon) * (0.08 + 0.84 * d), l = (6 + 14 * d) * k;
       t += `<line x1="${f1(x - l)}" y1="${f1(y)}" x2="${f1(x + l)}" y2="${f1(y)}" stroke="#ffffff" stroke-width="${f1(2 * k)}" stroke-linecap="round" opacity="0.7"/>`;
     }
+    const mLily = t.length;   // (ticket 284: the lily pads one object, on the water)
     for (let i = 0; i < 7; i++) {    // lily pads, a flower on some
       const d = R(i, 45), x = x0 + W * (0.05 + 0.9 * R(i, 44)), y = horizon + (shore - horizon) * (0.3 + 0.65 * d), r = (8 + 12 * d) * k;
       t += `<path d="M${P(x, y)} L${P(x + r, y - r * 0.12)} A${f1(r)} ${f1(r * 0.38)} 0 1 1 ${P(x + r, y + r * 0.12)} Z" fill="#4f9a3a" stroke="#3a7a2a" stroke-width="${f1(k)}"/>` +
            (i % 3 === 0 ? `<circle cx="${f1(x - r * 0.3)}" cy="${f1(y - r * 0.2)}" r="${f1(r * 0.3)}" fill="#f7a8c8"/>` : "");
     }
+    t = floorSince(t, mLily, "lily pads");
     // the near shore: packed dirt, thin grass, and a little beach in the middle
     // (the shore's wave, 5 and 1.1, is WATER's too)
     const [ba, bq, bb] = lakeBeach(c, shore), beachTop = `M${P(...ba)} Q${P(...bq)} ${P(...bb)}`;
@@ -469,8 +471,9 @@ function houseScene(c) {
       const drive = X(120) + 30 * k * (y - yb) / (y1 + pad - yb);
       if (x > drive - 30 * k) x = -x;
       const t = use(`bg-toy-${toy}`, x, y, k * (0.9 + 0.8 * u) * (R(i, 72) < 0.5 ? -1 : 1), k * (0.9 + 0.8 * u));
-      if (toy === "frisbee" || toy === "rope") flat.push(t);
-      else standing.push([i < TOYS.length ? toy : `${toy} ${Math.floor(i / TOYS.length) + 1}`, y, t]);
+      const name = i < TOYS.length ? toy : `${toy} ${Math.floor(i / TOYS.length) + 1}`;
+      if (toy === "frisbee" || toy === "rope") flat.push(floorObj(name, t));   // (ticket 284: objects too, lying on the grass)
+      else standing.push([name, y, t]);
     }
     return `<defs>${toyDefs}</defs>` + flat.join("") + byDepth(standing);
   });
