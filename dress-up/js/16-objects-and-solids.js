@@ -217,6 +217,7 @@ function trunkBands(parts, z, n = TRUNK_BANDS, base = 0) {
     const yA = edges[i], yB = edges[i + 1], inb = pts.filter(p => p[1] + p[2] >= yA && p[1] - p[2] <= yB);
     if (inb.length) out.push({ x0: Math.min(...inb.map(p => p[0] - p[2])), x1: Math.max(...inb.map(p => p[0] + p[2])), lo: Math.max(0, z - yB), hi: z - yA });
   }
+  if (out.length) out.bot = bot;   // (ticket 355: how far down the trunk is drawn, below its object's depth where its foot spreads)
   return out.length ? out : null;
 }
 // (ticket 283, Matthew: "placed trees have no collision boxes. A toggle (on by default) where they do: slim vertically, precise
@@ -252,6 +253,8 @@ function standingHere(B, seats) {
         const pts = [[r.x, r.y], [r.x + r.width, r.y], [r.x, r.y + r.height], [r.x + r.width, r.y + r.height]].map(([x, y]) => [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]);
         const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
         b = { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
+        // (ticket 355: a trunk's whole object, its foot in the floor too, which a marked trunk's own shapes leave out: how far down it is drawn)
+        if (trunk && marked) { const E2 = o.node.getScreenCTM(), m2 = E2 && Pinv.multiply(E2), q2 = m2 && boxThrough(o.node.getBBox(), m2); if (q2) b.bottom = q2.y + q2.height; }
       }
     } catch (e) { continue; }
     finally { for (const f of fumes) f.style.display = ""; }
@@ -290,7 +293,12 @@ function standingHere(B, seats) {
     if (bands) { const fb = bands[bands.length - 1]; foot = [fb.x0, fb.x1]; }
     const mid = foot ? (foot[0] + foot[1]) / 2 : b.x + b.width / 2, h = Math.max(0, o.z - b.y);
     const w = foot ? (potted ? foot[1] - foot[0] : Math.min(0.4 * b.width, Math.max(16 * k, foot[1] - foot[0]))) : trunk ? Math.min(b.width, Math.max(16 * k, TRUNK * b.width)) : b.width;
-    out.push(...solidParts(base, { name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front: o.z, h, standing: true, ...(bands ? { bands } : {}) }, k));
+    // (ticket 355, Matthew: "why can I walk through these collision boxes near the corner, for the tree?" the tree room's trunk
+    // was drawn down to 9 units in front of its box, its foot spreading over the floor: a trunk's box reaches as far forward
+    // as its trunk is drawn, so the feet stop at its foot, not inside it)
+    const drawnBot = Math.max(bands && Number.isFinite(bands.bot) ? bands.bot : -Infinity, Number.isFinite(b.bottom) ? b.bottom : -Infinity);
+    const front = trunk && Number.isFinite(drawnBot) ? Math.min(Math.max(o.z, drawnBot), o.z + 0.5 * w) : o.z;   // (at most half its width further: a giant's roots are not its trunk)
+    out.push(...solidParts(base, { name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front, h, standing: true, ...(bands ? { bands } : {}) }, k));
   }
   return out.concat(laddersHere());
 }

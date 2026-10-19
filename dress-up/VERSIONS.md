@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.295 (2026-10-18)
+
+Everything in 0.0.294, with the tree rooms' trunk solid to its foot.
+
+- **🌳 You no longer walk onto the tree trunk's foot in a tree house room.** The trunk's dark foot in the floor reached further forward than its box, so you could stand on it, looking as if you walked into the trunk. Its box now covers its foot, in every tree room.
+
 ## 0.0.294 (2026-10-18)
 
 Everything in 0.0.293, with the path through the woods' pebbles an object.
