@@ -1344,7 +1344,7 @@ function doorViewOf(shape) {
 function doorTooLow(r, inv, foot) {
   const BG = state.background, top = new DOMPoint(r.x, r.y).matrixTransform(inv).y, open = foot.y - top;
   if (!(open > 0) || !(figureT.k > 0)) return null;
-  const tall = youHeights().crown / figureT.k * (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, foot.y - SCENE.ground);
+  const tall = youHeights(true).crown / figureT.k * (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, foot.y - SCENE.ground);
   return tall > 0.97 * open ? { tall, open, stretch: Math.max(40, 0.9 * tall) } : null;
 }
 // (ticket 216) a door's leaf swung open: each of its shapes to its data-open shape (the same commands), its planks and knob

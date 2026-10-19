@@ -174,15 +174,15 @@ function drawNow() {
   const neckTop = -20 - B.neck;
   const s = F.size / 80;
   // (ticket 286: crawling toward us or away, the back seen short (move.squash): the head down on the neck as it is drawn)
-  // (toward us, the head is nearest: down in front of the shoulders, between the arms; the shirt and the pants turned over
-  // behind it, rising from the shoulders (-20) to the seat, the back seen from in front and above: flipped)
+  // (toward us, the head is nearest: down in front of the shoulders, between the arms; the shirt turned over behind it,
+  // a little of the back rising from the shoulders (-20), seen from in front and above: flipped)
   const squash = move && move.squash && !dir ? move.squash : 0;
   const headDrop = !squash ? 0 : crawlTo ? -20 + (move.chin ?? 0.3) * armLen - neckTop : (L - neckTop) * (1 - squash);
   const squashed = t => squash ? `<g transform="matrix(1 0 0 ${squash.toFixed(3)} 0 ${f1(L * (1 - squash))})">${t}</g>` : t;
   const backK = crawlTo ? move.back ?? squash : 0;
   const flipped = t => `<g transform="matrix(1 0 0 ${(-backK).toFixed(3)} 0 ${f1(-20 * (1 + backK))})">${t}</g>`;
   const ty = neckTop + 6 - (headChin(F) - 4) * s + headDrop, tx = -100 * s;
-  faceFrame = { tx, ty, s };
+  faceFrame = { tx, ty, s, drop: headDrop };
   // (ticket 124: in profile the hair sits toward the back of the head, in the face's units)
   const side = dir && !C ? sideHair(state.hair, F, dir) : null;
 
@@ -304,6 +304,9 @@ function drawNow() {
   // the ladder); crawling turns them about the hips (rot), and they rest on
   // the lowest of their hands, knees and feet as turned
   const rot = move && move.rot ? move.rot : 0;
+  // (ticket 286: crawling, the friend meets things as drawn: turned about the hips from the side, or running back into
+  // the picture toward us or away, the back that deep, seen short: crawlShape)
+  Object.assign(poseJoints, { turn: rot, L, crawl: rot ? "side" : squash ? (away ? "away" : "toward") : null, depth: squash ? squash * (L + 20) : 0 });
   let gFig = gStand;
   if (rot) {
     const a = rot * Math.PI / 180, turned = ([x, y]) => L + x * Math.sin(a) + (y - L) * Math.cos(a);
@@ -402,7 +405,7 @@ function drawNow() {
   // (a suit's tail swings out to our right; in profile, out behind them)
   else if (suit) tail = dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L);
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
-  // (ticket 286: crawling toward us, the tail goes up from the seat, turned over with it)
+  // (ticket 286: crawling toward us, the tail goes up from behind the back, turned over with it)
   if (tail) svg += veil("pants", crawlTo ? flipped(tail) : tail);
   // (ticket 138: facing away, the wings and the tail are drawn last, over them)
   const onBack = away ? svg.slice(backAt) : "";
@@ -457,7 +460,6 @@ function drawNow() {
   // drawn over the pants, after them (feetOver, above)
   const feetLater = feetOver ? svg.slice(feetAt) : "";
   if (feetOver) svg = svg.slice(0, feetAt);
-  if (crawlTo) svg = svg.slice(0, feetAt);   // (ticket 286: crawling toward us, the feet are beyond the seat, hidden)
   const pf = suit ? "url(#pat-fur)" : fillOf("pat-pants", P.color, P.pattern);
   const ps = suit ? darker(C.fur) : darker(P.color);
   const pantsAt = svg.length;
@@ -601,9 +603,22 @@ function drawNow() {
     svg += veil("shirt", fr + `<path d="${d} Z" fill="${tf0}" stroke="${ts}" stroke-width="2.5" stroke-linejoin="round"/>`);
   }
 
-  // (ticket 286: the seat, at the top of the back: the pants round the hips, the legs under it on the floor, hidden)
-  if (crawlTo) svg = svg.slice(0, legsAt) + flipped(`<clipPath id="crawl-seat"><ellipse cx="0" cy="${f1(L)}" rx="${f1(half + fx + 8)}" ry="${f1((move.seat ?? 0.24) * LL)}"/></clipPath>` +
-                                                    `<g clip-path="url(#crawl-seat)">${svg.slice(legsAt)}</g>`);
+  // (ticket 286: crawling toward us, the hips and the legs are behind the back, hidden: Matthew, "shoulders, head and
+  // arms ... but not so much torso, and almost no legs at all -- none maybe")
+  if (crawlTo) svg = svg.slice(0, legsAt);
+  // (Matthew, of the drawing without them: "we should see knees between the arms here") but the knees, on the floor
+  // between the arms, beyond the hands and under the chin: each thigh's front, seen short, down to its knee (in the pants,
+  // or a skirt or a dress draped over it, a witch's too, with a crease; bare in shorts, round); drawn with the arms, below,
+  // over long hair hanging down (Matthew: the witch's should show too)
+  let kneesTo = "";
+  if (crawlTo) {
+    const longPants = suit || (!undies && P.style !== "shorts"), kr = B.legW / 2 + 6, chinY = -20 + (move.chin ?? 0.3) * armLen;
+    const ky = chinY + 0.85 * (Math.max(...arms.map(x => x.H[1])) - chinY), top = chinY + 4;   // (Matthew: "knees should be closer down, nearer the hands")
+    for (const side of [1, -1]) { const kx = side * fx;
+      kneesTo += veil("pants", `<rect data-knee="${side}" x="${f1(kx - kr)}" y="${f1(top)}" width="${f1(2 * kr)}" height="${f1(ky + kr * 0.5 - top)}" rx="${f1(kr)}" ` +
+                           `fill="${longPants ? pf : limb}" stroke="${longPants ? ps : limbLine}" stroke-width="2.5"/>` +
+                           (longPants ? `<path d="M${f1(kx - kr * 0.6)} ${f1(ky - kr * 0.3)} Q${f1(kx)} ${f1(ky + kr * 0.15)} ${f1(kx + kr * 0.6)} ${f1(ky - kr * 0.3)}" fill="none" stroke="${ps}" stroke-width="3" stroke-linecap="round"/>` : "")); }
+  }
   // neck, behind the shirt so it shows in the collar
   // (the neck, the arms and the body are the shirt's to see through: an
   // invisible shirt is an invisible body, never a bare one)
@@ -618,17 +633,22 @@ function drawNow() {
   // (a falcon suit's arms are inside its wings, drawn after the body)
   const winged = !!BIRD_SUIT[kind];
   const farAt = svg.length;
-  if (!winged) for (const arm of farArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
+  if (!winged && !squash) for (const arm of farArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
   // (a sleeve: the shirt's share of the arm, round the elbow)
   const sleeveOf = arm => alongArm(arm, sleeve);
-  if (sleeve > 0 && !winged) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 14, ss);
+  if (sleeve > 0 && !winged && !squash) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 14, ss);
   // (a hand: with different hands, the friend's right hand, on our left when
   // they face us, wears its own style; one holding the broom is closed round
   // it, a round fist)
   const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : state.hands, own = !suit && side < 0 ? rightHandOf(hands) : hands;
     return handSvg(H[0], H[1], angle, out, broomH && side > 0 ? { ...own, style: "round" } : own, skin); };
+  // (ticket 286: crawling toward us or away, each arm drawn whole, straight down to its hand flat on the floor, seen short)
+  const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
+    (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf) : "") +
+    (wrapStripes(C) ? (P => limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""))(sleeveOf(arm)) : "");
+  const flatHand = arm => `<g transform="translate(0 ${f1(arm.H[1] * 0.4)}) scale(1 0.6)">${handOf(arm)}</g>`;
   // (in profile, or turned partway, the far arm's sleeve over it, and its hand, behind the body)
-  if ((dir || q) && !winged) {
+  if ((dir || q) && !winged && !squash) {
     if (sleeve > 0) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
     const farHandsAt = svg.length;
     for (const arm of farArms) svg += handOf(arm);
@@ -672,7 +692,7 @@ function drawNow() {
     svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>`;
   if (crawlTo) svg = svg.slice(0, shirtAt) + flipped(svg.slice(shirtAt));   // (ticket 286: the back, rising behind the head)
   veilFrom("shirt", bodyAt);
-  if (squash && !crawlTo) svg = svg.slice(0, bodyAt) + squashed(svg.slice(bodyAt));   // (ticket 286: the neck, the far arms and the body, seen short)
+  if (squash && !crawlTo) svg = svg.slice(0, bodyAt) + squashed(svg.slice(bodyAt));   // (ticket 286: the neck and the body, seen short; the arms are drawn whole, below)
   const bodyEnd = svg.length;
   if (squash && away) svg += veil("shirt", squashed(neckSvg));   // (crawling away, the neck is beyond the back, under the hair: not moved with it, below)
   // (ticket 125) the ears, facing us: out at the sides of the head at the
@@ -695,6 +715,9 @@ function drawNow() {
                  : `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairSvg(state.hair), "under-hat")}</g></g></g>`));
 
   if (earsOn && !dir && !(longHair && F.ears !== "elf")) svg += earsFront();
+  // (ticket 286: crawling toward us, the arms reach down from behind the head to the floor: over the hair hanging
+  // down, which hid them, and under the face, which is nearer than the shoulders; the hands come last, below)
+  if (crawlTo) svg += kneesTo + (winged ? "" : veil("shirt", arms.map(crawlArm).join("")));
   if (winged) svg += veil("shirt", arms.map(arm => dir ? armWing(C, arm, armW, 0.3) : armWing(C, arm, armW)).join(""));
 
   // the face, in its own units
@@ -763,7 +786,11 @@ function drawNow() {
   }
 
   // (ticket 286: crawling away, the back is nearer than the head: it hides the hair hanging down, and the head shows beyond it)
-  if (squash && away) svg = svg.slice(0, bodyAt) + svg.slice(bodyEnd) + svg.slice(bodyAt, bodyEnd);
+  // (and the arms, upright, so drawn whole, not seen short: from the shoulders as the back is drawn, behind it, down to
+  // the hands flat on the floor beside it)
+  const armsAway = squash && away && !winged ? `<g transform="translate(0 ${f1((1 - squash) * (L - arms[0].A[1]))})">` +
+                   veil("shirt", arms.map(crawlArm).join("")) + veil("hands", arms.map(flatHand).join("")) + `</g>` : "";
+  if (squash && away) svg = svg.slice(0, bodyAt) + svg.slice(bodyEnd) + armsAway + svg.slice(bodyAt, bodyEnd);
   svg += onBack;   // (ticket 138: wings and a tail, seen from behind)
   // then the arms again, over the hair and the face: raised arms cross
   // the chin and cheeks in front of the head, not behind it
@@ -771,14 +798,14 @@ function drawNow() {
   // covers their tops, outline and all)
   // (a bird suit's wings stay behind the face, or they would hide it)
   const armsAt = svg.length;
-  if (!winged && (dir || q)) {
+  if (!winged && (dir || q) && !squash) {
     // (in profile, or turned partway, the arm on our side wholly in front of the body)
     for (const arm of nearArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
     if (sleeve > 0) for (const arm of nearArms) svg += limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf);
     if (wrapStripes(C))
       for (const arm of nearArms) { const P = sleeveOf(arm);
         svg += limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""); }
-  } else if (!winged) {
+  } else if (!winged && !squash) {
     // (ticket 151: a clip, everywhere but the body grown by 1.5, as the
     // mask with its black body stroked 3 wide was; the mask was drawn again
     // offscreen on every frame: dragging the friend round the castle at 1920
@@ -806,11 +833,11 @@ function drawNow() {
   // and the hands last, in front of everything, the face too: raised
   // arms put them by the cheeks or over the eyes, not behind the head
   const handsAt = svg.length;
-  if (!winged) {
-    for (const arm of nearArms) svg += handOf(arm);
+  if (!winged && !(squash && away)) {
+    // (ticket 286: crawling toward us, each hand flat on the floor; away, drawn with the arms, behind the back, above)
+    for (const arm of nearArms) svg += crawlTo ? flatHand(arm) : handOf(arm);
   }
   veilFrom("hands", handsAt);
-  if (squash && !crawlTo) svg = svg.slice(0, armsAt) + squashed(svg.slice(armsAt));   // (ticket 286: and the near arms and hands)
   // a ghost: the sheet over all of the friend instead (what was drawn of
   // them is dropped, and its see-through layers with it)
   if (kind === "ghost") {

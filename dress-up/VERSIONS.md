@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.257 (2026-10-18)
+
+Everything in 0.0.256, with crawling hands on the floor, knees, and collision boxes that crawl too.
+
+- **Hands on the floor, not on the hips**: crawling away from you, each arm goes straight down beside the body to a hand flat on the floor, low beside the legs; toward you, the arms reach down beside the face to hands flat on the floor.
+- **Crawling toward you, less body and knees instead of legs**: the face, the shoulders and the arms, a little of the back behind the head, and the knees on the floor between the arms, just above the hands (in pants, a dress or fur; bare in shorts). The raised seat and the legs are gone.
+- **Your collision boxes crawl with you** (🔬 Inspection, 🧍 you): from the side, a box under the hands, one under the knees and feet, and the body's box lying along the floor between them, as low as you crawl; toward or away, the body's box runs back into the room behind your hands or feet. Doors still decide whether you crawl by your height standing.
+
 ## 0.0.256 (2026-10-18)
 
 Everything in 0.0.255, with crawling toward you and away from you drawn on the floor.

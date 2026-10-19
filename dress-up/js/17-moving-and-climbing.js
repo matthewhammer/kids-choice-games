@@ -675,13 +675,15 @@ function moveNow() {
     // of their height above the hips, the head on top of them, not squashed), the arms straight down to the floor, each leg
     // seen short (Step: the thigh down to the knee, the shin along the floor toward us), from behind the soles of the feet
     // showing (frontFeet); a hand and the other knee reaching on in turn (the leg and the arm a little longer, then
-    // shorter), a small bob; standing on the legs as drawn (grounded). Toward us, the head is nearest: down in front of
+    // shorter), a small bob; standing on the legs as drawn (grounded). The arms straight and whole (upright, so not seen
+    // short), a little out from the shoulders, to each hand flat on the floor beside the body (Matthew, of 0.0.256: "the
+    // hand position seems off ... like we are keeping our hands on our hips?"). Toward us, the head is nearest: down in front of
     // the shoulders (chin, a share of the arm below them), the arms straight down beside it to the hands on the floor,
-    // and behind it the back rising to the seat (back: the shirt and the pants turned over, that share of their height;
-    // seat: how much of the pants shows, a share of the legs), the feet hidden beyond
+    // and behind it a little of the back (back: the shirt turned over, that share of its height); the legs hidden behind
+    // it (Matthew: "not so much torso, and almost no legs at all -- none maybe")
     if (!dir) { const away = B.facing === "back";
-      return { ...both("Step", sd => 0.5 - 0.1 * sd * s), ...both("Arm", sd => 90 - (B.arms ?? 0) - lean(sd) + 5 * sd * s), ...both("Elbow", () => -(B.elbows ?? 0)),
-               frontFeet: away ? 0.5 : 0, squash: 0.45, lift: 2 * Math.abs(s), grounded: true, back: 0.55, chin: 0.45, seat: 0.4 }; }
+      return { ...both("Step", sd => 0.5 - 0.1 * sd * s), ...both("Arm", sd => 90 - (B.arms ?? 0) - (away ? 10 : 12) + 5 * sd * s), ...both("Elbow", () => -(B.elbows ?? 0)),
+               frontFeet: away ? 0.5 : 0, squash: 0.45, lift: 2 * Math.abs(s), grounded: true, back: 0.25, chin: 0.45 }; }
     return { ...both("Leg", sd => tilt - swing(sd) - t0), ...both("Knee", sd => 90 - swing(sd) - b0),
              ...both("Arm", sd => 90 - tilt - (B.arms ?? 0) - lean(sd) + 14 * sd * s), ...both("Elbow", () => -(B.elbows ?? 0)),
              ...both("Foot", () => -(180 - tilt)), rot: dir ? tilt * dir : 0 };

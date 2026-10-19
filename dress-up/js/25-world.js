@@ -485,7 +485,9 @@ function solidsHud() {
     // standing from the crotch, the hips' joints, up through the head, the crown, as drawn: figureT, faceFrame)
     for (let i = 0; i < 2; i++) polys[i].setAttribute("points", soles[i] ? pts(foot(soles[i])) : "");
     const t = torsoBox(fx, soles), T = figureT, J = poseJoints, up = y => T.dy + T.sg + T.k * (y - T.g);
-    const crotch = J && J.legs && J.legs.length ? up(Math.max(...J.legs.map(l => l.H[1]))) : fz, crown = up(faceFrame.ty + headCrown(state.face) * faceFrame.s);
+    // (ticket 286: crawling, the torso's face from under the belly to the top, as it lies: crawlShape's heights)
+    const C = crawlShape(), crotch = C && t ? up(T.g) - t[4] : J && J.legs && J.legs.length ? up(Math.max(...J.legs.map(l => l.H[1]))) : fz,
+          crown = C && t ? up(T.g) - t[5] : up(faceFrame.ty + headCrown(state.face) * faceFrame.s);
     polys[2].setAttribute("points", t ? pts(foot(t)) : "");
     polys[3].setAttribute("points", t ? pts([[t[0], crotch], [t[1], crotch], [t[1], crown], [t[0], crown]].map(([x, y]) => sc(x, y))) : "");
     const q0 = sc(Math.min(...soles.map(s => s[0])), Math.max(...soles.map(s => s[3]))); you.lastChild.setAttribute("x", (q0[0] + 2).toFixed(1)); you.lastChild.setAttribute("y", (q0[1] + 12).toFixed(1)); }

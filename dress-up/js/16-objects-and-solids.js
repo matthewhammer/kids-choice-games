@@ -302,15 +302,46 @@ const legReach = () => poseJoints && poseJoints.legs && poseJoints.legs.length
 // far they reach either side of the middle, and how deep.
 // (0.0.153, with the trunks' bands) each box also has its heights above the ground, [4] and [5]: a sole's from the
 // ground to the ankle, the torso's from the hips to the crown (youHeights), so a thing meets the boxes at its heights
-function youHeights() {
+// (ticket 286: upright, their crown as they stand, the head not lowered for a crawl: whether a door is too low for them)
+function youHeights(upright = false) {
   const J = poseJoints, T = figureT;
   if (!J || !J.legs || !J.legs.length || !T || !(T.k > 0)) return { ankle: 20, hips: 80, crown: 200 };
-  const foot = Math.max(...J.legs.map(l => l.F[1])), hips = Math.max(...J.legs.map(l => l.H[1])), crown = faceFrame.ty + headCrown(state.face) * faceFrame.s;
+  const C = !upright && crawlShape();
+  if (C) return { ankle: C.ankle, hips: C.torso[4], crown: C.torso[5] };
+  const foot = Math.max(...J.legs.map(l => l.F[1])), hips = Math.max(...J.legs.map(l => l.H[1])), crown = faceFrame.ty - (upright ? faceFrame.drop || 0 : 0) + headCrown(state.face) * faceFrame.s;
   return { ankle: Math.max(4, 0.2 * (foot - hips) * T.k), hips: Math.max(0, (foot - hips) * T.k), crown: Math.max(0, (foot - crown) * T.k) };
+}
+// (ticket 286, Matthew: "when we crawl, our collision box does not match our torso -- it stays upright?") Crawling, the
+// friend meets things where they are as drawn. From the side, turned about the hips (J.turn): a box on the floor under
+// the hands, one under the knees and the feet, and the body lying between them, from under the belly (half the hips'
+// height) to the top of the head. Toward us, the hands nearest, each a box; away, the soles nearest, as walking; and the
+// body running back into the picture behind them, J.depth deep (its back seen short), across the arms, from under the
+// belly to the crown. Offsets from where they stand (x, z) and heights, in the picture's units; null when not crawling.
+function crawlShape() {
+  const J = poseJoints, T = figureT, F = faceFrame;
+  if (!J || !J.crawl || !J.legs || !J.legs.length || !J.arms || !(T && T.k > 0) || !F) return null;
+  const k = T.k, h = y => Math.max(0, (T.g - y) * k), hd = Math.max(2.5, 5 * k), ankle = Math.max(4, 0.1 * J.LL * k);
+  const hr = Math.max(8, 0.35 * (J.handR || 40)), r = Math.max(10, (HEAD_C - headCrown(state.face)) * F.s), head = [0, F.ty + HEAD_C * F.s];
+  const xs = (ps, pad) => [(Math.min(...ps.map(p => p[0])) - pad) * k, (Math.max(...ps.map(p => p[0])) + pad) * k];
+  if (J.crawl === "side") {
+    const a = J.turn * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a), P = ([x, y]) => [x * c - (y - J.L) * sn, J.L + x * sn + (y - J.L) * c];
+    const back = xs(J.legs.flatMap(l => [P(l.K), P(l.F)]), J.legW / 2), front = xs(J.arms.map(q => P(q.H)), hr);
+    const spine = [...J.legs.map(l => P(l.H)), ...J.arms.map(q => P(q.A))], hc = P(head);
+    const body = xs(spine.concat([[hc[0] - r, 0], [hc[0] + r, 0]]), 0);
+    return { ankle, soles: [[...back, -hd, hd, 0, ankle], [...front, -hd, hd, 0, ankle]],
+             torso: [...body, -hd, hd, 0.5 * Math.min(...spine.map(p => h(p[1]))), h(hc[1]) + r * k] };
+  }
+  // (the crown as tall as they crawl, the arm upright and the head on it, as from the side: from behind, the head drawn
+  // higher, beyond the back, is farther, not taller)
+  const crown = Math.min(h(F.ty + headCrown(state.face) * F.s), (0.9 * J.armLen + 2 * r) * k), across = xs(J.arms.flatMap(q => [q.A, q.H]), hr), depth = J.depth * k;
+  const soles = J.crawl === "toward" ? J.arms.map(q => [...xs([q.H], hr), -hd, hd, 0, ankle]) : null;
+  return { ankle, soles, torso: [...across, -depth, hd, 0.25 * crown, crown] };
 }
 function feetSoles(x, z) {
   const J = poseJoints, T = figureT;
   if (!J || !J.legs || !J.legs.length || !T || !(T.k > 0)) return [[x - SOLID_MARGIN, x + SOLID_MARGIN, z - 3, z + 3, 0, 20]];
+  const C = crawlShape();
+  if (C && C.soles) return C.soles.map(([a, b, d0, d1, lo, hi]) => [x + a, x + b, z + d0, z + d1, lo, hi]);
   const prof = facingOf(state.body) !== 0, hw = T.k * Math.max(8, Math.min(45, (J.footR || 50) * (prof ? 0.6 : 0.42))), hd = Math.max(2.5, hw * 0.35), up = youHeights().ankle;
   return J.legs.map(l => { const fx = x + T.k * l.F[0]; return [fx - hw, fx + hw, z - hd, z + hd, 0, up]; });
 }
@@ -324,6 +355,8 @@ const feetSpan = () => { const S = feetSoles(0, 0); return [Math.max(...S.map(s 
 // body's height, is met side on as well.
 function torsoBox(x, S) {
   if (!S.length) return null;
+  const C = crawlShape();   // (ticket 286: crawling, the body as it lies, from where they stand: z, between the soles' fronts and backs)
+  if (C) { const z = (Math.min(...S.map(s => s[2])) + Math.max(...S.map(s => s[3]))) / 2, t = C.torso; return [x + t[0], x + t[1], z + t[2], z + t[3], t[4], t[5]]; }
   const [a, b] = S.length < 2 || S[0][0] <= S[1][0] ? [S[0], S[1] || S[0]] : [S[1], S[0]], gap = b[0] - a[1], half = Math.max(gap / 2, 2 * (figureT.k || 1)), H = youHeights();
   return [x - half, x + half, a[2], a[3], H.hips, H.crown];
 }
