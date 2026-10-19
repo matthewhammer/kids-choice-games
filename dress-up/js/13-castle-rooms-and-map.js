@@ -320,10 +320,11 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes, trap = null) {
       const tone = trap.tone === "surprise" ? ROCK_TONES[Math.floor(seeded(trap.seeds[i])(i + 50) * ROCK_TONES.length)] : trap.tone;
       const g = `<g data-boulder="${i}" data-drop="${f1(drop)}"${covered ? "" : ` transform="translate(0 ${f1(-drop)})" visibility="hidden"`}>${rockSvg(cx, base, rad, sd, tone)}</g>`;
       return covered ? obj(i ? "boulder, right" : "boulder, left", base, g) : g; };
-    if (!open) { t += `<g>` + pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, false) + `</g>` + boulder(); return; }   // (ticket 307: its lid across it)
+    const spikes = !!(trap && trap.spikes);   // (ticket 334: off unless the room's toggle is on)
+    if (!open) { t += `<g>` + pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, false, spikes) + `</g>` + boulder(); return; }   // (ticket 307: its lid across it)
     // (ticket 162: its hole, for falling in: its middle and its half widths, across and in depth)
     t += (to ? `<g class="portal" data-to="castleroom" data-room="${to}" data-pit="${f1(cx)} ${f1(cy)} ${f1(rx)} ${f1(ry)}" data-shape="${sh}">` : "<g>") +
-      pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, true) +
+      pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, true, spikes) +
       (to ? plankSign(cx, cy - ry - 34 * k, k, `🕳️ ${roomLabel(K.rooms[to - 1]).split(" ")[0]} ${to}`) : "") + `</g>` + boulder();
   });
   // a helmet someone dropped by the left pit, a sword by the right one

@@ -264,6 +264,8 @@ const pitShapeKey = (i, n, id) => `castlePit${i}_${n}${id}`;
 // drawn again each time the friend comes in (trapReshuffle). A pit opens when the lever working it is up, and shuts, planks over
 // it, when that lever is pulled.
 const pitOnKey = (i, n, id) => `castlePitOn${i}_${n}${id}`, leverKey = (side, n, id) => `castleLever${side}_${n}${id}`;
+// (ticket 334, Matthew: "add a spikes toggle for the other pits in the castle, and default to 'off'") a trap room's pits' spikes, each room's own
+const pitSpikesKey = (n, id) => `castlePitSpikes${n}${id}`;
 const leverWireKey = (n, id) => `castleLeverWire${n}${id}`, leverSeedKey = (n, id) => `castleLeverSeed${n}${id}`;
 const LEVER_WIRES = [["normal", "↕️ normal: each its own side's pit"], ["reversed", "🔀 reversed: each the other side's"], ["random", "🎲 random, new each time you come in"]];
 // which lever works each pit, the left and the right: "L" or "R" (at random, perhaps one lever for both)
@@ -295,7 +297,8 @@ function trapState(o, n, id) {
   const boulders = o[boulderOnKey(n, id)] !== false ? { L: !!o[boulderKey("L", n, id)], R: !!o[boulderKey("R", n, id)] } : null;
   return { wire, levers, on: [1, 2].map(i => o[pitOnKey(i, n, id)] !== false), open: [0, 1].map(i => !levers[wire[i]]),
            boulders, covered: [0, 1].map(i => !!(boulders && boulders[wire[i]])), tone: o[boulderToneKey(n, id)] || "#8f8a80", seeds: [0, 1].map(i => o[boulderSeedKey(i, n, id)] ?? 5 + i),
-           speed: { lever: o[leverSpeedKey(n, id)] || 100, boulder: o[boulderSpeedKey(n, id)] || 100, lid: o[lidSpeedKey(n, id)] || 100 } };
+           speed: { lever: o[leverSpeedKey(n, id)] || 100, boulder: o[boulderSpeedKey(n, id)] || 100, lid: o[lidSpeedKey(n, id)] || 100 },
+           spikes: !!o[pitSpikesKey(n, id)] };   // (ticket 334)
 }
 // (wired at random: drawn again each time the friend comes into the room, so each visit is a puzzle of its own)
 function trapReshuffle(B) {
@@ -464,6 +467,7 @@ const DEFAULTS = {
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
                    ...ROOM_NS.map(n => ["castleRoomTheme" + n + id, n % 2 ? "A" : "B"]),
+                   ...ROOM_NS.map(n => [pitSpikesKey(n, id), false]),   // (ticket 334)
                    ...ROOM_NS.flatMap(n => [[pitOnKey(1, n, id), true], [pitOnKey(2, n, id), true], [leverWireKey(n, id), "normal"], [boulderOnKey(n, id), true], [boulderToneKey(n, id), "#8f8a80"], [leverSpeedKey(n, id), 100], [boulderSpeedKey(n, id), 100], [lidSpeedKey(n, id), 100]]),   // (ticket 305)
                    ...ROOM_NS.flatMap(n => [["castleHallDoors" + n + id, 3], ["castleHallEnd" + n + id, "auto"], ["castleOut" + n + id, "auto"], ["castleBack" + n + id, "none"], ["castleFar" + n + id, "none"], ["castlePlaces" + n + id, 10],
                      ...DOOR_JS.map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
@@ -472,6 +476,7 @@ const DEFAULTS = {
                    ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
                 castleRoom: 1, livingOut: "house", ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["treeBack" + n, "none"])),
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShape" + n, "square"])),   // (ticket 252: each tree house's trapdoor's opening)
+                ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShut" + n, false])),   // (ticket 334: each tree house's trap door, open till its lever is pulled)
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
                 lfoFast: "D", lfoSlow: "E", lfoWings: "F",
@@ -1030,7 +1035,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.278", released: "2026-10-18" };
+const VERSION = { number: "0.0.279", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

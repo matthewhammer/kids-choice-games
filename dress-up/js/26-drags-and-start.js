@@ -379,6 +379,7 @@ function leverPull(i) {
 // (ticket 305) The trap room's lever pulled: it flips over, and so does every pit it works (trapState); its handle turns across
 function roomLeverPull(side) {
   if (side[0] === "B") return roomBoulderPull(side.slice(1));   // (ticket 323: a blue one)
+  if (side === "H") return hatchLeverPull();   // (ticket 334: a tree room's trap door's)
   const B = state.background;
   if (B.kind !== "castleroom") return;
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = leverKey(side, n, K.id);
@@ -391,6 +392,19 @@ function roomLeverPull(side) {
   // (Matthew: "opened by the red lever (trap door) while standing on it, and no falling sequence was triggered") a pit opened
   // under the friend: in they fall, as walking onto it does, once its lid has swung most of the way
   if (now.some((o, j) => o && !was[j])) setTimeout(fallIfOverPit, 0.6 * PIT_SWING * 100 / T.speed.lid);
+}
+// (ticket 334) A tree room's trap door lever pulled: the trap door shuts (its lid swinging across, the ladder gone, the floor
+// walked over) or opens again; a friend standing on it as it opens is moved off the hole
+function hatchLeverPull() {
+  const B = state.background;
+  if (B.kind !== "treeroom") return;
+  const me = Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1))), key = "hatchShut" + me;
+  B[key] = !B[key];
+  changed();
+  const open = !B[key];
+  turnArm(`[data-lever="H"] .lever-arm`, (open ? 1 : -1) * LEVER_TILT);
+  lidSwing(`.pit-lid[data-pit-i="hatch"]`, open);
+  if (open) setTimeout(() => { solidUnstick(200); changed(); }, 0);
 }
 // (the friend, standing still, over a pit's open hole: falling in, as walking onto it does; not mid-jump or on a trip)
 function fallIfOverPit() {

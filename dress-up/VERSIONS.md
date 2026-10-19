@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.279 (2026-10-18)
+
+Everything in 0.0.278, with the tree houses' trap doors on levers.
+
+- **🎚️ Each tree house's trap door has a lever on the wall.** It starts open; pull the lever and the trap door swings shut: planks over the hole, the ladder gone, and you can walk across it. Pull it again to open it. Shut, it is no way down, and the house below's ladder up into it goes nowhere either. Its opening is still the house's own shape (■ square, ● circle, ▲ triangle), and there is a "trap door shut" switch in 🏞️ Background too.
+- **🔱 The castle's trap room pits have no spikes now, unless you want them**: a spikes switch for each trap room, off to start.
+
 ## 0.0.278 (2026-10-18)
 
 Everything in 0.0.277, with planned walks kept out of everything.

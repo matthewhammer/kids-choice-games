@@ -424,7 +424,8 @@ const TABS = [
     ...[1, 2, 3, 4, 5, 6].flatMap(n => [["choice", "room" + n, `🏡 ${n}: its room`, ROOM_CHOICES],
       ...[1, 2].map(i => ["choice", `r${n}pic${i}`, `🏡 ${n}: picture ${i} on its wall`, PICTURE_CHOICES]),
       ["choice", "treeBack" + n, `🏡 ${n}: ⬇️ the way toward us leads to`, BEHIND_PLACES],
-      ["choice", "hatchShape" + n, `🏡 ${n}: 🕳️ its trapdoor's opening`, OPENING_SHAPES]]),   // (ticket 252)
+      ["choice", "hatchShape" + n, `🏡 ${n}: 🕳️ its trapdoor's opening`, OPENING_SHAPES],   // (ticket 252)
+      ["toggle", "hatchShut" + n, `🏡 ${n}: 🎚️ its trap door shut (its lever pulled)`]]),   // (ticket 334)
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
     ["of", "background", ["range", "toys", "🧸 things in the room", 0, 24, 4, 20], b => b.kind === "treeroom"],   // (ticket 285: its own rule, as the house's)
     // the mountain trail
@@ -502,6 +503,7 @@ const TABS = [
         ["choice", pitShapeKey(2, n, id), "🕳️ its second pit: its opening", OPENING_SHAPES],
         // (ticket 305) each pit there or not, and how the two levers on its wall work them
         ["toggle", pitOnKey(1, n, id), "🕳️ the left pit"], ["toggle", pitOnKey(2, n, id), "🕳️ the right pit"],
+        ["toggle", pitSpikesKey(n, id), "🔱 spikes in its pits"],   // (ticket 334)
         ["choice", leverWireKey(n, id), "🎚️ the levers work", LEVER_WIRES],
         // (ticket 323, N's) the blue boulder levers, under the red ones, and their boulders' rock
         ["toggle", boulderOnKey(n, id), "🪨 boulder levers (blue knobs): a boulder falls into a pit"], ["choice", boulderToneKey(n, id), "🪨 the boulders' rock", BOULDER_TONES],
@@ -977,6 +979,7 @@ const SHOWN_WHEN = {
             ["background.castleRoomList" + id, atCastle], ["background.castleGo" + id, atCastle], ["background.castleDesign" + id, atCastle],
             ...ROOM_NS.flatMap(n => [...[1, 2].map(i => ["background." + pitShapeKey(i, n, id), b => typeOf(b, n) === "trap"]),
               ...[1, 2].map(i => ["background." + pitOnKey(i, n, id), b => typeOf(b, n) === "trap"]), ["background." + leverWireKey(n, id), b => typeOf(b, n) === "trap"],
+              ["background." + pitSpikesKey(n, id), b => typeOf(b, n) === "trap"],   // (ticket 334)
               ["background." + boulderOnKey(n, id), b => typeOf(b, n) === "trap"], ["background." + boulderToneKey(n, id), b => typeOf(b, n) === "trap" && b[boulderOnKey(n, id)] !== false],   // (ticket 323)
               ["background." + leverSpeedKey(n, id), b => typeOf(b, n) === "trap"], ["background." + lidSpeedKey(n, id), b => typeOf(b, n) === "trap"], ["background." + boulderSpeedKey(n, id), b => typeOf(b, n) === "trap" && b[boulderOnKey(n, id)] !== false],   // (ticket 328)   // (ticket 305)   // (ticket 271: in a trap room's own box)
               ["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
@@ -998,6 +1001,7 @@ const SHOWN_WHEN = {
   "background.livingOut": b => b.kind === "livingroom",
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["background.treeBack" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n])),
   // (ticket 252: a trapdoor's opening, in its house, and in the house below, whose ceiling it is)
+  ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["background.hatchShut" + n, b => b.kind === "treeroom" && Math.round(b.inside ?? 1) === n && houseLinks(b, n - 1).some(L => L.way === "down")])),   // (ticket 334: this house's, with a way down)
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["background.hatchShape" + n, b => { if (b.kind !== "treeroom") return false; const i = Math.round(b.inside ?? 1);
     return (i === n && houseLinks(b, n - 1).some(L => L.way === "down")) || houseLinks(b, i - 1).some(L => L.way === "up" && L.to === n - 1); }])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],

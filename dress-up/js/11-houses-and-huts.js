@@ -375,7 +375,9 @@ function waysSvg(c, floor, links) {
   if (links.some(L => L.way === "left" || L.way === "right")) t += `<defs>${CABIN_DEFS}</defs>`;
   for (const L of links) {
     const go = L.to < 0 ? `data-to="treehouse"` : `data-to="treeroom" data-house="${L.to + 1}"`, name = L.to < 0 ? "🌳 out" : `${L.label} ${L.to + 1}`;
-    t += `<g class="portal" ${go}${L.way === "left" || L.way === "right" ? ` data-door=""` : ""}>`;
+    // (ticket 334: a shut trap door is no way down, so not a doorway; nor, from the house below, a way up)
+    const shutHere = (L.way === "down" && !!c.o["hatchShut" + Math.max(1, Math.min(6, c.o.houses ?? 4, Math.round(c.o.inside ?? 1)))]) || (L.way === "up" && !!c.o["hatchShut" + (L.to + 1)]);
+    t += shutHere ? `<g data-shut="">` : `<g class="portal" ${go}${L.way === "left" || L.way === "right" ? ` data-door=""` : ""}>`;
     if (L.way === "left" || L.way === "right") {
       // (ticket 223) a door in the side wall, as a castle room's side doors are (roomSpace), the rope bridge going out
       // through it: the first a side near the back corner, the second nearer us (TREE_DOOR_Z), its sign higher
@@ -413,6 +415,13 @@ function waysSvg(c, floor, links) {
       const hx = (x0 + W * 0.26) * TREE_FIT, hy = floor + 72 * k;   // (ticket 223: toward the middle, with what stands at the back wall)
       // (ticket 252: its opening's shape, this house's setting: the lid up at its far edge, and the hole)
       const me = Math.max(1, Math.min(6, c.o.houses ?? 4, Math.round(c.o.inside ?? 1))), sh = openingShape(c.o["hatchShape" + me]);
+      // (ticket 334, Matthew: "each tree house with a trap door has a lever on the wall. the default is the open state.
+      // switching it leads to the closed state. reuse what you can from the dungeon here") shut: the trap room's plank lid
+      // across the opening (lidSvg, its shape), no hole to keep off (no data-hole: walked over), no ladder (no way down);
+      // the lid is always drawn, folded away at its hinge while open, for lidSwing to swing when the lever is pulled
+      const shut = !!c.o["hatchShut" + me], hinge = hy + k - 19 * k;
+      const flat = `<g class="pit-lid" data-pit-i="hatch" data-hinge="${f1(hinge)}"${shut ? "" : ` transform="${lidAt(hinge, 0)}" visibility="hidden"`}>` + lidSvg(hx, hy + k, 76 * k, 19 * k, sh, k, "bg-hatch" + me) + `</g>`;
+      if (shut) { t += `<path d="${openingD(sh, hx, hy + k, 76 * k, 19 * k)}" fill="#2a1a0e" stroke="#5e3d22" stroke-width="${f1(4 * k)}"/>` + flat + plankSign(hx + 120 * k, hy - 30 * k, k, `${name} ⬇️`); t += `</g>`; continue; }
       const lid = { square: `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx + 55 * k, hy - 74 * k)} ${P(hx - 55 * k, hy - 74 * k)}"`,
                     circle: `<ellipse cx="${f1(hx)}" cy="${f1(hy - 46 * k)}" rx="${f1(60 * k)}" ry="${f1(28 * k)}"`,
                     triangle: `<polygon points="${P(hx - 60 * k, hy - 18 * k)} ${P(hx + 60 * k, hy - 18 * k)} ${P(hx, hy - 78 * k)}"` }[sh];
@@ -425,22 +434,29 @@ function waysSvg(c, floor, links) {
            `<g data-ladder="1" data-down="${f1(hy + 20 * k)}">` +
            [-22, 22].map(e => `<line x1="${f1(hx + e * k)}" y1="${f1(hy + 14 * k)}" x2="${f1(hx + e * 0.9 * k)}" y2="${f1(hy - 50 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
            [-36, -14, 8].map(dy => `<line x1="${f1(hx - 21 * k)}" y1="${f1(hy + dy * k)}" x2="${f1(hx + 21 * k)}" y2="${f1(hy + dy * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") + `</g>` +
-           plankSign(hx + 120 * k, hy - 30 * k, k, `${name} ⬇️`);
+           flat + plankSign(hx + 120 * k, hy - 30 * k, k, `${name} ⬇️`);
     } else {
       // a ladder up through a hole in the ceiling
       // (ticket 223: toward the middle, with what stands at the back wall; up to the ceiling where it is over the
       // ladder's foot, the square room's ceiling coming toward us from the back wall's top)
       const lx = (x1 - W * 0.4) * TREE_FIT, { top: rt, vy } = roomFrame(c), cy = vy + (rt - vy) * (floor + 14 * k - vy) / (floor - vy);
       // (ticket 252: the opening of the trapdoor above, its house's setting, seen from below)
-      t += `<path d="${openingD(openingShape(c.o["hatchShape" + (L.to + 1)]), lx, cy, 40 * k, 12 * k, true)}" fill="#2a1a0e"/>` +
-           // (ticket 252: data-up, the opening's line: climbing up, the friend is cut off above it)
-           `<g data-ladder="1" data-up="${f1(cy)}">` + [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(cy - 4 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
+      t += `<path d="${openingD(openingShape(c.o["hatchShape" + (L.to + 1)]), lx, cy, 40 * k, 12 * k, true)}" fill="${shutHere ? "#7a5230" : "#2a1a0e"}"${shutHere ? ` stroke="#4a3220" stroke-width="${f1(2 * k)}"` : ""}/>` +
+           // (ticket 252: data-up, the opening's line: climbing up, the friend is cut off above it; ticket 334: shut above, a ladder to climb no more)
+           (shutHere ? `<g>` : `<g data-ladder="1" data-up="${f1(cy)}">`) + [-22, 22].map(e => `<line x1="${f1(lx + e * k)}" y1="${f1(floor + 14 * k)}" x2="${f1(lx + e * 0.85 * k)}" y2="${f1(cy - 4 * k)}" stroke="#a0703f" stroke-width="${f1(5 * k)}"/>`).join("") +
            [...Array(Math.floor((floor + 14 * k - cy) / (30 * k)))].map((_, r) => `<line x1="${f1(lx - 20 * k)}" y1="${f1(floor - r * 30 * k)}" x2="${f1(lx + 20 * k)}" y2="${f1(floor - r * 30 * k)}" stroke="#c08a52" stroke-width="${f1(4 * k)}"/>`).join("") + `</g>` +
            plankSign(lx, y0 + H * 0.24, k, `${name} ⬆️`);
     }
     t += `</g>`;
   }
   return t;
+}
+// (ticket 334) the trap door's lever: on the back wall above the hatch, the trap room's (leverSvg, its shine; data-lever "H",
+// pulled as the trap room's are: roomLeverPull), its handle up while the trap door is open, pulled down to shut it
+function hatchLeverSvg(c, floor, open) {
+  const { x0, W, k } = c, hx = (x0 + W * 0.26) * TREE_FIT, px = hx + 64 * k, py = floor - 112 * k, a = (open ? 1 : -1) * LEVER_TILT;
+  return `<g data-lever="H" style="cursor: pointer">` + leverSvg(px - 13 * k, py - 20 * k, px, py, px, py - 44.4 * k, k,
+    s => `<g class="lever-arm" data-pivot="${f1(px)} ${f1(py)}" transform="rotate(${a} ${f1(px)} ${f1(py)})">${s}</g>`, undefined, leverShine(c.o)) + `</g>`;
 }
 // (ticket 50) a tree house room's seats, by which room it is (picked as
 // treeroomScene picks it): the bunk room's bottom bunk, the top of its
@@ -525,7 +541,7 @@ function treeBusyMeasure() {
   for (const o of bgShown.objs) {
     const ladder = o.name === "hatch" || o.name === "ladder up";
     // (ticket 244: the house's sign, hanging in front of the wall, as a whole: its map made it tall)
-    if (o.name === "house sign") add(o.node, TREE_PIC_CLEAR);
+    if (o.name === "house sign" || o.name === "hatch lever") add(o.node, TREE_PIC_CLEAR);   // (ticket 334: and the trap door's lever)
     else if (ladder || o.name === "side doors" || STANDING.has(objBase(o.name)))
       for (const sh of o.node.querySelectorAll("rect, path, polygon, polyline, line, ellipse, circle, use, image, text")) add(sh, ladder ? TREE_PIC_LADDER : TREE_PIC_CLEAR);
   }
@@ -801,7 +817,7 @@ function treeroomScene(c) {
   const links = houseLinks(o, inside - 1), ways = way => links.filter(L => way.includes(L.way));
   // (the houses' looks: their animals, their colors, the sign's map's and the bridge doors' views; tickets 244, 247)
   const looksKey = [o.houses, o.bridges, o.ladders, o.treeHouseSize, ...treeHouses(o, Math.max(1, Math.min(6, o.houses ?? 4)), 1).map(h => [h.animal, h.look.cols])];
-  s += SEP + part("room-ways", [c.F, links, [1, 2, 3, 4, 5, 6].map(n => o["hatchShape" + n]).join(), looksKey], () => {   // (ticket 252: its trapdoors' shapes, here and above)
+  s += SEP + part("room-ways", [c.F, links, [1, 2, 3, 4, 5, 6].map(n => o["hatchShape" + n]).join(), looksKey, [1, 2, 3, 4, 5, 6].map(n => o["hatchShut" + n] ? 1 : 0).join(""), o.leverShine, o.leverShineColor, o.leverFlicker], () => {   // (ticket 252: its trapdoors' shapes, here and above; ticket 334: its trap door shut or open, its lever's shine)
     const down = ways(["down"]), up = ways(["up"]);
     const doors = ways(["left", "right"]);
     // (ticket 238, Matthew: "we get (the main char) gets drawn below the ladder, the trap door flap, and we don't visibly
@@ -809,7 +825,7 @@ function treeroomScene(c) {
     // hole's far edge (hy - 18), not its near one: anyone at the near edge, climbing down, or beside it is in front of
     // it; only one standing behind the hole is behind its lid
     return (doors.length ? obj("side doors", floor, waysSvg(c, floor, doors)) : "") +
-           (down.length ? obj("hatch", floor + 54 * k, waysSvg(c, floor, down)) : "") +
+           (down.length ? obj("hatch", floor + 54 * k, waysSvg(c, floor, down)) + wallObj("hatch lever", hatchLeverSvg(c, floor, !o["hatchShut" + inside])) : "") +
            (up.length ? obj("ladder up", floor + 14 * k, waysSvg(c, floor, up)) : "");
   });
   // which house this is: a sign hanging from the rafters
