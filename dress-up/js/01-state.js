@@ -665,7 +665,7 @@ DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpos
 DEFAULTS.access = { allArrows: false, arrowDim: 45, arrowColor: "#38bdf8", arrowSize: 100, gameFont: 100, showPath: false, showSolids: false, pathColor: "#fde047", boxColor: "#ef4444", glowFade: 800,
                     pathWidth: 4, boxWidth: 2, boxFont: 11,   // (ticket 230: the path's and the boxes' lines, the boxes' names, in px)
                     showMadeOf: false, madeCats: {}, madeFont: 10, madeColor: "#ffffff", madeWidth: 2,
-                    clickWalk: true, clickWalkColor: "#22d3ee", pathAltColor: "#c084fc", clickPlan: "replace",
+                    clickWalk: true, clickWalkColor: "#22d3ee", pathAltColor: "#c084fc", clickPlan: "replace", leverFar: false,   // (leverFar: ticket 364)
                     showBubbleHits: false, bubbleHitColor: "#38bdf8",   // (ticket 290: 🫧 the bubble room's bubbles that pop, as circles)
                     showWater: false, waterColor: "#22d3ee", solidCats: {} };   // (ticket 283: 💧 where the friend is in water; the collision boxes' kinds, each on unless off)   // (ticket 251: 👆 walk where you click, and its glow's colour; on at first since 0.0.188, Matthew: "so helpful, let's have it on by default")   // (ticket 258: 🧩 what a place is made of; each kind's chip, MADE_CATS's when unset)
 // (ticket 236, Matthew: "Turn on the accessibility features during all tests, because: * we want them to always work.
@@ -1035,7 +1035,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.280", released: "2026-10-18" };
+const VERSION = { number: "0.0.281", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

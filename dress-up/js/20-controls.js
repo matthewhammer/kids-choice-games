@@ -1679,6 +1679,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                (() => { const b = el("button", { class: "ask-new-toggle", "aria-pressed": String(askNewOn()), onclick: () => { askNewSet(!askNewOn()); b.setAttribute("aria-pressed", String(askNewOn())); } },
                                     "🔔 a pop-up when a new version is out");
                         return el("div", { class: "row" }, [b]); })(),
+               // (ticket 364, Matthew, for N) pull a lever from where the friend stands, not walking to it: standing where the boulder
+               // falls, and pulling its lever; saved with the friend's settings (access.leverFar), off to start
+               (() => { const A = () => state.access || (state.access = clone(DEFAULTS.access));
+                        const b = el("button", { class: "lever-far-toggle", "aria-pressed": String(!!A().leverFar), onclick: () => { A().leverFar = !A().leverFar; b.setAttribute("aria-pressed", String(A().leverFar)); changed(); } },
+                                    "🎚️ pull levers from where you stand (no walking to them)");
+                        syncs.push(() => b.setAttribute("aria-pressed", String(!!A().leverFar)));
+                        return el("div", { class: "row" }, [b]); })(),
                meter,
                el("div", { class: "hint" }, "🚀 Kept off until they are fast: 60 frames a second, for everything the controller does, comes first. Switched on, each says how many it draws in this place; 📏 walks the friend here with it off, then on, and says what it costs on this computer."));
     perfMeter.node = meter;

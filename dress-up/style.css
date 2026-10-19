@@ -221,7 +221,7 @@
     background: var(--panel); border: 2px solid var(--accent); border-radius: 16px; padding: 12px 16px; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); }
   #ask-new p { margin: 0 0 6px; font-weight: 600; } #ask-new p.hint { font-weight: 400; color: var(--muted); font-size: 0.85em; margin-bottom: 10px; }
   #ask-new .row { justify-content: center; }
-  button.ask-new-toggle[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.ask-new-toggle[aria-pressed=true], button.lever-far-toggle[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }   /* (lever-far: ticket 364) */
   /* a menu for each hand, mirrored about a line down the middle */
   .ctl.pair:not([hidden]) { display: flex; }
   .pair > .side { flex: 1 1 0; min-width: 0; }

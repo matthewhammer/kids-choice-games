@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.281 (2026-10-18)
+
+Everything in 0.0.280, with levers pulled from where you stand.
+
+- **🎚️ Pull levers from where you stand**, a new switch in ⚙️ Advanced (off to start): every lever goes over at once when you press it, and the friend stays put, so you can stand where the boulder falls and pull its lever (for N).
+
 ## 0.0.280 (2026-10-18)
 
 Everything in 0.0.279, with collision shapes that follow the things.

@@ -340,7 +340,9 @@ const letGo = () => {
 // as before; already there, they pull it at once. Without 👆, it goes over at once, as before.
 function leverAct(sel, act) {
   const A = state.access || DEFAULTS.access, BG = state.background, el = bgShown.node && bgShown.node.querySelector(sel), M = pic.getScreenCTM();
-  if (!A.clickWalk || !el || !M || BG.kind === "none" || BG.onBridge) { act(); return; }
+  // (ticket 364, Matthew: "a toggle to switch the levers without walking to them, so I can stand on the place where the
+  // boulder falls, and still trigger that animation, for N") ⚙️ Advanced's 🎚️ pull levers from where you stand: at once, as before 316
+  if (!A.clickWalk || A.leverFar || !el || !M || BG.kind === "none" || BG.onBridge) { act(); return; }
   const r = el.getBoundingClientRect(), c = new DOMPoint((r.left + r.right) / 2, r.bottom).matrixTransform(M.inverse());
   const g = SCENE.ground, k = (SCENE.bottom - SCENE.top) / 700, F = sceneFrame, z = Math.max(g + figYMin(F) + 4, Math.min(F.bottom - 4, c.y + 8 * k));
   const pull = () => { if (BG.seat) standUp(); state.body.facing = "back"; state.body.turn = ""; startPull(act); };
