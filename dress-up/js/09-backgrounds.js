@@ -55,6 +55,16 @@ const obj = (name, z, svg) => OPEN(`<g data-obj="${name}" data-z="${Number.isFin
 // wall or floor, is its data-layer.
 const wallObj = (name, svg) => OPEN(`<g data-obj="${name}" data-z="back" data-layer="wall">`) + svg + CLOSE;
 const floorObj = (name, svg) => OPEN(`<g data-obj="${name}" data-z="back" data-layer="floor">`) + svg + CLOSE;
+// (ticket 297, Matthew: "flowers (and all the other plants that grow \"up\" into the sky) layer correctly: one standing
+// nearer than the friend's feet is drawn in front of the friend, one farther back behind") Things standing up out of the
+// ground in their dozens, in rows by depth: items ({ y: where it stands, svg }) gathered into rows `band` deep, each an
+// object at its row's middle, "<name> 1" the farthest, so the friend among them stands in front of the rows behind their
+// feet and behind those in front. A row each, not an object each: a dozen or so groups a place (the 60 fps rule)
+function depthRows(name, items, band) {
+  const rows = new Map();
+  for (const it of items) { const j = Math.floor(it.y / band); rows.set(j, (rows.get(j) || "") + it.svg); }
+  return [...rows.keys()].sort((a, b) => a - b).map((j, i) => obj(`${name} ${i + 1}`, (j + 0.5) * band, rows.get(j))).join("");
+}
 // (the same round what a drawing added to its text t since it was m long: a thing drawn by statements of its own, wrapped where it is)
 const wallSince = (t, m, name) => t.slice(0, m) + wallObj(name, t.slice(m)), floorSince = (t, m, name) => t.slice(0, m) + floorObj(name, t.slice(m));
 // (ticket 252, Matthew: "for each tree-house trap door (defined by two houses, stacked) we get to choose the opening:
@@ -585,13 +595,14 @@ const polyBox = P => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infin
   for (const [x, y] of P) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c, d]; };
 // (items: [{ svg, shape, keep }] in drawing order, shape a list of polygons or null (kept, covering nothing); keep: never
 // left out, but covering what is under it; their svgs, joined)
-function seenOnly(items, over = [], most = CULL_MOST) {
-  if (!CULL_HIDDEN) return items.map(it => it.svg).join("");
-  const all = items.map(it => it.shape ? { svg: it.svg, polys: it.shape.map(P => ({ P, b: polyBox(P) })) } : { svg: it.svg, polys: null });
+// (ticket 297: list, the items kept themselves, not their svgs joined)
+function seenOnly(items, over = [], most = CULL_MOST, list = false) {
+  if (!CULL_HIDDEN) return list ? items : items.map(it => it.svg).join("");
+  const all = items.map(it => it.shape ? { svg: it.svg, polys: it.shape.map(P => ({ P, b: polyBox(P) })), src: it } : { svg: it.svg, polys: null, src: it });
   for (const it of all) if (it.polys) it.b = it.polys.reduce((a, q) => [Math.min(a[0], q.b[0]), Math.min(a[1], q.b[1]), Math.max(a[2], q.b[2]), Math.max(a[3], q.b[3])], [Infinity, Infinity, -Infinity, -Infinity]);
   const top = over.map(P => ({ P, b: polyBox(P) })), N = 6;
   const hit = (q, x, y) => x >= q.b[0] && x <= q.b[2] && y >= q.b[1] && y <= q.b[3] && polyIn(q.P, x, y);
-  return all.filter((it, i) => {
+  const kept = all.filter((it, i) => {
     if (!it.polys || items[i].keep) return true;
     const B = it.b, near = q => q.b[0] < B[2] && q.b[2] > B[0] && q.b[1] < B[3] && q.b[3] > B[1];
     const later = [...all.slice(i + 1).flatMap(o => o.polys && near(o) ? o.polys.filter(near) : []), ...top.filter(near)];
@@ -606,7 +617,8 @@ function seenOnly(items, over = [], most = CULL_MOST) {
       seen++; if (later.some(o => hit(o, x, y))) hid++; else if (seen - hid > sure) return true;
     }
     return !seen || hid <= most * seen;
-  }).map(it => it.svg).join("");
+  });
+  return list ? kept.map(it => it.src) : kept.map(it => it.svg).join("");
 }
 // (ticket 261) rows of trees, far to near: each row an object ([name, z, items]), its trees ({ svg, shape }) more than
 // 75% hidden by the rows in front of it and by `over` (polygons drawn after them all) left out

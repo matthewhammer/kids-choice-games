@@ -87,13 +87,13 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // the meadow, brightest in the middle where the figure stands
     s += land(g - 30 * k, 10, "#86c95f", 2.1) +
          `<ellipse cx="0" cy="${f1(g + 20 * k)}" rx="${f1(W * 0.42)}" ry="${f1(70 * k)}" fill="#a6e07a"/>`;
-    const mFl = s.length;
+    const fl = [];   // (ticket 297: the flowers in rows by depth, the friend among them)
     for (let i = 0; i < 26; i++) {
       const x = x0 + W * R(i, 5), y = g - 20 * k + 110 * k * R(i, 6), c = ["#ff6fa5", "#ffd23f", "#ffffff", "#b388ff"][i % 4];
-      s += [0, 72, 144, 216, 288].map(a => `<circle cx="${f1(x + 5 * k * Math.cos(a * Math.PI / 180))}" cy="${f1(y + 5 * k * Math.sin(a * Math.PI / 180))}" r="${f1(3.6 * k)}" fill="${c}"/>`).join("") +
-           `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(2.6 * k)}" fill="#f2a900"/>`;
+      fl.push({ y, svg: [0, 72, 144, 216, 288].map(a => `<circle cx="${f1(x + 5 * k * Math.cos(a * Math.PI / 180))}" cy="${f1(y + 5 * k * Math.sin(a * Math.PI / 180))}" r="${f1(3.6 * k)}" fill="${c}"/>`).join("") +
+           `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(2.6 * k)}" fill="#f2a900"/>` });
     }
-    s = floorSince(s, mFl, "flowers");
+    s += depthRows("flowers", fl, 12 * k);
     // the butterflies, flying over the meadow (at the depth of the ground under the nearest)
     s += obj("butterflies", g - 40 * k, butterfliesSvg({ k, o: opts }, [[x0 + W * 0.16, g - 70 * k, 1.1], [x1 - W * 0.18, g - 110 * k, 1], [x1 - W * 0.34, g - 40 * k, 1.2]]));
     // big leafy trees at the sides, nearest of all (the outer two nearer still)

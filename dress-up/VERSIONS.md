@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.264 (2026-10-18)
+
+Everything in 0.0.263, with flowers you can stand among.
+
+- **Flowers and grass in front of you or behind you, as they should be**: in the tree house's meadow, the clearing, at the castle, in the fairy forest, at the grass hut and in the forest, a flower or a tuft nearer than your feet is drawn in front of you, and one farther back behind you. Before, they were all flat on the ground, behind you. They are in rows by depth ("flowers 1", "flowers 2", ... in 🔬 Inspection, each with its 👁️ chip), a dozen or so a place.
+
 ## 0.0.263 (2026-10-18)
 
 Everything in 0.0.262, with a choice for a click while walking.
