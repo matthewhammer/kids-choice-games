@@ -886,7 +886,10 @@ function bubbleroomScene(c) {
     const doc = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${bx} ${by} ${bwd} ${bht}" width="${bwd}" height="${bht}">${defs}${inner}</svg>`.replace(/"/g, "'");
     return { bx, by, bwd, bht, href: "data:image/svg+xml;charset=utf-8," + doc.replace(/%/g, "%25").replace(/#/g, "%23").replace(/</g, "%3C").replace(/>/g, "%3E") }; };
   const asImage = (inner, box, defs = "") => { const m = inner && imageOf(inner, box, defs);
-    return m ? `<image x="${m.bx}" y="${m.by}" width="${m.bwd}" height="${m.bht}" preserveAspectRatio="none" href="${m.href}"/>` : ""; };
+    // (ticket 384: no press is taken by it: an <image> takes one anywhere in its rectangle, its see-through parts too, and the front
+    // band of balls is a picture the size of the scene, in front of the friend: in the bubble room no press reached the friend, a
+    // maker or a lever behind it, and the gate's drag never took hold. Scenery; what moves on it is live, over it)
+    return m ? `<image x="${m.bx}" y="${m.by}" width="${m.bwd}" height="${m.bht}" preserveAspectRatio="none" pointer-events="none" href="${m.href}"/>` : ""; };
   const sets = (list, draw, seedK, box) => { let still = "", live = "";
     list.forEach((b, i) => { const life = lifeOf(seedK, i, b.r); if (life) live += draw(b, life); else still += draw(b, ""); });
     return asImage(still, box) + live; };

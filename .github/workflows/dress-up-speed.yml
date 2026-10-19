@@ -86,6 +86,12 @@ jobs:
         continue-on-error: true
         shell: bash
         run: SLOW=1 W=1920 H=1080 OUT=out/fpsgate-slow.json node tools/fpsgate.mjs 9333 "$PAGE" | tee out/fpsgate-slow.txt
+      # (ticket 384, ^du_report(12)'s next step 5: "the room with 4 makers, at full speed and on the slow tier, in Chrome and Firefox,
+      # each release": full speed is the gate's bubbleroom4; the black laptop's tier recorded here, a verdict once it has a record)
+      - name: The bubble room with 4 makers on the black laptop's tier (BLACK=1; recorded, not a verdict)
+        continue-on-error: true
+        shell: bash
+        run: BLACK=1 W=1920 H=1080 OUT=out/fpsgate-black-bubble.json node tools/fpsgate.mjs 9333 "$PAGE" black-bubbleroom4 | tee out/fpsgate-black-bubble.txt
       - name: Every place with the on-screen controller (ticket 160; recorded, not a verdict)
         continue-on-error: true
         shell: bash
@@ -127,6 +133,10 @@ jobs:
         continue-on-error: true
         shell: bash
         run: CLEAR=1 python3 tools/leakff.py "$PAGE" - 2 | tee out/leakff-changes.txt
+      - name: The bubble room with 4 makers in Firefox (ticket 384; recorded, not a verdict)
+        continue-on-error: true
+        shell: bash
+        run: python3 tools/ffbubble384.py "${PAGE%#inspect}" | tee out/ffbubble384.txt
       - name: Summary
         if: always()
         shell: bash

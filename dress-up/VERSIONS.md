@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.333 (2026-10-19)
+
+Everything in 0.0.332, with the bubble room's friend and things back in reach.
+
+- **🫧 In the bubble room you can pick up your friend again, and the bubble makers**: the bubbles stuck out of the foam in front of your friend were one see-through picture as big as the room, and it caught every press, so nothing behind it could be dragged or tapped. Now it lets presses through.
+- **🧪 The bubble room is in every release's speed checks**: four bubble makers, walked and dragged at full speed, and measured on a slow computer's speed and in Firefox.
+
 ## 0.0.332 (2026-10-19)
 
 Everything in 0.0.331, with a slow computer noticed in the first second of a walk.

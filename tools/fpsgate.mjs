@@ -38,6 +38,7 @@ const MIN = +(process.env.MIN || 55), RUNS = +(process.env.RUNS || 3), BLACK = !
 // headless Chrome on Matthew's laptop, 0.6 ms. So the black laptop's main thread is about 1.7 times
 // this one's: the tier runs at 2. STRESS=1 runs it at 6, as before, to see the margin.)
 if (BLACK && !process.env.CPU) process.env.CPU = process.env.STRESS ? "6" : "2";
+const BUBBLE4 = `state.background.kind = "bubbleroom"; state.background.things = [-330, -250, 170, 250].map((x, i) => ({ kind: "bubblemaker", x, z: SCENE.ground + 30, seed: 501 + i, size: 100, ...structuredClone(THING_DEFAULTS.bubblemaker || {}) }));`;
 const SCENES = [
   { id: "castle", label: "🏰 outside the castle", setup: `state.background.kind = "castle";` },
   { id: "witch", label: "🧙 outside the witch's house", setup: `state.background.kind = "witch";` },
@@ -61,6 +62,10 @@ const SCENES = [
   // (ticket 154: the slow machine's cases)
   { id: "emptyroom", label: "🔲 the empty room", setup: `state.background.kind = "emptyroom";`, slow: true },
   { id: "imagination", label: "💭 our imagination", setup: `state.background.kind = "imagination";`, slow: true },
+  // (ticket 384, ^du_report(12)'s next step 5: "the room with 4 makers, at full speed and on the slow tier, in Chrome and Firefox, each
+  // release") the bubble room, its foam still as it starts, four bubble makers blowing, two by each wall, clear of the walk
+  { id: "bubbleroom4", label: "🫧 the bubble room, 4 bubble makers", setup: BUBBLE4 },
+  { id: "black-bubbleroom4", label: "🫧 the bubble room, 4 bubble makers (black laptop)", setup: BUBBLE4, black: true },
   // (ticket 163: the black laptop's set, BLACK=1)
   { id: "black-emptyroom", label: "🔲 the empty room (black laptop)", setup: `state.background.kind = "emptyroom";`, black: true },
   // (known to fail, ticket 164: the pond's 1,000 shapes, processed again by the browser every frame; run it with only=black-lake)
