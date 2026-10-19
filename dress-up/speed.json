@@ -1,4 +1,12 @@
 {
+ "0.0.327": {
+  "result": "ok",
+  "failed": [],
+  "commit": "18b7d39bea1ba4b3c21cf24941137c78c9bfd413",
+  "run": "https://github.com/matthewhammer/kids-choice-games/actions/runs/39248580789",
+  "checked": "2026-10-19T13:11Z",
+  "inspect": true
+ },
  "0.0.326": {
   "result": "broken",
   "failed": [
