@@ -71,6 +71,8 @@ function treadStroke(amt, u) {
 const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["stairs", "🔼 walking up or down stairs"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"], ["jump", "🐸 short, fast jump"], ["jumphigh", "🦘 high, slow jump"], ["crouch", "🧎 crouching down"]];
 // (walking, running and crawling are seen from the side: chosen facing us, the friend turns to our right)
 const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true, stairs: true };   // (ticket 308: and on stairs)
+// (ticket 309) walking, how far behind the thigh the shin swings, in the stride's turn (radians): the knee leads, the foot follows
+const WALK_LAG = 1.1;
 // (ticket 287) swimming flat, from the side: how far the friend is turned about the hips, short of lying level, so the
 // head rides higher than the feet and the face looks ahead; and the waterline, that share of the body's half width
 // above the hips (0: through them; below 0, more of them above the water)
@@ -680,7 +682,12 @@ function moveNow() {
     const s = sin(1), c = cos(1);
     if (!dir) return { ...both("Step", sd => 0.16 * Math.max(0, sd * s)), ...both("Arm", sd => 8 * sd * s), ...both("Elbow", () => 10),
                        lift: 3 * Math.abs(s), frontFeet: 0.16 };
-    return { ...both("Leg", sd => 24 * sd * s), ...both("Knee", sd => 30 * Math.max(0, sd * c)),
+    // (ticket 309, Matthew: "our knees should lead each step, and our foot follows, as two separate parts of the motion, in
+    // phase") from the side: the thigh swings, and the shin follows it WALK_LAG behind in the stride (the foot follows the
+    // knee): as the thigh comes through, the knee bends, leading, the foot trailing; then the foot swings on to catch up and
+    // land, the leg straightening; while the foot is down the leg stays straight (a knee never bends backward)
+    const ph = sd => 2 * Math.PI * u + (sd > 0 ? 0 : Math.PI), thigh = sd => 24 * Math.sin(ph(sd)), shin = sd => 24 * Math.sin(ph(sd) - WALK_LAG);
+    return { ...both("Leg", thigh), ...both("Knee", sd => 4 + Math.max(0, 1.7 * (thigh(sd) - shin(sd)))),
              ...both("Arm", sd => 20 * sd * s), ...both("Elbow", () => 14), lift: 3 * Math.abs(c) };
   }
   // (ticket 308, Matthew: "two new animations: walking up/down stairs ... with a flag saying if we are facing towards up

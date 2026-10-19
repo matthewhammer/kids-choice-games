@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.270 (2026-10-18)
+
+Everything in 0.0.269, with a truer walk.
+
+- **Walking: the knee leads, the foot follows**: seen from the side, each step now swings the knee through first, bent, the foot trailing behind it; then the foot swings on ahead to land, the leg straightening; and the leg stays straight while its foot is down. Before, the knee and the foot moved together.
+
 ## 0.0.269 (2026-10-18)
 
 Everything in 0.0.268, with walking up and down stairs.
