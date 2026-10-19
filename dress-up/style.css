@@ -706,6 +706,11 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
 .accbox.on { border-color: var(--line); background: var(--mu-inst); padding: 6px 10px; }
 .accbox.plain { background: var(--mu-main); }
 .accbox .cap { font-weight: 600; }
+/* (ticket 375, knolled) the overlays and switches of 🔬 Inspection and ♿ Accessibility: like things side by side as chips, one switched
+   on opening to the panel's width with its own settings */
+#panel[data-part="access"] { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
+#panel[data-part="access"] > .accbox { margin: 0; }
+#panel[data-part="access"] > .accbox.on, #panel[data-part="access"] > .accbox.plain, #panel[data-part="access"] > :not(.accbox) { flex-basis: 100%; }
 .accmore { display: contents; }   /* (its items wrap one by one beside the chip, not all onto a line of their own) */
 .accmore[hidden] { display: none; }
 .accitem { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; white-space: nowrap; }

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.314 (2026-10-19)
+
+Everything in 0.0.313, with the Inspection and Accessibility switches side by side.
+
+- **🔬 Inspection's and ♿ Accessibility's switches side by side**, as chips, instead of one to a line; a switch turned on opens to the panel's width with its own settings.
+
 ## 0.0.313 (2026-10-19)
 
 Everything in 0.0.312, with the castle's color themes shown as flags.
