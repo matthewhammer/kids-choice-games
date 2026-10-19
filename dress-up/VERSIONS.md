@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.342 (2026-10-19)
+
+Everything in 0.0.341, with the hair right when lying on a sleeping bag.
+
+- **Lying on a sleeping bag, your friend's hair is on the back of their head** (ticket 412): with their head back on the pillow, looking up, the hair is round the far side of it and on the pillow, not over the top of their face.
+
 ## 0.0.341 (2026-10-19)
 
 Everything in 0.0.340, with your friend looking up when lying on a sleeping bag.

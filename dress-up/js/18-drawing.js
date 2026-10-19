@@ -1104,6 +1104,9 @@ function lieAlongSvg(A, S) {
   // the head: a ball on the pillow, round on the screen; its hair over the far side of it; its face up, and tipped toward the
   // feet by the pillow under the head, so toward us
   const hp = at(hx, 0, hc), R = hr * hp[2];
+  // (Matthew: "the hair should be on the far face of the head ball, not the top of it (the head is reclined now, looking
+  // upward)") the hair on the ball's far side, the crown toward the pillow: behind the head, showing round its far edge
+  if (!bald) s += `<ellipse cx="${f1(hp[0])}" cy="${f1(hp[1] - 0.16 * R)}" rx="${f1(1.1 * R)}" ry="${f1(1.04 * R)}" fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(hp)}"/>`;
   s += `<circle cx="${f1(hp[0])}" cy="${f1(hp[1])}" r="${f1(R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
   // (Matthew: "the face should be facing up -- not looking towards us"; before that, "there's a layering issue with the hair?")
   // Lying face up, seen from the feet and above: the face looks at the ceiling, so it shows on the head's upper part, shortened,
@@ -1113,8 +1116,8 @@ function lieAlongSvg(A, S) {
     `A${f1(R)} ${f1(R)} 0 ${y0 > hp[1] ? 0 : 1} 1 ${f1(hp[0] - Math.sqrt(R * R - (y0 - hp[1]) ** 2))} ${f1(y0)} Z" ${a}/>`;
   s += lo(hp[1] + 0.1 * R, 0.14 * R, `fill="${darker(skin)}" opacity="0.45"`);   // (under the chin)
   for (const sd of [-1, 1]) s += `<ellipse cx="${f1(hp[0] + sd * 0.97 * R)}" cy="${f1(hp[1] - 0.2 * R)}" rx="${f1(0.13 * R)}" ry="${f1(0.2 * R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
-  const hy = hp[1] - 0.68 * R, hw = Math.sqrt(R * R - (hy - hp[1]) ** 2);
-  if (!bald) s += `<path d="M${f1(hp[0] - hw)} ${f1(hy)} A${f1(R)} ${f1(R)} 0 0 1 ${f1(hp[0] + hw)} ${f1(hy)} Q${f1(hp[0])} ${f1(hy + 0.12 * R)} ${f1(hp[0] - hw)} ${f1(hy)} Z" ` +
+  const hy = hp[1] - 0.86 * R, hw = Math.sqrt(R * R - (hy - hp[1]) ** 2);   // (its hairline at the far edge: the forehead faces up)
+  if (!bald) s += `<path d="M${f1(hp[0] - hw)} ${f1(hy)} A${f1(R)} ${f1(R)} 0 0 1 ${f1(hp[0] + hw)} ${f1(hy)} Q${f1(hp[0])} ${f1(hy + 0.08 * R)} ${f1(hp[0] - hw)} ${f1(hy)} Z" ` +
     `fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(hp)}" stroke-linejoin="round"/>`;
   for (const sd of [-1, 1]) { const ex = hp[0] + sd * 0.27 * R, ey = hp[1] - 0.44 * R;
     // (its whites, the pupils at their far edge: looking up at the ceiling, past the forehead)
