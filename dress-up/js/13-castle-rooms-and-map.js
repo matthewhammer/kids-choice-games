@@ -192,10 +192,59 @@ const ladderUp = (x, floor, top, k, label, attrs, shape = "circle") => `<g class
 // places: its plate (x, y, its top left), its pivot (px, py) and the end of its
 // handle (ex, ey), where the knob is; arm wraps the handle and the knob (a
 // placed lever turns them as it is pulled)
-function leverSvg(x, y, px, py, ex, ey, k, arm = s => s, knob = "#c0392b") {   // (ticket 323: its knob's colour)
-  return `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(26 * k)}" height="${f1(40 * k)}" fill="#3a3a44"/>` +
+// (ticket 317, Matthew: "make levels more detailed, especially the panel and add a shine to the level that mimics the
+// light of the room in each instance (configurable though). Shine size and color and 'vibration level' (the torches
+// vibrate and we should mimic that, by default)") Its plate an iron panel: bevelled, a rivet at each corner, the slot
+// the handle swings in, a hub at the pivot; the handle with a bright edge; the knob with a ring and a gleam. And sh, its
+// shine (leverShine: the place's ✨ settings): the room's light caught on the knob (moving with it) and down the plate's
+// edge, as big as its size says, in its colour, flickering as the torches do (the scene's slow LFO, as torchSvg's glow;
+// without one, a flicker of its own) as much as its flicker says
+const leverShine = o => ({ size: Math.max(0, Number(o.leverShine ?? 100) || 0) / 100, color: o.leverShineColor || "#ffd27a", flicker: Math.max(0, Math.min(100, Number(o.leverFlicker ?? 60) || 0)) / 100, o });
+function leverSvg(x, y, px, py, ex, ey, k, arm = s => s, knob = "#c0392b", sh = null) {   // (ticket 323: its knob's colour)
+  const w = 26 * k, h = 40 * k, rivet = (cx, cy) => `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(1.8 * k)}" fill="#9a9aa8" stroke="#24242b" stroke-width="${f1(0.6 * k)}"/>`;
+  const glow = sh && sh.size > 0, f = glow ? sh.flicker : 0;
+  const flick = base => !glow || f <= 0 ? "" : sceneLfo(sh.o, "slow", 0.37, "opacity", (v, amp) => (base * (1 - f * (0.3 + 0.5 * amp) * (1 + v) / 2)).toFixed(2),
+    f > 0 ? `<animate attributeName="opacity" values="${[1, 1 - 0.55 * f, 1 - 0.15 * f, 1 - 0.65 * f, 1 - 0.1 * f, 1].map(m => (base * m).toFixed(2)).join(";")}" dur="1.3s" repeatCount="indefinite"/>` : "", "translate");
+  return `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" rx="${f1(2 * k)}" fill="#2e2e36" stroke="#1b1b20" stroke-width="${f1(1 * k)}"/>` +
+    `<rect x="${f1(x + 2.5 * k)}" y="${f1(y + 2.5 * k)}" width="${f1(w - 5 * k)}" height="${f1(h - 5 * k)}" rx="${f1(1.5 * k)}" fill="#3c3c46"/>` +
+    `<line x1="${f1(x + 2.5 * k)}" y1="${f1(y + 2.8 * k)}" x2="${f1(x + w - 2.5 * k)}" y2="${f1(y + 2.8 * k)}" stroke="#5e5e6a" stroke-width="${f1(1 * k)}"/>` +
+    `<rect x="${f1(px - 2.6 * k)}" y="${f1(y + 6 * k)}" width="${f1(5.2 * k)}" height="${f1(h - 12 * k)}" rx="${f1(2.6 * k)}" fill="#15151a"/>` +
+    rivet(x + 4 * k, y + 4 * k) + rivet(x + w - 4 * k, y + 4 * k) + rivet(x + 4 * k, y + h - 4 * k) + rivet(x + w - 4 * k, y + h - 4 * k) +
+    (glow ? `<rect x="${f1(x + 1 * k)}" y="${f1(y + 4 * k)}" width="${f1(1.6 * k * Math.min(2, sh.size))}" height="${f1(h - 8 * k)}" fill="${sh.color}" opacity="0.55">${flick(0.55)}</rect>` : "") +
     arm(`<line x1="${f1(px)}" y1="${f1(py)}" x2="${f1(ex)}" y2="${f1(ey)}" stroke="#6a6a76" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
-        `<circle cx="${f1(ex)}" cy="${f1(ey)}" r="${f1(7 * k)}" fill="${knob}"/>`);
+        `<line x1="${f1(px - 1.2 * k)}" y1="${f1(py)}" x2="${f1(ex - 1.2 * k)}" y2="${f1(ey)}" stroke="#a4a4b2" stroke-width="${f1(1.3 * k)}" stroke-linecap="round"/>` +
+        (glow ? `<circle cx="${f1(ex)}" cy="${f1(ey)}" r="${f1(12 * k * sh.size)}" fill="${sh.color}" opacity="0.18">${flick(0.18)}</circle>` : "") +
+        `<circle cx="${f1(ex)}" cy="${f1(ey)}" r="${f1(7 * k)}" fill="${knob}" stroke="${darker(knob)}" stroke-width="${f1(1.2 * k)}"/>` +
+        `<ellipse cx="${f1(ex - 2.2 * k)}" cy="${f1(ey - 2.6 * k)}" rx="${f1(2.4 * k * (glow ? Math.max(0.6, sh.size) : 1))}" ry="${f1(1.5 * k * (glow ? Math.max(0.6, sh.size) : 1))}" fill="${glow ? sh.color : "#ffffff"}" opacity="0.85">${flick(0.85)}</ellipse>`) +
+    `<circle cx="${f1(px)}" cy="${f1(py)}" r="${f1(4.5 * k)}" fill="#55555f" stroke="#202026" stroke-width="${f1(1 * k)}"/><circle cx="${f1(px)}" cy="${f1(py)}" r="${f1(1.6 * k)}" fill="#9a9aa8"/>`;
+}
+// (ticket 317) the trap room's helmet, recognizable: a knight's great helm lying on its rim, its dome with a ridge and a
+// shine, the visor's eye slit, breathing holes, a band of rivets round the rim, a red plume; (cx, base) the middle of its
+// rim on the floor
+function helmetSvg(cx, base, k) {
+  const w = 30 * k, h = 50 * k, steel = "#a3a9b4", dark = "#5a5f6a", lt = "#e2e6ee", hole = "#1d1f24", P = (x, y) => `${f1(x)} ${f1(y)}`;
+  return `<ellipse cx="${f1(cx)}" cy="${f1(base + 2 * k)}" rx="${f1(w * 1.15)}" ry="${f1(5 * k)}" fill="#000000" opacity="0.22"/>` +
+    `<path d="M${P(cx + 4 * k, base - h + 2 * k)} Q${P(cx + 18 * k, base - h - 16 * k)} ${P(cx + 34 * k, base - h - 4 * k)} Q${P(cx + 20 * k, base - h - 6 * k)} ${P(cx + 8 * k, base - h + 6 * k)} Z" fill="#c0392b" stroke="#7a1f16" stroke-width="${f1(1 * k)}"/>` +
+    `<path d="M${P(cx - w, base)} L${P(cx - w, base - 0.55 * h)} Q${P(cx - w, base - h)} ${P(cx, base - h)} Q${P(cx + w, base - h)} ${P(cx + w, base - 0.55 * h)} L${P(cx + w, base)} Z" fill="${steel}" stroke="${dark}" stroke-width="${f1(2 * k)}"/>` +
+    `<path d="M${P(cx - 0.86 * w, base - 0.66 * h)} L${P(cx + 0.86 * w, base - 0.66 * h)} L${P(cx + 0.8 * w, base - 7 * k)} Q${P(cx, base - 3 * k)} ${P(cx - 0.8 * w, base - 7 * k)} Z" fill="#959ba6" stroke="${dark}" stroke-width="${f1(1.2 * k)}"/>` +
+    `<rect x="${f1(cx - 0.7 * w)}" y="${f1(base - 0.66 * h + 2.5 * k)}" width="${f1(1.4 * w)}" height="${f1(4.5 * k)}" rx="${f1(2 * k)}" fill="${hole}"/>` +
+    `<line x1="${f1(cx)}" y1="${f1(base - h + 1 * k)}" x2="${f1(cx)}" y2="${f1(base - 0.66 * h)}" stroke="${dark}" stroke-width="${f1(1.8 * k)}"/>` +
+    `<line x1="${f1(cx)}" y1="${f1(base - 0.66 * h + 8 * k)}" x2="${f1(cx)}" y2="${f1(base - 6 * k)}" stroke="${dark}" stroke-width="${f1(1.4 * k)}"/>` +
+    [0, 1, 2].flatMap(r => [0, 1].map(cl => `<circle cx="${f1(cx + (6 + 5 * cl) * k)}" cy="${f1(base - 0.66 * h + (12 + 5 * r) * k)}" r="${f1(1.4 * k)}" fill="${hole}"/>`)).join("") +
+    `<rect x="${f1(cx - w)}" y="${f1(base - 6 * k)}" width="${f1(2 * w)}" height="${f1(6 * k)}" fill="#7d838e" stroke="${dark}" stroke-width="${f1(1 * k)}"/>` +
+    [0, 1, 2, 3, 4, 5].map(i => `<circle cx="${f1(cx - w + (5 + i * (2 * w - 10 * k) / 5 / k) * k)}" cy="${f1(base - 3 * k)}" r="${f1(1.3 * k)}" fill="${lt}"/>`).join("") +
+    `<path d="M${P(cx - 0.7 * w, base - 0.7 * h)} Q${P(cx - 0.72 * w, base - 0.95 * h)} ${P(cx - 0.25 * w, base - 0.98 * h)}" fill="none" stroke="${lt}" stroke-width="${f1(3 * k)}" stroke-linecap="round" opacity="0.8"/>`;
+}
+// (ticket 317) the trap room's sword, lying flat on the floor from its pommel (x0, y0) to its tip (x1, y1): a blade with
+// its fuller and a bright edge, a crossguard, a grip bound in leather, a round pommel
+function swordSvg(x0, y0, x1, y1, k) {
+  const len = Math.hypot(x1 - x0, y1 - y0), a = Math.atan2(y1 - y0, x1 - x0) * 180 / Math.PI, s = len / 100;
+  return `<g transform="translate(${f1(x0)} ${f1(y0)}) rotate(${a.toFixed(1)}) scale(${s.toFixed(3)})">` +
+    `<polygon points="22,-3.4 88,-2.6 100,0 88,2.6 22,3.4" fill="#c9ced6" stroke="#7d838e" stroke-width="0.7"/>` +
+    `<line x1="25" y1="0" x2="80" y2="0" stroke="#9aa0aa" stroke-width="1.1"/><line x1="23" y1="-2.6" x2="88" y2="-1.9" stroke="#f1f3f7" stroke-width="0.7"/>` +
+    `<rect x="19" y="-10" width="3.6" height="20" rx="1.4" fill="#b08d3a" stroke="#6e5520" stroke-width="0.6"/>` +
+    `<rect x="5" y="-2.3" width="14" height="4.6" rx="1.2" fill="#6e4a2c"/>` + [7, 10, 13, 16].map(xx => `<line x1="${xx}" y1="-2.3" x2="${xx + 1.6}" y2="2.3" stroke="#4a2e1a" stroke-width="0.7"/>`).join("") +
+    `<circle cx="3" cy="0" r="3.3" fill="#b08d3a" stroke="#6e5520" stroke-width="0.6"/></g>`;
 }
 // (ticket 284) the trap room's pit, shared with the 🕳️ trap door: its opening
 // (shape sh, middle cx, cy, half widths rx, ry), dark inside, spikes glinting
@@ -246,13 +295,13 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes, trap = null) {
   t += [["L", -1], ["R", 1]].map(([side, sd]) => {
     const px = sd * (bw * 0.32 + 13 * k), py = floor - 130 * k, up = trap ? !trap.levers[side] : true, a = (up ? 1 : -1) * sd * LEVER_TILT;
     return wallObj(side === "L" ? "lever, left" : "lever, right", `<g data-lever="${side}" style="cursor: pointer">` +
-      leverSvg(px - 13 * k, floor - 150 * k, px, py, px, py - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="${f1(px)} ${f1(py)}" transform="rotate(${a} ${f1(px)} ${f1(py)})">${s}</g>`) + `</g>`);
+      leverSvg(px - 13 * k, floor - 150 * k, px, py, px, py - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="${f1(px)} ${f1(py)}" transform="rotate(${a} ${f1(px)} ${f1(py)})">${s}</g>`, undefined, leverShine(c.o)) + `</g>`);
   }).join("") +
        // (ticket 323) the boulder levers, blue-knobbed, under the red ones: each down when its boulder has fallen
        (trap && trap.boulders ? [["L", -1], ["R", 1]].map(([side, sd]) => {
          const px = sd * (bw * 0.32 + 13 * k), py = floor - 64 * k, a = (trap.boulders[side] ? -1 : 1) * sd * LEVER_TILT;
          return wallObj(side === "L" ? "boulder lever, left" : "boulder lever, right", `<g data-lever="B${side}" style="cursor: pointer">` +
-           leverSvg(px - 13 * k, floor - 84 * k, px, py, px, py - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="${f1(px)} ${f1(py)}" transform="rotate(${a} ${f1(px)} ${f1(py)})">${s}</g>`, BOULDER_KNOB) + `</g>`);
+           leverSvg(px - 13 * k, floor - 84 * k, px, py, px, py - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="${f1(px)} ${f1(py)}" transform="rotate(${a} ${f1(px)} ${f1(py)})">${s}</g>`, BOULDER_KNOB, leverShine(c.o)) + `</g>`);
        }).join("") : "") +
        wallObj("warning sign", `<rect x="${f1(-bw * 0.38)}" y="${f1(top + 40 * k)}" width="${f1(bw * 0.76)}" height="${f1(44 * k)}" rx="${f1(6 * k)}" fill="#3a3530" opacity="0.85"/>` +
        `<text x="0" y="${f1(top + 72 * k)}" text-anchor="middle" font-size="${f1(26 * k)}" font-weight="bold" fill="#f2c12e" font-family="sans-serif">⚠️ MIND THE FLOOR ⚠️</text>`);
@@ -281,10 +330,8 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes, trap = null) {
   // (the helmet an object, standing where its rim meets the floor; the pits
   // are holes in the floor, and the sword lies flat on it: neither stands,
   // so the sword is drawn first, under all that stands, the friend too)
-  t += floorObj("sword", `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.42)}" y2="${f1(floor + 110 * k)}" stroke="#c9ced6" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
-       `<line x1="${f1(W * 0.33 - 5 * k)}" y1="${f1(floor + 118 * k)}" x2="${f1(W * 0.33 + 4 * k)}" y2="${f1(floor + 131 * k)}" stroke="#8b5e34" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
-       `<line x1="${f1(W * 0.33)}" y1="${f1(floor + 124 * k)}" x2="${f1(W * 0.31)}" y2="${f1(floor + 127 * k)}" stroke="#6e4a2c" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`) +   // (ticket 284: a floor object)
-       obj("helmet", floor + 70 * k, `<path d="M${P(-W * 0.36, floor + 70 * k)} Q${P(-W * 0.36, floor + 40 * k)} ${P(-W * 0.33, floor + 40 * k)} Q${P(-W * 0.3, floor + 40 * k)} ${P(-W * 0.3, floor + 70 * k)} Z" fill="#9aa0aa" stroke="#5a5f6a" stroke-width="${f1(2 * k)}"/>`);
+  t += floorObj("sword", swordSvg(W * 0.31, floor + 127 * k, W * 0.42, floor + 110 * k, k)) +   // (ticket 284: a floor object; ticket 317: in detail)
+       obj("helmet", floor + 70 * k, helmetSvg(-W * 0.33, floor + 70 * k, k));   // (ticket 317: a knight's helm)
   return t;
 }
 // a dungeon: cold stone, wet, a barred window high up with moonlight coming
@@ -2316,7 +2363,7 @@ function castleroomScene(c) {
   const pitShapes = K.pitShapesAt[n - 1];   // (ticket 271: this room's own; keyed, so a chip draws it again at once)
   const trap = style === "trap" ? trapState(o, n, K.id) : null;   // (ticket 305: its pits and levers)
   const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places, pitShapes, trap });
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() + JSON.stringify(trap) : bones, K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() + JSON.stringify(trap) + [o.leverShine, o.leverShineColor, o.leverFlicker].join() : bones,   // (ticket 317: and its levers' shine) K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,
                                   SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)

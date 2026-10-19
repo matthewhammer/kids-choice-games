@@ -433,6 +433,7 @@ const DEFAULTS = {
   shoes: { style: "sneaker", different: false, size: 100, color: "#c0392b", toes: 5, alienToes: 3, talonCount: 4 },
   // the figure's size and place in a background scene (dragged there)
   background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, objectsOff: {}, chickenLegs: false, legSize: 100, hutNear: 0,
+                leverShine: 100, leverShineColor: "#ffd27a", leverFlicker: 60,   // (ticket 317: the levers' shine: its size, its colour, how much it flickers with the torches)
                 // (standing in water: how see-through below the waist, and how big a wake: ticket 122)
                 waterSee: 70, waterWake: 100, waterTread: 100, seat: null,   // (ticket 50: the seat the friend sits on here, by name)
                 // (ticket 220) 🫧 bubble space: how many, the wind, and themes A (always), B and C (when on)
@@ -1026,7 +1027,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.272", released: "2026-10-18" };
+const VERSION = { number: "0.0.273", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.273 (2026-10-18)
+
+Everything in 0.0.272, with the trap room's things in detail.
+
+- **A knight's helmet**: the helmet by the trap room's left pit is now a knight's great helm, its eye slit, breathing holes, a band of rivets, a shine on its dome and a red plume.
+- **A sword in detail**: its blade with a groove down it and a bright edge, a gold crossguard, a leather-bound grip and a round pommel.
+- **Levers in detail, and shining**: each lever's panel is bevelled iron with a rivet at each corner, the slot its handle swings in and a hub at the pivot; the handle has a bright edge, and the knob catches the room's light, flickering as the torches do. Three new settings in 🏞️ Background, wherever there are levers (the trap room's or placed ones): ✨ the shine's size (0 for none), its colour, and 🔥 how much it flickers.
+
 ## 0.0.272 (2026-10-18)
 
 Everything in 0.0.271, with levers pulled by hand.

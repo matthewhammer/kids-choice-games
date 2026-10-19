@@ -337,6 +337,10 @@ const TABS = [
     ["bgbig", "big", "⛶ full screen"],
     ["bgview", "designerView", ""],   // (its own key: "view" is the living room window's, shown only there)
     ["places", "kind", "background", PLACES],
+    // (ticket 317) the levers' shine, wherever there are levers (the trap room's, placed ones)
+    ["range", "leverShine", "✨ levers' shine: its size (0 = none)", 0, 200, 0, 200],
+    ["color", "leverShineColor", "✨ levers' shine: its colour", ["#ffd27a", "#ffb347", "#ffffff", "#9ad7ff", "#ff6b6b", "#c4b5fd"]],
+    ["range", "leverFlicker", "🔥 levers' shine: how much it flickers, as the torches do", 0, 100, 0, 100],
     // (ticket 300) in a square of the world: where a change made here goes (the place's template, every one of it that has
     // no setting of its own; or this square alone), and this square back to the template
     ["choice", "instEdit", "✏️ changes here go to", [["template", "🧩 the template: every square of this place"], ["instance", "📍 only this square"]]],
@@ -877,6 +881,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries([...NORTH_OUT, ...NORTH_ROOMS].map(kd => ["background.north_" + kd, b => b.kind === kd])),
   "background.lfoFast": b => !!sceneLfoThings(b).fast, "background.lfoSlow": b => !!sceneLfoThings(b).slow, "background.lfoWings": b => !!sceneLfoThings(b).wings,
   "background.figPos": b => b.kind !== "none",
+  ...Object.fromEntries(["leverShine", "leverShineColor", "leverFlicker"].map(k => ["background." + k, b => (b.kind === "castleroom" && roomHereNowOf(b)[1] === "trap") || (b.things || []).some(t => t.kind === "lever")])),   // (ticket 317)
   "background.objectsOff": b => b.kind !== "none",
   "background.bubbles": b => b.kind === "bubblespace",   // (ticket 220)
   "background.bubbleroom": b => b.kind === "bubbleroom",   // (ticket 290)

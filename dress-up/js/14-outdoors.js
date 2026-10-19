@@ -1658,11 +1658,11 @@ const thingMoves = t => t.kind === "lifted" ? !!(liftedThing(t) || {}).moves : !
 // room's pit (pitSvg), a hole the friend's feet keep out of (data-hole, as a tree room's, drawn in thingSvg in the
 // stage's units). Its depth among the objects is its back edge (thingDepth), so a friend standing on it shut is drawn over it.
 const LEVER_TILT = 31, LEVER_K = 1.6, LEVER_PIVOT = -96 + 20 * LEVER_K, TRAP_RX = 110, TRAP_RY = 34;
-function leverThingSvg(t) {
+function leverThingSvg(t, o = state.background) {
   const k = LEVER_K, a = t.on ? LEVER_TILT : -LEVER_TILT;
   return `<ellipse cx="0" cy="2" rx="40" ry="9" fill="#000000" opacity="0.18"/>` +
     `<rect x="-26" y="-100" width="52" height="100" rx="4" fill="#6e6e7a"/><rect x="14" y="-100" width="12" height="100" fill="#5a5a66"/><rect x="-26" y="-100" width="52" height="9" rx="3" fill="#82828e"/>` +
-    leverSvg(-13 * k, -96, 0, LEVER_PIVOT, 0, LEVER_PIVOT - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="0 ${f1(LEVER_PIVOT)}" transform="rotate(${a} 0 ${f1(LEVER_PIVOT)})">${s}</g>`, knobOf(t));
+    leverSvg(-13 * k, -96, 0, LEVER_PIVOT, 0, LEVER_PIVOT - 44.4 * k, k, s => `<g class="lever-arm" data-pivot="0 ${f1(LEVER_PIVOT)}" transform="rotate(${a} 0 ${f1(LEVER_PIVOT)})">${s}</g>`, knobOf(t), leverShine(o));   // (ticket 317: the place's shine)
 }
 function trapdoorThingSvg(t, i) {
   const id = `thing-pit-${t.uid || i}`, sh = t.shape || "circle", rx = TRAP_RX, ry = TRAP_RY, seed = t.seed ?? 900 + i;
@@ -1692,7 +1692,7 @@ function thingSvg(o, t, i) {
   const at = inner => `<g transform="translate(${f1(t.x)} ${f1(t.z)}) scale(${(t.mirror ? -s : s).toFixed(3)} ${s.toFixed(3)})">${inner}</g>`;
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
   const body = t.kind === "lifted" ? liftedBody(t, at) :
-               t.kind === "lever" ? at(leverThingSvg(t)) :
+               t.kind === "lever" ? at(leverThingSvg(t, o)) :
                t.kind === "trapdoor" ? (t.open && !t.boulder ? `<g data-hole="${f1(t.x - TRAP_RX * s)} ${f1(t.x + TRAP_RX * s)} ${f1(t.z - TRAP_RY * s)} ${f1(t.z + TRAP_RY * s)}">` : "<g>") + at(trapdoorThingSvg(t, i)) + "</g>" :
                t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :
                t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :
@@ -1733,7 +1733,7 @@ function thingsLayer(c) {
   // That's the purpose of this slider -- it does not affect the static parts of the background, but it affects the
   // dynamic player, and placed objects") each sized by depthSize, so drawn again when the 🔭 setting moves its vanishing line
   const vanish = Math.round(10 * sceneVanish(c.o));
-  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : ""], () => obj(`${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");
+  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : ""], () => obj(`${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");   // (ticket 317: and a lever's shine)
 }
 // (Matthew, 2026-10-17) The crossing's geometry, shared with its ways out in
 // the world (worldWaysSvg): its floor reaches far up the picture (far), the
