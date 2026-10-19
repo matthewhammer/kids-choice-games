@@ -1098,7 +1098,7 @@ function lieAlongSvg(A, S) {
   const bald = !S.hair.style || S.hair.style === "none" || S.hair.style === "bald", longHair = S.hair.style === "long";
   let s = "";
   // the hair, spread on the pillow round the head (long hair the more)
-  const hx = 1.86, hc = 0.33, hr = 0.29;
+  const hx = 1.8, hc = 0.29, hr = 0.25;   // (the head smaller than the friend's own, so that, a ball raised by the pillow, it stays on the bag)
   if (!bald) { const sp = longHair ? 0.42 : 0.32, q = [at(hx + sp, 0, 0.07), at(hx, -sp * 1.05, 0.07), at(hx - 0.22, 0, 0.07), at(hx, sp * 1.05, 0.07)];
     s += `<path d="M${P(q[0])} Q${P(at(hx + sp, -sp, 0.07))} ${P(q[1])} Q${P(at(hx - 0.2, -sp, 0.07))} ${P(q[2])} Q${P(at(hx - 0.2, sp, 0.07))} ${P(q[3])} Q${P(at(hx + sp, sp, 0.07))} ${P(q[0])} Z" fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(q[0])}"/>`; }
   // the head: a ball on the pillow, round on the screen; its hair over the far side of it; its face up, and tipped toward the

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.339 (2026-10-19)
+
+Everything in 0.0.338, with a better fit on the sleeping bags.
+
+- **Fixed: lying on a sleeping bag, your friend's head stood up past the pillow** (ticket 412): it was so big that it reached over the far end of the bag. Now it is a little smaller and rests on the pillow.
+
 ## 0.0.338 (2026-10-19)
 
 Everything in 0.0.337, with lying down on the tent's sleeping bags.
