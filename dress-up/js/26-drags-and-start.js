@@ -314,6 +314,10 @@ function sitOn(t) {
 function lieOn(t) {
   const B = state.background, body = state.body;
   body.lieHead = t.head || "left"; strikePose("lie"); body.sit = true; B.seat = t.name;   // (the head first: on the back, it says which way they face)
+  // (ticket 412) along a sleeping bag: on the back, facing us, the arms along the sides, the feet at its open end (drawNow
+  // turns them to its slant and shortens them to its length, the head on its pillow)
+  if (t.along) { body.facing = "front"; body.poseArmL = body.poseArmR = 80 - (body.arms ?? 0);
+    B.figX = Math.round(t.along.near[0]); B.figY = Math.round(t.along.near[1] - SCENE.ground); changed(); return; }
   // (sunk in a little: it rests on its lower arm, which lifted the body clear of a soft bed)
   B.figX = Math.round((t.x0 + t.x1) / 2); B.figY = Math.round(t.y - SCENE.ground + (t.flat ? 4 : 10) * (SCENE.bottom - SCENE.top) / 700);
   changed();

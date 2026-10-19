@@ -315,7 +315,9 @@ function drawNow() {
   // the ladder); crawling turns them about the hips (rot), and they rest on
   // the lowest of their hands, knees and feet as turned
   // (ticket 299: lying down, turned level about the hips, the head to our left or right, resting on the side below)
-  const rot = move && move.rot ? move.rot : !move && B.pose === "lie" ? (B.lieHead === "right" ? 90 : -90) : 0;
+  // (ticket 412: lying along a sleeping bag, not turned level: turned to its slant about the feet, below)
+  const lieAlong = !move && B.pose === "lie" && scened ? (seatNow() || {}).along || null : null;
+  const rot = move && move.rot ? move.rot : !move && B.pose === "lie" && !lieAlong ? (B.lieHead === "right" ? 90 : -90) : 0;
   // (ticket 286: crawling, the friend meets things as drawn: turned about the hips from the side, or running back into
   // the picture toward us or away, the back that deep, seen short: crawlShape)
   Object.assign(poseJoints, { turn: rot, L, crawl: rot ? "side" : squash ? (away ? "away" : "toward") : null, depth: squash ? squash * (L + 20) : 0 });
@@ -331,7 +333,7 @@ function drawNow() {
   const hugLift = B.pose === "hug" && !rot && !wet ? LL * Math.max(0, Number(B.hugLift ?? 50) || 0) / 100 : 0;
   if (hugLift && !poseHeld) gFig += hugLift;
   // (ticket 287: swimming, turned inside the waterline, which stays level: below, in the water)
-  const rotTf = rot && !swimming ? ` rotate(${rot} 0 ${f1(L)})` : "";
+  let rotTf = rot && !swimming ? ` rotate(${rot} 0 ${f1(L)})` : "";
   // (seated, sized by the seat's depth, not by where their feet hang: ticket 50)
   const sizeSeat = scened ? seatNow() : null;
   // (ticket 331: out through a tree room's door to a bridge, in the picture seen through it: figOver, where and how big)
@@ -340,7 +342,7 @@ function drawNow() {
   figureT = figOver && scened ? { k: figOver.k, dx: figOver.x, dy: figOver.y - SCENE.ground, g: gFig, sg: SCENE.ground }
           : onBr ? { k: (BG.figSize ?? 100) / 100 * BRIDGE_TALL * (onBr.W ? onBr.W.s * bridgeScale(onBr.W, onBr.u) : onBr.s * onBr.sc) / BRIDGE_BASE, dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
           // (ticket 270: up the spiral staircase, their size the floor's straight below their step, not the screen's height)
-          : scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? sizeSeat.z - SCENE.ground : (BG.kind === "castleroom" && castleWallsOf(BG).stairs ? spiralFloorY(BG.figX ?? 0, BG.figY ?? 0) : null) ?? BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
+          : scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? (sizeSeat.kz ?? sizeSeat.z) - SCENE.ground : (BG.kind === "castleroom" && castleWallsOf(BG).stairs ? spiralFloorY(BG.figX ?? 0, BG.figY ?? 0) : null) ?? BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
   figureT.base = Math.max(1, ground - neckTop + 90);   // (ticket 331: their height standing, in their own units, that a size in the picture's divides)
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg, back: scened && SCENE_BACK[BG.kind] ? SCENE_BACK[BG.kind](top, bottom) : -Infinity };
@@ -1015,6 +1017,7 @@ function drawNow() {
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
+  if (lieAlong) lyingAlong(lieAlong);   // (ticket 412: lying along a sleeping bag, a view of its own)
   if (figAway || figBurst) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 349: and burst into bubbles)   // (ticket 193: a spin's copy is shown instead)
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units
   // (ticket 252) and climbing up through a ceiling's opening: cut off above it
@@ -1060,6 +1063,78 @@ function drawNow() {
 // (ticket 123) While the friend treads water they are drawn again about 30
 // times a second: not while a drag draws them anyway, nor while the page is
 // hidden. Only the friend is drawn; the scene is kept (see draw).
+// (ticket 412, Matthew: "lying with head and feet at a 45 degree angle --- as in the tent. it's specialized to that, I think.
+// L/R symmetry works, but otherwise it's specialized for laying down near the L or R wall edge of a room, where the pseudo 3d
+// perspective requires a new approach, just for that"; before it, "we just need more angles of the body, as their own drawing
+// routine, not cheap 2d transformations of the poses that we have now") Lying face up along a sleeping bag by a side wall, the
+// feet at its open end toward us, the head on its pillow by the far wall: a view of the friend of its own, drawn in the bag's
+// perspective, not the standing friend turned or skewed. The figure's group holds this drawing instead, in the picture's units.
+function lyingAlong(A) {
+  const f = document.getElementById("figure");
+  if (!f) return;
+  f.removeAttribute("transform");
+  f.innerHTML = lieAlongSvg(A, state);
+  const far = document.getElementById("figure-far"); if (far) far.style.display = "none";
+}
+// The body is volumes on the bag's floor, placed by at(xr, a, h): xr along the bag from its open end (0) to its far end (LIE_LEN),
+// a across it (-0.5 its edge by the wall, 0.5 the room's), h up from the floor, all in the bag's widths; the bag's own edges
+// run to where the tent's seams meet (vy), so a step along it is shorter on the screen the farther it is. Drawn far to near
+// and the wall's side before the room's, so what is nearer us covers what is farther (Matthew: "the torso obscures the back
+// arm, etc"): the hair on the pillow, the head (a ball: round from any side) and its face, looking up; the neck; the arm by
+// the wall; the body, its top and its side toward the room; the room's arm; the legs; the feet, pointing up. The friend's own
+// colours: skin, hair, shirt (its sleeves by style), pants (long or short), shoes. Not yet: costumes, hair styles one by one,
+// the face's own settings (eyes, brows), patterns.
+const LIE_LEN = 2.4;
+function lieAlongSvg(A, S) {
+  const { xa, xb, fy, ny, vy, side } = A, i0 = 1 / (ny - vy), i1 = 1 / (fy - vy), cx = (xa + xb) / 2, Wf = Math.abs(xb - xa);
+  const at = (xr, a, h = 0) => { const y = vy + 1 / (i0 + (i1 - i0) * xr / LIE_LEN), m = (y - vy) / (fy - vy); return [(cx - side * a * Wf) * m, y - h * Wf * m, Wf * m]; };
+  const P = p => `${f1(p[0])} ${f1(p[1])}`, lw = p => f1(Math.max(0.6, 0.018 * p[2]));
+  // (a limb: tapered, round at both ends, from one point to another, each with its radius in the bag's widths)
+  const capsule = (p0, r0, p1, r1, fill) => { const R0 = r0 * p0[2], R1 = r1 * p1[2], dx = p1[0] - p0[0], dy = p1[1] - p0[1], d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny2 = dx / d;
+    const A0 = [p0[0] + nx * R0, p0[1] + ny2 * R0], B1 = [p1[0] + nx * R1, p1[1] + ny2 * R1], C1 = [p1[0] - nx * R1, p1[1] - ny2 * R1], D0 = [p0[0] - nx * R0, p0[1] - ny2 * R0];
+    return `<path d="M${P(A0)} L${P(B1)} A${f1(R1)} ${f1(R1)} 0 0 0 ${P(C1)} L${P(D0)} A${f1(R0)} ${f1(R0)} 0 0 0 ${P(A0)} Z" fill="${fill}" stroke="${darker(fill)}" stroke-width="${lw(p0)}" stroke-linejoin="round"/>`; };
+  const skin = S.face.color, hair = S.hair.color, shirt = S.shirt.color, pants = S.pants.color, shoe = S.shoes.color;
+  const sleeve = S.shirt.style === "tank" ? 0 : S.shirt.style === "long" ? 1 : 0.45, longPants = !/short|skirt/.test(S.pants.style || "long");
+  const bald = !S.hair.style || S.hair.style === "none" || S.hair.style === "bald", longHair = S.hair.style === "long";
+  let s = "";
+  // the hair, spread on the pillow round the head (long hair the more)
+  const hx = 1.86, hc = 0.33, hr = 0.29;
+  if (!bald) { const sp = longHair ? 0.42 : 0.32, q = [at(hx + sp, 0, 0.07), at(hx, -sp * 1.05, 0.07), at(hx - 0.22, 0, 0.07), at(hx, sp * 1.05, 0.07)];
+    s += `<path d="M${P(q[0])} Q${P(at(hx + sp, -sp, 0.07))} ${P(q[1])} Q${P(at(hx - 0.2, -sp, 0.07))} ${P(q[2])} Q${P(at(hx - 0.2, sp, 0.07))} ${P(q[3])} Q${P(at(hx + sp, sp, 0.07))} ${P(q[0])} Z" fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(q[0])}"/>`; }
+  // the head: a ball on the pillow, round on the screen; its hair over the far side of it; its face up, and tipped toward the
+  // feet by the pillow under the head, so toward us
+  const hp = at(hx, 0, hc), R = hr * hp[2], on = (al, ac, up) => { const n = Math.hypot(al, ac, up); return at(hx + hr * al / n, hr * ac / n, hc + hr * up / n); };
+  s += `<circle cx="${f1(hp[0])}" cy="${f1(hp[1])}" r="${f1(R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
+  if (!bald) s += `<clipPath id="lie-head"><circle cx="${f1(hp[0])}" cy="${f1(hp[1])}" r="${f1(R)}"/></clipPath>` +
+    `<g clip-path="url(#lie-head)"><circle cx="${f1(hp[0])}" cy="${f1(hp[1] - 0.72 * R)}" r="${f1(R * 0.78)}" fill="${hair}"/></g>`;
+  for (const ac of [-0.36, 0.36]) { const e = on(-0.35, ac, 0.8), rx = 0.05 * e[2], ry = rx * 0.75;
+    s += `<ellipse cx="${f1(e[0])}" cy="${f1(e[1])}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#1f1f1f"/><circle cx="${f1(e[0] + rx * 0.3)}" cy="${f1(e[1] - ry * 0.3)}" r="${f1(rx * 0.28)}" fill="#ffffff"/>`; }
+  const m0 = on(-0.75, -0.24, 0.5), m1 = on(-0.75, 0.24, 0.5), mq = on(-0.95, 0, 0.35);
+  s += `<path d="M${P(m0)} Q${P(mq)} ${P(m1)}" fill="none" stroke="#7a2e2e" stroke-width="${f1(Math.max(0.8, 0.03 * mq[2]))}" stroke-linecap="round"/>`;
+  // the neck
+  s += capsule(at(1.56, 0, 0.17), 0.1, at(1.64, 0, 0.2), 0.1, skin);
+  // an arm, shoulder to hand, along the body: its sleeve as the shirt's style, then the hand
+  const arm = ac => { const sh = at(1.5, ac, 0.12), hd = at(0.97, ac * 1.04, 0.07), el = at(1.5 - 0.53 * sleeve, ac * 1.02, 0.1);
+    return (sleeve > 0 ? capsule(sh, 0.085, el, 0.075, shirt) : "") + capsule(sleeve > 0 ? el : sh, 0.068, hd, 0.06, skin) +
+      `<circle cx="${f1(hd[0])}" cy="${f1(hd[1])}" r="${f1(0.075 * hd[2])}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hd)}"/>`; };
+  s += arm(-0.38);   // (the arm by the wall: behind the body)
+  // the body: its top, the shirt's front, and its side toward the room, seen below that top's edge
+  const T = (xr, a) => at(xr, a, xr > 1.2 ? 0.24 : 0.21), B0 = (xr, a) => at(xr, a, 0);
+  s += `<path d="M${P(T(0.95, 0.26))} Q${P(T(1.25, 0.33))} ${P(T(1.56, 0.31))} L${P(B0(1.56, 0.31))} Q${P(B0(1.25, 0.33))} ${P(B0(0.95, 0.26))} Z" fill="${darker(shirt)}"/>`;
+  s += `<path d="M${P(T(0.95, -0.26))} Q${P(T(1.25, -0.33))} ${P(T(1.56, -0.31))} Q${P(at(1.66, 0, 0.27))} ${P(T(1.56, 0.31))} Q${P(T(1.25, 0.33))} ${P(T(0.95, 0.26))} Q${P(at(0.86, 0, 0.23))} ${P(T(0.95, -0.26))} Z" ` +
+       `fill="${shirt}" stroke="${darker(shirt)}" stroke-width="${lw(T(1.25, 0))}" stroke-linejoin="round"/>`;
+  s += `<path d="M${P(T(0.96, -0.25))} Q${P(at(0.9, 0, 0.22))} ${P(T(0.96, 0.25))}" fill="none" stroke="${darker(pants)}" stroke-width="${lw(T(0.96, 0))}"/>`;   // (the waist)
+  s += arm(0.38);    // (the arm by the room: in front of the body)
+  // the legs, hip to ankle, the wall's first; long pants to the ankle, short ones to the knee
+  const leg = ac => { const hp2 = at(0.96, ac, 0.11), kn = at(0.55, ac, 0.1), an = at(0.2, ac, 0.08);
+    return longPants ? capsule(hp2, 0.11, an, 0.085, pants) : capsule(hp2, 0.11, kn, 0.1, pants) + capsule(kn, 0.085, an, 0.07, skin); };
+  s += leg(-0.13) + leg(0.13);
+  // the feet, pointing up: each shoe standing on its heel at the open end, its sole toward us
+  const foot = ac => { const b = at(0.15, ac, 0.03), t = at(0.15, ac, 0.27), sole = at(0.11, ac, 0.05);
+    return capsule(b, 0.085, t, 0.08, shoe) + `<ellipse cx="${f1(sole[0])}" cy="${f1(sole[1])}" rx="${f1(0.07 * sole[2])}" ry="${f1(0.035 * sole[2])}" fill="#f2f2f2" opacity="0.8"/>`; };
+  s += foot(-0.13) + foot(0.13);
+  return `<g data-lie="along">${s}</g>`;
+}
 function treadTick(t) {
   treadLoop = 0;
   if (!moveNow()) return;

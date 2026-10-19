@@ -386,15 +386,30 @@ function campsiteScene(c) {
 // the orange one sleeping bags and a flashlight, the blue one books, a
 // teddy bear and a lantern, the green one an explorer's map, binoculars,
 // a backpack and a jar of fireflies.
+// (the tent's frame, for its drawing and its seats alike: the far wall's foot, its half width, the eye's height where the
+// seams meet, and a point on the far wall carried out toward us along its seam)
+const tentFrame = c => { const { y0, g, W, H, k } = c, vy = y0 + H * 0.42;
+  return { back: g - 70 * k, half: W * 0.3, vy, out: (x, y, to) => { const t = (to - y) / (y - vy); return [x + x * t, to]; } }; };
+// (ticket 412, Matthew: "new laying down pose that matches the perspective of these sleeping bags, or any other surface
+// against the L or R walls"; "click to lay down on the sleeping bags, once we can") The orange tent's sleeping bags are beds
+// to lie along: from the open end, toward us, to the pillow at the far wall (along: those two ends' middles), facing us,
+// in the bag's perspective (drawNow turns and shortens the friend to it). x0..x1 and y are its middle, for a click and its glow;
+// z its open end, where the feet go; kz its middle's depth, which sizes the friend.
+SEATS.tent = (c, B) => {
+  if (Math.max(1, Math.min(CAMP_TENTS.length, Math.round(B.tent ?? 1))) !== 1) return [];
+  const G = { k: c.k, y1: c.y1, ...tentFrame(c) };
+  return TENT_BAGS.map(([name, a, b]) => { const xa = G.half * a, xb = G.half * b, { fy, ny, na, nb } = bagEnds(G, xa, xb), mid = (fy + ny) / 2;
+    const l = (xa + na) / 2, r = (xb + nb) / 2;
+    return { name, x0: Math.min(l, r), x1: Math.max(l, r), y: mid, z: ny - 4 * G.k, kz: mid, facing: ["front"], lie: true, flat: true,
+             along: { near: [(na + nb) / 2, ny - 4 * G.k], far: [(xa + xb) / 2, fy + 2 * G.k], xa, xb, fy, ny, vy: G.vy, side: a < 0 ? -1 : 1 } }; });
+};
 function tentScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, o } = c;
   const n = Math.max(1, Math.min(CAMP_TENTS.length, Math.round(o.tent ?? 1))), T = CAMP_TENTS[n - 1];
   const time = CAMP_SKY[o.campTime] ? o.campTime : "day", night = time === "night", fire = o.fireOn ?? true;
   // the far wall (its peak, and its corners on the floor), the door in it,
   // and the point the seams run to (at the eye's height)
-  const back = g - 70 * k, apex = y0 + H * 0.08, half = W * 0.3, top = y0 + H * 0.3, dh = W * 0.12, vy = y0 + H * 0.42;
-  // a point on the far wall, carried out toward us along its seam
-  const out = (x, y, to) => { const t = (to - y) / (y - vy); return [x + x * t, to]; };
+  const { back, half, vy, out } = tentFrame(c), apex = y0 + H * 0.08, top = y0 + H * 0.3, dh = W * 0.12;
   const seam = mix(T.color, "#000000", 0.55);
   let s = SEP + part("tent-shell", [c.F, n], () => {
     const dark = mix(T.color, "#000000", 0.4), lit = mix(T.color, "#000000", 0.2), far = mix(T.color, "#ffffff", 0.1);
@@ -477,8 +492,10 @@ function tentScene(c) {
 }
 // a sleeping bag along the tent, from by the far wall out toward us: its
 // far end's two corners, and its color
-function sleepingBag({ k, back, out, y1 }, xa, xb, color) {
-  const fy = back + 8 * k, ny = y1 - 6 * k, [na] = out(xa, fy, ny), [nb] = out(xb, fy, ny);
+// (its far end's height, its open end's, and the open end's two corners: for its drawing and its seat alike)
+const bagEnds = ({ k, back, out, y1 }, xa, xb) => { const fy = back + 8 * k, ny = y1 - 6 * k; return { fy, ny, na: out(xa, fy, ny)[0], nb: out(xb, fy, ny)[0] }; };
+function sleepingBag(G, xa, xb, color) {
+  const { k } = G, { fy, ny, na, nb } = bagEnds(G, xa, xb);
   const flap = (u) => [xa + (na - xa) * u, xb + (nb - xb) * u, fy + (ny - fy) * u];
   const [fa, fb, fyy] = flap(0.3);
   return `<path d="M${f1(xa)} ${f1(fy)} Q${f1((xa + xb) / 2)} ${f1(fy - 10 * k)} ${f1(xb)} ${f1(fy)} L${f1(nb)} ${f1(ny)} Q${f1((na + nb) / 2)} ${f1(ny + 14 * k)} ${f1(na)} ${f1(ny)} Z" ` +
@@ -492,10 +509,12 @@ function sleepingBag({ k, back, out, y1 }, xa, xb, color) {
 // where the orange tent's flashlight lies, on the far end of the purple sleeping bag, its lens (the yellow end) up and to the right,
 // for the flashlight and its beam alike (ticket 306, Matthew: the beam came out of its tail)
 const tentFlashlightAt = G => `translate(${f1(G.W * 0.27)} ${f1(G.g - 20 * G.k)}) rotate(-25) scale(${G.k.toFixed(3)})`;
+// (the orange tent's two sleeping bags: each its far end's corners, as shares of the far wall's half width, and its color)
+const TENT_BAGS = [["sleeping bag, red", -0.88, -0.42, "#c0392b"], ["sleeping bag, purple", 0.42, 0.88, "#7d3c98"]];
 const TENT_THINGS = [
   // orange: two sleeping bags, a flashlight on one
   // (ticket 284: each tent's things a list of objects, [name, where ("floor": lying flat; else its depth, standing), drawing])
-  G => [["sleeping bag, red", "floor", sleepingBag(G, -G.half * 0.88, -G.half * 0.42, "#c0392b")], ["sleeping bag, purple", "floor", sleepingBag(G, G.half * 0.42, G.half * 0.88, "#7d3c98")],
+  G => [...TENT_BAGS.map(([name, a, b, color]) => [name, "floor", sleepingBag(G, G.half * a, G.half * b, color)]),
     ["flashlight", "floor", `<g transform="${tentFlashlightAt(G)}"><rect x="-24" y="-7" width="40" height="14" rx="4" fill="#3a3a3a"/>` +
     `<rect x="14" y="-10" width="12" height="20" rx="3" fill="#f2c12e"/><rect x="-14" y="-3" width="8" height="6" rx="1" fill="#e53935"/></g>`]],
   // blue: a teddy bear on a blanket, a pile of books

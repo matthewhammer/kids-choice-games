@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.338 (2026-10-19)
+
+Everything in 0.0.337, with lying down on the tent's sleeping bags.
+
+- **🛏️ Lie down on the sleeping bags in the orange tent** (ticket 412): click a sleeping bag with 👆 walk where you click on, and your friend walks there and lies down on it, face up, head on the pillow by the far wall and feet toward you, pointing up, along the bag as it runs into the tent. It is a new way of drawing your friend, just for lying along a side wall: their head round on the pillow with their face looking up and toward you, their body and arms along the bag, the arm by the wall behind the body. The same on the red bag by the left wall and the purple one by the right. For now it shows your friend's own colours (skin, hair, shirt, pants and shoes), not a costume.
+
 ## 0.0.337 (2026-10-19)
 
 Everything in 0.0.336, with many more things to sit on.
