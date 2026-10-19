@@ -739,11 +739,12 @@ function woodpathScene(c) {
       L.push(P2(x - w / 2, y)); Rr.push(P2(x + w / 2, y));
     }
     let t = `<polygon points="${[...L, ...Rr.reverse()].join(" ")}" fill="#c9a774" stroke="#a88a5a" stroke-width="${f1(2 * k)}"/>`;
+    const mPeb = t.length;   // (ticket 284: the path's pebbles one floor object; the path itself stays terrain)
     for (let i = 0; i < 18; i++) {
       const u = R(i, 408), y = y1 - (y1 - far) * u, x = W * 0.08 * Math.sin(u * 4.2) * u + W * 0.06 * u + (R(i, 409) - 0.5) * (150 - 140 * u) * k;
       t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((5 - 3 * u) * k)}" ry="${f1((3 - 2 * u) * k)}" fill="#a88a5a"/>`;
     }
-    return t;
+    return floorSince(t, mPeb, "pebbles on the path");
   });
   // near trunks either side, ferns and mushrooms at their feet (each tree,
   // its ferns with it, an object at its foot; each mushroom one too)

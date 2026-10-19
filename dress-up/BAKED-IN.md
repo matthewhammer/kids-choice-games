@@ -42,29 +42,24 @@ Outdoors
 
 | place | drawn in, not an object | where | moves | in the code |
 |---|---|---|---|---|
-| 🌲 forest | sunbeams (an object on the path through the woods and at the crossing) | sky | yes | 15:82 |
-| 🌲 forest | meadow flowers (26) | flat | | 15:90 |
-| 🐠 underwater, 🪸 deep sea | light rays | sky | deep sea | 15:102, 15:201 |
-| 🐠 underwater, 🪸 deep sea | sand specks; the deep sea's sand ripples | flat | | 15:110, 15:208 |
-| 🏖️ beach | (since 0.0.250, objects: the two striped blankets) | flat | | 15:640 |
-| 🏖️ beach | waves and foam | flat | | 15:632 |
-| 🌊 open water | (since 0.0.250, objects: the island with its palm, the sailboat) | sky | | 15:607, 15:610 |
-| 🌊 open water | (since 0.0.250, an object: the sun glitter on the water) | flat | | 15:620 |
-| 🧙 witch's woods | (since 0.0.250, an object: the four bats) | sky | yes | 15:412 |
-| 🧙 witch's woods | grass tufts (22) | flat | | 15:516 |
-| 🌿 cemetery | the brook with its ripples; stones along it (7); flowers (46) | flat | the brook | 15:338, 15:339, 15:362 |
-| 🦆 lake | a little beach, pebbles, grass tufts; sun glints (since 0.0.250, an object: the lily pads) | flat | | 09:241-260 |
-| 🏠 house and yard | the driveway and stone walk (since 0.0.250, objects: the frisbee and the rope, lying flat) | flat | | 09:419, 09:463 |
-| 🌳 tree house | the stream with its ripples; flowers (48) | flat | the stream | 11:26, 11:37 |
-| 🌲 forest clearing | the paths to each far thing, the front path; flowers (40) | flat | | 12:22-37 |
-| 🧚 fairy forest | the grass inside the ring; flowers and tufts (34) | flat | | 11:1424, 11:1430 |
-| ⛰️ mountain trail | the lake and village (7 houses) far below; the trail | sky, flat | | 14:31, 14:39 |
-| 💦 jungle waterfall | the falls (the way into the cave) and the mossy cliff; the pool with its ripples; flowers by the trunks | backdrop, flat | yes | 14:106-162 |
-| 🏕️ camp site | the dirt clearing round the fire | flat | | 14:322 |
-| 🥾 path through the woods | the path and its pebbles | flat | | 14:716 |
-| 🛤️ forest crossing | the paths, the meeting place, leaf litter | flat | | 14:1340-1349 |
-| 🏰 castle | the road with its ruts and edge stones; flowers and tufts; six birds | flat, sky | | 12:78, 12:120-128, 12:174 |
-| 🛖 grass hut | the path and meadow flowers; butterflies (an object everywhere else) | flat, sky | the butterflies | 11:1798, 11:1832 |
+| 🌲 forest | (objects since 0.0.252: the sunbeams and the meadow flowers, the flowers in rows by depth since ticket 297) | | | |
+| 🐠 underwater, 🪸 deep sea | (since 0.0.293, objects: the light rays; the sand's specks and the deep sea's ripples) | | | |
+| 🏖️ beach | waves and foam: the water's edge, terrain (since 0.0.250, objects: the two striped blankets) | flat | | 15:632 |
+| 🌊 open water | nothing (since 0.0.250, objects: the island with its palm, the sailboat, the sun glitter) | | | |
+| 🧙 witch's woods | nothing (since 0.0.250, the bats; since 0.0.293, the grass in rows by depth, and each dead tree and skull its own object) | | | |
+| 🌿 cemetery | the brook with its ripples: terrain (since 0.0.293, objects: the stones by the brook; the flowers in rows by depth) | flat | the brook | 15:338 |
+| 🦆 lake | the little beach: terrain (since 0.0.250, the lily pads; since 0.0.293, the sun on the water, the pebbles, the grass in rows by depth) | flat | | 09:241 |
+| 🏠 house and yard | the driveway and stone walk: terrain (since 0.0.250, objects: the frisbee and the rope) | flat | | 09:419 |
+| 🌳 tree house | the stream with its ripples: terrain (objects since 0.0.252: the flowers, in rows by depth since ticket 297) | flat | the stream | 11:26 |
+| 🌲 forest clearing | the paths to each far thing, the front path: terrain (objects since 0.0.252: the flowers, in rows by depth since ticket 297) | flat | | 12:22 |
+| 🧚 fairy forest | the grass inside the ring: terrain (objects since 0.0.252: the flowers and grass, in rows by depth since ticket 297) | flat | | 11:1424 |
+| ⛰️ mountain trail | the trail: terrain (since 0.0.293, an object: the far lake and village) | flat | | 14:39 |
+| 💦 jungle waterfall | the falls (the way into the cave) and the mossy cliff, a doorway and the backdrop; the pool with its ripples, terrain (since 0.0.293, the flowers by the trunks in rows by depth) | backdrop, flat | yes | 14:106 |
+| 🏕️ camp site | the dirt clearing round the fire: terrain | flat | | 14:322 |
+| 🥾 path through the woods | the path: terrain (since 0.0.293, an object: its pebbles) | flat | | 14:716 |
+| 🛤️ forest crossing | the paths, the meeting place, leaf litter: terrain | flat | | 14:1340 |
+| 🏰 castle | the road with its ruts and edge stones: terrain (objects since 0.0.252: the flowers and grass, in rows by depth since ticket 297, and the birds, flying since 0.0.288) | flat | | 12:78 |
+| 🛖 grass hut | the path: terrain (objects since 0.0.252: the meadow flowers, in rows by depth since ticket 297, and the butterflies) | flat | | 11:1798 |
 
 Inside
 

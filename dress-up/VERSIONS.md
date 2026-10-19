@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.294 (2026-10-18)
+
+Everything in 0.0.293, with the path through the woods' pebbles an object.
+
+- **The pebbles on the path through the woods** are an object of the floor now, to see, hide and place. With them, what every place draws is an object, except the ground itself (paths, roads, brooks, streams, pools, waves), the backdrops, and the doorways.
+
 ## 0.0.293 (2026-10-18)
 
 Everything in 0.0.292, with the last of the outdoor places' things made objects.
