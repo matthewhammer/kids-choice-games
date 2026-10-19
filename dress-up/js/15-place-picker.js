@@ -139,15 +139,19 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     s += byDepth(bigs.map(b => b.slice(0, 3)));
   } else if (kind === "underwater") {
     s += `<defs>${grad("bg-sea", "#6fd6f2", "#0b4f7a", y0, y1)}</defs>` + all("url(#bg-sea)");
+    const mRays = s.length;   // (ticket 284: the light coming down one wall object; the sand's specks one floor object)
     for (let j = 0; j < 5; j++) {
       const xt = x0 + W * (0.05 + 0.22 * j);
       s += `<polygon points="${P(xt, y0 - pad * 0.1)} ${P(xt + 60 * k, y0 - pad * 0.1)} ${P(xt + 10 * k + W * 0.08, g)} ${P(xt - 50 * k + W * 0.08, g)}" ` +
            `fill="#ffffff" opacity="0.1"/>`;
     }
+    s = wallSince(s, mRays, "light rays");
     // far rocks, then the sandy bottom
     s += land(g - 70 * k, 40, "#2f6f8f", 1.2) + land(g - 18 * k, 8, "#e6d29a", 0.3);
+    const mSpecks = s.length;
     for (let i = 0; i < 30; i++)
       s += `<circle cx="${f1(x0 + W * R(i, 9))}" cy="${f1(g - 5 * k + 120 * k * R(i, 10))}" r="${f1(2.2 * k)}" fill="#c9b27a"/>`;
+    s = floorSince(s, mSpecks, "sand specks");
     // rocks on the bottom, at the sides, weed on some (each an object)
     for (let i = 0; i < 5; i++) { const x = side(i) * (W * 0.3 + W * 0.17 * R(i, 15)), y = g + (10 + 60 * R(i, 16)) * k;
       s += obj(`rock, ${side(i) < 0 ? "left" : "right"} ${(i >> 1) + 1}`, y, rockSvg(x, y, (16 + 16 * R(i, 17)) * k, 700 + i, ["#5f7f8f", "#6f8a94", "#577584"][i % 3])); }
@@ -244,15 +248,17 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       const xt = x0 + W * (0.1 + 0.24 * j + 0.05 * R(j, 801)), wd = (50 + 40 * R(j, 802)) * k;
       rays += `<polygon points="${P(xt, y0 - pad * 0.1)} ${P(xt + wd, y0 - pad * 0.1)} ${P(xt + wd * 0.4 + W * 0.07, g)} ${P(xt - wd * 0.6 + W * 0.07, g)}" fill="#bfe8ff" opacity="${(0.05 + 0.04 * R(j, 803)).toFixed(3)}"/>`;
     }
-    s += `<g>${lfoTimed(opts, "slow", 0.3, `<animate attributeName="opacity" values="0.55;1;0.55" dur="7s" repeatCount="indefinite"/>`)}${rays}</g>`;
+    s += wallObj("light rays", `<g>${lfoTimed(opts, "slow", 0.3, `<animate attributeName="opacity" values="0.55;1;0.55" dur="7s" repeatCount="indefinite"/>`)}${rays}</g>`);   // (ticket 284)
     // far ridges, dark against the water, then the sandy bottom with its ripples and specks
     s += land(g - 95 * k, 46, "#0b2a45", 0.8) + land(g - 60 * k, 30, "#11385a", 2.1) + land(g - 16 * k, 6, "#c2ad7c", 0.3);
+    const mSand = s.length;   // (ticket 284: the sand's ripples and specks one floor object)
     for (let i = 0; i < 9; i++) {
       const y = g + (8 + 22 * i) * k, x = x0 + W * R(i, 811);
       s += `<path d="M${P(x - 70 * k, y)} Q${P(x - 35 * k, y - 6 * k)} ${P(x, y)} Q${P(x + 35 * k, y + 6 * k)} ${P(x + 70 * k, y)}" fill="none" stroke="#a8935f" stroke-width="${f1(2 * k)}" opacity="0.6"/>`;
     }
     for (let i = 0; i < 26; i++)
       s += `<circle cx="${f1(x0 + W * R(i, 812))}" cy="${f1(g + 150 * k * R(i, 813))}" r="${f1((1.4 + 1.4 * R(i, 814)) * k)}" fill="#8f7c52"/>`;
+    s = floorSince(s, mSand, "ripples in the sand");
     // rocks at the sides (each an object)
     for (let i = 0; i < 4; i++) { const x = side(i) * (W * 0.34 + W * 0.12 * R(i, 815)), y = g + (14 + 50 * R(i, 816)) * k;
       s += obj(`rock, ${side(i) < 0 ? "left" : "right"} ${(i >> 1) + 1}`, y, rockSvg(x, y, (18 + 16 * R(i, 817)) * k, 830 + i, ["#3c5868", "#2f4a59", "#46626f"][i % 3])); }
@@ -388,10 +394,12 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       // (ticket 42) its ripples flowing down it
       s += flowRipples(pts, [...Array(10)].map((_, i) => 0.08 + 0.09 * i), 2.8, w =>
         `<path d="M${f1(-w * 0.4)} 0 q${f1(w * 0.2)} ${f1(-w * 0.12)} ${f1(w * 0.4)} 0" fill="none" stroke="#e8f8ff" stroke-width="${f1(w * 0.06)}" opacity="0.85"/>`);
+      const mBrook = s.length;   // (ticket 284: the brook's stones one floor object)
       for (let i = 0; i < 7; i++) {
         const [cx, y, w] = pts(0.25 + 0.1 * i), sd = i % 2 ? 1 : -1;
         s += `<ellipse cx="${f1(cx + sd * w * 1.05)}" cy="${f1(y)}" rx="${f1((5 + 4 * R(i, 72)) * k * (0.6 + i * 0.12))}" ry="${f1(3.5 * k * (0.6 + i * 0.12))}" fill="#9a9a94" stroke="#6b6b66" stroke-width="${f1(1 * k)}"/>`;
       }
+      s = floorSince(s, mBrook, "stones by the brook");
       // and a weeping willow on its bank (an object, drawn after the flowers)
       const [wx, wy] = pts(0.18);
       const tx = wx + 70 * k, tb = wy + 4 * k, th = 150 * k;
@@ -400,12 +408,14 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
            [...Array(15)].map((_, j) => { const sx = tx + 8 * k + (j - 7) * 8 * k, len = (60 + 35 * R(j, 73)) * k;
              return `<path d="M${P(sx, tb - th * 0.86)} Q${P(sx + (j - 7) * 2 * k, tb - th * 0.6)} ${P(sx + (j - 7) * 3 * k, tb - th * 0.86 + len)}" fill="none" stroke="${j % 2 ? "#7fb35e" : "#9ccc78"}" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`; }).join(""));
     }
-    // flowers everywhere, in every color
+    // flowers everywhere, in every color (ticket 284: in rows by depth, as ticket 297's)
+    const cemFl = [];
     for (let i = 0; i < 46; i++) {
       const x = x0 + W * R(i, 74), y = g - 40 * k + 140 * k * R(i, 75), c = ["#ff6fa5", "#ffd23f", "#ffffff", "#b388ff", "#ff8c42", "#ff4d4d"][i % 6];
-      s += [0, 72, 144, 216, 288].map(a => `<circle cx="${f1(x + 4.5 * k * Math.cos(a * Math.PI / 180))}" cy="${f1(y + 4.5 * k * Math.sin(a * Math.PI / 180))}" r="${f1(3.3 * k)}" fill="${c}"/>`).join("") +
-           `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(2.3 * k)}" fill="#f2a900"/>`;
+      cemFl.push({ y, svg: [0, 72, 144, 216, 288].map(a => `<circle cx="${f1(x + 4.5 * k * Math.cos(a * Math.PI / 180))}" cy="${f1(y + 4.5 * k * Math.sin(a * Math.PI / 180))}" r="${f1(3.3 * k)}" fill="${c}"/>`).join("") +
+           `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(2.3 * k)}" fill="#f2a900"/>` });
     }
+    s += depthRows("flowers", cemFl, 12 * k);
     // the butterflies (at the depth of the ground under the nearest)
     s += obj("butterflies", g - 70 * k, butterfliesSvg({ k, o: opts }, [[x0 + W * 0.2, g - 120 * k, 0.9], [x1 - W * 0.22, g - 160 * k, 0.8], [x1 - W * 0.36, g - 70 * k, 1]], ["#f5f0e1", "#e8e0f0", "#d9d2c0"]));
     // the far stones, small, on the slope (one object, the row, at its
@@ -470,9 +480,10 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     const deadTree = (seed, x, y, h, w, col, depth, droop = 0, wide = 1, lean0 = 0) => drawnBy("deadTree", deadTreeSvg(seed, x, y, h, w, col, depth, droop, wide, lean0, k));
     // two rows far off, the farther paler (each row an object, standing at
     // its trees' middle depth)
+    // (ticket 284, Matthew: "all trees ... are missing from the object list?": each tree an object of its own, at its row's depth)
     for (const [row, base, col, n] of [[0, g - 130 * k, "#3b2c52", 9], [1, g - 92 * k, "#24192f", 8]]) {
-      let t = "";
       for (let i = 0; i < n; i++) {
+        let t = "";
         const seed = 100 + row * 40 + i, x = x0 + W * (i + 0.2 + 0.6 * R(seed, 9)) / n;
         const kind = R(seed, 10), h = (row ? 200 : 150) * k * (0.65 + 0.6 * R(seed, 11));
         if (kind < 0.12)   // a snapped-off stump
@@ -480,8 +491,8 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
         else
           t += deadTree(seed, x, base + 10 * k * R(seed, 12), h, (row ? 8 : 6) * k * (0.8 + 0.5 * R(seed, 13)), col,
                         kind < 0.45 ? 4 : 3, kind > 0.8 ? 1 : 0);
+        s += obj(`dead tree, ${row ? "near" : "far"} ${i + 1}`, base + 5 * k, t);
       }
-      s += obj(row ? "dead trees, near row" : "dead trees, far row", base + 5 * k, t);
     }
     // behind the fence, up on a rise: a log hut, on its own or (chosen) on
     // giant chicken legs, red-orange and scaly, white feathers at the top,
@@ -541,10 +552,12 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     s += obj("hut", g - 48 * k, hut);
     // the ground, dark earth, with tufts of grass
     s += land(g - 40 * k, 8, "#4a3a2a", 1.9);
+    const tufts = [];   // (ticket 284: in rows by depth, as ticket 297's flowers)
     for (let i = 0; i < 22; i++) {
       const x = x0 + W * R(i, 41), y = g - 30 * k + 120 * k * R(i, 42);
-      s += grassTuft(x, y, (12 + 8 * R(i, 43)) * k, 600 + i, "#3d5a2a", 1.8 * k);
+      tufts.push({ y, svg: grassTuft(x, y, (12 + 8 * R(i, 43)) * k, 600 + i, "#3d5a2a", 1.8 * k) });
     }
+    s += depthRows("grass", tufts, 12 * k);
     // a palisade across the middle: pointed stakes side by side, a skull
     // on every fourth one (the skulls drawn after the whole fence, so a big
     // one is in front of the stakes beside it): the fence an object, the
@@ -564,9 +577,9 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
         // middle and grow the skull to hold them, as a face's do: its sides
         // and its top out, its nose and jaw down.
         const u = k * (1 + (skullMax - 1) * R(i, 51));
-        skulls += drawnBy("skull", stakeSkullSvg(x, fy - h - 12 * k, u, skullEye, (cx, cy, r) => eyeDot(cx, cy, r, i)));   // (ticket 368: shared, tagged)
+        skulls += obj(`skull ${(i - 1) / 4 + 1}`, fy + 0.01, drawnBy("skull", stakeSkullSvg(x, fy - h - 12 * k, u, skullEye, (cx, cy, r) => eyeDot(cx, cy, r, i))));   // (ticket 368: shared, tagged; ticket 284: each an object, just in front of the fence)
       }
-      s += obj("fence", fy, drawnBy("fence", fence)) + obj("skulls", fy, skulls);   // (ticket 368: the fence tagged for 🧩)
+      s += obj("fence", fy, drawnBy("fence", fence)) + skulls;   // (ticket 368: the fence tagged for 🧩)
     }
     // and nearer: one giant on the left, its trunk massive and its limbs
     // sprawling wide toward the middle, its roots humped up out of the

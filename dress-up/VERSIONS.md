@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.293 (2026-10-18)
+
+Everything in 0.0.292, with the last of the outdoor places' things made objects.
+
+- **👁️ More of every outdoor place is an object you can see, hide and place**: the light rays under the sea and in the deep sea, the sand's specks and ripples, the stones by the cemetery's brook and its flowers, the lake's sun on the water, pebbles and grass, the far lake and village below the mountain trail, the flowers by the waterfall's trees, and the witch's grass.
+- **🧙 In the witch's woods each dead tree and each skull on the fence is its own object** now, in the 👁️ list one by one (17 trees, 11 skulls), instead of a row each.
+
 ## 0.0.292 (2026-10-18)
 
 Everything in 0.0.291, with reflections on the mixing board.

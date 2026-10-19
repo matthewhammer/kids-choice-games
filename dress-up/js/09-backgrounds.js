@@ -257,10 +257,12 @@ function lakeScene(c) {
     }
     t += obj("far wood", horizon, seenOnly(wood, [[[x0 - pad, horizon], [x1 + pad, horizon], [x1 + pad, shore], [x0 - pad, shore]]]));
     t += `<rect x="${f1(x0 - pad)}" y="${f1(horizon)}" width="${f1(W + 2 * pad)}" height="${f1(shore - horizon + 14 * k)}" fill="url(#bg-lake)"/>`;
+    const mSun = t.length;   // (ticket 284: the sun on the water one floor object)
     for (let i = 0; i < 18; i++) {   // the sun on the water
       const d = R(i, 43), x = x0 + W * R(i, 42), y = horizon + (shore - horizon) * (0.08 + 0.84 * d), l = (6 + 14 * d) * k;
       t += `<line x1="${f1(x - l)}" y1="${f1(y)}" x2="${f1(x + l)}" y2="${f1(y)}" stroke="#ffffff" stroke-width="${f1(2 * k)}" stroke-linecap="round" opacity="0.7"/>`;
     }
+    t = floorSince(t, mSun, "sun on the water");
     const mLily = t.length;   // (ticket 284: the lily pads one object, on the water)
     for (let i = 0; i < 7; i++) {    // lily pads, a flower on some
       const d = R(i, 45), x = x0 + W * (0.05 + 0.9 * R(i, 44)), y = horizon + (shore - horizon) * (0.3 + 0.65 * d), r = (8 + 12 * d) * k;
@@ -274,14 +276,17 @@ function lakeScene(c) {
     t += land(shore, 5, "#b59a68", 1.1) +
          `<path d="${beachTop} L${P(W * 0.22, y1 + pad)} L${P(-W * 0.22, y1 + pad)} Z" fill="#ecd8a2"/>` +
          `<path d="${beachTop}" fill="none" stroke="#c9b27a" stroke-width="${f1(5 * k)}"/>`;
+    const tufts = [];   // (ticket 284: the shore's grass in rows by depth; the beach's pebbles one floor object)
     for (let i = 0; i < 46; i++) {
       const sd = side(i), x = sd * (W * 0.27 + W * 0.25 * R(i, 46)), y = shore + 14 * k + (y1 - shore) * R(i, 47), h = (8 + 10 * R(i, 48)) * k;
-      t += grassTuft(x, y, h * 1.2, 650 + i, "#6f9b3c", 1.6 * k);
+      tufts.push({ y, svg: grassTuft(x, y, h * 1.2, 650 + i, "#6f9b3c", 1.6 * k) });
     }
+    const mPeb = t.length;
     for (let i = 0; i < 14; i++) {   // pebbles on the beach
       const x = W * 0.36 * (R(i, 49) - 0.5), y = shore + 30 * k + (y1 - shore - 40 * k) * R(i, 50);
       t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((3 + 4 * R(i, 51)) * k)}" ry="${f1(2.5 * k)}" fill="${["#9a9389", "#b8b0a3", "#7d776e"][i % 3]}"/>`;
     }
+    t = floorSince(t, mPeb, "pebbles") + depthRows("grass", tufts, 12 * k);
     return t;
   });
   // ducks: one drawing, its size the slider's, and one <use> for each duck
