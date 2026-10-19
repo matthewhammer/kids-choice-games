@@ -418,12 +418,13 @@ function tentScene(c) {
     const onWall = (sd, u, sc) => [sd * half * u * sc, vy + (apex + (back - apex) * u - vy) * sc];
     const segment = (a, b) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#333" stroke-width="${f1(0.8 * k)}" opacity="0.5"/>`;
     for (const sd of [-1, 1]) {
-      const u0 = 0.385, u1 = 0.42, s0 = 2.67, s1 = 3.29;
+      const u0 = 0.385, u1 = 0.42, s0 = 2.67, s1 = 3.29, mWin = t.length;   // (ticket 284: each a wall object)
       t += `<polygon points="${[[u0, s0], [u0, s1], [u1, s1], [u1, s0]].map(([u, sc]) => P2(...onWall(sd, u, sc))).join(" ")}" ` +
            `fill="${CAMP_SKY[time][1]}" stroke="${seam}" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>`;
       // (the mesh: threads along the wall, toward where the seams meet, and across it, along the far wall's edge)
       for (let j = 1; j < 4; j++) { const u = u0 + (u1 - u0) * j / 4; t += segment(onWall(sd, u, s0), onWall(sd, u, s1)); }
       for (let j = 1; j < 6; j++) { const sc = 1 / (1 / s0 + (1 / s1 - 1 / s0) * j / 6); t += segment(onWall(sd, u0, sc), onWall(sd, u1, sc)); }
+      t = wallSince(t, mWin, sd < 0 ? "window, left" : "window, right");
     }
     return t;
   });
@@ -455,10 +456,10 @@ function tentScene(c) {
     }
     return v;
   });
-  // the tent's own things on the groundsheet, either side of the middle
-  // (not objects here: each tent's are drawn together, the flat with the
-  // standing, by TENT_THINGS)
-  s += SEP + part("tent-things", [c.F, n], () => TENT_THINGS[n - 1]({ k, P, R, back, half, out, y0, y1, g, W, H }));
+  // the tent's own things on the groundsheet, either side of the middle (ticket 284: each an object of its own, what lies
+  // flat on the floor, what stands at its depth: TENT_THINGS)
+  for (const [name, at, svg] of TENT_THINGS[n - 1]({ k, P, R, back, half, out, y0, y1, g, W, H }))
+    s += SEP + (at === "floor" ? floorObj(name, part("tent-thing-" + n + "-" + name, [c.F], () => svg)) : obj(name, at, part("tent-thing-" + n + "-" + name, [c.F], () => svg)));
   // night or sunset over the inside, then what glows (each in front of
   // everything, the friend too; what glows, painted after the night or the
   // sunset, then in front of it, else where it stands: the flashlight, on
@@ -491,38 +492,41 @@ function sleepingBag({ k, back, out, y1 }, xa, xb, color) {
 const tentFlashlightAt = G => `translate(${f1(G.W * 0.27)} ${f1(G.g - 20 * G.k)}) rotate(-25) scale(${G.k.toFixed(3)})`;
 const TENT_THINGS = [
   // orange: two sleeping bags, a flashlight on one
-  G => sleepingBag(G, -G.half * 0.88, -G.half * 0.42, "#c0392b") + sleepingBag(G, G.half * 0.42, G.half * 0.88, "#7d3c98") +
-    `<g transform="${tentFlashlightAt(G)}"><rect x="-24" y="-7" width="40" height="14" rx="4" fill="#3a3a3a"/>` +
-    `<rect x="14" y="-10" width="12" height="20" rx="3" fill="#f2c12e"/><rect x="-14" y="-3" width="8" height="6" rx="1" fill="#e53935"/></g>`,
+  // (ticket 284: each tent's things a list of objects, [name, where ("floor": lying flat; else its depth, standing), drawing])
+  G => [["sleeping bag, red", "floor", sleepingBag(G, -G.half * 0.88, -G.half * 0.42, "#c0392b")], ["sleeping bag, purple", "floor", sleepingBag(G, G.half * 0.42, G.half * 0.88, "#7d3c98")],
+    ["flashlight", "floor", `<g transform="${tentFlashlightAt(G)}"><rect x="-24" y="-7" width="40" height="14" rx="4" fill="#3a3a3a"/>` +
+    `<rect x="14" y="-10" width="12" height="20" rx="3" fill="#f2c12e"/><rect x="-14" y="-3" width="8" height="6" rx="1" fill="#e53935"/></g>`]],
   // blue: a teddy bear on a blanket, a pile of books
   G => {
     const { k, W, g } = G, bx = -W * 0.31, by = g - 8 * k, rx = W * 0.3, ry = g + 6 * k;
-    let t = `<polygon points="${P2(bx - 70 * k, by + 20 * k)} ${P2(bx + 60 * k, by + 20 * k)} ${P2(bx + 80 * k, by + 70 * k)} ${P2(bx - 90 * k, by + 70 * k)}" fill="#e6b450"/>` +
+    const blanket = `<polygon points="${P2(bx - 70 * k, by + 20 * k)} ${P2(bx + 60 * k, by + 20 * k)} ${P2(bx + 80 * k, by + 70 * k)} ${P2(bx - 90 * k, by + 70 * k)}" fill="#e6b450"/>` +
             [0, 1, 2].map(j => `<line x1="${f1(bx - 76 * k + j * 3 * k)}" y1="${f1(by + 34 * k + j * 14 * k)}" x2="${f1(bx + 66 * k + j * 5 * k)}" y2="${f1(by + 34 * k + j * 14 * k)}" stroke="#c0392b" stroke-width="${f1(4 * k)}"/>`).join("");
-    t += `<g transform="translate(${f1(bx)} ${f1(by)}) scale(${k.toFixed(3)})">` +
+    const teddy = `<g transform="translate(${f1(bx)} ${f1(by)}) scale(${k.toFixed(3)})">` +
          `<ellipse cx="-22" cy="34" rx="12" ry="9" fill="#8b5a2b"/><ellipse cx="22" cy="34" rx="12" ry="9" fill="#8b5a2b"/>` +
          `<ellipse cx="0" cy="12" rx="30" ry="28" fill="#a0693a"/><ellipse cx="0" cy="18" rx="16" ry="16" fill="#d9a066"/>` +
          `<ellipse cx="-30" cy="4" rx="9" ry="14" fill="#8b5a2b" transform="rotate(25 -30 4)"/><ellipse cx="30" cy="4" rx="9" ry="14" fill="#8b5a2b" transform="rotate(-25 30 4)"/>` +
          `<circle cx="-18" cy="-40" r="10" fill="#8b5a2b"/><circle cx="18" cy="-40" r="10" fill="#8b5a2b"/><circle cx="-18" cy="-40" r="5" fill="#d9a066"/><circle cx="18" cy="-40" r="5" fill="#d9a066"/>` +
          `<circle cx="0" cy="-24" r="24" fill="#a0693a"/><ellipse cx="0" cy="-16" rx="10" ry="8" fill="#d9a066"/><circle cx="0" cy="-19" r="3.5" fill="#2a1a10"/>` +
          `<circle cx="-9" cy="-29" r="3" fill="#2a1a10"/><circle cx="9" cy="-29" r="3" fill="#2a1a10"/><path d="M-4 -12 Q0 -9 4 -12" fill="none" stroke="#2a1a10" stroke-width="1.5"/></g>`;
+    let books = "";
     [["#2e86de", 0], ["#e53935", -4], ["#27ae60", 3], ["#f2c12e", -2]].forEach(([col, dx], j) =>
-      t += `<rect x="${f1(rx - 34 * k + dx * k)}" y="${f1(ry - j * 13 * k)}" width="${f1(68 * k)}" height="${f1(12 * k)}" rx="${f1(2 * k)}" fill="${col}" stroke="${darker(col)}" stroke-width="${f1(1.2 * k)}"/>` +
+      books += `<rect x="${f1(rx - 34 * k + dx * k)}" y="${f1(ry - j * 13 * k)}" width="${f1(68 * k)}" height="${f1(12 * k)}" rx="${f1(2 * k)}" fill="${col}" stroke="${darker(col)}" stroke-width="${f1(1.2 * k)}"/>` +
            `<line x1="${f1(rx - 30 * k + dx * k)}" y1="${f1(ry - j * 13 * k + 3 * k)}" x2="${f1(rx + 30 * k + dx * k)}" y2="${f1(ry - j * 13 * k + 3 * k)}" stroke="#fff8e7" stroke-width="${f1(1.2 * k)}"/>`);
-    return t + `<rect x="${f1(rx - 28 * k)}" y="${f1(ry - 64 * k)}" width="${f1(52 * k)}" height="${f1(12 * k)}" rx="${f1(2 * k)}" fill="#9b59b6" transform="rotate(-8 ${f1(rx)} ${f1(ry - 58 * k)})"/>`;
+    books += `<rect x="${f1(rx - 28 * k)}" y="${f1(ry - 64 * k)}" width="${f1(52 * k)}" height="${f1(12 * k)}" rx="${f1(2 * k)}" fill="#9b59b6" transform="rotate(-8 ${f1(rx)} ${f1(ry - 58 * k)})"/>`;
+    return [["blanket", "floor", blanket], ["teddy bear", by + 42 * k, teddy], ["books", ry + 12 * k, books]];
   },
   // green: a map with a route to an X, binoculars on it, a backpack
   G => {
     const { k, W, g, P } = G, mx = -W * 0.3, my = g + 10 * k, px = W * 0.31, py = g - 30 * k;
-    return `<polygon points="${P2(mx - 60 * k, my - 30 * k)} ${P2(mx + 56 * k, my - 30 * k)} ${P2(mx + 78 * k, my + 36 * k)} ${P2(mx - 82 * k, my + 36 * k)}" fill="#f1e2b6" stroke="#b89a5a" stroke-width="${f1(2 * k)}"/>` +
+    return [["map", "floor", `<polygon points="${P2(mx - 60 * k, my - 30 * k)} ${P2(mx + 56 * k, my - 30 * k)} ${P2(mx + 78 * k, my + 36 * k)} ${P2(mx - 82 * k, my + 36 * k)}" fill="#f1e2b6" stroke="#b89a5a" stroke-width="${f1(2 * k)}"/>` +
       `<path d="M${P(mx - 60 * k, my + 24 * k)} Q${P(mx - 20 * k, my - 30 * k)} ${P(mx + 8 * k, my + 4 * k)} T${P(mx + 50 * k, my - 14 * k)}" fill="none" stroke="#c0392b" stroke-width="${f1(2.5 * k)}" stroke-dasharray="${f1(5 * k)} ${f1(4 * k)}"/>` +
       `<path d="M${P(mx + 44 * k, my - 22 * k)} L${P(mx + 58 * k, my - 8 * k)} M${P(mx + 58 * k, my - 22 * k)} L${P(mx + 44 * k, my - 8 * k)}" stroke="#c0392b" stroke-width="${f1(3.5 * k)}" stroke-linecap="round"/>` +
       `<path d="M${P(mx - 40 * k, my - 18 * k)} q${f1(8 * k)} ${f1(-8 * k)} ${f1(16 * k)} 0 M${P(mx - 10 * k, my + 22 * k)} q${f1(8 * k)} ${f1(-8 * k)} ${f1(16 * k)} 0" fill="none" stroke="#7a8a5a" stroke-width="${f1(2 * k)}"/>` +
-      `<g transform="translate(${f1(mx - 4 * k)} ${f1(my + 8 * k)}) scale(${k.toFixed(3)})"><circle cx="-12" cy="0" r="11" fill="#2a2a2a"/><circle cx="12" cy="0" r="11" fill="#2a2a2a"/>` +
-      `<circle cx="-12" cy="0" r="6" fill="#6fa8dc"/><circle cx="12" cy="0" r="6" fill="#6fa8dc"/><rect x="-4" y="-5" width="8" height="10" fill="#444"/></g>` +
-      `<g transform="translate(${f1(px)} ${f1(py)}) scale(${k.toFixed(3)})"><rect x="-38" y="-50" width="76" height="96" rx="20" fill="#8e5a2b" stroke="#5e3a1a" stroke-width="3"/>` +
+      ""], ["binoculars", "floor", `<g transform="translate(${f1(mx - 4 * k)} ${f1(my + 8 * k)}) scale(${k.toFixed(3)})"><circle cx="-12" cy="0" r="11" fill="#2a2a2a"/><circle cx="12" cy="0" r="11" fill="#2a2a2a"/>` +
+      `<circle cx="-12" cy="0" r="6" fill="#6fa8dc"/><circle cx="12" cy="0" r="6" fill="#6fa8dc"/><rect x="-4" y="-5" width="8" height="10" fill="#444"/></g>`],
+      ["backpack", py + 46 * k, `<g transform="translate(${f1(px)} ${f1(py)}) scale(${k.toFixed(3)})"><rect x="-38" y="-50" width="76" height="96" rx="20" fill="#8e5a2b" stroke="#5e3a1a" stroke-width="3"/>` +
       `<path d="M-38 -14 Q0 -40 38 -14 L38 -40 Q0 -64 -38 -40 Z" fill="#a8703a" stroke="#5e3a1a" stroke-width="3"/><rect x="-24" y="4" width="48" height="32" rx="8" fill="#a8703a" stroke="#5e3a1a" stroke-width="2.5"/>` +
-      `<rect x="-6" y="-22" width="12" height="16" rx="3" fill="#f2c12e"/><path d="M-30 -48 Q-44 -70 -20 -66 M30 -48 Q44 -70 20 -66" fill="none" stroke="#5e3a1a" stroke-width="5"/></g>`;
+      `<rect x="-6" y="-22" width="12" height="16" rx="3" fill="#f2c12e"/><path d="M-30 -48 Q-44 -70 -20 -66 M30 -48 Q44 -70 20 -66" fill="none" stroke="#5e3a1a" stroke-width="5"/></g>`]];
   },
 ];
 // what glows in each tent, over the night: the flashlight's beam, the
@@ -615,7 +619,8 @@ function caveScene(c) {
   // with its sparkle, drawn as the night sky's stars are and set the same
   // way (gemShape, gemSize, gemBright, gemTwinkle); and sparkles on the crystals
   const so = { starShape: o.gemShape, starSize: o.gemSize, starBright: o.gemBright, starTwinkle: o.gemTwinkle, lfoFast: o.lfoFast }, gems = Math.max(0, Math.round(o.caveGems ?? 16));
-  s += SEP + part("cave-gems", [c.F, gems, o.gemShape, o.gemSize, o.gemBright, o.gemTwinkle, sceneLfoKey(o, "fast")], () => {
+  // (ticket 284: the gems one wall object, each glowing crystal cluster one, the light in from the falls, the wet floor and the pebbles)
+  s += SEP + wallObj("gems", part("cave-gems", [c.F, gems, o.gemShape, o.gemSize, o.gemBright, o.gemTwinkle, sceneLfoKey(o, "fast")], () => {
     let t = "", i = 0;
     for (let j = 0; i < gems && j < gems * 12; j++) {
       const x = x0 + W * (0.03 + 0.94 * R(j, 1210)), y = y0 + H * 0.05 + (floor - y0 - H * 0.12) * R(j, 1211);
@@ -626,25 +631,27 @@ function caveScene(c) {
       i++;
     }
     return t + [[-0.4, 0.5], [0.37, 0.42], [-0.3, 0.2]].map(([u, v], j) => starsSvg(so, 4, W * u - 30 * k, W * u + 30 * k, y0 + H * v - 10 * k, y0 + H * v + 30 * k, k, (n, seed) => R(n + 10 * j, seed), 1240)).join("");
-  });
+  }));
   // crystals glowing on the walls, either side
   s += SEP + part("cave-crystals", [c.F, sceneLfoKey(o, "slow")], () => [[-0.4, 0.5, "#b388ff"], [0.37, 0.42, "#5ee6ff"], [-0.3, 0.2, "#5ee6ff"]].map(([u, v, col], j) => {
     const cx = W * u, cy = y0 + H * v;
-    return `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(50 * k)}" ry="${f1(40 * k)}" fill="${col}" opacity="0.25">${lfoTimed(o, "slow", j / 3, `<animate attributeName="opacity" values="0.15;0.4;0.15" dur="${3 + j}s" repeatCount="indefinite"/>`)}</ellipse>` +
+    return wallObj(`crystals ${j + 1}`, `<ellipse cx=""${f1(cx)}" cy="${f1(cy)}" rx="${f1(50 * k)}" ry="${f1(40 * k)}" fill="${col}" opacity="0.25">${lfoTimed(o, "slow", j / 3, `<animate attributeName="opacity" values="0.15;0.4;0.15" dur="${3 + j}s" repeatCount="indefinite"/>`)}</ellipse>` +
       [[-16, 0, 40, -20], [0, 4, 56, 0], [16, 2, 36, 22], [-6, 8, 28, -40], [10, 8, 26, 40]].map(([dx, dy, h, a]) =>
         `<polygon points="-6,0 -6,${-h + 8} 0,${-h} 6,${-h + 8} 6,0" fill="${col}" stroke="${mix(col, "#ffffff", 0.5)}" stroke-width="1.5" ` +
-        `transform="translate(${f1(cx + dx * k)} ${f1(cy + 30 * k + dy * k)}) rotate(${a}) scale(${k.toFixed(3)})"/>`).join("");
+        `transform="translate(${f1(cx + dx * k)} ${f1(cy + 30 * k + dy * k)}) rotate(${a}) scale(${k.toFixed(3)})"/>`).join(""));
   }).join(""));
   // the light falling in through the water, the floor, wet by the mouth
   s += SEP + part("cave-floor", c.F, () => {
     let t = `<path d="M${P(x0 - pad, floor + 10 * k)} Q${P(-W * 0.3, floor - 6 * k)} ${P(-mh, floor)} L${P(mh, floor)} Q${P(W * 0.3, floor - 6 * k)} ${P(x1 + pad, floor + 10 * k)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z" fill="#3b3542"/>` +
-            `<ellipse cx="0" cy="${f1(floor + 26 * k)}" rx="${f1(mh * 1.3)}" ry="${f1(22 * k)}" fill="#7fa3bd" opacity="0.25"/>`;
+            floorObj("wet floor", `<ellipse cx="0" cy="${f1(floor + 26 * k)}" rx="${f1(mh * 1.3)}" ry="${f1(22 * k)}" fill="#7fa3bd" opacity="0.25"/>`);
+    let light = "", pebbles = "";
     for (let i = 0; i < 3; i++)
-      t += `<polygon points="${P2(-cw * (0.8 - 0.6 * i), mt + 120 * k)} ${P2(-cw * (0.5 - 0.6 * i), mt + 120 * k)} ${P2(-W * (0.18 - 0.2 * i), y1 + pad)} ${P2(-W * (0.3 - 0.2 * i), y1 + pad)}" fill="#d8f4ff" opacity="0.08" pointer-events="none"/>`;
+      light += `<polygon points=""${P2(-cw * (0.8 - 0.6 * i), mt + 120 * k)} ${P2(-cw * (0.5 - 0.6 * i), mt + 120 * k)} ${P2(-W * (0.18 - 0.2 * i), y1 + pad)} ${P2(-W * (0.3 - 0.2 * i), y1 + pad)}" fill="#d8f4ff" opacity="0.08" pointer-events="none"/>`;
     for (let i = 0; i < 24; i++) {
       const x = x0 + W * R(i, 395), y = floor + 20 * k + (y1 - floor) * R(i, 396), r = (4 + 10 * R(i, 397)) * k;
-      t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.55)}" fill="${["#4a4452", "#2e2934", "#57505f"][i % 3]}"/>`;
+      pebbles += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.55)}" fill="${["#4a4452", "#2e2934", "#57505f"][i % 3]}"/>`;
     }
+    t += wallObj("light from the falls", light) + floorObj("pebbles", pebbles);
     // stalagmites at the sides, each an object standing at its foot
     for (const [u, h, w, name] of [[-0.44, 90, 30, "big stalagmite, left"], [-0.36, 50, 20, "small stalagmite, left"], [0.4, 110, 34, "big stalagmite, right"], [0.47, 60, 22, "small stalagmite, right"]]) {
       const x = W * u, b = floor + 30 * k;
@@ -1204,16 +1211,17 @@ function imaginationScene(c) {
   const mx = W * 0.03, top = y0 + H * 0.05, bottom = g - 70 * k, cw = (W - 2 * mx) / cols, rh = (bottom - top - 26 * k) / rows;
   const fw = Math.min(cw * 0.78, rh * 0.86 / 0.74 * 0.8), depth = (o.depth ?? 0) + 1;
   // a warm glow behind the map, breathing with the slow LFO
-  s += SEP + part("imagination-glow", [c.F, sceneLfoKey(o, "slow")], () => `<ellipse cx="0" cy="${f1((top + bottom) / 2)}" rx="${f1(W * 0.62)}" ry="${f1((bottom - top) * 0.75)}" fill="#fff3c4" opacity="0.25">` +
-    sceneLfo(o, "slow", 0, "opacity", (v, amp) => (0.25 * (1 + (0.3 + 0.6 * amp) * v)).toFixed(3)) + `</ellipse>`);
-  s += SEP + part("imagination-map", [c.F, cols, rows, sceneLfoKey(o, "fast")], () =>
+  // (ticket 284: the glow and the map board wall objects of their own; its pictures are doorways, as everywhere)
+  s += SEP + wallObj("glow", part("imagination-glow", [c.F, sceneLfoKey(o, "slow")], () => `<ellipse cx="0" cy="${f1((top + bottom) / 2)}" rx="${f1(W * 0.62)}" ry="${f1((bottom - top) * 0.75)}" fill="#fff3c4" opacity="0.25">` +
+    sceneLfo(o, "slow", 0, "opacity", (v, amp) => (0.25 * (1 + (0.3 + 0.6 * amp) * v)).toFixed(3)) + `</ellipse>`));
+  s += SEP + wallObj("map board", part("imagination-map", [c.F, cols, rows, sceneLfoKey(o, "fast")], () =>
     `<rect x="${f1(x0 + mx * 0.5)}" y="${f1(top - 6 * k)}" width="${f1(W - mx)}" height="${f1(bottom - top + 12 * k)}" rx="${f1(10 * k)}" fill="#ffffff" stroke="#d5dae3" stroke-width="${f1(2 * k)}"/>` +
     groups.map(([, name, kinds], i) => {
       const cx = x0 + mx + cw * (i + 0.5), ys = kinds.map((_, j) => top + 26 * k + rh * (j + 0.5));
       return `<text x="${f1(cx)}" y="${f1(top + 14 * k)}" text-anchor="middle" font-size="${f1(13 * k)}" font-weight="bold" fill="#5a6270" font-family="sans-serif">${name}</text>` +
         (ys.length > 1 ? `<line x1="${f1(cx)}" y1="${f1(ys[0])}" x2="${f1(cx)}" y2="${f1(ys[ys.length - 1])}" stroke="#b9c0cc" stroke-width="${f1(3 * k)}" stroke-dasharray="${f1(2 * k)} ${f1(6 * k)}" stroke-linecap="round">` +
           sceneLfo(o, "fast", i / cols, "stroke-dashoffset", (v, amp) => f1((2 + 5 * amp) * k * v)) + `</line>` : "");
-    }).join(""));
+    }).join("")));
   // the pictures, each a way there (in a picture of this room, only their frames)
   s += SEP + groups.map(([, , kinds], i) => kinds.map((kd, j) => {
     const cx = x0 + mx + cw * (i + 0.5), cy = top + 26 * k + rh * (j + 0.5), name = (PLACES.find(([v]) => v === kd) || [kd, kd])[1];

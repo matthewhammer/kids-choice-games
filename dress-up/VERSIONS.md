@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.249 (2026-10-18)
+
+Everything in 0.0.248, with three more places made of things of their own.
+
+- **Inside a tent**: its two mesh windows, and each tent's own things (the orange tent's two sleeping bags and flashlight, the blue tent's blanket, teddy bear and pile of books, the green tent's map, binoculars and backpack).
+- **The cave behind the falls**: its gems, each of its three clusters of glowing crystals, the light coming in from the falls, the wet floor and the pebbles.
+- **Our imagination**: its glow and the map board, with its columns' names and dotted lines (its pictures stay ways to each place).
+- As everywhere now: 🔬 Inspection names them, 👁️ hides them, and 📦 can place them in any other place.
+
 ## 0.0.248 (2026-10-18)
 
 Everything in 0.0.247, with the grass hut's rooms and the herb bundles as things of their own.
