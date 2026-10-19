@@ -87,6 +87,9 @@ const CASTLE_CARPETS = ["#a3122a", "#1e3a8a", "#14532d", "#6a2c91", "#7c2d12", "
 // color; rooms take A and B by turns to start with (odd rooms A).
 const CARPET_COLORS = [...new Set([...CASTLE_CARPETS, ...CASTLE_FLAG_COLORS])];
 const THEMES = [["A", "🎨 theme A"], ["B", "🎨 theme B"]];
+// (ticket 294) a click on the ground while the friend is walking to one: a new walk there, in place of the one under way, or
+// one more walk, after it (ticket 266's queue of clicks)
+const CLICK_PLANS = [["replace", "🔁 walks there instead"], ["queue", "➕ walks there next, after"]];
 // where the hallway's far end, the foot of a spiral staircase, leads: the
 // castle's first spiral staircase room, a room of its own choosing, or nowhere
 // A castle is rooms by number (up to ROOM_MAX), each with its own exits. A
@@ -651,7 +654,7 @@ DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpos
 DEFAULTS.access = { allArrows: false, arrowDim: 45, arrowColor: "#38bdf8", arrowSize: 100, gameFont: 100, showPath: false, showSolids: false, pathColor: "#fde047", boxColor: "#ef4444", glowFade: 800,
                     pathWidth: 4, boxWidth: 2, boxFont: 11,   // (ticket 230: the path's and the boxes' lines, the boxes' names, in px)
                     showMadeOf: false, madeCats: {}, madeFont: 10, madeColor: "#ffffff", madeWidth: 2,
-                    clickWalk: true, clickWalkColor: "#22d3ee", pathAltColor: "#c084fc",
+                    clickWalk: true, clickWalkColor: "#22d3ee", pathAltColor: "#c084fc", clickPlan: "replace",
                     showBubbleHits: false, bubbleHitColor: "#38bdf8",   // (ticket 290: 🫧 the bubble room's bubbles that pop, as circles)
                     showWater: false, waterColor: "#22d3ee", solidCats: {} };   // (ticket 283: 💧 where the friend is in water; the collision boxes' kinds, each on unless off)   // (ticket 251: 👆 walk where you click, and its glow's colour; on at first since 0.0.188, Matthew: "so helpful, let's have it on by default")   // (ticket 258: 🧩 what a place is made of; each kind's chip, MADE_CATS's when unset)
 // (ticket 236, Matthew: "Turn on the accessibility features during all tests, because: * we want them to always work.
@@ -1021,7 +1024,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.262", released: "2026-10-18" };
+const VERSION = { number: "0.0.263", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

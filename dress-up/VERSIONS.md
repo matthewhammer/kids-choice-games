@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.263 (2026-10-18)
+
+Everything in 0.0.262, with a choice for a click while walking.
+
+- **👆 a click while walking to one**: with 👆 walk where you click on, a new click on the ground while your friend is walking now **walks there instead** by default: they stop where they are and set off for the new spot. Or choose **walks there next, after**, the queue of clicks from before, good for planning a long walk. The choice is in ♿ Accessibility, beside 👆, and in 🎮 Controls too.
+
 ## 0.0.262 (2026-10-18)
 
 Everything in 0.0.261, with up to six thrones in each king's room.

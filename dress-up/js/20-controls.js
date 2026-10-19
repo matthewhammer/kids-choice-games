@@ -561,6 +561,9 @@ const TABS = [
       ["flip", "blowA", ["🅰️ theme A", "🅰️ theme A"]], ["flip", "blowB", ["🅱️ theme B", "🅱️ theme B"]], ["flip", "blowC", ["©️ theme C", "©️ theme C"]],
     ]]],
     ["of", "background", ["group", "blowThemes", "🎨 the bubble themes", BUBBLE_THEME_CTLS.map(([kd, key, label, ctls]) => [kd, key, label, ctls.filter(c => c[0] !== "flip")])]],   // (the looks only: B and C on in bubble space is bubble space's)
+    // (ticket 294, Matthew: "let the player choose which they prefer, and repeat that same choice under ♿ Accessibility")
+    // a click while walking to one: ♿'s own setting, shown here too while 👆 walk where you click is on
+    ["of", "access", ["choice", "clickPlan", "👆 a click while walking to one", CLICK_PLANS]],
     // (ticket 188, Matthew) how the friend moves: kept with the friend (body), not with a controller's buttons
     ["of", "body", ["group", "moving", "🏃 how your friend moves", [
       ["range", "runSpeed", "🏃 top running speed (100 = as it was)", 50, 250, 100, 100],
@@ -613,7 +616,7 @@ const TABS = [
     ["accbox", "allArrows", "🧭 all arrows", [["color", "arrowColor", "🎨"], ["range", "arrowDim", "🌗 brightness", 10, 100], ["range", "arrowSize", "↕️ size", 50, 250]]],
     ["accbox", null, "🔤 words in the game", [["range", "gameFont", "🔤 text size", 60, 250]]],
     // (ticket 251) the ground under the pointer glowing where the friend can go, and a click there walks them to it
-    ["accbox", "clickWalk", "👆 walk where you click", [["color", "clickWalkColor", "🎨"]]],
+    ["accbox", "clickWalk", "👆 walk where you click", [["color", "clickWalkColor", "🎨"], ["choice", "clickPlan", "👆 a click while walking", CLICK_PLANS]]],
   ]],
   ["⚙️ Advanced", "advanced", [
     ["advanced", "perf", "⚙️ advanced"],
@@ -819,6 +822,7 @@ function el(tag, attrs = {}, kids = []) {
 const SHOWN_WHEN = {
   // (ticket 230: the ♿ settings show beside their toggle, while it is on: accbox)
   "body.unpose": posed,
+  "access.clickPlan": a => !!a.clickWalk,   // (ticket 294: in 🎮 Controls, while 👆 is on)
   "body.hugLift": b => b.pose === "hug",
   "face.irisColor": f => f.iris > 0,
   "face.earSize": f => !!f.ears && f.ears !== "none",
@@ -1216,6 +1220,14 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           syncs.push(f); madeSyncs.push(f);
         }
         more.append(box);
+        continue;
+      }
+      // (ticket 294) a choice: a chip for each, the one chosen pressed
+      if (k2 === "choice") {
+        const box = el("div", { class: "madecats" });
+        for (const [v, name] of lo) { const b = el("button", { class: "flip", onclick: () => set(part, key2, v) }, name); box.append(b);
+          syncs.push(() => { const on = now() === v; if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", on); }); }
+        more.append(el("span", { class: "accitem" }, [lab2]), box);
         continue;
       }
       if (k2 === "color") {

@@ -528,9 +528,13 @@ pic.addEventListener("pointerleave", walkSpotHide);
 // multi-click plan when its shown") A click while walking to one before it: its own walk, planned from where that one
 // ends, added to the run (clickRun) and walked on after it, as many as are clicked; each click's points marked in
 // walkPath.segs (0, 1, 2...), 👣 drawing them by turns in its colour and its alt colour. The controller ends the run.
+// (ticket 294, Matthew: "in play it is often expected, and more useful, to cancel the current plan and replace it with
+// the one for the next click") Or, as ♿ 👆 says (clickPlan), a click while walking stops the walk where the friend is and
+// plans a new one from there (walkStop: the leg under way stops, without walking on); "queue", as before, adds to it.
 let clickRun = null;
 function walkPlanned(x, z) {
   const BG = state.background, g = SCENE.ground;
+  if (clickRun && (state.access || DEFAULTS.access).clickPlan !== "queue") { walkStop++; clickRun = null; entering = false; }
   if (clickRun) {
     const [lx, ly] = clickRun.end, path = planPath(lx, ly, x, z - g, 10);
     for (const p of path) { walkPath.pts.push(p); walkPath.segs.push(clickRun.n); }
@@ -1208,6 +1212,8 @@ function bridgeGoIn(be = bridgeEnd()) {
 }
 // (ticket 199) to a spot on the floor, walking (swimming in deep water) as
 // walkInto does, a long way faster, 2.5 s at most; then on
+// (ticket 294: a walk stopped, a new one in its place, is stopped by walkStop going on: its steps end where they are)
+let walkStop = 0;
 function walkTo(x, y, then) {
   bridgeOff();   // (ticket 245: from a rope bridge, down at its foot first)
   const BG = state.background, B = state.body, F = sceneFrame;
@@ -1217,7 +1223,9 @@ function walkTo(x, y, then) {
   if (B.pose !== "stand") strikePose("stand");
   const speed = Math.max(PAD_SPEED.walk, Math.hypot(tx - (BG.figX ?? 0), (ty - (BG.figY ?? 0)) / 0.6) / 2.5), t0 = performance.now();
   let last = 0;
+  const stop = walkStop;
   const step = t => {
+    if (walkStop !== stop) return;   // (ticket 294: stopped, a new walk in its place)
     const dt = last ? Math.min(0.1, (t - last) / 1000) : 0; last = t;
     const dx = tx - (BG.figX ?? 0), dy = ty - (BG.figY ?? 0), d = Math.hypot(dx, dy / 0.6), sp = speed * dt;
     if (d <= sp + 0.5 || t - t0 > WALK_IN_MAX) { BG.figX = tx; BG.figY = ty; B.anim = "none"; entering = false; draw(); then(); return; }
