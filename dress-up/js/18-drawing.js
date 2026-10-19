@@ -71,6 +71,11 @@ function drawNow() {
     P = WC.fairyOutfit === "pants" ? { ...P, style: "pants", color: mix(fCol, "#000000", 0.28), pattern: "plain" }
                                    : { ...P, style: "dress", skirtLen: 58, color: fCol, ...pat };
   }
+  // (ticket 288) a scuba suit: long sleeves and legs in its color, its stripes and fins (below); the old diving suit:
+  // canvas, a little wider, heavy boots, and over the head and shoulders its helmet and corselet (below)
+  const scuba = kind === "scuba", diver = kind === "diver";
+  if (scuba) { SH = { ...SH, style: "long", color: WC.scubaColor, pattern: "plain" }; P = { ...P, style: "long", color: WC.scubaColor, pattern: "plain" }; }
+  if (diver) { SH = { ...SH, style: "long", color: WC.diverCloth, pattern: "plain", width: SH.width * 1.1 }; P = { ...P, style: "long", color: WC.diverCloth, pattern: "plain" }; }
   const w = dir ? SH.width * 0.62 : q ? SH.width * 0.84 : SH.width, L = SH.length;
   const nw = Math.max(22, B.neckW / 2 + 6);           // the collar fits the neck
 
@@ -115,7 +120,7 @@ function drawNow() {
   };
   // no clothes: underwear or a swimsuit instead of the shirt and pants
   // (a full animal suit still covers everything)
-  const U = state.undies, undies = U.on && !suit && !witch && !fairy;
+  const U = state.undies, undies = U.on && !suit && !witch && !fairy && !scuba && !diver;
   const sleeve = suit ? 0.97 : undies ? 0 : { tee: 0.38, long: 0.95, tank: 0 }[SH.style];
 
   // PANTS: their hips under the shirt's hem, their feet under the legs.
@@ -186,7 +191,7 @@ function drawNow() {
   const ty = neckTop + 6 - (headChin(F) - 4) * s + headDrop, tx = -100 * s;
   faceFrame = { tx, ty, s, drop: headDrop };
   // (ticket 124: in profile the hair sits toward the back of the head, in the face's units)
-  const side = dir && !C ? sideHair(state.hair, F, dir) : null;
+  const side = dir && !C && !diver ? sideHair(state.hair, F, dir) : null;   // (ticket 288: none under the old helmet)
 
   // The picture's frame grows to hold everything.
   const handYs = arms.map(x => x.H[1]);
@@ -385,7 +390,7 @@ function drawNow() {
   }
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
-  if (!C && !dir && !away) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
+  if (!C && !diver && !dir && !away) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
                  `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairBackSvg(state.hair), "under-hat-back")}</g></g></g>`);
 
   // behind everything: a falcon's wings and tail, or a suit's tail
@@ -413,6 +418,7 @@ function drawNow() {
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
   // (ticket 286: crawling toward us, the tail goes up from behind the back, turned over with it)
   if (tail) svg += veil("pants", crawlTo ? flipped(tail) : tail);
+  if (WC.tank && !diver) svg += veil("shirt", tankSvg(WC, w, L, dir));   // (ticket 288: an air tank on the back)
   // (ticket 138: facing away, the wings and the tail are drawn last, over them)
   const onBack = away ? svg.slice(backAt) : "";
   if (away) svg = svg.slice(0, backAt);
@@ -442,6 +448,8 @@ function drawNow() {
   veilFrom("pants", legsAt);
   const feet = BIRD_SUIT[kind] ? { style: "talons", size: state.shoes.size }
              : kind === "deer" ? { style: "hoof", size: state.shoes.size }
+             : scuba ? { style: "fin", size: state.shoes.size, color: WC.scubaAccent }
+             : diver ? { style: "boot", size: state.shoes.size * 1.25, color: "#3f3a33" }
              : witch ? { style: "witchboot", size: state.shoes.size, color: WC.bootColor ?? "#1f1f22" }
              : fairy ? { style: "fairy-" + (FAIRY_SHOES.some(([v]) => v === WC.fairyShoes) ? WC.fairyShoes : "slipper"), size: state.shoes.size, color: WC.fairyShoeColor || FAIRY_SHOE_COLORS[0] }
              : suit ? { style: "paw", size: state.shoes.size, color: C.fur, pad: C.accent } : state.shoes;
@@ -593,6 +601,9 @@ function drawNow() {
                        : `<ellipse cx="${f1(kx)}" cy="${f1(ky + 3)}" rx="${f1(B.legW / 2 + 1)}" ry="${f1((B.legW / 2 + 1) * 0.75)}" fill="${limb}" stroke="${limbLine}" stroke-width="2"/>`; }
   }
   veilFrom("pants", pantsAt);
+  // (ticket 288: a scuba suit's stripe down the outside of each leg)
+  if (scuba) svg += veil("pants", [1, -1].map(side => { const J = legJoints(side);
+    return `<path d="M${J.map(([x, y]) => f1(x + side * (B.legW / 2 + 2)) + " " + f1(y)).join(" L")}" fill="none" stroke="${WC.scubaAccent}" stroke-width="6" stroke-linecap="round"/>`; }).join(""));
   svg += feetLater;
   // a fairy in a shirt and pants: her tunic's hem, a short frill at her
   // hips over the pants, in her tunic's style (the shirt's to see through)
@@ -682,6 +693,10 @@ function drawNow() {
            `<polyline points="${pts(body)}" fill="none" stroke="${limbLine}" stroke-width="2.5" stroke-linejoin="round"/>`;
     svg += undiesTop(U, w, nw, hw, fx, L);
   } else svg += poly(torso, sf, ss);
+  // (ticket 288) a scuba suit's yoke (and zip, from behind); an air tank's straps; the old diving suit's brass corselet
+  if (scuba && !undies) svg += scubaYoke(WC, w, nw, L, dir, away);
+  if (WC.tank && !diver) svg += tankStraps(w, L, dir, away);
+  if (diver) svg += diverCorselet(WC, w, dir);
   // a few webs on the bodice, side by side
   if (fewWebs && !undies)
     svg += spiderWeb(-0.42 * hw, -20 + 0.48 * (L + 20), 0.3 * hw, WC.webColor) + spiderWeb(0.42 * hw, -20 + 0.48 * (L + 20), 0.3 * hw, WC.webColor);
@@ -704,7 +719,7 @@ function drawNow() {
   // (ticket 125) the ears, facing us: out at the sides of the head at the
   // eyes' height, behind the head; under long hair, which covers them, but
   // over shorter hair, and an elf's poke out through any hair
-  const earsOn = F.ears && F.ears !== "none" && !C, earK = (F.earSize ?? 100) / 100;
+  const earsOn = F.ears && F.ears !== "none" && !C && !diver, earK = (F.earSize ?? 100) / 100;
   const earsFront = () => { const ey = faceLayout(F).eyeY + 10, [xl, xr] = acrossAt(headPoints(F), ey);
     return veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
                         earSvg(F.ears, earK, F.color, xl + 6, ey, -1) + earSvg(F.ears, earK, F.color, xr - 6, ey, 1) + `</g>`); };
@@ -715,7 +730,7 @@ function drawNow() {
   // them), and behind the head (its front, the bangs, comes again over the
   // face: see bangsSvg)
   // (in profile, what hangs behind the head, on the head as drawn)
-  if (!C)
+  if (!C && !diver)
     svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
            (side ? `<g transform="${topFlies(F)}">${tucked(side.back, "under-hat")}</g></g>`
                  : `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${tucked(hairSvg(state.hair), "under-hat")}</g></g></g>`));
@@ -739,7 +754,7 @@ function drawNow() {
     const fill = falconHead(kind) ? C.marks : eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
     svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F)}` +
                                `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/></g></g>`));
-  } else if (away) svg += veil("head", inFace(face.under)) + veil("hair", inFace(`<g transform="${topFlies(F)}">${backHair(state.hair, F)}</g>`));
+  } else if (away) svg += veil("head", inFace(face.under)) + (diver ? "" : veil("hair", inFace(`<g transform="${topFlies(F)}">${backHair(state.hair, F)}</g>`)));
   else if (!dir) svg += veil("head", inFace(face.under)) + veil("eyes", inFace(face.eyes)) + veil("head", inFace(face.over));
   else {
     // (ticket 124) in profile: the face's features on our side only (one
@@ -776,10 +791,27 @@ function drawNow() {
   // (under a witch's hat, from its brim down: the brim's line as the hat is
   // stretched with the head, which big eyes make taller)
   // (in profile, the hair on the head itself, over its top and back)
-  if (!C && !away) svg += veil("hair", inFace(side ? `<g transform="${topFlies(F)}">${tucked(side.cap, "under-hat-bangs", HEAD_C + (40 - HEAD_C) * headH(F))}</g>`
+  if (!C && !diver && !away) svg += veil("hair", inFace(side ? `<g transform="${topFlies(F)}">${tucked(side.cap, "under-hat-bangs", HEAD_C + (40 - HEAD_C) * headH(F))}</g>`
                                           : tucked(bangsSvg(state.hair, F), "under-hat-bangs", HEAD_C + (40 - HEAD_C) * headH(F))));
   // a fairy's wreath of flowers, over her hair
   if (fairy && WC.wreath !== false) svg += veil("hair", inFace(wreathSvg(F, WC.wreathFlowers)));
+  // (ticket 288) gear on the head: a face mask and a snorkel; with a tank and no snorkel, its air hose from the shoulder to
+  // a mouthpiece. Or the old helmet over the whole head, its air hose up to the top of the scene, behind it (in front of
+  // it, from behind)
+  if (!diver) {
+    if (WC.mask) svg += veil("head", inFace(maskSvg(F, WC, dir, away)));
+    if (WC.snorkel) svg += veil("head", inFace(snorkelSvg(F, WC, dir, away)));
+    if (WC.tank && !WC.snorkel && !away) {
+      const mx = tx + (100 + (dir ? dir * (profileEdge(F) - 4) : 10)) * s, my = ty + (faceLayout(F).mouthY + 4) * s, sx = dir ? -dir * 0.3 * w : 0.55 * w;
+      svg += veil("head", `<path d="M${f1(sx)} -12 Q${f1(sx + (dir ? dir * 40 : 50))} ${f1(my + 30)} ${f1(mx)} ${f1(my)}" fill="none" stroke="#1f2937" stroke-width="7" stroke-linecap="round"/>` +
+                          `<circle cx="${f1(mx)}" cy="${f1(my)}" r="${f1(14 * s)}" fill="#374151"/>`);
+    }
+  } else {
+    const hm = diverHelmet(F, WC, dir, away), a = [tx + hm.fitting[0] * s, ty + hm.fitting[1] * s];
+    const topY = (sceneFrame.top - figureT.dy - figureT.sg) / figureT.k + figureT.g - 10;
+    const hose = WC.diverHose !== false && topY < a[1] - 40 ? veil("head", diverHose(WC, a, [a[0] - (dir || 1) * 70, topY], sceneryStill())) : "";
+    svg += (away ? "" : hose) + veil("head", inFace(hm.svg)) + (away ? hose : "");
+  }
   // a witch's hat over it, stretched with the head as hair is (and flying
   // off with the lid); her cat on her shoulder
   if (witch) {

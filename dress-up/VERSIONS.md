@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.260 (2026-10-18)
+
+Everything in 0.0.259, with costumes for the ocean and the deep sea (🐯 Costume).
+
+- **🤿 scuba suit**: a sleek suit in its color with a bright yoke over the shoulders, a stripe down each leg and fins on the feet in the stripes' color; a zip down the back.
+- **⚓ old diving suit**: a round brass helmet (or copper, or steel) over the whole head, your face showing through its bolted glass front, small side ports, a brass collar on the shoulders, a canvas suit and heavy boots, and an air hose from the top of the helmet up to the top of the place, swaying slowly.
+- **Diving gear, with any costume**: 🤿 a snorkel, 🥽 a face mask and 🛢️ an air tank on your back (with straps, and a hose to a mouthpiece when there is no snorkel), each with its own color. Not under the old helmet.
+
 ## 0.0.259 (2026-10-18)
 
 Everything in 0.0.258, with swimming toward you and away from you.

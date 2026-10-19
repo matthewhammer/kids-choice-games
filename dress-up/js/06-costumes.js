@@ -378,3 +378,98 @@ function falconTail(C, hw, L, LL, fill = "url(#pat-bars)") {
   return poly(fan, fill, darker(fill.startsWith("url") ? C.fur : fill), 3) +
     `<polyline points="${pts(fan.slice(1, 6))}" fill="none" stroke="${C.belly}" stroke-width="6" stroke-linejoin="round"/>`;
 }
+
+// (ticket 288, Matthew: "new costumes for the ocean and the deep sea. A snorkel, the most minimal change to the friend's
+// appearance. An air tank and a face mask, for scuba, separate from the scuba suit. A scuba suit, modern and stylish.
+// An antique deep-sea diving suit, made of metal and glass, with an air hose reaching up to the top of the scene") The
+// two suits are costumes (state.costume.kind "scuba", "diver"); the snorkel, the mask and the tank are gear, worn with
+// any of them but the diver's helmet (costume.snorkel, .mask, .tank). What goes on the head is in the face's units (x
+// 100 the middle; facing us, from behind, or in profile, dir -1 or 1); the rest in the friend's own.
+const DIVE_GLASS = "#cfeefc";
+const ellD = (x, y, a, b) => `M${f1(x - a)} ${f1(y)} a${f1(a)} ${f1(b)} 0 1 0 ${f1(2 * a)} 0 a${f1(a)} ${f1(b)} 0 1 0 ${f1(-2 * a)} 0 Z`;
+const diveHead = F => { const top = headCrown(F), chin = headChin(F); return { LY: faceLayout(F), hw: 80 * headWidth(F), top, chin, cy: (top + chin) / 2, ry: (chin - top) / 2 }; };
+// the antique helmet: a round brass (or copper, or steel) bell round the whole head, the front port's glass over the face
+// (a hole in the metal, so the face shows through, faintly blue, its rim bolted), a small port at each side, a shine,
+// and the air hose's fitting on top toward the back; from behind, all metal. fitting: where the hose goes in
+function diverHelmet(F, WC, dir, away) {
+  const H = diveHead(F), m = WC.diverMetal || "#c9a227", dk = darker(m), lt = mix(m, "#ffffff", 0.45);
+  const rx = H.hw * 1.2 + 10, ry = H.ry * 1.16 + 10, cx = 100, cy = H.cy;
+  // (in profile, the port over the face's front, which the face's features are drawn toward, seen at a slant)
+  const pr = 0.62 * H.hw + 6, pa = dir ? 0.4 * pr : pr, px = dir ? cx + dir * 0.6 * H.hw : cx, py = H.LY.eyeY + 14;
+  let t = `<path data-dive="helmet" d="${ellD(cx, cy, rx, ry)} ${away ? "" : ellD(px, py, pa, pr)}" fill="${m}" fill-rule="evenodd" stroke="${dk}" stroke-width="5"/>` +
+          `<path d="M${f1(cx - 0.78 * rx)} ${f1(cy - 0.3 * ry)} Q${f1(cx - 0.6 * rx)} ${f1(cy - 0.84 * ry)} ${f1(cx - 0.05 * rx)} ${f1(cy - 0.93 * ry)}" fill="none" stroke="${lt}" stroke-width="8" stroke-linecap="round" opacity="0.8"/>`;
+  if (!away) {
+    t += `<path d="${ellD(px, py, pa, pr)}" fill="${DIVE_GLASS}" fill-opacity="0.2" stroke="${dk}" stroke-width="10"/><path d="${ellD(px, py, pa, pr)}" fill="none" stroke="${m}" stroke-width="4"/>`;
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; t += `<circle cx="${f1(px + Math.cos(a) * (pa + 3))}" cy="${f1(py + Math.sin(a) * (pr + 3))}" r="3.4" fill="${lt}" stroke="${dk}" stroke-width="1.5"/>`; }
+  }
+  const port = (x, y, a, b) => `<path d="${ellD(x, y, a, b)}" fill="${DIVE_GLASS}" fill-opacity="0.55" stroke="${dk}" stroke-width="6"/>`;
+  if (dir) t += port(cx - dir * 0.15 * rx, cy - 0.05 * ry, 0.22 * rx, 0.22 * rx);
+  else if (!away) t += port(cx - 0.9 * rx, cy, 0.1 * rx, 0.22 * ry) + port(cx + 0.9 * rx, cy, 0.1 * rx, 0.22 * ry);
+  const fx = cx - (dir || 0) * 0.4 * rx, fy = cy - ry + 6;
+  t += `<rect x="${f1(fx - 11)}" y="${f1(fy - 20)}" width="22" height="24" rx="4" fill="${m}" stroke="${dk}" stroke-width="3"/>`;
+  return { svg: t, fitting: [fx, fy - 20] };
+}
+// its corselet: the brass collar on the shoulders the helmet sits on, a bolt at each side and the middle, in the friend's units
+function diverCorselet(WC, w, dir) {
+  const m = WC.diverMetal || "#c9a227", dk = darker(m), lt = mix(m, "#ffffff", 0.45), x = dir ? 0.95 * w : w + 8;
+  return `<path data-dive="corselet" d="M${f1(-x)} 30 Q${f1(-x)} -26 0 -32 Q${f1(x)} -26 ${f1(x)} 30 Q0 46 ${f1(-x)} 30 Z" fill="${m}" stroke="${dk}" stroke-width="4"/>` +
+    [-0.7, 0, 0.7].map(u => `<circle cx="${f1(u * x)}" cy="${f1(30 + 14 * (1 - u * u) - 6)}" r="4" fill="${lt}" stroke="${dk}" stroke-width="1.5"/>`).join("");
+}
+// its air hose: one path from the helmet's fitting (a) up to the top of the scene (b), swaying slowly (a single path, as
+// the cauldron's light fumes are, and still on a slow computer)
+function diverHose(WC, a, b, still) {
+  const c = WC.hoseColor || "#4b5563", [ax, ay] = a, [bx, by] = b, h = ay - by;
+  const d = k => `M${f1(ax)} ${f1(ay)} C${f1(ax - 40 * k)} ${f1(ay - 0.35 * h)} ${f1(bx + 60 * k)} ${f1(by + 0.45 * h)} ${f1(bx)} ${f1(by)}`;
+  return `<path data-hose="1" d="${d(1)}" fill="none" stroke="${c}" stroke-width="11" stroke-linecap="round">` +
+    (still ? "" : `<animate attributeName="d" values="${d(1)};${d(-0.7)};${d(1)}" dur="6s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`) + `</path>`;
+}
+// a face mask: its lens over the eyes and the top of the nose, its frame and nose pocket, and the strap round the head;
+// in profile, the lens at the face's front and the strap back over the head; from behind, the strap
+function maskSvg(F, WC, dir, away) {
+  const H = diveHead(F), c = WC.maskColor || "#0ea5e9", dk = darker(c), y = H.LY.eyeY, [xl, xr] = acrossAt(headPoints(F), y);
+  const strap = (x0, x1) => `<line x1="${f1(x0)}" y1="${f1(y)}" x2="${f1(x1)}" y2="${f1(y)}" stroke="${c}" stroke-width="8" stroke-linecap="round"/>`;
+  if (away) return `<path data-dive="mask" d="M${f1(xl - 3)} ${f1(y)} Q100 ${f1(y + 10)} ${f1(xr + 3)} ${f1(y)}" fill="none" stroke="${c}" stroke-width="9" stroke-linecap="round"/>`;
+  const top = y - eyeHalfH(F) - 14, bot = y + eyeHalfH(F) + 20;
+  if (dir) { const x0 = 100 + dir * (profileEdge(F) + 6), x1 = x0 - dir * 38;
+    return strap(x1, 100 - dir * H.hw) + `<rect data-dive="mask" x="${f1(Math.min(x0, x1))}" y="${f1(top)}" width="38" height="${f1(bot - top)}" rx="12" fill="${DIVE_GLASS}" fill-opacity="0.45" stroke="${c}" stroke-width="7"/>`; }
+  const hx = H.LY.eyeDX + eyeHalfW(F) + 12;
+  return strap(xl - 2, 100 - hx) + strap(100 + hx, xr + 2) +
+    `<rect data-dive="mask" x="${f1(100 - hx)}" y="${f1(top)}" width="${f1(2 * hx)}" height="${f1(bot - top)}" rx="18" fill="${DIVE_GLASS}" fill-opacity="0.35" stroke="${c}" stroke-width="7"/>` +
+    `<path d="M${f1(100 - 15)} ${f1(bot - 3)} L${f1(100 - 10)} ${f1(bot + 16)} L${f1(100 + 10)} ${f1(bot + 16)} L${f1(100 + 15)} ${f1(bot - 3)} Z" fill="${c}" stroke="${dk}" stroke-width="2"/>`;
+}
+// a snorkel: a J of tube from the mouth, round to the side of the head and up past its top, a band at its tip; on the
+// friend's left (our right, facing us), on our side in profile
+function snorkelSvg(F, WC, dir, away) {
+  const H = diveHead(F), c = WC.snorkelColor || "#facc15", dk = darker(c), mY = H.LY.mouthY, up = H.top - 36;
+  const d = away ? `M${f1(100 - H.hw - 8)} ${f1(mY - 20)} L${f1(100 - H.hw - 8)} ${f1(up)}`
+          : dir ? `M${f1(100 + dir * (profileEdge(F) - 4))} ${f1(mY + 4)} Q${f1(100 + dir * 0.1 * H.hw)} ${f1(mY + 18)} ${f1(100 - dir * 0.05 * H.hw)} ${f1(mY - 30)} L${f1(100 - dir * 0.1 * H.hw)} ${f1(up)}`
+          : `M${f1(100 + 16)} ${f1(mY + 4)} Q${f1(100 + H.hw + 12)} ${f1(mY + 16)} ${f1(100 + H.hw + 12)} ${f1(mY - 26)} L${f1(100 + H.hw + 12)} ${f1(up)}`;
+  const tip = away ? [100 - H.hw - 8, up] : dir ? [100 - dir * 0.1 * H.hw, up] : [100 + H.hw + 12, up];
+  return `<path d="${d}" fill="none" stroke="${dk}" stroke-width="16" stroke-linecap="round"/><path data-dive="snorkel" d="${d}" fill="none" stroke="${c}" stroke-width="11" stroke-linecap="round"/>` +
+    `<rect x="${f1(tip[0] - 9)}" y="${f1(tip[1] - 6)}" width="18" height="10" rx="3" fill="${dk}"/>` +
+    (away ? "" : `<ellipse cx="${f1(dir ? 100 + dir * (profileEdge(F) - 2) : 100 + 10)}" cy="${f1(mY + 4)}" rx="9" ry="7" fill="#1f2937"/>`);
+}
+// an air tank on the back: a cylinder down from the shoulders, its valve on top; facing us, behind them (its straps over
+// the shirt: tankStraps); in profile, behind the back; from behind, over it
+function tankSvg(WC, w, L, dir) {
+  const c = WC.tankColor || "#facc15", dk = darker(c), lt = mix(c, "#ffffff", 0.5), tw = Math.max(24, 0.4 * w), x = dir ? -dir * (0.5 * w + 0.9 * tw) : 0;
+  const top = -12, bot = Math.max(top + 3 * tw, 0.78 * L);
+  return `<rect data-dive="tank" x="${f1(x - tw)}" y="${f1(top)}" width="${f1(2 * tw)}" height="${f1(bot - top)}" rx="${f1(tw)}" fill="${c}" stroke="${dk}" stroke-width="3"/>` +
+    `<line x1="${f1(x - 0.45 * tw)}" y1="${f1(top + 0.8 * tw)}" x2="${f1(x - 0.45 * tw)}" y2="${f1(bot - 0.8 * tw)}" stroke="${lt}" stroke-width="5" stroke-linecap="round"/>` +
+    `<rect x="${f1(x - 7)}" y="${f1(top - 20)}" width="14" height="22" rx="3" fill="#374151"/><circle cx="${f1(x + (dir || 1) * 10)}" cy="${f1(top - 12)}" r="6" fill="#111827"/>`;
+}
+function tankStraps(w, L, dir, away) {
+  // (grey webbing, edged darker: it shows on a dark suit as on a light shirt)
+  const s = "#9ca3af", band = `<rect x="${f1(-(w + 3))}" y="${f1(0.7 * L - 6)}" width="${f1(2 * w + 6)}" height="12" fill="${s}" stroke="#4b5563" stroke-width="2"/>`;
+  if (away) return band;
+  if (dir) return `<line x1="${f1(-dir * 0.15 * w)}" y1="-16" x2="${f1(-dir * 0.15 * w)}" y2="${f1(0.7 * L)}" stroke="${s}" stroke-width="10"/>` + band;
+  return [1, -1].map(sd => `<line x1="${f1(sd * 0.55 * w)}" y1="-18" x2="${f1(sd * 0.45 * w)}" y2="${f1(0.7 * L)}" stroke="${s}" stroke-width="10"/>`).join("") + band +
+    `<rect x="-9" y="${f1(0.7 * L - 9)}" width="18" height="18" rx="3" fill="#e5e7eb" stroke="#4b5563" stroke-width="2"/>`;
+}
+// a scuba suit's stripes: a bright yoke over the shoulders and chest (or back), a zip down the back, and a stripe down
+// the outside of each leg (scubaLegs)
+function scubaYoke(WC, w, nw, L, dir, away) {
+  const a = WC.scubaAccent || "#14b8a6", x = w + 3;
+  return `<path data-dive="yoke" d="M${f1(-x)} -8 L${f1(-nw)} -20 L${f1(nw)} -20 L${f1(x)} -8 L${f1(w)} 24 L0 ${f1(dir ? 24 : 46)} L${f1(-w)} 24 Z" fill="${a}" stroke="${darker(a)}" stroke-width="2"/>` +
+    (away ? `<line x1="0" y1="-18" x2="0" y2="${f1(L - 6)}" stroke="#9ca3af" stroke-width="3" stroke-dasharray="4 3"/>` : "");
+}

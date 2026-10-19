@@ -653,7 +653,7 @@ function moveNow() {
   // Toward us or away, the friend lying along the surface runs into the picture, seen short as the crawl is (squash: the
   // back; away, the head beyond it, the legs toward us, each seen short (Step), kicking, the soles showing; toward, the
   // face at the surface, a little of the back behind it, the legs hidden). Each arm windmills in the plane along the
-  // swim, seen from behind or in front and a little above: its hand drops in the picture by the share swimDrop says
+  // swim, seen from behind or in front and a little above: its hand drops in the picture by the share drop() says
   // (up, negative), the arm a little out from the shoulder, seen short by what it leaves of its length (ArmStep)
   if ((a === "swim" || a === "swimfast") && !dir && !poseHeld && deepHere()) {
     const away = B.facing === "back", p = a === "swimfast" ? (2 * u) % 1 : u, k = Math.sin(4 * Math.PI * p);

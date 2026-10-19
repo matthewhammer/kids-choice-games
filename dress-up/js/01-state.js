@@ -473,6 +473,8 @@ const DEFAULTS = {
              accent: "#e89aa0", furPattern: "stripes", spot: "auto",
              witchColor: "#6a2c91", webColor: "#3fae4a", webStyle: "tiled", trimColor: "#f28c28", witchCat: false, broom: false,
              catFur: "#1f1f22", catWhite: "#ffffff", catEyes: "#c6d43a", catNose: "#f4a0b0", catSize: 100, broomSize: 100, bootColor: "#1f1f22",
+             scubaColor: "#1f2937", scubaAccent: "#14b8a6", diverMetal: "#c9a227", diverCloth: "#b9a27a", diverHose: true, hoseColor: "#4b5563",
+             snorkel: false, snorkelColor: "#facc15", mask: false, maskColor: "#0ea5e9", tank: false, tankColor: "#facc15",
              wingStyle: "butterfly", fairyOutfit: "dress", tunicStyle: "petal", ghostRagged: 30, ghostEyes: "2", ghostHideEyes: false, ghostColor: "#f4f1ea", fairyShoes: "slipper", fairyShoeColor: FAIRY_SHOE_COLORS[0], wingFlutter: true, wingLfo: "none", wreath: true, wreathFlowers: "mix",
              ...Object.fromEntries(Object.entries(FAIRY_WINGS).map(([id, w]) => ["wingColor_" + id, w.colors[0]])),
              ...Object.fromEntries(Object.entries(FAIRY_TUNICS).map(([id, t]) => ["tunicColor_" + id, t.colors[0]])) },
@@ -1000,7 +1002,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.259", released: "2026-10-18" };
+const VERSION = { number: "0.0.260", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

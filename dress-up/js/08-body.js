@@ -260,6 +260,14 @@ function shoeSvg(x, y, side, sh, skin) {
            [14, 21, 26].map((dx, i) => `<circle cx="${f1(cx + side * dx * sc)}" cy="${f1(cy + (i - 1) * 6 * sc)}" ` +
              `r="${f1(3.6 * sc)}" fill="${sh.pad}"/>`).join("");
   }
+  // (ticket 288) a scuba suit's fins: a black foot pocket and a long blade on past the toes, ribbed, in the suit's stripes' color
+  if (sh.style === "fin") {
+    const c = sh.color || "#14b8a6", X = v => f1(x + side * v * sc), Y = v => f1(y + v * sc);
+    return `<path data-dive="fin" d="M${X(-12)} ${Y(-14)} L${X(12)} ${Y(-14)} L${X(18)} ${Y(4)} L${X(70)} ${Y(-2)} Q${X(96)} ${Y(-6)} ${X(102)} ${Y(10)} Q${X(96)} ${Y(28)} ${X(70)} ${Y(26)} L${X(-14)} ${Y(26)} Z" ` +
+           `fill="${c}" stroke="${darker(c)}" stroke-width="2.5" stroke-linejoin="round"/>` +
+           `<path d="M${X(-12)} ${Y(-14)} L${X(12)} ${Y(-14)} L${X(18)} ${Y(4)} L${X(22)} ${Y(26)} L${X(-14)} ${Y(26)} Z" fill="#111827"/>` +
+           [40, 58, 76].map(v => `<line x1="${X(v)}" y1="${Y(6)}" x2="${X(v + 12)}" y2="${Y(20)}" stroke="${darker(c)}" stroke-width="2"/>`).join("");
+  }
   if (sh.style === "bare")
     return `<ellipse cx="${f1(x + side * 12 * sc)}" cy="${f1(y + 8 * sc)}" rx="${f1(22 * sc)}" ry="${f1(10 * sc)}" ` +
            `fill="${skin}" stroke="${darker(skin)}" stroke-width="2.5"/>`;
