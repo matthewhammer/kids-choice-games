@@ -226,7 +226,11 @@ function standingHere(B, seats) {
     let b = null;
     // (ticket 214's audit: a cauldron's box stood up past the picture's top, its fumes measured as the pot) what rises
     // from a thing, .fumes, is no part of its box: hidden while it is measured
-    const fumes = [...o.node.querySelectorAll(".fumes")];
+    // (ticket 304, Matthew: the king's chest's box "reaches too far to the left, where there are only some coins on the
+    // ground and no chest") nor what lies flat on the floor beside it: a part marked .flat (coins spilled), and its shadow
+    // (a faint black ellipse under it)
+    const fumes = [...o.node.querySelectorAll('.fumes, .flat, ellipse[fill="#000"], ellipse[fill="#000000"]')]
+      .filter(el => !el.matches("ellipse") || el.closest(".fumes, .flat") || +(el.getAttribute("opacity") ?? el.getAttribute("fill-opacity") ?? 1) < 0.45);
     for (const f of fumes) f.style.display = "none";
     try {   // (Firefox throws for a drawing not shown)
       const r = root.getBBox(), E = root.getScreenCTM(), m = Pinv && E ? Pinv.multiply(E) : null;

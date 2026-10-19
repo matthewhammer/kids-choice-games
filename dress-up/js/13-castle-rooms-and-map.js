@@ -1164,7 +1164,8 @@ function kingRoomSvg(c, K) {
   t += obj("chest of gold", cyb, `<rect x="${f1(cx - 40 * k)}" y="${f1(cyb - 40 * k)}" width="${f1(80 * k)}" height="${f1(40 * k)}" fill="#7a4f2a" stroke="#4a2e1a" stroke-width="${f1(2 * k)}"/>` +
        `<path d="M${P(cx - 40 * k, cyb - 40 * k)} L${P(cx - 36 * k, cyb - 76 * k)} L${P(cx + 44 * k, cyb - 76 * k)} L${P(cx + 40 * k, cyb - 40 * k)} Z" fill="#8b5e34" stroke="#4a2e1a" stroke-width="${f1(2 * k)}"/>` +
        [...Array(14)].map((_, j) => `<ellipse cx="${f1(cx - 32 * k + 64 * k * R(j, 970))}" cy="${f1(cyb - 40 * k - 6 * k * R(j, 971))}" rx="${f1(6 * k)}" ry="${f1(3 * k)}" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(1 * k)}"/>`).join("") +
-       [...Array(6)].map((_, j) => `<ellipse cx="${f1(cx - 50 * k - 30 * k * R(j, 972))}" cy="${f1(cyb + 4 * k + 10 * k * R(j, 973))}" rx="${f1(6 * k)}" ry="${f1(3 * k)}" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(1 * k)}"/>`).join("") +
+       // (ticket 304: the coins spilled on the floor are flat, no part of its box)
+       `<g class="flat">${[...Array(6)].map((_, j) => `<ellipse cx="${f1(cx - 50 * k - 30 * k * R(j, 972))}" cy="${f1(cyb + 4 * k + 10 * k * R(j, 973))}" rx="${f1(6 * k)}" ry="${f1(3 * k)}" fill="${gold}" stroke="#9a7a12" stroke-width="${f1(1 * k)}"/>`).join("")}</g>` +
        [-1, 1].map(e => `<rect x="${f1(cx - 3 * k + e * 26 * k)}" y="${f1(cyb - 40 * k)}" width="${f1(6 * k)}" height="${f1(40 * k)}" fill="#c9a227"/>`).join(""));
   return t;
 }

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.268 (2026-10-18)
+
+Everything in 0.0.267, with collision boxes that end where things end.
+
+- **A thing's collision box is what stands, not what lies flat beside it**: the king's chest of gold no longer stops you at the coins spilled to its left, and rocks, stones, the fountain and the hay cart no longer stop you at their shadows (32 boxes across the places got narrower, 🔬 shows them).
+
 ## 0.0.267 (2026-10-18)
 
 Everything in 0.0.266, with nine new upbeat tracks, for M.
