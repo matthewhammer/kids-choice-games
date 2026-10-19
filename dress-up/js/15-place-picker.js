@@ -718,9 +718,9 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     }
   } else if (kind === "sea") {
     // (ticket 186, Matthew) open water, beyond the beach: the sky, the sea to
-    // the horizon all round, the friend swimming; far off a sail and an
-    // island; waves smaller and closer together toward the horizon. Still,
-    // nothing moving but the friend (60 frames a second first)
+    // the horizon all round, the friend swimming; waves smaller and closer
+    // together toward the horizon. Still, nothing moving but the friend (60
+    // frames a second first)
     const hz = seaHorizon({ g, k });
     s += `<defs>${grad("bg-sea-sky", "#5fbdf2", "#d6f0ff", y0, hz)}${grad("bg-sea", "#2a9fd6", "#0f5e8e", hz, y1)}</defs>` + all("url(#bg-sea-sky)");
     const sx = x1 - W * 0.2, sy = y0 + H * 0.15;
@@ -728,15 +728,8 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       return `<line x1="${f1(sx + 58 * k * Math.cos(a))}" y1="${f1(sy + 58 * k * Math.sin(a))}" x2="${f1(sx + 82 * k * Math.cos(a))}" y2="${f1(sy + 82 * k * Math.sin(a))}" ` +
              `stroke="#ffd23f" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`; }).join("") +
          `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(46 * k)}" fill="#ffd23f"/>`;
-    // the island, low on the horizon at the left, and a sail at the right (ticket 284: each an object of its own, far off)
-    const mIsle = s.length;
-    s += `<path d="M${P(x0 + W * 0.12, hz)} Q${P(x0 + W * 0.2, hz - 34 * k)} ${P(x0 + W * 0.27, hz - 22 * k)} Q${P(x0 + W * 0.31, hz - 30 * k)} ${P(x0 + W * 0.36, hz)} Z" fill="#4f8a4b"/>` +
-         `<path d="M${P(x0 + W * 0.25, hz - 22 * k)} l${f1(0)} ${f1(-26 * k)} M${P(x0 + W * 0.25, hz - 48 * k)} q${f1(-14 * k)} ${f1(2 * k)} ${f1(-20 * k)} ${f1(10 * k)} M${P(x0 + W * 0.25, hz - 48 * k)} q${f1(14 * k)} ${f1(2 * k)} ${f1(20 * k)} ${f1(10 * k)}" stroke="#2e6b2c" stroke-width="${f1(3 * k)}" fill="none"/>`;
-    s = wallSince(s, mIsle, "island");
-    const bx = x1 - W * 0.3, by = hz - 4 * k, mBoat = s.length;
-    s += `<path d="M${P(bx - 16 * k, by)} L${P(bx + 16 * k, by)} L${P(bx + 11 * k, by + 6 * k)} L${P(bx - 11 * k, by + 6 * k)} Z" fill="#7a4b28"/>` +
-         `<path d="M${P(bx, by - 2 * k)} L${P(bx, by - 40 * k)} L${P(bx + 18 * k, by - 6 * k)} Z" fill="#ffffff"/>`;
-    s = wallSince(s, mBoat, "sailboat");
+    // (ticket 212, Matthew: "island in distance, sail boat that seems stationary. Let's remove those, since they currently seem like
+    // promises for stuff that doesn't exist, and cannot be reached") no island and no sail: nothing far off that cannot be reached
     // the sea, and its waves: rows of little arcs, nearer ones bigger and further apart
     s += `<rect x="${f1(x0 - pad)}" y="${f1(hz)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - hz + pad)}" fill="url(#bg-sea)"/>` +
          `<line x1="${f1(x0 - pad)}" y1="${f1(hz)}" x2="${f1(x1 + pad)}" y2="${f1(hz)}" stroke="#e8f6ff" stroke-width="${f1(1.5 * k)}" opacity="0.7"/>`;

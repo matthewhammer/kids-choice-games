@@ -28,7 +28,7 @@ The audit of ticket 284 (Matthew, 2026-10-18: "audit each scene for objects that
 14. **Bats**, flying (the witch's woods).
 15. **A beach blanket**, striped (the beach).
 
-Runners-up: the dreamcatcher, the wind chime, the tent's teddy, books, backpack and flashlight, the crossed swords and shield, the sailboat.
+Runners-up: the dreamcatcher, the wind chime, the tent's teddy, books, backpack and flashlight, the crossed swords and shield.
 
 ## Placeable, with a caveat
 
@@ -45,7 +45,7 @@ Outdoors
 | 🌲 forest | (objects since 0.0.252: the sunbeams and the meadow flowers, the flowers in rows by depth since ticket 297) | | | |
 | 🐠 underwater, 🪸 deep sea | (since 0.0.293, objects: the light rays; the sand's specks and the deep sea's ripples) | | | |
 | 🏖️ beach | waves and foam: the water's edge, terrain (since 0.0.250, objects: the two striped blankets) | flat | | 15:632 |
-| 🌊 open water | nothing (since 0.0.250, objects: the island with its palm, the sailboat, the sun glitter) | | | |
+| 🌊 open water | nothing (since 0.0.250, objects: the sun glitter; the island and the sailboat taken away in 0.0.324, ticket 212) | | | |
 | 🧙 witch's woods | nothing (since 0.0.250, the bats; since 0.0.293, the grass in rows by depth, and each dead tree and skull its own object) | | | |
 | 🌿 cemetery | the brook with its ripples: terrain (since 0.0.293, objects: the stones by the brook; the flowers in rows by depth) | flat | the brook | 15:338 |
 | 🦆 lake | the little beach: terrain (since 0.0.250, the lily pads; since 0.0.293, the sun on the water, the pebbles, the grass in rows by depth) | flat | | 09:241 |

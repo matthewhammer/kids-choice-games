@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.324 (2026-10-19)
+
+Everything in 0.0.323, with open water that promises nothing it doesn't have.
+
+- **🌊 No island and no sail boat far off on the open water**: they looked like places to go and a boat to take, but neither could be reached. The sea and the sky are all there is out there now (a distant shore you can choose is coming next).
+
 ## 0.0.323 (2026-10-19)
 
 Everything in 0.0.322, with the 🏞️ Background tab much lighter while you play.
