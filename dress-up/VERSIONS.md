@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.328 (2026-10-19)
+
+Everything in 0.0.327, with 🏞️ Background open and walking smoother still.
+
+- **🏃 No hitch every quarter second with 🏞️ Background open**: while your friend moves, the game brings its controls up to date a few times a second; with the Background tab's thousands of settings that took a frame to itself each time. Now it is spread over a few frames while your friend moves, and done all at once when they stop.
+
 ## 0.0.327 (2026-10-19)
 
 Everything in 0.0.326, with the east and west arrows showing at the edges again.

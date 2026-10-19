@@ -750,12 +750,30 @@ function moved(force = false) {
   feedMusic();
   if (!settleTimer) settleTimer = setTimeout(settle, 250);
 }
+// (ticket 379, from 0.0.327's speed run: walking with 🏞️ Background open, 56 frames a second and 7% of them late, every other tab
+// 59.5 to 60: its round of syncs, 4,239 of them, 6.6 ms in the app's pane, ran inside one frame every 250 ms) While the friend is
+// moving, the round goes in slices of at most SETTLE_SLICE ms, one a frame, the rest of settle after the last; still (the round
+// when they stop), or in a hidden tab (no frames), all at once as before. A settle due while a round is going on runs after it.
+const SETTLE_SLICE = 3;
+let settling = null;
 function settle() {
   clearTimeout(settleTimer); settleTimer = 0;
+  if (settling) { settling.again = true; return; }
   worldKeep();   // (ticket 185: a forest crossing edited in its square, kept there, before it is saved)
   flagCastles = null;   // (ticket 365, as in changed)
-  for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync();
-  if (!hud.hidden && hudKey() !== hudShown) renderHud();
+  const rest = () => { for (const f of hudSyncs) f(); persist(); musicSync(); backSync();
+    if (!hud.hidden && hudKey() !== hudShown) renderHud(); };
+  if (performance.now() - movedLast > 200 || document.hidden) { for (const f of syncs) f(); rest(); return; }
+  const list = syncs, job = settling = { i: 0, again: false };
+  const step = () => {
+    if (syncs !== list) { settling = null; return; }   // (the tab built again: its own round, changed's, has run)
+    const t = performance.now();
+    while (job.i < list.length) { list[job.i++](); if (!(job.i & 31) && performance.now() - t > SETTLE_SLICE) break; }
+    if (job.i < list.length) { requestAnimationFrame(step); return; }
+    settling = null; rest();
+    if (job.again && !settleTimer) settleTimer = setTimeout(settle, 0);
+  };
+  step();
 }
 function changed() {
   worldKeep();   // (ticket 185, as in settle: before the drawing, which reads a crossing's live paths from it)
