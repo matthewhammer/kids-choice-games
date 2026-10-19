@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.253 (2026-10-18)
+
+Everything in 0.0.252, with the trap room's levers working by touch.
+
+- **Fixed: the trap room's red and blue levers did nothing to a touch** (on an iPad, for M). A tap on one now pulls it, as a click always has.
+
 ## 0.0.252 (2026-10-18)
 
 Everything in 0.0.251, with the trap room more magical and less glitchy.

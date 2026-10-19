@@ -140,8 +140,12 @@ function poseTo({ what, side }, [x, y]) {
     B["poseKnee" + sk] = r1(norm(thigh - shin - base.b0));
   }
 }
+// (ticket 350, Matthew: "the red and blue levers do not work with touch on M's ipad") a touch sends pointerdown, then
+// touchstart: a press on the trap room's levers (drag.roomLever, pulled when let go) was dropped here, not being on a joint,
+// the face, the friend or a thing, so the finger lifted on nothing; kept now, the page held still under it
 pic.addEventListener("touchstart", e => {
-  if (e.touches.length === 1 && (onJoint(e.touches[0]) || onFace(e.touches[0]) || onFigure(e.touches[0]) || onThing(e.touches[0]))) e.preventDefault();
+  const onRoomLever = e.target && e.target.closest && e.target.closest("[data-lever]");
+  if (e.touches.length === 1 && (onRoomLever || onJoint(e.touches[0]) || onFace(e.touches[0]) || onFigure(e.touches[0]) || onThing(e.touches[0]))) e.preventDefault();
   else drag = null;
 }, { passive: false });
 pic.addEventListener("touchmove", e => {
