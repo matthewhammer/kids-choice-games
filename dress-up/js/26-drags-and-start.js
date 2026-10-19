@@ -154,8 +154,16 @@ pic.addEventListener("touchmove", e => {
 pic.addEventListener("pointerleave", () => { if (hoverOn) { hoverOn = null; showHover(); } });
 // (ticket 369) a press the page made itself (a check's PointerEvent) has no pointer to capture; as the on-screen pad's
 function picCapture(id) { try { pic.setPointerCapture(id); } catch (_) { /* (a synthetic press) */ } }
+// (ticket 378, Matthew: "after closing a tree house trap door and reopening it -- we cannot click to activate walking and entering
+// it"; "other glowing things ... are also inactive on click") A press the page took itself (a lever pulled, the friend or a thing
+// held, a sign's board) was taken twice: at its letting go, and again by the click the browser sends after it, which went through the
+// passage the pointer was near (hoverPass; with the pointer held, the click's target is the picture, not the friend or the lever, so
+// its own test missed them): a click on a lever sent the friend out of the room while walking to it, the trip and the walk at odds,
+// and a trip that never ends leaves every passage dead (entering). pressTaken: that click is the press's, and goes nowhere else
+let pressTaken = false;
 pic.addEventListener("pointerdown", e => {
   if (!e.isPrimary) return;
+  pressTaken = false;
   if (hoverOn) { hoverOn = null; showHover(); }
   const joint = onJoint(e);
   if (joint) {
@@ -325,6 +333,7 @@ const letGo = () => {
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, placed = drag && drag.figure, put = drag && drag.put !== undefined;
+  if (drag) pressTaken = true;   // (ticket 378: its click is this press's)
   if (put) { clearTimeout(drag.redraw); if (drag.host) drag.host.removeAttribute("transform"); }   // (ticket 254: drawn where it was let go)
   drag = null;
   if (put) changed();
@@ -347,7 +356,14 @@ function leverAct(sel, act) {
   if (!A.clickWalk || A.leverFar || !el || !M || BG.kind === "none" || BG.onBridge) { act(); return; }
   const r = el.getBoundingClientRect(), c = new DOMPoint((r.left + r.right) / 2, r.bottom).matrixTransform(M.inverse());
   const g = SCENE.ground, k = (SCENE.bottom - SCENE.top) / 700, F = sceneFrame, z = Math.max(g + figYMin(F) + 4, Math.min(F.bottom - 4, c.y + 8 * k));
-  const pull = () => { if (BG.seat) standUp(); state.body.facing = "back"; state.body.turn = ""; startPull(act); };
+  // (ticket 378: pulled, they step aside, toward the room's middle, so the lever they stood before is in sight and in reach of a click
+  // again: in front of it, their body covered it, and a click on it took hold of them instead)
+  const aside = () => { const el2 = bgShown.node && bgShown.node.querySelector(sel), M2 = pic.getScreenCTM();   // (found again: the pull draws the place anew)
+    if (clickRun || entering || drag || state.body.anim !== "none" || !el2 || !M2) return; const fb = friendBox(), r2 = el2.getBoundingClientRect(), q0 = new DOMPoint(r2.left, r2.top).matrixTransform(M2.inverse()), q1 = new DOMPoint(r2.right, r2.top).matrixTransform(M2.inverse());
+    if (!fb) return; const half = (fb[2] - fb[0]) / 2, x = BG.figX ?? 0, lx0 = Math.min(q0.x, q1.x), lx1 = Math.max(q0.x, q1.x); if (x + half < lx0 || x - half > lx1) return;
+    const side = (lx0 + lx1) / 2 > (F.left + F.right) / 2 ? -1 : 1, tx = side > 0 ? lx1 + half + 10 * k : lx0 - half - 10 * k;
+    if (tx > F.left + half && tx < F.right - half) walkPlanned(tx, g + (BG.figY ?? 0)); };
+  const pull = () => { if (BG.seat) standUp(); state.body.facing = "back"; state.body.turn = ""; startPull(act); setTimeout(aside, 1250); };
   if (Math.hypot(c.x - (BG.figX ?? 0), z - (g + (BG.figY ?? 0))) < 24 * k && !clickRun) { pull(); return; }
   walkPlanned(c.x, z, pull);
 }
@@ -536,6 +552,7 @@ pic.parentNode.addEventListener("pointermove", e => {
 });
 pic.parentNode.addEventListener("pointerleave", () => { if (hoverPass) { hoverPass = null; showEnterGlow(); } });
 pic.addEventListener("click", e => {
+  if (pressTaken) { pressTaken = false; return; }   // (ticket 378: a press the page took itself, already done at its letting go)
   // (ticket 199: the one under the pointer, even far off: walked or swum to, and gone through)
   if (hoverPass && !entering && e.target.closest && !e.target.closest("#figure, [data-drag^='thing:']")) {
     const h = marks.pics.find(q => q.el === hoverPass.el && q.el.isConnected);

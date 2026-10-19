@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.316 (2026-10-19)
+
+Everything in 0.0.315, with levers that leave the passages working.
+
+- **🎚️ Clicking a lever no longer sends you out of the room**: a click on a lever (or on your friend) also counted as a click on the nearest doorway, so your friend could set off through it while walking to the lever, and afterwards no doorway, door or trap door would take a click. Now a click on a lever only pulls the lever.
+- **🎚️ After pulling a lever, your friend steps aside**, so the lever is not hidden behind them for the next click (the tree house's trap door: shut it, then open it again).
+
 ## 0.0.315 (2026-10-19)
 
 Everything in 0.0.314, with every tab able to open full screen beside the game.
