@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.290 (2026-10-18)
+
+Everything in 0.0.289, with copies of a part on the mixing board.
+
+- **⧉ dup on every channel of the mixing board**: a copy of that part, "bass A dup", playing the same notes on the same instrument, with its own strip starting from the original's settings, so you can move it an octave up or down and make the part fuller. A second copy is "dup 2". Each copy has a ✖ to take it away, and copies are saved with the tune's mix.
+
 ## 0.0.289 (2026-10-18)
 
 Everything in 0.0.288, with more things in your way, as they should be.

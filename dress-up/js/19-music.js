@@ -1249,17 +1249,25 @@ const nextInterval = iv => (iv || 12) % 12 + 1;
 // a tune made ready to play: every part's notes in one list, by step,
 // section after section of its form
 const songs = {};
+// (ticket 361, Matthew: "On each instrument, permit a 'dup' chip, that duplicates the instrument in the mix. The default is to
+// name the new one 'X dup' for 'X' as the original. The usecase is changing a part up or down an octave, to boost that part a
+// bit in the mix") A tune's dups, in its mix (saved with it): each { of: the channel copied, name: the copy's }; the song
+// gains each as a part of its own, the same notes on the same instrument, playing wherever the original plays (dupOf), so
+// it has its strip, its knobs and its octave presses; songOf builds again when the dups change
+const dupsOf = id => (mixOf(id).dups || []).filter(d => d && d.of && d.name);
 function songOf(id) {
-  if (songs[id] !== undefined) return songs[id];
+  const dk = JSON.stringify(dupsOf(id));
+  if (songs[id] !== undefined && (songs[id] === null || songs[id].dk === dk)) return songs[id];
   try {
     const T = TUNES[id].make(), bar = T.bar || 16, events = [];
+    for (const d of dupsOf(id)) { const q = T.parts.find(r => channelKey(r) === d.of); if (q) T.parts.push({ ...q, name: d.name, dupOf: q.dupOf || q.name }); }
     // (without a form: every part all the time, as long as the longest)
     const form = T.form || [{ bars: Math.max(...T.parts.map(p => p.line.steps)) / bar, names: null, up: 0 }];
     let start = 0;
     for (const sec of form) {
       const len = sec.bars * bar;
       T.parts.forEach((p, part) => {
-        if (sec.names && !sec.names.includes(p.name)) return;
+        if (sec.names && !sec.names.includes(p.dupOf || p.name)) return;   // (a dup plays where its original does)
         for (let rep = 0; rep * p.line.steps < len; rep++)
           for (const e of p.line.events) {
             const at = rep * p.line.steps + e.at;
@@ -1269,7 +1277,7 @@ function songOf(id) {
       start += len;
     }
     events.sort((a, b) => a.at - b.at);
-    return songs[id] = { T, steps: start, events };
+    return songs[id] = { T, steps: start, events, dk };
   } catch (err) {
     console.error("the tune " + id + " didn't build:", err);
     return songs[id] = null;
@@ -1558,6 +1566,25 @@ const LFO_FOLLOWERS = [
   () => ["fast", "slow", "wings"].flatMap(pace => { const B = state.background, th = sceneLfoThings(B)[pace], L = th && sceneLfoName(B, pace); return L ? [[L, th]] : []; }),
 ];
 const lfoFollowers = () => LFO_FOLLOWERS.flatMap(f => f());
+// (ticket 361) a dup added or taken away: the mix's list and the copy's channel (its original's settings, not muted or soloed),
+// then the tune, if playing, on from the step it is at, so the copy is heard at once
+const mixRoot = id => { const mix = state.music.mix || (state.music.mix = {}); return mix[id] || (mix[id] = structuredClone((TUNES[id] && TUNES[id].mix) || {})); };
+function dupAdd(id, p, key) {
+  const t = mixRoot(id), names = new Set((songOf(id)?.T.parts || []).map(q => q.name));
+  let name = p.name + " dup"; for (let n = 2; names.has(name); n++) name = `${p.name} dup ${n}`;
+  t.dups = [...(t.dups || []), { of: key, name }];
+  const { mute, solo, ...rest } = structuredClone(t[key] || {}); t[name + "·" + p.inst] = rest;
+  dupRestart(id);
+}
+function dupRemove(id, p, key) {
+  const t = mixRoot(id); t.dups = (t.dups || []).filter(d => d.name !== p.name); delete t[key];
+  dupRestart(id);
+}
+function dupRestart(id) {
+  if (!playing || playing.id !== id || !audio) return;
+  const p = playing, at = p.s0 + (audio.currentTime - p.t0) / p.sd, song = songOf(id);
+  stopTune(); startFrom = song && song.steps ? ((at % song.steps) + song.steps) % song.steps : 0; musicSync();
+}
 function mixChanged() {
   persist(); applyMix();
   // (whatever follows an LFO follows its changes at once)
@@ -1677,10 +1704,13 @@ function mixerBox(box) {
       const dot = el("span", { class: "dot" });
       const flip = what => () => { const ch = chan(id, key); ch[what] = !ch[what]; local(); syncButtons(); };
       const mute = el("button", { class: "ms", onclick: flip("mute") }, "🔇 mute"), solo = el("button", { class: "ms", onclick: flip("solo") }, "🎧 solo");
+      // (ticket 361) ⧉ dup: a copy of this channel, "X dup", starting from its settings; a dup's own ✖ takes it away
+      const dup = el("button", { class: "ms", title: "a copy of this part, its own channel, to move up or down an octave", onclick: () => { dupAdd(id, p, key); local(); build(); } }, "⧉ dup");
+      const undup = p.dupOf ? [el("button", { class: "ms", title: "take this copy away", onclick: () => { dupRemove(id, p, key); local(); build(); } }, "✖")] : [];
       const strip = el("div", { class: "strip" }, [
         el("div", { class: "strip-top" }, [dot, el("span", { class: "strip-name" }, [(INST_ICON[p.inst] || "🎵") + " " + partName(p.name) + " ",
           // (the instrument too, unless the name says it: "bass", "organ")
-          ...(partName(p.name).toLowerCase().startsWith(p.inst) ? [] : [el("small", {}, p.inst)])]), mute, solo, throwButton("🌊 throw", i)]),
+          ...(partName(p.name).toLowerCase().startsWith(p.inst) ? [] : [el("small", {}, p.inst)])]), mute, solo, throwButton("🌊 throw", i), dup, ...undup]),
         knob("🔊 level", -10, 10, () => c().level || 0, v => { chan(id, key).level = v; }, v => (v > 0 ? "+" : "") + v + " dB"),
         knob("🌊 echo", 0, 100, () => c().echo ?? Math.round((p.echo || 0) * 100), v => { chan(id, key).echo = v; }, pct),
         knob("🏛️ room", 0, 100, () => c().rev ?? Math.round((p.rev || 0) * 100), v => { chan(id, key).rev = v; }, pct),
