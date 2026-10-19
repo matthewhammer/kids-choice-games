@@ -37,7 +37,7 @@ function treehouseScene(c) {
   // flowers in the grass (ticket 261, Matthew: "looks like we are wasting time drawing flowers behind the tree house
   // tree?"): one more than 75% behind the trunk's dark core, at the tree's size now, left out; a part of their own, so
   // the size slider builds only them again
-  s += SEP + part("tree-flowers", [c.F, ts], () => {
+  s += SEP + floorObj("flowers", part("tree-flowers", [c.F, ts], () => {   // (ticket 284: an object)
     const { y1 } = c, sp = streamAt(c), z = ts * k, core = [[[-81.6 * z, g + 10 * z], [-48 * z, g - 780 * z], [48 * z, g - 780 * z], [81.6 * z, g + 10 * z]]];
     const items = [];
     for (let i = 0; i < 48; i++) {
@@ -47,7 +47,7 @@ function treehouseScene(c) {
       items.push({ svg: use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, sc, sc, ` color="${FLOWER_COLORS[i % 6]}"`), shape: [[[x - 8 * sc, y - 34 * sc], [x + 8 * sc, y - 34 * sc], [x + 8 * sc, y + sc], [x - 8 * sc, y + sc]]] });
     }
     return seenOnly(items, core);
-  });
+  }));
   s += SEP + part("tree-near", c.F, () => {
     const { x1, y1, P } = c, side = c.side, sp = streamAt(c);
     const tree = (i, x, y, sc) => i % 3 === 1 ? use("bg-woods-oak", x, y, sc * (R(i, 211) < 0.5 ? -1 : 1), sc)
@@ -1468,12 +1468,14 @@ function fairyforestScene(c) {
   // flowers, tufts, bushes and stones in the near grass
   s += SEP + part("fairy-near", [c.F, time], () => {
     let t = `<defs>${FLOWER_DEFS}</defs>`;
+    const mFl = t.length;   // (ticket 284: the flowers and tufts an object, flat)
     for (let i = 0; i < 34; i++) {
       const d = R(i, 1340), x = x0 + W * R(i, 1341), y = g + 10 * k + (y1 - g) * d;
       if (Math.abs(x - rx0) < rrx * 1.05 && Math.abs(y - ry0) < rry * 1.3) continue;
       t += i % 3 === 0 ? grassTuft(x, y, (14 + 10 * d) * k, i + 1340, tn("#4f9a3a"), 2 * k)
                        : use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.6 * d), k * (0.8 + 0.6 * d), ` color="${tn(FLOWER_COLORS[i % 6])}"`);
     }
+    t = floorSince(t, mFl, "flowers and grass");
     // (the flowers and tufts are flat; the bush and the stones are objects, each at its foot)
     t += obj("bush", g + 6 * k, bushSvg(x1 - W * 0.08, g + 6 * k, 70 * k, 1350, { greens: ["#285e2a", "#2f7d32", "#3a8a3c", "#4a9a46", "#5aad52"].map(tn) })) +
          obj("stone, left", g + 60 * k, rockSvg(x0 + W * 0.1, g + 60 * k, 26 * k, 1351, tn("#9a9488"))) + obj("stone, right", g + 90 * k, rockSvg(x1 - W * 0.3, g + 90 * k, 18 * k, 1352, tn("#9a9488")));
@@ -1837,12 +1839,13 @@ function hutScene(c) {
   s += SEP + part("hut-meadow", c.F, () => {
     let t = land(g - 125 * k, 4, "#86c262", 0.7) +
       `<path d="M${P(-70 * k, y1 + pad)} Q${P(-10 * k, g + 60 * k)} ${P(-22 * k, g + 10 * k)} L${P(22 * k, g + 10 * k)} Q${P(30 * k, g + 60 * k)} ${P(70 * k, y1 + pad)} Z" fill="#d9c08a"/>`;
+    let fl = "";
     for (let i = 0; i < 44; i++) {
       const d = R(i, 2792), x = x0 + W * R(i, 2793), y = g - 60 * k + (y1 - g + 60 * k) * d;
       if (Math.abs(x) < (60 + 40 * d) * k) continue;
-      t += use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.6 * d), k * (0.8 + 0.6 * d), ` color="${FLOWER_COLORS[i % 6]}"`);
+      fl += use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.6 * d), k * (0.8 + 0.6 * d), ` color="${FLOWER_COLORS[i % 6]}"`);
     }
-    return `<defs>${FLOWER_DEFS}</defs>` + t;
+    return `<defs>${FLOWER_DEFS}</defs>` + t + floorObj("flowers", fl);   // (ticket 284: an object)
   });
   // the hut, or its cluster, every door the way in (one object, at the nearest hut's feet); its smoke rising from the
   // peak of the hut center, or of the farthest hut, swaying with the slow LFO
@@ -1868,7 +1871,8 @@ function hutScene(c) {
     }
     return obj("woodpile", wy + 4 * k, t); });
   // butterflies over the meadow, bobbing with the quick LFO, their wings with the wings' LFO
-  s += SEP + part("hut-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => butterfliesSvg(c, [[-W * 0.32, g - 40 * k, 1.1], [W * 0.18, g - 120 * k, 0.9], [-W * 0.1, g + 30 * k, 1]]));
+  // (ticket 284: an object, as the butterflies are everywhere else)
+  s += SEP + obj("butterflies", g - 40 * k, part("hut-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => butterfliesSvg(c, [[-W * 0.32, g - 40 * k, 1.1], [W * 0.18, g - 120 * k, 0.9], [-W * 0.1, g + 30 * k, 1]])));
   return s;
 }
 // inside: its living room, the couch and the rug as the house's, with the hut's walls; the doors to its other rooms

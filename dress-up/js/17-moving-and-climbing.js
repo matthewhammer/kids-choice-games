@@ -943,7 +943,7 @@ const STILL_PIC_HOLD = 400, STILL_PARTS = 6, STILL_RES = "defs, linearGradient, 
 const stillPic = { gen: 0, node: null, text: null, vb: null, bitmap: false, off: "", parts: new Map(), shown: [], on: false, onNode: null, glow: null, glowOf: null, bitmapOk: null, drawsOn: 0, draws: 0,
   painted: new WeakSet(), sceneHidden: false };   // (ticket 177: the pictures that have had a frame to paint; whether the scene is hidden)
 let stillPicUntil = 0, stillPicEnd = 0;
-const stillPicWanted = () => !!bgShown.node && sceneryStill() && !SPEED_TEST.holder && !SPEED_TEST.noPic;
+const stillPicWanted = () => !!bgShown.node && sceneryStill() && !SPEED_TEST.holder && !SPEED_TEST.noPic && !(typeof SWINGS !== "undefined" && SWINGS.size);   // (not while a swing runs: ticket 349's blink)
 // (the parts' pictures, kept while the place, its frame and its hidden objects stay as they are)
 function stillPicReset() {
   const vb = pic.getAttribute("viewBox"), off = [...objectsOff(state.background)].join(",");

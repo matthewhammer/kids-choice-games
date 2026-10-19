@@ -890,7 +890,7 @@ const SHOWN_WHEN = {
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
   ...Object.fromEntries(["starShape", "starSize", "starBright", "starTwinkle"].map(key =>
-    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && b.campTime === "night") || (b.kind === "fairyforest" && b.fairyTime === "night")])),
+    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && b.campTime === "night") || (b.kind === "fairyforest" && b.fairyTime === "night") || (b.kind === "castleroom" && castleOf(b).rooms[Math.round(b.castleRoom ?? 1) - 1] === "trap")])),   // (and the trap room's: the sparkles of a boulder lifted)
   "background.tent": b => b.kind === "tent",
   "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),

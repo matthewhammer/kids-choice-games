@@ -337,6 +337,8 @@ function leverPull(i) {
   for (const [j, open] of swung) lidSwing(`[data-drag="thing:${j}"] .pit-lid`, open);   // (ticket 307)
   // (a boulder lifted out is drawn no more once it has gone: drawn again, held, for its rising; ticket 323)
   for (const [j, down] of dropped) if (down) boulderFall(`[data-drag="thing:${j}"] [data-boulder]`, true, BOULDER_FALL, boulderHits);
+  // (a placed boulder lever lifting its boulders: sparkles from the lever and from each trap door they leave)
+  if (T.does === "boulder" && !T.on) { sparkleFrom(`[data-drag="thing:${i}"] .lever-arm circle`, 14); for (const [j] of dropped) sparkleFrom(`[data-drag="thing:${j}"]`, 22); }
 }
 // (ticket 305) The trap room's lever pulled: it flips over, and so does every pit it works (trapState); its handle turns across
 function roomLeverPull(side) {
@@ -350,6 +352,16 @@ function roomLeverPull(side) {
   const up = !B[key], sd = side === "L" ? -1 : 1, T = trapState(B, n, K.id), now = T.open;
   turnArm(`[data-lever="${side}"] .lever-arm`, (up ? 1 : -1) * sd * LEVER_TILT, LEVER_TURN * 100 / T.speed.lever);   // (ticket 328: the room's speeds)
   for (const j of [0, 1]) if (now[j] !== was[j]) lidSwing(`.pit-lid[data-pit-i="${j}"]`, now[j], PIT_SWING * 100 / T.speed.lid);   // (ticket 307)
+  // (Matthew: "opened by the red lever (trap door) while standing on it, and no falling sequence was triggered") a pit opened
+  // under the friend: in they fall, as walking onto it does, once its lid has swung most of the way
+  if (now.some((o, j) => o && !was[j])) setTimeout(fallIfOverPit, 0.6 * PIT_SWING * 100 / T.speed.lid);
+}
+// (the friend, standing still, over a pit's open hole: falling in, as walking onto it does; not mid-jump or on a trip)
+function fallIfOverPit() {
+  const BG = state.background;
+  if (entering || BG.kind === "none" || isJump(state.body.anim)) return;
+  const pit = pitAt(BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
+  if (pit) enterScene(pit);
 }
 // (ticket 323) A trap room's boulder lever pulled: it flips over; each pit it works (by the room's wiring) has its boulder
 // fall from the ceiling into the hole, or rise away again. A new seed each time one falls: a new rock (its shape, and its
@@ -367,6 +379,11 @@ function roomBoulderPull(side) {
   const down = B[key], sd = side === "L" ? -1 : 1, sp = trapState(B, n, K.id).speed;
   turnArm(`[data-lever="B${side}"] .lever-arm`, (down ? -1 : 1) * sd * LEVER_TILT, LEVER_TURN * 100 / sp.lever);
   for (const j of [0, 1]) if (now[j] !== was[j]) boulderFall(`[data-boulder="${j}"]`, now[j], BOULDER_FALL * 100 / sp.boulder, boulderHits);
+  // (Matthew: "when the boulder lifts, can we have some sparkles shoot out of the boulder and lever -- like lifting is magic?")
+  if (!down) { sparkleFrom(`[data-lever="B${side}"] .lever-arm circle`, 14);
+    const dur = BOULDER_FALL * 100 / sp.boulder;
+    setTimeout(fallIfOverPit, 0.7 * dur);   // (a boulder lifted from an open pit the friend stands on: in they fall)
+    for (const j of [0, 1]) if (!now[j] && was[j]) [0, 0.18, 0.36, 0.54].forEach((u, m) => setTimeout(() => sparkleFrom(`[data-boulder="${j}"]`, m ? 12 : 22), u * dur)); }
 }
 // (a boulder falling from the ceiling into its pit, faster as it falls, a little bounce as it lands; or rising away, slowly
 // at first, out of sight; in BOULDER_FALL ms, carried on through a redrawing as every swing is)
@@ -387,8 +404,13 @@ function boulderFall(sel, down, dur = BOULDER_FALL, onLand = null) {
 // standing in where frames do not come, as for a drag; its clock starts at its first frame, not at the pull (a room slow
 // to draw again would otherwise use it up unseen). apply(el, u) draws it at u (0 to 1), and once more at 1 to end it.
 const SWINGS = new Map();
+// (Matthew: "one glitchy frame, where the boulder is still there after being lifted back up"; "similar glitch for the trap
+// door itself") A swing changes the page, not the scene's text, and a slow computer's still pictures (stillPart) are copies
+// of the page kept by that text: one copied before or during a swing came back for a frame after it. A swing marks them out
+// of date as it starts and as it ends, and none is used while one runs (stillPicWanted).
 function swingOn(sel, dur, apply) {
   const was = SWINGS.get(sel); if (was) was.stop();
+  stillPic.text = null;
   let raf = 0, tm = 0, t0 = null, done = false, lastU = 0;
   // (redo: drawn again at once where it is, in a room just built (mountScene), not a frame later at its end)
   const me = { stop: () => { done = true; cancelAnimationFrame(raf); clearTimeout(tm); }, redo: root => { const el = root.querySelector(sel); if (el) apply(el, lastU); } };
@@ -398,7 +420,7 @@ function swingOn(sel, dur, apply) {
     const now = performance.now(); if (t0 === null) t0 = now;
     const u = Math.min(1, (now - t0) / dur); lastU = u;
     if (el) apply(el, u);
-    if (u < 1) { raf = requestAnimationFrame(step); tm = setTimeout(step, 40); } else { done = true; if (SWINGS.get(sel) === me) SWINGS.delete(sel); } };
+    if (u < 1) { raf = requestAnimationFrame(step); tm = setTimeout(step, 40); } else { done = true; stillPic.text = null; if (SWINGS.get(sel) === me) SWINGS.delete(sel); } };
   const el = bgShown.node && bgShown.node.querySelector(sel);
   if (el) apply(el, 0);
   raf = requestAnimationFrame(step); tm = setTimeout(step, 40);
@@ -563,10 +585,50 @@ let figAway = false;
 // bubbles of their shape, head to feet, coloured from red at the top to violet at the feet, which spill out every way,
 // drift, slow and float, each popping at its own time; when the last has gone, the friend back where they stood (out from
 // under the boulder: solidUnstick), fading in, and on as before. The controls rest while it plays (entering).
-let figBurst = false, burstLayer = null;
+let figBurst = false, burstLayer = null, sparkleLayer = null;
+// (lifting is magic: stars shoot out of what is lifted and what lifts it, drawn as the night sky's are, by its ⭐ settings (shape,
+// size, brightness), spinning out, slowing, fading in about a second; from the middle of what sel finds, n of them)
+function sparkleFrom(sel, n = 16) {
+  const el = bgShown.node && bgShown.node.querySelector(sel), P = pic.getScreenCTM();
+  if (!el || !P) return;
+  const r = el.getBoundingClientRect(), mid = new DOMPoint(r.left + r.width / 2, r.top + r.height / 2).matrixTransform(P.inverse());
+  sparkleBurst(mid.x, mid.y, n, Math.max(20, Math.min(120, Math.hypot(r.width, r.height) / Math.hypot(P.a, P.b))));
+}
+function sparkleBurst(x, y, n, span) {
+  const B = state.background, NS = "http://www.w3.org/2000/svg", k = (sceneFrame.bottom - sceneFrame.top) / 700, rnd = Math.random;
+  const pick = STAR_SHAPES.some(([v]) => v === B.starShape) && B.starShape !== "dot" ? B.starShape : "mix", size = (B.starSize ?? 100) / 100, bright = Math.max(0.3, (B.starBright ?? 85) / 100);
+  if (!sparkleLayer) { sparkleLayer = document.createElementNS(NS, "g"); sparkleLayer.id = "sparkles"; sparkleLayer.setAttribute("pointer-events", "none"); }
+  burstKeep();
+  const tints = [...STAR_TINTS, "#ffe680", "#c4b5fd", "#7dd3fc", "#f9a8d4"], list = [];
+  for (let i = 0; i < n; i++) {
+    const shape = pick !== "mix" ? pick : ["four", "five", "six", "eight", "four"][Math.floor(rnd() * 5)], rr = (3 + 5 * rnd()) * k * size * 2.2;
+    const g = document.createElementNS(NS, "g");
+    g.innerHTML = `<circle r="${f1(rr * 1.8)}" fill="${tints[i % tints.length]}" opacity="0.25"/><path d="${starPath(shape, rr)}" fill="${tints[(i * 3) % tints.length]}"/>`;
+    sparkleLayer.append(g);
+    const a = rnd() * Math.PI * 2, sp = (span * 1.6 + 120 * k) * (0.5 + rnd());
+    list.push({ g, x: x + Math.cos(a) * span * 0.25 * rnd(), y: y + Math.sin(a) * span * 0.25 * rnd(), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60 * k, rot: rnd() * 90, spin: (rnd() - 0.5) * 720, life: 700 + 700 * rnd() });
+  }
+  const t0 = performance.now(); let last = t0;
+  const step = t => {
+    const dt = Math.min(0.05, (t - last) / 1000), e = t - t0; last = t; burstKeep();
+    let alive = 0;
+    for (const s of list) {
+      if (!s.g.isConnected && e > 0) continue;
+      const u = e / s.life;
+      if (u >= 1) { s.g.remove(); continue; }
+      alive++;
+      const damp = Math.pow(0.2, dt); s.vx *= damp; s.vy = s.vy * damp + 40 * k * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.rot += s.spin * dt;
+      s.g.setAttribute("transform", `translate(${f1(s.x)} ${f1(s.y)}) rotate(${f1(s.rot)}) scale(${(1 - 0.5 * u).toFixed(2)})`);
+      s.g.setAttribute("opacity", (bright * (u < 0.15 ? u / 0.15 : 1 - (u - 0.15) / 0.85)).toFixed(2));
+    }
+    if (alive) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 const BURST_N = 52, BURST_POP = [450, 2400];
 // (each drawing takes everything but the scene out of the picture: the burst's bubbles put back on top, so none blink out)
-const burstKeep = () => { if (burstLayer && burstLayer.parentNode !== pic) pic.append(burstLayer); };
+const burstKeep = () => { if (burstLayer && burstLayer.parentNode !== pic) pic.append(burstLayer);
+  if (sparkleLayer) { if (sparkleLayer.childNodes.length) { if (sparkleLayer.parentNode !== pic) pic.append(sparkleLayer); } else if (sparkleLayer.parentNode) sparkleLayer.remove(); } };
 function boulderHits(g) {
   const P = pic.getScreenCTM(), B = state.background;
   if (!P || figBurst || !g) return;

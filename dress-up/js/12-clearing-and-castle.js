@@ -27,12 +27,13 @@ function clearingScene(c) {
       const x = W * T.at[0], y = near - T.at[1] * k + (T.foot + 4) * T.size * k;
       t += `<path d="M${P(0, near + 4 * k)} Q${P(x * 0.5, Math.max(y, near - 10 * k))} ${P(x, y)}" fill="none" stroke="#d9c08a" stroke-width="${f1(14 * k)}" stroke-linecap="round"/>`;
     }
+    const mFl = t.length;   // (ticket 284: the flowers an object)
     for (let i = 0; i < 40; i++) {   // flowers in the near grass
       const d = R(i, 312), x = x0 + W * R(i, 313), y = near + 10 * k + (y1 - near) * d;
       if (Math.abs(x) < (40 + 30 * d) * k) continue;
       t += use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.8 + 0.6 * d), k * (0.8 + 0.6 * d), ` color="${FLOWER_COLORS[i % 6]}"`);
     }
-    return `<defs>${FLOWER_DEFS}</defs>` + t;
+    return `<defs>${FLOWER_DEFS}</defs>` + floorSince(t, mFl, "flowers");
   });
   // the path toward us, flat on the ground, so painted before anything standing (ticket 233: no longer a doorway of
   // its own to the path through the woods; the way toward us is the world's, a nav arrow, where it leads somewhere)
@@ -78,8 +79,8 @@ function castleScene(c) {
   // a warm afternoon: the sky, the sun, clouds, birds far off
   let s = SEP + part("castle-sky", [c.F, sceneLfoKey(o, "fast")], () => `<defs>${grad("bg-sky", "#6fbaf0", "#fde6c2", y0, g - 160 * k)}</defs>` + all("url(#bg-sky)") +
     sunSvg(x1 - W * 0.13, y0 + H * 0.13, 30 * k, true, o) +
-    [...Array(6)].map((_, i) => { const bx = x0 + W * (0.12 + 0.13 * i + 0.05 * R(i, 401)), by = y0 + H * (0.1 + 0.12 * R(i, 402)), b = (7 + 5 * R(i, 403)) * k;
-      return `<path d="M${P(bx - b, by - b * 0.4)} Q${P(bx - b * 0.4, by - b * 0.7)} ${P(bx, by)} Q${P(bx + b * 0.4, by - b * 0.7)} ${P(bx + b, by - b * 0.4)}" fill="none" stroke="#3a3a4a" stroke-width="${f1(2 * k)}" stroke-linecap="round"/>`; }).join(""));
+    wallObj("birds", [...Array(6)].map((_, i) => { const bx = x0 + W * (0.12 + 0.13 * i + 0.05 * R(i, 401)), by = y0 + H * (0.1 + 0.12 * R(i, 402)), b = (7 + 5 * R(i, 403)) * k;
+      return `<path d="M${P(bx - b, by - b * 0.4)} Q${P(bx - b * 0.4, by - b * 0.7)} ${P(bx, by)} Q${P(bx + b * 0.4, by - b * 0.7)} ${P(bx + b, by - b * 0.4)}" fill="none" stroke="#3a3a4a" stroke-width="${f1(2 * k)}" stroke-linecap="round"/>`; }).join("")));   // (ticket 284: the birds an object)
   s += SEP + cloudsSvg(c, 4, 0.85, 170);
   // far mountains, snow on their tops, and rows of forest before them
   s += SEP + part("castle-far", c.F, () => {
@@ -171,12 +172,14 @@ function castleScene(c) {
            `<ellipse cx="${f1(bx)}" cy="${f1(by - 44 * b)}" rx="${f1(16 * b)}" ry="${f1(4 * b)}" fill="#6e4a2c"/>`);
     }
     t += obj("crate", g + 84 * k, `<rect x="${f1(-W * 0.3)}" y="${f1(g + 50 * k)}" width="${f1(40 * k)}" height="${f1(34 * k)}" fill="#a0703f" stroke="#5e3d22" stroke-width="${f1(2 * k)}"/><path d="M${P(-W * 0.3, g + 50 * k)} l${f1(40 * k)} ${f1(34 * k)} M${P(-W * 0.3 + 40 * k, g + 50 * k)} l${f1(-40 * k)} ${f1(34 * k)}" stroke="#5e3d22" stroke-width="${f1(2 * k)}"/>`);
+    const mFl = t.length;   // (ticket 284: the flowers and grass an object)
     for (let i = 0; i < 46; i++) {   // flowers and grass in the near meadow, not on the road
       const u = R(i, 460), x = x0 + W * R(i, 461), y = g + 20 * k + (y1 - g) * u;
       if (Math.abs(x) < W * 0.07 + W * 0.12 * u + 20 * k) continue;
       t += i % 3 === 2 ? grassTuft(x, y, (12 + 10 * u) * k, 470 + i, "#4f9a3a", 1.8 * k)
         : use(i % 2 ? "bg-daisy" : "bg-tulip", x, y, k * (0.7 + 0.6 * u), k * (0.7 + 0.6 * u), ` color="${FLOWER_COLORS[i % 6]}"`);
     }
+    t = floorSince(t, mFl, "flowers and grass");
     for (let i = 0; i < 6; i++) { const x = x0 + W * (0.05 + 0.18 * i), y = g + (60 + 50 * R(i, 470)) * k, rr = (10 + 8 * R(i, 471)) * k;
       if (Math.abs(x) < W * 0.2) continue;
       t += obj(`rock, ${x < 0 ? "left" : "right"}, ${Math.abs(x) > W * 0.36 ? "outer" : "inner"}`, y, rockSvg(x, y, rr * 1.2, 480 + i)); continue;

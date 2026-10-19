@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.252 (2026-10-18)
+
+Everything in 0.0.251, with the trap room more magical and less glitchy.
+
+- **Lifting a boulder is magic**: when a blue lever lifts its boulder, stars shoot out of the boulder as it rises and out of the lever's knob, spinning and fading (drawn like the night sky's stars, with the same ⭐ settings, shown in the trap room now too). Placed boulder levers sparkle the same way.
+- **Open a trap door under yourself and you fall in**: pulling a red lever while you stand on its pit drops you in, once its lid has swung open, just as walking onto an open pit does. So does lifting a boulder out of an open pit you stand on.
+- **Fixed: a boulder or a trap door's lid showing for a moment in its old place after it moved.** On a computer the game has found slow, a picture of the room taken before or during the move could come back for a frame afterwards.
+
 ## 0.0.251 (2026-10-18)
 
 Everything in 0.0.250, plus N's rock-falling surprise.
