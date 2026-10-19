@@ -314,6 +314,10 @@ function trapReshuffle(B) {
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
   if (K.rooms[n - 1] === "trap" && B[leverWireKey(n, K.id)] === "random") B[leverSeedKey(n, K.id)] = 1 + Math.floor(Math.random() * 999999);
 }
+// (ticket 365, castlefs365: castleOf({ ...state.background, castle: id }) copied the background's ~1,900 settings on every call, 0.4 ms,
+// and 84 theme flags made one each on every change, 31 ms of the Background tab's 37 in the app's pane) castleOf of another castle
+// than the one chosen, read through a view: the settings themselves, the castle named over them (0.03 ms, the same castle)
+const castleView = (o, id) => Object.create(o, { castle: { value: id, enumerable: true } });
 const castleOf = o => {
   const id = CASTLE_DEFAULTS[o.castle] ? o.castle : "N", d = CASTLE_DEFAULTS[id];
   const fl = CASTLE_FLAG_DEFAULTS[id], flagA = o["castleFlagA" + id] ?? fl[0];
@@ -1056,7 +1060,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.322", released: "2026-10-19" };
+const VERSION = { number: "0.0.323", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.323 (2026-10-19)
+
+Everything in 0.0.322, with the 🏞️ Background tab much lighter while you play.
+
+- **🏃 Smoother walking with 🏞️ Background open**: the castles' little theme flags were each working out a whole castle several times a second while your friend moved, which made walks and drags stutter whenever the Background tab was open (side panel or full screen). Now each castle is worked out once, and the castle designer only redraws when something in it changes. The tab's refresh takes about a fifth of the time it did.
+
 ## 0.0.322 (2026-10-19)
 
 Everything in 0.0.321, with the world growing at its left and top too.

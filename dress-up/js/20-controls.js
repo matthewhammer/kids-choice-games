@@ -747,12 +747,14 @@ function moved(force = false) {
 function settle() {
   clearTimeout(settleTimer); settleTimer = 0;
   worldKeep();   // (ticket 185: a forest crossing edited in its square, kept there, before it is saved)
+  flagCastles = null;   // (ticket 365, as in changed)
   for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync();
   if (!hud.hidden && hudKey() !== hudShown) renderHud();
 }
 function changed() {
   worldKeep();   // (ticket 185, as in settle: before the drawing, which reads a crossing's live paths from it)
   const t0 = performance.now(); draw(); perfMeter.ms += performance.now() - t0; perfMeter.draws++;   // (ticket 155: for the ⚙️ advanced tab's meter)
+  flagCastles = null;   // (ticket 365: each round of syncs reads the castles afresh, once: flagCastle)
   for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync(); feedMusic();
   // a new friend (loaded, started over, surprised) or a scene turned on or
   // off rebuilds the HUD; a slider moving in it does not
@@ -1129,7 +1131,7 @@ function castleDesigner(part, key, box, syncs) {
   const map = el("div", { class: "map" }), note = el("p", { class: "note" }), rooms = el("div", { class: "row" }), edit = el("div", { class: "row" }),
         tools = el("div", { class: "row" }), probs = el("div"), panel = el("div", { class: "designer" }, [map, note, rooms, edit, tools, probs]);
   box.append(el("div", { class: "row castle-in" }, [toggle, bigChip]), panel);
-  let mapH = "";
+  let mapH = "", shownLook = "";
   const eid = e => `e${e.from}-${e.kind}${e.j ?? e.i ?? ""}${e.way ? "w" : ""}`;
   const pickOf = e => e.key || eid(e);
   const go = n => { const b = B(); if (n) { b.kind = "castleroom"; b.castleRoom = n; } else b.kind = "castle"; [b.figX, b.figY] = ARRIVE[b.kind] || [0, 0]; arriveSettle = true; changed(); };
@@ -1143,9 +1145,16 @@ function castleDesigner(part, key, box, syncs) {
     toggle.textContent = open ? "🗺️ close the castle designer" : "🗺️ open the castle designer";
     toggle.setAttribute("aria-pressed", open);
     panel.style.display = open || big ? "" : "none";
-    if (!open && !big) return;
-    const b = { ...B(), castle: id }, K = castleOf(b), E = castleGraph(K), P = castleProblems(K);
+    if (!open && !big) { shownLook = ""; return; }
+    const b = castleView(B(), id), K = castleOf(b);
     const here = b.kind === "castleroom" ? Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1))) : 0;
+    // (ticket 365, castlefs365 at the black laptop's tier: open full screen, this ran on every change, a walk's every step, its lists
+    // and the map made again: 34 fps walking against the side panel's 42) only when what it shows has changed: the rooms, their ways,
+    // the room you are in, what is picked, the doors' setting, the map loaded
+    const look = JSON.stringify([big, b.kind, here, picked, twoWay, K, !!window.cytoscape]);   // (the whole castle as castleGraph and castleProblems read it)
+    if (look === shownLook) return;
+    shownLook = look;
+    const E = castleGraph(K), P = castleProblems(K);
     const bad = new Set(P.filter(p => p.e).map(p => eid(p.e)));
     // the rooms, as chips too (the map's nodes, for a small screen or when the map can't load)
     rooms.replaceChildren(el("span", { class: "note" }, "rooms:"), ...[0, ...K.rooms.map((_, i) => i + 1)].map(r =>
@@ -1168,7 +1177,7 @@ function castleDesigner(part, key, box, syncs) {
     // two-way doors, and putting everything right at once
     const fixable = P.filter(p => mapCanFix(B(), id, p));
     const fixAll = el("button", { onclick: () => {
-      for (let i = 0; i < 40; i++) { const Q = castleProblems(castleOf({ ...B(), castle: id })), p = Q.find(p => mapCanFix(B(), id, p)); if (!p) break; mapFix(B(), id, p); }
+      for (let i = 0; i < 40; i++) { const Q = castleProblems(castleOf(castleView(B(), id))), p = Q.find(p => mapCanFix(B(), id, p)); if (!p) break; mapFix(B(), id, p); }
       changed(); } }, `🔧 fix everything (${fixable.length})`);
     fixAll.disabled = !fixable.length;
     tools.replaceChildren(
@@ -1194,7 +1203,7 @@ function castleDesigner(part, key, box, syncs) {
     if (grew) { map.style.height = h; mapH = h; }
     if (!cy) {
       cy = window.cytoscape({ container: map, elements: [...nodes, ...edges], style: MAP_STYLE, layout: MAP_LAYOUT(K.rooms.length), minZoom: 0.3, maxZoom: 2.5, wheelSensitivity: 0.3 });
-      cy.on("tap", "edge", ev => { const x = castleGraph(castleOf({ ...B(), castle: id })).find(x => eid(x) === ev.target.id()); picked = x ? { way: pickOf(x) } : null; setTimeout(draw); });
+      cy.on("tap", "edge", ev => { const x = castleGraph(castleOf(castleView(B(), id))).find(x => eid(x) === ev.target.id()); picked = x ? { way: pickOf(x) } : null; setTimeout(draw); });
       cy.on("tap", "node", ev => { picked = { room: +ev.target.id().slice(1) }; setTimeout(draw);
         // (ticket 365: full screen, the room's own box brought into view)
         const g = document.body.classList.contains("castle-big") && document.querySelector(`[data-group="castleRoomBox${picked.room}${id}"]`); if (g) g.scrollIntoView({ block: "nearest" }); });

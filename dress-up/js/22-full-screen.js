@@ -166,10 +166,14 @@ function advLayout(panel) {
 // (the report's "show the thing": a theme as what it draws)
 const LEAD_MARK = /^[\p{Extended_Pictographic}\u200D\uFE0F\u20E3]+\s*/u;
 // (a castle's theme as a little flag on its pole, its carpet a strip under it, kept in step with its settings)
+// (ticket 365: one castleOf for each castle in a round of syncs, not one for each of its 84 flags; the settings stay as they are while
+// the syncs run, and the castles are forgotten once the round is over)
+let flagCastles = null;
+const flagCastle = id => { if (!flagCastles) { flagCastles = {}; queueMicrotask(() => { flagCastles = null; }); } return flagCastles[id] || (flagCastles[id] = castleOf(castleView(state.background, id))); };
 function themeFlag(id, theme, big) {
   const sv = document.createElementNS("http://www.w3.org/2000/svg", "svg"); sv.setAttribute("viewBox", "0 0 30 30"); sv.setAttribute("aria-hidden", "true"); sv.setAttribute("class", big ? "flag-pic" : "flag-chip");
   let was = "";
-  syncs.push(() => { const K = castleOf({ ...state.background, castle: id }), T = theme === "B" ? { id, ...K.themeB } : { id, theme: "A", flagA: K.flagA, flagB: K.flagB, flagStyle: K.flagStyle, carpet: K.carpet };
+  syncs.push(() => { const K = flagCastle(id), T = theme === "B" ? { id, ...K.themeB } : { id, theme: "A", flagA: K.flagA, flagB: K.flagB, flagStyle: K.flagStyle, carpet: K.carpet };
     const k = JSON.stringify(T); if (k === was) return; was = k;
     sv.innerHTML = castleFlagDefs(T, 3) + `<rect x="3" y="25" width="24" height="4" rx="1" fill="${T.carpet}"/><line x1="6" y1="2" x2="6" y2="24" stroke="#8a8f9a" stroke-width="1.6"/>` +
       (T.flagStyle === "alternate" ? `<path d="M7 3 H27 V10 H7 Z" fill="${T.flagA}"/><path d="M7 10 H27 V17 L17 13 L7 17 Z" fill="${T.flagB}"/><path d="M7 3 H27 V17 L17 13 L7 17 Z" fill="none" stroke="#555" stroke-width="0.6"/>`   // (in turn: both, one over the other)
@@ -242,7 +246,9 @@ function bgLayout(panel) {
     // (rule 1, named once: full screen the box is named by its number and its kind, "2 · 🌿 greenhouse", and its "room 2 is" row says
     // no more than its chips do)
     const kind = g.querySelector(`:scope > .ctl[data-key="castleRoom${n}${id}"]`); if (kind) kind.classList.add("room-kind");
-    syncs.push(() => { const big = document.body.classList.contains("castle-big"), st = big ? castleOf({ ...state.background, castle: id }).rooms[+n - 1] : null, t = st ? `${n} · ${roomLabel(st)}` : was;
+    // (its kind read as castleOf reads it, not the whole castle built for it on every change: castlefs365)
+    const kindOf = () => { const raw = state.background["castleRoom" + n + id] ?? CASTLE_ROOMS[id][+n - 1] ?? "king"; return CASTLE_ROOM_CHOICES.some(([v]) => v === raw) ? raw : "king"; };
+    syncs.push(() => { const big = document.body.classList.contains("castle-big"), st = big ? kindOf() : null, t = st ? `${n} · ${roomLabel(st)}` : was;
       if (cap.textContent !== t) cap.textContent = t;
       if (!big) return; const src = st ? PICTURES_SITE + "castleroom--" + st + ".webp" : "";
       if (img.dataset.src !== src) { img.dataset.src = src; img.hidden = !src; if (src) img.src = src; } });
