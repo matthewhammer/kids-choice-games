@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.292 (2026-10-18)
+
+Everything in 0.0.291, with reflections on the mixing board.
+
+- **🪞 A reflection for every channel** (with a ⧉ dup, a part and its reflection together): 🎼 in key (some steps up or down the tune's scale, so it harmonizes and never clashes), 🪞 mirror (the tune turned upside down, in key), ⏪ backward (each bar played backward), 🔁 canon (the same part some beats later, a round), and 🎶 counter (a new line against another part you pick: thirds and sixths, moving the other way where it can). The octave presses still move a part up or down.
+
 ## 0.0.291 (2026-10-18)
 
 Everything in 0.0.290, with every tune's key.

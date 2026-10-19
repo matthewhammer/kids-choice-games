@@ -1277,8 +1277,45 @@ function keyMoved(key, n) {
   const [t, mode] = key.split(" "), i = KEY_NAMES.indexOf(t.replace("D#", "Eb").replace("Db", "C#").replace("Gb", "F#").replace("G#", "Ab").replace("A#", "Bb"));
   return i < 0 ? key : KEY_NAMES[(((i + Math.round(n || 0)) % 12) + 12) % 12] + " " + mode;
 }
+// (ticket 362, Matthew: "every channel (esp useful for dups) should offer a reflection setting. similar to transpose, but
+// extended. default reflection is up/down by one octave, transposed") A channel's reflection (mix channel .reflect: { mode, n,
+// follow }), made when the song is built, beyond the octave presses (which stay transpose, the default): "key", n steps up
+// or down the tune's scale, staying in its key; "mirror", each note turned about the key's tonic nearest the part, kept in
+// key; "back", each bar backward; "canon", n beats later; "counter", against another part (follow): each note a third or a
+// sixth from the note it sounds then, in key, near where it was, moving against it where it can. Its key is the tune's as
+// it sounds (tuneKey), so a note is placed by its sounding pitch (with the part's shift)
+const REFLECTS = [["none", "🪞 none"], ["key", "🎼 in key"], ["mirror", "🪞 mirror"], ["back", "⏪ backward"], ["canon", "🔁 canon"], ["counter", "🎶 counter"]];
+const SCALES = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10] };
+function reflectSong(id, T, events, steps) {
+  const mix = mixOf(id), key = tuneKey(id), bar = T.bar || 16;
+  const [ton, mode] = (key || "C major").split(" "), tonic = Math.max(0, KEY_NAMES.indexOf(ton)), sc = SCALES[mode] || SCALES.major;
+  const inKey = (m, sh) => sc.includes((((m + sh - tonic) % 12) + 12) % 12);
+  const snap = (m, sh) => { for (let d = 0; d < 7; d++) { if (inKey(m - d, sh)) return m - d; if (inKey(m + d, sh)) return m + d; } return m; };
+  const step = (m, n, sh) => { let x = snap(m, sh), k = Math.abs(n); const dir = Math.sign(n); while (k > 0) { x += dir; if (inKey(x, sh)) k--; } return x; };
+  T.parts.forEach((p, i) => {
+    const R = (mix[channelKey(p)] || {}).reflect; if (!R || !R.mode || R.mode === "none" || PERCUSSION.has(p.inst)) return;
+    const sh = p.shift || 0, mine = events.filter(e => e.part === i), n = Math.round(R.n || 0);
+    if (R.mode === "key") for (const e of mine) e.notes = (e.notes || []).map(m => step(m, n || 2, sh));
+    else if (R.mode === "mirror") { const all = mine.flatMap(e => e.notes || []), mean = all.length ? all.reduce((a, b) => a + b) / all.length : 60;
+      const axis = Math.round((mean - (tonic - sh)) / 12) * 12 + (tonic - sh);
+      for (const e of mine) e.notes = (e.notes || []).map(m => snap(2 * axis - m, sh)); }
+    else if (R.mode === "back") for (const e of mine) { const s0 = Math.floor(e.at / bar) * bar; e.at = Math.max(s0, s0 + bar - (e.at - s0) - (e.len || 1)); }
+    else if (R.mode === "canon") for (const e of mine) e.at = (e.at + 4 * Math.max(1, n || 2)) % steps;
+    else if (R.mode === "counter") { const L = T.parts.findIndex(q => channelKey(q) === R.follow); if (L < 0 || L === i) return;
+      const lead = events.filter(e => e.part === L), lsh = T.parts[L].shift || 0;
+      let prev = null, prevLead = null;
+      for (const e of mine) { const at = lead.filter(q => q.at <= e.at && e.at < q.at + (q.len || 1)), m0 = (e.notes || [])[0];
+        if (!at.length || m0 === undefined) continue;
+        const ln = Math.max(...at.flatMap(q => q.notes || [])) + lsh, cands = [];
+        for (let c = m0 - 12; c <= m0 + 12; c++) if (inKey(c, sh) && [3, 4, 8, 9].includes((((c + sh - ln) % 12) + 12) % 12)) cands.push(c);
+        if (!cands.length) continue;
+        const score = c => Math.abs(c - (prev ?? m0)) + (prev !== null && prevLead !== null && Math.sign(c - prev) === Math.sign(ln - prevLead) && c !== prev ? 3 : 0);
+        const c = cands.sort((a, b) => score(a) - score(b))[0]; e.notes = [c]; prev = c; prevLead = ln; } }
+  });
+  events.sort((a, b) => a.at - b.at);
+}
 function songOf(id) {
-  const dk = JSON.stringify(dupsOf(id));
+  const dk = JSON.stringify([dupsOf(id), Object.entries(mixOf(id)).filter(([, c]) => c && c.reflect && c.reflect.mode && c.reflect.mode !== "none").map(([k, c]) => [k, c.reflect])]);
   if (songs[id] !== undefined && (songs[id] === null || songs[id].dk === dk)) return songs[id];
   try {
     const T = TUNES[id].make(), bar = T.bar || 16, events = [];
@@ -1299,6 +1336,7 @@ function songOf(id) {
       start += len;
     }
     events.sort((a, b) => a.at - b.at);
+    reflectSong(id, T, events, start);   // (ticket 362)
     return songs[id] = { T, steps: start, events, dk };
   } catch (err) {
     console.error("the tune " + id + " didn't build:", err);
@@ -1673,6 +1711,19 @@ function channelMove(get, put, changed) {
   show();
   return el("div", { class: "knob move" }, [el("span", {}, "🎹 move"), el("div", { class: "row" }, [down, ivBtn, up]), say]);
 }
+// (ticket 362) a channel's reflection: its mode, its number (steps in key, beats for a canon), the part a counter follows
+function channelReflect(id, p, parts, get, put, changed) {
+  const R = () => get().reflect || { mode: "none", n: 0 };
+  const set = o => { const ch = put(); ch.reflect = { ...R(), ...o }; changed(); show(); };
+  const mode = el("select", { class: "ms", title: "how this part is reflected", onchange: e => set({ mode: e.target.value, n: e.target.value === "key" ? 2 : e.target.value === "canon" ? 2 : 0, follow: R().follow || channelKey(parts.find(q => q !== p && !PERCUSSION.has(q.inst)) || p) }) },
+    REFLECTS.map(([v, l]) => el("option", { value: v }, l)));
+  const num = el("input", { type: "number", class: "ms", min: -7, max: 8, step: 1, title: "steps up or down the scale; beats later for a canon", oninput: e => set({ n: Number(e.target.value) || 0 }) });
+  const follow = el("select", { class: "ms", title: "the part a counter goes against", onchange: e => set({ follow: e.target.value }) },
+    parts.filter(q => q !== p && !PERCUSSION.has(q.inst)).map(q => el("option", { value: channelKey(q) }, partName(q.name))));
+  const show = () => { const r = R(); mode.value = r.mode || "none"; num.value = r.n ?? 0; num.hidden = !["key", "canon"].includes(r.mode); follow.hidden = r.mode !== "counter"; if (r.follow) follow.value = r.follow; };
+  show();
+  return el("div", { class: "knob move" }, [el("span", {}, "🪞 reflect"), el("div", { class: "row" }, [mode, num, follow])]);
+}
 // The board itself, for the tune of the moment; built again when the tune
 // changes, or its mix does from outside (Load, Start over).
 function mixerBox(box) {
@@ -1749,6 +1800,7 @@ function mixerBox(box) {
           return el("div", { class: "knob move" }, [el("span", {}, "〰️ LFO"), el("div", { class: "row" }, [b])]);
         })()] : []),
         ...(PERCUSSION.has(p.inst) ? [] : [channelMove(() => c(), () => chan(id, key), local)]),
+        ...(PERCUSSION.has(p.inst) ? [] : [channelReflect(id, p, song.T.parts, () => c(), () => chan(id, key), () => { local(); dupRestart(id); })]),   // (ticket 362)
       ]);
       dots.push(dot); rows.push({ strip, mute, solo, c });
       return strip;
