@@ -261,7 +261,8 @@ function drawNow() {
   const pic0 = document.getElementById("pic"), tNow = pic0 && pic0.getCurrentTime ? pic0.getCurrentTime() : 0;
   const veil = (g, inner) => {
     const a = seen[g], lf = visLfo(g);
-    if ((a >= 1 && !lf) || !inner) return inner;
+    if (!inner) return inner;
+    if (a >= 1 && !lf) return `<g data-part="${g}">${inner}</g>`;   // (ticket 377: marked, so a box pointed at in the panel lights its part here)
     if (a <= 0) return "";
     const n = layers[g] = (layers[g] ?? 0) + 1;
     let anim = "", shown = a;
@@ -272,7 +273,7 @@ function drawNow() {
       for (let i = 0; i <= N; i++) { const u = i / N; vals.push((a * (1 - lf.amp * (1 - lfoWave(lf.shape, u)) / 2)).toFixed(3)); kt.push(u.toFixed(4)); }
       anim = `<animate attributeName="opacity" values="${vals.join(";")}" keyTimes="${kt.join(";")}" dur="${lf.dur.toFixed(4)}s" begin="${(tNow - lf.phase * lf.dur).toFixed(4)}s" repeatCount="indefinite"/>`;
     }
-    return `<g opacity="${shown.toFixed(2)}" data-veil="${g} ${n}">${anim}<g id="veil-${g}-${n}">${inner}</g></g>`;
+    return `<g opacity="${shown.toFixed(2)}" data-veil="${g} ${n}" data-part="${g}">${anim}<g id="veil-${g}-${n}">${inner}</g></g>`;
   };
   const veilFrom = (g, at) => { svg = svg.slice(0, at) + veil(g, svg.slice(at)); };
   const meanSeen = Object.values(seen).reduce((x, y) => x + y, 0) / VISIBLE_PARTS.length;

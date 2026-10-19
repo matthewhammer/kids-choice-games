@@ -246,6 +246,13 @@ const TAB_BOXES = {
                                   "tunicColor_sparkle", "tunicColor_toadstool", "fairyShoes", "fairyShoeColor"]],
                 ["🌸 the wreath", ["wreath", "wreathFlowers"]]],
 };
+// (ticket 377, the report's rule 7, mirror the picture) the parts of the friend each tab's boxes are about (the drawing's veil layers,
+// marked data-part): pointed at, a box lights them in the game (body[data-lit], style.css), however often the friend is drawn again
+const ALL_PARTS = "head eyes hair shirt pants feet hands";
+const BOX_PARTS = { "🧍 Body": ALL_PARTS, "😀 Face": "head", "👁 Eyes": "eyes", "💇 Hair": "hair", "👕 Shirt": "shirt", "🖐 Hands": "hands", "👖 Pants": "pants",
+  "🩱 Swim & undies": "shirt pants", "👟 Feet": "feet", "👻 Visibility": ALL_PARTS, "🐯 Costume": ALL_PARTS,
+  "🦒 Neck, arms & legs": { "🦒 the neck": "shirt", "💪 the arms": "shirt hands", "🦵 the legs": "pants feet", "🤸 posed": ALL_PARTS } };
+const boxParts = (tabName, boxName) => { const m = BOX_PARTS[tabName]; return !m ? "" : typeof m === "string" ? m : m[boxName] || ""; };
 function boxLayout(panel, tabName, ctls) {
   const plan = TAB_BOXES[tabName];
   if (!plan) return;
@@ -267,6 +274,8 @@ function boxLayout(panel, tabName, ctls) {
         n.hidden = true; const L = n.closest(".lbl"); if (L && !L.textContent.replace(n.textContent, "").trim()) L.hidden = true; } }
     const box = el("section", { class: "box tabbox" }, [el("h3", { class: "box-name" }, [b.name]), ...b.rows]);
     syncs.push(() => { const hide = b.rows.every(r => r.hidden); if (box.hidden !== hide) box.hidden = hide; });
+    const parts = boxParts(tabName, b.name);
+    if (parts) { box.addEventListener("pointerenter", () => { document.body.dataset.lit = parts; }); box.addEventListener("pointerleave", () => { if (document.body.dataset.lit === parts) delete document.body.dataset.lit; }); }
     return box; });
   panel.replaceChildren(el("div", { class: "boxes tabboxes" }, made));
 }

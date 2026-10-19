@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.318 (2026-10-19)
+
+Everything in 0.0.317, with the boxes lighting what they change.
+
+- **✨ Point at a box, and its part of your friend lights up in the game**: 👄 the mouth lights the head, 🦵 the legs the legs and feet, 👕 the shirt the shirt, and so on, so you see what you are about to change.
+
 ## 0.0.317 (2026-10-19)
 
 Everything in 0.0.316, with no click on a doorway that leaves the doorways dead.

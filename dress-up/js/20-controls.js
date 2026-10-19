@@ -2104,6 +2104,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
 
 function showTab() {
   syncs = []; madeSyncs = []; mixLights = null;
+  delete document.body.dataset.lit;   // (ticket 377: no part left lit by a box no longer there)
   const tabs = document.getElementById("tabs"), panel = document.getElementById("panel");
   tabs.replaceChildren(...TABS.map(([name], i) =>
     el("button", { "aria-pressed": i === tab, onclick: () => { tab = i; showTab(); } }, name)));

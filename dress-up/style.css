@@ -104,6 +104,14 @@
   .tabbox > .ctl { margin: 6px 0; }
   .tabbox > .ctl:first-of-type { margin-top: 2px; }
   .tabbox[hidden] { display: none; }
+  /* (ticket 377) the part of the friend a pointed-at box is about, lit in the game */
+  body[data-lit~="head"] #figure [data-part="head"] { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #ffb300); }
+  body[data-lit~="eyes"] #figure [data-part="eyes"] { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #ffb300); }
+  body[data-lit~="hair"] #figure [data-part="hair"] { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #ffb300); }
+  body[data-lit~="shirt"] #figure [data-part="shirt"] { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #ffb300); }
+  body[data-lit~="pants"] #figure [data-part="pants"] { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #ffb300); }
+  body[data-lit~="feet"] #figure [data-part="feet"] { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #ffb300); }
+  body[data-lit~="hands"] #figure [data-part="hands"] { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #ffb300); }
   /* (knolled) a box's on/off switches and one-tap actions, side by side as chips, not one to a line */
   :is(.tabbox, .chipset) > .ctl:has(> .lbl:empty) { display: inline-flex; margin: 3px 6px 3px 0; vertical-align: top; }
   :is(.tabbox, .chipset) > .ctl:has(> .lbl:empty) > .lbl { display: none; }
