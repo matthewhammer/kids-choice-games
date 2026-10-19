@@ -359,6 +359,10 @@ function solidParts(base, o, k) {
 }
 // (does the box x0..x1 by z0..z1 reach into o's oval on the floor?)
 const ovalOf = (o, gx = 0, gz = 0) => ({ cx: (o.x0 + o.x1) / 2, cz: (o.back + o.front) / 2, rx: (o.x1 - o.x0) / 2 + gx, rz: (o.front - o.back) / 2 + gz });
+// (ticket 369) an oval grown so that the friend's feet (gx either side, gz deep) kept outside it never meet it: the oval scaled
+// by 1 + t, t the feet's box measured in its radii (E ⊕ tE = (1 + t)E, and the box lies within tE). Adding gx and gz to its radii
+// fell short at its corners: a flat cauldron and a stride's wide, shallow reach, a foot a little deeper met it where it is wider
+const grownOval = (o, gx, gz) => { const E = ovalOf(o), t = Math.hypot(gx / Math.max(1e-6, E.rx), gz / Math.max(1e-6, E.rz)); return { cx: E.cx, cz: E.cz, rx: E.rx * (1 + t), rz: E.rz * (1 + t) }; };
 function ovalMeets(o, x0, x1, z0, z1) {
   const E = ovalOf(o), px = clamp(E.cx, x0, x1), pz = clamp(E.cz, z0, z1);
   return ((px - E.cx) / E.rx) ** 2 + ((pz - E.cz) / E.rz) ** 2 < 1;
@@ -591,7 +595,7 @@ function planPath(x0, y0, x1, y1, more = 0) {
   // falls into (pitsHere, PIT_EDGE of each), gone round too, unless the walk starts or ends in one; it is the middle of
   // the feet that falls in, so a pit is kept PATH_PAD off, not grown by the soles' reach as a solid is
   const gx = o => o.pit ? PATH_PAD : sx, gz = o => o.pit ? PATH_PAD : sz;
-  const inside = (o, x, z, e = 0) => { if (o.oval) { const E = ovalOf(o, gx(o) + e, gz(o) + e); return ((x - E.cx) / E.rx) ** 2 + ((z - E.cz) / E.rz) ** 2 < 1; }   // (ticket 337)
+  const inside = (o, x, z, e = 0) => { if (o.oval) { const E = grownOval(o, gx(o) + e, gz(o) + e); return ((x - E.cx) / E.rx) ** 2 + ((z - E.cz) / E.rz) ** 2 < 1; }   // (ticket 337)
     return x > o.x0 - gx(o) - e && x < o.x1 + gx(o) + e && z > o.back - gz(o) - e && z < o.front + gz(o) + e; };
   // (0.0.156: the soles' reach can touch a thing the walk starts or ends beside, the healer's soup pot, the bunk beds;
   // such a thing was left out altogether, and the walk went straight through it. Left out now only when the middle of
@@ -609,7 +613,7 @@ function planPath(x0, y0, x1, y1, more = 0) {
   const solids = solidsHere().map(wide).concat(pits).filter(o => !rawIn(o, x0, z0) && !rawIn(o, x1, z1) && !(leaving && o.name === leaving));
   const nearA = new Set(solids.filter(o => inside(o, x0, z0))), nearB = new Set(solids.filter(o => inside(o, x1, z1)));
   const hits = (ax, az, bx, bz, a = false, b = false) => solids.some(o => { const raw = (a && nearA.has(o)) || (b && nearB.has(o));
-    if (o.oval) return segOval(ax, az, bx, bz, raw ? ovalOf(o) : ovalOf(o, gx(o), gz(o)));   // (ticket 337)
+    if (o.oval) return segOval(ax, az, bx, bz, raw ? ovalOf(o) : grownOval(o, gx(o), gz(o)));   // (ticket 337)
     return raw ? segBox(ax, az, bx, bz, o.x0, o.back, o.x1, o.front) : segBox(ax, az, bx, bz, o.x0 - gx(o), o.back - gz(o), o.x1 + gx(o), o.front + gz(o)); });
   if (!solids.length || !hits(x0, z0, x1, z1, true, true)) return [[x1, y1]];
   const W = castleWalls(state.background), F = sceneFrame;
@@ -617,7 +621,7 @@ function planPath(x0, y0, x1, y1, more = 0) {
   const pts = [[x0, z0], [x1, z1]];
   for (const o of solids) { const mx = gx(o) + PATH_PAD, mz = gz(o) + PATH_PAD;
     // (ticket 337: round an oval, eight points on an octagon just outside it, not its box's four corners)
-    if (o.oval) { const E = ovalOf(o, mx, mz), f = 1 / Math.cos(Math.PI / 8);
+    if (o.oval) { const E = grownOval(o, mx, mz), f = 1 / Math.cos(Math.PI / 8);
       for (let j = 0; j < 8; j++) { const a = j * Math.PI / 4 + Math.PI / 8, p = [E.cx + E.rx * f * Math.cos(a), E.cz + E.rz * f * Math.sin(a)]; if (free(...p)) pts.push(p); }
       continue; }
     for (const p of [[o.x0 - mx, o.back - mz], [o.x1 + mx, o.back - mz], [o.x0 - mx, o.front + mz], [o.x1 + mx, o.front + mz]]) if (free(...p)) pts.push(p); }

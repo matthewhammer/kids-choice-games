@@ -906,6 +906,11 @@ const TUNES = {
       S(4, "bassA ghost"), S(8, "bassA drums violinsA plucksA"), S(8, "bassB drums violinsB plucksB"), S(4, "bassA drums"),
     ] };
   } },
+  // (ticket 372, Matthew: "new bat wing boogie remix track, based on these settings and adjustments", his save of 23:07) the
+  // bat-wing boogie at his tempo (166% of its 104) and down 14 half steps (its own shift, on top of the music's transpose), with
+  // his mix for it as its own: each channel's octave, level, knob, pan, tone, reverb and echo, and his five dups
+  batsremix: { name: "🦇 bat-wing boogie remix", key: "Bb minor", make: () => ({ ...TUNES.bats.make(), bpm: 173, shift: -14 }),
+    mix: {"bassA·buzz": {"upN": 0, "knob": 55, "pan": -3, "tone": 100, "rev": 50, "echo": 0, "level": 10}, "bassB·buzz": {"upN": 1, "level": 8, "knob": 100, "pan": 8}, "violinsA·fiddle": {"upN": 1}, "plucksB·fiddle": {"upN": 2, "level": 10, "rev": 80, "echo": 64}, "dups": [{"of": "plucksB·fiddle", "name": "plucksB dup"}, {"of": "drums·hat", "name": "drums dup"}, {"of": "bassA·buzz", "name": "bassA dup"}, {"of": "violinsA·fiddle", "name": "violinsA dup"}, {"of": "plucksB·fiddle", "name": "plucksB dup 2"}], "plucksB dup·fiddle": {"upN": 0, "level": 10, "rev": 80, "echo": 64}, "drums dup·hat": {"rev": 62, "mute": true}, "bassA dup·buzz": {"upN": 3, "knob": 99, "pan": -4, "tone": 91, "rev": 49, "echo": 46, "level": 2, "solo": false}, "violinsA dup·fiddle": {"upN": -2, "level": 5, "solo": false}, "plucksB dup 2·fiddle": {"upN": -1, "level": 10, "rev": 80, "echo": 64, "solo": false}} },
   // Four chase tunes, made like the bat-wing boogie: synth parts layered
   // one on another, drums dropping out and crashing back in. They are
   // written at a dancing speed, so the tempo slider can take them on a
@@ -1231,7 +1236,7 @@ const TUNE_GROUPS = [
   ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", ..."ABCD".split("").map(v => "steppers" + v), "superdub", "deepdub", "bubbledub"]],   // (ticket 263: its super-dub step beside it; ticket 290: and the bubble room's)
   ["calypso", "🏖️ calypso", ["beach", "soca", "lullaby"]],
   ["house", "🏠 house", ["cushions", ..."ABCDE".split("").map(v => "cushions" + v)]],   // (ticket 301: and its five versions)
-  ["groove", "🕺 groove", ["bats", "vibes"]],
+  ["groove", "🕺 groove", ["bats", "batsremix", "vibes"]],
   ["waltz", "💃 waltz", ["witch", ..."ABCDE".split("").map(v => "witchfunk" + v), "castlewaltz", "ballroom", "healerwaltz"]],
   ["chase", "🏃 chase", ["treechase", "duckdash", "housechase"]],
   ["story", "📖 storybook", ["forest", "harpsichord", "spiders", "cemetery"]],
@@ -1447,7 +1452,7 @@ function sendAhead(p) {
       // or, an LFO faster than a beat, the wave all through the hit)
       const lfo = p.lfos && p.lfos[ev.part], at = p.loop * p.song.steps + ev.at, fast = lfo && lfo.steps < 4;
       const bend = lfo && !fast ? lfo.depth * lfoWave(lfo.shape, (at / lfo.steps) % 1) : 0;
-      playNote(audio, p.buses, p.song, ev, t, p.sd, state.music.transpose || 0, p.knobs, p.ups, bend, fast ? { lfo, at, sd: p.sd } : null);
+      playNote(audio, p.buses, p.song, ev, t, p.sd, (state.music.transpose || 0) + (p.song.T.shift || 0), p.knobs, p.ups, bend, fast ? { lfo, at, sd: p.sd } : null);   // (ticket 372: a tune's own shift)
       if (mixLights && mixLights.id === p.id) blink(mixLights.dots[ev.part], t - audio.currentTime);
     }
     if (++p.i >= p.song.events.length) { p.i = 0; p.loop++; }

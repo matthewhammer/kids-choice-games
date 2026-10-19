@@ -21,7 +21,9 @@ try {
     B.things = [{ kind: "rock", x: -220, z: g + 60, seed: 901, size: 160, mirror: false, tone: ROCK_TONES[0] }, { kind: "bubblemaker", x: 220, z: g + 60, seed: 902, size: 100, mirror: false, rate: 1 },
                 { kind: "trapdoor", x: 0, z: g + 120, seed: 903, size: 100, mirror: false, uid: "dglow", open: false }];
     changed(); await w(800);
-    return JSON.stringify([...document.querySelectorAll('#bg .thing[data-drag^="thing:"]')].map(e => { const r = e.getBoundingClientRect(); return [e.dataset.drag, r.left + r.width / 2, r.top + r.height * 0.6]; })); })()`));
+    // (ticket 369: within the picture: the trap door, near us, hangs partly below its bottom edge, and the point under it was the caption's)
+    const P = pic.getBoundingClientRect();
+    return JSON.stringify([...document.querySelectorAll('#bg .thing[data-drag^="thing:"]')].map(e => { const r = e.getBoundingClientRect(), t = Math.max(r.top, P.top), b = Math.min(r.bottom, P.bottom); return [e.dataset.drag, r.left + r.width / 2, t + (b - t) * 0.6]; })); })()`));
   const seen = [];
   for (const [name, x, y] of at) {
     await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y }); await sleep(150);

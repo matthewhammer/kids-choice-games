@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.304 (2026-10-18)
+
+Everything in 0.0.303, with a new remix and tidier walks.
+
+- **🦇 A new track: the bat-wing boogie remix**, in 🕺 groove, made from Matthew's own mix: faster (173 beats a minute), lower (in B flat minor), with doubled fiddles, bass and drums, each set just so.
+- **🚶 Walking round things, your feet keep off them**: going round the witch's cauldron or the big root outside her hut, your stride no longer brushes through the edge.
+
 ## 0.0.303 (2026-10-18)
 
 Everything in 0.0.302, with the diving gear where it belongs.

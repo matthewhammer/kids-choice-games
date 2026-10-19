@@ -631,6 +631,11 @@ let clickRun = null;
 // between the steps and the column is narrower than the feet. The room has its own way, up the steps' middle (spiralPath,
 // ticket 268, used for its doors); a click walk takes it when the floor plan has to go far round (over twice the straight
 // way, or no way at all) and the stairs are the shorter
+// (ticket 369: walk251, paths215, the speed run's) how much further than the feet as they stand a walk's steps reach: a stride
+// in profile spreads the soles about 22 + 0.44 of the legs' length (the friend's own units: 84 for the default, legs 140)
+// either side, against 49 standing toward us and 22 in profile, so a walk planned from a stance kept the stance's reach (or
+// 10 more) and brushed a cauldron, a big root, with a foot; the stride's reach at the friend's size now, whatever the stance
+const strideMore = () => Math.max(10, (22 + 0.44 * (state.body.legLen ?? 140)) * (figureT.k || 1) - feetSpan()[0]);
 function planWalk(x0, y0, x1, y1, more = 0) {
   const P = planPath(x0, y0, x1, y1, more), BG = state.background;
   if (BG.kind !== "castleroom" || !castleWallsOf(BG).stairs) return P;
@@ -644,13 +649,13 @@ function walkPlanned(x, z, then = null) {
   const BG = state.background, g = SCENE.ground;
   if (clickRun && (state.access || DEFAULTS.access).clickPlan !== "queue") { walkStop++; clickRun = null; entering = false; }
   if (clickRun) {
-    const [lx, ly] = clickRun.end, path = planWalk(lx, ly, x, z - g, 10);
+    const [lx, ly] = clickRun.end, path = planWalk(lx, ly, x, z - g, strideMore());
     for (const p of path) { walkPath.pts.push(p); walkPath.segs.push(clickRun.n); }
     clickRun.n++; clickRun.end = path.short ? (path.length ? path[path.length - 1] : [lx, ly]) : [x, z - g]; clickRun.then = path.short ? null : then;
     return;
   }
   bridgeOff();
-  const from = [BG.figX ?? 0, BG.figY ?? 0], path = planWalk(from[0], from[1], x, z - g, 10);   // (the steps swing wider than the feet standing; ticket 367: the spiral room's stairs)
+  const from = [BG.figX ?? 0, BG.figY ?? 0], path = planWalk(from[0], from[1], x, z - g, strideMore());   // (the steps swing wider than the feet standing; ticket 367: the spiral room's stairs)
   if (path.short) then = null;   // (ticket 332: no way there, as near as a way goes, and nothing done after: not sat, not gone in)
   const run = clickRun = { n: 1, end: [x, z - g], then };
   walkPath = { pts: [from, ...path], segs: [0, ...path.map(() => 0)], made: performance.now(), leg: 0 };
@@ -1530,7 +1535,7 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   // (ticket 215) the way there, round what stands in it (planPath): a point at a time
   // (ticket 268: in the spiral staircase, up or down along its steps' middle)
   const spiral = BG.kind === "castleroom" && castleWallsOf(BG).stairs;
-  const from = [BG.figX ?? 0, BG.figY ?? 0], path = walk && !opt.here ? (spiral ? spiralPath(from[0], from[1], tx, ty) : planPath(from[0], from[1], tx, ty)) : [[tx, ty]];
+  const from = [BG.figX ?? 0, BG.figY ?? 0], path = walk && !opt.here ? (spiral ? spiralPath(from[0], from[1], tx, ty) : planPath(from[0], from[1], tx, ty, strideMore())) : [[tx, ty]];
   walkPath = { pts: [from, ...path], made: performance.now(), leg: 0 };
   // (deeper counts 1 / 0.6 as far, as the controller walks; a long way is walked faster, to take 2.5 s at most)
   const dist = path.reduce((a, p, i) => { const q = i ? path[i - 1] : from; return a + Math.hypot(p[0] - q[0], (p[1] - q[1]) / 0.6); }, 0), speed = Math.max(PAD_SPEED.walk, dist / 2.5);
