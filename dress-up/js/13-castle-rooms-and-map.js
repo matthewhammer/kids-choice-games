@@ -2189,7 +2189,8 @@ function castleWays(c, K, n, style) {
   const back = links.slice(0, 6), more = links.slice(6, 10);
   back.forEach((L, i) => {
     const sd = i % 2 ? 1 : -1, j = Math.floor(i / 2);
-    t += obj(`arch to room ${linkTo[i]}`, floor, archDoor(sd * (bw * 0.86 - j * 104 * k), floor, k, L.label, L.attrs, 76, 140));
+    // (ticket 352: 164 tall, 140 till 0.0.302, which the default friend crawled through: 1.04 of it; now 0.89, as the other rooms' doors)
+    t += obj(`arch to room ${linkTo[i]}`, floor, archDoor(sd * (bw * 0.86 - j * 104 * k), floor, k, L.label, L.attrs, 76, 164));
   });
   more.forEach((L, i) => { const j = Math.floor(i / 2), z1 = -0.03 - 0.15 * j;
     // (ticket 223: on its wall, behind anyone in the room)

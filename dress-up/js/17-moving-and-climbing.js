@@ -150,7 +150,13 @@ const climbPlace = BG => [BG.kind, BG.inside, BG.castleRoom, BG.tent].join(":");
 // the tree's units' size there. A friend on one (B.onBridge, { j, u }: which, how far along) stands on its deck, as
 // tall as BRIDGE_TALL of the tree's units (the houses' doors are 72: they fit), in front of the tree; along it is the
 // only way to go, ⬆ and ⬇ only turning them; let go of over one, they are put on it.
-const BRIDGE_TALL = 60, BRIDGE_REACH = 24;   // (how near a bridge a friend let go of is put on it, in the stage's units)
+// (ticket 352, Matthew: "we crawl when we run out of tree houses, but on the exterior view, we are tall enough to go into
+// the doors -- and quite small") Outside, the default friend is BRIDGE_TALL of the tree's units (a house's, times its size),
+// and any other in proportion to their own height against the default's, BRIDGE_BASE (in their own units: ground to crown,
+// plus the 90 the drawing adds), as inside: so a long-legged friend is taller outside too. 70 (60 till 0.0.302) makes the
+// default as large against a cabin's door (72) as against a tree room's door out, inside (0.89 of each), and the same rule,
+// doorTooLow's 0.97, says who crawls through either
+const BRIDGE_TALL = 70, BRIDGE_BASE = 452, BRIDGE_REACH = 24;   // (452: the default friend's, legs 140)   // (how near a bridge a friend let go of is put on it, in the stage's units)
 const BRIDGE_PACE = 0.5;   // (ticket 246: on a bridge, small, they go at half the controller's speed, a small friend's steps)
 function treeWalks(B = state.background) {
   if (B.kind !== "treehouse") return [];
@@ -221,6 +227,9 @@ function platformIn(house, opt = {}) {
   climb = null; entering = true; delete B.onBridge;
   B.onPlatform = { house, x: lx, back: 0 }; body.anim = "walk"; body.facing = lx > hx ? "left" : "right"; body.turn = "";
   let last = 0, phase = "walk", t0 = 0, opened = false;
+  // (ticket 352) too tall for the cabin's door (72 of the house's units at its arch), by doorTooLow's rule (their crown over
+  // 0.97 of it): through it crawling, as through a tree room's door inside
+  const crownOwn = youHeights(true).crown / Math.max(1e-6, figureT.k), low = crownOwn * (B.figSize ?? 100) / 100 * BRIDGE_TALL / BRIDGE_BASE > 0.97 * 72;
   // (ticket 331, Matthew: "whenever we enter a treehouse door, we could animate the door opening, like in the castle, but we
   // don't") its door swung in as they come near it, open by the time they are at it
   const open = () => { if (opened) return; opened = true; const L = bgShown.node && bgShown.node.querySelector(`.portal[data-house="${house}"] [data-cabin-leaf]`); if (L) leafOpen(L); };
@@ -229,7 +238,7 @@ function platformIn(house, opt = {}) {
     const o = B.onPlatform; if (!o || B.kind !== "treehouse") { entering = false; figClipRect = null; return; }
     if (phase === "walk") {
       const d = hx - o.x, sp = 70 * dt;   // (in the tree's units a second)
-      if (Math.abs(d) <= sp) { o.x = hx; phase = "in"; t0 = t; body.facing = "back"; open(); }
+      if (Math.abs(d) <= sp) { o.x = hx; phase = "in"; t0 = t; body.facing = "back"; if (low) body.anim = "crawl"; open(); }
       else o.x += Math.sign(d) * sp;
       if (Math.abs(d) < nearDoor) open();
     } else {

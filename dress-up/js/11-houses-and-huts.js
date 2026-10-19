@@ -390,7 +390,8 @@ function waysSvg(c, floor, links) {
       // (ticket 223) a door in the side wall, as a castle room's side doors are (roomSpace), the rope bridge going out
       // through it: the first a side near the back corner, the second nearer us (TREE_DOOR_Z), its sign higher
       const sd = L.way === "left" ? -1 : 1, j = Math.min(TREE_DOOR_Z.length - 1, sides[L.way]++), [z0, z1] = TREE_DOOR_Z[j];
-      const S = roomSpace(c), h = 172 * k, at = (z, y) => S.at(sd * S.bw, y, z), zm = (z0 + z1) / 2, km = k / (1 + zm);
+      // (ticket 352: TREE_DOOR_H tall, for the default friend to walk through, as through the cabin's door outside)
+      const S = roomSpace(c), h = TREE_DOOR_H * k, at = (z, y) => S.at(sd * S.bw, y, z), zm = (z0 + z1) / 2, km = k / (1 + zm);
       const nb = at(z0, floor), nt = at(z0, floor - h), ft = at(z1, floor - h), fb = at(z1, floor);
       const quad = (a, b, d, e) => `M${P(...a)} L${P(...b)} L${P(...d)} L${P(...e)} Z`, lerp = (p, q, u) => [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u];
       // (ticket 247, Matthew: "enhance the picture we see out the doors of the tree house that are for bridges, so they
@@ -416,8 +417,9 @@ function waysSvg(c, floor, links) {
            [0.25, 0.5, 0.75].map(u => { const a = on(u, 0.02), b = on(u, 0.98); return `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#6b4423" stroke-width="${f1(2 * km)}"/>`; }).join("") +
            `<ellipse cx="${f1(knob[0])}" cy="${f1(knob[1])}" rx="${f1(4.5 * km)}" ry="${f1(4.5 * km)}" fill="#e2c26a" stroke="#5e3d22" stroke-width="${f1(1.5 * km)}"/></g>` +
            `<path d="${quad(nb, nt, ft, fb)}" fill="none" stroke="#5e3d22" stroke-width="${f1(9 * km)}" stroke-linejoin="round"/>`;
-      const sk = Math.max(0.85 * k, km), top = on(0.5, 0);
-      t += plankSign(Math.max(x0 + 56 * sk, Math.min(x1 - 56 * sk, top[0])), top[1] - 26 * sk - j * 46 * k, sk, `${name} ${sd < 0 ? "⬅️" : "➡️"}`);
+      // (ticket 352: on the door's top, as the doors grew to TREE_DOOR_H: above it, the sign went up under the room's map sign)
+      const sk = Math.max(0.85 * k, km), top = on(0.5, 0.1);
+      t += plankSign(Math.max(x0 + 56 * sk, Math.min(x1 - 56 * sk, top[0])), top[1] + 4 * sk, sk, `${name} ${sd < 0 ? "⬅️" : "➡️"}`);
     } else if (L.way === "down") {
       // a hatch in the floor, its lid up, the ladder's top poking out
       const hx = (x0 + W * 0.26) * TREE_FIT, hy = floor + 72 * k;   // (ticket 223: toward the middle, with what stands at the back wall)
@@ -479,7 +481,10 @@ function hatchLeverSvg(c, floor, open) {
 // size, toward the middle, about the back wall's foot, to fit between the side walls: treeFitText fits a part's
 // drawing so (inside each object, its depth with it, so the objects stay the scene's own: sceneObjects passes over an
 // object inside a transformed group), and the seats with it (SEATS.treeroom).
-const TREE_FIT = 0.72, TREE_DOOR_Z = [[-0.15, -0.03], [-0.32, -0.2]];
+// (ticket 352, Matthew: "we crawl when we run out of tree houses, but on the exterior view, we are tall enough to go into the
+// doors") a side door to a bridge, TREE_DOOR_H of the room's units tall (172 till 0.0.302, which the default friend crawled
+// through: 1.27 of it), so the default walks through it as through the cabin's door outside (0.9 of each); taller ones crawl
+const TREE_FIT = 0.72, TREE_DOOR_Z = [[-0.15, -0.03], [-0.32, -0.2]], TREE_DOOR_H = 246;
 // (ticket 284) how far from the trunk's middle what hangs on the wall beside it stops: its braid's half width and a little
 const TREE_CLEAR = 100;
 function treeFitText(text, floor) {
@@ -953,7 +958,8 @@ function witchroomScene(c) {
   });
   // the door back out to the woods, in the middle, as outside: red, braced
   s += SEP + part("wroom-door", c.F, () => {
-    const w = 96 * k, top = floor - 196 * k;
+    // (ticket 352: 242 tall, 196 till 0.0.302, which the default friend crawled out through: 1.10 of it; now 0.89, as the tree's)
+    const w = 96 * k, top = floor - 242 * k;
     // (0.0.114, Matthew: her door no longer glowed or worked: the friend arrived in front of it, and took
     // the pointer; they arrive to one side now, ARRIVE.witchroom; and a door, data-door, so X glows it too)
     return `<g class="portal" data-to="witch" data-door="1"><rect x="${f1(-w / 2 - 8 * k)}" y="${f1(top - 8 * k)}" width="${f1(w + 16 * k)}" height="${f1(floor - top + 8 * k)}" fill="#2a1a12"/>` +

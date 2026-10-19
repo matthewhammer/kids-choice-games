@@ -1451,8 +1451,9 @@ const CRAWL_IN_PACE = 0.55;
 const DOOR_OUT_MS = 1300, DOOR_STAND_MS = 350, DOOR_DECK_MS = 1200, DOOR_DECK = [0.12, 0.45];
 // (ticket 331) the picture seen through a tree room's door to a bridge (shape, its opening, as waysSvg draws it), in the
 // picture's units: deck(u), a point u of the way along the bridge drawn there, from the threshold's middle to the far
-// house's door; tall(u), the friend's height there, as wide as its deck there, to their height at the far house (as tall
-// as BRIDGE_TALL of its size, as outside); and its opening, to be seen inside of (svg)
+// house's door; tall(u), the default friend's height there, as wide as its deck there, to their height at the far house
+// (as tall as BRIDGE_TALL of its size, as outside: any other in proportion, over BRIDGE_BASE, ticket 352); and its opening, to
+// be seen inside of (svg)
 function doorViewOf(shape) {
   const M = pic.getScreenCTM(), S = shape.getScreenCTM && shape.getScreenCTM(), n = (shape.getAttribute("d") || "").match(/-?\d*\.?\d+(?:e-?\d+)?/g);
   if (!M || !S || !n || n.length < 8) return null;
@@ -1464,6 +1465,7 @@ function doorViewOf(shape) {
 }
 function doorTooLow(r, inv, foot) {
   const BG = state.background, top = new DOMPoint(r.x, r.y).matrixTransform(inv).y, open = foot.y - top;
+  if (BG.kind === "clearing") return null;   // (ticket 352: the clearing's doors are far views, the house's small far off: a trip there, never a squeeze)
   if (!(open > 0) || !(figureT.k > 0)) return null;
   const tall = youHeights(true).crown / figureT.k * (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, foot.y - SCENE.ground);
   return tall > 0.97 * open ? { tall, open, stretch: Math.max(40, 0.9 * tall) } : null;
@@ -1599,16 +1601,16 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
       // face along it, away from us, and walk a part of it, smaller as they go, seen only inside the doorway)
       if (!tIn) tIn = t;
       if (!V.from) { tripPhase = "stepping in";
-        Object.assign(V, { k0: figureT.k, H: figureT.base || 1, from: [BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)], face: B.facing === "left" || B.facing === "right" ? B.facing : side < 0 ? "left" : "right",
+        Object.assign(V, { k0: figureT.k, from: [BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)], face: B.facing === "left" || B.facing === "right" ? B.facing : side < 0 ? "left" : "right",
           room: side < 0 ? `<rect x="${f1(foot.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + foot.x)}" height="8000"/>` }); }
       const e = t - tIn, at = (p, k, anim, facing, clip) => { figOver = { x: p[0], y: p[1], k, z: foot.y }; B.anim = anim; B.facing = facing; B.turn = ""; figClipRect = { svg: clip }; };
       if (e < DOOR_OUT_MS) {
-        const u = e / DOOR_OUT_MS, s = u * u * (3 - 2 * u), p = V.deck(DOOR_DECK[0]), k1 = V.tall(DOOR_DECK[0]) / V.H;
+        const u = e / DOOR_OUT_MS, s = u * u * (3 - 2 * u), p = V.deck(DOOR_DECK[0]), k1 = V.tall(DOOR_DECK[0]) / BRIDGE_BASE;
         at([V.from[0] + (p[0] - V.from[0]) * s, V.from[1] + (p[1] - V.from[1]) * s], V.k0 * Math.pow(k1 / V.k0, s), low ? "crawl" : "walk", V.face, V.room + V.svg);
-      } else if (e < DOOR_OUT_MS + DOOR_STAND_MS) at(V.deck(DOOR_DECK[0]), V.tall(DOOR_DECK[0]) / V.H, "none", "back", V.svg);
+      } else if (e < DOOR_OUT_MS + DOOR_STAND_MS) at(V.deck(DOOR_DECK[0]), V.tall(DOOR_DECK[0]) / BRIDGE_BASE, "none", "back", V.svg);
       else if (e < DOOR_OUT_MS + DOOR_STAND_MS + DOOR_DECK_MS) {
         const u = DOOR_DECK[0] + (DOOR_DECK[1] - DOOR_DECK[0]) * (e - DOOR_OUT_MS - DOOR_STAND_MS) / DOOR_DECK_MS;
-        at(V.deck(u), V.tall(u) / V.H, "walk", "back", V.svg);
+        at(V.deck(u), V.tall(u) / BRIDGE_BASE, "walk", "back", V.svg);
       } else { figOver = null; figClipRect = null; doorClip = null; done(); return; }
       draw(); requestAnimationFrame(step); return;
     }

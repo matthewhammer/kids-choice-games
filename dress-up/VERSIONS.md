@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.302 (2026-10-18)
+
+Everything in 0.0.301, with you the same size inside the tree house as outside it.
+
+- **🌳 Outside the tree house you are as big as inside**, against its doors: before, you were small out on the porches and bridges, and had to crawl through the rooms' doors but walked through the same doors from outside. Now you walk through both, and a big friend (try the size slider at 150) crawls through both. Long legs or short, your shape counts outside too.
+- **🚪 The tree rooms' doors to the bridges, the witch's door out, and the greenhouse's arches are taller**, so you walk through them, as through every other door made for you.
+
 ## 0.0.301 (2026-10-18)
 
 Everything in 0.0.300, with 🐠 under the sea come alive.
