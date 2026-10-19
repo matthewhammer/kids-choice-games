@@ -554,7 +554,11 @@ function planPath(x0, y0, x1, y1, more = 0) {
   // tree's trunk wider above its foot, the tree house's, had a planned walk brush through it)
   const crown = youHeights().crown, wide = o => { const bs = solidBands(o).filter(b => b.lo < crown);
     return bs.length ? { ...o, x0: Math.min(o.x0, ...bs.map(b => b.x0)), x1: Math.max(o.x1, ...bs.map(b => b.x1)) } : o; };
-  const solids = solidsHere().map(wide).concat(pits).filter(o => !rawIn(o, x0, z0) && !rawIn(o, x1, z1));
+  // (ticket 366, Matthew: "when sitting, click to walk seems broken") the seat (or bed) being got off is in nobody's way, as
+  // solidAt has it: on a throne the feet are behind its box, up on the dais, and since ticket 332 a plan with no way round
+  // walks nowhere, so every walk from a throne went nowhere
+  const leaving = state.body.sit && state.background.seat;
+  const solids = solidsHere().map(wide).concat(pits).filter(o => !rawIn(o, x0, z0) && !rawIn(o, x1, z1) && !(leaving && o.name === leaving));
   const nearA = new Set(solids.filter(o => inside(o, x0, z0))), nearB = new Set(solids.filter(o => inside(o, x1, z1)));
   const hits = (ax, az, bx, bz, a = false, b = false) => solids.some(o => { const raw = (a && nearA.has(o)) || (b && nearB.has(o));
     if (o.oval) return segOval(ax, az, bx, bz, raw ? ovalOf(o) : ovalOf(o, gx(o), gz(o)));   // (ticket 337)

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.283 (2026-10-18)
+
+Everything in 0.0.282, with walking off a seat fixed.
+
+- **Fixed: clicking to walk did nothing while sitting** (on a throne, a couch, a bed). Since 0.0.278 a walk with no way round goes nowhere, and the seat you were getting off counted as in the way. Now you get up and walk where you clicked, or to another seat and sit there.
+
 ## 0.0.282 (2026-10-18)
 
 Everything in 0.0.281, with fallen boulders you can move.
