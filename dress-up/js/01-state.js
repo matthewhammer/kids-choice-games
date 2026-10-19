@@ -465,7 +465,7 @@ const DEFAULTS = {
                 // bubbles stick out from each surface into the room
                 // (Matthew's own, from his save of 16:56 on 0.0.238: "these are good for the bubble room defaults")
                 foamBack: true, foamBackH: 98, foamLeft: true, foamLeftH: 84, foamRight: true, foamRightH: 82, foamFloor: true, foamFloorH: 86,
-                foamCeil: true, foamCeilH: 95, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 0, foamSeed: 58909, foamStick: 30, bubbleStick: 30, bubbleFloorWobble: 60,   // (foamStick, bubbleStick: ticket 341; bubbleFloorWobble: 343)
+                foamCeil: true, foamCeilH: 95, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 88, foamSeed: 58909, foamStick: 30, bubbleStick: 30, bubbleFloorWobble: 60,   // (foamStick, bubbleStick: ticket 341; bubbleFloorWobble: 343)
                 foamBackOut: 94, foamLeftOut: 82, foamRightOut: 82, foamFloorOut: 94, foamCeilOut: 20,
                 instEdit: "template", thingsSolid: true,   // (ticket 283: placed things in the way)   // (ticket 300: in a world square, changes go to the place's template, or 📍 only that square)
                 bubbleCOn: false, bubbleCColor: "#c8f7c5", bubbleCSize: 11, bubbleCShine: 60, bubbleCSparkle: "dot", bubbleCSparkleColor: "#ffffff",
@@ -650,10 +650,13 @@ function upgradeThings(next, saved) {
 // cost was the room's own moving foam, not the maker: held still, the same room ran at 52 frames a second and more there. A costly
 // effect is off at the start (his rule, 10-16), so the foam is still by default since 0.0.306; a save still at the old default
 // (88) is made still once (foamMoveSince marks it done), and an amount chosen since is kept
+// (ticket 383, Matthew 2026-10-19: "Yes, I want moving foam back on by default": since 0.0.334 the moving bubbles are page layers
+// that cost next to nothing, foamLayersRun) moving by default again (88); a save made still by 0.0.306 (at 0, marked 306) moves once,
+// one from before 0.0.306 keeps its amount, and an amount chosen since is kept
 function upgradeFoamMove(bg, saved) {
-  const old = saved && saved.background;
-  if (old && old.foamMoveSince === undefined && old.foamMove === 88) bg.foamMove = 0;
-  bg.foamMoveSince = 306;
+  const old = saved && saved.background, since = old && old.foamMoveSince;
+  if (old && since !== undefined && since < 383 && old.foamMove === 0) bg.foamMove = 88;
+  bg.foamMoveSince = 383;
 }
 function upgradeFigSize(bg, saved) {
   const old = saved && saved.background;

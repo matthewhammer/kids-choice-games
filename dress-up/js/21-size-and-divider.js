@@ -40,6 +40,7 @@ function fitPic() {
   const key = Math.floor(w) + "x" + Math.floor(h);
   if (key === picFit) return;
   picFit = key; pic.style.width = Math.floor(w) + "px"; pic.style.height = Math.floor(h) + "px";
+  if (typeof foamLayersPlace === "function") foamLayersPlace();   // (ticket 383: the layered foam where the picture is drawn now)
 }
 // The divider between the picture's column and the controls: dragged, it
 // moves (and the place it was left, as a share of the window, is

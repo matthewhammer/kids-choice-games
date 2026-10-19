@@ -831,6 +831,13 @@ function bubblespaceScene(c) {
 // and growing back (lifeOf); still at 0 (Matthew: "dynamic, not static": moving from the start).
 // Each surface's foam is an object of its own. Bubble makers (🫧, a placed thing) blow bubbles into it, or anywhere.
 const FOAM_SURFACES = [["Back", "back wall", true], ["Left", "left wall", true], ["Right", "right wall", true], ["Floor", "floor", false], ["Ceil", "ceiling", false]];
+// (ticket 383, ^du_report(12)'s next step 4, Matthew: "Yes, I want moving foam back on by default: build 383's layered foam") The
+// moving foam as layers the browser moves without painting the picture again: the room's backdrop (its shell and its five
+// surfaces' still pictures) under a see-through picture (#pic-under), and each moving bubble a page element of its own between
+// them (#foam-layers), scaled by a CSS animation (foamLayersRun); none of the picture's own animations (the stuck-out balls hold
+// still). The spike (diag-383): the room standing, Chrome at full speed 52 -> 60 fps, at the slow tier 22 -> 56-58, Firefox at
+// Matthew's screen 28 -> 60. on: false draws it as before (SMIL inside the picture), to compare.
+const FOAM_LAYERS = { on: true };
 const foamMemo = new Map();
 function foamPack(seed, w, h, rMax, rMin) {
   const mk = [seed, w, h, rMax, rMin].map(v => v.toFixed(2)).join();
@@ -851,13 +858,14 @@ function foamPack(seed, w, h, rMax, rMin) {
 function bubbleroomScene(c) {
   const { x0, y0, y1, W, H, k, pad, P, o } = c, { floor, top, bw, vy, out } = roomFrame(c), wh = floor - top, B = o;   // (read through o: a change to one draws it again)
   const base = B.foamColor || "#9ad7ff", tints = B.foamRainbow ?? true ? [base, mix(base, "#ff9ad8", 0.45), mix(base, "#b6f5a8", 0.45)] : [base, base, base];
-  const move = Math.max(0, Math.min(100, B.foamMove ?? 0)) / 100, seed = B.foamSeed ?? 1;
+  const move = Math.max(0, Math.min(100, B.foamMove ?? 0)) / 100, seed = B.foamSeed ?? 1, layered = FOAM_LAYERS.on && move > 0;   // (ticket 383)
   const at = (X, Y, z) => { const f = 1 / (1 + z); return [X * f, vy + (Y - vy) * f]; };
   // (a bubble of radius r, in its surface's own units, about the origin; tf lays it on the surface)
   // (the smallest a rim alone; bigger ones a light inside the rim; the biggest a shine too: fewer shapes to draw)
-  const bub = (r, j, tf, life = "") => `<g transform="${tf}">${life ? `<g>${life}` : ""}<circle r="${f1(r)}" fill="${tints[j]}" fill-opacity="0.2" stroke="${tints[j]}" stroke-width="${f1(Math.max(0.8, r * 0.1))}"/>` +
+  const bub = (r, j, tf, life = "") => { const mark = life.startsWith(" data-foam") ? life : ""; if (mark) life = "";   // (ticket 383: marked, to be a page layer)
+    return `<g transform="${tf}"${mark}>${life ? `<g>${life}` : ""}<circle r="${f1(r)}" fill="${tints[j]}" fill-opacity="0.2" stroke="${tints[j]}" stroke-width="${f1(Math.max(0.8, r * 0.1))}"/>` +
     (r > 5 * k ? `<circle r="${f1(r * 0.9)}" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="${f1(Math.max(0.5, r * 0.04))}"/>` : "") +
-    (r > 9 * k ? `<ellipse cx="${f1(-r * 0.36)}" cy="${f1(-r * 0.38)}" rx="${f1(r * 0.26)}" ry="${f1(r * 0.15)}" fill="#ffffff" opacity="0.75" transform="rotate(-35 ${f1(-r * 0.36)} ${f1(-r * 0.38)})"/>` : "") + (life ? `</g>` : "") + `</g>`;
+    (r > 9 * k ? `<ellipse cx="${f1(-r * 0.36)}" cy="${f1(-r * 0.38)}" rx="${f1(r * 0.26)}" ry="${f1(r * 0.15)}" fill="#ffffff" opacity="0.75" transform="rotate(-35 ${f1(-r * 0.36)} ${f1(-r * 0.38)})"/>` : "") + (life ? `</g>` : "") + `</g>`; };
   const mat = (a, b, cc, d, e, f) => `matrix(${[a, b, cc, d].map(v => v.toFixed(4)).join(" ")} ${f1(e)} ${f1(f)})`;
   // (ticket 290, Matthew on 0.0.238: "there's no dynamic aspect to the walls or floor --- Can we fix that without getting a
   // huge performance penalty?") Not the whole foam sliding (a few units, too little to see, and all of it drawn again every
@@ -869,8 +877,10 @@ function bubbleroomScene(c) {
   const lives = {};
   const lifeOf = (seedK, i, r) => { if (!move) return ""; const L = seeded(seedK * 31 + 7), v = L(i * 2), n = lives[seedK] || (lives[seedK] = { breathe: 0, pop: 0 });
     if (r >= 12 * k && v < 0.5 * move && n.breathe < 16) { n.breathe++; const a = (0.05 + 0.07 * L(i * 2 + 1)).toFixed(3);
+      if (layered) return ` data-foam="b ${a} ${(3 + 3 * L(i * 2 + 1)).toFixed(1)} -${(6 * v).toFixed(1)}"`;   // (ticket 383: breathing, as a page layer)
       return lfoTimed(o, "slow", L(i * 2 + 1), `<animateTransform attributeName="transform" type="scale" values="1;${(1 + +a).toFixed(3)};${(1 - +a).toFixed(3)};1" dur="${(3 + 3 * L(i * 2 + 1)).toFixed(1)}s" begin="-${(6 * v).toFixed(1)}s" repeatCount="indefinite"/>`); }
     if (r >= 6 * k && r < 12 * k && v > 1 - 0.04 * move && n.pop < 4) { n.pop++; const d = (7 + 8 * L(i * 2 + 1)).toFixed(1);
+      if (layered) return ` data-foam="p 0 ${d} -${(+d * L(i * 2 + 1)).toFixed(1)}"`;   // (ticket 383: popping, as a page layer)
       return `<animateTransform attributeName="transform" type="scale" values="1;1;0.05;0.05;1" keyTimes="0;0.72;0.75;0.8;1" dur="${d}s" begin="-${(+d * L(i * 2 + 1)).toFixed(1)}s" repeatCount="indefinite"/>`; }
     return ""; };
   // (ticket 290, Matthew: "bubble room with one bubble machine is stressing my modern laptop") What does not move is drawn
@@ -895,7 +905,8 @@ function bubbleroomScene(c) {
     return asImage(still, box) + live; };
   const rMax = 40 * k, rMin = 4 * k, clip = (id, pts) => `<defs><clipPath id="${id}"><polygon points="${pts}"/></clipPath></defs>`;
   const fEdge = (W / 2 + pad) / bw, dSide = 800 * (1 - 1 / fEdge), fBot = (y1 + pad - vy) / (floor - vy), dFloor = 800 * (1 - 1 / fBot), fTop = (vy - (y0 - pad)) / (vy - top), dCeil = 800 * (1 - 1 / fTop);
-  let s = SEP + part("bubbleroom-shell", c.F, () => {
+  // (ticket 383: layered, the backdrop, the shell and the foam's surfaces, in a group of its own that foamLayersRun puts under the picture)
+  let s = (layered ? SEP + '<g data-under="">' : "") + SEP + part("bubbleroom-shell", c.F, () => {
     let t = `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="#d9ecfb"/>`;
     t += `<rect x="${f1(-bw)}" y="${f1(top)}" width="${f1(2 * bw)}" height="${f1(wh)}" fill="#e6f3ff"/>`;
     for (const sd of [-1, 1]) { const [ax, ay] = out(sd * bw, top, y0 - pad), [bx, by] = out(sd * bw, floor, y1 + pad);
@@ -904,7 +915,7 @@ function bubbleroomScene(c) {
     t += `<polygon points="${P(-bw, floor)} ${P(bw, floor)} ${P(...out(bw, floor, y1 + pad))} ${P(...out(-bw, floor, y1 + pad))}" fill="#c4dcf3"/>`;
     return t + [[-bw, top, -bw, floor], [bw, top, bw, floor], [-bw, floor, bw, floor], [-bw, top, bw, top]].map(([a, b, cc, d]) => `<line x1="${f1(a)}" y1="${f1(b)}" x2="${f1(cc)}" y2="${f1(d)}" stroke="#b3cde6" stroke-width="${f1(2 * k)}"/>`).join("");
   });
-  const key = K => [c.F, B["foam" + K], B["foam" + K + "H"], base, B.foamRainbow ?? true, move, move ? sceneLfoKey(o, "slow") : "", seed];
+  const key = K => [c.F, B["foam" + K], B["foam" + K + "H"], base, B.foamRainbow ?? true, move, move && !layered ? sceneLfoKey(o, "slow") : "", seed, layered];
   // the back wall: from the floor up, as high as its setting
   if (B.foamBack ?? true) s += SEP + part("bubbleroom-foam-back", key("Back"), () => { const h = wh * (B.foamBackH ?? 70) / 100;
     return wallObj("foam, back wall", clip("bg-foam-back", `${P(-bw, top)} ${P(bw, top)} ${P(bw, floor)} ${P(-bw, floor)}`) + `<g clip-path="url(#bg-foam-back)">` +
@@ -932,6 +943,7 @@ function bubbleroomScene(c) {
   // ball is, shaded as a bubble seen whole, in the room's perspective; now and then a smaller one stuck on it in turn. Sorted
   // among the room's things by the floor under them, in bands (an object each), so the friend passes in front of and behind
   // them; bobbing a little, a band at a time, when the foam moves.
+  if (layered) s += SEP + "</g>";   // (ticket 383: the backdrop's end)
   const balls = [];
   const fz = (X, z) => at(X, floor, z)[1];
   for (const [K, si] of [["Back", 1], ["Left", 2], ["Right", 3], ["Floor", 4], ["Ceil", 5]]) {
@@ -965,15 +977,15 @@ function bubbleroomScene(c) {
     // (each about its own middle, so some of the big ones, when the foam moves, can swell and shrink a little, each its own way
     // in: forty at most)
     let breathing = 0;
-    const ballLife = (b, i) => move && b.r >= 12 * k && breathing < 40 && seeded(seed * 17 + 3)(i) < 0.4 * move && ++breathing ? lfoTimed(o, "slow", seeded(seed * 17 + 4)(i),
+    const ballLife = (b, i) => move && !layered && b.r >= 12 * k && breathing < 40 && seeded(seed * 17 + 3)(i) < 0.4 * move && ++breathing ? lfoTimed(o, "slow", seeded(seed * 17 + 4)(i),
         `<animateTransform attributeName="transform" type="scale" values="1;1.07;0.95;1" dur="${(3.5 + 2 * seeded(seed * 17 + 4)(i)).toFixed(1)}s" repeatCount="indefinite"/>`) : "";
     const ball = (b, life) => {
       return `<g transform="translate(${f1(b.x)} ${f1(b.y)})"><g>${life}<circle r="${f1(b.r)}" fill="url(#bg-ball-${b.j})" stroke="${tints[b.j]}" stroke-width="${f1(Math.max(0.7, b.r * 0.05))}"/>` +
         (b.r > 8 * k ? `<ellipse cx="${f1(b.r * 0.38)}" cy="${f1(b.r * 0.42)}" rx="${f1(b.r * 0.2)}" ry="${f1(b.r * 0.09)}" fill="#ffffff" opacity="0.55" transform="rotate(-35 ${f1(b.r * 0.38)} ${f1(b.r * 0.42)})"/>` : "") + `</g></g>`; };
     const shadow = b => b.K === "Floor" ? `<ellipse cx="${f1(b.x)}" cy="${f1(b.y + b.r * 0.98)}" rx="${f1(b.r * 0.8)}" ry="${f1(b.r * 0.18)}" fill="#3a5a8a" opacity="0.14"/>` : "";
-    const bob = (inner, n) => !move ? inner : `<g>${sceneLfo(o, "slow", (n * 0.17) % 1, "transform", (v, amp) => `0 ${f1(-6 * k * move * v * (0.5 + amp))}`,
+    const bob = (inner, n) => !move || layered ? inner : `<g>${sceneLfo(o, "slow", (n * 0.17) % 1, "transform", (v, amp) => `0 ${f1(-6 * k * move * v * (0.5 + amp))}`,
       `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-6 * k * move)};0 0" dur="${(3.5 + (n % 4) * 0.6).toFixed(1)}s" repeatCount="indefinite"/>`, "translate")}${inner}</g>`;
-    const ballKey = [c.F, ...FOAM_SURFACES.flatMap(([K]) => [B["foam" + K], B["foam" + K + "H"], B["foam" + K + "Out"]]), base, B.foamRainbow ?? true, move, move ? sceneLfoKey(o, "slow") : "", seed];
+    const ballKey = [c.F, ...FOAM_SURFACES.flatMap(([K]) => [B["foam" + K], B["foam" + K + "H"], B["foam" + K + "Out"]]), base, B.foamRainbow ?? true, move, move && !layered ? sceneLfoKey(o, "slow") : "", seed, layered];
     // (the back wall's against it, behind everything; the rest in bands by the floor under them, farther ones drawn first)
     const back = balls.filter(b => b.K === "Back").sort((a, b) => a.d - b.d), rest = balls.filter(b => b.K !== "Back").sort((a, b) => a.fz - b.fz || a.d - b.d);
     // (each lot: the still ones one picture, over the room's own extent of them, their gradients in it; the moving ones live)
@@ -1091,6 +1103,76 @@ function ballTick(t) {
   }
   for (const name of changed) ballApply(name);
   ballSim.raf = requestAnimationFrame(ballTick);
+}
+// (ticket 383) The layered foam, after each drawing: a scene mounted with a backdrop to put under the picture (data-under, drawn by
+// bubbleroomScene when the foam moves) has it moved into #pic-under, a picture of its own under #pic (placed as #pic-over is, inside
+// the border; #pic see-through, body.pic-see-through), and each of its moving bubbles (data-foam: "b amount seconds start" breathing,
+// "p 0 seconds start" popping) made a page element in #foam-layers, between the two: a little picture of that bubble alone, placed in
+// shares of the picture (so it follows any resize), scaled about its middle by a CSS animation, which the browser does without
+// painting either picture again; the bubble in the backdrop hidden. Not while the picture is held still (holdStill: the archive) or
+// the scenery is (a slow computer): then the backdrop stays in the picture, its bubbles still. Cheap when nothing is new.
+let foamLayers = { group: null, on: false };
+function foamLayersRun() {
+  const B = state.background, want = B.kind === "bubbleroom" && stillAt === null && !sceneryStill();
+  const fresh = bgShown.node ? bgShown.node.querySelector("[data-under]") : null;
+  // (taken down: no longer wanted (another place, the picture held still, the scenery still on a slow computer), or the scene mounted
+  // again with no backdrop to put under (the foam made still); the backdrop put back in the picture where it was, at once, its
+  // moving bubbles shown in it, still)
+  if (foamLayers.on && (!want || (!fresh && bgShown.node !== foamLayers.node))) {
+    const { group, mark } = foamLayers;
+    if (group && mark && mark.isConnected) { for (const el of group.querySelectorAll("[data-foam]")) el.style.visibility = ""; mark.replaceWith(group); }
+    document.getElementById("pic-under")?.remove(); document.getElementById("foam-layers")?.remove(); document.body.classList.remove("pic-see-through");
+    foamLayers = { group: null, on: false, watch: foamLayers.watch };
+  }
+  if (!want || !fresh) return;
+  let U = document.getElementById("pic-under"), L = document.getElementById("foam-layers");
+  if (!U) { U = document.createElementNS("http://www.w3.org/2000/svg", "svg"); U.id = "pic-under"; U.setAttribute("aria-hidden", "true"); U.setAttribute("pointer-events", "none"); }
+  if (!L) { L = document.createElement("div"); L.id = "foam-layers"; L.setAttribute("aria-hidden", "true"); }
+  if (U.nextSibling !== L || L.nextSibling !== pic) { pic.before(U); pic.before(L); }
+  const vb = pic.getAttribute("viewBox"); if (vb && U.getAttribute("viewBox") !== vb) U.setAttribute("viewBox", vb);
+  const mark = document.createComment("under"); fresh.before(mark);   // (where it goes back, taken down)
+  U.replaceChildren(fresh);
+  document.body.classList.add("pic-see-through");
+  const V = pic.viewBox.baseVal, Ui = U.getScreenCTM(), made = [];
+  if (Ui) { const Uinv = Ui.inverse();
+    for (const el of fresh.querySelectorAll("[data-foam]")) {
+      let m, q; try { m = Uinv.multiply(el.getScreenCTM()); q = boxThrough(el.getBBox(), m); } catch (e) { continue; }
+      if (!q || !(q.width > 0)) continue;
+      const pad = 0.15 * Math.max(q.width, q.height), x = q.x - pad, y = q.y - pad, w = q.width + 2 * pad, h = q.height + 2 * pad;
+      const [kind, amt, dur, start] = el.dataset.foam.split(" "), a = +amt, name = (el.closest("[data-obj]") || { dataset: {} }).dataset.obj || "";
+      const clip = (el.closest("[clip-path]") || { getAttribute: () => "" }).getAttribute("clip-path") || "";
+      const d = document.createElement("div"); d.className = "foam-b"; d.dataset.obj = name;
+      const pc = (v, of) => (100 * v / of).toFixed(3) + "%";
+      d.style.left = pc(x - V.x, V.width); d.style.top = pc(y - V.y, V.height); d.style.width = pc(w, V.width); d.style.height = pc(h, V.height);
+      d.style.animationName = kind === "p" ? "foam-pop" : "foam-breathe-" + (a < 0.07 ? 1 : a < 0.1 ? 2 : 3);
+      d.style.animationDuration = dur + "s"; d.style.animationDelay = start + "s";
+      d.innerHTML = `<svg viewBox="${[x, y, w, h].map(v => +v.toFixed(3)).join(" ")}" preserveAspectRatio="none"><g${clip ? ` clip-path="${clip}"` : ""}><g transform="matrix(${[m.a, m.b, m.c, m.d, m.e, m.f].map(v => +v.toFixed(6)).join(" ")})">${el.innerHTML}</g></g></svg>`;
+      el.style.visibility = "hidden";
+      made.push(d);
+    } }
+  // (in a box of their own where the scene's picture is drawn inside its frame: the picture fits the scene to its box, a band above
+  // and below where the shapes differ, so shares of the frame itself put them a few pixels off; placed again when it is resized)
+  const inner = document.createElement("div"); inner.className = "foam-in"; inner.append(...made);
+  L.replaceChildren(inner);
+  foamLayers = { group: fresh, mark, node: bgShown.node, on: true, inner, watch: foamLayers.watch };
+  foamLayersPlace();
+  if (!foamLayers.watch && typeof ResizeObserver === "function") { foamLayers.watch = new ResizeObserver(() => foamLayersPlace()); }
+  if (foamLayers.watch) { foamLayers.watch.disconnect(); foamLayers.watch.observe(U); }
+  foamLayersShow();
+}
+function foamLayersPlace() {
+  const U = document.getElementById("pic-under"), L = document.getElementById("foam-layers"), inner = foamLayers.inner;
+  if (!U || !L || !inner || !foamLayers.on) return;
+  const M = U.getScreenCTM(), V = U.viewBox.baseVal, r = L.getBoundingClientRect();
+  if (!M || !V || !V.width) return;
+  const px = v => v.toFixed(2) + "px";
+  inner.style.left = px(M.e + V.x * M.a - r.left); inner.style.top = px(M.f + V.y * M.d - r.top); inner.style.width = px(V.width * M.a); inner.style.height = px(V.height * M.d);
+}
+// (a foam surface hidden with 👁️ hides its moving bubbles too)
+function foamLayersShow() {
+  const L = foamLayers.on && foamLayers.inner; if (!L) return;
+  const off = objectsOff(state.background);
+  for (const d of L.children) { const v = off.has(d.dataset.obj) ? "none" : ""; if (d.style.display !== v) d.style.display = v; }
 }
 // (the friend's box, standing, in the picture's units: their feet's middle, as tall as they stand, a little over a third of
 // that across, from figureT; ticket 290)

@@ -45,6 +45,24 @@
   svg#pic { display: block; width: 100%; height: auto; max-width: 100%;
             background: var(--paper); border-radius: 18px; border: 2px solid var(--line);
             user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  /* (ticket 383) the layered foam: the bubble room's backdrop in a picture of its own under the scene's (#pic-under), each moving
+     bubble a page element between the two (#foam-layers), scaled by a CSS animation the browser runs without painting either picture
+     again; the scene's picture see-through over them. In .pic-box's own stacking (isolation), under the in-flow #pic, the overlays
+     over it as before */
+  .pic-box { isolation: isolate; }
+  #pic-under, #foam-layers { position: absolute; left: 2px; top: 2px; width: calc(100% - 4px); height: calc(100% - 4px);
+                             pointer-events: none; overflow: hidden; border-radius: 16px; }
+  #pic-under { z-index: -2; }
+  #foam-layers { z-index: -1; }
+  body.pic-see-through svg#pic { background: transparent; }
+  #foam-layers > .foam-in { position: absolute; }
+  #foam-layers .foam-b { position: absolute; will-change: transform; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+  #foam-layers .foam-b > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  @keyframes foam-breathe-1 { 0%, 100% { transform: scale(1); } 33% { transform: scale(1.06); } 66% { transform: scale(0.95); } }
+  @keyframes foam-breathe-2 { 0%, 100% { transform: scale(1); } 33% { transform: scale(1.085); } 66% { transform: scale(0.92); } }
+  @keyframes foam-breathe-3 { 0%, 100% { transform: scale(1); } 33% { transform: scale(1.11); } 66% { transform: scale(0.9); } }
+  @keyframes foam-pop { 0%, 72% { transform: scale(1); } 75%, 80% { transform: scale(0.05); } 100% { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { #foam-layers .foam-b { animation: none; } }
   /* (ticket 340) the makers' bubbles, in a picture of their own over the scene's, inside its border (the box is the picture's;
      makerOver keeps its viewBox the scene's); its own layer, so a bubble moving draws it alone again */
   #pic-over { position: absolute; left: 2px; top: 2px; width: calc(100% - 4px); height: calc(100% - 4px);

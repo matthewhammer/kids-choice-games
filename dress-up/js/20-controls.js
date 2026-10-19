@@ -382,7 +382,7 @@ const TABS = [
         ["range", "foam" + K + "Out", `🔵 bubbles stuck out into the room, from the ${name} (how many)`, 0, 100, 10, 60]]),
       ["color", "foamColor", "🎨 the foam's colour", BUBBLE_COLORS],
       ["toggle", "foamRainbow", "🌈 a rainbow sheen on the foam"],
-      ["range", "foamMove", "〰️ how much the foam moves (0 = still, as it starts: moving foam is costly, in Firefox about 19 frames a second against 50 or more still)", 0, 100, 0, 60],
+      ["range", "foamMove", "〰️ how much the foam moves (0 = still; it moves from the start, its bubbles as layers that cost the computer little)", 0, 100, 0, 60],
       ["range", "foamStick", "🫧 how often moving bubbles stick to the bubbles standing out (0 = never)", 0, 100, 10, 70],   // (ticket 341)
       ["range", "bubbleFloorWobble", "〰️ how much the bubbles move under you (0 = still)", 0, 100, 20, 90],   // (ticket 343)
       ["action", "foamSeed", "🎲 another foam", () => { state.background.foamSeed = 1 + Math.floor(Math.random() * 99999); }],
@@ -1543,7 +1543,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       // (what to do about it: take a marked thing away; a marked cauldron's fumes made simple; her own, in 🏞️ Background)
       const T = state.background.things || [], fancy = [...costly].some(i => (T[i] || {}).kind === "cauldron" && T[i].fumes === "fancy");
       // (ticket 340: in the bubble room its own moving foam costs more than any thing put there)
-      const foam = state.background.kind === "bubbleroom" && (state.background.foamMove ?? 0) > 0;
+      const foam = state.background.kind === "bubbleroom" && (state.background.foamMove ?? 0) > 0 && !foamLayers.on;   // (ticket 383: layered, the foam costs little)
       const t = blocked ? `🐢 ${slow || thingFps != null && thingFps < THING_FPS_MIN + 4 ? `About ${Math.round(thingFps)} frames a second here` : `${total} moving parts here`}: nothing more can be put here until ` +
         ([foam && "the foam is made still (it costs the most here: 🏞️ Background, 〰️ how much the foam moves, to 0)", [...costly].some(i => i !== "own") && "one of the things marked (they move the most) is taken away", fancy && "a marked cauldron's 💨 fumes made simple",
          costly.has("own") && "her cauldron (marked) made simple: 🏞️ Background, 💨 her cauldron's fumes"].filter(Boolean).join(", or ") || "it moves smoothly again") + "." : "";

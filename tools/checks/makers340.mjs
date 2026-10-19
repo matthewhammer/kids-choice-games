@@ -1,5 +1,5 @@
 // (ticket 340, Matthew: "bubble room with one bubble machine is stressing my modern laptop"; 23:39, in Firefox, "About 19 frames
-// a second here") What 0.0.306 and 0.0.307 put right, as facts rather than a frame rate: the bubble room's foam still at the start
+// a second here") What 0.0.306 and 0.0.307 put right, as facts rather than a frame rate (since 0.0.334, ticket 383, the foam moving again, as page layers): the bubble room's foam still at the start
 // (its moving foam was the cost: 18 frames a second in Firefox against 60 still); the bubble makers' bubbles in a picture of their
 // own over the scene's (#pic-over, its viewBox the scene's), each where the scene would put it; and all makers together blowing
 // MAKER_BUDGET bubbles a second, not each its own. Exits 1 on a failure.
@@ -32,7 +32,7 @@ try {
     const P = document.getElementById("pic"), M = P.getScreenCTM(), off = makerSim.list.filter(b => !b.pop && b.el.isConnected).slice(0, 8).map(b => { const q = b.el.getBoundingClientRect(), p = new DOMPoint(b.x, b.y).matrixTransform(M); return Math.hypot(q.left + q.width / 2 - p.x, q.top + q.height / 2 - p.y); });
     return JSON.stringify({ foam, over: !!O, layerInOver: !!(L && O && O.contains(L)), layerInPic: !!(L && P.contains(L)), vb: O && O.getAttribute("viewBox") === P.getAttribute("viewBox"), made, flying: makerSim.list.length, off: off.map(x => +x.toFixed(2)) }); })()`));
   console.log("  " + JSON.stringify(r));
-  ok("the bubble room's foam is still at the start (0.0.306): no moving foam drawn", r.foam.start === 0 && r.foam.smil === 0, r.foam);
+  ok("the bubble room's foam moves from the start again (0.0.334, ticket 383), as page layers: none of the picture's own animations", r.foam.start === 88 && r.foam.smil === 0, r.foam);
   ok("the makers' bubbles are in their own picture over the scene's, with the scene's viewBox", r.over && r.layerInOver && !r.layerInPic && r.vb, r);
   ok("sixteen makers blow MAKER_BUDGET (12) a second between them: at most 60 made in 4 s", r.made > 0 && r.made <= 60, r.made);
   ok("each bubble on the screen where the scene would put it (within 1 px)", r.off.length > 0 && r.off.every(x => x < 1), r.off);

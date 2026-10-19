@@ -43,6 +43,7 @@ function showObjects() {
   // made the browser restyle that object, every frame of a walk)
   // (ticket 335: the tree house hidden hides its houses too, objects of their own since)
   for (const o of bgShown.objs) { const d = off.has(o.name) || (off.has("tree house") && /^tree house \d$/.test(o.name)) ? "none" : ""; if (o.node.style.display !== d) o.node.style.display = d; }
+  if (foamLayers.on) foamLayersShow();   // (ticket 383: a foam surface's moving bubbles with it)
 }
 // the scene's element, its pieces those of the last scene where their text
 // is the same (see SEP), the rest parsed
