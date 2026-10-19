@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.267 (2026-10-18)
+
+Everything in 0.0.266, with nine new upbeat tracks, for M.
+
+- **🛋️ couch-cushion rave A to E** (🎵 Music, 🏠 house), each beside the first, about as long, in a major key (or funk's 9ths) at 120 to 128 beats a minute, with drums of its own: **A** a triplet shuffle, **B** three against four (a cowbell in threes over the beat), **C** a drum solo (snare and bongos in fives, sixes and threes, a wah bass), **D** a breakbeat, **E** half-time with triplet fills. Each has its own chords, and its hook made of their notes.
+- **🐢 turtle steppers dub A to D** (🌴 reggae): **A** a fast triplet shuffle (at the super-dub's pace), **B** the one-drop, **C** rockers with three against four, **D** with a drum break; each with chords, drums and tunes of its own.
+- Fixed: the castle rooms drew a sliver of a stone course with a negative height at the top of the back wall, an error in the page's console on every drawing (nothing you could see).
+
 ## 0.0.266 (2026-10-18)
 
 Everything in 0.0.265, with pointing to sit and pointing to lie down.

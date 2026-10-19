@@ -77,7 +77,7 @@ function roomShell(c, tone, opts = {}) {
   for (let r = 0, y = floor; y > top; r++, y -= rowH)
     for (let i = 0, x = -bw - (r % 2) * bwid / 2; x < bw; i++, x += bwid) {
       const xa = Math.max(x, -bw) + 2 * k, xb = Math.min(x + bwid, bw) - 2 * k, ya = Math.max(y - rowH, top) + 2 * k;
-      if (xb - xa < 4 * k) continue;
+      if (xb - xa < 4 * k || y - 2 * k - ya < 1) continue;   // (and no sliver of a course under the top: a negative height, an error each drawing)
       const v = R(r * 37 + i, 900), col = mix(tone, v < 0.5 ? "#000000" : "#ffffff", 0.05 + 0.12 * Math.abs(v - 0.5));
       t += `<rect x="${f1(xa)}" y="${f1(ya)}" width="${f1(xb - xa)}" height="${f1(y - 2 * k - ya)}" rx="${f1(3 * k)}" fill="${col}"/>`;
       if (R(r * 37 + i, 901) < 0.06) t += `<path d="M${P(xa + (xb - xa) * 0.3, ya)} L${P(xa + (xb - xa) * 0.45, ya + rowH * 0.4)} L${P(xa + (xb - xa) * 0.35, y - 2 * k)}" fill="none" stroke="${mortar}" stroke-width="${f1(1.5 * k)}"/>`;

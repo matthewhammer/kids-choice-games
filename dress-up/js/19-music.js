@@ -52,7 +52,7 @@ function hitsOf(text, note = 60) {
   return { events, steps: at / TICK };
 }
 // a chord by name, its notes up from the root at an octave: "Am", "G7", "Bb"
-const CHORD_SHAPES = { "": [0, 4, 7], m: [0, 3, 7], "7": [0, 4, 7, 10], m7: [0, 3, 7, 10], maj7: [0, 4, 7, 11], dim: [0, 3, 6] };
+const CHORD_SHAPES = { "": [0, 4, 7], m: [0, 3, 7], "7": [0, 4, 7, 10], m7: [0, 3, 7, 10], maj7: [0, 4, 7, 11], dim: [0, 3, 6], "9": [0, 4, 7, 10, 14] };   // (ticket 301: the 9, funk's)
 function chordOf(name, oct) {
   const m = /^([A-G][#b]?)(.*)$/.exec(name);
   return CHORD_SHAPES[m[2]].map(s => midiOf(m[1] + oct) + s);
@@ -442,6 +442,81 @@ const WITCH_FUNK = {
        wahLo: [[0, 0, 2], [2, 0, 1, 1], [3, 0, 1], [5, 2, 1], [6, 0, 2], [8, 0, 1, 1], [9, 1, 1], [11, 2, 1]],
        wahHi: [[1, 1, 1, 1], [4, 2, 1, 1], [7, 0, 1, 2], [10, 2, 1, 1]] },
 };
+// (ticket 301, for M: "more versions of \"🛋️ couch-cushion rave\" ... More variations of similar duration. From version to
+// version, vary the drums (experiment with triplets and polyrhythms, and drum solos) and the chord progressions (different
+// ones, especially upbeat and funky ones)") Five more raves beside the first, as the funked waltzes stand beside the
+// witch's: each its own two progressions (A, then B, a chord a bar), its drums (hitsOf: "16(...)" spreads hits over a bar,
+// so triplets and three-against-four), its bass and stabs on its chords, a hook made of its chords' tones (so it fits
+// whatever they are), and a drum solo in one of them; each as long as the first, about 52 bars. (Matthew: "we want each
+// new track to feel upbeat -- so major chords, or minor chords but uptempo": major keys, or funk's 9ths, at 120 to 128.)
+const CUSHION_RAVE = {
+  A: { what: "triplet shuffle", bpm: 122, A: ["D", "G", "A", "D"], B: ["Bm", "G", "A", "A7"],
+       kick: "x...x...x...x...", snare: "....x.......x...", hats: "16(xoxxoxxoxxox)", extra: ["shaker", "16(x.xx.xx.xx.x)"],
+       bass: [[0, 0, 3], [3, 7, 1], [6, 0, 2], [8, 12, 2], [11, 7, 1], [14, 10, 2]], stabs: [2, 6, 10, 14], hookA: [4, 3, 2, 0, 2, 3, 4, 6], hookB: [0, 2, 3, 4, 6, 4, 3, 2] },
+  B: { what: "three against four", bpm: 120, A: ["C", "F", "G", "C"], B: ["Am7", "F", "G", "G7"],
+       kick: "x...x...x...x...", snare: "....x.......x..o", hats: "..x...x...x...x.", extra: ["cowbell", "16(xxx)"], extra2: ["conga", "16(x.xx.xx.x)", 62],
+       bass: [[0, 0, 2], [3, 0, 1], [5, 7, 1], [8, 0, 2], [10, 12, 2], [13, 7, 1], [14, 10, 2]], stabs: [3, 7, 11, 15], hookA: [2, 4, 6, 4, 2, 0, 2, 4], hookB: [6, 5, 4, 2, 4, 5, 6, 8] },
+  C: { what: "a drum solo", bpm: 124, A: ["E9", "A9", "E9", "B7"], B: ["A9", "E9", "B7", "A7"], solo: true, wah: true,
+       kick: "x..x..x...x.x...", snare: "....x..o.o..x..o", hats: "xoxoxoxoxoxoxoxo", extra: ["openhat", "..............x."],
+       bass: [[0, 0, 2], [2, 12, 1], [4, 0, 1], [7, 10, 1], [8, 0, 2], [11, 7, 1], [12, 12, 2], [15, 10, 1]], stabs: [0, 6, 12], hookA: [0, 2, 4, 3, 2, 0, 3, 2], hookB: [4, 3, 2, 0, 2, 3, 4, 5] },
+  D: { what: "breakbeat", bpm: 126, A: ["G", "C", "D", "G"], B: ["Em", "C", "D", "D7"],
+       kick: "x..x..x...x.x...", snare: "....x..x.x..x..o", hats: "x.xxx.xxx.xxx.xx", extra: ["conga", "8(xxx)", 62],
+       bass: [[0, 0, 2], [3, 7, 1], [6, 0, 1], [7, 12, 1], [10, 0, 2], [13, 10, 1], [14, 7, 2]], stabs: [2, 5, 10, 13], hookA: [4, 2, 4, 6, 4, 2, 0, 2], hookB: [2, 4, 5, 6, 5, 4, 2, 0] },
+  E: { what: "half-time, triplet fills", bpm: 128, A: ["A", "D", "E", "A"], B: ["F#m", "D", "E", "E7"], half: true,
+       kick: "x.........x.....", snare: "........x.......", hats: "x.x.x.x.x.x.x.x.", extra: ["bongo", "16(xxxxxx)", 71],
+       bass: [[0, 0, 4], [6, 7, 2], [10, 0, 2], [12, 12, 4]], stabs: [0, 8], hookA: [0, 0, 2, 4, 6, 4, 2, 4], hookB: [6, 6, 4, 2, 0, 2, 4, 2] },
+};
+// (ticket 301, Matthew: "and turtle steppers' dub") Four more turtle steppers dubs beside it, its echoes and its sonar,
+// each with drums and chords of its own: triplets, the one-drop, three against four, and a drum break; upbeat (major, or
+// the minor one fast, at the super-dub's pace)
+const TURTLE_DUB = {
+  A: { what: "triplet shuffle, fast", bpm: 150, chords: ["Am", "Am", "Dm", "Am", "F", "G", "Am", "Am"], sonar: "A6:1 r:63 E6:1 r:63",
+       drums: { hat: "16(x.xx.xx.xx.x)", rim: "........x...16(..x)", extra: [["shaker", "16(xoxxoxxoxxox)", 0.35]] },
+       tunes: [[[8, 2, 2], [10, 3, 2], [12, 4, 4], [20, 4, 4], [24, 3, 4], [28, 2, 4]], [[0, 4, 4], [8, 6, 8], [16, 5, 4], [20, 4, 4], [24, 2, 8]]] },
+  B: { what: "one-drop", bpm: 84, chords: ["G", "C", "D", "G", "Em", "C", "D", "D"], sonar: "G6:1 r:63 D6:1 r:63", swing: 0.2,
+       drums: { kick: "........x.......", rim: "........x.......", hat: "x.x.x.x.x.x.x.x.", extra: [["shaker", "..x...x...x...x.", 0.3]] },
+       bassPat: [[0, 0, 4], [6, 7, 2], [8, 0, 2], [11, 4, 1], [12, 7, 4]], chop: [2, 6, 10, 14],
+       tunes: [[[4, 2, 2], [6, 3, 2], [8, 4, 6], [20, 3, 2], [22, 2, 2], [24, 0, 6]], [[0, 4, 4], [4, 5, 4], [8, 4, 8], [16, 2, 4], [20, 3, 4], [24, 2, 8]]] },
+  C: { what: "rockers, three against four", bpm: 88, chords: ["F", "Bb", "C7", "F", "Bb", "C7", "F", "C7"], sonar: "F6:1 r:63 C6:1 r:63",
+       drums: { kick: "x.....x.x.....x.", rim: "....x.......x...", hat: "xoxoxoxoxoxoxoxo", extra: [["cowbell", "16(xxx)", 0.3], ["conga", "16(x.xx.xx.x)", 0.45, 62]] },
+       bassPat: [[0, 0, 2], [3, 0, 1], [6, 7, 2], [10, 0, 2], [12, 10, 2], [14, 12, 2]],
+       tunes: [[[0, 3, 2], [2, 2, 2], [4, 1, 4], [12, 2, 4], [16, 3, 2], [18, 4, 2], [20, 5, 8]], [[0, 5, 4], [6, 4, 2], [8, 3, 8], [20, 1, 4], [24, 2, 8]]] },
+  D: { what: "a drum break", bpm: 92, chords: ["E9", "A9", "E9", "B7", "A9", "A9", "E9", "B7"], sonar: "E6:1 r:63 B5:1 r:63",
+       drums: { hat: "..x...x...x.x.x.", break: [["snare", "16(x.x.x) 8(xxx) 8(xxxxx) 16(xxxxxx) 4(xxxx) 4(xxx) 8(xxxxxx)", 0.55], ["rim", "8(x.x) 8(xx.x) 16(x.xxx.x) 8(xxx) 8(xxxx)", 0.6], ["kick", "x.......x...x...x.x.x.x.x...x...", 0.8]] },
+       tunes: [[[8, 2, 4], [12, 4, 4], [16, 3, 4], [20, 2, 4], [24, 0, 8]], [[0, 4, 4], [4, 6, 4], [8, 5, 8], [16, 4, 4], [20, 2, 4], [24, 4, 8]]],
+       form: [S(8, "kick bass sonar"), S(8, "kick bass sonar drums chop"), S(8, "kick bass sonar drums chop tuneA bubbles"),
+              S(4, "break"), S(8, "kick bass sonar drums chop tuneB bubbles"), S(8, "kick bass sonar drums chop tuneA bubbles"), S(4, "break kick bass")] },
+};
+const turtleDub = v => { const c = TURTLE_DUB[v];
+  return steppersTune({ bpm: c.bpm, chords: c.chords, lines: { sonar: c.sonar, bubbles: "r:9 " + c.sonar.split(" ")[0].replace(/[0-9]/, "7") + " r:21 " + c.sonar.split(" ")[2] + " r:17 " + c.sonar.split(" ")[0] + " r:33 " + c.sonar.split(" ")[2] + " r:44" },
+    drums: { ...c.drums, swing: c.swing }, bassPat: c.bassPat, tunes: c.tunes, chop: c.chop, form: c.form }); };
+function cushionRave(v) {
+  const c = CUSHION_RAVE[v], A = c.A, B = c.B;
+  const drum = (name, inst, pat, level, note) => ({ name, inst, level, line: hitsOf(pat, note) });
+  const extra = (name, e, level) => e ? [drum(name, e[0], e[1], level, e[2] ?? 60)] : [];
+  // (the solo: four bars of the drums alone, the snare and the bongos racing in fives, sixes and threes over the kick)
+  const solo = c.solo ? [drum("soloSnare", "snare", "8(xxxxx) 8(xxx) 4(xxxx) 4(xxx) 16(xxxxxx) 8(xxxxx) 8(xxxxxxx) 16(xxxxxxxxxxxx)", 0.55),
+                         drum("soloBongo", "bongo", "16(x.x.xx.x.x.x) 8(xxx) 8(xxxx) 16(xxxxxxxxxx) 4(xxxxx) 4(xxxxx) 8(xxxxxx)", 0.7, 71),
+                         drum("soloKick", "kick", "x.......x.......x...x...x.x.x.x.", 0.85)] : [];
+  return { bpm: c.bpm, room: 1.8, level: 1.1, parts: [
+      { name: "bassA", inst: c.wah ? "wahbass" : "buzz", level: c.wah ? 1.4 : 1, line: bassOf(A, 16, c.bass, 2) },
+      { name: "bassB", inst: c.wah ? "wahbass" : "buzz", level: c.wah ? 1.4 : 1, line: bassOf(B, 16, c.bass, 2) },
+      { name: "stabsA", inst: "lead", level: 0.42, rev: 0.25, line: stabsOf(A, 16, c.stabs, 1, 4) },
+      { name: "stabsB", inst: "lead", level: 0.42, rev: 0.25, line: stabsOf(B, 16, c.stabs, 1, 4) },
+      { name: "sparkle", inst: "musicbox", level: 0.45, rev: 0.4, line: arpOf(A, 16, [0, 1, 2, 3, 4, 3, 2, 1], 2, 5) },
+      { name: "hookA", inst: "lead", rev: 0.2, line: arpOf(A, 16, c.hookA, 2, 5) },
+      { name: "hookB", inst: "lead", rev: 0.2, line: arpOf(B, 16, c.hookB, 2, 5) },
+      { name: "ghost", inst: "ghost", level: 0.6, rev: 0.5, line: arpOf(A, 16, [2], 16, 5) },
+      drum("kick", "kick", c.kick, 0.85), drum("snare", "snare", c.snare, 0.45),
+      { ...drum("hats", "hat", c.hats, 0.38) }, ...extra("extra", c.extra, 0.4), ...extra("extra2", c.extra2, 0.45),
+      drum("roll", "snare", c.half ? "................ ................ ................ 16(xxxxxxxxxxxx)" : "................ ................ x...x...x...x... 8(xxx)8(xxxxxx)", 0.45),
+      ...solo,
+    ], form: [
+      S(4, "sparkle kick"), S(4, "sparkle kick hats bassA"), S(8, "kick snare hats extra extra2 bassA stabsA hookA"),
+      c.solo ? S(4, "soloSnare soloBongo soloKick") : S(4, "sparkle ghost"), S(4, "sparkle ghost roll"), S(8, "kick snare hats extra extra2 bassB stabsB hookB"),
+      S(8, "kick snare hats extra extra2 bassA stabsA hookA sparkle", 2), S(8, "kick snare hats extra extra2 bassB stabsB hookB roll", 2), S(4, "kick bassA"),
+    ] };
+}
 function witchFunk(v) {
   const c = WITCH_FUNK[v], { bar, L, n } = c, chords = ["Dm", "Dm", "Gm", "Dm", "Bb", "A7", "Dm", "A7"];
   // (n slots over L steps: one funk bar's pattern)
@@ -718,6 +793,9 @@ const TUNES = {
   } },
   // The spooky waltz, funked, five ways (Matthew picks): see witchFunk
   ...Object.fromEntries(Object.entries(WITCH_FUNK).map(([v, c]) => ["witchfunk" + v, { name: `🧙 funked waltz ${v}: ${c.what}`, make: () => witchFunk(v) }])),
+  // (ticket 301: the couch-cushion raves, A to E, for M; and the turtle steppers dubs, A to D)
+  ...Object.fromEntries(Object.entries(TURTLE_DUB).map(([v, c]) => ["steppers" + v, { name: `🐢 turtle steppers dub ${v}: ${c.what}`, make: () => turtleDub(v) }])),
+  ...Object.fromEntries(Object.entries(CUSHION_RAVE).map(([v, c]) => ["cushions" + v, { name: `🛋️ couch-cushion rave ${v}: ${c.what}`, make: () => cushionRave(v) }])),
   // Peaceful waltzes: three beats a bar (12 steps), oom-pah-pah under a
   // tune, two eight-bar halves, each with its own chords
   castlewaltz: { name: "🏰 castle waltz", make: () => {
@@ -1098,24 +1176,29 @@ const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TU
 // turtle steppers dub, and (ticket 263) its super-dub step: at another tempo, `down` half steps lower, each pitched part
 // `ups` (by its mixing-board channel, name·inst) back up from there; a drum keeps its pitch, as transposing leaves it
 // (ticket 290: and its chords, and its tunes, its sonar's ping and its bubbles, `lines`, of its own: the bubble room's)
-function steppersTune({ bpm = 74, down = 0, ups = {}, chords = ["Em", "Em", "Am", "Em", "C", "D", "Em", "Em"], lines = {} } = {}) {
-    const T = { bpm, swing: 0.15, room: 3, echoSteps: 3, level: 0.85, parts: [
-      { name: "kick", inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
-      { name: "drums", inst: "rim", level: 0.7, rev: 0.3, echo: 0.3, line: hitsOf("........x.......") },
-      { name: "drums", inst: "hat", level: 0.5, line: hitsOf("..x...x...x...x.") },
-      { name: "chop", inst: "chop", echo: 0.5, rev: 0.2, line: stabsOf(chords, 16, [4, 12], 1, 4) },
-      { name: "bass", inst: "bass", line: bassOf(chords, 16, [[0, 0, 3], [4, 0, 2], [6, 7, 2], [8, 0, 3], [12, 12, 2], [14, 10, 2]], 2) },
+// (ticket 301: and its versions, for M: drums of their own (kick, rim, hat, and more), a bass pattern, tunes made of their
+// chords' tones (tunes: two patterns, [step, chord tone, length, octaves up] over two bars, crossOf: so they fit any chords),
+// and a form of their own (a drum break); drums: { break } the break's parts, drums alone)
+function steppersTune({ bpm = 74, down = 0, ups = {}, chords = ["Em", "Em", "Am", "Em", "C", "D", "Em", "Em"], lines = {}, drums = {}, bassPat = null, tunes = null, chop = null, form = null } = {}) {
+    const T = { bpm, swing: drums.swing ?? 0.15, room: 3, echoSteps: 3, level: 0.85, parts: [
+      { name: "kick", inst: "kick", level: 0.8, line: hitsOf(drums.kick || "x...x...x...x...") },
+      { name: "drums", inst: "rim", level: 0.7, rev: 0.3, echo: 0.3, line: hitsOf(drums.rim || "........x.......") },
+      { name: "drums", inst: "hat", level: 0.5, line: hitsOf(drums.hat || "..x...x...x...x.") },
+      ...(drums.extra || []).map(([inst, pat, level = 0.45, note = 60]) => ({ name: "perc", inst, level, rev: 0.2, line: hitsOf(pat, note) })),
+      ...(drums.break || []).map(([inst, pat, level = 0.6, note = 60]) => ({ name: "break", inst, level, rev: 0.25, echo: 0.3, line: hitsOf(pat, note) })),
+      { name: "chop", inst: "chop", echo: 0.5, rev: 0.2, line: stabsOf(chords, 16, chop || [4, 12], 1, 4) },
+      { name: "bass", inst: "bass", line: bassOf(chords, 16, bassPat || [[0, 0, 3], [4, 0, 2], [6, 7, 2], [8, 0, 3], [12, 12, 2], [14, 10, 2]], 2) },
       // a ping, like sonar, far off in the echo
       { name: "sonar", inst: "bell", level: 0.35, rev: 0.5, echo: 0.6, line: lineOf(lines.sonar || "E6:1 r:63 B5:1 r:63") },
-      { name: "tuneA", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(lines.tuneA ||
+      { name: "tuneA", inst: "melodica", rev: 0.4, echo: 0.45, line: tunes ? crossOf(chords, 16, 32, tunes[0], 5) : lineOf(lines.tuneA ||
         "r:8 B4:2 D5:2 E5:4 | G5:4 E5:4 r:8 | r:8 C5:2 E5:2 A5:4 | G5:2 F#5:2 E5:4 r:8 | " +
         "r:4 G5:4 E5:4 C5:4 | D5:4 F#5:4 A5:8 | B5:8 G5:4 E5:4 | E5:12 r:4") },
-      { name: "tuneB", inst: "melodica", rev: 0.4, echo: 0.45, line: lineOf(lines.tuneB ||
+      { name: "tuneB", inst: "melodica", rev: 0.4, echo: 0.45, line: tunes ? crossOf(chords, 16, 32, tunes[1], 5) : lineOf(lines.tuneB ||
         "E5:4 r:4 G5:4 r:4 | B5:8 r:8 | A5:4 r:4 C6:4 r:4 | B5:4 G5:4 E5:8 | E5:4 G5:4 C6:8 | D6:4 A5:4 F#5:8 | G5:4 F#5:4 E5:8 | r:16") },
       { name: "bubbles", inst: "bubble", level: 0.9, rev: 0.5, echo: 0.2, line: lineOf(lines.bubbles || "r:9 E6:1 r:21 B6:1 r:17 G6:1 r:33 D6:1 r:11 A6:1 r:32") },
-    ], form: [
-      S(8, "kick bass sonar"), S(8, "kick bass sonar drums chop"), S(8, "kick bass sonar drums chop tuneA bubbles"),
-      S(8, "kick bass sonar chop"), S(8, "kick bass sonar drums chop tuneB bubbles"), S(8, "kick bass sonar drums chop tuneA bubbles"),
+    ], form: form || [
+      S(8, "kick bass sonar"), S(8, "kick bass sonar drums chop"), S(8, "kick bass sonar drums perc chop tuneA bubbles"),
+      S(8, "kick bass sonar chop"), S(8, "kick bass sonar drums perc chop tuneB bubbles"), S(8, "kick bass sonar drums perc chop tuneA bubbles"),
     ] };
     if (down || Object.keys(ups).length) for (const q of T.parts) if (!PERCUSSION.has(q.inst)) q.shift = -down + (ups[q.name + "·" + q.inst] || 0);
     return T;
@@ -1123,9 +1206,9 @@ function steppersTune({ bpm = 74, down = 0, ups = {}, chords = ["Em", "Em", "Am"
 // chips picks a kind, the second its tune
 const TUNE_GROUPS = [
   ["beats", "🥁 classic beats", ["bongobreak", "canyon", "skatepark"]],
-  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", "superdub", "deepdub", "bubbledub"]],   // (ticket 263: its super-dub step beside it; ticket 290: and the bubble room's)
+  ["reggae", "🌴 reggae", ["roots", "underwater", "steppers", ..."ABCD".split("").map(v => "steppers" + v), "superdub", "deepdub", "bubbledub"]],   // (ticket 263: its super-dub step beside it; ticket 290: and the bubble room's)
   ["calypso", "🏖️ calypso", ["beach", "soca", "lullaby"]],
-  ["house", "🏠 house", ["cushions"]],
+  ["house", "🏠 house", ["cushions", ..."ABCDE".split("").map(v => "cushions" + v)]],   // (ticket 301: and its five versions)
   ["groove", "🕺 groove", ["bats", "vibes"]],
   ["waltz", "💃 waltz", ["witch", ..."ABCDE".split("").map(v => "witchfunk" + v), "castlewaltz", "ballroom", "healerwaltz"]],
   ["chase", "🏃 chase", ["treechase", "duckdash", "housechase"]],
