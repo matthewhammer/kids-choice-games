@@ -125,6 +125,7 @@ const TABS = [
     ["range", "hugLift", "🙌 held up (100 = a leg's length)", 0, 300, 40, 90],
     ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"], ["back", "⬆️ away from us"]]],
     ["choice", "anim", "🎬 animations", ANIMS],
+    ["choice", "stairsWay", "🔼 on the stairs, facing", [["up", "🔼 up them: climbing with the feet"], ["down", "🔽 down them: a controlled fall"]]],   // (ticket 308)
     ["group", "jumps", "🐸🦘 the two jumps", [
       ["range", "jumpShortH", "🐸 short jump: how high (100 = a leg's length)", 5, 200, 20, 45],
       ["range", "jumpShortS", "🐸 short jump: how fast (100 = steady)", 25, 400, 120, 180],
@@ -826,6 +827,7 @@ const SHOWN_WHEN = {
   // (ticket 230: the ♿ settings show beside their toggle, while it is on: accbox)
   "body.unpose": posed,
   "body.lieHead": b => b.pose === "lie", "body.lieHow": b => b.pose === "lie",   // (ticket 299)
+  "body.stairsWay": b => b.anim === "stairs",   // (ticket 308)
   "access.clickPlan": a => !!a.clickWalk,   // (ticket 294: in 🎮 Controls, while 👆 is on)
   "body.hugLift": b => b.pose === "hug",
   "face.irisColor": f => f.iris > 0,

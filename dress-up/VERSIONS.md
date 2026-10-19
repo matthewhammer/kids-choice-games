@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.269 (2026-10-18)
+
+Everything in 0.0.268, with walking up and down stairs.
+
+- **🔼 walking up or down stairs**, a new animation (🧍 Body, "🎬 animations"), with a choice for the way: **up**, climbing with the feet, each knee lifted high as onto the next step and a rise each step; **down**, a controlled fall, quicker, each foot reaching on and down while the other knee bends under the weight, the arms out for balance. No stairs are drawn: it is the move itself.
+
 ## 0.0.268 (2026-10-18)
 
 Everything in 0.0.267, with collision boxes that end where things end.

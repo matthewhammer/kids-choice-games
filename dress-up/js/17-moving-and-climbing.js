@@ -68,9 +68,9 @@ function treadStroke(amt, u) {
 // about the hips (rot, crawling), and a ladder's rungs going by (ladder,
 // climbing). One stride to LFO B's wave (2 beats to start), as treading,
 // so it moves with the music. Without one chosen, deep water still treads.
-const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"], ["jump", "🐸 short, fast jump"], ["jumphigh", "🦘 high, slow jump"], ["crouch", "🧎 crouching down"]];
+const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["stairs", "🔼 walking up or down stairs"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"], ["jump", "🐸 short, fast jump"], ["jumphigh", "🦘 high, slow jump"], ["crouch", "🧎 crouching down"]];
 // (walking, running and crawling are seen from the side: chosen facing us, the friend turns to our right)
-const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true };
+const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true, stairs: true };   // (ticket 308: and on stairs)
 // (ticket 287) swimming flat, from the side: how far the friend is turned about the hips, short of lying level, so the
 // head rides higher than the feet and the face looks ahead; and the waterline, that share of the body's half width
 // above the hips (0: through them; below 0, more of them above the water)
@@ -682,6 +682,24 @@ function moveNow() {
                        lift: 3 * Math.abs(s), frontFeet: 0.16 };
     return { ...both("Leg", sd => 24 * sd * s), ...both("Knee", sd => 30 * Math.max(0, sd * c)),
              ...both("Arm", sd => 20 * sd * s), ...both("Elbow", () => 14), lift: 3 * Math.abs(c) };
+  }
+  // (ticket 308, Matthew: "two new animations: walking up/down stairs ... with a flag saying if we are facing towards up
+  // the stairs, or down. no need to render actual stairs ... Walking up a stairs is a kind of climbing with our feet.
+  // Walking down is a kind of controlled falling, like running but more extreme.") Up (B.stairsWay "up"): each knee in
+  // turn lifted high and bent, as onto the next step, the other leg pushing back off the one below, a rise each step.
+  // Down, twice as quick: each foot in turn reaching on and down, its leg nearly straight, the other knee bending under
+  // the weight (they stand on the lower foot, grounded: the reaching one, as if on the step below), the arms up and out
+  // for balance; toward us or away, each leg seen short as it lifts or reaches (Step), the soles showing
+  if (a === "stairs") {
+    const up = (B.stairsWay ?? "up") !== "down", s = sin(up ? 1 : 2), c = cos(up ? 1 : 2);
+    if (up) {
+      if (!dir) return { ...both("Step", sd => 0.42 * Math.max(0, sd * s)), ...both("Arm", sd => 12 * sd * s), ...both("Elbow", () => 20), lift: 7 * Math.abs(s), frontFeet: 0.42 };
+      return { ...both("Leg", sd => 62 * Math.max(0, sd * s) - 10 * Math.max(0, -sd * s)), ...both("Knee", sd => 8 + 92 * Math.max(0, sd * s)),
+               ...both("Arm", sd => 24 * sd * s - 6), ...both("Elbow", () => 22), lift: 7 * Math.abs(s) };
+    }
+    if (!dir) return { ...both("Step", sd => 0.24 * Math.max(0, sd * s)), ...both("Arm", sd => -24 + 8 * sd * s), ...both("Elbow", () => 12), lift: 2 * Math.abs(c), frontFeet: 0.24, grounded: true };
+    return { ...both("Leg", sd => 30 * Math.max(0, sd * s) - 6 * Math.max(0, -sd * s)), ...both("Knee", sd => 6 + 58 * Math.max(0, -sd * s)),
+             ...both("Arm", sd => -28 + 12 * sd * s), ...both("Elbow", () => 18), grounded: true };
   }
   if (a === "run") {
     // (twice as quick: long strides, the back foot kicked high, the elbows
