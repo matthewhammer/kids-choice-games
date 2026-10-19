@@ -277,9 +277,52 @@ function standingHere(B, seats) {
     if (bands) { const fb = bands[bands.length - 1]; foot = [fb.x0, fb.x1]; }
     const mid = foot ? (foot[0] + foot[1]) / 2 : b.x + b.width / 2, h = Math.max(0, o.z - b.y);
     const w = foot ? (potted ? foot[1] - foot[0] : Math.min(0.4 * b.width, Math.max(16 * k, foot[1] - foot[0]))) : trunk ? Math.min(b.width, Math.max(16 * k, TRUNK * b.width)) : b.width;
-    out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front: o.z, h, standing: true, ...(bands ? { bands } : {}) });
+    out.push(...solidParts(base, { name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - clamp(0.5 * h, 8, Math.max(8, SOLID_DEPTH * w)), front: o.z, h, standing: true, ...(bands ? { bands } : {}) }, k));
   }
   return out;
+}
+// (ticket 337, Matthew: "round / oval objects get oval collision regions, not 'boxes'; let's have tables be precise, in
+// terms of boxes for legs and top"; "simillar for beds and other funiture") A round thing (ROUND) is an oval on the floor,
+// the one its box holds (oval: solidAt, planPath, 🔬 meet and draw it so); a table is its top (a band at its height, as
+// wide and deep as it is) and four legs (each a box from the floor up to the top); bunk beds their four posts and two bunks;
+// a bed its legs and its frame; a bench its legs and its seat and back. Each part keeps the thing's name (🔬's glow, a seat's
+// name, getting out of it); its part says which. The friend meets a part above their ankles with their legs' box (youBoxes),
+// so a low table's top still stops them, and only one high enough is walked under.
+const ROUND = new Set(["barrel", "basket", "bucket", "cauldron", "soup pot", "stump", "rock", "boulder", "stone", "toadstool", "mushroom", "bush", "green bush",
+  "pink bush", "white bush", "yellow bush", "campfire", "fountain", "well", "water barrel", "coal heap", "hay heap"]);
+function solidParts(base, o, k) {
+  if (ROUND.has(base) && !o.bands) return [{ ...o, oval: true }];
+  const w = o.x1 - o.x0, d = o.front - o.back, h = o.h;
+  if (!(h > 0) || w < 24 * k || !["table", "tea table", "bed", "bunk beds", "bench"].includes(base)) return [o];
+  const legW = clamp(0.09 * w, 4 * k, 12 * k), legD = clamp(0.3 * d, 3 * k, 10 * k);
+  const box = (x0, x1, back, front, lo, hi, part) => ({ ...o, x0, x1, back, front, h: hi, part, bands: lo > 0 ? [{ x0, x1, lo, hi }] : undefined });
+  const legs = (hi, round = false) => { const cx = (o.x0 + o.x1) / 2, cz = (o.back + o.front) / 2, ix = 0.55 * w / 2, iz = 0.55 * d / 2;   // (a round top's legs inside its oval)
+    const at = round ? [[cx - ix - legW / 2, cz + iz - legD / 2], [cx + ix - legW / 2, cz + iz - legD / 2], [cx - ix - legW / 2, cz - iz - legD / 2], [cx + ix - legW / 2, cz - iz - legD / 2]]
+                     : [[o.x0, o.front - legD], [o.x1 - legW, o.front - legD], [o.x0, o.back], [o.x1 - legW, o.back]];
+    return at.map(([x, b]) => box(x, x + legW, b, b + legD, 0, hi, "leg")); };
+  const across = (lo, hi, part) => box(o.x0, o.x1, o.back, o.front, lo, hi, part);
+  if (base === "table") { const t = clamp(0.2 * h, 5 * k, 16 * k); return [across(h - t, h, "top"), ...legs(h - t)]; }
+  // (the healer's tea table: a round top on one pedestal in its middle)
+  if (base === "tea table") { const t = clamp(0.2 * h, 5 * k, 16 * k), cx = (o.x0 + o.x1) / 2, cz = (o.back + o.front) / 2, pw = Math.max(6 * k, 0.12 * w), pd = Math.max(4 * k, 0.3 * d);
+    return [{ ...across(h - t, h, "top"), oval: true }, box(cx - pw / 2, cx + pw / 2, cz - pd / 2, cz + pd / 2, 0, h - t, "leg")]; }
+  if (base === "bunk beds") return [...legs(h).map(q => ({ ...q, part: "post" })), across(0.12 * h, 0.42 * h, "lower bunk"), across(0.56 * h, 0.82 * h, "upper bunk")];
+  if (base === "bed") return [...legs(0.3 * h), across(0.25 * h, h, "frame")];
+  return [...legs(0.5 * h), across(0.42 * h, h, "seat and back")];   // (a bench)
+}
+// (does the box x0..x1 by z0..z1 reach into o's oval on the floor?)
+const ovalOf = (o, gx = 0, gz = 0) => ({ cx: (o.x0 + o.x1) / 2, cz: (o.back + o.front) / 2, rx: (o.x1 - o.x0) / 2 + gx, rz: (o.front - o.back) / 2 + gz });
+function ovalMeets(o, x0, x1, z0, z1) {
+  const E = ovalOf(o), px = clamp(E.cx, x0, x1), pz = clamp(E.cz, z0, z1);
+  return ((px - E.cx) / E.rx) ** 2 + ((pz - E.cz) / E.rz) ** 2 < 1;
+}
+// (does the segment pass through the inside of the oval (cx, cz, rx, rz)? as segBox does a box's)
+function segOval(ax, az, bx, bz, E) {
+  const ux = (ax - E.cx) / E.rx, uz = (az - E.cz) / E.rz, dx = (bx - ax) / E.rx, dz = (bz - az) / E.rz;
+  const a = dx * dx + dz * dz, b = 2 * (ux * dx + uz * dz), c = ux * ux + uz * uz - 1;
+  if (a < 1e-12) return c < 0;
+  const disc = b * b - 4 * a * c; if (disc <= 0) return false;
+  const r = Math.sqrt(disc), t0 = Math.max(0, (-b - r) / (2 * a)), t1 = Math.min(1, (-b + r) / (2 * a));
+  return t1 - t0 > 1e-6;
 }
 // (ticket 237, Matthew: "collision detection should avoid walking over the trap doors in the floor of the tree houses")
 // a hole in the floor (a tree room's trapdoor: data-hole, its box on the floor), a solid as low as a step: the feet
@@ -311,7 +354,7 @@ function solidsHere() {
     const seats = seatsHere(B);
     // (ticket 299: a flat one, a blanket, in nobody's way; each marked as a seat, for 🔬's own chip, sit or lie)
     solidMemo = { text: bgShown.text, kind: B.kind, off: offKey, list: seats.filter(t => !t.flat).map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
-      return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y, seat: t.lie ? "lie" : "sit" }; }).concat(sceneBoxesHere(B)).concat(standingHere(B, new Set(seats.map(t => t.name))), holesHere()) };
+      return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y, seat: t.lie ? "lie" : "sit", ...(ROUND.has(objBase(t.name)) ? { oval: true } : {}) }; }).concat(sceneBoxesHere(B)).concat(standingHere(B, new Set(seats.map(t => t.name))), holesHere()) };
     // (ticket 332, Matthew: "why is the path planned through the collision boxes of the corner tree trunk?") A solid
     // standing nearly against the back line reaches it: the tree room's corner trunk stopped 4 units short of it, a lane
     // the feet (3 deep) could stand in, walk along with the controller, and plan no way out of. A gap under LANE_MIN is
@@ -392,7 +435,11 @@ function torsoBox(x, S) {
   const [a, b] = S.length < 2 || S[0][0] <= S[1][0] ? [S[0], S[1] || S[0]] : [S[1], S[0]], gap = b[0] - a[1], half = Math.max(gap / 2, 2 * (figureT.k || 1)), H = youHeights();
   return [x - half, x + half, a[2], a[3], H.hips, H.crown];
 }
-const youBoxes = (x, z) => { const S = feetSoles(x, z), t = torsoBox(x, S); return t ? S.concat([t]) : S; };
+// (ticket 337: and, standing, their legs' box, ankle to hips, as the torso's across: what meets a thing above the ankles and
+// below the hips, a table's top, a bed's frame; before it, nothing did. Before the torso's, which stays the last)
+const youBoxes = (x, z) => { const S = feetSoles(x, z), t = torsoBox(x, S); if (!t) return S;
+  if (crawlShape()) return S.concat([t]);
+  const H = youHeights(); return S.concat([[t[0], t[1], t[2], t[3], H.ankle, H.hips], t]); };
 // a solid's boxes up from the ground: a trunk's bands, else one as tall as the thing (o.h)
 const solidBands = o => o.bands || [{ x0: o.x0, x1: o.x1, lo: 0, hi: o.h > 0 ? o.h : Infinity }];
 // (ticket 240, Matthew: "the swing's collision box does not swing at the tree house. our collision boxes don't swing
@@ -423,7 +470,8 @@ function solidAt(x, z, all = false) {
     // (ticket 345: a trunk's bands met where they are drawn: a sole deep in its footprint, behind its foot, is level on the
     // screen with the trunk that much higher up, so it is measured against the band there, as the eye sees it; the tree
     // house's braid curving out at the ground no longer stops a friend standing beside it, further back)
-    if (S.some(s => { if (!(s[3] > o.back && s[2] < o.front)) return false; const up = o.bands ? Math.max(0, o.front - (s[2] + s[3]) / 2) : 0;
+    if (S.some(s => { if (!(s[3] > o.back && s[2] < o.front)) return false; const up = o.bands && !o.part ? Math.max(0, o.front - (s[2] + s[3]) / 2) : 0;
+        if (o.oval && !ovalMeets(o, s[0], s[1], s[2], s[3])) return false;   // (ticket 337: its oval, not its box)
         return solidBands(o).some(b => s[1] > b.x0 && s[0] < b.x1 && s[5] + up > b.lo && s[4] + up < b.hi); })) {   // (a sole, or the torso's box, over one of its boxes, at its heights)
       if (!all) return o;
       list.push(o);
@@ -495,11 +543,12 @@ function planPath(x0, y0, x1, y1, more = 0) {
   // falls into (pitsHere, PIT_EDGE of each), gone round too, unless the walk starts or ends in one; it is the middle of
   // the feet that falls in, so a pit is kept PATH_PAD off, not grown by the soles' reach as a solid is
   const gx = o => o.pit ? PATH_PAD : sx, gz = o => o.pit ? PATH_PAD : sz;
-  const inside = (o, x, z, e = 0) => x > o.x0 - gx(o) - e && x < o.x1 + gx(o) + e && z > o.back - gz(o) - e && z < o.front + gz(o) + e;
+  const inside = (o, x, z, e = 0) => { if (o.oval) { const E = ovalOf(o, gx(o) + e, gz(o) + e); return ((x - E.cx) / E.rx) ** 2 + ((z - E.cz) / E.rz) ** 2 < 1; }   // (ticket 337)
+    return x > o.x0 - gx(o) - e && x < o.x1 + gx(o) + e && z > o.back - gz(o) - e && z < o.front + gz(o) + e; };
   // (0.0.156: the soles' reach can touch a thing the walk starts or ends beside, the healer's soup pot, the bunk beds;
   // such a thing was left out altogether, and the walk went straight through it. Left out now only when the middle of
   // the feet is in it; touched, a leg from or to that end must miss its own box, not grown)
-  const rawIn = (o, x, z) => x > o.x0 && x < o.x1 && z > o.back && z < o.front;
+  const rawIn = (o, x, z) => o.oval ? ovalMeets(o, x, x, z, z) : x > o.x0 && x < o.x1 && z > o.back && z < o.front;
   const pits = pitsHere().map(q => ({ name: "pit", pit: true, x0: q.cx - PIT_EDGE * q.rx, x1: q.cx + PIT_EDGE * q.rx, back: q.cy - PIT_EDGE * q.ry, front: q.cy + PIT_EDGE * q.ry }));
   // (ticket 248: each across as wide as its boxes up to the friend's crown, as walking meets them, not its foot's alone: a
   // tree's trunk wider above its foot, the tree house's, had a planned walk brush through it)
@@ -507,13 +556,18 @@ function planPath(x0, y0, x1, y1, more = 0) {
     return bs.length ? { ...o, x0: Math.min(o.x0, ...bs.map(b => b.x0)), x1: Math.max(o.x1, ...bs.map(b => b.x1)) } : o; };
   const solids = solidsHere().map(wide).concat(pits).filter(o => !rawIn(o, x0, z0) && !rawIn(o, x1, z1));
   const nearA = new Set(solids.filter(o => inside(o, x0, z0))), nearB = new Set(solids.filter(o => inside(o, x1, z1)));
-  const hits = (ax, az, bx, bz, a = false, b = false) => solids.some(o => (a && nearA.has(o)) || (b && nearB.has(o))
-    ? segBox(ax, az, bx, bz, o.x0, o.back, o.x1, o.front) : segBox(ax, az, bx, bz, o.x0 - gx(o), o.back - gz(o), o.x1 + gx(o), o.front + gz(o)));
+  const hits = (ax, az, bx, bz, a = false, b = false) => solids.some(o => { const raw = (a && nearA.has(o)) || (b && nearB.has(o));
+    if (o.oval) return segOval(ax, az, bx, bz, raw ? ovalOf(o) : ovalOf(o, gx(o), gz(o)));   // (ticket 337)
+    return raw ? segBox(ax, az, bx, bz, o.x0, o.back, o.x1, o.front) : segBox(ax, az, bx, bz, o.x0 - gx(o), o.back - gz(o), o.x1 + gx(o), o.front + gz(o)); });
   if (!solids.length || !hits(x0, z0, x1, z1, true, true)) return [[x1, y1]];
   const W = castleWalls(state.background), F = sceneFrame;
   const free = (x, z) => !solids.some(o => inside(o, x, z, 1)) && (!W || Math.abs(x) < W.half(z) - sx) && x > F.left && x < F.right && z - g >= figYMin(F) && z <= F.bottom;
   const pts = [[x0, z0], [x1, z1]];
   for (const o of solids) { const mx = gx(o) + PATH_PAD, mz = gz(o) + PATH_PAD;
+    // (ticket 337: round an oval, eight points on an octagon just outside it, not its box's four corners)
+    if (o.oval) { const E = ovalOf(o, mx, mz), f = 1 / Math.cos(Math.PI / 8);
+      for (let j = 0; j < 8; j++) { const a = j * Math.PI / 4 + Math.PI / 8, p = [E.cx + E.rx * f * Math.cos(a), E.cz + E.rz * f * Math.sin(a)]; if (free(...p)) pts.push(p); }
+      continue; }
     for (const p of [[o.x0 - mx, o.back - mz], [o.x1 + mx, o.back - mz], [o.x0 - mx, o.front + mz], [o.x1 + mx, o.front + mz]]) if (free(...p)) pts.push(p); }
   // (ticket 332) a walk starting (or ending) against a solid, behind it near the back line where its back corners are past
   // the line and left out: the points just past its sides at that depth, the way out along the gap and round

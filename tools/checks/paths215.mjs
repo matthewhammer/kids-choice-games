@@ -56,7 +56,7 @@ try {
     // (every frame's feet, while the walk lasts: a solid they started or end in does not count)
     // (0.0.156: judged as the game judges, by the friend's own boxes, the soles and the torso's, at each solid's heights,
     // with 2 units' grace for a swinging foot; a solid they touch where they start or where the walk ends does not count)
-    const S = solidsHere(), touches = (o, x, z, e = 0) => youBoxes(x, z).some(s => s[3] > o.back + e && s[2] < o.front - e && solidBands(o).some(b => s[1] > b.x0 + e && s[0] < b.x1 - e && s[5] > b.lo && s[4] < b.hi));
+    const S = solidsHere(), touches = (o, x, z, e = 0) => youBoxes(x, z).some(s => s[3] > o.back + e && s[2] < o.front - e && (!o.oval || ovalMeets(o, s[0] + e, s[1] - e, s[2] + e, s[3] - e)) && solidBands(o).some(b => s[1] > b.x0 + e && s[0] < b.x1 - e && s[5] > b.lo && s[4] < b.hi));   // (ticket 337: an oval one met as an oval)
     const startIn = new Set(S.filter(o => touches(o, ${c.x}, g + ${c.y})));
     let watching = true, endIn = null;
     // (not the step through the doorway at the end, once the planned path is walked: at a house's door, up its front step)

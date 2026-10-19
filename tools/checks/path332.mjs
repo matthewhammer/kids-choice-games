@@ -28,12 +28,12 @@ try {
       state.background.kind = kd; changed(); await w(250);
       const F = sceneFrame, g = SCENE.ground, yMin = figYMin(F), L = solidsHere(), spots = [];
       for (let t = 0; t < 400 && spots.length < 24; t++) { const x = F.left + 20 + rnd() * (F.right - F.left - 40), y = yMin + 2 + rnd() * (F.bottom - g - yMin - 4); if (!solidAt(x, g + y)) spots.push([x, y]); }
-      const inBox = (o, x, z) => x > o.x0 && x < o.x1 && z > o.back && z < o.front;
+      const inBox = (o, x, z) => o.oval ? ovalMeets(o, x, x, z, z) : x > o.x0 && x < o.x1 && z > o.back && z < o.front;
       let count = 0; const through = [];
       for (let i = 0; i < spots.length; i++) for (let j = 0; j < spots.length; j += 3) { if (i === j) continue;
         const [ax, ay] = spots[i], [bx, by] = spots[j], pts = [[ax, ay], ...planPath(ax, ay, bx, by, 10)]; count++;
         for (let q = 1; q < pts.length; q++) for (const o of L) { if (o.pit || inBox(o, ax, g + ay) || inBox(o, bx, g + by)) continue;
-          if (segBox(pts[q - 1][0], g + pts[q - 1][1], pts[q][0], g + pts[q][1], o.x0, o.back, o.x1, o.front)) through.push([o.name, Math.round(ax), Math.round(ay), Math.round(bx), Math.round(by)]); } }
+          if (o.oval ? segOval(pts[q - 1][0], g + pts[q - 1][1], pts[q][0], g + pts[q][1], ovalOf(o)) : segBox(pts[q - 1][0], g + pts[q - 1][1], pts[q][0], g + pts[q][1], o.x0, o.back, o.x1, o.front)) through.push([o.name, Math.round(ax), Math.round(ay), Math.round(bx), Math.round(by)]); } }
       walks[kd] = { count, through: through.slice(0, 3), n: through.length };
     }
     return JSON.stringify({ lanes, walks }); })()`));

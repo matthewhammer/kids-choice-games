@@ -453,9 +453,17 @@ function solidsHud() {
   // (each its footprint on the floor, and its front face up as tall as the thing, o.h, so it stands over what it is)
   // (ticket 299: a seat or a bed marked, sit or lie, and a flat one, a blanket, in nobody's way, its place to lie shown too)
   const flats = seatsHere(state.background).filter(t => t.flat).map(t => ({ name: t.name, seat: "lie", faces: [], q: [[t.x0, t.y - 10], [t.x1, t.y - 10], [t.x1, t.y + 10], [t.x0, t.y + 10]].map(([x, z]) => sc(x, z)) }));
-  const solids = solidsHere().map(o => ({ name: o.name, seat: o.seat, q: [[o.x0 - m, o.back], [o.x1 + m, o.back], [o.x1 + m, o.front], [o.x0 - m, o.front]].map(([x, z]) => sc(x, z)),
+  // (ticket 337) an oval one: its oval on the floor (24 points round it, starting at its front right, so its name sits by its
+  // front as a box's does), and each band its front half standing up from the floor to the band's top, a rim at each height
+  const ovalPts = (o, lift = 0, from = 0, to = 2 * Math.PI, n = 24) => { const E = ovalOf(o);
+    return Array.from({ length: n + 1 }, (_, i) => { const a = from + (to - from) * i / n; return sc(E.cx + E.rx * Math.cos(a), E.cz + E.rz * Math.sin(a) - lift); }); };
+  // (a thing in parts named once, by its top or its frame: not on every leg)
+  const named = o => !o.part || !["leg", "post"].includes(o.part);
+  const solids = solidsHere().map(o => o.oval ? { name: o.name, seat: o.seat, named: named(o), q: ovalPts(o, 0, Math.PI / 4, Math.PI / 4 + 2 * Math.PI),
+      faces: solidBands(o).map(b => { const hi = Number.isFinite(b.hi) ? b.hi : 0; return ovalPts(o, b.lo, Math.PI, 0, 12).concat(ovalPts(o, hi, 0, Math.PI, 12)); }) }
+    : { name: o.name, seat: o.seat, named: named(o), q: [[o.x0 - m, o.back], [o.x1 + m, o.back], [o.x1 + m, o.front], [o.x0 - m, o.front]].map(([x, z]) => sc(x, z)),
     // (0.0.153: a trunk's faces, its bands up from the ground, leaning as a palm's trunk leans)
-    faces: solidBands(o).map(b => { const hi = Number.isFinite(b.hi) ? b.hi : 0; return [[b.x0 - m, o.front - b.lo], [b.x1 + m, o.front - b.lo], [b.x1 + m, o.front - hi], [b.x0 - m, o.front - hi]].map(([x, z]) => sc(x, z)); }) }));
+    faces: solidBands(o).map(b => { const hi = Number.isFinite(b.hi) ? b.hi : 0; return [[b.x0 - m, o.front - b.lo], [b.x1 + m, o.front - b.lo], [b.x1 + m, o.front - hi], [b.x0 - m, o.front - hi]].map(([x, z]) => sc(x, z)); }) });
   const walls = W ? [-1, 1].map(sd => zs.map(z => sc(sd * (W.half(z) - m), z))) : [];
   const line = [sc(F.left, back), sc(F.right, back)];
   // (0.0.157) a trap room's pits: the hole one falls into (PIT_EDGE of it), which a planned walk goes round
@@ -471,7 +479,7 @@ function solidsHud() {
       walks.map(w => `<g data-walk="${xmlEsc(w.name)}"><polyline class="walk" points="${pts(w.at)}"/><polyline class="walk-mid" points="${pts(w.at)}"/></g>` +
         `<text x="${(w.at[12][0] - 30).toFixed(1)}" y="${(w.at[12][1] + 22).toFixed(1)}">${xmlEsc(w.name)}: along it</text>`).join("") +
       pitsShown.map(([x, y, rx, ry, name, sh]) => `<g data-solid="${xmlEsc(name)}"><path class="pit" d="${openingD(sh, x, y, rx, ry)}"/></g><text x="${(x - rx + 4).toFixed(1)}" y="${(y + ry + 13).toFixed(1)}">${xmlEsc(name)}: falls in</text>`).join("") +
-      [...solids, ...flats].map(o => `<g data-solid="${xmlEsc(String(o.name))}"${o.seat ? ` class="seat"` : ""}>${o.faces.map(f => `<polygon class="face" points="${pts(f)}"/>`).join("")}<polygon points="${pts(o.q)}"/></g><text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name)) + (o.seat ? (o.seat === "lie" ? ": 🛏️ lie down" : ": 🪑 sit") : "")}</text>`).join("") +
+      [...solids, ...flats].map(o => `<g data-solid="${xmlEsc(String(o.name))}"${o.seat ? ` class="seat"` : ""}>${o.faces.map(f => `<polygon class="face" points="${pts(f)}"/>`).join("")}<polygon points="${pts(o.q)}"/></g>` + (o.named === false ? "" : `<text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name)) + (o.seat ? (o.seat === "lie" ? ": 🛏️ lie down" : ": 🪑 sit") : "")}</text>`)).join("") +
       `<g class="you"><polygon/><polygon/><polygon class="torso"/><polygon class="face torso"/><text>you</text></g>`;
     solidsHitShown = -1;
   }

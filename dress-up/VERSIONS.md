@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.280 (2026-10-18)
+
+Everything in 0.0.279, with collision shapes that follow the things.
+
+- **⭕ Round things are round to bump into**: barrels, buckets, cauldrons, pots, stumps, rocks, stones, toadstools, mushrooms, bushes, the campfire and the well stop you at their oval, not a box around it, so you can stand closer at their sides, and walks go round them in a curve. 🔬 draws them as ovals.
+- **🪑 Tables are their top and legs**: the potion hut's table is a top on four legs, the healer's tea table a round top on one pedestal; bunk beds, beds and benches are their posts, frames and seats. Your legs now bump a table's top too, so a low table still stops you and only a high one could be walked under.
+
 ## 0.0.279 (2026-10-18)
 
 Everything in 0.0.278, with the tree houses' trap doors on levers.
