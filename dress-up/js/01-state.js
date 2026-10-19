@@ -959,7 +959,7 @@ async function speedCheck(report) {
     state = JSON.parse(saved);
     Object.assign(SPEED_TEST, { holder: null, noUnder: false, noRings: false, noPic: false, svg: false, still: false });
     slowFlag = keep.slowFlag; choppy = keep.choppy; PERF.slowMoving = keep.slowMoving;
-    moveSuspend = false; moveFrames = moveLate = 0;
+    moveSuspend = false; moveFrames = moveLate = 0; walkFrames = walkLate = 0;
     perfBusy = false;
     measuringNote(null);
     changed();
@@ -1061,7 +1061,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.331", released: "2026-10-19" };
+const VERSION = { number: "0.0.332", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

@@ -1034,16 +1034,25 @@ try { slowFlag = localStorage.getItem("dress-up-slow") === "1"; } catch (e) { /*
 // still on every visit after (its 🧪 on 0.0.91: 57 to 61 frames a second
 // in every pass, yet found choppy); each visit measures afresh. A trip
 // through a doorway does not count: its arrival's frame is long by nature.
-const CHOPPY_LATE = 0.25, CHOPPY_WINDOWS = 2, CHOPPY_FRAMES = 60;
-let choppy = false, moveFrameLast = 0, moveFrames = 0, moveLate = 0, moveSuspend = false, choppyRun = 0;
+// (ticket 382, ^du_report(12)'s next step 3: "the slow tier's first walk in the room ran at 5 to 12 frames a second before the game
+// held the scenery still; find out sooner (from the first frames) that a computer is slow") Each walk's first frames decide a plainly
+// slow computer at once: after CHOPPY_WARM frames (a walk's first frames are long by nature: the step's start, a part drawn new),
+// CHOPPY_EARLY more of which at least CHOPPY_EARLY_LATE are late make it choppy then; one that is only sometimes late is still found
+// by the two windows above. On a fast computer a walk's first frames are on time.
+const CHOPPY_LATE = 0.25, CHOPPY_WINDOWS = 2, CHOPPY_FRAMES = 60, CHOPPY_WARM = 3, CHOPPY_EARLY = 12, CHOPPY_EARLY_LATE = 0.75;
+let choppy = false, moveFrameLast = 0, moveFrames = 0, moveLate = 0, moveSuspend = false, choppyRun = 0, walkFrames = 0, walkLate = 0;
 try { localStorage.removeItem("dress-up-choppy"); } catch (e) { /* (nothing kept) */ }
 function noteMoveFrame(t) {
   if (moveSuspend || entering) return;   // (🧪 the speed check; a trip)
   const g = t - moveFrameLast;
   moveFrameLast = t;
-  if (g <= 0 || g > 250) return;
+  if (g <= 0 || g > 250) { walkFrames = walkLate = 0; return; }   // (a pause: the next frames start a new walk)
   moveFrames++;
   if (g > 25) moveLate++;
+  if (++walkFrames > CHOPPY_WARM && walkFrames <= CHOPPY_WARM + CHOPPY_EARLY) {
+    if (g > 25) walkLate++;
+    if (!choppy && walkFrames === CHOPPY_WARM + CHOPPY_EARLY && walkLate >= CHOPPY_EARLY_LATE * CHOPPY_EARLY) { choppy = true; setTimeout(changed, 0); }
+  }
   if (moveFrames < CHOPPY_FRAMES) return;
   choppyRun = moveLate > CHOPPY_LATE * moveFrames ? choppyRun + 1 : 0;
   if (!choppy && choppyRun >= CHOPPY_WINDOWS) { choppy = true; setTimeout(changed, 0); }

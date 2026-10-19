@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.332 (2026-10-19)
+
+Everything in 0.0.331, with a slow computer noticed in the first second of a walk.
+
+- **🐢 On a slow computer the first walk no longer stutters for seconds**: the game holds the scenery still on a computer that can't keep up, but it used to watch about 120 frames of walking first (at 10 frames a second, 12 seconds of stuttering, every visit). Now, when a walk's first frames are nearly all late, it decides at once (about a second and a half at 10 frames a second); a fast computer with the odd slow frame is not caught by it.
+
 ## 0.0.331 (2026-10-19)
 
 Everything in 0.0.330, with adding a thing to a full place quick again.
