@@ -364,6 +364,7 @@ const TABS = [
       // (ticket 329, Matthew) the bubbles smaller farther back; a pop's smaller bubbles, in its style; lines out from it, as
       // the sun's rays, growing and gone; and its sound, with an instrument's settings as the mixing board's
       ["range", "bubbleDepth", "🔭 smaller farther back (0 = all one size)", 0, 100, 40, 90],
+      ["range", "bubbleStick", "🫧 how often a bubble maker's bubbles stick to these (0 = never)", 0, 100, 10, 70],   // (ticket 341)
       ["range", "bubbleBurst", "💥 how likely a pop makes smaller bubbles", 0, 100, 20, 80],
       ["range", "bubbleBurstCount", "🫧 how many smaller bubbles, about", 1, 8, 2, 5],
       ["toggle", "bubbleRays", "✨ lines out from a pop"],
@@ -381,6 +382,7 @@ const TABS = [
       ["color", "foamColor", "🎨 the foam's colour", BUBBLE_COLORS],
       ["toggle", "foamRainbow", "🌈 a rainbow sheen on the foam"],
       ["range", "foamMove", "〰️ how much the foam moves (0 = still)", 0, 100, 0, 60],
+      ["range", "foamStick", "🫧 how often moving bubbles stick to the bubbles standing out (0 = never)", 0, 100, 10, 70],   // (ticket 341)
       ["action", "foamSeed", "🎲 another foam", () => { state.background.foamSeed = 1 + Math.floor(Math.random() * 99999); }],
     ]],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)

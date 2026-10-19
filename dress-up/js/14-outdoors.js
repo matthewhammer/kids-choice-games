@@ -1103,17 +1103,35 @@ function makerTick(t) {
       const el = document.createElementNS("http://www.w3.org/2000/svg", "g");
       el.innerHTML = `<g class="bubin">${bubbleSvg(0, 0, r, th)}</g>`; layer.append(el);
       const Wh = makerShape(d).wheels, wo = Wh[(makerSim.n >> 1) % Wh.length].out;   // (from each wheel by turns)
-      L.push({ x: d.x + sd * wo[0] * s, y: d.z + wo[1] * s, vx: sd * (70 + 70 * rnd()) * s, vy: -(25 + 50 * rnd()) * s, r, el, born: t, life: 4500 + 3500 * rnd(), ph: rnd() * 6.28, s });
+      L.push({ x: d.x + sd * wo[0] * s, y: d.z + wo[1] * s, vx: sd * (70 + 70 * rnd()) * s, vy: -(25 + 50 * rnd()) * s, r, el, born: t, life: 4500 + 3500 * rnd(), ph: rnd() * 6.28, s, roll: rnd() });
       if (L.length > 70) { const o = L.shift(); o.el.remove(); }
     }
   }
   // the friend: their box in the picture's units, from where they are drawn (figureT), not read back from the screen: a read
   // each frame made the browser lay the whole picture out again, thousands of shapes in the bubble room
   const fr = friendBox();
+  // (ticket 341) what a moving bubble can stick to here, and how likely it is to: the bubble room's bubbles standing out of its
+  // foam (roomBalls, where they are drawn, popped ones left out), or bubble space's own; each bubble rolls once, at its birth
+  const targets = makerStickTargets(B), stick = (B.kind === "bubbleroom" ? B.foamStick ?? 30 : B.bubbleStick ?? 30) / 100;
+  let stuckN = L.filter(b => b.stuck).length;
   for (let j = L.length - 1; j >= 0; j--) {
     const b = L[j], age = t - b.born;
     if (b.pop) { if (t - b.pop > 260) { b.el.remove(); L.splice(j, 1); } continue; }
     if (age > b.life || b.y < F.top - 40 * k || b.x < F.left - 60 * k || b.x > F.right + 60 * k) { b.el.remove(); L.splice(j, 1); continue; }
+    if (b.stuck) {   // (stuck: where it touched, following what it stuck to; swelling a little till it fades; a popped hold lets it go)
+      const T = b.stuck.to;
+      if (T.gone && T.gone()) { b.stuck = null; b.vx = 0; b.vy = 20 * b.s; stuckN--; }
+      else { b.x = T.x() + b.stuck.dx; b.y = T.y() + b.stuck.dy;
+        if (fr && b.x + b.r > fr[0] && b.x - b.r < fr[2] && b.y + b.r > fr[1] && b.y - b.r < fr[3]) { b.pop = t; if (b.el.firstChild) b.el.firstChild.classList.add("pop"); continue; }
+        const u = Math.min(1, (age - b.stuck.at) / (b.life - b.stuck.at)), fade = Math.min(1, (b.life - age) / 900);
+        b.el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)}) scale(${(1 + 0.15 * u).toFixed(3)})`); b.el.setAttribute("opacity", fade.toFixed(2));
+        continue; }
+    }
+    if (!b.stuck && age > 500 && b.roll < stick && stuckN < STICK_MAX && targets.length) {
+      const T = targets.find(q => { const dx = b.x - q.x(), dy = b.y - q.y(), rr = q.r + b.r; return Math.abs(dx) < rr && Math.abs(dy) < rr && dx * dx + dy * dy < rr * rr && !q.gone(); });
+      if (T) { const dx = b.x - T.x(), dy = b.y - T.y(), d = Math.hypot(dx, dy) || 1, rr = (T.r + b.r) * 0.94;
+        b.stuck = { to: T, dx: dx / d * rr, dy: dy / d * rr, at: age }; b.life = age + 6000 + 6000 * rnd(); b.vx = b.vy = 0; stuckN++; continue; }
+    }
     const damp = Math.pow(0.5, dt), w = t / 1000 * 1.3 + b.ph;
     b.vx = b.vx * damp + Math.cos(w) * 22 * b.s * dt; b.vy = b.vy * Math.pow(0.7, dt) - 14 * b.s * dt + Math.sin(w * 1.4) * 18 * b.s * dt;
     b.x += b.vx * dt; b.y += b.vy * dt;
@@ -1122,6 +1140,17 @@ function makerTick(t) {
     b.el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`); b.el.setAttribute("opacity", fade.toFixed(2));
   }
   makerSim.raf = requestAnimationFrame(makerTick);
+}
+// (ticket 341) the bubbles a moving bubble can stick to here: each its middle (as functions, as bubble space's move) and size,
+// and whether it has gone (popped); at most STICK_MAX stuck at once
+const STICK_MAX = 30;
+// (made once for the room as drawn, or for bubble space's list, not every frame: the bubble room has hundreds)
+function makerStickTargets(B) {
+  const src = B.kind === "bubbleroom" ? roomBalls : B.kind === "bubblespace" ? bubbleSim.list : null;
+  if (makerSim.tsrc === src && makerSim.tkind === B.kind) return makerSim.targets;
+  makerSim.tsrc = src; makerSim.tkind = B.kind;
+  return makerSim.targets = !src ? [] : B.kind === "bubbleroom" ? src.list.map(q => ({ x: () => q.x, y: () => q.y, r: q.r, gone: () => ballPops.has(q.id) }))
+    : src.map(q => ({ x: () => q.x, y: () => q.y, r: q.r, gone: () => !!(q.pop || q.back) }));
 }
 function bubbleRun() {
   if (state.background.kind !== "bubblespace") { if (bubbleSim.raf) cancelAnimationFrame(bubbleSim.raf); bubbleSim.raf = 0; bubbleSim.list = []; bubbleSim.bonds = []; bubbleSim.layer = null; bubbleSim.key = ""; bubbleKidsClear(); return; }

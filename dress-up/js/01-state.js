@@ -461,7 +461,7 @@ const DEFAULTS = {
                 // bubbles stick out from each surface into the room
                 // (Matthew's own, from his save of 16:56 on 0.0.238: "these are good for the bubble room defaults")
                 foamBack: true, foamBackH: 98, foamLeft: true, foamLeftH: 84, foamRight: true, foamRightH: 82, foamFloor: true, foamFloorH: 86,
-                foamCeil: true, foamCeilH: 95, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 88, foamSeed: 58909,
+                foamCeil: true, foamCeilH: 95, foamColor: "#9ad7ff", foamRainbow: true, foamMove: 88, foamSeed: 58909, foamStick: 30, bubbleStick: 30,   // (foamStick, bubbleStick: ticket 341)
                 foamBackOut: 94, foamLeftOut: 82, foamRightOut: 82, foamFloorOut: 94, foamCeilOut: 20,
                 instEdit: "template", thingsSolid: true,   // (ticket 283: placed things in the way)   // (ticket 300: in a world square, changes go to the place's template, or 📍 only that square)
                 bubbleCOn: false, bubbleCColor: "#c8f7c5", bubbleCSize: 11, bubbleCShine: 60, bubbleCSparkle: "dot", bubbleCSparkleColor: "#ffffff",
@@ -1044,7 +1044,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.283", released: "2026-10-18" };
+const VERSION = { number: "0.0.284", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

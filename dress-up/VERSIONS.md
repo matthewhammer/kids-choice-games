@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.284 (2026-10-18)
+
+Everything in 0.0.283, with bubbles that stick.
+
+- **🫧 A bubble maker's bubbles stick** to the bubbles standing out of the bubble room's walls and floor, so the room grows clusters, and in bubble space to its floating bubbles, following them as they drift. How often is a slider in each place (0 to 100, 30 to start). A stuck bubble swells a little and fades after a while, pops when you walk into it, and floats free if the bubble it holds pops.
+
 ## 0.0.283 (2026-10-18)
 
 Everything in 0.0.282, with walking off a seat fixed.
