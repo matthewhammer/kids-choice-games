@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.334 (2026-10-19)
+
+Everything in 0.0.333, with the bubble room's foam moving again, and cheaply.
+
+- **🫧 The bubble room's foam moves from the start again**: its bubbles breathe and now and then pop and grow back, on the walls, the floor and the ceiling, without slowing the game down. The moving bubbles are drawn as layers of their own that the browser moves by itself, under the picture of the room, instead of animations inside it (in our tests: from about 22 to about 58 frames a second on a slow computer). If you had made it still, it stays still; if it was still only because that was the start, it moves again. The bubbles stuck out into the room hold still for now.
+
 ## 0.0.333 (2026-10-19)
 
 Everything in 0.0.332, with the bubble room's friend and things back in reach.
