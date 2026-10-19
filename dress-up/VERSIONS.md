@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.311 (2026-10-19)
+
+Everything in 0.0.310, with the Background, Controls and Advanced tabs in boxes too.
+
+- **🏞️ The Background tab in boxes, beside the game or in its own panel alike**: 🗺️ the place, the place's own (🦆 lake, 🌳 tree house...), 🧍 the friend here, 👁️ what stands here, 🪨 things to put here, 🎵 the music moves it, 🏰 the castles.
+- **🫧 Each bubble theme shows its bubble**, drawn as you set it, by its name; the three themes side by side when there is room, and no 🅰️ in front of every row of theme A.
+- **⚙️ Advanced in boxes**: the look, this game, playing, tests and timing, the effects kept off till they are fast, what's new; each test's long account folded under ℹ️ how it works.
+
 ## 0.0.310 (2026-10-19)
 
 Everything in 0.0.309, with the friend's tabs laid out in boxes.

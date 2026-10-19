@@ -33,6 +33,14 @@ try {
     out.witchHidden = [...P.querySelectorAll(".tabbox")].filter(b => /witch|her cat|her broom/.test(b.querySelector(".box-name").textContent)).every(b => b.hidden);
     set("costume", "kind", "witch"); changed(); await w(250);
     out.witchShown = [...P.querySelectorAll(".tabbox")].some(b => /the witch/.test(b.querySelector(".box-name").textContent) && !b.hidden);
+    // (0.0.311) 🏞️ Background's side panel boxed by thing; ⚙️ Advanced in boxes, its long accounts folded; the bubble themes drawn
+    state = clone(DEFAULTS); state.background.kind = "lake"; changed(); tab = TABS.findIndex(t => t[1] === "background"); showTab(); await w(300);
+    out.bg = [...P.querySelectorAll(".bg-boxes > .tabbox")].filter(b => !b.hidden).map(b => b.querySelector(".box-name").textContent);
+    tab = TABS.findIndex(t => t[1] === "advanced"); showTab(); await w(300);
+    out.adv = { boxes: P.querySelectorAll(".advbox").length, folds: P.querySelectorAll("details.how").length };
+    tab = TABS.findIndex(t => t[1] === "controls"); showTab(); await w(300);
+    out.themes = [...P.querySelectorAll(".ctlgroup .cap > .cap-pic")].filter(sv => sv.childElementCount > 0).length;
+    out.themeNames = [...P.querySelectorAll(".ctlgroup")].filter(g => /theme A/.test((g.querySelector(":scope > .cap") || {}).textContent || "")).map(g => [...g.querySelectorAll(":scope > .ctl .name")].map(n => n.textContent)).flat();
     state = clone(DEFAULTS); changed(); return JSON.stringify(out); })()`));
   for (const t of r.tabs) console.log("  " + JSON.stringify(t));
   const boxed = r.tabs.filter(t => t.boxed);
@@ -42,6 +50,9 @@ try {
   ok("no tab's panel wider than itself", r.tabs.every(t => t.over <= 2), r.tabs.filter(t => t.over > 2));
   ok("a label's explanation a hint: knees bend, its parenthesis on pointing", r.knees && r.knees[0] === "🦵 knees bend" && /crouches/.test(r.knees[1]), r.knees);
   ok("the witch's boxes hidden with no costume, shown with the witch", r.witchHidden && r.witchShown, r);
+  ok("🏞️ Background's side panel in boxes by thing: the place, the lake's own, the friend here, what stands, things", ["🗺️ the place", "🧍 the friend here", "👁️ what stands here", "🪨 things to put here"].every(n => r.bg.includes(n)) && r.bg.some(n => /lake/.test(n)), r.bg);
+  ok("⚙️ Advanced in boxes (5 or more), its long accounts folded under ℹ️", r.adv.boxes >= 5 && r.adv.folds >= 2, r.adv);
+  ok("the bubble themes each drawn by its name (3), theme A's rows not repeating 🅰️", r.themes === 3 && r.themeNames.length && r.themeNames.every(n => !/🅰/.test(n)), r);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

@@ -2099,7 +2099,9 @@ function showTab() {
   panel.dataset.part = part;
   panel.replaceChildren(...ctls.map(c => control(part, c)));
   if (part === "background") bgLayout(panel);   // (ticket 285)
+  else if (part === "advanced") advLayout(panel);   // (ticket 375)
   else boxLayout(panel, TABS[tab][0], ctls);   // (ticket 375: its rows in boxes, as the designers' are)
+  tidyGroups(panel);   // (ticket 375: and every group in it named once, a bubble theme drawn)
   placePic();   // (ticket 231: the world designer's view built again, or gone with its tab)
   changed();
 }

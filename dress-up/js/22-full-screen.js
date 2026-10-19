@@ -85,11 +85,84 @@ function setBgBig(on) {
   placePic();
   designerScreen(on);
 }
+// (ticket 375) ⚙️ Advanced, one long row of seventeen parts till now, in boxes: 🌗 the look, 🏠 this game (its page, its code, its
+// version), 🎮 playing (a pop-up for new versions, the levers), 🧪 tests and timing, 🚀 effects kept off till fast (its long note a
+// hint on the box's name), 📰 what's new (last, as it was)
+function advLayout(panel) {
+  const root = panel.querySelector(":scope > .ctl"); if (!root) return;
+  const kids = [...root.children], txt = c => (c.textContent || "").trim(), lbl = kids.find(c => c.classList.contains("lbl"));
+  const pick = test => kids.filter(c => !c.dataset.boxed && test(c)).map(c => { c.dataset.boxed = "1"; return c; });
+  const box = (name, list, hint) => { if (!list.length) return null; const h = el("h3", { class: "box-name", ...(hint ? { title: hint } : {}) }, [name]);
+    return el("section", { class: "box tabbox advbox" }, [h, ...list]); };
+  const note = kids.find(c => c.classList.contains("hint") && /^🚀/.test(txt(c)));
+  const made = [
+    box("🌗 the look", pick(c => c.classList.contains("theme-row"))),
+    box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer")))),   // (the version's row by its button: its words come after)
+    box("🎮 playing", pick(c => (c.classList.contains("row") && /^(🔔|🎚️)/.test(txt(c))) || (c.classList.contains("hint") && !/^🚀/.test(txt(c))))),   // (and its note, filled as it is used)
+    box("🧪 tests and timing", pick(c => c.classList.contains("perfrow") && /^(🧪|⏱️)/.test(txt(c)))),
+    box("🚀 kept off till they are fast", pick(c => c.classList.contains("perfrow")), note ? txt(note).replace(/^🚀\s*/, "") : ""),
+    box("📰 what's new", pick(c => /news/.test(c.className)).filter(c => !c.classList.contains("news-cap"))),
+  ].filter(Boolean);
+  if (note) note.remove();
+  for (const c of kids) if (c.classList.contains("news-cap")) c.remove();   // (the box names it)
+  if (lbl) lbl.style.display = "none";   // ("⚙️ advanced": the tab names it)
+  const rest = kids.filter(c => c.isConnected && c.parentNode === root && c !== lbl);
+  root.replaceChildren(...(lbl ? [lbl] : []), el("div", { class: "boxes tabboxes" }, [...made, ...(rest.length ? [box("⚙️ more", rest)] : [])]));
+  // (a test's long account of what it does, folded under ℹ️, open on a tap: rule 4, a row on one line, and a fold that works on a touch
+  // screen, where a hint on pointing does not)
+  for (const h of root.querySelectorAll(".advbox .perfrow > .hint")) if ((h.textContent || "").length > 140) {
+    const d = el("details", { class: "how" }, [el("summary", {}, ["ℹ️ how it works"])]); h.before(d); d.append(h); }
+}
+// (ticket 375) Every group (a box inside a box: .chipset.ctlgroup, with its name in .cap), in any tab: nothing in it repeats its name
+// (🅰️ theme A's rows were "🅰️ color", "🅰️ size"), and a bubble theme's group shows its bubble by its name, drawn from its settings
+// (the report's "show the thing": a theme as what it draws)
+const LEAD_MARK = /^[\p{Extended_Pictographic}\u200D\uFE0F\u20E3]+\s*/u;
+function tidyGroups(panel) {
+  for (const g of panel.querySelectorAll(".chipset.ctlgroup")) {
+    const cap = g.querySelector(":scope > .cap"); if (!cap) continue;
+    const ct = cap.textContent.trim(), mark = (ct.match(LEAD_MARK) || [""])[0].trim(), word = ct.split(" ").pop();
+    for (const n of g.querySelectorAll(":scope > .ctl > .lbl .name")) {
+      let t = n.textContent.trim();
+      if (mark && t.startsWith(mark)) t = t.slice(mark.length).trim();
+      const m = word && t.match(new RegExp("^" + word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/s$/, "") + "s?(?:'s)?\\s+(\\S.*)$", "u"));
+      if (m) t = m[1];
+      if (t && t !== n.textContent) n.textContent = t;
+    }
+    const first = g.querySelector(':scope > .ctl[data-key$="Color"]'), L = first && (first.dataset.key.match(/^bubble([ABC])Color$/) || [])[1];
+    if (L && typeof makerTheme === "function" && typeof bubbleSvg === "function") {
+      const sv = document.createElementNS("http://www.w3.org/2000/svg", "svg"); sv.setAttribute("viewBox", "-15 -15 30 30"); sv.setAttribute("class", "cap-pic"); sv.setAttribute("aria-hidden", "true");
+      cap.prepend(sv); let was = "";
+      syncs.push(() => { const th = makerTheme(state.background, L), k = JSON.stringify(th); if (k !== was) { was = k; sv.innerHTML = bubbleSvg(0, 0, 12, th); } });
+    }
+  }
+}
+// (ticket 375) The Background tab's rows in boxes, a box for each thing in the picture, the same in the side panel and the full screen
+// (^du_report(5)'s step 2; till now its full screen made each row a box): 🗺️ the place, the place's own (named by the place, as it
+// changes), 🧍 the friend here, 👁️ what stands here, 🪨 things to put here, 🎵 its music's motion, 🏰 the castles. By the row's key.
+const BG_BOX = [["place", "🗺️ the place", k => k === "kind" || k === "instEdit", true],
+                ["friend", "🧍 the friend here", k => /^(figSize|figPos|seat|north_|water(See|Wake|Tread)|blow|swim|tread)/.test(k)],
+                ["stands", "👁️ what stands here", k => k === "objectsOff", true],
+                ["things", "🪨 things to put here", k => k === "things", true],
+                ["music", "🎵 the music moves it", k => /^lfo/.test(k)],
+                ["castles", "🏰 the castles", (k, row) => /^castle/.test(k) || (row.classList.contains("ctlgroup") && /castle|🏰|🚪|room/i.test((row.querySelector(":scope > .cap") || {}).textContent || "")), true]];
+function bgBoxes(rows) {
+  const own = { rows: [] }, by = Object.fromEntries(BG_BOX.map(([id]) => [id, []]));
+  for (const r of rows) { const k = r.dataset.key || "", hit = BG_BOX.find(([, , test]) => test(k, r)); (hit ? by[hit[0]] : own.rows).push(r); }
+  // (the place's row named "background": 🗺️ the place names it)
+  for (const r of by.place) if (r.dataset.key === "kind") { const L = r.querySelector(":scope > .lbl"); if (L && !L.querySelector(".val:not(:empty)")) L.hidden = true; }
+  const box = (name, list, wide, dyn) => { if (!list.length) return null;
+    const h = el("h3", { class: "box-name" }, [name]), b = el("section", { class: "box tabbox" + (wide ? " box-wide" : "") }, [h, ...list]);
+    syncs.push(() => { const hide = list.every(r => r.hidden); if (b.hidden !== hide) b.hidden = hide; if (dyn) { const t = dyn(); if (h.textContent !== t) h.textContent = t; } });
+    return b; };
+  const placeName = () => { const p = PLACES.find(q => q[0] === state.background.kind); return p ? p[1] : "🏞️ the place's own"; };
+  return [box(BG_BOX[0][1], by.place, true), box(placeName(), own.rows, false, placeName),
+          ...BG_BOX.slice(1).map(([id, name, , wide]) => box(name, by[id], wide))].filter(Boolean);
+}
 // (ticket 285) The Background tab's rows, once built, in the designer's two columns: its boxes (.bg-boxes), and beside them
 // the game's card (.bg-viewcol); outside the full screen the two are display: contents, and the tab is as it always was
 function bgLayout(panel) {
   const kids = [...panel.children], bar = kids.find(c => c.querySelector(":scope > button.designer-chip")), view = kids.find(c => c.querySelector(":scope > .bg-view"));
-  const boxes = el("div", { class: "bg-boxes" }, kids.filter(c => c !== bar && c !== view));
+  const boxes = el("div", { class: "bg-boxes" }, bgBoxes(kids.filter(c => c !== bar && c !== view)));
   // (Matthew: "no drag between LHS and RHS -- that's a key feature of world designer": the same dragger, kept apart from the world's)
   const split = el("div", { class: "world-split bg-split", role: "separator", "aria-orientation": "vertical", title: "Drag: more room for the boxes, or for the game" });
   const layout = el("div", { class: "bg-layout" }, [boxes, split, el("div", { class: "bg-viewcol" }, view ? [view] : [])]);
