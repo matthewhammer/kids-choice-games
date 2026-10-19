@@ -702,6 +702,10 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
 /* (ticket 220) 🫧 bubble space: a bubble that touches the friend swells and fades, about its own middle */
 #bubble-layer .bubin, #maker-bubbles .bubin, #ball-pops .bubin, #friend-burst .bubin { transform-box: fill-box; transform-origin: center; }
 #bubble-layer .bubin.pop, #maker-bubbles .bubin.pop, #ball-pops .bubin.pop, #friend-burst .bubin.pop { animation: bub-pop 0.25s ease-out forwards; }
+/* (ticket 415) a part of the friend gone to bubbles stays hidden, through every drawing, until they come back */
+#pic[data-burst~="head"] [data-part="head"], #pic[data-burst~="head"] [data-part="eyes"], #pic[data-burst~="head"] [data-part="hair"],
+#pic[data-burst~="torso"] [data-part="shirt"], #pic[data-burst~="torso"] [data-part="hands"],
+#pic[data-burst~="legs"] [data-part="pants"], #pic[data-burst~="feet"] [data-part="feet"] { visibility: hidden; }
 @keyframes bub-pop { to { scale: 1.7; opacity: 0; } }
 /* (ticket 329) a popped bubble's lines, out from it, growing and gone; and its smaller bubbles pop as the others */
 #bubble-kids .bubin { transform-box: fill-box; transform-origin: center; }

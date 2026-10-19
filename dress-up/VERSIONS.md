@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.336 (2026-10-19)
+
+Everything in 0.0.335, with a falling boulder turning you into rainbow bubbles part by part.
+
+- **Hit by a falling boulder, you go to rainbow bubbles one part at a time** (ticket 415, for N): as the boulder comes down on you, your head turns into bubbles first, then your body and arms, then your legs, then your feet, each part the moment the boulder reaches it. Before, all of you turned into bubbles at once when it landed. The bubbles are still every colour of the rainbow, red at your head down to violet at your feet; they spill out, float and pop, and then you are back where you stood.
+
 ## 0.0.335 (2026-10-19)
 
 Everything in 0.0.334, with the nav arrows' words where the arrows are, and staying longer.
