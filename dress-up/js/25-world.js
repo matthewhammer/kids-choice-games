@@ -250,9 +250,18 @@ function floorNearness(x, y, o = null) {
   const at = i => o && o[i] && (f[i] - a[i]) * o[i] > 0 ? a[i] : f[i];
   return Math.hypot(at(0) - a[0], at(1) - a[1]) / Math.max(PASS_MIN, Math.min(WAY_NEAR, Math.hypot(a[0] - c[0], a[1] - c[1]) / 2));
 }
-function wayNearness(d) {
+// (ticket 369, world185 in 0.0.326's speed run: 0.0.321's spacing moved E's and W's arrows up off SE's and SW's, and with them where
+// the way stood on the floor, so a friend walked to the east edge at an everyday depth was no longer near E and saw no arrow) a way's
+// spot on the floor, where the feet are judged near it and where a walk to it goes, is where it was before the arrows were spaced
+// (wayHomes, kept by worldWaysSvg); its arrow is drawn spaced
+let wayHomes = {};
+function waySpot(d) {
   const w = worldWaysAt.find(e => e[0] === d);
-  return w && WAY_OUT[d] ? floorNearness(w[1], w[2], WAY_OUT[d]) : Infinity;
+  return !w ? null : wayHomes[d] || [w[1], w[2]];
+}
+function wayNearness(d) {
+  const p = waySpot(d);
+  return p && WAY_OUT[d] ? floorNearness(p[0], p[1], WAY_OUT[d]) : Infinity;
 }
 // (the way X goes through, aimed at: its arrow glows, as a door's frame does)
 function worldWaysAim(d) {
@@ -296,7 +305,7 @@ function insideWaysSvg(B, x0, y0, x1, y1) {
   const IW = insideWays(B), k = (y1 - y0) / 700;
   // (where the world's ways toward us are: worldWaysSvg's AT)
   const AT = { S: [0, y1 - 30 * k, 90], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
-  worldWaysAt = IW.map(w => [w.d, ...AT[w.d], { kind: w.to }, w.label, w.attrs]);
+  worldWaysAt = IW.map(w => [w.d, ...AT[w.d], { kind: w.to }, w.label, w.attrs]); wayHomes = {};
   worldWaysHud();
   if (!IW.length) return "";
   return SEP + part("inside-ways", [B.kind, IW.map(w => w.d + w.attrs).join(), x0, y0, x1, y1], () => worldWaysAt.map(([d, x, y, a, , , attrs]) =>
@@ -316,7 +325,9 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const far = G ? G.far + 10 * k : g - 150 * k, mid = G ? G.cy + 14 * k : g + 40 * k, side = G ? 0.6 : 0.55;
   const AT = { N: [0, far - 6 * k, -90], S: [0, y1 - 30 * k, 90], E: [x1 - 45 * k, mid, 0], W: [x0 + 45 * k, mid, 180],
                NE: [x1 * side, far, -40], NW: [x0 * side, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
+  const homes = Object.fromEntries(Object.entries(AT).map(([d, [x, y]]) => [d, [x, y]]));
   waysSpaced(AT, k);   // (ticket 313)
+  wayHomes = homes;   // (ticket 369: where each way stands on the floor, as before the spacing)
   worldWaysAt = ways.map(d => [d, ...AT[d], meets(d), meets(d) ? names[worldMeets(W, W.at, d)] : null]);
   worldWaysHud();
   if (!ways.length) return "";

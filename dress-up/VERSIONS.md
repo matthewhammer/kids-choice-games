@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.327 (2026-10-19)
+
+Everything in 0.0.326, with the east and west arrows showing at the edges again.
+
+- **➡️ Walk to a place's east or west edge and its arrow shows again**: since 0.0.321 moved those arrows up off the corner arrows, they only showed when your friend was near the back. Now the arrows stay where 0.0.321 drew them, but whether your friend is near a way is judged where the way is on the ground, as before.
+
 ## 0.0.326 (2026-10-19)
 
 Everything in 0.0.325, with a small friend easy to pick up.

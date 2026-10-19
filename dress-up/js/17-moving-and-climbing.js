@@ -396,7 +396,7 @@ function measureMarks() {
       if (dd.way && !w) continue;
       // (ticket 233: a way toward us out of a room, a nav arrow too, as the world's: insideWays)
       const kind = dd.way ? "nav" : "door";
-      pics.push({ ...at, el: d, box, door: true, kind, spot: w ? [w[1], w[2]] : under(at), out: dd.way ? WAY_OUT[dd.way] : null });
+      pics.push({ ...at, el: d, box, door: true, kind, spot: w ? waySpot(dd.way) : under(at), out: dd.way ? WAY_OUT[dd.way] : null });   // (ticket 369: the way's spot on the floor, not its spaced arrow)
       continue;
     }
     if (!view) {   // (a doorway or a sign with no mark of its own: its whole drawing, the feet under it)
