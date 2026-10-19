@@ -402,18 +402,36 @@ function diverHelmet(F, WC, dir, away) {
     t += `<path d="${ellD(px, py, pa, pr)}" fill="${DIVE_GLASS}" fill-opacity="0.2" stroke="${dk}" stroke-width="10"/><path d="${ellD(px, py, pa, pr)}" fill="none" stroke="${m}" stroke-width="4"/>`;
     for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; t += `<circle cx="${f1(px + Math.cos(a) * (pa + 3))}" cy="${f1(py + Math.sin(a) * (pr + 3))}" r="3.4" fill="${lt}" stroke="${dk}" stroke-width="1.5"/>`; }
   }
-  const port = (x, y, a, b) => `<path d="${ellD(x, y, a, b)}" fill="${DIVE_GLASS}" fill-opacity="0.55" stroke="${dk}" stroke-width="6"/>`;
+  // (Matthew: "Adding more details -- like rivits and seams in the metal") its seams, riveted: one over the crown (down
+  // to the port facing us; down the back from behind; down the side in profile), and the raised neck ring round its foot
+  const rivet = (x, y, r = 2.6) => `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="${lt}" stroke="${dk}" stroke-width="1.2"/>`;
+  const along = (P, n) => Array.from({ length: n }, (_, i) => { const u = (i + 0.5) / n, [a, b, c] = P;
+    return rivet((1 - u) * (1 - u) * a[0] + 2 * u * (1 - u) * b[0] + u * u * c[0], (1 - u) * (1 - u) * a[1] + 2 * u * (1 - u) * b[1] + u * u * c[1]); }).join("");
+  const seam = (P, n) => `<path data-dive="seam" d="M${f1(P[0][0])} ${f1(P[0][1])} Q${f1(P[1][0])} ${f1(P[1][1])} ${f1(P[2][0])} ${f1(P[2][1])}" fill="none" stroke="${dk}" stroke-width="2.5"/>` + along(P, n);
+  const crown = dir ? [[cx + dir * 0.15 * rx, cy - ry], [cx - dir * 0.55 * rx, cy - 0.2 * ry], [cx - dir * 0.45 * rx, cy + 0.62 * ry]]
+              : away ? [[cx, cy - ry], [cx, cy], [cx, cy + 0.66 * ry]] : [[cx, cy - ry], [cx, (cy - ry + py - pr) / 2], [cx, py - pr - 9]];
+  t += seam(crown, away ? 6 : dir ? 5 : 3);
+  const ring = [[cx - 0.93 * rx, cy + 0.5 * ry], [cx, cy + 1.02 * ry], [cx + 0.93 * rx, cy + 0.5 * ry]];
+  t += `<path data-dive="ring" d="M${f1(ring[0][0])} ${f1(ring[0][1])} Q${f1(ring[1][0])} ${f1(ring[1][1])} ${f1(ring[2][0])} ${f1(ring[2][1])}" fill="none" stroke="${dk}" stroke-width="12" stroke-linecap="round"/>` +
+       `<path d="M${f1(ring[0][0])} ${f1(ring[0][1])} Q${f1(ring[1][0])} ${f1(ring[1][1])} ${f1(ring[2][0])} ${f1(ring[2][1])}" fill="none" stroke="${m}" stroke-width="7" stroke-linecap="round"/>` + along(ring, 9);
+  const port = (x, y, a, b) => `<path d="${ellD(x, y, a, b)}" fill="${DIVE_GLASS}" fill-opacity="0.55" stroke="${dk}" stroke-width="6"/>` +
+    Array.from({ length: 6 }, (_, i) => rivet(x + Math.cos(i * Math.PI / 3) * (a + 5), y + Math.sin(i * Math.PI / 3) * (b + 5), 2)).join("");
   if (dir) t += port(cx - dir * 0.15 * rx, cy - 0.05 * ry, 0.22 * rx, 0.22 * rx);
   else if (!away) t += port(cx - 0.9 * rx, cy, 0.1 * rx, 0.22 * ry) + port(cx + 0.9 * rx, cy, 0.1 * rx, 0.22 * ry);
   const fx = cx - (dir || 0) * 0.4 * rx, fy = cy - ry + 6;
   t += `<rect x="${f1(fx - 11)}" y="${f1(fy - 20)}" width="22" height="24" rx="4" fill="${m}" stroke="${dk}" stroke-width="3"/>`;
-  return { svg: t, fitting: [fx, fy - 20] };
+  // (where it leaks, when it does: the fitting, and its side, the exhaust valve)
+  return { svg: t, fitting: [fx, fy - 20], exhaust: [cx + (dir ? -dir * 0.92 : 0.92) * rx, cy + 0.1 * ry] };
 }
 // its corselet: the brass collar on the shoulders the helmet sits on, a bolt at each side and the middle, in the friend's units
 function diverCorselet(WC, w, dir) {
   const m = WC.diverMetal || "#c9a227", dk = darker(m), lt = mix(m, "#ffffff", 0.45), x = dir ? 0.95 * w : w + 8;
+  // (a seam set in from its edge, studded with rivets all along the edge, and a wing nut at each shoulder)
+  const edge = u => [u * x, 30 + 16 * (1 - u * u)];
   return `<path data-dive="corselet" d="M${f1(-x)} 30 Q${f1(-x)} -26 0 -32 Q${f1(x)} -26 ${f1(x)} 30 Q0 46 ${f1(-x)} 30 Z" fill="${m}" stroke="${dk}" stroke-width="4"/>` +
-    [-0.7, 0, 0.7].map(u => `<circle cx="${f1(u * x)}" cy="${f1(30 + 14 * (1 - u * u) - 6)}" r="4" fill="${lt}" stroke="${dk}" stroke-width="1.5"/>`).join("");
+    `<path d="M${f1(-x + 9)} 26 Q${f1(-x + 9)} -16 0 -22 Q${f1(x - 9)} -16 ${f1(x - 9)} 26" fill="none" stroke="${dk}" stroke-width="2" opacity="0.7"/>` +
+    Array.from({ length: 9 }, (_, i) => { const [ex, ey] = edge(-0.9 + 1.8 * i / 8); return `<circle cx="${f1(ex)}" cy="${f1(ey - 7)}" r="3" fill="${lt}" stroke="${dk}" stroke-width="1.2"/>`; }).join("") +
+    [-1, 1].map(sd => `<path d="M${f1(sd * 0.62 * x - 7)} -6 L${f1(sd * 0.62 * x + 7)} -6 L${f1(sd * 0.62 * x + 3)} 0 L${f1(sd * 0.62 * x - 3)} 0 Z" fill="${lt}" stroke="${dk}" stroke-width="1.5"/>`).join("");
 }
 // its air hose: one path from the helmet's fitting (a) up to the top of the scene (b), swaying slowly (a single path, as
 // the cauldron's light fumes are, and still on a slow computer)
@@ -472,4 +490,44 @@ function scubaYoke(WC, w, nw, L, dir, away) {
   const a = WC.scubaAccent || "#14b8a6", x = w + 3;
   return `<path data-dive="yoke" d="M${f1(-x)} -8 L${f1(-nw)} -20 L${f1(nw)} -20 L${f1(x)} -8 L${f1(w)} 24 L0 ${f1(dir ? 24 : 46)} L${f1(-w)} 24 Z" fill="${a}" stroke="${darker(a)}" stroke-width="2"/>` +
     (away ? `<line x1="0" y1="-18" x2="0" y2="${f1(L - 6)}" stroke="#9ca3af" stroke-width="3" stroke-dasharray="4 3"/>` : "");
+}
+
+// (ticket 288, Matthew: "we should have a param for \"leaks\" -- the default is fine (zero) and up to 100, it should be
+// more and more bubbly, like the bubble machine we added earlier tonight") A diving suit's leaks: bubbles streaming out
+// of where it leaks (leakPts, from the drawing: the old helmet's fitting and exhaust and its collar's edges; a scuba
+// suit's shoulders and knees, its tank's valve and mouthpiece, a snorkel's tip), "🫧 leaks" of 100 at most a second
+// eighteen, the bigger the more it leaks; each rising, wobbling, and fading after a few seconds or past the top. In a
+// layer of their own over the scene (#leak-bubbles), as the bubble makers' are; still while the picture is held still.
+let leakPts = null;
+const leakSim = { list: [], acc: 0, raf: 0, last: 0, n: 0, layer: null };
+function leakRun() {
+  if (!leakPts) { if (leakSim.raf) cancelAnimationFrame(leakSim.raf); leakSim.raf = 0; for (const b of leakSim.list) b.el.remove(); leakSim.list = []; if (leakSim.layer) { leakSim.layer.remove(); leakSim.layer = null; } return; }
+  let L = leakSim.layer;
+  if (!L) { L = leakSim.layer = document.createElementNS("http://www.w3.org/2000/svg", "g"); L.id = "leak-bubbles"; L.setAttribute("pointer-events", "none"); leakSim.list = []; }
+  if (L.parentNode !== pic || pic.lastChild !== L) pic.append(L);
+  if (!leakSim.raf) { leakSim.last = 0; leakSim.raf = requestAnimationFrame(leakTick); }
+}
+function leakTick(t) {
+  leakSim.raf = 0;
+  const P = leakPts, layer = leakSim.layer, F = sceneFrame;
+  if (!P || !layer) return;
+  const dt = leakSim.last ? Math.min(0.05, Math.max(0, (t - leakSim.last) / 1000)) : 0; leakSim.last = t;
+  if (stillAt !== null) { leakSim.raf = requestAnimationFrame(leakTick); return; }
+  const L = leakSim.list, k = P.k, rnd = () => { const v = Math.sin(++leakSim.n * 12.9898) * 43758.5453; return v - Math.floor(v); };
+  leakSim.acc += 18 * P.amt * dt;
+  while (leakSim.acc >= 1) {
+    leakSim.acc -= 1;
+    const [x, y] = P.pts[Math.floor(rnd() * P.pts.length)], r = Math.max(1.5, k * (5 + (6 + 16 * P.amt) * rnd()));
+    const el = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    el.innerHTML = bubbleSvg(0, 0, r, { color: "#dff6ff", shine: 0.85 }); layer.append(el);
+    L.push({ x, y, vx: (rnd() - 0.5) * 60 * k, vy: -(60 + 90 * rnd()) * k, r, el, born: t, life: 2000 + 2600 * rnd(), ph: rnd() * 6.28 });
+    if (L.length > 90) { const o = L.shift(); o.el.remove(); }
+  }
+  for (let j = L.length - 1; j >= 0; j--) {
+    const b = L[j], age = t - b.born;
+    if (age > b.life || b.y < F.top - 30) { b.el.remove(); L.splice(j, 1); continue; }
+    b.vy -= 70 * k * dt; b.vx *= Math.pow(0.4, dt); b.x += (b.vx + Math.sin(t / 1000 * 4 + b.ph) * 26 * k) * dt; b.y += b.vy * dt;
+    b.el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`); b.el.setAttribute("opacity", Math.min(1, (b.life - age) / 500, age / 120).toFixed(2));
+  }
+  leakSim.raf = requestAnimationFrame(leakTick);
 }

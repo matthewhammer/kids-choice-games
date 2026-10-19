@@ -279,6 +279,7 @@ const TABS = [
     ["color", "diverCloth", "⚓ suit's canvas", ["#b9a27a", "#8b7355", "#6b7280", "#d6c7a1"]],
     ["toggle", "diverHose", "⚓ air hose up to the surface"],
     ["color", "hoseColor", "⚓ hose's color", ["#4b5563", "#1f2937", "#7c2d12", "#d6c7a1"]],
+    ["range", "leaks", "🫧 leaks (more and more bubbles)", 0, 100, 0, 100],
     ["toggle", "snorkel", "🤿 snorkel"],
     ["color", "snorkelColor", "🤿 snorkel's color", ["#facc15", "#f97316", "#22c55e", "#ec4899", "#38bdf8", "#1f2937"]],
     ["toggle", "mask", "🥽 face mask"],
@@ -857,6 +858,7 @@ const SHOWN_WHEN = {
   "costume.scubaColor": c => c.kind === "scuba", "costume.scubaAccent": c => c.kind === "scuba",   // (ticket 288)
   "costume.diverMetal": c => c.kind === "diver", "costume.diverCloth": c => c.kind === "diver", "costume.diverHose": c => c.kind === "diver",
   "costume.hoseColor": c => c.kind === "diver" && c.diverHose !== false,
+  "costume.leaks": c => c.kind === "scuba" || c.kind === "diver" || !!c.tank || !!c.snorkel,
   "costume.snorkel": c => c.kind !== "diver", "costume.snorkelColor": c => c.kind !== "diver" && c.snorkel,
   "costume.mask": c => c.kind !== "diver", "costume.maskColor": c => c.kind !== "diver" && c.mask,
   "costume.tank": c => c.kind !== "diver", "costume.tankColor": c => c.kind !== "diver" && c.tank,

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.261 (2026-10-18)
+
+Everything in 0.0.260, with leaky diving suits and a riveted helmet.
+
+- **🫧 leaks**, a new slider for the diving suits and gear (0, the default, to 100): bubbles stream out of where the suit leaks, more and bigger the higher it goes, rising and wobbling like the bubble machine's: the old helmet's air fitting and its side valve, and its collar; a scuba suit's shoulders and knees, its tank's valve and mouthpiece, a snorkel's tip.
+- **The old diving helmet in more detail**: a riveted seam over its crown, a raised neck ring studded with rivets, rivets round its side ports and bolts round its glass; on its collar, a seam set in from the edge, rivets all along it, and a wing nut on each shoulder.
+
 ## 0.0.260 (2026-10-18)
 
 Everything in 0.0.259, with costumes for the ocean and the deep sea (🐯 Costume).

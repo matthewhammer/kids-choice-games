@@ -812,6 +812,22 @@ function drawNow() {
     const hose = WC.diverHose !== false && topY < a[1] - 40 ? veil("head", diverHose(WC, a, [a[0] - (dir || 1) * 70, topY], sceneryStill())) : "";
     svg += (away ? "" : hose) + veil("head", inFace(hm.svg)) + (away ? hose : "");
   }
+  // (ticket 288) where a diving suit leaks, as 🫧 leaks says: the old helmet's fitting and exhaust and its collar's edges;
+  // a scuba suit's shoulders and knees; a tank's valve and mouthpiece; a snorkel's tip (in the picture's units, turned
+  // with the friend: leakPts, for leakTick)
+  const leakAmt = Math.max(0, Math.min(100, Number(WC.leaks) || 0)) / 100;
+  if (leakAmt && (scuba || diver || WC.tank || WC.snorkel)) {
+    const inF = ([x, y]) => [tx + x * s, ty + y * s], DH = diveHead(F), pts = [];
+    if (diver) { const hm = diverHelmet(F, WC, dir, away); pts.push(inF(hm.fitting), inF(hm.exhaust), [-w, 28], [w, 28]); }
+    else {
+      if (scuba) pts.push(...arms.map(x => x.A), kneeAt(1), kneeAt(-1));
+      if (WC.tank) pts.push([dir ? -dir * (0.5 * w + 24) : 0, neckTop - 10]);
+      if (WC.tank && !WC.snorkel && !away) pts.push(inF([100 + (dir ? dir * (profileEdge(F) - 4) : 10), DH.LY.mouthY + 4]));
+      if (WC.snorkel) pts.push(inF([away ? 100 - DH.hw - 8 : dir ? 100 - dir * 0.1 * DH.hw : 100 + DH.hw + 12, DH.top - 40]));
+    }
+    const T = figureT, a = (rot || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+    leakPts = { amt: leakAmt, k: T.k, pts: pts.map(([x, y]) => { const X = x * ca - (y - L) * sa, Y = L + x * sa + (y - L) * ca; return [T.dx + T.k * X, T.dy + T.sg + T.k * (Y - T.g)]; }) };
+  } else leakPts = null;
   // a witch's hat over it, stretched with the head as hair is (and flying
   // off with the lid); her cat on her shoulder
   if (witch) {
@@ -1004,7 +1020,7 @@ function drawNow() {
     w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + shape + `</clipPath>`;
     n.replaceWith(w); w.append(n);
   }
-  worldWaysHud(); pathHud(); solidsHud(); madeOfHud(); accessApply(); bubbleRun(); makerRun(); ballRun(); bubbleHitsHud(); waterHud(); burstKeep();   // (0.0.145: the arrows placed again on every drawing too)   // (ticket 220: bubble space's bubbles, moving while it is shown)   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)
+  worldWaysHud(); pathHud(); solidsHud(); madeOfHud(); accessApply(); bubbleRun(); makerRun(); leakRun(); ballRun(); bubbleHitsHud(); waterHud(); burstKeep();   // (0.0.145: the arrows placed again on every drawing too)   // (ticket 220: bubble space's bubbles, moving while it is shown)   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)
   if (scened) { stillPic.draws++; if (stills) stillPic.drawsOn++; }   // (for 🧪)
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was
