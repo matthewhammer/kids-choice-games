@@ -757,7 +757,9 @@ function moveNow() {
   // (ticket 141) swimming fast (the controller's run, in water): the stroke twice as quick
   if (a === "swimfast") return { ...treadStroke(1, (2 * u) % 1), water: true };
   // (ticket 141) crouching down, held there: the knees bent, the arms a little forward
-  if (a === "crouch") return { ...both("Leg", () => 34), ...both("Knee", () => 75), ...both("Arm", sd => -18 - lean(sd)), ...both("Elbow", () => 25), held: true, grounded: true };
+  // (ticket 414's audit: facing us, the elbows' 25 degrees bent them out to the sides, in the picture; a crouch's arms reach
+  // forward for balance, toward us: a curl. In profile the bend is forward already)
+  if (a === "crouch") return { ...both("Leg", () => 34), ...both("Knee", () => 75), ...both("Arm", sd => -18 - lean(sd)), ...both("Elbow", () => dir ? 25 : 0), ...(dir ? {} : both("ElbowCurl", () => 55)), held: true, grounded: true };
   if (a === "walk" && bubbleFloor()) return bubbleWalk(u, dir);   // (ticket 343)
   if (a === "walk") {
     // (each leg swinging forward and back, its knee bending as it comes

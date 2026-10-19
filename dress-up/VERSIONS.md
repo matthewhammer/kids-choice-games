@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.343 (2026-10-19)
+
+Everything in 0.0.342, with elbows and knees that bend toward you and away.
+
+- **🏋️ Elbows curl, 🫖 elbows swing, 🦶 knees curl and ↔️ knees swing** (ticket 414), four new sliders in 🦒 Neck, arms & legs. The curl bends a forearm forward, as lifting a weight: facing you, the hand comes toward you, so the forearm looks short. The swing turns it side to side, as swinging a kettle across a table: + out, − in. The knees do the same backward: curl them and the feet go back behind, so facing you your friend kneels, their shoes hidden behind their legs; swing them and the feet go out or in. Both arms and both legs move alike. They work with every animation and pose.
+- **Crouching, facing you, your friend's arms reach forward for balance** (ticket 414): before, their elbows bent out to the sides.
+
 ## 0.0.342 (2026-10-19)
 
 Everything in 0.0.341, with the hair right when lying on a sleeping bag.

@@ -86,6 +86,7 @@ function drawNow() {
   // (ticket 121) An arm posed on its own turns and bends by its own pose
   // on top of the sliders' (poseOf), and is always drawn through its elbow.
   const a = B.arms * Math.PI / 180, armLen = B.armLen, armW = B.armW, elbow = B.elbows ?? 0, eb = elbow * Math.PI / 180;
+  const elbowCurl = (Number(B.elbowCurl) || 0) * Math.PI / 180, elbowSwing = (Number(B.elbowSwing) || 0) * Math.PI / 180;   // (ticket 414)
   // (in profile, both from the shoulder and to the front, `out`, the far one
   // held a little higher so both show)
   const arms = [1, -1].map(side => {
@@ -105,6 +106,12 @@ function drawNow() {
     const E = [A[0] + out * ak * armLen / 2 * Math.cos(ta), A[1] + ak * armLen / 2 * Math.sin(ta)];
     const H = [E[0] + out * ak * armLen / 2 * Math.cos(fa), E[1] + ak * armLen / 2 * Math.sin(fa)];
     return { side, out, A, E, H, angle: out > 0 ? turn - bend : 180 - turn + bend, joints: [A, E, H] };
+  }).map(arm => {
+    // (ticket 414) the elbows' curl and swing, on top of all that: the forearm turned toward the front of the body (a curl
+    // with a weight), then about the upper arm (side to side, a kettle swung across a table), and seen as it then points
+    // (an animation's own curl too, ElbowCurlL/R: the crouch's, facing us)
+    const t = turned3(arm.A, arm.E || [(arm.A[0] + arm.H[0]) / 2, (arm.A[1] + arm.H[1]) / 2], arm.H, elbowCurl + poseT("ElbowCurl", arm.side) * Math.PI / 180, elbowSwing * arm.side, dir ? [dir, 0, 0] : [0, 0, 1]);
+    return t ? { ...arm, E: t.J, H: t.T, joints: [arm.A, t.J, t.T], angle: t.angle ?? arm.angle } : arm;
   });
   // (in profile, the arm on our side is in front of the body, the other behind)
   // (turned partway, as in profile: the far arm wholly behind, the near one in front: ticket 144)
@@ -143,7 +150,7 @@ function drawNow() {
   // (ticket 140: a step toward us or away shortens the leg from the hip, as seen)
   const stepOf = (pose, side) => (dir ? 0 : Math.max(0, Math.min(0.6, pose("Step", side) || 0)));
   const foreshort = (joints, k) => (k ? joints.map(([x, y], i) => (i ? [x, L + (y - L) * (1 - k)] : [x, y])) : joints);
-  const bonesBy = pose => { const posed = !!dir || sitting || [1, -1].some(side => pose("Leg", side) || pose("Knee", side) || stepOf(pose, side));
+  const bonesFlat = pose => { const posed = !!dir || sitting || [1, -1].some(side => pose("Leg", side) || pose("Knee", side) || stepOf(pose, side));
     return { posed, bones: [1, -1].map(side => {
       const Hp = [side * fx, L], out = dir || side;
       if (!posed) { const fy = knee ? L + LL * Math.cos(knee) : L + LL;
@@ -152,6 +159,16 @@ function drawNow() {
       const K = [Hp[0] + out * LL / 2 * legBase.thigh * Math.sin(tt), Hp[1] + LL / 2 * legBase.thigh * Math.cos(tt)];
       return { side, out, joints: foreshort([Hp, K, [K[0] + out * LL / 2 * Math.sin(st), K[1] + LL / 2 * Math.cos(st)]], stepOf(pose, side)) };
     }) }; };
+  // (ticket 414) the knees' curl and swing, on top of that: the shin folded back, behind the body (away from us, or behind
+  // the way they face), then swung about the thigh's line, the foot in or out; such a leg counts as posed, so they stand on
+  // the lower of its foot and knee
+  const kneeCurl = (Number(B.kneeCurl) || 0) * Math.PI / 180, kneeSwing = (Number(B.kneeSwing) || 0) * Math.PI / 180;
+  const bonesBy = pose => { const r = bonesFlat(pose);
+    if (!kneeCurl && !kneeSwing && ![1, -1].some(sd => pose("KneeCurl", sd))) return r;
+    return { posed: true, bones: r.bones.map(b => { const J = b.joints, K = J.length > 2 ? J[1] : [(J[0][0] + J[1][0]) / 2, (J[0][1] + J[1][1]) / 2];
+      const t = turned3(J[0], K, J[J.length - 1], kneeCurl + (pose("KneeCurl", b.side) || 0) * Math.PI / 180, -kneeSwing * b.side, dir ? [-dir, 0, 0] : [0, 0, -1]);
+      // (facing us, a shin turned more than 30 degrees away puts its foot behind the leg: its shoe drawn before the leg, below)
+      return t ? { ...b, joints: [J[0], t.J, t.T], behind: !dir && t.dz < -0.5 } : b; }) }; };
   const { posed: legPosed, bones: legBones } = bonesBy(poseT);
   const legOf = side => legBones[side > 0 ? 0 : 1];
   const footAt = side => legOf(side).joints[legOf(side).joints.length - 1];
@@ -475,13 +492,17 @@ function drawNow() {
     const shoe = shoeSvg(ax, ay, dir || side, own, BIRD_SUIT[kind] ? C.accent : skin);
     return turn ? `<g transform="rotate(${f1(turn)} ${f1(ax)} ${f1(ay)})">${shoe}</g>` : shoe;
   };
-  for (const side of legSides) svg += shoeOf(side);
+  for (const side of legSides) if (!legOf(side).behind) svg += shoeOf(side);
   if (legApart) farLeg.shoe = shoeOf(dir);
   veilFrom("feet", feetAt);
+  // (ticket 414: a foot behind its leg, the knee curled back, seen from the front: its shoe under the leg and the pants)
+  const behindShoes = legSides.filter(side => legOf(side).behind).map(shoeOf).join("");
   // (ticket 129) a foot resting up on the other leg, as cross-legged, is
   // drawn over the pants, after them (feetOver, above)
   const feetLater = feetOver ? svg.slice(feetAt) : "";
   if (feetOver) svg = svg.slice(0, feetAt);
+  // (ticket 414: after that, which cuts the picture's text at feetAt: put in before it, these moved feetAt and lost the body)
+  if (behindShoes) svg = svg.slice(0, legsAt) + veil("feet", behindShoes) + svg.slice(legsAt);
   const pf = suit ? "url(#pat-fur)" : fillOf("pat-pants", P.color, P.pattern);
   const ps = suit ? darker(C.fur) : darker(P.color);
   const pantsAt = svg.length;
@@ -1063,6 +1084,30 @@ function drawNow() {
 // (ticket 123) While the friend treads water they are drawn again about 30
 // times a second: not while a drag draws them anyway, nor while the page is
 // hidden. Only the friend is drawn; the scene is kept (see draw).
+// (ticket 414, Matthew: "two sliders for elbows bend --- elbow muscle in-out (like doing a curl with a weight); elbow rotation,
+// side to side (like moving a tea kettle from one side of the table to another, by swing our arm, and rotating laterally at
+// elbow)"; "same for knees too") A limb's second bone turned in three dimensions, then seen: root R, joint J and tip T in the
+// picture's units (the first bone R to J stays as posed), the second bone curled by `curl` toward `front` (a direction: toward
+// us, or the way they face in profile; for a knee, the back), then swung by `swing` about the first bone's line. The tip is
+// where the bone then points, seen from the front of the picture: a bone pointing toward us or away is seen short. Its angle
+// in the picture too (as a hand's), and its depth (toward us +). null when there is nothing to turn.
+function turned3(R, J, T, curl, swing, front) {
+  if (!curl && !swing) return null;
+  const ux = J[0] - R[0], uy = J[1] - R[1], ul = Math.hypot(ux, uy), vx = T[0] - J[0], vy = T[1] - J[1], L = Math.hypot(vx, vy);
+  if (!(ul > 0) || !(L > 0)) return null;
+  const u = [ux / ul, uy / ul, 0], dot = (p, q) => p[0] * q[0] + p[1] * q[1] + p[2] * q[2];
+  let v = [vx / L, vy / L, 0];
+  if (curl) { const fp = front.map((c, i) => c - dot(front, v) * v[i]), fl = Math.hypot(...fp);
+    if (fl > 1e-6) v = v.map((c, i) => Math.cos(curl) * c + Math.sin(curl) * fp[i] / fl); }
+  if (swing) { const c = Math.cos(swing), sn = Math.sin(swing), k = dot(u, v), x = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+    v = v.map((vi, i) => vi * c + x[i] * sn + u[i] * k * (1 - c)); }
+  let seen = Math.hypot(v[0], v[1]);
+  // (a bone pointing straight at us or away is seen end on: kept a sliver long, its way as before, so what is drawn along it
+  // (a sleeve, a pants leg) has a way to go: at 0 length the pants and the shirt were lost to NaN)
+  if (seen < 0.06) { const ox = vx / L, oy = vy / L, w0 = seen > 1e-9 ? 0.06 / seen : 0;
+    v = seen > 1e-9 ? [v[0] * w0, v[1] * w0, v[2]] : [ox * 0.06, oy * 0.06, v[2]]; seen = 0.06; }
+  return { J, T: [J[0] + L * v[0], J[1] + L * v[1]], angle: seen > 0.05 ? Math.atan2(v[1], v[0]) * 180 / Math.PI : null, depth: L * v[2], dz: v[2] };
+}
 // (ticket 412, Matthew: "lying with head and feet at a 45 degree angle --- as in the tent. it's specialized to that, I think.
 // L/R symmetry works, but otherwise it's specialized for laying down near the L or R wall edge of a room, where the pseudo 3d
 // perspective requires a new approach, just for that"; before it, "we just need more angles of the body, as their own drawing

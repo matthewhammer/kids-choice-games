@@ -197,12 +197,16 @@ const TABS = [
     ["range", "neckW", "neck width", 2, 120, 12, 40],
     ["range", "arms", "arms (up ↔ down)", -180, 180, -75, 85],
     ["range", "elbows", "💪 elbows bend (− down, + up)", -150, 150, 0, 45],
+    ["range", "elbowCurl", "🏋️ elbows curl (in ↔ out, as lifting a weight)", 0, 150, 0, 40],   // (ticket 414)
+    ["range", "elbowSwing", "🫖 elbows swing (side to side, as a kettle swung across a table: − in, + out)", -90, 90, -20, 20],
     ["range", "armLen", "arm length", 10, 600, 60, 130],
     ["range", "armW", "arm width", 3, 60, 10, 24],
     ["range", "legLen", "leg length", 20, 420, 70, 200],
     ["range", "feetTurn", "👣 feet turn (toes down ↔ up)", -90, 180, -30, 60],
     ["range", "legW", "leg width", 4, 70, 14, 28],
     ["range", "knees", "🦵 knees bend (out, so the friend crouches)", 0, 150, 0, 25],
+    ["range", "kneeCurl", "🦶 knees curl (the foot back, behind)", 0, 150, 0, 30],   // (ticket 414)
+    ["range", "kneeSwing", "↔️ knees swing (the foot side to side: − in, + out)", -90, 90, -15, 15],
     ["note", "poseHow", () => posed(state.body) ? "🤸 Posed: each arm and leg as you dragged it." : "🤸 To pose the friend, drag a hand, a foot, an elbow or a knee in the picture."],
     ["action", "unpose", "🧍 stand straight again", () => { for (const k of POSE_KEYS) state.body[k] = 0; if (state.body.pose === "meditate" || state.body.pose === "dance" || state.body.pose === "hug") state.body.pose = state.body.sit ? "sit" : "stand"; }],
   ]],
