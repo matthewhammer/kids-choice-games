@@ -1523,7 +1523,7 @@ const SCENE_LFO_THINGS = {
   cave: { fast: "💎 the gems sparkling", slow: "🔮 the crystals glowing" },
   woodpath: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☀️ the sunbeams" },
   crossing: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☀️ the sunbeams" },
-  castle: { fast: "🚩 the pennants, ☀️ the sun's rays", slow: "☁️ the clouds drifting" },
+  castle: { fast: "🚩 the pennants, ☀️ the sun's rays", slow: "☁️ the clouds drifting", wings: "🐦 the birds' wings" },   // (wings: ticket 351)
   "castleroom:king": TORCH_LFO_THINGS, "castleroom:trap": TORCH_LFO_THINGS, "castleroom:dungeon1": TORCH_LFO_THINGS,
   "castleroom:dungeon2": TORCH_LFO_THINGS, "castleroom:hallway": TORCH_LFO_THINGS,
   "castleroom:greenhouse": { fast: "🦜 the glass parrots' wings", slow: "☁️ the clouds drifting" },

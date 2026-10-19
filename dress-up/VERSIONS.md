@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.288 (2026-10-18)
+
+Everything in 0.0.287, with the castle's birds flying.
+
+- **🐦 The birds over the castle flap their wings and glide** slowly back and forth across the sky, their wingbeats in time with the scene's wings LFO, as the butterflies' are (on the mixing board, the castle's "🐦 the birds' wings").
+
 ## 0.0.287 (2026-10-18)
 
 Everything in 0.0.286, with the witch's woods' trees, fence and skulls found and placeable.

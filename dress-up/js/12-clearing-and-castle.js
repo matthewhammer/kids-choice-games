@@ -77,10 +77,17 @@ function castleScene(c) {
   const K = castleOf(o), { foot, z } = castleAt(c, K);
   const bridgeEnd = foot + (K.moat > 0 ? 26 + 24 * K.moat : 8) * z;
   // a warm afternoon: the sky, the sun, clouds, birds far off
-  let s = SEP + part("castle-sky", [c.F, sceneLfoKey(o, "fast")], () => `<defs>${grad("bg-sky", "#6fbaf0", "#fde6c2", y0, g - 160 * k)}</defs>` + all("url(#bg-sky)") +
+  // (ticket 351, Matthew: "very minor birds in top box are not animated, but should they be?") each bird's wings flap, its
+  // stroke between wings up and wings down, in time with the scene's wings LFO as the butterflies' (lfoTimed: each its own
+  // way into it; at its own pace with none), and it glides slowly back and forth across the sky
+  let s = SEP + part("castle-sky", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => `<defs>${grad("bg-sky", "#6fbaf0", "#fde6c2", y0, g - 160 * k)}</defs>` + all("url(#bg-sky)") +
     sunSvg(x1 - W * 0.13, y0 + H * 0.13, 30 * k, true, o) +
     wallObj("birds", [...Array(6)].map((_, i) => { const bx = x0 + W * (0.12 + 0.13 * i + 0.05 * R(i, 401)), by = y0 + H * (0.1 + 0.12 * R(i, 402)), b = (7 + 5 * R(i, 403)) * k;
-      return `<path d="M${P(bx - b, by - b * 0.4)} Q${P(bx - b * 0.4, by - b * 0.7)} ${P(bx, by)} Q${P(bx + b * 0.4, by - b * 0.7)} ${P(bx + b, by - b * 0.4)}" fill="none" stroke="#3a3a4a" stroke-width="${f1(2 * k)}" stroke-linecap="round"/>`; }).join("")));   // (ticket 284: the birds an object)
+      const wing = (tip, mid) => `M${P(bx - b, by + tip * b)} Q${P(bx - b * 0.4, by + mid * b)} ${P(bx, by)} Q${P(bx + b * 0.4, by + mid * b)} ${P(bx + b, by + tip * b)}`;
+      const up = wing(-0.4, -0.7), down = wing(0.35, -0.15), glide = (18 + 14 * R(i, 404)) * k * (i % 2 ? -1 : 1);
+      const flap = lfoTimed(o, "wings", (i * 0.23) % 1, `<animate attributeName="d" values="${up};${down};${up}" dur="${(0.8 + 0.25 * R(i, 405)).toFixed(2)}s" begin="-${(R(i, 406)).toFixed(2)}s" repeatCount="indefinite"/>`);
+      return `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(glide)} ${f1(-3 * k)};0 0" dur="${(9 + 5 * R(i, 407)).toFixed(1)}s" begin="-${(3 * R(i, 408)).toFixed(1)}s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>` +
+        `<path d="${up}" fill="none" stroke="#3a3a4a" stroke-width="${f1(2 * k)}" stroke-linecap="round">${flap}</path></g>`; }).join("")));   // (ticket 284: the birds an object)
   s += SEP + cloudsSvg(c, 4, 0.85, 170);
   // far mountains, snow on their tops, and rows of forest before them
   s += SEP + part("castle-far", c.F, () => {
