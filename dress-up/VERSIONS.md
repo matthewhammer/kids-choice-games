@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.265 (2026-10-18)
+
+Everything in 0.0.264, with more of the tree house's meadow to walk in.
+
+- **Walk round behind the tree house's trunk**: at the tree house, your friend can now walk back as far as the meadow goes, to just in front of the far row of trees, and 🔬's blue back line is there. Before, it stopped them just behind the trunk's foot, with no room to get round behind it; a walk you click on the far side now goes round behind the trunk when that is shorter.
+
 ## 0.0.264 (2026-10-18)
 
 Everything in 0.0.263, with flowers you can stand among.

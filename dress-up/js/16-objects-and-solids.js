@@ -143,7 +143,10 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // way up to the picture's top: among the trees and clouds. Each value is how far above the ground line (g) its far
 // edge is, from the scene's code where it says (the forest path's far ground, the crossing's far line, the beach's
 // sea, the lake's far shore, open water's horizon), else read from a picture of it (ticket 214's audit).
-const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 175, treehouse: 90, clearing: 140,
+// (ticket 298, Matthew: "Blue horz line in this scene is not accurate -- too low"; "would be easier to walk around the tree
+// house trunk if the horizon line was corrected": the tree house's meadow runs back to its far row of trees, 124 up, its
+// land drawn to 130: 118, just in front of those trees, room to walk round behind the trunk)
+const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 175, treehouse: 118, clearing: 140,
                     fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, castle: 35,
                     woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
