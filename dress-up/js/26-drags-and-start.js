@@ -624,17 +624,31 @@ pic.addEventListener("pointerleave", walkSpotHide);
 // plans a new one from there (walkStop: the leg under way stops, without walking on); "queue", as before, adds to it.
 let clickRun = null;
 // (ticket 299: then, what to do on getting there, the last click's: sit, or lie down)
+// (ticket 367, Matthew: "spiral stair topology is still perplexing the path planner") In the spiral staircase, a click behind
+// the bottom steps, beside the column, was reached the long way round the column (612 units for 131 straight): the gap
+// between the steps and the column is narrower than the feet. The room has its own way, up the steps' middle (spiralPath,
+// ticket 268, used for its doors); a click walk takes it when the floor plan has to go far round (over twice the straight
+// way, or no way at all) and the stairs are the shorter
+function planWalk(x0, y0, x1, y1, more = 0) {
+  const P = planPath(x0, y0, x1, y1, more), BG = state.background;
+  if (BG.kind !== "castleroom" || !castleWallsOf(BG).stairs) return P;
+  const len = pts => pts.reduce((a, p, i) => { const q = i ? pts[i - 1] : [x0, y0]; return a + Math.hypot(p[0] - q[0], (p[1] - q[1]) / 0.6); }, 0);
+  const lp = len(P), direct = Math.hypot(x1 - x0, (y1 - y0) / 0.6);
+  if (!P.short && lp <= 2 * direct) return P;
+  const S = spiralPath(x0, y0, x1, y1);
+  return P.short || len(S) < lp ? S : P;
+}
 function walkPlanned(x, z, then = null) {
   const BG = state.background, g = SCENE.ground;
   if (clickRun && (state.access || DEFAULTS.access).clickPlan !== "queue") { walkStop++; clickRun = null; entering = false; }
   if (clickRun) {
-    const [lx, ly] = clickRun.end, path = planPath(lx, ly, x, z - g, 10);
+    const [lx, ly] = clickRun.end, path = planWalk(lx, ly, x, z - g, 10);
     for (const p of path) { walkPath.pts.push(p); walkPath.segs.push(clickRun.n); }
     clickRun.n++; clickRun.end = path.short ? (path.length ? path[path.length - 1] : [lx, ly]) : [x, z - g]; clickRun.then = path.short ? null : then;
     return;
   }
   bridgeOff();
-  const from = [BG.figX ?? 0, BG.figY ?? 0], path = planPath(from[0], from[1], x, z - g, 10);   // (the steps swing wider than the feet standing)
+  const from = [BG.figX ?? 0, BG.figY ?? 0], path = planWalk(from[0], from[1], x, z - g, 10);   // (the steps swing wider than the feet standing; ticket 367: the spiral room's stairs)
   if (path.short) then = null;   // (ticket 332: no way there, as near as a way goes, and nothing done after: not sat, not gone in)
   const run = clickRun = { n: 1, end: [x, z - g], then };
   walkPath = { pts: [from, ...path], segs: [0, ...path.map(() => 0)], made: performance.now(), leg: 0 };

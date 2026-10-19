@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.296 (2026-10-18)
+
+Everything in 0.0.295, with the spiral staircase's walks going up the stairs.
+
+- **🌀 In the spiral staircase, a click behind the bottom steps walks you up the stairs**, the short way, instead of all the way round the column. Walks across the floor are as before.
+
 ## 0.0.295 (2026-10-18)
 
 Everything in 0.0.294, with the tree rooms' trunk solid to its foot.
