@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.278 (2026-10-18)
+
+Everything in 0.0.277, with planned walks kept out of everything.
+
+- **🚶 No more walking through the tree room's corner trunk.** A thing standing nearly against the back wall now reaches it, so there is no thin lane behind it to get stuck in (the tree trunk, the living room's lamp, a waterfall tree, the castle room's chest, the hut's couch, the house's front step).
+- **A planned walk never goes straight through something** when it finds no way round: it walks as near as a way goes, and then doesn't sit or go in. From a gap beside a thing it steps out sideways first.
+
 ## 0.0.277 (2026-10-18)
 
 Everything in 0.0.276, with bubble space's pops bursting.

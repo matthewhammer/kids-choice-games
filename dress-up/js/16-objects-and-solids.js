@@ -312,9 +312,16 @@ function solidsHere() {
     // (ticket 299: a flat one, a blanket, in nobody's way; each marked as a seat, for 🔬's own chip, sit or lie)
     solidMemo = { text: bgShown.text, kind: B.kind, off: offKey, list: seats.filter(t => !t.flat).map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
       return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y, seat: t.lie ? "lie" : "sit" }; }).concat(sceneBoxesHere(B)).concat(standingHere(B, new Set(seats.map(t => t.name))), holesHere()) };
+    // (ticket 332, Matthew: "why is the path planned through the collision boxes of the corner tree trunk?") A solid
+    // standing nearly against the back line reaches it: the tree room's corner trunk stopped 4 units short of it, a lane
+    // the feet (3 deep) could stand in, walk along with the controller, and plan no way out of. A gap under LANE_MIN is
+    // no way behind anything, so the box goes back to the line
+    const backLine = SCENE.ground + figYMin(sceneFrame);
+    if (Number.isFinite(backLine)) solidMemo.list = solidMemo.list.map(o => !o.pit && o.back > backLine - 0.5 && o.back - backLine < LANE_MIN ? { ...o, back: backLine - 1, lane: o.back } : o);
   }
   return solidMemo.list;
 }
+const LANE_MIN = 16;
 // the friend's legs, hip to foot, in the stage's units (for what a jump clears)
 const legReach = () => poseJoints && poseJoints.legs && poseJoints.legs.length
   ? figureT.k * Math.max(...poseJoints.legs.map(l => Math.hypot(l.F[0] - l.H[0], l.F[1] - l.H[1]))) : 100 * figureT.k;
@@ -508,6 +515,10 @@ function planPath(x0, y0, x1, y1, more = 0) {
   const pts = [[x0, z0], [x1, z1]];
   for (const o of solids) { const mx = gx(o) + PATH_PAD, mz = gz(o) + PATH_PAD;
     for (const p of [[o.x0 - mx, o.back - mz], [o.x1 + mx, o.back - mz], [o.x0 - mx, o.front + mz], [o.x1 + mx, o.front + mz]]) if (free(...p)) pts.push(p); }
+  // (ticket 332) a walk starting (or ending) against a solid, behind it near the back line where its back corners are past
+  // the line and left out: the points just past its sides at that depth, the way out along the gap and round
+  for (const [near, zz] of [[nearA, z0], [nearB, z1]]) for (const o of near) { const mx = gx(o) + PATH_PAD;
+    for (const p of [[o.x0 - mx, zz], [o.x1 + mx, zz]]) if (free(...p)) pts.push(p); }
   const cost = (a, b) => Math.hypot(b[0] - a[0], (b[1] - a[1]) / 0.6), n = pts.length;
   const dist = Array(n).fill(Infinity), prev = Array(n).fill(-1), done = Array(n).fill(false);
   dist[0] = 0;
@@ -521,9 +532,13 @@ function planPath(x0, y0, x1, y1, more = 0) {
       if (d < dist[v]) { dist[v] = d; prev[v] = u; }
     }
   }
-  if (dist[1] === Infinity) return [[x1, y1]];
+  // (ticket 332) no way round: never the straight line through what is in the way (as till 0.0.277, followed with no
+  // collisions, through the trunk); as near the end as a way goes, the walk marked short (no sitting or going in after it)
+  let end = 1;
+  if (dist[1] === Infinity) { end = 0; for (let i = 2; i < n; i++) if (dist[i] < Infinity && cost(pts[i], pts[1]) < cost(pts[end], pts[1])) end = i; }
   const out = [];
-  for (let v = 1; v > 0; v = prev[v]) out.unshift([pts[v][0], pts[v][1] - g]);
+  for (let v = end; v > 0; v = prev[v]) out.unshift([pts[v][0], pts[v][1] - g]);
+  if (end !== 1) out.short = true;
   return out;
 }
 // (after a jump: landed inside a solid, out of it)

@@ -597,11 +597,12 @@ function walkPlanned(x, z, then = null) {
   if (clickRun) {
     const [lx, ly] = clickRun.end, path = planPath(lx, ly, x, z - g, 10);
     for (const p of path) { walkPath.pts.push(p); walkPath.segs.push(clickRun.n); }
-    clickRun.n++; clickRun.end = [x, z - g]; clickRun.then = then;
+    clickRun.n++; clickRun.end = path.short ? (path.length ? path[path.length - 1] : [lx, ly]) : [x, z - g]; clickRun.then = path.short ? null : then;
     return;
   }
   bridgeOff();
   const from = [BG.figX ?? 0, BG.figY ?? 0], path = planPath(from[0], from[1], x, z - g, 10);   // (the steps swing wider than the feet standing)
+  if (path.short) then = null;   // (ticket 332: no way there, as near as a way goes, and nothing done after: not sat, not gone in)
   const run = clickRun = { n: 1, end: [x, z - g], then };
   walkPath = { pts: [from, ...path], segs: [0, ...path.map(() => 0)], made: performance.now(), leg: 0 };
   let k = 0;
