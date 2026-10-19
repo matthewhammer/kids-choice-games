@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.320 (2026-10-19)
+
+Everything in 0.0.319, with the castle designer full screen.
+
+- **🏰 The castle designer, full screen**: in a castle, 🏞️ Background's ⛶ the castle designer, full screen opens it beside the game: the castle's map big across the top, then every room in its own box, in order, each with its picture and named by what it is (2 · 🌿 greenhouse), the room you are in marked; tap a room on the map and its box lights up and comes into view. Then the castle's look, its colors and who lives there. ✕ or Escape goes back (to the background designer, if you came from there).
+
 ## 0.0.319 (2026-10-19)
 
 Everything in 0.0.318, with hidden settings staying hidden and arrivals that never stand in a thing.

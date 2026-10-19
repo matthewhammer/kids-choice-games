@@ -243,6 +243,24 @@
   body.bg-big .obj-pic { display: block; width: 100%; height: 60px; object-fit: contain; margin-bottom: 2px; }
   body.bg-big .row.objs button.obj:has(.obj-pic) { width: 100px; display: inline-flex; flex-direction: column; align-items: center; padding: 4px; line-height: 1.25; }
   @media (max-width: 899px) { body.bg-big .bg-layout { grid-template-columns: minmax(0, 1fr); } body.bg-big .bg-viewcol, body.bg-big .bg-split { display: none; } }   /* (the game's card from 900 px, as the world designer's) */
+  /* (ticket 365) 🏰 the castle designer full screen (body.castle-big, with bg-big under it): the bar named for it, its ✕ in the
+     background's chip's place; only 🏰 the castles left of the game, knolled as a grid of its own: which castle and the rooms' map
+     across the top, then every room a box in order (its picture first; the one you are in, and the one picked on the map, marked),
+     then the castle's look, its themes and who lives there. The designer's open/close and ⛶ chips are not needed there */
+  body:not(.castle-big) #panel > .ctl > button.castle-bar-chip, body.castle-big #panel > .ctl > button.bgbig, body.castle-big .castle-in { display: none; }
+  body.castle-big #panel > .ctl:has(> button.designer-chip)::before { content: "🏰 Castle designer"; }
+  body.castle-big .bg-boxes > :not([data-box="castles"]) { display: none; }
+  body.castle-big .bg-boxes > [data-box="castles"] { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--box-gap); align-items: start; }
+  body.castle-big [data-box="castles"] > * { order: 3; margin: 0; min-width: 0; }
+  body.castle-big [data-box="castles"] > .box-name { order: 0; grid-column: 1 / -1; margin: 0; }
+  body.castle-big [data-box="castles"] > .ctl[data-key="castle"], body.castle-big [data-box="castles"] > [data-group^="castleRoomList"] { order: 1; grid-column: 1 / -1; }
+  body.castle-big [data-box="castles"] > [data-group^="castleRoomBox"] { order: 2; }
+  body.castle-big [data-box="castles"] > [data-group^="castleRoomBox"].picked { outline: 3px solid var(--accent); outline-offset: 2px; }
+  body.castle-big [data-box="castles"] > .box-name, body.castle-big .ctl[data-key^="castleDesign"] > .lbl, body.castle-big .room-kind > .lbl { display: none; }   /* (the bar names it; the box's name says the kind) */
+  body.castle-big .room-kind > .row { gap: 4px; }
+  body.castle-big .room-kind > .row > button { font-size: 0.8em; padding: 2px 7px; }
+  .room-pic { display: none; }
+  body.castle-big .room-pic:not([hidden]) { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; margin: 2px 0 6px; }
   .world-view-head { gap: 6px; align-items: center; margin-bottom: 6px; }
   .world-view-head .eye { font-size: 1.2em; margin: 0; }
   .world-view.folded .world-view-head { margin-bottom: 0; }

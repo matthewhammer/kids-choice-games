@@ -990,7 +990,8 @@ const SHOWN_WHEN = {
               ["background." + pitSpikesKey(n, id), b => typeOf(b, n) === "trap"],   // (ticket 334)
               ["background." + boulderOnKey(n, id), b => typeOf(b, n) === "trap"], ["background." + boulderToneKey(n, id), b => typeOf(b, n) === "trap" && b[boulderOnKey(n, id)] !== false],   // (ticket 323)
               ["background." + leverSpeedKey(n, id), b => typeOf(b, n) === "trap"], ["background." + lidSpeedKey(n, id), b => typeOf(b, n) === "trap"], ["background." + boulderSpeedKey(n, id), b => typeOf(b, n) === "trap" && b[boulderOnKey(n, id)] !== false],   // (ticket 328)   // (ticket 305)   // (ticket 271: in a trap room's own box)
-              ["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n)],
+              // (ticket 365: the castle designer full screen shows every room, in order)
+              ["background.castleRoomBox" + n + id, b => atCastle(b) && n <= nRooms(b) && (b.kind === "castle" || Math.round(b.castleRoom ?? 1) === n || document.body.classList.contains("castle-big"))],
               ["background.castleHallDoors" + n + id, b => hasDoors(b, n)], ["background.castleHallEnd" + n + id, b => isHall(b, n)],
               ["background.castleOut" + n + id, b => !isHall(b, n)], ["background.castleFar" + n + id, b => typeOf(b, n) === "dining"],
               // (the door behind us: where a room has no sign at the bottom already; never a dungeon, a pit with no way in but from above)
@@ -1123,9 +1124,12 @@ function castleDesigner(part, key, box, syncs) {
   const id = key.replace("castleDesign", ""), B = () => state[part];
   let open = false, cy = null, sig = "", picked = null, twoWay = true;
   const toggle = el("button", { onclick: () => { open = !open; picked = null; draw(); } });
+  // (ticket 365) and the castle designer full screen (setCastleBig): open there, whatever the toggle says here
+  const bigChip = el("button", { class: "castlebig designer-chip", onclick: () => setCastleBig(true) }, CASTLE_BIG[0]);
   const map = el("div", { class: "map" }), note = el("p", { class: "note" }), rooms = el("div", { class: "row" }), edit = el("div", { class: "row" }),
         tools = el("div", { class: "row" }), probs = el("div"), panel = el("div", { class: "designer" }, [map, note, rooms, edit, tools, probs]);
-  box.append(toggle, panel);
+  box.append(el("div", { class: "row castle-in" }, [toggle, bigChip]), panel);
+  let mapH = "";
   const eid = e => `e${e.from}-${e.kind}${e.j ?? e.i ?? ""}${e.way ? "w" : ""}`;
   const pickOf = e => e.key || eid(e);
   const go = n => { const b = B(); if (n) { b.kind = "castleroom"; b.castleRoom = n; } else b.kind = "castle"; [b.figX, b.figY] = ARRIVE[b.kind] || [0, 0]; arriveSettle = true; changed(); };
@@ -1135,10 +1139,11 @@ function castleDesigner(part, key, box, syncs) {
     changed();
   };
   const draw = () => {
+    const big = document.body.classList.contains("castle-big");
     toggle.textContent = open ? "🗺️ close the castle designer" : "🗺️ open the castle designer";
     toggle.setAttribute("aria-pressed", open);
-    panel.style.display = open ? "" : "none";
-    if (!open) return;
+    panel.style.display = open || big ? "" : "none";
+    if (!open && !big) return;
     const b = { ...B(), castle: id }, K = castleOf(b), E = castleGraph(K), P = castleProblems(K);
     const here = b.kind === "castleroom" ? Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1))) : 0;
     const bad = new Set(P.filter(p => p.e).map(p => eid(p.e)));
@@ -1158,6 +1163,8 @@ function castleDesigner(part, key, box, syncs) {
         `${EXIT_ICONS[x.kind]} ${x.kind === "door" ? "door " + x.j : x.way ? "way out" : EXIT_WORDS[x.kind]} → ${x.to === null ? (x.nowhere ? "🧱 nowhere" : "❓") : mapRoomName(K, x.to)}`)),
         el("button", { onclick: () => go(r) }, "🚶 go there"));
     } else edit.replaceChildren(el("span", { class: "note" }, "Tap a room or an arrow on the map (or a room above) to see where its ways lead, and change them."));
+    // (ticket 365: full screen, every room's box is in plain view below the map: the one picked marked)
+    for (const g of document.querySelectorAll(`[data-group^="castleRoomBox"][data-group$="${id}"]`)) g.classList.toggle("picked", big && picked?.room === +(g.dataset.group.match(/^castleRoomBox(\d+)/) || [])[1]);
     // two-way doors, and putting everything right at once
     const fixable = P.filter(p => mapCanFix(B(), id, p));
     const fixAll = el("button", { onclick: () => {
@@ -1183,16 +1190,19 @@ function castleDesigner(part, key, box, syncs) {
     const edges = E.filter(x => x.to !== null).map(x => ({ data: { id: eid(x), source: "r" + x.from, target: "r" + x.to, label: EXIT_ICONS[x.kind] },
       classes: [x.kind, x.key ? "set" : "fixed", bad.has(eid(x)) ? "bad" : "", picked?.way === pickOf(x) ? "picked" : ""].join(" ") }));
     const now = K.rooms.join();
-    map.style.height = (K.rooms.length > 6 ? 460 : 340) + "px";
+    const h = big ? "min(58vh, 600px)" : (K.rooms.length > 6 ? 460 : 340) + "px", grew = h !== mapH;
+    if (grew) { map.style.height = h; mapH = h; }
     if (!cy) {
       cy = window.cytoscape({ container: map, elements: [...nodes, ...edges], style: MAP_STYLE, layout: MAP_LAYOUT(K.rooms.length), minZoom: 0.3, maxZoom: 2.5, wheelSensitivity: 0.3 });
       cy.on("tap", "edge", ev => { const x = castleGraph(castleOf({ ...B(), castle: id })).find(x => eid(x) === ev.target.id()); picked = x ? { way: pickOf(x) } : null; setTimeout(draw); });
-      cy.on("tap", "node", ev => { picked = { room: +ev.target.id().slice(1) }; setTimeout(draw); });
+      cy.on("tap", "node", ev => { picked = { room: +ev.target.id().slice(1) }; setTimeout(draw);
+        // (ticket 365: full screen, the room's own box brought into view)
+        const g = document.body.classList.contains("castle-big") && document.querySelector(`[data-group="castleRoomBox${picked.room}${id}"]`); if (g) g.scrollIntoView({ block: "nearest" }); });
       cy.on("tap", ev => { if (ev.target === cy) { picked = null; setTimeout(draw); } });
       sig = now;
     } else if (now !== sig) { cy.elements().remove(); cy.add([...nodes, ...edges]); cy.layout(MAP_LAYOUT(K.rooms.length)).run(); sig = now; }
     else { cy.edges().remove(); cy.add(edges); for (const nd of nodes) cy.getElementById(nd.data.id).classes(nd.classes); }
-    cy.resize(); if (now !== sig || !cy.__fitted) { cy.fit(undefined, 14); cy.__fitted = true; }
+    cy.resize(); if (now !== sig || !cy.__fitted || grew) { cy.fit(undefined, 14); cy.__fitted = true; }
   };
   syncs.push(draw);
 }
@@ -1218,7 +1228,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // a group: its controls in a dashed box with its name, shown or hidden together
   // (and, with a test, marked when it holds: the castle room you are in)
   if (kind === "group") {
-    const g = el("div", { class: "chipset ctlgroup" }, [el("div", { class: "cap" }, [label]), ...rest[0].map(c => control(part, c))]);
+    const g = el("div", { class: "chipset ctlgroup", "data-group": key }, [el("div", { class: "cap" }, [label]), ...rest[0].map(c => control(part, c))]);   // (ticket 365: placed by its key, as a row is)
     const when = SHOWN_WHEN[part + "." + key], here = rest[1];
     if (when || here) syncs.push(() => { if (when) g.hidden = !when(state[part]); if (here) g.classList.toggle("here", !!here(state[part])); });
     return g;
@@ -1369,7 +1379,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                          document.body.classList.contains("world-big") ? WORLD_BIG[1] : WORLD_BIG[0]));
   // (ticket 285, ^du_report(5)'s step 2) 🏞️ Background, as a designer: full screen as the world designer is (setBgBig)
   if (kind === "bgbig") box.append(el("button", { class: "bgbig designer-chip", onclick: () => setBgBig(!document.body.classList.contains("bg-big")) },
-                                      document.body.classList.contains("bg-big") ? BG_BIG[1] : BG_BIG[0]));
+                                      document.body.classList.contains("bg-big") ? BG_BIG[1] : BG_BIG[0]),
+                                  // (ticket 365: and the castle designer's ✕ back, in its place while the castle designer is full screen)
+                                  el("button", { class: "castlebig designer-chip castle-bar-chip", onclick: () => setCastleBig(false) }, CASTLE_BIG[1]));
   // and its first card, the game itself (placePic puts the picture in it), folded by its 👁️ as the world designer's is
   if (kind === "bgview") {
     const view = el("div", { class: "world-view bg-view" }, [el("div", { class: "row world-view-head" }, [

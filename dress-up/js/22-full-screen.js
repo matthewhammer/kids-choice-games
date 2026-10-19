@@ -59,8 +59,14 @@ const WORLD_BIG = ["⛶ the world designer, full screen", "✕ back to the game"
 // (ticket 285, ^du_report(5)'s step 2) and 🏞️ Background as a designer, made for one place (setBgBig)
 const BG_BIG = ["⛶ the background designer, full screen", "✕ back to the game"];
 const TAB_BIG = ["⛶ full screen", "✕ back to the game"];   // (ticket 375: every other tab, a designer the same way)
+// (ticket 365, Matthew: "castle designer FS mode -- after we do knowlling on all panels") 🏰 the castle designer full screen: the
+// background designer's two columns (bg-big: its boxes, the game's card, the dragger between) holding only 🏰 the castles, the
+// map big across the top, every room a box of its own in order, its picture first (the one you are in marked), then the castle's
+// look, its themes and who lives there (style.css, body.castle-big)
+const CASTLE_BIG = ["⛶ the castle designer, full screen", "✕ back to the game"];
 const DESIGNERS = { music: { cls: "music-big", chip: "musicbig", words: MUSIC_BIG }, world: { cls: "world-big", chip: "worldbig", words: WORLD_BIG },
-                    background: { cls: "bg-big", chip: "bgbig", words: BG_BIG }, tab: { cls: "tab-big", chip: "tabbig", words: TAB_BIG } };
+                    background: { cls: "bg-big", chip: "bgbig", words: BG_BIG }, tab: { cls: "tab-big", chip: "tabbig", words: TAB_BIG },
+                    castle: { cls: "castle-big", chip: "castlebig", words: CASTLE_BIG } };
 function designerShell(name, on) {
   const D = DESIGNERS[name];
   document.body.classList.toggle(D.cls, on);
@@ -82,9 +88,29 @@ function setWorldBig(on) {
   designerScreen(on);
 }
 function setBgBig(on) {
+  if (!on && document.body.classList.contains("castle-big")) { castleFrom = null; designerShell("castle", false); changed(); }   // (ticket 365: never the castle's without the background's)
   designerShell("background", on);
   placePic();
   designerScreen(on);
+}
+// (ticket 365) from the side panel (✕ back to the game) or from the background designer (✕ back to it); leaving: the browser's full
+// screen left, all the way back
+let castleFrom = null;
+function setCastleBig(on, leaving) {
+  if (on === document.body.classList.contains("castle-big")) return;
+  if (on) {
+    castleFrom = document.body.classList.contains("bg-big") ? "bg" : "side";
+    const bgTab = TABS.findIndex(t => t[1] === "background");
+    if (tab !== bgTab) { tab = bgTab; showTab(); }
+  }
+  const toBg = !on && castleFrom === "bg" && !leaving;
+  designerShell("castle", on);
+  if (!toBg) designerShell("background", on);
+  if (on && castleFrom === "bg") for (const b of document.querySelectorAll("button.castlebig")) b.textContent = "✕ back to the background designer";
+  if (!on) castleFrom = null;
+  changed();   // (every room's box shown or the one again, the map as big as it gets or small again)
+  placePic();
+  if (!toBg) designerScreen(on);
 }
 function setTabBig(on) {
   designerShell("tab", on);
@@ -189,13 +215,13 @@ function bgBoxes(rows) {
   for (const r of rows) { const k = r.dataset.key || "", hit = BG_BOX.find(([, , test]) => test(k, r)); (hit ? by[hit[0]] : own.rows).push(r); }
   // (the place's row named "background": 🗺️ the place names it)
   for (const r of by.place) if (r.dataset.key === "kind") { const L = r.querySelector(":scope > .lbl"); if (L && !L.querySelector(".val:not(:empty)")) L.hidden = true; }
-  const box = (name, list, wide, dyn) => { if (!list.length) return null;
-    const h = el("h3", { class: "box-name" }, [name]), b = el("section", { class: "box tabbox" + (wide ? " box-wide" : "") }, [h, ...list]);
+  const box = (name, list, wide, dyn, id) => { if (!list.length) return null;
+    const h = el("h3", { class: "box-name" }, [name]), b = el("section", { class: "box tabbox" + (wide ? " box-wide" : ""), ...(id ? { "data-box": id } : {}) }, [h, ...list]);
     syncs.push(() => { const hide = list.every(r => r.hidden); if (b.hidden !== hide) b.hidden = hide; if (dyn) { const t = dyn(); if (h.textContent !== t) h.textContent = t; } });
     return b; };
   const placeName = () => { const p = PLACES.find(q => q[0] === state.background.kind); return p ? p[1] : "🏞️ the place's own"; };
   return [box(BG_BOX[0][1], by.place, true), box(placeName(), own.rows, false, placeName),
-          ...BG_BOX.slice(1).map(([id, name, , wide]) => box(name, by[id], wide))].filter(Boolean);
+          ...BG_BOX.slice(1).map(([id, name, , wide]) => box(name, by[id], wide, null, id))].filter(Boolean);
 }
 // (ticket 285) The Background tab's rows, once built, in the designer's two columns: its boxes (.bg-boxes), and beside them
 // the game's card (.bg-viewcol); outside the full screen the two are display: contents, and the tab is as it always was
@@ -207,6 +233,20 @@ function bgLayout(panel) {
   const layout = el("div", { class: "bg-layout" }, [boxes, split, el("div", { class: "bg-viewcol" }, view ? [view] : [])]);
   designerSplit(layout, split, "dress-up-bg-split");
   panel.replaceChildren(...(bar ? [bar] : []), layout);
+  // (ticket 365, the report's "show the thing") each castle room's box, full screen, opens with its kind of room as the picture archive
+  // has it (asked for only while the castle designer is full screen; a picture that cannot load hides)
+  for (const g of panel.querySelectorAll('[data-group^="castleRoomBox"]')) {
+    const [, n, id] = g.dataset.group.match(/^castleRoomBox(\d+)([A-Z])$/) || []; if (!n) continue;
+    const img = el("img", { class: "room-pic", alt: "", loading: "lazy", onerror: e => { e.target.hidden = true; } }), cap = g.querySelector(":scope > .cap"), was = cap.textContent;
+    cap.after(img);
+    // (rule 1, named once: full screen the box is named by its number and its kind, "2 · 🌿 greenhouse", and its "room 2 is" row says
+    // no more than its chips do)
+    const kind = g.querySelector(`:scope > .ctl[data-key="castleRoom${n}${id}"]`); if (kind) kind.classList.add("room-kind");
+    syncs.push(() => { const big = document.body.classList.contains("castle-big"), st = big ? castleOf({ ...state.background, castle: id }).rooms[+n - 1] : null, t = st ? `${n} · ${roomLabel(st)}` : was;
+      if (cap.textContent !== t) cap.textContent = t;
+      if (!big) return; const src = st ? PICTURES_SITE + "castleroom--" + st + ".webp" : "";
+      if (img.dataset.src !== src) { img.dataset.src = src; img.hidden = !src; if (src) img.src = src; } });
+  }
 }
 // (ticket 375, Matthew: "redesign all panels in menu of dress up that are not following the guidance and insights outlined in the
 // knowling report"; "does the non FS sub panel system look as well as the FS version? Are they each knowlled equally?") Every tab's
@@ -324,6 +364,7 @@ function worldViewShow(on) {
 }
 worldWide.addEventListener("change", placePic);
 document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && document.body.classList.contains("castle-big")) { setCastleBig(false); return; }   // (ticket 365: back where it came from, one step)
   if (e.key === "Escape" && document.body.classList.contains("world-big")) setWorldBig(false);
   if (e.key === "Escape" && document.body.classList.contains("bg-big")) setBgBig(false);
   if (e.key === "Escape" && document.body.classList.contains("tab-big")) setTabBig(false);
@@ -334,5 +375,6 @@ document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement && document.body.classList.contains("big")) setBig(false);
   if (!document.fullscreenElement && document.body.classList.contains("music-big")) setMusicBig(false, true);
   if (!document.fullscreenElement && document.body.classList.contains("world-big")) setWorldBig(false);
+  if (!document.fullscreenElement && document.body.classList.contains("castle-big")) setCastleBig(false, true);
   if (!document.fullscreenElement && document.body.classList.contains("bg-big")) setBgBig(false);
 });
