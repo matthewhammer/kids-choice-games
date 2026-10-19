@@ -39,10 +39,47 @@ function waterRuns(B, bgText, x0, x1, y0, y1, step = 2) {
 // there), and the ways one can face on it, the usual first ("front",
 // "left", "right"). Built from the same helpers as the place's drawing, so
 // the two can't drift. A place's lines sit next to its scene function.
-const seatsHere = B => { try { return (SEATS[B.kind]?.(stageC(), B) ?? []).filter(Boolean); } catch (e) { return []; } };
+const placeSeats = B => { try { return (SEATS[B.kind]?.(stageC(), B) ?? []).filter(Boolean); } catch (e) { return []; } };
+// (ticket 413, Matthew: "audit of all objects to determine: do they have the approximate size of a seat, sometimes, at any
+// scale? (rocks often do); do they have a reasonable top surface for sitting (rocks do, but cauldrons do not, since they would
+// burn us...)"; "don't sit on bushes -- they would poke us too much"; "lean towards doing it, unless there's a reason to
+// discuss") Things with a top to sit on, by their objects list's name, wherever they stand, a place's own or put there:
+// where on their height the seat is (at: 1 its top; a bench's or a chair's seat half way up, under its back), how much of
+// their width (span), and the ways to face on it. Not hot (cauldrons, stoves, a campfire), not prickly (bushes), not sharp
+// (stalagmites, stakes, coral), not alive, not a grave, nothing that would break or that one would sink into. The audit, every
+// object and why: dress-up/SEATS.md.
+const SIT_ANY = ["front", "left", "right"];
+const SIT_TOPS = new Map([
+  ...["rock", "boulder", "stone", "stump", "log", "fallen", "toadstool", "mushroom"].map(n => [n, { at: 0.94, span: 0.6, facing: SIT_ANY }]),
+  ...["barrel", "barrels", "water barrel", "crate", "box", "chest", "toy chest", "flour sack", "hay heap", "hay cart"].map(n => [n, { at: 0.98, span: 0.8, facing: SIT_ANY }]),
+  ...["bench", "chair"].map(n => [n, { at: 0.5, span: 0.8, facing: ["front"] }]),
+]);
+// (how high and wide a seat is for the friend there, as shares of their height at its depth. The places' own seats, measured so
+// (ticket 413): a front step 0.04, rocks 0.06 to 0.09, chairs, logs and mushrooms 0.11 to 0.13, toadstools, a wagon and barrels
+// 0.2 to 0.23, couches 0.34 to 0.38, the swing 0.46 and a throne on its dais 0.52; the narrowest, a mushroom, 0.08 across)
+const SIT_LOW = 0.05, SIT_HIGH = 0.42, SIT_WIDE = 0.07;
+// (the seats such things give here: each from its box as the friend meets it, solidsHere's, so the seat is where the thing
+// is; only where its seat is a seat's height and width for the friend at their size, at its depth; none in another place, nor
+// for a thing that is a seat of the place's own already, nor with 🧱 placed things out of the way)
+function thingSeats(B) {
+  if (B !== state.background || B.kind === "none" || !bgShown.node) return [];
+  const parts = new Map();
+  for (const o of solidsHere()) if (o.standing && !o.small && SIT_TOPS.has(objBase(o.name))) { if (!parts.has(o.name)) parts.set(o.name, []); parts.get(o.name).push(o); }
+  if (!parts.size) return [];
+  const H0 = (figureT.base || 400) * (B.figSize ?? 100) / 100 * sceneFig(B.kind), out = [];
+  for (const [name, ps] of parts) {
+    const how = SIT_TOPS.get(objBase(name)), x0 = Math.min(...ps.map(p => p.x0)), x1 = Math.max(...ps.map(p => p.x1));
+    const z = Math.max(...ps.map(p => p.front)), top = how.at * Math.max(...ps.map(p => p.h)), fh = H0 * depthSize(B, z - SCENE.ground);
+    if (!(fh > 0 && top >= SIT_LOW * fh && top <= SIT_HIGH * fh && x1 - x0 >= SIT_WIDE * fh)) continue;
+    const m = (x1 - x0) * (1 - how.span) / 2;
+    out.push({ name, x0: x0 + m, x1: x1 - m, y: z - top, z: z + 1, facing: how.facing, thing: true });
+  }
+  return out;
+}
+const seatsHere = B => placeSeats(B).concat(thingSeats(B));
 // the seat the friend sits on now (a seat here of the name kept, while they sit), or null
 const seatNow = () => { const B = state.background; if (!state.body.sit || !B.seat || B.kind === "none") return null;   // (lying on a bed, sit too: ticket 299)
-  return seatsHere(B).find(t => t.name === B.seat) || null; };
+  return placeSeats(B).find(t => t.name === B.seat) || thingSeats(B).find(t => t.name === B.seat) || null; };
 // (ticket 123) In deep water (not the shallow stream or brook) the friend
 // treads water: both arms scull out and in together, the legs kick in turn,
 // and they bob a little, twice a stroke; one stroke to LFO B's wave (2 beats

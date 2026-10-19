@@ -488,9 +488,11 @@ function solidsHud() {
     return Array.from({ length: n + 1 }, (_, i) => { const a = from + (to - from) * i / n; return sc(E.cx + E.rx * Math.cos(a), E.cz + E.rz * Math.sin(a) - lift); }); };
   // (a thing in parts named once, by its top or its frame: not on every leg)
   const named = o => !o.part || !["leg", "post"].includes(o.part);
-  const solids = solidsHere().map(o => o.oval ? { name: o.name, seat: o.seat, named: named(o), q: ovalPts(o, 0, Math.PI / 4, Math.PI / 4 + 2 * Math.PI),
+  // (ticket 413: a thing one can sit on here, at the friend's size, marked as a seat too)
+  const sitOnThings = new Set(thingSeats(state.background).map(t => t.name)), seatOf = o => o.seat || (sitOnThings.has(o.name) ? "sit" : undefined);
+  const solids = solidsHere().map(o => o.oval ? { name: o.name, seat: seatOf(o), named: named(o), q: ovalPts(o, 0, Math.PI / 4, Math.PI / 4 + 2 * Math.PI),
       faces: solidBands(o).map(b => { const hi = Number.isFinite(b.hi) ? b.hi : 0; return ovalPts(o, b.lo, Math.PI, 0, 12).concat(ovalPts(o, hi, 0, Math.PI, 12)); }) }
-    : { name: o.name, seat: o.seat, named: named(o), q: [[o.x0 - m, o.back], [o.x1 + m, o.back], [o.x1 + m, o.front], [o.x0 - m, o.front]].map(([x, z]) => sc(x, z)),
+    : { name: o.name, seat: seatOf(o), named: named(o), q: [[o.x0 - m, o.back], [o.x1 + m, o.back], [o.x1 + m, o.front], [o.x0 - m, o.front]].map(([x, z]) => sc(x, z)),
     // (0.0.153: a trunk's faces, its bands up from the ground, leaning as a palm's trunk leans)
     faces: solidBands(o).map(b => { const hi = Number.isFinite(b.hi) ? b.hi : 0; return [[b.x0 - m, o.front - b.lo], [b.x1 + m, o.front - b.lo], [b.x1 + m, o.front - hi], [b.x0 - m, o.front - hi]].map(([x, z]) => sc(x, z)); }) });
   const walls = W ? [-1, 1].map(sd => zs.map(z => sc(sd * (W.half(z) - m), z))) : [];

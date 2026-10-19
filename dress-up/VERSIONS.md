@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.337 (2026-10-19)
+
+Everything in 0.0.336, with many more things to sit on.
+
+- **🪑 Sit on rocks, toadstools, logs, barrels, chests and benches, wherever they are** (ticket 413): anything with a top to sit on is a seat when it is the right height for your friend, whether the place has it or you put it there. That makes 44 more seats in 10 places: the rest of the fairy ring's toadstools and its two stones, the rocks on the mountain trail, under the sea, in the deep sea, at the jungle waterfall and outside the castle, the castle's far barrel, the camp's near log, the path's inner mushrooms, the deep sea's and the cave's treasure chests, and the tree house's toy chest. A rock, toadstool, log, bench, barrel or treasure chest you put somewhere is a seat too, at sizes where it is not too big or too small. Click it with 👆 walk where you click on and your friend walks there and sits (a press that moves still drags it), drag your friend onto it, or use its 🪑 chip in 🏞️ Background. Hot, prickly, sharp and spooky things are not seats: cauldrons, campfires, bushes, stalagmites, skeletons. [SEATS.md](SEATS.md) lists every object and why.
+
 ## 0.0.336 (2026-10-19)
 
 Everything in 0.0.335, with a falling boulder turning you into rainbow bubbles part by part.

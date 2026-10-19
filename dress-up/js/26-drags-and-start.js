@@ -197,6 +197,9 @@ pic.addEventListener("pointerdown", e => {
     if (board) Object.assign(drag, { board: board.dataset.way, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 284) pressed on a 🎚️ lever: as a board, a press let go before it has gone SIGN_DRAG_PX pulls it
     else if (T && T.kind === "lever") Object.assign(drag, { lever: true, cx: e.clientX, cy: e.clientY, far: false });
+    // (ticket 413) pressed on a thing one can sit on, with 👆 on: as a lever, a press let go before SIGN_DRAG_PX walks there and
+    // sits on it; moved further, it is dragged as any thing
+    else if (T && (state.access || DEFAULTS.access).clickWalk) { const st = thingSeatOf(thing); if (st) Object.assign(drag, { sit: st.name, cx: e.clientX, cy: e.clientY, far: false }); }
     picCapture(e.pointerId); picDragging = true;
     return;
   }
@@ -253,7 +256,7 @@ pic.addEventListener("pointermove", e => {
   if (drag.roomLever) { if (!drag.far && Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) >= SIGN_DRAG_PX) drag.far = true; return; }   // (ticket 305)
   if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
-    if ((drag.board || drag.lever) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
+    if ((drag.board || drag.lever || drag.sit) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
     const x = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)), y = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
@@ -336,6 +339,7 @@ const letGo = () => {
   if (dragFrame || dragTimer) dragDraw(true);   // (the last move, drawn before letting go)
   const way = drag && drag.board && !drag.far ? drag.board : null, pull = drag && drag.lever && !drag.far ? drag.put : null;
   const pullRoom = drag && drag.roomLever && !drag.far ? drag.roomLever : null;   // (ticket 305)
+  const sitName = drag && drag.sit && !drag.far ? drag.sit : null;   // (ticket 413)
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, placed = drag && drag.figure, put = drag && drag.put !== undefined;
@@ -349,7 +353,16 @@ const letGo = () => {
   if (way) { const p = bgShown.node && bgShown.node.querySelector(`.portal[data-way="${way}"]`); if (p && !entering) enterScene(p); }   // (ticket 280: a board's way, as its arrow's click)
   if (pull !== null) leverAct(`[data-drag="thing:${pull}"]`, () => leverPull(pull));   // (ticket 284; ticket 316: walked to and pulled)
   if (pullRoom) leverAct(`[data-lever="${pullRoom}"]`, () => roomLeverPull(pullRoom));   // (ticket 305)
+  if (sitName && !entering && !(state.body.sit && state.background.seat === sitName)) {   // (ticket 413: as a seat clicked)
+    const t = seatsHere(state.background).find(q => q.name === sitName);
+    if (t) { walkSpotHide(); walkPlanned((t.x0 + t.x1) / 2, t.z + 6, () => sitOn(t)); }
+  }
 };
+// (ticket 413) the seat a thing put in the place gives, at the friend's size, by its object's name, or null
+function thingSeatOf(thingEl) {
+  const o = thingEl && (bgShown.objs || []).find(o => o.node === thingEl || (o.node.contains && (o.node.contains(thingEl) || thingEl.contains(o.node))));
+  return o ? thingSeats(state.background).find(t => t.name === o.name) || null : null;
+}
 // (ticket 316, Matthew: "when we trigger a lever for a trap door, we plan an animation and path: walk to the lever, facing
 // it. pull it ... then after the pull, the door opens, animated") With 👆 walk where you click on, a lever pressed is a
 // planned action: the friend walks to the floor just in front of its foot (a wall lever's: the back line before it),
@@ -604,7 +617,10 @@ function walkableAt(e) {
 // by as much again, across its span (a blanket's, flat, a band about its middle); the friend not on it already
 function seatAtPointer(e) {
   const BG = state.background, A = state.access || DEFAULTS.access;
-  if (!A.clickWalk || BG.kind === "none" || drag || !e.target || !e.target.closest || !e.target.closest("#pic") || e.target.closest("#figure, [data-drag], .portal, [data-ladder], #ways")) return null;
+  if (!A.clickWalk || BG.kind === "none" || drag || !e.target || !e.target.closest || !e.target.closest("#pic") || e.target.closest("#figure, .portal, [data-ladder], #ways")) return null;
+  // (ticket 413: over a thing put here, its own seat if it gives one; never another's through it)
+  const put = e.target.closest("[data-drag]");
+  if (put) { const t = put.dataset.drag.startsWith("thing:") ? thingSeatOf(put) : null; return t && t.name !== (state.body.sit && BG.seat) ? t : null; }
   const q = picUnits(e), k = (SCENE.bottom - SCENE.top) / 700;
   return seatsHere(BG).find(t => t.name !== (state.body.sit && BG.seat) && q.x >= t.x0 && q.x <= t.x1 &&
     (t.flat ? Math.abs(q.y - t.y) <= 24 * k : q.y >= t.y - Math.max(20 * k, t.z - t.y) && q.y <= t.z + 6)) || null;
@@ -619,7 +635,7 @@ function walkSpotShow(e) {
     const at = (x, y) => { const p = new DOMPoint(x, y).matrixTransform(M); return [p.x - box.left, p.y - box.top]; };
     const top = seat.flat ? seat.y - 18 * (SCENE.bottom - SCENE.top) / 700 : seat.y, [ax, ay] = at(seat.x0, top), [bx, by] = at(seat.x1, seat.flat ? seat.y + 18 * (SCENE.bottom - SCENE.top) / 700 : seat.z);
     if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "walk-spot"); layer.append(ov); }
-    const say = (seat.lie ? "🛏️ lie down on the " : "🪑 sit on the ") + seat.name.replace(/,.*$/, "");
+    const say = (seat.lie ? "🛏️ lie down on the " : "🪑 sit on the ") + seat.name.replace(/,.*$/, "").replace(/\s+\d+$/, "");   // (ticket 413: "the rock", not "the rock 1")
     ov.innerHTML = `<rect class="seat-spot" x="${ax.toFixed(1)}" y="${ay.toFixed(1)}" width="${(bx - ax).toFixed(1)}" height="${Math.max(6, by - ay).toFixed(1)}" rx="6"/>` +
       `<text class="seat-say" x="${((ax + bx) / 2).toFixed(1)}" y="${(ay - 8).toFixed(1)}" text-anchor="middle">${xmlEsc(say)}</text>`;
     ov.style.setProperty("--spot", (state.access || DEFAULTS.access).clickWalkColor || "#22d3ee");

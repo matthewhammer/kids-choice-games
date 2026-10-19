@@ -422,7 +422,7 @@ function solidsHere() {
   if (B.kind === "none") return [];
   const offKey = [...objectsOff(B)].join("|") + (B.thingsSolid === false ? "|no-things" : "");   // (ticket 283: placed things out of the way, or not)
   if (solidMemo.text !== bgShown.text || solidMemo.kind !== B.kind || solidMemo.off !== offKey || !bgShown.text) {
-    const seats = seatsHere(B);
+    const seats = placeSeats(B);   // (a place's own: a thing's seat, ticket 413, is made from these solids, thingSeats)
     // (ticket 299: a flat one, a blanket, in nobody's way; each marked as a seat, for 🔬's own chip, sit or lie)
     solidMemo = { text: bgShown.text, kind: B.kind, off: offKey, list: seats.filter(t => !t.flat).map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
       return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y, seat: t.lie ? "lie" : "sit", ...(ROUND.has(objBase(t.name)) ? { oval: true } : {}) }; }).concat(sceneBoxesHere(B)).concat(standingHere(B, new Set(seats.map(t => t.name))), holesHere()) };
