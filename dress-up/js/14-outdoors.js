@@ -2009,6 +2009,69 @@ const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutp
 const beachLines = ({ g, k }) => ({ sea: g - 170 * k, shore: g - 55 * k });
 // (ticket 186) open water's horizon: higher than the beach's, all the rest sea
 const seaHorizon = ({ g, k }) => g - 230 * k;
+// (ticket 212, Matthew: "having the option to display a shoreline, or treeline, in the distance, would be a good set of parameters to
+// make the 'open water' more useful in more situations": "different forest styles, maybe 2 or 3. default is off"; "different mountain
+// styles, maybe 2 or 3. default is off"; "forest and mountain styles layer and combine naturally"; "optional beach, drawn between the
+// horizon and the forest") A distant shore, as backdrop layers on a horizon any place can use: back to front, mountains, a forest, a
+// beach, each standing on the line in front of it, all scaled by the shore's size (ticket 213's "distant shore size": bigger, nearer).
+// Silhouettes, a path or two each, drawn once (the place holds still: 60 frames a second first). farLayers(c, base, look) draws them
+// and gives each its object (wallObj, so 👁️ hides it and 🔬 names it); look = { mountains, forest, beach, size }.
+const SHORE_MOUNTAINS = [["none", "🚫 none"], ["snowy", "🏔️ snowy peaks"], ["blue", "⛰️ a blue range"], ["hills", "🌄 rolling hills"]];
+const SHORE_FORESTS = [["none", "🚫 none"], ["pines", "🌲 pines"], ["broadleaf", "🌳 round trees"], ["mixed", "🌲🌳 mixed"]];
+function farLayers(c, base, look) {
+  const { x0, x1, W, k, pad, R, P } = c, u = k * Math.max(0.25, Math.min(3, (look.size ?? 100) / 100)), L = x0 - pad, Rt = x1 + pad;
+  const mountains = SHORE_MOUNTAINS.some(([v]) => v === look.mountains) ? look.mountains : "none", forest = SHORE_FORESTS.some(([v]) => v === look.forest) ? look.forest : "none";
+  const bh = look.beach ? 7 * u : 0, treeFoot = base - bh * 0.55, hillFoot = (forest !== "none" ? treeFoot - 6 * u : base - bh) + 1;
+  let s = "";
+  // ⛰️ mountains: snowy peaks (two ranges, snow on the far one), a blue range (one, hazy), rolling hills (two, rounded)
+  if (mountains !== "none") {
+    let m = "";
+    const range = (row, fill, hgt, n, seed, round) => {
+      const foot = hillFoot - row * 5 * u, pts = [];
+      let d = `M${P(L, foot)}`;
+      for (let i = 0; i <= n; i++) {
+        const x = x0 - 40 * u + (W + 80 * u) * i / n + (W / n) * 0.3 * (R(i + row * 17, seed) - 0.5), top = foot - hgt * u * (0.55 + 0.45 * R(i + row * 17, seed + 1));
+        pts.push([x, top]);
+        d += round ? ` Q${P(x - W / n / 2, top - hgt * u * 0.25)} ${P(x, top)}` : ` L${P(x - (W / n) * 0.42, foot - hgt * u * (0.25 + 0.2 * R(i + row * 17, seed + 2)))} L${P(x, top)}`;
+      }
+      const under = Math.min(foot + 8 * u, base);   // (never below the water line: the sea is in front, and 🔬 measures the layer by it)
+      m += `<path d="${d} L${P(Rt, foot)} L${P(Rt, under)} L${P(L, under)} Z" fill="${fill}"/>`;
+      return pts;
+    };
+    if (mountains === "snowy") {
+      const far = range(1, "#b6c6dc", 70, 7, 611, false); range(0, "#8ea3c0", 48, 9, 621, false);
+      for (const [x, y] of far) m += `<path d="M${P(x, y)} l${f1(-9 * u)} ${f1(13 * u)} l${f1(5 * u)} ${f1(-3 * u)} l${f1(4 * u)} ${f1(4 * u)} l${f1(4 * u)} ${f1(-4 * u)} l${f1(5 * u)} ${f1(3 * u)} Z" fill="#f4f8ff"/>`;
+    } else if (mountains === "blue") range(0, "#9fb4d4", 58, 8, 631, false);
+    else { range(1, "#9db896", 34, 6, 641, true); range(0, "#7fa47c", 24, 8, 651, true); }
+    s += wallObj("far mountains", m);
+  }
+  // 🌲 a forest: a pale far band and a dark near one, its tops pine points, round crowns, or both by turns
+  if (forest !== "none") {
+    let f = "";
+    const band = (row, fill, hgt, n, seed) => {
+      const foot = treeFoot - row * 3 * u, w = (W + 2 * pad) / n;
+      let d = `M${P(L, foot)}`;
+      for (let i = 0; i < n; i++) {
+        const x = L + w * (i + 0.5) + w * 0.3 * (R(i + row * 31, seed) - 0.5), h = hgt * u * (0.7 + 0.3 * R(i + row * 31, seed + 1));
+        const pine = forest === "pines" || (forest === "mixed" && R(i + row * 31, seed + 2) < 0.5);
+        d += pine ? ` L${P(x - w * 0.48, foot - h * 0.3)} L${P(x, foot - h)} L${P(x + w * 0.48, foot - h * 0.3)}`
+                  : ` Q${P(x - w * 0.62, foot - h * 1.05)} ${P(x, foot - h)} Q${P(x + w * 0.62, foot - h * 1.05)} ${P(x + w * 0.5, foot - h * 0.45)}`;
+      }
+      const under = Math.min(foot + 4 * u, base);
+      f += `<path d="${d} L${P(Rt, foot)} L${P(Rt, under)} L${P(L, under)} Z" fill="${fill}"/>`;
+    };
+    const n = Math.max(24, Math.round((W + 2 * pad) / (9 * u)));
+    band(1, "#5e8f6b", 15, n, 661); band(0, "#2f6b3a", 12, Math.round(n * 1.15), 671);
+    s += wallObj("far forest", f);
+  }
+  // 🏖️ a beach: sand from the forest's foot down to the water, the foam at its edge
+  if (look.beach) {
+    let d = `M${P(L, base - bh)}`;
+    for (let i = 0; i <= 16; i++) { const x = L + (W + 2 * pad) * i / 16; d += ` Q${P(x - (W + 2 * pad) / 32, base - bh - 1.5 * u * Math.sin(i * 1.3))} ${P(x, base - bh)}`; }
+    s += wallObj("far beach", `<path d="${d} L${P(Rt, base)} L${P(L, base)} Z" fill="#ecd9a8"/><line x1="${f1(L)}" y1="${f1(base - 0.6 * u)}" x2="${f1(Rt)}" y2="${f1(base - 0.6 * u)}" stroke="#ffffff" stroke-width="${f1(1.2 * u)}" opacity="0.85"/>`);
+  }
+  return s;
+}
 const brookAt = ({ W, g, k, y1 }) => t => { const y = g - 62 * k + t * (y1 + 40 * k - (g - 62 * k));
   return [W * (0.2 + 0.2 * t) + W * 0.05 * Math.sin(t * Math.PI * 1.6), y, (8 + 70 * t * t) * k]; };
 // (ticket 50) seats in the places backgroundSvg draws itself, as it draws

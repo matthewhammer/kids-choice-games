@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.325 (2026-10-19)
+
+Everything in 0.0.324, with a distant shore for the open water.
+
+- **🏝️ A distant shore on the open water**: in 🏞️ Background, at the open water, choose ⛰️ mountains far off (🏔️ snowy peaks, ⛰️ a blue range or 🌄 rolling hills), 🌲 a forest along the shore (pines, round trees, or both mixed) and 🏖️ a beach between the water and the trees, in any mix: they stand one in front of the other on the horizon. All off to begin with.
+- **📏 The shore's size**: bigger looks nearer. With ✏️ changes going to 📍 only this square, each open water square keeps its own size, so a column of them can bring the shore closer square by square as you swim north.
+- **🌊 Swim as far as the horizon, never onto the shore or into the sky**, whatever shore you choose; with a way north, swimming on into the horizon takes it.
+
 ## 0.0.324 (2026-10-19)
 
 Everything in 0.0.323, with open water that promises nothing it doesn't have.

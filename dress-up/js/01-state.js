@@ -505,6 +505,7 @@ const DEFAULTS = {
                 caveGems: 16, gemShape: "four", gemSize: 100, gemBright: 90, gemTwinkle: 60,
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
                 crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossBack: "woods", things: [],
+                seaMountains: "none", seaForest: "none", seaBeach: false, seaShoreSize: 100,   // (ticket 212: the open water's distant shore, off by default)
                 starShape: "mix", starSize: 100, starBright: 85, starTwinkle: 40,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
                 // (ticket 278) the living rooms' colors, the grass hut's blanket and potion
@@ -1060,7 +1061,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.324", released: "2026-10-19" };
+const VERSION = { number: "0.0.325", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

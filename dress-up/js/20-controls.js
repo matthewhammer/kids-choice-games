@@ -469,6 +469,12 @@ const TABS = [
     ["compass", "crossPaths", "🛤️ the paths that meet here", "cross"],
     ["color", "crossFloor", "🌿 the forest floor", CROSS_FLOORS],
     ["choice", "crossBack", "🌄 off in the distance", CROSS_BACKS],
+    // (ticket 212) the open water's distant shore, off by default: its layers, back to front, and its size (bigger: nearer)
+    ["group", "seaShore", "🏝️ a distant shore", [
+      ["choice", "seaMountains", "⛰️ mountains", SHORE_MOUNTAINS],
+      ["choice", "seaForest", "🌲 a forest", SHORE_FORESTS],
+      ["toggle", "seaBeach", "🏖️ a beach (between the water and the forest)"],
+      ["range", "seaShoreSize", "📏 its size (bigger: nearer)", 25, 300, 50, 200]]],
     // the forest clearing: what is far off down its paths
     ["toggle", "seeHouse", "🏠 see the family house"],
     ["toggle", "seeTree", "🌳 see the tree house"],
@@ -851,6 +857,9 @@ function el(tag, attrs = {}, kids = []) {
 
 // Iris color and eye whites only mean something once there is an iris.
 const SHOWN_WHEN = {
+  // (ticket 212) the open water's distant shore, there only; its size once there is a shore
+  "background.seaShore": b => b.kind === "sea",
+  "background.seaShoreSize": b => (b.seaMountains ?? "none") !== "none" || (b.seaForest ?? "none") !== "none" || !!b.seaBeach,
   // (ticket 230: the ♿ settings show beside their toggle, while it is on: accbox)
   "body.unpose": posed,
   "body.lieHead": b => b.pose === "lie", "body.lieHow": b => b.pose === "lie",   // (ticket 299)

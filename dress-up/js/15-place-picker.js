@@ -730,6 +730,8 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
          `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(46 * k)}" fill="#ffd23f"/>`;
     // (ticket 212, Matthew: "island in distance, sail boat that seems stationary. Let's remove those, since they currently seem like
     // promises for stuff that doesn't exist, and cannot be reached") no island and no sail: nothing far off that cannot be reached
+    // and, where it is chosen (off by default), a distant shore on the horizon: farLayers' mountains, forest, beach, at its size
+    s += farLayers({ x0, x1, W, k, pad, R, P }, hz, { mountains: opts.seaMountains, forest: opts.seaForest, beach: !!opts.seaBeach, size: opts.seaShoreSize });
     // the sea, and its waves: rows of little arcs, nearer ones bigger and further apart
     s += `<rect x="${f1(x0 - pad)}" y="${f1(hz)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - hz + pad)}" fill="url(#bg-sea)"/>` +
          `<line x1="${f1(x0 - pad)}" y1="${f1(hz)}" x2="${f1(x1 + pad)}" y2="${f1(hz)}" stroke="#e8f6ff" stroke-width="${f1(1.5 * k)}" opacity="0.7"/>`;
