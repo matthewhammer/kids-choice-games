@@ -1473,6 +1473,10 @@ const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
   rock: [["tone", "🎨", "color", ROCK_TONES]],
+  // (ticket 368) the witch's woods' things: a dead tree, a skull on a stake, a fence of stakes
+  deadtree: [["h", "📏", "choice", [[160, "a stump"], [300, "tall"], [460, "giant"]]], ["droop", "🥀 weeping", "toggle"], ["color", "🎨", "color", ["#24192f", "#3b2c52", "#2a1f1a", "#4a3a30"]]],
+  skullstake: [["eyes", "👁️ eyes", "choice", [[100, "usual"], [160, "big"], [220, "huge"]]]],
+  palisade: [["stakes", "🪵 stakes", "choice", [[3, "3"], [6, "6"], [10, "10"], [16, "16"]]], ["skulls", "💀 skulls on it", "toggle"]],
   tree: [["h", "📏", "choice", [[280, "short"], [380, "tall"], [480, "taller"]]], ["leaves", "🍂", "choice", [["summer", "summer"], ["spring", "spring"], ["autumn", "autumn"], ["blossom", "🌸 blossom"]]]],
   pine: [["tiers", "🌲 tiers", "choice", [[4, "4"], [5, "5"], [6, "6"], [7, "7"], [8, "8"]]]],
   bush: [["flowers", "🌸", "color", ["none", "#f472b6", "#fde047", "#ffffff", "#a78bfa", "#ef4444"]]],
@@ -1505,7 +1509,7 @@ const THING_PARAMS = {
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
-const THING_DEFAULTS = { rock: { tone: ROCK_TONES[0] }, tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },
+const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, skullstake: { eyes: 100 }, palisade: { stakes: 6, skulls: true }, rock: { tone: ROCK_TONES[0] },   // (ticket 368: the first three) tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, moss: { style: "haircap", on: "floor", color: "none", lobes: true }, lichen: { style: "crust", on: "back", color: "none" }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
@@ -1678,7 +1682,7 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
                       barrel: { label: "🛢️ barrel", size: 1, group: "camp" }, cauldron: { label: "🫕 cauldron", size: 1, group: "magic", moving: true },
-                      potion: { label: "🧪 potion", size: 1, group: "magic" }, skeleton: { label: "💀 skeleton", size: 1, group: "spooky" }, sign: { label: "🪧 sign", size: 1, group: "signs" },
+                      potion: { label: "🧪 potion", size: 1, group: "magic" }, skeleton: { label: "💀 skeleton", size: 1, group: "spooky" }, deadtree: { label: "🌳 dead tree", size: 1, group: "spooky" }, skullstake: { label: "💀 skull on a stake", size: 1, group: "spooky" }, palisade: { label: "🪵 fence of stakes", size: 1, group: "spooky" },   // (deadtree, skullstake, palisade: ticket 368) sign: { label: "🪧 sign", size: 1, group: "signs" },
                       signpost: { label: "🧭 sign with directions", size: 1, group: "signs" },
                       // (ticket 219) the 🐚 sea things, for the deep sea (and anywhere): the moving ones are counted as the campfire is
                       coral: { label: "🪸 coral", size: 1, group: "sea" }, shell: { label: "🐚 shell", size: 1, group: "sea" },
@@ -1782,6 +1786,20 @@ function trapdoorThingSvg(t, i) {
   const boulder = t.boulder ? `<g data-boulder="0" data-drop="520">${rockSvg(0, ry * 0.55, rx * 0.8, (t.rockSeed ?? 3) * 7, tone)}</g>` : "";
   return pitLidSvg(0, 0, rx, ry, sh, 1, R, 0, id, !!t.open, t.spikes ?? true) + boulder;   // (ticket 307: as the trap room's pits, its lid swung by lidSwing)
 }
+// (ticket 368) the placed fence's parts, as the witch's woods draws its palisade: a pointed stake (its foot at (x, y), h tall,
+// w wide, its colour by i), a skull's red eyes (steady, as the placed things hold no blink settings of their own), and a run
+// of n stakes on a rail, a skull on every fourth from the second, centred on its foot
+const stakeSvg = (x, y, h, w, i) => `<polygon points="${f1(x - w / 2 + 1)} ${f1(y)} ${f1(x - w / 2 + 1)} ${f1(y - h)} ${f1(x)} ${f1(y - h - 12)} ${f1(x + w / 2 - 1)} ${f1(y - h)} ${f1(x + w / 2 - 1)} ${f1(y)}" fill="${i % 2 ? "#6b5236" : "#7a5e3e"}" stroke="#2f2216" stroke-width="1.4"/>` +
+  `<line x1="${f1(x - 3)}" y1="${f1(y - h * 0.8)}" x2="${f1(x - 2)}" y2="${f1(y - h * 0.3)}" stroke="#4a3622" stroke-width="1.2"/>`;
+const skullGlow = (cx, cy, r) => `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r * 0.55)}" fill="#ff2626"/>`;
+function palisadeSvg(n, skulls, seed) {
+  const R = (i, j = 0) => { const v = Math.sin((i + seed) * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); }, step = 22, ph = 70, x0 = -step * (n - 1) / 2;
+  let fence = `<ellipse cx="0" cy="2" rx="${f1(step * n * 0.55)}" ry="6" fill="#000000" opacity="0.18"/><rect x="${f1(x0 - step / 2)}" y="${f1(-ph * 0.55)}" width="${f1(step * n)}" height="6" fill="#3a2a1a"/>`, sk = "";
+  for (let i = 0; i < n; i++) { const x = x0 + i * step, h = ph * (0.9 + 0.2 * R(i, 50));
+    fence += stakeSvg(x, 0, h, step, i);
+    if (skulls && i % 4 === 1) sk += drawnBy("skull", stakeSkullSvg(x, -h - 12, 1.3 + 1.2 * R(i, 51), 1, skullGlow)); }
+  return drawnBy("fence", fence) + sk;
+}
 // (a thing's depth among the objects: where its feet are; a trap door's, its back edge)
 const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;
 const thingLabel = t => t.fallen ? `🪨 fallen ${t.fallen}` : t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
@@ -1817,6 +1835,10 @@ function thingSvg(o, t, i) {
                t.kind === "lichen" ? at(lichenSvg(t.style || "crust", seed, { on: t.on, color: t.color })) :   // (ticket 319)   // (Matthew: 2.4 was too big)
                t.kind === "potion" ? at(shadow(22) + potionSvg(t.shape || "flask", 0, 0, 2.2, t.color || POTION_COLORS[5])) :
                t.kind === "skeleton" ? at(shadow(60) + skeletonSvg(0, -80 * 2.6, 2.6, "sit")) :
+               // (ticket 368: drawn as the witch's woods draws them)
+               t.kind === "deadtree" ? at(shadow(50) + drawnBy("deadTree", deadTreeSvg(seed, 0, 0, t.h ?? 300, (t.h ?? 300) > 400 ? 26 : 16, t.color || "#24192f", (t.h ?? 300) > 400 ? 6 : (t.h ?? 300) < 200 ? 2 : 4, t.droop ? 1 : 0, 1, 0, 1))) :
+               t.kind === "skullstake" ? at(shadow(14) + stakeSvg(0, 0, 70, 22, 0) + drawnBy("skull", stakeSkullSvg(0, -82, 1.6, (t.eyes ?? 100) / 100, skullGlow))) :
+               t.kind === "palisade" ? at(palisadeSvg(t.stakes ?? 6, t.skulls ?? true, seed)) :
                t.kind === "signpost" ? at(`<g transform="scale(0.85)">${signpostSvg(signpostBoards(o, t))}</g>`) :
                t.kind === "sign" ? at(shadow(30) + `<rect x="-5" y="-150" width="10" height="150" fill="#6e4a2c"/>` + plankSign(0, -120, 1.3, xmlText(t.text ?? "hello!"))) :
                // (ticket 219) the sea things

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.287 (2026-10-18)
+
+Everything in 0.0.286, with the witch's woods' trees, fence and skulls found and placeable.
+
+- **🧩 What it's made of finds the witch's woods' trees, fence and skulls**: each of its 19 dead trees (as 🌳 trees), each of the 11 skulls on its fence (💀 skulls, a new kind), and the fence (🪵 fences, a new kind).
+- **Three new things to place**, in 💀 spooky, drawn just as the woods draws them: a 🌳 dead tree (a stump, tall or giant, weeping or not, its colour), a 💀 skull on a stake (its eyes' size), and a 🪵 fence of stakes (3 to 16, with skulls on it or not). Each is in your way, as the woods' are.
+
 ## 0.0.286 (2026-10-18)
 
 Everything in 0.0.285, with balancing on bubbles.

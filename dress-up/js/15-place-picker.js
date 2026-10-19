@@ -34,6 +34,45 @@ function witchCauldronSvg(cx, b, k, opts, top, cheap = false) {   // (ticket 202
            // rises, out past the top of the picture
            `<g class="fumes">${(cheap ? helixCheapSvg : helixSvg)(cx, cy - 6 * k, top, 12 * k, 46 * k, k)}</g>`;   // (ticket 214: .fumes, left out of the cauldron's collision box)
 }
+// (ticket 368, Matthew: "seems like all trees and fence and fence skulls are missing from the object list?"; "we want to offer
+// these kinds of objects for reuse, for one") The witch's woods' dead tree and the skull on a fence stake, drawn here once for
+// the woods and for the placed things alike (connected views share their drawing). A dead tree grown from its seed: a trunk,
+// then limbs that fork two or three ways, bending as they go, thinner each time; its own lean, height, spread and twist; some
+// droop like weeping trees. k: the place's scale (a stroke's least width)
+function deadTreeSvg(seed, x, y, h, w, col, depth, droop = 0, wide = 1, lean0 = 0, k = 1) {
+  const R = (i, j = 0) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); }, P = (a, b) => `${f1(a)} ${f1(b)}`;
+  const out = [], lean = lean0 + (R(seed, 1) - 0.5) * 0.35, twist = 0.3 + 0.6 * R(seed, 2), spread = (0.45 + 0.4 * R(seed, 3)) * wide;
+  const grow = (x, y, a, len, wd, lvl, id) => {
+    const bend = (R(seed, id * 7 + 1) - 0.5) * twist;
+    const mx = x + Math.cos(a) * len * 0.5, my = y + Math.sin(a) * len * 0.5;
+    const ex = mx + Math.cos(a + bend) * len * 0.5, ey = my + Math.sin(a + bend) * len * 0.5;
+    out.push(`<path d="M${P(x, y)} Q${P(mx, my)} ${P(ex, ey)}" fill="none" stroke="${col}" stroke-width="${f1(Math.max(0.8 * k, wd))}" stroke-linecap="round"/>`);
+    if (lvl === 0) return;
+    const n = 2 + (R(seed, id * 7 + 2) > 0.55 ? 1 : 0);
+    for (let c = 0; c < n; c++) {
+      // (droop pulls limbs down, on either side, more the farther out)
+      const a0 = a + bend + (c - (n - 1) / 2) * spread * (0.7 + 0.6 * R(seed, id * 7 + 3 + c)), dr = droop * 0.22 * (depth - lvl + 1);
+      const na = Math.atan2(Math.sin(a0) + dr, Math.cos(a0));
+      grow(ex, ey, na, len * (0.55 + 0.3 * R(seed, id * 11 + c)), wd * 0.6, lvl - 1, id * 3 + c + 1);
+    }
+  };
+  grow(x, y, -Math.PI / 2 + lean, h * 0.38, w, depth, 1);
+  return out.join("");
+}
+// A skull on a stake, the tip (tipX, tipY) in it: drawn in its own units (u at the usual size; x across, y down, its eyes on
+// the line y = -3), scaled about the tip. Bigger eyes (eye, 1 the usual) keep their gap in the middle and grow the skull to
+// hold them, as a face's do: its sides and its top out, its nose and jaw down. glow(cx, cy, r): each eye's red light
+function stakeSkullSvg(tipX, tipY, u, eye, glow) {
+  const P = (a, b) => `${f1(a)} ${f1(b)}`, r = 3.4 * eye, ex = 1.1 + r;
+  const hw = Math.max(1, (ex + r + 3.1) / 11), up = Math.max(1, (r + 8.6) / 12), drop = Math.max(0, r - 3.4), jw = 1 + (hw - 1) * 0.5;
+  const L = (lx, ly) => P(tipX + lx * u, tipY + (ly - 2 - drop) * u), Lx = lx => f1(tipX + lx * u), Ly = ly => f1(tipY + (ly - 2 - drop) * u);
+  return `<path d="M${L(-11 * hw, 2 + drop)} Q${L(-12 * hw, -3 - 11 * up)} ${L(0, -3 - 12 * up)} Q${L(12 * hw, -3 - 11 * up)} ${L(11 * hw, 2 + drop)} ` +
+    `L${L(6 * jw, 4 + drop)} L${L(5 * jw, 10 + drop)} L${L(-5 * jw, 10 + drop)} L${L(-6 * jw, 4 + drop)} Z" fill="#efe8d8" stroke="#6b6355" stroke-width="${f1(1.2 * u)}"/>` +
+    [-1, 1].map(sd => `<circle cx="${Lx(sd * ex)}" cy="${Ly(-3)}" r="${f1(r * u)}" fill="#1a1426"/>`).join("") +
+    [-1, 1].map(sd => glow(tipX + sd * ex * u, tipY + (-5 - drop) * u, r * u)).join("") +
+    `<path d="M${L(-1.5, 3 + drop)} L${L(0, drop)} L${L(1.5, 3 + drop)} Z" fill="#1a1426"/>` +
+    [-3, 0, 3].map(t => `<line x1="${Lx(t * jw)}" y1="${Ly(6 + drop)}" x2="${Lx(t * jw)}" y2="${Ly(10 + drop)}" stroke="#6b6355" stroke-width="${f1(1 * u)}"/>`).join("");
+}
 function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);
   // the same "random" every time, for a scene that holds still
@@ -427,25 +466,8 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // fork two or three ways, bending as they go, thinner each time. A
     // tree has its own lean, height, spread and twist; some droop like
     // weeping trees, some are snapped-off stumps.
-    const deadTree = (seed, x, y, h, w, col, depth, droop = 0, wide = 1, lean0 = 0) => {
-      const out = [], lean = lean0 + (R(seed, 1) - 0.5) * 0.35, twist = 0.3 + 0.6 * R(seed, 2), spread = (0.45 + 0.4 * R(seed, 3)) * wide;
-      const grow = (x, y, a, len, wd, lvl, id) => {
-        const bend = (R(seed, id * 7 + 1) - 0.5) * twist;
-        const mx = x + Math.cos(a) * len * 0.5, my = y + Math.sin(a) * len * 0.5;
-        const ex = mx + Math.cos(a + bend) * len * 0.5, ey = my + Math.sin(a + bend) * len * 0.5;
-        out.push(`<path d="M${P(x, y)} Q${P(mx, my)} ${P(ex, ey)}" fill="none" stroke="${col}" stroke-width="${f1(Math.max(0.8 * k, wd))}" stroke-linecap="round"/>`);
-        if (lvl === 0) return;
-        const n = 2 + (R(seed, id * 7 + 2) > 0.55 ? 1 : 0);
-        for (let c = 0; c < n; c++) {
-          // (droop pulls limbs down, on either side, more the farther out)
-          const a0 = a + bend + (c - (n - 1) / 2) * spread * (0.7 + 0.6 * R(seed, id * 7 + 3 + c)), dr = droop * 0.22 * (depth - lvl + 1);
-          const na = Math.atan2(Math.sin(a0) + dr, Math.cos(a0));
-          grow(ex, ey, na, len * (0.55 + 0.3 * R(seed, id * 11 + c)), wd * 0.6, lvl - 1, id * 3 + c + 1);
-        }
-      };
-      grow(x, y, -Math.PI / 2 + lean, h * 0.38, w, depth, 1);
-      return out.join("");
-    };
+    // (ticket 368: one drawing, deadTreeSvg, shared with the placed dead tree; tagged, so 🧩 finds each tree)
+    const deadTree = (seed, x, y, h, w, col, depth, droop = 0, wide = 1, lean0 = 0) => drawnBy("deadTree", deadTreeSvg(seed, x, y, h, w, col, depth, droop, wide, lean0, k));
     // two rows far off, the farther paler (each row an object, standing at
     // its trees' middle depth)
     for (const [row, base, col, n] of [[0, g - 130 * k, "#3b2c52", 9], [1, g - 92 * k, "#24192f", 8]]) {
@@ -541,20 +563,10 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
         // then scaled about the tip. Bigger eyes keep their gap in the
         // middle and grow the skull to hold them, as a face's do: its sides
         // and its top out, its nose and jaw down.
-        const u = k * (1 + (skullMax - 1) * R(i, 51)), tipX = x, tipY = fy - h - 12 * k;
-        const r = 3.4 * skullEye, ex = 1.1 + r;
-        const hw = Math.max(1, (ex + r + 3.1) / 11), up = Math.max(1, (r + 8.6) / 12), drop = Math.max(0, r - 3.4);
-        const jw = 1 + (hw - 1) * 0.5;
-        const L = (lx, ly) => P(tipX + lx * u, tipY + (ly - 2 - drop) * u);
-        const Lx = lx => f1(tipX + lx * u), Ly = ly => f1(tipY + (ly - 2 - drop) * u);
-        skulls += `<path d="M${L(-11 * hw, 2 + drop)} Q${L(-12 * hw, -3 - 11 * up)} ${L(0, -3 - 12 * up)} Q${L(12 * hw, -3 - 11 * up)} ${L(11 * hw, 2 + drop)} ` +
-             `L${L(6 * jw, 4 + drop)} L${L(5 * jw, 10 + drop)} L${L(-5 * jw, 10 + drop)} L${L(-6 * jw, 4 + drop)} Z" fill="#efe8d8" stroke="#6b6355" stroke-width="${f1(1.2 * u)}"/>` +
-             [-1, 1].map(sd => `<circle cx="${Lx(sd * ex)}" cy="${Ly(-3)}" r="${f1(r * u)}" fill="#1a1426"/>`).join("") +
-             [-1, 1].map(sd => eyeDot(tipX + sd * ex * u, tipY + (-5 - drop) * u, r * u, i)).join("") +
-             `<path d="M${L(-1.5, 3 + drop)} L${L(0, drop)} L${L(1.5, 3 + drop)} Z" fill="#1a1426"/>` +
-             [-3, 0, 3].map(t => `<line x1="${Lx(t * jw)}" y1="${Ly(6 + drop)}" x2="${Lx(t * jw)}" y2="${Ly(10 + drop)}" stroke="#6b6355" stroke-width="${f1(1 * u)}"/>`).join("");
+        const u = k * (1 + (skullMax - 1) * R(i, 51));
+        skulls += drawnBy("skull", stakeSkullSvg(x, fy - h - 12 * k, u, skullEye, (cx, cy, r) => eyeDot(cx, cy, r, i)));   // (ticket 368: shared, tagged)
       }
-      s += obj("fence", fy, fence) + obj("skulls", fy, skulls);
+      s += obj("fence", fy, drawnBy("fence", fence)) + obj("skulls", fy, skulls);   // (ticket 368: the fence tagged for 🧩)
     }
     // and nearer: one giant on the left, its trunk massive and its limbs
     // sprawling wide toward the middle, its roots humped up out of the

@@ -522,11 +522,12 @@ let solidsHitShown = -1;
 // the tree); each kind a toggle of its own (MADE_CATS, access.madeCats), with how many are here (madeCounts); a legend.
 const MADE_CATS = [["objects", "🧩 objects (each place's list; their boxes are what sorts them front to back)", true],   // (ticket 283: "boxes for layering, separate from collision": these) ["trees", "🌳 leafy trees", true], ["pines", "🌲 pines", true],
                    ["palms", "🌴 palms", true], ["bushes", "🌿 bushes", true], ["flowers", "🌷 flowers", true], ["leafy", "🍀 ferns, vines and leaves", true],
-                   ["pads", "🍃 leaf pads", false], ["grass", "🌾 grass", false]];
+                   ["pads", "🍃 leaf pads", false], ["grass", "🌾 grass", false],
+                   ["skulls", "💀 skulls", true], ["fences", "🪵 fences", true]];   // (ticket 368)
 // (each procedure's kind)
 const PROC_CAT = { leafyTree: "trees", pineTree: "pines", palm: "palms", palmTrunkSvg: "palms", beachPalm: "palms", bushSvg: "bushes", hibiscus: "bushes",
                    tulip: "flowers", daisy: "flowers", paradise: "flowers", fern: "leafy", monstera: "leafy", vine: "leafy", ivy: "leafy", kelp: "leafy",
-                   lilyPads: "leafy", padSvg: "pads", padDef: "pads", grassTuft: "grass" };
+                   lilyPads: "leafy", padSvg: "pads", padDef: "pads", grassTuft: "grass", deadTree: "trees", skull: "skulls", fence: "fences" };   // (ticket 368: the witch's woods' and the placed ones)
 const madeCatOn = cat => { const m = (state.access || DEFAULTS.access).madeCats || {}; return cat in m ? !!m[cat] : !!(MADE_CATS.find(c => c[0] === cat) || [])[2]; };
 let madeShown = "", madeCounts = {};
 const procHue = name => [...name].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 360, 17);

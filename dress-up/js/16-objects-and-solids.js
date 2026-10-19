@@ -168,12 +168,12 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // flies, what lies flat, any object hidden (objectsOff), a seat (already
 // one), and anything where one swims.
 // (ticket 284: the grass hut bedroom's bed and stump too, Matthew: "hut objects are all missing collision boxes?")
-const STANDING = new Set(["fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
+const STANDING = new Set(["palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
   "rock", "boulder", "sand castle", "snake tank", "soup pot", "stone", "stove", "stump", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
   "water barrel", "water trough", "well", "white bush", "worktable", "yellow bush"]);
-const TRUNKED = new Set(["tree", "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
+const TRUNKED = new Set(["deadtree", "skullstake", "tree", "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
 // (ticket 214's audit: the living room's plant had a box as wide as its leaves) a pot's plant stands on its pot: its foot,
 // as a trunk's is found, but however short
 const POTTED = new Set(["plant"]);
