@@ -159,7 +159,10 @@ function drawNow() {
   // as posed, not as they kick, or every kick would jolt them up and down)
   // (ticket 141: a crouch and a jump stand on their feet as bent: grounded)
   const still = move && !move.rot && !move.grounded && bonesBy((what, side) => poseOf(B, what, side));
-  const ground = still ? standOn(Math.max(...still.bones.map(l => l.joints[l.joints.length - 1][1])), still.posed ? Math.max(...still.bones.map(l => l.joints[1][1])) + B.legW / 2 : -Infinity)
+  // (ticket 286: crawling toward us, the hands are nearest, on the floor, and the legs are hidden behind the body)
+  const crawlTo = move && move.squash && !dir && !away;
+  const ground = crawlTo ? Math.max(...arms.map(x => x.H[1])) + 12
+               : still ? standOn(Math.max(...still.bones.map(l => l.joints[l.joints.length - 1][1])), still.posed ? Math.max(...still.bones.map(l => l.joints[1][1])) + B.legW / 2 : -Infinity)
                        : standOn(feetY, legPosed ? Math.max(kneeAt(1)[1], kneeAt(-1)[1]) + B.legW / 2 : -Infinity);   // (or kneels, a knee lowest)
   poseJoints = { armLen, LL, armW, legW: B.legW, legBase,
                  arms: arms.map(x => ({ side: x.side, out: x.out, A: x.A, H: x.H, E: x.E || [(x.A[0] + x.H[0]) / 2, (x.A[1] + x.H[1]) / 2] })),
@@ -170,7 +173,15 @@ function drawNow() {
   // HEAD: its chin on the top of the neck.
   const neckTop = -20 - B.neck;
   const s = F.size / 80;
-  const ty = neckTop + 6 - (headChin(F) - 4) * s, tx = -100 * s;
+  // (ticket 286: crawling toward us or away, the back seen short (move.squash): the head down on the neck as it is drawn)
+  // (toward us, the head is nearest: down in front of the shoulders, between the arms; the shirt and the pants turned over
+  // behind it, rising from the shoulders (-20) to the seat, the back seen from in front and above: flipped)
+  const squash = move && move.squash && !dir ? move.squash : 0;
+  const headDrop = !squash ? 0 : crawlTo ? -20 + (move.chin ?? 0.3) * armLen - neckTop : (L - neckTop) * (1 - squash);
+  const squashed = t => squash ? `<g transform="matrix(1 0 0 ${squash.toFixed(3)} 0 ${f1(L * (1 - squash))})">${t}</g>` : t;
+  const backK = crawlTo ? move.back ?? squash : 0;
+  const flipped = t => `<g transform="matrix(1 0 0 ${(-backK).toFixed(3)} 0 ${f1(-20 * (1 + backK))})">${t}</g>`;
+  const ty = neckTop + 6 - (headChin(F) - 4) * s + headDrop, tx = -100 * s;
   faceFrame = { tx, ty, s };
   // (ticket 124: in profile the hair sits toward the back of the head, in the face's units)
   const side = dir && !C ? sideHair(state.hair, F, dir) : null;
@@ -383,13 +394,16 @@ function drawNow() {
            `<g transform="translate(${f1(-dir * w * 0.55)} 0) scale(0.42 1)">${half}</g>`;
   };
   const backAt = svg.length;
-  if (kind === "falcon") svg += veil("shirt", turnedAway(falconWings(C, w))) + veil("pants", falconTail(C, hw, L, LL));
-  else if (kind === "eagle") svg += veil("shirt", turnedAway(falconWings(C, w, C.fur))) + veil("pants", falconTail(C, hw, L, LL, C.belly));
-  else if (kind === "falconsuit") svg += veil("pants", falconTail(C, hw, L, LL, "url(#pat-fur)"));
-  else if (kind === "eaglesuit") svg += veil("pants", falconTail(C, hw, L, LL, C.belly));
+  let tail = "";
+  if (kind === "falcon") { svg += veil("shirt", turnedAway(falconWings(C, w))); tail = falconTail(C, hw, L, LL); }
+  else if (kind === "eagle") { svg += veil("shirt", turnedAway(falconWings(C, w, C.fur))); tail = falconTail(C, hw, L, LL, C.belly); }
+  else if (kind === "falconsuit") tail = falconTail(C, hw, L, LL, "url(#pat-fur)");
+  else if (kind === "eaglesuit") tail = falconTail(C, hw, L, LL, C.belly);
   // (a suit's tail swings out to our right; in profile, out behind them)
-  else if (suit) svg += veil("pants", dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L));
+  else if (suit) tail = dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L);
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
+  // (ticket 286: crawling toward us, the tail goes up from the seat, turned over with it)
+  if (tail) svg += veil("pants", crawlTo ? flipped(tail) : tail);
   // (ticket 138: facing away, the wings and the tail are drawn last, over them)
   const onBack = away ? svg.slice(backAt) : "";
   if (away) svg = svg.slice(0, backAt);
@@ -443,6 +457,7 @@ function drawNow() {
   // drawn over the pants, after them (feetOver, above)
   const feetLater = feetOver ? svg.slice(feetAt) : "";
   if (feetOver) svg = svg.slice(0, feetAt);
+  if (crawlTo) svg = svg.slice(0, feetAt);   // (ticket 286: crawling toward us, the feet are beyond the seat, hidden)
   const pf = suit ? "url(#pat-fur)" : fillOf("pat-pants", P.color, P.pattern);
   const ps = suit ? darker(C.fur) : darker(P.color);
   const pantsAt = svg.length;
@@ -586,12 +601,16 @@ function drawNow() {
     svg += veil("shirt", fr + `<path d="${d} Z" fill="${tf0}" stroke="${ts}" stroke-width="2.5" stroke-linejoin="round"/>`);
   }
 
+  // (ticket 286: the seat, at the top of the back: the pants round the hips, the legs under it on the floor, hidden)
+  if (crawlTo) svg = svg.slice(0, legsAt) + flipped(`<clipPath id="crawl-seat"><ellipse cx="0" cy="${f1(L)}" rx="${f1(half + fx + 8)}" ry="${f1((move.seat ?? 0.24) * LL)}"/></clipPath>` +
+                                                    `<g clip-path="url(#crawl-seat)">${svg.slice(legsAt)}</g>`);
   // neck, behind the shirt so it shows in the collar
   // (the neck, the arms and the body are the shirt's to see through: an
   // invisible shirt is an invisible body, never a bare one)
   const bodyAt = svg.length;
-  svg += `<rect x="${-B.neckW / 2}" y="${neckTop}" width="${B.neckW}" height="${B.neck + 44}" rx="4" ` +
-         `fill="${limb}" stroke="${limbLine}" stroke-width="2.5"/>`;
+  const neckSvg = `<rect x="${-B.neckW / 2}" y="${neckTop}" width="${B.neckW}" height="${B.neck + 44}" rx="4" ` +
+                  `fill="${limb}" stroke="${limbLine}" stroke-width="2.5"/>`;
+  if (!(squash && away)) svg += neckSvg;
 
   // arms, sleeves and shirt
   const sf = suit ? "url(#pat-fur)" : fillOf("pat-shirt", SH.color, SH.pattern);
@@ -627,6 +646,7 @@ function drawNow() {
   const torso = [[-nw, -20], ...collar, [nw, -20], ...shoulder, [w + 2, L], [-(w + 2), L],
                  ...shoulder.map(([x, y]) => [-x, y]).reverse()];
   const bareBody = [[-(w + 2), L + 2], [-w, 44], [-(w + 4), -6], [-nw, -20], [nw, -20], [w + 4, -6], [w, 44], [w + 2, L + 2]];
+  const shirtAt = svg.length;
   if (undies) {
     // a plain body shape in skin, no collar, then the swimsuit or top on it
     // (outlined on every side but the bottom, so it runs on into the hips
@@ -650,7 +670,11 @@ function drawNow() {
   if (wrapStripes(C) && !undies) svg += torsoStripes(torso, w, L, C.marks);
   if (suit && kind !== "eaglesuit" && !away)  // the suit's belly (a bald eagle is brown all over; none on its back: ticket 138)
     svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>`;
+  if (crawlTo) svg = svg.slice(0, shirtAt) + flipped(svg.slice(shirtAt));   // (ticket 286: the back, rising behind the head)
   veilFrom("shirt", bodyAt);
+  if (squash && !crawlTo) svg = svg.slice(0, bodyAt) + squashed(svg.slice(bodyAt));   // (ticket 286: the neck, the far arms and the body, seen short)
+  const bodyEnd = svg.length;
+  if (squash && away) svg += veil("shirt", squashed(neckSvg));   // (crawling away, the neck is beyond the back, under the hair: not moved with it, below)
   // (ticket 125) the ears, facing us: out at the sides of the head at the
   // eyes' height, behind the head; under long hair, which covers them, but
   // over shorter hair, and an elf's poke out through any hair
@@ -738,6 +762,8 @@ function drawNow() {
              `${shoulderCat(w, WC)}</g>`;
   }
 
+  // (ticket 286: crawling away, the back is nearer than the head: it hides the hair hanging down, and the head shows beyond it)
+  if (squash && away) svg = svg.slice(0, bodyAt) + svg.slice(bodyEnd) + svg.slice(bodyAt, bodyEnd);
   svg += onBack;   // (ticket 138: wings and a tail, seen from behind)
   // then the arms again, over the hair and the face: raised arms cross
   // the chin and cheeks in front of the head, not behind it
@@ -784,6 +810,7 @@ function drawNow() {
     for (const arm of nearArms) svg += handOf(arm);
   }
   veilFrom("hands", handsAt);
+  if (squash && !crawlTo) svg = svg.slice(0, armsAt) + squashed(svg.slice(armsAt));   // (ticket 286: and the near arms and hands)
   // a ghost: the sheet over all of the friend instead (what was drawn of
   // them is dropped, and its see-through layers with it)
   if (kind === "ghost") {

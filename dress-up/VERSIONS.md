@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.256 (2026-10-18)
+
+Everything in 0.0.255, with crawling toward you and away from you drawn on the floor.
+
+- **Crawling away from you**: seen from behind and a little above, like a baby crawling off across a carpet: the back seen short, the seat and the soles of the feet nearest you, the hands on the floor beside the body, and the head beyond. The back is in front of long hair now, and the friend crawls on the floor, not floating over their shadow.
+- **Crawling toward you**: the face low and nearest, the arms straight down to the hands on the floor, and the back rising behind the head to a raised seat (a costume's tail goes up from it). Before, both looked like crawling up or down a wall.
+
 ## 0.0.255 (2026-10-18)
 
 Everything in 0.0.254, with 🔬 Inspection's collision boxes in kinds, and placed things in your way.

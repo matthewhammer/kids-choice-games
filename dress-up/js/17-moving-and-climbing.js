@@ -669,6 +669,19 @@ function moveNow() {
     const body = Math.max(40, (state.shirt.length ?? 150) - 8), thigh = (B.legLen ?? 140) / 2, arm = B.armLen ?? 95;
     const tilt = Math.max(50, Math.min(100, Math.acos(Math.max(-1, Math.min(1, (arm - thigh) / body))) * 180 / Math.PI));
     const s = sin(1), t0 = (B.knees ?? 0) / 2, b0 = B.knees ?? 0, swing = sd => 12 * sd * s;
+    // (ticket 286, Matthew: toward and away "look more like someone crawling up or down the walls of the room"; his picture,
+    // a baby crawling away on a carpet, seen from behind and a little above) Toward us or away, the friend on the floor,
+    // the body running into the picture: its back seen short (squash: the shoulders, the neck and the arms drawn that share
+    // of their height above the hips, the head on top of them, not squashed), the arms straight down to the floor, each leg
+    // seen short (Step: the thigh down to the knee, the shin along the floor toward us), from behind the soles of the feet
+    // showing (frontFeet); a hand and the other knee reaching on in turn (the leg and the arm a little longer, then
+    // shorter), a small bob; standing on the legs as drawn (grounded). Toward us, the head is nearest: down in front of
+    // the shoulders (chin, a share of the arm below them), the arms straight down beside it to the hands on the floor,
+    // and behind it the back rising to the seat (back: the shirt and the pants turned over, that share of their height;
+    // seat: how much of the pants shows, a share of the legs), the feet hidden beyond
+    if (!dir) { const away = B.facing === "back";
+      return { ...both("Step", sd => 0.5 - 0.1 * sd * s), ...both("Arm", sd => 90 - (B.arms ?? 0) - lean(sd) + 5 * sd * s), ...both("Elbow", () => -(B.elbows ?? 0)),
+               frontFeet: away ? 0.5 : 0, squash: 0.45, lift: 2 * Math.abs(s), grounded: true, back: 0.55, chin: 0.45, seat: 0.4 }; }
     return { ...both("Leg", sd => tilt - swing(sd) - t0), ...both("Knee", sd => 90 - swing(sd) - b0),
              ...both("Arm", sd => 90 - tilt - (B.arms ?? 0) - lean(sd) + 14 * sd * s), ...both("Elbow", () => -(B.elbows ?? 0)),
              ...both("Foot", () => -(180 - tilt)), rot: dir ? tilt * dir : 0 };
