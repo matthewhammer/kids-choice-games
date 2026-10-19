@@ -23,7 +23,7 @@ try {
     const corr = (a, b) => { const ma = a.reduce((x, y) => x + y) / 12, mb = b.reduce((x, y) => x + y) / 12; let n = 0, da = 0, db = 0; for (let i = 0; i < 12; i++) { n += (a[i] - ma) * (b[i] - mb); da += (a[i] - ma) ** 2; db += (b[i] - mb) ** 2; } return n / Math.sqrt(da * db); };
     const g = TUNE_GROUPS.find(x => x[0] === "reggae")[2], ids = ["D1", "D2", "D3", "D4"].map(v => "steppers" + v), out = [];
     for (const id of ids) { const c = TURTLE_DUB[id.slice(8)], s = songOf(id), h = new Array(12).fill(0);
-      for (const e of s.events) { const p = s.T.parts[e.part]; if (SKIP.has(p.inst)) continue; for (const m of e.notes || []) h[(((m + (p.shift || 0)) % 12) + 12) % 12] += e.len || 1; }
+      for (const e of s.events) { const p = s.T.parts[e.part]; if (SKIP.has(p.inst)) continue; for (const m of e.notes || []) h[(((m + (p.shift || 0) + (s.T.shift || 0)) % 12) + 12) % 12] += e.len || 1; }
       const all = []; for (let t = 0; t < 12; t++) for (const [prof, mode] of [[MAJ, "major"], [MIN, "minor"]]) all.push({ key: KEY_NAMES[t] + " " + mode, r: corr(h, prof.map((_, i) => prof[(i - t + 12) % 12])) });
       all.sort((a, b) => b.r - a.r); const k = tuneKey(id);
       const pats = [c.drums.kick, c.drums.rim, c.drums.hat, ...(c.drums.extra || []).map(x => x[1]), ...(c.drums.break || []).map(x => x[1])].filter(Boolean);

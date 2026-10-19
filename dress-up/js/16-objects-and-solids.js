@@ -359,10 +359,12 @@ function solidParts(base, o, k) {
 }
 // (does the box x0..x1 by z0..z1 reach into o's oval on the floor?)
 const ovalOf = (o, gx = 0, gz = 0) => ({ cx: (o.x0 + o.x1) / 2, cz: (o.back + o.front) / 2, rx: (o.x1 - o.x0) / 2 + gx, rz: (o.front - o.back) / 2 + gz });
-// (ticket 369) an oval grown so that the friend's feet (gx either side, gz deep) kept outside it never meet it: the oval scaled
-// by 1 + t, t the feet's box measured in its radii (E ⊕ tE = (1 + t)E, and the box lies within tE). Adding gx and gz to its radii
-// fell short at its corners: a flat cauldron and a stride's wide, shallow reach, a foot a little deeper met it where it is wider
-const grownOval = (o, gx, gz) => { const E = ovalOf(o), t = Math.hypot(gx / Math.max(1e-6, E.rx), gz / Math.max(1e-6, E.rz)); return { cx: E.cx, cz: E.cz, rx: E.rx * (1 + t), rz: E.rz * (1 + t) }; };
+// (ticket 369) an oval grown so that the friend's feet (gx either side, gz deep) kept outside it never meet it. Adding gx and gz to
+// its radii fell short at its corners: a flat cauldron and a stride's wide, shallow reach, a foot a little deeper met it where it
+// is wider. Scaling it by 1 + t (t the feet's box in its radii) held, but grew a flat oval far too wide for a little depth (a bush 48
+// across grew to 118 round the planner's corners) and closed the lanes between the tree house's bushes; so each radius grows by
+// √2 times its margin, which holds the feet's box (within an oval of √2 its half-sizes) for feet wide and shallow as they are
+const grownOval = (o, gx, gz) => { const E = ovalOf(o); return { cx: E.cx, cz: E.cz, rx: E.rx + Math.SQRT2 * gx, rz: E.rz + Math.SQRT2 * gz }; };
 function ovalMeets(o, x0, x1, z0, z1) {
   const E = ovalOf(o), px = clamp(E.cx, x0, x1), pz = clamp(E.cz, z0, z1);
   return ((px - E.cx) / E.rx) ** 2 + ((pz - E.cz) / E.rz) ** 2 < 1;
@@ -667,6 +669,10 @@ function planPath(x0, y0, x1, y1, more = 0) {
   }
   // (ticket 332) no way round: never the straight line through what is in the way (as till 0.0.277, followed with no
   // collisions, through the trunk); as near the end as a way goes, the walk marked short (no sitting or going in after it)
+  // (ticket 369, the speed run's back298: the friend walked into the tree house's lane between its bushes, the ladder at one end
+  // and the trunk at the other, and with the stride's margin no plan led out; the margin is a wish, the feet's own reach is what
+  // standing needs: no way with it, the way with the feet's own reach, before a short walk)
+  if (dist[1] === Infinity && more > 0) { const again = planPath(x0, y0, x1, y1, 0); if (!again.short) return again; }
   let end = 1;
   if (dist[1] === Infinity) { end = 0; for (let i = 2; i < n; i++) if (dist[i] < Infinity && cost(pts[i], pts[1]) < cost(pts[end], pts[1])) end = i; }
   const out = [];
@@ -694,7 +700,9 @@ let arriveSide = null;
 function arrowsClear(side, again = true) {
   const B = state.background, fig = document.getElementById("figure"), M = pic.getScreenCTM(), layer = document.getElementById("ways");
   if (!fig || !M || !layer || entering || B.onBridge || B.onPlatform || state.body.sit || climb) return;
-  const f = fig.getBoundingClientRect(), pad = 6, meets = (t, px) => t.left - pad < f.right + px && f.left + px < t.right + pad && t.top < f.bottom && f.top < t.bottom;
+  // (ticket 369, the speed run's arrows312: in the water the strokes swing the arms out and in, the friend's box 97 to 125 across
+  // over a stroke; measured narrow, they stood a pad clear and an arm then covered the arrow: room for the stroke's swing there)
+  const f = fig.getBoundingClientRect(), mv = moveNow(), pad = 6 + (mv && mv.water ? 0.15 * f.width : 0), meets = (t, px) => t.left - pad < f.right + px && f.left + px < t.right + pad && t.top < f.bottom && f.top < t.bottom;
   const tri = el => el.querySelector(".way-tri"), rect = el => tri(el) && tri(el).getBoundingClientRect();
   const shown = [...layer.querySelectorAll(".way-arrow.near")].map(rect).filter(t => t && t.width);
   if (!shown.some(t => meets(t, 0))) return;

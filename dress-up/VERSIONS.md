@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.309 (2026-10-19)
+
+Everything in 0.0.308, with planned walks that find their way more often, and bubbles that stick in one plane.
+
+- **🧭 A tap to walk finds a way out of tight spots**: from between the tree house's bushes, the ladder at one end and the trunk at the other, a tap behind the tree now walks round behind it (before, nothing happened); and round flat things like bushes the planned way keeps closer, so lanes between them stay open.
+- **➡️ Coming into a sea square, the arrows stay clear of you while you tread water** (your arms swing out with each stroke).
+- **🫧 In bubble space with 🔭 depth at 0, bubbles that touch stick together** (they passed through each other, though drawn side by side).
+
 ## 0.0.308 (2026-10-19)
 
 Everything in 0.0.307, with four new turtle steppers dubs to try in place of D.

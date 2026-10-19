@@ -1,6 +1,6 @@
 // (ticket 363, Matthew: "let's store key data in the songs going forward, and display it") Every tune has a key (its TUNES
 // entry's key, else TUNE_KEYS), and its notes agree: a key-finding pass (Krumhansl-Kessler profiles, the parts' shifts in,
-// drums and effects out) puts the declared key first, or second within 0.06 of the first (the bubble super-dub: A minor by
+// drums and effects out; and a tune's own shift, ticket 372's remix: it plays every note so far moved) puts the declared key first, or second within 0.06 of the first (the bubble super-dub: A minor by
 // its chords, close to C major by its notes). The playing line says the key, moved with 🎵 transpose. Exits 1 on a failure.
 //   node key363.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
@@ -24,7 +24,7 @@ try {
     const bad = [], missing = [];
     for (const id of Object.keys(TUNES)) { const k = tuneKey(id); if (!k) { missing.push(id); continue; }
       const s = songOf(id), h = new Array(12).fill(0);
-      for (const e of s.events) { const p = s.T.parts[e.part]; if (SKIP.has(p.inst)) continue; for (const m of e.notes || []) h[(((m + (p.shift || 0)) % 12) + 12) % 12] += e.len || 1; }
+      for (const e of s.events) { const p = s.T.parts[e.part]; if (SKIP.has(p.inst)) continue; for (const m of e.notes || []) h[(((m + (p.shift || 0) + (s.T.shift || 0)) % 12) + 12) % 12] += e.len || 1; }
       const all = []; for (let t = 0; t < 12; t++) for (const [prof, mode] of [[MAJ, "major"], [MIN, "minor"]]) all.push({ key: KEY_NAMES[t] + " " + mode, r: corr(h, prof.map((_, i) => prof[(i - t + 12) % 12])) });
       all.sort((a, b) => b.r - a.r);
       if (!(all[0].key === k || (all[1].key === k && all[0].r - all[1].r < 0.06))) bad.push([id, k, all[0].key, +all[0].r.toFixed(2)]); }

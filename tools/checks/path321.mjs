@@ -19,7 +19,9 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, body = state.body, g = SCENE.ground;
     state.music.mute = true; state.world.at = null; climb = null; B.things = []; if (B.seat) standUp(); body.anim = "none"; state.access.showPath = true; state.access.clickWalk = true;
-    B.kind = "castleroom"; B.castle = "N"; B.castleRoom = castleOf(B).rooms.indexOf("trap") + 1; changed(); await w(500);
+    // (ticket 369: the pits shut by default since ticket 307, a lever never touched pulled down: both levers up, the pits open)
+    B.kind = "castleroom"; B.castle = "N"; B.castleRoom = castleOf(B).rooms.indexOf("trap") + 1; { const K = castleOf(B); B[leverKey("L", B.castleRoom, K.id)] = false; B[leverKey("R", B.castleRoom, K.id)] = false; }
+    changed(); await w(500);
     let best = null; for (const [fx, fy, tx, ty] of [[-250, 20, 250, 20], [-300, 60, 300, 60], [-300, 30, 300, 120], [-150, -20, 150, 140]]) { const p = planPath(fx, fy, tx, ty, 10); if (!best || p.length > best.p.length) best = { p, fx, fy, tx, ty }; }
     B.figX = best.fx; B.figY = best.fy; changed(); await w(400); draw();
     walkPlanned(best.tx, g + best.ty); const legs = walkPath.pts.length - 1;

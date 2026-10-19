@@ -1231,7 +1231,7 @@ function bubbleTick(t) {
   // touching: they stick (a new bond), at most five to a bubble
   const deg = new Array(L.length).fill(0); for (const [i, j] of bubbleSim.bonds) { deg[i]++; deg[j]++; }
   for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
-    const a = L[i], b = L[j]; if (a.pop || b.pop || a.back || b.back || Math.abs(a.d - b.d) > BUBBLE_TOUCH_DEPTH) continue;   // (ticket 329: one far behind another passes it by)
+    const a = L[i], b = L[j]; if (a.pop || b.pop || a.back || b.back || Math.abs(a.d - b.d) * depthAmt > BUBBLE_TOUCH_DEPTH * 0.7) continue;   // (ticket 329: one far behind another passes it by; ticket 369: by how far apart they are drawn, the same as before at 🔭 70, the start, and at 0, all in one plane, every touch sticks)
     const dx = b.x - a.x, dy = b.y - a.y, rr = a.r + b.r;
     if (Math.abs(dx) > rr || Math.abs(dy) > rr || dx * dx + dy * dy > rr * rr) continue;
     if (!bonded.has(i + "," + j) && deg[i] < 5 && deg[j] < 5) { bubbleSim.bonds.push([i, j, rr * 0.96]); deg[i]++; deg[j]++; bonded.add(i + "," + j); }
