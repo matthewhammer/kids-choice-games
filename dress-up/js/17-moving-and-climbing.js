@@ -49,6 +49,40 @@ const seatNow = () => { const B = state.background; if (!state.body.sit || !B.se
 // to start), so it moves with the music. As much as "🏊 treading water"
 // says; none while a joint is held. The turns and bends for now (degrees,
 // as the pose's, by side), and the bob, or null.
+// (ticket 343, Matthew, in the bubble room: "like swimming -- we need special animations: standing on bubbles, with a param for
+// how much they are moving under us --- the more they do, the more we 'brace our feet' and 'stick out our arms'; walking on
+// bubbles -- with arms out sideways for balance ... more precarious than the usual walk. running and crawling, etc can remain
+// the same for now") Where the floor is bubbles (the bubble room's floor foam), by "〰️ how much the bubbles move under you"
+// (bubbleFloorWobble, w 0 to 1): standing, a balancing stance, feet apart and knees bent, arms out to the sides (in profile
+// one forward and one back, as a tightrope walker's seen from the side), the body swaying about the hips and the arms rocking
+// against it; walking, a careful walk, shorter steps on bent knees, the arms out and rocking against each step, the body
+// tipping a little each way. An arm's angle here is its angle out from hanging down (outA): 90 - arms - the delta, so the
+// friend's own arms slider is taken back out
+const bubbleFloor = () => { const W = state.background;
+  return W.kind === "bubbleroom" && (W.foamFloor ?? true) && !state.body.sit && !climb && !isJump(state.body.anim) && bubbleWob() > 0; };   // (still bubbles, 0: as on any floor)
+const bubbleWob = () => Math.max(0, Math.min(100, Number(state.background.bubbleFloorWobble ?? 60) || 0)) / 100;
+const outA = (B, deg) => 90 - (B.arms ?? 0) - deg;
+function bubbleStance() {
+  if (!bubbleFloor()) return null;
+  const B = state.body, w = bubbleWob(), dir = facingOf(B), t = picClock(), sway = Math.sin(2 * Math.PI * t / 2.6), jig = Math.sin(2 * Math.PI * t / 0.9);
+  const tip = (2 + 5 * w) * sway + 1.5 * w * jig, rock = 10 * w * sway;
+  const knees = { KneeL: 6 + 22 * w, KneeR: 6 + 22 * w }, out = 40 + 40 * w;
+  if (!dir) return { ArmL: outA(B, out + rock), ArmR: outA(B, out - rock), ElbowL: 8, ElbowR: 8, LegL: 4 + 10 * w, LegR: 4 + 10 * w, ...knees, rot: tip, grounded: true, balance: w };
+  // (in profile: the near arm forward, the far one back, both raised)
+  const fwd = 30 + 35 * w, A = sd => sd === dir ? outA(B, fwd + rock) : outA(B, -(fwd - rock));
+  return { ArmL: A(1), ArmR: A(-1), ElbowL: 6, ElbowR: 6, LegL: 6 * w, LegR: -6 * w, ...knees, rot: tip, grounded: true, balance: w };
+}
+function bubbleWalk(u, dir) {
+  const B = state.body, w = bubbleWob(), s = Math.sin(2 * Math.PI * u), c = Math.cos(2 * Math.PI * u), both = (k, f) => ({ [k + "L"]: f(1), [k + "R"]: f(-1) });
+  const tip = (2 + 4 * w) * s, out = 55 + 25 * w, rock = 12 * w * s;
+  if (!dir) return { ...both("Step", sd => (0.16 - 0.07 * w) * Math.max(0, sd * s)), ...both("Arm", sd => outA(B, out + sd * rock)), ...both("Elbow", () => 8),
+                     ...both("Knee", () => 8 + 16 * w), lift: (3 - 1.5 * w) * Math.abs(s), frontFeet: 0.16 - 0.06 * w, rot: tip, balance: w };
+  // (from the side: the stride shorter, the knee leading as ever (ticket 309), on bent knees; the arms spread, rocking)
+  const amp = 24 * (1 - 0.45 * w), ph = sd => 2 * Math.PI * u + (sd > 0 ? 0 : Math.PI), thigh = sd => amp * Math.sin(ph(sd)), shin = sd => amp * Math.sin(ph(sd) - WALK_LAG);
+  const fwd = 40 + 30 * w;
+  return { ...both("Leg", thigh), ...both("Knee", sd => 4 + 14 * w + Math.max(0, 1.7 * (thigh(sd) - shin(sd)))),
+           ...both("Arm", sd => sd === dir ? outA(B, fwd + rock) : outA(B, -(fwd - rock))), ...both("Elbow", () => 6), lift: (3 - 1.5 * w) * Math.abs(c), rot: tip, balance: w };
+}
 function treadNow() {
   const W = state.background, amt = Math.max(0, Number(W.waterTread ?? 100) || 0) / 100;
   if (!amt || poseHeld || W.kind === "none" || SHALLOW_WATER[W.kind] || !inWater(W, W.figX ?? 0, SCENE.ground + (W.figY ?? 0))) return null;
@@ -635,7 +669,7 @@ function endJump() {
 }
 function moveNow() {
   const B = state.body, a = B.anim;
-  if (!a || a === "none" || poseHeld) return treadNow();
+  if (!a || a === "none" || poseHeld) return treadNow() || (!poseHeld && bubbleStance());   // (ticket 343: on bubbles, balancing)
   const u = lfoNow("B").phase, T = 2 * Math.PI, sin = f => Math.sin(T * u * f), cos = f => Math.cos(T * u * f);
   const dir = facingOf(B), lean = side => dir ? (side === dir ? -14 : 4) : 0;
   const both = (k, f) => ({ [k + "L"]: f(1), [k + "R"]: f(-1) });
@@ -673,6 +707,7 @@ function moveNow() {
   if (a === "swimfast") return { ...treadStroke(1, (2 * u) % 1), water: true };
   // (ticket 141) crouching down, held there: the knees bent, the arms a little forward
   if (a === "crouch") return { ...both("Leg", () => 34), ...both("Knee", () => 75), ...both("Arm", sd => -18 - lean(sd)), ...both("Elbow", () => 25), held: true, grounded: true };
+  if (a === "walk" && bubbleFloor()) return bubbleWalk(u, dir);   // (ticket 343)
   if (a === "walk") {
     // (each leg swinging forward and back, its knee bending as it comes
     // through; each arm swinging with the other leg; a small lift each step)

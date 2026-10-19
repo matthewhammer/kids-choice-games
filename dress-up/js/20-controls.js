@@ -383,6 +383,7 @@ const TABS = [
       ["toggle", "foamRainbow", "🌈 a rainbow sheen on the foam"],
       ["range", "foamMove", "〰️ how much the foam moves (0 = still)", 0, 100, 0, 60],
       ["range", "foamStick", "🫧 how often moving bubbles stick to the bubbles standing out (0 = never)", 0, 100, 10, 70],   // (ticket 341)
+      ["range", "bubbleFloorWobble", "〰️ how much the bubbles move under you (0 = still)", 0, 100, 20, 90],   // (ticket 343)
       ["action", "foamSeed", "🎲 another foam", () => { state.background.foamSeed = 1 + Math.floor(Math.random() * 99999); }],
     ]],
     // what in the scene moves with the music: its quick things and its slow things (SCENE_LFO_THINGS)

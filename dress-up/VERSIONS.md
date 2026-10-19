@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.286 (2026-10-18)
+
+Everything in 0.0.285, with balancing on bubbles.
+
+- **🫧 Standing on the bubble room's floor, you balance**: feet apart, knees bent, arms out to the sides, swaying, more the more the bubbles move. **Walking there is careful**: shorter steps on bent knees, arms spread and rocking, tipping a little each step. A new slider, "〰️ how much the bubbles move under you" (0 is a still floor, as anywhere). Running and crawling are as before.
+
 ## 0.0.285 (2026-10-18)
 
 Everything in 0.0.284, with placed things glowing.
