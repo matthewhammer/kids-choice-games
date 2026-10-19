@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.291 (2026-10-18)
+
+Everything in 0.0.290, with every tune's key.
+
+- **🎼 Every tune knows its key**, and the playing line says it: "▶ playing: 🐠 bubble reggae (in A minor, 72 beats a minute)". Move a tune with 🎵 transpose and the key moves with it (up 2: B minor). The turtle deep-dub, 13 half steps down, is in E-flat minor.
+
 ## 0.0.290 (2026-10-18)
 
 Everything in 0.0.289, with copies of a part on the mixing board.

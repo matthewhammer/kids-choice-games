@@ -1255,6 +1255,28 @@ const songs = {};
 // gains each as a part of its own, the same notes on the same instrument, playing wherever the original plays (dupOf), so
 // it has its strip, its knobs and its octave presses; songOf builds again when the dups change
 const dupsOf = id => (mixOf(id).dups || []).filter(d => d && d.of && d.name);
+// (ticket 363, Matthew: "let's store key data in the songs going forward, and display it") Each tune's key as it sounds (its
+// parts' shifts in: the deep-dub, 13 half steps down, is in E-flat minor), found once from its notes by a key-finding pass
+// (Krumhansl-Kessler profiles, weighted by length, drums left out) and checked against its chords where it has them (the
+// bubble super-dub's Am-F-C-G-...-E is A minor, which its notes leave close to C major). A tune made from now on says its key
+// on its TUNES entry (key: "D major"), which wins over this table; tools/checks/key363.mjs checks every tune has one and
+// that its notes agree. Shown on the playing line, moved with 🎵 transpose
+const TUNE_KEYS = {
+  forest: "G major", beach: "C major", soca: "D major", roots: "G major", underwater: "A minor", steppers: "E minor",
+  superdub: "E minor", deepdub: "Eb minor", bubbledub: "A minor", lullaby: "F major", witch: "D minor", witchfunkA: "D minor",
+  witchfunkB: "D minor", witchfunkC: "D minor", witchfunkD: "D minor", witchfunkE: "D minor", steppersA: "A minor", steppersB: "G major",
+  steppersC: "F major", steppersD: "E major", cushionsA: "D major", cushionsB: "C major", cushionsC: "E major", cushionsD: "G major",
+  cushionsE: "A major", castlewaltz: "G major", ballroom: "D major", healerwaltz: "F major", bats: "C minor", treechase: "A minor",
+  duckdash: "F major", cushions: "E minor", housechase: "D minor", harpsichord: "D minor", vibes: "A minor", spiders: "E minor",
+  cemetery: "F major", bongobreak: "E minor", canyon: "D minor", skatepark: "A minor" };
+const KEY_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+const tuneKey = id => (TUNES[id] && TUNES[id].key) || TUNE_KEYS[id] || null;
+// a key moved n half steps: its tonic, by name, the mode kept ("A minor" up 2 is "B minor")
+function keyMoved(key, n) {
+  if (!key) return null;
+  const [t, mode] = key.split(" "), i = KEY_NAMES.indexOf(t.replace("D#", "Eb").replace("Db", "C#").replace("Gb", "F#").replace("G#", "Ab").replace("A#", "Bb"));
+  return i < 0 ? key : KEY_NAMES[(((i + Math.round(n || 0)) % 12) + 12) % 12] + " " + mode;
+}
 function songOf(id) {
   const dk = JSON.stringify(dupsOf(id));
   if (songs[id] !== undefined && (songs[id] === null || songs[id].dk === dk)) return songs[id];
@@ -1838,7 +1860,8 @@ function nowPlaying() {
   if (!id) return "No background, so no music. Pick a tune to play one anyway.";
   const song = songOf(id), bpm = song ? Math.round(song.T.bpm * (m.tempo || 100) / 100) : 0;
   const moved = m.transpose ? `, ${m.transpose > 0 ? "up" : "down"} ${Math.abs(m.transpose)} half step${Math.abs(m.transpose) === 1 ? "" : "s"}` : "";
-  return (m.mute ? "🔇 muted: " : paused && paused.id === id ? "⏸ paused: " : "▶ playing: ") + TUNES[id].name + ` (${bpm} beats a minute${moved})` +
+  const key = keyMoved(tuneKey(id), m.transpose);   // (ticket 363)
+  return (m.mute ? "🔇 muted: " : paused && paused.id === id ? "⏸ paused: " : "▶ playing: ") + TUNES[id].name + ` (${key ? "in " + key + ", " : ""}${bpm} beats a minute${moved})` +
          (heard || m.mute ? "" : " (tap anywhere to start the sound)");
 }
 // after every change: the right tune playing (or none), at the volume
