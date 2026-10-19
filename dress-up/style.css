@@ -97,6 +97,24 @@
   .box { border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--box-tint, var(--mu-main)); }
   .boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
   .row1 { display: grid; grid-template-columns: var(--row-label) 1fr var(--row-value); align-items: center; gap: 4px; }
+  /* (ticket 375) every tab's rows in boxes (boxLayout, TAB_BOXES): each box its name once at its top, its rows inside, close; a
+     box inside a box (a group) a shade lighter, no dashed lines; the boxes a grid, one column in the side panel, more as it widens */
+  .tabboxes { margin-top: 4px; }
+  .tabbox > .box-name, .chipset > .cap { margin: 0 0 4px; font-size: 0.92em; font-weight: 700; color: var(--ink, inherit); }
+  .tabbox > .ctl { margin: 6px 0; }
+  .tabbox > .ctl:first-of-type { margin-top: 2px; }
+  .tabbox[hidden] { display: none; }
+  /* (knolled) a box's on/off switches and one-tap actions, side by side as chips, not one to a line */
+  .tabbox > .ctl:has(> .lbl:empty) { display: inline-flex; margin: 3px 6px 3px 0; vertical-align: top; }
+  .tabbox > .ctl:has(> .lbl:empty) > .lbl { display: none; }
+  .tabbox > .ctl[hidden] { display: none; }
+  /* (the report's rule 4) a slider row on one line, as the music's knob: its name, the slider, its value */
+  .tabbox > .ctl:has(> input[type="range"]) { display: grid; grid-template-columns: minmax(6.2em, 38%) 1fr 2.6em; align-items: center; column-gap: 6px; }
+  .tabbox > .ctl:has(> input[type="range"]) > .lbl { display: contents; }
+  .tabbox > .ctl:has(> input[type="range"]) > .lbl > span:first-child { grid-column: 1; grid-row: 1; min-width: 0; line-height: 1.15; }
+  .tabbox > .ctl:has(> input[type="range"]) > input[type="range"] { grid-column: 2; grid-row: 1; width: 100%; margin: 0; }
+  .tabbox > .ctl:has(> input[type="range"]) > .lbl > .val { grid-column: 3; grid-row: 1; text-align: right; }
+  .box .chipset, .box .box { background: rgba(255, 255, 255, 0.035); }
   body.designer-big { overflow: hidden; }
   body.designer-big .stage, body.designer-big .divider, body.designer-big .side > h1, body.designer-big #tabs { display: none; }
   body.designer-big .side { position: fixed; inset: 0; z-index: 30; overflow: auto; background: var(--bg);
@@ -198,7 +216,7 @@
   /* (ticket 164) a still place, on a slow computer: no CSS animations in the scenery either (the fairies' wings) */
   body.still-scenery #bg * { animation: none !important; }
   /* (ticket 155) the ⚙️ advanced tab: a feature kept off until it is fast, a row each */
-  .perfrow { border-top: 1px dashed var(--line); padding: 8px 0 4px; margin-top: 6px; }
+  .perfrow { border-top: 1px solid var(--line); padding: 8px 0 4px; margin-top: 6px; }
   .perfrow .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .perfrow button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   /* (ticket 179) measuring: the controls that would disturb it rest, and a notice says to wait */
@@ -230,7 +248,7 @@
   .ctl.pair:not([hidden]) { display: flex; }
   .pair > .side { flex: 1 1 0; min-width: 0; }
   .pair > .side:first-child { padding-right: 10px; }
-  .pair > .side:last-child { padding-left: 10px; border-left: 2px dashed var(--line); }
+  .pair > .side:last-child { padding-left: 10px; border-left: 2px solid var(--line); }
   .pair > .side > .lbl { font-weight: 600; margin-bottom: 4px; }
   .pair > .side:last-child > .lbl { text-align: right; }
   .pair > .side:last-child .row { justify-content: flex-end; }
@@ -241,9 +259,10 @@
   input[type=color] { width: 40px; height: 34px; border: none; padding: 0; background: none; }
   .hint { color: var(--muted); font-size: 0.9em; }
   .padmap { display: grid; gap: 4px; margin: 8px 0; }
-  .padrow { display: flex; gap: 8px; align-items: center; padding: 2px 6px; border-radius: 8px; }
-  .padrow .pbtn { min-width: 15em; }
-  .padrow .pwhich { min-width: 10em; color: var(--muted); }
+  /* (ticket 375: a row on one line that fits the panel: the action, its button, set; their min-widths, 15em and 10em, ran past it) */
+  .padrow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 2px 6px; border-radius: 8px; }
+  .padrow .pbtn { min-width: 0; }
+  .padrow .pwhich { min-width: 4.5em; color: var(--muted); white-space: nowrap; }
   .padteach { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; padding: 6px 8px; border-radius: 8px; outline: 2px solid #8b5cf6; }
   .padask { font-weight: bold; }
   .padline { width: 100%; max-width: 46em; font: inherit; font-size: 0.85em; margin: 4px 0; }
@@ -349,7 +368,7 @@
   .mixer { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 4px; }
   .mixer p.now { margin: 0; color: var(--muted); }
   .strip { border: var(--box-line); border-radius: var(--box-radius); padding: 6px 8px; font-size: 0.85em; }
-  .strip.master { border-style: dashed; }
+  .strip.master { border-width: 3px; }   /* (ticket 375: no dashed lines; the master strip by a thicker edge) */
   .strip.lfo { border-style: dotted; }
   .mixer .quad { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   @media (max-width: 520px) { .mixer .quad { grid-template-columns: minmax(0, 1fr); } }
@@ -374,7 +393,7 @@
   .designer ul.problems li { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
   /* a set of chips in a dashed box of its own, with its name (the music's
      kinds, then the kind's tunes), as the mixing board's master strip */
-  .chipset { border: 2px dashed var(--line); border-radius: 12px; padding: 6px 8px; }
+  .chipset { border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--box-tint, var(--mu-main)); }   /* (ticket 375: a box, no longer dashed) */
   .chipset + .chipset { margin-top: 6px; }
   /* (ticket 226) 🎶 genre/track selection, compact: each row's name at its start, its chips tighter, no dashed boxes */
   .tunesctl > .chipset { border: 0; padding: 0; display: grid; grid-template-columns: minmax(3.6em, auto) 1fr; align-items: center; column-gap: 8px; }
@@ -389,7 +408,7 @@
   .row.objs button.obj.off { opacity: 0.5; text-decoration: line-through; }
   .row.objs .me { font-size: 0.95em; padding: 0 2px; }
   .chipset > .cap { color: var(--muted); font-size: 0.85em; margin-bottom: 4px; }
-  /* a group of controls in its dashed box (the castle's look, its rooms, each room's own) */
+  /* a group of controls in its box (the castle's look, its rooms, each room's own; dashed till ticket 375) */
   .ctlgroup { margin: 10px 0; }
   .ctlgroup > .ctl { margin: 8px 0; }
   .ctlgroup.here { border-style: solid; border-color: var(--accent); }
@@ -479,7 +498,7 @@
 .world-cell { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0;
   padding: 2px; border-radius: clamp(6px, calc(var(--cell) * 0.07), 14px); border: 2px solid var(--line, #ccc); --sq: var(--panel); background: color-mix(in srgb, var(--sq) 26%, var(--panel)); color: var(--ink);
   font: inherit; font-size: clamp(8px, calc(var(--cell) * 0.105), 21px); line-height: 1.1; overflow: hidden; cursor: pointer; }
-.world-cell.empty { border-style: dashed; color: var(--muted, #888); background: transparent; cursor: default; }
+.world-cell.empty { opacity: 0.55; color: var(--muted, #888); background: transparent; cursor: default; }   /* (ticket 375: faint, not dashed) */
 /* (ticket 210, Matthew: "each type of grid square its own faint background color, like the instrument part panels in
    the music panel are different from the LFOs", "so water is blue, and green areas are green, witch is purple",
    "castle is grey (or the castle stone color...)") Each kind's own colour (from its place: the sea, the crossing's
@@ -557,7 +576,7 @@ svg.solid-boxes[data-hide~="you"] .you { display: none; }
 .world-palette-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; width: 100%; }
 .world-palette-name { font-size: 0.8em; opacity: 0.75; margin-right: 2px; white-space: nowrap; }
 .world-chip { font-size: 0.8em; padding: 2px 8px; cursor: grab; }
-.world-trash { border: 2px dashed var(--line, #ccc); border-radius: 8px; padding: 6px 10px; }
+.world-trash { border: 2px solid var(--line, #ccc); border-radius: 8px; padding: 6px 10px; }
 .world-here { margin: 0.5rem 0; }
 /* (ticket 224) the tab's order, the grid's column among the rest (in the page they are the rest, the dragger, the grid's
    column); the labels and the dragger full screen only */
@@ -583,7 +602,7 @@ svg.solid-boxes[data-hide~="you"] .you { display: none; }
 .world-compass-mid { display: flex; align-items: center; justify-content: center; font-size: 1.6em; border-radius: 8px; border: 2px solid var(--line);
                      --sq: var(--panel); background: color-mix(in srgb, var(--sq) 26%, var(--panel)); }
 body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-auto-rows: 3.2em; }
-.world-compass-mid.empty { border-style: dashed; opacity: 0.5; }   /* (ticket 249: a crossing's paths, round nothing) */
+.world-compass-mid.empty { opacity: 0.5; }   /* (ticket 249: a crossing's paths, round nothing) */
 .world-back-row { flex-wrap: wrap; gap: 4px; }
 .world-here .world-probs { border: 2px dotted var(--line); border-radius: 10px; padding: 6px 10px; margin: 8px 0; }
 .drag-ghost { position: fixed; z-index: 1000; pointer-events: none; transform: translate(-50%, -60%); font-size: 2.2em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
@@ -668,7 +687,7 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
    strip; the words' size in a dashed box of its own */
 .accbox { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 6px 0; padding: 4px 10px 4px 0; border: 2px solid transparent; border-radius: 12px; }
 .accbox.on { border-color: var(--line); background: var(--mu-inst); padding: 6px 10px; }
-.accbox.plain { border-style: dashed; background: var(--mu-main); }
+.accbox.plain { background: var(--mu-main); }
 .accbox .cap { font-weight: 600; }
 .accmore { display: contents; }   /* (its items wrap one by one beside the chip, not all onto a line of their own) */
 .accmore[hidden] { display: none; }

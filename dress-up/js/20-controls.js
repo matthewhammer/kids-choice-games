@@ -1281,7 +1281,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     return row;
   }
   const val = el("span", { class: "val" });
-  const name = el("span", { class: "name" }, [label]);
+  // (ticket 375, ^du_report(5)'s rule 4, a row on one line: what a label explains, its last parenthesis ("(100 = a leg's length)",
+  // "(round ↔ narrow)"), is a hint on pointing, not words in the row)
+  const hintM = typeof label === "string" && (label.match(/^(.*\S)\s+\(([^()]+)\)$/) || label.match(/^([^:]{2,24}):\s+(\S.{5,})$/));   // (and after a colon: "👕 shirt: the body, neck & arms")
+  const name = el("span", { class: "name", ...(hintM ? { title: hintM[2] } : {}) }, [hintM ? hintM[1] : label]);
   const lbl = el("div", { class: "lbl" }, [el("span", {}, [name]), val]);
   const box = el("div", { class: "ctl", ...(typeof key === "string" ? { "data-key": key } : {}) }, [lbl]);   // (ticket 250: placed by its key: the Music tab's first cards)
   if ((kind === "range" || kind === "turn" || kind === "place" || kind === "master") && buildingHud) {
@@ -2096,6 +2099,7 @@ function showTab() {
   panel.dataset.part = part;
   panel.replaceChildren(...ctls.map(c => control(part, c)));
   if (part === "background") bgLayout(panel);   // (ticket 285)
+  else boxLayout(panel, TABS[tab][0], ctls);   // (ticket 375: its rows in boxes, as the designers' are)
   placePic();   // (ticket 231: the world designer's view built again, or gone with its tab)
   changed();
 }

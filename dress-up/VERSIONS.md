@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.310 (2026-10-19)
+
+Everything in 0.0.309, with the friend's tabs laid out in boxes.
+
+- **🧰 The friend's tabs in boxes**: Body, Face, Eyes, Hair, Neck, arms & legs, Shirt, Hands, Pants, Swim & undies, Feet, Visibility and Costume each show their settings in boxes, one for each thing you can see (👄 the mouth, 👃 the nose, ✨ the shine, 🐈‍⬛ her cat...), named once at the top; a box shows only when it applies (the witch's boxes with the witch on).
+- **📏 A slider on one line**: its name, the slider, its number; what a name used to explain ("100 = a leg's length") shows when you point at it.
+- **🔘 Switches side by side**, as chips, instead of one to a line; no dashed boxes anywhere (the controller's, the bubble themes', the castle's groups are boxes now).
+- **🎮 The controller's buttons fit the panel** (their 🎯 set ran off its edge).
+
 ## 0.0.309 (2026-10-19)
 
 Everything in 0.0.308, with planned walks that find their way more often, and bubbles that stick in one plane.
