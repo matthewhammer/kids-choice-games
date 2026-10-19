@@ -888,7 +888,9 @@ function wading(B, inner, wl, hw, most = Infinity, bob = 0, water = "") {
 // following one reads it this way, and a change to that LFO on the mixing
 // board draws that scene again (partByReads), and no other.
 // (ticket 242: and "tree:busy", what a tree room measured standing before its wall, so a new measure builds the scene again)
-const sceneOpts = BG => new Proxy(BG, { get: (t, key) => typeof key === "string" && key.startsWith("lfo:") ? lfoStamp(key.slice(4)) : key === "tree:busy" ? treeBusy.key : t[key] });
+// (ticket 338: "fallen:cover", the pits a fallen rock lies on, as one string: the scene's cache compares what it read by identity,
+// and a rock dragged within the place's things is the same array)
+const sceneOpts = BG => new Proxy(BG, { get: (t, key) => typeof key === "string" && key.startsWith("lfo:") ? lfoStamp(key.slice(4)) : key === "tree:busy" ? treeBusy.key : key === "fallen:cover" ? fallenCover(t) : t[key] });
 const lfoStamp = L => { const lf = lfoNow(L); return lf ? [lf.dur.toFixed(4), lf.shape, lf.amp.toFixed(2), lfoBegin(lf, 0)].join() : ""; };
 // (ticket 121) The friend posed limb by limb: each arm's own turn at the
 // shoulder and bend at the elbow, each leg's at the hip and knee, in

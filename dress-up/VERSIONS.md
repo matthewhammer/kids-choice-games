@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.282 (2026-10-18)
+
+Everything in 0.0.281, with fallen boulders you can move.
+
+- **🪨 A boulder that falls into a trap room pit becomes a rock you can drag**: "fallen 1", "fallen 2" and so on. While it lies in its pit, the pit is covered; drag it off and the pit is open again. The blue lever's next pull lifts away a rock still in its pit, or drops a new one if you moved the last.
+
 ## 0.0.281 (2026-10-18)
 
 Everything in 0.0.280, with levers pulled from where you stand.

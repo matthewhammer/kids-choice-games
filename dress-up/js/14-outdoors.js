@@ -1755,7 +1755,7 @@ function trapdoorThingSvg(t, i) {
 }
 // (a thing's depth among the objects: where its feet are; a trap door's, its back edge)
 const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;
-const thingLabel = t => t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
+const thingLabel = t => t.fallen ? `🪨 fallen ${t.fallen}` : t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
 // (ticket 206, Matthew, after the Ubuntu laptop: every cauldron's fumes simple, unless its own 💨 fumes
 // are upgraded to ✨ fancy, one by one; 0.0.129's "auto" is simple now. Ticket 202's rule, cheap when
@@ -1813,7 +1813,7 @@ function thingsLayer(c) {
   // That's the purpose of this slider -- it does not affect the static parts of the background, but it affects the
   // dynamic player, and placed objects") each sized by depthSize, so drawn again when the 🔭 setting moves its vanishing line
   const vanish = Math.round(10 * sceneVanish(c.o));
-  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : ""], () => obj(`${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");   // (ticket 317: and a lever's shine)
+  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : ""], () => obj(t.fallen ? `fallen ${t.fallen}` : `${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");   // (ticket 317: and a lever's shine)
 }
 // (Matthew, 2026-10-17) The crossing's geometry, shared with its ways out in
 // the world (worldWaysSvg): its floor reaches far up the picture (far), the

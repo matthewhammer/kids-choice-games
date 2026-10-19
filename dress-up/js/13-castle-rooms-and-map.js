@@ -318,8 +318,9 @@ function trapRoomSvg(c, K, pits, shapes = K.pitShapes, trap = null) {
     const boulder = () => { if (!trap || !trap.boulders) return "";
       const rad = rx * 0.8, base = cy + ry * 0.55, drop = base - top + 90 * k, sd = trap.seeds[i] * 7 + i;   // (ticket 328: its own seed)
       const tone = trap.tone === "surprise" ? ROCK_TONES[Math.floor(seeded(trap.seeds[i])(i + 50) * ROCK_TONES.length)] : trap.tone;
-      const g = `<g data-boulder="${i}" data-drop="${f1(drop)}"${covered ? "" : ` transform="translate(0 ${f1(-drop)})" visibility="hidden"`}>${rockSvg(cx, base, rad, sd, tone)}</g>`;
-      return covered ? obj(i ? "boulder, right" : "boulder, left", base, g) : g; };
+      // (ticket 338: waiting up at the ceiling, always: once landed it is a placed rock, "fallen N", no longer the room's)
+      const g = `<g data-boulder="${i}" data-drop="${f1(drop)}" data-at="${f1(cx)} ${f1(base)} ${f1(rad)} ${sd} ${tone}" transform="translate(0 ${f1(-drop)})" visibility="hidden">${rockSvg(cx, base, rad, sd, tone)}</g>`;
+      return g; };
     const spikes = !!(trap && trap.spikes);   // (ticket 334: off unless the room's toggle is on)
     if (!open) { t += `<g>` + pitLidSvg(cx, cy, rx, ry, sh, k, R, i, id, false, spikes) + `</g>` + boulder(); return; }   // (ticket 307: its lid across it)
     // (ticket 162: its hole, for falling in: its middle and its half widths, across and in depth)

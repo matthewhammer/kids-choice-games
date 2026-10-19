@@ -422,28 +422,45 @@ function roomBoulderPull(side) {
   const B = state.background;
   if (B.kind !== "castleroom") return;
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = boulderKey(side, n, K.id);
-  const was = trapState(B, n, K.id).covered;
-  B[key] = !B[key];
-  // (ticket 328: a new rock only for a pit whose boulder falls now, each its own seed)
-  const now = trapState(B, n, K.id).covered;
-  for (const j of [0, 1]) if (now[j] && !was[j]) B[boulderSeedKey(j, n, K.id)] = 1 + Math.floor(Math.random() * 999999);
+  // (ticket 338) the pits this lever works: a fallen rock still on any, lifted away (each rising, and gone from the place's
+  // things); else into each a new rock falls, which once landed is a placed rock, "fallen N", dragged where one likes
+  const T0 = trapState(B, n, K.id), mine = [0, 1].filter(j => T0.wire[j] === side && T0.on[j]), lift = mine.some(j => T0.covered[j]);
+  B[key] = !lift;
+  if (!lift) for (const j of mine) B[boulderSeedKey(j, n, K.id)] = 1 + Math.floor(Math.random() * 999999);   // (ticket 328: a new rock, its own seed)
   changed();
-  const down = B[key], sd = side === "L" ? -1 : 1, sp = trapState(B, n, K.id).speed;
+  const down = B[key], sd = side === "L" ? -1 : 1, sp = trapState(B, n, K.id).speed, dur = BOULDER_FALL * 100 / sp.boulder;
   turnArm(`[data-lever="B${side}"] .lever-arm`, (down ? -1 : 1) * sd * LEVER_TILT, LEVER_TURN * 100 / sp.lever);
-  for (const j of [0, 1]) if (now[j] !== was[j]) boulderFall(`[data-boulder="${j}"]`, now[j], BOULDER_FALL * 100 / sp.boulder, boulderHits);
+  if (!lift) { for (const j of mine) boulderFall(`[data-boulder="${j}"]`, true, dur, boulderHits, g => boulderLanded(g, fallenPitKey(n, K.id, j))); return; }
   // (Matthew: "when the boulder lifts, can we have some sparkles shoot out of the boulder and lever -- like lifting is magic?")
-  if (!down) { sparkleFrom(`[data-lever="B${side}"] .lever-arm circle`, 14);
-    const dur = BOULDER_FALL * 100 / sp.boulder;
-    setTimeout(fallIfOverPit, 0.7 * dur);   // (a boulder lifted from an open pit the friend stands on: in they fall)
-    for (const j of [0, 1]) if (!now[j] && was[j]) [0, 0.18, 0.36, 0.54].forEach((u, m) => setTimeout(() => sparkleFrom(`[data-boulder="${j}"]`, m ? 12 : 22), u * dur)); }
+  sparkleFrom(`[data-lever="B${side}"] .lever-arm circle`, 14);
+  setTimeout(fallIfOverPit, 0.7 * dur);   // (a boulder lifted from an open pit the friend stands on: in they fall)
+  const keys = mine.filter(j => T0.covered[j]).map(j => fallenPitKey(n, K.id, j));
+  const rocks = (B.things || []).filter(t => t.fallen && keys.includes(t.pit) && fallenOn({ things: [t] }, t.pit));
+  for (const t of rocks) { const sel = `[data-drag="thing:${B.things.indexOf(t)}"]`;
+    swingOn(sel, dur, (g, u) => g.setAttribute("transform", `translate(0 ${f1(-520 * u * u)})`));
+    [0, 0.18, 0.36, 0.54].forEach((u, m) => setTimeout(() => sparkleFrom(sel, m ? 12 : 22), u * dur)); }
+  setTimeout(() => { if (!rocks.length) return; B.things = (B.things || []).filter(t => !rocks.includes(t)); changed(); }, dur + 60);
+}
+// (ticket 338) a room's boulder landed: the place's things gain it, a rock where it lies, as big and of the tone and shape it
+// was drawn with, named "fallen N" (the place's next number), its pit's key and where it landed kept; the room's own rock back
+// up at the ceiling, hidden, the next to fall
+function boulderLanded(g, pit) {
+  const B = state.background, [x, z, rad, seed, tone] = (g.dataset.at || "").split(" ");
+  if (!g.dataset.at || B.kind !== "castleroom") return;
+  const T = B.things || (B.things = []), N = 1 + Math.max(0, ...T.map(t => t.fallen || 0));
+  const X = +x, Z = +z, R = +rad, ds = depthSize(B, Z - SCENE.ground) || 1;
+  T.push({ kind: "rock", x: Math.round(X), z: Math.round(Z), seed: +seed, size: Math.round(100 * R / (38 * ds)), mirror: false, tone, fallen: N, pit, px: Math.round(X), pz: Math.round(Z), prad: Math.round(R) });
+  g.setAttribute("transform", `translate(0 ${f1(-(+g.dataset.drop))})`); g.setAttribute("visibility", "hidden");
+  changed();
 }
 // (a boulder falling from the ceiling into its pit, faster as it falls, a little bounce as it lands; or rising away, slowly
 // at first, out of sight; in BOULDER_FALL ms, carried on through a redrawing as every swing is)
 const BOULDER_FALL = 1300;   // (ticket 328: slower, to be seen; 720 in 0.0.231)
 // (ticket 349: onLand(g), once, as it lands: whether it fell on the friend)
-function boulderFall(sel, down, dur = BOULDER_FALL, onLand = null) {
-  let landed = false;
+function boulderFall(sel, down, dur = BOULDER_FALL, onLand = null, onDone = null) {
+  let landed = false, finished = false;
   swingOn(sel, dur, (g, u) => { const H = +g.dataset.drop;
+    if (u >= 1 && onDone && !finished) { finished = true; setTimeout(() => onDone(g), 0); }   // (ticket 338: once, at its end)
     if (down && u >= 0.8 && !landed) { landed = true; if (onLand) onLand(g); }
     const y = down ? (u < 0.8 ? -H * (1 - (u / 0.8) ** 2) : -H * 0.05 * Math.sin(Math.PI * (u - 0.8) / 0.2)) : -H * u * u;
     if (u < 1) { g.removeAttribute("visibility"); g.setAttribute("transform", `translate(0 ${f1(y)})`); return; }

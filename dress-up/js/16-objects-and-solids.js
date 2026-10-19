@@ -168,7 +168,7 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // flies, what lies flat, any object hidden (objectsOff), a seat (already
 // one), and anything where one swims.
 // (ticket 284: the grass hut bedroom's bed and stump too, Matthew: "hut objects are all missing collision boxes?")
-const STANDING = new Set(["anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
+const STANDING = new Set(["fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
   "rock", "boulder", "sand castle", "snake tank", "soup pot", "stone", "stove", "stump", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
@@ -288,7 +288,7 @@ function standingHere(B, seats) {
 // a bed its legs and its frame; a bench its legs and its seat and back. Each part keeps the thing's name (🔬's glow, a seat's
 // name, getting out of it); its part says which. The friend meets a part above their ankles with their legs' box (youBoxes),
 // so a low table's top still stops them, and only one high enough is walked under.
-const ROUND = new Set(["barrel", "basket", "bucket", "cauldron", "soup pot", "stump", "rock", "boulder", "stone", "toadstool", "mushroom", "bush", "green bush",
+const ROUND = new Set(["fallen", "barrel", "basket", "bucket", "cauldron", "soup pot", "stump", "rock", "boulder", "stone", "toadstool", "mushroom", "bush", "green bush",
   "pink bush", "white bush", "yellow bush", "campfire", "fountain", "well", "water barrel", "coal heap", "hay heap"]);
 function solidParts(base, o, k) {
   if (ROUND.has(base) && !o.bands) return [{ ...o, oval: true }];

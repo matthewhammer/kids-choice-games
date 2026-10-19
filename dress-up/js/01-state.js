@@ -292,11 +292,20 @@ const boulderToneKey = (n, id) => `castleBoulderTone${n}${id}`, boulderSeedKey =
 // (ticket 328, Matthew: "params in the room for each, in terms of animation speed") how fast its levers move, its boulders
 // fall and its trap doors swing: a share of each one's usual time (100), faster above
 const leverSpeedKey = (n, id) => `castleLeverSpeed${n}${id}`, boulderSpeedKey = (n, id) => `castleBoulderSpeed${n}${id}`, lidSpeedKey = (n, id) => `castleLidSpeed${n}${id}`;
+// (ticket 338, Matthew: "let's let them be placeable -- so we as the user/tester can move them after they fall ... maybe a special
+// name 'fallen 1, 2, 3'") a boulder that has landed is a placed rock ("fallen N", fallen: N, pit: its pit's key, px pz: where it
+// landed, prad: how big the pit's rock is); it covers its pit while it lies about where it landed, dragged off it the pit is open
+const fallenPitKey = (n, id, i) => `${id}:${n}:${i}`;
+const fallenNear = t => Math.hypot(t.x - t.px, (t.z - t.pz) / 0.6) < 0.4 * (t.prad || 80);
+const fallenCover = o => (Array.isArray(o.things) ? o.things : []).filter(t => t.fallen && fallenNear(t)).map(t => t.pit).sort().join(",");
+// (in a scene, read through sceneOpts as one string, so moving a rock draws the room again; else from the things themselves)
+const fallenOn = (o, key) => { const c = o["fallen:cover"]; return typeof c === "string" ? c.split(",").includes(key) : (Array.isArray(o.things) ? o.things : []).some(t => t.fallen && t.pit === key && fallenNear(t)); };
 function trapState(o, n, id) {
   const wire = trapWiring(o, n, id), levers = { L: leverDown(o, "L", n, id), R: leverDown(o, "R", n, id) };
   const boulders = o[boulderOnKey(n, id)] !== false ? { L: !!o[boulderKey("L", n, id)], R: !!o[boulderKey("R", n, id)] } : null;
   return { wire, levers, on: [1, 2].map(i => o[pitOnKey(i, n, id)] !== false), open: [0, 1].map(i => !levers[wire[i]]),
-           boulders, covered: [0, 1].map(i => !!(boulders && boulders[wire[i]])), tone: o[boulderToneKey(n, id)] || "#8f8a80", seeds: [0, 1].map(i => o[boulderSeedKey(i, n, id)] ?? 5 + i),
+           // (ticket 338: covered, a fallen rock lying on it)
+           boulders, covered: [0, 1].map(i => !!boulders && fallenOn(o, fallenPitKey(n, id, i))), tone: o[boulderToneKey(n, id)] || "#8f8a80", seeds: [0, 1].map(i => o[boulderSeedKey(i, n, id)] ?? 5 + i),
            speed: { lever: o[leverSpeedKey(n, id)] || 100, boulder: o[boulderSpeedKey(n, id)] || 100, lid: o[lidSpeedKey(n, id)] || 100 },
            spikes: !!o[pitSpikesKey(n, id)] };   // (ticket 334)
 }
@@ -1035,7 +1044,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.281", released: "2026-10-18" };
+const VERSION = { number: "0.0.282", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
