@@ -1,8 +1,9 @@
 // (ticket 287) Moving through deep water the friend swims, flat, not treading upright: from the side, turned about the
 // hips to lie along the surface (wider than tall), the arms windmilling (over a stroke the near hand goes from ahead of
 // the shoulder, down in the water, to back behind it, and up over the water: the arm is shorter than the body, so not
-// past the hips), the legs back; the waterline level. Still in the water, they
-// tread, upright, as before. Exits 1 on a failure.
+// past the hips), the legs back; the waterline level. Toward us and away (0.0.259), seen short as the crawl, each arm
+// windmilling up over the water and down into it in turn. Still in the water, they tread, upright, as before.
+// Exits 1 on a failure.
 //   node swim287.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -26,13 +27,15 @@ try {
       try { draw(); const m = moveNow() || {}, f = document.getElementById("figure").getBoundingClientRect(), J = poseJoints;
         const a = (m.rot || 0) * Math.PI / 180, P = ([x, y]) => [x * Math.cos(a) - (y - J.L) * Math.sin(a), J.L + x * Math.sin(a) + (y - J.L) * Math.cos(a)];
         const near = J.arms.find(q => q.side === 1), hand = P(near.H), shoulder = P(near.A), hips = P(J.legs[0].H);
-        return { swim: !!m.swim, rot: m.rot || 0, wide: Math.round(f.width), tall: Math.round(f.height), hand: hand.map(Math.round), shoulder: shoulder.map(Math.round), hips: hips.map(Math.round),
+        const na = J.arms.find(q => q.side === 1);
+        return { swim: !!m.swim, rot: m.rot || 0, squash: m.squash || 0, drop: Math.round(100 * (na.H[1] - na.A[1]) / J.armLen), wide: Math.round(f.width), tall: Math.round(f.height), hand: hand.map(Math.round), shoulder: shoulder.map(Math.round), hips: hips.map(Math.round),
                  level: !!document.querySelector('#figure clipPath[id^="water-above"]') && !document.querySelector('#figure > g[transform*="rotate"] clipPath[id^="water-above"]') }; }
       finally { lfoNow = lfo0; } };
     const strokes = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875].map(ph => at("swimfast", "left", ph));
     const right = at("swim", "right", 0.3), still = at("none", "left", 0.3);
+    const toward = [0, 0.125, 0.25, 0.375].map(ph => at("swimfast", "front", ph)), away = [0, 0.125, 0.25, 0.375].map(ph => at("swimfast", "back", ph));
     B.anim = "none"; draw();
-    return JSON.stringify({ deep, strokes, right, still }); })()`));
+    return JSON.stringify({ deep, strokes, right, still, toward, away }); })()`));
   console.log(`  ${JSON.stringify({ deep: r.deep, first: r.strokes[0], right: r.right, still: r.still })}`);
   const S = r.strokes;
   ok("the friend is in deep water in the lake", r.deep, r);
@@ -43,6 +46,9 @@ try {
   ok("and down in the water ahead (below the shoulder)", S.some(s => s.hand[0] < s.shoulder[0] && s.hand[1] > s.shoulder[1] + 30), S.map(s => s.hand));
   ok("and up over the water too (above the shoulder) on its way back", S.some(s => s.hand[1] < s.shoulder[1] - 30), S.map(s => s.hand));
   ok("the waterline level: drawn outside the turn", S.every(s => s.level), S.map(s => s.level));
+  for (const [name, V] of [["toward us", r.toward], ["away", r.away]])
+    ok(`${name}: swimming, seen short, each arm up over the water (the hand over half an arm above the shoulder) and down into it in turn`,
+       V.every(v => v.swim && v.squash > 0 && !v.rot) && V.some(v => v.drop < -50) && V.some(v => v.drop > 20), V.map(v => [v.swim, v.squash, v.drop]));
   ok("still in the water, treading upright as before (taller than wide, not turned)", !r.still.swim && !r.still.rot && r.still.tall > r.still.wide, r.still);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

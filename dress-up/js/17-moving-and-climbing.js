@@ -650,6 +650,20 @@ function moveNow() {
              ...both("Leg", sd => 14 * sd * k - t0), ...both("Knee", sd => 14 * Math.max(0, sd * k) - b0), ...both("Foot", () => -70),
              rot: SWIM_TILT * dir, float: SWIM_FLOAT, swim: true };
   }
+  // Toward us or away, the friend lying along the surface runs into the picture, seen short as the crawl is (squash: the
+  // back; away, the head beyond it, the legs toward us, each seen short (Step), kicking, the soles showing; toward, the
+  // face at the surface, a little of the back behind it, the legs hidden). Each arm windmills in the plane along the
+  // swim, seen from behind or in front and a little above: its hand drops in the picture by the share swimDrop says
+  // (up, negative), the arm a little out from the shoulder, seen short by what it leaves of its length (ArmStep)
+  if ((a === "swim" || a === "swimfast") && !dir && !poseHeld && deepHere()) {
+    const away = B.facing === "back", p = a === "swimfast" ? (2 * u) % 1 : u, k = Math.sin(4 * Math.PI * p);
+    const drop = sd => { const ph = 2 * Math.PI * (1 - ((p + (sd > 0 ? 0 : 0.5)) % 1)), f = Math.cos(ph), up = Math.sin(ph);
+      return away ? -(0.45 * f + 0.89 * up) : 0.45 * f - 0.89 * up; };
+    return { ...both("Arm", sd => (drop(sd) < 0 ? -75 : 75) - (B.arms ?? 0)), ...both("Elbow", () => -(B.elbows ?? 0)),
+             ...both("ArmStep", sd => 1 - Math.min(1, Math.abs(drop(sd)))),
+             ...both("Step", sd => away ? 0.5 - 0.12 * sd * k : 0), frontFeet: away ? 0.5 : 0,
+             squash: 0.45, back: 0.25, chin: 0.3, swim: true };
+  }
   if (a === "swim") return treadNow() || treadStroke(1, u);
   // (ticket 141) swimming fast (the controller's run, in water): the stroke twice as quick
   if (a === "swimfast") return { ...treadStroke(1, (2 * u) % 1), water: true };

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.259 (2026-10-18)
+
+Everything in 0.0.258, with swimming toward you and away from you.
+
+- **Swimming away from you**: seen from behind and a little above, as crawling away is: the back at the surface, the legs stretched toward you under the water, kicking, the soles showing, and each arm in turn coming up out of the water over the shoulder and reaching on ahead.
+- **Swimming toward you**: the head at the surface with the water at the chin, each arm in turn coming up over the water and reaching toward you, then pulling under it.
+
 ## 0.0.258 (2026-10-18)
 
 Everything in 0.0.257, with real swimming, from the side.

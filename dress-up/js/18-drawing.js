@@ -95,8 +95,10 @@ function drawNow() {
       return { side, out, A, E, H, angle: side > 0 ? B.arms - elbow : 180 - B.arms + elbow, joints: [A, E, H] };
     }
     const ta = turn * Math.PI / 180, fa = (turn - bend) * Math.PI / 180;
-    const E = [A[0] + out * armLen / 2 * Math.cos(ta), A[1] + armLen / 2 * Math.sin(ta)];
-    const H = [E[0] + out * armLen / 2 * Math.cos(fa), E[1] + armLen / 2 * Math.sin(fa)];
+    // (ticket 287: an arm reaching toward us or away is seen short from the shoulder, as a leg's step is: ArmStep)
+    const ak = dir ? 1 : 1 - Math.max(0, Math.min(0.9, poseT("ArmStep", side) || 0));
+    const E = [A[0] + out * ak * armLen / 2 * Math.cos(ta), A[1] + ak * armLen / 2 * Math.sin(ta)];
+    const H = [E[0] + out * ak * armLen / 2 * Math.cos(fa), E[1] + ak * armLen / 2 * Math.sin(fa)];
     return { side, out, A, E, H, angle: out > 0 ? turn - bend : 180 - turn + bend, joints: [A, E, H] };
   });
   // (in profile, the arm on our side is in front of the body, the other behind)
@@ -297,10 +299,11 @@ function drawNow() {
   if (scened) bridgeKeep();
   // (ticket 269: on a house's platform, on the way in from its ladder, as on a bridge)
   const onBr = scened ? bridgeNow() || platformNow() : null;
-  // (ticket 287: swimming flat, the waterline move.float of the body's half width above the hips, the turn's middle)
+  // (ticket 287: swimming flat, the waterline move.float of the body's half width above the hips, the turn's middle;
+  // swimming toward us, at the chin: the head and the arms coming over above the water, the rest under it)
   const swimming = !!(move && move.swim);
   const wet = scened && !onBr && !figOver && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)),
-        wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : swimming ? L - (move.float ?? 0) * w : tread ? Math.max(12, Math.min(L, 8 + 0.5 * armLen)) : L;
+        wl = SHALLOW_WATER[BG.kind] ? (L + feetY) / 2 : swimming && crawlTo ? -20 + move.chin * armLen + 6 : swimming ? L - (move.float ?? 0) * w : tread ? Math.max(12, Math.min(L, 8 + 0.5 * armLen)) : L;
   const gStand = poseHeld && scened ? poseHeld.g : wet ? wl : ground;
   // (ticket 132) an animation lifts the friend (a step, a bound, a pull up
   // the ladder); crawling turns them about the hips (rot), and they rest on
@@ -614,7 +617,7 @@ function drawNow() {
   // or a skirt or a dress draped over it, a witch's too, with a crease; bare in shorts, round); drawn with the arms, below,
   // over long hair hanging down (Matthew: the witch's should show too)
   let kneesTo = "";
-  if (crawlTo) {
+  if (crawlTo && !move.swim) {
     const longPants = suit || (!undies && P.style !== "shorts"), kr = B.legW / 2 + 6, chinY = -20 + (move.chin ?? 0.3) * armLen;
     const ky = chinY + 0.85 * (Math.max(...arms.map(x => x.H[1])) - chinY), top = chinY + 4;   // (Matthew: "knees should be closer down, nearer the hands")
     for (const side of [1, -1]) { const kx = side * fx;
@@ -649,7 +652,7 @@ function drawNow() {
   const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
     (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf) : "") +
     (wrapStripes(C) ? (P => limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""))(sleeveOf(arm)) : "");
-  const flatHand = arm => `<g transform="translate(0 ${f1(arm.H[1] * 0.4)}) scale(1 0.6)">${handOf(arm)}</g>`;
+  const flatHand = arm => move.swim ? handOf(arm) : `<g transform="translate(0 ${f1(arm.H[1] * 0.4)}) scale(1 0.6)">${handOf(arm)}</g>`;   // (swimming, as they are)
   // (in profile, or turned partway, the far arm's sleeve over it, and its hand, behind the body)
   if ((dir || q) && !winged && !squash) {
     if (sleeve > 0) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
