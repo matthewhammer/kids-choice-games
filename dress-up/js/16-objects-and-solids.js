@@ -146,8 +146,12 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // (ticket 298, Matthew: "Blue horz line in this scene is not accurate -- too low"; "would be easier to walk around the tree
 // house trunk if the horizon line was corrected": the tree house's meadow runs back to its far row of trees, 124 up, its
 // land drawn to 130: 118, just in front of those trees, room to walk round behind the trunk)
-const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 175, treehouse: 118, clearing: 140,
-                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, castle: 35,
+// (ticket 310, Matthew: "it's possible to walk behind either of them, and the dotted horizon line coincides with the
+// horizon, not the facade of the building. instead, the building's facade has accurate collision boxes ... permitting a
+// space for feet to squeeze between that box and the back horizon line": the house's lawn's far edge, 205 up, the
+// castle's meadow's, 150 up; the buildings' own boxes are SCENE_BOXES')
+const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 200, treehouse: 118, clearing: 140,
+                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, castle: 138,
                     woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
@@ -284,6 +288,19 @@ function standingHere(B, seats) {
 const HOLE_H = 30;
 const holesHere = () => bgShown.node ? [...bgShown.node.querySelectorAll("[data-hole]")].map(el => {
   const [x0, x1, back, front] = el.dataset.hole.split(" ").map(Number); return { name: "trapdoor", x0, x1, back, front, h: HOLE_H }; }) : [];
+// (ticket 310) A place's buildings that one walks round: a box at the building's foot, as wide as the building and only as
+// deep as it looks (the house's facade, a little; the castle, back to its moat's far edge), so there is room behind it to
+// the back line at the horizon. The house: its building as drawn (#bg-building, its flower bed with it); the castle: its
+// towers' span, as castleSvg draws them (out to 180 of its units either side), at its size (castleAt)
+const SCENE_BOXES = {
+  house: c => { const el = bgShown.node && bgShown.node.querySelector("#bg-building"), picEl = document.getElementById("pic"), P = picEl && picEl.getScreenCTM();
+    if (!el || !P) return [];
+    const r = el.getBoundingClientRect(), Pi = P.inverse(), a = new DOMPoint(r.left, r.top).matrixTransform(Pi), b = new DOMPoint(r.right, r.bottom).matrixTransform(Pi), yb = c.g - HOUSE_BASE * c.k;
+    return [{ name: "house", x0: a.x, x1: b.x, back: yb - 18 * c.k, front: yb + 2, h: yb - a.y }]; },
+  castle: (c, B) => { const K = castleOf(B), { foot, z } = castleAt(c, K), M = moatOf(K.moat), half = 180 * z;
+    return [{ name: "castle", x0: -half, x1: half, back: foot + z * (K.moat > 0 ? M.cy - M.ry + 4 : -24), front: foot + 2, h: (66 + 18 * K.levels + 50) * z }]; },
+};
+const sceneBoxesHere = B => { try { return SCENE_BOXES[B.kind] && !objectsOff(B).has(B.kind === "castle" ? "castle" : "house") ? SCENE_BOXES[B.kind](stageC(), B) : []; } catch (e) { return []; } };
 // (the solids here, made again only when the place, its seats or its hidden objects change)
 let solidMemo = { text: undefined, kind: null, off: "", list: [] };
 function solidsHere() {
@@ -294,7 +311,7 @@ function solidsHere() {
     const seats = seatsHere(B);
     // (ticket 299: a flat one, a blanket, in nobody's way; each marked as a seat, for 🔬's own chip, sit or lie)
     solidMemo = { text: bgShown.text, kind: B.kind, off: offKey, list: seats.filter(t => !t.flat).map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
-      return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y, seat: t.lie ? "lie" : "sit" }; }).concat(standingHere(B, new Set(seats.map(t => t.name))), holesHere()) };
+      return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y, seat: t.lie ? "lie" : "sit" }; }).concat(sceneBoxesHere(B)).concat(standingHere(B, new Set(seats.map(t => t.name))), holesHere()) };
   }
   return solidMemo.list;
 }

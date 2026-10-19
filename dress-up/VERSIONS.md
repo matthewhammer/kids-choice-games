@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.271 (2026-10-18)
+
+Everything in 0.0.270, with walking behind the house and the castle.
+
+- **Walk round behind the house and the castle**: the back line (🔬's blue line) is now the horizon, the far edge of the lawn or the meadow, not the building's front. Each building has a collision box of its own at its foot, only as deep as it looks (the castle's back to its moat's far side), with room behind it for your feet. The house stands a little nearer to make that room.
+- In the healer's hut, your feet fit round behind the soup pot.
+
 ## 0.0.270 (2026-10-18)
 
 Everything in 0.0.269, with a truer walk.

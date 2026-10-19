@@ -429,13 +429,16 @@ SEATS.house = (c, B) => { const { W, g, k, y1, pad } = c, hs = (B.houseSize ?? 1
                  facing: ["front", ahead] });
   }
   return seats; };
+const HOUSE_BASE = 150;
 function houseScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   const hs = (o.houseSize ?? 100) / 100, ts = (o.treeSize ?? 100) / 100, toys = o.toys ?? 6, flowers = o.flowers ?? 18;
-  const yb = g - 175 * k, bx = -40 * k, S = hs * k;   // the building's base and its middle; its scale
+  // (ticket 310: the house stands HOUSE_BASE above the ground line, forward of where it was (175), its lawn's far edge where
+  // it always was, 205 up, so there is room to walk behind it to the back line at that edge)
+  const yb = g - HOUSE_BASE * k, bx = -40 * k, S = hs * k;   // the building's base and its middle; its scale
   const X = lx => bx + lx * S;                          // a point on the building, in the scene
-  let s = SEP + part("house-sky", c.F, () => `<defs>${grad("bg-sky", "#62b8ee", "#e2f4ff", y0, yb)}</defs>` + all("url(#bg-sky)") +
-                                        land(yb - 30 * k, 6, "#8fc96c", 0.2) + land(yb - 8 * k, 3, "#7cc25a", 0.7));
+  let s = SEP + part("house-sky", c.F, () => `<defs>${grad("bg-sky", "#62b8ee", "#e2f4ff", y0, g - 175 * k)}</defs>` + all("url(#bg-sky)") +
+                                        land(g - 205 * k, 6, "#8fc96c", 0.2) + land(g - 183 * k, 3, "#7cc25a", 0.7));
   s += SEP + cloudsSvg(c, 3, 0.8, 80);
   // the driveway from the garage door, the stone walk from the front door
   s += SEP + part("house-paths", [c.F, hs], () => {
