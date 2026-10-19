@@ -1551,7 +1551,14 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // the friend is in (its own, or a way into it: a warning's key or to),
     // then those about the other squares.
     const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), gridWrap = el("div", { class: "world-grid-wrap" }, [grid]), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away (it waits below, unreachable, to be put back)"), unreach = el("div", { class: "world-unreach" });
-    const sizes = el("div", { class: "row" }, [...[["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { onclick: () => worldResize(dc, dr) }, t)),
+    // (ticket 320) the size buttons at the right and bottom edges, or, with ↖️ on (not the default), at the left and top
+    const sizeBtns = [["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { "data-size": t, onclick: () => worldResize(dc, dr, worldNearEdge) }, t));
+    const sizeWords = () => { for (const b of sizeBtns) { const t = b.dataset.size, w = worldNearEdge ? t + (/column/.test(t) ? " at the left" : " at the top") : t; if (b.textContent !== w) b.textContent = w;
+      b.title = (/＋/.test(t) ? "Add " : "Take away ") + (/column/.test(t) ? "a column at the " + (worldNearEdge ? "left" : "right") : "a row at the " + (worldNearEdge ? "top" : "bottom")) + " edge" + (/－/.test(t) ? " (only while it is empty)" : "") + (worldNearEdge ? ": every square moves over" : ""); }
+      nearChip.setAttribute("aria-pressed", String(worldNearEdge)); };
+    const nearChip = el("button", { class: "flip", title: "＋ and － add or take away at the left and top edges instead of the right and bottom", onclick: () => { worldNearEdge = !worldNearEdge; sizeWords(); } }, "↖️ left and top edges");
+    sizeWords();
+    const sizes = el("div", { class: "row" }, [...sizeBtns, nearChip,
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { instanceUnapply(state.world); state.world = clone(DEFAULTS.world); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
     const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
     // (ticket 195, M) every neighbour joined that can be

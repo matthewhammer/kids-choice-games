@@ -928,7 +928,7 @@ function worldRemove(key) {
 function worldRestore(i, key = null) {
   const W = state.world, U = W.unreachable || [], u = U[i];
   if (!u) return;
-  if (!key && u.from && !W.cells[u.from] && (([c, r]) => c < W.cols && r < W.rows)(u.from.split(",").map(Number))) key = u.from;
+  if (!key && u.from && !W.cells[u.from] && (([c, r]) => c >= 0 && r >= 0 && c < W.cols && r < W.rows)(u.from.split(",").map(Number))) key = u.from;   // (ticket 320: a left or top edge taken away leaves some off the grid's start)
   if (!key) { outer: for (let r = 0; r < W.rows; r++) for (let c = 0; c < W.cols; c++) if (!W.cells[c + "," + r]) { key = c + "," + r; break outer; } }
   if (!key) return;
   const { from, ...cell } = u, was = W.cells[key];
@@ -942,13 +942,29 @@ function worldRestore(i, key = null) {
 // and one forgotten for good
 function worldForget(i) { const W = state.world; W.unreachable = (W.unreachable || []).filter((_, j) => j !== i); changed(); }
 // the grid one column or row bigger or smaller (up to 12 by 12; smaller only while that column or row is empty)
-function worldResize(dc, dr) {
+// (ticket 320, Matthew: "world design +/- row -- toggle for left/top edge, which is not the default") near: at the left and top edges
+// instead, every square moving over by the column or row added or taken away (taken away only while that edge's is empty, as at the
+// far edges: "I like that we cannot remove a col or row that's non-empty")
+let worldNearEdge = false;
+function worldResize(dc, dr, near = false) {
   const W = state.world, cols = W.cols + dc, rows = W.rows + dr;
   if (cols < 1 || rows < 1 || cols > 12 || rows > 12) return;
-  if (worldKeys(W).some(k => { const [c, r] = k.split(",").map(Number); return c >= cols || r >= rows; })) return;
+  const at = k => k.split(",").map(Number);
+  if (near ? worldKeys(W).some(k => { const [c, r] = at(k); return (dc < 0 && c === 0) || (dr < 0 && r === 0); })
+           : worldKeys(W).some(k => { const [c, r] = at(k); return c >= cols || r >= rows; })) return;
+  if (near) worldShift(W, dc, dr);
   W.cols = cols; W.rows = rows;
   worldTrimEdges(W);   // (ticket 232: a smaller grid, the squares along its new edge given no way off it)
   changed();
+}
+// (ticket 320) every square's key moved by (dc, dr), and all that names a square by its key with it: the start, the friend's square,
+// the square shown as itself (W.applied, and the place the friend came to: worldHome), where each square waiting to be put back was
+function worldShift(W, dc, dr) {
+  const mv = k => { if (typeof k !== "string" || !/^-?\d+,-?\d+$/.test(k)) return k; const [c, r] = k.split(",").map(Number); return (c + dc) + "," + (r + dr); };
+  W.cells = Object.fromEntries(Object.entries(W.cells).map(([k, v]) => [mv(k), v]));
+  W.start = mv(W.start); W.at = mv(W.at); if (W.applied) W.applied = mv(W.applied);
+  for (const u of W.unreachable || []) if (u.from) u.from = mv(u.from);
+  if (typeof worldHome === "string" && worldHome.startsWith("sq:")) worldHome = "sq:" + mv(worldHome.slice(3));
 }
 // A press that becomes a drag after a few pixels: a ghost of it follows the
 // finger or the mouse, and on letting go, onDrop(the element under it, the

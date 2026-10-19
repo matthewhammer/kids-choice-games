@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.322 (2026-10-19)
+
+Everything in 0.0.321, with the world growing at its left and top too.
+
+- **↖️ Add or take away at the left and top of the world**: in 🗺️ World design, turn on ↖️ left and top edges, and ＋/－ column works at the left edge and ＋/－ row at the top, every square moving over with its places, its ways, the start and your friend. As at the right and bottom, a column or row is taken away only while it is empty.
+
 ## 0.0.321 (2026-10-19)
 
 Everything in 0.0.320, with the nav arrows apart in every place.
