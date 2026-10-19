@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.330 (2026-10-19)
+
+Everything in 0.0.329, with a place full of things drawn with less work.
+
+- **🫧 Many things in a place cost less to draw**: the things you put in a place (bubble makers, rocks, signs...) are drawn again only when one of them changes, not looked over one by one on every frame. With 256 bubble makers, about a quarter of the work it was.
+
 ## 0.0.329 (2026-10-19)
 
 Everything in 0.0.328, with the controls touching the page only where something changed.

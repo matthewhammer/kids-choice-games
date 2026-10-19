@@ -1888,9 +1888,18 @@ function thingsLayer(c) {
   // (ticket 249, Matthew: "rescale the placed objects when I drag the 'smaller going north' slider, including the main char.
   // That's the purpose of this slider -- it does not affect the static parts of the background, but it affects the
   // dynamic player, and placed objects") each sized by depthSize, so drawn again when the 🔭 setting moves its vanishing line
-  const vanish = Math.round(10 * sceneVanish(c.o));
-  return (Array.isArray(c.o.things) ? c.o.things : []).map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, JSON.stringify(t), t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : ""], () => obj(t.fallen ? `fallen ${t.fallen}` : `${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");   // (ticket 317: and a lever's shine)
+  const vanish = Math.round(10 * sceneVanish(c.o)), T = Array.isArray(c.o.things) ? c.o.things : [];
+  const extra = t => t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : "";   // (ticket 317: and a lever's shine)
+  // (ticket 380, ^du_report(12)'s next step 1: with 256 makers the layer cost a part() call each, its thing written out twice over, on
+  // every drawing, 0.58 ms in the app's pane) the whole layer kept while nothing it draws from changes: the things, written out once,
+  // and what else each reads; on a change each thing still comes from its own piece, so a drag makes one again, not all
+  const key = JSON.stringify([c.F, c.o.kind, vanish, T, T.map(extra)]);
+  if (key === thingsLayerMemo.key) return thingsLayerMemo.svg;
+  const svg = T.map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, t, extra(t)], () => obj(t.fallen ? `fallen ${t.fallen}` : `${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");
+  thingsLayerMemo = { key, svg };
+  return svg;
 }
+let thingsLayerMemo = { key: null, svg: "" };
 // (Matthew, 2026-10-17) The crossing's geometry, shared with its ways out in
 // the world (worldWaysSvg): its floor reaches far up the picture (far), the
 // paths meet a little below its middle (cy), and each path ends where it
