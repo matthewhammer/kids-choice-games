@@ -644,7 +644,10 @@ const TABS = [
   // (state.access) as 🔬 Inspection's: all arrows in both
   ["♿ Accessibility", "access", [
     ["accbox", "allArrows", "🧭 all arrows", [["color", "arrowColor", "🎨"], ["range", "arrowDim", "🌗 brightness", 10, 100], ["range", "arrowSize", "↕️ size", 50, 250]]],
-    ["accbox", null, "🔤 words in the game", [["range", "gameFont", "🔤 text size", 60, 250]]],
+    // (ticket 404, Matthew: "they disappear too quickly -- let's slow it down by a control in accessibility, default 2x
+    // slower than now, with room on each side in slider, but more room up than down") how long an arrow's words stay
+    // once the pointer leaves it: 250 ms was the old fade, now the slider's least; 500 the default; up to 1500
+    ["accbox", null, "🔤 words in the game", [["range", "gameFont", "🔤 text size", 60, 250], ["range", "labelStay", "⏳ arrow words stay, ms", 250, 1500]]],
     // (ticket 251) the ground under the pointer glowing where the friend can go, and a click there walks them to it
     ["accbox", "clickWalk", "👆 walk where you click", [["color", "clickWalkColor", "🎨"], ["choice", "clickPlan", "👆 a click while walking", CLICK_PLANS]]],
   ]],

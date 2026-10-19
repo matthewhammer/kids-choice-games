@@ -364,7 +364,8 @@ function worldWaysHud() {
   if (!M || !box.width) return;
   // (ticket 217) ♿: every arrow shown (the far ones dimmer, in their own colour), their size, their words' size
   const A = state.access || DEFAULTS.access, sc = (A.arrowSize ?? 100) / 100, all = !!A.allArrows, edge = 22 * sc;
-  const vars = [["--arrow-scale", String(sc)], ["--arrow-dim", String((A.arrowDim ?? 45) / 100)], ["--arrow-color", A.arrowColor || "#38bdf8"]];
+  const vars = [["--arrow-scale", String(sc)], ["--arrow-dim", String((A.arrowDim ?? 45) / 100)], ["--arrow-color", A.arrowColor || "#38bdf8"],
+                ["--label-stay", Math.max(100, A.labelStay ?? 500) + "ms"]];   // (ticket 404)
   for (const [k, v] of vars) if (layer.style.getPropertyValue(k) !== v) layer.style.setProperty(k, v);
   const at = [];
   worldWaysAt.forEach(([d, x, y, a], i) => {

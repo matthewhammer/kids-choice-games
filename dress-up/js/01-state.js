@@ -689,7 +689,7 @@ DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpos
 // (ticket 217, Matthew) ♿ Accessibility: every nav arrow shown, how bright the
 // far ones are and their colour (not the near ones' warm white), the arrows'
 // size, the size of the words in the game, and the planned path shown
-DEFAULTS.access = { allArrows: false, arrowDim: 45, arrowColor: "#38bdf8", arrowSize: 100, gameFont: 100, showPath: false, showSolids: false, pathColor: "#fde047", boxColor: "#ef4444", glowFade: 800,
+DEFAULTS.access = { allArrows: false, arrowDim: 45, arrowColor: "#38bdf8", arrowSize: 100, gameFont: 100, labelStay: 500, showPath: false, showSolids: false, pathColor: "#fde047", boxColor: "#ef4444", glowFade: 800,
                     pathWidth: 4, boxWidth: 2, boxFont: 11,   // (ticket 230: the path's and the boxes' lines, the boxes' names, in px)
                     showMadeOf: false, madeCats: {}, madeFont: 10, madeColor: "#ffffff", madeWidth: 2,
                     clickWalk: true, clickWalkColor: "#22d3ee", pathAltColor: "#c084fc", clickPlan: "replace", leverFar: false,   // (leverFar: ticket 364)
@@ -1064,7 +1064,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.334", released: "2026-10-19" };
+const VERSION = { number: "0.0.335", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

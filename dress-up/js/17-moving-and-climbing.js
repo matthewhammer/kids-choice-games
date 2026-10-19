@@ -466,7 +466,12 @@ function passUnderPointer(e) {
   if (!P) return null;
   let best = null;
   for (const p of marks.pics) if (p.kind === "nav" && p.spot) {
-    const s = new DOMPoint(p.spot[0], p.spot[1]).matrixTransform(P), d = Math.hypot(s.x - e.clientX, s.y - e.clientY);
+    // (ticket 404, Matthew: "the 'hover over' feature of nav buttons sometimes seem misaligned?") near where its arrow is
+    // drawn, not its spot on the floor: worldWaysHud spaces the arrows apart and keeps them inside the picture, so in
+    // the fairy forest the arrow to bubble space sat well above its spot, and the flower below it lit it
+    const tri = document.querySelector(`#ways .way-arrow[data-way="${p.el.dataset.way}"] .way-tri`), r = tri && tri.getBoundingClientRect();
+    const s = r && r.width ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : new DOMPoint(p.spot[0], p.spot[1]).matrixTransform(P);
+    const d = Math.hypot(s.x - e.clientX, s.y - e.clientY);
     if (d < 44 && (!best || d < best.d)) best = { d, p };
   }
   if (best) return best.p;

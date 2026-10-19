@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.335 (2026-10-19)
+
+Everything in 0.0.334, with the nav arrows' words where the arrows are, and staying longer.
+
+- **➡️ A nav arrow's words show when the pointer is on the arrow** (ticket 404, Matthew: "the 'hover over' feature of nav buttons sometimes seem misaligned?"): the pointer was judged against where the way meets the floor, but the arrow is drawn spaced apart from the others and kept inside the picture, so in the fairy forest the arrow to bubble space showed its words while the pointer was on the flower below it. Now the pointer is judged against the arrow as it is drawn.
+- **♿ "⏳ arrow words stay"** (ticket 404, Matthew: "they disappear too quickly -- let's slow it down by a control in accessibility, default 2x slower than now, with room on each side in slider, but more room up than down"): in ♿ Accessibility's 🔤 words box, how long an arrow's words take to go once the pointer leaves: 500 ms by default, twice the old 250, from 250 up to 1500. They stay near full until the end, then fade; they still come quickly.
+
 ## 0.0.334 (2026-10-19)
 
 Everything in 0.0.333, with the bubble room's foam moving again, and cheaply.
