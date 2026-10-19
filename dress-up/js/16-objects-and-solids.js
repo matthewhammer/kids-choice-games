@@ -713,8 +713,11 @@ function arrowsClear(side, again = true) {
   const F = sceneFrame, z = SCENE.ground + (B.figY ?? 0), x0 = B.figX ?? 0, s = Math.abs(M.a) || 1, pref = /E/.test(side) ? -1 : 1;
   for (let m = 6; m < layer.getBoundingClientRect().width * 0.6; m += 6) for (const px of [pref * m, -pref * m]) {
     const x = x0 + px / s;
-    if (!(x > F.left + 20 && x < F.right - 20) || showsAt(x).some(t => meets(t, px)) || solidAt(x, z)) continue;
-    B.figX = Math.round(x); changed();
+    // (ticket 369, arrows312's arrivals in a solid: the first clear spot, -194.6 by the house's bucket, rounded to -195, back on its edge;
+    // rounded the way the step goes, and that spot tested)
+    const xr = px > 0 ? Math.ceil(x) : Math.floor(x);
+    if (!(xr > F.left + 20 && xr < F.right - 20) || showsAt(xr).some(t => meets(t, px)) || solidAt(xr, z)) continue;
+    B.figX = xr; changed();
     if (again) setTimeout(() => arrowsClear(side, false), 0);   // (once more: an arrow come near shows, and the arrows make room for it)
     return;
   }

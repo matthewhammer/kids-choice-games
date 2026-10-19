@@ -104,6 +104,7 @@
   .tabbox > .ctl { margin: 6px 0; }
   .tabbox > .ctl:first-of-type { margin-top: 2px; }
   .tabbox[hidden] { display: none; }
+  #panel [hidden] { display: none !important; }   /* (ticket 369: a row's own display, a slider's grid, a switch's flex, no longer outranks hidden: burst329 found a hidden slider showing) */
   /* (ticket 377) the part of the friend a pointed-at box is about, lit in the game */
   body[data-lit~="head"] #figure [data-part="head"] { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #ffb300); }
   body[data-lit~="eyes"] #figure [data-part="eyes"] { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #ffb300); }

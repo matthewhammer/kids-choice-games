@@ -23,7 +23,7 @@ try {
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.body;
     state.music.mute = true; state.world.at = null; climb = null; state.background.kind = "emptyroom"; changed(); await w(400);
     const look = facing => { B.anim = "crawl"; B.facing = facing; draw();
-      const f = document.getElementById("figure"), kids = [...f.children], shadow = kids.find(k => k.tagName === "ellipse" && k.getAttribute("fill") === "#000");
+      const f = document.getElementById("figure"), kids = [...f.children].flatMap(k => k.dataset && k.dataset.part ? [...k.children] : [k]), shadow = kids.find(k => k.tagName === "ellipse" && k.getAttribute("fill") === "#000");
       const tf = k => k.getAttribute("transform") || "", box = k => k.getBoundingClientRect();
       const bottom = Math.max(...kids.filter(k => k !== shadow).map(k => box(k).bottom).filter(Number.isFinite));
       const sh = shadow ? box(shadow) : null, shY = sh ? (sh.top + sh.bottom) / 2 : null;

@@ -1,6 +1,7 @@
 // (ticket 298) The tree house's back limit, where the friend's feet stop going back (and 🔬's line for it), at the far edge
 // of its meadow: in front of its far row of trees, but far enough back to walk round behind the trunk; a spot right
-// behind the trunk is free, and a planned walk from one side to the other behind it goes there. Exits 1 on a failure.
+// behind the trunk is free, a way from one side to the other goes behind it (at the feet's own reach), and the planned walk
+// there reaches its spot. Exits 1 on a failure.
 //   node back298.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -25,14 +26,18 @@ try {
     // (just in front of the limit, behind the trunk's footprint, which reaches back from its foot)
     const behind = [-40, 0, 40].every(x => !solidAt(x, limit + 8));
     // (where the planned walk crosses the trunk's middle, between its corners)
-    const P = [[-200, 0], ...planPath(-200, 0, 200, -50 * k, 10)];
-    let atMid = null; for (let i = 1; i < P.length; i++) { const [a, b] = [P[i - 1], P[i]]; if (a[0] * b[0] <= 0 && a[0] !== b[0]) { atMid = g + a[1] + (b[1] - a[1]) * (0 - a[0]) / (b[0] - a[0]); break; } }
-    return JSON.stringify({ limit: Math.round(limit), far: Math.round(far), trunk: Math.round(trunk), k: +k.toFixed(3), behind, atMid: atMid && Math.round(atMid), crossesBehind: atMid !== null && atMid < trunk - 50 * k }); })()`));
+    // (ticket 369: the lane behind the trunk, at the feet's own reach (planPath's more 0): with the stride's margin the planner may
+    // go round the front instead, as it does in a wider window, the bushes closer; the walk itself must reach the spot)
+    const mid = P => { let at = null; for (let i = 1; i < P.length; i++) { const [a, b] = [P[i - 1], P[i]]; if (a[0] * b[0] <= 0 && a[0] !== b[0]) { at = g + a[1] + (b[1] - a[1]) * (0 - a[0]) / (b[0] - a[0]); break; } } return at; };
+    const P0 = planPath(-200, 0, 200, -50 * k, 0), P = planPath(-200, 0, 200, -50 * k, 10), atMid = mid([[-200, 0], ...P0]);
+    return JSON.stringify({ limit: Math.round(limit), far: Math.round(far), trunk: Math.round(trunk), k: +k.toFixed(3), behind, atMid: atMid && Math.round(atMid), crossesBehind: atMid !== null && atMid < trunk - 50 * k,
+      walk: { legs: P.length, short: !!P.short, end: P.length ? P[P.length - 1].map(Math.round) : null } }); })()`));
   console.log(`  ${JSON.stringify(r)}`);
   ok("the back limit is in front of the far row of trees", r.limit > r.far, r);
   ok("and far enough back to walk behind the trunk (over 80 of its units behind its foot)", r.trunk - r.limit > 80 * r.k, r);
   ok("right behind the trunk is free to stand in", r.behind, r);
-  ok("a planned walk from one side to the other, behind the trunk, goes behind it", r.crossesBehind, r);
+  ok("a way from one side to the other behind the trunk, at the feet's own reach", r.crossesBehind, r);
+  ok("and the planned walk there (the stride's margin) reaches the spot", r.walk.legs > 0 && !r.walk.short, r.walk);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

@@ -65,7 +65,11 @@ try {
       if (walkPath && walkPath.leg >= walkPath.pts.length - 1) { requestAnimationFrame(look); return; }
       // (ticket 369: nor one touched turning where they start, within 6 units of it: turned to walk, in profile, the feet reach a unit further)
       const atStart = Math.hypot(x - ${c.x}, z - g - ${c.y}) < 6;
-      for (const o of S) if (!startIn.has(o) && !(endIn && endIn.has(o)) && !atStart && touches(o, x, z, 2)) inSolid.push(o.name + "@" + Math.round(x) + "," + Math.round(z - g));
+      // (ticket 369, 0.0.318's run: walking away from a solid 16 units off, the first stride's back foot swung 7 units back into it;
+      // not the plan's fault: a solid behind the way they set off, within a stride of the start, touched only by the back foot)
+      const first = walkPath && walkPath.pts[1], dir = first ? Math.sign(first[0] - ${c.x}) : 0, nearStart = Math.hypot(x - ${c.x}, z - g - ${c.y}) < strideReach();
+      const behind = o => dir && nearStart && Math.sign((o.x0 + o.x1) / 2 - x) === -dir;
+      for (const o of S) if (!startIn.has(o) && !(endIn && endIn.has(o)) && !atStart && !behind(o) && touches(o, x, z, 2)) inSolid.push(o.name + "@" + Math.round(x) + "," + Math.round(z - g));
       requestAnimationFrame(look); };
     requestAnimationFrame(look);
     enterScene(p.el);

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.319 (2026-10-19)
+
+Everything in 0.0.318, with hidden settings staying hidden and arrivals that never stand in a thing.
+
+- **🫧 Settings that are off stay out of sight**: a slider or switch that only matters when another one is on (the bursting bubbles' own settings, and others like it) could still show while hidden; now it shows only when it applies.
+- **🧭 Coming into a place, your friend never ends up standing inside something**: stepping off the arrows could put them on the very edge of a thing (the house's bucket), inside it; now the spot they step to is checked as it is.
+
 ## 0.0.318 (2026-10-19)
 
 Everything in 0.0.317, with the boxes lighting what they change.

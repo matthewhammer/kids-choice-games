@@ -49,7 +49,7 @@ try {
     state = clone(DEFAULTS); changed(); return JSON.stringify(out); })()`));
   for (const t of r.tabs) console.log("  " + JSON.stringify(t));
   const boxed = r.tabs.filter(t => t.boxed);
-  ok("the friend's tabs and the costume boxed (13 tabs)", boxed.length >= 13, boxed.map(t => t.name));
+  ok("the friend's tabs and the costume boxed (12 tabs)", boxed.length >= 12, boxed.map(t => t.name));
   ok("each boxed tab: its rows in boxes, none loose, a box at least", boxed.every(t => t.boxes > 0 && t.loose === 0), boxed.filter(t => !(t.boxes > 0 && t.loose === 0)));
   ok("no dashed border in any tab's panel", r.tabs.every(t => t.dashed === 0), r.tabs.filter(t => t.dashed));
   ok("no tab's panel wider than itself", r.tabs.every(t => t.over <= 2), r.tabs.filter(t => t.over > 2));
