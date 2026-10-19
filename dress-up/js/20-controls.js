@@ -54,6 +54,7 @@ const HAND_CTLS = [
 const SLIDER_STYLE = { fingers: "human", alienFingers: "alien", starPoints: "star", clawCount: "claw", clawLen: "claw",
                        starAngle: "star", mittenAngle: "mitten", clawAngle: "claw", humanAngle: "human", alienAngle: "alien" };
 // a cat costume's paws have claws, set with the claw sliders
+const DIVING_SUITS = new Set(["scuba", "diver"]);   // (ticket 371)
 const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
 // a hand's slider shows when the hand wears its style
 const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
@@ -655,8 +656,12 @@ let hudSyncs = [];   // ...and the full-screen controls'
 
 function set(part, key, value) {
   if (part === "background" && key === "kind" && value !== state.background.kind) worldChoose(value);   // (ticket 185: a place is its square)
-  const wasBare = state.background.kind === "none";
+  const wasBare = state.background.kind === "none", wasKind = part === "costume" && key === "kind" ? state.costume.kind : null;
   state[part][key] = value;
+  // (ticket 371, Matthew: "something about the tank seems buggy. Switched to fairy costume and its still there?") the diving
+  // gear (ticket 288: worn with any costume) comes off with a diving suit: out of the scuba suit or the old one, into another
+  // costume, the snorkel, the mask and the tank too; any of them can be put on again with any costume
+  if (wasKind && DIVING_SUITS.has(wasKind) && !DIVING_SUITS.has(value)) Object.assign(state.costume, { snorkel: false, mask: false, tank: false });
   if (part === "access" && key === "clickWalk") state.access.clickWalkOn = true;   // (0.0.188: turned on or off by the player: kept so, upgradeClickWalk)
   // (ticket 132) the Body tab: a pose, from scratch; an animation seen from
   // the side turns a friend who faces us to our right

@@ -420,7 +420,10 @@ function drawNow() {
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
   // (ticket 286: crawling toward us, the tail goes up from behind the back, turned over with it)
   if (tail) svg += veil("pants", crawlTo ? flipped(tail) : tail);
-  if (WC.tank && !diver) svg += veil("shirt", tankSvg(WC, w, L, dir));   // (ticket 288: an air tank on the back)
+  // (ticket 288: an air tank on the back; ticket 371, Matthew: "crawling animation for scuba tank has it on our belly --
+  // inverted from correct": crawling toward us, it lies on the back, which rises behind the head: drawn over the back, below;
+  // crawling away, seen short with the back it lies on)
+  if (WC.tank && !diver && !crawlTo) { const tk = tankSvg(WC, w, L, dir); svg += veil("shirt", squash && away ? squashed(tk) : tk); }
   // (ticket 138: facing away, the wings and the tail are drawn last, over them)
   const onBack = away ? svg.slice(backAt) : "";
   if (away) svg = svg.slice(0, backAt);
@@ -697,7 +700,7 @@ function drawNow() {
   } else svg += poly(torso, sf, ss);
   // (ticket 288) a scuba suit's yoke (and zip, from behind); an air tank's straps; the old diving suit's brass corselet
   if (scuba && !undies) svg += scubaYoke(WC, w, nw, L, dir, away);
-  if (WC.tank && !diver) svg += tankStraps(w, L, dir, away);
+  if (WC.tank && !diver) svg += tankStraps(w, L, dir, away || crawlTo);   // (ticket 371: crawling toward us, it is the back that shows: its band, not the chest's buckle)
   if (diver) svg += diverCorselet(WC, w, dir);
   // a few webs on the bodice, side by side
   if (fewWebs && !undies)
@@ -714,6 +717,8 @@ function drawNow() {
   if (suit && kind !== "eaglesuit" && !away)  // the suit's belly (a bald eagle is brown all over; none on its back: ticket 138)
     svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>`;
   if (crawlTo) svg = svg.slice(0, shirtAt) + flipped(svg.slice(shirtAt));   // (ticket 286: the back, rising behind the head)
+  // (ticket 371: the tank on it, turned over with it, standing out of it by its own thickness: its far end over the back's line)
+  if (crawlTo && WC.tank && !diver) svg += veil("shirt", `<g transform="translate(0 ${f1(-0.8 * Math.max(24, 0.4 * w))})">${flipped(tankSvg(WC, w, L, dir))}</g>`);
   veilFrom("shirt", bodyAt);
   if (squash && !crawlTo) svg = svg.slice(0, bodyAt) + squashed(svg.slice(bodyAt));   // (ticket 286: the neck and the body, seen short; the arms are drawn whole, below)
   const bodyEnd = svg.length;
@@ -809,9 +814,13 @@ function drawNow() {
                           `<circle cx="${f1(mx)}" cy="${f1(my)}" r="${f1(14 * s)}" fill="#374151"/>`);
     }
   } else {
-    const hm = diverHelmet(F, WC, dir, away), a = [tx + hm.fitting[0] * s, ty + hm.fitting[1] * s];
+    const hm = diverHelmet(F, WC, dir, away), a0 = [tx + hm.fitting[0] * s, ty + hm.fitting[1] * s];
     const topY = (sceneFrame.top - figureT.dy - figureT.sg) / figureT.k + figureT.g - 10;
-    const hose = WC.diverHose !== false && topY < a[1] - 40 ? veil("head", diverHose(WC, a, [a[0] - (dir || 1) * 70, topY], sceneryStill())) : "";
+    // (ticket 371: the body turned about the hips, crawling in profile or lying down, the hose still rises from the helmet's
+    // fitting, wherever the turn has put it, straight up to the surface: counter-turned, not pointing the way the head does)
+    // (the turn: rotTf, or swimming, the inner group's below; the same, rot about the hips)
+    const th = (rot || 0) * Math.PI / 180, a = [a0[0] * Math.cos(th) - (a0[1] - L) * Math.sin(th), L + a0[0] * Math.sin(th) + (a0[1] - L) * Math.cos(th)];
+    const hose = WC.diverHose !== false && topY < a[1] - 40 ? veil("head", (rot ? `<g transform="rotate(${-rot} 0 ${f1(L)})">` : "") + diverHose(WC, a, [a[0] - (dir || 1) * 70, topY], sceneryStill()) + (rot ? `</g>` : "")) : "";
     svg += (away ? "" : hose) + veil("head", inFace(hm.svg)) + (away ? hose : "");
   }
   // (ticket 288) where a diving suit leaks, as 🫧 leaks says: the old helmet's fitting and exhaust and its collar's edges;

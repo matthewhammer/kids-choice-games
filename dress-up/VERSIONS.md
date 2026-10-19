@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.303 (2026-10-18)
+
+Everything in 0.0.302, with the diving gear where it belongs.
+
+- **🛢️ Crawling, the air tank stays on your back**, not on your belly: crawling toward us it rides on your back behind your head, crawling away it lies flat along your back, and crawling sideways it is on top.
+- **⚓ The old diving suit's air hose always rises up to the surface** from your helmet, even lying down, crawling or swimming flat, instead of pointing the way your head does.
+- **🧚 Changing out of a diving suit takes its gear off too**: the snorkel, mask and tank. You can still put any of them on with any costume.
+
 ## 0.0.302 (2026-10-18)
 
 Everything in 0.0.301, with you the same size inside the tree house as outside it.
