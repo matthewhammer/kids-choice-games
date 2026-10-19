@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.299 (2026-10-18)
+
+Everything in 0.0.298, with you drawn in front of and behind the right things.
+
+- **🌳 Up in the tree house, the houses below you are in front of you**: on the high bridge, the owl's house covers you where they meet, as a nearer house should. On the low bridge and on the ground, nothing changes.
+- **🛻 Sitting in the wagon by the house, you sit in it**, not behind it, and you bump into the wagon where it stands, not just behind it. The front step's seat is where the step is drawn too.
+- 🙈 Hiding the tree house hides its houses with it.
+- Under the hood: a new automatic check makes sure everything you can bump into is drawn in front of you or behind you as you stand.
+
 ## 0.0.298 (2026-10-18)
 
 Everything in 0.0.297, with three more quiet breakages of the same kind mended.

@@ -67,7 +67,15 @@ function treehouseScene(c) {
   // the tree, its leaves, houses, bridges and ladders: built in the tree's
   // units, so its size slider builds none of them again
   // (the whole group one object, standing where its trunk meets the ground)
-  s += obj("tree house", g, OPEN(`<g id="bg-tree" ${tf(0, g, ts * k)}>`) + treeInner(c) + CLOSE);
+  s += obj("tree house", g, OPEN(`<g id="bg-tree" ${tf(0, g, ts * k)}>`) + treeInner(c, false) + CLOSE);
+  // (ticket 335, Matthew: "layer bug: I'm on top of the owl tree house that should be 'in front' of me") each house an
+  // object of its own, after the tree at the tree's depth, highest first (a lower house covers the one above it), and
+  // marked with its platform's height on the screen (data-floor): the friend up on a bridge or a platform is drawn just
+  // before the first house lower than them (houseAhead), so the nearer houses below cover them, those level with them
+  // or above do not
+  const hz = (o.treeHouseSize ?? 100) / 100;
+  for (const h of treeHouseParts(o, n, hz))
+    s += obj(`tree house ${h.i + 1}`, g, OPEN(`<g data-floor="${f1(g + h.y * ts * k)}" ${tf(0, g, ts * k)}>`) + h.svg + CLOSE);
   // butterflies, fluttering with the quick LFO
   // (at the depth of the ground under the nearest)
   s += obj("butterflies", g - 60 * k, part("treehouse-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => butterfliesSvg(c, [[x0 + W * 0.12, g - 80 * k, 1], [x0 + W * 0.86, g - 60 * k, 1.1]])));

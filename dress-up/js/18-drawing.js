@@ -975,8 +975,11 @@ function drawNow() {
   // (ticket 130: the far arm, when it is apart, a body's depth farther back:
   // before the first thing standing nearer than that, so behind the rest)
   const farNode = figShown.find(n => n.id === "figure-far"), rest = figShown.filter(n => n !== farNode);
-  const behind = farNode && scenery && !SPEED_TEST.holder ? objectAhead(onBr || figOver ? feetZ : feetZ - 26 * figureT.k) : null;
-  const ahead = scenery && !SPEED_TEST.holder ? objectAhead(feetZ) : null;
+  // (ticket 335: up on a bridge or a platform, just before the first tree house lower than their feet, the nearer houses below
+  // covering them; else as before)
+  const up = onBr && scenery && !SPEED_TEST.holder ? houseAhead(onBr.y) : null;
+  const behind = farNode && scenery && !SPEED_TEST.holder ? up || objectAhead(onBr || figOver ? feetZ : feetZ - 26 * figureT.k) : null;
+  const ahead = scenery && !SPEED_TEST.holder ? up || objectAhead(feetZ) : null;
   // (ticket 164: on a slow computer, while the friend moves, the scene as
   // still pictures at its end, cut where the friend goes, the friend between)
   const stills = scened && scenery === bgShown.node ? stillLayers(farNode, behind, ahead) : null;

@@ -419,7 +419,9 @@ const sceneR = (i, j = 0) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758
 // rider in its bed (60 across, its sides from 24 to 8 above the ground; the
 // hips 18 up, a little down inside it), placed as houseScene places the toys
 SEATS.house = (c, B) => { const { W, g, k, y1, pad } = c, hs = (B.houseSize ?? 100) / 100, toys = B.toys ?? 6;
-  const yb = g - 175 * k, bx = -40 * k, S = hs * k, X = lx => bx + lx * S;
+  // (ticket 335: the building's base line, HOUSE_BASE, as houseScene's; 175 here till 0.0.298, while ticket 310 had moved it
+  // to 150: the wagon's seat and box, and the front step, sat 25 units behind where they are drawn)
+  const yb = g - HOUSE_BASE * k, bx = -40 * k, S = hs * k, X = lx => bx + lx * S;
   const seats = [{ name: "front step", x0: X(-96), x1: X(-24), y: yb, z: yb + 1, facing: ["front", "left", "right"] }];
   for (let i = 0; i < toys; i++) {
     if (TOYS[i % TOYS.length] !== "wagon") continue;

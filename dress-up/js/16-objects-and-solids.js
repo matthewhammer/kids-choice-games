@@ -21,6 +21,14 @@ function sceneObjects(root) {
   }).map(n => ({ name: n.dataset.obj, z: objDepth(n), node: n, layer: n.dataset.layer || null }));   // (ticket 284: wall, floor, or standing)
 }
 const objectAhead = feet => (bgShown.objs.find(o => o.z > feet) || {}).node || null;
+// (ticket 335) the tree house scene's houses, highest first, each marked with its platform's height on the screen: the first
+// lower than y (by more than a few units: a bridge meets a platform level with it), before which a friend up at y is drawn
+function houseAhead(y) {
+  if (state.background.kind !== "treehouse") return null;
+  const k = (SCENE.bottom - SCENE.top) / 700;
+  for (const o of bgShown.objs) { if (!/^tree house \d$/.test(o.name)) continue; const f = o.node.querySelector("[data-floor]"); if (f && +f.dataset.floor > y + 6 * k) return o.node; }
+  return null;
+}
 // which list of hidden objects a place keeps: a castle room's by its style,
 // a room in the tree house by its number, any other by its kind
 function objPlace(B) {
@@ -33,7 +41,8 @@ function showObjects() {
   const off = objectsOff(state.background);
   // (ticket 163: written only when it changes; every drawing, each write
   // made the browser restyle that object, every frame of a walk)
-  for (const o of bgShown.objs) { const d = off.has(o.name) ? "none" : ""; if (o.node.style.display !== d) o.node.style.display = d; }
+  // (ticket 335: the tree house hidden hides its houses too, objects of their own since)
+  for (const o of bgShown.objs) { const d = off.has(o.name) || (off.has("tree house") && /^tree house \d$/.test(o.name)) ? "none" : ""; if (o.node.style.display !== d) o.node.style.display = d; }
 }
 // the scene's element, its pieces those of the last scene where their text
 // is the same (see SEP), the rest parsed

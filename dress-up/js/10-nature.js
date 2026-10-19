@@ -151,7 +151,8 @@ const TREE_BRIDGES = [[2, 3], [0, 1], [4, 5], [0, 3], [2, 1]];   // across the t
 // braided trunk, leaves, swing, bridges, ladders and houses, all as the
 // sliders and menus say. The tree house scene draws it, and so does the
 // forest clearing, small and far off: the same tree.
-function treeInner(c) {
+// (ticket 335: houses false, the tree house scene's own: its houses are objects of their own there, treeHouseParts)
+function treeInner(c, houses = true) {
   const { o, R } = c;
   const n = Math.max(1, Math.min(6, o.houses ?? 4));
   // the houses' own size, apart from the tree's: they grow about where
@@ -217,12 +218,14 @@ function treeInner(c) {
     return t.ground ? `<g data-ladder="1" data-house="${i + 1}">${t.svg}</g>` : t.svg;
   }).join(""));
   // the houses: one drawing, its roof the color of its <use>
-  s += SEP + part("tree-cabin", [], () => `<defs>${CABIN_DEFS}</defs>` +
-    "") + treeHouses(o, n, hz).map(({ x, y, i, animal, look, sc }) =>
-      part("tree-house", [i, animal, look.cols, sc], () => `<g class="portal" data-to="treeroom" data-house="${i + 1}">` +
-        use("bg-cabin-body", x, y, sc, sc, ` color="${look.walls}"`) + `<g ${tf(x, y, sc)}><g data-cabin-leaf="" data-open="${CABIN_DOOR_OPEN}">${CABIN_DOOR}</g>${look.head}</g></g>`)).join("");
+  s += SEP + part("tree-cabin", [], () => `<defs>${CABIN_DEFS}</defs>`);
+  if (houses) s += treeHouseParts(o, n, hz).map(h => h.svg).join("");
   return s;
 }
+// (each house's drawing, in the tree's units, highest first: a lower house covers the one above it; y, its platform's height)
+const treeHouseParts = (o, n, hz) => treeHouses(o, n, hz).map(({ x, y, i, animal, look, sc }) => ({ i, y,
+  svg: part("tree-house", [i, animal, look.cols, sc], () => `<g class="portal" data-to="treeroom" data-house="${i + 1}">` +
+    use("bg-cabin-body", x, y, sc, sc, ` color="${look.walls}"`) + `<g ${tf(x, y, sc)}><g data-cabin-leaf="" data-open="${CABIN_DOOR_OPEN}">${CABIN_DOOR}</g>${look.head}</g></g>`) }));
 // The tree's pieces, in its own units, for treeInner and for the map on a tree room's sign (ticket 244). The limbs out to
 // the first n houses' platforms:
 const treeLimbs = n => TREE_SLOTS.slice(0, n).map(([x, y]) => {

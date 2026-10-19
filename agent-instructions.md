@@ -425,6 +425,9 @@ The archive tools live in the archives' own repositories, in `tools/`. The safet
 
 ## Drawing gotchas, and a routine for finding them
 
+- **Layering is depth, so a depth must agree with its box** (ticket 335, 0.0.299, Matthew at the tree house: "layer bug: I'm on top of the owl tree house that should be 'in front' of me"). The friend is drawn before the first object whose depth (`data-z`) is nearer than their feet (`objectAhead`), and a seated friend at the seat's `z`. So an object's depth must lie within its own collision boxes, and a seat's `z` at its drawing's depth: a depth in front of the box draws a friend standing just in front behind it, and a seat behind its drawing draws its rider behind it (the house's wagon, whose seat still used the house's old base line, 175, after ticket 310 moved it to `HOUSE_BASE`, 150). `tools/checks/layers335.mjs` audits every place, castle room and tree room for both.
+- **The tree house's houses are objects of their own** (`tree house 1`...), after the tree at its depth, highest first, each marked with its platform's height on the screen (`data-floor`). A friend up on a bridge or a platform is drawn just before the first house lower than them (`houseAhead`), so the nearer houses below cover them. Hiding the tree house (👁️) hides its houses too. `treeInner(c, false)` leaves the houses out for this; the clearing's far tree still draws them inside.
+
 Each picture is a hand-drawn illusion of depth, and a few kinds of slip break it at once. Matthew and M have caught each of these by eye:
 
 1. **A line runs past the thing it belongs to, or stops short of it.** Examples: floor tiles that carry on up into the walls (the castle rooms' floors); veins that run off a leaf's edge or stop well inside it; lead lines in a window that cross its arch. Every seam, vein, grid, tile line and plank edge must end on its shape's outline. There are two ways to make sure:
