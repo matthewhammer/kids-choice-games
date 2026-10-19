@@ -657,6 +657,33 @@ function planPath(x0, y0, x1, y1, more = 0) {
 // put where a place says they arrive (ARRIVE); draw, once the new place is on the screen, moves them out of what they
 // stand in, the nearest spot across that is clear.
 let arriveSettle = false;
+// (tickets 311 and 312, Matthew: "When we spawn from the S into the N part of a square pair --- it'd be better to be placed
+// just off from the nav arrows, so the next click is not obscured by our body"; then, over the default world, 125 of its
+// 138 ways in landed the friend on an arrow) Come in by a world way (arriveSide, the side come in from: worldEnter), once
+// the place is drawn: with a nav arrow shown under the friend, they step aside to the nearest spot clear of every arrow
+// that would show with them there (one shows as they near it), on the floor and in no solid; at equal steps inward from the east
+// edge, to the right from anywhere else (Matthew's picture: to the right of the ⬆️ and ⬇️)
+let arriveSide = null;
+function arrowsClear(side, again = true) {
+  const B = state.background, fig = document.getElementById("figure"), M = pic.getScreenCTM(), layer = document.getElementById("ways");
+  if (!fig || !M || !layer || entering || B.onBridge || B.onPlatform || state.body.sit || climb) return;
+  const f = fig.getBoundingClientRect(), pad = 6, meets = (t, px) => t.left - pad < f.right + px && f.left + px < t.right + pad && t.top < f.bottom && f.top < t.bottom;
+  const tri = el => el.querySelector(".way-tri"), rect = el => tri(el) && tri(el).getBoundingClientRect();
+  const shown = [...layer.querySelectorAll(".way-arrow.near")].map(rect).filter(t => t && t.width);
+  if (!shown.some(t => meets(t, 0))) return;
+  // (each arrow that would show bright with the friend there, near it: ♿'s all arrows shows the far ones dim, which a friend
+  // may stand over, as on 🔬 Inspection's pages, where every arrow shows)
+  const els = [...layer.children];
+  const showsAt = x => { const keep = B.figX; B.figX = x; const on = worldWaysAt.map(([d], i) => wayNearness(d) < 1 ? els[i] && rect(els[i]) : null).filter(t => t && t.width); B.figX = keep; return on; };
+  const F = sceneFrame, z = SCENE.ground + (B.figY ?? 0), x0 = B.figX ?? 0, s = Math.abs(M.a) || 1, pref = /E/.test(side) ? -1 : 1;
+  for (let m = 6; m < layer.getBoundingClientRect().width * 0.6; m += 6) for (const px of [pref * m, -pref * m]) {
+    const x = x0 + px / s;
+    if (!(x > F.left + 20 && x < F.right - 20) || showsAt(x).some(t => meets(t, px)) || solidAt(x, z)) continue;
+    B.figX = Math.round(x); changed();
+    if (again) setTimeout(() => arrowsClear(side, false), 0);   // (once more: an arrow come near shows, and the arrows make room for it)
+    return;
+  }
+}
 function solidUnstick(most = 400) {
   const B = state.background, x = B.figX ?? 0, z = SCENE.ground + (B.figY ?? 0), o = solidAt(x, z);
   if (!o || o.wall) return;

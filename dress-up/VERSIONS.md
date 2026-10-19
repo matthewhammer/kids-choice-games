@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.300 (2026-10-18)
+
+Everything in 0.0.299, with you arriving beside the arrows, not on them.
+
+- **🧭 Walking from one place into the next, you arrive just beside the nav arrows**, not standing on them, so the arrow to tap next is not under you: to the right of the ⬆️ and ⬇️ when you come in at the top or bottom, a step inward when you come in at a side. Before, almost every way in landed on one.
+
 ## 0.0.299 (2026-10-18)
 
 Everything in 0.0.298, with you drawn in front of and behind the right things.
