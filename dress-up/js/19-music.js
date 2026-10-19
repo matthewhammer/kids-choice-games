@@ -452,10 +452,19 @@ const WITCH_FUNK = {
 const CUSHION_RAVE = {
   A: { what: "triplet shuffle", bpm: 122, A: ["D", "G", "A", "D"], B: ["Bm", "G", "A", "A7"],
        kick: "x...x...x...x...", snare: "....x.......x...", hats: "16(xoxxoxxoxxox)", extra: ["shaker", "16(x.xx.xx.xx.x)"],
-       bass: [[0, 0, 3], [3, 7, 1], [6, 0, 2], [8, 12, 2], [11, 7, 1], [14, 10, 2]], stabs: [2, 6, 10, 14], hookA: [4, 3, 2, 0, 2, 3, 4, 6], hookB: [0, 2, 3, 4, 6, 4, 3, 2] },
+       bass: [[0, 0, 3], [3, 7, 1], [6, 0, 2], [8, 12, 2], [11, 7, 1], [14, 10, 2]], stabs: [2, 6, 10, 14], hookA: [4, 3, 2, 0, 2, 3, 4, 6], hookB: [0, 2, 3, 4, 6, 4, 3, 2],
+       // (ticket 360) Matthew's post-production, his save of 2026-10-18 20:48: the hooks three octaves down, darker and
+       // roomier, the stabs, sparkle and ghost two down, the first bass one, the hats and shaker in the room
+       mix: { "hookA·lead": { upN: -3, knob: 79, tone: 28, rev: 51, level: 2 }, "hookB·lead": { upN: -3, knob: 82, tone: 26, rev: 59, echo: 69, level: 8 },
+              "stabsA·lead": { upN: -2 }, "sparkle·musicbox": { upN: -2, rev: 85, echo: 50 }, "ghost·ghost": { upN: -2 }, "bassA·buzz": { upN: -1 },
+              "extra·shaker": { rev: 24, echo: 0 }, "hats·hat": { echo: 22, level: 5, rev: 40 } } },
   B: { what: "three against four", bpm: 120, A: ["C", "F", "G", "C"], B: ["Am7", "F", "G", "G7"],
        kick: "x...x...x...x...", snare: "....x.......x..o", hats: "..x...x...x...x.", extra: ["cowbell", "16(xxx)"], extra2: ["conga", "16(x.xx.xx.x)", 62],
-       bass: [[0, 0, 2], [3, 0, 1], [5, 7, 1], [8, 0, 2], [10, 12, 2], [13, 7, 1], [14, 10, 2]], stabs: [3, 7, 11, 15], hookA: [2, 4, 6, 4, 2, 0, 2, 4], hookB: [6, 5, 4, 2, 4, 5, 6, 8] },
+       bass: [[0, 0, 2], [3, 0, 1], [5, 7, 1], [8, 0, 2], [10, 12, 2], [13, 7, 1], [14, 10, 2]], stabs: [3, 7, 11, 15], hookA: [2, 4, 6, 4, 2, 0, 2, 4], hookB: [6, 5, 4, 2, 4, 5, 6, 8],
+       // (ticket 360) Matthew's post-production, his save of 2026-10-18 20:48: both basses louder, wah wide open, toned
+       // down and in the room, panned apart; the first an octave down
+       mix: { "bassA·buzz": { upN: -1, level: 7, echo: 49, rev: 36, tone: 75, knob: 100, pan: 4 },
+              "bassB·buzz": { knob: 95, level: 5, pan: -7, echo: 30, rev: 18, tone: 77 } } },
   C: { what: "a drum solo", bpm: 124, A: ["E9", "A9", "E9", "B7"], B: ["A9", "E9", "B7", "A7"], solo: true, wah: true,
        kick: "x..x..x...x.x...", snare: "....x..o.o..x..o", hats: "xoxoxoxoxoxoxoxo", extra: ["openhat", "..............x."],
        bass: [[0, 0, 2], [2, 12, 1], [4, 0, 1], [7, 10, 1], [8, 0, 2], [11, 7, 1], [12, 12, 2], [15, 10, 1]], stabs: [0, 6, 12], hookA: [0, 2, 4, 3, 2, 0, 3, 2], hookB: [4, 3, 2, 0, 2, 3, 4, 5] },
@@ -489,7 +498,7 @@ const TURTLE_DUB = {
 };
 const turtleDub = v => { const c = TURTLE_DUB[v];
   return steppersTune({ bpm: c.bpm, chords: c.chords, lines: { sonar: c.sonar, bubbles: "r:9 " + c.sonar.split(" ")[0].replace(/[0-9]/, "7") + " r:21 " + c.sonar.split(" ")[2] + " r:17 " + c.sonar.split(" ")[0] + " r:33 " + c.sonar.split(" ")[2] + " r:44" },
-    drums: { ...c.drums, swing: c.swing }, bassPat: c.bassPat, tunes: c.tunes, chop: c.chop, form: c.form }); };
+    drums: { ...c.drums, swing: c.swing }, bassPat: c.bassPat, tunes: c.tunes, chop: c.chop, form: c.form, bassInst: "wahbass" }); };
 function cushionRave(v) {
   const c = CUSHION_RAVE[v], A = c.A, B = c.B;
   const drum = (name, inst, pat, level, note) => ({ name, inst, level, line: hitsOf(pat, note) });
@@ -517,6 +526,19 @@ function cushionRave(v) {
       S(8, "kick snare hats extra extra2 bassA stabsA hookA sparkle", 2), S(8, "kick snare hats extra extra2 bassB stabsB hookB roll", 2), S(4, "kick bassA"),
     ] };
 }
+// (ticket 360) Matthew, after his board for A and B: "I like more low octave play in the rhythm and melody in general --
+// and more groovy bass, with more wah and effects (and more level)." The raves' starting mix from his board: the hooks
+// three octaves down, darker and roomier, the stabs, sparkle and ghost two, both basses loud, the wah open, wet and
+// panned apart, the first an octave down. A keeps his board as he left it; B his basses with these hooks
+const RAVE_LOW = { "hookA·lead": { upN: -3, knob: 80, tone: 27, rev: 55, level: 4 }, "hookB·lead": { upN: -3, knob: 80, tone: 27, rev: 55, echo: 50, level: 6 },
+                   "stabsA·lead": { upN: -2 }, "stabsB·lead": { upN: -2 }, "sparkle·musicbox": { upN: -2, rev: 85, echo: 50 }, "ghost·ghost": { upN: -2 } };
+const raveBass = inst => ({ [`bassA·${inst}`]: { upN: -1, level: 7, echo: 49, rev: 36, tone: 75, knob: 100, pan: 4 },
+                            [`bassB·${inst}`]: { knob: 95, level: 5, pan: -7, echo: 30, rev: 18, tone: 77 } });
+const raveMix = v => { const c = CUSHION_RAVE[v]; return v === "A" ? c.mix : { ...RAVE_LOW, ...raveBass(c.wah ? "wahbass" : "buzz"), ...(c.mix || {}) }; };
+// and the steppers dubs' (A to D), the same way: the bass a wah bass, loud, open and wet; the melodicas two octaves
+// down and the chop one, in the room
+const DUB_LOW = { "bass·wahbass": { level: 7, knob: 90, tone: 75, echo: 40, rev: 30 }, "tuneA·melodica": { upN: -2, rev: 60, tone: 60 },
+                  "tuneB·melodica": { upN: -2, rev: 60, tone: 60, pan: -4 }, "chop·chop": { upN: -1, echo: 70, level: 4, pan: 4 } };
 function witchFunk(v) {
   const c = WITCH_FUNK[v], { bar, L, n } = c, chords = ["Dm", "Dm", "Gm", "Dm", "Bb", "A7", "Dm", "A7"];
   // (n slots over L steps: one funk bar's pattern)
@@ -794,8 +816,8 @@ const TUNES = {
   // The spooky waltz, funked, five ways (Matthew picks): see witchFunk
   ...Object.fromEntries(Object.entries(WITCH_FUNK).map(([v, c]) => ["witchfunk" + v, { name: `🧙 funked waltz ${v}: ${c.what}`, make: () => witchFunk(v) }])),
   // (ticket 301: the couch-cushion raves, A to E, for M; and the turtle steppers dubs, A to D)
-  ...Object.fromEntries(Object.entries(TURTLE_DUB).map(([v, c]) => ["steppers" + v, { name: `🐢 turtle steppers dub ${v}: ${c.what}`, make: () => turtleDub(v) }])),
-  ...Object.fromEntries(Object.entries(CUSHION_RAVE).map(([v, c]) => ["cushions" + v, { name: `🛋️ couch-cushion rave ${v}: ${c.what}`, make: () => cushionRave(v) }])),
+  ...Object.fromEntries(Object.entries(TURTLE_DUB).map(([v, c]) => ["steppers" + v, { name: `🐢 turtle steppers dub ${v}: ${c.what}`, make: () => turtleDub(v), mix: DUB_LOW }])),
+  ...Object.fromEntries(Object.entries(CUSHION_RAVE).map(([v, c]) => ["cushions" + v, { name: `🛋️ couch-cushion rave ${v}: ${c.what}`, make: () => cushionRave(v), mix: raveMix(v) }])),
   // Peaceful waltzes: three beats a bar (12 steps), oom-pah-pah under a
   // tune, two eight-bar halves, each with its own chords
   castlewaltz: { name: "🏰 castle waltz", make: () => {
@@ -1179,7 +1201,7 @@ const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TU
 // (ticket 301: and its versions, for M: drums of their own (kick, rim, hat, and more), a bass pattern, tunes made of their
 // chords' tones (tunes: two patterns, [step, chord tone, length, octaves up] over two bars, crossOf: so they fit any chords),
 // and a form of their own (a drum break); drums: { break } the break's parts, drums alone)
-function steppersTune({ bpm = 74, down = 0, ups = {}, chords = ["Em", "Em", "Am", "Em", "C", "D", "Em", "Em"], lines = {}, drums = {}, bassPat = null, tunes = null, chop = null, form = null } = {}) {
+function steppersTune({ bpm = 74, down = 0, ups = {}, chords = ["Em", "Em", "Am", "Em", "C", "D", "Em", "Em"], lines = {}, drums = {}, bassPat = null, tunes = null, chop = null, form = null, bassInst = "bass" } = {}) {
     const T = { bpm, swing: drums.swing ?? 0.15, room: 3, echoSteps: 3, level: 0.85, parts: [
       { name: "kick", inst: "kick", level: 0.8, line: hitsOf(drums.kick || "x...x...x...x...") },
       { name: "drums", inst: "rim", level: 0.7, rev: 0.3, echo: 0.3, line: hitsOf(drums.rim || "........x.......") },
@@ -1187,7 +1209,7 @@ function steppersTune({ bpm = 74, down = 0, ups = {}, chords = ["Em", "Em", "Am"
       ...(drums.extra || []).map(([inst, pat, level = 0.45, note = 60]) => ({ name: "perc", inst, level, rev: 0.2, line: hitsOf(pat, note) })),
       ...(drums.break || []).map(([inst, pat, level = 0.6, note = 60]) => ({ name: "break", inst, level, rev: 0.25, echo: 0.3, line: hitsOf(pat, note) })),
       { name: "chop", inst: "chop", echo: 0.5, rev: 0.2, line: stabsOf(chords, 16, chop || [4, 12], 1, 4) },
-      { name: "bass", inst: "bass", line: bassOf(chords, 16, bassPat || [[0, 0, 3], [4, 0, 2], [6, 7, 2], [8, 0, 3], [12, 12, 2], [14, 10, 2]], 2) },
+      { name: "bass", inst: bassInst, line: bassOf(chords, 16, bassPat || [[0, 0, 3], [4, 0, 2], [6, 7, 2], [8, 0, 3], [12, 12, 2], [14, 10, 2]], 2) },
       // a ping, like sonar, far off in the echo
       { name: "sonar", inst: "bell", level: 0.35, rev: 0.5, echo: 0.6, line: lineOf(lines.sonar || "E6:1 r:63 B5:1 r:63") },
       { name: "tuneA", inst: "melodica", rev: 0.4, echo: 0.45, line: tunes ? crossOf(chords, 16, 32, tunes[0], 5) : lineOf(lines.tuneA ||

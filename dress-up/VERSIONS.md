@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.276 (2026-10-18)
+
+Everything in 0.0.275, with the new tracks starting from Matthew's mix.
+
+- **🛋️ Couch-cushion rave A starts from Matthew's own mixing board**: the hooks three octaves down, darker and roomier, the stabs, the sparkle and the ghost two down, the first bass one, the hats and the shaker in the room. **Rave B starts with his two basses**: louder, the wah wide open, toned down, in the room and panned apart.
+- **The other new tracks start low and groovy too**, as he likes it: raves B to E with the hooks three octaves down and the stabs, sparkle and ghost two, and both basses loud with the wah open; 🐢 turtle steppers dubs A to D with a wah bass, loud and wet, the melodicas two octaves down and the chop one. A player's own mixing board still wins once they change a knob.
+
 ## 0.0.275 (2026-10-18)
 
 Everything in 0.0.274, with a way to the game's page.
