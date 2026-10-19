@@ -71,6 +71,8 @@ function treadStroke(amt, u) {
 const ANIMS = [["none", "⏸️ still"], ["walk", "🚶 walking"], ["stairs", "🔼 walking up or down stairs"], ["run", "🏃 running"], ["swim", "🏊 swimming"], ["crawl", "🐛 crawling"], ["climb", "🪜 climbing (with ladder)"], ["climbup", "🧗 climbing"], ["jump", "🐸 short, fast jump"], ["jumphigh", "🦘 high, slow jump"], ["crouch", "🧎 crouching down"]];
 // (walking, running and crawling are seen from the side: chosen facing us, the friend turns to our right)
 const ANIM_SIDEWAYS = { walk: true, run: true, crawl: true, stairs: true };   // (ticket 308: and on stairs)
+// (ticket 316) pulling a lever: when it began, and which hand (1 their left, -1 their right)
+let pullAt = 0, pullSide = -1;
 // (ticket 309) walking, how far behind the thigh the shin swings, in the stride's turn (radians): the knee leads, the foot follows
 const WALK_LAG = 1.1;
 // (ticket 287) swimming flat, from the side: how far the friend is turned about the hips, short of lying level, so the
@@ -697,6 +699,17 @@ function moveNow() {
   // Down, twice as quick: each foot in turn reaching on and down, its leg nearly straight, the other knee bending under
   // the weight (they stand on the lower foot, grounded: the reaching one, as if on the step below), the arms up and out
   // for balance; toward us or away, each leg seen short as it lifts or reaches (Step), the soles showing
+  // (ticket 316, Matthew: "pull it --- new animation for reaching up and pulling down with dominate hand") pulling a
+  // lever: the dominant hand (pullSide) reaching up, straight, over 0.35 s, a moment's grip, then pulling down to the
+  // shoulder's height with the elbow bending, the knees giving a little with it, and back to rest; startPull times it
+  if (a === "pull") {
+    const t = (performance.now() - pullAt) / 1000, ease = x => x * x * (3 - 2 * x), up = -95 - (B.arms ?? 0), down = 35 - (B.arms ?? 0);
+    const [arm, elbow, knee] = t < 0.35 ? [up * ease(t / 0.35), 0, 0] : t < 0.5 ? [up, 0, 0] : t < 0.85 ? [up + (down - up) * ease((t - 0.5) / 0.35), 60 * ease((t - 0.5) / 0.35), 14 * ease((t - 0.5) / 0.35)]
+                             : [down * (1 - ease(Math.min(1, (t - 0.85) / 0.25))), 60 * (1 - ease(Math.min(1, (t - 0.85) / 0.25))), 14 * (1 - ease(Math.min(1, (t - 0.85) / 0.25)))];
+    // (from behind, drawn as facing us without the face: their right hand shows on our right, so the other side's arm)
+    const side = (pullSide > 0) !== (B.facing === "back") ? "L" : "R";
+    return { ["Arm" + side]: arm, ["Elbow" + side]: elbow, ...both("Knee", () => knee), grounded: true };
+  }
   if (a === "stairs") {
     const up = (B.stairsWay ?? "up") !== "down", s = sin(up ? 1 : 2), c = cos(up ? 1 : 2);
     if (up) {

@@ -121,6 +121,7 @@ const TABS = [
   ["🧍 Body", "body", [
     ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"], ["hug", "🤗 jumping up into a hug"], ["lie", "🛌 lying down"]]],
     ["choice", "lieHow", "🛌 lying", [["back", "🛌 on the back, face up"], ["side", "🛏️ on the side, facing us"]]],   // (ticket 299)
+    ["choice", "hand", "✋ dominant hand (it pulls the levers)", [["right", "🫱 right"], ["left", "🫲 left"], ["both", "🪙 both: a coin flip each time"]]],   // (ticket 316)
     ["choice", "lieHead", "🛌 head toward", [["left", "⬅️ our left"], ["right", "➡️ our right"]]],
     ["range", "hugLift", "🙌 held up (100 = a leg's length)", 0, 300, 40, 90],
     ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"], ["back", "⬆️ away from us"]]],

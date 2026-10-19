@@ -330,9 +330,31 @@ const letGo = () => {
   if (placed) dropOnSeat();
   if (placed && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)
   if (way) { const p = bgShown.node && bgShown.node.querySelector(`.portal[data-way="${way}"]`); if (p && !entering) enterScene(p); }   // (ticket 280: a board's way, as its arrow's click)
-  if (pull !== null) leverPull(pull);   // (ticket 284)
-  if (pullRoom) roomLeverPull(pullRoom);   // (ticket 305)
+  if (pull !== null) leverAct(`[data-drag="thing:${pull}"]`, () => leverPull(pull));   // (ticket 284; ticket 316: walked to and pulled)
+  if (pullRoom) leverAct(`[data-lever="${pullRoom}"]`, () => roomLeverPull(pullRoom));   // (ticket 305)
 };
+// (ticket 316, Matthew: "when we trigger a lever for a trap door, we plan an animation and path: walk to the lever, facing
+// it. pull it ... then after the pull, the door opens, animated") With 👆 walk where you click on, a lever pressed is a
+// planned action: the friend walks to the floor just in front of its foot (a wall lever's: the back line before it),
+// turns to face it, and pulls it with the dominant hand (startPull), and it goes over at the pull, its door swinging
+// as before; already there, they pull it at once. Without 👆, it goes over at once, as before.
+function leverAct(sel, act) {
+  const A = state.access || DEFAULTS.access, BG = state.background, el = bgShown.node && bgShown.node.querySelector(sel), M = pic.getScreenCTM();
+  if (!A.clickWalk || !el || !M || BG.kind === "none" || BG.onBridge) { act(); return; }
+  const r = el.getBoundingClientRect(), c = new DOMPoint((r.left + r.right) / 2, r.bottom).matrixTransform(M.inverse());
+  const g = SCENE.ground, k = (SCENE.bottom - SCENE.top) / 700, F = sceneFrame, z = Math.max(g + figYMin(F) + 4, Math.min(F.bottom - 4, c.y + 8 * k));
+  const pull = () => { if (BG.seat) standUp(); state.body.facing = "back"; state.body.turn = ""; startPull(act); };
+  if (Math.hypot(c.x - (BG.figX ?? 0), z - (g + (BG.figY ?? 0))) < 24 * k && !clickRun) { pull(); return; }
+  walkPlanned(c.x, z, pull);
+}
+function startPull(then) {
+  const body = state.body, h = body.hand ?? "right";
+  pullSide = h === "left" ? 1 : h === "right" ? -1 : Math.random() < 0.5 ? 1 : -1;
+  if (body.pose !== "stand") strikePose("stand");
+  body.anim = "pull"; pullAt = performance.now(); changed();
+  setTimeout(then, 560);
+  setTimeout(() => { if (body.anim === "pull") { body.anim = "none"; changed(); } }, 1150);
+}
 // (ticket 284) A 🎚️ lever pulled: it flips over, and so does every 🕳️ trap door here it is wired to (its 🔗); the picture is
 // drawn with it over, and then its handle on the screen turns across from where it was, in LEVER_TURN ms
 // (ticket 307, Matthew: "the switch should animate too -- rocking back and forth somehow": it swings past and rocks back, settling)

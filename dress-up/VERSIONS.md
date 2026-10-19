@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.272 (2026-10-18)
+
+Everything in 0.0.271, with levers pulled by hand.
+
+- **Pull a lever yourself**: with 👆 walk where you click on, pressing a lever (the trap room's on its wall, or one you placed) walks your friend over to it; they turn to face it, reach up and pull it down, and it goes over as they pull, its trap door swinging after. Already standing at it, they pull at once.
+- **✋ dominant hand** (🧍 Body): right, left, or both (a coin flip each time): the hand that pulls.
+
 ## 0.0.271 (2026-10-18)
 
 Everything in 0.0.270, with walking behind the house and the castle.
