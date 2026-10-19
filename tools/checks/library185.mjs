@@ -29,7 +29,8 @@ try {
   const THING_GROUPS_N = await ev("THING_GROUPS.length");
   // (ticket 369: more groups since, THING_GROUPS's; and nature has more after these five, moss and lichen since 0.0.227, ticket 319)
   ok("its groups (THING_GROUPS's, nine by 0.0.296), nature open at first: rock, bush, tree, pine, toadstool, then more", groups.chips.length === THING_GROUPS_N && groups.first.slice(0, 5).join() === "+ 🪨 rock,+ 🌿 bush,+ 🌳 tree,+ 🌲 pine,+ 🍄 toadstool", groups);
-  ok("camp: log, campfire, bench, barrel; magic: cauldron, potion; spooky: a skeleton; signs: a sign", groups.camp.join() === "+ 🪵 log,+ 🔥 campfire,+ 🪑 bench,+ 🛢️ barrel" && groups.magic.join() === "+ 🫕 cauldron,+ 🧪 potion" && groups.spooky.join() === "+ 💀 skeleton" && groups.signs.join() === "+ 🪧 sign,+ 🧭 sign with directions", groups);
+  // (ticket 369: spooky has the witch's woods' dead tree, skull on a stake and fence of stakes since 0.0.287, ticket 368)
+  ok("camp: log, campfire, bench, barrel; magic: cauldron, potion; spooky: a skeleton, then the witch's woods' pieces; signs: a sign", groups.camp.join() === "+ 🪵 log,+ 🔥 campfire,+ 🪑 bench,+ 🛢️ barrel" && groups.magic.join() === "+ 🫕 cauldron,+ 🧪 potion" && groups.spooky.join() === "+ 💀 skeleton,+ 🌳 dead tree,+ 💀 skull on a stake,+ 🪵 fence of stakes" && groups.signs.join() === "+ 🪧 sign,+ 🧭 sign with directions", groups);
   // (0.0.113) the drawings lifted out of the places: each drawn as a thing too, burning or not
   const lifted = JSON.parse(await ev(`(async () => { const B = state.background, kinds = ["log", "campfire", "bench", "barrel", "cauldron"];
     B.things = kinds.map((kind, i) => ({ kind, x: -300 + i * 150, z: 370, seed: 20 + i, size: 100, ...structuredClone(THING_DEFAULTS[kind] || {}) })); changed(); await new Promise(r => setTimeout(r, 500));

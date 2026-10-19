@@ -35,7 +35,9 @@ try {
     return JSON.stringify({ start, ys, fallen, lifted, placed }); })()`));
   console.log(`  start ${JSON.stringify(r.start)}; falling ${r.ys.join(" ")}; fallen ${JSON.stringify(r.fallen)}; lifted ${JSON.stringify(r.lifted)}; placed ${JSON.stringify(r.placed)}`);
   ok("the trap room has its blue pair, both pits a way down", r.start.blue === 2 && r.start.ways === 2 && !r.start.boulder, r.start);
-  ok("the left one pulled: the boulder seen falling (between the ceiling and the pit)", r.ys.some(y => y < -5) && r.ys[r.ys.length - 1] === 0, r.ys);
+  // (ticket 369: since ticket 338 the landed boulder is a placed rock, and the room's own goes back up out of sight: seen from the
+  // ceiling down to the pit, not still there at the end)
+  ok("the left one pulled: the boulder seen falling (between the ceiling and the pit)", r.ys.some(y => y < -400) && r.ys.some(y => y > -30 && y < -2), r.ys);
   ok("then its pit covered: one way down left, a boulder standing in it", r.fallen.ways === 1 && r.fallen.boulder, r.fallen);
   ok("pulled again: the boulder gone, both ways down back", r.lifted.ways === 2 && !r.lifted.boulder, r.lifted);
   ok("a placed boulder lever (blue knob) drops a boulder into its trap door, which has no hole then", r.placed.boulder && r.placed.drawn && !r.placed.hole && r.placed.blueKnob, r.placed);
