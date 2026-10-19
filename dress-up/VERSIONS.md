@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.326 (2026-10-19)
+
+Everything in 0.0.325, with a small friend easy to pick up.
+
+- **🧍 A small friend can be picked up and moved, not just posed**: far off, or up on the tree house's rope bridges, your friend is small on the screen, and nearly every press on them took a hand or a foot to pose instead of moving them, so you could not drag them down off a bridge. Now a hand's or foot's grip is never more than an eighth of your friend's height; at ordinary sizes nothing changes.
+
 ## 0.0.325 (2026-10-19)
 
 Everything in 0.0.324, with a distant shore for the open water.

@@ -53,8 +53,14 @@ function onJoint(e) {
   const [x, y] = figUnits(e), px = 1 / (pic.getScreenCTM().a * figureT.k), slop = (e.pointerType === "touch" ? 18 : 8) * px;
   let best = null;
   const consider = (what, side, P, r) => { const d = Math.hypot(x - P[0], y - P[1]); if (d <= r && (!best || d < best.d)) best = { what, side, d, P, r }; };
-  for (const a of poseJoints.arms) { consider("hand", a.side, a.H, Math.max(poseJoints.handR, 12 * px) + slop); consider("elbow", a.side, a.E, poseJoints.armW * 0.6 + 2 * px); }
-  for (const l of poseJoints.legs) { consider("foot", l.side, l.F, Math.max(poseJoints.footR, 12 * px) + slop); consider("knee", l.side, l.K, poseJoints.legW * 0.6 + 2 * px); }
+  // (ticket 369, bridge245: a friend small on a rope bridge, 54 pixels tall in the app's pane and less on GitHub's, was all hands and
+  // feet: their 12-pixel least size and the slop covered every point not on the face, so a press could only pose a limb, never take
+  // the friend off the bridge) a hand's or a foot's reach at most an eighth of the friend's height on the screen, never less than the
+  // hand or the foot itself; a friend of ordinary size (160 pixels tall and more under a mouse, 240 under a finger) is as before
+  const tall = ((document.getElementById("figure") || { getBoundingClientRect: () => ({ height: 1e9 }) }).getBoundingClientRect().height || 1e9) * px;
+  const reach = r => Math.max(r, Math.min(Math.max(r, 12 * px) + slop, tall / 8));
+  for (const a of poseJoints.arms) { consider("hand", a.side, a.H, reach(poseJoints.handR)); consider("elbow", a.side, a.E, poseJoints.armW * 0.6 + 2 * px); }
+  for (const l of poseJoints.legs) { consider("foot", l.side, l.F, reach(poseJoints.footR)); consider("knee", l.side, l.K, poseJoints.legW * 0.6 + 2 * px); }
   return best;
 }
 // (ticket 135) Under a mouse or a pen, what a press would take glows: the

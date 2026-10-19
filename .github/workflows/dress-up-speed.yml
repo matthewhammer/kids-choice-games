@@ -31,7 +31,9 @@ jobs:
   chrome:
     name: Chrome (checks, gate, audit, leak)
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # (ticket 369, 2026-10-19: the checks alone took 43 minutes in 0.0.319's run, and with the gate, the slow gate and the audit the job
+    # ran past 60, so since 0.0.312 every run was cut off in the audit or the leak, its last steps never recorded)
+    timeout-minutes: 90
     outputs:
       checks: ${{ steps.checks.outcome }}
       gate: ${{ steps.gate.outcome }}
