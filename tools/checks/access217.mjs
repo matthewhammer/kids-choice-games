@@ -54,7 +54,9 @@ try {
   console.log(`  (the boxes' row, on, at 1600 wide: ${shown.oneLine}px tall; one line is about 50)`);
   ok("Surprise me leaves it alone", tab.same, tab);
   // every arrow shown: off, none far shows; on, all, the far ones dim and coloured
-  const all = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access); await clearing();
+  // (ticket 419: since 0.0.335 an arrow takes ♿'s --label-stay, 500 ms, to fade out after being shown; read once it has, as
+  // "hidden" means: 4 frames in, 0.0.335's run caught the far ones mid-fade)
+  const all = JSON.parse(await ev(`(async () => { ${H} Object.assign(A, DEFAULTS.access); await clearing(); await w((A.labelStay ?? 500) + 200);
     const vis = () => arrows().map(el => +getComputedStyle(el).opacity);
     const off = vis(); A.allArrows = true; A.arrowDim = 40; A.arrowColor = "#f472b6"; changed(); await frames(4); await w(400);
     const far = arrows().filter(el => !el.classList.contains("near") && !el.classList.contains("aimed"));
