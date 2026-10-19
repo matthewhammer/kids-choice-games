@@ -139,15 +139,27 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     s += byDepth(bigs.map(b => b.slice(0, 3)));
   } else if (kind === "underwater") {
     s += `<defs>${grad("bg-sea", "#6fd6f2", "#0b4f7a", y0, y1)}</defs>` + all("url(#bg-sea)");
-    const mRays = s.length;   // (ticket 284: the light coming down one wall object; the sand's specks one floor object)
+    // (ticket 370, Matthew: "the background of this scene could be better with more layers, like deep sea") the light
+    // coming down shimmers with the slow LFO, as the deep sea's (ticket 284: one wall object)
+    let rays = "";
     for (let j = 0; j < 5; j++) {
       const xt = x0 + W * (0.05 + 0.22 * j);
-      s += `<polygon points="${P(xt, y0 - pad * 0.1)} ${P(xt + 60 * k, y0 - pad * 0.1)} ${P(xt + 10 * k + W * 0.08, g)} ${P(xt - 50 * k + W * 0.08, g)}" ` +
-           `fill="#ffffff" opacity="0.1"/>`;
+      rays += `<polygon points="${P(xt, y0 - pad * 0.1)} ${P(xt + 60 * k, y0 - pad * 0.1)} ${P(xt + 10 * k + W * 0.08, g)} ${P(xt - 50 * k + W * 0.08, g)}" ` +
+              `fill="#ffffff" opacity="0.1"/>`;
     }
-    s = wallSince(s, mRays, "light rays");
-    // far rocks, then the sandy bottom
-    s += land(g - 70 * k, 40, "#2f6f8f", 1.2) + land(g - 18 * k, 8, "#e6d29a", 0.3);
+    s += wallObj("light rays", `<g>${lfoTimed(opts, "slow", 0.6, `<animate attributeName="opacity" values="0.6;1;0.6" dur="7s" repeatCount="indefinite"/>`)}${rays}</g>`);
+    // the far water in layers, fading into the blue the farther they are: a hazy ridge, far kelp standing up from it, a
+    // mid ridge, the near rocks (as before), then the sandy bottom
+    s += land(g - 128 * k, 44, "#5aa6c6", 0.6);
+    let farKelp = "";
+    for (let i = 0; i < 9; i++) {
+      const x = x0 + W * (0.04 + 0.11 * i + 0.05 * R(i, 371)), b = g - 110 * k, h = (90 + 90 * R(i, 372)) * k;
+      let d = `M${P(x, b)}`;
+      for (let j = 1; j <= 3; j++) d += ` Q${P(x + (j % 2 ? 1 : -1) * 12 * k, b - h * (j - 0.5) / 3)} ${P(x, b - h * j / 3)}`;
+      farKelp += `<path d="${d}" fill="none" stroke="#4b97b7" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>`;
+    }
+    s += wallObj("far kelp", farKelp);
+    s += land(g - 98 * k, 34, "#3f88a8", 1.9) + land(g - 70 * k, 40, "#2f6f8f", 1.2) + land(g - 18 * k, 8, "#e6d29a", 0.3);
     const mSpecks = s.length;
     for (let i = 0; i < 30; i++)
       s += `<circle cx="${f1(x0 + W * R(i, 9))}" cy="${f1(g - 5 * k + 120 * k * R(i, 10))}" r="${f1(2.2 * k)}" fill="#c9b27a"/>`;
@@ -169,17 +181,60 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // a shipwreck on the left, half sunk in the sand, its mast broken (an
     // object with the sand heaped over its keel, standing in the middle of
     // that heap)
+    // (ticket 370, Matthew: "more detail for the shipwreck") its planks and their seams, its keel, a rail along the deck
+    // with a stretch broken away, a cabin at the stern, barnacles and weed on the hull (the weed swaying), the portholes'
+    // glints, a sail in tatters with holes and a torn flap that sways, the mast's splintered top, the rudder, an anchor
+    // on its chain against the bow, and a chest half sunk in the sand before it: still one object, standing where it did
     {
       const x = Math.min(x0 + W * 0.2, -230 * k), y = g - 10 * k, X = (a, b) => P(x + a * k, y + b * k);
-      s += obj("shipwreck", y + 40 * k, `<g transform="rotate(-9 ${P(x, y)})">` +
-           `<path d="M${X(-160, -40)} L${X(150, -64)} Q${X(150, 10)} ${X(110, 30)} L${X(-120, 40)} Q${X(-160, 10)} ${X(-160, -40)} Z" ` +
-           `fill="#6d4c2f" stroke="#3e2a18" stroke-width="${f1(4 * k)}"/>` +
-           [-20, 0, 20].map(d => `<path d="M${X(-150, -20 + d)} L${X(140, -42 + d)}" stroke="#4e3420" stroke-width="${f1(2.5 * k)}"/>`).join("") +
-           [-90, -40, 10, 60].map(a => `<circle cx="${f1(x + a * k)}" cy="${f1(y - (16 + a * 0.08) * k)}" r="${f1(9 * k)}" fill="#1d3a4a" stroke="#c9a14a" stroke-width="${f1(2.5 * k)}"/>`).join("") +
-           `<line x1="${f1(x + 10 * k)}" y1="${f1(y - 52 * k)}" x2="${f1(x + 30 * k)}" y2="${f1(y - 250 * k)}" stroke="#5a3d24" stroke-width="${f1(11 * k)}" stroke-linecap="round"/>` +
-           `<polygon points="${X(32, -240)} ${X(110, -205)} ${X(70, -150)} ${X(90, -120)} ${X(26, -110)}" fill="#d8cfae" opacity="0.85"/>` +
-           `<line x1="${f1(x + 25 * k)}" y1="${f1(y - 200 * k)}" x2="${f1(x + 95 * k)}" y2="${f1(y - 165 * k)}" stroke="#5a3d24" stroke-width="${f1(6 * k)}"/>` +
-           `</g>` + `<ellipse cx="${f1(x - 20 * k)}" cy="${f1(y + 40 * k)}" rx="${f1(190 * k)}" ry="${f1(34 * k)}" fill="#e6d29a"/>`);
+      const deck = a => -40 - 24 * (a + 160) / 310, keel = a => 40 - 10 * (a + 120) / 230, plank = (a, d) => -20 + d - 22 * (a + 150) / 290;
+      const dark = "#3e2a18", wood = "#5a3d24", sw = v => f1(v * k);
+      let t = `<path d="M${X(-160, -40)} L${X(150, -64)} Q${X(150, 10)} ${X(110, 30)} L${X(-120, 40)} Q${X(-160, 10)} ${X(-160, -40)} Z" fill="#6d4c2f" stroke="${dark}" stroke-width="${sw(4)}"/>`;
+      // the rudder, hanging from the stern into the sand
+      t = `<path d="M${X(146, -34)} L${X(170, -26)} L${X(166, 22)} L${X(142, 18)} Z" fill="${wood}" stroke="${dark}" stroke-width="${sw(2.5)}"/>` + t;
+      // planks: their lines, a seam where one meets the next, the keel below
+      t += [-20, 0, 20].map(d => `<path d="M${X(-150, -20 + d)} L${X(140, -42 + d)}" stroke="#4e3420" stroke-width="${sw(2.5)}"/>`).join("");
+      t += [[-30, [-110, -10, 90]], [-10, [-60, 40, 120]], [10, [-130, -20, 70]], [28, [-80, 20]]].map(([d, xs]) => xs.map(a =>
+        `<line x1="${f1(x + a * k)}" y1="${f1(y + (plank(a, d) - 8) * k)}" x2="${f1(x + a * k)}" y2="${f1(y + (plank(a, d) + 8) * k)}" stroke="#4e3420" stroke-width="${sw(1.6)}"/>`).join("")).join("");
+      t += `<path d="M${X(-122, 38)} L${X(112, 28)}" stroke="#2f1f12" stroke-width="${sw(6)}" stroke-linecap="round"/>`;
+      // the stern cabin, its window dark, a corner of its roof broken off
+      t += `<path d="M${X(72, deck(72))} L${X(72, deck(72) - 40)} L${X(118, deck(118) - 44)} L${X(128, deck(128) - 36)} L${X(140, deck(140) - 40)} L${X(140, deck(140))} Z" fill="#5e4128" stroke="${dark}" stroke-width="${sw(3)}"/>` +
+           `<rect x="${f1(x + 92 * k)}" y="${f1(y + (deck(92) - 32) * k)}" width="${sw(18)}" height="${sw(14)}" fill="#14303f" stroke="#c9a14a" stroke-width="${sw(2)}"/>`;
+      // the rail: posts along the deck, two gone, a piece of rail hanging down where they were
+      for (let a = -140; a <= 60; a += 25) if (a < -45 || a > 0) t += `<line x1="${f1(x + a * k)}" y1="${f1(y + deck(a) * k)}" x2="${f1(x + a * k)}" y2="${f1(y + (deck(a) - 14) * k)}" stroke="${wood}" stroke-width="${sw(3)}"/>`;
+      t += `<path d="M${X(-150, deck(-150) - 14)} L${X(-48, deck(-48) - 14)} M${X(6, deck(6) - 14)} L${X(70, deck(70) - 14)}" stroke="${wood}" stroke-width="${sw(4)}" stroke-linecap="round"/>` +
+           `<path d="M${X(-48, deck(-48) - 14)} L${X(-34, deck(-34) + 8)}" stroke="${wood}" stroke-width="${sw(4)}" stroke-linecap="round"/>`;
+      // the portholes, two with a glint
+      t += [-90, -40, 10, 60].map((a, i) => { const cx = x + a * k, cy = y - (16 + a * 0.08) * k;
+        return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${sw(9)}" fill="#1d3a4a" stroke="#c9a14a" stroke-width="${sw(2.5)}"/>` +
+          (i % 2 ? "" : `<path d="M${P(cx - 5 * k, cy - 2 * k)} Q${P(cx - 4 * k, cy - 6 * k)} ${P(cx + 1 * k, cy - 6 * k)}" fill="none" stroke="#ffffff" stroke-width="${sw(1.6)}" opacity="0.75"/>`); }).join("");
+      // barnacles along the bottom of the hull
+      for (let i = 0; i < 16; i++) { const a = -110 + 205 * R(i, 373), r = (1.6 + 2.2 * R(i, 374)) * k;
+        t += `<circle cx="${f1(x + a * k)}" cy="${f1(y + (keel(a) - 6 - 12 * R(i, 375)) * k)}" r="${f1(r)}" fill="#d6cfbd" stroke="#8d8676" stroke-width="${f1(0.8 * k)}"/>`; }
+      // weed on the hull, swaying (three tufts)
+      t += [-70, 5, 80].map((a, i) => { const bx = x + a * k, by = y + (keel(a) - 4) * k;
+        return swaying(opts, [-1, 1].map(sd => `<path d="M${P(bx + sd * 3 * k, by)} q${f1(sd * 10 * k)} ${f1(-14 * k)} ${f1(sd * 2 * k)} ${f1(-(26 + 10 * i) * k)} q${f1(-sd * 8 * k)} ${f1(-12 * k)} ${f1(sd * 4 * k)} ${f1(-(22 + 6 * i) * k)}" fill="none" stroke="#3d9a5c" stroke-width="${sw(3.5)}" stroke-linecap="round"/>`).join(""),
+          bx, by, 8, 0.2 + 0.3 * i, (4 + i * 0.7).toFixed(1)); }).join("");
+      // the anchor against the bow, on its chain from the hawse hole
+      t += `<path d="M${X(-152, -26)} Q${X(-178, -10)} ${X(-180, -26 + 16)}" fill="none" stroke="#55606a" stroke-width="${sw(3)}" stroke-dasharray="${sw(4)} ${sw(2)}"/>` +
+           `<circle cx="${f1(x - 180 * k)}" cy="${f1(y - 12 * k)}" r="${sw(5)}" fill="none" stroke="#4a545d" stroke-width="${sw(3)}"/>` +
+           `<path d="M${X(-180, -7)} L${X(-184, 34)} M${X(-194, 4)} L${X(-172, 2)} M${X(-200, 22)} Q${X(-192, 42)} ${X(-184, 36)} Q${X(-174, 40)} ${X(-168, 20)}" fill="none" stroke="#4a545d" stroke-width="${sw(5)}" stroke-linecap="round"/>`;
+      // the mast, its top splintered, the yard, the sail in tatters (two holes), a torn flap from the yard's end, swaying
+      t += `<line x1="${f1(x + 10 * k)}" y1="${f1(y - 52 * k)}" x2="${f1(x + 30 * k)}" y2="${f1(y - 250 * k)}" stroke="${wood}" stroke-width="${sw(11)}" stroke-linecap="round"/>` +
+           `<polygon points="${X(24, -246)} ${X(27, -262)} ${X(31, -251)} ${X(35, -266)} ${X(37, -248)}" fill="#7a5634" stroke="${dark}" stroke-width="${sw(1.5)}"/>` +
+           `<path fill-rule="evenodd" d="M${X(32, -240)} L${X(110, -205)} L${X(97, -192)} L${X(104, -180)} L${X(85, -168)} L${X(93, -152)} L${X(75, -143)} L${X(90, -120)} L${X(63, -119)} L${X(52, -110)} L${X(41, -115)} L${X(26, -110)} Z ` +
+             `M${X(54, -200)} a${sw(6)} ${sw(4)} 0 1 0 ${sw(12)} 0 a${sw(6)} ${sw(4)} 0 1 0 ${sw(-12)} 0 Z M${X(44, -152)} a${sw(5)} ${sw(7)} 0 1 0 ${sw(10)} 0 a${sw(5)} ${sw(7)} 0 1 0 ${sw(-10)} 0 Z" fill="#d8cfae" opacity="0.85"/>` +
+           `<line x1="${f1(x + 25 * k)}" y1="${f1(y - 200 * k)}" x2="${f1(x + 95 * k)}" y2="${f1(y - 165 * k)}" stroke="${wood}" stroke-width="${sw(6)}"/>` +
+           swaying(opts, `<path d="M${X(92, -167)} L${X(104, -160)} L${X(100, -140)} L${X(106, -128)} L${X(94, -132)} L${X(88, -146)} Z" fill="#cfc5a2" opacity="0.85"/>`, x + 95 * k, y - 165 * k, 6, 0.55, "4.6");
+      // the chest, half sunk in the sand heap before the wreck: its lid ajar, gold within, a glint
+      const cx = x + 92 * k, cy = y + 30 * k;
+      const chest = `<path d="M${P(cx - 22 * k, cy - 18 * k)} L${P(cx - 18 * k, cy - 30 * k)} L${P(cx + 20 * k, cy - 34 * k)} L${P(cx + 22 * k, cy - 20 * k)} Z" fill="#7a4e2a" stroke="${dark}" stroke-width="${sw(2)}"/>` +
+        [-8, 0, 8].map(dx => `<circle cx="${f1(cx + dx * k)}" cy="${f1(cy - 19 * k)}" r="${sw(4)}" fill="#f2c94c" stroke="#b8860b" stroke-width="${sw(1)}"/>`).join("") +
+        `<rect x="${f1(cx - 22 * k)}" y="${f1(cy - 18 * k)}" width="${sw(44)}" height="${sw(24)}" fill="#8b5a2b" stroke="${dark}" stroke-width="${sw(2)}"/>` +
+        `<rect x="${f1(cx - 3 * k)}" y="${f1(cy - 14 * k)}" width="${sw(6)}" height="${sw(7)}" fill="#c9a14a"/>` +
+        `<path d="M${P(cx + 10 * k, cy - 26 * k)} l${sw(3)} ${sw(-3)} M${P(cx + 13 * k, cy - 23 * k)} l${sw(4)} 0" stroke="#fff6c8" stroke-width="${sw(1.4)}" stroke-linecap="round"/>`;
+      s += obj("shipwreck", y + 40 * k, `<g transform="rotate(-9 ${P(x, y)})">` + t + `</g>` + `<ellipse cx="${f1(x - 20 * k)}" cy="${f1(y + 40 * k)}" rx="${f1(190 * k)}" ry="${f1(34 * k)}" fill="#e6d29a"/>` +
+           chest + `<ellipse cx="${f1(cx)}" cy="${f1(cy + 7 * k)}" rx="${sw(34)}" ry="${sw(9)}" fill="#e6d29a"/>`);
     }
     // a picnic table on the right, a shark sitting at each end (four
     // objects at the table's foot, in this order: the legs and bench, the
@@ -192,21 +247,27 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
         // an eye and a toothy grin, and a front fin holding up a fork
         const cx = x + sd * 128 * k, cy = y - 92 * k, T = (a, b) => P(cx - sd * a * k, cy + b * k);
         const steel = `stroke="#9aa4ad" stroke-width="${f1(3 * k)}" stroke-linecap="round"`;
-        return `<path d="M${T(14, 64)} Q${T(-30, 92)} ${T(-56, 72)} L${T(-20, 58)} Z" fill="#7d8ea0" stroke="#4d5b69" stroke-width="${f1(2.5 * k)}"/>` +
+        // (ticket 370, Matthew: "picnic sharks that move, a bit, somehow") each bobs gently on the slow LFO, sways its tail,
+        // blinks now and then, and every so often lifts its fork, the two out of step; nothing moves its place or its box
+        const ex = cx - sd * 11 * k, ey = cy - 48 * k, [fx, fy] = [cx - sd * 16 * k, cy + 4 * k], off = sd < 0 ? 0 : 0.5;
+        const bob = lfoTimed(opts, "slow", off, `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-3 * k)};0 0" dur="3.6s" repeatCount="indefinite"/>`);
+        const tailAt = [cx - sd * 14 * k, cy + 64 * k];
+        return `<g>${bob}` + swaying(opts, `<path d="M${T(14, 64)} Q${T(-30, 92)} ${T(-56, 72)} L${T(-20, 58)} Z" fill="#7d8ea0" stroke="#4d5b69" stroke-width="${f1(2.5 * k)}"/>`, tailAt[0], tailAt[1], 7, off + 0.25, "2.8") +
           `<path d="M${T(-12, -70)} Q${T(30, -78)} ${T(30, -30)} Q${T(26, 30)} ${T(10, 66)} Q${T(-30, 60)} ${T(-34, 10)} Q${T(-40, -50)} ${T(-12, -70)} Z" ` +
           `fill="#8b9cad" stroke="#4d5b69" stroke-width="${f1(3 * k)}"/>` +
           `<path d="M${T(26, -40)} Q${T(22, 20)} ${T(8, 60)} Q${T(-4, 20)} ${T(4, -40)} Z" fill="#eef3f6"/>` +
           `<path d="M${T(-30, -10)} L${T(-62, -24)} L${T(-34, 18)} Z" fill="#7d8ea0" stroke="#4d5b69" stroke-width="${f1(2.5 * k)}"/>` +
-          `<circle cx="${f1(cx - sd * 10 * k)}" cy="${f1(cy - 48 * k)}" r="${f1(6 * k)}" fill="#ffffff"/>` +
-          `<circle cx="${f1(cx - sd * 12 * k)}" cy="${f1(cy - 48 * k)}" r="${f1(3 * k)}" fill="#111"/>` +
+          `<g transform="translate(${P(ex, ey)})"><g><animateTransform attributeName="transform" type="scale" values="1 1;1 1;1 0.1;1 1" keyTimes="0;0.9;0.95;1" dur="${sd < 0 ? "4.6" : "5.3"}s" begin="-${sd < 0 ? "0.4" : "2.1"}s" repeatCount="indefinite"/>` +
+          `<circle cx="${f1(sd * 1 * k)}" cy="0" r="${f1(6 * k)}" fill="#ffffff"/><circle cx="${f1(-sd * 1 * k)}" cy="0" r="${f1(3 * k)}" fill="#111"/></g></g>` +
           `<path d="M${T(4, -30)} Q${T(18, -20)} ${T(28, -32)}" fill="#fff" stroke="#333" stroke-width="${f1(2 * k)}"/>` +
           [6, 13, 20].map(a => `<path d="M${T(a, -30 + (a - 4) * 0.1)} l${f1(-sd * 3 * k)} ${f1(5 * k)} l${f1(-sd * 3 * k)} ${f1(-5 * k)}" fill="#fff" stroke="#999" stroke-width="${f1(0.8 * k)}"/>`).join("") +
-          // the fork, held up over the table: a handle, a crossbar, three tines
+          // the fork, held up over the table: a handle, a crossbar, three tines (lifted now and then, with the fin holding it)
+          `<g><animateTransform attributeName="transform" type="rotate" values="0 ${P(fx, fy)};0 ${P(fx, fy)};${sd * 9} ${P(fx, fy)};${sd * 9} ${P(fx, fy)};0 ${P(fx, fy)}" keyTimes="0;0.55;0.65;0.82;1" dur="${sd < 0 ? "6.2" : "7.1"}s" begin="-${sd < 0 ? "1.0" : "4.4"}s" repeatCount="indefinite"/>` +
           `<line x1="${f1(cx - sd * 46 * k)}" y1="${f1(cy + 14 * k)}" x2="${f1(cx - sd * 46 * k)}" y2="${f1(cy - 34 * k)}" ${steel}/>` +
           `<line x1="${f1(cx - sd * 40 * k)}" y1="${f1(cy - 34 * k)}" x2="${f1(cx - sd * 52 * k)}" y2="${f1(cy - 34 * k)}" ${steel}/>` +
           [40, 46, 52].map(a => `<line x1="${f1(cx - sd * a * k)}" y1="${f1(cy - 34 * k)}" x2="${f1(cx - sd * a * k)}" y2="${f1(cy - 48 * k)}" ${steel}/>`).join("") +
           // ...in its front fin, wrapped round the handle
-          `<path d="M${T(16, -2)} Q${T(36, -8)} ${T(52, 4)} Q${T(38, 14)} ${T(16, 10)} Z" fill="#7d8ea0" stroke="#4d5b69" stroke-width="${f1(2.5 * k)}"/>`;
+          `<path d="M${T(16, -2)} Q${T(36, -8)} ${T(52, 4)} Q${T(38, 14)} ${T(16, 10)} Z" fill="#7d8ea0" stroke="#4d5b69" stroke-width="${f1(2.5 * k)}"/></g></g>`;
       };
       s += obj("picnic bench", y, benchSvg(x, y, k)) +
            obj("shark, left", y, shark(-1)) + obj("shark, right", y, shark(1));
@@ -218,20 +279,52 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
            `<ellipse cx="${f1(x + 40 * k)}" cy="${f1(y - 84 * k)}" rx="${f1(18 * k)}" ry="${f1(5 * k)}" fill="#ffffff" stroke="#bbb" stroke-width="${f1(1.5 * k)}"/>` +
            `<ellipse cx="${f1(x + 40 * k)}" cy="${f1(y - 90 * k)}" rx="${f1(12 * k)}" ry="${f1(6 * k)}" fill="#e57373"/>`);
     }
-    // fish, and bubbles rising (each fish an object, swimming out over the
-    // far rocks, the farthest bottom there is; the bubbles in front of
-    // everything)
+    // (ticket 370, Matthew: "small fish that move"; "the deep sea school of fish is really nice") each fish swims its own
+    // flat loop out over the far rocks, the way the deep sea's school does (animateMotion, rotate="auto": facing the way it
+    // swims, round both turns, so drawn along +x and alike top and bottom), its tail beating with the quick LFO; the loop
+    // drawn from where it stands (its own spot a transform, the loop from there), so held still on a slow computer each
+    // stays where it is drawn, facing the way it sets off; half of them the other way round (the whole frame mirrored).
+    // Each fish an object still.
+    const fishCol = ["#ff9f1c", "#ffd23f", "#ff6f91", "#7bdff2"];
     for (let i = 0; i < 4; i++) {
-      const x = x0 + W * (0.1 + 0.8 * R(i, 15)), y = y0 + (g - y0) * (0.15 + 0.4 * R(i, 16)), sd = side(i);
-      s += obj(`${["orange", "yellow", "pink", "blue"][i]} fish`, g - 70 * k, `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(18 * k)}" ry="${f1(9 * k)}" fill="${["#ff9f1c", "#ffd23f", "#ff6f91", "#7bdff2"][i]}"/>` +
-           `<g>${sceneLfo(opts, "fast", R(i, 15), "transform", (v, amp) => `${f1((10 + 30 * amp) * v)} ${f1(x - sd * 16 * k)} ${f1(y)}`,
-             `<animateTransform attributeName="transform" type="rotate" values="-15 ${f1(x - sd * 16 * k)} ${f1(y)};15 ${f1(x - sd * 16 * k)} ${f1(y)};-15 ${f1(x - sd * 16 * k)} ${f1(y)}" dur="${(0.5 + 0.1 * i).toFixed(1)}s" repeatCount="indefinite"/>`)}` +
-           `<polygon points="${P(x - sd * 16 * k, y)} ${P(x - sd * 30 * k, y - 9 * k)} ${P(x - sd * 30 * k, y + 9 * k)}" fill="${["#ff9f1c", "#ffd23f", "#ff6f91", "#7bdff2"][i]}"/></g>` +
-           `<circle cx="${f1(x + sd * 9 * k)}" cy="${f1(y - 2 * k)}" r="${f1(2 * k)}" fill="#111"/>`);
+      const x = x0 + W * (0.1 + 0.8 * R(i, 15)), y = y0 + (g - y0) * (0.15 + 0.4 * R(i, 16)), sd = side(i), c = fishCol[i];
+      const a = W * (0.1 + 0.08 * R(i, 376)), b = (14 + 14 * R(i, 377)) * k, dur = (17 + 8 * R(i, 378)).toFixed(1);
+      const tail = `<polygon points="${P(-16 * k, 0)} ${P(-30 * k, -9 * k)} ${P(-30 * k, 9 * k)}" fill="${c}"/>`;
+      s += obj(`${["orange", "yellow", "pink", "blue"][i]} fish`, g - 70 * k, `<g transform="translate(${P(x, y)})${sd < 0 ? " scale(-1 1)" : ""}"><g>` +
+           `<animateMotion path="M0 0 A${f1(a)} ${f1(b)} 0 0 0 0 ${f1(-2 * b)} A${f1(a)} ${f1(b)} 0 0 0 0 0" dur="${dur}s" begin="-${(+dur * R(i, 379)).toFixed(1)}s" rotate="auto" repeatCount="indefinite"/>` +
+           `<g>${sceneLfo(opts, "fast", R(i, 15), "transform", (v, amp) => `${f1((10 + 30 * amp) * v)} ${f1(-16 * k)} 0`,
+             `<animateTransform attributeName="transform" type="rotate" values="-15 ${f1(-16 * k)} 0;15 ${f1(-16 * k)} 0;-15 ${f1(-16 * k)} 0" dur="${(0.5 + 0.1 * i).toFixed(1)}s" repeatCount="indefinite"/>`)}${tail}</g>` +
+           `<ellipse cx="0" cy="0" rx="${f1(18 * k)}" ry="${f1(9 * k)}" fill="${c}"/>` +
+           `<path d="M${P(2 * k, -8 * k)} Q${P(6 * k, 0)} ${P(2 * k, 8 * k)}" fill="none" stroke="#ffffff" stroke-width="${f1(1.6 * k)}" opacity="0.55"/>` +
+           `<circle cx="${f1(9 * k)}" cy="0" r="${f1(2 * k)}" fill="#111"/></g></g>`);
     }
-    let bubbles = "";
-    for (let i = 0; i < 16; i++)
-      bubbles += `<circle cx="${f1(x0 + W * R(i, 17))}" cy="${f1(y0 + (g - y0) * R(i, 18))}" r="${f1((3 + 6 * R(i, 19)) * k)}" fill="none" stroke="#ffffff" stroke-width="${f1(1.5 * k)}" opacity="0.7"/>`;
+    // a small school, high in the water on the left, swimming round one loop together, each a little behind the one
+    // ahead and at its own place across the school (the deep sea's, ticket 235), brighter, being nearer
+    {
+      const cx = x0 + W * 0.3, cy = y0 + (g - y0) * 0.24, a = W * 0.2, b = 26 * k, z = 0.9 * k;
+      let fish = "";
+      for (let i = 0; i < 7; i++) {
+        const lag = (i * 0.34 + 0.25 * R(i, 380)).toFixed(2), across = ((i % 3) - 1) * 12 * z + (R(i, 381) - 0.5) * 8 * z, back = Math.floor(i / 3) * 5 * z;
+        const c = ["#ffe066", "#9be7f7", "#ffb347"][i % 3], beat = (0.36 + 0.1 * R(i, 382)).toFixed(2);
+        fish += `<g><animateMotion path="M0 0 A${f1(a)} ${f1(b)} 0 0 0 0 ${f1(-2 * b)} A${f1(a)} ${f1(b)} 0 0 0 0 0" dur="14s" begin="-${lag}s" rotate="auto" repeatCount="indefinite"/><g transform="translate(${f1(-back)} ${f1(across)})">` +
+          `<g><animateTransform attributeName="transform" type="rotate" values="-22 ${f1(-8 * z)} 0;22 ${f1(-8 * z)} 0;-22 ${f1(-8 * z)} 0" dur="${beat}s" repeatCount="indefinite"/>` +
+          `<path d="M${f1(-7 * z)} 0 L${f1(-16 * z)} ${f1(-5 * z)} L${f1(-14 * z)} 0 L${f1(-16 * z)} ${f1(5 * z)} Z" fill="${c}"/></g>` +
+          `<ellipse cx="0" cy="0" rx="${f1(10 * z)}" ry="${f1(4 * z)}" fill="${c}"/><circle cx="${f1(6 * z)}" cy="0" r="${f1(1.1 * z)}" fill="#0b2a45"/></g></g>`;
+      }
+      s += obj("school of fish", g - 90 * k, `<g transform="translate(${P(cx, cy + b)})" opacity="0.92">${fish}</g>`);
+    }
+    // (ticket 370, Matthew: "bubbles that move") bubbles rising and wobbling, fading in and out (risingBubbles, the deep
+    // sea vent's): a stream from the wreck, one from a clam in the sand, and some on their own across the floor, each at
+    // its own time; in front of everything, as before. Held still on a slow computer, each where it starts.
+    const wx = Math.min(x0 + W * 0.2, -230 * k), wy = g - 10 * k, clamX = x0 + W * 0.58, clamY = g + 58 * k;
+    s += floorObj("clam", `<path d="M${P(clamX - 14 * k, clamY)} Q${P(clamX, clamY - 16 * k)} ${P(clamX + 14 * k, clamY)} Z" fill="#b89bc9" stroke="#6e5a80" stroke-width="${f1(1.5 * k)}"/>` +
+      `<path d="M${P(clamX - 14 * k, clamY)} Q${P(clamX, clamY + 6 * k)} ${P(clamX + 14 * k, clamY)}" fill="#9a7fb0" stroke="#6e5a80" stroke-width="${f1(1.5 * k)}"/>`);
+    let bubbles = risingBubbles(wx + 14 * k, wy - 24 * k, 5, wy - y0, 6.6, 3.4 * k, 900) + risingBubbles(clamX, clamY - 6 * k, 5, clamY - y0, 5.4, 3 * k, 910);
+    for (let i = 0; i < 6; i++) {
+      const bx = x0 + W * (0.08 + 0.84 * R(i, 383)), by = g + 70 * k * R(i, 384), dur = 7 + 4 * R(i, 385), h = by - y0, wob = (R(i, 386) - 0.5) * 30 * k, begin = -(dur * R(i, 387)).toFixed(2);
+      bubbles += `<g><animateTransform attributeName="transform" type="translate" values="0 0;${f1(wob)} ${f1(-h * 0.5)};${f1(-wob * 0.5)} ${f1(-h)}" dur="${dur.toFixed(1)}s" begin="${begin}s" repeatCount="indefinite"/>` +
+                 `<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.8;1" dur="${dur.toFixed(1)}s" begin="${begin}s" repeatCount="indefinite"/>` + bubbleSvg(bx, by, (3 + 5 * R(i, 388)) * k) + `</g>`;
+    }
     s += obj("bubbles", Infinity, bubbles);
   } else if (kind === "deepsea") {
     // (ticket 219, Matthew: "background system for 'deep sea', as a grid
@@ -284,7 +377,9 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     // alike, so upside down on the way back it looks the same.
     {
       const cx = x0 + W * 0.52, cy = y0 + (g - y0) * 0.42, a = W * 0.3, b = 34 * k, z = 0.8 * k;
-      const loop = `M${P(cx - a, cy)} A${f1(a)} ${f1(b)} 0 1 1 ${P(cx + a, cy)} A${f1(a)} ${f1(b)} 0 1 1 ${P(cx - a, cy)} Z`;
+      // (ticket 370: the loop drawn from its left end, the school's place a transform: held still on a slow computer, the fish
+      // stay there, not at the scene's origin)
+      const loop = `M0 0 A${f1(a)} ${f1(b)} 0 1 1 ${f1(2 * a)} 0 A${f1(a)} ${f1(b)} 0 1 1 0 0 Z`;
       let fish = "";
       for (let i = 0; i < 9; i++) {
         const lag = (i * 0.32 + 0.25 * R(i, 825)).toFixed(2), across = ((i % 3) - 1) * 13 * z + (R(i, 824) - 0.5) * 8 * z, back = Math.floor(i / 3) * 4 * z;
@@ -294,7 +389,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
           `<path d="M${f1(-7 * z)} 0 L${f1(-16 * z)} ${f1(-5 * z)} L${f1(-14 * z)} 0 L${f1(-16 * z)} ${f1(5 * z)} Z" fill="${c}"/></g>` +
           `<ellipse cx="0" cy="0" rx="${f1(10 * z)}" ry="${f1(4 * z)}" fill="${c}"/><circle cx="${f1(6 * z)}" cy="0" r="${f1(1.1 * z)}" fill="#0b2a45"/></g></g>`;
       }
-      s += obj("school of fish", g - 95 * k, `<g opacity="0.85">${fish}</g>`);
+      s += obj("school of fish", g - 95 * k, `<g transform="translate(${P(cx - a, cy)})" opacity="0.85">${fish}</g>`);
     }
     // a vent in the sand, on the left, bubbles rising from it
     {

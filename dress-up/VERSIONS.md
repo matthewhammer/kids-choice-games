@@ -2,6 +2,17 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.301 (2026-10-18)
+
+Everything in 0.0.300, with 🐠 under the sea come alive.
+
+- **🐟 The fish swim**: the orange, yellow, pink and blue fish each swim round their own loop, tails beating, and a little school of seven swims together high on the left, like the deep sea's.
+- **🫧 The bubbles rise**, wobbling and fading: a stream from the shipwreck, one from a clam in the sand, and more on their own.
+- **🦈 The picnic sharks move a little**: they bob, sway their tails, blink, and now and then lift their forks.
+- **🚢 The shipwreck in more detail**: planks and seams, a broken rail, a cabin at the stern, barnacles, weed swaying on the hull, portholes that glint, a sail in tatters with a torn flap, a splintered mast, a rudder, an anchor on its chain, and a treasure chest half sunk in the sand.
+- **🌊 The water behind in layers**, like the deep sea: hazy far rocks, far kelp, nearer ridges, and the light shimmering.
+- On a slow computer everything holds still, as everywhere; the deep sea's school now holds still where it swims, too.
+
 ## 0.0.300 (2026-10-18)
 
 Everything in 0.0.299, with you arriving beside the arrows, not on them.
