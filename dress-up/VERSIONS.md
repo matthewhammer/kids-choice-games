@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.251 (2026-10-18)
+
+Everything in 0.0.250, plus N's rock-falling surprise.
+
+- **Hit by a falling boulder, you burst into rainbow bubbles**: stand on a pit in the trap room (or on a placed trap door) when its boulder falls, and you turn into a stack of bubbles in every colour of the rainbow, red at your head down to violet at your feet. They spill out every way, float, and pop one by one. Then you are back where you stood, fading in, and you carry on. No harm done, just bubbles.
+
 ## 0.0.250 (2026-10-18)
 
 Everything in 0.0.249, with some of the outdoors' things as things of their own.

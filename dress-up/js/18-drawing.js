@@ -890,7 +890,7 @@ function drawNow() {
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
-  if (figAway) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 193: a spin's copy is shown instead)
+  if (figAway || figBurst) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 349: and burst into bubbles)   // (ticket 193: a spin's copy is shown instead)
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units
   // (ticket 252) and climbing up through a ceiling's opening: cut off above it
   const clipDown = climb && climb.down && climb.clip != null, clipUp = climb && !climb.down && climb.clipUp != null && climb.door;
@@ -911,7 +911,7 @@ function drawNow() {
     w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + shape + `</clipPath>`;
     n.replaceWith(w); w.append(n);
   }
-  worldWaysHud(); pathHud(); solidsHud(); madeOfHud(); accessApply(); bubbleRun(); makerRun(); ballRun(); bubbleHitsHud();   // (0.0.145: the arrows placed again on every drawing too)   // (ticket 220: bubble space's bubbles, moving while it is shown)   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)
+  worldWaysHud(); pathHud(); solidsHud(); madeOfHud(); accessApply(); bubbleRun(); makerRun(); ballRun(); bubbleHitsHud(); burstKeep();   // (0.0.145: the arrows placed again on every drawing too)   // (ticket 220: bubble space's bubbles, moving while it is shown)   // (ticket 217: the planned path and the collision boxes, when ♿ shows them; the words' size)
   if (scened) { stillPic.draws++; if (stills) stillPic.drawsOn++; }   // (for 🧪)
   // a blown lid tilts about the crack, and on a tall head its top (and
   // long hair or a hood's back below it) swings far out: frame what was

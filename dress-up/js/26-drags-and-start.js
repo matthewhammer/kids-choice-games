@@ -336,7 +336,7 @@ function leverPull(i) {
   turnArm(`[data-drag="thing:${i}"] .lever-arm`, T.on ? LEVER_TILT : -LEVER_TILT);
   for (const [j, open] of swung) lidSwing(`[data-drag="thing:${j}"] .pit-lid`, open);   // (ticket 307)
   // (a boulder lifted out is drawn no more once it has gone: drawn again, held, for its rising; ticket 323)
-  for (const [j, down] of dropped) if (down) boulderFall(`[data-drag="thing:${j}"] [data-boulder]`, true);
+  for (const [j, down] of dropped) if (down) boulderFall(`[data-drag="thing:${j}"] [data-boulder]`, true, BOULDER_FALL, boulderHits);
 }
 // (ticket 305) The trap room's lever pulled: it flips over, and so does every pit it works (trapState); its handle turns across
 function roomLeverPull(side) {
@@ -366,13 +366,16 @@ function roomBoulderPull(side) {
   changed();
   const down = B[key], sd = side === "L" ? -1 : 1, sp = trapState(B, n, K.id).speed;
   turnArm(`[data-lever="B${side}"] .lever-arm`, (down ? -1 : 1) * sd * LEVER_TILT, LEVER_TURN * 100 / sp.lever);
-  for (const j of [0, 1]) if (now[j] !== was[j]) boulderFall(`[data-boulder="${j}"]`, now[j], BOULDER_FALL * 100 / sp.boulder);
+  for (const j of [0, 1]) if (now[j] !== was[j]) boulderFall(`[data-boulder="${j}"]`, now[j], BOULDER_FALL * 100 / sp.boulder, boulderHits);
 }
 // (a boulder falling from the ceiling into its pit, faster as it falls, a little bounce as it lands; or rising away, slowly
 // at first, out of sight; in BOULDER_FALL ms, carried on through a redrawing as every swing is)
 const BOULDER_FALL = 1300;   // (ticket 328: slower, to be seen; 720 in 0.0.231)
-function boulderFall(sel, down, dur = BOULDER_FALL) {
+// (ticket 349: onLand(g), once, as it lands: whether it fell on the friend)
+function boulderFall(sel, down, dur = BOULDER_FALL, onLand = null) {
+  let landed = false;
   swingOn(sel, dur, (g, u) => { const H = +g.dataset.drop;
+    if (down && u >= 0.8 && !landed) { landed = true; if (onLand) onLand(g); }
     const y = down ? (u < 0.8 ? -H * (1 - (u / 0.8) ** 2) : -H * 0.05 * Math.sin(Math.PI * (u - 0.8) / 0.2)) : -H * u * u;
     if (u < 1) { g.removeAttribute("visibility"); g.setAttribute("transform", `translate(0 ${f1(y)})`); return; }
     if (down) g.removeAttribute("transform"); else { g.setAttribute("transform", `translate(0 ${f1(-H)})`); g.setAttribute("visibility", "hidden"); } });
@@ -552,6 +555,67 @@ function svgBox(el) {
 // drawing hides its pieces again), going in and coming out. The copy's ids
 // are its own, so its masks and patterns are its own, not the hidden ones'.
 let figAway = false;
+// (ticket 349, Matthew, for N: "we turn into a stack of rainbow bubbles, and spill out, in all directions, and pop, at
+// different rates. then, as we were before, we fade back in, re-generating and continuing, after the animation of bubbles
+// completes. it's simulating getting crushed by a rock in a whimsical way that N wanted. -- no blood, just rainbow bubbles,
+// getting wild.") A boulder landing on the friend: where it lands (its drawing's box, as it lands), the friend's feet on
+// it. Then friendBurst: the friend hidden (figBurst, as a spin hides them), in their place a stack of rainbow
+// bubbles of their shape, head to feet, coloured from red at the top to violet at the feet, which spill out every way,
+// drift, slow and float, each popping at its own time; when the last has gone, the friend back where they stood (out from
+// under the boulder: solidUnstick), fading in, and on as before. The controls rest while it plays (entering).
+let figBurst = false, burstLayer = null;
+const BURST_N = 52, BURST_POP = [450, 2400];
+// (each drawing takes everything but the scene out of the picture: the burst's bubbles put back on top, so none blink out)
+const burstKeep = () => { if (burstLayer && burstLayer.parentNode !== pic) pic.append(burstLayer); };
+function boulderHits(g) {
+  const P = pic.getScreenCTM(), B = state.background;
+  if (!P || figBurst || !g) return;
+  const r = g.getBoundingClientRect(), inv = P.inverse(), a = new DOMPoint(r.left, r.top).matrixTransform(inv), c = new DOMPoint(r.right, r.bottom).matrixTransform(inv);
+  const x = B.figX ?? 0, z = SCENE.ground + (B.figY ?? 0), x0 = Math.min(a.x, c.x), x1 = Math.max(a.x, c.x), y0 = Math.min(a.y, c.y), y1 = Math.max(a.y, c.y);
+  // (anywhere on it but its very top and edges: each rock's shape is its own, and the friend may stand at the pit's back)
+  const bw = x1 - x0, bh = y1 - y0;
+  if (x > x0 + 0.08 * bw && x < x1 - 0.08 * bw && z > y0 + 0.1 * bh && z < y1 + 0.1 * bh) friendBurst();
+}
+function friendBurst() {
+  const fr = friendBox();
+  if (!fr || figBurst) return;
+  figBurst = true; entering = true; padWant = null; draw();
+  const NS = "http://www.w3.org/2000/svg", layer = burstLayer = document.createElementNS(NS, "g"); layer.id = "friend-burst"; layer.setAttribute("pointer-events", "none"); pic.append(layer);
+  const w = fr[2] - fr[0], h = fr[3] - fr[1], cx = (fr[0] + fr[2]) / 2, cy = fr[1] + h * 0.45, rnd = Math.random;
+  // (the friend's shape, roughly: a head, shoulders and body, two legs; as wide as each part there)
+  const inside = (u, v) => v < 0.17 ? Math.hypot(u / 0.16, (v - 0.09) / 0.09) < 1 : v < 0.6 ? Math.abs(u) < (v < 0.25 ? 0.2 : 0.26) : Math.abs(u) > 0.03 && Math.abs(u) < 0.15;
+  const bubs = [];
+  for (let i = 0; i < 2000 && bubs.length < BURST_N; i++) {
+    const u = (rnd() - 0.5) * 0.7, v = rnd();
+    if (!inside(u, v)) continue;
+    const x = cx + u * w * 1.6, y = fr[1] + v * h, r = h * (0.035 + 0.045 * rnd()), hue = Math.round(v * 290 + 20 * (rnd() - 0.5)), col = `hsl(${hue}, 95%, 60%)`;
+    const el = document.createElementNS(NS, "g"); el.setAttribute("transform", `translate(${f1(x)} ${f1(y)})`);
+    // (a bubble full of its colour, vivid: a rainbow, not a few pale rings)
+    el.innerHTML = `<g class="bubin"><circle r="${f1(r)}" fill="${col}" fill-opacity="0.38"/>${bubbleSvg(0, 0, r, { color: col, shine: 0.9 })}</g>`; layer.append(el);
+    const dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy) || 1, sp = h * (0.6 + 1.4 * rnd());
+    bubs.push({ x, y, vx: dx / d * sp + (rnd() - 0.5) * h * 0.5, vy: dy / d * sp * 0.7 - h * 0.3 * rnd(), el, pop: BURST_POP[0] + (BURST_POP[1] - BURST_POP[0]) * rnd(), gone: false });
+  }
+  const t0 = performance.now(), end = Math.max(...bubs.map(b => b.pop)) + 300;
+  let last = t0;
+  const step = t => {
+    const dt = Math.min(0.05, (t - last) / 1000), e = t - t0; last = t;
+    if (layer.parentNode !== pic) pic.append(layer);   // (a drawing takes it out: back on top)
+    for (const b of bubs) {
+      if (b.gone) continue;
+      if (e >= b.pop) { b.gone = true; if (b.el.firstChild) b.el.firstChild.classList.add("pop"); setTimeout(() => b.el.remove(), 260); continue; }
+      const damp = Math.pow(0.35, dt); b.vx *= damp; b.vy = b.vy * damp - h * 0.25 * dt;   // (slowing, then floating up)
+      b.x += b.vx * dt; b.y += b.vy * dt; b.el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
+    }
+    if (e < end) { requestAnimationFrame(step); return; }
+    // (back, where they stood, out from under the boulder; fading in, as through a door)
+    layer.remove(); burstLayer = null; figBurst = false;
+    solidUnstick(400); changed();
+    const fade = o => { for (const n of figShown) if (n.style) n.style.opacity = o; };
+    const t1 = performance.now(), f = tt => { const v = Math.min(1, (tt - t1) / WALK_IN_MS); fade(v < 1 ? v.toFixed(2) : ""); if (v < 1) requestAnimationFrame(f); else entering = false; };
+    fade("0"); requestAnimationFrame(f);
+  };
+  requestAnimationFrame(step);
+}
 function figHide(on) { figAway = on; for (const n of figShown) if (n.style) n.style.visibility = on ? "hidden" : ""; }
 function figCopy() {
   const NS = "http://www.w3.org/2000/svg", g = document.createElementNS(NS, "g"), P = pic.getScreenCTM().inverse();
