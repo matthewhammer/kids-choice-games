@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.321 (2026-10-19)
+
+Everything in 0.0.320, with the nav arrows apart in every place.
+
+- **➡️ The nav arrows never sit on each other**: on every background, the arrow on a side (east, west) now stands clear of the arrow in the corner below it (south-east, south-west), with room between them, so each is its own thing to tap.
+
 ## 0.0.320 (2026-10-19)
 
 Everything in 0.0.319, with the castle designer full screen.

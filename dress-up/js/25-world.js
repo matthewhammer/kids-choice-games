@@ -274,6 +274,22 @@ function insideWays(B) {
   return [];
 }
 // (a way's doorway: invisible, and not tapped, the arrow over the picture is; its shape, the triangle, is what the glow frames)
+// (ticket 313) an arrow's triangle's box in the picture, turned to its angle: [left, top, right, bottom]
+const wayTriBox = (x, y, a, k) => { const r = 28 * k, c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180), P = [[-0.6 * r, -0.8 * r], [0.9 * r, 0], [-0.6 * r, 0.8 * r]].map(([u, v]) => [x + u * c - v * s, y + u * s + v * c]);
+  return [Math.min(...P.map(q => q[0])), Math.min(...P.map(q => q[1])), Math.max(...P.map(q => q[0])), Math.max(...P.map(q => q[1]))]; };
+// (ticket 313, Matthew: "the nav arrows as objects are often still overlapped in terms of their bounding boxes -- maybe we should space
+// them further still, on each background?" "especially SE and E, and SW and W") On every background, a side's arrow (E, W) slid up off
+// the corner's below it (SE, SW), a gap between their boxes, and not onto the far corner's above it (NE, NW) where they meet across:
+// with no room for both gaps, midway between the two
+function waysSpaced(AT, k) {
+  const gap = 14 * k, across = (a, b) => Math.min(a[2], b[2]) > Math.max(a[0], b[0]);
+  for (const [side, low, high] of [["E", "SE", "NE"], ["W", "SW", "NW"]]) {
+    const S = AT[side], b = wayTriBox(...S, k), up = S[1] - b[1], down = b[3] - S[1], L = wayTriBox(...AT[low], k), H = wayTriBox(...AT[high], k);
+    const most = across(b, L) ? L[1] - gap - down : Infinity, least = across(b, H) ? H[3] + gap + up : -Infinity;
+    if (S[1] > most) S[1] = most >= least ? most : (most + least) / 2;
+  }
+  return AT;
+}
 const wayTri = (x, y, a, k) => { const r = 28 * k;
   return `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${a})"><path d="M${f1(-0.6 * r)} ${f1(-0.8 * r)} L${f1(0.9 * r)} 0 L${f1(-0.6 * r)} ${f1(0.8 * r)} Z" fill="#000000" opacity="0"/></g>`; };
 function insideWaysSvg(B, x0, y0, x1, y1) {
@@ -300,6 +316,7 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const far = G ? G.far + 10 * k : g - 150 * k, mid = G ? G.cy + 14 * k : g + 40 * k, side = G ? 0.6 : 0.55;
   const AT = { N: [0, far - 6 * k, -90], S: [0, y1 - 30 * k, 90], E: [x1 - 45 * k, mid, 0], W: [x0 + 45 * k, mid, 180],
                NE: [x1 * side, far, -40], NW: [x0 * side, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
+  waysSpaced(AT, k);   // (ticket 313)
   worldWaysAt = ways.map(d => [d, ...AT[d], meets(d), meets(d) ? names[worldMeets(W, W.at, d)] : null]);
   worldWaysHud();
   if (!ways.length) return "";
