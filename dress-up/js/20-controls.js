@@ -655,6 +655,12 @@ const TABS = [
 
 let tab = 0;
 let syncs = [];   // each control's refresh, run after every change
+// (ticket 379) a sync writes the page only where it changes: the same value written again is still a change to the browser, which
+// styles the panel anew; one round in 🏞️ Background wrote 3,995 times, 3,773 of them what was already there (aria-pressed, hidden,
+// an eye's 👁️), 45,000 times in a 3 s swim against the 😀 Face tab's 700
+const setPressed = (el, on) => { const v = typeof on === "string" ? on : String(!!on); if (el.getAttribute("aria-pressed") !== v) el.setAttribute("aria-pressed", v); };
+const setHidden = (el, h) => { h = !!h; if (el.hidden !== h) el.hidden = h; };
+const setText = (el, t) => { t = String(t); if (el.textContent !== t) el.textContent = t; };
 // (ticket 236: the 🧩 chips' counts alone, which madeOfHud refreshes from inside a drawing: all of syncs there re-ran
 // every control's refresh, the things guard's among them, clearing its latch whenever what a place is made of was shown)
 let madeSyncs = [], hudMadeSyncs = [];   // (the pinned controls' own, renderHud's)
@@ -1169,9 +1175,9 @@ function castleDesigner(part, key, box, syncs) {
   };
   const draw = () => {
     const big = document.body.classList.contains("castle-big");
-    toggle.textContent = open ? "🗺️ close the castle designer" : "🗺️ open the castle designer";
-    toggle.setAttribute("aria-pressed", open);
-    panel.style.display = open || big ? "" : "none";
+    setText(toggle, open ? "🗺️ close the castle designer" : "🗺️ open the castle designer");
+    setPressed(toggle, open);
+    { const d = open || big ? "" : "none"; if (panel.style.display !== d) panel.style.display = d; }
     if (!open && !big) { shownLook = ""; return; }
     const b = castleView(B(), id), K = castleOf(b);
     const here = b.kind === "castleroom" ? Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1))) : 0;
@@ -1258,7 +1264,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       return b; }));
     const g = el("div", { class: "chipset ctlgroup compass-group", "data-key": key }, [el("div", { class: "cap" }, [label]), box]);
     const when = SHOWN_WHEN[part + "." + key];
-    if (when) syncs.push(() => { g.hidden = !when(state[part]); });
+    if (when) syncs.push(() => { setHidden(g, !when(state[part])); });
     return g;
   }
   // a group: its controls in a dashed box with its name, shown or hidden together
@@ -1266,7 +1272,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   if (kind === "group") {
     const g = el("div", { class: "chipset ctlgroup", "data-group": key }, [el("div", { class: "cap" }, [label]), ...rest[0].map(c => control(part, c))]);   // (ticket 365: placed by its key, as a row is)
     const when = SHOWN_WHEN[part + "." + key], here = rest[1];
-    if (when || here) syncs.push(() => { if (when) g.hidden = !when(state[part]); if (here) g.classList.toggle("here", !!here(state[part])); });
+    if (when || here) syncs.push(() => { if (when) setHidden(g, !when(state[part])); if (here) { const on = !!here(state[part]); if (g.classList.contains("here") !== on) g.classList.toggle("here", on); } });
     return g;
   }
   // (ticket 230, Matthew: "for each of: all arrows ..., planned path ..., collision boxes (show a brick wall, not a red
@@ -1323,7 +1329,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       }
     }
     row.append(chip, more);
-    syncs.push(() => { const on = !key || !!state[part][key]; if (row.classList.contains("on") !== on) row.classList.toggle("on", on); more.hidden = !on; if (key) chip.setAttribute("aria-pressed", on); });
+    syncs.push(() => { const on = !key || !!state[part][key]; if (row.classList.contains("on") !== on) row.classList.toggle("on", on); setHidden(more, !on); if (key) setPressed(chip, on); });
     return row;
   }
   const val = el("span", { class: "val" });
@@ -1337,7 +1343,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const id = part + "." + key, eye = el("button", { class: "eye", title: "Fold this slider away, or open it (it stays pinned)",
                                                        onclick: () => { toggleMin(id); } }, "👁️");
     name.before(eye);
-    syncs.push(() => { eye.setAttribute("aria-pressed", !folded(id)); box.classList.toggle("min", folded(id)); });
+    syncs.push(() => { setPressed(eye, !folded(id)); if (box.classList.contains("min") !== folded(id)) box.classList.toggle("min", folded(id)); });
   }
   if ((kind === "range" || kind === "turn" || kind === "master") && !(part === "background" && key === "figSize") && !buildingHud) {
     // the pin, left of the name (the figure's size is always in the HUD:
@@ -1345,14 +1351,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const id = part + "." + key, pin = el("button", { class: "pin", title: "Pin to the full-screen controls",
                                                        onclick: () => togglePin(id) }, "📌");
     name.before(pin);
-    syncs.push(() => pin.setAttribute("aria-pressed", pinned(id)));
+    syncs.push(() => setPressed(pin, pinned(id)));
   }
   // chips to go straight to the castle or into one of its rooms, by number (to try a castle out)
   if (kind === "castlejump") {
     const row = el("div", { class: "row" });
     box.append(row);
+    let shownJump = "";
     syncs.push(() => {
       const B = state[part], K = castleOf(B), here = B.kind === "castle" ? 0 : B.kind === "castleroom" ? Math.round(B.castleRoom ?? 1) : -1;
+      // (ticket 379: made again only when its rooms or the room you are in change, not on every refresh)
+      const sig = K.rooms.join() + "|" + here; if (sig === shownJump) return; shownJump = sig;
       row.replaceChildren(...[0, ...K.rooms.map((_, i) => i + 1)].map(n => el("button", { "aria-pressed": n === here, onclick: () => {
         if (n) { B.kind = "castleroom"; B.castleRoom = n; } else B.kind = "castle";
         [B.figX, B.figY] = ARRIVE[B.kind] || [0, 0]; arriveSettle = true;
@@ -1384,10 +1393,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                                                el("span", { class: "eye" }), " " + o.name])]);
         row.replaceChildren(...chips.map(([, b]) => b));
       }
-      for (const [o, b] of chips) { const hid = off.has(o.name); b.querySelector(".eye").textContent = hid ? "🙈" : "👁️"; b.classList.toggle("off", hid); b.setAttribute("aria-pressed", !hid); }
+      for (const [o, b] of chips) { const hid = off.has(o.name); setText(b.querySelector(".eye"), hid ? "🙈" : "👁️"); if (b.classList.contains("off") !== hid) b.classList.toggle("off", hid); setPressed(b, !hid); }
       const feet = SCENE.ground + (B.figY ?? 0), i = list.findIndex(o => o.z > feet);
-      row.insertBefore(me, i < 0 ? null : chips[i][1]);
-      box.hidden = !list.length;
+      { const ref = i < 0 ? null : chips[i][1]; if (me.nextSibling !== ref || me.parentNode !== row) row.insertBefore(me, ref); }   // (ticket 379: moved only when its place changes)
+      setHidden(box, !list.length);
     });
   }
   if (kind === "seats") {
@@ -1403,7 +1412,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                                              onclick: () => sitOn(t) }, "🪑 " + t.name)),
                             ...(state.body.sit ? [el("button", { class: "obj", onclick: () => standUp() }, "🧍 stand up")] : []));
       }
-      box.hidden = !list.length;
+      setHidden(box, !list.length);
     });
   }
   // (ticket 159, Matthew) the music, full screen: this tab's controls take
@@ -1549,7 +1558,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // (v3: the library in groups: a chip per group, its things' buttons under it; the group open is kept while the game is open)
     const groups = el("div", { class: "row thing-groups" }), items = el("div", { class: "row thing-items" });
     const showGroup = () => {
-      for (const b of groups.children) b.setAttribute("aria-pressed", String(b.dataset.group === thingGroup));
+      for (const b of groups.children) setPressed(b, b.dataset.group === thingGroup);
       if (thingGroup === "places") {
         // (ticket 284) 📦 every object of a place, chosen from a list of the places; the one the friend is in first
         const P = liftPlaces(), here = liftPlaceHere(state.background), cur = P.some(([k]) => k === liftPlace) ? liftPlace : [here, ...P.map(([k]) => k)].find(k => P.some(([q]) => q === k) && liftedOf(k).objs.size) || "forest";   // (here, if anything stands here; else the first place that has something)
@@ -1764,7 +1773,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                (() => { const A = () => state.access || (state.access = clone(DEFAULTS.access));
                         const b = el("button", { class: "lever-far-toggle", "aria-pressed": String(!!A().leverFar), onclick: () => { A().leverFar = !A().leverFar; b.setAttribute("aria-pressed", String(A().leverFar)); changed(); } },
                                     "🎚️ pull levers from where you stand (no walking to them)");
-                        syncs.push(() => b.setAttribute("aria-pressed", String(!!A().leverFar)));
+                        syncs.push(() => setPressed(b, !!A().leverFar));
                         return el("div", { class: "row" }, [b]); })(),
                meter,
                el("div", { class: "hint" }, "🚀 Kept off until they are fast: 60 frames a second, for everything the controller does, comes first. Switched on, each says how many it draws in this place; 📏 walks the friend here with it off, then on, and says what it costs on this computer."));
@@ -1881,7 +1890,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const chip = el("button", { class: "ms lfo-chip", title: "Fade in and out with an LFO (the music's): tap for the next",
         onclick: () => { const all = ["none", ...LFO_NAMES]; state.visible[lk] = all[(all.indexOf(now()) + 1) % all.length]; changed(); } });
       lbl.insertBefore(chip, val);
-      syncs.push(() => { chip.textContent = now() === "none" ? "〰️ no LFO" : "〰️ LFO " + now(); chip.setAttribute("aria-pressed", now() !== "none"); });
+      syncs.push(() => { setText(chip, now() === "none" ? "〰️ no LFO" : "〰️ LFO " + now()); setPressed(chip, now() !== "none"); });
     }
   } else if (kind === "turn") {
     // an angle in radians, from 0 to a period that the other settings
@@ -1900,8 +1909,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const b = el("button", { onclick: () => set(part, key, !state[part][key]) });
     box.querySelector(".lbl").textContent = "";
     box.append(b);
-    syncs.push(() => { b.textContent = label + (state[part][key] ? ": on" : ": off");
-                       b.setAttribute("aria-pressed", state[part][key]); });
+    syncs.push(() => { setText(b, label + (state[part][key] ? ": on" : ": off"));
+                       setPressed(b, !!state[part][key]); });
   } else if (kind === "tunes") {
     // two rows of chips: the kind of music (or the scene's own tune), then
     // that kind's tunes; picking a kind plays its first tune, unless the
@@ -1926,7 +1935,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     let shownKind, tuneBtns = [];
     syncs.push(() => {
       const now = state[part][key], g = groupOfTune(now);
-      for (const [v, b] of kindBtns) b.setAttribute("aria-pressed", v === g);
+      for (const [v, b] of kindBtns) setPressed(b, v === g);
       if (g !== shownKind) {
         shownKind = g;
         const list = g && g !== "scene" ? TUNE_GROUPS.find(x => x[0] === g)[2] : [];
@@ -1935,7 +1944,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         tuneBox.hidden = !tuneBtns.length;
         tuneCap.textContent = tuneBtns.length ? `track (${TUNE_GROUPS.find(x => x[0] === g)[1]})` : "";
       }
-      for (const [v, b] of tuneBtns) b.setAttribute("aria-pressed", v === now);
+      for (const [v, b] of tuneBtns) setPressed(b, v === now);
     });
   } else if (kind === "every") {
     // chips that set every slider of the part at once (visibility's
@@ -1947,7 +1956,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       row.append(b); return [v, b];
     });
     box.append(row);
-    syncs.push(() => { for (const [v, b] of bs) b.setAttribute("aria-pressed", keys().every(k => state[part][k] === v)); });
+    syncs.push(() => { for (const [v, b] of bs) setPressed(b, keys().every(k => state[part][k] === v)); });
   } else if (kind === "master") {
     // one slider for every slider of the part: moving it sets each of them
     // to its value, wherever they were. It keeps its own value; once a part
@@ -1973,7 +1982,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         onclick: () => { const all = ["none", ...LFO_NAMES], cur = lfoNow(), next = all[(all.indexOf(cur === "mixed" ? "none" : cur) + 1) % all.length];
           for (const k of keys()) state[part]["lfo_" + k] = next; changed(); } });
       lbl.insertBefore(chip, val);
-      syncs.push(() => { const l = lfoNow(); chip.textContent = l === "none" ? "〰️ no LFO" : l === "mixed" ? "〰️ mixed LFOs" : "〰️ LFO " + l; chip.setAttribute("aria-pressed", l !== "none"); });
+      syncs.push(() => { const l = lfoNow(); setText(chip, l === "none" ? "〰️ no LFO" : l === "mixed" ? "〰️ mixed LFOs" : "〰️ LFO " + l); setPressed(chip, l !== "none"); });
     }
     syncs.push(() => {
       const v = own(), mixed = keys().some(k => (state[part][k] ?? hi) !== v);
@@ -1989,7 +1998,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const ivBtn = el("button", { title: "the interval: tap for the next", onclick: () => set(part, ikey, nextInterval(iv())) });
     const up = el("button", { title: "up by the interval", onclick: () => set(part, key, Math.min(hi, (state[part][key] || 0) + iv())) }, "➕");
     box.append(el("div", { class: "row" }, [down, ivBtn, up]));
-    syncs.push(() => { ivBtn.textContent = "🎵 " + INTERVALS[iv()]; val.textContent = INTERVALS[iv()] + ` (${iv()} half step${iv() === 1 ? "" : "s"})`; });
+    syncs.push(() => { setText(ivBtn, "🎵 " + INTERVALS[iv()]); setText(val, INTERVALS[iv()] + ` (${iv()} half step${iv() === 1 ? "" : "s"})`); });
   } else if (kind === "mixer") {
     box.classList.add("mixctl");   // (its strips carry their own colours)
     mixerBox(box);
@@ -2000,7 +2009,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const p = el("p", { class: "now" });
     lbl.remove();
     box.append(p);
-    syncs.push(() => { p.textContent = label(); });
+    syncs.push(() => { setText(p, label()); });
   } else if (kind === "flip") {
     // one chip that says which way it is now; a tap turns it the other way
     // (ticket 285, ^du_report(5): the bubble themes' on and off looked the same) a flip whose two words are the same says only
@@ -2008,8 +2017,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const b = el("button", { class: "flip" + (label[0] === label[1] ? " lit" : ""), onclick: () => set(part, key, !state[part][key]) });
     lbl.remove();
     box.append(b);
-    syncs.push(() => { b.textContent = label[state[part][key] ? 1 : 0];
-                       b.setAttribute("aria-pressed", !!state[part][key]); });
+    syncs.push(() => { setText(b, label[state[part][key] ? 1 : 0]);
+                       setPressed(b, !!state[part][key]); });
   } else if (kind === "pair") {
     // two columns side by side, mirrored about the middle: the first part's
     // on the left, each with its name, then its controls, a slider showing
@@ -2058,7 +2067,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     let shownKind, placeBtns = [];
     syncs.push(() => {
       const now = state[part][key], g = groupOfPlace(now);
-      for (const [v, b] of kindBtns) b.setAttribute("aria-pressed", v === g);
+      for (const [v, b] of kindBtns) setPressed(b, v === g);
       if (g !== shownKind) {
         shownKind = g;
         const list = g && g !== "none" ? PLACE_GROUPS.find(x => x[0] === g)[2] : [];
@@ -2069,7 +2078,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         placeBox.hidden = !placeBtns.length;
         placeCap.textContent = placeBtns.length ? `places: ${PLACE_GROUPS.find(x => x[0] === g)[1]}` : "";
       }
-      for (const [v, b] of placeBtns) b.setAttribute("aria-pressed", v === now);
+      for (const [v, b] of placeBtns) setPressed(b, v === now);
     });
   } else if (kind === "color") {
     const row = el("div", { class: "row" });
@@ -2090,7 +2099,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     row.append(pick);
     box.append(row);
     syncs.push(() => {
-      for (const [c, b] of bs) b.setAttribute("aria-pressed", state[part][key] === c);
+      for (const [c, b] of bs) setPressed(b, state[part][key] === c);
       if (state[part][key].startsWith("#")) pick.value = state[part][key];
     });
   } else if (kind === "place") {
@@ -2123,9 +2132,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const B = state.background, k = (B.figSize ?? 100) / 100 * sceneFig(B.kind);
       const h = Math.max(30, (naturalFrame.ground - naturalFrame.top) * k), w = Math.max(16, h * 0.4);
       const fx = B.figX ?? 0, fy = SCENE.ground + (B.figY ?? 0);
-      fig.setAttribute("x", f1(fx - w / 2)); fig.setAttribute("y", f1(fy - h));
-      fig.setAttribute("width", f1(w)); fig.setAttribute("height", f1(h));
-      val.textContent = !B.figX && !B.figY ? "middle" : "";
+      for (const [n, v] of [["x", f1(fx - w / 2)], ["y", f1(fy - h)], ["width", f1(w)], ["height", f1(h)]]) if (fig.getAttribute(n) !== String(v)) fig.setAttribute(n, v);   // (ticket 379)
+      setText(val, !B.figX && !B.figY ? "middle" : "");
     });
   } else if (kind === "pad") {
     // A square to tap or drag: the sun marks where the light comes from,
@@ -2153,7 +2161,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     syncs.push(() => sun.setAttribute("transform", `translate(${state[part].lightX} ${state[part].lightY})`));
   }
   const when = "when" in opts ? opts.when : SHOWN_WHEN[part + "." + key];
-  if (when) syncs.push(() => { box.hidden = !when(state[part]); });
+  if (when) syncs.push(() => { setHidden(box, !when(state[part])); });
   return box;
 }
 

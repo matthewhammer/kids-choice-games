@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.329 (2026-10-19)
+
+Everything in 0.0.328, with the controls touching the page only where something changed.
+
+- **🏃 Smoother again with 🏞️ Background open**: each time the game brought the controls up to date, thousands of buttons and rows were told again what they already showed, and the browser redid the panel's look for each; now only what changed is touched (about 4,000 changes a refresh down to 0 when nothing moved).
+
 ## 0.0.328 (2026-10-19)
 
 Everything in 0.0.327, with 🏞️ Background open and walking smoother still.
