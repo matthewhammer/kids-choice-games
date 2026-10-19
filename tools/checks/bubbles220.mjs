@@ -23,7 +23,8 @@ try {
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
     state.music.mute = true; state.world.at = null;
     const place = { inPlaces: PLACES.some(p => p[0] === "bubblespace"), elsewhere: ELSEWHERE.includes("bubblespace"), inPalette: worldPalette().includes("bubblespace") };
-    Object.assign(B, { kind: "bubblespace", figX: 0, figY: 70, bubbleCount: 30, bubbleWind: 60, bubbleBOn: false }); changed(); await w(800);
+    /* (ticket 369: all in one plane, 🔭 0: since ticket 329 bubbles at different depths pass each other by, and the default depth is 70) */
+    Object.assign(B, { kind: "bubblespace", figX: 0, figY: 70, bubbleCount: 30, bubbleWind: 60, bubbleBOn: false, bubbleDepth: 0 }); changed(); await w(800);
     const layer = document.getElementById("bubble-layer"), count = layer ? layer.childNodes.length : 0, at0 = bubbleSim.list.map(b => [b.x, b.y]);
     await w(2500);
     const moved = bubbleSim.list.filter((b, i) => at0[i] && Math.hypot(b.x - at0[i][0], b.y - at0[i][1]) > 3).length, bonds = bubbleSim.bonds.length;

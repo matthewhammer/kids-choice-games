@@ -27,11 +27,14 @@ try {
     // (from the picture's time now: the swing's turn begins where the music's slow LFO has it, after the page's start)
     pic.pauseAnimations(); const t0 = pic.getCurrentTime(), at = []; for (let t = t0; t <= t0 + 6; t += 0.1) { pic.setCurrentTime(t); const s = swingNow(); at.push({ t, deg: s.deg, dx: s.dx }); }
     const lo = at.reduce((a, b) => b.deg < a.deg ? b : a), hi = at.reduce((a, b) => b.deg > a.deg ? b : a);
-    const look = async t => { pic.setCurrentTime(t); await frames(3); const ov = document.querySelector("#access-layer svg.solid-boxes"), g = ov && ov.querySelector('[data-solid="swing"]'), you = ov && ov.querySelector(".you");
+    // (ticket 369: where the seat is, and whether walking meets it there, read at once, at the moment set: a drawing in the frames
+    // waited for after it (for ♿'s overlay) may build the swing again, its timing begun anew, which had both looks at one angle)
+    const look = async t => { pic.setCurrentTime(t); const s0 = swingNow(), mid = (swing.x0 + swing.x1) / 2 + s0.dx, met = !!solidAt(mid, swing.front - 2);
+      await frames(3); const ov = document.querySelector("#access-layer svg.solid-boxes"), g = ov && ov.querySelector('[data-solid="swing"]'), you = ov && ov.querySelector(".you");
       const deg = tf => { const m = /rotate\\(([-\\d.]+)/.exec(tf || ""); return m ? +m[1] : null; };
-      const s = swingNow(), mid = (swing.x0 + swing.x1) / 2 + s.dx;
+      const s = swingNow();
       // (walking into the seat where it is now, from beside it: met)
-      return { deg: s.deg, box: deg(g && g.getAttribute("transform")), you: deg(you && you.getAttribute("transform")), dx: s.dx, metAtSeat: !!solidAt(mid, swing.front - 2) }; };
+      return { deg: s.deg, box: deg(g && g.getAttribute("transform")), you: deg(you && you.getAttribute("transform")), dx: s0.dx, metAtSeat: met }; };
     const a = await look(lo.t), b = await look(hi.t);
     // (sitting on it: the friend's boxes turn with it)
     sitOn(seatsHere(B).find(t => t.name === "swing")); await w(300); const sa = await look(lo.t), sb = await look(hi.t);

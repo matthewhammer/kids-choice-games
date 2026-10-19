@@ -19,6 +19,8 @@ try {
   await send("Runtime.enable");
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, b = state.body;
+    // (ticket 369: from the default body: a pose left by an earlier check, arms raised, had the plain floor's hands as high as the bracing's)
+    Object.assign(b, clone(DEFAULTS.body));
     state.music.mute = true; state.world.at = null; climb = null; b.sit = false; B.seat = null; b.pose = "stand"; B.things = []; B.figX = 0; B.figY = 60;
     const stand = async (kind, wob) => { B.kind = kind; B.bubbleFloorWobble = wob; b.anim = "none"; b.facing = "front"; changed(); await w(500); draw();
       const J = poseJoints, m = moveNow() || {}; return { handY: Math.round(Math.min(...J.arms.map(a => a.H[1]))), feet: Math.round(Math.abs(J.legs[0].F[0] - J.legs[1].F[0])), knee: Math.round(m.KneeL || 0), tip: Math.abs(m.rot || 0) > 0, balance: m.balance ?? 0 }; };

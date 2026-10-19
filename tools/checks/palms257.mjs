@@ -39,11 +39,13 @@ try {
   // walking left at the left palm, from the room, at its depth
   const left = r.palms.find(p => /left/.test(p.name)), foot = left.bands.reduce((a, b) => b.lo < a.lo ? b : a);
   const walk = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
+    // (ticket 369: the hibiscus beside it has a box since 0.0.289, and stopped the walk first: out of the way, 👁️ hidden, for it)
+    B.objectsOff = { [objPlace(B)]: ["hibiscus, left"] };
     B.figX = ${foot.x1 + 70}; B.figY = ${left.z} - SCENE.ground; state.body.facing = "left"; changed(); await w(300);
     touchWant(true); const b = touchPad.pad.buttons[14]; b.pressed = true; b.value = 1; let met = null; const t0 = performance.now();
     while (performance.now() - t0 < 3500) { await w(50); if (solidHit.name && performance.now() - solidHit.t < 100) met = solidHit.name; }
     b.pressed = false; b.value = 0; await w(400); touchWant(false); await w(300);
-    return JSON.stringify({ x: B.figX, met, in: solidAt(B.figX, SCENE.ground + B.figY, true).list.map(o => o.name) }); })()`));
+    const res = JSON.stringify({ x: B.figX, met, in: solidAt(B.figX, SCENE.ground + B.figY, true).list.map(o => o.name) }); B.objectsOff = {}; changed(); return res; })()`));
   console.log(`  walking left at ${left.name} (its foot ${foot.x0}..${foot.x1}): stopped at x ${walk.x}, met ${walk.met}`);
   ok("walking left at the left palm: stopped by it, short of its foot", walk.met === left.name && walk.x > foot.x1 && !walk.in.includes(left.name), walk);
   ok("no page errors", !errs.length, errs);

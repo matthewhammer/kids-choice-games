@@ -20,7 +20,8 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, g = SCENE.ground;
     state.music.mute = true; state.world.at = null; climb = null; B.things = []; if (B.seat) standUp(); state.body.anim = "none";
-    const inBox = (o, x, y) => x > o.x0 && x < o.x1 && y > o.back && y < o.front;
+    // (ticket 369: a round thing's box is an oval since 0.0.280, ticket 337, gone round as one: its own shape, not its rectangle's corners)
+    const inBox = (o, x, y) => o.oval ? ovalMeets(o, x, x, y, y) : x > o.x0 && x < o.x1 && y > o.back && y < o.front;
     const behind = async (kind, name, from) => { B.kind = kind; B.figX = from[0]; B.figY = from[1]; changed(); await w(600); draw();
       const lim = g + figYMin(sceneFrame), box = solidsHere().find(o => o.name === name), depth = feetSpan()[1];
       if (!box) return { kind, missing: true };
