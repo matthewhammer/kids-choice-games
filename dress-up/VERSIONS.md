@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.285 (2026-10-18)
+
+Everything in 0.0.284, with placed things glowing.
+
+- **✨ Every thing you place glows under the pointer**, warm, as the doors and levers do, so you can see it is something you can pick up and move. The place's own drawings don't.
+
 ## 0.0.284 (2026-10-18)
 
 Everything in 0.0.283, with bubbles that stick.
