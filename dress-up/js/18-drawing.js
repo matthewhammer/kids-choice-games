@@ -1103,14 +1103,17 @@ function lieAlongSvg(A, S) {
     s += `<path d="M${P(q[0])} Q${P(at(hx + sp, -sp, 0.07))} ${P(q[1])} Q${P(at(hx - 0.2, -sp, 0.07))} ${P(q[2])} Q${P(at(hx - 0.2, sp, 0.07))} ${P(q[3])} Q${P(at(hx + sp, sp, 0.07))} ${P(q[0])} Z" fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(q[0])}"/>`; }
   // the head: a ball on the pillow, round on the screen; its hair over the far side of it; its face up, and tipped toward the
   // feet by the pillow under the head, so toward us
-  const hp = at(hx, 0, hc), R = hr * hp[2], on = (al, ac, up) => { const n = Math.hypot(al, ac, up); return at(hx + hr * al / n, hr * ac / n, hc + hr * up / n); };
+  const hp = at(hx, 0, hc), R = hr * hp[2];
   s += `<circle cx="${f1(hp[0])}" cy="${f1(hp[1])}" r="${f1(R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
-  if (!bald) s += `<clipPath id="lie-head"><circle cx="${f1(hp[0])}" cy="${f1(hp[1])}" r="${f1(R)}"/></clipPath>` +
-    `<g clip-path="url(#lie-head)"><circle cx="${f1(hp[0])}" cy="${f1(hp[1] - 0.72 * R)}" r="${f1(R * 0.78)}" fill="${hair}"/></g>`;
-  for (const ac of [-0.36, 0.36]) { const e = on(-0.35, ac, 0.8), rx = 0.05 * e[2], ry = rx * 0.75;
-    s += `<ellipse cx="${f1(e[0])}" cy="${f1(e[1])}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#1f1f1f"/><circle cx="${f1(e[0] + rx * 0.3)}" cy="${f1(e[1] - ry * 0.3)}" r="${f1(rx * 0.28)}" fill="#ffffff"/>`; }
-  const m0 = on(-0.75, -0.24, 0.5), m1 = on(-0.75, 0.24, 0.5), mq = on(-0.95, 0, 0.35);
-  s += `<path d="M${P(m0)} Q${P(mq)} ${P(m1)}" fill="none" stroke="#7a2e2e" stroke-width="${f1(Math.max(0.8, 0.03 * mq[2]))}" stroke-linecap="round"/>`;
+  // (Matthew: "there's a layering issue with the hair?": its cap came down over the eyes, drawn on it) The head propped on the
+  // pillow faces us, so its face is where the ball faces us, the circle's middle: the hair over its top down to a hairline above
+  // the eyes, the bangs bowing a little at the middle, then the eyes and the smile below it
+  const hy = hp[1] - 0.4 * R, hw = Math.sqrt(R * R - (hy - hp[1]) ** 2);
+  if (!bald) s += `<path d="M${f1(hp[0] - hw)} ${f1(hy)} A${f1(R)} ${f1(R)} 0 0 1 ${f1(hp[0] + hw)} ${f1(hy)} Q${f1(hp[0])} ${f1(hy + 0.22 * R)} ${f1(hp[0] - hw)} ${f1(hy)} Z" ` +
+    `fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(hp)}" stroke-linejoin="round"/>`;
+  for (const sd of [-1, 1]) { const ex = hp[0] + sd * 0.32 * R, ey = hp[1] + 0.02 * R, rx = 0.1 * R, ry = 0.13 * R;
+    s += `<ellipse cx="${f1(ex)}" cy="${f1(ey)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#1f1f1f"/><circle cx="${f1(ex + rx * 0.3)}" cy="${f1(ey - ry * 0.35)}" r="${f1(rx * 0.35)}" fill="#ffffff"/>`; }
+  s += `<path d="M${f1(hp[0] - 0.28 * R)} ${f1(hp[1] + 0.36 * R)} Q${f1(hp[0])} ${f1(hp[1] + 0.62 * R)} ${f1(hp[0] + 0.28 * R)} ${f1(hp[1] + 0.36 * R)}" fill="none" stroke="#7a2e2e" stroke-width="${f1(Math.max(0.8, 0.07 * R))}" stroke-linecap="round"/>`;
   // the neck
   s += capsule(at(1.56, 0, 0.17), 0.1, at(1.64, 0, 0.2), 0.1, skin);
   // an arm, shoulder to hand, along the body: its sleeve as the shirt's style, then the hand

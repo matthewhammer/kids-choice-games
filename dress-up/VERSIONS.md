@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.340 (2026-10-19)
+
+Everything in 0.0.339, with your friend's face and hair right when lying on a sleeping bag.
+
+- **Fixed: lying on a sleeping bag, your friend's eyes were drawn over their hair** (ticket 412): the hair over the top of their head came down past their eyes. Now their face looks out from the middle of their head, the hair over the top with its bangs above the eyes, and spread on the pillow behind.
+
 ## 0.0.339 (2026-10-19)
 
 Everything in 0.0.338, with a better fit on the sleeping bags.
