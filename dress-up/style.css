@@ -541,6 +541,12 @@
 .world-prob::before { content: "• "; }
 .world-off { margin-top: 0.5rem; }
 .world-palette { flex-wrap: wrap; gap: 4px; }
+/* (ticket 283) 🔬 collision boxes: each kind hidden when its chip is off */
+svg.solid-boxes[data-hide~="back"] .back, svg.solid-boxes[data-hide~="walls"] .wall,
+svg.solid-boxes[data-hide~="walks"] g[data-walk], svg.solid-boxes[data-hide~="walks"] g[data-walk] + text,
+svg.solid-boxes[data-hide~="pits"] g[data-solid]:has(.pit), svg.solid-boxes[data-hide~="pits"] g[data-solid]:has(.pit) + text,
+svg.solid-boxes[data-hide~="things"] g[data-solid]:not(:has(.pit)), svg.solid-boxes[data-hide~="things"] g[data-solid]:not(:has(.pit)) + text,
+svg.solid-boxes[data-hide~="you"] .you { display: none; }
 /* (ticket 300) the palette by kind of place, a line each, its name first */
 .world-palette-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; width: 100%; }
 .world-palette-name { font-size: 0.8em; opacity: 0.75; margin-right: 2px; white-space: nowrap; }

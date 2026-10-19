@@ -161,7 +161,7 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // flies, what lies flat, any object hidden (objectsOff), a seat (already
 // one), and anything where one swims.
 // (ticket 284: the grass hut bedroom's bed and stump too, Matthew: "hut objects are all missing collision boxes?")
-const STANDING = new Set(["anvil", "armor", "barrels", "basket", "bed", "bookcase", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
+const STANDING = new Set(["anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
   "rock", "boulder", "sand castle", "snake tank", "soup pot", "stone", "stove", "stump", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
@@ -203,12 +203,19 @@ function trunkBands(parts, z, n = TRUNK_BANDS, base = 0) {
   }
   return out.length ? out : null;
 }
+// (ticket 283, Matthew: "placed trees have no collision boxes. A toggle (on by default) where they do: slim vertically, precise
+// at the base, and in segments for trees that lean a lot") the things put in a place are objects of it, measured as its own
+// (a tree by its trunk, in bands up it); 🏞️ Background's "🧱 placed things are in your way" (thingsSolid, on at the start)
+// takes them out of the way when off. More kinds of thing stand in the way since (a bench, a barrel, a skeleton, an anchor,
+// a bubble maker, a lever, coral)
+const isPlaced = o => !!(o.node.closest && o.node.closest('[data-drag^="thing:"]')) || !!o.node.querySelector('[data-drag^="thing:"]');
 function standingHere(B, seats) {
   if (SWIM_PLACES.has(B.kind) || !bgShown.node) return [];
   const off = objectsOff(B), k = (SCENE.bottom - SCENE.top) / 700, out = [];
   // (its box in the friend's units, through the screen, as ladderAt does: the scene may sit in a nested svg of its own)
   const picEl = document.getElementById("pic"), P = picEl && picEl.getScreenCTM(), Pinv = P ? P.inverse() : null;
   for (const o of bgShown.objs) {
+    if (B.thingsSolid === false && isPlaced(o)) continue;
     // (ticket 241) a drawing that marks its trunk (data-trunk: the tree house's braid) is a trunk, measured by it alone
     const marked = o.node.querySelector("[data-trunk]"), root = marked || o.node;
     const base = objBase(o.name), trunk = TRUNKED.has(base) || !!marked, potted = POTTED.has(base);
@@ -275,7 +282,7 @@ let solidMemo = { text: undefined, kind: null, off: "", list: [] };
 function solidsHere() {
   const B = state.background;
   if (B.kind === "none") return [];
-  const offKey = [...objectsOff(B)].join("|");
+  const offKey = [...objectsOff(B)].join("|") + (B.thingsSolid === false ? "|no-things" : "");   // (ticket 283: placed things out of the way, or not)
   if (solidMemo.text !== bgShown.text || solidMemo.kind !== B.kind || solidMemo.off !== offKey || !bgShown.text) {
     const seats = seatsHere(B);
     solidMemo = { text: bgShown.text, kind: B.kind, off: offKey, list: seats.map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)

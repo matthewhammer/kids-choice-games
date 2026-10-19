@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.255 (2026-10-18)
+
+Everything in 0.0.254, with 🔬 Inspection's collision boxes in kinds, and placed things in your way.
+
+- **🧱 collision boxes, a chip for each kind**: 🪨 things in the way, 🧱 a room's side walls, ↔️ the back line, 🕳️ pits (you fall in), 🌉 bridges (the way along) and 🧍 you; switch off what you don't want to see.
+- **🧩 objects say what their boxes are for**: sorting the place's things front to back, separate from the collision boxes.
+- **Placed things are in your way**: a tree you put down stops you at its trunk (slim, in bands up it, as the places' own trees), and so do placed benches, barrels, skeletons, anchors, bubble makers, levers and coral now, as rocks and bushes always did. "🧱 placed things are in your way" in 🏞️ Background turns it off.
+
 ## 0.0.254 (2026-10-18)
 
 Everything in 0.0.253, with the water shown in 🔬 Inspection.

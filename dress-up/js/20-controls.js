@@ -425,6 +425,7 @@ const TABS = [
     ["choice", "tent", "⛺ which tent", CAMP_TENTS.map((T, i) => [i + 1, `⛺ ${i + 1}: ${T.name}`])],
     // (ticket 185) the things put in any place; and the forest crossing: which paths meet, its floor
     ["things", "things", "🪨 things to put here, then drag them where they go"],
+    ["toggle", "thingsSolid", "🧱 placed things are in your way (a tree by its trunk)"],   // (ticket 283)
     // (ticket 249, Matthew: "for the toggles for N/S/E/W, etc.... use the UX we made for world designer, with the 9 cells -- the
     // center cell be empty in this case") as the world designer's ways out, round an empty middle
     ["compass", "crossPaths", "🛤️ the paths that meet here", "cross"],
@@ -579,7 +580,7 @@ const TABS = [
     ["accbox", "allArrows", "🧭 all arrows", [["color", "arrowColor", "🎨"], ["range", "arrowDim", "🌗 brightness", 10, 100], ["range", "arrowSize", "↕️ size", 50, 250]]],
     ["accbox", "showPath", "👣 planned path", [["color", "pathColor", "🎨"], ["color", "pathAltColor", "🎨 alt"], ["range", "pathWidth", "✏️ line", 1, 12]]],   // (ticket 266: a queue of clicks' walks by turns)
     ["accbox", "showSolids", "🧱 collision boxes", [["color", "boxColor", "🎨"], ["range", "boxWidth", "✏️ line", 1, 8], ["range", "boxFont", "🏷️ names", 8, 24],
-      ["range", "glowFade", "✨ glow ms", 100, 3000]]],   // (ticket 229: a collision's glow, fading back in so long)
+      ["range", "glowFade", "✨ glow ms", 100, 3000], ["solidcats", "solidCats"]]],   // (ticket 283: each kind it draws, a chip)   // (ticket 229: a collision's glow, fading back in so long)
     // (ticket 290, Matthew: "We could have a new sub-cat for bubble collisions -- they are all circles right!") the bubble
     // room's stuck-out bubbles, each a circle that pops when the friend walks into it
     ["accbox", "showBubbleHits", "🫧 bubbles that pop (circles)", [["color", "bubbleHitColor", "🎨"]]],
@@ -889,6 +890,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
   ...Object.fromEntries(["crossPaths", "crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),
   "background.things": b => b.kind !== "none",
+  "background.thingsSolid": b => b.kind !== "none" && (b.things || []).length > 0,   // (ticket 283)
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
   ...Object.fromEntries(["starShape", "starSize", "starBright", "starTwinkle"].map(key =>
@@ -1168,6 +1170,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const chip = key ? el("button", { class: "flip", onclick: () => set(part, key, !state[part][key]) }, [label]) : el("span", { class: "cap" }, [label]);
     for (const [k2, key2, lab2, lo, hi] of rest[0]) {
       const now = () => state[part][key2] ?? DEFAULTS[part][key2];
+      // (ticket 283) the collision boxes' kinds, a chip each, on unless switched off
+      if (k2 === "solidcats") {
+        const box = el("div", { class: "madecats" });
+        for (const [cat, name] of SOLID_CATS) {
+          const b = el("button", { class: "flip", onclick: () => set(part, key2, { ...(state[part][key2] || {}), [cat]: !solidCatOn(cat) }) }, name);
+          box.append(b);
+          syncs.push(() => { const on = solidCatOn(cat); if (b.getAttribute("aria-pressed") !== String(on)) b.setAttribute("aria-pressed", on); });
+        }
+        more.append(box);
+        continue;
+      }
       if (k2 === "cats") {
         // (ticket 258) a chip per kind (MADE_CATS), on or off, with how many are in the place now
         const box = el("div", { class: "madecats" });

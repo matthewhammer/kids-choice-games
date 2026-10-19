@@ -434,6 +434,10 @@ function bubbleHitsHud() {
   ov.innerHTML = live.map(b => { const [x, y] = sc(b.x, b.y); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(b.r * s1).toFixed(1)}"/>`; }).join("");
   ov.setAttribute("style", `position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;fill:none;stroke:${A.bubbleHitColor || "#38bdf8"};stroke-width:1.5;stroke-dasharray:4 3`);
 }
+// (ticket 283: "A sub-panel of toggles for the collision boxes, showing their sub-categories") what 🧱 collision boxes draws,
+// each kind a chip (state.access.solidCats: on unless switched off); hidden by the stylesheet (svg.solid-boxes[data-hide])
+const SOLID_CATS = [["things", "🪨 things in the way"], ["walls", "🧱 a room's side walls"], ["back", "↔️ the back line"], ["pits", "🕳️ pits (you fall in)"], ["walks", "🌉 bridges (the way along)"], ["you", "🧍 you"]];
+const solidCatOn = cat => ((state.access || DEFAULTS.access).solidCats || {})[cat] !== false;
 function solidsHud() {
   const layer = document.getElementById("access-layer");
   if (!layer) return;
@@ -469,6 +473,7 @@ function solidsHud() {
       `<g class="you"><polygon/><polygon/><polygon class="torso"/><polygon class="face torso"/><text>you</text></g>`;
     solidsHitShown = -1;
   }
+  { const hide = SOLID_CATS.map(([c]) => c).filter(c => !solidCatOn(c)).join(" "); if ((ov.dataset.hide || "") !== hide) ov.dataset.hide = hide; }
   // (ticket 229, Matthew: "let's also show the collision box of the player, and let's animate ... the event of a
   // collision, by the two boxes glowing and then fading back to normal colors. Add fade rate") the friend's own box: to
   // the game they are a point at their feet, kept out of each box by the margin, so a box that wide about their feet,
@@ -503,7 +508,7 @@ let solidsHitShown = -1;
 // obj() and its name), each boxed and named; and its plants, each boxed and named by the procedure that drew it (its
 // drawing's [data-proc], drawnBy; a <use> by the drawing it uses), nested as they are drawn (a tree's leaf pads inside
 // the tree); each kind a toggle of its own (MADE_CATS, access.madeCats), with how many are here (madeCounts); a legend.
-const MADE_CATS = [["objects", "🧩 objects (each place's list)", true], ["trees", "🌳 leafy trees", true], ["pines", "🌲 pines", true],
+const MADE_CATS = [["objects", "🧩 objects (each place's list; their boxes are what sorts them front to back)", true],   // (ticket 283: "boxes for layering, separate from collision": these) ["trees", "🌳 leafy trees", true], ["pines", "🌲 pines", true],
                    ["palms", "🌴 palms", true], ["bushes", "🌿 bushes", true], ["flowers", "🌷 flowers", true], ["leafy", "🍀 ferns, vines and leaves", true],
                    ["pads", "🍃 leaf pads", false], ["grass", "🌾 grass", false]];
 // (each procedure's kind)
