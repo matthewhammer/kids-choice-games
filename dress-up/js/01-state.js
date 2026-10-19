@@ -400,6 +400,7 @@ const DEFAULTS = {
            ears: "free", earSize: 100 },   // (ticket 125, M's: ears, their shape and size)
   hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100 },
   body:  { blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
+           lieHead: "left", lieHow: "back",   // (ticket 299: lying down, the way the head points; on the back, face up, or on the side, facing us)
            neck: 22, neckW: 26, arms: 55, elbows: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0,
            // (ticket 121) each limb's own pose, dragged in the picture: on
            // top of the sliders' turn and bend, by the friend's own side (L
@@ -1024,7 +1025,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.265", released: "2026-10-18" };
+const VERSION = { number: "0.0.266", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

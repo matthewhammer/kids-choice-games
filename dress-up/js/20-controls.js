@@ -119,7 +119,9 @@ const TABS = [
   // (ticket 129) whole poses, first (Matthew: top level, before the face)
   // (ticket 132: "Body", with poses, the way they face, and animations)
   ["🧍 Body", "body", [
-    ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"], ["hug", "🤗 jumping up into a hug"]]],
+    ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"], ["hug", "🤗 jumping up into a hug"], ["lie", "🛌 lying down"]]],
+    ["choice", "lieHow", "🛌 lying", [["back", "🛌 on the back, face up"], ["side", "🛏️ on the side, facing us"]]],   // (ticket 299)
+    ["choice", "lieHead", "🛌 head toward", [["left", "⬅️ our left"], ["right", "➡️ our right"]]],
     ["range", "hugLift", "🙌 held up (100 = a leg's length)", 0, 300, 40, 90],
     ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"], ["back", "⬆️ away from us"]]],
     ["choice", "anim", "🎬 animations", ANIMS],
@@ -643,6 +645,7 @@ function set(part, key, value) {
   if (part === "body" && key === "facing") state.body.turn = "";   // (ticket 144: a chip's way, not turned)
   if (part === "body" && key === "anim" && value === "climbup") state.body.facing = "back";   // (up a place's ladder, facing it: ticket 138)
   if (part === "body" && key === "anim") climb = null;   // (ticket 137: a climb starts afresh)
+  if (part === "body" && (key === "lieHead" || key === "lieHow") && state.body.pose === "lie") strikePose("lie");   // (ticket 299: turned the new way)
   if (part === "body" && key === "anim" && isJump(value)) startJump("none", value);   // (ticket 138: once, then still)
   // (walking, running, crawling and climbing start from standing: sitting
   // or cross-legged, they had nothing to move with)
@@ -822,6 +825,7 @@ function el(tag, attrs = {}, kids = []) {
 const SHOWN_WHEN = {
   // (ticket 230: the ♿ settings show beside their toggle, while it is on: accbox)
   "body.unpose": posed,
+  "body.lieHead": b => b.pose === "lie", "body.lieHow": b => b.pose === "lie",   // (ticket 299)
   "access.clickPlan": a => !!a.clickWalk,   // (ticket 294: in 🎮 Controls, while 👆 is on)
   "body.hugLift": b => b.pose === "hug",
   "face.irisColor": f => f.iris > 0,

@@ -275,6 +275,7 @@ pic.addEventListener("pointermove", e => {
 // so a few rounds); kept by the seat's name. Standing up again puts their
 // feet on the floor in front of it.
 function sitOn(t) {
+  if (t.lie) return lieOn(t);   // (ticket 299: a bed or a blanket, to lie on)
   const B = state.background, body = state.body;
   body.sit = true; body.pose = "sit"; B.seat = t.name;
   if (t.facing && t.facing.length && !t.facing.includes(body.facing || "front")) body.facing = t.facing[0];
@@ -287,6 +288,15 @@ function sitOn(t) {
     const T = figureT, hips = T.sg + T.dy + T.k * (poseJoints.legs[0].H[1] - T.g);
     B.figY = Math.round(B.figY + (t.y - hips));
   }
+  changed();
+}
+// (ticket 299) Lying on a bed or a blanket: the friend lies down on it, the way its pillow says, the hips at its middle,
+// resting on its top (the lowest of them as turned there: drawNow); sit too, so the seat is kept as a seat is
+function lieOn(t) {
+  const B = state.background, body = state.body;
+  body.lieHead = t.head || "left"; strikePose("lie"); body.sit = true; B.seat = t.name;   // (the head first: on the back, it says which way they face)
+  // (sunk in a little: it rests on its lower arm, which lifted the body clear of a soft bed)
+  B.figX = Math.round((t.x0 + t.x1) / 2); B.figY = Math.round(t.y - SCENE.ground + (t.flat ? 4 : 10) * (SCENE.bottom - SCENE.top) / 700);
   changed();
 }
 function standUp() {
@@ -479,6 +489,9 @@ pic.addEventListener("click", e => {
   if (ladder) { climbLadder(ladder); return; }
   const door = !entering && e.target.closest && e.target.closest("#bg .portal");
   if (door) { enterScene(door); return; }
+  // (ticket 299) a seat or a bed clicked, with 👆 on: walked to, and sat on, or lain on
+  const seat = seatAtPointer(e);
+  if (seat) { walkSpotHide(); walkPlanned((seat.x0 + seat.x1) / 2, seat.flat ? seat.z : seat.z + 6, () => sitOn(seat)); return; }
   // (ticket 266) walking to a click already: another click on the ground is queued after it
   if (clickRun) { const spot = walkableAt(e); if (spot) walkPlanned(spot.x, spot.z); return; }
   // (ticket 187) a passage behind something standing in front of it (a fence, a bush, a sign's post):
@@ -506,10 +519,33 @@ function walkableAt(e) {
   if (solidAt(q.x, q.y) || pitAt(q.x, q.y)) return null;   // (walls too: solidAt's)
   return { x: q.x, z: q.y };
 }
+// (ticket 299, Matthew: "point to sit, and point to lie down"; "pointing at a place to sit or lie down shows a pop-up
+// that says so") The seat or bed under the pointer, with 👆 on: its box, from where a sitter's feet go (z) up past its top
+// by as much again, across its span (a blanket's, flat, a band about its middle); the friend not on it already
+function seatAtPointer(e) {
+  const BG = state.background, A = state.access || DEFAULTS.access;
+  if (!A.clickWalk || BG.kind === "none" || drag || !e.target || !e.target.closest || !e.target.closest("#pic") || e.target.closest("#figure, [data-drag], .portal, [data-ladder], #ways")) return null;
+  const q = picUnits(e), k = (SCENE.bottom - SCENE.top) / 700;
+  return seatsHere(BG).find(t => t.name !== (state.body.sit && BG.seat) && q.x >= t.x0 && q.x <= t.x1 &&
+    (t.flat ? Math.abs(q.y - t.y) <= 24 * k : q.y >= t.y - Math.max(20 * k, t.z - t.y) && q.y <= t.z + 6)) || null;
+}
 // its glow: an ellipse on the floor there, as wide as the friend's step at that depth, in ♿'s colour, pulsing
+// (ticket 299: over a seat or a bed, its box glowing instead, and what a click does there: sit, or lie down)
 function walkSpotShow(e) {
-  const layer = document.getElementById("access-layer"), s = walkableAt(e);
+  const layer = document.getElementById("access-layer"), seat = layer && seatAtPointer(e), s = !seat && walkableAt(e);
   let ov = layer && layer.querySelector("svg.walk-spot");
+  if (seat) {
+    const M = pic.getScreenCTM(), box = layer.getBoundingClientRect(); if (!M) return;
+    const at = (x, y) => { const p = new DOMPoint(x, y).matrixTransform(M); return [p.x - box.left, p.y - box.top]; };
+    const top = seat.flat ? seat.y - 18 * (SCENE.bottom - SCENE.top) / 700 : seat.y, [ax, ay] = at(seat.x0, top), [bx, by] = at(seat.x1, seat.flat ? seat.y + 18 * (SCENE.bottom - SCENE.top) / 700 : seat.z);
+    if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "walk-spot"); layer.append(ov); }
+    const say = (seat.lie ? "🛏️ lie down on the " : "🪑 sit on the ") + seat.name.replace(/,.*$/, "");
+    ov.innerHTML = `<rect class="seat-spot" x="${ax.toFixed(1)}" y="${ay.toFixed(1)}" width="${(bx - ax).toFixed(1)}" height="${Math.max(6, by - ay).toFixed(1)}" rx="6"/>` +
+      `<text class="seat-say" x="${((ax + bx) / 2).toFixed(1)}" y="${(ay - 8).toFixed(1)}" text-anchor="middle">${xmlEsc(say)}</text>`;
+    ov.style.setProperty("--spot", (state.access || DEFAULTS.access).clickWalkColor || "#22d3ee");
+    return;
+  }
+  if (ov && !ov.querySelector("ellipse")) { ov.remove(); ov = null; }
   if (!layer || !s) { walkSpotHide(); return; }
   const M = pic.getScreenCTM(), box = layer.getBoundingClientRect();
   if (!M) return;
@@ -532,23 +568,24 @@ pic.addEventListener("pointerleave", walkSpotHide);
 // the one for the next click") Or, as ♿ 👆 says (clickPlan), a click while walking stops the walk where the friend is and
 // plans a new one from there (walkStop: the leg under way stops, without walking on); "queue", as before, adds to it.
 let clickRun = null;
-function walkPlanned(x, z) {
+// (ticket 299: then, what to do on getting there, the last click's: sit, or lie down)
+function walkPlanned(x, z, then = null) {
   const BG = state.background, g = SCENE.ground;
   if (clickRun && (state.access || DEFAULTS.access).clickPlan !== "queue") { walkStop++; clickRun = null; entering = false; }
   if (clickRun) {
     const [lx, ly] = clickRun.end, path = planPath(lx, ly, x, z - g, 10);
     for (const p of path) { walkPath.pts.push(p); walkPath.segs.push(clickRun.n); }
-    clickRun.n++; clickRun.end = [x, z - g];
+    clickRun.n++; clickRun.end = [x, z - g]; clickRun.then = then;
     return;
   }
   bridgeOff();
   const from = [BG.figX ?? 0, BG.figY ?? 0], path = planPath(from[0], from[1], x, z - g, 10);   // (the steps swing wider than the feet standing)
-  const run = clickRun = { n: 1, end: [x, z - g] };
+  const run = clickRun = { n: 1, end: [x, z - g], then };
   walkPath = { pts: [from, ...path], segs: [0, ...path.map(() => 0)], made: performance.now(), leg: 0 };
   let k = 0;
   const leg = () => {
     if (clickRun !== run) { if (!entering) { state.body.anim = "none"; changed(); } return; }
-    if (++k >= walkPath.pts.length) { clickRun = null; state.body.anim = "none"; changed(); return; }
+    if (++k >= walkPath.pts.length) { const done = run.then; clickRun = null; state.body.anim = "none"; changed(); if (done) done(); return; }
     walkPath.leg = k - 1;
     walkTo(walkPath.pts[k][0], g + walkPath.pts[k][1], leg);
   };

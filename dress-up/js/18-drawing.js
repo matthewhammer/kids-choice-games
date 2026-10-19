@@ -29,7 +29,7 @@ function drawNow() {
   // their arms and legs come from under the shoulder and hip, and point the
   // way they face; the side nearer us is their -dir side (facing our right,
   // their right shoulder is toward us)
-  const dir = facingOf(B), sitting = !!B.sit || B.pose === "hug";   // (ticket 136: a hug's legs are a sitter's)
+  const dir = facingOf(B), sitting = (!!B.sit && B.pose !== "lie") || B.pose === "hug";   // (ticket 136: a hug's legs are a sitter's; ticket 299: lying on a bed, not)
   const q = dir ? 0 : turnOf(B);   // (ticket 144: turned partway, the far side's sign)
   // (ticket 138) facing away from us: drawn as facing us (dir 0), but the
   // back of the head is hair, with no face on it, and what is on their back
@@ -313,14 +313,16 @@ function drawNow() {
   // (ticket 132) an animation lifts the friend (a step, a bound, a pull up
   // the ladder); crawling turns them about the hips (rot), and they rest on
   // the lowest of their hands, knees and feet as turned
-  const rot = move && move.rot ? move.rot : 0;
+  // (ticket 299: lying down, turned level about the hips, the head to our left or right, resting on the side below)
+  const rot = move && move.rot ? move.rot : !move && B.pose === "lie" ? (B.lieHead === "right" ? 90 : -90) : 0;
   // (ticket 286: crawling, the friend meets things as drawn: turned about the hips from the side, or running back into
   // the picture toward us or away, the back that deep, seen short: crawlShape)
   Object.assign(poseJoints, { turn: rot, L, crawl: rot ? "side" : squash ? (away ? "away" : "toward") : null, depth: squash ? squash * (L + 20) : 0 });
   let gFig = gStand;
   if (rot && !swimming) {
     const a = rot * Math.PI / 180, turned = ([x, y]) => L + x * Math.sin(a) + (y - L) * Math.cos(a);
-    gFig = Math.max(...arms.map(x => turned(x.H) + 10), ...[1, -1].map(sd => turned(kneeAt(sd)) + B.legW / 2), ...[1, -1].map(sd => turned(footAt(sd)) + 8));
+    gFig = Math.max(...arms.map(x => turned(x.H) + 10), ...[1, -1].map(sd => turned(kneeAt(sd)) + B.legW / 2), ...[1, -1].map(sd => turned(footAt(sd)) + 8),
+                    B.pose === "lie" && !move ? L + w + 2 : -Infinity);   // (ticket 299: lying, on the body's back or side too, as thick as it is)
   } else if (move && move.lift && !wet && !poseHeld) gFig = gStand + move.lift;
   // (ticket 136) jumping up into a hug, they are held up off the ground
   // (their shadow stays on it); not in water, nor while a joint is held,

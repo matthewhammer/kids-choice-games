@@ -545,7 +545,8 @@
 svg.solid-boxes[data-hide~="back"] .back, svg.solid-boxes[data-hide~="walls"] .wall,
 svg.solid-boxes[data-hide~="walks"] g[data-walk], svg.solid-boxes[data-hide~="walks"] g[data-walk] + text,
 svg.solid-boxes[data-hide~="pits"] g[data-solid]:has(.pit), svg.solid-boxes[data-hide~="pits"] g[data-solid]:has(.pit) + text,
-svg.solid-boxes[data-hide~="things"] g[data-solid]:not(:has(.pit)), svg.solid-boxes[data-hide~="things"] g[data-solid]:not(:has(.pit)) + text,
+svg.solid-boxes[data-hide~="things"] g[data-solid]:not(:has(.pit)):not(.seat), svg.solid-boxes[data-hide~="things"] g[data-solid]:not(:has(.pit)):not(.seat) + text,
+svg.solid-boxes[data-hide~="seats"] g.seat, svg.solid-boxes[data-hide~="seats"] g.seat + text,
 svg.solid-boxes[data-hide~="you"] .you { display: none; }
 /* (ticket 300) the palette by kind of place, a line each, its name first */
 .world-palette-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; width: 100%; }
@@ -637,6 +638,10 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
 .walk-spot ellipse { fill: color-mix(in srgb, var(--spot, #22d3ee) 35%, transparent); stroke: var(--spot, #22d3ee); stroke-width: 2.5px;
   filter: drop-shadow(0 0 6px var(--spot, #22d3ee)); animation: walk-spot 1.1s ease-in-out infinite alternate; }
 @keyframes walk-spot { from { opacity: 0.55; } to { opacity: 1; } }
+/* (ticket 299) pointing at a seat or a bed: its box glowing, and what a click does there */
+.walk-spot .seat-spot { fill: color-mix(in srgb, var(--spot, #22d3ee) 22%, transparent); stroke: var(--spot, #22d3ee); stroke-width: 2.5px;
+  filter: drop-shadow(0 0 6px var(--spot, #22d3ee)); animation: walk-spot 1.1s ease-in-out infinite alternate; }
+.walk-spot .seat-say { font: 600 15px system-ui, sans-serif; fill: #ffffff; stroke: #0f172a; stroke-width: 4px; paint-order: stroke; }
 .madecats { display: flex; flex-wrap: wrap; gap: 4px; width: 100%; }
 .madecats .flip.none-here { opacity: 0.45; }
 .solid-boxes .walk { fill: none; stroke: color-mix(in srgb, #10b981 35%, transparent); stroke-width: 12px; stroke-linecap: round; stroke-linejoin: round; }   /* (ticket 245: a rope bridge's way along it) */

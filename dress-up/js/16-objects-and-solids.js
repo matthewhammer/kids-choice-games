@@ -288,8 +288,9 @@ function solidsHere() {
   const offKey = [...objectsOff(B)].join("|") + (B.thingsSolid === false ? "|no-things" : "");   // (ticket 283: placed things out of the way, or not)
   if (solidMemo.text !== bgShown.text || solidMemo.kind !== B.kind || solidMemo.off !== offKey || !bgShown.text) {
     const seats = seatsHere(B);
-    solidMemo = { text: bgShown.text, kind: B.kind, off: offKey, list: seats.map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
-      return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y }; }).concat(standingHere(B, new Set(seats.map(t => t.name))), holesHere()) };
+    // (ticket 299: a flat one, a blanket, in nobody's way; each marked as a seat, for 🔬's own chip, sit or lie)
+    solidMemo = { text: bgShown.text, kind: B.kind, off: offKey, list: seats.filter(t => !t.flat).map(t => { const w = t.x1 - t.x0, d = clamp(0.5 * (t.z - t.y), 8, Math.max(8, SOLID_DEPTH * w));   // (as deep as half its height, at most SOLID_DEPTH of its width: a couch is not as deep as it is wide)
+      return { name: t.name, x0: t.x0, x1: t.x1, back: t.z - d, front: t.z, h: t.z - t.y, seat: t.lie ? "lie" : "sit" }; }).concat(standingHere(B, new Set(seats.map(t => t.name))), holesHere()) };
   }
   return solidMemo.list;
 }
@@ -385,7 +386,7 @@ function solidAt(x, z, all = false) {
   const B = state.background, W = castleWalls(B), S = youBoxes(x, z), sw = B.kind === "treehouse" ? swingNow() : null;
   const wall = !!(W && S.some(s => Math.max(Math.abs(s[0]), Math.abs(s[1])) > W.half(z)));
   if (wall && !all) return { wall: true };
-  const sitting = state.body.sit && B.seat, a = state.body.anim, jumping = isJump(a);
+  const sitting = state.body.sit && B.seat, a = state.body.anim, jumping = isJump(a);   // (lying on a bed too: sit, ticket 299)
   const clears = jumping ? (a === "jumphigh" ? 1 : 0.5) * legReach() : 0, list = [];
   for (const o0 of solidsHere()) {
     const o = sw && o0.name === "swing" ? { ...o0, x0: o0.x0 + sw.dx, x1: o0.x1 + sw.dx } : o0;   // (ticket 240: where the seat is now)

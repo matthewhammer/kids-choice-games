@@ -41,7 +41,7 @@ function waterRuns(B, bgText, x0, x1, y0, y1, step = 2) {
 // the two can't drift. A place's lines sit next to its scene function.
 const seatsHere = B => { try { return (SEATS[B.kind]?.(stageC(), B) ?? []).filter(Boolean); } catch (e) { return []; } };
 // the seat the friend sits on now (a seat here of the name kept, while they sit), or null
-const seatNow = () => { const B = state.background; if (!state.body.sit || !B.seat || B.kind === "none") return null;
+const seatNow = () => { const B = state.background; if (!state.body.sit || !B.seat || B.kind === "none") return null;   // (lying on a bed, sit too: ticket 299)
   return seatsHere(B).find(t => t.name === B.seat) || null; };
 // (ticket 123) In deep water (not the shallow stream or brook) the friend
 // treads water: both arms scull out and in together, the legs kick in turn,
@@ -898,6 +898,15 @@ function strikePose(which) {
   if (which === "stand" || which === "sit") { F.closed = false; return; }
   // (a hug is seen from the side: facing us, they turn to our right)
   if (which === "hug") { F.closed = false; if (!facingOf(B)) B.facing = "right"; Object.assign(B, POSES.hug.pose); return; }
+  // (ticket 299) lying down, the body level, its head the way lieHead says (turned about the hips as the crawl turns them:
+  // drawNow), the arms along its sides, the legs straight. (Matthew: "this laying looks valid, but its 'laying on one's
+  // side' not facing upwards, like is expected. Both are valuable.") On the back, face up (lieHow "back", the usual): the
+  // friend from the side, facing away from where the head goes, so turned level the face looks up; on the side, facing us.
+  if (which === "lie") { F.closed = false; B.turn = "";
+    if (B.lieHow === "side") { B.facing = "front"; B.poseArmL = B.poseArmR = 80 - (B.arms ?? 0); return; }
+    B.facing = B.lieHead === "right" ? "left" : "right";
+    const d = facingOf(B);   // (in profile each arm leans its own way: straight down along the body, as turned)
+    B.poseArmL = 84 - (B.arms ?? 0) - (d === 1 ? -14 : 4); B.poseArmR = 84 - (B.arms ?? 0) - (d === -1 ? -14 : 4); return; }
   B.facing = "front"; B.turn = "";
   let P = POSES[which];
   if (Array.isArray(P)) { const left = P.filter(d => d.name !== lastDance); P = left[Math.floor(Math.random() * left.length)]; lastDance = P.name; }

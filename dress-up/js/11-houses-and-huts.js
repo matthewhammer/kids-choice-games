@@ -477,6 +477,9 @@ SEATS.treeroom = (c, B) => {
   // (no seat on the bottom bunk: at their size there, a sitter's head went
   // through the top bunk)
   // (ticket 223: where the beanbag is drawn, TREE_FIT toward the middle about the back wall's foot)
+  // (ticket 299: the bottom bunk to lie on, its pillow at our left; the furniture drawn TREE_FIT about the floor)
+  if (room === "bunks") { const bx = (x1 - W * 0.2) * f, w = 210 * k * f;
+    return [{ name: "bunk beds", x0: bx - w / 2, x1: bx + w / 2, y: floor - 174 * k * f, z: floor + 10 * k * f + 1, facing: ["front"], lie: true, head: "left" }]; }
   if (room === "books") { const gx = (x0 + W * 0.2) * f;
     return [{ name: "beanbag", x0: gx - 36 * k * f, x1: gx + 36 * k * f, y: floor - 50 * k * f, z: floor + 60 * k * f + 1, facing: ["front", "left", "right"] }]; }
   return [];
@@ -1919,6 +1922,9 @@ function hutroomScene(c) {
   return s;
 }
 SEATS.hutroom = (c, B) => SEATS.livingroom(c, B);
+// (ticket 299) the grass hut's bed, to lie on, its pillow at our left (where hutbedScene draws it: its mattress's top)
+SEATS.hutbed = c => { const { W, g, k } = c, bx = -W * 0.16, by = g + 34 * k, w = 210 * k;
+  return [{ name: "bed", x0: bx - w + 12 * k, x1: bx + w - 12 * k, y: by - 108 * k, z: by + 1, facing: ["front"], lie: true, head: "left" }]; };
 // (ticket 282) the hut center, the cluster's middle hut and its biggest, its way in when it has one: a round room with
 // a door to each of the others (the bedroom on the left, the living room at the back, the potion room on the right), a
 // fire in a ring of stones in the middle of the floor, logs either side of it to sit on (as the camp site's), its smoke

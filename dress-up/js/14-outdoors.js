@@ -1866,7 +1866,11 @@ SEATS.underwater = (c, B) => { const { x1, W, g, k } = c, x = Math.max(x1 - W * 
 // edge (34 up) and its front edge (18 up).
 SEATS.beach = (c, B) => { const { W, g, k } = c;
   return [-1, 1].map(sd => { const x = sd * Math.max(W / 2 - 210 * k, 150 * k), b = g + 20 * k, cx = x + sd * 30 * k, cy = b - 10 * k;
-    return { name: `beach chair, ${sd < 0 ? "left" : "right"}`, x0: cx - 34 * k, x1: cx + 34 * k, y: cy - 28 * k, z: cy + 1, facing: ["front"] }; }); };
+    return { name: `beach chair, ${sd < 0 ? "left" : "right"}`, x0: cx - 34 * k, x1: cx + 34 * k, y: cy - 28 * k, z: cy + 1, facing: ["front"] }; })
+    // (ticket 299) its blankets, to lie on, flat on the sand (where the beach draws them: the middle of each, its head toward
+    // the sea's middle): not in anyone's way (flat)
+    .concat([[-1, 70], [1, 95]].map(([sd, dy]) => { const x = sd * W * 0.2, y = g + dy * k - 21 * k, w = 150 * k;
+      return { name: `beach blanket, ${sd < 0 ? "left" : "right"}`, x0: x - w / 2 + 7 * k, x1: x + w / 2 + 7 * k, y, z: y + 1, facing: ["front"], lie: true, flat: true, head: sd < 0 ? "right" : "left" }; })); };
 // In the witch's woods, the giant tree's thickest root (the first of its
 // humped roots, [30, 230, 30, 15]), where it humps up out of the ground
 // beside the trunk on its way toward the middle: the top of its stroke

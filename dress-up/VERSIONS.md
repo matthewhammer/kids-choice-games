@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.266 (2026-10-18)
+
+Everything in 0.0.265, with pointing to sit and pointing to lie down.
+
+- **🛌 Lying down**, a new pose: on the back, face up (the usual), or on the side, facing you, with the head toward your left or your right (🧍 Body, "🤸 poses").
+- **Beds and blankets to lie on**: the grass hut's bed, the bottom bunk in tree house room 1, and the two blankets on the beach. Put your friend down on one, or click it, and they lie down on it, their head on the pillow.
+- **Point to sit, point to lie down**: with 👆 walk where you click on, pointing at a seat or a bed makes it glow and says what a click does ("🪑 sit on the beanbag", "🛏️ lie down on the bed"); click, and your friend walks there and sits or lies down.
+- **🔬 seats and beds**: the collision boxes have a chip of their own for them, each labelled "sit" or "lie down"; a blanket is flat, so it is in nobody's way.
+
 ## 0.0.265 (2026-10-18)
 
 Everything in 0.0.264, with more of the tree house's meadow to walk in.
