@@ -65,7 +65,7 @@ try {
   ok("no error thrown", errs.length === 0, errs);
   await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`);
   // recorded: frames counted standing
-  for (const cpu of [1, 4]) for (const [name, setup] of [["layered (0.0.334)", ""], ["the old drawing (animations in the picture)", "FOAM_LAYERS.on = false;"], ["still foam", "state.background.foamMove = 0;"]]) {
+  for (const cpu of [1, 4]) for (const [name, setup] of [["layered (0.0.334)", ""], ["the old drawing (animations in the picture)", "FOAM_LAYERS.on = false; READS.clear(); PARTS.clear();"], ["still foam", "state.background.foamMove = 0;"]]) {
     const { page: p2, send: s2, ev: e2 } = await open();
     await s2("Runtime.enable"); await s2("Emulation.setCPUThrottlingRate", { rate: cpu });
     await s2("Emulation.setDeviceMetricsOverride", { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false });

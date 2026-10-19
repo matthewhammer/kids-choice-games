@@ -21,11 +21,13 @@ try {
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
     state.music.mute = true; state.world.at = null; climb = null; delete B.onBridge; delete B.onPlatform;
     Object.assign(B, { kind: "bubbleroom", figX: 0, figY: 40, things: [], foamBack: true, foamBackH: 70, foamLeft: true, foamRight: true, foamFloor: true, foamCeil: true }); changed(); await w(500);
-    const objs = () => [...bgShown.node.querySelectorAll("[data-obj]")].map(n => n.getAttribute("data-obj"));
+    // (ticket 383: the room's backdrop, its foam surfaces, lives under the picture while the foam moves, #pic-under: looked for in both)
+    const roots = () => [bgShown.node, document.getElementById("pic-under")].filter(Boolean);
+    const objs = () => roots().flatMap(R => [...R.querySelectorAll("[data-obj]")]).map(n => n.getAttribute("data-obj"));
     // (ticket 369: since ticket 290's speed-up the still foam is one picture, an <image> of its own little SVG document, and
     // only the moving bubbles are live over it: its bubbles are read from inside that document too, each by its body, the
     // circle filled 0.2, and where its surface puts it)
-    const foam = () => { const N = bgShown.node.querySelector('[data-obj="foam, back wall"]'); if (!N) return [];
+    const foam = () => { const N = roots().map(R => R.querySelector('[data-obj="foam, back wall"]')).find(Boolean); if (!N) return [];
       const docs = [...N.querySelectorAll("image")].map(im => new DOMParser().parseFromString(decodeURIComponent(im.getAttribute("href").replace(/^data:[^,]*,/, "")), "image/svg+xml").documentElement);
       return [N, ...docs].flatMap(R => [...R.querySelectorAll('circle[fill-opacity="0.2"]')]).map(c => { const g = c.closest('g[transform^="translate"]'), m = g && /translate\\(\\S+ ([-\\d.]+)/.exec(g.getAttribute("transform"));
         return { r: +c.getAttribute("r"), y: m ? +m[1] : NaN }; }); };
