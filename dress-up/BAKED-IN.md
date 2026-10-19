@@ -76,16 +76,16 @@ Inside
 | 🪜 tree house room 5, the art room | nothing (since 0.0.224, objects: the paint spills; the pinned drawings, with more than 10 things) | | | |
 | 🪜 tree house room 6, the music room | nothing (since 0.0.225, an object: the records, moved clear of the trunk) | | | |
 | 🛋️ living room | the window's view (a doorway); pictures (doorways) (since 0.0.224, objects: the rug, the wall clock, the window's frame with its curtains, rod and sill) | wall | | 11:240 |
-| 🧙 inside the witch's hut | the red door with its "🌲 out" sign (a doorway) (since 0.0.224, objects: the round window, two windows, the herbs on the beam, two cobwebs, the shelf of potions, the frogs in jars, the crows in their cages) | wall | | 11:900 |
-| 🌿 inside the healer's hut | the arched door with its "🌲 out" sign (a doorway) (since 0.0.224, objects: the rug, the round window and its sunbeam, the herbs, the fireplace, the things on its mantel) | wall | | 11:1140 |
+| 🧙 inside the witch's hut | the red door with its "🌲 out" sign (a doorway) (since 0.0.224, objects: the round window, two windows, the herbs on the beam (since 0.0.248 each bundle its own, "drying herbs 1" to 8), two cobwebs, the shelf of potions, the frogs in jars, the crows in their cages) | wall | | 11:900 |
+| 🌿 inside the healer's hut | the arched door with its "🌲 out" sign (a doorway) (since 0.0.224, objects: the rug, the round window and its sunbeam, the herbs (since 0.0.248 each bundle its own, "drying herbs 1" to 10), the fireplace, the things on its mantel) | wall | | 11:1140 |
 | ⛺ inside a tent | two mesh windows; the open door onto the camp and its rolled flaps (a doorway); tent 1: two sleeping bags and the flashlight (only its beam is an object); tent 2: a teddy on a blanket, a pile of books; tent 3: a map, binoculars, a backpack | wall, flat | the flaps | 14:414-511 |
 | 🪨 cave behind the falls | the falls from behind and the mist (a doorway); gems and three glowing crystals; light shafts, a wet patch, pebbles | wall, flat | yes | 14:572-629 |
 | 💭 our imagination | the map board, the columns' names, the dotted lines, the framed pictures (doorways) | wall | yes | 14:909-917 |
 | 🛖 hut rooms, all four | the stick wall, the twine, the fringe of the eaves, the straw floor | wall, flat | | 11:1675-1681 |
-| 🛖 inside the hut | a straw rug; the window with its view and its rolled grass mat; two doors with signs; two pictures; a wind chime and a lantern | flat, wall, hanging | the chime | 11:1841-1859 |
-| 🔥 the hut center | the shaft of daylight; three doors with signs; two lanterns; the column of smoke | wall, hanging | yes | 11:1887-1893 |
-| 🛏️ the hut's bedroom | a rose rug; the night window with its twinkling stars; the door; a dreamcatcher | flat, wall, hanging | yes | 11:1910-1923 |
-| 🧪 the hut's potion room | the door; three curved shelves of 18 bottles, some glowing; six herb bundles on a beam | wall, hanging | yes | 11:1965-1987 |
+| 🛖 inside the hut | two doors with signs; two pictures (doorways); the window's view (a doorway) (since 0.0.248, objects: the rug, the window, the wind chime, the lantern) | wall | | 11:1841-1859 |
+| 🔥 the hut center | three doors with signs (doorways) (since 0.0.248, objects: the daylight, two lanterns, the smoke) | wall | | 11:1887-1893 |
+| 🛏️ the hut's bedroom | the door (a doorway) (since 0.0.248, objects: the rug, the window, the dreamcatcher; the bed and the stump collide) | wall | | 11:1910-1923 |
+| 🧪 the hut's potion room | the door (a doorway) (since 0.0.248, objects: three shelves of potions, the beam, six drying herbs) | wall | | 11:1965-1987 |
 | 🔲 empty room, 🫧 bubble space | nothing | | | |
 
 The castle's rooms

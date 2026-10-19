@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.248 (2026-10-18)
+
+Everything in 0.0.247, with the grass hut's rooms and the herb bundles as things of their own.
+
+- **The grass hut's rooms are made of things you can see, hide and place**: the living room's rug, window, wind chime and lantern; the center's daylight, two lanterns and smoke; the bedroom's rug, window and dreamcatcher; and the potion room's three shelves of potions, the beam and its herbs. 🔬 Inspection names them, 👁️ hides them, and 📦 can place them anywhere.
+- **The bedroom's bed and stump are in your way now**, as furniture is everywhere else.
+- **The herbs drying from the beam are each a thing of their own, "drying herbs 1", 2, 3...**: in the witch's hut, the healer's hut and the grass hut's potion room (they were one long thing, named only at its far end).
+
 ## 0.0.247 (2026-10-18)
 
 Everything in 0.0.246, with each square of the world a place of its own.

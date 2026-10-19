@@ -900,14 +900,15 @@ function witchroomScene(c) {
     // the beam across, herbs hanging from it, cobwebs in the corners
     const by = y0 + H * 0.02;
     t += `<rect x="${f1(x0 - pad)}" y="${f1(by)}" width="${f1(W + 2 * pad)}" height="${f1(16 * k)}" fill="#2a1a12"/>`;
-    const mHerbs = t.length;
+    // (ticket 336, Matthew: "unnamed objects hanging in witches interior ... Let's say they are 'drying-herbs'") each bundle
+    // an object of its own, "drying herbs 1" and on, left to right
+    let herbN = 0;
     for (let i = 0; i < 9; i++) {
       const hx = x0 + W * (0.06 + 0.11 * i) + 10 * k * R(i, 300);
       if (Math.abs(hx) < 70 * k) continue;
-      t += `<line x1="${f1(hx)}" y1="${f1(by + 14 * k)}" x2="${f1(hx)}" y2="${f1(by + 40 * k)}" stroke="#c9b27a" stroke-width="${f1(1.5 * k)}"/>` +
-           [-8, 0, 8].map(dx => `<path d="M${P(hx, by + 40 * k)} Q${P(hx + dx * k, by + 60 * k)} ${P(hx + dx * 1.4 * k, by + 78 * k)}" stroke="${["#5f8a3a", "#7a6a3a", "#4a7a5a"][i % 3]}" stroke-width="${f1(4 * k)}" fill="none" stroke-linecap="round"/>`).join("");
+      t += wallObj(`drying herbs ${++herbN}`, `<line x1="${f1(hx)}" y1="${f1(by + 14 * k)}" x2="${f1(hx)}" y2="${f1(by + 40 * k)}" stroke="#c9b27a" stroke-width="${f1(1.5 * k)}"/>` +
+           [-8, 0, 8].map(dx => `<path d="M${P(hx, by + 40 * k)} Q${P(hx + dx * k, by + 60 * k)} ${P(hx + dx * 1.4 * k, by + 78 * k)}" stroke="${["#5f8a3a", "#7a6a3a", "#4a7a5a"][i % 3]}" stroke-width="${f1(4 * k)}" fill="none" stroke-linecap="round"/>`).join(""));
     }
-    t = wallSince(t, mHerbs, "herbs on the beam");
     for (const [cx, sd] of [[x0, 1], [x1, -1]])
       t += wallObj(sd > 0 ? "cobweb, left" : "cobweb, right", [20, 40, 60].map(r => `<path d="M${P(cx, by + 16 * k + r * k)} Q${P(cx + sd * r * 0.5 * k, by + 16 * k + r * 0.5 * k)} ${P(cx + sd * r * k, by + 16 * k)}" fill="none" stroke="#d8d8e0" stroke-width="${f1(1.2 * k)}" opacity="0.7"/>`).join("") +
            [0.3, 0.6, 0.9].map(a => `<line x1="${f1(cx)}" y1="${f1(by + 16 * k)}" x2="${f1(cx + sd * 64 * k * Math.cos(a * Math.PI / 2))}" y2="${f1(by + 16 * k + 64 * k * Math.sin(a * Math.PI / 2))}" stroke="#d8d8e0" stroke-width="${f1(1.2 * k)}" opacity="0.7"/>`).join(""));
@@ -1119,18 +1120,18 @@ function healerroomScene(c) {
          `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(wr)}" fill="none" stroke="#8b5e34" stroke-width="${f1(9 * k)}"/>` +
          `<path d="M${P(wx - wr, wy)} H${f1(wx + wr)} M${P(wx, wy - wr)} V${f1(wy + wr)}" stroke="#8b5e34" stroke-width="${f1(4 * k)}"/>`;
     t = wallSince(t, mRound, "round window");
-    const mHerbs = t.length;
-    // herbs drying in bundles from the beam (not across the window)
+    // herbs drying in bundles from the beam (not across the window); (ticket 336) each an object of its own, "drying herbs 1" and on
+    let herbN = 0;
     for (let i = 0; i < 12; i++) {
       const hx = x0 + W * (0.04 + 0.08 * i) + 8 * k * R(i, 1105), by = wallTop + 12 * k;
       if (Math.abs(hx) < 70 * k) continue;
       const cc = ["#5f8a3a", "#a78bfa", "#7a9a3a", "#f2c12e", "#4a8a4a"][i % 5], len = (50 + 24 * R(i, 1106)) * k;
-      t += `<line x1="${f1(hx)}" y1="${f1(by)}" x2="${f1(hx)}" y2="${f1(by + 18 * k)}" stroke="#c9b27a" stroke-width="${f1(1.5 * k)}"/>` +
+      t += wallObj(`drying herbs ${++herbN}`, `<line x1="${f1(hx)}" y1="${f1(by)}" x2="${f1(hx)}" y2="${f1(by + 18 * k)}" stroke="#c9b27a" stroke-width="${f1(1.5 * k)}"/>` +
            `<rect x="${f1(hx - 4 * k)}" y="${f1(by + 16 * k)}" width="${f1(8 * k)}" height="${f1(5 * k)}" fill="#c9b27a"/>` +
            [-10, -5, 0, 5, 10].map(dx => `<path d="M${P(hx, by + 20 * k)} Q${P(hx + dx * 0.6 * k, by + 20 * k + len * 0.5)} ${P(hx + dx * k, by + 20 * k + len)}" stroke="${cc}" stroke-width="${f1(3.5 * k)}" fill="none" stroke-linecap="round"/>`).join("") +
-           (i % 2 ? [-8, 0, 8].map(dx => `<circle cx="${f1(hx + dx * k)}" cy="${f1(by + 20 * k + len)}" r="${f1(3 * k)}" fill="${cc === "#a78bfa" ? "#c4b5fd" : "#f7f2c4"}"/>`).join("") : "");
+           (i % 2 ? [-8, 0, 8].map(dx => `<circle cx="${f1(hx + dx * k)}" cy="${f1(by + 20 * k + len)}" r="${f1(3 * k)}" fill="${cc === "#a78bfa" ? "#c4b5fd" : "#f7f2c4"}"/>`).join("") : ""));
     }
-    return wallSince(t, mHerbs, "herbs on the beam");
+    return t;
   });
   // the hearth: a stone fireplace in the wall, its mantel with candles and jars
   s += SEP + part("hroom-hearth", c.F, () => {
@@ -1875,35 +1876,35 @@ function hutroomScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, P, o } = c;
   const cs = (o.couchSize ?? 100) / 100, pillows = o.pillows ?? 4, ps = (o.picSize ?? 100) / 100;
   let s = SEP + hutShellSvg(c, "hutroom");
-  s += SEP + part("hutroom-rug", [c.F, o.hutRugColors ?? "straw"], () => rugSvg(c, rugColorsOf(o.hutRugColors ?? "straw")));
+  // (ticket 284: its rug, window, wind chime and lantern objects of their own, on the floor and the walls)
+  s += SEP + floorObj("rug", part("hutroom-rug", [c.F, o.hutRugColors ?? "straw"], () => rugSvg(c, rugColorsOf(o.hutRugColors ?? "straw"))));
   // the window above the couch: its view (a doorway into it), a frame of sticks, a grass mat rolled up above it
   const wx = 150 * k, wy0 = y0 + H * 0.2, wy1 = y0 + H * 0.44, depth = (o.depth ?? 0) + 1;
   if (depth <= 2) {
     const view = PICTURE_CHOICES.some(([kd]) => kd === o.view) ? o.view : "lake";
     s += SEP + `<g class="portal" data-to="${view}">` + pictureSvg(view, o.viewDetail ?? 80, o, depth, -wx, wy0, 2 * wx, wy1 - wy0) + `</g>`;
   }
-  s += SEP + part("hutroom-window", c.F, () => `<g pointer-events="none">` +
+  s += SEP + wallObj("window", part("hutroom-window", c.F, () => `<g pointer-events="none">` +
     [[-wx, wy0, 2 * wx, 0], [-wx, wy1, 2 * wx, 0], [-wx, wy0, 0, 1], [wx, wy0, 0, 1]].map(([x, y, l, up]) =>
       `<rect x="${f1(x - 8 * k)}" y="${f1(y - 8 * k)}" width="${f1(up ? 16 * k : l + 16 * k)}" height="${f1(up ? wy1 - wy0 + 16 * k : 16 * k)}" rx="${f1(8 * k)}" fill="#8b5e34" stroke="#4a2e14" stroke-width="${f1(1.5 * k)}"/>`).join("") +
     `<path d="M${P(0, wy0)} V${f1(wy1)}" stroke="#7a5230" stroke-width="${f1(7 * k)}"/>` +
     `<rect x="${f1(-wx - 14 * k)}" y="${f1(wy0 - 30 * k)}" width="${f1(2 * wx + 28 * k)}" height="${f1(24 * k)}" rx="${f1(12 * k)}" fill="#c9b45a" stroke="#8a7a3a" stroke-width="${f1(2 * k)}"/>` +
-    [-0.6, 0.6].map(u => `<line x1="${f1(u * wx)}" y1="${f1(wy0 - 30 * k)}" x2="${f1(u * wx)}" y2="${f1(wy0 - 6 * k)}" stroke="#d8c48a" stroke-width="${f1(4 * k)}"/>`).join("") + `</g>`);
+    [-0.6, 0.6].map(u => `<line x1="${f1(u * wx)}" y1="${f1(wy0 - 30 * k)}" x2="${f1(u * wx)}" y2="${f1(wy0 - 6 * k)}" stroke="#d8c48a" stroke-width="${f1(4 * k)}"/>`).join("") + `</g>`));
   // the doors: to the bedroom on the left, the potion room on the right
   s += SEP + part("hutroom-doors", c.F, () => hutDoorSvg(c, Math.PI + HUT_DOOR_TH, "hutbed", "🛏️ bedroom") + hutDoorSvg(c, 2 * Math.PI - HUT_DOOR_TH, "hutpotion", "🧪 potions"));
   // two pictures high on the walls, over the doors
   { const G = hutGeom(c), xl = G.x(Math.PI + HUT_DOOR_TH);
     s += SEP + picturesSvg(o, "hutroom", [[xl, y0 + H * 0.27, 96 * k], [-xl, y0 + H * 0.27, 96 * k]], ps); }
   // a wind chime of little sticks, swinging with the quick LFO; a lantern, glowing with the slow
-  s += SEP + part("hutroom-hangings", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => {
+  s += SEP + wallObj("wind chime", part("hutroom-hangings", [c.F, sceneLfoKey(o, "fast")], () => {
     const cx = -W * 0.22, cy = y0 + H * 0.05;
     const chime = `<line x1="${f1(cx)}" y1="${f1(cy)}" x2="${f1(cx)}" y2="${f1(cy + 40 * k)}" stroke="#5a3a1e" stroke-width="${f1(1.5 * k)}"/>` +
       `<rect x="${f1(cx - 26 * k)}" y="${f1(cy + 40 * k)}" width="${f1(52 * k)}" height="${f1(7 * k)}" rx="${f1(3 * k)}" fill="#7a5230"/>` +
       [-20, -10, 0, 10, 20].map((dx, i) => `<line x1="${f1(cx + dx * k)}" y1="${f1(cy + 47 * k)}" x2="${f1(cx + dx * k)}" y2="${f1(cy + 60 * k)}" stroke="#d8c48a" stroke-width="${f1(k)}"/>` +
         `<rect x="${f1(cx + dx * k - 2.5 * k)}" y="${f1(cy + 60 * k)}" width="${f1(5 * k)}" height="${f1((26 + 6 * (i % 3)) * k)}" rx="${f1(2.5 * k)}" fill="${HUT_STICKS[i % 4]}"/>`).join("");
     return `<g>${sceneLfo(o, "fast", 0, "transform", (v, amp) => `${f1((6 + 12 * amp) * v)} ${f1(cx)} ${f1(cy)}`,
-      `<animateTransform attributeName="transform" type="rotate" values="-6 ${f1(cx)} ${f1(cy)};6 ${f1(cx)} ${f1(cy)};-6 ${f1(cx)} ${f1(cy)}" dur="1.4s" repeatCount="indefinite"/>`)}${chime}</g>` +
-      hutLanternSvg(c, W * 0.22, 0.4);
-  });
+      `<animateTransform attributeName="transform" type="rotate" values="-6 ${f1(cx)} ${f1(cy)};6 ${f1(cx)} ${f1(cy)};-6 ${f1(cx)} ${f1(cy)}" dur="1.4s" repeatCount="indefinite"/>`)}${chime}</g>`;
+  })) + SEP + wallObj("lantern", part("hutroom-lantern", [c.F, sceneLfoKey(o, "slow")], () => hutLanternSvg(c, W * 0.22, 0.4)));
   // the couch and its pillows, as the house's, in the hut's own colors (one object, standing on its feet)
   s += obj("couch", g - 40 * k, OPEN(`<g id="bg-hutcouch" ${tf(0, g - 40 * k, cs * k)}>`) + couchSvg("hutroom", o.hutCouchColor ?? "#7a5a3a") +
     SEP + part("hutroom-pillows", [pillows], () => `<defs><g id="bg-hutpillow"><path d="M-36 -34 Q0 -44 36 -34 Q44 0 36 34 Q0 44 -36 34 Q-44 0 -36 -34 Z" fill="currentColor" stroke="#00000033" stroke-width="2"/>` +
@@ -1922,14 +1923,15 @@ function hutcenterScene(c) {
   const { y0, g, W, k, pad, P, o } = c, fy = g + HUT_FIRE * k;
   let s = SEP + hutShellSvg(c, "hutcenter");
   // the daylight from the smoke hole, a pale shaft down to the fire, breathing with the slow LFO
-  s += SEP + part("hutcenter-light", [c.F, sceneLfoKey(o, "slow")], () => `<path d="M${P(-70 * k, y0 - pad)} L${P(70 * k, y0 - pad)} L${P(170 * k, fy)} L${P(-170 * k, fy)} Z" fill="#fff6c8" opacity="0.14" pointer-events="none">` +
-    sceneLfo(o, "slow", 0.1, "opacity", (v, amp) => (0.14 * (1 + (0.2 + 0.5 * amp) * v)).toFixed(3)) + `</path>`);
+  s += SEP + wallObj("daylight", part("hutcenter-light", [c.F, sceneLfoKey(o, "slow")], () => `<path d="M${P(-70 * k, y0 - pad)} L${P(70 * k, y0 - pad)} L${P(170 * k, fy)} L${P(-170 * k, fy)} Z" fill="#fff6c8" opacity="0.14" pointer-events="none">` +
+    sceneLfo(o, "slow", 0.1, "opacity", (v, amp) => (0.14 * (1 + (0.2 + 0.5 * amp) * v)).toFixed(3)) + `</path>`));
   s += SEP + part("hutcenter-doors", c.F, () => hutDoorSvg(c, Math.PI + HUT_DOOR_TH, "hutbed", "🛏️ bedroom") + hutDoorSvg(c, 1.5 * Math.PI, "hutroom", "🛋️ living room") +
     hutDoorSvg(c, 2 * Math.PI - HUT_DOOR_TH, "hutpotion", "🧪 potions"));
-  s += SEP + part("hutcenter-lanterns", [c.F, sceneLfoKey(o, "slow")], () => hutLanternSvg(c, -W * 0.3, 0) + hutLanternSvg(c, W * 0.3, 0.5));
+  s += SEP + wallObj("lantern, left", part("hutcenter-lantern-l", [c.F, sceneLfoKey(o, "slow")], () => hutLanternSvg(c, -W * 0.3, 0))) +
+       SEP + wallObj("lantern, right", part("hutcenter-lantern-r", [c.F, sceneLfoKey(o, "slow")], () => hutLanternSvg(c, W * 0.3, 0.5)));
   // the smoke, rising from the fire to the hole, swaying with the slow LFO
-  s += SEP + swaying(o, `<path d="M${P(0, fy - 150 * k)} Q${P(-34 * k, fy - 270 * k)} ${P(12 * k, fy - 380 * k)} T${P(0, y0 - pad)}" fill="none" stroke="#e4e4ea" stroke-width="${f1(22 * k)}" stroke-linecap="round" opacity="0.3" pointer-events="none"/>`,
-    0, fy - 150 * k, 5, 0.2);
+  s += SEP + wallObj("smoke", swaying(o, `<path d="M${P(0, fy - 150 * k)} Q${P(-34 * k, fy - 270 * k)} ${P(12 * k, fy - 380 * k)} T${P(0, y0 - pad)}" fill="none" stroke="#e4e4ea" stroke-width="${f1(22 * k)}" stroke-linecap="round" opacity="0.3" pointer-events="none"/>`,
+    0, fy - 150 * k, 5, 0.2));
   // the logs, then the fire (objects, standing on the floor)
   s += SEP + [-1, 1].map(u => obj(u < 0 ? "log, left" : "log, right", fy + 44 * k, part(u < 0 ? "hutcenter-log-l" : "hutcenter-log-r", c.F, () => logSvg(150 * u * k, fy + 30 * k, k)))).join("");
   s += SEP + obj("fire", fy + 14 * k, part("hutcenter-hearth", c.F, () => campfireHearthSvg(0, fy, k * 1.1)) +
@@ -1944,9 +1946,10 @@ SEATS.hutcenter = (c, B) => { const { g, k } = c, fy = g + HUT_FIRE * k;
 function hutbedScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, o } = c;
   let s = SEP + hutShellSvg(c, "hutbed");
-  s += SEP + part("hutbed-rug", c.F, () => rugSvg(c, rugColorsOf("rose"), 46).replace(/rx="[0-9.]+"/g, m => `rx="${f1(parseFloat(m.slice(4)) * 0.6)}"`));
+  // (ticket 284: its rug, window and dreamcatcher objects of their own)
+  s += SEP + floorObj("rug", part("hutbed-rug", c.F, () => rugSvg(c, rugColorsOf("rose"), 46).replace(/rx="[0-9.]+"/g, m => `rx="${f1(parseFloat(m.slice(4)) * 0.6)}"`)));
   // the round window, high in the middle: the night sky, a moon, stars twinkling with the quick LFO
-  s += SEP + part("hutbed-window", [c.F, sceneLfoKey(o, "fast")], () => { const wx = W * 0.08, wy = y0 + H * 0.28, wr = 52 * k;
+  s += SEP + wallObj("window", part("hutbed-window", [c.F, sceneLfoKey(o, "fast")], () => { const wx = W * 0.08, wy = y0 + H * 0.28, wr = 52 * k;
     return `<defs><clipPath id="bg-hutbed-win"><circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(wr)}"/></clipPath></defs>` +
       `<g clip-path="url(#bg-hutbed-win)"><rect x="${f1(wx - wr)}" y="${f1(wy - wr)}" width="${f1(2 * wr)}" height="${f1(2 * wr)}" fill="#1f2a5a"/>` +
       `<circle cx="${f1(wx + 18 * k)}" cy="${f1(wy - 16 * k)}" r="${f1(14 * k)}" fill="#fff6c8"/><circle cx="${f1(wx + 24 * k)}" cy="${f1(wy - 20 * k)}" r="${f1(12 * k)}" fill="#1f2a5a"/>` +
@@ -1954,19 +1957,19 @@ function hutbedScene(c) {
         sceneLfo(o, "fast", i / 6, "opacity", (v, amp) => (0.6 + (0.2 + 0.2 * amp) * v).toFixed(2)) + `</circle>`).join("") +
       `<ellipse cx="${f1(wx - 20 * k)}" cy="${f1(wy + 50 * k)}" rx="${f1(70 * k)}" ry="${f1(26 * k)}" fill="#1f3a2a"/></g>` +
       `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(wr)}" fill="none" stroke="#8b5e34" stroke-width="${f1(10 * k)}"/>` +
-      `<path d="M${P(wx - wr, wy)} H${f1(wx + wr)} M${P(wx, wy - wr)} V${f1(wy + wr)}" stroke="#7a5230" stroke-width="${f1(4 * k)}"/>`; });
+      `<path d="M${P(wx - wr, wy)} H${f1(wx + wr)} M${P(wx, wy - wr)} V${f1(wy + wr)}" stroke="#7a5230" stroke-width="${f1(4 * k)}"/>`; }));
   // the door back to the living room, on the right
   s += SEP + part("hutbed-door", c.F, () => hutDoorSvg(c, 2 * Math.PI - HUT_DOOR_TH, "hutroom", "🛋️ living room"));
   // the dreamcatcher, hanging over the bed, swaying with the slow LFO
   const bx = -W * 0.16;
-  s += SEP + part("hutbed-dream", [c.F, sceneLfoKey(o, "slow")], () => { const dx = bx, dy = y0 + H * 0.2, r = 26 * k;
+  s += SEP + wallObj("dreamcatcher", part("hutbed-dream", [c.F, sceneLfoKey(o, "slow")], () => { const dx = bx, dy = y0 + H * 0.2, r = 26 * k;
     const inner = `<line x1="${f1(dx)}" y1="${f1(y0 + H * 0.05)}" x2="${f1(dx)}" y2="${f1(dy - r)}" stroke="#5a3a1e" stroke-width="${f1(1.5 * k)}"/>` +
       `<circle cx="${f1(dx)}" cy="${f1(dy)}" r="${f1(r)}" fill="none" stroke="#9a6a3c" stroke-width="${f1(4 * k)}"/>` +
       [...Array(8)].map((_, i) => { const a = i * Math.PI / 4; return `<line x1="${f1(dx)}" y1="${f1(dy)}" x2="${f1(dx + Math.cos(a) * r)}" y2="${f1(dy + Math.sin(a) * r)}" stroke="#d8c48a" stroke-width="${f1(1.2 * k)}"/>`; }).join("") +
       `<circle cx="${f1(dx)}" cy="${f1(dy)}" r="${f1(5 * k)}" fill="#3ba3a3"/>` +
       [-14, 0, 14].map((ox, i) => `<line x1="${f1(dx + ox * k)}" y1="${f1(dy + r)}" x2="${f1(dx + ox * k)}" y2="${f1(dy + r + (30 + 8 * (i % 2)) * k)}" stroke="#d8c48a" stroke-width="${f1(1.2 * k)}"/>` +
         `<path d="M${P(dx + ox * k, dy + r + (30 + 8 * (i % 2)) * k)} q${f1(-6 * k)} ${f1(10 * k)} 0 ${f1(24 * k)} q${f1(6 * k)} ${f1(-14 * k)} 0 ${f1(-24 * k)} Z" fill="${["#e8c870", "#f6eedd", "#c0504d"][i]}"/>`).join("");
-    return swaying(o, inner, dx, y0 + H * 0.05, 5, 0.2); });
+    return swaying(o, inner, dx, y0 + H * 0.05, 5, 0.2); }));
   // the bed: a frame of logs, a headboard of sticks, the mattress, the blanket in its color, a pillow (one object)
   const by = g + 34 * k, bed = part("hutbed-bed", [c.F, o.hutBlanket ?? "#b8434f"], () => { const bl = o.hutBlanket ?? "#b8434f", w = 210 * k;
     let t = `<ellipse cx="${f1(bx)}" cy="${f1(by + 6 * k)}" rx="${f1(w + 20 * k)}" ry="${f1(16 * k)}" fill="#000000" opacity="0.15"/>`;
@@ -2001,10 +2004,11 @@ function hutpotionScene(c) {
   let s = SEP + hutShellSvg(c, "hutpotion");
   s += SEP + part("hutpotion-door", c.F, () => hutDoorSvg(c, Math.PI + HUT_DOOR_TH, "hutroom", "🛋️ living room"));
   // the shelves on the back wall, right of the middle, curving with it; their bottles, some glowing with the slow LFO
-  s += SEP + part("hutpotion-shelves", [c.F, sceneLfoKey(o, "slow")], () => {
+  // (ticket 284: each shelf an object of its own, "shelf of potions 1" to 3, top to bottom)
+  [0.36, 0.56, 0.76].forEach((u, row) => { s += SEP + wallObj(`shelf of potions ${row + 1}`, part("hutpotion-shelf-" + row, [c.F, sceneLfoKey(o, "slow")], () => {
     const G = hutGeom(c), ta = 1.47 * Math.PI, tb = 1.8 * Math.PI;
     let t = "";
-    [0.36, 0.56, 0.76].forEach((u, row) => {
+    {
       const plank = G.ring(u, ta, tb, 24);
       t += `<polyline points="${ptsOf(plank)}" fill="none" stroke="#4a2e14" stroke-width="${f1(15 * k)}" stroke-linecap="round"/>` +
            `<polyline points="${ptsOf(plank)}" fill="none" stroke="#7a5230" stroke-width="${f1(11 * k)}" stroke-linecap="round"/>`;
@@ -2018,14 +2022,17 @@ function hutpotionScene(c) {
           : `<path d="M-6 -40 L-18 0 H18 L6 -40 Z" fill="${cc}" fill-opacity="0.85" stroke="#2a2a30" stroke-width="1.5"/>`;
         t += glow + `<g ${tf(bx, sy, k * z)}>${bottle}<rect x="-4" y="${kind === 1 ? -70 : kind === 0 ? -52 : -48}" width="8" height="7" rx="2" fill="#a87a4a"/></g>`;
       }
-    });
+    }
     return t;
-  });
+  })); });
   // herbs drying in bundles from the beam round the wall's top, swaying a little with the slow LFO
-  s += SEP + part("hutpotion-herbs", [c.F, sceneLfoKey(o, "slow")], () => {
-    const G = hutGeom(c), beam = G.ring(0.06);
-    let t = `<polyline points="${ptsOf(beam)}" fill="none" stroke="#6e4a28" stroke-width="${f1(14 * k)}"/>`;
-    for (let i = 0; i < 6; i++) {   // (over the left of the wall: the shelves have the right)
+  // (ticket 336, Matthew: "unnamed objects hanging ... Let's say they are 'drying-herbs'": each bundle an object of its own,
+  // "drying herbs 1" to 6, left to right; the beam they hang from one too)
+  s += SEP + wallObj("beam", part("hutpotion-beam", c.F, () => `<polyline points="${ptsOf(hutGeom(c).ring(0.06))}" fill="none" stroke="#6e4a28" stroke-width="${f1(14 * k)}"/>`));
+  for (let i = 0; i < 6; i++) s += SEP + wallObj(`drying herbs ${i + 1}`, part("hutpotion-herbs-" + i, [c.F, sceneLfoKey(o, "slow")], () => {
+    const G = hutGeom(c);
+    let t = "";
+    {   // (over the left of the wall: the shelves have the right)
       const th = Math.PI * (1.08 + 0.066 * i), [hx, by0] = G.at(th, 0.06), by = by0 - 2 * k, z = 0.8 + 0.3 * (1 - G.s(th));
       const cc = ["#5f8a3a", "#a78bfa", "#7a9a3a", "#f2c12e", "#4a8a4a"][i % 5], len = (46 + 22 * R(i, 2794)) * k * z;
       const bundle = `<line x1="${f1(hx)}" y1="${f1(by + 8 * k)}" x2="${f1(hx)}" y2="${f1(by + 24 * k)}" stroke="#c9b27a" stroke-width="${f1(1.5 * k)}"/>` +
@@ -2033,7 +2040,7 @@ function hutpotionScene(c) {
       t += swaying(o, bundle, hx, by + 8 * k, 4, i / 10);
     }
     return t;
-  });
+  }));
   // the table on the left, a mortar and pestle and an open book on it (an object)
   const tx = -W * 0.2, ty = g + 10 * k;
   const table = part("hutpotion-table", c.F, () =>
