@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.345 (2026-10-19)
+
+Everything in 0.0.344, with your friend's own hair when lying on a sleeping bag.
+
+- **Lying on a sleeping bag, your friend keeps their own hair** (ticket 425): short hair close round their head, long hair fanned out on the pillow (the longer, the farther), curls in a ring, spikes, a big afro, or two pigtails tied and spread on the pillow; and none if they have none. Their bangs show as before. The 👁️ see-through sliders work there too.
+
 ## 0.0.344 (2026-10-19)
 
 Everything in 0.0.343, with the far arrows quick to show again.

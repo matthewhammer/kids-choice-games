@@ -27,7 +27,7 @@ try {
     for (const t of placeSeats(B).filter(t => t.along)) { sitOn(t); await w(400);
       const f = document.getElementById("figure"), view = f.querySelector('[data-lie="along"]'), P = pic.getScreenCTM().inverse();
       const box = el => { const q = el.getBoundingClientRect(), a = new DOMPoint(q.left, q.top).matrixTransform(P), c = new DOMPoint(q.right, q.bottom).matrixTransform(P); return [a.x, a.y, c.x, c.y].map(Math.round); };
-      const head = view && view.querySelector("circle"), shoes = view ? [...view.querySelectorAll(":scope > path")].slice(-2) : [];
+      const head = view && view.querySelector("circle.lie-head"), shoes = view ? [...view.querySelectorAll(":scope > path")].slice(-2) : [];
       out.push({ name: t.name, pose: state.body.pose, seat: B.seat, view: !!view, transform: f.getAttribute("transform"), head: head ? box(head) : null,
         shoes: shoes.map(box), far: t.along.far.map(Math.round), near: t.along.near.map(Math.round) });
       standUp(); await w(200); out[out.length - 1].stood = { pose: state.body.pose, feet: Math.round(SCENE.ground + B.figY), z: Math.round(t.z), view: !!document.querySelector('#figure [data-lie="along"]') }; }

@@ -1140,60 +1140,97 @@ function lieAlongSvg(A, S) {
     return `<path d="M${P(A0)} L${P(B1)} A${f1(R1)} ${f1(R1)} 0 0 0 ${P(C1)} L${P(D0)} A${f1(R0)} ${f1(R0)} 0 0 0 ${P(A0)} Z" fill="${fill}" stroke="${darker(fill)}" stroke-width="${lw(p0)}" stroke-linejoin="round"/>`; };
   const skin = S.face.color, hair = S.hair.color, shirt = S.shirt.color, pants = S.pants.color, shoe = S.shoes.color;
   const sleeve = S.shirt.style === "tank" ? 0 : S.shirt.style === "long" ? 1 : 0.45, longPants = !/short|skirt/.test(S.pants.style || "long");
-  const bald = !S.hair.style || S.hair.style === "none" || S.hair.style === "bald", longHair = S.hair.style === "long";
+  // (ticket 425: each part as see-through as its 👁️ slider says, as standing: the arms, the neck and the body the shirt's, the
+  // legs the pants', the hands and the feet their own)
+  const seen = visibility(), V = (part, svg) => !svg || seen[part] >= 1 ? svg : seen[part] <= 0 ? "" : `<g opacity="${seen[part].toFixed(2)}">${svg}</g>`;
   let s = "";
-  // the hair, spread on the pillow round the head (long hair the more)
+  // the head: a ball on the pillow, round on the screen, the face up (Matthew: "the face should be facing up -- not looking
+  // towards us"), the hair on its far side (Matthew: "the hair should be on the far face of the head ball, not the top of it
+  // (the head is reclined now, looking upward)"), behind the head and spread on the pillow
   const hx = 1.8, hc = 0.29, hr = 0.25;   // (the head smaller than the friend's own, so that, a ball raised by the pillow, it stays on the bag)
-  if (!bald) { const sp = longHair ? 0.42 : 0.32, q = [at(hx + sp, 0, 0.07), at(hx, -sp * 1.05, 0.07), at(hx - 0.22, 0, 0.07), at(hx, sp * 1.05, 0.07)];
-    s += `<path d="M${P(q[0])} Q${P(at(hx + sp, -sp, 0.07))} ${P(q[1])} Q${P(at(hx - 0.2, -sp, 0.07))} ${P(q[2])} Q${P(at(hx - 0.2, sp, 0.07))} ${P(q[3])} Q${P(at(hx + sp, sp, 0.07))} ${P(q[0])} Z" fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(q[0])}"/>`; }
-  // the head: a ball on the pillow, round on the screen; its hair over the far side of it; its face up, and tipped toward the
-  // feet by the pillow under the head, so toward us
-  const hp = at(hx, 0, hc), R = hr * hp[2];
-  // (Matthew: "the hair should be on the far face of the head ball, not the top of it (the head is reclined now, looking
-  // upward)") the hair on the ball's far side, the crown toward the pillow: behind the head, showing round its far edge
-  if (!bald) s += `<ellipse cx="${f1(hp[0])}" cy="${f1(hp[1] - 0.16 * R)}" rx="${f1(1.1 * R)}" ry="${f1(1.04 * R)}" fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(hp)}"/>`;
-  s += `<circle cx="${f1(hp[0])}" cy="${f1(hp[1])}" r="${f1(R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
-  // (Matthew: "the face should be facing up -- not looking towards us"; before that, "there's a layering issue with the hair?")
+  const hp = at(hx, 0, hc), R = hr * hp[2], hair3 = lyingHair(S.hair, { at, P, lw, hx, hp, R, hair });
+  s += V("hair", hair3.behind);
+  let head = `<circle class="lie-head" cx="${f1(hp[0])}" cy="${f1(hp[1])}" r="${f1(R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
   // Lying face up, seen from the feet and above: the face looks at the ceiling, so it shows on the head's upper part, shortened,
   // its forehead and hairline at the far top, then the eyes, the nose and, nearer us, the mouth; below it the underside of
-  // the chin and jaw, in shade. The ears at the head's sides; the hair over its far top and spread on the pillow behind.
+  // the chin and jaw, in shade. The ears at the head's sides.
   const lo = (y0, bow, a) => `<path d="M${f1(hp[0] - Math.sqrt(R * R - (y0 - hp[1]) ** 2))} ${f1(y0)} Q${f1(hp[0])} ${f1(y0 + bow)} ${f1(hp[0] + Math.sqrt(R * R - (y0 - hp[1]) ** 2))} ${f1(y0)} ` +
     `A${f1(R)} ${f1(R)} 0 ${y0 > hp[1] ? 0 : 1} 1 ${f1(hp[0] - Math.sqrt(R * R - (y0 - hp[1]) ** 2))} ${f1(y0)} Z" ${a}/>`;
-  s += lo(hp[1] + 0.1 * R, 0.14 * R, `fill="${darker(skin)}" opacity="0.45"`);   // (under the chin)
-  for (const sd of [-1, 1]) s += `<ellipse cx="${f1(hp[0] + sd * 0.97 * R)}" cy="${f1(hp[1] - 0.2 * R)}" rx="${f1(0.13 * R)}" ry="${f1(0.2 * R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
-  const hy = hp[1] - 0.86 * R, hw = Math.sqrt(R * R - (hy - hp[1]) ** 2);   // (its hairline at the far edge: the forehead faces up)
-  if (!bald) s += `<path d="M${f1(hp[0] - hw)} ${f1(hy)} A${f1(R)} ${f1(R)} 0 0 1 ${f1(hp[0] + hw)} ${f1(hy)} Q${f1(hp[0])} ${f1(hy + 0.08 * R)} ${f1(hp[0] - hw)} ${f1(hy)} Z" ` +
-    `fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(hp)}" stroke-linejoin="round"/>`;
+  head += lo(hp[1] + 0.1 * R, 0.14 * R, `fill="${darker(skin)}" opacity="0.45"`);   // (under the chin)
+  for (const sd of [-1, 1]) head += `<ellipse cx="${f1(hp[0] + sd * 0.97 * R)}" cy="${f1(hp[1] - 0.2 * R)}" rx="${f1(0.13 * R)}" ry="${f1(0.2 * R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
+  s += V("head", head) + V("hair", hair3.over);
+  let eyes = "";
   for (const sd of [-1, 1]) { const ex = hp[0] + sd * 0.27 * R, ey = hp[1] - 0.44 * R;
     // (its whites, the pupils at their far edge: looking up at the ceiling, past the forehead)
-    s += `<ellipse cx="${f1(ex)}" cy="${f1(ey)}" rx="${f1(0.1 * R)}" ry="${f1(0.06 * R)}" fill="#ffffff" stroke="${darker(skin)}" stroke-width="${f1(Math.max(0.5, 0.02 * R))}"/>` +
-         `<ellipse cx="${f1(ex)}" cy="${f1(ey - 0.025 * R)}" rx="${f1(0.05 * R)}" ry="${f1(0.035 * R)}" fill="#1f1f1f"/>` +
-         `<path d="M${f1(ex - 0.12 * R)} ${f1(ey - 0.1 * R)} Q${f1(ex)} ${f1(ey - 0.14 * R)} ${f1(ex + 0.12 * R)} ${f1(ey - 0.1 * R)}" fill="none" stroke="${darker(hair)}" stroke-width="${f1(Math.max(0.6, 0.035 * R))}" stroke-linecap="round"/>`; }
-  s += `<path d="M${f1(hp[0] - 0.06 * R)} ${f1(hp[1] - 0.22 * R)} Q${f1(hp[0])} ${f1(hp[1] - 0.15 * R)} ${f1(hp[0] + 0.06 * R)} ${f1(hp[1] - 0.22 * R)}" fill="none" stroke="${darker(skin)}" stroke-width="${f1(Math.max(0.6, 0.04 * R))}" stroke-linecap="round"/>`;   // (the nose)
-  s += `<path d="M${f1(hp[0] - 0.15 * R)} ${f1(hp[1] - 0.06 * R)} Q${f1(hp[0])} ${f1(hp[1] + 0.02 * R)} ${f1(hp[0] + 0.15 * R)} ${f1(hp[1] - 0.06 * R)}" fill="none" stroke="#7a2e2e" stroke-width="${f1(Math.max(0.7, 0.05 * R))}" stroke-linecap="round"/>`;
+    eyes += `<ellipse cx="${f1(ex)}" cy="${f1(ey)}" rx="${f1(0.1 * R)}" ry="${f1(0.06 * R)}" fill="#ffffff" stroke="${darker(skin)}" stroke-width="${f1(Math.max(0.5, 0.02 * R))}"/>` +
+            `<ellipse cx="${f1(ex)}" cy="${f1(ey - 0.025 * R)}" rx="${f1(0.05 * R)}" ry="${f1(0.035 * R)}" fill="#1f1f1f"/>` +
+            `<path d="M${f1(ex - 0.12 * R)} ${f1(ey - 0.1 * R)} Q${f1(ex)} ${f1(ey - 0.14 * R)} ${f1(ex + 0.12 * R)} ${f1(ey - 0.1 * R)}" fill="none" stroke="${darker(hair)}" stroke-width="${f1(Math.max(0.6, 0.035 * R))}" stroke-linecap="round"/>`; }
+  s += V("eyes", eyes);
+  s += V("head", `<path d="M${f1(hp[0] - 0.06 * R)} ${f1(hp[1] - 0.22 * R)} Q${f1(hp[0])} ${f1(hp[1] - 0.15 * R)} ${f1(hp[0] + 0.06 * R)} ${f1(hp[1] - 0.22 * R)}" fill="none" stroke="${darker(skin)}" stroke-width="${f1(Math.max(0.6, 0.04 * R))}" stroke-linecap="round"/>` +   // (the nose)
+    `<path d="M${f1(hp[0] - 0.15 * R)} ${f1(hp[1] - 0.06 * R)} Q${f1(hp[0])} ${f1(hp[1] + 0.02 * R)} ${f1(hp[0] + 0.15 * R)} ${f1(hp[1] - 0.06 * R)}" fill="none" stroke="#7a2e2e" stroke-width="${f1(Math.max(0.7, 0.05 * R))}" stroke-linecap="round"/>`);
   // the neck
-  s += capsule(at(1.56, 0, 0.17), 0.1, at(1.64, 0, 0.2), 0.1, skin);
+  s += V("shirt", capsule(at(1.56, 0, 0.17), 0.1, at(1.64, 0, 0.2), 0.1, skin));
   // an arm, shoulder to hand, along the body: its sleeve as the shirt's style, then the hand
   const arm = ac => { const sh = at(1.5, ac, 0.12), hd = at(0.97, ac * 1.04, 0.07), el = at(1.5 - 0.53 * sleeve, ac * 1.02, 0.1);
-    return (sleeve > 0 ? capsule(sh, 0.085, el, 0.075, shirt) : "") + capsule(sleeve > 0 ? el : sh, 0.068, hd, 0.06, skin) +
-      `<circle cx="${f1(hd[0])}" cy="${f1(hd[1])}" r="${f1(0.075 * hd[2])}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hd)}"/>`; };
+    return V("shirt", (sleeve > 0 ? capsule(sh, 0.085, el, 0.075, shirt) : "") + capsule(sleeve > 0 ? el : sh, 0.068, hd, 0.06, skin)) +
+      V("hands", `<circle cx="${f1(hd[0])}" cy="${f1(hd[1])}" r="${f1(0.075 * hd[2])}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hd)}"/>`); };
   s += arm(-0.38);   // (the arm by the wall: behind the body)
   // the body: its top, the shirt's front, and its side toward the room, seen below that top's edge
   const T = (xr, a) => at(xr, a, xr > 1.2 ? 0.24 : 0.21), B0 = (xr, a) => at(xr, a, 0);
-  s += `<path d="M${P(T(0.95, 0.26))} Q${P(T(1.25, 0.33))} ${P(T(1.56, 0.31))} L${P(B0(1.56, 0.31))} Q${P(B0(1.25, 0.33))} ${P(B0(0.95, 0.26))} Z" fill="${darker(shirt)}"/>`;
-  s += `<path d="M${P(T(0.95, -0.26))} Q${P(T(1.25, -0.33))} ${P(T(1.56, -0.31))} Q${P(at(1.66, 0, 0.27))} ${P(T(1.56, 0.31))} Q${P(T(1.25, 0.33))} ${P(T(0.95, 0.26))} Q${P(at(0.86, 0, 0.23))} ${P(T(0.95, -0.26))} Z" ` +
-       `fill="${shirt}" stroke="${darker(shirt)}" stroke-width="${lw(T(1.25, 0))}" stroke-linejoin="round"/>`;
-  s += `<path d="M${P(T(0.96, -0.25))} Q${P(at(0.9, 0, 0.22))} ${P(T(0.96, 0.25))}" fill="none" stroke="${darker(pants)}" stroke-width="${lw(T(0.96, 0))}"/>`;   // (the waist)
+  s += V("shirt", `<path d="M${P(T(0.95, 0.26))} Q${P(T(1.25, 0.33))} ${P(T(1.56, 0.31))} L${P(B0(1.56, 0.31))} Q${P(B0(1.25, 0.33))} ${P(B0(0.95, 0.26))} Z" fill="${darker(shirt)}"/>` +
+    `<path d="M${P(T(0.95, -0.26))} Q${P(T(1.25, -0.33))} ${P(T(1.56, -0.31))} Q${P(at(1.66, 0, 0.27))} ${P(T(1.56, 0.31))} Q${P(T(1.25, 0.33))} ${P(T(0.95, 0.26))} Q${P(at(0.86, 0, 0.23))} ${P(T(0.95, -0.26))} Z" ` +
+    `fill="${shirt}" stroke="${darker(shirt)}" stroke-width="${lw(T(1.25, 0))}" stroke-linejoin="round"/>`);
+  s += V("pants", `<path d="M${P(T(0.96, -0.25))} Q${P(at(0.9, 0, 0.22))} ${P(T(0.96, 0.25))}" fill="none" stroke="${darker(pants)}" stroke-width="${lw(T(0.96, 0))}"/>`);   // (the waist)
   s += arm(0.38);    // (the arm by the room: in front of the body)
   // the legs, hip to ankle, the wall's first; long pants to the ankle, short ones to the knee
   const leg = ac => { const hp2 = at(0.96, ac, 0.11), kn = at(0.55, ac, 0.1), an = at(0.2, ac, 0.08);
     return longPants ? capsule(hp2, 0.11, an, 0.085, pants) : capsule(hp2, 0.11, kn, 0.1, pants) + capsule(kn, 0.085, an, 0.07, skin); };
-  s += leg(-0.13) + leg(0.13);
+  s += V("pants", leg(-0.13) + leg(0.13));
   // the feet, pointing up: each shoe standing on its heel at the open end, its sole toward us
   const foot = ac => { const b = at(0.15, ac, 0.03), t = at(0.15, ac, 0.27), sole = at(0.11, ac, 0.05);
     return capsule(b, 0.085, t, 0.08, shoe) + `<ellipse cx="${f1(sole[0])}" cy="${f1(sole[1])}" rx="${f1(0.07 * sole[2])}" ry="${f1(0.035 * sole[2])}" fill="#f2f2f2" opacity="0.8"/>`; };
-  s += foot(-0.13) + foot(0.13);
+  s += V("feet", foot(-0.13) + foot(0.13));
   return `<g data-lie="along">${s}</g>`;
+}
+// (ticket 425) The friend's own hair, lying face up on a pillow, seen from the feet: `behind`, drawn before the head (on the
+// pillow, and round the head's far side, the crown toward the pillow), and `over`, the hairline at the head's far edge, its
+// fringe deeper with more bangs. Each style as it would lie: none; short, close round the head; long, fanned out on the
+// pillow, the farther the longer; curly, a ring of curls; spiky, spikes out from the crown; an afro, a big puff round the
+// head; pigtails, two tails out on the pillow, tied.
+function lyingHair(H, { at, P, lw, hx, hp, R, hair }) {
+  const style = H.style || "short", L = Math.max(0.3, Math.min(4, (H.length ?? 100) / 100)), bangs = Math.max(0, Math.min(3, (H.bangs ?? 100) / 100));
+  if (style === "none" || style === "bald") return { behind: "", over: "" };
+  const line = darker(hair), sw = lw(hp), F = `fill="${hair}" stroke="${line}" stroke-width="${sw}"`;
+  const pillow = (xr, a) => at(xr, a, 0.07);
+  // (a soft patch on the pillow round the head: its reach along the bag beyond the head, and across)
+  const spread = (along, across) => { const q = [pillow(hx + along, 0), pillow(hx, -across), pillow(hx - 0.2, 0), pillow(hx, across)];
+    return `<path d="M${P(q[0])} Q${P(pillow(hx + along, -across))} ${P(q[1])} Q${P(pillow(hx - 0.2, -across))} ${P(q[2])} Q${P(pillow(hx - 0.2, across))} ${P(q[3])} Q${P(pillow(hx + along, across))} ${P(q[0])} Z" ${F}/>`; };
+  const rim = (k = 1) => `<ellipse cx="${f1(hp[0])}" cy="${f1(hp[1] - 0.16 * R * k)}" rx="${f1((1 + 0.1 * k) * R)}" ry="${f1((1 + 0.04 * k) * R)}" ${F}/>`;
+  // (round the head's far half, n points at r times its radius: angles across the top of the circle on the screen)
+  const round = (n, r, from = 200, to = 340) => [...Array(n)].map((_, i) => { const a = (from + (to - from) * i / Math.max(1, n - 1)) * Math.PI / 180; return [hp[0] + Math.cos(a) * r * R, hp[1] + Math.sin(a) * r * R, a]; });
+  let behind = "";
+  if (style === "short") behind = spread(0.12, 0.22) + rim(0.6);
+  else if (style === "long") behind = spread(0.24 + 0.16 * L, 0.3 + 0.1 * L) + rim(1);
+  else if (style === "curly") { behind = spread(0.18 + 0.1 * L, 0.26 + 0.08 * L) + rim(1);
+    for (const [x, y] of round(9, 1.05, 170, 370)) behind += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(0.24 * R * (0.8 + 0.2 * L))}" ${F}/>`; }
+  else if (style === "spiky") { behind = rim(0.8);
+    for (const [x, y, a] of round(9, 0.95, 185, 355)) { const len = R * (0.35 + 0.2 * L), w = 0.16 * R, t = [x + Math.cos(a) * len, y + Math.sin(a) * len], n2 = [-Math.sin(a) * w, Math.cos(a) * w];
+      behind += `<path d="M${f1(x + n2[0])} ${f1(y + n2[1])} L${f1(t[0])} ${f1(t[1])} L${f1(x - n2[0])} ${f1(y - n2[1])} Z" ${F} stroke-linejoin="round"/>`; } }
+  else if (style === "afro") { const r = 1.42 + 0.12 * Math.min(2, L), c = [hp[0], hp[1] - 0.22 * R];
+    behind = `<ellipse cx="${f1(c[0])}" cy="${f1(c[1])}" rx="${f1(r * R)}" ry="${f1((r - 0.08) * R)}" ${F}/>`;
+    for (let i = 0; i < 14; i++) { const a = i / 14 * 2 * Math.PI; behind += `<circle cx="${f1(c[0] + Math.cos(a) * r * R * 0.95)}" cy="${f1(c[1] + Math.sin(a) * (r - 0.08) * R * 0.95)}" r="${f1(0.24 * R)}" fill="${hair}"/>`; } }
+  else if (style === "pigtails") { behind = spread(0.12, 0.2) + rim(0.7);
+    // (out to the sides and back along the pillow, never past the bag's edges: the wall is on one side; more length goes along)
+    for (const sd of [-1, 1]) { const root = at(hx + 0.02, sd * 0.24, 0.14), mid = pillow(hx + 0.1 + 0.08 * L, sd * Math.min(0.42, 0.36 + 0.04 * L)), tip = pillow(hx + 0.16 + 0.16 * Math.min(2.5, L), sd * Math.min(0.46, 0.4 + 0.04 * L));
+      const thick = 0.09 * root[2];
+      behind += `<path d="M${P(root)} Q${P(mid)} ${P(tip)}" fill="none" stroke="${line}" stroke-width="${f1(thick * 2 + 2 * +sw)}" stroke-linecap="round"/>` +
+                `<path d="M${P(root)} Q${P(mid)} ${P(tip)}" fill="none" stroke="${hair}" stroke-width="${f1(thick * 2)}" stroke-linecap="round"/>` +
+                `<circle cx="${f1(root[0] + (mid[0] - root[0]) * 0.25)}" cy="${f1(root[1] + (mid[1] - root[1]) * 0.25)}" r="${f1(thick * 0.9)}" fill="#e11d48"/>`; } }
+  else behind = spread(0.2, 0.28) + rim(1);   // (any other style: as before, a patch and the far side)
+  // (the hairline: at the far edge, a little lower with more bangs; an afro's and curls' bumpy)
+  const hy = hp[1] - (0.9 - 0.08 * Math.min(2, bangs)) * R, hw = Math.sqrt(Math.max(0, R * R - (hy - hp[1]) ** 2));
+  const over = `<path d="M${f1(hp[0] - hw)} ${f1(hy)} A${f1(R)} ${f1(R)} 0 0 1 ${f1(hp[0] + hw)} ${f1(hy)} Q${f1(hp[0])} ${f1(hy + (style === "afro" || style === "curly" ? 0.14 : 0.08) * R)} ${f1(hp[0] - hw)} ${f1(hy)} Z" ${F} stroke-linejoin="round"/>`;
+  return { behind, over };
 }
 function treadTick(t) {
   treadLoop = 0;
