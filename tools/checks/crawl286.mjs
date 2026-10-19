@@ -40,7 +40,7 @@ try {
     const away = look("back"), toward = look("front"), side = look("left");
     B.anim = "none"; B.facing = "front"; draw();
     const hands = facing => { B.anim = "crawl"; B.facing = facing; draw(); const f = document.getElementById("figure").getBoundingClientRect(),
-      hs = [...document.querySelectorAll("#figure g")].filter(g => /scale\(1 0\.6\)/.test(g.getAttribute("transform") || "")).map(g => g.getBoundingClientRect());
+      hs = [...document.querySelectorAll("#figure g")].filter(g => /scale\\(1 0\\.6\\)/.test(g.getAttribute("transform") || "")).map(g => g.getBoundingClientRect());
       const ks = [...document.querySelectorAll("#figure [data-knee]")].map(k => k.getBoundingClientRect()), mid = r => (r.left + r.right) / 2;
       const between = ks.length === 2 && hs.length === 2 && ks.every(k => mid(k) > Math.min(...hs.map(mid)) && mid(k) < Math.max(...hs.map(mid)));
       return { n: hs.length, low: hs.length ? Math.round(100 * (Math.min(...hs.map(r => r.top)) - f.top) / f.height) : null,

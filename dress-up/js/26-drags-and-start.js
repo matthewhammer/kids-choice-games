@@ -152,6 +152,8 @@ pic.addEventListener("touchmove", e => {
   if (drag && e.touches.length === 1) e.preventDefault();
 }, { passive: false });
 pic.addEventListener("pointerleave", () => { if (hoverOn) { hoverOn = null; showHover(); } });
+// (ticket 369) a press the page made itself (a check's PointerEvent) has no pointer to capture; as the on-screen pad's
+function picCapture(id) { try { pic.setPointerCapture(id); } catch (_) { /* (a synthetic press) */ } }
 pic.addEventListener("pointerdown", e => {
   if (!e.isPrimary) return;
   if (hoverOn) { hoverOn = null; showHover(); }
@@ -159,13 +161,13 @@ pic.addEventListener("pointerdown", e => {
   if (joint) {
     drag = { pose: joint, T: { ...figureT } };
     poseHeld = { what: joint.what, side: joint.side, g: figureT.g };
-    pic.setPointerCapture(e.pointerId); picDragging = true;   // (a drag: picGapNow waits for letGo)
+    picCapture(e.pointerId); picDragging = true;   // (a drag: picGapNow waits for letGo)
     changed();   // (the ring)
     return;
   }
   // (ticket 305) the trap room's levers, on its wall: as a placed lever, a press let go before SIGN_DRAG_PX pulls one
   const roomLever = !onFigure(e) && e.target.closest && e.target.closest("[data-lever]");
-  if (roomLever) { drag = { roomLever: roomLever.dataset.lever, cx: e.clientX, cy: e.clientY, far: false }; pic.setPointerCapture(e.pointerId); picDragging = true; return; }
+  if (roomLever) { drag = { roomLever: roomLever.dataset.lever, cx: e.clientX, cy: e.clientY, far: false }; picCapture(e.pointerId); picDragging = true; return; }
   const thing = onThing(e);
   if (thing && !onFigure(e)) {
     const p = picUnits(e), B = state.background, name = thing.dataset.drag;
@@ -181,20 +183,20 @@ pic.addEventListener("pointerdown", e => {
     if (board) Object.assign(drag, { board: board.dataset.way, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 284) pressed on a 🎚️ lever: as a board, a press let go before it has gone SIGN_DRAG_PX pulls it
     else if (T && T.kind === "lever") Object.assign(drag, { lever: true, cx: e.clientX, cy: e.clientY, far: false });
-    pic.setPointerCapture(e.pointerId); picDragging = true;
+    picCapture(e.pointerId); picDragging = true;
     return;
   }
   if (!onFace(e)) {
     if (!onFigure(e)) return;
     const p = picUnits(e);
     drag = { figure: true, x0: state.background.figX ?? 0, y0: state.background.figY ?? 0, px: p.x, py: p.y };
-    pic.setPointerCapture(e.pointerId); picDragging = true;
+    picCapture(e.pointerId); picDragging = true;
     return;
   }
   const [x, y] = faceUnits(e);
   const feature = y < faceLayout(state.face).eyeY - 12 - browLift(state.face) ? "brow" : "smile";
   drag = { feature, v0: state.face[feature], y0: e.clientY };
-  pic.setPointerCapture(e.pointerId); picDragging = true;
+  picCapture(e.pointerId); picDragging = true;
 });
 // (ticket 133) A drag's moves come faster than frames (a 125 Hz mouse, a
 // 240 Hz pencil, and all of them while the page is busy): each move updates

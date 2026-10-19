@@ -26,7 +26,7 @@ try {
     Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: 0, figY: 80, things: [], castleLeverL_3N: false, castleLeverR_3N: false }); changed(); await w(500);
     const q = () => ({ blue: bgShown.node.querySelectorAll('[data-lever^="B"]').length, ways: bgShown.node.querySelectorAll(".portal[data-pit]").length, boulder: !!bgShown.node.querySelector('[data-obj="boulder, left"]') });
     const start = q(); roomLeverPull("BL"); const ys = [];
-    for (let i = 0; i < 16; i++) { await w(50); const g = bgShown.node.querySelector('[data-boulder="0"]'); const m = g && /translate\\(0 (-?[\\d.]+)/.exec(g.getAttribute("transform") || ""); ys.push(m ? Math.round(+m[1]) : 0); }
+    for (let i = 0; i < Math.ceil((BOULDER_FALL + 300) / 50); i++) { await w(50);   /* (ticket 369: the whole fall, 1300 ms since ticket 328; this watched 800) */ const g = bgShown.node.querySelector('[data-boulder="0"]'); const m = g && /translate\\(0 (-?[\\d.]+)/.exec(g.getAttribute("transform") || ""); ys.push(m ? Math.round(+m[1]) : 0); }
     const fallen = q(); roomLeverPull("BL"); await w(900); const lifted = q();
     Object.assign(B, { kind: "emptyroom", things: [{ ...(THING_DEFAULTS.trapdoor || {}), kind: "trapdoor", x: -180, z: SCENE.ground + 90, size: 100, uid: "dtest", open: true },
                                                    { ...(THING_DEFAULTS.lever || {}), kind: "lever", x: 180, z: SCENE.ground + 60, size: 100, works: ["dtest"], on: false, does: "boulder" }] });

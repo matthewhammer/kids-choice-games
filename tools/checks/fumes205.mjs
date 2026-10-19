@@ -25,7 +25,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
-    state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); B.figX = -400;
+    /* (ticket 369: GitHub's computer measures slow, and a slow computer's scenery is held still, its animations taken out; kept moving here, as birds351 does) */ slowFlag = false; PERF.slowMoving = true; state.music.mute = true; state.world = clone(WORLD_DEFAULT_0183); worldEnter("3,3"); await w(500); B.figX = -400;   // (ticket 369: the square's own things come with the next drawing (worldKeep), so ours go in after it)
     B.things = [{ kind: "cauldron", x: 100, z: 370, seed: 31, size: 100, fumes: "simple" }]; changed(); await w(600);
     const c = document.querySelector('#bg [data-drag="thing:0"]'), strands = [...c.querySelectorAll('path[id^="fume-"] > animate[attributeName="d"]')];
     const shape = { strands: strands.length, moments: strands.map(a => a.getAttribute("values").split(";").length), paint: strands.map(a => a.parentElement.getAttribute("stroke") || ""),

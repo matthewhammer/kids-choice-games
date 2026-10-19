@@ -43,7 +43,8 @@ try {
     let f = 0; const t0 = performance.now(); await new Promise(res => { const tick = () => { f++; performance.now() - t0 < 2000 ? requestAnimationFrame(tick) : res(); }; requestAnimationFrame(tick); });
     return JSON.stringify({ place, count, moved, bonds, popped, back, colors, count50, fps: Math.round(f / ((performance.now() - t0) / 1000)) }); })()`));
   console.log("  bubble space:", JSON.stringify(r));
-  ok("bubble space is a place, off the grid (elsewhere), not among the world's squares", r.place.inPlaces && r.place.elsewhere && !r.place.inPalette, r.place);
+  // (ticket 369: since 0.0.246 every place is in the world designer's palette, by kind, to put on the grid by hand; so it is there too)
+  ok("bubble space is a place, off the grid (elsewhere), and in the world designer's palette as every place is", r.place.inPlaces && r.place.elsewhere && r.place.inPalette, r.place);
   ok("as many bubbles as set (30)", r.count === 30, r);
   ok("they move in the room's wind", r.moved >= 20, r);
   ok("touching ones stick together", r.bonds > 0, r);

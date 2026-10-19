@@ -520,7 +520,9 @@ let solidsHitShown = -1;
 // obj() and its name), each boxed and named; and its plants, each boxed and named by the procedure that drew it (its
 // drawing's [data-proc], drawnBy; a <use> by the drawing it uses), nested as they are drawn (a tree's leaf pads inside
 // the tree); each kind a toggle of its own (MADE_CATS, access.madeCats), with how many are here (madeCounts); a legend.
-const MADE_CATS = [["objects", "🧩 objects (each place's list; their boxes are what sorts them front to back)", true],   // (ticket 283: "boxes for layering, separate from collision": these) ["trees", "🌳 leafy trees", true], ["pines", "🌲 pines", true],
+// (ticket 283: "boxes for layering, separate from collision": the objects; ticket 369: this note sat at the end of the
+// first line, and swallowed the leafy trees and pines after it, so they were counted but never boxed or named)
+const MADE_CATS = [["objects", "🧩 objects (each place's list; their boxes are what sorts them front to back)", true], ["trees", "🌳 leafy trees", true], ["pines", "🌲 pines", true],
                    ["palms", "🌴 palms", true], ["bushes", "🌿 bushes", true], ["flowers", "🌷 flowers", true], ["leafy", "🍀 ferns, vines and leaves", true],
                    ["pads", "🍃 leaf pads", false], ["grass", "🌾 grass", false],
                    ["skulls", "💀 skulls", true], ["fences", "🪵 fences", true]];   // (ticket 368)

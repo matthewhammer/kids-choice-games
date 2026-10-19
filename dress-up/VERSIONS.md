@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.297 (2026-10-18)
+
+Everything in 0.0.296, with four things that were quietly broken mended.
+
+- **🕳️ The cave's crystals glow where they grow again**, and the light falling in through the waterfall is drawn whole.
+- **🏰 The castle's 🌳 trees nearby and 🌊 moat sliders show their numbers again** (they said NaN, and sat in the middle), starting at what the castle really has.
+- **🔬 Inspection's 🧩 what it's made of boxes and names the 🌳 leafy trees and 🌲 pines again**, each with its own chip.
+- Under the hood: the game's automatic checks catch broken drawing code like the cave's, and a dozen of them were brought up to date with what the game does now.
+
 ## 0.0.296 (2026-10-18)
 
 Everything in 0.0.295, with the spiral staircase's walks going up the stairs.

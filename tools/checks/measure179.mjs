@@ -1,6 +1,6 @@
 // (ticket 179) While 🧪 measures: the ⚙️ Advanced tab's buttons are
 // disabled and the notice says to wait and touch nothing, with the seconds
-// gone of about 40; when it ends, the notice goes, the buttons come back
+// gone of about how long it takes (62 s since the measure grew; ticket 369 takes any figure); when it ends, the notice goes, the buttons come back
 // and the line is there. Exits 1 on a failure or page error.
 //   node measure179.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
@@ -26,7 +26,7 @@ try {
   await ev(`[...document.querySelectorAll("#panel button")].find(b => /this computer's speed/.test(b.textContent)).click(); 1`);
   await sleep(3500);
   const during = await look();
-  say(during.measuring && during.note && /touch nothing/.test(during.note) && /\d+ s so far, of about 40 s/.test(during.note), `while measuring, the notice: "${during.note}"`);
+  say(during.measuring && during.note && /touch nothing/.test(during.note) && /\d+ s so far, of about \d+ s/.test(during.note), `while measuring, the notice: "${during.note}"`);
   say(during.buttons > 0 && during.disabled === during.buttons && during.copyDisabled, `while measuring, ${during.disabled} of ${during.buttons} buttons disabled, 📋 copy among them`);
   const t0 = Date.now(); let after;
   while (Date.now() - t0 < 90000) { await sleep(2000); after = await look(); if (!after.measuring) break; }

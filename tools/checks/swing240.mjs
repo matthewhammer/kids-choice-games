@@ -20,7 +20,7 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
     const frames = k => new Promise(r => { let i = 0; const f = () => ++i >= k ? r() : requestAnimationFrame(f); requestAnimationFrame(f); });
-    state.music.mute = true; state.world.at = null; Object.assign(state.access, DEFAULTS.access, { showSolids: true });
+    /* (ticket 369: GitHub's computer measures slow, and a slow computer's scenery is held still, its animations taken out; kept moving here, as birds351 does) */ slowFlag = false; PERF.slowMoving = true; state.music.mute = true; state.world.at = null; Object.assign(state.access, DEFAULTS.access, { showSolids: true });
     Object.assign(B, { kind: "treehouse", figX: -200, figY: 60, things: [] }); changed(); await w(600);
     const swing = solidsHere().find(o => o.name === "swing"); if (!swing) return JSON.stringify({ none: true });
     // (the clock held at moments across six seconds: the swing's two ends)

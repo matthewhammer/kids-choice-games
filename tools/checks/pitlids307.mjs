@@ -28,7 +28,7 @@ try {
     const angle = side => { const a = bgShown.node.querySelector('[data-lever="' + side + '"] .lever-arm'); return a ? +((a.getAttribute("transform") || "").match(/rotate\\((-?[\\d.]+)/) || [0, NaN])[1] : NaN; };
     const start = { lids: lids(), ways: ways() };
     roomLeverPull("L"); const t0 = performance.now(), angles = [], mid = [];
-    while (performance.now() - t0 < 1000) { await w(40); angles.push(angle("L")); const l = bgShown.node.querySelector('.pit-lid[data-pit-i="0"]'); if (l) mid.push(l.getAttribute("transform") || ""); }
+    while (performance.now() - t0 < LEVER_TURN + 400) { await w(40); angles.push(angle("L"));   /* (ticket 369: the whole turn, 1400 ms since ticket 328; this waited 1000) */ const l = bgShown.node.querySelector('.pit-lid[data-pit-i="0"]'); if (l) mid.push(l.getAttribute("transform") || ""); }
     const opened = { lids: lids(), ways: ways(), angles, mid: mid.slice(0, 8) };
     roomLeverPull("L"); await w(900); const shut = { lids: lids(), ways: ways() };
     // (a placed lever and trap door)

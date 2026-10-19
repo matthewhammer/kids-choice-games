@@ -471,7 +471,8 @@ const DEFAULTS = {
                 houses: 4, bridges: 2, ladders: 3, leaves: 60, treeHouseSize: 100,
                 castle: "N", ...Object.fromEntries(Object.entries(CASTLE_DEFAULTS).flatMap(([id, d]) =>
                   [["castleLevels" + id, d.levels], ["castleStone" + id, d.stone], ["castlePitShape1" + id, "circle"], ["castlePitShape2" + id, "circle"],
-                  ...ROOM_NS.flatMap(n => [1, 2].map(i => [pitShapeKey(i, n, id), "circle"])),   // (ticket 271: each room's own) ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
+                  // (ticket 271: each room's own pit shapes; ticket 369: this note sat before the trees and moat, and swallowed them)
+                  ...ROOM_NS.flatMap(n => [1, 2].map(i => [pitShapeKey(i, n, id), "circle"])), ["castleTrees" + id, d.trees], ["castleMoat" + id, d.moat],
                    ["castleFlagA" + id, CASTLE_FLAG_DEFAULTS[id][0]], ["castleFlagB" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagStyle" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleRoof" + id, CASTLE_ROOF_DEFAULTS[id]], ["castleCarpet" + id, CASTLE_CARPETS[0]],
                    ["castleFlagA_B" + id, CASTLE_FLAG_DEFAULTS[id][1]], ["castleFlagB_B" + id, CASTLE_FLAG_DEFAULTS[id][0]],
                    ["castleFlagStyle_B" + id, CASTLE_FLAG_STYLE_DEFAULTS[id]], ["castleCarpet_B" + id, CASTLE_FLAG_DEFAULTS[id][1]],
@@ -1044,7 +1045,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.296", released: "2026-10-18" };
+const VERSION = { number: "0.0.297", released: "2026-10-18" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

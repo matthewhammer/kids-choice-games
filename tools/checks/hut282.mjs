@@ -27,7 +27,7 @@ try {
   for (const center of [false, true]) for (let rooms = 1; rooms <= 6; rooms++) {
     const r = JSON.parse(await ev(`(async () => { Object.assign(state.background, { kind: "hut", hutRooms: ${rooms}, hutCenter: ${center} }); changed(); await new Promise(r => setTimeout(r, 400));
       const pic = document.getElementById("pic"), box = pic.getBoundingClientRect(), us = [...pic.querySelectorAll('[data-obj="hut"] use')];
-      const at = us.map(u => { const m = /translate\(([-\d.]+) ([-\d.]+)\) scale\(([-\d.]+)/.exec(u.getAttribute("transform")); return { x: +m[1], y: +m[2], s: +m[3] }; });
+      const at = us.map(u => { const m = /translate\\(([-\\d.]+) ([-\\d.]+)\\) scale\\(([-\\d.]+)/.exec(u.getAttribute("transform")); return { x: +m[1], y: +m[2], s: +m[3] }; });
       const bs = us.map(u => u.getBoundingClientRect()), b = { left: Math.min(...bs.map(x => x.left)), right: Math.max(...bs.map(x => x.right)), top: Math.min(...bs.map(x => x.top)) };   // (the huts, not their smoke)
       return JSON.stringify({ at, to: [...new Set([...pic.querySelectorAll('[data-obj="hut"] .portal')].map(p => p.dataset.to))],
         inside: b.left >= box.left - 1 && b.right <= box.right + 1 && b.top >= box.top - 1 }); })()`));
