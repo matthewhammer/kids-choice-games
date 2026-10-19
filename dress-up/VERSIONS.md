@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.341 (2026-10-19)
+
+Everything in 0.0.340, with your friend looking up when lying on a sleeping bag.
+
+- **Lying on a sleeping bag, your friend's face looks up at the ceiling** (ticket 412), not at you: you see it from their feet, so it is on the top of their head, their eyes looking up past their forehead, the hair at the top, their ears at the sides and the bottom of their chin in shadow.
+
 ## 0.0.340 (2026-10-19)
 
 Everything in 0.0.339, with your friend's face and hair right when lying on a sleeping bag.
