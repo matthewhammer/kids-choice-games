@@ -461,7 +461,7 @@ Each picture is a hand-drawn illusion of depth, and a few kinds of slip break it
   - **After a place switch, set things after the next drawing**: `worldKeep` brings the square's own things on the drawing after `B.kind` changes, replacing ones set in the same breath (`worldEnter(…); await w(500);` then `B.things = …`).
   - **Wait for the whole animation, from its constant**: `LEVER_TURN`, `BOULDER_FALL` (both slowed in ticket 328, which stranded two checks that waited the old times).
   - **A check's own `PointerEvent` has no pointer to capture:** the picture's `pointerdown` captures through `picCapture`, which lets that go, as the on-screen pad's do.
-  - **Never end a line of code with a note and then more code**: a `//` note swallows the rest of its line. It hid MADE_CATS's 🌳 and 🌲 (counted, never boxed, since 0.0.255), the castles' trees and moat defaults, and once trapState's tones; `tools/checks/markup369.mjs` catches the like in markup (`cx=""${…}"`, the cave's since 0.0.249), which the page's parser drops without a word.
+  - **Never end a line of code with a note and then more code**: a `//` note swallows the rest of its line. It hid MADE_CATS's 🌳 and 🌲 (counted, never boxed, since 0.0.255), the castles' trees and moat defaults, and once trapState's tones; `tools/check_script.py` now refuses such a line before a release (0.0.298: it found three more, THING_KINDS's 🪧 sign, THING_DEFAULTS's tree, pine and bush, and a castle room's cache key), and `tools/checks/markup369.mjs` catches the like in markup (`cx=""${…}"`, the cave's since 0.0.249), which the page's parser drops without a word.
 - **Old saves.** After changing a setting's meaning, load a JSON saved by the last release and check that it looks the same.
 
 ## Working with Matthew

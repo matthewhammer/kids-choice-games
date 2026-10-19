@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.298 (2026-10-18)
+
+Everything in 0.0.297, with three more quiet breakages of the same kind mended.
+
+- **🪧 The plain sign is back among the 🪧 signs** to put in a place (it had gone missing in 0.0.287).
+- **🌳 A tree, 🌲 a pine and 🌿 a bush you put in a place start with their settings again** (their height, leaves, tiers and flowers).
+- **🏰 A castle room draws again when its flags, carpet or horses change.**
+- Under the hood: before every release the game's code is now checked for a note that hides code after it, which is how all six of these went missing.
+
 ## 0.0.297 (2026-10-18)
 
 Everything in 0.0.296, with four things that were quietly broken mended.

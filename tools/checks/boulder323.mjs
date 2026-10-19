@@ -1,6 +1,6 @@
 // (ticket 323, N, through Matthew: a second pair of levers under the first, blue-knobbed, that let boulders fall from the
 // ceiling into the pits; and every lever choosing what it does) N's trap room: the blue pair there; the left one pulled:
-// its pit covered (no way down, a "boulder, left" standing there), the boulder seen falling; pulled again: gone, the way
+// its pit covered (no way down, a "boulder, left" standing there, since ticket 338 a placed rock, "fallen N"), the boulder seen falling; pulled again: gone, the way
 // down back. A placed lever set to drop boulders, wired to a trap door: pulled, the trap door has a boulder in it and no
 // hole. Exits 1 on a failure.
 //   node boulder323.mjs <devtools port> <url>
@@ -24,10 +24,10 @@ try {
     state.music.mute = true; state.world.at = null; climb = null;
     for (const k of Object.keys(B)) if (/^castle(Lever|Boulder)[LR]_/.test(k)) delete B[k];
     Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: 0, figY: 80, things: [], castleLeverL_3N: false, castleLeverR_3N: false }); changed(); await w(500);
-    const q = () => ({ blue: bgShown.node.querySelectorAll('[data-lever^="B"]').length, ways: bgShown.node.querySelectorAll(".portal[data-pit]").length, boulder: !!bgShown.node.querySelector('[data-obj="boulder, left"]') });
+    const q = () => ({ blue: bgShown.node.querySelectorAll('[data-lever^="B"]').length, ways: bgShown.node.querySelectorAll(".portal[data-pit]").length, boulder: (B.things || []).some(t => t.fallen) && !!bgShown.node.querySelector('[data-drag^="thing:"]') });   // (ticket 369: since ticket 338 a landed boulder is a placed rock, "fallen N", in the place's things)
     const start = q(); roomLeverPull("BL"); const ys = [];
     for (let i = 0; i < Math.ceil((BOULDER_FALL + 300) / 50); i++) { await w(50);   /* (ticket 369: the whole fall, 1300 ms since ticket 328; this watched 800) */ const g = bgShown.node.querySelector('[data-boulder="0"]'); const m = g && /translate\\(0 (-?[\\d.]+)/.exec(g.getAttribute("transform") || ""); ys.push(m ? Math.round(+m[1]) : 0); }
-    const fallen = q(); roomLeverPull("BL"); await w(900); const lifted = q();
+    const fallen = q(); roomLeverPull("BL"); await w(BOULDER_FALL + 400); const lifted = q();   // (the lift as long as the fall, ticket 328's; the rock gone after it)
     Object.assign(B, { kind: "emptyroom", things: [{ ...(THING_DEFAULTS.trapdoor || {}), kind: "trapdoor", x: -180, z: SCENE.ground + 90, size: 100, uid: "dtest", open: true },
                                                    { ...(THING_DEFAULTS.lever || {}), kind: "lever", x: 180, z: SCENE.ground + 60, size: 100, works: ["dtest"], on: false, does: "boulder" }] });
     changed(); await w(300); leverPull(1); await w(900);

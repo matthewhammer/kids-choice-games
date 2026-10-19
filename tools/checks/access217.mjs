@@ -38,7 +38,7 @@ try {
     const rows = t ? t[2].filter(c => c[0] === "accbox") : [], all = both.flatMap(x => x[2].filter(c => c[0] === "accbox")), keys = all.flatMap(c => [c[1], ...c[3].map(i => i[1])]).filter(Boolean);
     const boxes = [...document.querySelectorAll("#panel .accbox")];
     return JSON.stringify({ has: !!t, name: t && t[0], rows: rows.map(c => c[1]), a11y: both.length === 2 ? { name: both[1][0], rows: both[1][2].filter(c => c[0] === "accbox").map(c => c[1]) } : null,
-      covered: Object.keys(DEFAULTS.access).every(k => keys.includes(k)), same, brick: rows.some(c => c[2].startsWith("🧱")) }); })()`));
+      covered: Object.keys(DEFAULTS.access).every(k => keys.includes(k) || k === "leverFar"),   /* (ticket 369: but 🎚️ levers from afar, ticket 364, which Matthew asked for under ⚙️ Advanced) */ same, brick: rows.some(c => c[2].startsWith("🧱")) }); })()`));
   ok("a 🔬 Inspection tab (♿ Accessibility till 0.0.185): a row for each overlay (arrows, path, boxes, the boxes' a 🧱 brick wall, since ticket 258 🧩 what it's made of; 🫧 bubbles that pop and 💧 water since 290 and 283)",
      tab.has && tab.name === "🔬 Inspection" && JSON.stringify(tab.rows) === JSON.stringify(["allArrows", "showPath", "showSolids", "showBubbleHits", "showWater", "showMadeOf"]) && tab.brick, tab);   // (ticket 369: 🫧 bubbles that pop since ticket 290, 💧 water since 283)
   ok("and a ♿ Accessibility tab: all arrows again (the same setting), then the words' size; every setting in one of the two",

@@ -17,7 +17,8 @@ const ev = async x => { const r = await send("Runtime.evaluate", { expression: x
 const say = (ok, line) => { if (!ok) fails++; console.log(`${ok ? "ok  " : "FAIL"} ${line}`); };
 // (the page's own: a signpost in the square the friend is in, the friend away to the left; a board nothing covers)
 const SETUP = `(async () => { const tick = ms => new Promise(r => setTimeout(r, ms)); state.music.mute = true;
-  const W = state.world; state.background.kind = W.cells[W.at].kind; state.background.figX = -250; changed(); await tick(400);
+  const W = state.world; if (!W.at || !W.cells[W.at]) { worldEnter(W.start && W.cells[W.start] ? W.start : Object.keys(W.cells)[0]); await tick(400); }   // (ticket 369: no square yet at load, as 0.0.296 starts)
+  state.background.kind = W.cells[W.at].kind; state.background.figX = -250; changed(); await tick(400);
   state.background.things = [{ kind: "signpost", x: 60, z: SCENE.ground + 10, size: 100, mirror: false, seed: 1234 }]; changed(); await tick(600);
   const b = [...document.querySelectorAll("#pic .sign-board")].map(b => { const r = b.getBoundingClientRect(), x = r.x + r.width * 0.6, y = r.y + r.height / 2, el = document.elementFromPoint(x, y);
     return { way: b.dataset.way, x, y, top: !!(el && el.closest(".sign-board") === b) }; }).find(b => b.top);

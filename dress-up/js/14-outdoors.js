@@ -1512,7 +1512,8 @@ const THING_PARAMS = {
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
-const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, skullstake: { eyes: 100 }, palisade: { stakes: 6, skulls: true }, rock: { tone: ROCK_TONES[0] },   // (ticket 368: the first three) tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },
+const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, skullstake: { eyes: 100 }, palisade: { stakes: 6, skulls: true }, rock: { tone: ROCK_TONES[0] },   // (ticket 368: the first three)
+                         tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },   // (ticket 369: swallowed by the note above, 0.0.287-0.0.297)
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, moss: { style: "haircap", on: "floor", color: "none", lobes: true }, lichen: { style: "crust", on: "back", color: "none" }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
@@ -1685,7 +1686,8 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
                       barrel: { label: "🛢️ barrel", size: 1, group: "camp" }, cauldron: { label: "🫕 cauldron", size: 1, group: "magic", moving: true },
-                      potion: { label: "🧪 potion", size: 1, group: "magic" }, skeleton: { label: "💀 skeleton", size: 1, group: "spooky" }, deadtree: { label: "🌳 dead tree", size: 1, group: "spooky" }, skullstake: { label: "💀 skull on a stake", size: 1, group: "spooky" }, palisade: { label: "🪵 fence of stakes", size: 1, group: "spooky" },   // (deadtree, skullstake, palisade: ticket 368) sign: { label: "🪧 sign", size: 1, group: "signs" },
+                      potion: { label: "🧪 potion", size: 1, group: "magic" }, skeleton: { label: "💀 skeleton", size: 1, group: "spooky" }, deadtree: { label: "🌳 dead tree", size: 1, group: "spooky" }, skullstake: { label: "💀 skull on a stake", size: 1, group: "spooky" }, palisade: { label: "🪵 fence of stakes", size: 1, group: "spooky" },   // (deadtree, skullstake, palisade: ticket 368)
+                      sign: { label: "🪧 sign", size: 1, group: "signs" },   // (ticket 369: the note above swallowed it, 0.0.287-0.0.297)
                       signpost: { label: "🧭 sign with directions", size: 1, group: "signs" },
                       // (ticket 219) the 🐚 sea things, for the deep sea (and anywhere): the moving ones are counted as the campfire is
                       coral: { label: "🪸 coral", size: 1, group: "sea" }, shell: { label: "🐚 shell", size: 1, group: "sea" },

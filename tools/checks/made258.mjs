@@ -56,10 +56,11 @@ try {
   ok("the beach's palms named", gh.b.procs.includes("beachPalm"), gh.b.procs);
   // the ♿ panel: the row, and a chip per kind with its count
   const panel = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); tab = TABS.findIndex(t => t[1] === "access"); showTab(); changed(); await w(300);
-    const chips = [...document.querySelectorAll("#panel .madecats .flip")].map(b => ({ text: b.textContent, on: b.getAttribute("aria-pressed") }));
-    return JSON.stringify({ chips, counts: madeCounts }); })()`));
+    // (ticket 369: the collision boxes' kinds have chips of their own beside these since 0.0.255; the made-of ones are MADE_CATS's)
+    const labels = MADE_CATS.map(c => c[1]), chips = [...document.querySelectorAll("#panel .madecats .flip")].filter(b => labels.some(l => b.textContent.startsWith(l))).map(b => ({ text: b.textContent, on: b.getAttribute("aria-pressed") }));
+    return JSON.stringify({ chips, counts: madeCounts, kinds: MADE_CATS.length }); })()`));
   console.log(`  ♿ chips: ${panel.chips.map(c => c.text + (c.on === "true" ? " ✓" : "")).join(" | ")}`);
-  ok("the ♿ panel: a chip for each kind, with how many are here", panel.chips.length === 9 && panel.chips.every(c => /×\d+/.test(c.text)), panel);
+  ok("the 🔬 panel: a chip for each kind (MADE_CATS's, 11 since ticket 368's skulls and fences), with how many are here", panel.chips.length === panel.kinds && panel.chips.every(c => /×\d+/.test(c.text)), panel);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

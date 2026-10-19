@@ -20,7 +20,11 @@ const send = (method, params = {}) => new Promise(res => { const i = ++n; pendin
 const ev = async x => { const r = await send("Runtime.evaluate", { expression: x, awaitPromise: true, returnByValue: true }); if (r.result.exceptionDetails) throw new Error(JSON.stringify(r.result.exceptionDetails).slice(0, 300)); return r.result.result.value; };
 // (each place's count of drawings more than 75% hidden at 0.0.198, after ticket 261's culling; 4 more allowed)
 const BUDGET = { forest: 15, underwater: 2, witch: 12, lake: 4, house: 12, treehouse: 63, livingroom: 15, clearing: 37, fairyforest: 10, mountains: 8,
-                 waterfall: 4, campsite: 1, woodpath: 14, crossing: 7, castle: 45, castleroom: 0, "the greenhouse": 35, "treehouse at its busiest": 64 }, SLACK = 4;
+                 waterfall: 4, campsite: 1, woodpath: 14, crossing: 7, castle: 45, castleroom: 0, "the greenhouse": 35, "treehouse at its busiest": 64,
+                 // (ticket 369: the places made since, at their counts on 0.0.296. The bubble room's are not hidden: its foam and stuck-out
+                 // bubbles are see-through pictures, each over the whole frame, and a point on a picture counts as covered. The hut's,
+                 // pines and flowers behind the hut, and the hut room's, the window's far wood, are a few cheap copies each)
+                 bubbleroom: 11, hut: 16, hutroom: 16 }, SLACK = 4;
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 1500)}`); if (!cond) bad++; };
 const MEASURE = `async (setup) => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;

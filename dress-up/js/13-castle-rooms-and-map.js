@@ -2365,7 +2365,8 @@ function castleroomScene(c) {
   const pitShapes = K.pitShapesAt[n - 1];   // (ticket 271: this room's own; keyed, so a chip draws it again at once)
   const trap = style === "trap" ? trapState(o, n, K.id) : null;   // (ticket 305: its pits and levers)
   const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places, pitShapes, trap });
-  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() + JSON.stringify(trap) + [o.leverShine, o.leverShineColor, o.leverFlicker].join() : bones,   // (ticket 317: and its levers' shine) K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,
+  let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() + JSON.stringify(trap) + [o.leverShine, o.leverShineColor, o.leverFlicker].join() : bones,   // (ticket 317: and its levers' shine)
+                                  K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,   // (ticket 369: these were swallowed by the note above, so a change to them did not draw the room again)
                                   SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)

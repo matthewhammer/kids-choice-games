@@ -17,6 +17,8 @@ const ev = async x => { const r = await send("Runtime.evaluate", { expression: x
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 1200)}`); if (!cond) bad++; };
 const ROOM = `state.music.mute = true; state.world.at = null; state.body.anim = "none"; climb = null;
+  /* (ticket 369: the run's checks share one browser, and the game keeps what it was left with: boulder323, just before, can leave a fallen rock on a pit) */
+  state.background.things = []; for (const k of Object.keys(state.background)) if (/^castle(Lever|Boulder)[LR]_/.test(k)) delete state.background[k];
   Object.assign(state.background, { kind: "castleroom", castle: "N", castleLeverL_3N: false, castleLeverR_3N: false, castleRoom: 3, castleRoom3N: "trap", figX: 0, figY: 60 }); changed(); await new Promise(r => setTimeout(r, 900));`;
 try {
   await send("Runtime.enable");
