@@ -376,7 +376,7 @@ const TABS = [
     ["color", "staffOrb", "🔮 the staff's orb", ["#7dd3fc", "#a78bfa", "#86efac", "#fca5a5", "#fde047"]],
     // (ticket 438) the friend's horse, with them whatever they wear: led by its rein; its coat, mane and face marking (the
     // stable's horses' own), its halter and rein, white socks
-    ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"]]],
+    ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
     ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
     ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
     ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],

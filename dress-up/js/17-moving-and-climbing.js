@@ -718,6 +718,16 @@ function endJump() {
     const BG = state.background, pit = !entering && BG.kind !== "none" ? pitAt(BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0)) : null;
     if (pit) enterScene(pit); }
 }
+// (ticket 438) riding the friend's horse: astride, the walk or run the horse's, not theirs. In profile the thighs go
+// forward and down along its side and the shins back; facing us or away, the legs go down either side of it; the hands
+// forward and low, holding the reins. In place of moveNow's limbs, while costume.horse is "ride" (riding()).
+const RIDE_ANIMS = ["none", "walk", "run"];
+const riding = B => state.costume.horse === "ride" && B.pose !== "lie" && RIDE_ANIMS.includes(B.anim || "none") && !poseHeld;
+function rideMove(B) {
+  const dir = facingOf(B), both = (k, f) => ({ [k + "L"]: f(1), [k + "R"]: f(-1) });
+  if (dir) return { ...both("Leg", () => 45), ...both("Knee", () => 75), ...both("Arm", () => 12), ...both("Elbow", () => 50), riding: true };
+  return { ...both("Leg", () => 34), ...both("Knee", () => 18), ...both("Arm", () => 12), ...both("ElbowCurl", () => 70), riding: true };
+}
 function moveNow() {
   const B = state.body, a = B.anim;
   if (!a || a === "none" || poseHeld) return treadNow() || (!poseHeld && bubbleStance());   // (ticket 343: on bubbles, balancing)

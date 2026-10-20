@@ -22,14 +22,15 @@ function drawNow() {
   const { face: F, body: B } = state;
   // (ticket 123) treading water: the strokes for now, on top of any pose
   // (ticket 132: any animation from the Body tab, the same way; `tread` is only treading in water)
-  const move = moveNow(), tread = move && move.water ? move : null;
+  // (ticket 438: riding the horse, the rider's own limbs, rideMove, in place of the animation's)
+  const move = riding(B) ? rideMove(B) : moveNow(), tread = move && move.water ? move : null, ride = !!(move && move.riding);
   const poseT = (what, side) => poseOf(B, what, side) + (move ? move[what + (side > 0 ? "L" : "R")] || 0 : 0);
   // (ticket 124) which way they face (0 toward us; -1, 1 in profile to our
   // left or right), and whether they sit. In profile the friend is narrower,
   // their arms and legs come from under the shoulder and hip, and point the
   // way they face; the side nearer us is their -dir side (facing our right,
   // their right shoulder is toward us)
-  const dir = facingOf(B), sitting = (!!B.sit && B.pose !== "lie") || B.pose === "hug";   // (ticket 136: a hug's legs are a sitter's; ticket 299: lying on a bed, not)
+  const dir = facingOf(B), sitting = !ride && ((!!B.sit && B.pose !== "lie") || B.pose === "hug");   // (ticket 136: a hug's legs are a sitter's; ticket 299: lying on a bed, not)
   const q = dir ? 0 : turnOf(B);   // (ticket 144: turned partway, the far side's sign)
   // (ticket 138) facing away from us: drawn as facing us (dir 0), but the
   // back of the head is hair, with no face on it, and what is on their back
@@ -300,8 +301,10 @@ function drawNow() {
   // Not while they sit, lie, swim, climb or crawl. The frame grows to hold it.
   const horseView = (WC.horse || "none") !== "none" && !sitting && B.pose !== "lie" && !(move && (move.water || move.ladder != null || move.squash || move.rot))
     ? (dir ? "side" : away ? "back" : "front") : null;
-  const horseX = horseView === "side" ? -dir * 80 : horseView === "front" ? -150 : 150;
-  if (horseView) { left = Math.min(left, horseView === "side" ? -340 : -260); top = Math.min(top, ground - (horseView === "side" ? 520 : 570)); bottom = Math.max(bottom, ground + 24); }
+  // (ridden: under them, the saddle's seat at their hips, and they are lifted onto it, rideLift, the frame's top with them)
+  const horseX = ride ? (horseView === "side" ? -dir * 30 : 0) : horseView === "side" ? -dir * 80 : horseView === "front" ? -150 : 150;
+  const rideLift = ride && horseView ? ground - 326 - L - 12 : 0;
+  if (horseView) { left = Math.min(left, horseView === "side" ? -340 : -260); top = Math.min(top + rideLift - 12, ground - (horseView === "side" ? 520 : 570)); bottom = Math.max(bottom, ground + 24); }
   // A background is a stage of its own, the same whatever the figure
   // (SCENE): the frame the usual figure gets in a scene. The figure stands
   // on its ground by its feet, at its size and where it was dragged, so
@@ -441,7 +444,7 @@ function drawNow() {
     const lx = (hx - figureT.dx) / figureT.k, ly = (hy - figureT.dy - figureT.sg) / figureT.k + figureT.g, at = `${f1(lx)} ${f1(ly)}`;
     svg += lfoTimed(BG, "slow", 0.15, `<animateTransform attributeName="transform" type="rotate" additive="sum" values="-14 ${at};14 ${at};-14 ${at}" dur="2.6s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`);
   }
-  if (meanSeen > 0 && !wet && !rot) svg += `<ellipse cx="0" cy="${f1(ground + hugLift + climbUp + (move && move.jump && !wet ? move.lift : 0))}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
+  if (meanSeen > 0 && !wet && !rot && !(ride && horseView)) svg += `<ellipse cx="0" cy="${f1(ground + hugLift + climbUp + (move && move.jump && !wet ? move.lift : 0))}" rx="${f1(hw + 70)}" ry="12" fill="#000" opacity="${(0.08 * meanSeen).toFixed(3)}"/>`;
   // (ticket 132) climbing: a ladder behind the friend, its rungs going down two a stride
   // (ticket 137: seen from the side, the ladder stands in front of them,
   // side on: its two rails nearly one behind the other, the far one a
@@ -460,14 +463,16 @@ function drawNow() {
     svg += t + "</g>";
   }
   // (ticket 438) the horse, before the friend: its own shadow, then it, stepping with their stride
-  let horseRing = null;
+  let horseRing = null, horseBits = null, horseOver = "", lift = 0;
   if (horseView && !wet) {
     const gait = B.anim === "walk" ? "walk" : B.anim === "run" ? "run" : "stand", k = horseView === "side" ? dir : 1;
     const h = horseSvg(horseView, gait, gait === "stand" ? 0 : lfoNow("B").phase,
-                       { coat: WC.horseCoat, mane: WC.horseMane, mark: WC.horseMark, tack: WC.horseTack, socks: WC.horseSocks }, ground);
+                       { coat: WC.horseCoat, mane: WC.horseMane, mark: WC.horseMark, tack: WC.horseTack, socks: WC.horseSocks }, ground, ride);
     svg += `<g class="horse" data-horse="${horseView} ${gait}"><ellipse cx="${f1(horseX - k * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${horseView === "side" ? 225 : 100}" ry="14" fill="#000" opacity="0.08"/>` +
            `<g transform="translate(${f1(horseX)} 0) scale(${k} 1)">${h.svg}</g></g>`;
     horseRing = h.ring && [horseX + k * h.ring[0], h.ring[1]];
+    if (ride) { lift = rideLift + h.bob; horseBits = h.bits.map(([x, y]) => [horseX + k * x, y - lift]);
+      if (h.over) horseOver = `<g class="horse-over" transform="translate(${f1(horseX)} 0)">${h.over}</g>`; }
   }
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
@@ -1087,7 +1092,13 @@ function drawNow() {
   // and the hands last, in front of everything, the face too: raised
   // arms put them by the cheeks or over the eyes, not behind the head
   // (ticket 438) the horse's rein, from its noseband's ring to the hand nearer it, hanging a little: under the hand
-  if (horseRing && nearArms.length) {
+  if (horseBits && nearArms.length) {
+    // (ridden: each near hand's rein to the bit on its side (in profile, the one rein to the ring), in the lifted frame;
+    // from behind, hidden by them)
+    if (!away)
+    for (const arm of nearArms) { const [x0, y0] = horseBits[horseBits.length > 1 && arm.H[0] > 0 ? 1 : 0], [x1, y1] = arm.H;
+      svg += `<path class="rein" d="M${f1(x0)} ${f1(y0)} Q${f1((x0 + x1) / 2)} ${f1(Math.max(y0, y1) + 12)} ${f1(x1)} ${f1(y1)}" fill="none" stroke="${WC.horseTack || "#7a3a1a"}" stroke-width="5" stroke-linecap="round"/>`; }
+  } else if (horseRing && nearArms.length) {
     const d = a => Math.hypot(a.H[0] - horseRing[0], a.H[1] - horseRing[1]), hand = nearArms.reduce((a, b) => d(b) < d(a) ? b : a);
     const [x0, y0] = horseRing, [x1, y1] = hand.H, sag = 30 + 0.12 * Math.hypot(x1 - x0, y1 - y0);
     svg += `<path class="rein" d="M${f1(x0)} ${f1(y0)} Q${f1((x0 + x1) / 2)} ${f1(Math.max(y0, y1) + sag)} ${f1(x1)} ${f1(y1)}" fill="none" stroke="${WC.horseTack || "#7a3a1a"}" stroke-width="5" stroke-linecap="round"/>`;
@@ -1127,11 +1138,13 @@ function drawNow() {
       svg += `<ellipse cx="${f1(x)}" cy="${f1(wl)}" rx="${f1(r * (0.8 + 0.8 * p))}" ry="${f1(r * 0.16 * (0.8 + 0.8 * p))}" fill="none" stroke="#ffffff" stroke-width="5" opacity="${(0.9 * (1 - p)).toFixed(2)}"/>`;
     }
   }
+  // (ticket 438: riding, the friend lifted onto the saddle, and the horse's near parts over their legs)
+  if (lift) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})">${svg.slice(figAt)}</g>` + horseOver;
   svg += `</g>`;   // the figure
   // (ticket 136: the far leg first, see-through with the pants and the feet,
   // then the far arm, see-through with the shirt, as it was)
   const farLegSvg = legApart ? veil("pants", farLeg.skin) + veil("feet", farLeg.shoe) + veil("pants", farLeg.pants) : "";
-  if (farDeep || farLegSvg) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
+  if (farDeep || farLegSvg) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g + lift)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
   if (poseHeld && poseJoints) {

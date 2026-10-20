@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.365 (2026-10-19)
+
+Everything in 0.0.364, and now you can ride the horse.
+
+- **Riding the horse** (ticket 438): in 🐯 Costume, 🐴 the horse: 🏇 ridden puts your friend in the saddle, whatever they are wearing. From the side they sit astride with their feet down its side and the reins in their hands; facing us or from behind their legs hang down either side of it. When they walk or run, the horse walks or canters and carries them, bobbing with its stride. The saddle cloth is the colour of its halter and reins.
+
 ## 0.0.364 (2026-10-19)
 
 Everything in 0.0.363, with a horse to lead.

@@ -5,7 +5,9 @@
 // standing, walking or running with them, its legs moving through the stride; its rein runs from its noseband to the
 // friend's hand; it fits the picture's frame (no scene); there is none while they lie down or sit, nor with no horse; its
 // rows show only with a horse; the stable's horses keep their faces' animation, and the friend's horse's face has none.
-// Exits 1 on a failure.
+// Ridden ("🏇 ridden"): the friend lifted onto its saddle (`.rider`), facing us or away the horse's near parts drawn over
+// their legs (`.horse-over`), a rein to each hand facing us, one in profile, none seen from behind, all inside the frame;
+// as it walks or runs, the friend's own drawing does not walk (only the lift bobs). Exits 1 on a failure.
 //   node horse438.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -41,6 +43,19 @@ try {
       for (const u of [0, 0.125, 0.25, 0.375]) { lfoNow = n => n === "B" ? { ...lfo0(n), phase: u } : lfo0(n); changed(); drawNow(); const h = horse(); seen.push(h ? h.getAttribute("data-horse") + "|" + h.innerHTML.length + "|" + h.innerHTML.slice(-3000) : null); }
       out.legs[g + " " + f] = { gait: seen.map(x => x && x.split("|")[0]), distinct: new Set(seen).size }; } }
     finally { lfoNow = lfo0; state.body.anim = "none"; }
+    // (ridden: each way, the rider lifted, the horse's near parts over them facing us or away, its reins, the frame)
+    set("costume", "horse", "ride"); out.ride = {};
+    for (const f of ["front", "right", "left", "back"]) { state.body.facing = f; state.body.anim = "none"; changed(); drawNow(); await w(60);
+      const fig = pic().querySelector("#figure"), rider = fig.querySelector(":scope > .rider"), over = fig.querySelector(":scope > .horse-over"), vb = pic().viewBox.baseVal;
+      const lift = rider ? +(rider.getAttribute("transform").match(/translate\\(0 (-?[\\d.]+)\\)/) || [0, 0])[1] : 0, b = fig.getBBox();
+      out.ride[f] = { rider: !!rider, lift: Math.round(lift), over: !!over && !!rider && !!(rider.compareDocumentPosition(over) & Node.DOCUMENT_POSITION_FOLLOWING), reins: fig.querySelectorAll(".rein").length,
+                      inside: b.y >= vb.y - 1 && b.y + b.height <= vb.y + vb.height + 1 && b.x >= vb.x - 1 && b.x + b.width <= vb.x + vb.width + 1 }; }
+    try { state.body.facing = "right"; const seen = new Set(), gaits = new Set();
+      for (const g of ["walk", "run"]) for (const u of [0, 0.2, 0.4]) { state.body.anim = g; lfoNow = n => n === "B" ? { ...lfo0(n), phase: u } : lfo0(n); changed(); drawNow();
+        const r = pic().querySelector("#figure > .rider"); seen.add(r ? r.innerHTML : null); gaits.add(horse() && horse().getAttribute("data-horse")); }
+      out.rideStill = seen.size; out.rideGaits = [...gaits]; }
+    finally { lfoNow = lfo0; state.body.anim = "none"; }
+    set("costume", "horse", "lead"); state.body.facing = "front"; changed(); drawNow();
     // (no horse lying down or sitting)
     state.body.facing = "front"; state.body.pose = "lie"; changed(); drawNow(); out.off.lie = !!horse();
     state.body.pose = "stand"; state.body.sit = true; changed(); drawNow(); out.off.sit = !!horse();
@@ -63,6 +78,10 @@ try {
   ok("each way: its rein, the horse before the friend, inside the picture's frame", Object.values(r.views).every(v => v.rein && v.before && v.inside), r.views);
   ok("walking and running, each way: the horse walks or runs with them, its legs moving (4 different drawings in a stride)",
      Object.entries(r.legs).every(([k, v]) => v.gait.every(gt => gt && gt.endsWith(k.split(" ")[0])) && v.distinct === 4), r.legs);
+  ok("ridden, each way: the friend lifted onto it", Object.values(r.ride).every(v => v.rider && v.lift < -100), r.ride);
+  ok("ridden facing us or away, the horse's near parts over the friend's legs; in profile none", r.ride.front.over && r.ride.back.over && !r.ride.right.over && !r.ride.left.over, r.ride);
+  ok("ridden: two reins facing us, one in profile, none from behind; all inside the frame", r.ride.front.reins === 2 && r.ride.right.reins === 1 && r.ride.left.reins === 1 && r.ride.back.reins === 0 && Object.values(r.ride).every(v => v.inside), r.ride);
+  ok("ridden, walking and running: the horse walks and runs, the friend's own drawing stays as it is", r.rideStill === 1 && r.rideGaits.includes("side walk") && r.rideGaits.includes("side run"), [r.rideStill, r.rideGaits]);
   ok("no horse lying down or sitting; back when standing", !r.off.lie && !r.off.sit && r.off.stand, r.off);
   ok("🐴 the horse box: six rows with a horse, only the choice without", r.rowsWith === 6 && r.rowsWithout === 1, [r.rowsWith, r.rowsWithout]);
   ok("the stable's horses' faces stay animated; the friend's horse's face is still", r.stableAnim && !r.stillAnim, [r.stableAnim, r.stillAnim]);
