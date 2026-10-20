@@ -144,7 +144,7 @@ const TABS = [
     ["range", "eyeGap", "eye gap", 0, 600, 25, 55],
     ["range", "smile", "smile", -100, 200, 0, 100],
     ["range", "mouthSize", "👄 mouth size", 20, 400, 70, 140],
-    ["range", "brow", "eyebrows", -100, 200, 0, 100],
+    ["range", "brow", "slant (up ↔ down)", -100, 200, 0, 100],   // (ticket 392: "eyebrows" said 🤨 the brows again)
     ["toggle", "unibrow", "one big eyebrow"],
     ["choice", "noseView", "👃 nose", [["none", "none"], ["right", "side, L →"], ["left", "side, ← backwards L"], ["front", "front"], ["witch", "🧙 witch, warts"]]],
     ["choice", "nose", "side shape", [["L", "L"], ["angle", "<"], ["soft", "soft"], ["hook", "bulbous"]]],
@@ -2252,6 +2252,7 @@ function showTab() {
   else boxLayout(panel, TABS[tab][0], ctls);   // (ticket 375: its rows in boxes, as the designers' are)
   tidyGroups(panel);   // (ticket 375: and every group in it named once, a bubble theme drawn)
   // (ticket 375) every tab without a designer of its own is one (tabDesigner); one with its own leaves the generic full screen
+  if (part === "music" || part === "world") designerHeads(panel, TABS[tab][0]);   // (ticket 392)
   if (!["music", "world", "background"].includes(part)) tabDesigner(panel, TABS[tab][0]);
   else if (document.body.classList.contains("tab-big")) setTabBig(false);
   placePic();   // (ticket 231: the world designer's view built again, or gone with its tab)

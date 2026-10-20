@@ -810,3 +810,6 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
 .world-mini-cell.empty { font-size: 9px; opacity: 0.4; border: 1px dashed var(--line, #c9c2b4); }
 .world-mini-cell.chosen { outline: 3px solid #0ea5e9; }
 
+
+/* (ticket 392) a row's name or a group's header that only says its box's name again */
+.head-dup { display: none !important; }

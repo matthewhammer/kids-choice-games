@@ -205,6 +205,56 @@ function tidyGroups(panel) {
     }
   }
 }
+// (ticket 392, Matthew: "there are still redundant headers (pose panel says "the pose" and then "poses", similar for the facing
+// and moving panel next to it). Same for dominant hand -- the controls in the panel are already labeled enough, and there isn't
+// more than one sub control.") A box says its name once. With one row or group showing, that row's name or group's header is
+// the box's own, hidden (its words kept as the box name's tooltip; a slider keeps its name); with several, a row's name or a
+// group's header whose words are all the box's ("↔️ facing" in ↔️ facing and moving, "🤸 poses" in 🤸 the pose) is hidden.
+// A sync, since rows show and hide (a place's own box holds every place's rows) and a box's name can change with the place.
+const HEAD_SKIP = new Set(["the", "its", "her", "his", "and", "&", "of", "both"]);   // (not "a": 🅰️ theme A is theme A)
+const headWords = t => t.replace(/[\p{Extended_Pictographic}\u200D\uFE0F]/gu, " ").toLowerCase().split(/[\s,:;()]+/)
+  .map(w => w.replace(/'s$/, "").replace(/s$/, "")).filter(w => w && !HEAD_SKIP.has(w));
+// (a header's words all the box's; a word ending in one of the box's counts: "eyebrows" in 🤨 the brows)
+const headRepeats = (head, name) => { const hw = headWords(head), nw = headWords(name);
+  return hw.length > 0 && hw.every(w => nw.some(b => w === b || (b.length >= 4 && w.endsWith(b)))); };
+const rowHead = r => r.matches(".ctlgroup") ? r.querySelector(":scope > .cap") : r.querySelector(":scope > .lbl .name");
+function boxHeads(box, name, rows) {
+  const heads = rows.map(r => [r, rowHead(r)]).filter(([, h]) => h), boxName = box.querySelector(":scope > .box-name");
+  if (!heads.length) return;
+  let was = "";
+  syncs.push(() => {
+    const shown = rows.filter(r => !r.hidden), nm = name(), key = nm + "|" + shown.length + "|" + heads.map(([r]) => r.hidden ? 0 : 1).join("");
+    if (key === was) return;
+    was = key;
+    let tip = "";
+    for (const [r, h] of heads) {
+      const text = h.textContent.trim(), slider = !!r.querySelector(":scope > input[type=range]");
+      const dup = !slider && !r.hidden && !h.hidden && (shown.length === 1 || headRepeats(text, nm));
+      // (a row's label holding only its name goes with it; one with a value shown keeps the value)
+      const L = h.classList.contains("cap") ? null : h.closest(".lbl"), whole = L && !L.textContent.replace(h.textContent, "").trim();
+      const target = whole ? L : h;
+      (whole ? h : L || h).classList.remove("head-dup");
+      target.classList.toggle("head-dup", dup);
+      if (dup && shown.length === 1 && !headRepeats(text, nm)) tip = text;
+    }
+    if (boxName && (tip || boxName.dataset.tip)) { if (tip) { boxName.title = tip; boxName.dataset.tip = "1"; } else { boxName.removeAttribute("title"); delete boxName.dataset.tip; } }
+  });
+}
+// (ticket 392) The two designers' tabs, 🎵 Music and 🗺️ World design, the same: a row's name that its one button says again
+// ("⛶ full screen" over "⛶ the world designer, full screen"), and the name of a tab's one row that the tab says ("🗺️ world
+// design" under 🗺️ World design), are hidden. Once, as the tab is built: these rows do not come and go.
+function designerHeads(panel, tabName) {
+  const rows = [...panel.querySelectorAll(":scope > .ctl")].filter(r => !r.hidden), named = [];
+  for (const r of rows) {
+    const n = r.querySelector(":scope > .lbl .name"), L = n && n.closest(".lbl"); if (!n) continue;
+    const btns = r.querySelectorAll(":scope > button, :scope > .row > button");
+    if (btns.length === 1 && headRepeats(n.textContent, btns[0].textContent)) { L.classList.add("head-dup"); continue; }
+    named.push([r, n, L]);
+  }
+  const alone = rows.filter(r => !r.querySelector(":scope > .lbl.head-dup")).length === 1;
+  if (alone && named.length === 1 && !named[0][0].querySelector(":scope > input[type=range]") && headRepeats(named[0][1].textContent, tabName)) {
+    const [, n, L] = named[0]; (L.textContent.replace(n.textContent, "").trim() ? n : L).classList.add("head-dup"); }
+}
 // (ticket 375) The Background tab's rows in boxes, a box for each thing in the picture, the same in the side panel and the full screen
 // (^du_report(5)'s step 2; till now its full screen made each row a box): 🗺️ the place, the place's own (named by the place, as it
 // changes), 🧍 the friend here, 👁️ what stands here, 🪨 things to put here, 🎵 its music's motion, 🏰 the castles. By the row's key.
@@ -222,6 +272,7 @@ function bgBoxes(rows) {
   const box = (name, list, wide, dyn, id) => { if (!list.length) return null;
     const h = el("h3", { class: "box-name" }, [name]), b = el("section", { class: "box tabbox" + (wide ? " box-wide" : ""), ...(id ? { "data-box": id } : {}) }, [h, ...list]);
     syncs.push(() => { const hide = list.every(r => r.hidden); if (b.hidden !== hide) b.hidden = hide; if (dyn) { const t = dyn(); if (h.textContent !== t) h.textContent = t; } });
+    boxHeads(b, () => h.textContent, list);
     return b; };
   const placeName = () => { const p = PLACES.find(q => q[0] === state.background.kind); return p ? p[1] : "🏞️ the place's own"; };
   return [box(BG_BOX[0][1], by.place, true), box(placeName(), own.rows, false, placeName),
@@ -270,8 +321,8 @@ const TAB_BOXES = {
   "👁 Eyes": [["👁 the eyes", ["eyes", "oval", "tilt", "whites"], ["eye"]], ["⚫ pupil and iris", ["pupil", "iris", "irisColor"]],
              ["✨ the shine", ["light", "shine", "shineMix", "shineSize"]], ["⭐ funny eyes", ["stars", "hearts", "xeyes", "closed"]]],
   "💇 Hair": [["💇 the hair", ["style", "length", "bangs", "color"]]],
-  "🦒 Neck, arms & legs": [["🦒 the neck", ["neck", "neckW"]], ["💪 the arms", ["arms", "elbows", "armLen", "armW"]],
-                          ["🦵 the legs", ["legLen", "legW", "knees", "feetTurn"]], ["🤸 posed", ["poseHow", "unpose"]]],
+  "🦒 Neck, arms & legs": [["🦒 the neck", ["neck", "neckW"]], ["💪 the arms", ["arms", "elbows", "elbowCurl", "elbowSwing", "armLen", "armW"]],
+                          ["🦵 the legs", ["legLen", "legW", "knees", "kneeCurl", "kneeSwing", "feetTurn"]], ["🤸 posed", ["poseHow", "unpose"]]],
   "👕 Shirt": [["👕 the shirt", ["style", "collar", "color", "width", "length"]], ["🔷 its pattern", ["pattern", "patternSize", "patternColor"]]],
   "🖐 Hands": [["🖐 both hands", ["different", "style", "color", "size"]], ["🖐🖐 each hand", ["rightHand"]],
               ["🔢 how many", ["fingers", "alienFingers", "starPoints", "clawCount", "clawLen"], ["number of"]],
@@ -310,7 +361,7 @@ function boxLayout(panel, tabName, ctls) {
     // the name's last and any the plan adds, at a label's start, after its emoji)
     const words = j < plan.length ? [b.name.split(" ").pop(), ...(plan[j][2] || [])] : [];
     for (const r of b.rows) for (const n of r.querySelectorAll(":scope > .lbl .name")) { const t = n.textContent;
-      for (const w of words) { const m = t.match(new RegExp("^((?:[\\p{Extended_Pictographic}\\u200D\\uFE0F]\\s*)*)" + w.replace(/s$/, "") + "s?(?:'s)?\\s+(\\S.*)$", "u"));
+      for (const w of words) { const m = t.match(new RegExp("^((?:[\\p{Extended_Pictographic}\\u200D\\uFE0F]\\s*)*)(?:the\\s+|its\\s+)?" + w.replace(/s$/, "") + "s?(?:'s)?\\s+(\\S.*)$", "u"));
         if (m) { n.textContent = m[1] + m[2]; break; } }
       // (and a row whose name is only the box's: "costume" in 🐯 the costume, "pattern" in 🔷 its pattern: the box names it)
       const bare = n.textContent.replace(/^[\p{Extended_Pictographic}\u200D\uFE0F\s]+/u, "").trim();
@@ -320,6 +371,7 @@ function boxLayout(panel, tabName, ctls) {
         n.hidden = true; const L = n.closest(".lbl"); if (L && !L.textContent.replace(n.textContent, "").trim()) L.hidden = true; } }
     const box = el("section", { class: "box tabbox" }, [el("h3", { class: "box-name" }, [b.name]), ...b.rows]);
     syncs.push(() => { const hide = b.rows.every(r => r.hidden); if (box.hidden !== hide) box.hidden = hide; });
+    boxHeads(box, () => b.name, b.rows);
     const parts = boxParts(tabName, b.name);
     if (parts) { box.addEventListener("pointerenter", () => { document.body.dataset.lit = parts; }); box.addEventListener("pointerleave", () => { if (document.body.dataset.lit === parts) delete document.body.dataset.lit; }); }
     return box; });

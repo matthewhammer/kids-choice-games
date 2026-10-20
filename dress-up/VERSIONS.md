@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.347 (2026-10-19)
+
+Everything in 0.0.346, with each panel saying its name once.
+
+- **Each panel says its name once** (ticket 392): a panel with one set of controls shows only the panel's name (✋ the dominant hand, 🐸 the jumps, 👁️ what stands here, 🪨 things to put here), and a panel with several drops a name that only says the panel's again (no more "🤸 poses" under 🤸 the pose, or "↔️ facing" under ↔️ facing and moving). Sliders keep their names: the brows' slider is now "slant (up ↔ down)", and the wreath's flowers are just "🌸 flowers". In 🎵 Music and 🗺️ World design, the "⛶ full screen" and "🗺️ world design" names over their buttons are gone too.
+- **The elbows' and knees' new sliders** (from ticket 414) are now in 💪 the arms and 🦵 the legs, instead of a panel of their own.
+
 ## 0.0.346 (2026-10-19)
 
 Everything in 0.0.345, with many worlds, linked to each other.
