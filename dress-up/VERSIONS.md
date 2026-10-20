@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.351 (2026-10-19)
+
+Everything in 0.0.350, with beards.
+
+- **🧔 Beards** (ticket 442): in 💇 Hair, a beard for anyone: ✂️ short, 🧔 full, 🧙 long (down the chest), or a 🐐 goatee; its colour ("auto" matches the hair, or white, grey, brown, ginger, blonde or black), and a moustache with it or without. Facing you and in profile.
+- **The wizard's and the gnome's beards are these beards** (ticket 442): putting on the wizard gives your friend a long white beard, and the gnome man a full one, if they have none; change it in 💇 Hair. Taking the costume off takes that beard off again, unless you changed it.
+
 ## 0.0.350 (2026-10-19)
 
 Everything in 0.0.349, with a wizard costume.

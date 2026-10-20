@@ -448,6 +448,44 @@ function earSvg(kind, k, color, x0, y, s) {
 }
 // (ticket 124) in profile, the face's front edge from its middle, in the face's units
 const profileEdge = F => 80 * headWidth(F) * (1 + 0.12 * F.alien / 100) - 8;
+// (ticket 442, Matthew: "let's add beard to the hair sub-panel, with its own controls ... maybe useful also for the gnome
+// father character, and other characters too (king, maybe the monk/druid -- having a few styles would be helpful -- maybe 4
+// to start") A BEARD, in the face's units: hair.beard, one of BEARDS; hair.beardShade, a colour or "auto" (the hair's);
+// hair.moustache. Short, full and long grow from the cheeks down round the mouth (left open, so the mouth and its moods show)
+// to a rounded point below the chin, `long` below it; a goatee is only a tuft under the mouth to below the chin. In profile
+// (dir), along the jaw from below the ear to the chin's front and down to its point; none from behind. The moustache over
+// the mouth (at its front, in profile). The gnome man's and the wizard's beards are these (ticket 431, 432; set() puts one on).
+const BEARDS = { none: null, short: { long: 16, flare: 0 }, full: { long: 74, flare: 10 }, long: { long: 150, flare: 12 }, goatee: { long: 24, goatee: true } };
+const BEARD_WHITE = "#f4f1ea";
+const beardShade = H => !H.beardShade || H.beardShade === "auto" ? H.color : H.beardShade;
+function beardSvg(F, style, c, dir = 0, moustache = true) {
+  const B = BEARDS[style]; if (!B) return "";
+  const ln = darker(c), LY = faceLayout(F), pts = headPoints(F), chin = headChin(F);
+  const cheekY = LY.eyeY + 24, [xl, xr] = acrossAt(pts, cheekY), my = LY.mouthY, tipY = chin + B.long, mw = 24 * (F.mouthSize ?? 100) / 100;
+  const st = `stroke="${ln}" stroke-width="3" stroke-linejoin="round"`;
+  let out = "";
+  if (!dir) {
+    if (B.goatee) out += `<path d="M${f1(100 - mw * 0.7)} ${f1(my + 22)} Q100 ${f1(my + 14)} ${f1(100 + mw * 0.7)} ${f1(my + 22)} Q${f1(100 + mw * 0.6)} ${f1(tipY - 6)} 100 ${f1(tipY)} Q${f1(100 - mw * 0.6)} ${f1(tipY - 6)} ${f1(100 - mw * 0.7)} ${f1(my + 22)} Z" fill="${c}" ${st}/>`;
+    else {
+      const fl = B.flare, bot = Math.max(chin - 18, tipY - 18), side = Math.min(36, 20 + B.long / 5);
+      const outer = `M${f1(xl + 3)} ${f1(cheekY)} Q${f1(xl - fl)} ${f1(Math.min(chin, tipY))} ${f1(100 - side)} ${f1(bot)} Q100 ${f1(tipY + 10)} ${f1(100 + side)} ${f1(bot)} ` +
+                    `Q${f1(xr + fl)} ${f1(Math.min(chin, tipY))} ${f1(xr - 3)} ${f1(cheekY)} Q${f1(xr - 14)} ${f1(my - 6)} 100 ${f1(my - 4)} Q${f1(xl + 14)} ${f1(my - 6)} ${f1(xl + 3)} ${f1(cheekY)} Z`;
+      const hole = `M${f1(100 - mw - 6)} ${f1(my + 2)} Q100 ${f1(my - 8)} ${f1(100 + mw + 6)} ${f1(my + 2)} Q${f1(100 + mw + 2)} ${f1(my + 30)} 100 ${f1(my + 32)} Q${f1(100 - mw - 2)} ${f1(my + 30)} ${f1(100 - mw - 6)} ${f1(my + 2)} Z`;
+      out += `<path d="${outer} ${hole}" fill="${c}" fill-rule="evenodd" ${st}/>`;
+      if (B.long > 40) out += [-22, 0, 22].map(dx => `<path d="M${f1(100 + dx)} ${f1(my + 44)} Q${f1(100 + dx * 1.2)} ${f1(tipY - 30)} ${f1(100 + dx * 0.8)} ${f1(tipY - 14)}" fill="none" stroke="${ln}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>`).join("");
+    }
+    const ny = my - 4;
+    if (moustache) out += `<path d="M100 ${f1(ny - 9)} Q${f1(100 - mw - 6)} ${f1(ny - 14)} ${f1(100 - mw - 16)} ${f1(ny + 8)} Q${f1(100 - mw * 0.5)} ${f1(ny + 6)} 100 ${f1(ny + 1)} ` +
+                           `Q${f1(100 + mw * 0.5)} ${f1(ny + 6)} ${f1(100 + mw + 16)} ${f1(ny + 8)} Q${f1(100 + mw + 6)} ${f1(ny - 14)} 100 ${f1(ny - 9)} Z" fill="${c}" ${st}/>`;
+    return out;
+  }
+  const edge = profileEdge(F), fx = 100 + dir * (edge - 6), bx = 100 - dir * 14;
+  if (B.goatee) out += `<path d="M${f1(fx - dir * 16)} ${f1(my + 16)} Q${f1(fx + dir * 4)} ${f1(my + 14)} ${f1(fx + dir * 2)} ${f1(chin)} Q${f1(fx)} ${f1(tipY)} ${f1(fx - dir * 8)} ${f1(tipY + 2)} Q${f1(fx - dir * 20)} ${f1(chin)} ${f1(fx - dir * 16)} ${f1(my + 16)} Z" fill="${c}" ${st}/>`;
+  else out += `<path d="M${f1(bx)} ${f1(cheekY)} Q${f1(100 + dir * edge * 0.6)} ${f1(my - 2)} ${f1(fx)} ${f1(my + 6)} Q${f1(fx + dir * 6)} ${f1(Math.min(chin + 10, tipY))} ${f1(100 + dir * edge * 0.55)} ${f1(tipY)} ` +
+              `Q${f1(100 - dir * 4)} ${f1(tipY - 12)} ${f1(100 - dir * 26)} ${f1(Math.min(chin - 6, tipY - 10))} Q${f1(bx - dir * 8)} ${f1(cheekY + 30)} ${f1(bx)} ${f1(cheekY)} Z" fill="${c}" ${st}/>`;
+  if (moustache) out += `<path d="M${f1(fx + dir * 4)} ${f1(my - 12)} Q${f1(fx - dir * 20)} ${f1(my - 14)} ${f1(fx - dir * 30)} ${f1(my + 6)} Q${f1(fx - dir * 8)} ${f1(my)} ${f1(fx + dir * 6)} ${f1(my - 2)} Z" fill="${c}" ${st}/>`;
+  return out;
+}
 function faceSvg(F, ground, parts = false, dir = 0, turn = 0) {
   const b = F.burst, k = F.candy, r = F.rays, o = F.open;
   const rayLen = r === 0 ? 0 : idiv((15 + idiv(r * 6, 10)) * b, 100);

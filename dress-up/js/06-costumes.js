@@ -385,30 +385,7 @@ function falconTail(C, hw, L, LL, fill = "url(#pat-bars)") {
 // stripes. Both: the tall pointed hat (gnomeHat). GNOME_STRIPES: the skirt's stripes after its own color.
 const GNOME_STRIPES = ["#d2382b", "#2e7d32", "#e3b72f", "#7b3f8c", "#2f6db5"];
 const GNOME_CLOTH = "#f7f4ec";
-// The beard, in the face's units: from the cheeks down round the mouth (left open, so the mouth and its moods show) to a
-// rounded point well below the chin, a few strands in it; and a moustache over the mouth. In profile (dir), along the jaw
-// from below the ear to the chin's front and down to its point, the moustache at the front. None from behind.
-// (ticket 432: the wizard's too, longer: color, and how far below the chin its point reaches)
-function gnomeBeard(F, WC, dir = 0, color = WC.beardColor, long = 74) {
-  const c = color || "#f4f1ea", ln = darker(c), LY = faceLayout(F), pts = headPoints(F), chin = headChin(F);
-  const cheekY = LY.eyeY + 24, [xl, xr] = acrossAt(pts, cheekY), my = LY.mouthY, tipY = chin + long, mw = 24 * (F.mouthSize ?? 100) / 100;
-  const st = `stroke="${ln}" stroke-width="3" stroke-linejoin="round"`;
-  if (!dir) {
-    const outer = `M${f1(xl + 3)} ${f1(cheekY)} Q${f1(xl - 10)} ${f1(chin)} ${f1(64)} ${f1(tipY - 18)} Q100 ${f1(tipY + 10)} 136 ${f1(tipY - 18)} ` +
-                  `Q${f1(xr + 10)} ${f1(chin)} ${f1(xr - 3)} ${f1(cheekY)} Q${f1(xr - 14)} ${f1(my - 6)} 100 ${f1(my - 4)} Q${f1(xl + 14)} ${f1(my - 6)} ${f1(xl + 3)} ${f1(cheekY)} Z`;
-    const hole = `M${f1(100 - mw - 6)} ${f1(my + 2)} Q100 ${f1(my - 8)} ${f1(100 + mw + 6)} ${f1(my + 2)} Q${f1(100 + mw + 2)} ${f1(my + 30)} 100 ${f1(my + 32)} Q${f1(100 - mw - 2)} ${f1(my + 30)} ${f1(100 - mw - 6)} ${f1(my + 2)} Z`;
-    const strands = [-22, 0, 22].map(dx => `<path d="M${f1(100 + dx)} ${f1(my + 44)} Q${f1(100 + dx * 1.2)} ${f1(tipY - 30)} ${f1(100 + dx * 0.8)} ${f1(tipY - 14)}" fill="none" stroke="${ln}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>`).join("");
-    const ny = my - 4;
-    const must = `M100 ${f1(ny - 9)} Q${f1(100 - mw - 6)} ${f1(ny - 14)} ${f1(100 - mw - 16)} ${f1(ny + 8)} Q${f1(100 - mw * 0.5)} ${f1(ny + 6)} 100 ${f1(ny + 1)} ` +
-                 `Q${f1(100 + mw * 0.5)} ${f1(ny + 6)} ${f1(100 + mw + 16)} ${f1(ny + 8)} Q${f1(100 + mw + 6)} ${f1(ny - 14)} 100 ${f1(ny - 9)} Z`;
-    return `<path d="${outer} ${hole}" fill="${c}" fill-rule="evenodd" ${st}/>` + strands + `<path d="${must}" fill="${c}" ${st}/>`;
-  }
-  const edge = profileEdge(F), fx = 100 + dir * (edge - 6), bx = 100 - dir * 14;
-  const side = `M${f1(bx)} ${f1(cheekY)} Q${f1(100 + dir * edge * 0.6)} ${f1(my - 2)} ${f1(fx)} ${f1(my + 6)} Q${f1(fx + dir * 6)} ${f1(chin + 10)} ${f1(100 + dir * edge * 0.55)} ${f1(tipY)} ` +
-               `Q${f1(100 - dir * 4)} ${f1(tipY - 12)} ${f1(100 - dir * 26)} ${f1(chin - 6)} Q${f1(bx - dir * 8)} ${f1(cheekY + 30)} ${f1(bx)} ${f1(cheekY)} Z`;
-  const must = `M${f1(fx + dir * 4)} ${f1(my - 12)} Q${f1(fx - dir * 20)} ${f1(my - 14)} ${f1(fx - dir * 30)} ${f1(my + 6)} Q${f1(fx - dir * 8)} ${f1(my)} ${f1(fx + dir * 6)} ${f1(my - 2)} Z`;
-  return `<path d="${side}" fill="${c}" ${st}/>` + `<path d="${must}" fill="${c}" ${st}/>`;
-}
+// (the man's beard and the wizard's: the friend's own, from 💇 Hair since ticket 442: beardSvg in js/04-hair.js)
 // The woman's bodice, in body units: over the blouse from the chest down to the waist, its sides the torso's, laced up the
 // front (white cross-lacing; edge on in profile, at the front); from behind, its back, plain.
 function gnomeBodice(WC, w, L, dir, away) {

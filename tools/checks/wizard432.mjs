@@ -1,4 +1,5 @@
-// (ticket 432) The wizard costume, distinct from the witch: a robe to the feet covered in stars, a gold cord, a long beard, a
+// (ticket 432) The wizard costume, distinct from the witch: a robe to the feet covered in stars, a gold cord, a long beard (the
+// friend's own, put on with the costume since ticket 442), a
 // hat with stars and a crescent moon whose tip flops forward, and a staff with a glowing orb; facing us, in profile both
 // ways and from behind (no beard there); the staff and the beard can be taken off; the tab shows his rows; every pose drawn.
 // Exits 1 on a failure.   node wizard432.mjs <devtools port> <url>
@@ -22,15 +23,15 @@ try {
     set("costume", "kind", "wizard");
     const fig = () => document.getElementById("figure").innerHTML, C = state.costume;
     for (const facing of ["front", "left", "right", "back"]) { state.body.facing = facing; changed(); await w(80); const m = fig();
-      out.views[facing] = { stars: m.includes("polygon points") && ((document.getElementById("pat-shirt") || {}).outerHTML || "").includes("★"), beard: m.includes('fill="' + C.wizardBeard + '"'), orb: m.includes(C.staffOrb), cord: m.includes("#e0b030") }; }
-    state.body.facing = "front"; set("costume", "staff", false); set("costume", "wizardBeardOn", false); changed(); await w(80);
-    out.off = { orb: fig().includes(C.staffOrb), beard: fig().includes('fill="' + C.wizardBeard + '"') };
-    set("costume", "staff", true); set("costume", "wizardBeardOn", true); changed();
+      out.views[facing] = { stars: m.includes("polygon points") && ((document.getElementById("pat-shirt") || {}).outerHTML || "").includes("★"), beard: m.includes('fill="' + beardShade(state.hair) + '"') && state.hair.beard === "long", orb: m.includes(C.staffOrb), cord: m.includes("#e0b030") }; }
+    state.body.facing = "front"; set("costume", "staff", false); set("hair", "beard", "none"); changed(); await w(80);
+    out.off = { orb: fig().includes(C.staffOrb), beard: fig().includes('fill="' + BEARD_WHITE + '"') };
+    set("costume", "staff", true); set("hair", "beard", "long"); changed();
     for (const pose of ["stand", "sit", "meditate", "dance", "hug", "lie"]) { set("body", "pose", pose); changed(); await w(60); out.poses[pose] = fig().length > 1000; }
     set("body", "pose", "stand"); state.body.sit = false; changed();
     tab = TABS.findIndex(t => t[1] === "costume"); showTab(); await w(200);
     const shown = key => { const el = document.querySelector('#panel [data-key="' + key + '"]'); return !!el && !el.hidden; };
-    out.rows = ["wizardRobe", "wizardStars", "wizardBeardOn", "staff", "staffOrb", "witchColor", "gnomeWho"].map(k => shown(k) ? 1 : 0).join("");
+    out.rows = ["wizardRobe", "wizardStars", "staff", "staffOrb", "witchColor", "gnomeWho"].map(k => shown(k) ? 1 : 0).join("");
     return JSON.stringify(out); })()`));
   console.log(`  ${JSON.stringify(r)}`);
   const V = r.views;
@@ -38,7 +39,7 @@ try {
   ok("from behind: the stars and the staff, no beard", V.back.stars && V.back.orb && !V.back.beard, V.back);
   ok("the staff and the beard taken off", !r.off.orb && !r.off.beard, r.off);
   ok("every pose drawn", Object.values(r.poses).every(Boolean), r.poses);
-  ok("the tab shows the wizard's rows, not the witch's or the gnome's", r.rows === "1111100", r.rows);
+  ok("the tab shows the wizard's rows, not the witch's or the gnome's", r.rows === "111100", r.rows);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

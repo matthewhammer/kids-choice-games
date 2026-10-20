@@ -240,6 +240,9 @@ function drawNow() {
   // and hair, stretched with the head (it hangs and spreads in face units)
   const hr = C ? { top: 0, bottom: 0, half: 0 } : hairReach(state.hair);
   const hairY = y => HEAD_C + (y - HEAD_C) * headH(F);
+  // (ticket 442) the friend's beard, from 💇 Hair (none under the old diving helmet or as a ghost), and how far below the
+  // chin it reaches, for the picture's bottom
+  const beardStyle = BEARDS[state.hair.beard] && kind !== "diver" && kind !== "ghost" ? state.hair.beard : null;
   const flying = F.burst > 0 ? idiv(F.burst * 7, 10) + idiv(F.burst * 4, 10) + 40 : 0;   // see topFlies
   const faceTop = Math.min(-90, HEAD_C - 175 * headH(F), headCrown(F) + 50.6 - 1.4 * F.burst - 40,
                            hairY(hr.top) - 40 - flying, (C ? (kind === "deer" ? -140 : -90) : 0) - flying,
@@ -262,7 +265,7 @@ function drawNow() {
   const skirtHem = !suit && !undies && (P.style === "skirt" || P.style === "dress")
     ? L + (feetY - L) * (P.skirtLen ?? 50) / 100 + 30 : 0;
   const toesDown = suit || witch ? 0 : feetY + Math.max(footDown(state.shoes), footDown(rightShoeOf(state.shoes))) * shoeSc + 12;
-  let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem,
+  let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem, beardStyle ? ty + (headChin(F) + BEARDS[beardStyle].long + 16) * s : 0,
                           broomH ? broomH[1] + 140 * kb : 0, staffH ? staffH[1] + 120 : 0, catK ? -9 + 46 * catK : 0);
   const hairHalf = hr.half * headWidth(F) * (1 + 0.12 * F.alien / 100) * s;
   let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
@@ -855,9 +858,8 @@ function drawNow() {
   // (under a witch's hat, from its brim down: the brim's line as the hat is
   // stretched with the head, which big eyes make taller)
   // (in profile, the hair on the head itself, over its top and back)
-  // (ticket 431) a gnome man's beard and moustache, over the mouth's surroundings, under the bangs and the hat
-  if (gnomeM && WC.gnomeBeard !== false && !away) svg += veil("head", inFace(gnomeBeard(F, WC, dir)));
-  if (wizard && WC.wizardBeardOn !== false && !away) svg += veil("head", inFace(gnomeBeard(F, WC, dir, WC.wizardBeard || "#f4f1ea", 150)));
+  // (ticket 442) the beard and moustache from 💇 Hair (the gnome man's and the wizard's too), under the bangs and a hat
+  if (beardStyle && !away) svg += veil("hair", inFace(beardSvg(F, beardStyle, beardShade(state.hair), dir, state.hair.moustache !== false)));
   if (!C && !diver && !away) svg += veil("hair", inFace(side ? `<g transform="${topFlies(F)}">${tucked(side.cap, "under-hat-bangs", HEAD_C + ((hatLine ?? 40) - HEAD_C) * headH(F))}</g>`
                                           : tucked(bangsSvg(state.hair, F), "under-hat-bangs", HEAD_C + ((hatLine ?? 40) - HEAD_C) * headH(F))));
   // a fairy's wreath of flowers, over her hair

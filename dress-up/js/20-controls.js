@@ -191,6 +191,10 @@ const TABS = [
     ["range", "length", "📏 length", 30, 400, 70, 180],
     ["range", "bangs", "✂️ bangs (0 = none, 100 = down to the brows)", 0, 300, 40, 140],
     ["color", "color", "color", HAIRS],
+    // (ticket 442) the beard: four styles, its colour ("auto": the hair's), and a moustache with it
+    ["choice", "beard", "🧔 beard", [["none", "none"], ["short", "✂️ short"], ["full", "🧔 full"], ["long", "🧙 long"], ["goatee", "🐐 goatee"]]],
+    ["color", "beardShade", "🧔 beard's color", ["auto", BEARD_WHITE, "#c9c5bd", "#8d8172", "#6b4226", "#c0612b", "#e8c35a", "#2b2b2b"]],
+    ["toggle", "moustache", "👨 moustache"],
   ]],
   ["🦒 Neck, arms & legs", "body", [
     ["range", "neck", "neck length", 0, 420, 4, 60],
@@ -327,18 +331,14 @@ const TABS = [
     // (ticket 431) the gnome: a man or a woman, the tall pointed hat, and each one's clothes; felt boots
     ["choice", "gnomeWho", "🍄 the gnome", [["man", "👴 gnome man"], ["woman", "👵 gnome woman"]]],
     ["color", "gnomeHat", "🍄 pointed hat's color", ["#d2382b", "#7b3f8c", "#2f6db5", "#2e7d32", "#e8862a", "#c2185b"]],
-    ["toggle", "gnomeBeard", "🧔 beard"],
-    ["color", "beardColor", "🧔 beard's color", ["#f4f1ea", "#c9c5bd", "#8d8172", "#6b4226", "#c0612b", "#1f1f22"]],
     ["color", "gnomeTunic", "🍄 tunic's color", ["#3f8f8a", "#2f6db5", "#2e7d32", "#7b3f8c", "#b71c1c", "#8b5a2b"]],
     ["color", "gnomeTrousers", "🍄 trousers' color", ["#7d8b6a", "#5b6b4a", "#6b5a45", "#4b5563", "#2f3e5c"]],
     ["color", "gnomeBodice", "🍄 bodice's color", ["#d2382b", "#2e7d32", "#2f6db5", "#7b3f8c", "#1f1f22"]],
     ["color", "gnomeSkirt", "🍄 skirt's first stripe", ["#d2382b", "#e8862a", "#c2185b", "#2f6db5", "#2e7d32"]],
     ["color", "gnomeBoots", "🥾 felt boots' color", ["#e8e4da", "#8d8172", "#6b4226", "#1f1f22", "#b71c1c"]],
-    // (ticket 432) the wizard: his robe and its stars, his beard, his staff and its orb
+    // (ticket 432) the wizard: his robe and its stars, his staff and its orb (his beard is the friend's, in 💇 Hair)
     ["color", "wizardRobe", "🧙‍♂️ robe & hat color", ["#2a3a8c", "#1f1f22", "#5b2a86", "#7a1f2b", "#1f5a4a", "#6b7280"]],
     ["color", "wizardStars", "⭐ stars & moon color", ["#f2c230", "#e5e7eb", "#93c5fd", "#f9a8d4"]],
-    ["toggle", "wizardBeardOn", "🧔 beard"],
-    ["color", "wizardBeard", "🧔 beard's color", ["#f4f1ea", "#c9c5bd", "#8d8172", "#6b4226", "#1f1f22"]],
     ["toggle", "staff", "🪄 staff"],
     ["color", "staffOrb", "🔮 the staff's orb", ["#7dd3fc", "#a78bfa", "#86efac", "#fca5a5", "#fde047"]],
     // the fairy: wings and tunic, each in a style with its own colors; shoes
@@ -714,6 +714,13 @@ function set(part, key, value) {
   if (part === "body" && key === "anim" && value !== "none" && value !== "swim" && state.body.pose !== "stand") strikePose("stand");
   // choosing an animal dresses it in its natural colors
   if (part === "costume" && key === "kind" && ANIMALS[value]) Object.assign(state.costume, lookOf(value));
+  // (ticket 442) the wizard and the gnome man wear a beard, from 💇 Hair: put on (white; long, or full) when the friend has
+  // none, and taken off again on leaving the costume, or the gnome becoming a woman, if it is still the one put on
+  if (part === "costume" && (key === "kind" || key === "gnomeWho")) {
+    const C = state.costume, H = state.hair, want = C.kind === "wizard" ? "long" : C.kind === "gnome" && C.gnomeWho !== "woman" ? "full" : null;
+    if (C.beardGiven && C.beardGiven !== want) { if (H.beard === C.beardGiven) { H.beard = "none"; if (H.beardShade === BEARD_WHITE) H.beardShade = "auto"; } C.beardGiven = null; }
+    if (want && !BEARDS[H.beard]) { H.beard = want; H.beardShade = BEARD_WHITE; C.beardGiven = want; }
+  }
   // (ticket 431: as on the book's cover, the gnome man's hat red and the woman's purple, while the hat is one of those two)
   if (part === "costume" && key === "gnomeWho" && ["#d2382b", "#7b3f8c"].includes(state.costume.gnomeHat)) state.costume.gnomeHat = value === "woman" ? "#7b3f8c" : "#d2382b";
   // a skirt starts at skirt length and a dress at dress length
@@ -932,10 +939,9 @@ const SHOWN_WHEN = {
   "costume.fur": c => !!ANIMALS[c.kind],
   "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),
   "costume.witchColor": c => c.kind === "witch",
-  "costume.wizardRobe": c => c.kind === "wizard", "costume.wizardStars": c => c.kind === "wizard", "costume.wizardBeardOn": c => c.kind === "wizard",
-  "costume.wizardBeard": c => c.kind === "wizard" && c.wizardBeardOn !== false, "costume.staff": c => c.kind === "wizard", "costume.staffOrb": c => c.kind === "wizard" && c.staff !== false,
+  "hair.beardShade": h => !!BEARDS[h.beard], "hair.moustache": h => !!BEARDS[h.beard],
+  "costume.wizardRobe": c => c.kind === "wizard", "costume.wizardStars": c => c.kind === "wizard", "costume.staff": c => c.kind === "wizard", "costume.staffOrb": c => c.kind === "wizard" && c.staff !== false,
   "costume.gnomeWho": c => c.kind === "gnome", "costume.gnomeHat": c => c.kind === "gnome", "costume.gnomeBoots": c => c.kind === "gnome",
-  "costume.gnomeBeard": c => c.kind === "gnome" && c.gnomeWho !== "woman", "costume.beardColor": c => c.kind === "gnome" && c.gnomeWho !== "woman" && c.gnomeBeard !== false,
   "costume.gnomeTunic": c => c.kind === "gnome" && c.gnomeWho !== "woman", "costume.gnomeTrousers": c => c.kind === "gnome" && c.gnomeWho !== "woman",
   "costume.gnomeBodice": c => c.kind === "gnome" && c.gnomeWho === "woman", "costume.gnomeSkirt": c => c.kind === "gnome" && c.gnomeWho === "woman",
   ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
@@ -2184,7 +2190,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const b = c === "skin" || c === "auto" || c === "off"
         ? el("button", { class: "swatch skin",
                          title: c === "skin" ? "same as skin" : c === "off" ? "none: the fur shows through"
-                              : key === "spot" ? "a warm brown" : "a lighter shade",
+                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color" : "a lighter shade",
                          onclick: () => set(part, key, c) }, c)
         : key === "color" && part === "face" && SKIN_MARKS[c]
         ? el("button", { class: "swatch", title: SKIN_MARKS[c][1], "aria-label": SKIN_MARKS[c][1],

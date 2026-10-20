@@ -1,4 +1,4 @@
-// (ticket 431) The gnome costume: a gnome man (the tall pointed hat, a beard and moustache, a belted tunic over trousers,
+// (ticket 431) The gnome costume: a gnome man (the tall pointed hat, a beard and moustache (the friend's own since ticket 442), a belted tunic over trousers,
 // felt boots) or a gnome woman (the hat, a white blouse, a laced bodice, an apron, a skirt of upright stripes), facing us,
 // in profile both ways and from behind; the hat's cover colour following the gnome chosen; the tab's rows for each; every
 // pose drawn without an error. Exits 1 on a failure.
@@ -25,13 +25,13 @@ try {
     const shown = key => { const r = document.querySelector('#panel [data-key="' + key + '"]'); return !!r && !r.hidden; };
     for (const who of ["man", "woman"]) { set("costume", "gnomeWho", who); out[who + "Hat"] = state.costume.gnomeHat;
       for (const facing of ["front", "left", "right", "back"]) { state.body.facing = facing; changed(); await w(80); const m = fig(), C = state.costume;
-        out.views[who + "-" + facing] = { hat: m.includes('fill="' + C.gnomeHat + '"'), beard: m.includes('fill="' + C.beardColor + '"'), bodice: m.includes('fill="' + C.gnomeBodice + '"'),
+        out.views[who + "-" + facing] = { hat: m.includes('fill="' + C.gnomeHat + '"'), beard: m.includes('fill="' + beardShade(state.hair) + '"') && !!BEARDS[state.hair.beard], bodice: m.includes('fill="' + C.gnomeBodice + '"'),
           stripes: ((document.getElementById("pat-pants") || {}).outerHTML || "").includes('fill="' + GNOME_STRIPES[2] + '"') && m.includes("url(#pat-pants)"), boots: m.includes(C.gnomeBoots) }; }
       state.body.facing = "front";
       for (const pose of ["stand", "sit", "meditate", "dance", "hug", "lie"]) { set("body", "pose", pose); changed(); await w(60); out.poses[who + "-" + pose] = fig().length > 1000; }
       set("body", "pose", "stand"); state.body.sit = false; changed();
       tab = TABS.findIndex(t => t[1] === "costume"); showTab(); await w(200);
-      out.rows[who] = ["gnomeWho", "gnomeHat", "gnomeBeard", "gnomeTunic", "gnomeBodice", "gnomeSkirt", "gnomeBoots", "witchColor"].map(k => shown(k) ? 1 : 0).join(""); }
+      out.rows[who] = ["gnomeWho", "gnomeHat", "gnomeTunic", "gnomeBodice", "gnomeSkirt", "gnomeBoots", "witchColor"].map(k => shown(k) ? 1 : 0).join(""); }
     return JSON.stringify(out); })()`));
   console.log(`  ${JSON.stringify(r)}`);
   const V = r.views;
@@ -39,7 +39,7 @@ try {
   ok("the woman: hat, bodice, striped skirt, no beard, every way", ["front", "left", "right", "back"].every(f => V["woman-" + f].hat && V["woman-" + f].bodice && V["woman-" + f].stripes && !V["woman-" + f].beard), V);
   ok("the hat red for the man and purple for the woman, as on the cover", r.manHat === "#d2382b" && r.womanHat === "#7b3f8c", [r.manHat, r.womanHat]);
   ok("every pose drawn, both gnomes", Object.values(r.poses).every(Boolean), r.poses);
-  ok("the tab shows the man's rows for the man and the woman's for the woman, never the witch's", r.rows.man === "1111001" + "0" && r.rows.woman === "1100111" + "0", r.rows);
+  ok("the tab shows the man's rows for the man and the woman's for the woman, never the witch's", r.rows.man === "1110010" && r.rows.woman === "1101110", r.rows);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
