@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.379 (2026-10-20)
+
+Everything in 0.0.378, plus cave mushrooms, a better treasure chest and a worn floor in the cave behind the falls.
+
+- **🍄 Cave mushrooms, in the "🦇 cave" things:** six kinds for a dark cave ("💡 glowing caps", "🔔 bells", "🍄 a crowd", "📚 shelves on a stump", "🕯️ tall and thin", "⚪ puffballs"), in a glowing colour, their spores drifting up; turn "✨ glowing" off for plain ones. You can sit on them.
+- **💰 The treasure chest, better:** wooden planks with gold bands, and a lock when it is shut. Open, choose what is in it ("💰 in it"): "🪙 gold coins", "💎 gems", or "👑 gold, gems and a crown", sparkling.
+- **The 🪨 cave behind the falls** has the cave room's worn, rounded floor now, and its archway to the 🦇 cave room is on the left, where the old chest no longer stands in front of it.
+
 ## 0.0.378 (2026-10-20)
 
 Everything in 0.0.377, plus cave passages to put anywhere.

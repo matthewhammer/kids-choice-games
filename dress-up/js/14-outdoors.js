@@ -661,13 +661,15 @@ function caveScene(c) {
         `<polygon points="-6,0 -6,${-h + 8} 0,${-h} 6,${-h + 8} 6,0" fill="${col}" stroke="${mix(col, "#ffffff", 0.5)}" stroke-width="1.5" ` +
         `transform="translate(${f1(cx + dx * k)} ${f1(cy + 30 * k + dy * k)}) rotate(${a}) scale(${k.toFixed(3)})"/>`).join(""));
   }).join(""));
-  // (ticket 471) at the back, right of the mouth: a dark archway, deeper in, to the 🦇 cave room (drawn as the cave room
-  // draws its way back here, caveArchSvg)
+  // (ticket 471) at the back, left of the mouth (the old chest stands on the right): a dark archway, deeper in, to the 🦇
+  // cave room (drawn as the cave room draws its way back here, caveArchSvg)
   s += SEP + part("cave-deeper", c.F, () => wallObj("archway to the cave room", `<g class="portal" data-to="caveroom">` +
-    caveArchSvg(c, "bg-cave-deeper", W * 0.31, floor + 4 * k, 64 * k, 118 * k, 4711, "#7a6a9a") + `</g>`));
+    caveArchSvg(c, "bg-cave-deeper", -W * 0.29, floor + 4 * k, 64 * k, 118 * k, 4711, "#7a6a9a") + `</g>`));
   // the light falling in through the water, the floor, wet by the mouth
   s += SEP + part("cave-floor", c.F, () => {
     let t = `<path d="M${P(x0 - pad, floor + 10 * k)} Q${P(-W * 0.3, floor - 6 * k)} ${P(-mh, floor)} L${P(mh, floor)} Q${P(W * 0.3, floor - 6 * k)} ${P(x1 + pad, floor + 10 * k)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z" fill="#3b3542"/>` +
+            // (ticket 471, Matthew: "look at, and refine, the waterfall cave") its floor worn round, ledge after ledge, as the cave room's
+            floorObj("the floor's ledges", caveLedgesSvg(c, floor + 4 * k, y1 - 8 * k, y => Math.max(0.45, Math.min(1.35, 0.5 + 0.9 * (y - floor) / (y1 - floor))))) +
             floorObj("wet floor", `<ellipse cx="0" cy="${f1(floor + 26 * k)}" rx="${f1(mh * 1.3)}" ry="${f1(22 * k)}" fill="#7fa3bd" opacity="0.25"/>`);
     let light = "", pebbles = "";
     for (let i = 0; i < 3; i++)
@@ -755,6 +757,25 @@ function caveArchSvg(c, id, x, foot, w, h, seed, glow) {
     `<path d="${d}" fill="none" stroke="#0a080c" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>` +
     `<path d="${caveSmooth(pts.slice(2, 19), P)}" fill="none" stroke="#6a6276" stroke-width="${f1(4 * k)}" stroke-linecap="round" opacity="0.7" transform="translate(${f1(-2 * k)} ${f1(-3 * k)})"/>`;
 }
+// (ticket 471) a cave's floor worn round and fractal: ledges after ledges toward us, from its far edge (back) to near, each
+// a fractal line, lit on top and shadowed below; and bumps of three sizes on it; sized for their depth by persp(y)
+function caveLedgesSvg(c, back, near, persp) {
+  const { x0, x1, W, k, R, P } = c;
+    let ledges = "";
+    for (let i = 0; i < 6; i++) {
+      const v = Math.pow((i + 0.6) / 6, 1.35), y = back + (near - back) * v, a = x0 - 30 * k + 0.1 * W * R(i, 4775), b = x1 + 30 * k - 0.1 * W * R(i, 4776);
+      const pts = caveFractalPath([[a, y + 18 * k * R(i, 4777)], [x0 + W * (0.3 + 0.1 * R(i, 4778)), y - 10 * k * persp(y)], [x1 - W * (0.3 + 0.1 * R(i, 4779)), y + 6 * k * persp(y)], [b, y - 14 * k * R(i, 4780)]], 4, 0.04, R, 4781 + 13 * i);
+      ledges += `<path d="${caveSmooth(pts, P)}" fill="none" stroke="#211d27" stroke-width="${f1(5 * k * persp(y))}" stroke-linecap="round" opacity="0.6" transform="translate(0 ${f1(2.5 * k * persp(y))})"/>` +
+                `<path d="${caveSmooth(pts, P)}" fill="none" stroke="#6b6278" stroke-width="${f1(2.5 * k * persp(y))}" stroke-linecap="round" opacity="0.55"/>`;
+    }
+    let bumps = "";
+    for (let j = 0; j < 3; j++) for (let i = 0; i < [10, 22, 44][j]; i++) {
+      const y = back + 8 * k + (near - back) * Math.pow(R(i, 4800 + j), 0.8), x = x0 + W * R(i, 4803 + j), z = persp(y), rx = [58, 28, 12][j] * k * z * (0.7 + 0.6 * R(i, 4806 + j)), ry = rx * 0.26;
+      bumps += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#5a5266" opacity="0.4"/>` +
+               `<path d="M${P(x - rx, y)} Q${P(x, y + ry * 2.2)} ${P(x + rx, y)}" fill="none" stroke="#221e28" stroke-width="${f1(Math.max(1, ry * 0.5))}" opacity="0.45"/>`;
+    }
+    return ledges + bumps;
+}
 // (ticket 471, Matthew: "a background that represents being in a cave room, rounded, fractal structure on the ground
 // (walkable) suface. Different cave rock formations (6 styles for floor, and 6 styles for ceiling) --- look at, and refine,
 // the waterfall cave") The 🦇 cave room, deeper in behind the falls: in through a dark archway at the back of the cave,
@@ -805,25 +826,12 @@ function caveroomScene(c) {
     let t = `<defs>${grad("bg-caveroom-floor", "#2e2934", "#4b4455", back - 60 * k, y1)}</defs>` +
             `<path d="${caveSmooth(edge, P)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z" fill="url(#bg-caveroom-floor)"/>` +
             `<path d="${caveSmooth(edge, P)}" fill="none" stroke="#1c1922" stroke-width="${f1(4 * k)}" stroke-linejoin="round"/>`;
-    let ledges = "";
-    for (let i = 0; i < 6; i++) {
-      const v = Math.pow((i + 0.6) / 6, 1.35), y = back + (near - back) * v, a = x0 - 30 * k + 0.1 * W * R(i, 4775), b = x1 + 30 * k - 0.1 * W * R(i, 4776);
-      const pts = caveFractalPath([[a, y + 18 * k * R(i, 4777)], [x0 + W * (0.3 + 0.1 * R(i, 4778)), y - 10 * k * persp(y)], [x1 - W * (0.3 + 0.1 * R(i, 4779)), y + 6 * k * persp(y)], [b, y - 14 * k * R(i, 4780)]], 4, 0.04, R, 4781 + 13 * i);
-      ledges += `<path d="${caveSmooth(pts, P)}" fill="none" stroke="#211d27" stroke-width="${f1(5 * k * persp(y))}" stroke-linecap="round" opacity="0.6" transform="translate(0 ${f1(2.5 * k * persp(y))})"/>` +
-                `<path d="${caveSmooth(pts, P)}" fill="none" stroke="#6b6278" stroke-width="${f1(2.5 * k * persp(y))}" stroke-linecap="round" opacity="0.55"/>`;
-    }
-    let bumps = "";
-    for (let j = 0; j < 3; j++) for (let i = 0; i < [10, 22, 44][j]; i++) {
-      const y = back + 8 * k + (near - back) * Math.pow(R(i, 4800 + j), 0.8), x = x0 + W * R(i, 4803 + j), z = persp(y), rx = [58, 28, 12][j] * k * z * (0.7 + 0.6 * R(i, 4806 + j)), ry = rx * 0.26;
-      bumps += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#5a5266" opacity="0.4"/>` +
-               `<path d="M${P(x - rx, y)} Q${P(x, y + ry * 2.2)} ${P(x + rx, y)}" fill="none" stroke="#221e28" stroke-width="${f1(Math.max(1, ry * 0.5))}" opacity="0.45"/>`;
-    }
     let pebbles = "";
     for (let i = 0; i < 30; i++) {
       const y = back + 10 * k + (near - back) * R(i, 4810), x = x0 + W * R(i, 4811), r = (2.5 + 6 * R(i, 4812)) * k * persp(y);
       pebbles += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.55)}" fill="${["#5c5468", "#2e2934", "#6a6276"][i % 3]}"/>`;
     }
-    return t + floorObj("the floor's ledges", ledges + bumps) + floorObj("pebbles", pebbles);
+    return t + floorObj("the floor's ledges", caveLedgesSvg(c, back, near, persp)) + floorObj("pebbles", pebbles);
   });
   // drops falling from the vault into a puddle, rings spreading on it (the fast LFO)
   s += SEP + part("caveroom-drips", [c.F, sceneLfoKey(o, "fast")], () => {
@@ -1961,6 +1969,32 @@ function passageThingSvg(t, seed) {
   }
   return r + portal(caveArchSvg(c, `passage-arch-${seed}`, 0, 0, 74, 112, seed + 30, "#9a8ab8"));
 }
+// (ticket 471, Matthew: "mushrooms (already have these, but maybe more styles, for a dark cave?)") A cave mushroom, a thing
+// of its own (the places' toadstools keep theirs): six kinds, glowing in their colour (the slow LFO), or not
+const CAVE_MUSHROOMS = [["glowcap", "💡 glowing caps"], ["bells", "🔔 bells"], ["cluster", "🍄 a crowd"], ["shelves", "📚 shelves on a stump"], ["tall", "🕯️ tall and thin"], ["puffballs", "⚪ puffballs"]];
+const CAVE_MUSHROOM_COLORS = ["#7dd3fc", "#a7f3d0", "#c4b5fd", "#fcd34d", "#f9a8d4", "#86efac"];
+function caveMushroomSvg(t, seed, o) {
+  const col = t.color || CAVE_MUSHROOM_COLORS[0], R = seeded(seed), st = t.style || "glowcap", rim = mix(col, "#1a1620", 0.45), stem = "#ece4f2";
+  const glow = t.glow ?? true ? `<defs><radialGradient id="cmush-glow-${seed}"><stop offset="0" stop-color="${col}" stop-opacity="0.65"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></radialGradient></defs>` +
+    `<ellipse class="fumes" cx="0" cy="-30" rx="60" ry="46" fill="url(#cmush-glow-${seed})" opacity="0.5">` + lfoTimed(o, "slow", R(1), `<animate attributeName="opacity" values="0.3;0.75;0.3" dur="4s" repeatCount="indefinite"/>`) + `</ellipse>` : "";
+  const shade = `<ellipse class="flat" cx="0" cy="1" rx="30" ry="5" fill="#000000" opacity="0.2"/>`;
+  const cap = (x, h, r, tall = 0.8) => `<path d="M${f1(x - r * 0.16)} 0 L${f1(x - r * 0.1)} ${f1(-h)} L${f1(x + r * 0.1)} ${f1(-h)} L${f1(x + r * 0.16)} 0 Z" fill="${stem}"/>` +
+    `<path d="M${f1(x - r)} ${f1(-h + 2)} Q${f1(x - r * 0.9)} ${f1(-h - r * tall)} ${f1(x)} ${f1(-h - r * tall * 1.05)} Q${f1(x + r * 0.9)} ${f1(-h - r * tall)} ${f1(x + r)} ${f1(-h + 2)} Q${f1(x)} ${f1(-h + r * 0.2)} ${f1(x - r)} ${f1(-h + 2)} Z" fill="${col}" stroke="${rim}" stroke-width="1.5"/>`;
+  let body;
+  if (st === "bells") body = [[-14, 30, 12], [6, 42, 14], [22, 24, 10]].map(([x, h, r]) => `<path d="M${f1(x - 1.5)} 0 Q${f1(x - 3)} ${f1(-h * 0.5)} ${f1(x)} ${f1(-h)} L${f1(x + 1.5)} ${f1(-h)} Q${f1(x + 2)} ${f1(-h * 0.5)} ${f1(x + 1.5)} 0 Z" fill="${stem}"/>` +
+    `<path d="M${f1(x - r * 0.7)} ${f1(-h + r * 0.4)} Q${f1(x - r * 0.75)} ${f1(-h - r)} ${f1(x)} ${f1(-h - r * 1.1)} Q${f1(x + r * 0.75)} ${f1(-h - r)} ${f1(x + r * 0.7)} ${f1(-h + r * 0.4)} Q${f1(x)} ${f1(-h + r * 0.1)} ${f1(x - r * 0.7)} ${f1(-h + r * 0.4)} Z" fill="${col}" stroke="${rim}" stroke-width="1.4"/>`).join("");
+  else if (st === "cluster") body = [...Array(9)].map((_, j) => { const x = (R(j + 3) - 0.5) * 50, h = 8 + 18 * R(j + 4), r = 5 + 6 * R(j + 5); return cap(x, h, r, 0.6); }).sort().join("");
+  else if (st === "shelves") body = `<path d="M-20 0 L-16 -44 Q0 -50 16 -44 L20 0 Z" fill="#6b4a32" stroke="#3a2818" stroke-width="2"/><ellipse cx="0" cy="-45" rx="16" ry="4" fill="#a07a58"/>` +
+    [[-16, -14, -1], [16, -24, 1], [-16, -34, -1], [16, -38, 1]].map(([x, y, e]) => `<path d="M${x} ${y} Q${x + e * 18} ${y - 6} ${x + e * 22} ${y + 2} Q${x + e * 12} ${y + 5} ${x} ${y + 3} Z" fill="${col}" stroke="${rim}" stroke-width="1.3"/>`).join("");
+  else if (st === "tall") body = [[-8, 62, 7], [6, 48, 6], [16, 36, 5]].map(([x, h, r]) => cap(x, h, r, 1.3)).join("");
+  else if (st === "puffballs") body = [[-14, 13], [8, 17], [24, 9]].map(([x, r]) => `<circle cx="${x}" cy="${-r + 1}" r="${r}" fill="${mix(col, "#ffffff", 0.45)}" stroke="${rim}" stroke-width="1.4"/>` +
+    `<circle cx="${x - r * 0.35}" cy="${f1(-r * 1.35)}" r="${f1(r * 0.25)}" fill="#ffffff" opacity="0.6"/>`).join("");
+  else body = cap(-16, 22, 12) + cap(4, 36, 20) + cap(24, 16, 9);
+  return glow + shade + body + (t.glow ?? true ? [0, 1, 2].map(n => `<circle cx="${(n - 1) * 8}" cy="-50" r="1.6" fill="${col}" opacity="0">` +
+    lfoTimed(o, "slow", n / 3 + R(2), `<animate attributeName="cy" values="-50;-100" dur="5s" repeatCount="indefinite"/>`) + lfoTimed(o, "slow", n / 3 + R(2), `<animate attributeName="opacity" values="0;0.9;0" dur="5s" repeatCount="indefinite"/>`) + `</circle>`).join("").replace(/^/, `<g class="fumes">`) + `</g>` : "");
+}
+// (ticket 471) what a treasure chest holds, open (seaChestSvg)
+const CHEST_TREASURE = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown", "👑 gold, gems and a crown"]];
 const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
@@ -1988,7 +2022,7 @@ const THING_PARAMS = {
   shell: [["shape", "🐚", "choice", [["scallop", "scallop"], ["conch", "conch"], ["clam", "clam"]]], ["color", "🎨", "color", SHELL_COLORS]],
   starfish: [["color", "🎨", "color", STAR_COLORS]],
   seafish: [["color", "🎨", "color", SEAFISH_COLORS], ["bubbles", "🫧 bubbles", "toggle"]],
-  chest: [["open", "🔓 open", "toggle"]],
+  chest: [["open", "🔓 open", "toggle"], ["treasure", "💰 in it", "choice", CHEST_TREASURE]],   // (ticket 471: what is in it)
   anchor: [["chain", "⛓️ broken chain", "toggle"]],
   // (ticket 284) a lever's 🔗: the trap doors here it opens and shuts (by their uid); a trap door's own: open or shut, its shape, its spikes
   // (ticket 323, N's: "each lever should choose going forward: controls doors; lets a boulder fall from somewhere, of a certain
@@ -2004,6 +2038,7 @@ const THING_PARAMS = {
   puddle: [["drip", "💧 a drip from above", "toggle"]],
   cascade: [["style", "💦 kind", "choice", CASCADE_STYLES]],
   passage: [["style", "🕳️ kind", "choice", PASSAGE_STYLES], ["to", "🧭 leads to", "choice", passagePlaces]],
+  cavemushroom: [["style", "🍄 kind", "choice", CAVE_MUSHROOMS], ["color", "🎨", "color", CAVE_MUSHROOM_COLORS], ["glow", "✨ glowing", "toggle"]],
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
@@ -2012,10 +2047,10 @@ const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, s
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, moss: { style: "haircap", on: "floor", color: "none", lobes: true }, lichen: { style: "crust", on: "back", color: "none" }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
-                         seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
+                         seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true, treasure: "gold" }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
                          bubblemaker: { shape: "round", rate: 4, theme: "A", color: MAKER_COLORS[0] },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] },
-                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" } };   // (ticket 471)
+                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" }, cavemushroom: { style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true } };   // (ticket 471)
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
 // size and shininess (like stars we add or not, and controls over their color
@@ -2114,15 +2149,31 @@ function seaFishSvg(color, seed, bubbles = true) {
     (bubbles ? risingBubbles(0, -14, 3, 150, 2.6, 4, seed) : "") + `</g>`;
 }
 // a treasure chest on the sand: the castle's chest of gold, lid up, coins spilling (or shut)
-function seaChestSvg(open) {
-  const gold = "#e8c33a";
-  return `<ellipse cx="0" cy="3" rx="54" ry="9" fill="#000000" opacity="0.2"/>` +
-    `<rect x="-40" y="-40" width="80" height="40" fill="#7a4f2a" stroke="#4a2e1a" stroke-width="2"/>` +
-    (open ? `<path d="M-40 -40 L-36 -76 L44 -76 L40 -40 Z" fill="#8b5e34" stroke="#4a2e1a" stroke-width="2"/>` +
-      [...Array(12)].map((_, j) => `<ellipse cx="${f1(-32 + 64 * seaR(j, 970))}" cy="${f1(-40 - 6 * seaR(j, 971))}" rx="6" ry="3" fill="${gold}" stroke="#9a7a12" stroke-width="1"/>`).join("") +
-      [...Array(5)].map((_, j) => `<ellipse cx="${f1(-48 - 26 * seaR(j, 972))}" cy="${f1(2 + 6 * seaR(j, 973))}" rx="6" ry="3" fill="${gold}" stroke="#9a7a12" stroke-width="1"/>`).join("")
-      : `<path d="M-42 -40 Q0 -62 42 -40 Z" fill="#8b5e34" stroke="#4a2e1a" stroke-width="2"/><rect x="-5" y="-46" width="10" height="12" fill="#c9a227" stroke="#6b5414" stroke-width="1"/>`) +
-    [-1, 1].map(e => `<rect x="${f1(-3 + e * 26)}" y="-40" width="6" height="40" fill="#c9a227"/>`).join("");
+// (ticket 471, Matthew: "More objects to refine and make placeable -- treasure chest") A treasure chest: planks banded with
+// gold, a lock; open, its lid back and its treasure heaped (🪙 gold, 💎 gems, or 👑 both and a crown), a few coins spilled,
+// sparkling (the fast LFO); shut, locked
+function seaChestSvg(open, treasure = "gold", o = {}) {
+  const gold = "#e8c33a", band = "#c9a227", coin = (x, y, r = 6) => `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${r}" ry="${f1(r / 2)}" fill="${gold}" stroke="#9a7a12" stroke-width="1"/>`;
+  const gem = (x, y, col) => `<path d="M${f1(x - 5)} ${f1(y - 3)} L${f1(x - 2)} ${f1(y - 7)} L${f1(x + 2)} ${f1(y - 7)} L${f1(x + 5)} ${f1(y - 3)} L${f1(x)} ${f1(y + 3)} Z" fill="${col}" stroke="${mix(col, "#000000", 0.35)}" stroke-width="1"/>`;
+  const planks = (y0, h) => [1, 2].map(i => `<line x1="-40" y1="${f1(y0 + h * i / 3)}" x2="40" y2="${f1(y0 + h * i / 3)}" stroke="#5e3d22" stroke-width="1.5" opacity="0.7"/>`).join("");
+  let s = `<ellipse cx="0" cy="3" rx="54" ry="9" fill="#000000" opacity="0.2"/>` +
+    `<rect x="-40" y="-40" width="80" height="40" rx="2" fill="#7a4f2a" stroke="#4a2e1a" stroke-width="2"/>` + planks(-40, 40);
+  if (open) {
+    s += `<path d="M-40 -40 L-36 -76 L44 -76 L40 -40 Z" fill="#8b5e34" stroke="#4a2e1a" stroke-width="2"/><path d="M-34 -44 L-31 -70 L38 -70 L35 -44 Z" fill="#4a2e1a" opacity="0.55"/>` +
+      [-1, 1].map(e => `<path d="M${f1(-3 + e * 26)} -40 L${f1(-1 + e * 27)} -76 L${f1(5 + e * 27)} -76 L${f1(3 + e * 26)} -40 Z" fill="${band}"/>`).join("");
+    // the heap: gold always, and gems or a crown as it says
+    s += `<path d="M-38 -40 Q-20 -58 0 -54 Q22 -60 38 -40 Z" fill="${gold}" stroke="#9a7a12" stroke-width="1.2"/>` +
+      [...Array(12)].map((_, j) => coin(-32 + 64 * seaR(j, 970), -40 - 6 * seaR(j, 971) - 6 * Math.sin(Math.PI * seaR(j, 970)))).join("");
+    if (treasure !== "gold") s += [...Array(treasure === "gems" ? 7 : 4)].map((_, j) => gem(-26 + 52 * seaR(j, 974), -46 - 8 * seaR(j, 975), GEM_COLORS[j % 6])).join("");
+    if (treasure === "crown") s += `<path d="M-6 -56 L-6 -70 L0 -63 L6 -72 L12 -63 L18 -70 L18 -56 Z" fill="${gold}" stroke="#9a7a12" stroke-width="1.4"/>` +
+      [[0, -60, "#e11d48"], [6, -62, "#3b82f6"], [12, -60, "#22c55e"]].map(([x, y, col]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="${col}"/>`).join("");
+    s += [...Array(5)].map((_, j) => coin(-48 - 26 * seaR(j, 972), 2 + 6 * seaR(j, 973))).join("") +
+      [[-14, -58, 6, 0], [16, -54, 5, 0.4], [-28, -46, 4, 0.7]].map(([x, y, r, off]) => gemSparkle(o, x, y, r, off)).join("");
+  } else s += `<path d="M-42 -40 Q0 -62 42 -40 Z" fill="#8b5e34" stroke="#4a2e1a" stroke-width="2"/>` +
+    [-1, 1].map(e => `<path d="M${f1(-3 + e * 26)} -40 Q${f1(-3 + e * 26)} ${f1(-56 + Math.abs(e) * 4)} ${f1(e * 27)} ${f1(-55 + Math.abs(e) * 4)} L${f1(6 + e * 26)} -55 Q${f1(3 + e * 26)} -50 ${f1(3 + e * 26)} -40 Z" fill="${band}"/>`).join("") +
+    `<rect x="-7" y="-46" width="14" height="14" rx="2" fill="${band}" stroke="#6b5414" stroke-width="1"/><circle cx="0" cy="-41" r="2" fill="#3a2a10"/><rect x="-0.8" y="-41" width="1.6" height="5" fill="#3a2a10"/>`;
+  return s + [-1, 1].map(e => `<rect x="${f1(-3 + e * 26)}" y="-40" width="6" height="40" fill="${band}"/>`).join("") +
+    `<rect x="-40" y="-6" width="80" height="4" fill="${band}" opacity="0.9"/>`;
 }
 // an anchor half sunk in the sand, a length of chain still on its ring, broken off
 function anchorSvg(chain) {
@@ -2194,6 +2245,7 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       // (ticket 471) the 🦇 cave things, for the cave room (and anywhere): a gem, a puddle, a little waterfall
                       gem: { label: "💎 gem", size: 1, group: "cave", moving: true }, puddle: { label: "💧 puddle", size: 1, group: "cave", moving: true },
                       cascade: { label: "💦 little waterfall", size: 1, group: "cave", moving: true }, passage: { label: "🕳️ cave passage", size: 1, group: "cave" },
+                      cavemushroom: { label: "🍄 cave mushroom", size: 1, group: "cave", moving: true },
                       // (ticket 284) a 🎚️ lever, and 🕳️ trap doors it opens and shuts
                       lever: { label: "🎚️ lever", size: 1, group: "works" }, trapdoor: { label: "🕳️ trap door", size: 1, group: "works" },
                       // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
@@ -2355,7 +2407,7 @@ function thingSvg(o, t, i) {
                t.kind === "shell" ? at(seaShellSvg(t.shape || "scallop", t.color || SHELL_COLORS[0])) :
                t.kind === "starfish" ? at(starfishSvg(t.color || STAR_COLORS[0], seed)) :
                t.kind === "seafish" ? at(seaFishSvg(t.color || SEAFISH_COLORS[0], seed, t.bubbles ?? true)) :
-               t.kind === "chest" ? at(seaChestSvg(t.open ?? true)) :
+               t.kind === "chest" ? at(seaChestSvg(t.open ?? true, t.treasure || "gold", o)) :
                t.kind === "bubblemaker" ? at(shadow(40) + bubbleMakerSvg(t)) :   // (ticket 290)
                t.kind === "anchor" ? at(anchorSvg(t.chain ?? true)) :
                // (ticket 471) the cave things
@@ -2363,6 +2415,7 @@ function thingSvg(o, t, i) {
                t.kind === "puddle" ? at(puddleThingSvg(t, seed, o, (SCENE.top - t.z) / Math.max(0.05, s))) :
                t.kind === "cascade" ? at(cascadeThingSvg(t, seed, o)) :
                t.kind === "passage" ? at(passageThingSvg(t, seed)) :
+               t.kind === "cavemushroom" ? at(caveMushroomSvg(t, seed, o)) :
                ["kelp", "seagrass", "seafan", "sealettuce"].includes(t.kind) ? at(seaPlantSvg(t.kind, t.color || THING_DEFAULTS[t.kind].color, seed, o)) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
   // (ticket 324: a lever marked, so it glows under the pointer as the trap room's do)

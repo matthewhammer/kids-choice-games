@@ -181,7 +181,7 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // (ticket 358: and what the audit found standing with no box: the cemetery's stones, the cave's stalagmites, the hut's woodpile
 // and the hut center's fire, the trap room's helmet, the greenhouse's watering can, the house's toys, a chair not sat on, the
 // sea floor's wreck and vent)
-const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "stalagmite", "crystal cluster", "cascade",   // (the last three: the cave room's and the little waterfall, ticket 471)
+const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "stalagmite", "crystal cluster", "cascade", "cavemushroom",   // (the last four: the cave room's, the little waterfall, the cave mushroom: ticket 471)
    "woodpile", "helmet", "watering can", "teddy", "truck", "blocks", "chair", "shipwreck", "vent", "palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",

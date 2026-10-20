@@ -50,7 +50,7 @@ const placeSeats = B => { try { return (SEATS[B.kind]?.(stageC(), B) ?? []).filt
 // object and why: dress-up/SEATS.md.
 const SIT_ANY = ["front", "left", "right"];
 const SIT_TOPS = new Map([
-  ...["rock", "boulder", "stone", "stump", "log", "fallen", "toadstool", "mushroom"].map(n => [n, { at: 0.94, span: 0.6, facing: SIT_ANY }]),
+  ...["rock", "boulder", "stone", "stump", "log", "fallen", "toadstool", "mushroom", "cavemushroom"].map(n => [n, { at: 0.94, span: 0.6, facing: SIT_ANY }]),
   ...["barrel", "barrels", "water barrel", "crate", "box", "chest", "toy chest", "flour sack", "hay heap", "hay cart"].map(n => [n, { at: 0.98, span: 0.8, facing: SIT_ANY }]),
   ...["bench", "chair"].map(n => [n, { at: 0.5, span: 0.8, facing: ["front"] }]),
 ]);

@@ -26,7 +26,9 @@ try {
     const place = { inPlaces: PLACES.some(p => p[0] === "caveroom"), group: PLACE_GROUPS.filter(g => g[2].includes("caveroom")).map(g => g[0]), inside: INSIDES.waterfall.includes("caveroom"),
       phrase: PLACE_PHRASE.caveroom, lfo: !!SCENE_LFO_THINGS.caveroom };
     Object.assign(B, { kind: "cave", figX: -150, figY: 25, seat: null, things: [] }); state.body.sit = false; changed(); await w(600);
-    const cave = { portals: portals(), arch: objsNow().includes("archway to the cave room") };
+    const ca = bgShown.node.querySelector('[data-obj="archway to the cave room"] path'), cr = ca && ca.getBoundingClientRect();
+    const cave = { portals: portals(), arch: objsNow().includes("archway to the cave room"), covered: cr ? [...bgShown.node.querySelectorAll("[data-obj]")].filter(o => /stalagmite|chest|crystals/.test(o.dataset.obj))
+      .filter(o => { const b = o.getBoundingClientRect(); return b.left < cr.right && b.right > cr.left && b.top < cr.bottom && b.bottom > cr.top; }).map(o => o.dataset.obj) : ["no archway"] };
     Object.assign(B, { kind: "caveroom", figX: ARRIVE.caveroom[0], figY: ARRIVE.caveroom[1], caveFloor: "stalagmites", caveCeiling: "stalactites" }); changed(); await w(600);
     const room = { portals: portals(), anims: bgShown.node.querySelectorAll("animate, animateTransform").length, arriveClear: !solidAt(ARRIVE.caveroom[0], SCENE.ground + ARRIVE.caveroom[1]) };
     const floors = {};
@@ -46,6 +48,7 @@ try {
   const { place: P, cave: C, room: Rm, floors: F, roofs: Rf, trip } = r;
   ok("the cave room is a place: in the list, in the camping group once, inside the waterfall's square, with its words and its LFO things", P.inPlaces && P.group.length === 1 && P.group[0] === "camping" && P.inside && /cave room/.test(P.phrase || "") && P.lfo, P);
   ok("the cave behind the falls has an archway to the cave room (and still its way out to the falls)", C.arch && C.portals.includes("caveroom") && C.portals.includes("waterfall"), C);
+  ok("nothing in the cave stands in front of that archway (its stalagmites, its chest, its crystals)", !C.covered.length, C.covered);
   ok("the cave room has its way back to the cave, and things moving", Rm.portals.includes("cave") && Rm.anims >= 8, Rm);
   ok("the friend arrives clear of every formation", Rm.arriveClear, Rm);
   for (const [sty, f] of Object.entries(F)) {

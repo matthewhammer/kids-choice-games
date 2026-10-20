@@ -5,6 +5,8 @@
 // drop falling, one without has none; the friend stands in a puddle (in front of its back edge). And the cave passages
 // ("we also want to place cave passageways (dark openings that look like natural archways, holes in the wall, and holes in
 // the floor)"): each kind a doorway to the place it says, no more in the way than a door; through one, and back by ⬅️.
+// And part 4 ("mushrooms ... maybe more styles, for a dark cave?"; "treasure chest"): each cave mushroom kind drawn,
+// glowing, and sat on; a treasure chest open with 🪙 gold, 💎 gems or 👑 a crown, sparkling, and shut with its lock.
 // Exits 1 on a failure.
 //   node cavethings471.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
@@ -41,7 +43,14 @@ try {
     const passSolids = solidsHere().filter(o => /^passage/.test(o.name)).length;
     enterScene(bgShown.node.querySelector('.thing .portal[data-to="forest"]')); await w(5000);
     const went = B.kind; if (!backBtn.hidden) backBtn.click(); await w(5000);
-    return JSON.stringify({ group, els, solids, depth, doors, passSolids, trip: [went, B.kind], places: passagePlaces().length }); })()`));
+    // part 4: the cave mushrooms and the chest's treasure
+    B.things = [...CAVE_MUSHROOMS.map(([st], i) => ({ kind: "cavemushroom", x: -320 + i * 120, z: 300, seed: 500 + i, size: 100, mirror: false, style: st, color: CAVE_MUSHROOM_COLORS[i], glow: true })),
+      ...[["gold", true], ["gems", true], ["crown", true], ["gold", false]].map(([tr, op], i) => ({ kind: "chest", x: -300 + i * 180, z: 385, seed: 600 + i, size: 100, mirror: false, open: op, treasure: tr }))];
+    Object.assign(B, { kind: "caveroom", figX: 330, figY: -60 }); changed(); await w(800);
+    const p4 = [...bgShown.node.querySelectorAll(".thing")].map(el => { const t = B.things[+el.dataset.drag.split(":")[1]], b = el.getBBox();
+      return { kind: t.kind, style: t.style || (t.open ? t.treasure : "shut"), w: Math.round(b.width), anims: el.querySelectorAll("animate").length, gems: el.querySelectorAll('path[d*="Z"]').length, lock: !!el.querySelector('circle[fill="#3a2a10"]') }; });
+    const mushSeats = seatsHere(B).filter(t => /^cavemushroom/.test(t.name)).length;
+    return JSON.stringify({ group, els, solids, depth, doors, passSolids, trip: [went, B.kind], places: passagePlaces().length, p4, mushSeats }); })()`));
   const E = r.els, by = (k, st) => E.find(e => e.kind === k && e.style === st);
   ok("the gem, the puddle and the little waterfall are 🦇 cave things", r.group.every(g => g === "cave"), r.group);
   ok("every gem kind drawn, sparkling", ["cut", "cluster", "geode", "point", "rough", "heart"].every(st => { const e = by("gem", st); return e && e.w > 20 && e.h > 20 && e.anims >= 2; }), E.filter(e => e.kind === "gem"));
@@ -53,6 +62,10 @@ try {
   ok("a passage is no more in the way than a door", r.passSolids === 0, r.passSolids);
   ok("through a passage to the forest, and back to the cave room by ⬅️", r.trip[0] === "forest" && r.trip[1] === "caveroom", r.trip);
   ok("a passage may lead to any place but a castle's or a tree house's rooms", r.places >= 25, r.places);
+  const M = r.p4.filter(e => e.kind === "cavemushroom"), C = r.p4.filter(e => e.kind === "chest");
+  ok("every cave mushroom kind drawn, glowing", ["glowcap", "bells", "cluster", "shelves", "tall", "puffballs"].every(st => { const e = M.find(m => m.style === st); return e && e.w > 20 && e.anims >= 2; }), M);
+  ok("the cave mushrooms can be sat on", r.mushSeats >= 4, r.mushSeats);
+  ok("a chest open with gold, gems or a crown sparkles; shut, it has its lock", ["gold", "gems", "crown"].every(tr => { const e = C.find(c => c.style === tr); return e && e.anims >= 3; }) && C.find(c => c.style === "shut").lock, C);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
