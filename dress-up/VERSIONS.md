@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.372 (2026-10-19)
+
+Everything in 0.0.371, with the band going all the way down.
+
+- **The band, deeper** (ticket 461): it now names the row you are pointing at and the part of it too: "background / the place / kind of place", "background / the place / place choices", "body / the jumps / short jump: how high". The place picker's places are now headed "place choices".
+
 ## 0.0.371 (2026-10-19)
 
 Everything in 0.0.370, with the band naming only what you can see.

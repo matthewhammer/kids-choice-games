@@ -42,10 +42,10 @@ try {
   console.log(`  ${JSON.stringify(r)}`);
   ok("🏞️ Background: the band says background", r.start === "background", r.start);
   ok("the box is 👁️ default background objects now (no what stands here)", r.renamed && !r.oldName, r);
-  ok("over its chips: background / default background objects", r.over === "background / default background objects", r.over);
+  ok("over its chips: background / default background objects (and deeper since ticket 461)", r.over.startsWith("background / default background objects"), r.over);
   ok("scrolled far down, the band is still at the top of the window", r.scrolled > 200 && r.bandShown && Math.abs(r.bandTop) <= 2, r);
   ok("the pointer gone from the panel: background again", r.left === "background", r.left);
-  ok("🧍 Body, over the jumps' sliders: body / the jumps", r.body === "body / the jumps", r.body);
+  ok("🧍 Body, over the jumps' sliders: body / the jumps (and the slider since ticket 461), not the hidden group", r.body.startsWith("body / the jumps") && !/two jumps/.test(r.body), r.body);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

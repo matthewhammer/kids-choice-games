@@ -2285,7 +2285,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                                                                                  onerror: e => e.target.remove() }), label(id)])]);
         places.replaceChildren(...placeBtns.map(([, b]) => b));
         placeBox.hidden = !placeBtns.length;
-        placeCap.textContent = placeBtns.length ? `places: ${PLACE_GROUPS.find(x => x[0] === g)[1]}` : "";
+        placeCap.textContent = placeBtns.length ? `place choices: ${PLACE_GROUPS.find(x => x[0] === g)[1]}` : "";   // (ticket 461: Matthew's name, was "places")
       }
       for (const [v, b] of placeBtns) setPressed(b, v === now);
     });
@@ -2379,19 +2379,26 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
 // slashes as separators to give a tree-path into the panel that we hover over"; "to at least see the start of the breadcrumb
 // trail ('background') in that fixed band") The band over the panel (#crumbs, kept at the top as the page scrolls): the tab's
 // name, then the boxes and groups round what the pointer is over (or what has the keyboard's focus), outermost first, their
-// emoji left out; the tab's name alone when the pointer leaves the panel.
+// emoji left out; the tab's name alone when the pointer leaves the panel. (ticket 461, Matthew: "bread crumbs look good, but
+// they don't go as deep as they could -- for instance, background / the place / kind of place vs background / the place /
+// places ('place choices', let's say)") As deep as it goes: every set of chips with a heading (a group, or a part of a row,
+// as the place picker's kinds and its choices: a heading "X: Y" said as X) and the row itself, by its name; a heading that
+// is hidden, or says only the tab's name, is not said.
 const crumbWords = t => String(t || "").replace(/[\p{Extended_Pictographic}\u200D\uFE0F\u20E3]/gu, "").replace(/\s+/g, " ").trim();
 function crumbsShow(target) {
   const band = document.getElementById("crumbs"), panel = document.getElementById("panel");
   if (!band || !TABS[tab]) return;
-  const inner = [];
+  const inner = [], tabWords = crumbWords(TABS[tab][0]).toLowerCase();
   for (let x = target; x && x !== panel && x.nodeType === 1; x = x.parentElement) {
-    const head = x.matches("section.box") ? x.querySelector(":scope > .box-name") : x.matches(".ctlgroup") ? x.querySelector(":scope > .cap") : null;
+    const set = x.matches(".chipset");
+    const head = x.matches("section.box") ? x.querySelector(":scope > .box-name") : set ? x.querySelector(":scope > .cap")
+               : x.matches(".ctl") ? x.querySelector(":scope > .lbl .name") : null;
     // (a header hidden, as one that says only its box's words again is (ticket 392), is not said either)
-    const t = head && head.getClientRects().length ? crumbWords(head.textContent) : "";
-    if (t && inner[0] !== t) inner.unshift(t);
+    let t = head && head.getClientRects().length ? crumbWords(head.textContent) : "";
+    if (set && t.includes(":")) t = t.split(":")[0].trim();
+    if (t && inner[0] !== t && t.toLowerCase() !== tabWords) inner.unshift(t);
   }
-  const text = [crumbWords(TABS[tab][0]).toLowerCase(), ...inner].join(" / ");
+  const text = [tabWords, ...inner].join(" / ");
   if (band.textContent !== text) band.textContent = text;
 }
 { const panel = document.getElementById("panel");
