@@ -55,7 +55,7 @@ try {
   ok("no tab's panel wider than itself", r.tabs.every(t => t.over <= 2), r.tabs.filter(t => t.over > 2));
   ok("a label's explanation a hint: knees bend, its parenthesis on pointing", r.knees && r.knees[0] === "🦵 knees bend" && /crouches/.test(r.knees[1]), r.knees);
   ok("the witch's boxes hidden with no costume, shown with the witch", r.witchHidden && r.witchShown, r);
-  ok("🏞️ Background's side panel in boxes by thing: the place, the lake's own, the friend here, what stands, things", ["🗺️ the place", "🧍 the friend here", "👁️ what stands here", "🪨 things to put here"].every(n => r.bg.includes(n)) && r.bg.some(n => /lake/.test(n)), r.bg);
+  ok("🏞️ Background's side panel in boxes by thing: the place, the lake's own, the friend here, the default background objects (ticket 456), things", ["🗺️ the place", "🧍 the friend here", "👁️ default background objects", "🪨 things to put here"].every(n => r.bg.includes(n)) && r.bg.some(n => /lake/.test(n)), r.bg);
   ok("⚙️ Advanced in boxes (5 or more), its long accounts folded under ℹ️", r.adv.boxes >= 5 && r.adv.folds >= 2, r.adv);
   ok("the bubble themes each drawn by its name (3), theme A's rows not repeating 🅰️", r.themes === 3 && r.themeNames.length && r.themeNames.every(n => !/🅰/.test(n)), r);
   ok("😀 Face a designer: full screen, the game beside its boxes (a grid of 2 or more), Escape back with the game home", r.fs.big && r.fs.gameIn && r.fs.cols >= 2 && r.fs.back, r.fs);

@@ -2374,6 +2374,28 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   return box;
 }
 
+// (ticket 456, Matthew, from M's request: "when we have activated a RHS menu panel (e.g., background), and we scroll the RHS
+// into the sub-panels -- retain a small band above them saying 'background / sub-panel-1 / ... / sub-panel-N' --- we use
+// slashes as separators to give a tree-path into the panel that we hover over"; "to at least see the start of the breadcrumb
+// trail ('background') in that fixed band") The band over the panel (#crumbs, kept at the top as the page scrolls): the tab's
+// name, then the boxes and groups round what the pointer is over (or what has the keyboard's focus), outermost first, their
+// emoji left out; the tab's name alone when the pointer leaves the panel.
+const crumbWords = t => String(t || "").replace(/[\p{Extended_Pictographic}\u200D\uFE0F\u20E3]/gu, "").replace(/\s+/g, " ").trim();
+function crumbsShow(target) {
+  const band = document.getElementById("crumbs"), panel = document.getElementById("panel");
+  if (!band || !TABS[tab]) return;
+  const inner = [];
+  for (let x = target; x && x !== panel && x.nodeType === 1; x = x.parentElement) {
+    const head = x.matches("section.box") ? x.querySelector(":scope > .box-name") : x.matches(".ctlgroup") ? x.querySelector(":scope > .cap") : null;
+    const t = head && crumbWords(head.textContent);
+    if (t && inner[0] !== t) inner.unshift(t);
+  }
+  const text = [crumbWords(TABS[tab][0]).toLowerCase(), ...inner].join(" / ");
+  if (band.textContent !== text) band.textContent = text;
+}
+{ const panel = document.getElementById("panel");
+  if (panel) { panel.addEventListener("pointerover", e => crumbsShow(e.target)); panel.addEventListener("focusin", e => crumbsShow(e.target));
+               panel.addEventListener("pointerleave", () => crumbsShow(null)); } }
 function showTab() {
   syncs = []; madeSyncs = []; mixLights = null;
   delete document.body.dataset.lit;   // (ticket 377: no part left lit by a box no longer there)
@@ -2392,5 +2414,6 @@ function showTab() {
   if (!["music", "world", "background"].includes(part)) tabDesigner(panel, TABS[tab][0]);
   else if (document.body.classList.contains("tab-big")) setTabBig(false);
   placePic();   // (ticket 231: the world designer's view built again, or gone with its tab)
+  crumbsShow(null);   // (ticket 456: the band, the tab's name)
   changed();
 }

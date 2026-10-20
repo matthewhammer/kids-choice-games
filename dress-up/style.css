@@ -253,7 +253,7 @@
   body.bg-big .bg-boxes { grid-column: 1; grid-row: 1; }
   body.bg-big .bg-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
   body.bg-big .bg-boxes > :not([hidden]) { margin: 0; border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--mu-main); }
-  body.bg-big .bg-boxes > .box-wide { grid-column: 1 / -1; }   /* (ticket 375: the place, what stands here, the things and the castles across) */
+  body.bg-big .bg-boxes > .box-wide { grid-column: 1 / -1; }   /* (ticket 375: the place, the default background objects, the things and the castles across) */
   body.bg-big .bg-viewcol { display: block; position: sticky; top: 56px; grid-column: 3; grid-row: 1; }
   body.bg-big .bg-view { display: block; }
   body.bg-big .place-thumb { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; margin-bottom: 4px; }
@@ -826,3 +826,10 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28); }
 .person-pick .person-pick-chips { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
 .person-pick .person-pick-foot { margin-top: auto; display: flex; justify-content: center; padding-top: 6px; border-top: 1px solid var(--line); }
+/* (ticket 456) the band over the panel, kept at the top as the page scrolls: the tab's name / the box / the group the pointer
+   is over; not in a designer's full screen, which has its own head */
+.crumbs { position: sticky; top: 0; z-index: 6; margin: 0 0 6px; padding: 4px 10px; border-radius: 10px; box-sizing: border-box;
+          background: var(--panel); border: 1px solid var(--line); color: var(--muted); font-size: 0.85em; font-weight: 600;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
+.crumbs:empty { display: none; }
+body.designer-big .crumbs { display: none; }

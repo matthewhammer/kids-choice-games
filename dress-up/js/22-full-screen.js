@@ -257,10 +257,10 @@ function designerHeads(panel, tabName) {
 }
 // (ticket 375) The Background tab's rows in boxes, a box for each thing in the picture, the same in the side panel and the full screen
 // (^du_report(5)'s step 2; till now its full screen made each row a box): 🗺️ the place, the place's own (named by the place, as it
-// changes), 🧍 the friend here, 👁️ what stands here, 🪨 things to put here, 🎵 its music's motion, 🏰 the castles. By the row's key.
+// changes), 🧍 the friend here, 👁️ default background objects, 🪨 things to put here, 🎵 its music's motion, 🏰 the castles. By the row's key.
 const BG_BOX = [["place", "🗺️ the place", k => k === "kind" || k === "instEdit", true],
                 ["friend", "🧍 the friend here", k => /^(figSize|figPos|seat|north_|water(See|Wake|Tread)|blow|swim|tread)/.test(k)],
-                ["stands", "👁️ what stands here", k => k === "objectsOff", true],
+                ["stands", "👁️ default background objects", k => k === "objectsOff", true],   // (ticket 456, Matthew: "let's call this -- \"default background objects\" instead"; was 👁️ what stands here)
                 ["things", "🪨 things to put here", k => k === "things", true],
                 ["music", "🎵 the music moves it", k => /^lfo/.test(k)],
                 ["castles", "🏰 the castles", (k, row) => /^castle/.test(k) || (row.classList.contains("ctlgroup") && /castle|🏰|🚪|room/i.test((row.querySelector(":scope > .cap") || {}).textContent || "")), true]];

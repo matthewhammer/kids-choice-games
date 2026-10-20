@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.370 (2026-10-19)
+
+Everything in 0.0.369, with a band that says where you are in the controls.
+
+- **Where you are in the controls** (ticket 456, M's idea): a band stays at the top of the controls however far you scroll. It always names the tab you are in ("background"), and as you point at the boxes in it, the box too ("background / default background objects").
+- **Default background objects** (ticket 456): 🏞️ Background's 👁️ what stands here box is now called 👁️ default background objects.
+
 ## 0.0.369 (2026-10-19)
 
 Everything in 0.0.368, with no more heads cut off lying down.
