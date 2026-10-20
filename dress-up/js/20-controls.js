@@ -526,7 +526,8 @@ const TABS = [
       ["range", "skyYear", "📅 the year", 2000, 2050, 2020, 2030],
       ["range", "skyMonth", "📅 the month (1 = January)", 1, 12, 1, 12],
       ["range", "skyDay", "📅 the day of the month", 1, 31, 1, 31],
-      ["range", "skyHour", "🕰️ the hour (the sun's own time there: 12 is noon)", 0, 23, 0, 23]]],
+      ["range", "skyHour", "🕰️ the hour (the sun's own time there: 12 is noon)", 0, 23, 0, 23],
+      ["note", "skySays", () => skySays(state.background)]]],
     // the cave behind the falls: gems on its walls, sparkling
     ["range", "caveGems", "💎 gems on the walls", 0, 40, 6, 30],
     ["choice", "gemShape", "✨ sparkles: shape", STAR_SHAPES],
@@ -1101,7 +1102,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["caveGems", "gemShape", "gemSize", "gemBright", "gemTwinkle"].map(key => ["background." + key, b => b.kind === "cave"])),
   ...Object.fromEntries(["caveFloor", "caveCeiling"].map(key => ["background." + key, b => b.kind === "caveroom"])),   // (ticket 471)
   // (ticket 490) 🌍 where and when: where this place's time of day is by the clock; its own latitude and longitude for 📍
-  ...Object.fromEntries(["skyWhen", "skyWhere", "skyYear", "skyMonth", "skyDay", "skyHour"].map(key => ["background." + key, b => clockHere(b)])),
+  ...Object.fromEntries(["skyWhen", "skyWhere", "skyYear", "skyMonth", "skyDay", "skyHour", "skySays"].map(key => ["background." + key, b => clockHere(b)])),
   ...Object.fromEntries(["skyLat", "skyLon"].map(key => ["background." + key, b => clockHere(b) && b.skyWhere === "custom"])),
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
   ...Object.fromEntries(["crossPaths", "crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),

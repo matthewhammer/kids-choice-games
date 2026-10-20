@@ -244,9 +244,21 @@ function skyNow(o) {
   const lm = Lm + rad * 6.289 * Math.sin(Mm), bm = rad * 5.128 * Math.sin(Fm), dist = 385001 - 20905 * Math.cos(Mm), moon = { ra: ra(lm, bm), dec: dec(lm, bm), dist };
   const sd = 149598000, ph = Math.acos(Math.sin(sun.dec) * Math.sin(moon.dec) + Math.cos(sun.dec) * Math.cos(moon.dec) * Math.cos(sun.ra - moon.ra));
   const inc = Math.atan2(sd * Math.sin(ph), dist - sd * Math.cos(ph)), ang = Math.atan2(Math.cos(sun.dec) * Math.sin(sun.ra - moon.ra), Math.sin(sun.dec) * Math.cos(moon.dec) - Math.cos(sun.dec) * Math.sin(moon.dec) * Math.cos(sun.ra - moon.ra));
-  const now = { lat, lon, hour, sun: where(sun.ra, sun.dec), moon: { ...where(moon.ra, moon.dec), frac: (1 + Math.cos(inc)) / 2, phase: 0.5 + 0.5 * inc * (ang < 0 ? -1 : 1) / Math.PI } };
+  const now = { lat, lon, hour, sunDec: sun.dec, sun: where(sun.ra, sun.dec), moon: { ...where(moon.ra, moon.dec), frac: (1 + Math.cos(inc)) / 2, phase: 0.5 + 0.5 * inc * (ang < 0 ? -1 : 1) / Math.PI } };
   skyMemo = { key, now };
   return now;
+}
+// (ticket 490) the sky in words, for 🌍 where and when: the sun's height and direction and the day's length (from sunrise to
+// sunset, the sun's top at the horizon: -0.83°), the moon's phase, how much of it is lit, its height and direction
+function skySays(o) {
+  const n = skyNow(o), deg = r => Math.round(r * 180 / Math.PI), rad = Math.PI / 180;
+  const dir = az => ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"][Math.round(((az * 180 / Math.PI + 180) % 360 + 360) % 360 / 45) % 8];
+  const phi = n.lat * rad, c = (Math.sin(-0.833 * rad) - Math.sin(phi) * Math.sin(n.sunDec)) / (Math.cos(phi) * Math.cos(n.sunDec));
+  const day = c >= 1 ? "the sun does not rise today" : c <= -1 ? "the sun does not set today" : (h => `the day is ${Math.floor(h)} h ${Math.round((h % 1) * 60)} min long`)(2 * Math.acos(c) / rad / 15);
+  const sa = deg(n.sun.alt), ma = deg(n.moon.alt), lit = Math.round(n.moon.frac * 100), p = n.moon.phase;
+  const phase = lit < 3 ? "new" : lit > 97 ? "full" : (p < 0.5 ? "waxing" : "waning") + (lit < 42 ? " crescent" : lit > 58 ? " gibbous" : ", half");
+  return `☀️ the sun: ${sa > 0 ? `${sa}° up, in the ${dir(n.sun.az)}` : `down, ${-sa}° below the horizon`}; ${day}. ` +
+    `${["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"][Math.round(p * 8) % 8]} the moon: ${phase}, ${lit}% lit, ${ma > 0 ? `${ma}° up, in the ${dir(n.moon.az)}` : "down"}.`;
 }
 // the time of day the sun makes (its height: above 6° day, below -6° night, between them dawn or dusk); a place with no
 // sunrise of its own shows its sunset for dawn as well

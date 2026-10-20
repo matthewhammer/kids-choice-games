@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.384 (2026-10-20)
+
+Everything in 0.0.383, plus the sky in words.
+
+- **🌍 where and when says what the sky is doing:** under the date and hour, a line tells you where the sun is (how high, which way) and how long the day is there, from sunrise to sunset, and the moon's phase, how much of it is lit and where it is. Far north in winter it says the sun does not rise that day.
+
 ## 0.0.383 (2026-10-20)
 
 Everything in 0.0.382, with 🎮 Controls tidied into boxes.
