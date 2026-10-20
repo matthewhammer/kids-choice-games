@@ -1,7 +1,7 @@
 // (ticket 434) The Robin Hood costume: a forester's cap with a feather, a tunic with a dagged cape and hem, a strap across the
 // chest, a belt and pouch, hose and boots, a bow in the hand and a quiver of arrows (its fletching over the shoulder from the
 // front, the whole quiver on the back from behind); facing us, in profile both ways and from behind; the bow and quiver
-// taken off; no pouch from behind; every pose drawn; the tab's rows. Exits 1 on a failure.
+// taken off; no pouch from behind; in profile the quiver on the back (ticket 445); every pose drawn; the tab's rows. Exits 1 on a failure.
 //   node robin434.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -24,7 +24,7 @@ try {
     const has = sel => !!document.querySelector("#figure " + sel);
     for (const facing of ["front", "left", "right", "back"]) { state.body.facing = facing; changed(); await w(70); const m = fig();
       out.v[facing] = { feather: m.includes('fill="' + C.robinFeather + '"'), bow: m.includes('stroke="#e8e0cc"'), fletch: m.includes("l-5 -18 l5 6 l5 -6"), quiverCase: has('rect[rx="8"][fill="#7a4f2a"]'),
-        pouch: has('rect[fill="#8a5a2b"]'), dagged: (m.match(/ L[\\d.-]+ [\\d.-]+ L[\\d.-]+ [\\d.-]+/g) || []).length > 8 }; }
+        pouch: has('rect[fill="#8a5a2b"]'), quiverSide: (q => q ? Math.sign(q.getBoundingClientRect().left + q.getBoundingClientRect().width / 2 - (b => b.left + b.width / 2)(document.querySelector("#figure").getBoundingClientRect())) : 0)(document.querySelector('#figure rect[rx="8"][fill="#7a4f2a"]')), dagged: (m.match(/ L[\\d.-]+ [\\d.-]+ L[\\d.-]+ [\\d.-]+/g) || []).length > 8 }; }
     state.body.facing = "front"; set("costume", "bow", false); set("costume", "quiver", false); changed(); await w(60);
     out.off = { bow: fig().includes('stroke="#e8e0cc"'), fletch: fig().includes("l-5 -18 l5 6 l5 -6") }; set("costume", "bow", true); set("costume", "quiver", true);
     for (const pose of ["stand", "sit", "meditate", "dance", "hug", "lie"]) { set("body", "pose", pose); changed(); await w(60); out.poses[pose] = fig().length > 1000; }
@@ -37,6 +37,8 @@ try {
   const V = r.v;
   ok("facing us and in profile: the feather, the bow, the fletching over the shoulder, the pouch, the dagged edges", ["front", "left", "right"].every(f => V[f].feather && V[f].bow && V[f].fletch && V[f].pouch && V[f].dagged), V);
   ok("from behind: the whole quiver on the back, no pouch", V.back.quiverCase && V.back.fletch && !V.back.pouch, V.back);
+  // (ticket 445, Matthew: "L and R facing poses are mis-placing the quiver") in profile, the quiver on the back: behind them
+  ok("in profile, the quiver on his back: facing left on our right, facing right on our left; facing us, only the fletching", V.left.quiverCase && V.left.quiverSide > 0 && V.right.quiverCase && V.right.quiverSide < 0 && !V.front.quiverCase, V);
   ok("the bow and the quiver taken off", !r.off.bow && !r.off.fletch, r.off);
   ok("every pose drawn", Object.values(r.poses).every(Boolean), r.poses);
   ok("the tab shows Robin Hood's rows, not the staff's or the wizard's", r.rows === "1111100", r.rows);

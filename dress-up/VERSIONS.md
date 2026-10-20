@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.356 (2026-10-19)
+
+Everything in 0.0.355, with Robin Hood's quiver on his back from the side.
+
+- **Robin Hood's quiver from the side** (ticket 445): facing left or right, his quiver is on his back, behind him, with the arrows sticking out of its top (it was drawn where it shows facing you, on the front shoulder).
+
 ## 0.0.355 (2026-10-19)
 
 Everything in 0.0.354, with Robin Hood.

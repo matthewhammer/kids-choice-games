@@ -794,12 +794,15 @@ function bowSvg([hx, hy], side) {
     `<line x1="${f1(t[0])}" y1="${f1(t[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#e8e0cc" stroke-width="1.5"/>`;
 }
 // A quiver of arrows, in body units, slung on the back from the left shoulder down to the right hip: the case, a band, and the
-// arrows' fletching out of its top; from the front only that fletching shows, over the shoulder
-function quiverSvg(w, L, away) {
-  const top = [-(w - 6), -34], bot = [w - 16, L * 0.62], ang = Math.atan2(bot[1] - top[1], bot[0] - top[0]) * 180 / Math.PI - 90;
+// arrows' fletching out of its top; from the front only that fletching shows, over the shoulder. (ticket 445, Matthew: "L and
+// R facing poses are mis-placing the quiver") In profile (dir, the way they face), on the back: the case along the back, just
+// behind it, leaning a little back at its top, the fletching above it.
+function quiverSvg(w, L, away, dir = 0) {
+  const top = dir ? [-dir * (w + 16), -48] : [-(w - 6), -34], bot = dir ? [-dir * (w + 6), L * 0.62] : [w - 16, L * 0.62];
+  const ang = Math.atan2(bot[1] - top[1], bot[0] - top[0]) * 180 / Math.PI - 90;
   const fletch = [-10, 0, 10].map((dx, i) => `<path d="M${f1(top[0] + dx)} ${f1(top[1] - 4)} l-5 -18 l5 6 l5 -6 Z" fill="${["#d2382b", "#f4f1ea", "#e3b72f"][i]}" stroke="#5a3d22" stroke-width="1"/>` +
     `<line x1="${f1(top[0] + dx)}" y1="${f1(top[1] - 4)}" x2="${f1(top[0] + dx)}" y2="${f1(top[1] + 10)}" stroke="#7a4f2a" stroke-width="2"/>`).join("");
-  if (!away) return fletch;
+  if (!away && !dir) return fletch;
   const len = Math.hypot(bot[0] - top[0], bot[1] - top[1]);
   return fletch + `<g transform="translate(${f1(top[0])} ${f1(top[1])}) rotate(${f1(ang)})"><rect x="-14" y="0" width="28" height="${f1(len)}" rx="8" fill="#7a4f2a" stroke="#4a2f16" stroke-width="2.5"/>` +
     `<rect x="-14" y="${f1(len * 0.2)}" width="28" height="6" fill="#4a2f16"/></g>`;

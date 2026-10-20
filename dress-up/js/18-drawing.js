@@ -788,7 +788,7 @@ function drawNow() {
     svg += `<path d="M${f1(-sd * (w - 8))} 6 L${f1(sd * (w - 4))} ${f1(L - 18)}" stroke="#6b4226" stroke-width="9" stroke-linecap="round"/>` +
            `<rect x="${f1(-(w + 3))}" y="${f1(L - 16)}" width="${f1(2 * w + 6)}" height="11" fill="#6b4226" stroke="#4a2f16" stroke-width="2"/>` +
            (away ? "" : `<rect x="${f1(dir ? dir * (w - 18) - 9 : -w * 0.5)}" y="${f1(L - 8)}" width="18" height="22" rx="4" fill="#8a5a2b" stroke="#4a2f16" stroke-width="2"/>`);
-    if (WC.quiver !== false) svg += quiverSvg(w, L, away);
+    if (WC.quiver !== false) svg += quiverSvg(w, L, away, dir);
   }
   // (ticket 433) a monk's or a dryad's rope belt (the wizard's cord, in rope), and the hood down: a cowl folded on the shoulders
   if (monk && !undies) { const gx = dir ? dir * (w - 4) : -10, cy = L - 14, rope = WC.monkWho === "dryad" ? "#8a6a3a" : "#c8a46a";
