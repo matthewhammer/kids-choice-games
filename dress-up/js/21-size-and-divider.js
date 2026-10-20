@@ -49,6 +49,18 @@ function fitPic() {
 // height (between 40% and 70% of the window, and leaving the controls
 // 320 pixels); the arrow keys move it too.
 const appEl = document.querySelector(".app"), divider = document.getElementById("divider");
+// (ticket 491, Matthew: "fix for breadcrumbs in single column mode (on my desktop at half screen width)") In one column
+// (760 px and less) the picture's stage sticks at the top of the window and the panel scrolls under it, so the band of
+// breadcrumbs (#crumbs), sticky too, sticks just under the stage instead of across the picture: --stage-h, the stage's
+// height, kept by a ResizeObserver (read only when the stage changes size, as ticket 133 asks).
+const stageEl = document.querySelector(".stage");
+if (stageEl && typeof ResizeObserver === "function") {
+  let stageH = -1;
+  new ResizeObserver(() => {
+    const h = Math.ceil(stageEl.offsetHeight);
+    if (h !== stageH) { stageH = h; appEl.style.setProperty("--stage-h", h + "px"); }
+  }).observe(stageEl);
+}
 const SPLIT_KEY = "dress-up-split";
 const splitBounds = () => [260, Math.max(260, appEl.clientWidth - 18 - 320)];
 function setSplit(px, keep = false) {

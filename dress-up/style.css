@@ -839,3 +839,6 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
 .crumbs:empty { display: none; }
 body.designer-big .crumbs { display: none; }
+/* (ticket 491) in one column, under the picture's stage, which sticks at the top (its height, --stage-h, kept by
+   21-size-and-divider.js), not across the picture */
+@media (max-width: 760px) { .crumbs { top: var(--stage-h, 0px); } }

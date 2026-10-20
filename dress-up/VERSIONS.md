@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **Fixed:** in one column (a phone, or a window about half a screen wide), the band over the controls that names where the pointer is (the breadcrumbs) slid across the top of the picture as the controls scrolled. It now stays just under the picture and its buttons.
+
 ## 0.0.375 (2026-10-20)
 
 Everything in 0.0.374, with two things moved up where you can find them.
