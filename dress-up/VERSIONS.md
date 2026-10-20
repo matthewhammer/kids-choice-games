@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.382 (2026-10-20)
+
+Everything in 0.0.381, with 🗺️ World design tidied into boxes beside the picture.
+
+- **🗺️ World design, beside the picture (not full screen):** each part is a box with its name at the top ("🌍 worlds", "🎨 places to put in a square", the world's grid, "📐 the world's size", "📍" the square you are in, "🪨 things here", "🚪 off the grid"), and on a wide screen the boxes sit side by side, as they do in full screen, instead of one long column.
+
 ## 0.0.381 (2026-10-20)
 
 Everything in 0.0.380, plus the sun and the moon as they really are, where and when you say.

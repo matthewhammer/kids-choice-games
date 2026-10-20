@@ -1789,7 +1789,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // two lists (Matthew: a lot of them overwhelm), those about the square
     // the friend is in (its own, or a way into it: a warning's key or to),
     // then those about the other squares.
-    const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), gridWrap = el("div", { class: "world-grid-wrap" }, [grid]), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away (it waits below, unreachable, to be put back)"), unreach = el("div", { class: "world-unreach" });
+    const palette = el("div", { class: "world-palette row", "data-box-name": "🎨 places to put in a square (drag one onto the grid)" }),   // (ticket 488: each part a box, named once)
+       grid = el("div", { class: "world-grid" }), gridWrap = el("div", { class: "world-grid-wrap" }, [grid]), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away (it waits below, unreachable, to be put back)"), unreach = el("div", { class: "world-unreach" });
     // (ticket 320) the size buttons at the right and bottom edges, or, with ↖️ on (not the default), at the left and top
     const sizeBtns = [["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { "data-size": t, onclick: () => worldResize(dc, dr, worldNearEdge) }, t));
     const sizeWords = () => { for (const b of sizeBtns) { const t = b.dataset.size, w = worldNearEdge ? t + (/column/.test(t) ? " at the left" : " at the top") : t; if (b.textContent !== w) b.textContent = w;
@@ -1801,7 +1802,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { instanceUnapply(state.world); worldsInit(); const { id, name } = state.world;   // (ticket 406: this world again, still itself; the other worlds' links into it go)
           for (const w of Object.values(state.worldsAway)) for (const c of Object.values(w.cells)) for (const [d, L] of Object.entries(c.links || {})) if (L.world === id) delete c.links[d];
           state.world = Object.assign(clone(DEFAULTS.world), { id, name }); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
-    const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
+    const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint", "data-box-name": "🚪 off the grid: the places inside others" });
     // (ticket 195, M) every neighbour joined that can be
     const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself), and take away every way that leads off the map's edge",
       // (ticket 232: and every way off the map's edge taken away, saying how many)
@@ -2001,7 +2002,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { class: "eye", onclick: () => worldViewShow(worldViewHidden) }, "👁️"), el("span", { class: "hint" }, "📺 in-game view")]), el("div", { class: "world-view-pic" })]);
     worldViewMark(view);
     const layout = el("div", { class: "world-layout" }, [
-      el("div", { class: "world-rest" }, [view, worldsBox, notHere, warnings, palette, el("div", { class: "world-sizes" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
+      el("div", { class: "world-rest" }, [view, worldsBox, notHere, warnings, palette, el("div", { class: "world-sizes", "data-box-name": "📐 the world's size" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
       split, gridcol]);
     designerSplit(layout, split, "dress-up-world-split");
     box.append(el("div", { class: "hint world-intro" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."), layout);
