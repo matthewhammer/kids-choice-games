@@ -1810,9 +1810,9 @@ function horseFace(H, i, halter, still) {
   const blink = (3.6 + 0.9 * i).toFixed(1), ear = (3.1 + 0.8 * ((i * 3) % 4)).toFixed(1), chew = (0.55 + 0.08 * i).toFixed(2), A = x => still ? "" : x;
   const earAt = sd => `<g>${poly([[sd * 9, -155], [sd * 21, -184], [sd * 21, -152]], coat, ln, 1.5)}${poly([[sd * 12, -156], [sd * 19.5, -178], [sd * 19, -155]], mix(coat, "#e8a0a0", 0.35), mix(coat, "#e8a0a0", 0.35), 0.5)}` +
     A(`<animateTransform attributeName="transform" type="rotate" values="0 ${sd * 15} -155;0 ${sd * 15} -155;${sd * 24} ${sd * 15} -155;0 ${sd * 15} -155" keyTimes="0;0.82;0.88;1" dur="${ear}s" begin="-${(i * 1.3 + (sd > 0 ? 0.9 : 0)).toFixed(1)}s" repeatCount="indefinite"/>`) + `</g>`;
-  const mark = H.mark === "star" ? `<path d="M0 -148 L4.5 -140 L0 -132 L-4.5 -140 Z" fill="${white}"/>`
-    : H.mark === "stripe" ? `<path d="M-2.5 -148 Q0 -150 2.5 -148 L3 -76 Q0 -73 -3 -76 Z" fill="${white}"/>`
-    : H.mark === "blaze" ? `<path d="M-8 -152 Q0 -157 8 -152 L5 -100 Q4 -86 9 -70 L-9 -70 Q-4 -86 -5 -100 Z" fill="${white}"/>` : "";
+  const mark = H.mark === "star" ? `<path d="M0 -148 L4.5 -140 L0 -132 L-4.5 -140 Z" fill="${H.markColor || white}"/>`
+    : H.mark === "stripe" ? `<path d="M-2.5 -148 Q0 -150 2.5 -148 L3 -76 Q0 -73 -3 -76 Z" fill="${H.markColor || white}"/>`
+    : H.mark === "blaze" ? `<path d="M-8 -152 Q0 -157 8 -152 L5 -100 Q4 -86 9 -70 L-9 -70 Q-4 -86 -5 -100 Z" fill="${H.markColor || white}"/>` : "";
   // (eyes at the sides of the head, standing out a little past it, as a horse's do)
   const eye = sd => `<ellipse cx="${sd * 22}" cy="-128" rx="4.8" ry="6.2" fill="#1f1410" stroke="${ln}" stroke-width="0.8">` + A(`<animate attributeName="ry" values="6.2;6.2;0.8;6.2" keyTimes="0;0.93;0.965;1" dur="${blink}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`) + `</ellipse>` +
     `<circle cx="${sd * 22 + 1.6}" cy="-130.5" r="1.5" fill="#ffffff"/>` +

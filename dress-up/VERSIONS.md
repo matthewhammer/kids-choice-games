@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.387 (2026-10-20)
+
+Everything in 0.0.386, plus more colours for the horse, for M.
+
+- **🐴 More colours for the horse** (in 🧍 Body's 🐴 the horse, one colour chooser each): "🧲 its horseshoes" (none, or steel, silver, gold, red, blue, pink or green, or any colour), "⭐ the colour of the mark on its face" (the star, stripe or blaze, seen from the side and from the front), and, while you ride, "🏇 its saddle" and "🟦 its saddle blanket".
+
 ## 0.0.386 (2026-10-20)
 
 Everything in 0.0.385, with today's new things fixed where a careful look found them wrong.

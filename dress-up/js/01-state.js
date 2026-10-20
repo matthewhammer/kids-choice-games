@@ -425,6 +425,7 @@ const DEFAULTS = {
            ears: "free", earSize: 100 },   // (ticket 125, M's: ears, their shape and size)
   hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100, beard: "none", beardShade: "auto", moustache: true, beardLength: 100, braidWidth: 100 },
   body:  { horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false, horseSize: 100,   // (ticket 492: the horse, in 🧍 Body)
+           horseShoes: "off", horseMarkColor: "#f7f4ee", horseSaddle: "#6b3f1f", horseBlanket: "auto",   // (ticket 495, for M: more colours)
            blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
            lieHead: "left", lieHow: "back", stairsWay: "up",   // (ticket 308: up or down the stairs)
            hand: "right",   // (ticket 316: the dominant hand, the one that pulls a lever: right, left, or both, by a coin flip)   // (ticket 299: lying down, the way the head points; on the back, face up, or on the side, facing us)
@@ -1098,7 +1099,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.386", released: "2026-10-20" };
+const VERSION = { number: "0.0.387", released: "2026-10-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

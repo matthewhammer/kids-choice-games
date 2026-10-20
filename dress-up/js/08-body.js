@@ -868,7 +868,7 @@ function scepterSvg([hx, hy], jewel) {
 // (ticket 457) the horse at 100 (body.horseSize): as big as the stable's horses at the same depth, face to face (their
 // faces 2.1 times the friend's horse's as first drawn, measured in the stable at the stalls' depth)
 const HORSE_SCALE = 2.1;
-function horseLeg(top, len, swing, flex, fore, w, coat, sock, g, hoofOut = null) {
+function horseLeg(top, len, swing, flex, fore, w, coat, sock, g, hoofOut = null, shoe = null) {
   // (a leg from its top down: an upper bone swinging by `swing` degrees (forward, the way it faces), the lower bending at
   // the knee (fore: the hoof folding back) or the hock by `flex`, a hoof; its outline round the bones, tapering)
   // (a hind leg at rest: its gaskin slanting back to the hock, its cannon straight down; bending, the hock goes further
@@ -886,7 +886,10 @@ function horseLeg(top, len, swing, flex, fore, w, coat, sock, g, hoofOut = null)
   if (hoofOut) hoofOut.push([F[0] + dx * hl * 0.5, F[1]]);   // (ticket 492: where the hoof is, for its collision box)
   return `<polygon points="${[u1[0], u1[1], u2[1], u2[2], u1[2], u1[3]].map(pt).join(" ")}" fill="${coat}" stroke="${mix(coat, "#000000", 0.42)}" stroke-width="2.5" stroke-linejoin="round"/>` +
     (sock ? `<polygon points="${out(M, F, w * 0.5, w * 0.44).map(pt).join(" ")}" fill="#f7f4ee"/>` : "") +
-    `<polygon points="${hoof.map(pt).join(" ")}" fill="#3b2f2a" stroke="#1f1612" stroke-width="2" stroke-linejoin="round"/>`;
+    `<polygon points="${hoof.map(pt).join(" ")}" fill="#3b2f2a" stroke="#1f1612" stroke-width="2" stroke-linejoin="round"/>` +
+    // (ticket 495, for M) its shoe: along the hoof's sole, in its colour
+    (shoe ? (([a, b]) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="${shoe}" stroke-width="4.5" stroke-linecap="round"/>`)(
+      [0.12, 0.88].map(u => [hoof[3][0] + (hoof[2][0] - hoof[3][0]) * u, hoof[3][1] + (hoof[2][1] - hoof[3][1]) * u])) : "");
 }
 function horseSvg(view, gait, u, H, g, ride) {
   const coat = H.coat, mane = H.mane, ln = mix(coat, "#000000", 0.42), far = mix(coat, "#000000", 0.25), maneD = mix(mane, "#000000", 0.3), white = "#f7f4ee";
@@ -897,22 +900,25 @@ function horseSvg(view, gait, u, H, g, ride) {
   const step = off => { if (!walk && !run) return [0, 0]; const ph = T * (p + off), A = run ? 30 : 16, Fx = run ? 62 : 40;
     return [A * Math.sin(ph), Fx * Math.max(0, Math.cos(ph)) ** 1.5]; };
   const sock = !!H.socks, OFF = run ? { lh: 0, rh: 0.08, lf: 0.45, rf: 0.55 } : { lh: 0, lf: 0.25, rh: 0.5, rf: 0.75 };
-  const tailSw = (run ? 10 : 6) * Math.sin(T * p), cloth = mix(tack, "#ffffff", 0.2), leather = "#6b3f1f", leatherD = "#3e2410";
+  // (ticket 495, for M: "even more color choices for horse ... one color chooser per param") its shoes (off: none), its face
+  // marking's colour (white), its saddle's leather, and its blanket (auto: a lighter shade of the halter's colour, as before)
+  const shoe = H.shoes && H.shoes !== "off" ? H.shoes : null, markC = H.markColor || white;
+  const tailSw = (run ? 10 : 6) * Math.sin(T * p), cloth = H.blanket && H.blanket !== "auto" ? H.blanket : mix(tack, "#ffffff", 0.2), leather = H.saddle || "#6b3f1f", leatherD = leather === "#6b3f1f" ? "#3e2410" : mix(leather, "#000000", 0.42);
   if (view === "side") {
     // (facing our right: its left side toward us, its right legs beyond, darker. X: the rear drawn in, a horse being about
     // as long as it is tall at the withers)
     const X = x => f1(x < 0 ? x * 0.82 : x);
     // (ticket 492: each hoof's place, [x, lifted, back]: the far legs a little behind the near)
     const hooves = [], leg = (x, top, fore, off, near) => { const [sw, fl] = step(off), at = [];
-      const svg = horseLeg([+X(x), y(top)], g - y(top) - 6, sw, fl, fore, near ? 17 : 15, near ? coat : far, sock, g, at); hooves.push([at[0][0], g - at[0][1], near ? 0 : 8]); return svg; };
+      const svg = horseLeg([+X(x), y(top)], g - y(top) - 6, sw, fl, fore, near ? 17 : 15, near ? coat : far, sock, g, at, shoe); hooves.push([at[0][0], g - at[0][1], near ? 0 : 8]); return svg; };
     const body = `<path d="M120 ${f1(y(-292))} C40 ${f1(y(-314))} ${X(-120)} ${f1(y(-318))} ${X(-165)} ${f1(y(-304))} C${X(-212)} ${f1(y(-288))} ${X(-216)} ${f1(y(-220))} ${X(-186)} ${f1(y(-186))} ` +
       `C${X(-150)} ${f1(y(-160))} ${X(-40)} ${f1(y(-156))} 82 ${f1(y(-166))} C142 ${f1(y(-174))} 172 ${f1(y(-216))} 152 ${f1(y(-260))} Z" fill="${coat}" stroke="${ln}" stroke-width="3"/>` +
       // (the shoulder, sloping back from the chest to the withers, and the round of the haunch)
       `<path d="M140 ${f1(y(-196))} Q112 ${f1(y(-250))} 96 ${f1(y(-300))} M${X(-96)} ${f1(y(-312))} Q${X(-120)} ${f1(y(-240))} ${X(-176)} ${f1(y(-200))}" fill="none" stroke="${mix(coat, "#000000", 0.2)}" stroke-width="3" stroke-linecap="round" opacity="0.7"/>`;
     const neck = `<path d="M84 ${f1(y(-298))} Q128 ${f1(y(-386))} 182 ${f1(y(-448))} L214 ${f1(y(-420))} Q206 ${f1(y(-356))} 160 ${f1(y(-248))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>`;
-    const mark = H.mark === "star" ? `<path d="M232 ${f1(y(-458))} L238 ${f1(y(-450))} L232 ${f1(y(-442))} L226 ${f1(y(-450))} Z" fill="${white}"/>`
-      : H.mark === "stripe" ? `<path d="M232 ${f1(y(-456))} L236 ${f1(y(-458))} L286 ${f1(y(-398))} L282 ${f1(y(-394))} Z" fill="${white}"/>`
-      : H.mark === "blaze" ? `<path d="M226 ${f1(y(-458))} L240 ${f1(y(-460))} L292 ${f1(y(-398))} Q294 ${f1(y(-384))} 282 ${f1(y(-380))} L226 ${f1(y(-440))} Z" fill="${white}"/>` : "";
+    const mark = H.mark === "star" ? `<path d="M232 ${f1(y(-458))} L238 ${f1(y(-450))} L232 ${f1(y(-442))} L226 ${f1(y(-450))} Z" fill="${markC}"/>`
+      : H.mark === "stripe" ? `<path d="M232 ${f1(y(-456))} L236 ${f1(y(-458))} L286 ${f1(y(-398))} L282 ${f1(y(-394))} Z" fill="${markC}"/>`
+      : H.mark === "blaze" ? `<path d="M226 ${f1(y(-458))} L240 ${f1(y(-460))} L292 ${f1(y(-398))} Q294 ${f1(y(-384))} 282 ${f1(y(-380))} L226 ${f1(y(-440))} Z" fill="${markC}"/>` : "";
     const head = `<path d="M178 ${f1(y(-452))} Q204 ${f1(y(-472))} 226 ${f1(y(-458))} L290 ${f1(y(-400))} Q302 ${f1(y(-380))} 286 ${f1(y(-366))} L256 ${f1(y(-360))} Q236 ${f1(y(-372))} 214 ${f1(y(-404))} Q198 ${f1(y(-420))} 178 ${f1(y(-432))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
       `<path d="M188 ${f1(y(-458))} L184 ${f1(y(-494))} L204 ${f1(y(-464))} Z" fill="${coat}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` + mark +
       `<ellipse cx="216" cy="${f1(y(-436))}" rx="5" ry="6" fill="#1f1410"/><circle cx="218" cy="${f1(y(-438))}" r="1.6" fill="#ffffff"/>` +
@@ -938,12 +944,14 @@ function horseSvg(view, gait, u, H, g, ride) {
   // (a leg seen end on, toward us or away: shorter as it lifts, the hoof's sole showing)
   const endOn = (x, top, w, fill, lift) => `<path d="M${f1(x - w)} ${f1(y(top))} L${f1(x + w)} ${f1(y(top))} L${f1(x + w * 0.64)} ${f1(g - 18 - lift)} L${f1(x - w * 0.64)} ${f1(g - 18 - lift)} Z" fill="${fill}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` +
     (sock ? `<path d="M${f1(x - w * 0.66)} ${f1(g - 70 - lift)} L${f1(x + w * 0.66)} ${f1(g - 70 - lift)} L${f1(x + w * 0.64)} ${f1(g - 18 - lift)} L${f1(x - w * 0.64)} ${f1(g - 18 - lift)} Z" fill="${white}"/>` : "") +
-    `<rect x="${f1(x - w * 0.8)}" y="${f1(g - 18 - lift)}" width="${f1(w * 1.6)}" height="${lift ? 11 : 18}" rx="3" fill="${lift ? "#6a5848" : "#3b2f2a"}" stroke="#1f1612" stroke-width="2"/>`;
+    `<rect x="${f1(x - w * 0.8)}" y="${f1(g - 18 - lift)}" width="${f1(w * 1.6)}" height="${lift ? 11 : 18}" rx="3" fill="${lift ? "#6a5848" : "#3b2f2a"}" stroke="#1f1612" stroke-width="2"/>` +
+    (!shoe ? "" : lift ? `<path d="M${f1(x - w * 0.55)} ${f1(g - 16 - lift)} Q${f1(x)} ${f1(g - 5 - lift)} ${f1(x + w * 0.55)} ${f1(g - 16 - lift)}" fill="none" stroke="${shoe}" stroke-width="3.5" stroke-linecap="round"/>`
+      : `<rect x="${f1(x - w * 0.8)}" y="${f1(g - 5)}" width="${f1(w * 1.6)}" height="5" rx="2" fill="${shoe}"/>`);
   const lifted = (off, sign) => { const [sw] = step(off); return Math.max(0, sign * sw) / (run ? 34 : 18) * (run ? 40 : 22); };
   if (view === "front") {
     // (facing us: the hind legs beyond; the chest, broad at the shoulders; the neck, its mane falling to one side; the
     // forelegs; the face hanging in front of the neck)
-    const hindF = x => `<path d="M${f1(x - 13)} ${f1(y(-184))} L${f1(x + 13)} ${f1(y(-184))} L${f1(x + 9)} ${f1(g - 26)} L${f1(x - 9)} ${f1(g - 26)} Z" fill="${far}" stroke="${ln}" stroke-width="2"/><rect x="${f1(x - 11)}" y="${f1(g - 26)}" width="22" height="12" rx="3" fill="#2a211c"/>`;
+    const hindF = x => `<path d="M${f1(x - 13)} ${f1(y(-184))} L${f1(x + 13)} ${f1(y(-184))} L${f1(x + 9)} ${f1(g - 26)} L${f1(x - 9)} ${f1(g - 26)} Z" fill="${far}" stroke="${ln}" stroke-width="2"/><rect x="${f1(x - 11)}" y="${f1(g - 26)}" width="22" height="12" rx="3" fill="#2a211c"/>` + (shoe ? `<rect x="${f1(x - 11)}" y="${f1(g - 17.5)}" width="22" height="3.5" rx="1.5" fill="${shoe}"/>` : "");
     // (ridden, its head is carried lower, D, so more of the rider shows over it; centered, in front of them (ticket 458,
     // Matthew: "the horse head should be centered (and layered in front of) the rider, not off to the side"; 0.0.366 had
     // turned it aside, HX, kept at 0)
@@ -962,7 +970,7 @@ function horseSvg(view, gait, u, H, g, ride) {
   }
   // (from behind: the forelegs beyond; over the back, the neck and the back of the head, its ears, the mane falling to one
   // side; the haunches, the hind legs, the tail)
-  const foreB = x => `<path d="M${f1(x - 12)} ${f1(y(-176))} L${f1(x + 12)} ${f1(y(-176))} L${f1(x + 9)} ${f1(g - 26)} L${f1(x - 9)} ${f1(g - 26)} Z" fill="${far}" stroke="${ln}" stroke-width="2"/><rect x="${f1(x - 11)}" y="${f1(g - 26)}" width="22" height="12" rx="3" fill="#2a211c"/>`;
+  const foreB = x => `<path d="M${f1(x - 12)} ${f1(y(-176))} L${f1(x + 12)} ${f1(y(-176))} L${f1(x + 9)} ${f1(g - 26)} L${f1(x - 9)} ${f1(g - 26)} Z" fill="${far}" stroke="${ln}" stroke-width="2"/><rect x="${f1(x - 11)}" y="${f1(g - 26)}" width="22" height="12" rx="3" fill="#2a211c"/>` + (shoe ? `<rect x="${f1(x - 11)}" y="${f1(g - 17.5)}" width="22" height="3.5" rx="1.5" fill="${shoe}"/>` : "");
   const behindB = foreB(-32) + foreB(32) +
     `<path d="M-38 ${f1(y(-300))} Q-30 ${f1(y(-400))} -22 ${f1(y(-438))} Q0 ${f1(y(-458))} 22 ${f1(y(-438))} Q30 ${f1(y(-400))} 38 ${f1(y(-300))} Z" fill="${far}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` +
     [-1, 1].map(k => `<path d="M${f1(k * 8)} ${f1(y(-448))} L${f1(k * 24)} ${f1(y(-488))} L${f1(k * 24)} ${f1(y(-440))} Z" fill="${far}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>`).join("") +

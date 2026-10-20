@@ -143,6 +143,12 @@ const TABS = [
     ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
     ["color", "horseTack", "🪢 its halter and rein", ["#7a3a1a", "#1f1f22", "#b91c1c", "#1d4ed8", "#15803d", "#e0b030"]],
     ["toggle", "horseSocks", "🧦 white socks"],
+    // (ticket 495, for M: "even more color choices for horse ... one color chooser per param") its shoes, its face marking's
+    // colour, and, ridden, its saddle and its blanket
+    ["color", "horseShoes", "🧲 its horseshoes", ["off", "#9ca3af", "#e5e7eb", "#e8c33a", "#d2382b", "#3b82f6", "#ec4899", "#22c55e"]],
+    ["color", "horseMarkColor", "⭐ the colour of the mark on its face", ["#f7f4ee", "#fde68a", "#f9a8d4", "#93c5fd", "#c4b5fd", "#86efac", "#1f1f22"]],
+    ["color", "horseSaddle", "🏇 its saddle", ["#6b3f1f", "#1f1f22", "#7a1f2b", "#e8e4da", "#c9a227", "#3f2a6b", "#ec4899"]],
+    ["color", "horseBlanket", "🟦 its saddle blanket", ["auto", "#1d4ed8", "#b91c1c", "#15803d", "#f59e0b", "#ec4899", "#ffffff", "#7c3aed"]],
     // (ticket 457) its size: 100, as big as the stable's horses, whatever the friend's size in the scene
     ["range", "horseSize", "📏 its size (100 = as big as the stable's horses)", 20, 200, 40, 150],
     ["group", "jumps", "🐸🦘 the two jumps", [
@@ -1028,7 +1034,10 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",
-  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
+  // (ticket 495) the mark's colour with a mark; the saddle's and its blanket's while ridden (the only time they are drawn)
+  "body.horseMarkColor": b => (b.horse || "none") !== "none" && (b.horseMark || "none") !== "none",
+  ...Object.fromEntries(["horseSaddle", "horseBlanket"].map(k => ["body." + k, b => b.horse === "ride"])),
+  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize", "horseShoes"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
   ...Object.fromEntries(["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor"].map(k => ["costume." + k, c => c.kind === "ghost"])),
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),
@@ -2360,7 +2369,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const bs = rest[0].map(c => {
       const b = c === "skin" || c === "auto" || c === "off"
         ? el("button", { class: "swatch skin",
-                         title: c === "skin" ? "same as skin" : c === "off" ? "none: the fur shows through"
+                         title: c === "skin" ? "same as skin" : c === "off" ? (key === "horseShoes" ? "no shoes" : "none: the fur shows through")
                               : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color" : "a lighter shade",
                          onclick: () => set(part, key, c) }, c)
         : key === "color" && part === "face" && SKIN_MARKS[c]
