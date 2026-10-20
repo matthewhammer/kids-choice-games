@@ -379,6 +379,55 @@ function falconTail(C, hw, L, LL, fill = "url(#pat-bars)") {
     `<polyline points="${pts(fan.slice(1, 6))}" fill="none" stroke="${C.belly}" stroke-width="6" stroke-linejoin="round"/>`;
 }
 
+// (ticket 431) THE GNOMES (inspired by the gnome man and woman of Huygen and Poortvliet's book, 1977, drawn in the game's own
+// plain way: shapes and patterns, no illustration). The man: a long-sleeved tunic over trousers, belted, its skirt below the
+// belt; felt boots; a beard and a moustache. The woman: a white blouse, a laced bodice, an apron, and a skirt of upright
+// stripes. Both: the tall pointed hat (gnomeHat). GNOME_STRIPES: the skirt's stripes after its own color.
+const GNOME_STRIPES = ["#d2382b", "#2e7d32", "#e3b72f", "#7b3f8c", "#2f6db5"];
+const GNOME_CLOTH = "#f7f4ec";
+// The beard, in the face's units: from the cheeks down round the mouth (left open, so the mouth and its moods show) to a
+// rounded point well below the chin, a few strands in it; and a moustache over the mouth. In profile (dir), along the jaw
+// from below the ear to the chin's front and down to its point, the moustache at the front. None from behind.
+function gnomeBeard(F, WC, dir = 0) {
+  const c = WC.beardColor || "#f4f1ea", ln = darker(c), LY = faceLayout(F), pts = headPoints(F), chin = headChin(F);
+  const cheekY = LY.eyeY + 24, [xl, xr] = acrossAt(pts, cheekY), my = LY.mouthY, tipY = chin + 74, mw = 24 * (F.mouthSize ?? 100) / 100;
+  const st = `stroke="${ln}" stroke-width="3" stroke-linejoin="round"`;
+  if (!dir) {
+    const outer = `M${f1(xl + 3)} ${f1(cheekY)} Q${f1(xl - 10)} ${f1(chin)} ${f1(64)} ${f1(tipY - 18)} Q100 ${f1(tipY + 10)} 136 ${f1(tipY - 18)} ` +
+                  `Q${f1(xr + 10)} ${f1(chin)} ${f1(xr - 3)} ${f1(cheekY)} Q${f1(xr - 14)} ${f1(my - 6)} 100 ${f1(my - 4)} Q${f1(xl + 14)} ${f1(my - 6)} ${f1(xl + 3)} ${f1(cheekY)} Z`;
+    const hole = `M${f1(100 - mw - 6)} ${f1(my + 2)} Q100 ${f1(my - 8)} ${f1(100 + mw + 6)} ${f1(my + 2)} Q${f1(100 + mw + 2)} ${f1(my + 30)} 100 ${f1(my + 32)} Q${f1(100 - mw - 2)} ${f1(my + 30)} ${f1(100 - mw - 6)} ${f1(my + 2)} Z`;
+    const strands = [-22, 0, 22].map(dx => `<path d="M${f1(100 + dx)} ${f1(my + 44)} Q${f1(100 + dx * 1.2)} ${f1(tipY - 30)} ${f1(100 + dx * 0.8)} ${f1(tipY - 14)}" fill="none" stroke="${ln}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>`).join("");
+    const ny = my - 4;
+    const must = `M100 ${f1(ny - 9)} Q${f1(100 - mw - 6)} ${f1(ny - 14)} ${f1(100 - mw - 16)} ${f1(ny + 8)} Q${f1(100 - mw * 0.5)} ${f1(ny + 6)} 100 ${f1(ny + 1)} ` +
+                 `Q${f1(100 + mw * 0.5)} ${f1(ny + 6)} ${f1(100 + mw + 16)} ${f1(ny + 8)} Q${f1(100 + mw + 6)} ${f1(ny - 14)} 100 ${f1(ny - 9)} Z`;
+    return `<path d="${outer} ${hole}" fill="${c}" fill-rule="evenodd" ${st}/>` + strands + `<path d="${must}" fill="${c}" ${st}/>`;
+  }
+  const edge = profileEdge(F), fx = 100 + dir * (edge - 6), bx = 100 - dir * 14;
+  const side = `M${f1(bx)} ${f1(cheekY)} Q${f1(100 + dir * edge * 0.6)} ${f1(my - 2)} ${f1(fx)} ${f1(my + 6)} Q${f1(fx + dir * 6)} ${f1(chin + 10)} ${f1(100 + dir * edge * 0.55)} ${f1(tipY)} ` +
+               `Q${f1(100 - dir * 4)} ${f1(tipY - 12)} ${f1(100 - dir * 26)} ${f1(chin - 6)} Q${f1(bx - dir * 8)} ${f1(cheekY + 30)} ${f1(bx)} ${f1(cheekY)} Z`;
+  const must = `M${f1(fx + dir * 4)} ${f1(my - 12)} Q${f1(fx - dir * 20)} ${f1(my - 14)} ${f1(fx - dir * 30)} ${f1(my + 6)} Q${f1(fx - dir * 8)} ${f1(my)} ${f1(fx + dir * 6)} ${f1(my - 2)} Z`;
+  return `<path d="${side}" fill="${c}" ${st}/>` + `<path d="${must}" fill="${c}" ${st}/>`;
+}
+// The woman's bodice, in body units: over the blouse from the chest down to the waist, its sides the torso's, laced up the
+// front (white cross-lacing; edge on in profile, at the front); from behind, its back, plain.
+function gnomeBodice(WC, w, L, dir, away) {
+  const c = WC.gnomeBodice || "#d2382b", ln = darker(c), top = 0.3 * L;
+  const body = `<path d="M${f1(-(w - 2))} ${f1(top)} Q0 ${f1(top + 10)} ${f1(w - 2)} ${f1(top)} L${f1(w + 2)} ${f1(L)} L${f1(-(w + 2))} ${f1(L)} Z" fill="${c}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  if (away) return body;
+  const x = dir ? dir * (w - 8) : 0, n = 4, lace = [];
+  for (let i = 0; i < n; i++) { const y0 = top + 10 + i * (L - top - 18) / n, y1 = y0 + (L - top - 18) / n;
+    lace.push(dir ? `M${f1(x)} ${f1(y0)} L${f1(x)} ${f1(y1)}` : `M-9 ${f1(y0)} L9 ${f1(y1)} M9 ${f1(y0)} L-9 ${f1(y1)}`); }
+  return body + `<path d="${lace.join(" ")}" fill="none" stroke="${GNOME_CLOTH}" stroke-width="2.5" stroke-linecap="round"/>`;
+}
+// Her apron, in body units: from the waist down the front of the skirt, a little narrower than the hips and not so long as
+// the skirt, with its band round the waist; in profile, a strip at the front; from behind, only the band and its bow.
+function gnomeApron(w, L, hem, dir, away) {
+  const ln = "#cfc8b8", band = `<rect x="${f1(-(w + 3))}" y="${f1(L - 8)}" width="${f1(2 * w + 6)}" height="9" fill="${GNOME_CLOTH}" stroke="${ln}" stroke-width="2"/>`;
+  if (away) return band + `<path d="M0 ${f1(L - 4)} q-16 -12 -22 2 q8 10 22 -2 q16 -12 22 2 q-8 10 -22 -2 M-2 ${f1(L - 2)} l-8 22 M2 ${f1(L - 2)} l8 22" fill="${GNOME_CLOTH}" stroke="${ln}" stroke-width="2"/>`;
+  const a = dir ? [dir * (w - 18), dir * (w + 6)] : [-(w - 6), w - 6], b = L + 0.82 * (hem - L);
+  const [x0, x1] = [Math.min(...a), Math.max(...a)];
+  return `<path d="M${f1(x0)} ${f1(L)} L${f1(x1)} ${f1(L)} L${f1(x1 + (dir ? 0 : 6))} ${f1(b)} Q${f1((x0 + x1) / 2)} ${f1(b + 6)} ${f1(x0 - (dir ? 0 : 6))} ${f1(b)} Z" fill="${GNOME_CLOTH}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` + band;
+}
 // (ticket 288, Matthew: "new costumes for the ocean and the deep sea. A snorkel, the most minimal change to the friend's
 // appearance. An air tank and a face mask, for scuba, separate from the scuba suit. A scuba suit, modern and stylish.
 // An antique deep-sea diving suit, made of metal and glass, with an air hose reaching up to the top of the scene") The

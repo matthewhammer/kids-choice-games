@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.349 (2026-10-19)
+
+Everything in 0.0.348, with a gnome costume.
+
+- **🍄 The gnome** (ticket 431): a new costume in 🐯 Costume, a gnome man or a gnome woman (inspired by the gnomes of the 1977 book, drawn in the game's own simple way). Both wear a tall pointed hat (red for the man and purple for the woman, or any of six colours) and felt boots. The man has a white beard and moustache (or none, or grey, brown, ginger or black), a belted tunic with its skirt below the belt, and trousers; the woman a white blouse, a laced bodice, an apron, and a skirt of upright stripes. Facing you, in profile either way, from behind, sitting, dancing, crawling and swimming.
+
 ## 0.0.348 (2026-10-19)
 
 Everything in 0.0.347, with the greenhouse fountain's collision oval on the floor.

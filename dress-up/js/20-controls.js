@@ -279,7 +279,7 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -324,6 +324,16 @@ const TABS = [
     ["toggle", "broom", "🧹 broom"],
     ["range", "broomSize", "🧹 broom's size", 10, 1000, 70, 160],
     ["color", "bootColor", "👢 boots & belt color", ["#1f1f22", "#6a2c91", "#4a2c17", "#b71c1c", "#2e7d32", "#ffffff"]],
+    // (ticket 431) the gnome: a man or a woman, the tall pointed hat, and each one's clothes; felt boots
+    ["choice", "gnomeWho", "🍄 the gnome", [["man", "👴 gnome man"], ["woman", "👵 gnome woman"]]],
+    ["color", "gnomeHat", "🍄 pointed hat's color", ["#d2382b", "#7b3f8c", "#2f6db5", "#2e7d32", "#e8862a", "#c2185b"]],
+    ["toggle", "gnomeBeard", "🧔 beard"],
+    ["color", "beardColor", "🧔 beard's color", ["#f4f1ea", "#c9c5bd", "#8d8172", "#6b4226", "#c0612b", "#1f1f22"]],
+    ["color", "gnomeTunic", "🍄 tunic's color", ["#3f8f8a", "#2f6db5", "#2e7d32", "#7b3f8c", "#b71c1c", "#8b5a2b"]],
+    ["color", "gnomeTrousers", "🍄 trousers' color", ["#7d8b6a", "#5b6b4a", "#6b5a45", "#4b5563", "#2f3e5c"]],
+    ["color", "gnomeBodice", "🍄 bodice's color", ["#d2382b", "#2e7d32", "#2f6db5", "#7b3f8c", "#1f1f22"]],
+    ["color", "gnomeSkirt", "🍄 skirt's first stripe", ["#d2382b", "#e8862a", "#c2185b", "#2f6db5", "#2e7d32"]],
+    ["color", "gnomeBoots", "🥾 felt boots' color", ["#e8e4da", "#8d8172", "#6b4226", "#1f1f22", "#b71c1c"]],
     // the fairy: wings and tunic, each in a style with its own colors; shoes
     ["choice", "wingStyle", "🧚 wings", Object.entries(FAIRY_WINGS).map(([id, w]) => [id, w.name])],
     ...Object.entries(FAIRY_WINGS).map(([id, w]) => ["color", "wingColor_" + id, "🧚 wings' color", w.colors]),
@@ -697,6 +707,8 @@ function set(part, key, value) {
   if (part === "body" && key === "anim" && value !== "none" && value !== "swim" && state.body.pose !== "stand") strikePose("stand");
   // choosing an animal dresses it in its natural colors
   if (part === "costume" && key === "kind" && ANIMALS[value]) Object.assign(state.costume, lookOf(value));
+  // (ticket 431: as on the book's cover, the gnome man's hat red and the woman's purple, while the hat is one of those two)
+  if (part === "costume" && key === "gnomeWho" && ["#d2382b", "#7b3f8c"].includes(state.costume.gnomeHat)) state.costume.gnomeHat = value === "woman" ? "#7b3f8c" : "#d2382b";
   // a skirt starts at skirt length and a dress at dress length
   if (part === "pants" && key === "style" && value === "skirt") state.pants.skirtLen = 50;
   if (part === "pants" && key === "style" && value === "dress") state.pants.skirtLen = 95;
@@ -913,6 +925,10 @@ const SHOWN_WHEN = {
   "costume.fur": c => !!ANIMALS[c.kind],
   "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),
   "costume.witchColor": c => c.kind === "witch",
+  "costume.gnomeWho": c => c.kind === "gnome", "costume.gnomeHat": c => c.kind === "gnome", "costume.gnomeBoots": c => c.kind === "gnome",
+  "costume.gnomeBeard": c => c.kind === "gnome" && c.gnomeWho !== "woman", "costume.beardColor": c => c.kind === "gnome" && c.gnomeWho !== "woman" && c.gnomeBeard !== false,
+  "costume.gnomeTunic": c => c.kind === "gnome" && c.gnomeWho !== "woman", "costume.gnomeTrousers": c => c.kind === "gnome" && c.gnomeWho !== "woman",
+  "costume.gnomeBodice": c => c.kind === "gnome" && c.gnomeWho === "woman", "costume.gnomeSkirt": c => c.kind === "gnome" && c.gnomeWho === "woman",
   ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",

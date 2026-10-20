@@ -88,6 +88,9 @@ function patternDef(id, color, kind, size = 14, markColor = "auto") {
     // a spider web: eight threads out from the middle, and three rings
     // across them, each sagging a little toward the middle between threads
     web:     webTile(lt),
+    // (ticket 431) a gnome woman's skirt: five upright stripes, the first in its color, then the cover's green, yellow,
+    // purple and blue
+    gnomeskirt: GNOME_STRIPES.slice(1).map((c, i) => `<rect x="${f1(2.8 * (i + 1))}" width="2.8" height="14" fill="${c}"/>`).join(""),
   }[kind];
   if (!inner) return "";
   return `<pattern id="${id}" width="14" height="14" patternUnits="userSpaceOnUse" ` +

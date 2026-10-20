@@ -556,6 +556,18 @@ function witchHat(WC, rx = 128, dir = 0) {
     (dir ? `<rect x="${dir > 0 ? 141 : 51}" y="${dir > 0 ? 23 : 23}" width="8" height="16" rx="2" fill="none" stroke="#f2c230" stroke-width="3"/>`
          : `<rect x="89" y="25" width="22" height="16" rx="2" fill="none" stroke="#f2c230" stroke-width="3.5"/>`);
 }
+// (ticket 431, Matthew: "gnome costume, like this one (man and woman on Gnomes book cover, and in that book generally --
+// 1977 --- we aren't copying any illustrations at all, we are being inspired by them for our super simple-styled drawings")
+// A GNOME'S HAT, in the round head's units: a tall cone of felt from a base low over the brow (64), a little wider than the
+// head there, its sides bowing out a little and its tip rounded, three times the head's height above the base; in profile
+// (dir, the way they face) the tip leans back, away from the face; a soft fold along its base.
+function gnomeHat(WC, dir = 0) {
+  const c = WC.gnomeHat || "#d2382b", ln = darker(c), lean = dir ? -dir * 30 : 0, tx = 100 + lean, ty = -236;
+  const d = `M14 66 Q${f1(26 + lean * 0.3)} -40 ${f1(tx - 7)} ${f1(ty + 10)} Q${f1(tx)} ${f1(ty - 4)} ${f1(tx + 7)} ${f1(ty + 10)} ` +
+            `Q${f1(174 + lean * 0.3)} -40 186 66 Q100 82 14 66 Z`;
+  return `<path d="${d}" fill="${c}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="M22 58 Q100 72 178 58" fill="none" stroke="${ln}" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>`;
+}
 // A cat sitting on the left shoulder (the picture's left), in body units,
 // a tuxedo cat: its fur, with a white blaze down its nose, a white chest
 // and white boots on its front paws ("off" leaves it all fur). Its tail
