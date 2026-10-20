@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.352 (2026-10-19)
+
+Everything in 0.0.351, with a monk or a dryad.
+
+- **🧘 The monk or dryad** (ticket 433): a new costume in 🐯 Costume: a hooded cloak down to the feet with a rope belt, and a staff (or none). The monk's cloak is brown and his staff has a knob; the dryad's is moss green, covered in little leaves, and her staff sprouts leaves. The hood frames the face and hides the hair, from the side too, and closes over the head from behind; put it down and the hair shows, the hood folded on the shoulders. Six cloak colours, and any beard from 💇 Hair.
+
 ## 0.0.351 (2026-10-19)
 
 Everything in 0.0.350, with beards.

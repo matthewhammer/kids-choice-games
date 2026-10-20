@@ -41,6 +41,28 @@ const isBird = kind => !!BIRDS[kind];
 const falconHead = kind => kind === "falcon" || kind === "falconsuit";
 const lookOf = kind => { const { suit, ...look } = ANIMALS[kind]; return look; };
 const costumeOn = () => (ANIMALS[state.costume.kind] ? state.costume : null);
+// (ticket 433, Matthew: "monk/dryad costume with hooded cloak, and a staff (optional, like how the witch has an optional
+// broom)") A CLOTH HOOD, its colour, while one is up (the monk's or the dryad's cloak): over the hair, framing the face. In the
+// round head's units (stretched with the head, as hair is), on the animal hood's frame (hoodGeom): its back, behind the head,
+// a cowl with a peak at the top and its drape down onto the shoulders; its front, the same shape with the face's opening cut
+// out (from the forehead, at 64, to below the chin; in profile toward the face), drawn over the face but under its features;
+// from behind, closed over the head.
+const clothHood = () => state.costume.kind === "monk" && state.costume.hoodUp !== false ? (state.costume.monkCloak || "#6b4a2b") : null;
+function clothHoodPath(F, dir = 0) {
+  const { cy, ry } = hoodGeom(F), top = cy - ry, bot = cy + ry, b = dir ? -dir * 14 : 0, p = dir ? -dir * 10 : 0;
+  return `M${f1(100 + b - 110)} ${f1(cy)} Q${f1(100 + b - 112)} ${f1(top + 8)} ${f1(100 + b - 40)} ${f1(top - 8)} Q${f1(100 + p - 6)} ${f1(top - 16)} ${f1(100 + p)} ${f1(top - 36)} ` +
+         `Q${f1(100 + p + 6)} ${f1(top - 16)} ${f1(100 + b + 40)} ${f1(top - 8)} Q${f1(100 + b + 112)} ${f1(top + 8)} ${f1(100 + b + 110)} ${f1(cy)} ` +
+         `Q${f1(100 + b + 116)} ${f1(bot)} ${f1(100 + b + 136)} ${f1(bot + 36)} L${f1(100 + b - 136)} ${f1(bot + 36)} Q${f1(100 + b - 116)} ${f1(bot)} ${f1(100 + b - 110)} ${f1(cy)} Z`;
+}
+function clothHoodOpening(F, dir = 0) {
+  const top = 64, bot = headChin(F) + 12, cy = (top + bot) / 2, ry = (bot - top) / 2, cx = 100 + dir * 40, rx = dir ? 62 : 72;
+  return `M${f1(cx - rx)} ${f1(cy)} A${f1(rx)} ${f1(ry)} 0 1 0 ${f1(cx + rx)} ${f1(cy)} A${f1(rx)} ${f1(ry)} 0 1 0 ${f1(cx - rx)} ${f1(cy)} Z`;
+}
+const clothHoodBack = (F, c, dir = 0) => `<path d="${clothHoodPath(F, dir)}" fill="${darker(c)}" stroke="${darker(darker(c))}" stroke-width="4" stroke-linejoin="round"/>`;
+const clothHoodFront = (F, c, dir = 0) => `<path d="${clothHoodPath(F, dir)} ${clothHoodOpening(F, dir)}" fill="${c}" fill-rule="evenodd" stroke="${darker(c)}" stroke-width="4" stroke-linejoin="round"/>` +
+  `<path d="${clothHoodOpening(F, dir)}" fill="none" stroke="${darker(darker(c))}" stroke-width="3" opacity="0.6"/>`;
+const clothHoodAway = (F, c) => `<path d="${clothHoodPath(F)}" fill="${c}" stroke="${darker(c)}" stroke-width="4" stroke-linejoin="round"/>` +
+  `<path data-hood="closed" d="M100 ${f1(hoodGeom(F).cy - hoodGeom(F).ry - 30)} L100 ${f1(hoodGeom(F).cy + hoodGeom(F).ry)}" stroke="${darker(c)}" stroke-width="3" opacity="0.5"/>`;
 
 // Fur: the fur color with little tufts, and stripes, spots or patches in
 // the markings color. Feathers: the feather color with curved bars.

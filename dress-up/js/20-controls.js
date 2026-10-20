@@ -283,7 +283,7 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -336,6 +336,10 @@ const TABS = [
     ["color", "gnomeBodice", "🍄 bodice's color", ["#d2382b", "#2e7d32", "#2f6db5", "#7b3f8c", "#1f1f22"]],
     ["color", "gnomeSkirt", "🍄 skirt's first stripe", ["#d2382b", "#e8862a", "#c2185b", "#2f6db5", "#2e7d32"]],
     ["color", "gnomeBoots", "🥾 felt boots' color", ["#e8e4da", "#8d8172", "#6b4226", "#1f1f22", "#b71c1c"]],
+    // (ticket 433) the monk or the dryad: the cloak and its hood, up or down (the staff: the wizard's row)
+    ["choice", "monkWho", "🧘 who", [["monk", "🧘 monk"], ["dryad", "🌿 dryad"]]],
+    ["color", "monkCloak", "🧥 cloak's color", ["#6b4a2b", "#4f6b3a", "#7a7468", "#3f4a5c", "#8a3b2b", "#e8e0cc"]],
+    ["toggle", "hoodUp", "🧥 hood up"],
     // (ticket 432) the wizard: his robe and its stars, his staff and its orb (his beard is the friend's, in 💇 Hair)
     ["color", "wizardRobe", "🧙‍♂️ robe & hat color", ["#2a3a8c", "#1f1f22", "#5b2a86", "#7a1f2b", "#1f5a4a", "#6b7280"]],
     ["color", "wizardStars", "⭐ stars & moon color", ["#f2c230", "#e5e7eb", "#93c5fd", "#f9a8d4"]],
@@ -721,6 +725,8 @@ function set(part, key, value) {
     if (C.beardGiven && C.beardGiven !== want) { if (H.beard === C.beardGiven) { H.beard = "none"; if (H.beardShade === BEARD_WHITE) H.beardShade = "auto"; } C.beardGiven = null; }
     if (want && !BEARDS[H.beard]) { H.beard = want; H.beardShade = BEARD_WHITE; C.beardGiven = want; }
   }
+  // (ticket 433: a monk's cloak brown and a dryad's moss green, while it is one of those two)
+  if (part === "costume" && key === "monkWho" && ["#6b4a2b", "#4f6b3a"].includes(state.costume.monkCloak)) state.costume.monkCloak = value === "dryad" ? "#4f6b3a" : "#6b4a2b";
   // (ticket 431: as on the book's cover, the gnome man's hat red and the woman's purple, while the hat is one of those two)
   if (part === "costume" && key === "gnomeWho" && ["#d2382b", "#7b3f8c"].includes(state.costume.gnomeHat)) state.costume.gnomeHat = value === "woman" ? "#7b3f8c" : "#d2382b";
   // a skirt starts at skirt length and a dress at dress length
@@ -940,7 +946,8 @@ const SHOWN_WHEN = {
   "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),
   "costume.witchColor": c => c.kind === "witch",
   "hair.beardShade": h => !!BEARDS[h.beard], "hair.moustache": h => !!BEARDS[h.beard],
-  "costume.wizardRobe": c => c.kind === "wizard", "costume.wizardStars": c => c.kind === "wizard", "costume.staff": c => c.kind === "wizard", "costume.staffOrb": c => c.kind === "wizard" && c.staff !== false,
+  "costume.wizardRobe": c => c.kind === "wizard", "costume.wizardStars": c => c.kind === "wizard", "costume.staff": c => c.kind === "wizard" || c.kind === "monk",
+  "costume.monkWho": c => c.kind === "monk", "costume.monkCloak": c => c.kind === "monk", "costume.hoodUp": c => c.kind === "monk", "costume.staffOrb": c => c.kind === "wizard" && c.staff !== false,
   "costume.gnomeWho": c => c.kind === "gnome", "costume.gnomeHat": c => c.kind === "gnome", "costume.gnomeBoots": c => c.kind === "gnome",
   "costume.gnomeTunic": c => c.kind === "gnome" && c.gnomeWho !== "woman", "costume.gnomeTrousers": c => c.kind === "gnome" && c.gnomeWho !== "woman",
   "costume.gnomeBodice": c => c.kind === "gnome" && c.gnomeWho === "woman", "costume.gnomeSkirt": c => c.kind === "gnome" && c.gnomeWho === "woman",

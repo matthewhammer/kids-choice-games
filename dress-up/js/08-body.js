@@ -772,8 +772,12 @@ function wizardHat(WC, rx = 116, dir = 0) {
 }
 // A wizard's staff through the hand at H, in body units: a straight wooden staff, leaning a little, 150 above the hand and
 // down to 110 below it, knotted at its head round an orb that glows in its colour.
+// (ticket 433: a monk's ends in a knob, "knob"; a dryad's sprouts leaves, "leaves")
 function staffSvg([hx, hy], orb) {
   const top = [hx + 10, hy - 150], b = [hx - 6, hy + 110];
+  if (orb === "knob" || orb === "leaves") return line(top[0], top[1] - 6, b[0], b[1], 7, "#7a4f2a", "#4a2f16") +
+    (orb === "knob" ? `<circle cx="${f1(top[0])}" cy="${f1(top[1] - 8)}" r="8" fill="#7a4f2a" stroke="#4a2f16" stroke-width="2"/>`
+      : [[-1, -10, -30], [1, -2, 25], [-1, 8, -55], [1, 14, 55]].map(([s, dy, a]) => `<path d="M0 0 Q${f1(s * 6)} -10 0 -20 Q${f1(-s * 6)} -10 0 0 Z" transform="translate(${f1(top[0])} ${f1(top[1] + dy)}) rotate(${a})" fill="#4caf50" stroke="#2e6b30" stroke-width="1.5"/>`).join(""));
   return line(top[0], top[1], b[0], b[1], 7, "#7a4f2a", "#4a2f16") +
     `<path d="M${f1(top[0] - 9)} ${f1(top[1] + 4)} Q${f1(top[0] - 12)} ${f1(top[1] - 14)} ${f1(top[0])} ${f1(top[1] - 20)} Q${f1(top[0] + 12)} ${f1(top[1] - 14)} ${f1(top[0] + 9)} ${f1(top[1] + 4)}" fill="none" stroke="#7a4f2a" stroke-width="5" stroke-linecap="round"/>` +
     `<circle cx="${f1(top[0])}" cy="${f1(top[1] - 10)}" r="22" fill="${orb}" opacity="0.25"/>` +

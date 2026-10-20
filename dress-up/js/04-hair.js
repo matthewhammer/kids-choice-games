@@ -509,13 +509,16 @@ function faceSvg(F, ground, parts = false, dir = 0, turn = 0) {
   const C = costumeOn(), kind = state.costume.kind;
   const hoodClips = C ? `<clipPath id="hood-brim"><rect x="-200" y="-400" width="600" height="454"/></clipPath>` +
                         `<clipPath id="hood-inside"><ellipse ${hoodEllipse(F)}/></clipPath>` : "";
+  const CH = clothHood();   // (ticket 433: a cloth hood, up)
   const under = `<defs>${clips}${hoodClips}</defs>` +
     (C ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${dir ? `<g transform="translate(${-dir * 16} 0)">${hoodBack(C, kind, F)}</g>` : hoodBack(C, kind, F)}</g></g>` : "") +
+    (CH ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${clothHoodBack(F, CH, dir)}</g></g>` : "") +
     sideLines(F.sides) +
     (b > 0 ? part(' clip-path="url(#below-crack)"') : part()) +
     raysUp(rayLen, 3 + idiv(r, 25), crackY) +
     (b > 0 ? `<g transform="translate(0 ${-lift}) rotate(${-tilt} 100 ${f1(crackY)})">${part(' clip-path="url(#above-crack)"')}</g>` : "") +
     (C ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${dir ? hoodSide(C, kind, F, dir) : hoodFront(C, kind, F)}</g></g>` : "") +
+    (CH ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${clothHoodFront(F, CH, dir)}</g></g>` : "") +
     pieces(shown, b, crackY) +
     (b > 0 ? `<path d="${crack}" fill="none" stroke="black" stroke-width="2"/>` : "");
   const eyes = `<g transform="translate(0 ${f1(LY.eyeY - 100)})">` +
