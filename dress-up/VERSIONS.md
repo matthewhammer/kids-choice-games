@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.350 (2026-10-19)
+
+Everything in 0.0.349, with a wizard costume.
+
+- **🧙‍♂️ The wizard** (ticket 432): a new costume in 🐯 Costume, a cousin of the witch but his own: a robe down to his feet covered in stars, a gold cord round his waist, a long beard, a tall hat with stars and a crescent moon whose tip flops forward (the witch's bends back), and a staff with a glowing orb. Choose the robe's colour (six), the stars' (four), the beard's (or none), and the orb's (or no staff).
+
 ## 0.0.349 (2026-10-19)
 
 Everything in 0.0.348, with a gnome costume.

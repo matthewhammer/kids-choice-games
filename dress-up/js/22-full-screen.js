@@ -336,6 +336,7 @@ const TAB_BOXES = {
                 ["🤿 the scuba suit", ["scubaColor", "scubaAccent"]], ["⚓ the old diving suit", ["diverMetal", "diverCloth", "diverHose", "hoseColor"]],
                 ["🥽 diving gear", ["snorkel", "snorkelColor", "mask", "maskColor", "tank", "tankColor", "leaks"]],
                 ["👻 the ghost", ["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor", "visible"]],
+                ["🧙‍♂️ the wizard", ["wizardRobe", "wizardStars", "wizardBeardOn", "wizardBeard", "staff", "staffOrb"]],
                 ["🍄 the gnome", ["gnomeWho", "gnomeHat", "gnomeBeard", "beardColor", "gnomeTunic", "gnomeTrousers", "gnomeBodice", "gnomeSkirt", "gnomeBoots"]],
                 ["🧙 the witch", ["witchColor", "webColor", "webStyle", "trimColor", "bootColor"]],
                 ["🐈‍⬛ her cat", ["witchCat", "catFur", "catWhite", "catEyes", "catNose", "catSize"]], ["🧹 her broom", ["broom", "broomSize"]],

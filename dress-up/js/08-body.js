@@ -757,6 +757,29 @@ function walkingCat(WC, W, i) {
     `<path d="M30 -29 L40 -31 M30 -28 L40 -27" stroke="${tux || fur === "#1f1f22" ? "#d8d8de" : "#3a3a3a"}" stroke-width="0.6"/>`;
 }
 
+// (ticket 432, Matthew: "wizard costume, somewhat like witch but also distinct, somehow") A WIZARD'S HAT, in the round
+// head's units: a narrow brim (rx, as wide as the hair needs), a tall cone whose tip flops forward over the brim (in profile
+// toward the face, where a witch's bends back; facing us, to our left), no band or buckle, and gold stars and a crescent moon
+// on the cone, in the robe's star colour.
+const starPts = (cx, cy, r) => Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * 0.45 : r; return f1(cx + q * Math.cos(a)) + "," + f1(cy + q * Math.sin(a)); }).join(" ");
+function wizardHat(WC, rx = 116, dir = 0) {
+  const c = WC.wizardRobe || "#2a3a8c", ln = darker(c), st = WC.wizardStars || "#f2c230", f = dir || -1;
+  const cone = `M50 42 Q66 -30 88 -110 Q94 -140 ${f1(100 + f * 10)} -156 Q${f1(100 + f * 40)} -162 ${f1(100 + f * 58)} -128 Q${f1(100 + f * 30)} -140 112 -112 Q132 -30 150 42 Q100 54 50 42 Z`;
+  const moon = `<path d="M${f1(100 - f * 18)} -24 a16 16 0 1 0 ${f1(-f * 6)} 26 a12 12 0 1 1 ${f1(f * 6)} -26 Z" fill="${st}"/>`;
+  return `<ellipse cx="100" cy="44" rx="${f1(rx)}" ry="${f1(14 * Math.max(1, rx / 116) ** 0.5)}" fill="${c}" stroke="${ln}" stroke-width="3"/>` +
+    `<path d="${cone}" fill="${c}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` + moon +
+    [[100 + f * 16, 6, 8], [96, -54, 7], [104 - f * 4, -96, 5.5]].map(([x, y, r]) => `<polygon points="${starPts(x, y, r)}" fill="${st}"/>`).join("");
+}
+// A wizard's staff through the hand at H, in body units: a straight wooden staff, leaning a little, 150 above the hand and
+// down to 110 below it, knotted at its head round an orb that glows in its colour.
+function staffSvg([hx, hy], orb) {
+  const top = [hx + 10, hy - 150], b = [hx - 6, hy + 110];
+  return line(top[0], top[1], b[0], b[1], 7, "#7a4f2a", "#4a2f16") +
+    `<path d="M${f1(top[0] - 9)} ${f1(top[1] + 4)} Q${f1(top[0] - 12)} ${f1(top[1] - 14)} ${f1(top[0])} ${f1(top[1] - 20)} Q${f1(top[0] + 12)} ${f1(top[1] - 14)} ${f1(top[0] + 9)} ${f1(top[1] + 4)}" fill="none" stroke="#7a4f2a" stroke-width="5" stroke-linecap="round"/>` +
+    `<circle cx="${f1(top[0])}" cy="${f1(top[1] - 10)}" r="22" fill="${orb}" opacity="0.25"/>` +
+    `<circle cx="${f1(top[0])}" cy="${f1(top[1] - 10)}" r="11" fill="${orb}" stroke="${darker(orb)}" stroke-width="2"/>` +
+    `<circle cx="${f1(top[0] - 3.5)}" cy="${f1(top[1] - 14)}" r="3.5" fill="#ffffff" opacity="0.8"/>`;
+}
 // A broom through the hand at H, in body units: the stick, leaning a
 // little, 120 above the hand and 52 below it, then the bristles flaring
 // out under a band in the trim color.

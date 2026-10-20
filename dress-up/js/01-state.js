@@ -521,6 +521,7 @@ const DEFAULTS = {
   hud: { pins: [], min: [] },
   costume: { kind: "none", fur: "#e8862a", marks: "#1f1a17", belly: "#f7ead8", eyes: "#e0a800",
              accent: "#e89aa0", furPattern: "stripes", spot: "auto",
+             wizardRobe: "#2a3a8c", wizardStars: "#f2c230", wizardBeardOn: true, wizardBeard: "#f4f1ea", staff: true, staffOrb: "#7dd3fc",
              gnomeWho: "man", gnomeHat: "#d2382b", gnomeBeard: true, beardColor: "#f4f1ea", gnomeTunic: "#3f8f8a", gnomeTrousers: "#7d8b6a",
              gnomeBodice: "#d2382b", gnomeSkirt: "#d2382b", gnomeBoots: "#e8e4da",
              witchColor: "#6a2c91", webColor: "#3fae4a", webStyle: "tiled", trimColor: "#f28c28", witchCat: false, broom: false,
@@ -1068,7 +1069,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.349", released: "2026-10-19" };
+const VERSION = { number: "0.0.350", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

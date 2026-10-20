@@ -388,9 +388,10 @@ const GNOME_CLOTH = "#f7f4ec";
 // The beard, in the face's units: from the cheeks down round the mouth (left open, so the mouth and its moods show) to a
 // rounded point well below the chin, a few strands in it; and a moustache over the mouth. In profile (dir), along the jaw
 // from below the ear to the chin's front and down to its point, the moustache at the front. None from behind.
-function gnomeBeard(F, WC, dir = 0) {
-  const c = WC.beardColor || "#f4f1ea", ln = darker(c), LY = faceLayout(F), pts = headPoints(F), chin = headChin(F);
-  const cheekY = LY.eyeY + 24, [xl, xr] = acrossAt(pts, cheekY), my = LY.mouthY, tipY = chin + 74, mw = 24 * (F.mouthSize ?? 100) / 100;
+// (ticket 432: the wizard's too, longer: color, and how far below the chin its point reaches)
+function gnomeBeard(F, WC, dir = 0, color = WC.beardColor, long = 74) {
+  const c = color || "#f4f1ea", ln = darker(c), LY = faceLayout(F), pts = headPoints(F), chin = headChin(F);
+  const cheekY = LY.eyeY + 24, [xl, xr] = acrossAt(pts, cheekY), my = LY.mouthY, tipY = chin + long, mw = 24 * (F.mouthSize ?? 100) / 100;
   const st = `stroke="${ln}" stroke-width="3" stroke-linejoin="round"`;
   if (!dir) {
     const outer = `M${f1(xl + 3)} ${f1(cheekY)} Q${f1(xl - 10)} ${f1(chin)} ${f1(64)} ${f1(tipY - 18)} Q100 ${f1(tipY + 10)} 136 ${f1(tipY - 18)} ` +
