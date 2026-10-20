@@ -1628,6 +1628,7 @@ const THING_PARAMS = {
   // (ticket 284) a lever's 🔗: the trap doors here it opens and shuts (by their uid); a trap door's own: open or shut, its shape, its spikes
   // (ticket 323, N's: "each lever should choose going forward: controls doors; lets a boulder fall from somewhere, of a certain
   // style (including random/surprise me)"; "offer that param [the knob's colour] as a color selector generally")
+  helmet: [["facing", "🪖 facing", "choice", [["toward", "toward us"], ["away", "away"], ["left", "⬅️ left"], ["right", "➡️ right"]]], ["plume", "🪶 plume", "color", ["#c0392b", "#f4f1ea", "#2f6db5", "#e0b030", "#1f1f22"]]],
   lever: [["does", "🎚️ it", "choice", [["doors", "🕳️ opens and shuts trap doors"], ["boulder", "🪨 drops a boulder into them"]]], ["works", "🔗 its trap doors", "wires"],
           ["rock", "🪨 the boulder", "choice", BOULDER_TONES], ["knob", "🎨 its knob", "color", KNOB_COLORS]],
   trapdoor: [["open", "🕳️ open", "toggle"], ["shape", "its opening", "choice", OPENING_SHAPES], ["spikes", "🔱 spikes inside", "toggle"]],
@@ -1641,7 +1642,7 @@ const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, s
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, moss: { style: "haircap", on: "floor", color: "none", lobes: true }, lichen: { style: "crust", on: "back", color: "none" }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
-                         seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, trapdoor: { open: false, shape: "circle", spikes: true },
+                         seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
                          bubblemaker: { shape: "round", rate: 4, theme: "A", color: MAKER_COLORS[0] },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] } };
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
@@ -1805,7 +1806,7 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["places", "📦 from the places"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
@@ -1824,6 +1825,9 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
                       // (ticket 290, for N) a 🫧 bubble maker, blowing bubbles wherever it is put
                       bubblemaker: { label: "🫧 bubble maker", size: 1, group: "bubbles", moving: true },
+                      // (ticket 435, Matthew: "also permits us to place helmets in each of the 4 poses (L, R, toward, away)") the
+                      // trap room's helmet, the knight's (helmetSvg), standing on its rim, facing toward us, away, left or right
+                      helmet: { label: "🪖 helmet", size: 1, group: "castle" },
                       lifted: { label: "📦 from a place", size: 1, group: "places" } };
 // (ticket 284, Matthew: "audit each scene for objects that we can offer as new placed objects ... The ticket would be
 // complete if we feel that every object in each scene is something that can also be placed") 📦 any object of any
@@ -1949,6 +1953,7 @@ function thingSvg(o, t, i) {
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
   const body = t.kind === "lifted" ? liftedBody(t, at) :
                t.kind === "lever" ? at(leverThingSvg(t, o)) :
+               t.kind === "helmet" ? at(helmetSvg(0, 0, 1.4, { plume: t.plume || "#c0392b", side: t.facing === "left" ? -1 : t.facing === "right" ? 1 : 0, back: t.facing === "away" })) :
                t.kind === "trapdoor" ? (t.open && !t.boulder ? `<g data-hole="${f1(t.x - TRAP_RX * s)} ${f1(t.x + TRAP_RX * s)} ${f1(t.z - TRAP_RY * s)} ${f1(t.z + TRAP_RY * s)}">` : "<g>") + at(trapdoorThingSvg(t, i)) + "</g>" :
                t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :
                t.kind === "bush" ? at(bushSvg(0, 0, 70, seed, t.flowers && t.flowers !== "none" ? { flowers: [t.flowers] } : {})) :

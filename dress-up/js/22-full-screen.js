@@ -338,6 +338,7 @@ const TAB_BOXES = {
                 ["👻 the ghost", ["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor", "visible"]],
                 ["🧙‍♂️ the wizard", ["wizardRobe", "wizardStars"]], ["🧘 the monk or dryad", ["monkWho", "monkCloak", "hoodUp"]],
                 ["🪄 the staff", ["staff", "staffOrb"]], ["🏹 Robin Hood", ["robinTunic", "robinHat", "robinFeather", "bow", "quiver"]],
+                ["🛡️ the knight", ["knightA", "knightB", "tabardLayout", "emblem", "plume", "plumeColor", "helmOpen", "sword", "shield"]],
                 ["🍄 the gnome", ["gnomeWho", "gnomeHat", "gnomeTunic", "gnomeTrousers", "gnomeBodice", "gnomeSkirt", "gnomeBoots"]],
                 ["🧙 the witch", ["witchColor", "webColor", "webStyle", "trimColor", "bootColor"]],
                 ["🐈‍⬛ her cat", ["witchCat", "catFur", "catWhite", "catEyes", "catNose", "catSize"]], ["🧹 her broom", ["broom", "broomSize"]],

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.357 (2026-10-19)
+
+Everything in 0.0.356, with a knight, and helmets to place.
+
+- **🛡️ The knight** (ticket 435): a new costume in 🐯 Costume: chain mail under a tabard in his colours (two of them, quartered, in halves, or plain) with an emblem on his chest (a cross, a chevron, a falcon or a crown), a shield in the same colours, a sword raised in his hand, and on his head the great helm from the castle's trap room, its plume in any of five colours. Open the helm to see his face. Walk him away from you: the helm's back, the tabard's, and the shield's wooden back.
+- **🪖 Helmets to place** (ticket 435): in a new 🏰 castle group of things, the trap room's helmet, standing on its rim and facing toward you, away, left or right, each its own drawing.
+
 ## 0.0.356 (2026-10-19)
 
 Everything in 0.0.355, with Robin Hood's quiver on his back from the side.

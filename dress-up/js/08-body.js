@@ -807,6 +807,13 @@ function quiverSvg(w, L, away, dir = 0) {
   return fletch + `<g transform="translate(${f1(top[0])} ${f1(top[1])}) rotate(${f1(ang)})"><rect x="-14" y="0" width="28" height="${f1(len)}" rx="8" fill="#7a4f2a" stroke="#4a2f16" stroke-width="2.5"/>` +
     `<rect x="-14" y="${f1(len * 0.2)}" width="28" height="6" fill="#4a2f16"/></g>`;
 }
+// (ticket 435) a knight's shield on his arm, a heater shield in his arms (armsFill), 76 tall; from behind, its back (his
+// sword is the trap room's, swordSvg in js/13-castle-rooms-and-map.js, held upright)
+function shieldSvg([hx, hy], WC, id, away) {
+  const d = `M${f1(hx - 30)} ${f1(hy - 38)} L${f1(hx + 30)} ${f1(hy - 38)} L${f1(hx + 30)} ${f1(hy - 4)} Q${f1(hx + 28)} ${f1(hy + 24)} ${f1(hx)} ${f1(hy + 38)} Q${f1(hx - 28)} ${f1(hy + 24)} ${f1(hx - 30)} ${f1(hy - 4)} Z`;
+  return away ? `<path d="${d}" fill="#7a4f2a" stroke="#3b3b44" stroke-width="2.5"/><rect x="${f1(hx - 4)}" y="${f1(hy - 30)}" width="8" height="56" fill="#4a2f16"/>`
+              : armsFill(id, d, WC, false, [hx, hy - 6], 0.9, [hx, hy - 6], 46);
+}
 // A wizard's staff through the hand at H, in body units: a straight wooden staff, leaning a little, 150 above the hand and
 // down to 110 below it, knotted at its head round an orb that glows in its colour.
 // (ticket 433: a monk's ends in a knob, "knob"; a dryad's sprouts leaves, "leaves")

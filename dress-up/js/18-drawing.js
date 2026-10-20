@@ -51,9 +51,11 @@ function drawNow() {
   // (ticket 432) a wizard: a long robe with stars, a gold cord, a long beard, the hat with stars and a moon, a staff
   const wizard = kind === "wizard";
   // (ticket 433) a monk or a dryad: a hooded cloak to the feet, a rope belt, a staff; the hood up hides the hair
-  const monk = kind === "monk", hooded = !!clothHood();
+  const monk = kind === "monk", hooded = !!clothHood() || kind === "knight";
   // (ticket 434) a forester (Robin Hood): a green tunic with dagged edges over hose, a strap across the chest, a quiver, a bow
   const robin = kind === "robin";
+  // (ticket 435) a knight: mail under a tabard in his arms, a helmet (the hair under it), a sword and a shield
+  const knight = kind === "knight";
   // (a fairy: her tunic in its style's color, and the style's pattern)
   const fTunic = FAIRY_TUNICS[WC.tunicStyle] ? WC.tunicStyle : "petal", fCol = WC["tunicColor_" + fTunic] ?? FAIRY_TUNICS[fTunic].colors[0];
   const fWing = FAIRY_WINGS[WC.wingStyle] ? WC.wingStyle : "butterfly", fWingCol = WC["wingColor_" + fWing] ?? FAIRY_WINGS[fWing].colors[0];
@@ -72,6 +74,7 @@ function drawNow() {
     SH = { ...SH, style: "long", color: WC.witchColor, pattern: webPat, patternSize: 96, patternColor: WC.webColor };
     P = { ...P, style: "dress", skirtLen: 72, color: WC.witchColor, pattern: webPat, patternSize: 96, patternColor: WC.webColor };
   }
+  if (knight) { const mail = { color: "#9ca3af", pattern: "dots", patternSize: 9, patternColor: "#6b7280" }; SH = { ...SH, style: "long", ...mail }; P = { ...P, style: "long", ...mail }; }
   if (robin) { SH = { ...SH, style: "long", color: WC.robinTunic || "#3f7d3a", pattern: "plain" }; P = { ...P, style: "long", color: "#5a3d22", pattern: "plain" }; }
   if (monk) {
     const cloak = { color: WC.monkCloak || "#6b4a2b", ...(WC.monkWho === "dryad" ? { pattern: "leaves", patternSize: 26, patternColor: mix(WC.monkCloak || "#4f6b3a", "#000000", 0.3) } : { pattern: "plain" }) };
@@ -153,7 +156,7 @@ function drawNow() {
   };
   // no clothes: underwear or a swimsuit instead of the shirt and pants
   // (a full animal suit still covers everything)
-  const U = state.undies, undies = U.on && !suit && !witch && !fairy && !scuba && !diver && !gnome && !wizard && !monk && !robin;
+  const U = state.undies, undies = U.on && !suit && !witch && !fairy && !scuba && !diver && !gnome && !wizard && !monk && !robin && !knight;
   const sleeve = suit ? 0.97 : undies ? 0 : { tee: 0.38, long: 0.95, tank: 0 }[SH.style];
 
   // PANTS: their hips under the shirt's hem, their feet under the legs.
@@ -255,20 +258,22 @@ function drawNow() {
   const flying = F.burst > 0 ? idiv(F.burst * 7, 10) + idiv(F.burst * 4, 10) + 40 : 0;   // see topFlies
   const faceTop = Math.min(-90, HEAD_C - 175 * headH(F), headCrown(F) + 50.6 - 1.4 * F.burst - 40,
                            hairY(hr.top) - 40 - flying, (C ? (kind === "deer" ? -140 : -90) : 0) - flying,
-                           witch ? hairY(-130) - 20 - flying : 0, gnome ? hairY(-240) - 20 - flying : 0, wizard ? hairY(-170) - 20 - flying : 0, hooded ? hairY(hoodGeom(F).cy - hoodGeom(F).ry - 40) - 10 - flying : 0, robin ? hairY(-90) - 10 - flying : 0);
+                           witch ? hairY(-130) - 20 - flying : 0, gnome ? hairY(-240) - 20 - flying : 0, wizard ? hairY(-170) - 20 - flying : 0, hooded ? hairY(hoodGeom(F).cy - hoodGeom(F).ry - 40) - 10 - flying : 0, robin ? hairY(-90) - 10 - flying : 0, knight ? hairY(-40) - 10 - flying : 0);
   // (a broom stands 120 above the hand that holds it, its bristles 66 below)
   const broomH = witch && WC.broom ? arms[0].H : null;
   // (ticket 432: a wizard's staff, in the same hand: 160 above it, 120 below)
   const staffH = (wizard || monk) && WC.staff !== false ? arms[0].H : null;
   // (ticket 434: a forester's bow, in the other hand: 90 above and below it, its back 40 out)
   const bowH = robin && WC.bow !== false ? arms[1].H : null;
+  // (ticket 435: a knight's sword in the hand a staff is in, his shield on the other)
+  const swordH = knight && WC.sword !== false ? arms[0].H : null, shieldH = knight && WC.shield !== false ? arms[1].H : null;
   // (and a cat on the shoulder, 64 above where it sits and 42 below, its
   // tail out 34 to the side, all times its size)
   const kb = (state.costume.broomSize ?? 100) / 100, catK = witch && WC.witchCat ? (WC.catSize ?? 100) / 100 : 0;
   // (posed limbs: room for their elbows, knees and feet wherever they went)
   const armPosed = [1, -1].some(side => poseT("Arm", side) || poseT("Elbow", side));
   const posedYs = [...(armPosed ? arms.filter(x => x.E).map(x => x.E[1] - armW - 20) : []), ...(legPosed ? legBones.flatMap(l => l.joints.slice(1)).map(([, y]) => y - B.legW - 40) : [])];
-  let top = Math.min(ty + faceTop * s, ...handYs.map(y => y - Math.max(40, reach)), broomH ? broomH[1] - 140 * kb : 0, staffH ? staffH[1] - 190 : 0, bowH ? bowH[1] - 90 : 0, ...posedYs,
+  let top = Math.min(ty + faceTop * s, ...handYs.map(y => y - Math.max(40, reach)), broomH ? broomH[1] - 140 * kb : 0, staffH ? staffH[1] - 190 : 0, bowH ? bowH[1] - 90 : 0, swordH ? swordH[1] - 145 : 0, ...posedYs,
                        catK ? -9 - 70 * catK : 0);
   const pileP = F.sick > 100 ? 100 + (F.sick - 100) / 2 : F.sick > 30 ? (F.sick - 30) * 100 / 70 : 0;
   const pileRx = (6 + pileP * 84 / 100) * 1.6 * s;
@@ -277,14 +282,14 @@ function drawNow() {
     ? L + (feetY - L) * (P.skirtLen ?? 50) / 100 + 30 : 0;
   const toesDown = suit || witch ? 0 : feetY + Math.max(footDown(state.shoes), footDown(rightShoeOf(state.shoes))) * shoeSc + 12;
   let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem, beardStyle ? ty + (headChin(F) + beardLong(beardStyle, state.hair) + (BEARDS[beardStyle].braid ? 60 : 16)) * s : 0,
-                          broomH ? broomH[1] + 140 * kb : 0, staffH ? staffH[1] + 120 : 0, bowH ? bowH[1] + 90 : 0, catK ? -9 + 46 * catK : 0);
+                          broomH ? broomH[1] + 140 * kb : 0, staffH ? staffH[1] + 120 : 0, bowH ? bowH[1] + 90 : 0, shieldH ? shieldH[1] + 45 : 0, catK ? -9 + 46 * catK : 0);
   const hairHalf = hr.half * headWidth(F) * (1 + 0.12 * F.alien / 100) * s;
   let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
                         ...arms.filter(x => x.E).map(x => -Math.abs(x.E[0]) - armW - 20), knee ? -Math.abs(kneeAt(1)[0]) - B.legW - 30 : 0,
                         ...(legPosed ? legBones.flatMap(l => [-Math.abs(l.joints[1][0]) - B.legW - 30, -Math.abs(l.joints[2][0]) - 60 - Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes))) * shoeSc]) : []),
                         -(fx + half + 70), -(fx + (witch ? FOOT_REACH.witchboot : Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes)))) * shoeSc + 20), -(w + 40), -(pileRx + 20), -(B.neckW / 2 + 40), -(hairHalf + 20),
                         -((80 + (C ? (kind === "deer" ? 60 : 30) : witch ? brimRx - 80 : 0)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20),
-                        broomH ? -(Math.abs(broomH[0]) + 60 * kb) : 0, staffH ? -(Math.abs(staffH[0]) + 40) : 0, bowH ? -(Math.abs(bowH[0]) + 50) : 0,
+                        broomH ? -(Math.abs(broomH[0]) + 60 * kb) : 0, staffH ? -(Math.abs(staffH[0]) + 40) : 0, bowH ? -(Math.abs(bowH[0]) + 50) : 0, shieldH ? -(Math.abs(shieldH[0]) + 40) : 0, swordH ? -(Math.abs(swordH[0]) + 24) : 0,
                         catK ? -(w - 4) - 24 * catK : 0, catK ? -(-(w - 4) + 40 * catK) : 0);
   // A background is a stage of its own, the same whatever the figure
   // (SCENE): the frame the usual figure gets in a scene. The figure stands
@@ -513,6 +518,7 @@ function drawNow() {
              : wizard ? { style: "boot", size: state.shoes.size, color: "#3b2f4a" }
              : monk ? { style: "boot", size: state.shoes.size, color: "#5a3d22" }
              : robin ? { style: "boot", size: state.shoes.size, color: "#6b4226" }
+             : knight ? { style: "boot", size: state.shoes.size, color: "#6b7280" }
              : fairy ? { style: "fairy-" + (FAIRY_SHOES.some(([v]) => v === WC.fairyShoes) ? WC.fairyShoes : "slipper"), size: state.shoes.size, color: WC.fairyShoeColor || FAIRY_SHOE_COLORS[0] }
              : suit ? { style: "paw", size: state.shoes.size, color: C.fur, pad: C.accent } : state.shoes;
   // (a falcon suit's talons are yellow, like a falcon's feet)
@@ -735,7 +741,7 @@ function drawNow() {
   // they face us, wears its own style; one holding the broom is closed round
   // it, a round fist)
   const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : state.hands, own = !suit && side < 0 ? rightHandOf(hands) : hands;
-    return handSvg(H[0], H[1], angle, out, ((broomH || staffH) && side > 0) || (bowH && side < 0) ? { ...own, style: "round" } : own, skin); };
+    return handSvg(H[0], H[1], angle, out, ((broomH || staffH || swordH) && side > 0) || ((bowH || shieldH) && side < 0) ? { ...own, style: "round" } : own, skin); };
   // (ticket 286: crawling toward us or away, each arm drawn whole, straight down to its hand flat on the floor, seen short)
   const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
     (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf) : "") +
@@ -777,6 +783,14 @@ function drawNow() {
   // a few webs on the bodice, side by side
   if (fewWebs && !undies)
     svg += spiderWeb(-0.42 * hw, -20 + 0.48 * (L + 20), 0.3 * hw, WC.webColor) + spiderWeb(0.42 * hw, -20 + 0.48 * (L + 20), 0.3 * hw, WC.webColor);
+  // (ticket 435) a knight's tabard over the mail, in his arms, the emblem on his chest (none on his back; at his side, one
+  // colour); a belt at the waist, its buckle facing us only
+  if (knight && !undies) { const tb = L + LL * 0.24, top = -18;
+    const shape = dir ? `M${f1(-(w - 2))} ${f1(top)} L${f1(w - 2)} ${f1(top)} L${f1(w + 4)} ${f1(tb)} L${f1(-(w + 4))} ${f1(tb)} Z`
+                      : `M${f1(-(w - 6))} ${f1(top)} Q0 ${f1(top + (away ? 4 : 16))} ${f1(w - 6)} ${f1(top)} L${f1(hw + 8)} ${f1(tb)} L${f1(-(hw + 8))} ${f1(tb)} Z`;
+    svg += dir ? `<path d="${shape}" fill="${WC.knightA || "#2f6db5"}" stroke="#3b3b44" stroke-width="2.5"/>` : armsFill("tabard", shape, WC, away, away ? null : [0, L * 0.42], 1.2, [0, L * 0.42], Math.max(hw + 12, (tb - top) / 2 + 30));
+    svg += `<rect x="${f1(-(w + 4))}" y="${f1(L - 14)}" width="${f1(2 * w + 8)}" height="10" fill="#4a2f16"/>` + (away || dir ? "" : `<rect x="-8" y="${f1(L - 16)}" width="16" height="14" rx="2" fill="none" stroke="#e0b030" stroke-width="3"/>`);
+  }
   // (ticket 434) a forester's: the tunic's dagged hem over the hose, its dagged cape on the shoulders, a belt with a pouch,
   // the quiver's strap across the chest (the other way from behind, with the quiver on the back)
   if (robin && !undies) { const tc = SH.color, tl = darker(tc);
@@ -860,7 +874,7 @@ function drawNow() {
     svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F)}` +
                                `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/></g></g>`));
   } else if (away) svg += veil("head", inFace(face.under)) + (diver ? "" : hooded
-      ? veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${clothHoodAway(F, clothHood())}</g></g>`))   // (ticket 433: the hood closed over the head)
+      ? veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${knight ? "" : clothHoodAway(F, clothHood())}</g></g>`))   // (ticket 433: the hood closed over the head; 435: a knight's helmet)
       : veil("hair", inFace(`<g transform="${topFlies(F)}">${backHair(state.hair, F)}</g>`)));
   else if (!dir) svg += veil("head", inFace(face.under)) + veil("eyes", inFace(face.eyes)) + veil("head", inFace(face.over));
   else {
@@ -944,6 +958,10 @@ function drawNow() {
   // (ticket 431) a gnome's hat, stretched with the head as hair is, flying off with the lid
   if (gnome) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
                     `<g transform="${hairStretch(F)}">${gnomeHat(WC, dir)}</g></g></g>`);
+  // (ticket 435) a knight's helmet: the trap room's great helm, worn over the whole head (closed, as there; open, the face in
+  // its window), its plume falling back, mirrored facing our right, its back from behind
+  if (knight) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
+                     `<g transform="${hairStretch(F)}">${helmetSvg(100, 204, 3.45, { worn: true, plume: WC.plume !== false ? WC.plumeColor || "#c0392b" : false, side: dir, back: away, open: !!WC.helmOpen && !away && !dir })}</g></g></g>`);
   if (robin) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
                     `<g transform="${hairStretch(F)}">${robinHat(WC, dir, away)}</g></g></g>`);
   if (wizard) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
@@ -1004,6 +1022,8 @@ function drawNow() {
     svg += `<g transform="translate(${f1(broomH[0])} ${f1(broomH[1])}) scale(${kb.toFixed(3)}) translate(${f1(-broomH[0])} ${f1(-broomH[1])})">` +
            `${broomSvg(broomH, WC.trimColor)}</g>`;
   if (bowH) svg += bowSvg(bowH, dir ? -dir : -1);
+  if (swordH) svg += swordSvg(swordH[0] - 2, swordH[1] + 20, swordH[0] + 3, swordH[1] - 122, 1);   // (the trap room's sword, upright in his hand)
+  if (shieldH) svg += shieldSvg(shieldH, WC, "shield-arms", away);
   if (staffH) svg += staffSvg(staffH, monk ? (WC.monkWho === "dryad" ? "leaves" : "knob") : WC.staffOrb || "#7dd3fc");
 
   // and the hands last, in front of everything, the face too: raised

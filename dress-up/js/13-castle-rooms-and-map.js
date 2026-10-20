@@ -220,20 +220,34 @@ function leverSvg(x, y, px, py, ex, ey, k, arm = s => s, knob = "#c0392b", sh = 
 }
 // (ticket 317) the trap room's helmet, recognizable: a knight's great helm lying on its rim, its dome with a ridge and a
 // shine, the visor's eye slit, breathing holes, a band of rivets round the rim, a red plume; (cx, base) the middle of its
-// rim on the floor
-function helmetSvg(cx, base, k) {
+// rim on the floor. (ticket 435, Matthew: "we had a helmet in the dungeon -- can we follow that style, and then use the same
+// routine in both places?"; "also permits us to place helmets in each of the 4 poses (L, R, toward, away)") Seen four ways:
+// facing us (as the trap room has it), from behind (o.back: no front plate, slit or holes), or from the side (o.side, the way
+// its front faces, -1 our left, 1 our right): a drawing of its own, the front plate edge-on at that side as a strip with the
+// slit's end and the breathing holes on it, the plume falling back and the shine on the back. And worn (o.worn: no shadow on
+// the floor), its plume in any colour (o.plume; false, none), or open (o.open: a window for the face instead of the front
+// plate, facing us). Called as the trap room calls it, it draws as it always did.
+function helmetSvg(cx, base, k, o = {}) {
   const w = 30 * k, h = 50 * k, steel = "#a3a9b4", dark = "#5a5f6a", lt = "#e2e6ee", hole = "#1d1f24", P = (x, y) => `${f1(x)} ${f1(y)}`;
-  return `<ellipse cx="${f1(cx)}" cy="${f1(base + 2 * k)}" rx="${f1(w * 1.15)}" ry="${f1(5 * k)}" fill="#000000" opacity="0.22"/>` +
-    `<path d="M${P(cx + 4 * k, base - h + 2 * k)} Q${P(cx + 18 * k, base - h - 16 * k)} ${P(cx + 34 * k, base - h - 4 * k)} Q${P(cx + 20 * k, base - h - 6 * k)} ${P(cx + 8 * k, base - h + 6 * k)} Z" fill="#c0392b" stroke="#7a1f16" stroke-width="${f1(1 * k)}"/>` +
-    `<path d="M${P(cx - w, base)} L${P(cx - w, base - 0.55 * h)} Q${P(cx - w, base - h)} ${P(cx, base - h)} Q${P(cx + w, base - h)} ${P(cx + w, base - 0.55 * h)} L${P(cx + w, base)} Z" fill="${steel}" stroke="${dark}" stroke-width="${f1(2 * k)}"/>` +
-    `<path d="M${P(cx - 0.86 * w, base - 0.66 * h)} L${P(cx + 0.86 * w, base - 0.66 * h)} L${P(cx + 0.8 * w, base - 7 * k)} Q${P(cx, base - 3 * k)} ${P(cx - 0.8 * w, base - 7 * k)} Z" fill="#959ba6" stroke="${dark}" stroke-width="${f1(1.2 * k)}"/>` +
-    `<rect x="${f1(cx - 0.7 * w)}" y="${f1(base - 0.66 * h + 2.5 * k)}" width="${f1(1.4 * w)}" height="${f1(4.5 * k)}" rx="${f1(2 * k)}" fill="${hole}"/>` +
+  const sd = o.side || 0, pc = o.plume === undefined ? "#c0392b" : o.plume, pl = pc === "#c0392b" ? "#7a1f16" : pc ? darker(pc) : "";
+  const fx = sd ? -sd : 1, X = d => cx + fx * d, front = !o.back && !o.open && !sd;
+  const dome = `M${P(cx - w, base)} L${P(cx - w, base - 0.55 * h)} Q${P(cx - w, base - h)} ${P(cx, base - h)} Q${P(cx + w, base - h)} ${P(cx + w, base - 0.55 * h)} L${P(cx + w, base)} Z`;
+  const win = o.open && !sd && !o.back ? ` M${P(cx - 0.6 * w, base - 0.45 * h)} A${f1(0.6 * w)} ${f1(0.37 * h)} 0 1 0 ${P(cx + 0.6 * w, base - 0.45 * h)} A${f1(0.6 * w)} ${f1(0.37 * h)} 0 1 0 ${P(cx - 0.6 * w, base - 0.45 * h)} Z` : "";
+  // (the side: the plate's edge from 0.55 of the half-width out to the dome's side, its slit a notch at the front, holes on it)
+  const side = !sd ? "" : `<path d="M${P(cx + sd * 0.5 * w, base - 0.7 * h)} L${P(cx + sd * w, base - 0.62 * h)} L${P(cx + sd * w, base - 6 * k)} L${P(cx + sd * 0.55 * w, base - 7 * k)} Z" fill="#959ba6" stroke="${dark}" stroke-width="${f1(1.2 * k)}"/>` +
+    `<rect x="${f1(sd > 0 ? cx + 0.6 * w : cx - w)}" y="${f1(base - 0.66 * h + 2.5 * k)}" width="${f1(0.4 * w)}" height="${f1(4.5 * k)}" rx="${f1(1.5 * k)}" fill="${hole}"/>` +
+    [0, 1, 2].map(r => `<circle cx="${f1(cx + sd * 0.8 * w)}" cy="${f1(base - 0.66 * h + (12 + 5 * r) * k)}" r="${f1(1.4 * k)}" fill="${hole}"/>`).join("");
+  return (o.worn ? "" : `<ellipse cx="${f1(cx)}" cy="${f1(base + 2 * k)}" rx="${f1(w * 1.15)}" ry="${f1(5 * k)}" fill="#000000" opacity="0.22"/>`) +
+    (pc ? `<path d="M${P(X(4 * k), base - h + 2 * k)} Q${P(X(18 * k), base - h - 16 * k)} ${P(X(34 * k), base - h - 4 * k)} Q${P(X(20 * k), base - h - 6 * k)} ${P(X(8 * k), base - h + 6 * k)} Z" fill="${pc}" stroke="${pl}" stroke-width="${f1(1 * k)}"/>` : "") +
+    `<path d="${dome}${win}" fill="${steel}"${win ? ' fill-rule="evenodd"' : ""} stroke="${dark}" stroke-width="${f1(2 * k)}"/>` +
+    (front ? `<path d="M${P(cx - 0.86 * w, base - 0.66 * h)} L${P(cx + 0.86 * w, base - 0.66 * h)} L${P(cx + 0.8 * w, base - 7 * k)} Q${P(cx, base - 3 * k)} ${P(cx - 0.8 * w, base - 7 * k)} Z" fill="#959ba6" stroke="${dark}" stroke-width="${f1(1.2 * k)}"/>` +
+    `<rect x="${f1(cx - 0.7 * w)}" y="${f1(base - 0.66 * h + 2.5 * k)}" width="${f1(1.4 * w)}" height="${f1(4.5 * k)}" rx="${f1(2 * k)}" fill="${hole}"/>` : "") + side +
     `<line x1="${f1(cx)}" y1="${f1(base - h + 1 * k)}" x2="${f1(cx)}" y2="${f1(base - 0.66 * h)}" stroke="${dark}" stroke-width="${f1(1.8 * k)}"/>` +
-    `<line x1="${f1(cx)}" y1="${f1(base - 0.66 * h + 8 * k)}" x2="${f1(cx)}" y2="${f1(base - 6 * k)}" stroke="${dark}" stroke-width="${f1(1.4 * k)}"/>` +
-    [0, 1, 2].flatMap(r => [0, 1].map(cl => `<circle cx="${f1(cx + (6 + 5 * cl) * k)}" cy="${f1(base - 0.66 * h + (12 + 5 * r) * k)}" r="${f1(1.4 * k)}" fill="${hole}"/>`)).join("") +
+    (front ? `<line x1="${f1(cx)}" y1="${f1(base - 0.66 * h + 8 * k)}" x2="${f1(cx)}" y2="${f1(base - 6 * k)}" stroke="${dark}" stroke-width="${f1(1.4 * k)}"/>` +
+    [0, 1, 2].flatMap(r => [0, 1].map(cl => `<circle cx="${f1(X((6 + 5 * cl) * k))}" cy="${f1(base - 0.66 * h + (12 + 5 * r) * k)}" r="${f1(1.4 * k)}" fill="${hole}"/>`)).join("") : "") +
     `<rect x="${f1(cx - w)}" y="${f1(base - 6 * k)}" width="${f1(2 * w)}" height="${f1(6 * k)}" fill="#7d838e" stroke="${dark}" stroke-width="${f1(1 * k)}"/>` +
     [0, 1, 2, 3, 4, 5].map(i => `<circle cx="${f1(cx - w + (5 + i * (2 * w - 10 * k) / 5 / k) * k)}" cy="${f1(base - 3 * k)}" r="${f1(1.3 * k)}" fill="${lt}"/>`).join("") +
-    `<path d="M${P(cx - 0.7 * w, base - 0.7 * h)} Q${P(cx - 0.72 * w, base - 0.95 * h)} ${P(cx - 0.25 * w, base - 0.98 * h)}" fill="none" stroke="${lt}" stroke-width="${f1(3 * k)}" stroke-linecap="round" opacity="0.8"/>`;
+    `<path d="M${P(X(-0.7 * w), base - 0.7 * h)} Q${P(X(-0.72 * w), base - 0.95 * h)} ${P(X(-0.25 * w), base - 0.98 * h)}" fill="none" stroke="${lt}" stroke-width="${f1(3 * k)}" stroke-linecap="round" opacity="0.8"/>`;
 }
 // (ticket 317) the trap room's sword, lying flat on the floor from its pommel (x0, y0) to its tip (x1, y1): a blade with
 // its fuller and a bright edge, a crossguard, a grip bound in leather, a round pommel

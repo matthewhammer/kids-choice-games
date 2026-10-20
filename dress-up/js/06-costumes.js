@@ -48,6 +48,27 @@ const costumeOn = () => (ANIMALS[state.costume.kind] ? state.costume : null);
 // out (from the forehead, at 64, to below the chin; in profile toward the face), drawn over the face but under its features;
 // from behind, closed over the head.
 const clothHood = () => state.costume.kind === "monk" && state.costume.hoodUp !== false ? (state.costume.monkCloak || "#6b4a2b") : null;
+// (ticket 435) the knight's helmet: the trap room's great helm, worn (helmetSvg in js/13-castle-rooms-and-map.js)
+// The knight's arms, as a tabard, a shield and the emblem show them: its two colours laid out (quartered, halves, plain) in a
+// shape, clipped to it, and the emblem in its middle; HERALDRY's emblems in a unit box about (0, 0), 30 across.
+const EMBLEMS = {
+  none: () => "",
+  cross: c => `<path d="M-4 -15 H4 V-4 H15 V4 H4 V15 H-4 V4 H-15 V-4 H-4 Z" fill="${c}"/>`,
+  chevron: c => `<path d="M-16 8 L0 -8 L16 8 L16 16 L0 0 L-16 16 Z" fill="${c}"/>`,
+  falcon: c => `<path d="M0 -6 Q-8 -14 -18 -10 Q-12 -6 -10 0 Q-6 2 -3 0 L-5 12 L0 8 L5 12 L3 0 Q6 2 10 0 Q12 -6 18 -10 Q8 -14 0 -6 Z" fill="${c}"/><circle cx="0" cy="-9" r="3" fill="${c}"/>`,
+  crown: c => `<path d="M-14 10 L-14 -6 L-7 2 L0 -12 L7 2 L14 -6 L14 10 Z" fill="${c}"/>`,
+};
+// (the fields only as big as the shape, about its middle [cx, cy] and `half` out: a clip does not shrink what is measured)
+function armsFill(id, shape, WC, mirror = false, emblemAt = null, k = 1, mid = emblemAt || [0, 0], half = 160) {
+  const A = WC.knightA || "#2f6db5", B = WC.knightB || "#f4f1ea", lay = WC.tabardLayout || "quartered";
+  const [l, r] = mirror ? [B, A] : [A, B], [cx, cy] = mid, x0 = cx - half, y0 = cy - half, H = 2 * half;
+  const R = (x, y, w, h, c) => `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="${c}"/>`;
+  const fields = lay === "plain" ? R(x0, y0, H, H, A)
+    : lay === "halves" ? R(x0, y0, half, H, l) + R(cx, y0, half, H, r)
+    : R(x0, y0, half, half, l) + R(cx, y0, half, half, r) + R(x0, cy, half, half, r) + R(cx, cy, half, half, l);
+  const em = emblemAt && EMBLEMS[WC.emblem] ? `<g transform="translate(${f1(emblemAt[0])} ${f1(emblemAt[1])}) scale(${k.toFixed(3)})"><circle r="19" fill="${lay === "plain" ? B : "#e0b030"}" opacity="0.95"/>${EMBLEMS[WC.emblem](lay === "plain" ? A : "#7a1f2b")}</g>` : "";
+  return `<clipPath id="${id}"><path d="${shape}"/></clipPath><g clip-path="url(#${id})">${fields}</g>${WC.emblem && WC.emblem !== "none" ? em : ""}<path d="${shape}" fill="none" stroke="#3b3b44" stroke-width="2.5" stroke-linejoin="round"/>`;
+}
 function clothHoodPath(F, dir = 0) {
   const { cy, ry } = hoodGeom(F), top = cy - ry, bot = cy + ry, b = dir ? -dir * 14 : 0, p = dir ? -dir * 10 : 0;
   return `M${f1(100 + b - 110)} ${f1(cy)} Q${f1(100 + b - 112)} ${f1(top + 8)} ${f1(100 + b - 40)} ${f1(top - 8)} Q${f1(100 + p - 6)} ${f1(top - 16)} ${f1(100 + p)} ${f1(top - 36)} ` +
