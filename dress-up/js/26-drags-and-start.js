@@ -1589,7 +1589,7 @@ function doorViewOf(shape) {
   if (!M || !S || !n || n.length < 8) return null;
   const m = M.inverse().multiply(S), q = [0, 2, 4, 6].map(i => { const p = new DOMPoint(+n[i], +n[i + 1]).matrixTransform(m); return [p.x, p.y]; });
   const G = doorViewGeom(...q), [nx, ny] = G.on(0.5, 1), nearW = Math.abs(G.near[1][0] - G.near[0][0]), farW = 2 * G.pw;
-  const tallFar = BRIDGE_TALL * G.hs * (state.background.figSize ?? 100) / 100;
+  const tallFar = BRIDGE_TALL * G.hs * figScale(state.background);
   return { deck: u => [nx + (G.cx - nx) * u, ny + (G.py - ny) * u], tall: u => tallFar * (nearW + (farW - nearW) * u) / farW,
            svg: `<path d="M${q.map(p => p.map(f1).join(" ")).join(" L")} Z"/>` };
 }
@@ -1597,7 +1597,7 @@ function doorTooLow(r, inv, foot) {
   const BG = state.background, top = new DOMPoint(r.x, r.y).matrixTransform(inv).y, open = foot.y - top;
   if (BG.kind === "clearing") return null;   // (ticket 352: the clearing's doors are far views, the house's small far off: a trip there, never a squeeze)
   if (!(open > 0) || !(figureT.k > 0)) return null;
-  const tall = youHeights(true).crown / figureT.k * (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, foot.y - SCENE.ground);
+  const tall = youHeights(true).crown / figureT.k * figScale(BG) * sceneFig(BG.kind) * depthSize(BG, foot.y - SCENE.ground);
   return tall > 0.97 * open ? { tall, open, stretch: Math.max(40, 0.9 * tall) } : null;
 }
 // (ticket 216) a door's leaf swung open: each of its shapes to its data-open shape (the same commands), its planks and knob

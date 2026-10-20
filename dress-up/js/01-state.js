@@ -23,6 +23,11 @@ const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, 
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
+// (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
+// for each background as we play around with them") the friend's own size (body.size, a share), in every place, on top of
+// the place's size for them (background.figSize): figScale, the two together, wherever the friend's size in a scene is
+const bodyScale = () => Math.max(0.1, Math.min(5, (Number(state.body.size ?? 100) || 100) / 100));
+const figScale = B => (B.figSize ?? 100) / 100 * bodyScale();
 // (ticket 99) The friend is smaller farther back and bigger nearer, as a
 // place draws what stands in it. A place's vanishing height is the y where
 // a thing standing there would shrink to nothing (the horizon of its
@@ -438,6 +443,8 @@ const DEFAULTS = {
            // (ticket 124) which way the friend faces (toward us, or in profile
            // to our left or right), and whether they sit
            facing: "front", sit: false,
+           // (ticket 457) their own size in every place (100: as the place sets it)
+           size: 100,
            // (ticket 144) facing us but turned partway to our left or right
            // (a controller's diagonal toward us), or not ("")
            turn: "" },
@@ -525,7 +532,7 @@ const DEFAULTS = {
              knightA: "#2f6db5", knightB: "#f4f1ea", tabardLayout: "quartered", emblem: "falcon", plume: true, plumeColor: "#c0392b", helmOpen: false, sword: true, shield: true,
              robinTunic: "#3f7d3a", robinHat: "#3f7d3a", robinFeather: "#d2382b", bow: true, quiver: true,
              wizardRobe: "#2a3a8c", wizardStars: "#f2c230", staff: true, staffOrb: "#7dd3fc", beardGiven: null,
-             horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false,
+             horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false, horseSize: 100,
              gnomeWho: "man", gnomeHat: "#d2382b", gnomeTunic: "#3f8f8a", gnomeTrousers: "#7d8b6a",
              gnomeBodice: "#d2382b", gnomeSkirt: "#d2382b", gnomeBoots: "#e8e4da",
              witchColor: "#6a2c91", webColor: "#3fae4a", webStyle: "tiled", trimColor: "#f28c28", witchCat: false, broom: false,
@@ -1073,7 +1080,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.365", released: "2026-10-19" };
+const VERSION = { number: "0.0.366", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

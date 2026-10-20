@@ -865,6 +865,9 @@ function scepterSvg([hx, hy], jewel) {
 // is where the rider's hips go, `bob` how far the stride lifts them, and facing us or away it comes in two parts: `svg`,
 // behind the rider, and `over`, before them (facing us its chest, forelegs, neck and face, the head carried lower; from
 // behind its haunches, hind legs and tail), so the rider's legs hang down its sides.
+// (ticket 457) the horse at 100 (costume.horseSize): as big as the stable's horses at the same depth, face to face (their
+// faces 2.1 times the friend's horse's as first drawn, measured in the stable at the stalls' depth)
+const HORSE_SCALE = 2.1;
 function horseLeg(top, len, swing, flex, fore, w, coat, sock, g) {
   // (a leg from its top down: an upper bone swinging by `swing` degrees (forward, the way it faces), the lower bending at
   // the knee (fore: the hoof folding back) or the hock by `flex`, a hoof; its outline round the bones, tapering)
@@ -936,17 +939,18 @@ function horseSvg(view, gait, u, H, g, ride) {
     // (facing us: the hind legs beyond; the chest, broad at the shoulders; the neck, its mane falling to one side; the
     // forelegs; the face hanging in front of the neck)
     const hindF = x => `<path d="M${f1(x - 13)} ${f1(y(-184))} L${f1(x + 13)} ${f1(y(-184))} L${f1(x + 9)} ${f1(g - 26)} L${f1(x - 9)} ${f1(g - 26)} Z" fill="${far}" stroke="${ln}" stroke-width="2"/><rect x="${f1(x - 11)}" y="${f1(g - 26)}" width="22" height="12" rx="3" fill="#2a211c"/>`;
-    // (ridden, its head is carried lower, D, so more of the rider shows over it)
-    const D = ride ? 70 : 0, behind = hindF(-56) + hindF(56) +
+    // (ridden, its head is carried lower, D, and turned a little to our left, HX, so the rider shows beside it: a small rider
+    // on a big horse would be hidden behind its head; ticket 457)
+    const D = ride ? 110 : 0, HX = ride ? -66 : 0, behind = hindF(-56) + hindF(56) +
       (ride ? [-1, 1].map(k => `<path d="M${f1(k * 60)} ${f1(y(-334))} L${f1(k * 100)} ${f1(y(-328))} L${f1(k * 96)} ${f1(y(-246))} L${f1(k * 64)} ${f1(y(-250))} Z" fill="${cloth}" stroke="${tackD}" stroke-width="2.5" stroke-linejoin="round"/>`).join("") : "");
-    const near = `<path d="M-44 ${f1(y(-296))} L-32 ${f1(y(-432 + D))} L32 ${f1(y(-432 + D))} L44 ${f1(y(-296))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
-      `<path d="M30 ${f1(y(-436 + D))} Q50 ${f1(y(-410 + D))} 42 ${f1(y(-384 + D * 0.7))} Q54 ${f1(y(-358))} 46 ${f1(y(-332))} Q56 ${f1(y(-312))} 48 ${f1(y(-292))} L38 ${f1(y(-300))} Q34 ${f1(y(-370 + D * 0.5))} 26 ${f1(y(-432 + D))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>` +
+    const near = `<path d="M-44 ${f1(y(-296))} L${-32 + HX} ${f1(y(-432 + D))} L${32 + HX} ${f1(y(-432 + D))} L44 ${f1(y(-296))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
+      `<path d="M${30 + HX} ${f1(y(-436 + D))} Q${50 + HX} ${f1(y(-410 + D))} ${42 + HX * 0.6} ${f1(y(-384 + D * 0.7))} Q54 ${f1(y(-358))} 46 ${f1(y(-332))} Q56 ${f1(y(-312))} 48 ${f1(y(-292))} L38 ${f1(y(-300))} Q${34 + HX * 0.5} ${f1(y(-370 + D * 0.5))} ${26 + HX} ${f1(y(-432 + D))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>` +
       `<path d="M-60 ${f1(y(-326))} Q0 ${f1(y(-346))} 60 ${f1(y(-326))} Q86 ${f1(y(-300))} 84 ${f1(y(-252))} Q82 ${f1(y(-206))} 64 ${f1(y(-190))} L-64 ${f1(y(-190))} Q-82 ${f1(y(-206))} -84 ${f1(y(-252))} Q-86 ${f1(y(-300))} -60 ${f1(y(-326))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
       `<path d="M0 ${f1(y(-300))} L0 ${f1(y(-206))} M-34 ${f1(y(-312))} Q-50 ${f1(y(-262))} -46 ${f1(y(-214))} M34 ${f1(y(-312))} Q50 ${f1(y(-262))} 46 ${f1(y(-214))}" fill="none" stroke="${mix(coat, "#000000", 0.2)}" stroke-width="3" stroke-linecap="round" opacity="0.6"/>` +
       endOn(-46, -214, 17, coat, lifted(OFF.lf, 1)) + endOn(46, -214, 17, coat, lifted(OFF.rf, 1)) +
-      `<g transform="translate(0 ${f1(y(-316 + D))}) scale(1.25)">${horseFace(H, 0, tack, true)}</g>`;
-    return { svg: ride ? behind : behind + near, over: ride ? near : "", ring: [0, y(-316 + D) - 77 * 1.25],
-             bits: [-1, 1].map(k => [k * 17, y(-316 + D) - 52 * 1.25]), seat: [0, y(-330)], bob };
+      `<g transform="translate(${HX} ${f1(y(-316 + D))}) scale(1.25)">${horseFace(H, 0, tack, true)}</g>`;
+    return { svg: ride ? behind : behind + near, over: ride ? near : "", ring: [HX, y(-316 + D) - 77 * 1.25],
+             bits: [-1, 1].map(k => [HX + k * 17, y(-316 + D) - 52 * 1.25]), seat: [0, y(-330)], bob };
   }
   // (from behind: the forelegs beyond; over the back, the neck and the back of the head, its ears, the mane falling to one
   // side; the haunches, the hind legs, the tail)

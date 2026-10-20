@@ -36,7 +36,7 @@ try {
       const ring = h && h.querySelector("circle[stroke='#e8b923']");
       out.views[f] = { horse: h && h.getAttribute("data-horse"), rein: !!pic().querySelector("#figure .rein"), before,
                        inside: !!b && b.x >= vb.x - 1 && b.x + b.width <= vb.x + vb.width + 1 && b.y >= vb.y - 1 && b.y + b.height <= vb.y + vb.height + 1,
-                       mirrored: (h && h.querySelector("g[transform*='scale(-1 1)']")) ? true : false }; }
+                       mirrored: (h && h.querySelector("g[transform*='scale(-']")) ? true : false, box: b && [b.x, b.y, b.width, b.height].map(Math.round), vb: [vb.x, vb.y, vb.width, vb.height].map(Math.round) }; }
     // (walking and running, facing right and toward us: the legs at four points in the stride all differ)
     const lfo0 = lfoNow;
     try { for (const [g, f] of [["walk", "right"], ["run", "right"], ["walk", "front"], ["run", "back"]]) { state.body.facing = f; state.body.anim = g; const seen = [];
@@ -83,7 +83,7 @@ try {
   ok("ridden: two reins facing us, one in profile, none from behind; all inside the frame", r.ride.front.reins === 2 && r.ride.right.reins === 1 && r.ride.left.reins === 1 && r.ride.back.reins === 0 && Object.values(r.ride).every(v => v.inside), r.ride);
   ok("ridden, walking and running: the horse walks and runs, the friend's own drawing stays as it is", r.rideStill === 1 && r.rideGaits.includes("side walk") && r.rideGaits.includes("side run"), [r.rideStill, r.rideGaits]);
   ok("no horse lying down or sitting; back when standing", !r.off.lie && !r.off.sit && r.off.stand, r.off);
-  ok("🐴 the horse box: six rows with a horse, only the choice without", r.rowsWith === 6 && r.rowsWithout === 1, [r.rowsWith, r.rowsWithout]);
+  ok("🐴 the horse box: seven rows with a horse (its size too, ticket 457), only the choice without", r.rowsWith === 7 && r.rowsWithout === 1, [r.rowsWith, r.rowsWithout]);
   ok("the stable's horses' faces stay animated; the friend's horse's face is still", r.stableAnim && !r.stillAnim, [r.stableAnim, r.stillAnim]);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

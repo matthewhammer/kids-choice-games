@@ -66,7 +66,7 @@ function thingSeats(B) {
   const parts = new Map();
   for (const o of solidsHere()) if (o.standing && !o.small && SIT_TOPS.has(objBase(o.name))) { if (!parts.has(o.name)) parts.set(o.name, []); parts.get(o.name).push(o); }
   if (!parts.size) return [];
-  const H0 = (figureT.base || 400) * (B.figSize ?? 100) / 100 * sceneFig(B.kind), out = [];
+  const H0 = (figureT.base || 400) * figScale(B) * sceneFig(B.kind), out = [];
   for (const [name, ps] of parts) {
     const how = SIT_TOPS.get(objBase(name)), x0 = Math.min(...ps.map(p => p.x0)), x1 = Math.max(...ps.map(p => p.x1));
     const z = Math.max(...ps.map(p => p.front)), top = how.at * Math.max(...ps.map(p => p.h)), fh = H0 * depthSize(B, z - SCENE.ground);
@@ -266,7 +266,7 @@ function platformIn(house, opt = {}) {
   let last = 0, phase = "walk", t0 = 0, opened = false;
   // (ticket 352) too tall for the cabin's door (72 of the house's units at its arch), by doorTooLow's rule (their crown over
   // 0.97 of it): through it crawling, as through a tree room's door inside
-  const crownOwn = youHeights(true).crown / Math.max(1e-6, figureT.k), low = crownOwn * (B.figSize ?? 100) / 100 * BRIDGE_TALL / BRIDGE_BASE > 0.97 * 72;
+  const crownOwn = youHeights(true).crown / Math.max(1e-6, figureT.k), low = crownOwn * figScale(B) * BRIDGE_TALL / BRIDGE_BASE > 0.97 * 72;
   // (ticket 331, Matthew: "whenever we enter a treehouse door, we could animate the door opening, like in the castle, but we
   // don't") its door swung in as they come near it, open by the time they are at it
   const open = () => { if (opened) return; opened = true; const L = bgShown.node && bgShown.node.querySelector(`.portal[data-house="${house}"] [data-cabin-leaf]`); if (L) leafOpen(L); };

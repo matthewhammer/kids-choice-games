@@ -128,6 +128,8 @@ const TABS = [
     ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"], ["back", "⬆️ away from us"]]],
     ["choice", "anim", "🎬 animations", ANIMS],
     ["choice", "stairsWay", "🔼 on the stairs, facing", [["up", "🔼 up them: climbing with the feet"], ["down", "🔽 down them: a controlled fall"]]],   // (ticket 308)
+    // (ticket 457) their own size in every place, on top of the place's size for them (a gnome made small once, everywhere)
+    ["range", "size", "📏 their own size in every place (100 = as the place sets it)", 20, 300, 50, 150],
     ["group", "jumps", "🐸🦘 the two jumps", [
       ["range", "jumpShortH", "🐸 short jump: how high (100 = a leg's length)", 5, 200, 20, 45],
       ["range", "jumpShortS", "🐸 short jump: how fast (100 = steady)", 25, 400, 120, 180],
@@ -382,6 +384,8 @@ const TABS = [
     ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
     ["color", "horseTack", "🪢 its halter and rein", ["#7a3a1a", "#1f1f22", "#b91c1c", "#1d4ed8", "#15803d", "#e0b030"]],
     ["toggle", "horseSocks", "🧦 white socks"],
+    // (ticket 457) its size: 100, as big as the stable's horses, whatever the friend's size in the scene
+    ["range", "horseSize", "📏 its size (100 = as big as the stable's horses)", 20, 200, 40, 150],
     // the fairy: wings and tunic, each in a style with its own colors; shoes
     ["choice", "wingStyle", "🧚 wings", Object.entries(FAIRY_WINGS).map(([id, w]) => [id, w.name])],
     ...Object.entries(FAIRY_WINGS).map(([id, w]) => ["color", "wingColor_" + id, "🧚 wings' color", w.colors]),
@@ -792,8 +796,8 @@ function set(part, key, value) {
     // (the usual figure, at its usual size, stands well inside the stage:
     // only a much bigger one shrinks)
     const n = naturalFrame, fit = Math.min((SCENE.ground - SCENE.top) / (n.ground - n.top), SCENE.left / n.left);
-    if (fit < 0.98 * (state.background.figSize ?? 100) / 100 * sceneFig(value))
-      state.background.figSize = Math.max(10, Math.floor(100 * fit / sceneFig(value)));
+    if (fit < 0.98 * figScale(state.background) * sceneFig(value))
+      state.background.figSize = Math.max(10, Math.floor(100 * fit / (sceneFig(value) * bodyScale())));   // (ticket 457: their own size too)
   }
   changed();
 }
@@ -1001,7 +1005,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",
-  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks"].map(k => ["costume." + k, c => (c.horse || "none") !== "none"])),
+  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize"].map(k => ["costume." + k, c => (c.horse || "none") !== "none"])),
   ...Object.fromEntries(["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor"].map(k => ["costume." + k, c => c.kind === "ghost"])),
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),
@@ -2288,7 +2292,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     svg.addEventListener("pointercancel", () => { held = false; });
     box.append(svg);
     syncs.push(() => {
-      const B = state.background, k = (B.figSize ?? 100) / 100 * sceneFig(B.kind);
+      const B = state.background, k = figScale(B) * sceneFig(B.kind);
       const h = Math.max(30, (naturalFrame.ground - naturalFrame.top) * k), w = Math.max(16, h * 0.4);
       const fx = B.figX ?? 0, fy = SCENE.ground + (B.figY ?? 0);
       for (const [n, v] of [["x", f1(fx - w / 2)], ["y", f1(fy - h)], ["width", f1(w)], ["height", f1(h)]]) if (fig.getAttribute(n) !== String(v)) fig.setAttribute(n, v);   // (ticket 379)

@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.366 (2026-10-19)
+
+Everything in 0.0.365, with a horse as big as the stable's, and your friend's own size.
+
+- **The horse's size** (ticket 457): the horse is now as big as the horses in the castle's stable, and 🐴 the horse has its own 📏 size. It stays the same however big or small your friend is, so a little gnome can ride a full-size horse. Facing us, a ridden horse turns its head a little aside so you can see who is riding.
+- **Your friend's own size** (ticket 457): 🧍 Body has 📏 their size, which follows your friend into every place. Make a gnome small once and they stay small wherever they go, and their horse stays the right size.
+
 ## 0.0.365 (2026-10-19)
 
 Everything in 0.0.364, and now you can ride the horse.

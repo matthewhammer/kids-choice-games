@@ -302,9 +302,18 @@ function drawNow() {
   const horseView = (WC.horse || "none") !== "none" && !sitting && B.pose !== "lie" && !(move && (move.water || move.ladder != null || move.squash || move.rot))
     ? (dir ? "side" : away ? "back" : "front") : null;
   // (ridden: under them, the saddle's seat at their hips, and they are lifted onto it, rideLift, the frame's top with them)
-  const horseX = ride ? (horseView === "side" ? -dir * 30 : 0) : horseView === "side" ? -dir * 80 : horseView === "front" ? -150 : 150;
-  const rideLift = ride && horseView ? ground - 326 - L - 12 : 0;
-  if (horseView) { left = Math.min(left, horseView === "side" ? -340 : -260); top = Math.min(top + rideLift - 12, ground - (horseView === "side" ? 520 : 570)); bottom = Math.max(bottom, ground + 24); }
+  // (ticket 457, Matthew: "horse needs its own 'size compared to main friend' param, to adjust the scales of different
+  // characters on the horse, for it to look right (e.g., small gnome on normal horse, next to other horses in stable scene)";
+  // "we want that the 'default horse' and its scale looks right in the stable scene"; "test with a small gnome (size in each
+  // scene is small)"; "after we have that refinement, adjusting the horse to look right on the character should be possible to
+  // set just once, and then reuse in different scenes") its size, hs, in the friend's units: its own slider (horseSize, 100: as
+  // big as the stable's horses, HORSE_SCALE, measured face to face at the stalls' depth) over the friend's own size (body.size,
+  // bodyScale), so the place's size for people (figSize) sizes it, never the rider's own: a small gnome leaves their horse as
+  // big as it was, in every place. Everything about it (where it stands, the seat, the reins, the frame) goes by hs.
+  const horseHs = HORSE_SCALE * Math.max(0.2, Number(WC.horseSize ?? 100) / 100) / bodyScale(), friendFrame = { left, top };
+  const horseX = ride ? (horseView === "side" ? -dir * 30 * horseHs : 0) : horseView === "side" ? -dir * (130 * horseHs - 50) : (horseView === "front" ? -1 : 1) * (84 * horseHs + 66);
+  const rideLift = ride && horseView ? ground - 326 * horseHs - L - 12 : 0;
+  if (horseView) { left = Math.min(left, -(Math.abs(horseX) + (horseView === "side" ? 310 : 100) * horseHs + 20)); top = Math.min(top + rideLift - 12, ground - (horseView === "side" ? 520 : 570) * horseHs); bottom = Math.max(bottom, ground + 16 * horseHs + 10); }   // (its shadow's reach)
   // A background is a stage of its own, the same whatever the figure
   // (SCENE): the frame the usual figure gets in a scene. The figure stands
   // on its ground by its feet, at its size and where it was dragged, so
@@ -313,7 +322,7 @@ function drawNow() {
   // grown past the stage's edges is cut off there; its size slider brings
   // it back.
   const scened = state.background.kind !== "none";
-  naturalFrame = { left, top, ground };
+  naturalFrame = { ...friendFrame, ground };   // (ticket 457: the friend's own, without their horse)
   if (scened) ({ left, top, bottom } = SCENE);
   const width = -2 * left;
 
@@ -409,9 +418,9 @@ function drawNow() {
   // (ticket 245) on a rope bridge: their feet on its deck, as tall as BRIDGE_TALL of the tree's units (times their
   // slider's share); ticket 352: and their own height's against the default's (BRIDGE_BASE), as inside, not whatever their shape
   figureT = figOver && scened ? { k: figOver.k, dx: figOver.x, dy: figOver.y - SCENE.ground, g: gFig, sg: SCENE.ground }
-          : onBr ? { k: (BG.figSize ?? 100) / 100 * BRIDGE_TALL * (onBr.W ? onBr.W.s * bridgeScale(onBr.W, onBr.u) : onBr.s * onBr.sc) / BRIDGE_BASE, dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
+          : onBr ? { k: figScale(BG) * BRIDGE_TALL * (onBr.W ? onBr.W.s * bridgeScale(onBr.W, onBr.u) : onBr.s * onBr.sc) / BRIDGE_BASE, dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
           // (ticket 270: up the spiral staircase, their size the floor's straight below their step, not the screen's height)
-          : scened ? { k: (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? (sizeSeat.kz ?? sizeSeat.z) - SCENE.ground : (BG.kind === "castleroom" && castleWallsOf(BG).stairs ? spiralFloorY(BG.figX ?? 0, BG.figY ?? 0) : null) ?? BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
+          : scened ? { k: figScale(BG) * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? (sizeSeat.kz ?? sizeSeat.z) - SCENE.ground : (BG.kind === "castleroom" && castleWallsOf(BG).stairs ? spiralFloorY(BG.figX ?? 0, BG.figY ?? 0) : null) ?? BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
   figureT.base = Math.max(1, ground - neckTop + 90);   // (ticket 331: their height standing, in their own units, that a size in the picture's divides)
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg, back: scened && SCENE_BACK[BG.kind] ? SCENE_BACK[BG.kind](top, bottom) : -Infinity };
@@ -467,12 +476,14 @@ function drawNow() {
   if (horseView && !wet) {
     const gait = B.anim === "walk" ? "walk" : B.anim === "run" ? "run" : "stand", k = horseView === "side" ? dir : 1;
     const h = horseSvg(horseView, gait, gait === "stand" ? 0 : lfoNow("B").phase,
-                       { coat: WC.horseCoat, mane: WC.horseMane, mark: WC.horseMark, tack: WC.horseTack, socks: WC.horseSocks }, ground, ride);
-    svg += `<g class="horse" data-horse="${horseView} ${gait}"><ellipse cx="${f1(horseX - k * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${horseView === "side" ? 225 : 100}" ry="14" fill="#000" opacity="0.08"/>` +
-           `<g transform="translate(${f1(horseX)} 0) scale(${k} 1)">${h.svg}</g></g>`;
-    horseRing = h.ring && [horseX + k * h.ring[0], h.ring[1]];
-    if (ride) { lift = rideLift + h.bob; horseBits = h.bits.map(([x, y]) => [horseX + k * x, y - lift]);
-      if (h.over) horseOver = `<g class="horse-over" transform="translate(${f1(horseX)} 0)">${h.over}</g>`; }
+                       { coat: WC.horseCoat, mane: WC.horseMane, mark: WC.horseMark, tack: WC.horseTack, socks: WC.horseSocks }, 0, ride);
+    // (drawn on the ground at 0, scaled by hs about its hooves; its points into the friend's units, T)
+    const hs = horseHs, T = ([x, y]) => [horseX + k * hs * x, ground + hs * y], at = `translate(${f1(horseX)} ${f1(ground)}) scale(${(k * hs).toFixed(4)} ${hs.toFixed(4)})`;
+    svg += `<g class="horse" data-horse="${horseView} ${gait}" data-size="${hs.toFixed(3)}"><ellipse cx="${f1(horseX - k * hs * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${f1((horseView === "side" ? 225 : 100) * hs)}" ry="${f1(14 * hs)}" fill="#000" opacity="0.08"/>` +
+           `<g transform="${at}">${h.svg}</g></g>`;
+    horseRing = h.ring && T(h.ring);
+    if (ride) { lift = rideLift + h.bob * hs; horseBits = h.bits.map(b => { const [x, y] = T(b); return [x, y - lift]; });
+      if (h.over) horseOver = `<g class="horse-over" transform="${at}">${h.over}</g>`; }
   }
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
