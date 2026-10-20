@@ -414,6 +414,8 @@ const DEFAULTS = {
   worldsAway: {}, worldTemplates: {},
   // (ticket 439) the person being dressed (their look is the parts below), and the other people, by id
   person: { id: "p1", name: "", template: false, from: null }, peopleAway: {},
+  // (ticket 482) 🧩 Scripting: the rules on or off, and each module's text (null: the shipped one, scriptsState)
+  scripts: { on: false, common: null, rooms: {} },
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
            stars: false, hearts: false, xeyes: false, closed: false, unibrow: false, eyes: 50, sides: 0,
            rays: 0, teeth: 5, open: 0, teethStyle: "normal",

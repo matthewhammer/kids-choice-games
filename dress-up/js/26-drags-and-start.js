@@ -423,6 +423,11 @@ function leverPull(i) {
 function roomLeverPull(side) {
   if (side[0] === "B") return roomBoulderPull(side.slice(1));   // (ticket 323: a blue one)
   if (side === "H") return hatchLeverPull();   // (ticket 334: a tree room's trap door's)
+  if (scriptPull(side)) return;   // (ticket 482: 🧩 Scripting's rule for the trap room, when it is on)
+  roomLeverFlip(side);
+}
+// a red lever flipped, and the pits it works with it (the pull itself, and a script's Flip; ticket 482)
+function roomLeverFlip(side) {
   const B = state.background;
   if (B.kind !== "castleroom") return;
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = leverKey(side, n, K.id);

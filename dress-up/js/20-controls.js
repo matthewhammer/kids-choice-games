@@ -721,6 +721,10 @@ const TABS = [
     // (ticket 251) the ground under the pointer glowing where the friend can go, and a click there walks them to it
     ["accbox", "clickWalk", "👆 walk where you click", [["color", "clickWalkColor", "🎨"], ["choice", "clickPlan", "👆 a click while walking", CLICK_PLANS]]],
   ]],
+  // (ticket 482) the game's logic in Hazel
+  ["🧩 Scripting", "scripting", [
+    ["scripting", "scripts", "🧩 scripting"],
+  ]],
   ["⚙️ Advanced", "advanced", [
     ["advanced", "perf", "⚙️ advanced"],
   ]],
@@ -1961,6 +1965,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // they are otherwise); the frame rate now; and the background features
   // kept off until they are fast (PERF_FEATURES), each with how many there
   // are in this place, and a measure of what it costs on this computer.
+  if (kind === "scripting") { scriptingPanel(box); return box; }   // (ticket 482)
   if (kind === "advanced") {
     // (syncs run on every frame of a walk: the page is changed only when a value changes)
     const put = (node, text) => { if (node.textContent !== text) node.textContent = text; };

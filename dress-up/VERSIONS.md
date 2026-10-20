@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🧩 Scripting** (ticket 482, a pull request): the game's logic written in Hazel. A new tab has an editor for 📚 Common and one for the castle's trap room; switched on, the trap room's red levers do what its script says: flip a lever, flip both, or say something over the picture. Off to start, and with a mistake in the script the levers work as they always have.
+
 ## 0.0.373 (2026-10-20)
 
 Everything in 0.0.372, with a paper to read.
