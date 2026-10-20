@@ -296,6 +296,21 @@ function drawNow() {
                         -((80 + (C ? (kind === "deer" ? 60 : 30) : witch ? brimRx - 80 : 0)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20),
                         broomH ? -(Math.abs(broomH[0]) + 60 * kb) : 0, staffH ? -(Math.abs(staffH[0]) + 40) : 0, bowH ? -(Math.abs(bowH[0]) + 50) : 0, shieldH ? -(Math.abs(shieldH[0]) + 40) : 0, swordH ? -(Math.abs(swordH[0]) + 24) : 0,
                         catK ? -(w - 4) - 24 * catK : 0, catK ? -(-(w - 4) + 40 * catK) : 0);
+  // (ticket 454, Matthew: "look into the dress-up-pictures for clipped pictures ... see if you can find any and what caused
+  // them. Fix those if possible." The archive's 0.0.347 run had the head cut off at the frame's side lying down and crawling
+  // in profile, and the top of the head cut jumping into a hug: the frame was the friend's standing one.) Turned about the
+  // hips (crawling, swimming, lying: the turn drawNow gives them below, rot), the frame is the standing one's corners turned
+  // the same way, as wide as they reach and as tall above the ground; held up into a hug, its top goes up by the lift.
+  {
+    const turn0 = move && move.rot ? move.rot : !move && B.pose === "lie" && state.background.kind === "none" ? (B.lieHead === "right" ? 90 : -90) : 0;
+    if (turn0) {
+      const a = turn0 * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+      const pts = [[left, top], [-left, top], [left, bottom], [-left, bottom]].map(([x, y]) => [x * c - (y - L) * sn, L + x * sn + (y - L) * c]);
+      left = Math.min(left, -Math.max(...pts.map(p => Math.abs(p[0]))));
+      top = Math.min(top, ground - (Math.max(...pts.map(p => p[1])) - Math.min(...pts.map(p => p[1]))));
+    }
+    if (B.pose === "hug" && !turn0) top -= LL * Math.max(0, Number(B.hugLift ?? 50) || 0) / 100;
+  }
   // (ticket 438) the friend's horse, led by its rein, beside them: in profile behind them, its shoulder at theirs and its
   // head ahead of them (mirrored, facing our left); toward us at their right (our left), away at their right (our right).
   // Not while they sit, lie, swim, climb or crawl. The frame grows to hold it.

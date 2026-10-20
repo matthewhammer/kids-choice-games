@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.369 (2026-10-19)
+
+Everything in 0.0.368, with no more heads cut off lying down.
+
+- **The picture holds the whole friend** (ticket 454): with no place behind them, lying down, crawling sideways or swimming no longer cuts your friend's head off at the picture's side, and jumping up into a hug no longer cuts off the top of their head.
+
 ## 0.0.368 (2026-10-19)
 
 Everything in 0.0.367, with new people from a costume.
