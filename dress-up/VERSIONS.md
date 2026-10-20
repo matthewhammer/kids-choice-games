@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.378 (2026-10-20)
+
+Everything in 0.0.377, plus cave passages to put anywhere.
+
+- **🕳️ Cave passages, in the "🦇 cave" things:** a dark way through, put anywhere, as "🌑 a natural archway" in a lump of rock, "🕳️ a hole through a wall of rock" or "⚫ a hole in the floor". Each leads where its "🧭 leads to" says, any place but a castle's or a tree house's rooms, and you go through it as through any doorway (walk to it, ✨, or 🚪 on the controller), and come back with ⬅️.
+
 ## 0.0.377 (2026-10-20)
 
 Everything in 0.0.376, plus cave things to put in any place.

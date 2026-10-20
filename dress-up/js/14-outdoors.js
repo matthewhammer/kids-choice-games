@@ -1927,6 +1927,40 @@ function cascadeThingSvg(t, seed, o) {
     [[-30, -50], [28, -96], [-18, -118]].map(([x, y], j) => gemSparkle(o, x, y, 5, R(j + 20))).join("");
   return s;
 }
+// (ticket 471, Matthew: "we also want to place cave passageways (dark openings that look like natural archways, holes in
+// the wall, and holes in the floor)") A cave passage put in a place: a way through, to the place it says (🧭, any place
+// of the list but a castle's or a tree house's rooms, which need more to say which), and back by ⬅️ as any way. Its
+// opening is the doorway (glowing, gone through as any: the friend walks to its foot, or, a hole in the floor, its
+// middle); the rock round it stands where it is drawn but is no more in the way than a door (one goes into it).
+const PASSAGE_STYLES = [["arch", "🌑 a natural archway"], ["wallhole", "🕳️ a hole through a wall of rock"], ["floorhole", "⚫ a hole in the floor"]];
+const passagePlaces = () => (typeof PLACES === "undefined" ? [] : PLACES).filter(([k]) => !["none", "castleroom", "treeroom"].includes(k));
+function passageThingSvg(t, seed) {
+  const st = t.style || "arch", Rs = (i, j) => seeded(seed + j)(i), P = (x, y) => `${f1(x)} ${f1(y)}`, to = t.to || "cave", c = { k: 1, R: Rs, P };
+  const portal = inner => `<g class="portal" data-to="${to}">${inner}</g>`;
+  if (st === "floorhole") {
+    const pts = [];
+    for (let n = 0; n <= 18; n++) { const a = n / 18 * 2 * Math.PI, b = 1 + 0.2 * (Rs(n, 3) - 0.5); pts.push([48 * Math.cos(a) * b, 15 * Math.sin(a) * b]); }
+    const d = caveSmooth(pts, P) + " Z";
+    return `<defs><radialGradient id="passage-hole-${seed}" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#050407"/><stop offset="0.7" stop-color="#0d0b10"/><stop offset="1" stop-color="#2a2530"/></radialGradient></defs>` +
+      portal(`<path d="${d}" fill="url(#passage-hole-${seed})"/><path d="${d}" fill="none" stroke="#6a6276" stroke-width="3" opacity="0.8"/>`) +
+      [...Array(9)].map((_, i) => { const a = Math.PI * (0.05 + 0.9 * i / 8), x = 54 * Math.cos(a), y = 17 * Math.sin(a) + 2, r = 5 + 4 * Rs(i, 4);
+        return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.6)}" fill="${["#5c5468", "#6a6276", "#4a4352"][i % 3]}" stroke="#2a2630" stroke-width="1"/>`; }).join("");
+  }
+  // a lump of rock, an archway at its foot or a hole through it
+  const edge = caveFractalPath([[-78, 0], [-76, -50], [-60, -104], [-30, -146], [6, -158], [40, -142], [66, -100], [80, -46], [76, 0]], 3, 0.08, Rs, 21);
+  let r = `<ellipse class="flat" cx="0" cy="2" rx="80" ry="10" fill="#000000" opacity="0.2"/><path d="${caveSmooth(edge, P)} Z" fill="#5a5266" stroke="#2a2630" stroke-width="2.5"/>` +
+    [[-48, -30, 16], [44, -40, 18], [-36, -110, 14], [30, -116, 13], [0, -138, 10]].map(([x, y, rr]) => `<ellipse cx="${x}" cy="${y}" rx="${rr}" ry="${f1(rr * 0.7)}" fill="#463f50" opacity="0.6"/>` +
+      `<path d="M${P(x - rr, y)} Q${P(x - rr * 0.4, y - rr * 0.8)} ${P(x + rr * 0.5, y - rr * 0.7)}" fill="none" stroke="#7a7186" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>`).join("");
+  if (st === "wallhole") {
+    const pts = [];
+    for (let n = 0; n <= 16; n++) { const a = n / 16 * 2 * Math.PI, b = 1 + 0.16 * (Rs(n, 5) - 0.5); pts.push([34 * Math.cos(a) * b, -78 + 30 * Math.sin(a) * b]); }
+    const d = caveSmooth(pts, P) + " Z";
+    return r + `<path d="M-40 -46 L40 -46 L46 -38 L-46 -38 Z" fill="#463f50"/>` +
+      portal(`<defs><radialGradient id="passage-wall-${seed}" cx="0.5" cy="0.55" r="0.6"><stop offset="0" stop-color="#9a8ab8" stop-opacity="0.45"/><stop offset="0.5" stop-color="#110e15"/><stop offset="1" stop-color="#050407"/></radialGradient></defs>` +
+        `<path d="${d}" fill="url(#passage-wall-${seed})"/><path d="${d}" fill="none" stroke="#0a080c" stroke-width="3"/>`);
+  }
+  return r + portal(caveArchSvg(c, `passage-arch-${seed}`, 0, 0, 74, 112, seed + 30, "#9a8ab8"));
+}
 const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
@@ -1969,6 +2003,7 @@ const THING_PARAMS = {
   gem: [["style", "💎 kind", "choice", GEM_STYLES], ["color", "🎨", "color", GEM_COLORS], ["glow", "✨ glowing", "toggle"]],
   puddle: [["drip", "💧 a drip from above", "toggle"]],
   cascade: [["style", "💦 kind", "choice", CASCADE_STYLES]],
+  passage: [["style", "🕳️ kind", "choice", PASSAGE_STYLES], ["to", "🧭 leads to", "choice", passagePlaces]],
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
@@ -1980,7 +2015,7 @@ const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, s
                          seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
                          bubblemaker: { shape: "round", rate: 4, theme: "A", color: MAKER_COLORS[0] },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] },
-                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" } };   // (ticket 471)
+                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" } };   // (ticket 471)
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
 // size and shininess (like stars we add or not, and controls over their color
@@ -2158,7 +2193,7 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       seafan: { label: "🪭 sea fan", size: 1, group: "sea" }, sealettuce: { label: "🥬 sea lettuce", size: 1, group: "sea" },
                       // (ticket 471) the 🦇 cave things, for the cave room (and anywhere): a gem, a puddle, a little waterfall
                       gem: { label: "💎 gem", size: 1, group: "cave", moving: true }, puddle: { label: "💧 puddle", size: 1, group: "cave", moving: true },
-                      cascade: { label: "💦 little waterfall", size: 1, group: "cave", moving: true },
+                      cascade: { label: "💦 little waterfall", size: 1, group: "cave", moving: true }, passage: { label: "🕳️ cave passage", size: 1, group: "cave" },
                       // (ticket 284) a 🎚️ lever, and 🕳️ trap doors it opens and shuts
                       lever: { label: "🎚️ lever", size: 1, group: "works" }, trapdoor: { label: "🕳️ trap door", size: 1, group: "works" },
                       // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
@@ -2327,6 +2362,7 @@ function thingSvg(o, t, i) {
                t.kind === "gem" ? at(gemThingSvg(t, seed, o)) :
                t.kind === "puddle" ? at(puddleThingSvg(t, seed, o, (SCENE.top - t.z) / Math.max(0.05, s))) :
                t.kind === "cascade" ? at(cascadeThingSvg(t, seed, o)) :
+               t.kind === "passage" ? at(passageThingSvg(t, seed)) :
                ["kelp", "seagrass", "seafan", "sealettuce"].includes(t.kind) ? at(seaPlantSvg(t.kind, t.color || THING_DEFAULTS[t.kind].color, seed, o)) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
   // (ticket 324: a lever marked, so it glows under the pointer as the trap room's do)

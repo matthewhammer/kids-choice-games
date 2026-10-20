@@ -1648,7 +1648,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           if (how === "color") return [el("span", { class: "hint" }, label), ...opts.map(col => el("button", { title: col, "aria-pressed": String((now ?? opts[0]) === col),
             style: col === "none" ? "width: 1.6em; height: 1.6em; padding: 0; border-radius: 50%;" : `background: ${col}; width: 1.6em; height: 1.6em; padding: 0; border-radius: 50%;`,
             onclick: set(col) }, col === "none" ? "∅" : ""))];
-          if (how === "choice") return [el("span", { class: "hint" }, label), ...opts.map(([v, name]) => el("button", { "aria-pressed": String(now === v), onclick: set(v) }, name))];
+          // (ticket 471: a list may be a function, read now: a cave passage's places, which this part defines after the things)
+          if (how === "choice") return [el("span", { class: "hint" }, label), ...(typeof opts === "function" ? opts() : opts).map(([v, name]) => el("button", { "aria-pressed": String(now === v), onclick: set(v) }, name))];
           if (how === "action") return [el("button", { onclick: () => { t[p] = opts(t); changed(); } }, label)];
           if (how === "range") { const [lo, hi, st] = opts, shownAt = el("span", { class: "hint" }, `${now ?? 100}%`);
             return [el("span", { class: "hint" }, label), el("input", { type: "range", min: String(lo), max: String(hi), step: String(st), value: String(now ?? 100), "aria-label": label, "data-thing": String(i), "data-param": p,
