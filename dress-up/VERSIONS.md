@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.371 (2026-10-19)
+
+Everything in 0.0.370, with the band naming only what you can see.
+
+- **The band** (ticket 456): it no longer names a group whose name the controls hide (over the jumps it says "body / the jumps"); and the 👥 People box and 🗺️ World design's worlds box have plain borders like every other box.
+
 ## 0.0.370 (2026-10-19)
 
 Everything in 0.0.369, with a band that says where you are in the controls.

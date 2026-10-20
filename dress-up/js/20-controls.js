@@ -2387,7 +2387,8 @@ function crumbsShow(target) {
   const inner = [];
   for (let x = target; x && x !== panel && x.nodeType === 1; x = x.parentElement) {
     const head = x.matches("section.box") ? x.querySelector(":scope > .box-name") : x.matches(".ctlgroup") ? x.querySelector(":scope > .cap") : null;
-    const t = head && crumbWords(head.textContent);
+    // (a header hidden, as one that says only its box's words again is (ticket 392), is not said either)
+    const t = head && head.getClientRects().length ? crumbWords(head.textContent) : "";
     if (t && inner[0] !== t) inner.unshift(t);
   }
   const text = [crumbWords(TABS[tab][0]).toLowerCase(), ...inner].join(" / ");
