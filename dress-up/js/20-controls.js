@@ -1353,6 +1353,36 @@ function castleDesigner(part, key, box, syncs) {
   };
   syncs.push(draw);
 }
+// (ticket 486) ✈️ How to add the game to this device, so it opens in airplane mode, and whether this version is kept here yet
+// (sw.js keeps it; offlineKept counts it). The steps for each kind of device; 📲 where the browser offers its own install.
+function offlineHelp() {
+  const status = el("div", { class: "hint offline-status" }, "…");
+  const install = el("button", { class: "offline-install", hidden: "", onclick: async () => {
+    const p = offlinePrompt; if (!p) return; offlinePrompt = null; install.hidden = true; try { await p.prompt(); } catch (_) { /* (dismissed) */ } } }, "📲 add Dress Up to this device");
+  const say = async () => {
+    install.hidden = !offlinePrompt;
+    const k = await offlineKept(), t = !k.can ? "⚠️ This browser can't keep a copy of the game (a private window keeps nothing). Open it in a normal window."
+      : !k.on ? "💻 This copy comes from this computer, which keeps none: the game at matthewhammer.org keeps a copy of itself."
+      : k.total && k.kept === k.total ? "✅ This version (" + VERSION.number + ") is kept on this device: it opens without the Internet."
+      : "⏳ Keeping a copy on this device: " + k.kept + " of " + k.total + " files so far. Leave the game open a moment, with the Internet.";
+    if (status.textContent !== t) status.textContent = t;
+  };
+  const step = (who, how) => el("li", {}, [el("b", {}, who), " " + how]);
+  const d = el("details", { class: "how offline-help" }, [
+    el("summary", {}, ["✈️ play without the Internet (airplane mode): add the game to this device"]),
+    status, install,
+    el("ol", {}, [
+      step("📱 iPad or iPhone, in Safari:", "tap Share (the square with an arrow up), then \"Add to Home Screen\", then Add."),
+      step("🤖 Android phone or tablet, in Chrome:", "tap ⋮ (top right), then \"Add to Home screen\" or \"Install app\"."),
+      step("💻 A computer, in Chrome or Edge:", "click the install button at the right end of the address bar, or ⋮ then \"Cast, save and share\" then \"Install page as app\" (Edge: ··· then Apps then \"Install this site as an app\")."),
+      step("🍎 A Mac, in Safari:", "File, then \"Add to Dock\"."),
+      step("🦊 Firefox:", "nothing to add: once the game has opened here with the Internet, this same address opens without it. A bookmark finds it again.")]),
+    el("div", { class: "hint" }, "Then open Dress Up once from its new icon while the Internet is still on. After that it works in airplane mode, and your friends and settings are saved on the device as always. When the Internet is back, a newer version shows as 🆕 after the game's name, as before.")]);
+  d.addEventListener("toggle", () => { if (d.open) say(); });
+  let timer = setInterval(() => { if (!d.isConnected) { clearInterval(timer); timer = null; } else if (d.open) say(); }, 2000);
+  say();
+  return d;
+}
 function control(part, [kind, key, label, ...rest], opts = {}) {
   // another tab's control, shown here when this tab's settings say (its
   // settings are that tab's: the ghost's see-through-ness is the
@@ -1985,6 +2015,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                  el("a", { href: "https://arxiv.org/abs/1703.05410", target: "_blank", rel: "noopener" }, "Languages of Play: Towards Semantic Foundations For Game Interfaces (2017) ↗"),
                  el("span", { class: "hint" }, "Chris Martens and Matthew A. Hammer, arXiv:1703.05410;"),
                  el("a", { href: "https://arxiv.org/html/1703.05410v1", target: "_blank", rel: "noopener" }, "as a web page ↗")]),
+               // (ticket 486, Matthew: "In the advanced tab, let's offer an expandable panel that instructs the user how to add the app to
+               // their device (esp mobile and tablets) so they can use in Airplane mode.") folded, open on a tap
+               offlineHelp(),
                el("div", { class: "row" }, [ver, up]),
                // (ticket 302, M) a pop-up when a new version is out: off unless switched on here, this browser's own
                (() => { const b = el("button", { class: "ask-new-toggle", "aria-pressed": String(askNewOn()), onclick: () => { askNewSet(!askNewOn()); b.setAttribute("aria-pressed", String(askNewOn())); } },

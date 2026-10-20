@@ -1801,3 +1801,5 @@ showTab();
 setSplit();
 // (this version after the game's name, and a newer one offered when there is one: ticket 134)
 showVersion();
+// (a copy of the game kept on this device, for airplane mode: ticket 486)
+offlineStart();
