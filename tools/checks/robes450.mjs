@@ -21,7 +21,7 @@ try {
     state.music.mute = true; state.world.at = null; Object.assign(state.background, { kind: "emptyroom", things: [], seat: null }); state.body.sit = false; state.body.facing = "front";
     for (const k of ["monk", "wizard", "king", "queen"]) { set("costume", "kind", k); changed(); await w(80);
       // (the skirt: the path from the waist, M-hw L-10, in the robe's fill)
-      const sk = [...document.querySelectorAll("#figure path")].find(e => /^M-[\\d.]+ [\\d.]+ L[\\d.]+ [\\d.]+ L/.test(e.getAttribute("d") || "") && (e.getAttribute("fill") || "").length > 3 && e.getBoundingClientRect().height > 40);
+      const sk = [...document.querySelectorAll("#figure path")].find(e => /^M-[\\d.]+ [\\d.]+ L[\\d.]+ [\\d.]+ L/.test(e.getAttribute("d") || "") && (e.getAttribute("fill") || "").length > 3 && e.getBBox().height > 60);   // (in the drawing's own units: on GitHub's smaller picture the robe is 30 px tall on the screen, and a 40 px test found nothing)
       if (!sk) { out[k] = null; continue; }
       const d = sk.getAttribute("d").match(/^M(-[\\d.]+)/), waist = 2 * Math.abs(+d[1]), b = sk.getBBox();
       out[k] = { hem: Math.round(b.width), waist: Math.round(waist) }; }
