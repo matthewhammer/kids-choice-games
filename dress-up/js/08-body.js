@@ -771,6 +771,39 @@ function wizardHat(WC, rx = 116, dir = 0) {
     `<path d="${cone}" fill="${c}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` + moon +
     [[100 + f * 16, 6, 8], [96, -54, 7], [104 - f * 4, -96, 5.5]].map(([x, y, r]) => `<polygon points="${starPts(x, y, r)}" fill="${st}"/>`).join("");
 }
+// (ticket 434, Matthew: "robin hood -style costume (also see Lego's theme from the 1990s castle era with woodsman, the
+// patterns on those figures are memorable)") A FORESTER'S CAP, in the round head's units: a felt crown over the top of the
+// head from a band at 46, peaked at the front (facing us, its peak a point over the brow; in profile, a beak over the face,
+// the brim turned up behind), and a long feather slanting back from the band.
+function robinHat(WC, dir = 0, away = false) {
+  const c = WC.robinHat || "#3f7d3a", ln = darker(c), fc = WC.robinFeather || "#d2382b", f = dir || 0;
+  const crown = !f ? `M30 48 Q34 -6 100 -18 Q166 -6 170 48 Q100 ${away ? 40 : 66} 30 48 Z`
+    : `M${f1(100 - f * 74)} 50 Q${f1(100 - f * 80)} -4 ${f1(100 - f * 10)} -14 Q${f1(100 + f * 60)} -6 ${f1(100 + f * 96)} 54 Q${f1(100 + f * 40)} 44 ${f1(100 - f * 74)} 50 Z`;
+  const brim = !f ? `<path d="M26 46 Q100 ${away ? 62 : 58} 174 46 L176 36 Q100 46 24 36 Z" fill="${ln}"/>`
+    : `<path d="M${f1(100 - f * 76)} 52 Q${f1(100 - f * 96)} 30 ${f1(100 - f * 100)} 8 Q${f1(100 - f * 70)} 30 ${f1(100 - f * 60)} 46 Z" fill="${ln}" stroke="${darker(ln)}" stroke-width="2"/>`;
+  const fx = f ? 100 - f * 40 : 140, fy = 30, tip = f ? [100 - f * 140, -70] : [196, -76];
+  const feather = `<path d="M${f1(fx)} ${f1(fy)} Q${f1((fx + tip[0]) / 2 + (f ? f * 10 : -14))} ${f1(fy - 70)} ${f1(tip[0])} ${f1(tip[1])} Q${f1((fx + tip[0]) / 2 + (f ? -f * 14 : 18))} ${f1(fy - 40)} ${f1(fx)} ${f1(fy)} Z" fill="${fc}" stroke="${darker(fc)}" stroke-width="2"/>` +
+    `<path d="M${f1(fx)} ${f1(fy)} Q${f1((fx + tip[0]) / 2)} ${f1(fy - 56)} ${f1(tip[0])} ${f1(tip[1])}" fill="none" stroke="${darker(fc)}" stroke-width="1.5"/>`;
+  return feather + `<path d="${crown}" fill="${c}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` + brim;
+}
+// A bow through the hand at H, in body units: a curved wooden bow, its back toward the side `side` the hand is on, its
+// string straight between its tips through the hand
+function bowSvg([hx, hy], side) {
+  const t = [hx, hy - 78], b = [hx, hy + 78], bx = hx + side * 30;
+  return `<path d="M${f1(t[0])} ${f1(t[1])} Q${f1(bx)} ${f1(hy)} ${f1(b[0])} ${f1(b[1])}" fill="none" stroke="#7a4f2a" stroke-width="6" stroke-linecap="round"/>` +
+    `<line x1="${f1(t[0])}" y1="${f1(t[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#e8e0cc" stroke-width="1.5"/>`;
+}
+// A quiver of arrows, in body units, slung on the back from the left shoulder down to the right hip: the case, a band, and the
+// arrows' fletching out of its top; from the front only that fletching shows, over the shoulder
+function quiverSvg(w, L, away) {
+  const top = [-(w - 6), -34], bot = [w - 16, L * 0.62], ang = Math.atan2(bot[1] - top[1], bot[0] - top[0]) * 180 / Math.PI - 90;
+  const fletch = [-10, 0, 10].map((dx, i) => `<path d="M${f1(top[0] + dx)} ${f1(top[1] - 4)} l-5 -18 l5 6 l5 -6 Z" fill="${["#d2382b", "#f4f1ea", "#e3b72f"][i]}" stroke="#5a3d22" stroke-width="1"/>` +
+    `<line x1="${f1(top[0] + dx)}" y1="${f1(top[1] - 4)}" x2="${f1(top[0] + dx)}" y2="${f1(top[1] + 10)}" stroke="#7a4f2a" stroke-width="2"/>`).join("");
+  if (!away) return fletch;
+  const len = Math.hypot(bot[0] - top[0], bot[1] - top[1]);
+  return fletch + `<g transform="translate(${f1(top[0])} ${f1(top[1])}) rotate(${f1(ang)})"><rect x="-14" y="0" width="28" height="${f1(len)}" rx="8" fill="#7a4f2a" stroke="#4a2f16" stroke-width="2.5"/>` +
+    `<rect x="-14" y="${f1(len * 0.2)}" width="28" height="6" fill="#4a2f16"/></g>`;
+}
 // A wizard's staff through the hand at H, in body units: a straight wooden staff, leaning a little, 150 above the hand and
 // down to 110 below it, knotted at its head round an orb that glows in its colour.
 // (ticket 433: a monk's ends in a knob, "knob"; a dryad's sprouts leaves, "leaves")

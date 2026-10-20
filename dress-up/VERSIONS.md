@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.355 (2026-10-19)
+
+Everything in 0.0.354, with Robin Hood.
+
+- **🏹 Robin Hood** (ticket 434): a new costume in 🐯 Costume, a forester: a green tunic with zigzag edges on its cape and hem, a strap across the chest, a belt with a pouch, brown hose and boots, a cap with a long feather, a bow in his hand and a quiver of arrows on his back (walk him away from you to see it). The tunic, cap and feather each in five colours; the bow and the quiver can come off.
+
 ## 0.0.354 (2026-10-19)
 
 Everything in 0.0.353, with no buckles on the back.
