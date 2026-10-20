@@ -663,6 +663,15 @@ svg.solid-boxes[data-hide~="you"] .you { display: none; }
 .world-rest > .world-alert { order: 1; } .world-rest > .world-warn { order: 2; } .world-rest > .world-palette { order: 3; } .world-gridcol { order: 4; }
 .world-rest > .world-sizes { order: 5; } .world-rest > .world-here { order: 6; } .world-rest > .world-things { order: 7; } .world-rest > .world-off { order: 8; }
 .world-split { display: none; }
+/* (ticket 488, ^du_report(5)'s "Always Be Knolling"; Matthew: "Especially, for example, non-FS world design control panels")
+   🗺️ World design in the side panel, knolled as it is full screen: each part a box, named once (its own heading, or its
+   data-box-name), the boxes a grid (one column in the side panel's width, more as it widens), the world's grid, the places
+   to put and the things here across all of them; in the order they had (the order above) */
+body:not(.world-big) .world-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
+body:not(.world-big) .world-rest > :not([hidden]):not(.world-view) { margin: 0; border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--mu-main); }
+body:not(.world-big) :is(.world-gridcol, .world-rest > .world-alert, .world-rest > .world-palette, .world-rest > .world-things) { grid-column: 1 / -1; }
+body:not(.world-big) .world-rest > .world-alert { border-color: #d97706; background: color-mix(in srgb, #f59e0b 18%, var(--panel)); }
+.world-rest > [data-box-name]::before { content: attr(data-box-name); display: block; flex-basis: 100%; margin: 0 0 4px; font-size: 0.92em; font-weight: 700; color: var(--ink, inherit); }
 /* (ticket 255, Matthew: "the letters do not scale large enough in the grid when not full screen. I misread them") the
    columns' letters and the rows' numbers outside full screen too, a band the grid's size is reckoned with, as full screen
    has (ticket 224); each at least 13px; an empty square's own name (its letter and number) as big */
@@ -849,3 +858,6 @@ body.designer-big .crumbs { display: none; }
 .script-say { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 50; padding: 6px 14px; border-radius: 999px;
   background: #1f2937; color: #fff; font: 14px/1.4 system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .script-say[hidden] { display: none; }
+/* (ticket 491) in one column, under the picture's stage, which sticks at the top (its height, --stage-h, kept by
+   21-size-and-divider.js), not across the picture */
+@media (max-width: 760px) { .crumbs { top: var(--stage-h, 0px); } }

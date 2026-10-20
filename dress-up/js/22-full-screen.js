@@ -133,8 +133,8 @@ function tabDesigner(panel, name) {
   designerSplit(layout, split, "dress-up-tab-split");
   panel.replaceChildren(bar, layout);
 }
-// (ticket 375) ⚙️ Advanced, one long row of seventeen parts till now, in boxes: 🌗 the look, 🏠 this game (its page, its code, its
-// version), 🎮 playing (a pop-up for new versions, the levers), 🧪 tests and timing, 🚀 effects kept off till fast (its long note a
+// (ticket 375) ⚙️ Advanced, one long row of seventeen parts till now, in boxes: 🌗 the look, 🏠 this game (its page, its code, See
+// also, its version), ✈️ without the Internet (ticket 486), 🎮 playing (a pop-up for new versions, the levers), 🧪 tests and timing, 🚀 effects kept off till fast (its long note a
 // hint on the box's name), 📰 what's new (last, as it was)
 function advLayout(panel) {
   const root = panel.querySelector(":scope > .ctl"); if (!root) return;
@@ -145,7 +145,8 @@ function advLayout(panel) {
   const note = kids.find(c => c.classList.contains("hint") && /^🚀/.test(txt(c)));
   const made = [
     box("🌗 the look", pick(c => c.classList.contains("theme-row"))),
-    box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer")))),   // (the version's row by its button: its words come after)
+    box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer") || c.classList.contains("see-also")))),   // (the version's row by its button: its words come after; ticket 474's See also, near the top, between the code and the version)
+    box("✈️ without the Internet", pick(c => c.classList.contains("offline-help"))),   // (ticket 486: adding the game to a device, for airplane mode, near the top where a parent looks)
     box("🎮 playing", pick(c => (c.classList.contains("row") && /^(🔔|🎚️)/.test(txt(c))) || (c.classList.contains("hint") && !/^🚀/.test(txt(c))))),   // (and its note, filled as it is used)
     box("🧪 tests and timing", pick(c => c.classList.contains("perfrow") && /^(🧪|⏱️)/.test(txt(c)))),
     box("🚀 kept off till they are fast", pick(c => c.classList.contains("perfrow")), note ? txt(note).replace(/^🚀\s*/, "") : ""),
@@ -313,7 +314,7 @@ function bgLayout(panel) {
 // as it is (its own layout: the designers, the controller, accessibility, advanced)
 const TAB_BOXES = {
   "🧍 Body": [["🤸 the pose", ["pose", "lieHow", "lieHead", "hugLift"]], ["↔️ facing and moving", ["facing", "anim", "stairsWay"]],
-              ["✋ the dominant hand", ["hand"]], ["📏 their size", ["size"]], ["🐸 the jumps", ["jumps"]]],
+              ["✋ the dominant hand", ["hand"]], ["📏 their size", ["size"]], ["🐴 the horse", ["horse", "horseSize", "horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks"]], ["🐸 the jumps", ["jumps"]]],
   "😀 Face": [["🙂 the head", ["color", "size", "faceW", "faceH", "alien", "eyeGap", "sides", "rays"], ["face"]], ["🤨 the brows", ["brow", "unibrow"]],
               ["👄 the mouth", ["smile", "mouthSize", "open", "teethStyle", "teeth", "tongue", "tongueLen", "tongueW", "tongueColor"]],
               ["👃 the nose", ["noseView", "nose", "noseFront", "noseH", "noseW", "witchDir", "witchLen"]], ["👂 the ears", ["ears", "earSize"]],
@@ -332,6 +333,8 @@ const TAB_BOXES = {
   "👟 Feet": [["👟 both feet", ["different", "style", "color", "size"]], ["👟👟 each foot", ["rightShoe"]],
              ["🔢 how many", ["toes", "alienToes", "talonCount"], ["number of"]]],
   "👻 Visibility": [["🧍 the whole friend", ["all"]], ["👻 each part", ["head", "eyes", "hair", "shirt", "pants", "feet", "hands"]]],
+  // (ticket 488, ^du_report(5)'s rules: Matthew, "how can we best 'Knowl' the panels") the controller, the bubbles, moving
+  "🎮 Controls": [["🎮 the game controller", ["map"]], ["🫧 bubbles", ["blowing", "blowThemes"]], ["🏃 moving", ["moving", "clickPlan"]]],
   "🐯 Costume": [["🐯 the costume", ["kind"]], ["🐾 the animal", ["fur", "furPattern", "marks", "spot", "belly", "eyes", "accent"]],
                 ["🤿 the scuba suit", ["scubaColor", "scubaAccent"]], ["⚓ the old diving suit", ["diverMetal", "diverCloth", "diverHose", "hoseColor"]],
                 ["🥽 diving gear", ["snorkel", "snorkelColor", "mask", "maskColor", "tank", "tankColor", "leaks"]],
@@ -346,7 +349,7 @@ const TAB_BOXES = {
                 ["🧚 the fairy", ["wingStyle", "wingColor_butterfly", "wingColor_dragonfly", "wingColor_leaf", "wingColor_petal", "wingColor_sparkle",
                                   "wingFlutter", "wingLfo", "fairyOutfit", "tunicStyle", "tunicColor_petal", "tunicColor_leaf", "tunicColor_bluebell",
                                   "tunicColor_sparkle", "tunicColor_toadstool", "fairyShoes", "fairyShoeColor"]],
-                ["🌸 the wreath", ["wreath", "wreathFlowers"]], ["🐴 the horse", ["horse", "horseSize", "horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks"]]],
+                ["🌸 the wreath", ["wreath", "wreathFlowers"]]],
 };
 // (ticket 377, the report's rule 7, mirror the picture) the parts of the friend each tab's boxes are about (the drawing's veil layers,
 // marked data-part): pointed at, a box lights them in the game (body[data-lit], style.css), however often the friend is drawn again
@@ -359,7 +362,11 @@ function boxLayout(panel, tabName, ctls) {
   const plan = TAB_BOXES[tabName];
   if (!plan) return;
   const rows = [...panel.children], boxes = plan.map(([name]) => ({ name, rows: [] })), rest = { name: tabName, rows: [] };
-  rows.forEach((r, i) => { const key = ctls[i] && typeof ctls[i][1] === "string" ? ctls[i][1] : null, j = key ? plan.findIndex(([, keys]) => keys.includes(key)) : -1;
+  // (ticket 488) a row of another part ("of": 🎮 Controls' bubbles, from 🧍 Body and 🏞️ Background) by its own key, unless the
+  // plan names its part (🐯 Costume's 👻 visibility rows)
+  const keyOf = c => { const k = c && typeof c[1] === "string" ? c[1] : null;
+    return c && c[0] === "of" && c[2] && typeof c[2][1] === "string" && !plan.some(([, keys]) => keys.includes(k)) ? c[2][1] : k; };
+  rows.forEach((r, i) => { const key = keyOf(ctls[i]), j = key ? plan.findIndex(([, keys]) => keys.includes(key)) : -1;
     (j >= 0 ? boxes[j] : rest).rows.push(r); });
   const made = [...boxes, rest].filter(b => b.rows.length).map((b, j) => {
     // (the report's rule 1: nothing inside repeats the box's name: "mouth size" in 👄 the mouth is "size"; the words dropped are

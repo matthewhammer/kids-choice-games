@@ -161,7 +161,7 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // space for feet to squeeze between that box and the back horizon line": the house's lawn's far edge, 205 up, the
 // castle's meadow's, 150 up; the buildings' own boxes are SCENE_BOXES')
 const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 200, treehouse: 118, clearing: 140,
-                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, castle: 138,
+                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, castle: 138,
                     woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
@@ -181,7 +181,8 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // (ticket 358: and what the audit found standing with no box: the cemetery's stones, the cave's stalagmites, the hut's woodpile
 // and the hut center's fire, the trap room's helmet, the greenhouse's watering can, the house's toys, a chair not sat on, the
 // sea floor's wreck and vent)
-const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "woodpile", "helmet", "watering can", "teddy", "truck", "blocks", "chair", "shipwreck", "vent", "palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
+const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "stalagmite", "crystal cluster", "cascade", "cavemushroom",   // (the last four: the cave room's, the little waterfall, the cave mushroom: ticket 471)
+   "woodpile", "helmet", "watering can", "teddy", "truck", "blocks", "chair", "shipwreck", "vent", "palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
   "rock", "boulder", "sand castle", "snake tank", "soup pot", "stone", "stove", "stump", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
@@ -459,6 +460,10 @@ const legReach = () => poseJoints && poseJoints.legs && poseJoints.legs.length
 function youHeights(upright = false) {
   const J = poseJoints, T = figureT;
   if (!J || !J.legs || !J.legs.length || !T || !(T.k > 0)) return { ankle: 20, hips: 80, crown: 200 };
+  // (ticket 492) ridden, they are up on the horse: the hooves' fetlocks are the ankles that meet the floor's things, the hips
+  // on the saddle's seat, the crown that far over them as they sit (a low door or bridge meets a rider's head)
+  if (horseNow && horseNow.ride) { const s = T.k * horseNow.hs, hips = horseNow.seat * s, hipsY = Math.max(...J.legs.map(l => l.H[1])), crownY = faceFrame.ty + headCrown(state.face) * faceFrame.s;
+    return { ankle: HORSE_FETLOCK * s, hips, crown: hips + Math.max(0, (hipsY - crownY) * T.k) }; }
   const C = !upright && crawlShape();
   if (C) return { ankle: C.ankle, hips: C.torso[4], crown: C.torso[5] };
   const foot = Math.max(...J.legs.map(l => l.F[1])), hips = Math.max(...J.legs.map(l => l.H[1])), crown = faceFrame.ty - (upright ? faceFrame.drop || 0 : 0) + headCrown(state.face) * faceFrame.s;
@@ -490,9 +495,34 @@ function crawlShape() {
   const soles = J.crawl === "toward" ? J.arms.map(q => [...xs([q.H], hr), -hd, hd, 0, ankle]) : null;
   return { ankle, soles, torso: [...across, -depth, hd, 0.25 * crown, crown] };
 }
+// (ticket 492, Matthew: "When 'riding horse' or 'leading horse' -- we need the collision boxes to be more accurate. our
+// actual body is above the horse. the horse has a body, and feet. Do the same we are doing for humanoid bodies, but extended
+// for horses (four legs, not just two)") The friend's horse meets things as it is drawn (horseNow): a box under each of its
+// four hooves, as wide as a hoof, a step deep, up to its fetlock (the pair drawn farther back, seen end on, that much
+// deeper); and its body, from its belly up to its back, along its barrel, as deep as the horse is wide seen side on, or as
+// long as it is seen end on: so what is lower than its belly passes under it, between its legs. horseBoxes(x, z): those,
+// were the friend's feet at (x, z); null with no horse.
+const HORSE_FETLOCK = 46;
+function horseBoxes(x, z) {
+  const H = horseNow, T = figureT;
+  if (!H || !T || !(T.k > 0) || !H.barrel) return null;
+  const s = T.k * H.hs, at = hx => x + T.k * (H.X + H.k * H.hs * hx), hw = Math.max(3, 11 * s), hd = Math.max(2.5, 6 * s);
+  const hooves = H.hooves.map(([hx, , back]) => { const cx = at(hx), zz = z - back * s; return [cx - hw, cx + hw, zz - hd, zz + hd, 0, HORSE_FETLOCK * s]; });
+  const [b0, b1, belly, top, deep] = H.barrel, xa = at(b0), xb = at(b1);
+  return { hooves, body: [Math.min(xa, xb), Math.max(xa, xb), z - deep * s, z + hd, belly * s, top * s] };
+}
+// (ticket 492) ridden: the rider's box, up on the horse, from the hips on its saddle to their crown, as wide as their hips
+// (a sliver at least), at the barrel's middle depth seen side on, at the hooves' line seen end on
+function riderBox(x, z) {
+  const H = horseNow, T = figureT, Y = youHeights(), s = T.k * H.hs, half = Math.max(4, 16 * s), hd = Math.max(2.5, 6 * s), zr = z - (H.view === "side" ? 12 : 0) * s;
+  return [x - half, x + half, zr - hd, zr + hd, Y.hips, Y.crown];
+}
 function feetSoles(x, z) {
   const J = poseJoints, T = figureT;
   if (!J || !J.legs || !J.legs.length || !T || !(T.k > 0)) return [[x - SOLID_MARGIN, x + SOLID_MARGIN, z - 3, z + 3, 0, 20]];
+  // (ticket 492) ridden, the soles on the floor are the horse's hooves: theirs are up beside its barrel
+  const HB = horseNow && horseNow.ride ? horseBoxes(x, z) : null;
+  if (HB) return HB.hooves;
   const C = crawlShape();
   if (C && C.soles) return C.soles.map(([a, b, d0, d1, lo, hi]) => [x + a, x + b, z + d0, z + d1, lo, hi]);
   const prof = facingOf(state.body) !== 0, hw = T.k * Math.max(8, Math.min(45, (J.footR || 50) * (prof ? 0.6 : 0.42))), hd = Math.max(2.5, hw * 0.35), up = youHeights().ankle;
@@ -515,7 +545,12 @@ function torsoBox(x, S) {
 }
 // (ticket 337: and, standing, their legs' box, ankle to hips, as the torso's across: what meets a thing above the ankles and
 // below the hips, a table's top, a bed's frame; before it, nothing did. Before the torso's, which stays the last)
-const youBoxes = (x, z) => { const S = feetSoles(x, z), t = torsoBox(x, S); if (!t) return S;
+// (ticket 492) with a horse: ridden, its hooves, its body and the rider up on it; led, theirs and its, the torso's last
+const youBoxes = (x, z) => { const HB = horseBoxes(x, z);
+  if (HB && horseNow.ride) return HB.hooves.concat([HB.body, riderBox(x, z)]);
+  const own = youBoxesOwn(x, z);
+  return HB ? own.slice(0, -1).concat(HB.hooves, [HB.body], own.slice(-1)) : own; };
+const youBoxesOwn = (x, z) => { const S = feetSoles(x, z), t = torsoBox(x, S); if (!t) return S;
   if (crawlShape()) return S.concat([t]);
   const H = youHeights(); return S.concat([[t[0], t[1], t[2], t[3], H.ankle, H.hips], t]); };
 // a solid's boxes up from the ground: a trunk's bands, else one as tall as the thing (o.h)

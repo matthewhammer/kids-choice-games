@@ -314,7 +314,7 @@ function drawNow() {
   // (ticket 438) the friend's horse, led by its rein, beside them: in profile behind them, its shoulder at theirs and its
   // head ahead of them (mirrored, facing our left); toward us at their right (our left), away at their right (our right).
   // Not while they sit, lie, swim, climb or crawl. The frame grows to hold it.
-  const horseView = (WC.horse || "none") !== "none" && !sitting && B.pose !== "lie" && !(move && (move.water || move.ladder != null || move.squash || move.rot))
+  const horseView = (B.horse || "none") !== "none" && !sitting && B.pose !== "lie" && !(move && (move.water || move.ladder != null || move.squash || move.rot))
     ? (dir ? "side" : away ? "back" : "front") : null;
   // (ridden: under them, the saddle's seat at their hips, and they are lifted onto it, rideLift, the frame's top with them)
   // (ticket 457, Matthew: "horse needs its own 'size compared to main friend' param, to adjust the scales of different
@@ -325,7 +325,7 @@ function drawNow() {
   // big as the stable's horses, HORSE_SCALE, measured face to face at the stalls' depth) over the friend's own size (body.size,
   // bodyScale), so the place's size for people (figSize) sizes it, never the rider's own: a small gnome leaves their horse as
   // big as it was, in every place. Everything about it (where it stands, the seat, the reins, the frame) goes by hs.
-  const horseHs = HORSE_SCALE * Math.max(0.2, Number(WC.horseSize ?? 100) / 100) / bodyScale(), friendFrame = { left, top };
+  const horseHs = HORSE_SCALE * Math.max(0.2, Number(B.horseSize ?? 100) / 100) / bodyScale(), friendFrame = { left, top };
   const horseX = ride ? (horseView === "side" ? -dir * 30 * horseHs : 0) : horseView === "side" ? -dir * (130 * horseHs - 50) : (horseView === "front" ? -1 : 1) * (84 * horseHs + 66);
   const rideLift = ride && horseView ? ground - 326 * horseHs - L - 12 : 0;
   if (horseView) { left = Math.min(left, -(Math.abs(horseX) + (horseView === "side" ? 310 : 100) * horseHs + 20)); top = Math.min(top + rideLift - 12, ground - (horseView === "side" ? 520 : 570) * horseHs); bottom = Math.max(bottom, ground + 16 * horseHs + 10); }   // (its shadow's reach)
@@ -488,15 +488,17 @@ function drawNow() {
   }
   // (ticket 438) the horse, before the friend: its own shadow, then it, stepping with their stride
   let horseRing = null, horseBits = null, horseOver = "", lift = 0;
+  horseNow = null;
   if (horseView && !wet) {
     const gait = B.anim === "walk" ? "walk" : B.anim === "run" ? "run" : "stand", k = horseView === "side" ? dir : 1;
     const h = horseSvg(horseView, gait, gait === "stand" ? 0 : lfoNow("B").phase,
-                       { coat: WC.horseCoat, mane: WC.horseMane, mark: WC.horseMark, tack: WC.horseTack, socks: WC.horseSocks }, 0, ride);
+                       { coat: B.horseCoat, mane: B.horseMane, mark: B.horseMark, tack: B.horseTack, socks: B.horseSocks }, 0, ride);
     // (drawn on the ground at 0, scaled by hs about its hooves; its points into the friend's units, T)
     const hs = horseHs, T = ([x, y]) => [horseX + k * hs * x, ground + hs * y], at = `translate(${f1(horseX)} ${f1(ground)}) scale(${(k * hs).toFixed(4)} ${hs.toFixed(4)})`;
     svg += `<g class="horse" data-horse="${horseView} ${gait}" data-size="${hs.toFixed(3)}"><ellipse cx="${f1(horseX - k * hs * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${f1((horseView === "side" ? 225 : 100) * hs)}" ry="${f1(14 * hs)}" fill="#000" opacity="0.08"/>` +
            `<g transform="${at}">${h.svg}</g></g>`;
     horseRing = h.ring && T(h.ring);
+    horseNow = { view: horseView, ride: !!ride, X: horseX, k, hs, hooves: h.hooves || [], barrel: h.barrel, seat: -h.seat[1] };   // (ticket 492)
     if (ride) { lift = rideLift + h.bob * hs; horseBits = h.bits.map(b => { const [x, y] = T(b); return [x, y - lift]; });
       if (h.over) horseOver = `<g class="horse-over" transform="${at}">${h.over}</g>`; }
   }
@@ -1123,11 +1125,11 @@ function drawNow() {
     // from behind, hidden by them)
     if (!away)
     for (const arm of nearArms) { const [x0, y0] = horseBits[horseBits.length > 1 && arm.H[0] > 0 ? 1 : 0], [x1, y1] = arm.H;
-      svg += `<path class="rein" d="M${f1(x0)} ${f1(y0)} Q${f1((x0 + x1) / 2)} ${f1(Math.max(y0, y1) + 12)} ${f1(x1)} ${f1(y1)}" fill="none" stroke="${WC.horseTack || "#7a3a1a"}" stroke-width="5" stroke-linecap="round"/>`; }
+      svg += `<path class="rein" d="M${f1(x0)} ${f1(y0)} Q${f1((x0 + x1) / 2)} ${f1(Math.max(y0, y1) + 12)} ${f1(x1)} ${f1(y1)}" fill="none" stroke="${state.body.horseTack || "#7a3a1a"}" stroke-width="5" stroke-linecap="round"/>`; }
   } else if (horseRing && nearArms.length) {
     const d = a => Math.hypot(a.H[0] - horseRing[0], a.H[1] - horseRing[1]), hand = nearArms.reduce((a, b) => d(b) < d(a) ? b : a);
     const [x0, y0] = horseRing, [x1, y1] = hand.H, sag = 30 + 0.12 * Math.hypot(x1 - x0, y1 - y0);
-    svg += `<path class="rein" d="M${f1(x0)} ${f1(y0)} Q${f1((x0 + x1) / 2)} ${f1(Math.max(y0, y1) + sag)} ${f1(x1)} ${f1(y1)}" fill="none" stroke="${WC.horseTack || "#7a3a1a"}" stroke-width="5" stroke-linecap="round"/>`;
+    svg += `<path class="rein" d="M${f1(x0)} ${f1(y0)} Q${f1((x0 + x1) / 2)} ${f1(Math.max(y0, y1) + sag)} ${f1(x1)} ${f1(y1)}" fill="none" stroke="${state.body.horseTack || "#7a3a1a"}" stroke-width="5" stroke-linecap="round"/>`;
   }
   const handsAt = svg.length;
   if (!winged && !(squash && away)) {
@@ -1458,7 +1460,7 @@ const PLACE_PHRASE = { sea: "swimming in 🌊 open water", deepsea: "swimming in
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
   hut: "outside the 🛖 grass hut", hutroom: "in the 🛖 grass hut's living room", hutbed: "in the 🛖 grass hut's bedroom", hutpotion: "in the 🛖 grass hut's potion room", hutcenter: "in the 🛖 grass hut's 🔥 center",
   healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",
-  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", woodpath: "on the 🥾 path through the woods", crossing: "at the 🛤️ forest crossing",
+  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", caveroom: "in the 🦇 cave room", woodpath: "on the 🥾 path through the woods", crossing: "at the 🛤️ forest crossing",
   castle: b => `outside of ${castleOf(b).id}'s 🏰 castle`,
   castleroom: b => { const K = castleOf(b), n = Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1)));
     return `in the ${roomLabel(K.rooms[n - 1])} (room ${n} of ${K.id}'s castle)`; } };

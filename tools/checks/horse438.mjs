@@ -1,6 +1,6 @@
 // (ticket 438, Matthew: "horse in all poses we have for people that 'make sense' for using in the game as a way to ride, or
 // walk/run with (holding the horse's reins, and walking/running next to it) ... Just walking and running, and standing
-// still: towards, away and L R poses") The friend's horse, led by its rein: with 🐯 Costume's 🐴 the horse at "led by its
+// still: towards, away and L R poses") The friend's horse, led by its rein: with 🧍 Body's 🐴 the horse (🐯 Costume's before 0.0.380, ticket 492) at "led by its
 // rein", it is drawn before the friend, from the side facing our right or left, facing us, or from behind as they face,
 // standing, walking or running with them, its legs moving through the stride; its rein runs from its noseband to the
 // friend's hand; it fits the picture's frame (no scene); there is none while they lie down or sit, nor with no horse; its
@@ -28,7 +28,7 @@ try {
     state.music.mute = true; state.world.at = null; state.background.kind = "none"; state.body.sit = false;
     const pic = () => document.getElementById("pic"), horse = () => pic().querySelector("#figure .horse");
     out.none = !!horse();
-    set("costume", "horse", "lead");
+    set("body", "horse", "lead");
     // (each way they face, standing: the horse's view, its rein, inside the frame, before the friend's first part)
     for (const f of ["front", "right", "left", "back"]) { state.body.facing = f; changed(); drawNow(); await w(60);
       const h = horse(), vb = pic().viewBox.baseVal, b = h && h.getBBox(), fig = pic().querySelector("#figure");
@@ -44,7 +44,7 @@ try {
       out.legs[g + " " + f] = { gait: seen.map(x => x && x.split("|")[0]), distinct: new Set(seen).size }; } }
     finally { lfoNow = lfo0; state.body.anim = "none"; }
     // (ridden: each way, the rider lifted, the horse's near parts over them facing us or away, its reins, the frame)
-    set("costume", "horse", "ride"); out.ride = {};
+    set("body", "horse", "ride"); out.ride = {};
     for (const f of ["front", "right", "left", "back"]) { state.body.facing = f; state.body.anim = "none"; changed(); drawNow(); await w(60);
       const fig = pic().querySelector("#figure"), rider = fig.querySelector(":scope > .rider"), over = fig.querySelector(":scope > .horse-over"), vb = pic().viewBox.baseVal;
       const lift = rider ? +(rider.getAttribute("transform").match(/translate\\(0 (-?[\\d.]+)\\)/) || [0, 0])[1] : 0, b = fig.getBBox();
@@ -55,17 +55,17 @@ try {
         const r = pic().querySelector("#figure > .rider"); seen.add(r ? r.innerHTML : null); gaits.add(horse() && horse().getAttribute("data-horse")); }
       out.rideStill = seen.size; out.rideGaits = [...gaits]; }
     finally { lfoNow = lfo0; state.body.anim = "none"; }
-    set("costume", "horse", "lead"); state.body.facing = "front"; changed(); drawNow();
+    set("body", "horse", "lead"); state.body.facing = "front"; changed(); drawNow();
     // (no horse lying down or sitting)
     state.body.facing = "front"; state.body.pose = "lie"; changed(); drawNow(); out.off.lie = !!horse();
     state.body.pose = "stand"; state.body.sit = true; changed(); drawNow(); out.off.sit = !!horse();
     state.body.sit = false; changed(); drawNow(); out.off.stand = !!horse();
-    // (its rows: in 🐯 Costume's 🐴 the horse box, all six with a horse, only the choice without)
-    tab = TABS.findIndex(t => t[0] === "🐯 Costume"); showTab(); await w(200);
+    // (its rows: in 🧍 Body's 🐴 the horse box (ticket 492), all with a horse, only the choice without)
+    tab = TABS.findIndex(t => t[0] === "🧍 Body"); showTab(); await w(200);
     const shows = e => { for (let x = e; x && x.id !== "panel"; x = x.parentElement) if (x.hidden || getComputedStyle(x).display === "none") return false; return true; };
     const rows = () => { const b = [...document.querySelectorAll("#panel section.box")].find(x => x.querySelector(":scope > .box-name").textContent.trim() === "🐴 the horse");
       return b ? [...b.children].filter(c => !c.classList.contains("box-name") && shows(c)).length : -1; };
-    out.rowsWith = rows(); set("costume", "horse", "none"); changed(); showTab(); await w(200); out.rowsWithout = rows();
+    out.rowsWith = rows(); set("body", "horse", "none"); changed(); showTab(); await w(200); out.rowsWithout = rows();
     // (the stable's faces nod, blink and munch; the friend's horse's is still)
     const H = { coat: "#7b4a2a", mane: "#1f1f22", mark: "blaze" };
     out.stableAnim = /<animate/.test(horseFace(H, 1, "#c0392b", false)); out.stillAnim = /<animate/.test(horseFace(H, 1, "#7a3a1a", true));

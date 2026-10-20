@@ -50,7 +50,7 @@ const placeSeats = B => { try { return (SEATS[B.kind]?.(stageC(), B) ?? []).filt
 // object and why: dress-up/SEATS.md.
 const SIT_ANY = ["front", "left", "right"];
 const SIT_TOPS = new Map([
-  ...["rock", "boulder", "stone", "stump", "log", "fallen", "toadstool", "mushroom"].map(n => [n, { at: 0.94, span: 0.6, facing: SIT_ANY }]),
+  ...["rock", "boulder", "stone", "stump", "log", "fallen", "toadstool", "mushroom", "cavemushroom"].map(n => [n, { at: 0.94, span: 0.6, facing: SIT_ANY }]),
   ...["barrel", "barrels", "water barrel", "crate", "box", "chest", "toy chest", "flour sack", "hay heap", "hay cart"].map(n => [n, { at: 0.98, span: 0.8, facing: SIT_ANY }]),
   ...["bench", "chair"].map(n => [n, { at: 0.5, span: 0.8, facing: ["front"] }]),
 ]);
@@ -720,9 +720,9 @@ function endJump() {
 }
 // (ticket 438) riding the friend's horse: astride, the walk or run the horse's, not theirs. In profile the thighs go
 // forward and down along its side and the shins back; facing us or away, the legs go down either side of it; the hands
-// forward and low, holding the reins. In place of moveNow's limbs, while costume.horse is "ride" (riding()).
+// forward and low, holding the reins. In place of moveNow's limbs, while body.horse is "ride" (riding()).
 const RIDE_ANIMS = ["none", "walk", "run"];
-const riding = B => state.costume.horse === "ride" && B.pose !== "lie" && RIDE_ANIMS.includes(B.anim || "none") && !poseHeld;
+const riding = B => state.body.horse === "ride" && B.pose !== "lie" && RIDE_ANIMS.includes(B.anim || "none") && !poseHeld;
 function rideMove(B) {
   const dir = facingOf(B), both = (k, f) => ({ [k + "L"]: f(1), [k + "R"]: f(-1) });
   if (dir) return { ...both("Leg", () => 45), ...both("Knee", () => 75), ...both("Arm", () => 12), ...both("Elbow", () => 50), riding: true };
@@ -1056,6 +1056,10 @@ const posed = B => POSE_KEYS.some(k => Number(B[k]));
 // where each joint was drawn, in the figure's units, for grabbing them
 // (draw fills it in): shoulders, elbows, hands; hips, knees, feet, by side
 let poseJoints = null;
+// (ticket 492) the friend's horse as last drawn, for its collision boxes (horseBoxes): its view, ridden or not, where it
+// stands (X, in the friend's units), which way (k), its size (hs), its hooves and barrel (horseSvg's) and its seat's
+// height; null with no horse drawn
+let horseNow = null;
 // while a joint is held (the drag below): which, and the ground the friend
 // stood on when it was grabbed, kept till it is let go, so the friend stays
 // put under the finger even as the lower foot changes

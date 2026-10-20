@@ -26,7 +26,7 @@ try {
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), out = {};
     state.music.mute = true; state.world.at = null; const B = state.background;
     Object.assign(B, { kind: "castleroom", castle: "N", castleRoomsN: 6, castleRoom6N: "stable", castleRoom: 6, figX: 0, figY: -92, figSize: 100 });
-    set("costume", "horse", "lead"); state.body.facing = "front"; changed(); await w(900);
+    set("body", "horse", "lead"); state.body.facing = "front"; changed(); await w(900);
     // (a face: the stable's face path, as horseFace draws it, its height on the screen)
     const faceH = root => { const p = root && [...root.querySelectorAll("path")].find(p => /^M-16 -157/.test(p.getAttribute("d") || "")); return p ? p.getBoundingClientRect().height : 0; };
     const mine = () => { drawNow(); return faceH(document.querySelector("#figure .horse")); };
@@ -34,9 +34,9 @@ try {
     out.at100 = mine();
     set("body", "size", 50); out.small = mine(); set("body", "size", 100);
     B.figSize = 50; out.place = mine(); B.figSize = 100;
-    set("costume", "horseSize", 50); out.half = mine(); set("costume", "horseSize", 100);
+    set("body", "horseSize", 50); out.half = mine(); set("body", "horseSize", 100);
     // (ridden by a small gnome, facing us: the gnome's head above the horse's, not hidden)
-    set("costume", "kind", "gnome"); set("costume", "horse", "ride"); set("body", "size", 50); changed(); drawNow(); await w(200);
+    set("costume", "kind", "gnome"); set("body", "horse", "ride"); set("body", "size", 50); changed(); drawNow(); await w(200);
     const head = document.querySelector("#figure .rider"), over = document.querySelector("#figure .horse-over");
     const hr = head && head.getBoundingClientRect(), orr = over && over.getBoundingClientRect();
     out.riderTop = hr ? Math.round(hr.top) : null; out.horseTop = orr ? Math.round(orr.top) : null;
@@ -45,7 +45,7 @@ try {
     const rh = document.querySelector("#figure .rider [data-part=head]"), rb = rh && rh.getBoundingClientRect();
     out.centered = !!(hb && rb) && Math.abs((hb.left + hb.width / 2) - (rb.left + rb.width / 2)) < 0.15 * hb.width;
     out.overRider = !!(over && head && (head.compareDocumentPosition(over) & Node.DOCUMENT_POSITION_FOLLOWING));
-    set("costume", "kind", "none"); set("costume", "horse", "none"); set("body", "size", 100); changed();
+    set("costume", "kind", "none"); set("body", "horse", "none"); set("body", "size", 100); changed();
     return JSON.stringify(out); })()`));
   console.log(`  ${JSON.stringify(r)}`);
   const st = r.stable.reduce((a, b) => a + b, 0) / Math.max(1, r.stable.length);

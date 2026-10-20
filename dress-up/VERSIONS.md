@@ -6,6 +6,76 @@ Each version lists the game's features as of that version. The newest version is
 
 - **🧩 Scripting** (ticket 482, a pull request): the game's logic written in Hazel. A new tab has an editor for 📚 Common and one for the castle's trap room; switched on, the trap room's red levers do what its script says: flip a lever, flip both, or say something over the picture. Off to start, and with a mistake in the script the levers work as they always have.
 
+## 0.0.385 (2026-10-20)
+
+Everything in 0.0.384, with the waterfall's moon by the clock too.
+
+- **The 🌊 waterfall and the 🪨 cave behind it, "🕰️ by the clock":** the moon is the real one there too, in its phase. At the waterfall it hides behind the cliff and the jungle unless it is high enough or far enough to the side to be seen; from inside the cave you see it through the mouth whenever it is up.
+
+## 0.0.384 (2026-10-20)
+
+Everything in 0.0.383, plus the sky in words.
+
+- **🌍 where and when says what the sky is doing:** under the date and hour, a line tells you where the sun is (how high, which way) and how long the day is there, from sunrise to sunset, and the moon's phase, how much of it is lit and where it is. Far north in winter it says the sun does not rise that day.
+
+## 0.0.383 (2026-10-20)
+
+Everything in 0.0.382, with 🎮 Controls tidied into boxes.
+
+- **🎮 Controls in three boxes:** "🎮 the game controller" (its buttons), "🫧 bubbles" (blowing them, and the three bubble themes) and "🏃 moving" (how your friend moves, and what a click does while they walk), instead of one long column.
+
+## 0.0.382 (2026-10-20)
+
+Everything in 0.0.381, with 🗺️ World design tidied into boxes beside the picture.
+
+- **🗺️ World design, beside the picture (not full screen):** each part is a box with its name at the top ("🌍 worlds", "🎨 places to put in a square", the world's grid, "📐 the world's size", "📍" the square you are in, "🪨 things here", "🚪 off the grid"), and on a wide screen the boxes sit side by side, as they do in full screen, instead of one long column.
+
+## 0.0.381 (2026-10-20)
+
+Everything in 0.0.380, plus the sun and the moon as they really are, where and when you say.
+
+- **🕰️ By the clock:** the 🌗 time of day at the waterfall (and its cave), the camp site (and its tents) and the fairy forest has a new choice, "🕰️ by the clock". Then "🌍 the sky: where and when" says where on Earth you are ("📍 where on Earth": Denver, New York, London, Tokyo, Sydney, Quito on the equator, Reykjavík, Tromsø far north, Ushuaia far south, or "📍 my own place" with its latitude and longitude) and the game's own date and hour. The game works out where the sun and the moon are then, and the moon's phase, by itself, without the Internet: the time of day follows the sun, the sun rises in the east and sets in the west, high in summer and low in winter, and the moon is drawn lit as it really is that night. Far north in winter the sun never rises; in summer it never sets.
+
+## 0.0.380 (2026-10-20)
+
+Everything in 0.0.379, plus the horse as part of the body, meeting things as it is drawn.
+
+- **🐴 The horse is in 🧍 Body now**, in its own box "🐴 the horse", not in 🐯 Costume: a horse goes with any costume. A friend saved with a horse keeps it.
+- **Riding or leading, the horse meets things where it is:** each of its four hooves bumps into things, and its body does too, from its belly up to its back, so something low can pass under it between its legs. Riding, you are up on the horse, not on the floor: your head is up there too, so a low doorway or bridge meets it. Leading, you and the horse each meet things. 🔬 Inspection's collision boxes show the horse's hooves and body, and the rider on it.
+
+## 0.0.379 (2026-10-20)
+
+Everything in 0.0.378, plus cave mushrooms, a better treasure chest and a worn floor in the cave behind the falls.
+
+- **🍄 Cave mushrooms, in the "🦇 cave" things:** six kinds for a dark cave ("💡 glowing caps", "🔔 bells", "🍄 a crowd", "📚 shelves on a stump", "🕯️ tall and thin", "⚪ puffballs"), in a glowing colour, their spores drifting up; turn "✨ glowing" off for plain ones. You can sit on them.
+- **💰 The treasure chest, better:** wooden planks with gold bands, and a lock when it is shut. Open, choose what is in it ("💰 in it"): "🪙 gold coins", "💎 gems", or "👑 gold, gems and a crown", sparkling.
+- **The 🪨 cave behind the falls** has the cave room's worn, rounded floor now, and its archway to the 🦇 cave room is on the left, where the old chest no longer stands in front of it.
+
+## 0.0.378 (2026-10-20)
+
+Everything in 0.0.377, plus cave passages to put anywhere.
+
+- **🕳️ Cave passages, in the "🦇 cave" things:** a dark way through, put anywhere, as "🌑 a natural archway" in a lump of rock, "🕳️ a hole through a wall of rock" or "⚫ a hole in the floor". Each leads where its "🧭 leads to" says, any place but a castle's or a tree house's rooms, and you go through it as through any doorway (walk to it, ✨, or 🚪 on the controller), and come back with ⬅️.
+
+## 0.0.377 (2026-10-20)
+
+Everything in 0.0.376, plus cave things to put in any place.
+
+- **New things to put in a place, in the "🦇 cave" group:** a 💎 gem (six kinds: cut, a cluster, a geode, a single point, rough, a heart; any colour; "✨ glowing" or not), a 💧 puddle (with "💧 a drip from above" falling into it, or still), and a 💦 little waterfall: water coming out of a lump of rock and running down it into a pool at its foot (six kinds: a trickle, a sheet over a ledge, down steps, a spout from a hole, mossy, glowing). You walk around the waterfall's rock, over gems, and stand in puddles. The sparkles, drops and running water move in time with the music.
+
+## 0.0.376 (2026-10-20)
+
+Everything in 0.0.375, plus a new place, the 🦇 cave room, and a fix for narrow windows.
+
+- **A new place, the 🦇 cave room** (in 🏕️ camping), deeper in behind the waterfall: go through the dark archway at the back of the 🪨 cave behind the falls, and come back the same way. Its floor is worn, rounded rock, ledge after ledge, and you can walk all over it. Choose what stands on the floor, "🪨 on the cave room's floor": 🗼 stalagmites, 🪨 boulders, 🏛️ columns from floor to ceiling, 💧 rimstone pools, 💎 crystal clusters or 🍄 glowing mushrooms. You walk around them, and you can sit on a boulder or a big mushroom. Choose what hangs from the ceiling, "🦇 on the cave room's ceiling": 🦷 stalactites, 🥢 soda straws, 🎐 curtains of rock, ☀️ a crack of daylight, 💎 crystals or 🐛 glowworms. Drops fall into a puddle in time with the music, glowing patches on the walls breathe slowly, and two bats are asleep up in the dark.
+- **Fixed:** in one column (a phone, or a window about half a screen wide), the band over the controls that names where the pointer is (the breadcrumbs) slid across the top of the picture as the controls scrolled. It now stays just under the picture and its buttons.
+
+## 0.0.375 (2026-10-20)
+
+Everything in 0.0.374, with two things moved up where you can find them.
+
+- **⚙️ Advanced, near the top:** "✈️ without the Internet", the steps for adding the game to your device, now has a box of its own right after 🏠 this game, instead of at the very bottom. And **See also**, the paper *Languages of Play* (2017), is in 🏠 this game, after the links to the game's page and its code, near the top as it was meant to be (in 0.0.373 and 0.0.374 it had slipped to the bottom box, ⚙️ more).
+
 ## 0.0.374 (2026-10-20)
 
 Everything in 0.0.373, and it works without the Internet.

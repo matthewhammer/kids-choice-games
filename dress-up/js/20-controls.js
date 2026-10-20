@@ -60,6 +60,8 @@ const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
 const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
 // The places, and the kinds of place they are, for the Background tab's
 // two rows (as the music's): every place is of exactly one kind.
+// (ticket 490) the place's time of day is by the clock (🌍 where and when shows)
+const clockHere = b => ((b.kind === "waterfall" || b.kind === "cave") ? b.fallTime : (b.kind === "campsite" || b.kind === "tent") ? b.campTime : b.kind === "fairyforest" ? b.fairyTime : null) === "clock";
 const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["bubbleroom", "🫧 the bubble room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
@@ -67,7 +69,7 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
   ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
-  ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"],
+  ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"], ["caveroom", "🦇 cave room"],
   ["woodpath", "🥾 path through the woods"], ["crossing", "🛤️ forest crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
   // (ticket 278, for M) the grass hut, and its three rooms
   ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"], ["hutcenter", "🔥 the grass hut's center"]];
@@ -79,7 +81,7 @@ const PLACE_GROUPS = [
   ["bubbles", "🫧 bubbles", ["bubblespace", "bubbleroom"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains"]],
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
-  ["camping", "🏕️ camping", ["campsite", "tent", "cave"]],
+  ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom"]],
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
@@ -130,6 +132,17 @@ const TABS = [
     ["choice", "stairsWay", "🔼 on the stairs, facing", [["up", "🔼 up them: climbing with the feet"], ["down", "🔽 down them: a controlled fall"]]],   // (ticket 308)
     // (ticket 457) their own size in every place, on top of the place's size for them (a gnome made small once, everywhere)
     ["range", "size", "📏 their own size in every place (100 = as the place sets it)", 20, 300, 50, 150],
+    // (ticket 492: in 🧍 Body since 0.0.380, Matthew: "The horse settings should be under 'body', not costume")
+    // (ticket 438) the friend's horse, with them whatever they wear: led by its rein; its coat, mane and face marking (the
+    // stable's horses' own), its halter and rein, white socks
+    ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
+    ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
+    ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
+    ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
+    ["color", "horseTack", "🪢 its halter and rein", ["#7a3a1a", "#1f1f22", "#b91c1c", "#1d4ed8", "#15803d", "#e0b030"]],
+    ["toggle", "horseSocks", "🧦 white socks"],
+    // (ticket 457) its size: 100, as big as the stable's horses, whatever the friend's size in the scene
+    ["range", "horseSize", "📏 its size (100 = as big as the stable's horses)", 20, 200, 40, 150],
     ["group", "jumps", "🐸🦘 the two jumps", [
       ["range", "jumpShortH", "🐸 short jump: how high (100 = a leg's length)", 5, 200, 20, 45],
       ["range", "jumpShortS", "🐸 short jump: how fast (100 = steady)", 25, 400, 120, 180],
@@ -376,16 +389,6 @@ const TABS = [
     ["color", "wizardStars", "⭐ stars & moon color", ["#f2c230", "#e5e7eb", "#93c5fd", "#f9a8d4"]],
     ["toggle", "staff", "🪄 staff"],
     ["color", "staffOrb", "🔮 the staff's orb", ["#7dd3fc", "#a78bfa", "#86efac", "#fca5a5", "#fde047"]],
-    // (ticket 438) the friend's horse, with them whatever they wear: led by its rein; its coat, mane and face marking (the
-    // stable's horses' own), its halter and rein, white socks
-    ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
-    ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
-    ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
-    ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
-    ["color", "horseTack", "🪢 its halter and rein", ["#7a3a1a", "#1f1f22", "#b91c1c", "#1d4ed8", "#15803d", "#e0b030"]],
-    ["toggle", "horseSocks", "🧦 white socks"],
-    // (ticket 457) its size: 100, as big as the stable's horses, whatever the friend's size in the scene
-    ["range", "horseSize", "📏 its size (100 = as big as the stable's horses)", 20, 200, 40, 150],
     // the fairy: wings and tunic, each in a style with its own colors; shoes
     ["choice", "wingStyle", "🧚 wings", Object.entries(FAIRY_WINGS).map(([id, w]) => [id, w.name])],
     ...Object.entries(FAIRY_WINGS).map(([id, w]) => ["color", "wingColor_" + id, "🧚 wings' color", w.colors]),
@@ -513,15 +516,29 @@ const TABS = [
     ["range", "mist", "🌫️ mist", 0, 100, 30, 90],
     ["range", "parrots", "🦜 parrots", 0, 6, 1, 4],
     ["range", "fallRate", "💦 how fast it falls (100 = the usual)", 25, 400, 50, 250],
-    ["choice", "fallTime", "🌗 time of day (outside the cave too)", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"]]],
+    ["choice", "fallTime", "🌗 time of day (outside the cave too)", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"], ["clock", "🕰️ by the clock (🌍 where and when)"]]],
+    // (ticket 490) 🌍 where and when, for a sky by the clock: the place (or its own latitude and longitude) and the game's date
+    // and hour (the sun's own time there), never the device's; shown where the time of day is by the clock
+    ["group", "skyWhen", "🌍 the sky: where and when", [
+      ["choice", "skyWhere", "📍 where on Earth", SKY_PLACES.map(([v, l]) => [v, l])],
+      ["range", "skyLat", "🧭 latitude (north +, south −)", -89, 89, -60, 70],
+      ["range", "skyLon", "🧭 longitude (east +, west −)", -180, 180, -150, 150],
+      ["range", "skyYear", "📅 the year", 2000, 2050, 2020, 2030],
+      ["range", "skyMonth", "📅 the month (1 = January)", 1, 12, 1, 12],
+      ["range", "skyDay", "📅 the day of the month", 1, 31, 1, 31],
+      ["range", "skyHour", "🕰️ the hour (the sun's own time there: 12 is noon)", 0, 23, 0, 23],
+      ["note", "skySays", () => skySays(state.background)]]],
     // the cave behind the falls: gems on its walls, sparkling
     ["range", "caveGems", "💎 gems on the walls", 0, 40, 6, 30],
     ["choice", "gemShape", "✨ sparkles: shape", STAR_SHAPES],
     ["range", "gemSize", "✨ sparkles: size (100 = the usual, up to huge)", 25, 2000, 60, 600],
     ["range", "gemBright", "✨ sparkles: brightness", 5, 100, 50, 100],
     ["range", "gemTwinkle", "✨ sparkles: twinkle (the big bright ones turn, grow and shrink, and glimmer)", 0, 100, 20, 100],
+    // (ticket 471) the cave room: what stands on its floor, and what hangs from its ceiling
+    ["choice", "caveFloor", "🪨 on the cave room's floor", CAVE_FLOORS],
+    ["choice", "caveCeiling", "🦇 on the cave room's ceiling", CAVE_CEILINGS],
     // the camp site
-    ["choice", "campTime", "🌗 time of day", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"]]],
+    ["choice", "campTime", "🌗 time of day", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"], ["clock", "🕰️ by the clock (🌍 where and when)"]]],
     ["choice", "starShape", "⭐ stars: shape", STAR_SHAPES],
     ["range", "starSize", "⭐ stars: size (100 = the usual, up to huge)", 25, 2000, 60, 600],
     ["range", "starBright", "⭐ stars: brightness", 5, 100, 50, 100],
@@ -615,7 +632,7 @@ const TABS = [
     ["range", "frogs", "🐸 frogs in jars", 0, 8, 2, 8],
     ["range", "snakes", "🐍 snakes in the tank", 0, 6, 1, 5],
     // the fairy forest: its time of day, its ring of toadstools, its fairy house
-    ["choice", "fairyTime", "🌗 time of day", FAIRY_TIMES],
+    ["choice", "fairyTime", "🌗 time of day", [...FAIRY_TIMES, ["clock", "🕰️ by the clock (🌍 where and when)"]]],
     ["range", "mushrooms", "🍄 toadstools in the ring", 4, 30, 8, 24],
     ["range", "fairyHouseSeen", "🏡 the fairy house: how much it shows (0 = hidden)", 0, 100, 40, 100],
     ["choice", "fairyHouseLfo", "〰️ the fairy house fades with", [["none", "no LFO"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
@@ -1013,7 +1030,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",
-  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize"].map(k => ["costume." + k, c => (c.horse || "none") !== "none"])),
+  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
   ...Object.fromEntries(["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor"].map(k => ["costume." + k, c => c.kind === "ghost"])),
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),
@@ -1087,6 +1104,10 @@ const SHOWN_WHEN = {
   // (the cave sees the falls from behind: their width and mist)
   ...Object.fromEntries(["fallWidth", "mist", "fallRate", "fallTime"].map(key => ["background." + key, b => b.kind === "waterfall" || b.kind === "cave"])),
   ...Object.fromEntries(["caveGems", "gemShape", "gemSize", "gemBright", "gemTwinkle"].map(key => ["background." + key, b => b.kind === "cave"])),
+  ...Object.fromEntries(["caveFloor", "caveCeiling"].map(key => ["background." + key, b => b.kind === "caveroom"])),   // (ticket 471)
+  // (ticket 490) 🌍 where and when: where this place's time of day is by the clock; its own latitude and longitude for 📍
+  ...Object.fromEntries(["skyWhen", "skyWhere", "skyYear", "skyMonth", "skyDay", "skyHour", "skySays"].map(key => ["background." + key, b => clockHere(b)])),
+  ...Object.fromEntries(["skyLat", "skyLon"].map(key => ["background." + key, b => clockHere(b) && b.skyWhere === "custom"])),
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
   ...Object.fromEntries(["crossPaths", "crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),
   "background.things": b => b.kind !== "none",
@@ -1648,7 +1669,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           if (how === "color") return [el("span", { class: "hint" }, label), ...opts.map(col => el("button", { title: col, "aria-pressed": String((now ?? opts[0]) === col),
             style: col === "none" ? "width: 1.6em; height: 1.6em; padding: 0; border-radius: 50%;" : `background: ${col}; width: 1.6em; height: 1.6em; padding: 0; border-radius: 50%;`,
             onclick: set(col) }, col === "none" ? "∅" : ""))];
-          if (how === "choice") return [el("span", { class: "hint" }, label), ...opts.map(([v, name]) => el("button", { "aria-pressed": String(now === v), onclick: set(v) }, name))];
+          // (ticket 471: a list may be a function, read now: a cave passage's places, which this part defines after the things)
+          if (how === "choice") return [el("span", { class: "hint" }, label), ...(typeof opts === "function" ? opts() : opts).map(([v, name]) => el("button", { "aria-pressed": String(now === v), onclick: set(v) }, name))];
           if (how === "action") return [el("button", { onclick: () => { t[p] = opts(t); changed(); } }, label)];
           if (how === "range") { const [lo, hi, st] = opts, shownAt = el("span", { class: "hint" }, `${now ?? 100}%`);
             return [el("span", { class: "hint" }, label), el("input", { type: "range", min: String(lo), max: String(hi), step: String(st), value: String(now ?? 100), "aria-label": label, "data-thing": String(i), "data-param": p,
@@ -1772,7 +1794,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // two lists (Matthew: a lot of them overwhelm), those about the square
     // the friend is in (its own, or a way into it: a warning's key or to),
     // then those about the other squares.
-    const palette = el("div", { class: "world-palette row" }), grid = el("div", { class: "world-grid" }), gridWrap = el("div", { class: "world-grid-wrap" }, [grid]), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away (it waits below, unreachable, to be put back)"), unreach = el("div", { class: "world-unreach" });
+    const palette = el("div", { class: "world-palette row", "data-box-name": "🎨 places to put in a square (drag one onto the grid)" }),   // (ticket 488: each part a box, named once)
+       grid = el("div", { class: "world-grid" }), gridWrap = el("div", { class: "world-grid-wrap" }, [grid]), trash = el("div", { class: "world-trash hint" }, "🗑️ drop a square here to take it away (it waits below, unreachable, to be put back)"), unreach = el("div", { class: "world-unreach" });
     // (ticket 320) the size buttons at the right and bottom edges, or, with ↖️ on (not the default), at the left and top
     const sizeBtns = [["＋ column", 1, 0], ["－ column", -1, 0], ["＋ row", 0, 1], ["－ row", 0, -1]].map(([t, dc, dr]) => el("button", { "data-size": t, onclick: () => worldResize(dc, dr, worldNearEdge) }, t));
     const sizeWords = () => { for (const b of sizeBtns) { const t = b.dataset.size, w = worldNearEdge ? t + (/column/.test(t) ? " at the left" : " at the top") : t; if (b.textContent !== w) b.textContent = w;
@@ -1784,7 +1807,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { instanceUnapply(state.world); worldsInit(); const { id, name } = state.world;   // (ticket 406: this world again, still itself; the other worlds' links into it go)
           for (const w of Object.values(state.worldsAway)) for (const c of Object.values(w.cells)) for (const [d, L] of Object.entries(c.links || {})) if (L.world === id) delete c.links[d];
           state.world = Object.assign(clone(DEFAULTS.world), { id, name }); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
-    const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
+    const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint", "data-box-name": "🚪 off the grid: the places inside others" });
     // (ticket 195, M) every neighbour joined that can be
     const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself), and take away every way that leads off the map's edge",
       // (ticket 232: and every way off the map's edge taken away, saying how many)
@@ -1984,7 +2007,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { class: "eye", onclick: () => worldViewShow(worldViewHidden) }, "👁️"), el("span", { class: "hint" }, "📺 in-game view")]), el("div", { class: "world-view-pic" })]);
     worldViewMark(view);
     const layout = el("div", { class: "world-layout" }, [
-      el("div", { class: "world-rest" }, [view, worldsBox, notHere, warnings, palette, el("div", { class: "world-sizes" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
+      el("div", { class: "world-rest" }, [view, worldsBox, notHere, warnings, palette, el("div", { class: "world-sizes", "data-box-name": "📐 the world's size" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
       split, gridcol]);
     designerSplit(layout, split, "dress-up-world-split");
     box.append(el("div", { class: "hint world-intro" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."), layout);

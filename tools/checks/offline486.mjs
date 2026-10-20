@@ -53,12 +53,14 @@ try {
     const started = typeof state === "object" && !!document.querySelector("#panel") && typeof VERSION === "object";
     tab = TABS.findIndex(t => t[1] === "advanced"); showTab(); await w(400);
     const d = document.querySelector("#panel details.offline-help"); if (d) { d.open = true; d.dispatchEvent(new Event("toggle")); } await w(800);
-    return JSON.stringify({ started, version: VERSION.number, controlled: !!navigator.serviceWorker.controller,
-      section: !!d, summary: d ? d.querySelector("summary").textContent : "", status: d ? d.querySelector(".offline-status").textContent : "",
+    const boxes = [...document.querySelectorAll("#panel .advbox .box-name")].map(h => h.textContent), mine = d && d.closest(".advbox");
+    return JSON.stringify({ started, version: VERSION.number, controlled: !!navigator.serviceWorker.controller, boxes,
+      box: mine ? mine.querySelector(".box-name").textContent : null, section: !!d, summary: d ? d.querySelector("summary").textContent : "", status: d ? d.querySelector(".offline-status").textContent : "",
       steps: d ? [...d.querySelectorAll("li")].map(li => li.querySelector("b").textContent) : [] }); })()`));
   console.log(`  ${JSON.stringify(off)}`);
   ok("with no server, the game starts from the kept copy", off.started && off.controlled, off);
   ok("⚙️ Advanced has the ✈️ airplane-mode section", off.section && /airplane mode/.test(off.summary), off.summary);
+  ok("near the top: a box of its own, right after 🏠 this game", /Internet/.test(off.box || "") && off.boxes.indexOf(off.box) === off.boxes.findIndex(b => /this game/.test(b)) + 1, off.boxes);
   ok("it says this version is kept here", /✅/.test(off.status) && off.status.includes(off.version), off.status);
   ok("steps for an iPad or iPhone, Android, and a computer", ["iPad", "Android", "computer"].every(w => off.steps.some(s => s.includes(w))), off.steps);
   ok("no page errors", !errs.length, errs);

@@ -1375,13 +1375,15 @@ SEATS.fairyforest = (c, B) => { const { W, g, k } = c, n = Math.max(4, Math.min(
     .map(({ i, x, y, s }) => ({ name: `toadstool ${i + 1}`, x0: x - 12 * s, x1: x + 12 * s, y: y - 41 * s, z: y + 1, facing: ["front", "left", "right"] })); };
 function fairyforestScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o } = c;
-  const time = FAIRY_SKY[o.fairyTime] ? o.fairyTime : "day", night = time === "night", dusk = time === "sunset" || night;
+  // (ticket 490) by the clock: the time of day, the sun and the moon where and when the game says (🌍)
+  const clock = o.fairyTime === "clock", time = clock ? skyTimeOf(o, true) : FAIRY_SKY[o.fairyTime] ? o.fairyTime : "day", night = time === "night", dusk = time === "sunset" || night;
   const [tint, ta] = FAIRY_TINT[time], tn = col => ta ? mix(col, tint, ta) : col;
   const starKeys = night ? [o.starShape, o.starSize, o.starBright, o.starTwinkle] : [];
   // the sky: its sun low or high, or the moon and stars
-  let s = SEP + part("fairy-sky", [c.F, time, ...starKeys, sceneLfoKey(o, "fast")], () => {
+  let s = SEP + part("fairy-sky", [c.F, time, ...starKeys, sceneLfoKey(o, "fast"), clock ? skyKey(o) : ""], () => {
     const [a, b] = FAIRY_SKY[time];
     let t = `<defs>${grad("bg-sky", a, b, y0, g - 150 * k)}</defs>` + all("url(#bg-sky)");
+    if (clock) return t + (night ? starsSvg(o, 70, x0, x1, y0, g - 170 * k, k, R, 1300) : "") + skyBodiesSvg(c, o, g - 150 * k, y0 + 12 * k, a);
     if (time === "day") t += sunSvg(x1 - W * 0.14, y0 + H * 0.12, 30 * k, true, o);
     if (time === "sunrise") t += `<circle cx="${f1(x0 + W * 0.2)}" cy="${f1(g - 170 * k)}" r="${f1(44 * k)}" fill="#ffd27a" opacity="0.95"/>`;
     if (time === "sunset") t += `<circle cx="${f1(x1 - W * 0.22)}" cy="${f1(g - 165 * k)}" r="${f1(48 * k)}" fill="#ff8c42" opacity="0.95"/>`;
