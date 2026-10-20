@@ -600,6 +600,14 @@ function drawNow() {
     if (P.style === "skirt")
       svg += `<path d="M${-hw} ${L - 10} L${hw} ${L - 10} L${f1(hw + 30)} ${f1(L + sl)} Q0 ${f1(L + sl + 14)} ${f1(-hw - 30)} ${f1(L + sl)} Z" ` +
              `fill="${pf}" stroke="${ps}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    // (ticket 450, Matthew: "less bell shaped robe at the ankle/feet area -- it's a robe, not a dress") a robe (the monk's or
+    // dryad's, the wizard's, the king's) falls nearly straight from the waist to a straight hem, its weight against the body
+    else if (monk || wizard || king) {
+      const fl = hw + 6 + sl * 0.05, hem = L + sl;
+      svg += `<path d="M${-hw} ${L - 10} L${hw} ${L - 10} L${f1(fl)} ${f1(hem)} Q0 ${f1(hem + 8)} ${f1(-fl)} ${f1(hem)} Z" fill="${pf}" stroke="${ps}" stroke-width="2.5" stroke-linejoin="round"/>` +
+             `<path d="M${f1(-fl + 6)} ${f1(hem - 8)} Q0 ${f1(hem)} ${f1(fl - 6)} ${f1(hem - 8)}" fill="none" stroke="${ps}" stroke-width="2" opacity="0.45"/>` +
+             [-0.45, 0.45].map(k => `<path d="M${f1(k * hw)} ${f1(L + 0.2 * sl)} L${f1(k * fl * 1.02)} ${f1(hem - 6)}" stroke="${ps}" stroke-width="2" opacity="0.3"/>`).join("");
+    }
     else {
       const fl = hw + 26 + sl * 0.25, n = witch ? 9 : fairy ? 7 : 6;
       // (a toadstool's white frill peeps out under its hem)

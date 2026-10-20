@@ -77,21 +77,28 @@ function clothHoodPath(F, dir = 0) {
   // (ticket 448, Matthew: "I really like the new facing away view of the hood. Let's mimic that for L and R, but adjusted for
   // that viewpoint --- now the peak hangs down behind our head"; "it doesn't 'stick out' at all") In profile the hood is round
   // over the head, and its peak a flap hanging down behind it (clothHoodFlap), as from behind.
+  // (ticket 449, Matthew: "the hood should be more like the long hair (default hair), in that it falls down over the shoulders,
+  // but with a rounded shape in front facing view, near the neck area (like a beard, sort of)"; "less 'bell shaped' at the
+  // bottom of the hood"; "more like how heavy fabric would fall against the body, not outward") Its sides fall straight
+  // down onto the shoulders, as long hair does (to about 268), and in front of the neck it rounds under the chin.
   if (dir) { const X = d => f1(100 + dir * d);
     return `M${X(112)} ${f1(cy)} Q${X(116)} ${f1(top + 4)} ${X(40)} ${f1(top - 8)} Q${X(-40)} ${f1(top - 14)} ${X(-96)} ${f1(top + 16)} ` +
-           `Q${X(-120)} ${f1(cy)} ${X(-124)} ${f1(bot)} L${X(-140)} ${f1(bot + 36)} ` +
-           `L${X(126)} ${f1(bot + 36)} Q${X(118)} ${f1(bot)} ${X(112)} ${f1(cy)} Z`; }
-  return `M${f1(100 + b - 110)} ${f1(cy)} Q${f1(100 + b - 112)} ${f1(top + 8)} ${f1(100 + b - 40)} ${f1(top - 8)} Q${f1(100 + p - 6)} ${f1(top - 16)} ${f1(100 + p)} ${f1(top - 36)} ` +
-         `Q${f1(100 + p + 6)} ${f1(top - 16)} ${f1(100 + b + 40)} ${f1(top - 8)} Q${f1(100 + b + 112)} ${f1(top + 8)} ${f1(100 + b + 110)} ${f1(cy)} ` +
-         `Q${f1(100 + b + 116)} ${f1(bot)} ${f1(100 + b + 136)} ${f1(bot + 36)} L${f1(100 + b - 136)} ${f1(bot + 36)} Q${f1(100 + b - 116)} ${f1(bot)} ${f1(100 + b - 110)} ${f1(cy)} Z`;
+           `Q${X(-120)} ${f1(cy)} ${X(-118)} 232 L${X(-110)} 270 Q${X(-60)} 282 ${X(-10)} 272 Q${X(60)} 300 ${X(94)} 252 ` +
+           `C${X(110)} 226 ${X(116)} ${f1(cy + 50)} ${X(112)} ${f1(cy)} Z`; }
+  return `M-10 ${f1(cy)} Q-12 ${f1(top + 8)} 60 ${f1(top - 8)} Q94 ${f1(top - 16)} 100 ${f1(top - 36)} Q106 ${f1(top - 16)} 140 ${f1(top - 8)} Q212 ${f1(top + 8)} 210 ${f1(cy)} ` +
+         `C214 ${f1(cy + 50)} 206 230 202 268 Q186 276 168 262 Q150 302 100 304 Q50 302 32 262 Q14 276 -2 268 C-6 230 -14 ${f1(cy + 50)} -10 ${f1(cy)} Z`;
 }
 function clothHoodOpening(F, dir = 0) {
   const top = 64, bot = headChin(F) + 12, cy = (top + bot) / 2, ry = (bot - top) / 2, cx = 100 + dir * 40, rx = dir ? 62 : 72;
   return `M${f1(cx - rx)} ${f1(cy)} A${f1(rx)} ${f1(ry)} 0 1 0 ${f1(cx + rx)} ${f1(cy)} A${f1(rx)} ${f1(ry)} 0 1 0 ${f1(cx - rx)} ${f1(cy)} Z`;
 }
 const clothHoodBack = (F, c, dir = 0) => `<path d="${clothHoodPath(F, dir)}" fill="${darker(c)}" stroke="${darker(darker(c))}" stroke-width="4" stroke-linejoin="round"/>`;
+// (ticket 449, Matthew: "maybe rounded/beveled to indicate that") a soft fold just inside its bottom edge, the cloth's thickness
+const clothHoodHem = (c, dir = 0) => { const X = d => f1(100 + dir * d), st = `fill="none" stroke="${darker(c)}" stroke-width="3" stroke-linecap="round" opacity="0.45"`;
+  return dir ? `<path d="M${X(-102)} 262 Q${X(-60)} 272 ${X(-12)} 264 Q${X(52)} 286 ${X(84)} 248" ${st}/>`
+             : `<path d="M8 260 Q22 266 38 254 Q54 290 100 292 Q146 290 162 254 Q178 266 192 260" ${st}/>`; };
 const clothHoodFront = (F, c, dir = 0) => `<path d="${clothHoodPath(F, dir)} ${clothHoodOpening(F, dir)}" fill="${c}" fill-rule="evenodd" stroke="${darker(c)}" stroke-width="4" stroke-linejoin="round"/>` +
-  `<path d="${clothHoodOpening(F, dir)}" fill="none" stroke="${darker(darker(c))}" stroke-width="3" opacity="0.6"/>` + (dir ? clothHoodFlap(F, c, dir) : "");
+  `<path d="${clothHoodOpening(F, dir)}" fill="none" stroke="${darker(darker(c))}" stroke-width="3" opacity="0.6"/>` + clothHoodHem(c, dir) + (dir ? clothHoodFlap(F, c, dir) : "");
 // (ticket 448) the peak, in profile: a pointed flap from the crown's back hanging down behind the head, past the neck, shaded
 function clothHoodFlap(F, c, dir) {
   const { cy, ry } = hoodGeom(F), top = cy - ry, bot = cy + ry, X = d => f1(100 + dir * d);
@@ -105,9 +112,10 @@ function clothHoodFlap(F, c, dir) {
 function clothHoodAway(F, c) {
   const { cy, ry } = hoodGeom(F), top = cy - ry, bot = cy + ry, ln = darker(c);
   const round = `M-10 ${f1(cy)} Q-12 ${f1(top + 8)} 60 ${f1(top - 8)} Q100 ${f1(top - 16)} 140 ${f1(top - 8)} Q212 ${f1(top + 8)} 210 ${f1(cy)} ` +
-                `Q216 ${f1(bot)} 236 ${f1(bot + 36)} L-36 ${f1(bot + 36)} Q-16 ${f1(bot)} -10 ${f1(cy)} Z`;
+                `C214 ${f1(cy + 50)} 206 230 202 268 Q100 300 -2 268 C-6 230 -14 ${f1(cy + 50)} -10 ${f1(cy)} Z`;   // (ticket 449: falling straight, no flare)
   const flap = `M54 ${f1(top + 18)} Q100 ${f1(top + 2)} 146 ${f1(top + 18)} L108 ${f1(bot + 52)} Q100 ${f1(bot + 62)} 92 ${f1(bot + 52)} Z`;
   return `<path d="${round}" fill="${c}" stroke="${ln}" stroke-width="4" stroke-linejoin="round"/>` +
+    `<path d="M10 258 Q100 286 190 258" fill="none" stroke="${ln}" stroke-width="3" stroke-linecap="round" opacity="0.45"/>` +
     `<path data-hood="closed" d="${flap}" fill="${mix(c, "#000000", 0.08)}" stroke="${ln}" stroke-width="3.5" stroke-linejoin="round"/>` +
     `<path d="M100 ${f1(top + 10)} L100 ${f1(bot + 54)} L146 ${f1(top + 18)} Z" fill="#000000" opacity="0.1"/>`;
 }

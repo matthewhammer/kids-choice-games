@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.360 (2026-10-19)
+
+Everything in 0.0.359, with hoods that fall onto the shoulders and robes that hang straight.
+
+- **The hood falls onto the shoulders** (ticket 449): the monk's and the dryad's hood hangs down onto the shoulders like long hair, heavy cloth against the body, rounded under the chin in front of the neck, with a soft fold along its edge; no more bell.
+- **Robes hang straight** (ticket 450): the monk's and the dryad's cloak, the wizard's robe and the king's fall straight to the ankles with a straight hem, as robes do; the queen's gown keeps its flare.
+
 ## 0.0.359 (2026-10-19)
 
 Everything in 0.0.358, with the hood's peak hanging behind from the side.
