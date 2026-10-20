@@ -525,7 +525,10 @@ function drawNow() {
              : witch ? { style: "witchboot", size: state.shoes.size, color: WC.bootColor ?? "#1f1f22" }
              : gnome ? { style: "boot", size: state.shoes.size, color: WC.gnomeBoots || "#e8e4da" }
              : wizard ? { style: "boot", size: state.shoes.size, color: "#3b2f4a" }
-             : monk ? { style: "boot", size: state.shoes.size, color: "#5a3d22" }
+             // (ticket 452, Matthew: "druid should not have boots, but should use whatever feet params are there for the character
+             // -- also, give a toggle for 'bare feet', where we ignore those params while wearing the druid") the monk or dryad: the
+             // friend's own feet, or bare (their shoes hidden in the cloak: the story of the costume)
+             : monk ? (WC.bareFeet ? { style: "bare", size: state.shoes.size } : state.shoes)
              : robin ? { style: "boot", size: state.shoes.size, color: "#6b4226" }
              : knight ? { style: "boot", size: state.shoes.size, color: "#6b7280" }
              : royal ? { style: "boot", size: state.shoes.size, color: "#e0b030" }

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.362 (2026-10-19)
+
+Everything in 0.0.361, with the druid's own feet, or bare ones.
+
+- **The monk's and the dryad's feet** (ticket 452): no more boots: under the cloak your friend wears their own shoes (as set in 👟 Feet), or turn on 🦶 bare feet and their shoes are hidden away in the cloak.
+
 ## 0.0.361 (2026-10-19)
 
 Everything in 0.0.360, with the hood round on top.

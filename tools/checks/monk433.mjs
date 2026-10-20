@@ -53,12 +53,16 @@ try {
     state.body.facing = "front"; set("costume", "hoodUp", true);
     set("costume", "monkWho", "dryad"); changed(); await w(60); out.leaves = ((document.getElementById("pat-shirt") || {}).outerHTML || "").includes("M3 11") && fig().includes("#4caf50");
     set("costume", "monkWho", "monk"); changed(); await w(60); out.knob = !fig().includes("#4caf50") && fig().includes('r="8" fill="#7a4f2a"');
+    // (ticket 452: the friend's own feet, no boots; bare feet when asked)
+    set("shoes", "style", "sneaker"); set("shoes", "color", "#2f6db5"); changed(); await w(50); out.ownFeet = fig().includes('fill="#2f6db5"');
+    set("costume", "bareFeet", true); changed(); await w(50); out.bareFeet = !fig().includes('fill="#2f6db5"') && (fig().match(new RegExp('<ellipse[^>]*fill="' + state.face.color + '"', "g")) || []).length >= 2;
+    set("costume", "bareFeet", false);
     set("costume", "staff", false); changed(); await w(60); out.noStaff = !fig().includes('r="8" fill="#7a4f2a"'); set("costume", "staff", true);
     for (const pose of ["stand", "sit", "meditate", "dance", "hug", "lie"]) { set("body", "pose", pose); changed(); await w(60); out.poses[pose] = fig().length > 1000; }
     set("body", "pose", "stand"); state.body.sit = false; changed();
     tab = TABS.findIndex(t => t[1] === "costume"); showTab(); await w(200);
     const shown = key => { const el = document.querySelector('#panel [data-key="' + key + '"]'); return !!el && !el.hidden; };
-    out.rows = ["monkWho", "monkCloak", "hoodUp", "staff", "staffOrb", "wizardRobe"].map(k => shown(k) ? 1 : 0).join("");
+    out.rows = ["monkWho", "monkCloak", "hoodUp", "bareFeet", "staff", "staffOrb", "wizardRobe"].map(k => shown(k) ? 1 : 0).join("");
     return JSON.stringify(out); })()`));
   console.log(`  ${JSON.stringify(r)}`);
   const V = r.v;
@@ -71,8 +75,9 @@ try {
   ok("facing us, a round crown with no peak, as high as from behind (ticket 451)", r.crown !== null && Math.abs(r.crown) < 3, r.crown);
   ok("the monk's cloak brown, the dryad's moss green", r.monkCloak === "#6b4a2b" && r.dryadCloak === "#4f6b3a", [r.monkCloak, r.dryadCloak]);
   ok("the dryad's cloak in leaves and her staff sprouting; the monk's staff knobbed; the staff taken off", r.leaves && r.knob && r.noStaff, [r.leaves, r.knob, r.noStaff]);
+  ok("the friend's own feet under the cloak, no boots; bare feet when asked (ticket 452)", r.ownFeet && r.bareFeet, [r.ownFeet, r.bareFeet]);
   ok("every pose drawn", Object.values(r.poses).every(Boolean), r.poses);
-  ok("the tab shows the monk's rows and the staff, not the orb or the wizard's", r.rows === "111100", r.rows);
+  ok("the tab shows the monk's rows and the staff, not the orb or the wizard's", r.rows === "1111100", r.rows);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
