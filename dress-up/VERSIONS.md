@@ -2,6 +2,22 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.386 (2026-10-20)
+
+Everything in 0.0.385, with today's new things fixed where a careful look found them wrong.
+
+- **Fixed:** a 🕳️ cave passage you put in a place could not be tapped or clicked to go through it (it moved instead). Now a tap or a click goes through it, as any doorway, and dragging it still moves it; it glows when you point at it.
+- **Fixed:** a cave passage could be set to lead to 🌊 open water or 🪸 the deep sea, and then went nowhere. It offers only places you can go through a doorway to.
+- **Fixed:** in the 🦇 cave room, the ceiling's rock could cover the friend when they stood just behind the nearest formation.
+- **Fixed:** the sparkles, drops, running water and glows of the cave things fell out of time with the music after it started or its LFOs changed.
+- **Fixed:** "🕰️ by the clock" at Quito, on the equator, showed no sun from October to March: the picture now faces where the noon sun is.
+- **Fixed:** inside a tent "by the clock", its windows kept the colour of the time of day it first had.
+- **Fixed:** at night "by the clock", the ⭐ stars' settings were hidden although the stars were shown.
+- **Fixed:** the sky in words could say a day was "9 h 60 min" long.
+- **Fixed:** in 🗺️ World design beside the picture, the 📺 note (a place not from a square) lost its amber colour.
+- **Fixed:** in the 🦇 cave room, the dark at the picture's edges is lighter work for the game.
+- **Fixed:** a person kept in 👥 People from before 0.0.380 lost their horse; now they keep it, as the friend does.
+
 ## 0.0.385 (2026-10-20)
 
 Everything in 0.0.384, with the waterfall's moon by the clock too.

@@ -61,6 +61,8 @@ const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "
 // The places, and the kinds of place they are, for the Background tab's
 // two rows (as the music's): every place is of exactly one kind.
 // (ticket 490) the place's time of day is by the clock (🌍 where and when shows)
+// (the review after 0.0.385) night, as chosen or by the clock (the stars are drawn either way)
+const nightBy = (t, b, sunrise) => t === "night" || (t === "clock" && skyTimeOf(b, sunrise) === "night");
 const clockHere = b => ((b.kind === "waterfall" || b.kind === "cave") ? b.fallTime : (b.kind === "campsite" || b.kind === "tent") ? b.campTime : b.kind === "fairyforest" ? b.fairyTime : null) === "clock";
 const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["bubbleroom", "🫧 the bubble room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
@@ -1111,7 +1113,7 @@ const SHOWN_WHEN = {
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
   ...Object.fromEntries(["starShape", "starSize", "starBright", "starTwinkle"].map(key =>
-    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && b.campTime === "night") || (b.kind === "fairyforest" && b.fairyTime === "night") || (b.kind === "castleroom" && castleOf(b).rooms[Math.round(b.castleRoom ?? 1) - 1] === "trap")])),   // (and the trap room's: the sparkles of a boulder lifted)
+    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && nightBy(b.campTime, b, false)) || (b.kind === "fairyforest" && nightBy(b.fairyTime, b, true)) || (b.kind === "castleroom" && castleOf(b).rooms[Math.round(b.castleRoom ?? 1) - 1] === "trap")])),   // (and the trap room's: the sparkles of a boulder lifted)
   "background.tent": b => b.kind === "tent",
   "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),

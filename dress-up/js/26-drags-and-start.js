@@ -197,6 +197,9 @@ pic.addEventListener("pointerdown", e => {
     if (board) Object.assign(drag, { board: board.dataset.way, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 284) pressed on a 🎚️ lever: as a board, a press let go before it has gone SIGN_DRAG_PX pulls it
     else if (T && T.kind === "lever") Object.assign(drag, { lever: true, cx: e.clientX, cy: e.clientY, far: false });
+    // (ticket 471, the review after 0.0.385) pressed on a 🕳️ cave passage's opening: as a board, a press let go before it has
+    // gone SIGN_DRAG_PX goes through it, as any doorway clicked; moved further, the passage is dragged
+    else if (T && e.target.closest && e.target.closest(".thing .portal")) Object.assign(drag, { door: true, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 413) pressed on a thing one can sit on, with 👆 on: as a lever, a press let go before SIGN_DRAG_PX walks there and
     // sits on it; moved further, it is dragged as any thing
     else if (T && (state.access || DEFAULTS.access).clickWalk) { const st = thingSeatOf(thing); if (st) Object.assign(drag, { sit: st.name, cx: e.clientX, cy: e.clientY, far: false }); }
@@ -256,7 +259,7 @@ pic.addEventListener("pointermove", e => {
   if (drag.roomLever) { if (!drag.far && Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) >= SIGN_DRAG_PX) drag.far = true; return; }   // (ticket 305)
   if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
-    if ((drag.board || drag.lever || drag.sit) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
+    if ((drag.board || drag.lever || drag.sit || drag.door) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
     const x = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)), y = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
@@ -344,6 +347,7 @@ const letGo = () => {
   const way = drag && drag.board && !drag.far ? drag.board : null, pull = drag && drag.lever && !drag.far ? drag.put : null;
   const pullRoom = drag && drag.roomLever && !drag.far ? drag.roomLever : null;   // (ticket 305)
   const sitName = drag && drag.sit && !drag.far ? drag.sit : null;   // (ticket 413)
+  const goDoor = drag && drag.door && !drag.far ? drag.put : null;   // (ticket 471: a cave passage pressed, not moved)
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, placed = drag && drag.figure, put = drag && drag.put !== undefined;
@@ -355,6 +359,8 @@ const letGo = () => {
   if (placed) dropOnSeat();
   if (placed && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)
   if (way) { const p = bgShown.node && bgShown.node.querySelector(`.portal[data-way="${way}"]`); if (p && !entering) enterScene(p); }   // (ticket 280: a board's way, as its arrow's click)
+  // (ticket 471: the passage found again, drawn anew as it was let go)
+  if (goDoor !== null) { const p = bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${goDoor}"] .portal`); if (p && !entering) enterScene(p); }
   if (pull !== null) leverAct(`[data-drag="thing:${pull}"]`, () => leverPull(pull));   // (ticket 284; ticket 316: walked to and pulled)
   if (pullRoom) leverAct(`[data-lever="${pullRoom}"]`, () => roomLeverPull(pullRoom));   // (ticket 305)
   if (sitName && !entering && !(state.body.sit && state.background.seat === sitName)) {   // (ticket 413: as a seat clicked)

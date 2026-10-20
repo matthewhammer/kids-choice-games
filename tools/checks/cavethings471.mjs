@@ -7,6 +7,8 @@
 // the floor)"): each kind a doorway to the place it says, no more in the way than a door; through one, and back by ⬅️.
 // And part 4 ("mushrooms ... maybe more styles, for a dark cave?"; "treasure chest"): each cave mushroom kind drawn,
 // glowing, and sat on; a treasure chest open with 🪙 gold, 💎 gems or 👑 a crown, sparkling, and shut with its lock.
+// (The review after 0.0.385) a passage pressed with the mouse, through Chrome's own input, goes through it (a press on a
+// thing had dragged it), and every place a passage offers is one a doorway can lead to (not open water or the deep sea).
 // Exits 1 on a failure.
 //   node cavethings471.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
@@ -56,7 +58,7 @@ try {
   ok("every gem kind drawn, sparkling", ["cut", "cluster", "geode", "point", "rough", "heart"].every(st => { const e = by("gem", st); return e && e.w > 20 && e.h > 20 && e.anims >= 2; }), E.filter(e => e.kind === "gem"));
   ok("every little waterfall kind drawn, its water running", ["trickle", "sheet", "steps", "spout", "mossy", "glowing"].every(st => { const e = by("cascade", st); return e && e.w > 50 && e.h > 60 && e.anims >= 3; }), E.filter(e => e.kind === "cascade"));
   ok("a puddle with a drip has a drop falling and rings; one without has none", by("puddle", "drip").anims >= 5 && by("puddle", "still").anims === 0, E.filter(e => e.kind === "puddle"));
-  ok("a little waterfall's rock is in the way; gems and puddles are not", r.solids.filter(s => s.startsWith("cascade")).length === 6 && !r.solids.some(s => /^(gem|puddle)\\b/.test(s)), r.solids);
+  ok("a little waterfall's rock is in the way; gems and puddles are not", r.solids.filter(s => s.startsWith("cascade")).length === 6 && !r.solids.some(s => /^(gem|puddle)\b/.test(s)), r.solids);
   ok("one stands in a puddle (its depth is its back edge); a gem stands at its foot", r.depth[0] && r.depth[1], r.depth);
   ok("each cave passage is a doorway to its own place, with a spot to walk to", r.doors.length === 3 && ["cave", "forest", "beach"].every(to => r.doors.some(d => d.to === to && d.spot)), r.doors);
   ok("a passage is no more in the way than a door", r.passSolids === 0, r.passSolids);
@@ -66,6 +68,17 @@ try {
   ok("every cave mushroom kind drawn, glowing", ["glowcap", "bells", "cluster", "shelves", "tall", "puffballs"].every(st => { const e = M.find(m => m.style === st); return e && e.w > 20 && e.anims >= 2; }), M);
   ok("the cave mushrooms can be sat on", r.mushSeats >= 4, r.mushSeats);
   ok("a chest open with gold, gems or a crown sparkles; shut, it has its lock", ["gold", "gems", "crown"].every(tr => { const e = C.find(c => c.style === tr); return e && e.anims >= 3; }) && C.find(c => c.style === "shut").lock, C);
+  // a real press and release on a passage's opening, with no move: through it
+  const at = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background;
+    Object.assign(B, { kind: "caveroom", figX: -120, figY: 40, seat: null, things: [{ kind: "passage", x: 220, z: 330, seed: 410, size: 100, mirror: false, style: "arch", to: "forest" }] });
+    state.body.sit = false; changed(); await w(800);
+    const r = bgShown.node.querySelector('.thing .portal path').getBoundingClientRect();
+    return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height * 0.7, places: passagePlaces().map(p => p[0]), enterable: passagePlaces().every(([k]) => SCENES[k] || PICTURE_CHOICES.some(([q]) => q === k)) }); })()`));
+  for (const type of ["mouseMoved", "mousePressed", "mouseReleased"]) await send("Input.dispatchMouseEvent", { type, x: at.x, y: at.y, button: "left", clickCount: 1 });
+  await sleep(7000);
+  const went = await ev(`state.background.kind`);
+  ok("a passage pressed and let go (not moved) goes through it, as any doorway", went === "forest", { went, at });
+  ok("a passage offers only places a doorway can lead to (no open water, no deep sea)", at.enterable && !at.places.includes("sea") && !at.places.includes("deepsea"), at.places);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

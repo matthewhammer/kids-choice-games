@@ -693,6 +693,10 @@ function upgradeHorse(st, saved) {
   for (const k of HORSE_KEYS) { if (old && old[k] !== undefined && !had) st.body[k] = old[k]; delete st.costume[k]; }
   for (const list of [st.hud && st.hud.pins, st.hud && st.hud.min]) if (Array.isArray(list))
     for (let i = 0; i < list.length; i++) if (typeof list[i] === "string" && HORSE_KEYS.some(k => list[i] === "costume." + k)) list[i] = list[i].replace(/^costume\./, "body.");
+  // (the review after 0.0.385) and every person away (a look kept in peopleAway), by the same rule
+  for (const P of Object.values((st && st.peopleAway) || {})) { const L = P && P.look, c = L && L.costume; if (!c) continue;
+    const hadP = !!(L.body && L.body.horse !== undefined);
+    for (const k of HORSE_KEYS) if (c[k] !== undefined) { if (!hadP) (L.body = L.body || {})[k] = c[k]; delete c[k]; } }
 }
 function upgradeFeet(st, saved) {
   if (!(saved && saved.rightShoe)) for (const k of SHOE_OWN) st.rightShoe[k] = st.shoes[k];
@@ -1094,7 +1098,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.385", released: "2026-10-20" };
+const VERSION = { number: "0.0.386", released: "2026-10-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

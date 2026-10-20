@@ -40,8 +40,15 @@ try {
     Object.assign(B, { kind: "waterfall", fallTime: "clock", skyMonth: 10, skyDay: 20, skyHour: 21 }); changed(); await w(400);
     const wfMoon = bgShown.node.querySelectorAll('path[fill="#f4eebc"]').length; B.kind = "cave"; changed(); await w(400);
     const caveMoon = bgShown.node.querySelectorAll('path[fill="#f4eebc"]').length;
+    // (the review after 0.0.385) Quito at noon today: the sun drawn (the picture faces the noon sun); no day "X h 60 min" all year;
+    // the tent's windows follow the clock; the stars' settings show at night by the clock
+    const qn = skyNow({ skyWhere: "quito", skyYear: 2026, skyMonth: 10, skyDay: 20, skyHour: 12 }), quitoSun = !!skyXY(stageC(), qn.sun, SCENE.ground - 100, SCENE.top + 10);
+    let sixty = 0; for (let m = 1; m <= 12; m++) for (let dd = 1; dd <= 28; dd += 3) for (const wh of ["denver", "newyork", "london"]) if (/ 60 min/.test(skySays({ skyWhere: wh, skyYear: 2026, skyMonth: m, skyDay: dd, skyHour: 12 }))) sixty++;
+    Object.assign(B, { kind: "tent", campTime: "clock", skyWhere: "denver", skyMonth: 10, skyDay: 20, skyHour: 12 }); changed(); await w(400);
+    const winDay = bgShown.node.querySelectorAll('[fill="' + CAMP_SKY.day[1] + '"]').length; B.skyHour = 21; changed(); await w(400);
+    const winNight = bgShown.node.querySelectorAll('[fill="' + CAMP_SKY.day[1] + '"]').length, starsShown = !!SHOWN_WHEN["background.starShape"](B);
     const words = { june: skySays({ skyWhere: "denver", skyYear: 2026, skyMonth: 6, skyDay: 21, skyHour: 12 }), polar: skySays({ skyWhere: "tromso", skyYear: 2026, skyMonth: 12, skyDay: 21, skyHour: 12 }) };
-    return JSON.stringify({ v, times, night, day, hidden, fairy, words, wfMoon, caveMoon }); })()`));
+    return JSON.stringify({ v, times, night, day, hidden, fairy, words, wfMoon, caveMoon, quitoSun, sixty, winDay, winNight, starsShown }); })()`));
   const V = r.v;
   ok("the noon sun in Denver: 73.7° at the June solstice, 26.8° at the December one (within half a degree)", Math.abs(V.dJune - 73.7) < 0.5 && Math.abs(V.dDec - 26.8) < 0.5, V);
   ok("the noon sun in Sydney in June: 32.7° up, to the north", Math.abs(V.sJuneAlt - 32.7) < 0.5 && V.sJuneAz > 170, V);
@@ -53,6 +60,10 @@ try {
   ok("the fairy forest by the clock draws the moon at night", r.fairy.moon, r.fairy);
   ok("the sky in words: Denver's June day about 15 hours, the moon's phase; Tromsø's December sun does not rise", /the day is 1[45] h/.test(r.words.june) && /the moon: /.test(r.words.june) && /does not rise/.test(r.words.polar), r.words);
   ok("the waterfall by the clock: tonight's moon behind its cliff; from the cave, through its mouth, in its phase", r.wfMoon === 0 && r.caveMoon === 1, [r.wfMoon, r.caveMoon]);
+  ok("at Quito, by the equator, today's noon sun is drawn (the picture faces the noon sun)", r.quitoSun, r.quitoSun);
+  ok("the day's length in whole minutes, never 'X h 60 min'", r.sixty === 0, r.sixty);
+  ok("the tent's windows follow the clock: day's colour at noon, not at nine at night", r.winDay > 0 && r.winNight < r.winDay, [r.winDay, r.winNight]);
+  ok("the stars' settings show at night by the clock", r.starsShown, r.starsShown);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

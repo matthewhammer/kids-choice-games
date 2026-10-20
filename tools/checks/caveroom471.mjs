@@ -38,7 +38,8 @@ try {
       floors[sty] = { objs: objsNow().filter(o => /stalagmite|boulder|column|crystal|mushroom|rimstone/.test(o)), solids: sol.length, seats: seatsHere(B).map(t => t.name), archHidden: hidden }; }
     B.caveFloor = "stalagmites";
     const roofs = {};
-    for (const [sty, label] of CAVE_CEILINGS) { B.caveCeiling = sty; changed(); await w(300); roofs[sty] = objsNow().filter(o => o.startsWith("the ceiling's")); }
+    for (const [sty, label] of CAVE_CEILINGS) { B.caveCeiling = sty; changed(); await w(300); roofs[sty] = objsNow().filter(o => o.startsWith("the ceiling's"));
+      const rock = bgShown.node.querySelector('path[fill="url(#bg-caveroom-roof)"]'); roofs[sty + ":rockInObj"] = !!(rock && rock.closest('[data-obj^="the ceiling"]')); }
     B.caveCeiling = "stalactites"; changed(); await w(300);
     // back to the cave through the room's archway, and in again through the cave's
     enterScene(bgShown.node.querySelector('.portal[data-to="cave"]')); await w(5000);
@@ -57,7 +58,9 @@ try {
     ok(`floor "${sty}": the archway back is not hidden by a column`, !f.archHidden, f);
   }
   ok("a boulder and a mushroom can be sat on", F.boulders.seats.some(s => s.startsWith("boulder")) && F.mushrooms.seats.some(s => s.startsWith("mushroom")), { b: F.boulders.seats, m: F.mushrooms.seats });
-  ok("each ceiling style drawn, named for itself", Object.values(Rf).every(v => v.length === 1) && new Set(Object.values(Rf).map(v => v[0])).size === 6, Rf);
+  const named = Object.entries(Rf).filter(([k]) => !k.includes(":")).map(([, v]) => v);
+  ok("each ceiling style drawn, named for itself", named.every(v => v.length === 1) && new Set(named.map(v => v[0])).size === 6, Rf);
+  ok("the ceiling's rock is inside the ceiling's object (behind the friend, never among the formations)", Object.entries(Rf).filter(([k]) => k.endsWith(":rockInObj")).every(([, v]) => v === true), Rf);
   ok("through the archways: out to the cave, and in again", trip[0] === "cave" && trip[1] === "caveroom", trip);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

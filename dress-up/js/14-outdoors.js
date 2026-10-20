@@ -419,7 +419,7 @@ function tentScene(c) {
   // and the point the seams run to (at the eye's height)
   const { back, half, vy, out } = tentFrame(c), apex = y0 + H * 0.08, top = y0 + H * 0.3, dh = W * 0.12;
   const seam = mix(T.color, "#000000", 0.55);
-  let s = SEP + part("tent-shell", [c.F, n], () => {
+  let s = SEP + part("tent-shell", [c.F, n, time], () => {   // (time: its windows show the sky; the review after 0.0.385)
     const dark = mix(T.color, "#000000", 0.4), lit = mix(T.color, "#000000", 0.2), far = mix(T.color, "#ffffff", 0.1);
     let t = all(dark) + `<rect x="0" y="${f1(y0 - pad)}" width="${f1(x1 + pad)}" height="${f1(H + 2 * pad)}" fill="${lit}"/>`;
     // the seams along the walls, from the far wall's edges out past us
@@ -639,7 +639,7 @@ function caveScene(c) {
              `<animate attributeName="cy" values="${f1(y)};${f1(y - 20 * k)};${f1(y)}" dur="${(4 + 3 * R(i, 394)).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`;
     }).join("") + `</g>`;
     // (outside, the falls' time of day: its tint over all of it, the moon behind the water at night)
-    if (time !== "day") t += (clock ? (moonUp ? moonPhaseSvg(-mh * 0.45, mt + 50 * k, 18 * k, skyNow(o).moon.phase, "#1c2742", skyNow(o).lat < 0) : "") : time === "night" ? `<circle cx="${f1(-mh * 0.45)}" cy="${f1(mt + 50 * k)}" r="${f1(18 * k)}" fill="#fff6d6"/>` : "") +
+    if (time !== "day") t += (clock ? (moonUp ? moonPhaseSvg(-mh * 0.45, mt + 50 * k, 18 * k, skyNow(o).moon.phase, "#1c2742", skyFacesNorth(skyNow(o))) : "") : time === "night" ? `<circle cx="${f1(-mh * 0.45)}" cy="${f1(mt + 50 * k)}" r="${f1(18 * k)}" fill="#fff6d6"/>` : "") +
       `<rect x="${f1(-mh)}" y="${f1(mt - 20 * k)}" width="${f1(2 * mh)}" height="${f1(floor - mt + 20 * k)}" fill="${FALL_TINT[time][0]}" opacity="${FALL_TINT[time][1]}" pointer-events="none"/>`;
     return t + `</g><path d="${mouth}" fill="none" stroke="#1a171f" stroke-width="${f1(8 * k)}" stroke-linejoin="round"/></g>`;
   });
@@ -920,9 +920,11 @@ function caveroomScene(c) {
   // above them, at the back)
   s += SEP + part("caveroom-roof-" + roofSty, [c.F, sceneLfoKey(o, "slow"), sceneLfoKey(o, "fast")], () => {
     const xs = n => [...Array(n)].map((_, i) => x0 + W * (i + 0.15 + 0.7 * R(i, 4860 + n)) / n);
+    // (the review after 0.0.385: the rock and its edge inside the ceiling's object, which sorts behind the friend; drawn loose,
+    // it fell among the formations and covered a friend standing behind the nearest)
     let t = `<defs>${grad("bg-caveroom-roof", "#17141b", "#2a2530", y0 - pad, y0 + 130 * k)}</defs>` +
             `<path d="M${P(x0 - pad, y0 - pad)} L${P(x1 + pad, y0 - pad)} L${P(x1 + pad, vault[vault.length - 1][1])} ${caveSmooth([...vault].reverse(), P).replace(/^M/, "L")} L${P(x0 - pad, vault[0][1])} Z" fill="url(#bg-caveroom-roof)"/>` +
-            `<path d="${caveSmooth(vault, P)}" fill="none" stroke="#4a4354" stroke-width="${f1(3 * k)}" stroke-linejoin="round" opacity="0.8"/>`, f = "";
+            `<path d="${caveSmooth(vault, P)}" fill="none" stroke="#4a4354" stroke-width="${f1(3 * k)}" stroke-linejoin="round" opacity="0.8"/>`, f = "", lightOnFloor = "";
     if (roofSty === "stalactites") xs(22).forEach((x, i) => {
       const top = caveAlong(vault, x) - 6 * k, len = (24 + 80 * R(i, 4865)) * k, w = (7 + 9 * R(i, 4866)) * k;
       f += `<path d="M${P(x - w, top)} L${P(x + w, top)} Q${P(x + w * 0.3, top + len * 0.6)} ${P(x, top + len)} Q${P(x - w * 0.3, top + len * 0.6)} ${P(x - w, top)} Z" fill="#4e4759" stroke="#2a2630" stroke-width="${f1(1.5 * k)}"/>` +
@@ -952,7 +954,7 @@ function caveroomScene(c) {
            [[-38, 2], [42, 4], [-20, 8]].map(([dx, dy], j) => grassTuft(cx + dx * k, top + dy * k, 12 * k, 4873 + j, "#4f7f3a", 1.4 * k)).join("") +
            [...Array(9)].map((_, j) => { const mx = cx + (R(j, 4876) - 0.3) * 120 * k, my = top + (g - top) * R(j, 4877);
              return `<circle cx="${f1(mx)}" cy="${f1(my)}" r="${f1(1.4 * k)}" fill="#fff6d0" opacity="0.7">` + slow(j / 9, `<animate attributeName="cy" values="${f1(my)};${f1(my + 30 * k)};${f1(my)}" dur="7s" repeatCount="indefinite"/>`) + `</circle>`; }).join("");
-      t += floorObj("daylight on the floor", `<ellipse cx="${f1(cx + 25 * k)}" cy="${f1(g + 40 * k)}" rx="${f1(90 * k)}" ry="${f1(18 * k)}" fill="#fff6d0" opacity="0.18" pointer-events="none"/>`);
+      lightOnFloor = floorObj("daylight on the floor", `<ellipse cx="${f1(cx + 25 * k)}" cy="${f1(g + 40 * k)}" rx="${f1(90 * k)}" ry="${f1(18 * k)}" fill="#fff6d0" opacity="0.18" pointer-events="none"/>`);
     }
     else if (roofSty === "crystals") xs(14).forEach((x, i) => {
       // clusters of crystals growing down from the vault and up out of its hollows, each its own size and slant
@@ -970,11 +972,12 @@ function caveroomScene(c) {
     });
     // two bats asleep, whatever the style
     f += caveBatSvg(-0.22 * W, caveAlong(vault, -0.22 * W) - 2 * k, k, 0) + caveBatSvg(0.33 * W, caveAlong(vault, 0.33 * W) - 2 * k, k, 1);
-    return t + wallObj(`the ceiling's ${CAVE_CEILINGS.find(([v]) => v === roofSty)[1].replace(/^\S+\s/, "")}`, f);
+    return wallObj(`the ceiling's ${CAVE_CEILINGS.find(([v]) => v === roofSty)[1].replace(/^\S+\s/, "")}`, t + f) + lightOnFloor;
   });
-  // the dark at the picture's edges, over everything: a cave lit only by what glows in it
+  // the dark at the picture's edges, over everything: a cave lit only by what glows in it (see-through as a layer, its
+  // opacity on itself, so ticket 261's audit counts nothing as hidden under it: 0.0.376's speed run found 13)
   s += SEP + part("caveroom-dark", c.F, () => obj("the dark", Infinity, `<defs><radialGradient id="bg-caveroom-dark" cx="0.5" cy="0.55" r="0.75"><stop offset="0.55" stop-color="#07060a" stop-opacity="0"/>` +
-    `<stop offset="1" stop-color="#07060a" stop-opacity="0.6"/></radialGradient></defs><rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="url(#bg-caveroom-dark)" pointer-events="none"/>`));
+    `<stop offset="1" stop-color="#07060a" stop-opacity="1"/></radialGradient></defs><rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="url(#bg-caveroom-dark)" opacity="0.55" pointer-events="none"/>`));
   return s;
 }
 
@@ -1950,7 +1953,9 @@ function cascadeThingSvg(t, seed, o) {
 // opening is the doorway (glowing, gone through as any: the friend walks to its foot, or, a hole in the floor, its
 // middle); the rock round it stands where it is drawn but is no more in the way than a door (one goes into it).
 const PASSAGE_STYLES = [["arch", "🌑 a natural archway"], ["wallhole", "🕳️ a hole through a wall of rock"], ["floorhole", "⚫ a hole in the floor"]];
-const passagePlaces = () => (typeof PLACES === "undefined" ? [] : PLACES).filter(([k]) => !["none", "castleroom", "treeroom"].includes(k));
+// (the review after 0.0.385: only places a doorway can take the friend to, enterScene's, so not 🌊 open water or 🪸 deep sea,
+// reached only from the world's squares)
+const passagePlaces = () => (typeof PLACES === "undefined" ? [] : PLACES).filter(([k]) => !["none", "castleroom", "treeroom"].includes(k) && (SCENES[k] || PICTURE_CHOICES.some(([q]) => q === k)));
 function passageThingSvg(t, seed) {
   const st = t.style || "arch", Rs = (i, j) => seeded(seed + j)(i), P = (x, y) => `${f1(x)} ${f1(y)}`, to = t.to || "cave", c = { k: 1, R: Rs, P };
   const portal = inner => `<g class="portal" data-to="${to}">${inner}</g>`;
@@ -2440,7 +2445,10 @@ function thingsLayer(c) {
   // That's the purpose of this slider -- it does not affect the static parts of the background, but it affects the
   // dynamic player, and placed objects") each sized by depthSize, so drawn again when the 🔭 setting moves its vanishing line
   const vanish = Math.round(10 * sceneVanish(c.o)), T = Array.isArray(c.o.things) ? c.o.things : [];
-  const extra = t => t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : "";   // (ticket 317: and a lever's shine)
+  // (the review after 0.0.385) and the LFOs a thing's animations are timed by (lfoTimed: the cave things, the chest's sparkles,
+  // the sea plants): with them in its key, a thing is drawn again when the music starts or an LFO changes, not left out of time
+  const lfoKey = ["fast", "slow", "wings"].map(p => { const L = sceneLfoName(c.o, p); return L ? L + lfoStamp(L) : "own"; }).join();
+  const extra = t => (t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : "") + "|" + lfoKey;   // (ticket 317: and a lever's shine)
   // (ticket 380, ^du_report(12)'s next step 1: with 256 makers the layer cost a part() call each, its thing written out twice over, on
   // every drawing, 0.58 ms in the app's pane) the whole layer kept while nothing it draws from changes: the things, written out once,
   // and what else each reads; on a change each thing still comes from its own piece, so a drag makes one again, not all

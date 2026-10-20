@@ -30,6 +30,10 @@ try {
     for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(old[k] || {}) };
     upgradeHorse(next, old);
     const upgraded = [next.body.horse, next.body.horseCoat, next.body.horseSize, next.costume.horse === undefined];
+    // (the review after 0.0.385) a person away, saved with a horse in their costume, keeps it in their body too
+    const old2 = { costume: { kind: "none" }, body: {}, peopleAway: { p2: { id: "p2", look: { costume: { kind: "none", horse: "lead", horseCoat: "#ffffff" }, body: {} } } } }, next2 = clone(DEFAULTS);
+    for (const k of Object.keys(DEFAULTS)) next2[k] = { ...DEFAULTS[k], ...(old2[k] || {}) };
+    upgradeHorse(next2, old2); const away = next2.peopleAway.p2.look; upgraded.push(away.body.horse, away.body.horseCoat, away.costume.horse === undefined);
     Object.assign(B, { kind: "caveroom", figX: 0, figY: 40, seat: null, things: [] }); state.access = { ...(state.access || DEFAULTS.access), showSolids: true };
     Object.assign(state.body, { horse: "ride", facing: "right", sit: false, pose: "stand", anim: "none" }); changed(); drawNow(); await w(500);
     const fz = g + B.figY, R = horseBoxes(B.figX, fz), boxes = youBoxes(B.figX, fz), Y = youHeights(), soles = feetSoles(B.figX, fz);
@@ -48,6 +52,7 @@ try {
     return JSON.stringify({ tabs, upgraded, ride, views, lead, none }); })()`));
   ok("the horse's settings are in 🧍 Body, none in 🐯 Costume", r.tabs.body.length === 7 && r.tabs.costume.length === 0 && r.tabs.defaults[0] === "none" && r.tabs.defaults[1] == null, r.tabs);
   ok("a friend saved with a horse in Costume keeps it, in Body", r.upgraded[0] === "ride" && r.upgraded[1] === "#1f1f22" && r.upgraded[2] === 80 && r.upgraded[3], r.upgraded);
+  ok("a person away, saved with a horse in Costume, keeps it in Body too", r.upgraded[4] === "lead" && r.upgraded[5] === "#ffffff" && r.upgraded[6], r.upgraded);
   const R = r.ride;
   ok("ridden: four hooves on the floor (the soles), its body, and the rider up on it: six boxes", R.view === "side" && R.hooves === 4 && R.n === 6 && R.solesAreHooves, R);
   ok("ridden: the rider's hips at the saddle, their crown over them; the horse's belly well off the floor", R.hipsAtSeat && R.crownOver && R.bellyOver, R);

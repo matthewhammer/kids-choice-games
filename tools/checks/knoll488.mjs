@@ -46,6 +46,11 @@ try {
     return JSON.stringify({ controls, ghost }); })()`));
   ok("🎮 Controls in three boxes: the game controller, the bubbles, moving", c.controls.length === 3 && /controller/.test(c.controls[0][0]) && /bubbles/.test(c.controls[1][0]) && c.controls[1][1].length === 2 && /moving/.test(c.controls[2][0]) && c.controls[2][1].length === 2, c.controls);
   ok("🐯 Costume's 👻 visibility rows still in the ghost's box", c.ghost && c.ghost[1].filter(k => k === "all").length === 2, c.ghost);
+  // (the review after 0.0.385) the 📺 alert (a place not from a square) keeps its amber over the box rule
+  const amber = await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); state.background.kind = "bubblespace"; changed();
+    tab = TABS.findIndex(t => /World design/.test(t[0])); showTab(); await w(500); const a = document.querySelector("#panel .world-alert");
+    return a && !a.hidden ? getComputedStyle(a).borderTopColor : "hidden"; })()`);
+  ok("World design's 📺 alert keeps its amber in the side panel", amber === "rgb(217, 119, 6)", amber);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

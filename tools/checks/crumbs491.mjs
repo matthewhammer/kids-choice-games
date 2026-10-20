@@ -25,7 +25,7 @@ try {
   ok("one column: the band is under the picture and its buttons, not over them", a.narrow && a.scrolled > 0 && a.crumbsH > 0 && a.crumbsTop >= a.stageBottom - 1 && a.crumbsTop <= a.stageBottom + 12, a);
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false }); await sleep(800);
   const b = JSON.parse(await ev(measure));
-  ok("two columns: the band at the top, as before", !b.narrow && b.crumbsTop <= 2, b);
+  ok("two columns: the band at the top, as before (within the panel's top padding)", !b.narrow && b.crumbsTop < 12, b);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
