@@ -85,7 +85,8 @@ function clothHoodPath(F, dir = 0) {
     return `M${X(112)} ${f1(cy)} Q${X(116)} ${f1(top + 4)} ${X(40)} ${f1(top - 8)} Q${X(-40)} ${f1(top - 14)} ${X(-96)} ${f1(top + 16)} ` +
            `Q${X(-120)} ${f1(cy)} ${X(-118)} 232 L${X(-110)} 270 Q${X(-60)} 282 ${X(-10)} 272 Q${X(60)} 300 ${X(94)} 252 ` +
            `C${X(110)} 226 ${X(116)} ${f1(cy + 50)} ${X(112)} ${f1(cy)} Z`; }
-  return `M-10 ${f1(cy)} Q-12 ${f1(top + 8)} 60 ${f1(top - 8)} Q94 ${f1(top - 16)} 100 ${f1(top - 36)} Q106 ${f1(top - 16)} 140 ${f1(top - 8)} Q212 ${f1(top + 8)} 210 ${f1(cy)} ` +
+  // (ticket 451, Matthew: "front view looks good now, except we want a rounded crown, with no peak sticking up now")
+  return `M-10 ${f1(cy)} Q-12 ${f1(top + 8)} 60 ${f1(top - 8)} Q100 ${f1(top - 16)} 140 ${f1(top - 8)} Q212 ${f1(top + 8)} 210 ${f1(cy)} ` +
          `C214 ${f1(cy + 50)} 206 230 202 268 Q186 276 168 262 Q150 302 100 304 Q50 302 32 262 Q14 276 -2 268 C-6 230 -14 ${f1(cy + 50)} -10 ${f1(cy)} Z`;
 }
 function clothHoodOpening(F, dir = 0) {

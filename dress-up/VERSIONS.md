@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.361 (2026-10-19)
+
+Everything in 0.0.360, with the hood round on top.
+
+- **The hood's crown is round** (ticket 451): facing you, the monk's and the dryad's hood is rounded over the head, with no peak sticking up.
+
 ## 0.0.360 (2026-10-19)
 
 Everything in 0.0.359, with hoods that fall onto the shoulders and robes that hang straight.

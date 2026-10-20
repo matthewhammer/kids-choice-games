@@ -43,7 +43,13 @@ try {
     // (ticket 449: the hood falls onto the shoulders, against the body, not bell-shaped: barely wider than the head)
     { const hood = [...document.querySelectorAll("#figure path")].find(e => e.getAttribute("fill-rule") === "evenodd" && e.getAttribute("fill") === state.costume.monkCloak);
       const head = [...document.querySelectorAll("#figure path")].find(e => e.getAttribute("fill") === state.face.color);
-      out.hoodWidth = hood && head ? +(hood.getBoundingClientRect().width / head.getBoundingClientRect().width).toFixed(2) : null; }
+      out.hoodWidth = hood && head ? +(hood.getBoundingClientRect().width / head.getBoundingClientRect().width).toFixed(2) : null;
+      // (ticket 451: a round crown facing us, no peak: its top as high as the round top seen from behind)
+      const frontTop = hood ? hood.getBoundingClientRect().top : null;
+      state.body.facing = "back"; changed(); await w(50);
+      const back = [...document.querySelectorAll("#figure path")].find(e => e.getAttribute("fill") === state.costume.monkCloak && e.getAttribute("stroke-width") === "4" && !e.hasAttribute("data-hood"));
+      out.crown = frontTop !== null && back ? +(frontTop - back.getBoundingClientRect().top).toFixed(1) : null;
+      state.body.facing = "front"; changed(); await w(30); }
     state.body.facing = "front"; set("costume", "hoodUp", true);
     set("costume", "monkWho", "dryad"); changed(); await w(60); out.leaves = ((document.getElementById("pat-shirt") || {}).outerHTML || "").includes("M3 11") && fig().includes("#4caf50");
     set("costume", "monkWho", "monk"); changed(); await w(60); out.knob = !fig().includes("#4caf50") && fig().includes('r="8" fill="#7a4f2a"');
@@ -62,6 +68,7 @@ try {
   // (ticket 448, Matthew: "now the peak hangs down behind our head"; "it doesn't 'stick out' at all")
   ok("in profile the hood's peak hangs down behind the head as a flap, sticking out nowhere; facing us, no flap", ["left", "right"].every(f => r.peak[f] && r.peak[f].flap && r.peak[f].flapBelowHood && r.peak[f].behind < 1.6 * r.peak[f].front) && !r.flapFront, [r.peak, r.flapFront]);
   ok("facing us, the hood falls onto the shoulders, no wider than 1.5 heads, not bell-shaped (ticket 449)", r.hoodWidth && r.hoodWidth < 1.5, r.hoodWidth);
+  ok("facing us, a round crown with no peak, as high as from behind (ticket 451)", r.crown !== null && Math.abs(r.crown) < 3, r.crown);
   ok("the monk's cloak brown, the dryad's moss green", r.monkCloak === "#6b4a2b" && r.dryadCloak === "#4f6b3a", [r.monkCloak, r.dryadCloak]);
   ok("the dryad's cloak in leaves and her staff sprouting; the monk's staff knobbed; the staff taken off", r.leaves && r.knob && r.noStaff, [r.leaves, r.knob, r.noStaff]);
   ok("every pose drawn", Object.values(r.poses).every(Boolean), r.poses);
