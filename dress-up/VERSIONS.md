@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.374 (2026-10-20)
+
+Everything in 0.0.373, and it works without the Internet.
+
+- **✈️ Play in airplane mode** (ticket 486): the game now keeps a copy of itself on your iPad, phone or computer, the first time it opens with the Internet. After that it opens with no Internet at all, in a car, on a plane, anywhere. In ⚙️ Advanced, "✈️ play without the Internet" folds open to show how to add the game to your device, so it gets its own icon on the home screen: on an iPad or iPhone, Safari's Share button and then "Add to Home Screen"; on Android, Chrome's ⋮ menu; on a computer, the install button in Chrome or Edge. It also says whether this version is kept on the device yet (✅). Your friends and settings stay saved on the device, as always, and when the Internet is back a newer version shows as 🆕, as before.
+
 ## 0.0.373 (2026-10-20)
 
 Everything in 0.0.372, with a paper to read.

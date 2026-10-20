@@ -1082,7 +1082,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.373", released: "2026-10-20" };
+const VERSION = { number: "0.0.374", released: "2026-10-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
@@ -1149,6 +1149,31 @@ function switchToOffered() {
   if (!offered) return;
   persist();
   location.replace(location.pathname + "?v=" + encodeURIComponent(offered.number) + location.hash);
+}
+// (ticket 486, Matthew: "hardening MUDU against lack of internet on a tablet, desktop, or mobile phone") The game keeps a copy
+// of itself on this device (sw.js), from any visit over https, so a game added to the home screen opens in airplane mode. Not
+// on a copy served from this computer (localhost, the checks on GitHub), where a kept copy would hide a change, unless
+// localStorage "dress-up-offline" is "on" (offline486 does that).
+const OFFLINE_CACHE = "dress-up";
+const offlineOn = () => { if (location.protocol === "https:") return true; try { return localStorage.getItem("dress-up-offline") === "on"; } catch (_) { return false; } };
+const offlineCan = () => "serviceWorker" in navigator && typeof caches !== "undefined";
+// (Chrome and Edge, on Android and computers, offer their own install: kept for the 📲 button in ⚙️ Advanced)
+let offlinePrompt = null;
+function offlineStart() {
+  addEventListener("beforeinstallprompt", e => { e.preventDefault(); offlinePrompt = e; });
+  if (!offlineCan() || !offlineOn()) return;
+  navigator.serviceWorker.register("sw.js").catch(() => { /* (private windows, and browsers that keep nothing: the game as before) */ });
+}
+// How much of this version is kept here: the page, its stylesheet and every part, as the ⚙️ Advanced panel says.
+async function offlineKept() {
+  if (!offlineCan() || !offlineOn()) return { can: offlineCan(), on: false, kept: 0, total: 0 };
+  const want = [new URL("./", location.href).href, ...[...document.querySelectorAll("script[src], link[rel=stylesheet][href]")].map(e => e.src || e.href)]
+    .filter(u => new URL(u).origin === location.origin);
+  try {
+    const c = await caches.open(OFFLINE_CACHE);
+    const kept = (await Promise.all(want.map(u => c.match(u)))).filter(Boolean).length;
+    return { can: true, on: true, kept, total: want.length };
+  } catch (_) { return { can: false, on: true, kept: 0, total: want.length }; }
 }
 function showVersion() {
   const el = document.getElementById("version");

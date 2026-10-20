@@ -153,6 +153,12 @@
   .thingcard > .tline-range > input[type="range"] { flex: 1 1 6em; min-width: 0; }
   .thingcard > .tline > .hint:first-child { min-width: 1.6em; }
   details.how > summary { cursor: pointer; color: var(--muted); font-size: 0.85em; margin: 2px 0; }   /* (ticket 375: a long account folded, open on a tap) */
+  /* (ticket 486) ✈️ adding the game to a device, for airplane mode: folded in ⚙️ Advanced, the steps for each kind of device */
+  details.offline-help { margin: 6px 0; }
+  details.offline-help > summary { color: var(--ink); font-size: 0.95em; }
+  details.offline-help ol { margin: 6px 0 6px 1.3em; padding: 0; }
+  details.offline-help li { margin: 4px 0; line-height: 1.35; }
+  details.offline-help .offline-status { margin: 6px 0; color: var(--ink); }
   .cap > .cap-pic { width: 2.4em; height: 2.4em; vertical-align: -0.85em; margin-right: 6px; }   /* (a bubble theme's bubble, by its name) */
   button > .flag-chip { width: 1.4em; height: 1.4em; vertical-align: -0.35em; margin-right: 3px; }   /* (a room's theme chip, its flag) */
   /* (knolled) a group of groups, like things (the three bubble themes): side by side, the same size, as wide as there is room */
