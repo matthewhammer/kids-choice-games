@@ -1222,6 +1222,7 @@ function drawNow() {
     if (ahead) for (const n of rest) ahead.parentNode.insertBefore(n, ahead);
     else pic.append(...rest);
   }
+  peopleShow(pic, scenery, feetZ);   // (ticket 439: the people put in this place, among its objects by depth)
   showObjects();
   // (ticket 268) the spiral staircase's steps in front of the friend: each one that covers them seen through, while it does
   if (scened && BG.kind === "castleroom" && scenery) { const steps = scenery.querySelectorAll("[data-front-step]"), f = steps.length && document.getElementById("figure");

@@ -939,9 +939,10 @@ function horseSvg(view, gait, u, H, g, ride) {
     // (facing us: the hind legs beyond; the chest, broad at the shoulders; the neck, its mane falling to one side; the
     // forelegs; the face hanging in front of the neck)
     const hindF = x => `<path d="M${f1(x - 13)} ${f1(y(-184))} L${f1(x + 13)} ${f1(y(-184))} L${f1(x + 9)} ${f1(g - 26)} L${f1(x - 9)} ${f1(g - 26)} Z" fill="${far}" stroke="${ln}" stroke-width="2"/><rect x="${f1(x - 11)}" y="${f1(g - 26)}" width="22" height="12" rx="3" fill="#2a211c"/>`;
-    // (ridden, its head is carried lower, D, and turned a little to our left, HX, so the rider shows beside it: a small rider
-    // on a big horse would be hidden behind its head; ticket 457)
-    const D = ride ? 110 : 0, HX = ride ? -66 : 0, behind = hindF(-56) + hindF(56) +
+    // (ridden, its head is carried lower, D, so more of the rider shows over it; centered, in front of them (ticket 458,
+    // Matthew: "the horse head should be centered (and layered in front of) the rider, not off to the side"; 0.0.366 had
+    // turned it aside, HX, kept at 0)
+    const D = ride ? 110 : 0, HX = 0, behind = hindF(-56) + hindF(56) +
       (ride ? [-1, 1].map(k => `<path d="M${f1(k * 60)} ${f1(y(-334))} L${f1(k * 100)} ${f1(y(-328))} L${f1(k * 96)} ${f1(y(-246))} L${f1(k * 64)} ${f1(y(-250))} Z" fill="${cloth}" stroke="${tackD}" stroke-width="2.5" stroke-linejoin="round"/>`).join("") : "");
     const near = `<path d="M-44 ${f1(y(-296))} L${-32 + HX} ${f1(y(-432 + D))} L${32 + HX} ${f1(y(-432 + D))} L44 ${f1(y(-296))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
       `<path d="M${30 + HX} ${f1(y(-436 + D))} Q${50 + HX} ${f1(y(-410 + D))} ${42 + HX * 0.6} ${f1(y(-384 + D * 0.7))} Q54 ${f1(y(-358))} 46 ${f1(y(-332))} Q56 ${f1(y(-312))} 48 ${f1(y(-292))} L38 ${f1(y(-300))} Q${34 + HX * 0.5} ${f1(y(-370 + D * 0.5))} ${26 + HX} ${f1(y(-432 + D))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>` +

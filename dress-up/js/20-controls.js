@@ -399,6 +399,10 @@ const TABS = [
     ["choice", "fairyShoes", "🧚 shoes", FAIRY_SHOES],
     ["color", "fairyShoeColor", "🧚 shoes' color", FAIRY_SHOE_COLORS],
   ]],
+  // (ticket 439) the people: who is being dressed, the others and where they stand, templates and new people from them
+  ["👥 People", "person", [
+    ["people", "list", ""],
+  ]],
   ["🏞️ Background", "background", [
     // (ticket 285, ^du_report(5)'s step 2) 🏞️ Background as a designer: its full screen, and the game as its first card there
     ["bgbig", "big", "⛶ full screen"],
@@ -1511,6 +1515,46 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       }
       setHidden(box, !list.length);
     });
+  }
+  // (ticket 439) the people: a chip each (tapped, that person comes into the picture to be dressed and moved; the one left
+  // stays where they stood); the one dressed now: their name, ⭐ a template or not; a new person from a template; then the
+  // others, each with where they stand (a square of a world), 📍 put here beside the friend, ✖ out of the places, ⭐ and
+  // 🗑️. Kept while nothing in it changes (shown).
+  if (kind === "people") {
+    const wrap = el("div", { class: "people" });
+    box.append(wrap);
+    let shown = null, newTpl = null;
+    const render = () => {
+      peopleInit();
+      const me = state.person, all = peopleAll(), here = personHere(), tpls = all.filter(p => p.template);
+      const sig = JSON.stringify([me, all.map(p => [p.id, personTitle(p), !!p.template, p.from, p.place || null]), here && [here.world, here.key], newTpl,
+                                  all.filter(p => p.place).map(p => personWhere(p))]);
+      if (sig === shown) return;
+      shown = sig;
+      if (!tpls.some(t => t.id === newTpl)) newTpl = tpls.length ? tpls[0].id : null;
+      const mark = p => (p.template ? "⭐ " : "🧍 ") + personTitle(p);
+      const chips = all.map(p => el("button", { class: "person-chip", "aria-pressed": String(p === me), "data-person": p.id,
+        title: p === me ? "The one in the picture: every tab dresses them, and they are the one who moves" : "Dress this person: they come into the picture, and the one now stays where they stand",
+        onclick: () => { if (p !== me) personSwitch(p.id); } }, mark(p)));
+      const nameBox = el("input", { type: "text", maxlength: String(PERSON_NAME_MAX), size: "14", value: String(me.name || ""), placeholder: personTitle({ ...me, name: "" }), "aria-label": "this person's name",
+        onchange: e => { me.name = e.target.value.trim().slice(0, PERSON_NAME_MAX); changed(); } });
+      const pick = tpls.length ? el("select", { "aria-label": "the template for a new person", onchange: e => { newTpl = e.target.value; shown = null; render(); } },
+        tpls.map(t => el("option", { value: t.id, ...(t.id === newTpl ? { selected: "" } : {}) }, "⭐ " + personTitle(t)))) : null;
+      const others = all.filter(p => p !== me).map(p => el("div", { class: "row person-row", "data-person-row": p.id }, [
+        el("span", { class: "person-name" }, mark(p)), el("span", { class: "hint person-where" }, personWhere(p)),
+        el("button", { class: "person-here", ...(here ? {} : { disabled: "" }), title: here ? "Put them here, beside the friend" : "Go to a place first: they stand in places", onclick: () => personPlace(p.id, personAside(here, p.id)) }, "📍 here"),
+        ...(p.place ? [el("button", { class: "person-out", title: "Take them out of the places (they stay in the list)", onclick: () => personPlace(p.id, null) }, "✖ out")] : []),
+        el("button", { class: "person-tpl", "aria-pressed": String(!!p.template), title: "A template: new people can be made from them", onclick: () => personSetTemplate(p.id, !p.template) }, "⭐"),
+        el("button", { class: "person-drop", title: "Take this person out of the game", onclick: () => { if (confirm(`Take ${personTitle(p)} out of the game? This can't be undone.`)) personDrop(p.id); } }, "🗑️")]));
+      wrap.replaceChildren(el("div", { class: "cap" }, "👥 people"), el("div", { class: "row people-chips" }, chips),
+        el("div", { class: "hint" }, `🧍 dressing ${personTitle(me)}: every tab dresses them, and they are the one who moves`),
+        el("label", { class: "row person-name-row" }, [el("span", { class: "hint" }, "✏️ their name:"), nameBox]),
+        el("div", { class: "row" }, [el("button", { class: "person-template", "aria-pressed": String(!!me.template), onclick: () => personSetTemplate(me.id, !me.template) }, "⭐ a template: new people can be made from them")]),
+        el("div", { class: "row person-new-row" }, tpls.length ? [el("span", { class: "hint" }, "➕ a new person from"), pick, el("button", { class: "person-new", onclick: () => personNew(newTpl) }, "➕ new person")]
+                                                         : [el("span", { class: "hint" }, "➕ to make new people, make someone ⭐ a template")]),
+        ...(others.length ? [el("div", { class: "cap" }, "🧍 the others"), ...others] : []));
+    };
+    syncs.push(render);
   }
   // (ticket 159, Matthew) the music, full screen: this tab's controls take
   // the whole window, and the screen where the browser allows (setMusicBig)

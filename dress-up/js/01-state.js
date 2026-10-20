@@ -412,6 +412,8 @@ const DEFAULTS = {
   world: WORLD_DEFAULT,
   // (ticket 406) the other worlds, by id (the one the friend is in is `world`), and the worlds kept as templates, by id
   worldsAway: {}, worldTemplates: {},
+  // (ticket 439) the person being dressed (their look is the parts below), and the other people, by id
+  person: { id: "p1", name: "", template: false, from: null }, peopleAway: {},
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
            stars: false, hearts: false, xeyes: false, closed: false, unibrow: false, eyes: 50, sides: 0,
            rays: 0, teeth: 5, open: 0, teethStyle: "normal",
@@ -1080,7 +1082,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.366", released: "2026-10-19" };
+const VERSION = { number: "0.0.367", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

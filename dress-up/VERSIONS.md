@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.367 (2026-10-19)
+
+Everything in 0.0.366, with many people, and templates to make them from.
+
+- **People** (ticket 439): a new 👥 People tab. Your friend is the first person; make anyone ⭐ a template, then ➕ make new people from it ("knight 1", "knight 2") and dress each one their own way. Tap a person to dress them: they come into the picture, and the one you were dressing stays standing where they were. The others stand in their places, drawn just like your friend; 📍 brings one beside you, ✖ takes one out of the places, 🗑️ out of the game. They are all saved with your game.
+- **The ridden horse's head** (ticket 458): facing us, the horse's head is in the middle again, in front of its rider.
+
 ## 0.0.366 (2026-10-19)
 
 Everything in 0.0.365, with a horse as big as the stable's, and your friend's own size.

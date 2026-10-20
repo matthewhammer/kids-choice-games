@@ -1137,3 +1137,168 @@ function pressDrag(el, ghost, { onDrop, onTap = null }) {
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
   });
 }
+// (ticket 439, Matthew: "System for creating people templates, and multiple people. Use the new 'multi-world' system you
+// created as the inspiration for its functions -- we want a single .json file for MUDU to have a list of people, some of
+// whom are marked as templates (to make the list of those shorter in a large syste) --- but any person can become a
+// template by toggling it. As a template, we can create a new instance ('knight 1' versus 'knight 2') and style them
+// differently, and place them into the game.") Many people, as worlds are many. The friend in the picture, the one every
+// tab dresses and every control moves, is the person `state.person` names ({ id: "p1" for the first, name, template, from:
+// the template they were made from }); their look is the state's own parts (PERSON_PARTS), so every tab works on them
+// unchanged. The others wait in `state.peopleAway`, by id, each with their look and, put in a place, where ({ world, key,
+// x, y }: a square of a world and their spot in it), where they stand, drawn as the friend would be (personFigure). Going
+// to another person (personSwitch) leaves the one dressed till now standing where they were, and brings the other into the
+// picture at their own place (or, with none, here, the one left stepping aside). Any person can be a template (⭐); a new
+// person from one is a copy of their look named after it, "knight 1", "knight 2". All of it is saved in the game's .json.
+const PERSON_PARTS = ["face", "hair", "body", "shirt", "hands", "pants", "undies", "shoes", "costume", "rightHand", "rightShoe", "visible"];
+const PERSON_FIRST = "p1", PERSON_NAME_MAX = 24, PERSON_ASIDE = 130;
+function peopleInit(S = state) {
+  if (!S) return;
+  if (!S.person || typeof S.person !== "object" || Array.isArray(S.person)) S.person = {};
+  if (!S.person.id) S.person.id = PERSON_FIRST;
+  if (!S.peopleAway || typeof S.peopleAway !== "object" || Array.isArray(S.peopleAway)) S.peopleAway = {};
+}
+const personNum = P => +String(P.id || "").replace(/\D/g, "") || 1;
+const personTitle = P => String(P.name || "").trim() || (P.id === PERSON_FIRST ? "the friend" : "person " + personNum(P));
+function peopleAll() { peopleInit(); return [state.person, ...Object.values(state.peopleAway)].sort((a, b) => personNum(a) - personNum(b)); }
+const personLookNow = () => Object.fromEntries(PERSON_PARTS.map(k => [k, clone(state[k])]));
+// (a look as kept, made whole: each part over its defaults, so a person kept before a setting existed still draws)
+const personLookWhole = look => Object.fromEntries(PERSON_PARTS.map(k => [k, { ...clone(DEFAULTS[k]), ...clone((look || {})[k] || {}) }]));
+// where the friend stands now: this world's square and their spot in it; none outside the places
+function personHere() {
+  worldsInit();
+  const BG = state.background, W = state.world;
+  return BG.kind === "none" || !W.at || !W.cells[W.at] ? null : { world: W.id, key: W.at, x: BG.figX ?? 0, y: BG.figY ?? 0 };
+}
+// (a spot beside one, free: the nearest of a step, two, three... to either side (toward the middle first) where no one else
+// put in that square stands within most of a step, inside the scene; `skip`, a person not to count)
+function personAside(at, skip = null) {
+  if (!at) return null;
+  const others = Object.values(state.peopleAway).filter(P => P.id !== skip && P.place && P.place.world === at.world && P.place.key === at.key);
+  const free = x => Math.abs(x) < SCENE.left * -0.88 && Math.abs(x - at.x) >= 0.7 * PERSON_ASIDE && others.every(P => Math.abs(P.place.x - x) >= 0.7 * PERSON_ASIDE || Math.abs(P.place.y - at.y) > 40);
+  const first = at.x > 0 ? -1 : 1;
+  for (let i = 1; i <= 5; i++) for (const sd of [first, -first]) { const x = at.x + sd * i * PERSON_ASIDE; if (free(x)) return { ...at, x }; }
+  return { ...at, x: at.x + first * PERSON_ASIDE };
+}
+// the person whose look and place a template or a list row means: the one dressed now, as they are, or one away
+const personRec = id => id === state.person.id ? { ...state.person, look: personLookNow(), place: null } : state.peopleAway[id] || null;
+function personSwitch(id) {
+  peopleInit();
+  const from = state.person, to = state.peopleAway[id];
+  if (!to || from.id === id) return false;
+  const here = personHere();
+  // (the one left stays where they stood; when the other has no place of their own, the other comes here, and the one left
+  // steps aside)
+  state.peopleAway[from.id] = { id: from.id, name: from.name || "", template: !!from.template, from: from.from || null, look: personLookNow(),
+                                place: to.place || !here ? here : personAside(here, to.id) };
+  delete state.peopleAway[id];
+  const look = personLookWhole(to.look);
+  for (const k of PERSON_PARTS) state[k] = look[k];
+  state.person = { id: to.id, name: to.name || "", template: !!to.template, from: to.from || null };
+  const P = to.place;
+  if (P && worldById(P.world) && worldById(P.world).cells[P.key]) {
+    if (P.world !== state.world.id) worldSwitch(P.world, P.key, null, false); else if (P.key !== state.world.at) worldEnter(P.key, null, false);
+    state.background.figX = P.x; state.background.figY = P.y;
+  }
+  changed();
+  return true;
+}
+// a new person from a template (any person, as they are now): their look, named after them with the next free number
+function personNew(tplId) {
+  peopleInit();
+  const T = personRec(tplId);
+  if (!T) return null;
+  const all = peopleAll(), n = 1 + Math.max(0, ...all.map(personNum)), base = personTitle(T).replace(/\s+\d+$/, ""), names = new Set(all.map(personTitle));
+  let k = 1; while (names.has(`${base} ${k}`)) k++;
+  const P = { id: "p" + n, name: `${base} ${k}`.slice(0, PERSON_NAME_MAX), template: false, from: T.id, look: clone(T.look), place: null };
+  state.peopleAway[P.id] = P;
+  personSwitch(P.id);
+  return P.id;
+}
+function personSetTemplate(id, on) { const P = id === state.person.id ? state.person : state.peopleAway[id]; if (P) { P.template = !!on; changed(); } }
+function personPlace(id, at) { const P = state.peopleAway[id]; if (P) { P.place = at || null; changed(); } }
+// (one away taken out of the game; never the one dressed now)
+function personDrop(id) { if (!state.peopleAway[id]) return false; delete state.peopleAway[id]; for (const P of peopleAll()) if (P.from === id) P.from = null; changed(); return true; }
+// Where a person stands, said: the world (when another), the square's place and name
+function personWhere(P) {
+  if (!P.place) return "not in any place";
+  const W = worldById(P.place.world), c = W && W.cells[P.place.key];
+  const nm = worldName(W, P.place.key);
+  return !c ? "🚧 their place is gone" : `📍 ${W !== state.world ? "🌍 " + worldTitle(W) + ": " : ""}${nm}${nm.includes(squareName(P.place.key)) ? "" : " (" + squareName(P.place.key) + ")"}`;
+}
+// The people put in places, drawn: each one's figure drawn as the friend would be, with no scene, off the screen, once per
+// look (peopleDrawMissing, after a drawing that wanted one: never inside one), kept by its look (personDrawn); each one's
+// node kept by person (personNodes) and put among the scene's objects by depth, as the friend is (peopleShow).
+const personDrawn = new Map(), personNodes = new Map();
+let personBusy = false, personWanted = false;
+function peopleDrawMissing() {
+  personWanted = false;
+  if (personBusy) return;
+  const want = Object.values(state.peopleAway).filter(P => P.place && !personDrawn.has(JSON.stringify(P.look)));
+  if (!want.length) return;
+  // (not while the friend is held, climbing, dragged or going in somewhere: the drawing's own state is busy then)
+  if (poseHeld || climb || drag || entering) { setTimeout(peopleDrawMissing, 400); return; }
+  personBusy = true;
+  const real = document.getElementById("pic"), tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  tmp.setAttribute("style", "position:fixed;left:-10000px;top:0;width:400px;height:600px;visibility:hidden;pointer-events:none");
+  const keep = Object.fromEntries(PERSON_PARTS.map(k => [k, state[k]])), keepBG = state.background;
+  const keepG = { poseJoints, faceFrame, naturalFrame, figureT, figShown, objs: bgShown.objs };
+  try {
+    real.id = "pic-real"; tmp.id = "pic"; document.body.append(tmp);
+    figShown = [];
+    for (const P of want) {
+      const look = personLookWhole(P.look);
+      for (const k of PERSON_PARTS) state[k] = look[k];
+      state.body.anim = "none"; state.background = { ...keepBG, kind: "none" };
+      drawNow();
+      const fig = tmp.querySelector("#figure"), far = tmp.querySelector("#figure-far"), defs = tmp.querySelector("defs");
+      if (fig) personDrawn.set(JSON.stringify(P.look), { svg: (defs ? defs.outerHTML : "") + (far ? far.outerHTML : "") + fig.outerHTML, g: naturalFrame.ground });
+    }
+  } finally {
+    for (const k of PERSON_PARTS) state[k] = keep[k];
+    state.background = keepBG;
+    ({ poseJoints, faceFrame, naturalFrame, figureT, figShown } = keepG); bgShown.objs = keepG.objs;
+    tmp.remove(); real.id = "pic";
+    personBusy = false;
+  }
+  if (personDrawn.size > 200) personDrawn.delete(personDrawn.keys().next().value);
+  changed();
+}
+// (each id in a person's figure made their own, as the friend's are kept: pat-shirt, the veils' masks)
+function personOwnIds(svg, pre) {
+  const ids = new Set([...svg.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
+  for (const id of ids) svg = svg.split(`id="${id}"`).join(`id="${pre}${id}"`).split(`url(#${id})`).join(`url(#${pre}${id})`).split(`href="#${id}"`).join(`href="#${pre}${id}"`);
+  return svg;
+}
+function peopleShow(pic, scenery, feetZ) {
+  for (const n of pic.querySelectorAll("g.person-placed")) n.remove();
+  if (personBusy || !scenery) return;
+  const BG = state.background, W = state.world;
+  const here = Object.values(state.peopleAway).filter(P => P.place && P.place.world === W.id && P.place.key === W.at);
+  if (!here.length) return;
+  const items = [];
+  for (const P of here) {
+    const f = personDrawn.get(JSON.stringify(P.look));
+    if (!f) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } continue; }
+    const x = P.place.x, y = P.place.y, z = SCENE.ground + y, k = (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, y);
+    const sig = [JSON.stringify(P.look), x, y, k.toFixed(4), f.g].join("|");
+    let kept = personNodes.get(P.id);
+    if (!kept || kept.sig !== sig) {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("class", "person-placed"); g.setAttribute("data-person", P.id); g.setAttribute("data-obj", "👤 " + personTitle(P));
+      g.innerHTML = `<ellipse cx="${f1(x)}" cy="${f1(z)}" rx="${f1(70 * k)}" ry="${f1(12 * k)}" fill="#000" opacity="0.08"/>` +
+                    `<g transform="translate(${f1(x)} ${f1(z)}) scale(${k.toFixed(4)}) translate(0 ${f1(-f.g)})">${personOwnIds(f.svg, "pp" + P.id + "-")}</g>`;
+      kept = { sig, node: g }; personNodes.set(P.id, kept);
+    }
+    kept.node.setAttribute("data-obj", "👤 " + personTitle(P));
+    items.push({ node: kept.node, z });
+  }
+  for (const id of [...personNodes.keys()]) if (!state.peopleAway[id]) personNodes.delete(id);
+  // (by depth among the scene's objects, as the friend: one farther than them before them, one nearer after them)
+  const friend = document.getElementById("figure-far") || document.getElementById("figure"), friendAhead = objectAhead(feetZ);
+  for (const { node, z } of items.sort((a, b) => a.z - b.z)) {
+    const ahead = objectAhead(z);
+    if (z <= feetZ && ahead === friendAhead && friend && friend.parentNode) friend.parentNode.insertBefore(node, friend);
+    else if (ahead) ahead.parentNode.insertBefore(node, ahead);
+    else pic.append(node);
+  }
+}

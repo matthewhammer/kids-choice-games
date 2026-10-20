@@ -813,3 +813,10 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
 
 /* (ticket 392) a row's name or a group's header that only says its box's name again */
 .head-dup { display: none !important; }
+
+/* (ticket 439) the people: a chip each, the one being dressed bold; the others' rows, name, where, then small buttons */
+.people { border: 1px dashed var(--line, #c9c2b4); border-radius: 10px; padding: 6px 8px; margin: 6px 0; }
+.people .person-chip[aria-pressed="true"] { font-weight: bold; }
+.people .person-row { align-items: center; gap: 6px; }
+.people .person-row button { padding: 2px 8px; min-height: 0; }
+.people .person-name { font-weight: 600; }

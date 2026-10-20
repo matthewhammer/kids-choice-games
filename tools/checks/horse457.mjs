@@ -6,7 +6,7 @@
 // castle's stable, the friend at the stalls' depth leading their horse toward us: at 📏 its size 100 its face is as big as
 // the stable's horses' faces (within 15%); a small gnome (🧍 Body's 📏 their own size 50) leaves the horse as big as it was;
 // the place's 🧍 size in the scene at 50 halves the friend and the horse alike; its own size at 50 halves it; ridden toward
-// us, the small gnome's face shows beside the horse's head. Exits 1 on a failure.
+// us, the horse's head is centered under the gnome's and drawn over them (ticket 458). Exits 1 on a failure.
 //   node horse457.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -40,10 +40,11 @@ try {
     const head = document.querySelector("#figure .rider"), over = document.querySelector("#figure .horse-over");
     const hr = head && head.getBoundingClientRect(), orr = over && over.getBoundingClientRect();
     out.riderTop = hr ? Math.round(hr.top) : null; out.horseTop = orr ? Math.round(orr.top) : null;
-    // (and the gnome's face not covered by the horse's: the point at the face's middle is the rider's)
-    const fr = document.querySelector("#figure .rider [data-part=head]"), fb = fr && fr.getBoundingClientRect();
-    const at = fb && document.elementFromPoint(fb.left + fb.width / 2, fb.top + fb.height / 2);
-    out.faceShows = !!(at && at.closest(".rider"));
+    // (ticket 458: the horse's head centered under the rider's, and drawn over them)
+    const hf = [...(over ? over.querySelectorAll("path") : [])].find(p => /^M-16 -157/.test(p.getAttribute("d") || "")), hb = hf && hf.getBoundingClientRect();
+    const rh = document.querySelector("#figure .rider [data-part=head]"), rb = rh && rh.getBoundingClientRect();
+    out.centered = !!(hb && rb) && Math.abs((hb.left + hb.width / 2) - (rb.left + rb.width / 2)) < 0.15 * hb.width;
+    out.overRider = !!(over && head && (head.compareDocumentPosition(over) & Node.DOCUMENT_POSITION_FOLLOWING));
     set("costume", "kind", "none"); set("costume", "horse", "none"); set("body", "size", 100); changed();
     return JSON.stringify(out); })()`));
   console.log(`  ${JSON.stringify(r)}`);
@@ -52,7 +53,7 @@ try {
   ok("a small friend (their own size 50) leaves the horse as big as it was (within 3%)", Math.abs(r.small - r.at100) < 0.03 * r.at100, [r.at100, r.small]);
   ok("the place's size for people at 50 halves the horse with them (within 5%)", Math.abs(r.place - r.at100 / 2) < 0.05 * r.at100, [r.at100, r.place]);
   ok("its size at 50 halves it (within 5%)", Math.abs(r.half - r.at100 / 2) < 0.05 * r.at100, [r.at100, r.half]);
-  ok("ridden toward us by a small gnome: the gnome's face shows, beside the horse's head", r.faceShows, r);
+  ok("ridden toward us by a small gnome: the horse's head centered under theirs, drawn over them (ticket 458)", r.centered && r.overRider, r);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
