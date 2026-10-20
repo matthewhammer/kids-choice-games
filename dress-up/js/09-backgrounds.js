@@ -269,7 +269,7 @@ const skyTimeOf = (o, sunrise = true) => { const a = skyNow(o).sun.alt * 180 / M
 // (h) up to the top (top) by its height; null when it is down, or behind us
 // (the review after 0.0.385: facing where the noon sun is, not by the hemisphere alone: at Quito, just south of the equator,
 // the sun is to the south from October to March, and facing north it was never drawn)
-const skyFacesNorth = n => n.lat < n.sunDec;
+const skyFacesNorth = n => n.lat * Math.PI / 180 < n.sunDec;   // (latitude in degrees, the declination in radians: the review of 0.0.386)
 function skyXY(c, body, h, top) {
   const south = skyMemo.now ? skyFacesNorth(skyMemo.now) : false, a = south ? ((body.az + 2 * Math.PI) % (2 * Math.PI)) - Math.PI : body.az;
   if (body.alt < -0.02 || Math.abs(a) > Math.PI / 2 * 1.08) return null;

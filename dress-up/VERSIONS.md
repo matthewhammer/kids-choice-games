@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.388 (2026-10-20)
+
+Everything in 0.0.387, plus which side you lead the horse from.
+
+- **🐴 Lead your horse from its left or its right** (in 🧍 Body's 🐴 the horse, while you lead it): "🚶 lead it from its" left side (the usual) or right side. You stay on that side whichever way you walk; on its far side you walk at its head, so the horse does not hide you.
+- **Fixed:** "🕰️ by the clock" at Quito, the picture still faced the wrong way on some days near the equinoxes.
+- **Fixed:** in the 🦇 cave room with columns, the columns poked up through the ceiling's rock.
+
 ## 0.0.387 (2026-10-20)
 
 Everything in 0.0.386, plus more colours for the horse, for M.

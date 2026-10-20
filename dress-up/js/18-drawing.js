@@ -326,7 +326,14 @@ function drawNow() {
   // bodyScale), so the place's size for people (figSize) sizes it, never the rider's own: a small gnome leaves their horse as
   // big as it was, in every place. Everything about it (where it stands, the seat, the reins, the frame) goes by hs.
   const horseHs = HORSE_SCALE * Math.max(0.2, Number(B.horseSize ?? 100) / 100) / bodyScale(), friendFrame = { left, top };
-  const horseX = ride ? (horseView === "side" ? -dir * 30 * horseHs : 0) : horseView === "side" ? -dir * (130 * horseHs - 50) : (horseView === "front" ? -1 : 1) * (84 * horseHs + 66);
+  // (ticket 496, Matthew: "Let the user choose between guide on left of horse, or guide on right -- currently it's not realistic
+  // because we flip between those options depending on L versus R movement") led, the friend keeps to one side of the horse, its
+  // left (the usual) or its right: seen from the front or behind, the horse stands at their other side; seen side on, on the
+  // horse's far side the horse is drawn in front of them (leadFar)
+  const leadR = (B.horseLead || "left") === "right";
+  const leadFar = !ride && horseView === "side" && (leadR ? dir > 0 : dir < 0);
+  // (on its far side they walk at its head, by its chest, under its neck: at its shoulder, as on the near side, its body hid them)
+  const horseX = ride ? (horseView === "side" ? -dir * 30 * horseHs : 0) : horseView === "side" ? -dir * (leadFar ? 210 * horseHs : 130 * horseHs - 50) : (horseView === "front" ? -1 : 1) * (leadR ? -1 : 1) * (84 * horseHs + 66);
   const rideLift = ride && horseView ? ground - 326 * horseHs - L - 12 : 0;
   if (horseView) { left = Math.min(left, -(Math.abs(horseX) + (horseView === "side" ? 310 : 100) * horseHs + 20)); top = Math.min(top + rideLift - 12, ground - (horseView === "side" ? 520 : 570) * horseHs); bottom = Math.max(bottom, ground + 16 * horseHs + 10); }   // (its shadow's reach)
   // A background is a stage of its own, the same whatever the figure
@@ -487,7 +494,7 @@ function drawNow() {
     svg += t + "</g>";
   }
   // (ticket 438) the horse, before the friend: its own shadow, then it, stepping with their stride
-  let horseRing = null, horseBits = null, horseOver = "", lift = 0;
+  let horseRing = null, horseBits = null, horseOver = "", horseFront = "", lift = 0;
   horseNow = null;
   if (horseView && !wet) {
     const gait = B.anim === "walk" ? "walk" : B.anim === "run" ? "run" : "stand", k = horseView === "side" ? dir : 1;
@@ -495,10 +502,11 @@ function drawNow() {
                        { coat: B.horseCoat, mane: B.horseMane, mark: B.horseMark, tack: B.horseTack, socks: B.horseSocks, shoes: B.horseShoes, markColor: B.horseMarkColor, saddle: B.horseSaddle, blanket: B.horseBlanket }, 0, ride);
     // (drawn on the ground at 0, scaled by hs about its hooves; its points into the friend's units, T)
     const hs = horseHs, T = ([x, y]) => [horseX + k * hs * x, ground + hs * y], at = `translate(${f1(horseX)} ${f1(ground)}) scale(${(k * hs).toFixed(4)} ${hs.toFixed(4)})`;
-    svg += `<g class="horse" data-horse="${horseView} ${gait}" data-size="${hs.toFixed(3)}"><ellipse cx="${f1(horseX - k * hs * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${f1((horseView === "side" ? 225 : 100) * hs)}" ry="${f1(14 * hs)}" fill="#000" opacity="0.08"/>` +
+    const horseG = `<g class="horse" data-horse="${horseView} ${gait}" data-size="${hs.toFixed(3)}"${leadFar ? ' data-far=""' : ""}><ellipse cx="${f1(horseX - k * hs * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${f1((horseView === "side" ? 225 : 100) * hs)}" ry="${f1(14 * hs)}" fill="#000" opacity="0.08"/>` +
            `<g transform="${at}">${h.svg}</g></g>`;
+    if (leadFar) horseFront = horseG; else svg += horseG;   // (ticket 496: on its far side, the horse after the friend, over them)
     horseRing = h.ring && T(h.ring);
-    horseNow = { view: horseView, ride: !!ride, X: horseX, k, hs, hooves: h.hooves || [], barrel: h.barrel, seat: -h.seat[1] };   // (ticket 492)
+    horseNow = { view: horseView, ride: !!ride, far: leadFar, X: horseX, k, hs, hooves: h.hooves || [], barrel: h.barrel, seat: -h.seat[1] };   // (ticket 492; far: ticket 496)
     if (ride) { lift = rideLift + h.bob * hs; horseBits = h.bits.map(b => { const [x, y] = T(b); return [x, y - lift]; });
       if (h.over) horseOver = `<g class="horse-over" transform="${at}">${h.over}</g>`; }
   }
@@ -1168,6 +1176,7 @@ function drawNow() {
   }
   // (ticket 438: riding, the friend lifted onto the saddle, and the horse's near parts over their legs)
   if (lift) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})">${svg.slice(figAt)}</g>` + horseOver;
+  svg += horseFront;   // (ticket 496: led from its far side, the horse in front of the friend)
   svg += `</g>`;   // the figure
   // (ticket 136: the far leg first, see-through with the pants and the feet,
   // then the far arm, see-through with the shirt, as it was)

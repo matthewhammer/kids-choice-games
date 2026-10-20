@@ -870,7 +870,7 @@ function caveroomScene(c) {
              `<ellipse cx="${f1(x - rx * 0.3)}" cy="${f1(y - ry * 0.2)}" rx="${f1(rx * 0.3)}" ry="${f1(ry * 0.18)}" fill="#e6f8ff" opacity="0.3">` +
              fast(i / 4, `<animate attributeName="opacity" values="0.1;0.45;0.1" dur="1.2s" repeatCount="indefinite"/>`) + `</ellipse>`;
     }).join(""));
-    return S.map(({ x, y, z, i }) => {
+    return (floorSty === "columns" ? `<defs><clipPath id="bg-caveroom-under-vault"><path d="${caveSmooth(vault, P)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z"/></clipPath></defs>` : "") + S.map(({ x, y, z, i }) => {
       if (floorSty === "stalagmites") {
         const h = (60 + 70 * R(i, 4830)) * z, w = (24 + 16 * R(i, 4831)) * z;
         return obj(`stalagmite ${i + 1}`, y, `<path d="M${P(x - w, y)} Q${P(x - w * 0.4, y - h * 0.5)} ${P(x - w * 0.08, y - h * 0.94)} Q${P(x, y - h * 1.02)} ${P(x + w * 0.08, y - h * 0.94)} Q${P(x + w * 0.4, y - h * 0.5)} ${P(x + w, y)} Z" fill="#5a5266" stroke="#2a2630" stroke-width="${f1(2 * k)}"/>` +
@@ -886,12 +886,14 @@ function caveroomScene(c) {
         // (six at most: the two nearest are left out, so the picture is not all column; and none in front of the archway,
         // which a column, floor to ceiling, would hide)
         if (i > 5 || Math.abs(x + 0.3 * W) < 80 * k) return "";
-        const top = caveAlong(vault, x) + 6 * k, w = (34 + 18 * R(i, 4840)) * z, mid = y - (y - top) * (0.45 + 0.15 * R(i, 4841)), wm = w * (0.42 + 0.15 * R(i, 4842));
+        // (the review of 0.0.386: each column rises into the vault and is cut off along it, so it meets the ceiling wherever
+        // the vault slopes; flat-topped at the vault, the outer ones stuck up into the rock once the rock was drawn behind them)
+        const top = caveAlong(vault, x) - 40 * k, w = (34 + 18 * R(i, 4840)) * z, mid = y - (y - top) * (0.45 + 0.15 * R(i, 4841)), wm = w * (0.42 + 0.15 * R(i, 4842));
         const L = caveFractalPath([[x - w, y], [x - wm, mid], [x - w * 1.3, top]], 3, 0.06, R, 4843 + 5 * i), Rt = caveFractalPath([[x + w * 1.3, top], [x + wm, mid], [x + w, y]], 3, 0.06, R, 4846 + 5 * i);
-        return obj(`column ${i + 1}`, y, `<path d="${caveSmooth(L, P)} ${caveSmooth(Rt, P).replace(/^M/, "L")} Z" fill="#5e5668" stroke="#2a2630" stroke-width="${f1(2 * k)}"/>` +
+        return obj(`column ${i + 1}`, y, `<g clip-path="url(#bg-caveroom-under-vault)"><path d="${caveSmooth(L, P)} ${caveSmooth(Rt, P).replace(/^M/, "L")} Z" fill="#5e5668" stroke="#2a2630" stroke-width="${f1(2 * k)}"/>` +
           [0.15, 0.3, 0.62, 0.8].map(f => { const yy = y - (y - top) * f, ww = f < 0.5 ? w - (w - wm) * f / 0.5 : wm + (w * 1.3 - wm) * (f - 0.5) / 0.5;
             return `<path d="M${P(x - ww * 0.95, yy)} Q${P(x, yy + 6 * z)} ${P(x + ww * 0.95, yy)}" fill="none" stroke="#776e83" stroke-width="${f1(2 * z)}" opacity="0.7"/>`; }).join("") +
-          `<ellipse class="flat" cx="${f1(x)}" cy="${f1(y)}" rx="${f1(w * 1.3)}" ry="${f1(w * 0.28)}" fill="#1c1922" opacity="0.35"/>`);
+          `</g><ellipse class="flat" cx="${f1(x)}" cy="${f1(y)}" rx="${f1(w * 1.3)}" ry="${f1(w * 0.28)}" fill="#1c1922" opacity="0.35"/>`);
       }
       if (floorSty === "crystals") {
         const col = CAVE_GLOWS[i % 5], h = (54 + 40 * R(i, 4850)) * z;
@@ -2374,6 +2376,8 @@ function palisadeSvg(n, skulls, seed) {
   return drawnBy("fence", fence) + sk;
 }
 // (a thing's depth among the objects: where its feet are; a trap door's, its back edge)
+// (the kinds whose drawings lfoTimed or sceneLfo time: their cache keys carry the LFOs' stamps, thingsLayer)
+const LFO_THINGS = new Set(["gem", "puddle", "cascade", "cavemushroom", "chest", "kelp", "seagrass", "seafan", "sealettuce", "campfire", "cauldron"]);
 const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 :
   t.kind === "puddle" ? t.z - PUDDLE_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;   // (ticket 471: one stands in a puddle, in front of its back edge)
 const thingLabel = t => t.fallen ? `🪨 fallen ${t.fallen}` : t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
@@ -2447,8 +2451,9 @@ function thingsLayer(c) {
   const vanish = Math.round(10 * sceneVanish(c.o)), T = Array.isArray(c.o.things) ? c.o.things : [];
   // (the review after 0.0.385) and the LFOs a thing's animations are timed by (lfoTimed: the cave things, the chest's sparkles,
   // the sea plants): with them in its key, a thing is drawn again when the music starts or an LFO changes, not left out of time
-  const lfoKey = ["fast", "slow", "wings"].map(p => { const L = sceneLfoName(c.o, p); return L ? L + lfoStamp(L) : "own"; }).join();
-  const extra = t => (t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : "") + "|" + lfoKey;   // (ticket 317: and a lever's shine)
+  // (and only for those: the review of 0.0.386, so an LFO's change draws again only the things it times)
+  const lfoKey = T.some(t => LFO_THINGS.has(t.kind)) ? ["fast", "slow", "wings"].map(p => { const L = sceneLfoName(c.o, p); return L ? L + lfoStamp(L) : "own"; }).join() : "";
+  const extra = t => (t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : "") + (LFO_THINGS.has(t.kind) ? "|" + lfoKey : "");   // (ticket 317: and a lever's shine)
   // (ticket 380, ^du_report(12)'s next step 1: with 256 makers the layer cost a part() call each, its thing written out twice over, on
   // every drawing, 0.58 ms in the app's pane) the whole layer kept while nothing it draws from changes: the things, written out once,
   // and what else each reads; on a change each thing still comes from its own piece, so a drag makes one again, not all

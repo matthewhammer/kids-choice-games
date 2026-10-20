@@ -138,6 +138,8 @@ const TABS = [
     // (ticket 438) the friend's horse, with them whatever they wear: led by its rein; its coat, mane and face marking (the
     // stable's horses' own), its halter and rein, white socks
     ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
+    // (ticket 496) which side of it they walk on, leading it: one side, whichever way they go
+    ["choice", "horseLead", "🚶 lead it from its", [["left", "⬅️ left side (the usual)"], ["right", "➡️ right side"]]],
     ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
     ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
     ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
@@ -1035,6 +1037,7 @@ const SHOWN_WHEN = {
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",
   // (ticket 495) the mark's colour with a mark; the saddle's and its blanket's while ridden (the only time they are drawn)
+  "body.horseLead": b => b.horse === "lead",   // (ticket 496)
   "body.horseMarkColor": b => (b.horse || "none") !== "none" && (b.horseMark || "none") !== "none",
   ...Object.fromEntries(["horseSaddle", "horseBlanket"].map(k => ["body." + k, b => b.horse === "ride"])),
   ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize", "horseShoes"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),

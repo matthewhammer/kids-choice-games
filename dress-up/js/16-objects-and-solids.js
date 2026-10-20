@@ -507,9 +507,10 @@ function horseBoxes(x, z) {
   const H = horseNow, T = figureT;
   if (!H || !T || !(T.k > 0) || !H.barrel) return null;
   const s = T.k * H.hs, at = hx => x + T.k * (H.X + H.k * H.hs * hx), hw = Math.max(3, 11 * s), hd = Math.max(2.5, 6 * s);
-  const hooves = H.hooves.map(([hx, , back]) => { const cx = at(hx), zz = z - back * s; return [cx - hw, cx + hw, zz - hd, zz + hd, 0, HORSE_FETLOCK * s]; });
+  // (ticket 496: led from its far side, the horse stands nearer than the friend, its depth the other way)
+  const f = H.far ? -1 : 1, hooves = H.hooves.map(([hx, , back]) => { const cx = at(hx), zz = z - f * back * s; return [cx - hw, cx + hw, zz - hd, zz + hd, 0, HORSE_FETLOCK * s]; });
   const [b0, b1, belly, top, deep] = H.barrel, xa = at(b0), xb = at(b1);
-  return { hooves, body: [Math.min(xa, xb), Math.max(xa, xb), z - deep * s, z + hd, belly * s, top * s] };
+  return { hooves, body: [Math.min(xa, xb), Math.max(xa, xb), H.far ? z - hd : z - deep * s, H.far ? z + deep * s : z + hd, belly * s, top * s] };
 }
 // (ticket 492) ridden: the rider's box, up on the horse, from the hips on its saddle to their crown, as wide as their hips
 // (a sliver at least), at the barrel's middle depth seen side on, at the hooves' line seen end on
