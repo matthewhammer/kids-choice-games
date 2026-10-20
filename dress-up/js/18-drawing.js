@@ -769,20 +769,21 @@ function drawNow() {
   // (ticket 433) a monk's or a dryad's rope belt (the wizard's cord, in rope), and the hood down: a cowl folded on the shoulders
   if (monk && !undies) { const gx = dir ? dir * (w - 4) : -10, cy = L - 14, rope = WC.monkWho === "dryad" ? "#8a6a3a" : "#c8a46a";
     svg += `<path d="M${f1(-(w + 2))} ${f1(cy)} Q0 ${f1(cy + 6)} ${f1(w + 2)} ${f1(cy)}" fill="none" stroke="${rope}" stroke-width="5" stroke-linecap="round"/>` +
-           `<path d="M${f1(gx)} ${f1(cy + 2)} l-3 44 M${f1(gx + 4)} ${f1(cy + 2)} l4 36" stroke="${rope}" stroke-width="4" stroke-linecap="round"/>`;
+           (away ? "" : `<path d="M${f1(gx)} ${f1(cy + 2)} l-3 44 M${f1(gx + 4)} ${f1(cy + 2)} l4 36" stroke="${rope}" stroke-width="4" stroke-linecap="round"/>`);   // (ticket 444: its ends at the front only)
     if (!hooded) { const c = WC.monkCloak || "#6b4a2b";
       svg += `<path d="M${f1(-(w + 6))} -10 Q0 ${f1(away ? -24 : 34)} ${f1(w + 6)} -10 Q${f1(w * 0.6)} -30 0 -26 Q${f1(-w * 0.6)} -30 ${f1(-(w + 6))} -10 Z" fill="${darker(c)}" stroke="${darker(darker(c))}" stroke-width="3" stroke-linejoin="round"/>`; } }
   // (ticket 432) a wizard's gold cord round his waist, its knot and tassels hanging at the front (at the side, in profile)
   if (wizard && !undies) { const gx = dir ? dir * (w - 4) : 6, cy = L - 14;
     svg += `<path d="M${f1(-(w + 2))} ${f1(cy)} Q0 ${f1(cy + 6)} ${f1(w + 2)} ${f1(cy)}" fill="none" stroke="#e0b030" stroke-width="5" stroke-linecap="round"/>` +
-           `<circle cx="${f1(gx)}" cy="${f1(cy + 3)}" r="5" fill="#e0b030"/><path d="M${f1(gx - 2)} ${f1(cy + 6)} l-4 30 M${f1(gx + 2)} ${f1(cy + 6)} l5 26" stroke="#e0b030" stroke-width="3.5" stroke-linecap="round"/>`; }
+           (away ? "" : `<circle cx="${f1(gx)}" cy="${f1(cy + 3)}" r="5" fill="#e0b030"/><path d="M${f1(gx - 2)} ${f1(cy + 6)} l-4 30 M${f1(gx + 2)} ${f1(cy + 6)} l5 26" stroke="#e0b030" stroke-width="3.5" stroke-linecap="round"/>`); }   // (ticket 444: its knot at the front only)
   // (ticket 431) a gnome woman's bodice over her blouse, and her apron over the skirt
   if (gnomeW) svg += gnomeBodice(WC, w, L, dir, away) + gnomeApron(w, L, skirtHem ? Math.max(L + 40, skirtHem - 30) : L + 120, dir, away);
   // a witch's belt round her waist, its buckle in the middle (and a gnome man's, brown)
   if (witch || gnomeM) {
     const bc = gnomeM ? "#5b3a1e" : WC.bootColor ?? "#1f1f22";
     svg += `<rect x="${f1(-(w + 3))}" y="${f1(L - 16)}" width="${f1(2 * w + 6)}" height="12" fill="${bc}" stroke="${darker(bc)}" stroke-width="2"/>` +
-           (dir ? `<rect x="${f1(dir * (w + 3) - (dir > 0 ? 8 : 0))}" y="${f1(L - 19)}" width="8" height="18" rx="2" fill="none" stroke="#f2c230" stroke-width="3"/>`   // (in profile, edge on, at her front)
+           // (ticket 444, Matthew: "the walking away pose shouldn't show a belt buckle, just the forwards facing pose, L and R")
+           (away ? "" : dir ? `<rect x="${f1(dir * (w + 3) - (dir > 0 ? 8 : 0))}" y="${f1(L - 19)}" width="8" height="18" rx="2" fill="none" stroke="#f2c230" stroke-width="3"/>`   // (in profile, edge on, at her front)
                 : `<rect x="-11" y="${f1(L - 19)}" width="22" height="18" rx="2.5" fill="none" stroke="#f2c230" stroke-width="4"/>` +
                   `<line x1="-3" y1="${f1(L - 10)}" x2="9" y2="${f1(L - 10)}" stroke="#f2c230" stroke-width="2.5" stroke-linecap="round"/>`);
   }
@@ -925,7 +926,7 @@ function drawNow() {
   // off with the lid); her cat on her shoulder
   if (witch) {
     svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
-           `<g transform="${hairStretch(F)}">${witchHat(WC, brimRx, dir)}</g></g></g>`);
+           `<g transform="${hairStretch(F)}">${witchHat(WC, brimRx, dir, away)}</g></g></g>`);
     // (the cat grows or shrinks about where it sits)
     if (WC.witchCat)
       svg += `<g transform="translate(${f1(-(w - 4))} -9) scale(${((WC.catSize ?? 100) / 100).toFixed(3)}) translate(${f1(w - 4)} 9)">` +

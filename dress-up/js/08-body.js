@@ -546,14 +546,15 @@ function handSvg(x, y, angle, side, h, skin) {
 // the trim color and a gold buckle.
 // (ticket 124) in profile (dir, the way she faces) its tip bends back,
 // away from her face, and the band's buckle is seen edge on at its front
-function witchHat(WC, rx = 128, dir = 0) {
+// (ticket 444: from behind, away, no buckle: it is at the band's front)
+function witchHat(WC, rx = 128, dir = 0, away = false) {
   const c = WC.witchColor, ln = darker(c);
   const cone = `<path d="M46 42 Q72 -24 98 -84 Q112 -116 154 -126 Q128 -104 122 -80 Q134 -20 154 42 Q100 54 46 42 Z" ` +
     `fill="${c}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>`;
   return `<ellipse cx="100" cy="44" rx="${f1(rx)}" ry="${f1(18 * Math.max(1, rx / 128) ** 0.5)}" fill="${c}" stroke="${ln}" stroke-width="3"/>` +
     (dir > 0 ? `<g transform="translate(200 0) scale(-1 1)">${cone}</g>` : cone) +
     `<path d="M52 24 Q100 34 149 24 L152 38 Q100 48 49 38 Z" fill="${WC.trimColor}"/>` +
-    (dir ? `<rect x="${dir > 0 ? 141 : 51}" y="${dir > 0 ? 23 : 23}" width="8" height="16" rx="2" fill="none" stroke="#f2c230" stroke-width="3"/>`
+    (away ? "" : dir ? `<rect x="${dir > 0 ? 141 : 51}" y="${dir > 0 ? 23 : 23}" width="8" height="16" rx="2" fill="none" stroke="#f2c230" stroke-width="3"/>`
          : `<rect x="89" y="25" width="22" height="16" rx="2" fill="none" stroke="#f2c230" stroke-width="3.5"/>`);
 }
 // (ticket 431, Matthew: "gnome costume, like this one (man and woman on Gnomes book cover, and in that book generally --

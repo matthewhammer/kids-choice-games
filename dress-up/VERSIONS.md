@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.354 (2026-10-19)
+
+Everything in 0.0.353, with no buckles on the back.
+
+- **No buckle from behind** (ticket 444): walking away, the gnome's and the witch's belts show no buckle, the witch's hat no buckle on its band, the wizard's cord no knot or tassels, and the monk's rope no hanging ends; facing you and from the side, all as before. (The witch's boots keep their buckles: those are on the outside of each ankle.)
+
 ## 0.0.353 (2026-10-19)
 
 Everything in 0.0.352, with a braided beard and every beard's length.
