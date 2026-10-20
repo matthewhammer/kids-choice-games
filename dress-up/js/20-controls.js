@@ -192,7 +192,9 @@ const TABS = [
     ["range", "bangs", "✂️ bangs (0 = none, 100 = down to the brows)", 0, 300, 40, 140],
     ["color", "color", "color", HAIRS],
     // (ticket 442) the beard: four styles, its colour ("auto": the hair's), and a moustache with it
-    ["choice", "beard", "🧔 beard", [["none", "none"], ["short", "✂️ short"], ["full", "🧔 full"], ["long", "🧙 long"], ["goatee", "🐐 goatee"]]],
+    ["choice", "beard", "🧔 beard", [["none", "none"], ["short", "✂️ short"], ["full", "🧔 full"], ["long", "🧙 long"], ["goatee", "🐐 goatee"], ["braided", "🪢 braided"]]],
+    ["range", "beardLength", "📏 beard length", 30, 300, 60, 180],   // (ticket 443: a share of the style's own)
+    ["range", "braidWidth", "🪢 braid width (apart ↔ tight)", 30, 250, 60, 180],
     ["color", "beardShade", "🧔 beard's color", ["auto", BEARD_WHITE, "#c9c5bd", "#8d8172", "#6b4226", "#c0612b", "#e8c35a", "#2b2b2b"]],
     ["toggle", "moustache", "👨 moustache"],
   ]],
@@ -945,7 +947,8 @@ const SHOWN_WHEN = {
   "costume.fur": c => !!ANIMALS[c.kind],
   "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),
   "costume.witchColor": c => c.kind === "witch",
-  "hair.beardShade": h => !!BEARDS[h.beard], "hair.moustache": h => !!BEARDS[h.beard],
+  "hair.beardShade": h => !!BEARDS[h.beard], "hair.moustache": h => !!BEARDS[h.beard], "hair.beardLength": h => !!BEARDS[h.beard],
+  "hair.braidWidth": h => !!(BEARDS[h.beard] && BEARDS[h.beard].braid),
   "costume.wizardRobe": c => c.kind === "wizard", "costume.wizardStars": c => c.kind === "wizard", "costume.staff": c => c.kind === "wizard" || c.kind === "monk",
   "costume.monkWho": c => c.kind === "monk", "costume.monkCloak": c => c.kind === "monk", "costume.hoodUp": c => c.kind === "monk", "costume.staffOrb": c => c.kind === "wizard" && c.staff !== false,
   "costume.gnomeWho": c => c.kind === "gnome", "costume.gnomeHat": c => c.kind === "gnome", "costume.gnomeBoots": c => c.kind === "gnome",

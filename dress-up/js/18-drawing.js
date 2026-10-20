@@ -271,7 +271,7 @@ function drawNow() {
   const skirtHem = !suit && !undies && (P.style === "skirt" || P.style === "dress")
     ? L + (feetY - L) * (P.skirtLen ?? 50) / 100 + 30 : 0;
   const toesDown = suit || witch ? 0 : feetY + Math.max(footDown(state.shoes), footDown(rightShoeOf(state.shoes))) * shoeSc + 12;
-  let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem, beardStyle ? ty + (headChin(F) + BEARDS[beardStyle].long + 16) * s : 0,
+  let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem, beardStyle ? ty + (headChin(F) + beardLong(beardStyle, state.hair) + (BEARDS[beardStyle].braid ? 60 : 16)) * s : 0,
                           broomH ? broomH[1] + 140 * kb : 0, staffH ? staffH[1] + 120 : 0, catK ? -9 + 46 * catK : 0);
   const hairHalf = hr.half * headWidth(F) * (1 + 0.12 * F.alien / 100) * s;
   let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
@@ -874,7 +874,7 @@ function drawNow() {
   // stretched with the head, which big eyes make taller)
   // (in profile, the hair on the head itself, over its top and back)
   // (ticket 442) the beard and moustache from 💇 Hair (the gnome man's and the wizard's too), under the bangs and a hat
-  if (beardStyle && !away) svg += veil("hair", inFace(beardSvg(F, beardStyle, beardShade(state.hair), dir, state.hair.moustache !== false)));
+  if (beardStyle && !away) svg += veil("hair", inFace(beardSvg(F, beardStyle, beardShade(state.hair), dir, state.hair.moustache !== false, state.hair)));
   if (!C && !diver && !hooded && !away) svg += veil("hair", inFace(side ? `<g transform="${topFlies(F)}">${tucked(side.cap, "under-hat-bangs", HEAD_C + ((hatLine ?? 40) - HEAD_C) * headH(F))}</g>`
                                           : tucked(bangsSvg(state.hair, F), "under-hat-bangs", HEAD_C + ((hatLine ?? 40) - HEAD_C) * headH(F))));
   // a fairy's wreath of flowers, over her hair

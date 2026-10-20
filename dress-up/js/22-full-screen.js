@@ -320,7 +320,7 @@ const TAB_BOXES = {
               ["💥 faces it makes", ["burst", "candy", "sick"]]],
   "👁 Eyes": [["👁 the eyes", ["eyes", "oval", "tilt", "whites"], ["eye"]], ["⚫ pupil and iris", ["pupil", "iris", "irisColor"]],
              ["✨ the shine", ["light", "shine", "shineMix", "shineSize"]], ["⭐ funny eyes", ["stars", "hearts", "xeyes", "closed"]]],
-  "💇 Hair": [["💇 the hair", ["style", "length", "bangs", "color"]], ["🧔 the beard", ["beard", "beardShade", "moustache"]]],
+  "💇 Hair": [["💇 the hair", ["style", "length", "bangs", "color"]], ["🧔 the beard", ["beard", "beardLength", "braidWidth", "beardShade", "moustache"]]],
   "🦒 Neck, arms & legs": [["🦒 the neck", ["neck", "neckW"]], ["💪 the arms", ["arms", "elbows", "elbowCurl", "elbowSwing", "armLen", "armW"]],
                           ["🦵 the legs", ["legLen", "legW", "knees", "kneeCurl", "kneeSwing", "feetTurn"]], ["🤸 posed", ["poseHow", "unpose"]]],
   "👕 Shirt": [["👕 the shirt", ["style", "collar", "color", "width", "length"]], ["🔷 its pattern", ["pattern", "patternSize", "patternColor"]]],

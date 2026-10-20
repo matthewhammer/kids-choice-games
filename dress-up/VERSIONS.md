@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.353 (2026-10-19)
+
+Everything in 0.0.352, with a braided beard and every beard's length.
+
+- **🪢 A braided beard** (ticket 443): a full beard gathered below the chin into one long braid, ending in a tie and a tuft. 🪢 braid width goes from thin strands with gaps between them to a fat braid with none.
+- **📏 Beard length** (ticket 443): every beard style can be shorter or longer, from half its length to three times it.
+
 ## 0.0.352 (2026-10-19)
 
 Everything in 0.0.351, with a monk or a dryad.

@@ -416,7 +416,7 @@ const DEFAULTS = {
            faceW: 100, faceH: 100, alien: 0, eyeGap: 38, noseView: "none", nose: "L", noseFront: "round", noseW: 100, noseH: 100,
            witchDir: "right", witchLen: 100, mouthSize: 100,
            ears: "free", earSize: 100 },   // (ticket 125, M's: ears, their shape and size)
-  hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100, beard: "none", beardShade: "auto", moustache: true },
+  hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100, beard: "none", beardShade: "auto", moustache: true, beardLength: 100, braidWidth: 100 },
   body:  { blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
            lieHead: "left", lieHow: "back", stairsWay: "up",   // (ticket 308: up or down the stairs)
            hand: "right",   // (ticket 316: the dominant hand, the one that pulls a lever: right, left, or both, by a coin flip)   // (ticket 299: lying down, the way the head points; on the back, face up, or on the side, facing us)
@@ -1070,7 +1070,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.352", released: "2026-10-19" };
+const VERSION = { number: "0.0.353", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

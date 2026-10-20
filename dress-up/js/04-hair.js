@@ -455,15 +455,40 @@ const profileEdge = F => 80 * headWidth(F) * (1 + 0.12 * F.alien / 100) - 8;
 // to a rounded point below the chin, `long` below it; a goatee is only a tuft under the mouth to below the chin. In profile
 // (dir), along the jaw from below the ear to the chin's front and down to its point; none from behind. The moustache over
 // the mouth (at its front, in profile). The gnome man's and the wizard's beards are these (ticket 431, 432; set() puts one on).
-const BEARDS = { none: null, short: { long: 16, flare: 0 }, full: { long: 74, flare: 10 }, long: { long: 150, flare: 12 }, goatee: { long: 24, goatee: true } };
+const BEARDS = { none: null, short: { long: 16, flare: 0 }, full: { long: 74, flare: 10 }, long: { long: 150, flare: 12 }, goatee: { long: 24, goatee: true },
+                 braided: { long: 300, flare: 8, braid: true } };
+// (ticket 443, Matthew: "add new style, called braided ... let's permit the user to control the width of the braids, so they
+// can be separate (like tree house tree trunk) or so fat that they don't show many or any gaps between them"; "give each
+// beard style a length control") hair.beardLength, a share of each style's own length below the chin (100 its usual);
+// hair.braidWidth, a share of the braid's lobes' usual width (narrow, apart with gaps; wide, no gaps at all).
+const beardLong = (style, H) => BEARDS[style] ? BEARDS[style].long * Math.max(0.2, (Number(H.beardLength) || 100) / 100) : 0;
+// A PLAIT, in the face's units: hanging at cx from y0 to y1, a chain of slanted lobes, left and right in turn, each upper one
+// over the one below (drawn from the bottom up), narrowing a little toward the end; wk the lobes' width (1 usual); then a tie
+// and a tuft. The tree house trunk's braid (braidSvg) is its cousin: strands apart, crossing as they rise.
+function plaitSvg(cx, y0, y1, wk, c, ln) {
+  const len = y1 - y0; if (len < 12) return "";
+  // (the lobes stay long and slanted as they widen, side by side further apart: a plait, never a string of beads)
+  const n = Math.max(2, Math.round(len / (18 + 6 * Math.min(2, wk)))), step = len / n;
+  let s = "";
+  for (let i = n - 1; i >= 0; i--) {
+    const u = i / n, taper = 1 - 0.4 * u, side = i % 2 ? 1 : -1, x = cx + side * (5 + 4 * wk) * taper, y = y0 + (i + 0.5) * step;
+    const rx = Math.max(2, 11 * wk * taper), ry = Math.max(step * 0.8, rx * 1.6);
+    s += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" transform="rotate(${-side * 32} ${f1(x)} ${f1(y)})" fill="${c}" stroke="${ln}" stroke-width="2"/>`;
+  }
+  const tw = Math.max(5, 11 * wk * 0.6);
+  return s + `<path d="M${f1(cx - tw)} ${f1(y1 + 2)} Q${f1(cx - tw - 6)} ${f1(y1 + 22)} ${f1(cx - 3)} ${f1(y1 + 26)} Q${f1(cx + tw + 6)} ${f1(y1 + 22)} ${f1(cx + tw)} ${f1(y1 + 2)} Z" fill="${c}" stroke="${ln}" stroke-width="2"/>` +
+    `<rect x="${f1(cx - tw - 1)}" y="${f1(y1 - 4)}" width="${f1(2 * tw + 2)}" height="7" rx="3" fill="${ln}"/>`;
+}
 const BEARD_WHITE = "#f4f1ea";
 const beardShade = H => !H.beardShade || H.beardShade === "auto" ? H.color : H.beardShade;
-function beardSvg(F, style, c, dir = 0, moustache = true) {
+function beardSvg(F, style, c, dir = 0, moustache = true, H = { beardLength: 100, braidWidth: 100 }) {
   const B = BEARDS[style]; if (!B) return "";
-  const ln = darker(c), LY = faceLayout(F), pts = headPoints(F), chin = headChin(F);
-  const cheekY = LY.eyeY + 24, [xl, xr] = acrossAt(pts, cheekY), my = LY.mouthY, tipY = chin + B.long, mw = 24 * (F.mouthSize ?? 100) / 100;
+  const ln = darker(c), LY = faceLayout(F), pts = headPoints(F), chin = headChin(F), long = beardLong(style, H);
+  // (a braided beard: a full one on the face, gathered below the chin into the plait, which hangs `long` below it)
+  const cheekY = LY.eyeY + 24, [xl, xr] = acrossAt(pts, cheekY), my = LY.mouthY, tipY = chin + (B.braid ? 36 : long), mw = 24 * (F.mouthSize ?? 100) / 100;
+  const plait = B.braid ? plaitSvg(dir ? 100 + dir * profileEdge(F) * 0.4 : 100, chin + 24, chin + 24 + long, Math.max(0.2, (Number(H.braidWidth) || 100) / 100), c, ln) : "";
+  let out = plait;
   const st = `stroke="${ln}" stroke-width="3" stroke-linejoin="round"`;
-  let out = "";
   if (!dir) {
     if (B.goatee) out += `<path d="M${f1(100 - mw * 0.7)} ${f1(my + 22)} Q100 ${f1(my + 14)} ${f1(100 + mw * 0.7)} ${f1(my + 22)} Q${f1(100 + mw * 0.6)} ${f1(tipY - 6)} 100 ${f1(tipY)} Q${f1(100 - mw * 0.6)} ${f1(tipY - 6)} ${f1(100 - mw * 0.7)} ${f1(my + 22)} Z" fill="${c}" ${st}/>`;
     else {
@@ -472,7 +497,7 @@ function beardSvg(F, style, c, dir = 0, moustache = true) {
                     `Q${f1(xr + fl)} ${f1(Math.min(chin, tipY))} ${f1(xr - 3)} ${f1(cheekY)} Q${f1(xr - 14)} ${f1(my - 6)} 100 ${f1(my - 4)} Q${f1(xl + 14)} ${f1(my - 6)} ${f1(xl + 3)} ${f1(cheekY)} Z`;
       const hole = `M${f1(100 - mw - 6)} ${f1(my + 2)} Q100 ${f1(my - 8)} ${f1(100 + mw + 6)} ${f1(my + 2)} Q${f1(100 + mw + 2)} ${f1(my + 30)} 100 ${f1(my + 32)} Q${f1(100 - mw - 2)} ${f1(my + 30)} ${f1(100 - mw - 6)} ${f1(my + 2)} Z`;
       out += `<path d="${outer} ${hole}" fill="${c}" fill-rule="evenodd" ${st}/>`;
-      if (B.long > 40) out += [-22, 0, 22].map(dx => `<path d="M${f1(100 + dx)} ${f1(my + 44)} Q${f1(100 + dx * 1.2)} ${f1(tipY - 30)} ${f1(100 + dx * 0.8)} ${f1(tipY - 14)}" fill="none" stroke="${ln}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>`).join("");
+      if (tipY - chin > 40) out += [-22, 0, 22].map(dx => `<path d="M${f1(100 + dx)} ${f1(my + 44)} Q${f1(100 + dx * 1.2)} ${f1(tipY - 30)} ${f1(100 + dx * 0.8)} ${f1(tipY - 14)}" fill="none" stroke="${ln}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>`).join("");
     }
     const ny = my - 4;
     if (moustache) out += `<path d="M100 ${f1(ny - 9)} Q${f1(100 - mw - 6)} ${f1(ny - 14)} ${f1(100 - mw - 16)} ${f1(ny + 8)} Q${f1(100 - mw * 0.5)} ${f1(ny + 6)} 100 ${f1(ny + 1)} ` +
