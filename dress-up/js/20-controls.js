@@ -374,6 +374,14 @@ const TABS = [
     ["color", "wizardStars", "⭐ stars & moon color", ["#f2c230", "#e5e7eb", "#93c5fd", "#f9a8d4"]],
     ["toggle", "staff", "🪄 staff"],
     ["color", "staffOrb", "🔮 the staff's orb", ["#7dd3fc", "#a78bfa", "#86efac", "#fca5a5", "#fde047"]],
+    // (ticket 438) the friend's horse, with them whatever they wear: led by its rein; its coat, mane and face marking (the
+    // stable's horses' own), its halter and rein, white socks
+    ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"]]],
+    ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
+    ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
+    ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
+    ["color", "horseTack", "🪢 its halter and rein", ["#7a3a1a", "#1f1f22", "#b91c1c", "#1d4ed8", "#15803d", "#e0b030"]],
+    ["toggle", "horseSocks", "🧦 white socks"],
     // the fairy: wings and tunic, each in a style with its own colors; shoes
     ["choice", "wingStyle", "🧚 wings", Object.entries(FAIRY_WINGS).map(([id, w]) => [id, w.name])],
     ...Object.entries(FAIRY_WINGS).map(([id, w]) => ["color", "wingColor_" + id, "🧚 wings' color", w.colors]),
@@ -993,6 +1001,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",
+  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks"].map(k => ["costume." + k, c => (c.horse || "none") !== "none"])),
   ...Object.fromEntries(["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor"].map(k => ["costume." + k, c => c.kind === "ghost"])),
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),

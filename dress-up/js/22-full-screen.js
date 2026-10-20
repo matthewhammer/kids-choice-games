@@ -346,7 +346,7 @@ const TAB_BOXES = {
                 ["🧚 the fairy", ["wingStyle", "wingColor_butterfly", "wingColor_dragonfly", "wingColor_leaf", "wingColor_petal", "wingColor_sparkle",
                                   "wingFlutter", "wingLfo", "fairyOutfit", "tunicStyle", "tunicColor_petal", "tunicColor_leaf", "tunicColor_bluebell",
                                   "tunicColor_sparkle", "tunicColor_toadstool", "fairyShoes", "fairyShoeColor"]],
-                ["🌸 the wreath", ["wreath", "wreathFlowers"]]],
+                ["🌸 the wreath", ["wreath", "wreathFlowers"]], ["🐴 the horse", ["horse", "horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks"]]],
 };
 // (ticket 377, the report's rule 7, mirror the picture) the parts of the friend each tab's boxes are about (the drawing's veil layers,
 // marked data-part): pointed at, a box lights them in the game (body[data-lit], style.css), however often the friend is drawn again

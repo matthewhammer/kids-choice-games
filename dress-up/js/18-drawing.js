@@ -295,6 +295,13 @@ function drawNow() {
                         -((80 + (C ? (kind === "deer" ? 60 : 30) : witch ? brimRx - 80 : 0)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20),
                         broomH ? -(Math.abs(broomH[0]) + 60 * kb) : 0, staffH ? -(Math.abs(staffH[0]) + 40) : 0, bowH ? -(Math.abs(bowH[0]) + 50) : 0, shieldH ? -(Math.abs(shieldH[0]) + 40) : 0, swordH ? -(Math.abs(swordH[0]) + 24) : 0,
                         catK ? -(w - 4) - 24 * catK : 0, catK ? -(-(w - 4) + 40 * catK) : 0);
+  // (ticket 438) the friend's horse, led by its rein, beside them: in profile behind them, its shoulder at theirs and its
+  // head ahead of them (mirrored, facing our left); toward us at their right (our left), away at their right (our right).
+  // Not while they sit, lie, swim, climb or crawl. The frame grows to hold it.
+  const horseView = (WC.horse || "none") !== "none" && !sitting && B.pose !== "lie" && !(move && (move.water || move.ladder != null || move.squash || move.rot))
+    ? (dir ? "side" : away ? "back" : "front") : null;
+  const horseX = horseView === "side" ? -dir * 80 : horseView === "front" ? -150 : 150;
+  if (horseView) { left = Math.min(left, horseView === "side" ? -340 : -260); top = Math.min(top, ground - (horseView === "side" ? 520 : 570)); bottom = Math.max(bottom, ground + 24); }
   // A background is a stage of its own, the same whatever the figure
   // (SCENE): the frame the usual figure gets in a scene. The figure stands
   // on its ground by its feet, at its size and where it was dragged, so
@@ -451,6 +458,16 @@ function drawNow() {
             `<line x1="${f1(x)}" y1="${top}" x2="${f1(x)}" y2="${f1(ground + 6)}" stroke="#7a5230" stroke-width="9" stroke-linecap="round"/>`;
     for (let y = top + off; y < ground; y += gap) t += `<line x1="${f1(-x)}" y1="${f1(y)}" x2="${f1(x)}" y2="${f1(y)}" stroke="#9c6b3d" stroke-width="7" stroke-linecap="round"/>`;
     svg += t + "</g>";
+  }
+  // (ticket 438) the horse, before the friend: its own shadow, then it, stepping with their stride
+  let horseRing = null;
+  if (horseView && !wet) {
+    const gait = B.anim === "walk" ? "walk" : B.anim === "run" ? "run" : "stand", k = horseView === "side" ? dir : 1;
+    const h = horseSvg(horseView, gait, gait === "stand" ? 0 : lfoNow("B").phase,
+                       { coat: WC.horseCoat, mane: WC.horseMane, mark: WC.horseMark, tack: WC.horseTack, socks: WC.horseSocks }, ground);
+    svg += `<g class="horse" data-horse="${horseView} ${gait}"><ellipse cx="${f1(horseX - k * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${horseView === "side" ? 225 : 100}" ry="14" fill="#000" opacity="0.08"/>` +
+           `<g transform="translate(${f1(horseX)} 0) scale(${k} 1)">${h.svg}</g></g>`;
+    horseRing = h.ring && [horseX + k * h.ring[0], h.ring[1]];
   }
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
@@ -1069,6 +1086,12 @@ function drawNow() {
 
   // and the hands last, in front of everything, the face too: raised
   // arms put them by the cheeks or over the eyes, not behind the head
+  // (ticket 438) the horse's rein, from its noseband's ring to the hand nearer it, hanging a little: under the hand
+  if (horseRing && nearArms.length) {
+    const d = a => Math.hypot(a.H[0] - horseRing[0], a.H[1] - horseRing[1]), hand = nearArms.reduce((a, b) => d(b) < d(a) ? b : a);
+    const [x0, y0] = horseRing, [x1, y1] = hand.H, sag = 30 + 0.12 * Math.hypot(x1 - x0, y1 - y0);
+    svg += `<path class="rein" d="M${f1(x0)} ${f1(y0)} Q${f1((x0 + x1) / 2)} ${f1(Math.max(y0, y1) + sag)} ${f1(x1)} ${f1(y1)}" fill="none" stroke="${WC.horseTack || "#7a3a1a"}" stroke-width="5" stroke-linecap="round"/>`;
+  }
   const handsAt = svg.length;
   if (!winged && !(squash && away)) {
     // (ticket 286: crawling toward us, each hand flat on the floor; away, drawn with the arms, behind the back, above)

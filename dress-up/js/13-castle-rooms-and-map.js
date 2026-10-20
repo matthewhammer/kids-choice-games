@@ -1801,38 +1801,31 @@ function catRoomCats(c, K, wags) {
   });
   return items.sort((a, b) => b.z - a.z).map(e => e.svg).join("");
 }
-// A horse looking out over its stall's half door, (0, 0) where its neck meets
-// the door's top: its neck and mane, its long face with its marking, a halter
-// in the castle's colors. It nods with its wag (an LFO, or its own pace,
-// begun its own way in), looks round now and then, flicks an ear, blinks,
-// and munches a wisp of hay; each horse in its own time.
-function horseHead(H, W, i, halter) {
+// A horse's face, from in front, as the stable's horses look out of their stalls: its ears, its long face with its
+// marking, its muzzle, its eyes at the sides, its forelock, a halter (or bridle) in `halter`. `still` (ticket 438: the
+// friend's horse, facing us): no blinking, no ear flicks, no munching, no hay. (0, 0) as for horseHead.
+function horseFace(H, i, halter, still) {
   const coat = H.coat, ln = mix(coat, "#000000", 0.42), mane = H.mane, maneD = mix(mane, "#000000", 0.3), sh = mix(coat, "#000000", 0.2);
   const light = hexToRgb(coat).reduce((a, b) => a + b, 0) > 520, muz = light ? "#b9a6a0" : mix(coat, "#2a2420", 0.4), white = "#f7f4ee";
-  const look = (6 + 1.4 * (i % 3)).toFixed(1), blink = (3.6 + 0.9 * i).toFixed(1), ear = (3.1 + 0.8 * ((i * 3) % 4)).toFixed(1), chew = (0.55 + 0.08 * i).toFixed(2);
-  // (the neck, behind the head, and the mane down its side, swaying a little)
-  const t = `<path d="M-20 8 Q-21 -40 -12 -104 L12 -104 Q21 -40 20 8 Z" fill="${coat}" stroke="${ln}" stroke-width="1.5"/>` +
-    `<path d="M10 -96 Q17 -44 16 6" fill="none" stroke="${sh}" stroke-width="5" opacity="0.5"/>` +
-    `<g>${[...Array(10)].map((_, j) => `<path d="M${f1(-11 - j * 0.85)} ${-104 + j * 11} q-10 4 -14 13 q8 -3 14 -6 Z" fill="${mane}" stroke="${maneD}" stroke-width="0.6"/>`).join("")}` +
-    `<animateTransform attributeName="transform" type="rotate" values="0 -12 -100;-3 -12 -100;0 -12 -100" dur="${(2.4 + 0.35 * i).toFixed(2)}s" repeatCount="indefinite"/></g>`;
+  const blink = (3.6 + 0.9 * i).toFixed(1), ear = (3.1 + 0.8 * ((i * 3) % 4)).toFixed(1), chew = (0.55 + 0.08 * i).toFixed(2), A = x => still ? "" : x;
   const earAt = sd => `<g>${poly([[sd * 9, -155], [sd * 21, -184], [sd * 21, -152]], coat, ln, 1.5)}${poly([[sd * 12, -156], [sd * 19.5, -178], [sd * 19, -155]], mix(coat, "#e8a0a0", 0.35), mix(coat, "#e8a0a0", 0.35), 0.5)}` +
-    `<animateTransform attributeName="transform" type="rotate" values="0 ${sd * 15} -155;0 ${sd * 15} -155;${sd * 24} ${sd * 15} -155;0 ${sd * 15} -155" keyTimes="0;0.82;0.88;1" dur="${ear}s" begin="-${(i * 1.3 + (sd > 0 ? 0.9 : 0)).toFixed(1)}s" repeatCount="indefinite"/></g>`;
+    A(`<animateTransform attributeName="transform" type="rotate" values="0 ${sd * 15} -155;0 ${sd * 15} -155;${sd * 24} ${sd * 15} -155;0 ${sd * 15} -155" keyTimes="0;0.82;0.88;1" dur="${ear}s" begin="-${(i * 1.3 + (sd > 0 ? 0.9 : 0)).toFixed(1)}s" repeatCount="indefinite"/>`) + `</g>`;
   const mark = H.mark === "star" ? `<path d="M0 -148 L4.5 -140 L0 -132 L-4.5 -140 Z" fill="${white}"/>`
     : H.mark === "stripe" ? `<path d="M-2.5 -148 Q0 -150 2.5 -148 L3 -76 Q0 -73 -3 -76 Z" fill="${white}"/>`
     : H.mark === "blaze" ? `<path d="M-8 -152 Q0 -157 8 -152 L5 -100 Q4 -86 9 -70 L-9 -70 Q-4 -86 -5 -100 Z" fill="${white}"/>` : "";
   // (eyes at the sides of the head, standing out a little past it, as a horse's do)
-  const eye = sd => `<ellipse cx="${sd * 22}" cy="-128" rx="4.8" ry="6.2" fill="#1f1410" stroke="${ln}" stroke-width="0.8"><animate attributeName="ry" values="6.2;6.2;0.8;6.2" keyTimes="0;0.93;0.965;1" dur="${blink}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/></ellipse>` +
+  const eye = sd => `<ellipse cx="${sd * 22}" cy="-128" rx="4.8" ry="6.2" fill="#1f1410" stroke="${ln}" stroke-width="0.8">` + A(`<animate attributeName="ry" values="6.2;6.2;0.8;6.2" keyTimes="0;0.93;0.965;1" dur="${blink}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`) + `</ellipse>` +
     `<circle cx="${sd * 22 + 1.6}" cy="-130.5" r="1.5" fill="#ffffff"/>` +
     `<path d="M${sd * 17} -135 Q${sd * 22} -139 ${sd * 27} -134" fill="none" stroke="${ln}" stroke-width="1.1"/>`;
-  const hay = i % 2 ? `<g>${[[-4, 9, -5], [0, 11, 1], [4, 10, 6]].map(([x, l, dx]) => `<line x1="${x}" y1="-48" x2="${x + dx}" y2="${-48 + l}" stroke="#e3c46a" stroke-width="1.6"/>`).join("")}` +
+  const hay = !still && i % 2 ? `<g>${[[-4, 9, -5], [0, 11, 1], [4, 10, 6]].map(([x, l, dx]) => `<line x1="${x}" y1="-48" x2="${x + dx}" y2="${-48 + l}" stroke="#e3c46a" stroke-width="1.6"/>`).join("")}` +
     `<animateTransform attributeName="transform" type="rotate" values="-6 0 -48;6 0 -48;-6 0 -48" dur="${chew}s" repeatCount="indefinite"/></g>` : "";
-  const head = earAt(-1) + earAt(1) +
+  return earAt(-1) + earAt(1) +
     `<path d="M-16 -157 Q-25 -151 -23 -136 Q-22 -116 -15 -96 Q-12 -84 -13 -74 Q-18 -62 -13 -50 Q0 -43 13 -50 Q18 -62 13 -74 Q12 -84 15 -96 Q22 -116 23 -136 Q25 -151 16 -157 Q0 -163 -16 -157 Z" fill="${coat}" stroke="${ln}" stroke-width="1.5"/>` +
     `<path d="M-15 -112 Q-11 -98 -10 -84 M15 -112 Q11 -98 10 -84" fill="none" stroke="${sh}" stroke-width="1.4" opacity="0.6"/>` + mark +
     `<ellipse cx="0" cy="-59" rx="14.5" ry="11.5" fill="${H.mark === "blaze" ? mix(muz, "#f0d8d0", 0.5) : muz}"/>` +
     [-1, 1].map(sd => `<path d="M${sd * 5} -65 q${sd * 4} -2 ${sd * 5} 4 q${sd * -1} 3 ${sd * -4} 1" fill="#1f1410"/>`).join("") +
     hay + `<g><path d="M-6 -50 Q0 -47.5 6 -50" fill="none" stroke="#1f1410" stroke-width="1.2"/>` +
-    `<animateTransform attributeName="transform" type="translate" values="0 0;0 1.2;0 0" dur="${chew}s" repeatCount="indefinite"/></g>` +
+    A(`<animateTransform attributeName="transform" type="translate" values="0 0;0 1.2;0 0" dur="${chew}s" repeatCount="indefinite"/>`) + `</g>` +
     eye(-1) + eye(1) +
     `<path d="M-9 -160 Q-16 -146 -7 -134 Q-3 -146 0 -159 Q4 -145 10 -137 Q14 -150 9 -160 Q0 -165 -9 -160 Z" fill="${mane}"/>` +
     // (its halter: a noseband in the castle's colors, its straps going back round the cheeks)
@@ -1840,6 +1833,21 @@ function horseHead(H, W, i, halter) {
     `<path d="M-13.5 -84 Q0 -76 13.5 -84" fill="none" stroke="${halter}" stroke-width="4.5" stroke-linecap="round"/>` +
     `<path d="M-13.5 -84 Q0 -76 13.5 -84" fill="none" stroke="${mix(halter, "#000000", 0.35)}" stroke-width="0.8" stroke-dasharray="2 2"/>` +
     `<circle cx="0" cy="-77" r="3" fill="none" stroke="#e8b923" stroke-width="1.6"/>`;
+}
+// A horse looking out over its stall's half door, (0, 0) where its neck meets
+// the door's top: its neck and mane, its long face with its marking, a halter
+// in the castle's colors. It nods with its wag (an LFO, or its own pace,
+// begun its own way in), looks round now and then, flicks an ear, blinks,
+// and munches a wisp of hay; each horse in its own time.
+function horseHead(H, W, i, halter) {
+  const coat = H.coat, ln = mix(coat, "#000000", 0.42), mane = H.mane, maneD = mix(mane, "#000000", 0.3), sh = mix(coat, "#000000", 0.2);
+  const look = (6 + 1.4 * (i % 3)).toFixed(1);
+  // (the neck, behind the head, and the mane down its side, swaying a little)
+  const t = `<path d="M-20 8 Q-21 -40 -12 -104 L12 -104 Q21 -40 20 8 Z" fill="${coat}" stroke="${ln}" stroke-width="1.5"/>` +
+    `<path d="M10 -96 Q17 -44 16 6" fill="none" stroke="${sh}" stroke-width="5" opacity="0.5"/>` +
+    `<g>${[...Array(10)].map((_, j) => `<path d="M${f1(-11 - j * 0.85)} ${-104 + j * 11} q-10 4 -14 13 q8 -3 14 -6 Z" fill="${mane}" stroke="${maneD}" stroke-width="0.6"/>`).join("")}` +
+    `<animateTransform attributeName="transform" type="rotate" values="0 -12 -100;-3 -12 -100;0 -12 -100" dur="${(2.4 + 0.35 * i).toFixed(2)}s" repeatCount="indefinite"/></g>`;
+  const head = horseFace(H, i, halter, false);
   // (the nod: down and back up once a wag; looking round: a turn about the throat)
   return t + wagged(W, s => `<g>${wagAnim(W, "transform", (v, amp) => `0 ${f1((3 + 9 * amp) * (1 + v) / 2)}`, s, "translate")}` +
     `<g><animateTransform attributeName="transform" type="rotate" values="0 0 -70;0 0 -70;-9 0 -70;-9 0 -70;0 0 -70;0 0 -70;8 0 -70;8 0 -70;0 0 -70" dur="${look}s" begin="-${(i * 1.9).toFixed(1)}s" repeatCount="indefinite"/>${head}</g></g>`);

@@ -525,6 +525,7 @@ const DEFAULTS = {
              knightA: "#2f6db5", knightB: "#f4f1ea", tabardLayout: "quartered", emblem: "falcon", plume: true, plumeColor: "#c0392b", helmOpen: false, sword: true, shield: true,
              robinTunic: "#3f7d3a", robinHat: "#3f7d3a", robinFeather: "#d2382b", bow: true, quiver: true,
              wizardRobe: "#2a3a8c", wizardStars: "#f2c230", staff: true, staffOrb: "#7dd3fc", beardGiven: null,
+             horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false,
              gnomeWho: "man", gnomeHat: "#d2382b", gnomeTunic: "#3f8f8a", gnomeTrousers: "#7d8b6a",
              gnomeBodice: "#d2382b", gnomeSkirt: "#d2382b", gnomeBoots: "#e8e4da",
              witchColor: "#6a2c91", webColor: "#3fae4a", webStyle: "tiled", trimColor: "#f28c28", witchCat: false, broom: false,
@@ -1072,7 +1073,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.363", released: "2026-10-19" };
+const VERSION = { number: "0.0.364", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.364 (2026-10-19)
+
+Everything in 0.0.363, with a horse to lead.
+
+- **A horse** (ticket 438): in 🐯 Costume, 🐴 the horse: lead a horse by its rein, whatever your friend is wearing. It stands beside them facing us, from behind, or from the side, and walks or runs (a canter) with them, its legs stepping in time with theirs. Choose its coat, its mane and tail, a star, stripe or blaze on its face (the same as the castle stable's horses), the colour of its halter and rein, and white socks.
+
 ## 0.0.363 (2026-10-19)
 
 Everything in 0.0.362, with a druid's face in the shadow of the hood.

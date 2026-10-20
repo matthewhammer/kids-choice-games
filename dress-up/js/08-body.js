@@ -851,6 +851,104 @@ function scepterSvg([hx, hy], jewel) {
     `<circle cx="${f1(t[0])}" cy="${f1(t[1] - 8)}" r="11" fill="#e0b030" stroke="#8a6420" stroke-width="2"/><circle cx="${f1(t[0])}" cy="${f1(t[1] - 8)}" r="5" fill="${jewel}"/>` +
     `<path d="M${f1(t[0])} ${f1(t[1] - 19)} L${f1(t[0])} ${f1(t[1] - 33)} M${f1(t[0] - 6)} ${f1(t[1] - 27)} L${f1(t[0] + 6)} ${f1(t[1] - 27)}" stroke="#e0b030" stroke-width="3.5" stroke-linecap="round"/>`;
 }
+// (ticket 438, Matthew: "horse in all poses we have for people that 'make sense' for using in the game as a way to ride, or
+// walk/run with (holding the horse's reins, and walking/running next to it). The horse need not sit, or crawl, or swim, etc.
+// Just walking and running, and standing still: towards, away and L R poses, just our main character.") THE FRIEND'S HORSE, in
+// the friend's units, standing on the ground at (0, g): its withers about the friend's shoulders. Three drawings of its own,
+// none a turn of another: from the side (facing our right; mirrored for our left, as a horse is the same both sides), facing
+// us (its face the stable's horses' own, horseFace, still), and from behind. Its legs step with the friend: walking, a
+// four-beat walk (left hind, left fore, right hind, right fore, a quarter of a stride apart) on the friend's own stride (u,
+// LFO B's phase); running, a canter, twice as quick, the hind pair then the fore pair, the body rising and falling;
+// standing, square. H: its coat, mane and face marking (the stable's: HORSE_COATS, HORSE_MANES, HORSE_MARKS), its tack's
+// color, white socks. Returned with it, `ring`: where a lead rein is tied on (the noseband's ring under its chin), or null.
+function horseLeg(top, len, swing, flex, fore, w, coat, sock, g) {
+  // (a leg from its top down: an upper bone swinging by `swing` degrees (forward, the way it faces), the lower bending at
+  // the knee (fore: the hoof folding back) or the hock by `flex`, a hoof; its outline round the bones, tapering)
+  // (a hind leg at rest: its gaskin slanting back to the hock, its cannon straight down; bending, the hock goes further
+  // back and the hoof comes forward under it)
+  const rest = fore ? 0 : 8, a1 = (swing - rest - (fore ? 0 : 0.35 * flex)) * Math.PI / 180, a2 = (swing + (fore ? -flex : 0.65 * flex)) * Math.PI / 180;
+  const up = len * (fore ? 0.48 : 0.5), lo = len * (fore ? 0.44 : 0.43);
+  const K = [top[0] + Math.sin(a1) * up, top[1] + Math.cos(a1) * up], F = [K[0] + Math.sin(a2) * lo, K[1] + Math.cos(a2) * lo];
+  const out = (P, Q, wa, wb) => { const dx = Q[0] - P[0], dy = Q[1] - P[1], d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny = dx / d;
+    return [[P[0] + nx * wa, P[1] + ny * wa], [Q[0] + nx * wb, Q[1] + ny * wb], [Q[0] - nx * wb, Q[1] - ny * wb], [P[0] - nx * wa, P[1] - ny * wa]]; };
+  const u1 = out(top, K, w, w * 0.6), u2 = out(K, F, w * 0.55, w * 0.42), pt = ([x, y]) => `${f1(x)},${f1(y)}`;
+  const M = [K[0] + (F[0] - K[0]) * 0.45, K[1] + (F[1] - K[1]) * 0.45];
+  // (the hoof: along the lower bone, flat on the ground when it is straight down)
+  const dx = Math.sin(a2), dy = Math.cos(a2), hx = -dy, hy = dx, hl = 14, hw = w * 0.6;
+  const hoof = [[F[0] + hx * hw, F[1] + hy * hw], [F[0] - hx * hw, F[1] - hy * hw], [F[0] - hx * hw * 1.1 + dx * hl, F[1] - hy * hw * 1.1 + dy * hl], [F[0] + hx * hw * 1.1 + dx * hl, F[1] + hy * hw * 1.1 + dy * hl]];
+  return `<polygon points="${[u1[0], u1[1], u2[1], u2[2], u1[2], u1[3]].map(pt).join(" ")}" fill="${coat}" stroke="${mix(coat, "#000000", 0.42)}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    (sock ? `<polygon points="${out(M, F, w * 0.5, w * 0.44).map(pt).join(" ")}" fill="#f7f4ee"/>` : "") +
+    `<polygon points="${hoof.map(pt).join(" ")}" fill="#3b2f2a" stroke="#1f1612" stroke-width="2" stroke-linejoin="round"/>`;
+}
+function horseSvg(view, gait, u, H, g) {
+  const coat = H.coat, mane = H.mane, ln = mix(coat, "#000000", 0.42), far = mix(coat, "#000000", 0.25), maneD = mix(mane, "#000000", 0.3), white = "#f7f4ee";
+  const tack = H.tack, tackD = mix(tack, "#000000", 0.35);
+  const run = gait === "run", walk = gait === "walk", p = run ? (2 * u) % 1 : u, T = 2 * Math.PI;
+  const bob = run ? -10 * Math.abs(Math.sin(T * p)) : walk ? -2 * Math.abs(Math.sin(2 * T * p)) : 0, y = v => g + v + bob;
+  // (each leg's swing and bend at its place in the stride)
+  const step = off => { if (!walk && !run) return [0, 0]; const ph = T * (p + off), A = run ? 30 : 16, Fx = run ? 62 : 40;
+    return [A * Math.sin(ph), Fx * Math.max(0, Math.cos(ph)) ** 1.5]; };
+  const sock = !!H.socks, OFF = run ? { lh: 0, rh: 0.08, lf: 0.45, rf: 0.55 } : { lh: 0, lf: 0.25, rh: 0.5, rf: 0.75 };
+  const tailSw = (run ? 10 : 6) * Math.sin(T * p);
+  if (view === "side") {
+    // (facing our right: its left side toward us, its right legs beyond, darker. X: the rear drawn in, a horse being about
+    // as long as it is tall at the withers)
+    const X = x => f1(x < 0 ? x * 0.82 : x);
+    const leg = (x, top, fore, off, near) => { const [sw, fl] = step(off); return horseLeg([+X(x), y(top)], g - y(top) - 6, sw, fl, fore, near ? 17 : 15, near ? coat : far, sock, g); };
+    const body = `<path d="M120 ${f1(y(-292))} C40 ${f1(y(-314))} ${X(-120)} ${f1(y(-318))} ${X(-165)} ${f1(y(-304))} C${X(-212)} ${f1(y(-288))} ${X(-216)} ${f1(y(-220))} ${X(-186)} ${f1(y(-186))} ` +
+      `C${X(-150)} ${f1(y(-160))} ${X(-40)} ${f1(y(-156))} 82 ${f1(y(-166))} C142 ${f1(y(-174))} 172 ${f1(y(-216))} 152 ${f1(y(-260))} Z" fill="${coat}" stroke="${ln}" stroke-width="3"/>` +
+      // (the shoulder, sloping back from the chest to the withers, and the round of the haunch)
+      `<path d="M140 ${f1(y(-196))} Q112 ${f1(y(-250))} 96 ${f1(y(-300))} M${X(-96)} ${f1(y(-312))} Q${X(-120)} ${f1(y(-240))} ${X(-176)} ${f1(y(-200))}" fill="none" stroke="${mix(coat, "#000000", 0.2)}" stroke-width="3" stroke-linecap="round" opacity="0.7"/>`;
+    const neck = `<path d="M84 ${f1(y(-298))} Q128 ${f1(y(-386))} 182 ${f1(y(-448))} L214 ${f1(y(-420))} Q206 ${f1(y(-356))} 160 ${f1(y(-248))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>`;
+    const mark = H.mark === "star" ? `<path d="M232 ${f1(y(-458))} L238 ${f1(y(-450))} L232 ${f1(y(-442))} L226 ${f1(y(-450))} Z" fill="${white}"/>`
+      : H.mark === "stripe" ? `<path d="M232 ${f1(y(-456))} L236 ${f1(y(-458))} L286 ${f1(y(-398))} L282 ${f1(y(-394))} Z" fill="${white}"/>`
+      : H.mark === "blaze" ? `<path d="M226 ${f1(y(-458))} L240 ${f1(y(-460))} L292 ${f1(y(-398))} Q294 ${f1(y(-384))} 282 ${f1(y(-380))} L226 ${f1(y(-440))} Z" fill="${white}"/>` : "";
+    const head = `<path d="M178 ${f1(y(-452))} Q204 ${f1(y(-472))} 226 ${f1(y(-458))} L290 ${f1(y(-400))} Q302 ${f1(y(-380))} 286 ${f1(y(-366))} L256 ${f1(y(-360))} Q236 ${f1(y(-372))} 214 ${f1(y(-404))} Q198 ${f1(y(-420))} 178 ${f1(y(-432))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
+      `<path d="M188 ${f1(y(-458))} L184 ${f1(y(-494))} L204 ${f1(y(-464))} Z" fill="${coat}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` + mark +
+      `<ellipse cx="216" cy="${f1(y(-436))}" rx="5" ry="6" fill="#1f1410"/><circle cx="218" cy="${f1(y(-438))}" r="1.6" fill="#ffffff"/>` +
+      `<path d="M206 ${f1(y(-446))} Q216 ${f1(y(-450))} 226 ${f1(y(-444))}" fill="none" stroke="${ln}" stroke-width="1.6"/>` +
+      `<path d="M280 ${f1(y(-388))} q6 -3 7 4 q-2 3 -6 1" fill="#1f1410"/><path d="M262 ${f1(y(-366))} Q272 ${f1(y(-370))} 284 ${f1(y(-368))}" stroke="${ln}" stroke-width="2" fill="none"/>` +
+      // (the noseband round the nose and a strap up its cheek behind the eye, as the stable's halters; the ring under the chin)
+      `<path d="M240 ${f1(y(-374))} L272 ${f1(y(-410))}" stroke="${tack}" stroke-width="7" stroke-linecap="round"/><path d="M204 ${f1(y(-462))} Q214 ${f1(y(-420))} 244 ${f1(y(-384))}" fill="none" stroke="${tackD}" stroke-width="5" stroke-linecap="round"/>` +
+      `<circle cx="240" cy="${f1(y(-368))}" r="5" fill="none" stroke="#e8b923" stroke-width="2.5"/>`;
+    const maneP = `<path d="M86 ${f1(y(-302))} Q130 ${f1(y(-392))} 184 ${f1(y(-454))} L196 ${f1(y(-456))} L176 ${f1(y(-430))} L168 ${f1(y(-412))} L150 ${f1(y(-398))} L144 ${f1(y(-372))} L124 ${f1(y(-360))} L118 ${f1(y(-332))} L100 ${f1(y(-322))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>` +
+      `<path d="M204 ${f1(y(-464))} Q218 ${f1(y(-452))} 222 ${f1(y(-432))} Q208 ${f1(y(-440))} 198 ${f1(y(-456))} Z" fill="${mane}"/>`;
+    const tail = `<path d="M${X(-180)} ${f1(y(-294))} Q${X(-236 + tailSw)} ${f1(y(-240))} ${X(-218 + tailSw)} ${f1(y(-128))} Q${X(-198 + tailSw)} ${f1(y(-148))} ${X(-194 + tailSw * 0.5)} ${f1(y(-210))} Q${X(-188)} ${f1(y(-252))} ${X(-170)} ${f1(y(-284))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`;
+    return { svg: leg(100, -200, true, OFF.rf, false) + leg(-160, -214, false, OFF.rh, false) + tail + body + neck + maneP + head + leg(122, -204, true, OFF.lf, true) + leg(-140, -218, false, OFF.lh, true),
+             ring: [240, y(-368)] };
+  }
+  // (a leg seen end on, toward us or away: shorter as it lifts, the hoof's sole showing)
+  const endOn = (x, top, w, fill, lift) => `<path d="M${f1(x - w)} ${f1(y(top))} L${f1(x + w)} ${f1(y(top))} L${f1(x + w * 0.64)} ${f1(g - 18 - lift)} L${f1(x - w * 0.64)} ${f1(g - 18 - lift)} Z" fill="${fill}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    (sock ? `<path d="M${f1(x - w * 0.66)} ${f1(g - 70 - lift)} L${f1(x + w * 0.66)} ${f1(g - 70 - lift)} L${f1(x + w * 0.64)} ${f1(g - 18 - lift)} L${f1(x - w * 0.64)} ${f1(g - 18 - lift)} Z" fill="${white}"/>` : "") +
+    `<rect x="${f1(x - w * 0.8)}" y="${f1(g - 18 - lift)}" width="${f1(w * 1.6)}" height="${lift ? 11 : 18}" rx="3" fill="${lift ? "#6a5848" : "#3b2f2a"}" stroke="#1f1612" stroke-width="2"/>`;
+  const lifted = (off, sign) => { const [sw] = step(off); return Math.max(0, sign * sw) / (run ? 34 : 18) * (run ? 40 : 22); };
+  if (view === "front") {
+    // (facing us: the hind legs beyond; the chest, broad at the shoulders; the neck, its mane falling to one side; the
+    // forelegs; the face hanging in front of the neck)
+    const hindF = x => `<path d="M${f1(x - 13)} ${f1(y(-184))} L${f1(x + 13)} ${f1(y(-184))} L${f1(x + 9)} ${f1(g - 26)} L${f1(x - 9)} ${f1(g - 26)} Z" fill="${far}" stroke="${ln}" stroke-width="2"/><rect x="${f1(x - 11)}" y="${f1(g - 26)}" width="22" height="12" rx="3" fill="#2a211c"/>`;
+    return { svg: hindF(-56) + hindF(56) +
+      `<path d="M-44 ${f1(y(-296))} L-32 ${f1(y(-432))} L32 ${f1(y(-432))} L44 ${f1(y(-296))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
+      `<path d="M30 ${f1(y(-436))} Q50 ${f1(y(-410))} 42 ${f1(y(-384))} Q54 ${f1(y(-358))} 46 ${f1(y(-332))} Q56 ${f1(y(-312))} 48 ${f1(y(-292))} L38 ${f1(y(-300))} Q34 ${f1(y(-370))} 26 ${f1(y(-432))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>` +
+      `<path d="M-60 ${f1(y(-326))} Q0 ${f1(y(-346))} 60 ${f1(y(-326))} Q86 ${f1(y(-300))} 84 ${f1(y(-252))} Q82 ${f1(y(-206))} 64 ${f1(y(-190))} L-64 ${f1(y(-190))} Q-82 ${f1(y(-206))} -84 ${f1(y(-252))} Q-86 ${f1(y(-300))} -60 ${f1(y(-326))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
+      `<path d="M0 ${f1(y(-300))} L0 ${f1(y(-206))} M-34 ${f1(y(-312))} Q-50 ${f1(y(-262))} -46 ${f1(y(-214))} M34 ${f1(y(-312))} Q50 ${f1(y(-262))} 46 ${f1(y(-214))}" fill="none" stroke="${mix(coat, "#000000", 0.2)}" stroke-width="3" stroke-linecap="round" opacity="0.6"/>` +
+      endOn(-46, -214, 17, coat, lifted(OFF.lf, 1)) + endOn(46, -214, 17, coat, lifted(OFF.rf, 1)) +
+      `<g transform="translate(0 ${f1(y(-316))}) scale(1.25)">${horseFace(H, 0, tack, true)}</g>`,
+      ring: [0, y(-316) - 77 * 1.25] };
+  }
+  // (from behind: the forelegs beyond; over the back, the neck and the back of the head, its ears, the mane falling to one
+  // side; the haunches, the hind legs, the tail)
+  const foreB = x => `<path d="M${f1(x - 12)} ${f1(y(-176))} L${f1(x + 12)} ${f1(y(-176))} L${f1(x + 9)} ${f1(g - 26)} L${f1(x - 9)} ${f1(g - 26)} Z" fill="${far}" stroke="${ln}" stroke-width="2"/><rect x="${f1(x - 11)}" y="${f1(g - 26)}" width="22" height="12" rx="3" fill="#2a211c"/>`;
+  return { svg: foreB(-32) + foreB(32) +
+    `<path d="M-38 ${f1(y(-300))} Q-30 ${f1(y(-400))} -22 ${f1(y(-438))} Q0 ${f1(y(-458))} 22 ${f1(y(-438))} Q30 ${f1(y(-400))} 38 ${f1(y(-300))} Z" fill="${far}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    [-1, 1].map(k => `<path d="M${f1(k * 8)} ${f1(y(-448))} L${f1(k * 24)} ${f1(y(-488))} L${f1(k * 24)} ${f1(y(-440))} Z" fill="${far}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>`).join("") +
+    `<path d="M-14 ${f1(y(-452))} Q-36 ${f1(y(-420))} -30 ${f1(y(-392))} Q-42 ${f1(y(-362))} -36 ${f1(y(-334))} Q-46 ${f1(y(-314))} -40 ${f1(y(-296))} L-30 ${f1(y(-300))} Q-22 ${f1(y(-380))} -6 ${f1(y(-446))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>` +
+    `<path d="M-24 ${f1(y(-424))} Q0 ${f1(y(-414))} 24 ${f1(y(-424))}" fill="none" stroke="${tackD}" stroke-width="5" stroke-linecap="round"/>` +
+    endOn(-48, -206, 17, coat, lifted(OFF.lh, -1)) + endOn(48, -206, 17, coat, lifted(OFF.rh, -1)) +
+    `<path d="M-86 ${f1(y(-240))} Q-90 ${f1(y(-326))} -4 ${f1(y(-330))} L4 ${f1(y(-330))} Q90 ${f1(y(-326))} 86 ${f1(y(-240))} Q84 ${f1(y(-192))} 52 ${f1(y(-182))} L-52 ${f1(y(-182))} Q-84 ${f1(y(-192))} -86 ${f1(y(-240))} Z" fill="${coat}" stroke="${ln}" stroke-width="3"/>` +
+    `<path d="M0 ${f1(y(-318))} L0 ${f1(y(-196))}" stroke="${ln}" stroke-width="2" opacity="0.5"/>` +
+    `<path d="M-14 ${f1(y(-322))} Q${f1(-26 + tailSw)} ${f1(y(-220))} ${f1(-12 + tailSw)} ${f1(y(-128))} L${f1(14 + tailSw)} ${f1(y(-128))} Q${f1(24 + tailSw)} ${f1(y(-220))} 14 ${f1(y(-322))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`,
+    ring: [-20, y(-422)] };
+}
 // A broom through the hand at H, in body units: the stick, leaning a
 // little, 120 above the hand and 52 below it, then the bristles flaring
 // out under a band in the trim color.
