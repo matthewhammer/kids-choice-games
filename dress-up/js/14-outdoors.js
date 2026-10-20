@@ -76,7 +76,8 @@ function mountainsScene(c) {
 // the same): day, or a tint over everything at sunset and at night, the
 // moon out at night; and how fast its water falls (100 = the usual)
 const FALL_TINT = { day: ["#ffffff", 0], sunset: ["#9a3412", 0.25], night: ["#0b1030", 0.55] };
-const fallTimeOf = o => FALL_TINT[o.fallTime] ? o.fallTime : "day", fallRateOf = o => Math.max(0.1, (o.fallRate ?? 100) / 100);
+const fallTimeOf = o => o.fallTime === "clock" ? skyTimeOf(o, false) : FALL_TINT[o.fallTime] ? o.fallTime : "day",   // (ticket 490: or by the clock)
+      fallRateOf = o => Math.max(0.1, (o.fallRate ?? 100) / 100);
 // the falls' pool: the line where the falls meet it, its water (an ellipse
 // about (0, cy)), and the near bank's edge over its near side (for its
 // drawing, and for a friend wading in it: WATER, ticket 122)
@@ -297,13 +298,17 @@ function campfireFlamesSvg(o, night, time) {
 }
 function campsiteScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
-  const time = CAMP_SKY[o.campTime] ? o.campTime : "day", fire = o.fireOn ?? true, fz = (o.flameSize ?? 100) / 100;
+  // (ticket 490) by the clock: the time of day, the sun and the moon where and when the game says (🌍)
+  const clock = o.campTime === "clock", time = clock ? skyTimeOf(o, false) : CAMP_SKY[o.campTime] ? o.campTime : "day", fire = o.fireOn ?? true, fz = (o.flameSize ?? 100) / 100;
   const food = o.campFood ?? "none", tents = o.tents ?? 2, night = time === "night";
   const fx = 0, fy = g + 40 * k;
   const starKeys = night ? [o.starShape, o.starSize, o.starBright, o.starTwinkle] : [];
-  let s = SEP + part("camp-sky", [c.F, time, ...starKeys, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => {
+  let s = SEP + part("camp-sky", [c.F, time, ...starKeys, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow"), clock ? skyKey(o) : ""], () => {
     const [a, b] = CAMP_SKY[time];
     let t = `<defs>${grad("bg-sky", a, b, y0, g - 100 * k)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)");
+    if (clock) { if (night) t += starsSvg(o, 70, x0, x1, y0, g - 160 * k, k, R, 360);
+      t += skyBodiesSvg(c, o, g - 100 * k, y0 + 12 * k, a) + (time === "day" ? [0, 1, 2].map(i => driftingCloud(x0 + W * (0.15 + 0.3 * i), y0 + H * (0.1 + 0.05 * (i % 2)), k * 0.7, i, o)).join("") : "");
+      return t; }
     if (time === "day") t += `<circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(34 * k)}" fill="#ffd23f"/>` +
       [0, 1, 2].map(i => driftingCloud(x0 + W * (0.15 + 0.3 * i), y0 + H * (0.1 + 0.05 * (i % 2)), k * 0.7, i, o)).join("");
     if (time === "sunset") t += `<circle cx="${f1(-W * 0.2)}" cy="${f1(g - 110 * k)}" r="${f1(46 * k)}" fill="#ff8c42" opacity="0.95"/>`;
@@ -406,7 +411,7 @@ SEATS.tent = (c, B) => {
 function tentScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, o } = c;
   const n = Math.max(1, Math.min(CAMP_TENTS.length, Math.round(o.tent ?? 1))), T = CAMP_TENTS[n - 1];
-  const time = CAMP_SKY[o.campTime] ? o.campTime : "day", night = time === "night", fire = o.fireOn ?? true;
+  const time = o.campTime === "clock" ? skyTimeOf(o, false) : CAMP_SKY[o.campTime] ? o.campTime : "day", night = time === "night", fire = o.fireOn ?? true;   // (ticket 490)
   // the far wall (its peak, and its corners on the floor), the door in it,
   // and the point the seams run to (at the eye's height)
   const { back, half, vy, out } = tentFrame(c), apex = y0 + H * 0.08, top = y0 + H * 0.3, dh = W * 0.12;

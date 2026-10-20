@@ -209,6 +209,75 @@ const sunSvg = (x, y, r, turning = false, o = null) => (turning ? `<g><animateTr
   return `<line x1="${f1(x + r * 1.26 * Math.cos(a))}" y1="${f1(y + r * 1.26 * Math.sin(a))}" x2="${f1(x + r * 1.78 * Math.cos(a))}" y2="${f1(y + r * 1.78 * Math.sin(a))}" ` +
          `stroke="#ffd23f" stroke-width="${f1(r * 0.13)}" stroke-linecap="round"${turning ? `>${o ? sceneLfo(o, "fast", i / 12, "stroke-width", (v, amp) => f1(r * (0.13 + (0.04 + 0.14 * amp) * (1 + v) / 2)), own) : own}</line>` : "/>"}`; }).join("") +
   (turning ? "</g>" : "") + `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="#ffd23f"/>`;
+// (ticket 490, Matthew: "moon cycles. Seeing the moon accurately, during the cycle. Selecting a GPS coordinate and seeing the
+// moon in the sky accurately at that GPS coordinate during the game's idea of its date (mapped to real world dates). sun
+// cycles (winter, spring, summer, winter). Same idea"; "we'd want the length of day, and placement of the sun and moon to
+// roughly indicate something real about those cycles, given our GPS coordinate that we choose, in the game (not from any
+// real data in the device)") The sky where and when the game says: a place (one of SKY_PLACES, or 📍 its own latitude
+// and longitude) and the game's date and hour (the sun's own time there, so noon is when it is highest), all settings, never
+// the device's place or clock. The sun's and the moon's height and direction, and the moon's phase, worked out here (the
+// usual short formulas, good to a degree or so: no network, so it works in airplane mode).
+const SKY_PLACES = [["denver", "🏔️ Denver", 39.74, -104.99], ["newyork", "🗽 New York", 40.71, -74.01], ["london", "🎡 London", 51.51, -0.13],
+  ["tokyo", "🗾 Tokyo", 35.68, 139.69], ["sydney", "🦘 Sydney", -33.87, 151.21], ["quito", "🌋 Quito, on the equator", -0.18, -78.47],
+  ["reykjavik", "🧊 Reykjavík", 64.15, -21.94], ["tromso", "🌌 Tromsø, far north", 69.65, 18.96], ["ushuaia", "🐧 Ushuaia, far south", -54.8, -68.3],
+  ["custom", "📍 my own place"]];
+const skyPlaceOf = o => { const p = SKY_PLACES.find(q => q[0] === o.skyWhere && q[0] !== "custom");
+  return p ? { lat: p[2], lon: p[3] } : { lat: Math.max(-89.9, Math.min(89.9, Number(o.skyLat ?? 39.74))), lon: Math.max(-180, Math.min(180, Number(o.skyLon ?? -104.99))) }; };
+const skyKey = o => [o.skyWhere, o.skyLat, o.skyLon, o.skyYear, o.skyMonth, o.skyDay, o.skyHour].join("|");
+let skyMemo = { key: null, now: null };
+function skyNow(o) {
+  const key = skyKey(o);
+  if (skyMemo.key === key) return skyMemo.now;
+  const { lat, lon } = skyPlaceOf(o), rad = Math.PI / 180, e = 23.4397 * rad;
+  let Y = Math.round(o.skyYear ?? 2026), M = Math.round(o.skyMonth ?? 10), D = Math.min(Math.round(o.skyDay ?? 20), [31, (Y % 4 === 0 && (Y % 100 !== 0 || Y % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][M - 1] || 31);
+  const hour = Math.max(0, Math.min(23.99, Number(o.skyHour ?? 12))), ut = hour - lon / 15;   // (the sun's time there, as the hour by Greenwich)
+  if (M <= 2) { Y -= 1; M += 12; }
+  const A = Math.floor(Y / 100), Bc = 2 - A + Math.floor(A / 4);
+  const d = Math.floor(365.25 * (Y + 4716)) + Math.floor(30.6001 * (M + 1)) + D + Bc - 1524.5 + ut / 24 - 2451545;   // (days from noon, 2000-01-01, by Greenwich)
+  const ra = (l, b) => Math.atan2(Math.sin(l) * Math.cos(e) - Math.tan(b) * Math.sin(e), Math.cos(l)), dec = (l, b) => Math.asin(Math.sin(b) * Math.cos(e) + Math.cos(b) * Math.sin(e) * Math.sin(l));
+  const phi = lat * rad, lw = -lon * rad, sid = rad * (280.16 + 360.9856235 * d) - lw;
+  const where = (a, de) => { const H = sid - a; return { alt: Math.asin(Math.sin(phi) * Math.sin(de) + Math.cos(phi) * Math.cos(de) * Math.cos(H)),
+    az: Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(phi) - Math.tan(de) * Math.cos(phi)) }; };   // (az from the south, toward the west)
+  const Ms = rad * (357.5291 + 0.98560028 * d), Ls = Ms + rad * (1.9148 * Math.sin(Ms) + 0.02 * Math.sin(2 * Ms) + 0.0003 * Math.sin(3 * Ms)) + rad * 102.9372 + Math.PI;
+  const sun = { ra: ra(Ls, 0), dec: dec(Ls, 0) };
+  const Lm = rad * (218.316 + 13.176396 * d), Mm = rad * (134.963 + 13.064993 * d), Fm = rad * (93.272 + 13.22935 * d);
+  const lm = Lm + rad * 6.289 * Math.sin(Mm), bm = rad * 5.128 * Math.sin(Fm), dist = 385001 - 20905 * Math.cos(Mm), moon = { ra: ra(lm, bm), dec: dec(lm, bm), dist };
+  const sd = 149598000, ph = Math.acos(Math.sin(sun.dec) * Math.sin(moon.dec) + Math.cos(sun.dec) * Math.cos(moon.dec) * Math.cos(sun.ra - moon.ra));
+  const inc = Math.atan2(sd * Math.sin(ph), dist - sd * Math.cos(ph)), ang = Math.atan2(Math.cos(sun.dec) * Math.sin(sun.ra - moon.ra), Math.sin(sun.dec) * Math.cos(moon.dec) - Math.cos(sun.dec) * Math.sin(moon.dec) * Math.cos(sun.ra - moon.ra));
+  const now = { lat, lon, hour, sun: where(sun.ra, sun.dec), moon: { ...where(moon.ra, moon.dec), frac: (1 + Math.cos(inc)) / 2, phase: 0.5 + 0.5 * inc * (ang < 0 ? -1 : 1) / Math.PI } };
+  skyMemo = { key, now };
+  return now;
+}
+// the time of day the sun makes (its height: above 6° day, below -6° night, between them dawn or dusk); a place with no
+// sunrise of its own shows its sunset for dawn as well
+const skyTimeOf = (o, sunrise = true) => { const a = skyNow(o).sun.alt * 180 / Math.PI, n = skyNow(o);
+  return a > 6 ? "day" : a < -6 ? "night" : n.hour < 12 && sunrise ? "sunrise" : "sunset"; };
+// where a body of the sky is in the picture, seen facing the equator (in the north, facing south: east on the left;
+// in the south, facing north: east on the right): x across the picture's width by its direction, y from the horizon
+// (h) up to the top (top) by its height; null when it is down, or behind us
+function skyXY(c, body, h, top) {
+  const south = skyMemo.now ? skyMemo.now.lat < 0 : false, a = south ? ((body.az + 2 * Math.PI) % (2 * Math.PI)) - Math.PI : body.az;
+  if (body.alt < -0.02 || Math.abs(a) > Math.PI / 2 * 1.08) return null;
+  return [c.x0 + c.W / 2 + a / (Math.PI / 2) * (c.W / 2) * 0.92, h - Math.max(0, body.alt) / (Math.PI / 2) * (h - top)];
+}
+// the moon in its phase at (cx, cy), r: its dark part faint, its lit part (waxing lit on the right in the north, on the left
+// in the south), the terminator an ellipse as wide as cos(2π·phase) says
+function moonPhaseSvg(cx, cy, r, phase, dark, south = false) {
+  const t = Math.cos(2 * Math.PI * phase), waxing = phase < 0.5, rx = Math.abs(t) * r, P = (x, y) => `${f1(x)} ${f1(y)}`;
+  const outer = waxing ? `A${f1(r)} ${f1(r)} 0 0 1 ${P(cx, cy + r)}` : `A${f1(r)} ${f1(r)} 0 0 0 ${P(cx, cy + r)}`;
+  const sweep = waxing ? (t > 0 ? 0 : 1) : (t > 0 ? 1 : 0);
+  const lit = `M${P(cx, cy - r)} ${outer} A${f1(rx)} ${f1(r)} 0 0 ${sweep} ${P(cx, cy - r)} Z`;
+  return `<g${south ? ` transform="translate(${f1(2 * cx)} 0) scale(-1 1)"` : ""}><circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r * 1.6)}" fill="#f4eebc" opacity="${(0.08 + 0.12 * (1 - Math.abs(t)) * (t < 0 ? 1 : 0.4)).toFixed(2)}"/>` +
+    `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="${dark}" opacity="0.85"/><path d="${lit}" fill="#f4eebc"/></g>`;
+}
+// the sun and the moon by the clock, in a scene's sky (its horizon h, its top): the sun (low and orange near the horizon),
+// the moon in its phase (faint by day)
+function skyBodiesSvg(c, o, h, top, darkSky) {
+  const n = skyNow(o), k = c.k, out = [], sp = skyXY(c, n.sun, h, top), mp = skyXY(c, n.moon, h, top), sa = n.sun.alt * 180 / Math.PI;
+  if (mp) out.push(`<g opacity="${sa > 6 ? 0.55 : 1}">` + moonPhaseSvg(mp[0], mp[1], 22 * k, n.moon.phase, darkSky, n.lat < 0) + `</g>`);
+  if (sp) out.push(sa > 8 ? sunSvg(sp[0], sp[1], 30 * k, true, o) : `<circle cx="${f1(sp[0])}" cy="${f1(sp[1])}" r="${f1(44 * k)}" fill="${sa > 2 ? "#ffd27a" : "#ff8c42"}" opacity="0.95"/>`);
+  return out.join("");
+}
 // a puffy cloud, its size the drawing's own
 const cloudDef = (id, puff) => `<g id="${id}"><g transform="scale(${+puff.toFixed(3)})">` +
   `<ellipse cx="0" cy="14" rx="92" ry="22" fill="#e4edf7"/>` +

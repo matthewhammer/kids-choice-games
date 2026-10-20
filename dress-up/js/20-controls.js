@@ -60,6 +60,8 @@ const clawedSuit = () => !!CLAWED[state.costume.kind] && !!costumeOn();
 const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "clawLen" || key === "clawCount") && clawedSuit());
 // The places, and the kinds of place they are, for the Background tab's
 // two rows (as the music's): every place is of exactly one kind.
+// (ticket 490) the place's time of day is by the clock (🌍 where and when shows)
+const clockHere = b => ((b.kind === "waterfall" || b.kind === "cave") ? b.fallTime : (b.kind === "campsite" || b.kind === "tent") ? b.campTime : b.kind === "fairyforest" ? b.fairyTime : null) === "clock";
 const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["bubbleroom", "🫧 the bubble room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
@@ -514,7 +516,17 @@ const TABS = [
     ["range", "mist", "🌫️ mist", 0, 100, 30, 90],
     ["range", "parrots", "🦜 parrots", 0, 6, 1, 4],
     ["range", "fallRate", "💦 how fast it falls (100 = the usual)", 25, 400, 50, 250],
-    ["choice", "fallTime", "🌗 time of day (outside the cave too)", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"]]],
+    ["choice", "fallTime", "🌗 time of day (outside the cave too)", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"], ["clock", "🕰️ by the clock (🌍 where and when)"]]],
+    // (ticket 490) 🌍 where and when, for a sky by the clock: the place (or its own latitude and longitude) and the game's date
+    // and hour (the sun's own time there), never the device's; shown where the time of day is by the clock
+    ["group", "skyWhen", "🌍 the sky: where and when", [
+      ["choice", "skyWhere", "📍 where on Earth", SKY_PLACES.map(([v, l]) => [v, l])],
+      ["range", "skyLat", "🧭 latitude (north +, south −)", -89, 89, -60, 70],
+      ["range", "skyLon", "🧭 longitude (east +, west −)", -180, 180, -150, 150],
+      ["range", "skyYear", "📅 the year", 2000, 2050, 2020, 2030],
+      ["range", "skyMonth", "📅 the month (1 = January)", 1, 12, 1, 12],
+      ["range", "skyDay", "📅 the day of the month", 1, 31, 1, 31],
+      ["range", "skyHour", "🕰️ the hour (the sun's own time there: 12 is noon)", 0, 23, 0, 23]]],
     // the cave behind the falls: gems on its walls, sparkling
     ["range", "caveGems", "💎 gems on the walls", 0, 40, 6, 30],
     ["choice", "gemShape", "✨ sparkles: shape", STAR_SHAPES],
@@ -525,7 +537,7 @@ const TABS = [
     ["choice", "caveFloor", "🪨 on the cave room's floor", CAVE_FLOORS],
     ["choice", "caveCeiling", "🦇 on the cave room's ceiling", CAVE_CEILINGS],
     // the camp site
-    ["choice", "campTime", "🌗 time of day", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"]]],
+    ["choice", "campTime", "🌗 time of day", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"], ["clock", "🕰️ by the clock (🌍 where and when)"]]],
     ["choice", "starShape", "⭐ stars: shape", STAR_SHAPES],
     ["range", "starSize", "⭐ stars: size (100 = the usual, up to huge)", 25, 2000, 60, 600],
     ["range", "starBright", "⭐ stars: brightness", 5, 100, 50, 100],
@@ -619,7 +631,7 @@ const TABS = [
     ["range", "frogs", "🐸 frogs in jars", 0, 8, 2, 8],
     ["range", "snakes", "🐍 snakes in the tank", 0, 6, 1, 5],
     // the fairy forest: its time of day, its ring of toadstools, its fairy house
-    ["choice", "fairyTime", "🌗 time of day", FAIRY_TIMES],
+    ["choice", "fairyTime", "🌗 time of day", [...FAIRY_TIMES, ["clock", "🕰️ by the clock (🌍 where and when)"]]],
     ["range", "mushrooms", "🍄 toadstools in the ring", 4, 30, 8, 24],
     ["range", "fairyHouseSeen", "🏡 the fairy house: how much it shows (0 = hidden)", 0, 100, 40, 100],
     ["choice", "fairyHouseLfo", "〰️ the fairy house fades with", [["none", "no LFO"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
@@ -1088,6 +1100,9 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["fallWidth", "mist", "fallRate", "fallTime"].map(key => ["background." + key, b => b.kind === "waterfall" || b.kind === "cave"])),
   ...Object.fromEntries(["caveGems", "gemShape", "gemSize", "gemBright", "gemTwinkle"].map(key => ["background." + key, b => b.kind === "cave"])),
   ...Object.fromEntries(["caveFloor", "caveCeiling"].map(key => ["background." + key, b => b.kind === "caveroom"])),   // (ticket 471)
+  // (ticket 490) 🌍 where and when: where this place's time of day is by the clock; its own latitude and longitude for 📍
+  ...Object.fromEntries(["skyWhen", "skyWhere", "skyYear", "skyMonth", "skyDay", "skyHour"].map(key => ["background." + key, b => clockHere(b)])),
+  ...Object.fromEntries(["skyLat", "skyLon"].map(key => ["background." + key, b => clockHere(b) && b.skyWhere === "custom"])),
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
   ...Object.fromEntries(["crossPaths", "crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),
   "background.things": b => b.kind !== "none",

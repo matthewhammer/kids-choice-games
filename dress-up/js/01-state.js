@@ -516,6 +516,7 @@ const DEFAULTS = {
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2, fallRate: 100, fallTime: "day",
                 caveGems: 16, gemShape: "four", gemSize: 100, gemBright: 90, gemTwinkle: 60,
                 caveFloor: "stalagmites", caveCeiling: "stalactites",   // (ticket 471: the cave room's formations)
+                skyWhere: "denver", skyLat: 39.74, skyLon: -104.99, skyYear: 2026, skyMonth: 10, skyDay: 20, skyHour: 20,   // (ticket 490: 🌍 where and when, for a sky by the clock)
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
                 crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossBack: "woods", things: [],
                 seaMountains: "none", seaForest: "none", seaBeach: false, seaShoreSize: 100,   // (ticket 212: the open water's distant shore, off by default)
@@ -1093,7 +1094,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.380", released: "2026-10-20" };
+const VERSION = { number: "0.0.381", released: "2026-10-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.381 (2026-10-20)
+
+Everything in 0.0.380, plus the sun and the moon as they really are, where and when you say.
+
+- **🕰️ By the clock:** the 🌗 time of day at the waterfall (and its cave), the camp site (and its tents) and the fairy forest has a new choice, "🕰️ by the clock". Then "🌍 the sky: where and when" says where on Earth you are ("📍 where on Earth": Denver, New York, London, Tokyo, Sydney, Quito on the equator, Reykjavík, Tromsø far north, Ushuaia far south, or "📍 my own place" with its latitude and longitude) and the game's own date and hour. The game works out where the sun and the moon are then, and the moon's phase, by itself, without the Internet: the time of day follows the sun, the sun rises in the east and sets in the west, high in summer and low in winter, and the moon is drawn lit as it really is that night. Far north in winter the sun never rises; in summer it never sets.
+
 ## 0.0.380 (2026-10-20)
 
 Everything in 0.0.379, plus the horse as part of the body, meeting things as it is drawn.
