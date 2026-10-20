@@ -1400,6 +1400,8 @@ function greenhouseSvg(c, K) {
        `<circle cx="${f1(fx + 5 * k)}" cy="${f1(bowlY - 22 * k)}" r="${f1(2 * k)}" fill="#1f2937"/>` +
        `<path d="M${P(fx, bowlY - 34 * k)} Q${P(fx + 6 * k, bowlY - 90 * k)} ${P(fx + 26 * k, bowlY - 4 * k)}" fill="none" stroke="#bfe6ff" stroke-width="${f1(3.5 * k)}" stroke-dasharray="${f1(8 * k)} ${f1(6 * k)}">` +
        `<animate attributeName="stroke-dashoffset" values="${f1(28 * k)};0" dur="0.5s" repeatCount="indefinite"/></path>`;
+  // (ticket 441) its footprint, unseen: where the basin's wall meets the floor, as wide and deep as the basin (solidsHere)
+  ft += `<ellipse data-footprint="1" cx="${f1(fx)}" cy="${f1(fb + 14 * k)}" rx="${f1(brx)}" ry="${f1(bry)}" fill="none" stroke="none"/>`;
   t += obj("fountain", fb - 10 * k, ft);   // (at its pedestal's foot: the friend's first spot, 320, stays in front of it)
   // a watering can and a bench at the sides (the petals fallen on the floor: with the moss, above)
   t += obj("watering can", floor + 190 * k, `<path d="M${P(-W * 0.2, floor + 190 * k)} h${f1(40 * k)} v${f1(-30 * k)} h${f1(-40 * k)} Z" fill="#5b8fb9"/><path d="M${P(-W * 0.2 + 40 * k, floor + 170 * k)} l${f1(30 * k)} ${f1(-20 * k)}" stroke="#5b8fb9" stroke-width="${f1(5 * k)}"/>` +

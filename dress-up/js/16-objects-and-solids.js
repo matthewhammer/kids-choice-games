@@ -286,6 +286,13 @@ function standingHere(B, seats) {
     } catch (e) { return; }
     finally { for (const f of fumes) f.style.display = ""; }
     if (!b || !(b.width > 0) || !(b.height > 0)) return;
+    // (ticket 441, Matthew: "collision box for fountain in the castle greenhouse looks off --- I should say -- collision oval")
+    // A drawing that marks its footprint ([data-footprint]: an unseen shape where it meets the floor) is that wide and that
+    // deep, its oval (a round thing) or its box there: the greenhouse fountain's foot line is its pool's middle and it stands
+    // tall with its jet, so a box from its foot back by half its height held an oval behind the pool, above it on the screen.
+    const fpEl = o.node.querySelector("[data-footprint]");
+    if (fpEl && Pinv) { let q = null; try { const E = fpEl.getScreenCTM(); q = E && boxThrough(fpEl.getBBox(), Pinv.multiply(E)); } catch (e) { q = null; }
+      if (q && q.width > 0 && q.height > 0) { out.push(...solidParts(base, { name: o.name, x0: q.x, x1: q.x + q.width, back: q.y, front: q.y + q.height, h: Math.max(0, o.z - b.y), standing: true }, k)); return; } }
     if (small) { if (base === "shell" && b.width < SMALL_SHELL * k) return;   // (ticket 358: a small box at its foot, or none)
       const w = clamp(0.25 * b.width, 6 * k, 22 * k), mid = b.x + b.width / 2;
       out.push({ name: o.name, x0: mid - w / 2, x1: mid + w / 2, back: o.z - 8 * k, front: o.z, h: Math.min(40 * k, Math.max(0, o.z - b.y)), standing: true, small: true }); return; }

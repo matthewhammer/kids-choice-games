@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.348 (2026-10-19)
+
+Everything in 0.0.347, with the greenhouse fountain's collision oval on the floor.
+
+- **The greenhouse fountain's collision oval is round its pool** (ticket 441): with 🔬 🧱 collision boxes on, the castle greenhouse's fountain showed its oval floating above the pool, round the middle of its column; now it lies on the floor where the basin's wall meets it, as wide as the basin, and your friend bumps into the pool there.
+
 ## 0.0.347 (2026-10-19)
 
 Everything in 0.0.346, with each panel saying its name once.
