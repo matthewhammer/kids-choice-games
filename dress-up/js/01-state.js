@@ -424,7 +424,8 @@ const DEFAULTS = {
            witchDir: "right", witchLen: 100, mouthSize: 100,
            ears: "free", earSize: 100 },   // (ticket 125, M's: ears, their shape and size)
   hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100, beard: "none", beardShade: "auto", moustache: true, beardLength: 100, braidWidth: 100 },
-  body:  { blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
+  body:  { horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false, horseSize: 100,   // (ticket 492: the horse, in 🧍 Body)
+           blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
            lieHead: "left", lieHow: "back", stairsWay: "up",   // (ticket 308: up or down the stairs)
            hand: "right",   // (ticket 316: the dominant hand, the one that pulls a lever: right, left, or both, by a coin flip)   // (ticket 299: lying down, the way the head points; on the back, face up, or on the side, facing us)
            neck: 22, neckW: 26, arms: 55, elbows: 0, elbowCurl: 0, elbowSwing: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0, kneeCurl: 0, kneeSwing: 0,
@@ -535,7 +536,6 @@ const DEFAULTS = {
              knightA: "#2f6db5", knightB: "#f4f1ea", tabardLayout: "quartered", emblem: "falcon", plume: true, plumeColor: "#c0392b", helmOpen: false, sword: true, shield: true,
              robinTunic: "#3f7d3a", robinHat: "#3f7d3a", robinFeather: "#d2382b", bow: true, quiver: true,
              wizardRobe: "#2a3a8c", wizardStars: "#f2c230", staff: true, staffOrb: "#7dd3fc", beardGiven: null,
-             horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false, horseSize: 100,
              gnomeWho: "man", gnomeHat: "#d2382b", gnomeTunic: "#3f8f8a", gnomeTrousers: "#7d8b6a",
              gnomeBodice: "#d2382b", gnomeSkirt: "#d2382b", gnomeBoots: "#e8e4da",
              witchColor: "#6a2c91", webColor: "#3fae4a", webStyle: "tiled", trimColor: "#f28c28", witchCat: false, broom: false,
@@ -684,6 +684,15 @@ function upgradeFigSize(bg, saved) {
   bg.figUnit = "scene";
 }
 // before 0.0.15 there were three toed styles, each with its own count
+// (ticket 492, Matthew: "The horse settings should be under 'body', not costume") before 0.0.380 the friend's horse was
+// in 🐯 Costume (costume.horse...): a saved friend keeps theirs, in 🧍 Body now, and a pinned horse slider with it
+const HORSE_KEYS = ["horse", "horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize"];
+function upgradeHorse(st, saved) {
+  const old = saved && saved.costume, had = saved && saved.body && saved.body.horse !== undefined;
+  for (const k of HORSE_KEYS) { if (old && old[k] !== undefined && !had) st.body[k] = old[k]; delete st.costume[k]; }
+  for (const list of [st.hud && st.hud.pins, st.hud && st.hud.min]) if (Array.isArray(list))
+    for (let i = 0; i < list.length; i++) if (typeof list[i] === "string" && HORSE_KEYS.some(k => list[i] === "costume." + k)) list[i] = list[i].replace(/^costume\./, "body.");
+}
 function upgradeFeet(st, saved) {
   if (!(saved && saved.rightShoe)) for (const k of SHOE_OWN) st.rightShoe[k] = st.shoes[k];
   for (const f of [st.shoes, st.rightShoe]) {
@@ -1049,6 +1058,7 @@ try {
   upgradeHands(state.hands);
   upgradeRightHand(state, saved);
   upgradeFeet(state, saved);
+  upgradeHorse(state, saved);
   upgradeInside(state.background, saved);
   upgradeFigSize(state.background, saved);
   upgradeFoamMove(state.background, saved);
@@ -1083,7 +1093,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.379", released: "2026-10-20" };
+const VERSION = { number: "0.0.380", released: "2026-10-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

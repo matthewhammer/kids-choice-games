@@ -314,7 +314,7 @@ function bgLayout(panel) {
 // as it is (its own layout: the designers, the controller, accessibility, advanced)
 const TAB_BOXES = {
   "🧍 Body": [["🤸 the pose", ["pose", "lieHow", "lieHead", "hugLift"]], ["↔️ facing and moving", ["facing", "anim", "stairsWay"]],
-              ["✋ the dominant hand", ["hand"]], ["📏 their size", ["size"]], ["🐸 the jumps", ["jumps"]]],
+              ["✋ the dominant hand", ["hand"]], ["📏 their size", ["size"]], ["🐴 the horse", ["horse", "horseSize", "horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks"]], ["🐸 the jumps", ["jumps"]]],
   "😀 Face": [["🙂 the head", ["color", "size", "faceW", "faceH", "alien", "eyeGap", "sides", "rays"], ["face"]], ["🤨 the brows", ["brow", "unibrow"]],
               ["👄 the mouth", ["smile", "mouthSize", "open", "teethStyle", "teeth", "tongue", "tongueLen", "tongueW", "tongueColor"]],
               ["👃 the nose", ["noseView", "nose", "noseFront", "noseH", "noseW", "witchDir", "witchLen"]], ["👂 the ears", ["ears", "earSize"]],
@@ -347,7 +347,7 @@ const TAB_BOXES = {
                 ["🧚 the fairy", ["wingStyle", "wingColor_butterfly", "wingColor_dragonfly", "wingColor_leaf", "wingColor_petal", "wingColor_sparkle",
                                   "wingFlutter", "wingLfo", "fairyOutfit", "tunicStyle", "tunicColor_petal", "tunicColor_leaf", "tunicColor_bluebell",
                                   "tunicColor_sparkle", "tunicColor_toadstool", "fairyShoes", "fairyShoeColor"]],
-                ["🌸 the wreath", ["wreath", "wreathFlowers"]], ["🐴 the horse", ["horse", "horseSize", "horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks"]]],
+                ["🌸 the wreath", ["wreath", "wreathFlowers"]]],
 };
 // (ticket 377, the report's rule 7, mirror the picture) the parts of the friend each tab's boxes are about (the drawing's veil layers,
 // marked data-part): pointed at, a box lights them in the game (body[data-lit], style.css), however often the friend is drawn again

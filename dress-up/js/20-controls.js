@@ -130,6 +130,17 @@ const TABS = [
     ["choice", "stairsWay", "🔼 on the stairs, facing", [["up", "🔼 up them: climbing with the feet"], ["down", "🔽 down them: a controlled fall"]]],   // (ticket 308)
     // (ticket 457) their own size in every place, on top of the place's size for them (a gnome made small once, everywhere)
     ["range", "size", "📏 their own size in every place (100 = as the place sets it)", 20, 300, 50, 150],
+    // (ticket 492: in 🧍 Body since 0.0.380, Matthew: "The horse settings should be under 'body', not costume")
+    // (ticket 438) the friend's horse, with them whatever they wear: led by its rein; its coat, mane and face marking (the
+    // stable's horses' own), its halter and rein, white socks
+    ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
+    ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
+    ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
+    ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
+    ["color", "horseTack", "🪢 its halter and rein", ["#7a3a1a", "#1f1f22", "#b91c1c", "#1d4ed8", "#15803d", "#e0b030"]],
+    ["toggle", "horseSocks", "🧦 white socks"],
+    // (ticket 457) its size: 100, as big as the stable's horses, whatever the friend's size in the scene
+    ["range", "horseSize", "📏 its size (100 = as big as the stable's horses)", 20, 200, 40, 150],
     ["group", "jumps", "🐸🦘 the two jumps", [
       ["range", "jumpShortH", "🐸 short jump: how high (100 = a leg's length)", 5, 200, 20, 45],
       ["range", "jumpShortS", "🐸 short jump: how fast (100 = steady)", 25, 400, 120, 180],
@@ -376,16 +387,6 @@ const TABS = [
     ["color", "wizardStars", "⭐ stars & moon color", ["#f2c230", "#e5e7eb", "#93c5fd", "#f9a8d4"]],
     ["toggle", "staff", "🪄 staff"],
     ["color", "staffOrb", "🔮 the staff's orb", ["#7dd3fc", "#a78bfa", "#86efac", "#fca5a5", "#fde047"]],
-    // (ticket 438) the friend's horse, with them whatever they wear: led by its rein; its coat, mane and face marking (the
-    // stable's horses' own), its halter and rein, white socks
-    ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
-    ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
-    ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
-    ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
-    ["color", "horseTack", "🪢 its halter and rein", ["#7a3a1a", "#1f1f22", "#b91c1c", "#1d4ed8", "#15803d", "#e0b030"]],
-    ["toggle", "horseSocks", "🧦 white socks"],
-    // (ticket 457) its size: 100, as big as the stable's horses, whatever the friend's size in the scene
-    ["range", "horseSize", "📏 its size (100 = as big as the stable's horses)", 20, 200, 40, 150],
     // the fairy: wings and tunic, each in a style with its own colors; shoes
     ["choice", "wingStyle", "🧚 wings", Object.entries(FAIRY_WINGS).map(([id, w]) => [id, w.name])],
     ...Object.entries(FAIRY_WINGS).map(([id, w]) => ["color", "wingColor_" + id, "🧚 wings' color", w.colors]),
@@ -1012,7 +1013,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",
-  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize"].map(k => ["costume." + k, c => (c.horse || "none") !== "none"])),
+  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
   ...Object.fromEntries(["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor"].map(k => ["costume." + k, c => c.kind === "ghost"])),
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),

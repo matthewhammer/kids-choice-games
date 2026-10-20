@@ -515,7 +515,7 @@ function solidsHud() {
         `<text x="${(w.at[12][0] - 30).toFixed(1)}" y="${(w.at[12][1] + 22).toFixed(1)}">${xmlEsc(w.name)}: along it</text>`).join("") +
       pitsShown.map(([x, y, rx, ry, name, sh]) => `<g data-solid="${xmlEsc(name)}"><path class="pit" d="${openingD(sh, x, y, rx, ry)}"/></g><text x="${(x - rx + 4).toFixed(1)}" y="${(y + ry + 13).toFixed(1)}">${xmlEsc(name)}: falls in</text>`).join("") +
       [...solids, ...flats].map(o => `<g data-solid="${xmlEsc(String(o.name))}"${o.seat ? ` class="seat"` : ""}>${o.faces.map(f => `<polygon class="face" points="${pts(f)}"/>`).join("")}<polygon points="${pts(o.q)}"/></g>` + (o.named === false ? "" : `<text x="${o.q[3][0].toFixed(1)}" y="${(o.q[3][1] + 13).toFixed(1)}">${xmlEsc(String(o.name)) + (o.seat ? (o.seat === "lie" ? ": 🛏️ lie down" : ": 🪑 sit") : "")}</text>`)).join("") +
-      `<g class="you"><polygon/><polygon/><polygon class="torso"/><polygon class="face torso"/><text>you</text></g>`;
+      `<g class="you"><polygon/><polygon/><polygon class="torso"/><polygon class="face torso"/><g class="horse-boxes"></g><text>you</text></g>`;
     solidsHitShown = -1;
   }
   { const hide = SOLID_CATS.map(([c]) => c).filter(c => !solidCatOn(c)).join(" "); if ((ov.dataset.hide || "") !== hide) ov.dataset.hide = hide; }
@@ -535,6 +535,14 @@ function solidsHud() {
           crown = C && t ? up(T.g) - t[5] : up(faceFrame.ty + headCrown(state.face) * faceFrame.s);
     polys[2].setAttribute("points", t ? pts(foot(t)) : "");
     polys[3].setAttribute("points", t ? pts([[t[0], crotch], [t[1], crotch], [t[1], crown], [t[0], crown]].map(([x, y]) => sc(x, y))) : "");
+    // (ticket 492) the horse's: each hoof, and its body (its footprint, and its face from its belly to its back); ridden, the
+    // rider's box in the torso's place, from the hips on the saddle to the crown, and no soles of their own
+    const HB = horseBoxes(fx, fz), hg = you.querySelector(".horse-boxes");
+    if (HB && horseNow.ride) { const r = riderBox(fx, fz); polys[0].setAttribute("points", ""); polys[1].setAttribute("points", "");
+      polys[2].setAttribute("points", pts(foot(r))); polys[3].setAttribute("points", pts([[r[0], r[3] - r[4]], [r[1], r[3] - r[4]], [r[1], r[3] - r[5]], [r[0], r[3] - r[5]]].map(([x, y]) => sc(x, y)))); }
+    const hk = HB ? JSON.stringify([HB.hooves, HB.body].flat(2).map(v => Math.round(v))) : "";
+    if (hg && hg.dataset.k !== hk) { hg.dataset.k = hk; hg.innerHTML = !HB ? "" : HB.hooves.map(h => `<polygon points="${pts(foot(h))}"/>`).join("") +
+      `<polygon class="torso" points="${pts(foot(HB.body))}"/><polygon class="face torso" points="${pts([[HB.body[0], HB.body[3] - HB.body[4]], [HB.body[1], HB.body[3] - HB.body[4]], [HB.body[1], HB.body[3] - HB.body[5]], [HB.body[0], HB.body[3] - HB.body[5]]].map(([x, y]) => sc(x, y)))}"/>`; }
     const q0 = sc(Math.min(...soles.map(s => s[0])), Math.max(...soles.map(s => s[3]))); you.lastChild.setAttribute("x", (q0[0] + 2).toFixed(1)); you.lastChild.setAttribute("y", (q0[1] + 12).toFixed(1)); }
   if (!swingHudOn && Bg.kind === "treehouse") { swingHudOn = true; requestAnimationFrame(swingHud); }   // (ticket 240)
   const A = state.access || DEFAULTS.access, fade = Math.max(100, A.glowFade ?? 800) + "ms";

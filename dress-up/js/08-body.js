@@ -865,10 +865,10 @@ function scepterSvg([hx, hy], jewel) {
 // is where the rider's hips go, `bob` how far the stride lifts them, and facing us or away it comes in two parts: `svg`,
 // behind the rider, and `over`, before them (facing us its chest, forelegs, neck and face, the head carried lower; from
 // behind its haunches, hind legs and tail), so the rider's legs hang down its sides.
-// (ticket 457) the horse at 100 (costume.horseSize): as big as the stable's horses at the same depth, face to face (their
+// (ticket 457) the horse at 100 (body.horseSize): as big as the stable's horses at the same depth, face to face (their
 // faces 2.1 times the friend's horse's as first drawn, measured in the stable at the stalls' depth)
 const HORSE_SCALE = 2.1;
-function horseLeg(top, len, swing, flex, fore, w, coat, sock, g) {
+function horseLeg(top, len, swing, flex, fore, w, coat, sock, g, hoofOut = null) {
   // (a leg from its top down: an upper bone swinging by `swing` degrees (forward, the way it faces), the lower bending at
   // the knee (fore: the hoof folding back) or the hock by `flex`, a hoof; its outline round the bones, tapering)
   // (a hind leg at rest: its gaskin slanting back to the hock, its cannon straight down; bending, the hock goes further
@@ -883,6 +883,7 @@ function horseLeg(top, len, swing, flex, fore, w, coat, sock, g) {
   // (the hoof: along the lower bone, flat on the ground when it is straight down)
   const dx = Math.sin(a2), dy = Math.cos(a2), hx = -dy, hy = dx, hl = 14, hw = w * 0.6;
   const hoof = [[F[0] + hx * hw, F[1] + hy * hw], [F[0] - hx * hw, F[1] - hy * hw], [F[0] - hx * hw * 1.1 + dx * hl, F[1] - hy * hw * 1.1 + dy * hl], [F[0] + hx * hw * 1.1 + dx * hl, F[1] + hy * hw * 1.1 + dy * hl]];
+  if (hoofOut) hoofOut.push([F[0] + dx * hl * 0.5, F[1]]);   // (ticket 492: where the hoof is, for its collision box)
   return `<polygon points="${[u1[0], u1[1], u2[1], u2[2], u1[2], u1[3]].map(pt).join(" ")}" fill="${coat}" stroke="${mix(coat, "#000000", 0.42)}" stroke-width="2.5" stroke-linejoin="round"/>` +
     (sock ? `<polygon points="${out(M, F, w * 0.5, w * 0.44).map(pt).join(" ")}" fill="#f7f4ee"/>` : "") +
     `<polygon points="${hoof.map(pt).join(" ")}" fill="#3b2f2a" stroke="#1f1612" stroke-width="2" stroke-linejoin="round"/>`;
@@ -901,7 +902,9 @@ function horseSvg(view, gait, u, H, g, ride) {
     // (facing our right: its left side toward us, its right legs beyond, darker. X: the rear drawn in, a horse being about
     // as long as it is tall at the withers)
     const X = x => f1(x < 0 ? x * 0.82 : x);
-    const leg = (x, top, fore, off, near) => { const [sw, fl] = step(off); return horseLeg([+X(x), y(top)], g - y(top) - 6, sw, fl, fore, near ? 17 : 15, near ? coat : far, sock, g); };
+    // (ticket 492: each hoof's place, [x, lifted, back]: the far legs a little behind the near)
+    const hooves = [], leg = (x, top, fore, off, near) => { const [sw, fl] = step(off), at = [];
+      const svg = horseLeg([+X(x), y(top)], g - y(top) - 6, sw, fl, fore, near ? 17 : 15, near ? coat : far, sock, g, at); hooves.push([at[0][0], g - at[0][1], near ? 0 : 8]); return svg; };
     const body = `<path d="M120 ${f1(y(-292))} C40 ${f1(y(-314))} ${X(-120)} ${f1(y(-318))} ${X(-165)} ${f1(y(-304))} C${X(-212)} ${f1(y(-288))} ${X(-216)} ${f1(y(-220))} ${X(-186)} ${f1(y(-186))} ` +
       `C${X(-150)} ${f1(y(-160))} ${X(-40)} ${f1(y(-156))} 82 ${f1(y(-166))} C142 ${f1(y(-174))} 172 ${f1(y(-216))} 152 ${f1(y(-260))} Z" fill="${coat}" stroke="${ln}" stroke-width="3"/>` +
       // (the shoulder, sloping back from the chest to the withers, and the round of the haunch)
@@ -928,7 +931,9 @@ function horseSvg(view, gait, u, H, g, ride) {
       `<path d="M-16 ${f1(y(-344))} Q-6 ${f1(y(-320))} 30 ${f1(y(-320))} Q64 ${f1(y(-320))} 76 ${f1(y(-340))} L86 ${f1(y(-334))} Q88 ${f1(y(-300))} 70 ${f1(y(-292))} L-8 ${f1(y(-292))} Q-24 ${f1(y(-302))} -16 ${f1(y(-344))} Z" fill="${leather}" stroke="${leatherD}" stroke-width="2.5" stroke-linejoin="round"/>` +
       `<path d="M8 ${f1(y(-300))} L66 ${f1(y(-300))} L62 ${f1(y(-248))} Q36 ${f1(y(-240))} 12 ${f1(y(-248))} Z" fill="${mix(leather, "#000000", 0.12)}" stroke="${leatherD}" stroke-width="2" stroke-linejoin="round"/>`;
     return { svg: leg(100, -200, true, OFF.rf, false) + leg(-160, -214, false, OFF.rh, false) + tail + body + neck + maneP + saddle + head + leg(122, -204, true, OFF.lf, true) + leg(-140, -218, false, OFF.lh, true),
-             over: "", ring: [240, y(-368)], bits: [[240, y(-368)], [240, y(-368)]], seat: [30, y(-326)], bob };
+             over: "", ring: [240, y(-368)], bits: [[240, y(-368)], [240, y(-368)]], seat: [30, y(-326)], bob,
+             // (ticket 492) its hooves, and its barrel: [x from, x to, its belly's height, its back's, how deep it is behind its hooves' line]
+             hooves, barrel: [+X(-216), 172, 156 - bob, 318 - bob, 30] };
   }
   // (a leg seen end on, toward us or away: shorter as it lifts, the hoof's sole showing)
   const endOn = (x, top, w, fill, lift) => `<path d="M${f1(x - w)} ${f1(y(top))} L${f1(x + w)} ${f1(y(top))} L${f1(x + w * 0.64)} ${f1(g - 18 - lift)} L${f1(x - w * 0.64)} ${f1(g - 18 - lift)} Z" fill="${fill}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` +
@@ -951,7 +956,9 @@ function horseSvg(view, gait, u, H, g, ride) {
       endOn(-46, -214, 17, coat, lifted(OFF.lf, 1)) + endOn(46, -214, 17, coat, lifted(OFF.rf, 1)) +
       `<g transform="translate(${HX} ${f1(y(-316 + D))}) scale(1.25)">${horseFace(H, 0, tack, true)}</g>`;
     return { svg: ride ? behind : behind + near, over: ride ? near : "", ring: [HX, y(-316 + D) - 77 * 1.25],
-             bits: [-1, 1].map(k => [HX + k * 17, y(-316 + D) - 52 * 1.25]), seat: [0, y(-330)], bob };
+             bits: [-1, 1].map(k => [HX + k * 17, y(-316 + D) - 52 * 1.25]), seat: [0, y(-330)], bob,
+             // (ticket 492: the forelegs toward us on the line, the hind legs drawn 26 up, that far back; its body, as long as it is, into the picture)
+             hooves: [[-46, lifted(OFF.lf, 1), 0], [46, lifted(OFF.rf, 1), 0], [-56, 0, 26], [56, 0, 26]], barrel: [-56, 56, 184 - bob, 330 - bob, 110] };
   }
   // (from behind: the forelegs beyond; over the back, the neck and the back of the head, its ears, the mane falling to one
   // side; the haunches, the hind legs, the tail)
@@ -966,7 +973,9 @@ function horseSvg(view, gait, u, H, g, ride) {
     `<path d="M-86 ${f1(y(-240))} Q-90 ${f1(y(-326))} -4 ${f1(y(-330))} L4 ${f1(y(-330))} Q90 ${f1(y(-326))} 86 ${f1(y(-240))} Q84 ${f1(y(-192))} 52 ${f1(y(-182))} L-52 ${f1(y(-182))} Q-84 ${f1(y(-192))} -86 ${f1(y(-240))} Z" fill="${coat}" stroke="${ln}" stroke-width="3"/>` +
     `<path d="M0 ${f1(y(-318))} L0 ${f1(y(-196))}" stroke="${ln}" stroke-width="2" opacity="0.5"/>` +
     `<path d="M-14 ${f1(y(-322))} Q${f1(-26 + tailSw)} ${f1(y(-220))} ${f1(-12 + tailSw)} ${f1(y(-128))} L${f1(14 + tailSw)} ${f1(y(-128))} Q${f1(24 + tailSw)} ${f1(y(-220))} 14 ${f1(y(-322))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`;
-  return { svg: ride ? behindB : behindB + nearB, over: ride ? nearB : "", ring: [-20, y(-422)], bits: [-1, 1].map(k => [k * 22, y(-420)]), seat: [0, y(-330)], bob };
+  return { svg: ride ? behindB : behindB + nearB, over: ride ? nearB : "", ring: [-20, y(-422)], bits: [-1, 1].map(k => [k * 22, y(-420)]), seat: [0, y(-330)], bob,
+           // (ticket 492: from behind, the hind legs on the line, the forelegs 26 up, that far back)
+           hooves: [[-48, lifted(OFF.lh, -1), 0], [48, lifted(OFF.rh, -1), 0], [-32, 0, 26], [32, 0, 26]], barrel: [-48, 48, 176 - bob, 330 - bob, 110] };
 }
 // A broom through the hand at H, in body units: the stick, leaning a
 // little, 120 above the hand and 52 below it, then the bristles flaring

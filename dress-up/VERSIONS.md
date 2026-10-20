@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.380 (2026-10-20)
+
+Everything in 0.0.379, plus the horse as part of the body, meeting things as it is drawn.
+
+- **🐴 The horse is in 🧍 Body now**, in its own box "🐴 the horse", not in 🐯 Costume: a horse goes with any costume. A friend saved with a horse keeps it.
+- **Riding or leading, the horse meets things where it is:** each of its four hooves bumps into things, and its body does too, from its belly up to its back, so something low can pass under it between its legs. Riding, you are up on the horse, not on the floor: your head is up there too, so a low doorway or bridge meets it. Leading, you and the horse each meet things. 🔬 Inspection's collision boxes show the horse's hooves and body, and the rider on it.
+
 ## 0.0.379 (2026-10-20)
 
 Everything in 0.0.378, plus cave mushrooms, a better treasure chest and a worn floor in the cave behind the falls.
