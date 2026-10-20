@@ -195,8 +195,11 @@ function waterfallScene(c) {
   // the light at sunset or at night, over everything (an object in front of
   // everything, the friend too: where they stand among the objects, it is
   // over them all the same)
-  if (time !== "day") s += SEP + obj(time === "night" ? "dark" : "sunset light", Infinity, part("wf-tint", [c.F, time], () => all(FALL_TINT[time][0]).replace("<rect ", `<rect pointer-events="none" opacity="${FALL_TINT[time][1]}" `) +
-    (time === "night" ? `<circle cx="${f1(-W * 0.32)}" cy="${f1(y0 + H * 0.12)}" r="${f1(26 * k)}" fill="#fff6d6" opacity="0.95"/><circle cx="${f1(-W * 0.32 + 10 * k)}" cy="${f1(y0 + H * 0.12 - 6 * k)}" r="${f1(22 * k)}" fill="#0b1030" opacity="0.35"/>` : "")));
+  // (ticket 490: by the clock, the moon in its phase where it is, the sun low at dusk, instead of the moon drawn always the same)
+  const clock = o.fallTime === "clock";
+  if (time !== "day") s += SEP + obj(time === "night" ? "dark" : "sunset light", Infinity, part("wf-tint", [c.F, time, clock ? skyKey(o) : ""], () => all(FALL_TINT[time][0]).replace("<rect ", `<rect pointer-events="none" opacity="${FALL_TINT[time][1]}" `) +
+    // (the sky open above the cliff's top, and beside it above the jungle: behind them, the moon is hidden)
+    (clock ? skyBodiesSvg(c, o, y0 + H * 0.4, y0 + 8 * k, "#0b1030", ([x, y]) => y < top - 14 * k || (Math.abs(x) > W * 0.33 && y < y0 + H * 0.28)) : time === "night" ? `<circle cx="${f1(-W * 0.32)}" cy="${f1(y0 + H * 0.12)}" r="${f1(26 * k)}" fill="#fff6d6" opacity="0.95"/><circle cx="${f1(-W * 0.32 + 10 * k)}" cy="${f1(y0 + H * 0.12 - 6 * k)}" r="${f1(22 * k)}" fill="#0b1030" opacity="0.35"/>` : "")));
   // (ticket 233: its old signpost, fixed links to places, is gone; the world's ways are the nav arrows, and a sign with directions, 🧭, a thing, says where they lead)
   return s;
 }
@@ -610,7 +613,8 @@ function caveScene(c) {
   });
   // the mouth: the light outside, the jungle blurred beyond, the curtain
   // of water falling across it, mist at its foot
-  s += SEP + part("cave-mouth", [c.F, fw, mist, rate, time, PERF.blur], () => {
+  const clock = o.fallTime === "clock", moonUp = clock && skyNow(o).moon.alt > 0;   // (ticket 490: by the clock, the moon in its phase, when it is up)
+  s += SEP + part("cave-mouth", [c.F, fw, mist, rate, time, PERF.blur, clock ? skyKey(o) : ""], () => {
     // (the light outside, by the falls' time of day)
     const sky = { day: ["#effcff", "#a9dcc6"], sunset: ["#ffe0b0", "#e8946a"], night: ["#4a5c88", "#1c2742"] }[time];
     let t = `<defs><clipPath id="bg-cave-mouth"><path d="${mouth}"/></clipPath>${grad("bg-cave-light", sky[0], sky[1], mt, floor)}` +
@@ -635,7 +639,7 @@ function caveScene(c) {
              `<animate attributeName="cy" values="${f1(y)};${f1(y - 20 * k)};${f1(y)}" dur="${(4 + 3 * R(i, 394)).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`;
     }).join("") + `</g>`;
     // (outside, the falls' time of day: its tint over all of it, the moon behind the water at night)
-    if (time !== "day") t += (time === "night" ? `<circle cx="${f1(-mh * 0.45)}" cy="${f1(mt + 50 * k)}" r="${f1(18 * k)}" fill="#fff6d6"/>` : "") +
+    if (time !== "day") t += (clock ? (moonUp ? moonPhaseSvg(-mh * 0.45, mt + 50 * k, 18 * k, skyNow(o).moon.phase, "#1c2742", skyNow(o).lat < 0) : "") : time === "night" ? `<circle cx="${f1(-mh * 0.45)}" cy="${f1(mt + 50 * k)}" r="${f1(18 * k)}" fill="#fff6d6"/>` : "") +
       `<rect x="${f1(-mh)}" y="${f1(mt - 20 * k)}" width="${f1(2 * mh)}" height="${f1(floor - mt + 20 * k)}" fill="${FALL_TINT[time][0]}" opacity="${FALL_TINT[time][1]}" pointer-events="none"/>`;
     return t + `</g><path d="${mouth}" fill="none" stroke="#1a171f" stroke-width="${f1(8 * k)}" stroke-linejoin="round"/></g>`;
   });

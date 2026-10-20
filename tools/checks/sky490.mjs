@@ -36,8 +36,12 @@ try {
     B.campTime = "day"; changed(); await w(300); const hidden = !seen();
     Object.assign(B, { kind: "fairyforest", fairyTime: "clock", skyMonth: 10, skyDay: 20, skyHour: 21 }); changed(); await w(500);
     const fairy = { moon: !!bgShown.node.querySelector('path[fill="#f4eebc"]') };
+    // the waterfall by the clock at 21:00 tonight: the moon behind its cliff, hidden; seen from the cave, through its mouth
+    Object.assign(B, { kind: "waterfall", fallTime: "clock", skyMonth: 10, skyDay: 20, skyHour: 21 }); changed(); await w(400);
+    const wfMoon = bgShown.node.querySelectorAll('path[fill="#f4eebc"]').length; B.kind = "cave"; changed(); await w(400);
+    const caveMoon = bgShown.node.querySelectorAll('path[fill="#f4eebc"]').length;
     const words = { june: skySays({ skyWhere: "denver", skyYear: 2026, skyMonth: 6, skyDay: 21, skyHour: 12 }), polar: skySays({ skyWhere: "tromso", skyYear: 2026, skyMonth: 12, skyDay: 21, skyHour: 12 }) };
-    return JSON.stringify({ v, times, night, day, hidden, fairy, words }); })()`));
+    return JSON.stringify({ v, times, night, day, hidden, fairy, words, wfMoon, caveMoon }); })()`));
   const V = r.v;
   ok("the noon sun in Denver: 73.7° at the June solstice, 26.8° at the December one (within half a degree)", Math.abs(V.dJune - 73.7) < 0.5 && Math.abs(V.dDec - 26.8) < 0.5, V);
   ok("the noon sun in Sydney in June: 32.7° up, to the north", Math.abs(V.sJuneAlt - 32.7) < 0.5 && V.sJuneAz > 170, V);
@@ -48,6 +52,7 @@ try {
   ok("🌍 where and when shows where the time of day is by the clock, and not otherwise", r.night.shown && r.hidden, [r.night.shown, r.hidden]);
   ok("the fairy forest by the clock draws the moon at night", r.fairy.moon, r.fairy);
   ok("the sky in words: Denver's June day about 15 hours, the moon's phase; Tromsø's December sun does not rise", /the day is 1[45] h/.test(r.words.june) && /the moon: /.test(r.words.june) && /does not rise/.test(r.words.polar), r.words);
+  ok("the waterfall by the clock: tonight's moon behind its cliff; from the cave, through its mouth, in its phase", r.wfMoon === 0 && r.caveMoon === 1, [r.wfMoon, r.caveMoon]);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

@@ -283,9 +283,9 @@ function moonPhaseSvg(cx, cy, r, phase, dark, south = false) {
     `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="${dark}" opacity="0.85"/><path d="${lit}" fill="#f4eebc"/></g>`;
 }
 // the sun and the moon by the clock, in a scene's sky (its horizon h, its top): the sun (low and orange near the horizon),
-// the moon in its phase (faint by day)
-function skyBodiesSvg(c, o, h, top, darkSky) {
-  const n = skyNow(o), k = c.k, out = [], sp = skyXY(c, n.sun, h, top), mp = skyXY(c, n.moon, h, top), sa = n.sun.alt * 180 / Math.PI;
+// the moon in its phase (faint by day); none where open says the sky is hidden there (a cliff, drawn under the night's tint)
+function skyBodiesSvg(c, o, h, top, darkSky, open = null) {
+  const n = skyNow(o), k = c.k, out = [], vis = p => p && (!open || open(p)) ? p : null, sp = vis(skyXY(c, n.sun, h, top)), mp = vis(skyXY(c, n.moon, h, top)), sa = n.sun.alt * 180 / Math.PI;
   if (mp) out.push(`<g opacity="${sa > 6 ? 0.55 : 1}">` + moonPhaseSvg(mp[0], mp[1], 22 * k, n.moon.phase, darkSky, n.lat < 0) + `</g>`);
   if (sp) out.push(sa > 8 ? sunSvg(sp[0], sp[1], 30 * k, true, o) : `<circle cx="${f1(sp[0])}" cy="${f1(sp[1])}" r="${f1(44 * k)}" fill="${sa > 2 ? "#ffd27a" : "#ff8c42"}" opacity="0.95"/>`);
   return out.join("");

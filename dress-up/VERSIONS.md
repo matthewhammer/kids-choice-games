@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.385 (2026-10-20)
+
+Everything in 0.0.384, with the waterfall's moon by the clock too.
+
+- **The 🌊 waterfall and the 🪨 cave behind it, "🕰️ by the clock":** the moon is the real one there too, in its phase. At the waterfall it hides behind the cliff and the jungle unless it is high enough or far enough to the side to be seen; from inside the cave you see it through the mouth whenever it is up.
+
 ## 0.0.384 (2026-10-20)
 
 Everything in 0.0.383, plus the sky in words.
