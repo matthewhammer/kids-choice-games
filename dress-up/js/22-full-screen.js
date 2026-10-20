@@ -333,6 +333,8 @@ const TAB_BOXES = {
   "👟 Feet": [["👟 both feet", ["different", "style", "color", "size"]], ["👟👟 each foot", ["rightShoe"]],
              ["🔢 how many", ["toes", "alienToes", "talonCount"], ["number of"]]],
   "👻 Visibility": [["🧍 the whole friend", ["all"]], ["👻 each part", ["head", "eyes", "hair", "shirt", "pants", "feet", "hands"]]],
+  // (ticket 488, ^du_report(5)'s rules: Matthew, "how can we best 'Knowl' the panels") the controller, the bubbles, moving
+  "🎮 Controls": [["🎮 the game controller", ["map"]], ["🫧 bubbles", ["blowing", "blowThemes"]], ["🏃 moving", ["moving", "clickPlan"]]],
   "🐯 Costume": [["🐯 the costume", ["kind"]], ["🐾 the animal", ["fur", "furPattern", "marks", "spot", "belly", "eyes", "accent"]],
                 ["🤿 the scuba suit", ["scubaColor", "scubaAccent"]], ["⚓ the old diving suit", ["diverMetal", "diverCloth", "diverHose", "hoseColor"]],
                 ["🥽 diving gear", ["snorkel", "snorkelColor", "mask", "maskColor", "tank", "tankColor", "leaks"]],
@@ -360,7 +362,11 @@ function boxLayout(panel, tabName, ctls) {
   const plan = TAB_BOXES[tabName];
   if (!plan) return;
   const rows = [...panel.children], boxes = plan.map(([name]) => ({ name, rows: [] })), rest = { name: tabName, rows: [] };
-  rows.forEach((r, i) => { const key = ctls[i] && typeof ctls[i][1] === "string" ? ctls[i][1] : null, j = key ? plan.findIndex(([, keys]) => keys.includes(key)) : -1;
+  // (ticket 488) a row of another part ("of": 🎮 Controls' bubbles, from 🧍 Body and 🏞️ Background) by its own key, unless the
+  // plan names its part (🐯 Costume's 👻 visibility rows)
+  const keyOf = c => { const k = c && typeof c[1] === "string" ? c[1] : null;
+    return c && c[0] === "of" && c[2] && typeof c[2][1] === "string" && !plan.some(([, keys]) => keys.includes(k)) ? c[2][1] : k; };
+  rows.forEach((r, i) => { const key = keyOf(ctls[i]), j = key ? plan.findIndex(([, keys]) => keys.includes(key)) : -1;
     (j >= 0 ? boxes[j] : rest).rows.push(r); });
   const made = [...boxes, rest].filter(b => b.rows.length).map((b, j) => {
     // (the report's rule 1: nothing inside repeats the box's name: "mouth size" in 👄 the mouth is "size"; the words dropped are

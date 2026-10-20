@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.383 (2026-10-20)
+
+Everything in 0.0.382, with 🎮 Controls tidied into boxes.
+
+- **🎮 Controls in three boxes:** "🎮 the game controller" (its buttons), "🫧 bubbles" (blowing them, and the three bubble themes) and "🏃 moving" (how your friend moves, and what a click does while they walk), instead of one long column.
+
 ## 0.0.382 (2026-10-20)
 
 Everything in 0.0.381, with 🗺️ World design tidied into boxes beside the picture.

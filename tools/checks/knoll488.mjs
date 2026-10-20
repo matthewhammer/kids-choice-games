@@ -2,7 +2,9 @@
 // control panels") 🗺️ World design in the side panel, not full screen: each of its parts a box (a border, named once: by
 // its own heading or its data-box-name), in the order they had (worlds, warnings, the places, the world's grid, its size,
 // this square, things here, off the grid); one column in a narrow side panel, more side by side in a wide one, the grid,
-// the places and the things across all of them. Exits 1 on a failure.
+// the places and the things across all of them. And 🎮 Controls in boxes (0.0.383): the game controller, the bubbles (blowing
+// and the themes), moving (how the friend moves, and a click while walking); 🐯 Costume's 👻 visibility rows still in its
+// ghost's box (rows of another part are boxed by their own key only where the plan does not name the part). Exits 1 on a failure.
 //   node knoll488.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -35,6 +37,15 @@ try {
   await ev(`setSplit(innerWidth * 0.4)`); await sleep(400);
   const b = JSON.parse(await ev(measure)), row = y => b.parts.filter(p => Math.abs(p.y - y) < 2).length;
   ok("in a wide side panel, boxes side by side (more than one column), the grid across them all", b.cols >= 2 && b.parts.some(p => row(p.y) >= 2) && b.parts.find(p => p.cls === "world-gridcol").w >= b.parts.find(p => p.cls === "world-sizes").w * 1.8, { cols: b.cols, parts: b.parts });
+  const c = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
+    const boxes = () => [...document.querySelectorAll("#panel .tabbox")].filter(b => b.getClientRects().length).map(b => [(b.querySelector(":scope > .box-name") || {}).textContent,
+      [...b.children].filter(x => !x.classList.contains("box-name")).map(x => x.dataset.key || "")]);
+    tab = TABS.findIndex(t => t[0] === "🎮 Controls"); showTab(); await w(300); const controls = boxes();
+    const was = state.costume.kind; state.costume.kind = "ghost"; changed(); tab = TABS.findIndex(t => t[0] === "🐯 Costume"); showTab(); await w(300);
+    const ghost = boxes().find(b => /ghost/.test(b[0] || "")); state.costume.kind = was; changed(); showTab();
+    return JSON.stringify({ controls, ghost }); })()`));
+  ok("🎮 Controls in three boxes: the game controller, the bubbles, moving", c.controls.length === 3 && /controller/.test(c.controls[0][0]) && /bubbles/.test(c.controls[1][0]) && c.controls[1][1].length === 2 && /moving/.test(c.controls[2][0]) && c.controls[2][1].length === 2, c.controls);
+  ok("🐯 Costume's 👻 visibility rows still in the ghost's box", c.ghost && c.ghost[1].filter(k => k === "all").length === 2, c.ghost);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
