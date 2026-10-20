@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.358 (2026-10-19)
+
+Everything in 0.0.357, with a queen and a king, and the monk's hood from the side and behind.
+
+- **👸 The queen and 🤴 the king** (tickets 436, 437): two new costumes in 🐯 Costume: a gold crown (the queen's dainty with three points, the king's tall with five) with jewels and a velvet cap, a robe down to the floor with a gold girdle, a white ermine collar, an ermine-trimmed mantle behind (walk them away to see it over their backs), and a golden scepter. The king puts on a full white beard (change it in 💇 Hair). Robes in five or six colours, jewels in five; the mantle and the scepter can come off.
+- **The monk's and the dryad's hood** (ticket 447): from the side, its peak sticks out behind the head, away from the face; from behind, the peak comes toward you, hanging down the back of the head; facing you, as before.
+
 ## 0.0.357 (2026-10-19)
 
 Everything in 0.0.356, with a knight, and helmets to place.

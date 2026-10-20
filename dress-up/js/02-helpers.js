@@ -88,6 +88,8 @@ function patternDef(id, color, kind, size = 14, markColor = "auto") {
     // a spider web: eight threads out from the middle, and three rings
     // across them, each sagging a little toward the middle between threads
     web:     webTile(lt),
+    // (tickets 436, 437) ermine, a royal mantle's fur: white, with small black tails
+    ermine: `<path d="M7 3.5 L7 9.5 M4.6 8.4 L7 10.8 L9.4 8.4" fill="none" stroke="${lt}" stroke-width="1.6" stroke-linecap="round"/>`,
     // (ticket 433) a dryad's cloak: a small leaf, its vein, sloping
     leaves: `<path d="M3 11 Q4 4 11 3 Q10 10 3 11 Z" fill="${lt}"/><path d="M3.6 10.4 L9.5 4.5" stroke="${color}" stroke-width="0.6"/>`,
     // (ticket 431) a gnome woman's skirt: five upright stripes, the first in its color, then the cover's green, yellow,

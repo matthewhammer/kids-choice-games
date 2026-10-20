@@ -69,8 +69,15 @@ function armsFill(id, shape, WC, mirror = false, emblemAt = null, k = 1, mid = e
   const em = emblemAt && EMBLEMS[WC.emblem] ? `<g transform="translate(${f1(emblemAt[0])} ${f1(emblemAt[1])}) scale(${k.toFixed(3)})"><circle r="19" fill="${lay === "plain" ? B : "#e0b030"}" opacity="0.95"/>${EMBLEMS[WC.emblem](lay === "plain" ? A : "#7a1f2b")}</g>` : "";
   return `<clipPath id="${id}"><path d="${shape}"/></clipPath><g clip-path="url(#${id})">${fields}</g>${WC.emblem && WC.emblem !== "none" ? em : ""}<path d="${shape}" fill="none" stroke="#3b3b44" stroke-width="2.5" stroke-linejoin="round"/>`;
 }
+// (ticket 447, Matthew: "the monk/druid hood doesn't read that way in L and R poses --- due to the placement of the point -- it
+// should come out like a larger triangle, sticking away from the face, not in the middle of the crown, on top") In profile its
+// peak is a larger triangle out behind the head, pointing away from the face, the cowl round the crown and down the back.
 function clothHoodPath(F, dir = 0) {
   const { cy, ry } = hoodGeom(F), top = cy - ry, bot = cy + ry, b = dir ? -dir * 14 : 0, p = dir ? -dir * 10 : 0;
+  if (dir) { const X = d => f1(100 + dir * d);
+    return `M${X(112)} ${f1(cy)} Q${X(116)} ${f1(top + 4)} ${X(40)} ${f1(top - 8)} Q${X(-40)} ${f1(top - 12)} ${X(-84)} ${f1(top + 6)} ` +
+           `L${X(-168)} ${f1(top + 62)} L${X(-104)} ${f1(top + 70)} Q${X(-118)} ${f1(cy + 20)} ${X(-124)} ${f1(bot)} L${X(-140)} ${f1(bot + 36)} ` +
+           `L${X(126)} ${f1(bot + 36)} Q${X(118)} ${f1(bot)} ${X(112)} ${f1(cy)} Z`; }
   return `M${f1(100 + b - 110)} ${f1(cy)} Q${f1(100 + b - 112)} ${f1(top + 8)} ${f1(100 + b - 40)} ${f1(top - 8)} Q${f1(100 + p - 6)} ${f1(top - 16)} ${f1(100 + p)} ${f1(top - 36)} ` +
          `Q${f1(100 + p + 6)} ${f1(top - 16)} ${f1(100 + b + 40)} ${f1(top - 8)} Q${f1(100 + b + 112)} ${f1(top + 8)} ${f1(100 + b + 110)} ${f1(cy)} ` +
          `Q${f1(100 + b + 116)} ${f1(bot)} ${f1(100 + b + 136)} ${f1(bot + 36)} L${f1(100 + b - 136)} ${f1(bot + 36)} Q${f1(100 + b - 116)} ${f1(bot)} ${f1(100 + b - 110)} ${f1(cy)} Z`;
@@ -82,8 +89,18 @@ function clothHoodOpening(F, dir = 0) {
 const clothHoodBack = (F, c, dir = 0) => `<path d="${clothHoodPath(F, dir)}" fill="${darker(c)}" stroke="${darker(darker(c))}" stroke-width="4" stroke-linejoin="round"/>`;
 const clothHoodFront = (F, c, dir = 0) => `<path d="${clothHoodPath(F, dir)} ${clothHoodOpening(F, dir)}" fill="${c}" fill-rule="evenodd" stroke="${darker(c)}" stroke-width="4" stroke-linejoin="round"/>` +
   `<path d="${clothHoodOpening(F, dir)}" fill="none" stroke="${darker(darker(c))}" stroke-width="3" opacity="0.6"/>`;
-const clothHoodAway = (F, c) => `<path d="${clothHoodPath(F)}" fill="${c}" stroke="${darker(c)}" stroke-width="4" stroke-linejoin="round"/>` +
-  `<path data-hood="closed" d="M100 ${f1(hoodGeom(F).cy - hoodGeom(F).ry - 30)} L100 ${f1(hoodGeom(F).cy + hoodGeom(F).ry)}" stroke="${darker(c)}" stroke-width="3" opacity="0.5"/>`;
+// (ticket 447, Matthew: "the away facing view also looks wrong, like L and R --- the peak should come toward us now that the face
+// is facing away") From behind, the hood's top is round and its peak comes toward us: a pointed flap over the back of the head,
+// its tip down over the shoulders, shaded on one side.
+function clothHoodAway(F, c) {
+  const { cy, ry } = hoodGeom(F), top = cy - ry, bot = cy + ry, ln = darker(c);
+  const round = `M-10 ${f1(cy)} Q-12 ${f1(top + 8)} 60 ${f1(top - 8)} Q100 ${f1(top - 16)} 140 ${f1(top - 8)} Q212 ${f1(top + 8)} 210 ${f1(cy)} ` +
+                `Q216 ${f1(bot)} 236 ${f1(bot + 36)} L-36 ${f1(bot + 36)} Q-16 ${f1(bot)} -10 ${f1(cy)} Z`;
+  const flap = `M54 ${f1(top + 18)} Q100 ${f1(top + 2)} 146 ${f1(top + 18)} L108 ${f1(bot + 52)} Q100 ${f1(bot + 62)} 92 ${f1(bot + 52)} Z`;
+  return `<path d="${round}" fill="${c}" stroke="${ln}" stroke-width="4" stroke-linejoin="round"/>` +
+    `<path data-hood="closed" d="${flap}" fill="${mix(c, "#000000", 0.08)}" stroke="${ln}" stroke-width="3.5" stroke-linejoin="round"/>` +
+    `<path d="M100 ${f1(top + 10)} L100 ${f1(bot + 54)} L146 ${f1(top + 18)} Z" fill="#000000" opacity="0.1"/>`;
+}
 
 // Fur: the fur color with little tufts, and stripes, spots or patches in
 // the markings color. Feathers: the feather color with curved bars.

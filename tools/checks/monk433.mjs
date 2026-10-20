@@ -29,6 +29,15 @@ try {
       for (const up of [true, false]) { set("costume", "hoodUp", up);
         for (const facing of ["front", "right", "back"]) { state.body.facing = facing; changed(); await w(70); const m = fig();
           out.v[who + (up ? "-up-" : "-down-") + facing] = { opening: m.includes('fill-rule="evenodd"') && m.includes(" A"), closed: m.includes('data-hood="closed"'), hair: await hairShows() }; } } }
+    // (ticket 447: in profile the hood's peak sticks out behind the head, away from the face: the hood reaches further behind
+    // the head's middle than in front of it)
+    set("costume", "monkWho", "monk"); set("costume", "hoodUp", true); out.peak = {};
+    for (const [facing, d] of [["left", -1], ["right", 1]]) { state.body.facing = facing; changed(); await w(70);
+      const hood = [...document.querySelectorAll("#figure path")].find(e => e.getAttribute("fill") === darker(state.costume.monkCloak) && e.getAttribute("stroke-width") === "4");
+      const eye = document.querySelector("#figure circle, #figure ellipse"), hb = hood && hood.getBoundingClientRect(), fb = document.querySelector("#figure").getBoundingClientRect();
+      const head = [...document.querySelectorAll("#figure path")].find(e => e.getAttribute("fill") === state.face.color);
+      const hc = head ? (b => b.left + b.width / 2)(head.getBoundingClientRect()) : 0;
+      out.peak[facing] = hb ? { behind: Math.round(d > 0 ? hc - hb.left : hb.right - hc), front: Math.round(d > 0 ? hb.right - hc : hc - hb.left) } : null; }
     state.body.facing = "front"; set("costume", "hoodUp", true);
     set("costume", "monkWho", "dryad"); changed(); await w(60); out.leaves = ((document.getElementById("pat-shirt") || {}).outerHTML || "").includes("M3 11") && fig().includes("#4caf50");
     set("costume", "monkWho", "monk"); changed(); await w(60); out.knob = !fig().includes("#4caf50") && fig().includes('r="8" fill="#7a4f2a"');
@@ -42,8 +51,9 @@ try {
   console.log(`  ${JSON.stringify(r)}`);
   const V = r.v;
   ok("the hood up: the face's opening facing us and in profile, and no hair, monk and dryad", ["monk", "dryad"].every(w => ["front", "right"].every(f => V[w + "-up-" + f].opening && !V[w + "-up-" + f].hair)), V);
-  ok("the hood up, from behind: closed over the head, no hair", ["monk", "dryad"].every(w => !V[w + "-up-back"].hair && V[w + "-up-back"].closed), V);
+  ok("the hood up, from behind: closed over the head, its peak a flap toward us, no face opening under it, no hair (ticket 447)", ["monk", "dryad"].every(w => !V[w + "-up-back"].hair && V[w + "-up-back"].closed && !V[w + "-up-back"].opening), V);
   ok("the hood down: the hair shows, no hood", ["monk", "dryad"].every(w => ["front", "right", "back"].every(f => V[w + "-down-" + f].hair && !V[w + "-down-" + f].opening && !V[w + "-down-" + f].closed)), V);
+  ok("in profile the hood's peak sticks out behind the head, away from the face (ticket 447)", ["left", "right"].every(f => r.peak[f] && r.peak[f].behind > 1.2 * r.peak[f].front), r.peak);
   ok("the monk's cloak brown, the dryad's moss green", r.monkCloak === "#6b4a2b" && r.dryadCloak === "#4f6b3a", [r.monkCloak, r.dryadCloak]);
   ok("the dryad's cloak in leaves and her staff sprouting; the monk's staff knobbed; the staff taken off", r.leaves && r.knob && r.noStaff, [r.leaves, r.knob, r.noStaff]);
   ok("every pose drawn", Object.values(r.poses).every(Boolean), r.poses);

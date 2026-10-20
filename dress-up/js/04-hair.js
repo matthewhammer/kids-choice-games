@@ -511,7 +511,8 @@ function beardSvg(F, style, c, dir = 0, moustache = true, H = { beardLength: 100
   if (moustache) out += `<path d="M${f1(fx + dir * 4)} ${f1(my - 12)} Q${f1(fx - dir * 20)} ${f1(my - 14)} ${f1(fx - dir * 30)} ${f1(my + 6)} Q${f1(fx - dir * 8)} ${f1(my)} ${f1(fx + dir * 6)} ${f1(my - 2)} Z" fill="${c}" ${st}/>`;
   return out;
 }
-function faceSvg(F, ground, parts = false, dir = 0, turn = 0) {
+// (ticket 447: away, facing away from us: a cloth hood is drawn whole over the head instead, clothHoodAway)
+function faceSvg(F, ground, parts = false, dir = 0, turn = 0, away = false) {
   const b = F.burst, k = F.candy, r = F.rays, o = F.open;
   const rayLen = r === 0 ? 0 : idiv((15 + idiv(r * 6, 10)) * b, 100);
   const shown = k * b >= 2500 ? 40 : idiv(k * b * 40, 2500);
@@ -534,7 +535,7 @@ function faceSvg(F, ground, parts = false, dir = 0, turn = 0) {
   const C = costumeOn(), kind = state.costume.kind;
   const hoodClips = C ? `<clipPath id="hood-brim"><rect x="-200" y="-400" width="600" height="454"/></clipPath>` +
                         `<clipPath id="hood-inside"><ellipse ${hoodEllipse(F)}/></clipPath>` : "";
-  const CH = clothHood();   // (ticket 433: a cloth hood, up)
+  const CH = away ? null : clothHood();   // (ticket 433: a cloth hood, up)
   const under = `<defs>${clips}${hoodClips}</defs>` +
     (C ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${dir ? `<g transform="translate(${-dir * 16} 0)">${hoodBack(C, kind, F)}</g>` : hoodBack(C, kind, F)}</g></g>` : "") +
     (CH ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${clothHoodBack(F, CH, dir)}</g></g>` : "") +

@@ -285,7 +285,7 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -338,6 +338,12 @@ const TABS = [
     ["color", "gnomeBodice", "🍄 bodice's color", ["#d2382b", "#2e7d32", "#2f6db5", "#7b3f8c", "#1f1f22"]],
     ["color", "gnomeSkirt", "🍄 skirt's first stripe", ["#d2382b", "#e8862a", "#c2185b", "#2f6db5", "#2e7d32"]],
     ["color", "gnomeBoots", "🥾 felt boots' color", ["#e8e4da", "#8d8172", "#6b4226", "#1f1f22", "#b71c1c"]],
+    // (tickets 436, 437) the queen and the king: each one's robe, the crown's jewel, the mantle, the scepter
+    ["color", "queenRobe", "👸 gown's color", ["#5b2a86", "#7a1f2b", "#1e3a8a", "#1f5a4a", "#c2185b", "#e0b030"]],
+    ["color", "kingRobe", "🤴 robe's color", ["#7a1f2b", "#5b2a86", "#1e3a8a", "#1f5a4a", "#e0b030"]],
+    ["color", "crownJewel", "💎 the jewels' color", ["#d2382b", "#2f6db5", "#2e7d32", "#7b3f8c", "#f4f1ea"]],
+    ["toggle", "mantle", "👑 ermine mantle"],
+    ["toggle", "scepter", "👑 scepter"],
     // (ticket 435) the knight: his arms (two colours, how they are laid out, an emblem), his helmet's plume and visor, sword and shield
     ["color", "knightA", "🛡️ arms' first color", ["#2f6db5", "#8a2b2b", "#1f1f22", "#2e7d32", "#e0b030", "#7b3f8c"]],
     ["color", "knightB", "🛡️ arms' second color", ["#f4f1ea", "#e0b030", "#1f1f22", "#8a2b2b", "#2f6db5"]],
@@ -739,7 +745,7 @@ function set(part, key, value) {
   // (ticket 442) the wizard and the gnome man wear a beard, from 💇 Hair: put on (white; long, or full) when the friend has
   // none, and taken off again on leaving the costume, or the gnome becoming a woman, if it is still the one put on
   if (part === "costume" && (key === "kind" || key === "gnomeWho")) {
-    const C = state.costume, H = state.hair, want = C.kind === "wizard" ? "long" : C.kind === "gnome" && C.gnomeWho !== "woman" ? "full" : null;
+    const C = state.costume, H = state.hair, want = C.kind === "wizard" ? "long" : C.kind === "king" || (C.kind === "gnome" && C.gnomeWho !== "woman") ? "full" : null;
     if (C.beardGiven && C.beardGiven !== want) { if (H.beard === C.beardGiven) { H.beard = "none"; if (H.beardShade === BEARD_WHITE) H.beardShade = "auto"; } C.beardGiven = null; }
     if (want && !BEARDS[H.beard]) { H.beard = want; H.beardShade = BEARD_WHITE; C.beardGiven = want; }
   }
@@ -966,6 +972,8 @@ const SHOWN_WHEN = {
   "hair.beardShade": h => !!BEARDS[h.beard], "hair.moustache": h => !!BEARDS[h.beard], "hair.beardLength": h => !!BEARDS[h.beard],
   "hair.braidWidth": h => !!(BEARDS[h.beard] && BEARDS[h.beard].braid),
   "costume.wizardRobe": c => c.kind === "wizard", "costume.wizardStars": c => c.kind === "wizard", "costume.staff": c => c.kind === "wizard" || c.kind === "monk",
+  "costume.queenRobe": c => c.kind === "queen", "costume.kingRobe": c => c.kind === "king", "costume.crownJewel": c => c.kind === "queen" || c.kind === "king",
+  "costume.mantle": c => c.kind === "queen" || c.kind === "king", "costume.scepter": c => c.kind === "queen" || c.kind === "king",
   "costume.knightA": c => c.kind === "knight", "costume.knightB": c => c.kind === "knight" && c.tabardLayout !== "plain" || c.kind === "knight" && c.emblem !== "none",
   "costume.tabardLayout": c => c.kind === "knight", "costume.emblem": c => c.kind === "knight", "costume.plume": c => c.kind === "knight",
   "costume.plumeColor": c => c.kind === "knight" && c.plume !== false, "costume.helmOpen": c => c.kind === "knight", "costume.sword": c => c.kind === "knight", "costume.shield": c => c.kind === "knight",

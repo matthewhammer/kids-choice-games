@@ -828,6 +828,29 @@ function staffSvg([hx, hy], orb) {
     `<circle cx="${f1(top[0])}" cy="${f1(top[1] - 10)}" r="11" fill="${orb}" stroke="${darker(orb)}" stroke-width="2"/>` +
     `<circle cx="${f1(top[0] - 3.5)}" cy="${f1(top[1] - 14)}" r="3.5" fill="#ffffff" opacity="0.8"/>`;
 }
+// (tickets 436, 437, Matthew: "queen." "king.") A CROWN, in the round head's units, on the head (the hair tucked under its
+// band, as under a hat): a gold band from 40 up to 20, points rising from it (the king's five and tall, the queen's three
+// and dainty), a velvet cap inside in the robe's colour, pearls on the points and jewels on the band (facing us; none from
+// behind).
+function crownSvg(WC, king, cap, away = false) {
+  const gold = "#e0b030", ln = "#8a6420", j = WC.crownJewel || "#d2382b", n = king ? 5 : 3, top = king ? -18 : -2;
+  const xs = Array.from({ length: n }, (_, i) => 40 + 120 * (i + 0.5) / n);
+  let pts = `M38 40 L38 20`;
+  for (let i = 0; i < n; i++) pts += ` L${f1(xs[i] - 60 / n)} 20 L${f1(xs[i])} ${f1(top + (king && i % 2 ? 10 : 0))} L${f1(xs[i] + 60 / n)} 20`;
+  pts += ` L162 20 L162 40 Z`;
+  return `<path d="M44 22 Q100 ${king ? -40 : -24} 156 22 Z" fill="${cap}" stroke="${darker(cap)}" stroke-width="2"/>` +
+    `<path d="${pts}" fill="${gold}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    xs.map((x, i) => `<circle cx="${f1(x)}" cy="${f1(top + (king && i % 2 ? 10 : 0) - 2)}" r="4" fill="#f7f4ec" stroke="#c9c5bd" stroke-width="1"/>`).join("") +
+    `<rect x="38" y="31" width="124" height="4" fill="${ln}" opacity="0.5"/>` +
+    (away ? "" : [72, 100, 128].map((x, i) => `<rect x="${f1(x - 5)}" y="25" width="10" height="10" rx="2" transform="rotate(45 ${x} 30)" fill="${i === 1 ? j : mix(j, "#2f6db5", 0.6)}" stroke="#8a6420" stroke-width="1"/>`).join(""));
+}
+// A scepter through the hand at H, in body units: a gold rod 130 above the hand and 30 below, a jewel and a small cross on top
+function scepterSvg([hx, hy], jewel) {
+  const t = [hx + 6, hy - 130];
+  return line(hx - 2, hy + 30, t[0], t[1], 6, "#e0b030", "#8a6420") +
+    `<circle cx="${f1(t[0])}" cy="${f1(t[1] - 8)}" r="11" fill="#e0b030" stroke="#8a6420" stroke-width="2"/><circle cx="${f1(t[0])}" cy="${f1(t[1] - 8)}" r="5" fill="${jewel}"/>` +
+    `<path d="M${f1(t[0])} ${f1(t[1] - 19)} L${f1(t[0])} ${f1(t[1] - 33)} M${f1(t[0] - 6)} ${f1(t[1] - 27)} L${f1(t[0] + 6)} ${f1(t[1] - 27)}" stroke="#e0b030" stroke-width="3.5" stroke-linecap="round"/>`;
+}
 // A broom through the hand at H, in body units: the stick, leaning a
 // little, 120 above the hand and 52 below it, then the bristles flaring
 // out under a band in the trim color.
