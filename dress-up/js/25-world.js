@@ -1214,6 +1214,42 @@ function personNew(tplId) {
   personSwitch(P.id);
   return P.id;
 }
+// (ticket 459, Matthew: "permit '+ from costume' and show a box -- on top of other panels, not within them? -- with the
+// costume chips to choose (or cancel at the bottom) --- experimenting with a new UX, instead of a drop down, to compare") a
+// new person in a costume: a fresh friend (the game's own look) wearing it, put on as the 🐯 Costume tab puts it on (set():
+// a beard given, a hat's colour, an animal's colours), named after it with the next free number ("knight 1")
+function personNewCostume(kind, label) {
+  peopleInit();
+  const all = peopleAll(), n = 1 + Math.max(0, ...all.map(personNum)), names = new Set(all.map(personTitle));
+  const base = String(label || kind).replace(/[^\p{L}\p{N}\s'-]/gu, "").replace(/\s+/g, " ").trim() || kind;
+  let k = 1; while (names.has(`${base} ${k}`)) k++;
+  const P = { id: "p" + n, name: `${base} ${k}`.slice(0, PERSON_NAME_MAX), template: false, from: null, look: personLookWhole(null), place: null };
+  state.peopleAway[P.id] = P;
+  personSwitch(P.id);
+  set("costume", "kind", kind);
+  return P.id;
+}
+// (the costumes, as the 🐯 Costume tab lists them: [kind, its chip's words], none left out)
+const personCostumes = () => ((TABS.find(t => t[1] === "costume") || [, , []])[2].find(r => r[0] === "choice" && r[1] === "kind") || [])[3]?.filter(([v]) => v !== "none") || [];
+// The box to choose a costume in: laid over the panel where it is on the screen (not inside it), the costumes' chips, and ✖
+// cancel at its bottom; Escape or a tap outside it closes it too
+function personCostumeBox() {
+  document.querySelector(".person-pick")?.remove();
+  const close = () => { box.remove(); document.removeEventListener("keydown", esc, true); document.removeEventListener("pointerdown", away, true); };
+  const esc = e => { if (e.key === "Escape") { e.stopPropagation(); e.preventDefault(); close(); } };
+  const away = e => { if (!box.contains(e.target)) close(); };
+  const box = el("div", { class: "person-pick", role: "dialog", "aria-label": "a new person in a costume" }, [
+    el("div", { class: "cap" }, "➕ a new person in a costume"),
+    el("div", { class: "person-pick-chips" }, personCostumes().map(([v, lab]) => el("button", { class: "person-pick-chip", "data-kind": v, onclick: () => { close(); personNewCostume(v, lab); } }, lab))),
+    el("div", { class: "person-pick-foot" }, [el("button", { class: "person-pick-cancel", onclick: close }, "✖ cancel")])]);
+  const host = document.getElementById("panel"), r = host ? host.getBoundingClientRect() : { left: 8, right: innerWidth - 8, top: 8, bottom: innerHeight - 8 };
+  const top = Math.max(8, r.top), bottom = Math.min(innerHeight - 8, Math.max(r.bottom, top + 240)), left = Math.max(8, r.left), right = Math.min(innerWidth - 8, r.right);
+  Object.assign(box.style, { left: left + "px", top: top + "px", width: Math.max(220, right - left) + "px", maxHeight: (bottom - top) + "px" });
+  document.body.append(box);
+  document.addEventListener("keydown", esc, true);
+  setTimeout(() => document.addEventListener("pointerdown", away, true), 0);
+  return box;
+}
 function personSetTemplate(id, on) { const P = id === state.person.id ? state.person : state.peopleAway[id]; if (P) { P.template = !!on; changed(); } }
 function personPlace(id, at) { const P = state.peopleAway[id]; if (P) { P.place = at || null; changed(); } }
 // (one away taken out of the game; never the one dressed now)

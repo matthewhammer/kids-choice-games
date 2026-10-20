@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.368 (2026-10-19)
+
+Everything in 0.0.367, with new people from a costume.
+
+- **➕ From a costume** (ticket 459): in 👥 People, ➕ from a costume opens a box over the panels with every costume as a chip. Pick one and a new person appears in that costume, ready to dress ("knight 1"), or ✖ cancel at the bottom. It is an experiment beside the template list, to see which works better.
+
 ## 0.0.367 (2026-10-19)
 
 Everything in 0.0.366, with many people, and templates to make them from.

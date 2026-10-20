@@ -820,3 +820,9 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
 .people .person-row { align-items: center; gap: 6px; }
 .people .person-row button { padding: 2px 8px; min-height: 0; }
 .people .person-name { font-weight: 600; }
+/* (ticket 459) the box a costume is chosen in, laid over the panel (not inside it): the chips, then ✖ cancel at its bottom */
+.person-pick { position: fixed; z-index: 1000; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; overflow: auto;
+               background: var(--panel); color: var(--ink); border: 2px solid var(--accent); border-radius: 14px; padding: 10px 12px;
+               box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28); }
+.person-pick .person-pick-chips { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
+.person-pick .person-pick-foot { margin-top: auto; display: flex; justify-content: center; padding-top: 6px; border-top: 1px solid var(--line); }

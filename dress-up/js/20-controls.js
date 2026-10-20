@@ -1552,6 +1552,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         el("div", { class: "row" }, [el("button", { class: "person-template", "aria-pressed": String(!!me.template), onclick: () => personSetTemplate(me.id, !me.template) }, "⭐ a template: new people can be made from them")]),
         el("div", { class: "row person-new-row" }, tpls.length ? [el("span", { class: "hint" }, "➕ a new person from"), pick, el("button", { class: "person-new", onclick: () => personNew(newTpl) }, "➕ new person")]
                                                          : [el("span", { class: "hint" }, "➕ to make new people, make someone ⭐ a template")]),
+        // (ticket 459: or from a costume, chosen in a box laid over the panels, to compare with the dropdown above)
+        el("div", { class: "row" }, [el("button", { class: "person-from-costume", title: "A new person in a costume: choose it in a box over the panels", onclick: () => personCostumeBox() }, "➕ from a costume")]),
         ...(others.length ? [el("div", { class: "cap" }, "🧍 the others"), ...others] : []));
     };
     syncs.push(render);
