@@ -2,8 +2,11 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.376 (2026-10-20)
 
+Everything in 0.0.375, plus a new place, the 🦇 cave room, and a fix for narrow windows.
+
+- **A new place, the 🦇 cave room** (in 🏕️ camping), deeper in behind the waterfall: go through the dark archway at the back of the 🪨 cave behind the falls, and come back the same way. Its floor is worn, rounded rock, ledge after ledge, and you can walk all over it. Choose what stands on the floor, "🪨 on the cave room's floor": 🗼 stalagmites, 🪨 boulders, 🏛️ columns from floor to ceiling, 💧 rimstone pools, 💎 crystal clusters or 🍄 glowing mushrooms. You walk around them, and you can sit on a boulder or a big mushroom. Choose what hangs from the ceiling, "🦇 on the cave room's ceiling": 🦷 stalactites, 🥢 soda straws, 🎐 curtains of rock, ☀️ a crack of daylight, 💎 crystals or 🐛 glowworms. Drops fall into a puddle in time with the music, glowing patches on the walls breathe slowly, and two bats are asleep up in the dark.
 - **Fixed:** in one column (a phone, or a window about half a screen wide), the band over the controls that names where the pointer is (the breadcrumbs) slid across the top of the picture as the controls scrolled. It now stays just under the picture and its buttons.
 
 ## 0.0.375 (2026-10-20)

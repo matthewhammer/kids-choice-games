@@ -661,6 +661,10 @@ function caveScene(c) {
         `<polygon points="-6,0 -6,${-h + 8} 0,${-h} 6,${-h + 8} 6,0" fill="${col}" stroke="${mix(col, "#ffffff", 0.5)}" stroke-width="1.5" ` +
         `transform="translate(${f1(cx + dx * k)} ${f1(cy + 30 * k + dy * k)}) rotate(${a}) scale(${k.toFixed(3)})"/>`).join(""));
   }).join(""));
+  // (ticket 471) at the back, right of the mouth: a dark archway, deeper in, to the 🦇 cave room (drawn as the cave room
+  // draws its way back here, caveArchSvg)
+  s += SEP + part("cave-deeper", c.F, () => wallObj("archway to the cave room", `<g class="portal" data-to="caveroom">` +
+    caveArchSvg(c, "bg-cave-deeper", W * 0.31, floor + 4 * k, 64 * k, 118 * k, 4711, "#7a6a9a") + `</g>`));
   // the light falling in through the water, the floor, wet by the mouth
   s += SEP + part("cave-floor", c.F, () => {
     let t = `<path d="M${P(x0 - pad, floor + 10 * k)} Q${P(-W * 0.3, floor - 6 * k)} ${P(-mh, floor)} L${P(mh, floor)} Q${P(W * 0.3, floor - 6 * k)} ${P(x1 + pad, floor + 10 * k)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z" fill="#3b3542"/>` +
@@ -704,14 +708,256 @@ function caveScene(c) {
   // bats asleep, hanging from the roof; an old chest by the wall (two
   // objects: the bats among the stalactites, at their depth; the chest
   // standing on the floor)
-  s += SEP + part("cave-bats-chest", c.F, () => obj("bats", floor + 30 * k, [[-0.3, 26], [-0.22, 12], [0.32, 18]].map(([u, dy], i) => {
-    const bx = W * u, by = y0 + dy * k;
-    return `<g transform="translate(${f1(bx)} ${f1(by)}) scale(${k.toFixed(3)})"><g><animateTransform attributeName="transform" type="rotate" values="-6;6;-6" dur="${4 + i}s" repeatCount="indefinite"/>` +
-      `<line x1="0" y1="0" x2="0" y2="8" stroke="#111" stroke-width="2"/><path d="M0 6 Q-14 12 -10 34 Q0 44 10 34 Q14 12 0 6 Z" fill="#1a1620"/>` +
-      `<path d="M-6 40 L-9 50 L-2 43 Z M6 40 L9 50 L2 43 Z" fill="#1a1620"/><circle cx="-3" cy="38" r="1.5" fill="#ffffff"/><circle cx="3" cy="38" r="1.5" fill="#ffffff"/></g></g>`;
-  }).join("")) + obj("chest", floor + 50 * k, `<g transform="translate(${f1(W * 0.3)} ${f1(floor + 50 * k)}) scale(${k.toFixed(3)})"><rect x="-46" y="-40" width="92" height="50" rx="4" fill="#8b5a2b" stroke="#4a2e1a" stroke-width="3"/>` +
+  s += SEP + part("cave-bats-chest", c.F, () => obj("bats", floor + 30 * k, [[-0.3, 26], [-0.22, 12], [0.32, 18]].map(([u, dy], i) => caveBatSvg(W * u, y0 + dy * k, k, i)).join("")) + obj("chest", floor + 50 * k, `<g transform="translate(${f1(W * 0.3)} ${f1(floor + 50 * k)}) scale(${k.toFixed(3)})"><rect x="-46" y="-40" width="92" height="50" rx="4" fill="#8b5a2b" stroke="#4a2e1a" stroke-width="3"/>` +
     `<path d="M-46 -40 Q0 -76 46 -40 Z" fill="#a0693a" stroke="#4a2e1a" stroke-width="3"/><rect x="-50" y="-20" width="100" height="8" fill="#f2c12e"/><rect x="-8" y="-28" width="16" height="20" rx="3" fill="#f2c12e" stroke="#a07a10" stroke-width="2"/>` +
     [[-60, 12], [-50, 18], [54, 14], [62, 8]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="4" fill="#f2c12e" stroke="#a07a10" stroke-width="1.5"/>`).join("") + `</g>`));
+  return s;
+}
+
+// (ticket 471) a bat asleep, hanging from the roof at (bx, by), swaying a little (i: its own pace): the cave's, and the cave room's
+const caveBatSvg = (bx, by, k, i) => `<g transform="translate(${f1(bx)} ${f1(by)}) scale(${k.toFixed(3)})"><g><animateTransform attributeName="transform" type="rotate" values="-6;6;-6" dur="${4 + i}s" repeatCount="indefinite"/>` +
+  `<line x1="0" y1="0" x2="0" y2="8" stroke="#111" stroke-width="2"/><path d="M0 6 Q-14 12 -10 34 Q0 44 10 34 Q14 12 0 6 Z" fill="#1a1620"/>` +
+  `<path d="M-6 40 L-9 50 L-2 43 Z M6 40 L9 50 L2 43 Z" fill="#1a1620"/><circle cx="-3" cy="38" r="1.5" fill="#ffffff"/><circle cx="3" cy="38" r="1.5" fill="#ffffff"/></g></g>`;
+// (ticket 471) A fractal edge from a to b: each piece's middle pushed out across it, by up to `rough` of its length, the
+// roughness falling by about half each round (seeded, R(i, seed)); its points, for caveSmooth to draw round
+function caveFractal(a, b, rounds, rough, R, seed) {
+  let pts = [a, b];
+  for (let d = 0; d < rounds; d++, rough *= 0.55) {
+    const out = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, ay] = pts[i - 1], [bx, by] = pts[i], L = Math.hypot(bx - ax, by - ay) || 1, off = (R(i + 64 * d, seed) - 0.5) * 2 * rough * L;
+      out.push([(ax + bx) / 2 - (by - ay) / L * off, (ay + by) / 2 + (bx - ax) / L * off], pts[i]);
+    }
+    pts = out;
+  }
+  return pts;
+}
+// (a line through several points, each piece fractal: the points of all of them, in order)
+const caveFractalPath = (pts, rounds, rough, R, seed) => pts.slice(1).flatMap((p, i) => caveFractal(pts[i], p, rounds, rough, R, seed + 7 * i).slice(i ? 1 : 0));
+// (through points, worn round: a curve to each midpoint, the points its controls)
+const caveSmooth = (pts, P) => pts.slice(1, -1).reduce((d, p, i) => d + ` Q${P(p[0], p[1])} ${P((p[0] + pts[i + 2][0]) / 2, (p[1] + pts[i + 2][1]) / 2)}`, `M${P(pts[0][0], pts[0][1])}`) +
+  ` L${P(pts[pts.length - 1][0], pts[pts.length - 1][1])}`;
+// (the height of a line of points at x, between the two it falls between)
+const caveAlong = (pts, x) => { for (let i = 1; i < pts.length; i++) { const [ax, ay] = pts[i - 1], [bx, by] = pts[i];
+  if ((x - ax) * (x - bx) <= 0) return bx === ax ? ay : ay + (by - ay) * (x - ax) / (bx - ax); } return pts[x < pts[0][0] ? 0 : pts.length - 1][1]; };
+// (ticket 471) A natural archway into the rock, its foot at (x, foot), w wide and h high, its rim worn round and uneven
+// (seed); dark inside, a little light far in (glow): the way between the cave behind the falls and the cave room, drawn
+// the same way at both ends
+function caveArchSvg(c, id, x, foot, w, h, seed, glow) {
+  const { k, R, P } = c, pts = [];
+  for (let i = 0; i <= 20; i++) {
+    const a = Math.PI * (1 - i / 20), b = 1 + 0.12 * (R(i, seed) - 0.5) + 0.06 * (R(2 * i, seed + 1) - 0.5);
+    pts.push([x + w / 2 * Math.cos(a) * b, foot - h * Math.pow(Math.sin(a), 0.55) * (i % 20 ? b : 1)]);
+  }
+  const d = caveSmooth(pts, P) + " Z";
+  return `<defs><radialGradient id="${id}" cx="0.5" cy="0.75" r="0.65"><stop offset="0" stop-color="${glow}" stop-opacity="0.6"/><stop offset="0.5" stop-color="#110e15"/>` +
+    `<stop offset="1" stop-color="#050407"/></radialGradient></defs><path d="${d}" fill="url(#${id})"/>` +
+    `<path d="${d}" fill="none" stroke="#0a080c" stroke-width="${f1(3 * k)}" stroke-linejoin="round"/>` +
+    `<path d="${caveSmooth(pts.slice(2, 19), P)}" fill="none" stroke="#6a6276" stroke-width="${f1(4 * k)}" stroke-linecap="round" opacity="0.7" transform="translate(${f1(-2 * k)} ${f1(-3 * k)})"/>`;
+}
+// (ticket 471, Matthew: "a background that represents being in a cave room, rounded, fractal structure on the ground
+// (walkable) suface. Different cave rock formations (6 styles for floor, and 6 styles for ceiling) --- look at, and refine,
+// the waterfall cave") The 🦇 cave room, deeper in behind the falls: in through a dark archway at the back of the cave,
+// and back out through its own. Its floor a rounded, fractal surface of worn rock, ledge over ledge, walkable all over
+// (what stands on it is what stops the feet); its vault a fractal arch, its back wall lumpy rock, glowing here and there.
+// Six styles of formations on the floor (caveFloor), each standing at its depth (the stalagmites, boulders, columns,
+// crystal clusters and mushrooms stop the feet, as STANDING says; one sits on a boulder or a mushroom as on any; the
+// rimstone pools lie flat), and six on the ceiling (caveCeiling). Whatever the styles: drops falling into a puddle (the
+// fast LFO), the glow breathing (the slow one), two bats asleep.
+const CAVE_FLOORS = [["stalagmites", "🗼 stalagmites"], ["boulders", "🪨 boulders"], ["columns", "🏛️ columns, floor to ceiling"],
+                     ["rimstone", "💧 rimstone pools"], ["crystals", "💎 crystal clusters"], ["mushrooms", "🍄 glowing mushrooms"]];
+const CAVE_CEILINGS = [["stalactites", "🦷 stalactites"], ["straws", "🥢 soda straws"], ["curtains", "🎐 curtains of rock"],
+                       ["crack", "☀️ a crack of daylight"], ["crystals", "💎 crystals"], ["glowworms", "🐛 glowworms"]];
+const CAVE_GLOWS = ["#b388ff", "#5ee6ff", "#7dfcd2", "#ffd36e", "#ff8fb1"];
+function caveroomScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, o } = c;
+  const floorSty = CAVE_FLOORS.some(([v]) => v === o.caveFloor) ? o.caveFloor : "stalagmites";
+  const roofSty = CAVE_CEILINGS.some(([v]) => v === o.caveCeiling) ? o.caveCeiling : "stalactites";
+  const back = g - 135 * k, line = g - 125 * k, near = y1 - 10 * k;   // (the floor's far edge in the middle; just in front of it, the back line, SCENE_FAR's)
+  // the vault, from wall to wall over the room, and the floor's far edge, rising round to meet it at either side
+  const vault = caveFractalPath([[x0 - 40 * k, g - 230 * k], [x0 + 0.12 * W, y0 + 120 * k], [x0 + 0.34 * W, y0 + 62 * k], [x1 - 0.3 * W, y0 + 56 * k], [x1 - 0.1 * W, y0 + 130 * k], [x1 + 40 * k, g - 220 * k]], 4, 0.07, R, 4720);
+  const edge = caveFractalPath([[x0 - 40 * k, g - 230 * k], [x0 + 0.1 * W, back - 40 * k], [x0 + 0.3 * W, back - 6 * k], [x1 - 0.32 * W, back - 2 * k], [x1 - 0.1 * W, back - 34 * k], [x1 + 40 * k, g - 220 * k]], 4, 0.05, R, 4740);
+  const persp = y => Math.max(0.45, Math.min(1.35, 0.5 + 0.9 * (y - back) / (near - back)));
+  const fast = (off, own) => lfoTimed(o, "fast", off, own), slow = (off, own) => lfoTimed(o, "slow", off, own);
+  // the back wall: rock, lump over lump, three sizes of them (the fractal look), and its glows breathing (the slow LFO)
+  let s = SEP + part("caveroom-wall", [c.F, sceneLfoKey(o, "slow")], () => {
+    let t = `<defs>${grad("bg-caveroom-wall", "#3a3344", "#2b2632", y0, back)}</defs>` + all("url(#bg-caveroom-wall)");
+    for (let j = 0; j < 3; j++) for (let i = 0; i < [12, 26, 50][j]; i++) {
+      const r = [64, 30, 14][j] * k * (0.7 + 0.6 * R(i, 4750 + j)), x = x0 + W * R(i, 4753 + j), y = y0 + (back - y0) * R(i, 4756 + j);
+      t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.72)}" fill="${R(i, 4759 + j) < 0.5 ? "#433b4e" : "#2a2530"}" opacity="0.7"/>` +
+           `<path d="M${P(x - r * 0.7, y - r * 0.2)} Q${P(x - r * 0.4, y - r * 0.68)} ${P(x + r * 0.2, y - r * 0.66)}" fill="none" stroke="#5a5266" stroke-width="${f1(Math.max(1, r * 0.08))}" stroke-linecap="round" opacity="0.6"/>`;
+    }
+    // glowing patches on the wall (lichen, or a seam of something bright), each breathing in its own time
+    const glows = [[-0.36, 0.42, 0], [0.12, 0.3, 1], [0.38, 0.5, 2], [-0.08, 0.62, 3]].map(([u, v, j]) => {
+      const x = W * u, y = y0 + (back - y0) * v, r = (46 + 20 * R(j, 4762)) * k, col = CAVE_GLOWS[(j * 2 + 1) % 5];
+      return `<defs><radialGradient id="bg-caveroom-glow-${j}"><stop offset="0" stop-color="${col}" stop-opacity="0.75"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></radialGradient></defs>` +
+             `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.7)}" fill="url(#bg-caveroom-glow-${j})" opacity="0.45">` +
+             slow(j / 4, `<animate attributeName="opacity" values="0.25;0.7;0.25" dur="${(4 + j).toFixed(1)}s" repeatCount="indefinite"/>`) + `</ellipse>` +
+             [...Array(7)].map((_, n) => `<circle cx="${f1(x + (R(n + 9 * j, 4763) - 0.5) * r * 1.3)}" cy="${f1(y + (R(n + 9 * j, 4764) - 0.5) * r * 0.8)}" r="${f1((1.4 + 1.6 * R(n + 9 * j, 4765)) * k)}" fill="${col}"/>`).join("");
+    }).join("");
+    return t + wallObj("glowing patches", glows);
+  });
+  // the way back: a dark archway at the back, on the left, to the 🪨 cave behind the falls (lit far off by the falls)
+  s += SEP + part("caveroom-arch", c.F, () => wallObj("archway to the cave", `<g class="portal" data-to="cave">` +
+    caveArchSvg(c, "bg-caveroom-arch", -0.3 * W, back - 2 * k, 92 * k, 150 * k, 4770, "#9ad7f0") + `</g>`));
+  // the floor: worn rock, rounded and fractal, ledge over ledge toward us, bumps of three sizes on it, pebbles; walkable
+  s += SEP + part("caveroom-floor", c.F, () => {
+    let t = `<defs>${grad("bg-caveroom-floor", "#2e2934", "#4b4455", back - 60 * k, y1)}</defs>` +
+            `<path d="${caveSmooth(edge, P)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z" fill="url(#bg-caveroom-floor)"/>` +
+            `<path d="${caveSmooth(edge, P)}" fill="none" stroke="#1c1922" stroke-width="${f1(4 * k)}" stroke-linejoin="round"/>`;
+    let ledges = "";
+    for (let i = 0; i < 6; i++) {
+      const v = Math.pow((i + 0.6) / 6, 1.35), y = back + (near - back) * v, a = x0 - 30 * k + 0.1 * W * R(i, 4775), b = x1 + 30 * k - 0.1 * W * R(i, 4776);
+      const pts = caveFractalPath([[a, y + 18 * k * R(i, 4777)], [x0 + W * (0.3 + 0.1 * R(i, 4778)), y - 10 * k * persp(y)], [x1 - W * (0.3 + 0.1 * R(i, 4779)), y + 6 * k * persp(y)], [b, y - 14 * k * R(i, 4780)]], 4, 0.04, R, 4781 + 13 * i);
+      ledges += `<path d="${caveSmooth(pts, P)}" fill="none" stroke="#211d27" stroke-width="${f1(5 * k * persp(y))}" stroke-linecap="round" opacity="0.6" transform="translate(0 ${f1(2.5 * k * persp(y))})"/>` +
+                `<path d="${caveSmooth(pts, P)}" fill="none" stroke="#6b6278" stroke-width="${f1(2.5 * k * persp(y))}" stroke-linecap="round" opacity="0.55"/>`;
+    }
+    let bumps = "";
+    for (let j = 0; j < 3; j++) for (let i = 0; i < [10, 22, 44][j]; i++) {
+      const y = back + 8 * k + (near - back) * Math.pow(R(i, 4800 + j), 0.8), x = x0 + W * R(i, 4803 + j), z = persp(y), rx = [58, 28, 12][j] * k * z * (0.7 + 0.6 * R(i, 4806 + j)), ry = rx * 0.26;
+      bumps += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#5a5266" opacity="0.4"/>` +
+               `<path d="M${P(x - rx, y)} Q${P(x, y + ry * 2.2)} ${P(x + rx, y)}" fill="none" stroke="#221e28" stroke-width="${f1(Math.max(1, ry * 0.5))}" opacity="0.45"/>`;
+    }
+    let pebbles = "";
+    for (let i = 0; i < 30; i++) {
+      const y = back + 10 * k + (near - back) * R(i, 4810), x = x0 + W * R(i, 4811), r = (2.5 + 6 * R(i, 4812)) * k * persp(y);
+      pebbles += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.55)}" fill="${["#5c5468", "#2e2934", "#6a6276"][i % 3]}"/>`;
+    }
+    return t + floorObj("the floor's ledges", ledges + bumps) + floorObj("pebbles", pebbles);
+  });
+  // drops falling from the vault into a puddle, rings spreading on it (the fast LFO)
+  s += SEP + part("caveroom-drips", [c.F, sceneLfoKey(o, "fast")], () => {
+    const px = -0.1 * W, py = g + 30 * k, top = caveAlong(vault, px) + 30 * k;
+    let t = floorObj("puddle", `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="${f1(40 * k)}" ry="${f1(10 * k)}" fill="#6fb6cf" opacity="0.4"/>` +
+      `<ellipse cx="${f1(px - 8 * k)}" cy="${f1(py - 2 * k)}" rx="${f1(14 * k)}" ry="${f1(2.5 * k)}" fill="#d8f4ff" opacity="0.35"/>` +
+      [0, 1].map(j => `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="${f1(4 * k)}" ry="${f1(1 * k)}" fill="none" stroke="#d8f4ff" stroke-width="${f1(1.2 * k)}" opacity="0">` +
+        fast(0.12 + j * 0.2, `<animate attributeName="rx" values="${f1(4 * k)};${f1(34 * k)}" dur="1.6s" repeatCount="indefinite"/>`) +
+        fast(0.12 + j * 0.2, `<animate attributeName="ry" values="${f1(1 * k)};${f1(8.5 * k)}" dur="1.6s" repeatCount="indefinite"/>`) +
+        fast(0.12 + j * 0.2, `<animate attributeName="opacity" values="0.8;0" dur="1.6s" repeatCount="indefinite"/>`) + `</ellipse>`).join(""));
+    t += obj("drops", py, `<circle cx="${f1(px)}" cy="${f1(top)}" r="${f1(2.6 * k)}" fill="#bfeaff">` +
+      fast(0, `<animate attributeName="cy" values="${f1(top)};${f1(py)}" dur="1.6s" repeatCount="indefinite"/>`) +
+      fast(0, `<animate attributeName="opacity" values="1;1;0" keyTimes="0;0.9;1" dur="1.6s" repeatCount="indefinite"/>`) + `</circle>`);
+    return t;
+  });
+  // the floor's style: where its formations stand, front to back (the middle and the archway kept clear)
+  const spots = [[-0.43, 0.12, 1], [0.41, 0.06, 1.1], [-0.13, 0.03, 0.75], [0.17, 0.08, 0.8], [0.3, 0.42, 0.9], [-0.32, 0.5, 0.95], [-0.45, 0.86, 1.2], [0.45, 0.8, 1.15]];
+  s += SEP + part("caveroom-floor-" + floorSty, [c.F, sceneLfoKey(o, "slow"), sceneLfoKey(o, "fast")], () => {
+    const at = ([u, v, z], i) => { const y = line + 6 * k + (near - 30 * k - line) * v; return { x: W * u, y, z: z * persp(y) * k, i }; };
+    const S = spots.map(at);
+    if (floorSty === "rimstone") return floorObj("rimstone pools", [[-0.3, 0.3, 1.3], [0.22, 0.2, 1.1], [0.05, 0.75, 1.5], [-0.38, 0.85, 1]].map(([u, v, z], i) => {
+      const { x, y, z: zz } = at([u, v, z], i), rx = 70 * zz, ry = 16 * zz, pts = [];
+      for (let n = 0; n <= 16; n++) { const a = n / 16 * 2 * Math.PI, b = 1 + 0.18 * (R(n + 17 * i, 4820) - 0.5); pts.push([x + rx * Math.cos(a) * b, y + ry * Math.sin(a) * b]); }
+      const d = caveSmooth(pts, P) + " Z";
+      return `<path d="${d}" fill="#4f9fb4" opacity="0.55"/><path d="${d}" fill="none" stroke="#c9bfa8" stroke-width="${f1(4 * zz)}" stroke-linejoin="round" opacity="0.85"/>` +
+             `<path d="${d}" fill="none" stroke="#7d7363" stroke-width="${f1(2 * zz)}" transform="translate(0 ${f1(3 * zz)})" opacity="0.6"/>` +
+             `<ellipse cx="${f1(x - rx * 0.3)}" cy="${f1(y - ry * 0.2)}" rx="${f1(rx * 0.3)}" ry="${f1(ry * 0.18)}" fill="#e6f8ff" opacity="0.3">` +
+             fast(i / 4, `<animate attributeName="opacity" values="0.1;0.45;0.1" dur="1.2s" repeatCount="indefinite"/>`) + `</ellipse>`;
+    }).join(""));
+    return S.map(({ x, y, z, i }) => {
+      if (floorSty === "stalagmites") {
+        const h = (60 + 70 * R(i, 4830)) * z, w = (24 + 16 * R(i, 4831)) * z;
+        return obj(`stalagmite ${i + 1}`, y, `<path d="M${P(x - w, y)} Q${P(x - w * 0.4, y - h * 0.5)} ${P(x - w * 0.08, y - h * 0.94)} Q${P(x, y - h * 1.02)} ${P(x + w * 0.08, y - h * 0.94)} Q${P(x + w * 0.4, y - h * 0.5)} ${P(x + w, y)} Z" fill="#5a5266" stroke="#2a2630" stroke-width="${f1(2 * k)}"/>` +
+          [0.25, 0.48, 0.7].map(f => `<path d="M${P(x - w * (1 - f) * 0.92, y - h * f)} Q${P(x, y - h * f + 5 * z)} ${P(x + w * (1 - f) * 0.92, y - h * f)}" fill="none" stroke="#6e6579" stroke-width="${f1(2 * z)}" opacity="0.8"/>`).join("") +
+          `<path d="M${P(x - w * 0.55, y - 4 * z)} Q${P(x - w * 0.3, y - h * 0.5)} ${P(x - w * 0.05, y - h * 0.85)}" fill="none" stroke="#8a8196" stroke-width="${f1(2 * z)}" opacity="0.5"/>` +
+          `<ellipse class="flat" cx="${f1(x)}" cy="${f1(y)}" rx="${f1(w * 1.2)}" ry="${f1(w * 0.25)}" fill="#1c1922" opacity="0.35"/>`);
+      }
+      if (floorSty === "boulders") {
+        const r = (38 + 30 * R(i, 4835)) * z;
+        return obj(`boulder ${i + 1}`, y, `<ellipse class="flat" cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r * 1.15)}" ry="${f1(r * 0.25)}" fill="#1c1922" opacity="0.4"/>` + rockSvg(x, y, r, 4836 + i, ["#6a6276", "#5a5266", "#7a7184"][i % 3]));
+      }
+      if (floorSty === "columns") {
+        // (six at most: the two nearest are left out, so the picture is not all column; and none in front of the archway,
+        // which a column, floor to ceiling, would hide)
+        if (i > 5 || Math.abs(x + 0.3 * W) < 80 * k) return "";
+        const top = caveAlong(vault, x) + 6 * k, w = (34 + 18 * R(i, 4840)) * z, mid = y - (y - top) * (0.45 + 0.15 * R(i, 4841)), wm = w * (0.42 + 0.15 * R(i, 4842));
+        const L = caveFractalPath([[x - w, y], [x - wm, mid], [x - w * 1.3, top]], 3, 0.06, R, 4843 + 5 * i), Rt = caveFractalPath([[x + w * 1.3, top], [x + wm, mid], [x + w, y]], 3, 0.06, R, 4846 + 5 * i);
+        return obj(`column ${i + 1}`, y, `<path d="${caveSmooth(L, P)} ${caveSmooth(Rt, P).replace(/^M/, "L")} Z" fill="#5e5668" stroke="#2a2630" stroke-width="${f1(2 * k)}"/>` +
+          [0.15, 0.3, 0.62, 0.8].map(f => { const yy = y - (y - top) * f, ww = f < 0.5 ? w - (w - wm) * f / 0.5 : wm + (w * 1.3 - wm) * (f - 0.5) / 0.5;
+            return `<path d="M${P(x - ww * 0.95, yy)} Q${P(x, yy + 6 * z)} ${P(x + ww * 0.95, yy)}" fill="none" stroke="#776e83" stroke-width="${f1(2 * z)}" opacity="0.7"/>`; }).join("") +
+          `<ellipse class="flat" cx="${f1(x)}" cy="${f1(y)}" rx="${f1(w * 1.3)}" ry="${f1(w * 0.28)}" fill="#1c1922" opacity="0.35"/>`);
+      }
+      if (floorSty === "crystals") {
+        const col = CAVE_GLOWS[i % 5], h = (54 + 40 * R(i, 4850)) * z;
+        return obj(`crystal cluster ${i + 1}`, y, `<ellipse class="fumes" cx="${f1(x)}" cy="${f1(y - h * 0.4)}" rx="${f1(h * 0.9)}" ry="${f1(h * 0.7)}" fill="${col}" opacity="0.2">` +
+          slow(i / 8, `<animate attributeName="opacity" values="0.1;0.32;0.1" dur="4s" repeatCount="indefinite"/>`) + `</ellipse>` +
+          [[-0.45, 0.55, -32], [0.4, 0.62, 28], [-0.15, 0.85, -10], [0.12, 1, 8], [0.62, 0.4, 48], [-0.65, 0.36, -52]].map(([dx, f, a]) => {
+            const hh = h * f, ww = h * 0.13;
+            return `<g transform="translate(${f1(x + dx * h * 0.3)} ${f1(y)}) rotate(${a})"><polygon points="${P2(-ww, 0)} ${P2(-ww, -hh * 0.82)} ${P2(0, -hh)} ${P2(ww, -hh * 0.82)} ${P2(ww, 0)}" fill="${col}" stroke="${mix(col, "#ffffff", 0.5)}" stroke-width="${f1(1.5 * z)}" opacity="0.92"/>` +
+                   `<line x1="0" y1="0" x2="0" y2="${f1(-hh)}" stroke="${mix(col, "#ffffff", 0.6)}" stroke-width="${f1(1 * z)}" opacity="0.6"/></g>`; }).join("") +
+          `<circle cx="${f1(x + h * 0.04)}" cy="${f1(y - h * 0.9)}" r="${f1(2.4 * z)}" fill="#ffffff">` + fast(i / 8, `<animate attributeName="opacity" values="0;1;0" dur="1.4s" repeatCount="indefinite"/>`) + `</circle>`);
+      }
+      // the glowing mushrooms: a big one and its little ones, glowing, spores drifting up from the big cap
+      const col = ["#7dd3fc", "#a7f3d0", "#c4b5fd", "#fcd34d"][i % 4], hs = (26 + 14 * R(i, 4855)) * z, cr = (26 + 10 * R(i, 4856)) * z;   // (squat: a giant one is a stool to sit on)
+      const cap = (cx, cy, r, h) => `<path d="M${P(cx - r * 0.18, cy)} L${P(cx - r * 0.12, cy - h)} L${P(cx + r * 0.12, cy - h)} L${P(cx + r * 0.18, cy)} Z" fill="#e8e0f0"/>` +
+        `<path d="M${P(cx - r, cy - h + 2 * z)} Q${P(cx - r * 0.9, cy - h - r * 0.8)} ${P(cx, cy - h - r * 0.85)} Q${P(cx + r * 0.9, cy - h - r * 0.8)} ${P(cx + r, cy - h + 2 * z)} Q${P(cx, cy - h + r * 0.2)} ${P(cx - r, cy - h + 2 * z)} Z" fill="${col}" stroke="${mix(col, "#1a1620", 0.5)}" stroke-width="${f1(1.5 * z)}"/>` +
+        [[-0.4, -0.45], [0.1, -0.62], [0.45, -0.35]].map(([dx, dy]) => `<circle cx="${f1(cx + dx * r)}" cy="${f1(cy - h + dy * r)}" r="${f1(r * 0.1)}" fill="#ffffff" opacity="0.8"/>`).join("");
+      return obj(`mushroom ${i + 1}`, y, `<ellipse class="fumes" cx="${f1(x)}" cy="${f1(y - hs * 0.8)}" rx="${f1(cr * 2.2)}" ry="${f1(cr * 1.7)}" fill="${col}" opacity="0.18">` +
+        slow(i / 8, `<animate attributeName="opacity" values="0.1;0.3;0.1" dur="4s" repeatCount="indefinite"/>`) + `</ellipse>` +
+        cap(x + cr * 1.1, y + 2 * z, cr * 0.45, hs * 0.45) + cap(x, y, cr, hs) + cap(x - cr * 0.9, y + 3 * z, cr * 0.35, hs * 0.32) +
+        `<g class="fumes">` + [0, 1, 2].map(n => `<circle cx="${f1(x + (n - 1) * cr * 0.4)}" cy="${f1(y - hs - cr)}" r="${f1(1.6 * z)}" fill="${col}" opacity="0">` +
+          slow(n / 3 + i / 8, `<animate attributeName="cy" values="${f1(y - hs - cr)};${f1(y - hs - cr - 60 * z)}" dur="5s" repeatCount="indefinite"/>`) +
+          slow(n / 3 + i / 8, `<animate attributeName="opacity" values="0;0.9;0" dur="5s" repeatCount="indefinite"/>`) + `</circle>`).join("") + `</g>`);
+    }).join("");
+  });
+  // the ceiling: the near rock over the room, its edge the vault; its style hanging from it (behind the friend: it hangs
+  // above them, at the back)
+  s += SEP + part("caveroom-roof-" + roofSty, [c.F, sceneLfoKey(o, "slow"), sceneLfoKey(o, "fast")], () => {
+    const xs = n => [...Array(n)].map((_, i) => x0 + W * (i + 0.15 + 0.7 * R(i, 4860 + n)) / n);
+    let t = `<defs>${grad("bg-caveroom-roof", "#17141b", "#2a2530", y0 - pad, y0 + 130 * k)}</defs>` +
+            `<path d="M${P(x0 - pad, y0 - pad)} L${P(x1 + pad, y0 - pad)} L${P(x1 + pad, vault[vault.length - 1][1])} ${caveSmooth([...vault].reverse(), P).replace(/^M/, "L")} L${P(x0 - pad, vault[0][1])} Z" fill="url(#bg-caveroom-roof)"/>` +
+            `<path d="${caveSmooth(vault, P)}" fill="none" stroke="#4a4354" stroke-width="${f1(3 * k)}" stroke-linejoin="round" opacity="0.8"/>`, f = "";
+    if (roofSty === "stalactites") xs(22).forEach((x, i) => {
+      const top = caveAlong(vault, x) - 6 * k, len = (24 + 80 * R(i, 4865)) * k, w = (7 + 9 * R(i, 4866)) * k;
+      f += `<path d="M${P(x - w, top)} L${P(x + w, top)} Q${P(x + w * 0.3, top + len * 0.6)} ${P(x, top + len)} Q${P(x - w * 0.3, top + len * 0.6)} ${P(x - w, top)} Z" fill="#4e4759" stroke="#2a2630" stroke-width="${f1(1.5 * k)}"/>` +
+           `<path d="M${P(x - w * 0.5, top + 4 * k)} Q${P(x - w * 0.2, top + len * 0.6)} ${P(x, top + len)}" fill="none" stroke="#6f667b" stroke-width="${f1(1.5 * k)}"/>`;
+      if (i % 4 === 1) f += `<circle cx="${f1(x)}" cy="${f1(top + len)}" r="${f1(2 * k)}" fill="#bfeaff">` +
+        fast(i / 22, `<animate attributeName="cy" values="${f1(top + len)};${f1(top + len + 60 * k)}" dur="1.2s" repeatCount="indefinite"/>`) +
+        fast(i / 22, `<animate attributeName="opacity" values="1;1;0" keyTimes="0;0.7;1" dur="1.2s" repeatCount="indefinite"/>`) + `</circle>`;
+    });
+    else if (roofSty === "straws") xs(46).forEach((x, i) => {
+      const top = caveAlong(vault, x) - 4 * k, len = (14 + 46 * R(i, 4867)) * k;
+      f += `<line x1="${f1(x)}" y1="${f1(top)}" x2="${f1(x + (R(i, 4868) - 0.5) * 3 * k)}" y2="${f1(top + len)}" stroke="#d8cdb8" stroke-width="${f1(2.6 * k)}" stroke-linecap="round" opacity="0.85"/>` +
+           `<circle cx="${f1(x)}" cy="${f1(top + len + 2 * k)}" r="${f1(1.8 * k)}" fill="#e6f8ff">` + fast(i / 46, `<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/>`) + `</circle>`;
+    });
+    else if (roofSty === "curtains") xs(7).forEach((x, i) => {
+      // draperies: a sheet of rock hanging from the vault, its hem waving, banded light and dark (the "bacon" a cave grows)
+      const top = caveAlong(vault, x) - 6 * k, wd = (40 + 30 * R(i, 4869)) * k, len = (60 + 70 * R(i, 4870)) * k, n = 6;
+      const hem = [...Array(n + 1)].map((_, j) => { const u = 1 - j / n; return [x - wd / 2 + wd * u, top + len * (0.75 + 0.25 * Math.sin(u * Math.PI)) + (j % 2 ? 9 : -5) * k]; });
+      f += `<path d="M${P(x - wd / 2, top)} L${P(x + wd / 2, top)} ${caveSmooth(hem, P).replace(/^M/, "L")} Z" fill="#a8774e" stroke="#5e3f26" stroke-width="${f1(1.5 * k)}" opacity="0.88"/>` +
+           [0.2, 0.4, 0.6, 0.8].map((u, j) => `<line x1="${f1(x - wd / 2 + wd * u)}" y1="${f1(top)}" x2="${f1(x - wd / 2 + wd * u)}" y2="${f1(top + len * (0.7 + 0.2 * Math.sin(u * Math.PI)))}" stroke="${j % 2 ? "#7a4f2e" : "#ecd6b4"}" stroke-width="${f1(3 * k)}" opacity="0.7"/>`).join("");
+    });
+    else if (roofSty === "crack") {
+      // a crack in the vault, daylight through it; its beam down to the floor, motes drifting in it (the slow LFO), ferns at its edge
+      const cx = 0.16 * W, top = caveAlong(vault, cx), crack = caveFractal([cx - 34 * k, top - 10 * k], [cx + 40 * k, top - 4 * k], 4, 0.25, R, 4871);
+      f += `<defs><linearGradient id="bg-caveroom-beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6d0" stop-opacity="0.45"/><stop offset="1" stop-color="#fff6d0" stop-opacity="0"/></linearGradient></defs>` +
+           `<polygon points="${P2(cx - 30 * k, top)} ${P2(cx + 36 * k, top)} ${P2(cx + 110 * k, g + 40 * k)} ${P2(cx - 60 * k, g + 40 * k)}" fill="url(#bg-caveroom-beam)" pointer-events="none"/>` +
+           `<path d="${caveSmooth(crack, P)} ${caveSmooth([...crack].reverse().map(([x, y], j) => [x, y + (6 + 6 * R(j, 4872)) * k]), P).replace(/^M/, "L")} Z" fill="#fffbe6" stroke="#1a171f" stroke-width="${f1(2 * k)}"/>` +
+           [[-38, 2], [42, 4], [-20, 8]].map(([dx, dy], j) => grassTuft(cx + dx * k, top + dy * k, 12 * k, 4873 + j, "#4f7f3a", 1.4 * k)).join("") +
+           [...Array(9)].map((_, j) => { const mx = cx + (R(j, 4876) - 0.3) * 120 * k, my = top + (g - top) * R(j, 4877);
+             return `<circle cx="${f1(mx)}" cy="${f1(my)}" r="${f1(1.4 * k)}" fill="#fff6d0" opacity="0.7">` + slow(j / 9, `<animate attributeName="cy" values="${f1(my)};${f1(my + 30 * k)};${f1(my)}" dur="7s" repeatCount="indefinite"/>`) + `</circle>`; }).join("");
+      t += floorObj("daylight on the floor", `<ellipse cx="${f1(cx + 25 * k)}" cy="${f1(g + 40 * k)}" rx="${f1(90 * k)}" ry="${f1(18 * k)}" fill="#fff6d0" opacity="0.18" pointer-events="none"/>`);
+    }
+    else if (roofSty === "crystals") xs(14).forEach((x, i) => {
+      // clusters of crystals growing down from the vault and up out of its hollows, each its own size and slant
+      const top = caveAlong(vault, x) - 4 * k + 26 * k * R(i, 4880) * (i % 3 === 2 ? 1 : 0), col = CAVE_GLOWS[i % 5], z = k * (0.55 + 0.75 * R(i, 4878)), tilt = (R(i, 4881) - 0.5) * 40;
+      f += [[-0.6, 22, -34], [-0.2, 30, -10], [0.15, 40, 6], [0.5, 26, 30], [0.85, 16, 52]].slice(0, 3 + (i % 3)).map(([dx, h, a]) => `<polygon points="-5,0 -5,${f1(h - 8)} 0,${f1(h)} 5,${f1(h - 8)} 5,0" fill="${col}" stroke="${mix(col, "#ffffff", 0.5)}" stroke-width="1.2" opacity="0.9" ` +
+             `transform="translate(${f1(x + dx * 16 * z)} ${f1(top)}) rotate(${f1(a + tilt)}) scale(${z.toFixed(3)})"/>`).join("") +
+           `<circle cx="${f1(x)}" cy="${f1(top + 30 * k)}" r="${f1(2.2 * k)}" fill="#ffffff">` + fast(i / 18, `<animate attributeName="opacity" values="0;1;0" dur="1.6s" repeatCount="indefinite"/>`) + `</circle>`;
+    });
+    else xs(30).forEach((x, i) => {
+      // glowworms: threads of silk hanging, beads of light along them, glowing in turn (the slow LFO)
+      const top = caveAlong(vault, x) - 4 * k, len = (20 + 80 * R(i, 4879)) * k;
+      f += `<line x1="${f1(x)}" y1="${f1(top)}" x2="${f1(x)}" y2="${f1(top + len)}" stroke="#cfe" stroke-width="${f1(0.8 * k)}" opacity="0.45"/>` +
+           [0.3, 0.55, 0.8, 1].map((u, j) => `<circle cx="${f1(x)}" cy="${f1(top + len * u)}" r="${f1((1 + 0.6 * j) * k)}" fill="#7dfcd2" opacity="0.8">` +
+             (j === 3 ? slow(i / 30, `<animate attributeName="opacity" values="0.3;1;0.3" dur="4s" repeatCount="indefinite"/>`) : "") + `</circle>`).join("");
+    });
+    // two bats asleep, whatever the style
+    f += caveBatSvg(-0.22 * W, caveAlong(vault, -0.22 * W) - 2 * k, k, 0) + caveBatSvg(0.33 * W, caveAlong(vault, 0.33 * W) - 2 * k, k, 1);
+    return t + wallObj(`the ceiling's ${CAVE_CEILINGS.find(([v]) => v === roofSty)[1].replace(/^\S+\s/, "")}`, f);
+  });
+  // the dark at the picture's edges, over everything: a cave lit only by what glows in it
+  s += SEP + part("caveroom-dark", c.F, () => obj("the dark", Infinity, `<defs><radialGradient id="bg-caveroom-dark" cx="0.5" cy="0.55" r="0.75"><stop offset="0.55" stop-color="#07060a" stop-opacity="0"/>` +
+    `<stop offset="1" stop-color="#07060a" stop-opacity="0.6"/></radialGradient></defs><rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="url(#bg-caveroom-dark)" pointer-events="none"/>`));
   return s;
 }
 
@@ -2119,7 +2365,7 @@ function crossingScene(c) {
 }
 const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, hutcenter: hutcenterScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
+                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width
