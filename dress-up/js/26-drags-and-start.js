@@ -1782,7 +1782,8 @@ backBtn.addEventListener("click", () => {
   if (entering || !last) return;
   flyInto(backBtn.getBoundingClientRect(), () => {
     trips.pop();
-    if (last.worldAt) worldEnter(last.worldAt, null, false);   // (ticket 185: back to the square left, its own things and paths)
+    // (ticket 185: back to the square left, its own things and paths; ticket 406: in the world left)
+    if (last.worldAt) { if (last.worldId && state.world.id !== last.worldId && worldById(last.worldId)) worldSwitch(last.worldId, last.worldAt, null, false); else worldEnter(last.worldAt, null, false); }
     Object.assign(state.background, { kind: last.kind, figX: last.figX, figY: last.figY });
     if (last.inside) state.background.inside = last.inside;
     if (last.tent) state.background.tent = last.tent;

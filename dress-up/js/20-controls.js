@@ -1611,7 +1611,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const nearChip = el("button", { class: "flip", title: "＋ and － add or take away at the left and top edges instead of the right and bottom", onclick: () => { worldNearEdge = !worldNearEdge; sizeWords(); } }, "↖️ left and top edges");
     sizeWords();
     const sizes = el("div", { class: "row" }, [...sizeBtns, nearChip,
-      el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { instanceUnapply(state.world); state.world = clone(DEFAULTS.world); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
+      el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { instanceUnapply(state.world); worldsInit(); const { id, name } = state.world;   // (ticket 406: this world again, still itself; the other worlds' links into it go)
+          for (const w of Object.values(state.worldsAway)) for (const c of Object.values(w.cells)) for (const [d, L] of Object.entries(c.links || {})) if (L.world === id) delete c.links[d];
+          state.world = Object.assign(clone(DEFAULTS.world), { id, name }); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
     const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint" });
     // (ticket 195, M) every neighbour joined that can be
     const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself), and take away every way that leads off the map's edge",
@@ -1636,11 +1638,73 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       palette.append(row);
     }
     let shown = null;
+    // (ticket 406) the worlds' box and the links' editor: which way, which world (UI only, kept while the game is open)
+    const worldsBox = el("div", { class: "world-worlds" });
+    let linkOpen = false, linkDir = null, linkWorld = null, newTpl = "first";
+    // (ticket 406) this square's ways linked to squares of worlds: a toggle, off to start; open, a way to choose (a compass),
+    // a world (its chips), then a square on that world's grid drawn small (each square its emoji and its name, A1...):
+    // tapped, the way leads there, and that square's way back leads here. Each link listed, ✖ to take it off.
+    const linksEditor = (W, at) => {
+      const links = Object.entries(at.links || {}), wrap = el("div", { class: "world-links" });
+      const list = links.map(([d, L]) => { const T = worldById(L.world), ok = T && T.cells[L.key];
+        return el("div", { class: "row world-link" }, [el("span", {}, `${WORLD_ARROWS[d]} ${d} → ${ok ? (T === W ? "" : "🌍 " + worldTitle(T) + ": ") + worldName(T, L.key) + " (" + squareName(L.key) + ")" : "🚧 gone"}`),
+          el("button", { class: "world-unlink", title: "Take this link off (and the link back)", onclick: () => { worldUnlinkAt(W, W.at, d); changed(); } }, "✖")]); });
+      wrap.append(el("div", { class: "row" }, [el("button", { class: "flip world-links-toggle", "aria-pressed": String(linkOpen),
+        title: "Link a way out of this square to a square of another world (or of this one): walking out that way leads there",
+        onclick: () => { linkOpen = !linkOpen; shown = null; render(); } }, `🌍 ways to other worlds${links.length ? " (" + links.length + ")" : ""}`)]), ...list);
+      if (!linkOpen) return wrap;
+      const dirs = Object.keys(WORLD_DIRS).filter(d => !worldNoWay(at.kind, d));
+      if (!dirs.includes(linkDir)) linkDir = dirs[0] || null;
+      const worlds = worldsAll();
+      if (!worlds.some(w => w.id === linkWorld)) linkWorld = (worlds.find(w => w !== W) || W).id;
+      const T = worldById(linkWorld);
+      wrap.append(el("div", { class: "hint" }, "1. the way out:"), el("div", { class: "world-compass world-link-compass" }, ["NW", "N", "NE", "W", null, "E", "SW", "S", "SE"].map(d => d === null
+          ? el("span", { class: "world-compass-mid", title: placeName(at.kind) }, placeName(at.kind).split(" ")[0])
+          : el("button", { "aria-pressed": String(d === linkDir), "data-link-dir": d, ...(dirs.includes(d) ? {} : { disabled: "" }), class: at.links && at.links[d] ? "linked" : "",
+                           onclick: () => { linkDir = d; shown = null; render(); } }, WORLD_ARROWS[d]))),
+        el("div", { class: "hint" }, "2. the world:"), el("div", { class: "row" }, worlds.map(w => el("button", { "aria-pressed": String(w.id === linkWorld), "data-link-world": w.id,
+          onclick: () => { linkWorld = w.id; shown = null; render(); } }, "🌍 " + worldTitle(w) + (w === W ? " (this one)" : "")))),
+        el("div", { class: "hint" }, "3. the square it leads to:"));
+      if (T) {
+        const mini = el("div", { class: "world-mini" });
+        mini.style.setProperty("--cols", T.cols);
+        for (let r = 0; r < T.rows; r++) for (let c = 0; c < T.cols; c++) {
+          const key = c + "," + r, cell = T.cells[key], cur = at.links && at.links[linkDir], chosen = cur && cur.world === T.id && cur.key === key;
+          const self = T === W && key === W.at, noBack = cell && worldNoWay(cell.kind, WORLD_OPP[linkDir]);
+          mini.append(cell && !self && !noBack
+            ? el("button", { class: "world-mini-cell" + (chosen ? " chosen" : ""), "data-link-to": key, title: `${squareName(key)}: ${worldName(T, key)}`,
+                             onclick: () => { if (linkDir && worldLink(linkDir, T.id, key)) { shown = null; render(); } } }, [el("span", {}, placeName(cell.kind).split(" ")[0]), el("small", {}, squareName(key))])
+            : el("span", { class: "world-mini-cell empty", title: squareName(key) + (self ? ": this square" : cell ? ": no way back that side" : ": empty") }, self ? "📍" : squareName(key)));
+        }
+        wrap.append(mini);
+      }
+      return wrap;
+    };
+    // (ticket 406) the worlds: one chip each (tapped, the friend goes there); this world's name; a new world from a template;
+    // this world kept as a template; this world taken away (never the last)
+    const worldsRender = () => {
+      const W = state.world, all = worldsAll();
+      const nameBox = el("input", { type: "text", maxlength: String(WORLD_NAME_MAX), size: "14", value: String(W.name || ""), placeholder: "world " + worldNum(W), "aria-label": "this world's name",
+        onchange: e => { const v = e.target.value.trim().slice(0, WORLD_NAME_MAX); W.name = v; changed(); } });
+      const tpls = worldTemplatesAll();
+      if (!tpls.some(t => t.id === newTpl)) newTpl = tpls[0].id;
+      const pick = el("select", { "aria-label": "the template for a new world", onchange: e => { newTpl = e.target.value; } }, tpls.map(t => el("option", { value: t.id, ...(t.id === newTpl ? { selected: "" } : {}) }, t.name)));
+      worldsBox.replaceChildren(el("div", { class: "cap" }, "🌍 worlds"),
+        el("div", { class: "row world-chips" }, all.map(w => el("button", { class: "world-world", "aria-pressed": String(w === W), "data-world": w.id,
+          title: w === W ? "The world the friend is in" : "Go to this world", onclick: () => { if (w !== W) worldSwitch(w.id); } }, "🌍 " + worldTitle(w)))),
+        el("label", { class: "row world-name-row" }, [el("span", { class: "hint" }, "✏️ this world's name:"), nameBox]),
+        el("div", { class: "row" }, [el("span", { class: "hint" }, "➕ a new world from"), pick, el("button", { class: "world-new", onclick: () => worldNew(newTpl) }, "➕ new world")]),
+        el("div", { class: "row" }, [el("button", { class: "world-keep-tpl", title: "Keep this world, its squares and things, as a template for new worlds", onclick: () => worldKeepTemplate() }, "📐 keep this world as a template"),
+          ...(all.length > 1 ? [el("button", { class: "world-drop", title: "Take this world away, and every link into it", onclick: () => { if (confirm(`Take ${worldTitle(W)} away, with its squares and the things in them, and every way linked into it? This can't be undone.`)) worldDrop(); } }, "🗑️ take this world away")] : [])]));
+    };
     const render = () => {
+      worldsInit();
       const W = state.world, P = worldProblems(W), at = W.at && W.cells[W.at];
-      const sig = JSON.stringify([state.background.kind, W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown, (W.unreachable || []).map(u => [u.kind, u.from, u.name || ""])]);
+      const sig = JSON.stringify([W.id, worldsAll().map(w => [w.id, worldTitle(w), w.cols, w.rows, Object.entries(w.cells).map(([k, c]) => [k, c.kind, c.name || "", c.links || null])]), Object.keys(state.worldTemplates),
+        linkOpen, linkDir, linkWorld, newTpl, state.background.kind, W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown, (W.unreachable || []).map(u => [u.kind, u.from, u.name || ""])]);
       if (sig === shown) return;
       shown = sig;
+      worldsRender();
       const bad = worldWarnShown ? worldFixSquares(W, P) : new Set();   // (ticket 191: red where a fix is suggested)
       grid.style.setProperty("--cols", W.cols); grid.style.setProperty("--rows", W.rows);   // (ticket 210: the squares' size, from the room, in the stylesheet)
       // (ticket 224, Matthew: "in FS mode for world design, let's show A, B, C ... and 1, 2, 3 as the row and column
@@ -1655,13 +1719,14 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         const b = el("button", { class: "world-cell" + (bad.has(key) ? " bad" : "") + (W.at === key ? " here" : "") + (W.start === key ? " start" : ""), "data-square": key, "data-kind": cell.kind,
                                  title: `${squareName(key)}: ${own ? own + " (" + name + ")" : name}` + (ways.length ? ", ways out " + ways.map(d => WORLD_ARROWS[d]).join(" ") : "") + ". Tap to go there; drag to move it.",
                                  onclick: () => worldEnter(key) },
-                     [el("span", { class: "world-emoji" }, emoji), el("span", { class: "world-name" }, own || words.join(" ")), ...ways.map(d => el("span", { class: "world-way w-" + d }, ""))]);
+                     [el("span", { class: "world-emoji" }, emoji), el("span", { class: "world-name" }, own || words.join(" ")), ...ways.map(d => el("span", { class: "world-way w-" + d + (cell.links && cell.links[d] ? " linked" : "") }, ""))]);
         pressDrag(b, () => emoji, { onDrop: under => { if (!under || !under.closest) return; if (under.closest(".world-trash")) worldRemove(key); else { const sq = under.closest("[data-square]"); if (sq) worldMove(key, sq.dataset.square); } } });
         return b;
       }).flatMap((sq, i) => i % W.cols ? [sq] : [lab("row", String(i / W.cols + 1)), sq]));
       // the square the friend is in: its ways out (a forest crossing's are its paths), the start
       if (at && at.kind === state.background.kind) {
         const ways = worldWays(at), fix = worldWarnShown ? worldWaysToToggle(W, W.at) : { on: [], off: [] }, toggle = d => () => {
+          if (at.links && at.links[d]) { worldUnlinkAt(W, W.at, d); changed(); return; }   // (ticket 406: a linked way off: its link, and the link back, go)
           if (at.kind === "crossing") state.background["cross" + d] = !state.background["cross" + d];   // (its paths, which worldKeep keeps in its square)
           else at.ways = ways.includes(d) ? ways.filter(x => x !== d) : [...ways, d].sort((x, y) => Object.keys(WORLD_DIRS).indexOf(x) - Object.keys(WORLD_DIRS).indexOf(y));
           changed();
@@ -1698,7 +1763,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
               // again only when the world changes; the chips shown chosen as they are clicked)
               onclick: e => { state.background.crossBack = v; for (const b of e.currentTarget.parentNode.querySelectorAll("[data-back]")) b.setAttribute("aria-pressed", String(b.dataset.back === v)); changed(); } }, name))])] : []),
           probs,
-          el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]));
+          el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]),
+          linksEditor(W, at));
       } else {
         // (ticket 210, Matthew) the picture shows a place that is not the square the friend is in (one chosen in
         // 🏞️ Background, or not on the grid yet): say so, and where it is on the grid if it is there
@@ -1748,7 +1814,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { class: "eye", onclick: () => worldViewShow(worldViewHidden) }, "👁️"), el("span", { class: "hint" }, "📺 in-game view")]), el("div", { class: "world-view-pic" })]);
     worldViewMark(view);
     const layout = el("div", { class: "world-layout" }, [
-      el("div", { class: "world-rest" }, [view, notHere, warnings, palette, el("div", { class: "world-sizes" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
+      el("div", { class: "world-rest" }, [view, worldsBox, notHere, warnings, palette, el("div", { class: "world-sizes" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
       split, gridcol]);
     designerSplit(layout, split, "dress-up-world-split");
     box.append(el("div", { class: "hint world-intro" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."), layout);

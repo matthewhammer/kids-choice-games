@@ -50,7 +50,8 @@ const worldWays = cell => !cell ? [] : (cell.kind === "crossing" ? CROSS_DIRS.ma
 function worldLiveWays(W, key) {
   const cell = W.cells[key], ways = worldWays(cell);
   if (!cell || cell.kind !== "crossing") return ways;
-  return ways.filter(d => { const nb = worldNeighbour(W, key, d), other = W.cells[nb.key]; return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]); });
+  return ways.filter(d => { if (cell.links && cell.links[d]) return !!worldTarget(W, key, d);   // (ticket 406: a way to another world leads somewhere)
+    const nb = worldNeighbour(W, key, d), other = W.cells[nb.key]; return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]); });
 }
 const placeName = kind => (PLACES.find(p => p[0] === kind) || [kind, kind])[1];
 // a square's name, as on a map: a letter for the column, a number for the row
@@ -83,6 +84,7 @@ function worldWaysToToggle(W, key, now = worldProblems(W).length) {
   const ways = worldWays(cell);
   for (const d of Object.keys(WORLD_DIRS)) {
     const isOn = ways.includes(d);
+    if (cell.links && cell.links[d]) continue;   // (ticket 406: a way linked to another world is the designer's, not a mistake to toggle)
     if (!isOn && (worldOffMap(W, key, d) || worldNoWay(cell.kind, d))) continue;
     const c2 = cell.kind === "crossing" ? { ...cell, ["cross" + d]: !isOn } : { ...cell, ways: isOn ? ways.filter(x => x !== d) : [...ways, d] };
     if (worldProblems({ ...W, cells: { ...W.cells, [key]: c2 } }).length < now) out[isOn ? "off" : "on"].push(d);
@@ -144,6 +146,8 @@ function worldProblems(W) {
     const cell = W.cells[key];
     if (INSIDE_KINDS.has(cell.kind)) P.push({ key, text: `${name(key)} is an inside: put its outside on the grid instead, and it comes with it.` });
     for (const d of cell.kind === "crossing" ? worldLiveWays(W, key) : worldWays(cell)) {   // (a crossing's dead ends are no mistake: not drawn)
+      // (ticket 406: a way linked to a square of a world leads there, if that world and square are still there)
+      if (cell.links && cell.links[d]) { if (!worldTarget(W, key, d)) P.push({ key, dir: d, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} is linked to a world or a square that is gone.` }); continue; }
       const nb = worldNeighbour(W, key, d), other = W.cells[nb.key];
       if (nb.off) P.push({ key, dir: d, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} leads off the map.` });
       else if (!other) P.push({ key, dir: d, to: nb.key, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} leads to an empty square, ${squareName(nb.key)}.` });
@@ -315,7 +319,7 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const W = state.world, cell = W && W.at && W.cells[W.at];
   if (!cell || cell.kind !== B.kind) return insideWaysSvg(B, x0, y0, x1, y1);
   const ways = worldLiveWays(W, W.at);
-  const meets = d => { const key = worldMeets(W, W.at, d); return key ? W.cells[key] : null; }, names = worldNames(W);
+  const target = d => worldTarget(W, W.at, d);   // (ticket 406: the square beside it, or a square of a world it is linked to)
   const k = (y1 - y0) / 700;
   // (a forest crossing's at its own paths' ends: crossGeom; any other place's at its far ground and sides)
   const G = B.kind === "crossing" ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;
@@ -328,7 +332,7 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const homes = Object.fromEntries(Object.entries(AT).map(([d, [x, y]]) => [d, [x, y]]));
   waysSpaced(AT, k);   // (ticket 313)
   wayHomes = homes;   // (ticket 369: where each way stands on the floor, as before the spacing)
-  worldWaysAt = ways.map(d => [d, ...AT[d], meets(d), meets(d) ? names[worldMeets(W, W.at, d)] : null]);
+  worldWaysAt = ways.map(d => { const t = target(d); return [d, ...AT[d], t ? t.cell : null, worldTargetName(t)]; });
   worldWaysHud();
   if (!ways.length) return "";
   const sig = worldWaysAt.map(([d, , , , to, nm]) => d + (to ? to.kind + ":" + nm : "-")).join();
@@ -783,15 +787,141 @@ function waysApart(ws, box, sc = 1) {
     }
   }
 }
+// (ticket 406, Matthew: "a default world: the current one; a set of world templates, starting with the default world; a set
+// of world instances, at first just the default world, called start; any other instance can be given a name, and is
+// otherwise 'world N' for a fresh N; each world has its own squares, and worlds connect through special nav arrows (a toggle,
+// off by default) that link to any nav arrow as its neighbor, chosen by the designer: which world instance, and where in it
+// this square should be imagined as overlaying, as a neighbor: a grid position chosen graphically on a small version of that
+// instance's world grid, labelled but with minimal detail") Many worlds. `state.world` is the world the friend is in, as
+// always (every designer above works on it unchanged), now with an `id` ("w1" for the first) and a `name` ("start"; empty:
+// "world N", N from its id); the others wait in `state.worldsAway`, by id. Going to another world keeps the square left
+// (worldKeep), takes its own settings off the place (instanceUnapply), swaps the two, and enters the other at its square.
+// A world is made from a template: the first world as the game lays it out, one square of the empty room, or a world kept
+// as one (`state.worldTemplates`, by id). A way can be linked to a square of any world (`cell.links[d] = { world, key }`):
+// walking out that way leads there, come in from the side facing back, as if that square were the neighbour on this side;
+// a link is made both ways (the square there gets the way back, linked here), so there is always a way back.
+const WORLD_FIRST = "w1";
+function worldsInit(S = state) {
+  const W = S && S.world;
+  if (!W) return;
+  if (!W.id) W.id = WORLD_FIRST;
+  if (W.id === WORLD_FIRST && W.name === undefined) W.name = "start";
+  if (!S.worldsAway || typeof S.worldsAway !== "object" || Array.isArray(S.worldsAway)) S.worldsAway = {};
+  if (!S.worldTemplates || typeof S.worldTemplates !== "object" || Array.isArray(S.worldTemplates)) S.worldTemplates = {};
+}
+const worldNum = W => +String(W.id || "").replace(/\D/g, "") || 1;
+const worldTitle = W => String(W.name || "").trim() || "world " + worldNum(W);
+function worldsAll() { worldsInit(); return [state.world, ...Object.values(state.worldsAway)].sort((a, b) => worldNum(a) - worldNum(b)); }
+function worldById(id) { worldsInit(); return state.world.id === id ? state.world : state.worldsAway[id] || null; }
+// where a way leads: the square of a world it is linked to, or else the square beside it, when that has a way back; null
+// when it leads nowhere
+function worldTarget(W, key, d) {
+  const cell = W && W.cells[key], L = cell && cell.links && cell.links[d];
+  if (L) { const T = worldById(L.world), c = T && T.cells[L.key]; return c ? { W: T, key: L.key, cell: c, link: true } : null; }
+  const m = worldMeets(W, key, d);
+  return m ? { W, key: m, cell: W.cells[m], link: false } : null;
+}
+// (its words on the arrow: the square's name, and the world's, when it is another)
+const worldTargetName = t => !t ? null : t.W !== state.world ? `🌍 ${worldTitle(t.W)}: ${worldName(t.W, t.key)}` : worldName(t.W, t.key);
+// to another world, at its square (or where the friend was in it, or its start); from a side when walking in
+function worldSwitch(id, key = null, side = null, draw = true) {
+  worldsInit();
+  const from = state.world;
+  if (from.id === id) { if (key && from.cells[key]) worldEnter(key, side, draw); return; }
+  const to = state.worldsAway[id];
+  if (!to) return;
+  worldKeep();
+  instanceUnapply(from);
+  state.worldsAway[from.id] = from; delete state.worldsAway[id];
+  state.world = to;
+  const at = key && to.cells[key] ? key : to.cells[to.at] ? to.at : to.start;
+  if (to.cells[at]) worldEnter(at, key ? side : null, draw); else if (draw) changed();
+}
+const WORLD_SMALL = { cols: 3, rows: 3, start: "1,1", cells: { "1,1": { kind: "emptyroom", ways: [] } } };
+function worldTemplatesAll() {
+  worldsInit();
+  return [{ id: "first", name: "🗺️ the first world", world: WORLD_DEFAULT }, { id: "small", name: "🔲 one square: the empty room", world: WORLD_SMALL },
+          ...Object.entries(state.worldTemplates).map(([id, t]) => ({ id, name: "📐 " + t.name, world: t.world }))];
+}
+// (a world's copy for a new world or a template: its squares and things, never its links, which pair with other worlds)
+function worldCopy(W) {
+  const c = clone(W);
+  for (const k of ["id", "name", "applied", "tpl", "at"]) delete c[k];
+  for (const cell of Object.values(c.cells || {})) delete cell.links;
+  return c;
+}
+function worldNew(tplId) {
+  const all = worldTemplatesAll(), T = all.find(t => t.id === tplId) || all[0], n = 1 + Math.max(0, ...worldsAll().map(worldNum));
+  const W = Object.assign(worldCopy(T.world), { id: "w" + n, name: "" });
+  W.at = W.start;
+  state.worldsAway[W.id] = W;
+  worldSwitch(W.id);
+  return W.id;
+}
+function worldKeepTemplate() {
+  worldsInit(); worldKeep();
+  const n = 1 + Math.max(0, ...Object.keys(state.worldTemplates).map(k => +k.replace(/\D/g, "") || 0));
+  state.worldTemplates["t" + n] = { name: worldTitle(state.world), world: worldCopy(state.world) };
+  changed();
+  return "t" + n;
+}
+// (this world taken away, never the last: the links into it from the others go too)
+function worldDrop() {
+  const all = worldsAll(), gone = state.world;
+  if (all.length < 2) return false;
+  const next = all.find(w => w !== gone);
+  for (const w of all) for (const c of Object.values(w.cells)) for (const [d, L] of Object.entries(c.links || {})) if (L.world === gone.id) delete c.links[d];
+  instanceUnapply(gone);
+  delete state.worldsAway[next.id];
+  state.world = next;
+  const at = next.cells[next.at] ? next.at : next.start;
+  if (next.cells[at]) worldEnter(at); else changed();
+  return true;
+}
+// (a square's way on: its ways, or a crossing's path; for the square shown, its place's settings too)
+function worldWayOn(W, key, d) {
+  const c = W.cells[key];
+  if (!c) return;
+  if (c.kind === "crossing") { c["cross" + d] = true; if (W === state.world && W.at === key && state.background.kind === "crossing") state.background["cross" + d] = true; }
+  else if (!worldWays(c).includes(d)) { const order = Object.keys(WORLD_DIRS); c.ways = order.filter(x => x === d || (c.ways || []).includes(x)); }
+}
+function worldWayOff(W, key, d) {
+  const c = W.cells[key];
+  if (!c) return;
+  if (c.kind === "crossing") { c["cross" + d] = false; if (W === state.world && W.at === key && state.background.kind === "crossing") state.background["cross" + d] = false; }
+  else c.ways = (c.ways || []).filter(x => x !== d);
+}
+// a link taken off one way, and the link back from where it led; the ways stay where they still meet a square beside them
+function worldUnlinkAt(W, key, d) {
+  const c = W.cells[key], L = c && c.links && c.links[d];
+  if (!L) return;
+  delete c.links[d];
+  if (!worldMeets(W, key, d)) worldWayOff(W, key, d);
+  const T = worldById(L.world), tc = T && T.cells[L.key], back = WORLD_OPP[d], LB = tc && tc.links && tc.links[back];
+  if (LB && LB.world === W.id && LB.key === key) { delete tc.links[back]; if (!worldMeets(T, L.key, back)) worldWayOff(T, L.key, back); }
+}
+// the way d out of the square the friend is in, linked to a square of a world; and that square's way back, linked here
+function worldLink(d, worldId, key) {
+  worldsInit();
+  const W = state.world, here = W.at, cell = W.cells[here], T = worldById(worldId), tc = T && T.cells[key], back = WORLD_OPP[d];
+  if (!WORLD_DIRS[d] || !cell || !tc || (T === W && key === here) || worldNoWay(cell.kind, d) || worldNoWay(tc.kind, back)) return false;
+  worldUnlinkAt(W, here, d);
+  worldUnlinkAt(T, key, back);
+  cell.links = { ...(cell.links || {}), [d]: { world: T.id, key } }; worldWayOn(W, here, d);
+  tc.links = { ...(tc.links || {}), [back]: { world: W.id, key: here } }; worldWayOn(T, key, back);
+  changed();
+  return true;
+}
 // a way out taken: the friend walks to it, then is in the square beside
 // it, come in from the side it leads to; the back chip can bring them back
 // (stepping through it its own way, facing it: east, to the right; here: from an edge, where they stand)
 function worldWalk(door, here = false) {
-  const W = state.world, d = door.dataset.way, nb = worldNeighbour(W, W.at, d), other = W.cells[nb.key], B = state.background;
-  if (nb.off || !other) return;
-  const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: other.kind, worldAt: W.at };
+  const W = state.world, d = door.dataset.way, t = worldTarget(W, W.at, d), B = state.background;
+  if (!t) return;
+  const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: t.cell.kind, worldAt: W.at, worldId: W.id };
   tripStart(door, "walk");
-  walkInto(door, () => { trips.push(from); worldEnter(nb.key, WORLD_OPP[d], false); }, true, "step", null, { out: WORLD_DIRS[d], here });
+  // (ticket 406: through a way linked to another world, into that world, at its square, come in from the side facing back)
+  walkInto(door, () => { trips.push(from); if (t.W !== W) worldSwitch(t.W.id, t.key, WORLD_OPP[d], false); else worldEnter(t.key, WORLD_OPP[d], false); }, true, "step", null, { out: WORLD_DIRS[d], here });
 }
 // and back: the place edited where the friend is, kept in its square
 // (from changed() and settle(): cheap, and only for the place in use).
@@ -818,7 +948,8 @@ function worldKeep() {
   let cell = W.at && W.cells[W.at];
   const adopting = !W.at;
   if (B.kind !== "none" && (!cell || cell.kind !== B.kind)) { const key = worldSquareFor(W, B.kind); if (key) { W.at = key; cell = W.cells[key]; } }
-  const sq = !!cell && cell.kind === B.kind, home = B.kind === "none" ? null : sq ? "sq:" + W.at : "off:" + placeKey(B);
+  worldsInit();
+  const sq = !!cell && cell.kind === B.kind, home = B.kind === "none" ? null : sq ? "sq:" + W.id + ":" + W.at : "off:" + W.id + ":" + placeKey(B);   // (ticket 406: by world, as two worlds have squares of one name)
   if (adopting) worldHome = home;
   if (home !== worldHome) {   // (just come: the place's own things, never those of the place left)
     worldHome = home;
@@ -899,7 +1030,7 @@ function worldTrimEdges(W, keys = worldKeys(W)) {
   for (const key of keys) {
     const c = W.cells[key];
     if (!c || c.kind === "crossing" || !Array.isArray(c.ways)) continue;
-    const keep = c.ways.filter(d => !worldOffMap(W, key, d));
+    const keep = c.ways.filter(d => !worldOffMap(W, key, d) || (c.links && c.links[d]));   // (ticket 406: a linked way leads off this world on purpose)
     gone += c.ways.length - keep.length; c.ways = keep;
   }
   return gone;

@@ -795,3 +795,18 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
 .way-arrow[data-side="right"] .way-words { left: 26px; top: 50%; transform: translateY(-50%); text-align: left; }
 .way-arrow[data-side="below"] .way-words { top: 26px; left: 50%; transform: translateX(-50%); }
 .way-arrow[data-side="above"] .way-words { bottom: 26px; left: 50%; transform: translateX(-50%); }
+
+/* (ticket 406) many worlds: the worlds' chips, and a way linked to another world: on the big grid a 🌍 on its mark; the
+   square to link to picked on that world's grid drawn small, each square its emoji and its name */
+.world-worlds { border: 1px dashed var(--line, #c9c2b4); border-radius: 10px; padding: 6px 8px; margin: 6px 0; }
+.world-worlds .world-chips button[aria-pressed="true"] { font-weight: bold; }
+.world-way.linked::after { content: "🌍"; font-size: 9px; position: absolute; transform: translate(-50%, -50%); }
+.world-links { border: 1px dotted var(--line, #c9c2b4); border-radius: 8px; padding: 4px 6px; margin-top: 6px; }
+.world-link { gap: 6px; align-items: center; }
+.world-link-compass button.linked { outline: 2px dashed #0ea5e9; }
+.world-mini { display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(28px, 44px)); gap: 3px; margin: 4px 0 2px; }
+.world-mini-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 34px; padding: 1px; font-size: 15px; line-height: 1.05; border-radius: 6px; }
+.world-mini-cell small { font-size: 9px; opacity: 0.75; }
+.world-mini-cell.empty { font-size: 9px; opacity: 0.4; border: 1px dashed var(--line, #c9c2b4); }
+.world-mini-cell.chosen { outline: 3px solid #0ea5e9; }
+

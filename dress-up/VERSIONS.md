@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.346 (2026-10-19)
+
+Everything in 0.0.345, with many worlds, linked to each other.
+
+- **Many worlds** (ticket 406): the world you start in is now called **start**, and you can make more. In 🗺️ World design, the new 🌍 worlds box has a chip for each world (tap one to go there), a box for this world's name (a world with no name is "world 2", "world 3"...), ➕ a new world from a template (🗺️ the first world, or 🔲 one square: the empty room), 📐 keep this world as a template (its squares and the things in them), and 🗑️ take this world away (never the last one, and every way linked into it goes too).
+- **Ways to other worlds** (ticket 406): under a square's ways out, "🌍 ways to other worlds" (closed to start) links a way out of this square to a square of any world: choose the way, the world, then the square on that world's grid drawn small. Walking out that way, your friend arrives in that world, at that square, and its way back leads here. The arrow says where it goes (🌍 world 2: 🔲 empty room), the back chip brings you back to the world you left, a linked way has a 🌍 on its square in the grid, and ✖ takes a link off (its way back too). Everything is kept in Save, Load and the autosave.
+
 ## 0.0.345 (2026-10-19)
 
 Everything in 0.0.344, with your friend's own hair when lying on a sleeping bag.
