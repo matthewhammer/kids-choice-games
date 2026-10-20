@@ -133,8 +133,8 @@ function tabDesigner(panel, name) {
   designerSplit(layout, split, "dress-up-tab-split");
   panel.replaceChildren(bar, layout);
 }
-// (ticket 375) ⚙️ Advanced, one long row of seventeen parts till now, in boxes: 🌗 the look, 🏠 this game (its page, its code, its
-// version), 🎮 playing (a pop-up for new versions, the levers), 🧪 tests and timing, 🚀 effects kept off till fast (its long note a
+// (ticket 375) ⚙️ Advanced, one long row of seventeen parts till now, in boxes: 🌗 the look, 🏠 this game (its page, its code, See
+// also, its version), ✈️ without the Internet (ticket 486), 🎮 playing (a pop-up for new versions, the levers), 🧪 tests and timing, 🚀 effects kept off till fast (its long note a
 // hint on the box's name), 📰 what's new (last, as it was)
 function advLayout(panel) {
   const root = panel.querySelector(":scope > .ctl"); if (!root) return;
@@ -145,7 +145,8 @@ function advLayout(panel) {
   const note = kids.find(c => c.classList.contains("hint") && /^🚀/.test(txt(c)));
   const made = [
     box("🌗 the look", pick(c => c.classList.contains("theme-row"))),
-    box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer")))),   // (the version's row by its button: its words come after)
+    box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer") || c.classList.contains("see-also")))),   // (the version's row by its button: its words come after; ticket 474's See also, near the top, between the code and the version)
+    box("✈️ without the Internet", pick(c => c.classList.contains("offline-help"))),   // (ticket 486: adding the game to a device, for airplane mode, near the top where a parent looks)
     box("🎮 playing", pick(c => (c.classList.contains("row") && /^(🔔|🎚️)/.test(txt(c))) || (c.classList.contains("hint") && !/^🚀/.test(txt(c))))),   // (and its note, filled as it is used)
     box("🧪 tests and timing", pick(c => c.classList.contains("perfrow") && /^(🧪|⏱️)/.test(txt(c)))),
     box("🚀 kept off till they are fast", pick(c => c.classList.contains("perfrow")), note ? txt(note).replace(/^🚀\s*/, "") : ""),

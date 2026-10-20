@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.375 (2026-10-20)
+
+Everything in 0.0.374, with two things moved up where you can find them.
+
+- **⚙️ Advanced, near the top:** "✈️ without the Internet", the steps for adding the game to your device, now has a box of its own right after 🏠 this game, instead of at the very bottom. And **See also**, the paper *Languages of Play* (2017), is in 🏠 this game, after the links to the game's page and its code, near the top as it was meant to be (in 0.0.373 and 0.0.374 it had slipped to the bottom box, ⚙️ more).
+
 ## 0.0.374 (2026-10-20)
 
 Everything in 0.0.373, and it works without the Internet.

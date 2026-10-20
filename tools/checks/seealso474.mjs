@@ -21,13 +21,19 @@ try {
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
     state = clone(DEFAULTS); state.music.mute = true; changed(); await w(300);
     tab = TABS.findIndex(t => t[1] === "advanced"); showTab(); await w(300);
-    const row = document.querySelector("#panel .see-also"), rows = [...document.querySelectorAll("#panel .row")];
+    const row = document.querySelector("#panel .see-also");
     const links = row ? [...row.querySelectorAll("a")].map(a => [a.textContent, a.href]) : [];
-    const verRow = rows.findIndex(x => x.querySelector(".newer"));
-    return JSON.stringify({ row: !!row, text: row ? row.textContent : "", links, at: rows.indexOf(row), verRow }); })()`));
+    // (0.0.373's run caught it: ⚙️ Advanced sorts its rows into boxes (advLayout, ticket 375), and See also fell into ⚙️ more, the
+    // last; near the top is the 🏠 this game box, after the links to the game's page and code, before the version)
+    const code = [...document.querySelectorAll("#panel a")].find(a => /this game's code/.test(a.textContent)), ver = (document.querySelector("#panel button.newer") || {}).parentElement;
+    const before = (a, b) => !!(a && b && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING));
+    const boxOf = n => n && n.closest(".advbox"), name = n => boxOf(n) ? boxOf(n).querySelector(".box-name").textContent : null;
+    return JSON.stringify({ row: !!row, text: row ? row.textContent : "", links, box: name(row), boxes: [...document.querySelectorAll("#panel .advbox .box-name")].map(h => h.textContent),
+      sameBox: !!row && boxOf(row) === boxOf(code) && boxOf(row) === boxOf(ver), afterCode: before(code, row), beforeVersion: before(row, ver) }); })()`));
   console.log(`  ${JSON.stringify(r)}`);
   ok("⚙️ Advanced has a See also row", r.row && /See also/.test(r.text), r);
-  ok("near the top: before the version row", r.at >= 0 && r.verRow > r.at, r);
+  ok("near the top: in 🏠 this game, the second box", /this game/.test(r.box || "") && r.boxes.indexOf(r.box) === 1, r);
+  ok("after the links to the game's page and code, before the version", r.sameBox && r.afterCode && r.beforeVersion, r);
   ok("the paper's title and year, linked to arXiv", r.links.length >= 1 && /Languages of Play: Towards Semantic Foundations For Game Interfaces \(2017\)/.test(r.links[0][0]) && r.links[0][1] === "https://arxiv.org/abs/1703.05410", r.links);
   ok("its authors", /Chris Martens and Matthew A\. Hammer/.test(r.text), r.text);
   ok("its HTML version, after the citation", r.links.length === 2 && r.links[1][1] === "https://arxiv.org/html/1703.05410v1", r.links);
