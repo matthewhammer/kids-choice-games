@@ -74,9 +74,12 @@ function armsFill(id, shape, WC, mirror = false, emblemAt = null, k = 1, mid = e
 // peak is a larger triangle out behind the head, pointing away from the face, the cowl round the crown and down the back.
 function clothHoodPath(F, dir = 0) {
   const { cy, ry } = hoodGeom(F), top = cy - ry, bot = cy + ry, b = dir ? -dir * 14 : 0, p = dir ? -dir * 10 : 0;
+  // (ticket 448, Matthew: "I really like the new facing away view of the hood. Let's mimic that for L and R, but adjusted for
+  // that viewpoint --- now the peak hangs down behind our head"; "it doesn't 'stick out' at all") In profile the hood is round
+  // over the head, and its peak a flap hanging down behind it (clothHoodFlap), as from behind.
   if (dir) { const X = d => f1(100 + dir * d);
-    return `M${X(112)} ${f1(cy)} Q${X(116)} ${f1(top + 4)} ${X(40)} ${f1(top - 8)} Q${X(-40)} ${f1(top - 12)} ${X(-84)} ${f1(top + 6)} ` +
-           `L${X(-168)} ${f1(top + 62)} L${X(-104)} ${f1(top + 70)} Q${X(-118)} ${f1(cy + 20)} ${X(-124)} ${f1(bot)} L${X(-140)} ${f1(bot + 36)} ` +
+    return `M${X(112)} ${f1(cy)} Q${X(116)} ${f1(top + 4)} ${X(40)} ${f1(top - 8)} Q${X(-40)} ${f1(top - 14)} ${X(-96)} ${f1(top + 16)} ` +
+           `Q${X(-120)} ${f1(cy)} ${X(-124)} ${f1(bot)} L${X(-140)} ${f1(bot + 36)} ` +
            `L${X(126)} ${f1(bot + 36)} Q${X(118)} ${f1(bot)} ${X(112)} ${f1(cy)} Z`; }
   return `M${f1(100 + b - 110)} ${f1(cy)} Q${f1(100 + b - 112)} ${f1(top + 8)} ${f1(100 + b - 40)} ${f1(top - 8)} Q${f1(100 + p - 6)} ${f1(top - 16)} ${f1(100 + p)} ${f1(top - 36)} ` +
          `Q${f1(100 + p + 6)} ${f1(top - 16)} ${f1(100 + b + 40)} ${f1(top - 8)} Q${f1(100 + b + 112)} ${f1(top + 8)} ${f1(100 + b + 110)} ${f1(cy)} ` +
@@ -88,7 +91,14 @@ function clothHoodOpening(F, dir = 0) {
 }
 const clothHoodBack = (F, c, dir = 0) => `<path d="${clothHoodPath(F, dir)}" fill="${darker(c)}" stroke="${darker(darker(c))}" stroke-width="4" stroke-linejoin="round"/>`;
 const clothHoodFront = (F, c, dir = 0) => `<path d="${clothHoodPath(F, dir)} ${clothHoodOpening(F, dir)}" fill="${c}" fill-rule="evenodd" stroke="${darker(c)}" stroke-width="4" stroke-linejoin="round"/>` +
-  `<path d="${clothHoodOpening(F, dir)}" fill="none" stroke="${darker(darker(c))}" stroke-width="3" opacity="0.6"/>`;
+  `<path d="${clothHoodOpening(F, dir)}" fill="none" stroke="${darker(darker(c))}" stroke-width="3" opacity="0.6"/>` + (dir ? clothHoodFlap(F, c, dir) : "");
+// (ticket 448) the peak, in profile: a pointed flap from the crown's back hanging down behind the head, past the neck, shaded
+function clothHoodFlap(F, c, dir) {
+  const { cy, ry } = hoodGeom(F), top = cy - ry, bot = cy + ry, X = d => f1(100 + dir * d);
+  return `<path data-hood="flap" d="M${X(-58)} ${f1(top + 2)} Q${X(-110)} ${f1(top + 14)} ${X(-116)} ${f1(cy)} L${X(-106)} ${f1(bot + 56)} Q${X(-98)} ${f1(bot + 66)} ${X(-90)} ${f1(bot + 54)} L${X(-74)} ${f1(cy + 6)} Q${X(-70)} ${f1(top + 24)} ${X(-58)} ${f1(top + 2)} Z" ` +
+    `fill="${mix(c, "#000000", 0.08)}" stroke="${darker(c)}" stroke-width="3.5" stroke-linejoin="round"/>` +
+    `<path d="M${X(-62)} ${f1(top + 8)} L${X(-98)} ${f1(bot + 56)} L${X(-76)} ${f1(cy + 6)} Z" fill="#000000" opacity="0.1"/>`;
+}
 // (ticket 447, Matthew: "the away facing view also looks wrong, like L and R --- the peak should come toward us now that the face
 // is facing away") From behind, the hood's top is round and its peak comes toward us: a pointed flap over the back of the head,
 // its tip down over the shoulders, shaded on one side.

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.359 (2026-10-19)
+
+Everything in 0.0.358, with the hood's peak hanging behind from the side.
+
+- **The monk's and the dryad's hood from the side** (ticket 448): like the view from behind, the hood is round over the head and its peak hangs down behind it, sticking out nowhere.
+
 ## 0.0.358 (2026-10-19)
 
 Everything in 0.0.357, with a queen and a king, and the monk's hood from the side and behind.
