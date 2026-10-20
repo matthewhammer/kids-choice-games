@@ -57,12 +57,22 @@ try {
     set("shoes", "style", "sneaker"); set("shoes", "color", "#2f6db5"); changed(); await w(50); out.ownFeet = fig().includes('fill="#2f6db5"');
     set("costume", "bareFeet", true); changed(); await w(50); out.bareFeet = !fig().includes('fill="#2f6db5"') && (fig().match(new RegExp('<ellipse[^>]*fill="' + state.face.color + '"', "g")) || []).length >= 2;
     set("costume", "bareFeet", false);
+    // (ticket 453: the face in the hood: dimmed by a share, or dark with eyes in the dark drawn without their whites)
+    const darkOp = () => { const el = document.querySelector('#figure [data-hood="dark"]'); return el ? +el.getAttribute("opacity") : 0; };
+    set("costume", "hoodDim", 60); changed(); await w(40); out.dim = darkOp();
+    set("costume", "hoodDim", 0); set("costume", "hoodFace", false); set("costume", "hoodEyes", true); state.face.stars = 1; changed(); await w(40);
+    const afterDark = fig().slice(fig().indexOf('data-hood="dark"'));
+    out.dark = { op: darkOp(), noWhites: !afterDark.includes('fill="#ffffff" stroke="black"') };
+    set("costume", "hoodEyes", false); changed(); await w(40);
+    // (the eyes in the dark: what the drawing has after the dark, with them, more than without)
+    out.noEyes = afterDark.length - fig().slice(fig().indexOf('data-hood="dark"')).length > 100;
+    state.face.stars = 0; set("costume", "hoodFace", true); set("costume", "hoodEyes", true); changed();
     set("costume", "staff", false); changed(); await w(60); out.noStaff = !fig().includes('r="8" fill="#7a4f2a"'); set("costume", "staff", true);
     for (const pose of ["stand", "sit", "meditate", "dance", "hug", "lie"]) { set("body", "pose", pose); changed(); await w(60); out.poses[pose] = fig().length > 1000; }
     set("body", "pose", "stand"); state.body.sit = false; changed();
     tab = TABS.findIndex(t => t[1] === "costume"); showTab(); await w(200);
     const shown = key => { const el = document.querySelector('#panel [data-key="' + key + '"]'); return !!el && !el.hidden; };
-    out.rows = ["monkWho", "monkCloak", "hoodUp", "bareFeet", "staff", "staffOrb", "wizardRobe"].map(k => shown(k) ? 1 : 0).join("");
+    out.rows = ["monkWho", "monkCloak", "hoodUp", "hoodFace", "hoodDim", "hoodEyes", "bareFeet", "staff", "staffOrb", "wizardRobe"].map(k => shown(k) ? 1 : 0).join("");
     return JSON.stringify(out); })()`));
   console.log(`  ${JSON.stringify(r)}`);
   const V = r.v;
@@ -76,8 +86,9 @@ try {
   ok("the monk's cloak brown, the dryad's moss green", r.monkCloak === "#6b4a2b" && r.dryadCloak === "#4f6b3a", [r.monkCloak, r.dryadCloak]);
   ok("the dryad's cloak in leaves and her staff sprouting; the monk's staff knobbed; the staff taken off", r.leaves && r.knob && r.noStaff, [r.leaves, r.knob, r.noStaff]);
   ok("the friend's own feet under the cloak, no boots; bare feet when asked (ticket 452)", r.ownFeet && r.bareFeet, [r.ownFeet, r.bareFeet]);
+  ok("the face in the hood dimmed by its share; hidden, the hood dark, the eyes in the dark without whites, or none (ticket 453)", r.dim === 0.6 && r.dark.op === 1 && r.dark.noWhites && r.noEyes, [r.dim, r.dark, r.noEyes]);
   ok("every pose drawn", Object.values(r.poses).every(Boolean), r.poses);
-  ok("the tab shows the monk's rows and the staff, not the orb or the wizard's", r.rows === "1111100", r.rows);
+  ok("the tab shows the monk's rows and the staff, not the orb or the wizard's", r.rows === "1111101100", r.rows);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

@@ -891,6 +891,7 @@ function drawNow() {
   // eyes, floating)
   const face = faceSvg(F, groundInFace, true, dir, q, away);
   const inFace = t => `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">${t}</g>`;
+  let faceEyes = "";   // (ticket 453: the eyes as drawn, for the druid's eyes in the dark)
   // (ticket 138: from behind, the head and its hair, no face)
   // (in a costume, the hood's back closed over the head: its ears, mane or
   // horns, and no face on its brim)
@@ -898,10 +899,10 @@ function drawNow() {
     const fill = falconHead(kind) ? C.marks : eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
     svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F)}` +
                                `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/></g></g>`));
-  } else if (away) svg += veil("head", inFace(face.under)) + (diver ? "" : hooded
+  } else if (away) { svg += veil("head", inFace(face.under)) + (diver ? "" : hooded
       ? veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${knight ? "" : clothHoodAway(F, clothHood())}</g></g>`))   // (ticket 433: the hood closed over the head; 435: a knight's helmet)
-      : veil("hair", inFace(`<g transform="${topFlies(F)}">${backHair(state.hair, F)}</g>`)));
-  else if (!dir) svg += veil("head", inFace(face.under)) + veil("eyes", inFace(face.eyes)) + veil("head", inFace(face.over));
+      : veil("hair", inFace(`<g transform="${topFlies(F)}">${backHair(state.hair, F)}</g>`))); }
+  else if (!dir) { faceEyes = inFace(face.eyes); svg += veil("head", inFace(face.under)) + veil("eyes", faceEyes) + veil("head", inFace(face.over)); }
   else {
     // (ticket 124) in profile: the face's features on our side only (one
     // eye and brow, half the mouth), moved toward the front of the head; a
@@ -929,7 +930,8 @@ function drawNow() {
     // (the ear, as chosen, seen whole: its front edge toward the face, its rim toward the back)
     const earAt = !earsOn ? null : side ? side.ear : [100 - dir * 0.12 * 80 * headWidth(F), HEAD_C + 5];
     const earSide = earAt ? earSvg(F.ears, earK, F.color, earAt[0] + dir * 8 * earK, earAt[1], -dir) : "";
-    svg += veil("head", inFace(face.under + earSide)) + veil("eyes", inFace(near(face.eyes).replace('id="face-near"', 'id="face-near-e"').replace("url(#face-near)", "url(#face-near-e)"))) +
+    faceEyes = inFace(near(face.eyes).replace('id="face-near"', 'id="face-near-e"').replace("url(#face-near)", "url(#face-near-e)"));
+    svg += veil("head", inFace(face.under + earSide)) + veil("eyes", faceEyes) +
            veil("head", inFace(near(brows) + lips + face.sick + nose));
   }
   // and the front of the hair over them all: the bangs (on the lid, when
@@ -939,6 +941,17 @@ function drawNow() {
   // (in profile, the hair on the head itself, over its top and back)
   // (ticket 442) the beard and moustache from 💇 Hair (the gnome man's and the wizard's too), under the bangs and a hat
   if (beardStyle && !away) svg += veil("hair", inFace(beardSvg(F, beardStyle, beardShade(state.hair), dir, state.hair.moustache !== false, state.hair)));
+  // (ticket 453, Matthew: "see head? if yes, show the head as is, but permit a slider to control how dim it is (fading to black
+  // in the extreme). if no --- we see black in the hood, and see eyes is an option still (if no see head)--- black eyes won't
+  // show up, but various other eye styles will") the druid's face in the hood: dimmed toward black (hoodDim, a share), or
+  // not seen (hoodFace false), the hood's window black, and its eyes in the dark if asked (hoodEyes: drawn again without their
+  // whites, so black pupils vanish and coloured irises, stars, hearts and crosses show)
+  if (monk && clothHood() && !away) {
+    const dark = op => veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">` +
+                                    `<path data-hood="dark" d="${clothHoodOpening(F, dir)}" fill="#000000" opacity="${op}"/></g></g></g>`);
+    if (WC.hoodFace === false) { svg += dark(1); if (WC.hoodEyes !== false && faceEyes) svg += veil("eyes", faceEyes.replace(/fill="#ffffff" stroke="black"/g, 'fill="none" stroke="none"').replace(/id="face-near-e"/g, 'id="face-near-dark"').replace(/url\(#face-near-e\)/g, "url(#face-near-dark)")); }
+    else if ((Number(WC.hoodDim) || 0) > 0) svg += dark((Math.min(100, Number(WC.hoodDim)) / 100).toFixed(2));
+  }
   if (!C && !diver && !hooded && !away) svg += veil("hair", inFace(side ? `<g transform="${topFlies(F)}">${tucked(side.cap, "under-hat-bangs", HEAD_C + ((hatLine ?? 40) - HEAD_C) * headH(F))}</g>`
                                           : tucked(bangsSvg(state.hair, F), "under-hat-bangs", HEAD_C + ((hatLine ?? 40) - HEAD_C) * headH(F))));
   // a fairy's wreath of flowers, over her hair

@@ -336,7 +336,7 @@ const TAB_BOXES = {
                 ["🤿 the scuba suit", ["scubaColor", "scubaAccent"]], ["⚓ the old diving suit", ["diverMetal", "diverCloth", "diverHose", "hoseColor"]],
                 ["🥽 diving gear", ["snorkel", "snorkelColor", "mask", "maskColor", "tank", "tankColor", "leaks"]],
                 ["👻 the ghost", ["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor", "visible"]],
-                ["🧙‍♂️ the wizard", ["wizardRobe", "wizardStars"]], ["🧘 the monk or dryad", ["monkWho", "monkCloak", "hoodUp", "bareFeet"]],
+                ["🧙‍♂️ the wizard", ["wizardRobe", "wizardStars"]], ["🧘 the monk or dryad", ["monkWho", "monkCloak", "hoodUp", "hoodFace", "hoodDim", "hoodEyes", "bareFeet"]],
                 ["🪄 the staff", ["staff", "staffOrb"]], ["🏹 Robin Hood", ["robinTunic", "robinHat", "robinFeather", "bow", "quiver"]],
                 ["👑 the queen or king", ["queenRobe", "kingRobe", "crownJewel", "mantle", "scepter"]],
                 ["🛡️ the knight", ["knightA", "knightB", "tabardLayout", "emblem", "plume", "plumeColor", "helmOpen", "sword", "shield"]],

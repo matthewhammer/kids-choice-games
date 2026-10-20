@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.363 (2026-10-19)
+
+Everything in 0.0.362, with a druid's face in the shadow of the hood.
+
+- **The face in the hood** (ticket 453): for the monk or dryad with the hood up, 👤 see the face, and 🌑 how deep the hood's shadow is over it, from clear to black. Or hide the face: the hood is dark inside, and 👀 eyes in the dark lets the eyes show there: plain black eyes vanish (only their glints show), but coloured eyes, star eyes and heart eyes glow.
+
 ## 0.0.362 (2026-10-19)
 
 Everything in 0.0.361, with the druid's own feet, or bare ones.

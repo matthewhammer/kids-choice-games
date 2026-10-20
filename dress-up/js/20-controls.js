@@ -365,6 +365,10 @@ const TABS = [
     ["color", "monkCloak", "🧥 cloak's color", ["#6b4a2b", "#4f6b3a", "#7a7468", "#3f4a5c", "#8a3b2b", "#e8e0cc"]],
     ["toggle", "hoodUp", "🧥 hood up"],
     ["toggle", "bareFeet", "🦶 bare feet (the shoes hidden in the cloak)"],
+    // (ticket 453) the face in the hood: seen and dimmed, or dark with eyes in it
+    ["toggle", "hoodFace", "👤 see the face in the hood"],
+    ["range", "hoodDim", "🌑 the face in shadow (clear ↔ black)", 0, 100, 0, 70],
+    ["toggle", "hoodEyes", "👀 eyes in the dark"],
     // (ticket 432) the wizard: his robe and its stars, his staff and its orb (his beard is the friend's, in 💇 Hair)
     ["color", "wizardRobe", "🧙‍♂️ robe & hat color", ["#2a3a8c", "#1f1f22", "#5b2a86", "#7a1f2b", "#1f5a4a", "#6b7280"]],
     ["color", "wizardStars", "⭐ stars & moon color", ["#f2c230", "#e5e7eb", "#93c5fd", "#f9a8d4"]],
@@ -980,7 +984,9 @@ const SHOWN_WHEN = {
   "costume.plumeColor": c => c.kind === "knight" && c.plume !== false, "costume.helmOpen": c => c.kind === "knight", "costume.sword": c => c.kind === "knight", "costume.shield": c => c.kind === "knight",
   "costume.robinTunic": c => c.kind === "robin", "costume.robinHat": c => c.kind === "robin", "costume.robinFeather": c => c.kind === "robin",
   "costume.bow": c => c.kind === "robin", "costume.quiver": c => c.kind === "robin",
-  "costume.monkWho": c => c.kind === "monk", "costume.monkCloak": c => c.kind === "monk", "costume.hoodUp": c => c.kind === "monk", "costume.bareFeet": c => c.kind === "monk", "costume.staffOrb": c => c.kind === "wizard" && c.staff !== false,
+  "costume.monkWho": c => c.kind === "monk", "costume.monkCloak": c => c.kind === "monk", "costume.hoodUp": c => c.kind === "monk", "costume.bareFeet": c => c.kind === "monk",
+  "costume.hoodFace": c => c.kind === "monk" && c.hoodUp !== false, "costume.hoodDim": c => c.kind === "monk" && c.hoodUp !== false && c.hoodFace !== false,
+  "costume.hoodEyes": c => c.kind === "monk" && c.hoodUp !== false && c.hoodFace === false, "costume.staffOrb": c => c.kind === "wizard" && c.staff !== false,
   "costume.gnomeWho": c => c.kind === "gnome", "costume.gnomeHat": c => c.kind === "gnome", "costume.gnomeBoots": c => c.kind === "gnome",
   "costume.gnomeTunic": c => c.kind === "gnome" && c.gnomeWho !== "woman", "costume.gnomeTrousers": c => c.kind === "gnome" && c.gnomeWho !== "woman",
   "costume.gnomeBodice": c => c.kind === "gnome" && c.gnomeWho === "woman", "costume.gnomeSkirt": c => c.kind === "gnome" && c.gnomeWho === "woman",

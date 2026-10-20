@@ -521,7 +521,7 @@ const DEFAULTS = {
   hud: { pins: [], min: [] },
   costume: { kind: "none", fur: "#e8862a", marks: "#1f1a17", belly: "#f7ead8", eyes: "#e0a800",
              accent: "#e89aa0", furPattern: "stripes", spot: "auto",
-             monkWho: "monk", monkCloak: "#6b4a2b", hoodUp: true, bareFeet: false, queenRobe: "#5b2a86", kingRobe: "#7a1f2b", crownJewel: "#d2382b", mantle: true, scepter: true,
+             monkWho: "monk", monkCloak: "#6b4a2b", hoodUp: true, bareFeet: false, hoodFace: true, hoodDim: 0, hoodEyes: true, queenRobe: "#5b2a86", kingRobe: "#7a1f2b", crownJewel: "#d2382b", mantle: true, scepter: true,
              knightA: "#2f6db5", knightB: "#f4f1ea", tabardLayout: "quartered", emblem: "falcon", plume: true, plumeColor: "#c0392b", helmOpen: false, sword: true, shield: true,
              robinTunic: "#3f7d3a", robinHat: "#3f7d3a", robinFeather: "#d2382b", bow: true, quiver: true,
              wizardRobe: "#2a3a8c", wizardStars: "#f2c230", staff: true, staffOrb: "#7dd3fc", beardGiven: null,
@@ -1072,7 +1072,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.362", released: "2026-10-19" };
+const VERSION = { number: "0.0.363", released: "2026-10-19" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
