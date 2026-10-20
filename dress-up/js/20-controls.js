@@ -1972,6 +1972,14 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // (ticket 325, Matthew: "advanced panel links to matthewhammer.org/hazel/dress-up page") the game's own page: its music, pictures and reports
     box.append(themes, el("div", { class: "row" }, [el("a", { href: "https://matthewhammer.org/hazel/dress-up/", target: "_blank", rel: "noopener" }, "🏠 this game's page: its music, pictures and reports ↗")]),
                el("div", { class: "row" }, [el("a", { href: "https://github.com/matthewhammer/kids-choice-games", target: "_blank", rel: "noopener" }, "💻 this game's code, on GitHub ↗")]),
+               // (ticket 474, Matthew: "add link and citation for https://arxiv.org/abs/1703.05410 into the MUDU advanced panel, near the top --- the
+               // link says 'See also -- Languages of Play: Towards Semantic Foundations For Game Interfaces (2017)'"; "there's an HTML version ... let's
+               // offer that in the advanced panel (after citation)") the paper, its authors, and its HTML version
+               el("div", { class: "row see-also" }, [
+                 el("span", { class: "hint" }, "📖 See also —"),
+                 el("a", { href: "https://arxiv.org/abs/1703.05410", target: "_blank", rel: "noopener" }, "Languages of Play: Towards Semantic Foundations For Game Interfaces (2017) ↗"),
+                 el("span", { class: "hint" }, "Chris Martens and Matthew A. Hammer, arXiv:1703.05410;"),
+                 el("a", { href: "https://arxiv.org/html/1703.05410v1", target: "_blank", rel: "noopener" }, "as a web page ↗")]),
                el("div", { class: "row" }, [ver, up]),
                // (ticket 302, M) a pop-up when a new version is out: off unless switched on here, this browser's own
                (() => { const b = el("button", { class: "ask-new-toggle", "aria-pressed": String(askNewOn()), onclick: () => { askNewSet(!askNewOn()); b.setAttribute("aria-pressed", String(askNewOn())); } },

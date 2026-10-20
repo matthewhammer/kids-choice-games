@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.373 (2026-10-20)
+
+Everything in 0.0.372, with a paper to read.
+
+- **See also** (ticket 474): near the top of ⚙️ Advanced, a link to *Languages of Play: Towards Semantic Foundations For Game Interfaces* (2017), by Chris Martens and Matthew A. Hammer: a paper about what players mean to do in a game, and the languages that say it. Its web page version is right after it.
+
 ## 0.0.372 (2026-10-19)
 
 Everything in 0.0.371, with the band going all the way down.
