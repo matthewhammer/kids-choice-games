@@ -1842,6 +1842,91 @@ function bubbleMakerSvg(t) {
     `<circle cx="0" cy="${cy}" r="40" fill="${col}" stroke="${dark}" stroke-width="3"/><path d="M-26 ${cy - 26} Q-36 ${cy - 6} -30 ${cy + 14}" fill="none" stroke="${lite}" stroke-width="5" stroke-linecap="round" opacity="0.8"/>` +
     `<path d="M-18 ${cy - 37} Q0 ${cy - 70} 18 ${cy - 37}" fill="none" stroke="${dark}" stroke-width="7" stroke-linecap="round"/>` + wheels;
 }
+// (ticket 471, Matthew: "Gems are extra things to add, including 6 styles"; "puddle on ground, with/without drip from ceiling.
+// Little waterfall coming out of the wall, and trickling down the rock (the placeable object would be the water and the it
+// runs down, into a puddle on the floor; all connected into one placeable object, for now --- 6 styles") The 🦇 cave things,
+// for the cave room and anywhere: each drawn standing at 0, 0, in its own units, as thingSvg places it.
+const GEM_STYLES = [["cut", "💎 cut"], ["cluster", "🔮 a cluster"], ["geode", "🪨 a geode"], ["point", "🔺 a single point"], ["rough", "🫘 rough"], ["heart", "💖 a heart"]];
+const GEM_COLORS = ["#a855f7", "#3b82f6", "#e11d48", "#22c55e", "#fbbf24", "#e0f2fe"];
+const CASCADE_STYLES = [["trickle", "💧 a trickle"], ["sheet", "🫗 a sheet over a ledge"], ["steps", "🪜 down steps"], ["spout", "⛲ a spout from a hole"], ["mossy", "🌿 mossy"], ["glowing", "✨ glowing"]];
+const PUDDLE_RY = 11;   // (a puddle's depth either side of its middle, in its own units: the friend stands in it, in front of its back edge)
+// (a sparkle on a gem: a four-point star at (x, y), twinkling with the fast LFO, each its own way in)
+const gemSparkle = (o, x, y, r, off) => `<path d="M${f1(x)} ${f1(y - r)} L${f1(x + r * 0.25)} ${f1(y - r * 0.25)} L${f1(x + r)} ${f1(y)} L${f1(x + r * 0.25)} ${f1(y + r * 0.25)} L${f1(x)} ${f1(y + r)} L${f1(x - r * 0.25)} ${f1(y + r * 0.25)} L${f1(x - r)} ${f1(y)} L${f1(x - r * 0.25)} ${f1(y - r * 0.25)} Z" fill="#ffffff" opacity="0">` +
+  lfoTimed(o, "fast", off, `<animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.15;0.3;1" dur="1.8s" repeatCount="indefinite"/>`) + `</path>`;
+function gemThingSvg(t, seed, o) {
+  const col = t.color || GEM_COLORS[0], lite = mix(col, "#ffffff", 0.55), dark = mix(col, "#000000", 0.35), R = seeded(seed), st = t.style || "cut";
+  const glow = t.glow ?? true ? `<defs><radialGradient id="gem-glow-${seed}"><stop offset="0" stop-color="${col}" stop-opacity="0.7"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></radialGradient></defs>` +
+    `<ellipse class="fumes" cx="0" cy="-18" rx="44" ry="34" fill="url(#gem-glow-${seed})" opacity="0.5">` + lfoTimed(o, "slow", R(1), `<animate attributeName="opacity" values="0.3;0.7;0.3" dur="4s" repeatCount="indefinite"/>`) + `</ellipse>` : "";
+  const shade = `<ellipse class="flat" cx="0" cy="1" rx="22" ry="4" fill="#000000" opacity="0.2"/>`;
+  const prism = (x, h, a, w = 7) => `<g transform="translate(${x} 0) rotate(${f1(a)})"><polygon points="${-w},0 ${-w},${f1(-h * 0.8)} 0,${f1(-h)} ${w},${f1(-h * 0.8)} ${w},0" fill="${col}" stroke="${lite}" stroke-width="1.4" opacity="0.92"/>` +
+    `<polygon points="0,0 0,${f1(-h)} ${w},${f1(-h * 0.8)} ${w},0" fill="${dark}" opacity="0.35"/></g>`;
+  let body;
+  if (st === "cluster") body = [[-12, 26, -30], [10, 30, 26], [-4, 40, -8], [4, 46, 6], [16, 18, 50], [-16, 16, -52]].map(([x, h, a]) => prism(x, h * (0.85 + 0.3 * R(x + 40)), a)).join("");
+  else if (st === "point") body = prism(0, 62, (R(2) - 0.5) * 16, 10);
+  else if (st === "geode") body = `<path d="M-30 0 Q-32 -34 0 -38 Q32 -34 30 0 Z" fill="#6b5a4a" stroke="#3a2e24" stroke-width="2.5"/><path d="M-22 -4 Q-23 -28 0 -31 Q23 -28 22 -4 Z" fill="${dark}"/>` +
+    [...Array(14)].map((_, i) => { const a = Math.PI * (0.08 + 0.84 * i / 13), r = 20 + 3 * R(i + 9), x = -Math.cos(a) * r, y = -4 - Math.sin(a) * r * 1.1;
+      return `<polygon points="${f1(x)},${f1(y)} ${f1(x * 0.6 - 3)},${f1(y * 0.6)} ${f1(x * 0.6 + 3)},${f1(y * 0.6)}" fill="${i % 2 ? col : lite}" opacity="0.95"/>`; }).join("");
+  else if (st === "rough") body = `<path d="M-22 0 L-26 -14 L-16 -30 L2 -34 L20 -26 L26 -10 L18 0 Z" fill="${col}" stroke="${dark}" stroke-width="2" opacity="0.9"/>` +
+    `<path d="M-16 -30 L-6 -16 L2 -34 M-6 -16 L20 -26 M-6 -16 L-4 0 M-6 -16 L-26 -14" fill="none" stroke="${lite}" stroke-width="1.5" opacity="0.7"/>`;
+  else if (st === "heart") body = `<path d="M0 0 L-26 -24 Q-34 -40 -18 -46 Q-6 -48 0 -36 Q6 -48 18 -46 Q34 -40 26 -24 Z" fill="${col}" stroke="${dark}" stroke-width="2"/>` +
+    `<path d="M0 -36 L0 0 M-26 -24 L0 -14 L26 -24 M-18 -46 L-10 -30 L0 -36 L10 -30 L18 -46" fill="none" stroke="${lite}" stroke-width="1.4" opacity="0.7"/>`;
+  else body = `<path d="M-24 -26 L-14 -36 L14 -36 L24 -26 L0 0 Z" fill="${col}" stroke="${dark}" stroke-width="2"/><path d="M-24 -26 L24 -26" stroke="${lite}" stroke-width="1.6"/>` +
+    `<path d="M-14 -36 L-8 -26 L0 -36 L8 -26 L14 -36 M-8 -26 L0 0 L8 -26 M-24 -26 L0 0" fill="none" stroke="${lite}" stroke-width="1.2" opacity="0.75"/><path d="M-14 -36 L0 -36 L-8 -26 Z" fill="#ffffff" opacity="0.35"/>`;
+  return glow + shade + body + gemSparkle(o, st === "point" ? 3 : -6, st === "point" ? -54 : st === "cluster" ? -36 : -30, 7, R(3)) + gemSparkle(o, 10, -14, 4, R(4));
+}
+// a puddle: its edge uneven (its seed), a shine on it; with a drip, a drop falls into it from the top of the picture (top, in
+// its own units) and rings spread (the fast LFO)
+function puddleThingSvg(t, seed, o, top) {
+  const R = seeded(seed), pts = [];
+  for (let n = 0; n <= 18; n++) { const a = n / 18 * 2 * Math.PI, b = 1 + 0.22 * (R(n) - 0.5); pts.push([46 * Math.cos(a) * b, PUDDLE_RY * Math.sin(a) * b]); }
+  const d = caveSmooth(pts, (x, y) => `${f1(x)} ${f1(y)}`) + " Z";
+  let s = `<path d="${d}" fill="#6fb6cf" opacity="0.5"/><path d="${d}" fill="none" stroke="#2c3e46" stroke-width="2" opacity="0.4"/>` +
+          `<ellipse cx="-12" cy="-3" rx="16" ry="2.6" fill="#e6f8ff" opacity="0.45"/>`;
+  if (t.drip ?? true) s += [0, 1].map(j => `<ellipse cx="0" cy="0" rx="4" ry="1" fill="none" stroke="#e6f8ff" stroke-width="1.4" opacity="0">` +
+      lfoTimed(o, "fast", 0.1 + j * 0.2, `<animate attributeName="rx" values="4;38" dur="1.6s" repeatCount="indefinite"/>`) +
+      lfoTimed(o, "fast", 0.1 + j * 0.2, `<animate attributeName="ry" values="1;9" dur="1.6s" repeatCount="indefinite"/>`) +
+      lfoTimed(o, "fast", 0.1 + j * 0.2, `<animate attributeName="opacity" values="0.85;0" dur="1.6s" repeatCount="indefinite"/>`) + `</ellipse>`).join("") +
+    `<circle cx="0" cy="${f1(top)}" r="3" fill="#bfeaff">` + lfoTimed(o, "fast", 0, `<animate attributeName="cy" values="${f1(top)};0" dur="1.6s" repeatCount="indefinite"/>`) +
+    lfoTimed(o, "fast", 0, `<animate attributeName="opacity" values="1;1;0" keyTimes="0;0.92;1" dur="1.6s" repeatCount="indefinite"/>`) + `</circle>`;
+  return s;
+}
+// a little waterfall: a slab of rock, the water coming out near its top and running down its face into a pool at its foot,
+// all one thing (the pool lies flat: the rock is what stands in the way); six kinds
+function cascadeThingSvg(t, seed, o) {
+  const R = seeded(seed), st = t.style || "trickle", Rs = (i, j) => seeded(seed + j)(i), P = (x, y) => `${f1(x)} ${f1(y)}`;
+  const glowing = st === "glowing", water = glowing ? "#7df9ff" : "#b8e6f5", rock = st === "mossy" ? "#5d6152" : glowing ? "#4a4560" : "#6a6276";
+  // (a lump of the cave's rock, wide at its foot and leaning, never a slab: an even one looked like a headstone)
+  const edge = caveFractalPath([[-62, 0], [-58, -34], [-48, -78], [-30, -116], [-8, -138], [18, -132], [38, -104], [56, -62], [64, -20], [58, 0]], 3, 0.1, Rs, 11);
+  let s = `<ellipse class="flat" cx="6" cy="6" rx="62" ry="13" fill="${water}" opacity="0.5"/><ellipse class="flat" cx="0" cy="4" rx="40" ry="5" fill="#ffffff" opacity="0.25"/>` +
+          `<path d="${caveSmooth(edge, P)} Z" fill="${rock}" stroke="#2a2630" stroke-width="2.5"/>` +
+          [[-36, -24, 18], [34, -30, 20], [-24, -84, 15], [30, -86, 14], [6, -116, 12]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${f1(r * 0.7)}" fill="${mix(rock, "#000000", 0.18)}" opacity="0.6"/>`).join("") +
+          [[-26, -100, 16], [14, -70, 20], [-10, -36, 14], [24, -112, 10], [-44, -50, 12], [44, -40, 12]].map(([x, y, r]) => `<path d="M${P(x - r, y)} Q${P(x - r * 0.4, y - r * 0.8)} ${P(x + r * 0.5, y - r * 0.7)}" fill="none" stroke="${mix(rock, "#ffffff", 0.25)}" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>`).join("");
+  // where the water comes out: a dark crack or hole near the top
+  const sx = st === "spout" ? -8 : 4, sy = st === "spout" ? -92 : -118;
+  s += `<ellipse cx="${sx}" cy="${sy}" rx="${st === "spout" ? 9 : 12}" ry="${st === "spout" ? 7 : 4}" fill="#14111a"/>`;
+  // the water's paths down, by kind
+  let paths;
+  if (st === "sheet") { s += `<path d="M-30 -84 L30 -84 L36 -76 L-34 -76 Z" fill="${mix(rock, "#000000", 0.25)}"/>`; paths = [-24, -14, -4, 6, 16, 26].map(x => `M${P(x * 0.6 + sx, sy)} Q${P(x * 0.9, -100)} ${P(x, -80)} L${P(x * 1.15, 4)}`); }
+  else if (st === "steps") { s += [-96, -62, -28].map((y, j) => `<path d="M${P(-28 + j * 8, y)} L${P(22 + j * 8, y)} L${P(26 + j * 8, y + 6)} L${P(-30 + j * 8, y + 6)} Z" fill="${mix(rock, "#000000", 0.25)}"/>`).join("");
+    paths = [-4, 4].map(dx => `M${P(sx + dx, sy)} L${P(10 + dx, -96)} L${P(20 + dx, -96)} L${P(18 + dx, -62)} L${P(28 + dx, -62)} L${P(26 + dx, -28)} L${P(34 + dx, -28)} L${P(30 + dx, 4)}`); }
+  else if (st === "spout") paths = [-3, 0, 3].map(dx => `M${P(sx, sy + dx)} Q${P(30, sy - 20 + dx)} ${P(44 + dx * 2, 4)}`);
+  else paths = [-1, 1, ...(st === "trickle" ? [] : [3])].map(j => `M${P(sx + j * 4, sy)} Q${P(sx + j * 10 + (R(j + 5) - 0.5) * 30, -80)} ${P(sx + j * 6, -50)} Q${P(sx + j * 12 + (R(j + 7) - 0.5) * 24, -24)} ${P(sx + j * 8, 4)}`);
+  const wide = st === "sheet" ? 7 : st === "trickle" ? 3 : 4.5;
+  s += paths.map((d, j) => `<path d="${d}" fill="none" stroke="${water}" stroke-width="${wide}" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>` +
+    `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${f1(wide * 0.45)}" stroke-dasharray="10 16" stroke-linecap="round" opacity="0.8">` +
+    lfoTimed(o, "fast", j / paths.length, `<animate attributeName="stroke-dashoffset" values="0;-52" dur="1s" repeatCount="indefinite"/>`) + `</path>`).join("");
+  // the splash in the pool: rings, and bubbles bobbing
+  const fx = st === "spout" ? 44 : st === "steps" ? 30 : st === "sheet" ? 0 : sx + 8;
+  s += [0, 1].map(j => `<ellipse cx="${fx}" cy="4" rx="4" ry="1.2" fill="none" stroke="#ffffff" stroke-width="1.3" opacity="0">` +
+    lfoTimed(o, "fast", j / 2, `<animate attributeName="rx" values="4;24" dur="1.2s" repeatCount="indefinite"/>`) +
+    lfoTimed(o, "fast", j / 2, `<animate attributeName="opacity" values="0.8;0" dur="1.2s" repeatCount="indefinite"/>`) + `</ellipse>`).join("");
+  if (st === "mossy") s += [[-40, -20], [-30, -90], [36, -40], [20, -128], [-44, -60]].map(([x, y], j) => `<ellipse cx="${x}" cy="${y}" rx="${10 + 6 * R(j)}" ry="${5 + 3 * R(j + 9)}" fill="#4f7f3a" opacity="0.9"/>`).join("") +
+    grassTuft(-38, 0, 18, seed + 3, "#4f7f3a", 2) + grassTuft(40, -2, 14, seed + 4, "#5f8f48", 2);
+  if (glowing) s = `<defs><radialGradient id="cascade-glow-${seed}"><stop offset="0" stop-color="#7df9ff" stop-opacity="0.6"/><stop offset="1" stop-color="#7df9ff" stop-opacity="0"/></radialGradient></defs>` +
+    `<ellipse class="fumes" cx="0" cy="-60" rx="80" ry="90" fill="url(#cascade-glow-${seed})" opacity="0.5">` + lfoTimed(o, "slow", R(2), `<animate attributeName="opacity" values="0.3;0.7;0.3" dur="4s" repeatCount="indefinite"/>`) + `</ellipse>` + s +
+    [[-30, -50], [28, -96], [-18, -118]].map(([x, y], j) => gemSparkle(o, x, y, 5, R(j + 20))).join("");
+  return s;
+}
 const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
@@ -1880,6 +1965,10 @@ const THING_PARAMS = {
   trapdoor: [["open", "🕳️ open", "toggle"], ["shape", "its opening", "choice", OPENING_SHAPES], ["spikes", "🔱 spikes inside", "toggle"]],
   // (ticket 290, for N) a bubble maker: how many bubbles a second, which of the friend's bubble themes it blows, its colour
   bubblemaker: [["shape", "🫧 its shape", "choice", [["round", "⭕ round"], ["box", "📦 a box"], ["tower", "🗼 a tower"]]], ["rate", "🫧 bubbles a second", "range", [1, 12, 1]], ["theme", "🫧 its bubbles", "choice", [["A", "🅰️ theme A"], ["B", "🅱️ theme B"], ["C", "©️ theme C"]]], ["color", "🎨", "color", MAKER_COLORS]],
+  // (ticket 471) the cave things' own: a gem's kind, colour and glow; a puddle's drip; a little waterfall's kind
+  gem: [["style", "💎 kind", "choice", GEM_STYLES], ["color", "🎨", "color", GEM_COLORS], ["glow", "✨ glowing", "toggle"]],
+  puddle: [["drip", "💧 a drip from above", "toggle"]],
+  cascade: [["style", "💦 kind", "choice", CASCADE_STYLES]],
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
@@ -1890,7 +1979,8 @@ const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, s
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
                          seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
                          bubblemaker: { shape: "round", rate: 4, theme: "A", color: MAKER_COLORS[0] },
-                         kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] } };
+                         kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] },
+                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" } };   // (ticket 471)
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
 // size and shininess (like stars we add or not, and controls over their color
@@ -2052,7 +2142,7 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
@@ -2066,6 +2156,9 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       chest: { label: "💰 treasure chest", size: 1, group: "sea" }, anchor: { label: "⚓ anchor", size: 1, group: "sea" },
                       kelp: { label: "🌿 kelp", size: 1, group: "sea", moving: true }, seagrass: { label: "🌾 sea grass", size: 1, group: "sea", moving: true },
                       seafan: { label: "🪭 sea fan", size: 1, group: "sea" }, sealettuce: { label: "🥬 sea lettuce", size: 1, group: "sea" },
+                      // (ticket 471) the 🦇 cave things, for the cave room (and anywhere): a gem, a puddle, a little waterfall
+                      gem: { label: "💎 gem", size: 1, group: "cave", moving: true }, puddle: { label: "💧 puddle", size: 1, group: "cave", moving: true },
+                      cascade: { label: "💦 little waterfall", size: 1, group: "cave", moving: true },
                       // (ticket 284) a 🎚️ lever, and 🕳️ trap doors it opens and shuts
                       lever: { label: "🎚️ lever", size: 1, group: "works" }, trapdoor: { label: "🕳️ trap door", size: 1, group: "works" },
                       // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
@@ -2180,7 +2273,8 @@ function palisadeSvg(n, skulls, seed) {
   return drawnBy("fence", fence) + sk;
 }
 // (a thing's depth among the objects: where its feet are; a trap door's, its back edge)
-const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;
+const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 :
+  t.kind === "puddle" ? t.z - PUDDLE_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;   // (ticket 471: one stands in a puddle, in front of its back edge)
 const thingLabel = t => t.fallen ? `🪨 fallen ${t.fallen}` : t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
 // (ticket 206, Matthew, after the Ubuntu laptop: every cauldron's fumes simple, unless its own 💨 fumes
@@ -2229,6 +2323,10 @@ function thingSvg(o, t, i) {
                t.kind === "chest" ? at(seaChestSvg(t.open ?? true)) :
                t.kind === "bubblemaker" ? at(shadow(40) + bubbleMakerSvg(t)) :   // (ticket 290)
                t.kind === "anchor" ? at(anchorSvg(t.chain ?? true)) :
+               // (ticket 471) the cave things
+               t.kind === "gem" ? at(gemThingSvg(t, seed, o)) :
+               t.kind === "puddle" ? at(puddleThingSvg(t, seed, o, (SCENE.top - t.z) / Math.max(0.05, s))) :
+               t.kind === "cascade" ? at(cascadeThingSvg(t, seed, o)) :
                ["kelp", "seagrass", "seafan", "sealettuce"].includes(t.kind) ? at(seaPlantSvg(t.kind, t.color || THING_DEFAULTS[t.kind].color, seed, o)) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
   // (ticket 324: a lever marked, so it glows under the pointer as the trap room's do)

@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.377 (2026-10-20)
+
+Everything in 0.0.376, plus cave things to put in any place.
+
+- **New things to put in a place, in the "🦇 cave" group:** a 💎 gem (six kinds: cut, a cluster, a geode, a single point, rough, a heart; any colour; "✨ glowing" or not), a 💧 puddle (with "💧 a drip from above" falling into it, or still), and a 💦 little waterfall: water coming out of a lump of rock and running down it into a pool at its foot (six kinds: a trickle, a sheet over a ledge, down steps, a spout from a hole, mossy, glowing). You walk around the waterfall's rock, over gems, and stand in puddles. The sparkles, drops and running water move in time with the music.
+
 ## 0.0.376 (2026-10-20)
 
 Everything in 0.0.375, plus a new place, the 🦇 cave room, and a fix for narrow windows.
