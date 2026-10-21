@@ -2238,6 +2238,7 @@ function imaginationScene(c) {
   const groups = PLACE_GROUPS.filter(([gid]) => gid !== "imagination"), cols = groups.length, rows = Math.max(...groups.map(([, , kinds]) => kinds.length));
   const mx = W * 0.03, top = y0 + H * 0.05, bottom = g - 70 * k, cw = (W - 2 * mx) / cols, rh = (bottom - top - 26 * k) / rows;
   const fw = Math.min(cw * 0.78, rh * 0.86 / 0.74 * 0.8), depth = (o.depth ?? 0) + 1;
+  const raster = depth === 1 && o.raster != null;   // (ticket 509: its pictures as pixels in play)
   // a warm glow behind the map, breathing with the slow LFO
   // (ticket 284: the glow and the map board wall objects of their own; its pictures are doorways, as everywhere)
   s += SEP + wallObj("glow", part("imagination-glow", [c.F, sceneLfoKey(o, "slow")], () => `<ellipse cx="0" cy="${f1((top + bottom) / 2)}" rx="${f1(W * 0.62)}" ry="${f1((bottom - top) * 0.75)}" fill="#fff3c4" opacity="0.25">` +
@@ -2254,7 +2255,7 @@ function imaginationScene(c) {
   s += SEP + groups.map(([, , kinds], i) => kinds.map((kd, j) => {
     const cx = x0 + mx + cw * (i + 0.5), cy = top + 26 * k + rh * (j + 0.5), name = (PLACES.find(([v]) => v === kd) || [kd, kd])[1];
     return (depth > 2 ? `<g class="portal" data-to="${kd}"><rect x="${f1(cx - fw / 2)}" y="${f1(cy - fw * 0.37)}" width="${f1(fw)}" height="${f1(fw * 0.74)}" fill="#e8ebf0" stroke="#b8862f" stroke-width="${f1(3 * k)}"/></g>`
-                      : framedSvg(kd, 45, o, depth, cx, cy - 6 * k, fw, !PERF.livePictures)) +
+                      : framedSvg(kd, 45, o, depth, cx, cy - 6 * k, fw, !PERF.livePictures, raster)) +
       `<text x="${f1(cx)}" y="${f1(cy + fw * 0.37 + 4 * k)}" text-anchor="middle" font-size="${f1(9 * k)}" fill="#5a6270" font-family="sans-serif">${name}</text>`;
   }).join("")).join(SEP);
   // (ticket 145) the ladders: from just off the floor at the wall's foot up

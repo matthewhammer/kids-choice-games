@@ -6,6 +6,12 @@ Each version lists the game's features as of that version. The newest version is
 
 - **🧩 Scripting** (ticket 482, a pull request): the game's logic written in Hazel. A new tab has an editor for 📚 Common and one for the castle's trap room; switched on, the trap room's red levers do what its script says: flip a lever, flip both, or say something over the picture. Off to start, and with a mistake in the script the levers work as they always have.
 
+## 0.0.395 (2026-10-21)
+
+Everything in 0.0.394, plus a smoother walk in our imagination.
+
+- **💭 Our imagination walks smoothly:** its map's pictures of every place are now drawn once as ordinary pictures, so the glow, the dashes and the bobbing ladders no longer make the computer draw all 36 of them again while you walk. On computers without a strong graphics card it walked at about 48 frames a second; now 60. They look the same.
+
 ## 0.0.394 (2026-10-20)
 
 Everything in 0.0.393, plus the date's moon in the dungeons.
