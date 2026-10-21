@@ -337,7 +337,9 @@ function drawNow() {
   // (on its far side they walk at its head, by its chest, under its neck: at its shoulder, as on the near side, its body hid them)
   const horseX = ride ? (horseView === "side" ? -dir * 30 * horseHs : 0) : horseView === "side" ? -dir * (leadFar ? 210 * horseHs : 130 * horseHs - 50) : (horseView === "front" ? -1 : 1) * (leadR ? -1 : 1) * (84 * horseHs + 66);
   const rideLift = ride && horseView ? ground - 326 * horseHs - L - 12 : 0;
-  if (horseView) { left = Math.min(left, -(Math.abs(horseX) + (horseView === "side" ? 310 : 100) * horseHs + 20)); top = Math.min(top + rideLift - 12, ground - (horseView === "side" ? 520 : 570) * horseHs); bottom = Math.max(bottom, ground + 16 * horseHs + 10); }   // (its shadow's reach)
+  // (ticket 498: an armour's plume, or the dragon helm's horns, over its head)
+  const plumed = (B.horseArmour || "none") !== "none" ? (horseView === "side" ? 80 : 50) : 0;
+  if (horseView) { left = Math.min(left, -(Math.abs(horseX) + (horseView === "side" ? 310 : 100) * horseHs + 20)); top = Math.min(top + rideLift - 12, ground - ((horseView === "side" ? 520 : 570) + plumed) * horseHs); bottom = Math.max(bottom, ground + 16 * horseHs + 10); }   // (its shadow's reach)
   // A background is a stage of its own, the same whatever the figure
   // (SCENE): the frame the usual figure gets in a scene. The figure stands
   // on its ground by its feet, at its size and where it was dragged, so
@@ -501,7 +503,8 @@ function drawNow() {
   if (horseView && !wet) {
     const gait = B.anim === "walk" ? "walk" : B.anim === "run" ? "run" : "stand", k = horseView === "side" ? dir : 1;
     const h = horseSvg(horseView, gait, gait === "stand" ? 0 : lfoNow("B").phase,
-                       { coat: B.horseCoat, mane: B.horseMane, mark: B.horseMark, tack: B.horseTack, socks: B.horseSocks, shoes: B.horseShoes, markColor: B.horseMarkColor, saddle: B.horseSaddle, blanket: B.horseBlanket, maneStyle: B.horseManeStyle, bows: B.horseBows }, 0, ride);
+                       { coat: B.horseCoat, mane: B.horseMane, mark: B.horseMark, tack: B.horseTack, socks: B.horseSocks, shoes: B.horseShoes, markColor: B.horseMarkColor, saddle: B.horseSaddle, blanket: B.horseBlanket, maneStyle: B.horseManeStyle, bows: B.horseBows,
+                         armour: B.horseArmour, arms: knight ? WC : null }, 0, ride);   // (ticket 498: its armour, in the knight's arms while they are a knight)
     // (drawn on the ground at 0, scaled by hs about its hooves; its points into the friend's units, T)
     const hs = horseHs, T = ([x, y]) => [horseX + k * hs * x, ground + hs * y], at = `translate(${f1(horseX)} ${f1(ground)}) scale(${(k * hs).toFixed(4)} ${hs.toFixed(4)})`;
     const horseG = `<g class="horse" data-horse="${horseView} ${gait}" data-size="${hs.toFixed(3)}"${leadFar ? ' data-far=""' : ""}><ellipse cx="${f1(horseX - k * hs * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${f1((horseView === "side" ? 225 : 100) * hs)}" ry="${f1(14 * hs)}" fill="#000" opacity="0.08"/>` +

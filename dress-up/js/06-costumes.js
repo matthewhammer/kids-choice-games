@@ -68,8 +68,15 @@ function armsFill(id, shape, WC, mirror = false, emblemAt = null, k = 1, mid = e
   const fields = lay === "plain" ? R(x0, y0, H, H, A)
     : lay === "halves" ? R(x0, y0, half, H, l) + R(cx, y0, half, H, r)
     : R(x0, y0, half, half, l) + R(cx, y0, half, half, r) + R(x0, cy, half, half, r) + R(cx, cy, half, half, l);
-  const em = emblemAt && EMBLEMS[WC.emblem] ? `<g transform="translate(${f1(emblemAt[0])} ${f1(emblemAt[1])}) scale(${k.toFixed(3)})"><circle r="19" fill="${lay === "plain" ? B : "#e0b030"}" opacity="0.95"/>${EMBLEMS[WC.emblem](lay === "plain" ? A : "#7a1f2b")}</g>` : "";
-  return `<clipPath id="${id}"><path d="${shape}"/></clipPath><g clip-path="url(#${id})">${fields}</g>${WC.emblem && WC.emblem !== "none" ? em : ""}<path d="${shape}" fill="none" stroke="#3b3b44" stroke-width="2.5" stroke-linejoin="round"/>`;
+  const em = emblemAt ? armsEmblem(WC, emblemAt, k) : "";
+  return `<clipPath id="${id}"><path d="${shape}"/></clipPath><g clip-path="url(#${id})">${fields}</g>${em}<path d="${shape}" fill="none" stroke="#3b3b44" stroke-width="2.5" stroke-linejoin="round"/>`;
+}
+// the emblem alone, on its round, at `at`, k its size (ticket 498: armsFill's, and on its own where a cloth shows it twice, as
+// the horse's caparison does on its two haunches seen from behind)
+function armsEmblem(WC, at, k = 1) {
+  if (!EMBLEMS[WC.emblem] || WC.emblem === "none") return "";
+  const A = WC.knightA || "#2f6db5", B = WC.knightB || "#f4f1ea", lay = WC.tabardLayout || "quartered";
+  return `<g transform="translate(${f1(at[0])} ${f1(at[1])}) scale(${k.toFixed(3)})"><circle r="19" fill="${lay === "plain" ? B : "#e0b030"}" opacity="0.95"/>${EMBLEMS[WC.emblem](lay === "plain" ? A : "#7a1f2b")}</g>`;
 }
 // (ticket 447, Matthew: "the monk/druid hood doesn't read that way in L and R poses --- due to the placement of the point -- it
 // should come out like a larger triangle, sticking away from the face, not in the middle of the crown, on top") In profile its

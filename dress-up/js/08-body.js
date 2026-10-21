@@ -931,6 +931,264 @@ function maneBraid(s, dir, len, mane, maneD, bow) {
   return g + `<path d="M${f1(ex)} ${f1(ey)} l-4 12 M${f1(ex)} ${f1(ey)} l4 12" stroke="${bow}" stroke-width="3" stroke-linecap="round"/>` +
     `<path d="M${f1(ex)} ${f1(ey)} l-12 -7 l0 14 Z M${f1(ex)} ${f1(ey)} l12 -7 l0 14 Z" fill="${bow}" stroke="${bowD}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="${f1(ex)}" cy="${f1(ey)}" r="3.2" fill="${bow}" stroke="${bowD}" stroke-width="1.2"/>`;
 }
+// (ticket 498, Matthew: "let's start to think of costumes for the knight as having horse pieces (face helmets, look at images
+// from Lego castles and knights) -- not just saddles"; then "just release and let the kids decide") The horse's armour,
+// body.horseArmour (HORSE_ARMOURS), as the mock-up (dress-up/mockups/horse-armour.html) drew it: 🛡️ full plate (a chanfron
+// down its face with a plume, a crinet of plates down its neck's crest, a peytral over its chest, flanchards at its sides, a
+// crupper over its rump); 🦁 half caparison (a steel chanfron, a cloth to below its belly, its hem scalloped, the emblem on
+// its side); 🎪 tournament (a cloth over everything: its head with eye holes and ear sleeves, its neck, and down to its
+// hooves, the hem dagged, a plume); 🐉 dragon helm (a dragon's head for a chanfron with horns, spikes and teeth, a scaly
+// crinet, a cloth with a dagged hem); 🧱 toy helmet (one chunky moulded helmet with round eye holes and a plume in a clip, as
+// on a toy castle's horse, and a short cloth); 🎀 parade (rosettes and ribbons on its bridle, a plume, a saddle cloth with
+// tassels). Each piece is drawn from the side, from the front and from behind, each a drawing of its own (Matthew's rule for
+// new angles). The cloth and the plume take the knight's arms when the friend wears the knight costume (horseArms), else the
+// halter's colour and a light shade of it, with no emblem. The pieces are drawn on the body at rest and lifted with the
+// stride's bob; the plumes and the parade's ribbons swing with the stride, as the tail does, and hang still while it stands
+// (the friend's horse has no animations of its own: its face is drawn `still`).
+const HORSE_STEEL = { S: "#b9c1ca", D: "#59626e", L: "#eef2f6" };
+const HORSE_DRAGON = { S: "#4f7a52", D: "#22382a", L: "#9cc79a", horn: "#efe6cf", hornD: "#8a7f62", eye: "#c0392b" };
+// (the sets with a cloth: its hem's height, and its cut)
+const HORSE_CLOTHS = { half: [-150, "scallop"], tourney: [-34, "dag"], dragon: [-120, "dag"], toy: [-176, "scallop"] };
+// the arms the armour's cloth and plume take: the knight's (a: state.costume, while it is the knight's), else the halter's
+// colour and a light shade of it, quartered, no emblem, and a plume in the halter's colour
+function horseArms(H) {
+  const a = H.arms, t = H.tack || "#7a3a1a";
+  return a ? { knightA: a.knightA || "#2f6db5", knightB: a.knightB || "#f4f1ea", tabardLayout: a.tabardLayout || "quartered", emblem: a.emblem || "none", plume: a.plumeColor || "#c0392b" }
+    : { knightA: t, knightB: mix(t, "#ffffff", 0.6), tabardLayout: "quartered", emblem: "none", plume: t };
+}
+const swung = (sw, x, y, inner) => sw ? `<g transform="rotate(${f1(sw)} ${f1(x)} ${f1(y)})">${inner}</g>` : inner;
+// a plume from the side: three feathers from a holder at (x, y), sweeping back (the mock-up's), swung by sw degrees
+const horsePlumeSide = (x, y, c, tall, sw) => swung(sw, x, y, [[-40, 0], [-20, 6], [-58, -6]].map(([dx, dy], i) =>
+  `<path d="M${f1(x)} ${f1(y)} C${f1(x - 6)} ${f1(y - 50 * tall)} ${f1(x + dx * 0.4)} ${f1(y - 80 * tall + dy)} ${f1(x + dx)} ${f1(y - 70 * tall + dy)} C${f1(x + dx * 0.5)} ${f1(y - 50 * tall)} ${f1(x + 4)} ${f1(y - 30 * tall)} ${f1(x + 4)} ${f1(y)} Z" fill="${i === 1 ? mix(c, "#ffffff", 0.35) : c}" stroke="${mix(c, "#000000", 0.35)}" stroke-width="1.5"/>`).join(""));
+// a plume facing us: three feathers fanning up from (x, y), h tall, the middle one lighter, in front; short (ridden toward
+// us, the head carried low before the rider: the plume sweeping back toward them, seen end on), a low wide tuft, so the
+// rider's face shows over it
+const horsePlumeFront = (x, y, c, h, sw, short) => swung(sw, x, y, [[-1, 0.86], [1, 0.86], [0, 1]].map(([lean, f]) => {
+  const a = lean * h * (short ? 0.5 : 0.42), t = h * f * (short ? 0.42 : 1), w = h * (short ? 0.16 : 0.2);
+  return `<path d="M${f1(x - 2)} ${f1(y)} Q${f1(x + a * 0.2 - w)} ${f1(y - t * 0.55)} ${f1(x + a)} ${f1(y - t)} Q${f1(x + a * 0.2 + w)} ${f1(y - t * 0.55)} ${f1(x + 2)} ${f1(y)} Z" fill="${lean ? c : mix(c, "#ffffff", 0.35)}" stroke="${mix(c, "#000000", 0.35)}" stroke-width="1.2"/>`; }).join(""));
+// a plume from behind: it sweeps back toward us, so two feathers arch up and over to each side, and the middle one rises
+// short between them, its tip coming toward us
+const horsePlumeBack = (x, y, c, h, sw) => swung(sw, x, y, [-1, 1].map(sd =>
+  `<path d="M${f1(x)} ${f1(y)} C${f1(x + sd * h * 0.15)} ${f1(y - h * 1.15)} ${f1(x + sd * h * 0.7)} ${f1(y - h * 1.1)} ${f1(x + sd * h * 0.85)} ${f1(y - h * 0.4)} C${f1(x + sd * h * 0.55)} ${f1(y - h * 0.8)} ${f1(x + sd * h * 0.2)} ${f1(y - h * 0.75)} ${f1(x + sd * 3)} ${f1(y)} Z" fill="${c}" stroke="${mix(c, "#000000", 0.35)}" stroke-width="1.5"/>`).join("") +
+  `<path d="M${f1(x - 3)} ${f1(y)} Q${f1(x - h * 0.2)} ${f1(y - h * 0.45)} ${f1(x)} ${f1(y - h * 0.72)} Q${f1(x + h * 0.2)} ${f1(y - h * 0.45)} ${f1(x + 3)} ${f1(y)} Z" fill="${mix(c, "#ffffff", 0.35)}" stroke="${mix(c, "#000000", 0.35)}" stroke-width="1.5"/>`);
+// a rosette on the bridle at (x, y), r its petals' size: petals in the arms' first colour round a gold middle, two ribbons in
+// the second hanging from it and swinging (sw)
+const horseRosette = (x, y, r, K, sw) => swung(sw, x, y, `<path d="M${f1(x)} ${f1(y)} l${f1(-r * 0.9)} ${f1(r * 4.8)} M${f1(x)} ${f1(y)} l${f1(r * 1.1)} ${f1(r * 4.4)}" stroke="${mix(K.knightB, "#000000", 0.25)}" stroke-width="${f1(r * 1.15)}" stroke-linecap="round"/>` +
+  `<path d="M${f1(x)} ${f1(y)} l${f1(-r * 0.9)} ${f1(r * 4.8)} M${f1(x)} ${f1(y)} l${f1(r * 1.1)} ${f1(r * 4.4)}" stroke="${K.knightB}" stroke-width="${f1(r * 0.8)}" stroke-linecap="round"/>`) +
+  [0, 1, 2, 3, 4, 5, 6, 7].map(i => `<circle cx="${f1(x + Math.cos(i * Math.PI / 4) * r * 1.33)}" cy="${f1(y + Math.sin(i * Math.PI / 4) * r * 1.33)}" r="${f1(r)}" fill="${K.knightA}" stroke="${mix(K.knightA, "#000000", 0.35)}" stroke-width="0.8"/>`).join("") +
+  `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="#e0b030" stroke="#9a7413" stroke-width="0.8"/>`;
+const horseRivets = (pts, c, r = 2.4) => pts.map(([x, y]) => `<circle cx="${f1(x)}" cy="${f1(y)}" r="${r}" fill="${c}"/>`).join("");
+// a hem along y from x0 to x1 in n pieces, cut in scallops or in dags, as a path's next commands
+const horseHem = (x0, x1, y, n, cut, deep) => { let d = ""; for (let i = 1; i <= n; i++) { const a = x0 + (x1 - x0) * (i - 1) / n, b = x0 + (x1 - x0) * i / n, m = (a + b) / 2;
+  d += cut === "dag" ? ` L${f1(m)} ${f1(y + deep + 2)} L${f1(b)} ${f1(y)}` : ` Q${f1(m)} ${f1(y + deep)} ${f1(b)} ${f1(y)}`; } return d; };
+// a tassel hanging from (x, y), in the arms' second colour with a gold knob; tassels: n of them along a line from a to b
+const horseTassel = ([x, y], K) => `<path d="M${f1(x)} ${f1(y)} l-4 16 l8 0 Z" fill="${K.knightB}" stroke="${mix(K.knightB, "#000000", 0.4)}" stroke-width="1"/><circle cx="${f1(x)}" cy="${f1(y)}" r="3" fill="#e0b030"/>`;
+const horseTassels = (a, b, n, K) => [...Array(n)].map((_, i) => { const t = (i + 0.5) / n; return horseTassel([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], K); }).join("");
+// lames: plates overlapping down a neck seen from the front or behind, between y0 (its top) and y1, w(y) its half width
+// there; c their colours (steel, or the dragon's scales); toward us their lower edges curve down, from behind their upper ones up
+function horseLames(y0, y1, w, c, scales, behind) {
+  let s = ""; const n = 5, step = (y1 - y0) / n;
+  for (let i = 0; i < n; i++) { const a = y0 + i * step, b = Math.min(y1, a + step * 1.4), wa = w(a) + 3, wb = w(b) + 3;
+    s += behind ? `<path d="M${f1(-wa)} ${f1(a + 4)} Q0 ${f1(a - 6)} ${f1(wa)} ${f1(a + 4)} L${f1(wb)} ${f1(b)} L${f1(-wb)} ${f1(b)} Z" fill="${c.S}" stroke="${c.D}" stroke-width="2" stroke-linejoin="round"/>`
+      : `<path d="M${f1(-wa)} ${f1(a)} L${f1(wa)} ${f1(a)} L${f1(wb)} ${f1(b)} Q0 ${f1(b + 7)} ${f1(-wb)} ${f1(b)} Z" fill="${c.S}" stroke="${c.D}" stroke-width="2" stroke-linejoin="round"/>`;
+    s += scales ? `<path d="M${f1(-wa * 0.5)} ${f1(a + step * 0.6)} q4 6 9 0 M${f1(wa * 0.15)} ${f1(a + step * 0.6)} q4 6 9 0" fill="none" stroke="${c.D}" stroke-width="1.2"/>`
+      : `<path d="M${f1(-wa + 4)} ${f1(a + (behind ? 3 : 2))} L${f1(wa - 4)} ${f1(a + (behind ? 3 : 2))}" stroke="${c.L}" stroke-width="2" opacity="0.8"/>`; }
+  return s;
+}
+// ---- from the side (facing our right), on the body at rest: the mock-up's pieces ----
+// the crest of the neck, as the mane follows it, from the withers (t 0) to the poll (t 1), o in toward the neck (horseSvg's, at rest)
+const horseCrestAt = (t, o) => { const v = 1 - t, x = v * v * 86 + 2 * v * t * 130 + t * t * 184, y = v * v * -302 + 2 * v * t * -392 + t * t * -454;
+  const dx = 88 * (1 - t) + 108 * t, dy = -180 * (1 - t) - 124 * t, d = Math.hypot(dx, dy); return [x - dy / d * o, y + dx / d * o]; };
+const HORSE_EYE = `<ellipse cx="216" cy="-436" rx="5" ry="6" fill="#1f1410"/><circle cx="218" cy="-438" r="1.6" fill="#ffffff"/>`;
+function horseChanfronSide(kind, K, sw, tack) {
+  if (kind === "toy") {
+    // (one chunky moulded piece, round eye holes, a clip on top for its plume, a shine down it)
+    const c = K.knightA, d = mix(c, "#000000", 0.4);
+    return `<path d="M180 -468 Q210 -484 238 -466 L294 -410 Q304 -398 294 -388 L276 -392 L226 -424 L184 -446 Z" fill="${c}" stroke="${d}" stroke-width="3" stroke-linejoin="round"/>` +
+      `<path d="M196 -470 Q214 -478 232 -466 L284 -416" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.45"/>` +
+      `<circle cx="216" cy="-436" r="10" fill="${mix(c, "#000000", 0.55)}"/>` + HORSE_EYE + `<rect x="190" y="-484" width="14" height="16" rx="3" fill="${c}" stroke="${d}" stroke-width="2"/>` + horsePlumeSide(197, -482, K.plume, 1, sw);
+  }
+  if (kind === "dragon") {
+    // (a dragon's head: a horn sweeping back, spikes down the nose, teeth along its edge, a red ring round the eye)
+    const m = HORSE_DRAGON;
+    return `<path d="M196 -462 C178 -480 160 -500 132 -506 C158 -490 172 -472 184 -452 Z" fill="${m.horn}" stroke="${m.hornD}" stroke-width="2"/>` +
+      `<path d="M184 -462 Q206 -472 228 -462 L288 -406 Q296 -394 290 -386 L270 -390 Q246 -404 228 -418 Q212 -432 196 -440 Q184 -446 184 -462 Z" fill="${m.S}" stroke="${m.D}" stroke-width="2.5" stroke-linejoin="round"/>` +
+      [0, 1, 2, 3, 4].map(i => { const x = 214 + i * 15, y = -462 + i * 14; return `<path d="M${x - 6} ${y + 2} L${x + 2} ${y - 12} L${x + 6} ${y + 4} Z" fill="${m.horn}" stroke="${m.hornD}" stroke-width="1.2"/>`; }).join("") +
+      [0, 1, 2, 3].map(i => { const x = 236 + i * 13, y = -410 + i * 7; return `<path d="M${x} ${y} l3 9 l4 -7 Z" fill="#ffffff" stroke="${m.hornD}" stroke-width="1"/>`; }).join("") +
+      `<path d="M200 -450 q6 -2 10 2 M222 -446 q6 -2 10 2 M244 -428 q6 -2 10 2 M262 -414 q6 -2 10 2" fill="none" stroke="${m.D}" stroke-width="1.6" opacity="0.7"/>` +
+      `<circle cx="216" cy="-436" r="10" fill="none" stroke="${m.eye}" stroke-width="3.5"/>` + HORSE_EYE;
+  }
+  if (kind === "cloth") {
+    // (a cloth over the whole head in the arms, with an eye hole and a sleeve over the ear; the bridle over it, so the rein
+    // has its ring; the plume in a gold band)
+    const shape = "M174 -456 Q204 -478 230 -462 L294 -402 Q306 -380 288 -362 L254 -356 Q232 -370 210 -402 Q194 -418 174 -430 Z", tackD = mix(tack, "#000000", 0.35);
+    return armsFill("horse-head-cloth", shape, K, false, [234, -414], 0.75, [234, -414], 90) + `<path d="M186 -456 L182 -500 L206 -462 Z" fill="${K.knightA}" stroke="#3b3b44" stroke-width="2"/>` +
+      `<circle cx="216" cy="-436" r="9" fill="#2a2420"/>` + HORSE_EYE +
+      `<path d="M240 -374 L272 -410" stroke="${tack}" stroke-width="7" stroke-linecap="round"/><path d="M204 -462 Q214 -420 244 -384" fill="none" stroke="${tackD}" stroke-width="5" stroke-linecap="round"/>` +
+      `<circle cx="240" cy="-368" r="5" fill="none" stroke="#e8b923" stroke-width="2.5"/>` +
+      `<path d="M196 -470 L200 -478" stroke="#e0b030" stroke-width="5"/>` + horsePlumeSide(198, -478, K.plume, 1.2, sw);
+  }
+  // (steel: a plate down the face from the poll to the nose, a ridge down its middle, rivets, a cup round the eye, a plume)
+  const c = HORSE_STEEL;
+  return `<path d="M184 -462 Q206 -472 228 -462 L288 -406 Q296 -394 290 -386 L270 -390 Q246 -404 228 -418 Q212 -432 196 -440 Q184 -446 184 -462 Z" fill="${c.S}" stroke="${c.D}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    `<path d="M196 -462 L286 -400" stroke="${c.L}" stroke-width="3" stroke-linecap="round" opacity="0.9"/>` + horseRivets([[200, -452], [244, -436], [270, -412], [282, -396]], c.D) +
+    `<circle cx="216" cy="-436" r="10" fill="${mix(c.S, "#000000", 0.5)}" stroke="${c.D}" stroke-width="2"/>` + HORSE_EYE + horsePlumeSide(196, -466, K.plume, 1, sw);
+}
+// the crinet: plates overlapping down the neck's crest, from the withers up (scales: the dragon's, with scales drawn on)
+function horseCrinetSide(c, scales) {
+  let s = ""; const P = p => `${f1(p[0])} ${f1(p[1])}`;
+  for (let i = 0; i < 8; i++) { const t0 = 0.04 + i * 0.115, t1 = t0 + 0.14;
+    s += `<path d="M${P(horseCrestAt(t0, -4))} L${P(horseCrestAt(t1, -4))} L${P(horseCrestAt(t1, 32))} Q${P(horseCrestAt((t0 + t1) / 2, 40))} ${P(horseCrestAt(t0, 32))} Z" fill="${c.S}" stroke="${c.D}" stroke-width="2" stroke-linejoin="round"/>` +
+      (scales ? `<path d="M${P(horseCrestAt(t0 + 0.02, 10))} q4 6 9 0 M${P(horseCrestAt(t0 + 0.06, 22))} q4 6 9 0" fill="none" stroke="${c.D}" stroke-width="1.2"/>`
+        : `<path d="M${P(horseCrestAt(t0 + 0.01, 0))} L${P(horseCrestAt(t1 - 0.02, 0))}" stroke="${c.L}" stroke-width="2" opacity="0.8"/>`); }
+  return s;
+}
+const horsePeytralSide = c => `<path d="M118 -298 Q174 -284 180 -234 Q178 -192 150 -176 L122 -184 Q144 -236 112 -282 Z" fill="${c.S}" stroke="${c.D}" stroke-width="2.5" stroke-linejoin="round"/>` +
+  `<path d="M126 -288 Q168 -270 168 -228" fill="none" stroke="${c.L}" stroke-width="3" opacity="0.8"/><circle cx="160" cy="-232" r="8" fill="${c.L}" stroke="${c.D}" stroke-width="2"/>` + horseRivets([[130, -282], [172, -250], [160, -196]], c.D);
+const horseCrupperSide = c => `<path d="M-50 -318 Q-150 -322 -178 -292 Q-194 -252 -176 -212 L-156 -220 Q-166 -258 -146 -286 Q-104 -304 -50 -302 Z" fill="${c.S}" stroke="${c.D}" stroke-width="2.5" stroke-linejoin="round"/>` +
+  `<path d="M-60 -312 Q-140 -312 -166 -286" fill="none" stroke="${c.L}" stroke-width="3" opacity="0.8"/>` + horseRivets([[-80, -310], [-140, -300], [-172, -262]], c.D);
+const horseFlanchardSide = c => `<path d="M-40 -292 L100 -292 Q110 -250 96 -206 Q30 -196 -36 -206 Q-48 -250 -40 -292 Z" fill="${c.S}" stroke="${c.D}" stroke-width="2.5" stroke-linejoin="round"/>` +
+  `<path d="M-30 -282 L92 -282" stroke="${c.L}" stroke-width="2.5" opacity="0.8"/>` + horseRivets([[-30, -214], [30, -206], [88, -214]], c.D);
+// the caparison: a cloth in the arms from the withers to the rump, down to its hem (hemY), cut in scallops or dags; the emblem
+// on its side; and (neck) over the neck too
+function horseCaparisonSide(K, hemY, cut, neck) {
+  const d = `M150 -302 Q100 -316 40 -324 Q-60 -324 -140 -308 Q-182 -286 -192 -236 L-196 ${hemY}` + horseHem(-196, 186, hemY, 16, cut, 16) + ` L186 -236 Q184 -280 150 -302 Z`;
+  return armsFill("horse-cloth", d, K, false, [-60, -236], 1.6, [-5, -200], 260) +
+    (neck ? armsFill("horse-neck-cloth", "M84 -298 Q128 -386 182 -448 L214 -420 Q206 -356 160 -248 Z", K, false, null, 1, [150, -350], 120) : "");
+}
+// the pieces of a set from the side: body (over the near legs' tops, under the saddle), neck, chest (over the saddle's
+// girth), head (over the head), after (last); hideHead and hideMane where a cloth covers them; tailOver, the tail over the cloth
+function horseArmourSide(set, K, sw, tack) {
+  const cl = HORSE_CLOTHS[set], none = { body: "", neck: "", chest: "", head: "", after: "" };
+  if (set === "plate") return { ...none, body: horseFlanchardSide(HORSE_STEEL) + horseCrupperSide(HORSE_STEEL), neck: horseCrinetSide(HORSE_STEEL), chest: horsePeytralSide(HORSE_STEEL), head: horseChanfronSide("steel", K, sw, tack), tailOver: true };
+  if (set === "half") return { ...none, body: horseCaparisonSide(K, cl[0], cl[1]), head: horseChanfronSide("steel", K, sw, tack), tailOver: true };
+  if (set === "tourney") return { ...none, body: horseCaparisonSide(K, cl[0], cl[1], true), head: horseChanfronSide("cloth", K, sw, tack), hideHead: true, hideMane: true, tailOver: true };
+  if (set === "dragon") return { ...none, body: horseCaparisonSide(K, cl[0], cl[1]), neck: horseCrinetSide(HORSE_DRAGON, true), head: horseChanfronSide("dragon", K, sw, tack), tailOver: true };
+  if (set === "toy") return { ...none, body: horseCaparisonSide(K, cl[0], cl[1]), head: horseChanfronSide("toy", K, sw, tack), tailOver: true };
+  if (set === "parade") {
+    // (rosettes where the bridle's straps meet, at the poll and the noseband, a plume, tassels along the saddle cloth's edge)
+    const edge = t => { const v = 1 - t; return [v * v * -26 + 2 * v * t * 30 + t * t * 92, v * v * -240 + 2 * v * t * -228 + t * t * -238]; };
+    return { ...none, head: horseRosette(204, -462, 4.5, K, sw) + horseRosette(244, -386, 4.5, K, sw) + horsePlumeSide(196, -470, K.plume, 0.8, sw),
+             after: [...Array(7)].map((_, i) => horseTassel(edge(0.04 + i * 0.15), K)).join("") };
+  }
+  return null;
+}
+// ---- facing us, on the body at rest ----
+// the chest cloth: from over the chest down to its hem, over the forelegs' tops, the emblem on its breast
+function horseClothFront(K, hemY, cut) {
+  const d = `M-62 -334 Q0 -352 62 -334 Q90 -308 92 -256 L94 ${hemY}` + horseHem(94, -94, hemY, 8, cut, 14) + ` L-92 -256 Q-90 -308 -62 -334 Z`;
+  return armsFill("horse-cloth", d, K, false, [0, -212], 1.2, [0, (hemY - 352) / 2], Math.max(110, (hemY + 352) / 2 + 12));
+}
+// the chanfron facing us, in the face's own units (horseFace's): a plate down the face from between the ears to above the
+// nose, a ridge, rivets, cups round the eyes (the eyes drawn again in them), and the plume's socket between the ears
+const horseFaceEyes = `<ellipse cx="-22" cy="-128" rx="4.8" ry="6.2" fill="#1f1410"/><circle cx="-20.4" cy="-130.5" r="1.5" fill="#ffffff"/><ellipse cx="22" cy="-128" rx="4.8" ry="6.2" fill="#1f1410"/><circle cx="23.6" cy="-130.5" r="1.5" fill="#ffffff"/>`;
+function horseChanfronFront(kind, K, sw, tack, short) {
+  if (kind === "toy") {
+    // (one chunky helmet over the top of the head and down the face, round holes for the eyes, its ear tips showing, a clip
+    // on top for the plume, a shine)
+    const c = K.knightA, d = mix(c, "#000000", 0.4);
+    return `<path d="M-27 -146 Q-28 -174 0 -176 Q28 -174 27 -146 L25 -118 Q21 -98 14 -90 Q0 -86 -14 -90 Q-21 -98 -25 -118 Z" fill="${c}" stroke="${d}" stroke-width="2.4" stroke-linejoin="round"/>` +
+      `<path d="M-17 -164 Q-23 -140 -18 -110" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.45"/>` +
+      `<circle cx="-20" cy="-128" r="8.5" fill="${mix(c, "#000000", 0.55)}"/><circle cx="20" cy="-128" r="8.5" fill="${mix(c, "#000000", 0.55)}"/>` + horseFaceEyes +
+      `<rect x="-6" y="-186" width="12" height="12" rx="2.5" fill="${c}" stroke="${d}" stroke-width="1.6"/>` + horsePlumeFront(0, -184, K.plume, 46, sw, short);
+  }
+  if (kind === "dragon") {
+    // (a dragon's mask: horns curving up and out, spikes up the ridge of the nose, teeth along its lower edge, red rings round
+    // the eyes)
+    const m = HORSE_DRAGON;
+    return [-1, 1].map(sd => `<path d="M${sd * 12} -158 C${sd * 24} -176 ${sd * 30} -194 ${sd * 46} -204 C${sd * 36} -188 ${sd * 30} -172 ${sd * 22} -152 Z" fill="${m.horn}" stroke="${m.hornD}" stroke-width="1.4"/>`).join("") +
+      `<path d="M-20 -162 Q0 -170 20 -162 L24 -134 Q20 -110 14 -90 Q0 -84 -14 -90 Q-20 -110 -24 -134 Z" fill="${m.S}" stroke="${m.D}" stroke-width="2" stroke-linejoin="round"/>` +
+      [-158, -146, -134, -122, -110, -98].map(y => `<path d="M-3.5 ${y + 2} L0 ${y - 6} L3.5 ${y + 2} Z" fill="${m.horn}" stroke="${m.hornD}" stroke-width="0.9"/>`).join("") +
+      [-10, -5, 0, 5, 10].map(x => `<path d="M${x - 2.2} -89 l2.2 6 l2.2 -6 Z" fill="#ffffff" stroke="${m.hornD}" stroke-width="0.8"/>`).join("") +
+      `<path d="M-15 -150 q3 -3 6 0 M9 -150 q3 -3 6 0 M-14 -112 q3 -3 6 0 M8 -112 q3 -3 6 0 M-12 -100 q3 -3 6 0 M6 -100 q3 -3 6 0" fill="none" stroke="${m.D}" stroke-width="1.2" opacity="0.7"/>` +
+      `<circle cx="-22" cy="-128" r="8" fill="none" stroke="${m.eye}" stroke-width="3"/><circle cx="22" cy="-128" r="8" fill="none" stroke="${m.eye}" stroke-width="3"/>` + horseFaceEyes;
+  }
+  if (kind === "cloth") {
+    // (the cloth over the whole head: sleeves over the ears, eye holes, the bridle over it, the plume in a gold band)
+    const tackD = mix(tack, "#3a2414", 0.45);
+    return [-1, 1].map(sd => `<path d="M${sd * 8} -154 L${sd * 23} -190 L${sd * 25} -150 Z" fill="${K.knightA}" stroke="#3b3b44" stroke-width="1.6" stroke-linejoin="round"/>`).join("") +
+      armsFill("horse-head-cloth", "M-18 -160 Q-27 -153 -25 -136 Q-24 -116 -17 -96 Q-14 -84 -15 -74 Q-20 -62 -15 -48 Q0 -40 15 -48 Q20 -62 15 -74 Q14 -84 17 -96 Q24 -116 25 -136 Q27 -153 18 -160 Q0 -167 -18 -160 Z", K, false, null, 1, [0, -104], 70) +
+      `<ellipse cx="-21" cy="-128" rx="7.5" ry="8.5" fill="#2a2420"/><ellipse cx="21" cy="-128" rx="7.5" ry="8.5" fill="#2a2420"/>` + horseFaceEyes +
+      [-1, 1].map(sd => `<path d="M${sd * 12.5} -82 Q${sd * 16} -98 ${sd * 18} -112" fill="none" stroke="${tackD}" stroke-width="3" stroke-linecap="round"/>`).join("") +
+      `<path d="M-13.5 -84 Q0 -76 13.5 -84" fill="none" stroke="${tack}" stroke-width="4.5" stroke-linecap="round"/><circle cx="0" cy="-77" r="3" fill="none" stroke="#e8b923" stroke-width="1.6"/>` +
+      `<rect x="-4" y="-170" width="8" height="8" rx="1.5" fill="#e0b030" stroke="#9a7413" stroke-width="1"/>` + horsePlumeFront(0, -168, K.plume, 52, sw, short);
+  }
+  const c = HORSE_STEEL;
+  return `<path d="M-17 -161 Q0 -168 17 -161 L21 -134 Q18 -110 12 -90 Q0 -84 -12 -90 Q-18 -110 -21 -134 Z" fill="${c.S}" stroke="${c.D}" stroke-width="2" stroke-linejoin="round"/>` +
+    `<path d="M0 -162 L0 -91" stroke="${c.L}" stroke-width="2" stroke-linecap="round" opacity="0.9"/>` + horseRivets([[-12, -152], [12, -152], [-9, -100], [9, -100]], c.D, 1.4) +
+    `<circle cx="-22" cy="-128" r="8" fill="none" stroke="${c.S}" stroke-width="4"/><circle cx="22" cy="-128" r="8" fill="none" stroke="${c.S}" stroke-width="4"/>` +
+    `<circle cx="-22" cy="-128" r="10" fill="none" stroke="${c.D}" stroke-width="1"/><circle cx="22" cy="-128" r="10" fill="none" stroke="${c.D}" stroke-width="1"/>` + horseFaceEyes +
+    `<rect x="-4" y="-170" width="8" height="9" rx="1.5" fill="${c.S}" stroke="${c.D}" stroke-width="1.2"/>` + horsePlumeFront(0, -168, K.plume, 46, sw, short);
+}
+// the pieces of a set facing us: behind (at its sides, under the rider), neck (over the neck and the mane), chest (over the
+// forelegs' tops), face (in the face's units, over it), hideFace and hideMane where a cloth covers them; D, how much lower the
+// head is carried (ridden); the parade's cloth at its sides is horseSvg's, as the saddle blanket's
+function horseArmourFront(set, K, D, sw, tack) {
+  const cl = HORSE_CLOTHS[set], none = { behind: "", neck: "", chest: "", face: "" }, top = -432 + D, nw = y => 44 - 12 * (-296 - y) / Math.max(1, -296 - top);
+  if (set === "plate") return { ...none, behind: [-1, 1].map(k => `<path d="M${k * 82} -316 L${k * 99} -310 Q${k * 103} -262 ${k * 96} -212 L${k * 80} -214 Z" fill="${HORSE_STEEL.S}" stroke="${HORSE_STEEL.D}" stroke-width="2.5" stroke-linejoin="round"/>`).join(""),
+    neck: horseLames(top, -298, nw, HORSE_STEEL, false, false),
+    chest: `<path d="M-58 -322 Q0 -340 58 -322 Q80 -298 78 -256 Q76 -216 60 -202 Q0 -194 -60 -202 Q-76 -216 -78 -256 Q-80 -298 -58 -322 Z" fill="${HORSE_STEEL.S}" stroke="${HORSE_STEEL.D}" stroke-width="2.5" stroke-linejoin="round"/>` +
+      `<path d="M0 -332 L0 -198" stroke="${HORSE_STEEL.D}" stroke-width="1.6" opacity="0.6"/><path d="M-48 -318 Q-70 -292 -68 -250" fill="none" stroke="${HORSE_STEEL.L}" stroke-width="3" opacity="0.8"/>` +
+      `<circle cx="0" cy="-262" r="10" fill="${HORSE_STEEL.L}" stroke="${HORSE_STEEL.D}" stroke-width="2"/>` + horseRivets([[-44, -320], [44, -320], [-68, -230], [68, -230], [-30, -204], [30, -204]], HORSE_STEEL.D),
+    face: horseChanfronFront("steel", K, sw, tack, D > 0) };
+  if (set === "half") return { ...none, chest: horseClothFront(K, cl[0], cl[1]), face: horseChanfronFront("steel", K, sw, tack, D > 0) };
+  if (set === "tourney") return { ...none, neck: armsFill("horse-neck-cloth", `M-46 -294 L-34 ${f1(top - 2)} L34 ${f1(top - 2)} L46 -294 Z`, K, false, null, 1, [0, (top - 294) / 2], 80),
+    chest: horseClothFront(K, cl[0], cl[1]), face: horseChanfronFront("cloth", K, sw, tack, D > 0), hideFace: true, hideMane: true };
+  if (set === "dragon") return { ...none, neck: horseLames(top, -298, nw, HORSE_DRAGON, true, false), chest: horseClothFront(K, cl[0], cl[1]), face: horseChanfronFront("dragon", K, sw, tack, D > 0) };
+  if (set === "toy") return { ...none, chest: horseClothFront(K, cl[0], cl[1]), face: horseChanfronFront("toy", K, sw, tack, D > 0) };
+  if (set === "parade") {
+    // (a browband under the ears with a rosette at each end, small ones where the noseband meets the cheek straps, a plume)
+    return { ...none, face: `<path d="M-19 -149 Q0 -142 19 -149" fill="none" stroke="${tack}" stroke-width="3.5" stroke-linecap="round"/>` +
+      horseRosette(-19, -149, 3.4, K, sw) + horseRosette(19, -149, 3.4, K, -sw) + horseRosette(-13.5, -84, 2.4, K, sw) + horseRosette(13.5, -84, 2.4, K, -sw) + horsePlumeFront(0, -156, K.plume, 40, sw, D > 0) };
+  }
+  return null;
+}
+// ---- from behind, on the body at rest ----
+// the cloth over the rump, from over the haunches down to its hem, an emblem on each haunch
+function horseClothBack(K, hemY, cut) {
+  const d = `M-90 -244 Q-94 -338 -4 -342 L4 -342 Q94 -338 90 -244 L92 ${hemY}` + horseHem(92, -92, hemY, 8, cut, 14) + ` Z`;
+  return armsFill("horse-cloth", d, K, true, null, 1, [0, (hemY - 342) / 2], Math.max(110, (hemY + 342) / 2 + 12)) + armsEmblem(K, [-46, -264], 0.9) + armsEmblem(K, [46, -264], 0.9);
+}
+// the head from behind: the chanfron's edges at the sides of the head and across its top, the plume's socket at the poll
+function horseChanfronBack(kind, K, sw) {
+  if (kind === "toy") {
+    // (the chunky helmet's shell over the back of the head, its shine, the clip and its plume; the ear tips through it)
+    const c = K.knightA, d = mix(c, "#000000", 0.4);
+    return `<path d="M-30 -428 Q-32 -466 0 -468 Q32 -466 30 -428 L26 -412 Q0 -420 -26 -412 Z" fill="${c}" stroke="${d}" stroke-width="2.5" stroke-linejoin="round"/>` +
+      `<path d="M-20 -456 Q-26 -440 -22 -424" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.45"/>` +
+      `<rect x="-7" y="-480" width="14" height="14" rx="3" fill="${c}" stroke="${d}" stroke-width="2"/>` + horsePlumeBack(0, -478, K.plume, 56, sw);
+  }
+  if (kind === "dragon") {
+    // (the dragon helm's back: a green cap, the horns sweeping back toward us and out, spikes along its top)
+    const m = HORSE_DRAGON;
+    return `<path d="M-26 -438 Q0 -464 26 -438 L23 -424 Q0 -436 -23 -424 Z" fill="${m.S}" stroke="${m.D}" stroke-width="2" stroke-linejoin="round"/>` +
+      [-1, 1].map(sd => `<path d="M${sd * 16} -450 C${sd * 36} -456 ${sd * 52} -444 ${sd * 60} -420 C${sd * 46} -432 ${sd * 32} -438 ${sd * 20} -436 Z" fill="${m.horn}" stroke="${m.hornD}" stroke-width="1.6"/>`).join("") +
+      [-12, 0, 12].map(x => `<path d="M${x - 4} ${-450 - (x ? 0 : 3)} L${x} ${-464 - (x ? 0 : 3)} L${x + 4} ${-450 - (x ? 0 : 3)} Z" fill="${m.horn}" stroke="${m.hornD}" stroke-width="1"/>`).join("") +
+      `<path d="M-14 -440 q4 -4 8 0 M6 -440 q4 -4 8 0" fill="none" stroke="${m.D}" stroke-width="1.2" opacity="0.7"/>`;
+  }
+  if (kind === "cloth") return [-1, 1].map(sd => `<path d="M${sd * 6} -446 L${sd * 26} -492 L${sd * 26} -438 Z" fill="${K.knightA}" stroke="#3b3b44" stroke-width="2" stroke-linejoin="round"/>`).join("") +
+    `<rect x="-5" y="-462" width="10" height="9" rx="2" fill="#e0b030" stroke="#9a7413" stroke-width="1"/>` + horsePlumeBack(0, -460, K.plume, 62, sw);
+  // (steel: the plate's edges showing past the head at its sides, below the ears, and the plume's socket at the poll)
+  const c = HORSE_STEEL;
+  return [-1, 1].map(sd => `<path d="M${sd * 20} -444 Q${sd * 31} -436 ${sd * 31} -414 L${sd * 24} -410 Q${sd * 26} -428 ${sd * 18} -436 Z" fill="${c.S}" stroke="${c.D}" stroke-width="1.8" stroke-linejoin="round"/>`).join("") +
+    `<rect x="-5" y="-462" width="10" height="11" rx="2" fill="${c.S}" stroke="${c.D}" stroke-width="1.4"/>` + horsePlumeBack(0, -460, K.plume, 56, sw);
+}
+// the pieces of a set from behind: sides (beyond the forelegs, under the rider), neck (over the back of the neck and the
+// mane, under the halter's strap), head (after the strap), rump (over the haunches and the hind legs' tops, under the tail)
+function horseArmourBack(set, K, sw) {
+  const cl = HORSE_CLOTHS[set], none = { sides: "", neck: "", head: "", rump: "" }, nw = y => 38 - 16 * (-300 - y) / 138;
+  if (set === "plate") return { ...none, sides: [-1, 1].map(k => `<path d="M${k * 84} -318 L${k * 100} -312 Q${k * 104} -262 ${k * 97} -214 L${k * 82} -216 Z" fill="${HORSE_STEEL.S}" stroke="${HORSE_STEEL.D}" stroke-width="2.5" stroke-linejoin="round"/>`).join(""),
+    neck: horseLames(-440, -302, nw, HORSE_STEEL, false, true), head: horseChanfronBack("steel", K, sw),
+    rump: `<path d="M-80 -244 Q-84 -322 -4 -326 L4 -326 Q84 -322 80 -244 Q78 -206 56 -196 L-56 -196 Q-78 -206 -80 -244 Z" fill="${HORSE_STEEL.S}" stroke="${HORSE_STEEL.D}" stroke-width="2.5" stroke-linejoin="round"/>` +
+      `<path d="M-70 -296 Q-50 -318 -10 -318 M70 -296 Q50 -318 10 -318" fill="none" stroke="${HORSE_STEEL.L}" stroke-width="3" opacity="0.8"/>` + horseRivets([[-72, -280], [72, -280], [-72, -224], [72, -224], [-40, -202], [40, -202]], HORSE_STEEL.D) };
+  if (set === "half") return { ...none, head: horseChanfronBack("steel", K, sw), rump: horseClothBack(K, cl[0], cl[1]) };
+  if (set === "tourney") return { ...none, neck: armsFill("horse-neck-cloth", "M-40 -298 Q-32 -400 -24 -440 Q0 -462 24 -440 Q32 -400 40 -298 Z", K, true, null, 1, [0, -380], 90),
+    head: horseChanfronBack("cloth", K, sw), rump: horseClothBack(K, cl[0], cl[1]), hideMane: true };
+  if (set === "dragon") return { ...none, neck: horseLames(-440, -302, nw, HORSE_DRAGON, true, true), head: horseChanfronBack("dragon", K, sw), rump: horseClothBack(K, cl[0], cl[1]) };
+  if (set === "toy") return { ...none, head: horseChanfronBack("toy", K, sw), rump: horseClothBack(K, cl[0], cl[1]) };
+  if (set === "parade") return { ...none, head: horseRosette(-24, -424, 4.2, K, sw) + horseRosette(24, -424, 4.2, K, -sw) + horsePlumeBack(0, -452, K.plume, 44, sw) };
+  return null;
+}
 function horseSvg(view, gait, u, H, g, ride) {
   const coat = H.coat, mane = H.mane, ln = mix(coat, "#000000", 0.42), far = mix(coat, "#000000", 0.25), maneD = mix(mane, "#000000", 0.3), white = "#f7f4ee";
   const tack = H.tack, tackD = mix(tack, "#000000", 0.35);
@@ -944,6 +1202,11 @@ function horseSvg(view, gait, u, H, g, ride) {
   // marking's colour (white), its saddle's leather, and its blanket (auto: a lighter shade of the halter's colour, as before)
   const shoe = H.shoes && H.shoes !== "off" ? H.shoes : null, markC = H.markColor || white;
   const tailSw = (run ? 10 : 6) * Math.sin(T * p), cloth = H.blanket && H.blanket !== "auto" ? H.blanket : mix(tack, "#ffffff", 0.2), leather = H.saddle || "#6b3f1f", leatherD = leather === "#6b3f1f" ? "#3e2410" : mix(leather, "#000000", 0.42);
+  // (ticket 498) its armour (none: drawn exactly as before), the arms its cloth and plume take, its saddle blanket in their first
+  // colour (unless one is chosen), how far the plumes and ribbons swing with the stride, and the pieces lifted with its bob
+  const arm = H.armour && H.armour !== "none" && HORSE_ARMOURS.some(([id]) => id === H.armour) ? H.armour : null, K = arm ? horseArms(H) : null;
+  const clothC = arm && !(H.blanket && H.blanket !== "auto") ? K.knightA : cloth, plumeSw = -(run ? 9 : 5) * Math.sin(T * p);
+  const onBody = s => !s ? "" : g + bob ? `<g transform="translate(0 ${f1(g + bob)})">${s}</g>` : s;
   if (view === "side") {
     // (facing our right: its left side toward us, its right legs beyond, darker. X: the rear drawn in, a horse being about
     // as long as it is tall at the withers)
@@ -995,11 +1258,20 @@ function horseSvg(view, gait, u, H, g, ride) {
     const tail = `<path d="M${X(-180)} ${f1(y(-294))} Q${X(-236 + tailSw)} ${f1(y(-240))} ${X(-218 + tailSw)} ${f1(y(-128))} Q${X(-198 + tailSw)} ${f1(y(-148))} ${X(-194 + tailSw * 0.5)} ${f1(y(-210))} Q${X(-188)} ${f1(y(-252))} ${X(-170)} ${f1(y(-284))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`;
     // (ridden: a saddle cloth in the tack's color, the saddle on it, its seat dipping between the cantle and the pommel,
     // its flap, and the girth round the belly)
-    const saddle = !ride ? "" : `<path d="M-30 ${f1(y(-314))} Q30 ${f1(y(-326))} 96 ${f1(y(-312))} L92 ${f1(y(-238))} Q30 ${f1(y(-228))} -26 ${f1(y(-240))} Z" fill="${cloth}" stroke="${tackD}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    // (ticket 498: the parade's saddle cloth, led too)
+    const blanket = `<path d="M-30 ${f1(y(-314))} Q30 ${f1(y(-326))} 96 ${f1(y(-312))} L92 ${f1(y(-238))} Q30 ${f1(y(-228))} -26 ${f1(y(-240))} Z" fill="${clothC}" stroke="${tackD}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    const saddle = !ride ? (arm === "parade" ? blanket : "") : blanket +
       `<path d="M42 ${f1(y(-250))} L48 ${f1(y(-164))}" stroke="${tackD}" stroke-width="7" stroke-linecap="round"/>` +
       `<path d="M-16 ${f1(y(-344))} Q-6 ${f1(y(-320))} 30 ${f1(y(-320))} Q64 ${f1(y(-320))} 76 ${f1(y(-340))} L86 ${f1(y(-334))} Q88 ${f1(y(-300))} 70 ${f1(y(-292))} L-8 ${f1(y(-292))} Q-24 ${f1(y(-302))} -16 ${f1(y(-344))} Z" fill="${leather}" stroke="${leatherD}" stroke-width="2.5" stroke-linejoin="round"/>` +
       `<path d="M8 ${f1(y(-300))} L66 ${f1(y(-300))} L62 ${f1(y(-248))} Q36 ${f1(y(-240))} 12 ${f1(y(-248))} Z" fill="${mix(leather, "#000000", 0.12)}" stroke="${leatherD}" stroke-width="2" stroke-linejoin="round"/>`;
-    return { svg: leg(100, -200, true, OFF.rf, false) + leg(-160, -214, false, OFF.rh, false) + tail + body + neck + maneP + saddle + head + maneOver + leg(122, -204, true, OFF.lf, true) + leg(-140, -218, false, OFF.lh, true),
+    // (the legs drawn in this order, their hooves listed so)
+    const rf = leg(100, -200, true, OFF.rf, false), rh = leg(-160, -214, false, OFF.rh, false), lf = leg(122, -204, true, OFF.lf, true), lh = leg(-140, -218, false, OFF.lh, true);
+    // (ticket 498) armoured: the near legs before the armour, the cloth hanging over their tops and under the saddle, the tail
+    // over the cloth or the crupper, the head's pieces over the head; the mane and the head where nothing covers them
+    const A = arm && horseArmourSide(arm, K, plumeSw, tack);
+    return { svg: !A ? rf + rh + tail + body + neck + maneP + saddle + head + maneOver + lf + lh
+               : rf + rh + (A.tailOver ? "" : tail) + body + neck + (A.hideMane ? "" : maneP) + lf + lh + onBody(A.body) + (A.tailOver ? tail : "") + onBody(A.neck) + saddle + onBody(A.chest) +
+                 (A.hideHead ? "" : head + (A.hideMane ? "" : maneOver)) + onBody(A.head + A.after),
              over: "", ring: [240, y(-368)], bits: [[240, y(-368)], [240, y(-368)]], seat: [30, y(-326)], bob,
              // (ticket 492) its hooves, and its barrel: [x from, x to, its belly's height, its back's, how deep it is behind its hooves' line]
              hooves, barrel: [+X(-216), 172, 156 - bob, 318 - bob, 30] };
@@ -1018,15 +1290,18 @@ function horseSvg(view, gait, u, H, g, ride) {
     // (ridden, its head is carried lower, D, so more of the rider shows over it; centered, in front of them (ticket 458,
     // Matthew: "the horse head should be centered (and layered in front of) the rider, not off to the side"; 0.0.366 had
     // turned it aside, HX, kept at 0)
-    const D = ride ? 110 : 0, HX = 0, behind = hindF(-56) + hindF(56) +
-      (ride ? [-1, 1].map(k => `<path d="M${f1(k * 60)} ${f1(y(-334))} L${f1(k * 100)} ${f1(y(-328))} L${f1(k * 96)} ${f1(y(-246))} L${f1(k * 64)} ${f1(y(-250))} Z" fill="${cloth}" stroke="${tackD}" stroke-width="2.5" stroke-linejoin="round"/>`).join("") : "");
+    // (ticket 498) armoured: its pieces at its sides behind, the neck's over its mane, the chest's over the forelegs' tops, the
+    // face's over the face (the tournament's cloth in its place); the parade's saddle cloth, with tassels, led too
+    const D = ride ? 110 : 0, HX = 0, A = arm && horseArmourFront(arm, K, D, plumeSw, tack), behind = hindF(-56) + hindF(56) + (A ? onBody(A.behind) : "") +
+      (ride || arm === "parade" ? [-1, 1].map(k => `<path d="M${f1(k * 60)} ${f1(y(-334))} L${f1(k * 100)} ${f1(y(-328))} L${f1(k * 96)} ${f1(y(-246))} L${f1(k * 64)} ${f1(y(-250))} Z" fill="${clothC}" stroke="${tackD}" stroke-width="2.5" stroke-linejoin="round"/>` +
+        (arm === "parade" ? onBody(horseTassels([k * 64, -250], [k * 96, -246], 3, K)) : "")).join("") : "");
     const near = `<path d="M-44 ${f1(y(-296))} L${-32 + HX} ${f1(y(-432 + D))} L${32 + HX} ${f1(y(-432 + D))} L44 ${f1(y(-296))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
-      ((H.maneStyle || "loose") === "loose" ? `<path d="M${30 + HX} ${f1(y(-436 + D))} Q${50 + HX} ${f1(y(-410 + D))} ${42 + HX * 0.6} ${f1(y(-384 + D * 0.7))} Q54 ${f1(y(-358))} 46 ${f1(y(-332))} Q56 ${f1(y(-312))} 48 ${f1(y(-292))} L38 ${f1(y(-300))} Q${34 + HX * 0.5} ${f1(y(-370 + D * 0.5))} ${26 + HX} ${f1(y(-432 + D))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`
-        : maneFall(H.maneStyle, [27 + HX, y(-434 + D)], [39, y(-298)], 1, mane, maneD, H.bows || cloth)) +
+      (A && A.hideMane ? "" : (H.maneStyle || "loose") === "loose" ? `<path d="M${30 + HX} ${f1(y(-436 + D))} Q${50 + HX} ${f1(y(-410 + D))} ${42 + HX * 0.6} ${f1(y(-384 + D * 0.7))} Q54 ${f1(y(-358))} 46 ${f1(y(-332))} Q56 ${f1(y(-312))} 48 ${f1(y(-292))} L38 ${f1(y(-300))} Q${34 + HX * 0.5} ${f1(y(-370 + D * 0.5))} ${26 + HX} ${f1(y(-432 + D))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`
+        : maneFall(H.maneStyle, [27 + HX, y(-434 + D)], [39, y(-298)], 1, mane, maneD, H.bows || cloth)) + (A ? onBody(A.neck) : "") +
       `<path d="M-60 ${f1(y(-326))} Q0 ${f1(y(-346))} 60 ${f1(y(-326))} Q86 ${f1(y(-300))} 84 ${f1(y(-252))} Q82 ${f1(y(-206))} 64 ${f1(y(-190))} L-64 ${f1(y(-190))} Q-82 ${f1(y(-206))} -84 ${f1(y(-252))} Q-86 ${f1(y(-300))} -60 ${f1(y(-326))} Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
       `<path d="M0 ${f1(y(-300))} L0 ${f1(y(-206))} M-34 ${f1(y(-312))} Q-50 ${f1(y(-262))} -46 ${f1(y(-214))} M34 ${f1(y(-312))} Q50 ${f1(y(-262))} 46 ${f1(y(-214))}" fill="none" stroke="${mix(coat, "#000000", 0.2)}" stroke-width="3" stroke-linecap="round" opacity="0.6"/>` +
-      endOn(-46, -214, 17, coat, lifted(OFF.lf, 1)) + endOn(46, -214, 17, coat, lifted(OFF.rf, 1)) +
-      `<g transform="translate(${HX} ${f1(y(-316 + D))}) scale(1.25)">${horseFace(H.maneStyle === "bows" ? { ...H, bow: H.bows || cloth } : H, 0, tack, true)}</g>`;
+      endOn(-46, -214, 17, coat, lifted(OFF.lf, 1)) + endOn(46, -214, 17, coat, lifted(OFF.rf, 1)) + (A ? onBody(A.chest) : "") +
+      `<g transform="translate(${HX} ${f1(y(-316 + D))}) scale(1.25)">${A && A.hideFace ? "" : horseFace(H.maneStyle === "bows" ? { ...H, bow: H.bows || cloth } : H, 0, tack, true)}${A ? A.face : ""}</g>`;
     return { svg: ride ? behind : behind + near, over: ride ? near : "", ring: [HX, y(-316 + D) - 77 * 1.25],
              bits: [-1, 1].map(k => [HX + k * 17, y(-316 + D) - 52 * 1.25]), seat: [0, y(-330)], bob,
              // (ticket 492: the forelegs toward us on the line, the hind legs drawn 26 up, that far back; its body, as long as it is, into the picture)
@@ -1035,16 +1310,20 @@ function horseSvg(view, gait, u, H, g, ride) {
   // (from behind: the forelegs beyond; over the back, the neck and the back of the head, its ears, the mane falling to one
   // side; the haunches, the hind legs, the tail)
   const foreB = x => `<path d="M${f1(x - 12)} ${f1(y(-176))} L${f1(x + 12)} ${f1(y(-176))} L${f1(x + 9)} ${f1(g - 26)} L${f1(x - 9)} ${f1(g - 26)} Z" fill="${far}" stroke="${ln}" stroke-width="2"/><rect x="${f1(x - 11)}" y="${f1(g - 26)}" width="22" height="12" rx="3" fill="#2a211c"/>` + (shoe ? `<rect x="${f1(x - 11)}" y="${f1(g - 17.5)}" width="22" height="3.5" rx="1.5" fill="${shoe}"/>` : "");
-  const behindB = foreB(-32) + foreB(32) +
+  // (ticket 498) armoured: its pieces at its sides beyond the forelegs, the neck's over its mane and under the halter's strap,
+  // the head's after the strap, the rump's over the haunches and the hind legs' tops, under the tail; the parade's saddle cloth
+  const A = arm && horseArmourBack(arm, K, plumeSw);
+  const behindB = foreB(-32) + foreB(32) + (A ? onBody(A.sides) : "") +
     `<path d="M-38 ${f1(y(-300))} Q-30 ${f1(y(-400))} -22 ${f1(y(-438))} Q0 ${f1(y(-458))} 22 ${f1(y(-438))} Q30 ${f1(y(-400))} 38 ${f1(y(-300))} Z" fill="${far}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` +
     [-1, 1].map(k => `<path d="M${f1(k * 8)} ${f1(y(-448))} L${f1(k * 24)} ${f1(y(-488))} L${f1(k * 24)} ${f1(y(-440))} Z" fill="${far}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>`).join("") +
-    ((H.maneStyle || "loose") === "loose" ? `<path d="M-14 ${f1(y(-452))} Q-36 ${f1(y(-420))} -30 ${f1(y(-392))} Q-42 ${f1(y(-362))} -36 ${f1(y(-334))} Q-46 ${f1(y(-314))} -40 ${f1(y(-296))} L-30 ${f1(y(-300))} Q-22 ${f1(y(-380))} -6 ${f1(y(-446))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`
-      : maneFall(H.maneStyle, [-9, y(-449)], [-32, y(-298)], -1, mane, maneD, H.bows || cloth)) +
-    `<path d="M-24 ${f1(y(-424))} Q0 ${f1(y(-414))} 24 ${f1(y(-424))}" fill="none" stroke="${tackD}" stroke-width="5" stroke-linecap="round"/>` +
-    (ride ? [-1, 1].map(k => `<path d="M${f1(k * 70)} ${f1(y(-336))} L${f1(k * 102)} ${f1(y(-330))} L${f1(k * 98)} ${f1(y(-250))} L${f1(k * 74)} ${f1(y(-254))} Z" fill="${cloth}" stroke="${tackD}" stroke-width="2.5" stroke-linejoin="round"/>`).join("") : "");
+    (A && A.hideMane ? "" : (H.maneStyle || "loose") === "loose" ? `<path d="M-14 ${f1(y(-452))} Q-36 ${f1(y(-420))} -30 ${f1(y(-392))} Q-42 ${f1(y(-362))} -36 ${f1(y(-334))} Q-46 ${f1(y(-314))} -40 ${f1(y(-296))} L-30 ${f1(y(-300))} Q-22 ${f1(y(-380))} -6 ${f1(y(-446))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`
+      : maneFall(H.maneStyle, [-9, y(-449)], [-32, y(-298)], -1, mane, maneD, H.bows || cloth)) + (A ? onBody(A.neck) : "") +
+    `<path d="M-24 ${f1(y(-424))} Q0 ${f1(y(-414))} 24 ${f1(y(-424))}" fill="none" stroke="${tackD}" stroke-width="5" stroke-linecap="round"/>` + (A ? onBody(A.head) : "") +
+    (ride || arm === "parade" ? [-1, 1].map(k => `<path d="M${f1(k * 70)} ${f1(y(-336))} L${f1(k * 102)} ${f1(y(-330))} L${f1(k * 98)} ${f1(y(-250))} L${f1(k * 74)} ${f1(y(-254))} Z" fill="${clothC}" stroke="${tackD}" stroke-width="2.5" stroke-linejoin="round"/>` +
+      (arm === "parade" ? onBody(horseTassels([k * 74, -254], [k * 98, -250], 3, K)) : "")).join("") : "");
   const nearB = endOn(-48, -206, 17, coat, lifted(OFF.lh, -1)) + endOn(48, -206, 17, coat, lifted(OFF.rh, -1)) +
     `<path d="M-86 ${f1(y(-240))} Q-90 ${f1(y(-326))} -4 ${f1(y(-330))} L4 ${f1(y(-330))} Q90 ${f1(y(-326))} 86 ${f1(y(-240))} Q84 ${f1(y(-192))} 52 ${f1(y(-182))} L-52 ${f1(y(-182))} Q-84 ${f1(y(-192))} -86 ${f1(y(-240))} Z" fill="${coat}" stroke="${ln}" stroke-width="3"/>` +
-    `<path d="M0 ${f1(y(-318))} L0 ${f1(y(-196))}" stroke="${ln}" stroke-width="2" opacity="0.5"/>` +
+    `<path d="M0 ${f1(y(-318))} L0 ${f1(y(-196))}" stroke="${ln}" stroke-width="2" opacity="0.5"/>` + (A ? onBody(A.rump) : "") +
     `<path d="M-14 ${f1(y(-322))} Q${f1(-26 + tailSw)} ${f1(y(-220))} ${f1(-12 + tailSw)} ${f1(y(-128))} L${f1(14 + tailSw)} ${f1(y(-128))} Q${f1(24 + tailSw)} ${f1(y(-220))} 14 ${f1(y(-322))} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`;
   return { svg: ride ? behindB : behindB + nearB, over: ride ? nearB : "", ring: [-20, y(-422)], bits: [-1, 1].map(k => [k * 22, y(-420)]), seat: [0, y(-330)], bob,
            // (ticket 492: from behind, the hind legs on the line, the forelegs 26 up, that far back)
