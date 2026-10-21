@@ -1069,6 +1069,188 @@ function woodpathScene(c) {
   s += SEP + part("woodpath-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => obj("butterflies", g - 50 * k, butterfliesSvg(c, [[x0 + W * 0.18, g - 50 * k, 1], [x0 + W * 0.8, g - 90 * k, 1.1]])));
   return s;
 }
+// (ticket 503, for M; Matthew: "field/pasture for animals (like horses) to graze.") The 🌾 pasture: a wide green field
+// rolling away to hills (farLayers' rolling hills and round trees, on its horizon), a post-and-rail fence along the back
+// with a gate in it (shut: the world's ways are the nav arrows), a big shade tree, a water trough, wildflowers and tufts
+// of grass in rows by depth (ticket 297) swaying with the slow LFO, clouds drifting with it, a bird on the gate post,
+// butterflies, and horses grazing, side on, heads down to the grass, their tails swishing with the quick LFO, each its
+// own way in. Its depth is the friend's: what stands at a depth is drawn at the size the friend's own horse is there (🔭
+// at its usual 40, the friend arriving at the ground line), so a horse led into the pasture is as big as the ones
+// grazing beside it. No hens (Matthew: "chickens -- already in stable"): the stable has them, pecking.
+// (how far above the ground line, in k, a thing would shrink to nothing: sceneVanish's line at 🔭's usual 40)
+const PASTURE_VANISH = 175;
+const pastureDepth = up => Math.max(0.12, (PASTURE_VANISH - up) / PASTURE_VANISH);
+// (a horse's own units, horseSvg's, to the picture's at `up` k above the ground line: the friend's horse's size there,
+// HORSE_SCALE of the friend's units at the friend's size in the pasture, SCENE_FIG's, carried from the stage to this frame)
+const pastureHorseScale = (k, up) => HORSE_SCALE * sceneFig("pasture") * 700 / (SCENE.bottom - SCENE.top) * pastureDepth(up) * k;
+// The horses grazing: their coats, manes and face markings the stable's (HORSE_COATS, HORSE_MANES, HORSE_MARKS), where
+// each stands (u: a share of the picture's width from its middle; up: k above the ground line), which way it faces
+// (1 our right), and how far into the swish its tail starts (each its own); pastureHorses says how many
+const PASTURE_HORSES = [
+  { name: "bay", coat: "#7b4a2a", mane: "#1f1f22", mark: "star", u: -0.14, up: 112, face: -1, off: 0.13 },
+  { name: "grey", coat: "#c9c9cf", mane: "#f3efe6", mark: "none", u: 0.33, up: 94, face: -1, off: 0.58 },
+  { name: "chestnut", coat: "#a0522d", mane: "#7a3a1a", mark: "blaze", u: 0.17, up: 134, face: -1, off: 0.81 }];
+// The wildflowers in its grass: [name, its petals' colour, its middle's, how many petals, how wide each (radians)]
+const PASTURE_FLOWERS = [["daisy", "#ffffff", "#f6c915", 9, 0.3], ["buttercup", "#f7d21e", "#d9a400", 5, 0.55], ["poppy", "#e0412f", "#2a1a1a", 4, 0.78],
+                         ["cornflower", "#4c7be0", "#26408a", 8, 0.26], ["clover", "#d77fb8", "#b0558f", 10, 0.32]];
+// A horse grazing, side on, facing our right, in horseSvg's units (its hooves on the ground at 0, its withers about 300
+// up): its own drawing, not the standing horse turned (Matthew's rule for a new pose): its neck lowered in an arch from the
+// withers, its head hanging down to the grass, the muzzle in it, the ears up at the poll, its mane falling down our side
+// of the neck, the forelock down its forehead; one foreleg a step forward, as a horse stands to graze. Its legs are the
+// friend's horse's (horseLeg), its far side darker, all four under its body (the belly's outline over their tops). Its
+// tail hangs from the croup and swishes about its root with the quick LFO, `off` of a swish in. Its shadow lies flat, and
+// its footprint (an unseen box, ticket 441's) is where its hooves stand, from its tail to its muzzle and a body's width
+// deep, so the friend walks round it, in front of it or behind it.
+function grazingHorseSvg(H, o, off, i) {
+  const coat = H.coat, mane = H.mane, ln = mix(coat, "#000000", 0.42), far = mix(coat, "#000000", 0.25), maneD = mix(mane, "#000000", 0.3), white = "#f7f4ee";
+  const P_ = ([x, y]) => `${f1(x)} ${f1(y)}`;
+  const leg = (x, top, swing, flex, fore, near) => horseLeg([x, top], -top - 6, swing, flex, fore, near ? 17 : 15, near ? coat : far, false, 0);
+  const dur = 1.4 + 0.35 * i;
+  const tail = `<g>${sceneLfo(o, "fast", off, "transform", (v, amp) => `${f1((5 + 9 * amp) * v)} -146 -288`,
+      `<animateTransform attributeName="transform" type="rotate" values="-5 -146 -288;9 -146 -288;-5 -146 -288" dur="${dur.toFixed(2)}s" begin="-${(off * dur).toFixed(2)}s" repeatCount="indefinite"/>`)}` +
+    `<path d="M-148 -292 Q-198 -236 -186 -96 Q-170 -110 -162 -150 Q-157 -228 -136 -282 Z" fill="${mane}" stroke="${maneD}" stroke-width="2.5" stroke-linejoin="round"/></g>`;
+  // (the body, its withers a little lower than standing, the weight on the forehand; the shoulder and the round of the haunch)
+  const body = `<path d="M116 -282 C40 -308 -98 -318 -136 -302 C-176 -286 -178 -218 -152 -186 C-122 -160 -34 -158 80 -166 C140 -172 168 -212 150 -256 Z" fill="${coat}" stroke="${ln}" stroke-width="3"/>` +
+    `<path d="M138 -198 Q118 -240 104 -282 M-80 -312 Q-100 -240 -146 -200" fill="none" stroke="${mix(coat, "#000000", 0.2)}" stroke-width="3" stroke-linecap="round" opacity="0.7"/>`;
+  // (the neck: its crest arching forward from the withers and down to the poll, its underside from the breast to the throat)
+  const neck = `<path d="M84 -292 Q196 -304 240 -156 L210 -116 Q172 -150 148 -222 Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>`;
+  const crest = t => { const v = 1 - t; return [v * v * 86 + 2 * v * t * 196 + t * t * 240, v * v * -298 + 2 * v * t * -308 + t * t * -160]; };
+  const inward = t => { const dx = 220 * (1 - t) + 88 * t, dy = -20 * (1 - t) + 296 * t, d = Math.hypot(dx, dy); return [-dy / d, dx / d]; };
+  const top = [...Array(13)].map((_, j) => crest(j / 12));
+  const under = [...Array(13)].map((_, j) => { const t = 1 - j / 12, [x, y] = crest(t), [nx, ny] = inward(t), d = j % 2 ? 13 : 23; return [x + nx * d, y + ny * d]; });
+  const maneP = `<path d="M${top.map(P_).join(" L")} L${under.map(P_).join(" L")} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`;
+  // (the head, hanging from the poll: the forehead and the long nose in front, the round cheek and the jaw behind, the
+  // muzzle down in the grass)
+  const head = `<path d="M236 -158 Q254 -152 256 -134 L276 -46 Q284 -20 274 -8 Q262 -2 252 -10 Q246 -24 236 -46 L220 -82 Q200 -104 206 -124 Q214 -144 236 -158 Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>`;
+  const ear = (a, b, c2, fill) => `<path d="M${a} L${b} L${c2} Z" fill="${fill}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  const mark = H.mark === "star" ? `<path d="M250 -142 L256 -134 L250 -126 L244 -134 Z" fill="${white}"/>`
+    : H.mark === "stripe" ? `<path d="M250 -128 L255 -129 L275 -40 L270 -38 Z" fill="${white}"/>`
+    : H.mark === "blaze" ? `<path d="M244 -136 L256 -137 L277 -44 Q282 -26 274 -14 L266 -24 L261 -46 Z" fill="${white}"/>` : "";
+  const face = mark + `<ellipse cx="238" cy="-118" rx="4.5" ry="5.5" fill="#1f1410"/><circle cx="239.5" cy="-120" r="1.5" fill="#ffffff"/>` +
+    `<path d="M270 -30 q5 -2 6 3 q-2 3 -5 1" fill="#1f1410"/><path d="M254 -13 Q262 -15 270 -11" fill="none" stroke="${ln}" stroke-width="2"/>`;
+  const forelock = `<path d="M234 -160 Q258 -154 259 -126 Q248 -136 230 -146 Z" fill="${mane}" stroke="${maneD}" stroke-width="1.8" stroke-linejoin="round"/>`;
+  // (the grass it is pulling at, in front of its muzzle)
+  const grass = `<path d="M256 2 q-3 -12 -9 -18 M264 2 q0 -14 3 -22 M272 2 q3 -10 9 -15 M281 2 q2 -6 7 -9" fill="none" stroke="#4f8a35" stroke-width="3.2" stroke-linecap="round"/>`;
+  return `<ellipse class="flat" cx="40" cy="2" rx="215" ry="13" fill="#000000" opacity="0.14"/>` +
+    `<rect data-footprint="1" x="-165" y="-24" width="452" height="26" fill="none" stroke="none"/>` +
+    leg(100, -200, -5, 4, true, false) + leg(-131, -214, 5, 6, false, false) + leg(-115, -218, -3, 4, false, true) + leg(124, -204, 9, 0, true, true) +
+    tail + body + neck + maneP + ear("226 -150", "212 -184", "238 -160", far) + head + face + forelock + ear("234 -156", "227 -194", "248 -162", coat) + grass;
+}
+// The pasture's water trough, in a horse's units as the horses are (its foot line at 0): planks on two low trestles, the
+// water just under its rim, rings spreading on it with the quick LFO; its shadow flat; its footprint a trough's width deep
+function pastureTroughSvg(o) {
+  const wood = "#8a5a32", dk = "#4e3019", rim = "#a97445";
+  return `<ellipse class="flat" cx="0" cy="2" rx="140" ry="10" fill="#000000" opacity="0.16"/>` +
+    `<rect data-footprint="1" x="-130" y="-24" width="260" height="26" fill="none" stroke="none"/>` +
+    `<path d="M-114 0 L-114 -16 L-100 -16 L-100 0 Z M100 0 L100 -16 L114 -16 L114 0 Z" fill="${dk}"/>` +
+    // (inside, over the near rim: the far side's inner face, the water)
+    `<path d="M-126 -100 L126 -100 L119 -111 L-119 -111 Z" fill="#3f2814"/>` +
+    `<path d="M-122 -101 L122 -101 L117 -107 L-117 -107 Z" fill="#7cc0dc"/>` +
+    `<ellipse cx="38" cy="-104" rx="4" ry="0.6" fill="none" stroke="#e6f8ff" stroke-width="1.6" opacity="0">` +
+    lfoTimed(o, "fast", 0.3, `<animate attributeName="rx" values="4;30" dur="1.8s" repeatCount="indefinite"/>` +
+      `<animate attributeName="ry" values="0.6;2.6" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.9;0" dur="1.8s" repeatCount="indefinite"/>`) + `</ellipse>` +
+    // (its near side, planks, and the rim)
+    `<path d="M-120 -14 L120 -14 L128 -100 L-128 -100 Z" fill="${wood}" stroke="${dk}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="M-123 -43 L123 -43 M-126 -72 L126 -72 M-60 -16 L-62 -98 M60 -16 L62 -98" stroke="${dk}" stroke-width="2" opacity="0.55"/>` +
+    `<path d="M-128 -100 L128 -100" stroke="${rim}" stroke-width="5" stroke-linecap="round"/>`;
+}
+function pastureScene(c) {
+  const { x0, y0, x1, W, H, g, k, pad, R, P, grad, all, land, o } = c;
+  const horses = Math.max(0, Math.min(PASTURE_HORSES.length, Math.round(o.pastureHorses ?? 3))), flowers = Math.max(0, Math.min(24, Math.round(o.pastureFlowers ?? 10)));
+  const at = up => g - up * k, horizon = at(172), fenceY = at(150), gx = 0.08 * W, gw = 90 * k, tree = { x: -0.4 * W, y: at(50) };
+  // the sky, the sun, clouds drifting with the slow LFO
+  let s = SEP + part("pasture-sky", [c.F, sceneLfoKey(o, "slow")], () => `<defs>${grad("bg-sky", "#79bdf0", "#e6f5ff", y0, horizon)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)") +
+    `<defs><radialGradient id="bg-pasture-sun"><stop offset="0.5" stop-color="#fff6c8" stop-opacity="0.9"/><stop offset="1" stop-color="#fff6c8" stop-opacity="0"/></radialGradient></defs>` +
+    `<circle cx="${f1(x1 - W * 0.12)}" cy="${f1(y0 + H * 0.11)}" r="${f1(66 * k)}" fill="url(#bg-pasture-sun)"/><circle cx="${f1(x1 - W * 0.12)}" cy="${f1(y0 + H * 0.11)}" r="${f1(34 * k)}" fill="#ffe680"/>` +
+    [[0.14, 0.1, 0.75], [0.46, 0.05, 0.95], [0.7, 0.19, 0.6]].map(([u, v, z], i) => driftingCloud(x0 + W * u, y0 + H * v, k * z, i, o)).join(""));
+  // far off: rolling hills and round trees on the horizon (the shared layers, ticket 212)
+  s += SEP + part("pasture-far", c.F, () => farLayers(c, horizon, { mountains: "hills", forest: "broadleaf", beach: false, size: 170 }));
+  // the field, rolling away in bands, paler farther off; the grass's texture (short strokes, smaller farther off); the
+  // big tree's shade on it
+  s += SEP + part("pasture-field", c.F, () => {
+    let t = land(at(171), 2, "#b8d991", 0.4) + land(at(118), 6, "#a2cd77", 1.3) + land(at(50), 7, "#92c467", 2.2) + land(at(-30), 8, "#86bc5b", 0.9), d = "";
+    for (let i = 0; i < 70; i++) { const up = 165 - 260 * R(i, 5010), f = pastureDepth(up), x = W * (R(i, 5011) - 0.5) * 1.05, y = at(up);
+      d += `M${P(x, y)} l${f1(-2 * f * k)} ${f1(-9 * f * k)} M${P(x + 4 * f * k, y)} l${f1(2 * f * k)} ${f1(-8 * f * k)}`; }
+    return t + `<path d="${d}" fill="none" stroke="#6e9f47" stroke-width="${f1(1.3 * k)}" stroke-linecap="round" opacity="0.5"/>` +
+      `<ellipse cx="${f1(tree.x + 60 * k)}" cy="${f1(tree.y + 8 * k)}" rx="${f1(210 * k)}" ry="${f1(30 * k)}" fill="#3f7a32" opacity="0.28"/>`;
+  });
+  // the fence along the back, posts and three rails, the gate in it shut (five bars and a brace, its latch), and a
+  // bird sitting on the gate's post (an object at the fence's foot: behind wherever the friend can stand)
+  s += SEP + part("pasture-fence", c.F, () => {
+    const ph = 41 * k, pw = 4.5 * k, gp = 48 * k, gpw = 6.5 * k, step = 78 * k, L = gx - gw / 2, Rt = gx + gw / 2;
+    let posts = "", rails = "";
+    const post = (x, h, w) => `M${P(x - w / 2, fenceY)} L${P(x - w / 2, fenceY - h)} L${P(x, fenceY - h - 1.5 * k)} L${P(x + w / 2, fenceY - h)} L${P(x + w / 2, fenceY)} Z `;
+    for (let x = L - step; x > x0 - pad - step; x -= step) posts += post(x, ph, pw);
+    for (let x = Rt + step; x < x1 + pad + step; x += step) posts += post(x, ph, pw);
+    for (const h of [0.3, 0.6, 0.88]) { const y = fenceY - h * ph;
+      rails += `M${P(x0 - pad, y - 1.8 * k)} L${P(L, y - 1.8 * k)} L${P(L, y + 1.8 * k)} L${P(x0 - pad, y + 1.8 * k)} Z M${P(Rt, y - 1.8 * k)} L${P(x1 + pad, y - 1.8 * k)} L${P(x1 + pad, y + 1.8 * k)} L${P(Rt, y + 1.8 * k)} Z `; }
+    const a = L + gpw / 2, b = Rt - gpw / 2, gh = 38 * k, bars = [0.12, 0.31, 0.5, 0.69, 0.88].map(h => { const y = fenceY - h * gh;
+      return `M${P(a, y - 1.5 * k)} L${P(b, y - 1.5 * k)} L${P(b, y + 1.5 * k)} L${P(a, y + 1.5 * k)} Z`; }).join(" ") +
+      ` M${P(a, fenceY - 0.05 * gh)} L${P(a + 3.5 * k, fenceY - 0.05 * gh)} L${P(a + 3.5 * k, fenceY - 0.95 * gh)} L${P(a, fenceY - 0.95 * gh)} Z` +
+      ` M${P(b - 3.5 * k, fenceY - 0.05 * gh)} L${P(b, fenceY - 0.05 * gh)} L${P(b, fenceY - 0.95 * gh)} L${P(b - 3.5 * k, fenceY - 0.95 * gh)} Z`;
+    const bx = L, by = fenceY - gp - 1.5 * k, u = 0.85 * k;
+    const bird = `<path d="M${P(bx - 6 * u, by - 5 * u)} L${P(bx - 14 * u, by - 1 * u)} L${P(bx - 5 * u, by - 2 * u)} Z" fill="#5a3d2b"/>` +
+      `<ellipse cx="${f1(bx)}" cy="${f1(by - 5 * u)}" rx="${f1(7 * u)}" ry="${f1(5 * u)}" fill="#6b4a33"/>` +
+      `<ellipse cx="${f1(bx + 2.5 * u)}" cy="${f1(by - 4 * u)}" rx="${f1(4 * u)}" ry="${f1(3.5 * u)}" fill="#e2683a"/>` +
+      `<circle cx="${f1(bx + 5 * u)}" cy="${f1(by - 10 * u)}" r="${f1(3.6 * u)}" fill="#6b4a33"/>` +
+      `<path d="M${P(bx + 8.4 * u, by - 10.8 * u)} l${f1(3 * u)} ${f1(1 * u)} l${f1(-3 * u)} ${f1(1 * u)} Z" fill="#e8b923"/>` +
+      `<circle cx="${f1(bx + 6 * u)}" cy="${f1(by - 11 * u)}" r="${f1(0.9 * u)}" fill="#111111"/>`;
+    return obj("fence and gate", fenceY, `<path d="${rails}" fill="#8a6a45" stroke="#5a4128" stroke-width="${f1(0.8 * k)}"/>` +
+      `<path d="${posts}" fill="#7a5a38" stroke="#4e3822" stroke-width="${f1(0.8 * k)}"/>` +
+      `<path d="${bars}" fill="#b08a5a" stroke="#6e5232" stroke-width="${f1(0.7 * k)}"/>` +
+      `<path d="M${P(a + 3 * k, fenceY - 0.1 * gh)} L${P(b - 3 * k, fenceY - 0.9 * gh)}" stroke="#9a7648" stroke-width="${f1(3 * k)}" stroke-linecap="round"/>` +
+      `<path d="${post(L, gp, gpw)}${post(Rt, gp, gpw)}" fill="#6e4f30" stroke="#4e3822" stroke-width="${f1(0.8 * k)}"/>` +
+      `<rect x="${f1(b - 2 * k)}" y="${f1(fenceY - 0.62 * gh)}" width="${f1(5 * k)}" height="${f1(3 * k)}" fill="#3a3a3a"/>` + bird);
+  });
+  // the big shade tree (an object at its foot), and the water trough by it, farther back (an object at its foot line)
+  s += SEP + part("pasture-tree", c.F, () => obj("big tree", tree.y, `<g ${tf(tree.x, tree.y, 1.45 * k)}>${leafyTree(5030, { wide: 1.3, h: 330 })}</g>`));
+  s += SEP + part("pasture-trough", [c.F, sceneLfoKey(o, "fast")], () => { const up = 95, sc = pastureHorseScale(k, up);
+    return obj("water trough", at(up), `<g ${tf(-0.3 * W, at(up), sc)}>${pastureTroughSvg(o)}</g>`); });
+  // the horses grazing (each an object where its hooves stand)
+  s += SEP + part("pasture-horses", [c.F, horses, sceneLfoKey(o, "fast")], () => PASTURE_HORSES.slice(0, horses).map((Hh, i) => {
+    const sc = pastureHorseScale(k, Hh.up), x = W * Hh.u, y = at(Hh.up);
+    return obj(`grazing horse, ${Hh.name}`, y, `<g ${tf(x - Hh.face * 60 * sc, y, Hh.face * sc, sc)}>${grazingHorseSvg(Hh, o, Hh.off, i)}</g>`);
+  }).join(""));
+  // patches of wildflowers (daisies, buttercups, poppies, cornflowers, clover: two to four of a kind, each its petals
+  // round its middle; a patch three shapes, its stems and leaves, its petals, its middles) and tufts of grass, smaller
+  // farther off, in rows by depth (ticket 297: each row an object, the friend among them), each nearer row swaying a
+  // little with the slow LFO, about its foot, its own way in (the far rows held still: their sway would hardly show, and
+  // each swaying row is drawn again every frame across the picture's width: 60 frames a second first)
+  s += SEP + part("pasture-grass", [c.F, flowers, sceneLfoKey(o, "slow")], () => {
+    const items = [], band = 36 * k;
+    for (let i = 0; i < flowers; i++) {
+      const up = 132 - 226 * R(i, 5031), y = at(up), sz = pastureDepth(up) * k, x = W * (R(i, 5032) - 0.5) * 1.02, [, col, mid, n, w] = PASTURE_FLOWERS[i % PASTURE_FLOWERS.length];
+      let stems = "", petals = "", mids = "";
+      for (let j = 0, m = 2 + Math.floor(3 * R(i, 5033)); j < m; j++) {
+        const fx = x + (j - (m - 1) / 2) * 9 * sz + (R(i * 5 + j, 5034) - 0.5) * 6 * sz, h = (30 + 24 * R(i * 5 + j, 5035)) * sz, lean = (R(i * 5 + j, 5036) - 0.5) * 12 * sz;
+        const hx = fx + lean, hy = y - h, r = (col === "#d77fb8" ? 4.2 : 5.6) * sz, rot = R(i * 5 + j, 5037) * Math.PI;
+        stems += `M${P(fx, y)} Q${P(fx + lean * 0.2, y - h * 0.6)} ${P(hx, hy)} `;
+        for (let q = 0; q < n; q++) { const a = rot + q * 2 * Math.PI / n, pt = (b, rr) => P(hx + rr * Math.cos(b), hy + rr * Math.sin(b));
+          petals += `M${P(hx, hy)} Q${pt(a - w, r * 0.85)} ${pt(a, r)} Q${pt(a + w, r * 0.85)} ${P(hx, hy)} Z `; }
+        const r2 = (col === "#d77fb8" ? 1.6 : 1.9) * sz;
+        mids += `M${P(hx - r2, hy)} a${f1(r2)} ${f1(r2)} 0 1 0 ${f1(2 * r2)} 0 a${f1(r2)} ${f1(r2)} 0 1 0 ${f1(-2 * r2)} 0 Z `;
+      }
+      // (two leaves at the patch's foot)
+      stems += `M${P(x - 2 * sz, y)} q${f1(-6 * sz)} ${f1(-4 * sz)} ${f1(-10 * sz)} ${f1(-12 * sz)} M${P(x + 2 * sz, y)} q${f1(6 * sz)} ${f1(-3 * sz)} ${f1(11 * sz)} ${f1(-10 * sz)}`;
+      items.push({ y, svg: `<path d="${stems}" fill="none" stroke="#4f8a35" stroke-width="${f1(1.6 * sz)}" stroke-linecap="round"/>` +
+        `<path d="${petals}" fill="${col}"${col === "#ffffff" ? ` stroke="#d9d9d9" stroke-width="${f1(0.5 * sz)}"` : ""}/><path d="${mids}" fill="${mid}"/>` });
+    }
+    for (let i = 0; i < 10; i++) { const up = 110 - 205 * R(i, 5038), y = at(up), f = pastureDepth(up);
+      items.push({ y, svg: grassTuft(W * (R(i, 5039) - 0.5) * 1.02, y, (26 + 14 * R(i, 5040)) * f * k, 5041 + i, "#5e9a3c", 1.8 * f * k) }); }
+    const rows = new Map();
+    for (const it of items) { const j = Math.floor(it.y / band); rows.set(j, (rows.get(j) || "") + it.svg); }
+    return [...rows.keys()].sort((a, b) => a - b).map((j, n) => { const foot = (j + 0.5) * band, d = 4.5 + (n % 3) * 0.8;
+      if (foot < at(70)) return obj(`grass and flowers ${n + 1}`, foot, rows.get(j));
+      return obj(`grass and flowers ${n + 1}`, foot, `<g transform="translate(0 ${f1(foot)})"><g>` +
+        sceneLfo(o, "slow", ((n * 0.29) % 1), "transform", (v, amp) => f1((1.5 + 4 * amp) * v),
+          `<animateTransform attributeName="transform" type="skewX" values="-2.5;2.5;-2.5" dur="${d.toFixed(1)}s" begin="-${(n * 1.3).toFixed(1)}s" repeatCount="indefinite"/>`, "skewX") +
+        `<g transform="translate(0 ${f1(-foot)})">${rows.get(j)}</g></g></g>`); }).join("");
+  });
+  // butterflies over the flowers (an object at the depth of the ground under the nearer one)
+  s += SEP + part("pasture-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () =>
+    obj("butterflies", at(10), butterfliesSvg(c, [[-0.24 * W, at(10), 0.9], [0.16 * W, at(60), 0.8]])));
+  return s;
+}
 // Our imagination: a room of endless white, the empty white of a film's
 // training world, the floor only a soft grey toward us; and on its far
 // wall a big map of every place there is, each a framed picture of it to
@@ -2576,7 +2758,7 @@ function crossingScene(c) {
 }
 const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, hutcenter: hutcenterScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
+                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, woodpath: woodpathScene, pasture: pastureScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width
