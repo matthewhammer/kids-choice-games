@@ -773,7 +773,7 @@ let state = clone(DEFAULTS);
 // again with it.
 const PERF_FEATURES = [
   { id: "blur", label: "🌫️ soft blurs", what: "the soft edges in pictures on walls and in the imagination's map, the waterfall's mist and the leaves outside the cave (Gaussian blurs). Off, pictures are sharp and the mist is a soft gradient.",
-    count: () => document.querySelectorAll("#bg feGaussianBlur").length + [...document.querySelectorAll('#bg image[href^="data:image/svg"]')].filter(i => i.getAttribute("href").includes("feGaussianBlur")).length, unit: ["blur", "blurs"] },
+    count: () => document.querySelectorAll("#bg feGaussianBlur").length + [...document.querySelectorAll('#bg image[href^="data:image/svg"]')].filter(i => i.getAttribute("href").includes("feGaussianBlur")).length + document.querySelectorAll("#bg image[data-blur]").length, unit: ["blur", "blurs"] },
   // (ticket 158: every framed picture, not only the imagination's: the living
   // room's three held it to 49 frames a second dragging, 60 held still. A
   // window's view of outside stays moving: it has no frame)
@@ -1122,7 +1122,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.394", released: "2026-10-20" };
+const VERSION = { number: "0.0.395", released: "2026-10-21" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

@@ -118,7 +118,7 @@ document.getElementById("save").addEventListener("click", () => {
   const vb = pic.viewBox.baseVal, scale = 1000 / vb.height;
   // a standalone copy at its own size; both the .svg and the .png keep a
   // transparent background
-  const copy = pic.cloneNode(true);
+  const copy = unrastered(pic.cloneNode(true));   // (ticket 509: its pictures as SVG again)
   copy.setAttribute("width", Math.round(vb.width * scale));
   copy.setAttribute("height", 1000);
   const svgText = '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(copy);
@@ -163,7 +163,7 @@ function postcardBlob(caption) {
   return new Promise((resolve, reject) => {
     const pic = document.getElementById("pic"), vb = pic.viewBox.baseVal, scale = 1000 / vb.height;
     const w = Math.round(vb.width * scale), h = 1000, pad = 48, band = caption ? 160 : 0;
-    const copy = pic.cloneNode(true);
+    const copy = unrastered(pic.cloneNode(true));   // (ticket 509: its pictures as SVG again)
     copy.setAttribute("width", w); copy.setAttribute("height", h);
     const img = new Image();
     img.onload = () => {

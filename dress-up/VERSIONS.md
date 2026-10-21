@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.395 (2026-10-21)
+
+Everything in 0.0.394, plus a smoother walk in our imagination.
+
+- **💭 Our imagination walks smoothly:** its map's pictures of every place are now drawn once as ordinary pictures, so the glow, the dashes and the bobbing ladders no longer make the computer draw all 36 of them again while you walk. On computers without a strong graphics card it walked at about 48 frames a second; now 60. They look the same.
+
 ## 0.0.394 (2026-10-20)
 
 Everything in 0.0.393, plus the date's moon in the dungeons.

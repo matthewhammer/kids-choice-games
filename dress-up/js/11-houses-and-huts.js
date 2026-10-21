@@ -90,7 +90,65 @@ function treehouseScene(c) {
 // once, not forever
 const PICTURE_KINDS = ["lake", "beach", "livingroom", "forest", "treehouse", "underwater", "house", "witch", "cemetery", "treeroom"];
 const SCENE_PARTS = new Map(), TRIMMED = new Map(), STILLS = new Map();
-function pictureSvg(kind, detail, o, depth, x, y, w, h, still = false) {
+// (ticket 509) A still picture in play, as pixels. On a computer drawing without a graphics card (GitHub's, measured), an SVG
+// image is not kept as pixels: whatever moves near it, the browser draws all its shapes again, and the imagination's 36 framed
+// pictures, live animations among them, walked at about 48 frames a second on two of three such computers (60 with the
+// pictures hidden, or every animation off). Drawn once into a canvas and kept as a WebP, a picture costs what any image does.
+// Only in play (the scene's "raster" option): a held picture (the archive) keeps the SVG, and a save or a postcard gets it
+// back (unrastered). RASTER_GEN counts the
+// batches made, so the scene, which reads it, is drawn again with them.
+const RASTERS = new Map(), RASTER_SRC = new Map(), RASTER_JOBS = [];   // (the still picture's SVG -> its pixels, and back)
+let RASTER_GEN = 0, rasterBusy = false, rasterMade = false;
+function rasterize(key, href, w, h) {
+  if (RASTERS.has(key)) return;
+  if (RASTERS.size > 120) { RASTERS.clear(); RASTER_SRC.clear(); RASTER_JOBS.length = 0; RASTER_GEN++; }
+  RASTERS.set(key, null);   // (being made, or none to be had here: the SVG stays)
+  RASTER_JOBS.push([key, href, w, h]);
+  // (the newest first to wait: settings that change the pictures queue new ones, and the old ones would hold their SVG text)
+  while (RASTER_JOBS.length > 60) RASTERS.delete(RASTER_JOBS.shift()[0]);
+  rasterNext();
+}
+// one at a time, in the page's idle moments, so walking in does not stall while 36 are made
+function rasterNext() {
+  if (rasterBusy || !RASTER_JOBS.length) return;
+  rasterBusy = true;
+  const idle = window.requestIdleCallback || (f => setTimeout(f, 30));
+  idle(deadline => {
+    if (deadline && deadline.timeRemaining() < 8) { rasterBusy = false; rasterNext(); return; }   // (too little time in this one)
+    const [key, href, w, h] = RASTER_JOBS.shift();
+    if (RASTERS.get(key) !== null) { rasterBusy = false; rasterNext(); return; }   // (made already, or let go)
+    const img = new Image();
+    let over = false;
+    // (the scene drawn again once the queue is empty, not once a picture: each drawing of it is kept)
+    const done = () => { if (over) return; over = true; clearTimeout(guard); rasterBusy = false;
+      if (!RASTER_JOBS.length && rasterMade) { rasterMade = false; RASTER_GEN++; setTimeout(() => moved(true), 0); }
+      rasterNext(); };
+    const guard = setTimeout(done, 8000);   // (a picture that never loads holds up no others)
+    img.onload = () => {
+      try {
+        // (as fine as the picture can be shown: full screen on this screen, at its pixel ratio, a tenth to spare)
+        const s = Math.min(6, Math.max(3, 1.1 * (screen.width || 1920) / (-2 * SCENE.left) * (window.devicePixelRatio || 1))), c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(w * s)); c.height = Math.max(1, Math.round(h * s));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        // (WebP where the browser makes it; Safari gives PNG for it, which is pixels all the same)
+        const url = c.toDataURL("image/webp", 0.92);
+        if (/^data:image\/(webp|png)/.test(url)) { RASTERS.set(key, url); RASTER_SRC.set(url, href); rasterMade = true; }
+      } catch (e) { }
+      done();
+    };
+    img.onerror = done;
+    img.src = href;
+  });
+}
+// (a copy of the picture leaving the page, a save or a postcard: its pictures back as SVG, which print sharp at any size)
+function unrastered(root) {
+  for (const i of root.querySelectorAll("image[data-raster]")) {
+    const svg = RASTER_SRC.get(i.getAttribute("href"));
+    if (svg) { i.setAttribute("href", svg); for (const a of ["data-raster", "data-blur", "decoding"]) i.removeAttribute(a); }
+  }
+  return root;
+}
+function pictureSvg(kind, detail, o, depth, x, y, w, h, still = false, raster = false) {
   const opts = new Proxy({}, { get: (_, key) => (key === "depth" ? depth : o[key]) });
   const full = partByReads(`picture:${kind}:${depth}`, opts, oo =>
     prefixIds(unmarked(backgroundSvg(kind, SCENE.left, SCENE.top, -SCENE.left, SCENE.bottom, SCENE.ground, oo)), `p${depth}${kind}-`));
@@ -136,17 +194,25 @@ function pictureSvg(kind, detail, o, depth, x, y, w, h, still = false) {
       if (STILLS.size > 80) STILLS.clear();
       STILLS.set(key, href);
     }
+    // (ticket 509: as pixels, once made, kept by the still picture itself: the key above holds its animations' begin times,
+    // which move with the music's clock (when it starts, stops or jumps); data-blur keeps ⚙️'s count of soft blurs right;
+    // decoding="sync": the picture never drawn for a frame without them)
+    if (raster) {
+      const px = RASTERS.get(href);
+      if (px) return `<image x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" preserveAspectRatio="xMidYMid slice" data-raster="1" decoding="sync"${inner === body ? "" : ' data-blur="1"'} href="${px}"/>`;
+      rasterize(href, href, w, h);
+    }
     return `<image x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" preserveAspectRatio="xMidYMid slice" href="${href}"/>`;
   }
   return `<svg x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" viewBox="${SCENE.left} ${SCENE.top} ${W} ${H}" preserveAspectRatio="xMidYMid slice">` + inner + `</svg>`;
 }
 // a framed picture, its middle at (x, y), w wide
-const framedSvg = (kind, detail, o, depth, x, y, w, still = false) => {
+const framedSvg = (kind, detail, o, depth, x, y, w, still = false, raster = false) => {
   const h = w * 0.74, fr = w * 0.07, mat = w * 0.04;
   return `<g class="portal" data-to="${kind}"><rect x="${f1(x - w / 2 + 4)}" y="${f1(y - h / 2 + 6)}" width="${f1(w)}" height="${f1(h)}" fill="#000000" opacity="0.18"/>` +
          `<rect x="${f1(x - w / 2)}" y="${f1(y - h / 2)}" width="${f1(w)}" height="${f1(h)}" fill="#b8862f" stroke="#7a5518" stroke-width="2"/>` +
          `<rect x="${f1(x - w / 2 + fr)}" y="${f1(y - h / 2 + fr)}" width="${f1(w - 2 * fr)}" height="${f1(h - 2 * fr)}" fill="#f7f2e6"/>` +
-         pictureSvg(kind, detail, o, depth, x - w / 2 + fr + mat, y - h / 2 + fr + mat, w - 2 * fr - 2 * mat, h - 2 * fr - 2 * mat, still) + `</g>`;
+         pictureSvg(kind, detail, o, depth, x - w / 2 + fr + mat, y - h / 2 + fr + mat, w - 2 * fr - 2 * mat, h - 2 * fr - 2 * mat, still, raster) + `</g>`;
 };
 // (each picture's scene is a choice of its own: pic1, pic2, ...)
 const PICTURE_CHOICES = [["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["beach", "🏖️ beach"], ["witch", "🧙 witch's woods"],
