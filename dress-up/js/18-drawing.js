@@ -57,7 +57,7 @@ function drawNow() {
   // (ticket 432) a wizard: a long robe with stars, a gold cord, a long beard, the hat with stars and a moon, a staff
   const wizard = kind === "wizard";
   // (ticket 433) a monk or a dryad: a hooded cloak to the feet, a rope belt, a staff; the hood up hides the hair
-  const monk = kind === "monk", hooded = !!clothHood() || kind === "knight";
+  const monk = kind === "monk", hooded = !!clothHood() || kind === "knight" || kind === "robot";   // (ticket 515: a robot's head too)
   // (ticket 434) a forester (Robin Hood): a green tunic with dagged edges over hose, a strap across the chest, a quiver, a bow
   const robin = kind === "robin";
   // (ticket 435) a knight: mail under a tabard in his arms, a helmet (the hair under it), a sword and a shield
@@ -114,6 +114,10 @@ function drawNow() {
   const scuba = kind === "scuba", diver = kind === "diver";
   if (scuba) { SH = { ...SH, style: "long", color: WC.scubaColor, pattern: "plain" }; P = { ...P, style: "long", color: WC.scubaColor, pattern: "plain" }; }
   if (diver) { SH = { ...SH, style: "long", color: WC.diverCloth, pattern: "plain", width: SH.width * 1.1 }; P = { ...P, style: "long", color: WC.diverCloth, pattern: "plain" }; }
+  // (ticket 515) a robot: one of ROBOT_STYLES (R: its colours and traits), its sleeves and legs in its limb colour (the box
+  // bot's legs and feet the friend's own); its pieces below, each in its own slot, each view its own drawing
+  const robot = kind === "robot", R = robot ? robotOf(WC) : null;
+  if (robot) { SH = { ...SH, style: "long", collar: "flat", color: R.limb, pattern: "plain" }; if (R.S.feet !== "own") P = { ...P, style: "long", color: R.limb, pattern: "plain" }; }
   const w = dir ? SH.width * 0.62 : q ? SH.width * 0.84 : SH.width, L = SH.length;
   const nw = Math.max(22, B.neckW / 2 + 6);           // the collar fits the neck
 
@@ -165,7 +169,7 @@ function drawNow() {
   };
   // no clothes: underwear or a swimsuit instead of the shirt and pants
   // (a full animal suit still covers everything)
-  const U = state.undies, undies = U.on && !suit && !witch && !fairy && !scuba && !diver && !gnome && !wizard && !monk && !robin && !knight && !royal;
+  const U = state.undies, undies = U.on && !suit && !witch && !fairy && !scuba && !diver && !gnome && !wizard && !monk && !robin && !knight && !royal && !robot;
   const sleeve = suit ? 0.97 : undies ? 0 : { tee: 0.38, long: 0.95, tank: 0 }[SH.style];
 
   // PANTS: their hips under the shirt's hem, their feet under the legs.
@@ -247,6 +251,10 @@ function drawNow() {
   faceFrame = { tx, ty, s, drop: headDrop };
   // (ticket 124: in profile the hair sits toward the back of the head, in the face's units)
   const side = dir && !C && !diver && !hooded ? sideHair(state.hair, F, dir) : null;   // (ticket 288: none under the old helmet)
+  // (ticket 515) a robot's head, in the face's units, and how far up and out it reaches; lying face up (on the back, seen from
+  // the side), what is on the back is under them
+  const lying = !move && B.pose === "lie", lieBack = lying && !!dir;
+  const RH = robot ? robotHead(R, F, { dir, away, closed: !!F.closed, lieBack }) : null;
 
   // The picture's frame grows to hold everything.
   const handYs = arms.map(x => x.H[1]);
@@ -255,6 +263,7 @@ function drawNow() {
   // (a falcon suit's wing reaches past the hand by about an arm's length)
   // (either hand's: the left may wear its own style)
   const reach = BIRD_SUIT[kind] ? B.armLen * 1.4 + 50
+    : robot ? handReach(robotHands(R, state.hands)) + 12   // (ticket 515)
     : (suit ? handReach(suitHands(C, kind))
             : Math.max(handReach(state.hands), handReach(rightHandOf(state.hands)))) + 12;
   // room for big hair on a tall head, a lid blown far off, and candy
@@ -263,11 +272,11 @@ function drawNow() {
   const hairY = y => HEAD_C + (y - HEAD_C) * headH(F);
   // (ticket 442) the friend's beard, from 💇 Hair (none under the old diving helmet or as a ghost), and how far below the
   // chin it reaches, for the picture's bottom
-  const beardStyle = BEARDS[state.hair.beard] && kind !== "diver" && kind !== "ghost" ? state.hair.beard : null;
+  const beardStyle = BEARDS[state.hair.beard] && kind !== "diver" && kind !== "ghost" && kind !== "robot" ? state.hair.beard : null;
   const flying = F.burst > 0 ? idiv(F.burst * 7, 10) + idiv(F.burst * 4, 10) + 40 : 0;   // see topFlies
   const faceTop = Math.min(-90, HEAD_C - 175 * headH(F), headCrown(F) + 50.6 - 1.4 * F.burst - 40,
                            hairY(hr.top) - 40 - flying, (C ? (kind === "deer" || dragon ? -140 : -90) : 0) - flying,
-                           witch ? hairY(-130) - 20 - flying : 0, gnome ? hairY(-240) - 20 - flying : 0, wizard ? hairY(-170) - 20 - flying : 0, hooded ? hairY(hoodGeom(F).cy - hoodGeom(F).ry - 40) - 10 - flying : 0, robin ? hairY(-90) - 10 - flying : 0, knight ? hairY(-40) - 10 - flying : 0, royal ? hairY(king ? -60 : -40) - 10 - flying : 0);
+                           witch ? hairY(-130) - 20 - flying : 0, gnome ? hairY(-240) - 20 - flying : 0, wizard ? hairY(-170) - 20 - flying : 0, hooded ? hairY(hoodGeom(F).cy - hoodGeom(F).ry - 40) - 10 - flying : 0, robin ? hairY(-90) - 10 - flying : 0, knight ? hairY(-40) - 10 - flying : 0, royal ? hairY(king ? -60 : -40) - 10 - flying : 0, RH ? RH.top - 10 - flying : 0);
   // (a broom stands 120 above the hand that holds it, its bristles 66 below)
   const broomH = witch && WC.broom ? arms[0].H : null;
   // (ticket 432: a wizard's staff, in the same hand: 160 above it, 120 below)
@@ -300,7 +309,8 @@ function drawNow() {
                         -(fx + half + 70), -(fx + (witch ? FOOT_REACH.witchboot : Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes)))) * shoeSc + 20), -(w + 40), -(pileRx + 20), -(B.neckW / 2 + 40), -(hairHalf + 20),
                         -((80 + (C ? (kind === "deer" ? 60 : 30) : witch ? brimRx - 80 : 0)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20),
                         broomH ? -(Math.abs(broomH[0]) + 60 * kb) : 0, staffH ? -(Math.abs(staffH[0]) + 40) : 0, bowH ? -(Math.abs(bowH[0]) + 50) : 0, shieldH ? -(Math.abs(shieldH[0]) + 40) : 0, swordH ? -(Math.abs(swordH[0]) + 24) : 0,
-                        catK ? -(w - 4) - 24 * catK : 0, catK ? -(-(w - 4) + 40 * catK) : 0);
+                        catK ? -(w - 4) - 24 * catK : 0, catK ? -(-(w - 4) + 40 * catK) : 0,
+                        robot ? -(w + robotOut(R, w, dir, false) + 16) : 0, RH ? -(RH.half * s + 20) : 0);   // (ticket 515: a robot's head, its blocks, plates, fins, key or legs)
   // (ticket 454, Matthew: "look into the dress-up-pictures for clipped pictures ... see if you can find any and what caused
   // them. Fix those if possible." The archive's 0.0.347 run had the head cut off at the frame's side lying down and crawling
   // in profile, and the top of the head cut jumping into a hug: the frame was the friend's standing one.) Turned about the
@@ -432,7 +442,7 @@ function drawNow() {
   if (rot && !swimming) {
     const a = rot * Math.PI / 180, turned = ([x, y]) => L + x * Math.sin(a) + (y - L) * Math.cos(a);
     gFig = Math.max(...arms.map(x => turned(x.H) + 10), ...[1, -1].map(sd => turned(kneeAt(sd)) + B.legW / 2), ...[1, -1].map(sd => turned(footAt(sd)) + 8),
-                    B.pose === "lie" && !move ? L + w + 2 : -Infinity);   // (ticket 299: lying, on the body's back or side too, as thick as it is)
+                    B.pose === "lie" && !move ? L + w + 2 + (robot ? Math.max(robotOut(R, w, dir, true), RH.half * s - w) : 0) : -Infinity);   // (ticket 299: lying, on the body's back or side too, as thick as it is; ticket 515: a robot as wide as it reaches)
   } else if (move && move.lift && !wet && !poseHeld) gFig = gStand + move.lift;
   // (ticket 136) jumping up into a hug, they are held up off the ground
   // (their shadow stays on it); not in water, nor while a joint is held,
@@ -554,6 +564,14 @@ function drawNow() {
   // (a suit's tail swings out to our right; in profile, out behind them)
   else if (suit) tail = dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L);
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
+  // (ticket 515) a robot's back: behind them facing us, over the back from behind (onBack), seen short crawling away; crawling
+  // toward us only what rises from behind the back (the spider's legs; the rest is drawn over the back, below); walking or
+  // running, the tin's key turns (its three drawings by the stride's phase); in the air, the space bot's flames
+  const robotBackO = robot ? { stride: move && !move.water && (B.anim === "walk" || B.anim === "run") ? Math.floor(lfoNow("B").phase * 3) % 3 : 0,
+                               jump: !!(move && move.jump && (move.lift || 0) > 0 && !move.water), sitting: sitting || B.pose === "meditate", lying, lieBack, crawlTo,
+                               turn: dir && move && move.rot && (move.swim || B.anim === "crawl") ? move.rot : 0, floor: swimming ? wl + 28 : gFig,
+                               flip: flipped, flipY: y => -backK * y - 20 * (1 + backK) } : null;
+  if (robot) { const rb = rbG("back", robotBack(R, w, L, dir, away, robotBackO)); if (rb) svg += veil("shirt", squash && away ? squashed(rb) : rb); }
   // (tickets 436, 437) a royal mantle from the shoulders to the floor, behind them (over them from behind: as wings are), its
   // ermine hem; in profile it hangs behind the back
   if (royal && WC.mantle !== false) { const mc = mix(robeC, "#000000", 0.18), fl = feetY + 8, b = dir ? -dir * (w * 0.6) : 0, sp = dir ? 0.5 : 1;
@@ -606,6 +624,7 @@ function drawNow() {
              : robin ? { style: "boot", size: state.shoes.size, color: "#6b4226" }
              : knight ? { style: "boot", size: state.shoes.size, color: "#6b7280" }
              : royal ? { style: "boot", size: state.shoes.size, color: "#e0b030" }
+             : robot ? robotFeet(R, state.shoes)   // (ticket 515: boots in its colour, the mech's bigger; the box bot's the friend's own)
              : fairy ? { style: "fairy-" + (FAIRY_SHOES.some(([v]) => v === WC.fairyShoes) ? WC.fairyShoes : "slipper"), size: state.shoes.size, color: WC.fairyShoeColor || FAIRY_SHOE_COLORS[0] }
              : suit ? { style: "paw", size: state.shoes.size, color: C.fur, pad: C.accent, claws: dragon ? C.horn : null } : state.shoes;   // (ticket 499: a dragon's feet clawed)
   // (a falcon suit's talons are yellow, like a falcon's feet)
@@ -746,8 +765,9 @@ function drawNow() {
         const d = "M" + Q.map(([x, y]) => f1(x) + " " + f1(y)).join(" L");
         return `<path d="${d}" fill="none" stroke="${ps}" stroke-width="${f1(2 * half + 5)}" stroke-linejoin="round"/>` +
                `<path d="${d}" fill="none" stroke="${pf}" stroke-width="${f1(2 * half)}" stroke-linejoin="round"/>`; };
-      for (const side of legSides) t += pantsLeg(side);
-      if (legApart) farLeg.pants += pantsLeg(dir);   // (ticket 136: the far one apart)
+      const legBits = side => robot ? rbG("leg", robotLeg(R, legJoints(side), half, dir)) : "";   // (ticket 515: a robot's ridges or knee pads, with each leg)
+      for (const side of legSides) t += pantsLeg(side) + legBits(side);
+      if (legApart) farLeg.pants += pantsLeg(dir) + legBits(dir);   // (ticket 136: the far one apart)
       svg += t + `<g transform="translate(0 1.5)">${hips(false).replace(/x="([^"]+)"/, (_, x) => `x="${f1(Number(x) + 1.5)}"`).replace(/width="([^"]+)"/, (_, w) => `width="${f1(Number(w) - 3)}"`)}</g>`;
     } else svg += poly(legs, pf, ps);
     if (wrapStripes(C) && legPosed)   // (along each thigh and shin, as an arm's are)
@@ -767,6 +787,7 @@ function drawNow() {
       svg += longPants ? `<path d="M${f1(kx - half * 0.7)} ${f1(ky + 4)} Q${f1(kx)} ${f1(ky + 13)} ${f1(kx + half * 0.7)} ${f1(ky + 4)}" fill="none" stroke="${ps}" stroke-width="3" stroke-linecap="round"/>`
                        : `<ellipse cx="${f1(kx)}" cy="${f1(ky + 3)}" rx="${f1(B.legW / 2 + 1)}" ry="${f1((B.legW / 2 + 1) * 0.75)}" fill="${limb}" stroke="${limbLine}" stroke-width="2"/>`; }
   }
+  if (robot && !dir) for (const side of [1, -1]) svg += rbG("leg", robotLeg(R, legJoints(side), half, 0));   // (ticket 515: facing us, both legs')
   veilFrom("pants", pantsAt);
   // (ticket 288: a scuba suit's stripe down the outside of each leg)
   if (scuba) svg += veil("pants", [1, -1].map(side => { const J = legJoints(side);
@@ -818,8 +839,9 @@ function drawNow() {
   // (the neck, the arms and the body are the shirt's to see through: an
   // invisible shirt is an invisible body, never a bare one)
   const bodyAt = svg.length;
+  const neckC = robot && R.S.head !== "bubble" ? R.limb : limb;   // (ticket 515: a robot's neck in its metal; inside the space bot's glass, the friend's own)
   const neckSvg = `<rect x="${-B.neckW / 2}" y="${neckTop}" width="${B.neckW}" height="${B.neck + 44}" rx="4" ` +
-                  `fill="${limb}" stroke="${limbLine}" stroke-width="2.5"/>`;
+                  `fill="${neckC}" stroke="${robot ? darker(neckC) : limbLine}" stroke-width="2.5"/>`;
   if (!(squash && away)) svg += neckSvg;
 
   // arms, sleeves and shirt
@@ -835,16 +857,18 @@ function drawNow() {
   // (a hand: with different hands, the friend's right hand, on our left when
   // they face us, wears its own style; one holding the broom is closed round
   // it, a round fist)
-  const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : state.hands, own = !suit && side < 0 ? rightHandOf(hands) : hands;
+  const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : robot ? robotHands(R, state.hands) : state.hands, own = !suit && !robot && side < 0 ? rightHandOf(hands) : hands;   // (ticket 515: a robot's hands)
     return handSvg(H[0], H[1], angle, out, ((broomH || staffH || swordH || scepterH) && side > 0) || ((bowH || shieldH) && side < 0) ? { ...own, style: "round" } : own, skin); };
   // (ticket 286: crawling toward us or away, each arm drawn whole, straight down to its hand flat on the floor, seen short)
   const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
     (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf) : "") +
-    (wrapStripes(C) ? (P => limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""))(sleeveOf(arm)) : "");
+    (wrapStripes(C) ? (P => limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""))(sleeveOf(arm)) : "") +
+    (robot ? rbG("arm", robotArm(R, arm, { dir: 0, w, armW, sleeve: sleeveOf(arm) })) : "");   // (ticket 515: a robot's, at its shoulder)
   const flatHand = arm => move.swim ? handOf(arm) : `<g transform="translate(0 ${f1(arm.H[1] * 0.4)}) scale(1 0.6)">${handOf(arm)}</g>`;   // (swimming, as they are)
   // (in profile, or turned partway, the far arm's sleeve over it, and its hand, behind the body)
   if ((dir || q) && !winged && !squash) {
     if (sleeve > 0) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
+    if (robot) for (const arm of farArms) svg += rbG("arm", robotArm(R, arm, { dir, far: true, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     const farHandsAt = svg.length;
     for (const arm of farArms) svg += handOf(arm);
     veilFrom("hands", farHandsAt);
@@ -870,7 +894,7 @@ function drawNow() {
     svg += poly(body, limb, "none", 0) +
            `<polyline points="${pts(body)}" fill="none" stroke="${limbLine}" stroke-width="2.5" stroke-linejoin="round"/>`;
     svg += undiesTop(U, w, nw, hw, fx, L);
-  } else svg += poly(torso, sf, ss);
+  } else if (!(robot && R.S.torso === "egg")) svg += poly(torso, sf, ss);   // (ticket 515: the helper bot's egg is its body, in place of the shirt's)
   // (ticket 288) a scuba suit's yoke (and zip, from behind); an air tank's straps; the old diving suit's brass corselet
   if (scuba && !undies) svg += scubaYoke(WC, w, nw, L, dir, away);
   if (WC.tank && !diver) svg += tankStraps(w, L, dir, away || crawlTo);   // (ticket 371: crawling toward us, it is the back that shows: its band, not the chest's buckle)
@@ -890,6 +914,7 @@ function drawNow() {
     svg += dir ? `<path d="${shape}" fill="${WC.knightA || "#2f6db5"}" stroke="#3b3b44" stroke-width="2.5"/>` : armsFill("tabard", shape, WC, away, away ? null : [0, L * 0.42], 1.2, [0, L * 0.42], Math.max(hw + 12, (tb - top) / 2 + 30));
     svg += `<rect x="${f1(-(w + 4))}" y="${f1(L - 14)}" width="${f1(2 * w + 8)}" height="10" fill="#4a2f16"/>` + (away || dir ? "" : `<rect x="-8" y="${f1(L - 16)}" width="16" height="14" rx="2" fill="none" stroke="#e0b030" stroke-width="3"/>`);
   }
+  if (robot) svg += rbG("torso", robotTorso(R, w, L, dir, away || crawlTo));   // (ticket 515: a robot's shell, chest or back; flipped below crawling toward us)
   // (ticket 434) a forester's: the tunic's dagged hem over the hose, its dagged cape on the shoulders, a belt with a pouch,
   // the quiver's strap across the chest (the other way from behind, with the quiver on the back)
   if (robin && !undies) { const tc = SH.color, tl = darker(tc);
@@ -930,6 +955,7 @@ function drawNow() {
   if (crawlTo) svg = svg.slice(0, shirtAt) + flipped(svg.slice(shirtAt));   // (ticket 286: the back, rising behind the head)
   // (ticket 371: the tank on it, turned over with it, standing out of it by its own thickness: its far end over the back's line)
   if (crawlTo && WC.tank && !diver) svg += veil("shirt", `<g transform="translate(0 ${f1(-0.8 * Math.max(24, 0.4 * w))})">${flipped(tankSvg(WC, w, L, dir))}</g>`);
+  if (crawlTo && robot) { const rb = rbG("back", robotBack(R, w, L, dir, away, { ...robotBackO, over: true })); if (rb) svg += veil("shirt", rb); }   // (ticket 515: the key standing up off it, the pack, the battery, the cord)
   veilFrom("shirt", bodyAt);
   if (squash && !crawlTo) svg = svg.slice(0, bodyAt) + squashed(svg.slice(bodyAt));   // (ticket 286: the neck and the body, seen short; the arms are drawn whole, below)
   const bodyEnd = svg.length;
@@ -973,9 +999,12 @@ function drawNow() {
     const fill = falconHead(kind) ? C.marks : eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
     svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F, 0, true)}` +
                                `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/>${dragon ? dragonHoodSpines(C, F) : ""}</g></g>`));   // (ticket 499: a dragon's spines down it)
-  } else if (away) { svg += veil("head", inFace(face.under)) + (diver ? "" : hooded
+  } else if (away) { svg += (robot && !robotSees(R, "back") ? "" : veil("head", inFace(face.under))) + (diver || robot ? "" : hooded
       ? veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${knight ? "" : clothHoodAway(F, clothHood())}</g></g>`))   // (ticket 433: the hood closed over the head; 435: a knight's helmet)
       : veil("hair", inFace(`<g transform="${topFlies(F)}">${backHair(state.hair, F)}</g>`))); }
+  // (ticket 515) under a robot's faceplate, a screen, or a box seen from the side, the face is not drawn (its own eyes and
+  // mouth follow the mood, below); a window or an opening shows it
+  else if (robot && !robotSees(R, dir ? "side" : "front")) { /* (faceFrame stays, for bubbles and fire) */ }
   else if (!dir) { faceEyes = inFace(face.eyes); svg += veil("head", inFace(face.under)) + veil("eyes", faceEyes) + veil("head", inFace(face.over)); }
   else {
     // (ticket 124) in profile: the face's features on our side only (one
@@ -1076,6 +1105,9 @@ function drawNow() {
                      `<g transform="${hairStretch(F)}">${helmetSvg(100, 204, 3.45, { worn: true, plume: WC.plume !== false ? WC.plumeColor || "#c0392b" : false, side: dir, back: away, open: !!WC.helmOpen && !away && !dir })}</g></g></g>`);
   if (royal) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
                     `<g transform="${hairStretch(F)}">${crownSvg(WC, king, robeC, away)}</g></g></g>`);
+  // (ticket 515) a robot's head, over the whole head (in the face's units as they are, as the old diving helmet is), and a
+  // faceplate's own eyes on the eyes' veil
+  if (robot) svg += veil("head", inFace(`<g data-robot="head" transform="${topFlies(F)}">${RH.svg}</g>`)) + (RH.eyes ? veil("eyes", inFace(`<g data-robot="eyes" transform="${topFlies(F)}">${RH.eyes}</g>`)) : "");
   if (robin) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
                     `<g transform="${hairStretch(F)}">${robinHat(WC, dir, away)}</g></g></g>`);
   if (wizard) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
@@ -1108,6 +1140,7 @@ function drawNow() {
     // (in profile, or turned partway, the arm on our side wholly in front of the body)
     for (const arm of nearArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
     if (sleeve > 0) for (const arm of nearArms) svg += limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf);
+    if (robot) for (const arm of nearArms) svg += rbG("arm", robotArm(R, arm, { dir, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     if (wrapStripes(C))
       for (const arm of nearArms) { const P = sleeveOf(arm);
         svg += limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""); }
@@ -1122,6 +1155,7 @@ function drawNow() {
     if (sleeve > 0) for (const arm of arms) svg += limbThrough(sleeveOf(arm), armW + 14, ss);
     svg += `</g>`;
     if (sleeve > 0) for (const arm of arms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
+    if (robot) for (const arm of arms) svg += rbG("arm", robotArm(R, arm, { dir: 0, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     // (from past the shoulder, where the fur sleeve joins the body)
     if (wrapStripes(C))
       for (const arm of arms) { const P = sleeveOf(arm);   // (round a bent elbow: the upper arm's, then the forearm's)

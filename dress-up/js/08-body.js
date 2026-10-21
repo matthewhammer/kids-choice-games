@@ -427,7 +427,7 @@ const suitHands = (C, kind) => ({ style: kind === "deer" ? "hoof" : "paw", size:
                                   clawCount: state.hands.clawCount ?? 4, clawColor: C.horn });   // (ticket 499: a dragon's in its horns' colour)
 // How far a hand reaches from where it joins the arm, in any direction,
 // in units of its size (fingers and claws stick out; a round hand doesn't).
-const HAND_REACH = { round: 1, mitten: 1.65, star: 1.4, paw: 1.2, hoof: 1.2, claw: 2.4,
+const HAND_REACH = { round: 1, mitten: 1.65, star: 1.4, paw: 1.2, hoof: 1.2, claw: 2.4, pincer: 2.1,
                      human: 2.3, alien: 3.2, alien4: 2.7, alien3: 3.2 };
 const handReach = h => {
   const k = (h.clawLen ?? 100) / 100;
@@ -527,6 +527,11 @@ function handSvg(x, y, angle, side, h, skin) {
                `<path d="M${r * 0.35} ${-r * 0.95} Q${r * 1.45} 0 ${r * 0.35} ${r * 0.95} Z" fill="#3a2a1e" stroke="#1d140d" stroke-width="2"/>` +
                `<line x1="${r * 0.4}" y1="0" x2="${r * 1.2}" y2="0" stroke="#1d140d" stroke-width="2"/>`);
     }
+    case "pincer":
+      // (ticket 515) a robot's grabber: two curved jaws, open a little, out of a round wrist (one path for both jaws)
+      return g(`<path d="M${f1(0.2 * r)} ${f1(-0.55 * r)} Q${f1(1.4 * r)} ${f1(-1.05 * r)} ${f1(1.95 * r)} ${f1(-0.2 * r)} Q${f1(1.25 * r)} ${f1(-0.45 * r)} ${f1(0.6 * r)} ${f1(-0.1 * r)} Z ` +
+               `M${f1(0.2 * r)} ${f1(0.55 * r)} Q${f1(1.4 * r)} ${f1(1.05 * r)} ${f1(1.95 * r)} ${f1(0.2 * r)} Q${f1(1.25 * r)} ${f1(0.45 * r)} ${f1(0.6 * r)} ${f1(0.1 * r)} Z" fill="${c}" stroke="${st}" stroke-width="2.5" stroke-linejoin="round"/>` +
+               `<circle r="${f1(0.72 * r)}" fill="${c}" stroke="${st}" stroke-width="2.5"/>`);
     case "claw": {
       // a furry paw with four hooked talons
       return g(talons(r, r * 0.7, h.clawLen, h.clawCount) +

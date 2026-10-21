@@ -345,6 +345,7 @@ const TAB_BOXES = {
                 ["🪄 the staff", ["staff", "staffOrb"]], ["🏹 Robin Hood", ["robinTunic", "robinHat", "robinFeather", "bow", "quiver"]],
                 ["👑 the queen or king", ["queenRobe", "kingRobe", "crownJewel", "mantle", "scepter"]],
                 ["🐉 the dragon", ["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow", "dragonWingLfo"]],
+                ["🤖 the robot", ["robotStyle", ...Object.keys(ROBOT_STYLES).map(id => "robotColor_" + id), "robotLights"]],   // (ticket 515)
                 ["🛡️ the knight", ["knightA", "knightB", "tabardLayout", "emblem", "plume", "plumeColor", "helmOpen", "sword", "shield"]],
                 ["🍄 the gnome", ["gnomeWho", "gnomeHat", "gnomeTunic", "gnomeTrousers", "gnomeBodice", "gnomeSkirt", "gnomeBoots"]],
                 ["🧙 the witch", ["witchColor", "webColor", "webStyle", "trimColor", "bootColor"]],

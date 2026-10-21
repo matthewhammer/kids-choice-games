@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🤖 A robot costume** (in "🐯 Costume"), in eight styles to pick from in "🤖 style": "🔑 wind-up tin" (a tin toy with a big key in its back that turns as it walks), "📦 box bot" (a cardboard box robot, your own face showing through the hole and your own trousers and shoes underneath), "🤗 helper bot" (a round white robot with a glowing screen face), "🚀 space bot" (a glass bubble helmet and a rocket pack that sparks flames when you jump), "🦾 big mech" (a digger-yellow mech with a cockpit window, a beacon and huge shoulder blocks), "⚡ hero bot" (a helmet with a gold V crest and a visor), "📺 TV bot" (your face on an old television's screen, with rabbit-ear antennas and a curly power cord) and "🕷️ spider bot" (four jointed spider legs out of its back). Each style keeps its own colour in "🤖 its colour", and "💡 its lights" colours the lights on all of them ("auto" is each style's own). The tin's and the helper's faces are their own, and they smile or frown with yours. Facing us, from behind and from the side, standing, sitting, lying, crawling and swimming.
+
 ## 0.0.397 (2026-10-21)
 
 Everything in 0.0.396, plus lighter cauldron fumes.

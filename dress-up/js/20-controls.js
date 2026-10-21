@@ -320,7 +320,7 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -387,6 +387,11 @@ const TABS = [
     ["color", "dragonHorns", "🦷 its horns, teeth and claws", ["#f4ecd6", "#e0b030", "#c9c5bd", "#1f1f22", "#8a5a2b", "#ffffff"]],
     ["choice", "dragonWingsHow", "🪽 its wings", DRAGON_WINGS],
     ["choice", "dragonWingLfo", "〰️ wings flap with", [["none", "their own slow beat"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
+    // (ticket 515) the robot: one of eight styles, its colour (each style its own, shown while it is chosen, as the fairy's
+    // wings), and its lights ("auto": each style's own)
+    ["choice", "robotStyle", "🤖 style", Object.entries(ROBOT_STYLES).map(([id, r]) => [id, r.name])],
+    ...Object.entries(ROBOT_STYLES).map(([id, r]) => ["color", "robotColor_" + id, "🤖 its colour", r.colors]),
+    ["color", "robotLights", "💡 its lights", ROBOT_LIGHTS],
     // (ticket 435) the knight: his arms (two colours, how they are laid out, an emblem), his helmet's plume and visor, sword and shield
     ["color", "knightA", "🛡️ arms' first color", ["#2f6db5", "#8a2b2b", "#1f1f22", "#2e7d32", "#e0b030", "#7b3f8c"]],
     ["color", "knightB", "🛡️ arms' second color", ["#f4f1ea", "#e0b030", "#1f1f22", "#8a2b2b", "#2f6db5"]],
@@ -1083,6 +1088,8 @@ const SHOWN_WHEN = {
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),
   ...Object.fromEntries(Object.keys(FAIRY_TUNICS).map(id => ["costume.tunicColor_" + id, c => c.kind === "fairy" && (c.tunicStyle ?? "petal") === id])),
+  "costume.robotStyle": c => c.kind === "robot", "costume.robotLights": c => c.kind === "robot",   // (ticket 515)
+  ...Object.fromEntries(Object.keys(ROBOT_STYLES).map(id => ["costume.robotColor_" + id, c => c.kind === "robot" && (ROBOT_STYLES[c.robotStyle] ? c.robotStyle : "tin") === id])),
   "costume.webColor": c => c.kind === "witch",
   "costume.webStyle": c => c.kind === "witch",
   "costume.trimColor": c => c.kind === "witch",
@@ -2423,7 +2430,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const b = c === "skin" || c === "auto" || c === "off"
         ? el("button", { class: "swatch skin",
                          title: c === "skin" ? "same as skin" : c === "off" ? (key === "horseShoes" ? "no shoes" : "none: the fur shows through")
-                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color"
+                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color" : key === "robotLights" ? "each robot's own lights"
                               // (ticket 498: with armour on, the horse's blanket on auto is the armour's cloth colour)
                               : key === "horseBlanket" ? "a lighter shade of the halter's, or with armour the armour's colour" : "a lighter shade",
                          onclick: () => set(part, key, c) }, c)
