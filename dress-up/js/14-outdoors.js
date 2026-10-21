@@ -1085,11 +1085,15 @@ const pastureDepth = up => Math.max(0.12, (PASTURE_VANISH - up) / PASTURE_VANISH
 const pastureHorseScale = (k, up) => HORSE_SCALE * sceneFig("pasture") * 700 / (SCENE.bottom - SCENE.top) * pastureDepth(up) * k;
 // The horses grazing: their coats, manes and face markings the stable's (HORSE_COATS, HORSE_MANES, HORSE_MARKS), where
 // each stands (u: a share of the picture's width from its middle; up: k above the ground line), which way it faces
-// (1 our right), and how far into the swish its tail starts (each its own); pastureHorses says how many
+// (1 our right), and how far into the swish its tail starts (each its own); pastureHorses says how many.
+// (ticket 503, after review: the friend walks behind every horse, not only the grey) Each stands far enough in front of
+// the back line (SCENE_FAR's 157) that its footprint's back is more than LANE_MIN (24) in front of it, or solidsHere
+// closes the lane behind it: none farther back than about 111 up (lanes of 28, 36 and 48 here); and their footprints
+// apart, so the friend goes round each
 const PASTURE_HORSES = [
-  { name: "bay", coat: "#7b4a2a", mane: "#1f1f22", mark: "star", u: -0.14, up: 112, face: -1, off: 0.13 },
-  { name: "grey", coat: "#c9c9cf", mane: "#f3efe6", mark: "none", u: 0.33, up: 94, face: -1, off: 0.58 },
-  { name: "chestnut", coat: "#a0522d", mane: "#7a3a1a", mark: "blaze", u: 0.17, up: 134, face: -1, off: 0.81 }];
+  { name: "bay", coat: "#7b4a2a", mane: "#1f1f22", mark: "star", u: 0.18, up: 100, face: -1, off: 0.13 },
+  { name: "grey", coat: "#c9c9cf", mane: "#f3efe6", mark: "none", u: 0.335, up: 84, face: -1, off: 0.58 },
+  { name: "chestnut", coat: "#a0522d", mane: "#7a3a1a", mark: "blaze", u: -0.12, up: 111, face: -1, off: 0.81 }];
 // The wildflowers in its grass: [name, its petals' colour, its middle's, how many petals, how wide each (radians)]
 const PASTURE_FLOWERS = [["daisy", "#ffffff", "#f6c915", 9, 0.3], ["buttercup", "#f7d21e", "#d9a400", 5, 0.55], ["poppy", "#e0412f", "#2a1a1a", 4, 0.78],
                          ["cornflower", "#4c7be0", "#26408a", 8, 0.26], ["clover", "#d77fb8", "#b0558f", 10, 0.32]];
@@ -1157,7 +1161,7 @@ function pastureTroughSvg(o) {
 function pastureScene(c) {
   const { x0, y0, x1, W, H, g, k, pad, R, P, grad, all, land, o } = c;
   const horses = Math.max(0, Math.min(PASTURE_HORSES.length, Math.round(o.pastureHorses ?? 3))), flowers = Math.max(0, Math.min(24, Math.round(o.pastureFlowers ?? 10)));
-  const at = up => g - up * k, horizon = at(172), fenceY = at(150), gx = 0.08 * W, gw = 90 * k, tree = { x: -0.4 * W, y: at(50) };
+  const at = up => g - up * k, horizon = at(172), fenceUp = 162, fenceY = at(fenceUp), tree = { x: -0.4 * W, y: at(50) };
   // the sky, the sun, clouds drifting with the slow LFO
   let s = SEP + part("pasture-sky", [c.F, sceneLfoKey(o, "slow")], () => `<defs>${grad("bg-sky", "#79bdf0", "#e6f5ff", y0, horizon)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)") +
     `<defs><radialGradient id="bg-pasture-sun"><stop offset="0.5" stop-color="#fff6c8" stop-opacity="0.9"/><stop offset="1" stop-color="#fff6c8" stop-opacity="0"/></radialGradient></defs>` +
@@ -1175,32 +1179,38 @@ function pastureScene(c) {
       `<ellipse cx="${f1(tree.x + 60 * k)}" cy="${f1(tree.y + 8 * k)}" rx="${f1(210 * k)}" ry="${f1(30 * k)}" fill="#3f7a32" opacity="0.28"/>`;
   });
   // the fence along the back, posts and three rails, the gate in it shut (five bars and a brace, its latch), and a
-  // bird sitting on the gate's post (an object at the fence's foot: behind wherever the friend can stand)
+  // bird sitting on the gate's post (an object at the fence's foot: behind wherever the friend can stand). Drawn in a
+  // horse's units at its depth (u), as the horses and the trough are: its posts 260 tall, a little under a horse's
+  // withers. (ticket 503, after review: 162 up, the back line just in front of it, far enough back for the friend to
+  // walk behind every horse.) Its rails, posts and gate are drawnBy "fence", as the witch's woods' are (ticket 368),
+  // so 🔬's 🪵 fences chip finds them; the bird is not fence
   s += SEP + part("pasture-fence", c.F, () => {
-    const ph = 41 * k, pw = 4.5 * k, gp = 48 * k, gpw = 6.5 * k, step = 78 * k, L = gx - gw / 2, Rt = gx + gw / 2;
+    const u = pastureHorseScale(k, fenceUp), gx = 0.035 * W, gw = 570 * u;
+    const ph = 260 * u, pw = 28 * u, gp = 305 * u, gpw = 41 * u, step = 500 * u, L = gx - gw / 2, Rt = gx + gw / 2, rt = 11.5 * u;
     let posts = "", rails = "";
-    const post = (x, h, w) => `M${P(x - w / 2, fenceY)} L${P(x - w / 2, fenceY - h)} L${P(x, fenceY - h - 1.5 * k)} L${P(x + w / 2, fenceY - h)} L${P(x + w / 2, fenceY)} Z `;
+    const post = (x, h, w) => `M${P(x - w / 2, fenceY)} L${P(x - w / 2, fenceY - h)} L${P(x, fenceY - h - 9.5 * u)} L${P(x + w / 2, fenceY - h)} L${P(x + w / 2, fenceY)} Z `;
     for (let x = L - step; x > x0 - pad - step; x -= step) posts += post(x, ph, pw);
     for (let x = Rt + step; x < x1 + pad + step; x += step) posts += post(x, ph, pw);
     for (const h of [0.3, 0.6, 0.88]) { const y = fenceY - h * ph;
-      rails += `M${P(x0 - pad, y - 1.8 * k)} L${P(L, y - 1.8 * k)} L${P(L, y + 1.8 * k)} L${P(x0 - pad, y + 1.8 * k)} Z M${P(Rt, y - 1.8 * k)} L${P(x1 + pad, y - 1.8 * k)} L${P(x1 + pad, y + 1.8 * k)} L${P(Rt, y + 1.8 * k)} Z `; }
-    const a = L + gpw / 2, b = Rt - gpw / 2, gh = 38 * k, bars = [0.12, 0.31, 0.5, 0.69, 0.88].map(h => { const y = fenceY - h * gh;
-      return `M${P(a, y - 1.5 * k)} L${P(b, y - 1.5 * k)} L${P(b, y + 1.5 * k)} L${P(a, y + 1.5 * k)} Z`; }).join(" ") +
-      ` M${P(a, fenceY - 0.05 * gh)} L${P(a + 3.5 * k, fenceY - 0.05 * gh)} L${P(a + 3.5 * k, fenceY - 0.95 * gh)} L${P(a, fenceY - 0.95 * gh)} Z` +
-      ` M${P(b - 3.5 * k, fenceY - 0.05 * gh)} L${P(b, fenceY - 0.05 * gh)} L${P(b, fenceY - 0.95 * gh)} L${P(b - 3.5 * k, fenceY - 0.95 * gh)} Z`;
-    const bx = L, by = fenceY - gp - 1.5 * k, u = 0.85 * k;
-    const bird = `<path d="M${P(bx - 6 * u, by - 5 * u)} L${P(bx - 14 * u, by - 1 * u)} L${P(bx - 5 * u, by - 2 * u)} Z" fill="#5a3d2b"/>` +
-      `<ellipse cx="${f1(bx)}" cy="${f1(by - 5 * u)}" rx="${f1(7 * u)}" ry="${f1(5 * u)}" fill="#6b4a33"/>` +
-      `<ellipse cx="${f1(bx + 2.5 * u)}" cy="${f1(by - 4 * u)}" rx="${f1(4 * u)}" ry="${f1(3.5 * u)}" fill="#e2683a"/>` +
-      `<circle cx="${f1(bx + 5 * u)}" cy="${f1(by - 10 * u)}" r="${f1(3.6 * u)}" fill="#6b4a33"/>` +
-      `<path d="M${P(bx + 8.4 * u, by - 10.8 * u)} l${f1(3 * u)} ${f1(1 * u)} l${f1(-3 * u)} ${f1(1 * u)} Z" fill="#e8b923"/>` +
-      `<circle cx="${f1(bx + 6 * u)}" cy="${f1(by - 11 * u)}" r="${f1(0.9 * u)}" fill="#111111"/>`;
-    return obj("fence and gate", fenceY, `<path d="${rails}" fill="#8a6a45" stroke="#5a4128" stroke-width="${f1(0.8 * k)}"/>` +
-      `<path d="${posts}" fill="#7a5a38" stroke="#4e3822" stroke-width="${f1(0.8 * k)}"/>` +
-      `<path d="${bars}" fill="#b08a5a" stroke="#6e5232" stroke-width="${f1(0.7 * k)}"/>` +
-      `<path d="M${P(a + 3 * k, fenceY - 0.1 * gh)} L${P(b - 3 * k, fenceY - 0.9 * gh)}" stroke="#9a7648" stroke-width="${f1(3 * k)}" stroke-linecap="round"/>` +
-      `<path d="${post(L, gp, gpw)}${post(Rt, gp, gpw)}" fill="#6e4f30" stroke="#4e3822" stroke-width="${f1(0.8 * k)}"/>` +
-      `<rect x="${f1(b - 2 * k)}" y="${f1(fenceY - 0.62 * gh)}" width="${f1(5 * k)}" height="${f1(3 * k)}" fill="#3a3a3a"/>` + bird);
+      rails += `M${P(x0 - pad, y - rt)} L${P(L, y - rt)} L${P(L, y + rt)} L${P(x0 - pad, y + rt)} Z M${P(Rt, y - rt)} L${P(x1 + pad, y - rt)} L${P(x1 + pad, y + rt)} L${P(Rt, y + rt)} Z `; }
+    const a = L + gpw / 2, b = Rt - gpw / 2, gh = 240 * u, bt = 9.5 * u, bw = 22 * u, bars = [0.12, 0.31, 0.5, 0.69, 0.88].map(h => { const y = fenceY - h * gh;
+      return `M${P(a, y - bt)} L${P(b, y - bt)} L${P(b, y + bt)} L${P(a, y + bt)} Z`; }).join(" ") +
+      ` M${P(a, fenceY - 0.05 * gh)} L${P(a + bw, fenceY - 0.05 * gh)} L${P(a + bw, fenceY - 0.95 * gh)} L${P(a, fenceY - 0.95 * gh)} Z` +
+      ` M${P(b - bw, fenceY - 0.05 * gh)} L${P(b, fenceY - 0.05 * gh)} L${P(b, fenceY - 0.95 * gh)} L${P(b - bw, fenceY - 0.95 * gh)} Z`;
+    const bx = L, by = fenceY - gp - 9.5 * u, q = 5.4 * u;
+    const bird = `<path d="M${P(bx - 6 * q, by - 5 * q)} L${P(bx - 14 * q, by - 1 * q)} L${P(bx - 5 * q, by - 2 * q)} Z" fill="#5a3d2b"/>` +
+      `<ellipse cx="${f1(bx)}" cy="${f1(by - 5 * q)}" rx="${f1(7 * q)}" ry="${f1(5 * q)}" fill="#6b4a33"/>` +
+      `<ellipse cx="${f1(bx + 2.5 * q)}" cy="${f1(by - 4 * q)}" rx="${f1(4 * q)}" ry="${f1(3.5 * q)}" fill="#e2683a"/>` +
+      `<circle cx="${f1(bx + 5 * q)}" cy="${f1(by - 10 * q)}" r="${f1(3.6 * q)}" fill="#6b4a33"/>` +
+      `<path d="M${P(bx + 8.4 * q, by - 10.8 * q)} l${f1(3 * q)} ${f1(1 * q)} l${f1(-3 * q)} ${f1(1 * q)} Z" fill="#e8b923"/>` +
+      `<circle cx="${f1(bx + 6 * q)}" cy="${f1(by - 11 * q)}" r="${f1(0.9 * q)}" fill="#111111"/>`;
+    const sw = f1(5 * u);
+    return obj("fence and gate", fenceY, drawnBy("fence", `<path d="${rails}" fill="#8a6a45" stroke="#5a4128" stroke-width="${sw}"/>` +
+      `<path d="${posts}" fill="#7a5a38" stroke="#4e3822" stroke-width="${sw}"/>` +
+      `<path d="${bars}" fill="#b08a5a" stroke="#6e5232" stroke-width="${f1(4.5 * u)}"/>` +
+      `<path d="M${P(a + 19 * u, fenceY - 0.1 * gh)} L${P(b - 19 * u, fenceY - 0.9 * gh)}" stroke="#9a7648" stroke-width="${f1(19 * u)}" stroke-linecap="round"/>` +
+      `<path d="${post(L, gp, gpw)}${post(Rt, gp, gpw)}" fill="#6e4f30" stroke="#4e3822" stroke-width="${sw}"/>` +
+      `<rect x="${f1(b - 13 * u)}" y="${f1(fenceY - 0.62 * gh)}" width="${f1(32 * u)}" height="${f1(19 * u)}" fill="#3a3a3a"/>`) + bird);
   });
   // the big shade tree (an object at its foot), and the water trough by it, farther back (an object at its foot line)
   s += SEP + part("pasture-tree", c.F, () => obj("big tree", tree.y, `<g ${tf(tree.x, tree.y, 1.45 * k)}>${leafyTree(5030, { wide: 1.3, h: 330 })}</g>`));
@@ -1232,8 +1242,9 @@ function pastureScene(c) {
       }
       // (two leaves at the patch's foot)
       stems += `M${P(x - 2 * sz, y)} q${f1(-6 * sz)} ${f1(-4 * sz)} ${f1(-10 * sz)} ${f1(-12 * sz)} M${P(x + 2 * sz, y)} q${f1(6 * sz)} ${f1(-3 * sz)} ${f1(11 * sz)} ${f1(-10 * sz)}`;
-      items.push({ y, svg: `<path d="${stems}" fill="none" stroke="#4f8a35" stroke-width="${f1(1.6 * sz)}" stroke-linecap="round"/>` +
-        `<path d="${petals}" fill="${col}"${col === "#ffffff" ? ` stroke="#d9d9d9" stroke-width="${f1(0.5 * sz)}"` : ""}/><path d="${mids}" fill="${mid}"/>` });
+      // (each patch drawnBy "wildflowers", a plant drawing, so 🔬's 🌷 flowers chip finds it)
+      items.push({ y, svg: drawnBy("wildflowers", `<path d="${stems}" fill="none" stroke="#4f8a35" stroke-width="${f1(1.6 * sz)}" stroke-linecap="round"/>` +
+        `<path d="${petals}" fill="${col}"${col === "#ffffff" ? ` stroke="#d9d9d9" stroke-width="${f1(0.5 * sz)}"` : ""}/><path d="${mids}" fill="${mid}"/>`) });
     }
     for (let i = 0; i < 10; i++) { const up = 110 - 205 * R(i, 5038), y = at(up), f = pastureDepth(up);
       items.push({ y, svg: grassTuft(W * (R(i, 5039) - 0.5) * 1.02, y, (26 + 14 * R(i, 5040)) * f * k, 5041 + i, "#5e9a3c", 1.8 * f * k) }); }

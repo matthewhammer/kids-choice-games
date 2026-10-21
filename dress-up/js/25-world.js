@@ -574,7 +574,8 @@ const MADE_CATS = [["objects", "🧩 objects (each place's list; their boxes are
 // (each procedure's kind)
 const PROC_CAT = { leafyTree: "trees", pineTree: "pines", palm: "palms", palmTrunkSvg: "palms", beachPalm: "palms", bushSvg: "bushes", hibiscus: "bushes",
                    tulip: "flowers", daisy: "flowers", paradise: "flowers", fern: "leafy", monstera: "leafy", vine: "leafy", ivy: "leafy", kelp: "leafy",
-                   lilyPads: "leafy", padSvg: "pads", padDef: "pads", grassTuft: "grass", deadTree: "trees", skull: "skulls", fence: "fences" };   // (ticket 368: the witch's woods' and the placed ones)
+                   lilyPads: "leafy", padSvg: "pads", padDef: "pads", grassTuft: "grass", deadTree: "trees", skull: "skulls", fence: "fences",   // (ticket 368: the witch's woods' and the placed ones)
+                   wildflowers: "flowers" };   // (ticket 503: the pasture's patches of wildflowers; its fence is "fence")
 const madeCatOn = cat => { const m = (state.access || DEFAULTS.access).madeCats || {}; return cat in m ? !!m[cat] : !!(MADE_CATS.find(c => c[0] === cat) || [])[2]; };
 let madeShown = "", madeCounts = {};
 const procHue = name => [...name].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 360, 17);

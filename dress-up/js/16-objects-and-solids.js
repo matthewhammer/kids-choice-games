@@ -162,9 +162,11 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // horizon, not the facade of the building. instead, the building's facade has accurate collision boxes ... permitting a
 // space for feet to squeeze between that box and the back horizon line": the house's lawn's far edge, 205 up, the
 // castle's meadow's, 150 up; the buildings' own boxes are SCENE_BOXES')
+// (ticket 503) the pasture's: just in front of its fence (162 up), far enough back that the friend walks behind each of
+// its horses grazing (PASTURE_HORSES: a horse moved farther back must keep LANE_MIN behind its footprint)
 const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 200, treehouse: 118, clearing: 140,
                     fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, castle: 138,
-                    woodpath: 165, pasture: 142, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
+                    woodpath: 165, pasture: 157, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
 // (ticket 176) The things that stand in a place and can't be walked

@@ -1,10 +1,12 @@
 // (ticket 503, for M; Matthew: "field/pasture for animals (like horses) to graze.") The 🌾 pasture: a place in the woods'
 // group (the outdoor places), picked from the menu with the friend landing clear of everything; its fence and gate, its
 // big tree, its water trough, its three horses grazing (each its tail moving, each standing in the way by a footprint a
-// body's width deep, its depth within it), its rows of grass and flowers, its butterflies; the friend walks behind a horse
-// (drawn before it) and in front of it (drawn after it); its settings (how many horses, how many patches of flowers) do
-// what they say; a horse led in by the friend is as big as the grazing ones at the same depth, and leaves the pasture as it
-// was; no doorway in it (its gate is shut: the world's ways are the nav arrows). Exits 1 on a failure.
+// body's width deep, its depth within it, as drawn: not stretched back to the back line by solidsHere, LANE_MIN or more
+// in front of it), its rows of grass and flowers, its butterflies; the friend walks behind each horse (drawn before it)
+// and in front of it (drawn after it); 🔬 finds its wildflowers (🌷 flowers) and its fence (🪵 fences); its settings
+// (how many horses, how many patches of flowers) do what they say; a horse led in by the friend is as big as the grazing
+// ones at the same depth, and leaves the pasture as it was; no doorway in it (its gate is shut: the world's ways are the
+// nav arrows). Exits 1 on a failure.
 //   node pasture503.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -35,17 +37,22 @@ try {
       tails: horses.map(h => el(h).querySelectorAll("animateTransform").length) };
     // their boxes: each horse, the trough, the tree; each horse's shallow, its depth within it
     const sol = solidsHere(), box = name => { const bs = sol.filter(s => s.name === name); return bs.length ? { x0: Math.min(...bs.map(b => b.x0)), x1: Math.max(...bs.map(b => b.x1)),
-      back: Math.min(...bs.map(b => b.back)), front: Math.max(...bs.map(b => b.front)) } : null; };
+      back: Math.min(...bs.map(b => b.back)), front: Math.max(...bs.map(b => b.front)), lane: bs.some(b => "lane" in b), toBack: Math.min(...bs.map(b => b.back)) - SCENE_BACK.pasture() } : null; };
     const zOf = name => { const o = bgShown.objs.find(o => o.name === name); return o ? o.z : null; };
     const boxes = Object.fromEntries([...horses, "water trough", "big tree"].map(h => [h, { box: box(h), z: zOf(h) }]));
-    // behind the grey horse, then in front of it: where the friend is drawn
-    const G = boxes["grazing horse, grey"].box, mid = G ? (G.x0 + G.x1) / 2 : 0, fig = () => document.getElementById("figure");
-    const after = name => !!(fig().compareDocumentPosition(el(name)) & Node.DOCUMENT_POSITION_FOLLOWING);
-    const spot = G ? { x: mid, z: G.back - 8 } : null;
-    const behind = spot ? { free: !solidAt(spot.x, spot.z), inFront: spot.z > SCENE_BACK.pasture() } : null;
-    if (spot) { Object.assign(B, { figX: mid, figY: spot.z - SCENE.ground }); changed(); await w(400); behind.drawnBefore = after("grazing horse, grey"); }
-    if (G) { Object.assign(B, { figX: mid, figY: G.front + 12 - SCENE.ground }); changed(); await w(400); }
-    const front = { drawnAfter: G ? !after("grazing horse, grey") : false };
+    // behind each horse (free to stand there), then in front of it: where the friend is drawn
+    const fig = () => document.getElementById("figure"), after = name => !!(fig().compareDocumentPosition(el(name)) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const behind = {}, front = {};
+    for (const h of horses) { const G = boxes[h].box; if (!G) continue;
+      const mid = (G.x0 + G.x1) / 2, z = G.back - 8;
+      behind[h] = { free: !solidAt(mid, z), inFront: z > SCENE_BACK.pasture() };
+      Object.assign(B, { figX: mid, figY: z - SCENE.ground }); changed(); await w(400); behind[h].drawnBefore = after(h);
+      Object.assign(B, { figX: mid, figY: G.front + 12 - SCENE.ground }); changed(); await w(400); front[h] = { drawnAfter: !after(h) }; }
+    // 🔬 what it is made of: its patches of wildflowers (🌷 flowers) and its fence (🪵 fences)
+    state.access.showMadeOf = true; state.access.madeCats = {}; changed(); await w(400); madeOfHud(); await w(100);
+    const made = { patches: bgShown.node.querySelectorAll('[data-proc="wildflowers"]').length, fence: bgShown.node.querySelectorAll('[data-obj="fence and gate"] [data-proc="fence"]').length,
+      cat: PROC_CAT.wildflowers, counts: { ...madeCounts } };
+    state.access.showMadeOf = false; changed(); await w(200);
     // a horse led in, at the grey horse's depth: as big as it (each one's horse units on the screen), and the pasture as it was
     const greyZ = zOf("grazing horse, grey");
     Object.assign(B, { figX: 0, figY: greyZ - SCENE.ground }); set("body", "horse", "lead"); state.body.facing = "front"; changed(); drawNow(); await w(500);
@@ -58,8 +65,8 @@ try {
     const paths = () => [...bgShown.node.querySelectorAll('[data-obj^="grass and flowers"] path')].length;
     B.pastureFlowers = 0; changed(); await w(300); counts.flowers0 = paths(); B.pastureFlowers = 24; changed(); await w(300); counts.flowers24 = paths();
     B.pastureFlowers = 10; B.pastureHorses = 3; changed(); await w(200);
-    return JSON.stringify({ place, arrive, drawn, boxes, behind, front, led, counts }); })()`));
-  const { place: P, arrive: A, drawn: D, boxes: X, behind: Bh, front: F, led: L, counts: C } = r;
+    return JSON.stringify({ place, arrive, drawn, boxes, behind, front, made, led, counts }); })()`));
+  const { place: P, arrive: A, drawn: D, boxes: X, behind: Bh, front: F, made: M, led: L, counts: C } = r;
   ok("the pasture is a place: in the list, in the woods' group once, with its words, its LFO things, its scene, its back line and its 🔭",
      P.inPlaces && P.groups.length === 1 && P.groups[0] === "woods" && /pasture/.test(P.phrase || "") && P.lfo && P.lfo.fast && P.lfo.slow && P.scene && P.back && P.north, P);
   ok("picked from the menu, the friend lands clear of everything", !A.inSolid, A);
@@ -70,10 +77,15 @@ try {
   ok("no doorway in it: the gate is shut (the world's ways are the nav arrows)", D.portals === 0, D.portals);
   for (const [name, { box: b, z }] of Object.entries(X)) {
     const horse = name.startsWith("grazing horse");
-    ok(`${name}: in the way, its depth within its box${horse ? ", a body's width deep" : ""}`, !!b && z != null && z <= b.front + 3 && z >= b.back - 3 && (!horse || b.front - b.back < 30), { b, z });
+    ok(`${name}: in the way, its depth within its box${horse ? ", a body's width deep" : ""}, its box as drawn, LANE_MIN or more in front of the back line`,
+       !!b && z != null && z <= b.front + 3 && z >= b.back - 3 && (!horse || b.front - b.back < 30) && !b.lane && b.toBack >= 24, { b, z });
   }
-  ok("the friend can stand behind the grey horse (clear, in front of the back line), drawn behind it", Bh && Bh.free && Bh.inFront && Bh.drawnBefore, Bh);
-  ok("in front of the grey horse, the friend is drawn in front of it", F.drawnAfter, F);
+  for (const h of ["grazing horse, bay", "grazing horse, grey", "grazing horse, chestnut"]) {
+    ok(`the friend can stand behind the ${h.slice(15)} horse (clear, in front of the back line), drawn behind it`, Bh[h] && Bh[h].free && Bh[h].inFront && Bh[h].drawnBefore, Bh[h]);
+    ok(`in front of the ${h.slice(15)} horse, the friend is drawn in front of it`, F[h] && F[h].drawnAfter, F[h]);
+  }
+  ok("🔬 finds its wildflowers (a patch each, 🌷 flowers) and its fence (🪵 fences)",
+     M.patches === 10 && M.cat === "flowers" && M.counts.flowers >= 8 && M.fence === 1 && M.counts.fences === 1, M);
   ok("a horse led in by the friend is as big as the grazing ones at the same depth (within 4%)", L.mine > 0 && L.grey > 0 && Math.abs(L.mine / L.grey - 1) < 0.04, L);
   ok("with the friend's own horse, the pasture is as it was", D.names.join("|") === L.names.join("|"), { before: D.names, after: L.names });
   ok("🐴 horses grazing: none, two, three", C.horses0 === 0 && C.horses2 === 2 && C.horses3 === 3, C);
