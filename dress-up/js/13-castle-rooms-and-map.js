@@ -1620,7 +1620,7 @@ function catRoomSvg(c, K) {
     t += `<path d="${arch(-8 * k)}" fill="${beam}"/><defs><clipPath id="bg-catwin"><path d="${arch(0)}"/></clipPath></defs><g clip-path="url(#bg-catwin)"><path d="${arch(0)}" fill="url(#bg-catsky)"/>` +
          `<path d="M${P(wx - ar, wyb - 20 * k)} Q${P(wx - ar * 0.4, wyb - 46 * k)} ${P(wx, wyb - 28 * k)} Q${P(wx + ar * 0.5, wyb - 12 * k)} ${P(wx + ar, wyb - 34 * k)} V${f1(wyb)} H${f1(wx - ar)} Z" fill="#3a3a5e"/>` +
          `<path d="M${P(wx - ar, wyb - 6 * k)} Q${P(wx, wyb - 22 * k)} ${P(wx + ar, wyb - 8 * k)} V${f1(wyb)} H${f1(wx - ar)} Z" fill="#2a2a48"/>` +
-         `<circle cx="${f1(wx + ar * 0.45)}" cy="${f1(wyt + ar * 0.75)}" r="${f1(12 * k)}" fill="#fff6c8"/><circle cx="${f1(wx + ar * 0.45 + 6 * k)}" cy="${f1(wyt + ar * 0.7)}" r="${f1(11 * k)}" fill="#3a3f6e"/>` +
+         moonOfDateSvg(c.o, wx + ar * 0.45, wyt + ar * 0.75, 12 * k, "#3a3f6e") +   // (ticket 490: the date's moon, where the crescent was)
          [...Array(9)].map((_, j) => `<circle cx="${f1(wx - ar * 0.8 + ar * 1.6 * R(j, 1240))}" cy="${f1(wyt + ar * 0.3 + (wyb - wyt) * 0.45 * R(j, 1241))}" r="${f1((0.8 + 1.2 * R(j, 1242)) * k)}" fill="#ffffff">` +
            `<animate attributeName="opacity" values="1;0.25;1" dur="${(1.6 + 2 * R(j, 1243)).toFixed(1)}s" begin="-${(3 * R(j, 1244)).toFixed(1)}s" repeatCount="indefinite"/></circle>`).join("");
     for (let i = 1; i < 6; i++) t += `<line x1="${f1(wx - ar + ww * i / 6)}" y1="${f1(wyt)}" x2="${f1(wx - ar + ww * i / 6)}" y2="${f1(wyb)}" stroke="#2a2a32" stroke-width="${f1(1 * k)}" opacity="0.5"/>`;
@@ -2499,7 +2499,8 @@ function castleroomScene(c) {
   const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places, hens, pitShapes, trap });
   let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() + JSON.stringify(trap) + [o.leverShine, o.leverShineColor, o.leverFlicker].join() : bones,   // (ticket 317: and its levers' shine)
                                   K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places, hens,   // (ticket 369: these were swallowed by the note above, so a change to them did not draw the room again)
-                                  SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
+                                  SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : "",
+                                  style === "catroom" ? moonOfDateKey(o) : ""], draw);   // (ticket 490: the cat room's window's moon, the date's)
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)
     const wags = K.cats.map(catWag);

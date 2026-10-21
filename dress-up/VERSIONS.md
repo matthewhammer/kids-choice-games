@@ -6,6 +6,12 @@ Each version lists the game's features as of that version. The newest version is
 
 - **🧩 Scripting** (ticket 482, a pull request): the game's logic written in Hazel. A new tab has an editor for 📚 Common and one for the castle's trap room; switched on, the trap room's red levers do what its script says: flip a lever, flip both, or say something over the picture. Off to start, and with a mistake in the script the levers work as they always have.
 
+## 0.0.393 (2026-10-20)
+
+Everything in 0.0.392, plus the moon of the game's date in four more places.
+
+- **🌙 The moon in its phase, in the witch's woods and three windows:** the witch's woods (its moon was always full), and the round windows of the witch's hut and the hut's bedroom and the cat room's window (theirs were always a crescent) show the moon of the date in 🌍 the sky: where and when, in its phase, waxing or waning the right way round for the place on Earth.
+
 ## 0.0.392 (2026-10-20)
 
 Everything in 0.0.391, plus a dragon, fire, armour for the horse and a stable full of hens: every choice in the game, for the kids to pick.

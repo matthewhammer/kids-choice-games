@@ -904,7 +904,7 @@ function witchroomScene(c) {
   const floor = g - 100 * k, cz = (o.cauldronSize ?? 100) / 100, wz = (o.witchSize ?? 100) / 100;
   const crows = o.crows ?? 3, frogs = o.frogs ?? 4, snakes = o.snakes ?? 2;
   // the hut: log walls, a beam with herbs, cobwebs, a round window with the moon
-  let s = SEP + part("wroom-shell", c.F, () => {
+  let s = SEP + part("wroom-shell", [c.F, moonOfDateKey(o)], () => {   // (ticket 490: and its window's moon)
     let t = all("#3a2a3a");
     for (let i = 0; i < 16; i++) {
       const y = y0 - 10 * k + i * 30 * k;
@@ -917,7 +917,7 @@ function witchroomScene(c) {
     const mRound = t.length;   // (ticket 284: its windows, the herbs on the beam, the cobwebs, the shelves of potions and of frogs, the crows in their cages: wall objects)
     // the round window, the moon in it
     const wx = 0, wy = y0 + H * 0.14;
-    t += `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(48 * k)}" fill="#1c2340"/><circle cx="${f1(wx + 14 * k)}" cy="${f1(wy - 10 * k)}" r="${f1(18 * k)}" fill="#f4e7b0"/>` +
+    t += `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(48 * k)}" fill="#1c2340"/>` + moonOfDateSvg(o, wx + 14 * k, wy - 10 * k, 18 * k, "#1c2340") +   // (ticket 490: the date's moon)
          `<circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(48 * k)}" fill="none" stroke="#2a3a8a" stroke-width="${f1(9 * k)}"/><path d="M${P(wx - 48 * k, wy)} H${f1(wx + 48 * k)} M${P(wx, wy - 48 * k)} V${f1(wy + 48 * k)}" stroke="#2a3a8a" stroke-width="${f1(4 * k)}"/>`;
     t = wallSince(t, mRound, "round window");
     // a window either side of the door, as outside: blue frames, the dark woods beyond
@@ -1994,10 +1994,10 @@ function hutbedScene(c) {
   // (ticket 284: its rug, window and dreamcatcher objects of their own)
   s += SEP + floorObj("rug", part("hutbed-rug", c.F, () => rugSvg(c, rugColorsOf("rose"), 46).replace(/rx="[0-9.]+"/g, m => `rx="${f1(parseFloat(m.slice(4)) * 0.6)}"`)));
   // the round window, high in the middle: the night sky, a moon, stars twinkling with the quick LFO
-  s += SEP + wallObj("window", part("hutbed-window", [c.F, sceneLfoKey(o, "fast")], () => { const wx = W * 0.08, wy = y0 + H * 0.28, wr = 52 * k;
+  s += SEP + wallObj("window", part("hutbed-window", [c.F, sceneLfoKey(o, "fast"), moonOfDateKey(o)], () => { const wx = W * 0.08, wy = y0 + H * 0.28, wr = 52 * k;
     return `<defs><clipPath id="bg-hutbed-win"><circle cx="${f1(wx)}" cy="${f1(wy)}" r="${f1(wr)}"/></clipPath></defs>` +
       `<g clip-path="url(#bg-hutbed-win)"><rect x="${f1(wx - wr)}" y="${f1(wy - wr)}" width="${f1(2 * wr)}" height="${f1(2 * wr)}" fill="#1f2a5a"/>` +
-      `<circle cx="${f1(wx + 18 * k)}" cy="${f1(wy - 16 * k)}" r="${f1(14 * k)}" fill="#fff6c8"/><circle cx="${f1(wx + 24 * k)}" cy="${f1(wy - 20 * k)}" r="${f1(12 * k)}" fill="#1f2a5a"/>` +
+      moonOfDateSvg(o, wx + 18 * k, wy - 16 * k, 14 * k, "#1f2a5a") +   // (ticket 490: the date's moon, where the crescent was)
       [[-30, -20], [-12, -34], [-34, 10], [10, 20], [30, 14], [-6, 0]].map(([dx, dy], i) => `<circle cx="${f1(wx + dx * k)}" cy="${f1(wy + dy * k)}" r="${f1(2.2 * k)}" fill="#ffffff">` +
         sceneLfo(o, "fast", i / 6, "opacity", (v, amp) => (0.6 + (0.2 + 0.2 * amp) * v).toFixed(2)) + `</circle>`).join("") +
       `<ellipse cx="${f1(wx - 20 * k)}" cy="${f1(wy + 50 * k)}" rx="${f1(70 * k)}" ry="${f1(26 * k)}" fill="#1f3a2a"/></g>` +

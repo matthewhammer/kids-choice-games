@@ -291,6 +291,12 @@ function moonPhaseSvg(cx, cy, r, phase, dark, south = false) {
   return `<g${south ? ` transform="translate(${f1(2 * cx)} 0) scale(-1 1)"` : ""}><circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r * 1.6)}" fill="#f4eebc" opacity="${(0.08 + 0.12 * (1 - Math.abs(t)) * (t < 0 ? 1 : 0.4)).toFixed(2)}"/>` +
     `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="${dark}" opacity="0.85"/><path d="${lit}" fill="#f4eebc"/></g>`;
 }
+// (ticket 490, part 2: "the other places' moons ... in the date's phase") a moon that is always out (the witch's woods, the
+// round windows of the witch's hut and the hut's bedroom, the cat room's window): in the phase of the game's date where it
+// says (🌍), at whatever time of day, at (cx, cy), r; the sky behind it dark. moonOfDateKey goes in its part's key.
+const moonOfDate = o => { const n = skyNow(o); return { phase: Math.round(n.moon.phase * 100) / 100, south: skyFacesNorth(n) }; };
+const moonOfDateKey = o => { const m = moonOfDate(o); return m.phase + (m.south ? "s" : "n"); };
+const moonOfDateSvg = (o, cx, cy, r, dark) => { const m = moonOfDate(o); return moonPhaseSvg(cx, cy, r, m.phase, dark, m.south); };
 // the sun and the moon by the clock, in a scene's sky (its horizon h, its top): the sun (low and orange near the horizon),
 // the moon in its phase (faint by day); none where open says the sky is hidden there (a cliff, drawn under the night's tint)
 function skyBodiesSvg(c, o, h, top, darkSky, open = null) {

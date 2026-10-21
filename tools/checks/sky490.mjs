@@ -50,7 +50,13 @@ try {
     const winDay = bgShown.node.querySelectorAll('[fill="' + CAMP_SKY.day[1] + '"]').length; B.skyHour = 21; changed(); await w(400);
     const winNight = bgShown.node.querySelectorAll('[fill="' + CAMP_SKY.day[1] + '"]').length, starsShown = !!SHOWN_WHEN["background.starShape"](B);
     const words = { june: skySays({ skyWhere: "denver", skyYear: 2026, skyMonth: 6, skyDay: 21, skyHour: 12 }), polar: skySays({ skyWhere: "tromso", skyYear: 2026, skyMonth: 12, skyDay: 21, skyHour: 12 }) };
-    return JSON.stringify({ v, times, night, day, hidden, fairy, words, wfMoon, caveMoon, quitoSun, sixty, winDay, winNight, starsShown }); })()`));
+    // (ticket 490, part 2) the moons always out (the witch's woods, the witch's hut's window, the hut bedroom's, the cat room's)
+    // in the date's phase: a week apart, each draws its moon differently, and the same date the same
+    const moonAt = (kind, extra, y, m, d) => { const o = { ...structuredClone(DEFAULTS.background), kind, ...extra, skyYear: y, skyMonth: m, skyDay: d };
+      return backgroundSvg(kind, SCENE.left, SCENE.top, -SCENE.left, SCENE.bottom, SCENE.ground, o); };
+    const moonPlaces = [["witch", {}], ["witchroom", {}], ["hutbed", {}], ["castleroom", { castle: "N", castleRoomsN: 6, castleRoom6N: "catroom", castleRoom: 6 }]];
+    const moons = moonPlaces.map(([kind, extra]) => [kind, moonAt(kind, extra, 2026, 10, 20) !== moonAt(kind, extra, 2026, 10, 27), moonAt(kind, extra, 2026, 10, 20) === moonAt(kind, extra, 2026, 10, 20)]);
+    return JSON.stringify({ v, times, night, day, hidden, fairy, words, wfMoon, caveMoon, quitoSun, sixty, winDay, winNight, starsShown, moons }); })()`));
   const V = r.v;
   ok("the noon sun in Denver: 73.7° at the June solstice, 26.8° at the December one (within half a degree)", Math.abs(V.dJune - 73.7) < 0.5 && Math.abs(V.dDec - 26.8) < 0.5, V);
   ok("the noon sun in Sydney in June: 32.7° up, to the north", Math.abs(V.sJuneAlt - 32.7) < 0.5 && V.sJuneAz > 170, V);
@@ -66,6 +72,7 @@ try {
   ok("the day's length in whole minutes, never 'X h 60 min'", r.sixty === 0, r.sixty);
   ok("the tent's windows follow the clock: day's colour at noon, not at nine at night", r.winDay > 0 && r.winNight < r.winDay, [r.winDay, r.winNight]);
   ok("the stars' settings show at night by the clock", r.starsShown, r.starsShown);
+  ok("the moons always out (witch's woods, her hut's window, the hut bedroom's, the cat room's) follow the date's phase", r.moons.every(([, differ, same]) => differ && same), r.moons);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
