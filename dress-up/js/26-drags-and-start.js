@@ -727,6 +727,13 @@ document.addEventListener("keydown", e => {
 });
 document.addEventListener("keyup", e => { if (e.key === "b" || e.key === "B") blowKey = false; });
 window.addEventListener("blur", () => { blowKey = false; });
+// (ticket 499) F held on the keyboard: breathing fire, as 🔥 on the controller
+document.addEventListener("keydown", e => {
+  if ((e.key !== "f" && e.key !== "F") || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
+  fireKey = true; fireGo();
+});
+document.addEventListener("keyup", e => { if (e.key === "f" || e.key === "F") fireKey = false; });
+window.addEventListener("blur", () => { fireKey = false; });
 // (ticket 187) Enter: through the passage that glows, as X
 document.addEventListener("keydown", e => {
   if (e.key !== "Enter" || e.repeat || (e.target.closest && e.target.closest("input, textarea, select, button, [contenteditable]"))) return;
@@ -1007,7 +1014,7 @@ function flyInto(box, arrive) {
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
                      ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
                      ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"],
-                     ["bubbles", "🫧 blow bubbles (held)"]];   // (ticket 221)
+                     ["bubbles", "🫧 blow bubbles (held)"], ["fire", "🔥 breathe fire (held)"]];   // (tickets 221, 499)
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -1138,6 +1145,8 @@ function padPoll(t) {
   if (hit("enter")) enterPicture();   // (ticket 145)
   blowPad = held("bubbles");   // (ticket 221: bubbles while it is held)
   if (blowPad) blowGo();
+  firePad = held("fire");   // (ticket 499: fire while it is held)
+  if (firePad) fireGo();
   if (moving || coasting) {
     // (ticket 188: the speed they are told, reached at once, or over the ramp's time: a step toward it each frame)
     const top = padTop(isJump(B.anim) ? jumpPrev : B.anim), want = moving ? [vx * top, vy * top] : [0, 0];
@@ -1270,7 +1279,8 @@ function padUse(id) {
 // hidden while one is. Whether it is shown is this browser's own
 // (localStorage "dress-up-touchpad"), not the friend's.
 const TOUCH_ID = "on-screen controller";
-const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3 };
+// (ticket 499: 🫧 and 🔥 on their own buttons here too, so a layout kept from before an action came in gets it on its button)
+const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3, bubbles: 6, fire: 7 };
 const touchPad = { want: false, shown: false, el: null, keys: "",
   pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
          buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, at: 0, tok: 0 })) } };
@@ -1330,8 +1340,9 @@ function touchBuild() {
   dpad.addEventListener("contextmenu", e => e.preventDefault());
   const abxy = el("div", { class: "abxy pad", role: "group", "aria-label": "buttons" }, [btn("bx", 3, "X"), btn("by", 2, "Y"), btn("ba", 1, "A"), btn("bb", 0, "B")]);
   touchPad.el = el("div", { class: "touchpad", id: "touchpad", hidden: "" }, [
-    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, btn("sm", 8, "select"), btn("sm", 6, "🫧")]),   // (ticket 221: blow bubbles)
-    el("div", { class: "half r" }, [btn("sh", 5, "R"), btn("sm", 9, "start"), abxy])]);
+    // (ticket 221: 🫧 blow bubbles, under select; ticket 499: 🔥 breathe fire, under start, each a column of its own, so none covers another)
+    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, el("div", { class: "sms" }, [btn("sm", 8, "select"), btn("sm", 6, "🫧")])]),
+    el("div", { class: "half r" }, [btn("sh", 5, "R"), el("div", { class: "sms" }, [btn("sm", 9, "start"), btn("sm", 7, "🔥")]), abxy])]);
   document.body.append(touchPad.el);
   touchPad.keys = "";
   touchLabels();

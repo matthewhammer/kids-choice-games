@@ -434,6 +434,7 @@ const DEFAULTS = {
            horseLead: "left",   // (ticket 496: which side of it they lead it from)
            horseManeStyle: "loose", horseBows: "#ec4899",   // (ticket 497, for M: how its mane is done, and its bows' colour)
            blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
+           fireStyle: "roar", fireFrom: "mouth", fireSize: 100, fireHeat: true,   // (ticket 499: breathing fire, its fire, where from, how big, its heat shown)
            lieHead: "left", lieHow: "back", stairsWay: "up",   // (ticket 308: up or down the stairs)
            hand: "right",   // (ticket 316: the dominant hand, the one that pulls a lever: right, left, or both, by a coin flip)   // (ticket 299: lying down, the way the head points; on the back, face up, or on the side, facing us)
            neck: 22, neckW: 26, arms: 55, elbows: 0, elbowCurl: 0, elbowSwing: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0, kneeCurl: 0, kneeSwing: 0,
@@ -727,7 +728,7 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 // (ticket 146) R (5, the right shoulder) turns crawling on or off. A pad
 // taught its buttons (🎓 in the Controls tab) keeps its own layout, by its
 // name, in localStorage["dress-up-pads"], put back whenever it connects.
-DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4, bubbles: 6 };   // (ticket 221: 🫧 on the left trigger, and beside select on the screen)
+DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4, bubbles: 6, fire: 7 };   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start)
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 // (ticket 217, Matthew) ♿ Accessibility: every nav arrow shown, how bright the
 // far ones are and their colour (not the near ones' warm white), the arrows'

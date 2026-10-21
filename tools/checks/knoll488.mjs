@@ -3,7 +3,7 @@
 // its own heading or its data-box-name), in the order they had (worlds, warnings, the places, the world's grid, its size,
 // this square, things here, off the grid); one column in a narrow side panel, more side by side in a wide one, the grid,
 // the places and the things across all of them. And 🎮 Controls in boxes (0.0.383): the game controller, the bubbles (blowing
-// and the themes), moving (how the friend moves, and a click while walking); 🐯 Costume's 👻 visibility rows still in its
+// and the themes), the fire (ticket 499), moving (how the friend moves, and a click while walking); 🐯 Costume's 👻 visibility rows still in its
 // ghost's box (rows of another part are boxed by their own key only where the plan does not name the part). Exits 1 on a failure.
 //   node knoll488.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
@@ -44,7 +44,9 @@ try {
     const was = state.costume.kind; state.costume.kind = "ghost"; changed(); tab = TABS.findIndex(t => t[0] === "🐯 Costume"); showTab(); await w(300);
     const ghost = boxes().find(b => /ghost/.test(b[0] || "")); state.costume.kind = was; changed(); showTab();
     return JSON.stringify({ controls, ghost }); })()`));
-  ok("🎮 Controls in three boxes: the game controller, the bubbles, moving", c.controls.length === 3 && /controller/.test(c.controls[0][0]) && /bubbles/.test(c.controls[1][0]) && c.controls[1][1].length === 2 && /moving/.test(c.controls[2][0]) && c.controls[2][1].length === 2, c.controls);
+  // (ticket 499: and 🔥 breathing fire, its own box after the bubbles)
+  ok("🎮 Controls in four boxes: the game controller, the bubbles, the fire, moving", c.controls.length === 4 && /controller/.test(c.controls[0][0]) && /bubbles/.test(c.controls[1][0]) && c.controls[1][1].length === 2 &&
+     /fire/.test(c.controls[2][0]) && c.controls[2][1].length === 1 && /moving/.test(c.controls[3][0]) && c.controls[3][1].length === 2, c.controls);
   ok("🐯 Costume's 👻 visibility rows still in the ghost's box", c.ghost && c.ghost[1].filter(k => k === "all").length === 2, c.ghost);
   // (the review after 0.0.385) the 📺 alert (a place not from a square) keeps its amber over the box rule
   const amber = await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); state.background.kind = "bubblespace"; changed();

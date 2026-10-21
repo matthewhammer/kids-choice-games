@@ -1893,15 +1893,20 @@ function ballTick(t) {
     for (const b of R.list) {
       if (ballPops.has(b.id) || b.x + b.r < cx - half || b.x - b.r > cx + half || b.y + b.r < fr[1] || b.y - b.r > feet) continue;
       if (Math.abs(b.fzHit - feet) > b.dz + 4 * R.k) continue;
-      const v = Math.sin(++ballSim.n * 12.9898) * 43758.5453;
-      ballPops.set(b.id, { at: t, back: t + 9000 + 6000 * (v - Math.floor(v)), obj: b.obj }); changed.add(b.obj); ballSim.touched.add(b.obj);
-      // (the pop: a copy of it swelling and gone, over everything, a quarter second)
-      if (ballSim.layer) { const el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
-        el.innerHTML = `<g class="bubin pop">${bubbleSvg(0, 0, b.r, { color: R.tints[b.j], shine: 0.7 })}</g>`; ballSim.layer.append(el); setTimeout(() => el.remove(), 320); }
+      ballPop(b, t, changed);
     }
   }
   for (const name of changed) ballApply(name);
   ballSim.raf = requestAnimationFrame(ballTick);
+}
+// (ticket 499) one of the room's bubbles popped, by the friend's touch or by a fire's heat (firePops) alike: gone till 9 to 15
+// seconds on, its lot (changed) to be shown again without it (ballApply)
+function ballPop(b, t, changed) {
+  const R = roomBalls, v = Math.sin(++ballSim.n * 12.9898) * 43758.5453;
+  ballPops.set(b.id, { at: t, back: t + 9000 + 6000 * (v - Math.floor(v)), obj: b.obj }); changed.add(b.obj); ballSim.touched.add(b.obj);
+  // (the pop: a copy of it swelling and gone, over everything, a quarter second)
+  if (ballSim.layer) { const el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
+    el.innerHTML = `<g class="bubin pop">${bubbleSvg(0, 0, b.r, { color: R.tints[b.j], shine: 0.7 })}</g>`; ballSim.layer.append(el); setTimeout(() => el.remove(), 320); }
 }
 // (ticket 383) The layered foam, after each drawing: a scene mounted with a backdrop to put under the picture (data-under, drawn by
 // bubbleroomScene when the foam moves) has it moved into #pic-under, a picture of its own under #pic (placed as #pic-over is, inside
@@ -2128,16 +2133,23 @@ function bubbleTick(t) {
     if (b.x < F.left + b.r) { b.x = F.left + b.r; b.vx = Math.abs(b.vx) * 0.6; } else if (b.x > F.right - b.r) { b.x = F.right - b.r; b.vx = -Math.abs(b.vx) * 0.6; }
     if (b.y < F.top + b.r) { b.y = F.top + b.r; b.vy = Math.abs(b.vy) * 0.6; } else if (b.y > F.bottom - b.r) { b.y = F.bottom - b.r; b.vy = -Math.abs(b.vy) * 0.6; }
     const el = layer.childNodes[i];
-    if (fr && b.x + b.r > fr[0] && b.x - b.r < fr[2] && b.y + b.r > fr[1] && b.y - b.r < fr[3]) {
-      b.pop = t; b.back = t + 1400; bubbleSim.bonds = bubbleSim.bonds.filter(([p, q]) => p !== i && q !== i); bubblePopped(b, 0, k, rand);
-      if (el && el.firstChild) { el.firstChild.classList.add("pop"); setTimeout(() => { if (b.pop && el.isConnected) el.style.display = "none"; }, 260); }
-      return;
-    }
+    if (fr && b.x + b.r > fr[0] && b.x - b.r < fr[2] && b.y + b.r > fr[1] && b.y - b.r < fr[3]) { bubbleSpacePop(b, i, t, k, rand); return; }
     if (el) el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
   });
   bubbleKidsTick(t, dt, layer, F, k, fr, wx, wy, wind, rand);
   bubbleSim.raf = requestAnimationFrame(bubbleTick);
 }
+// (ticket 499) bubble space's pops, by the friend's touch or by a fire's heat (firePops) alike: bubble i swells and is gone,
+// its bonds let go, its lines, its sound and maybe its smaller bubbles (bubblePopped), back in from an edge 1.4 s on; one of
+// the smaller ones the same, once more at most (BUBBLE_KID_GENS). bubbleRand: the chance they draw on, from the place's
+// seed (🎲), as bubbleTick's own
+const bubbleRand = () => { const again = seeded((state.background.bubbleSeed ?? 1) + 0.5); return (a, b) => a + (b - a) * again(bubbleSim.backs++); };
+function bubbleSpacePop(b, i, t, k, rand) {
+  const el = bubbleSim.layer && bubbleSim.layer.childNodes[i];
+  b.pop = t; b.back = t + 1400; bubbleSim.bonds = bubbleSim.bonds.filter(([p, q]) => p !== i && q !== i); bubblePopped(b, 0, k, rand);
+  if (el && el.firstChild) { el.firstChild.classList.add("pop"); setTimeout(() => { if (b.pop && el.isConnected) el.style.display = "none"; }, 260); }
+}
+function bubbleKidPop(c, t, k, rand) { c.pop = t; if (c.el.firstChild) c.el.firstChild.classList.add("pop"); bubblePopped(c, c.gen, k, rand); }
 // (ticket 329, Matthew: "when we 'pop' a bubble in bubble space: the likelihood of creating new, smaller bubbles (0 to
 // 100); the number of new, smaller bubbles, on average -- same style as the popped bubble, for now", and "some more
 // 'popping' animation, like the 'face head lines' that stick out of the face, or the rays that come out of the sun, but
@@ -2184,7 +2196,7 @@ function bubbleKidsTick(t, dt, layer, F, k, fr, wx, wy, wind, rand) {
     // (born on the friend, each pops on them only once it has been clear of them: walk into it again)
     const on = fr && c.x + c.r > fr[0] && c.x - c.r < fr[2] && c.y + c.r > fr[1] && c.y - c.r < fr[3];
     if (fr && !on) c.clear = true;   // (a frame with no friend to measure is not one clear of them)
-    else if (c.clear) { c.pop = t; if (c.el.firstChild) c.el.firstChild.classList.add("pop"); bubblePopped(c, c.gen, k, rand); continue; }
+    else if (c.clear) { bubbleKidPop(c, t, k, rand); continue; }
     c.el.setAttribute("transform", `translate(${f1(c.x)} ${f1(c.y)})`);
     c.el.setAttribute("opacity", Math.min(1, (c.life - age) / 700, age / 120).toFixed(2));
   }
