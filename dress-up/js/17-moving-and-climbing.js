@@ -1079,6 +1079,18 @@ let treadLoop = 0, treadLast = 0;
 // (sceneryStill), unless 🌀 moving scenery on a slow computer is on.
 const SLOW_IN = 6, SLOW_OUT = 2.5;
 let slowAvg = 0, slowN = 0, slowFlag = false;
+// (ticket 510) A place whose still picture keeps needing new parts is given up on: its scenery moves there for the rest of
+// the visit to the game (a reload measures afresh), each time the friend is in it. Each part is the whole place drawn into a screen-size picture; walking past many objects' depths, the fairy
+// forest made 20 to 40 of them in a 4 s walk and walked at 50 frames a second, where live it walks at 60 on the same computers.
+// More than STILL_CHURN new parts within STILL_CHURN_MS gives it up, but only where the place drawn live is cheap here
+// (liveDrawAvg, its drawings' average while not held still, under STILL_GIVE_UP_MS): on a truly slow computer (the black
+// laptop's pond: 30 frames a second live, 60 still) the still picture is the point, churn or not. 🧪's passes
+// (SPEED_TEST.still) are never given up.
+const STILL_CHURN = 10, STILL_CHURN_MS = 4000, STILL_GIVE_UP_MS = 9;
+let liveDrawAvg = 0;
+const stillGaveUp = new Set();
+let stillMade = [];
+const stillPlace = () => { const B = state.background; return [B.kind, B.castle, B.castleRoom, B.inside, B.houses, state.world && state.world.at].join("/"); };
 try { slowFlag = localStorage.getItem("dress-up-slow") === "1"; } catch (e) { /* (measured afresh) */ }
 // (ticket 164) Or frames dropping while the friend moves: the black laptop
 // draws the friend in 1 ms, as fast as Matthew's laptop, yet the duck pond
@@ -1123,7 +1135,7 @@ function noteMoveFrame(t) {
 // takes it back after one drawing on a computer that draws fast: 0.0.92)
 // (ticket 274) Held still (holdStill), never: a held picture is the full scene, whatever this computer's speed, so
 // the settings alone decide it.
-const sceneryStill = () => (SPEED_TEST.still || (stillAt === null && (slowFlag || choppy))) && !PERF.slowMoving;
+const sceneryStill = () => (SPEED_TEST.still || (stillAt === null && (slowFlag || choppy) && !stillGaveUp.has(stillPlace()))) && !PERF.slowMoving;
 // (ticket 164, 0.0.86) 🧪's test passes, each taking one part of a place
 // away while the friend swims, to find what costs the black laptop its
 // frames: holder, a group drawn instead of the place's scenery (empty, or
@@ -1174,6 +1186,10 @@ function stillPart(lo, hi) {
   if (p) return p;
   p = { lo, hi, img: null, url: null, ready: false, used: performance.now() };
   stillPic.parts.set(key, p);
+  // (ticket 510: too many new parts too fast here, and the place's scenery moves again)
+  const t = p.used;
+  stillMade = stillMade.filter(x => t - x < STILL_CHURN_MS); stillMade.push(t);
+  if (stillMade.length > STILL_CHURN && !SPEED_TEST.still && liveDrawAvg < STILL_GIVE_UP_MS) { stillGaveUp.add(stillPlace()); stillMade = []; setTimeout(() => moved(true), 0); }
   const gen = stillPic.gen, node = stillPic.node, bitmap = stillPic.bitmap, vb = stillPic.vb, NS = "http://www.w3.org/2000/svg";
   setTimeout(async () => {
     if (gen !== stillPic.gen || !node.isConnected || stillPic.parts.get(key) !== p) return;

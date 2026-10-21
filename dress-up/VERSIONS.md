@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.396 (2026-10-21)
+
+Everything in 0.0.395, plus a smoother walk in the fairy forest and the castle on slower computers.
+
+- **🧚 The fairy forest walks smoothly:** on a computer the game finds slow, it holds a place's scenery still, as a picture, while the friend walks. In places full of things at different depths, like the fairy forest, that picture had to be made again and again as the friend walked past them, and the walk got choppier, not smoother. Now, where that happens and the place moves well enough on its own, the scenery just keeps moving there.
+
 ## 0.0.395 (2026-10-21)
 
 Everything in 0.0.394, plus a smoother walk in our imagination.
