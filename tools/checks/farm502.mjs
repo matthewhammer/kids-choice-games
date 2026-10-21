@@ -6,8 +6,8 @@
 // things: every barn kind drawn (the red barn's weather vane and the coop's hens moving) and standing in the way; every fence
 // kind drawn. The tiles: fence pieces snap to a tile's row and column; one beside another of its kind on its row reaches it
 // with its rails (fenceLinks: wider than a lone post's stubs), one of another kind or row does not; tileNext finds the tile
-// beside the last; a piece dragged with the pointer lands on a tile, and its old neighbour is left with a stub. Exits 1 on a
-// failure.
+// beside the last, and once its row is full a tile on another row, as the last; a piece dragged with the pointer lands on a
+// tile, and its old neighbour is left with a stub; two joined at the back stay joined when 🔭 changes. Exits 1 on a failure.
 //   node farm502.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -58,9 +58,19 @@ try {
     fire("pointerdown", x, y); for (let i = 1; i <= 8; i++) { fire("pointermove", x + px * i / 8, y + 2 * i); await w(30); }
     fire("pointerup", x + px, y + 16); await w(800);
     const moved = B.things[2], drag = { x: moved.x, z: moved.z, from: c.x, onTile: onTile(moved), links: [fenceLinks(B, 1), fenceLinks(B, 2)], width1: width(1) };
+    // (from a review) two wooden pieces side by side at the back (row -4), then 🔭 changed: still joined
+    B.things = []; const zb = tileRowZ(B, -4), wb = tileSpan(B, zb), nk = "north_" + B.kind, keep = B[nk];
+    snap(-wb, zb); snap(0, zb);
+    const north = [0, 20, 60].map(v => { B[nk] = v; return fenceLinks(B, 0)[1] > 0 && fenceLinks(B, 1)[0]; }); B[nk] = keep;
+    // (from a review) tapped in again and again, as add does: its row full, the next piece goes on a tile of another row, as the last
+    B.things = []; snap(0, tileRowZ(B, 0), "picket").size = 80;
+    let after = null;
+    for (let k = 0; k < 40; k++) { const nx = tileNext(B, "fencepiece"); if (!nx || Math.abs(nx.z - B.things[0].z) > 0.6) { after = nx; break; }
+      B.things.push({ kind: "fencepiece", x: nx.x, z: nx.z, seed: 400 + k, size: nx.size, mirror: !!nx.mirror, style: nx.style }); }
+    const full = { n: B.things.length, next: after, onTile: !!after && onTile(after) };
     B.things = []; changed();
-    return JSON.stringify({ place, yard, els, thingSolids, tiles, drag }); })()`));
-  const { place: P, yard: Y, els: E, thingSolids: S, tiles: Tl, drag: D } = r;
+    return JSON.stringify({ place, yard, els, thingSolids, tiles, drag, north, full }); })()`));
+  const { place: P, yard: Y, els: E, thingSolids: S, tiles: Tl, drag: D, north: N, full: Fu } = r;
   ok("the farm yard is a place: in the list, in the home group once, its words, its LFO things (quick and slow), its scene", P.inPlaces && P.group.length === 1 && P.group[0] === "home" && /farm yard/.test(P.phrase || "") && P.lfo && P.lfo.fast && P.lfo.slow && P.scene, P);
   ok("its objects: the barn and the farmhouse, the back fence, the windpump and the trough, the tractor, the haystack, three hens",
      ["red barn", "farmhouse", "fence, back", "windpump", "water trough", "tractor", "haystack", "hen, brown", "hen, white", "hen, black"].every(o => Y.objs.includes(o)), Y.objs);
@@ -69,7 +79,8 @@ try {
   ok("the friend arrives clear of everything", Y.arriveClear, Y);
   ok("the barn and the fence are 🚜 farm things", P.things.every(x => x === "farm"), P.things);
   const by = (k, st) => E.find(e => e.kind === k && e.style === st);
-  ok("every barn kind drawn", ["gambrel", "round", "stone", "pole", "coop", "silo"].every(st => { const e = by("barn", st); return e && e.w > 50 && e.h > 50; }), E.filter(e => e.kind === "barn"));
+  // (from a review: at 60% at the back the little coop is about 40 across and tall, the others over 55)
+  ok("every barn kind drawn", ["gambrel", "round", "stone", "pole", "coop", "silo"].every(st => { const e = by("barn", st), m = st === "coop" ? 30 : 50; return e && e.w > m && e.h > m; }), E.filter(e => e.kind === "barn"));
   ok("the red barn's weather vane turns, the coop's hens peck", by("barn", "gambrel").anims >= 1 && by("barn", "coop").anims >= 2, E.filter(e => e.kind === "barn"));
   ok("every fence kind drawn", ["wood", "picket", "stone"].every(st => { const e = by("fencepiece", st); return e && e.w > 20 && e.h > 40; }), E.filter(e => e.kind === "fencepiece"));
   ok("the barns and the fence pieces stand in the way", S.filter(s => s.startsWith("barn")).length === 6 && S.filter(s => s.startsWith("fencepiece")).length === 3, S);
@@ -80,6 +91,8 @@ try {
   ok("tileNext: the tile beside the last piece, on its row, as it is", Tl.next && Math.abs(Tl.next.z - Tl.row[0]) < 0.6 && Tl.next.style === "picket", Tl.next);
   ok("a piece dragged with the pointer lands on a tile, further right", D.onTile && D.x > D.from, D);
   ok("and its old neighbour is left with a stub (no piece to its right now), narrower", !D.links[0][1] && D.width1 < 0.6 * Tl.span, D);
+  ok("🔭 changed afterwards: two pieces joined at the back stay joined", N.every(Boolean), N);
+  ok("tapped in on a full row: the next piece goes on a tile of another row, a picket of its size", Fu.n >= 5 && Fu.next && Fu.onTile && Fu.next.style === "picket" && Fu.next.size === 80, Fu);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

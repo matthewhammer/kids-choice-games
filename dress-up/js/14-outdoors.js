@@ -2366,41 +2366,59 @@ const tileView = B => { const arrive = SCENE.ground + (ARRIVE[B.kind] || [0, 0])
 const tileRowZ = (B, r) => { const { arrive, v, flat } = tileView(B); return flat ? arrive + r * TILE_SPAN * 0.22 : v + (arrive - v) * TILE_EYE / (TILE_EYE - r * TILE_SPAN); };
 const tileRowOf = (B, z) => { const { arrive, v, flat } = tileView(B); if (flat) return (z - arrive) / (TILE_SPAN * 0.22);
   const s = (z - v) / (arrive - v); return s > 0 ? TILE_EYE * (1 - 1 / s) / TILE_SPAN : -Infinity; };
+// (the floor one can stand on, from its back line, lo, to the picture's foot, hi; its rows from where a thing is a tenth of
+// its size, the smallest drawn, to the nearest before the eye)
+const tileFloor = B => { const F = sceneFrame, { flat } = tileView(B);
+  return { lo: SCENE.ground + figYMin(F), hi: SCENE.ground + F.bottom - F.ground,
+           rMin: flat ? -400 : Math.ceil(TILE_EYE * (1 - 10) / TILE_SPAN), rMax: flat ? 400 : Math.ceil(TILE_EYE / TILE_SPAN) - 1 }; };
 function tileSnap(B, t) {
   if (!t || !(THING_KINDS[t.kind] || {}).tiles) return;
-  const F = sceneFrame, lo = SCENE.ground + figYMin(F), hi = SCENE.ground + F.bottom - F.ground, { flat } = tileView(B);
-  // (rows from where a thing is a tenth of its size, the smallest drawn, to the nearest before the eye)
-  const rMin = flat ? -400 : Math.ceil(TILE_EYE * (1 - 10) / TILE_SPAN), rMax = flat ? 400 : Math.ceil(TILE_EYE / TILE_SPAN) - 1;
+  const F = sceneFrame, { lo, hi, rMin, rMax } = tileFloor(B);
   let r = clamp(Math.round(tileRowOf(B, t.z)), rMin, rMax);
   while (r < rMax && tileRowZ(B, r) < lo) r++;
   while (r > rMin && tileRowZ(B, r) > hi) r--;
   const z = tileRowZ(B, r), w = tileSpan(B, z);
   let x = Math.round(t.x / w) * w;
   if (x < F.left) x += w; else if (x > F.right) x -= w;
-  t.z = Math.round(z * 10) / 10; t.x = Math.round(x * 10) / 10;
+  // (and the span of its tile, as it is put: its neighbours are a span away, whatever 🔭 says later, fenceLinks)
+  t.z = Math.round(z * 10) / 10; t.x = Math.round(x * 10) / 10; t.tileW = Math.round(w * 10) / 10;
 }
 // (a fence piece tapped in, not dragged: on the tile nearest the last one put, along its row, the rest of the run's way first, as
-// its style, size and side, so tapping again and again builds a fence; null when there is none yet)
+// its style, size and side, so tapping again and again builds a fence; its row full, on the next row nearer, else farther, and
+// on, from the tile nearest the last outward; null when there is none yet, or no free tile on the floor)
 function tileNext(B, kind) {
   const T = (B.things || []).filter(t => t.kind === kind), last = T[T.length - 1];
   if (!last) return null;
-  const w = tileSpan(B, last.z), F = sceneFrame, taken = x => T.some(t => Math.abs(t.z - last.z) < 0.6 && Math.abs(t.x - x) < 0.3 * w);
+  const F = sceneFrame, { lo, hi, rMin, rMax } = tileFloor(B), r0 = Math.round(tileRowOf(B, last.z));
+  const taken = (x, z, w) => T.some(t => Math.abs(t.z - z) < 0.6 && Math.abs(t.x - x) < 0.3 * w);
   const back = T.length > 1 && T[T.length - 2].x > last.x && Math.abs(T[T.length - 2].z - last.z) < 0.6 ? -1 : 1;
-  for (let n = 1; n < 60; n++) for (const sd of [back, -back]) { const x = last.x + sd * n * w;
-    if (x >= F.left && x <= F.right && !taken(x)) return { x, z: last.z, style: last.style, size: last.size, mirror: last.mirror }; }
+  const as = (x, z) => ({ x, z, style: last.style, size: last.size, mirror: last.mirror });
+  const w0 = tileSpan(B, last.z);
+  for (let n = 1; n < 60; n++) for (const sd of [back, -back]) { const x = last.x + sd * n * w0;
+    if (x >= F.left && x <= F.right && !taken(x, last.z, w0)) return as(x, last.z); }
+  // (ticket 502, from a review: once its row was full, the next piece came out a plain wooden one somewhere else)
+  for (let k = 1; k <= rMax - rMin; k++) for (const r of [r0 + k, r0 - k]) {
+    if (r < rMin || r > rMax) continue;
+    const z = Math.round(tileRowZ(B, r) * 10) / 10;
+    if (!(z >= lo && z <= hi)) continue;
+    const w = tileSpan(B, z), c = Math.round(last.x / w);
+    for (let n = 0; n < 60; n++) for (const sd of n ? [back, -back] : [1]) { const x = Math.round((c + sd * n) * w * 10) / 10;
+      if (x >= F.left && x <= F.right && !taken(x, z, w)) return as(x, z); }
+  }
   return null;
 }
 // (whether a fence piece has one of its style a tile to its left on its row, and how far, in the stage's units, the one to its
-// right is: 0 for none)
+// right is: 0 for none. A tile apart as the two were put (tileW, from tileSnap), so a run stays joined when 🔭 changes the
+// tiles' size on its row afterwards; from a review: the runs at the back came apart)
 function fenceLinks(B, i) {
   const T = B.things || [], t = T[i];
   if (!t || t.kind !== "fencepiece") return [false, 0];
-  const w = tileSpan(B, t.z), st = fenceStyleOf(t);
+  const w = t.tileW || tileSpan(B, t.z), st = fenceStyleOf(t);
   let left = false, right = 0;
   T.forEach((u, j) => {
     if (j === i || !u || u.kind !== "fencepiece" || fenceStyleOf(u) !== st || Math.abs(u.z - t.z) > 0.6) return;
-    const dx = u.x - t.x;
-    if (Math.abs(Math.abs(dx) - w) > 0.3 * w) return;
+    const dx = u.x - t.x, span = (w + (u.tileW || w)) / 2;
+    if (Math.abs(Math.abs(dx) - span) > 0.3 * span) return;
     if (dx > 0) right = right ? Math.min(right, dx) : dx; else left = true;
   });
   return [left, Math.round(right * 10) / 10];
