@@ -1,0 +1,480 @@
+{
+ "about": "every picture in pictures/: its file, what it shows, where it came from, its size in bytes, its shapes (path, circle, ellipse, rect, polygon, polyline, line) and how many carry an animation (an animated class or a SMIL <animate>)",
+ "made_by": "drivers/pictures.mjs",
+ "heat_mockup": {
+  "roar": [
+   600,
+   15
+  ],
+  "balls": [
+   640,
+   9
+  ],
+  "twist": [
+   570,
+   12
+  ],
+  "jet": [
+   660,
+   6
+  ],
+  "bricks": [
+   560,
+   12
+  ],
+  "bubbles": [
+   500,
+   16
+  ]
+ },
+ "pictures": [
+  {
+   "file": "pictures/mock/fire-roar.svg",
+   "what": "the mock-up's 🔥 roaring flame, as its card draws it (dusk, fire on, heat shown)",
+   "from": "mockups/dragon-fire.html scene()",
+   "bytes": 27846,
+   "shapes": 158,
+   "animated": 48
+  },
+  {
+   "file": "pictures/mock/fire-balls.svg",
+   "what": "the mock-up's ☄️ fireballs, as its card draws it (dusk, fire on, heat shown)",
+   "from": "mockups/dragon-fire.html scene()",
+   "bytes": 26230,
+   "shapes": 162,
+   "animated": 13
+  },
+  {
+   "file": "pictures/mock/fire-twist.svg",
+   "what": "the mock-up's 🌀 twisting fire, as its card draws it (dusk, fire on, heat shown)",
+   "from": "mockups/dragon-fire.html scene()",
+   "bytes": 26182,
+   "shapes": 154,
+   "animated": 46
+  },
+  {
+   "file": "pictures/mock/fire-jet.svg",
+   "what": "the mock-up's 🔵 blue-hot jet, as its card draws it (dusk, fire on, heat shown)",
+   "from": "mockups/dragon-fire.html scene()",
+   "bytes": 24969,
+   "shapes": 136,
+   "animated": 23
+  },
+  {
+   "file": "pictures/mock/fire-bricks.svg",
+   "what": "the mock-up's 🧱 brick fire, as its card draws it (dusk, fire on, heat shown)",
+   "from": "mockups/dragon-fire.html scene()",
+   "bytes": 26191,
+   "shapes": 135,
+   "animated": 11
+  },
+  {
+   "file": "pictures/mock/fire-bubbles.svg",
+   "what": "the mock-up's 🫧 fire bubbles, as its card draws it (dusk, fire on, heat shown)",
+   "from": "mockups/dragon-fire.html scene()",
+   "bytes": 31728,
+   "shapes": 210,
+   "animated": 28
+  },
+  {
+   "file": "pictures/mock/dragon-pieces.svg",
+   "what": "the mock-up's big picture: the costume with its pieces named, the roaring flame on",
+   "from": "mockups/dragon-fire.html scene()",
+   "bytes": 28970,
+   "shapes": 165,
+   "animated": 48
+  },
+  {
+   "file": "pictures/thumb.svg",
+   "what": "the series index card's thumbnail: the mock-up's roaring flame, nearer",
+   "from": "mockups/dragon-fire.html scene()",
+   "bytes": 27846,
+   "shapes": 158,
+   "animated": 48
+  },
+  {
+   "file": "pictures/mock/horse-plate.svg",
+   "what": "the mock-up's 🛡️ full plate, as its card draws it (white coat, the arms quartered blue and white with a falcon)",
+   "from": "mockups/horse-armour.html scene()",
+   "bytes": 8733,
+   "shapes": 74,
+   "animated": 1
+  },
+  {
+   "file": "pictures/mock/horse-half.svg",
+   "what": "the mock-up's 🦁 half caparison, as its card draws it (white coat, the arms quartered blue and white with a falcon)",
+   "from": "mockups/horse-armour.html scene()",
+   "bytes": 7112,
+   "shapes": 51,
+   "animated": 1
+  },
+  {
+   "file": "pictures/mock/horse-tourney.svg",
+   "what": "the mock-up's 🎪 tournament, as its card draws it (white coat, the arms quartered blue and white with a falcon)",
+   "from": "mockups/horse-armour.html scene()",
+   "bytes": 7179,
+   "shapes": 52,
+   "animated": 1
+  },
+  {
+   "file": "pictures/mock/horse-dragon.svg",
+   "what": "the mock-up's 🐉 dragon helm, as its card draws it (white coat, the arms quartered blue and white with a falcon)",
+   "from": "mockups/horse-armour.html scene()",
+   "bytes": 9530,
+   "shapes": 70,
+   "animated": 0
+  },
+  {
+   "file": "pictures/mock/horse-toy.svg",
+   "what": "the mock-up's 🧱 toy helmet, as its card draws it (white coat, the arms quartered blue and white with a falcon)",
+   "from": "mockups/horse-armour.html scene()",
+   "bytes": 6972,
+   "shapes": 48,
+   "animated": 1
+  },
+  {
+   "file": "pictures/mock/horse-parade.svg",
+   "what": "the mock-up's 🎀 parade, as its card draws it (white coat, the arms quartered blue and white with a falcon)",
+   "from": "mockups/horse-armour.html scene()",
+   "bytes": 6855,
+   "shapes": 67,
+   "animated": 1
+  },
+  {
+   "file": "pictures/game/horse-plate-side.svg",
+   "what": "the game's 🛡️ full plate: horseSvg(\"side\", \"stand\", …, ridden) at 0.0.392, in the mock-up's arms and coat",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js horseSvg()",
+   "bytes": 8399,
+   "shapes": 73,
+   "animated": 0
+  },
+  {
+   "file": "pictures/game/horse-half-side.svg",
+   "what": "the game's 🦁 half caparison: horseSvg(\"side\", \"stand\", …, ridden) at 0.0.392, in the mock-up's arms and coat",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js horseSvg()",
+   "bytes": 7625,
+   "shapes": 52,
+   "animated": 0
+  },
+  {
+   "file": "pictures/game/horse-tourney-side.svg",
+   "what": "the game's 🎪 tournament: horseSvg(\"side\", \"stand\", …, ridden) at 0.0.392, in the mock-up's arms and coat",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js horseSvg()",
+   "bytes": 7723,
+   "shapes": 54,
+   "animated": 0
+  },
+  {
+   "file": "pictures/game/horse-dragon-side.svg",
+   "what": "the game's 🐉 dragon helm: horseSvg(\"side\", \"stand\", …, ridden) at 0.0.392, in the mock-up's arms and coat",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js horseSvg()",
+   "bytes": 10111,
+   "shapes": 71,
+   "animated": 0
+  },
+  {
+   "file": "pictures/game/horse-toy-side.svg",
+   "what": "the game's 🧱 toy helmet: horseSvg(\"side\", \"stand\", …, ridden) at 0.0.392, in the mock-up's arms and coat",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js horseSvg()",
+   "bytes": 7479,
+   "shapes": 49,
+   "animated": 0
+  },
+  {
+   "file": "pictures/game/horse-parade-side.svg",
+   "what": "the game's 🎀 parade: horseSvg(\"side\", \"stand\", …, ridden) at 0.0.392, in the mock-up's arms and coat",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js horseSvg()",
+   "bytes": 7432,
+   "shapes": 68,
+   "animated": 0
+  },
+  {
+   "file": "pictures/game/fire-roar-side.svg",
+   "what": "the game's 🔥 roaring flame, side on: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 10257,
+   "shapes": 48,
+   "animated": 46,
+   "fire": "roar",
+   "view": "side",
+   "fire_shapes": 45,
+   "fire_animated": 45
+  },
+  {
+   "file": "pictures/game/fire-roar-front.svg",
+   "what": "the game's 🔥 roaring flame, toward us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 11410,
+   "shapes": 47,
+   "animated": 44,
+   "fire": "roar",
+   "view": "front",
+   "fire_shapes": 43,
+   "fire_animated": 43
+  },
+  {
+   "file": "pictures/game/fire-roar-away.svg",
+   "what": "the game's 🔥 roaring flame, away from us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 10834,
+   "shapes": 41,
+   "animated": 40,
+   "fire": "roar",
+   "view": "away",
+   "fire_shapes": 39,
+   "fire_animated": 39
+  },
+  {
+   "file": "pictures/game/fire-balls-side.svg",
+   "what": "the game's ☄️ fireballs, side on: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 8013,
+   "shapes": 52,
+   "animated": 11,
+   "fire": "balls",
+   "view": "side",
+   "fire_shapes": 49,
+   "fire_animated": 10
+  },
+  {
+   "file": "pictures/game/fire-balls-front.svg",
+   "what": "the game's ☄️ fireballs, toward us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 9816,
+   "shapes": 71,
+   "animated": 11,
+   "fire": "balls",
+   "view": "front",
+   "fire_shapes": 67,
+   "fire_animated": 10
+  },
+  {
+   "file": "pictures/game/fire-balls-away.svg",
+   "what": "the game's ☄️ fireballs, away from us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 8120,
+   "shapes": 51,
+   "animated": 11,
+   "fire": "balls",
+   "view": "away",
+   "fire_shapes": 49,
+   "fire_animated": 10
+  },
+  {
+   "file": "pictures/game/fire-twist-side.svg",
+   "what": "the game's 🌀 twisting fire, side on: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 8878,
+   "shapes": 44,
+   "animated": 44,
+   "fire": "twist",
+   "view": "side",
+   "fire_shapes": 41,
+   "fire_animated": 43
+  },
+  {
+   "file": "pictures/game/fire-twist-front.svg",
+   "what": "the game's 🌀 twisting fire, toward us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 10407,
+   "shapes": 45,
+   "animated": 42,
+   "fire": "twist",
+   "view": "front",
+   "fire_shapes": 41,
+   "fire_animated": 41
+  },
+  {
+   "file": "pictures/game/fire-twist-away.svg",
+   "what": "the game's 🌀 twisting fire, away from us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 9993,
+   "shapes": 39,
+   "animated": 40,
+   "fire": "twist",
+   "view": "away",
+   "fire_shapes": 37,
+   "fire_animated": 39
+  },
+  {
+   "file": "pictures/game/fire-jet-side.svg",
+   "what": "the game's 🔵 blue-hot jet, side on: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 6676,
+   "shapes": 26,
+   "animated": 21,
+   "fire": "jet",
+   "view": "side",
+   "fire_shapes": 23,
+   "fire_animated": 20
+  },
+  {
+   "file": "pictures/game/fire-jet-front.svg",
+   "what": "the game's 🔵 blue-hot jet, toward us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 7151,
+   "shapes": 31,
+   "animated": 25,
+   "fire": "jet",
+   "view": "front",
+   "fire_shapes": 27,
+   "fire_animated": 24
+  },
+  {
+   "file": "pictures/game/fire-jet-away.svg",
+   "what": "the game's 🔵 blue-hot jet, away from us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 6713,
+   "shapes": 25,
+   "animated": 21,
+   "fire": "jet",
+   "view": "away",
+   "fire_shapes": 23,
+   "fire_animated": 20
+  },
+  {
+   "file": "pictures/game/fire-bricks-side.svg",
+   "what": "the game's 🧱 brick fire, side on: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 7475,
+   "shapes": 25,
+   "animated": 9,
+   "fire": "bricks",
+   "view": "side",
+   "fire_shapes": 22,
+   "fire_animated": 8
+  },
+  {
+   "file": "pictures/game/fire-bricks-front.svg",
+   "what": "the game's 🧱 brick fire, toward us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 8736,
+   "shapes": 32,
+   "animated": 11,
+   "fire": "bricks",
+   "view": "front",
+   "fire_shapes": 28,
+   "fire_animated": 10
+  },
+  {
+   "file": "pictures/game/fire-bricks-away.svg",
+   "what": "the game's 🧱 brick fire, away from us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 7429,
+   "shapes": 24,
+   "animated": 9,
+   "fire": "bricks",
+   "view": "away",
+   "fire_shapes": 22,
+   "fire_animated": 8
+  },
+  {
+   "file": "pictures/game/fire-bubbles-side.svg",
+   "what": "the game's 🫧 fire bubbles, side on: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 13444,
+   "shapes": 100,
+   "animated": 26,
+   "fire": "bubbles",
+   "view": "side",
+   "fire_shapes": 97,
+   "fire_animated": 25
+  },
+  {
+   "file": "pictures/game/fire-bubbles-front.svg",
+   "what": "the game's 🫧 fire bubbles, toward us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 13308,
+   "shapes": 101,
+   "animated": 26,
+   "fire": "bubbles",
+   "view": "front",
+   "fire_shapes": 97,
+   "fire_animated": 25
+  },
+  {
+   "file": "pictures/game/fire-bubbles-away.svg",
+   "what": "the game's 🫧 fire bubbles, away from us: fireSvg() at 0.0.392 with its heat and mouth (no friend), on the mock-up's dusk",
+   "from": "dress-up-0.0.392: dress-up/js/08-body.js fireSvg(), dress-up/style.css .fi-*",
+   "bytes": 13361,
+   "shapes": 99,
+   "animated": 26,
+   "fire": "bubbles",
+   "view": "away",
+   "fire_shapes": 97,
+   "fire_animated": 25
+  },
+  {
+   "file": "pictures/archive/kind--dragon.svg",
+   "what": "the dragon costume, facing us, its wings flapping (SMIL)",
+   "from": "run-2026-10-20:pictures/costume/kind--dragon.svg",
+   "bytes": 14666,
+   "shapes": 96,
+   "animated": 2
+  },
+  {
+   "file": "pictures/archive/dragonWingsHow--open.svg",
+   "what": "its wings open and still",
+   "from": "run-2026-10-20:pictures/costume/dragonWingsHow--open.svg",
+   "bytes": 14011,
+   "shapes": 96,
+   "animated": 0
+  },
+  {
+   "file": "pictures/archive/dragonWingsHow--folded.svg",
+   "what": "its wings folded",
+   "from": "run-2026-10-20:pictures/costume/dragonWingsHow--folded.svg",
+   "bytes": 14005,
+   "shapes": 96,
+   "animated": 0
+  },
+  {
+   "file": "pictures/archive/horseArmour--plate.svg",
+   "what": "the horse in plate, facing us, led (the friend not a knight: the halter's colours)",
+   "from": "run-2026-10-20:pictures/body/horseArmour--plate.svg",
+   "bytes": 17613,
+   "shapes": 126,
+   "animated": 0
+  },
+  {
+   "file": "pictures/archive/horseArmour--half.svg",
+   "what": "the horse in half, facing us, led (the friend not a knight: the halter's colours)",
+   "from": "run-2026-10-20:pictures/body/horseArmour--half.svg",
+   "bytes": 16351,
+   "shapes": 110,
+   "animated": 0
+  },
+  {
+   "file": "pictures/archive/horseArmour--tourney.svg",
+   "what": "the horse in tourney, facing us, led (the friend not a knight: the halter's colours)",
+   "from": "run-2026-10-20:pictures/body/horseArmour--tourney.svg",
+   "bytes": 15118,
+   "shapes": 96,
+   "animated": 0
+  },
+  {
+   "file": "pictures/archive/horseArmour--dragon.svg",
+   "what": "the horse in dragon, facing us, led (the friend not a knight: the halter's colours)",
+   "from": "run-2026-10-20:pictures/body/horseArmour--dragon.svg",
+   "bytes": 18134,
+   "shapes": 123,
+   "animated": 0
+  },
+  {
+   "file": "pictures/archive/horseArmour--toy.svg",
+   "what": "the horse in toy, facing us, led (the friend not a knight: the halter's colours)",
+   "from": "run-2026-10-20:pictures/body/horseArmour--toy.svg",
+   "bytes": 15979,
+   "shapes": 104,
+   "animated": 0
+  },
+  {
+   "file": "pictures/archive/horseArmour--parade.svg",
+   "what": "the horse in parade, facing us, led (the friend not a knight: the halter's colours)",
+   "from": "run-2026-10-20:pictures/body/horseArmour--parade.svg",
+   "bytes": 19566,
+   "shapes": 148,
+   "animated": 0
+  }
+ ]
+}
