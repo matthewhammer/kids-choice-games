@@ -1865,6 +1865,31 @@ function horseHead(H, W, i, halter) {
   return t + wagged(W, s => `<g>${wagAnim(W, "transform", (v, amp) => `0 ${f1((3 + 9 * amp) * (1 + v) / 2)}`, s, "translate")}` +
     `<g><animateTransform attributeName="transform" type="rotate" values="0 0 -70;0 0 -70;-9 0 -70;-9 0 -70;0 0 -70;0 0 -70;8 0 -70;8 0 -70;0 0 -70" dur="${look}s" begin="-${(i * 1.9).toFixed(1)}s" repeatCount="indefinite"/>${head}</g></g>`);
 }
+// (ticket 502, for M: the 🚜 farm yard and the 🐔 chicken coop have the stable's hens and its water trough, drawn by the
+// same code, so they look the same everywhere; Matthew: "chickens -- already in stable") The stone water trough at (tx, ty),
+// s its size, its water rippling (P the scene's point writer)
+const troughSvg = (P, tx, ty, s) => `<ellipse cx="${f1(tx)}" cy="${f1(ty)}" rx="${f1(58 * s)}" ry="${f1(7 * s)}" fill="#000000" opacity="0.2"/>` +
+  `<path d="M${P(tx - 52 * s, ty - 30 * s)} L${P(tx - 44 * s, ty - 40 * s)} L${P(tx + 44 * s, ty - 40 * s)} L${P(tx + 52 * s, ty - 30 * s)} Z" fill="#7d7468"/>` +
+  `<path d="M${P(tx - 44 * s, ty - 36 * s)} L${P(tx + 44 * s, ty - 36 * s)} L${P(tx + 48 * s, ty - 31 * s)} L${P(tx - 48 * s, ty - 31 * s)} Z" fill="#6aa6c8"/>` +
+  `<rect x="${f1(tx - 52 * s)}" y="${f1(ty - 30 * s)}" width="${f1(104 * s)}" height="${f1(30 * s)}" fill="#9a9082" stroke="#6a6258" stroke-width="${f1(1.2 * s)}"/>` +
+  [0.25, 0.5, 0.75].map(u => `<line x1="${f1(tx - 52 * s + 104 * s * u)}" y1="${f1(ty - 30 * s)}" x2="${f1(tx - 52 * s + 104 * s * u)}" y2="${f1(ty)}" stroke="#6a6258" stroke-width="${f1(1 * s)}"/>`).join("") +
+  `<ellipse cx="${f1(tx)}" cy="${f1(ty - 33.5 * s)}" rx="${f1(8 * s)}" ry="${f1(1.4 * s)}" fill="none" stroke="#ffffff" stroke-width="${f1(0.8 * s)}"><animate attributeName="rx" values="${f1(3 * s)};${f1(40 * s)}" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="3s" repeatCount="indefinite"/></ellipse>`;
+// A hen at (hx, hy), s her size, sd 1 facing right or -1 left; i her own pace and way into her peck, which the scene's quick
+// LFO times; look 0 brown, 1 white (the stable's two), 2 black
+const HEN_LOOKS = [["#a0522d", "#6b3418"], ["#f5efe2", "#c9bca2"], ["#3b3836", "#1c1a19"]];
+function henSvg(o, hx, hy, s, sd, i, look = i ? 1 : 0) {
+  const pk = (1.6 + 0.5 * i).toFixed(1), [fill, line] = HEN_LOOKS[look] || HEN_LOOKS[0];
+  return `<g transform="translate(${f1(hx)} ${f1(hy)}) scale(${(sd * s).toFixed(3)} ${s.toFixed(3)})">` +
+    `<ellipse cx="0" cy="0" rx="14" ry="2.5" fill="#000000" opacity="0.18"/>` +
+    `<line x1="-3" y1="-8" x2="-4" y2="0" stroke="#e8a33a" stroke-width="1.6"/><line x1="3" y1="-8" x2="4" y2="0" stroke="#e8a33a" stroke-width="1.6"/>` +
+    `<path d="M-16 -18 Q-20 -30 -12 -28 Q-6 -14 6 -14 Q14 -14 14 -22 L10 -8 Q0 -2 -10 -8 Z" fill="${fill}" stroke="${line}" stroke-width="1"/>` +
+    `<path d="M-6 -16 Q0 -12 6 -15" fill="none" stroke="${line}" stroke-width="1"/>` +
+    // (a peck, down and back, once round the quick LFO: the scene's quick things)
+    `<g>${sceneLfo(o, "fast", i * 0.45, "transform", (v, amp) => `${f1(Math.max(0, v) * (30 + 50 * amp))} 10 -18`,
+      `<animateTransform attributeName="transform" type="rotate" values="0 10 -18;0 10 -18;55 10 -18;0 10 -18;0 10 -18;55 10 -18;0 10 -18" keyTimes="0;0.4;0.47;0.54;0.75;0.82;1" dur="${pk}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`)}` +
+    `<circle cx="14" cy="-24" r="5" fill="${fill}"/><path d="M12 -29 q2 -4 4 0 q2 -4 3 1 Z" fill="#d62828"/><path d="M18 -24 l4 1 l-4 1 Z" fill="#e8a33a"/>` +
+    `<path d="M15 -21 q1 3 -1 4" fill="#d62828"/><circle cx="15.5" cy="-25" r="0.9" fill="#111"/></g></g>`;
+}
 // The stable: the castle's stone, under timber; four stalls along the back
 // wall, each a half door with its top door swung open, a horse looking out
 // over it (or, empty, a blanket over the door), its name plate, a bucket; a
@@ -1991,12 +2016,7 @@ function stableSvg(c, K) {
          [...Array(9)].map((_, j) => { const y = lt + (lb - lt) * (j + 0.5) / 9; return `<line x1="${f1(la - lw / 2)}" y1="${f1(y)}" x2="${f1(la + lw / 2 + 4 * k)}" y2="${f1(y)}" stroke="${oak}" stroke-width="${f1(3.5 * k)}"/>`; }).join("") + `</g>`); }
   // the stone water trough, its water rippling; buckets by it
   { const [tx, ty] = at(-0.66 * bw, floor, -0.3), s = k / 0.7;
-    t += obj("water trough", ty, `<ellipse cx="${f1(tx)}" cy="${f1(ty)}" rx="${f1(58 * s)}" ry="${f1(7 * s)}" fill="#000000" opacity="0.2"/>` +
-         `<path d="M${P(tx - 52 * s, ty - 30 * s)} L${P(tx - 44 * s, ty - 40 * s)} L${P(tx + 44 * s, ty - 40 * s)} L${P(tx + 52 * s, ty - 30 * s)} Z" fill="#7d7468"/>` +
-         `<path d="M${P(tx - 44 * s, ty - 36 * s)} L${P(tx + 44 * s, ty - 36 * s)} L${P(tx + 48 * s, ty - 31 * s)} L${P(tx - 48 * s, ty - 31 * s)} Z" fill="#6aa6c8"/>` +
-         `<rect x="${f1(tx - 52 * s)}" y="${f1(ty - 30 * s)}" width="${f1(104 * s)}" height="${f1(30 * s)}" fill="#9a9082" stroke="#6a6258" stroke-width="${f1(1.2 * s)}"/>` +
-         [0.25, 0.5, 0.75].map(u => `<line x1="${f1(tx - 52 * s + 104 * s * u)}" y1="${f1(ty - 30 * s)}" x2="${f1(tx - 52 * s + 104 * s * u)}" y2="${f1(ty)}" stroke="#6a6258" stroke-width="${f1(1 * s)}"/>`).join("") +
-         `<ellipse cx="${f1(tx)}" cy="${f1(ty - 33.5 * s)}" rx="${f1(8 * s)}" ry="${f1(1.4 * s)}" fill="none" stroke="#ffffff" stroke-width="${f1(0.8 * s)}"><animate attributeName="rx" values="${f1(3 * s)};${f1(40 * s)}" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="3s" repeatCount="indefinite"/></ellipse>`);
+    t += obj("water trough", ty, troughSvg(P, tx, ty, s));
     let bk = "";
     for (const dx of [64, 84]) bk += `<path d="M${P(tx + dx * s - 10 * s, ty - 24 * s)} L${P(tx + dx * s + 10 * s, ty - 24 * s)} L${P(tx + dx * s + 8 * s, ty)} L${P(tx + dx * s - 8 * s, ty)} Z" fill="#9aa3ad" stroke="#5a626c" stroke-width="${f1(1 * s)}"/>` +
       `<ellipse cx="${f1(tx + dx * s)}" cy="${f1(ty - 24 * s)}" rx="${f1(10 * s)}" ry="${f1(2.5 * s)}" fill="#5a626c"/>`;
@@ -2011,17 +2031,8 @@ function stableSvg(c, K) {
          `<path d="M${P(hx + 10 * s, hy - 30 * s)} L${P(hx + 18 * s, hy - 40 * s)} M${P(hx + 16 * s, hy - 26 * s)} L${P(hx + 20 * s, hy - 38 * s)} M${P(hx + 22 * s, hy - 24 * s)} L${P(hx + 21 * s, hy - 37 * s)} M${P(hx + 12 * s, hy - 37 * s)} L${P(hx + 24 * s, hy - 40 * s)}" stroke="#7d8590" stroke-width="${f1(1.8 * s)}" stroke-linecap="round"/>`); }
   // two hens, pecking at the straw
   for (const [X, z, sd, i] of [[-0.42 * bw, -0.2, 1, 0], [0.36 * bw, -0.3, -1, 1]]) {
-    const [hx, hy] = at(X, floor, z), s = k / (1 + z) * 0.9, pk = (1.6 + 0.5 * i).toFixed(1);
-    t += obj(i ? "hen, white" : "hen, brown", hy, `<g transform="translate(${f1(hx)} ${f1(hy)}) scale(${(sd * s).toFixed(3)} ${s.toFixed(3)})">` +
-         `<ellipse cx="0" cy="0" rx="14" ry="2.5" fill="#000000" opacity="0.18"/>` +
-         `<line x1="-3" y1="-8" x2="-4" y2="0" stroke="#e8a33a" stroke-width="1.6"/><line x1="3" y1="-8" x2="4" y2="0" stroke="#e8a33a" stroke-width="1.6"/>` +
-         `<path d="M-16 -18 Q-20 -30 -12 -28 Q-6 -14 6 -14 Q14 -14 14 -22 L10 -8 Q0 -2 -10 -8 Z" fill="${i ? "#f5efe2" : "#a0522d"}" stroke="${i ? "#c9bca2" : "#6b3418"}" stroke-width="1"/>` +
-         `<path d="M-6 -16 Q0 -12 6 -15" fill="none" stroke="${i ? "#c9bca2" : "#6b3418"}" stroke-width="1"/>` +
-         // (a peck, down and back, once round the quick LFO: the scene's quick things)
-         `<g>${sceneLfo(c.o, "fast", i * 0.45, "transform", (v, amp) => `${f1(Math.max(0, v) * (30 + 50 * amp))} 10 -18`,
-           `<animateTransform attributeName="transform" type="rotate" values="0 10 -18;0 10 -18;55 10 -18;0 10 -18;0 10 -18;55 10 -18;0 10 -18" keyTimes="0;0.4;0.47;0.54;0.75;0.82;1" dur="${pk}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`)}` +
-         `<circle cx="14" cy="-24" r="5" fill="${i ? "#f5efe2" : "#a0522d"}"/><path d="M12 -29 q2 -4 4 0 q2 -4 3 1 Z" fill="#d62828"/><path d="M18 -24 l4 1 l-4 1 Z" fill="#e8a33a"/>` +
-         `<path d="M15 -21 q1 3 -1 4" fill="#d62828"/><circle cx="15.5" cy="-25" r="0.9" fill="#111"/></g></g>`);
+    const [hx, hy] = at(X, floor, z), s = k / (1 + z) * 0.9;
+    t += obj(i ? "hen, white" : "hen, brown", hy, henSvg(c.o, hx, hy, s, sd, i));
   }
   // sunbeams from the round window down onto the floor, dust drifting in them
   // (an object at the depth where they reach the floor: ticket 99)

@@ -68,7 +68,7 @@ const nightBy = (t, b, sunrise) => t === "night" || (t === "clock" && skyTimeOf(
 const clockHere = b => ((b.kind === "waterfall" || b.kind === "cave") ? b.fallTime : (b.kind === "campsite" || b.kind === "tent") ? b.campTime : b.kind === "fairyforest" ? b.fairyTime : null) === "clock";
 const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["bubbleroom", "🫧 the bubble room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
-  ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
+  ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"], ["farmyard", "🚜 farm yard"],   // (farmyard: ticket 502, for M)
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
   ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
   ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
@@ -88,7 +88,7 @@ const PLACE_GROUPS = [
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom"]],
-  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
+  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
   ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion", "hutcenter"]],
@@ -1726,13 +1726,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // apart from the last)
     const add = (kd, at = null, extra = {}) => {
       const B = state.background, T = B.things || (B.things = []), i = T.length, F = sceneFrame;
-      const x = at ? Math.round(clamp(at.x, F.left, F.right)) : Math.round((((i * 0.37) % 1) - 0.5) * 520);
-      const z = at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
+      // (ticket 502: a 🪵 fence piece tapped in goes on the tile beside the last one, as it is, so tapping again builds a fence: tileNext)
+      const next = !at && (THING_KINDS[kd] || {}).tiles ? tileNext(B, kd) : null;
+      const x = next ? next.x : at ? Math.round(clamp(at.x, F.left, F.right)) : Math.round((((i * 0.37) % 1) - 0.5) * 520);
+      const z = next ? next.z : at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
       if (thingsLatch) return;   // (ticket 203: shut till the marked ones are dealt with)
       T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}),
                ...(kd === "trapdoor" ? { uid: "d" + Math.floor(Math.random() * 36 ** 6).toString(36) } : {}), ...extra });   // (ticket 284: a trap door's name for the levers wired to it)
       // (ticket 303, M: a lever and a trap door put in one place work together at once, whichever came first; a chip unjoins them)
       const nu = T[T.length - 1];
+      if (next) Object.assign(nu, { style: next.style ?? nu.style, size: next.size ?? nu.size, mirror: !!next.mirror });
+      tileSnap(B, nu);   // (ticket 502: a thing that stands on the floor's tiles goes onto the nearest; any other stays where it is put)
       if (kd === "lever") nu.works = T.filter(x => x.kind === "trapdoor" && x.uid).map(x => x.uid);
       if (kd === "trapdoor") for (const L of T) if (L.kind === "lever") L.works = [...(L.works || []), nu.uid];
       changed();
