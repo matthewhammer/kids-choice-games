@@ -2219,7 +2219,10 @@ function saguaroSvg(t, seed) {
     `<path d="${A.lit}" fill="none" stroke="${lit}" stroke-width="4" stroke-linecap="round" opacity="0.5"/><path d="${A.rib}" fill="none" stroke="${dark}" stroke-width="1.3" opacity="0.45"/>` +
     (A.sp ? `<path d="${A.sp}" fill="none" stroke="#f1e6c2" stroke-width="1.1" stroke-linecap="round"/>` : "")).join("");
   // the column, its shaded and its lit side, its ribs (each ending inside its rounded top), the spines down them
+  // (ticket 501: and its spine, unseen, as wide as the column, so the whole column is in the friend's way, whatever its arms;
+  // found by its tall shapes, a young one's, with no arms, was its stripes and ribs alone, short of its lit side by 10)
   s += `<path d="M${-r} 0 L${-r} ${f1(top)} A${r} ${r} 0 0 1 ${r} ${f1(top)} L${r} 0 Z" fill="${green}" stroke="${dark}" stroke-width="2.5"/>` +
+       `<path data-spine="" d="M0 0 V${f1(top)}" fill="none" stroke="transparent" stroke-width="${2 * r}" pointer-events="none"/>` +
        `<path d="M-15 -2 L-15 ${f1(top)}" stroke="${dark}" stroke-width="8" opacity="0.18"/><path d="M10 -2 L10 ${f1(top - 8)}" stroke="${lit}" stroke-width="6" stroke-linecap="round" opacity="0.5"/>`;
   let ribs = "";
   for (const x of [-12, -4, 4, 12]) {
@@ -3008,11 +3011,13 @@ function farLayers(c, base, look) {
       // (ticket 501, for M, the desert's far off) 🏜️ red mesas: flat tops, steep sides over slopes of fallen rock, two rows,
       // the far one hazier; each its own shape (so they may overlap), then the ground they stand on, all one path a row
       for (const [row, fill, hgt, n, seed] of [[1, "#c6a3a0", 46, 4, 681], [0, "#b38377", 32, 5, 691]]) {
-        const foot = hillFoot - row * 5 * u, under = Math.min(foot + 8 * u, base);
-        let d = `M${P(L, foot)} L${P(Rt, foot)} L${P(Rt, under)} L${P(L, under)} Z`;
+        // (ticket 501: each row on or above the horizon, its mesas' feet no lower than the ground they stand on: the near row,
+        // on the horizon itself with nothing in front, went 2 below it, over a band wound the other way: a pale seam at its foot)
+        const foot = Math.min(hillFoot - row * 5 * u, base), under = Math.min(foot + 8 * u, base), low = Math.min(foot + 1, under);
+        let d = under > foot ? `M${P(L, foot)} L${P(Rt, foot)} L${P(Rt, under)} L${P(L, under)} Z` : "";
         for (let i = 0; i < n; i++) {
           const j = i + row * 17, x = x0 + W * (i + 0.5) / n + (W / n) * 0.3 * (R(j, seed) - 0.5), w = (W / n) * (0.1 + 0.16 * R(j, seed + 1)), h = hgt * u * (0.6 + 0.4 * R(j, seed + 2)), sl = Math.min(8 * u, w * 0.6);
-          d += ` M${P(x - w - 2.2 * sl, foot + 1)} L${P(x - w - sl, foot - h * 0.4)} L${P(x - w, foot - h)} L${P(x + w, foot - h + 2 * u * (R(j, seed + 3) - 0.5))} L${P(x + w + sl, foot - h * 0.45)} L${P(x + w + 2.4 * sl, foot + 1)} Z`;
+          d += ` M${P(x - w - 2.2 * sl, low)} L${P(x - w - sl, foot - h * 0.4)} L${P(x - w, foot - h)} L${P(x + w, foot - h + 2 * u * (R(j, seed + 3) - 0.5))} L${P(x + w + sl, foot - h * 0.45)} L${P(x + w + 2.4 * sl, low)} Z`;
         }
         m += `<path d="${d}" fill="${fill}"/>`;
       }

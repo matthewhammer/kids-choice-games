@@ -4,7 +4,8 @@
 // snowy peaks, nothing); its plants and rocks standing at their depths and in the way, the lizard, the tumbleweed and the
 // hawk not; things moving with the music; the friend arriving clear of everything. And the 🌵 desert things: six kinds in
 // their own group, each drawn and in the way (the tall ones by their columns, trunks and stems, not their arms: a saguaro's
-// box narrower than its drawing), each one's settings changing its drawing. Exits 1 on a failure.
+// box narrower than its drawing; a young one's, with no arms, as wide as its column), each one's settings changing its drawing;
+// the red mesas on the horizon, none below it. Exits 1 on a failure.
 //   node desert501.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -32,6 +33,9 @@ try {
     const objs = objsNow(), sol = solidsHere().map(o => o.name);
     const scene = { objs, solids: sol, seats: seatsHere(B).map(t => t.name), arriveClear: !solidAt(ARRIVE.desert[0], SCENE.ground + ARRIVE.desert[1]),
       moving: { tumbleweed: anims("tumbleweed"), lizard: anims("lizard"), hawk: anims("hawk"), sand: anims("sand blowing off the dunes") }, all: bgShown.node.querySelectorAll("animate, animateTransform, animateMotion").length };
+    // (the red mesas stand on the horizon, none of them below it: the bottom of what is far off, against the sky's gradient's foot)
+    const skyFoot = +bgShown.node.querySelector("#bg-desert-sky").getAttribute("y2"), farEl = bgShown.node.querySelector('[data-obj="far mountains"]');
+    const mesas = farEl ? { bottom: Math.round(10 * (farEl.getBBox().y + farEl.getBBox().height)) / 10, horizon: skyFoot } : null;
     const far = {};
     for (const v of ["mesas", "snowy", "none"]) { B.desertFar = v; changed(); await w(300); far[v] = objsNow().includes("far mountains"); }
     B.desertFar = "mesas";
@@ -48,7 +52,12 @@ try {
     const wide = await drawn([thing("saguaro", 0, { arms: 4 })]), wideBox = solidsHere().filter(o => /^saguaro/.test(o.name)).map(o => Math.round(o.x1 - o.x0));
     const other = await drawn([thing("saguaro", -300, { arms: 0, flowers: false }), thing("pricklypear", -180, { bloom: "none" }), thing("barrelcactus", -60, { flowers: false }),
       thing("agave", 60, { stalk: true }), thing("joshuatree", 180, { flowers: true }), thing("ocotillo", 300, { leaves: false, flowers: false })]);
-    return JSON.stringify({ place, scene, far, group, plain, things, wide: [wide[0], wideBox], other }); })()`));
+    // (a young saguaro, with no arms: its boxes as wide as its column, at every height; its column measured as standingHere does)
+    const young = (() => { const el = [...bgShown.node.querySelectorAll(".thing")].find(e => B.things[+e.dataset.drag.split(":")[1]].kind === "saguaro");
+      const col = el && el.querySelector('path[d^="M-22 0 "]'), Pinv = document.getElementById("pic").getScreenCTM().inverse();
+      const q = col && boxThrough(col.getBBox(), Pinv.multiply(col.getScreenCTM())), o = solidsHere().find(s => /^saguaro/.test(s.name));
+      return { col: q ? [Math.round(q.x), Math.round(q.x + q.width)] : null, bands: o && o.bands ? o.bands.map(b => [Math.round(b.x0), Math.round(b.x1)]) : [] }; })();
+    return JSON.stringify({ place, scene, mesas, far, group, plain, things, wide: [wide[0], wideBox], young, other }); })()`));
   const { place: P, scene: S, far: F, plain, other } = r;
   ok("the desert is a place: in the list, a kind of its own, outdoors, with its words, its tune, its back line and its quick and slow things",
      P.inPlaces && P.group.length === 1 && P.group[0] === "desert" && P.outdoors && /desert/.test(P.phrase || "") && P.tune === "canyon" && P.back && P.lfo.fast && P.lfo.slow, P);
@@ -62,10 +71,13 @@ try {
      S.moving.tumbleweed >= 3 && S.moving.lizard >= 2 && S.moving.hawk >= 2 && S.moving.sand >= 2, S.moving);
   ok("the friend arrives clear of everything", S.arriveClear, S);
   ok("far off: red mesas, snowy peaks, or nothing, as 🏜️ says", F.mesas && F.snowy && !F.none, F);
+  ok("the red mesas stand on the horizon, none below it (no pale seam at their foot)", r.mesas && Number.isFinite(r.mesas.horizon) && r.mesas.bottom <= r.mesas.horizon + 0.2, r.mesas);
   ok("the six desert plants are 🌵 desert things", r.group.every(g => g === "desert"), r.group);
   ok("each desert plant drawn", KINDS.every(k => { const e = plain.find(p => p.kind === k); return e && e.w > 30 && e.h > 40; }), plain);
   ok("each desert plant is in the way", KINDS.every(k => r.things.some(t => t.name.startsWith(k + " "))), r.things);
   ok("a saguaro with arms is in the way by its column, not its arms (its box narrower than its drawing)", r.wide[1].length === 1 && r.wide[1][0] < 0.5 * r.wide[0].w, r.wide);
+  ok("a young saguaro, with no arms, is in the way by all its column, at every height", r.young.col && r.young.bands.length >= 3 &&
+     r.young.bands.every(b => b[0] <= r.young.col[0] + 1 && b[1] >= r.young.col[1] - 1), r.young);
   const by = (list, k) => list.find(p => p.kind === k) || {};
   ok("each one's settings change its drawing (no arms or flowers, no bloom, no flowers, a flower stalk, in bloom, no leaves or flowers)",
      KINDS.every(k => by(other, k).shapes !== by(plain, k).shapes) && by(other, "agave").h > by(plain, "agave").h + 100 && by(other, "saguaro").w < by(plain, "saguaro").w, { plain, other });
