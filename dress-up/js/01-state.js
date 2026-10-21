@@ -23,7 +23,7 @@ const HOUSE_COLOR_DEFAULTS = {
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, desert: 0.45, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
 // for each background as we play around with them") the friend's own size (body.size, a share), in every place, on top of
@@ -48,7 +48,7 @@ const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroo
 // of it shrinks as one. Outdoors 40 (the mountain trail's far edge about 0.4 of the size, the clearing's about 0.2);
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
-                   "waterfall", "campsite", "cave", "castle", "woodpath", "crossing", "beach", "sea", "lake"];
+                   "waterfall", "campsite", "cave", "castle", "woodpath", "crossing", "beach", "sea", "lake", "desert"];   // (desert: ticket 501)
 const NORTH_ROOMS = ["treeroom", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
 const northDefault = kind => NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
@@ -524,6 +524,7 @@ const DEFAULTS = {
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2, fallRate: 100, fallTime: "day",
                 caveGems: 16, gemShape: "four", gemSize: 100, gemBright: 90, gemTwinkle: 60,
                 caveFloor: "stalagmites", caveCeiling: "stalactites",   // (ticket 471: the cave room's formations)
+                desertFar: "mesas",   // (ticket 501: what the desert has far off, farLayers' mountains)
                 skyWhere: "denver", skyLat: 39.74, skyLon: -104.99, skyYear: 2026, skyMonth: 10, skyDay: 20, skyHour: 20,   // (ticket 490: 🌍 where and when, for a sky by the clock)
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
                 crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossBack: "woods", things: [],
