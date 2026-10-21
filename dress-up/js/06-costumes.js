@@ -867,10 +867,10 @@ function leakTick(t) {
 //   robotHead   over the head, in the face's units (x 100 its middle), where the knight's helmet goes; a faceplate or a
 //               screen (tin, helper) draws eyes and a mouth of its own that follow the friend's mood, and the face is not
 //               drawn under it; a window or an opening shows the friend's face in the views `see` names
-//   robotTorso  over the shirt, where the knight's tabard goes; from behind, and crawling toward us (the back turned up),
-//               its back
-//   robotBack   what stands off the back, where wings go: behind them facing us, over the back from behind (seen short
-//               crawling away); crawling toward us, its own drawing over the back turned up (the tank's way, ticket 371)
+//   robotTorso  over the shirt, where the knight's tabard goes; from behind, its back; crawling toward us or away, a
+//               drawing of its own (robotCrawlTorso), outside the body's turned or shortened group
+//   robotBack   what stands off the back, where wings go: behind them facing us, over the back from behind; crawling
+//               toward us or away, a drawing of its own over the back (robotCrawlBack), never the from-behind one turned
 //   robotArm    on each arm, in that arm's own slot, so a nearer arm's piece is over a farther one's
 //   robotLeg    on each leg, in the order the legs are drawn
 // Speed (the first rule): no masks, filters, gradients or animations; a few shapes each, a row of rivets, gears or slots
@@ -910,12 +910,14 @@ const rbBow = (cx, cy, a, h, across = false) => [-1, 1].map(s => across
 
 // The head, in the face's units (x 100 the middle; the head from headCrown to headChin, 80 * headWidth either side), worn
 // as the knight's helmet is. o: { dir, away, closed (the eyes shut, meditating), lieBack (lying face up) }. Returns its
-// svg, its eyes (a faceplate's, drawn on the eyes' veil), and how far up and out it reaches (for the picture's frame).
+// svg, its eyes (a faceplate's, drawn on the eyes' veil), `behind` (the inside of a window the face looks out of: one
+// solid shape, drawn under the face, so nothing behind the friend shows round it), and how far up and out it reaches (for
+// the picture's frame).
 function robotHead(R, F, o) {
   const H = diveHead(F), LY = H.LY, hw = H.hw, { dir, away } = o, m = R.main, dk = R.dk, lt = R.lt, P = rbPath;
   const smile = Math.max(-1, Math.min(1, ((F.smile ?? 85) - 50) / 50));   // (the mood: 1 a big smile, -1 a frown; 50 or more smiles)
   const X = d => 100 + dir * d, Y = k => H.cy + k * H.ry;   // (across: toward the face in profile; down, in the head's half heights)
-  let svg = "", eyes = "", top = H.top, half = hw;
+  let svg = "", eyes = "", behind = "", top = H.top, half = hw;
   switch (R.S.head) {
     // 🔑 the tin: a tall box with round top corners, a cone ear each side, one antenna with a bobble; facing us a printed
     // tin face (two round eyes, a grille mouth bending with the mood, rivets round it); in profile its side, the ear end on;
@@ -963,7 +965,8 @@ function robotHead(R, F, o) {
       const pipes = xs => rbStroke(xs.map(x => `M${f1(x)} ${f1(tp + 2)} Q${f1(x - 12)} ${f1(tp - 14)} ${f1(x)} ${f1(tp - 30)} Q${f1(x + 12)} ${f1(tp - 46)} ${f1(x)} ${f1(tp - 62)}`).join(" "), lt, 5) +
                          P(rbDots(xs.map(x => [x, tp - 70]), 11), lt, R.ltk, 2);
       top = tp - 84; half = bw;
-      if (!dir && !away) svg = P(rbRect(100 - bw, tp, 100 + bw, bot, 6) + " " + rbRect(100 - wx, wy0, 100 + wx, wy1, 3), m, dk, 4, ' fill-rule="evenodd"') + pipes([100 - 0.45 * bw, 100 + 0.45 * bw]);
+      if (!dir && !away) { svg = P(rbRect(100 - bw, tp, 100 + bw, bot, 6) + " " + rbRect(100 - wx, wy0, 100 + wx, wy1, 3), m, dk, 4, ' fill-rule="evenodd"') + pipes([100 - 0.45 * bw, 100 + 0.45 * bw]);
+        behind = P(rbRect(100 - wx, wy0, 100 + wx, wy1, 3), mix(m, "#000000", 0.5)); }   // (the box's dark inside, round the face)
       else if (away) svg = P(rbRect(100 - bw, tp, 100 + bw, bot, 6), m, dk, 4) +
                             `<path d="M${f1(100 - bw + 2)} ${f1((tp + bot) / 2)} L${f1(100 + bw - 2)} ${f1((tp + bot) / 2)} M100 ${f1(tp + 2)} L100 ${f1(bot - 2)}" stroke="#b8bec6" stroke-width="22" opacity="0.9"/>` +
                             pipes([100 - 0.45 * bw, 100 + 0.45 * bw]);
@@ -1033,6 +1036,7 @@ function robotHead(R, F, o) {
       top = tp - 34; half = 1.2 * bw;
       if (!dir && !away) {
         const wx = 0.64 * bw, w0 = LY.eyeY - 40, w1 = LY.mouthY + 30;
+        behind = P(rbRect(100 - wx, w0, 100 + wx, w1, 10), "#33383f");   // (the cockpit's dark inside)
         svg = beacon(100) + P(rbRect(100 - bw, tp, 100 + bw, bot, 22) + " " + rbRect(100 - wx, w0, 100 + wx, w1, 10), m, dk, 4, ' fill-rule="evenodd"') +
               P(rbRect(100 - wx, w0, 100 + wx, w1, 10), "#bae6fd", frame, 9, ' fill-opacity="0.2"') +
               `<path d="M${f1(100 - bw + 36)} ${f1(tp + 21)} L${f1(100 + bw - 36)} ${f1(tp + 21)}" stroke="#1f2937" stroke-width="13" stroke-dasharray="11 9"/>` +
@@ -1042,6 +1046,7 @@ function robotHead(R, F, o) {
           P(rbDots([[100 - 0.8 * bw, bot - 20], [100 + 0.8 * bw, bot - 20]], 7), ROBOT_SILVER, frame, 2.5);
       else {
         const xb = X(-1.2 * bw), xf = X(0.9 * bw), s0 = X(0.4 * hw), s1 = X(0.98 * hw), w0 = LY.eyeY - 38, w1 = LY.mouthY + 26;
+        behind = P(rbRect(s0, w0, s1, w1, 8), "#33383f");
         svg = beacon(X(-0.15 * bw)) + P(rbRect(xb, tp, xf, bot, 22) + " " + rbRect(s0, w0, s1, w1, 8), m, dk, 4, ' fill-rule="evenodd"') +
               P(rbRect(s0, w0, s1, w1, 8), "#bae6fd", frame, 8, ' fill-opacity="0.2"') +
               P(rbRect(xf - dir * 26, tp + 12, xf - dir * 8, tp + 30, 3), lt, R.ltk, 2.5) +
@@ -1086,6 +1091,7 @@ function robotHead(R, F, o) {
       const ears = (x0, xa, xb) => rbStroke(`M${f1(xa)} ${f1(tp - 144)} L${f1(x0)} ${f1(tp + 2)} L${f1(xb)} ${f1(tp - 144)}`, "#d1d5db", 5) + P(rbDots([[xa, tp - 148], [xb, tp - 148]], 8), "#374151");
       top = tp - 158; half = 1.84 * hw;
       if (!dir && !away) {
+        behind = P(rbRect(100 - sw, sy0, 100 + sw, sy1, 22), mix(lt, "#000000", 0.72));   // (the screen, dark round the face's picture)
         svg = stalk(100) + ears(100, 100 - 0.42 * hw, 100 + 0.42 * hw) +
               P(rbRect(cl, tp, cr, bot, 16) + " " + rbRect(100 - sw, sy0, 100 + sw, sy1, 22), m, dk, 4, ' fill-rule="evenodd"') +
               P(rbRect(100 - sw, sy0, 100 + sw, sy1, 22), lt, lt, 5, ' fill-opacity="0.15"') +
@@ -1128,13 +1134,14 @@ function robotHead(R, F, o) {
       break;
     }
   }
-  return { svg, eyes, top, half };
+  return { svg, eyes, behind, top, half };
 }
 
 // The torso, in the friend's own units (the shirt from the neck at -20 to its hem at L; w its half width, as drawn in this
-// view: 0.62 of it in profile), over the shirt. back: seen from behind, or crawling toward us (the back turned up).
-function robotTorso(R, w, L, dir, back) {
+// view: 0.62 of it in profile), over the shirt. back: seen from behind. cr: crawling toward us or away (robotCrawlTorso).
+function robotTorso(R, w, L, dir, back, cr = null) {
   const m = R.main, dk = R.dk, lt = R.lt, P = rbPath;
+  if (cr) return robotCrawlTorso(R, w, L, cr);
   switch (R.S.torso) {
     // 🔑 a straight tin column, flaring at the hips into a short hem (front and back in profile); facing us a dark window
     // with two gears and a light
@@ -1221,6 +1228,70 @@ function robotTorso(R, w, L, dir, back) {
   return "";
 }
 
+// Crawling toward us or away (ticket 286's crawl: the body runs into the picture, its back up), the torso's own drawing, in
+// the friend's units as the picture has them, never the from-behind drawing turned over or seen short. cr: { to } crawling
+// toward us (the back rising behind the head from the shoulders at -20, that share of its length: the hips far, up the
+// picture), or { away } (the back rising from the hips at L toward the head, that share: the shoulders far). Fy carries a
+// place along the back (in the shirt's own units, neck -20 to hem L) to the picture; what stands off the back by h shows
+// 0.9 h higher (seen from a little above). Each shell shows its back as seen from there and, where it has depth, its near
+// end (toward us the shoulders' end, away the hips'): the tin's column end on, the box's open top and its side flaps (toward
+// us) or its closed bottom (away), the helper's egg round (its cross-section, not a flat ring), the plates thin on the back.
+function robotCrawlTorso(R, w, L, cr) {
+  const m = R.main, dk = R.dk, lt = R.lt, P = rbPath, to = !!cr.to, k = cr.to || cr.away;
+  const Fy = y => to ? -k * y - 20 * (1 + k) : L - k * (L - y);
+  const near = (yTop, yBot) => to ? Fy(yTop) : Fy(yBot);   // (the near end's line in the picture: the shoulders' toward us, the hips' away)
+  const band = (x0, x1, ya, yb, r, fill, line, sw = 2.5) => P(rbRect(x0, Fy(ya), x1, Fy(yb), r), fill, line, sw);
+  const pts = ps => rbLine(ps.map(([x, y, h = 0]) => [x, Fy(y) - 0.9 * h]));
+  switch (R.S.torso) {
+    // 🔑 the column: its back, the hem flaring at the hips, and its near end on (the shoulders' end, rounded; the hem's rim)
+    case "column": {
+      const c = w + 3, h = w + 13, y0 = L - 18, y1 = L + 12, sh = mix(m, "#000000", 0.18);
+      const end = to ? P(rbRect(-c, Fy(-24), c, Fy(-24) + 24, 12), sh, dk, 3) : P(rbRect(-h, Fy(y1) - 2, h, Fy(y1) + 14, 4), sh, dk, 3);
+      return end + P(rbRect(-c, Fy(-24), c, Fy(y0), 6), m, dk, 3) + P(pts([[-c, y0], [c, y0], [h, y1], [-h, y1]]) + " Z", m, dk, 3);
+    }
+    // 📦 the box: its back with the tape and the marker arrow; toward us its open top, dark inside, the side flaps opened out
+    // either side; away its closed bottom end on, the flaps far up at the top's corners
+    case "box": {
+      const y0 = -26, y1 = L + 16, b = 1.3 * w, flap = mix(m, "#000000", 0.12), inside = mix(m, "#000000", 0.5);
+      let t = "";
+      if (to) { const e = Fy(y0), d = 40;
+        t = P([-1, 1].map(s => rbLine([[s * b, e + 2], [s * (b + 30), e - 8], [s * (b + 26), e + d + 6], [s * b, e + d - 2]]) + " Z").join(" "), flap, dk, 2.5) +
+            P(rbRect(-b, e, b, e + d, 3), inside, dk, 3); }
+      else t = P([-1, 1].map(s => pts([[s * b, y0], [s * (b + 22), y0 - 30], [s * 0.54 * b, y0 - 36], [s * 0.58 * b, y0]]) + " Z").join(" "), flap, dk, 2.5) +
+               P(rbRect(-b, Fy(y1), b, Fy(y1) + 30, 3), flap, dk, 3);
+      return t + band(-b, b, y0, y1, 3, m, dk, 3) + band(-b, b, L - 32, L - 18, 0, "#b8bec6", "#8f969e", 1.5) +
+             rbStroke(pts([[0, 0.62 * L], [0, 0.12 * L]]) + " " + pts([[-16, 0.12 * L + 18], [0, 0.12 * L], [16, 0.12 * L + 18]]), dk, 4);
+    }
+    // 🤗 the egg, round from either end: its widest round (as wide as the egg, as deep as it is from the side, and the length
+    // it shows), the band round its middle arching over its back (its lower half under the egg), the hatch on top (away)
+    case "egg": {
+      const y0 = -26, y1 = L + 22, cy = (y0 + y1) / 2, ry = (y1 - y0) / 2, rx = 1.35 * w, dz = 0.9 * w, wh = "#f4f6f8";
+      const Ry = Math.hypot(k * ry, 0.9 * dz), bc = Fy(cy + 24), a = 0.97 * rx, bb = 0.7 * dz;
+      return P(ellD(0, Fy(cy), rx, Ry), wh, dk, 3) + rbStroke(`M${f1(-a)} ${f1(bc)} A${f1(a)} ${f1(bb)} 0 0 1 ${f1(a)} ${f1(bc)}`, m, 10, ' stroke-linecap="butt"') +
+             (to ? "" : P(rbRect(-0.42 * rx, Fy(cy - 0.52 * ry) - 0.55 * dz, 0.42 * rx, Fy(cy - 0.02 * ry) - 0.55 * dz, 8), mix(wh, m, 0.18), dk, 2.5));
+    }
+    // 🚀 the back plate on the back, its near edge's thickness under it
+    case "capsule": { const pk = "#9aa6b2", y = near(-22, L - 14);
+      return P(rbRect(-(w - 2), y, w - 2, y + 7, 3), mix("#e4e9ef", "#000000", 0.15), pk, 2) + band(-(w - 2), w - 2, -22, L - 14, 0.4 * w, "#e4e9ef", pk, 3); }
+    // 🦾 the back plate and the belt round the waist (near, away; far up, toward us)
+    case "chest": { const y = near(-8, 0.62 * L);
+      return P(rbRect(-(w - 8), y, w - 8, y + 7, 3), mix(m, "#000000", 0.3), dk, 2) + band(-(w - 8), w - 8, -8, 0.62 * L, 8, mix(m, "#000000", 0.15), dk, 3) +
+             band(-(w + 4), w + 4, L - 18, L - 3, 0, "#27272a", "#18181b", 2); }
+    // ⚡ the back plate with its two thruster vents, and the V belt at the waist
+    case "plate": { const red = R.red, y = near(-12, 0.5 * L);
+      return P(rbRect(-(w - 10), y, w - 10, y + 7, 3), mix(m, "#000000", 0.35), dk, 2) + band(-(w - 10), w - 10, -12, 0.5 * L, 10, mix(m, "#000000", 0.2), dk, 3) +
+             P(rbRect(-0.55 * w, Fy(0.18 * L), -0.15 * w, Fy(0.4 * L), 4) + " " + rbRect(0.15 * w, Fy(0.18 * L), 0.55 * w, Fy(0.4 * L), 4), lt, R.ltk, 2) +
+             P(pts([[-(w + 2), L - 20], [0, L - 4], [w + 2, L - 20], [w + 2, L - 7], [0, L + 9], [-(w + 2), L - 7]]) + " Z", red, darker(red), 2);
+    }
+    // 📺 no shell: the friend's own body
+    case "panel": return "";
+    // 🕷️ the bands across the back, bowed up over its round top
+    case "segments":
+      return rbStroke([0.12, 0.34, 0.56, 0.78].map(f => { const y = Fy(f * L); return `M${f1(-(w - 2))} ${f1(y)} Q0 ${f1(y - 18)} ${f1(w - 2)} ${f1(y)}`; }).join(" "), dk, 3);
+  }
+  return "";
+}
+
 // A piece on an arm (in the friend's units), drawn in that arm's slot. o: { dir (in profile), far (the far arm, behind),
 // w (the torso's half width as drawn), armW, sleeve (the sleeve's points) }
 function robotArm(R, arm, o) {
@@ -1254,29 +1325,42 @@ function robotArm(R, arm, o) {
   return "";
 }
 
-// A piece on a leg (its joints J, hip to foot; `half` the pants leg's half width): the tin's ridges, the mech's knee pad
-function robotLeg(R, J, half, dir) {
+// A piece on a leg (its joints J, hip to foot; `half` the pants leg's half width; away: seen from behind): the tin's ridges,
+// the mech's knee pad
+function robotLeg(R, J, half, dir, away = false) {
   if (R.S.limbs === "bolts") {
-    const A = J[J.length - 2], B = J[J.length - 1], l = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, k = Math.max(0, 1 - 24 / l);
-    return rbStroke(rbLine([...J.slice(0, -1), [A[0] + (B[0] - A[0]) * k, A[1] + (B[1] - A[1]) * k]]), "#9aa1ab", f1(2 * half - 8), ' stroke-dasharray="2.5 10" stroke-linecap="butt"');
+    // (the ridges across the thigh and across the shin, each its own run of dashes, as wide as the leg less a margin: each run
+    // stops short of the knee by as far as its ends would reach past the knee's middle line, so a bent knee's two runs never
+    // cross, and the shin's short of the foot; a knee folded past 100 degrees (sitting cross-legged, meditating: the leg drawn
+    // as a flat fold) has no shin ridges, and its thigh's stop short leaves few or none)
+    const hr = half - 4, unit = (A, B) => { const l = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1; return [(B[0] - A[0]) / l, (B[1] - A[1]) / l, l]; };
+    const run = (A, B, a, b) => { const [ux, uy, l] = unit(A, B); return l - a - b < 6 ? "" : `M${f1(A[0] + ux * a)} ${f1(A[1] + uy * a)} L${f1(B[0] - ux * b)} ${f1(B[1] - uy * b)}`; };
+    let d;
+    if (J.length < 3) d = run(J[0], J[1], 0, 24);
+    else { const [t1, t2] = [unit(J[0], J[1]), unit(J[1], J[2])], bend = Math.acos(Math.max(-1, Math.min(1, t1[0] * t2[0] + t1[1] * t2[1])));
+      const gap = bend > 3 ? Infinity : hr * Math.tan(bend / 2) + 3;
+      d = [run(J[0], J[1], 0, gap), bend <= 1.75 ? run(J[1], J[2], gap, 24) : ""].filter(Boolean).join(" "); }
+    return d ? rbStroke(d, "#9aa1ab", f1(2 * hr), ' stroke-dasharray="2.5 10" stroke-linecap="butt"') : "";
   }
-  if (R.S.limbs === "blocks") { const K = J.length > 2 ? J[1] : [(J[0][0] + J[1][0]) / 2, (J[0][1] + J[1][1]) / 2], x = K[0] + (dir ? dir * 5 : 0);
+  // (the mech's knee pad: on the front of the knee, so none from behind)
+  if (R.S.limbs === "blocks" && !away) { const K = J.length > 2 ? J[1] : [(J[0][0] + J[1][0]) / 2, (J[0][1] + J[1][1]) / 2], x = K[0] + (dir ? dir * 5 : 0);
     return rbPath(rbRect(x - 16, K[1] - 16, x + 16, K[1] + 16, 5), R.main, R.dk, 3); }
   return "";
 }
 
 // What stands off the back (in the friend's units), drawn where wings are. o: { stride (walking or running, which of the
 // key's three drawings: 0, 1, 2), jump (in the air: the space bot's flames), sitting, lying (any facing: the spider's legs
-// folded), lieBack (lying face up: what is on the back is under them, not drawn), crawlTo (crawling toward us: behind the
-// back turned up, only what rises from behind it), over (crawling toward us: its own drawing over that back), flip and
-// flipY (that back's turn) }
+// folded), lieBack (lying face up: what is on the back is under them, not drawn), crawl ({ to } crawling toward us or
+// { away }: robotCrawlTorso's), crawlTo (crawling toward us: behind the back turned up, only what rises from behind it),
+// over (crawling toward us: its own drawing over that back), turn and phase (crawling or swimming in profile: the turn
+// about the hips, and LFO B's phase, the spider's legs stepping by it), floor (the floor, or the water's depth) }
 function robotBack(R, w, L, dir, away, o = {}) {
   const m = R.main, dk = R.dk, lt = R.lt, P = rbPath, kind = R.S.back;
   if (o.lieBack && kind !== "legs") return "";
   if (o.crawlTo && !o.over && kind !== "legs") return "";
   if (o.over && kind === "legs") return "";
-  // (crawling toward us, the back's own drawing, turned over with the back it lies on, as the tank is)
-  if (o.over && kind !== "key") return o.flip(robotBack(R, w, L, 0, true, { ...o, over: false, crawlTo: false }));
+  // (crawling toward us, over the back turned up, or crawling away: each piece's own drawing there)
+  if (o.over || (o.crawl && o.crawl.away)) return robotCrawlBack(R, w, L, o);
   switch (kind) {
     // 🔑 the wind-up key: hidden facing us; from the side its stem straight out of the back at the shoulder blades, its bow
     // seen full on (its iconic outline); from behind seen end on, the hub and the bow edge on, an upright bar. Walking or
@@ -1284,10 +1368,6 @@ function robotBack(R, w, L, dir, away, o = {}) {
     // slanting one way, then the other), never a rotate()
     case "key": {
       const k = o.stride || 0, steel = "#9aa1ab";
-      // (crawling toward us: standing straight up off the back, which lies behind the head, the bow full on across its top,
-      // the stem long enough that the bow shows over the tall tin head)
-      if (o.over) { const y = o.flipY(30);
-        return P(rbRect(-4, y - 42, 4, y, 0), steel, "#4b5563", 2) + P(rbBow(0, y - 50, 11, 20, true), lt, R.ltk, 2.5) + P(ellD(0, y, 9, 9), lt, R.ltk, 2.5); }
       if (!dir && !away) return "";
       if (away) { const a = [90, 30, 150][k] * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), y = 34, l = 30, t = 5;
         return P(rbLine([[c * l - s * t, y - s * l - c * t], [c * l + s * t, y - s * l + c * t], [-c * l + s * t, y + s * l + c * t], [-c * l - s * t, y + s * l - c * t]]) + " Z", lt, R.ltk, 2.5) +
@@ -1344,20 +1424,79 @@ function robotBack(R, w, L, dir, away, o = {}) {
       // (crawling or swimming in profile, turned about the hips: a drawing of its own laid out level in the picture, two legs
       // reaching forward and two back over the body, their knees high over the back and their tips down by the floor (or in
       // the water), the far pair darker; each point carried back into the friend's turned units, as the dragon's tail is)
-      if (o.turn) { const a = o.turn * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), s = dir || 1;
+      // (they step as the friend goes, by LFO B's phase: a front leg on one side with the back leg on the other, each lifted
+      // while it swings forward, the other two planted)
+      if (o.turn) { const a = o.turn * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), s = dir || 1, ph = 2 * Math.PI * (o.phase || 0);
         const lev = ([x, y]) => [x * ca - (y - L) * sa, L + x * sa + (y - L) * ca], back = ([x, y]) => [x * ca + (y - L) * sa, L - x * sa + (y - L) * ca];
         const [rx, ry] = lev([-s * w * 0.5, 0.3 * L]), fy = o.floor - 10;
-        const leg = (b, h, c, d = 0) => [[rx + s * d, ry], [rx + s * (d + b), ry - h], [rx + s * (d + c), fy]].map(back);
-        return legs([[[leg(62, 100, 156, 8), leg(-58, 96, -150, -8)], far], [[leg(42, 88, 112), leg(-40, 86, -112)], ln]]); }
+        const leg = (b, h, c, d = 0, i = 0) => { const sw = Math.sin(ph + i * Math.PI), up = 14 * Math.max(0, Math.cos(ph + i * Math.PI));
+          return [[rx + s * d, ry], [rx + s * (d + b + 6 * sw), ry - h - 0.5 * up], [rx + s * (d + c + 18 * sw), fy - up]].map(back); };
+        return legs([[[leg(62, 100, 156, 8, 1), leg(-58, 96, -150, -8, 0)], far], [[leg(42, 88, 112, 0, 0), leg(-40, 86, -112, 0, 1)], ln]]); }
       const tipY = o.sitting ? [L - 40, L - 22] : [L + 56, L + 76];
       if (dir) { const x = -dir * w * 0.4, f = s => -dir * (w + s);
         return legs([[[[[x, 6], [f(8), -72], [f(70), tipY[0] - 6]], [[x, 26], [f(44), -46], [f(118), tipY[1] - 10]]], far],
                      [[[[x, 10], [f(24), -62], [f(92), tipY[0] + 6]], [[x, 30], [f(62), -32], [f(142), tipY[1]]]], ln]]) + sac(-dir * (w + 10), 26); }
-      const dy = o.crawlTo ? o.flipY(0.2 * L) - 10 : 0, set = s => [[[[s * 20, 6 + dy], [s * (w + 34), -64 + dy], [s * (w + 100), tipY[0] + dy]], [[s * 20, 26 + dy], [s * (w + 62), -34 + dy], [s * (w + 128), tipY[1] + dy]]], ln];
+      // (crawling toward us, rising from behind the back turned up, their tips on the floor, the front pair's a little further
+      // back, so higher in the picture)
+      const kb = o.crawlTo ? o.crawl.to : 0, dy = o.crawlTo ? -kb * 0.2 * L - 20 * (1 + kb) - 10 : 0, tip = i => o.crawlTo ? o.floor - (i ? 10 : 24) : tipY[i] + dy;
+      const set = s => [[[[s * 20, 6 + dy], [s * (w + 34), -64 + dy], [s * (w + 100), tip(0)]], [[s * 20, 26 + dy], [s * (w + 62), -34 + dy], [s * (w + 128), tip(1)]]], ln];
       return legs([set(-1), set(1)]) + (away ? sac(0, 0.62 * w) : "");
     }
   }
   return "";
+}
+// Crawling, the back's pieces as they are seen there, each its own drawing (never the from-behind drawing turned over or
+// seen short): over the back turned up behind the head (o.over: crawling toward us) or over the back seen from behind and a
+// little above (o.crawl.away). Fy as robotCrawlTorso's; what stands up off the back shows 0.9 of its height up the picture.
+function robotCrawlBack(R, w, L, o) {
+  const m = R.main, dk = R.dk, lt = R.lt, P = rbPath, to = !!o.crawl.to, k = o.crawl.to || o.crawl.away;
+  const Fy = y => to ? -k * y - 20 * (1 + k) : L - k * (L - y);
+  const pts = ps => rbLine(ps.map(([x, y, h = 0]) => [x, Fy(y) - 0.9 * h]));
+  switch (R.S.back) {
+    // 🔑 the key standing straight up off the back, the bow full on across its top (crawling toward us, the stem long enough
+    // that the bow shows over the tall tin head)
+    case "key": { const y = Fy(30), st = to ? 42 : 34;
+      return P(rbRect(-4, y - st, 4, y, 0), "#9aa1ab", "#4b5563", 2) + P(rbBow(0, y - st - 8, 11, 20, true), lt, R.ltk, 2.5) + P(ellD(0, y, 9, 9), lt, R.ltk, 2.5); }
+    // 🚀 the two tubes lying along the back, seen along their length: toward us their nose cones end on (the tips at us), the
+    // fins far up by the nozzles; away the nozzles end on, rimmed in the lights, the fins out beside them, the cones far up
+    case "rockets": {
+      const r = 13, top = -66, bot = L - 14, xs = [-(w - 18), w - 18], h = r + 2;
+      const tube = x => pts([[x - r, top + r, h], [x - r, bot, h], [x + r, bot, h], [x + r, top + r, h]]) + " Z";
+      const fin = x => { const s = Math.sign(x); return pts([[x + s * r, bot - 46, h], [x + s * (r + 26), bot + 8, h], [x + s * r, bot, h]]) + " Z"; };
+      const endOn = (x, y, rr) => ellD(x, Fy(y) - 0.9 * h, rr, 0.9 * rr);
+      let t = P(xs.map(fin).join(" "), mix(m, "#000000", 0.12), dk, 2.5) + P(xs.map(tube).join(" "), m, dk, 3);
+      if (to) t += P(xs.map(x => rbRect(x - r - 2, Fy(bot) - 0.9 * h - 4, x + r + 2, Fy(bot) - 0.9 * h + 5, 3)).join(" "), lt, R.ltk, 2) +   // (the nozzles' rims, far up, seen from the side)
+                   P(xs.map(x => endOn(x, top + r, r)).join(" "), m, dk, 3) + P(rbDots(xs.map(x => [x - 3, Fy(top + r) - 0.9 * h - 3]), 3), mix(m, "#ffffff", 0.6));
+      else t += P(xs.map(x => endOn(x, top + r, r)).join(" "), m, dk, 3) + P(xs.map(x => endOn(x, bot, r + 2)).join(" "), lt, R.ltk, 2) + P(xs.map(x => endOn(x, bot, r - 4)).join(" "), "#27272a");
+      return t;
+    }
+    // 🦾 the battery box on the back: its top with the bolt, and its near end
+    case "battery": {
+      const h = 30, ya = 10, yb = 86, ye = to ? ya : yb, mx = ([x, y]) => [x, y, h];
+      const bolt = [[5, -18], [-7, 2], [1, 2], [-4, 18], [9, -4], [1, -4], [6, -18]].map(([x, y]) => mx([x, 48 + y]));
+      return P(rbRect(-28, Fy(ye) - 0.9 * h, 28, Fy(ye), 4), mix(m, "#000000", 0.18), dk, 3) + P(rbRect(-28, Fy(ya) - 0.9 * h, 28, Fy(yb) - 0.9 * h, 5), m, dk, 3) +
+             P(pts(bolt) + " Z", lt, R.ltk, 1.5);
+    }
+    // 📺 the curly cord lying down the back in its coils, its plug at the waist (away, near us, its pins toward us; toward
+    // us, far up the back)
+    case "cord": {
+      const y0 = -12, n = 7, py = L - 30, step = (Fy(py) - Fy(y0)) / n;
+      let d = `M0 ${f1(Fy(y0))}`;
+      for (let i = 0; i < n; i++) d += ` a7 7 0 1 1 0 ${f1(step)}`;
+      const e = Fy(py), dirn = Math.sign(step), pe = e + dirn * 12;
+      return rbStroke(d, "#374151", 4) + P(rbRect(-9, e, 9, pe, 3) + " " + rbRect(-5, pe, -2, pe + dirn * 7, 0) + " " + rbRect(2, pe, 5, pe + dirn * 7, 0), "#374151");
+    }
+    // 🕷️ crawling away: the four legs out of the back, their knees up over it and their tips down on the floor either side
+    // (the front pair, further away, higher in the picture), and the abdomen pack round on the back
+    case "legs": {
+      const ln = dk, shine = mix(m, "#ffffff", 0.35), joint = mix(m, "#000000", 0.6), fl = o.floor;
+      const ps = [-1, 1].flatMap(s => [[[s * 20, Fy(6) - 10], [s * (w + 34), Fy(6) - 84], [s * (w + 100), fl - 24]], [[s * 20, Fy(26) - 10], [s * (w + 62), Fy(26) - 62], [s * (w + 128), fl - 10]]]);
+      const rx = 0.62 * w, sy = Fy(0.56 * L) - 14, sr = Math.hypot(k * 0.36 * L, 14);
+      return rbStroke(ps.map(rbLine).join(" "), ln, 7) + rbStroke(ps.map(p => rbLine(p.slice(0, 2).map(([x, y]) => [x, y - 2.5]))).join(" "), shine, 2.5) + P(rbDots(ps.map(p => p[1]), 5), joint) +
+             P(ellD(0, sy, rx, sr), m, dk, 3) + rbStroke(`M${f1(-0.9 * rx)} ${f1(sy + 4)} Q0 ${f1(sy - 10)} ${f1(0.9 * rx)} ${f1(sy + 4)}`, "#facc15", 8, ' stroke-linecap="butt"');
+    }
+  }
+  return "";   // (back "none", the box's, the helper's and the hero's: nothing stands off it; its details are the torso's)
 }
 // How far the robot reaches out sideways past its torso (w), in the friend's units, in this view: for the picture's frame,
 // and, lying down, for the ground under them (the box's flaps, the mech's blocks, the hero's plates, the fins, the legs;

@@ -403,37 +403,38 @@ const FAIRY_TUNICS = {
   toadstool: { name: "🍄 toadstool", colors: ["#dc2626", "#ea580c", "#9333ea", "#f59e0b", "#db2777"] },
 };
 // (ticket 515, Matthew: "robot costume -- multiple styles -- do 8") The robot: eight styles, each with its own colours (the
-// first its usual one), the colour of its lights (💡 lights' "auto") and its traits, the data its drawing reads
-// (js/06-costumes.js): the head; how its face is made (`face`: "plate" or "screen", a face of its own, its eyes and mouth
-// following the friend's mood; "window", the friend's face through a hole; "open", the friend's face in an opening); what
-// is on top; the torso; the back; the limbs' pieces; the hands (and how much bigger, handK) and the feet (footK); `see`,
-// the views the friend's own face is drawn in ("front", "side", "back"); `limb`, the sleeves' and legs' colour ("main":
-// the style's colour; the box bot keeps the friend's own trousers and shoes, feet "own"); `hand`, `boot`, theirs ("main",
-// "darker" a shade of it, "red" the hero's red, or a colour).
+// first its usual one), the colour of its lights (💡 lights' "auto") and its traits, all of them read by its drawing
+// (js/06-costumes.js): `head`, the head's drawing (robotHead: its face, a plate, screen, window or opening, and what is on
+// top are the head's own); `torso` (robotTorso); `back`, what stands off the back (robotBack: "none" when nothing does, its
+// back's details then the torso's); `limbs`, the arms' and legs' pieces (robotArm, robotLeg); `hands` (and how much
+// bigger, handK) and `feet` (footK; "own", the box bot's: the friend's own trousers and shoes); `see`, the views the
+// friend's own face is drawn in ("front", "side", "back"; none under the tin's faceplate and the helper's screen, which
+// draw their own eyes and mouth following the friend's mood); `limb`, the sleeves' and legs' colour; `hand`, `boot`,
+// theirs ("main" the style's colour, "darker" a shade of it, "red" the hero's red, or a colour).
 const ROBOT_STYLES = {
   tin:    { name: "🔑 wind-up tin", colors: ["#d23a2e", "#2563eb", "#16a34a", "#0d9488", "#f97316", "#7c3aed"], lights: "#f6c445",
-            head: "tinbox", face: "plate", top: "bobble", torso: "column", back: "key", limbs: "bolts", hands: "round", feet: "boot",
+            head: "tinbox", torso: "column", back: "key", limbs: "bolts", hands: "round", feet: "boot",
             see: "", limb: "#c9ced6", hand: "#c9ced6", boot: "main" },
   box:    { name: "📦 box bot", colors: ["#c9a06b", "#f4f1ea", "#8b6a43", "#ef4444", "#3b82f6", "#22c55e"], lights: "#e53935",
-            head: "cube", face: "window", top: "pipes", torso: "box", back: "tape", limbs: "hose", hands: "mitten", feet: "own",
+            head: "cube", torso: "box", back: "none", limbs: "hose", hands: "mitten", feet: "own",
             see: "front", limb: "#b8bec6", hand: "#b8bec6", boot: "main" },
   helper: { name: "🤗 helper bot", colors: ["#4aa3df", "#f472b6", "#34d399", "#facc15", "#a78bfa", "#fb923c"], lights: "#39e0ff",
-            head: "ball", face: "screen", top: "nub", torso: "egg", back: "hatch", limbs: "plain", hands: "round", handK: 1.2, feet: "boot",
+            head: "ball", torso: "egg", back: "none", limbs: "plain", hands: "round", handK: 1.2, feet: "boot",
             see: "", limb: "#f4f6f8", hand: "#f4f6f8", boot: "main" },
   space:  { name: "🚀 space bot", colors: ["#ef6c3a", "#e63946", "#2563eb", "#10b981", "#7c3aed", "#facc15"], lights: "#6ee7b7",
-            head: "bubble", face: "window", top: "cones", torso: "capsule", back: "rockets", limbs: "accordion", hands: "pincer", feet: "boot",
+            head: "bubble", torso: "capsule", back: "rockets", limbs: "accordion", hands: "pincer", feet: "boot",
             see: "front side back", limb: "#dfe5ec", hand: "main", boot: "main" },
   mech:   { name: "🦾 big mech", colors: ["#f2b705", "#ea580c", "#6b7d3a", "#64748b", "#2563eb", "#dc2626", "#f8fafc"], lights: "#ff7a00",
-            head: "cockpit", face: "window", top: "beacon", torso: "chest", back: "battery", limbs: "blocks", hands: "pincer", handK: 1.5, feet: "boot", footK: 1.35,
+            head: "cockpit", torso: "chest", back: "battery", limbs: "blocks", hands: "pincer", handK: 1.5, feet: "boot", footK: 1.35,
             see: "front side", limb: "#3f3f46", hand: "main", boot: "#3f3f46" },
   hero:   { name: "⚡ hero bot", colors: ["#2556c4", "#dc2626", "#f1f5f9", "#111827", "#16a34a", "#7c3aed"], lights: "#7ff3ff",
-            head: "helm", face: "open", top: "crest", torso: "plate", back: "thrusters", limbs: "plates", hands: "mitten", feet: "boot",
+            head: "helm", torso: "plate", back: "none", limbs: "plates", hands: "mitten", feet: "boot",
             see: "front side", limb: "main", hand: "red", boot: "red" },
   tv:     { name: "📺 TV bot", colors: ["#8a5a33", "#e11d48", "#14b8a6", "#f59e0b", "#f1f5f9", "#94a3b8"], lights: "#b7f5d0",
-            head: "set", face: "window", top: "ears", torso: "panel", back: "cord", limbs: "plain", hands: "round", feet: "boot",
+            head: "set", torso: "panel", back: "cord", limbs: "plain", hands: "round", feet: "boot",
             see: "front", limb: "#d9d2c3", hand: "#d9d2c3", boot: "darker" },
   spider: { name: "🕷️ spider bot", colors: ["#334155", "#111827", "#7c3aed", "#0f766e", "#b91c1c", "#ca8a04"], lights: "#ef4444",
-            head: "dome", face: "open", top: "lenses", torso: "segments", back: "legs", limbs: "plain", hands: "pincer", feet: "boot",
+            head: "dome", torso: "segments", back: "legs", limbs: "plain", hands: "pincer", feet: "boot",
             see: "front side", limb: "main", hand: "darker", boot: "darker" },
 };
 const ROBOT_LIGHTS = ["auto", "#f6c445", "#39e0ff", "#6ee7b7", "#ff7a00", "#ef4444", "#f472b6", "#ffffff"];

@@ -63,6 +63,24 @@ try {
         state.body.facing = facing; state.body.anim = anim; changed(); await w(60); const t = figText();
         out.poses[id + " " + anim + "/" + facing] = t.length > 1000 && pieces(t, "head") === 1 && !/NaN|undefined/.test(t); }
       state.body.anim = "none"; state.body.facing = "front"; changed(); }
+    // (review) crawling toward us and away: each shell and back piece its own drawing, none inside the body's turned-over or
+    // shortened group (a matrix); crawling toward us, no piece lower than the hands on the floor (the spider's legs went 70
+    // units through it); the box's, mech's and TV's windows solid inside, under the face
+    out.crawl = {}; out.behind = {};
+    for (const id of ids) { set("costume", "robotStyle", id);
+      for (const facing of ["front", "back"]) { state.body.facing = facing; state.body.anim = "crawl"; changed(); await w(60);
+        const fig = document.getElementById("figure"), ps = [...fig.querySelectorAll('[data-robot="torso"], [data-robot="back"]')];
+        const inMatrix = ps.some(p => { for (let e = p.parentElement; e && e !== fig; e = e.parentElement) if ((e.getAttribute("transform") || "").includes("matrix(")) return true; return false; });
+        let low = -Infinity, hands = -Infinity;
+        for (const p of fig.querySelectorAll("[data-robot]")) low = Math.max(low, p.getBoundingClientRect().bottom);
+        for (const h of fig.querySelectorAll('[data-part="hands"]')) hands = Math.max(hands, h.getBoundingClientRect().bottom);
+        out.crawl[id + "/" + facing] = { pieces: ps.length, inMatrix, below: Math.round(low - hands) }; }
+      state.body.anim = "none"; state.body.facing = "front"; changed(); await w(50);
+      out.behind[id] = !!document.querySelector('#figure [data-robot="behind"]'); }
+    // lying face down (↔️ facing turned after the pose): the tin's key stands off its back; face up it is under them
+    set("costume", "robotStyle", "tin"); set("body", "lieHead", "left"); set("body", "pose", "lie"); out.faceDown = [];
+    for (const facing of ["left", "right"]) { state.body.facing = facing; changed(); await w(60); out.faceDown.push(document.querySelectorAll('#figure [data-robot="back"]').length); }
+    set("body", "pose", "stand"); state.body.facing = "front"; changed(); await w(60);
     // the tin's key, walking, from the side and from behind: three drawings of its own as the stride goes on
     set("costume", "robotStyle", "tin"); out.key = {};
     for (const facing of ["right", "back"]) { state.body.facing = facing; state.body.anim = "walk"; const seen = new Set();
@@ -110,6 +128,10 @@ try {
      F["box/right"] === "" && F["tv/right"] === "" && ["space", "mech", "hero", "spider"].every(id => F[id + "/right"] === "eyes"), F);
   ok("every pose and animation drawn, every style, toward us, from behind and from the side", Object.values(r.poses).every(Boolean), Object.entries(r.poses).filter(([, v]) => !v));
   ok("the tin's key, walking: three drawings of its own from the side and from behind", r.key.right === 3 && r.key.back === 3, r.key);
+  ok("crawling toward us and away: every shell and back piece its own drawing, none inside the body's turned or shortened group", Object.values(r.crawl).every(c => !c.inMatrix), r.crawl);
+  ok("crawling toward us: no robot piece lower than the hands on the floor", ids.every(id => r.crawl[id + "/front"].below <= 2), r.crawl);
+  ok("the box's, mech's and TV's windows solid inside toward us; no other style draws one", ids.every(id => r.behind[id] === ["box", "mech", "tv"].includes(id)), r.behind);
+  ok("lying face down the tin's key stands off its back; face up it is under them", r.faceDown.join(" ") === "1 0", r.faceDown);
   ok("colours: the style's on its head, the lights on its eyes, the tin silver on its limbs", r.colours.main && r.colours.lights && r.colours.sleeves, r.colours);
   ok("the hero's trim red, and white on the red swatch", r.colours.hero && r.colours.heroOnRed, r.colours);
   ok("the space bot's flames only in the air", r.flames[0] === false && r.flames[1] === true, r.flames);
