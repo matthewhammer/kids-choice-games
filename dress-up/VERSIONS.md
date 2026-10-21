@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.397 (2026-10-21)
+
+Everything in 0.0.396, plus lighter cauldron fumes.
+
+- **🧪 The simple cauldron fumes cost less:** the glowing band that slides up each strand is drawn with fewer steps. It looks the same, and a room full of cauldrons walks a little smoother on slower computers.
+
 ## 0.0.396 (2026-10-21)
 
 Everything in 0.0.395, plus a smoother walk in the fairy forest and the castle on slower computers.
