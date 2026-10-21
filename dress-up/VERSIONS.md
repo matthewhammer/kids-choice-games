@@ -2,6 +2,17 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.391 (2026-10-20)
+
+Everything in 0.0.390, plus M's three new places and her farm animals.
+
+- **🏜️ The desert:** sand dunes rolling into the distance, mesas far off (or other mountains: "far off" in 🏞️ Background), cacti and desert plants standing in it, a tumbleweed rolling past and a lizard doing push-ups (quick), a hawk circling and sand blowing off the dunes (slow).
+- **🌵 Desert plants to put anywhere** (🪨 things, 🌵 desert): a saguaro (its arms, its flowers), a prickly pear (flowers or fruit), a barrel cactus, an agave (with its tall flower stalk), a Joshua tree and an ocotillo.
+- **🚜 The farm yard:** a red barn, a farmhouse, a windpump pouring into a trough, a tractor, a haystack with a mouse, and hens pecking, behind a fence with fields beyond.
+- **🚜 Farm things to put anywhere** (🪨 things, 🚜 farm): a 🏚️ barn of six kinds (a red barn with a hay loft, a round barn, a stone barn, an open pole barn full of hay, a chicken coop, a barn with a silo), and a 🪵 fence piece of three kinds (wooden rails, a white picket, a stone wall). Fence pieces snap to tiles on the floor, and a piece joins its rails to the one beside it; tap "+ 🪵 fence" again and again to build a run. The first step to building fences as you play.
+- **🌾 The pasture:** a wide green field with horses grazing in it (up to three), a big shade tree, a trough, wildflowers and a fence with a gate.
+- **🐄 Farm animals to put anywhere** (🪨 things, 🐄 farm animals): a cow (standing, grazing, lying down, mooing; black and white, brown, red and white, or a shaggy Highland), a pig (standing, rooting, lying on its side, sitting; pink, spotted, black with a band, or ginger), and a chicken (standing, pecking, sitting on a nest, flapping; white, brown, black or speckled), each moving with the music.
+
 ## 0.0.390 (2026-10-20)
 
 Everything in 0.0.389, plus six ways to do the horse's mane, for M.
