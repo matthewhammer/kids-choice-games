@@ -541,8 +541,11 @@ function drawNow() {
   else if (kind === "eaglesuit") tail = falconTail(C, hw, L, LL, C.belly);
   // (ticket 499) a dragon's bat wings behind the shoulders (over the back, from behind; seen short with it, crawling away, as
   // the tank is) and its long tail, each view drawn for itself
-  else if (dragon) { const wg = dragonWingsSvg(C, WC, w, L, dir, away); svg += veil("shirt", squash && away ? squashed(wg) : wg); tail = dragonTailSvg(C, hw, L, ground, dir, away,
-    !move && B.pose === "lie" && rot ? { lie: Math.sign(rot), w, LL } : crawlTo ? { rise: -backK * L - 20 * (1 + backK) } : null); }
+  // (review: crawling or swimming in profile, turned about the hips, each has a drawing of its own laid out in the picture,
+  // the tail along the ground there, the floor (gFig, as turned) or just under the water's top)
+  else if (dragon) { const sideTurn = dir && move && move.rot && (move.swim || B.anim === "crawl") ? move.rot : 0;
+    const wg = dragonWingsSvg(C, WC, w, L, dir, away, sideTurn); svg += veil("shirt", squash && away ? squashed(wg) : wg); tail = dragonTailSvg(C, hw, L, ground, dir, away,
+    !move && B.pose === "lie" && rot ? { lie: Math.sign(rot), w, LL } : crawlTo ? { rise: -backK * L - 20 * (1 + backK) } : sideTurn ? { turn: sideTurn, floor: swimming ? wl + 28 : gFig } : null); }
   // (a suit's tail swings out to our right; in profile, out behind them)
   else if (suit) tail = dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L);
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));

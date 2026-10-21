@@ -602,10 +602,20 @@ function dragonTail(C, P, w0, w1, mid = 0, up = [0, -1]) {
 // the ground and along it; from behind, from the bottom of the back down over the seat, toward us, then out along the ground.
 // And two poses of its own (how): lying down (lie: the side the ground is on, +1 or -1, in the friend's turned units; w, LL),
 // along the ground by the legs and out past the feet, its spikes up off the ground; crawling toward us (rise: where the
-// hips show, over the back behind the head), up from behind the back and over, as a cat's tail goes up
+// hips show, over the back behind the head), up from behind the back and over, as a cat's tail goes up.
+// (ticket 499, review: crawling or swimming in profile, the friend turned about the hips, the profile's tail turned with them
+// went up from the hips with its spikes pointing at the head, against Matthew's "dragon tail spikes should be facing upward,
+// not downward". So that pose has a curve of its own (turn: the turn, in degrees; floor: the ground's height in the
+// picture's units), laid out level in the picture: from the back of the hips out behind them, arching a little up, then down
+// to the ground and along it (swimming, floor is a little under the water's top); each point turned back into the friend's
+// turned units, and `up` the picture's up in them)
 function dragonTailSvg(C, hw, L, ground, dir, away, how = null) {
   if (how && how.lie) { const g = how.lie, x = g * (how.w - 6);
     return dragonTail(C, [[g * hw * 0.3, L + 8], [x, L + 50], [x, L + how.LL * 0.8], [g * (how.w - 12), L + how.LL + 90]], 20, 4, 0, [-g, 0]); }
+  if (how && how.turn && dir) { const a = how.turn * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a), fl = how.floor;
+    const toPic = ([x, y]) => [x * c - (y - L) * sn, L + x * sn + (y - L) * c], toBody = ([x, y]) => [x * c + (y - L) * sn, L - x * sn + (y - L) * c];
+    const r = toPic([-dir * hw * 0.8, L - 10]);
+    return dragonTail(C, [r, [r[0] - dir * 95, r[1] - 26], [r[0] - dir * 150, fl - 24], [r[0] - dir * 250, fl - 22]].map(toBody), 21, 4, 0, [-sn, -c]); }
   if (how && how.rise !== undefined) { const y = how.rise;
     return dragonTail(C, [[hw * 0.3, y + 6], [hw + 30, y - 40], [hw + 100, y - 60], [hw + 160, y - 16]], 18, 4); }
   if (away) return dragonTail(C, [[0, L - 6], [4, L + 70], [24, ground - 6], [hw + 165, ground - 20]], 22, 4, 0.45);
@@ -632,7 +642,11 @@ const DRAGON_WINGS = [["flap", "🪽 flapping"], ["open", "🦇 open and still"]
 // the far one up and forward behind the head, darker; from behind, their backs over the friend's back, the bones lit along
 // their tops. Folded, each lies against the back, its wrist over the shoulder. Flapping, each turns about its root, the two in
 // step (sign: which way turns its tip up), a little open on the whole.
-function dragonWingsSvg(C, WC, w, L, dir, away) {
+// (ticket 499, review: crawling or swimming in profile, turned with the friend, the far wing hung down under the head through
+// the floor.) Turned about the hips by `turn` (degrees) in profile, open or flapping, they have a drawing of their own, laid
+// out in the picture: both raised up off the back, the near one up and back over the hips, the far one, darker, up and a
+// little forward, behind it; each point turned back into the friend's turned units. Folded, they lie on the back as ever.
+function dragonWingsSvg(C, WC, w, L, dir, away, turn = 0) {
   const how = DRAGON_WINGS.some(([v]) => v === WC.dragonWingsHow) ? WC.dragonWingsHow : "flap", folded = how === "folded";
   const W = C.wing, WD = mix(W, "#000000", 0.3), Wf = { lf: how === "flap" ? lfoNow(WC.dragonWingLfo) : null, off: 0, dur: 1.7 };
   const one = (R, pts, fill, bone, sign, ridge = null) => {
@@ -643,6 +657,9 @@ function dragonWingsSvg(C, WC, w, L, dir, away) {
     const X = ps => ps.map(([x, y]) => [dir * x, y]);
     if (folded) return one([-dir * w * 0.15, -14], X([[-10, -84], [-30, -40], [-34, 4], [-26, 36], [4, 20]]), WD, mix(WD, "#000000", 0.3), -dir) +
                        one([-dir * w * 0.6, -8], X([[-20, -70], [-44, -18], [-50, L * 0.38], [-40, L * 0.72], [-2, L * 0.5]]), W, WD, dir);
+    if (turn) { const a = turn * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a), T = ps => X(ps).map(([x, y]) => [x * c + y * sn, -x * sn + y * c]);
+      return one([-dir * w * 0.3, -16], T([[24, -150], [80, -212], [120, -150], [100, -84], [30, -22]]), WD, mix(WD, "#000000", 0.3), -dir) +
+             one([-dir * w * 0.6, -8], T([[-40, -128], [-150, -160], [-205, -80], [-180, -8], [-40, 8]]), W, WD, dir); }
     return one([dir * 14, -12], X([[56, -158], [136, -203], [151, -138], [111, -88], [21, -28]]), WD, mix(WD, "#000000", 0.3), -dir) +
            one([-dir * w * 0.6, -8], X([[-98, -112], [-228, -87], [-216, 3], [-153, 56], [-10, 70]]), W, WD, dir);
   }

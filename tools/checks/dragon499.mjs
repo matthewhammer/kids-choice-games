@@ -3,7 +3,8 @@
 // downward :)") The 🐉 dragon, an animal suit beside the wolf: on the hood two horns, spines, teeth, slit-pupilled eyes and
 // nostrils (no whiskers); scales; a plated belly; claws on the paws and feet; two bat wings (in profile the near one bigger;
 // flapping, open and still, or folded; flapping with an LFO when one is chosen); a long tail, every spike on it standing up,
-// a spade at its tip. Toward us, from behind and from the side each drawn for itself (only moved into place, never scaled
+// a spade at its tip (the review's: measured on the screen too, crawling and swimming in profile, turned about the hips, and
+// crawling no wing through the floor). Toward us, from behind and from the side each drawn for itself (only moved into place, never scaled
 // or turned from another view); every pose and animation drawn, nothing undefined; its four colours each its own chooser,
 // shown only for the dragon. Exits 1 on a failure.
 //   node dragon499.mjs <devtools port> <url>
@@ -68,6 +69,28 @@ try {
       state.body.facing = facing; state.body.anim = anim; changed(); await w(120); const m = fig().innerHTML;
       out.poses[anim + "/" + facing] = m.length > 1000 && all('[data-dragon="tail"]').length === 1 && !/NaN|undefined/.test(m); }
     state.body.anim = "none"; state.body.facing = "front"; changed();
+    // (review) on the screen, not in the friend's own units: crawling and swimming in profile the friend is turned about the
+    // hips, so each spike's way up is measured as drawn (its apex over its base's middle, in degrees above level); and the
+    // wings' lowest point against the floor, through a whole flap (the pictures held still at moments across its 1.7 s)
+    const onPic = el => pic.getScreenCTM().inverse().multiply(el.getScreenCTM());
+    const spikeAngles = () => all('[data-dragon="spikes"]').flatMap(p => { const m = onPic(p), at = (x, y) => new DOMPoint(x, y).matrixTransform(m);
+      return [...p.getAttribute("d").matchAll(/M(\\S+) (\\S+) L(\\S+) (\\S+) L(\\S+) (\\S+) Z/g)].map(q => q.slice(1).map(Number)).map(([x0, y0, x1, y1, x2, y2]) => {
+        const a = at(x0, y0), b = at(x1, y1), c = at(x2, y2); return Math.round(Math.atan2((a.y + c.y) / 2 - b.y, Math.abs(b.x - (a.x + c.x) / 2)) * 180 / Math.PI); }); });
+    const wingLow = () => { let low = -Infinity; pic.pauseAnimations(); const t0 = pic.getCurrentTime();
+      for (let i = 0; i <= 10; i++) { pic.setCurrentTime(t0 + i * 0.17);
+        for (const p of all('[data-dragon="wing"] path')) { const m = onPic(p), n = p.getTotalLength();
+          for (let k = 0; k <= 40; k++) { const q = p.getPointAtLength(n * k / 40); low = Math.max(low, new DOMPoint(q.x, q.y).matrixTransform(m).y); } } }
+      pic.setCurrentTime(t0); pic.unpauseAnimations(); return Math.round(low); };
+    const floorY = () => Math.round(new DOMPoint(0, figureT.dy + figureT.sg).matrixTransform(onPic(fig().parentNode)).y);
+    out.screen = {}; out.low = {};
+    for (const facing of ["front", "left", "right", "back"]) { state.body.facing = facing; changed(); await w(60); out.screen["stand/" + facing] = spikeAngles(); }
+    for (const how of ["flap", "open", "folded"]) for (const facing of ["right", "left"]) {
+      set("costume", "dragonWingsHow", how); state.body.facing = facing; state.body.anim = "crawl"; changed(); await w(120);
+      out.screen["crawl/" + facing + "/" + how] = spikeAngles(); out.low["crawl/" + facing + "/" + how] = [wingLow(), floorY(), poseJoints.crawl]; }
+    set("costume", "dragonWingsHow", "flap"); state.body.anim = "none"; changed(); await w(60);
+    set("background", "kind", "sea"); for (const facing of ["right", "left"]) { state.body.facing = facing; state.body.anim = "swim"; changed(); await w(150);
+      out.screen["swim/" + facing] = spikeAngles(); out.swum = (out.swum || "") + (poseJoints.crawl === "side" ? 1 : 0); }
+    state.body.anim = "none"; Object.assign(state.background, { kind: "emptyroom", things: [], seat: null }); state.body.facing = "front"; changed(); await w(60);
     // the tab: the dragon's rows only for the dragon; the other animals' colours not for it, its eye colour yes
     tab = TABS.findIndex(t => t[1] === "costume"); showTab(); await w(250);
     const shown = key => { const el = document.querySelector('#panel [data-key="' + key + '"]'); return !!el && !el.hidden; };
@@ -82,6 +105,11 @@ try {
   ok("its colours start as the mock-up's, the wings flapping at their own slow beat", r.defaults.join() === "#3f8f4a,#e9d27a,#d0453a,#f4ecd6,flap,none", r.defaults);
   ok("two wings and one tail with a spade, every facing; nothing undefined", views.every(v => v.wings === 2 && v.tail === 1 && v.spade === 1 && !v.nan), V);
   ok("every spike on the tail stands up (Matthew: \"facing upward, not downward\"), every facing and sitting", views.every(v => v.spikes >= 8 && v.spikesUp) && r.spikes.sit.length >= 8 && r.spikes.sit.every(Boolean), { V, sit: r.spikes.sit });
+  const S = r.screen, need = ["stand/front", "stand/left", "stand/right", "stand/back", ...["flap", "open", "folded"].flatMap(h => ["right", "left"].map(f => `crawl/${f}/${h}`)), "swim/right", "swim/left"];
+  ok("on the screen, every spike stands up at least 45 degrees above level: standing each way, crawling and swimming in profile (turned about the hips)",
+     need.every(k => S[k] && S[k].length >= 8 && Math.min(...S[k]) >= 45) && r.swum === "11", { S, swum: r.swum });
+  ok("crawling in profile, no wing reaches below the floor, through a whole flap, open or folded", Object.values(r.low).length === 6 &&
+     Object.values(r.low).every(([low, floor, crawl]) => crawl === "side" && low < floor), r.low);
   ok("in profile the near wing is bigger than the far one", V.left.area[1] > V.left.area[0] && V.right.area[1] > V.right.area[0], [V.left.area, V.right.area]);
   ok("each view its own drawing: wings, tail and horns differ toward us, from behind and from the side, each only moved into place",
      V.front.wingD !== V.back.wingD && V.front.wingD !== V.right.wingD && V.back.wingD !== V.right.wingD && new Set([V.front.tailD, V.back.tailD, V.right.tailD]).size === 3 &&
