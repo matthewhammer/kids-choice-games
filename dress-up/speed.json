@@ -1,4 +1,12 @@
 {
+ "0.0.397": {
+  "result": "ok",
+  "failed": [],
+  "commit": "f9a461b162a3000b4c7ef9d97798d016172bfba8",
+  "run": "https://github.com/matthewhammer/kids-choice-games/actions/runs/39579220956",
+  "checked": "2026-10-21T11:00Z",
+  "inspect": true
+ },
  "0.0.396": {
   "result": "ok",
   "failed": [],
@@ -587,14 +595,5 @@
   "commit": "3bdc396044cfe14c6ec60bf2a5432da3aceb4065",
   "run": "https://github.com/matthewhammer/kids-choice-games/actions/runs/39067417519",
   "checked": "2026-10-17T20:44Z"
- },
- "0.0.132": {
-  "result": "slow",
-  "failed": [
-   "the frame-rate gate's slow scenes"
-  ],
-  "commit": "52c919e56d5cf56758219214aa1d311624db1af3",
-  "run": "https://github.com/matthewhammer/kids-choice-games/actions/runs/39064885406",
-  "checked": "2026-10-17T20:37Z"
  }
 }
