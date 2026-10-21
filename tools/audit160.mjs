@@ -32,6 +32,8 @@ async function openPage() {
 let CASES;
 {
   const P = await openPage();
+  // (the page's scripts may still be loading, more so in a Chrome just started: diag-509's fresh-3 failed here)
+  for (let i = 0; i < 60 && !(await P.ev(`typeof PLACES !== "undefined" && typeof ROOM_KINDS !== "undefined" && typeof HOUSE_ROOMS !== "undefined"`).catch(() => false)); i++) await sleep(500);
   CASES = JSON.parse(await P.ev(`JSON.stringify([
     ...PLACES.filter(([k]) => k !== "none").map(([k, label]) => ({ id: k, label, setup: { kind: k } })),
     ...Object.entries(ROOM_KINDS).map(([st, R]) => ({ id: "castleroom:" + st, label: "🚪 " + R.label, setup: { kind: "castleroom", castle: "N", castleRoom: 1, castleRoom1N: st } })),

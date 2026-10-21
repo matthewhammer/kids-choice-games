@@ -95,7 +95,16 @@ jobs:
       - name: Every place with the on-screen controller (ticket 160; recorded, not a verdict)
         continue-on-error: true
         shell: bash
-        run: RUNS=1 OUT=out/audit160.json node tools/audit160.mjs 9333 "$PAGE" | tee out/audit160.txt
+        # (2026-10-21, ticket 510: measured after the checks in the same Chrome, about 40 minutes of it, places walked late read
+        # low on the slower runners: the forest 55 to 58 here and 60 first thing in a fresh Chrome on the same computers,
+        # diag-509f. So a fresh Chrome for the audit; the steps after it open their own pages.)
+        run: |
+          pkill -x chrome || true; pkill -x google-chrome || true; sleep 2
+          (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
+            --remote-debugging-port=9333 --remote-allow-origins='*' \
+            --user-data-dir="$RUNNER_TEMP/chrome-audit" about:blank > "$RUNNER_TEMP/chrome-audit.log" 2>&1 &)
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done
+          RUNS=1 OUT=out/audit160.json node tools/audit160.mjs 9333 "$PAGE" | tee out/audit160.txt
       - name: After the duck pond (ticket 167), in Chrome (recorded, not a verdict)
         continue-on-error: true
         shell: bash
