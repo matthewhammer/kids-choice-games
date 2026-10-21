@@ -34,7 +34,7 @@ try {
       const h = horse(), vb = pic().viewBox.baseVal, b = h && h.getBBox(), fig = pic().querySelector("#figure");
       const first = fig && fig.querySelector("[data-part]"), before = h && first ? !!(h.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING) : false;
       const ring = h && h.querySelector("circle[stroke='#e8b923']");
-      out.views[f] = { horse: h && h.getAttribute("data-horse"), rein: !!pic().querySelector("#figure .rein"), before,
+      out.views[f] = { horse: h && h.getAttribute("data-horse"), rein: !!pic().querySelector("#figure .rein"), before, far: !!(horseNow && horseNow.far),
                        inside: !!b && b.x >= vb.x - 1 && b.x + b.width <= vb.x + vb.width + 1 && b.y >= vb.y - 1 && b.y + b.height <= vb.y + vb.height + 1,
                        mirrored: (h && h.querySelector("g[transform*='scale(-']")) ? true : false, box: b && [b.x, b.y, b.width, b.height].map(Math.round), vb: [vb.x, vb.y, vb.width, vb.height].map(Math.round) }; }
     // (walking and running, facing right and toward us: the legs at four points in the stride all differ)
@@ -75,7 +75,10 @@ try {
   ok("facing us: the horse faces us; away: from behind; right: from the side; left: from the side, mirrored",
      r.views.front.horse === "front stand" && r.views.back.horse === "back stand" && r.views.right.horse === "side stand" && !r.views.right.mirrored
      && r.views.left.horse === "side stand" && r.views.left.mirrored, r.views);
-  ok("each way: its rein, the horse before the friend, inside the picture's frame", Object.values(r.views).every(v => v.rein && v.before && v.inside), r.views);
+  // (ticket 496, 0.0.388: led from its left side, the usual, the friend facing our left is on the horse's far side, at its head,
+  // and the horse is drawn after them, in front; on the near side, before them)
+  ok("each way: its rein, the horse before the friend on its near side and after them on its far side, inside the picture's frame",
+     Object.values(r.views).every(v => v.rein && v.before === !v.far && v.inside), r.views);
   ok("walking and running, each way: the horse walks or runs with them, its legs moving (4 different drawings in a stride)",
      Object.entries(r.legs).every(([k, v]) => v.gait.every(gt => gt && gt.endsWith(k.split(" ")[0])) && v.distinct === 4), r.legs);
   ok("ridden, each way: the friend lifted onto it", Object.values(r.ride).every(v => v.rider && v.lift < -100), r.ride);
@@ -83,7 +86,8 @@ try {
   ok("ridden: two reins facing us, one in profile, none from behind; all inside the frame", r.ride.front.reins === 2 && r.ride.right.reins === 1 && r.ride.left.reins === 1 && r.ride.back.reins === 0 && Object.values(r.ride).every(v => v.inside), r.ride);
   ok("ridden, walking and running: the horse walks and runs, the friend's own drawing stays as it is", r.rideStill === 1 && r.rideGaits.includes("side walk") && r.rideGaits.includes("side run"), [r.rideStill, r.rideGaits]);
   ok("no horse lying down or sitting; back when standing", !r.off.lie && !r.off.sit && r.off.stand, r.off);
-  ok("🐴 the horse box: seven rows with a horse (its size too, ticket 457), only the choice without", r.rowsWith === 7 && r.rowsWithout === 1, [r.rowsWith, r.rowsWithout]);
+  // (seven rows in 0.0.380; more since: ticket 495's colours, 496's side, 497's mane, 498's armour)
+  ok("🐴 the horse box: its rows with a horse (seven or more, its size too, ticket 457), only the choice without", r.rowsWith >= 7 && r.rowsWithout === 1, [r.rowsWith, r.rowsWithout]);
   ok("the stable's horses' faces stay animated; the friend's horse's face is still", r.stableAnim && !r.stillAnim, [r.stableAnim, r.stillAnim]);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
