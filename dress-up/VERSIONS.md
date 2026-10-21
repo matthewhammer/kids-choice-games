@@ -2,6 +2,15 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.392 (2026-10-20)
+
+Everything in 0.0.391, plus a dragon, fire, armour for the horse and a stable full of hens: every choice in the game, for the kids to pick.
+
+- **🐉 A dragon costume** (🐯 Costume, after the deer): a hood with two horns, spines down its back, teeth along its edge and slit eyes; scales, a plated belly, claws; bat wings that flap (with their own beat or an LFO), stay open or fold; and a long tail with its spikes standing up and a spade at its tip. One colour each for its scales, its belly, its wings and spines, and its horns, teeth and claws. Facing us, from behind and from the side, standing, sitting, lying, crawling and swimming.
+- **🔥 Breathe fire** (held, like 🫧 blowing bubbles): 🔥 on the game controller (the right trigger), on the screen's controller, or F on the keyboard. Anyone can, whatever they wear. Six fires to pick in 🎮 Controls: 🔥 roaring flame, ☄️ fireballs, 🌀 twisting fire, 🔵 blue-hot jet, 🧱 brick fire and 🫧 fire bubbles; from the 👄 mouth, the 🫲 left hand or the 🫱 right hand; its size; and whether its heat shows. The heat reaches past the flames and pops every bubble it touches: in bubble space, the bubble room, from bubble makers and the ones the friend blew. The best tool against bubbles.
+- **🛡️ Armour for the horse** (🧍 Body's 🐴 the horse, "🛡️ its armour"): 🛡️ full plate, 🦁 a half caparison, 🎪 tournament, 🐉 a dragon helm, 🧱 a toy helmet or 🎀 parade, seen from the side, the front and behind, led and ridden. A knight's horse wears the knight's own colours and emblem.
+- **🐔 Hens in the castle's stable** (the stable's own settings): from none to 30; two, as before, to start with.
+
 ## 0.0.391 (2026-10-20)
 
 Everything in 0.0.390, plus M's three new places and her farm animals.
