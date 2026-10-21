@@ -2401,7 +2401,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const b = c === "skin" || c === "auto" || c === "off"
         ? el("button", { class: "swatch skin",
                          title: c === "skin" ? "same as skin" : c === "off" ? (key === "horseShoes" ? "no shoes" : "none: the fur shows through")
-                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color" : "a lighter shade",
+                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color"
+                              // (ticket 498: with armour on, the horse's blanket on auto is the armour's cloth colour)
+                              : key === "horseBlanket" ? "a lighter shade of the halter's, or with armour the armour's colour" : "a lighter shade",
                          onclick: () => set(part, key, c) }, c)
         : key === "color" && part === "face" && SKIN_MARKS[c]
         ? el("button", { class: "swatch", title: SKIN_MARKS[c][1], "aria-label": SKIN_MARKS[c][1],

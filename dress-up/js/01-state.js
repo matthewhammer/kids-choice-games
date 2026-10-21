@@ -205,7 +205,7 @@ const HORSE_MARKS = [["none", "none"], ["star", "⭐ a star"], ["stripe", "❕ a
 const HORSE_MANE_STYLES = [["loose", "🐴 loose (the usual)"], ["long", "🌊 long and flowing"], ["buttons", "🔘 button braids"], ["brush", "🪮 short, standing up"], ["curly", "➰ curly"], ["bows", "🎀 braids with bows"]];
 // (ticket 498, Matthew: "let's start to think of costumes for the knight as having horse pieces (face helmets, look at images
 // from Lego castles and knights) -- not just saddles"; "just release and let the kids decide") the friend's horse's armour:
-// none, or one of the six sets in the mock-up (dress-up/mockups/horse-armour.html), all of them for the kids to choose from
+// none, or one of the six sets in the mock-up (horse-armour.html, outside the repo), all of them for the kids to choose from
 const HORSE_ARMOURS = [["none", "none"], ["plate", "🛡️ full plate"], ["half", "🦁 half caparison"], ["tourney", "🎪 tournament"], ["dragon", "🐉 dragon helm"], ["toy", "🧱 toy helmet"], ["parade", "🎀 parade"]];
 const STABLE_HORSES = [
   { coat: "#7b4a2a", mane: "#1f1f22", mark: "star", offset: 23 },
