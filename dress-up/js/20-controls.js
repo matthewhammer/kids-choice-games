@@ -145,6 +145,9 @@ const TABS = [
     ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
     // (ticket 496) which side of it they walk on, leading it: one side, whichever way they go
     ["choice", "horseLead", "🚶 lead it from its", [["left", "⬅️ left side (the usual)"], ["right", "➡️ right side"]]],
+    // (ticket 498: "just release and let the kids decide") its armour: none, or one of six sets; the cloth and the plume in the
+    // knight's arms when the friend is a knight, else in its halter's colour
+    ["choice", "horseArmour", "🛡️ its armour", HORSE_ARMOURS],
     ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
     ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
     ["choice", "horseManeStyle", "💇 its mane", HORSE_MANE_STYLES],   // (ticket 497, for M)
@@ -1054,8 +1057,9 @@ const SHOWN_WHEN = {
   "body.horseLead": b => b.horse === "lead",   // (ticket 496)
   "body.horseBows": b => (b.horse || "none") !== "none" && b.horseManeStyle === "bows",   // (ticket 497)
   "body.horseMarkColor": b => (b.horse || "none") !== "none" && (b.horseMark || "none") !== "none",
-  ...Object.fromEntries(["horseSaddle", "horseBlanket"].map(k => ["body." + k, b => b.horse === "ride"])),
-  ...Object.fromEntries(["horseCoat", "horseMane", "horseManeStyle", "horseMark", "horseTack", "horseSocks", "horseSize", "horseShoes"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
+  // (ticket 498: the parade armour's cloth is its saddle blanket, led too)
+  "body.horseSaddle": b => b.horse === "ride", "body.horseBlanket": b => b.horse === "ride" || (b.horse === "lead" && b.horseArmour === "parade"),
+  ...Object.fromEntries(["horseCoat", "horseMane", "horseManeStyle", "horseArmour", "horseMark", "horseTack", "horseSocks", "horseSize", "horseShoes"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
   ...Object.fromEntries(["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor"].map(k => ["costume." + k, c => c.kind === "ghost"])),
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),
@@ -2400,7 +2404,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const b = c === "skin" || c === "auto" || c === "off"
         ? el("button", { class: "swatch skin",
                          title: c === "skin" ? "same as skin" : c === "off" ? (key === "horseShoes" ? "no shoes" : "none: the fur shows through")
-                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color" : "a lighter shade",
+                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color"
+                              // (ticket 498: with armour on, the horse's blanket on auto is the armour's cloth colour)
+                              : key === "horseBlanket" ? "a lighter shade of the halter's, or with armour the armour's colour" : "a lighter shade",
                          onclick: () => set(part, key, c) }, c)
         : key === "color" && part === "face" && SKIN_MARKS[c]
         ? el("button", { class: "swatch", title: SKIN_MARKS[c][1], "aria-label": SKIN_MARKS[c][1],
