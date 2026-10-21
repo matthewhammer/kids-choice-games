@@ -736,12 +736,13 @@ function fireAt() {
   return dir ? { x: p[0], y: p[1], k, view: "side", sx: dir, tilt: 6, mouth: head }
     : B.facing === "back" ? { x: p[0], y: p[1], k, view: "away", sx: 1, tilt: 0, mouth: 0 } : { x: p[0], y: p[1], k, view: "front", sx: 1, tilt: 0, mouth: head };
 }
-// its heat in the picture's units: a cone (from x, y along ux, uy, R long, a its half-angle) or, coming at us, a disc
+// its heat in the picture's units: a cone (from x, y along ux, uy, R long, a its half-angle) or, coming at us, a disc; and
+// which way it is seen (view), for the bubble room's depth (firePops)
 function fireHeatAt(A, B) {
   const st = fireStyleOf(B), K = A.k * fireSize(B);
-  if (A.view === "front") return { x: A.x, y: A.y, disc: FIRE_HEAT.front[st] * K };
+  if (A.view === "front") return { x: A.x, y: A.y, disc: FIRE_HEAT.front[st] * K, view: A.view };
   const [R, deg] = FIRE_HEAT[A.view][st], th = A.view === "away" ? -Math.PI / 2 : A.tilt * Math.PI / 180;
-  return { x: A.x, y: A.y, ux: A.view === "away" ? 0 : A.sx * Math.cos(th), uy: Math.sin(th), R: R * K, a: deg * Math.PI / 180 };
+  return { x: A.x, y: A.y, ux: A.view === "away" ? 0 : A.sx * Math.cos(th), uy: Math.sin(th), R: R * K, a: deg * Math.PI / 180, view: A.view };
 }
 // whether a bubble at x, y of radius r has its edge inside the heat (the mock-up's hot(b)): how far along the heat it is if
 // so (for a disc, how far from its middle), else -1
@@ -754,9 +755,13 @@ function fireHot(H, x, y, r) {
 }
 // every bubble here in the heat pops, each kind as a touch pops it (its swell, and where the code gives it them, its sound
 // and smaller bubbles): bubble space's and the smaller ones they throw out (which fly out into the heat and pop in turn, a
-// generation or two: BUBBLE_KID_GENS); the bubble room's stuck out of its foam, at the fire's depth (as the friend's touch,
-// but as deep as the heat is wide there); the bubble makers'; blown ones (with bubble space's pop sound); a diving suit's
-// leaks. A few hundred sums a frame at most, and only while it is held.
+// generation or two: BUBBLE_KID_GENS); the bubble room's stuck out of its foam, where the fire goes in the room's depth (below);
+// the bubble makers'; blown ones (with bubble space's pop sound); a diving suit's leaks. A few hundred sums a frame at most,
+// and only while it is held.
+// (the bubble room's, a frame: at most FIRE_BALLS.frame of them, the nearest the mouth first, so its heat sweeps out through
+// them, from at most FIRE_BALLS.lots of the room's lots, as each lot popped has its still picture built again (ballApply): a
+// breath at 📏 200 had popped up to 390 at once, each with its swelling copy, where the friend's touch pops a few)
+const FIRE_BALLS = { frame: 10, lots: 2 };
 function firePops(H, t) {
   const B = state.background, F = sceneFrame, k = (F.bottom - F.top) / 700, hot = (x, y, r) => fireHot(H, x, y, r) >= 0;
   if (stillAt !== null || B.kind === "none") return;
@@ -766,12 +771,26 @@ function firePops(H, t) {
     for (const c of [...(bubbleSim.kids || [])]) if (!c.pop && hot(c.x, c.y, c.r)) bubbleKidPop(c, t, k, rand);
   }
   if (B.kind === "bubbleroom" && roomBalls) {
-    const R = roomBalls, feet = figureT.dy + figureT.sg, changed = new Set();
+    // (in the room's depth, by the floor under each (fzHit) against the friend's feet, give or take the ball's own depth, as
+    // the friend's touch: side on, the fire stays at the friend's depth, as deep as the heat is wide there; facing away it
+    // goes into the room, up the picture, so all it covers at their depth or behind them; facing us it comes at us, so all
+    // it covers at their depth or in front of them. Both had been tested as side on is, the friend's depth give or take the
+    // heat's width: facing away almost none of what it covered popped, and facing us the room behind them did)
+    const R = roomBalls, feet = figureT.dy + figureT.sg, changed = new Set(), hits = [];
     for (const b of R.list) {
       if (ballPops.has(b.id)) continue;
       const d = fireHot(H, b.x, b.y, b.r);
-      if (d < 0 || Math.abs(b.fzHit - feet) > b.dz + 4 * R.k + (H.disc || d * Math.tan(H.a))) continue;
-      ballPop(b, t, changed);
+      if (d < 0) continue;
+      const tol = b.dz + 4 * R.k, dz = b.fzHit - feet;
+      if (H.view === "away" ? dz > tol : H.view === "front" ? dz < -tol : Math.abs(dz) > tol + d * Math.tan(H.a)) continue;
+      hits.push([d, b]);
+    }
+    hits.sort((p, q) => p[0] - q[0]);
+    let n = 0;
+    for (const [, b] of hits) {
+      if (n >= FIRE_BALLS.frame) break;
+      if (changed.size >= FIRE_BALLS.lots && !changed.has(b.obj)) continue;
+      ballPop(b, t, changed); n++;
     }
     for (const name of changed) ballApply(name);
   }

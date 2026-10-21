@@ -1056,7 +1056,9 @@ function padPoll(t) {
   const real = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(Boolean);
   touchShow(!real && touchPad.want, !real);
   const g = real || (touchPad.want ? touchPad.pad : null);
-  if (!g) { padName = ""; padDown = new Set(); padLast = 0; if (padMoving) { padMoving = false; changed(); } return; }
+  // (ticket 499: and what was held is let go: 🔥 or 🫧 held as the on-screen controller was hidden, or the game controller
+  // unplugged, kept burning or blowing, this loop stopped and nothing else let it go)
+  if (!g) { padName = ""; padDown = new Set(); padLast = 0; blowPad = false; firePad = false; if (padMoving) { padMoving = false; changed(); } return; }
   padName = (g.id || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
   padMapping = g.mapping || "";
   // (and again when the settings are replaced: ↺ start over or 📂 load put

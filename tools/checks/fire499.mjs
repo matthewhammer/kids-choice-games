@@ -4,7 +4,9 @@
 // 🔥 breathing fire: the action is on the controller (button 7), on the on-screen controller (under start, clear of the
 // others) and on F, held; each of the six fires draws and moves in every view (side on to our right and to our left, toward
 // us, away), side on going the way the friend faces; let go, it is gone; from a hand it starts at that hand; and its heat pops
-// a bubble in reach (past the flames) and not one out of reach, in bubble space and a blown one. Exits 1 on a failure.
+// a bubble in reach (past the flames) and not one out of reach, in bubble space and a blown one; in the bubble room, facing
+// away, all it covers behind the friend, and facing us none behind them, at most 10 a frame; held on the on-screen
+// controller as it is hidden, it is let go. Exits 1 on a failure.
 //   node fire499.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -79,6 +81,30 @@ try {
   ok("a bubble in bubble space past the flames, in its heat, pops", pops.inside && pops.inPopped, pops);
   ok("one out of its reach does not", !pops.outside && !pops.outPopped, pops);
   ok("a blown bubble in its heat pops", pops.blownPopped, pops);
+  // the bubble room's, in the room's depth: facing away the fire goes into the room, so every one its heat covers behind the
+  // friend pops; facing us it comes at us, so none behind them does; and a breath pops at most FIRE_BALLS.frame a frame, from
+  // at most FIRE_BALLS.lots of the room's lots, the nearest first
+  const room = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, out = {};
+    Object.assign(B, { kind: "bubbleroom", figX: 0, figY: 40 }); blowSim.list.length = 0;
+    const behind = () => { const A = fireAt(), H = fireHeatAt(A, state.body), feet = figureT.dy + figureT.sg;
+      return roomBalls.list.filter(b => fireHot(H, b.x, b.y, b.r) >= 0 && b.fzHit < feet - b.dz - 4 * roomBalls.k); };
+    for (const facing of ["back", "front"]) {
+      Object.assign(state.body, { facing, fireStyle: "roar", fireFrom: "mouth", fireSize: 100 }); ballPops.clear(); changed(); await w(900);
+      const bs = behind(); fireKey = true; fireGo(); await w(600);
+      out[facing] = { view: fireSim.at && fireSim.at.view, n: bs.length, popped: bs.filter(b => ballPops.has(b.id)).length };
+      fireKey = false; await w(400);
+    }
+    // (side on at 📏 200, a frame at a time)
+    Object.assign(state.body, { facing: "right", fireSize: 200 }); B.figX = -150; ballPops.clear(); changed(); await w(900);
+    const A = fireAt(), H = fireHeatAt(A, state.body), per = [];
+    for (let f = 0; f < 60; f++) { const was = new Set(ballPops.keys()); firePops(H, performance.now()); const now = [...ballPops.keys()].filter(k => !was.has(k));
+      if (!now.length) break; per.push([now.length, new Set(now.map(k => ballPops.get(k).obj)).size]); }
+    out.frames = per; out.cap = FIRE_BALLS;
+    state.body.fireSize = 100; ballPops.clear(); changed(); await w(300);
+    return JSON.stringify(out); })()`));
+  ok("in the bubble room, facing away, every bubble its heat covers behind the friend pops (the fire goes into the room)", room.back.view === "away" && room.back.n >= 8 && room.back.popped === room.back.n, room.back);
+  ok("facing us, none behind the friend pops (the fire comes at us)", room.front.view === "front" && room.front.n >= 8 && room.front.popped === 0, room.front);
+  ok("a breath at 📏 200 pops at most 10 a frame, from at most 2 lots, sweeping out over frames", room.frames.length >= 2 && room.frames.every(([n, l]) => n <= room.cap.frame && l <= room.cap.lots), room);
   // the controller and the on-screen controller
   const pad = JSON.parse(await ev(`(async () => { touchWant(true); await new Promise(r => setTimeout(r, 300));
     const box = b => { const e = document.querySelector('#touchpad [data-b="' + b + '"]'); return e ? e.getBoundingClientRect() : null; };
@@ -87,6 +113,13 @@ try {
                 apart: apart(box(7), box(9)) && apart(box(6), box(8)) };
     touchWant(false); return JSON.stringify(r); })()`));
   ok("the controller's action 🔥 (button 7), and its button on the on-screen controller, clear of start (and 🫧 clear of select)", pad.action && pad.button === 7 && pad.fire && /🔥/.test(pad.label) && pad.apart, pad);
+  // 🔥 held on the on-screen controller as it is hidden: let go, not burning on
+  const hide = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
+    Object.assign(state.background, { kind: "emptyroom", figX: 0, figY: 70 }); state.body.facing = "right"; changed(); touchWant(true); await w(300);
+    touchSet(state.controls.fire, true); await w(300); const O = () => document.getElementById("fire-over"), on = firePad && !!O() && O().style.display !== "none";
+    touchWant(false); await w(600);
+    return JSON.stringify({ on, after: firePad, shown: !!O() && O().style.display !== "none" }); })()`));
+  ok("held on the on-screen controller as it is hidden, the fire is let go", hide.on && !hide.after && !hide.shown, hide);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
