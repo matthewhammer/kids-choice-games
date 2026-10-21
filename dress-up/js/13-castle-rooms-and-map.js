@@ -362,9 +362,10 @@ function dungeonSvg(c, K, deep, bones = 0) {
   const { x0, x1, y1, W, k, R, P } = c, { floor, top, bw } = roomFrame(c);
   let t = roomShell(c, deep ? ROOM_TONE.dungeon2 : ROOM_TONE.dungeon1, { moss: deep ? "#3f6b3a" : "#4a5a4a", floor: deep ? "#3a3e36" : "#45474e" });
   // the barred window, high in the back wall, and its beam of moonlight
-  const wx = deep ? bw * 0.45 : -bw * 0.5, wy = top + 60 * k;
-  t += wallObj("window", `<polygon points="${P(wx - 30 * k, wy + 30 * k)} ${P(wx + 30 * k, wy + 30 * k)} ${P(wx + 150 * k, floor + 90 * k)} ${P(wx - 20 * k, floor + 110 * k)}" fill="#cfe3ff" opacity="0.10"/>` +
-       `<rect x="${f1(wx - 32 * k)}" y="${f1(wy - 24 * k)}" width="${f1(64 * k)}" height="${f1(52 * k)}" fill="#1b2840"/><circle cx="${f1(wx + 10 * k)}" cy="${f1(wy - 6 * k)}" r="${f1(10 * k)}" fill="#fff3c4"/>` +
+  // (ticket 490: the moon in it the date's, and the beam as bright as the moon is lit: as it was at full, faint at new)
+  const wx = deep ? bw * 0.45 : -bw * 0.5, wy = top + 60 * k, lit = (1 - Math.cos(2 * Math.PI * moonOfDate(c.o).phase)) / 2;
+  t += wallObj("window", `<polygon points="${P(wx - 30 * k, wy + 30 * k)} ${P(wx + 30 * k, wy + 30 * k)} ${P(wx + 150 * k, floor + 90 * k)} ${P(wx - 20 * k, floor + 110 * k)}" fill="#cfe3ff" opacity="${(0.02 + 0.08 * lit).toFixed(3)}"/>` +
+       `<rect x="${f1(wx - 32 * k)}" y="${f1(wy - 24 * k)}" width="${f1(64 * k)}" height="${f1(52 * k)}" fill="#1b2840"/>` + moonOfDateSvg(c.o, wx + 10 * k, wy - 6 * k, 10 * k, "#1b2840") +
        [...Array(5)].map((_, j) => `<line x1="${f1(wx - 26 * k + j * 13 * k)}" y1="${f1(wy - 24 * k)}" x2="${f1(wx - 26 * k + j * 13 * k)}" y2="${f1(wy + 28 * k)}" stroke="#3a3a44" stroke-width="${f1(4 * k)}"/>`).join("") +
        `<rect x="${f1(wx - 32 * k)}" y="${f1(wy - 24 * k)}" width="${f1(64 * k)}" height="${f1(52 * k)}" fill="none" stroke="#2a2a32" stroke-width="${f1(5 * k)}"/>`);   // (ticket 284: wall objects, the window with its moonbeam, the torch)
   t += wallObj("torch", torchSvg(deep ? -bw * 0.7 : bw * 0.7, floor - 200 * k, k, deep ? 2 : 1, c.o));
@@ -2500,7 +2501,7 @@ function castleroomScene(c) {
   let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() + JSON.stringify(trap) + [o.leverShine, o.leverShineColor, o.leverFlicker].join() : bones,   // (ticket 317: and its levers' shine)
                                   K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places, hens,   // (ticket 369: these were swallowed by the note above, so a change to them did not draw the room again)
                                   SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : "",
-                                  style === "catroom" ? moonOfDateKey(o) : ""], draw);   // (ticket 490: the cat room's window's moon, the date's)
+                                  style === "catroom" || style === "dungeon1" || style === "dungeon2" ? moonOfDateKey(o) : ""], draw);   // (ticket 490: the cat room's and the dungeons' windows' moons, the date's)
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)
     const wags = K.cats.map(catWag);
