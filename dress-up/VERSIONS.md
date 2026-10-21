@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.394 (2026-10-20)
+
+Everything in 0.0.393, plus the date's moon in the dungeons.
+
+- **🌙 The dungeons' moonlight follows the moon:** the moon in the barred window of the dungeon and the deep dungeon (it was always full) is the moon of the date in 🌍 the sky: where and when, in its phase, and its beam of light across the floor is as bright as the moon is lit: as before at full moon, barely there at new moon.
+
 ## 0.0.393 (2026-10-20)
 
 Everything in 0.0.392, plus the moon of the game's date in four more places.
