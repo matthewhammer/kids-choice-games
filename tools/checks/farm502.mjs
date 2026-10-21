@@ -6,8 +6,9 @@
 // things: every barn kind drawn (the red barn's weather vane and the coop's hens moving) and standing in the way; every fence
 // kind drawn. The tiles: fence pieces snap to a tile's row and column; one beside another of its kind on its row reaches it
 // with its rails (fenceLinks: wider than a lone post's stubs), one of another kind or row does not; tileNext finds the tile
-// beside the last, and once its row is full a tile on another row, as the last; a piece dragged with the pointer lands on a
-// tile, and its old neighbour is left with a stub; two joined at the back stay joined when 🔭 changes. Exits 1 on a failure.
+// beside the last, and once its row is full a tile on another row, as the last; a piece dragged with the pointer goes tile by
+// tile and lands on a tile of its row further right, and its old neighbour is left with a stub; two joined at the back stay
+// joined when 🔭 changes. Exits 1 on a failure.
 //   node farm502.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -51,13 +52,21 @@ try {
     const tiles = { onTile: [a, b, c, e, d].map(onTile), row: [a, b, c].map(t => t.z), cols: [a, b, c, d].map(t => Math.round(t.x / tileSpan(B, t.z))),
       links: [0, 1, 2, 3, 4].map(i => fenceLinks(B, i)), widths: [0, 1, 2, 3, 4].map(width), span: Math.round(w0), next: tileNext(B, "fencepiece") };
     // dragged with the pointer, held by its post: the right end of the wooden run, 1.6 tiles further right and a little down
-    const el = bgShown.node.querySelector('[data-drag="thing:2"]'), M = el.getScreenCTM(), px = 1.6 * w0 * M.a;
-    const p0 = new DOMPoint(c.x, c.z - 45 * depthSize(B, c.z - g)).matrixTransform(M);
+    // (ticket 502, its first run on GitHub, 0.0.392: "FAIL a piece dragged with the pointer lands on a tile, further right:
+    // {"x":130.5,"z":378,"from":130.5,...}". The game had moved it, from x -110 on row 0 (z 350) to 130.5 on row 1 (z 378), two
+    // tiles right; but from was read after the drag, from c, which is the piece the drag moves (B.things[2]), so it was always
+    // its new x. Where it was put is kept before the drag now. And "a little down" was 16 screen pixels: past half a row (12.8
+    // of the picture's units at row 0) wherever the picture is drawn 1.25 times or less, as on GitHub, so it landed a row
+    // nearer there and not on a bigger screen; now a quarter of a row's depth, in the picture's units, on its row on any screen)
+    const el = bgShown.node.querySelector('[data-drag="thing:2"]'), M = el.getScreenCTM(), px = 1.6 * w0 * M.a, py = 0.25 * (tileRowZ(B, 1) - c.z) * M.d;
+    const p0 = new DOMPoint(c.x, c.z - 45 * depthSize(B, c.z - g)).matrixTransform(M), from = { x: c.x, z: c.z }, path = [];
     let x = p0.x, y = p0.y;
     const fire = (type, x, y) => (document.elementFromPoint(x, y) || el).dispatchEvent(new PointerEvent(type, { bubbles: true, isPrimary: true, pointerId: 9, clientX: x, clientY: y, button: 0, buttons: type === "pointerup" ? 0 : 1 }));
-    fire("pointerdown", x, y); for (let i = 1; i <= 8; i++) { fire("pointermove", x + px * i / 8, y + 2 * i); await w(30); }
-    fire("pointerup", x + px, y + 16); await w(800);
-    const moved = B.things[2], drag = { x: moved.x, z: moved.z, from: c.x, onTile: onTile(moved), links: [fenceLinks(B, 1), fenceLinks(B, 2)], width1: width(1) };
+    fire("pointerdown", x, y); for (let i = 1; i <= 8; i++) { fire("pointermove", x + px * i / 8, y + py * i / 8); path.push(Math.round(c.x / tileSpan(B, c.z))); await w(30); }
+    fire("pointerup", x + px, y + py); await w(800);
+    // (where it went at each move, by column, each column once: tile by tile, as Matthew asked, "move them tile by tile")
+    const moved = B.things[2], drag = { x: moved.x, z: moved.z, from, tiles: Math.round((moved.x - from.x) / tileSpan(B, moved.z)), path: path.filter((k, i) => k !== path[i - 1]),
+      onTile: onTile(moved), links: [fenceLinks(B, 1), fenceLinks(B, 2)], width1: width(1) };
     // (from a review) two wooden pieces side by side at the back (row -4), then 🔭 changed: still joined
     B.things = []; const zb = tileRowZ(B, -4), wb = tileSpan(B, zb), nk = "north_" + B.kind, keep = B[nk];
     snap(-wb, zb); snap(0, zb);
@@ -89,7 +98,8 @@ try {
   ok("a piece of another kind beside them, and one in another row, join nothing", JSON.stringify(Tl.links.slice(3).map(([l, rt]) => [l, rt > 0])) === JSON.stringify([[false, false], [false, false]]), Tl.links);
   ok("a piece reaching its neighbour is drawn about a tile wide; a lone one, its stubs, much narrower", Tl.widths[0] > 0.85 * Tl.span && Tl.widths[1] > 0.85 * Tl.span && Tl.widths[3] < 0.6 * Tl.span, { widths: Tl.widths, span: Tl.span });
   ok("tileNext: the tile beside the last piece, on its row, as it is", Tl.next && Math.abs(Tl.next.z - Tl.row[0]) < 0.6 && Tl.next.style === "picket", Tl.next);
-  ok("a piece dragged with the pointer lands on a tile, further right", D.onTile && D.x > D.from, D);
+  ok("a piece dragged with the pointer goes tile by tile and lands on a tile of its row, further right (1.6 tiles dragged: two tiles)",
+     D.onTile && D.x > D.from.x && Math.abs(D.z - D.from.z) < 0.6 && D.tiles === 2 && D.path.join() === "-1,0,1", D);
   ok("and its old neighbour is left with a stub (no piece to its right now), narrower", !D.links[0][1] && D.width1 < 0.6 * Tl.span, D);
   ok("🔭 changed afterwards: two pieces joined at the back stay joined", N.every(Boolean), N);
   ok("tapped in on a full row: the next piece goes on a tile of another row, a picket of its size", Fu.n >= 5 && Fu.next && Fu.onTile && Fu.next.style === "picket" && Fu.next.size === 80, Fu);
