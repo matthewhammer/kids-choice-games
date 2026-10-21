@@ -844,12 +844,13 @@ function leakTick(t) {
     leakSim.acc -= 1;
     const [x, y] = P.pts[Math.floor(rnd() * P.pts.length)], r = Math.max(1.5, k * (5 + (6 + 16 * P.amt) * rnd()));
     const el = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    el.innerHTML = bubbleSvg(0, 0, r, { color: "#dff6ff", shine: 0.85 }); layer.append(el);
+    el.innerHTML = `<g class="bubin">${bubbleSvg(0, 0, r, { color: "#dff6ff", shine: 0.85 })}</g>`; layer.append(el);   // (ticket 499: in a group of its own, to pop)
     L.push({ x, y, vx: (rnd() - 0.5) * 60 * k, vy: -(60 + 90 * rnd()) * k, r, el, born: t, life: 2000 + 2600 * rnd(), ph: rnd() * 6.28 });
     if (L.length > 90) { const o = L.shift(); o.el.remove(); }
   }
   for (let j = L.length - 1; j >= 0; j--) {
     const b = L[j], age = t - b.born;
+    if (b.pop) { if (t - b.pop > 260) { b.el.remove(); L.splice(j, 1); } continue; }   // (ticket 499: popped by a fire's heat, swelling and gone)
     if (age > b.life || b.y < F.top - 30) { b.el.remove(); L.splice(j, 1); continue; }
     b.vy -= 70 * k * dt; b.vx *= Math.pow(0.4, dt); b.x += (b.vx + Math.sin(t / 1000 * 4 + b.ph) * 26 * k) * dt; b.y += b.vy * dt;
     b.el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`); b.el.setAttribute("opacity", Math.min(1, (b.life - age) / 500, age / 120).toFixed(2));

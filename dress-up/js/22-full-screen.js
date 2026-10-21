@@ -336,7 +336,7 @@ const TAB_BOXES = {
              ["🔢 how many", ["toes", "alienToes", "talonCount"], ["number of"]]],
   "👻 Visibility": [["🧍 the whole friend", ["all"]], ["👻 each part", ["head", "eyes", "hair", "shirt", "pants", "feet", "hands"]]],
   // (ticket 488, ^du_report(5)'s rules: Matthew, "how can we best 'Knowl' the panels") the controller, the bubbles, moving
-  "🎮 Controls": [["🎮 the game controller", ["map"]], ["🫧 bubbles", ["blowing", "blowThemes"]], ["🏃 moving", ["moving", "clickPlan"]]],
+  "🎮 Controls": [["🎮 the game controller", ["map"]], ["🫧 bubbles", ["blowing", "blowThemes"]], ["🔥 fire", ["firing"]], ["🏃 moving", ["moving", "clickPlan"]]],   // (ticket 499: breathing fire)
   "🐯 Costume": [["🐯 the costume", ["kind"]], ["🐾 the animal", ["fur", "furPattern", "marks", "spot", "belly", "eyes", "accent"]],
                 ["🤿 the scuba suit", ["scubaColor", "scubaAccent"]], ["⚓ the old diving suit", ["diverMetal", "diverCloth", "diverHose", "hoseColor"]],
                 ["🥽 diving gear", ["snorkel", "snorkelColor", "mask", "maskColor", "tank", "tankColor", "leaks"]],

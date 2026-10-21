@@ -713,6 +713,15 @@ const TABS = [
       ["flip", "blowA", ["🅰️ theme A", "🅰️ theme A"]], ["flip", "blowB", ["🅱️ theme B", "🅱️ theme B"]], ["flip", "blowC", ["©️ theme C", "©️ theme C"]],
     ]]],
     ["of", "background", ["group", "blowThemes", "🎨 the bubble themes", BUBBLE_THEME_CTLS.map(([kd, key, label, ctls]) => [kd, key, label, ctls.filter(c => c[0] !== "flip")])]],   // (the looks only: B and C on in bubble space is bubble space's)
+    // (ticket 499, Matthew: "optional dragon breath -- need an action for that, like bubbles -- shooting fire out of our mouth.";
+    // "Mock up the dragon costume and 6 fire styles.") Held (🔥 on the controller, F on the keyboard): one of the mock-up's six
+    // fires, from the mouth or a hand, as the bubbles' from; its heat pops bubbles, and shows as a shimmer if asked
+    ["of", "body", ["group", "firing", "🔥 breathing fire", [
+      ["choice", "fireStyle", "🔥 its fire", FIRE_STYLES],
+      ["choice", "fireFrom", "🧭 from where", [["mouth", "👄 mouth"], ["left", "🫲 left hand"], ["right", "🫱 right hand"]]],
+      ["range", "fireSize", "📏 how big (100 = as drawn)", 50, 200, 80, 140],
+      ["flip", "fireHeat", ["🌡️ show its heat", "🌡️ show its heat"]],
+    ]]],
     // (ticket 294, Matthew: "let the player choose which they prefer, and repeat that same choice under ♿ Accessibility")
     // a click while walking to one: ♿'s own setting, shown here too while 👆 walk where you click is on
     ["of", "access", ["choice", "clickPlan", "👆 a click while walking to one", CLICK_PLANS]],

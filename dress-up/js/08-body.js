@@ -1363,3 +1363,242 @@ function broomSvg([hx, hy], trim) {
       return `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" stroke="#a87a2a" stroke-width="1.5"/>`; }).join("") +
     line(at(5, 9)[0], at(5, 9)[1], at(5, -9)[0], at(5, -9)[1], 6, trim);
 }
+
+// (ticket 499, Matthew: "optional dragon breath -- need an action for that, like bubbles -- shooting fire out of our
+// mouth."; "let's get serious about animating fire shooting out of things. Mock up the dragon costume and 6 fire styles.")
+// The six fires of the mock-up (dress-up/mockups/dragon-fire.html), each a fixed set of shapes, each shape moved by a CSS
+// animation of its own (style.css: fi-… side on, fi-f-… toward us, fi-a-… away from us), begun its own way in (its delay),
+// so the drawing is the same every time and the page does nothing a frame for it. In the friend's units, from where it
+// leaves them, (0, 0): side on toward +x (whoever places it mirrors it for our left, and tilts it); toward us, coming at us
+// about (0, 0), the mouth; away from us, up from (0, 0), the top of the head, smaller as it goes. A new angle is its own
+// drawing (Matthew's rule): toward us and away are drawn as such, not the side-on fire turned.
+const FIRE_STYLES = [["roar", "🔥 roaring flame"], ["balls", "☄️ fireballs"], ["twist", "🌀 twisting fire"], ["jet", "🔵 blue-hot jet"],
+                     ["bricks", "🧱 brick fire"], ["bubbles", "🫧 fire bubbles"]];
+// (ticket 499, Matthew: "let's have the dragon fire be the best tool against bubbles -- can you add logic for that -- the heat
+// extend further than the fire.") Each fire's heat, about half again as far as its flames, in the friend's units: side on
+// and away, a cone from (0, 0), how far it reaches and its half-angle in degrees (the mock-up's HEAT, side on); toward us, a
+// disc about the mouth, its radius.
+const FIRE_HEAT = {
+  side: { roar: [600, 15], balls: [640, 9], twist: [570, 12], jet: [660, 6], bricks: [560, 12], bubbles: [500, 16] },
+  front: { roar: 230, balls: 210, twist: 225, jet: 200, bricks: 235, bubbles: 200 },
+  away: { roar: [380, 22], balls: [400, 14], twist: [360, 22], jet: [330, 12], bricks: [350, 18], bubbles: [360, 22] },
+};
+const fireStyleOf = B => FIRE_STYLES.some(([v]) => v === B.fireStyle) ? B.fireStyle : "roar";
+// (the mock-up's shapes: a flame's puff, a smaller one, a round one for one coming at us, a toy flame piece standing on its clip)
+const FIRE_BLOB = "M-26 0 C-14 -20 18 -22 30 0 C18 22 -14 20 -26 0 Z", FIRE_SMALL = "M-18 0 C-10 -14 12 -15 20 0 C12 15 -10 14 -18 0 Z";
+const FIRE_ROUND = "M-22 0 C-22 -15 -11 -23 1 -23 C14 -22 23 -12 22 1 C21 14 12 22 -1 22 C-13 22 -22 13 -22 0 Z";
+const FIRE_FLAME = "M-18 0 C-24 -16 -14 -28 -12 -44 C-6 -34 -4 -28 -2 -24 C0 -38 4 -50 10 -62 C12 -46 16 -38 14 -28 C20 -34 22 -40 24 -46 C30 -28 28 -10 18 0 Z";
+const FIRE_BRICKS = [["#ff8c1a", "#b04c00"], ["#ffd21f", "#a07c00"], ["#f0401c", "#931a0a"]];
+// (sparks flying out from a burst: n strokes round its middle, r long)
+const fireBurst = (n, r, col) => { let s = ""; for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2;
+  s += `<path d="M${f1(Math.cos(a) * r * 0.35)} ${f1(Math.sin(a) * r * 0.35)} L${f1(Math.cos(a) * r)} ${f1(Math.sin(a) * r)}" stroke="${col}" stroke-width="3.2" stroke-linecap="round"/>`; }
+  return s + `<circle r="${f1(r * 0.25)}" fill="#fff8d0"/>`; };
+const fireGlow = (g = "fi-g-glow", rx = 30, ry = 20) => `<ellipse class="fi-glow" rx="${rx}" ry="${ry}" fill="url(#${g})"/>`;
+const fireAnim = (cls, delay, inner, extra = "") => `<g class="${cls}" style="animation-delay:${delay}s"${extra}>${inner}</g>`;
+const fireShape = (cls, d, delay, fill, extra = "") => `<path class="${cls}" d="${d}" fill="${fill}" style="animation-delay:${delay}s"${extra}/>`;
+const fireTurn = deg => `<g transform="rotate(${f1(deg)})">`;
+const fireFlame = (f, st) => `<path d="${FIRE_FLAME}" fill="${f}" fill-opacity="0.82" stroke="${st}" stroke-width="2.2" stroke-linejoin="round"/>` +
+  `<path d="M-10 -6 C-14 -18 -8 -26 -7 -36" stroke="#fff" stroke-opacity="0.75" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+  `<rect x="-9" y="-2" width="18" height="9" rx="2" fill="${f}" stroke="${st}" stroke-width="2"/>`;
+const fireBubble = flame => `<circle r="19" fill="url(#fi-g-bub)" stroke="#ffb347" stroke-width="2.2"/>` +
+  (flame ? `<path class="fi-bub-flame" d="M-6 8 C-10 0 -4 -6 0 -12 C2 -4 8 -2 6 8 Z" fill="#ffd23f"/>` : "") +
+  `<ellipse cx="-7" cy="-8" rx="5" ry="3" fill="#fff" opacity="0.85" transform="rotate(-30 -7 -8)"/>`;
+const FIRE_DRAW = {
+  // side on, as the mock-up draws each
+  side: {
+    roar() {
+      let s = "";
+      for (let i = 0; i < 6; i++) s += fireTurn(-4 - (i % 3) * 3) + `<circle class="fi-smoke" r="20" fill="#5e5853" opacity="0" style="animation-delay:${-(i / 6 * 1.8).toFixed(2)}s"/></g>`;
+      s += fireGlow();
+      for (let i = 0; i < 26; i++) s += fireTurn(((i * 7) % 13 - 6) * 1.6) + fireShape("fi-roar", FIRE_BLOB, -(i / 26 * 0.9).toFixed(3), "#ffe14d") + `</g>`;
+      for (let i = 0; i < 12; i++) s += fireTurn(((i * 5) % 7 - 3) * 1.4) + fireShape("fi-core", FIRE_BLOB, -(i / 12 * 0.45).toFixed(3), "#ffffff") + `</g>`;
+      return s;
+    },
+    balls() {
+      let s = fireGlow();
+      for (let i = 0; i < 3; i++) {
+        const d = -(i * 0.5);
+        s += fireAnim("fi-fb", d, `<g class="fi-tail"><path d="M2 -15 C-40 -17 -86 -6 -120 0 C-86 6 -40 17 2 15 Z" fill="url(#fi-g-tail)"/><path d="M2 -8 C-26 -9 -52 -3 -70 0 C-52 3 -26 9 2 8 Z" fill="#ffe680"/></g><circle r="17" fill="url(#fi-g-ball)"/>`);
+        s += `<g transform="translate(430 -4)">` + fireAnim("fi-burst", d, fireBurst(12, 36, "#ffb02e")) + `</g>`;
+      }
+      return s;
+    },
+    twist() {
+      let s = fireGlow();
+      for (const [r, fill] of [["a", "#ffc83d"], ["b", "#fff176"]]) {
+        s += `<g class="fi-twirl">`;
+        for (let i = 0; i < 20; i++) s += fireShape("fi-tw" + r, FIRE_BLOB, -(i / 20 * 1.1).toFixed(3), fill);
+        s += `</g>`;
+      }
+      return s;
+    },
+    jet() {
+      const cone = (len, hw) => `M0 ${f1(-hw * 0.45)} C${f1(len * 0.25)} ${-hw} ${f1(len * 0.65)} ${-hw} ${len} 0 C${f1(len * 0.65)} ${hw} ${f1(len * 0.25)} ${hw} 0 ${f1(hw * 0.45)} Z`;
+      let s = fireGlow("fi-g-blueglow");
+      for (let i = 0; i < 8; i++) s += fireTurn((i % 4 - 1.5) * 1.6) + fireShape("fi-jettip", FIRE_SMALL, -(i / 8 * 0.5).toFixed(3), "#ffb347") + `</g>`;
+      s += `<g class="fi-jet"><path d="${cone(350, 26)}" fill="#1d4ed8" opacity="0.45"/><path d="${cone(300, 15)}" fill="#60a5fa" opacity="0.8"/><path d="${cone(210, 8)}" fill="#e0f2fe"/><path d="${cone(100, 4)}" fill="#fff"/></g>`;
+      for (let i = 0; i < 10; i++) s += fireTurn(((i * 3) % 7 - 3) * 1.2) + `<path class="fi-spark" d="M0 0 L16 0" stroke="#fff" stroke-width="2.4" stroke-linecap="round" style="animation-delay:${-(i / 10 * 0.38).toFixed(3)}s"/></g>`;
+      return s;
+    },
+    bricks() {
+      let s = fireGlow();
+      for (let i = 0; i < 7; i++) {
+        const [f, st] = FIRE_BRICKS[i % 3], x = 34 + 54 * i, y = i % 2 ? 9 : -9, rot = 90 + (i % 2 ? 14 : -14), sc = 0.75 + i * 0.09;
+        s += `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc.toFixed(2)})">` + fireAnim("fi-brick", (i * 0.11).toFixed(2), fireFlame(f, st)) + `</g>`;
+      }
+      return s;
+    },
+    bubbles() {
+      let s = fireGlow();
+      const sizes = [0.8, 1.1, 0.9, 1.25, 0.75, 1, 1.15, 0.85];
+      for (let i = 0; i < 8; i++) {
+        const d = -(i / 8 * 2.4).toFixed(2);
+        s += fireTurn((i % 4 - 1.5) * 5) + fireAnim("fi-fbub", d, `<g transform="scale(${sizes[i]})">${fireBubble(true)}</g>`) +
+             `<g transform="translate(305 -22)">` + fireAnim("fi-bubpop", d, fireBurst(8, 26, "#ffb347")) + `</g></g>`;
+      }
+      return s;
+    },
+  },
+  // toward us: each coming at us out of the mouth, spreading out round it and growing as it nears us, then gone
+  front: {
+    roar() {
+      let s = "";
+      for (let i = 0; i < 8; i++) s += fireTurn(i * 45 + 20) + `<circle class="fi-f-smoke" r="20" fill="#5e5853" opacity="0" style="animation-delay:${-(i / 8 * 1.8).toFixed(2)}s"/></g>`;
+      s += fireGlow("fi-g-glow", 44, 40);
+      for (let i = 0; i < 24; i++) s += fireTurn(i * 137.5) + fireShape("fi-f-roar", FIRE_ROUND, -(i / 24 * 1).toFixed(3), "#ffe14d") + `</g>`;
+      for (let i = 0; i < 10; i++) s += fireTurn(i * 97 + 30) + fireShape("fi-f-core", FIRE_ROUND, -(i / 10 * 0.5).toFixed(3), "#ffffff") + `</g>`;
+      return s;
+    },
+    balls() {
+      let s = fireGlow("fi-g-glow", 40, 36);
+      // (a ball seen coming at us: its tail hidden behind it, but for the flames licking out all round it)
+      const corona = `<g class="fi-flick">` + [0, 1, 2, 3, 4, 5, 6, 7].map(j => `<path d="M14 -7 C24 -6 32 -2 36 0 C32 2 24 6 14 7 Z" fill="${j % 2 ? "#ff9b1f" : "#ffd23f"}" transform="rotate(${j * 45 + 10})"/>`).join("") + `</g>`;
+      for (let i = 0; i < 3; i++) {
+        const d = -(i * 0.5), a = [205, 330, 80][i];
+        s += fireTurn(a) + fireAnim("fi-f-ball", d, corona + `<circle r="17" fill="url(#fi-g-ball)"/>`) +
+             `<g transform="translate(64 0)">` + fireAnim("fi-f-burst", d, fireBurst(12, 36, "#ffb02e")) + `</g></g>`;
+      }
+      return s;
+    },
+    twist() {
+      // (two ribbons, one red and one yellow, coming at us twisting round each other: a spiral of each, turning out from the mouth)
+      let s = fireGlow("fi-g-glow", 40, 36);
+      for (const [r, turn, fill] of [["a", 0, "#ffc83d"], ["b", 180, "#fff176"]]) {
+        s += fireTurn(turn);
+        for (let i = 0; i < 20; i++) s += fireShape("fi-f-tw" + r, FIRE_ROUND, -(i / 20 * 1.1).toFixed(3), fill);
+        s += `</g>`;
+      }
+      return s;
+    },
+    jet() {
+      // (looking down the jet: a white-hot middle in rings of blue, flickering; orange where it ends, and sparks flying at us)
+      let s = fireGlow("fi-g-blueglow", 52, 50);
+      for (let i = 0; i < 10; i++) s += fireTurn(i * 36 + 8) + fireShape("fi-f-jettip", FIRE_SMALL, -(i / 10 * 0.5).toFixed(3), "#ffb347") + `</g>`;
+      s += `<g class="fi-f-jet"><circle r="38" fill="#1d4ed8" opacity="0.45"/><circle r="26" fill="#60a5fa" opacity="0.8"/><circle r="15" fill="#e0f2fe"/><circle r="7" fill="#fff"/></g>`;
+      for (let i = 0; i < 12; i++) s += fireTurn(i * 67 + 15) + `<path class="fi-f-spark" d="M0 0 L12 0" stroke="#fff" stroke-width="2.4" stroke-linecap="round" style="animation-delay:${-(i / 12 * 0.38).toFixed(3)}s"/></g>`;
+      return s;
+    },
+    bricks() {
+      // (the pieces click on one by one round the mouth, spiralling out, each nearer us and so bigger, pointing out from it)
+      let s = fireGlow("fi-g-glow", 40, 36);
+      for (let i = 0; i < 9; i++) {
+        const [f, st] = FIRE_BRICKS[i % 3], a = i * 100 + 20, r = 22 + 15 * i, sc = 0.45 + i * 0.13;
+        s += `<g transform="rotate(${a}) translate(${r} 0) rotate(90) scale(${sc.toFixed(2)})">` + fireAnim("fi-brick", (i * 0.11).toFixed(2), fireFlame(f, st)) + `</g>`;
+      }
+      return s;
+    },
+    bubbles() {
+      let s = fireGlow("fi-g-glow", 40, 36);
+      const sizes = [0.8, 1.1, 0.9, 1.25, 0.75, 1, 1.15, 0.85];
+      for (let i = 0; i < 8; i++) {
+        const d = -(i / 8 * 2.4).toFixed(2);
+        s += fireTurn(i * 137.5 + 10) + fireAnim("fi-f-bub", d, `<g transform="scale(${sizes[i]})">${fireBubble(true)}</g>`) +
+             `<g transform="translate(66 0)">` + fireAnim("fi-f-bubpop", d, fireBurst(8, 26, "#ffb347")) + `</g></g>`;
+      }
+      return s;
+    },
+  },
+  // away from us: from behind the head, up and away into the picture, each part smaller as it goes
+  away: {
+    roar() {
+      let s = "";
+      for (let i = 0; i < 6; i++) s += `<g transform="translate(${(i % 3 - 1) * 14} 0)"><circle class="fi-a-smoke" r="20" fill="#5e5853" opacity="0" style="animation-delay:${-(i / 6 * 1.8).toFixed(2)}s"/></g>`;
+      s += fireGlow("fi-g-glow", 36, 26);
+      for (let i = 0; i < 22; i++) s += fireTurn(((i * 7) % 11 - 5) * 1.2) + fireShape("fi-a-roar", FIRE_ROUND, -(i / 22 * 1).toFixed(3), "#ffe14d") + `</g>`;
+      for (let i = 0; i < 10; i++) s += fireTurn(((i * 5) % 7 - 3) * 2) + fireShape("fi-a-core", FIRE_ROUND, -(i / 10 * 0.5).toFixed(3), "#ffffff") + `</g>`;
+      return s;
+    },
+    balls() {
+      let s = fireGlow("fi-g-glow", 32, 24);
+      for (let i = 0; i < 3; i++) {
+        const d = -(i * 0.5), a = [-5, 6, 0][i];
+        // (its tail toward us, below it: short, seen end on)
+        s += fireTurn(a) + fireAnim("fi-a-ball", d, `<g class="fi-tail"><path d="M-15 -2 C-16 18 -6 38 0 52 C6 38 16 18 15 -2 Z" fill="url(#fi-g-tailup)"/><path d="M-8 -2 C-9 10 -3 22 0 30 C3 22 9 10 8 -2 Z" fill="#ffe680"/></g><circle r="17" fill="url(#fi-g-ball)"/>`) +
+             `<g transform="translate(0 -262)">` + fireAnim("fi-a-burst", d, fireBurst(12, 36, "#ffb02e")) + `</g></g>`;
+      }
+      return s;
+    },
+    twist() {
+      let s = fireGlow("fi-g-glow", 32, 24);
+      for (const [r, fill] of [["a", "#ffc83d"], ["b", "#fff176"]]) {
+        s += `<g class="fi-a-twirl">`;
+        for (let i = 0; i < 18; i++) s += fireShape("fi-a-tw" + r, FIRE_ROUND, -(i / 18 * 1.1).toFixed(3), fill);
+        s += `</g>`;
+      }
+      return s;
+    },
+    jet() {
+      // (the jet up and away from the top of the head: short, as it is seen end on, tapering to where it goes)
+      const cone = (len, hw) => `M${f1(-hw * 0.45)} 0 C${-hw} ${f1(-len * 0.25)} ${-hw} ${f1(-len * 0.6)} 0 ${-len} C${hw} ${f1(-len * 0.6)} ${hw} ${f1(-len * 0.25)} ${f1(hw * 0.45)} 0 Z`;
+      let s = fireGlow("fi-g-blueglow", 36, 26);
+      for (let i = 0; i < 8; i++) s += fireTurn(-90 + (i % 4 - 1.5) * 3) + fireShape("fi-a-jettip", FIRE_SMALL, -(i / 8 * 0.5).toFixed(3), "#ffb347") + `</g>`;
+      s += `<g class="fi-a-jet"><path d="${cone(200, 28)}" fill="#1d4ed8" opacity="0.45"/><path d="${cone(172, 17)}" fill="#60a5fa" opacity="0.8"/><path d="${cone(120, 9)}" fill="#e0f2fe"/><path d="${cone(60, 4)}" fill="#fff"/></g>`;
+      for (let i = 0; i < 10; i++) s += fireTurn(-90 + ((i * 3) % 7 - 3) * 2.4) + `<path class="fi-a-spark" d="M0 0 L14 0" stroke="#fff" stroke-width="2.4" stroke-linecap="round" style="animation-delay:${-(i / 10 * 0.38).toFixed(3)}s"/></g>`;
+      return s;
+    },
+    bricks() {
+      // (a column of pieces going away up from the head, each farther and so smaller, clicking on one by one)
+      let s = fireGlow("fi-g-glow", 32, 24);
+      let y = -14;
+      for (let i = 0; i < 7; i++) {
+        const [f, st] = FIRE_BRICKS[i % 3], sc = 1.05 - i * 0.11, x = i % 2 ? 7 * sc : -7 * sc;
+        s += `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${i % 2 ? 12 : -12}) scale(${sc.toFixed(2)})">` + fireAnim("fi-brick", (i * 0.11).toFixed(2), fireFlame(f, st)) + `</g>`;
+        y -= 40 * sc;
+      }
+      return s;
+    },
+    bubbles() {
+      let s = fireGlow("fi-g-glow", 32, 24);
+      const sizes = [0.8, 1.1, 0.9, 1.25, 0.75, 1, 1.15, 0.85];
+      for (let i = 0; i < 8; i++) {
+        const d = -(i / 8 * 2.4).toFixed(2);
+        s += fireTurn((i % 4 - 1.5) * 7) + fireAnim("fi-a-bub", d, `<g transform="scale(${sizes[i]})">${fireBubble(true)}</g>`) +
+             `<g transform="translate(0 -236)">` + fireAnim("fi-a-bubpop", d, fireBurst(8, 26, "#ffb347")) + `</g></g>`;
+      }
+      return s;
+    },
+  },
+};
+// its heat, as the mock-up shows it: the cone (or, coming at us, the disc) it reaches, faint, its edge shimmering
+function fireHeatSvg(style, view) {
+  const H = FIRE_HEAT[view][style], stroke = `stroke="#ffb066" stroke-opacity="0.5" stroke-width="3" stroke-dasharray="10 12"`;
+  if (view === "front") return `<circle class="fi-heat" r="${H}" fill="url(#fi-g-heatf)" ${stroke}/>`;
+  const [R, a] = H, x = f1(R * Math.cos(a * Math.PI / 180)), y = f1(R * Math.sin(a * Math.PI / 180));
+  const cone = `<path class="fi-heat" d="M0 0 L${x} ${-y} A${R} ${R} 0 0 1 ${x} ${y} Z" fill="url(#fi-g-heat)" ${stroke}/>`;
+  return view === "away" ? `<g transform="rotate(-90)">${cone}</g>` : cone;
+}
+// one fire: its heat (if shown) under its flames
+const fireSvg = (style, view, heat) => (heat ? fireHeatSvg(style, view) : "") + FIRE_DRAW[view][style]();
+// the open mouth it comes out of, in the friend's units for a head of the usual size (k its size over that): side on, a
+// dark oval at the front of the face (over the fire's root, toward -x); toward us, a round "O", under the fire
+const fireMouth = (view, k) => view === "side" ? `<ellipse cx="${f1(-5 * k)}" cy="0" rx="${f1(7 * k)}" ry="${f1(6 * k)}" fill="#5a1414" stroke="#000" stroke-width="${f1(1.8 * k)}"/>`
+  : view === "front" ? `<ellipse rx="${f1(10 * k)}" ry="${f1(9 * k)}" fill="#5a1414" stroke="#000" stroke-width="${f1(1.8 * k)}"/><ellipse cy="${f1(4 * k)}" rx="${f1(5.5 * k)}" ry="${f1(3 * k)}" fill="#e75480" opacity="0.8"/>` : "";
+// the gradients the fires use, once in the picture they are drawn in
+const FIRE_DEFS = `<radialGradient id="fi-g-glow"><stop offset="0" stop-color="#fff8d0"/><stop offset="0.4" stop-color="#ffcf40" stop-opacity="0.9"/><stop offset="0.7" stop-color="#ff7a1a" stop-opacity="0.45"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient>` +
+  `<radialGradient id="fi-g-blueglow"><stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#93c5fd" stop-opacity="0.85"/><stop offset="1" stop-color="#2563eb" stop-opacity="0"/></radialGradient>` +
+  `<radialGradient id="fi-g-ball" fx="0.38" fy="0.38"><stop offset="0" stop-color="#ffffff"/><stop offset="0.3" stop-color="#fff3a0"/><stop offset="0.65" stop-color="#ffb02e"/><stop offset="1" stop-color="#e8401c"/></radialGradient>` +
+  `<linearGradient id="fi-g-tail" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#ff9b1f"/><stop offset="1" stop-color="#e8401c" stop-opacity="0"/></linearGradient>` +
+  `<linearGradient id="fi-g-tailup" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9b1f"/><stop offset="1" stop-color="#e8401c" stop-opacity="0"/></linearGradient>` +
+  `<radialGradient id="fi-g-bub"><stop offset="0" stop-color="#ffc850" stop-opacity="0.15"/><stop offset="0.75" stop-color="#ff8c1e" stop-opacity="0.35"/><stop offset="1" stop-color="#ff6e14" stop-opacity="0.8"/></radialGradient>` +
+  `<radialGradient id="fi-g-heat" cx="0" cy="0.5" r="1"><stop offset="0" stop-color="#ff9a3c" stop-opacity="0.22"/><stop offset="0.7" stop-color="#ff9a3c" stop-opacity="0.1"/><stop offset="1" stop-color="#ff9a3c" stop-opacity="0.02"/></radialGradient>` +
+  `<radialGradient id="fi-g-heatf"><stop offset="0" stop-color="#ff9a3c" stop-opacity="0.22"/><stop offset="0.7" stop-color="#ff9a3c" stop-opacity="0.1"/><stop offset="1" stop-color="#ff9a3c" stop-opacity="0.02"/></radialGradient>`;

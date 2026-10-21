@@ -649,7 +649,7 @@ function swingHud() {
 // (bubble space's themes, bubbleSvg); each floats up and drifts, wobbling,
 // and is gone at the picture's top or after BLOW_LIFE. Drawn over the
 // picture in #access-layer, by blowTick, which runs while any are up.
-const BLOW_EVERY = 140, BLOW_LIFE = 7000;
+const BLOW_EVERY = 140, BLOW_LIFE = 7000, BLOW_POP = 250;
 let blowPad = false, blowKey = false;
 const blowSim = { list: [], raf: 0, last: 0, next: 0, turn: 0, shown: "" };
 function blowGo() { if (!blowSim.raf) { blowSim.last = performance.now(); blowSim.raf = requestAnimationFrame(blowTick); } }
@@ -679,7 +679,9 @@ function blowTick(t) {
     blowSim.next = t + BLOW_EVERY;
   }
   // up and drifting, wobbling; gone above the picture or when old
+  // (ticket 499: one popped by a fire's heat swells and fades where it was, BLOW_POP ms, as bubble space's do)
   blowSim.list = blowSim.list.filter(b => {
+    if (b.pop) return t - b.pop < BLOW_POP;
     b.vy += -8 * k * dt; b.vx *= Math.pow(0.6, dt);
     b.x += (b.vx + Math.sin(t / 400 + b.ph) * 14 * k) * dt; b.y += b.vy * dt;
     return b.y + b.r > F.top && t - b.born < BLOW_LIFE;
@@ -689,11 +691,149 @@ function blowTick(t) {
     const M = pic.getScreenCTM(), box = layer.getBoundingClientRect();
     if (M && box.width) {
       if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "blown"); layer.append(ov); }
-      ov.innerHTML = blowSim.list.map(b => { const q = new DOMPoint(b.x, b.y).matrixTransform(M), age = (t - b.born) / BLOW_LIFE, fade = age > 0.8 ? (1 - age) / 0.2 : 1;
-        return `<g opacity="${fade.toFixed(2)}">${bubbleSvg(q.x - box.left, q.y - box.top, b.r * M.a, b.th)}</g>`; }).join("");
+      ov.innerHTML = blowSim.list.map(b => { const q = new DOMPoint(b.x, b.y).matrixTransform(M), age = (t - b.born) / BLOW_LIFE, p = b.pop ? Math.min(1, (t - b.pop) / BLOW_POP) : 0,
+        fade = (age > 0.8 ? (1 - age) / 0.2 : 1) * (1 - p);
+        return `<g opacity="${Math.max(0, fade).toFixed(2)}">${bubbleSvg(q.x - box.left, q.y - box.top, b.r * M.a * (1 + 0.7 * p), b.th)}</g>`; }).join("");
     }
   } else if (ov) ov.remove();
   if (holding || blowSim.list.length) blowSim.raf = requestAnimationFrame(blowTick);
+}
+// (ticket 499, Matthew: "optional dragon breath -- need an action for that, like bubbles -- shooting fire out of our mouth.";
+// "let's have the dragon fire be the best tool against bubbles -- can you add logic for that -- the heat extend further than
+// the fire.") 🔥 Breathing fire, held as 🫧 blowing bubbles is: 🔥 on the controller (the right trigger, button 7; on the
+// on-screen controller under start) or F on the keyboard. Anyone can, whatever they wear, in any place. Its fire is one of
+// six (🔥 its fire, in 🎮 Controls: FIRE_STYLES, drawn by fireSvg), from the mouth, open while it breathes, or a hand (🫲 our
+// left, 🫱 our right, as blown bubbles'), at 📏 its size: side on, it goes the way the friend faces, a little down from the
+// mouth; facing us, from the mouth it comes at us, and facing away, it goes away from us, up past their head (each its own
+// drawing); from a hand facing us or away, out to that hand's side. It is drawn in a picture of its own over the scene's
+// (#fire-over, its viewBox the scene's, as the bubble makers' #pic-over), built once and then only moved: each frame while it
+// is held, fireTick puts it where the friend was last drawn (figureT, faceFrame, poseJoints), then pops every bubble whose
+// edge comes inside its heat (FIRE_HEAT, about half again as far as its flames: firePops). Let go, it fades and stops, and
+// nothing runs for it.
+let firePad = false, fireKey = false;
+const fireSim = { raf: 0, shown: "", tf: "", out: 0, at: null };
+function fireGo() { if (!fireSim.raf) fireSim.raf = requestAnimationFrame(fireTick); }
+const fireSize = B => Math.max(0.3, Math.min(3, (Number(B.fireSize) || 100) / 100));
+// where it comes from and which way it goes, in the picture's units: { x, y, k (the friend's scale), view ("side", "front",
+// "away"), sx (side on: 1 toward our right, -1 our left), tilt (degrees, down), mouth (the open mouth's size, 0 none) }
+function fireAt() {
+  const B = state.body, T = figureT, J = poseJoints, f = faceFrame, Fc = state.face;
+  if (!J || !f || !(T && T.k > 0)) return null;
+  const dir = facingOf(B), L = J.L ?? 150, a = (J.turn || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), lift = J.lift || 0, k = T.k;
+  // (the friend's own units into the picture's: lifted onto a saddle, turned about the hips as drawn: crawling, swimming, lying)
+  const at = (x, y) => { const yy = y + lift - L, X = x * ca - yy * sa, Y = L + x * sa + yy * ca; return [T.dx + k * X, T.dy + T.sg + k * (Y - T.g)]; };
+  if (B.fireFrom === "left" || B.fireFrom === "right") {
+    const hs = J.arms.map(q => at(q.H[0], q.H[1])).sort((p, q) => p[0] - q[0]);
+    if (!hs.length) return null;
+    const p = B.fireFrom === "left" ? hs[0] : hs[hs.length - 1], sx = dir || (B.fireFrom === "left" ? -1 : 1);
+    return { x: p[0] + sx * 12 * k, y: p[1], k, view: "side", sx, tilt: 0, mouth: 0 };
+  }
+  // (the mouth's middle, in the face's units: its line where faceLayout puts it, between its lips as they are)
+  const LY = faceLayout(Fc), [up, lo] = lips(Fc.smile, Fc.open), my = LY.mouthY + (75 + (up + lo) / 4 - 150) * LY.my, head = f.s / 0.575;
+  const face = (x, y) => at(f.tx + x * f.s, f.ty + y * f.s);
+  // (side on, where the lips meet the front of the face; away, the top of the head; toward us, the mouth, turned as the face is)
+  const p = dir ? face(100 + dir * (profileEdge(Fc) - 8), my) : B.facing === "back" ? face(100, headCrown(Fc) + 14) : face(100 + turnOf(B) * 14, my);
+  return dir ? { x: p[0], y: p[1], k, view: "side", sx: dir, tilt: 6, mouth: head }
+    : B.facing === "back" ? { x: p[0], y: p[1], k, view: "away", sx: 1, tilt: 0, mouth: 0 } : { x: p[0], y: p[1], k, view: "front", sx: 1, tilt: 0, mouth: head };
+}
+// its heat in the picture's units: a cone (from x, y along ux, uy, R long, a its half-angle) or, coming at us, a disc; and
+// which way it is seen (view), for the bubble room's depth (firePops)
+function fireHeatAt(A, B) {
+  const st = fireStyleOf(B), K = A.k * fireSize(B);
+  if (A.view === "front") return { x: A.x, y: A.y, disc: FIRE_HEAT.front[st] * K, view: A.view };
+  const [R, deg] = FIRE_HEAT[A.view][st], th = A.view === "away" ? -Math.PI / 2 : A.tilt * Math.PI / 180;
+  return { x: A.x, y: A.y, ux: A.view === "away" ? 0 : A.sx * Math.cos(th), uy: Math.sin(th), R: R * K, a: deg * Math.PI / 180, view: A.view };
+}
+// whether a bubble at x, y of radius r has its edge inside the heat (the mock-up's hot(b)): how far along the heat it is if
+// so (for a disc, how far from its middle), else -1
+function fireHot(H, x, y, r) {
+  const dx = x - H.x, dy = y - H.y, dist = Math.hypot(dx, dy);
+  if (H.disc) return dist - r <= H.disc ? dist : -1;
+  const lx = dx * H.ux + dy * H.uy, ly = dy * H.ux - dx * H.uy;
+  if (lx <= 0 || dist - r > H.R) return -1;
+  return Math.abs(Math.atan2(ly, lx)) <= H.a + Math.asin(Math.min(1, r / Math.max(dist, r))) ? lx : -1;
+}
+// every bubble here in the heat pops, each kind as a touch pops it (its swell, and where the code gives it them, its sound
+// and smaller bubbles): bubble space's and the smaller ones they throw out (which fly out into the heat and pop in turn, a
+// generation or two: BUBBLE_KID_GENS); the bubble room's stuck out of its foam, where the fire goes in the room's depth (below);
+// the bubble makers'; blown ones (with bubble space's pop sound); a diving suit's leaks. A few hundred sums a frame at most,
+// and only while it is held.
+// (the bubble room's, a frame: at most FIRE_BALLS.frame of them, the nearest the mouth first, so its heat sweeps out through
+// them, from at most FIRE_BALLS.lots of the room's lots, as each lot popped has its still picture built again (ballApply): a
+// breath at 📏 200 had popped up to 390 at once, each with its swelling copy, where the friend's touch pops a few)
+const FIRE_BALLS = { frame: 10, lots: 2 };
+function firePops(H, t) {
+  const B = state.background, F = sceneFrame, k = (F.bottom - F.top) / 700, hot = (x, y, r) => fireHot(H, x, y, r) >= 0;
+  if (stillAt !== null || B.kind === "none") return;
+  if (B.kind === "bubblespace" && bubbleSim.layer) {
+    const rand = bubbleRand();
+    bubbleSim.list.forEach((b, i) => { if (!b.pop && !b.back && hot(b.x, b.y, b.r)) bubbleSpacePop(b, i, t, k, rand); });
+    for (const c of [...(bubbleSim.kids || [])]) if (!c.pop && hot(c.x, c.y, c.r)) bubbleKidPop(c, t, k, rand);
+  }
+  if (B.kind === "bubbleroom" && roomBalls) {
+    // (in the room's depth, by the floor under each (fzHit) against the friend's feet, give or take the ball's own depth, as
+    // the friend's touch: side on, the fire stays at the friend's depth, as deep as the heat is wide there; facing away it
+    // goes into the room, up the picture, so all it covers at their depth or behind them; facing us it comes at us, so all
+    // it covers at their depth or in front of them. Both had been tested as side on is, the friend's depth give or take the
+    // heat's width: facing away almost none of what it covered popped, and facing us the room behind them did)
+    const R = roomBalls, feet = figureT.dy + figureT.sg, changed = new Set(), hits = [];
+    for (const b of R.list) {
+      if (ballPops.has(b.id)) continue;
+      const d = fireHot(H, b.x, b.y, b.r);
+      if (d < 0) continue;
+      const tol = b.dz + 4 * R.k, dz = b.fzHit - feet;
+      if (H.view === "away" ? dz > tol : H.view === "front" ? dz < -tol : Math.abs(dz) > tol + d * Math.tan(H.a)) continue;
+      hits.push([d, b]);
+    }
+    hits.sort((p, q) => p[0] - q[0]);
+    let n = 0;
+    for (const [, b] of hits) {
+      if (n >= FIRE_BALLS.frame) break;
+      if (changed.size >= FIRE_BALLS.lots && !changed.has(b.obj)) continue;
+      ballPop(b, t, changed); n++;
+    }
+    for (const name of changed) ballApply(name);
+  }
+  for (const b of makerSim.list) if (!b.pop && hot(b.x, b.y, b.r)) { b.pop = t; if (b.el.firstChild) b.el.firstChild.classList.add("pop"); }
+  for (const b of blowSim.list) if (!b.pop && hot(b.x, b.y, b.r)) { b.pop = t; bubblePopSound(b.r / k); }
+  for (const b of leakSim.list) if (!b.pop && hot(b.x, b.y, b.r)) { b.pop = t; if (b.el.firstChild) b.el.firstChild.classList.add("pop"); }
+}
+// the picture it is drawn in: over the scene's (and over the bubble makers'), inside its border, its viewBox the scene's
+function fireLayer() {
+  let O = document.getElementById("fire-over");
+  if (!O) { O = document.createElementNS("http://www.w3.org/2000/svg", "svg"); O.id = "fire-over"; O.setAttribute("aria-hidden", "true"); O.setAttribute("pointer-events", "none");
+    (document.getElementById("pic-over") || pic).after(O); }
+  const vb = pic.getAttribute("viewBox"); if (vb && O.getAttribute("viewBox") !== vb) O.setAttribute("viewBox", vb);
+  return O;
+}
+function fireTick(t) {
+  fireSim.raf = 0;
+  const B = state.body, A = (firePad || fireKey) && !figAway && !figBurst ? fireAt() : null, O = document.getElementById("fire-over");
+  fireSim.at = A;
+  if (A) {
+    // (built again only when what it draws changes: its fire, which way it is seen, its heat shown, the mouth's size)
+    const L = fireLayer(), st = fireStyleOf(B), heat = B.fireHeat !== false, key = [st, A.view, heat, A.mouth.toFixed(2)].join(" ");
+    if (key !== fireSim.shown || !L.querySelector(".fi-fire")) {
+      const mouth = fireMouth(A.view, A.mouth);
+      L.innerHTML = `<defs>${FIRE_DEFS}</defs><g class="fi-fire" data-fire="${st} ${A.view}"><g class="fi-way">${A.view === "front" ? mouth : ""}<g class="fi-big">${fireSvg(st, A.view, heat)}</g>${A.view === "side" ? mouth : ""}</g></g>`;
+      fireSim.shown = key; fireSim.tf = "";
+    }
+    // (then only moved: where, the friend's scale; the way it goes; its size)
+    const g = L.querySelector(".fi-fire"), tf = [`translate(${f1(A.x)} ${f1(A.y)}) scale(${A.k.toFixed(4)})`, `scale(${A.sx} 1) rotate(${A.tilt})`, `scale(${fireSize(B).toFixed(3)})`];
+    if (tf.join("|") !== fireSim.tf) { g.setAttribute("transform", tf[0]); g.querySelector(".fi-way").setAttribute("transform", tf[1]); g.querySelector(".fi-big").setAttribute("transform", tf[2]); fireSim.tf = tf.join("|"); }
+    if (g.classList.contains("fi-out")) g.classList.remove("fi-out");
+    if (L.style.display) L.style.display = "";
+    fireSim.out = 0;
+    firePops(fireHeatAt(A, B), t);
+    fireSim.raf = requestAnimationFrame(fireTick);
+    return;
+  }
+  // (let go, or no friend to breathe it: it fades, then is hidden, its animations stopped, and this rests)
+  const g = O && O.querySelector(".fi-fire");
+  if (!g || O.style.display === "none") { fireSim.out = 0; return; }
+  if (!fireSim.out) { fireSim.out = t; g.classList.add("fi-out"); }
+  if (t - fireSim.out < 220) { fireSim.raf = requestAnimationFrame(fireTick); return; }
+  O.style.display = "none"; fireSim.out = 0;
 }
 // (0.0.145, Matthew: "into FS mode, need to reposition the accessibility help, not make it wrong, or make it
 // disappear") Over the picture, everything placed through the screen (the nav arrows, the collision boxes, the planned

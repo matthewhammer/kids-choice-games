@@ -517,6 +517,7 @@ function drawNow() {
     if (ride) { lift = rideLift + h.bob * hs; horseBits = h.bits.map(b => { const [x, y] = T(b); return [x, y - lift]; });
       if (h.over) horseOver = `<g class="horse-over" transform="${at}">${h.over}</g>`; }
   }
+  poseJoints.lift = lift;   // (ticket 499: riding, how far they are lifted onto the saddle, for where their mouth and hands are now)
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
   if (!C && !diver && !hooded && !dir && !away) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
