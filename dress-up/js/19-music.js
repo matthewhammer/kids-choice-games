@@ -1652,6 +1652,8 @@ const LFO_FOLLOWERS = [
   () => VISIBLE_PARTS.filter(g => LFO_NAMES.includes(state.visible["lfo_" + g])).map(g => [state.visible["lfo_" + g], "👻 " + g]),
   // (a fairy's wings, while she wears them and they flap with it)
   () => state.costume.kind === "fairy" && state.costume.wingFlutter !== false && LFO_NAMES.includes(state.costume.wingLfo) ? [[state.costume.wingLfo, "🧚 fairy wings"]] : [],
+  // (ticket 499: a dragon's wings, while they flap with it)
+  () => state.costume.kind === "dragon" && (state.costume.dragonWingsHow ?? "flap") === "flap" && LFO_NAMES.includes(state.costume.dragonWingLfo) ? [[state.costume.dragonWingLfo, "🐉 dragon wings"]] : [],
   () => state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo) ? [[state.background.fairyHouseLfo, "🏡 fairy house"]] : [],
   // (the castle's residents in the room the friend is in)
   () => residentsHereNow().flatMap(([R, list]) => list.flatMap((one, i) => LFO_NAMES.includes(one.lfo) && (!R.followsIf || R.followsIf(one)) ? [[one.lfo, R.follows(i)]] : [])),   // (ticket 293: a throne's cat's tail, while it has one)
