@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.393 (2026-10-20)
+
+Everything in 0.0.392, plus the moon of the game's date in four more places.
+
+- **🌙 The moon in its phase, in the witch's woods and three windows:** the witch's woods (its moon was always full), and the round windows of the witch's hut and the hut's bedroom and the cat room's window (theirs were always a crescent) show the moon of the date in 🌍 the sky: where and when, in its phase, waxing or waning the right way round for the place on Earth.
+
 ## 0.0.392 (2026-10-20)
 
 Everything in 0.0.391, plus a dragon, fire, armour for the horse and a stable full of hens: every choice in the game, for the kids to pick.

@@ -553,9 +553,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
       return `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="#ff2626">${anim}</circle>`;
     };
     const mx = x1 - W * 0.17, my = y0 + H * 0.15;
-    s += `<circle cx="${f1(mx)}" cy="${f1(my)}" r="${f1(44 * k)}" fill="#fff3c4"/>` +
-         `<circle cx="${f1(mx + 14 * k)}" cy="${f1(my - 8 * k)}" r="${f1(9 * k)}" fill="#efe0a8"/>` +
-         `<circle cx="${f1(mx - 16 * k)}" cy="${f1(my + 12 * k)}" r="${f1(6 * k)}" fill="#efe0a8"/>`;
+    s += moonOfDateSvg(opts, mx, my, 44 * k, "#2b1d4a");   // (ticket 490: the moon of the game's date, where it says; it was always full)
     const mBats = s.length;   // (ticket 284: the four bats one object, flying)
     for (let i = 0; i < 4; i++) {
       // a bat: two scalloped wings and a small body
