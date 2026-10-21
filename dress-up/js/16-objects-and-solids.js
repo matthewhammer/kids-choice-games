@@ -163,7 +163,7 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // space for feet to squeeze between that box and the back horizon line": the house's lawn's far edge, 205 up, the
 // castle's meadow's, 150 up; the buildings' own boxes are SCENE_BOXES')
 const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 200, treehouse: 118, clearing: 140,
-                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, castle: 138,
+                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, desert: 120, castle: 138,
                     woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
@@ -184,12 +184,14 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // and the hut center's fire, the trap room's helmet, the greenhouse's watering can, the house's toys, a chair not sat on, the
 // sea floor's wreck and vent)
 const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "stalagmite", "crystal cluster", "cascade", "cavemushroom",   // (the last four: the cave room's, the little waterfall, the cave mushroom: ticket 471)
+   "pricklypear", "prickly pear", "barrelcactus", "barrel cactus", "agave",   // (ticket 501: the low desert plants, as things and in the desert)
    "woodpile", "helmet", "watering can", "teddy", "truck", "blocks", "chair", "shipwreck", "vent", "palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
   "rock", "boulder", "sand castle", "snake tank", "soup pot", "stone", "stove", "stump", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
   "water barrel", "water trough", "well", "white bush", "worktable", "yellow bush"]);
 const TRUNKED = new Set(["big tree", "giant tree", "deadtree", "skullstake", "tree",   // (big tree, giant tree: ticket 358)
+   "saguaro", "joshuatree", "joshua tree", "ocotillo",   // (ticket 501: the tall desert plants, in the way by their columns, trunks and stems, not their arms)
    "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
 // (ticket 214's audit: the living room's plant had a box as wide as its leaves) a pot's plant stands on its pot: its foot,
 // as a trunk's is found, but however short

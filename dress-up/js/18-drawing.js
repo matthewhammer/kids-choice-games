@@ -1471,7 +1471,7 @@ const PLACE_PHRASE = { sea: "swimming in 🌊 open water", deepsea: "swimming in
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
   hut: "outside the 🛖 grass hut", hutroom: "in the 🛖 grass hut's living room", hutbed: "in the 🛖 grass hut's bedroom", hutpotion: "in the 🛖 grass hut's potion room", hutcenter: "in the 🛖 grass hut's 🔥 center",
   healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",
-  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", caveroom: "in the 🦇 cave room", woodpath: "on the 🥾 path through the woods", crossing: "at the 🛤️ forest crossing",
+  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", caveroom: "in the 🦇 cave room", desert: "in the 🏜️ desert", woodpath: "on the 🥾 path through the woods", crossing: "at the 🛤️ forest crossing",
   castle: b => `outside of ${castleOf(b).id}'s 🏰 castle`,
   castleroom: b => { const K = castleOf(b), n = Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1)));
     return `in the ${roomLabel(K.rooms[n - 1])} (room ${n} of ${K.id}'s castle)`; } };

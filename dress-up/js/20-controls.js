@@ -76,7 +76,9 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"], ["caveroom", "🦇 cave room"],
   ["woodpath", "🥾 path through the woods"], ["crossing", "🛤️ forest crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
   // (ticket 278, for M) the grass hut, and its three rooms
-  ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"], ["hutcenter", "🔥 the grass hut's center"]];
+  ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"], ["hutcenter", "🔥 the grass hut's center"],
+  // (ticket 501, for M) the desert
+  ["desert", "🏜️ desert"]];
 // (where the way toward us can lead from a room outside the castle: any place but those found by a number of their own)
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const PLACE_GROUPS = [
@@ -90,6 +92,7 @@ const PLACE_GROUPS = [
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
   ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion", "hutcenter"]],
+  ["desert", "🏜️ desert", ["desert"]],   // (ticket 501, for M: a kind of its own, as the bubbles are)
 ];
 const groupOfPlace = v => v === "none" ? "none" : (PLACE_GROUPS.find(g => g[2].includes(v)) || [null])[0];
 console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g => g[2]).length === PLACES.length - 1,
@@ -551,6 +554,8 @@ const TABS = [
     // (ticket 471) the cave room: what stands on its floor, and what hangs from its ceiling
     ["choice", "caveFloor", "🪨 on the cave room's floor", CAVE_FLOORS],
     ["choice", "caveCeiling", "🦇 on the cave room's ceiling", CAVE_CEILINGS],
+    // (ticket 501, for M) the desert: what it has far off (farLayers' mountains, as a distant shore's)
+    ["choice", "desertFar", "🏜️ far off in the desert", SHORE_MOUNTAINS],
     // the camp site
     ["choice", "campTime", "🌗 time of day", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"], ["clock", "🕰️ by the clock (🌍 where and when)"]]],
     ["choice", "starShape", "⭐ stars: shape", STAR_SHAPES],
@@ -1120,6 +1125,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["fallWidth", "mist", "fallRate", "fallTime"].map(key => ["background." + key, b => b.kind === "waterfall" || b.kind === "cave"])),
   ...Object.fromEntries(["caveGems", "gemShape", "gemSize", "gemBright", "gemTwinkle"].map(key => ["background." + key, b => b.kind === "cave"])),
   ...Object.fromEntries(["caveFloor", "caveCeiling"].map(key => ["background." + key, b => b.kind === "caveroom"])),   // (ticket 471)
+  "background.desertFar": b => b.kind === "desert",   // (ticket 501)
   // (ticket 490) 🌍 where and when: where this place's time of day is by the clock; its own latitude and longitude for 📍
   ...Object.fromEntries(["skyWhen", "skyWhere", "skyYear", "skyMonth", "skyDay", "skyHour", "skySays"].map(key => ["background." + key, b => clockHere(b)])),
   ...Object.fromEntries(["skyLat", "skyLon"].map(key => ["background." + key, b => clockHere(b) && b.skyWhere === "custom"])),

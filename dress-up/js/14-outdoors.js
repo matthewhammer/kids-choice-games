@@ -71,6 +71,162 @@ function mountainsScene(c) {
   return s;
 }
 
+// (ticket 501, for M: "dessert -- sand dunes in distance-- placeable objects are 6 types of dessert plants (cactus,etc)";
+// Matthew passing on M's ideas, the desert he means) The 🏜️ desert: an open sky, the sun high in it and a cloud or two; far
+// off, what its 🏜️ setting says (red mesas to start with: farLayers, which any place can call); sand dunes rolling into the
+// distance, three rows, lighter and bluer the farther they are, each dune gentle on its windward side and steep on its lee,
+// its windward side in shade; and a sand floor to walk on, rippled, a lizard's tracks across it. The desert plants stand in
+// it, each an object at its depth, drawn by the things' own drawings (saguaroSvg and the rest); two rocks; and a lizard on
+// a flat stone doing push-ups to the beat, a tumbleweed rolling past and bouncing on the beat (the quick LFO), a hawk
+// circling high up and sand blowing off the near dunes' crests (the slow one).
+const DESERT_SAND = "#e6bc7a", DESERT_HAZE = "#c3cde3";
+// (its horizon, the sand floor's far edge (the back line, SCENE_FAR's, just in front of it), and its dunes, each row's
+// troughs and crests in turn: for their drawing and for the sand blowing off their crests, alike)
+function desertGeom(c) {
+  const { x0, W, g, k, R } = c, hz = g - 232 * k, back = g - 128 * k;
+  const rows = [[hz + 6 * k, 26, 7, 0.6, 5010], [hz + 42 * k, 34, 5, 0.38, 5030], [back + 4 * k, 44, 4, 0.16, 5050]].map(([base, amp, n, haze, seed]) => {
+    const step = (W + 120 * k) / n, xs = [...Array(n + 1)].map((_, i) => x0 - 60 * k + step * (i + (i && i < n ? 0.3 * (R(i, seed) - 0.5) : 0)));
+    const ys = xs.map((_, i) => base - amp * k * 0.12 * R(i, seed + 1));
+    const dunes = xs.slice(0, n).map((xa, i) => { const xb = xs[i + 1], xc = xa + (xb - xa) * (0.58 + 0.18 * R(i, seed + 2));
+      return { xa, ya: ys[i], xc, top: base - amp * k * (0.55 + 0.45 * R(i, seed + 3)), xb, yb: ys[i + 1] }; });
+    const fill = mix(DESERT_SAND, DESERT_HAZE, haze);
+    return { base, dunes, fill, shade: mix(fill, "#6f4f7a", 0.5), lit: mix(fill, "#ffffff", 0.5) };
+  });
+  return { hz, back, rows };
+}
+function desertScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o } = c;
+  const { hz, back, rows } = desertGeom(c), far = SHORE_MOUNTAINS.some(([v]) => v === o.desertFar) ? o.desertFar : "mesas";
+  // (a size as the friend's is there, with 🔭 as it starts: one of the stage's units in this frame (a picture's are smaller),
+  // times how near; so a plant stands beside the friend in proportion, and beside one put there as a thing)
+  const u = k * 700 / (SCENE.bottom - SCENE.top), near = y => Math.max(0.1, (y - g + 140 * k) / (175 * k));
+  // the sky, and the sun high in it, glowing
+  let s = SEP + part("desert-sky", c.F, () => { const sx = x1 - W * 0.17, sy = y0 + H * 0.14;
+    return `<defs>${grad("bg-desert-sky", "#3d86d1", "#f4e3c3", y0, hz)}<radialGradient id="bg-desert-sun"><stop offset="0" stop-color="#fff6cf" stop-opacity="0.9"/>` +
+      `<stop offset="1" stop-color="#fff6cf" stop-opacity="0"/></radialGradient>${cloudDef("bg-cloud", 0.8)}</defs>` + all("url(#bg-desert-sky)") +
+      `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(95 * k)}" fill="url(#bg-desert-sun)"/>` + sunSvg(sx, sy, 28 * k); });
+  // two small clouds, drifting (the slow LFO)
+  s += SEP + part("desert-clouds", [c.F, sceneLfoKey(o, "slow")], () => [0, 1].map(i =>
+    driftingCloud(x0 + W * (0.12 + 0.42 * i), y0 + H * (0.08 + 0.07 * i), k * (0.42 + 0.12 * i), i + 3, o)).join(""));
+  // far off: 🏜️'s choice, on the horizon
+  s += SEP + part("desert-far", [c.F, far], () => farLayers(c, hz, { mountains: far, size: 150 }));
+  // the dunes, far to near: each row's sand down past the picture's foot (the rows nearer, and the floor, cover it), each
+  // dune's windward side in shade (fading toward its foot), the lit edge of its crest; and, far off on the middle row, a few
+  // saguaros' outlines (scenery: none is a place to go)
+  const duneRow = ({ base, dunes, fill, shade, lit }, id) => {
+    let d = `M${P(x0 - pad, base)} L${P(dunes[0].xa, dunes[0].ya)}`, sh = "", edge = "";
+    for (const { xa, ya, xc, top, xb, yb } of dunes) {
+      const w = [xa + (xc - xa) * 0.6, top], l = [xc + (xb - xc) * 0.12, yb];
+      d += ` Q${P(...w)} ${P(xc, top)} Q${P(...l)} ${P(xb, yb)}`;
+      sh += `M${P(xa, ya)} Q${P(...w)} ${P(xc, top)} Q${P(xc - (xc - xa) * 0.05, top + (base - top) * 0.6)} ${P(xc - (xc - xa) * 0.35, base)} L${P(xa, base)} Z `;
+      // (the lit edge: the lee side's first third, a curve of its own split off the lee's)
+      const q = 0.35, m1 = [xc + (l[0] - xc) * q, top + (l[1] - top) * q], e = [(1 - q) ** 2 * xc + 2 * (1 - q) * q * l[0] + q * q * xb, (1 - q) ** 2 * top + 2 * (1 - q) * q * l[1] + q * q * yb];
+      edge += `M${P(xc, top)} Q${P(...m1)} ${P(...e)} `;
+    }
+    const top = Math.min(...dunes.map(q => q.top));
+    return `<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(top)}" x2="0" y2="${f1(base)}"><stop offset="0" stop-color="${shade}" stop-opacity="0.55"/>` +
+      `<stop offset="1" stop-color="${shade}" stop-opacity="0"/></linearGradient></defs>` +
+      `<path d="${d} L${P(x1 + pad, base)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z" fill="${fill}"/><path d="${sh}" fill="url(#${id})"/>` +
+      `<path d="${edge}" fill="none" stroke="${lit}" stroke-width="${f1(2 * k)}" stroke-linecap="round" opacity="0.8"/>`;
+  };
+  s += SEP + part("desert-dunes", c.F, () => {
+    let cacti = "";
+    rows[1].dunes.forEach(({ xa, ya, xc, top }, i) => { if (i % 2 || xc < x0 || xc > x1) return;
+      const q = 0.7, wx = xa + (xc - xa) * 0.6, x = (1 - q) ** 2 * xa + 2 * (1 - q) * q * wx + q * q * xc, y = (1 - q) ** 2 * ya + 2 * (1 - q) * q * top + q * q * top + 3 * k, h = (16 + 8 * R(i, 5070)) * k;
+      cacti += `M${P(x, y)} V${f1(y - h)} M${P(x, y - h * 0.42)} H${f1(x - h * 0.2)} V${f1(y - h * 0.7)} M${P(x, y - h * 0.5)} H${f1(x + h * 0.18)} V${f1(y - h * 0.8)} `; });
+    return wallObj("far dunes", duneRow(rows[0], "bg-desert-dunes0") + duneRow(rows[1], "bg-desert-dunes1") +
+      (cacti ? `<path d="${cacti}" fill="none" stroke="${mix("#4f8a46", DESERT_HAZE, 0.45)}" stroke-width="${f1(3.2 * k)}" stroke-linecap="round" stroke-linejoin="round"/>` : "")) +
+      wallObj("near dunes", duneRow(rows[2], "bg-desert-dunes2"));
+  });
+  // sand blowing off the near dunes' crests, to the right on the wind (the slow LFO, each its own way in)
+  s += SEP + part("desert-sand-blowing", [c.F, sceneLfoKey(o, "slow")], () => wallObj("sand blowing off the dunes",
+    rows[2].dunes.filter(q => q.xc > x0 + 20 * k && q.xc < x1 - 60 * k).slice(0, 3).map(({ xc, top }, j) => {
+      const L = 70 * k, lift = 6 * k;
+      return `<path d="M${P(xc, top)} q${f1(L * 0.4)} ${f1(-lift)} ${f1(L)} ${f1(-lift * 0.4)} q${f1(-L * 0.5)} ${f1(lift * 0.9)} ${f1(-L)} ${f1(lift * 0.6)} Z" fill="#f8e6bf" opacity="0">` +
+        lfoTimed(o, "slow", 0.2 + 0.31 * j, `<animate attributeName="opacity" values="0;0.7;0" dur="6s" repeatCount="indefinite"/>`) +
+        lfoTimed(o, "slow", 0.2 + 0.31 * j, `<animateTransform attributeName="transform" type="translate" values="0 0;${f1(34 * k)} ${f1(-6 * k)}" dur="6s" repeatCount="indefinite"/>`) + `</path>`;
+    }).join("")));
+  // the sand floor, warmer toward us; ripples on it, smaller farther off; a lizard's tracks, from the right edge to its stone,
+  // and the line its tail drew between them
+  s += SEP + part("desert-floor", c.F, () => {
+    let rip = "", tr = "", tail = "";
+    for (let i = 0; i < 16; i++) { const y = back + 10 * k + (y1 - back) * Math.pow(R(i, 5060), 0.9), x = x0 + W * R(i, 5061), z = near(y), w = (40 + 50 * R(i, 5062)) * k * z;
+      rip += `M${P(x - w, y)} q${f1(w * 0.5)} ${f1(-3 * k * z)} ${f1(w)} 0 t${f1(w)} 0 `; }
+    const xa = W * 0.18 + 36 * k, ya = g + 86 * k, xb = x1 + 30 * k, yb = g + 34 * k;
+    for (let i = 0; i <= 16; i++) { const q = i / 16, x = xa + (xb - xa) * q, y = ya + (yb - ya) * q + 5 * k * Math.sin(q * 9), z = near(y) * k, py = y + (i % 2 ? 5 : -5) * z;
+      tr += `M${P(x, py)} l${f1(-3.4 * z)} 0 M${P(x, py)} l${f1(-2.8 * z)} ${f1(-2 * z)} M${P(x, py)} l${f1(-2.8 * z)} ${f1(2 * z)} `;
+      tail += (i ? " L" : "M") + P(x + 4 * z, y); }
+    return `<defs>${grad("bg-desert-floor", "#ecc98e", "#e0a85f", back, y1)}</defs>` + land(back, 5, "url(#bg-desert-floor)", 0.7) +
+      floorObj("sand ripples", `<path d="${rip}" fill="none" stroke="#c99a5c" stroke-width="${f1(1.6 * k)}" stroke-linecap="round" opacity="0.55"/>`) +
+      floorObj("tracks in the sand", `<path d="${tail}" fill="none" stroke="#b98a50" stroke-width="${f1(1 * k)}" opacity="0.35"/>` +
+        `<path d="${tr}" fill="none" stroke="#b98a50" stroke-width="${f1(1.2 * k)}" stroke-linecap="round" opacity="0.7"/>`);
+  });
+  // a hawk circling high up, tilting as it turns (the slow LFO): its spot on the outer group and its loop from there, so held
+  // still it stays in the sky (ticket 370's lesson); at the depth of the far ground under it
+  s += SEP + part("desert-hawk", [c.F, sceneLfoKey(o, "slow")], () => { const rx = 110 * k, ry = 28 * k;
+    return obj("hawk", hz, `<g transform="translate(${f1(-0.3 * W)} ${f1(y0 + H * 0.2)})"><g>` +
+      lfoTimed(o, "slow", 0.15, `<animateMotion path="M0 0 A${f1(rx)} ${f1(ry)} 0 1 1 ${f1(2 * rx)} 0 A${f1(rx)} ${f1(ry)} 0 1 1 0 0" dur="16s" repeatCount="indefinite"/>`) +
+      `<g transform="scale(${(1.3 * k).toFixed(3)})">${swaying(o, hawkSvg(), 0, 0, 8, 0.4, 6)}</g></g></g>`); });
+  // the plants, each standing at its depth, sized for it (the Joshua tree and the saguaros as big as trees): [its name, its
+  // place across (a share of the picture's width), its depth (from the ground's line), its drawing and its settings, its
+  // seed, how big, mirrored]; the middle kept clear for the friend
+  s += SEP + part("desert-plants", c.F, () => byDepth([
+    ["saguaro, far", -0.12, -84, saguaroSvg, { arms: 2, flowers: false }, 5102, 1.2, true],
+    ["joshua tree", 0.33, -72, joshuaTreeSvg, { flowers: false }, 5101, 1.5, false],
+    ["agave", -0.2, -44, agaveSvg, { stalk: true, tone: AGAVE_TONES[0] }, 5104, 1, false],
+    ["ocotillo", 0.17, -30, ocotilloSvg, { leaves: true, flowers: true }, 5103, 1.1, false],
+    ["prickly pear", 0.38, 54, pricklyPearSvg, { bloom: "fruit" }, 5105, 1, true],
+    ["saguaro, near", -0.43, 60, saguaroSvg, { arms: 3, flowers: true }, 5106, 0.85, false],
+    ["barrel cactus", -0.24, 90, barrelCactusSvg, { flowers: true, color: DESERT_FLOWERS[3] }, 5107, 0.9, false],
+  ].map(([name, ux, dy, draw, t, seed, big, flip]) => { const y = g + dy * k, z = u * near(y) * big;
+    return [name, y, `<g transform="translate(${f1(W * ux)} ${f1(y)}) scale(${(flip ? -z : z).toFixed(3)} ${z.toFixed(3)})">${draw(t, seed)}</g>`]; }).concat(
+    // (the rocks, as the mountain trail's: each one a seat)
+    [["rock, right", 0.1, -60, 5110], ["rock, back", 0.02, -104, 5111]].map(([name, ux, dy, seed]) => { const y = g + dy * k;
+      return [name, y, rockSvg(W * ux, y, 36 * u * near(y), seed, "#b98a68")]; }))));
+  // the lizard, on a flat stone (no seat: it is the lizard's), facing the middle, doing push-ups to the beat (the quick LFO)
+  s += SEP + part("desert-lizard", [c.F, sceneLfoKey(o, "fast")], () => { const y = g + 86 * k, z = u * near(y) * 1.1;
+    return obj("lizard", y, `<g transform="translate(${f1(W * 0.18)} ${f1(y)}) scale(${(-z).toFixed(3)} ${z.toFixed(3)})">${lizardSvg(o, 0.3)}</g>`); });
+  // a tumbleweed rolling past now and then, in front of the friend where they arrive, bouncing on the beat (the quick LFO);
+  // held still (a slow computer), it rests on the sand where it is placed
+  s += SEP + part("desert-tumbleweed", [c.F, sceneLfoKey(o, "fast")], () => { const y = g + 64 * k, sx = -0.33 * W, z = u * near(y), r = 30 * z;
+    const from = x0 - 90 * k - sx, to = x1 + 90 * k - sx;
+    return obj("tumbleweed", y, `<g transform="translate(${f1(sx)} ${f1(y)})"><g><animateTransform attributeName="transform" type="translate" values="${f1(from)} 0;${f1(to)} 0;${f1(to)} 0" keyTimes="0;0.7;1" dur="15s" repeatCount="indefinite"/>` +
+      `<ellipse cx="0" cy="2" rx="${f1(r * 0.9)}" ry="${f1(r * 0.18)}" fill="#000000" opacity="0.15"/>` +
+      `<g>${lfoTimed(o, "fast", 0.6, `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-r * 0.7)};0 0" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.3 0.6 0.5 1;0.5 0 0.7 0.4" dur="0.6s" repeatCount="indefinite"/>`)}` +
+      `<g transform="scale(${z.toFixed(3)})"><g><animateTransform attributeName="transform" type="rotate" values="0 0 -30;360 0 -30" dur="2.4s" repeatCount="indefinite"/>${tumbleweedSvg(5120)}</g></g></g></g></g>`); });
+  return s;
+}
+// the desert's lizard, a collared lizard, facing right, its feet on the line y = 0, on its flat stone: its body doing
+// push-ups about its hips (the quick LFO, off of its round on), its near front leg straightening under it
+function lizardSvg(o, off) {
+  const body = "#2f9e98", edge = "#1d6b66", up = own => lfoTimed(o, "fast", off, own);
+  return `<ellipse cx="0" cy="4" rx="34" ry="6" fill="#a8865f"/><ellipse cx="-2" cy="1.5" rx="30" ry="4.5" fill="#c9a882"/>` +
+    `<path d="M-8 -7 Q-30 -7 -48 -2 Q-30 -2 -8 -2 Z" fill="${body}" stroke="${edge}" stroke-width="0.8"/>` +
+    `<path d="M-6 -4 L-11 0 L-15 0 M-3 -4 L-1 0 L3 0" fill="none" stroke="${edge}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<g>${up(`<animateTransform attributeName="transform" type="rotate" values="0 -6 -5;-14 -6 -5;0 -6 -5" keyTimes="0;0.4;1" dur="0.6s" repeatCount="indefinite"/>`)}` +
+    `<path d="M10 -4 L8 0" fill="none" stroke="${edge}" stroke-width="2" stroke-linecap="round"/>` +
+    `<ellipse cx="4" cy="-6" rx="12" ry="4.5" fill="${body}" stroke="${edge}" stroke-width="0.8"/><path d="M-5 -3.5 Q4 -1.5 14 -4" fill="none" stroke="#9ee6dc" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<ellipse cx="19" cy="-8" rx="6" ry="4" fill="#e9c46a" stroke="#a07a2a" stroke-width="0.8"/><path d="M12 -10.5 Q13 -6.5 12 -2.5 M14.5 -11 Q15.5 -7.5 14.5 -3.5" fill="none" stroke="#1f2937" stroke-width="1.4"/>` +
+    `<circle cx="21" cy="-9" r="1" fill="#1f2937"/></g>` +
+    `<line x1="12" y1="0" x2="12" y2="-5" stroke="${edge}" stroke-width="2.2" stroke-linecap="round">${up(`<animate attributeName="y2" values="-5;-9.4;-5" keyTimes="0;0.4;1" dur="0.6s" repeatCount="indefinite"/>`)}</line>`;
+}
+// a tumbleweed: a ball of dry twigs, 60 across, resting on y = 0
+function tumbleweedSvg(seed) {
+  const R = seeded(seed), r = 30, P = (x, y) => `${f1(x)} ${f1(y)}`;
+  let d = "", d2 = "";
+  for (let i = 0; i < 12; i++) { const a = R(i) * 6.28, b = a + 1.6 + 2.2 * R(i + 20), ra = r * (0.55 + 0.45 * R(i + 40)), rb = r * (0.55 + 0.45 * R(i + 60));
+    const seg = `M${P(ra * Math.cos(a), -r + ra * Math.sin(a))} Q${P(r * 0.8 * (R(i + 80) - 0.5), -r + r * 0.8 * (R(i + 90) - 0.5))} ${P(rb * Math.cos(b), -r + rb * Math.sin(b))} `;
+    if (i % 3) d += seg; else d2 += seg; }
+  return `<circle cx="0" cy="${-r}" r="${r}" fill="#c9a46a" opacity="0.25"/><circle cx="0" cy="${-r}" r="${r - 1}" fill="none" stroke="#9a7444" stroke-width="2.2" stroke-dasharray="13 7"/>` +
+    `<path d="${d}" fill="none" stroke="#8a6a3e" stroke-width="1.8" stroke-linecap="round"/><path d="${d2}" fill="none" stroke="#dcc08a" stroke-width="1.5" stroke-linecap="round"/>`;
+}
+// a hawk soaring, seen from below (so the same whichever way it turns), its middle at 0, 0, 64 across its wings
+function hawkSvg() {
+  const wing = sd => `<path d="M${sd * 3} -3 Q${sd * 15} -10 ${sd * 31} -5 L${sd * 29} -2 L${sd * 32} 0 L${sd * 28} 2 L${sd * 30} 4 Q${sd * 16} 6 ${sd * 3} 5 Z" fill="#6b4a2e"/>` +
+    `<path d="M${sd * 5} -1 Q${sd * 14} -5 ${sd * 23} -2 Q${sd * 14} 3 ${sd * 5} 3 Z" fill="#d9b991" opacity="0.85"/>`;
+  return wing(-1) + wing(1) + `<path d="M-3 8 L-9 21 Q0 25 9 21 L3 8 Z" fill="#c2552b"/><ellipse cx="0" cy="1" rx="4.2" ry="10" fill="#5b3a22"/><circle cx="0" cy="-10" r="3.6" fill="#5b3a22"/>`;
+}
+
 // The jungle waterfall: a mossy cliff, the water falling (streaks running
 // down it), a pool below with ripples, mist rising, big-leaved trees,
 // vines swaying, parrots, flowers.
@@ -2013,6 +2169,218 @@ function caveMushroomSvg(t, seed, o) {
 }
 // (ticket 471) what a treasure chest holds, open (seaChestSvg)
 const CHEST_TREASURE = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown", "👑 gold, gems and a crown"]];
+// (ticket 501, for M: "dessert -- sand dunes in distance-- placeable objects are 6 types of dessert plants (cactus,etc)";
+// Matthew passing on M's ideas, the desert he means) The 🌵 desert plants: things to put anywhere, and the 🏜️ desert's own
+// (drawn by the same code, so one standing there and one put somewhere else look alike). Each stands at 0, 0 in its own
+// units, as thingSvg places it, lit from the right (the desert's sun); its spines a few tens of short strokes in one path,
+// never hundreds of shapes, and what repeats (arms, blossoms, leaves of one width) one path each (60 frames a second first).
+const DESERT_FLOWERS = ["#fde047", "#fb923c", "#f472b6", "#ef4444", "#ffffff", "#c084fc"];
+const SAGUARO_ARMS = [[0, "🌱 none yet (a young one)"], [1, "1"], [2, "2"], [3, "3"], [4, "4"]];
+const PEAR_BLOOMS = [["none", "🚫 nothing"], ["flowers", "🌼 flowers"], ["fruit", "🍒 fruit"]];
+const AGAVE_TONES = ["#7fa8a0", "#6f9a5a", "#9ab8c8", "#8f9c62"];
+// (a plant's shadow on the ground: flat, so its collision box is the plant's)
+const plantShade = rx => `<ellipse class="flat" cx="0" cy="2" rx="${rx}" ry="${f1(rx * 0.2)}" fill="#000000" opacity="0.2"/>`;
+// (blossoms at the points pts, r across: five round petals each, all in one path, their middles in another)
+function bloomsSvg(pts, r, col, mid = mix(col, "#7c2d12", 0.5)) {
+  if (!pts.length) return "";
+  const at = (x, y, rad, deg) => `${f1(x + rad * Math.cos(deg * Math.PI / 180))} ${f1(y + rad * Math.sin(deg * Math.PI / 180))}`;
+  let d = "", m = "";
+  for (const [x, y] of pts) {
+    d += `M${at(x, y, r * 0.35, -126)}`;
+    for (let i = 0; i < 5; i++) { const a = -90 + 72 * i; d += ` Q${at(x, y, r * 1.1, a - 30)} ${at(x, y, r, a)} Q${at(x, y, r * 1.1, a + 30)} ${at(x, y, r * 0.35, a + 36)}`; }
+    const q = r * 0.32;
+    d += " Z "; m += `M${f1(x - q)} ${f1(y)} a${f1(q)} ${f1(q)} 0 1 0 ${f1(2 * q)} 0 a${f1(q)} ${f1(q)} 0 1 0 ${f1(-2 * q)} 0 `;
+  }
+  return `<path d="${d}" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="${f1(r * 0.12)}"/><path d="${m}" fill="${mid}"/>`;
+}
+// 🌵 a saguaro: a tall ribbed column, rounded on top, and its arms (none on a young one): the first two low on either side,
+// reaching out a little and up; the next two higher and farther out, nearer us (drawn over the low ones); spines in rows
+// down its ribs; a woodpecker's hole now and then; its white flowers on the tops (flowers)
+function saguaroSvg(t, seed) {
+  const R = seeded(seed), arms = Math.max(0, Math.min(4, Math.round(t.arms ?? 2))), H = 350 + 50 * R(1), r = 22, top = -H + r;
+  const green = "#4f8a46", dark = "#2b5a2e", lit = "#86bf6e", first = R(2) < 0.5 ? -1 : 1, P = (x, y) => `${f1(x)} ${f1(y)}`;
+  const lowY = -H * (0.34 + 0.06 * R(3)), lowOut = 26 + 10 * R(4);
+  // (the low arms, then the high ones: each group one outline, one fill, its lit side and its ribs, the high ones over the low)
+  const arm = [0, 1].map(() => ({ d: "", rib: "", lit: "", sp: "" }));
+  let spines = "";
+  const tops = [[-10, top - r + 7], [0, top - r + 1], [10, top - r + 7]];
+  for (let j = 0; j < arms; j++) {
+    const sd = j % 2 ? -first : first, high = j >= 2, ya = high ? -H * (0.56 + 0.06 * R(5 + j)) : lowY - 12 * R(5 + j);
+    const ax = sd * (r + (high ? lowOut + 36 + 8 * R(9 + j) : lowOut + 6 * R(9 + j))), yt = Math.max(top + 50, ya - (high ? 50 + 40 * R(13 + j) : 70 + 70 * R(13 + j)));
+    const A = arm[high ? 1 : 0];
+    A.d += `M${P(sd * 6, ya)} L${P(ax - sd * 14, ya)} Q${P(ax, ya)} ${P(ax, ya - 14)} L${P(ax, yt)} `;
+    A.rib += `M${P(ax, ya - 16)} L${P(ax, yt - 6)} `; A.lit += `M${P(ax + 6, ya - 12)} L${P(ax + 6, yt - 4)} `;
+    for (let y = ya - 30; y > yt + 4; y -= 30) A.sp += `M${P(ax - 2.5, y + 1.5)} L${P(ax, y)} L${P(ax + 2.5, y + 1.5)} `;
+    tops.push([ax, yt - 12]);
+  }
+  // (the arms, behind the column)
+  let s = plantShade(40) + arm.filter(A => A.d).map(A => `<path d="${A.d}" fill="none" stroke="${dark}" stroke-width="31" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="${A.d}" fill="none" stroke="${green}" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="${A.lit}" fill="none" stroke="${lit}" stroke-width="4" stroke-linecap="round" opacity="0.5"/><path d="${A.rib}" fill="none" stroke="${dark}" stroke-width="1.3" opacity="0.45"/>` +
+    (A.sp ? `<path d="${A.sp}" fill="none" stroke="#f1e6c2" stroke-width="1.1" stroke-linecap="round"/>` : "")).join("");
+  // the column, its shaded and its lit side, its ribs (each ending inside its rounded top), the spines down them
+  s += `<path d="M${-r} 0 L${-r} ${f1(top)} A${r} ${r} 0 0 1 ${r} ${f1(top)} L${r} 0 Z" fill="${green}" stroke="${dark}" stroke-width="2.5"/>` +
+       `<path d="M-15 -2 L-15 ${f1(top)}" stroke="${dark}" stroke-width="8" opacity="0.18"/><path d="M10 -2 L10 ${f1(top - 8)}" stroke="${lit}" stroke-width="6" stroke-linecap="round" opacity="0.5"/>`;
+  let ribs = "";
+  for (const x of [-12, -4, 4, 12]) {
+    const end = top - Math.sqrt(r * r - x * x) + 4;
+    ribs += `M${P(x, -1)} L${P(x, end)} `;
+    if (x !== 4) for (let y = -16; y > end + 6; y -= 30) spines += `M${P(x - 2.5, y + 1.5)} L${P(x, y)} L${P(x + 2.5, y + 1.5)} `;
+  }
+  s += `<path d="${ribs}" fill="none" stroke="${dark}" stroke-width="1.3" opacity="0.4"/><path d="${spines}" fill="none" stroke="#f1e6c2" stroke-width="1.1" stroke-linecap="round"/>`;
+  if (R(7) < 0.55) { const hx = (R(8) < 0.5 ? -1 : 1) * 7, hy = -H * 0.72;   // (a woodpecker's hole, a small surprise)
+    s += `<ellipse cx="${f1(hx)}" cy="${f1(hy)}" rx="5" ry="7" fill="#6b8f50"/><ellipse cx="${f1(hx)}" cy="${f1(hy + 0.5)}" rx="3.6" ry="5.4" fill="#2a1a10"/>`; }
+  if (t.flowers ?? true) s += bloomsSvg(tops, 7, "#fffaf0", "#facc15");
+  return drawnBy("saguaroSvg", s);
+}
+// 🍐 a prickly pear: flat round pads, two on the ground and more growing from their tops (how many by its seed), each with
+// a few spines; on its top edges flowers in their colour, or its red fruit, or nothing (bloom)
+function pricklyPearSvg(t, seed) {
+  const R = seeded(seed), bloom = t.bloom ?? "flowers", col = t.color || DESERT_FLOWERS[0];
+  const green = "#6aa84f", dark = "#2f6b2a", lit = "#a3d17f", P = (x, y) => `${f1(x)} ${f1(y)}`;
+  // its pads: [x, y, half its width, half its length, its turn]
+  const base = [[-24, -40, 24, 40, -14], [26, -34, 22, 36, 16], [-46, -104, 20, 32, -28], [-6, -112, 22, 36, 4], [44, -92, 19, 31, 26]];
+  if (R(1) < 0.7) base.push([-24, -168, 18, 28, -14]);
+  if (R(2) < 0.6) base.push([56, -148, 16, 26, 32]);
+  if (R(3) < 0.4) base.push([-72, -152, 15, 24, -40]);
+  const pads = base.map(([x, y, rx, ry, a], i) => [x + 8 * (R(10 + i) - 0.5), y + 6 * (R(20 + i) - 0.5), rx, ry, a + 14 * (R(30 + i) - 0.5)]);
+  // (a point on a pad, from across it (u) and along it (v), each -1 to 1; and whether a point is inside one)
+  const on = ([x, y, rx, ry, a], u, v) => { const c = Math.cos(a * Math.PI / 180), sn = Math.sin(a * Math.PI / 180); return [x + u * rx * c - v * ry * sn, y + u * rx * sn + v * ry * c]; };
+  const inside = ([x, y, rx, ry, a], px, py) => { const c = Math.cos(a * Math.PI / 180), sn = Math.sin(a * Math.PI / 180), dx = px - x, dy = py - y, lu = (dx * c + dy * sn) / rx, lv = (-dx * sn + dy * c) / ry; return lu * lu + lv * lv < 1; };
+  // (the highest drawn first, so each pad hides the foot of the one growing from it)
+  const order = pads.map((p, i) => i).sort((i, j) => pads[i][1] - pads[j][1]);
+  let s = plantShade(64), spines = "";
+  for (const i of order) {
+    const p = pads[i], [x, y, rx, ry, a] = p, [hx, hy] = on(p, 0.28, -0.12);
+    s += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${rx}" ry="${ry}" transform="rotate(${f1(a)} ${f1(x)} ${f1(y)})" fill="${green}" stroke="${dark}" stroke-width="2"/>` +
+         `<ellipse cx="${f1(hx)}" cy="${f1(hy)}" rx="${f1(rx * 0.45)}" ry="${f1(ry * 0.62)}" transform="rotate(${f1(a)} ${f1(hx)} ${f1(hy)})" fill="${lit}" opacity="0.35"/>`;
+    for (const [u, v] of [[-0.45, -0.45], [0.4, -0.52], [0, -0.05], [-0.42, 0.42], [0.45, 0.38]]) { const [px, py] = on(p, u, v);
+      spines += `M${P(px - 2.2, py - 1.6)} L${P(px, py)} L${P(px + 2.2, py - 1.6)} `; }
+  }
+  s += `<path d="${spines}" fill="none" stroke="#f3ecd0" stroke-width="1.1" stroke-linecap="round"/>`;
+  // what grows on its top edges: on the upper pads, where no other pad covers the spot
+  const spots = pads.filter(p => p[1] < -80).flatMap(p => [on(p, -0.38, -0.9), on(p, 0.32, -0.94)]).filter(([px, py]) => pads.filter(q => inside(q, px, py)).length <= 1);
+  if (bloom === "flowers") s += bloomsSvg(spots, 8, col);
+  else if (bloom === "fruit") s += spots.map(([px, py]) => `<ellipse cx="${f1(px)}" cy="${f1(py - 4)}" rx="5.5" ry="7.5" fill="#c0265f" stroke="#7a1238" stroke-width="1.2"/>` +
+    `<circle cx="${f1(px + 1.8)}" cy="${f1(py - 7)}" r="1.6" fill="#f9a8d4"/>`).join("");
+  return drawnBy("pricklyPearSvg", s);
+}
+// 🛢️ a barrel cactus: round and squat, its ribs running up to its crown, hooked red spines along them; a crown of flowers in
+// their colour (flowers), or of spines
+function barrelCactusSvg(t, seed) {
+  const R = seeded(seed), w = 34 + 8 * R(1), h = 76 + 18 * R(2), col = t.color || DESERT_FLOWERS[1];
+  const green = "#5b8f45", dark = "#2c5a28", lit = "#8cc070", P = (x, y) => `${f1(x)} ${f1(y)}`;
+  const left = `M${P(-w * 0.9, 0)} C${P(-w * 1.15, -h * 0.35)} ${P(-w * 1.05, -h * 0.92)} ${P(0, -h)}`;
+  let s = plantShade(46) + `<path d="${left} C${P(w * 1.05, -h * 0.92)} ${P(w * 1.15, -h * 0.35)} ${P(w * 0.9, 0)} Z" fill="${green}" stroke="${dark}" stroke-width="2.2"/>` +
+    // (its shaded side and its lit side, inside its outline)
+    `<path d="${left} Q${P(-w * 0.55, -h * 0.5)} ${P(-w * 0.35, 0)} Z" fill="${dark}" opacity="0.2"/>` +
+    `<path d="M${P(w * 0.9, 0)} C${P(w * 1.15, -h * 0.35)} ${P(w * 1.05, -h * 0.92)} ${P(0, -h)} Q${P(w * 0.75, -h * 0.5)} ${P(w * 0.6, 0)} Z" fill="${lit}" opacity="0.3"/>`;
+  let ribs = "", hooks = "";
+  for (const u of [-0.75, -0.45, -0.15, 0.15, 0.45, 0.75]) {
+    const a = [u * w * 0.82, -1], c = [u * w * 1.1, -h * 0.5], b = [u * w * 0.22, -h * 0.94], sd = u < 0 ? -1 : 1;
+    ribs += `M${P(...a)} Q${P(...c)} ${P(...b)} `;
+    for (const q of [0.28, 0.54, 0.78]) { const x = (1 - q) ** 2 * a[0] + 2 * (1 - q) * q * c[0] + q * q * b[0], y = (1 - q) ** 2 * a[1] + 2 * (1 - q) * q * c[1] + q * q * b[1];
+      hooks += `M${P(x, y)} q${f1(sd * 3)} -6 ${f1(sd * 6)} -3 `; }
+  }
+  s += `<path d="${ribs}" fill="none" stroke="${dark}" stroke-width="1.5" opacity="0.5"/><path d="${hooks}" fill="none" stroke="#d9774a" stroke-width="1.4" stroke-linecap="round"/>`;
+  if (t.flowers ?? true) s += bloomsSvg([-0.42, -0.21, 0, 0.21, 0.42].map((u, i) => [u * w, -h * 0.97 + Math.abs(u) * w * 0.3 - 3 * (i % 2)]), 7, col);
+  else s += `<path d="${[-6, -3, 0, 3, 6].map(x => `M${P(x, -h + 1)} l${f1(x * 0.4)} -7`).join(" ")}" fill="none" stroke="#d9774a" stroke-width="1.4" stroke-linecap="round"/>`;
+  return drawnBy("barrelCactusSvg", s);
+}
+// 🪴 an agave: a rosette of thick pointed leaves in its colour (tone), the outer ones bending down, a dark spine at each tip
+// and teeth along the front ones; and, now and then, its tall flower stalk, branching at the top into yellow flowers (stalk)
+function agaveSvg(t, seed) {
+  const R = seeded(seed), tone = t.tone || AGAVE_TONES[0], dark = mix(tone, "#000000", 0.4), lit = mix(tone, "#ffffff", 0.35), P = (x, y) => `${f1(x)} ${f1(y)}`;
+  let s = plantShade(70);
+  if (t.stalk) {
+    const top = -300 - 30 * R(1), lean = 10 * (R(2) - 0.5);
+    let br = "", fl = "";
+    for (let j = 0; j < 5; j++) { const y = top + 12 + j * 16, x = lean * (y / top), sd = j % 2 ? 1 : -1, ex = x + sd * (24 - j * 2), ey = y - 12;
+      br += `M${P(x, y)} q${f1(sd * 14)} -2 ${f1(ex - x)} ${f1(ey - y)} `;
+      for (const [dx, dy, q] of [[0, -4, 6], [sd * 6, 1, 4.5], [-sd * 5, 2, 4]]) fl += `M${P(ex + dx - q, ey + dy)} a${q} ${q} 0 1 0 ${2 * q} 0 a${q} ${q} 0 1 0 ${-2 * q} 0 `; }
+    s += `<path d="M0 -30 Q${P(lean * 0.4, top * 0.5)} ${P(lean, top)}" fill="none" stroke="#7a6a32" stroke-width="7" stroke-linecap="round"/>` +
+         `<path d="${br}" fill="none" stroke="#7a6a32" stroke-width="3" stroke-linecap="round"/><path d="${fl}" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>`;
+  }
+  // its leaves, back to front: [angle (degrees, -90 straight up), length, half its width at the foot]
+  const L = [[-100, 104, 12], [-80, 110, 12], [-122, 92, 12], [-58, 96, 12], [-145, 80, 13], [-35, 84, 13], [-165, 70, 13], [-15, 74, 13],
+             [-112, 70, 14], [-68, 72, 14], [-140, 56, 15], [-40, 58, 15]];
+  let ribs = "", teeth = "";
+  L.forEach(([deg, len0, hw], i) => {
+    const a = (deg + 8 * (R(10 + i) - 0.5)) * Math.PI / 180, len = len0 * (0.9 + 0.2 * R(20 + i)), ca = Math.cos(a), sa = Math.sin(a), nx = -sa, ny = ca;
+    const droop = len * 0.22 * ca * ca, bx = ca * 8, by = -3, tx = ca * len, ty = Math.min(-2, sa * len + droop), mx = ca * len * 0.5, my = sa * len * 0.5 + droop * 0.25;
+    const front = i >= 8, fill = front ? mix(tone, "#ffffff", 0.08) : i < 4 ? mix(tone, "#000000", 0.08) : tone;
+    s += `<path d="M${P(bx - nx * hw, Math.min(0, by - ny * hw))} Q${P(mx - nx * hw, my - ny * hw)} ${P(tx, ty)} Q${P(mx + nx * hw, my + ny * hw)} ${P(bx + nx * hw, Math.min(0, by + ny * hw))} Z" fill="${fill}" stroke="${dark}" stroke-width="1.5" stroke-linejoin="round"/>`;
+    ribs += `M${P(bx, by)} Q${P(mx, my)} ${P(bx + (tx - bx) * 0.82, by + (ty - by) * 0.82)} `;
+    const ux = (tx - mx) / Math.hypot(tx - mx, ty - my), uy = (ty - my) / Math.hypot(tx - mx, ty - my);
+    teeth += `M${P(tx, ty)} l${f1(ux * 7)} ${f1(uy * 7)} `;
+    if (front) for (const q of [0.35, 0.6]) for (const e of [-1, 1]) { const ex = bx + (tx - bx) * q + e * nx * hw * (1 - q) * 0.9, ey = by + (ty - by) * q + e * ny * hw * (1 - q) * 0.9;
+      teeth += `M${P(ex, ey)} l${f1(e * nx * 3 + ux * 2)} ${f1(e * ny * 3 + uy * 2)} `; }
+  });
+  s += `<path d="${ribs}" fill="none" stroke="${lit}" stroke-width="1.5" opacity="0.6"/><path d="${teeth}" fill="none" stroke="#3a2a1a" stroke-width="1.6" stroke-linecap="round"/>`;
+  return drawnBy("agaveSvg", s);
+}
+// 🌴 a Joshua tree: a shaggy trunk branching twice, each branch bending its own way up, a spiky green tuft at each tip over
+// a skirt of old dry leaves; in bloom, a creamy cluster at the tips (flowers)
+function joshuaTreeSvg(t, seed) {
+  const R = seeded(seed), P = (x, y) => `${f1(x)} ${f1(y)}`, widths = [24, 16, 11], segs = [], tips = [];
+  let n = 0;
+  const grow = (x, y, ang, len, d) => {
+    const x2 = x + Math.cos(ang) * len, y2 = y + Math.sin(ang) * len, bend = len * 0.14 * (R(90 + n) - 0.5);
+    segs.push([x, y, (x + x2) / 2 - Math.sin(ang) * bend, (y + y2) / 2 + Math.cos(ang) * bend, x2, y2, d]);
+    if (d === 2) { tips.push([x2, y2, ang]); return; }
+    const kids = d === 0 ? 2 + (R(1) < 0.5 ? 1 : 0) : (R(40 + n) < 0.3 ? 3 : 2);
+    for (let j = 0; j < kids; j++) { n++;
+      const spread = kids === 1 ? (R(50 + n) - 0.5) * 0.6 : (j / (kids - 1) - 0.5) * (1.3 + 0.4 * R(60 + n));
+      grow(x2, y2, Math.max(-Math.PI + 0.45, Math.min(-0.45, ang + spread + (R(70 + n) - 0.5) * 0.3)), len * (0.62 + 0.18 * R(80 + n)), d + 1); }
+  };
+  grow(0, 0, -Math.PI / 2 + (R(2) - 0.5) * 0.2, 140 + 30 * R(3), 0);
+  // (its wood: one outline and one fill for each thickness, the trunk's alone, so its trunk is found as a tree's is)
+  const wood = d => segs.filter(q => q[6] === d).map(([x, y, cx, cy, x2, y2]) => `M${P(x, y)} Q${P(cx, cy)} ${P(x2, y2)}`).join(" ");
+  let s = plantShade(46);
+  for (const d of [0, 1, 2]) s += `<path d="${wood(d)}" fill="none" stroke="#3f3226" stroke-width="${widths[d] + 3}" stroke-linecap="round"/>`;
+  for (const d of [0, 1, 2]) s += `<path d="${wood(d)}" fill="none" stroke="#7a6650" stroke-width="${widths[d]}" stroke-linecap="round"/>`;
+  // its shag: short strokes down its wood
+  let shag = "";
+  for (const [x, y, cx, cy, x2, y2, d] of segs) for (let q = 0.15; q < 0.95; q += d ? 0.3 : 0.14) {
+    const px = (1 - q) ** 2 * x + 2 * (1 - q) * q * cx + q * q * x2, py = (1 - q) ** 2 * y + 2 * (1 - q) * q * cy + q * q * y2, w = widths[d] * 0.35;
+    shag += `M${P(px - w, py - w)} l${f1(w * 0.8)} ${f1(w * 1.3)} M${P(px + w * 0.3, py)} l${f1(w * 0.6)} ${f1(w * 1.2)} `; }
+  s += `<path d="${shag}" fill="none" stroke="#5a4a3a" stroke-width="1.6" stroke-linecap="round"/>`;
+  // the tufts at the tips, over their skirts of dry leaves
+  let skirt = "", spikes = "", pale = "", bloom = "";
+  tips.forEach(([x, y, ang], i) => {
+    for (let j = 0; j < 7; j++) { const a = ang + Math.PI + (j / 6 - 0.5) * 1.3, L = 16 + 8 * R(100 + i * 10 + j); skirt += `M${P(x, y)} l${f1(Math.cos(a) * L)} ${f1(Math.sin(a) * L + 6)} `; }
+    for (let j = 0; j < 14; j++) { const a = ang + (j / 13 - 0.5) * 4.6, L = 22 + 10 * R(200 + i * 15 + j); spikes += `M${P(x, y)} l${f1(Math.cos(a) * L)} ${f1(Math.sin(a) * L)} `; }
+    for (let j = 0; j < 7; j++) { const a = ang + (j / 6 - 0.5) * 3, L = 16 + 8 * R(300 + i * 7 + j); pale += `M${P(x, y)} l${f1(Math.cos(a) * L)} ${f1(Math.sin(a) * L)} `; }
+    if (t.flowers) { const fx = x + Math.cos(ang) * 10, fy = y + Math.sin(ang) * 10;
+      for (const [dx, dy, q] of [[0, -3, 5.5], [-4, 3, 4.5], [4, 3, 4.5], [0, -10, 4]]) bloom += `M${P(fx + dx - q, fy + dy)} a${q} ${q} 0 1 0 ${2 * q} 0 a${q} ${q} 0 1 0 ${-2 * q} 0 `; }
+  });
+  s += `<path d="${skirt}" fill="none" stroke="#8a7350" stroke-width="2.4" stroke-linecap="round"/><path d="${spikes}" fill="none" stroke="#5f8436" stroke-width="3.2" stroke-linecap="round"/>` +
+       `<path d="${pale}" fill="none" stroke="#a6bd5c" stroke-width="2.2" stroke-linecap="round"/>` + (bloom ? `<path d="${bloom}" fill="#f3ecd2" stroke="#c9bb8a" stroke-width="1"/>` : "");
+  return drawnBy("joshuaTreeSvg", s);
+}
+// 🔥 an ocotillo: long thin whips fanning up out of one foot, each its own path (so it is found as a tree's trunk is),
+// spined; leafed out after rain (leaves), and red flowers like flames at their tips (flowers)
+function ocotilloSvg(t, seed) {
+  const R = seeded(seed), n = 9 + Math.floor(3 * R(1)), P = (x, y) => `${f1(x)} ${f1(y)}`;
+  const stems = [...Array(n)].map((_, i) => { const u = i / (n - 1) - 0.5, a = -Math.PI / 2 + u * 1.15 + (R(10 + i) - 0.5) * 0.18, len = 230 + 90 * R(20 + i) - 50 * Math.abs(u);
+    const bx = u * 18 + (R(30 + i) - 0.5) * 4, bend = (R(40 + i) - 0.5) * 30;
+    return { bx, cx: bx + Math.cos(a) * len * 0.5 - Math.sin(a) * bend, cy: Math.sin(a) * len * 0.5 + Math.cos(a) * bend, tx: bx + Math.cos(a) * len, ty: Math.sin(a) * len, i }; });
+  const at = (S, q) => [(1 - q) ** 2 * S.bx + 2 * (1 - q) * q * S.cx + q * q * S.tx, 2 * (1 - q) * q * S.cy + q * q * S.ty];
+  let s = plantShade(34), spines = "", leaves = "", flame = "", core = "";
+  for (const S of stems) {
+    s += `<path d="M${P(S.bx, 0)} Q${P(S.cx, S.cy)} ${P(S.tx, S.ty)}" fill="none" stroke="${S.i % 2 ? "#6e5d47" : "#7d6a50"}" stroke-width="4.2" stroke-linecap="round"/>`;
+    const dx = S.tx - S.cx, dy = S.ty - S.cy, dl = Math.hypot(dx, dy), ux = dx / dl, uy = dy / dl, nx = -uy, ny = ux;
+    for (const q of [0.25, 0.45, 0.65, 0.85]) { const [px, py] = at(S, q); spines += `M${P(px - nx * 4, py - ny * 4)} L${P(px + nx * 4, py + ny * 4)} `; }
+    if (t.leaves ?? true) for (let j = 0; j < 5; j++) { const [px, py] = at(S, 0.2 + 0.14 * j), e = j % 2 ? 1 : -1;
+      leaves += `M${P(px, py)} l${f1(e * nx * 6 + ux * 4)} ${f1(e * ny * 6 + uy * 4)} `; }
+    if (t.flowers ?? true) { const [bx, by] = at(S, 0.96), ax = S.tx + ux * 18, ay = S.ty + uy * 18;
+      flame += `M${P(bx + nx * 5, by + ny * 5)} Q${P(S.tx + nx * 7, S.ty + ny * 7)} ${P(ax, ay)} Q${P(S.tx - nx * 7, S.ty - ny * 7)} ${P(bx - nx * 5, by - ny * 5)} Z `;
+      core += `M${P(S.tx + nx * 2.5, S.ty + ny * 2.5)} Q${P(S.tx + ux * 8 + nx * 3, S.ty + uy * 8 + ny * 3)} ${P(S.tx + ux * 13, S.ty + uy * 13)} Q${P(S.tx + ux * 8 - nx * 3, S.ty + uy * 8 - ny * 3)} ${P(S.tx - nx * 2.5, S.ty - ny * 2.5)} Z `; }
+  }
+  s += `<path d="${spines}" fill="none" stroke="#cbbfa8" stroke-width="1" stroke-linecap="round"/>` + (leaves ? `<path d="${leaves}" fill="none" stroke="#6aa121" stroke-width="3.6" stroke-linecap="round"/>` : "") +
+       (flame ? `<path d="${flame}" fill="#e5402a" stroke="#9f1d10" stroke-width="0.8"/><path d="${core}" fill="#fb923c"/>` : "");
+  return drawnBy("ocotilloSvg", s);
+}
 const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
@@ -2057,6 +2425,15 @@ const THING_PARAMS = {
   cascade: [["style", "💦 kind", "choice", CASCADE_STYLES]],
   passage: [["style", "🕳️ kind", "choice", PASSAGE_STYLES], ["to", "🧭 leads to", "choice", passagePlaces]],
   cavemushroom: [["style", "🍄 kind", "choice", CAVE_MUSHROOMS], ["color", "🎨", "color", CAVE_MUSHROOM_COLORS], ["glow", "✨ glowing", "toggle"]],
+  // (ticket 501, for M) the desert plants' own: a saguaro's arms and flowers; a prickly pear's flowers or fruit and their colour; a
+  // barrel cactus's crown of flowers and its colour; an agave's flower stalk and its leaves' colour; a Joshua tree in bloom; an
+  // ocotillo's leaves and flowers
+  saguaro: [["arms", "💪 arms", "choice", SAGUARO_ARMS], ["flowers", "🌸 flowers on top", "toggle"]],
+  pricklypear: [["bloom", "🌼 on its pads", "choice", PEAR_BLOOMS], ["color", "🎨 its flowers", "color", DESERT_FLOWERS]],
+  barrelcactus: [["flowers", "🌼 a crown of flowers", "toggle"], ["color", "🎨 its flowers", "color", DESERT_FLOWERS]],
+  agave: [["stalk", "🌾 its tall flower stalk", "toggle"], ["tone", "🎨 its leaves", "color", AGAVE_TONES]],
+  joshuatree: [["flowers", "🌼 in bloom", "toggle"]],
+  ocotillo: [["leaves", "🍃 leafed out (after rain)", "toggle"], ["flowers", "🔥 red flowers at the tips", "toggle"]],
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
@@ -2068,7 +2445,9 @@ const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, s
                          seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true, treasure: "gold" }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
                          bubblemaker: { shape: "round", rate: 4, theme: "A", color: MAKER_COLORS[0] },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] },
-                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" }, cavemushroom: { style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true } };   // (ticket 471)
+                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" }, cavemushroom: { style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true },   // (ticket 471)
+                         saguaro: { arms: 2, flowers: true }, pricklypear: { bloom: "flowers", color: DESERT_FLOWERS[0] }, barrelcactus: { flowers: true, color: DESERT_FLOWERS[1] },
+                         agave: { stalk: false, tone: AGAVE_TONES[0] }, joshuatree: { flowers: false }, ocotillo: { leaves: true, flowers: true } };   // (ticket 501)
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
 // size and shininess (like stars we add or not, and controls over their color
@@ -2246,7 +2625,7 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["desert", "🌵 desert"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
@@ -2264,6 +2643,10 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       gem: { label: "💎 gem", size: 1, group: "cave", moving: true }, puddle: { label: "💧 puddle", size: 1, group: "cave", moving: true },
                       cascade: { label: "💦 little waterfall", size: 1, group: "cave", moving: true }, passage: { label: "🕳️ cave passage", size: 1, group: "cave" },
                       cavemushroom: { label: "🍄 cave mushroom", size: 1, group: "cave", moving: true },
+                      // (ticket 501, for M) the 🌵 desert plants, for the desert (and anywhere): none of them moves
+                      saguaro: { label: "🌵 saguaro", size: 1, group: "desert" }, pricklypear: { label: "🍐 prickly pear", size: 1, group: "desert" },
+                      barrelcactus: { label: "🛢️ barrel cactus", size: 1, group: "desert" }, agave: { label: "🪴 agave", size: 1, group: "desert" },
+                      joshuatree: { label: "🌴 Joshua tree", size: 1, group: "desert" }, ocotillo: { label: "🔥 ocotillo", size: 1, group: "desert" },
                       // (ticket 284) a 🎚️ lever, and 🕳️ trap doors it opens and shuts
                       lever: { label: "🎚️ lever", size: 1, group: "works" }, trapdoor: { label: "🕳️ trap door", size: 1, group: "works" },
                       // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
@@ -2436,6 +2819,10 @@ function thingSvg(o, t, i) {
                t.kind === "cascade" ? at(cascadeThingSvg(t, seed, o)) :
                t.kind === "passage" ? at(passageThingSvg(t, seed)) :
                t.kind === "cavemushroom" ? at(caveMushroomSvg(t, seed, o)) :
+               // (ticket 501) the desert plants, drawn as the desert draws its own
+               t.kind === "saguaro" ? at(saguaroSvg(t, seed)) : t.kind === "pricklypear" ? at(pricklyPearSvg(t, seed)) :
+               t.kind === "barrelcactus" ? at(barrelCactusSvg(t, seed)) : t.kind === "agave" ? at(agaveSvg(t, seed)) :
+               t.kind === "joshuatree" ? at(joshuaTreeSvg(t, seed)) : t.kind === "ocotillo" ? at(ocotilloSvg(t, seed)) :
                ["kelp", "seagrass", "seafan", "sealettuce"].includes(t.kind) ? at(seaPlantSvg(t.kind, t.color || THING_DEFAULTS[t.kind].color, seed, o)) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
   // (ticket 324: a lever marked, so it glows under the pointer as the trap room's do)
@@ -2576,7 +2963,7 @@ function crossingScene(c) {
 }
 const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, hutcenter: hutcenterScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
+                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, desert: desertScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width
@@ -2591,7 +2978,7 @@ const seaHorizon = ({ g, k }) => g - 230 * k;
 // beach, each standing on the line in front of it, all scaled by the shore's size (ticket 213's "distant shore size": bigger, nearer).
 // Silhouettes, a path or two each, drawn once (the place holds still: 60 frames a second first). farLayers(c, base, look) draws them
 // and gives each its object (wallObj, so 👁️ hides it and 🔬 names it); look = { mountains, forest, beach, size }.
-const SHORE_MOUNTAINS = [["none", "🚫 none"], ["snowy", "🏔️ snowy peaks"], ["blue", "⛰️ a blue range"], ["hills", "🌄 rolling hills"]];
+const SHORE_MOUNTAINS = [["none", "🚫 none"], ["snowy", "🏔️ snowy peaks"], ["blue", "⛰️ a blue range"], ["hills", "🌄 rolling hills"], ["mesas", "🏜️ red mesas"]];   // (mesas: ticket 501)
 const SHORE_FORESTS = [["none", "🚫 none"], ["pines", "🌲 pines"], ["broadleaf", "🌳 round trees"], ["mixed", "🌲🌳 mixed"]];
 function farLayers(c, base, look) {
   const { x0, x1, W, k, pad, R, P } = c, u = k * Math.max(0.25, Math.min(3, (look.size ?? 100) / 100)), L = x0 - pad, Rt = x1 + pad;
@@ -2617,7 +3004,19 @@ function farLayers(c, base, look) {
       const far = range(1, "#b6c6dc", 70, 7, 611, false); range(0, "#8ea3c0", 48, 9, 621, false);
       for (const [x, y] of far) m += `<path d="M${P(x, y)} l${f1(-9 * u)} ${f1(13 * u)} l${f1(5 * u)} ${f1(-3 * u)} l${f1(4 * u)} ${f1(4 * u)} l${f1(4 * u)} ${f1(-4 * u)} l${f1(5 * u)} ${f1(3 * u)} Z" fill="#f4f8ff"/>`;
     } else if (mountains === "blue") range(0, "#9fb4d4", 58, 8, 631, false);
-    else { range(1, "#9db896", 34, 6, 641, true); range(0, "#7fa47c", 24, 8, 651, true); }
+    else if (mountains === "mesas") {
+      // (ticket 501, for M, the desert's far off) 🏜️ red mesas: flat tops, steep sides over slopes of fallen rock, two rows,
+      // the far one hazier; each its own shape (so they may overlap), then the ground they stand on, all one path a row
+      for (const [row, fill, hgt, n, seed] of [[1, "#c6a3a0", 46, 4, 681], [0, "#b38377", 32, 5, 691]]) {
+        const foot = hillFoot - row * 5 * u, under = Math.min(foot + 8 * u, base);
+        let d = `M${P(L, foot)} L${P(Rt, foot)} L${P(Rt, under)} L${P(L, under)} Z`;
+        for (let i = 0; i < n; i++) {
+          const j = i + row * 17, x = x0 + W * (i + 0.5) / n + (W / n) * 0.3 * (R(j, seed) - 0.5), w = (W / n) * (0.1 + 0.16 * R(j, seed + 1)), h = hgt * u * (0.6 + 0.4 * R(j, seed + 2)), sl = Math.min(8 * u, w * 0.6);
+          d += ` M${P(x - w - 2.2 * sl, foot + 1)} L${P(x - w - sl, foot - h * 0.4)} L${P(x - w, foot - h)} L${P(x + w, foot - h + 2 * u * (R(j, seed + 3) - 0.5))} L${P(x + w + sl, foot - h * 0.45)} L${P(x + w + 2.4 * sl, foot + 1)} Z`;
+        }
+        m += `<path d="${d}" fill="${fill}"/>`;
+      }
+    } else { range(1, "#9db896", 34, 6, 641, true); range(0, "#7fa47c", 24, 8, 651, true); }
     s += wallObj("far mountains", m);
   }
   // 🌲 a forest: a pale far band and a dark near one, its tops pine points, round crowns, or both by turns
