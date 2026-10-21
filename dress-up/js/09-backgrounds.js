@@ -166,8 +166,9 @@ function helixCheapSvg(cx, bottom, top, r0, r1, k, colors = ["#7bd33a", "#4aa3ff
     }
     return d;
   };
-  // (the band: at a height where the turn's phase is a, the strand is in front by sin(a): 0.9 there, 0.15 at the back, as the full ones)
-  const band = si => [...Array(13)].map((_, i) => { const o = i / 12, front = (1 + Math.sin(2 * Math.PI * o + si * Math.PI)) / 2;
+  // (the band: at a height where the turn's phase is a, the strand is in front by sin(a): 0.9 there, 0.15 at the back, as the full ones;
+  // ticket 511: seven stops, not thirteen, the same to the eye, 5 to 8% of fumes205's frames back on GitHub's slower computers)
+  const band = si => [...Array(7)].map((_, i) => { const o = i / 6, front = (1 + Math.sin(2 * Math.PI * o + si * Math.PI)) / 2;
     return `<stop offset="${o.toFixed(3)}" stop-color="${colors[si]}" stop-opacity="${(0.15 + 0.75 * front).toFixed(2)}"/>`; }).join("");
   const tag = `${f1(cx)}-${Math.round(bottom)}-${Math.round(top)}-${f1(k)}`;
   return colors.map((c, si) => { const ds = [...Array(K + 1)].map((_, f) => pathAt(si, f)), id = `fume-${si}-${tag}`, g = `fume-band-${si}-${tag}`;

@@ -6,6 +6,12 @@ Each version lists the game's features as of that version. The newest version is
 
 - **🧩 Scripting** (ticket 482, a pull request): the game's logic written in Hazel. A new tab has an editor for 📚 Common and one for the castle's trap room; switched on, the trap room's red levers do what its script says: flip a lever, flip both, or say something over the picture. Off to start, and with a mistake in the script the levers work as they always have.
 
+## 0.0.397 (2026-10-21)
+
+Everything in 0.0.396, plus lighter cauldron fumes.
+
+- **🧪 The simple cauldron fumes cost less:** the glowing band that slides up each strand is drawn with fewer steps. It looks the same, and a room full of cauldrons walks a little smoother on slower computers.
+
 ## 0.0.396 (2026-10-21)
 
 Everything in 0.0.395, plus a smoother walk in the fairy forest and the castle on slower computers.
