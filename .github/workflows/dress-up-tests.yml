@@ -25,7 +25,9 @@ jobs:
   chrome:
     name: Chrome (script, safety net, pictures, gate, audit, leak)
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # (2026-10-20: every run on scripting-panel since 17:43 was cancelled at 60 minutes, at the frame-rate gate: the
+    # checks, ~190 of them now, the pictures and the safety net no longer fit in an hour; the speed workflow allows 90)
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
