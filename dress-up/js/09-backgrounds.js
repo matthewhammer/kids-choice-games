@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0 AND BSD-2-Clause
 // (ticket 178) Part 9 of 26 of the game's script, run in order by index.html.
 
 // ===================== BACKGROUNDS =====================
@@ -217,6 +219,10 @@ const sunSvg = (x, y, r, turning = false, o = null) => (turning ? `<g><animateTr
 // and longitude) and the game's date and hour (the sun's own time there, so noon is when it is highest), all settings, never
 // the device's place or clock. The sun's and the moon's height and direction, and the moon's phase, worked out here (the
 // usual short formulas, good to a degree or so: no network, so it works in airplane mode).
+// (ticket 500) Those formulas follow SunCalc 1.9.0, https://github.com/mourner/suncalc/blob/v1.9.0/suncalc.js ,
+// (c) 2011-2015 Vladimir (now Volodymyr) Agafonkin, under the BSD 2-Clause licence (its text is in NOTICE): skyNow's sun
+// and moon positions and the moon's phase, and skySays's sunrise (its hour angle, at a height of -0.833 degrees), are
+// SunCalc's sums, rewritten here. SunCalc's formulas come from Astronomy Answers (aa.quae.nl).
 const SKY_PLACES = [["denver", "🏔️ Denver", 39.74, -104.99], ["newyork", "🗽 New York", 40.71, -74.01], ["london", "🎡 London", 51.51, -0.13],
   ["tokyo", "🗾 Tokyo", 35.68, 139.69], ["sydney", "🦘 Sydney", -33.87, 151.21], ["quito", "🌋 Quito, on the equator", -0.18, -78.47],
   ["reykjavik", "🧊 Reykjavík", 64.15, -21.94], ["tromso", "🌌 Tromsø, far north", 69.65, 18.96], ["ushuaia", "🐧 Ushuaia, far south", -54.8, -68.3],

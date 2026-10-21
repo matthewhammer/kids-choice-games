@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 22 of 26 of the game's script, run in order by index.html.
 
 // ===================== FULL SCREEN =====================
@@ -145,7 +147,7 @@ function advLayout(panel) {
   const note = kids.find(c => c.classList.contains("hint") && /^🚀/.test(txt(c)));
   const made = [
     box("🌗 the look", pick(c => c.classList.contains("theme-row"))),
-    box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer") || c.classList.contains("see-also")))),   // (the version's row by its button: its words come after; ticket 474's See also, near the top, between the code and the version)
+    box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer") || c.classList.contains("see-also") || c.classList.contains("licence")))),   // (the version's row by its button: its words come after; ticket 474's See also, near the top, between the code and the version; ticket 500's licence, under the code)
     box("✈️ without the Internet", pick(c => c.classList.contains("offline-help"))),   // (ticket 486: adding the game to a device, for airplane mode, near the top where a parent looks)
     box("🎮 playing", pick(c => (c.classList.contains("row") && /^(🔔|🎚️)/.test(txt(c))) || (c.classList.contains("hint") && !/^🚀/.test(txt(c))))),   // (and its note, filled as it is used)
     box("🧪 tests and timing", pick(c => c.classList.contains("perfrow") && /^(🧪|⏱️)/.test(txt(c)))),

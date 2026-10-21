@@ -1,3 +1,5 @@
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 486, Matthew: "hardening MUDU against lack of internet on a tablet, desktop, or mobile phone"; "On a mobile phone or
 // tablet, I'd want a way to download the JS and have it run from the local storage on the device") The game keeps a copy of
 // itself on the device. One visit with the Internet saves every file it needs; after that it opens with none, in airplane mode.

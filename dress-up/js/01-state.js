@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 1 of 26 of the game's script, run in order by index.html.
 
 // ===================== STATE =====================
@@ -1100,7 +1102,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.388", released: "2026-10-20" };
+const VERSION = { number: "0.0.389", released: "2026-10-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

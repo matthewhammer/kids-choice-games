@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 13 of 26 of the game's script, run in order by index.html.
 
 // the room's frame: the back wall from x = -bw to bw, from its top to the

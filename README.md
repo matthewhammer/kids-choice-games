@@ -18,6 +18,19 @@ The order matters: the plain prototype is played with first, by real players, an
 
 Play it at http://matthewhammer.org/kids-choice-games/dress-up/, nothing to install. Each game is a single HTML file, so a copy also plays from disk: open `dress-up/index.html` in a browser.
 
+## Licences
+
+Reuse is welcome, with credit. Everything here is copyright 2026 Matthew Hammer and family (M and N), except one part [NOTICE](NOTICE) names, under two licences:
+
+- **The code**, under the [Apache License 2.0](LICENSE): every program and script here (the `.js`, `.mjs`, `.py`, `.css`, `.html` and `.yml` files), the game's drawing methods and music-making among them, and the tools. Keep the [NOTICE](NOTICE) file with any copy or reuse of it.
+- **Everything else**, under [Creative Commons Attribution 4.0](LICENSE-CC-BY-4.0) ([in short](https://creativecommons.org/licenses/by/4.0/)): the pictures, music and sounds, and the words (the `.md` files, and the words and pictures in the reports' pages). What is written inside a code file, such as the tunes in the music code or the words on the game's buttons, goes with that file, under Apache 2.0.
+
+The one part that is not ours: the sun and moon formulas in `dress-up/js/09-backgrounds.js` follow [SunCalc 1.9.0](https://github.com/mourner/suncalc/tree/v1.9.0), by Vladimir (now Volodymyr) Agafonkin, and stay under its BSD 2-Clause licence (in [NOTICE](NOTICE)).
+
+To credit us, say "by Matthew Hammer and family (M and N)", link to https://github.com/matthewhammer/kids-choice-games , name the licence, and say if you changed it.
+
+The game also loads, from outside this repository, one outside library, [Cytoscape.js](https://js.cytoscape.org/) (MIT licence), for its map view, and two things of Matthew's own from his site: the nav bar his pages share, and pictures from the game's picture archive.
+
 ## History
 
 The commits before this README come from where the game was first published, as a folder of my homepage's repository. They keep their messages and dates: one commit per change that went live, from 2026-10-09 on.

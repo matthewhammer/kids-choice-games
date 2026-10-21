@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.389 (2026-10-20)
+
+Everything in 0.0.388, plus who made it and on what terms.
+
+- **📜 Reuse is welcome, with credit:** the game and everything with it is © 2026 Matthew Hammer and family (M and N). The code is under the Apache License 2.0 and the pictures, music and words under Creative Commons Attribution 4.0. ⚙️ Advanced says so under the code's link, and each of the game's files carries a two-line notice. The sun's and moon's formulas (🕰️ by the clock) follow SunCalc 1.9.0, by Vladimir (now Volodymyr) Agafonkin, and stay under its own BSD licence: NOTICE says so.
+
 ## 0.0.388 (2026-10-20)
 
 Everything in 0.0.387, plus which side you lead the horse from.

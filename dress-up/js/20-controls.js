@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 20 of 26 of the game's script, run in order by index.html.
 
 // ===================== CONTROLS =====================
@@ -2039,6 +2041,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // (ticket 325, Matthew: "advanced panel links to matthewhammer.org/hazel/dress-up page") the game's own page: its music, pictures and reports
     box.append(themes, el("div", { class: "row" }, [el("a", { href: "https://matthewhammer.org/hazel/dress-up/", target: "_blank", rel: "noopener" }, "🏠 this game's page: its music, pictures and reports ↗")]),
                el("div", { class: "row" }, [el("a", { href: "https://github.com/matthewhammer/kids-choice-games", target: "_blank", rel: "noopener" }, "💻 this game's code, on GitHub ↗")]),
+               // (ticket 500, Matthew: "the two licences, credit 'Matthew Hammer and family (M and N)', whole repo.") who made it, and on what terms
+               el("div", { class: "row licence" }, [el("span", { class: "hint" }, ["📜 © 2026 Matthew Hammer and family (M and N). Reuse is welcome, with credit: the code under ",
+                 el("a", { href: "https://github.com/matthewhammer/kids-choice-games/blob/main/LICENSE", target: "_blank", rel: "noopener" }, "Apache 2.0 ↗"),
+                 ", and the pictures, music and words under ",
+                 el("a", { href: "https://creativecommons.org/licenses/by/4.0/", target: "_blank", rel: "noopener" }, "CC BY 4.0 ↗"), "."])]),
                // (ticket 474, Matthew: "add link and citation for https://arxiv.org/abs/1703.05410 into the MUDU advanced panel, near the top --- the
                // link says 'See also -- Languages of Play: Towards Semantic Foundations For Game Interfaces (2017)'"; "there's an HTML version ... let's
                // offer that in the advanced panel (after citation)") the paper, its authors, and its HTML version

@@ -1,3 +1,5 @@
+/* Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+   SPDX-License-Identifier: Apache-2.0 */
 /* Messed Up Dress Up's style (ticket 178: it was in index.html) */
   :root { --ink: #222; --muted: #666; --line: #d6d6d6; --paper: #fffdf7; --bg: #f3f0ff;
           --panel: #ffffff; --accent: #7c3aed; --accent-ink: #fff;
