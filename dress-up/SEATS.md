@@ -33,6 +33,7 @@ The audit of ticket 413 (Matthew, 2026-10-19: "audit of all objects to determine
 | 🎚️ lever, 🫧 bubble maker, 🕳️ trap door | no | | for pulling, for bubbles, a hole |
 | 🪸 coral | no | | sharp, and alive |
 | ⭐ starfish, 🐟 fish | no | | alive |
+| 🐄 cow, 🐖 pig, 🐔 chicken | no | | alive (ticket 504: not in `SIT_TOPS`; a ride on a cow was not asked for) |
 | 🐚 shell, 🌿 kelp, 🌾 sea grass, 🪭 sea fan, 🥬 sea lettuce | no | | small, soft or alive; they have only a small box at their foot |
 | 🌱 moss, 🪨 lichen, 🧪 potion | no | | flat on the ground or on a rock, or too small; nothing stands up |
 | 📦 from a place | as the thing it is | | a lifted thing keeps its name, so the rules below apply to it |

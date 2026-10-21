@@ -2013,6 +2013,286 @@ function caveMushroomSvg(t, seed, o) {
 }
 // (ticket 471) what a treasure chest holds, open (seaChestSvg)
 const CHEST_TREASURE = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown", "👑 gold, gems and a crown"]];
+// (ticket 504, for M; Matthew: "More animals as placeable objects with animation: * cows (4 poses) * pigs (4 poses)", and
+// "chickens -- already in stable 30 in stable.") The 🐄 farm animals, to put anywhere: a cow, a pig and a chicken, each in
+// four poses, each pose its own drawing, seen from the side facing our right (↔️ mirror turns one to face our left), its
+// feet at 0, 0 in the stage's units, as thingSvg places a thing. At 🔎 100% they are sized against the friend as most
+// places draw them (0.45 of their own size: about 200 units tall): a cow as tall at the shoulder as the friend's chest
+// (about 105), a pig to the knee and a bit (about 39 at its back; the knee is 31), a chicken shin-high (about 28, comb
+// and all). Each moves with the music's LFOs as its pose would (a tail swishing, an ear flicking, a jaw chewing, a belly
+// breathing, a peck, a wingbeat), each animation begun its own way in from the animal's seed, so a field of them never
+// moves in step. The chicken is the stable's hens (their outline, their brown and their white, a little smaller), in four
+// poses and four coats; the stable's own two are left as they are.
+const COW_POSES = [["stand", "🧍 standing"], ["graze", "🌱 grazing"], ["lie", "💤 lying down"], ["moo", "📢 mooing"]];
+const COW_COATS = [["holstein", "🐄 black and white"], ["brown", "🟤 brown"], ["redwhite", "🔴 red and white"], ["highland", "🧡 Highland, ginger and shaggy"]];
+const PIG_POSES = [["stand", "🧍 standing"], ["root", "👃 rooting"], ["side", "😴 lying on its side"], ["sit", "🪑 sitting"]];
+const PIG_COATS = [["pink", "🐷 pink"], ["spots", "⚫ pink with black spots"], ["band", "🖤 black with a pink band"], ["ginger", "🧡 ginger"]];
+const HEN_POSES = [["stand", "🧍 standing"], ["peck", "🌾 pecking"], ["nest", "🥚 sitting on a nest"], ["flap", "💨 flapping"]];
+const HEN_COATS = [["white", "🤍 white"], ["brown", "🤎 brown"], ["black", "🖤 black"], ["speckled", "🍪 speckled"]];
+// (each coat's colours: its hide; its patches, spots or band, if it has them; its muzzle or snout; a hen's wing; the
+// Highland cow's long hair, its fringe over its eyes and its long horns)
+const COW_COAT = { holstein: { hide: "#f4f1ea", patch: "#1f1f22", muzzle: "#eab6ad" }, brown: { hide: "#8b5a2b", muzzle: "#e3cfae" },
+                   redwhite: { hide: "#f4f1ea", patch: "#9a3a1c", muzzle: "#efc0b4" }, highland: { hide: "#c4682b", muzzle: "#7a4424", shaggy: true } };
+const PIG_COAT = { pink: { hide: "#f4a7b0", snout: "#ee8e9b" }, spots: { hide: "#f4b0b6", snout: "#ee8e9b", spot: "#2b2527" },
+                   band: { hide: "#2e282a", snout: "#4a3f42", band: "#f2b6bd" }, ginger: { hide: "#c9682e", snout: "#dc9064" } };
+// (the stable's hens are the white and the brown, in their colours)
+const HEN_COAT = { white: { body: "#f5efe2", line: "#c9bca2", wing: "#ebe2cf" }, brown: { body: "#a0522d", line: "#6b3418", wing: "#8c4626" },
+                   black: { body: "#2a272e", line: "#0e0d10", wing: "#34463f" }, speckled: { body: "#6e3518", line: "#3f1a08", wing: "#5e2c12", dots: true } };
+// (the pig and the chicken are drawn a little big, in units that keep their shapes easy to read: each shrunk to its size here)
+const PIG_SCALE = 0.85, HEN_SCALE = 0.85;
+const farmP = (x, y) => `${f1(x)} ${f1(y)}`;
+// (an animal's animation, timed by the scene's LFO of that pace, `off` of a round on; with no LFO, its own round of `dur`
+// seconds, begun as far in: each animal, and each moving part of it, its own way in)
+const farmMove = (o, pace, off, dur, anim) => lfoTimed(o, pace, off, anim.replace(/\/>$/, ` dur="${dur}s" begin="-${(off * dur).toFixed(2)}s" repeatCount="indefinite"/>`));
+const farmTurn = (angles, x, y) => angles.map(a => `${a} ${x} ${y}`).join(";");
+// (a move made n times in a round: its values, from and back to the first)
+const farmTimes = (n, seq) => { const v = [seq[0]]; for (let i = 0; i < n; i++) v.push(...seq.slice(1)); return v; };
+// (a patch or a spot: a closed smooth path round (cx, cy), its edge uneven by R from k on)
+function farmBlob(cx, cy, rx, ry, R, k, n = 7) {
+  const p = [...Array(n)].map((_, i) => { const a = 2 * Math.PI * (i + R(k + 20)) / n, f = 0.75 + 0.45 * R(k + i); return [cx + Math.cos(a) * rx * f, cy + Math.sin(a) * ry * f]; });
+  const m = i => { const a = p[i % n], b = p[(i + 1) % n]; return farmP((a[0] + b[0]) / 2, (a[1] + b[1]) / 2); };
+  let d = `M${m(0)}`;
+  for (let i = 1; i <= n; i++) d += ` Q${farmP(p[i % n][0], p[i % n][1])} ${m(i)}`;
+  return d + " Z";
+}
+// (a cow's or a pig's leg, from its top (x, top) down to the ground g, w wide: a foreleg straight down, a hind leg slanting
+// back to its hock and down again; its hoof or trotter at the foot, hh high, cloven)
+function hoofLeg(x, top, g, w, hind, col, sw, hoof, hh) {
+  const k = top + (g - hh - top) * 0.55, fx = hind ? x - w * 0.1 : x, kx = hind ? x - w * 0.55 : x;
+  const pts = [[x - w * 0.55, top], [x + w * 0.55, top], [kx + w * 0.45, k], [fx + w * 0.38, g - hh], [fx - w * 0.38, g - hh], [kx - w * 0.45, k]];
+  return `<polygon points="${pts.map(([a, b]) => `${f1(a)},${f1(b)}`).join(" ")}" fill="${col}" stroke="${mix(col, "#000000", 0.5)}" stroke-width="${sw}" stroke-linejoin="round"/>` +
+    `<path d="M${farmP(fx - w * 0.4, g - hh)} L${farmP(fx + w * 0.42, g - hh)} L${farmP(fx + w * 0.55, g)} L${farmP(fx - w * 0.45, g)} Z M${farmP(fx + w * 0.08, g - hh * 0.7)} L${farmP(fx + w * 0.12, g)}" ` +
+    `fill="${hoof}" stroke="${mix(hoof, "#000000", 0.4)}" stroke-width="${f1(sw * 0.6)}" stroke-linejoin="round"/>`;
+}
+// THE COW. Standing, grazing and mooing it stands the same, square on its legs (its udder between the hind ones), and only
+// its neck and head go another way: standing, its head held out, an ear flicking now and then; grazing, its head down in
+// the grass, chewing; mooing, its head stretched up, its mouth opening for each moo and its moo going out. Lying, it rests
+// on the ground, its legs folded under it, its belly breathing, chewing its cud. Its tail swishes when it stands.
+const COW_HEADS = {
+  stand: { neck: "M36 -105 C52 -110 70 -118 84 -116 L92 -76 C82 -64 70 -58 56 -58 Z", neckPatch: [62, -96, 10, 8],
+           head: "M82 -117 C90 -120 98 -114 104 -104 L112 -94 C120 -90 123 -82 121 -74 C119 -68 113 -66 106 -67 L96 -70 C88 -72 82 -78 79 -88 C77 -98 76 -110 82 -117 Z",
+           muzzle: "M110 -95 C119 -92 124 -82 121 -74 C119 -68 113 -66 106 -67 C103 -73 103 -88 110 -95 Z", nose: [117, -85], mouth: "M106 -71 Q112 -69 118 -71",
+           eye: [93, -104], patch: [90, -105, 10, 9], ear: "M86 -108 Q74 -116 64 -110 Q72 -101 86 -103 Z", earAt: [86, -106],
+           horn: "M84 -117 Q82 -127 88 -131 Q89 -123 91 -118 Z", horns: ["M82 -116 C72 -122 62 -124 58 -138 C56 -124 66 -112 80 -110 Z", "M86 -118 C94 -126 106 -130 108 -144 C112 -130 102 -118 90 -112 Z"],
+           fringe: "M78 -120 C86 -126 100 -122 106 -108 L104 -98 L100 -104 L97 -94 L94 -103 L90 -92 L87 -102 L83 -94 L81 -104 L77 -98 C76 -106 75 -114 78 -120 Z" },
+  graze: { neck: "M34 -105 C58 -106 78 -90 90 -66 L82 -36 C74 -48 66 -58 54 -62 Z", neckPatch: [62, -84, 9, 9],
+           head: "M86 -68 C94 -70 100 -64 102 -56 L107 -32 C112 -26 113 -14 111 -6 C109 -1 102 0 96 -1 L92 -2 C88 -8 86 -16 84 -26 C82 -36 78 -48 80 -58 C81 -64 83 -67 86 -68 Z",
+           muzzle: "M104 -30 C111 -26 113 -14 111 -6 C109 -1 102 0 96 -1 C94 -8 96 -20 98 -26 C99 -28 101 -30 104 -30 Z", nose: [107, -8], mouth: "M92 -6 Q95 -3 99 -2",
+           eye: [95, -52], patch: [92, -54, 9, 10], ear: "M86 -60 Q74 -66 66 -58 Q74 -52 86 -55 Z", earAt: [86, -58],
+           horn: "M88 -68 Q88 -78 94 -81 Q93 -74 94 -69 Z", horns: ["M84 -66 C74 -70 66 -72 62 -86 C60 -72 68 -62 82 -60 Z", "M92 -68 C100 -76 108 -78 112 -92 C114 -78 104 -66 96 -62 Z"],
+           fringe: "M82 -70 C90 -76 102 -70 104 -58 L103 -46 L99 -52 L97 -40 L94 -50 L91 -38 L89 -49 L85 -40 L84 -52 L80 -46 C79 -54 78 -64 82 -70 Z" },
+  lie:   { neck: "M34 -68 C48 -80 64 -94 80 -98 L92 -66 C80 -56 66 -46 56 -38 Z", neckPatch: [58, -72, 9, 8],
+           head: "M80 -101 C88 -104 96 -100 102 -92 L112 -84 C119 -80 122 -73 120 -67 C118 -62 112 -60 106 -61 L96 -64 C88 -66 82 -72 79 -80 C77 -88 76 -96 80 -101 Z",
+           muzzle: "M110 -86 C118 -82 122 -74 120 -67 C118 -62 112 -60 106 -61 C103 -67 104 -80 110 -86 Z", nose: [116, -77], mouth: "M105 -65 Q111 -63 117 -65",
+           eye: [92, -90], patch: [90, -90, 10, 8], ear: "M84 -92 Q72 -98 64 -92 Q72 -85 84 -88 Z", earAt: [84, -90],
+           horn: "M81 -100 Q79 -110 85 -114 Q86 -106 88 -101 Z", horns: ["M79 -100 C69 -106 59 -108 55 -122 C53 -108 63 -96 77 -94 Z", "M85 -102 C93 -110 105 -114 107 -128 C111 -114 101 -102 89 -96 Z"],
+           fringe: "M76 -104 C84 -110 98 -106 104 -94 L102 -82 L98 -88 L95 -78 L92 -87 L88 -76 L85 -86 L81 -78 L79 -88 L75 -82 C74 -90 73 -98 76 -104 Z" },
+  moo:   { neck: "M36 -105 C54 -116 72 -130 88 -134 L102 -110 C88 -98 72 -82 58 -62 Z", neckPatch: [66, -104, 10, 8],
+           head: "M86 -138 C90 -145 98 -147 104 -146 L122 -151 C130 -153 134 -146 132 -138 L110 -130 C104 -128 100 -124 96 -120 C90 -122 84 -130 86 -138 Z",
+           jaw: "M96 -124 L126 -126 C130 -123 129 -118 124 -117 L102 -114 C97 -114 94 -119 96 -124 Z", inside: "M108 -130 L132 -138 L128 -122 L100 -120 Z", hinge: [98, -122], tongue: [116, -124.5],
+           muzzle: "M120 -151 C129 -153 134 -146 132 -138 L122 -134 C119 -139 117 -146 120 -151 Z", nose: [128, -145],
+           eye: [100, -138], patch: [98, -138, 9, 8], ear: "M90 -132 Q78 -134 70 -126 Q80 -122 90 -127 Z", earAt: [90, -130],
+           horn: "M88 -140 Q85 -148 90 -153 Q92 -146 94 -142 Z", horns: ["M86 -138 C76 -144 66 -146 62 -160 C60 -146 70 -134 84 -132 Z", "M92 -142 C100 -150 110 -154 112 -168 C116 -154 106 -142 96 -136 Z"],
+           fringe: "M84 -142 C92 -150 106 -148 110 -138 L108 -126 L104 -132 L101 -122 L98 -131 L94 -120 L91 -130 L87 -122 L86 -132 L82 -126 C81 -132 81 -138 84 -142 Z" } };
+function cowThingSvg(t, seed, o) {
+  const pose = COW_HEADS[t.pose] ? t.pose : "stand", C = COW_COAT[t.coat] || COW_COAT.holstein, R = seeded(seed), H = COW_HEADS[pose], lying = pose === "lie";
+  const hide = C.hide, ln = mix(hide, "#000000", 0.5), far = mix(hide, "#000000", 0.2), hoof = "#3b302a", horn = "#ebe2c8", tuft = C.patch || mix(hide, "#000000", 0.35);
+  const paint = (d, col = hide, w = 2) => `<path d="${d}" fill="${col}" stroke="${mix(col, "#000000", 0.5)}" stroke-width="${w}" stroke-linejoin="round"/>`;
+  const bodyD = lying ? "M40 -66 C8 -73 -42 -73 -68 -68 C-88 -64 -97 -36 -90 -14 C-86 -3 -74 0 -60 0 L32 0 C48 0 60 -10 61 -26 C62 -46 56 -62 40 -66 Z"
+    : "M40 -104 C10 -110 -40 -110 -66 -106 L-80 -102 C-90 -96 -91 -74 -84 -62 C-79 -55 -66 -54 -56 -56 Q-12 -46 30 -55 C46 -58 58 -66 60 -80 C61 -92 54 -102 40 -104 Z";
+  // (black and white, red and white: patches on its body and round an eye, each ending at its outline, clipped to it;
+  // where they lie, by its seed)
+  const bodyId = `cow-body-${lying ? "lie" : "up"}-${seed}`, headId = `cow-head-${pose}-${seed}`;
+  const spots = lying ? [[-60, -54, 18, 12], [-22, -42, 20, 13], [14, -58, 14, 9], [-84, -30, 11, 11], [40, -30, 12, 11]]
+    : [[-58, -94, 18, 12], [-22, -80, 20, 13], [12, -98, 14, 9], [-80, -72, 12, 11], [42, -74, 12, 13]];
+  const patches = !C.patch ? "" : `<defs><clipPath id="${bodyId}"><path d="${bodyD}"/></clipPath></defs><g clip-path="url(#${bodyId})" fill="${C.patch}">` +
+    spots.filter((_, i) => i < 3 || R(i + 10) < 0.8).map(([x, y, rx, ry], i) => `<path d="${farmBlob(x + (R(i) - 0.5) * 12, y + (R(i + 5) - 0.5) * 8, rx, ry, R, 30 + 10 * i)}"/>`).join("") + `</g>`;
+  // (the Highland's long hair: hanging in a fringe under its belly when it stands, and lying in locks along its sides)
+  const hair = !C.shaggy ? "" : (lying ? "" : (() => {
+      const zig = [[-84, -62], [-80, -50], [-74, -57], [-68, -47], [-62, -55], [-54, -45], [-46, -52], [-36, -42], [-26, -50], [-16, -41], [-6, -48], [4, -41], [14, -49], [24, -43], [32, -52], [40, -47], [46, -56], [52, -52], [57, -62]];
+      const z = zig.map(([x, y]) => farmP(x, y)).join(" L");
+      return `<path d="M${z} L57 -68 Q-12 -60 -84 -68 Z" fill="${hide}"/><path d="M${z}" fill="none" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round"/>`; })()) +
+    `<path d="${lying ? "M-62 -60 q7 6 2 14 M-34 -64 q7 6 2 14 M-4 -64 q7 6 2 14 M22 -58 q7 6 2 14 M-50 -40 q7 6 2 14 M-18 -40 q7 6 2 14 M14 -38 q7 6 2 14"
+      : "M-62 -98 q7 6 2 14 M-34 -101 q7 6 2 14 M-4 -100 q7 6 2 14 M22 -96 q7 6 2 14 M-48 -80 q7 6 2 14 M-16 -78 q7 6 2 14 M12 -76 q7 6 2 14"}" fill="none" stroke="${mix(hide, "#000000", 0.28)}" stroke-width="1.6" stroke-linecap="round"/>`;
+  let s = `<ellipse class="flat" cx="-12" cy="1" rx="${lying ? 104 : 96}" ry="9" fill="#000000" opacity="0.18"/>`;
+  if (!lying) {
+    // (its far legs, a shade darker, a little behind the near; its udder; its near legs; its body over their tops)
+    s += hoofLeg(30, -66, -4, 15, false, far, 2, hoof, 8) + hoofLeg(-54, -70, -4, 18, true, far, 2, hoof, 8) +
+      `<path d="M-50 -55 Q-49 -44 -41 -43 Q-33 -44 -32 -54 Z" fill="${C.muzzle}" stroke="${mix(C.muzzle, "#000000", 0.4)}" stroke-width="1.6"/>` +
+      `<path d="M-46 -44 L-46.5 -40 M-37 -44 L-36.5 -40" stroke="${mix(C.muzzle, "#000000", 0.2)}" stroke-width="2.4" stroke-linecap="round"/>` +
+      hoofLeg(44, -66, 0, 15, false, hide, 2, hoof, 8) + hoofLeg(-66, -72, 0, 18, true, hide, 2, hoof, 8) + paint(bodyD) + patches + hair +
+      `<g>${farmMove(o, "slow", R(1), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn(farmTimes(4, [0, 9, -4, 0]), -82, -100)}"/>`)}` +
+      `<path d="M-82 -100 Q-93 -84 -90 -60" fill="none" stroke="${ln}" stroke-width="3.6" stroke-linecap="round"/><path d="M-82 -100 Q-93 -84 -90 -60" fill="none" stroke="${hide}" stroke-width="1.6" stroke-linecap="round"/>` +
+      `<path d="M-90 -62 Q-97 -53 -91 -45 Q-85 -52 -88 -62 Z" fill="${tuft}" stroke="${mix(tuft, "#000000", 0.4)}" stroke-width="1"/></g>`;
+  } else {
+    // (lying: its body breathing, rising and falling three times a round of the slow LFO; its hind leg folded along its side,
+    // the hoof forward; its foreleg tucked under its chest, the knee forward; its tail along the ground)
+    s += `<g>${farmMove(o, "slow", R(1), 9, `<animateTransform attributeName="transform" type="scale" values="${farmTimes(3, ["1 1", "1 1.025", "1 1"]).join(";")}"/>`)}` +
+      paint(bodyD) + patches + hair + `<path d="M-74 -54 C-56 -56 -40 -42 -40 -22 C-40 -12 -46 -6 -54 -4" fill="none" stroke="${ln}" stroke-width="2" stroke-linecap="round"/></g>` +
+      paint("M-86 -1 L-86 -11 L-50 -9 L-48 -1 Z") + `<path d="M-50 -9 L-40 -8 L-38 -1 L-49 -1 Z" fill="${hoof}" stroke="#1f1814" stroke-width="1.2" stroke-linejoin="round"/>` +
+      paint("M30 -28 C42 -26 54 -20 60 -12 C63 -6 60 -1 54 -1 L36 -1 C34 -4 34 -8 38 -9 L50 -9 C46 -16 38 -20 28 -20 Z") + `<path d="M38 -9 L30 -8 L28 -1 L36 -1 Z" fill="${hoof}" stroke="#1f1814" stroke-width="1.2" stroke-linejoin="round"/>` +
+      `<path d="M-86 -60 C-98 -50 -100 -20 -94 -6 C-90 2 -80 2 -74 -1" fill="none" stroke="${ln}" stroke-width="3.6" stroke-linecap="round"/><path d="M-86 -60 C-98 -50 -100 -20 -94 -6 C-90 2 -80 2 -74 -1" fill="none" stroke="${hide}" stroke-width="1.6" stroke-linecap="round"/>` +
+      `<ellipse cx="-71" cy="-1.5" rx="5" ry="2.6" fill="${tuft}"/>`;
+  }
+  // (its neck and head, as the pose holds them; a Highland's long horns, the far one behind its head, the near in front)
+  if (C.shaggy) s += paint(H.horns[0], mix(horn, "#000000", 0.12), 1.6);
+  s += paint(H.neck);
+  if (pose === "moo") s += `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([-24, -24, 0, 0, -24, -24, -24, 0, 0, -24, -24], ...H.hinge)}" keyTimes="0;0.1;0.16;0.36;0.42;0.5;0.6;0.66;0.86;0.92;1"/>`)}` +
+    `<path d="${H.inside}" fill="#4a1f22"/><ellipse cx="${H.tongue[0]}" cy="${H.tongue[1]}" rx="6" ry="2" fill="#d9737a"/>${paint(H.jaw)}</g>`;
+  s += paint(H.head) + (C.patch ? `<defs><clipPath id="${headId}"><path d="${H.neck}"/><path d="${H.head}"/></clipPath></defs><g clip-path="url(#${headId})" fill="${C.patch}"><path d="${farmBlob(...H.patch, R, 90)}"/>` +
+    (R(98) < 0.7 ? `<path d="${farmBlob(...H.neckPatch, R, 100)}"/>` : "") + `</g>` : "");
+  const [nx, ny] = H.nose, muzzle = paint(H.muzzle, C.muzzle, 1.6) + `<ellipse cx="${nx}" cy="${ny}" rx="1.6" ry="1.3" fill="#3a2020"/>` +
+    (H.mouth ? `<path d="${H.mouth}" fill="none" stroke="${mix(C.muzzle, "#000000", 0.45)}" stroke-width="1.4" stroke-linecap="round"/>` : "");
+  // (grazing and lying, it chews: its muzzle working with the quick LFO, once a round)
+  s += pose === "graze" || lying ? `<g>${farmMove(o, "fast", R(3), 1, `<animateTransform attributeName="transform" type="translate" values="0 0;0.8 1.4;0 0"/>`)}${muzzle}</g>` : muzzle;
+  if (pose === "graze") s += grassTuft(99, 1, 12, seed + 5, "#5a9a3a", 1.8);   // (the grass it is eating, round its muzzle)
+  const [ex, ey] = H.eye;
+  s += lying ? `<ellipse cx="${ex}" cy="${ey}" rx="2.2" ry="1.4" fill="#1f1410"/><path d="M${ex - 2.8} ${ey - 1} Q${ex} ${ey - 2.8} ${ex + 2.8} ${ey - 1}" fill="none" stroke="${ln}" stroke-width="1.3"/>`
+    : `<ellipse cx="${ex}" cy="${ey}" rx="2.2" ry="2.6" fill="#1f1410"/><circle cx="${ex + 0.8}" cy="${ey - 1}" r="0.8" fill="#ffffff"/>`;
+  // (its ear; standing, flicking twice a round of the slow LFO; a Highland's long fringe over its eyes, and over its ear)
+  const ear = paint(H.ear, hide, 1.6) + `<path d="${H.ear}" fill="${C.muzzle}" opacity="0.45" transform="translate(${f1(H.earAt[0] * 0.12)} ${f1(H.earAt[1] * 0.12)}) scale(0.88)"/>`;
+  s += pose === "stand" ? `<g>${farmMove(o, "slow", R(4), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, -14, 5, 0, 0, -14, 5, 0, 0], ...H.earAt)}" keyTimes="0;0.2;0.23;0.26;0.29;0.7;0.73;0.76;0.79;1"/>`)}${ear}</g>` : ear;
+  if (C.shaggy) s += paint(H.fringe, hide, 1.4) + `<path d="${H.fringe}" fill="none" stroke="${mix(hide, "#000000", 0.25)}" stroke-width="1" transform="translate(${f1(H.eye[0] * 0.2)} ${f1(H.eye[1] * 0.2)}) scale(0.8)"/>`;
+  s += C.shaggy ? paint(H.horns[1], horn, 1.6) : paint(H.horn, horn, 1.4);
+  // (mooing: its moo going out from its mouth as its jaw opens, the same way in as the jaw)
+  if (pose === "moo") s += `<path class="fumes" d="M138 -146 Q143 -135 138 -124 M145 -151 Q152 -135 145 -119 M152 -156 Q161 -135 152 -114" fill="none" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" opacity="0.8">` +
+    farmMove(o, "slow", R(2), 8, `<animate attributeName="opacity" values="0;0;0.8;0.8;0;0;0;0.8;0.8;0;0" keyTimes="0;0.1;0.16;0.36;0.42;0.5;0.6;0.66;0.86;0.92;1"/>`) + `</path>`;
+  return s;
+}
+// THE PIG. Standing, its curly tail wiggling with the quick LFO and its ear flopping with the slow; rooting, its snout in
+// the earth, nudging at it; lying on its side, asleep, its belly toward us and its legs out, breathing; sitting on its
+// haunches, its head turning one way and the other. Spots and a band end at its outline, clipped to it.
+const PIG_POSE = {
+  stand: { body: "M26 -40 C6 -47 -24 -47 -38 -40 C-48 -34 -49 -18 -40 -12 C-28 -7 0 -7 20 -10 C32 -12 38 -21 36 -30 C35 -36 31 -39 26 -40 Z",
+           legs: [[16, -18, -3, 7, 0], [-26, -18, -3, 8, 1], [24, -18, 0, 7.5, 0], [-34, -18, 0, 8.5, 1]],
+           head: "M22 -42 C30 -48 42 -45 48 -36 L54 -29 C56 -26 56 -19 54 -17 C48 -13 40 -12 32 -14 C24 -16 18 -24 22 -42 Z",
+           snout: [55, -23, 3.4, 6.4, 0], eye: [41, -32], cheek: [45, -22], mouth: "M44 -17 Q48 -15 51 -17",
+           farEar: "M28 -42 Q32 -53 41 -50 Q37 -45 34 -41 Z", ear: "M31 -43 Q42 -51 50 -42 Q44 -38 38 -35 Q34 -38 31 -43 Z", earAt: [32, -43],
+           tail: "M-46 -32 C-52 -33 -55 -38 -51 -41 C-47 -44 -43 -40 -46 -37 C-48 -35 -51 -37 -49 -39", tailAt: [-45, -32],
+           spots: [[-26, -34, 7, 5], [-6, -24, 8, 6], [12, -36, 5, 4], [-38, -20, 5, 5]], band: "M2 -52 L22 -52 L28 2 L6 2 Z" },
+  root:  { body: "M24 -36 C8 -45 -22 -50 -38 -44 C-49 -38 -50 -22 -41 -15 C-28 -9 0 -8 18 -8 C30 -9 35 -18 33 -26 C32 -31 28 -34 24 -36 Z",
+           legs: [[18, -16, -3, 7, 0], [-26, -20, -3, 8, 1], [26, -16, 0, 7.5, 0], [-34, -20, 0, 8.5, 1]],
+           head: "M20 -38 C30 -43 40 -38 44 -30 L51 -14 C54 -8 54 -4 50 -2 C44 0 36 -2 32 -6 C26 -12 20 -22 20 -38 Z",
+           snout: [51, -4.5, 3, 5.6, 60], eye: [36, -28], cheek: [41, -16], mouth: "M38 -5 Q41 -3 44 -3",
+           farEar: "M24 -38 Q28 -48 36 -46 Q32 -41 29 -37 Z", ear: "M27 -39 Q40 -43 45 -30 Q38 -28 33 -28 Q29 -32 27 -39 Z", earAt: [28, -39],
+           tail: "M-47 -40 C-53 -41 -56 -46 -52 -49 C-48 -52 -44 -48 -47 -45 C-49 -43 -52 -45 -50 -47", tailAt: [-46, -40],
+           spots: [[-26, -38, 7, 5], [-6, -26, 8, 6], [12, -32, 5, 4], [-40, -26, 5, 5]], band: "M0 -54 L20 -54 L28 2 L6 2 Z", turn: [22, -32] },
+  side:  { body: "M-44 -6 C-52 -18 -40 -34 -16 -35 C6 -36 24 -32 31 -22 C35 -15 33 -8 27 -6 L-36 -4 C-40 -4 -43 -5 -44 -6 Z",
+           head: "M24 -28 C33 -33 45 -30 51 -22 L56 -17 C58 -14 58 -8 56 -6 C50 -3 38 -3 30 -6 C22 -10 19 -20 24 -28 Z",
+           snout: [56.5, -11.5, 2.8, 5, 0], shut: "M38 -21 Q40.5 -19 43 -21", cheek: [44, -12], mouth: "M45 -8 Q48 -6.5 51 -8",
+           ear: "M30 -29 Q41 -36 48 -26 Q41 -24 35 -22 Q31 -25 30 -29 Z", earAt: [31, -28],
+           tail: "M-44 -16 C-50 -17 -53 -22 -49 -25 C-45 -28 -41 -24 -44 -21 C-46 -19 -49 -21 -47 -23", tailAt: [-43, -16],
+           spots: [[-24, -26, 7, 5], [-4, -22, 8, 5], [14, -28, 5, 4]], band: "M0 -40 L18 -40 L20 4 L2 4 Z" },
+  sit:   { body: "M-26 0 C-38 -2 -40 -16 -34 -26 C-26 -38 -10 -46 4 -46 C14 -46 20 -40 20 -30 C20 -20 16 -10 12 -4 L-12 0 Z",
+           legs: [[4, -24, -3, 7, 0]],
+           head: "M2 -58 C9 -68 23 -69 30 -61 L37 -53 C39 -50 39 -43 37 -41 C32 -37 24 -37 17 -39 C8 -42 0 -49 2 -58 Z",
+           snout: [38, -47, 3, 6, 0], eye: [25, -56], cheek: [28, -45], mouth: "M29 -41 Q33 -39 35 -41",
+           farEar: "M8 -62 Q13 -72 21 -69 Q17 -64 14 -61 Z", ear: "M13 -62 Q25 -71 32 -60 Q27 -57 21 -54 Q16 -57 13 -62 Z", earAt: [14, -62],
+           tail: "M-34 -3 C-40 -3 -43 -8 -39 -11 C-35 -14 -31 -10 -34 -7 C-36 -5 -39 -7 -37 -9", tailAt: [-33, -3],
+           spots: [[-22, -26, 7, 5], [-2, -38, 7, 5], [8, -20, 5, 4]], band: "M-10 -54 L10 -54 L20 2 L-2 2 Z", turn: [10, -46] } };
+function pigThingSvg(t, seed, o) {
+  const pose = PIG_POSE[t.pose] ? t.pose : "stand", C = PIG_COAT[t.coat] || PIG_COAT.pink, R = seeded(seed), Q = PIG_POSE[pose];
+  const hide = C.hide, ln = mix(hide, "#000000", 0.45), trot = C.band ? "#1c1718" : mix(hide, "#3a2020", 0.6), band = C.band || hide;
+  const paint = (d, col = hide, w = 1.6) => `<path d="${d}" fill="${col}" stroke="${mix(col, "#000000", 0.45)}" stroke-width="${w}" stroke-linejoin="round"/>`;
+  const clipId = `pig-body-${pose}-${seed}`;
+  const coat = C.spot || C.band ? `<defs><clipPath id="${clipId}"><path d="${Q.body}"/></clipPath></defs><g clip-path="url(#${clipId})">` +
+    (C.band ? `<path d="${Q.band}" fill="${C.band}"/>` : Q.spots.map(([x, y, rx, ry], i) => `<path d="${farmBlob(x + (R(i) - 0.5) * 6, y + (R(i + 5) - 0.5) * 4, rx, ry, R, 30 + 10 * i)}" fill="${C.spot}"/>`).join("")) + `</g>` : "";
+  // (its curly tail, with a dark edge; wiggling, or not)
+  const tailOf = (wig, off) => { const [tx, ty] = Q.tailAt, tl = `<path d="${Q.tail}" fill="none" stroke="${ln}" stroke-width="3.4" stroke-linecap="round"/><path d="${Q.tail}" fill="none" stroke="${hide}" stroke-width="1.7" stroke-linecap="round"/>`;
+    return wig ? `<g>${farmMove(o, "fast", off, 1, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 18, -8, 0], tx, ty)}"/>`)}${tl}</g>` : tl; };
+  // (a leg: [x, its top, the ground, its width, a hind one]; the near pair in its coat, the far a shade darker; the band's
+  // forelegs in the band's colour)
+  const legOf = ([x, top, g, w, hind]) => { const col = !hind && C.band ? band : hide; return hoofLeg(x, top, g, w, !!hind, g < 0 ? mix(col, "#000000", 0.18) : col, 1.4, trot, 3); };
+  const [sx, sy, srx, sry, sa] = Q.snout;
+  const ear = paint(Q.ear, hide, 1.3) + `<path d="${Q.ear}" fill="${C.snout}" opacity="0.4" transform="translate(${f1(Q.earAt[0] * 0.15)} ${f1(Q.earAt[1] * 0.15)}) scale(0.85)"/>`;
+  const head = (Q.farEar ? paint(Q.farEar, mix(hide, "#000000", 0.18), 1.2) : "") + paint(Q.head) +
+    `<ellipse cx="${Q.cheek[0]}" cy="${Q.cheek[1]}" rx="3.2" ry="2" fill="#e8607a" opacity="${C.band ? 0 : 0.3}"/>` +
+    `<g transform="rotate(${sa} ${sx} ${sy})"><ellipse cx="${sx}" cy="${sy}" rx="${srx}" ry="${sry}" fill="${C.snout}" stroke="${mix(C.snout, "#000000", 0.45)}" stroke-width="1.2"/>` +
+    `<ellipse cx="${f1(sx + 0.4)}" cy="${f1(sy - sry * 0.4)}" rx="0.9" ry="1.3" fill="#3a2226"/><ellipse cx="${f1(sx + 0.4)}" cy="${f1(sy + sry * 0.4)}" rx="0.9" ry="1.3" fill="#3a2226"/></g>` +
+    `<path d="${Q.mouth}" fill="none" stroke="${ln}" stroke-width="1.2" stroke-linecap="round"/>` +
+    (Q.shut ? `<path d="${Q.shut}" fill="none" stroke="#2a1a1c" stroke-width="1.3" stroke-linecap="round"/>`
+      : `<circle cx="${Q.eye[0]}" cy="${Q.eye[1]}" r="1.7" fill="#1f1416"/><circle cx="${Q.eye[0] + 0.6}" cy="${Q.eye[1] - 0.6}" r="0.6" fill="#ffffff"/>`);
+  let s = `<ellipse class="flat" cx="0" cy="1" rx="${pose === "side" ? 54 : pose === "sit" ? 36 : 50}" ry="5" fill="#000000" opacity="0.18"/>`;
+  if (pose === "stand") s += Q.legs.map(legOf).join("") + paint(Q.body) + coat + tailOf(true, R(1)) + head +
+    `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, 10, -3, 0, 0, 10, -3, 0, 0], ...Q.earAt)}" keyTimes="0;0.25;0.28;0.31;0.34;0.65;0.68;0.71;0.74;1"/>`)}${ear}</g>`;
+  else if (pose === "root") s += `<g class="flat"><ellipse cx="51" cy="1" rx="11" ry="2.4" fill="#5a3e22" opacity="0.5"/>` +
+      [[58, -1, 2], [61, 1, 1.6], [46, 1.5, 1.4], [55, 2, 1.2]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${f1(r * 0.7)}" fill="#6b4a2a"/>`).join("") + `</g>` +
+    Q.legs.map(legOf).join("") + paint(Q.body) + coat + tailOf(true, R(1)) +
+    `<g>${farmMove(o, "fast", R(2), 1, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, -7, 2, 0], ...Q.turn)}"/>`)}${head + ear}</g>`;
+  else if (pose === "side") {
+    // (on its side, its belly toward us: its four legs out toward us from the belly, the upper pair a shade darker)
+    // (its legs from the belly's edge, the top of each left open so it grows out of the belly; the upper pair behind)
+    const stub = (x, col) => `<path d="M${f1(x - 3.5)} -8 L${f1(x - 1)} -1 L${f1(x + 6)} -1 L${f1(x + 3.5)} -8" fill="${col}" stroke="${mix(col, "#000000", 0.45)}" stroke-width="1.3" stroke-linejoin="round"/>` +
+      `<path d="M${f1(x - 1)} -1 L${f1(x + 6)} -1 L${f1(x + 6.6)} 3 L${f1(x - 1.6)} 3 Z" fill="${trot}" stroke="${mix(trot, "#000000", 0.4)}" stroke-width="0.9" stroke-linejoin="round"/>`;
+    s += `<g>${farmMove(o, "slow", R(1), 9, `<animateTransform attributeName="transform" type="scale" values="${farmTimes(3, ["1 1", "1.01 1.05", "1 1"]).join(";")}"/>`)}` +
+      paint(Q.body) + coat + `<path d="M-36 -6 Q-6 -15 26 -8 Q-4 -4 -36 -6 Z" fill="${mix(hide, "#ffffff", 0.22)}"/>` +
+      stub(-20, mix(hide, "#000000", 0.18)) + stub(18, mix(band, "#000000", 0.18)) + stub(-27, hide) + stub(11, band) + `</g>` +
+      tailOf(false) + head + `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, -8, 3, 0, 0, -8, 3, 0, 0], ...Q.earAt)}" keyTimes="0;0.3;0.33;0.36;0.39;0.75;0.78;0.81;0.84;1"/>`)}${ear}</g>`;
+  } else {
+    // (sitting: its far foreleg, its body, its near hind leg folded at its side with the trotter forward, its near foreleg)
+    const fore = mix(band, "#000000", 0.45);
+    s += tailOf(true, R(1)) + legOf(Q.legs[0]) + paint(Q.body) + coat +
+      paint("M-14 -6 L0 -5 L1 -1 L-14 -1 Z") + `<path d="M0 -5 L5 -4.5 L6 0 L0.5 0 Z" fill="${trot}" stroke="${mix(trot, "#000000", 0.4)}" stroke-width="0.9" stroke-linejoin="round"/>` +
+      paint("M-34 -12 C-34 -24 -20 -28 -12 -20 C-6 -14 -6 -4 -12 -1 L-28 -1 C-33 -3 -34 -7 -34 -12 Z") +
+      `<path d="M10.5 -18 L11 -3 L17 -3 L17.5 -18" fill="${band}" stroke="${fore}" stroke-width="1.4" stroke-linejoin="round"/>` +
+      `<path d="M10.8 -3 L17.2 -3 L17.8 0 L10.2 0 Z" fill="${trot}" stroke="${mix(trot, "#000000", 0.4)}" stroke-width="0.9" stroke-linejoin="round"/>` +
+      `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, -7, -7, 0, 0, 5, 5, 0, 0], ...Q.turn)}" keyTimes="0;0.15;0.2;0.38;0.43;0.58;0.63;0.82;0.87;1"/>`)}${head + ear}</g>`;
+  }
+  return `<g transform="scale(${PIG_SCALE})">${s}</g>`;
+}
+// THE CHICKEN, the stable's hens: standing, its head jerking with the quick LFO, blinking now and then; pecking, its body
+// tipped forward and its head down at the grain, up and down again once a round of the quick LFO; sitting fluffed up on
+// a nest of straw, an egg peeping out, breathing and turning its head; flapping, its wings beating with the wings' LFO
+// (F, a quarter of a beat to start with) and its beak open.
+const HEN_HEAD = (x, y, r, C, open) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${C.body}" stroke="${C.line}" stroke-width="0.8"/>` +
+  `<path d="M${f1(x - 2)} ${f1(y - r)} q2 -4 4 0 q2 -4 3 1 Z" fill="#d62828"/>` +
+  (open ? `<path d="M${f1(x + r - 0.3)} ${f1(y - 1)} l4 0.6 l-4 1 Z M${f1(x + r - 0.3)} ${f1(y + 1)} l3.4 1.6 l-3.6 -0.2 Z" fill="#e8a33a"/>` : `<path d="M${f1(x + r - 1)} ${y} l4 1 l-4 1 Z" fill="#e8a33a"/>`) +
+  `<path d="M${f1(x + 1)} ${f1(y + 3)} q1 3 -1 4" fill="#d62828"/>`;
+function chickenThingSvg(t, seed, o) {
+  const pose = HEN_POSES.some(([p]) => p === t.pose) ? t.pose : "peck", C = HEN_COAT[t.coat] || HEN_COAT.brown, R = seeded(seed);
+  const paint = (d, col = C.body, w = 1) => `<path d="${d}" fill="${col}" stroke="${C.line}" stroke-width="${w}" stroke-linejoin="round"/>`;
+  const line = d => `<path d="${d}" fill="none" stroke="${C.line}" stroke-width="0.8" stroke-linecap="round"/>`;
+  const legs = (d, toes) => `<path d="${d}" fill="none" stroke="#e8a33a" stroke-width="1.6" stroke-linecap="round"/><path d="${toes}" fill="none" stroke="#e8a33a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // (speckled: dots of white and of black over its body, inside its outline)
+  const dots = (cx, cy, rx, ry) => !C.dots ? "" : [...Array(14)].map((_, i) => { const a = 2 * Math.PI * R(i + 50), u = Math.sqrt(R(i + 70));
+    return `<circle cx="${f1(cx + Math.cos(a) * rx * u)}" cy="${f1(cy + Math.sin(a) * ry * u)}" r="0.95" fill="${i % 4 ? "#f5efe2" : "#1f1a16"}"/>`; }).join("");
+  const eye = (x, y, blink) => `<ellipse cx="${x}" cy="${y}" rx="0.9" ry="0.9" fill="#111111">${blink ? farmMove(o, "slow", R(3), 8, `<animate attributeName="ry" values="0.9;0.9;0.1;0.9;0.9;0.1;0.9;0.9" keyTimes="0;0.4;0.42;0.44;0.8;0.82;0.84;1"/>`) : ""}</ellipse>`;
+  let s = `<ellipse class="flat" cx="0" cy="0.5" rx="${pose === "nest" ? 20 : 14}" ry="2.5" fill="#000000" opacity="0.18"/>`;
+  if (pose === "stand") s += legs("M-3 -8 L-4 0 M3 -8 L4 0", "M-7 0.6 L-4 0 L-0.5 0.8 M0.5 0.6 L4 0 L7.5 0.8") +
+    paint("M-16 -18 Q-20 -30 -12 -28 Q-6 -14 6 -14 Q14 -14 14 -22 L10 -8 Q0 -2 -10 -8 Z") + line("M-15 -20 Q-18 -26 -14 -27.5 M-13 -19 Q-15 -24 -12 -26") +
+    paint("M-9 -17 Q-2 -19 5 -15 Q2 -10 -4 -10 Q-9 -12 -9 -17 Z", C.wing, 0.8) + line("M-6 -13 Q-1 -12 3 -13.5") + dots(-2, -11, 8, 3.5) +
+    `<g>${farmMove(o, "fast", R(1), 1, `<animateTransform attributeName="transform" type="translate" values="0 0;0 0;1.6 -0.4;1.6 -0.4;0 0;0 0" keyTimes="0;0.4;0.45;0.85;0.9;1"/>`)}` +
+    HEN_HEAD(14, -24, 5, C) + eye(15.5, -25, true) + `</g>`;
+  else if (pose === "peck") s += `<g class="flat">${[[20, 0.6], [23.5, -0.4], [18, 1.4], [25, 1]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="1" ry="0.6" fill="#d9b25a"/>`).join("")}</g>` +
+    legs("M-4 -6 L-5 0 M2 -6 L3 0", "M-8 0.6 L-5 0 L-1.5 0.8 M-0.5 0.6 L3 0 L6.5 0.8") +
+    paint("M-14 -20 Q-20 -34 -10 -32 Q-4 -18 6 -15 Q11 -14 11 -11 L8 -6 Q-2 -1 -10 -6 Z") + line("M-13 -22 Q-17 -29 -11 -31 M-11 -21 Q-13 -27 -9 -29") +
+    paint("M-9 -16 Q-2 -17 4 -12 Q1 -7 -5 -7 Q-10 -10 -9 -16 Z", C.wing, 0.8) + line("M-6 -11 Q-1 -10 2 -11") + dots(-3, -12, 7, 4) +
+    // (its head down at the grain; once a round it comes up and goes down again)
+    `<g>${farmMove(o, "fast", R(1), 1, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, -34, -34, 0, 0], 8, -12)}" keyTimes="0;0.2;0.5;0.68;1"/>`)}` +
+    paint("M4 -15 Q12 -16 16 -9 L12 -5 Q9 -9 5 -9 Z", C.body, 0.8) + `<circle cx="15" cy="-5.5" r="4.4" fill="${C.body}" stroke="${C.line}" stroke-width="0.8"/>` +
+    `<path d="M11.5 -9.5 q2 -3.5 4 -0.5 q2 -3 3.5 1.2 Z" fill="#d62828"/><path d="M17.5 -2.4 l2.2 3.2 l-3.8 -1.2 Z" fill="#e8a33a"/><path d="M14 -1.5 q-1 2.5 -3 2" fill="#d62828"/>` + eye(16.6, -6.2) + `</g>`;
+  else if (pose === "nest") s += `<ellipse cx="0" cy="-6" rx="19" ry="6" fill="#9a7840" stroke="#6b5228" stroke-width="1"/><ellipse cx="0" cy="-7" rx="15" ry="3.4" fill="#5e4724"/>` +
+    // (fluffed up on the nest, breathing three times a round of the slow LFO, its head turning to look about)
+    `<g>${farmMove(o, "slow", R(1), 9, `<animateTransform attributeName="transform" type="scale" values="${farmTimes(3, ["1 1", "1.02 1.05", "1 1"]).join(";")}"/>`)}` +
+    paint("M-16 -3 C-20 -12 -20 -22 -14 -27 C-10 -24 -6 -23 -2 -24 C6 -26 14 -22 15 -15 C16 -10 14 -5 12 -3 Z") + line("M-15 -12 Q-18 -20 -14 -25") +
+    line("M10 -22 q2.2 1.2 1.4 3.4 q2.2 1.2 0.8 3.4 q2 1.4 0.2 3.2") + paint("M-13 -15 Q-5 -21 6 -17 Q2 -10 -6 -9 Q-12 -10 -13 -15 Z", C.wing, 0.8) +
+    line("M-9 -12 q2 1.6 4 0 q2 1.6 4 0 q2 1.6 3 -0.6") + dots(-2, -15, 10, 5) +
+    `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, -12, -12, 0, 0], 10, -24)}" keyTimes="0;0.3;0.36;0.6;0.66;1"/>`)}` +
+    HEN_HEAD(11, -27, 4.5, C) + eye(12.6, -28.2) + `</g></g>` +
+    `<ellipse cx="14.5" cy="-6.5" rx="2.6" ry="3.3" fill="#f3ead8" stroke="#c9bca2" stroke-width="0.6"/>` +
+    `<path d="M-19 -6 C-19 1 -10 2 0 2 C10 2 19 1 19 -6 C12 -5 -12 -5 -19 -6 Z" fill="#b8904c" stroke="#6b5228" stroke-width="1"/>` +
+    `<path d="M-16 -3 l6 1.5 M-8 -1 l7 0.5 M2 -1 l6 -0.5 M10 -2.5 l6 -1.5 M-13 0 l5 -1.5 M5 0.5 l6 -1" stroke="#e0c070" stroke-width="0.9" stroke-linecap="round"/>`;
+  else {
+    // (flapping: both wings up, each beating down and back up with the wings' LFO, together)
+    const flap = (inner, x, y) => `<g>${farmMove(o, "wings", R(1), 0.3, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, -55, 0], x, y)}"/>`)}${inner}</g>`;
+    s += flap(paint("M3 -18 Q-2 -32 -12 -41 Q-11 -37 -15 -35 Q-11 -32 -15 -29 Q-10 -27 -12 -23 Q-4 -21 3 -16 Z", mix(C.wing, "#000000", 0.2), 0.8), 3, -18) +
+      legs("M-3 -6 L-4 0 M3 -6 L5 0", "M-7 0.6 L-4 0 L-0.5 0.8 M1.5 0.6 L5 0 L8.5 0.8") +
+      paint("M-15 -12 Q-20 -24 -12 -24 Q-6 -17 3 -20 Q8 -23 11 -30 L17 -28 Q16 -18 12 -11 Q4 -5 -8 -6 Q-13 -8 -15 -12 Z") + line("M-14 -14 Q-17 -21 -12.5 -23") + dots(-1, -12, 8, 3.5) +
+      HEN_HEAD(15, -31, 4.6, C, true) + eye(16.4, -32) +
+      flap(paint("M0 -17 Q-4 -30 -12 -38 Q-11 -34 -15 -32 Q-11 -29 -15 -26 Q-10 -24 -12 -20 Q-5 -18 -3 -13 Q-1 -14 0 -17 Z", C.wing, 0.8) + line("M-2.5 -18 L-11 -33 M-3.5 -16 L-12.5 -26"), 0, -17);
+  }
+  return `<g transform="scale(${HEN_SCALE})">${s}</g>`;
+}
 const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
@@ -2057,6 +2337,10 @@ const THING_PARAMS = {
   cascade: [["style", "💦 kind", "choice", CASCADE_STYLES]],
   passage: [["style", "🕳️ kind", "choice", PASSAGE_STYLES], ["to", "🧭 leads to", "choice", passagePlaces]],
   cavemushroom: [["style", "🍄 kind", "choice", CAVE_MUSHROOMS], ["color", "🎨", "color", CAVE_MUSHROOM_COLORS], ["glow", "✨ glowing", "toggle"]],
+  // (ticket 504, for M) the 🐄 farm animals' own: each its pose (four, each its own drawing) and its coat
+  cow: [["pose", "🐄 pose", "choice", COW_POSES], ["coat", "🎨 coat", "choice", COW_COATS]],
+  pig: [["pose", "🐖 pose", "choice", PIG_POSES], ["coat", "🎨 coat", "choice", PIG_COATS]],
+  chicken: [["pose", "🐔 pose", "choice", HEN_POSES], ["coat", "🎨 coat", "choice", HEN_COATS]],
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
@@ -2068,7 +2352,8 @@ const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, s
                          seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true, treasure: "gold" }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
                          bubblemaker: { shape: "round", rate: 4, theme: "A", color: MAKER_COLORS[0] },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] },
-                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" }, cavemushroom: { style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true } };   // (ticket 471)
+                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" }, cavemushroom: { style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true },   // (ticket 471)
+                         cow: { pose: "stand", coat: "holstein" }, pig: { pose: "stand", coat: "pink" }, chicken: { pose: "peck", coat: "brown" } };   // (ticket 504)
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
 // size and shininess (like stars we add or not, and controls over their color
@@ -2246,7 +2531,7 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["animals", "🐄 farm animals"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
@@ -2264,6 +2549,9 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       gem: { label: "💎 gem", size: 1, group: "cave", moving: true }, puddle: { label: "💧 puddle", size: 1, group: "cave", moving: true },
                       cascade: { label: "💦 little waterfall", size: 1, group: "cave", moving: true }, passage: { label: "🕳️ cave passage", size: 1, group: "cave" },
                       cavemushroom: { label: "🍄 cave mushroom", size: 1, group: "cave", moving: true },
+                      // (ticket 504, for M) the 🐄 farm animals: a cow, a pig and a chicken, each in four poses, moving with the music
+                      cow: { label: "🐄 cow", size: 1, group: "animals", moving: true }, pig: { label: "🐖 pig", size: 1, group: "animals", moving: true },
+                      chicken: { label: "🐔 chicken", size: 1, group: "animals", moving: true },
                       // (ticket 284) a 🎚️ lever, and 🕳️ trap doors it opens and shuts
                       lever: { label: "🎚️ lever", size: 1, group: "works" }, trapdoor: { label: "🕳️ trap door", size: 1, group: "works" },
                       // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
@@ -2379,7 +2667,8 @@ function palisadeSvg(n, skulls, seed) {
 }
 // (a thing's depth among the objects: where its feet are; a trap door's, its back edge)
 // (the kinds whose drawings lfoTimed or sceneLfo time: their cache keys carry the LFOs' stamps, thingsLayer)
-const LFO_THINGS = new Set(["gem", "puddle", "cascade", "cavemushroom", "chest", "kelp", "seagrass", "seafan", "sealettuce", "campfire", "cauldron"]);
+const LFO_THINGS = new Set(["gem", "puddle", "cascade", "cavemushroom", "chest", "kelp", "seagrass", "seafan", "sealettuce", "campfire", "cauldron",
+                            "cow", "pig", "chicken"]);   // (the farm animals: ticket 504)
 const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 :
   t.kind === "puddle" ? t.z - PUDDLE_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;   // (ticket 471: one stands in a puddle, in front of its back edge)
 const thingLabel = t => t.fallen ? `🪨 fallen ${t.fallen}` : t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
@@ -2436,6 +2725,10 @@ function thingSvg(o, t, i) {
                t.kind === "cascade" ? at(cascadeThingSvg(t, seed, o)) :
                t.kind === "passage" ? at(passageThingSvg(t, seed)) :
                t.kind === "cavemushroom" ? at(caveMushroomSvg(t, seed, o)) :
+               // (ticket 504) the farm animals
+               t.kind === "cow" ? at(cowThingSvg(t, seed, o)) :
+               t.kind === "pig" ? at(pigThingSvg(t, seed, o)) :
+               t.kind === "chicken" ? at(chickenThingSvg(t, seed, o)) :
                ["kelp", "seagrass", "seafan", "sealettuce"].includes(t.kind) ? at(seaPlantSvg(t.kind, t.color || THING_DEFAULTS[t.kind].color, seed, o)) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
   // (ticket 324: a lever marked, so it glows under the pointer as the trap room's do)
