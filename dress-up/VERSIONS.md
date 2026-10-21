@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## 0.0.390 (2026-10-20)
+
+Everything in 0.0.389, plus six ways to do the horse's mane, for M.
+
+- **💇 The horse's mane** (in 🧍 Body's 🐴 the horse): 🐴 loose (the usual, as before), 🌊 long and flowing (with a long forelock over its forehead), 🔘 button braids (little knots along its neck), 🪮 short and standing up (a brush, like a zebra's), ➰ curly, and 🎀 braids with bows, whose bows have their own colour ("🎀 its bows"). Seen from the side, from the front and from behind, led and ridden.
+
 ## 0.0.389 (2026-10-20)
 
 Everything in 0.0.388, plus who made it and on what terms.

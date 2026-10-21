@@ -144,6 +144,8 @@ const TABS = [
     ["choice", "horseLead", "🚶 lead it from its", [["left", "⬅️ left side (the usual)"], ["right", "➡️ right side"]]],
     ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
     ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
+    ["choice", "horseManeStyle", "💇 its mane", HORSE_MANE_STYLES],   // (ticket 497, for M)
+    ["color", "horseBows", "🎀 its bows", ["#ec4899", "#d2382b", "#3b82f6", "#e8c33a", "#22c55e", "#7c3aed", "#ffffff"]],
     ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
     ["color", "horseTack", "🪢 its halter and rein", ["#7a3a1a", "#1f1f22", "#b91c1c", "#1d4ed8", "#15803d", "#e0b030"]],
     ["toggle", "horseSocks", "🧦 white socks"],
@@ -1040,9 +1042,10 @@ const SHOWN_WHEN = {
   "costume.wreath": c => c.kind === "fairy",
   // (ticket 495) the mark's colour with a mark; the saddle's and its blanket's while ridden (the only time they are drawn)
   "body.horseLead": b => b.horse === "lead",   // (ticket 496)
+  "body.horseBows": b => (b.horse || "none") !== "none" && b.horseManeStyle === "bows",   // (ticket 497)
   "body.horseMarkColor": b => (b.horse || "none") !== "none" && (b.horseMark || "none") !== "none",
   ...Object.fromEntries(["horseSaddle", "horseBlanket"].map(k => ["body." + k, b => b.horse === "ride"])),
-  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize", "horseShoes"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
+  ...Object.fromEntries(["horseCoat", "horseMane", "horseManeStyle", "horseMark", "horseTack", "horseSocks", "horseSize", "horseShoes"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
   ...Object.fromEntries(["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor"].map(k => ["costume." + k, c => c.kind === "ghost"])),
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),

@@ -501,7 +501,7 @@ function drawNow() {
   if (horseView && !wet) {
     const gait = B.anim === "walk" ? "walk" : B.anim === "run" ? "run" : "stand", k = horseView === "side" ? dir : 1;
     const h = horseSvg(horseView, gait, gait === "stand" ? 0 : lfoNow("B").phase,
-                       { coat: B.horseCoat, mane: B.horseMane, mark: B.horseMark, tack: B.horseTack, socks: B.horseSocks, shoes: B.horseShoes, markColor: B.horseMarkColor, saddle: B.horseSaddle, blanket: B.horseBlanket }, 0, ride);
+                       { coat: B.horseCoat, mane: B.horseMane, mark: B.horseMark, tack: B.horseTack, socks: B.horseSocks, shoes: B.horseShoes, markColor: B.horseMarkColor, saddle: B.horseSaddle, blanket: B.horseBlanket, maneStyle: B.horseManeStyle, bows: B.horseBows }, 0, ride);
     // (drawn on the ground at 0, scaled by hs about its hooves; its points into the friend's units, T)
     const hs = horseHs, T = ([x, y]) => [horseX + k * hs * x, ground + hs * y], at = `translate(${f1(horseX)} ${f1(ground)}) scale(${(k * hs).toFixed(4)} ${hs.toFixed(4)})`;
     const horseG = `<g class="horse" data-horse="${horseView} ${gait}" data-size="${hs.toFixed(3)}"${leadFar ? ' data-far=""' : ""}><ellipse cx="${f1(horseX - k * hs * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${f1((horseView === "side" ? 225 : 100) * hs)}" ry="${f1(14 * hs)}" fill="#000" opacity="0.08"/>` +

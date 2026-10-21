@@ -1806,6 +1806,17 @@ function catRoomCats(c, K, wags) {
 // A horse's face, from in front, as the stable's horses look out of their stalls: its ears, its long face with its
 // marking, its muzzle, its eyes at the sides, its forelock, a halter (or bridle) in `halter`. `still` (ticket 438: the
 // friend's horse, facing us): no blinking, no ear flicks, no munching, no hay. (0, 0) as for horseHead.
+// (ticket 497, for M) the forelock between the ears, seen from the front, in the mane's style (H.maneStyle; the stable's
+// horses have none, so theirs is loose); a bow in H.bow
+function forelock(H, mane, maneD) {
+  const s = H.maneStyle || "loose";
+  if (s === "long") return `<path d="M-10 -161 Q-21 -147 -16 -126 Q-10 -140 -2 -156 Q0 -158 2 -156 Q10 -140 16 -126 Q21 -147 10 -161 Q0 -166 -10 -161 Z" fill="${mane}" stroke="${maneD}" stroke-width="1"/>`;
+  if (s === "brush") return `<path d="M-8 -158 L-7 -171 L-3 -161 L0 -174 L3 -161 L7 -171 L8 -158 Q0 -162 -8 -158 Z" fill="${mane}" stroke="${maneD}" stroke-width="1" stroke-linejoin="round"/>`;
+  if (s === "buttons") return maneKnot([0, -158], 5, mane, maneD);
+  if (s === "curly") return maneCurl([-6, -157], 4.5, mane, maneD) + maneCurl([6, -157], 4.5, mane, maneD) + maneCurl([0, -150], 4.5, mane, maneD);
+  if (s === "bows") return maneBraid([0, -161], [0, 1], 20, mane, maneD, H.bow || "#e0559a");
+  return `<path d="M-9 -160 Q-16 -146 -7 -134 Q-3 -146 0 -159 Q4 -145 10 -137 Q14 -150 9 -160 Q0 -165 -9 -160 Z" fill="${mane}"/>`;
+}
 function horseFace(H, i, halter, still) {
   const coat = H.coat, ln = mix(coat, "#000000", 0.42), mane = H.mane, maneD = mix(mane, "#000000", 0.3), sh = mix(coat, "#000000", 0.2);
   const light = hexToRgb(coat).reduce((a, b) => a + b, 0) > 520, muz = light ? "#b9a6a0" : mix(coat, "#2a2420", 0.4), white = "#f7f4ee";
@@ -1829,7 +1840,7 @@ function horseFace(H, i, halter, still) {
     hay + `<g><path d="M-6 -50 Q0 -47.5 6 -50" fill="none" stroke="#1f1410" stroke-width="1.2"/>` +
     A(`<animateTransform attributeName="transform" type="translate" values="0 0;0 1.2;0 0" dur="${chew}s" repeatCount="indefinite"/>`) + `</g>` +
     eye(-1) + eye(1) +
-    `<path d="M-9 -160 Q-16 -146 -7 -134 Q-3 -146 0 -159 Q4 -145 10 -137 Q14 -150 9 -160 Q0 -165 -9 -160 Z" fill="${mane}"/>` +
+    forelock(H, mane, maneD) +
     // (its halter: a noseband in the castle's colors, its straps going back round the cheeks)
     [-1, 1].map(sd => `<path d="M${sd * 12.5} -82 Q${sd * 16} -98 ${sd * 18} -112" fill="none" stroke="${mix(halter, "#3a2414", 0.45)}" stroke-width="3" stroke-linecap="round"/>`).join("") +
     `<path d="M-13.5 -84 Q0 -76 13.5 -84" fill="none" stroke="${halter}" stroke-width="4.5" stroke-linecap="round"/>` +

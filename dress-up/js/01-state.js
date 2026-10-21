@@ -200,6 +200,9 @@ const catKey = (id, j, what) => "castleCat" + j + what + id;
 const HORSE_COATS = ["#7b4a2a", "#a0522d", "#2a2a2e", "#c9c9cf", "#f3efe6", "#d9a95b", "#5a3a22"];
 const HORSE_MANES = ["#1f1f22", "#5a3a22", "#7a3a1a", "#f3efe6", "#c0c0c0", "#f3e6c8", "#8b5cf6"];
 const HORSE_MARKS = [["none", "none"], ["star", "⭐ a star"], ["stripe", "❕ a stripe"], ["blaze", "⬜ a blaze"]];
+// (ticket 497, for M: "can we adjust the mane style? the default is good -- can we think of 5 others, to bring the total to
+// 6?") the friend's horse's mane: loose as it always was, and five more (the stable's horses keep theirs loose)
+const HORSE_MANE_STYLES = [["loose", "🐴 loose (the usual)"], ["long", "🌊 long and flowing"], ["buttons", "🔘 button braids"], ["brush", "🪮 short, standing up"], ["curly", "➰ curly"], ["bows", "🎀 braids with bows"]];
 const STABLE_HORSES = [
   { coat: "#7b4a2a", mane: "#1f1f22", mark: "star", offset: 23 },
   { coat: "#c9c9cf", mane: "#f3efe6", mark: "none", offset: 71 },
@@ -429,6 +432,7 @@ const DEFAULTS = {
   body:  { horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false, horseSize: 100,   // (ticket 492: the horse, in 🧍 Body)
            horseShoes: "off", horseMarkColor: "#f7f4ee", horseSaddle: "#6b3f1f", horseBlanket: "auto",   // (ticket 495, for M: more colours)
            horseLead: "left",   // (ticket 496: which side of it they lead it from)
+           horseManeStyle: "loose", horseBows: "#ec4899",   // (ticket 497, for M: how its mane is done, and its bows' colour)
            blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
            lieHead: "left", lieHow: "back", stairsWay: "up",   // (ticket 308: up or down the stairs)
            hand: "right",   // (ticket 316: the dominant hand, the one that pulls a lever: right, left, or both, by a coin flip)   // (ticket 299: lying down, the way the head points; on the back, face up, or on the side, facing us)
@@ -1102,7 +1106,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.389", released: "2026-10-20" };
+const VERSION = { number: "0.0.390", released: "2026-10-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

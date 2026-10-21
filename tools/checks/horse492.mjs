@@ -24,7 +24,7 @@ try {
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, g = SCENE.ground;
     state.music.mute = true; state.world.at = null;
     const rowsIn = name => (TABS.find(t => t[0] === name) || [0, 0, []])[2].flat(3).filter(x => typeof x === "string" && /^horse/.test(x));
-    const tabs = { body: rowsIn("🧍 Body"), costume: rowsIn("🐯 Costume"), defaults: [DEFAULTS.body.horse, DEFAULTS.costume.horse] };
+    const tabs = { body: rowsIn("🧍 Body"), costume: rowsIn("🐯 Costume"), defaults: [DEFAULTS.body.horse, DEFAULTS.costume.horse], keys: Object.keys(DEFAULTS.body).filter(k => /^horse/.test(k)) };
     // an old save: the horse in Costume
     const old = { costume: { kind: "none", horse: "ride", horseCoat: "#1f1f22", horseSize: 80 }, body: {} }, next = clone(DEFAULTS);
     for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(old[k] || {}) };
@@ -55,7 +55,7 @@ try {
     Object.assign(state.body, { horse: "none", facing: "front" }); changed(); drawNow(); await w(200);
     const none = { boxes: youBoxes(B.figX, fz).length, horse: horseNow };
     return JSON.stringify({ tabs, upgraded, ride, views, lead, none, sides }); })()`));
-  ok("the horse's settings are in 🧍 Body, none in 🐯 Costume", r.tabs.body.length === 7 && r.tabs.costume.length === 0 && r.tabs.defaults[0] === "none" && r.tabs.defaults[1] == null, r.tabs);
+  ok("the horse's settings are in 🧍 Body (each of its settings has its row there), none in 🐯 Costume", r.tabs.keys.length >= 7 && r.tabs.keys.every(k => r.tabs.body.includes(k)) && r.tabs.costume.length === 0 && r.tabs.defaults[0] === "none" && r.tabs.defaults[1] == null, r.tabs);
   ok("a friend saved with a horse in Costume keeps it, in Body", r.upgraded[0] === "ride" && r.upgraded[1] === "#1f1f22" && r.upgraded[2] === 80 && r.upgraded[3], r.upgraded);
   ok("a person away, saved with a horse in Costume, keeps it in Body too", r.upgraded[4] === "lead" && r.upgraded[5] === "#ffffff" && r.upgraded[6], r.upgraded);
   const R = r.ride;
