@@ -9,6 +9,7 @@ function draw() {
   if (tripTimer) tripWork("drawing", t);   // (⏱️ a trip being timed)
   if (bgShown.text !== text) return;
   const ms = performance.now() - t;
+  if (!sceneryStill()) liveDrawAvg = liveDrawAvg ? 0.9 * liveDrawAvg + 0.1 * ms : ms;   // (ticket 510: the place drawn live, for the churn guard)
   slowAvg = slowN ? 0.9 * slowAvg + 0.1 * ms : ms;
   if (++slowN < 30) return;
   const was = slowFlag;
