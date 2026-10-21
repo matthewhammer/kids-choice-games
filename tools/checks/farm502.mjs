@@ -62,7 +62,7 @@ try {
     const p0 = new DOMPoint(c.x, c.z - 45 * depthSize(B, c.z - g)).matrixTransform(M), from = { x: c.x, z: c.z }, path = [];
     let x = p0.x, y = p0.y;
     const fire = (type, x, y) => (document.elementFromPoint(x, y) || el).dispatchEvent(new PointerEvent(type, { bubbles: true, isPrimary: true, pointerId: 9, clientX: x, clientY: y, button: 0, buttons: type === "pointerup" ? 0 : 1 }));
-    fire("pointerdown", x, y); for (let i = 1; i <= 8; i++) { fire("pointermove", x + px * i / 8, y + py * i / 8); path.push(Math.round(c.x / tileSpan(B, c.z))); await w(30); }
+    fire("pointerdown", x, y); for (let i = 1; i <= 8; i++) { fire("pointermove", x + px * i / 8, y + py * i / 8); path.push(onTile(c) ? Math.round(c.x / tileSpan(B, c.z)) : "off");   /* (on a tile at every step, or "off": a piece that slid and snapped only when let go would show "off") */ await w(30); }
     fire("pointerup", x + px, y + py); await w(800);
     // (where it went at each move, by column, each column once: tile by tile, as Matthew asked, "move them tile by tile")
     const moved = B.things[2], drag = { x: moved.x, z: moved.z, from, tiles: Math.round((moved.x - from.x) / tileSpan(B, moved.z)), path: path.filter((k, i) => k !== path[i - 1]),
