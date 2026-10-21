@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 16 of 26 of the game's script, run in order by index.html.
 
 // each group's objects put in order by depth, in the places they held (a
@@ -160,9 +162,11 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // horizon, not the facade of the building. instead, the building's facade has accurate collision boxes ... permitting a
 // space for feet to squeeze between that box and the back horizon line": the house's lawn's far edge, 205 up, the
 // castle's meadow's, 150 up; the buildings' own boxes are SCENE_BOXES')
+// (ticket 503) the pasture's: just in front of its fence (162 up), far enough back that the friend walks behind each of
+// its horses grazing (PASTURE_HORSES: a horse moved farther back must keep LANE_MIN behind its footprint)
 const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 200, treehouse: 118, clearing: 140,
-                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, castle: 138,
-                    woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
+                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, farmyard: 90, desert: 120, castle: 138,
+                    woodpath: 165, pasture: 157, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
 // (ticket 176) The things that stand in a place and can't be walked
@@ -181,13 +185,20 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // (ticket 358: and what the audit found standing with no box: the cemetery's stones, the cave's stalagmites, the hut's woodpile
 // and the hut center's fire, the trap room's helmet, the greenhouse's watering can, the house's toys, a chair not sat on, the
 // sea floor's wreck and vent)
+// (ticket 504: and the farm animals put in a place, which, alive as they are, stand in the way as a bench does: a cow, a
+// pig, a chicken; the stable's own hens do not)
 const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "stalagmite", "crystal cluster", "cascade", "cavemushroom",   // (the last four: the cave room's, the little waterfall, the cave mushroom: ticket 471)
+   "cow", "pig", "chicken",
+   "pricklypear", "prickly pear", "barrelcactus", "barrel cactus", "agave",   // (ticket 501: the low desert plants, as things and in the desert)
+   "grazing horse",   // (ticket 503: the pasture's horses, big as a hay cart: walked round, not through, by their footprints)
+   "barn", "fencepiece", "haystack", "tractor", "windpump",   // (ticket 502: the farm things, each by its foot (data-footprint), and the farm yard's)
    "woodpile", "helmet", "watering can", "teddy", "truck", "blocks", "chair", "shipwreck", "vent", "palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
   "rock", "boulder", "sand castle", "snake tank", "soup pot", "stone", "stove", "stump", "table", "tea table", "telescope", "toadstool", "toy chest", "tree trunk",
   "water barrel", "water trough", "well", "white bush", "worktable", "yellow bush"]);
 const TRUNKED = new Set(["big tree", "giant tree", "deadtree", "skullstake", "tree",   // (big tree, giant tree: ticket 358)
+   "saguaro", "joshuatree", "joshua tree", "ocotillo",   // (ticket 501: the tall desert plants, in the way by their columns, trunks and stems, not their arms)
    "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
 // (ticket 214's audit: the living room's plant had a box as wide as its leaves) a pot's plant stands on its pot: its foot,
 // as a trunk's is found, but however short
@@ -248,8 +259,9 @@ function standingHere(B, seats) {
   // (its box in the friend's units, through the screen, as ladderAt does: the scene may sit in a nested svg of its own)
   const picEl = document.getElementById("pic"), P = picEl && picEl.getScreenCTM(), Pinv = P ? P.inverse() : null;
   const frame = [SCENE.left, SCENE.top, SCENE.bottom, SCENE.ground, B.kind, Math.round(10 * sceneVanish(B))];
-  const keptKey = o => { const dg = o.node.querySelector('[data-drag^="thing:"]') || (o.node.closest && o.node.closest('[data-drag^="thing:"]')), t = dg && (B.things || [])[+dg.dataset.drag.slice(6)];
-    return t ? JSON.stringify([frame, t, t.kind === "signpost" ? signpostBoards(B, t) : ""]) : null; };
+  // (ticket 502: and a fence piece's neighbours, whose posts its rails reach: fenceLinks)
+  const keptKey = o => { const dg = o.node.querySelector('[data-drag^="thing:"]') || (o.node.closest && o.node.closest('[data-drag^="thing:"]')), i = dg && +dg.dataset.drag.slice(6), t = dg && (B.things || [])[i];
+    return t ? JSON.stringify([frame, t, t.kind === "signpost" ? signpostBoards(B, t) : t.kind === "fencepiece" ? fenceLinks(B, i) : ""]) : null; };
   for (const o of bgShown.objs) {
     if (B.thingsSolid === false && isPlaced(o)) continue;
     if (off.has(o.name) || seats.has(o.name)) continue;
@@ -362,7 +374,7 @@ function laddersHere() {
 // name, getting out of it); its part says which. The friend meets a part above their ankles with their legs' box (youBoxes),
 // so a low table's top still stops them, and only one high enough is walked under.
 const ROUND = new Set(["fallen", "barrel", "basket", "bucket", "cauldron", "soup pot", "stump", "rock", "boulder", "stone", "toadstool", "mushroom", "bush", "green bush",
-  "pink bush", "white bush", "yellow bush", "campfire", "fountain", "well", "water barrel", "coal heap", "hay heap"]);
+  "pink bush", "white bush", "yellow bush", "campfire", "fountain", "well", "water barrel", "coal heap", "hay heap", "haystack"]);   // (haystack: ticket 502)
 function solidParts(base, o, k) {
   if (ROUND.has(base) && !o.bands) return [{ ...o, oval: true }];
   const w = o.x1 - o.x0, d = o.front - o.back, h = o.h;
@@ -507,9 +519,10 @@ function horseBoxes(x, z) {
   const H = horseNow, T = figureT;
   if (!H || !T || !(T.k > 0) || !H.barrel) return null;
   const s = T.k * H.hs, at = hx => x + T.k * (H.X + H.k * H.hs * hx), hw = Math.max(3, 11 * s), hd = Math.max(2.5, 6 * s);
-  const hooves = H.hooves.map(([hx, , back]) => { const cx = at(hx), zz = z - back * s; return [cx - hw, cx + hw, zz - hd, zz + hd, 0, HORSE_FETLOCK * s]; });
+  // (ticket 496: led from its far side, the horse stands nearer than the friend, its depth the other way)
+  const f = H.far ? -1 : 1, hooves = H.hooves.map(([hx, , back]) => { const cx = at(hx), zz = z - f * back * s; return [cx - hw, cx + hw, zz - hd, zz + hd, 0, HORSE_FETLOCK * s]; });
   const [b0, b1, belly, top, deep] = H.barrel, xa = at(b0), xb = at(b1);
-  return { hooves, body: [Math.min(xa, xb), Math.max(xa, xb), z - deep * s, z + hd, belly * s, top * s] };
+  return { hooves, body: [Math.min(xa, xb), Math.max(xa, xb), H.far ? z - hd : z - deep * s, H.far ? z + deep * s : z + hd, belly * s, top * s] };
 }
 // (ticket 492) ridden: the rider's box, up on the horse, from the hips on its saddle to their crown, as wide as their hips
 // (a sliver at least), at the barrel's middle depth seen side on, at the hooves' line seen end on

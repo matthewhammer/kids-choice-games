@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 22 of 26 of the game's script, run in order by index.html.
 
 // ===================== FULL SCREEN =====================
@@ -145,7 +147,7 @@ function advLayout(panel) {
   const note = kids.find(c => c.classList.contains("hint") && /^🚀/.test(txt(c)));
   const made = [
     box("🌗 the look", pick(c => c.classList.contains("theme-row"))),
-    box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer") || c.classList.contains("see-also")))),   // (the version's row by its button: its words come after; ticket 474's See also, near the top, between the code and the version)
+    box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer") || c.classList.contains("see-also") || c.classList.contains("licence")))),   // (the version's row by its button: its words come after; ticket 474's See also, near the top, between the code and the version; ticket 500's licence, under the code)
     box("✈️ without the Internet", pick(c => c.classList.contains("offline-help"))),   // (ticket 486: adding the game to a device, for airplane mode, near the top where a parent looks)
     box("🎮 playing", pick(c => (c.classList.contains("row") && /^(🔔|🎚️)/.test(txt(c))) || (c.classList.contains("hint") && !/^🚀/.test(txt(c))))),   // (and its note, filled as it is used)
     box("🧪 tests and timing", pick(c => c.classList.contains("perfrow") && /^(🧪|⏱️)/.test(txt(c)))),
@@ -314,7 +316,7 @@ function bgLayout(panel) {
 // as it is (its own layout: the designers, the controller, accessibility, advanced)
 const TAB_BOXES = {
   "🧍 Body": [["🤸 the pose", ["pose", "lieHow", "lieHead", "hugLift"]], ["↔️ facing and moving", ["facing", "anim", "stairsWay"]],
-              ["✋ the dominant hand", ["hand"]], ["📏 their size", ["size"]], ["🐴 the horse", ["horse", "horseSize", "horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks"]], ["🐸 the jumps", ["jumps"]]],
+              ["✋ the dominant hand", ["hand"]], ["📏 their size", ["size"]], ["🐴 the horse", ["horse", "horseLead", "horseArmour", "horseSize", "horseCoat", "horseMane", "horseManeStyle", "horseBows", "horseMark", "horseMarkColor", "horseTack", "horseSocks", "horseShoes", "horseSaddle", "horseBlanket"]], ["🐸 the jumps", ["jumps"]]],
   "😀 Face": [["🙂 the head", ["color", "size", "faceW", "faceH", "alien", "eyeGap", "sides", "rays"], ["face"]], ["🤨 the brows", ["brow", "unibrow"]],
               ["👄 the mouth", ["smile", "mouthSize", "open", "teethStyle", "teeth", "tongue", "tongueLen", "tongueW", "tongueColor"]],
               ["👃 the nose", ["noseView", "nose", "noseFront", "noseH", "noseW", "witchDir", "witchLen"]], ["👂 the ears", ["ears", "earSize"]],
@@ -334,7 +336,7 @@ const TAB_BOXES = {
              ["🔢 how many", ["toes", "alienToes", "talonCount"], ["number of"]]],
   "👻 Visibility": [["🧍 the whole friend", ["all"]], ["👻 each part", ["head", "eyes", "hair", "shirt", "pants", "feet", "hands"]]],
   // (ticket 488, ^du_report(5)'s rules: Matthew, "how can we best 'Knowl' the panels") the controller, the bubbles, moving
-  "🎮 Controls": [["🎮 the game controller", ["map"]], ["🫧 bubbles", ["blowing", "blowThemes"]], ["🏃 moving", ["moving", "clickPlan"]]],
+  "🎮 Controls": [["🎮 the game controller", ["map"]], ["🫧 bubbles", ["blowing", "blowThemes"]], ["🔥 fire", ["firing"]], ["🏃 moving", ["moving", "clickPlan"]]],   // (ticket 499: breathing fire)
   "🐯 Costume": [["🐯 the costume", ["kind"]], ["🐾 the animal", ["fur", "furPattern", "marks", "spot", "belly", "eyes", "accent"]],
                 ["🤿 the scuba suit", ["scubaColor", "scubaAccent"]], ["⚓ the old diving suit", ["diverMetal", "diverCloth", "diverHose", "hoseColor"]],
                 ["🥽 diving gear", ["snorkel", "snorkelColor", "mask", "maskColor", "tank", "tankColor", "leaks"]],
@@ -342,6 +344,7 @@ const TAB_BOXES = {
                 ["🧙‍♂️ the wizard", ["wizardRobe", "wizardStars"]], ["🧘 the monk or dryad", ["monkWho", "monkCloak", "hoodUp", "hoodFace", "hoodDim", "hoodEyes", "bareFeet"]],
                 ["🪄 the staff", ["staff", "staffOrb"]], ["🏹 Robin Hood", ["robinTunic", "robinHat", "robinFeather", "bow", "quiver"]],
                 ["👑 the queen or king", ["queenRobe", "kingRobe", "crownJewel", "mantle", "scepter"]],
+                ["🐉 the dragon", ["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow", "dragonWingLfo"]],
                 ["🛡️ the knight", ["knightA", "knightB", "tabardLayout", "emblem", "plume", "plumeColor", "helmOpen", "sword", "shield"]],
                 ["🍄 the gnome", ["gnomeWho", "gnomeHat", "gnomeTunic", "gnomeTrousers", "gnomeBodice", "gnomeSkirt", "gnomeBoots"]],
                 ["🧙 the witch", ["witchColor", "webColor", "webStyle", "trimColor", "bootColor"]],

@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 13 of 26 of the game's script, run in order by index.html.
 
 // the room's frame: the back wall from x = -bw to bw, from its top to the
@@ -1804,15 +1806,26 @@ function catRoomCats(c, K, wags) {
 // A horse's face, from in front, as the stable's horses look out of their stalls: its ears, its long face with its
 // marking, its muzzle, its eyes at the sides, its forelock, a halter (or bridle) in `halter`. `still` (ticket 438: the
 // friend's horse, facing us): no blinking, no ear flicks, no munching, no hay. (0, 0) as for horseHead.
+// (ticket 497, for M) the forelock between the ears, seen from the front, in the mane's style (H.maneStyle; the stable's
+// horses have none, so theirs is loose); a bow in H.bow
+function forelock(H, mane, maneD) {
+  const s = H.maneStyle || "loose";
+  if (s === "long") return `<path d="M-10 -161 Q-21 -147 -16 -126 Q-10 -140 -2 -156 Q0 -158 2 -156 Q10 -140 16 -126 Q21 -147 10 -161 Q0 -166 -10 -161 Z" fill="${mane}" stroke="${maneD}" stroke-width="1"/>`;
+  if (s === "brush") return `<path d="M-8 -158 L-7 -171 L-3 -161 L0 -174 L3 -161 L7 -171 L8 -158 Q0 -162 -8 -158 Z" fill="${mane}" stroke="${maneD}" stroke-width="1" stroke-linejoin="round"/>`;
+  if (s === "buttons") return maneKnot([0, -158], 5, mane, maneD);
+  if (s === "curly") return maneCurl([-6, -157], 4.5, mane, maneD) + maneCurl([6, -157], 4.5, mane, maneD) + maneCurl([0, -150], 4.5, mane, maneD);
+  if (s === "bows") return maneBraid([0, -161], [0, 1], 20, mane, maneD, H.bow || "#e0559a");
+  return `<path d="M-9 -160 Q-16 -146 -7 -134 Q-3 -146 0 -159 Q4 -145 10 -137 Q14 -150 9 -160 Q0 -165 -9 -160 Z" fill="${mane}"/>`;
+}
 function horseFace(H, i, halter, still) {
   const coat = H.coat, ln = mix(coat, "#000000", 0.42), mane = H.mane, maneD = mix(mane, "#000000", 0.3), sh = mix(coat, "#000000", 0.2);
   const light = hexToRgb(coat).reduce((a, b) => a + b, 0) > 520, muz = light ? "#b9a6a0" : mix(coat, "#2a2420", 0.4), white = "#f7f4ee";
   const blink = (3.6 + 0.9 * i).toFixed(1), ear = (3.1 + 0.8 * ((i * 3) % 4)).toFixed(1), chew = (0.55 + 0.08 * i).toFixed(2), A = x => still ? "" : x;
   const earAt = sd => `<g>${poly([[sd * 9, -155], [sd * 21, -184], [sd * 21, -152]], coat, ln, 1.5)}${poly([[sd * 12, -156], [sd * 19.5, -178], [sd * 19, -155]], mix(coat, "#e8a0a0", 0.35), mix(coat, "#e8a0a0", 0.35), 0.5)}` +
     A(`<animateTransform attributeName="transform" type="rotate" values="0 ${sd * 15} -155;0 ${sd * 15} -155;${sd * 24} ${sd * 15} -155;0 ${sd * 15} -155" keyTimes="0;0.82;0.88;1" dur="${ear}s" begin="-${(i * 1.3 + (sd > 0 ? 0.9 : 0)).toFixed(1)}s" repeatCount="indefinite"/>`) + `</g>`;
-  const mark = H.mark === "star" ? `<path d="M0 -148 L4.5 -140 L0 -132 L-4.5 -140 Z" fill="${white}"/>`
-    : H.mark === "stripe" ? `<path d="M-2.5 -148 Q0 -150 2.5 -148 L3 -76 Q0 -73 -3 -76 Z" fill="${white}"/>`
-    : H.mark === "blaze" ? `<path d="M-8 -152 Q0 -157 8 -152 L5 -100 Q4 -86 9 -70 L-9 -70 Q-4 -86 -5 -100 Z" fill="${white}"/>` : "";
+  const mark = H.mark === "star" ? `<path d="M0 -148 L4.5 -140 L0 -132 L-4.5 -140 Z" fill="${H.markColor || white}"/>`
+    : H.mark === "stripe" ? `<path d="M-2.5 -148 Q0 -150 2.5 -148 L3 -76 Q0 -73 -3 -76 Z" fill="${H.markColor || white}"/>`
+    : H.mark === "blaze" ? `<path d="M-8 -152 Q0 -157 8 -152 L5 -100 Q4 -86 9 -70 L-9 -70 Q-4 -86 -5 -100 Z" fill="${H.markColor || white}"/>` : "";
   // (eyes at the sides of the head, standing out a little past it, as a horse's do)
   const eye = sd => `<ellipse cx="${sd * 22}" cy="-128" rx="4.8" ry="6.2" fill="#1f1410" stroke="${ln}" stroke-width="0.8">` + A(`<animate attributeName="ry" values="6.2;6.2;0.8;6.2" keyTimes="0;0.93;0.965;1" dur="${blink}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`) + `</ellipse>` +
     `<circle cx="${sd * 22 + 1.6}" cy="-130.5" r="1.5" fill="#ffffff"/>` +
@@ -1827,7 +1840,7 @@ function horseFace(H, i, halter, still) {
     hay + `<g><path d="M-6 -50 Q0 -47.5 6 -50" fill="none" stroke="#1f1410" stroke-width="1.2"/>` +
     A(`<animateTransform attributeName="transform" type="translate" values="0 0;0 1.2;0 0" dur="${chew}s" repeatCount="indefinite"/>`) + `</g>` +
     eye(-1) + eye(1) +
-    `<path d="M-9 -160 Q-16 -146 -7 -134 Q-3 -146 0 -159 Q4 -145 10 -137 Q14 -150 9 -160 Q0 -165 -9 -160 Z" fill="${mane}"/>` +
+    forelock(H, mane, maneD) +
     // (its halter: a noseband in the castle's colors, its straps going back round the cheeks)
     [-1, 1].map(sd => `<path d="M${sd * 12.5} -82 Q${sd * 16} -98 ${sd * 18} -112" fill="none" stroke="${mix(halter, "#3a2414", 0.45)}" stroke-width="3" stroke-linecap="round"/>`).join("") +
     `<path d="M-13.5 -84 Q0 -76 13.5 -84" fill="none" stroke="${halter}" stroke-width="4.5" stroke-linecap="round"/>` +
@@ -1852,6 +1865,31 @@ function horseHead(H, W, i, halter) {
   return t + wagged(W, s => `<g>${wagAnim(W, "transform", (v, amp) => `0 ${f1((3 + 9 * amp) * (1 + v) / 2)}`, s, "translate")}` +
     `<g><animateTransform attributeName="transform" type="rotate" values="0 0 -70;0 0 -70;-9 0 -70;-9 0 -70;0 0 -70;0 0 -70;8 0 -70;8 0 -70;0 0 -70" dur="${look}s" begin="-${(i * 1.9).toFixed(1)}s" repeatCount="indefinite"/>${head}</g></g>`);
 }
+// (ticket 502, for M: the 🚜 farm yard and the 🐔 chicken coop have the stable's hens and its water trough, drawn by the
+// same code, so they look the same everywhere; Matthew: "chickens -- already in stable") The stone water trough at (tx, ty),
+// s its size, its water rippling (P the scene's point writer)
+const troughSvg = (P, tx, ty, s) => `<ellipse cx="${f1(tx)}" cy="${f1(ty)}" rx="${f1(58 * s)}" ry="${f1(7 * s)}" fill="#000000" opacity="0.2"/>` +
+  `<path d="M${P(tx - 52 * s, ty - 30 * s)} L${P(tx - 44 * s, ty - 40 * s)} L${P(tx + 44 * s, ty - 40 * s)} L${P(tx + 52 * s, ty - 30 * s)} Z" fill="#7d7468"/>` +
+  `<path d="M${P(tx - 44 * s, ty - 36 * s)} L${P(tx + 44 * s, ty - 36 * s)} L${P(tx + 48 * s, ty - 31 * s)} L${P(tx - 48 * s, ty - 31 * s)} Z" fill="#6aa6c8"/>` +
+  `<rect x="${f1(tx - 52 * s)}" y="${f1(ty - 30 * s)}" width="${f1(104 * s)}" height="${f1(30 * s)}" fill="#9a9082" stroke="#6a6258" stroke-width="${f1(1.2 * s)}"/>` +
+  [0.25, 0.5, 0.75].map(u => `<line x1="${f1(tx - 52 * s + 104 * s * u)}" y1="${f1(ty - 30 * s)}" x2="${f1(tx - 52 * s + 104 * s * u)}" y2="${f1(ty)}" stroke="#6a6258" stroke-width="${f1(1 * s)}"/>`).join("") +
+  `<ellipse cx="${f1(tx)}" cy="${f1(ty - 33.5 * s)}" rx="${f1(8 * s)}" ry="${f1(1.4 * s)}" fill="none" stroke="#ffffff" stroke-width="${f1(0.8 * s)}"><animate attributeName="rx" values="${f1(3 * s)};${f1(40 * s)}" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="3s" repeatCount="indefinite"/></ellipse>`;
+// A hen at (hx, hy), s her size, sd 1 facing right or -1 left; i her own pace and way into her peck, which the scene's quick
+// LFO times; look 0 brown, 1 white (the stable's two), 2 black
+const HEN_LOOKS = [["#a0522d", "#6b3418"], ["#f5efe2", "#c9bca2"], ["#3b3836", "#1c1a19"]];
+function henSvg(o, hx, hy, s, sd, i, look = i ? 1 : 0) {
+  const pk = (1.6 + 0.5 * i).toFixed(1), [fill, line] = HEN_LOOKS[look] || HEN_LOOKS[0];
+  return `<g transform="translate(${f1(hx)} ${f1(hy)}) scale(${(sd * s).toFixed(3)} ${s.toFixed(3)})">` +
+    `<ellipse cx="0" cy="0" rx="14" ry="2.5" fill="#000000" opacity="0.18"/>` +
+    `<line x1="-3" y1="-8" x2="-4" y2="0" stroke="#e8a33a" stroke-width="1.6"/><line x1="3" y1="-8" x2="4" y2="0" stroke="#e8a33a" stroke-width="1.6"/>` +
+    `<path d="M-16 -18 Q-20 -30 -12 -28 Q-6 -14 6 -14 Q14 -14 14 -22 L10 -8 Q0 -2 -10 -8 Z" fill="${fill}" stroke="${line}" stroke-width="1"/>` +
+    `<path d="M-6 -16 Q0 -12 6 -15" fill="none" stroke="${line}" stroke-width="1"/>` +
+    // (a peck, down and back, once round the quick LFO: the scene's quick things)
+    `<g>${sceneLfo(o, "fast", i * 0.45, "transform", (v, amp) => `${f1(Math.max(0, v) * (30 + 50 * amp))} 10 -18`,
+      `<animateTransform attributeName="transform" type="rotate" values="0 10 -18;0 10 -18;55 10 -18;0 10 -18;0 10 -18;55 10 -18;0 10 -18" keyTimes="0;0.4;0.47;0.54;0.75;0.82;1" dur="${pk}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`)}` +
+    `<circle cx="14" cy="-24" r="5" fill="${fill}"/><path d="M12 -29 q2 -4 4 0 q2 -4 3 1 Z" fill="#d62828"/><path d="M18 -24 l4 1 l-4 1 Z" fill="#e8a33a"/>` +
+    `<path d="M15 -21 q1 3 -1 4" fill="#d62828"/><circle cx="15.5" cy="-25" r="0.9" fill="#111"/></g></g>`;
+}
 // The stable: the castle's stone, under timber; four stalls along the back
 // wall, each a half door with its top door swung open, a horse looking out
 // over it (or, empty, a blanket over the door), its name plate, a bucket; a
@@ -1859,7 +1897,8 @@ function horseHead(H, W, i, halter) {
 // edge, a ladder up; a round window high up, sunbeams slanting down through
 // drifting dust, swallows flying round the beams; horseshoes, saddles and
 // bridles on the side walls; straw all over the floor, a water trough, a
-// heap of hay with a pitchfork in it, buckets, and two hens pecking about.
+// heap of hay with a pitchfork in it, buckets, and hens pecking about (two
+// to start with; ticket 506: as many as its 🐔 setting says, up to 30).
 function stablePlaces(c) {
   const { k } = c, { floor, top, bw, vy, wh, at, Yh, onWall } = roomSpace(c);
   const hb = 0.205 * bw;
@@ -1868,9 +1907,14 @@ function stablePlaces(c) {
   const doorTop = Yh(0.3), lintel = Yh(0.64);
   const rail = X => { const [xa, ya] = at(X - hb, doorTop, -0.01), [xb] = at(X + hb, doorTop, -0.01);
     return `<rect x="${f1(xa)}" y="${f1(ya - 2 * k)}" width="${f1(xb - xa)}" height="${f1(9 * k)}" fill="#6b4527" stroke="#3e2714" stroke-width="${f1(1 * k)}"/>`; };
-  return { at, Yh, hb, bays, order, doorTop, lintel, rail, floor, top, bw, vy, wh, onWall };
+  // (ticket 506: where the water trough, the hay heap and the ladder stand on the floor, for the hens to keep off them too)
+  const trough = at(-0.66 * bw, floor, -0.3), hay = at(0.6 * bw, floor, -0.4), ladderX = -0.985 * bw;
+  return { at, Yh, hb, bays, order, doorTop, lintel, rail, floor, top, bw, vy, wh, onWall, trough, hay, ladderX };
 }
-function stableSvg(c, K) {
+// (ticket 506) the stable's first two hens, where they always stood: [across, as a share of the back wall's half width; z;
+// facing; their own pace and way into a peck (henSvg's i)]
+const STABLE_HENS_FIRST = [[-0.42, -0.2, 1, 0], [0.36, -0.3, -1, 1]];
+function stableSvg(c, K, hens = STABLE_HENS) {
   const { x0, x1, y0, y1, W, H, k, pad, R, P } = c, L = stablePlaces(c), { at, Yh, hb, bays, order, doorTop, lintel, floor, top, bw, vy, wh, onWall } = L;
   const oak = "#7a5230", oakD = "#4e341d", oakL = "#9c6b40", straw = "#e3c46a", strawD = "#b8963e", iron = "#2e2e36";
   const pg = (pts, fill, more = "") => `<polygon points="${pts.map(p => P(...p)).join(" ")}" fill="${fill}"${more}/>`;
@@ -1973,43 +2017,31 @@ function stableSvg(c, K) {
   // (ticket 99) all that stands in the room, after its walls, floor and what is on them: each an
   // object at its foot, so the horses (drawn after the room) are sorted in among them by depth
   // the ladder up to the loft, standing on the floor by the left wall
-  { const [la, lt] = at(-0.985 * bw, loftY - 14 * k, -0.14), [, lb] = at(-0.985 * bw, floor, -0.14), lw = 24 * k;
+  { const [la, lt] = at(L.ladderX, loftY - 14 * k, -0.14), [, lb] = at(L.ladderX, floor, -0.14), lw = 24 * k;
     t += obj("ladder", lb, `<g data-ladder="1">` + [-1, 1].map(e => `<line x1="${f1(la + e * lw / 2)}" y1="${f1(lt)}" x2="${f1(la + e * lw / 2 + 4 * k)}" y2="${f1(lb)}" stroke="${oakL}" stroke-width="${f1(5 * k)}"/>`).join("") +
          [...Array(9)].map((_, j) => { const y = lt + (lb - lt) * (j + 0.5) / 9; return `<line x1="${f1(la - lw / 2)}" y1="${f1(y)}" x2="${f1(la + lw / 2 + 4 * k)}" y2="${f1(y)}" stroke="${oak}" stroke-width="${f1(3.5 * k)}"/>`; }).join("") + `</g>`); }
   // the stone water trough, its water rippling; buckets by it
-  { const [tx, ty] = at(-0.66 * bw, floor, -0.3), s = k / 0.7;
-    t += obj("water trough", ty, `<ellipse cx="${f1(tx)}" cy="${f1(ty)}" rx="${f1(58 * s)}" ry="${f1(7 * s)}" fill="#000000" opacity="0.2"/>` +
-         `<path d="M${P(tx - 52 * s, ty - 30 * s)} L${P(tx - 44 * s, ty - 40 * s)} L${P(tx + 44 * s, ty - 40 * s)} L${P(tx + 52 * s, ty - 30 * s)} Z" fill="#7d7468"/>` +
-         `<path d="M${P(tx - 44 * s, ty - 36 * s)} L${P(tx + 44 * s, ty - 36 * s)} L${P(tx + 48 * s, ty - 31 * s)} L${P(tx - 48 * s, ty - 31 * s)} Z" fill="#6aa6c8"/>` +
-         `<rect x="${f1(tx - 52 * s)}" y="${f1(ty - 30 * s)}" width="${f1(104 * s)}" height="${f1(30 * s)}" fill="#9a9082" stroke="#6a6258" stroke-width="${f1(1.2 * s)}"/>` +
-         [0.25, 0.5, 0.75].map(u => `<line x1="${f1(tx - 52 * s + 104 * s * u)}" y1="${f1(ty - 30 * s)}" x2="${f1(tx - 52 * s + 104 * s * u)}" y2="${f1(ty)}" stroke="#6a6258" stroke-width="${f1(1 * s)}"/>`).join("") +
-         `<ellipse cx="${f1(tx)}" cy="${f1(ty - 33.5 * s)}" rx="${f1(8 * s)}" ry="${f1(1.4 * s)}" fill="none" stroke="#ffffff" stroke-width="${f1(0.8 * s)}"><animate attributeName="rx" values="${f1(3 * s)};${f1(40 * s)}" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="3s" repeatCount="indefinite"/></ellipse>`);
+  { const [tx, ty] = L.trough, s = k / 0.7;
+    t += obj("water trough", ty, troughSvg(P, tx, ty, s));
     let bk = "";
     for (const dx of [64, 84]) bk += `<path d="M${P(tx + dx * s - 10 * s, ty - 24 * s)} L${P(tx + dx * s + 10 * s, ty - 24 * s)} L${P(tx + dx * s + 8 * s, ty)} L${P(tx + dx * s - 8 * s, ty)} Z" fill="#9aa3ad" stroke="#5a626c" stroke-width="${f1(1 * s)}"/>` +
       `<ellipse cx="${f1(tx + dx * s)}" cy="${f1(ty - 24 * s)}" rx="${f1(10 * s)}" ry="${f1(2.5 * s)}" fill="#5a626c"/>`;
     t += obj("buckets", ty, bk); }
   // a heap of hay with a pitchfork in it
-  { const [hx, hy] = at(0.6 * bw, floor, -0.4), s = k / 0.6;
+  { const [hx, hy] = L.hay, s = k / 0.6;
     t += obj("hay heap", hy, `<ellipse cx="${f1(hx)}" cy="${f1(hy)}" rx="${f1(62 * s)}" ry="${f1(8 * s)}" fill="#000000" opacity="0.18"/>` +
          `<path d="M${P(hx - 60 * s, hy)} Q${P(hx - 50 * s, hy - 40 * s)} ${P(hx - 10 * s, hy - 52 * s)} Q${P(hx + 30 * s, hy - 56 * s)} ${P(hx + 50 * s, hy - 26 * s)} Q${P(hx + 62 * s, hy - 10 * s)} ${P(hx + 60 * s, hy)} Z" fill="${straw}" stroke="${strawD}" stroke-width="${f1(1.2 * s)}"/>` +
          [...Array(30)].map((_, j) => { const u = R(j, 1320), x = hx - 50 * s + 100 * s * u, y = hy - (4 + 44 * Math.sin(Math.PI * u) * R(j, 1321)) * s, a = (R(j, 1322) - 0.5) * 2;
            return `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + 10 * s * Math.cos(a))}" y2="${f1(y - 4 * s * Math.sin(a + 1))}" stroke="${strawD}" stroke-width="${f1(1 * s)}"/>`; }).join("") +
          `<line x1="${f1(hx + 18 * s)}" y1="${f1(hy - 40 * s)}" x2="${f1(hx + 46 * s)}" y2="${f1(hy - 120 * s)}" stroke="${oakL}" stroke-width="${f1(3.5 * s)}" stroke-linecap="round"/>` +
          `<path d="M${P(hx + 10 * s, hy - 30 * s)} L${P(hx + 18 * s, hy - 40 * s)} M${P(hx + 16 * s, hy - 26 * s)} L${P(hx + 20 * s, hy - 38 * s)} M${P(hx + 22 * s, hy - 24 * s)} L${P(hx + 21 * s, hy - 37 * s)} M${P(hx + 12 * s, hy - 37 * s)} L${P(hx + 24 * s, hy - 40 * s)}" stroke="#7d8590" stroke-width="${f1(1.8 * s)}" stroke-linecap="round"/>`); }
-  // two hens, pecking at the straw
-  for (const [X, z, sd, i] of [[-0.42 * bw, -0.2, 1, 0], [0.36 * bw, -0.3, -1, 1]]) {
-    const [hx, hy] = at(X, floor, z), s = k / (1 + z) * 0.9, pk = (1.6 + 0.5 * i).toFixed(1);
-    t += obj(i ? "hen, white" : "hen, brown", hy, `<g transform="translate(${f1(hx)} ${f1(hy)}) scale(${(sd * s).toFixed(3)} ${s.toFixed(3)})">` +
-         `<ellipse cx="0" cy="0" rx="14" ry="2.5" fill="#000000" opacity="0.18"/>` +
-         `<line x1="-3" y1="-8" x2="-4" y2="0" stroke="#e8a33a" stroke-width="1.6"/><line x1="3" y1="-8" x2="4" y2="0" stroke="#e8a33a" stroke-width="1.6"/>` +
-         `<path d="M-16 -18 Q-20 -30 -12 -28 Q-6 -14 6 -14 Q14 -14 14 -22 L10 -8 Q0 -2 -10 -8 Z" fill="${i ? "#f5efe2" : "#a0522d"}" stroke="${i ? "#c9bca2" : "#6b3418"}" stroke-width="1"/>` +
-         `<path d="M-6 -16 Q0 -12 6 -15" fill="none" stroke="${i ? "#c9bca2" : "#6b3418"}" stroke-width="1"/>` +
-         // (a peck, down and back, once round the quick LFO: the scene's quick things)
-         `<g>${sceneLfo(c.o, "fast", i * 0.45, "transform", (v, amp) => `${f1(Math.max(0, v) * (30 + 50 * amp))} 10 -18`,
-           `<animateTransform attributeName="transform" type="rotate" values="0 10 -18;0 10 -18;55 10 -18;0 10 -18;0 10 -18;55 10 -18;0 10 -18" keyTimes="0;0.4;0.47;0.54;0.75;0.82;1" dur="${pk}s" begin="-${(i * 0.7).toFixed(1)}s" repeatCount="indefinite"/>`)}` +
-         `<circle cx="14" cy="-24" r="5" fill="${i ? "#f5efe2" : "#a0522d"}"/><path d="M12 -29 q2 -4 4 0 q2 -4 3 1 Z" fill="#d62828"/><path d="M18 -24 l4 1 l-4 1 Z" fill="#e8a33a"/>` +
-         `<path d="M15 -21 q1 3 -1 4" fill="#d62828"/><circle cx="15.5" cy="-25" r="0.9" fill="#111"/></g></g>`);
+  // two hens, pecking at the straw; (ticket 506) as many as the room's 🐔 setting says, 0 to 30: the first two where they
+  // always were, as they were drawn, then the rest spread over the floor (stableMoreHens)
+  for (const [u, z, sd, i] of STABLE_HENS_FIRST.slice(0, hens)) {
+    const [hx, hy] = at(u * bw, floor, z), s = k / (1 + z) * 0.9;
+    t += obj(i ? "hen, white" : "hen, brown", hy, henSvg(c.o, hx, hy, s, sd, i));
   }
+  t += stableMoreHens(c, L, hens);
   // sunbeams from the round window down onto the floor, dust drifting in them
   // (an object at the depth where they reach the floor: ticket 99)
   { const [fx, fy] = at(0.36 * bw, floor, -0.25), [gx] = at(0.62 * bw, floor, -0.25);
@@ -2029,6 +2061,80 @@ function stableSvg(c, K) {
   }
   t += obj("swallows", floor, sw);
   return t;
+}
+// (ticket 506, for M; Matthew: "chickens -- already in stable 30 in stable.", then "just release and let the kids decide")
+// Where the stable's hens past its first two stand, up to n in all. Each on the floor where a seeded draw puts it: of
+// HEN_TRIES spots, the first well clear of every hen already there (HEN_CLEAR), else the one farthest from them, so a
+// few hens stand about at random and many fill the floor evenly. How far, as a share of the two hens' room on the
+// floor: an oval round each one's feet, as wide as the hen and its walk, as deep as a hen is tall (so a hen even half
+// that far behind another shows its head and back over it, as in a flock). 30 fill the floor, so the farthest is not always
+// clear of every other, but no two stand on one spot. Never in front of the stalls (so far forward its comb is about at
+// their doors' foot), by the side walls where their doors are or on the way to them (the friend's ways out, two a
+// side), on the ladder, behind or over the trough, its buckets or the hay heap, where the friend arrives (the middle,
+// near us: ARRIVE's 0, 40), nor off the picture. Nearer is bigger, as the first two. Each hen's spot comes from the
+// hens before it only, so one more hen leaves the others where they were. Their looks by turn (brown, white, black:
+// HEN_LOOKS), each facing its own way; its peck's pace and way in from its place in a spread (henSvg's i: as a count,
+// past the first few it made a peck too slow), its walk's way in its own.
+const HEN_TRIES = 48, HEN_CLEAR = 1.6, HEN_SEED = 5060, HEN_LOOK_NAMES = ["brown", "white", "black"];
+// (how far apart two hens' ovals are: 1 just touching, under 1 overlapping)
+const henApart = (a, b) => Math.hypot((a.cx - b.cx) / (a.hw + b.hw), (a.y - b.y) / (a.hd + b.hd));
+// (ticket 506: the spots kept by the room's frame and the count, all they read: the search at 30 takes ~8 ms, too much to
+// do again each time a mixing-board LFO knob or a tune draws the stable again, which changes only the hens' timing (the
+// 60 fps rule))
+const henSpotsMemo = new Map();
+function stableHenSpots(c, L, n) {
+  const { k, W, g, y1 } = c, { at, floor, bw, vy } = L, f = y => (y - vy) / (floor - vy);
+  const mk = [k, W, g, y1, floor, bw, vy, n].join();
+  if (henSpotsMemo.has(mk)) return henSpotsMemo.get(mk);
+  // (a hen's room on the floor: its feet at (x, y) at size s, as far as it walks, go)
+  const room = (x, y, s, go = 0) => ({ cx: x + go / 2, y, hw: 22 * s + Math.abs(go) / 2, hd: 16 * s });
+  // (what stands on the floor, as boxes on the screen: the ladder up to the loft, the trough and its buckets, the hay
+  // heap; and the four doors the side walls can hold, as castleWays draws them, two a side, each from z1 - 0.12 to z1, down
+  // to its foot; a hen's box, up to its comb, may not meet one)
+  const [tx, ty] = L.trough, ts = k / 0.7, [hx, hy] = L.hay, hs = k / 0.6, [lx, ly] = at(L.ladderX, floor, -0.14);
+  const blocks = [{ xa: lx - 34 * k, xb: lx + 34 * k, ya: -Infinity, yb: ly + 8 * k }, { xa: tx - 60 * ts, xb: tx + 96 * ts, ya: ty - 42 * ts, yb: ty + 9 * ts },
+                  { xa: hx - 64 * hs, xb: hx + 64 * hs, ya: hy - 60 * hs, yb: hy + 9 * hs },
+                  ...[-1, 1].flatMap(sd => [0, 1].map(j => { const z1 = -0.03 - 0.17 * j, [xa] = at(sd * bw, floor, z1), [xb, yb] = at(sd * bw, floor, z1 - 0.12);
+                    return { xa: Math.min(xa, xb) - 6 * k, xb: Math.max(xa, xb) + 6 * k, ya: -Infinity, yb: yb + 6 * k }; }))];
+  // (a spot on the floor no hen stands on: in front of the stalls, by a side door, where the friend arrives)
+  const kept = (x, y) => { const F = f(y), X = x / F, z = 1 / F - 1;
+    return z > -0.12 || (Math.abs(X) > 0.72 * bw && z > -0.4) || (Math.abs(x) < 110 * k && y > g - 20 * k); };
+  const yTop = at(0, floor, -0.12)[1], yBot = y1 - 6 * k;
+  const hens = STABLE_HENS_FIRST.map(([u, z]) => { const [x, y] = at(u * bw, floor, z); return room(x, y, k / (1 + z) * 0.9); }), out = [];
+  for (let j = 2; j < n; j++) {
+    const r = seeded(HEN_SEED + j);
+    let best = null;
+    for (let t = 0, found = 0; t < 600 && found < HEN_TRIES; t++) {
+      const x = W * (r(4 * t) - 0.5), y = yTop + (yBot - yTop) * r(4 * t + 1), s = k * f(y) * 0.9, sd = r(4 * t + 2) < 0.5 ? -1 : 1, go = sd * (8 + 10 * r(4 * t + 3)) * s;
+      const A = { xa: Math.min(x, x + go) - 22 * s, xb: Math.max(x, x + go) + 22 * s, ya: y - 33 * s, yb: y + 3 * s };
+      if (kept(x, y) || kept(x + go, y) || A.xa < -W / 2 + 6 * k || A.xb > W / 2 - 6 * k || blocks.some(b => A.xa < b.xb && b.xa < A.xb && A.ya < b.yb && b.ya < A.yb)) continue;
+      found++;
+      const me = room(x, y, s, go), sep = Math.min(HEN_CLEAR, ...hens.map(h => henApart(me, h)));
+      if (!best || sep > best.sep) best = { x, y, s, sd, go, me, sep };
+      if (sep >= HEN_CLEAR) break;
+    }
+    if (!best) break;
+    hens.push(best.me);
+    out.push({ ...best, j, look: j % 3, i: ((j * 0.618034) % 1) * 2.2, off: r(4001), dur: 8 + 5 * r(4002) });
+  }
+  out.sort((a, b) => a.y - b.y);
+  if (henSpotsMemo.size > 40) henSpotsMemo.clear();
+  henSpotsMemo.set(mk, out);
+  return out;
+}
+// The hens past the first two, each an object at its feet, back to front. Each pecks with the quick LFO (henSvg) and,
+// now and then, with the slow one, walks a few steps the way it faces, turns round, pecks there, walks back and turns
+// again, as the lake's ducks swim (the walk outside its spot, the turn about its feet): three animations a hen, so 30
+// stay light (the 60 fps rule); held still, each stands at its spot
+function stableMoreHens(c, L, n) {
+  const { o } = c;
+  return stableHenSpots(c, L, n).map(h => { const d = h.dur.toFixed(1), b = (h.off * h.dur).toFixed(2);
+    return obj(`hen ${h.j + 1}, ${HEN_LOOK_NAMES[h.look]}`, h.y, `<g data-hen="${h.j + 1}">` +
+      lfoTimed(o, "slow", h.off, `<animateTransform attributeName="transform" type="translate" values="0 0;0 0;${f1(h.go)} 0;${f1(h.go)} 0;0 0;0 0" keyTimes="0;0.3;0.44;0.8;0.94;1" ` +
+        `calcMode="spline" keySplines="0 0 1 1;0.4 0 0.6 1;0 0 1 1;0.4 0 0.6 1;0 0 1 1" dur="${d}s" begin="-${b}s" repeatCount="indefinite"/>`) +
+      `<g transform="translate(${f1(h.x)} ${f1(h.y)})"><g>` +
+      lfoTimed(o, "slow", h.off, `<animateTransform attributeName="transform" type="scale" values="1 1;-1 1;1 1" keyTimes="0;0.44;0.94" calcMode="discrete" dur="${d}s" begin="-${b}s" repeatCount="indefinite"/>`) +
+      henSvg(o, 0, 0, h.s, h.sd, h.i, h.look) + `</g></g></g>`); }).join("");
 }
 // The stable's horses, each looking out of its stall, the outer stalls
 // first; its door's top rail drawn again over the foot of its neck. (ticket
@@ -2387,11 +2493,12 @@ function castleroomScene(c) {
   if (K.roomTheme[n - 1] === "B") K = { ...K, ...K.themeB };
   const hallEnd = style === "hallway" && K.hall[n - 1].end === "none" ? "none" : "";
   const places = style === "dining" ? K.places[n - 1] : 0;
+  const hens = style === "stable" ? K.hens[n - 1] : 0;   // (ticket 506: this stable's hens)
   const pitShapes = K.pitShapesAt[n - 1];   // (ticket 271: this room's own; keyed, so a chip draws it again at once)
   const trap = style === "trap" ? trapState(o, n, K.id) : null;   // (ticket 305: its pits and levers)
-  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places, pitShapes, trap });
+  const draw = () => ROOM_KINDS[style].draw(c, K, { pits, bones, hallEnd, places, hens, pitShapes, trap });
   let s = SEP + part("croom-" + style, [c.F, K.id, style === "trap" ? pits.join() + K.rooms.join() + pitShapes.join() + JSON.stringify(trap) + [o.leverShine, o.leverShineColor, o.leverFlicker].join() : bones,   // (ticket 317: and its levers' shine)
-                                  K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places,   // (ticket 369: these were swallowed by the note above, so a change to them did not draw the room again)
+                                  K.flagA, K.flagB, K.flagStyle, OWN_EXIT_ROOMS.includes(style) ? K.carpet : "", style === "stable" ? K.horses.length : "", hallEnd, places, hens,   // (ticket 369: these were swallowed by the note above, so a change to them did not draw the room again)
                                   SCENE_LFO_THINGS["castleroom:" + style] ? sceneLfoKey(o, "fast") + sceneLfoKey(o, "slow") : ""], draw);
   // (the cat room's cats: a part of their own, so a cat's settings draw only the cats again)
   if (style === "catroom") { for (const C of K.cats) void o["lfo:" + C.lfo];   // (as the fairy house: sceneOpts)

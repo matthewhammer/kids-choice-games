@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 482, Matthew: "an editor panel in MUDU, under a new control panel called 'Scripting' --- with a list of editors, one per
 // room that needs logic, starting only with the dungeon in the castle. The editors are showing sub-programs of a large, global
 // program with global vars, using the $GameUpdate [monad] ... The programs can use sub-routines defined in a common editor that

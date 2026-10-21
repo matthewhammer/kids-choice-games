@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 1 of 26 of the game's script, run in order by index.html.
 
 // ===================== STATE =====================
@@ -21,7 +23,7 @@ const HOUSE_COLOR_DEFAULTS = {
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, woodpath: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
 // for each background as we play around with them") the friend's own size (body.size, a share), in every place, on top of
@@ -46,7 +48,7 @@ const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroo
 // of it shrinks as one. Outdoors 40 (the mountain trail's far edge about 0.4 of the size, the clearing's about 0.2);
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
-                   "waterfall", "campsite", "cave", "castle", "woodpath", "crossing", "beach", "sea", "lake"];
+                   "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "beach", "sea", "lake", "desert", "farmyard"];   // (desert: ticket 501)
 const NORTH_ROOMS = ["treeroom", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
 const northDefault = kind => NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
@@ -157,7 +159,7 @@ const ROOM_KINDS = {
   dungeon2: { label: "⛓️ deep dungeon", by: "N", exits: "ladder", tone: "#5d6b62", draw: (c, K, r) => dungeonSvg(c, K, true, r.bones) },
   hallway: { label: "🕯️ hallway", by: "N", exits: "hall", tone: "#8a8597", draw: (c, K, R) => hallwaySvg(c, K, R) },
   catroom: { label: "🐈 cat room", by: "more", exits: "side", draw: (c, K) => catRoomSvg(c, K) },
-  stable: { label: "🐴 stable", by: "more", exits: "side", draw: (c, K) => stableSvg(c, K) },
+  stable: { label: "🐴 stable", by: "more", exits: "side", draw: (c, K, r) => stableSvg(c, K, r.hens) },   // (ticket 506: and its hens)
   dining: { label: "🍽️ dining room", by: "M", exits: "long", tone: "#9c8f84", draw: (c, K, r) => diningRoomSvg(c, K, r) },
   kitchen: { label: "🍲 kitchen", by: "more", exits: "side", tone: "#b8a58c", draw: (c, K) => kitchenSvg(c, K) },
   smithy: { label: "⚒️ smithy", by: "more", exits: "side", tone: "#5e5650", draw: (c, K) => smithySvg(c, K) },
@@ -198,6 +200,13 @@ const catKey = (id, j, what) => "castleCat" + j + what + id;
 const HORSE_COATS = ["#7b4a2a", "#a0522d", "#2a2a2e", "#c9c9cf", "#f3efe6", "#d9a95b", "#5a3a22"];
 const HORSE_MANES = ["#1f1f22", "#5a3a22", "#7a3a1a", "#f3efe6", "#c0c0c0", "#f3e6c8", "#8b5cf6"];
 const HORSE_MARKS = [["none", "none"], ["star", "⭐ a star"], ["stripe", "❕ a stripe"], ["blaze", "⬜ a blaze"]];
+// (ticket 497, for M: "can we adjust the mane style? the default is good -- can we think of 5 others, to bring the total to
+// 6?") the friend's horse's mane: loose as it always was, and five more (the stable's horses keep theirs loose)
+const HORSE_MANE_STYLES = [["loose", "🐴 loose (the usual)"], ["long", "🌊 long and flowing"], ["buttons", "🔘 button braids"], ["brush", "🪮 short, standing up"], ["curly", "➰ curly"], ["bows", "🎀 braids with bows"]];
+// (ticket 498, Matthew: "let's start to think of costumes for the knight as having horse pieces (face helmets, look at images
+// from Lego castles and knights) -- not just saddles"; "just release and let the kids decide") the friend's horse's armour:
+// none, or one of the six sets in the mock-up (horse-armour.html, outside the repo), all of them for the kids to choose from
+const HORSE_ARMOURS = [["none", "none"], ["plate", "🛡️ full plate"], ["half", "🦁 half caparison"], ["tourney", "🎪 tournament"], ["dragon", "🐉 dragon helm"], ["toy", "🧱 toy helmet"], ["parade", "🎀 parade"]];
 const STABLE_HORSES = [
   { coat: "#7b4a2a", mane: "#1f1f22", mark: "star", offset: 23 },
   { coat: "#c9c9cf", mane: "#f3efe6", mark: "none", offset: 71 },
@@ -205,6 +214,10 @@ const STABLE_HORSES = [
   { coat: "#d9a95b", mane: "#f3e6c8", mark: "stripe", offset: 8 }];
 const STABLE_HORSE_COUNT = 3;
 const horseKey = (id, j, what) => "castleHorse" + j + what + id;
+// (ticket 506, for M; Matthew: "chickens -- already in stable 30 in stable.", then "just release and let the kids decide")
+// how many hens peck about a stable's floor: each stable room its own, 0 to 30, two to start with, as it always had
+const STABLE_HENS = 2, STABLE_HENS_MAX = 30;
+const stableHensKey = (n, id) => `castleHens${n}${id}`;
 // The castle's residents, by kind: who lives in which room style, up to how
 // many (`count`: the setting, its most, how many to start with), and each
 // one's settings (`fields`: [the key's last word, its control, its label,
@@ -348,6 +361,8 @@ const castleOf = o => {
              const st = o["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i] ?? "king";
              return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king"; }),
            places: ROOM_NS.map(n => Math.max(4, Math.min(18, Math.round(o["castlePlaces" + n + id] ?? 10)))),
+           // (ticket 506) each stable's hens, by its room number (a number that is none: the two it always had)
+           hens: ROOM_NS.map(n => { const v = Math.round(o[stableHensKey(n, id)] ?? STABLE_HENS); return Number.isFinite(v) ? Math.max(0, Math.min(STABLE_HENS_MAX, v)) : STABLE_HENS; }),
            bones: ROOM_NS.map(n => Object.fromEntries(Object.entries(ROOM_BONES).map(([st, most]) =>
              [st, Math.max(0, Math.min(most, Math.round(o[roomBonesKey(id, n, st)] ?? 0)))]))),
            // its residents: its cats, who live in its cat room (or rooms), its horses, in its stable
@@ -427,7 +442,12 @@ const DEFAULTS = {
            ears: "free", earSize: 100 },   // (ticket 125, M's: ears, their shape and size)
   hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100, beard: "none", beardShade: "auto", moustache: true, beardLength: 100, braidWidth: 100 },
   body:  { horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false, horseSize: 100,   // (ticket 492: the horse, in 🧍 Body)
+           horseShoes: "off", horseMarkColor: "#f7f4ee", horseSaddle: "#6b3f1f", horseBlanket: "auto",   // (ticket 495, for M: more colours)
+           horseLead: "left",   // (ticket 496: which side of it they lead it from)
+           horseManeStyle: "loose", horseBows: "#ec4899",   // (ticket 497, for M: how its mane is done, and its bows' colour)
+           horseArmour: "none",   // (ticket 498: its armour, none to start with)
            blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
+           fireStyle: "roar", fireFrom: "mouth", fireSize: 100, fireHeat: true,   // (ticket 499: breathing fire, its fire, where from, how big, its heat shown)
            lieHead: "left", lieHow: "back", stairsWay: "up",   // (ticket 308: up or down the stairs)
            hand: "right",   // (ticket 316: the dominant hand, the one that pulls a lever: right, left, or both, by a coin flip)   // (ticket 299: lying down, the way the head points; on the back, face up, or on the side, facing us)
            neck: 22, neckW: 26, arms: 55, elbows: 0, elbowCurl: 0, elbowSwing: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0, kneeCurl: 0, kneeSwing: 0,
@@ -501,6 +521,7 @@ const DEFAULTS = {
                      ...DOOR_JS.map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...ROOM_NS.map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
                    ...ROOM_NS.flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
+                   ...ROOM_NS.map(n => [stableHensKey(n, id), STABLE_HENS]),   // (ticket 506: each stable's hens)
                    ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
                 castleRoom: 1, livingOut: "house", ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["treeBack" + n, "none"])),
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShape" + n, "square"])),   // (ticket 252: each tree house's trapdoor's opening)
@@ -515,9 +536,11 @@ const DEFAULTS = {
                 fairyTime: "day", mushrooms: 14, fairyHouseSeen: 100, fairyHouseLfo: "none",
                 seeHouse: true, seeTree: true, seeWitch: true, seeCastle: true, seeHealer: true,
                 peakHeight: 100, mtClouds: 5, birds: 3, farLake: true,
+                pastureHorses: 3, pastureFlowers: 10,   // (ticket 503: the pasture's horses grazing and its patches of wildflowers)
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2, fallRate: 100, fallTime: "day",
                 caveGems: 16, gemShape: "four", gemSize: 100, gemBright: 90, gemTwinkle: 60,
                 caveFloor: "stalagmites", caveCeiling: "stalactites",   // (ticket 471: the cave room's formations)
+                desertFar: "mesas",   // (ticket 501: what the desert has far off, farLayers' mountains)
                 skyWhere: "denver", skyLat: 39.74, skyLon: -104.99, skyYear: 2026, skyMonth: 10, skyDay: 20, skyHour: 20,   // (ticket 490: 🌍 where and when, for a sky by the clock)
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
                 crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossBack: "woods", things: [],
@@ -537,6 +560,7 @@ const DEFAULTS = {
              accent: "#e89aa0", furPattern: "stripes", spot: "auto",
              monkWho: "monk", monkCloak: "#6b4a2b", hoodUp: true, bareFeet: false, hoodFace: true, hoodDim: 0, hoodEyes: true, queenRobe: "#5b2a86", kingRobe: "#7a1f2b", crownJewel: "#d2382b", mantle: true, scepter: true,
              knightA: "#2f6db5", knightB: "#f4f1ea", tabardLayout: "quartered", emblem: "falcon", plume: true, plumeColor: "#c0392b", helmOpen: false, sword: true, shield: true,
+             dragonScales: "#3f8f4a", dragonBelly: "#e9d27a", dragonWings: "#d0453a", dragonHorns: "#f4ecd6", dragonWingsHow: "flap", dragonWingLfo: "none",   // (ticket 499)
              robinTunic: "#3f7d3a", robinHat: "#3f7d3a", robinFeather: "#d2382b", bow: true, quiver: true,
              wizardRobe: "#2a3a8c", wizardStars: "#f2c230", staff: true, staffOrb: "#7dd3fc", beardGiven: null,
              gnomeWho: "man", gnomeHat: "#d2382b", gnomeTunic: "#3f8f8a", gnomeTrousers: "#7d8b6a",
@@ -695,6 +719,10 @@ function upgradeHorse(st, saved) {
   for (const k of HORSE_KEYS) { if (old && old[k] !== undefined && !had) st.body[k] = old[k]; delete st.costume[k]; }
   for (const list of [st.hud && st.hud.pins, st.hud && st.hud.min]) if (Array.isArray(list))
     for (let i = 0; i < list.length; i++) if (typeof list[i] === "string" && HORSE_KEYS.some(k => list[i] === "costume." + k)) list[i] = list[i].replace(/^costume\./, "body.");
+  // (the review after 0.0.385) and every person away (a look kept in peopleAway), by the same rule
+  for (const P of Object.values((st && st.peopleAway) || {})) { const L = P && P.look, c = L && L.costume; if (!c) continue;
+    const hadP = !!(L.body && L.body.horse !== undefined);
+    for (const k of HORSE_KEYS) if (c[k] !== undefined) { if (!hadP) (L.body = L.body || {})[k] = c[k]; delete c[k]; } }
 }
 function upgradeFeet(st, saved) {
   if (!(saved && saved.rightShoe)) for (const k of SHOE_OWN) st.rightShoe[k] = st.shoes[k];
@@ -715,7 +743,7 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 // (ticket 146) R (5, the right shoulder) turns crawling on or off. A pad
 // taught its buttons (🎓 in the Controls tab) keeps its own layout, by its
 // name, in localStorage["dress-up-pads"], put back whenever it connects.
-DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4, bubbles: 6 };   // (ticket 221: 🫧 on the left trigger, and beside select on the screen)
+DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4, bubbles: 6, fire: 7 };   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start)
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 // (ticket 217, Matthew) ♿ Accessibility: every nav arrow shown, how bright the
 // far ones are and their colour (not the near ones' warm white), the arrows'
@@ -1096,7 +1124,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.385", released: "2026-10-20" };
+const VERSION = { number: "0.0.392", released: "2026-10-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

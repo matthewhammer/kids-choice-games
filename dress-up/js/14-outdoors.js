@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 14 of 26 of the game's script, run in order by index.html.
 
 function mountainsScene(c) {
@@ -67,6 +69,162 @@ function mountainsScene(c) {
            `<animateMotion path="M${P(cx - rx, cy)} A${f1(rx)} ${f1(ry)} 0 1 1 ${P(cx + rx, cy)} A${f1(rx)} ${f1(ry)} 0 1 1 ${P(cx - rx, cy)}" dur="${(9 + 5 * R(i, 339)).toFixed(1)}s" repeatCount="indefinite"/></path>`;
   }).join("")));
   return s;
+}
+
+// (ticket 501, for M: "dessert -- sand dunes in distance-- placeable objects are 6 types of dessert plants (cactus,etc)";
+// Matthew passing on M's ideas, the desert he means) The 🏜️ desert: an open sky, the sun high in it and a cloud or two; far
+// off, what its 🏜️ setting says (red mesas to start with: farLayers, which any place can call); sand dunes rolling into the
+// distance, three rows, lighter and bluer the farther they are, each dune gentle on its windward side and steep on its lee,
+// its windward side in shade; and a sand floor to walk on, rippled, a lizard's tracks across it. The desert plants stand in
+// it, each an object at its depth, drawn by the things' own drawings (saguaroSvg and the rest); two rocks; and a lizard on
+// a flat stone doing push-ups to the beat, a tumbleweed rolling past and bouncing on the beat (the quick LFO), a hawk
+// circling high up and sand blowing off the near dunes' crests (the slow one).
+const DESERT_SAND = "#e6bc7a", DESERT_HAZE = "#c3cde3";
+// (its horizon, the sand floor's far edge (the back line, SCENE_FAR's, just in front of it), and its dunes, each row's
+// troughs and crests in turn: for their drawing and for the sand blowing off their crests, alike)
+function desertGeom(c) {
+  const { x0, W, g, k, R } = c, hz = g - 232 * k, back = g - 128 * k;
+  const rows = [[hz + 6 * k, 26, 7, 0.6, 5010], [hz + 42 * k, 34, 5, 0.38, 5030], [back + 4 * k, 44, 4, 0.16, 5050]].map(([base, amp, n, haze, seed]) => {
+    const step = (W + 120 * k) / n, xs = [...Array(n + 1)].map((_, i) => x0 - 60 * k + step * (i + (i && i < n ? 0.3 * (R(i, seed) - 0.5) : 0)));
+    const ys = xs.map((_, i) => base - amp * k * 0.12 * R(i, seed + 1));
+    const dunes = xs.slice(0, n).map((xa, i) => { const xb = xs[i + 1], xc = xa + (xb - xa) * (0.58 + 0.18 * R(i, seed + 2));
+      return { xa, ya: ys[i], xc, top: base - amp * k * (0.55 + 0.45 * R(i, seed + 3)), xb, yb: ys[i + 1] }; });
+    const fill = mix(DESERT_SAND, DESERT_HAZE, haze);
+    return { base, dunes, fill, shade: mix(fill, "#6f4f7a", 0.5), lit: mix(fill, "#ffffff", 0.5) };
+  });
+  return { hz, back, rows };
+}
+function desertScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o } = c;
+  const { hz, back, rows } = desertGeom(c), far = SHORE_MOUNTAINS.some(([v]) => v === o.desertFar) ? o.desertFar : "mesas";
+  // (a size as the friend's is there, with 🔭 as it starts: one of the stage's units in this frame (a picture's are smaller),
+  // times how near; so a plant stands beside the friend in proportion, and beside one put there as a thing)
+  const u = k * 700 / (SCENE.bottom - SCENE.top), near = y => Math.max(0.1, (y - g + 140 * k) / (175 * k));
+  // the sky, and the sun high in it, glowing
+  let s = SEP + part("desert-sky", c.F, () => { const sx = x1 - W * 0.17, sy = y0 + H * 0.14;
+    return `<defs>${grad("bg-desert-sky", "#3d86d1", "#f4e3c3", y0, hz)}<radialGradient id="bg-desert-sun"><stop offset="0" stop-color="#fff6cf" stop-opacity="0.9"/>` +
+      `<stop offset="1" stop-color="#fff6cf" stop-opacity="0"/></radialGradient>${cloudDef("bg-cloud", 0.8)}</defs>` + all("url(#bg-desert-sky)") +
+      `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(95 * k)}" fill="url(#bg-desert-sun)"/>` + sunSvg(sx, sy, 28 * k); });
+  // two small clouds, drifting (the slow LFO)
+  s += SEP + part("desert-clouds", [c.F, sceneLfoKey(o, "slow")], () => [0, 1].map(i =>
+    driftingCloud(x0 + W * (0.12 + 0.42 * i), y0 + H * (0.08 + 0.07 * i), k * (0.42 + 0.12 * i), i + 3, o)).join(""));
+  // far off: 🏜️'s choice, on the horizon
+  s += SEP + part("desert-far", [c.F, far], () => farLayers(c, hz, { mountains: far, size: 150 }));
+  // the dunes, far to near: each row's sand down past the picture's foot (the rows nearer, and the floor, cover it), each
+  // dune's windward side in shade (fading toward its foot), the lit edge of its crest; and, far off on the middle row, a few
+  // saguaros' outlines (scenery: none is a place to go)
+  const duneRow = ({ base, dunes, fill, shade, lit }, id) => {
+    let d = `M${P(x0 - pad, base)} L${P(dunes[0].xa, dunes[0].ya)}`, sh = "", edge = "";
+    for (const { xa, ya, xc, top, xb, yb } of dunes) {
+      const w = [xa + (xc - xa) * 0.6, top], l = [xc + (xb - xc) * 0.12, yb];
+      d += ` Q${P(...w)} ${P(xc, top)} Q${P(...l)} ${P(xb, yb)}`;
+      sh += `M${P(xa, ya)} Q${P(...w)} ${P(xc, top)} Q${P(xc - (xc - xa) * 0.05, top + (base - top) * 0.6)} ${P(xc - (xc - xa) * 0.35, base)} L${P(xa, base)} Z `;
+      // (the lit edge: the lee side's first third, a curve of its own split off the lee's)
+      const q = 0.35, m1 = [xc + (l[0] - xc) * q, top + (l[1] - top) * q], e = [(1 - q) ** 2 * xc + 2 * (1 - q) * q * l[0] + q * q * xb, (1 - q) ** 2 * top + 2 * (1 - q) * q * l[1] + q * q * yb];
+      edge += `M${P(xc, top)} Q${P(...m1)} ${P(...e)} `;
+    }
+    const top = Math.min(...dunes.map(q => q.top));
+    return `<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(top)}" x2="0" y2="${f1(base)}"><stop offset="0" stop-color="${shade}" stop-opacity="0.55"/>` +
+      `<stop offset="1" stop-color="${shade}" stop-opacity="0"/></linearGradient></defs>` +
+      `<path d="${d} L${P(x1 + pad, base)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z" fill="${fill}"/><path d="${sh}" fill="url(#${id})"/>` +
+      `<path d="${edge}" fill="none" stroke="${lit}" stroke-width="${f1(2 * k)}" stroke-linecap="round" opacity="0.8"/>`;
+  };
+  s += SEP + part("desert-dunes", c.F, () => {
+    let cacti = "";
+    rows[1].dunes.forEach(({ xa, ya, xc, top }, i) => { if (i % 2 || xc < x0 || xc > x1) return;
+      const q = 0.7, wx = xa + (xc - xa) * 0.6, x = (1 - q) ** 2 * xa + 2 * (1 - q) * q * wx + q * q * xc, y = (1 - q) ** 2 * ya + 2 * (1 - q) * q * top + q * q * top + 3 * k, h = (16 + 8 * R(i, 5070)) * k;
+      cacti += `M${P(x, y)} V${f1(y - h)} M${P(x, y - h * 0.42)} H${f1(x - h * 0.2)} V${f1(y - h * 0.7)} M${P(x, y - h * 0.5)} H${f1(x + h * 0.18)} V${f1(y - h * 0.8)} `; });
+    return wallObj("far dunes", duneRow(rows[0], "bg-desert-dunes0") + duneRow(rows[1], "bg-desert-dunes1") +
+      (cacti ? `<path d="${cacti}" fill="none" stroke="${mix("#4f8a46", DESERT_HAZE, 0.45)}" stroke-width="${f1(3.2 * k)}" stroke-linecap="round" stroke-linejoin="round"/>` : "")) +
+      wallObj("near dunes", duneRow(rows[2], "bg-desert-dunes2"));
+  });
+  // sand blowing off the near dunes' crests, to the right on the wind (the slow LFO, each its own way in)
+  s += SEP + part("desert-sand-blowing", [c.F, sceneLfoKey(o, "slow")], () => wallObj("sand blowing off the dunes",
+    rows[2].dunes.filter(q => q.xc > x0 + 20 * k && q.xc < x1 - 60 * k).slice(0, 3).map(({ xc, top }, j) => {
+      const L = 70 * k, lift = 6 * k;
+      return `<path d="M${P(xc, top)} q${f1(L * 0.4)} ${f1(-lift)} ${f1(L)} ${f1(-lift * 0.4)} q${f1(-L * 0.5)} ${f1(lift * 0.9)} ${f1(-L)} ${f1(lift * 0.6)} Z" fill="#f8e6bf" opacity="0">` +
+        lfoTimed(o, "slow", 0.2 + 0.31 * j, `<animate attributeName="opacity" values="0;0.7;0" dur="6s" repeatCount="indefinite"/>`) +
+        lfoTimed(o, "slow", 0.2 + 0.31 * j, `<animateTransform attributeName="transform" type="translate" values="0 0;${f1(34 * k)} ${f1(-6 * k)}" dur="6s" repeatCount="indefinite"/>`) + `</path>`;
+    }).join("")));
+  // the sand floor, warmer toward us; ripples on it, smaller farther off; a lizard's tracks, from the right edge to its stone,
+  // and the line its tail drew between them
+  s += SEP + part("desert-floor", c.F, () => {
+    let rip = "", tr = "", tail = "";
+    for (let i = 0; i < 16; i++) { const y = back + 10 * k + (y1 - back) * Math.pow(R(i, 5060), 0.9), x = x0 + W * R(i, 5061), z = near(y), w = (40 + 50 * R(i, 5062)) * k * z;
+      rip += `M${P(x - w, y)} q${f1(w * 0.5)} ${f1(-3 * k * z)} ${f1(w)} 0 t${f1(w)} 0 `; }
+    const xa = W * 0.18 + 36 * k, ya = g + 86 * k, xb = x1 + 30 * k, yb = g + 34 * k;
+    for (let i = 0; i <= 16; i++) { const q = i / 16, x = xa + (xb - xa) * q, y = ya + (yb - ya) * q + 5 * k * Math.sin(q * 9), z = near(y) * k, py = y + (i % 2 ? 5 : -5) * z;
+      tr += `M${P(x, py)} l${f1(-3.4 * z)} 0 M${P(x, py)} l${f1(-2.8 * z)} ${f1(-2 * z)} M${P(x, py)} l${f1(-2.8 * z)} ${f1(2 * z)} `;
+      tail += (i ? " L" : "M") + P(x + 4 * z, y); }
+    return `<defs>${grad("bg-desert-floor", "#ecc98e", "#e0a85f", back, y1)}</defs>` + land(back, 5, "url(#bg-desert-floor)", 0.7) +
+      floorObj("sand ripples", `<path d="${rip}" fill="none" stroke="#c99a5c" stroke-width="${f1(1.6 * k)}" stroke-linecap="round" opacity="0.55"/>`) +
+      floorObj("tracks in the sand", `<path d="${tail}" fill="none" stroke="#b98a50" stroke-width="${f1(1 * k)}" opacity="0.35"/>` +
+        `<path d="${tr}" fill="none" stroke="#b98a50" stroke-width="${f1(1.2 * k)}" stroke-linecap="round" opacity="0.7"/>`);
+  });
+  // a hawk circling high up, tilting as it turns (the slow LFO): its spot on the outer group and its loop from there, so held
+  // still it stays in the sky (ticket 370's lesson); at the depth of the far ground under it
+  s += SEP + part("desert-hawk", [c.F, sceneLfoKey(o, "slow")], () => { const rx = 110 * k, ry = 28 * k;
+    return obj("hawk", hz, `<g transform="translate(${f1(-0.3 * W)} ${f1(y0 + H * 0.2)})"><g>` +
+      lfoTimed(o, "slow", 0.15, `<animateMotion path="M0 0 A${f1(rx)} ${f1(ry)} 0 1 1 ${f1(2 * rx)} 0 A${f1(rx)} ${f1(ry)} 0 1 1 0 0" dur="16s" repeatCount="indefinite"/>`) +
+      `<g transform="scale(${(1.3 * k).toFixed(3)})">${swaying(o, hawkSvg(), 0, 0, 8, 0.4, 6)}</g></g></g>`); });
+  // the plants, each standing at its depth, sized for it (the Joshua tree and the saguaros as big as trees): [its name, its
+  // place across (a share of the picture's width), its depth (from the ground's line), its drawing and its settings, its
+  // seed, how big, mirrored]; the middle kept clear for the friend
+  s += SEP + part("desert-plants", c.F, () => byDepth([
+    ["saguaro, far", -0.12, -84, saguaroSvg, { arms: 2, flowers: false }, 5102, 1.2, true],
+    ["joshua tree", 0.33, -72, joshuaTreeSvg, { flowers: false }, 5101, 1.5, false],
+    ["agave", -0.2, -44, agaveSvg, { stalk: true, tone: AGAVE_TONES[0] }, 5104, 1, false],
+    ["ocotillo", 0.17, -30, ocotilloSvg, { leaves: true, flowers: true }, 5103, 1.1, false],
+    ["prickly pear", 0.38, 54, pricklyPearSvg, { bloom: "fruit" }, 5105, 1, true],
+    ["saguaro, near", -0.43, 60, saguaroSvg, { arms: 3, flowers: true }, 5106, 0.85, false],
+    ["barrel cactus", -0.24, 90, barrelCactusSvg, { flowers: true, color: DESERT_FLOWERS[3] }, 5107, 0.9, false],
+  ].map(([name, ux, dy, draw, t, seed, big, flip]) => { const y = g + dy * k, z = u * near(y) * big;
+    return [name, y, `<g transform="translate(${f1(W * ux)} ${f1(y)}) scale(${(flip ? -z : z).toFixed(3)} ${z.toFixed(3)})">${draw(t, seed)}</g>`]; }).concat(
+    // (the rocks, as the mountain trail's: each one a seat)
+    [["rock, right", 0.1, -60, 5110], ["rock, back", 0.02, -104, 5111]].map(([name, ux, dy, seed]) => { const y = g + dy * k;
+      return [name, y, rockSvg(W * ux, y, 36 * u * near(y), seed, "#b98a68")]; }))));
+  // the lizard, on a flat stone (no seat: it is the lizard's), facing the middle, doing push-ups to the beat (the quick LFO)
+  s += SEP + part("desert-lizard", [c.F, sceneLfoKey(o, "fast")], () => { const y = g + 86 * k, z = u * near(y) * 1.1;
+    return obj("lizard", y, `<g transform="translate(${f1(W * 0.18)} ${f1(y)}) scale(${(-z).toFixed(3)} ${z.toFixed(3)})">${lizardSvg(o, 0.3)}</g>`); });
+  // a tumbleweed rolling past now and then, in front of the friend where they arrive, bouncing on the beat (the quick LFO);
+  // held still (a slow computer), it rests on the sand where it is placed
+  s += SEP + part("desert-tumbleweed", [c.F, sceneLfoKey(o, "fast")], () => { const y = g + 64 * k, sx = -0.33 * W, z = u * near(y), r = 30 * z;
+    const from = x0 - 90 * k - sx, to = x1 + 90 * k - sx;
+    return obj("tumbleweed", y, `<g transform="translate(${f1(sx)} ${f1(y)})"><g><animateTransform attributeName="transform" type="translate" values="${f1(from)} 0;${f1(to)} 0;${f1(to)} 0" keyTimes="0;0.7;1" dur="15s" repeatCount="indefinite"/>` +
+      `<ellipse cx="0" cy="2" rx="${f1(r * 0.9)}" ry="${f1(r * 0.18)}" fill="#000000" opacity="0.15"/>` +
+      `<g>${lfoTimed(o, "fast", 0.6, `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-r * 0.7)};0 0" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.3 0.6 0.5 1;0.5 0 0.7 0.4" dur="0.6s" repeatCount="indefinite"/>`)}` +
+      `<g transform="scale(${z.toFixed(3)})"><g><animateTransform attributeName="transform" type="rotate" values="0 0 -30;360 0 -30" dur="2.4s" repeatCount="indefinite"/>${tumbleweedSvg(5120)}</g></g></g></g></g>`); });
+  return s;
+}
+// the desert's lizard, a collared lizard, facing right, its feet on the line y = 0, on its flat stone: its body doing
+// push-ups about its hips (the quick LFO, off of its round on), its near front leg straightening under it
+function lizardSvg(o, off) {
+  const body = "#2f9e98", edge = "#1d6b66", up = own => lfoTimed(o, "fast", off, own);
+  return `<ellipse cx="0" cy="4" rx="34" ry="6" fill="#a8865f"/><ellipse cx="-2" cy="1.5" rx="30" ry="4.5" fill="#c9a882"/>` +
+    `<path d="M-8 -7 Q-30 -7 -48 -2 Q-30 -2 -8 -2 Z" fill="${body}" stroke="${edge}" stroke-width="0.8"/>` +
+    `<path d="M-6 -4 L-11 0 L-15 0 M-3 -4 L-1 0 L3 0" fill="none" stroke="${edge}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<g>${up(`<animateTransform attributeName="transform" type="rotate" values="0 -6 -5;-14 -6 -5;0 -6 -5" keyTimes="0;0.4;1" dur="0.6s" repeatCount="indefinite"/>`)}` +
+    `<path d="M10 -4 L8 0" fill="none" stroke="${edge}" stroke-width="2" stroke-linecap="round"/>` +
+    `<ellipse cx="4" cy="-6" rx="12" ry="4.5" fill="${body}" stroke="${edge}" stroke-width="0.8"/><path d="M-5 -3.5 Q4 -1.5 14 -4" fill="none" stroke="#9ee6dc" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<ellipse cx="19" cy="-8" rx="6" ry="4" fill="#e9c46a" stroke="#a07a2a" stroke-width="0.8"/><path d="M12 -10.5 Q13 -6.5 12 -2.5 M14.5 -11 Q15.5 -7.5 14.5 -3.5" fill="none" stroke="#1f2937" stroke-width="1.4"/>` +
+    `<circle cx="21" cy="-9" r="1" fill="#1f2937"/></g>` +
+    `<line x1="12" y1="0" x2="12" y2="-5" stroke="${edge}" stroke-width="2.2" stroke-linecap="round">${up(`<animate attributeName="y2" values="-5;-9.4;-5" keyTimes="0;0.4;1" dur="0.6s" repeatCount="indefinite"/>`)}</line>`;
+}
+// a tumbleweed: a ball of dry twigs, 60 across, resting on y = 0
+function tumbleweedSvg(seed) {
+  const R = seeded(seed), r = 30, P = (x, y) => `${f1(x)} ${f1(y)}`;
+  let d = "", d2 = "";
+  for (let i = 0; i < 12; i++) { const a = R(i) * 6.28, b = a + 1.6 + 2.2 * R(i + 20), ra = r * (0.55 + 0.45 * R(i + 40)), rb = r * (0.55 + 0.45 * R(i + 60));
+    const seg = `M${P(ra * Math.cos(a), -r + ra * Math.sin(a))} Q${P(r * 0.8 * (R(i + 80) - 0.5), -r + r * 0.8 * (R(i + 90) - 0.5))} ${P(rb * Math.cos(b), -r + rb * Math.sin(b))} `;
+    if (i % 3) d += seg; else d2 += seg; }
+  return `<circle cx="0" cy="${-r}" r="${r}" fill="#c9a46a" opacity="0.25"/><circle cx="0" cy="${-r}" r="${r - 1}" fill="none" stroke="#9a7444" stroke-width="2.2" stroke-dasharray="13 7"/>` +
+    `<path d="${d}" fill="none" stroke="#8a6a3e" stroke-width="1.8" stroke-linecap="round"/><path d="${d2}" fill="none" stroke="#dcc08a" stroke-width="1.5" stroke-linecap="round"/>`;
+}
+// a hawk soaring, seen from below (so the same whichever way it turns), its middle at 0, 0, 64 across its wings
+function hawkSvg() {
+  const wing = sd => `<path d="M${sd * 3} -3 Q${sd * 15} -10 ${sd * 31} -5 L${sd * 29} -2 L${sd * 32} 0 L${sd * 28} 2 L${sd * 30} 4 Q${sd * 16} 6 ${sd * 3} 5 Z" fill="#6b4a2e"/>` +
+    `<path d="M${sd * 5} -1 Q${sd * 14} -5 ${sd * 23} -2 Q${sd * 14} 3 ${sd * 5} 3 Z" fill="#d9b991" opacity="0.85"/>`;
+  return wing(-1) + wing(1) + `<path d="M-3 8 L-9 21 Q0 25 9 21 L3 8 Z" fill="#c2552b"/><ellipse cx="0" cy="1" rx="4.2" ry="10" fill="#5b3a22"/><circle cx="0" cy="-10" r="3.6" fill="#5b3a22"/>`;
 }
 
 // The jungle waterfall: a mossy cliff, the water falling (streaks running
@@ -419,7 +577,7 @@ function tentScene(c) {
   // and the point the seams run to (at the eye's height)
   const { back, half, vy, out } = tentFrame(c), apex = y0 + H * 0.08, top = y0 + H * 0.3, dh = W * 0.12;
   const seam = mix(T.color, "#000000", 0.55);
-  let s = SEP + part("tent-shell", [c.F, n], () => {
+  let s = SEP + part("tent-shell", [c.F, n, time], () => {   // (time: its windows show the sky; the review after 0.0.385)
     const dark = mix(T.color, "#000000", 0.4), lit = mix(T.color, "#000000", 0.2), far = mix(T.color, "#ffffff", 0.1);
     let t = all(dark) + `<rect x="0" y="${f1(y0 - pad)}" width="${f1(x1 + pad)}" height="${f1(H + 2 * pad)}" fill="${lit}"/>`;
     // the seams along the walls, from the far wall's edges out past us
@@ -639,7 +797,7 @@ function caveScene(c) {
              `<animate attributeName="cy" values="${f1(y)};${f1(y - 20 * k)};${f1(y)}" dur="${(4 + 3 * R(i, 394)).toFixed(1)}s" repeatCount="indefinite"/></ellipse>`;
     }).join("") + `</g>`;
     // (outside, the falls' time of day: its tint over all of it, the moon behind the water at night)
-    if (time !== "day") t += (clock ? (moonUp ? moonPhaseSvg(-mh * 0.45, mt + 50 * k, 18 * k, skyNow(o).moon.phase, "#1c2742", skyNow(o).lat < 0) : "") : time === "night" ? `<circle cx="${f1(-mh * 0.45)}" cy="${f1(mt + 50 * k)}" r="${f1(18 * k)}" fill="#fff6d6"/>` : "") +
+    if (time !== "day") t += (clock ? (moonUp ? moonPhaseSvg(-mh * 0.45, mt + 50 * k, 18 * k, skyNow(o).moon.phase, "#1c2742", skyFacesNorth(skyNow(o))) : "") : time === "night" ? `<circle cx="${f1(-mh * 0.45)}" cy="${f1(mt + 50 * k)}" r="${f1(18 * k)}" fill="#fff6d6"/>` : "") +
       `<rect x="${f1(-mh)}" y="${f1(mt - 20 * k)}" width="${f1(2 * mh)}" height="${f1(floor - mt + 20 * k)}" fill="${FALL_TINT[time][0]}" opacity="${FALL_TINT[time][1]}" pointer-events="none"/>`;
     return t + `</g><path d="${mouth}" fill="none" stroke="#1a171f" stroke-width="${f1(8 * k)}" stroke-linejoin="round"/></g>`;
   });
@@ -870,7 +1028,7 @@ function caveroomScene(c) {
              `<ellipse cx="${f1(x - rx * 0.3)}" cy="${f1(y - ry * 0.2)}" rx="${f1(rx * 0.3)}" ry="${f1(ry * 0.18)}" fill="#e6f8ff" opacity="0.3">` +
              fast(i / 4, `<animate attributeName="opacity" values="0.1;0.45;0.1" dur="1.2s" repeatCount="indefinite"/>`) + `</ellipse>`;
     }).join(""));
-    return S.map(({ x, y, z, i }) => {
+    return (floorSty === "columns" ? `<defs><clipPath id="bg-caveroom-under-vault"><path d="${caveSmooth(vault, P)} L${P(x1 + pad, y1 + pad)} L${P(x0 - pad, y1 + pad)} Z"/></clipPath></defs>` : "") + S.map(({ x, y, z, i }) => {
       if (floorSty === "stalagmites") {
         const h = (60 + 70 * R(i, 4830)) * z, w = (24 + 16 * R(i, 4831)) * z;
         return obj(`stalagmite ${i + 1}`, y, `<path d="M${P(x - w, y)} Q${P(x - w * 0.4, y - h * 0.5)} ${P(x - w * 0.08, y - h * 0.94)} Q${P(x, y - h * 1.02)} ${P(x + w * 0.08, y - h * 0.94)} Q${P(x + w * 0.4, y - h * 0.5)} ${P(x + w, y)} Z" fill="#5a5266" stroke="#2a2630" stroke-width="${f1(2 * k)}"/>` +
@@ -886,12 +1044,14 @@ function caveroomScene(c) {
         // (six at most: the two nearest are left out, so the picture is not all column; and none in front of the archway,
         // which a column, floor to ceiling, would hide)
         if (i > 5 || Math.abs(x + 0.3 * W) < 80 * k) return "";
-        const top = caveAlong(vault, x) + 6 * k, w = (34 + 18 * R(i, 4840)) * z, mid = y - (y - top) * (0.45 + 0.15 * R(i, 4841)), wm = w * (0.42 + 0.15 * R(i, 4842));
+        // (the review of 0.0.386: each column rises into the vault and is cut off along it, so it meets the ceiling wherever
+        // the vault slopes; flat-topped at the vault, the outer ones stuck up into the rock once the rock was drawn behind them)
+        const top = caveAlong(vault, x) - 40 * k, w = (34 + 18 * R(i, 4840)) * z, mid = y - (y - top) * (0.45 + 0.15 * R(i, 4841)), wm = w * (0.42 + 0.15 * R(i, 4842));
         const L = caveFractalPath([[x - w, y], [x - wm, mid], [x - w * 1.3, top]], 3, 0.06, R, 4843 + 5 * i), Rt = caveFractalPath([[x + w * 1.3, top], [x + wm, mid], [x + w, y]], 3, 0.06, R, 4846 + 5 * i);
-        return obj(`column ${i + 1}`, y, `<path d="${caveSmooth(L, P)} ${caveSmooth(Rt, P).replace(/^M/, "L")} Z" fill="#5e5668" stroke="#2a2630" stroke-width="${f1(2 * k)}"/>` +
+        return obj(`column ${i + 1}`, y, `<g clip-path="url(#bg-caveroom-under-vault)"><path d="${caveSmooth(L, P)} ${caveSmooth(Rt, P).replace(/^M/, "L")} Z" fill="#5e5668" stroke="#2a2630" stroke-width="${f1(2 * k)}"/>` +
           [0.15, 0.3, 0.62, 0.8].map(f => { const yy = y - (y - top) * f, ww = f < 0.5 ? w - (w - wm) * f / 0.5 : wm + (w * 1.3 - wm) * (f - 0.5) / 0.5;
             return `<path d="M${P(x - ww * 0.95, yy)} Q${P(x, yy + 6 * z)} ${P(x + ww * 0.95, yy)}" fill="none" stroke="#776e83" stroke-width="${f1(2 * z)}" opacity="0.7"/>`; }).join("") +
-          `<ellipse class="flat" cx="${f1(x)}" cy="${f1(y)}" rx="${f1(w * 1.3)}" ry="${f1(w * 0.28)}" fill="#1c1922" opacity="0.35"/>`);
+          `</g><ellipse class="flat" cx="${f1(x)}" cy="${f1(y)}" rx="${f1(w * 1.3)}" ry="${f1(w * 0.28)}" fill="#1c1922" opacity="0.35"/>`);
       }
       if (floorSty === "crystals") {
         const col = CAVE_GLOWS[i % 5], h = (54 + 40 * R(i, 4850)) * z;
@@ -920,9 +1080,11 @@ function caveroomScene(c) {
   // above them, at the back)
   s += SEP + part("caveroom-roof-" + roofSty, [c.F, sceneLfoKey(o, "slow"), sceneLfoKey(o, "fast")], () => {
     const xs = n => [...Array(n)].map((_, i) => x0 + W * (i + 0.15 + 0.7 * R(i, 4860 + n)) / n);
+    // (the review after 0.0.385: the rock and its edge inside the ceiling's object, which sorts behind the friend; drawn loose,
+    // it fell among the formations and covered a friend standing behind the nearest)
     let t = `<defs>${grad("bg-caveroom-roof", "#17141b", "#2a2530", y0 - pad, y0 + 130 * k)}</defs>` +
             `<path d="M${P(x0 - pad, y0 - pad)} L${P(x1 + pad, y0 - pad)} L${P(x1 + pad, vault[vault.length - 1][1])} ${caveSmooth([...vault].reverse(), P).replace(/^M/, "L")} L${P(x0 - pad, vault[0][1])} Z" fill="url(#bg-caveroom-roof)"/>` +
-            `<path d="${caveSmooth(vault, P)}" fill="none" stroke="#4a4354" stroke-width="${f1(3 * k)}" stroke-linejoin="round" opacity="0.8"/>`, f = "";
+            `<path d="${caveSmooth(vault, P)}" fill="none" stroke="#4a4354" stroke-width="${f1(3 * k)}" stroke-linejoin="round" opacity="0.8"/>`, f = "", lightOnFloor = "";
     if (roofSty === "stalactites") xs(22).forEach((x, i) => {
       const top = caveAlong(vault, x) - 6 * k, len = (24 + 80 * R(i, 4865)) * k, w = (7 + 9 * R(i, 4866)) * k;
       f += `<path d="M${P(x - w, top)} L${P(x + w, top)} Q${P(x + w * 0.3, top + len * 0.6)} ${P(x, top + len)} Q${P(x - w * 0.3, top + len * 0.6)} ${P(x - w, top)} Z" fill="#4e4759" stroke="#2a2630" stroke-width="${f1(1.5 * k)}"/>` +
@@ -952,7 +1114,7 @@ function caveroomScene(c) {
            [[-38, 2], [42, 4], [-20, 8]].map(([dx, dy], j) => grassTuft(cx + dx * k, top + dy * k, 12 * k, 4873 + j, "#4f7f3a", 1.4 * k)).join("") +
            [...Array(9)].map((_, j) => { const mx = cx + (R(j, 4876) - 0.3) * 120 * k, my = top + (g - top) * R(j, 4877);
              return `<circle cx="${f1(mx)}" cy="${f1(my)}" r="${f1(1.4 * k)}" fill="#fff6d0" opacity="0.7">` + slow(j / 9, `<animate attributeName="cy" values="${f1(my)};${f1(my + 30 * k)};${f1(my)}" dur="7s" repeatCount="indefinite"/>`) + `</circle>`; }).join("");
-      t += floorObj("daylight on the floor", `<ellipse cx="${f1(cx + 25 * k)}" cy="${f1(g + 40 * k)}" rx="${f1(90 * k)}" ry="${f1(18 * k)}" fill="#fff6d0" opacity="0.18" pointer-events="none"/>`);
+      lightOnFloor = floorObj("daylight on the floor", `<ellipse cx="${f1(cx + 25 * k)}" cy="${f1(g + 40 * k)}" rx="${f1(90 * k)}" ry="${f1(18 * k)}" fill="#fff6d0" opacity="0.18" pointer-events="none"/>`);
     }
     else if (roofSty === "crystals") xs(14).forEach((x, i) => {
       // clusters of crystals growing down from the vault and up out of its hollows, each its own size and slant
@@ -970,11 +1132,173 @@ function caveroomScene(c) {
     });
     // two bats asleep, whatever the style
     f += caveBatSvg(-0.22 * W, caveAlong(vault, -0.22 * W) - 2 * k, k, 0) + caveBatSvg(0.33 * W, caveAlong(vault, 0.33 * W) - 2 * k, k, 1);
-    return t + wallObj(`the ceiling's ${CAVE_CEILINGS.find(([v]) => v === roofSty)[1].replace(/^\S+\s/, "")}`, f);
+    return wallObj(`the ceiling's ${CAVE_CEILINGS.find(([v]) => v === roofSty)[1].replace(/^\S+\s/, "")}`, t + f) + lightOnFloor;
   });
-  // the dark at the picture's edges, over everything: a cave lit only by what glows in it
+  // the dark at the picture's edges, over everything: a cave lit only by what glows in it (see-through as a layer, its
+  // opacity on itself, so ticket 261's audit counts nothing as hidden under it: 0.0.376's speed run found 13)
   s += SEP + part("caveroom-dark", c.F, () => obj("the dark", Infinity, `<defs><radialGradient id="bg-caveroom-dark" cx="0.5" cy="0.55" r="0.75"><stop offset="0.55" stop-color="#07060a" stop-opacity="0"/>` +
-    `<stop offset="1" stop-color="#07060a" stop-opacity="0.6"/></radialGradient></defs><rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="url(#bg-caveroom-dark)" pointer-events="none"/>`));
+    `<stop offset="1" stop-color="#07060a" stop-opacity="1"/></radialGradient></defs><rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="url(#bg-caveroom-dark)" opacity="0.55" pointer-events="none"/>`));
+  return s;
+}
+
+// (ticket 502, for M; Matthew: "farm yard -- placeable ojects are barn buildings (6 types) and fence parts ...") The 🚜 farm
+// yard: packed earth with straw all over it and wheel ruts, a red barn and a farmhouse at the back behind a fence of posts and
+// rails (drawn by the 🏚️ barn's and the 🪵 fence's own code), fields beyond them under rolling hills and a line of trees (the
+// shared far layers), the sky. A windpump pours into the stable's water trough, its wheel turning with the slow LFO, as the
+// clouds drift and the chimney's smoke sways; the hens (the stable's own, M: "chickens") peck, the barn's weather vane turns
+// and wisps of straw blow across the yard with the quick one. A haystack with a mouse at its foot, and a little red tractor
+// (the place's 🚜). The middle is left clear for the friend and for what is put here (fences snap to its tiles: tileSnap).
+function farmhouseSvg(o) {
+  const wall = "#f2ece0", line = "#b9ad98", roof = "#8e3b2f", trim = "#ffffff", shut = "#4f7a55";
+  let gable = ""; for (let y = -168; y < -118; y += 10) { const hw = 96 * (y + 178) / 60; gable += `M${f1(-hw)} ${y} H${f1(hw)} `; }
+  let clap = ""; for (let y = -108; y < 0; y += 10) clap += `M-96 ${y} H96 `;
+  // (its smoke, rising from the chimney, sways with the slow LFO: behind the chimney's top)
+  return (o ? swaying(o, `<path d="M55 -198 Q44 -222 58 -244 T52 -290" fill="none" stroke="#e9e9ef" stroke-width="10" stroke-linecap="round" opacity="0.6"/>`, 55, -198, 7, 0.4) : "") +
+    `<ellipse cx="0" cy="3" rx="118" ry="10" fill="#000000" opacity="0.18"/>` +
+    `<rect x="46" y="-196" width="18" height="50" fill="#9a4a3a" stroke="#5e2a20" stroke-width="1.5"/><rect x="43" y="-201" width="24" height="7" fill="#7a3a2e"/>` +
+    `<path d="M-96 0 V-118 L0 -178 L96 -118 V0 Z" fill="${wall}" stroke="${line}" stroke-width="1.5"/><path d="${clap}${gable}" stroke="${line}" stroke-width="1" opacity="0.7"/>` +
+    `<path d="M-110 -110 L0 -187 L110 -110" fill="none" stroke="${roof}" stroke-width="13" stroke-linejoin="round" stroke-linecap="round"/>` +
+    `<circle cx="0" cy="-146" r="11" fill="#9cc7dd" stroke="${trim}" stroke-width="3"/><path d="M-11 -146 H11 M0 -157 V-135" stroke="${trim}" stroke-width="2"/>` +
+    `<path d="M-83 -88 h9 v40 h-9 Z M-42 -88 h9 v40 h-9 Z M33 -88 h9 v40 h-9 Z M74 -88 h9 v40 h-9 Z" fill="${shut}"/>` +
+    [-58, 58].map(x => `<rect x="${x - 15}" y="-88" width="30" height="40" fill="#9cc7dd" stroke="${trim}" stroke-width="3"/><path d="M${x} -88 V-48 M${x - 15} -68 H${x + 15}" stroke="${trim}" stroke-width="2"/>`).join("") +
+    `<rect x="-16" y="-70" width="32" height="70" fill="#6b8f6e" stroke="#3e5a40" stroke-width="1.5"/><circle cx="9" cy="-36" r="2.2" fill="#e2c15a"/>` +
+    `<path d="M-30 -74 L30 -74 L36 -84 L-36 -84 Z" fill="${roof}"/><path d="M-27 -74 V-5 M27 -74 V-5" stroke="${trim}" stroke-width="4"/>` +
+    `<rect x="-34" y="-6" width="68" height="6" fill="#c9bfae" stroke="${line}" stroke-width="1"/>` +
+    // (two sunflowers by its corner, taller than its windows: a surprise)
+    `<path d="M-104 0 Q-106 -50 -102 -104 M-90 0 Q-88 -40 -92 -84" fill="none" stroke="#4f7f3a" stroke-width="3"/>` +
+    `<path d="M-104 -40 q-12 -6 -16 4 q10 2 16 -4 Z M-91 -50 q12 -8 16 2 q-10 4 -16 -2 Z" fill="#5f8f48"/>` +
+    [[-102, -110, 13], [-92, -89, 11]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#f2c12e" stroke="#e8a317" stroke-width="5" stroke-dasharray="3 2"/><circle cx="${x}" cy="${y}" r="${f1(r * 0.5)}" fill="#6b3f1d"/>`).join("");
+}
+function tractorSvg() {
+  const red = "#c0392b", redD = "#7d2018", tire = "#26231f", hub = "#e8b33a";
+  const wheel = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${tire}"/><circle cx="${x}" cy="${y}" r="${f1(r - 3)}" fill="none" stroke="#3d3833" stroke-width="5" stroke-dasharray="5 4"/>` +
+    `<circle cx="${x}" cy="${y}" r="${f1(r * 0.45)}" fill="${hub}" stroke="#a07a1a" stroke-width="2"/><circle cx="${x}" cy="${y}" r="${f1(r * 0.14)}" fill="#a07a1a"/>`;
+  return `<ellipse cx="0" cy="2" rx="80" ry="8" fill="#000000" opacity="0.2"/>` + farmFoot(-72, 68, 26) +
+    `<rect x="26" y="-112" width="6" height="52" fill="#4a4a4a"/><rect x="24" y="-116" width="10" height="6" rx="2" fill="#333333"/>` +
+    `<path d="M-12 -62 L54 -62 Q62 -62 64 -54 L66 -30 L-12 -30 Z" fill="${red}" stroke="${redD}" stroke-width="2"/>` +
+    `<path d="M60 -56 V-34 M56 -58 V-32 M-4 -54 H46 M-4 -46 H46" stroke="${redD}" stroke-width="1.5" opacity="0.7"/><circle cx="62" cy="-58" r="4" fill="#fff3b0" stroke="${redD}" stroke-width="1"/>` +
+    `<path d="M-56 -76 Q-58 -94 -46 -94 L-38 -94 L-38 -74 Z" fill="#3a3a3a"/><path d="M-6 -62 L-22 -86" stroke="#3a3a3a" stroke-width="3"/><ellipse cx="-22" cy="-88" rx="9" ry="3" fill="none" stroke="#3a3a3a" stroke-width="2.5"/>` +
+    wheel(46, -20, 20) +
+    `<path d="M-76 -40 Q-74 -82 -34 -82 Q4 -82 6 -40 L-4 -40 Q-6 -72 -34 -72 Q-62 -72 -66 -40 Z" fill="${red}" stroke="${redD}" stroke-width="2"/>` +
+    wheel(-34, -36, 36);
+}
+function haystackSvg(seed) {
+  const R = seeded(seed), id = `bg-hay-${seed}`;
+  let strands = "";
+  for (let j = 0; j < 46; j++) { const v = 0.06 + 0.88 * R(j), y = -v * 136, half = 76 * Math.sqrt(Math.max(0, 1 - v * v)) * 0.92, x = (R(j + 50) * 2 - 1) * half * 0.86, a = (R(j + 100) - 0.5) * 1.6;
+    strands += `M${f1(x)} ${f1(y)} q${f1(4 * Math.cos(a))} ${f1(-3 + 6 * Math.sin(a))} ${f1(9 * Math.cos(a))} ${f1(-4 + 8 * Math.sin(a))} `; }
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d98a"/><stop offset="1" stop-color="#c9a24a"/></linearGradient></defs>` +
+    `<ellipse cx="0" cy="3" rx="88" ry="10" fill="#000000" opacity="0.2"/>` +
+    `<path d="M-76 0 C-86 -66 -46 -138 0 -142 C46 -138 86 -66 76 0 Q0 8 -76 0 Z" fill="url(#${id})" stroke="${FARM_STRAW_D}" stroke-width="1.5"/>` +
+    `<path d="${strands}" fill="none" stroke="${FARM_STRAW_D}" stroke-width="1.3" opacity="0.8"/>` +
+    `<path d="M-8 -140 q-6 -10 -2 -14 M0 -142 q2 -12 6 -14 M8 -139 q8 -8 10 -6" fill="none" stroke="${FARM_STRAW_D}" stroke-width="1.5"/>` +
+    `<path d="M30 -70 L58 -170" stroke="#9c6b40" stroke-width="4" stroke-linecap="round"/><path d="M52 -168 h12" stroke="#7a5230" stroke-width="5" stroke-linecap="round"/>` +
+    // (a mouse peeking out at its foot)
+    `<ellipse cx="-50" cy="-3" rx="9" ry="6" fill="#8c8a86"/><circle cx="-56" cy="-9" r="3.2" fill="#a9a6a0" stroke="#6e6b66" stroke-width="0.8"/><circle cx="-57" cy="-3" r="1" fill="#111111"/><circle cx="-59" cy="-1" r="0.9" fill="#e48a9a"/>`;
+}
+function windpumpSvg(o, seed) {
+  const R = seeded(seed), steel = "#8d969c", dk = "#5d666c";
+  let br = "";
+  for (let y = 0; y > -200; y -= 40) { const h0 = 26 - 20 * (-y / 200), h1 = 26 - 20 * ((40 - y) / 200); br += `M${f1(-h0)} ${y} L${f1(h1)} ${y - 40} M${f1(h0)} ${y} L${f1(-h1)} ${y - 40} `; }
+  let blades = "";
+  for (let j = 0; j < 18; j++) { const a = j * 20 * Math.PI / 180, p = (r, da) => `${f1(r * Math.cos(a + da))} ${f1(r * Math.sin(a + da))}`;
+    blades += `M${p(9, -0.07)} L${p(44, -0.12)} L${p(44, 0.07)} L${p(9, 0.04)} Z `; }
+  return `<ellipse cx="0" cy="2" rx="34" ry="5" fill="#000000" opacity="0.18"/>` + farmFoot(-30, 30, 8) +
+    `<path d="M-26 0 L-6 -200 M26 0 L6 -200" stroke="${steel}" stroke-width="4"/><path d="${br}" stroke="${steel}" stroke-width="1.8"/>` +
+    `<rect x="-14" y="-206" width="28" height="6" fill="${dk}"/><path d="M0 -200 V-40" stroke="#6a6a6a" stroke-width="2"/>` +
+    `<rect x="-6" y="-42" width="12" height="28" fill="#5a7a8a" stroke="#3a5060" stroke-width="1.5"/><path d="M6 -36 L24 -32 L24 -27 L6 -30 Z" fill="#5a7a8a" stroke="#3a5060" stroke-width="1"/>` +
+    `<path d="M23 -27 Q25 -16 24 -4" stroke="#9fd3ea" stroke-width="3" fill="none" opacity="0.85"/>` +
+    // (its tail vane, behind the wheel, out to the right; the wheel facing us a little to the left)
+    `<path d="M0 -214 L58 -218" stroke="${steel}" stroke-width="3"/><path d="M40 -232 L68 -230 L68 -206 L40 -210 Z" fill="#c94a3a" stroke="${dk}" stroke-width="1.5"/>` +
+    `<g transform="translate(0 -214) scale(0.85 1)"><g>${lfoTimed(o, "slow", R(1), `<animateTransform attributeName="transform" type="rotate" values="0;60" dur="5s" repeatCount="indefinite"/>`)}` +
+    `<path d="${blades}" fill="#dfe4e7" stroke="${dk}" stroke-width="0.8"/><circle r="44" fill="none" stroke="${dk}" stroke-width="2"/><circle r="26" fill="none" stroke="${dk}" stroke-width="1.5"/>` +
+    `<circle r="7" fill="${dk}"/></g></g>`;
+}
+function farmyardScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, o } = c;
+  // (the fields from the horizon to near, the ground the buildings stand on, the back fence at fz: just behind the back line
+  // that SCENE_FAR sets, 90 up)
+  const horizon = g - 205 * k, near = g - 128 * k, fz = g - 94 * k;
+  // the sky and a soft sun; the clouds drifting (the slow LFO)
+  let s = SEP + part("farm-sky", c.F, () => `<defs>${grad("bg-farm-sky", "#74bdea", "#e6f4fb", y0, horizon)}` +
+    `<radialGradient id="bg-farm-sun"><stop offset="0.3" stop-color="#fff3b0"/><stop offset="1" stop-color="#fff3b0" stop-opacity="0"/></radialGradient></defs>` + all("url(#bg-farm-sky)") +
+    `<circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(64 * k)}" fill="url(#bg-farm-sun)"/><circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(22 * k)}" fill="#fff6c9"/>`);
+  s += SEP + cloudsSvg(c, 3, 0.55, 502);
+  // far off: rolling hills and a line of round trees, on the horizon (farLayers: wall objects of their own)
+  s += SEP + part("farm-far", c.F, () => farLayers(c, horizon, { mountains: "hills", forest: "broadleaf", size: 70 }));
+  // the fields: strips going off toward the hills, crops of five colours, furrows in every other one (ending on its edges),
+  // hedges between the rows of them
+  s += SEP + part("farm-fields", c.F, () => {
+    const at = (u, v) => [u * W * 0.75 * (0.25 + 0.75 * v), horizon + (near - horizon) * v];
+    const us = [-1.9, -1.2, -0.62, -0.2, 0.22, 0.66, 1.25, 1.95], vs = [0, 0.28, 0.6, 1], crops = ["#d9b85a", "#8fbf5e", "#a07c52", "#b9d77f", "#c9a24a", "#7fae55"];
+    let t = `<rect x="${f1(x0 - pad)}" y="${f1(horizon - 2 * k)}" width="${f1(W + 2 * pad)}" height="${f1(near - horizon + 6 * k)}" fill="#a8c76e"/>`;
+    for (let j = 0; j < 3; j++) for (let i = 0; i < us.length - 1; i++) {
+      const q = [at(us[i], vs[j]), at(us[i + 1], vs[j]), at(us[i + 1], vs[j + 1]), at(us[i], vs[j + 1])], col = crops[(i * 2 + j * 3) % crops.length];
+      t += `<polygon points="${q.map(p => P(...p)).join(" ")}" fill="${col}"/>`;
+      if ((i + j) % 2 === 0) { let d = "";
+        for (let m = 1; m < 6; m++) { const u = us[i] + (us[i + 1] - us[i]) * m / 6, [ax, ay] = at(u, vs[j]), [bx, by] = at(u, vs[j + 1]); d += `M${P(ax, ay)} L${P(bx, by)} `; }
+        t += `<path d="${d}" stroke="${mix(col, "#000000", 0.22)}" stroke-width="${f1(1.2 * k)}" opacity="0.6"/>`; }
+    }
+    for (const v of [0.28, 0.6]) { const y = horizon + (near - horizon) * v, h = (2.5 + 5 * v) * k, n = 40;
+      let d = `M${P(x0 - pad, y + h * 0.4)}`;
+      for (let i = 0; i <= n; i++) { const x = x0 - pad + (W + 2 * pad) * i / n; d += ` Q${P(x - (W + 2 * pad) / n / 2, y - h * (0.8 + 0.6 * R(i, 5020 + v * 10)))} ${P(x, y)}`; }
+      t += `<path d="${d} L${P(x1 + pad, y + h * 0.5)} L${P(x0 - pad, y + h * 0.5)} Z" fill="#4f7f3a"/>`; }
+    return wallObj("fields", t);
+  });
+  // the ground behind the fence, grass, and the yard's packed earth in front of it (the earth a little lighter far off)
+  s += SEP + part("farm-ground", c.F, () => `<defs>${grad("bg-farm-earth", "#d2b483", "#ac8a58", fz, y1)}</defs>` +
+    `<rect x="${f1(x0 - pad)}" y="${f1(near - 2 * k)}" width="${f1(W + 2 * pad)}" height="${f1(fz - near + 6 * k)}" fill="#9fc46a"/>` +
+    `<rect x="${f1(x0 - pad)}" y="${f1(fz - 2 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - fz + pad)}" fill="url(#bg-farm-earth)"/>`);
+  // at the back: the red barn on the left, the farmhouse on the right (the 🏚️ barn's own drawing; its weather vane the quick LFO,
+  // the chimney's smoke the slow); objects behind the fence, the friend always in front of them
+  s += SEP + part("farm-buildings", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => {
+    const bx = -W * 0.17, by = g - 124 * k, hx = W * 0.36, hy = g - 122 * k;
+    return obj("red barn", by, `<g ${tf(bx, by, 0.5 * k)}>${barnThingSvg({ style: "gambrel" }, 5021, o)}</g>`) +
+           obj("farmhouse", hy, `<g ${tf(hx, hy, 0.45 * k)}>${farmhouseSvg(o)}</g>`);
+  });
+  // the back fence: wooden posts and rails right across (the 🪵 fence's own drawing, one run), grass along its foot
+  s += SEP + part("farm-fence", c.F, () => {
+    const fs = 0.314 * k, a = Math.floor((x0 - pad * 0.1) / fs / TILE_SPAN) * TILE_SPAN, b = Math.ceil((x1 + pad * 0.1) / fs / TILE_SPAN) * TILE_SPAN, posts = [];
+    for (let x = a; x <= b; x += TILE_SPAN) posts.push(x);
+    let grass = `M${P(x0 - 20 * k, fz + 3 * k)}`;
+    for (let x = x0 - 20 * k, i = 0; x < x1 + 20 * k; x += 6 * k, i++) grass += ` L${P(x + 2 * k, fz - (4 + 6 * R(i, 5024)) * k)} L${P(x + 4 * k, fz + 2 * k)}`;
+    return obj("fence, back", fz, `<g ${tf(0, fz, fs)}>${fenceSvg("wood", a, b, posts, 5022)}</g>`) +
+           floorObj("grass by the fence", `<path d="${grass} L${P(x1 + 20 * k, fz + 4 * k)} L${P(x0 - 20 * k, fz + 4 * k)} Z" fill="#7fa94e"/>`);
+  });
+  // on the yard's floor: the tractor's tracks, its two wheels' side by side, from where it stands round toward us; patches of
+  // darker earth, pebbles, straw all over
+  s += SEP + part("farm-floor", c.F, () => {
+    const rut = dz => `M${P(W * 0.13 - 16 * k, g - 64 * k + dz)} Q${P(-W * 0.12, g - 60 * k + dz * 1.4)} ${P(-W * 0.2 + dz * 1.6, y1 + pad)}`;
+    let patches = "", pebbles = "", st = ["", ""];
+    for (let i = 0; i < 9; i++) { const y = fz + 12 * k + (y1 - fz) * R(i, 5030), x = x0 + W * R(i, 5031), z = 0.5 + 0.8 * (y - fz) / (y1 - fz), rx = (30 + 40 * R(i, 5032)) * k * z;
+      patches += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(rx * 0.22)}" fill="${i % 3 ? "#a08154" : "#d8bd8e"}" opacity="0.45"/>`; }
+    for (let i = 0; i < 26; i++) { const y = fz + 6 * k + (y1 - fz) * R(i, 5033), x = x0 + W * R(i, 5034), r = (1.4 + 2.4 * R(i, 5035)) * k * (0.5 + 0.8 * (y - fz) / (y1 - fz));
+      pebbles += `M${P(x - r, y)} a${f1(r)} ${f1(r * 0.6)} 0 1 0 ${f1(2 * r)} 0 a${f1(r)} ${f1(r * 0.6)} 0 1 0 ${f1(-2 * r)} 0 `; }
+    for (let i = 0; i < 90; i++) { const v = Math.pow(R(i, 5036), 1.3), y = fz + 8 * k + (y1 - fz) * v, x = x0 + W * R(i, 5037), z = 0.5 + 0.9 * v, a = R(i, 5038) * Math.PI;
+      st[i % 3 ? 0 : 1] += `M${P(x, y)} l${f1(Math.cos(a) * 10 * k * z)} ${f1(Math.sin(a) * 2.6 * k * z)} `; }
+    return floorObj("wheel ruts", `<path d="${rut(-5 * k)} ${rut(5 * k)}" fill="none" stroke="#94744a" stroke-width="${f1(5 * k)}" stroke-linecap="round" opacity="0.4"/>` + patches) +
+           floorObj("pebbles", `<path d="${pebbles}" fill="#8a7a66"/>`) +
+           floorObj("straw", `<path d="${st[0]}" stroke="${FARM_STRAW}" stroke-width="${f1(1.6 * k)}" stroke-linecap="round" opacity="0.9"/><path d="${st[1]}" stroke="${FARM_STRAW_D}" stroke-width="${f1(1.6 * k)}" stroke-linecap="round" opacity="0.9"/>`);
+  });
+  // what stands in the yard, back to front: the windpump (its wheel the slow LFO) and the trough it pours into, on the left;
+  // the tractor on the right; the haystack at the right, nearer (one sits in its shade: not in the way of the middle)
+  s += SEP + part("farm-yard-things", [c.F, sceneLfoKey(o, "slow")], () => {
+    const wx = -W * 0.31, wz = g - 70 * k, tx = -W * 0.31 + 30 * k, tz = g - 48 * k;
+    return obj("windpump", wz, `<g ${tf(wx, wz, 0.55 * k)}>${windpumpSvg(o, 5023)}</g>`) +
+           obj("water trough", tz, troughSvg(P, tx, tz, 1.0 * k)) +
+           obj("tractor", g - 64 * k, `<g ${tf(W * 0.13, g - 64 * k, 0.62 * k)}>${tractorSvg()}</g>`) +
+           obj("haystack", g + 50 * k, `<g ${tf(W * 0.38, g + 50 * k, 1.0 * k)}>${haystackSvg(5027)}</g>`);
+  });
+  // the hens (the stable's own: henSvg), pecking with the quick LFO, each her own way in; bigger nearer
+  s += SEP + part("farm-hens", [c.F, sceneLfoKey(o, "fast")], () => [[-0.2, 62, 1, 0, 0, "hen, brown"], [0.2, 26, -1, 1, 1, "hen, white"], [-0.16, -36, 1, 2, 2, "hen, black"]]
+    .map(([u, dy, sd, i, look, name]) => obj(name, g + dy * k, henSvg(o, W * u, g + dy * k, k * (1 + 0.0071 * dy), sd, i, look))).join(""));
+  // wisps of straw blowing across the yard, with the quick LFO (each its own way in), fading in and out
+  s += SEP + part("farm-blowing", [c.F, sceneLfoKey(o, "fast")], () => obj("blowing straw", g + 30 * k, [[-0.14, 22, 0], [0.04, 44, 1], [-0.3, 6, 2], [0.18, 66, 3]].map(([u, dy, j]) => {
+    const x = W * u, y = g + dy * k, d = 70 * k * (0.7 + 0.6 * R(j, 5025)), off = j / 4 + 0.1 * R(j, 5026);
+    return `<g opacity="0">${lfoTimed(o, "fast", off, `<animateTransform attributeName="transform" type="translate" values="0 0;${f1(d * 0.5)} ${f1(-14 * k)};${f1(d)} 0" dur="1.6s" repeatCount="indefinite"/>`)}` +
+      lfoTimed(o, "fast", off, `<animate attributeName="opacity" values="0;0.95;0" dur="1.6s" repeatCount="indefinite"/>`) +
+      `<path d="M${P(x, y)} l${f1(9 * k)} ${f1(-2 * k)} M${P(x + 3 * k, y + 2 * k)} l${f1(7 * k)} ${f1(1 * k)}" stroke="${FARM_STRAW}" stroke-width="${f1(1.8 * k)}" stroke-linecap="round"/></g>`;
+  }).join("")));
   return s;
 }
 
@@ -1060,6 +1384,199 @@ function woodpathScene(c) {
   // butterflies, fluttering with the quick LFO (an object at the depth of
   // the ground under the nearer one)
   s += SEP + part("woodpath-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () => obj("butterflies", g - 50 * k, butterfliesSvg(c, [[x0 + W * 0.18, g - 50 * k, 1], [x0 + W * 0.8, g - 90 * k, 1.1]])));
+  return s;
+}
+// (ticket 503, for M; Matthew: "field/pasture for animals (like horses) to graze.") The 🌾 pasture: a wide green field
+// rolling away to hills (farLayers' rolling hills and round trees, on its horizon), a post-and-rail fence along the back
+// with a gate in it (shut: the world's ways are the nav arrows), a big shade tree, a water trough, wildflowers and tufts
+// of grass in rows by depth (ticket 297) swaying with the slow LFO, clouds drifting with it, a bird on the gate post,
+// butterflies, and horses grazing, side on, heads down to the grass, their tails swishing with the quick LFO, each its
+// own way in. Its depth is the friend's: what stands at a depth is drawn at the size the friend's own horse is there (🔭
+// at its usual 40, the friend arriving at the ground line), so a horse led into the pasture is as big as the ones
+// grazing beside it. No hens (Matthew: "chickens -- already in stable"): the stable has them, pecking.
+// (how far above the ground line, in k, a thing would shrink to nothing: sceneVanish's line at 🔭's usual 40)
+const PASTURE_VANISH = 175;
+const pastureDepth = up => Math.max(0.12, (PASTURE_VANISH - up) / PASTURE_VANISH);
+// (a horse's own units, horseSvg's, to the picture's at `up` k above the ground line: the friend's horse's size there,
+// HORSE_SCALE of the friend's units at the friend's size in the pasture, SCENE_FIG's, carried from the stage to this frame)
+const pastureHorseScale = (k, up) => HORSE_SCALE * sceneFig("pasture") * 700 / (SCENE.bottom - SCENE.top) * pastureDepth(up) * k;
+// The horses grazing: their coats, manes and face markings the stable's (HORSE_COATS, HORSE_MANES, HORSE_MARKS), where
+// each stands (u: a share of the picture's width from its middle; up: k above the ground line), which way it faces
+// (1 our right), and how far into the swish its tail starts (each its own); pastureHorses says how many.
+// (ticket 503, after review: the friend walks behind every horse, not only the grey) Each stands far enough in front of
+// the back line (SCENE_FAR's 157) that its footprint's back is more than LANE_MIN (24) in front of it, or solidsHere
+// closes the lane behind it: none farther back than about 111 up (lanes of 28, 36 and 48 here); and their footprints
+// apart, so the friend goes round each
+const PASTURE_HORSES = [
+  { name: "bay", coat: "#7b4a2a", mane: "#1f1f22", mark: "star", u: 0.18, up: 100, face: -1, off: 0.13 },
+  { name: "grey", coat: "#c9c9cf", mane: "#f3efe6", mark: "none", u: 0.335, up: 84, face: -1, off: 0.58 },
+  { name: "chestnut", coat: "#a0522d", mane: "#7a3a1a", mark: "blaze", u: -0.12, up: 111, face: -1, off: 0.81 }];
+// The wildflowers in its grass: [name, its petals' colour, its middle's, how many petals, how wide each (radians)]
+const PASTURE_FLOWERS = [["daisy", "#ffffff", "#f6c915", 9, 0.3], ["buttercup", "#f7d21e", "#d9a400", 5, 0.55], ["poppy", "#e0412f", "#2a1a1a", 4, 0.78],
+                         ["cornflower", "#4c7be0", "#26408a", 8, 0.26], ["clover", "#d77fb8", "#b0558f", 10, 0.32]];
+// A horse grazing, side on, facing our right, in horseSvg's units (its hooves on the ground at 0, its withers about 300
+// up): its own drawing, not the standing horse turned (Matthew's rule for a new pose): its neck lowered in an arch from the
+// withers, its head hanging down to the grass, the muzzle in it, the ears up at the poll, its mane falling down our side
+// of the neck, the forelock down its forehead; one foreleg a step forward, as a horse stands to graze. Its legs are the
+// friend's horse's (horseLeg), its far side darker, all four under its body (the belly's outline over their tops). Its
+// tail hangs from the croup and swishes about its root with the quick LFO, `off` of a swish in. Its shadow lies flat, and
+// its footprint (an unseen box, ticket 441's) is where its hooves stand, from its tail to its muzzle and a body's width
+// deep, so the friend walks round it, in front of it or behind it.
+function grazingHorseSvg(H, o, off, i) {
+  const coat = H.coat, mane = H.mane, ln = mix(coat, "#000000", 0.42), far = mix(coat, "#000000", 0.25), maneD = mix(mane, "#000000", 0.3), white = "#f7f4ee";
+  const P_ = ([x, y]) => `${f1(x)} ${f1(y)}`;
+  const leg = (x, top, swing, flex, fore, near) => horseLeg([x, top], -top - 6, swing, flex, fore, near ? 17 : 15, near ? coat : far, false, 0);
+  const dur = 1.4 + 0.35 * i;
+  const tail = `<g>${sceneLfo(o, "fast", off, "transform", (v, amp) => `${f1((5 + 9 * amp) * v)} -146 -288`,
+      `<animateTransform attributeName="transform" type="rotate" values="-5 -146 -288;9 -146 -288;-5 -146 -288" dur="${dur.toFixed(2)}s" begin="-${(off * dur).toFixed(2)}s" repeatCount="indefinite"/>`)}` +
+    `<path d="M-148 -292 Q-198 -236 -186 -96 Q-170 -110 -162 -150 Q-157 -228 -136 -282 Z" fill="${mane}" stroke="${maneD}" stroke-width="2.5" stroke-linejoin="round"/></g>`;
+  // (the body, its withers a little lower than standing, the weight on the forehand; the shoulder and the round of the haunch)
+  const body = `<path d="M116 -282 C40 -308 -98 -318 -136 -302 C-176 -286 -178 -218 -152 -186 C-122 -160 -34 -158 80 -166 C140 -172 168 -212 150 -256 Z" fill="${coat}" stroke="${ln}" stroke-width="3"/>` +
+    `<path d="M138 -198 Q118 -240 104 -282 M-80 -312 Q-100 -240 -146 -200" fill="none" stroke="${mix(coat, "#000000", 0.2)}" stroke-width="3" stroke-linecap="round" opacity="0.7"/>`;
+  // (the neck: its crest arching forward from the withers and down to the poll, its underside from the breast to the throat)
+  const neck = `<path d="M84 -292 Q196 -304 240 -156 L210 -116 Q172 -150 148 -222 Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>`;
+  const crest = t => { const v = 1 - t; return [v * v * 86 + 2 * v * t * 196 + t * t * 240, v * v * -298 + 2 * v * t * -308 + t * t * -160]; };
+  const inward = t => { const dx = 220 * (1 - t) + 88 * t, dy = -20 * (1 - t) + 296 * t, d = Math.hypot(dx, dy); return [-dy / d, dx / d]; };
+  const top = [...Array(13)].map((_, j) => crest(j / 12));
+  const under = [...Array(13)].map((_, j) => { const t = 1 - j / 12, [x, y] = crest(t), [nx, ny] = inward(t), d = j % 2 ? 13 : 23; return [x + nx * d, y + ny * d]; });
+  const maneP = `<path d="M${top.map(P_).join(" L")} L${under.map(P_).join(" L")} Z" fill="${mane}" stroke="${maneD}" stroke-width="2" stroke-linejoin="round"/>`;
+  // (the head, hanging from the poll: the forehead and the long nose in front, the round cheek and the jaw behind, the
+  // muzzle down in the grass)
+  const head = `<path d="M236 -158 Q254 -152 256 -134 L276 -46 Q284 -20 274 -8 Q262 -2 252 -10 Q246 -24 236 -46 L220 -82 Q200 -104 206 -124 Q214 -144 236 -158 Z" fill="${coat}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>`;
+  const ear = (a, b, c2, fill) => `<path d="M${a} L${b} L${c2} Z" fill="${fill}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  const mark = H.mark === "star" ? `<path d="M250 -142 L256 -134 L250 -126 L244 -134 Z" fill="${white}"/>`
+    : H.mark === "stripe" ? `<path d="M250 -128 L255 -129 L275 -40 L270 -38 Z" fill="${white}"/>`
+    : H.mark === "blaze" ? `<path d="M244 -136 L256 -137 L277 -44 Q282 -26 274 -14 L266 -24 L261 -46 Z" fill="${white}"/>` : "";
+  const face = mark + `<ellipse cx="238" cy="-118" rx="4.5" ry="5.5" fill="#1f1410"/><circle cx="239.5" cy="-120" r="1.5" fill="#ffffff"/>` +
+    `<path d="M270 -30 q5 -2 6 3 q-2 3 -5 1" fill="#1f1410"/><path d="M254 -13 Q262 -15 270 -11" fill="none" stroke="${ln}" stroke-width="2"/>`;
+  const forelock = `<path d="M234 -160 Q258 -154 259 -126 Q248 -136 230 -146 Z" fill="${mane}" stroke="${maneD}" stroke-width="1.8" stroke-linejoin="round"/>`;
+  // (the grass it is pulling at, in front of its muzzle)
+  const grass = `<path d="M256 2 q-3 -12 -9 -18 M264 2 q0 -14 3 -22 M272 2 q3 -10 9 -15 M281 2 q2 -6 7 -9" fill="none" stroke="#4f8a35" stroke-width="3.2" stroke-linecap="round"/>`;
+  return `<ellipse class="flat" cx="40" cy="2" rx="215" ry="13" fill="#000000" opacity="0.14"/>` +
+    `<rect data-footprint="1" x="-165" y="-24" width="452" height="26" fill="none" stroke="none"/>` +
+    leg(100, -200, -5, 4, true, false) + leg(-131, -214, 5, 6, false, false) + leg(-115, -218, -3, 4, false, true) + leg(124, -204, 9, 0, true, true) +
+    tail + body + neck + maneP + ear("226 -150", "212 -184", "238 -160", far) + head + face + forelock + ear("234 -156", "227 -194", "248 -162", coat) + grass;
+}
+// The pasture's water trough, in a horse's units as the horses are (its foot line at 0): planks on two low trestles, the
+// water just under its rim, rings spreading on it with the quick LFO; its shadow flat; its footprint a trough's width deep
+function pastureTroughSvg(o) {
+  const wood = "#8a5a32", dk = "#4e3019", rim = "#a97445";
+  return `<ellipse class="flat" cx="0" cy="2" rx="140" ry="10" fill="#000000" opacity="0.16"/>` +
+    `<rect data-footprint="1" x="-130" y="-24" width="260" height="26" fill="none" stroke="none"/>` +
+    `<path d="M-114 0 L-114 -16 L-100 -16 L-100 0 Z M100 0 L100 -16 L114 -16 L114 0 Z" fill="${dk}"/>` +
+    // (inside, over the near rim: the far side's inner face, the water)
+    `<path d="M-126 -100 L126 -100 L119 -111 L-119 -111 Z" fill="#3f2814"/>` +
+    `<path d="M-122 -101 L122 -101 L117 -107 L-117 -107 Z" fill="#7cc0dc"/>` +
+    `<ellipse cx="38" cy="-104" rx="4" ry="0.6" fill="none" stroke="#e6f8ff" stroke-width="1.6" opacity="0">` +
+    lfoTimed(o, "fast", 0.3, `<animate attributeName="rx" values="4;30" dur="1.8s" repeatCount="indefinite"/>` +
+      `<animate attributeName="ry" values="0.6;2.6" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.9;0" dur="1.8s" repeatCount="indefinite"/>`) + `</ellipse>` +
+    // (its near side, planks, and the rim)
+    `<path d="M-120 -14 L120 -14 L128 -100 L-128 -100 Z" fill="${wood}" stroke="${dk}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="M-123 -43 L123 -43 M-126 -72 L126 -72 M-60 -16 L-62 -98 M60 -16 L62 -98" stroke="${dk}" stroke-width="2" opacity="0.55"/>` +
+    `<path d="M-128 -100 L128 -100" stroke="${rim}" stroke-width="5" stroke-linecap="round"/>`;
+}
+function pastureScene(c) {
+  const { x0, y0, x1, W, H, g, k, pad, R, P, grad, all, land, o } = c;
+  const horses = Math.max(0, Math.min(PASTURE_HORSES.length, Math.round(o.pastureHorses ?? 3))), flowers = Math.max(0, Math.min(24, Math.round(o.pastureFlowers ?? 10)));
+  const at = up => g - up * k, horizon = at(172), fenceUp = 162, fenceY = at(fenceUp), tree = { x: -0.4 * W, y: at(50) };
+  // the sky, the sun, clouds drifting with the slow LFO
+  let s = SEP + part("pasture-sky", [c.F, sceneLfoKey(o, "slow")], () => `<defs>${grad("bg-sky", "#79bdf0", "#e6f5ff", y0, horizon)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)") +
+    `<defs><radialGradient id="bg-pasture-sun"><stop offset="0.5" stop-color="#fff6c8" stop-opacity="0.9"/><stop offset="1" stop-color="#fff6c8" stop-opacity="0"/></radialGradient></defs>` +
+    `<circle cx="${f1(x1 - W * 0.12)}" cy="${f1(y0 + H * 0.11)}" r="${f1(66 * k)}" fill="url(#bg-pasture-sun)"/><circle cx="${f1(x1 - W * 0.12)}" cy="${f1(y0 + H * 0.11)}" r="${f1(34 * k)}" fill="#ffe680"/>` +
+    [[0.14, 0.1, 0.75], [0.46, 0.05, 0.95], [0.7, 0.19, 0.6]].map(([u, v, z], i) => driftingCloud(x0 + W * u, y0 + H * v, k * z, i, o)).join(""));
+  // far off: rolling hills and round trees on the horizon (the shared layers, ticket 212)
+  s += SEP + part("pasture-far", c.F, () => farLayers(c, horizon, { mountains: "hills", forest: "broadleaf", beach: false, size: 170 }));
+  // the field, rolling away in bands, paler farther off; the grass's texture (short strokes, smaller farther off); the
+  // big tree's shade on it
+  s += SEP + part("pasture-field", c.F, () => {
+    let t = land(at(171), 2, "#b8d991", 0.4) + land(at(118), 6, "#a2cd77", 1.3) + land(at(50), 7, "#92c467", 2.2) + land(at(-30), 8, "#86bc5b", 0.9), d = "";
+    for (let i = 0; i < 70; i++) { const up = 165 - 260 * R(i, 5010), f = pastureDepth(up), x = W * (R(i, 5011) - 0.5) * 1.05, y = at(up);
+      d += `M${P(x, y)} l${f1(-2 * f * k)} ${f1(-9 * f * k)} M${P(x + 4 * f * k, y)} l${f1(2 * f * k)} ${f1(-8 * f * k)}`; }
+    return t + `<path d="${d}" fill="none" stroke="#6e9f47" stroke-width="${f1(1.3 * k)}" stroke-linecap="round" opacity="0.5"/>` +
+      `<ellipse cx="${f1(tree.x + 60 * k)}" cy="${f1(tree.y + 8 * k)}" rx="${f1(210 * k)}" ry="${f1(30 * k)}" fill="#3f7a32" opacity="0.28"/>`;
+  });
+  // the fence along the back, posts and three rails, the gate in it shut (five bars and a brace, its latch), and a
+  // bird sitting on the gate's post (an object at the fence's foot: behind wherever the friend can stand). Drawn in a
+  // horse's units at its depth (u), as the horses and the trough are: its posts 260 tall, a little under a horse's
+  // withers. (ticket 503, after review: 162 up, the back line just in front of it, far enough back for the friend to
+  // walk behind every horse.) Its rails, posts and gate are drawnBy "fence", as the witch's woods' are (ticket 368),
+  // so 🔬's 🪵 fences chip finds them; the bird is not fence
+  s += SEP + part("pasture-fence", c.F, () => {
+    const u = pastureHorseScale(k, fenceUp), gx = 0.035 * W, gw = 570 * u;
+    const ph = 260 * u, pw = 28 * u, gp = 305 * u, gpw = 41 * u, step = 500 * u, L = gx - gw / 2, Rt = gx + gw / 2, rt = 11.5 * u;
+    let posts = "", rails = "";
+    const post = (x, h, w) => `M${P(x - w / 2, fenceY)} L${P(x - w / 2, fenceY - h)} L${P(x, fenceY - h - 9.5 * u)} L${P(x + w / 2, fenceY - h)} L${P(x + w / 2, fenceY)} Z `;
+    for (let x = L - step; x > x0 - pad - step; x -= step) posts += post(x, ph, pw);
+    for (let x = Rt + step; x < x1 + pad + step; x += step) posts += post(x, ph, pw);
+    for (const h of [0.3, 0.6, 0.88]) { const y = fenceY - h * ph;
+      rails += `M${P(x0 - pad, y - rt)} L${P(L, y - rt)} L${P(L, y + rt)} L${P(x0 - pad, y + rt)} Z M${P(Rt, y - rt)} L${P(x1 + pad, y - rt)} L${P(x1 + pad, y + rt)} L${P(Rt, y + rt)} Z `; }
+    const a = L + gpw / 2, b = Rt - gpw / 2, gh = 240 * u, bt = 9.5 * u, bw = 22 * u, bars = [0.12, 0.31, 0.5, 0.69, 0.88].map(h => { const y = fenceY - h * gh;
+      return `M${P(a, y - bt)} L${P(b, y - bt)} L${P(b, y + bt)} L${P(a, y + bt)} Z`; }).join(" ") +
+      ` M${P(a, fenceY - 0.05 * gh)} L${P(a + bw, fenceY - 0.05 * gh)} L${P(a + bw, fenceY - 0.95 * gh)} L${P(a, fenceY - 0.95 * gh)} Z` +
+      ` M${P(b - bw, fenceY - 0.05 * gh)} L${P(b, fenceY - 0.05 * gh)} L${P(b, fenceY - 0.95 * gh)} L${P(b - bw, fenceY - 0.95 * gh)} Z`;
+    const bx = L, by = fenceY - gp - 9.5 * u, q = 5.4 * u;
+    const bird = `<path d="M${P(bx - 6 * q, by - 5 * q)} L${P(bx - 14 * q, by - 1 * q)} L${P(bx - 5 * q, by - 2 * q)} Z" fill="#5a3d2b"/>` +
+      `<ellipse cx="${f1(bx)}" cy="${f1(by - 5 * q)}" rx="${f1(7 * q)}" ry="${f1(5 * q)}" fill="#6b4a33"/>` +
+      `<ellipse cx="${f1(bx + 2.5 * q)}" cy="${f1(by - 4 * q)}" rx="${f1(4 * q)}" ry="${f1(3.5 * q)}" fill="#e2683a"/>` +
+      `<circle cx="${f1(bx + 5 * q)}" cy="${f1(by - 10 * q)}" r="${f1(3.6 * q)}" fill="#6b4a33"/>` +
+      `<path d="M${P(bx + 8.4 * q, by - 10.8 * q)} l${f1(3 * q)} ${f1(1 * q)} l${f1(-3 * q)} ${f1(1 * q)} Z" fill="#e8b923"/>` +
+      `<circle cx="${f1(bx + 6 * q)}" cy="${f1(by - 11 * q)}" r="${f1(0.9 * q)}" fill="#111111"/>`;
+    const sw = f1(5 * u);
+    return obj("fence and gate", fenceY, drawnBy("fence", `<path d="${rails}" fill="#8a6a45" stroke="#5a4128" stroke-width="${sw}"/>` +
+      `<path d="${posts}" fill="#7a5a38" stroke="#4e3822" stroke-width="${sw}"/>` +
+      `<path d="${bars}" fill="#b08a5a" stroke="#6e5232" stroke-width="${f1(4.5 * u)}"/>` +
+      `<path d="M${P(a + 19 * u, fenceY - 0.1 * gh)} L${P(b - 19 * u, fenceY - 0.9 * gh)}" stroke="#9a7648" stroke-width="${f1(19 * u)}" stroke-linecap="round"/>` +
+      `<path d="${post(L, gp, gpw)}${post(Rt, gp, gpw)}" fill="#6e4f30" stroke="#4e3822" stroke-width="${sw}"/>` +
+      `<rect x="${f1(b - 13 * u)}" y="${f1(fenceY - 0.62 * gh)}" width="${f1(32 * u)}" height="${f1(19 * u)}" fill="#3a3a3a"/>`) + bird);
+  });
+  // the big shade tree (an object at its foot), and the water trough by it, farther back (an object at its foot line)
+  s += SEP + part("pasture-tree", c.F, () => obj("big tree", tree.y, `<g ${tf(tree.x, tree.y, 1.45 * k)}>${leafyTree(5030, { wide: 1.3, h: 330 })}</g>`));
+  s += SEP + part("pasture-trough", [c.F, sceneLfoKey(o, "fast")], () => { const up = 95, sc = pastureHorseScale(k, up);
+    return obj("water trough", at(up), `<g ${tf(-0.3 * W, at(up), sc)}>${pastureTroughSvg(o)}</g>`); });
+  // the horses grazing (each an object where its hooves stand)
+  s += SEP + part("pasture-horses", [c.F, horses, sceneLfoKey(o, "fast")], () => PASTURE_HORSES.slice(0, horses).map((Hh, i) => {
+    const sc = pastureHorseScale(k, Hh.up), x = W * Hh.u, y = at(Hh.up);
+    return obj(`grazing horse, ${Hh.name}`, y, `<g ${tf(x - Hh.face * 60 * sc, y, Hh.face * sc, sc)}>${grazingHorseSvg(Hh, o, Hh.off, i)}</g>`);
+  }).join(""));
+  // patches of wildflowers (daisies, buttercups, poppies, cornflowers, clover: two to four of a kind, each its petals
+  // round its middle; a patch three shapes, its stems and leaves, its petals, its middles) and tufts of grass, smaller
+  // farther off, in rows by depth (ticket 297: each row an object, the friend among them), each nearer row swaying a
+  // little with the slow LFO, about its foot, its own way in (the far rows held still: their sway would hardly show, and
+  // each swaying row is drawn again every frame across the picture's width: 60 frames a second first)
+  s += SEP + part("pasture-grass", [c.F, flowers, sceneLfoKey(o, "slow")], () => {
+    const items = [], band = 36 * k;
+    for (let i = 0; i < flowers; i++) {
+      const up = 132 - 226 * R(i, 5031), y = at(up), sz = pastureDepth(up) * k, x = W * (R(i, 5032) - 0.5) * 1.02, [, col, mid, n, w] = PASTURE_FLOWERS[i % PASTURE_FLOWERS.length];
+      let stems = "", petals = "", mids = "";
+      for (let j = 0, m = 2 + Math.floor(3 * R(i, 5033)); j < m; j++) {
+        const fx = x + (j - (m - 1) / 2) * 9 * sz + (R(i * 5 + j, 5034) - 0.5) * 6 * sz, h = (30 + 24 * R(i * 5 + j, 5035)) * sz, lean = (R(i * 5 + j, 5036) - 0.5) * 12 * sz;
+        const hx = fx + lean, hy = y - h, r = (col === "#d77fb8" ? 4.2 : 5.6) * sz, rot = R(i * 5 + j, 5037) * Math.PI;
+        stems += `M${P(fx, y)} Q${P(fx + lean * 0.2, y - h * 0.6)} ${P(hx, hy)} `;
+        for (let q = 0; q < n; q++) { const a = rot + q * 2 * Math.PI / n, pt = (b, rr) => P(hx + rr * Math.cos(b), hy + rr * Math.sin(b));
+          petals += `M${P(hx, hy)} Q${pt(a - w, r * 0.85)} ${pt(a, r)} Q${pt(a + w, r * 0.85)} ${P(hx, hy)} Z `; }
+        const r2 = (col === "#d77fb8" ? 1.6 : 1.9) * sz;
+        mids += `M${P(hx - r2, hy)} a${f1(r2)} ${f1(r2)} 0 1 0 ${f1(2 * r2)} 0 a${f1(r2)} ${f1(r2)} 0 1 0 ${f1(-2 * r2)} 0 Z `;
+      }
+      // (two leaves at the patch's foot)
+      stems += `M${P(x - 2 * sz, y)} q${f1(-6 * sz)} ${f1(-4 * sz)} ${f1(-10 * sz)} ${f1(-12 * sz)} M${P(x + 2 * sz, y)} q${f1(6 * sz)} ${f1(-3 * sz)} ${f1(11 * sz)} ${f1(-10 * sz)}`;
+      // (each patch drawnBy "wildflowers", a plant drawing, so 🔬's 🌷 flowers chip finds it)
+      items.push({ y, svg: drawnBy("wildflowers", `<path d="${stems}" fill="none" stroke="#4f8a35" stroke-width="${f1(1.6 * sz)}" stroke-linecap="round"/>` +
+        `<path d="${petals}" fill="${col}"${col === "#ffffff" ? ` stroke="#d9d9d9" stroke-width="${f1(0.5 * sz)}"` : ""}/><path d="${mids}" fill="${mid}"/>`) });
+    }
+    for (let i = 0; i < 10; i++) { const up = 110 - 205 * R(i, 5038), y = at(up), f = pastureDepth(up);
+      items.push({ y, svg: grassTuft(W * (R(i, 5039) - 0.5) * 1.02, y, (26 + 14 * R(i, 5040)) * f * k, 5041 + i, "#5e9a3c", 1.8 * f * k) }); }
+    const rows = new Map();
+    for (const it of items) { const j = Math.floor(it.y / band); rows.set(j, (rows.get(j) || "") + it.svg); }
+    return [...rows.keys()].sort((a, b) => a - b).map((j, n) => { const foot = (j + 0.5) * band, d = 4.5 + (n % 3) * 0.8;
+      if (foot < at(70)) return obj(`grass and flowers ${n + 1}`, foot, rows.get(j));
+      return obj(`grass and flowers ${n + 1}`, foot, `<g transform="translate(0 ${f1(foot)})"><g>` +
+        sceneLfo(o, "slow", ((n * 0.29) % 1), "transform", (v, amp) => f1((1.5 + 4 * amp) * v),
+          `<animateTransform attributeName="transform" type="skewX" values="-2.5;2.5;-2.5" dur="${d.toFixed(1)}s" begin="-${(n * 1.3).toFixed(1)}s" repeatCount="indefinite"/>`, "skewX") +
+        `<g transform="translate(0 ${f1(-foot)})">${rows.get(j)}</g></g></g>`); }).join("");
+  });
+  // butterflies over the flowers (an object at the depth of the ground under the nearer one)
+  s += SEP + part("pasture-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () =>
+    obj("butterflies", at(10), butterfliesSvg(c, [[-0.24 * W, at(10), 0.9], [0.16 * W, at(60), 0.8]])));
   return s;
 }
 // Our imagination: a room of endless white, the empty white of a film's
@@ -1376,15 +1893,20 @@ function ballTick(t) {
     for (const b of R.list) {
       if (ballPops.has(b.id) || b.x + b.r < cx - half || b.x - b.r > cx + half || b.y + b.r < fr[1] || b.y - b.r > feet) continue;
       if (Math.abs(b.fzHit - feet) > b.dz + 4 * R.k) continue;
-      const v = Math.sin(++ballSim.n * 12.9898) * 43758.5453;
-      ballPops.set(b.id, { at: t, back: t + 9000 + 6000 * (v - Math.floor(v)), obj: b.obj }); changed.add(b.obj); ballSim.touched.add(b.obj);
-      // (the pop: a copy of it swelling and gone, over everything, a quarter second)
-      if (ballSim.layer) { const el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
-        el.innerHTML = `<g class="bubin pop">${bubbleSvg(0, 0, b.r, { color: R.tints[b.j], shine: 0.7 })}</g>`; ballSim.layer.append(el); setTimeout(() => el.remove(), 320); }
+      ballPop(b, t, changed);
     }
   }
   for (const name of changed) ballApply(name);
   ballSim.raf = requestAnimationFrame(ballTick);
+}
+// (ticket 499) one of the room's bubbles popped, by the friend's touch or by a fire's heat (firePops) alike: gone till 9 to 15
+// seconds on, its lot (changed) to be shown again without it (ballApply)
+function ballPop(b, t, changed) {
+  const R = roomBalls, v = Math.sin(++ballSim.n * 12.9898) * 43758.5453;
+  ballPops.set(b.id, { at: t, back: t + 9000 + 6000 * (v - Math.floor(v)), obj: b.obj }); changed.add(b.obj); ballSim.touched.add(b.obj);
+  // (the pop: a copy of it swelling and gone, over everything, a quarter second)
+  if (ballSim.layer) { const el = document.createElementNS("http://www.w3.org/2000/svg", "g"); el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
+    el.innerHTML = `<g class="bubin pop">${bubbleSvg(0, 0, b.r, { color: R.tints[b.j], shine: 0.7 })}</g>`; ballSim.layer.append(el); setTimeout(() => el.remove(), 320); }
 }
 // (ticket 383) The layered foam, after each drawing: a scene mounted with a backdrop to put under the picture (data-under, drawn by
 // bubbleroomScene when the foam moves) has it moved into #pic-under, a picture of its own under #pic (placed as #pic-over is, inside
@@ -1611,16 +2133,23 @@ function bubbleTick(t) {
     if (b.x < F.left + b.r) { b.x = F.left + b.r; b.vx = Math.abs(b.vx) * 0.6; } else if (b.x > F.right - b.r) { b.x = F.right - b.r; b.vx = -Math.abs(b.vx) * 0.6; }
     if (b.y < F.top + b.r) { b.y = F.top + b.r; b.vy = Math.abs(b.vy) * 0.6; } else if (b.y > F.bottom - b.r) { b.y = F.bottom - b.r; b.vy = -Math.abs(b.vy) * 0.6; }
     const el = layer.childNodes[i];
-    if (fr && b.x + b.r > fr[0] && b.x - b.r < fr[2] && b.y + b.r > fr[1] && b.y - b.r < fr[3]) {
-      b.pop = t; b.back = t + 1400; bubbleSim.bonds = bubbleSim.bonds.filter(([p, q]) => p !== i && q !== i); bubblePopped(b, 0, k, rand);
-      if (el && el.firstChild) { el.firstChild.classList.add("pop"); setTimeout(() => { if (b.pop && el.isConnected) el.style.display = "none"; }, 260); }
-      return;
-    }
+    if (fr && b.x + b.r > fr[0] && b.x - b.r < fr[2] && b.y + b.r > fr[1] && b.y - b.r < fr[3]) { bubbleSpacePop(b, i, t, k, rand); return; }
     if (el) el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`);
   });
   bubbleKidsTick(t, dt, layer, F, k, fr, wx, wy, wind, rand);
   bubbleSim.raf = requestAnimationFrame(bubbleTick);
 }
+// (ticket 499) bubble space's pops, by the friend's touch or by a fire's heat (firePops) alike: bubble i swells and is gone,
+// its bonds let go, its lines, its sound and maybe its smaller bubbles (bubblePopped), back in from an edge 1.4 s on; one of
+// the smaller ones the same, once more at most (BUBBLE_KID_GENS). bubbleRand: the chance they draw on, from the place's
+// seed (🎲), as bubbleTick's own
+const bubbleRand = () => { const again = seeded((state.background.bubbleSeed ?? 1) + 0.5); return (a, b) => a + (b - a) * again(bubbleSim.backs++); };
+function bubbleSpacePop(b, i, t, k, rand) {
+  const el = bubbleSim.layer && bubbleSim.layer.childNodes[i];
+  b.pop = t; b.back = t + 1400; bubbleSim.bonds = bubbleSim.bonds.filter(([p, q]) => p !== i && q !== i); bubblePopped(b, 0, k, rand);
+  if (el && el.firstChild) { el.firstChild.classList.add("pop"); setTimeout(() => { if (b.pop && el.isConnected) el.style.display = "none"; }, 260); }
+}
+function bubbleKidPop(c, t, k, rand) { c.pop = t; if (c.el.firstChild) c.el.firstChild.classList.add("pop"); bubblePopped(c, c.gen, k, rand); }
 // (ticket 329, Matthew: "when we 'pop' a bubble in bubble space: the likelihood of creating new, smaller bubbles (0 to
 // 100); the number of new, smaller bubbles, on average -- same style as the popped bubble, for now", and "some more
 // 'popping' animation, like the 'face head lines' that stick out of the face, or the rays that come out of the sun, but
@@ -1667,7 +2196,7 @@ function bubbleKidsTick(t, dt, layer, F, k, fr, wx, wy, wind, rand) {
     // (born on the friend, each pops on them only once it has been clear of them: walk into it again)
     const on = fr && c.x + c.r > fr[0] && c.x - c.r < fr[2] && c.y + c.r > fr[1] && c.y - c.r < fr[3];
     if (fr && !on) c.clear = true;   // (a frame with no friend to measure is not one clear of them)
-    else if (c.clear) { c.pop = t; if (c.el.firstChild) c.el.firstChild.classList.add("pop"); bubblePopped(c, c.gen, k, rand); continue; }
+    else if (c.clear) { bubbleKidPop(c, t, k, rand); continue; }
     c.el.setAttribute("transform", `translate(${f1(c.x)} ${f1(c.y)})`);
     c.el.setAttribute("opacity", Math.min(1, (c.life - age) / 700, age / 120).toFixed(2));
   }
@@ -1950,7 +2479,9 @@ function cascadeThingSvg(t, seed, o) {
 // opening is the doorway (glowing, gone through as any: the friend walks to its foot, or, a hole in the floor, its
 // middle); the rock round it stands where it is drawn but is no more in the way than a door (one goes into it).
 const PASSAGE_STYLES = [["arch", "🌑 a natural archway"], ["wallhole", "🕳️ a hole through a wall of rock"], ["floorhole", "⚫ a hole in the floor"]];
-const passagePlaces = () => (typeof PLACES === "undefined" ? [] : PLACES).filter(([k]) => !["none", "castleroom", "treeroom"].includes(k));
+// (the review after 0.0.385: only places a doorway can take the friend to, enterScene's, so not 🌊 open water or 🪸 deep sea,
+// reached only from the world's squares)
+const passagePlaces = () => (typeof PLACES === "undefined" ? [] : PLACES).filter(([k]) => !["none", "castleroom", "treeroom"].includes(k) && (SCENES[k] || PICTURE_CHOICES.some(([q]) => q === k)));
 function passageThingSvg(t, seed) {
   const st = t.style || "arch", Rs = (i, j) => seeded(seed + j)(i), P = (x, y) => `${f1(x)} ${f1(y)}`, to = t.to || "cave", c = { k: 1, R: Rs, P };
   const portal = inner => `<g class="portal" data-to="${to}">${inner}</g>`;
@@ -2004,6 +2535,758 @@ function caveMushroomSvg(t, seed, o) {
 }
 // (ticket 471) what a treasure chest holds, open (seaChestSvg)
 const CHEST_TREASURE = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown", "👑 gold, gems and a crown"]];
+// (ticket 504, for M; Matthew: "More animals as placeable objects with animation: * cows (4 poses) * pigs (4 poses)", and
+// "chickens -- already in stable 30 in stable.") The 🐄 farm animals, to put anywhere: a cow, a pig and a chicken, each in
+// four poses, each pose its own drawing, seen from the side facing our right (↔️ mirror turns one to face our left), its
+// feet at 0, 0 in the stage's units, as thingSvg places a thing. At 🔎 100% they are sized against the friend as most
+// places draw them (0.45 of their own size: about 200 units tall): a cow as tall at the shoulder as the friend's chest
+// (about 105), a pig to the knee and a bit (about 39 at its back; the knee is 31), a chicken shin-high (about 28, comb
+// and all). Each moves with the music's LFOs as its pose would (a tail swishing, an ear flicking, a jaw chewing, a belly
+// breathing, a peck, a wingbeat), each animation begun its own way in from the animal's seed, so a field of them never
+// moves in step. The chicken is the stable's hens (their outline, their brown and their white, a little smaller), in four
+// poses and four coats; the stable's own two are left as they are.
+const COW_POSES = [["stand", "🧍 standing"], ["graze", "🌱 grazing"], ["lie", "💤 lying down"], ["moo", "📢 mooing"]];
+const COW_COATS = [["holstein", "🐄 black and white"], ["brown", "🟤 brown"], ["redwhite", "🔴 red and white"], ["highland", "🧡 Highland, ginger and shaggy"]];
+const PIG_POSES = [["stand", "🧍 standing"], ["root", "👃 rooting"], ["side", "😴 lying on its side"], ["sit", "🪑 sitting"]];
+const PIG_COATS = [["pink", "🐷 pink"], ["spots", "⚫ pink with black spots"], ["band", "🖤 black with a pink band"], ["ginger", "🧡 ginger"]];
+const HEN_POSES = [["stand", "🧍 standing"], ["peck", "🌾 pecking"], ["nest", "🥚 sitting on a nest"], ["flap", "💨 flapping"]];
+const HEN_COATS = [["white", "🤍 white"], ["brown", "🤎 brown"], ["black", "🖤 black"], ["speckled", "🍪 speckled"]];
+// (each coat's colours: its hide; its patches, spots or band, if it has them; its muzzle or snout; a hen's wing; the
+// Highland cow's long hair, its fringe over its eyes and its long horns)
+const COW_COAT = { holstein: { hide: "#f4f1ea", patch: "#1f1f22", muzzle: "#eab6ad" }, brown: { hide: "#8b5a2b", muzzle: "#e3cfae" },
+                   redwhite: { hide: "#f4f1ea", patch: "#9a3a1c", muzzle: "#efc0b4" }, highland: { hide: "#c4682b", muzzle: "#7a4424", shaggy: true } };
+const PIG_COAT = { pink: { hide: "#f4a7b0", snout: "#ee8e9b" }, spots: { hide: "#f4b0b6", snout: "#ee8e9b", spot: "#2b2527" },
+                   band: { hide: "#2e282a", snout: "#4a3f42", band: "#f2b6bd" }, ginger: { hide: "#c9682e", snout: "#dc9064" } };
+// (the stable's hens are the white and the brown, in their colours)
+const HEN_COAT = { white: { body: "#f5efe2", line: "#c9bca2", wing: "#ebe2cf" }, brown: { body: "#a0522d", line: "#6b3418", wing: "#8c4626" },
+                   black: { body: "#2a272e", line: "#0e0d10", wing: "#34463f" }, speckled: { body: "#6e3518", line: "#3f1a08", wing: "#5e2c12", dots: true } };
+// (the pig and the chicken are drawn a little big, in units that keep their shapes easy to read: each shrunk to its size here)
+const PIG_SCALE = 0.85, HEN_SCALE = 0.85;
+const farmP = (x, y) => `${f1(x)} ${f1(y)}`;
+// (an animal's animation, timed by the scene's LFO of that pace, `off` of a round on; with no LFO, its own round of `dur`
+// seconds, begun as far in: each animal, and each moving part of it, its own way in)
+const farmMove = (o, pace, off, dur, anim) => lfoTimed(o, pace, off, anim.replace(/\/>$/, ` dur="${dur}s" begin="-${(off * dur).toFixed(2)}s" repeatCount="indefinite"/>`));
+const farmTurn = (angles, x, y) => angles.map(a => `${a} ${x} ${y}`).join(";");
+// (a move made n times in a round: its values, from and back to the first)
+const farmTimes = (n, seq) => { const v = [seq[0]]; for (let i = 0; i < n; i++) v.push(...seq.slice(1)); return v; };
+// (a patch or a spot: a closed smooth path round (cx, cy), its edge uneven by R from k on)
+function farmBlob(cx, cy, rx, ry, R, k, n = 7) {
+  const p = [...Array(n)].map((_, i) => { const a = 2 * Math.PI * (i + R(k + 20)) / n, f = 0.75 + 0.45 * R(k + i); return [cx + Math.cos(a) * rx * f, cy + Math.sin(a) * ry * f]; });
+  const m = i => { const a = p[i % n], b = p[(i + 1) % n]; return farmP((a[0] + b[0]) / 2, (a[1] + b[1]) / 2); };
+  let d = `M${m(0)}`;
+  for (let i = 1; i <= n; i++) d += ` Q${farmP(p[i % n][0], p[i % n][1])} ${m(i)}`;
+  return d + " Z";
+}
+// (a cow's or a pig's leg, from its top (x, top) down to the ground g, w wide: a foreleg straight down, a hind leg slanting
+// back to its hock and down again; its hoof or trotter at the foot, hh high, cloven)
+function hoofLeg(x, top, g, w, hind, col, sw, hoof, hh) {
+  const k = top + (g - hh - top) * 0.55, fx = hind ? x - w * 0.1 : x, kx = hind ? x - w * 0.55 : x;
+  const pts = [[x - w * 0.55, top], [x + w * 0.55, top], [kx + w * 0.45, k], [fx + w * 0.38, g - hh], [fx - w * 0.38, g - hh], [kx - w * 0.45, k]];
+  return `<polygon points="${pts.map(([a, b]) => `${f1(a)},${f1(b)}`).join(" ")}" fill="${col}" stroke="${mix(col, "#000000", 0.5)}" stroke-width="${sw}" stroke-linejoin="round"/>` +
+    `<path d="M${farmP(fx - w * 0.4, g - hh)} L${farmP(fx + w * 0.42, g - hh)} L${farmP(fx + w * 0.55, g)} L${farmP(fx - w * 0.45, g)} Z M${farmP(fx + w * 0.08, g - hh * 0.7)} L${farmP(fx + w * 0.12, g)}" ` +
+    `fill="${hoof}" stroke="${mix(hoof, "#000000", 0.4)}" stroke-width="${f1(sw * 0.6)}" stroke-linejoin="round"/>`;
+}
+// THE COW. Standing, grazing and mooing it stands the same, square on its legs (its udder between the hind ones), and only
+// its neck and head go another way: standing, its head held out, an ear flicking now and then; grazing, its head down in
+// the grass, chewing; mooing, its head stretched up, its mouth opening for each moo and its moo going out. Lying, it rests
+// on the ground, its legs folded under it, its belly breathing, chewing its cud. Its tail swishes when it stands.
+const COW_HEADS = {
+  stand: { neck: "M36 -105 C52 -110 70 -118 84 -116 L92 -76 C82 -64 70 -58 56 -58 Z", neckPatch: [62, -96, 10, 8],
+           head: "M82 -117 C90 -120 98 -114 104 -104 L112 -94 C120 -90 123 -82 121 -74 C119 -68 113 -66 106 -67 L96 -70 C88 -72 82 -78 79 -88 C77 -98 76 -110 82 -117 Z",
+           muzzle: "M110 -95 C119 -92 124 -82 121 -74 C119 -68 113 -66 106 -67 C103 -73 103 -88 110 -95 Z", nose: [117, -85], mouth: "M106 -71 Q112 -69 118 -71",
+           eye: [93, -104], patch: [90, -105, 10, 9], ear: "M86 -108 Q74 -116 64 -110 Q72 -101 86 -103 Z", earAt: [86, -106],
+           horn: "M84 -117 Q82 -127 88 -131 Q89 -123 91 -118 Z", horns: ["M82 -116 C72 -122 62 -124 58 -138 C56 -124 66 -112 80 -110 Z", "M86 -118 C94 -126 106 -130 108 -144 C112 -130 102 -118 90 -112 Z"],
+           fringe: "M78 -120 C86 -126 100 -122 106 -108 L104 -98 L100 -104 L97 -94 L94 -103 L90 -92 L87 -102 L83 -94 L81 -104 L77 -98 C76 -106 75 -114 78 -120 Z" },
+  graze: { neck: "M34 -105 C58 -106 78 -90 90 -66 L82 -36 C74 -48 66 -58 54 -62 Z", neckPatch: [62, -84, 9, 9],
+           head: "M86 -68 C94 -70 100 -64 102 -56 L107 -32 C112 -26 113 -14 111 -6 C109 -1 102 0 96 -1 L92 -2 C88 -8 86 -16 84 -26 C82 -36 78 -48 80 -58 C81 -64 83 -67 86 -68 Z",
+           muzzle: "M104 -30 C111 -26 113 -14 111 -6 C109 -1 102 0 96 -1 C94 -8 96 -20 98 -26 C99 -28 101 -30 104 -30 Z", nose: [107, -8], mouth: "M92 -6 Q95 -3 99 -2",
+           eye: [95, -52], patch: [92, -54, 9, 10], ear: "M86 -60 Q74 -66 66 -58 Q74 -52 86 -55 Z", earAt: [86, -58],
+           horn: "M88 -68 Q88 -78 94 -81 Q93 -74 94 -69 Z", horns: ["M84 -66 C74 -70 66 -72 62 -86 C60 -72 68 -62 82 -60 Z", "M92 -68 C100 -76 108 -78 112 -92 C114 -78 104 -66 96 -62 Z"],
+           fringe: "M82 -70 C90 -76 102 -70 104 -58 L103 -46 L99 -52 L97 -40 L94 -50 L91 -38 L89 -49 L85 -40 L84 -52 L80 -46 C79 -54 78 -64 82 -70 Z" },
+  lie:   { neck: "M34 -68 C48 -80 64 -94 80 -98 L92 -66 C80 -56 66 -46 56 -38 Z", neckPatch: [58, -72, 9, 8],
+           head: "M80 -101 C88 -104 96 -100 102 -92 L112 -84 C119 -80 122 -73 120 -67 C118 -62 112 -60 106 -61 L96 -64 C88 -66 82 -72 79 -80 C77 -88 76 -96 80 -101 Z",
+           muzzle: "M110 -86 C118 -82 122 -74 120 -67 C118 -62 112 -60 106 -61 C103 -67 104 -80 110 -86 Z", nose: [116, -77], mouth: "M105 -65 Q111 -63 117 -65",
+           eye: [92, -90], patch: [90, -90, 10, 8], ear: "M84 -92 Q72 -98 64 -92 Q72 -85 84 -88 Z", earAt: [84, -90],
+           horn: "M81 -100 Q79 -110 85 -114 Q86 -106 88 -101 Z", horns: ["M79 -100 C69 -106 59 -108 55 -122 C53 -108 63 -96 77 -94 Z", "M85 -102 C93 -110 105 -114 107 -128 C111 -114 101 -102 89 -96 Z"],
+           fringe: "M76 -104 C84 -110 98 -106 104 -94 L102 -82 L98 -88 L95 -78 L92 -87 L88 -76 L85 -86 L81 -78 L79 -88 L75 -82 C74 -90 73 -98 76 -104 Z" },
+  moo:   { neck: "M36 -105 C54 -116 72 -130 88 -134 L102 -110 C88 -98 72 -82 58 -62 Z", neckPatch: [66, -104, 10, 8],
+           head: "M86 -138 C90 -145 98 -147 104 -146 L122 -151 C130 -153 134 -146 132 -138 L110 -130 C104 -128 100 -124 96 -120 C90 -122 84 -130 86 -138 Z",
+           jaw: "M96 -124 L126 -126 C130 -123 129 -118 124 -117 L102 -114 C97 -114 94 -119 96 -124 Z", inside: "M108 -130 L132 -138 L128 -122 L100 -120 Z", hinge: [98, -122], tongue: [116, -124.5],
+           muzzle: "M120 -151 C129 -153 134 -146 132 -138 L122 -134 C119 -139 117 -146 120 -151 Z", nose: [128, -145],
+           eye: [100, -138], patch: [98, -138, 9, 8], ear: "M90 -132 Q78 -134 70 -126 Q80 -122 90 -127 Z", earAt: [90, -130],
+           horn: "M88 -140 Q85 -148 90 -153 Q92 -146 94 -142 Z", horns: ["M86 -138 C76 -144 66 -146 62 -160 C60 -146 70 -134 84 -132 Z", "M92 -142 C100 -150 110 -154 112 -168 C116 -154 106 -142 96 -136 Z"],
+           fringe: "M84 -142 C92 -150 106 -148 110 -138 L108 -126 L104 -132 L101 -122 L98 -131 L94 -120 L91 -130 L87 -122 L86 -132 L82 -126 C81 -132 81 -138 84 -142 Z" } };
+function cowThingSvg(t, seed, o) {
+  const pose = COW_HEADS[t.pose] ? t.pose : "stand", C = COW_COAT[t.coat] || COW_COAT.holstein, R = seeded(seed), H = COW_HEADS[pose], lying = pose === "lie";
+  const hide = C.hide, ln = mix(hide, "#000000", 0.5), far = mix(hide, "#000000", 0.2), hoof = "#3b302a", horn = "#ebe2c8", tuft = C.patch || mix(hide, "#000000", 0.35);
+  const paint = (d, col = hide, w = 2) => `<path d="${d}" fill="${col}" stroke="${mix(col, "#000000", 0.5)}" stroke-width="${w}" stroke-linejoin="round"/>`;
+  const bodyD = lying ? "M40 -66 C8 -73 -42 -73 -68 -68 C-88 -64 -97 -36 -90 -14 C-86 -3 -74 0 -60 0 L32 0 C48 0 60 -10 61 -26 C62 -46 56 -62 40 -66 Z"
+    : "M40 -104 C10 -110 -40 -110 -66 -106 L-80 -102 C-90 -96 -91 -74 -84 -62 C-79 -55 -66 -54 -56 -56 Q-12 -46 30 -55 C46 -58 58 -66 60 -80 C61 -92 54 -102 40 -104 Z";
+  // (black and white, red and white: patches on its body and round an eye, each ending at its outline, clipped to it;
+  // where they lie, by its seed)
+  const bodyId = `cow-body-${lying ? "lie" : "up"}-${seed}`, headId = `cow-head-${pose}-${seed}`;
+  const spots = lying ? [[-60, -54, 18, 12], [-22, -42, 20, 13], [14, -58, 14, 9], [-84, -30, 11, 11], [40, -30, 12, 11]]
+    : [[-58, -94, 18, 12], [-22, -80, 20, 13], [12, -98, 14, 9], [-80, -72, 12, 11], [42, -74, 12, 13]];
+  const patches = !C.patch ? "" : `<defs><clipPath id="${bodyId}"><path d="${bodyD}"/></clipPath></defs><g clip-path="url(#${bodyId})" fill="${C.patch}">` +
+    spots.filter((_, i) => i < 3 || R(i + 10) < 0.8).map(([x, y, rx, ry], i) => `<path d="${farmBlob(x + (R(i) - 0.5) * 12, y + (R(i + 5) - 0.5) * 8, rx, ry, R, 30 + 10 * i)}"/>`).join("") + `</g>`;
+  // (the Highland's long hair: hanging in a fringe under its belly when it stands, and lying in locks along its sides)
+  const hair = !C.shaggy ? "" : (lying ? "" : (() => {
+      const zig = [[-84, -62], [-80, -50], [-74, -57], [-68, -47], [-62, -55], [-54, -45], [-46, -52], [-36, -42], [-26, -50], [-16, -41], [-6, -48], [4, -41], [14, -49], [24, -43], [32, -52], [40, -47], [46, -56], [52, -52], [57, -62]];
+      const z = zig.map(([x, y]) => farmP(x, y)).join(" L");
+      return `<path d="M${z} L57 -68 Q-12 -60 -84 -68 Z" fill="${hide}"/><path d="M${z}" fill="none" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round"/>`; })()) +
+    `<path d="${lying ? "M-62 -60 q7 6 2 14 M-34 -64 q7 6 2 14 M-4 -64 q7 6 2 14 M22 -58 q7 6 2 14 M-50 -40 q7 6 2 14 M-18 -40 q7 6 2 14 M14 -38 q7 6 2 14"
+      : "M-62 -98 q7 6 2 14 M-34 -101 q7 6 2 14 M-4 -100 q7 6 2 14 M22 -96 q7 6 2 14 M-48 -80 q7 6 2 14 M-16 -78 q7 6 2 14 M12 -76 q7 6 2 14"}" fill="none" stroke="${mix(hide, "#000000", 0.28)}" stroke-width="1.6" stroke-linecap="round"/>`;
+  let s = `<ellipse class="flat" cx="-12" cy="1" rx="${lying ? 104 : 96}" ry="9" fill="#000000" opacity="0.18"/>`;
+  if (!lying) {
+    // (its far legs, a shade darker, a little behind the near; its udder; its near legs; its body over their tops)
+    s += hoofLeg(30, -66, -4, 15, false, far, 2, hoof, 8) + hoofLeg(-54, -70, -4, 18, true, far, 2, hoof, 8) +
+      `<path d="M-50 -55 Q-49 -44 -41 -43 Q-33 -44 -32 -54 Z" fill="${C.muzzle}" stroke="${mix(C.muzzle, "#000000", 0.4)}" stroke-width="1.6"/>` +
+      `<path d="M-46 -44 L-46.5 -40 M-37 -44 L-36.5 -40" stroke="${mix(C.muzzle, "#000000", 0.2)}" stroke-width="2.4" stroke-linecap="round"/>` +
+      hoofLeg(44, -66, 0, 15, false, hide, 2, hoof, 8) + hoofLeg(-66, -72, 0, 18, true, hide, 2, hoof, 8) + paint(bodyD) + patches + hair +
+      `<g>${farmMove(o, "slow", R(1), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn(farmTimes(4, [0, 9, -4, 0]), -82, -100)}"/>`)}` +
+      `<path d="M-82 -100 Q-93 -84 -90 -60" fill="none" stroke="${ln}" stroke-width="3.6" stroke-linecap="round"/><path d="M-82 -100 Q-93 -84 -90 -60" fill="none" stroke="${hide}" stroke-width="1.6" stroke-linecap="round"/>` +
+      `<path d="M-90 -62 Q-97 -53 -91 -45 Q-85 -52 -88 -62 Z" fill="${tuft}" stroke="${mix(tuft, "#000000", 0.4)}" stroke-width="1"/></g>`;
+  } else {
+    // (lying: its body breathing, rising and falling three times a round of the slow LFO; its hind leg folded along its side,
+    // the hoof forward; its foreleg tucked under its chest, the knee forward; its tail along the ground)
+    s += `<g>${farmMove(o, "slow", R(1), 9, `<animateTransform attributeName="transform" type="scale" values="${farmTimes(3, ["1 1", "1 1.025", "1 1"]).join(";")}"/>`)}` +
+      paint(bodyD) + patches + hair + `<path d="M-74 -54 C-56 -56 -40 -42 -40 -22 C-40 -12 -46 -6 -54 -4" fill="none" stroke="${ln}" stroke-width="2" stroke-linecap="round"/></g>` +
+      paint("M-86 -1 L-86 -11 L-50 -9 L-48 -1 Z") + `<path d="M-50 -9 L-40 -8 L-38 -1 L-49 -1 Z" fill="${hoof}" stroke="#1f1814" stroke-width="1.2" stroke-linejoin="round"/>` +
+      paint("M30 -28 C42 -26 54 -20 60 -12 C63 -6 60 -1 54 -1 L36 -1 C34 -4 34 -8 38 -9 L50 -9 C46 -16 38 -20 28 -20 Z") + `<path d="M38 -9 L30 -8 L28 -1 L36 -1 Z" fill="${hoof}" stroke="#1f1814" stroke-width="1.2" stroke-linejoin="round"/>` +
+      `<path d="M-86 -60 C-98 -50 -100 -20 -94 -6 C-90 2 -80 2 -74 -1" fill="none" stroke="${ln}" stroke-width="3.6" stroke-linecap="round"/><path d="M-86 -60 C-98 -50 -100 -20 -94 -6 C-90 2 -80 2 -74 -1" fill="none" stroke="${hide}" stroke-width="1.6" stroke-linecap="round"/>` +
+      `<ellipse cx="-71" cy="-1.5" rx="5" ry="2.6" fill="${tuft}"/>`;
+  }
+  // (its neck and head, as the pose holds them; a Highland's long horns, the far one behind its head, the near in front)
+  if (C.shaggy) s += paint(H.horns[0], mix(horn, "#000000", 0.12), 1.6);
+  s += paint(H.neck);
+  if (pose === "moo") s += `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([-24, -24, 0, 0, -24, -24, -24, 0, 0, -24, -24], ...H.hinge)}" keyTimes="0;0.1;0.16;0.36;0.42;0.5;0.6;0.66;0.86;0.92;1"/>`)}` +
+    `<path d="${H.inside}" fill="#4a1f22"/><ellipse cx="${H.tongue[0]}" cy="${H.tongue[1]}" rx="6" ry="2" fill="#d9737a"/>${paint(H.jaw)}</g>`;
+  s += paint(H.head) + (C.patch ? `<defs><clipPath id="${headId}"><path d="${H.neck}"/><path d="${H.head}"/></clipPath></defs><g clip-path="url(#${headId})" fill="${C.patch}"><path d="${farmBlob(...H.patch, R, 90)}"/>` +
+    (R(98) < 0.7 ? `<path d="${farmBlob(...H.neckPatch, R, 100)}"/>` : "") + `</g>` : "");
+  const [nx, ny] = H.nose, muzzle = paint(H.muzzle, C.muzzle, 1.6) + `<ellipse cx="${nx}" cy="${ny}" rx="1.6" ry="1.3" fill="#3a2020"/>` +
+    (H.mouth ? `<path d="${H.mouth}" fill="none" stroke="${mix(C.muzzle, "#000000", 0.45)}" stroke-width="1.4" stroke-linecap="round"/>` : "");
+  // (grazing and lying, it chews: its muzzle working with the quick LFO, once a round)
+  s += pose === "graze" || lying ? `<g>${farmMove(o, "fast", R(3), 1, `<animateTransform attributeName="transform" type="translate" values="0 0;0.8 1.4;0 0"/>`)}${muzzle}</g>` : muzzle;
+  if (pose === "graze") s += grassTuft(99, 1, 12, seed + 5, "#5a9a3a", 1.8);   // (the grass it is eating, round its muzzle)
+  const [ex, ey] = H.eye;
+  s += lying ? `<ellipse cx="${ex}" cy="${ey}" rx="2.2" ry="1.4" fill="#1f1410"/><path d="M${ex - 2.8} ${ey - 1} Q${ex} ${ey - 2.8} ${ex + 2.8} ${ey - 1}" fill="none" stroke="${ln}" stroke-width="1.3"/>`
+    : `<ellipse cx="${ex}" cy="${ey}" rx="2.2" ry="2.6" fill="#1f1410"/><circle cx="${ex + 0.8}" cy="${ey - 1}" r="0.8" fill="#ffffff"/>`;
+  // (its ear; standing, flicking twice a round of the slow LFO; a Highland's long fringe over its eyes, and over its ear)
+  const ear = paint(H.ear, hide, 1.6) + `<path d="${H.ear}" fill="${C.muzzle}" opacity="0.45" transform="translate(${f1(H.earAt[0] * 0.12)} ${f1(H.earAt[1] * 0.12)}) scale(0.88)"/>`;
+  s += pose === "stand" ? `<g>${farmMove(o, "slow", R(4), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, -14, 5, 0, 0, -14, 5, 0, 0], ...H.earAt)}" keyTimes="0;0.2;0.23;0.26;0.29;0.7;0.73;0.76;0.79;1"/>`)}${ear}</g>` : ear;
+  if (C.shaggy) s += paint(H.fringe, hide, 1.4) + `<path d="${H.fringe}" fill="none" stroke="${mix(hide, "#000000", 0.25)}" stroke-width="1" transform="translate(${f1(H.eye[0] * 0.2)} ${f1(H.eye[1] * 0.2)}) scale(0.8)"/>`;
+  s += C.shaggy ? paint(H.horns[1], horn, 1.6) : paint(H.horn, horn, 1.4);
+  // (mooing: its moo going out from its mouth as its jaw opens, the same way in as the jaw)
+  if (pose === "moo") s += `<path class="fumes" d="M138 -146 Q143 -135 138 -124 M145 -151 Q152 -135 145 -119 M152 -156 Q161 -135 152 -114" fill="none" stroke="#5a5a5a" stroke-width="2" stroke-linecap="round" opacity="0.8">` +
+    farmMove(o, "slow", R(2), 8, `<animate attributeName="opacity" values="0;0;0.8;0.8;0;0;0;0.8;0.8;0;0" keyTimes="0;0.1;0.16;0.36;0.42;0.5;0.6;0.66;0.86;0.92;1"/>`) + `</path>`;
+  return s;
+}
+// THE PIG. Standing, its curly tail wiggling with the quick LFO and its ear flopping with the slow; rooting, its snout in
+// the earth, nudging at it; lying on its side, asleep, its belly toward us and its legs out, breathing; sitting on its
+// haunches, its head turning one way and the other. Spots and a band end at its outline, clipped to it.
+const PIG_POSE = {
+  stand: { body: "M26 -40 C6 -47 -24 -47 -38 -40 C-48 -34 -49 -18 -40 -12 C-28 -7 0 -7 20 -10 C32 -12 38 -21 36 -30 C35 -36 31 -39 26 -40 Z",
+           legs: [[16, -18, -3, 7, 0], [-26, -18, -3, 8, 1], [24, -18, 0, 7.5, 0], [-34, -18, 0, 8.5, 1]],
+           head: "M22 -42 C30 -48 42 -45 48 -36 L54 -29 C56 -26 56 -19 54 -17 C48 -13 40 -12 32 -14 C24 -16 18 -24 22 -42 Z",
+           snout: [55, -23, 3.4, 6.4, 0], eye: [41, -32], cheek: [45, -22], mouth: "M44 -17 Q48 -15 51 -17",
+           farEar: "M28 -42 Q32 -53 41 -50 Q37 -45 34 -41 Z", ear: "M31 -43 Q42 -51 50 -42 Q44 -38 38 -35 Q34 -38 31 -43 Z", earAt: [32, -43],
+           tail: "M-46 -32 C-52 -33 -55 -38 -51 -41 C-47 -44 -43 -40 -46 -37 C-48 -35 -51 -37 -49 -39", tailAt: [-45, -32],
+           spots: [[-26, -34, 7, 5], [-6, -24, 8, 6], [12, -36, 5, 4], [-38, -20, 5, 5]], band: "M2 -52 L22 -52 L28 2 L6 2 Z" },
+  root:  { body: "M24 -36 C8 -45 -22 -50 -38 -44 C-49 -38 -50 -22 -41 -15 C-28 -9 0 -8 18 -8 C30 -9 35 -18 33 -26 C32 -31 28 -34 24 -36 Z",
+           legs: [[18, -16, -3, 7, 0], [-26, -20, -3, 8, 1], [26, -16, 0, 7.5, 0], [-34, -20, 0, 8.5, 1]],
+           head: "M20 -38 C30 -43 40 -38 44 -30 L51 -14 C54 -8 54 -4 50 -2 C44 0 36 -2 32 -6 C26 -12 20 -22 20 -38 Z",
+           snout: [51, -4.5, 3, 5.6, 60], eye: [36, -28], cheek: [41, -16], mouth: "M38 -5 Q41 -3 44 -3",
+           farEar: "M24 -38 Q28 -48 36 -46 Q32 -41 29 -37 Z", ear: "M27 -39 Q40 -43 45 -30 Q38 -28 33 -28 Q29 -32 27 -39 Z", earAt: [28, -39],
+           tail: "M-47 -40 C-53 -41 -56 -46 -52 -49 C-48 -52 -44 -48 -47 -45 C-49 -43 -52 -45 -50 -47", tailAt: [-46, -40],
+           spots: [[-26, -38, 7, 5], [-6, -26, 8, 6], [12, -32, 5, 4], [-40, -26, 5, 5]], band: "M0 -54 L20 -54 L28 2 L6 2 Z", turn: [22, -32] },
+  side:  { body: "M-44 -6 C-52 -18 -40 -34 -16 -35 C6 -36 24 -32 31 -22 C35 -15 33 -8 27 -6 L-36 -4 C-40 -4 -43 -5 -44 -6 Z",
+           head: "M24 -28 C33 -33 45 -30 51 -22 L56 -17 C58 -14 58 -8 56 -6 C50 -3 38 -3 30 -6 C22 -10 19 -20 24 -28 Z",
+           snout: [56.5, -11.5, 2.8, 5, 0], shut: "M38 -21 Q40.5 -19 43 -21", cheek: [44, -12], mouth: "M45 -8 Q48 -6.5 51 -8",
+           ear: "M30 -29 Q41 -36 48 -26 Q41 -24 35 -22 Q31 -25 30 -29 Z", earAt: [31, -28],
+           tail: "M-44 -16 C-50 -17 -53 -22 -49 -25 C-45 -28 -41 -24 -44 -21 C-46 -19 -49 -21 -47 -23", tailAt: [-43, -16],
+           spots: [[-24, -26, 7, 5], [-4, -22, 8, 5], [14, -28, 5, 4]], band: "M0 -40 L18 -40 L20 4 L2 4 Z" },
+  sit:   { body: "M-26 0 C-38 -2 -40 -16 -34 -26 C-26 -38 -10 -46 4 -46 C14 -46 20 -40 20 -30 C20 -20 16 -10 12 -4 L-12 0 Z",
+           legs: [[4, -24, -3, 7, 0]],
+           head: "M2 -58 C9 -68 23 -69 30 -61 L37 -53 C39 -50 39 -43 37 -41 C32 -37 24 -37 17 -39 C8 -42 0 -49 2 -58 Z",
+           snout: [38, -47, 3, 6, 0], eye: [25, -56], cheek: [28, -45], mouth: "M29 -41 Q33 -39 35 -41",
+           farEar: "M8 -62 Q13 -72 21 -69 Q17 -64 14 -61 Z", ear: "M13 -62 Q25 -71 32 -60 Q27 -57 21 -54 Q16 -57 13 -62 Z", earAt: [14, -62],
+           tail: "M-34 -3 C-40 -3 -43 -8 -39 -11 C-35 -14 -31 -10 -34 -7 C-36 -5 -39 -7 -37 -9", tailAt: [-33, -3],
+           spots: [[-22, -26, 7, 5], [-2, -38, 7, 5], [8, -20, 5, 4]], band: "M-10 -54 L10 -54 L20 2 L-2 2 Z", turn: [10, -46] } };
+function pigThingSvg(t, seed, o) {
+  const pose = PIG_POSE[t.pose] ? t.pose : "stand", C = PIG_COAT[t.coat] || PIG_COAT.pink, R = seeded(seed), Q = PIG_POSE[pose];
+  const hide = C.hide, ln = mix(hide, "#000000", 0.45), trot = C.band ? "#1c1718" : mix(hide, "#3a2020", 0.6), band = C.band || hide;
+  const paint = (d, col = hide, w = 1.6) => `<path d="${d}" fill="${col}" stroke="${mix(col, "#000000", 0.45)}" stroke-width="${w}" stroke-linejoin="round"/>`;
+  const clipId = `pig-body-${pose}-${seed}`;
+  const coat = C.spot || C.band ? `<defs><clipPath id="${clipId}"><path d="${Q.body}"/></clipPath></defs><g clip-path="url(#${clipId})">` +
+    (C.band ? `<path d="${Q.band}" fill="${C.band}"/>` : Q.spots.map(([x, y, rx, ry], i) => `<path d="${farmBlob(x + (R(i) - 0.5) * 6, y + (R(i + 5) - 0.5) * 4, rx, ry, R, 30 + 10 * i)}" fill="${C.spot}"/>`).join("")) + `</g>` : "";
+  // (its curly tail, with a dark edge; wiggling, or not)
+  const tailOf = (wig, off) => { const [tx, ty] = Q.tailAt, tl = `<path d="${Q.tail}" fill="none" stroke="${ln}" stroke-width="3.4" stroke-linecap="round"/><path d="${Q.tail}" fill="none" stroke="${hide}" stroke-width="1.7" stroke-linecap="round"/>`;
+    return wig ? `<g>${farmMove(o, "fast", off, 1, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 18, -8, 0], tx, ty)}"/>`)}${tl}</g>` : tl; };
+  // (a leg: [x, its top, the ground, its width, a hind one]; the near pair in its coat, the far a shade darker; the band's
+  // forelegs in the band's colour)
+  const legOf = ([x, top, g, w, hind]) => { const col = !hind && C.band ? band : hide; return hoofLeg(x, top, g, w, !!hind, g < 0 ? mix(col, "#000000", 0.18) : col, 1.4, trot, 3); };
+  const [sx, sy, srx, sry, sa] = Q.snout;
+  const ear = paint(Q.ear, hide, 1.3) + `<path d="${Q.ear}" fill="${C.snout}" opacity="0.4" transform="translate(${f1(Q.earAt[0] * 0.15)} ${f1(Q.earAt[1] * 0.15)}) scale(0.85)"/>`;
+  const head = (Q.farEar ? paint(Q.farEar, mix(hide, "#000000", 0.18), 1.2) : "") + paint(Q.head) +
+    `<ellipse cx="${Q.cheek[0]}" cy="${Q.cheek[1]}" rx="3.2" ry="2" fill="#e8607a" opacity="${C.band ? 0 : 0.3}"/>` +
+    `<g transform="rotate(${sa} ${sx} ${sy})"><ellipse cx="${sx}" cy="${sy}" rx="${srx}" ry="${sry}" fill="${C.snout}" stroke="${mix(C.snout, "#000000", 0.45)}" stroke-width="1.2"/>` +
+    `<ellipse cx="${f1(sx + 0.4)}" cy="${f1(sy - sry * 0.4)}" rx="0.9" ry="1.3" fill="#3a2226"/><ellipse cx="${f1(sx + 0.4)}" cy="${f1(sy + sry * 0.4)}" rx="0.9" ry="1.3" fill="#3a2226"/></g>` +
+    `<path d="${Q.mouth}" fill="none" stroke="${ln}" stroke-width="1.2" stroke-linecap="round"/>` +
+    (Q.shut ? `<path d="${Q.shut}" fill="none" stroke="#2a1a1c" stroke-width="1.3" stroke-linecap="round"/>`
+      : `<circle cx="${Q.eye[0]}" cy="${Q.eye[1]}" r="1.7" fill="#1f1416"/><circle cx="${Q.eye[0] + 0.6}" cy="${Q.eye[1] - 0.6}" r="0.6" fill="#ffffff"/>`);
+  let s = `<ellipse class="flat" cx="0" cy="1" rx="${pose === "side" ? 54 : pose === "sit" ? 36 : 50}" ry="5" fill="#000000" opacity="0.18"/>`;
+  if (pose === "stand") s += Q.legs.map(legOf).join("") + paint(Q.body) + coat + tailOf(true, R(1)) + head +
+    `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, 10, -3, 0, 0, 10, -3, 0, 0], ...Q.earAt)}" keyTimes="0;0.25;0.28;0.31;0.34;0.65;0.68;0.71;0.74;1"/>`)}${ear}</g>`;
+  else if (pose === "root") s += `<g class="flat"><ellipse cx="51" cy="1" rx="11" ry="2.4" fill="#5a3e22" opacity="0.5"/>` +
+      [[58, -1, 2], [61, 1, 1.6], [46, 1.5, 1.4], [55, 2, 1.2]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${f1(r * 0.7)}" fill="#6b4a2a"/>`).join("") + `</g>` +
+    Q.legs.map(legOf).join("") + paint(Q.body) + coat + tailOf(true, R(1)) +
+    `<g>${farmMove(o, "fast", R(2), 1, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, -7, 2, 0], ...Q.turn)}"/>`)}${head + ear}</g>`;
+  else if (pose === "side") {
+    // (on its side, its belly toward us: its four legs out toward us from the belly, the upper pair a shade darker)
+    // (its legs from the belly's edge, the top of each left open so it grows out of the belly; the upper pair behind)
+    const stub = (x, col) => `<path d="M${f1(x - 3.5)} -8 L${f1(x - 1)} -1 L${f1(x + 6)} -1 L${f1(x + 3.5)} -8" fill="${col}" stroke="${mix(col, "#000000", 0.45)}" stroke-width="1.3" stroke-linejoin="round"/>` +
+      `<path d="M${f1(x - 1)} -1 L${f1(x + 6)} -1 L${f1(x + 6.6)} 3 L${f1(x - 1.6)} 3 Z" fill="${trot}" stroke="${mix(trot, "#000000", 0.4)}" stroke-width="0.9" stroke-linejoin="round"/>`;
+    s += `<g>${farmMove(o, "slow", R(1), 9, `<animateTransform attributeName="transform" type="scale" values="${farmTimes(3, ["1 1", "1.01 1.05", "1 1"]).join(";")}"/>`)}` +
+      paint(Q.body) + coat + `<path d="M-36 -6 Q-6 -15 26 -8 Q-4 -4 -36 -6 Z" fill="${mix(hide, "#ffffff", 0.22)}"/>` +
+      stub(-20, mix(hide, "#000000", 0.18)) + stub(18, mix(band, "#000000", 0.18)) + stub(-27, hide) + stub(11, band) + `</g>` +
+      tailOf(false) + head + `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, -8, 3, 0, 0, -8, 3, 0, 0], ...Q.earAt)}" keyTimes="0;0.3;0.33;0.36;0.39;0.75;0.78;0.81;0.84;1"/>`)}${ear}</g>`;
+  } else {
+    // (sitting: its far foreleg, its body, its near hind leg folded at its side with the trotter forward, its near foreleg)
+    const fore = mix(band, "#000000", 0.45);
+    s += tailOf(true, R(1)) + legOf(Q.legs[0]) + paint(Q.body) + coat +
+      paint("M-14 -6 L0 -5 L1 -1 L-14 -1 Z") + `<path d="M0 -5 L5 -4.5 L6 0 L0.5 0 Z" fill="${trot}" stroke="${mix(trot, "#000000", 0.4)}" stroke-width="0.9" stroke-linejoin="round"/>` +
+      paint("M-34 -12 C-34 -24 -20 -28 -12 -20 C-6 -14 -6 -4 -12 -1 L-28 -1 C-33 -3 -34 -7 -34 -12 Z") +
+      `<path d="M10.5 -18 L11 -3 L17 -3 L17.5 -18" fill="${band}" stroke="${fore}" stroke-width="1.4" stroke-linejoin="round"/>` +
+      `<path d="M10.8 -3 L17.2 -3 L17.8 0 L10.2 0 Z" fill="${trot}" stroke="${mix(trot, "#000000", 0.4)}" stroke-width="0.9" stroke-linejoin="round"/>` +
+      `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, -7, -7, 0, 0, 5, 5, 0, 0], ...Q.turn)}" keyTimes="0;0.15;0.2;0.38;0.43;0.58;0.63;0.82;0.87;1"/>`)}${head + ear}</g>`;
+  }
+  return `<g transform="scale(${PIG_SCALE})">${s}</g>`;
+}
+// THE CHICKEN, the stable's hens: standing, its head jerking with the quick LFO, blinking now and then; pecking, its body
+// tipped forward and its head down at the grain, up and down again once a round of the quick LFO; sitting fluffed up on
+// a nest of straw, an egg peeping out, breathing and turning its head; flapping, its wings beating with the wings' LFO
+// (F, a quarter of a beat to start with) and its beak open.
+const HEN_HEAD = (x, y, r, C, open) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${C.body}" stroke="${C.line}" stroke-width="0.8"/>` +
+  `<path d="M${f1(x - 2)} ${f1(y - r)} q2 -4 4 0 q2 -4 3 1 Z" fill="#d62828"/>` +
+  (open ? `<path d="M${f1(x + r - 0.3)} ${f1(y - 1)} l4 0.6 l-4 1 Z M${f1(x + r - 0.3)} ${f1(y + 1)} l3.4 1.6 l-3.6 -0.2 Z" fill="#e8a33a"/>` : `<path d="M${f1(x + r - 1)} ${y} l4 1 l-4 1 Z" fill="#e8a33a"/>`) +
+  `<path d="M${f1(x + 1)} ${f1(y + 3)} q1 3 -1 4" fill="#d62828"/>`;
+function chickenThingSvg(t, seed, o) {
+  const pose = HEN_POSES.some(([p]) => p === t.pose) ? t.pose : "peck", C = HEN_COAT[t.coat] || HEN_COAT.brown, R = seeded(seed);
+  const paint = (d, col = C.body, w = 1) => `<path d="${d}" fill="${col}" stroke="${C.line}" stroke-width="${w}" stroke-linejoin="round"/>`;
+  const line = d => `<path d="${d}" fill="none" stroke="${C.line}" stroke-width="0.8" stroke-linecap="round"/>`;
+  const legs = (d, toes) => `<path d="${d}" fill="none" stroke="#e8a33a" stroke-width="1.6" stroke-linecap="round"/><path d="${toes}" fill="none" stroke="#e8a33a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // (speckled: dots of white and of black over its body, inside its outline)
+  const dots = (cx, cy, rx, ry) => !C.dots ? "" : [...Array(14)].map((_, i) => { const a = 2 * Math.PI * R(i + 50), u = Math.sqrt(R(i + 70));
+    return `<circle cx="${f1(cx + Math.cos(a) * rx * u)}" cy="${f1(cy + Math.sin(a) * ry * u)}" r="0.95" fill="${i % 4 ? "#f5efe2" : "#1f1a16"}"/>`; }).join("");
+  const eye = (x, y, blink) => `<ellipse cx="${x}" cy="${y}" rx="0.9" ry="0.9" fill="#111111">${blink ? farmMove(o, "slow", R(3), 8, `<animate attributeName="ry" values="0.9;0.9;0.1;0.9;0.9;0.1;0.9;0.9" keyTimes="0;0.4;0.42;0.44;0.8;0.82;0.84;1"/>`) : ""}</ellipse>`;
+  let s = `<ellipse class="flat" cx="0" cy="0.5" rx="${pose === "nest" ? 20 : 14}" ry="2.5" fill="#000000" opacity="0.18"/>`;
+  if (pose === "stand") s += legs("M-3 -8 L-4 0 M3 -8 L4 0", "M-7 0.6 L-4 0 L-0.5 0.8 M0.5 0.6 L4 0 L7.5 0.8") +
+    paint("M-16 -18 Q-20 -30 -12 -28 Q-6 -14 6 -14 Q14 -14 14 -22 L10 -8 Q0 -2 -10 -8 Z") + line("M-15 -20 Q-18 -26 -14 -27.5 M-13 -19 Q-15 -24 -12 -26") +
+    paint("M-9 -17 Q-2 -19 5 -15 Q2 -10 -4 -10 Q-9 -12 -9 -17 Z", C.wing, 0.8) + line("M-6 -13 Q-1 -12 3 -13.5") + dots(-2, -11, 8, 3.5) +
+    `<g>${farmMove(o, "fast", R(1), 1, `<animateTransform attributeName="transform" type="translate" values="0 0;0 0;1.6 -0.4;1.6 -0.4;0 0;0 0" keyTimes="0;0.4;0.45;0.85;0.9;1"/>`)}` +
+    HEN_HEAD(14, -24, 5, C) + eye(15.5, -25, true) + `</g>`;
+  else if (pose === "peck") s += `<g class="flat">${[[20, 0.6], [23.5, -0.4], [18, 1.4], [25, 1]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="1" ry="0.6" fill="#d9b25a"/>`).join("")}</g>` +
+    legs("M-4 -6 L-5 0 M2 -6 L3 0", "M-8 0.6 L-5 0 L-1.5 0.8 M-0.5 0.6 L3 0 L6.5 0.8") +
+    paint("M-14 -20 Q-20 -34 -10 -32 Q-4 -18 6 -15 Q11 -14 11 -11 L8 -6 Q-2 -1 -10 -6 Z") + line("M-13 -22 Q-17 -29 -11 -31 M-11 -21 Q-13 -27 -9 -29") +
+    paint("M-9 -16 Q-2 -17 4 -12 Q1 -7 -5 -7 Q-10 -10 -9 -16 Z", C.wing, 0.8) + line("M-6 -11 Q-1 -10 2 -11") + dots(-3, -12, 7, 4) +
+    // (its head down at the grain; once a round it comes up and goes down again)
+    `<g>${farmMove(o, "fast", R(1), 1, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, -34, -34, 0, 0], 8, -12)}" keyTimes="0;0.2;0.5;0.68;1"/>`)}` +
+    paint("M4 -15 Q12 -16 16 -9 L12 -5 Q9 -9 5 -9 Z", C.body, 0.8) + `<circle cx="15" cy="-5.5" r="4.4" fill="${C.body}" stroke="${C.line}" stroke-width="0.8"/>` +
+    `<path d="M11.5 -9.5 q2 -3.5 4 -0.5 q2 -3 3.5 1.2 Z" fill="#d62828"/><path d="M17.5 -2.4 l2.2 3.2 l-3.8 -1.2 Z" fill="#e8a33a"/><path d="M14 -1.5 q-1 2.5 -3 2" fill="#d62828"/>` + eye(16.6, -6.2) + `</g>`;
+  else if (pose === "nest") s += `<ellipse cx="0" cy="-6" rx="19" ry="6" fill="#9a7840" stroke="#6b5228" stroke-width="1"/><ellipse cx="0" cy="-7" rx="15" ry="3.4" fill="#5e4724"/>` +
+    // (fluffed up on the nest, breathing three times a round of the slow LFO, its head turning to look about)
+    `<g>${farmMove(o, "slow", R(1), 9, `<animateTransform attributeName="transform" type="scale" values="${farmTimes(3, ["1 1", "1.02 1.05", "1 1"]).join(";")}"/>`)}` +
+    paint("M-16 -3 C-20 -12 -20 -22 -14 -27 C-10 -24 -6 -23 -2 -24 C6 -26 14 -22 15 -15 C16 -10 14 -5 12 -3 Z") + line("M-15 -12 Q-18 -20 -14 -25") +
+    line("M10 -22 q2.2 1.2 1.4 3.4 q2.2 1.2 0.8 3.4 q2 1.4 0.2 3.2") + paint("M-13 -15 Q-5 -21 6 -17 Q2 -10 -6 -9 Q-12 -10 -13 -15 Z", C.wing, 0.8) +
+    line("M-9 -12 q2 1.6 4 0 q2 1.6 4 0 q2 1.6 3 -0.6") + dots(-2, -15, 10, 5) +
+    `<g>${farmMove(o, "slow", R(2), 8, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, 0, -12, -12, 0, 0], 10, -24)}" keyTimes="0;0.3;0.36;0.6;0.66;1"/>`)}` +
+    HEN_HEAD(11, -27, 4.5, C) + eye(12.6, -28.2) + `</g></g>` +
+    `<ellipse cx="14.5" cy="-6.5" rx="2.6" ry="3.3" fill="#f3ead8" stroke="#c9bca2" stroke-width="0.6"/>` +
+    `<path d="M-19 -6 C-19 1 -10 2 0 2 C10 2 19 1 19 -6 C12 -5 -12 -5 -19 -6 Z" fill="#b8904c" stroke="#6b5228" stroke-width="1"/>` +
+    `<path d="M-16 -3 l6 1.5 M-8 -1 l7 0.5 M2 -1 l6 -0.5 M10 -2.5 l6 -1.5 M-13 0 l5 -1.5 M5 0.5 l6 -1" stroke="#e0c070" stroke-width="0.9" stroke-linecap="round"/>`;
+  else {
+    // (flapping: both wings up, each beating down and back up with the wings' LFO, together)
+    const flap = (inner, x, y) => `<g>${farmMove(o, "wings", R(1), 0.3, `<animateTransform attributeName="transform" type="rotate" values="${farmTurn([0, -55, 0], x, y)}"/>`)}${inner}</g>`;
+    s += flap(paint("M3 -18 Q-2 -32 -12 -41 Q-11 -37 -15 -35 Q-11 -32 -15 -29 Q-10 -27 -12 -23 Q-4 -21 3 -16 Z", mix(C.wing, "#000000", 0.2), 0.8), 3, -18) +
+      legs("M-3 -6 L-4 0 M3 -6 L5 0", "M-7 0.6 L-4 0 L-0.5 0.8 M1.5 0.6 L5 0 L8.5 0.8") +
+      paint("M-15 -12 Q-20 -24 -12 -24 Q-6 -17 3 -20 Q8 -23 11 -30 L17 -28 Q16 -18 12 -11 Q4 -5 -8 -6 Q-13 -8 -15 -12 Z") + line("M-14 -14 Q-17 -21 -12.5 -23") + dots(-1, -12, 8, 3.5) +
+      HEN_HEAD(15, -31, 4.6, C, true) + eye(16.4, -32) +
+      flap(paint("M0 -17 Q-4 -30 -12 -38 Q-11 -34 -15 -32 Q-11 -29 -15 -26 Q-10 -24 -12 -20 Q-5 -18 -3 -13 Q-1 -14 0 -17 Z", C.wing, 0.8) + line("M-2.5 -18 L-11 -33 M-3.5 -16 L-12.5 -26"), 0, -17);
+  }
+  return `<g transform="scale(${HEN_SCALE})">${s}</g>`;
+}
+// (ticket 501, for M: "dessert -- sand dunes in distance-- placeable objects are 6 types of dessert plants (cactus,etc)";
+// Matthew passing on M's ideas, the desert he means) The 🌵 desert plants: things to put anywhere, and the 🏜️ desert's own
+// (drawn by the same code, so one standing there and one put somewhere else look alike). Each stands at 0, 0 in its own
+// units, as thingSvg places it, lit from the right (the desert's sun); its spines a few tens of short strokes in one path,
+// never hundreds of shapes, and what repeats (arms, blossoms, leaves of one width) one path each (60 frames a second first).
+const DESERT_FLOWERS = ["#fde047", "#fb923c", "#f472b6", "#ef4444", "#ffffff", "#c084fc"];
+const SAGUARO_ARMS = [[0, "🌱 none yet (a young one)"], [1, "1"], [2, "2"], [3, "3"], [4, "4"]];
+const PEAR_BLOOMS = [["none", "🚫 nothing"], ["flowers", "🌼 flowers"], ["fruit", "🍒 fruit"]];
+const AGAVE_TONES = ["#7fa8a0", "#6f9a5a", "#9ab8c8", "#8f9c62"];
+// (a plant's shadow on the ground: flat, so its collision box is the plant's)
+const plantShade = rx => `<ellipse class="flat" cx="0" cy="2" rx="${rx}" ry="${f1(rx * 0.2)}" fill="#000000" opacity="0.2"/>`;
+// (blossoms at the points pts, r across: five round petals each, all in one path, their middles in another)
+function bloomsSvg(pts, r, col, mid = mix(col, "#7c2d12", 0.5)) {
+  if (!pts.length) return "";
+  const at = (x, y, rad, deg) => `${f1(x + rad * Math.cos(deg * Math.PI / 180))} ${f1(y + rad * Math.sin(deg * Math.PI / 180))}`;
+  let d = "", m = "";
+  for (const [x, y] of pts) {
+    d += `M${at(x, y, r * 0.35, -126)}`;
+    for (let i = 0; i < 5; i++) { const a = -90 + 72 * i; d += ` Q${at(x, y, r * 1.1, a - 30)} ${at(x, y, r, a)} Q${at(x, y, r * 1.1, a + 30)} ${at(x, y, r * 0.35, a + 36)}`; }
+    const q = r * 0.32;
+    d += " Z "; m += `M${f1(x - q)} ${f1(y)} a${f1(q)} ${f1(q)} 0 1 0 ${f1(2 * q)} 0 a${f1(q)} ${f1(q)} 0 1 0 ${f1(-2 * q)} 0 `;
+  }
+  return `<path d="${d}" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="${f1(r * 0.12)}"/><path d="${m}" fill="${mid}"/>`;
+}
+// 🌵 a saguaro: a tall ribbed column, rounded on top, and its arms (none on a young one): the first two low on either side,
+// reaching out a little and up; the next two higher and farther out, nearer us (drawn over the low ones); spines in rows
+// down its ribs; a woodpecker's hole now and then; its white flowers on the tops (flowers)
+function saguaroSvg(t, seed) {
+  const R = seeded(seed), arms = Math.max(0, Math.min(4, Math.round(t.arms ?? 2))), H = 350 + 50 * R(1), r = 22, top = -H + r;
+  const green = "#4f8a46", dark = "#2b5a2e", lit = "#86bf6e", first = R(2) < 0.5 ? -1 : 1, P = (x, y) => `${f1(x)} ${f1(y)}`;
+  const lowY = -H * (0.34 + 0.06 * R(3)), lowOut = 26 + 10 * R(4);
+  // (the low arms, then the high ones: each group one outline, one fill, its lit side and its ribs, the high ones over the low)
+  const arm = [0, 1].map(() => ({ d: "", rib: "", lit: "", sp: "" }));
+  let spines = "";
+  const tops = [[-10, top - r + 7], [0, top - r + 1], [10, top - r + 7]];
+  for (let j = 0; j < arms; j++) {
+    const sd = j % 2 ? -first : first, high = j >= 2, ya = high ? -H * (0.56 + 0.06 * R(5 + j)) : lowY - 12 * R(5 + j);
+    const ax = sd * (r + (high ? lowOut + 36 + 8 * R(9 + j) : lowOut + 6 * R(9 + j))), yt = Math.max(top + 50, ya - (high ? 50 + 40 * R(13 + j) : 70 + 70 * R(13 + j)));
+    const A = arm[high ? 1 : 0];
+    A.d += `M${P(sd * 6, ya)} L${P(ax - sd * 14, ya)} Q${P(ax, ya)} ${P(ax, ya - 14)} L${P(ax, yt)} `;
+    A.rib += `M${P(ax, ya - 16)} L${P(ax, yt - 6)} `; A.lit += `M${P(ax + 6, ya - 12)} L${P(ax + 6, yt - 4)} `;
+    for (let y = ya - 30; y > yt + 4; y -= 30) A.sp += `M${P(ax - 2.5, y + 1.5)} L${P(ax, y)} L${P(ax + 2.5, y + 1.5)} `;
+    tops.push([ax, yt - 12]);
+  }
+  // (the arms, behind the column)
+  let s = plantShade(40) + arm.filter(A => A.d).map(A => `<path d="${A.d}" fill="none" stroke="${dark}" stroke-width="31" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="${A.d}" fill="none" stroke="${green}" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="${A.lit}" fill="none" stroke="${lit}" stroke-width="4" stroke-linecap="round" opacity="0.5"/><path d="${A.rib}" fill="none" stroke="${dark}" stroke-width="1.3" opacity="0.45"/>` +
+    (A.sp ? `<path d="${A.sp}" fill="none" stroke="#f1e6c2" stroke-width="1.1" stroke-linecap="round"/>` : "")).join("");
+  // the column, its shaded and its lit side, its ribs (each ending inside its rounded top), the spines down them
+  // (ticket 501: and its spine, unseen, as wide as the column, so the whole column is in the friend's way, whatever its arms;
+  // found by its tall shapes, a young one's, with no arms, was its stripes and ribs alone, short of its lit side by 10)
+  s += `<path d="M${-r} 0 L${-r} ${f1(top)} A${r} ${r} 0 0 1 ${r} ${f1(top)} L${r} 0 Z" fill="${green}" stroke="${dark}" stroke-width="2.5"/>` +
+       `<path data-spine="" d="M0 0 V${f1(top)}" fill="none" stroke="transparent" stroke-width="${2 * r}" pointer-events="none"/>` +
+       `<path d="M-15 -2 L-15 ${f1(top)}" stroke="${dark}" stroke-width="8" opacity="0.18"/><path d="M10 -2 L10 ${f1(top - 8)}" stroke="${lit}" stroke-width="6" stroke-linecap="round" opacity="0.5"/>`;
+  let ribs = "";
+  for (const x of [-12, -4, 4, 12]) {
+    const end = top - Math.sqrt(r * r - x * x) + 4;
+    ribs += `M${P(x, -1)} L${P(x, end)} `;
+    if (x !== 4) for (let y = -16; y > end + 6; y -= 30) spines += `M${P(x - 2.5, y + 1.5)} L${P(x, y)} L${P(x + 2.5, y + 1.5)} `;
+  }
+  s += `<path d="${ribs}" fill="none" stroke="${dark}" stroke-width="1.3" opacity="0.4"/><path d="${spines}" fill="none" stroke="#f1e6c2" stroke-width="1.1" stroke-linecap="round"/>`;
+  if (R(7) < 0.55) { const hx = (R(8) < 0.5 ? -1 : 1) * 7, hy = -H * 0.72;   // (a woodpecker's hole, a small surprise)
+    s += `<ellipse cx="${f1(hx)}" cy="${f1(hy)}" rx="5" ry="7" fill="#6b8f50"/><ellipse cx="${f1(hx)}" cy="${f1(hy + 0.5)}" rx="3.6" ry="5.4" fill="#2a1a10"/>`; }
+  if (t.flowers ?? true) s += bloomsSvg(tops, 7, "#fffaf0", "#facc15");
+  return drawnBy("saguaroSvg", s);
+}
+// 🍐 a prickly pear: flat round pads, two on the ground and more growing from their tops (how many by its seed), each with
+// a few spines; on its top edges flowers in their colour, or its red fruit, or nothing (bloom)
+function pricklyPearSvg(t, seed) {
+  const R = seeded(seed), bloom = t.bloom ?? "flowers", col = t.color || DESERT_FLOWERS[0];
+  const green = "#6aa84f", dark = "#2f6b2a", lit = "#a3d17f", P = (x, y) => `${f1(x)} ${f1(y)}`;
+  // its pads: [x, y, half its width, half its length, its turn]
+  const base = [[-24, -40, 24, 40, -14], [26, -34, 22, 36, 16], [-46, -104, 20, 32, -28], [-6, -112, 22, 36, 4], [44, -92, 19, 31, 26]];
+  if (R(1) < 0.7) base.push([-24, -168, 18, 28, -14]);
+  if (R(2) < 0.6) base.push([56, -148, 16, 26, 32]);
+  if (R(3) < 0.4) base.push([-72, -152, 15, 24, -40]);
+  const pads = base.map(([x, y, rx, ry, a], i) => [x + 8 * (R(10 + i) - 0.5), y + 6 * (R(20 + i) - 0.5), rx, ry, a + 14 * (R(30 + i) - 0.5)]);
+  // (a point on a pad, from across it (u) and along it (v), each -1 to 1; and whether a point is inside one)
+  const on = ([x, y, rx, ry, a], u, v) => { const c = Math.cos(a * Math.PI / 180), sn = Math.sin(a * Math.PI / 180); return [x + u * rx * c - v * ry * sn, y + u * rx * sn + v * ry * c]; };
+  const inside = ([x, y, rx, ry, a], px, py) => { const c = Math.cos(a * Math.PI / 180), sn = Math.sin(a * Math.PI / 180), dx = px - x, dy = py - y, lu = (dx * c + dy * sn) / rx, lv = (-dx * sn + dy * c) / ry; return lu * lu + lv * lv < 1; };
+  // (the highest drawn first, so each pad hides the foot of the one growing from it)
+  const order = pads.map((p, i) => i).sort((i, j) => pads[i][1] - pads[j][1]);
+  let s = plantShade(64), spines = "";
+  for (const i of order) {
+    const p = pads[i], [x, y, rx, ry, a] = p, [hx, hy] = on(p, 0.28, -0.12);
+    s += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${rx}" ry="${ry}" transform="rotate(${f1(a)} ${f1(x)} ${f1(y)})" fill="${green}" stroke="${dark}" stroke-width="2"/>` +
+         `<ellipse cx="${f1(hx)}" cy="${f1(hy)}" rx="${f1(rx * 0.45)}" ry="${f1(ry * 0.62)}" transform="rotate(${f1(a)} ${f1(hx)} ${f1(hy)})" fill="${lit}" opacity="0.35"/>`;
+    for (const [u, v] of [[-0.45, -0.45], [0.4, -0.52], [0, -0.05], [-0.42, 0.42], [0.45, 0.38]]) { const [px, py] = on(p, u, v);
+      spines += `M${P(px - 2.2, py - 1.6)} L${P(px, py)} L${P(px + 2.2, py - 1.6)} `; }
+  }
+  s += `<path d="${spines}" fill="none" stroke="#f3ecd0" stroke-width="1.1" stroke-linecap="round"/>`;
+  // what grows on its top edges: on the upper pads, where no other pad covers the spot
+  const spots = pads.filter(p => p[1] < -80).flatMap(p => [on(p, -0.38, -0.9), on(p, 0.32, -0.94)]).filter(([px, py]) => pads.filter(q => inside(q, px, py)).length <= 1);
+  if (bloom === "flowers") s += bloomsSvg(spots, 8, col);
+  else if (bloom === "fruit") s += spots.map(([px, py]) => `<ellipse cx="${f1(px)}" cy="${f1(py - 4)}" rx="5.5" ry="7.5" fill="#c0265f" stroke="#7a1238" stroke-width="1.2"/>` +
+    `<circle cx="${f1(px + 1.8)}" cy="${f1(py - 7)}" r="1.6" fill="#f9a8d4"/>`).join("");
+  return drawnBy("pricklyPearSvg", s);
+}
+// 🛢️ a barrel cactus: round and squat, its ribs running up to its crown, hooked red spines along them; a crown of flowers in
+// their colour (flowers), or of spines
+function barrelCactusSvg(t, seed) {
+  const R = seeded(seed), w = 34 + 8 * R(1), h = 76 + 18 * R(2), col = t.color || DESERT_FLOWERS[1];
+  const green = "#5b8f45", dark = "#2c5a28", lit = "#8cc070", P = (x, y) => `${f1(x)} ${f1(y)}`;
+  const left = `M${P(-w * 0.9, 0)} C${P(-w * 1.15, -h * 0.35)} ${P(-w * 1.05, -h * 0.92)} ${P(0, -h)}`;
+  let s = plantShade(46) + `<path d="${left} C${P(w * 1.05, -h * 0.92)} ${P(w * 1.15, -h * 0.35)} ${P(w * 0.9, 0)} Z" fill="${green}" stroke="${dark}" stroke-width="2.2"/>` +
+    // (its shaded side and its lit side, inside its outline)
+    `<path d="${left} Q${P(-w * 0.55, -h * 0.5)} ${P(-w * 0.35, 0)} Z" fill="${dark}" opacity="0.2"/>` +
+    `<path d="M${P(w * 0.9, 0)} C${P(w * 1.15, -h * 0.35)} ${P(w * 1.05, -h * 0.92)} ${P(0, -h)} Q${P(w * 0.75, -h * 0.5)} ${P(w * 0.6, 0)} Z" fill="${lit}" opacity="0.3"/>`;
+  let ribs = "", hooks = "";
+  for (const u of [-0.75, -0.45, -0.15, 0.15, 0.45, 0.75]) {
+    const a = [u * w * 0.82, -1], c = [u * w * 1.1, -h * 0.5], b = [u * w * 0.22, -h * 0.94], sd = u < 0 ? -1 : 1;
+    ribs += `M${P(...a)} Q${P(...c)} ${P(...b)} `;
+    for (const q of [0.28, 0.54, 0.78]) { const x = (1 - q) ** 2 * a[0] + 2 * (1 - q) * q * c[0] + q * q * b[0], y = (1 - q) ** 2 * a[1] + 2 * (1 - q) * q * c[1] + q * q * b[1];
+      hooks += `M${P(x, y)} q${f1(sd * 3)} -6 ${f1(sd * 6)} -3 `; }
+  }
+  s += `<path d="${ribs}" fill="none" stroke="${dark}" stroke-width="1.5" opacity="0.5"/><path d="${hooks}" fill="none" stroke="#d9774a" stroke-width="1.4" stroke-linecap="round"/>`;
+  if (t.flowers ?? true) s += bloomsSvg([-0.42, -0.21, 0, 0.21, 0.42].map((u, i) => [u * w, -h * 0.97 + Math.abs(u) * w * 0.3 - 3 * (i % 2)]), 7, col);
+  else s += `<path d="${[-6, -3, 0, 3, 6].map(x => `M${P(x, -h + 1)} l${f1(x * 0.4)} -7`).join(" ")}" fill="none" stroke="#d9774a" stroke-width="1.4" stroke-linecap="round"/>`;
+  return drawnBy("barrelCactusSvg", s);
+}
+// 🪴 an agave: a rosette of thick pointed leaves in its colour (tone), the outer ones bending down, a dark spine at each tip
+// and teeth along the front ones; and, now and then, its tall flower stalk, branching at the top into yellow flowers (stalk)
+function agaveSvg(t, seed) {
+  const R = seeded(seed), tone = t.tone || AGAVE_TONES[0], dark = mix(tone, "#000000", 0.4), lit = mix(tone, "#ffffff", 0.35), P = (x, y) => `${f1(x)} ${f1(y)}`;
+  let s = plantShade(70);
+  if (t.stalk) {
+    const top = -300 - 30 * R(1), lean = 10 * (R(2) - 0.5);
+    let br = "", fl = "";
+    for (let j = 0; j < 5; j++) { const y = top + 12 + j * 16, x = lean * (y / top), sd = j % 2 ? 1 : -1, ex = x + sd * (24 - j * 2), ey = y - 12;
+      br += `M${P(x, y)} q${f1(sd * 14)} -2 ${f1(ex - x)} ${f1(ey - y)} `;
+      for (const [dx, dy, q] of [[0, -4, 6], [sd * 6, 1, 4.5], [-sd * 5, 2, 4]]) fl += `M${P(ex + dx - q, ey + dy)} a${q} ${q} 0 1 0 ${2 * q} 0 a${q} ${q} 0 1 0 ${-2 * q} 0 `; }
+    s += `<path d="M0 -30 Q${P(lean * 0.4, top * 0.5)} ${P(lean, top)}" fill="none" stroke="#7a6a32" stroke-width="7" stroke-linecap="round"/>` +
+         `<path d="${br}" fill="none" stroke="#7a6a32" stroke-width="3" stroke-linecap="round"/><path d="${fl}" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>`;
+  }
+  // its leaves, back to front: [angle (degrees, -90 straight up), length, half its width at the foot]
+  const L = [[-100, 104, 12], [-80, 110, 12], [-122, 92, 12], [-58, 96, 12], [-145, 80, 13], [-35, 84, 13], [-165, 70, 13], [-15, 74, 13],
+             [-112, 70, 14], [-68, 72, 14], [-140, 56, 15], [-40, 58, 15]];
+  let ribs = "", teeth = "";
+  L.forEach(([deg, len0, hw], i) => {
+    const a = (deg + 8 * (R(10 + i) - 0.5)) * Math.PI / 180, len = len0 * (0.9 + 0.2 * R(20 + i)), ca = Math.cos(a), sa = Math.sin(a), nx = -sa, ny = ca;
+    const droop = len * 0.22 * ca * ca, bx = ca * 8, by = -3, tx = ca * len, ty = Math.min(-2, sa * len + droop), mx = ca * len * 0.5, my = sa * len * 0.5 + droop * 0.25;
+    const front = i >= 8, fill = front ? mix(tone, "#ffffff", 0.08) : i < 4 ? mix(tone, "#000000", 0.08) : tone;
+    s += `<path d="M${P(bx - nx * hw, Math.min(0, by - ny * hw))} Q${P(mx - nx * hw, my - ny * hw)} ${P(tx, ty)} Q${P(mx + nx * hw, my + ny * hw)} ${P(bx + nx * hw, Math.min(0, by + ny * hw))} Z" fill="${fill}" stroke="${dark}" stroke-width="1.5" stroke-linejoin="round"/>`;
+    ribs += `M${P(bx, by)} Q${P(mx, my)} ${P(bx + (tx - bx) * 0.82, by + (ty - by) * 0.82)} `;
+    const ux = (tx - mx) / Math.hypot(tx - mx, ty - my), uy = (ty - my) / Math.hypot(tx - mx, ty - my);
+    teeth += `M${P(tx, ty)} l${f1(ux * 7)} ${f1(uy * 7)} `;
+    if (front) for (const q of [0.35, 0.6]) for (const e of [-1, 1]) { const ex = bx + (tx - bx) * q + e * nx * hw * (1 - q) * 0.9, ey = by + (ty - by) * q + e * ny * hw * (1 - q) * 0.9;
+      teeth += `M${P(ex, ey)} l${f1(e * nx * 3 + ux * 2)} ${f1(e * ny * 3 + uy * 2)} `; }
+  });
+  s += `<path d="${ribs}" fill="none" stroke="${lit}" stroke-width="1.5" opacity="0.6"/><path d="${teeth}" fill="none" stroke="#3a2a1a" stroke-width="1.6" stroke-linecap="round"/>`;
+  return drawnBy("agaveSvg", s);
+}
+// 🌴 a Joshua tree: a shaggy trunk branching twice, each branch bending its own way up, a spiky green tuft at each tip over
+// a skirt of old dry leaves; in bloom, a creamy cluster at the tips (flowers)
+function joshuaTreeSvg(t, seed) {
+  const R = seeded(seed), P = (x, y) => `${f1(x)} ${f1(y)}`, widths = [24, 16, 11], segs = [], tips = [];
+  let n = 0;
+  const grow = (x, y, ang, len, d) => {
+    const x2 = x + Math.cos(ang) * len, y2 = y + Math.sin(ang) * len, bend = len * 0.14 * (R(90 + n) - 0.5);
+    segs.push([x, y, (x + x2) / 2 - Math.sin(ang) * bend, (y + y2) / 2 + Math.cos(ang) * bend, x2, y2, d]);
+    if (d === 2) { tips.push([x2, y2, ang]); return; }
+    const kids = d === 0 ? 2 + (R(1) < 0.5 ? 1 : 0) : (R(40 + n) < 0.3 ? 3 : 2);
+    for (let j = 0; j < kids; j++) { n++;
+      const spread = kids === 1 ? (R(50 + n) - 0.5) * 0.6 : (j / (kids - 1) - 0.5) * (1.3 + 0.4 * R(60 + n));
+      grow(x2, y2, Math.max(-Math.PI + 0.45, Math.min(-0.45, ang + spread + (R(70 + n) - 0.5) * 0.3)), len * (0.62 + 0.18 * R(80 + n)), d + 1); }
+  };
+  grow(0, 0, -Math.PI / 2 + (R(2) - 0.5) * 0.2, 140 + 30 * R(3), 0);
+  // (its wood: one outline and one fill for each thickness, the trunk's alone, so its trunk is found as a tree's is)
+  const wood = d => segs.filter(q => q[6] === d).map(([x, y, cx, cy, x2, y2]) => `M${P(x, y)} Q${P(cx, cy)} ${P(x2, y2)}`).join(" ");
+  let s = plantShade(46);
+  for (const d of [0, 1, 2]) s += `<path d="${wood(d)}" fill="none" stroke="#3f3226" stroke-width="${widths[d] + 3}" stroke-linecap="round"/>`;
+  for (const d of [0, 1, 2]) s += `<path d="${wood(d)}" fill="none" stroke="#7a6650" stroke-width="${widths[d]}" stroke-linecap="round"/>`;
+  // its shag: short strokes down its wood
+  let shag = "";
+  for (const [x, y, cx, cy, x2, y2, d] of segs) for (let q = 0.15; q < 0.95; q += d ? 0.3 : 0.14) {
+    const px = (1 - q) ** 2 * x + 2 * (1 - q) * q * cx + q * q * x2, py = (1 - q) ** 2 * y + 2 * (1 - q) * q * cy + q * q * y2, w = widths[d] * 0.35;
+    shag += `M${P(px - w, py - w)} l${f1(w * 0.8)} ${f1(w * 1.3)} M${P(px + w * 0.3, py)} l${f1(w * 0.6)} ${f1(w * 1.2)} `; }
+  s += `<path d="${shag}" fill="none" stroke="#5a4a3a" stroke-width="1.6" stroke-linecap="round"/>`;
+  // the tufts at the tips, over their skirts of dry leaves
+  let skirt = "", spikes = "", pale = "", bloom = "";
+  tips.forEach(([x, y, ang], i) => {
+    for (let j = 0; j < 7; j++) { const a = ang + Math.PI + (j / 6 - 0.5) * 1.3, L = 16 + 8 * R(100 + i * 10 + j); skirt += `M${P(x, y)} l${f1(Math.cos(a) * L)} ${f1(Math.sin(a) * L + 6)} `; }
+    for (let j = 0; j < 14; j++) { const a = ang + (j / 13 - 0.5) * 4.6, L = 22 + 10 * R(200 + i * 15 + j); spikes += `M${P(x, y)} l${f1(Math.cos(a) * L)} ${f1(Math.sin(a) * L)} `; }
+    for (let j = 0; j < 7; j++) { const a = ang + (j / 6 - 0.5) * 3, L = 16 + 8 * R(300 + i * 7 + j); pale += `M${P(x, y)} l${f1(Math.cos(a) * L)} ${f1(Math.sin(a) * L)} `; }
+    if (t.flowers) { const fx = x + Math.cos(ang) * 10, fy = y + Math.sin(ang) * 10;
+      for (const [dx, dy, q] of [[0, -3, 5.5], [-4, 3, 4.5], [4, 3, 4.5], [0, -10, 4]]) bloom += `M${P(fx + dx - q, fy + dy)} a${q} ${q} 0 1 0 ${2 * q} 0 a${q} ${q} 0 1 0 ${-2 * q} 0 `; }
+  });
+  s += `<path d="${skirt}" fill="none" stroke="#8a7350" stroke-width="2.4" stroke-linecap="round"/><path d="${spikes}" fill="none" stroke="#5f8436" stroke-width="3.2" stroke-linecap="round"/>` +
+       `<path d="${pale}" fill="none" stroke="#a6bd5c" stroke-width="2.2" stroke-linecap="round"/>` + (bloom ? `<path d="${bloom}" fill="#f3ecd2" stroke="#c9bb8a" stroke-width="1"/>` : "");
+  return drawnBy("joshuaTreeSvg", s);
+}
+// 🔥 an ocotillo: long thin whips fanning up out of one foot, each its own path (so it is found as a tree's trunk is),
+// spined; leafed out after rain (leaves), and red flowers like flames at their tips (flowers)
+function ocotilloSvg(t, seed) {
+  const R = seeded(seed), n = 9 + Math.floor(3 * R(1)), P = (x, y) => `${f1(x)} ${f1(y)}`;
+  const stems = [...Array(n)].map((_, i) => { const u = i / (n - 1) - 0.5, a = -Math.PI / 2 + u * 1.15 + (R(10 + i) - 0.5) * 0.18, len = 230 + 90 * R(20 + i) - 50 * Math.abs(u);
+    const bx = u * 18 + (R(30 + i) - 0.5) * 4, bend = (R(40 + i) - 0.5) * 30;
+    return { bx, cx: bx + Math.cos(a) * len * 0.5 - Math.sin(a) * bend, cy: Math.sin(a) * len * 0.5 + Math.cos(a) * bend, tx: bx + Math.cos(a) * len, ty: Math.sin(a) * len, i }; });
+  const at = (S, q) => [(1 - q) ** 2 * S.bx + 2 * (1 - q) * q * S.cx + q * q * S.tx, 2 * (1 - q) * q * S.cy + q * q * S.ty];
+  let s = plantShade(34), spines = "", leaves = "", flame = "", core = "";
+  for (const S of stems) {
+    s += `<path d="M${P(S.bx, 0)} Q${P(S.cx, S.cy)} ${P(S.tx, S.ty)}" fill="none" stroke="${S.i % 2 ? "#6e5d47" : "#7d6a50"}" stroke-width="4.2" stroke-linecap="round"/>`;
+    const dx = S.tx - S.cx, dy = S.ty - S.cy, dl = Math.hypot(dx, dy), ux = dx / dl, uy = dy / dl, nx = -uy, ny = ux;
+    for (const q of [0.25, 0.45, 0.65, 0.85]) { const [px, py] = at(S, q); spines += `M${P(px - nx * 4, py - ny * 4)} L${P(px + nx * 4, py + ny * 4)} `; }
+    if (t.leaves ?? true) for (let j = 0; j < 5; j++) { const [px, py] = at(S, 0.2 + 0.14 * j), e = j % 2 ? 1 : -1;
+      leaves += `M${P(px, py)} l${f1(e * nx * 6 + ux * 4)} ${f1(e * ny * 6 + uy * 4)} `; }
+    if (t.flowers ?? true) { const [bx, by] = at(S, 0.96), ax = S.tx + ux * 18, ay = S.ty + uy * 18;
+      flame += `M${P(bx + nx * 5, by + ny * 5)} Q${P(S.tx + nx * 7, S.ty + ny * 7)} ${P(ax, ay)} Q${P(S.tx - nx * 7, S.ty - ny * 7)} ${P(bx - nx * 5, by - ny * 5)} Z `;
+      core += `M${P(S.tx + nx * 2.5, S.ty + ny * 2.5)} Q${P(S.tx + ux * 8 + nx * 3, S.ty + uy * 8 + ny * 3)} ${P(S.tx + ux * 13, S.ty + uy * 13)} Q${P(S.tx + ux * 8 - nx * 3, S.ty + uy * 8 - ny * 3)} ${P(S.tx - nx * 2.5, S.ty - ny * 2.5)} Z `; }
+  }
+  s += `<path d="${spines}" fill="none" stroke="#cbbfa8" stroke-width="1" stroke-linecap="round"/>` + (leaves ? `<path d="${leaves}" fill="none" stroke="#6aa121" stroke-width="3.6" stroke-linecap="round"/>` : "") +
+       (flame ? `<path d="${flame}" fill="#e5402a" stroke="#9f1d10" stroke-width="0.8"/><path d="${core}" fill="#fb923c"/>` : "");
+  return drawnBy("ocotilloSvg", s);
+}
+// (ticket 502, for M; Matthew: "farm yard -- placeable ojects are barn buildings (6 types) and fence parts (posts with lateral
+// connections, 3 types)") The 🚜 farm things, for the farm yard and anywhere: a 🏚️ barn of six kinds and a 🪵 fence piece of
+// three, each drawn standing at 0, 0 in its own units, as thingSvg places them (100% about the friend's height where they
+// arrive: the eye there is 150 up, so a line below it bows down toward us and one above it up). The farm yard draws its own
+// barn and fence with the same code, so they look the same there as put anywhere.
+const BARN_STYLES = [["gambrel", "🟥 red barn with a hay loft"], ["round", "⭕ round barn"], ["stone", "🪨 stone barn"],
+                     ["pole", "🌾 open pole barn, hay inside"], ["coop", "🐔 little chicken coop"], ["silo", "🌽 barn with a silo"]];
+const BARN_COLORS = ["none", "#b03a2e", "#efe8da", "#5f80a6", "#6f8f4e", "#d9a93a", "#7a5236"];   // (its walls' colour: ∅ its kind's own)
+const BARN_OWN = { gambrel: "#b03a2e", round: "#e6dcc2", stone: "#8a5a34", pole: "#8e9ca0", coop: "#e7d6a3", silo: "#b03a2e" };
+const FARM_STRAW = "#e3c46a", FARM_STRAW_D = "#b8963e";
+// (how far a level line at height y bows toward us, below the eye; away, above it)
+const farmBow = y => (y + 150) * 0.04;
+// (upright boards on a wall from x0 to x1, every `step`, from its top (topAt(x), on its outline) down to y1: one path)
+const farmBoards = (x0, x1, topAt, y1, step, stroke, op = 0.35) => {
+  let d = "";
+  for (let x = x0 + step; x < x1 - 1; x += step) d += `M${f1(x)} ${f1(topAt(x))} V${f1(y1)} `;
+  return `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.5" opacity="${op}"/>`;
+};
+// (a barn door from x0 to x1, its top at y (to the ground): planks, a white frame and its X braces, two leaves)
+const farmDoors = (x0, x1, y, fill, trim) => { const m = (x0 + x1) / 2;
+  return `<rect x="${f1(x0)}" y="${f1(y)}" width="${f1(x1 - x0)}" height="${f1(-y)}" fill="${fill}"/>` +
+    `<path d="M${f1(x0)} ${f1(y)} L${f1(m)} 0 M${f1(m)} ${f1(y)} L${f1(x0)} 0 M${f1(m)} ${f1(y)} L${f1(x1)} 0 M${f1(x1)} ${f1(y)} L${f1(m)} 0 M${f1(m)} ${f1(y)} V0" stroke="${trim}" stroke-width="4"/>` +
+    `<rect x="${f1(x0)}" y="${f1(y)}" width="${f1(x1 - x0)}" height="${f1(-y)}" fill="none" stroke="${trim}" stroke-width="5"/>`; };
+// (a window at (x, y), w by h: its glass, a white frame and its cross)
+const farmWindow = (x, y, w, h, trim = "#f4efe4") => `<rect x="${f1(x - w / 2)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="#3f5a6b" stroke="${trim}" stroke-width="3"/>` +
+  `<path d="M${f1(x)} ${f1(y)} V${f1(y + h)} M${f1(x - w / 2)} ${f1(y + h / 2)} H${f1(x + w / 2)}" stroke="${trim}" stroke-width="2"/>`;
+// (where a barn stands in the way: its foot, x0 to x1, d deep, for the collision box; ticket 441's data-footprint)
+const farmFoot = (x0, x1, d = 44) => `<rect data-footprint="1" x="${x0}" y="${-d}" width="${x1 - x0}" height="${d + 4}" fill="none" stroke="none"/>`;
+const farmShadow = (rx, cx = 0) => `<ellipse class="flat" cx="${cx}" cy="3" rx="${rx}" ry="${f1(rx * 0.11)}" fill="#000000" opacity="0.2"/>`;
+// a rooster weather vane on a pole from (x, y) up, turning in the wind with the scene's quick LFO (its own way in: off)
+function weatherVaneSvg(o, x, y, off) {
+  const turn = sceneLfo(o, "fast", off, "transform", (v, amp) => `${(1 - (0.35 + 0.45 * amp) * (1 + v) / 2).toFixed(3)} 1`,
+    `<animateTransform attributeName="transform" type="scale" values="1 1;0.45 1;1 1" dur="2.6s" repeatCount="indefinite"/>`, "scale");
+  return `<path d="M${f1(x)} ${f1(y)} V${f1(y - 58)} M${f1(x - 12)} ${f1(y - 26)} H${f1(x + 12)}" stroke="#2b2b2b" stroke-width="2.5"/><circle cx="${f1(x)}" cy="${f1(y - 4)}" r="4" fill="#2b2b2b"/>` +
+    `<g transform="translate(${f1(x)} ${f1(y - 40)})"><g>${turn}<path d="M-24 0 H18 M12 -4 L20 0 L12 4 M-24 0 l-6 -5 M-24 0 l-6 5" fill="none" stroke="#2b2b2b" stroke-width="2"/>` +
+    `<path d="M-8 -3 Q-11 -12 -5 -14 Q-3 -22 3 -20 L8 -17 L4 -15 Q8 -8 4 -3 Z M-8 -5 Q-17 -12 -13 -21 Q-9 -13 -6 -9 Z" fill="#2b2b2b"/></g></g>`;
+}
+function barnThingSvg(t, seed, o) {
+  const st = BARN_STYLES.some(([v]) => v === t.style) ? t.style : "gambrel", col = t.color && t.color !== "none" ? t.color : BARN_OWN[st];
+  const dk = mix(col, "#000000", 0.32), lt = mix(col, "#ffffff", 0.3), trim = "#f4efe4", R = seeded(seed), P = (x, y) => `${f1(x)} ${f1(y)}`;
+  if (st === "round") {
+    // a round barn: a drum of boards under a cone of a roof, a cupola on top; shaded round (its own gradient)
+    const id = `barn-round-${seed}`, top = x => -140 - farmBow(-140) * (1 - (x / 105) ** 2), bot = x => farmBow(0) * (1 - (x / 105) ** 2);
+    let lines = "";
+    for (let a = -75; a <= 75; a += 15) { const x = 105 * Math.sin(a * Math.PI / 180); lines += `M${P(x, top(x))} V${f1(bot(x))} `; }
+    return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${dk}"/><stop offset="0.35" stop-color="${lt}"/><stop offset="0.65" stop-color="${col}"/><stop offset="1" stop-color="${dk}"/></linearGradient>` +
+      `<linearGradient id="${id}-r" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2f4a3a"/><stop offset="0.4" stop-color="#5f8a6c"/><stop offset="1" stop-color="#2f4a3a"/></linearGradient></defs>` +
+      farmShadow(124) + farmFoot(-108, 108) +
+      `<path d="M-105 -140 Q0 ${f1(-140 - 2 * farmBow(-140))} 105 -140 V0 Q0 ${f1(2 * farmBow(0))} -105 0 Z" fill="url(#${id})" stroke="${dk}" stroke-width="2"/>` +
+      `<path d="${lines}" fill="none" stroke="${dk}" stroke-width="1.4" opacity="0.4"/>` +
+      `<path d="M-26 ${f1(bot(-26))} V-62 Q-26 -88 0 -88 Q26 -88 26 -62 V${f1(bot(26))} Z" fill="${dk}" stroke="${trim}" stroke-width="4"/>` +
+      `<path d="M-26 -62 L26 ${f1(bot(26))} M26 -62 L-26 ${f1(bot(-26))}" stroke="${trim}" stroke-width="3"/>` +
+      farmWindow(-64, -116, 14, 20, trim) + farmWindow(64, -116, 14, 20, trim) +
+      `<path d="M-118 -134 Q-96 -192 -22 -226 L22 -226 Q96 -192 118 -134 Q0 -128 -118 -134 Z" fill="url(#${id}-r)" stroke="#24382c" stroke-width="2"/>` +
+      `<path d="M-118 -134 Q0 -128 118 -134" fill="none" stroke="${trim}" stroke-width="3"/>` +
+      `<rect x="-17" y="-258" width="34" height="34" fill="${col}" stroke="${dk}" stroke-width="2"/><path d="M-11 -250 H11 M-11 -243 H11 M-11 -236 H11" stroke="${dk}" stroke-width="2.5"/>` +
+      `<path d="M-24 -256 L0 -280 L24 -256 Z" fill="#2f4a3a" stroke="#24382c" stroke-width="2"/><line x1="0" y1="-280" x2="0" y2="-294" stroke="#2b2b2b" stroke-width="2.5"/>`;
+  }
+  if (st === "stone") {
+    // a stone barn: its gable end of stones in courses (three tones, one path each), a slate roof's edge, an arched wooden door
+    // (the door its colour), slits for windows, an owl hole up in the gable
+    const id = `barn-stone-${seed}`, d = ["", "", ""], stone = (x, y, w, h) => `M${P(x + 3, y)} H${f1(x + w - 3)} Q${P(x + w, y)} ${P(x + w, y + 3)} V${f1(y + h - 3)} Q${P(x + w, y + h)} ${P(x + w - 3, y + h)} H${f1(x + 3)} Q${P(x, y + h)} ${P(x, y + h - 3)} V${f1(y + 3)} Q${P(x, y)} ${P(x + 3, y)} Z `;
+    for (let row = 0; row < 10; row++) { const y = -20 * (row + 1); let x = -130 - 18 * R(row + 40), n = 0;
+      while (x < 130) { const w = 26 + 20 * R(row * 17 + n); d[(row + n) % 3] += stone(x + 1, y + 1, w - 2, 18); x += w; n++; } }
+    const plank = [-28, -19, -9.5, 0, 9.5, 19, 28].map(x => `M${P(x, 0)} V${f1(-62 - Math.sqrt(Math.max(0, 38 * 38 - x * x)) + 2)}`).join(" ");
+    return `<defs><clipPath id="${id}"><path d="M-125 0 V-118 L0 -200 L125 -118 V0 Z"/></clipPath></defs>` + farmShadow(140) + farmFoot(-128, 128) +
+      `<path d="M-125 0 V-118 L0 -200 L125 -118 V0 Z" fill="#6f6a62"/>` +
+      `<g clip-path="url(#${id})">` + ["#a19c91", "#8c877d", "#b2ac9f"].map((c, j) => `<path d="${d[j]}" fill="${c}"/>`).join("") + `</g>` +
+      `<path d="M-136 -112 L0 -210 L136 -112" fill="none" stroke="#3d4552" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>` +
+      `<path d="M-46 0 V-62 A46 46 0 0 1 46 -62 V0" fill="none" stroke="#c4bcab" stroke-width="10"/>` +
+      `<path d="M-38 0 V-62 A38 38 0 0 1 38 -62 V0 Z" fill="${col}" stroke="${dk}" stroke-width="2"/><path d="${plank}" stroke="${dk}" stroke-width="1.5" opacity="0.7"/>` +
+      `<path d="M-34 -24 H-6 M-34 -70 H-6 M6 -24 H34 M6 -70 H34" stroke="#2e2e36" stroke-width="5"/><circle cx="-6" cy="-44" r="3" fill="#2e2e36"/><circle cx="6" cy="-44" r="3" fill="#2e2e36"/>` +
+      `<path d="M-86 -104 h8 v32 h-8 Z M78 -104 h8 v32 h-8 Z" fill="#2a2622"/><circle cx="0" cy="-156" r="10" fill="#2a2622" stroke="#c4bcab" stroke-width="3"/>`;
+  }
+  if (st === "pole") {
+    // an open pole barn: a metal roof on four poles, open at the front, hay bales stacked inside (their twine, one path)
+    const bales = [[-110, 0], [-56, 0], [-2, 0], [52, 0], [-83, 1], [-29, 1], [25, 1], [-56, 2], [-2, 2]];
+    const top = x => -152 - 52 * (1 - Math.abs(x) / 142);
+    let cor = ""; for (let x = -132; x <= 132; x += 10) cor += `M${P(x, top(x))} V-152 `;
+    return farmShadow(150) + farmFoot(-132, 132, 50) +
+      `<rect x="-126" y="-150" width="252" height="150" fill="#4a3a2a"/><path d="M-126 -150 L-110 -136 H110 L126 -150" fill="#3a2d20"/>` +
+      `<path d="${bales.map(([x, r]) => `M${P(x, -26 * (r + 1))} h54 v26 h-54 Z`).join(" ")}" fill="${FARM_STRAW}" stroke="${FARM_STRAW_D}" stroke-width="1.5"/>` +
+      `<path d="${bales.map(([x, r]) => `M${P(x + 16, -26 * (r + 1))} v26 M${P(x + 38, -26 * (r + 1))} v26`).join(" ")}" stroke="#8a6a32" stroke-width="1.6"/>` +
+      `<path d="${[...Array(14)].map((_, j) => { const x = -120 + 240 * R(j + 60); return `M${P(x, -1)} l${f1(6 + 6 * R(j + 80))} ${f1(-2 - 3 * R(j + 90))}`; }).join(" ")}" stroke="${FARM_STRAW_D}" stroke-width="1.5"/>` +
+      `<path d="${[-126, -44, 44, 126].map(x => `M${P(x - 5, 0)} V-150 h10 V0 Z`).join(" ")}" fill="#7a5634" stroke="#3e2a16" stroke-width="1.5"/>` +
+      `<rect x="-140" y="-158" width="280" height="10" fill="#5e4026"/>` +
+      `<path d="M-142 -152 L0 -204 L142 -152 Z" fill="${col}"/><path d="${cor}" fill="none" stroke="${dk}" stroke-width="1.5" opacity="0.5"/>` +
+      `<path d="M-152 -146 L0 -210 L152 -146" fill="none" stroke="${dk}" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+  if (st === "coop") {
+    // a little chicken coop on legs: clapboards, a red roof, a round door with a ramp down, a nest box on its side, a window;
+    // two of the stable's hens about it (henSvg), pecking with the quick LFO
+    let cl = ""; for (let y = -104; y < -34; y += 10) cl += `M-48 ${y} H48 `;
+    return farmShadow(78, -4) + farmFoot(-74, 60, 34) +
+      `<path d="M-44 -34 V0 M40 -34 V0" stroke="#5e4026" stroke-width="7"/><path d="M-30 -34 V-4 M26 -34 V-4" stroke="#3e2a16" stroke-width="6"/>` +
+      `<path d="${[...Array(10)].map((_, j) => `M${P(-50 + 100 * R(j + 30), 1)} l${f1(8 * R(j + 40))} ${f1(-3)}`).join(" ")}" stroke="${FARM_STRAW}" stroke-width="1.6"/>` +
+      `<rect x="-72" y="-86" width="24" height="28" fill="${dk}" stroke="${mix(col, "#000000", 0.5)}" stroke-width="1.5"/><path d="M-76 -84 L-60 -94 L-46 -86" fill="none" stroke="#a8452e" stroke-width="5" stroke-linejoin="round"/>` +
+      `<path d="M-48 -34 V-112 L0 -140 L48 -112 V-34 Z" fill="${col}" stroke="${dk}" stroke-width="2"/><path d="${cl}" stroke="${dk}" stroke-width="1" opacity="0.45"/>` +
+      `<path d="M-58 -106 L0 -146 L58 -106" fill="none" stroke="#a8452e" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>` +
+      farmWindow(24, -100, 18, 16) +
+      `<path d="M-12 -34 V-54 Q-12 -66 0 -66 Q12 -66 12 -54 V-34 Z" fill="#2b2016"/>` +
+      `<path d="M-8 -34 L8 -34 L58 0 L42 0 Z" fill="#9a7048" stroke="#4e3420" stroke-width="1.5"/><path d="M6 -29 l8 0 M18 -21 l8 0 M30 -13 l8 0 M42 -5 l8 0" stroke="#4e3420" stroke-width="2.5"/>` +
+      henSvg(o, -60, 2, 1.1, 1, 0, 0) + henSvg(o, 70, 3, 1.05, -1, 1, 2);
+  }
+  if (st === "silo") {
+    // a barn with a tall silo beside it: the barn a plain gable, big doors, a loft window; the silo a cylinder of hoops (each
+    // bowing as the eye sees it) under a metal dome, a ladder up its side
+    const id = `barn-silo-${seed}`, peak = -172, topAt = x => Math.abs(x + 50) <= 80 ? -110 - 62 * (1 - Math.abs(x + 50) / 80) : -110;
+    let hoops = ""; for (let y = -30; y > -300; y -= 30) hoops += `M36 ${y} Q72 ${f1(y + 2 * farmBow(y))} 108 ${y} `;
+    let rungs = ""; for (let y = -20; y > -290; y -= 14) rungs += `M100 ${y} H107 `;
+    return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e989c"/><stop offset="0.35" stop-color="#e2e6e8"/><stop offset="1" stop-color="#7f898e"/></linearGradient></defs>` +
+      farmShadow(138, -12) + farmFoot(-136, 112) +
+      `<path d="M-130 0 V-110 L-50 ${peak} L30 -110 V0 Z" fill="${col}" stroke="${dk}" stroke-width="2"/>` + farmBoards(-130, 30, topAt, 0, 16, dk) +
+      `<path d="M-140 -103 L-50 ${peak - 8} L40 -103" fill="none" stroke="#4b3f3b" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>` +
+      `<path d="M-131 -108 L-50 ${peak + 2} L31 -108" fill="none" stroke="${trim}" stroke-width="3"/>` +
+      farmDoors(-82, -18, -80, dk, trim) + farmWindow(-50, -146, 20, 18, trim) +
+      `<path d="M36 -300 V0 Q72 ${f1(2 * farmBow(0))} 108 0 V-300 Z" fill="url(#${id})" stroke="#5f696e" stroke-width="2"/>` +
+      `<path d="${hoops}" fill="none" stroke="#6f797e" stroke-width="2"/>` +
+      `<path d="M36 -300 Q36 -336 72 -340 Q108 -336 108 -300 Q72 ${f1(-300 + 2 * farmBow(-300))} 36 -300 Z" fill="#a3aeb3" stroke="#5f696e" stroke-width="2"/><path d="M50 -318 Q62 -332 78 -334" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.6"/>` +
+      `<path d="M100 -294 V-6 M107 -294 V-6 ${rungs}" stroke="#4a5257" stroke-width="2"/>`;
+  }
+  // the red barn: its gambrel gable end facing us, boards to the roof line, white trim, big doors with X braces, the hay loft's
+  // door open on its hay and the hook's beam over it, two windows; a weather vane on the ridge, turning with the quick LFO
+  const topAt = x => Math.abs(x) >= 100 ? -130 - 62 * (120 - Math.abs(x)) / 20 : -192 - 44 * (100 - Math.abs(x)) / 100;
+  return farmShadow(150) + farmFoot(-124, 124) +
+    `<path d="M-120 0 V-130 L-100 -192 L0 -236 L100 -192 L120 -130 V0 Z" fill="${col}" stroke="${dk}" stroke-width="2"/>` + farmBoards(-120, 120, topAt, 0, 15, dk) +
+    `<path d="M-130 -124 L-108 -196 L0 -245 L108 -196 L130 -124" fill="none" stroke="#4b3f3b" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>` +
+    `<path d="M-121 -128 L-101 -190 L0 -235 L101 -190 L121 -128" fill="none" stroke="${trim}" stroke-width="3"/>` +
+    farmDoors(-46, 46, -100, dk, trim) + farmWindow(-84, -100, 26, 28, trim) + farmWindow(84, -100, 26, 28, trim) +
+    `<rect x="-22" y="-178" width="44" height="42" fill="#2a1a10" stroke="${trim}" stroke-width="3"/>` +
+    `<path d="M-20 -137 Q-14 -156 -4 -150 Q2 -164 10 -152 Q18 -158 20 -137 Z" fill="${FARM_STRAW}" stroke="${FARM_STRAW_D}" stroke-width="1.2"/>` +
+    `<path d="M22 -178 L38 -182 L38 -132 L22 -136 Z" fill="${col}" stroke="${trim}" stroke-width="2.5"/>` +
+    `<rect x="-7" y="-218" width="14" height="10" fill="#5e4026"/><path d="M0 -208 V-186" stroke="#6b5a40" stroke-width="1.5"/><circle cx="0" cy="-208" r="3" fill="#2b2b2b"/>` +
+    weatherVaneSvg(o, 0, -245, R(1));
+}
+// The 🪵 fence: a run of it in its own units, standing on y = 0: posts at `posts` (x), its rails (or its wall) from a to b.
+// A piece put in a place is one post, its rails reaching to the next piece's post (fencePieceSvg); the farm yard's own fence
+// at its back is one run of many posts
+const FENCE_STYLES = [["wood", "🪵 wooden post and rails"], ["picket", "🤍 white picket"], ["stone", "🪨 stone wall"]];
+const FENCE_STUB = 20, FENCE_HALF = { wood: 7, picket: 6, stone: 13 };   // (a rail's end past a post with no piece beside it; half a post's width)
+const fenceStyleOf = t => FENCE_STYLES.some(([v]) => v === t.style) ? t.style : "wood";
+function fenceSvg(style, a, b, posts, seed) {
+  const R = seeded(seed), P = (x, y) => `${f1(x)} ${f1(y)}`;
+  const shade = `<ellipse class="flat" cx="${f1((a + b) / 2)}" cy="2" rx="${f1((b - a) / 2 + 8)}" ry="5" fill="#000000" opacity="0.16"/>`;
+  const foot = `<rect data-footprint="1" x="${f1(a - 6)}" y="-8" width="${f1(b - a + 12)}" height="12" fill="none" stroke="none"/>`;
+  if (style === "picket") {
+    // white pickets, pointed, on two rails, none where a post stands; square posts with a cap and a point
+    let pk = "";
+    for (let x = a + 4; x + 9 <= b - 2; x += 15) if (!posts.some(p => Math.abs(x + 4.5 - p) < 11)) pk += `M${P(x, 0)} V-64 L${P(x + 4.5, -73)} L${P(x + 9, -64)} V0 Z `;
+    return foot + shade + [-20, -50].map(y => `<rect x="${f1(a)}" y="${y}" width="${f1(b - a)}" height="6" fill="#ece7dc" stroke="#a9a293" stroke-width="1"/>`).join("") +
+      (pk ? `<path d="${pk}" fill="#f6f3ec" stroke="#a9a293" stroke-width="1.2"/>` : "") +
+      `<path d="${posts.map(x => `M${P(x - 6, 0)} V-80 H${f1(x + 6)} V0 Z`).join(" ")}" fill="#fbf9f4" stroke="#a9a293" stroke-width="1.2"/>` +
+      `<path d="${posts.map(x => `M${P(x - 8, -80)} H${f1(x + 8)} V-85 H${f1(x - 8)} Z M${P(x - 4, -85)} L${P(x, -92)} L${P(x + 4, -85)} Z`).join(" ")}" fill="#ffffff" stroke="#a9a293" stroke-width="1"/>`;
+  }
+  if (style === "stone") {
+    // a dry-stone wall: four courses of stones (three tones, a path each) over dark gaps, coping stones on edge along its top;
+    // a pillar at each post, capped
+    const d = ["", "", ""];
+    for (let row = 0; row < 4; row++) { const y = -14 * (row + 1); let x = a - 14 * R(row + 7), n = 0;
+      while (x < b) { const w = 16 + 16 * R(row * 31 + n), x0 = Math.max(a, x), x1 = Math.min(b, x + w);
+        if (x1 - x0 > 5) d[(row + n) % 3] += `M${P(x0 + 3, y + 1)} H${f1(x1 - 3)} Q${P(x1 - 1, y + 1)} ${P(x1 - 1, y + 4)} V${f1(y + 10)} Q${P(x1 - 1, y + 13)} ${P(x1 - 3, y + 13)} H${f1(x0 + 3)} Q${P(x0 + 1, y + 13)} ${P(x0 + 1, y + 10)} V${f1(y + 4)} Q${P(x0 + 1, y + 1)} ${P(x0 + 3, y + 1)} Z `;
+        x += w; n++; } }
+    let cope = ""; for (let x = a; x + 4 < b; x += 9) cope += `M${P(x, -56)} v-7 q${f1(Math.min(9, b - x) / 2)} -4 ${f1(Math.min(9, b - x))} 0 v7 Z `;
+    return foot + shade + `<rect x="${f1(a)}" y="-56" width="${f1(b - a)}" height="56" fill="#5f5a52"/>` + ["#a19c91", "#8c877d", "#b2ac9f"].map((c, j) => d[j] ? `<path d="${d[j]}" fill="${c}"/>` : "").join("") +
+      `<path d="${cope}" fill="#a49e92" stroke="#5f5a52" stroke-width="1"/>` +
+      `<path d="${posts.map(x => `M${P(x - 13, 0)} V-70 H${f1(x + 13)} V0 Z`).join(" ")}" fill="#9e988c" stroke="#5f5a52" stroke-width="1.5"/>` +
+      `<path d="${posts.map(x => `M${P(x - 13, -24)} H${f1(x + 13)} M${P(x - 13, -48)} H${f1(x + 13)} M${P(x + 2, 0)} V-24 M${P(x - 5, -24)} V-48 M${P(x + 4, -48)} V-70`).join(" ")}" stroke="#6f6a62" stroke-width="1.2"/>` +
+      `<path d="${posts.map(x => `M${P(x - 16, -70)} H${f1(x + 16)} V-78 Q${P(x, -84)} ${P(x - 16, -78)} Z`).join(" ")}" fill="#b3ad9f" stroke="#5f5a52" stroke-width="1.2"/>`;
+  }
+  // wooden post and rails: three rails of split wood, a light edge on each; posts with a pointed top, a darker side, grain
+  const ys = [-26, -54, -80];
+  return foot + shade + ys.map((y, j) => `<rect x="${f1(a)}" y="${y - 4}" width="${f1(b - a)}" height="8" rx="2" fill="${j % 2 ? "#a07650" : "#94693f"}" stroke="#4e3420" stroke-width="1.3"/>`).join("") +
+    `<path d="${ys.map(y => `M${P(a + 2, y - 3)} H${f1(b - 2)}`).join(" ")}" stroke="#c49a6c" stroke-width="1.2" opacity="0.7"/>` +
+    `<path d="${posts.map(x => `M${P(x - 7, 0)} V-92 L${P(x, -99)} L${P(x + 7, -92)} V0 Z`).join(" ")}" fill="#7a5634" stroke="#3e2a16" stroke-width="1.4"/>` +
+    `<path d="${posts.map(x => `M${P(x + 3, -1)} V-93 L${P(x + 6, -92)} V-1 Z`).join(" ")}" fill="#5e4026"/>` +
+    `<path d="${posts.map(x => `M${P(x - 3, -10)} Q${P(x - 1, -50)} ${P(x - 3, -86)}`).join(" ")}" fill="none" stroke="#4e3420" stroke-width="1" opacity="0.6"/>`;
+}
+// (ticket 502, Matthew: "let's start to plan fence creation as an in-game experience. Harvest mood let people pick up pieces of
+// fence and move them tile by tile We don't have tiles yet. We havent' moved objects -- let's start experimenting.") Tiles: the
+// first experiment. The floor of a place is a grid of tiles, square on the ground, TILE_SPAN across (a fence's span, post to
+// post, in the stage's units where the friend arrives, and in a piece's own units) and as deep. Seen from the eye TILE_EYE in
+// front of where the friend arrives (about a 60° view across the stage, which draws a round shadow on the floor as flat as
+// the places draw theirs), a row of tiles farther back is narrower and shallower: row r's things are drawn at size
+// TILE_EYE / (TILE_EYE - r TILE_SPAN) (row 0 where the friend arrives, nearer rows positive), its columns TILE_SPAN at that
+// size apart, from the picture's middle; with 🔭 at 0 (no smaller going north) the rows are even. A thing whose kind says
+// `tiles` (the 🪵 fence) snaps to the nearest tile when put or dragged (tileSnap), within the floor one can stand on
+const TILE_SPAN = 110, TILE_EYE = 700;
+const tileSpan = (B, z) => TILE_SPAN * depthSize(B, z - SCENE.ground);
+const tileView = B => { const arrive = SCENE.ground + (ARRIVE[B.kind] || [0, 0])[1], v = sceneVanish(B); return { arrive, v, flat: !Number.isFinite(v) || v >= arrive - 1 }; };
+const tileRowZ = (B, r) => { const { arrive, v, flat } = tileView(B); return flat ? arrive + r * TILE_SPAN * 0.22 : v + (arrive - v) * TILE_EYE / (TILE_EYE - r * TILE_SPAN); };
+const tileRowOf = (B, z) => { const { arrive, v, flat } = tileView(B); if (flat) return (z - arrive) / (TILE_SPAN * 0.22);
+  const s = (z - v) / (arrive - v); return s > 0 ? TILE_EYE * (1 - 1 / s) / TILE_SPAN : -Infinity; };
+// (the floor one can stand on, from its back line, lo, to the picture's foot, hi; its rows from where a thing is a tenth of
+// its size, the smallest drawn, to the nearest before the eye)
+const tileFloor = B => { const F = sceneFrame, { flat } = tileView(B);
+  return { lo: SCENE.ground + figYMin(F), hi: SCENE.ground + F.bottom - F.ground,
+           rMin: flat ? -400 : Math.ceil(TILE_EYE * (1 - 10) / TILE_SPAN), rMax: flat ? 400 : Math.ceil(TILE_EYE / TILE_SPAN) - 1 }; };
+function tileSnap(B, t) {
+  if (!t || !(THING_KINDS[t.kind] || {}).tiles) return;
+  const F = sceneFrame, { lo, hi, rMin, rMax } = tileFloor(B);
+  let r = clamp(Math.round(tileRowOf(B, t.z)), rMin, rMax);
+  while (r < rMax && tileRowZ(B, r) < lo) r++;
+  while (r > rMin && tileRowZ(B, r) > hi) r--;
+  const z = tileRowZ(B, r), w = tileSpan(B, z);
+  let x = Math.round(t.x / w) * w;
+  if (x < F.left) x += w; else if (x > F.right) x -= w;
+  // (and the span of its tile, as it is put: its neighbours are a span away, whatever 🔭 says later, fenceLinks)
+  t.z = Math.round(z * 10) / 10; t.x = Math.round(x * 10) / 10; t.tileW = Math.round(w * 10) / 10;
+}
+// (a fence piece tapped in, not dragged: on the tile nearest the last one put, along its row, the rest of the run's way first, as
+// its style, size and side, so tapping again and again builds a fence; its row full, on the next row nearer, else farther, and
+// on, from the tile nearest the last outward; null when there is none yet, or no free tile on the floor)
+function tileNext(B, kind) {
+  const T = (B.things || []).filter(t => t.kind === kind), last = T[T.length - 1];
+  if (!last) return null;
+  const F = sceneFrame, { lo, hi, rMin, rMax } = tileFloor(B), r0 = Math.round(tileRowOf(B, last.z));
+  const taken = (x, z, w) => T.some(t => Math.abs(t.z - z) < 0.6 && Math.abs(t.x - x) < 0.3 * w);
+  const back = T.length > 1 && T[T.length - 2].x > last.x && Math.abs(T[T.length - 2].z - last.z) < 0.6 ? -1 : 1;
+  const as = (x, z) => ({ x, z, style: last.style, size: last.size, mirror: last.mirror });
+  const w0 = tileSpan(B, last.z);
+  for (let n = 1; n < 60; n++) for (const sd of [back, -back]) { const x = last.x + sd * n * w0;
+    if (x >= F.left && x <= F.right && !taken(x, last.z, w0)) return as(x, last.z); }
+  // (ticket 502, from a review: once its row was full, the next piece came out a plain wooden one somewhere else)
+  for (let k = 1; k <= rMax - rMin; k++) for (const r of [r0 + k, r0 - k]) {
+    if (r < rMin || r > rMax) continue;
+    const z = Math.round(tileRowZ(B, r) * 10) / 10;
+    if (!(z >= lo && z <= hi)) continue;
+    const w = tileSpan(B, z), c = Math.round(last.x / w);
+    for (let n = 0; n < 60; n++) for (const sd of n ? [back, -back] : [1]) { const x = Math.round((c + sd * n) * w * 10) / 10;
+      if (x >= F.left && x <= F.right && !taken(x, z, w)) return as(x, z); }
+  }
+  return null;
+}
+// (whether a fence piece has one of its style a tile to its left on its row, and how far, in the stage's units, the one to its
+// right is: 0 for none. A tile apart as the two were put (tileW, from tileSnap), so a run stays joined when 🔭 changes the
+// tiles' size on its row afterwards; from a review: the runs at the back came apart)
+function fenceLinks(B, i) {
+  const T = B.things || [], t = T[i];
+  if (!t || t.kind !== "fencepiece") return [false, 0];
+  const w = t.tileW || tileSpan(B, t.z), st = fenceStyleOf(t);
+  let left = false, right = 0;
+  T.forEach((u, j) => {
+    if (j === i || !u || u.kind !== "fencepiece" || fenceStyleOf(u) !== st || Math.abs(u.z - t.z) > 0.6) return;
+    const dx = u.x - t.x, span = (w + (u.tileW || w)) / 2;
+    if (Math.abs(Math.abs(dx) - span) > 0.3 * span) return;
+    if (dx > 0) right = right ? Math.min(right, dx) : dx; else left = true;
+  });
+  return [left, Math.round(right * 10) / 10];
+}
+// a fence piece put in a place: its post, its rails (or wall) reaching to the post of the piece beside it on the right, or a
+// stub on a side with none (a lone post has stubs both sides); the piece on its left reaches it. s: its size here, as thingSvg
+// draws it (its own units are the stage's over s); mirrored, its own right is the picture's left
+function fencePieceSvg(o, t, i, s) {
+  const st = fenceStyleOf(t), [left, right] = fenceLinks(o, i), d = t.mirror ? -1 : 1;
+  const r = right ? right / Math.max(0.01, s) - FENCE_HALF[st] : FENCE_STUB, l = left ? 0 : FENCE_STUB;
+  return fenceSvg(st, Math.min(d * r, -d * l), Math.max(d * r, -d * l), [0], t.seed ?? 900 + i);
+}
 const THING_PARAMS = {
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
@@ -2048,6 +3331,22 @@ const THING_PARAMS = {
   cascade: [["style", "💦 kind", "choice", CASCADE_STYLES]],
   passage: [["style", "🕳️ kind", "choice", PASSAGE_STYLES], ["to", "🧭 leads to", "choice", passagePlaces]],
   cavemushroom: [["style", "🍄 kind", "choice", CAVE_MUSHROOMS], ["color", "🎨", "color", CAVE_MUSHROOM_COLORS], ["glow", "✨ glowing", "toggle"]],
+  // (ticket 504, for M) the 🐄 farm animals' own: each its pose (four, each its own drawing) and its coat
+  cow: [["pose", "🐄 pose", "choice", COW_POSES], ["coat", "🎨 coat", "choice", COW_COATS]],
+  pig: [["pose", "🐖 pose", "choice", PIG_POSES], ["coat", "🎨 coat", "choice", PIG_COATS]],
+  chicken: [["pose", "🐔 pose", "choice", HEN_POSES], ["coat", "🎨 coat", "choice", HEN_COATS]],
+  // (ticket 501, for M) the desert plants' own: a saguaro's arms and flowers; a prickly pear's flowers or fruit and their colour; a
+  // barrel cactus's crown of flowers and its colour; an agave's flower stalk and its leaves' colour; a Joshua tree in bloom; an
+  // ocotillo's leaves and flowers
+  saguaro: [["arms", "💪 arms", "choice", SAGUARO_ARMS], ["flowers", "🌸 flowers on top", "toggle"]],
+  pricklypear: [["bloom", "🌼 on its pads", "choice", PEAR_BLOOMS], ["color", "🎨 its flowers", "color", DESERT_FLOWERS]],
+  barrelcactus: [["flowers", "🌼 a crown of flowers", "toggle"], ["color", "🎨 its flowers", "color", DESERT_FLOWERS]],
+  agave: [["stalk", "🌾 its tall flower stalk", "toggle"], ["tone", "🎨 its leaves", "color", AGAVE_TONES]],
+  joshuatree: [["flowers", "🌼 in bloom", "toggle"]],
+  ocotillo: [["leaves", "🍃 leafed out (after rain)", "toggle"], ["flowers", "🔥 red flowers at the tips", "toggle"]],
+  // (ticket 502) the farm things' own: a barn's kind and its walls' colour (∅ its kind's own); a fence piece's kind
+  barn: [["style", "🏚️ kind", "choice", BARN_STYLES], ["color", "🎨", "color", BARN_COLORS]],
+  fencepiece: [["style", "🪵 kind", "choice", FENCE_STYLES]],
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
@@ -2059,7 +3358,11 @@ const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, s
                          seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true, treasure: "gold" }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
                          bubblemaker: { shape: "round", rate: 4, theme: "A", color: MAKER_COLORS[0] },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] },
-                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" }, cavemushroom: { style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true } };   // (ticket 471)
+                         gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" }, cavemushroom: { style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true },   // (ticket 471)
+                         cow: { pose: "stand", coat: "holstein" }, pig: { pose: "stand", coat: "pink" }, chicken: { pose: "peck", coat: "brown" },   // (ticket 504)
+                         saguaro: { arms: 2, flowers: true }, pricklypear: { bloom: "flowers", color: DESERT_FLOWERS[0] }, barrelcactus: { flowers: true, color: DESERT_FLOWERS[1] },
+                         agave: { stalk: false, tone: AGAVE_TONES[0] }, joshuatree: { flowers: false }, ocotillo: { leaves: true, flowers: true },   // (ticket 501)
+                         barn: { style: "gambrel", color: "none" }, fencepiece: { style: "wood" } };   // (ticket 502)
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
 // size and shininess (like stars we add or not, and controls over their color
@@ -2237,7 +3540,7 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["farm", "🚜 farm"], ["desert", "🌵 desert"], ["animals", "🐄 farm animals"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
 const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
@@ -2255,6 +3558,16 @@ const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bu
                       gem: { label: "💎 gem", size: 1, group: "cave", moving: true }, puddle: { label: "💧 puddle", size: 1, group: "cave", moving: true },
                       cascade: { label: "💦 little waterfall", size: 1, group: "cave", moving: true }, passage: { label: "🕳️ cave passage", size: 1, group: "cave" },
                       cavemushroom: { label: "🍄 cave mushroom", size: 1, group: "cave", moving: true },
+                      // (ticket 504, for M) the 🐄 farm animals: a cow, a pig and a chicken, each in four poses, moving with the music
+                      cow: { label: "🐄 cow", size: 1, group: "animals", moving: true }, pig: { label: "🐖 pig", size: 1, group: "animals", moving: true },
+                      chicken: { label: "🐔 chicken", size: 1, group: "animals", moving: true },
+                      // (ticket 501, for M) the 🌵 desert plants, for the desert (and anywhere): none of them moves
+                      saguaro: { label: "🌵 saguaro", size: 1, group: "desert" }, pricklypear: { label: "🍐 prickly pear", size: 1, group: "desert" },
+                      barrelcactus: { label: "🛢️ barrel cactus", size: 1, group: "desert" }, agave: { label: "🪴 agave", size: 1, group: "desert" },
+                      joshuatree: { label: "🌴 Joshua tree", size: 1, group: "desert" }, ocotillo: { label: "🔥 ocotillo", size: 1, group: "desert" },
+                      // (ticket 502, for M) the 🚜 farm things: a barn (its weather vane, a coop's hens, move), a piece of fence (it
+                      // snaps to the floor's tiles: tiles, tileSnap)
+                      barn: { label: "🏚️ barn", size: 1, group: "farm", moving: true }, fencepiece: { label: "🪵 fence", size: 1, group: "farm", tiles: true },
                       // (ticket 284) a 🎚️ lever, and 🕳️ trap doors it opens and shuts
                       lever: { label: "🎚️ lever", size: 1, group: "works" }, trapdoor: { label: "🕳️ trap door", size: 1, group: "works" },
                       // (ticket 284) any object of any place: its own buttons, a place's at a time (the Background tab's "places" group)
@@ -2369,6 +3682,9 @@ function palisadeSvg(n, skulls, seed) {
   return drawnBy("fence", fence) + sk;
 }
 // (a thing's depth among the objects: where its feet are; a trap door's, its back edge)
+// (the kinds whose drawings lfoTimed or sceneLfo time: their cache keys carry the LFOs' stamps, thingsLayer)
+const LFO_THINGS = new Set(["gem", "puddle", "cascade", "cavemushroom", "chest", "kelp", "seagrass", "seafan", "sealettuce", "campfire", "cauldron",
+                            "cow", "pig", "chicken", "barn"]);   // (the farm animals: ticket 504)
 const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 :
   t.kind === "puddle" ? t.z - PUDDLE_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;   // (ticket 471: one stands in a puddle, in front of its back edge)
 const thingLabel = t => t.fallen ? `🪨 fallen ${t.fallen}` : t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
@@ -2425,6 +3741,17 @@ function thingSvg(o, t, i) {
                t.kind === "cascade" ? at(cascadeThingSvg(t, seed, o)) :
                t.kind === "passage" ? at(passageThingSvg(t, seed)) :
                t.kind === "cavemushroom" ? at(caveMushroomSvg(t, seed, o)) :
+               // (ticket 504) the farm animals
+               t.kind === "cow" ? at(cowThingSvg(t, seed, o)) :
+               t.kind === "pig" ? at(pigThingSvg(t, seed, o)) :
+               t.kind === "chicken" ? at(chickenThingSvg(t, seed, o)) :
+               // (ticket 501) the desert plants, drawn as the desert draws its own
+               t.kind === "saguaro" ? at(saguaroSvg(t, seed)) : t.kind === "pricklypear" ? at(pricklyPearSvg(t, seed)) :
+               t.kind === "barrelcactus" ? at(barrelCactusSvg(t, seed)) : t.kind === "agave" ? at(agaveSvg(t, seed)) :
+               t.kind === "joshuatree" ? at(joshuaTreeSvg(t, seed)) : t.kind === "ocotillo" ? at(ocotilloSvg(t, seed)) :
+               // (ticket 502) the farm things: a fence piece's rails reach the piece beside it (fencePieceSvg)
+               t.kind === "barn" ? at(barnThingSvg(t, seed, o)) :
+               t.kind === "fencepiece" ? at(fencePieceSvg(o, t, i, s)) :
                ["kelp", "seagrass", "seafan", "sealettuce"].includes(t.kind) ? at(seaPlantSvg(t.kind, t.color || THING_DEFAULTS[t.kind].color, seed, o)) :
                at(shadow(90) + leafyTree(seed, { h: t.h ?? 380, ...(LEAF_SETS[t.leaves] ? { greens: LEAF_SETS[t.leaves] } : {}) }));
   // (ticket 324: a lever marked, so it glows under the pointer as the trap room's do)
@@ -2440,13 +3767,18 @@ function thingsLayer(c) {
   // That's the purpose of this slider -- it does not affect the static parts of the background, but it affects the
   // dynamic player, and placed objects") each sized by depthSize, so drawn again when the 🔭 setting moves its vanishing line
   const vanish = Math.round(10 * sceneVanish(c.o)), T = Array.isArray(c.o.things) ? c.o.things : [];
-  const extra = t => t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : "";   // (ticket 317: and a lever's shine)
+  // (the review after 0.0.385) and the LFOs a thing's animations are timed by (lfoTimed: the cave things, the chest's sparkles,
+  // the sea plants): with them in its key, a thing is drawn again when the music starts or an LFO changes, not left out of time
+  // (and only for those: the review of 0.0.386, so an LFO's change draws again only the things it times)
+  const lfoKey = T.some(t => LFO_THINGS.has(t.kind)) ? ["fast", "slow", "wings"].map(p => { const L = sceneLfoName(c.o, p); return L ? L + lfoStamp(L) : "own"; }).join() : "";
+  // (ticket 502: and a fence piece's neighbours, which its rails reach: fenceLinks)
+  const extra = (t, i) => (t.kind === "signpost" ? JSON.stringify(signpostBoards(c.o, t)) : t.kind === "lever" ? [c.o.leverShine, c.o.leverShineColor, c.o.leverFlicker].join() : t.kind === "fencepiece" ? fenceLinks(c.o, i).join() : "") + (LFO_THINGS.has(t.kind) ? "|" + lfoKey : "");   // (ticket 317: and a lever's shine)
   // (ticket 380, ^du_report(12)'s next step 1: with 256 makers the layer cost a part() call each, its thing written out twice over, on
   // every drawing, 0.58 ms in the app's pane) the whole layer kept while nothing it draws from changes: the things, written out once,
   // and what else each reads; on a change each thing still comes from its own piece, so a drag makes one again, not all
   const key = JSON.stringify([c.F, c.o.kind, vanish, T, T.map(extra)]);
   if (key === thingsLayerMemo.key) return thingsLayerMemo.svg;
-  const svg = T.map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, t, extra(t)], () => obj(t.fallen ? `fallen ${t.fallen}` : `${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");
+  const svg = T.map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, t, extra(t, i)], () => obj(t.fallen ? `fallen ${t.fallen}` : `${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");
   thingsLayerMemo = { key, svg };
   return svg;
 }
@@ -2561,7 +3893,7 @@ function crossingScene(c) {
 }
 const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, hutcenter: hutcenterScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, woodpath: woodpathScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
+                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, farmyard: farmyardScene, desert: desertScene, woodpath: woodpathScene, pasture: pastureScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width
@@ -2576,7 +3908,7 @@ const seaHorizon = ({ g, k }) => g - 230 * k;
 // beach, each standing on the line in front of it, all scaled by the shore's size (ticket 213's "distant shore size": bigger, nearer).
 // Silhouettes, a path or two each, drawn once (the place holds still: 60 frames a second first). farLayers(c, base, look) draws them
 // and gives each its object (wallObj, so 👁️ hides it and 🔬 names it); look = { mountains, forest, beach, size }.
-const SHORE_MOUNTAINS = [["none", "🚫 none"], ["snowy", "🏔️ snowy peaks"], ["blue", "⛰️ a blue range"], ["hills", "🌄 rolling hills"]];
+const SHORE_MOUNTAINS = [["none", "🚫 none"], ["snowy", "🏔️ snowy peaks"], ["blue", "⛰️ a blue range"], ["hills", "🌄 rolling hills"], ["mesas", "🏜️ red mesas"]];   // (mesas: ticket 501)
 const SHORE_FORESTS = [["none", "🚫 none"], ["pines", "🌲 pines"], ["broadleaf", "🌳 round trees"], ["mixed", "🌲🌳 mixed"]];
 function farLayers(c, base, look) {
   const { x0, x1, W, k, pad, R, P } = c, u = k * Math.max(0.25, Math.min(3, (look.size ?? 100) / 100)), L = x0 - pad, Rt = x1 + pad;
@@ -2602,7 +3934,21 @@ function farLayers(c, base, look) {
       const far = range(1, "#b6c6dc", 70, 7, 611, false); range(0, "#8ea3c0", 48, 9, 621, false);
       for (const [x, y] of far) m += `<path d="M${P(x, y)} l${f1(-9 * u)} ${f1(13 * u)} l${f1(5 * u)} ${f1(-3 * u)} l${f1(4 * u)} ${f1(4 * u)} l${f1(4 * u)} ${f1(-4 * u)} l${f1(5 * u)} ${f1(3 * u)} Z" fill="#f4f8ff"/>`;
     } else if (mountains === "blue") range(0, "#9fb4d4", 58, 8, 631, false);
-    else { range(1, "#9db896", 34, 6, 641, true); range(0, "#7fa47c", 24, 8, 651, true); }
+    else if (mountains === "mesas") {
+      // (ticket 501, for M, the desert's far off) 🏜️ red mesas: flat tops, steep sides over slopes of fallen rock, two rows,
+      // the far one hazier; each its own shape (so they may overlap), then the ground they stand on, all one path a row
+      for (const [row, fill, hgt, n, seed] of [[1, "#c6a3a0", 46, 4, 681], [0, "#b38377", 32, 5, 691]]) {
+        // (ticket 501: each row on or above the horizon, its mesas' feet no lower than the ground they stand on: the near row,
+        // on the horizon itself with nothing in front, went 2 below it, over a band wound the other way: a pale seam at its foot)
+        const foot = Math.min(hillFoot - row * 5 * u, base), under = Math.min(foot + 8 * u, base), low = Math.min(foot + 1, under);
+        let d = under > foot ? `M${P(L, foot)} L${P(Rt, foot)} L${P(Rt, under)} L${P(L, under)} Z` : "";
+        for (let i = 0; i < n; i++) {
+          const j = i + row * 17, x = x0 + W * (i + 0.5) / n + (W / n) * 0.3 * (R(j, seed) - 0.5), w = (W / n) * (0.1 + 0.16 * R(j, seed + 1)), h = hgt * u * (0.6 + 0.4 * R(j, seed + 2)), sl = Math.min(8 * u, w * 0.6);
+          d += ` M${P(x - w - 2.2 * sl, low)} L${P(x - w - sl, foot - h * 0.4)} L${P(x - w, foot - h)} L${P(x + w, foot - h + 2 * u * (R(j, seed + 3) - 0.5))} L${P(x + w + sl, foot - h * 0.45)} L${P(x + w + 2.4 * sl, low)} Z`;
+        }
+        m += `<path d="${d}" fill="${fill}"/>`;
+      }
+    } else { range(1, "#9db896", 34, 6, 641, true); range(0, "#7fa47c", 24, 8, 651, true); }
     s += wallObj("far mountains", m);
   }
   // 🌲 a forest: a pale far band and a dark near one, its tops pine points, round crowns, or both by turns

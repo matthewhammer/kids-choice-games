@@ -33,8 +33,10 @@ The audit of ticket 413 (Matthew, 2026-10-19: "audit of all objects to determine
 | 🎚️ lever, 🫧 bubble maker, 🕳️ trap door | no | | for pulling, for bubbles, a hole |
 | 🪸 coral | no | | sharp, and alive |
 | ⭐ starfish, 🐟 fish | no | | alive |
+| 🐄 cow, 🐖 pig, 🐔 chicken | no | | alive (ticket 504: not in `SIT_TOPS`; a ride on a cow was not asked for) |
 | 🐚 shell, 🌿 kelp, 🌾 sea grass, 🪭 sea fan, 🥬 sea lettuce | no | | small, soft or alive; they have only a small box at their foot |
 | 🌱 moss, 🪨 lichen, 🧪 potion | no | | flat on the ground or on a rock, or too small; nothing stands up |
+| 🏚️ barn, 🪵 fence | no | | (ticket 502, not measured) a building; a fence's rails or a wall's top, to be thought about with building fences in play |
 | 📦 from a place | as the thing it is | | a lifted thing keeps its name, so the rules below apply to it |
 
 ## The places' own objects
@@ -59,6 +61,7 @@ Each kind as it stands in the places: all 38 at their default settings, and ever
 | bush, green bush, pink bush, white bush, yellow bush | many places | no | prickly |
 | cauldron, soup pot, campfire, fire, fireplace, stove, oven, forge | huts, castle rooms, camp | no | hot |
 | big stalagmite, small stalagmite, crystals | cave behind the falls | no | sharp |
+| haystack, tractor, windpump | farm yard | no | (ticket 502, not measured) a haystack taller than a seat, a machine, a tower; the farm yard's water trough is the stable's |
 | headstone, cross, stag stone | cemetery | no | graves, and a standing stone |
 | skeleton, skull | witch's woods | no | not seats, and spooky |
 | bucket, buckets, basket, watering can | yard, castle rooms | no | one would sit in it, or crush it |

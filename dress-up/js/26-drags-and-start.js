@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 26 of 26 of the game's script, run in order by index.html.
 
 // ===================== DRAG THE MOUTH AND BROW =====================
@@ -197,6 +199,9 @@ pic.addEventListener("pointerdown", e => {
     if (board) Object.assign(drag, { board: board.dataset.way, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 284) pressed on a 🎚️ lever: as a board, a press let go before it has gone SIGN_DRAG_PX pulls it
     else if (T && T.kind === "lever") Object.assign(drag, { lever: true, cx: e.clientX, cy: e.clientY, far: false });
+    // (ticket 471, the review after 0.0.385) pressed on a 🕳️ cave passage's opening: as a board, a press let go before it has
+    // gone SIGN_DRAG_PX goes through it, as any doorway clicked; moved further, the passage is dragged
+    else if (T && e.target.closest && e.target.closest(".thing .portal")) Object.assign(drag, { door: true, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 413) pressed on a thing one can sit on, with 👆 on: as a lever, a press let go before SIGN_DRAG_PX walks there and
     // sits on it; moved further, it is dragged as any thing
     else if (T && (state.access || DEFAULTS.access).clickWalk) { const st = thingSeatOf(thing); if (st) Object.assign(drag, { sit: st.name, cx: e.clientX, cy: e.clientY, far: false }); }
@@ -256,12 +261,13 @@ pic.addEventListener("pointermove", e => {
   if (drag.roomLever) { if (!drag.far && Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) >= SIGN_DRAG_PX) drag.far = true; return; }   // (ticket 305)
   if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
-    if ((drag.board || drag.lever || drag.sit) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
+    if ((drag.board || drag.lever || drag.sit || drag.door) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
     const x = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)), y = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
     const T = drag.put !== undefined && (B.things || [])[drag.put];
-    if (T) { T.x = x; T.z = SCENE.ground + y; thingDragMove(T); return; }   // (ticket 254)
+    // (ticket 502: a 🪵 fence piece goes from tile to tile as it is dragged, tileSnap; its rails reach their new neighbours at the next drawing)
+    if (T) { T.x = x; T.z = SCENE.ground + y; tileSnap(B, T); thingDragMove(T); return; }   // (ticket 254)
     B[drag.thing + "X"] = x; B[drag.thing + "Y"] = y;
     dragChanged();
     return;
@@ -344,6 +350,7 @@ const letGo = () => {
   const way = drag && drag.board && !drag.far ? drag.board : null, pull = drag && drag.lever && !drag.far ? drag.put : null;
   const pullRoom = drag && drag.roomLever && !drag.far ? drag.roomLever : null;   // (ticket 305)
   const sitName = drag && drag.sit && !drag.far ? drag.sit : null;   // (ticket 413)
+  const goDoor = drag && drag.door && !drag.far ? drag.put : null;   // (ticket 471: a cave passage pressed, not moved)
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, placed = drag && drag.figure, put = drag && drag.put !== undefined;
@@ -355,6 +362,8 @@ const letGo = () => {
   if (placed) dropOnSeat();
   if (placed && state.body.anim === "climbup") { climb = null; climbAnywhere = false; changed(); }   // (ticket 137: a ladder within reach of where they were put)
   if (way) { const p = bgShown.node && bgShown.node.querySelector(`.portal[data-way="${way}"]`); if (p && !entering) enterScene(p); }   // (ticket 280: a board's way, as its arrow's click)
+  // (ticket 471: the passage found again, drawn anew as it was let go)
+  if (goDoor !== null) { const p = bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${goDoor}"] .portal`); if (p && !entering) enterScene(p); }
   if (pull !== null) leverAct(`[data-drag="thing:${pull}"]`, () => leverPull(pull));   // (ticket 284; ticket 316: walked to and pulled)
   if (pullRoom) leverAct(`[data-lever="${pullRoom}"]`, () => roomLeverPull(pullRoom));   // (ticket 305)
   if (sitName && !entering && !(state.body.sit && state.background.seat === sitName)) {   // (ticket 413: as a seat clicked)
@@ -723,6 +732,13 @@ document.addEventListener("keydown", e => {
 });
 document.addEventListener("keyup", e => { if (e.key === "b" || e.key === "B") blowKey = false; });
 window.addEventListener("blur", () => { blowKey = false; });
+// (ticket 499) F held on the keyboard: breathing fire, as 🔥 on the controller
+document.addEventListener("keydown", e => {
+  if ((e.key !== "f" && e.key !== "F") || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
+  fireKey = true; fireGo();
+});
+document.addEventListener("keyup", e => { if (e.key === "f" || e.key === "F") fireKey = false; });
+window.addEventListener("blur", () => { fireKey = false; });
 // (ticket 187) Enter: through the passage that glows, as X
 document.addEventListener("keydown", e => {
   if (e.key !== "Enter" || e.repeat || (e.target.closest && e.target.closest("input, textarea, select, button, [contenteditable]"))) return;
@@ -1003,7 +1019,7 @@ function flyInto(box, arrive) {
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
                      ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
                      ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"],
-                     ["bubbles", "🫧 blow bubbles (held)"]];   // (ticket 221)
+                     ["bubbles", "🫧 blow bubbles (held)"], ["fire", "🔥 breathe fire (held)"]];   // (tickets 221, 499)
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -1045,7 +1061,9 @@ function padPoll(t) {
   const real = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(Boolean);
   touchShow(!real && touchPad.want, !real);
   const g = real || (touchPad.want ? touchPad.pad : null);
-  if (!g) { padName = ""; padDown = new Set(); padLast = 0; if (padMoving) { padMoving = false; changed(); } return; }
+  // (ticket 499: and what was held is let go: 🔥 or 🫧 held as the on-screen controller was hidden, or the game controller
+  // unplugged, kept burning or blowing, this loop stopped and nothing else let it go)
+  if (!g) { padName = ""; padDown = new Set(); padLast = 0; blowPad = false; firePad = false; if (padMoving) { padMoving = false; changed(); } return; }
   padName = (g.id || "").replace(/\s*\(.*$/, "").trim() || "a game controller";
   padMapping = g.mapping || "";
   // (and again when the settings are replaced: ↺ start over or 📂 load put
@@ -1134,6 +1152,8 @@ function padPoll(t) {
   if (hit("enter")) enterPicture();   // (ticket 145)
   blowPad = held("bubbles");   // (ticket 221: bubbles while it is held)
   if (blowPad) blowGo();
+  firePad = held("fire");   // (ticket 499: fire while it is held)
+  if (firePad) fireGo();
   if (moving || coasting) {
     // (ticket 188: the speed they are told, reached at once, or over the ramp's time: a step toward it each frame)
     const top = padTop(isJump(B.anim) ? jumpPrev : B.anim), want = moving ? [vx * top, vy * top] : [0, 0];
@@ -1266,7 +1286,8 @@ function padUse(id) {
 // hidden while one is. Whether it is shown is this browser's own
 // (localStorage "dress-up-touchpad"), not the friend's.
 const TOUCH_ID = "on-screen controller";
-const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3 };
+// (ticket 499: 🫧 and 🔥 on their own buttons here too, so a layout kept from before an action came in gets it on its button)
+const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3, bubbles: 6, fire: 7 };
 const touchPad = { want: false, shown: false, el: null, keys: "",
   pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
          buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, at: 0, tok: 0 })) } };
@@ -1326,8 +1347,9 @@ function touchBuild() {
   dpad.addEventListener("contextmenu", e => e.preventDefault());
   const abxy = el("div", { class: "abxy pad", role: "group", "aria-label": "buttons" }, [btn("bx", 3, "X"), btn("by", 2, "Y"), btn("ba", 1, "A"), btn("bb", 0, "B")]);
   touchPad.el = el("div", { class: "touchpad", id: "touchpad", hidden: "" }, [
-    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, btn("sm", 8, "select"), btn("sm", 6, "🫧")]),   // (ticket 221: blow bubbles)
-    el("div", { class: "half r" }, [btn("sh", 5, "R"), btn("sm", 9, "start"), abxy])]);
+    // (ticket 221: 🫧 blow bubbles, under select; ticket 499: 🔥 breathe fire, under start, each a column of its own, so none covers another)
+    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, el("div", { class: "sms" }, [btn("sm", 8, "select"), btn("sm", 6, "🫧")])]),
+    el("div", { class: "half r" }, [btn("sh", 5, "R"), el("div", { class: "sms" }, [btn("sm", 9, "start"), btn("sm", 7, "🔥")]), abxy])]);
   document.body.append(touchPad.el);
   touchPad.keys = "";
   touchLabels();
@@ -1350,7 +1372,7 @@ if (touchPad.want) padLoop = requestAnimationFrame(padPoll);
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { hut: [-120, 50], hutroom: [0, 40], hutbed: [130, 40], hutpotion: [-60, 50], hutcenter: [-260, 60], witchroom: [-170, 0], crossing: [0, -20], imagination: [0, 70], emptyroom: [0, 70], bubblespace: [0, 70], bubbleroom: [0, 40], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], caveroom: [-120, 40], castle: [-210, 30], castleroom: [0, 40] };
+const ARRIVE = { hut: [-120, 50], hutroom: [0, 40], hutbed: [130, 40], hutpotion: [-60, 50], hutcenter: [-260, 60], witchroom: [-170, 0], crossing: [0, -20], imagination: [0, 70], emptyroom: [0, 70], bubblespace: [0, 70], bubbleroom: [0, 40], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], caveroom: [-120, 40], farmyard: [0, 30], desert: [-40, 30], castle: [-210, 30], castleroom: [0, 40] };
 // Where each trip through a doorway began, the last on top: the back chip
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.

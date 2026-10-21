@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 18 of 26 of the game's script, run in order by index.html.
 
 function draw() {
@@ -41,6 +43,8 @@ function drawNow() {
   // A costume: a suit is fur over everything below the hood; a falcon is
   // wings and a tail over the clothes.
   const C = costumeOn(), kind = state.costume.kind, suit = C && ANIMALS[kind].suit;
+  // (ticket 499) a dragon: the suit, with horns, spines and teeth on its hood, scales, a plated belly, claws, bat wings and a tail
+  const dragon = kind === "dragon";
   const limb = suit ? C.fur : skin, limbLine = suit ? darker(C.fur) : skinLine;
   // A witch: a long dress -- long sleeves, a long skirt with a ragged hem
   // -- in the hat's color with a spider web on it; striped stockings; a
@@ -261,7 +265,7 @@ function drawNow() {
   const beardStyle = BEARDS[state.hair.beard] && kind !== "diver" && kind !== "ghost" ? state.hair.beard : null;
   const flying = F.burst > 0 ? idiv(F.burst * 7, 10) + idiv(F.burst * 4, 10) + 40 : 0;   // see topFlies
   const faceTop = Math.min(-90, HEAD_C - 175 * headH(F), headCrown(F) + 50.6 - 1.4 * F.burst - 40,
-                           hairY(hr.top) - 40 - flying, (C ? (kind === "deer" ? -140 : -90) : 0) - flying,
+                           hairY(hr.top) - 40 - flying, (C ? (kind === "deer" || dragon ? -140 : -90) : 0) - flying,
                            witch ? hairY(-130) - 20 - flying : 0, gnome ? hairY(-240) - 20 - flying : 0, wizard ? hairY(-170) - 20 - flying : 0, hooded ? hairY(hoodGeom(F).cy - hoodGeom(F).ry - 40) - 10 - flying : 0, robin ? hairY(-90) - 10 - flying : 0, knight ? hairY(-40) - 10 - flying : 0, royal ? hairY(king ? -60 : -40) - 10 - flying : 0);
   // (a broom stands 120 above the hand that holds it, its bristles 66 below)
   const broomH = witch && WC.broom ? arms[0].H : null;
@@ -279,7 +283,7 @@ function drawNow() {
   const armPosed = [1, -1].some(side => poseT("Arm", side) || poseT("Elbow", side));
   const posedYs = [...(armPosed ? arms.filter(x => x.E).map(x => x.E[1] - armW - 20) : []), ...(legPosed ? legBones.flatMap(l => l.joints.slice(1)).map(([, y]) => y - B.legW - 40) : [])];
   let top = Math.min(ty + faceTop * s, ...handYs.map(y => y - Math.max(40, reach)), broomH ? broomH[1] - 140 * kb : 0, staffH ? staffH[1] - 190 : 0, bowH ? bowH[1] - 90 : 0, swordH ? swordH[1] - 145 : 0, scepterH ? scepterH[1] - 170 : 0, ...posedYs,
-                       catK ? -9 - 70 * catK : 0);
+                       catK ? -9 - 70 * catK : 0, dragon && dir ? -255 : 0);   // (ticket 499: the far wing, up over the head in profile)
   const pileP = F.sick > 100 ? 100 + (F.sick - 100) / 2 : F.sick > 30 ? (F.sick - 30) * 100 / 70 : 0;
   const pileRx = (6 + pileP * 84 / 100) * 1.6 * s;
   // and a long skirt or dress, which can reach past the feet
@@ -289,7 +293,7 @@ function drawNow() {
   let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem, beardStyle ? ty + (headChin(F) + beardLong(beardStyle, state.hair) + (BEARDS[beardStyle].braid ? 60 : 16)) * s : 0,
                           broomH ? broomH[1] + 140 * kb : 0, staffH ? staffH[1] + 120 : 0, bowH ? bowH[1] + 90 : 0, shieldH ? shieldH[1] + 45 : 0, catK ? -9 + 46 * catK : 0);
   const hairHalf = hr.half * headWidth(F) * (1 + 0.12 * F.alien / 100) * s;
-  let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
+  let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, dragon ? -Math.max(w + 230, hw + 250) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
                         ...arms.filter(x => x.E).map(x => -Math.abs(x.E[0]) - armW - 20), knee ? -Math.abs(kneeAt(1)[0]) - B.legW - 30 : 0,
                         ...(legPosed ? legBones.flatMap(l => [-Math.abs(l.joints[1][0]) - B.legW - 30, -Math.abs(l.joints[2][0]) - 60 - Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes))) * shoeSc]) : []),
                         -(fx + half + 70), -(fx + (witch ? FOOT_REACH.witchboot : Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes)))) * shoeSc + 20), -(w + 40), -(pileRx + 20), -(B.neckW / 2 + 40), -(hairHalf + 20),
@@ -326,9 +330,18 @@ function drawNow() {
   // bodyScale), so the place's size for people (figSize) sizes it, never the rider's own: a small gnome leaves their horse as
   // big as it was, in every place. Everything about it (where it stands, the seat, the reins, the frame) goes by hs.
   const horseHs = HORSE_SCALE * Math.max(0.2, Number(B.horseSize ?? 100) / 100) / bodyScale(), friendFrame = { left, top };
-  const horseX = ride ? (horseView === "side" ? -dir * 30 * horseHs : 0) : horseView === "side" ? -dir * (130 * horseHs - 50) : (horseView === "front" ? -1 : 1) * (84 * horseHs + 66);
+  // (ticket 496, Matthew: "Let the user choose between guide on left of horse, or guide on right -- currently it's not realistic
+  // because we flip between those options depending on L versus R movement") led, the friend keeps to one side of the horse, its
+  // left (the usual) or its right: seen from the front or behind, the horse stands at their other side; seen side on, on the
+  // horse's far side the horse is drawn in front of them (leadFar)
+  const leadR = (B.horseLead || "left") === "right";
+  const leadFar = !ride && horseView === "side" && (leadR ? dir > 0 : dir < 0);
+  // (on its far side they walk at its head, by its chest, under its neck: at its shoulder, as on the near side, its body hid them)
+  const horseX = ride ? (horseView === "side" ? -dir * 30 * horseHs : 0) : horseView === "side" ? -dir * (leadFar ? 210 * horseHs : 130 * horseHs - 50) : (horseView === "front" ? -1 : 1) * (leadR ? -1 : 1) * (84 * horseHs + 66);
   const rideLift = ride && horseView ? ground - 326 * horseHs - L - 12 : 0;
-  if (horseView) { left = Math.min(left, -(Math.abs(horseX) + (horseView === "side" ? 310 : 100) * horseHs + 20)); top = Math.min(top + rideLift - 12, ground - (horseView === "side" ? 520 : 570) * horseHs); bottom = Math.max(bottom, ground + 16 * horseHs + 10); }   // (its shadow's reach)
+  // (ticket 498: an armour's plume, or the dragon helm's horns, over its head)
+  const plumed = (B.horseArmour || "none") !== "none" ? (horseView === "side" ? 80 : 50) : 0;
+  if (horseView) { left = Math.min(left, -(Math.abs(horseX) + (horseView === "side" ? 310 : 100) * horseHs + 20)); top = Math.min(top + rideLift - 12, ground - ((horseView === "side" ? 520 : 570) + plumed) * horseHs); bottom = Math.max(bottom, ground + 16 * horseHs + 10); }   // (its shadow's reach)
   // A background is a stage of its own, the same whatever the figure
   // (SCENE): the frame the usual figure gets in a scene. The figure stands
   // on its ground by its feet, at its size and where it was dragged, so
@@ -487,21 +500,24 @@ function drawNow() {
     svg += t + "</g>";
   }
   // (ticket 438) the horse, before the friend: its own shadow, then it, stepping with their stride
-  let horseRing = null, horseBits = null, horseOver = "", lift = 0;
+  let horseRing = null, horseBits = null, horseOver = "", horseFront = "", lift = 0;
   horseNow = null;
   if (horseView && !wet) {
     const gait = B.anim === "walk" ? "walk" : B.anim === "run" ? "run" : "stand", k = horseView === "side" ? dir : 1;
     const h = horseSvg(horseView, gait, gait === "stand" ? 0 : lfoNow("B").phase,
-                       { coat: B.horseCoat, mane: B.horseMane, mark: B.horseMark, tack: B.horseTack, socks: B.horseSocks }, 0, ride);
+                       { coat: B.horseCoat, mane: B.horseMane, mark: B.horseMark, tack: B.horseTack, socks: B.horseSocks, shoes: B.horseShoes, markColor: B.horseMarkColor, saddle: B.horseSaddle, blanket: B.horseBlanket, maneStyle: B.horseManeStyle, bows: B.horseBows,
+                         armour: B.horseArmour, arms: knight ? WC : null }, 0, ride);   // (ticket 498: its armour, in the knight's arms while they are a knight)
     // (drawn on the ground at 0, scaled by hs about its hooves; its points into the friend's units, T)
     const hs = horseHs, T = ([x, y]) => [horseX + k * hs * x, ground + hs * y], at = `translate(${f1(horseX)} ${f1(ground)}) scale(${(k * hs).toFixed(4)} ${hs.toFixed(4)})`;
-    svg += `<g class="horse" data-horse="${horseView} ${gait}" data-size="${hs.toFixed(3)}"><ellipse cx="${f1(horseX - k * hs * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${f1((horseView === "side" ? 225 : 100) * hs)}" ry="${f1(14 * hs)}" fill="#000" opacity="0.08"/>` +
+    const horseG = `<g class="horse" data-horse="${horseView} ${gait}" data-size="${hs.toFixed(3)}"${leadFar ? ' data-far=""' : ""}><ellipse cx="${f1(horseX - k * hs * (horseView === "side" ? 20 : 0))}" cy="${f1(ground)}" rx="${f1((horseView === "side" ? 225 : 100) * hs)}" ry="${f1(14 * hs)}" fill="#000" opacity="0.08"/>` +
            `<g transform="${at}">${h.svg}</g></g>`;
+    if (leadFar) horseFront = horseG; else svg += horseG;   // (ticket 496: on its far side, the horse after the friend, over them)
     horseRing = h.ring && T(h.ring);
-    horseNow = { view: horseView, ride: !!ride, X: horseX, k, hs, hooves: h.hooves || [], barrel: h.barrel, seat: -h.seat[1] };   // (ticket 492)
+    horseNow = { view: horseView, ride: !!ride, far: leadFar, X: horseX, k, hs, hooves: h.hooves || [], barrel: h.barrel, seat: -h.seat[1] };   // (ticket 492; far: ticket 496)
     if (ride) { lift = rideLift + h.bob * hs; horseBits = h.bits.map(b => { const [x, y] = T(b); return [x, y - lift]; });
       if (h.over) horseOver = `<g class="horse-over" transform="${at}">${h.over}</g>`; }
   }
+  poseJoints.lift = lift;   // (ticket 499: riding, how far they are lifted onto the saddle, for where their mouth and hands are now)
   const figAt = svg.length;
   // behind everything: long hair's back layer, in the face's frame
   if (!C && !diver && !hooded && !dir && !away) svg += veil("hair", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})">` +
@@ -527,6 +543,13 @@ function drawNow() {
   else if (kind === "eagle") { svg += veil("shirt", turnedAway(falconWings(C, w, C.fur))); tail = falconTail(C, hw, L, LL, C.belly); }
   else if (kind === "falconsuit") tail = falconTail(C, hw, L, LL, "url(#pat-fur)");
   else if (kind === "eaglesuit") tail = falconTail(C, hw, L, LL, C.belly);
+  // (ticket 499) a dragon's bat wings behind the shoulders (over the back, from behind; seen short with it, crawling away, as
+  // the tank is) and its long tail, each view drawn for itself
+  // (review: crawling or swimming in profile, turned about the hips, each has a drawing of its own laid out in the picture,
+  // the tail along the ground there, the floor (gFig, as turned) or just under the water's top)
+  else if (dragon) { const sideTurn = dir && move && move.rot && (move.swim || B.anim === "crawl") ? move.rot : 0;
+    const wg = dragonWingsSvg(C, WC, w, L, dir, away, sideTurn); svg += veil("shirt", squash && away ? squashed(wg) : wg); tail = dragonTailSvg(C, hw, L, ground, dir, away,
+    !move && B.pose === "lie" && rot ? { lie: Math.sign(rot), w, LL } : crawlTo ? { rise: -backK * L - 20 * (1 + backK) } : sideTurn ? { turn: sideTurn, floor: swimming ? wl + 28 : gFig } : null); }
   // (a suit's tail swings out to our right; in profile, out behind them)
   else if (suit) tail = dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L);
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
@@ -536,7 +559,7 @@ function drawNow() {
     svg += veil("shirt", `<path d="M${f1(b - (w + 6))} -14 Q${f1(b - (w + 26) * sp)} ${f1(L)} ${f1(b - (w + 50) * sp)} ${f1(fl)} L${f1(b + (w + 50) * sp)} ${f1(fl)} Q${f1(b + (w + 26) * sp)} ${f1(L)} ${f1(b + w + 6)} -14 Z" fill="${mc}" stroke="${darker(mc)}" stroke-width="2.5" stroke-linejoin="round"/>` +
       `<rect x="${f1(b - (w + 50) * sp)}" y="${f1(fl - 16)}" width="${f1(2 * (w + 50) * sp)}" height="16" fill="url(#pat-ermine)" stroke="#c9c5bd" stroke-width="1.5"/>`); }
   // (ticket 286: crawling toward us, the tail goes up from behind the back, turned over with it)
-  if (tail) svg += veil("pants", crawlTo ? flipped(tail) : tail);
+  if (tail) svg += veil("pants", crawlTo && !dragon ? flipped(tail) : tail);   // (ticket 499: a dragon's, crawling toward us, drawn rising)
   // (ticket 288: an air tank on the back; ticket 371, Matthew: "crawling animation for scuba tank has it on our belly --
   // inverted from correct": crawling toward us, it lies on the back, which rises behind the head: drawn over the back, below;
   // crawling away, seen short with the back it lies on)
@@ -583,7 +606,7 @@ function drawNow() {
              : knight ? { style: "boot", size: state.shoes.size, color: "#6b7280" }
              : royal ? { style: "boot", size: state.shoes.size, color: "#e0b030" }
              : fairy ? { style: "fairy-" + (FAIRY_SHOES.some(([v]) => v === WC.fairyShoes) ? WC.fairyShoes : "slipper"), size: state.shoes.size, color: WC.fairyShoeColor || FAIRY_SHOE_COLORS[0] }
-             : suit ? { style: "paw", size: state.shoes.size, color: C.fur, pad: C.accent } : state.shoes;
+             : suit ? { style: "paw", size: state.shoes.size, color: C.fur, pad: C.accent, claws: dragon ? C.horn : null } : state.shoes;   // (ticket 499: a dragon's feet clawed)
   // (a falcon suit's talons are yellow, like a falcon's feet)
   // (with different feet, the friend's right foot, on our left, wears its own)
   const feetAt = svg.length;
@@ -902,7 +925,7 @@ function drawNow() {
   }
   if (wrapStripes(C) && !undies) svg += torsoStripes(torso, w, L, C.marks);
   if (suit && kind !== "eaglesuit" && !away)  // the suit's belly (a bald eagle is brown all over; none on its back: ticket 138)
-    svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>`;
+    svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>` + (dragon ? dragonPlates(C, L * 0.58, w * 0.55, L * 0.36) : "");   // (ticket 499: plated)
   if (crawlTo) svg = svg.slice(0, shirtAt) + flipped(svg.slice(shirtAt));   // (ticket 286: the back, rising behind the head)
   // (ticket 371: the tank on it, turned over with it, standing out of it by its own thickness: its far end over the back's line)
   if (crawlTo && WC.tank && !diver) svg += veil("shirt", `<g transform="translate(0 ${f1(-0.8 * Math.max(24, 0.4 * w))})">${flipped(tankSvg(WC, w, L, dir))}</g>`);
@@ -947,8 +970,8 @@ function drawNow() {
   // horns, and no face on its brim)
   if (away && C) {
     const fill = falconHead(kind) ? C.marks : eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
-    svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F)}` +
-                               `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/></g></g>`));
+    svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F, 0, true)}` +
+                               `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/>${dragon ? dragonHoodSpines(C, F) : ""}</g></g>`));   // (ticket 499: a dragon's spines down it)
   } else if (away) { svg += veil("head", inFace(face.under)) + (diver ? "" : hooded
       ? veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${knight ? "" : clothHoodAway(F, clothHood())}</g></g>`))   // (ticket 433: the hood closed over the head; 435: a knight's helmet)
       : veil("hair", inFace(`<g transform="${topFlies(F)}">${backHair(state.hair, F)}</g>`))); }
@@ -1168,6 +1191,7 @@ function drawNow() {
   }
   // (ticket 438: riding, the friend lifted onto the saddle, and the horse's near parts over their legs)
   if (lift) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})">${svg.slice(figAt)}</g>` + horseOver;
+  svg += horseFront;   // (ticket 496: led from its far side, the horse in front of the friend)
   svg += `</g>`;   // the figure
   // (ticket 136: the far leg first, see-through with the pants and the feet,
   // then the far arm, see-through with the shirt, as it was)
@@ -1460,7 +1484,7 @@ const PLACE_PHRASE = { sea: "swimming in 🌊 open water", deepsea: "swimming in
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
   hut: "outside the 🛖 grass hut", hutroom: "in the 🛖 grass hut's living room", hutbed: "in the 🛖 grass hut's bedroom", hutpotion: "in the 🛖 grass hut's potion room", hutcenter: "in the 🛖 grass hut's 🔥 center",
   healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",
-  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", caveroom: "in the 🦇 cave room", woodpath: "on the 🥾 path through the woods", crossing: "at the 🛤️ forest crossing",
+  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", caveroom: "in the 🦇 cave room", farmyard: "in the 🚜 farm yard", desert: "in the 🏜️ desert", woodpath: "on the 🥾 path through the woods", pasture: "in the 🌾 pasture", crossing: "at the 🛤️ forest crossing",
   castle: b => `outside of ${castleOf(b).id}'s 🏰 castle`,
   castleroom: b => { const K = castleOf(b), n = Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1)));
     return `in the ${roomLabel(K.rooms[n - 1])} (room ${n} of ${K.id}'s castle)`; } };

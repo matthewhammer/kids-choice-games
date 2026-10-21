@@ -1,3 +1,5 @@
+/* Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+   SPDX-License-Identifier: Apache-2.0 */
 /* Messed Up Dress Up's style (ticket 178: it was in index.html) */
   :root { --ink: #222; --muted: #666; --line: #d6d6d6; --paper: #fffdf7; --bg: #f3f0ff;
           --panel: #ffffff; --accent: #7c3aed; --accent-ink: #fff;
@@ -413,6 +415,8 @@
   .touchpad .half.l { grid-template-columns: auto auto; grid-template-areas: "sh ." "pad sm"; }
   .touchpad .half.r { grid-template-columns: auto auto; grid-template-areas: ". sh" "sm pad"; }
   .touchpad .sh { grid-area: sh; } .touchpad .sm { grid-area: sm; } .touchpad .pad { grid-area: pad; }
+  /* (ticket 499) select over 🫧, start over 🔥: a column in their corner, each its own place (🫧 had lain on select) */
+  .touchpad .sms { grid-area: sm; display: flex; flex-direction: column; align-items: center; gap: 6px; }
   body.big .pad-btn { bottom: auto; top: 8px; right: 124px; }
   .touchpad button, .touchpad .dpad { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none;
                                       -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
@@ -592,6 +596,7 @@
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="clearing"] { --sq: #7cc35a; }
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="crossing"] { --sq: #76843a; }
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="woodpath"] { --sq: #5f8f3a; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="pasture"] { --sq: #a3c447; }   /* (ticket 503: the pasture's grass, sunnier than the clearing's) */
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="treehouse"] { --sq: #4f9a3a; }
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="house"] { --sq: #9cc95c; }
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="campsite"] { --sq: #c08a3e; }
@@ -670,7 +675,7 @@ svg.solid-boxes[data-hide~="you"] .you { display: none; }
 body:not(.world-big) .world-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
 body:not(.world-big) .world-rest > :not([hidden]):not(.world-view) { margin: 0; border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--mu-main); }
 body:not(.world-big) :is(.world-gridcol, .world-rest > .world-alert, .world-rest > .world-palette, .world-rest > .world-things) { grid-column: 1 / -1; }
-body:not(.world-big) .world-rest > .world-alert { border-color: #d97706; background: color-mix(in srgb, #f59e0b 18%, var(--panel)); }
+body:not(.world-big) .world-rest > .world-alert:not([hidden]) { border-color: #d97706; background: color-mix(in srgb, #f59e0b 18%, var(--panel)); }   /* (as specific as the box rule above, after it: the review after 0.0.385) */
 .world-rest > [data-box-name]::before { content: attr(data-box-name); display: block; flex-basis: 100%; margin: 0 0 4px; font-size: 0.92em; font-weight: 700; color: var(--ink, inherit); }
 /* (ticket 255, Matthew: "the letters do not scale large enough in the grid when not full screen. I misread them") the
    columns' letters and the rows' numbers outside full screen too, a band the grid's size is reckoned with, as full screen
@@ -716,9 +721,139 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
 .way-arrow.terse .way-words { display: none; }
 /* (ticket 221) 🫧 blown bubbles, over the picture */
 .blown { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+/* (ticket 499) 🔥 breathing fire: in a picture of its own over the scene's (#fire-over, inside its border as #pic-over is, its
+   viewBox the scene's), a fixed set of shapes each moved by one of these animations, the mock-up's (mockups/dragon-fire.html):
+   side on (fi-), toward us (fi-f-), away from us (fi-a-). Each shape is placed by its parent group (a turn, a spot), so an
+   animation's transform is about the fire's own (0, 0). Let go, it fades (.fi-out) and is hidden, its animations stopped. */
+#fire-over { position: absolute; left: 2px; top: 2px; width: calc(100% - 4px); height: calc(100% - 4px);
+             pointer-events: none; overflow: hidden; border-radius: 16px; will-change: transform; }   /* (a layer of its own: its flames moving paint it alone) */
+#fire-over .fi-fire { transition: opacity 0.1s; }
+#fire-over .fi-fire.fi-out { opacity: 0; transition: opacity 0.2s; }
+.fi-heat { animation: fi-shimmer 0.6s linear infinite; }
+@keyframes fi-shimmer { to { stroke-dashoffset: -22; } }
+.fi-glow { animation: fi-flicker 0.13s ease-in-out infinite alternate; }
+@keyframes fi-flicker { from { transform: scale(0.88); opacity: 0.75; } to { transform: scale(1.15); opacity: 1; } }
+.fi-tail, .fi-bub-flame { animation: fi-tail 0.1s linear infinite alternate; }
+.fi-bub-flame { animation-duration: 0.15s; }
+@keyframes fi-tail { from { transform: scale(0.85, 0.9); } to { transform: scale(1.12, 1.05); } }
+.fi-flick { animation: fi-flick 0.1s linear infinite alternate; }
+@keyframes fi-flick { from { transform: scale(0.85) rotate(-6deg); } to { transform: scale(1.15) rotate(6deg); } }
+/* side on, 1: roaring flame */
+.fi-roar { animation: fi-roar 0.9s linear infinite; }
+@keyframes fi-roar { 0% { transform: translate(0, 0) scale(0.2); fill: #fffbe0; opacity: 1; } 20% { fill: #ffe14d; } 45% { fill: #ff9b1f; }
+  70% { fill: #ef4b1b; opacity: 0.85; } 100% { transform: translate(330px, -26px) scale(2.1); fill: #7c2414; opacity: 0; } }
+.fi-core { animation: fi-core 0.45s linear infinite; }
+@keyframes fi-core { 0% { transform: translate(0, 0) scale(0.15); fill: #ffffff; opacity: 1; } 100% { transform: translate(125px, -4px) scale(0.95); fill: #ffe14d; opacity: 0; } }
+.fi-smoke { animation: fi-smoke 1.8s linear infinite; }
+@keyframes fi-smoke { 0% { transform: translate(230px, 0) scale(0.3); opacity: 0; } 30% { opacity: 0.4; } 100% { transform: translate(400px, -100px) scale(1.7); opacity: 0; } }
+/* 2: fireballs */
+.fi-fb { animation: fi-fb 1.5s linear infinite; }
+@keyframes fi-fb { 0% { transform: translate(0, 0) scale(0.3); opacity: 1; } 50% { transform: translate(215px, -40px) scale(0.95); }
+  86% { transform: translate(390px, -14px) scale(1.15); opacity: 1; } 92% { transform: translate(425px, -6px) scale(1.4); opacity: 0; } 100% { transform: translate(440px, 0) scale(1.4); opacity: 0; } }
+.fi-burst { animation: fi-burst 1.5s linear infinite; }
+@keyframes fi-burst { 0%, 84% { transform: scale(0.2); opacity: 0; } 90% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+/* 3: twisting fire */
+.fi-twirl { animation: fi-twirl 0.7s ease-in-out infinite alternate; }
+@keyframes fi-twirl { from { transform: scale(1, 1); } to { transform: scale(1, -1); } }
+.fi-twa { animation: fi-twa 1.1s linear infinite; }
+.fi-twb { animation: fi-twb 1.1s linear infinite; }
+@keyframes fi-twa { 0% { transform: translate(0, 0) scale(0.2); fill: #fff3b0; opacity: 1; } 25% { transform: translate(85px, -30px) scale(0.55); fill: #ffc83d; }
+  50% { transform: translate(170px, 0) scale(0.85); fill: #ff8a1f; } 75% { transform: translate(255px, 30px) scale(1.15); fill: #e8401c; opacity: 0.85; }
+  100% { transform: translate(340px, 0) scale(1.4); fill: #7c2414; opacity: 0; } }
+@keyframes fi-twb { 0% { transform: translate(0, 0) scale(0.2); fill: #ffffff; opacity: 1; } 25% { transform: translate(85px, 30px) scale(0.55); fill: #fff176; }
+  50% { transform: translate(170px, 0) scale(0.85); fill: #ffd23f; } 75% { transform: translate(255px, -30px) scale(1.15); fill: #ffa726; opacity: 0.85; }
+  100% { transform: translate(340px, 0) scale(1.4); fill: #c2410c; opacity: 0; } }
+/* 4: blue-hot jet */
+.fi-jet { animation: fi-jet 0.07s linear infinite alternate; }
+@keyframes fi-jet { from { transform: scale(0.95, 1.08); } to { transform: scale(1.04, 0.9); } }
+.fi-jettip { animation: fi-jettip 0.5s linear infinite; }
+@keyframes fi-jettip { 0% { transform: translate(270px, 0) scale(0.3); fill: #ffb347; opacity: 0; } 20% { opacity: 0.9; } 100% { transform: translate(400px, -26px) scale(1.3); fill: #ff6a1a; opacity: 0; } }
+.fi-spark { animation: fi-spark 0.38s linear infinite; }
+@keyframes fi-spark { 0% { transform: translate(20px, 0); opacity: 1; } 100% { transform: translate(430px, 0); opacity: 0; } }
+/* 5: brick fire (toy flame pieces that click on, then pop off): the same in every view */
+.fi-brick { animation: fi-brick 1.8s ease-out infinite both; }
+@keyframes fi-brick { 0% { transform: scale(0) rotate(-20deg); opacity: 1; } 7% { transform: scale(1.18) rotate(6deg); } 11% { transform: scale(1) rotate(0deg); }
+  40% { transform: scale(1) rotate(-4deg); } 60% { transform: scale(1) rotate(4deg); } 72% { transform: scale(1) rotate(0deg); opacity: 1; }
+  76% { transform: scale(1.25) rotate(0deg); opacity: 0; } 100% { transform: scale(0) rotate(0deg); opacity: 0; } }
+/* 6: fire bubbles */
+.fi-fbub { animation: fi-fbub 2.4s linear infinite; }
+@keyframes fi-fbub { 0% { transform: translate(0, 0) scale(0.15); opacity: 1; } 18% { transform: translate(70px, -14px) scale(0.75); } 40% { transform: translate(150px, -4px) scale(0.95); }
+  62% { transform: translate(230px, -26px) scale(1); } 84% { transform: translate(300px, -20px) scale(1.05); opacity: 1; } 88% { transform: translate(306px, -22px) scale(1.45); opacity: 0; }
+  100% { transform: translate(306px, -22px) scale(1.45); opacity: 0; } }
+.fi-bubpop { animation: fi-bubpop 2.4s linear infinite; }
+@keyframes fi-bubpop { 0%, 84% { transform: scale(0.3); opacity: 0; } 89% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+/* toward us: out from the mouth in every direction (each shape's parent turns it), growing as it comes nearer */
+.fi-f-roar { animation: fi-f-roar 1s linear infinite; }
+@keyframes fi-f-roar { 0% { transform: translate(0, 0) scale(0.15); fill: #fffbe0; opacity: 1; } 25% { fill: #ffe14d; } 50% { fill: #ff9b1f; }
+  75% { fill: #ef4b1b; opacity: 0.8; } 100% { transform: translate(72px, 0) scale(3.3); fill: #7c2414; opacity: 0; } }
+.fi-f-core { animation: fi-f-core 0.5s linear infinite; }
+@keyframes fi-f-core { 0% { transform: translate(0, 0) scale(0.1); fill: #ffffff; opacity: 1; } 100% { transform: translate(22px, 0) scale(1.6); fill: #ffe14d; opacity: 0; } }
+.fi-f-smoke { animation: fi-f-smoke 1.8s linear infinite; }
+@keyframes fi-f-smoke { 0% { transform: translate(80px, 0) scale(0.6); opacity: 0; } 30% { opacity: 0.35; } 100% { transform: translate(165px, 0) scale(2.4); opacity: 0; } }
+.fi-f-ball { animation: fi-f-ball 1.5s linear infinite; }
+@keyframes fi-f-ball { 0% { transform: translate(0, 0) scale(0.25); opacity: 1; } 80% { transform: translate(56px, 0) scale(2.3); opacity: 1; }
+  88% { transform: translate(64px, 0) scale(2.9); opacity: 0; } 100% { transform: translate(64px, 0) scale(2.9); opacity: 0; } }
+.fi-f-burst { animation: fi-f-burst 1.5s linear infinite; }
+@keyframes fi-f-burst { 0%, 82% { transform: scale(0.3); opacity: 0; } 89% { transform: scale(2); opacity: 1; } 100% { transform: scale(3); opacity: 0; } }
+.fi-f-twa { animation: fi-f-twa 1.1s linear infinite; }
+.fi-f-twb { animation: fi-f-twb 1.1s linear infinite; }
+@keyframes fi-f-twa { 0% { transform: rotate(0deg) translate(0px, 0px) scale(0.2); fill: #fff3b0; opacity: 1; } 25% { fill: #ffc83d; }
+  50% { transform: rotate(-150deg) translate(62px, 0px) scale(0.95); fill: #ff8a1f; } 75% { fill: #e8401c; opacity: 0.85; }
+  100% { transform: rotate(-300deg) translate(128px, 0px) scale(1.9); fill: #7c2414; opacity: 0; } }
+@keyframes fi-f-twb { 0% { transform: rotate(0deg) translate(0px, 0px) scale(0.2); fill: #ffffff; opacity: 1; } 25% { fill: #fff176; }
+  50% { transform: rotate(-150deg) translate(62px, 0px) scale(0.95); fill: #ffd23f; } 75% { fill: #ffa726; opacity: 0.85; }
+  100% { transform: rotate(-300deg) translate(128px, 0px) scale(1.9); fill: #c2410c; opacity: 0; } }
+.fi-f-jet { animation: fi-f-jet 0.07s linear infinite alternate; }
+@keyframes fi-f-jet { from { transform: scale(0.93); } to { transform: scale(1.07); } }
+.fi-f-jettip { animation: fi-f-jettip 0.5s linear infinite; }
+@keyframes fi-f-jettip { 0% { transform: translate(28px, 0) scale(0.4); fill: #ffb347; opacity: 0; } 20% { opacity: 0.9; } 100% { transform: translate(88px, 0) scale(1.9); fill: #ff6a1a; opacity: 0; } }
+.fi-f-spark { animation: fi-f-spark 0.38s linear infinite; }
+@keyframes fi-f-spark { 0% { transform: translate(14px, 0) scale(0.5); opacity: 1; } 100% { transform: translate(120px, 0) scale(2.2); opacity: 0; } }
+.fi-f-bub { animation: fi-f-bub 2.4s linear infinite; }
+@keyframes fi-f-bub { 0% { transform: translate(0, 0) scale(0.15); opacity: 1; } 40% { transform: translate(30px, 0) scale(1.2); } 84% { transform: translate(60px, 0) scale(2.4); opacity: 1; }
+  88% { transform: translate(66px, 0) scale(3); opacity: 0; } 100% { transform: translate(66px, 0) scale(3); opacity: 0; } }
+.fi-f-bubpop { animation: fi-f-bubpop 2.4s linear infinite; }
+@keyframes fi-f-bubpop { 0%, 84% { transform: scale(0.3); opacity: 0; } 89% { transform: scale(1.9); opacity: 1; } 100% { transform: scale(2.8); opacity: 0; } }
+/* away from us: up from behind the head, slowing and shrinking as it goes farther off */
+.fi-a-roar { animation: fi-a-roar 1s linear infinite; }
+@keyframes fi-a-roar { 0% { transform: translate(0, 24px) scale(1.5); fill: #fffbe0; opacity: 0; } 12% { opacity: 1; } 20% { fill: #ffe14d; }
+  35% { transform: translate(0, -110px) scale(0.85); } 45% { fill: #ff9b1f; } 70% { transform: translate(0, -200px) scale(0.48); } 75% { fill: #ef4b1b; opacity: 0.85; }
+  100% { transform: translate(0, -240px) scale(0.3); fill: #7c2414; opacity: 0; } }
+.fi-a-core { animation: fi-a-core 0.5s linear infinite; }
+@keyframes fi-a-core { 0% { transform: translate(0, 20px) scale(1.1); fill: #ffffff; opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(0, -95px) scale(0.35); fill: #ffe14d; opacity: 0; } }
+.fi-a-smoke { animation: fi-a-smoke 1.8s linear infinite; }
+@keyframes fi-a-smoke { 0% { transform: translate(0, -150px) scale(0.7); opacity: 0; } 30% { opacity: 0.35; } 100% { transform: translate(0, -300px) scale(0.5); opacity: 0; } }
+.fi-a-ball { animation: fi-a-ball 1.5s linear infinite; }
+@keyframes fi-a-ball { 0% { transform: translate(0, 20px) scale(1.4); opacity: 0; } 8% { opacity: 1; } 30% { transform: translate(0, -120px) scale(0.75); }
+  55% { transform: translate(0, -205px) scale(0.5); } 80% { transform: translate(0, -250px) scale(0.38); opacity: 1; }
+  88% { transform: translate(0, -262px) scale(0.32); opacity: 0; } 100% { transform: translate(0, -262px) scale(0.32); opacity: 0; } }
+.fi-a-burst { animation: fi-a-burst 1.5s linear infinite; }
+@keyframes fi-a-burst { 0%, 82% { transform: scale(0.1); opacity: 0; } 89% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(0.8); opacity: 0; } }
+.fi-a-twirl { animation: fi-a-twirl 0.7s ease-in-out infinite alternate; }
+@keyframes fi-a-twirl { from { transform: scale(1, 1); } to { transform: scale(-1, 1); } }
+.fi-a-twa { animation: fi-a-twa 1.1s linear infinite; }
+.fi-a-twb { animation: fi-a-twb 1.1s linear infinite; }
+@keyframes fi-a-twa { 0% { transform: translate(0, 20px) scale(1.3); fill: #fff3b0; opacity: 0; } 10% { opacity: 1; } 25% { transform: translate(-38px, -70px) scale(0.95); fill: #ffc83d; }
+  50% { transform: translate(0, -140px) scale(0.68); fill: #ff8a1f; } 75% { transform: translate(18px, -190px) scale(0.48); fill: #e8401c; opacity: 0.85; }
+  100% { transform: translate(0, -222px) scale(0.33); fill: #7c2414; opacity: 0; } }
+@keyframes fi-a-twb { 0% { transform: translate(0, 20px) scale(1.3); fill: #ffffff; opacity: 0; } 10% { opacity: 1; } 25% { transform: translate(38px, -70px) scale(0.95); fill: #fff176; }
+  50% { transform: translate(0, -140px) scale(0.68); fill: #ffd23f; } 75% { transform: translate(-18px, -190px) scale(0.48); fill: #ffa726; opacity: 0.85; }
+  100% { transform: translate(0, -222px) scale(0.33); fill: #c2410c; opacity: 0; } }
+.fi-a-jet { animation: fi-a-jet 0.07s linear infinite alternate; }
+@keyframes fi-a-jet { from { transform: scale(1.06, 0.95); } to { transform: scale(0.92, 1.05); } }
+.fi-a-jettip { animation: fi-a-jettip 0.5s linear infinite; }
+@keyframes fi-a-jettip { 0% { transform: translate(150px, 0) scale(0.6); fill: #ffb347; opacity: 0; } 20% { opacity: 0.9; } 100% { transform: translate(232px, 0) scale(0.3); fill: #ff6a1a; opacity: 0; } }
+.fi-a-spark { animation: fi-a-spark 0.38s linear infinite; }
+@keyframes fi-a-spark { 0% { transform: translate(10px, 0) scale(1); opacity: 1; } 100% { transform: translate(250px, 0) scale(0.4); opacity: 0; } }
+.fi-a-bub { animation: fi-a-bub 2.4s linear infinite; }
+@keyframes fi-a-bub { 0% { transform: translate(0, 20px) scale(1.2); opacity: 0; } 8% { opacity: 1; } 30% { transform: translate(-6px, -100px) scale(0.85); }
+  60% { transform: translate(6px, -180px) scale(0.6); } 84% { transform: translate(0, -230px) scale(0.45); opacity: 1; } 88% { transform: translate(0, -236px) scale(0.6); opacity: 0; }
+  100% { transform: translate(0, -236px) scale(0.6); opacity: 0; } }
+.fi-a-bubpop { animation: fi-a-bubpop 2.4s linear infinite; }
+@keyframes fi-a-bubpop { 0%, 84% { transform: scale(0.15); opacity: 0; } 89% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(0.75); opacity: 0; } }
 /* (ticket 220) 🫧 bubble space: a bubble that touches the friend swells and fades, about its own middle */
-#bubble-layer .bubin, #maker-bubbles .bubin, #ball-pops .bubin, #friend-burst .bubin { transform-box: fill-box; transform-origin: center; }
-#bubble-layer .bubin.pop, #maker-bubbles .bubin.pop, #ball-pops .bubin.pop, #friend-burst .bubin.pop { animation: bub-pop 0.25s ease-out forwards; }
+#bubble-layer .bubin, #maker-bubbles .bubin, #ball-pops .bubin, #friend-burst .bubin, #leak-bubbles .bubin { transform-box: fill-box; transform-origin: center; }
+#bubble-layer .bubin.pop, #maker-bubbles .bubin.pop, #ball-pops .bubin.pop, #friend-burst .bubin.pop, #leak-bubbles .bubin.pop { animation: bub-pop 0.25s ease-out forwards; }   /* (ticket 499: a leak's too, popped by a fire's heat) */
 /* (ticket 415) a part of the friend gone to bubbles stays hidden, through every drawing, until they come back */
 #pic[data-burst~="head"] [data-part="head"], #pic[data-burst~="head"] [data-part="eyes"], #pic[data-burst~="head"] [data-part="hair"],
 #pic[data-burst~="torso"] [data-part="shirt"], #pic[data-burst~="torso"] [data-part="hands"],

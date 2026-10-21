@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 19 of 26 of the game's script, run in order by index.html.
 
 // ===================== MUSIC =====================
@@ -1218,7 +1220,7 @@ const TUNES = {
 const SCENE_TUNE = { hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", hutcenter: "lullaby", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
-                     tent: "lullaby", cave: "steppers", caveroom: "steppers", woodpath: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom",
+                     tent: "lullaby", cave: "steppers", caveroom: "steppers", farmyard: "forest", desert: "canyon", woodpath: "forest", pasture: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom",
                      bubbleroom: "bubbledub" };   // (ticket 290: the bubble room's own, 🫧 bubble super-dub step; Matthew: "oh there no music and no LFO?")
 const TUNE_CHOICES = [["scene", "🏞️ the scene's own"], ...Object.entries(TUNES).map(([id, t]) => [id, t.name])];
 // the kinds of music, each with its tunes: the music tab's first row of
@@ -1616,8 +1618,11 @@ const SCENE_LFO_THINGS = {
   campsite: { fast: "🔥 the campfire, ⭐ the stars", slow: "☁️ the clouds, 🔆 the fire's glow" },
   tent: { fast: "🔥 the campfire outside, ⭐ the stars at night", slow: "🏮 the tent's light" },
   caveroom: { fast: "💧 the drops falling", slow: "✨ the glow breathing" },   // (ticket 471)
+  desert: { fast: "🌾 the tumbleweed bouncing, 🦎 the lizard's push-ups", slow: "🦅 the hawk circling, 💨 sand blowing off the dunes, ☁️ the clouds" },   // (ticket 501)
+  farmyard: { fast: "🐔 the hens pecking, 🐓 the weather vane, 🌾 the straw blowing", slow: "☁️ the clouds, 🌬️ the windpump's wheel, 💨 the chimney's smoke" },   // (ticket 502)
   cave: { fast: "💎 the gems sparkling", slow: "🔮 the crystals glowing" },
   woodpath: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☀️ the sunbeams" },
+  pasture: { fast: "🐴 the horses' tails swishing, 💧 the trough's rings, 🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☁️ the clouds drifting, 🌼 the grass and flowers swaying" },   // (ticket 503)
   crossing: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "☀️ the sunbeams" },
   castle: { fast: "🚩 the pennants, ☀️ the sun's rays", slow: "☁️ the clouds drifting", wings: "🐦 the birds' wings" },   // (wings: ticket 351)
   "castleroom:king": TORCH_LFO_THINGS, "castleroom:trap": TORCH_LFO_THINGS, "castleroom:dungeon1": TORCH_LFO_THINGS,
@@ -1630,7 +1635,10 @@ const SCENE_LFO_THINGS = {
   "castleroom:smithy": { fast: "🔨 the smith's hammer and the sparks", slow: "🔥 the forge's glow, the bellows" },
   "castleroom:spiral": TORCH_LFO_THINGS,
 };
-const sceneLfoThings = b => SCENE_LFO_THINGS[b.kind === "castleroom" ? "castleroom:" + (roomHereNowOf(b)[1] ?? "king") : b.kind] || {};
+// (ticket 506: a stable's hens past its first two wander about with the slow LFO, named while there are some)
+const sceneLfoThings = b => { if (b.kind !== "castleroom") return SCENE_LFO_THINGS[b.kind] || {};
+  const [K, st] = roomHereNowOf(b), T = SCENE_LFO_THINGS["castleroom:" + (st ?? "king")] || {};
+  return st === "stable" && K.hens[Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1))) - 1] > STABLE_HENS ? { ...T, slow: T.slow + ", 🐔 the hens wandering" } : T; };
 // the cats in the room the friend is in, when it is a cat room; the horses, when it is a stable
 const roomHereNowOf = B => { if (B.kind !== "castleroom") return [null, null];
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))); return [K, K.rooms[n - 1]]; };
@@ -1647,6 +1655,8 @@ const LFO_FOLLOWERS = [
   () => VISIBLE_PARTS.filter(g => LFO_NAMES.includes(state.visible["lfo_" + g])).map(g => [state.visible["lfo_" + g], "👻 " + g]),
   // (a fairy's wings, while she wears them and they flap with it)
   () => state.costume.kind === "fairy" && state.costume.wingFlutter !== false && LFO_NAMES.includes(state.costume.wingLfo) ? [[state.costume.wingLfo, "🧚 fairy wings"]] : [],
+  // (ticket 499: a dragon's wings, while they flap with it)
+  () => state.costume.kind === "dragon" && (state.costume.dragonWingsHow ?? "flap") === "flap" && LFO_NAMES.includes(state.costume.dragonWingLfo) ? [[state.costume.dragonWingLfo, "🐉 dragon wings"]] : [],
   () => state.background.kind === "fairyforest" && LFO_NAMES.includes(state.background.fairyHouseLfo) ? [[state.background.fairyHouseLfo, "🏡 fairy house"]] : [],
   // (the castle's residents in the room the friend is in)
   () => residentsHereNow().flatMap(([R, list]) => list.flatMap((one, i) => LFO_NAMES.includes(one.lfo) && (!R.followsIf || R.followsIf(one)) ? [[one.lfo, R.follows(i)]] : [])),   // (ticket 293: a throne's cat's tail, while it has one)

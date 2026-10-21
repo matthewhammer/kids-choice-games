@@ -1,0 +1,48 @@
+Kids' Choice Games, and in it Messed Up Dress Up
+Copyright 2026 Matthew Hammer and family (M and N)
+https://github.com/matthewhammer/kids-choice-games
+
+The code here (the .js, .mjs, .py, .css, .html and .yml files) is licensed
+under the Apache License, Version 2.0: see LICENSE.
+
+Everything else here (the pictures, music, sounds and words, including the
+words and pictures in the .html reports) is licensed under the Creative
+Commons Attribution 4.0 International licence: see LICENSE-CC-BY-4.0, or
+https://creativecommons.org/licenses/by/4.0/ .
+
+One part is not ours: the sun and moon formulas in dress-up/js/09-backgrounds.js
+(skyNow and skySays) follow SunCalc 1.9.0,
+https://github.com/mourner/suncalc/tree/v1.9.0 , by Vladimir (now Volodymyr)
+Agafonkin, and stay under its BSD 2-Clause licence, below.
+
+Reuse is welcome, with credit. If you reuse any of it, its drawing methods
+included, keep this notice with it and credit
+"Matthew Hammer and family (M and N)".
+
+----------------------------------------------------------------------
+SunCalc 1.9.0's licence (from https://github.com/mourner/suncalc/blob/v1.9.0/LICENSE),
+the version whose formulas skyNow and skySays follow; its source's header reads
+"(c) 2011-2015, Vladimir Agafonkin":
+
+Copyright (c) 2014, Vladimir Agafonkin
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are
+permitted provided that the following conditions are met:
+
+   1. Redistributions of source code must retain the above copyright notice, this list of
+      conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright notice, this list
+      of conditions and the following disclaimer in the documentation and/or other materials
+      provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

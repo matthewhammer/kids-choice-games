@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0 AND BSD-2-Clause
 // (ticket 178) Part 9 of 26 of the game's script, run in order by index.html.
 
 // ===================== BACKGROUNDS =====================
@@ -217,6 +219,10 @@ const sunSvg = (x, y, r, turning = false, o = null) => (turning ? `<g><animateTr
 // and longitude) and the game's date and hour (the sun's own time there, so noon is when it is highest), all settings, never
 // the device's place or clock. The sun's and the moon's height and direction, and the moon's phase, worked out here (the
 // usual short formulas, good to a degree or so: no network, so it works in airplane mode).
+// (ticket 500) Those formulas follow SunCalc 1.9.0, https://github.com/mourner/suncalc/blob/v1.9.0/suncalc.js ,
+// (c) 2011-2015 Vladimir (now Volodymyr) Agafonkin, under the BSD 2-Clause licence (its text is in NOTICE): skyNow's sun
+// and moon positions and the moon's phase, and skySays's sunrise (its hour angle, at a height of -0.833 degrees), are
+// SunCalc's sums, rewritten here. SunCalc's formulas come from Astronomy Answers (aa.quae.nl).
 const SKY_PLACES = [["denver", "🏔️ Denver", 39.74, -104.99], ["newyork", "🗽 New York", 40.71, -74.01], ["london", "🎡 London", 51.51, -0.13],
   ["tokyo", "🗾 Tokyo", 35.68, 139.69], ["sydney", "🦘 Sydney", -33.87, 151.21], ["quito", "🌋 Quito, on the equator", -0.18, -78.47],
   ["reykjavik", "🧊 Reykjavík", 64.15, -21.94], ["tromso", "🌌 Tromsø, far north", 69.65, 18.96], ["ushuaia", "🐧 Ushuaia, far south", -54.8, -68.3],
@@ -254,7 +260,7 @@ function skySays(o) {
   const n = skyNow(o), deg = r => Math.round(r * 180 / Math.PI), rad = Math.PI / 180;
   const dir = az => ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"][Math.round(((az * 180 / Math.PI + 180) % 360 + 360) % 360 / 45) % 8];
   const phi = n.lat * rad, c = (Math.sin(-0.833 * rad) - Math.sin(phi) * Math.sin(n.sunDec)) / (Math.cos(phi) * Math.cos(n.sunDec));
-  const day = c >= 1 ? "the sun does not rise today" : c <= -1 ? "the sun does not set today" : (h => `the day is ${Math.floor(h)} h ${Math.round((h % 1) * 60)} min long`)(2 * Math.acos(c) / rad / 15);
+  const day = c >= 1 ? "the sun does not rise today" : c <= -1 ? "the sun does not set today" : (m => `the day is ${Math.floor(m / 60)} h ${m % 60} min long`)(Math.round(2 * Math.acos(c) / rad / 15 * 60));   // (whole minutes first: never "9 h 60 min")
   const sa = deg(n.sun.alt), ma = deg(n.moon.alt), lit = Math.round(n.moon.frac * 100), p = n.moon.phase;
   const phase = lit < 3 ? "new" : lit > 97 ? "full" : (p < 0.5 ? "waxing" : "waning") + (lit < 42 ? " crescent" : lit > 58 ? " gibbous" : ", half");
   return `☀️ the sun: ${sa > 0 ? `${sa}° up, in the ${dir(n.sun.az)}` : `down, ${-sa}° below the horizon`}; ${day}. ` +
@@ -267,8 +273,11 @@ const skyTimeOf = (o, sunrise = true) => { const a = skyNow(o).sun.alt * 180 / M
 // where a body of the sky is in the picture, seen facing the equator (in the north, facing south: east on the left;
 // in the south, facing north: east on the right): x across the picture's width by its direction, y from the horizon
 // (h) up to the top (top) by its height; null when it is down, or behind us
+// (the review after 0.0.385: facing where the noon sun is, not by the hemisphere alone: at Quito, just south of the equator,
+// the sun is to the south from October to March, and facing north it was never drawn)
+const skyFacesNorth = n => n.lat * Math.PI / 180 < n.sunDec;   // (latitude in degrees, the declination in radians: the review of 0.0.386)
 function skyXY(c, body, h, top) {
-  const south = skyMemo.now ? skyMemo.now.lat < 0 : false, a = south ? ((body.az + 2 * Math.PI) % (2 * Math.PI)) - Math.PI : body.az;
+  const south = skyMemo.now ? skyFacesNorth(skyMemo.now) : false, a = south ? ((body.az + 2 * Math.PI) % (2 * Math.PI)) - Math.PI : body.az;
   if (body.alt < -0.02 || Math.abs(a) > Math.PI / 2 * 1.08) return null;
   return [c.x0 + c.W / 2 + a / (Math.PI / 2) * (c.W / 2) * 0.92, h - Math.max(0, body.alt) / (Math.PI / 2) * (h - top)];
 }
@@ -286,7 +295,7 @@ function moonPhaseSvg(cx, cy, r, phase, dark, south = false) {
 // the moon in its phase (faint by day); none where open says the sky is hidden there (a cliff, drawn under the night's tint)
 function skyBodiesSvg(c, o, h, top, darkSky, open = null) {
   const n = skyNow(o), k = c.k, out = [], vis = p => p && (!open || open(p)) ? p : null, sp = vis(skyXY(c, n.sun, h, top)), mp = vis(skyXY(c, n.moon, h, top)), sa = n.sun.alt * 180 / Math.PI;
-  if (mp) out.push(`<g opacity="${sa > 6 ? 0.55 : 1}">` + moonPhaseSvg(mp[0], mp[1], 22 * k, n.moon.phase, darkSky, n.lat < 0) + `</g>`);
+  if (mp) out.push(`<g opacity="${sa > 6 ? 0.55 : 1}">` + moonPhaseSvg(mp[0], mp[1], 22 * k, n.moon.phase, darkSky, skyFacesNorth(n)) + `</g>`);
   if (sp) out.push(sa > 8 ? sunSvg(sp[0], sp[1], 30 * k, true, o) : `<circle cx="${f1(sp[0])}" cy="${f1(sp[1])}" r="${f1(44 * k)}" fill="${sa > 2 ? "#ffd27a" : "#ff8c42"}" opacity="0.95"/>`);
   return out.join("");
 }

@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 6 of 26 of the game's script, run in order by index.html.
 
 // ===================== COSTUMES =====================
@@ -24,6 +26,9 @@ const ANIMALS = {
   // a deer, spotted like a fawn: antlers, long ears, a short white tail,
   // hooves
   deer: { suit: true, fur: "#a8682f", marks: "#fbf3e4", belly: "#f3e3c3", eyes: "#3b2414", accent: "#2a1a10", furPattern: "spots" },
+  // (ticket 499) a dragon: scales, horns, spines, teeth, slit eyes, nostrils, a plated belly, claws, bat wings and a long
+  // spiked tail (its own colours are dragonScales, dragonBelly, dragonWings and dragonHorns: dragonLook, below)
+  dragon: { suit: true, fur: "#3f8f4a", marks: "#d0453a", belly: "#e9d27a", eyes: "#f2b705", accent: "#f4ecd6", furPattern: "none" },
   // a whole falcon suit: feathers all over, wings on the arms, talons
   falconsuit: { suit: true, fur: "#55616d", marks: "#23282e", belly: "#f2ece0", eyes: "#1a1410", accent: "#f2c230", furPattern: "none" },
   // and a bald eagle's: dark brown feathers, white head and tail
@@ -40,7 +45,12 @@ const isBird = kind => !!BIRDS[kind];
 // the falcon's head (hat or suit): its hood, moustache and face
 const falconHead = kind => kind === "falcon" || kind === "falconsuit";
 const lookOf = kind => { const { suit, ...look } = ANIMALS[kind]; return look; };
-const costumeOn = () => (ANIMALS[state.costume.kind] ? state.costume : null);
+// (ticket 499) the dragon's look, from its own four colours (a chooser each, in 🐯 Costume's 🐉 the dragon): its scales are the
+// suit's fur (the paws' pads and the scales' lines a shade darker), its belly, its wings and spines (wing), and its horns,
+// teeth and claws (horn); its eyes are the animal eye colour, as any animal's
+const dragonLook = c => { const S = c.dragonScales || "#3f8f4a", dk = mix(S, "#000000", 0.3);
+  return { ...c, fur: S, marks: dk, accent: dk, belly: c.dragonBelly || "#e9d27a", wing: c.dragonWings || "#d0453a", horn: c.dragonHorns || "#f4ecd6", furPattern: "none" }; };
+const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "dragon" ? dragonLook(state.costume) : state.costume) : null);
 // (ticket 433, Matthew: "monk/dryad costume with hooded cloak, and a staff (optional, like how the witch has an optional
 // broom)") A CLOTH HOOD, its colour, while one is up (the monk's or the dryad's cloak): over the hair, framing the face. In the
 // round head's units (stretched with the head, as hair is), on the animal hood's frame (hoodGeom): its back, behind the head,
@@ -66,8 +76,15 @@ function armsFill(id, shape, WC, mirror = false, emblemAt = null, k = 1, mid = e
   const fields = lay === "plain" ? R(x0, y0, H, H, A)
     : lay === "halves" ? R(x0, y0, half, H, l) + R(cx, y0, half, H, r)
     : R(x0, y0, half, half, l) + R(cx, y0, half, half, r) + R(x0, cy, half, half, r) + R(cx, cy, half, half, l);
-  const em = emblemAt && EMBLEMS[WC.emblem] ? `<g transform="translate(${f1(emblemAt[0])} ${f1(emblemAt[1])}) scale(${k.toFixed(3)})"><circle r="19" fill="${lay === "plain" ? B : "#e0b030"}" opacity="0.95"/>${EMBLEMS[WC.emblem](lay === "plain" ? A : "#7a1f2b")}</g>` : "";
-  return `<clipPath id="${id}"><path d="${shape}"/></clipPath><g clip-path="url(#${id})">${fields}</g>${WC.emblem && WC.emblem !== "none" ? em : ""}<path d="${shape}" fill="none" stroke="#3b3b44" stroke-width="2.5" stroke-linejoin="round"/>`;
+  const em = emblemAt ? armsEmblem(WC, emblemAt, k) : "";
+  return `<clipPath id="${id}"><path d="${shape}"/></clipPath><g clip-path="url(#${id})">${fields}</g>${em}<path d="${shape}" fill="none" stroke="#3b3b44" stroke-width="2.5" stroke-linejoin="round"/>`;
+}
+// the emblem alone, on its round, at `at`, k its size (ticket 498: armsFill's, and on its own where a cloth shows it twice, as
+// the horse's caparison does on its two haunches seen from behind)
+function armsEmblem(WC, at, k = 1) {
+  if (!EMBLEMS[WC.emblem] || WC.emblem === "none") return "";
+  const A = WC.knightA || "#2f6db5", B = WC.knightB || "#f4f1ea", lay = WC.tabardLayout || "quartered";
+  return `<g transform="translate(${f1(at[0])} ${f1(at[1])}) scale(${k.toFixed(3)})"><circle r="19" fill="${lay === "plain" ? B : "#e0b030"}" opacity="0.95"/>${EMBLEMS[WC.emblem](lay === "plain" ? A : "#7a1f2b")}</g>`;
 }
 // (ticket 447, Matthew: "the monk/druid hood doesn't read that way in L and R poses --- due to the placement of the point -- it
 // should come out like a larger triangle, sticking away from the face, not in the middle of the crown, on top") In profile its
@@ -128,6 +145,13 @@ function clothHoodAway(F, c) {
 const rosetteMiddle = C =>
   !C.spot || C.spot === "auto" ? mix(C.fur, "#7a4a10", 0.35) : C.spot === "off" ? "none" : C.spot;
 function furDefs(C, kind) {
+  // (ticket 499) a dragon's scales: rows of little arcs, each row half a scale along from the last, a shade darker than the
+  // scales (the mock-up's pattern)
+  if (kind === "dragon") {
+    const sc = `<rect width="24" height="20" fill="${C.fur}"/><path d="M0 10 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 M-6 20 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 ` +
+               `M-6 0 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0" stroke="${C.marks}" fill="none" stroke-width="1.6" opacity="0.8"/>`;
+    return `<pattern id="pat-fur" width="24" height="20" patternUnits="userSpaceOnUse">${sc}</pattern><pattern id="pat-bars" width="24" height="20" patternUnits="userSpaceOnUse">${sc}</pattern>`;
+  }
   if (BIRD_SUIT[kind])   // feathers: the color with curved bars, all over
     return `<pattern id="pat-fur" width="24" height="12" patternUnits="userSpaceOnUse">` +
       `<rect width="24" height="12" fill="${C.fur}"/>` +
@@ -225,10 +249,13 @@ function hoodEllipse(F) {
   const { cy, rx, ry } = hoodGeom(F);
   return `cx="100" cy="${f1(cy)}" rx="${rx}" ry="${f1(ry)}"`;
 }
-function hoodBack(C, kind, F) {
+// (dir: the way they face, 0 toward us or from behind (away), -1 or 1 in profile; only the dragon's is drawn for each)
+function hoodBack(C, kind, F, dir = 0, away = false) {
   const HOOD = hoodEllipse(F);
   // a bald eagle's head is white
   const line = darker(C.fur), fill = eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
+  // (ticket 499) a dragon's horns and spines, behind the hood's own shape, which hides their roots
+  if (kind === "dragon") return dragonHoodBack(C, F, dir, away) + `<ellipse ${HOOD} fill="${fill}" stroke="${line}" stroke-width="4"/>`;
   let s = "";
   if (kind === "lion") {
     const pts = [];
@@ -315,8 +342,11 @@ function hoodSide(C, kind, F, dir) {
               `<ellipse ${HOOD} fill="${fill}" stroke="${line}" stroke-width="4" clip-path="url(#hood-open)"/>` +
               `<ellipse ${hole} fill="none" stroke="${line}" stroke-width="4" clip-path="url(#hood-whole)"/>`;
   // (on the brim, the animal's face on our side only, a little to the front)
-  const all = hoodFront(C, kind, F), cut = all.indexOf("/>", all.indexOf("<line ")) + 2, features = all.slice(cut);
-  return cap + `<defs><clipPath id="hood-near"><rect x="${dir > 0 ? 100 : -4000}" y="-4000" width="4100" height="8000"/></clipPath></defs>` +
+  // (ticket 499: a dragon's, drawn for the side: its brow, its slit eye, a nostril; and its teeth along the top of the opening)
+  const all = kind === "dragon" ? "" : hoodFront(C, kind, F), cut = all.indexOf("/>", all.indexOf("<line ")) + 2;
+  const features = kind === "dragon" ? dragonBrimSide(C, dir) : all.slice(cut);
+  const teeth = kind === "dragon" ? dragonTeethSide(C, fx, fcy, frx, fry, dir, cy, ry) : "";
+  return cap + teeth + `<defs><clipPath id="hood-near"><rect x="${dir > 0 ? 100 : -4000}" y="-4000" width="4100" height="8000"/></clipPath></defs>` +
          `<g transform="translate(${f1(dir * 12)} 0)"><g clip-path="url(#hood-near)">${features}</g></g>`;
 }
 function hoodFront(C, kind, F) {
@@ -325,6 +355,18 @@ function hoodFront(C, kind, F) {
   let s = `<ellipse ${HOOD} fill="${brimFill}" stroke="${darker(C.fur)}" stroke-width="4" clip-path="url(#hood-brim)"/>` +
           `<line x1="0" y1="54" x2="200" y2="54" stroke="${darker(C.fur)}" stroke-width="4" clip-path="url(#hood-inside)"/>`;
   const shine = (x, y, r) => `<circle cx="${x - r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.28}" fill="#ffffff"/>`;
+  // (ticket 499) a dragon's: a brow ridge over each slit-pupilled eye, two nostrils (no nose or whiskers), and its teeth along
+  // the brim's edge, the top of the hood's opening, pointing down at the face
+  if (kind === "dragon") {
+    const ln = darker(C.fur);
+    for (const [x, sd] of [[78, -1], [122, 1]])
+      s += `<path d="M${x - sd * 16} 14 Q${x} 3 ${x + sd * 18} 13" fill="none" stroke="${ln}" stroke-width="4" stroke-linecap="round"/>` +
+           `<ellipse cx="${x}" cy="24" rx="9" ry="8" fill="${C.eyes}" stroke="#111" stroke-width="2"/><ellipse cx="${x}" cy="24" rx="1.8" ry="6.6" fill="#111"/>` + shine(x, 24, 8);
+    s += [-1, 1].map(sd => `<ellipse cx="${100 + sd * 9}" cy="42" rx="4.4" ry="2.7" transform="rotate(${sd * 20} ${100 + sd * 9} 42)" fill="${ln}"/>`).join("");
+    let d = "";
+    for (let i = 0; i < 12; i++) { const x = 25 + i * 150 / 11; d += `M${f1(x - 5)} 53 L${f1(x)} 67 L${f1(x + 5)} 53 Z`; }
+    return s + `<g clip-path="url(#hood-inside)"><path data-dragon="teeth" d="${d}" fill="${C.horn}" stroke="${darker(C.horn)}" stroke-width="1.8" stroke-linejoin="round"/></g>`;
+  }
   if (falconHead(kind)) {
     for (const x of [76, 124])
       s += `<circle cx="${x}" cy="26" r="12" fill="${C.accent}"/>` +
@@ -456,6 +498,183 @@ function falconTail(C, hw, L, LL, fill = "url(#pat-bars)") {
                [hw * 0.5, tl + 8], [hw + 28, tl - 10], [hw * 0.45, L - 20]];
   return poly(fan, fill, darker(fill.startsWith("url") ? C.fur : fill), 3) +
     `<polyline points="${pts(fan.slice(1, 6))}" fill="none" stroke="${C.belly}" stroke-width="6" stroke-linejoin="round"/>`;
+}
+
+// (ticket 499, Matthew: "new costume to add -- dragon." "look at Lego castles and knights for inspiration." "wings, tail and
+// optional dragon breath"; and on the mock-up, mockups/dragon-fire.html: "dragon tail spikes should be facing upward, not
+// downward :)") THE DRAGON, a suit as the wolf's is, with a dragon's pieces: on the hood two horns sweeping back, a row of
+// spines down its back, teeth along the top of its opening, slit-pupilled eyes and nostrils (dragonHoodBack, hoodFront,
+// dragonBrimSide, dragonTeethSide, dragonHoodSpines); scales for fur (furDefs); a plated belly (dragonPlates); claws on the
+// paws and feet; bat wings behind the shoulders (dragonWingsSvg: flapping, open and still, or folded); a long tapering tail,
+// its spikes standing up along its top, a spade at its tip (dragonTailSvg). Each view (toward us, from behind, from the side)
+// is a drawing of its own; our left and right mirror each other. The breath is another ticket's.
+// Behind the hood, in the round head's units (dy: how far the hood's top is from the mock-up's, -2, as the head grows):
+// toward us its horns rising and curving back, and the first spine of the row showing over the crown; in profile (the mock-
+// up's, facing our right; mirrored for our left) the row of spines down the back of the hood, tallest in the middle, and the
+// two horns sweeping back, the far one a shade darker; from behind, its horns as they sweep back toward us, their undersides.
+function dragonHoodBack(C, F, dir, away) {
+  const { cy, ry } = hoodGeom(F), top = cy - ry, dy = top + 2, H = C.horn, HD = darker(H), W = C.wing, WD = mix(W, "#000000", 0.3);
+  const up = d => d.replace(/(-?[\d.]+) (-?[\d.]+)/g, (_, x, y) => `${x} ${f1(Number(y) + dy)}`);
+  const horn = (d, ridges, fill = H) => `<path data-dragon="horn" d="${up(d)}" fill="${fill}" stroke="${HD}" stroke-width="3.5" stroke-linejoin="round"/>` +
+    `<path d="${up(ridges)}" fill="none" stroke="${HD}" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>`;
+  const mirror = t => `<g transform="translate(200 0) scale(-1 1)">${t}</g>`;
+  if (dir) {
+    let sp = "";
+    for (let a = -118; a >= -206; a -= 14.5) {
+      const pt = deg => [100 + 106 * Math.cos(deg * Math.PI / 180), cy + ry * Math.sin(deg * Math.PI / 180)];
+      const t0 = pt(a + 6), t1 = pt(a - 6), m = pt(a), nx = Math.cos(a * Math.PI / 180) / 106, ny = Math.sin(a * Math.PI / 180) / ry, nn = Math.hypot(nx, ny);
+      const h = 30 - Math.abs(a + 150) * 0.12, ap = [m[0] + nx / nn * h, m[1] + ny / nn * h];
+      sp += `M${f1(t0[0])} ${f1(t0[1])} L${f1(ap[0])} ${f1(ap[1])} L${f1(t1[0])} ${f1(t1[1])} Z `;
+    }
+    const s = `<path data-dragon="spines" d="${sp}" fill="${W}" stroke="${WD}" stroke-width="3" stroke-linejoin="round"/>` +
+      horn("M58 34 C46 -10 18 -40 -14 -56 C26 -32 76 -2 92 26 Z", "M44 4 Q56 0 66 8 M28 -18 Q38 -22 46 -14", mix(H, "#000000", 0.12)) +
+      horn("M110 18 C105 -30 78 -70 48 -95 C88 -62 138 -28 152 14 Z", "M106 -16 Q120 -22 134 -12 M92 -42 Q104 -48 114 -40 M76 -64 Q84 -70 92 -64");
+    return dir > 0 ? s : mirror(s);
+  }
+  if (away) {
+    const r = horn("M122 4 C122 -22 138 -44 164 -58 C178 -64 192 -60 198 -50 C186 -46 176 -34 170 -18 C168 -4 168 8 166 20 Z", "M132 -26 Q144 -20 157 -26 M148 -46 Q158 -40 170 -46") +
+      `<path d="${up("M198 -50 C186 -46 176 -34 170 -18 C168 -4 168 8 166 20 L156 16 C158 -2 162 -26 178 -44 Z")}" fill="#000000" opacity="0.15"/>`;
+    return r + mirror(r);
+  }
+  const r = horn("M124 4 C132 -30 160 -58 198 -72 C194 -42 184 -12 166 20 Z", "M138 -16 Q154 -6 176 -10 M158 -44 Q170 -34 188 -40");
+  return `<path data-dragon="spines" d="${up("M90 14 L100 -18 L110 14 Z")}" fill="${W}" stroke="${WD}" stroke-width="3" stroke-linejoin="round"/>` + r + mirror(r);
+}
+// From behind, the row of spines down the middle of the hood, on it (drawn after it): each standing up toward us, lit on one
+// side, the top one over the crown, smaller toward the nape
+function dragonHoodSpines(C, F) {
+  const { cy, ry } = hoodGeom(F), top = cy - ry, W = C.wing, WD = mix(W, "#000000", 0.3);
+  let lit = "", shade = "";
+  for (let i = 0; i < 7; i++) {
+    const y = top + 10 + i * ry * 1.5 / 6, h = 26 - i * 2, b = 11 - i * 0.8;
+    lit += `M${f1(100 - b)} ${f1(y)} L100 ${f1(y - h)} L${f1(100 + b)} ${f1(y)} Z `;
+    shade += `M100 ${f1(y - h)} L${f1(100 + b)} ${f1(y)} L100 ${f1(y - 3)} Z `;
+  }
+  return `<path data-dragon="spines" d="${lit}" fill="${W}" stroke="${WD}" stroke-width="2.5" stroke-linejoin="round"/><path d="${shade}" fill="#000000" opacity="0.18"/>`;
+}
+// On the brim in profile, before hoodSide's clip and shift to the front (our side only): a brow ridge over a slit-pupilled eye,
+// and a nostril at the snout's front, over the opening
+const dragonBrimSide = (C, dir) => { const X = v => f1(100 + dir * (v - 100)), ln = darker(C.fur);
+  return `<path d="M${X(106)} 14 Q${X(122)} 3 ${X(140)} 13" fill="none" stroke="${ln}" stroke-width="4" stroke-linecap="round"/>` +
+    `<ellipse cx="${X(122)}" cy="24" rx="9" ry="8" fill="${C.eyes}" stroke="#111" stroke-width="2"/><ellipse cx="${X(122)}" cy="24" rx="1.8" ry="6.6" fill="#111"/>` +
+    `<circle cx="${X(122 - 2.8 * dir)}" cy="21.2" r="2.2" fill="#ffffff"/>` +
+    `<ellipse cx="${X(160)}" cy="42" rx="5" ry="3" transform="rotate(${dir * 18} ${X(160)} 42)" fill="${ln}"/>`; };
+// In profile, its teeth along the top of the hood's opening (the oval fx, fcy, frx, fry: hoodSide's), pointing in at the face;
+// only where that edge is on the hood (its oval about 100, cy, 106 by ry), not where the opening runs out past its front
+function dragonTeethSide(C, fx, fcy, frx, fry, dir, cy, ry) {
+  const pt = deg => { const t = deg * Math.PI / 180; return [fx + dir * frx * Math.cos(t), fcy + fry * Math.sin(t)]; };
+  let d = "";
+  for (let a = -152; a <= -42; a += 12.2) {
+    if (((pt(a + 4)[0] - 100) / 106) ** 2 + ((pt(a + 4)[1] - cy) / ry) ** 2 > 0.96) continue;
+    const t0 = pt(a - 4), t1 = pt(a + 4), m = pt(a), v = [fx - m[0], fcy - m[1]], vn = Math.hypot(v[0], v[1]) || 1, ap = [m[0] + v[0] / vn * 15, m[1] + v[1] / vn * 15];
+    d += `M${f1(t0[0])} ${f1(t0[1])} L${f1(ap[0])} ${f1(ap[1])} L${f1(t1[0])} ${f1(t1[1])} Z `;
+  }
+  return `<g clip-path="url(#hood-whole)"><path data-dragon="teeth" d="${d}" fill="${C.horn}" stroke="${darker(C.horn)}" stroke-width="1.8" stroke-linejoin="round"/></g>`;
+}
+// The plated belly: lines across the suit's belly (its oval: cy, rx, ry, in the middle), each bowed down a little and ending on
+// the oval's outline, a shade darker than the belly; one path
+function dragonPlates(C, cy, rx, ry) {
+  let d = "";
+  for (let i = 0; i < 7; i++) { const y = cy - ry * 0.76 + i * ry * 1.6 / 6, hw = rx * Math.sqrt(Math.max(0, 1 - ((y - cy) / ry) ** 2));
+    d += `M${f1(-hw)} ${f1(y)} Q0 ${f1(y + 5)} ${f1(hw)} ${f1(y)} `; }
+  return `<path data-dragon="plates" d="${d}" fill="none" stroke="${mix(C.belly, "#000000", 0.28)}" stroke-width="2.2"/>`;
+}
+// A dragon's tail along a cubic curve P (four points), half w0 wide at the root tapering to w1, in the scales; its spikes
+// standing up along its top side (the side its normals point up on, the same side all along), each between that side's
+// outward line and straight up, so none points down; from behind, where it comes toward us (t under `mid`), along its middle,
+// straight up; and a spade at its tip. `up`: which way is up in the units it is drawn in (lying down, the friend is turned)
+function dragonTail(C, P, w0, w1, mid = 0, up = [0, -1]) {
+  const at = t => { const u = 1 - t; return [0, 1].map(k => u * u * u * P[0][k] + 3 * u * u * t * P[1][k] + 3 * u * t * t * P[2][k] + t * t * t * P[3][k]); };
+  const tan = t => { const u = 1 - t, d = [0, 1].map(k => 3 * u * u * (P[1][k] - P[0][k]) + 6 * u * t * (P[2][k] - P[1][k]) + 3 * t * t * (P[3][k] - P[2][k])), n = Math.hypot(d[0], d[1]) || 1; return [d[0] / n, d[1] / n]; };
+  const wd = t => w0 * (1 - t) + w1 * t, k = w0 / 21, W = C.wing, WD = mix(W, "#000000", 0.3);
+  let sum = 0; for (let i = 0; i <= 10; i++) { const d = tan(i / 10); sum += -d[1] * up[0] + d[0] * up[1]; }
+  const sg = sum >= 0 ? 1 : -1, nTop = d => [-d[1] * sg, d[0] * sg];
+  const Lp = [], Rp = [];
+  for (let i = 0; i <= 28; i++) { const t = i / 28, p = at(t), n = nTop(tan(t)), w = wd(t); Lp.push([p[0] + n[0] * w, p[1] + n[1] * w]); Rp.push([p[0] - n[0] * w, p[1] - n[1] * w]); }
+  const body = "M" + Lp.concat(Rp.reverse()).map(q => f1(q[0]) + " " + f1(q[1])).join(" L") + " Z";
+  let edge = "", middle = "";
+  for (let t = 0.12; t < 0.9; t += 0.095) {
+    const p = at(t), d = tan(t), n = nTop(d), w = wd(t), h = (22 * (1 - t) + 8) * k, onMid = t < mid;
+    let u = onMid ? up : [n[0] + up[0], n[1] + up[1]]; const ul = Math.hypot(u[0], u[1]) || 1; u = [u[0] / ul, u[1] / ul];
+    const e = onMid ? [-up[1], up[0]] : d, b = onMid ? p : [p[0] + n[0] * (w - 3), p[1] + n[1] * (w - 3)], s = 9 * k, back = onMid ? 0 : 6 * k;
+    const tri = `M${f1(b[0] - e[0] * s)} ${f1(b[1] - e[1] * s)} L${f1(b[0] + u[0] * h - d[0] * back)} ${f1(b[1] + u[1] * h - d[1] * back)} L${f1(b[0] + e[0] * s)} ${f1(b[1] + e[1] * s)} Z `;
+    if (onMid) middle += tri; else edge += tri;
+  }
+  const e = at(1), d = tan(1), n = [d[1], -d[0]], q = (a, b) => `${f1(e[0] + (d[0] * a + n[0] * b) * k)} ${f1(e[1] + (d[1] * a + n[1] * b) * k)}`;
+  const spikes = t => t ? `<path data-dragon="spikes" d="${t}" fill="${W}" stroke="${WD}" stroke-width="2" stroke-linejoin="round"/>` : "";
+  return spikes(edge) + `<path data-dragon="tail" d="${body}" fill="url(#pat-fur)" stroke="${darker(C.fur)}" stroke-width="2.5" stroke-linejoin="round"/>` + spikes(middle) +
+    `<path data-dragon="spade" d="M${q(-6, 0)} Q${q(-12, 22)} ${q(6, 20)} Q${q(16, 12)} ${q(34, 0)} Q${q(16, -12)} ${q(6, -20)} Q${q(-12, -22)} ${q(-6, 0)} Z" fill="${W}" stroke="${WD}" stroke-width="2.5" stroke-linejoin="round"/>`;
+}
+// The tail in each view, in the friend's units (hw: the hips' half width; L the waist; ground under the feet): toward us,
+// from behind the hips out to our right and down onto the ground; in profile (the mock-up's), out behind the hips, down to
+// the ground and along it; from behind, from the bottom of the back down over the seat, toward us, then out along the ground.
+// And two poses of its own (how): lying down (lie: the side the ground is on, +1 or -1, in the friend's turned units; w, LL),
+// along the ground by the legs and out past the feet, its spikes up off the ground; crawling toward us (rise: where the
+// hips show, over the back behind the head), up from behind the back and over, as a cat's tail goes up.
+// (ticket 499, review: crawling or swimming in profile, the friend turned about the hips, the profile's tail turned with them
+// went up from the hips with its spikes pointing at the head, against Matthew's "dragon tail spikes should be facing upward,
+// not downward". So that pose has a curve of its own (turn: the turn, in degrees; floor: the ground's height in the
+// picture's units), laid out level in the picture: from the back of the hips out behind them, arching a little up, then down
+// to the ground and along it (swimming, floor is a little under the water's top); each point turned back into the friend's
+// turned units, and `up` the picture's up in them)
+function dragonTailSvg(C, hw, L, ground, dir, away, how = null) {
+  if (how && how.lie) { const g = how.lie, x = g * (how.w - 6);
+    return dragonTail(C, [[g * hw * 0.3, L + 8], [x, L + 50], [x, L + how.LL * 0.8], [g * (how.w - 12), L + how.LL + 90]], 20, 4, 0, [-g, 0]); }
+  if (how && how.turn && dir) { const a = how.turn * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a), fl = how.floor;
+    const toPic = ([x, y]) => [x * c - (y - L) * sn, L + x * sn + (y - L) * c], toBody = ([x, y]) => [x * c + (y - L) * sn, L - x * sn + (y - L) * c];
+    const r = toPic([-dir * hw * 0.8, L - 10]);
+    return dragonTail(C, [r, [r[0] - dir * 95, r[1] - 26], [r[0] - dir * 150, fl - 24], [r[0] - dir * 250, fl - 22]].map(toBody), 21, 4, 0, [-sn, -c]); }
+  if (how && how.rise !== undefined) { const y = how.rise;
+    return dragonTail(C, [[hw * 0.3, y + 6], [hw + 30, y - 40], [hw + 100, y - 60], [hw + 160, y - 16]], 18, 4); }
+  if (away) return dragonTail(C, [[0, L - 6], [4, L + 70], [24, ground - 6], [hw + 165, ground - 20]], 22, 4, 0.45);
+  if (dir) { const x = hw * 0.8; return dragonTail(C, [[-dir * x, L - 10], [-dir * (x + 97), L], [-dir * (x + 112), ground - 20], [-dir * (x + 210), ground - 24]], 21, 4); }
+  return dragonTail(C, [[hw * 0.45, L + 8], [hw + 80, L + 20], [hw + 70, ground - 14], [hw + 175, ground - 22]], 20, 4);
+}
+// One bat wing from its root (0, 0), in the friend's units: its arm up to the wrist Wr, three fingers out from there to the
+// tips T1 to T3, the skin between them in scallops bowed in toward the wrist and back to the body at Bk; its thumb's claw at
+// the wrist (in the horns' colour); `ridge`, from behind: the bones lit along their tops
+function batWing(C, [Wr, T1, T2, T3, Bk], fill, bone, bw, ridge = null) {
+  const P = ([x, y]) => `${f1(x)} ${f1(y)}`, o = Math.sign(Wr[0]) || 1;
+  const sc = (a, b, k) => { const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; return `Q${f1(mx + (Wr[0] - mx) * k)} ${f1(my + (Wr[1] - my) * k)} ${P(b)}`; };
+  const bones = `M0 0 L${P(Wr)} L${P(T1)} M${P(Wr)} L${P(T2)} M${P(Wr)} L${P(T3)}`;
+  return `<path d="M0 0 L${P(Wr)} L${P(T1)} ${sc(T1, T2, 0.25)} ${sc(T2, T3, 0.25)} ${sc(T3, Bk, 0.2)} Z" fill="${fill}" stroke="${bone}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="${bones}" fill="none" stroke="${bone}" stroke-width="${bw}" stroke-linecap="round" stroke-linejoin="round"/>` +
+    (ridge ? `<path d="${bones}" fill="none" stroke="${ridge}" stroke-width="${f1(bw * 0.4)}" stroke-linecap="round" stroke-linejoin="round"/>` : "") +
+    `<path d="M${P(Wr)} l${o * 6} -16 l${-o * 12} 10 Z" fill="${C.horn}" stroke="${darker(C.horn)}" stroke-width="1.5" stroke-linejoin="round"/>`;
+}
+// 🪽 its wings: flapping (slowly, about the shoulder, with the LFO chosen in dragonWingLfo, or at their own slow beat), open
+// and still, or folded
+const DRAGON_WINGS = [["flap", "🪽 flapping"], ["open", "🦇 open and still"], ["folded", "🌂 folded"]];
+// The wings in each view, in the friend's units (w the shirt's half width as drawn, L its length): toward us, one each side
+// behind the shoulders, spread up and out; in profile (the mock-up's), the near one bigger, spread back behind the shoulders,
+// the far one up and forward behind the head, darker; from behind, their backs over the friend's back, the bones lit along
+// their tops. Folded, each lies against the back, its wrist over the shoulder. Flapping, each turns about its root, the two in
+// step (sign: which way turns its tip up), a little open on the whole.
+// (ticket 499, review: crawling or swimming in profile, turned with the friend, the far wing hung down under the head through
+// the floor.) Turned about the hips by `turn` (degrees) in profile, open or flapping, they have a drawing of their own, laid
+// out in the picture: both raised up off the back, the near one up and back over the hips, the far one, darker, up and a
+// little forward, behind it; each point turned back into the friend's turned units. Folded, they lie on the back as ever.
+function dragonWingsSvg(C, WC, w, L, dir, away, turn = 0) {
+  const how = DRAGON_WINGS.some(([v]) => v === WC.dragonWingsHow) ? WC.dragonWingsHow : "flap", folded = how === "folded";
+  const W = C.wing, WD = mix(W, "#000000", 0.3), Wf = { lf: how === "flap" ? lfoNow(WC.dragonWingLfo) : null, off: 0, dur: 1.7 };
+  const one = (R, pts, fill, bone, sign, ridge = null) => {
+    const wing = batWing(C, pts, fill, bone, folded ? 4 : 5, ridge);
+    const inner = how !== "flap" ? wing : wagged(Wf, sh => `<g>${wagAnim(Wf, "transform", (v, amp) => f1(sign * (3 + (6 + 12 * amp) * v)), sh)}${wing}</g>`);
+    return `<g data-dragon="wing" transform="translate(${f1(R[0])} ${f1(R[1])})">${inner}</g>`; };
+  if (dir) {
+    const X = ps => ps.map(([x, y]) => [dir * x, y]);
+    if (folded) return one([-dir * w * 0.15, -14], X([[-10, -84], [-30, -40], [-34, 4], [-26, 36], [4, 20]]), WD, mix(WD, "#000000", 0.3), -dir) +
+                       one([-dir * w * 0.6, -8], X([[-20, -70], [-44, -18], [-50, L * 0.38], [-40, L * 0.72], [-2, L * 0.5]]), W, WD, dir);
+    if (turn) { const a = turn * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a), T = ps => X(ps).map(([x, y]) => [x * c + y * sn, -x * sn + y * c]);
+      return one([-dir * w * 0.3, -16], T([[24, -150], [80, -212], [120, -150], [100, -84], [30, -22]]), WD, mix(WD, "#000000", 0.3), -dir) +
+             one([-dir * w * 0.6, -8], T([[-40, -128], [-150, -160], [-205, -80], [-180, -8], [-40, 8]]), W, WD, dir); }
+    return one([dir * 14, -12], X([[56, -158], [136, -203], [151, -138], [111, -88], [21, -28]]), WD, mix(WD, "#000000", 0.3), -dir) +
+           one([-dir * w * 0.6, -8], X([[-98, -112], [-228, -87], [-216, 3], [-153, 56], [-10, 70]]), W, WD, dir);
+  }
+  const both = (R, ps, fill, ridge) => [-1, 1].map(sd => one([sd * R[0], R[1]], ps.map(([x, y]) => [sd * x, y]), fill, WD, -sd, ridge)).join("");
+  if (away) return folded ? both([12, 0], [[w * 0.5, -62], [w * 0.66, -14], [w * 0.72, L * 0.4], [w * 0.56, L * 0.76], [2, L * 0.62]], mix(W, "#000000", 0.12), mix(W, "#ffffff", 0.25))
+                          : both([12, 0], [[w + 28, -110], [w + 158, -86], [w + 178, 10], [w + 116, 94], [w * 0.35 - 12, L * 0.42]], mix(W, "#000000", 0.12), mix(W, "#ffffff", 0.25));
+  return folded ? both([18, 6], [[w - 4, -70], [w + 8, -10], [w + 12, L * 0.35], [w + 2, L * 0.68], [w - 28, L * 0.55]], W)
+                : both([20, 10], [[w + 20, -115], [w + 150, -92], [w + 170, 4], [w + 108, 90], [w - 26, 102]], W);
 }
 
 // (ticket 431) THE GNOMES (inspired by the gnome man and woman of Huygen and Poortvliet's book, 1977, drawn in the game's own
@@ -625,12 +844,13 @@ function leakTick(t) {
     leakSim.acc -= 1;
     const [x, y] = P.pts[Math.floor(rnd() * P.pts.length)], r = Math.max(1.5, k * (5 + (6 + 16 * P.amt) * rnd()));
     const el = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    el.innerHTML = bubbleSvg(0, 0, r, { color: "#dff6ff", shine: 0.85 }); layer.append(el);
+    el.innerHTML = `<g class="bubin">${bubbleSvg(0, 0, r, { color: "#dff6ff", shine: 0.85 })}</g>`; layer.append(el);   // (ticket 499: in a group of its own, to pop)
     L.push({ x, y, vx: (rnd() - 0.5) * 60 * k, vy: -(60 + 90 * rnd()) * k, r, el, born: t, life: 2000 + 2600 * rnd(), ph: rnd() * 6.28 });
     if (L.length > 90) { const o = L.shift(); o.el.remove(); }
   }
   for (let j = L.length - 1; j >= 0; j--) {
     const b = L[j], age = t - b.born;
+    if (b.pop) { if (t - b.pop > 260) { b.el.remove(); L.splice(j, 1); } continue; }   // (ticket 499: popped by a fire's heat, swelling and gone)
     if (age > b.life || b.y < F.top - 30) { b.el.remove(); L.splice(j, 1); continue; }
     b.vy -= 70 * k * dt; b.vx *= Math.pow(0.4, dt); b.x += (b.vx + Math.sin(t / 1000 * 4 + b.ph) * 26 * k) * dt; b.y += b.vy * dt;
     b.el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`); b.el.setAttribute("opacity", Math.min(1, (b.life - age) / 500, age / 120).toFixed(2));

@@ -6,6 +6,68 @@ Each version lists the game's features as of that version. The newest version is
 
 - **🧩 Scripting** (ticket 482, a pull request): the game's logic written in Hazel. A new tab has an editor for 📚 Common and one for the castle's trap room; switched on, the trap room's red levers do what its script says: flip a lever, flip both, or say something over the picture. Off to start, and with a mistake in the script the levers work as they always have.
 
+## 0.0.392 (2026-10-20)
+
+Everything in 0.0.391, plus a dragon, fire, armour for the horse and a stable full of hens: every choice in the game, for the kids to pick.
+
+- **🐉 A dragon costume** (🐯 Costume, after the deer): a hood with two horns, spines down its back, teeth along its edge and slit eyes; scales, a plated belly, claws; bat wings that flap (with their own beat or an LFO), stay open or fold; and a long tail with its spikes standing up and a spade at its tip. One colour each for its scales, its belly, its wings and spines, and its horns, teeth and claws. Facing us, from behind and from the side, standing, sitting, lying, crawling and swimming.
+- **🔥 Breathe fire** (held, like 🫧 blowing bubbles): 🔥 on the game controller (the right trigger), on the screen's controller, or F on the keyboard. Anyone can, whatever they wear. Six fires to pick in 🎮 Controls: 🔥 roaring flame, ☄️ fireballs, 🌀 twisting fire, 🔵 blue-hot jet, 🧱 brick fire and 🫧 fire bubbles; from the 👄 mouth, the 🫲 left hand or the 🫱 right hand; its size; and whether its heat shows. The heat reaches past the flames and pops every bubble it touches: in bubble space, the bubble room, from bubble makers and the ones the friend blew. The best tool against bubbles.
+- **🛡️ Armour for the horse** (🧍 Body's 🐴 the horse, "🛡️ its armour"): 🛡️ full plate, 🦁 a half caparison, 🎪 tournament, 🐉 a dragon helm, 🧱 a toy helmet or 🎀 parade, seen from the side, the front and behind, led and ridden. A knight's horse wears the knight's own colours and emblem.
+- **🐔 Hens in the castle's stable** (the stable's own settings): from none to 30; two, as before, to start with.
+
+## 0.0.391 (2026-10-20)
+
+Everything in 0.0.390, plus M's three new places and her farm animals.
+
+- **🏜️ The desert:** sand dunes rolling into the distance, mesas far off (or other mountains: "far off" in 🏞️ Background), cacti and desert plants standing in it, a tumbleweed rolling past and a lizard doing push-ups (quick), a hawk circling and sand blowing off the dunes (slow).
+- **🌵 Desert plants to put anywhere** (🪨 things, 🌵 desert): a saguaro (its arms, its flowers), a prickly pear (flowers or fruit), a barrel cactus, an agave (with its tall flower stalk), a Joshua tree and an ocotillo.
+- **🚜 The farm yard:** a red barn, a farmhouse, a windpump pouring into a trough, a tractor, a haystack with a mouse, and hens pecking, behind a fence with fields beyond.
+- **🚜 Farm things to put anywhere** (🪨 things, 🚜 farm): a 🏚️ barn of six kinds (a red barn with a hay loft, a round barn, a stone barn, an open pole barn full of hay, a chicken coop, a barn with a silo), and a 🪵 fence piece of three kinds (wooden rails, a white picket, a stone wall). Fence pieces snap to tiles on the floor, and a piece joins its rails to the one beside it; tap "+ 🪵 fence" again and again to build a run. The first step to building fences as you play.
+- **🌾 The pasture:** a wide green field with horses grazing in it (up to three), a big shade tree, a trough, wildflowers and a fence with a gate.
+- **🐄 Farm animals to put anywhere** (🪨 things, 🐄 farm animals): a cow (standing, grazing, lying down, mooing; black and white, brown, red and white, or a shaggy Highland), a pig (standing, rooting, lying on its side, sitting; pink, spotted, black with a band, or ginger), and a chicken (standing, pecking, sitting on a nest, flapping; white, brown, black or speckled), each moving with the music.
+
+## 0.0.390 (2026-10-20)
+
+Everything in 0.0.389, plus six ways to do the horse's mane, for M.
+
+- **💇 The horse's mane** (in 🧍 Body's 🐴 the horse): 🐴 loose (the usual, as before), 🌊 long and flowing (with a long forelock over its forehead), 🔘 button braids (little knots along its neck), 🪮 short and standing up (a brush, like a zebra's), ➰ curly, and 🎀 braids with bows, whose bows have their own colour ("🎀 its bows"). Seen from the side, from the front and from behind, led and ridden.
+
+## 0.0.389 (2026-10-20)
+
+Everything in 0.0.388, plus who made it and on what terms.
+
+- **📜 Reuse is welcome, with credit:** the game and everything with it is © 2026 Matthew Hammer and family (M and N). The code is under the Apache License 2.0 and the pictures, music and words under Creative Commons Attribution 4.0. ⚙️ Advanced says so under the code's link, and each of the game's files carries a two-line notice. The sun's and moon's formulas (🕰️ by the clock) follow SunCalc 1.9.0, by Vladimir (now Volodymyr) Agafonkin, and stay under its own BSD licence: NOTICE says so.
+
+## 0.0.388 (2026-10-20)
+
+Everything in 0.0.387, plus which side you lead the horse from.
+
+- **🐴 Lead your horse from its left or its right** (in 🧍 Body's 🐴 the horse, while you lead it): "🚶 lead it from its" left side (the usual) or right side. You stay on that side whichever way you walk; on its far side you walk at its head, so the horse does not hide you.
+- **Fixed:** "🕰️ by the clock" at Quito, the picture still faced the wrong way on some days near the equinoxes.
+- **Fixed:** in the 🦇 cave room with columns, the columns poked up through the ceiling's rock.
+
+## 0.0.387 (2026-10-20)
+
+Everything in 0.0.386, plus more colours for the horse, for M.
+
+- **🐴 More colours for the horse** (in 🧍 Body's 🐴 the horse, one colour chooser each): "🧲 its horseshoes" (none, or steel, silver, gold, red, blue, pink or green, or any colour), "⭐ the colour of the mark on its face" (the star, stripe or blaze, seen from the side and from the front), and, while you ride, "🏇 its saddle" and "🟦 its saddle blanket".
+
+## 0.0.386 (2026-10-20)
+
+Everything in 0.0.385, with today's new things fixed where a careful look found them wrong.
+
+- **Fixed:** a 🕳️ cave passage you put in a place could not be tapped or clicked to go through it (it moved instead). Now a tap or a click goes through it, as any doorway, and dragging it still moves it; it glows when you point at it.
+- **Fixed:** a cave passage could be set to lead to 🌊 open water or 🪸 the deep sea, and then went nowhere. It offers only places you can go through a doorway to.
+- **Fixed:** in the 🦇 cave room, the ceiling's rock could cover the friend when they stood just behind the nearest formation.
+- **Fixed:** the sparkles, drops, running water and glows of the cave things fell out of time with the music after it started or its LFOs changed.
+- **Fixed:** "🕰️ by the clock" at Quito, on the equator, showed no sun from October to March: the picture now faces where the noon sun is.
+- **Fixed:** inside a tent "by the clock", its windows kept the colour of the time of day it first had.
+- **Fixed:** at night "by the clock", the ⭐ stars' settings were hidden although the stars were shown.
+- **Fixed:** the sky in words could say a day was "9 h 60 min" long.
+- **Fixed:** in 🗺️ World design beside the picture, the 📺 note (a place not from a square) lost its amber colour.
+- **Fixed:** in the 🦇 cave room, the dark at the picture's edges is lighter work for the game.
+- **Fixed:** a person kept in 👥 People from before 0.0.380 lost their horse; now they keep it, as the friend does.
+
 ## 0.0.385 (2026-10-20)
 
 Everything in 0.0.384, with the waterfall's moon by the clock too.

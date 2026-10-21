@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 20 of 26 of the game's script, run in order by index.html.
 
 // ===================== CONTROLS =====================
@@ -61,31 +63,36 @@ const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "
 // The places, and the kinds of place they are, for the Background tab's
 // two rows (as the music's): every place is of exactly one kind.
 // (ticket 490) the place's time of day is by the clock (🌍 where and when shows)
+// (the review after 0.0.385) night, as chosen or by the clock (the stars are drawn either way)
+const nightBy = (t, b, sunrise) => t === "night" || (t === "clock" && skyTimeOf(b, sunrise) === "night");
 const clockHere = b => ((b.kind === "waterfall" || b.kind === "cave") ? b.fallTime : (b.kind === "campsite" || b.kind === "tent") ? b.campTime : b.kind === "fairyforest" ? b.fairyTime : null) === "clock";
 const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["bubbleroom", "🫧 the bubble room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
-  ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"],
+  ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"], ["farmyard", "🚜 farm yard"],   // (farmyard: ticket 502, for M)
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
   ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
   ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"], ["caveroom", "🦇 cave room"],
-  ["woodpath", "🥾 path through the woods"], ["crossing", "🛤️ forest crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
+  ["woodpath", "🥾 path through the woods"], ["pasture", "🌾 pasture"], ["crossing", "🛤️ forest crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
   // (ticket 278, for M) the grass hut, and its three rooms
-  ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"], ["hutcenter", "🔥 the grass hut's center"]];
+  ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"], ["hutcenter", "🔥 the grass hut's center"],
+  // (ticket 501, for M) the desert
+  ["desert", "🏜️ desert"]];
 // (where the way toward us can lead from a room outside the castle: any place but those found by a number of their own)
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const PLACE_GROUPS = [
   ["imagination", "💭 imagination", ["emptyroom", "imagination"]],
   // (ticket 290, for N: bubbles, a kind of place of its own: bubble space, moved here, and the bubble room)
   ["bubbles", "🫧 bubbles", ["bubblespace", "bubbleroom"]],
-  ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains"]],
+  ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom"]],
-  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom"]],
+  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
   ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion", "hutcenter"]],
+  ["desert", "🏜️ desert", ["desert"]],   // (ticket 501, for M: a kind of its own, as the bubbles are)
 ];
 const groupOfPlace = v => v === "none" ? "none" : (PLACE_GROUPS.find(g => g[2].includes(v)) || [null])[0];
 console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g => g[2]).length === PLACES.length - 1,
@@ -136,11 +143,24 @@ const TABS = [
     // (ticket 438) the friend's horse, with them whatever they wear: led by its rein; its coat, mane and face marking (the
     // stable's horses' own), its halter and rein, white socks
     ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
+    // (ticket 496) which side of it they walk on, leading it: one side, whichever way they go
+    ["choice", "horseLead", "🚶 lead it from its", [["left", "⬅️ left side (the usual)"], ["right", "➡️ right side"]]],
+    // (ticket 498: "just release and let the kids decide") its armour: none, or one of six sets; the cloth and the plume in the
+    // knight's arms when the friend is a knight, else in its halter's colour
+    ["choice", "horseArmour", "🛡️ its armour", HORSE_ARMOURS],
     ["color", "horseCoat", "🐴 its coat", HORSE_COATS],
     ["color", "horseMane", "💈 its mane and tail", HORSE_MANES],
+    ["choice", "horseManeStyle", "💇 its mane", HORSE_MANE_STYLES],   // (ticket 497, for M)
+    ["color", "horseBows", "🎀 its bows", ["#ec4899", "#d2382b", "#3b82f6", "#e8c33a", "#22c55e", "#7c3aed", "#ffffff"]],
     ["choice", "horseMark", "⭐ on its face", HORSE_MARKS],
     ["color", "horseTack", "🪢 its halter and rein", ["#7a3a1a", "#1f1f22", "#b91c1c", "#1d4ed8", "#15803d", "#e0b030"]],
     ["toggle", "horseSocks", "🧦 white socks"],
+    // (ticket 495, for M: "even more color choices for horse ... one color chooser per param") its shoes, its face marking's
+    // colour, and, ridden, its saddle and its blanket
+    ["color", "horseShoes", "🧲 its horseshoes", ["off", "#9ca3af", "#e5e7eb", "#e8c33a", "#d2382b", "#3b82f6", "#ec4899", "#22c55e"]],
+    ["color", "horseMarkColor", "⭐ the colour of the mark on its face", ["#f7f4ee", "#fde68a", "#f9a8d4", "#93c5fd", "#c4b5fd", "#86efac", "#1f1f22"]],
+    ["color", "horseSaddle", "🏇 its saddle", ["#6b3f1f", "#1f1f22", "#7a1f2b", "#e8e4da", "#c9a227", "#3f2a6b", "#ec4899"]],
+    ["color", "horseBlanket", "🟦 its saddle blanket", ["auto", "#1d4ed8", "#b91c1c", "#15803d", "#f59e0b", "#ec4899", "#ffffff", "#7c3aed"]],
     // (ticket 457) its size: 100, as big as the stable's horses, whatever the friend's size in the scene
     ["range", "horseSize", "📏 its size (100 = as big as the stable's horses)", 20, 200, 40, 150],
     ["group", "jumps", "🐸🦘 the two jumps", [
@@ -300,7 +320,7 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -359,6 +379,14 @@ const TABS = [
     ["color", "crownJewel", "💎 the jewels' color", ["#d2382b", "#2f6db5", "#2e7d32", "#7b3f8c", "#f4f1ea"]],
     ["toggle", "mantle", "👑 ermine mantle"],
     ["toggle", "scepter", "👑 scepter"],
+    // (ticket 499) the dragon: a colour each for its scales, its belly, its wings and spines, and its horns, teeth and claws; its
+    // wings flapping, open and still, or folded, and what they flap with
+    ["color", "dragonScales", "🐉 its scales", ["#3f8f4a", "#2f6db5", "#8a2b2b", "#5b3f8c", "#1f1f22", "#c9a227", "#7a8a3a", "#e8862a"]],
+    ["color", "dragonBelly", "🐉 its belly", ["#e9d27a", "#f4ecd6", "#e8a87c", "#9ad0c2", "#c9c5bd", "#f9a8d4"]],
+    ["color", "dragonWings", "🦇 its wings and spines", ["#d0453a", "#f28c28", "#7b3f8c", "#2f6db5", "#2e7d32", "#1f1f22", "#e9d27a"]],
+    ["color", "dragonHorns", "🦷 its horns, teeth and claws", ["#f4ecd6", "#e0b030", "#c9c5bd", "#1f1f22", "#8a5a2b", "#ffffff"]],
+    ["choice", "dragonWingsHow", "🪽 its wings", DRAGON_WINGS],
+    ["choice", "dragonWingLfo", "〰️ wings flap with", [["none", "their own slow beat"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
     // (ticket 435) the knight: his arms (two colours, how they are laid out, an emblem), his helmet's plume and visor, sword and shield
     ["color", "knightA", "🛡️ arms' first color", ["#2f6db5", "#8a2b2b", "#1f1f22", "#2e7d32", "#e0b030", "#7b3f8c"]],
     ["color", "knightB", "🛡️ arms' second color", ["#f4f1ea", "#e0b030", "#1f1f22", "#8a2b2b", "#2f6db5"]],
@@ -510,6 +538,9 @@ const TABS = [
     ["range", "mtClouds", "☁️ clouds", 0, 10, 2, 8],
     ["range", "birds", "🦅 birds circling", 0, 8, 1, 5],
     ["toggle", "farLake", "🏞️ the lake and village far below"],
+    // (ticket 503, for M) the pasture: how many horses graze in it, and how many patches of wildflowers grow in its grass
+    ["range", "pastureHorses", "🐴 horses grazing", 0, 3, 0, 3],
+    ["range", "pastureFlowers", "🌼 patches of wildflowers in the grass", 0, 24, 4, 16],
     // the jungle waterfall
     ["range", "fallWidth", "💦 waterfall width", 40, 250, 70, 160],
     ["range", "vines", "🌿 vines", 0, 20, 4, 14],
@@ -537,6 +568,8 @@ const TABS = [
     // (ticket 471) the cave room: what stands on its floor, and what hangs from its ceiling
     ["choice", "caveFloor", "🪨 on the cave room's floor", CAVE_FLOORS],
     ["choice", "caveCeiling", "🦇 on the cave room's ceiling", CAVE_CEILINGS],
+    // (ticket 501, for M) the desert: what it has far off (farLayers' mountains, as a distant shore's)
+    ["choice", "desertFar", "🏜️ far off in the desert", SHORE_MOUNTAINS],
     // the camp site
     ["choice", "campTime", "🌗 time of day", [["day", "☀️ day"], ["sunset", "🌇 sunset"], ["night", "🌙 night"], ["clock", "🕰️ by the clock (🌍 where and when)"]]],
     ["choice", "starShape", "⭐ stars: shape", STAR_SHAPES],
@@ -609,6 +642,8 @@ const TABS = [
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castlePlaces" + n + id, "🍽️ places at table", 4, 18, 4, 18],
+        // (ticket 506, for M: "chickens -- already in stable 30 in stable.") a stable's hens, pecking about its floor
+        ["range", stableHensKey(n, id), "🐔 hens (0 = none, up to 30)", 0, STABLE_HENS_MAX, 1, 12],
         // (ticket 197: the one room's style, not the whole castle built to read it, on every refresh)
         ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, DOOR_MAX, 0, 4, b => roomDoorMax(roomStyleOf(b, id, n))],
         ...DOOR_JS.map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
@@ -678,6 +713,15 @@ const TABS = [
       ["flip", "blowA", ["🅰️ theme A", "🅰️ theme A"]], ["flip", "blowB", ["🅱️ theme B", "🅱️ theme B"]], ["flip", "blowC", ["©️ theme C", "©️ theme C"]],
     ]]],
     ["of", "background", ["group", "blowThemes", "🎨 the bubble themes", BUBBLE_THEME_CTLS.map(([kd, key, label, ctls]) => [kd, key, label, ctls.filter(c => c[0] !== "flip")])]],   // (the looks only: B and C on in bubble space is bubble space's)
+    // (ticket 499, Matthew: "optional dragon breath -- need an action for that, like bubbles -- shooting fire out of our mouth.";
+    // "Mock up the dragon costume and 6 fire styles.") Held (🔥 on the controller, F on the keyboard): one of the mock-up's six
+    // fires, from the mouth or a hand, as the bubbles' from; its heat pops bubbles, and shows as a shimmer if asked
+    ["of", "body", ["group", "firing", "🔥 breathing fire", [
+      ["choice", "fireStyle", "🔥 its fire", FIRE_STYLES],
+      ["choice", "fireFrom", "🧭 from where", [["mouth", "👄 mouth"], ["left", "🫲 left hand"], ["right", "🫱 right hand"]]],
+      ["range", "fireSize", "📏 how big (100 = as drawn)", 50, 200, 80, 140],
+      ["flip", "fireHeat", ["🌡️ show its heat", "🌡️ show its heat"]],
+    ]]],
     // (ticket 294, Matthew: "let the player choose which they prefer, and repeat that same choice under ♿ Accessibility")
     // a click while walking to one: ♿'s own setting, shown here too while 👆 walk where you click is on
     ["of", "access", ["choice", "clickPlan", "👆 a click while walking to one", CLICK_PLANS]],
@@ -1008,8 +1052,10 @@ const SHOWN_WHEN = {
   "face.noseH": f => f.noseView !== "none",
   "face.noseW": f => f.noseView !== "none",
   "face.whites": f => f.iris > 0,
-  "costume.fur": c => !!ANIMALS[c.kind],
-  "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),
+  "costume.fur": c => !!ANIMALS[c.kind] && c.kind !== "dragon",   // (ticket 499: a dragon's colours are its own, below)
+  "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon",
+  ...Object.fromEntries(["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow"].map(k => ["costume." + k, c => c.kind === "dragon"])),
+  "costume.dragonWingLfo": c => c.kind === "dragon" && (c.dragonWingsHow ?? "flap") === "flap",
   "costume.witchColor": c => c.kind === "witch",
   "hair.beardShade": h => !!BEARDS[h.beard], "hair.moustache": h => !!BEARDS[h.beard], "hair.beardLength": h => !!BEARDS[h.beard],
   "hair.braidWidth": h => !!(BEARDS[h.beard] && BEARDS[h.beard].braid),
@@ -1030,7 +1076,13 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["wingStyle", "wingFlutter", "fairyOutfit", "tunicStyle", "fairyShoes", "fairyShoeColor"].map(k => ["costume." + k, c => c.kind === "fairy"])),
   "costume.wingLfo": c => c.kind === "fairy" && c.wingFlutter !== false,
   "costume.wreath": c => c.kind === "fairy",
-  ...Object.fromEntries(["horseCoat", "horseMane", "horseMark", "horseTack", "horseSocks", "horseSize"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
+  // (ticket 495) the mark's colour with a mark; the saddle's and its blanket's while ridden (the only time they are drawn)
+  "body.horseLead": b => b.horse === "lead",   // (ticket 496)
+  "body.horseBows": b => (b.horse || "none") !== "none" && b.horseManeStyle === "bows",   // (ticket 497)
+  "body.horseMarkColor": b => (b.horse || "none") !== "none" && (b.horseMark || "none") !== "none",
+  // (ticket 498: the parade armour's cloth is its saddle blanket, led too)
+  "body.horseSaddle": b => b.horse === "ride", "body.horseBlanket": b => b.horse === "ride" || (b.horse === "lead" && b.horseArmour === "parade"),
+  ...Object.fromEntries(["horseCoat", "horseMane", "horseManeStyle", "horseArmour", "horseMark", "horseTack", "horseSocks", "horseSize", "horseShoes"].map(k => ["body." + k, c => (c.horse || "none") !== "none"])),
   ...Object.fromEntries(["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor"].map(k => ["costume." + k, c => c.kind === "ghost"])),
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),
@@ -1100,11 +1152,13 @@ const SHOWN_WHEN = {
   "background.house6": b => b.kind === "treehouse" && b.houses >= 6,
   "background.inside": b => b.kind === "treeroom",
   ...Object.fromEntries(["peakHeight", "mtClouds", "birds", "farLake"].map(key => ["background." + key, b => b.kind === "mountains"])),
+  ...Object.fromEntries(["pastureHorses", "pastureFlowers"].map(key => ["background." + key, b => b.kind === "pasture"])),   // (ticket 503)
   ...Object.fromEntries(["vines", "parrots"].map(key => ["background." + key, b => b.kind === "waterfall"])),
   // (the cave sees the falls from behind: their width and mist)
   ...Object.fromEntries(["fallWidth", "mist", "fallRate", "fallTime"].map(key => ["background." + key, b => b.kind === "waterfall" || b.kind === "cave"])),
   ...Object.fromEntries(["caveGems", "gemShape", "gemSize", "gemBright", "gemTwinkle"].map(key => ["background." + key, b => b.kind === "cave"])),
   ...Object.fromEntries(["caveFloor", "caveCeiling"].map(key => ["background." + key, b => b.kind === "caveroom"])),   // (ticket 471)
+  "background.desertFar": b => b.kind === "desert",   // (ticket 501)
   // (ticket 490) 🌍 where and when: where this place's time of day is by the clock; its own latitude and longitude for 📍
   ...Object.fromEntries(["skyWhen", "skyWhere", "skyYear", "skyMonth", "skyDay", "skyHour", "skySays"].map(key => ["background." + key, b => clockHere(b)])),
   ...Object.fromEntries(["skyLat", "skyLon"].map(key => ["background." + key, b => clockHere(b) && b.skyWhere === "custom"])),
@@ -1115,7 +1169,7 @@ const SHOWN_WHEN = {
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
   ...Object.fromEntries(["starShape", "starSize", "starBright", "starTwinkle"].map(key =>
-    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && b.campTime === "night") || (b.kind === "fairyforest" && b.fairyTime === "night") || (b.kind === "castleroom" && castleOf(b).rooms[Math.round(b.castleRoom ?? 1) - 1] === "trap")])),   // (and the trap room's: the sparkles of a boulder lifted)
+    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && nightBy(b.campTime, b, false)) || (b.kind === "fairyforest" && nightBy(b.fairyTime, b, true)) || (b.kind === "castleroom" && castleOf(b).rooms[Math.round(b.castleRoom ?? 1) - 1] === "trap")])),   // (and the trap room's: the sparkles of a boulder lifted)
   "background.tent": b => b.kind === "tent",
   "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),
@@ -1157,6 +1211,7 @@ const SHOWN_WHEN = {
               ["background.castleOut" + n + id, b => !isHall(b, n)], ["background.castleFar" + n + id, b => typeOf(b, n) === "dining"],
               // (the door behind us: where a room has no sign at the bottom already; never a dungeon, a pit with no way in but from above)
               ["background.castleBack" + n + id, b => ["hall", "trap", "all"].includes(ROOM_KINDS[typeOf(b, n)]?.exits)], ["background.castlePlaces" + n + id, b => typeOf(b, n) === "dining"],
+              ["background." + stableHensKey(n, id), b => typeOf(b, n) === "stable"],   // (ticket 506)
               ...DOOR_JS.map(k => ["background." + hallDoorKey(id, n, k), b => hasDoors(b, n) && k <= Math.min(roomDoorMax(typeOf(b, n)), Math.round(b["castleHallDoors" + n + id] ?? 3))])])];
   })),
   ...Object.fromEntries(CASTLES.flatMap(([id]) => [["background.castleRooms" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id],
@@ -1198,11 +1253,11 @@ const SHOWN_WHEN = {
   "background.pic4": b => b.kind === "livingroom" && b.pictures >= 4,
   "background.pic5": b => b.kind === "livingroom" && b.pictures >= 5,
   "background.pic6": b => b.kind === "livingroom" && b.pictures >= 6,
-  "costume.marks": c => !!ANIMALS[c.kind],
-  "costume.spot": c => c.furPattern === "rosettes" && !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit),
-  "costume.belly": c => !!ANIMALS[c.kind],
+  "costume.marks": c => !!ANIMALS[c.kind] && c.kind !== "dragon",
+  "costume.spot": c => c.furPattern === "rosettes" && !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon",
+  "costume.belly": c => !!ANIMALS[c.kind] && c.kind !== "dragon",
   "costume.eyes": c => !!ANIMALS[c.kind],
-  "costume.accent": c => !!ANIMALS[c.kind],
+  "costume.accent": c => !!ANIMALS[c.kind] && c.kind !== "dragon",
   "hair.length": h => ["long", "curly", "pigtails", "spiky", "afro"].includes(h.style),
   "hair.bangs": h => !!BANG_LOCKS[h.style],
   "pants.skirtLen": p => p.style === "skirt" || p.style === "dress",
@@ -1701,13 +1756,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // apart from the last)
     const add = (kd, at = null, extra = {}) => {
       const B = state.background, T = B.things || (B.things = []), i = T.length, F = sceneFrame;
-      const x = at ? Math.round(clamp(at.x, F.left, F.right)) : Math.round((((i * 0.37) % 1) - 0.5) * 520);
-      const z = at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
+      // (ticket 502: a 🪵 fence piece tapped in goes on the tile beside the last one, as it is, so tapping again builds a fence: tileNext)
+      const next = !at && (THING_KINDS[kd] || {}).tiles ? tileNext(B, kd) : null;
+      const x = next ? next.x : at ? Math.round(clamp(at.x, F.left, F.right)) : Math.round((((i * 0.37) % 1) - 0.5) * 520);
+      const z = next ? next.z : at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
       if (thingsLatch) return;   // (ticket 203: shut till the marked ones are dealt with)
       T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}),
                ...(kd === "trapdoor" ? { uid: "d" + Math.floor(Math.random() * 36 ** 6).toString(36) } : {}), ...extra });   // (ticket 284: a trap door's name for the levers wired to it)
       // (ticket 303, M: a lever and a trap door put in one place work together at once, whichever came first; a chip unjoins them)
       const nu = T[T.length - 1];
+      if (next) Object.assign(nu, { style: next.style ?? nu.style, size: next.size ?? nu.size, mirror: !!next.mirror });
+      tileSnap(B, nu);   // (ticket 502: a thing that stands on the floor's tiles goes onto the nearest; any other stays where it is put)
       if (kd === "lever") nu.works = T.filter(x => x.kind === "trapdoor" && x.uid).map(x => x.uid);
       if (kd === "trapdoor") for (const L of T) if (L.kind === "lever") L.works = [...(L.works || []), nu.uid];
       changed();
@@ -2030,6 +2089,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     // (ticket 325, Matthew: "advanced panel links to matthewhammer.org/hazel/dress-up page") the game's own page: its music, pictures and reports
     box.append(themes, el("div", { class: "row" }, [el("a", { href: "https://matthewhammer.org/hazel/dress-up/", target: "_blank", rel: "noopener" }, "🏠 this game's page: its music, pictures and reports ↗")]),
                el("div", { class: "row" }, [el("a", { href: "https://github.com/matthewhammer/kids-choice-games", target: "_blank", rel: "noopener" }, "💻 this game's code, on GitHub ↗")]),
+               // (ticket 500, Matthew: "the two licences, credit 'Matthew Hammer and family (M and N)', whole repo.") who made it, and on what terms
+               el("div", { class: "row licence" }, [el("span", { class: "hint" }, ["📜 © 2026 Matthew Hammer and family (M and N). Reuse is welcome, with credit: the code under ",
+                 el("a", { href: "https://github.com/matthewhammer/kids-choice-games/blob/main/LICENSE", target: "_blank", rel: "noopener" }, "Apache 2.0 ↗"),
+                 ", and the pictures, music and words under ",
+                 el("a", { href: "https://creativecommons.org/licenses/by/4.0/", target: "_blank", rel: "noopener" }, "CC BY 4.0 ↗"), "."])]),
                // (ticket 474, Matthew: "add link and citation for https://arxiv.org/abs/1703.05410 into the MUDU advanced panel, near the top --- the
                // link says 'See also -- Languages of Play: Towards Semantic Foundations For Game Interfaces (2017)'"; "there's an HTML version ... let's
                // offer that in the advanced panel (after citation)") the paper, its authors, and its HTML version
@@ -2363,8 +2427,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const bs = rest[0].map(c => {
       const b = c === "skin" || c === "auto" || c === "off"
         ? el("button", { class: "swatch skin",
-                         title: c === "skin" ? "same as skin" : c === "off" ? "none: the fur shows through"
-                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color" : "a lighter shade",
+                         title: c === "skin" ? "same as skin" : c === "off" ? (key === "horseShoes" ? "no shoes" : "none: the fur shows through")
+                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color"
+                              // (ticket 498: with armour on, the horse's blanket on auto is the armour's cloth colour)
+                              : key === "horseBlanket" ? "a lighter shade of the halter's, or with armour the armour's colour" : "a lighter shade",
                          onclick: () => set(part, key, c) }, c)
         : key === "color" && part === "face" && SKIN_MARKS[c]
         ? el("button", { class: "swatch", title: SKIN_MARKS[c][1], "aria-label": SKIN_MARKS[c][1],

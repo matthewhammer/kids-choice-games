@@ -1,4 +1,6 @@
 "use strict";
+// Messed Up Dress Up. Copyright 2026 Matthew Hammer and family (M and N). Reuse welcome, with credit: see LICENSE and NOTICE.
+// SPDX-License-Identifier: Apache-2.0
 // (ticket 178) Part 4 of 26 of the game's script, run in order by index.html.
 
 // ===================== HAIR (in face units) =====================
@@ -537,7 +539,7 @@ function faceSvg(F, ground, parts = false, dir = 0, turn = 0, away = false) {
                         `<clipPath id="hood-inside"><ellipse ${hoodEllipse(F)}/></clipPath>` : "";
   const CH = away ? null : clothHood();   // (ticket 433: a cloth hood, up)
   const under = `<defs>${clips}${hoodClips}</defs>` +
-    (C ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${dir ? `<g transform="translate(${-dir * 16} 0)">${hoodBack(C, kind, F)}</g>` : hoodBack(C, kind, F)}</g></g>` : "") +
+    (C ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${dir ? `<g transform="translate(${-dir * 16} 0)">${hoodBack(C, kind, F, dir)}</g>` : hoodBack(C, kind, F)}</g></g>` : "") +
     (CH ? `<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${clothHoodBack(F, CH, dir)}</g></g>` : "") +
     sideLines(F.sides) +
     (b > 0 ? part(' clip-path="url(#below-crack)"') : part()) +
