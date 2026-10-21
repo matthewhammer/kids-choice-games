@@ -257,10 +257,14 @@ function shoeSvg(x, y, side, sh, skin) {
   }
   if (sh.style === "paw") {
     const cx = x + side * 10 * sc, cy = y + 12 * sc;
+    // (ticket 499) a dragon's: three claws, in its horns' colour, out of the paw's front edge by its toes
+    const claws = !sh.claws ? "" : `<path d="${[-1, 0, 1].map(i => { const y0 = cy + i * 6 * sc, rim = 28 * Math.sqrt(1 - (i * 6 / 14) ** 2);
+      return `M${f1(cx + side * (rim - 3) * sc)} ${f1(y0 - 3.5 * sc)} L${f1(cx + side * (rim + 9) * sc)} ${f1(y0 + i * sc)} L${f1(cx + side * (rim - 3) * sc)} ${f1(y0 + 3.5 * sc)} Z`; }).join(" ")}" ` +
+      `fill="${sh.claws}" stroke="${darker(sh.claws)}" stroke-width="1.2" stroke-linejoin="round"/>`;
     return `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(28 * sc)}" ry="${f1(14 * sc)}" fill="${sh.color}" ` +
            `stroke="${darker(sh.color)}" stroke-width="2.5"/>` +
            [14, 21, 26].map((dx, i) => `<circle cx="${f1(cx + side * dx * sc)}" cy="${f1(cy + (i - 1) * 6 * sc)}" ` +
-             `r="${f1(3.6 * sc)}" fill="${sh.pad}"/>`).join("");
+             `r="${f1(3.6 * sc)}" fill="${sh.pad}"/>`).join("") + claws;
   }
   // (ticket 288) a scuba suit's fins: a black foot pocket and a long blade on past the toes, ribbed, in the suit's stripes' color
   if (sh.style === "fin") {
@@ -395,7 +399,8 @@ function fingered(r, c, st, fingers, palm = 0.75) {
 // paw; this sets only the claws). Up to 4 they keep the usual spacing;
 // more fan out wider, to nearly all the way round at 100, and get thinner
 // so each still shows.
-function talons(r, R, clawLen = 100, n = 4) {
+// (ticket 499: fill and line, the claws' colours; a dragon's are its horns')
+function talons(r, R, clawLen = 100, n = 4, fill = "#f4ecd6", line = "#5c4a2e") {
   const k = (clawLen ?? 100) / 100;
   n = Math.max(1, Math.min(100, Math.round(n ?? 4)));
   const span = n <= 4 ? 118 * (n - 1) / 3 : Math.min(330, 118 + (n - 4) * 20);
@@ -411,15 +416,15 @@ function talons(r, R, clawLen = 100, n = 4) {
     const w = Math.max(r * 0.03, Math.min(r * 0.25 * Math.min(1, 0.6 + 0.4 * k), room * 1.1));
     const P = (along, across) => `${f1(dx * along + nx * across)} ${f1(dy * along + ny * across)}`;
     return `<path d="M${P(R * 0.8, -w)} Q${P(R + len * 0.75, -w * 0.9)} ${P(R + len, hook)} ` +
-           `Q${P(R + len * 0.45, w * 0.6)} ${P(R * 0.8, w)} Z" fill="#f4ecd6" stroke="#5c4a2e" stroke-width="${f1(sw)}" stroke-linejoin="round"/>`;
+           `Q${P(R + len * 0.45, w * 0.6)} ${P(R * 0.8, w)} Z" fill="${fill}" stroke="${line}" stroke-width="${f1(sw)}" stroke-linejoin="round"/>`;
   }).join("");
 }
 // The cat costumes (lion too) have claws on their paws.
-const CLAWED = { cat: 1, tiger: 1, lion: 1, bobcat: 1, leopard: 1, cheetah: 1, jaguar: 1, wolf: 1 };
+const CLAWED = { cat: 1, tiger: 1, lion: 1, bobcat: 1, leopard: 1, cheetah: 1, jaguar: 1, wolf: 1, dragon: 1 };
 // A suit's hands: paws in the fur color, with claws on a cat.
 const suitHands = (C, kind) => ({ style: kind === "deer" ? "hoof" : "paw", size: Math.max(state.hands.size, 12), color: C.fur, pad: C.accent,
                                   claws: !!CLAWED[kind], clawLen: state.hands.clawLen ?? 100,
-                                  clawCount: state.hands.clawCount ?? 4 });
+                                  clawCount: state.hands.clawCount ?? 4, clawColor: C.horn });   // (ticket 499: a dragon's in its horns' colour)
 // How far a hand reaches from where it joins the arm, in any direction,
 // in units of its size (fingers and claws stick out; a round hand doesn't).
 const HAND_REACH = { round: 1, mitten: 1.65, star: 1.4, paw: 1.2, hoof: 1.2, claw: 2.4,
@@ -510,7 +515,7 @@ function handSvg(x, y, angle, side, h, skin) {
       // a costume's paw: fur, with a pad and three toe pads (and on a cat
       // costume, the claw hand's talons sticking out of it)
       const pad = h.pad;
-      return g((h.claws ? talons(r, r * 1.0, h.clawLen, h.clawCount) : "") +
+      return g((h.claws ? talons(r, r * 1.0, h.clawLen, h.clawCount, h.clawColor, h.clawColor && darker(h.clawColor)) : "") +
                `<circle r="${r * 1.15}" fill="${c}" stroke="${st}" stroke-width="2.5"/>` +
                `<ellipse cx="${-r * 0.15}" rx="${r * 0.42}" ry="${r * 0.5}" fill="${pad}"/>` +
                [[0.62, -0.6], [0.86, 0], [0.62, 0.6]].map(([px, py]) =>

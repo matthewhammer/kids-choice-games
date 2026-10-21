@@ -43,6 +43,8 @@ function drawNow() {
   // A costume: a suit is fur over everything below the hood; a falcon is
   // wings and a tail over the clothes.
   const C = costumeOn(), kind = state.costume.kind, suit = C && ANIMALS[kind].suit;
+  // (ticket 499) a dragon: the suit, with horns, spines and teeth on its hood, scales, a plated belly, claws, bat wings and a tail
+  const dragon = kind === "dragon";
   const limb = suit ? C.fur : skin, limbLine = suit ? darker(C.fur) : skinLine;
   // A witch: a long dress -- long sleeves, a long skirt with a ragged hem
   // -- in the hat's color with a spider web on it; striped stockings; a
@@ -263,7 +265,7 @@ function drawNow() {
   const beardStyle = BEARDS[state.hair.beard] && kind !== "diver" && kind !== "ghost" ? state.hair.beard : null;
   const flying = F.burst > 0 ? idiv(F.burst * 7, 10) + idiv(F.burst * 4, 10) + 40 : 0;   // see topFlies
   const faceTop = Math.min(-90, HEAD_C - 175 * headH(F), headCrown(F) + 50.6 - 1.4 * F.burst - 40,
-                           hairY(hr.top) - 40 - flying, (C ? (kind === "deer" ? -140 : -90) : 0) - flying,
+                           hairY(hr.top) - 40 - flying, (C ? (kind === "deer" || dragon ? -140 : -90) : 0) - flying,
                            witch ? hairY(-130) - 20 - flying : 0, gnome ? hairY(-240) - 20 - flying : 0, wizard ? hairY(-170) - 20 - flying : 0, hooded ? hairY(hoodGeom(F).cy - hoodGeom(F).ry - 40) - 10 - flying : 0, robin ? hairY(-90) - 10 - flying : 0, knight ? hairY(-40) - 10 - flying : 0, royal ? hairY(king ? -60 : -40) - 10 - flying : 0);
   // (a broom stands 120 above the hand that holds it, its bristles 66 below)
   const broomH = witch && WC.broom ? arms[0].H : null;
@@ -281,7 +283,7 @@ function drawNow() {
   const armPosed = [1, -1].some(side => poseT("Arm", side) || poseT("Elbow", side));
   const posedYs = [...(armPosed ? arms.filter(x => x.E).map(x => x.E[1] - armW - 20) : []), ...(legPosed ? legBones.flatMap(l => l.joints.slice(1)).map(([, y]) => y - B.legW - 40) : [])];
   let top = Math.min(ty + faceTop * s, ...handYs.map(y => y - Math.max(40, reach)), broomH ? broomH[1] - 140 * kb : 0, staffH ? staffH[1] - 190 : 0, bowH ? bowH[1] - 90 : 0, swordH ? swordH[1] - 145 : 0, scepterH ? scepterH[1] - 170 : 0, ...posedYs,
-                       catK ? -9 - 70 * catK : 0);
+                       catK ? -9 - 70 * catK : 0, dragon && dir ? -255 : 0);   // (ticket 499: the far wing, up over the head in profile)
   const pileP = F.sick > 100 ? 100 + (F.sick - 100) / 2 : F.sick > 30 ? (F.sick - 30) * 100 / 70 : 0;
   const pileRx = (6 + pileP * 84 / 100) * 1.6 * s;
   // and a long skirt or dress, which can reach past the feet
@@ -291,7 +293,7 @@ function drawNow() {
   let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem, beardStyle ? ty + (headChin(F) + beardLong(beardStyle, state.hair) + (BEARDS[beardStyle].braid ? 60 : 16)) * s : 0,
                           broomH ? broomH[1] + 140 * kb : 0, staffH ? staffH[1] + 120 : 0, bowH ? bowH[1] + 90 : 0, shieldH ? shieldH[1] + 45 : 0, catK ? -9 + 46 * catK : 0);
   const hairHalf = hr.half * headWidth(F) * (1 + 0.12 * F.alien / 100) * s;
-  let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
+  let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, dragon ? -Math.max(w + 230, hw + 250) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
                         ...arms.filter(x => x.E).map(x => -Math.abs(x.E[0]) - armW - 20), knee ? -Math.abs(kneeAt(1)[0]) - B.legW - 30 : 0,
                         ...(legPosed ? legBones.flatMap(l => [-Math.abs(l.joints[1][0]) - B.legW - 30, -Math.abs(l.joints[2][0]) - 60 - Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes))) * shoeSc]) : []),
                         -(fx + half + 70), -(fx + (witch ? FOOT_REACH.witchboot : Math.max(footReach(state.shoes), footReach(rightShoeOf(state.shoes)))) * shoeSc + 20), -(w + 40), -(pileRx + 20), -(B.neckW / 2 + 40), -(hairHalf + 20),
@@ -540,6 +542,13 @@ function drawNow() {
   else if (kind === "eagle") { svg += veil("shirt", turnedAway(falconWings(C, w, C.fur))); tail = falconTail(C, hw, L, LL, C.belly); }
   else if (kind === "falconsuit") tail = falconTail(C, hw, L, LL, "url(#pat-fur)");
   else if (kind === "eaglesuit") tail = falconTail(C, hw, L, LL, C.belly);
+  // (ticket 499) a dragon's bat wings behind the shoulders (over the back, from behind; seen short with it, crawling away, as
+  // the tank is) and its long tail, each view drawn for itself
+  // (review: crawling or swimming in profile, turned about the hips, each has a drawing of its own laid out in the picture,
+  // the tail along the ground there, the floor (gFig, as turned) or just under the water's top)
+  else if (dragon) { const sideTurn = dir && move && move.rot && (move.swim || B.anim === "crawl") ? move.rot : 0;
+    const wg = dragonWingsSvg(C, WC, w, L, dir, away, sideTurn); svg += veil("shirt", squash && away ? squashed(wg) : wg); tail = dragonTailSvg(C, hw, L, ground, dir, away,
+    !move && B.pose === "lie" && rot ? { lie: Math.sign(rot), w, LL } : crawlTo ? { rise: -backK * L - 20 * (1 + backK) } : sideTurn ? { turn: sideTurn, floor: swimming ? wl + 28 : gFig } : null); }
   // (a suit's tail swings out to our right; in profile, out behind them)
   else if (suit) tail = dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L);
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
@@ -549,7 +558,7 @@ function drawNow() {
     svg += veil("shirt", `<path d="M${f1(b - (w + 6))} -14 Q${f1(b - (w + 26) * sp)} ${f1(L)} ${f1(b - (w + 50) * sp)} ${f1(fl)} L${f1(b + (w + 50) * sp)} ${f1(fl)} Q${f1(b + (w + 26) * sp)} ${f1(L)} ${f1(b + w + 6)} -14 Z" fill="${mc}" stroke="${darker(mc)}" stroke-width="2.5" stroke-linejoin="round"/>` +
       `<rect x="${f1(b - (w + 50) * sp)}" y="${f1(fl - 16)}" width="${f1(2 * (w + 50) * sp)}" height="16" fill="url(#pat-ermine)" stroke="#c9c5bd" stroke-width="1.5"/>`); }
   // (ticket 286: crawling toward us, the tail goes up from behind the back, turned over with it)
-  if (tail) svg += veil("pants", crawlTo ? flipped(tail) : tail);
+  if (tail) svg += veil("pants", crawlTo && !dragon ? flipped(tail) : tail);   // (ticket 499: a dragon's, crawling toward us, drawn rising)
   // (ticket 288: an air tank on the back; ticket 371, Matthew: "crawling animation for scuba tank has it on our belly --
   // inverted from correct": crawling toward us, it lies on the back, which rises behind the head: drawn over the back, below;
   // crawling away, seen short with the back it lies on)
@@ -596,7 +605,7 @@ function drawNow() {
              : knight ? { style: "boot", size: state.shoes.size, color: "#6b7280" }
              : royal ? { style: "boot", size: state.shoes.size, color: "#e0b030" }
              : fairy ? { style: "fairy-" + (FAIRY_SHOES.some(([v]) => v === WC.fairyShoes) ? WC.fairyShoes : "slipper"), size: state.shoes.size, color: WC.fairyShoeColor || FAIRY_SHOE_COLORS[0] }
-             : suit ? { style: "paw", size: state.shoes.size, color: C.fur, pad: C.accent } : state.shoes;
+             : suit ? { style: "paw", size: state.shoes.size, color: C.fur, pad: C.accent, claws: dragon ? C.horn : null } : state.shoes;   // (ticket 499: a dragon's feet clawed)
   // (a falcon suit's talons are yellow, like a falcon's feet)
   // (with different feet, the friend's right foot, on our left, wears its own)
   const feetAt = svg.length;
@@ -915,7 +924,7 @@ function drawNow() {
   }
   if (wrapStripes(C) && !undies) svg += torsoStripes(torso, w, L, C.marks);
   if (suit && kind !== "eaglesuit" && !away)  // the suit's belly (a bald eagle is brown all over; none on its back: ticket 138)
-    svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>`;
+    svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>` + (dragon ? dragonPlates(C, L * 0.58, w * 0.55, L * 0.36) : "");   // (ticket 499: plated)
   if (crawlTo) svg = svg.slice(0, shirtAt) + flipped(svg.slice(shirtAt));   // (ticket 286: the back, rising behind the head)
   // (ticket 371: the tank on it, turned over with it, standing out of it by its own thickness: its far end over the back's line)
   if (crawlTo && WC.tank && !diver) svg += veil("shirt", `<g transform="translate(0 ${f1(-0.8 * Math.max(24, 0.4 * w))})">${flipped(tankSvg(WC, w, L, dir))}</g>`);
@@ -960,8 +969,8 @@ function drawNow() {
   // horns, and no face on its brim)
   if (away && C) {
     const fill = falconHead(kind) ? C.marks : eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
-    svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F)}` +
-                               `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/></g></g>`));
+    svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F, 0, true)}` +
+                               `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/>${dragon ? dragonHoodSpines(C, F) : ""}</g></g>`));   // (ticket 499: a dragon's spines down it)
   } else if (away) { svg += veil("head", inFace(face.under)) + (diver ? "" : hooded
       ? veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${knight ? "" : clothHoodAway(F, clothHood())}</g></g>`))   // (ticket 433: the hood closed over the head; 435: a knight's helmet)
       : veil("hair", inFace(`<g transform="${topFlies(F)}">${backHair(state.hair, F)}</g>`))); }
