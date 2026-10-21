@@ -162,9 +162,11 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // horizon, not the facade of the building. instead, the building's facade has accurate collision boxes ... permitting a
 // space for feet to squeeze between that box and the back horizon line": the house's lawn's far edge, 205 up, the
 // castle's meadow's, 150 up; the buildings' own boxes are SCENE_BOXES')
+// (ticket 503) the pasture's: just in front of its fence (162 up), far enough back that the friend walks behind each of
+// its horses grazing (PASTURE_HORSES: a horse moved farther back must keep LANE_MIN behind its footprint)
 const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 200, treehouse: 118, clearing: 140,
                     fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, desert: 120, castle: 138,
-                    woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
+                    woodpath: 165, pasture: 157, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
 // (ticket 176) The things that stand in a place and can't be walked
@@ -188,6 +190,7 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "stalagmite", "crystal cluster", "cascade", "cavemushroom",   // (the last four: the cave room's, the little waterfall, the cave mushroom: ticket 471)
    "cow", "pig", "chicken",
    "pricklypear", "prickly pear", "barrelcactus", "barrel cactus", "agave",   // (ticket 501: the low desert plants, as things and in the desert)
+   "grazing horse",   // (ticket 503: the pasture's horses, big as a hay cart: walked round, not through, by their footprints)
    "woodpile", "helmet", "watering can", "teddy", "truck", "blocks", "chair", "shipwreck", "vent", "palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",

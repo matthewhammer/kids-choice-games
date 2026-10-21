@@ -594,6 +594,7 @@
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="clearing"] { --sq: #7cc35a; }
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="crossing"] { --sq: #76843a; }
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="woodpath"] { --sq: #5f8f3a; }
+:is(.world-cell, .world-chip, .world-compass-mid)[data-kind="pasture"] { --sq: #a3c447; }   /* (ticket 503: the pasture's grass, sunnier than the clearing's) */
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="treehouse"] { --sq: #4f9a3a; }
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="house"] { --sq: #9cc95c; }
 :is(.world-cell, .world-chip, .world-compass-mid)[data-kind="campsite"] { --sq: #c08a3e; }
