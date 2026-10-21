@@ -2078,8 +2078,14 @@ function stableSvg(c, K, hens = STABLE_HENS) {
 const HEN_TRIES = 48, HEN_CLEAR = 1.6, HEN_SEED = 5060, HEN_LOOK_NAMES = ["brown", "white", "black"];
 // (how far apart two hens' ovals are: 1 just touching, under 1 overlapping)
 const henApart = (a, b) => Math.hypot((a.cx - b.cx) / (a.hw + b.hw), (a.y - b.y) / (a.hd + b.hd));
+// (ticket 506: the spots kept by the room's frame and the count, all they read: the search at 30 takes ~8 ms, too much to
+// do again each time a mixing-board LFO knob or a tune draws the stable again, which changes only the hens' timing (the
+// 60 fps rule))
+const henSpotsMemo = new Map();
 function stableHenSpots(c, L, n) {
   const { k, W, g, y1 } = c, { at, floor, bw, vy } = L, f = y => (y - vy) / (floor - vy);
+  const mk = [k, W, g, y1, floor, bw, vy, n].join();
+  if (henSpotsMemo.has(mk)) return henSpotsMemo.get(mk);
   // (a hen's room on the floor: its feet at (x, y) at size s, as far as it walks, go)
   const room = (x, y, s, go = 0) => ({ cx: x + go / 2, y, hw: 22 * s + Math.abs(go) / 2, hd: 16 * s });
   // (what stands on the floor, as boxes on the screen: the ladder up to the loft, the trough and its buckets, the hay
@@ -2111,7 +2117,10 @@ function stableHenSpots(c, L, n) {
     hens.push(best.me);
     out.push({ ...best, j, look: j % 3, i: ((j * 0.618034) % 1) * 2.2, off: r(4001), dur: 8 + 5 * r(4002) });
   }
-  return out.sort((a, b) => a.y - b.y);
+  out.sort((a, b) => a.y - b.y);
+  if (henSpotsMemo.size > 40) henSpotsMemo.clear();
+  henSpotsMemo.set(mk, out);
+  return out;
 }
 // The hens past the first two, each an object at its feet, back to front. Each pecks with the quick LFO (henSvg) and,
 // now and then, with the slow one, walks a few steps the way it faces, turns round, pecks there, walks back and turns
