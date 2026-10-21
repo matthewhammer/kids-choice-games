@@ -163,7 +163,7 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // space for feet to squeeze between that box and the back horizon line": the house's lawn's far edge, 205 up, the
 // castle's meadow's, 150 up; the buildings' own boxes are SCENE_BOXES')
 const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 200, treehouse: 118, clearing: 140,
-                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, castle: 138,
+                    fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, farmyard: 90, castle: 138,
                     woodpath: 165, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
@@ -184,6 +184,7 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 // and the hut center's fire, the trap room's helmet, the greenhouse's watering can, the house's toys, a chair not sat on, the
 // sea floor's wreck and vent)
 const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "stalagmite", "crystal cluster", "cascade", "cavemushroom",   // (the last four: the cave room's, the little waterfall, the cave mushroom: ticket 471)
+   "barn", "fencepiece", "haystack", "tractor", "windpump",   // (ticket 502: the farm things, each by its foot (data-footprint), and the farm yard's)
    "woodpile", "helmet", "watering can", "teddy", "truck", "blocks", "chair", "shipwreck", "vent", "palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
@@ -250,8 +251,9 @@ function standingHere(B, seats) {
   // (its box in the friend's units, through the screen, as ladderAt does: the scene may sit in a nested svg of its own)
   const picEl = document.getElementById("pic"), P = picEl && picEl.getScreenCTM(), Pinv = P ? P.inverse() : null;
   const frame = [SCENE.left, SCENE.top, SCENE.bottom, SCENE.ground, B.kind, Math.round(10 * sceneVanish(B))];
-  const keptKey = o => { const dg = o.node.querySelector('[data-drag^="thing:"]') || (o.node.closest && o.node.closest('[data-drag^="thing:"]')), t = dg && (B.things || [])[+dg.dataset.drag.slice(6)];
-    return t ? JSON.stringify([frame, t, t.kind === "signpost" ? signpostBoards(B, t) : ""]) : null; };
+  // (ticket 502: and a fence piece's neighbours, whose posts its rails reach: fenceLinks)
+  const keptKey = o => { const dg = o.node.querySelector('[data-drag^="thing:"]') || (o.node.closest && o.node.closest('[data-drag^="thing:"]')), i = dg && +dg.dataset.drag.slice(6), t = dg && (B.things || [])[i];
+    return t ? JSON.stringify([frame, t, t.kind === "signpost" ? signpostBoards(B, t) : t.kind === "fencepiece" ? fenceLinks(B, i) : ""]) : null; };
   for (const o of bgShown.objs) {
     if (B.thingsSolid === false && isPlaced(o)) continue;
     if (off.has(o.name) || seats.has(o.name)) continue;
@@ -364,7 +366,7 @@ function laddersHere() {
 // name, getting out of it); its part says which. The friend meets a part above their ankles with their legs' box (youBoxes),
 // so a low table's top still stops them, and only one high enough is walked under.
 const ROUND = new Set(["fallen", "barrel", "basket", "bucket", "cauldron", "soup pot", "stump", "rock", "boulder", "stone", "toadstool", "mushroom", "bush", "green bush",
-  "pink bush", "white bush", "yellow bush", "campfire", "fountain", "well", "water barrel", "coal heap", "hay heap"]);
+  "pink bush", "white bush", "yellow bush", "campfire", "fountain", "well", "water barrel", "coal heap", "hay heap", "haystack"]);   // (haystack: ticket 502)
 function solidParts(base, o, k) {
   if (ROUND.has(base) && !o.bands) return [{ ...o, oval: true }];
   const w = o.x1 - o.x0, d = o.front - o.back, h = o.h;
