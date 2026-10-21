@@ -20,12 +20,12 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { tab = TABS.findIndex(t => t[1] === "advanced"); showTab();
     for (let i = 0; i < 50 && !document.querySelector(".news .news-card"); i++) await new Promise(r => setTimeout(r, 100));
-    const box = document.querySelector(".news"), cards = [...document.querySelectorAll(".news .news-card")], first = cards[0];
+    const box = document.querySelector(".news"), cards = [...document.querySelectorAll(".news .news-card")], first = cards.find(c => c.dataset.version !== "Unreleased"), unreleased = cards.findIndex(c => c.dataset.version === "Unreleased");
     const panel = box && box.parentNode, last = panel ? [...panel.children].filter(c => !c.hidden).pop() : null;
-    return JSON.stringify({ cards: cards.length, first: first && first.dataset.version, now: first && first.classList.contains("now"), version: VERSION.number,
+    return JSON.stringify({ cards: cards.length, unreleased, first: first && first.dataset.version, now: first && first.classList.contains("now"), version: VERSION.number,
       scrolls: !!box && box.scrollHeight > box.clientHeight + 50 && getComputedStyle(box).overflowY === "auto", last: last === box,
       raw: box ? /\\*\\*|^##/m.test(box.textContent) : true, bold: box ? box.querySelectorAll("li b").length : 0, firstText: first ? first.textContent.slice(0, 80) : "" }); })()`));
-  ok("⚙️ Advanced ends with what's new: a card for every version (over a hundred), newest first", r.cards > 100 && r.first === r.version && r.last, r);
+  ok("⚙️ Advanced ends with what's new: a card for every version (over a hundred), newest first", r.cards > 100 && r.first === r.version && r.unreleased <= 0 && r.last, r);
   ok("this version's card marked, bold as bold, no markdown showing", r.now && r.bold > 50 && !r.raw, r);
   ok("in a box that scrolls on its own", r.scrolls, r);
   ok("no page errors", !errs.length, errs);
