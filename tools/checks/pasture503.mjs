@@ -56,8 +56,13 @@ try {
     // a horse led in, at the grey horse's depth: as big as it (each one's horse units on the screen), and the pasture as it was
     const greyZ = zOf("grazing horse, grey");
     Object.assign(B, { figX: 0, figY: greyZ - SCENE.ground }); set("body", "horse", "lead"); state.body.facing = "front"; changed(); drawNow(); await w(500);
+    // (each one's group in horseSvg's units: the friend's scaled by figureT.k and hs, the grey's by pastureHorseScale. A
+    // place's object holds its drawing inside a plain <g> that mountScene makes for it, so the grey's own group is the one
+    // inside that. 0.0.392's run read the plain one, the stage's own scale on the screen (0.848), against the friend's
+    // horse (0.417, which is 0.848 x 0.4914, the grey's own pastureHorseScale), and so failed a horse as big as the grey)
     const scaleOf = g => { const m = g && g.getScreenCTM(); return m ? Math.hypot(m.a, m.b) : 0; };
-    const led = { mine: scaleOf(document.querySelector("#pic .horse > g[transform]")), grey: scaleOf(el("grazing horse, grey").querySelector(":scope > g")), names: objs() };
+    const led = { mine: scaleOf(document.querySelector("#pic .horse > g[transform]")), grey: scaleOf(el("grazing horse, grey").querySelector(":scope > g > g[transform]")),
+      stage: scaleOf(bgShown.node), names: objs() };
     set("body", "horse", "none"); changed(); await w(200);
     // the settings: how many horses, how many patches of flowers
     const counts = {};
