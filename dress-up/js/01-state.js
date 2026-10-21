@@ -159,7 +159,7 @@ const ROOM_KINDS = {
   dungeon2: { label: "⛓️ deep dungeon", by: "N", exits: "ladder", tone: "#5d6b62", draw: (c, K, r) => dungeonSvg(c, K, true, r.bones) },
   hallway: { label: "🕯️ hallway", by: "N", exits: "hall", tone: "#8a8597", draw: (c, K, R) => hallwaySvg(c, K, R) },
   catroom: { label: "🐈 cat room", by: "more", exits: "side", draw: (c, K) => catRoomSvg(c, K) },
-  stable: { label: "🐴 stable", by: "more", exits: "side", draw: (c, K) => stableSvg(c, K) },
+  stable: { label: "🐴 stable", by: "more", exits: "side", draw: (c, K, r) => stableSvg(c, K, r.hens) },   // (ticket 506: and its hens)
   dining: { label: "🍽️ dining room", by: "M", exits: "long", tone: "#9c8f84", draw: (c, K, r) => diningRoomSvg(c, K, r) },
   kitchen: { label: "🍲 kitchen", by: "more", exits: "side", tone: "#b8a58c", draw: (c, K) => kitchenSvg(c, K) },
   smithy: { label: "⚒️ smithy", by: "more", exits: "side", tone: "#5e5650", draw: (c, K) => smithySvg(c, K) },
@@ -210,6 +210,10 @@ const STABLE_HORSES = [
   { coat: "#d9a95b", mane: "#f3e6c8", mark: "stripe", offset: 8 }];
 const STABLE_HORSE_COUNT = 3;
 const horseKey = (id, j, what) => "castleHorse" + j + what + id;
+// (ticket 506, for M; Matthew: "chickens -- already in stable 30 in stable.", then "just release and let the kids decide")
+// how many hens peck about a stable's floor: each stable room its own, 0 to 30, two to start with, as it always had
+const STABLE_HENS = 2, STABLE_HENS_MAX = 30;
+const stableHensKey = (n, id) => `castleHens${n}${id}`;
 // The castle's residents, by kind: who lives in which room style, up to how
 // many (`count`: the setting, its most, how many to start with), and each
 // one's settings (`fields`: [the key's last word, its control, its label,
@@ -353,6 +357,8 @@ const castleOf = o => {
              const st = o["castleRoom" + (i + 1) + id] ?? CASTLE_ROOMS[id][i] ?? "king";
              return CASTLE_ROOM_CHOICES.some(([v]) => v === st) ? st : "king"; }),
            places: ROOM_NS.map(n => Math.max(4, Math.min(18, Math.round(o["castlePlaces" + n + id] ?? 10)))),
+           // (ticket 506) each stable's hens, by its room number (a number that is none: the two it always had)
+           hens: ROOM_NS.map(n => { const v = Math.round(o[stableHensKey(n, id)] ?? STABLE_HENS); return Number.isFinite(v) ? Math.max(0, Math.min(STABLE_HENS_MAX, v)) : STABLE_HENS; }),
            bones: ROOM_NS.map(n => Object.fromEntries(Object.entries(ROOM_BONES).map(([st, most]) =>
              [st, Math.max(0, Math.min(most, Math.round(o[roomBonesKey(id, n, st)] ?? 0)))]))),
            // its residents: its cats, who live in its cat room (or rooms), its horses, in its stable
@@ -507,6 +513,7 @@ const DEFAULTS = {
                      ...DOOR_JS.map(j => [hallDoorKey(id, n, j), hallDoorDefault(n, j)])]),
                    ["castleRooms" + id, CASTLE_ROOMS[id].length], ...ROOM_NS.map(n => ["castleRoom" + n + id, CASTLE_ROOMS[id][n - 1] ?? "king"]),
                    ...ROOM_NS.flatMap(n => Object.keys(ROOM_BONES).map(st => [roomBonesKey(id, n, st), 0])),
+                   ...ROOM_NS.map(n => [stableHensKey(n, id), STABLE_HENS]),   // (ticket 506: each stable's hens)
                    ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
                 castleRoom: 1, livingOut: "house", ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["treeBack" + n, "none"])),
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShape" + n, "square"])),   // (ticket 252: each tree house's trapdoor's opening)

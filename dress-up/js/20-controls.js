@@ -631,6 +631,8 @@ const TABS = [
         ["choice", "castleRoomTheme" + n + id, "🎨 its colors", THEMES],
         ...Object.entries(ROOM_BONES).map(([st, most]) => ["range", roomBonesKey(id, n, st), "💀 skeletons (0 = none)", 0, most, 0, 0]),
         ["range", "castlePlaces" + n + id, "🍽️ places at table", 4, 18, 4, 18],
+        // (ticket 506, for M: "chickens -- already in stable 30 in stable.") a stable's hens, pecking about its floor
+        ["range", stableHensKey(n, id), "🐔 hens (0 = none, up to 30)", 0, STABLE_HENS_MAX, 1, 12],
         // (ticket 197: the one room's style, not the whole castle built to read it, on every refresh)
         ["range", "castleHallDoors" + n + id, "🚪 doors in its walls", 0, DOOR_MAX, 0, 4, b => roomDoorMax(roomStyleOf(b, id, n))],
         ...DOOR_JS.map(k => ["choice", hallDoorKey(id, n, k), `🚪 door ${k} leads to`, hallDoorDests(id)]),
@@ -1182,6 +1184,7 @@ const SHOWN_WHEN = {
               ["background.castleOut" + n + id, b => !isHall(b, n)], ["background.castleFar" + n + id, b => typeOf(b, n) === "dining"],
               // (the door behind us: where a room has no sign at the bottom already; never a dungeon, a pit with no way in but from above)
               ["background.castleBack" + n + id, b => ["hall", "trap", "all"].includes(ROOM_KINDS[typeOf(b, n)]?.exits)], ["background.castlePlaces" + n + id, b => typeOf(b, n) === "dining"],
+              ["background." + stableHensKey(n, id), b => typeOf(b, n) === "stable"],   // (ticket 506)
               ...DOOR_JS.map(k => ["background." + hallDoorKey(id, n, k), b => hasDoors(b, n) && k <= Math.min(roomDoorMax(typeOf(b, n)), Math.round(b["castleHallDoors" + n + id] ?? 3))])])];
   })),
   ...Object.fromEntries(CASTLES.flatMap(([id]) => [["background.castleRooms" + id, b => (b.kind === "castle" || b.kind === "castleroom") && (b.castle ?? "N") === id],

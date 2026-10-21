@@ -1635,7 +1635,10 @@ const SCENE_LFO_THINGS = {
   "castleroom:smithy": { fast: "🔨 the smith's hammer and the sparks", slow: "🔥 the forge's glow, the bellows" },
   "castleroom:spiral": TORCH_LFO_THINGS,
 };
-const sceneLfoThings = b => SCENE_LFO_THINGS[b.kind === "castleroom" ? "castleroom:" + (roomHereNowOf(b)[1] ?? "king") : b.kind] || {};
+// (ticket 506: a stable's hens past its first two wander about with the slow LFO, named while there are some)
+const sceneLfoThings = b => { if (b.kind !== "castleroom") return SCENE_LFO_THINGS[b.kind] || {};
+  const [K, st] = roomHereNowOf(b), T = SCENE_LFO_THINGS["castleroom:" + (st ?? "king")] || {};
+  return st === "stable" && K.hens[Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1))) - 1] > STABLE_HENS ? { ...T, slow: T.slow + ", 🐔 the hens wandering" } : T; };
 // the cats in the room the friend is in, when it is a cat room; the horses, when it is a stable
 const roomHereNowOf = B => { if (B.kind !== "castleroom") return [null, null];
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))); return [K, K.rooms[n - 1]]; };
