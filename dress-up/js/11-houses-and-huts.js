@@ -1120,7 +1120,7 @@ function topFurniture(c, o) {
     // turned toward the trunk, its pillows on it; the rug round the trunk's foot; the lamp on the hatch's side, the plant on
     // the other; the wind chime from a limb
     const cs = 0.65, p = topSpot(c, sd, G.R - 70 * k, 1.3 * PI, 0, 0, g - 40 * k, cs);
-    put("couch", p, () => `<g ${tf(0, 0, k)}>` + couchSvg("hutroom", o.hutCouchColor ?? "#7a5a3a") + hutPillowsSvg(o.pillows ?? 4) + `</g>`, "",
+    put("couch", p, () => `<g ${tf(0, 0, k)}>` + couchSvg("hutroom", o.hutCouchColor ?? "#7a5a3a") + hutPillowsSvg(o.pillows ?? 4) + `</g>`, p.fp(230 * k, 22 * k),
       seatOf(p, "couch", -232 * k, 236 * k, -112 * k, 0, ["front", "left", "right"]));
     out.push({ name: "rug", z: "floor", svg: () => `<g transform="translate(0 ${f1(G.cy)}) scale(0.6) translate(0 ${f1(-G.cy)})">` +
       rugSvg(c, rugColorsOf(o.hutRugColors ?? "straw"), (G.cy - g) / k) + `</g>` });
@@ -1134,11 +1134,11 @@ function topFurniture(c, o) {
     // 🛏️ the tree room's bunk beds, tall, near the picture's side away from the hatch (clear of the window), and their toy
     // chest; the hut's bed of logs along the wall on the hatch's side, low, under that window; the stump with its candle
     // beside it, toward the trunk (outside the ring); the dreamcatcher over the bed, from a limb
-    const toys = o.toys ?? 10, bp = topSpot(c, sd, G.R - 55 * k, 1.1 * PI, 0, treeFloor + 10 * k, treeFloor + 10 * k, TREE_FIT);
+    const toys = o.toys ?? 10, bp = topSpot(c, sd, G.R - 55 * k, 1.2 * PI, 0, treeFloor + 10 * k, treeFloor + 10 * k, TREE_FIT);
     const bunks = () => bunkBedsSvg(c, 0, treeFloor, toys, -75 * k);
     put("bunk beds", bp, () => `<defs>${toyDefs}</defs>` + bunks()[0], bp.fp(110 * k, 22 * k, 0),
       seatOf(bp, "bunk beds", -105 * k, 105 * k, treeFloor - 174 * k, treeFloor + 10 * k, ["front"], { lie: true, head: "left" }));
-    const cp = topSpot(c, sd, G.R - 60 * k, 1.24 * PI, 0, treeFloor + 20 * k, treeFloor + 20 * k, TREE_FIT);
+    const cp = topSpot(c, sd, G.R - 60 * k, 1.34 * PI, 0, treeFloor + 20 * k, treeFloor + 20 * k, TREE_FIT);
     put("toy chest", cp, () => bunks()[1], cp.fp(75 * k, 18 * k));
     const by = g + 34 * k, hp = topSpot(c, sd, G.R - 70 * k, 1.8 * PI, 0, by, by, 0.75), bl = o.hutBlanket ?? "#b8434f";
     put("bed", hp, () => hutBedSvg(c, 0, by, bl), hp.fp(210 * k, 22 * k),
@@ -1180,14 +1180,14 @@ function topFurniture(c, o) {
     // 🍵 the healer's tea table and its two chairs in front, away from the hatch, the chairs facing the table; the tree
     // room kitchen's counter low along the wall under the window away from the hatch, its stove tall on the hatch's side;
     // a bench of three logs (the hut center's) wrapping the trunk's front, away from the hatch, to sit on facing us
-    const ty = g + 34 * k, tp = topSpot(c, sd, 360 * k, 0.84 * PI, 0, ty + 42 * k, ty + 42 * k, 0.85), set = () => teaSetSvg(c, 0, ty);   // (drawn only for the scene: a seat's c has no P)
+    const ty = g + 34 * k, tp = topSpot(c, sd, 340 * k, 0.78 * PI, 0, ty + 42 * k, ty + 42 * k, 0.85), set = () => teaSetSvg(c, 0, ty);   // (drawn only for the scene: a seat's c has no P)
     const tz = tp.at(0, ty + 44 * k)[1];
     out.push({ name: "chair, left", z: tz, svg: () => tp.g(set()[0]) + `<ellipse data-footprint="" cx="${f1(tp.at(-92 * k, 0)[0])}" cy="${f1(tz - 10 * k * tp.f)}" rx="${f1(26 * k * tp.fx)}" ry="${f1(10 * k * tp.f)}" fill="none"/>`,
       seat: seatOf(tp, "chair, left", -118 * k, -66 * k, ty + 4 * k, ty + 44 * k, ["right"]) });
     out.push({ name: "chair, right", z: tz, svg: () => tp.g(set()[1]) + `<ellipse data-footprint="" cx="${f1(tp.at(92 * k, 0)[0])}" cy="${f1(tz - 10 * k * tp.f)}" rx="${f1(26 * k * tp.fx)}" ry="${f1(10 * k * tp.f)}" fill="none"/>`,
       seat: seatOf(tp, "chair, right", 66 * k, 118 * k, ty + 4 * k, ty + 44 * k, ["left"]) });
     put("tea table", tp, () => set()[2], tp.fp(40 * k, 10 * k));
-    const top = -130 * k, cp = topSpot(c, sd, G.R - 60 * k, 1.22 * PI, 0, 0, treeFloor + 10 * k, TREE_FIT);
+    const top = -130 * k, cp = topSpot(c, sd, G.R - 60 * k, 1.28 * PI, 0, 0, treeFloor + 10 * k, TREE_FIT);
     put("counter", cp, () => kitchenCounterSvg(c, -W * 0.17, top), cp.fp(W * 0.17 + 8 * k, 16 * k));
     const vp = topSpot(c, sd, G.R - 60 * k, 1.81 * PI, 0, 0, treeFloor + 10 * k, TREE_FIT);
     put("stove", vp, () => stoveSvg(c, -55 * k, top), vp.fp(55 * k, 16 * k));

@@ -21,7 +21,7 @@ const H = `const w = ms => new Promise(r => setTimeout(r, ms)), B = state.backgr
 const WANT = { parlour: ["couch", "rug", "lamp", "plant", "wind chime"], loft: ["bunk beds", "toy chest", "bed", "stump", "dreamcatcher"],
   reading: ["shelves on the trunk", "beanbag", "telescope", "lantern"], potions: ["potion shelves", "shelf of potions 1", "drying herbs 1", "cauldron", "worktable"],
   tea: ["chair, left", "chair, right", "tea table", "counter", "stove", "log 1", "log 2", "log 3"] };
-const SOLID = { parlour: ["lamp", "plant"], loft: ["bunk beds", "toy chest", "bed", "stump"], reading: ["telescope"], potions: ["potion shelves", "cauldron", "worktable"],
+const SOLID = { parlour: ["couch", "lamp", "plant"], loft: ["bunk beds", "toy chest", "bed", "stump"], reading: ["telescope"], potions: ["potion shelves", "cauldron", "worktable"],
   tea: ["chair, left", "chair, right", "tea table", "counter", "stove", "log 1"] };
 const SEATS_N = { parlour: 1, loft: 2, reading: 1, potions: 0, tea: 5 };
 try {
