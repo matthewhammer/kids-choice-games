@@ -357,6 +357,7 @@ const TAB_BOXES = {
                 ["🪄 the staff", ["staff", "staffOrb"]], ["🏹 Robin Hood", ["robinTunic", "robinHat", "robinFeather", "bow", "quiver"]],
                 ["👑 the queen or king", ["queenRobe", "kingRobe", "crownJewel", "mantle", "scepter"]],
                 ["🐉 the dragon", ["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow", "dragonWingLfo", "fireStyle"]],   // (ticket 523: its fire, the friend's)
+                ["🦋 the moth", ["mothStyle", ...Object.keys(MOTH_STYLES).map(id => "mothColor_" + id), "mothSpots"]],   // (ticket 536)
                 ["🤖 the robot", ["robotStyle", ...Object.keys(ROBOT_STYLES).map(id => "robotColor_" + id), "robotLights"]],   // (ticket 515)
                 ["🥷 the ninja", ["ninjaBoots", "ninjaBand", "ninjaGem", "ninjaGemShape", "ninjaEyes"]],   // (ticket 557)
                 ["🦶 the Sasquatch", ["sasquatchStyle", ...Object.keys(SASQUATCH_STYLES).map(id => "sasquatchColor_" + id), "sasquatchPrints", "sasquatchGrin"]],   // (ticket 530)

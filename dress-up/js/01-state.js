@@ -438,6 +438,29 @@ const ROBOT_STYLES = {
             see: "front side", limb: "main", hand: "darker", boot: "darker" },
 };
 const ROBOT_LIGHTS = ["auto", "#f6c445", "#39e0ff", "#6ee7b7", "#ff7a00", "#ef4444", "#f472b6", "#ffffff"];
+// (ticket 536, Matthew: "moth costume, 3 styles. Follow the bird costume examples for wing ideas, but we want moth wings
+// here, and antenna, etc") The 🦋 moth: an animal suit (ANIMALS.moth, js/06-costumes.js) with a moth's wings on its arms,
+// as the bird suits' are (mothWing), feathery antennae and a fuzzy crown on its hood, a fluffy collar and a banded belly, in
+// three styles offered as the Sasquatch's are: mothStyle (a choice row), mothColor_<id> (each style its wings' own colour
+// row, its first swatch the usual one, shown only while it is chosen), and mothSpots (👁️ its eyespots), all in 🐯
+// Costume's 🦋 the moth box. Each style: `colors` (its wings); `body`, the suit's own colours, put on when the style (or the
+// costume) is chosen (set(), js/20-controls.js), which the animal colour rows then change as any animal's; `hind`, the
+// hindwings' colour (null: the wings' own); `costa`, the band along each forewing's leading edge; `bands`, the wavy lines
+// across the wings ([colour, width], "zig" lines zigzag); `hindBand`, one along each hindwing's edge; `spot`, an eyespot's rim, ring, middle and how big (on the
+// hindwings; `foreSpot` how big on the forewings, 0 none); `tail`, the hindwings' long tails; `antenna`, their colour;
+// `dust`, a dusting of darker scales; `kidney`, the small kidney-shaped ring a night moth has on each forewing.
+const MOTH_STYLES = {
+  luna:    { name: "🌙 luna moth", colors: ["#b8e6a0", "#9fdcc8", "#e8f09a", "#f5c4da", "#c6d4f5"], hind: null, costa: "#8a3b5c",
+             body: { fur: "#f4f1e6", marks: "#c9b98f", belly: "#ffffff", accent: "#e7b8cb", furPattern: "none" },
+             bands: [["#e9f5c8", 3]], hindBand: null, spot: ["#7a3450", "#f2c94c", "#dff3ff", 9], foreSpot: 6, tail: true, antenna: "#d4ae4f" },
+  emperor: { name: "🦚 emperor moth", colors: ["#c9773d", "#b0563a", "#9a6e4c", "#d9a05b", "#a77bb8", "#d9708e"], hind: "#e3913f", costa: "#efe2cf",
+             body: { fur: "#8d5d3b", marks: "#4b2d1d", belly: "#e2c29a", accent: "#f2d6a2", furPattern: "none" },
+             bands: [["#f6ead6", 4], ["#4a2a1a", 2.5]], hindBand: ["#f6ead6", 3.5], spot: ["#24160e", "#f4bd45", "#2c3a86", 15], foreSpot: 13, tail: false, antenna: "#5b3a24" },
+  night:   { name: "🌫️ night moth", colors: ["#9b9081", "#7f766b", "#b3a993", "#8c7b6a", "#a4a9b2"], hind: "#d9905f", costa: "#5d544a",
+             body: { fur: "#8f8578", marks: "#4f473f", belly: "#cfc5b4", accent: "#6d6154", furPattern: "none" },
+             bands: [["#3f3832", 3, "zig"], ["#3f3832", 3, "zig"]], hindBand: ["#2e2a26", 5], spot: ["#2e2a26", "#2e2a26", "#2e2a26", 0], foreSpot: 0, tail: false,
+             antenna: "#6c6156", dust: "#4a4239", kidney: true },
+};
 // (ticket 518, Matthew: "body can hold things in each hand. Audit all MUDU objects to hold (staff, broom, sword, shield, horse
 // rein) and add every option to body sub-panel, somehow.") HOLDABLES: everything a hand can hold, by id, in drawing order
 // (the order the costumes' own were drawn in). `name` its chip; `ext` how far it reaches from the hand, for the picture's
@@ -728,6 +751,8 @@ const DEFAULTS = {
              ...Object.fromEntries(Object.entries(FAIRY_TUNICS).map(([id, t]) => ["tunicColor_" + id, t.colors[0]])),
              // (ticket 515) the robot: its style, its lights, and each style's own colour (the fairy's way)
              robotStyle: "tin", robotLights: "auto", ...Object.fromEntries(Object.entries(ROBOT_STYLES).map(([id, r]) => ["robotColor_" + id, r.colors[0]])),
+             // (ticket 536) the moth: its style, each style's wing colour, and its eyespots
+             mothStyle: "luna", mothSpots: true, ...Object.fromEntries(Object.entries(MOTH_STYLES).map(([id, t]) => ["mothColor_" + id, t.colors[0]])),
              // (ticket 522) the cowgirl and the cowboy: each one's style and each style's colour, the hat (both share it) and its colour
              // for each hat, and the lasso (its hand is 🧍 Body's, holdL/holdR, since ticket 518)
              cowgirlStyle: "rodeo", cowboyStyle: "sheriff", cowHat: "cattleman", cowHatAuto: true, lasso: true,
