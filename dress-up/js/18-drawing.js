@@ -50,7 +50,8 @@ function drawNow() {
   // edge), big feet, and its footprints; each piece a group marked data-sasquatch, nothing in one turned
   const sasq = kind === "sasquatch", sqG = (what, t) => t ? `<g data-sasquatch="${what}">${t}</g>` : "";
   const sqArm = (arm, d) => sasq ? sqG("arm", shagEdge(armJoints(arm), d ? -d : arm.side, (armW + 9) / 2, 9, C)) : "";
-  const limb = suit ? C.fur : skin, limbLine = suit ? darker(C.fur) : skinLine;
+  // (ticket 557: a ninja's bare arms, legs and neck are in the cloth, the wrists in the gloves, js/06-costumes.js)
+  const limb = suit ? C.fur : kind === "ninja" ? NINJA.glove : skin, limbLine = suit ? darker(C.fur) : kind === "ninja" ? NINJA.line : skinLine;
   // A witch: a long dress -- long sleeves, a long skirt with a ragged hem
   // -- in the hat's color with a spider web on it; striped stockings; a
   // pointed hat; and, if chosen, a cat on her shoulder and a broom in her
@@ -61,7 +62,7 @@ function drawNow() {
   // (ticket 432) a wizard: a long robe with stars, a gold cord, a long beard, the hat with stars and a moon, a staff
   const wizard = kind === "wizard";
   // (ticket 433) a monk or a dryad: a hooded cloak to the feet, a rope belt, a staff; the hood up hides the hair
-  const monk = kind === "monk", hooded = !!clothHood() || kind === "knight" || kind === "robot";   // (ticket 515: a robot's head too)
+  const monk = kind === "monk", hooded = !!clothHood() || kind === "knight" || kind === "robot" || kind === "ninja";   // (ticket 515: a robot's head too; 557: a ninja's mask)
   // (ticket 434) a forester (Robin Hood): a green tunic with dagged edges over hose, a strap across the chest, a quiver, a bow
   const robin = kind === "robin";
   // (ticket 435) a knight: mail under a tabard in his arms, a helmet (the hair under it), a sword and a shield
@@ -70,6 +71,9 @@ function drawNow() {
   const royal = kind === "queen" || kind === "king", king = kind === "king", robeC = king ? WC.kingRobe || "#7a1f2b" : WC.queenRobe || "#5b2a86";
   // (ticket 522) a cowgirl or a cowboy: a style each (W: its clothes, pieces and colours, and the hat, W.H, shared by both)
   const western = kind === "cowgirl" || kind === "cowboy", W = western ? westernOf(WC, kind) : null;
+  // (ticket 557) a ninja: all in black, gloves, soft boots with bands up the shin, a mask hiding the face, and the gold head
+  // covering with its gem (ninjaMask, ninjaBand, ninjaShin in js/06-costumes.js)
+  const ninja = kind === "ninja", njG = (what, t) => t ? `<g data-ninja="${what}">${t}</g>` : "";
   // (a fairy: her tunic in its style's color, and the style's pattern)
   const fTunic = FAIRY_TUNICS[WC.tunicStyle] ? WC.tunicStyle : "petal", fCol = WC["tunicColor_" + fTunic] ?? FAIRY_TUNICS[fTunic].colors[0];
   const fWing = FAIRY_WINGS[WC.wingStyle] ? WC.wingStyle : "butterfly", fWingCol = WC["wingColor_" + fWing] ?? FAIRY_WINGS[fWing].colors[0];
@@ -125,6 +129,7 @@ function drawNow() {
   const robot = kind === "robot", R = robot ? robotOf(WC) : null;
   if (robot) { SH = { ...SH, style: "long", collar: "flat", color: R.limb, pattern: "plain" }; if (R.S.feet !== "own") P = { ...P, style: "long", color: R.limb, pattern: "plain" }; }
   if (western) { SH = { ...SH, ...W.shirt }; P = { ...P, ...W.pants }; }   // (ticket 522)
+  if (ninja) { SH = { ...SH, style: "long", collar: "v", color: NINJA.cloth, pattern: "plain" }; P = { ...P, style: "long", color: NINJA.cloth, pattern: "plain" }; }   // (ticket 557)
   const w = dir ? SH.width * 0.62 : q ? SH.width * 0.84 : SH.width, L = SH.length;
   const nw = Math.max(22, B.neckW / 2 + 6);           // the collar fits the neck
 
@@ -176,7 +181,7 @@ function drawNow() {
   };
   // no clothes: underwear or a swimsuit instead of the shirt and pants
   // (a full animal suit still covers everything)
-  const U = state.undies, undies = U.on && !suit && !witch && !fairy && !scuba && !diver && !gnome && !wizard && !monk && !robin && !knight && !royal && !robot && !western;
+  const U = state.undies, undies = U.on && !suit && !witch && !fairy && !scuba && !diver && !gnome && !wizard && !monk && !robin && !knight && !royal && !robot && !western && !ninja;
   const sleeve = suit ? 0.97 : undies ? 0 : { tee: 0.38, long: 0.95, tank: 0 }[SH.style];
 
   // PANTS: their hips under the shirt's hem, their feet under the legs.
@@ -228,7 +233,8 @@ function drawNow() {
   const half = Math.max(hw / 2, B.legW / 2 + 6);
   // (ticket 515: a robot stands on the feet it wears, its boots at their own size, the mech's 1.35 times, never bare; the box
   // bot's are the friend's own shoes. Every other costume as before: the friend's shoes)
-  const worn = robot ? robotFeet(R, state.shoes) : western ? westernFeet(W, state.shoes) : state.shoes;   // (ticket 522: and a cowgirl or cowboy on their boots)
+  const ninjaBoots = ninja ? { style: "ninjaboot", size: state.shoes.size, color: NINJA.glove } : null;   // (ticket 557: soft and quiet, drawn by shoeSvg)
+  const worn = robot ? robotFeet(R, state.shoes) : western ? westernFeet(W, state.shoes) : ninja ? ninjaBoots : state.shoes;   // (ticket 522: and a cowgirl or cowboy on their boots)
   const shoeSc = worn.size / 100;
   const standOn = (fy, kneeY) => Math.max(fy + (worn.style === "bare" ? 18 : 30) * shoeSc, kneeY);
   // (treading, they float where they would stand: the ground of their legs
@@ -283,7 +289,7 @@ function drawNow() {
   const hairY = y => HEAD_C + (y - HEAD_C) * headH(F);
   // (ticket 442) the friend's beard, from 💇 Hair (none under the old diving helmet or as a ghost), and how far below the
   // chin it reaches, for the picture's bottom
-  const beardStyle = BEARDS[state.hair.beard] && kind !== "diver" && kind !== "ghost" && kind !== "robot" ? state.hair.beard : null;
+  const beardStyle = BEARDS[state.hair.beard] && kind !== "diver" && kind !== "ghost" && kind !== "robot" && kind !== "ninja" ? state.hair.beard : null;   // (ticket 557: none under the mask)
   const flying = F.burst > 0 ? idiv(F.burst * 7, 10) + idiv(F.burst * 4, 10) + 40 : 0;   // see topFlies
   const faceTop = Math.min(-90, HEAD_C - 175 * headH(F), headCrown(F) + 50.6 - 1.4 * F.burst - 40,
                            hairY(hr.top) - 40 - flying, (C ? (kind === "deer" || dragon ? -140 : -90) : 0) - flying,
@@ -655,6 +661,7 @@ function drawNow() {
              : knight ? { style: "boot", size: state.shoes.size, color: "#6b7280" }
              : royal ? { style: "boot", size: state.shoes.size, color: "#e0b030" }
              : western ? westernFeet(W, state.shoes)   // (ticket 522: cowboy boots)
+             : ninja ? ninjaBoots   // (ticket 557)
              : robot ? robotFeet(R, state.shoes)   // (ticket 515: boots in its colour, the mech's bigger; the box bot's the friend's own)
              : fairy ? { style: "fairy-" + (FAIRY_SHOES.some(([v]) => v === WC.fairyShoes) ? WC.fairyShoes : "slipper"), size: state.shoes.size, color: WC.fairyShoeColor || FAIRY_SHOE_COLORS[0] }
              : suit ? { style: "paw", size: state.shoes.size * (sasq ? C.sq.footK : 1), color: C.fur, pad: C.accent, claws: dragon ? C.horn : null } : state.shoes;   // (ticket 530: a Sasquatch's big feet)   // (ticket 499: a dragon's feet clawed)
@@ -808,7 +815,8 @@ function drawNow() {
         const d = "M" + Q.map(([x, y]) => f1(x) + " " + f1(y)).join(" L");
         return `<path d="${d}" fill="none" stroke="${ps}" stroke-width="${f1(2 * half + 5)}" stroke-linejoin="round"/>` +
                `<path d="${d}" fill="none" stroke="${pf}" stroke-width="${f1(2 * half)}" stroke-linejoin="round"/>`; };
-      const legBits = side => robot ? rbG("leg", robotLeg(R, legJoints(side), half, dir)) : western && W.S.chaps ? westernChap(W, legJoints(side), half, side, dir, away) : sasq ? sqG("leg", shagEdge(legJoints(side), -dir, half, 10, C)) : "";   // (ticket 515: a robot's ridges or knee pads, with each leg; 522: chaps)
+      const legBits = side => robot ? rbG("leg", robotLeg(R, legJoints(side), half, dir)) : western && W.S.chaps ? westernChap(W, legJoints(side), half, side, dir, away) : sasq ? sqG("leg", shagEdge(legJoints(side), -dir, half, 10, C))
+        : ninja ? njG("bands", ninjaShin(legJoints(side), half, WC.ninjaBoots)) : "";   // (ticket 515: a robot's ridges or knee pads, with each leg; 522: chaps; 557: a ninja's bands up the shin)
       for (const side of legSides) t += pantsLeg(side) + legBits(side);
       if (legApart) farLeg.pants += pantsLeg(dir) + legBits(dir);   // (ticket 136: the far one apart)
       svg += t + `<g transform="translate(0 1.5)">${hips(false).replace(/x="([^"]+)"/, (_, x) => `x="${f1(Number(x) + 1.5)}"`).replace(/width="([^"]+)"/, (_, w) => `width="${f1(Number(w) - 3)}"`)}</g>`;
@@ -833,6 +841,7 @@ function drawNow() {
   if (robot && !dir) for (const side of [1, -1]) svg += rbG("leg", robotLeg(R, legJoints(side), half, 0, away));   // (ticket 515: facing us, both legs'; from behind, no knee pads)
   if (western && W.S.chaps && !dir) for (const side of [1, -1]) svg += westernChap(W, legJoints(side), half, side, 0, away);   // (ticket 522: facing us or from behind, both chaps)
   if (sasq && !dir) svg += sqG("leg", shagEdge([1, -1].map(side => [legJoints(side), side]), "many", half, 10, C));   // (ticket 530: down each leg's outside)
+  if (ninja && !dir) for (const side of [1, -1]) svg += njG("bands", ninjaShin(legJoints(side), half, WC.ninjaBoots));   // (ticket 557: facing us or from behind, both shins)
   veilFrom("pants", pantsAt);
   // (ticket 288: a scuba suit's stripe down the outside of each leg)
   if (scuba) svg += veil("pants", [1, -1].map(side => { const J = legJoints(side);
@@ -888,9 +897,9 @@ function drawNow() {
   // (the neck, the arms and the body are the shirt's to see through: an
   // invisible shirt is an invisible body, never a bare one)
   const bodyAt = svg.length;
-  const neckC = robot && R.S.head !== "bubble" ? R.limb : limb;   // (ticket 515: a robot's neck in its metal; inside the space bot's glass, the friend's own)
+  const neckC = ninja ? NINJA.cloth : robot && R.S.head !== "bubble" ? R.limb : limb;   // (ticket 515: a robot's neck in its metal; inside the space bot's glass, the friend's own; 557: a ninja's, the mask's cloth)
   const neckSvg = `<rect x="${-B.neckW / 2}" y="${neckTop}" width="${B.neckW}" height="${B.neck + 44}" rx="4" ` +
-                  `fill="${neckC}" stroke="${robot ? darker(neckC) : limbLine}" stroke-width="2.5"/>`;
+                  `fill="${neckC}" stroke="${robot || ninja ? darker(neckC) : limbLine}" stroke-width="2.5"/>`;
   if (!(squash && away)) svg += neckSvg;
 
   // arms, sleeves and shirt
@@ -911,7 +920,8 @@ function drawNow() {
   // they face us, wears its own style; one holding the broom is closed round
   // it, a round fist)
   const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : robot ? robotHands(R, state.hands) : state.hands, own = !suit && !robot && ownOf(side) === "R" ? rightHandOf(hands) : hands;   // (ticket 515: a robot's hands; ticket 528: by own hand, armOf's)
-    return handSvg(H[0], H[1], angle, out, held.some(h => h.arm.side === side && HOLDABLES[h.item].fist) ? { ...own, style: "round" } : own, skin); };
+    const gl = ninja ? { ...own, color: NINJA.glove } : own;   // (ticket 557: black gloves, in the friend's own hand style)
+    return handSvg(H[0], H[1], angle, out, held.some(h => h.arm.side === side && HOLDABLES[h.item].fist) ? { ...gl, style: "round" } : gl, skin); };
   // (ticket 286: crawling toward us or away, each arm drawn whole, straight down to its hand flat on the floor, seen short)
   const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
     (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf) : "") +
@@ -1064,12 +1074,16 @@ function drawNow() {
     const fill = falconHead(kind) ? C.marks : eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
     svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F, 0, true)}` +
                                `<ellipse ${hoodEllipse(F)} fill="${fill}" stroke="${darker(C.fur)}" stroke-width="4"/>${dragon ? dragonHoodSpines(C, F) : ""}${sasq ? sasquatchTop(C, F, 0, true) : ""}</g></g>`));   // (ticket 499: a dragon's spines down it)
-  } else if (away) { svg += (robot && !robotSees(R, "back") ? "" : veil("head", inFace(face.under))) + (diver || robot ? "" : hooded
+  } else if (away) { svg += (robot && !robotSees(R, "back") || ninja ? "" : veil("head", inFace(face.under))) + (diver || robot || ninja ? "" : hooded
       ? veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${knight ? "" : clothHoodAway(F, clothHood())}</g></g>`))   // (ticket 433: the hood closed over the head; 435: a knight's helmet)
       : veil("hair", inFace(`<g transform="${topFlies(F)}">${western && W.H ? tucked(backHair(state.hair, F), "under-hat-away", HEAD_C + (hatLine - HEAD_C) * headH(F)) : backHair(state.hair, F)}</g>`))); }   // (ticket 522: under a cowboy hat, from behind too)
   // (ticket 515) under a robot's faceplate, a screen, or a box seen from the side, the face is not drawn (its own eyes and
   // mouth follow the mood, below); a window or an opening shows it
   else if (robot && !robotSees(R, dir ? "side" : "front")) { /* (faceFrame stays, for bubbles and fire) */ }
+  // (ticket 557) under a ninja's mask the face is not drawn (the mask, below); only its eyes, kept for 👀 eyes in the slit:
+  // facing us as drawn, in profile the near eye moved to the front as the profile's features are
+  else if (ninja) { if (WC.ninjaEyes) faceEyes = !dir ? face.eyes : `<defs><clipPath id="face-near-n"><rect x="${dir > 0 ? 100 : -4000}" y="-4000" width="4100" height="8000"/></clipPath></defs>` +
+                                                  `<g transform="translate(${f1(dir * 24 * headWidth(F))} 0)"><g clip-path="url(#face-near-n)">${face.eyes}</g></g>`; }
   else if (!dir) { faceEyes = inFace(face.eyes); svg += veil("head", inFace(face.under)) + veil("eyes", faceEyes) + veil("head", inFace(face.over)); }
   else {
     // (ticket 124) in profile: the face's features on our side only (one
@@ -1109,6 +1123,15 @@ function drawNow() {
   // (in profile, the hair on the head itself, over its top and back)
   // (ticket 442) the beard and moustache from 💇 Hair (the gnome man's and the wizard's too), under the bangs and a hat
   if (beardStyle && !away) svg += veil("hair", inFace(beardSvg(F, beardStyle, beardShade(state.hair), dir, state.hair.moustache !== false, state.hair)));
+  // (ticket 557) a ninja's mask over the whole head, tight, the face hidden: the eyes only in the slit, with 👀 (as the monk's
+  // eyes in the dark: drawn again without their whites, so black pupils vanish and coloured ones show); and the gold head
+  // covering over it, flying off with the lid as a hat does
+  if (ninja) {
+    svg += veil("head", inFace(njG("mask", ninjaMask(F, dir, away, q))));
+    const slit = faceEyes && !away ? ninjaSlitClip(F, dir, q) : null;
+    if (slit) svg += veil("eyes", inFace(slit.def + `<g clip-path="url(#${slit.id})">${faceEyes.replace(/fill="#ffffff" stroke="black"/g, 'fill="none" stroke="none"')}</g>`));
+    if (WC.ninjaBand !== false) svg += veil("head", inFace(`<g transform="${topFlies(F)}">${njG("band", ninjaBand(F, WC, dir, away, q))}</g>`));
+  }
   // (ticket 453, Matthew: "see head? if yes, show the head as is, but permit a slider to control how dim it is (fading to black
   // in the extreme). if no --- we see black in the hood, and see eyes is an option still (if no see head)--- black eyes won't
   // show up, but various other eye styles will") the druid's face in the hood: dimmed toward black (hoodDim, a share), or

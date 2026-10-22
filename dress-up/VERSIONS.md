@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🥷 Ninja costume** (M): a new costume in 🐯 Costume, all in black: the shirt, the trousers, black gloves, and a black mask fitted close round the head that hides the whole face, with only a narrow dark slit across the eyes ("👀 eyes in the slit" shows the eyes in it, and is off at first). Soft, quiet ninja boots with a split toe and bands from the ankle up the shin, in "🥾 the boots' bands": "🪢 braided bands" (two colours crossing over and under each other, the first choice) or "🧣 bands wrapped round" (band above band). And "👑 golden head band", on at first: a gold band all the way round the head, above the eyebrows, and a second gold band from the middle of the forehead over the top of the head to the back, joined to the first in front and behind, like an upside-down T on the forehead, with a gem where they meet: "💎 the gem" (ruby, emerald, sapphire, amethyst, topaz or diamond; a ruby at first) and "💎 the gem's shape" (round, oval, diamond shape, teardrop, star or heart). Behind, a round gold clasp joins the bands. It works facing toward us, away, left and right, turned partway, and walking, running, crouching, riding, sitting, swimming, climbing, jumping and crawling (ticket 557).
+
 ## 0.0.409 (2026-10-22)
 
 Everything in 0.0.408, plus a dress, a skirt or a robe that stays over the legs in every pose.

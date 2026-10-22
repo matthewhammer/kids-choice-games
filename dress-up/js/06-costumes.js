@@ -148,6 +148,152 @@ function clothHoodAway(F, c) {
     `<path d="M100 ${f1(top + 10)} L100 ${f1(bot + 54)} L146 ${f1(top + 18)} Z" fill="#000000" opacity="0.1"/>`;
 }
 
+// (ticket 557, for M) THE NINJA'S HEAD: a black mask that hides the whole face, fitted tight (Matthew: "look at the hooded
+// monk/dryad, but let's make the mask fit tight, not so loose"), and over it the gold head covering. In the face's units,
+// on the head's own outline as drawn (headPoints: its width, height and alien shape already in it, so no hairStretch), grown
+// NINJA_FIT all round from the head's middle: the cloth hugs the head and the neck (the neck in the cloth: drawNow's
+// neckC). The face is not drawn under it (drawNow), nor the hair, the ears or a beard (`hooded`); a narrow slit across the
+// eyes is black, the eyes in it only with 👀 (ninjaEyes, off), drawn as the monk's eyes in the dark are, inside the slit.
+// Every view its own drawing: facing us (dir 0) the slit across both eyes, a face cloth's edge under it; in profile (dir -1
+// or 1) the slit on the near side, open at the front edge, and the cloth over the nose a small bump (with a nose); from
+// behind (away) no slit. `turn` (ticket 144, turned partway) slides what is on the face, as faceSvg slides the features.
+const NINJA_FIT = 5, NINJA_BW = 11;
+function ninjaMaskPts(F, grow = NINJA_FIT) {
+  return headPoints(F).map(([x, y]) => { const dx = x - 100, dy = y - HEAD_C, r = Math.hypot(dx, dy) || 1, k = (r + grow) / r; return [100 + dx * k, HEAD_C + dy * k]; });
+}
+const ninjaPath = pts => "M" + pts.map(([x, y]) => f1(x) + " " + f1(y)).join(" L") + " Z";
+// (ticket 274's rule: a clip's id named by its shape, not by chance, so two friends' clips never share one)
+const ninjaClip = (pre, d) => { let h = 2166136261; for (let i = 0; i < d.length; i++) h = Math.imul(h ^ d.charCodeAt(i), 16777619);
+  const id = pre + (h >>> 0).toString(36); return { id, def: `<clipPath id="${id}"><path d="${d}"/></clipPath>` }; };
+// the slit's middle line, the band's line (above the brows, below the crown) and the head's mask outline
+function ninjaGeom(F) {
+  const LY = faceLayout(F), crown = headCrown(F), pts = ninjaMaskPts(F);
+  return { LY, pts, eyeY: LY.eyeY, bandY: crown + 0.55 * (LY.eyeY - crown), top: Math.min(...pts.map(p => p[1])), hh: 8 };
+}
+function ninjaMask(F, dir = 0, away = false, turn = 0) {
+  const G = ninjaGeom(F), { pts, eyeY, hh, LY } = G, P = (x, y) => f1(x) + " " + f1(y), soft = mix(NINJA.cloth, "#ffffff", 0.14);
+  // (the cloth's sheen: a lighter arc inside the outline over the crown, toward the back of the head in profile)
+  const sheenPts = ninjaMaskPts(F, NINJA_FIT - 9), i0 = dir > 0 ? 42 : dir < 0 ? 58 : 40, sheen = sheenPts.slice(i0, i0 + 11);
+  let s = "";
+  // (in profile, the cloth over the nose: a small bump at the front edge, under the mask's own outline)
+  const noseOn = F.noseView && F.noseView !== "none";
+  if (dir && !away && noseOn) { const ny = LY.eyeY + 6 + 15 * F.noseH / 100, nh = Math.max(8, 13 * F.noseH / 100), ex = acrossAt(pts, ny)[dir > 0 ? 1 : 0], b = Math.min(11, 3 + 6 * F.noseW / 100);
+    s += `<path d="M${P(ex - dir * 6, ny - nh)} Q${P(ex + dir * b, ny - 2)} ${P(ex + dir * (b - 2), ny + nh * 0.6)} Q${P(ex + dir * 2, ny + nh)} ${P(ex - dir * 6, ny + nh)} Z" fill="${NINJA.cloth}" stroke="${NINJA.line}" stroke-width="3" stroke-linejoin="round"/>`; }
+  s += `<path data-ninja="mask" d="${ninjaPath(pts)}" fill="${NINJA.cloth}" stroke="${NINJA.line}" stroke-width="3.5" stroke-linejoin="round"/>` +
+       `<path d="M${sheen.map(([x, y]) => P(x, y)).join(" L")}" fill="none" stroke="${soft}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>`;
+  if (away) return s;
+  const cx = 100 + turn * 14, edge = (y, t) => { const [l, r] = acrossAt(pts, y); return dir ? (dir > 0 ? r : l) : t < 0 ? l : r; };
+  if (!dir) {
+    // facing us: the slit across both eyes, inside the head's outline, an almond narrower than the eyes are tall
+    const reach = LY.eyeDX + eyeHalfW(F) + 12, xl = Math.max(edge(eyeY, -1) + 12, cx - reach), xr = Math.min(edge(eyeY, 1) - 12, cx + reach), q = (xr - xl) * 0.25;
+    s += `<path data-ninja="slit" d="M${P(xl, eyeY)} C${P(xl + q, eyeY - hh * 1.35)} ${P(xr - q, eyeY - hh * 1.35)} ${P(xr, eyeY)} C${P(xr - q, eyeY + hh * 1.35)} ${P(xl + q, eyeY + hh * 1.35)} ${P(xl, eyeY)} Z" fill="${NINJA.slit}"/>`;
+    // the face cloth's top edge, just under the slit, from side to side
+    const wy = eyeY + hh + 6;
+    s += `<path d="M${P(edge(wy, -1) + 3, wy + 2)} Q${P(cx, wy + 7)} ${P(edge(wy, 1) - 3, wy + 2)}" fill="none" stroke="${soft}" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>`;
+    return s;
+  }
+  // in profile: the slit from behind the near eye to the face's front edge, and the face cloth's edge under it
+  const sh = 24 * headWidth(F), x0 = 100 + dir * (sh + LY.eyeDX - eyeHalfW(F) - 8), xe = edge(eyeY), xm = x0 + (xe - x0) * 0.55;
+  s += `<path data-ninja="slit" d="M${P(x0, eyeY)} Q${P(xm, eyeY - hh * 1.2)} ${P(xe, eyeY - hh)} L${P(xe, eyeY + hh * 0.8)} Q${P(xm, eyeY + hh * 1.1)} ${P(x0, eyeY)} Z" fill="${NINJA.slit}"/>`;
+  const wy = eyeY + hh + 6;
+  s += `<path d="M${P(x0 - dir * 14, wy + 1)} Q${P(xm, wy + 4)} ${P(edge(wy) - dir * 2, wy + 1)}" fill="none" stroke="${soft}" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>`;
+  return s;
+}
+// the eye slit alone, as a clip for the eyes in it (ninjaEyes), the same shape as ninjaMask's: { id, def }
+function ninjaSlitClip(F, dir = 0, turn = 0) {
+  const m = ninjaMask(F, dir, false, turn).match(/data-ninja="slit" d="([^"]+)"/);
+  return m ? ninjaClip("ninja-slit-", m[1]) : null;
+}
+// THE HEAD COVERING (ninjaBand): a gold band round the head above the brows and below the crown, and a second band from the
+// middle of the forehead over the top of the head to the back, joined to the first in front and behind (an inverted T on
+// the forehead), the gem where they meet in front (ninjaGemSvg), a round gold clasp where they meet behind. Both bands are
+// drawn inside the mask's outline grown by one (a band's thickness), so their ends meet its edge as they go round it: their
+// outlines first and then their gold, so the T is one piece. Facing us and from behind, the band round the head bows down a
+// little at the middle (a ring seen from just above it) and the band over the top rises from the junction; in profile the
+// round band crosses the whole head and the band over the top follows the head's outline from the forehead to the back,
+// the gem standing out at the forehead's edge.
+function ninjaBand(F, WC, dir = 0, away = false, turn = 0) {
+  const G = ninjaGeom(F), { pts, bandY: yb, top } = G, bw = NINJA_BW, bow = 4, P = (x, y) => f1(x) + " " + f1(y), clip = ninjaClip("ninja-band-", ninjaPath(ninjaMaskPts(F, NINJA_FIT + 1)));
+  const cx = 100 + (away ? 0 : turn * 14), stroke = (d, c, w) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f1(w)}" stroke-linejoin="round"/>`;
+  let round, over, gem = "", clasp = "";
+  if (!dir) {
+    round = `M${P(-60, yb - bow)} Q${P(cx, yb + 2 * bow)} ${P(260, yb - bow)}`;
+    over = `M${P(cx, yb + bow)} Q${P(cx + (100 - cx) * 0.2, (yb + top) / 2)} ${P(100 + (cx - 100) * 0.3, top - 20)}`;
+    if (away) clasp = `<circle cx="${f1(cx)}" cy="${f1(yb + bow)}" r="7.5" fill="${NINJA.gold}" stroke="${NINJA.goldLine}" stroke-width="2"/><circle cx="${f1(cx - 2.5)}" cy="${f1(yb + bow - 2.5)}" r="2.2" fill="${NINJA.goldLight}"/>`;
+    else gem = ninjaGemSvg(WC.ninjaGem, WC.ninjaGemShape, cx, yb + bow, 10);
+  } else {
+    // in profile: the round band straight across, the band over the top along the head's outline, inset by half its width
+    round = `M${P(-60, yb)} L${P(260, yb)}`;
+    const inner = ninjaMaskPts(F, NINJA_FIT + 1 - bw / 2), [xl, xr] = acrossAt(inner, yb);
+    const arc = inner.slice(36).filter(([, y]) => y < yb);
+    over = `M${P(xl, yb)} L${arc.map(([x, y]) => P(x, y)).join(" L")} L${P(xr, yb)}`;
+    if (!away) gem = ninjaGemSide(WC.ninjaGem, WC.ninjaGemShape, acrossAt(pts, yb)[dir > 0 ? 1 : 0] + dir, yb, 11, dir);
+  }
+  const shine = !dir ? `M${P(-60, yb - bow - 3)} Q${P(cx, yb + 2 * bow - 3)} ${P(260, yb - bow - 3)}` : `M${P(-60, yb - 3)} L${P(260, yb - 3)}`;
+  return clip.def + `<g clip-path="url(#${clip.id})">${stroke(round + " " + over, NINJA.goldLine, bw + 3.5)}${stroke(round + " " + over, NINJA.gold, bw)}${stroke(shine, NINJA.goldLight, 2.5)}</g>` + clasp + gem;
+}
+// a gem's outline, about (cx, cy), r its size (a round gem's radius), one of NINJA_GEM_SHAPES; and how far each reaches above
+// and below its middle, in r (for its side view)
+const NINJA_GEM_REACH = { round: [1, 1], oval: [1.08, 1.08], rhombus: [1.22, 1.22], teardrop: [1.3, 0.85], star: [1.2, 1], heart: [1.05, 1.05] };
+function ninjaGemPath(shape, cx, cy, r) {
+  const P = (x, y) => f1(cx + x * r) + " " + f1(cy + y * r);
+  switch (shape) {
+    case "oval": return `M${P(-0.74, 0)} A${f1(0.74 * r)} ${f1(1.08 * r)} 0 1 0 ${P(0.74, 0)} A${f1(0.74 * r)} ${f1(1.08 * r)} 0 1 0 ${P(-0.74, 0)} Z`;
+    case "rhombus": return `M${P(0, -1.22)} L${P(0.82, 0)} L${P(0, 1.22)} L${P(-0.82, 0)} Z`;
+    case "teardrop": return `M${P(0, -1.3)} C${P(0.3, -0.85)} ${P(0.85, -0.45)} ${P(0.85, 0)} A${f1(0.85 * r)} ${f1(0.85 * r)} 0 0 1 ${P(-0.85, 0)} C${P(-0.85, -0.45)} ${P(-0.3, -0.85)} ${P(0, -1.3)} Z`;
+    case "star": return "M" + Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 0.52 : 1.2; return P(q * Math.cos(a), q * Math.sin(a)); }).join(" L") + " Z";
+    case "heart": return `M${P(0, 1.05)} C${P(-0.35, 0.72)} ${P(-1.1, 0.2)} ${P(-1.05, -0.35)} C${P(-1, -0.95)} ${P(-0.25, -1.05)} ${P(0, -0.5)} C${P(0.25, -1.05)} ${P(1, -0.95)} ${P(1.05, -0.35)} C${P(1.1, 0.2)} ${P(0.35, 0.72)} ${P(0, 1.05)} Z`;
+    default: return `M${P(-1, 0)} A${f1(r)} ${f1(r)} 0 1 0 ${P(1, 0)} A${f1(r)} ${f1(r)} 0 1 0 ${P(-1, 0)} Z`;
+  }
+}
+const ninjaGemOf = kind => NINJA_GEMS[kind] || NINJA_GEMS.ruby;
+const ninjaShapeOf = shape => NINJA_GEM_REACH[shape] ? shape : "round";
+// the gem facing us: a gold setting a size bigger, the stone, a lighter facet up and to our left, and a white glint
+function ninjaGemSvg(kind, shape, cx, cy, r) {
+  const g = ninjaGemOf(kind), sh = ninjaShapeOf(shape);
+  return `<g data-ninja="gem"><path d="${ninjaGemPath(sh, cx, cy, r * 1.32)}" fill="${NINJA.gold}" stroke="${NINJA.goldLine}" stroke-width="2" stroke-linejoin="round"/>` +
+    `<path d="${ninjaGemPath(sh, cx, cy, r)}" fill="${g.c}" stroke="${g.line}" stroke-width="1.6" stroke-linejoin="round"/>` +
+    `<path d="${ninjaGemPath(sh, cx - r * 0.16, cy - r * 0.2, r * 0.44)}" fill="${g.light}" opacity="0.85"/>` +
+    `<circle cx="${f1(cx - r * 0.22)}" cy="${f1(cy - r * 0.28)}" r="${f1(r * 0.15)}" fill="#ffffff"/></g>`;
+}
+// the gem from the side, at the forehead's edge (x, cy), toward `dir`: its setting's rim, and the stone standing out of it,
+// domed (round, oval, teardrop, heart) or pointed (the diamond shape, the star), as tall as the shape is facing us
+function ninjaGemSide(kind, shape, x, cy, r, dir) {
+  const g = ninjaGemOf(kind), sh = ninjaShapeOf(shape), [up, down] = NINJA_GEM_REACH[sh], y0 = cy - up * r, y1 = cy + down * r, P = (a, b) => f1(a) + " " + f1(b);
+  const out = 0.8 * r, xs = x + dir * 3, pointed = sh === "rhombus" || sh === "star", ym = (y0 + y1) / 2;
+  const stone = pointed ? `M${P(xs, y0)} L${P(xs + dir * out, cy)} L${P(xs, y1)} Z` : `M${P(xs, y0)} Q${P(xs + dir * out * 1.5, ym)} ${P(xs, y1)} Z`;
+  return `<g data-ninja="gem"><path d="M${P(x - dir * 2, y0 - 1.5)} L${P(xs, y0 - 1.5)} L${P(xs, y1 + 1.5)} L${P(x - dir * 2, y1 + 1.5)} Z" fill="${NINJA.gold}" stroke="${NINJA.goldLine}" stroke-width="1.8" stroke-linejoin="round"/>` +
+    `<path d="${stone}" fill="${g.c}" stroke="${g.line}" stroke-width="1.6" stroke-linejoin="round"/>` +
+    `<path d="M${P(xs + dir * 1.5, y0 + (y1 - y0) * 0.22)} Q${P(xs + dir * out * 0.55, (y0 + ym) / 2)} ${P(xs + dir * out * 0.5, ym)}" fill="none" stroke="${g.light}" stroke-width="2" stroke-linecap="round"/></g>`;
+}
+// THE BOOTS' BANDS (ninjaBoots), over the trousers from the ankle up the shin to below the knee, along the leg's own joints
+// (J, from the hip; the shin from the knee, or a straight leg's middle, to the ankle), `half` the trouser leg's half width:
+// "braided" (the default; Matthew: "we want the bands to be braided together, not wrapped around laterally"), two strands
+// in two tones crossing the shin from edge to edge, over and under in turn, between a tie at the ankle and one at the top;
+// "wrapped", straight round the shin, band above band, each bowed a little toward the ankle as a ring is seen from above.
+// Each set of strokes is one path (an outline under, the fills over), so the shapes stay few whatever the shin's length.
+function ninjaShin(J, half, style) {
+  if (!J || J.length < 2) return "";
+  const F = J[J.length - 1], K = J.length > 2 ? J[J.length - 2] : [(J[0][0] + F[0]) / 2, (J[0][1] + F[1]) / 2];
+  const dx = K[0] - F[0], dy = K[1] - F[1], len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len, top = 0.84, wd = half + 1;
+  const at = (t, s) => f1(F[0] + dx * t + nx * s) + " " + f1(F[1] + dy * t + ny * s);
+  const lines = (d, c, w) => d ? `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f1(w)}"/>` : "";
+  if (style === "wrapped") {
+    const n = Math.max(4, Math.round(len * top / 11)), step = len * top / n, bow = Math.min(3, step * 0.3) / len;
+    const d = Array.from({ length: n }, (_, i) => { const t = (i + 0.5) * top / n; return `M${at(t, -wd)} Q${at(t - bow, 0)} ${at(t, wd)}`; }).join(" ");
+    return lines(d, NINJA.bandLine, step + 1.5) + lines(d, NINJA.bandA, step - 2.2) +
+      lines(Array.from({ length: n }, (_, i) => { const t = (i + 0.5) * top / n + 0.3 * step / len; return `M${at(t, -wd * 0.8)} Q${at(t - bow, 0)} ${at(t, wd * 0.8)}`; }).join(" "), NINJA.bandB, 1.6);
+  }
+  const n = Math.max(3, Math.round(len * top / 17)), sw = 6.5, e = wd - 3.5, under = [[], []], over = [[], []];   // (e: the strands turn just inside the leg's edge, their corners on it)
+  for (let i = 0; i < n; i++) { const t0 = (0.06 + i * (top - 0.06) / n), t1 = 0.06 + (i + 1) * (top - 0.06) / n, s = i % 2 ? 1 : -1;
+    const a = `M${at(t0, s * e)} L${at(t1, -s * e)}`, b = `M${at(t0, -s * e)} L${at(t1, s * e)}`;
+    (i % 2 ? under : over)[0].push(a); (i % 2 ? over : under)[1].push(b); }
+  const ties = `M${at(0.03, -wd)} L${at(0.03, wd)} M${at(top, -wd)} L${at(top, wd)}`;
+  return lines(under[0].concat(under[1]).join(" "), NINJA.bandLine, sw + 2.5) + lines(under[0].join(" "), NINJA.bandA, sw) + lines(under[1].join(" "), NINJA.bandB, sw) +
+    lines(over[0].concat(over[1]).join(" "), NINJA.bandLine, sw + 2.5) + lines(over[0].join(" "), NINJA.bandA, sw) + lines(over[1].join(" "), NINJA.bandB, sw) +
+    lines(ties, NINJA.bandLine, 9.5) + lines(ties, NINJA.bandA, 7);
+}
+
 // Fur: the fur color with little tufts, and stripes, spots or patches in
 // the markings color. Feathers: the feather color with curved bars.
 // A rosette's middle: "auto" is a warm brown mixed into the fur, "off"
