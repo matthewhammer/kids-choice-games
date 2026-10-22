@@ -255,7 +255,7 @@ kpis = "".join(f'<div class="kpi"><div class="v">{v}</div><div class="l">{E(l)}<
 GH = "https://github.com/matthewhammer/kids-choice-games/tree/main/dress-up/reports/016/"
 
 body = f'''<main>
-<p class="series"><a href="../">Dress Up reports</a> · {ref(16)} · {D["date"]} · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(D["after"])}{wip}</p>
+<p class="series"><a href="../">Dress Up reports</a> · {ref(16)} · {D["date"]} · <span class="wip" style="color:#b45309;font-weight:600">work in progress</span> · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(D["after"])}{wip}</p>
 <h1>{E(TITLE)}</h1>
 <p class="reading">About READMIN minutes to read (READWORDS words, not counting tables and figures).</p>
 <p class="sub">{E(D["question"])} The follow-up to {ref(5)}, “Always Be Knolling”, from {ref(521, "ticket")}. Matthew, {D["asked"]["at"]}: “{E(D["asked"]["words"])}”</p>

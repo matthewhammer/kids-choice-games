@@ -1,0 +1,1729 @@
+{
+ "run": 39202069060,
+ "branch": "measure-340",
+ "what": "the frame-rate gate's walk and drag (2 runs each, 1920x1080) in the bubble room with N bubble makers, today's game (0.0.303) and 0.0.239's, CPU 1 and 4; then a stats pass per count at full speed",
+ "gate": [
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 0,
+   "kind": "drag",
+   "fps": [
+    60,
+    60
+   ],
+   "drawMs": [
+    1.51,
+    1.77
+   ],
+   "worst": [
+    17,
+    17
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 1,
+   "kind": "drag",
+   "fps": [
+    60,
+    58.7
+   ],
+   "drawMs": [
+    2.01,
+    2.65
+   ],
+   "worst": [
+    17,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 2,
+   "kind": "drag",
+   "fps": [
+    60,
+    57
+   ],
+   "drawMs": [
+    2.34,
+    3.24
+   ],
+   "worst": [
+    17,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 4,
+   "kind": "drag",
+   "fps": [
+    25.3,
+    26
+   ],
+   "drawMs": [
+    3.82,
+    4.05
+   ],
+   "worst": [
+    50,
+    50
+   ],
+   "scenery": "moving"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 8,
+   "kind": "drag",
+   "fps": [
+    24.4,
+    24.2
+   ],
+   "drawMs": [
+    4.15,
+    4.18
+   ],
+   "worst": [
+    50,
+    67
+   ],
+   "scenery": "moving"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 16,
+   "kind": "drag",
+   "fps": [
+    60,
+    57.7
+   ],
+   "drawMs": [
+    3.22,
+    3.67
+   ],
+   "worst": [
+    17,
+    50
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 32,
+   "kind": "drag",
+   "fps": [
+    59,
+    58.7
+   ],
+   "drawMs": [
+    3.69,
+    3.55
+   ],
+   "worst": [
+    50,
+    33
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 64,
+   "kind": "drag",
+   "fps": [
+    27,
+    24.3
+   ],
+   "drawMs": [
+    5.02,
+    4.9
+   ],
+   "worst": [
+    67,
+    83
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 128,
+   "kind": "drag",
+   "fps": [
+    24.5,
+    24.7
+   ],
+   "drawMs": [
+    6.96,
+    6.81
+   ],
+   "worst": [
+    83,
+    83
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 256,
+   "kind": "drag",
+   "fps": [
+    15.8,
+    16.2
+   ],
+   "drawMs": [
+    10.4,
+    10.21
+   ],
+   "worst": [
+    100,
+    117
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 0,
+   "kind": "walk",
+   "fps": [
+    55.7,
+    60
+   ],
+   "drawMs": [
+    1.89,
+    1.47
+   ],
+   "worst": [
+    33,
+    17
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 1,
+   "kind": "walk",
+   "fps": [
+    24.2,
+    49.4
+   ],
+   "drawMs": [
+    3.19,
+    2.15
+   ],
+   "worst": [
+    50,
+    83
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 2,
+   "kind": "walk",
+   "fps": [
+    23.2,
+    48.7
+   ],
+   "drawMs": [
+    3.5,
+    2.32
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 4,
+   "kind": "walk",
+   "fps": [
+    25.3,
+    26
+   ],
+   "drawMs": [
+    3.5,
+    3.53
+   ],
+   "worst": [
+    67,
+    50
+   ],
+   "scenery": "moving"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 8,
+   "kind": "walk",
+   "fps": [
+    23.8,
+    24.9
+   ],
+   "drawMs": [
+    3.44,
+    3.82
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 16,
+   "kind": "walk",
+   "fps": [
+    26,
+    58.7
+   ],
+   "drawMs": [
+    4.44,
+    2.57
+   ],
+   "worst": [
+    83,
+    50
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 32,
+   "kind": "walk",
+   "fps": [
+    53.4,
+    59.3
+   ],
+   "drawMs": [
+    3.37,
+    2.8
+   ],
+   "worst": [
+    83,
+    33
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 64,
+   "kind": "walk",
+   "fps": [
+    44.3,
+    53.7
+   ],
+   "drawMs": [
+    4.16,
+    4.06
+   ],
+   "worst": [
+    67,
+    50
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 128,
+   "kind": "walk",
+   "fps": [
+    58.3,
+    59
+   ],
+   "drawMs": [
+    4.86,
+    4.61
+   ],
+   "worst": [
+    50,
+    50
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 1,
+   "n": 256,
+   "kind": "walk",
+   "fps": [
+    56.7,
+    58
+   ],
+   "drawMs": [
+    8.1,
+    8.82
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 0,
+   "kind": "drag",
+   "fps": [
+    58.7,
+    55
+   ],
+   "drawMs": [
+    6.46,
+    7.79
+   ],
+   "worst": [
+    50,
+    67
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 1,
+   "kind": "drag",
+   "fps": [
+    57.7,
+    44.1
+   ],
+   "drawMs": [
+    9.3,
+    12.22
+   ],
+   "worst": [
+    50,
+    67
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 2,
+   "kind": "drag",
+   "fps": [
+    48.1,
+    40.2
+   ],
+   "drawMs": [
+    12.54,
+    13.31
+   ],
+   "worst": [
+    100,
+    67
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 4,
+   "kind": "drag",
+   "fps": [
+    42.2,
+    42.7
+   ],
+   "drawMs": [
+    12.07,
+    11.87
+   ],
+   "worst": [
+    167,
+    67
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 8,
+   "kind": "drag",
+   "fps": [
+    36.3,
+    35.9
+   ],
+   "drawMs": [
+    12.76,
+    13.37
+   ],
+   "worst": [
+    167,
+    167
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 16,
+   "kind": "drag",
+   "fps": [
+    35,
+    34.3
+   ],
+   "drawMs": [
+    14.84,
+    14.83
+   ],
+   "worst": [
+    50,
+    50
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 32,
+   "kind": "drag",
+   "fps": [
+    31.1,
+    32.5
+   ],
+   "drawMs": [
+    17.75,
+    15.37
+   ],
+   "worst": [
+    67,
+    83
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 64,
+   "kind": "drag",
+   "fps": [
+    19.1,
+    19.1
+   ],
+   "drawMs": [
+    18.56,
+    21.14
+   ],
+   "worst": [
+    83,
+    100
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 128,
+   "kind": "drag",
+   "fps": [
+    17.7,
+    17.8
+   ],
+   "drawMs": [
+    23.64,
+    24.68
+   ],
+   "worst": [
+    117,
+    100
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 256,
+   "kind": "drag",
+   "fps": [
+    11.2,
+    11.4
+   ],
+   "drawMs": [
+    41.03,
+    40.85
+   ],
+   "worst": [
+    167,
+    133
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 0,
+   "kind": "walk",
+   "fps": [
+    11.3,
+    51.1
+   ],
+   "drawMs": [
+    10.37,
+    6.14
+   ],
+   "worst": [
+    300,
+    117
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 1,
+   "kind": "walk",
+   "fps": [
+    6.4,
+    36.6
+   ],
+   "drawMs": [
+    15.38,
+    9.81
+   ],
+   "worst": [
+    400,
+    217
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 2,
+   "kind": "walk",
+   "fps": [
+    7.1,
+    51.8
+   ],
+   "drawMs": [
+    14,
+    10.04
+   ],
+   "worst": [
+    350,
+    83
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 4,
+   "kind": "walk",
+   "fps": [
+    14.7,
+    46.1
+   ],
+   "drawMs": [
+    15,
+    10.76
+   ],
+   "worst": [
+    317,
+    67
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 8,
+   "kind": "walk",
+   "fps": [
+    10.3,
+    9.9
+   ],
+   "drawMs": [
+    15.43,
+    14.89
+   ],
+   "worst": [
+    433,
+    333
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 16,
+   "kind": "walk",
+   "fps": [
+    14.1,
+    54.1
+   ],
+   "drawMs": [
+    17.92,
+    12.2
+   ],
+   "worst": [
+    283,
+    100
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 32,
+   "kind": "walk",
+   "fps": [
+    25.9,
+    52.8
+   ],
+   "drawMs": [
+    17,
+    13.96
+   ],
+   "worst": [
+    283,
+    117
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 64,
+   "kind": "walk",
+   "fps": [
+    35.9,
+    34.1
+   ],
+   "drawMs": [
+    17.81,
+    18.86
+   ],
+   "worst": [
+    100,
+    133
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 128,
+   "kind": "walk",
+   "fps": [
+    24.8,
+    25.3
+   ],
+   "drawMs": [
+    21.92,
+    22.68
+   ],
+   "worst": [
+    133,
+    167
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "today",
+   "cpu": 4,
+   "n": 256,
+   "kind": "walk",
+   "fps": [
+    16.1,
+    17.8
+   ],
+   "drawMs": [
+    33.63,
+    31.18
+   ],
+   "worst": [
+    200,
+    233
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 0,
+   "kind": "drag",
+   "fps": [
+    60,
+    60
+   ],
+   "drawMs": [
+    1.44,
+    1.38
+   ],
+   "worst": [
+    17,
+    17
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 1,
+   "kind": "drag",
+   "fps": [
+    59.7,
+    59.7
+   ],
+   "drawMs": [
+    1.89,
+    1.82
+   ],
+   "worst": [
+    33,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 2,
+   "kind": "drag",
+   "fps": [
+    60,
+    59.7
+   ],
+   "drawMs": [
+    1.9,
+    1.74
+   ],
+   "worst": [
+    17,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 4,
+   "kind": "drag",
+   "fps": [
+    60,
+    59.7
+   ],
+   "drawMs": [
+    1.97,
+    1.82
+   ],
+   "worst": [
+    17,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 8,
+   "kind": "drag",
+   "fps": [
+    59.7,
+    59.7
+   ],
+   "drawMs": [
+    1.8,
+    1.69
+   ],
+   "worst": [
+    33,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 16,
+   "kind": "drag",
+   "fps": [
+    59.7,
+    59.7
+   ],
+   "drawMs": [
+    1.82,
+    1.72
+   ],
+   "worst": [
+    33,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 32,
+   "kind": "drag",
+   "fps": [
+    59,
+    59.7
+   ],
+   "drawMs": [
+    1.91,
+    1.82
+   ],
+   "worst": [
+    67,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 64,
+   "kind": "drag",
+   "fps": [
+    57.3,
+    58.7
+   ],
+   "drawMs": [
+    2.34,
+    2.4
+   ],
+   "worst": [
+    117,
+    50
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 128,
+   "kind": "drag",
+   "fps": [
+    43.7,
+    58.7
+   ],
+   "drawMs": [
+    2.66,
+    2.39
+   ],
+   "worst": [
+    100,
+    67
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 256,
+   "kind": "drag",
+   "fps": [
+    38.1,
+    58
+   ],
+   "drawMs": [
+    3.24,
+    2.77
+   ],
+   "worst": [
+    133,
+    67
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 0,
+   "kind": "walk",
+   "fps": [
+    56.7,
+    60
+   ],
+   "drawMs": [
+    1.45,
+    1.28
+   ],
+   "worst": [
+    167,
+    17
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 1,
+   "kind": "walk",
+   "fps": [
+    56.7,
+    59.3
+   ],
+   "drawMs": [
+    1.88,
+    1.73
+   ],
+   "worst": [
+    133,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 2,
+   "kind": "walk",
+   "fps": [
+    56,
+    59.3
+   ],
+   "drawMs": [
+    2.06,
+    1.65
+   ],
+   "worst": [
+    167,
+    50
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 4,
+   "kind": "walk",
+   "fps": [
+    55.7,
+    59.3
+   ],
+   "drawMs": [
+    2.01,
+    1.77
+   ],
+   "worst": [
+    167,
+    50
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 8,
+   "kind": "walk",
+   "fps": [
+    55.7,
+    59.3
+   ],
+   "drawMs": [
+    1.86,
+    1.76
+   ],
+   "worst": [
+    167,
+    50
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 16,
+   "kind": "walk",
+   "fps": [
+    54.4,
+    59.7
+   ],
+   "drawMs": [
+    2.12,
+    1.71
+   ],
+   "worst": [
+    183,
+    33
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 32,
+   "kind": "walk",
+   "fps": [
+    54.7,
+    59.3
+   ],
+   "drawMs": [
+    2.25,
+    1.78
+   ],
+   "worst": [
+    150,
+    50
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 64,
+   "kind": "walk",
+   "fps": [
+    30.3,
+    31
+   ],
+   "drawMs": [
+    2.59,
+    2.56
+   ],
+   "worst": [
+    167,
+    50
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 128,
+   "kind": "walk",
+   "fps": [
+    25.4,
+    58.7
+   ],
+   "drawMs": [
+    4.84,
+    2.05
+   ],
+   "worst": [
+    250,
+    50
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 1,
+   "n": 256,
+   "kind": "walk",
+   "fps": [
+    12.8,
+    20.9
+   ],
+   "drawMs": [
+    3.16,
+    6
+   ],
+   "worst": [
+    100,
+    300
+   ],
+   "scenery": "held still (choppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 0,
+   "kind": "drag",
+   "fps": [
+    56.7,
+    57.4
+   ],
+   "drawMs": [
+    6.06,
+    6.08
+   ],
+   "worst": [
+    133,
+    117
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 1,
+   "kind": "drag",
+   "fps": [
+    56.7,
+    57.3
+   ],
+   "drawMs": [
+    8.78,
+    9
+   ],
+   "worst": [
+    150,
+    150
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 2,
+   "kind": "drag",
+   "fps": [
+    55.4,
+    56.4
+   ],
+   "drawMs": [
+    9.63,
+    8.81
+   ],
+   "worst": [
+    150,
+    183
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 4,
+   "kind": "drag",
+   "fps": [
+    56,
+    57
+   ],
+   "drawMs": [
+    9.05,
+    8.53
+   ],
+   "worst": [
+    167,
+    133
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 8,
+   "kind": "drag",
+   "fps": [
+    55.4,
+    56.3
+   ],
+   "drawMs": [
+    9.59,
+    9.21
+   ],
+   "worst": [
+    133,
+    167
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 16,
+   "kind": "drag",
+   "fps": [
+    55.4,
+    55
+   ],
+   "drawMs": [
+    9.71,
+    9.25
+   ],
+   "worst": [
+    150,
+    167
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 32,
+   "kind": "drag",
+   "fps": [
+    52.7,
+    51.1
+   ],
+   "drawMs": [
+    9.68,
+    10.29
+   ],
+   "worst": [
+    150,
+    150
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 64,
+   "kind": "drag",
+   "fps": [
+    42.4,
+    41.6
+   ],
+   "drawMs": [
+    10.97,
+    12.01
+   ],
+   "worst": [
+    183,
+    167
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 128,
+   "kind": "drag",
+   "fps": [
+    50.1,
+    42.1
+   ],
+   "drawMs": [
+    11.93,
+    12.11
+   ],
+   "worst": [
+    200,
+    183
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 256,
+   "kind": "drag",
+   "fps": [
+    28,
+    31.5
+   ],
+   "drawMs": [
+    14.4,
+    14.18
+   ],
+   "worst": [
+    250,
+    217
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 0,
+   "kind": "walk",
+   "fps": [
+    54.3,
+    56.7
+   ],
+   "drawMs": [
+    6.56,
+    5.81
+   ],
+   "worst": [
+    167,
+    183
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 1,
+   "kind": "walk",
+   "fps": [
+    53,
+    56.4
+   ],
+   "drawMs": [
+    8.17,
+    8.35
+   ],
+   "worst": [
+    217,
+    183
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 2,
+   "kind": "walk",
+   "fps": [
+    52.1,
+    56.7
+   ],
+   "drawMs": [
+    8.34,
+    8.61
+   ],
+   "worst": [
+    250,
+    167
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 4,
+   "kind": "walk",
+   "fps": [
+    51.8,
+    54.4
+   ],
+   "drawMs": [
+    8.62,
+    9.22
+   ],
+   "worst": [
+    250,
+    167
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 8,
+   "kind": "walk",
+   "fps": [
+    53.7,
+    56.4
+   ],
+   "drawMs": [
+    9.28,
+    9
+   ],
+   "worst": [
+    133,
+    183
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 16,
+   "kind": "walk",
+   "fps": [
+    51.8,
+    55.1
+   ],
+   "drawMs": [
+    9.1,
+    9.07
+   ],
+   "worst": [
+    167,
+    217
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 32,
+   "kind": "walk",
+   "fps": [
+    40.9,
+    54.4
+   ],
+   "drawMs": [
+    10.06,
+    9.33
+   ],
+   "worst": [
+    167,
+    217
+   ],
+   "scenery": "held still (slow)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 64,
+   "kind": "walk",
+   "fps": [
+    34.1,
+    43.1
+   ],
+   "drawMs": [
+    11.55,
+    10.91
+   ],
+   "worst": [
+    183,
+    217
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 128,
+   "kind": "walk",
+   "fps": [
+    38.6,
+    35.9
+   ],
+   "drawMs": [
+    11.62,
+    11.82
+   ],
+   "worst": [
+    217,
+    233
+   ],
+   "scenery": "held still (slowchoppy)"
+  },
+  {
+   "ver": "0.0.239",
+   "cpu": 4,
+   "n": 256,
+   "kind": "walk",
+   "fps": [
+    24.5,
+    24.3
+   ],
+   "drawMs": [
+    14.06,
+    13.8
+   ],
+   "worst": [
+    250,
+    300
+   ],
+   "scenery": "held still (slowchoppy)"
+  }
+ ],
+ "stats": [
+  {
+   "ver": "today",
+   "n": 0,
+   "elements": 971,
+   "anims": 139,
+   "flying": 0,
+   "heapMB": 37.2,
+   "drawMs": 5.1,
+   "seconds": 3
+  },
+  {
+   "ver": "today",
+   "n": 1,
+   "elements": 1046,
+   "anims": 140,
+   "flying": 12,
+   "heapMB": 19.4,
+   "drawMs": 5.8,
+   "seconds": 3
+  },
+  {
+   "ver": "today",
+   "n": 2,
+   "elements": 1152,
+   "anims": 141,
+   "flying": 32,
+   "heapMB": 17.5,
+   "drawMs": 6.6,
+   "seconds": 3
+  },
+  {
+   "ver": "today",
+   "n": 4,
+   "elements": 1256,
+   "anims": 143,
+   "flying": 45,
+   "heapMB": 14.7,
+   "drawMs": 8.4,
+   "seconds": 3
+  },
+  {
+   "ver": "today",
+   "n": 8,
+   "elements": 1444,
+   "anims": 147,
+   "flying": 66,
+   "heapMB": 17.1,
+   "drawMs": 8,
+   "seconds": 3
+  },
+  {
+   "ver": "today",
+   "n": 16,
+   "elements": 1668,
+   "anims": 155,
+   "flying": 70,
+   "heapMB": 14.4,
+   "drawMs": 8.9,
+   "seconds": 3
+  },
+  {
+   "ver": "today",
+   "n": 32,
+   "elements": 2084,
+   "anims": 171,
+   "flying": 70,
+   "heapMB": 21.1,
+   "drawMs": 9.2,
+   "seconds": 3
+  },
+  {
+   "ver": "today",
+   "n": 64,
+   "elements": 2916,
+   "anims": 203,
+   "flying": 70,
+   "heapMB": 20.8,
+   "drawMs": 11,
+   "seconds": 3
+  },
+  {
+   "ver": "today",
+   "n": 128,
+   "elements": 4315,
+   "anims": 0,
+   "flying": 70,
+   "heapMB": 24.6,
+   "drawMs": 15.1,
+   "seconds": 3
+  },
+  {
+   "ver": "today",
+   "n": 256,
+   "elements": 7515,
+   "anims": 0,
+   "flying": 70,
+   "heapMB": 53.1,
+   "drawMs": 22.6,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 0,
+   "elements": 7478,
+   "anims": 0,
+   "flying": 0,
+   "heapMB": 19.2,
+   "drawMs": 5.7,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 1,
+   "elements": 7548,
+   "anims": 0,
+   "flying": 11,
+   "heapMB": 11.6,
+   "drawMs": 6.5,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 2,
+   "elements": 7653,
+   "anims": 0,
+   "flying": 31,
+   "heapMB": 11.2,
+   "drawMs": 6.8,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 4,
+   "elements": 7739,
+   "anims": 0,
+   "flying": 40,
+   "heapMB": 12,
+   "drawMs": 7.7,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 8,
+   "elements": 7891,
+   "anims": 0,
+   "flying": 53,
+   "heapMB": 11.9,
+   "drawMs": 7.3,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 16,
+   "elements": 8159,
+   "anims": 0,
+   "flying": 70,
+   "heapMB": 11.6,
+   "drawMs": 8.2,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 32,
+   "elements": 8555,
+   "anims": 0,
+   "flying": 69,
+   "heapMB": 11.9,
+   "drawMs": 7.4,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 64,
+   "elements": 9359,
+   "anims": 0,
+   "flying": 70,
+   "heapMB": 14.1,
+   "drawMs": 9.1,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 128,
+   "elements": 10959,
+   "anims": 0,
+   "flying": 70,
+   "heapMB": 19.2,
+   "drawMs": 11.3,
+   "seconds": 3
+  },
+  {
+   "ver": "0.0.239",
+   "n": 256,
+   "elements": 14159,
+   "anims": 0,
+   "flying": 70,
+   "heapMB": 22.8,
+   "drawMs": 11.1,
+   "seconds": 3
+  }
+ ]
+}

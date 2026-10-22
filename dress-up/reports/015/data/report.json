@@ -2,7 +2,7 @@
  "report": "^du_report(15)",
  "title": "Seen before it was built",
  "date": "2026-10-21",
- "after": 10,
+ "after": 14,
  "after_why": "the series line names the newest published report; 11 to 14 are drafts, not yet published",
  "question": "On 2026-10-20 Matthew asked for a dragon costume, fire to breathe and armour for the knight's horse. What did the two mock-ups show him before anything was built, what went out in 0.0.392, 81 minutes after he asked, and where does the game differ from them?",
  "trigger": "Matthew, that day, on the dragon mock-up at 13:46: “looks good.” then “please publish as a du_report.”; at 13:47, on the horse's: “include this too -- looks good”.",

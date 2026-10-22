@@ -1,0 +1,274 @@
+{
+ "url": "http://127.0.0.1:8133/dress-up/index.html#inspect",
+ "size": [
+  1250,
+  830,
+  "1.6"
+ ],
+ "rows": [
+  {
+   "case": "room alone, default friend",
+   "runs": [
+    {
+     "fps": 22.4,
+     "p95": 67,
+     "worst": 67
+    },
+    {
+     "fps": 45.5,
+     "p95": 67,
+     "worst": 83
+    }
+   ],
+   "page": {
+    "elements": 971,
+    "over": 0,
+    "smil": 139,
+    "anims": 0,
+    "flying": 0,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "room, his fairy",
+   "runs": [
+    {
+     "fps": 18.5,
+     "p95": 67,
+     "worst": 116
+    },
+    {
+     "fps": 19.4,
+     "p95": 67,
+     "worst": 83
+    }
+   ],
+   "page": {
+    "elements": 1080,
+    "over": 0,
+    "smil": 139,
+    "anims": 3,
+    "flying": 0,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "room, his fairy, 1 maker (as live)",
+   "runs": [
+    {
+     "fps": 15.8,
+     "p95": 83,
+     "worst": 84
+    },
+    {
+     "fps": 31.5,
+     "p95": 83,
+     "worst": 84
+    }
+   ],
+   "page": {
+    "elements": 1171,
+    "over": 0,
+    "smil": 140,
+    "anims": 2,
+    "flying": 17,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...the maker's bubbles hidden",
+   "runs": [
+    {
+     "fps": 18,
+     "p95": 83,
+     "worst": 83
+    },
+    {
+     "fps": 18,
+     "p95": 83,
+     "worst": 83
+    }
+   ],
+   "page": {
+    "elements": 1171,
+    "over": 0,
+    "smil": 140,
+    "anims": 3,
+    "flying": 16,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...the room held still",
+   "runs": [
+    {
+     "fps": 52,
+     "p95": 33,
+     "worst": 117
+    },
+    {
+     "fps": 113,
+     "p95": 17,
+     "worst": 50
+    }
+   ],
+   "page": {
+    "elements": 1045,
+    "over": 0,
+    "smil": 0,
+    "anims": 2,
+    "flying": 19,
+    "still": true,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...wings not fluttering",
+   "runs": [
+    {
+     "fps": 18,
+     "p95": 83,
+     "worst": 83
+    },
+    {
+     "fps": 34.7,
+     "p95": 67,
+     "worst": 84
+    }
+   ],
+   "page": {
+    "elements": 1175,
+    "over": 0,
+    "smil": 140,
+    "anims": 0,
+    "flying": 19,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...no fairy (default friend)",
+   "runs": [
+    {
+     "fps": 20.9,
+     "p95": 67,
+     "worst": 67
+    },
+    {
+     "fps": 43,
+     "p95": 67,
+     "worst": 68
+    }
+   ],
+   "page": {
+    "elements": 1086,
+    "over": 0,
+    "smil": 140,
+    "anims": 1,
+    "flying": 22,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...budget lever",
+   "runs": [
+    {
+     "fps": 16,
+     "p95": 83,
+     "worst": 84
+    },
+    {
+     "fps": 31.4,
+     "p95": 83,
+     "worst": 84
+    }
+   ],
+   "page": {
+    "elements": 1175,
+    "over": 0,
+    "smil": 140,
+    "anims": 2,
+    "flying": 18,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...overlay lever",
+   "runs": [
+    {
+     "fps": 17.7,
+     "p95": 67,
+     "worst": 83
+    },
+    {
+     "fps": 18.2,
+     "p95": 67,
+     "worst": 83
+    }
+   ],
+   "page": {
+    "elements": 1102,
+    "over": 69,
+    "smil": 140,
+    "anims": 3,
+    "flying": 17,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...both levers",
+   "runs": [
+    {
+     "fps": 18,
+     "p95": 83,
+     "worst": 101
+    },
+    {
+     "fps": 37.2,
+     "p95": 67,
+     "worst": 83
+    }
+   ],
+   "page": {
+    "elements": 1102,
+    "over": 81,
+    "smil": 140,
+    "anims": 3,
+    "flying": 20,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "empty room, his fairy, 1 maker",
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 17,
+     "worst": 17
+    },
+    {
+     "fps": 120.3,
+     "p95": 17,
+     "worst": 17
+    }
+   ],
+   "page": {
+    "elements": 310,
+    "over": 0,
+    "smil": 1,
+    "anims": 2,
+    "flying": 23,
+    "still": false,
+    "fps": null
+   }
+  }
+ ]
+}

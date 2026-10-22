@@ -1,0 +1,250 @@
+{
+ "url": "http://127.0.0.1:8133/dress-up/index.html#inspect",
+ "size": [
+  1250,
+  830,
+  "1.6"
+ ],
+ "rows": [
+  {
+   "case": "0.0.306, room alone, default friend",
+   "runs": [
+    {
+     "fps": 60,
+     "p95": 17,
+     "worst": 17
+    },
+    {
+     "fps": 120.3,
+     "p95": 17,
+     "worst": 17
+    }
+   ],
+   "page": {
+    "elements": 169,
+    "over": 0,
+    "smil": 0,
+    "anims": 0,
+    "flying": 0,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "0.0.306, his fairy, 1 maker (live)",
+   "runs": [
+    {
+     "fps": 59.7,
+     "p95": 17,
+     "worst": 33
+    },
+    {
+     "fps": 120.3,
+     "p95": 17,
+     "worst": 17
+    }
+   ],
+   "page": {
+    "elements": 309,
+    "over": 0,
+    "smil": 1,
+    "anims": 3,
+    "flying": 2,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...overlay",
+   "runs": [
+    {
+     "fps": 59.7,
+     "p95": 17,
+     "worst": 33
+    },
+    {
+     "fps": 120.3,
+     "p95": 17,
+     "worst": 17
+    }
+   ],
+   "page": {
+    "elements": 300,
+    "over": 9,
+    "smil": 1,
+    "anims": 3,
+    "flying": 2,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...budget",
+   "runs": [
+    {
+     "fps": 59.3,
+     "p95": 17,
+     "worst": 33
+    },
+    {
+     "fps": 60,
+     "p95": 17,
+     "worst": 17
+    }
+   ],
+   "page": {
+    "elements": 309,
+    "over": 0,
+    "smil": 1,
+    "anims": 3,
+    "flying": 2,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...both",
+   "runs": [
+    {
+     "fps": 59.7,
+     "p95": 17,
+     "worst": 33
+    },
+    {
+     "fps": 120.3,
+     "p95": 17,
+     "worst": 17
+    }
+   ],
+   "page": {
+    "elements": 300,
+    "over": 9,
+    "smil": 1,
+    "anims": 3,
+    "flying": 2,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "0.0.306, his fairy, 4 makers",
+   "runs": [
+    {
+     "fps": 49,
+     "p95": 33,
+     "worst": 34
+    },
+    {
+     "fps": 73.8,
+     "p95": 33,
+     "worst": 50
+    }
+   ],
+   "page": {
+    "elements": 611,
+    "over": 0,
+    "smil": 4,
+    "anims": 4,
+    "flying": 58,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...both levers",
+   "runs": [
+    {
+     "fps": 52.3,
+     "p95": 33,
+     "worst": 34
+    },
+    {
+     "fps": 80.5,
+     "p95": 33,
+     "worst": 34
+    }
+   ],
+   "page": {
+    "elements": 378,
+    "over": 169,
+    "smil": 4,
+    "anims": 4,
+    "flying": 42,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "0.0.306, his fairy, 16 makers",
+   "runs": [
+    {
+     "fps": 39.9,
+     "p95": 34,
+     "worst": 50
+    },
+    {
+     "fps": 80.1,
+     "p95": 34,
+     "worst": 50
+    }
+   ],
+   "page": {
+    "elements": 967,
+    "over": 0,
+    "smil": 16,
+    "anims": 8,
+    "flying": 69,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "  ...both levers ",
+   "runs": [
+    {
+     "fps": 41.2,
+     "p95": 34,
+     "worst": 50
+    },
+    {
+     "fps": 75.2,
+     "p95": 33,
+     "worst": 49
+    }
+   ],
+   "page": {
+    "elements": 690,
+    "over": 181,
+    "smil": 16,
+    "anims": 4,
+    "flying": 45,
+    "still": false,
+    "fps": null
+   }
+  },
+  {
+   "case": "as 0.0.305: foam moving, fairy, 1 maker",
+   "runs": [
+    {
+     "fps": 18,
+     "p95": 83,
+     "worst": 100
+    },
+    {
+     "fps": 36.5,
+     "p95": 67,
+     "worst": 83
+    }
+   ],
+   "page": {
+    "elements": 1115,
+    "over": 0,
+    "smil": 140,
+    "anims": 4,
+    "flying": 2,
+    "still": false,
+    "fps": null
+   }
+  }
+ ]
+}

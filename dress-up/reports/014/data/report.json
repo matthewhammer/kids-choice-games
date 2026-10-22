@@ -1,0 +1,222 @@
+{
+ "date": "2026-10-19",
+ "title": "Posing the Body",
+ "h1": "Posing the body",
+ "question": "How is the friend's body posed, what does a new pose need from the drawing, and which poses come next?",
+ "short": [
+  [
+   "Three views, and transforms of them.",
+   "The friend is drawn facing us, in profile, or from behind; crawling toward or away from us squashes the front or back view, and lying level turns the profile 90 degrees. Those transforms hold for the poses they were made for, but not for a new angle."
+  ],
+  [
+   "New angles are drawing routines of their own.",
+   "Lying along the tent's sleeping bags, the standing friend turned to the bag's slant read as rolling over, and skewed onto it, as too flat. Matthew: \"we just need more angles of the body, as their own drawing routine, not cheap 2d transformations\". The first one, lying face up along a side wall, is in the game since 0.0.338 (0.0.342 as it stands)."
+  ],
+  [
+   "Elbows and knees now turn in three dimensions.",
+   "Since 0.0.343 a forearm or a shin can curl toward the front (a knee's toward the back) and swing about the bone above it, and is drawn as it then points: four sliders, on top of every pose and animation."
+  ],
+  [
+   "Layering by depth is the rule to keep.",
+   "What is nearer us covers what is farther, part by part: the torso covers the arm behind it, a foot turned behind its leg is drawn under it, a head's hair goes where the head faces away from us. Today one fixed order of layers serves every pose; new poses need their own order."
+  ],
+  [
+   "Next: lying on one side, a three-quarter view, beds along a wall.",
+   "Each a routine of its own, plain friend first; costumes and hair styles after (What next, below)."
+  ]
+ ],
+ "tries": [
+  [
+   "1",
+   "The standing friend turned to the bag's slant (38 degrees about the feet) and shortened to its length (0.70)",
+   "\"Looks like we are tilting to roll over, not face up.\"",
+   "Not released."
+  ],
+  [
+   "2",
+   "A skew about the feet: the width across the picture, the length along the bag",
+   "\"latest attempt looks better, but now we are 'too flat'\"",
+   "Not released."
+  ],
+  [
+   "3",
+   "The head and the feet skewed back upright on the skew",
+   "(not shown: Matthew's next words came first)",
+   "Not released."
+  ],
+  [
+   "4",
+   "A drawing of its own (lieAlongSvg): volumes laid on the bag in its perspective, far to near",
+   "\"we just need more angles of the body, as their own drawing routine\"; \"lying with head and feet at a 45 degree angle --- as in the tent ... L/R symmetry works\"",
+   "0.0.338"
+  ],
+  [
+   "5",
+   "The head smaller, so it rests on the pillow",
+   "",
+   "0.0.339"
+  ],
+  [
+   "6",
+   "The face under its hair, not over it",
+   "\"the lying view looks way better, but there's a layering issue with the hair?\"",
+   "0.0.340"
+  ],
+  [
+   "7",
+   "The face looking up at the ceiling, not at us",
+   "\"the face should be facing up -- not looking towards us --- it's pretty goofy face wise still\"; the legs, torso, arms and feet \"good enough for now\"",
+   "0.0.341"
+  ],
+  [
+   "8",
+   "The hair on the head's far side",
+   "\"the hair should be on the far face of the head ball, not the top of it (the head is reclined now, looking upward)\"",
+   "0.0.342"
+  ]
+ ],
+ "views": [
+  [
+   "18-drawing.js (the drawing)",
+   1081,
+   100,
+   45,
+   27
+  ],
+  [
+   "06-costumes.js",
+   533,
+   46,
+   17,
+   0
+  ],
+  [
+   "04-hair.js",
+   506,
+   17,
+   1,
+   0
+  ],
+  [
+   "08-body.js",
+   760,
+   6,
+   6,
+   0
+  ],
+  [
+   "07-underwear.js",
+   63,
+   2,
+   0,
+   0
+  ],
+  [
+   "03-face.js",
+   431,
+   0,
+   0,
+   0
+  ]
+ ],
+ "audit": [
+  [
+   "walking",
+   "sideways always",
+   "14",
+   "4 to 45"
+  ],
+  [
+   "walking up or down stairs",
+   "sideways always",
+   "22",
+   "8 to 100"
+  ],
+  [
+   "running",
+   "sideways always",
+   "85",
+   "25 to 95"
+  ],
+  [
+   "crawling",
+   "sideways always",
+   "0",
+   "78 to 102"
+  ],
+  [
+   "swimming",
+   "either",
+   "0 to 36",
+   "10 to 80"
+  ],
+  [
+   "climbing (with a ladder), facing us",
+   "facing us",
+   "20 to 50",
+   "0 to 55"
+  ],
+  [
+   "climbing (with a ladder), in profile",
+   "in profile",
+   "6 to 20",
+   "16 to 78"
+  ],
+  [
+   "crouching",
+   "either",
+   "25 (facing us: now a 55-degree curl)",
+   "75"
+  ],
+  [
+   "climbing, the two jumps",
+   "either",
+   "none of their own",
+   "none of their own"
+  ]
+ ],
+ "next": [
+  [
+   "Lying on one side",
+   "a view of its own, seen from the front, its layers in a roll's order: the upper leg over the lower, the torso over the arm beneath"
+  ],
+  [
+   "A three-quarter view",
+   "between facing us and profile, for turning: every part drawn for it"
+  ],
+  [
+   "Beds along a side wall",
+   "the lying-along view from a bed's own ends, if the beds and bunk beds are redesigned to stand that way"
+  ],
+  [
+   "Costumes and hair styles in the lying-along view",
+   "today it draws the friend's own colours only"
+  ],
+  [
+   "Per-side sliders for the elbows and knees",
+   "each its own, if wanted; and whether the old 💪 bend in the picture stays beside the new swing"
+  ],
+  [
+   "A per-pose order of the layers",
+   "in place of the one fixed order: each pose says which part is nearer"
+  ],
+  [
+   "Each part's size by its depth in a lying view",
+   "the head a little smaller than the feet, lying away from us"
+  ]
+ ],
+ "sources": {
+  "tickets": [
+   "The tickets: 412 (lying along a side wall), 414 (elbows and knees), 422 (this report)",
+   "https://matthewhammer.org/hazel/dashboard/"
+  ],
+  "versions": [
+   "Dress Up's versions, 0.0.338 to 0.0.343",
+   "https://matthewhammer.org/kids-choice-games/dress-up/VERSIONS.md"
+  ],
+  "log": [
+   "The log this report is made from: data/pose-notes.json",
+   "data/pose-notes.json"
+  ]
+ }
+}
