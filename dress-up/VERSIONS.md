@@ -4,8 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **🗺️ Every room can go in the world** (in "🗺️ World design"): every place is in "🎨 places to put in a square" now, the rooms inside other places too, such as "🦇 cave room" under "🏕️ camping". Drag one onto a square and it is a square like any other, with its own ways out. Its own doors still lead by kind: the cave's archway goes to the nearest cave room square, and back through the cave to the nearest waterfall, so the friend may come out somewhere far away. A tree house room, a tent or a castle room in a square has "which one" chips on its card, and the square remembers which.
 - **⚙️ A place's settings in the world designer:** "⚙️ show this place's settings" opens the place's own settings from "🏞️ Background" in "🗺️ World design", such as the cave room's "🪨 on the cave room's floor" and "🦇 on the cave room's ceiling". With "✏️ changes here go to" set to "📍 only this square", a change stays in that square. It starts closed, because open it costs as much as the Background tab.
 - **📍 Inside a room, the world designer says where you are:** inside the cave room behind a waterfall (or any room inside a place on the grid), "🗺️ World design" shows that place's square, named with the room ("📍 A5: 💦 jungle waterfall → 🦇 cave room (inside)"), and a "↩️ to A5" button. It used to say only "Tap a square to go there and change it."
+- **🚪 The rooms off the grid are buttons:** in "🚪 off the grid", tap a room to go there, or drag it onto a square to put it there.
 
 ## 0.0.399 (2026-10-21)
 

@@ -697,8 +697,10 @@ body:not(.world-big) .world-rest > .world-alert:not([hidden]) { border-color: #d
 body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-auto-rows: 3.2em; }
 .world-compass-mid.empty { opacity: 0.5; }   /* (ticket 249: a crossing's paths, round nothing) */
 .world-back-row { flex-wrap: wrap; gap: 4px; }
-/* (ticket 524) ⚙️ the place's settings: Background's boxes, a grid of them */
+/* (ticket 524) ⚙️ the place's settings: Background's boxes, a grid of them; the places off the grid as chips; which one */
 .world-settings-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; margin-top: 6px; }
+.world-off-chips, .world-which { flex-wrap: wrap; gap: 4px; align-items: center; }
+.world-off-chip[aria-pressed="true"] { outline: 2px solid var(--accent, #38bdf8); }
 .world-here .world-probs { border: 2px dotted var(--line); border-radius: 10px; padding: 6px 10px; margin: 8px 0; }
 .drag-ghost { position: fixed; z-index: 1000; pointer-events: none; transform: translate(-50%, -60%); font-size: 2.2em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
 

@@ -1896,7 +1896,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       ...(worldSettingsOpen ? [el("div", { class: "world-settings-boxes" }, bgPlaceRows())] : [])]);
     syncs.push(() => { const kd = state.background.kind, t = `⚙️ ${placeName(kd)}'s settings`, none = kd === "none";
       if (settings.dataset.boxName !== t) settings.dataset.boxName = t; if (settings.hidden !== none) settings.hidden = none; });
-    const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint", "data-box-name": "🚪 off the grid: the places inside others" });
+    const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off", "data-box-name": "🚪 off the grid: the places inside others (tap one to go there, or drag it onto a square)" });
     // (ticket 195, M) every neighbour joined that can be
     const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself), and take away every way that leads off the map's edge",
       // (ticket 232: and every way off the map's edge taken away, saying how many)
@@ -1983,7 +1983,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       worldsInit();
       const W = state.world, P = worldProblems(W), at = W.at && W.cells[W.at];
       const sig = JSON.stringify([W.id, worldsAll().map(w => [w.id, worldTitle(w), w.cols, w.rows, Object.entries(w.cells).map(([k, c]) => [k, c.kind, c.name || "", c.links || null])]), Object.keys(state.worldTemplates),
-        linkOpen, linkDir, linkWorld, newTpl, state.background.kind, W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown, (W.unreachable || []).map(u => [u.kind, u.from, u.name || ""])]);
+        linkOpen, linkDir, linkWorld, newTpl, state.background.kind, at && INSIDE_WHICH[at.kind] ? [state.background[INSIDE_WHICH[at.kind]], insideCount(state.background, at.kind)] : null, W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown, (W.unreachable || []).map(u => [u.kind, u.from, u.name || ""])]);
       if (sig === shown) return;
       shown = sig;
       worldsRender();
@@ -2036,9 +2036,15 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                   class: hint ? "way-suggest" : drop ? "way-suggest-off" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]);
         };
         const mid = el("span", { class: "world-compass-mid", "data-kind": at.kind, title: placeName(at.kind) }, emojiOf(at.kind));
+        // (ticket 524) a square holding an inside an outside has several of: which one (a tree house's room, a tent, a castle room)
+        const whichKey = !inside && INSIDE_WHICH[at.kind], B0 = state.background, whichNow = whichKey ? Math.round(B0[whichKey] ?? 1) : 0;
+        const whichRow = whichKey ? [el("div", { class: "row world-which" }, [el("span", { class: "hint" }, "which one:"),
+          ...Array.from({ length: insideCount(B0, at.kind) }, (_, i) => el("button", { "aria-pressed": String(whichNow === i + 1), "data-which": String(i + 1),
+            onclick: () => { B0[whichKey] = i + 1; changed(); } }, `${emojiOf(at.kind)} ${at.kind === "treeroom" ? "room" : at.kind === "tent" ? "tent" : "room"} ${i + 1}`))])] : [];
         here.replaceChildren(el("div", { class: "cap" }, inside ? `📍 ${squareName(W.at)}: ${worldName(W, W.at)} → ${placeName(state.background.kind)} (inside)` : `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
           ...(inside ? [el("div", { class: "row" }, [el("button", { class: "world-to-square", title: "Back out to the square this place is inside", onclick: () => worldEnter(W.at) }, `↩️ to ${squareName(W.at)}`)])] : []),
           el("label", { class: "row world-name-row" }, [el("span", { class: "hint" }, "✏️ its name on signs:"), nameBox]),
+          ...whichRow,
           ...(inside ? [] : [el("div", { class: "world-ways-out" }, [el("span", { class: "hint" }, "ways out:"),
             el("div", { class: "world-compass" }, ["NW", "N", "NE", "W", null, "E", "SW", "S", "SE"].map(d => d ? wayBtn(d) : mid))])]),
           // (ticket 249, Matthew: "expose the three far away options to the world designer") a forest crossing's 🌄 off in
@@ -2081,7 +2087,15 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           const chip = el("button", { class: "world-chip", title: `${own || words.join(" ")}, from ${squareName(u.from)}: drag onto a square to put it back (tap: the first empty square); onto 🗑️ to forget it` }, `${emoji} ${own || words.join(" ")} (was ${squareName(u.from)})`);
           pressDrag(chip, () => emoji, { onDrop: under => { if (!under || !under.closest) return; if (under.closest(".world-trash")) worldForget(i); else { const sq = under.closest("[data-square]"); if (sq) worldRestore(i, sq.dataset.square); } }, onTap: () => worldRestore(i) });
           return chip; }))] : []));
-      off.replaceChildren("Off the grid: ", ...worldOffGrid(W).flatMap((o, i) => [i ? " · " : "", `${o.id}: ${placeName(o.kind)}` + (o.from ? ` (through ${placeName(W.cells[o.from].kind)}, ${squareName(o.from)})` : "")]));
+      // (ticket 524) each place off the grid a chip: tapped, the friend goes there (worldVisit: an inside through its outside's
+      // square); dragged onto a square, it is put there as any place (worldPut), a square of its own
+      off.replaceChildren(el("div", { class: "row world-off-chips" }, worldOffGrid(W).map(o => {
+        const [emoji] = placeName(o.kind).split(" "), on = state.background.kind === o.kind && (o.from ? W.at === o.from : !instanceOf(W));
+        const chip = el("button", { class: "world-chip world-off-chip", "data-kind": o.kind, ...(o.from ? { "data-from": o.from } : {}), "aria-pressed": String(on),
+          title: `${o.id}: ${placeName(o.kind)}` + (o.from ? `, through ${placeName(W.cells[o.from].kind)} (${squareName(o.from)})` : "") + ". Tap to go there; drag onto a square to put it there." },
+          `${placeName(o.kind)}` + (o.from ? ` (${squareName(o.from)})` : ""));
+        pressDrag(chip, () => emoji, { onDrop: under => { const sq = under && under.closest && under.closest("[data-square]"); if (sq) worldPut(sq.dataset.square, o.kind); }, onTap: () => worldVisit(o) });
+        return chip; })));
     };
     // (ticket 224, Matthew: "in FS mode for world designer, we want to let the user scroll the RHS (with controls and
     // things to add) and the LHS (the grid of squares) stays in place, and maximal -- maybe also a dragger for LHS vs RHS
