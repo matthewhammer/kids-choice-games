@@ -17,10 +17,11 @@ let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 900)}`); if (!cond) bad++; };
 const SCENARIO = `(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, out = { steps: [] };
   state.music.mute = true; state.world.at = null; climb = null;
-  if (SCRIPT_FUMOLA) { const t0 = performance.now();
+  if (SCRIPT_FUMOLA) {
     try { await fumolaLoad(); } catch (e) { out.loadError = String(e && e.message || e); }
     for (let i = 0; i < 100 && !(fumolaCompile() || {}).ready; i++) await w(100);
-    const C = fumolaCompile() || {}; out.ready = !!C.ready; out.errors = C.errors; out.loadMs = Math.round(performance.now() - t0); out.defineMs = C.ms; }
+    const C = fumolaCompile() || {}; out.ready = !!C.ready; out.errors = C.errors; out.loadedAt = fumolaLoadedAt == null ? null : Math.round(fumolaLoadedAt); out.defineMs = C.ms;
+    const wasm = performance.getEntriesByType("resource").find(e => e.name.endsWith("fumola_wasm_bg.wasm")); out.wasmMs = wasm ? Math.round(wasm.duration) : null; }
   const snap = what => out.steps.push({ what, kind: B.kind,
     keys: Object.fromEntries(Object.keys(B).filter(k => /^castle(Lever|Boulder)[LR]_3N$|^hatchShut/.test(k)).sort().map(k => [k, B[k]])),
     fallen: (B.things || []).filter(t => t.fallen).map(t => t.pit).sort(),
@@ -109,7 +110,7 @@ try {
   console.log(`  js walks: ${JSON.stringify(js.walks)}`);
   for (const mode of ["fumola", "fumola-list"]) {
     const fm = await runMode(mode);
-    ok(`${mode}: Fumola loaded and the rules defined (${fm.loadMs} ms to ready, ${fm.defineMs && fm.defineMs.toFixed(1)} ms to define)`, fm.ready === true, { ready: fm.ready, loadError: fm.loadError, errors: fm.errors });
+    ok(`${mode}: Fumola loaded and the rules defined (its build ready ${fm.loadedAt} ms after the page began, its wasm fetched in ${fm.wasmMs} ms; ${fm.defineMs && fm.defineMs.toFixed(1)} ms to define the rules)`, fm.ready === true, { ready: fm.ready, loadError: fm.loadError, errors: fm.errors });
     ok(`${mode}: the same number of steps (${PULLS})`, fm.steps.length === js.steps.length, [js.steps.length, fm.steps.length]);
     js.steps.forEach((s, i) => ok(`${mode}: after ${s.what}: the same state as js`, JSON.stringify(s) === JSON.stringify(fm.steps[i]), { js: s, [mode]: fm.steps[i] }));
     ok(`${mode}: the castle's and the world's ways: the same decisions as js`, JSON.stringify(js.ways) === JSON.stringify(fm.ways), { js: js.ways, [mode]: fm.ways });

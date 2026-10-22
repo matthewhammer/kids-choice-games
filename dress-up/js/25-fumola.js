@@ -286,11 +286,12 @@ function fumolaRules(F, mode = "fumola") {
 }
 
 // ---- in the page: the build loaded once (under ?logic=fumola or fumola-list only), the rules compiled once ----
-let fumolaLoading = null, fumolaBuild = null;
+// (fumolaLoadedAt: when it was ready, in ms from the page's start, for the checks to read)
+let fumolaLoading = null, fumolaBuild = null, fumolaLoadedAt = null;
 function fumolaLoad() {
   if (fumolaBuild) return Promise.resolve(fumolaBuild);
   if (!fumolaLoading) fumolaLoading = import(FUMOLA_JS_URL)
-    .then(async m => { await m.default({ module_or_path: FUMOLA_WASM_URL }); fumolaBuild = m; return m; })
+    .then(async m => { await m.default({ module_or_path: FUMOLA_WASM_URL }); fumolaBuild = m; fumolaLoadedAt = performance.now(); return m; })
     .catch(e => { fumolaLoading = null; throw e; });
   return fumolaLoading;
 }
