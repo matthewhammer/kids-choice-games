@@ -970,6 +970,9 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
 .world-mini-cell small { font-size: 9px; opacity: 0.75; }
 .world-mini-cell.empty { font-size: 9px; opacity: 0.4; border: 1px dashed var(--line, #c9c2b4); }
 .world-mini-cell.chosen { outline: 3px solid #0ea5e9; }
+/* (ticket 525) a cave door's 🧭 on its card: where it leads, the worlds, the small grid, the places off the grid */
+.door-dest, .door-worlds, .door-offs { flex-wrap: wrap; gap: 4px; align-items: center; }
+.door-offs .world-off-chip { font-size: 13px; }
 
 
 /* (ticket 392) a row's name or a group's header that only says its box's name again */

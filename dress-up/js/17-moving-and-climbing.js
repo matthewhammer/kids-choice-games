@@ -589,7 +589,7 @@ function showEnterGlow() {
   // walked through: the glow leaves it as the walk begins
   if (leaf !== glowLeaf && !(entering && !leaf)) { doorSwing(glowLeaf, false); glowLeaf = leaf; doorSwing(leaf, true); }
   // (a nav arrow's glow is its arrow over the picture: aimed, or near and dimmer)
-  worldWaysAim(p && p.kind === "nav" ? p.el.dataset.way : null);
+  worldWaysAim(p && (p.kind === "nav" || (p.el.dataset && /^p-/.test(p.el.dataset.way || ""))) ? p.el.dataset.way : null);   // (ticket 525: a cave door's arrow too)
   const NS = "http://www.w3.org/2000/svg", put = (el, box, dim, outline) => {
     const g = document.createElementNS(NS, "g");
     g.setAttribute("class", "enter-glow" + (dim ? " dim" : "")); g.setAttribute("pointer-events", "none");

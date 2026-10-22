@@ -1377,6 +1377,8 @@ const ARRIVE = { hut: [-120, 50], hutroom: [0, 40], hutbed: [130, 40], hutpotion
 const trips = [];
 function enterScene(door, here = false) {
   // (ticket 185: a way out of a world square, to the one beside it; ticket 233: a room's way toward us has its own data-to)
+  // (ticket 525: a cave door linked to a square or a place off the grid: there, out by its twin; unlinked, by kind, below)
+  if (door.dataset.passage) { const t = passageOf(door.dataset.passage); if (t && t.dest && passageWalk(door, t)) return; }
   if (door.dataset.way && !door.dataset.to) { worldWalk(door, here); return; }
   const to = door.dataset.to, house = door.dataset.house, tent = door.dataset.tent, room = door.dataset.room, B = state.background;
   if (!SCENES[to] && !PICTURE_CHOICES.some(([kd]) => kd === to)) return;
@@ -1432,7 +1434,7 @@ function enterScene(door, here = false) {
   if (pp) walkTo((pp.x0 + pp.x1) / 2, clamp(pp.y1, SCENE.ground + figYMin(sceneFrame), sceneFrame.bottom), () => flyInto(svgBox(view), arrive));
   else if (view) flyInto(svgBox(view), arrive);
   else if (door.dataset.pit) walkInto(door, () => { arrive(); landFall = true; }, true, "fall");   // (ticket 162)
-  else walkInto(door, arrive, !(climb && climb.through), "step", null, door.dataset.way ? { out: WORLD_DIRS[door.dataset.way], here } : {});
+  else walkInto(door, arrive, !(climb && climb.through), "step", null, WORLD_DIRS[door.dataset.way] ? { out: WORLD_DIRS[door.dataset.way], here } : {});   // (ticket 525: never a cave door's "p-" way)
 }
 // (ticket 246) along the rope bridge they are on, to its end (0 or 1), walking (3 s at most), then on
 function bridgeWalkTo(end, then) {

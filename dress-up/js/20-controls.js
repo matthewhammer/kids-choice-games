@@ -1505,6 +1505,46 @@ function offlineHelp() {
 // (ticket 524) 🗺️ World design's ⚙️ box of the place's settings: open or not, kept while the game is open (closed to start:
 // closed, it builds nothing; open, it costs what the 🏞️ Background tab does, ticket 167)
 let worldSettingsOpen = false;
+// (ticket 406, factored out for ticket 525) a world's grid drawn small: each square its emoji and its name (A1...); at(key, cell)
+// says whether it can be picked ({ ok, chosen, self, why }); picked, pick(key). attr: the data attribute naming its square
+function worldMiniGrid(T, at, pick, attr) {
+  const mini = el("div", { class: "world-mini" });
+  mini.style.setProperty("--cols", T.cols);
+  for (let r = 0; r < T.rows; r++) for (let c = 0; c < T.cols; c++) {
+    const key = c + "," + r, cell = T.cells[key], a = at(key, cell);
+    mini.append(cell && a.ok
+      ? el("button", { class: "world-mini-cell" + (a.chosen ? " chosen" : ""), [attr]: key, title: `${squareName(key)}: ${worldName(T, key)}`,
+                       onclick: () => pick(key) }, [el("span", {}, placeName(cell.kind).split(" ")[0]), el("small", {}, squareName(key))])
+      : el("span", { class: "world-mini-cell empty", title: squareName(key) + a.why }, a.self ? "📍" : squareName(key)));
+  }
+  return mini;
+}
+// (ticket 525) a cave door's 🧭 on its card: where it leads now (✖ to unlink: its twin there goes); a world's chips; its grid, small
+// (a square tapped: linked there, a twin put there leading back); and its places off the grid, chips (an inside of a square,
+// the cave room behind the falls among them). The world chosen is the page's only (doorWorld), not saved.
+let doorWorld = null;
+function doorDestParts(t, label, again) {
+  const here = passageHere(), hereHome = passageHome(here), d = t.dest, worlds = worldsAll();
+  if (!worlds.some(w => w.id === doorWorld)) doorWorld = state.world.id;
+  const T = worldById(doorWorld), out = [el("span", { class: "hint" }, label)];
+  if (d) { const ok = passageDestOk(d), Tw = ok && worldById(d.world);
+    const name = !ok ? "🚧 gone" : (Tw !== state.world ? "🌍 " + worldTitle(Tw) + ": " : "") + (d.key ? worldName(Tw, d.key) + " (" + squareName(d.key) + ")" : placeName(d.kind));
+    out.push(el("div", { class: "row door-dest" }, [el("span", {}, "→ " + name + (passageTwin(t) ? ", and back" : ", 🚧 no way back")),
+      el("button", { class: "door-unlink", title: "Take this link off (and the passage there that leads back)", onclick: () => { passageUnlink(t); again(); } }, "✖")])); }
+  if (!here) return [...out, el("span", { class: "hint" }, "(the place shown has no square or home yet)")];
+  out.push(el("div", { class: "row door-worlds" }, worlds.map(w => el("button", { "aria-pressed": String(w.id === doorWorld), "data-door-world": w.id,
+    onclick: () => { doorWorld = w.id; again(); } }, "🌍 " + worldTitle(w) + (w === state.world ? " (this one)" : "")))));
+  if (!T) return out;
+  out.push(worldMiniGrid(T, key => { const self = passageHome({ world: T.id, key }) === hereHome;
+      return { ok: !self, chosen: !!d && d.world === T.id && d.key === key, self, why: self ? ": this square" : ": empty" }; },
+    key => { if (passageLink(t, { world: T.id, key, kind: T.cells[key].kind })) again(); }, "data-door-to"));
+  // (the places off the grid there: as worldOffGrid lists them, each one's home its placeKey)
+  const offs = worldOffGrid(T).map(o => { const w = INSIDE_WHICH[o.kind], v = Object.assign(Object.create(state.background), { kind: o.kind, ...(w ? { [w]: o.which || 1 } : {}) });
+    return { world: T.id, off: placeKey(v), kind: o.kind, from: o.from, ...(w ? { [w]: o.which || 1 } : {}) }; }).filter(o => passageHome(o) !== hereHome);
+  if (offs.length) out.push(el("div", { class: "row door-offs" }, offs.map(o => el("button", { class: "world-off-chip", "data-door-off": o.off, "aria-pressed": String(!!d && passageHome(d) === passageHome(o)),
+    title: placeName(o.kind) + (o.from ? " (through " + squareName(o.from) + ")" : ""), onclick: () => { if (passageLink(t, o)) again(); } }, placeName(o.kind) + (o.from ? " · " + squareName(o.from) : "")))));
+  return out;
+}
 function control(part, [kind, key, label, ...rest], opts = {}) {
   // another tab's control, shown here when this tab's settings say (its
   // settings are that tab's: the ghost's see-through-ness is the
@@ -1763,7 +1803,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       // (a thing's words are typed, and its size slid, in place: not in the signature, or each key or step would
       // build the row again, and the box lose the caret, the slider the finger; a slider not in hand follows its thing)
       const T = state.background.things || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p, , how]) => how === "text" || how === "range" ? null : t[p] ?? null),
-                                                                              t.kind === "signpost" ? signWays(state.background).join() : ""]));
+                                                                              t.kind === "signpost" ? signWays(state.background).join() : "", t.kind === "passage" ? [t.twin, doorWorld, worldsAll().map(w => w.id + worldTitle(w)).join()] : ""]));   // (ticket 525)
       if (sig === shown) {
         for (const r of list.querySelectorAll('input[type="range"][data-thing]')) {
           const t = T[+r.dataset.thing], v = t && (t[r.dataset.param] ?? 100);
@@ -1798,14 +1838,16 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             return [el("span", { class: "hint" }, label), ...doors.map(d => { const on = cur.includes(d.uid), n = all.indexOf(d) + 1;
               return el("button", { "aria-pressed": String(on), title: on ? `🕳️ trap door ${n} opens and shuts with this lever: tap to unjoin it` : `🕳️ trap door ${n} is not joined to this lever: tap to join it`,
                 onclick: () => { const c = t[p] || []; t[p] = c.includes(d.uid) ? c.filter(u => u !== d.uid) : [...c, d.uid]; changed(); } }, `${on ? "🔗" : "➕"} 🕳️ ${n}`); })]; }
+          if (how === "doordest") return doorDestParts(t, label, () => { shown = null; rows(); });
           if (how === "text") return [el("span", { class: "hint" }, label), el("input", { type: "text", maxlength: String(opts), size: String(opts), value: String(now ?? ""), "aria-label": label, oninput: e => { t[p] = e.target.value.slice(0, opts); changed(); } })];
           return [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)];
       };
       list.replaceChildren(...T.map((t, i) => { const chips = [], lines = [];
-        for (const q of thingParams(t.kind)) { const parts = partsFor(t, i, q), how = q[2];
-          if (["color", "choice", "range", "dirs", "wires", "text"].includes(how)) lines.push(el("div", { class: "tline tline-" + how }, parts)); else chips.push(...parts); }
+        for (const q of thingParams(t.kind)) { if (t.kind === "passage" && q[0] === "to" && t.dest) continue;   // (ticket 525: linked, it leads where its dest says)
+          const parts = partsFor(t, i, q), how = q[2];
+          if (["color", "choice", "range", "dirs", "wires", "text", "doordest"].includes(how)) lines.push(el("div", { class: "tline tline-" + how }, parts)); else chips.push(...parts); }
         return el("div", { class: "row thingcard" }, [el("div", { class: "thead" }, [thingPic(i), el("span", { class: "name" }, `${thingLabel(t)} ${i + 1}`),
-          el("button", { class: "tdel", title: "Take it away", onclick: () => { T.splice(i, 1); changed(); } }, "✖")]), ...(chips.length ? [el("div", { class: "tline tchips" }, chips)] : []), ...lines]); }));
+          el("button", { class: "tdel", title: "Take it away", onclick: () => { passageUnlink(t, false); /* (ticket 525: a cave door's twin goes with it) */ T.splice(i, 1); changed(); } }, "✖")]), ...(chips.length ? [el("div", { class: "tline tchips" }, chips)] : []), ...lines]); }));
     };
     // (v2: dragged onto the picture, it stands where it was let go, kept within
     // the ground the friend can stand on; tapped, near the middle, a little
@@ -1818,7 +1860,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const z = next ? next.z : at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
       if (thingsLatch) return;   // (ticket 203: shut till the marked ones are dealt with)
       T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}),
-               ...(kd === "trapdoor" ? { uid: "d" + Math.floor(Math.random() * 36 ** 6).toString(36) } : {}), ...extra });   // (ticket 284: a trap door's name for the levers wired to it)
+               ...(kd === "trapdoor" ? { uid: "d" + Math.floor(Math.random() * 36 ** 6).toString(36) } : {}), ...(kd === "passage" ? { uid: passageUid() } : {}), ...extra });   // (ticket 525: a cave door's name, for its arrow and its twin)   // (ticket 284: a trap door's name for the levers wired to it)
       // (ticket 303, M: a lever and a trap door put in one place work together at once, whichever came first; a chip unjoins them)
       const nu = T[T.length - 1];
       if (next) Object.assign(nu, { style: next.style ?? nu.style, size: next.size ?? nu.size, mirror: !!next.mirror });
@@ -1886,7 +1928,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     };
     groups.append(...THING_GROUPS.map(([g, name]) => el("button", { "data-group": g, onclick: () => { thingGroup = g; showGroup(); } }, name)));
     showGroup();
-    box.append(groups, items, slowNote, el("div", { class: "row" }, [el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
+    box.append(groups, items, slowNote, el("div", { class: "row" }, [el("button", { onclick: () => { for (const t of state.background.things || []) passageUnlink(t, false); state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
     syncs.push(() => { const m = (state.background.things || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); guard();
       // (ticket 201: every ten seconds, while there are things here that move)
       if (performance.now() - thingFpsAt > 10000 && box.isConnected && ((state.background.things || []).some(thingMoves) || ownMovingNow().length)) thingCheck(guard); });
@@ -1985,17 +2027,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           onclick: () => { linkWorld = w.id; shown = null; render(); } }, "🌍 " + worldTitle(w) + (w === W ? " (this one)" : "")))),
         el("div", { class: "hint" }, "3. the square it leads to:"));
       if (T) {
-        const mini = el("div", { class: "world-mini" });
-        mini.style.setProperty("--cols", T.cols);
-        for (let r = 0; r < T.rows; r++) for (let c = 0; c < T.cols; c++) {
-          const key = c + "," + r, cell = T.cells[key], cur = at.links && at.links[linkDir], chosen = cur && cur.world === T.id && cur.key === key;
-          const self = T === W && key === W.at, noBack = cell && worldNoWay(cell.kind, WORLD_OPP[linkDir]);
-          mini.append(cell && !self && !noBack
-            ? el("button", { class: "world-mini-cell" + (chosen ? " chosen" : ""), "data-link-to": key, title: `${squareName(key)}: ${worldName(T, key)}`,
-                             onclick: () => { if (linkDir && worldLink(linkDir, T.id, key)) { shown = null; render(); } } }, [el("span", {}, placeName(cell.kind).split(" ")[0]), el("small", {}, squareName(key))])
-            : el("span", { class: "world-mini-cell empty", title: squareName(key) + (self ? ": this square" : cell ? ": no way back that side" : ": empty") }, self ? "📍" : squareName(key)));
-        }
-        wrap.append(mini);
+        const cur = at.links && at.links[linkDir];
+        wrap.append(worldMiniGrid(T, (key, cell) => { const self = T === W && key === W.at;
+          return { ok: !self && !(cell && worldNoWay(cell.kind, WORLD_OPP[linkDir])), chosen: cur && cur.world === T.id && cur.key === key, self, why: self ? ": this square" : cell ? ": no way back that side" : ": empty" }; },
+          key => { if (linkDir && worldLink(linkDir, T.id, key)) { shown = null; render(); } }, "data-link-to"));
       }
       return wrap;
     };

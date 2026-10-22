@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🕳️ Cave doors** (Matthew: "a way to place cave doors --- as objects with nav arrows associated with them", in the world design panel). A 🕳️ cave passage put in a place now has a nav arrow over its opening, like the arrows at a square's edges: walk near its foot and the arrow shows where it leads; tap the arrow (or the opening, or press X) to go through. On the passage's card (in "🗺️ World design" or "🏞️ Background"), "🧭 a cave door to a square, and back" shows the worlds and each world's grid, small: tap a square, or one of the places off the grid (the cave room behind the falls, a tent, a living room...), and the passage leads there. A passage just like it appears there, leading back, so there is always a way home. ✖ on either one takes both away; ✖ next to where it leads takes the link off (the passage stays and leads to its 🧭 place again). A passage that is not linked works as before, and it gets an arrow too. When a world is taken away, the doors into it are unlinked, and 🗺️ World design warns about a door whose square is gone or whose way back is missing.
+
 ## 0.0.403 (2026-10-21)
 
 Everything in 0.0.402, plus a thing to hold in each hand, chosen in 🧍 Body.
