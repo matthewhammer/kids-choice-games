@@ -196,22 +196,44 @@ function scriptPull(side) {
 // browsers, drawing every animation frame; so there the frame is display: none (style.css), which browsers throttle (the 60
 // frames a second rule). A frame first laid out undisplayed measures Hazel's font as nothing (the hidden-pane lesson), so one is
 // never made while the panel is hidden; Hazel measures its font again when it is shown.
-//   A frame that has not said "ready" in SCRIPT_FRAME_WAIT, or that says "crash", is taken away, its words in its place and a
-// button to start it again: the text boxes work all along. Its height is the one posted, at most SCRIPT_FRAME_MAX; its box
-// scrolls past a screenful (style.css).
+//   A frame that has not said "ready" in SCRIPT_FRAME_WAIT, that says "crash" before it, or that speaks another protocol, is taken
+// away, its words in its place and a button to start it again: the text boxes work all along. The wait counts only the time the
+// frame can draw (scriptFrameCanDraw: the page shown, the game not full screen, the frame on screen), as Hazel says "ready" only
+// after its first display, which needs the frame's animation frames, and browsers stop those in a frame out of view, undisplayed
+// or in a hidden tab; so does the ten seconds before "no program" is said. A "crash" after "ready" is said by the tiles and they
+// are kept (Hazel keeps its last model and goes on), unless SCRIPT_FRAME_CRASHES come within a minute. Its height is the one
+// posted, at most SCRIPT_FRAME_MAX; its box scrolls past a screenful (style.css).
 //   The keys: a click in the frame gives it the keyboard, as any frame takes it; the tiles are only for looking, and the game's keys
 // (B, F, Enter, Escape) are wanted back, so a frame given the focus gives it back (scriptFrameBlur).
-const SCRIPT_FRAME_WAIT = 30000;
-const SCRIPT_FRAME_MAX = 4000;
-// the frame now: { iframe, holder, phase ("loading", "ready", "late", "crashed"), made, readyMs, build, sent, status, height, why (a crash's
-// words, or "quiet": ready, yet no status ten seconds on), blurs, wait and quiet (its timers) }
+const SCRIPT_FRAME_WAIT = 30000, SCRIPT_FRAME_QUIET = 10000, SCRIPT_FRAME_TICK = 1000;
+const SCRIPT_FRAME_MAX = 4000, SCRIPT_FRAME_CRASHES = 3;
+// the frame now: { iframe, holder, phase ("loading", "ready", "late", "crashed"), made, readyMs, build, sent, status, height, why (the
+// words it was taken away with, or "quiet": ready, yet no status SCRIPT_FRAME_QUIET on), crashes (the times of its crashes after ready)
+// and oops (the last one's words), blurs, inView (false while off screen), waited and quiet (the ms it could draw while loading, and
+// since ready), tick (the timer counting them) and seen (its IntersectionObserver) }
 let scriptFrame = null, scriptFrameListening = false;
 const scriptFrameHidden = () => document.hidden || document.body.classList.contains("big");
+const scriptFrameCanDraw = F => !scriptFrameHidden() && F.inView !== false;
+// (once a second while loading, or ready with no status yet: the time the frame could draw, counted; nothing after that)
+function scriptFrameTick(F) {
+  clearTimeout(F.tick);
+  F.tick = setTimeout(() => {
+    if (scriptFrame !== F || !F.iframe.isConnected) { scriptFrameEnd(F); return; }
+    const can = scriptFrameCanDraw(F);
+    if (F.phase === "loading") {
+      if (can && (F.waited += SCRIPT_FRAME_TICK) >= SCRIPT_FRAME_WAIT) { scriptFrameStop(F, "late"); return; }
+    } else if (F.phase === "ready" && !F.status) {
+      if (can && (F.quiet += SCRIPT_FRAME_TICK) >= SCRIPT_FRAME_QUIET) { F.why = "quiet"; scriptFrameShow(F); return; }
+    } else return;
+    scriptFrameTick(F);
+  }, SCRIPT_FRAME_TICK);
+}
+function scriptFrameEnd(F) { clearTimeout(F.tick); if (F.seen) { F.seen.disconnect(); F.seen = null; } }
 function scriptFrameMount(holder) {
   if (!holder || !holder.isConnected || (scriptFrame && scriptFrame.holder === holder && scriptFrame.iframe.isConnected)) return;
   // (not while the panel is hidden: later, if the tab is still open then)
   if (scriptFrameHidden()) { setTimeout(() => scriptFrameMount(holder), 1000); return; }
-  if (scriptFrame) { clearTimeout(scriptFrame.wait); clearTimeout(scriptFrame.quiet); }
+  if (scriptFrame) scriptFrameEnd(scriptFrame);
   if (!scriptFrameListening) {
     scriptFrameListening = true;
     window.addEventListener("message", scriptFrameMessage);
@@ -220,13 +242,15 @@ function scriptFrameMount(holder) {
   const wrap = holder.querySelector(".script-frame-wrap");
   const iframe = el("iframe", { class: "script-frame", src: SCRIPT_FRAME_URL, tabindex: "-1",
     title: "Hazel's tiles: the whole program, read only, with Hazel's own marks where something is wrong" });
-  const F = scriptFrame = { iframe, holder, phase: "loading", made: performance.now(), readyMs: null, build: null, sent: null, status: null, height: 0, why: "", blurs: 0 };
-  F.wait = setTimeout(() => { if (scriptFrame === F && F.phase === "loading" && iframe.isConnected) scriptFrameStop(F, "late"); }, SCRIPT_FRAME_WAIT);
+  const F = scriptFrame = { iframe, holder, phase: "loading", made: performance.now(), readyMs: null, build: null, sent: null, status: null, height: 0, why: "",
+    crashes: [], oops: "", blurs: 0, inView: undefined, waited: 0, quiet: 0, tick: 0, seen: null };
   wrap.replaceChildren(iframe);
+  if (typeof IntersectionObserver === "function") { F.seen = new IntersectionObserver(es => { for (const e of es) F.inView = e.isIntersecting; }); F.seen.observe(iframe); }
+  scriptFrameTick(F);
   scriptFrameShow(F);
 }
 function scriptFrameStop(F, phase, why = "") {
-  clearTimeout(F.wait); clearTimeout(F.quiet);
+  scriptFrameEnd(F);
   F.phase = phase; F.why = why;
   F.iframe.remove();
   scriptFrameShow(F);
@@ -236,20 +260,26 @@ function scriptFrameMessage(e) {
   if (!F || e.origin !== SCRIPT_HAZEL_ORIGIN || !F.iframe.contentWindow || e.source !== F.iframe.contentWindow) return;
   const m = e.data || {};
   if (m.type === "ready") {
-    clearTimeout(F.wait);
+    // (a build that speaks other messages, as a branch build may after a push: its fields would be misread, so it is put away)
+    if (m.protocol !== 1) { scriptFrameStop(F, "crashed", `they speak protocol ${m.protocol}, and this game knows protocol 1`); return; }
     if (F.phase === "loading") { F.phase = "ready"; F.readyMs = performance.now() - F.made; }
     F.build = m.build || null; F.sent = null;
     scriptFramePost();
     // (a frame that takes no program says nothing back: it takes programs only from the pages it knows, EmbedProtocol.re's
     // site_origins and dev_hosts, so a copy of the game served from elsewhere, or from disk, has no tiles; said, after a while)
-    clearTimeout(F.quiet);
-    F.quiet = setTimeout(() => { if (scriptFrame === F && F.phase === "ready" && !F.status) { F.why = "quiet"; scriptFrameShow(F); } }, 10000);
+    F.quiet = 0; if (!F.status) scriptFrameTick(F);
   } else if (m.type === "size") {
     const h = Math.max(24, Math.min(SCRIPT_FRAME_MAX, Math.ceil(+m.height || 0)));
     if (h !== F.height) { F.height = h; F.iframe.style.height = h + "px"; }
     return;
   } else if (m.type === "status") F.status = m;
-  else if (m.type === "crash") { scriptFrameStop(F, "crashed", String(m.message || "")); return; }
+  else if (m.type === "crash") {
+    const why = String(m.message || ""), t = performance.now();
+    // (before ready, or again and again: taken away; otherwise said, and the tiles kept, as Hazel keeps its last program and goes on)
+    F.crashes = F.crashes.filter(x => t - x < 60000); F.crashes.push(t);
+    if (F.phase !== "ready" || F.crashes.length >= SCRIPT_FRAME_CRASHES) { scriptFrameStop(F, "crashed", why); return; }
+    F.oops = why || "an error";
+  }
   else return;
   scriptFrameShow(F);
 }
@@ -292,6 +322,7 @@ function scriptFrameShow(F) {
     const lib = window.Hazel && window.Hazel.build;
     if (lib && F.build && lib !== F.build && lib !== "local" && F.build !== "local") words += ` (the tiles are from Hazel ${F.build.slice(0, 10)}, the levers' Hazel from ${lib.slice(0, 10)}: a reload in ten minutes makes them one)`;
   }
+  if (F.phase === "ready" && F.oops) words += ` (Hazel's tiles had an error, ${F.oops}, and carry on)`;
   line.replaceChildren(words, ...(again ? [" ", el("button", { class: "script-frame-again", onclick: () => { scriptFrame = null; scriptFrameMount(F.holder); } }, "↻ start the tiles again")] : []));
   list.replaceChildren(...items.slice(0, 8).map(t => el("li", {}, t)));
 }
@@ -312,13 +343,14 @@ function scriptingPanel(box) {
     errs.replaceChildren(...[...C.errors.slice(0, 8), ...C.unfinished].map(e => el("li", {}, e)));
   };
   hazelLoad().then(sync, () => { status.textContent = "Hazel did not load (it comes from " + SCRIPT_LIB_URL + "): the levers work as before"; });
-  // (each change written to the state as it is now, not as the tab found it: a load or a start over replaces it)
+  // (each change written to the state as it is now, not as the tab found it: a load or a start over replaces it, and then the
+  // boxes and the switch are filled again from the new one, below)
   const on = el("button", { class: "script-on", "aria-pressed": String(!!S.on), onclick: () => { const T = scriptsState(); T.on = !T.on; setPressed(on, T.on); changed(); } },
     "🧩 the trap room's red levers run by these scripts");
   let timer = null;
   const editor = (title, modName, get, put) => {
     const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", "data-module": modName });
-    ta.value = get();
+    ta.value = get(); ta.refill = () => { ta.value = get(); };
     ta.addEventListener("input", () => { put(ta.value); clearTimeout(timer); timer = setTimeout(() => { changed(); sync(); }, 600); });
     // (the game's keys move the friend: in an editor they are the editor's)
     ta.addEventListener("keydown", e => e.stopPropagation());
@@ -335,11 +367,21 @@ function scriptingPanel(box) {
   box.append(
     el("div", { class: "hint" }, "The game's logic in Hazel: each editor is a module of one program; 📚 Common's are in scope in every room's, as Common.name. A room's on_event(globals, event) gives what to do, as Cmd: Flip(\"lever_L\", then), Say(\"words\", then), Done."),
     el("div", { class: "row" }, [on]), status, errs,
-    editor("📚 Common", "Common", () => S.common, v => { scriptsState().common = v; }),
-    ...SCRIPT_ROOMS.map(r => editor(r.label, r.name, () => S.rooms[r.name], v => { scriptsState().rooms[r.name] = v; })),
+    editor("📚 Common", "Common", () => scriptsState().common, v => { scriptsState().common = v; }),
+    ...SCRIPT_ROOMS.map(r => editor(r.label, r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; })),
     tiles,
     el("details", { class: "script-preamble" }, [el("summary", {}, "what every module can name (the program's start)"), el("pre", {}, SCRIPT_PREAMBLE)]),
   );
+  // (a 📂 load or a ↺ start over replaces state, and so state.scripts, with the tab open: each box and the switch filled again from
+  // the new one, before a keystroke can write the old box's text into it, and Hazel and the tiles told; per round, one compare)
+  let filled = S;
+  syncs.push(() => {
+    if (state.scripts === filled) return;
+    filled = scriptsState();
+    for (const ta of box.querySelectorAll("textarea.script-editor")) ta.refill();
+    setPressed(on, filled.on);
+    clearTimeout(timer); sync();
+  });
   // (after showTab: its layout moves the rows, and a frame moved in the page loads again; after the tab's first paint, too)
   requestAnimationFrame(() => setTimeout(() => scriptFrameMount(tiles), 0));
 }

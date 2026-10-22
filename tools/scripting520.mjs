@@ -63,7 +63,7 @@ const flips = [];
 Object.assign(ctx, {
   state: { scripts: { on: false, common: null, rooms: {} }, background: { kind: "castleroom", castleRoom: 3 } },
   el(tag, attrs = {}, kids = []) { const e = doc.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); } for (const k of [].concat(kids)) e.append(k); return e; },
-  setPressed: (e, on) => e.setAttribute("aria-pressed", String(!!on)), changed() {},
+  setPressed: (e, on) => e.setAttribute("aria-pressed", String(!!on)), changed() {}, syncs: [],
   castleOf: () => ({ id: "N", rooms: ["king", "hall", "trap"] }), leverDown: () => false, leverWireKey: () => "wire", roomLeverFlip: side => flips.push(side),
 });
 vm.createContext(ctx);
@@ -100,11 +100,19 @@ ok("typing: nothing posted while the change timer waits", posts.length === 1, po
 advance(400);
 ok("the timer: the new program posted once, its last \";\" dropped", posts.length === 2 && posts[1].data.modules[1].text === 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Flip(1, Done) end', posts.map(p => p.data.modules[1].text));
 ok("the editors write the state", run("state.scripts.rooms.TrapRoom").startsWith("let on_event") && run("scriptSpec().modules[1].text").endsWith("end"), run("state.scripts.rooms.TrapRoom"));
-run('state = { ...state, scripts: { on: false, common: null, rooms: {} } }');
+// (a 📂 load or a ↺ start over: state replaced, then changed(), whose round of syncs fills the tab again)
+const onBtn = panel.querySelector("button.script-on");
+run('state = { ...state, scripts: { on: true, common: "let loaded = 1", rooms: { TrapRoom: "let on_event = fun (g, e) : (Globals, Event) -> Done" } } }; for (const f of syncs) f();');
+ok("after a load or a start over, both boxes and the switch show the new state", boxes[0].value === "let loaded = 1" && boxes[1].value === "let on_event = fun (g, e) : (Globals, Event) -> Done"
+  && onBtn.getAttribute("aria-pressed") === "true", [boxes.map(b => b.value), onBtn.getAttribute("aria-pressed")]);
+ok("... and the new program goes to the tiles", posts.length === 3 && posts[2].data.modules[0].text === "let loaded = 1", posts.map(p => p.data.modules[0].text));
 boxes[0].value = "let flip2 = fun (a, b) : (String, String) -> Done"; boxes[0].fire("input"); advance(700);
-ok("after a load or a start over (a new state), typing writes the state as it is now", run("state.scripts.common") === "let flip2 = fun (a, b) : (String, String) -> Done", run("state.scripts.common"));
+ok("after a load or a start over (a new state), typing writes the state as it is now, and the other box's loaded text is kept",
+  run("state.scripts.common") === "let flip2 = fun (a, b) : (String, String) -> Done" && run("state.scripts.rooms.TrapRoom") === "let on_event = fun (g, e) : (Globals, Event) -> Done", run("state.scripts"));
+run("for (const f of syncs) f()");
+ok("a round of syncs with the same state leaves the boxes be", boxes[0].value === "let flip2 = fun (a, b) : (String, String) -> Done", boxes[0].value);
 advance(5000);
-ok("no post without a change", posts.length === 3, posts.length);
+ok("no post without a change", posts.length === 4, posts.length);
 msg({ type: "size", height: 431.2 });
 ok("size: the frame as tall as it says", frame.style.height === "432px", frame.style.height);
 msg({ type: "size", height: 1e7 });
@@ -124,8 +132,13 @@ for (const f of winOn.blur || []) f({}); advance(300);
 ok("the page's window losing the focus elsewhere leaves it be", frame.blurred === 1, frame.blurred);
 
 // ---- crash, a frame that never says ready, full screen ----
+msg({ type: "crash", message: "Failure(ninja-keys)" });
+const n1 = posts.length; boxes[0].value += "\nlet more = 2"; boxes[0].fire("input"); advance(700);
+ok("a crash after ready: said, the tiles kept, and the next program still posted", frame.isConnected && run("scriptFrame.phase") === "ready" && posts.length === n1 + 1
+  && /had an error, Failure\(ninja-keys\)/.test(panel.querySelector(".script-frame-status").textContent), panel.querySelector(".script-frame-status").textContent);
+msg({ type: "crash", message: "Invalid_argument" });
 msg({ type: "crash", message: "Not_found" });
-ok("crash: the frame taken away, its words and a button to start it again; the boxes kept",
+ok("three crashes in a minute: the frame taken away, its words and a button to start it again; the boxes kept",
   !frame.isConnected && /stopped \(Not_found\)/.test(panel.querySelector(".script-frame-status").textContent) && !!panel.querySelector("button.script-frame-again") && panel.querySelectorAll("textarea").length === 2,
   panel.querySelector(".script-frame-status").textContent);
 const n0 = posts.length;
@@ -142,12 +155,25 @@ const panel2 = new FakeEl("div"); body.append(panel2); run("scriptingPanel")(pan
 ok("none made while the game is full screen", !panel2.querySelector("iframe"), panel2.querySelectorAll("iframe").length);
 body.setAttribute("class", ""); advance(1100);
 ok("made once it is not", !!panel2.querySelector("iframe.script-frame"), panel2.querySelectorAll("iframe").length);
-msg({ type: "ready", protocol: 1, build: "abc" }); advance(10100);
+const frame3 = run("scriptFrame").iframe;
+body.setAttribute("class", "big"); advance(31000);
+ok("full screen before ready: the wait stops (the frame cannot draw), the frame kept", frame3.isConnected && run("scriptFrame.phase") === "loading", run("scriptFrame.phase"));
+body.setAttribute("class", ""); advance(5000);
+ok("... and counts again once shown", frame3.isConnected && run("scriptFrame.phase") === "loading" && run("scriptFrame.waited") >= 5000 && run("scriptFrame.waited") < 30000, run("scriptFrame.waited"));
+msg({ type: "ready", protocol: 1, build: "abc" });
+body.setAttribute("class", "big"); advance(15000);
+ok("full screen after ready: no \"no program\" while the frame cannot draw", !/had no program/.test(panel2.querySelector(".script-frame-status").textContent), panel2.querySelector(".script-frame-status").textContent);
+body.setAttribute("class", ""); advance(10100);
 ok("a frame that says ready but never answers a program (a page it does not take programs from): said, after ten seconds",
   /had no program/.test(panel2.querySelector(".script-frame-status").textContent) && run("scriptFrame.phase") === "ready", panel2.querySelector(".script-frame-status").textContent);
 msg({ type: "status", ...{ ok: true, errors: [], holes: {}, programHoles: 0, incomplete: {}, programIncomplete: 0 } });
 ok("... and a status after it shown as ever", /is fine/.test(panel2.querySelector(".script-frame-status").textContent), panel2.querySelector(".script-frame-status").textContent);
-panel2.remove(); panel.remove();
+panel2.remove();
+const panel4 = new FakeEl("div"); body.append(panel4); run("scriptingPanel")(panel4); advance(20);
+const frame4 = run("scriptFrame").iframe, n4 = posts.length; msg({ type: "ready", protocol: 2, build: "def" });
+ok("a frame that speaks another protocol: taken away, said, nothing posted to it", !frame4.isConnected && run("scriptFrame.phase") === "crashed"
+  && /protocol 2, and this game knows protocol 1/.test(panel4.querySelector(".script-frame-status").textContent) && posts.length === n4, panel4.querySelector(".script-frame-status").textContent);
+panel4.remove(); panel.remove();
 
 // ---- the levers: through runProgram, or the fallback; ready or not ----
 const shipped = run("SCRIPT_TRAP"), RULES = {

@@ -3,6 +3,8 @@
 // page for each of the game's tabs. With the 🏞️ Background tab open it
 // swam at 2 to 15 frames a second (its room choices built the whole castle
 // on every refresh); every other tab, 60. Fails if any tab is under 50.
+// Every tab, to the last (until ticket 520 it stopped at 18, so ♿, 🧩 and ⚙️
+// were never swum); 🧩 with Hazel's tiles ready and in view.
 //   node tabs167.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -22,6 +24,18 @@ async function run(tabIndex) {
       Object.defineProperty(navigator, "getGamepads", { value: () => [window.__pad], configurable: true }); const e = new Event("gamepadconnected"); e.gamepad = window.__pad; window.dispatchEvent(e);
       state.background.kind = "lake"; choppy = false; slowFlag = false; PERF.slowMoving = true; tab = ${tabIndex}; showTab();
       window.__F = { gaps: [], last: 0, on: false }; const f = t => { if (__F.on) { if (__F.last) __F.gaps.push(t - __F.last); __F.last = t; } requestAnimationFrame(f); }; requestAnimationFrame(f); return 1; })()`);
+    // (ticket 520: 🧩 Scripting runs Hazel's app in a frame; its start-up is scripting482's, so here the steady state: the tiles in
+    // view, ready, with the program's status, before the warm-up)
+    let tiles = "";
+    if (await ev(`TABS[${tabIndex}][1]`) === "scripting") {
+      let ph = "none";
+      for (let k = 0; k < 240; k++) {
+        ph = await ev(`(() => { const F = scriptFrame; if (!F) return "none"; if (F.phase === "loading" && F.iframe.isConnected) F.iframe.scrollIntoView({ block: "nearest" }); return F.phase + (F.status ? ", with a status" : ""); })()`);
+        if (ph === "ready, with a status" || ph === "late" || ph === "crashed") break;
+        await sleep(250);
+      }
+      tiles = ` (Hazel's tiles: ${ph})`;
+    }
     await sleep(800);
     const swim = async on => { for (const b of [15, 14]) { await ev(`__pad.buttons[${b}].pressed = true; __F.on = ${on}; 1`); await sleep(2000); await ev(`__pad.buttons.forEach(x => x.pressed = false); 1`); } };
     await swim(false);
@@ -29,13 +43,13 @@ async function run(tabIndex) {
     await swim(true);
     const F = JSON.parse(await ev(`(() => { __F.on = false; const g = __F.gaps, s = g.reduce((a, b) => a + b, 0); return JSON.stringify({ fps: +(1000 * g.length / Math.max(1, s)).toFixed(1), late: Math.round(100 * g.filter(x => x > 25).length / Math.max(1, g.length)) }); })()`));
     const name = await ev(`TABS[${tabIndex}][0]`);
-    return { name, ...F };
+    return { name: name + tiles, ...F };
   } finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
 }
 // (the number of tabs, read from a page)
 let fails = 0;
 console.log(`Chrome, the duck pond, the default friend swimming, by the tab open (fresh page each):`);
-for (let i = 0; i < 18; i++) {
+for (let i = 0; i < 64; i++) {   // (to the last tab: run() gives null past it)
   try { const r = await run(i); if (!r) break;
     const ok = r.fps >= 50; if (!ok) fails++;
     console.log(`${ok ? "ok  " : "FAIL"} ${String(r.fps).padStart(5)} fps (${r.late}% late)  ${r.name}`); }

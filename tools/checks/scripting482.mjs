@@ -39,8 +39,11 @@ const frameEv = async x => {
   }
   return null;
 };
-const inFrame = `JSON.stringify({ tokens: document.querySelectorAll(".code-container .token").length, marks: document.querySelectorAll(".errors > .errors-piece").length,
-  row: getComputedStyle(document.documentElement).getPropertyValue("--row-height-px").trim(), focused: document.hasFocus() })`;
+// (marks: the error pieces that draw something; Hazel makes a piece per error id even where it draws nothing. words: whether the
+// tiles hold the program posted, not any text. scroll: the frame's content height, against the height the page gave it)
+const inFrame = `(() => { const t = [...document.querySelectorAll(".code-container .token")].map(e => e.textContent.trim());
+  return JSON.stringify({ tokens: t.length, words: ["module", "Common", "TrapRoom", "on_event"].every(w => t.includes(w)), marks: document.querySelectorAll(".errors > .errors-piece > *").length,
+    row: getComputedStyle(document.documentElement).getPropertyValue("--row-height-px").trim(), scroll: document.documentElement.scrollHeight, focused: document.hasFocus() }); })()`;
 const frameLook = async () => { const v = await frameEv(inFrame); return v ? JSON.parse(v) : null; };
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 900)}`); if (!cond) bad++; };
@@ -82,7 +85,10 @@ try {
   for (let i = 0; i < 80 && !(look && look.tokens > 0); i++) { look = await frameLook(); if (!(look && look.tokens > 0)) await sleep(250); }
   const st0 = JSON.parse(await ev(`JSON.stringify((scriptFrame && scriptFrame.status) || null)`));
   ok("Hazel's frame (index.html#embed on the embed branch's build) says ready", r.frameSrc === "https://hazel.org/build/js-library-embed/index.html#embed" && T.phase === "ready", [r.frameSrc, T.phase]);
-  ok("the frame shows the shipped program as tiles, with no error mark, and its status says fine", !!look && look.tokens > 20 && look.marks === 0 && !!st0 && st0.ok === true, [look, st0]);
+  ok("the frame shows the shipped program as tiles (its modules and on_event among them), with no error mark, and its status says fine", !!look && look.tokens > 20 && look.words && look.marks === 0 && !!st0 && st0.ok === true, [look, st0]);
+  const Z = JSON.parse(await ev(`JSON.stringify({ height: scriptFrame && scriptFrame.height, style: scriptFrame && parseInt(scriptFrame.iframe.style.height) })`));
+  const row = parseFloat(look && look.row) || 30;
+  ok("size: the frame as tall as Hazel says its tiles are (taller than its first 120 px, within a row of its content)", Z.height > 120 && Z.style === Z.height && !!look && Math.abs(look.scroll - Z.height) <= row + 2, [Z, look]);
   // ---- the levers, through runProgram ----
   const L = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), out = {}, B = state.background;
     for (let i = 0; i < 120 && !window.Hazel; i++) await w(250);
@@ -162,7 +168,8 @@ try {
   await send("Input.dispatchKeyEvent", { type: "keyUp", key: "b", code: "KeyB", windowsVirtualKeyCode: 66, nativeVirtualKeyCode: 66 });
   console.log(`  ${JSON.stringify({ box, after: K1, blown })}`);
   ok("a click in the tiles takes the focus there, and it comes back to the game, whose B still blows bubbles", K1.blurs > box.blurs && K1.active !== "the frame" && blown === true, [box, K1, blown]);
-  const last = await ev(`scriptFrame ? scriptFrame.phase : "none"`);
+  // (a crash after ready keeps the tiles, said in their status line: still a failure here)
+  const last = await ev(`scriptFrame ? scriptFrame.phase + (scriptFrame.oops ? " (crashed: " + scriptFrame.oops + ")" : "") : "none"`);
   ok("the frame did not crash", last === "ready", [last, await ev(`scriptFrame && scriptFrame.why`), frameErrs.slice(0, 3)]);
   if (frameErrs.length) console.log(`  (the frame's own page errors, not the game's: ${frameErrs.length}, the first ${frameErrs[0]})`);
   ok("no page errors", !errs.length, errs);
