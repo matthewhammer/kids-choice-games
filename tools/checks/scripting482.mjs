@@ -165,8 +165,9 @@ try {
     return JSON.stringify(out); })()`));
   ok("while the game is full screen the frame is display: none, and shown again after", D.big === "none" && D.back !== "none" && D.connected, D);
   // ---- the keys: a click in the tiles, then B ----
-  const box = JSON.parse(await ev(`(async () => { const f = scriptFrame.iframe; f.scrollIntoView({ block: "center" }); await new Promise(r => setTimeout(r, 400));
-    const b = f.getBoundingClientRect(); return JSON.stringify({ inView: b.top >= 0 && b.bottom <= innerHeight, x: Math.round(b.left + Math.min(60, b.width / 2)), y: Math.round(b.top + Math.min(30, b.height / 2)), blurs: scriptFrame.blurs }); })()`));
+  // (ticket 531: with four editors the tiles are taller than the viewport, so centred their top is above it: their top is scrolled to)
+  const box = JSON.parse(await ev(`(async () => { const f = scriptFrame.iframe; f.scrollIntoView({ block: "start" }); await new Promise(r => setTimeout(r, 400));
+    const b = f.getBoundingClientRect(); return JSON.stringify({ inView: b.top >= 0 && b.top + Math.min(30, b.height / 2) < innerHeight, x: Math.round(b.left + Math.min(60, b.width / 2)), y: Math.round(b.top + Math.min(30, b.height / 2)), blurs: scriptFrame.blurs }); })()`));
   const mouse = (type, extra = {}) => send("Input.dispatchMouseEvent", { type, x: box.x, y: box.y, button: "left", clickCount: 1, ...extra });
   await mouse("mouseMoved", { button: "none", clickCount: 0 }); await mouse("mousePressed"); await mouse("mouseReleased");
   await sleep(800);
