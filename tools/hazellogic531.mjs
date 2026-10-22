@@ -71,7 +71,9 @@ const q = (a, p) => { const s = [...(a || [])].sort((x, y) => x - y); return s.l
 const sum = { mode, loadMs: result.loadMs, cold: result.cold, heapCold: result.heapCold, heapAfter: result.heapAfter, hz: result.hz, stopped: result.stopped, errs: errs.length, events: {} };
 for (const [tag, E] of Object.entries(result.events)) sum.events[tag] = {
   toFrame: { p50: q(E.toFrame, 0.5), p95: q(E.toFrame, 0.95), max: q(E.toFrame, 1) }, event: { p50: q(mode === "hazel" ? E.hazel : E.js, 0.5), p95: q(mode === "hazel" ? E.hazel : E.js, 0.95) },
-  handler: { p50: q(E.handler, 0.5), p95: q(E.handler, 0.95) }, run: { p50: q(E.run, 0.5), p95: q(E.run, 0.95) }, dropped: E.dropped, burstMax: q(E.gaps, 1) };
+  handler: { p50: q(E.handler, 0.5), p95: q(E.handler, 0.95) }, run: { p50: q(E.run, 0.5), p95: q(E.run, 0.95) }, dropped: E.dropped, burstMax: q(E.gaps, 1),
+  // (pulls made, and how many went through Hazel: under hazel, fewer means the plain JS ran for the rest)
+  pulls: (E.toFrame || []).length + (E.gaps || []).length, hazelCalls: (E.hazel || []).length };
 result.summary = sum;
 console.log(JSON.stringify(sum, null, 1));
 if (out) writeFileSync(out, JSON.stringify(result));

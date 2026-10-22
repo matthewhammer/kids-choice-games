@@ -239,18 +239,19 @@ const hzPush = (a, v) => { if (a.length < HZ_KEEP) a.push(Math.round(v * 1000) /
 function hzJs(tag, f) { const t0 = performance.now(); try { return f(); } finally { const Z = hzCounters(); hzPush(Z.js[tag] || (Z.js[tag] = []), performance.now() - t0); } }
 
 // the commands a rule gave, run in order, each by the room's act (its tag's method, with the command's fields before the rest);
-// Wait(ms, rest) runs the rest later. A tag the room does not know ends the walk, counted (__hz.unknown) and said once
-function scriptRun(cmd, act, depth = 0) {
-  if (!cmd || depth > 200 || cmd.tag === "Done") return;
+// Wait(ms, rest) runs the rest later. A tag the room does not know ends the walk, counted (__hz.unknown) and said once.
+// end() runs once, when the walk ends, however it ends (after a Wait too, so what the walk gathered stays with its own event)
+function scriptRun(cmd, act, depth = 0, end = () => {}) {
+  if (!cmd || depth > 200 || cmd.tag === "Done") return end();
   const v = Array.isArray(cmd.value) ? cmd.value : [cmd.value], k = v.length > 1 ? v[v.length - 1] : null, args = v.length > 1 ? v.slice(0, -1) : v;
-  if (cmd.tag === "Say") { scriptSay(String(args[0])); return scriptRun(k, act, depth + 1); }
-  if (cmd.tag === "Wait") { setTimeout(() => scriptRun(k, act, depth + 1), Math.max(0, +args[0] || 0)); return; }
-  if (typeof act[cmd.tag] === "function" && act[cmd.tag](...args) !== false) return scriptRun(k, act, depth + 1);
+  if (cmd.tag === "Say") { scriptSay(String(args[0])); return scriptRun(k, act, depth + 1, end); }
+  if (cmd.tag === "Wait") { setTimeout(() => scriptRun(k, act, depth + 1, end), Math.max(0, +args[0] || 0)); return; }
+  if (typeof act[cmd.tag] === "function" && act[cmd.tag](...args) !== false) return scriptRun(k, act, depth + 1, end);
   const Z = hzCounters(); Z.unknown++; if (Z.unknownTags.length < 20) Z.unknownTags.push(String(cmd.tag));
   if (Z.unknown === 1) scriptSay(`a command this room does not know: ${cmd.tag}`);
+  end();
 }
 
-let scriptBoulders = { drop: [], lift: [] }, scriptDoors = [];
 // (the empty fields of a room's globals that are not its own)
 const scriptNoGlobals = () => ({ lever_L: false, lever_R: false, wiring: "normal", draws: [], pits_on: [], covered: [], hatch: false, things: [] });
 // (ticket 531) the event's room, its globals and how its commands act: per room kind (SCRIPT_ROOMS' kind), filled in as rules move
@@ -263,13 +264,14 @@ const SCRIPT_ACTS = {
         pits_on: T.on, covered: T.covered, hatch: false, things: [] }; },
     // (a Flip moves the lever only; each SetPit swings its pit's lid, the rule having said which: ticket 531. A pit the rule says
     // otherwise than the drawing, which follows the levers, is counted in __hz.mismatch)
-    act: () => ({ Flip: name => { if (name === "lever_L") roomLeverFlip("L", false); else if (name === "lever_R") roomLeverFlip("R", false); else return false; },
+    // (each event its own gathered boulders, handed to done when its walk ends)
+    act: () => { const got = { drop: [], lift: [] }; return { got, Flip: name => { if (name === "lever_L") roomLeverFlip("L", false); else if (name === "lever_R") roomLeverFlip("R", false); else return false; },
                   SetPit: (i, open) => { if (i !== 0 && i !== 1) return false; if (!roomPitSwing(i, !!open)) hzCounters().mismatch++; },
                   // (a blue lever: the boulders the rule names, gathered, then dropped or lifted together when the walk ends, as the
                   // JS's roomBoulderAct; none named, the lever still turns, down)
-                  DropBoulder: i => { if (i !== 0 && i !== 1) return false; scriptBoulders.drop.push(i); },
-                  LiftBoulder: i => { if (i !== 0 && i !== 1) return false; scriptBoulders.lift.push(i); } }),
-    done: ev => { if (ev.tag !== "PullBoulder") return; const { drop, lift } = scriptBoulders; scriptBoulders = { drop: [], lift: [] };
+                  DropBoulder: i => { if (i !== 0 && i !== 1) return false; got.drop.push(i); },
+                  LiftBoulder: i => { if (i !== 0 && i !== 1) return false; got.lift.push(i); } }; },
+    done: (ev, a) => { if (ev.tag !== "PullBoulder") return; const { drop, lift } = a.got;
       roomBoulderAct(String(ev.value), lift.length ? lift : drop, lift.length > 0); },
   },
   // (a tree room's trap door, PullHatch(n), n its house, 0 the round room at the top; hatch: that door shut)
@@ -284,8 +286,8 @@ const SCRIPT_ACTS = {
     here: ev => { const T = (state.background.things || [])[ev.value]; return !!T && T.kind === "lever"; },
     globals: () => ({ ...scriptNoGlobals(), things: (state.background.things || []).flatMap((t, at) => t.kind === "lever" || t.kind === "trapdoor"
       ? [{ at, uid: String(t.uid || ""), kind: t.kind, on: !!t.on, works: (t.works || []).map(String), does: String(t.does || ""), open: !!t.open, boulder: !!t.boulder }] : []) }),
-    act: () => ({ OpenDoor: (at, open) => { scriptDoors.push([at, "open", !!open]); }, DropRock: (at, down) => { scriptDoors.push([at, "boulder", !!down]); } }),
-    done: ev => { const doors = scriptDoors; scriptDoors = []; leverPullApply(ev.value, doors); },
+    act: () => { const doors = []; return { doors, OpenDoor: (at, open) => { doors.push([at, "open", !!open]); }, DropRock: (at, down) => { doors.push([at, "boulder", !!down]); } }; },
+    done: (ev, a) => { leverPullApply(ev.value, a.doors); },
   },
 };
 
@@ -304,8 +306,8 @@ function scriptEvent(room, ev) {
   const t1 = performance.now();
   try { cmd = f(A.globals(ev), ev); } catch (e) { scriptSay("the rule stopped: " + (e && e.message || e)); return true; }
   const t2 = performance.now();
-  scriptRun(cmd, A.act(ev));
-  if (A.done) A.done(ev);
+  const act = A.act(ev);
+  scriptRun(cmd, act, 0, () => { if (A.done) A.done(ev, act); });
   const t3 = performance.now();
   Z.calls++; hzPush(Z.ms, t2 - t1); hzPush(Z.runMs, t3 - t2); hzPush(Z.hazel[ev.tag] || (Z.hazel[ev.tag] = []), t3 - t0);
   return true;

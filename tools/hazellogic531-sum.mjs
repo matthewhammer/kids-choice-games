@@ -18,6 +18,8 @@ for (const J of jobs) {
     console.log(`  ${r.mode.padEnd(5)} load ${r.loadMs} ms${r.cold && r.cold.compileMs != null ? `, library ${Math.round(r.cold.libWaitMs)} ms, first compile ${Math.round(r.cold.compileMs)} ms` : ""}, heap ${r.heapAfter ? (r.heapAfter.used / 1e6).toFixed(1) : "?"} MB${r.stopped ? ", STOPPED " + r.stopped : ""}`);
     for (const [tag, E] of Object.entries(r.events || {})) {
       console.log(`    ${tag.padEnd(12)} to frame p50 ${E.toFrame.p50} p95 ${E.toFrame.p95} max ${E.toFrame.max}; event p50 ${E.event.p50} p95 ${E.event.p95}; dropped ${E.dropped}/20`);
+      // (a hazel run whose compile was not ready, or whose pulls did not all go through Hazel, measured the JS: flagged, left out)
+      if (r.mode === "hazel" && (!r.cold || r.cold.ready !== true || E.hazelCalls !== E.pulls)) { console.log(`      LEFT OUT: not all Hazel (ready ${r.cold && r.cold.ready}, ${E.hazelCalls}/${E.pulls} pulls through Hazel)`); continue; }
       rows.push({ cpu: J.cpu, job: J.dir, mode: r.mode, tag, frame: E.toFrame.p50, frame95: E.toFrame.p95, event: E.event.p50, dropped: E.dropped });
     }
   }
