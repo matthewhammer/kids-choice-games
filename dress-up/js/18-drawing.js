@@ -292,7 +292,8 @@ function drawNow() {
   // arm that is that own hand: the left is side +1 facing us (arms[0], where the broom, staff, scepter, sword and lasso
   // always were), side -1 from behind, so from behind a thing stays in its own hand. The lasso is put away while the hands
   // are busy (crawling, swimming or treading, climbing, lying: ticket 522); running, its loop twirls (LFO B's phase).
-  const handsBusy = (move && (move.swim || move.squash || move.rot || move.water || move.ladder != null)) || /climb/.test(B.anim || "") || B.pose === "lie";
+  const handsBusy = (move && (move.swim || move.squash || move.rot || move.water || move.ladder != null)) || /climb|swim/.test(B.anim || "") || B.pose === "lie";
+  // (swimming out of the water, or in shallow water, is a tread stroke with neither swim nor water set: still busy, 522's rule)
   // (ticket 528: and the other way, the own hand an arm is: from behind, side +1 is the right hand, so its style goes there too)
   const ownOf = side => (away ? -side : side) > 0 ? "L" : "R";
   const armOf = own => arms.find(x => x.side === (away ? -1 : 1) * (own === "L" ? 1 : -1)) || null;
