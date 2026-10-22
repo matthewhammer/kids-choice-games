@@ -432,8 +432,8 @@ function leverPull(i) {
 function roomLeverPull(side) {
   if (side[0] === "B") return roomBoulderPull(side.slice(1));   // (ticket 323: a blue one)
   if (side === "H") return hatchLeverPull();   // (ticket 334: a tree room's trap door's)
-  if (scriptPull(side)) return;   // (ticket 482: 🧩 Scripting's rule for the trap room, when it is on)
-  roomLeverFlip(side);
+  if (scriptEvent("TrapRoom", { tag: "Pull", value: side })) return;   // (ticket 482: 🧩 Scripting's rule for the trap room, when it is on)
+  hzJs("Pull", () => roomLeverFlip(side));   // (ticket 531: timed as the rule is)
 }
 // a red lever flipped, and the pits it works with it (the pull itself, and a script's Flip; ticket 482)
 function roomLeverFlip(side) {

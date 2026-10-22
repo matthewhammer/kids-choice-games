@@ -181,7 +181,7 @@ const shipped = run("SCRIPT_TRAP"), RULES = {
   say: 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Say("hello from Hazel", Done) end',
   err: 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Flip(1, Done) end' };
 const setRule = t => run(`state.scripts = { on: true, common: null, rooms: { TrapRoom: ${JSON.stringify(t)} } }; scriptCompiled.key = null;`);
-const pull = () => { flips.length = 0; const used = run('scriptPull("L")'); return { used, flips: flips.join("") }; };
+const pull = () => { flips.length = 0; const used = run('scriptEvent("TrapRoom", { tag: "Pull", value: "L" })'); return { used, flips: flips.join("") }; };
 // (a stand-in library: runProgram answers as told; run, the joined text's, fine)
 const calls = { run: 0, runProgram: 0 }, Flip = (a, k) => ({ tag: "Flip", value: [a, k] }), Done = { tag: "Done" };
 const fake = (answer, withProgram = true) => { ctx.Hazel = { version: "fake", build: "local", run: text => { calls.run++; return { errors: [], value: { traproom: () => Flip("lever_L", Done), rooms: 1 }, text }; } };

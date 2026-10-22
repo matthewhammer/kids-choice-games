@@ -149,6 +149,7 @@ function scriptCompile() {
     if (ready) for (const room of SCRIPT_ROOMS) if (!handlers[room.name]) { errors.push(`${room.name}: its on_event did not come back as a function`); ready = false; }
   } catch (e) { errors = [String(e && e.message || e)]; ready = false; }
   scriptCompiled = { key, via: viaProgram ? "runProgram" : "run", errors, unfinished, ready, handlers, ms: performance.now() - t0 };
+  hzPush(hzCounters().compileMs, scriptCompiled.ms);   // (ticket 531)
   return scriptCompiled;
 }
 
@@ -160,28 +161,56 @@ function scriptSay(text) {
   clearTimeout(scriptSay.t); scriptSay.t = setTimeout(() => { b.hidden = true; }, 3000);
 }
 
-// the commands a rule gave, run in order: a lever's Flip as the game's own pull; anything not understood ends it
+// (ticket 531) the time Hazel and the plain JS each take per event, for the speed runs to read (tools/hazellogic531.mjs): calls, each
+// handler call's ms (ms), each command walk's (runMs), each compile's (compileMs), the commands not understood (unknown), and per event
+// tag the whole event's ms in each mode (hazel, js: from the guard to the last command acted on, the drawing after it not counted)
+const HZ_KEEP = 5000;
+const hzCounters = () => window.__hz || (window.__hz = { calls: 0, ms: [], runMs: [], compileMs: [], unknown: 0, unknownTags: [], mismatch: 0, hazel: {}, js: {} });
+const hzPush = (a, v) => { if (a.length < HZ_KEEP) a.push(Math.round(v * 1000) / 1000); };
+// (the plain JS's own handler, timed the same way: the whole event)
+function hzJs(tag, f) { const t0 = performance.now(); try { return f(); } finally { const Z = hzCounters(); hzPush(Z.js[tag] || (Z.js[tag] = []), performance.now() - t0); } }
+
+// the commands a rule gave, run in order, each by the room's act (its tag's method, with the command's fields before the rest);
+// Wait(ms, rest) runs the rest later. A tag the room does not know ends the walk, counted (__hz.unknown) and said once
 function scriptRun(cmd, act, depth = 0) {
-  if (!cmd || depth > 200) return;
-  const [a, k] = Array.isArray(cmd.value) ? cmd.value : [cmd.value, null];
-  if (cmd.tag === "Flip") { act.flip(String(a)); scriptRun(k, act, depth + 1); }
-  else if (cmd.tag === "Say") { scriptSay(String(a)); scriptRun(k, act, depth + 1); }
+  if (!cmd || depth > 200 || cmd.tag === "Done") return;
+  const v = Array.isArray(cmd.value) ? cmd.value : [cmd.value], k = v.length > 1 ? v[v.length - 1] : null, args = v.length > 1 ? v.slice(0, -1) : v;
+  if (cmd.tag === "Say") { scriptSay(String(args[0])); return scriptRun(k, act, depth + 1); }
+  if (cmd.tag === "Wait") { setTimeout(() => scriptRun(k, act, depth + 1), Math.max(0, +args[0] || 0)); return; }
+  if (typeof act[cmd.tag] === "function" && act[cmd.tag](...args) !== false) return scriptRun(k, act, depth + 1);
+  const Z = hzCounters(); Z.unknown++; if (Z.unknownTags.length < 20) Z.unknownTags.push(String(cmd.tag));
+  if (Z.unknown === 1) scriptSay(`a command this room does not know: ${cmd.tag}`);
 }
 
-// (from roomLeverPull) a red lever pulled in a trap room, with 🧩 on and the program ready: its rule says what happens, and true;
-// otherwise (errors, or not finished: a hole to fill, a bracket left open) false, and the lever works as it always has
-function scriptPull(side) {
-  const S = state.scripts, B = state.background;
-  if (!S || !S.on || B.kind !== "castleroom" || (side !== "L" && side !== "R")) return false;
-  const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
-  if (K.rooms[n - 1] !== "trap") return false;
+// (ticket 531) the event's room, its globals and how its commands act: per room kind (SCRIPT_ROOMS' kind), filled in as rules move
+const SCRIPT_ACTS = {
+  trap: {
+    here: () => { const B = state.background; if (B.kind !== "castleroom") return false; const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))); return K.rooms[n - 1] === "trap"; },
+    globals: () => { const B = state.background, K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
+      return { lever_L: !leverDown(B, "L", n, K.id), lever_R: !leverDown(B, "R", n, K.id), wiring: B[leverWireKey(n, K.id)] || "normal" }; },
+    act: () => ({ Flip: name => { if (name === "lever_L") roomLeverFlip("L"); else if (name === "lever_R") roomLeverFlip("R"); else return false; } }),
+  },
+};
+
+// (ticket 531; ticket 482's scriptPull) an event in a room, with 🧩 on and the program ready: the room's rule says what happens, its
+// commands are acted on, and true. Otherwise false, and the caller's own JS runs as it always has: 🧩 off, Hazel not loaded yet,
+// not ready (errors, a hole to fill, a bracket left open), no handler for the room, or not in that room
+function scriptEvent(room, ev) {
+  const S = state.scripts;
+  if (!S || !S.on) return false;
+  const R = SCRIPT_ROOMS.find(r => r.name === room), A = R && SCRIPT_ACTS[R.kind];
+  if (!A || !A.here(ev)) return false;
   if (!window.Hazel) { hazelLoad().catch(() => {}); return false; }
-  const C = scriptCompile(), f = C && C.ready && C.handlers.TrapRoom;
+  const t0 = performance.now(), Z = hzCounters();
+  const C = scriptCompile(), f = C && C.ready && C.handlers[room];
   if (!f) return false;
-  const g = { lever_L: !leverDown(B, "L", n, K.id), lever_R: !leverDown(B, "R", n, K.id), wiring: B[leverWireKey(n, K.id)] || "normal" };
   let cmd;
-  try { cmd = f(g, { tag: "Pull", value: side }); } catch (e) { scriptSay("the rule stopped: " + (e && e.message || e)); return true; }
-  scriptRun(cmd, { flip: name => { if (name === "lever_L") roomLeverFlip("L"); else if (name === "lever_R") roomLeverFlip("R"); } });
+  const t1 = performance.now();
+  try { cmd = f(A.globals(ev), ev); } catch (e) { scriptSay("the rule stopped: " + (e && e.message || e)); return true; }
+  const t2 = performance.now();
+  scriptRun(cmd, A.act(ev));
+  const t3 = performance.now();
+  Z.calls++; hzPush(Z.ms, t2 - t1); hzPush(Z.runMs, t3 - t2); hzPush(Z.hazel[ev.tag] || (Z.hazel[ev.tag] = []), t3 - t0);
   return true;
 }
 
