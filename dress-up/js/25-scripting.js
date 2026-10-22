@@ -472,7 +472,7 @@ function scriptingPanel(box) {
   // (each change written to the state as it is now, not as the tab found it: a load or a start over replaces it, and then the
   // boxes and the switch are filled again from the new one, below)
   const on = el("button", { class: "script-on", "aria-pressed": String(!!S.on), onclick: () => { const T = scriptsState(); T.on = !T.on; setPressed(on, T.on); changed(); } },
-    "🧩 the trap room's red levers run by these scripts");
+    "🧩 the levers run by these scripts (the trap room's, the tree houses' trap doors, placed levers)");
   let timer = null;
   const editor = (title, modName, get, put) => {
     const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", "data-module": modName });
@@ -491,7 +491,8 @@ function scriptingPanel(box) {
     el("div", { class: "hint" }, "For looking: the tiles show what the text boxes hold, with Hazel's own marks where something is wrong; you write in the boxes above. A click in the tiles leaves the keys with the game."),
   ]);
   box.append(
-    el("div", { class: "hint" }, "The game's logic in Hazel: each editor is a module of one program; 📚 Common's are in scope in every room's, as Common.name. A room's on_event(globals, event) gives what to do, as Cmd: Flip(\"lever_L\", then), Say(\"words\", then), Done."),
+    el("div", { class: "hint" }, "The game's logic in Hazel: each editor is a module of one program; 📚 Common's are in scope in every room's, as Common.name. A room's on_event(globals, event) gives what to do, as Cmd, each command with the rest after it: Flip(\"lever_L\", then), SetPit(0, true, then), DropBoulder(0, then), SetHatch(2, false, then), OpenDoor(3, true, then), Say(\"words\", then), Wait(500, then), Done."),
+    ...(SCRIPT_LOGIC ? [el("div", { class: "hint" }, SCRIPT_LOGIC === "hazel" ? "This page was opened with ?logic=hazel: the levers run the shipped scripts, whatever is in the boxes or the switch." : "This page was opened with ?logic=js: the levers run the game's own code, whatever the switch says.")] : []),
     el("div", { class: "row" }, [on]), status, errs,
     editor("📚 Common", "Common", () => scriptsState().common, v => { scriptsState().common = v; }),
     ...SCRIPT_ROOMS.map(r => editor(r.label, r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; })),
