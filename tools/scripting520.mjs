@@ -180,8 +180,8 @@ panel4.remove(); panel.remove();
 
 // ---- the levers: through runProgram, or the fallback; ready or not ----
 const shipped = run("SCRIPT_TRAP"), RULES = {
-  shipped, both: 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Common.flip2("lever_L", "lever_R") end',
-  say: 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Say("hello from Hazel", Done) end',
+  shipped, both: 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Common.flip2("lever_L", "lever_R") | _ => Done end',
+  say: 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Say("hello from Hazel", Done) | _ => Done end',
   err: 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Flip(1, Done) end' };
 const setRule = t => run(`state.scripts = { on: true, common: null, rooms: { TrapRoom: ${JSON.stringify(t)} } }; scriptCompiled.key = null;`);
 const pull = () => { flips.length = 0; const used = run('scriptEvent("TrapRoom", { tag: "Pull", value: "L" })'); return { used, flips: flips.join("") }; };
@@ -236,6 +236,10 @@ if (libPath) {
     const [a, b] = viaBoth(t);
     ok(`${name}: the same lever through runProgram (${a.used ? a.flips || "none" : "as always"}) as through the fallback`, a.via === "runProgram" && b.via === "run" && a.used === b.used && a.flips === b.flips && a.ready === b.ready, [a, b]);
   }
+  // (ticket 531: Event has more than Pull now, so a rule matching Pull alone is not exhaustive, an error, and the lever falls back;
+  // scripting482's rules end in "| _ => Done", and here they must be ready and used)
+  { const [b] = viaBoth(RULES.both), [s] = viaBoth(RULES.say);
+    ok("scripting482's rules are ready: flip2 flips both, Say flips none", b.ready && b.used && b.flips === "LR" && s.ready && s.used && s.flips === "", [b, s]); }
   const [err] = viaBoth(RULES.err);
   ok("Flip(1, Done): an error, TrapRoom's", !err.ready && err.errors.length > 0 && err.errors.every(e => e.startsWith("TrapRoom: ")), err.errors);
   const notReady = (what, t, test) => { const [a] = viaBoth(t); ok(what, !a.ready && !a.used && test(a), a); };
