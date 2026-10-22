@@ -130,8 +130,15 @@ function measure(o) {
     let x = R(p).left + (parseFloat(gcs.borderLeftWidth) || 0) + (parseFloat(gcs.paddingLeft) || 0);
     for (const sz of sizes) if (sz > 0) { spans.push([x, x + sz]); x += sz + gap; }   // (a folded track's gutters fold with it)
     const reach = r => spans.filter(([a, b]) => Math.min(r.right, b) - Math.max(r.left, a) > 1).length;
+    // (packed, c5: the most room over a box beyond one row gap, between it and the lowest box above it in its columns, or the grid's
+    // top; a grid in rows leaves a short box's hole over the box under it)
+    const rowGap = parseFloat(gcs.rowGap) || 0, colGap = gap, ctop = R(p).top + (parseFloat(gcs.borderTopWidth) || 0) + (parseFloat(gcs.paddingTop) || 0);
+    const slack = Math.round(Math.max(0, ...kr.map(r => { const over = kr.filter(o => o !== r && o.bottom <= r.top + 1 && Math.min(o.right, r.right) - Math.max(o.left, r.left) > 1);
+      return over.length ? r.top - Math.max(...over.map(o => o.bottom)) - Math.max(rowGap, colGap) : r.top - ctop; })));
+    const full = kr.filter(r => spans.length > 1 && reach(r) === spans.length).length;
     return { cls: (p.className || "").toString().slice(0, 40), tracks: spans.length, tracksListed: sizes.length, boxes: kids.length,
              emptyTracks: spans.filter(([a, b]) => !kr.some(r => Math.min(r.right, b) - Math.max(r.left, a) > 1)).length, across: kr.filter(r => reach(r) > 1).length,
+             full, reachSum: kr.filter(r => !(spans.length > 1 && reach(r) === spans.length)).reduce((t, r) => t + reach(r), 0), slack,
              usedFirstRow: new Set(kids.filter(k => R(k).top < top + 2).map(k => Math.round(R(k).left))).size }; });
   // inside each box: what holds a control or a line of text
   let boxPx = 0, inkPx = 0;
@@ -298,13 +305,24 @@ try {
     const fs1920 = me.cases.filter(c => c.mode === "fs" && !c.skip && c.screen === "1920x1080");
     // (a box across is in every column, so it hides an empty cell beside the others: the columns no more than the boxes not across,
     // unless every box is across)
-    const emptyCol = g => g.emptyTracks > 0 || (g.boxes > g.across && g.tracks > g.boxes - g.across);
+    // (c5: a box over two columns of three, the 🫧 themes, is not across: the columns no more than the columns the boxes not across
+    // reach)
+    const emptyCol = g => g.emptyTracks > 0 || (g.boxes > g.full && g.tracks > g.reachSum);
     ok("full screen at 1920x1080: no grid has more columns than the boxes it shows that are not across (no column without a box, nor a cell beside a row's last box)",
        fs1920.length > 0 && fs1920.every(c => !c.between.grids.some(emptyCol)), fs1920.filter(c => c.between.grids.some(emptyCol)).map(c => [c.tab, c.between.grids.filter(emptyCol)]));
     const one = fs1920.filter(c => c.between.grids.some(g => /tabboxes/.test(g.cls) && g.boxes <= 2));
     const narrow = c => { const g = c.between.grids.find(x => /tabboxes/.test(x.cls)); return c.region.w <= g.boxes * (440 + 8) + 16; };
     ok("full screen at 1920x1080: a tab of one or two boxes leaves the rest to the game's card (its column no wider than its boxes at --box-max, 440 px)",
        one.length > 0 && one.every(narrow), one.filter(c => !narrow(c)).map(c => [c.tab, c.region.w, c.view.slot, c.between.grids.map(g => [g.tracks, g.boxes])]));
+    // (c5, ticket 521: the boxes packed. Each box sits one gap under the lowest box above it in its columns (packBoxes' 4 px rows: at
+    // most 4 px more), not at the top of a row as tall as the row's tallest box; in the side panel and full screen alike)
+    const packed = me.cases.filter(c => !c.skip && c.between.grids.some(g => /tabboxes|bg-boxes/.test(g.cls) && g.tracks >= 2));
+    const loose = c => c.between.grids.filter(g => /tabboxes|bg-boxes/.test(g.cls) && g.tracks >= 2 && g.slack > 4);
+    ok("every grid of boxes of two columns or more packed: no box more than a gap and 4 px under the box above it (packBoxes)",
+       packed.length > 0 && packed.every(c => !loose(c).length), packed.filter(c => loose(c).length).map(c => [c.screen, c.mode, c.tab, loose(c).map(g => [g.cls, g.tracks, g.boxes, g.slack])]));
+    const ctl = at("1920x1080", "fs", me.cases.find(c => c.part === "controls")?.tab), cg = ctl && ctl.between.grids.find(g => /tabboxes/.test(g.cls));
+    ok("full screen at 1920x1080: 🎮 Controls' 🫧 themes box two columns wide (the grid 864 px or wider), its groups side by side",
+       !!cg && cg.tracks >= 3 && cg.across >= 1, ctl && { w: ctl.region.w, grids: ctl.between.grids });
   }
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

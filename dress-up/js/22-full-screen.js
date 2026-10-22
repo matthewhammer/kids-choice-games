@@ -161,6 +161,7 @@ function advLayout(panel) {
   const all = [...made, ...(rest.length ? [box("⚙️ more", rest)] : [])];
   root.replaceChildren(...(lbl ? [lbl] : []), el("div", { class: "boxes tabboxes" }, all));
   boxCount(panel, all);   // (ticket 521)
+  packBoxes(root.querySelector(":scope > .tabboxes"));   // (ticket 521)
   // (a test's long account of what it does, folded under ℹ️, open on a tap: rule 4, a row on one line, and a fold that works on a touch
   // screen, where a hint on pointing does not)
   for (const h of root.querySelectorAll(".advbox .perfrow > .hint")) if ((h.textContent || "").length > 140) {
@@ -281,6 +282,24 @@ function boxCount(panel, boxes) {
     if (panel.style.getPropertyValue("--n") !== n) panel.style.setProperty("--n", n);
     if (panel.style.getPropertyValue("--nn") !== nn) panel.style.setProperty("--nn", nn); });
 }
+// (ticket 521, ^du_report(16)'s c5) A grid of boxes packed: each box spans the 4 px rows its height needs (and a box gap), so a short
+// box no longer leaves a hole under it as tall as its row's tallest box; each box, in order, goes where it fits first from the top
+// (style.css: dense), so the shortest column. One ResizeObserver for the tab shown (showTab disconnects it); it writes the spans alone, which change no box's size, so it
+// never runs again from its own writes, and nothing of it runs in draw() or settle(). Only the tabs' boxes (.tabboxes) and the
+// background's (.bg-boxes): the world designer's (knoll488 reads their order), the castle's rooms, the cards of things, themes and
+// music, and the mixer's strips are things of a kind, and stay in rows
+const PACK_ROW = 4;
+let packWatch = null;
+function packBoxes(grid) {
+  if (!grid || typeof ResizeObserver !== "function") return;
+  grid.classList.add("packed");
+  if (!packWatch) packWatch = new ResizeObserver(list => {
+    for (const e of list) { const b = e.target, sz = e.borderBoxSize && e.borderBoxSize[0], h = sz ? sz.blockSize : b.getBoundingClientRect().height;
+      if (!h) continue;   // (hidden: its span waits for it to show again)
+      const g = b.parentElement, gap = g ? parseFloat(getComputedStyle(g).columnGap) || 0 : 0, span = "span " + Math.ceil((h + gap) / PACK_ROW);
+      if (b.style.gridRowEnd !== span) b.style.gridRowEnd = span; } });
+  for (const b of grid.children) packWatch.observe(b);
+}
 function bgBoxes(rows) {
   const own = { rows: [] }, by = Object.fromEntries(BG_BOX.map(([id]) => [id, []]));
   for (const r of rows) { const k = r.dataset.key || "", hit = BG_BOX.find(([, , test]) => test(k, r)); (hit ? by[hit[0]] : own.rows).push(r); }
@@ -292,8 +311,11 @@ function bgBoxes(rows) {
     boxHeads(b, () => h.textContent, list);
     return b; };
   const placeName = () => { const p = PLACES.find(q => q[0] === state.background.kind); return p ? p[1] : "🏞️ the place's own"; };
+  // (ticket 521: the place, its own, then the boxes beside one another, the wide ones last: packed, a box across waits under every
+  // column above it, so a narrow one after it could not fill the hole beside a short one before it)
+  const rest = BG_BOX.slice(1).map(([id, name, , wide]) => [wide, () => box(name, by[id], wide, null, id)]);
   return [box(BG_BOX[0][1], by.place, true), box(placeName(), own.rows, false, placeName),
-          ...BG_BOX.slice(1).map(([id, name, , wide]) => box(name, by[id], wide, null, id))].filter(Boolean);
+          ...rest.filter(([w]) => !w).map(([, f]) => f()), ...rest.filter(([w]) => w).map(([, f]) => f())].filter(Boolean);
 }
 // (ticket 524, Matthew: "we need to make each room, and its params, available to world builder"; "world design panel I
 // mean") The place's own settings as 🗺️ World design's ⚙️ box shows them: the 🏞️ Background tab's rows, built from the
@@ -313,6 +335,7 @@ function bgLayout(panel) {
   const kids = [...panel.children], bar = kids.find(c => c.querySelector(":scope > button.designer-chip")), view = kids.find(c => c.querySelector(":scope > .bg-view"));
   const made = bgBoxes(kids.filter(c => c !== bar && c !== view)), boxes = el("div", { class: "bg-boxes" }, made);
   boxCount(panel, made);   // (ticket 521)
+  packBoxes(boxes);   // (ticket 521)
   // (Matthew: "no drag between LHS and RHS -- that's a key feature of world designer": the same dragger, kept apart from the world's)
   const split = el("div", { class: "world-split bg-split", role: "separator", "aria-orientation": "vertical", title: "Drag: more room for the boxes, or for the game" });
   const layout = el("div", { class: "bg-layout" }, [boxes, split, el("div", { class: "bg-viewcol" }, view ? [view] : [])]);
@@ -420,8 +443,10 @@ function boxLayout(panel, tabName, ctls) {
     const parts = boxParts(tabName, b.name);
     if (parts) { box.addEventListener("pointerenter", () => { document.body.dataset.lit = parts; }); box.addEventListener("pointerleave", () => { if (document.body.dataset.lit === parts) delete document.body.dataset.lit; }); }
     return box; });
-  panel.replaceChildren(el("div", { class: "boxes tabboxes" }, made));
+  const grid = el("div", { class: "boxes tabboxes" }, made);
+  panel.replaceChildren(grid);
   boxCount(panel, made);   // (ticket 521: after each box's hide sync)
+  packBoxes(grid);   // (ticket 521)
 }
 // (a place's picture, the picture archive's thumbnail of it with the friend; the castle's rooms by the room shown now, or the king's)
 const PICTURES_SITE = "https://matthewhammer.org/dress-up-pictures/pictures/thumbs/backgrounds-with-friend/";
