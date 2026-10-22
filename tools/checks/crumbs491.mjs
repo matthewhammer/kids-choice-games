@@ -14,7 +14,8 @@ const ev = async x => { const r = await send("Runtime.evaluate", { expression: x
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 1200)}`); if (!cond) bad++; };
 const measure = `(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); state.music.mute = true;
-  crumbsShow(document.querySelector("#panel h3, #panel summary, #panel *")); window.scrollTo(0, 1600); await w(600);
+  crumbsShow(document.querySelector("#panel h3, #panel summary, #panel *")); if (!document.getElementById("crumbs491-room")) document.getElementById("panel").append(Object.assign(document.createElement("div"), { id: "crumbs491-room", style: "height: 2400px" }));   // (ticket 521 packs the boxes: a short tab's page no longer scrolls past the band's place, so room to scroll, to test it sticks)
+  window.scrollTo(0, 1600); await w(600);
   const s = document.querySelector(".stage").getBoundingClientRect(), c = document.getElementById("crumbs").getBoundingClientRect();
   return JSON.stringify({ narrow: matchMedia("(max-width: 760px)").matches, stageBottom: Math.round(s.bottom), crumbsTop: Math.round(c.top), crumbsH: Math.round(c.height), scrolled: Math.round(scrollY) }); })()`;
 try {
