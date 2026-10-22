@@ -2,7 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.409 (2026-10-22)
+
+Everything in 0.0.408, plus a dress, a skirt or a robe that stays over the legs in every pose.
 
 - **Fixed:** in a dress, a long skirt or a robe (the wizard's, the monk's or dryad's, the king's and the queen's too), the legs stuck out through its sides, as if it had holes in it (M): riding the horse ("🏇 ridden") facing left, right, toward us and away, "🧎 crouching down", "🏃 running", and also walking, sitting side on and with "🦵 knees bend". Now the cloth drapes over the knees and the stride, and a leg shows only below the hem. Standing, nothing changes (ticket 546).
 
