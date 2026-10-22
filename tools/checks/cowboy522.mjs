@@ -6,8 +6,8 @@
 // blur, gradient or SMIL in the friend, the shapes under the robot's cap of 80 with any hat; the hat a drawing of its own
 // toward us, from the side and from behind (left and right mirrored), nothing inside it or the lasso turned or scaled;
 // the lasso in the friend's own hand (swapped from behind), in the far section with the far hand in profile, hidden while
-// the hands are busy, twirling in four drawings while running; a style puts on its usual hat only over another style's
-// usual one; the rows only where they apply. Exits 1 on a failure.
+// the hands are busy, twirling in four drawings while running; a style puts on its usual hat until a kid picks one; the
+// duster on the lap meditating; the rows only where they apply. Exits 1 on a failure.
 //   node cowboy522.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -88,10 +88,19 @@ try {
     state.body.facing = "right"; state.body.anim = "run"; const seen = new Set();
     for (const u of [0.05, 0.3, 0.55, 0.8]) { holdStill(0); stillAt = u * lfoNow("B").dur; changed(); await w(40); seen.add(inner(figText(), "lasso")); }
     out.twirl = seen.size; stillAt = null; pic.unpauseAnimations(); state.body.anim = "none"; state.body.facing = "front"; changed(); await w(60);
-    // the usual hat: a style puts its own on while the hat is another style's usual one, never over a hat picked
-    set("costume", "kind", "cowboy"); set("costume", "cowHat", "star"); set("costume", "cowboyStyle", "rider"); out.usual = [C.cowHat];
-    set("costume", "cowHat", "none"); set("costume", "cowboyStyle", "sheriff"); out.usual.push(C.cowHat);
-    set("costume", "cowHat", "cattleman"); set("costume", "kind", "cowgirl"); set("costume", "cowgirlStyle", "prairie"); out.usual.push(C.cowHat);
+    // the usual hat: a style (or the costume) puts its own on until a kid picks a hat; then a style never changes it
+    state.costume.cowHatAuto = true; set("costume", "kind", "cowboy"); set("costume", "cowboyStyle", "sheriff"); out.usual = [C.cowHat];
+    set("costume", "cowboyStyle", "rider"); out.usual.push(C.cowHat);
+    set("costume", "cowHat", "feather"); set("costume", "cowboyStyle", "trailboss"); out.usual.push(C.cowHat);
+    set("costume", "cowboyStyle", "rider"); out.usual.push(C.cowHat);
+    set("costume", "cowHat", "none"); set("costume", "kind", "cowgirl"); set("costume", "cowgirlStyle", "prairie"); out.usual.push(C.cowHat);
+    // (review) the trail boss's duster meditating: its skirts end on the lap, above the picture's bottom, in every facing
+    set("costume", "kind", "cowboy"); set("costume", "cowboyStyle", "trailboss"); set("body", "pose", "meditate"); out.medCoat = {};
+    for (const [facing, turn] of [["front", ""], ["front", "left"], ["right", ""], ["left", ""], ["back", ""]]) {
+      state.body.facing = facing; state.body.turn = turn; changed(); await w(60);
+      const c = fig().querySelector('[data-western="coat"]'), p = document.getElementById("pic").getBoundingClientRect(), b = c && c.getBoundingClientRect();
+      out.medCoat[facing + (turn ? "-" + turn : "")] = b ? Math.round(p.bottom - b.bottom) : null; }
+    state.body.turn = ""; set("body", "pose", "stand"); state.body.facing = "front"; changed(); await w(60);
     // no guns: nothing in the picture or the settings named so
     out.noGuns = !/gun|holster|pistol|revolver|rifle|bullet|cartridge/i.test(JSON.stringify([COWGIRL_STYLES, COWBOY_STYLES, COW_HATS]) + figText());
     // the rules: each style's colour row only while it is chosen, the hat's colour row the hat worn's, the lasso rows for both
@@ -130,7 +139,9 @@ try {
   ok("in profile the far hand's lasso is drawn behind the body, the near hand's in front", r.order.right === "before" && r.order.left === "after", r.order);
   ok("➿ lasso off: none drawn", r.off === 0, r.off);
   ok("running, the loop twirls in four drawings", r.twirl === 4, r.twirl);
-  ok("a style's usual hat goes on over another style's usual one, never over a hat picked", r.usual.join() === "tengallon,none,straw", r.usual);
+  ok("a style's usual hat goes on until a kid picks one; a picked hat (🪶, 🚫) stays through any style", r.usual.join() === "star,tengallon,feather,feather,none", r.usual);
+  ok("meditating, the trail boss's duster ends well above the picture's bottom (on the lap) in every facing",
+     Object.values(r.medCoat).every(v => v != null && v > 20), r.medCoat);
   ok("no guns, holsters or bullets anywhere in the costumes", r.noGuns, r.noGuns);
   ok("each colour row only while its style or hat is chosen; the hat and lasso rows only for the cowgirl and the cowboy",
      r.rules[0] === "100 010 001" && r.rules[1] === "100 010 001" && r.rules[2] === "100000 010000 001000 000100 000010 000001" && r.rules[3] === "10110000", r.rules);

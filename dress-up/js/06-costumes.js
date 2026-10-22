@@ -1638,12 +1638,12 @@ function westernHem(W, hw, L, sl) {
   if (!W.S.hemFringe) return "";
   return fringeSvg(`M${f1(hw + 30)} ${f1(L + sl + 8)} Q0 ${f1(L + sl + 22)} ${f1(-hw - 30)} ${f1(L + sl + 8)}`, W.S.fringe, 16, W.S.fringeUnder);
 }
-// the trail boss's duster skirts, from the waist to mid-shin (L + 0.72 LL), over the trousers and under the arms (the gnome
-// tunic's slot): facing us two panels flaring apart, the trousers between; in profile one panel, its front edge straight
+// the trail boss's duster skirts, from the waist to `hem` (mid-shin standing, L + 0.72 LL; on the lap meditating), over
+// the trousers and under the arms (the gnome tunic's slot): facing us two panels flaring apart, the trousers between; in profile one panel, its front edge straight
 // and its back flaring behind (the legs walk inside it, as in a robe); from behind one panel and its centre vent
-function westernCoat(W, w, hw, L, LL, dir, away) {
+function westernCoat(W, w, hw, L, hem, dir, away) {
   if (!W.S.duster) return "";
-  const c = W.main, cd = darker(c), hem = L + LL * 0.72, P = (x, y) => f1(x) + " " + f1(y);
+  const c = W.main, cd = darker(c), P = (x, y) => f1(x) + " " + f1(y);
   const fill = d => `<path d="${d}" fill="${c}" stroke="${cd}" stroke-width="2.5" stroke-linejoin="round"/>`;
   if (dir) return fill(`M${P(-dir * (w + 2), L - 16)} L${P(dir * (w + 2), L - 16)} L${P(dir * (w + 4), hem)} L${P(-dir * (w + 34), hem - 6)} Z`);
   if (away) return fill(`M${P(-(hw + 4), L - 16)} L${P(hw + 4, L - 16)} L${P(hw + 26, hem)} L${P(-(hw + 26), hem)} Z`) +

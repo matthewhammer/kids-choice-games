@@ -785,7 +785,7 @@ function drawNow() {
         const d = "M" + Q.map(([x, y]) => f1(x) + " " + f1(y)).join(" L");
         return `<path d="${d}" fill="none" stroke="${ps}" stroke-width="${f1(2 * half + 5)}" stroke-linejoin="round"/>` +
                `<path d="${d}" fill="none" stroke="${pf}" stroke-width="${f1(2 * half)}" stroke-linejoin="round"/>`; };
-      const legBits = side => robot ? rbG("leg", robotLeg(R, legJoints(side), half, dir)) : western && W.S.chaps ? westernChap(W, legJoints(side), half, side, dir, away) : "";   // (ticket 522: chaps)   // (ticket 515: a robot's ridges or knee pads, with each leg)
+      const legBits = side => robot ? rbG("leg", robotLeg(R, legJoints(side), half, dir)) : western && W.S.chaps ? westernChap(W, legJoints(side), half, side, dir, away) : "";   // (ticket 515: a robot's ridges or knee pads, with each leg; 522: chaps)
       for (const side of legSides) t += pantsLeg(side) + legBits(side);
       if (legApart) farLeg.pants += pantsLeg(dir) + legBits(dir);   // (ticket 136: the far one apart)
       svg += t + `<g transform="translate(0 1.5)">${hips(false).replace(/x="([^"]+)"/, (_, x) => `x="${f1(Number(x) + 1.5)}"`).replace(/width="([^"]+)"/, (_, w) => `width="${f1(Number(w) - 3)}"`)}</g>`;
@@ -807,8 +807,8 @@ function drawNow() {
       svg += longPants ? `<path d="M${f1(kx - half * 0.7)} ${f1(ky + 4)} Q${f1(kx)} ${f1(ky + 13)} ${f1(kx + half * 0.7)} ${f1(ky + 4)}" fill="none" stroke="${ps}" stroke-width="3" stroke-linecap="round"/>`
                        : `<ellipse cx="${f1(kx)}" cy="${f1(ky + 3)}" rx="${f1(B.legW / 2 + 1)}" ry="${f1((B.legW / 2 + 1) * 0.75)}" fill="${limb}" stroke="${limbLine}" stroke-width="2"/>`; }
   }
-  if (robot && !dir) for (const side of [1, -1]) svg += rbG("leg", robotLeg(R, legJoints(side), half, 0, away));
-  if (western && W.S.chaps && !dir) for (const side of [1, -1]) svg += westernChap(W, legJoints(side), half, side, 0, away);   // (ticket 522: facing us or from behind, both chaps)   // (ticket 515: facing us, both legs'; from behind, no knee pads)
+  if (robot && !dir) for (const side of [1, -1]) svg += rbG("leg", robotLeg(R, legJoints(side), half, 0, away));   // (ticket 515: facing us, both legs'; from behind, no knee pads)
+  if (western && W.S.chaps && !dir) for (const side of [1, -1]) svg += westernChap(W, legJoints(side), half, side, 0, away);   // (ticket 522: facing us or from behind, both chaps)
   veilFrom("pants", pantsAt);
   // (ticket 288: a scuba suit's stripe down the outside of each leg)
   if (scuba) svg += veil("pants", [1, -1].map(side => { const J = legJoints(side);
@@ -826,7 +826,9 @@ function drawNow() {
     for (let i = 0; i < n; i++) { const x0 = hw + 4 - i * sx; hem += ` L${f1(x0 - sx / 2)} ${f1(hemY + 12)} L${f1(x0 - sx)} ${f1(hemY)}`; }
     svg += veil("shirt", `<path d="${hem} Z" fill="${tc}" stroke="${darker(tc)}" stroke-width="2.5" stroke-linejoin="round"/>`); }
   // (ticket 522) the trail boss's duster skirts, over the trousers, under the arms
-  if (western && W.S.duster) svg += veil("shirt", squash && away ? squashed(westernCoat(W, w, hw, L, LL, dir, away)) : westernCoat(W, w, hw, L, LL, dir, away));   // (crawling away, seen short with the back)
+  // (meditating, the skirts end on the lap, by the crossed feet, as a robe's hem does; sitting, as standing)
+  if (western && W.S.duster) { const coatHem = B.pose === "meditate" ? Math.min(L + LL * 0.72, L + (feetY - L) * 0.72) : L + LL * 0.72;
+    svg += veil("shirt", `<g data-western="coat">${squash && away ? squashed(westernCoat(W, w, hw, L, coatHem, dir, away)) : westernCoat(W, w, hw, L, coatHem, dir, away)}</g>`); }   // (crawling away, seen short with the back)
   // a fairy in a shirt and pants: her tunic's hem, a short frill at her
   // hips over the pants, in her tunic's style (the shirt's to see through)
   if (fairy && WC.fairyOutfit === "pants" && !undies) {
@@ -942,9 +944,9 @@ function drawNow() {
     svg += dir ? `<path d="${shape}" fill="${WC.knightA || "#2f6db5"}" stroke="#3b3b44" stroke-width="2.5"/>` : armsFill("tabard", shape, WC, away, away ? null : [0, L * 0.42], 1.2, [0, L * 0.42], Math.max(hw + 12, (tb - top) / 2 + 30));
     svg += `<rect x="${f1(-(w + 4))}" y="${f1(L - 14)}" width="${f1(2 * w + 8)}" height="10" fill="#4a2f16"/>` + (away || dir ? "" : `<rect x="-8" y="${f1(L - 16)}" width="16" height="14" rx="2" fill="none" stroke="#e0b030" stroke-width="3"/>`);
   }
-  if (robot && !squash) svg += rbG("torso", robotTorso(R, w, L, dir, away));
+  if (robot && !squash) svg += rbG("torso", robotTorso(R, w, L, dir, away));   // (ticket 515: a robot's shell, chest or back; crawling, its own drawing, below)
   // (ticket 522) a cowgirl's or cowboy's pieces over the shirt; crawling toward us, the back's, turned up with it
-  if (western) svg += `<g data-western="torso">${westernTorso(W, w, L, nw, dir, away || crawlTo)}</g>`;   // (ticket 515: a robot's shell, chest or back; crawling, its own drawing, below)
+  if (western) svg += `<g data-western="torso">${westernTorso(W, w, L, nw, dir, away || crawlTo)}</g>`;
   // (ticket 434) a forester's: the tunic's dagged hem over the hose, its dagged cape on the shoulders, a belt with a pouch,
   // the quiver's strap across the chest (the other way from behind, with the quiver on the back)
   if (robin && !undies) { const tc = SH.color, tl = darker(tc);

@@ -853,12 +853,13 @@ function set(part, key, value) {
   if (part === "costume" && key === "monkWho" && ["#6b4a2b", "#4f6b3a"].includes(state.costume.monkCloak)) state.costume.monkCloak = value === "dryad" ? "#4f6b3a" : "#6b4a2b";
   // (ticket 431: as on the book's cover, the gnome man's hat red and the woman's purple, while the hat is one of those two)
   if (part === "costume" && key === "gnomeWho" && ["#d2382b", "#7b3f8c"].includes(state.costume.gnomeHat)) state.costume.gnomeHat = value === "woman" ? "#7b3f8c" : "#d2382b";
-  // (ticket 522: choosing a cowgirl's or cowboy's style, or the costume, puts on the style's usual hat, but only while the hat
-  // worn is another style's usual one, so a hat a kid picked is never changed)
+  // (ticket 522: choosing a cowgirl's or cowboy's style, or the costume, puts on the style's usual hat, until a kid picks a
+  // hat themselves (cowHatAuto false), so a hat a kid picked is never changed)
+  if (part === "costume" && key === "cowHat") state.costume.cowHatAuto = false;
   if (part === "costume" && (key === "cowgirlStyle" || key === "cowboyStyle" || (key === "kind" && (value === "cowgirl" || value === "cowboy")))) {
     const C = state.costume, k = key === "kind" ? value : key === "cowgirlStyle" ? "cowgirl" : "cowboy", T = k === "cowgirl" ? COWGIRL_STYLES : COWBOY_STYLES;
-    const S = T[C[k + "Style"]] || Object.values(T)[0], usual = [...Object.values(COWGIRL_STYLES), ...Object.values(COWBOY_STYLES)].map(t => t.hat);
-    if (C.kind === k && usual.includes(C.cowHat ?? "cattleman")) C.cowHat = S.hat;
+    const S = T[C[k + "Style"]] || Object.values(T)[0];
+    if (C.kind === k && C.cowHatAuto !== false) C.cowHat = S.hat;
   }
   // a skirt starts at skirt length and a dress at dress length
   if (part === "pants" && key === "style" && value === "skirt") state.pants.skirtLen = 50;

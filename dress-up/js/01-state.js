@@ -441,8 +441,8 @@ const ROBOT_LIGHTS = ["auto", "#f6c445", "#39e0ff", "#6ee7b7", "#ff7a00", "#ef44
 // (ticket 522, M and Matthew: "Cowgirl and Cowboy, 3 variations of style each. 6 styles of hat. Lasso to hold. No guns
 // please.") The cowgirl's and the cowboy's styles, each with its own colours (the first its usual one, its colour row's) and
 // the traits the drawing reads (js/06-costumes.js, westernOf): `shirt` and `pants` (what replaces the friend's own, "main"
-// the style's chosen colour); `hat`, its usual hat (choosing the style puts it on while the hat worn is another style's
-// usual one, set()); over the shirt `chestFringe` (the rodeo star's U of fringe), `vest`, `badge` (a toy star), `tie`,
+// the style's chosen colour); `hat`, its usual hat (choosing the style puts it on until a kid picks a hat themselves,
+// cowHatAuto, set()); over the shirt `chestFringe` (the rodeo star's U of fringe), `vest`, `badge` (a toy star), `tie`,
 // `yoke`, `number` (the card on the back), `collarBow`, `bandana` ("auto": red with white dots, navy on a reddish shirt),
 // `duster` (the trail boss's long coat: its shirt panel, capelet and skirts) and `belt`, `buckle`, `bigBuckle`; on the arms
 // `sleeveFringe`; on the legs `chaps` (`chapLine`, `spots`); at the hem `hemFringe`, `ruffle` (a petticoat's frill); on the
@@ -659,7 +659,7 @@ const DEFAULTS = {
              robotStyle: "tin", robotLights: "auto", ...Object.fromEntries(Object.entries(ROBOT_STYLES).map(([id, r]) => ["robotColor_" + id, r.colors[0]])),
              // (ticket 522) the cowgirl and the cowboy: each one's style and each style's colour, the hat (both share it) and its colour
              // for each hat, the lasso and the hand that holds it
-             cowgirlStyle: "rodeo", cowboyStyle: "sheriff", cowHat: "cattleman", lasso: true, lassoHand: "left",
+             cowgirlStyle: "rodeo", cowboyStyle: "sheriff", cowHat: "cattleman", cowHatAuto: true, lasso: true, lassoHand: "left",
              ...Object.fromEntries(Object.entries(COWGIRL_STYLES).map(([id, t]) => ["cowgirlColor_" + id, t.colors[0]])),
              ...Object.fromEntries(Object.entries(COWBOY_STYLES).map(([id, t]) => ["cowboyColor_" + id, t.colors[0]])),
              ...Object.fromEntries(Object.entries(COW_HATS).map(([id, t]) => ["cowHatColor_" + id, t.colors[0]])) },

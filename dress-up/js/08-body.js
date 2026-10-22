@@ -872,9 +872,9 @@ function scepterSvg([hx, hy], jewel) {
 }
 // (ticket 522) A cowboy hat (COW_HATS[W.hatId] in W.hatColor), in the round head's units (x 100 the middle, the brim's line
 // at COW_HAT_Y), stretched with the head as the witch's is: each view its own drawing. Facing us (and from behind, without
-// what is on its front: the pinches, a bow, a star) a crown with a crease (or tall, or flat), its band, a brim curled up at
+// what is on its front: the pinches, a big bow, a big star; a small bow or star at the back instead) a crown with a crease (or tall, or flat), its band, a brim curled up at
 // both sides, rxHair widening it over big hair (at most half again); in profile the crown sloping down to its front, one
-// dent, the band, the brim nearly edge on with its back turned up, a star or a bow seen edge on at the front. The feather
+// dent, the band, the brim nearly edge on with its back turned up, a small star on the crown's side, a bow at the front and its back bow at the back. The feather
 // is on the friend's right: our left facing us, our right from behind; in profile over the crown facing our right (their
 // right side near), behind it facing our left. The straw's ribbon tails hang down the back, seen from behind.
 function cowHatSvg(W, dir = 0, away = false, rxHair = 0) {
@@ -905,6 +905,11 @@ function cowHatSvg(W, dir = 0, away = false, rxHair = 0) {
                   `Q${P(100 + bw * 0.62, y0 + 17)} ${P(100, y0 + 18)} Q${P(100 - bw * 0.62, y0 + 17)} ${P(100 - bw, y0 - curl)} Z`, c));
     if (H.weave) out.push(thin(`M${P(100 - cw * 0.86, top + 30)} Q${P(100, top + 38)} ${P(100 + cw * 0.86, top + 30)} M${P(100 - cw * 0.95, top + 50)} Q${P(100, top + 58)} ${P(100 + cw * 0.95, top + 50)} ` +
                                `M${P(100 - bw * 0.8, y0 + 2 - curl * 0.5)} Q${P(100, y0 + 19)} ${P(100 + bw * 0.8, y0 + 2 - curl * 0.5)}`, ln, 2, weave));
+    // (from behind, a bow hat's small bow at the back of its band, its loops and tails; a star hat's small star on its band)
+    if (H.bow && away) out.push(fill(`M100 ${y0 - 5} Q80 ${y0 - 24} 74 ${y0 - 8} Q78 ${y0 + 6} 100 ${y0 - 5} Z M100 ${y0 - 5} Q120 ${y0 - 24} 126 ${y0 - 8} Q122 ${y0 + 6} 100 ${y0 - 5} Z ` +
+                                     `M97 ${y0 - 2} L88 ${y0 + 34} L95 ${y0 + 31} Z M103 ${y0 - 2} L112 ${y0 + 34} L105 ${y0 + 31} Z`, band, 2) +
+                                `<circle cx="100" cy="${y0 - 5}" r="6" fill="${band}" stroke="${darker(band)}" stroke-width="2"/>`);
+    if (H.star && away) out.push(`<polygon points="${starPts(100, y0 - 6, 8)}" fill="${H.star}" stroke="#8a6420" stroke-width="1.5" stroke-linejoin="round"/>`);
     if (H.tails && away) out.push(thin(`M${P(97, y0 + 10)} L${P(88, y0 + 48)} M${P(103, y0 + 10)} L${P(114, y0 + 44)}`, band, 6));
     if (H.bow && !away) {
       const by = y0 - 4;   // (a big bow over the band and the brim's front: two loops, two tails, then its knot)
@@ -926,13 +931,16 @@ function cowHatSvg(W, dir = 0, away = false, rxHair = 0) {
   out.push(`<path d="M${P(X(-cw - 1), y0 - 13)} L${P(X(cw + 1), y0 - 13)} L${P(X(cw + 1), y0 + 2)} L${P(X(-cw - 1), y0 + 2)} Z" fill="${band}"/>`);
   if (H.conchos) out.push(conchos([[X(-cw * 0.5), y0 - 5], [X(cw * 0.35), y0 - 5]]));
   if (featherP && near) out.push(featherP);
-  if (H.star) out.push(thin(`M${P(X(cw * 0.9), mid - 6)} L${P(X(cw * 0.97), mid + 12)}`, H.star, 5));
+  // (in profile the star hat's star is its own small star on the crown's side, as the feather is the feather's)
+  if (H.star) out.push(`<polygon points="${starPts(X(cw * 0.32), mid + 2, 12)}" fill="${H.star}" stroke="#8a6420" stroke-width="2" stroke-linejoin="round"/>`);
   out.push(fill(`M${P(X(-bw), y0 - curl)} Q${P(X(-bw * 0.5), y0 + 8)} ${P(X(0), y0 + 8)} Q${P(X(bw * 0.55), y0 + 8)} ${P(X(bw), y0 - curl * 0.3)} ` +
                 `Q${P(X(bw * 0.55), y0 + 1)} ${P(X(0), y0 + 1)} Q${P(X(-bw * 0.5), y0 + 1)} ${P(X(-bw), y0 - curl)} Z`, c));
   if (H.weave) out.push(thin(`M${P(X(-cw * 0.9), top + 32)} L${P(X(cw * 0.8), top + 40)} M${P(X(-bw * 0.8), y0 + 3)} Q${P(X(0), y0 + 6)} ${P(X(bw * 0.85), y0 + 3)}`, ln, 2, weave));
   if (H.bow) {
-    out.push(fill(`M${P(X(cw), y0 - 6)} Q${P(X(cw + 20), y0 - 22)} ${P(X(cw + 16), y0 - 3)} Z M${P(X(cw + 1), y0 - 3)} L${P(X(cw + 8), y0 + 20)} L${P(X(cw + 3), y0 + 18)} Z`, band, 2));
-    out.push(`<circle cx="${f1(X(cw + 1))}" cy="${y0 - 5}" r="5" fill="${band}" stroke="${darker(band)}" stroke-width="2"/>`);
+    out.push(fill(`M${P(X(cw), y0 - 6)} Q${P(X(cw + 28), y0 - 30)} ${P(X(cw + 22), y0 - 2)} Z M${P(X(cw + 1), y0 - 3)} L${P(X(cw + 10), y0 + 26)} L${P(X(cw + 3), y0 + 23)} Z`, band, 2));
+    out.push(`<circle cx="${f1(X(cw + 1))}" cy="${y0 - 5}" r="6" fill="${band}" stroke="${darker(band)}" stroke-width="2"/>`);
+    // (and the back bow's loop and tail at the crown's back)
+    out.push(fill(`M${P(X(-cw), y0 - 6)} Q${P(X(-cw - 18), y0 - 22)} ${P(X(-cw - 14), y0 - 2)} Z M${P(X(-cw - 1), y0 - 3)} L${P(X(-cw - 8), y0 + 26)} L${P(X(-cw - 2), y0 + 23)} Z`, band, 2));
   }
   return out.join("");
 }
