@@ -12,6 +12,7 @@ Each version lists the game's features as of that version. The newest version is
 - **The game's picture is as tall as the window allows in a tab's ⛶ full screen and in the background designer.** It stopped at a bit more than half the window's height, so with one or two boxes on the left much of the card beside it was empty. Now it reaches down to the bottom of the window (the world designer's stays as it was, so its cards can scroll under it).
 - **The boxes are packed, with no holes under the short ones.** Where a tab's boxes sit in two columns or more (beside the game, in a tab's ⛶ full screen, and in the background designer), each box went at the top of a row as tall as that row's tallest box, so a short box left a hole under it. Now each box sits just under the one above it, in the column with the most room, and the panel is shorter. In "🏞️ Background" the boxes beside one another come first, then the wide ones; in "🎮 Controls" the 🫧 themes box is two columns wide when there is room for three.
 - **A short row of chips sits beside its name** in a wide box: where a box is wide enough (380 px inside), a setting with 8 chips or fewer has its name on the left and its chips on the right, in the same column as the sliders' names, instead of its name on a line of its own above the chips.
+- **Fixed: the short chip rows really do sit beside their names.** The rule that puts them there was written in a form browsers reject, so it did nothing; now it is in a form they accept.
 
 ## 0.0.405 (2026-10-21)
 

@@ -172,7 +172,7 @@ function measure(o) {
   // how many are beside, how many are still under their label, and how many of those beside end in one chip
   let beside = 0, under = 0, besideOrphans = 0;
   if (!document.body.classList.contains("castle-big")) for (const c of all.filter(e => e.matches(".tabbox > .ctl") && !e.hidden && shown(e))) {
-    const box = c.parentElement, bcs = getComputedStyle(box), inner = box.clientWidth - (parseFloat(bcs.paddingLeft) || 0) - (parseFloat(bcs.paddingRight) || 0);
+    const box = c.parentElement, bcs = getComputedStyle(box), inner = box.getBoundingClientRect().width - (parseFloat(bcs.borderLeftWidth) || 0) - (parseFloat(bcs.borderRightWidth) || 0) - (parseFloat(bcs.paddingLeft) || 0) - (parseFloat(bcs.paddingRight) || 0);
     const L = c.querySelector(":scope > .lbl"), rws = c.querySelectorAll(":scope > .row"), row = rws[0];
     if (inner < 380 || !L || L.hidden || L.classList.contains("head-dup") || !(L.textContent || "").trim() || rws.length !== 1 || row.hidden || row.children.length > 8 || c.querySelector(":scope > input[type=range]")) continue;
     if (!shown(L) || !shown(row)) continue;

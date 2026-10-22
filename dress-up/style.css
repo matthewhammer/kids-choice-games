@@ -160,10 +160,10 @@
      the castles box, each cell narrower than the box) */
   .tabbox { container-type: inline-size; }
   @container (min-width: 380px) {
-    body:not(.castle-big) .tabbox > .ctl:not([hidden]):has(> .lbl:not([hidden], :empty, .head-dup)):has(> .row:not([hidden], :has(> :nth-child(9)))):not(:has(> input[type="range"]), :has(> .row ~ .row)) {
+    body:not(.castle-big) .tabbox > .ctl:not([hidden]):has(> .lbl:not([hidden], :empty, .head-dup)):has(> .row:not([hidden])):not(:has(> input[type="range"]), :has(> .row ~ .row), :has(> .row > :nth-child(9))) {
       display: grid; grid-template-columns: minmax(6.2em, 38%) 1fr; align-items: center; column-gap: 6px; }
-    body:not(.castle-big) .tabbox > .ctl:not([hidden]):has(> .lbl:not([hidden], :empty, .head-dup)):has(> .row:not([hidden], :has(> :nth-child(9)))):not(:has(> input[type="range"]), :has(> .row ~ .row)) > .lbl { margin: 0; min-width: 0; line-height: 1.15; }
-    body:not(.castle-big) .tabbox > .ctl:not([hidden]):has(> .lbl:not([hidden], :empty, .head-dup)):has(> .row:not([hidden], :has(> :nth-child(9)))):not(:has(> input[type="range"]), :has(> .row ~ .row)) > :not(.lbl, .row) { grid-column: 1 / -1; }
+    body:not(.castle-big) .tabbox > .ctl:not([hidden]):has(> .lbl:not([hidden], :empty, .head-dup)):has(> .row:not([hidden])):not(:has(> input[type="range"]), :has(> .row ~ .row), :has(> .row > :nth-child(9))) > .lbl { margin: 0; min-width: 0; line-height: 1.15; }
+    body:not(.castle-big) .tabbox > .ctl:not([hidden]):has(> .lbl:not([hidden], :empty, .head-dup)):has(> .row:not([hidden])):not(:has(> input[type="range"]), :has(> .row ~ .row), :has(> .row > :nth-child(9))) > :not(.lbl, .row) { grid-column: 1 / -1; }
   }
   .box .chipset, .box .box { background: rgba(255, 255, 255, 0.035); }
   /* (ticket 375) the things put in a place, knolled: same-size cards in a grid, each its picture, its name once, ✖, its chips, a line
