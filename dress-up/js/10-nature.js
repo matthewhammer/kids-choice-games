@@ -149,6 +149,18 @@ const CABIN_DEFS = `<g id="bg-cabin">${CABIN_SVG}</g><g id="bg-cabin-body">${CAB
 // the room inside each tree house
 const HOUSE_ROOMS = ["bunks", "kitchen", "books", "lookout", "art", "music"];
 const TREE_BRIDGES = [[2, 3], [0, 1], [4, 5], [0, 3], [2, 1]];   // across the tree
+// (ticket 516) The crown's limbs, as the tree draws them (tree-crown), j from 0 up the trunk: each its side (sd, even
+// left, odd right), the height it leaves the trunk at (sy), its tip (tx, ty) along a quadratic through (tx * 0.45, sy - 20),
+// a fork to (fx, fy), its width (w). The round room at the top of the tree has the same limbs inside (crownLimbs j 0..7)
+// (the scenes' own seeded numbers, backgroundSvg's R: for the map on a sign, drawn outside a scene)
+const crownR = (i, j = 0) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
+const crownLimbs = R => [...Array(14)].map((_, j) => {
+  const sd = j % 2 ? 1 : -1, sy = -780 - 34 * j, tx = sd * (160 + 470 * R(j, 230)), ty = sy - 80 - 220 * R(j, 231);
+  return { j, sd, sy, tx, ty, fx: tx * 0.7 + sd * 60, fy: ty - 90 - 60 * R(j, 232), w: 26 - j };
+});
+// a crown limb and its fork, as tree-crown draws them
+const crownLimbSvg = L => `<path d="M${L.sd * 20} ${L.sy} Q${f1(L.tx * 0.45)} ${f1(L.sy - 20)} ${f1(L.tx)} ${f1(L.ty)}" fill="none" stroke="#6e4a2c" stroke-width="${f1(L.w)}" stroke-linecap="round"/>` +
+  `<path d="M${f1(L.tx * 0.6)} ${f1((L.sy + L.ty) / 2 - 10)} L${f1(L.fx)} ${f1(L.fy)}" fill="none" stroke="#6e4a2c" stroke-width="11" stroke-linecap="round"/>`;
 // The great tree, in its own units (standing at 0, 0): its crown, branches,
 // braided trunk, leaves, swing, bridges, ladders and houses, all as the
 // sliders and menus say. The tree house scene draws it, and so does the
@@ -164,26 +176,11 @@ function treeInner(c, houses = true) {
   let s = "";
   // the crown, high above the frame at the tree's usual size (its top is
   // about 600 of the tree's units up): seen only when the tree is small
-  s += SEP + part("tree-crown", [leaves], () => {
-    let t = `<polygon points="-62,-720 -26,-1290 26,-1290 62,-720" fill="#5e3d22" stroke="#3a2414" stroke-width="2"/>` +
-            [-30, -8, 14].map(x => `<path d="M${x} -730 Q${x + 10} -950 ${x / 2} -1280" fill="none" stroke="#3a2414" stroke-width="3" opacity="0.5"/>`).join("");
-    const tips = [];
-    for (let j = 0; j < 14; j++) {
-      const sd = j % 2 ? 1 : -1, sy = -780 - 34 * j, tx = sd * (160 + 470 * R(j, 230)), ty = sy - 80 - 220 * R(j, 231);
-      const fx = tx * 0.7 + sd * 60, fy = ty - 90 - 60 * R(j, 232);
-      t += `<path d="M${sd * 20} ${sy} Q${f1(tx * 0.45)} ${f1(sy - 20)} ${f1(tx)} ${f1(ty)}" fill="none" stroke="#6e4a2c" stroke-width="${f1(26 - j)}" stroke-linecap="round"/>` +
-           `<path d="M${f1(tx * 0.6)} ${f1((sy + ty) / 2 - 10)} L${f1(fx)} ${f1(fy)}" fill="none" stroke="#6e4a2c" stroke-width="11" stroke-linecap="round"/>`;
-      tips.push([tx, ty], [fx, fy]);
-    }
-    tips.push([0, -1300], [-120, -1360], [120, -1350], [0, -1420]);
-    // (ticket 261: a pad more than 75% hidden by the pads drawn after it, left out)
-    t += seenOnly([...Array(Math.round(leaves * 0.8))].map((_, i) => {
-      const [x, y] = tips[i % tips.length], more = Math.floor(i / tips.length), sc = 1 + 1.1 * R(i, 233), j = Math.floor(R(i, 234) * 8);
-      const px = x + more * 70 * (R(i, 235) - 0.5) * 2, py = y + 10 - more * 50, sx = sc * (R(i, 236) < 0.5 ? -1 : 1);
-      return { svg: use(`bg-pad${j}`, px, py, sx, sc, ` color="${["#2a6e2e", "#2f7d32", "#3c9a40", "#266b30", "#4fb04f"][Math.floor(R(i, 237) * 5)]}"`), shape: padOutline(j, px, py, sx, sc) };
-    }));
-    return t;
-  });
+  // (ticket 516: its limbs, crownLimbs, shared with the round room at the top of the tree, inside and out; its leaf pads a
+  // part of their own, drawn after that room, over the limbs' tips where they come out of its thatch)
+  s += SEP + part("tree-crown", [], () => `<polygon points="-62,-720 -26,-1290 26,-1290 62,-720" fill="#5e3d22" stroke="#3a2414" stroke-width="2"/>` +
+    [-30, -8, 14].map(x => `<path d="M${x} -730 Q${x + 10} -950 ${x / 2} -1280" fill="none" stroke="#3a2414" stroke-width="3" opacity="0.5"/>`).join("") +
+    crownLimbs(R).map(L => crownLimbSvg(L)).join(""));
   // more branches, up the trunk and out each side, a fork on each
   s += SEP + part("tree-branches", [], () => TREE_TIPS.map(([sx, sy, tx, ty, fx, fy]) =>
     `<path d="M${sx} ${sy} Q${f1((sx + tx) / 2)} ${f1(sy - 6)} ${tx} ${ty}" fill="none" stroke="#6e4a2c" stroke-width="13" stroke-linecap="round"/>` +
@@ -194,6 +191,19 @@ function treeInner(c, houses = true) {
     // (ticket 345, Matthew: "the base of the tree house trunk system is very, very curvy -- it's good, but we need more
     // fine-grained boxes there in collision info") and five bands more in its lowest third, data-base (trunkBands)
     treeLimbs(n) + treeRoots() + `<g data-trunk="" data-base="5">` + treeBraid() + `</g>`);
+  // (ticket 516) the round room at the top of the tree, wrapped round the trunk where the braid ends and the crown's limbs
+  // begin, the limbs coming out through its thatch; the ladder up to it from the house below (topHouse)
+  s += SEP + part("tree-top", [n, hz, topHouse(o), o.windowSize ?? 100], () => treeTopSvg(o, R));
+  s += SEP + part("tree-crown-pads", [leaves], () => {
+    const tips = crownLimbs(R).flatMap(L => [[L.tx, L.ty], [L.fx, L.fy]]);
+    tips.push([0, -1300], [-120, -1360], [120, -1350], [0, -1420]);
+    // (ticket 261: a pad more than 75% hidden by the pads drawn after it, left out)
+    return seenOnly([...Array(Math.round(leaves * 0.8))].map((_, i) => {
+      const [x, y] = tips[i % tips.length], more = Math.floor(i / tips.length), sc = 1 + 1.1 * R(i, 233), j = Math.floor(R(i, 234) * 8);
+      const px = x + more * 70 * (R(i, 235) - 0.5) * 2, py = y + 10 - more * 50, sx = sc * (R(i, 236) < 0.5 ? -1 : 1);
+      return { svg: use(`bg-pad${j}`, px, py, sx, sc, ` color="${["#2a6e2e", "#2f7d32", "#3c9a40", "#266b30", "#4fb04f"][Math.floor(R(i, 237) * 5)]}"`), shape: padOutline(j, px, py, sx, sc) };
+    }));
+  });
   // leaves: bonsai pads, eight shapes drawn once, each used again and
   // again, grown, flipped and colored by its <use> (0 leaves: bare)
   s += SEP + part("tree-pad-shapes", [], () => `<defs>${[...Array(8)].map((_, j) => padDef(`bg-pad${j}`, j)).join("")}</defs>`);
@@ -267,6 +277,104 @@ const treeLadder = (n, i, hz) => {
   for (let y2 = top + 18; y2 < below - 4; y2 += 22) t += `<line x1="${lx - 12}" y1="${y2}" x2="${lx + 12}" y2="${y2}" stroke="#a0703f" stroke-width="4"/>`;
   return { svg: t, ground: below === 0 };
 };
+// (ticket 516, Matthew: "New background --- round tree house interior, inspired by hut."; "Can we show a round treehouse room
+// with a tree trunk in the center, and lots of limbs reaching into the roof?") The round room at the top of the tree, outside,
+// in the tree's units: where the braid ends (-780) and the crown's limbs leave the trunk, the only place a room can wrap round
+// the living trunk; the grass hut's shape (hutSvg's dome), the tree rooms' planks. Its floor's top (floor), the wall's
+// radius (R) up to the eaves, the dome overhanging to RE, tied round the trunk at collar; the platform under it (plat).
+// Inside it is the place "treetop" (treetopScene): the same limbs (crownLimbs j 0..TOP.limbs - 1), the same braid
+const TOP = { floor: -660, eaves: -780, collar: -1050, R: 200, RE: 236, plat: 230, collarR: 44, limbs: 8 };
+// the house below it, whose ladder goes up to it: house 4 (the lookout) when there are four houses or more, else house 2,
+// else house 1 (1-based); its side of the trunk (sd: 1 right, -1 left), where the round room's one hatch is
+const topHouse = o => { const n = Math.max(1, Math.min(6, o.houses ?? 4)); return n >= 4 ? 4 : n >= 2 ? 2 : 1; };
+const topSide = o => Math.sign(TREE_SLOTS[topHouse(o) - 1][0]) || 1;
+// the ladder up to it, from the house below's platform, at its end nearest the trunk, to an opening in the round floor
+const topLadderAt = o => { const i = topHouse(o) - 1, [hx, hy] = TREE_SLOTS[i], sd = topSide(o), hz = (o.treeHouseSize ?? 100) / 100;
+  return { lx: hx - sd * (78 * houseScale(i, hz) - 14), foot: hy, top: TOP.floor + 16 }; };
+function topLadderSvg(o) {
+  const { lx, foot, top } = topLadderAt(o);
+  let t = `<line x1="${f1(lx - 12)}" y1="${foot}" x2="${f1(lx - 12)}" y2="${top}" stroke="#8b5e34" stroke-width="5"/><line x1="${f1(lx + 12)}" y1="${foot}" x2="${f1(lx + 12)}" y2="${top}" stroke="#8b5e34" stroke-width="5"/>`;
+  let rungs = "";
+  for (let y = foot - 18; y > top + 4; y -= 22) rungs += `M${f1(lx - 12)} ${y} H${f1(lx + 12)} `;
+  return t + `<path d="${rungs.trim()}" stroke="#a0703f" stroke-width="4"/>`;
+}
+// where the dome is at height y: its half width (the dome hutSvg draws: a quarter ellipse from the eaves up to the collar)
+const topRoofHalf = y => { const v = (TOP.eaves - 4 - y) / (TOP.eaves - 4 - TOP.collar); return v < 0 ? TOP.RE : v > 1 ? 0 : TOP.RE * Math.sqrt(1 - v * v); };
+const TOP_STRAW = ["#c9c25a", "#a8a23e", "#d8d070"];
+// its shell, seen from below: the wall a cylinder of upright planks (its foot and top bowing up toward us, its sides shaded;
+// the two round windows the room has inside, at the same angles round the wall and the same 🪟 size, lit warm from within,
+// so a spin out through one finds it here), the platform's underside over the wall's foot with beams out
+// from the trunk and the ladder's opening, the dome of thatch over it all in rings of fringe, a straw collar round the trunk
+function topShellSvg(o) {
+  const { floor, eaves, collar, R: Ro, RE, plat, collarR } = TOP, arc = (y, b, r = Ro) => [...Array(25)].map((_, i) => { const a = Math.PI * i / 24; return [-r * Math.cos(a), y - b * Math.sin(a)]; });
+  let t = `<polygon points="${ptsOf(arc(floor, 16))} ${ptsOf(arc(eaves, 12).reverse())}" fill="#b47e48" stroke="#5e3d22" stroke-width="2"/>`;
+  let seams = "";
+  for (let i = 1; i < 20; i++) { const a = Math.PI * i / 20, x = -Ro * Math.cos(a), sh = Math.sin(a); seams += `M${f1(x)} ${f1(floor - 16 * sh)} V${f1(eaves - 12 * sh)} `; }
+  t += `<path d="${seams.trim()}" stroke="#7a4f2a" stroke-width="2" opacity="0.8"/>` +
+       [-1, 1].map(s => `<polygon points="${f1(s * Ro)},${floor} ${f1(s * Ro * 0.8)},${floor - 10} ${f1(s * Ro * 0.8)},${eaves - 8} ${f1(s * Ro)},${eaves}" fill="#000000" opacity="0.16"/>`).join("");
+  // (the windows: inside at th 1.31π and 1.69π; a little lower here, clear of the eaves' fringe; here at a = th - π round the front's arc)
+  const ws = (o.windowSize ?? 100) / 100;
+  for (const th of [1.31, 1.69]) { const a = (th - 1) * Math.PI, sa = Math.sin(a), wx = -Ro * Math.cos(a), wy = eaves + 0.55 * (floor - eaves) - 14 * sa, ry = 19 * ws, rx = ry * Math.max(0.4, sa) * 0.9;
+    t += `<ellipse cx="${f1(wx)}" cy="${f1(wy)}" rx="${f1(rx + 4)}" ry="${f1(ry + 4)}" fill="#5e3d22" stroke="#3a2414" stroke-width="2"/>` +
+         `<ellipse cx="${f1(wx)}" cy="${f1(wy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#f0c066"/>` +
+         `<path d="M${f1(wx - rx)} ${f1(wy)} H${f1(wx + rx)} M${f1(wx)} ${f1(wy - ry)} V${f1(wy + ry)}" stroke="#5e3d22" stroke-width="3"/>`; }
+  // (the platform after the wall: seen from below, its near rim hides the wall's foot)
+  let beams = "";
+  for (let i = 0; i < 12; i++) { const a = Math.PI * (i + 0.5) / 12; beams += `M${f1(Math.cos(a) * 60)} ${f1(floor + 8 + Math.sin(a) * 8)} L${f1(Math.cos(a) * plat * 0.97)} ${f1(floor + 8 + Math.sin(a) * 25)} `; }
+  const { lx } = topLadderAt(o);
+  t += `<ellipse cx="0" cy="${floor + 8}" rx="${plat}" ry="26" fill="#5e3d22" stroke="#3a2414" stroke-width="2"/><path d="${beams.trim()}" stroke="#3a2414" stroke-width="3"/>` +
+       `<path d="${openingD("square", lx, floor + 20, 22, 6)}" fill="#1f140b"/>`;
+  // the eaves' underside and the dome of thatch (the grass hut's: hutSvg's curve, its rings of fringe), tied round the trunk
+  const eY = eaves - 4, DH = eY - collar, kc = 0.5523;
+  t += `<ellipse cx="0" cy="${eY}" rx="${RE}" ry="20" fill="#8a7030"/>` +
+       `<path d="M${-RE} ${eY} C${-RE} ${f1(eY - kc * DH)} ${f1(-kc * RE)} ${collar} 0 ${collar} C${f1(kc * RE)} ${collar} ${RE} ${f1(eY - kc * DH)} ${RE} ${eY} Q0 ${eY + 36} ${-RE} ${eY} Z" fill="#c4b85a" stroke="#6e6a22" stroke-width="2"/>`;
+  const straw = ["", "", ""];
+  for (let jr = 1; jr <= 5; jr++) { const v = jr / 6, r = RE * Math.sqrt(1 - v * v) * 0.98, y = eY - DH * v, b = 16 * (1 - v);
+    const P2 = [...Array(21)].map((_, i) => { const a = 0.08 + (Math.PI - 0.08 * 2) * i / 20; return [r * Math.cos(a), y + b * Math.sin(a)]; });
+    t += `<polyline points="${ptsOf(P2)}" fill="none" stroke="#9a9434" stroke-width="3"/>`;
+    P2.forEach(([x, yy], i) => { const l = 12 + ((i * 5 + jr) % 5) * 2; straw[(i + jr) % 3] += `M${f1(x)} ${f1(yy - 1)} q${(i % 3) - 1} ${f1(l / 2)} ${(i % 3) - 1.5} ${l} `; }); }
+  for (let i = 0; i < 48; i++) { const x = -RE + 2 * RE * (i + 0.5) / 48, l = 12 + 9 * ((i * 7) % 5) / 4; straw[i % 3] += `M${f1(x)} ${f1(eY + 18 * Math.sqrt(1 - (x / RE) ** 2))} q${(i % 3) - 1} ${f1(l / 2)} ${(i % 3) - 1.5} ${f1(l)} `; }
+  t += straw.map((d, i) => `<path d="${d.trim()}" stroke="${TOP_STRAW[i]}" stroke-width="3" fill="none" stroke-linecap="round"/>`).join("");
+  // (the trunk above the dome as thick as it is inside, its strands going on up into the crown's trunk)
+  t += `<polygon points="${-collarR + 2},${collar} -33,-1190 33,-1190 ${collarR - 2},${collar}" fill="#5e3d22" stroke="#3a2414" stroke-width="2"/>` +
+       `<path d="M-22 ${collar} Q-30 -1120 -16 -1190 M0 ${collar} Q8 -1120 -2 -1190 M22 ${collar} Q14 -1120 18 -1190" fill="none" stroke="#3a2414" stroke-width="3" opacity="0.5"/>`;
+  t += `<path d="M${-collarR - 8} ${collar + 10} Q0 ${collar + 26} ${collarR + 8} ${collar + 10} L${collarR + 2} ${collar - 8} Q0 ${collar + 4} ${-collarR - 2} ${collar - 8} Z" fill="#a8a23e" stroke="#6e6a22" stroke-width="2"/>` +
+       `<path d="M${-collarR - 4} ${collar + 2} Q0 ${collar + 16} ${collarR + 4} ${collar + 2}" fill="none" stroke="#d8c48a" stroke-width="4"/>`;
+  return t;
+}
+// where each crown limb rooted inside the dome comes out through the thatch: the limb again from the dome's edge
+// (de Casteljau's split of its quadratic), over the roof, its fork from where it leaves the roof, and a straw collar
+function topLimbsOutSvg(R) {
+  let t = "", straw = ["", "", ""];
+  for (const L of crownLimbs(R).slice(0, TOP.limbs)) {
+    const p0 = [L.sd * 20, L.sy], p1 = [L.tx * 0.45, L.sy - 20], p2 = [L.tx, L.ty], q = u => [0, 1].map(a => (1 - u) * (1 - u) * p0[a] + 2 * u * (1 - u) * p1[a] + u * u * p2[a]);
+    let u = 1;
+    for (let s = 1; s <= 80; s++) { const [x, y] = q(s / 80); if (Math.abs(x) > topRoofHalf(y) - 4) { u = s / 80; break; } }
+    // (the lowest four rest on the wall's top inside, as rafters do: out here they come out from under the eaves, curving up
+    // and out to their own tips; the rest out through the thatch where their curve meets it)
+    const eave = L.j < 4, u0 = u, a = eave ? [L.sd * (TOP.RE - 12 - 6 * (L.j >> 1)), TOP.eaves - 2 - 22 * (L.j >> 1)] : q(u0),
+      m = eave ? [L.sd * (Math.max(Math.abs(L.tx), TOP.RE) + 30), TOP.eaves - 30] : [0, 1].map(i => p1[i] + (p2[i] - p1[i]) * u0);
+    // (its bark edged dark, as inside, so the bit between the thatch and the leaves reads as a limb, not a knob)
+    const d = `M${f1(a[0])} ${f1(a[1])} Q${f1(m[0])} ${f1(m[1])} ${f1(L.tx)} ${f1(L.ty)}`;
+    t += `<path d="${d}" fill="none" stroke="#3a2414" stroke-width="${f1(L.w + 4)}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#6e4a2c" stroke-width="${f1(L.w)}" stroke-linecap="round"/>` +
+         `<path d="${d}" fill="none" stroke="#8a6040" stroke-width="${f1(L.w * 0.25)}" stroke-linecap="round" transform="translate(0 ${f1(-L.w * 0.2)})"/>`;
+    // (its fork, only when it leaves the limb outside the roof: one starting in the thatch would show as a stub; then the
+    // limb goes on from its tip to the fork's end instead, so a short limb reaches up into the leaves, not ending in a knob)
+    const f0 = [L.tx * 0.6, (L.sy + L.ty) / 2 - 10];
+    if (Math.abs(f0[0]) <= topRoofHalf(f0[1]) + 2) t += `<path d="M${f1(L.tx)} ${f1(L.ty)} L${f1(L.fx)} ${f1(L.fy)}" fill="none" stroke="#3a2414" stroke-width="15" stroke-linecap="round"/><path d="M${f1(L.tx)} ${f1(L.ty)} L${f1(L.fx)} ${f1(L.fy)}" fill="none" stroke="#6e4a2c" stroke-width="11" stroke-linecap="round"/>`;
+    else for (let s = 0; s <= 20; s++) { const v = s / 20, x = f0[0] + (L.fx - f0[0]) * v, y = f0[1] + (L.fy - f0[1]) * v;
+      if (Math.abs(x) > topRoofHalf(y) + 2) { if (v < 0.9) t += `<path d="M${f1(x)} ${f1(y)} L${f1(L.fx)} ${f1(L.fy)}" fill="none" stroke="#6e4a2c" stroke-width="11" stroke-linecap="round"/>`; break; } }
+    // (a collar of thatch over where it comes out, wider than the limb, so its cut end never shows: a tuft of straw wrapped
+    // round it, fringe hanging over it)
+    const [x, y] = eave ? [a[0] + L.sd * 4, a[1]] : q(u), [dx, dy] = eave ? [m[0] - a[0], m[1] - a[1]] : [0, 1].map(i => q(Math.min(1, u + 0.02))[i] - q(u)[i]), ang = Math.atan2(dy, dx) * 180 / Math.PI;
+    t += `<ellipse cx="${f1(x - L.sd * 3)}" cy="${f1(y)}" rx="${f1(L.w * 0.6)}" ry="${f1(L.w * 1.05)}" transform="rotate(${f1(ang)} ${f1(x - L.sd * 3)} ${f1(y)})" fill="#c4b85a" stroke="#6e6a22" stroke-width="2"/>`;
+    for (let i = 0; i < 7; i++) { const e = (i - 3) / 3, px = x - L.sd * 2, py = y - L.w * 0.5 + e * L.w * 0.6, l = 8 + 5 * R(L.j * 7 + i, 5172);
+      straw[i % 3] += `M${f1(px)} ${f1(py)} q${f1(-L.sd * l * 0.2)} ${f1(l * 0.5)} ${f1(-L.sd * l * 0.1)} ${f1(l)} `; }
+  }
+  return t + straw.map((d, i) => `<path d="${d.trim()}" stroke="${TOP_STRAW[i]}" stroke-width="3" fill="none" stroke-linecap="round"/>`).join("");
+}
+// all of it, as the tree draws it (treeInner's part tree-top): the ladder, the shell a doorway into the room, the limbs out
+const treeTopSvg = (o, R) => topLadderSvg(o) + `<g class="portal" data-to="treetop">` + topShellSvg(o) + `</g>` + topLimbsOutSvg(R);
 // the n houses, each where it sits, its animal and its look, its size; the higher houses first: a lower one is
 // nearer, in front of them
 const treeHouses = (o, n, hz) => TREE_SLOTS.slice(0, n).map((slot, i) => [slot, i]).sort((u, v) => u[0][1] - v[0][1]).map(([[x, y, usual], i]) => {
@@ -282,17 +390,24 @@ const silhouette = (svg, col) => svg.replace(/<use href="#bg-eye"[^>]*\/>/g, "")
 // and its limbs, the bridges and ladders, and the houses, each numbered; a white ring round house `here` (1-based). In the
 // tree's units, cut to TREE_MAP_BOX: the trunk goes on up, out of it.
 const TREE_MAP_BOX = [-480, -640, 960, 670];
-function treeMapSvg(o, here) {
+// (ticket 516: every map draws the ladder up to the round room at the top of the tree, going up out of the box; the round
+// room's own sign, here "top", has its box up round the crown (TOP_MAP_BOX), the room drawn and ringed)
+const TOP_MAP_BOX = [-480, -1150, 960, 670];
+function treeMapSvg(o, here, box = TREE_MAP_BOX) {
   const n = Math.max(1, Math.min(6, o.houses ?? 4)), hz = (o.treeHouseSize ?? 100) / 100;
-  const bridges = o.bridges ?? 2, ladders = o.ladders ?? 3, [bx, by, bw, bh] = TREE_MAP_BOX;
+  const bridges = o.bridges ?? 2, ladders = o.ladders ?? 3, [bx, by, bw, bh] = box, top = here === "top";
   let t = `<defs><clipPath id="bg-treemap"><rect x="${bx}" y="${by}" width="${bw}" height="${bh}"/></clipPath></defs><g clip-path="url(#bg-treemap)">` +
-          `<rect x="${bx}" y="10" width="${bw}" height="${by + bh - 10}" fill="#2c3318"/>` +
-          silhouette(treeLimbs(n) + treeRoots() + treeBraid(), "#3b2715") +
-          silhouette(treeBridges(n, bridges, hz) + TREE_SLOTS.slice(0, Math.min(n, ladders)).map((_, i) => treeLadder(n, i, hz).svg).join(""), "#4d3520");
-  const houses = treeHouses(o, n, hz);
+          (by + bh > 10 ? `<rect x="${bx}" y="10" width="${bw}" height="${by + bh - 10}" fill="#2c3318"/>` : "") +
+          // (the round room's map: what is up there, the crown and the houses' tops; nothing below its box)
+          (top ? silhouette(treeBraid() + `<polygon points="-62,-720 -26,-1290 26,-1290 62,-720"/>` + crownLimbs(crownR).map(crownLimbSvg).join(""), "#3b2715") + silhouette(topLadderSvg(o), "#4d3520")
+               : silhouette(treeLimbs(n) + treeRoots() + treeBraid(), "#3b2715") +
+                 silhouette(treeBridges(n, bridges, hz) + TREE_SLOTS.slice(0, Math.min(n, ladders)).map((_, i) => treeLadder(n, i, hz).svg).join("") + topLadderSvg(o), "#4d3520"));
+  const houses = treeHouses(o, n, hz).filter(({ y, sc }) => !top || y - 110 * sc < by + bh);
   // (the numbers after all the houses: a lower house, nearer, covers the one above it, and would cover its number)
   t += houses.map(({ x, y, look, sc }) => silhouette(`<g ${tf(x, y, sc)}>${CABIN_SVG}${look.head}</g>`, "#1f140b")).join("") +
+       (top ? silhouette(topShellSvg(o) + topLimbsOutSvg(crownR), "#1f140b") : "") +
        houses.map(({ x, y, i, sc }) => `<text x="${f1(x)}" y="${f1(y - 14 * sc)}" text-anchor="middle" font-size="${f1(92 * sc)}" font-weight="bold" fill="#e9d3a6" font-family="sans-serif">${i + 1}</text>`).join("");
+  if (top) return t + [["#1f140b", 30], ["#ffffff", 16]].map(([col, w]) => `<ellipse data-here="top" cx="0" cy="-860" rx="270" ry="250" fill="none" stroke="${col}" stroke-width="${w}"/>`).join("") + `</g>`;
   const h = houses.find(u => u.i === here - 1);
   if (h) t += [["#1f140b", 30], ["#ffffff", 16]].map(([col, w]) => `<circle data-here="${here}" cx="${f1(h.x)}" cy="${f1(h.y - 84 * h.sc)}" r="${f1(112 * h.sc)}" fill="none" stroke="${col}" stroke-width="${w}"/>`).join("");
   return t + `</g>`;

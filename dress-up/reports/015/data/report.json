@@ -1,0 +1,663 @@
+{
+ "report": "^du_report(15)",
+ "title": "Seen before it was built",
+ "date": "2026-10-21",
+ "after": 10,
+ "after_why": "the series line names the newest published report; 11 to 14 are drafts, not yet published",
+ "question": "On 2026-10-20 Matthew asked for a dragon costume, fire to breathe and armour for the knight's horse. What did the two mock-ups show him before anything was built, what went out in 0.0.392, 81 minutes after he asked, and where does the game differ from them?",
+ "trigger": "Matthew, that day, on the dragon mock-up at 13:46: “looks good.” then “please publish as a du_report.”; at 13:47, on the horse's: “include this too -- looks good”.",
+ "game": {
+  "version": "0.0.392",
+  "commit": "b1900d5e22",
+  "commit_full": "b1900d5e227fa04867aab1086a3700f3cbd00e2f",
+  "tag": "dress-up-0.0.392",
+  "released": "2026-10-20 19:14",
+  "unchanged_through": "0.0.397 (bfb30f9): no line of dress-up/js mentioning fire, dragon, armour or horse changed after 0.0.392",
+  "versions_md": "Everything in 0.0.391, plus a dragon, fire, armour for the horse and a stable full of hens: every choice in the game, for the kids to pick."
+ },
+ "kpis": [
+  [
+   "2",
+   "mock-ups, 10 and 31 minutes after the first ask (ready 18:03 and 18:24)"
+  ],
+  [
+   "13 of 13",
+   "options released: six fires, six armour sets and the costume"
+  ],
+  [
+   "81 min",
+   "from the first ask (17:53) to 0.0.392 (19:14)"
+  ],
+  [
+   "102 of 102",
+   "lines of the three tickets' checks passed, in 0.0.392's run and in 0.0.397's"
+  ]
+ ],
+ "asked": [
+  [
+   "2026-10-20 17:53",
+   498,
+   "let's start to think of costumes for the knight as having horse pieces (face helmets, look at images from Lego castles and knights) -- not just saddles."
+  ],
+  [
+   "2026-10-20 17:53",
+   499,
+   "new costume to add -- dragon."
+  ],
+  [
+   "2026-10-20 17:53",
+   "498, 499",
+   "look at Lego castles and knights for inspiration."
+  ],
+  [
+   "2026-10-20 17:53",
+   499,
+   "wings, tail and optional dragon breath -- need an action for that, like bubbles -- shooting fire out of our mouth."
+  ],
+  [
+   "2026-10-20 17:54",
+   499,
+   "let's get serious about animating fire shooting out of things. Mock up the dragon costume and 6 fire styles."
+  ],
+  [
+   "2026-10-20 17:58",
+   499,
+   "let's have the dragon fire be the best tool against bubbles -- can you add logic for that -- the heat extend further than the fire."
+  ],
+  [
+   "2026-10-20 17:59",
+   499,
+   "dragon tail spikes should be facing upward, not downward :)"
+  ],
+  [
+   "2026-10-20 18:48",
+   "498, 499, 506",
+   "chickens dragon and horse -- just release and let the kids decide please."
+  ],
+  [
+   "2026-10-21 13:46",
+   499,
+   "looks good."
+  ],
+  [
+   "2026-10-21 13:47",
+   498,
+   "looks good"
+  ]
+ ],
+ "asked_note": "Each quote is the ticket's own record of Matthew's words in chat. Times are the tickets' log of his messages, matched by length (the 18:48 message is 73 characters, as the quote is; the ticket's text says '18:5x'). 'chickens' is ticket 506, hens in the castle's stable, also in 0.0.392.",
+ "timeline": [
+  [
+   "17:53",
+   "Matthew asks for a dragon costume, and horse pieces",
+   "matthew"
+  ],
+  [
+   "17:54",
+   "Matthew: “Mock up the dragon costume and 6 fire styles.”",
+   "matthew"
+  ],
+  [
+   "17:58",
+   "Matthew: “the heat extend further than the fire.”",
+   "matthew"
+  ],
+  [
+   "17:59",
+   "Matthew: “dragon tail spikes should be facing upward”",
+   "matthew"
+  ],
+  [
+   "18:03",
+   "the dragon mock-up: the costume and six fires",
+   "mockup"
+  ],
+  [
+   "18:24",
+   "the horse mock-up: six sets of armour",
+   "mockup"
+  ],
+  [
+   "18:48",
+   "Matthew: “just release and let the kids decide please.”",
+   "matthew"
+  ],
+  [
+   "18:58",
+   "built: the horse's armour, the dragon costume",
+   "game"
+  ],
+  [
+   "19:01",
+   "built: breathing fire",
+   "game"
+  ],
+  [
+   "19:10",
+   "fixed after review: the armour",
+   "game"
+  ],
+  [
+   "19:12",
+   "fixed after review: the dragon, the fire; merged",
+   "game"
+  ],
+  [
+   "19:14",
+   "0.0.392 released, 81 minutes after the ask",
+   "game"
+  ]
+ ],
+ "timeline_later": [
+  [
+   "2026-10-20 19:35",
+   "the picture archive draws 0.0.392"
+  ],
+  [
+   "2026-10-20 21:13",
+   "0.0.392's checks: the three tickets' pass"
+  ],
+  [
+   "2026-10-21 13:46 and 13:47",
+   "Matthew, on each mock-up: “looks good”"
+  ]
+ ],
+ "timeline_sources": "Matthew's words: the tickets' logs. Mock-ups: the tickets' progress notes (18:03, 18:24) and the files' times (17:59:31, 18:24:19). Built, fixed, merged, released: the commits' times, dress-up-0.0.391..dress-up-0.0.392 (8dd223a774 18:58:02, 18b6912edf 18:58:36, 62cf77cdae 19:01:04, 61d95f63df 19:10:05, 4b885e1820 19:12:14, 4bec1d2f4a 19:12:37, merges 19:12:52 to 19:12:57, b1900d5e22 19:14:07).",
+ "mockups": {
+  "dragon": {
+   "file": "mockups/dragon-fire.html",
+   "ticket": 499,
+   "title": "🐉 A dragon costume and 🔥 six kinds of fire: a mock-up",
+   "bytes": 39835,
+   "sha256": "9cc5983af66de680930859bea157f7764368cf95c7e884c351650e3c9e071119",
+   "saved": "2026-10-20 17:59:31",
+   "ready": "2026-10-20 18:03",
+   "what": "The friend drawn by the game itself (the wolf suit, standing, facing right, recoloured), with the dragon's pieces added: two horns and a row of spines on the hood, teeth along the hood's opening, a slit-pupilled eye on the hood, scales, a plated belly, three claws on each foot, flapping bat wings, a tapering tail with its spines up and a spade at its tip. Six fires on the big picture and as six cards; hold to breathe (a button, or F); four colour pickers; a sky (dusk, day, night); the pieces named; bubbles drifting in that the heat pops, and a count of them.",
+   "options": [
+    [
+     "roar",
+     "🔥 roaring flame",
+     "A wide stream that starts white-hot at the mouth, turns yellow, orange and red, and ends in smoke."
+    ],
+    [
+     "balls",
+     "☄️ fireballs",
+     "Balls of fire with flaming tails, shot one after another, that burst into sparks."
+    ],
+    [
+     "twist",
+     "🌀 twisting fire",
+     "Two ribbons of flame, one red and one yellow, that twist around each other."
+    ],
+    [
+     "jet",
+     "🔵 blue-hot jet",
+     "A narrow roaring jet, blue and white like a torch, with orange at its tip and sparks."
+    ],
+    [
+     "bricks",
+     "🧱 brick fire",
+     "Toy flame pieces, see-through orange, yellow and red, that click on one by one and pop off."
+    ],
+    [
+     "bubbles",
+     "🫧 fire bubbles",
+     "Glowing bubbles with a flame inside that float out and pop into sparks."
+    ]
+   ],
+   "colours": {
+    "scales": "#3f8f4a",
+    "belly": "#e9d27a",
+    "wings and spines": "#d0453a",
+    "horns, teeth and claws": "#f4ecd6"
+   },
+   "credits": "LEGO Castle: the Dragon Knights battle pack (2010) flame piece and plume, for the brick fire; the Dragon Suit Guy (Collectible Minifigures, 2018), the same idea as this costume; the Dragon Knights' dragon-head armour, to tie in with the horse (ticket 498)."
+  },
+  "horse": {
+   "file": "mockups/horse-armour.html",
+   "ticket": 498,
+   "title": "🛡️ Armour for the knight's horse: a mock-up",
+   "bytes": 24924,
+   "sha256": "aadcfc08261040c4400718ed49ae6931579b06ca0d3f0e7d221d8a13f4ea9e82",
+   "saved": "2026-10-20 18:24:19",
+   "ready": "2026-10-20 18:24",
+   "what": "The game's own horse, as 0.0.390 drew it side on and ridden with its saddle on, in six sets that take the knight's arms: two colours, a layout (quartered, halves, plain) and an emblem (none, falcon, crown, cross, chevron); four coats (white, grey, brown, black). The plume sways.",
+   "options": [
+    [
+     "plate",
+     "🛡️ full plate",
+     "Steel all over: a chanfron down its face, plates down its neck, a chest plate, side plates and a rump plate, and a plume."
+    ],
+    [
+     "half",
+     "🦁 half caparison",
+     "A steel face plate and a cloth in the knight's arms to below its belly, with a scalloped hem and the emblem on its side."
+    ],
+    [
+     "tourney",
+     "🎪 tournament",
+     "A cloth in the knight's arms over everything: its head (eye holes, ear sleeves), its neck, and down to its hooves."
+    ],
+    [
+     "dragon",
+     "🐉 dragon helm",
+     "A dragon's head for a chanfron (horns, spikes, teeth), scaly neck plates, and a cloth with a dagged hem."
+    ],
+    [
+     "toy",
+     "🧱 toy helmet",
+     "One chunky helmet with round eye holes and a plume in a clip, as on a toy horse, and a short cloth over its back."
+    ],
+    [
+     "parade",
+     "🎀 parade",
+     "No armour: rosettes and ribbons on its bridle, a plume, and a saddle cloth with tassels in the knight's colours."
+    ]
+   ],
+   "key_note": "The mock-up's key for the toy helmet is \"lego\"; the game's is \"toy\".",
+   "credits": "LEGO Castle: the horse battle helmet with a plume in Knights' Kingdom (6095), for the toy helmet; the cloth barding of the Lion Knights' Castle (10305), for the half caparison; the Dragon Knights' dragon-head armour, for the dragon helm. The real pieces' names: chanfron (face), crinet (neck), peytral (chest), crupper (rump), flanchards (sides), caparison (the cloth)."
+  }
+ },
+ "heat": {
+  "about": "How far each fire's heat reaches from the mouth, in the friend's units (standing, the friend is about 460 of them from the top of the hood to the soles), and its half-angle in degrees. The mock-up's HEAT is the game's FIRE_HEAT.side, number for number; front (a disc about the mouth, its radius) and away (a cone up from the head) are the game's own.",
+  "mockup_side": {
+   "roar": [
+    600,
+    15
+   ],
+   "balls": [
+    640,
+    9
+   ],
+   "twist": [
+    570,
+    12
+   ],
+   "jet": [
+    660,
+    6
+   ],
+   "bricks": [
+    560,
+    12
+   ],
+   "bubbles": [
+    500,
+    16
+   ]
+  },
+  "game": {
+   "side": {
+    "roar": [
+     600,
+     15
+    ],
+    "balls": [
+     640,
+     9
+    ],
+    "twist": [
+     570,
+     12
+    ],
+    "jet": [
+     660,
+     6
+    ],
+    "bricks": [
+     560,
+     12
+    ],
+    "bubbles": [
+     500,
+     16
+    ]
+   },
+   "front": {
+    "roar": 230,
+    "balls": 210,
+    "twist": 225,
+    "jet": 200,
+    "bricks": 235,
+    "bubbles": 200
+   },
+   "away": {
+    "roar": [
+     380,
+     22
+    ],
+    "balls": [
+     400,
+     14
+    ],
+    "twist": [
+     360,
+     22
+    ],
+    "jet": [
+     330,
+     12
+    ],
+    "bricks": [
+     350,
+     18
+    ],
+    "bubbles": [
+     360,
+     22
+    ]
+   }
+  },
+  "source": "mockups/dragon-fire.html HEAT; dress-up/js/08-body.js FIRE_HEAT at dress-up-0.0.392"
+ },
+ "differences": [
+  [
+   "🔥 fire",
+   "Six fires: roaring flame, fireballs, twisting fire, blue-hot jet, brick fire, fire bubbles",
+   "All six, by the same names, in 🎮 Controls, “🔥 its fire” (the roaring flame to start with). Side on, the same shapes, moved by the same timings",
+   "same"
+  ],
+  [
+   "🔥 fire",
+   "Drawn side on",
+   "Drawn three ways, each a drawing of its own: side on; toward us, out of an open “O” mouth; away, rising past the head",
+   "more"
+  ],
+  [
+   "🔥 fire",
+   "Hold a button or F to breathe; “tap it for a puff”",
+   "Held: 🔥 on the game controller (the right trigger), on the screen's controller, or F. Let go, it fades in 0.2 s; no puff of its own",
+   "changed"
+  ],
+  [
+   "🔥 fire",
+   "From the 👄 mouth, the 🫲 left hand or the 🫱 right hand",
+   "The same three, “🧭 from where”; and a size, “📏 how big”, 50 to 200",
+   "more"
+  ],
+  [
+   "🔥 fire",
+   "The heat, a cone past the flames; bubbles drifting in pop",
+   "The same six cones side on; toward us a disc, away a cone. It pops the bubbles of bubble space, the bubble room, the bubble makers, the friend's blown ones and a diving suit's leaks",
+   "more"
+  ],
+  [
+   "🔥 fire",
+   "“🌡️ show the heat”",
+   "“🌡️ show its heat”, on to start with",
+   "same"
+  ],
+  [
+   "🔥 fire",
+   "A count, “🫧 popped by the heat”",
+   "No count",
+   "page only"
+  ],
+  [
+   "🔥 fire",
+   "Fire makers anything can use: a torch, a campfire, a cannon, a dragon placed in a scene",
+   "Only the friend breathes fire",
+   "not yet"
+  ],
+  [
+   "🔥 fire",
+   "“🔁 keep breathing (for looking)”, the sky, “🏷️ name the pieces”",
+   "For looking at the mock-up; not in the game",
+   "page only"
+  ],
+  [
+   "🐉 dragon",
+   "The friend in a dragon suit, side on, standing",
+   "The same pieces, in 🐯 Costume after the deer; facing us, from behind and from the side; standing, sitting, lying, crawling and swimming",
+   "more"
+  ],
+  [
+   "🐉 dragon",
+   "Four colours, any colour each",
+   "The same four, starting at the mock-up's; 6 to 8 swatches each and “any color”",
+   "same"
+  ],
+  [
+   "🐉 dragon",
+   "Wings flapping, 1.7 s each way",
+   "“🪽 its wings”: flapping (with their own slow beat, or an LFO from the mixing board), open and still, or folded",
+   "more"
+  ],
+  [
+   "🛡️ armour",
+   "Six sets: full plate, half caparison, tournament, dragon helm, toy helmet, parade",
+   "All six, by the same names, in 🧍 Body's 🐴 the horse, “🛡️ its armour” (none to start with)",
+   "same"
+  ],
+  [
+   "🛡️ armour",
+   "The horse side on, ridden",
+   "Side on, from the front and from behind, each a drawing of its own; led and ridden",
+   "more"
+  ],
+  [
+   "🛡️ armour",
+   "Cloth and plume in the knight's arms from 🐯 Costume, else the halter's colour",
+   "As proposed: a knight's horse in the knight's colours, layout, emblem and plume colour; otherwise the halter's colour and a lighter shade, quartered, no emblem",
+   "same"
+  ],
+  [
+   "🛡️ armour",
+   "The arms and four coats, chosen on the page",
+   "Chosen where they already were: the knight's arms in 🐯 Costume, the coat in “🐴 its coat” (7 colours)",
+   "page only"
+  ],
+  [
+   "🛡️ armour",
+   "The plume sways all the time",
+   "Plumes and the parade's ribbons swing with the stride, as the tail does, and hang still while the horse stands",
+   "changed"
+  ],
+  [
+   "🛡️ armour",
+   "The 🎪 tournament's cloth over the whole head, with no bridle drawn over it",
+   "The bridle drawn over the head cloth, so the rein has its ring: its strap crosses the eye, and the noseband and the ring show",
+   "changed"
+  ],
+  [
+   "🛡️ armour",
+   "The dragon helm in a fixed green",
+   "The same fixed green; it does not follow the dragon costume's colours",
+   "same"
+  ],
+  [
+   "🛡️ armour",
+   "Pieces placed on their own: a 🐴 chanfron on a stand in the armoury",
+   "On the friend's horse only",
+   "not yet"
+  ]
+ ],
+ "differences_source": "the two mock-ups' “How it could go into the game” lists and controls, against dress-up/js at dress-up-0.0.392 (01-state.js, 06-costumes.js, 08-body.js, 20-controls.js, 25-world.js, style.css) and VERSIONS.md 0.0.392",
+ "checks": {
+  "about": "Each ticket's check (tools/checks/*.mjs) drives the released page in headless Chrome on GitHub's computers and prints one ok or FAIL line per thing it checks. Counted from the runs' logs.",
+  "runs": {
+   "0.0.392": {
+    "run": 39526121922,
+    "commit": "b1900d5e22",
+    "checked": "2026-10-21T03:13Z",
+    "speed_json": "broken"
+   },
+   "0.0.397": {
+    "run": 39579220956,
+    "commit": "f9a461b162",
+    "checked": "2026-10-21T11:00Z",
+    "speed_json": "ok"
+   }
+  },
+  "ticket_checks": [
+   [
+    "armour498",
+    "seven choices; every set different in every view, led and ridden; the arms' and the halter's colours; the frame holds plume and horns; the near hind leg in front of the tail; nothing over the rider's face",
+    {
+     "0.0.392": [
+      59,
+      0
+     ],
+     "0.0.397": [
+      59,
+      0
+     ]
+    }
+   ],
+   [
+    "dragon499",
+    "among the costumes; its colours start as the mock-up's; two wings, a tail with a spade in every facing; every tail spike up, crawling and swimming too; no wing through the floor; flapping, open and folded; every pose drawn",
+    {
+     "0.0.392": [
+      18,
+      0
+     ],
+     "0.0.397": [
+      18,
+      0
+     ]
+    }
+   ],
+   [
+    "fire499",
+    "F held draws a moving fire, let go removes it; all six fires in every view; from a hand; the heat reaches past the flames and pops bubbles in reach, not out of reach; in the bubble room facing away and toward us; at most 10 a frame at size 200; the controller's button and the screen's",
+    {
+     "0.0.392": [
+      25,
+      0
+     ],
+     "0.0.397": [
+      25,
+      0
+     ]
+    }
+   ]
+  ],
+  "ticket_checks_columns": [
+   "check",
+   "what it checks",
+   "ok and FAIL lines per run"
+  ],
+  "other_fails_0_0_392": [
+   [
+    "farm502",
+    1,
+    "a fence piece dragged with the pointer: the check read the piece where it was put after the drag",
+    "19a1f1f, 0e4487a, in 0.0.394"
+   ],
+   [
+    "horse438",
+    2,
+    "the led horse before the friend, and a count of the horse box's rows that more choosers had outgrown",
+    "2c5a744, in 0.0.393"
+   ],
+   [
+    "pasture503",
+    1,
+    "the led horse's size against the grazing ones: the check measured a wrapper, not the horse",
+    "b74e6cf, in 0.0.394"
+   ]
+  ],
+  "gate_0_0_392": {
+   "frame-rate gate": "all 14 at 55 fps or more",
+   "its slow scenes": "all 10 at 55 fps or more",
+   "the slow-laptop tier (the Ubuntu laptop, Intel i7)": "all 2 at 55 fps or more",
+   "every place with the on-screen controller": "all 56 at 58 fps or more"
+  },
+  "not_measured": "No frame-rate case breathes fire, wears the dragon costume or rides the armoured horse: tools/fpsgate.mjs names none of them, and the three ticket checks record no frames a second."
+ },
+ "choice": {
+  "words": "chickens dragon and horse -- just release and let the kids decide please.",
+  "at": "2026-10-20 18:48",
+  "in_the_game": [
+   [
+    "🔥 its fire",
+    "🎮 Controls, 🔥 breathing fire",
+    "six",
+    "🔥 roaring flame"
+   ],
+   [
+    "🛡️ its armour",
+    "🧍 Body, 🐴 the horse",
+    "none or six",
+    "none"
+   ],
+   [
+    "🐉 dragon",
+    "🐯 Costume, after the deer",
+    "one of the costumes",
+    "not worn"
+   ]
+  ],
+  "picked": "Not recorded as of 2026-10-21: no ticket notes which fire or armour M and N chose."
+ },
+ "fire_shapes_game": {
+  "about": "Shapes in each of the game's fire drawings at 0.0.392, the heat, the mouth and the picture's ground left out; each moves by a CSS animation of its own (or its group's). From data/pictures.json.",
+  "columns": [
+   "fire",
+   "side on",
+   "toward us",
+   "away"
+  ]
+ },
+ "next": [
+  [
+   "Time breathing fire",
+   "Add cases to the frame-rate gate (tools/fpsgate.mjs) for breathing fire held while walking: the roaring flame (45 moving shapes side on) and the fire bubbles (97 shapes), in bubble space and the bubble room, where its heat pops bubbles every frame; and for riding the armoured horse at a run. The three tickets' checks test what is drawn, not how fast"
+  ],
+  [
+   "Fire from things in a scene",
+   "Let things placed in a scene breathe the six fires, as the dragon mock-up proposed: a torch, a campfire, a cannon or a placed dragon, each fire with its heat, drawn by the same fireSvg"
+  ],
+  [
+   "Armour on a stand",
+   "Let the horse armour's pieces be placed on their own, as the horse mock-up proposed: a chanfron on a stand in the armoury, like the helmet in the trap room"
+  ],
+  [
+   "What M and N pick",
+   "When M and N have played with them, add a dated note here saying which fires and which armour they chose (Matthew: “let the kids decide”)"
+  ]
+ ],
+ "sources": {
+  "tickets": [
+   "Tickets 498 and 499 on the Hazel Work Dashboard: Matthew's words, the mock-ups' progress notes, the outcomes",
+   "https://matthewhammer.org/hazel/dashboard/#ticket-499"
+  ],
+  "mockups": [
+   "The two mock-ups, as Matthew looked at them: mockups/dragon-fire.html and mockups/horse-armour.html",
+   "https://github.com/matthewhammer/kids-choice-games/tree/main/dress-up/reports/015/mockups"
+  ],
+  "release": [
+   "Dress Up 0.0.392: its commits, from dress-up-0.0.391",
+   "https://github.com/matthewhammer/kids-choice-games/compare/dress-up-0.0.391...dress-up-0.0.392"
+  ],
+  "versions": [
+   "VERSIONS.md: 0.0.392 (2026-10-20)",
+   "https://github.com/matthewhammer/kids-choice-games/blob/main/dress-up/VERSIONS.md"
+  ],
+  "code": [
+   "The game's drawing of the fires, the heat and the armour at 0.0.392: dress-up/js/08-body.js",
+   "https://github.com/matthewhammer/kids-choice-games/blob/dress-up-0.0.392/dress-up/js/08-body.js"
+  ],
+  "checks": [
+   "The checks: tools/checks/armour498.mjs, dragon499.mjs, fire499.mjs",
+   "https://github.com/matthewhammer/kids-choice-games/tree/main/tools/checks"
+  ],
+  "run392": [
+   "0.0.392's speed run (GitHub Actions run 39526121922)",
+   "https://github.com/matthewhammer/kids-choice-games/actions/runs/39526121922"
+  ],
+  "run397": [
+   "0.0.397's speed run (GitHub Actions run 39579220956)",
+   "https://github.com/matthewhammer/kids-choice-games/actions/runs/39579220956"
+  ],
+  "speed": [
+   "speed.json: each version's speed run, ok or broken",
+   "https://github.com/matthewhammer/kids-choice-games/blob/main/dress-up/speed.json"
+  ],
+  "archive": [
+   "The picture archive's run of 0.0.392 (tag run-2026-10-20)",
+   "https://github.com/matthewhammer/dress-up-pictures/tree/run-2026-10-20"
+  ]
+ }
+}

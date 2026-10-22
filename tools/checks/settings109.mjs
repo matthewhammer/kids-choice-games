@@ -24,7 +24,7 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(() => {
     const uses = {}, kinds = { range: "number", toggle: "boolean", things: "list" }, wrong = [];
-    const VALUE = { range: "number", nudge: "number", master: "number", every: "number", turn: "number", place: "number", toggle: "boolean", things: "list" };
+    const VALUE = { range: "number", nudge: "number", master: "number", every: "number", turn: "number", place: "number", toggle: "boolean", things: "list", breathe: "choice" };   // (ticket 523: breathe is a choice, with a button)
     const walk = (part, cs) => { for (const c of cs || []) {
       if (!Array.isArray(c) || typeof c[0] !== "string" || typeof c[1] !== "string") continue;
       if (c[0] === "group") { walk(part, c[3]); continue; }

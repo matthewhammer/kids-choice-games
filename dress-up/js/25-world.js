@@ -15,14 +15,39 @@
 // (a house's living room, the castle's rooms, the witch's hut...) are
 // reached through their outside's door, so they are off the grid, each with
 // an id of its own; so are the places reached their own way (our
-// imagination, the empty room). world.at is the square the friend is in.
+// imagination, the empty room). Since ticket 524 (Matthew: "we need to make
+// each room, and its params, available to world builder") an inside can be
+// put in a square too, as any place: then it is that square, and its
+// outside's door leads there. world.at is the square the friend is in.
 const WORLD_DIRS = { N: [0, -1], NE: [1, -1], E: [1, 0], SE: [1, 1], S: [0, 1], SW: [-1, 1], W: [-1, 0], NW: [-1, -1] };
 const WORLD_OPP = { N: "S", NE: "SW", E: "W", SE: "NW", S: "N", SW: "NE", W: "E", NW: "SE" };
 const WORLD_ARROWS = { N: "⬆️", NE: "↗️", E: "➡️", SE: "↘️", S: "⬇️", SW: "↙️", W: "⬅️", NW: "↖️" };
-const INSIDES = { house: ["livingroom"], treehouse: ["treeroom"], witch: ["witchroom"], clearing: ["healerroom"], campsite: ["tent"],
+const INSIDES = { house: ["livingroom"], treehouse: ["treeroom", "treetop"], witch: ["witchroom"], clearing: ["healerroom"], campsite: ["tent"],
                   waterfall: ["cave", "caveroom"], castle: ["castleroom"], lake: ["underwater"], hut: ["hutroom", "hutbed", "hutpotion", "hutcenter"] };
 const INSIDE_KINDS = new Set(Object.values(INSIDES).flat());
 const ELSEWHERE = ["imagination", "emptyroom", "bubblespace", "bubbleroom"];
+// (ticket 524) the insides an outside has several of, each by its own number: a tree house's rooms, the camp's tents, a
+// castle's rooms. A square holding one says which (its key, kept with the square: cellKeys), from 1 to insideCount.
+const INSIDE_WHICH = { treeroom: "inside", tent: "tent", castleroom: "castleRoom" };
+function insideCount(B, kind) {
+  if (kind === "treeroom") return Math.max(1, Math.min(6, Math.round(B.houses ?? 4)));
+  if (kind === "tent") return CAMP_TENTS.length;
+  if (kind === "castleroom") { const id = CASTLE_DEFAULTS[B.castle] ? B.castle : "N"; return Math.max(1, Math.min(ROOM_MAX, Math.round(B["castleRooms" + id] ?? CASTLE_ROOMS[id].length))); }   // (castleOf's count, not the whole castle: ticket 167)
+  return 1;
+}
+// (ticket 524) a square holds the place shown: its kind, and for an inside an outside has several of, that one (castle
+// room 2 is not castle room 1's square, though both are castle rooms)
+function cellHolds(cell, B) {
+  const w = INSIDE_WHICH[B.kind];
+  return !!cell && cell.kind === B.kind && (!w || Math.round(cell[w] ?? 1) === Math.round(B[w] ?? 1));
+}
+// (ticket 524) the first of an inside an outside has several of that no square holds (1 when every one is in a square)
+function worldFreeWhich(W, B, kind) {
+  const w = INSIDE_WHICH[kind];
+  if (!w) return undefined;
+  for (let n = 1; n <= insideCount(B, kind); n++) if (!Object.values(W.cells).some(c => cellHolds(c, { kind, [w]: n }))) return n;
+  return 1;
+}
 // (ticket 195, M) The waterfall's north is the waterfall itself, into the
 // cave behind it: "having both and having them mean different things is
 // too strange", so no way north on the grid there (WORLD_NO_WAY: never a
@@ -30,7 +55,8 @@ const ELSEWHERE = ["imagination", "emptyroom", "bubblespace", "bubbleroom"];
 // ways a place's own scene has no room for, which 🔗 all passageways
 // leaves out (WORLD_UNNATURAL): the beach's sea, the castle and the house
 // at their backs, the wood path's diagonals (thick woods either side of its
-// one path). A forest crossing has all eight; the insides are off the grid.
+// one path). A forest crossing has all eight; an inside put in a square
+// (ticket 524) all its own, as any place.
 const WORLD_NO_WAY = { waterfall: ["N"] };
 const WORLD_UNNATURAL = { beach: ["N", "NE", "NW"], castle: ["N"], house: ["N"], woodpath: ["NE", "NW", "SE", "SW"] };
 const worldNoWay = (kind, d) => (WORLD_NO_WAY[kind] || []).includes(d);
@@ -102,10 +128,9 @@ function worldJoinAll(W) {
   const order = Object.keys(WORLD_DIRS);
   for (const key of worldKeys(W)) {
     const a = W.cells[key];
-    if (INSIDE_KINDS.has(a.kind)) continue;
-    for (const d of order) {
+    for (const d of order) {   // (ticket 524: an inside in a square is joined as any place)
       const nb = worldNeighbour(W, key, d), b = W.cells[nb.key];
-      if (nb.off || !b || INSIDE_KINDS.has(b.kind) || !worldNaturalPair(a.kind, d, b.kind) || worldWays(a).includes(d)) continue;
+      if (nb.off || !b || !worldNaturalPair(a.kind, d, b.kind) || worldWays(a).includes(d)) continue;
       if (a.kind === "crossing") a["cross" + d] = true;
       else a.ways = order.filter(x => x === d || worldWays(a).includes(x));
       added++;
@@ -118,7 +143,7 @@ function worldJoinAll(W) {
 }
 // (ticket 191: "the red square on the grid should correspond to the placement of the dotted red
 // suggestion", not its neighbour) the squares whose ways could put a warning right; and for a warning
-// no way can (a name twice, an inside on the grid, no start), its own square
+// no way can (a name twice, no start), its own square
 function worldFixSquares(W, P = worldProblems(W)) {
   const now = P.length, red = new Set();
   for (const key of worldKeys(W)) { const t = worldWaysToToggle(W, key, now); if (t.on.length || t.off.length) red.add(key); }
@@ -135,18 +160,30 @@ function worldNeighbour(W, key, d) {
   const [c, r] = key.split(",").map(Number), [dx, dy] = WORLD_DIRS[d], nc = c + dx, nr = r + dy;
   return { key: nc + "," + nr, off: nc < 0 || nr < 0 || nc >= W.cols || nr >= W.rows };
 }
-// the places off the grid, each with its id: the insides, by their outside's square, then the rest
+// the places off the grid, each with its id: the insides, by their outside's square, then the rest. (ticket 524) One
+// that is in a square of its own is not off the grid: its outside's door leads to that square (worldSquareFor); an inside
+// an outside has several of (INSIDE_WHICH) stays, as the square holds only one of them.
 function worldOffGrid(W) {
-  const out = []; let n = 0;
-  for (const key of worldKeys(W)) for (const kind of INSIDES[W.cells[key].kind] || []) out.push({ id: "inside " + (++n), kind, from: key });
-  ELSEWHERE.forEach((kind, i) => out.push({ id: "elsewhere " + (i + 1), kind, from: null }));
+  const out = [], has = new Set(Object.values(W.cells).map(c => c.kind)); let n = 0;
+  for (const key of worldKeys(W)) for (const kind of INSIDES[W.cells[key].kind] || []) if (INSIDE_WHICH[kind] || !has.has(kind))
+    out.push({ id: "inside " + (++n), kind, from: key, ...(INSIDE_WHICH[kind] ? { which: worldFreeWhich(W, state.background, kind) } : {}) });   // (which one: one not in a square)
+  ELSEWHERE.forEach((kind, i) => { if (!has.has(kind)) out.push({ id: "elsewhere " + (i + 1), kind, from: null }); });
   return out;
+}
+// (ticket 524) a place off the grid, gone to from 🗺️ World design (its chip tapped): an inside through its outside's
+// square (the friend in that square, so the inside is that square's: instanceOf), a place reached its own way as it is
+function worldVisit(o) {
+  const W = state.world, B = state.background;
+  if (o.from && W.cells[o.from]) worldEnter(o.from, null, false);
+  B.kind = o.kind;
+  if (o.which) B[INSIDE_WHICH[o.kind]] = o.which;   // (one not in a square, so the friend is not taken to one that is: worldKeep)
+  [B.figX, B.figY] = ARRIVE[o.kind] || [0, 0]; arriveSettle = true; arriveSide = null;
+  changed();
 }
 function worldProblems(W) {
   const P = [], name = key => `${placeName(W.cells[key].kind)} (${squareName(key)})`;
   for (const key of worldKeys(W)) {
-    const cell = W.cells[key];
-    if (INSIDE_KINDS.has(cell.kind)) P.push({ key, text: `${name(key)} is an inside: put its outside on the grid instead, and it comes with it.` });
+    const cell = W.cells[key];   // (ticket 524: an inside in a square is a square as any other, no mistake)
     for (const d of cell.kind === "crossing" ? worldLiveWays(W, key) : worldWays(cell)) {   // (a crossing's dead ends are no mistake: not drawn)
       // (ticket 406: a way linked to a square of a world leads there, if that world and square are still there)
       if (cell.links && cell.links[d]) { if (!worldTarget(W, key, d)) P.push({ key, dir: d, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} is linked to a world or a square that is gone.` }); continue; }
@@ -167,8 +204,16 @@ function worldProblems(W) {
       if (!nb.off && other && worldWays(other).includes(WORLD_OPP[d]) && !seen.has(nb.key)) { seen.add(nb.key); q.push(nb.key); }
     }
   }
-  if (seen.size) for (const key of worldKeys(W)) if (!seen.has(key) && !INSIDE_KINDS.has(W.cells[key].kind))
+  if (seen.size) for (const key of worldKeys(W)) if (!seen.has(key))
     P.push({ key, text: `${name(key)} can't be reached from where the friend starts (${squareName(W.start)}).` });
+  // (ticket 525) a cave door whose square or world is gone, or whose twin there, its way back, is gone
+  const doorAt = (T, where) => { for (const t of T || []) if (t.kind === "passage" && t.dest) {
+    const at = where.key ? name(where.key) : placeName(where.off.split(":")[0]);
+    if (!passageDestOk(t.dest)) P.push({ key: where.key || null, text: `The 🕳️ cave passage in ${at} leads to a world or a square that is gone.` });
+    else if (!passageTwin(t)) P.push({ key: where.key || null, text: `The 🕳️ cave passage in ${at} has no way back: its passage there is gone.` });
+  } };
+  for (const key of worldKeys(W)) doorAt(W.cells[key].things, { key });
+  for (const [off, T] of Object.entries(W.off || {})) doorAt(T, { off });
   // two squares with one name: a sign could not say which it means
   const names = worldNames(W), by = {};
   for (const [k, nm] of Object.entries(names)) (by[nm.toLowerCase()] = by[nm.toLowerCase()] || []).push(k);
@@ -180,7 +225,8 @@ function worldProblems(W) {
 // (state.background), so the square opened is the square changed: its
 // things, any place's; and a forest crossing's paths and floor.
 const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack"];
-const cellKeys = kind => kind === "crossing" ? ["things", ...CROSS_KEYS] : ["things"];
+// (ticket 524) and an inside an outside has several of: which one it is (INSIDE_WHICH)
+const cellKeys = kind => kind === "crossing" ? ["things", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", INSIDE_WHICH[kind]] : ["things"];
 // where the friend comes in, walking into a square from a side: just
 // inside that side, as if they had come through it (the stage's units, as
 // figX and figY: across, and nearer or farther than the ground line)
@@ -267,7 +313,7 @@ function waySpot(d) {
 }
 function wayNearness(d) {
   const p = waySpot(d);
-  return p && WAY_OUT[d] ? floorNearness(p[0], p[1], WAY_OUT[d]) : Infinity;
+  return p ? floorNearness(p[0], p[1], WAY_OUT[d] || null) : Infinity;   // (ticket 525: a cave door's arrow, by its foot, no outward way)
 }
 // (the way X goes through, aimed at: its arrow glows, as a door's frame does)
 function worldWaysAim(d) {
@@ -284,6 +330,7 @@ function insideWays(B) {
   if (B.kind === "livingroom") return to(B.livingOut);
   if (B.kind === "hutroom") return to(B.hutCenter ? "hutcenter" : "hut");   // (ticket 278: toward us, out of the grass hut; 282: into its center, with one)
   if (B.kind === "hutcenter") return to("hut");
+  if (B.kind === "treetop") return to(B.treetopBack);   // (ticket 516)
   if (B.kind === "treeroom") return to(B["treeBack" + Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1)))]);
   if (B.kind === "castleroom") { const K = castleOf(B); return castleSouthWays(K, Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)))); }
   return [];
@@ -311,10 +358,11 @@ function insideWaysSvg(B, x0, y0, x1, y1) {
   const IW = insideWays(B), k = (y1 - y0) / 700;
   // (where the world's ways toward us are: worldWaysSvg's AT)
   const AT = { S: [0, y1 - 30 * k, 90], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
-  worldWaysAt = IW.map(w => [w.d, ...AT[w.d], { kind: w.to }, w.label, w.attrs]); wayHomes = {};
+  const ways = IW.map(w => [w.d, ...AT[w.d], { kind: w.to }, w.label, w.attrs]); wayHomes = {};
+  worldWaysAt = [...ways, ...doorWays(B, k)];   // (ticket 525: and the cave doors' arrows; their doorways are the passages' own)
   worldWaysHud();
   if (!IW.length) return "";
-  return SEP + part("inside-ways", [B.kind, IW.map(w => w.d + w.attrs).join(), x0, y0, x1, y1], () => worldWaysAt.map(([d, x, y, a, , , attrs]) =>
+  return SEP + part("inside-ways", [B.kind, IW.map(w => w.d + w.attrs).join(), x0, y0, x1, y1], () => ways.map(([d, x, y, a, , , attrs]) =>
     obj(`way ${d}`, Infinity, `<g class="portal way-out" data-door="1" data-way="${d}" ${attrs} pointer-events="none">${wayTri(x, y, a, k)}</g>`)).join(""));
 }
 function worldWaysSvg(B, x0, y0, x1, y1, g) {
@@ -334,13 +382,17 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const homes = Object.fromEntries(Object.entries(AT).map(([d, [x, y]]) => [d, [x, y]]));
   waysSpaced(AT, k);   // (ticket 313)
   wayHomes = homes;   // (ticket 369: where each way stands on the floor, as before the spacing)
-  worldWaysAt = ways.map(d => { const t = target(d); return [d, ...AT[d], t ? t.cell : null, worldTargetName(t)]; });
+  const compass = ways.map(d => { const t = target(d); return [d, ...AT[d], t ? t.cell : null, worldTargetName(t)]; });
+  // (ticket 524) an inside in a square of its own keeps its way toward us (insideWays: the living room's door out, a
+  // tree room's, a castle room's), where the square has no way that side: still a way back to its outside
+  if (INSIDE_KINDS.has(B.kind)) for (const w of insideWays(B)) if (!ways.includes(w.d)) compass.push([w.d, ...AT[w.d], { kind: w.to }, w.label, w.attrs]);
+  worldWaysAt = [...compass, ...doorWays(B, k)];   // (ticket 525: and the cave doors' arrows, after the compass's; their doorways are the passages' own)
   worldWaysHud();
-  if (!ways.length) return "";
-  const sig = worldWaysAt.map(([d, , , , to, nm]) => d + (to ? to.kind + ":" + nm : "-")).join();
-  return SEP + part("world-ways", [W.at, B.kind, sig, x0, y0, x1, y1, g], () => worldWaysAt.map(([d, x, y, a, to]) => {
+  if (!compass.length) return "";
+  const sig = compass.map(([d, , , , to, nm, attrs]) => d + (to ? to.kind + ":" + nm : "-") + (attrs || "")).join();
+  return SEP + part("world-ways", [W.at, B.kind, sig, x0, y0, x1, y1, g], () => compass.map(([d, x, y, a, to, , attrs]) => {
     const tri = wayTri(x, y, a, k);
-    return obj(`way ${d}`, Infinity, to ? `<g class="portal way-out" data-door="1" data-way="${d}" pointer-events="none">${tri}</g>` : `<g class="way-out nowhere" pointer-events="none">${tri}</g>`);
+    return obj(`way ${d}`, Infinity, to ? `<g class="portal way-out" data-door="1" data-way="${d}"${attrs ? " " + attrs : ""} pointer-events="none">${tri}</g>` : `<g class="way-out nowhere" pointer-events="none">${tri}</g>`);
   }).join(""));
 }
 // The arrows over the picture: made again when the ways change, placed and
@@ -356,10 +408,11 @@ function worldWaysHud() {
       const b = document.createElement("button");
       b.className = "way-arrow" + (to ? "" : " nowhere"); b.dataset.way = d; b.type = "button";
       b.style.setProperty("--a", a + "deg");
-      b.setAttribute("aria-label", to ? `Go ${d}, to ${nm}` : `The way ${d} leads nowhere yet`);
+      const door = worldWaysAt.find(e => e[0] === d)[7];   // (ticket 525: a cave door's arrow: its glyph, its words' side)
+      b.setAttribute("aria-label", door ? `Go through the ${door.name}, to ${nm}` : to ? `Go ${d}, to ${nm}` : `The way ${d} leads nowhere yet`);
       const tri = document.createElement("span"); tri.className = "way-tri";
       const words = document.createElement("span"); words.className = "way-words";
-      words.append(to ? WORLD_ARROWS[d] : "🚧 " + WORLD_ARROWS[d], document.createElement("br"), to ? nm : "nowhere yet");
+      words.append(door ? door.glyph : to ? WORLD_ARROWS[d] : "🚧 " + WORLD_ARROWS[d], document.createElement("br"), to ? nm : "nowhere yet");
       b.append(tri, words);
       b.addEventListener("click", () => { const p = to && bgShown.node && bgShown.node.querySelector(`.portal[data-way="${d}"]`); if (p && !entering) enterScene(p); });
       return b;
@@ -374,14 +427,14 @@ function worldWaysHud() {
                 ["--label-stay", Math.max(100, A.labelStay ?? 500) + "ms"]];   // (ticket 404)
   for (const [k, v] of vars) if (layer.style.getPropertyValue(k) !== v) layer.style.setProperty(k, v);
   const at = [];
-  worldWaysAt.forEach(([d, x, y, a], i) => {
+  worldWaysAt.forEach(([d, x, y, a, , , , door], i) => {
     const el = layer.children[i];
     if (!el) return;
     const p = new DOMPoint(x, y).matrixTransform(M), near = wayNearness(d) < 1;
     // (kept inside the picture, by its size)
     const left = Math.max(edge, Math.min(box.width - edge, p.x - box.left)), top = Math.max(edge, Math.min(box.height - edge, p.y - box.top));
     // (its words toward the middle: left of an arrow on the right, below one at the top...)
-    const side = /E/.test(d) && !/W/.test(d) ? "left" : /W/.test(d) ? "right" : d === "N" ? "below" : "above";
+    const side = door ? door.side : /E/.test(d) && !/W/.test(d) ? "left" : /W/.test(d) ? "right" : d === "N" ? "below" : "above";
     if (el.dataset.side !== side) el.dataset.side = side;
     if (el.classList.contains("near") !== near) el.classList.toggle("near", near);
     if (el.classList.contains("always") !== all) el.classList.toggle("always", all);
@@ -711,8 +764,48 @@ function blowTick(t) {
 // edge comes inside its heat (FIRE_HEAT, about half again as far as its flames: firePops). Let go, it fades and stops, and
 // nothing runs for it.
 let firePad = false, fireKey = false;
-const fireSim = { raf: 0, shown: "", tf: "", out: 0, at: null };
+const fireSim = { raf: 0, shown: "", tf: "", out: 0, at: null, until: 0 };
 function fireGo() { if (!fireSim.raf) fireSim.raf = requestAnimationFrame(fireTick); }
+// (ticket 523, Matthew: "let's also add a 'fire' button within the dragon costume, with chips for testing each type, so the
+// person trying on the costume need not switch to game controls to try") In 🐯 Costume's 🐉 the dragon box (the control
+// kind "breathe", js/20-controls.js): a 🔥 button breathes fire while it is held (fireBtn: a pointer down on it till it
+// lifts or leaves it, or Space or Enter on it; let go too when the window loses the focus or the browser's tab is hidden,
+// when the panel's tab changes (the button gone from the page: fireTick), and when the pointer lifts anywhere), a tap
+// breathing FIRE_TAP ms at least, so it is seen; and each fire's chip, tapped, breathes that fire for FIRE_TRY ms
+// (fireSim.until), long enough for each to show what it does (the brick fire's pieces click on, one after another, and pop
+// off; the fire bubbles fly and burst, one every 0.3 s), so the six can be tried one after another without holding anything.
+// Its own flag: firePad is the controller's, written every frame one is live, and fireKey is F's, cleared by F's keyup.
+// Neither redraws the friend (no changed()); a chip's setting does, as any setting does.
+const FIRE_TAP = 250, FIRE_TRY = 2000;
+let fireBtn = null;   // (the 🔥 button held: { el, at, id: the pointer's id, or "key" }; null when not)
+function fireBtnDown(b, id) { fireBtn = { el: b, at: performance.now(), id }; setPressed(b, true); fireGo(); }
+function fireBtnUp() {
+  if (!fireBtn) return;
+  const { el: b, at } = fireBtn;
+  fireBtn = null; setPressed(b, false);
+  fireSim.until = Math.max(fireSim.until, at + FIRE_TAP); fireGo();
+}
+function fireTry() { fireSim.until = performance.now() + FIRE_TRY; fireGo(); }
+function fireHoldButton() {
+  const b = el("button", { type: "button", class: "fire-hold", "aria-pressed": "false", title: "Hold to breathe fire (as 🔥 on the controller, or F on the keyboard)" }, "🔥 hold to breathe fire");
+  b.addEventListener("pointerdown", e => {
+    if (e.button > 0) return;
+    e.preventDefault();
+    // (a touch is held by what it began on till it lifts, so it never leaves it: let go of that, so sliding off lets go)
+    try { if (e.target.hasPointerCapture && e.target.hasPointerCapture(e.pointerId)) e.target.releasePointerCapture(e.pointerId); } catch (_) { /* (a synthetic press) */ }
+    fireBtnDown(b, e.pointerId);
+  });
+  b.addEventListener("pointerleave", e => { if (fireBtn && fireBtn.id === e.pointerId) fireBtnUp(); });
+  b.addEventListener("keydown", e => { if (e.key !== " " && e.key !== "Enter") return; e.preventDefault(); if (!e.repeat && !fireBtn) fireBtnDown(b, "key"); });
+  b.addEventListener("keyup", e => { if ((e.key === " " || e.key === "Enter") && fireBtn && fireBtn.id === "key") fireBtnUp(); });
+  b.addEventListener("blur", () => { if (fireBtn && fireBtn.el === b) fireBtnUp(); });
+  b.addEventListener("contextmenu", e => e.preventDefault());
+  return b;
+}
+// (the pointer lifted anywhere, heard before anything else: the button may be gone, its tab built again while it was held)
+for (const k of ["pointerup", "pointercancel"]) document.addEventListener(k, e => { if (fireBtn && fireBtn.id === e.pointerId) fireBtnUp(); }, true);
+window.addEventListener("blur", fireBtnUp);
+document.addEventListener("visibilitychange", () => { if (document.hidden) fireBtnUp(); });
 const fireSize = B => Math.max(0.3, Math.min(3, (Number(B.fireSize) || 100) / 100));
 // where it comes from and which way it goes, in the picture's units: { x, y, k (the friend's scale), view ("side", "front",
 // "away"), sx (side on: 1 toward our right, -1 our left), tilt (degrees, down), mouth (the open mouth's size, 0 none) }
@@ -807,8 +900,11 @@ function fireLayer() {
   return O;
 }
 function fireTick(t) {
+  // (ticket 523: the 🔥 button gone from the page while held, its tab changed or its panel built again, or hidden, the
+  // costume changed from the dragon: let go. Before the frame's own request is cleared, so letting go asks for no second one)
+  if (fireBtn && (!fireBtn.el.isConnected || fireBtn.el.closest("[hidden]"))) fireBtnUp();
   fireSim.raf = 0;
-  const B = state.body, A = (firePad || fireKey) && !figAway && !figBurst ? fireAt() : null, O = document.getElementById("fire-over");
+  const B = state.body, A = (firePad || fireKey || fireBtn || t < fireSim.until) && !figAway && !figBurst ? fireAt() : null, O = document.getElementById("fire-over");
   fireSim.at = A;
   if (A) {
     // (built again only when what it draws changes: its fire, which way it is seen, its heat shown, the mouth's size)
@@ -828,12 +924,15 @@ function fireTick(t) {
     fireSim.raf = requestAnimationFrame(fireTick);
     return;
   }
-  // (let go, or no friend to breathe it: it fades, then is hidden, its animations stopped, and this rests)
-  const g = O && O.querySelector(".fi-fire");
-  if (!g || O.style.display === "none") { fireSim.out = 0; return; }
+  // (let go, or no friend to breathe it: it fades, then is hidden, its animations stopped, and this rests; but while the 🔥
+  // button is still held or a chip's breath still goes on, with no friend to breathe it (spinning through a passage, gone to
+  // bubbles under a boulder) it waits for them: nothing else would start it again, as F's key repeats and the controller's
+  // every frame do)
+  const g = O && O.querySelector(".fi-fire"), wait = () => { if (fireBtn || t < fireSim.until) fireSim.raf = requestAnimationFrame(fireTick); };
+  if (!g || O.style.display === "none") { fireSim.out = 0; wait(); return; }
   if (!fireSim.out) { fireSim.out = t; g.classList.add("fi-out"); }
   if (t - fireSim.out < 220) { fireSim.raf = requestAnimationFrame(fireTick); return; }
-  O.style.display = "none"; fireSim.out = 0;
+  O.style.display = "none"; fireSim.out = 0; wait();
 }
 // (0.0.145, Matthew: "into FS mode, need to reposition the accessibility help, not make it wrong, or make it
 // disappear") Over the picture, everything placed through the screen (the nav arrows, the collision boxes, the planned
@@ -999,11 +1098,16 @@ function worldCopy(W) {
   const c = clone(W);
   for (const k of ["id", "name", "applied", "tpl", "at"]) delete c[k];
   for (const cell of Object.values(c.cells || {})) delete cell.links;
+  // (ticket 525: its cave doors into another world unlinked; those within it kept, their world "" until the copy has its id: worldNew)
+  const doors = T => { for (const t of T || []) if (t.kind === "passage" && t.dest) { if (t.dest.world === W.id || t.dest.world === "") t.dest.world = ""; else { delete t.dest; delete t.twin; } } };
+  for (const cell of Object.values(c.cells || {})) doors(cell.things);
+  for (const T of Object.values(c.off || {})) doors(T);
   return c;
 }
 function worldNew(tplId) {
   const all = worldTemplatesAll(), T = all.find(t => t.id === tplId) || all[0], n = 1 + Math.max(0, ...worldsAll().map(worldNum));
   const W = Object.assign(worldCopy(T.world), { id: "w" + n, name: "" });
+  for (const T2 of [...Object.values(W.cells || {}).map(c => c.things), ...Object.values(W.off || {})]) for (const t of T2 || []) if (t.kind === "passage" && t.dest && t.dest.world === "") t.dest.world = W.id;   // (ticket 525)
   W.at = W.start;
   state.worldsAway[W.id] = W;
   worldSwitch(W.id);
@@ -1022,6 +1126,8 @@ function worldDrop() {
   if (all.length < 2) return false;
   const next = all.find(w => w !== gone);
   for (const w of all) for (const c of Object.values(w.cells)) for (const [d, L] of Object.entries(c.links || {})) if (L.world === gone.id) delete c.links[d];
+  // (ticket 525: and the cave doors into it, unlinked: they lead by kind again)
+  passagesEach(T => { for (const t of T) if (t.kind === "passage" && t.dest && t.dest.world === gone.id) { delete t.dest; delete t.twin; } });
   instanceUnapply(gone);
   delete state.worldsAway[next.id];
   state.world = next;
@@ -1074,6 +1180,121 @@ function worldWalk(door, here = false) {
   // (ticket 406: through a way linked to another world, into that world, at its square, come in from the side facing back)
   walkInto(door, () => { trips.push(from); if (t.W !== W) worldSwitch(t.W.id, t.key, WORLD_OPP[d], false); else worldEnter(t.key, WORLD_OPP[d], false); }, true, "step", null, { out: WORLD_DIRS[d], here });
 }
+// (ticket 525, Matthew: "Also need a way to place cave doors --- as objects with nav arrows associated with them."; "world
+// design panel I mean.") A 🕳️ cave passage is a cave door: its own name (uid), and, linked (its card's 🧭, in 🗺️ World design or
+// 🏞️ Background), where it leads (dest: a square, { world, key, kind }; or a place off the grid, { world, off: its placeKey,
+// kind, from: its outside's square, and which one }) and its twin there, a passage of the same kind with its dest here, so
+// there is always a way back (the contract: doorways go somewhere sensible). Linking puts the twin in; taking either away,
+// or unlinking, takes both. Unlinked, it leads by kind as before (its 🧭 place, back by ⬅️). Either way it has a nav arrow,
+// as the compass's ways (doorWays, appended to worldWaysAt): over its opening, near when the feet are near its foot.
+const passageUid = () => "p" + Math.floor(Math.random() * 36 ** 6).toString(36);
+const passageHome = d => !d ? null : d.key ? "sq:" + d.world + ":" + d.key : "off:" + d.world + ":" + d.off;
+// (the list of things a dest's place keeps: the place shown's own, state.background's, when it is that one; else its square's, or W.off's)
+function passageThings(d, make = false) {
+  if (!d) return null;
+  if (passageHome(d) === worldHome) { const B = state.background; return Array.isArray(B.things) ? B.things : make ? (B.things = []) : null; }
+  const T = worldById(d.world);
+  if (!T) return null;
+  if (d.key) { const c = T.cells[d.key]; return !c ? null : Array.isArray(c.things) ? c.things : make ? (c.things = []) : null; }
+  if (make && !T.off) T.off = {};
+  return T.off && Array.isArray(T.off[d.off]) ? T.off[d.off] : make ? (T.off[d.off] = []) : null;
+}
+// (where the place shown is, as a dest: its square, or off the grid)
+function passageHere() {
+  const W = state.world, B = state.background;
+  if (!W || !worldHome) return null;
+  if (worldHome.startsWith("sq:")) return { world: W.id, key: W.at, kind: B.kind };
+  const w = INSIDE_WHICH[B.kind];
+  return { world: W.id, off: placeKey(B), kind: B.kind, from: instanceOf(W) ? W.at : null, ...(w ? { [w]: B[w] ?? 1 } : {}) };
+}
+const passageOf = uid => (state.background.things || []).find(t => t.kind === "passage" && t.uid === uid) || null;
+const passageTwin = t => { const T = t && t.dest ? passageThings(t.dest) : null; return T ? T.find(x => x.kind === "passage" && x.uid === t.twin) || null : null; };
+// (a dest still there: its world, and its square, holding the kind it had)
+function passageDestOk(d) {
+  const T = d && worldById(d.world);
+  return !!T && (!d.key || !!T.cells[d.key]);
+}
+// t (a passage in the place shown) linked to dest, and a twin put there leading back; false when dest is here
+function passageLink(t, dest) {
+  const here = passageHere();
+  if (!t || t.kind !== "passage" || !here || !dest || passageHome(dest) === passageHome(here) || !passageDestOk(dest)) return false;
+  passageUnlink(t, false);
+  const T = passageThings(dest, true);
+  if (!T) return false;
+  if (!t.uid) t.uid = passageUid();
+  // (where the friend comes in there: a step in front of it, at the place's arrival)
+  const a = ARRIVE[dest.kind] || [0, 60], tw = { kind: "passage", x: Math.round(a[0]), z: Math.round(SCENE.ground + Math.max(0, a[1] - 30)), seed: 900 + Math.floor(Math.random() * 9000),
+    size: 100, mirror: false, style: t.style || "arch", to: here.kind, uid: passageUid(), dest: here, twin: t.uid };
+  T.push(tw);
+  t.dest = structuredClone(dest); t.twin = tw.uid;
+  changed();
+  return true;
+}
+// t's link taken off, and its twin taken away (t stays, leading by kind again)
+function passageUnlink(t, draw = true) {
+  if (!t || !t.dest) return;
+  const T = passageThings(t.dest), i = T ? T.findIndex(x => x.kind === "passage" && x.uid === t.twin) : -1;
+  if (i >= 0) T.splice(i, 1);
+  delete t.dest; delete t.twin;
+  if (draw) changed();
+}
+// (every list of things of every world, the place shown's own too: fn(list, where), where a dest-like { world, key } or { world, off })
+function passagesEach(fn) {
+  for (const W of worldsAll()) {
+    for (const [key, c] of Object.entries(W.cells || {})) if (Array.isArray(c.things)) fn(c.things, { world: W.id, key });
+    for (const [off, T] of Object.entries(W.off || {})) if (Array.isArray(T)) fn(T, { world: W.id, off });
+  }
+  if (Array.isArray(state.background.things)) fn(state.background.things, null);
+}
+// (squares renamed in world id: each door's dest naming one moved along, mv(key) its new key; and a door into an off-grid place
+// put on the grid, put: { off, key, kind }, now leading to that square)
+function passagesRemap(id, mv, put = null) {
+  passagesEach(T => { for (const t of T) {
+    const d = t.kind === "passage" && t.dest;
+    if (!d || d.world !== id) continue;
+    if (put && d.off === put.off) { t.dest = { world: id, key: put.key, kind: put.kind }; continue; }
+    if (d.key) d.key = mv(d.key);
+    if (d.from) d.from = mv(d.from);
+  } });
+}
+// (a square about to hold another place: the doors into it unlinked, their twins there going with it)
+function passagesUnlinkInto(id, key) {
+  passagesEach(T => { for (const t of T) if (t.kind === "passage" && t.dest && t.dest.world === id && t.dest.key === key) { delete t.dest; delete t.twin; } });
+}
+// each cave door's nav arrow: [id, x, y, angle, { kind }, its words, "", { glyph, side, name }], its spot on the floor its foot (wayHomes)
+const PASSAGE_TOP = { arch: 112, wallhole: 108, floorhole: 15 };
+function doorWays(B, k) {
+  const out = [];
+  for (const t of B.things || []) {
+    if (t.kind !== "passage" || !t.uid) continue;
+    const d = t.dest, T = d && passageDestOk(d) ? worldById(d.world) : null, st = t.style || "arch";
+    const s = depthSize(B, t.z - SCENE.ground) * (t.size ?? 100) / 100, floor = st === "floorhole";
+    const name = T && d.key ? worldTargetName({ W: T, key: d.key, cell: T.cells[d.key] }) : placeName(passageTo(t));
+    const id = "p-" + t.uid;
+    wayHomes[id] = [t.x, t.z];
+    out.push([id, t.x, t.z - (PASSAGE_TOP[st] || 112) * s - (floor ? 40 : 30) * k, floor ? 90 : -90, { kind: T && d.key ? T.cells[d.key].kind : passageTo(t) }, name, "",
+              { glyph: "🕳️", side: t.x < 0 ? "right" : "left", name: "cave passage" }]);
+  }
+  return out;
+}
+// through a linked cave door: walked to, then there, a step in front of its twin; the back chip brings them back
+function passageWalk(door, t) {
+  const W = state.world, B = state.background, d = t.dest, tw = passageTwin(t), T = d && worldById(d.world);
+  if (!tw || !passageDestOk(d)) return false;
+  const kind = d.key ? T.cells[d.key].kind : d.kind;
+  const from = { kind: B.kind, inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to: kind, worldAt: W.at, worldId: W.id };
+  const fx = Math.round(tw.x), fy = Math.round(tw.z - SCENE.ground + 30);
+  tripStart(door, "walk");
+  walkInto(door, () => {
+    trips.push(from);
+    const sq = d.key || (d.from && T.cells[d.from] ? d.from : null);
+    if (T !== state.world) worldSwitch(T.id, sq, null, false); else if (sq) worldEnter(sq, null, false);
+    const b = state.background;
+    if (!d.key) { b.kind = d.kind; const w = INSIDE_WHICH[d.kind]; if (w) b[w] = d[w] ?? 1; }
+    b.figX = fx; b.figY = fy; arriveSettle = true; arriveSide = null;
+  }, true, "step", null, {});
+  return true;
+}
 // and back: the place edited where the friend is, kept in its square
 // (from changed() and settle(): cheap, and only for the place in use).
 // (0.0.114, Matthew: a potion put in one square was in every square) A
@@ -1089,18 +1310,23 @@ function worldWalk(door, here = false) {
 // are go into the square found for it.
 let worldHome = null;
 const placeKey = B => B.kind + (B.kind === "castleroom" ? ":" + castleOf(B).id + ":" + (B.castleRoom ?? 1) : B.kind === "treeroom" ? ":" + (B.inside ?? 1) : B.kind === "tent" ? ":" + (B.tent ?? 1) : "");
-function worldSquareFor(W, kind) {
-  const nb = W.at && W.cells[W.at] ? Object.keys(WORLD_DIRS).map(d => worldNeighbour(W, W.at, d)).find(n => !n.off && W.cells[n.key] && W.cells[n.key].kind === kind) : null;
-  return nb ? nb.key : worldKeys(W).find(k => W.cells[k].kind === kind) || null;
+// (ticket 524) an inside an outside has several of: only a square holding that one (tree room 3 through house 3's door);
+// with none, it is its outside's, off the grid, as before
+function worldSquareFor(W, kind, B = null) {
+  const fits = k => cellHolds(W.cells[k], B && B.kind === kind ? B : { kind });
+  const nb = W.at && W.cells[W.at] ? Object.keys(WORLD_DIRS).map(d => worldNeighbour(W, W.at, d)).find(n => !n.off && fits(n.key)) : null;
+  return nb ? nb.key : worldKeys(W).find(fits) || null;
 }
 function worldKeep() {
   const W = state.world, B = state.background;
   if (!W || !W.cells) return;
+  // (ticket 525: a cave passage from before has its name given, so it has its nav arrow too)
+  if (Array.isArray(B.things)) for (const t of B.things) if (t.kind === "passage" && !t.uid) t.uid = passageUid();
   let cell = W.at && W.cells[W.at];
   const adopting = !W.at;
-  if (B.kind !== "none" && (!cell || cell.kind !== B.kind)) { const key = worldSquareFor(W, B.kind); if (key) { W.at = key; cell = W.cells[key]; } }
+  if (B.kind !== "none" && !cellHolds(cell, B)) { const key = worldSquareFor(W, B.kind, B); if (key) { W.at = key; cell = W.cells[key]; } }
   worldsInit();
-  const sq = !!cell && cell.kind === B.kind, home = B.kind === "none" ? null : sq ? "sq:" + W.id + ":" + W.at : "off:" + W.id + ":" + placeKey(B);   // (ticket 406: by world, as two worlds have squares of one name)
+  const sq = cellHolds(cell, B), home = B.kind === "none" ? null : sq ? "sq:" + W.id + ":" + W.at : "off:" + W.id + ":" + placeKey(B);   // (ticket 406: by world, as two worlds have squares of one name)
   if (adopting) worldHome = home;
   if (home !== worldHome) {   // (just come: the place's own things, never those of the place left)
     worldHome = home;
@@ -1132,7 +1358,7 @@ function worldKeep() {
 const INSTANCE_SKIP = new Set(["kind", "figX", "figY", "figSize", "figUnit", "seat", "things", "onBridge", "onPlatform", "inside", "castleRoom", "tent", "crossLive", "lfoFast", "lfoSlow", "lfoWings", "instEdit", "big", "designerView", ...CROSS_KEYS]);
 let instanceLast = null, instanceState = null;
 const instanceOf = W => { const B = state.background, cell = W && W.at && W.cells[W.at];
-  return cell && (cell.kind === B.kind || (INSIDES[cell.kind] || []).includes(B.kind)) ? W.at : null; };
+  return cell && (cellHolds(cell, B) || (INSIDES[cell.kind] || []).includes(B.kind)) ? W.at : null; };
 function instanceUnapply(W) { const B = state.background; for (const [k, v] of Object.entries(W.tpl || {})) { if (v === undefined) delete B[k]; else B[k] = structuredClone(v); } W.tpl = {}; W.applied = null; }
 function instanceApply(W, key) {
   const B = state.background, cell = key && W.cells[key];
@@ -1166,10 +1392,11 @@ function worldChoose(kind) {
 // ---- the world designer's hands (v2): putting places in squares, moving
 // and taking them away, the grid's size, and a drag that works the same
 // with a mouse and a finger
-// the places a square can hold: every place but the insides and those reached their own way
+// the places a square can hold: every place
 // (ticket 300, Matthew: "every background is categorized and available for a world design, even the very abstract ones")
-// every place but the insides, which come with their outsides: our imagination, the empty room and the bubble places too
-const worldPalette = () => PLACES.map(([k]) => k).filter(k => k !== "none" && !INSIDE_KINDS.has(k));
+// our imagination, the empty room and the bubble places too; and (ticket 524, Matthew: "we need to make each room, and its
+// params, available to world builder and this one is not dragable") the insides, the cave room behind the falls among them
+const worldPalette = () => PLACES.map(([k]) => k).filter(k => k !== "none");
 // a place's usual ways out, put in a square: as in the first world, else east and west
 const worldUsualWays = kind => { const c = Object.values(WORLD_DEFAULT.cells).find(c => c.kind === kind); return c && c.ways ? [...c.ways] : ["E", "W"]; };
 // (ticket 232, Matthew: "'all passageways' does not respect the edge of the grid ... and it introduces issues that can
@@ -1186,10 +1413,19 @@ function worldTrimEdges(W, keys = worldKeys(W)) {
   }
   return gone;
 }
-function worldPut(key, kind) {
-  const W = state.world;
-  W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", things: [] }
-                                     : { kind, ways: worldUsualWays(kind), things: [] };
+// (ticket 524) o: a place off the grid (worldOffGrid), its chip dropped here: that place, with what it has, its things kept off
+// the grid (W.off) and the settings of its own its outside's square kept for it (cell.own, those that are this place's only)
+function worldPut(key, kind, o = null) {
+  const W = state.world, w = INSIDE_WHICH[kind], which = o && o.which || 1;
+  const from = o && o.from && W.cells[o.from], fromOwn = from && from.own || {};
+  const view = k => Object.assign(Object.create(state.background), fromOwn, { kind: k, ...(w ? { [w]: which } : {}) });
+  const pk = o ? placeKey(view(kind)) : null, things = pk && W.off && W.off[pk] ? structuredClone(W.off[pk]) : [];
+  if (W.cells[key]) passagesUnlinkInto(W.id, key);
+  const own = {};
+  if (from) for (const [k, v] of Object.entries(fromOwn)) { const when = SHOWN_WHEN["background." + k]; if (when && when(view(kind)) && !when(view(from.kind))) own[k] = structuredClone(v); }
+  W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", things }
+                                     : { kind, ways: worldUsualWays(kind), things, ...(w ? { [w]: which } : {}), ...(Object.keys(own).length ? { own } : {}) };   // (ticket 524: which one)
+  if (pk && W.off) { delete W.off[pk]; passagesRemap(W.id, k => k, { off: pk, key, kind }); }
   worldTrimEdges(W, [key]);   // (ticket 232: its usual ways, but none off the edge where it is put)
   if (!W.start || !W.cells[W.start]) W.start = key;
   if (W.at === key) W.at = null;   // (the square the friend was in holds another place now)
@@ -1203,6 +1439,7 @@ function worldMove(from, to) {
   W.cells[to] = a; if (b) W.cells[from] = b; else delete W.cells[from];
   worldTrimEdges(W, [to, from]);   // (ticket 232: moved to an edge, no way off it)
   W.start = swap(W.start); W.at = swap(W.at);
+  passagesRemap(W.id, swap);   // (ticket 525: the doors into them follow)
   changed();
 }
 // (ticket 300, Matthew: "removing a grid square does not remove its instance from the world: it goes into a list of
@@ -1260,6 +1497,7 @@ function worldShift(W, dc, dr) {
   W.cells = Object.fromEntries(Object.entries(W.cells).map(([k, v]) => [mv(k), v]));
   W.start = mv(W.start); W.at = mv(W.at); if (W.applied) W.applied = mv(W.applied);
   for (const u of W.unreachable || []) if (u.from) u.from = mv(u.from);
+  passagesRemap(W.id, mv);   // (ticket 525: the doors into them follow)
   if (typeof worldHome === "string" && worldHome.startsWith("sq:")) worldHome = "sq:" + mv(worldHome.slice(3));
 }
 // A press that becomes a drag after a few pixels: a ghost of it follows the
@@ -1384,14 +1622,17 @@ function personNewCostume(kind, label) {
 const personCostumes = () => ((TABS.find(t => t[1] === "costume") || [, , []])[2].find(r => r[0] === "choice" && r[1] === "kind") || [])[3]?.filter(([v]) => v !== "none") || [];
 // The box to choose a costume in: laid over the panel where it is on the screen (not inside it), the costumes' chips, and ✖
 // cancel at its bottom; Escape or a tap outside it closes it too
-function personCostumeBox() {
+// (ticket 459; generalised in ticket 518) a box of chips laid over the panel: its title, a chip each ([value, label, on]: on,
+// the one chosen now, pressed), then ✖ cancel at its bottom; a chip, ✖, Escape or a tap outside closes it
+function chipBox(title, aria, chips, onPick, chipClass = "person-pick-chip", data = "kind") {
   document.querySelector(".person-pick")?.remove();
   const close = () => { box.remove(); document.removeEventListener("keydown", esc, true); document.removeEventListener("pointerdown", away, true); };
   const esc = e => { if (e.key === "Escape") { e.stopPropagation(); e.preventDefault(); close(); } };
   const away = e => { if (!box.contains(e.target)) close(); };
-  const box = el("div", { class: "person-pick", role: "dialog", "aria-label": "a new person in a costume" }, [
-    el("div", { class: "cap" }, "➕ a new person in a costume"),
-    el("div", { class: "person-pick-chips" }, personCostumes().map(([v, lab]) => el("button", { class: "person-pick-chip", "data-kind": v, onclick: () => { close(); personNewCostume(v, lab); } }, lab))),
+  const box = el("div", { class: "person-pick", role: "dialog", "aria-label": aria }, [
+    el("div", { class: "cap" }, title),
+    el("div", { class: "person-pick-chips" }, chips.map(([v, lab, on]) => el("button", { class: chipClass, ["data-" + data]: v, ...(on === undefined ? {} : { "aria-pressed": String(!!on) }),
+                                                                                        onclick: () => { close(); onPick(v, lab); } }, lab))),
     el("div", { class: "person-pick-foot" }, [el("button", { class: "person-pick-cancel", onclick: close }, "✖ cancel")])]);
   const host = document.getElementById("panel"), r = host ? host.getBoundingClientRect() : { left: 8, right: innerWidth - 8, top: 8, bottom: innerHeight - 8 };
   const top = Math.max(8, r.top), bottom = Math.min(innerHeight - 8, Math.max(r.bottom, top + 240)), left = Math.max(8, r.left), right = Math.min(innerWidth - 8, r.right);
@@ -1400,6 +1641,15 @@ function personCostumeBox() {
   document.addEventListener("keydown", esc, true);
   setTimeout(() => document.addEventListener("pointerdown", away, true), 0);
   return box;
+}
+function personCostumeBox() {
+  return chipBox("➕ a new person in a costume", "a new person in a costume", personCostumes(), (v, lab) => personNewCostume(v, lab));
+}
+// (ticket 518) what one hand holds (key holdR or holdL), chosen in a chip box: the costume's own, nothing, or each thing
+// (the horse's rein only while there is a horse)
+function holdChipBox(part, key, label) {
+  const now = state[part][key] || "auto", horse = state.body.horse && state.body.horse !== "none";
+  return chipBox(label, label, HOLD_CHOICES.filter(([v]) => v !== "rein" || horse).map(([v, lab]) => [v, lab, v === now]), v => set(part, key, v), "person-pick-chip hold-pick-chip", "hold");
 }
 function personSetTemplate(id, on) { const P = id === state.person.id ? state.person : state.peopleAway[id]; if (P) { P.template = !!on; changed(); } }
 function personPlace(id, at) { const P = state.peopleAway[id]; if (P) { P.place = at || null; changed(); } }

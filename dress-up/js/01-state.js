@@ -22,7 +22,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // (ticket 50) where people can sit, per place: see seatsHere
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
-                    treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
+                    treehouse: 0.3, treeroom: 0.65, treetop: 0.6, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
@@ -39,7 +39,7 @@ const figScale = B => (B.figSize ?? 100) / 100 * bodyScale();
 // kept between 0.3 and 1.5. A castle room's comes from its perspective
 // (roomFrame: the eye's height on the wall); rooms drawn flatter, with big
 // things at their back walls, vanish far above the picture.
-const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, hutroom: -60, hutbed: -60, hutpotion: -60, hutcenter: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60, bubbleroom: -60 };
+const SCENE_VANISH = { treeroom: -60, treetop: -60, livingroom: -60, witchroom: -60, healerroom: -60, hutroom: -60, hutbed: -60, hutpotion: -60, hutcenter: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60, bubbleroom: -60 };
 // (ticket 214, Matthew: "this scene, and the forest clearing scene, and maybe others, should scale the player down more
 // dramatically as they go 'into' the scene (heading N)"; "each picture should have its own setting for how much we get
 // smaller as we move a certain number of fractions of picture N. north-ward scaling factor") Each place's 🔭 setting,
@@ -49,7 +49,7 @@ const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroo
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
                    "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "beach", "sea", "lake", "desert", "farmyard"];   // (desert: ticket 501)
-const NORTH_ROOMS = ["treeroom", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
+const NORTH_ROOMS = ["treeroom", "treetop", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
 const northDefault = kind => NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
   if (B.kind === "castleroom") {
@@ -402,7 +402,140 @@ const FAIRY_TUNICS = {
   sparkle:   { name: "✨ sparkle", colors: ["#c4b5fd", "#f0abfc", "#93c5fd", "#fde68a", "#99f6e4"] },
   toadstool: { name: "🍄 toadstool", colors: ["#dc2626", "#ea580c", "#9333ea", "#f59e0b", "#db2777"] },
 };
-const FAIRY_SHOES = [["slipper", "🩰 curly slippers"], ["petal", "🌸 petal shoes"], ["leaf", "🍃 leaf wraps"], ["sparkle", "✨ sparkle boots"], ["bare", "🌼 bare feet, flower anklets"]];
+// (ticket 515, Matthew: "robot costume -- multiple styles -- do 8") The robot: eight styles, each with its own colours (the
+// first its usual one), the colour of its lights (💡 lights' "auto") and its traits, all of them read by its drawing
+// (js/06-costumes.js): `head`, the head's drawing (robotHead: its face, a plate, screen, window or opening, and what is on
+// top are the head's own); `torso` (robotTorso); `back`, what stands off the back (robotBack: "none" when nothing does, its
+// back's details then the torso's); `limbs`, the arms' and legs' pieces (robotArm, robotLeg); `hands` (and how much
+// bigger, handK) and `feet` (footK; "own", the box bot's: the friend's own trousers and shoes); `see`, the views the
+// friend's own face is drawn in ("front", "side", "back"; none under the tin's faceplate and the helper's screen, which
+// draw their own eyes and mouth following the friend's mood); `limb`, the sleeves' and legs' colour; `hand`, `boot`,
+// theirs ("main" the style's colour, "darker" a shade of it, "red" the hero's red, or a colour).
+const ROBOT_STYLES = {
+  tin:    { name: "🔑 wind-up tin", colors: ["#d23a2e", "#2563eb", "#16a34a", "#0d9488", "#f97316", "#7c3aed"], lights: "#f6c445",
+            head: "tinbox", torso: "column", back: "key", limbs: "bolts", hands: "round", feet: "boot",
+            see: "", limb: "#c9ced6", hand: "#c9ced6", boot: "main" },
+  box:    { name: "📦 box bot", colors: ["#c9a06b", "#f4f1ea", "#8b6a43", "#ef4444", "#3b82f6", "#22c55e"], lights: "#e53935",
+            head: "cube", torso: "box", back: "none", limbs: "hose", hands: "mitten", feet: "own",
+            see: "front", limb: "#b8bec6", hand: "#b8bec6", boot: "main" },
+  helper: { name: "🤗 helper bot", colors: ["#4aa3df", "#f472b6", "#34d399", "#facc15", "#a78bfa", "#fb923c"], lights: "#39e0ff",
+            head: "ball", torso: "egg", back: "none", limbs: "plain", hands: "round", handK: 1.2, feet: "boot",
+            see: "", limb: "#f4f6f8", hand: "#f4f6f8", boot: "main" },
+  space:  { name: "🚀 space bot", colors: ["#ef6c3a", "#e63946", "#2563eb", "#10b981", "#7c3aed", "#facc15"], lights: "#6ee7b7",
+            head: "bubble", torso: "capsule", back: "rockets", limbs: "accordion", hands: "pincer", feet: "boot",
+            see: "front side back", limb: "#dfe5ec", hand: "main", boot: "main" },
+  mech:   { name: "🦾 big mech", colors: ["#f2b705", "#ea580c", "#6b7d3a", "#64748b", "#2563eb", "#dc2626", "#f8fafc"], lights: "#ff7a00",
+            head: "cockpit", torso: "chest", back: "battery", limbs: "blocks", hands: "pincer", handK: 1.5, feet: "boot", footK: 1.35,
+            see: "front side", limb: "#3f3f46", hand: "main", boot: "#3f3f46" },
+  hero:   { name: "⚡ hero bot", colors: ["#2556c4", "#dc2626", "#f1f5f9", "#111827", "#16a34a", "#7c3aed"], lights: "#7ff3ff",
+            head: "helm", torso: "plate", back: "none", limbs: "plates", hands: "mitten", feet: "boot",
+            see: "front side", limb: "main", hand: "red", boot: "red" },
+  tv:     { name: "📺 TV bot", colors: ["#8a5a33", "#e11d48", "#14b8a6", "#f59e0b", "#f1f5f9", "#94a3b8"], lights: "#b7f5d0",
+            head: "set", torso: "panel", back: "cord", limbs: "plain", hands: "round", feet: "boot",
+            see: "front", limb: "#d9d2c3", hand: "#d9d2c3", boot: "darker" },
+  spider: { name: "🕷️ spider bot", colors: ["#334155", "#111827", "#7c3aed", "#0f766e", "#b91c1c", "#ca8a04"], lights: "#ef4444",
+            head: "dome", torso: "segments", back: "legs", limbs: "plain", hands: "pincer", feet: "boot",
+            see: "front side", limb: "main", hand: "darker", boot: "darker" },
+};
+const ROBOT_LIGHTS = ["auto", "#f6c445", "#39e0ff", "#6ee7b7", "#ff7a00", "#ef4444", "#f472b6", "#ffffff"];
+// (ticket 518, Matthew: "body can hold things in each hand. Audit all MUDU objects to hold (staff, broom, sword, shield, horse
+// rein) and add every option to body sub-panel, somehow.") HOLDABLES: everything a hand can hold, by id, in drawing order
+// (the order the costumes' own were drawn in). `name` its chip; `ext` how far it reaches from the hand, for the picture's
+// frame (up, down, out to the side, 0 for no room; the broom's times its size); `fist`, the hand closed round it. Their drawings are
+// heldSvg's (js/08-body.js): toward us, in profile and from behind, each view its own drawing. body.holdR and body.holdL
+// (the friend's OWN right and left hands) are "auto" (the costume's own, as before: heldAuto), "none", or an id here.
+// The rein draws nothing here: it decides which hand the horse's rein goes to (js/18-drawing.js), shown only with a horse.
+const HOLDABLES = {
+  broom:   { name: "🧹 broom", ext: [140, 140, 60], fist: true },
+  bow:     { name: "🏹 bow", ext: [90, 90, 50], fist: true },
+  scepter: { name: "👑 scepter", ext: [170, 0, 0], fist: true },
+  sword:   { name: "🗡️ sword", ext: [145, 0, 24], fist: true },
+  shield:  { name: "🛡️ shield", ext: [0, 45, 40], fist: true },
+  staff:   { name: "🪄 staff", ext: [190, 120, 40], fist: true },
+  lasso:   { name: "➿ lasso", ext: [0, 64, 44], fist: true },
+  rein:    { name: "🐴 the horse's rein", ext: [0, 0, 0], fist: true },
+};
+const HOLD_CHOICES = [["auto", "🎭 the costume's own"], ["none", "✋ nothing"], ...Object.entries(HOLDABLES).map(([id, h]) => [id, h.name])];
+// What a costume puts in each own hand by itself ("auto"): the broom, staff, scepter, sword and lasso in the left (side +1
+// facing us), the bow and the shield in the right, each while its own costume setting has it on
+function heldAuto(kind, WC) {
+  const L = kind === "witch" ? (WC.broom ? "broom" : null) : kind === "wizard" || kind === "monk" ? (WC.staff !== false ? "staff" : null)
+    : kind === "queen" || kind === "king" ? (WC.scepter !== false ? "scepter" : null) : kind === "knight" ? (WC.sword !== false ? "sword" : null)
+    : kind === "cowgirl" || kind === "cowboy" ? (WC.lasso !== false ? "lasso" : null) : null;
+  const R = kind === "robin" ? (WC.bow !== false ? "bow" : null) : kind === "knight" ? (WC.shield !== false ? "shield" : null) : null;
+  return { L, R };
+}
+// What each own hand holds: an explicit choice wins, and takes its item out of the other hand's "auto" (a lasso moved to the
+// right hand leaves the left); the rein only with a horse
+function heldItems(body, kind, WC) {
+  const auto = heldAuto(kind, WC), v = own => body["hold" + own] || "auto";
+  const pick = (own, other) => { const x = v(own);
+    if (x === "auto") { const a = auto[own]; return a && v(other) !== a ? a : null; }
+    return HOLDABLES[x] && (x !== "rein" || (body.horse && body.horse !== "none")) ? x : null; };
+  return { L: pick("L", "R"), R: pick("R", "L") };
+}
+// (ticket 522, M and Matthew: "Cowgirl and Cowboy, 3 variations of style each. 6 styles of hat. Lasso to hold. No guns
+// please.") The cowgirl's and the cowboy's styles, each with its own colours (the first its usual one, its colour row's) and
+// the traits the drawing reads (js/06-costumes.js, westernOf): `shirt` and `pants` (what replaces the friend's own, "main"
+// the style's chosen colour); `hat`, its usual hat (choosing the style puts it on until a kid picks a hat themselves,
+// cowHatAuto, set()); over the shirt `chestFringe` (the rodeo star's U of fringe), `vest`, `badge` (a toy star), `tie`,
+// `yoke`, `number` (the card on the back), `collarBow`, `bandana` ("auto": red with white dots, navy on a reddish shirt),
+// `duster` (the trail boss's long coat: its shirt panel, capelet and skirts) and `belt`, `buckle`, `bigBuckle`; on the arms
+// `sleeveFringe`; on the legs `chaps` (`chapLine`, `spots`); at the hem `hemFringe`, `ruffle` (a petticoat's frill); on the
+// feet `boot` (SHOES.cowboot), `bootStar` and `spur` (a toy star disc, nothing sharp). No guns, holsters or knives.
+const COWGIRL_STYLES = {
+  rodeo:     { name: "🌟 rodeo star", colors: ["#ec4899", "#14b8a6", "#8b5cf6", "#f97316", "#ef4444", "#3b82f6"], hat: "bow",
+               shirt: { style: "long", collar: "v", color: "main", pattern: "plain" }, pants: { style: "skirt", skirtLen: 42, color: "#f4f1ea", pattern: "plain" },
+               fringe: "#f4f1ea", fringeUnder: "#b8b2a6", chestFringe: true, sleeveFringe: true, hemFringe: true,
+               belt: "#f4f1ea", buckle: "#e0b030", boot: "#f4f1ea", bootStar: "main", spur: false },
+  prairie:   { name: "🌻 prairie", colors: ["#dc2626", "#2563eb", "#16a34a", "#9333ea", "#ea580c", "#db2777"], hat: "straw",
+               shirt: { style: "long", collar: "round", color: "main", pattern: "gingham", patternSize: 16, patternColor: "#ffffff" },
+               pants: { style: "dress", skirtLen: 86, color: "main", pattern: "gingham", patternSize: 16, patternColor: "#ffffff" },
+               ruffle: "#ffffff", collarBow: "#ffffff", boot: "#6b4226", spur: false },
+  cowprint:  { name: "🐮 cow-print", colors: ["#facc15", "#ef4444", "#a855f7", "#14b8a6", "#f4f1ea", "#fb923c"], hat: "cattleman",
+               shirt: { style: "long", collar: "v", color: "main", pattern: "plain" }, pants: { style: "long", color: "#3b5b8c", pattern: "plain" },
+               chaps: "#f7f3ea", chapLine: "#c9c2b4", spots: "#1f1a17", bandana: "auto", belt: "#6b4226", buckle: "#d1d5db", boot: "#8b5a2b", spur: true },
+};
+const COWBOY_STYLES = {
+  sheriff:   { name: "⭐ sheriff", colors: ["#6b4226", "#1f1f22", "#c8a27a", "#7a2e2e", "#475569", "#1e3a8a"], hat: "star",
+               shirt: { style: "long", collar: "flat", color: "#f4f1ea", pattern: "plain" }, pants: { style: "long", color: "#3b5b8c", pattern: "plain" },
+               vest: "main", badge: "#e0b030", tie: "#1f1f22", belt: "#1f1f22", buckle: "#d1d5db", boot: "#1f1f22", spur: true },
+  rider:     { name: "🏅 rodeo rider", colors: ["#dc2626", "#2563eb", "#7c3aed", "#0d9488", "#1f1f22", "#f97316"], hat: "tengallon",
+               shirt: { style: "long", collar: "flat", color: "main", pattern: "plain" }, pants: { style: "long", color: "#3b5b8c", pattern: "plain" },
+               yoke: "#f4f1ea", number: true, belt: "#6b4226", buckle: "#e0b030", bigBuckle: true, boot: "#c8a27a", spur: true },
+  trailboss: { name: "🧥 trail boss", colors: ["#b08a5a", "#3f3f46", "#5b3a1e", "#1f2937", "#6b7d3a", "#e8dcc4"], hat: "feather",
+               shirt: { style: "long", collar: "flat", color: "main", pattern: "plain" }, pants: { style: "long", color: "#4b5563", pattern: "plain" },
+               duster: true, panel: "#e9e1cf", bandana: "#7f1d1d", boot: "#1f1f22", spur: true },
+};
+// (ticket 530, Matthew: "Sasquatch costume") The 🦶 Sasquatch: an animal suit (ANIMALS.sasquatch, js/06-costumes.js) in four
+// styles, offered as the robot's are: sasquatchStyle (a choice row), sasquatchColor_<id> (each style its own colour row, its
+// first swatch the usual one, shown only while it is chosen), all in 🐯 Costume's 🦶 the Sasquatch box. Each style: `colors`,
+// `face` (the muzzle, belly and pads), `shag` (how long its tufts are), `footK` (its feet's size), and its extras, every one
+// read by the drawing (sasquatchLook, shagEdge, sasquatchTop): `frost` (blue tuft tips), `moss` and `leaves` (stuck in the
+// fur), `bow` (on its head).
+const SASQUATCH_STYLES = {
+  bigfoot: { name: "🦶 Bigfoot", colors: ["#7a4e2d", "#5b3a1e", "#a0703f", "#3f2a1a", "#8b6a43"], face: "#d9b38c", shag: 1, footK: 1.45 },
+  yeti:    { name: "❄️ yeti", colors: ["#f4f1ea", "#dbeafe", "#e5e7eb", "#c7d2fe"], face: "#dbeafe", marks: "#bfdbfe", shag: 1.1, footK: 1.3, frost: "#60a5fa" },
+  mossy:   { name: "🌿 mossy", colors: ["#6b5a2e", "#4d5b2a", "#7c6a3a", "#3f4a2a"], face: null, shag: 1, footK: 1.3, moss: "#65a30d", leaves: "#84cc16" },
+  fluffy:  { name: "🍭 fluffy", colors: ["#f9a8d4", "#c4b5fd", "#fdba74", "#99f6e4", "#fde68a"], face: null, shag: 1.3, footK: 1.2, bow: "#ec4899" },
+};
+// The hats, one setting for both (cowHat, or "none"), each with its own colours. In the round head's units (x 100 the
+// middle): the brim's line at y COW_HAT_Y, the hair tucked above COW_HAT_LINE (under a flat brim too). `crown` "pinch" (a
+// crease and two front pinches), "tall" (taller and rounder) or "flat"; `top` the crown's top; `bw` the brim's half width;
+// `curl` how far its sides (in profile, its back) turn up; `band` ("darker": the hat's colour toward black; "bow": white,
+// pink on a light hat); and its ornaments: conchos, the straw's weave and ribbon tails, a bow, a star, a feather.
+const COW_HAT_Y = 58, COW_HAT_LINE = 60;
+const COW_HATS = {
+  cattleman: { name: "🐂 cattleman", colors: ["#8b5a2b", "#c8a27a", "#1f1f22", "#f4f1ea", "#6b7280", "#7a2e2e"], crown: "pinch", top: -16, bw: 128, curl: 16, band: "darker" },
+  tengallon: { name: "🪣 ten-gallon", colors: ["#f4f1ea", "#c8a27a", "#8b5a2b", "#1f1f22", "#9ca3af", "#e9d5a8"], crown: "tall", top: -70, bw: 146, curl: 22, band: "#3b2414", conchos: true },
+  straw:     { name: "🌾 straw", colors: ["#e9c96b", "#f3e3a6", "#d4a84a", "#c9b38a", "#f4f1ea", "#b45309"], crown: "pinch", top: 0, bw: 158, curl: 4, band: "#c0392b", weave: true, tails: true },
+  bow:       { name: "🎀 bow", colors: ["#f472b6", "#f4f1ea", "#a78bfa", "#38bdf8", "#facc15", "#ef4444"], crown: "pinch", top: -10, bw: 122, curl: 18, band: "bow", bow: true },
+  star:      { name: "🌠 star hat", colors: ["#1f1f22", "#8b5a2b", "#f4f1ea", "#c8a27a", "#7a2e2e", "#475569"], crown: "pinch", top: -24, bw: 132, curl: 14, band: "#c9ced6", star: "#e0b030" },
+  feather:   { name: "🪶 feather", colors: ["#4b5563", "#1f1f22", "#7c3a2e", "#2f4f6f", "#c8a27a", "#3f6212"], crown: "flat", top: -6, bw: 134, curl: 3, band: "#1f1f22", feather: "#d2382b" },
+};
+// the lasso's rope (the monk's rope colour) over a darker one
+const ROPE = "#c8a46a", ROPE_DK = "#8a6a3a";
+const FAIRY_SHOES = [["slipper", "🩰 curly slippers"],["petal", "🌸 petal shoes"], ["leaf", "🍃 leaf wraps"], ["sparkle", "✨ sparkle boots"], ["bare", "🌼 bare feet, flower anklets"]];
 const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa", "#ffffff"];
 
 // (ticket 185) The world: places laid on a grid, each joined to its
@@ -449,6 +582,7 @@ const DEFAULTS = {
            blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
            fireStyle: "roar", fireFrom: "mouth", fireSize: 100, fireHeat: true,   // (ticket 499: breathing fire, its fire, where from, how big, its heat shown)
            lieHead: "left", lieHow: "back", stairsWay: "up",   // (ticket 308: up or down the stairs)
+           holdR: "auto", holdL: "auto",   // (ticket 518: what each own hand holds, HOLDABLES)
            hand: "right",   // (ticket 316: the dominant hand, the one that pulls a lever: right, left, or both, by a coin flip)   // (ticket 299: lying down, the way the head points; on the back, face up, or on the side, facing us)
            neck: 22, neckW: 26, arms: 55, elbows: 0, elbowCurl: 0, elbowSwing: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0, kneeCurl: 0, kneeSwing: 0,
            // (ticket 121) each limb's own pose, dragged in the picture: on
@@ -525,7 +659,8 @@ const DEFAULTS = {
                    ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
                 castleRoom: 1, livingOut: "house", ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["treeBack" + n, "none"])),
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShape" + n, "square"])),   // (ticket 252: each tree house's trapdoor's opening)
-                ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShut" + n, false])),   // (ticket 334: each tree house's trap door, open till its lever is pulled)
+                ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShut" + n, false])),
+                hatchShapeTop: "square", hatchShutTop: false, treetopBack: "none", topFurnish: "none",   // (ticket 517: how the round room is furnished) (ticket 516: the round room at the top of the tree: its trapdoor's opening, shut or open, its way toward us)   // (ticket 334: each tree house's trap door, open till its lever is pulled)
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
                 lfoFast: "D", lfoSlow: "E", lfoWings: "F",
@@ -571,7 +706,18 @@ const DEFAULTS = {
              leaks: 0, snorkel: false, snorkelColor: "#facc15", mask: false, maskColor: "#0ea5e9", tank: false, tankColor: "#facc15",
              wingStyle: "butterfly", fairyOutfit: "dress", tunicStyle: "petal", ghostRagged: 30, ghostEyes: "2", ghostHideEyes: false, ghostColor: "#f4f1ea", fairyShoes: "slipper", fairyShoeColor: FAIRY_SHOE_COLORS[0], wingFlutter: true, wingLfo: "none", wreath: true, wreathFlowers: "mix",
              ...Object.fromEntries(Object.entries(FAIRY_WINGS).map(([id, w]) => ["wingColor_" + id, w.colors[0]])),
-             ...Object.fromEntries(Object.entries(FAIRY_TUNICS).map(([id, t]) => ["tunicColor_" + id, t.colors[0]])) },
+             ...Object.fromEntries(Object.entries(FAIRY_TUNICS).map(([id, t]) => ["tunicColor_" + id, t.colors[0]])),
+             // (ticket 515) the robot: its style, its lights, and each style's own colour (the fairy's way)
+             robotStyle: "tin", robotLights: "auto", ...Object.fromEntries(Object.entries(ROBOT_STYLES).map(([id, r]) => ["robotColor_" + id, r.colors[0]])),
+             // (ticket 522) the cowgirl and the cowboy: each one's style and each style's colour, the hat (both share it) and its colour
+             // for each hat, and the lasso (its hand is 🧍 Body's, holdL/holdR, since ticket 518)
+             cowgirlStyle: "rodeo", cowboyStyle: "sheriff", cowHat: "cattleman", cowHatAuto: true, lasso: true,
+             ...Object.fromEntries(Object.entries(COWGIRL_STYLES).map(([id, t]) => ["cowgirlColor_" + id, t.colors[0]])),
+             ...Object.fromEntries(Object.entries(COWBOY_STYLES).map(([id, t]) => ["cowboyColor_" + id, t.colors[0]])),
+             ...Object.fromEntries(Object.entries(COW_HATS).map(([id, t]) => ["cowHatColor_" + id, t.colors[0]])),
+             // (ticket 530) the Sasquatch: its style, each style's colour, its footprints and its grin
+             sasquatchStyle: "bigfoot", sasquatchPrints: true, sasquatchGrin: true,
+             ...Object.fromEntries(Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["sasquatchColor_" + id, t.colors[0]])) },
 };
 const clone = o => JSON.parse(JSON.stringify(o));
 // before the nose views: a nose was a shape (or "none"), a direction and
@@ -723,6 +869,15 @@ function upgradeHorse(st, saved) {
   for (const P of Object.values((st && st.peopleAway) || {})) { const L = P && P.look, c = L && L.costume; if (!c) continue;
     const hadP = !!(L.body && L.body.horse !== undefined);
     for (const k of HORSE_KEYS) if (c[k] !== undefined) { if (!hadP) (L.body = L.body || {})[k] = c[k]; delete c[k]; } }
+}
+// (ticket 518) from 0.0.401 to ticket 518, the lasso's hand was the costume's lassoHand: "right" is now the right hand
+// holding it, chosen in 🧍 Body (holdR "lasso"); "left" was what "auto" does. For the friend and every person away.
+function upgradeLassoHand(st) {
+  const one = L => { const c = L && L.costume; if (!c || c.lassoHand === undefined) return;
+    if (c.lassoHand === "right" && (c.kind === "cowgirl" || c.kind === "cowboy") && c.lasso !== false) { const b = L.body = L.body || {}; if ((b.holdR || "auto") === "auto") b.holdR = "lasso"; }
+    delete c.lassoHand; };
+  one(st);
+  for (const P of Object.values((st && st.peopleAway) || {})) one(P && P.look);
 }
 function upgradeFeet(st, saved) {
   if (!(saved && saved.rightShoe)) for (const k of SHOE_OWN) st.rightShoe[k] = st.shoes[k];
@@ -1090,6 +1245,7 @@ try {
   upgradeRightHand(state, saved);
   upgradeFeet(state, saved);
   upgradeHorse(state, saved);
+  upgradeLassoHand(state);
   upgradeInside(state.background, saved);
   upgradeFigSize(state.background, saved);
   upgradeFoamMove(state.background, saved);
@@ -1124,7 +1280,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.397", released: "2026-10-21" };
+const VERSION = { number: "0.0.407", released: "2026-10-21" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

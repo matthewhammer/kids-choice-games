@@ -454,8 +454,9 @@ function roomLeverFlip(side) {
 // walked over) or opens again; a friend standing on it as it opens is moved off the hole
 function hatchLeverPull() {
   const B = state.background;
-  if (B.kind !== "treeroom") return;
-  const me = Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1))), key = "hatchShut" + me;
+  // (ticket 516: and the round room at the top of the tree's, on its post)
+  if (B.kind !== "treeroom" && B.kind !== "treetop") return;
+  const key = B.kind === "treetop" ? "hatchShutTop" : "hatchShut" + Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1)));
   B[key] = !B[key];
   changed();
   const open = !B[key];
@@ -1372,13 +1373,17 @@ if (touchPad.want) padLoop = requestAnimationFrame(padPoll);
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { hut: [-120, 50], hutroom: [0, 40], hutbed: [130, 40], hutpotion: [-60, 50], hutcenter: [-260, 60], witchroom: [-170, 0], crossing: [0, -20], imagination: [0, 70], emptyroom: [0, 70], bubblespace: [0, 70], bubbleroom: [0, 40], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], caveroom: [-120, 40], farmyard: [0, 30], desert: [-40, 30], castle: [-210, 30], castleroom: [0, 40] };
+const ARRIVE = { hut: [-120, 50], hutroom: [0, 40], hutbed: [130, 40], hutpotion: [-60, 50], hutcenter: [-260, 60], witchroom: [-170, 0], crossing: [0, -20], imagination: [0, 70], emptyroom: [0, 70], bubblespace: [0, 70], bubbleroom: [0, 40], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], caveroom: [-120, 40], farmyard: [0, 30], desert: [-40, 30], castle: [-210, 30], castleroom: [0, 40],
+  // (ticket 516: the round room at the top of the tree: at the front, on the side away from its hatch (the house below's side), under a window)
+  get treetop() { return [-topSide(state.background) * 170, 50]; } };
 // Where each trip through a doorway began, the last on top: the back chip
 // goes back through them, one at a time, while the friend is in the scene
 // the last trip went to.
 const trips = [];
 function enterScene(door, here = false) {
   // (ticket 185: a way out of a world square, to the one beside it; ticket 233: a room's way toward us has its own data-to)
+  // (ticket 525: a cave door linked to a square or a place off the grid: there, out by its twin; unlinked, by kind, below)
+  if (door.dataset.passage) { const t = passageOf(door.dataset.passage); if (t && t.dest && passageWalk(door, t)) return; }
   if (door.dataset.way && !door.dataset.to) { worldWalk(door, here); return; }
   const to = door.dataset.to, house = door.dataset.house, tent = door.dataset.tent, room = door.dataset.room, B = state.background;
   if (!SCENES[to] && !PICTURE_CHOICES.some(([kd]) => kd === to)) return;
@@ -1397,6 +1402,11 @@ function enterScene(door, here = false) {
     if (tent) B.tent = +tent;
     if (room) B.castleRoom = +room;
     if (to === "castleroom") trapReshuffle(B);   // (ticket 305)
+    // (ticket 516) up the ladder into the round room at the top of the tree: a step from its hatch, toward the middle; down
+    // its hatch into the house below: at the foot of that room's ladder up, a step toward the middle (not its middle, [0, 0],
+    // which in some rooms is the trunk)
+    if (to === "treetop" && from.kind === "treeroom") { const c = stageC(), { sd, hx } = topHatchAt(c, B); B.figX = Math.round(hx - sd * 110 * c.k); B.figY = Math.round(30 * c.k); }
+    if (to === "treeroom" && from.kind === "treetop") { const c = stageC(), lx = (c.x1 - c.W * 0.4) * TREE_FIT; B.figX = Math.round(lx - 60 * c.k); B.figY = Math.round(-50 * c.k); }
     if (downTo) { const i = downTo - 1, [x] = TREE_SLOTS[i], hz = (B.treeHouseSize ?? 100) / 100, s = (B.treeSize ?? 100) / 100 * (SCENE.bottom - SCENE.top) / 700;
       B.figX = Math.round(clamp((x + Math.sign(x) * 52 * hz) * s, sceneFrame.left + 20, sceneFrame.right - 20)); B.figY = Math.round(8 * s); }
   };
@@ -1429,7 +1439,7 @@ function enterScene(door, here = false) {
   if (pp) walkTo((pp.x0 + pp.x1) / 2, clamp(pp.y1, SCENE.ground + figYMin(sceneFrame), sceneFrame.bottom), () => flyInto(svgBox(view), arrive));
   else if (view) flyInto(svgBox(view), arrive);
   else if (door.dataset.pit) walkInto(door, () => { arrive(); landFall = true; }, true, "fall");   // (ticket 162)
-  else walkInto(door, arrive, !(climb && climb.through), "step", null, door.dataset.way ? { out: WORLD_DIRS[door.dataset.way], here } : {});
+  else walkInto(door, arrive, !(climb && climb.through), "step", null, WORLD_DIRS[door.dataset.way] ? { out: WORLD_DIRS[door.dataset.way], here } : {});   // (ticket 525: never a cave door's "p-" way)
 }
 // (ticket 246) along the rope bridge they are on, to its end (0 or 1), walking (3 s at most), then on
 function bridgeWalkTo(end, then) {

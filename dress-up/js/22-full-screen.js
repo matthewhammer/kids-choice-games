@@ -281,6 +281,18 @@ function bgBoxes(rows) {
   return [box(BG_BOX[0][1], by.place, true), box(placeName(), own.rows, false, placeName),
           ...BG_BOX.slice(1).map(([id, name, , wide]) => box(name, by[id], wide, null, id))].filter(Boolean);
 }
+// (ticket 524, Matthew: "we need to make each room, and its params, available to world builder"; "world design panel I
+// mean") The place's own settings as 🗺️ World design's ⚙️ box shows them: the 🏞️ Background tab's rows, built from the
+// same TABS entries (so the same settings, each shown by its own SHOWN_WHEN only where it applies), less what is not the
+// place's or what World design has already (the place chosen, the full screen and view, the things and the forest
+// crossing's paths and distance (the square's card has them), BG_BOX's 🧍 the friend here), in bgBoxes' boxes. Built once
+// as the tab is (control() adds a sync a row: never from a sync).
+const BG_PLACE_SKIP = new Set(["kind", "big", "designerView", "things", "thingsSolid", "crossPaths", "crossBack"]);
+function bgPlaceRows() {
+  const friend = BG_BOX.find(([id]) => id === "friend")[2], ctls = (TABS.find(t => t[1] === "background") || [, , []])[2];
+  const keyOf = c => c[0] === "of" ? c[2][1] : c[1];
+  return bgBoxes(ctls.filter(c => !BG_PLACE_SKIP.has(keyOf(c)) && !friend(keyOf(c))).map(c => control("background", c)));
+}
 // (ticket 285) The Background tab's rows, once built, in the designer's two columns: its boxes (.bg-boxes), and beside them
 // the game's card (.bg-viewcol); outside the full screen the two are display: contents, and the tab is as it always was
 function bgLayout(panel) {
@@ -316,7 +328,7 @@ function bgLayout(panel) {
 // as it is (its own layout: the designers, the controller, accessibility, advanced)
 const TAB_BOXES = {
   "🧍 Body": [["🤸 the pose", ["pose", "lieHow", "lieHead", "hugLift"]], ["↔️ facing and moving", ["facing", "anim", "stairsWay"]],
-              ["✋ the dominant hand", ["hand"]], ["📏 their size", ["size"]], ["🐴 the horse", ["horse", "horseLead", "horseArmour", "horseSize", "horseCoat", "horseMane", "horseManeStyle", "horseBows", "horseMark", "horseMarkColor", "horseTack", "horseSocks", "horseShoes", "horseSaddle", "horseBlanket"]], ["🐸 the jumps", ["jumps"]]],
+              ["✋ the dominant hand", ["hand"]], ["🫴 holding", ["holdR", "holdL"]], ["📏 their size", ["size"]], ["🐴 the horse", ["horse", "horseLead", "horseArmour", "horseSize", "horseCoat", "horseMane", "horseManeStyle", "horseBows", "horseMark", "horseMarkColor", "horseTack", "horseSocks", "horseShoes", "horseSaddle", "horseBlanket"]], ["🐸 the jumps", ["jumps"]]],
   "😀 Face": [["🙂 the head", ["color", "size", "faceW", "faceH", "alien", "eyeGap", "sides", "rays"], ["face"]], ["🤨 the brows", ["brow", "unibrow"]],
               ["👄 the mouth", ["smile", "mouthSize", "open", "teethStyle", "teeth", "tongue", "tongueLen", "tongueW", "tongueColor"]],
               ["👃 the nose", ["noseView", "nose", "noseFront", "noseH", "noseW", "witchDir", "witchLen"]], ["👂 the ears", ["ears", "earSize"]],
@@ -344,7 +356,11 @@ const TAB_BOXES = {
                 ["🧙‍♂️ the wizard", ["wizardRobe", "wizardStars"]], ["🧘 the monk or dryad", ["monkWho", "monkCloak", "hoodUp", "hoodFace", "hoodDim", "hoodEyes", "bareFeet"]],
                 ["🪄 the staff", ["staff", "staffOrb"]], ["🏹 Robin Hood", ["robinTunic", "robinHat", "robinFeather", "bow", "quiver"]],
                 ["👑 the queen or king", ["queenRobe", "kingRobe", "crownJewel", "mantle", "scepter"]],
-                ["🐉 the dragon", ["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow", "dragonWingLfo"]],
+                ["🐉 the dragon", ["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow", "dragonWingLfo", "fireStyle"]],   // (ticket 523: its fire, the friend's)
+                ["🤖 the robot", ["robotStyle", ...Object.keys(ROBOT_STYLES).map(id => "robotColor_" + id), "robotLights"]],   // (ticket 515)
+                ["🦶 the Sasquatch", ["sasquatchStyle", ...Object.keys(SASQUATCH_STYLES).map(id => "sasquatchColor_" + id), "sasquatchPrints", "sasquatchGrin"]],   // (ticket 530)
+                ["🤠 the outfit", ["cowgirlStyle", ...Object.keys(COWGIRL_STYLES).map(id => "cowgirlColor_" + id), "cowboyStyle", ...Object.keys(COWBOY_STYLES).map(id => "cowboyColor_" + id)]],   // (ticket 522)
+                ["🎩 the hat", ["cowHat", ...Object.keys(COW_HATS).map(id => "cowHatColor_" + id)]], ["➿ the lasso", ["lasso"]],
                 ["🛡️ the knight", ["knightA", "knightB", "tabardLayout", "emblem", "plume", "plumeColor", "helmOpen", "sword", "shield"]],
                 ["🍄 the gnome", ["gnomeWho", "gnomeHat", "gnomeTunic", "gnomeTrousers", "gnomeBodice", "gnomeSkirt", "gnomeBoots"]],
                 ["🧙 the witch", ["witchColor", "webColor", "webStyle", "trimColor", "bootColor"]],

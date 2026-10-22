@@ -7,6 +7,76 @@ Each version lists the game's features as of that version. The newest version is
 - **🧩 Scripting** (ticket 482, a pull request): the game's logic written in Hazel. A new tab has an editor for 📚 Common and one for the castle's trap room; switched on, the trap room's red levers do what its script says: flip a lever, flip both, or say something over the picture. Off to start, and with a mistake in the script the levers work as they always have.
 - **🧩 Hazel's tiles** (ticket 520): under the text boxes, the whole script as Hazel draws it, in its tiles, with Hazel's own red marks where something is wrong. They are for looking, for now: you still write in the boxes above, and the tiles follow a moment after you stop typing. A script that is not finished yet (a hole to fill, or a bracket left open) leaves the levers working as they always have, and the panel says what is missing and in which room.
 
+## 0.0.407 (2026-10-21)
+
+Everything in 0.0.406, plus a 🦶 Sasquatch costume in four styles.
+
+- **🦶 Sasquatch costume** (Matthew: "Sasquatch costume"): a big, shaggy, friendly suit in 🐯 Costume, with four styles, each with its own fur colours: "🦶 Bigfoot" (brown, with the biggest feet), "❄️ yeti" (snow white with frosty blue tips), "🌿 mossy" (moss and leaves stuck in its fur), and "🍭 fluffy" (candy colours, extra fluffy, with a bow). Shaggy fur along its arms, legs and sides, a big muzzle with "🙂 big grin" (two square teeth), small round ears and a stubby tail. Stand still and "👣 footprints" shows the trail it walked in on. It works in every pose and from every side.
+
+## 0.0.406 (2026-10-21)
+
+Everything in 0.0.405, plus each hand keeps its own look from behind, and held things lie on the floor while crawling.
+
+- **Held things while crawling and swimming** (ticket 529): crawling toward us, each thing in a hand (broom, bow, scepter, sword, shield, staff) lies flat on the floor under the hand, out to the side, its own drawing. Swimming, held things are put away, as the lasso already was: both arms sweep over the head and under the body each stroke, so a thing in the hand would sweep through the friend.
+- **Fixed:** from behind, with different hands, the right hand's own look (claws, its style) was on the left hand, as if the friend still faced us, and a sword's fist in the left hand closed over it. Each hand's look now stays on its own hand from behind, like what it holds (ticket 528).
+
+## 0.0.405 (2026-10-21)
+
+Everything in 0.0.404, plus five ways to furnish the round room at the top of the tree.
+
+- **⭕ 🪑 Furniture for the round room at the top of the tree** (its new setting "⭕ 🪑 how it is furnished"; it starts empty, "🚫 none"): five ways to furnish it, each made from things already in the game, set round the curved wall with their backs to it and round the trunk, and always leaving the trap door, its lever and the way round the trunk clear. "🛋️ hut parlour": the grass hut's couch and pillows, a rug round the trunk, the living room's lamp and plant, the wind chime hanging from a branch. "🛏️ sleeping loft": the tree house's bunk beds and toy chest, the hut's bed of logs with a candle on a stump beside it, the dreamcatcher on a branch. "📚 reading ring": shelves of books going round the trunk itself, the beanbag, the lookout's telescope, a lantern on a branch. "🧪 potion nook": the healer's potion shelves with her cat on top, the hut's curved shelves of bottles, herbs drying from the branches, the bubbling cauldron, the healer's worktable. "🍵 tea and kitchen": the healer's tea table and chairs, the tree house kitchen's counter and stove, and a bench of logs curving round the trunk. Sit on the couch, the beds, the beanbag, the chairs and the logs.
+
+## 0.0.404 (2026-10-21)
+
+Everything in 0.0.403, plus cave doors: a cave passage with a nav arrow, linked to a square in the world and back.
+
+- **🕳️ Cave doors** (Matthew: "a way to place cave doors --- as objects with nav arrows associated with them", in the world design panel). A 🕳️ cave passage put in a place now has a nav arrow over its opening, like the arrows at a square's edges: walk near its foot and the arrow shows where it leads; tap the arrow (or the opening, or press X) to go through. On the passage's card (in "🗺️ World design" or "🏞️ Background"), "🧭 a cave door to a square, and back" shows the worlds and each world's grid, small: tap a square, or one of the places off the grid (the cave room behind the falls, a tent, a living room...), and the passage leads there. A passage just like it appears there, leading back, so there is always a way home. ✖ on either one takes both away; ✖ next to where it leads takes the link off (the passage stays and leads to its 🧭 place again). A passage that is not linked works as before, and it gets an arrow too. When a world is taken away, the doors into it are unlinked, and 🗺️ World design warns about a door whose square is gone or whose way back is missing. Moving a square, or putting a place from off the grid onto one, takes its cave doors with it; a door whose square was taken away leads to its 🧭 place until the square is back.
+
+## 0.0.403 (2026-10-21)
+
+Everything in 0.0.402, plus a thing to hold in each hand, chosen in 🧍 Body.
+
+- **🫴 Things to hold, in either hand** (in "🧍 Body", "🫴 holding"): "🫱 right hand holds" and "🫲 left hand holds" each show what that hand holds; a tap opens a box of chips: "🎭 the costume's own" (what the costume always held, the usual), "✋ nothing", "🧹 broom", "🏹 bow", "👑 scepter", "🗡️ sword", "🛡️ shield", "🪄 staff", "➿ lasso", and, with a horse, "🐴 the horse's rein". Anyone can hold anything: a fairy with a sword, a knight with a broom, two swords at once. A shield is the knight's arms on a knight, a plain wooden one on anyone else.
+- **Each held thing has its own drawings from the side and from behind**: a broom, staff, scepter and sword leaning the way the friend faces, the sword's blade edge on, a shield seen by its rim, a scepter's plain back and a bow's string side from behind. In profile, a thing in the far hand is behind the body.
+- **The lasso's hand is chosen in "🫴 holding" now**, not in the costume's "➿ held in" row: pick "➿ lasso" for "🫱 right hand holds" to move it. A friend saved with the lasso in the right hand still has it there.
+- **The horse's rein**: picking "🐴 the horse's rein" for a hand puts the led horse's rein in that hand. Riding, a hand holding something else lets go of its rein.
+- **Fixed:** from behind, the costumes' things (the broom, staff, scepter, sword, bow and shield) were in the wrong hand, as if the friend were still facing us. They now stay in their own hand. In profile, a thing in the far hand was drawn over the body.
+
+## 0.0.402 (2026-10-21)
+
+Everything in 0.0.401, plus a round room at the top of the tree, round the trunk, with its limbs holding up the roof.
+
+- **⭕ A round room at the top of the tree** (a new place in "🏠 home", "⭕ the round room at the top of the tree", after "🪜 inside the tree house"): a round room built round the great tree's trunk where its branches begin, with a thatched roof like the 🛖 grass hut's. The trunk rises through the middle of a floor laid in rings like a tree's, and the tree's own branches reach out to the walls and up through the thatch, where daylight falls in. Two round windows look out at the leaves blowing in the wind, two lanterns hang from the branches, and a squirrel peeks out of a knot hole in the trunk. Climb up to it by the ladder in the highest tree house ("🐰 4" with four houses or more), and down again through its trap door; or go out of a window to the tree house. Outside, the room sits in the top of the tree with the branches coming out through its roof: make "🌳 tree size" small to see it, and look for it on the tree in the 🌲 forest clearing. Its own settings: "⭕ 🕳️ its trapdoor's opening", "⭕ 🎚️ its trap door shut (its lever pulled)" (or pull the lever on its post beside the trap door) and "⭕ ⬇️ the way toward us leads to". The map on every tree house room's sign shows the new ladder, and the round room's sign shows the top of the tree.
+
+## 0.0.401 (2026-10-21)
+
+Everything in 0.0.400, plus a cowgirl and a cowboy in three styles each, six hats and a lasso.
+
+- **👢 A cowgirl and 🤠 a cowboy** (in "🐯 Costume"), asked for by M and Matthew, with no guns. The cowgirl has three styles in "👢 style": "🌟 rodeo star" (a bright shirt with white fringe across the chest, down the sleeves and under a short white skirt, a gold buckle, and white boots with a star), "🌻 prairie" (a long gingham dress with a scalloped hem, a white petticoat ruffle peeking out and a little bow at the collar) and "🐮 cow-print" (white chaps with black cow spots over blue jeans, a polka-dot bandana, a silver buckle and boots with star spurs). The cowboy has three in "🤠 style": "⭐ sheriff" (a leather vest with a big toy star badge and a string tie), "🏅 rodeo rider" (a pointed white yoke, a big trophy buckle with a star, and a number 7 card on his back) and "🧥 trail boss" (a long duster coat with a shoulder cape and a red neckerchief). Each style has its own colour row. Both wear cowboy boots, and the star on a boot or a spur is a toy star.
+- **🎩 Six cowboy hats** for either one, in "🎩 hat": "🐂 cattleman", "🪣 ten-gallon" (the tallest), "🌾 straw" (the widest, with red ribbon tails down the back), "🎀 bow" (a big bow at the front, a small one at the back), "🌠 star hat" (a gold star on the front and on each side, a small one at the back) and "🪶 feather" (a flat top with a long red feather), or "🚫 no hat". Each hat has its own colour. Each style has a usual hat it puts on when you pick it, but never over a hat you chose yourself. The hat is drawn from the front, the side and the back, and the hair tucks under it, even big hair seen from behind.
+- **➿ A lasso** to hold, a coil of rope in "➿ held in" "🫲 left hand" (so the right hand is free for a horse's rein) or "🫱 right hand". Running, the cowgirl or cowboy twirls its loop. It is put away while crawling, swimming, climbing or lying down. Switch it off with "➿ lasso".
+
+## 0.0.400 (2026-10-21)
+
+Everything in 0.0.399, plus every room in 🗺️ World design, draggable onto the map, with its own settings.
+
+- **🗺️ Every room can go in the world** (in "🗺️ World design"): every place is in "🎨 places to put in a square" now, the rooms inside other places too, such as "🦇 cave room" under "🏕️ camping". Drag one onto a square and it is a square like any other, with its own ways out. Its own doors still lead by kind: the cave's archway goes to the nearest cave room square, and back through the cave to the nearest waterfall, so the friend may come out somewhere far away. A tree house room, a tent or a castle room in a square has "which one" chips on its card, and the square remembers which.
+- **⚙️ A place's settings in the world designer:** "⚙️ show this place's settings" opens the place's own settings from "🏞️ Background" in "🗺️ World design", such as the cave room's "🪨 on the cave room's floor" and "🦇 on the cave room's ceiling". With "✏️ changes here go to" set to "📍 only this square", a change stays in that square. It starts closed, because open it costs as much as the Background tab.
+- **📍 Inside a room, the world designer says where you are:** inside the cave room behind a waterfall (or any room inside a place on the grid), "🗺️ World design" shows that place's square, named with the room ("📍 A5: 💦 jungle waterfall → 🦇 cave room (inside)"), and a "↩️ to A5" button. It used to say only "Tap a square to go there and change it."
+- **🚪 The rooms off the grid are buttons:** in "🚪 off the grid", tap a room to go there, or drag it onto a square to put it there. A room dragged onto a square brings its things with it, and its "📍 only this square" settings. A campsite's tent, a tree house's room or a castle room tapped there is one that is not in a square yet. Walking through a castle room's door to another room no longer turns the square into that room.
+
+## 0.0.399 (2026-10-21)
+
+Everything in 0.0.398, plus a 🔥 button and the six fires' chips in the dragon costume.
+
+- **🔥 Try the dragon's fire while dressing up** (in "🐯 Costume", in "🐉 the dragon", while the dragon costume is on): a "🔥 hold to breathe fire" button breathes fire for as long as you hold it, with the mouse, a finger or the Space key, and stops when you let go or slide off it. Under it are the six fires: "🔥 roaring flame", "☄️ fireballs", "🌀 twisting fire", "🔵 blue-hot jet", "🧱 brick fire" and "🫧 fire bubbles". Tap one and the dragon breathes that fire for two seconds, so you can try each in turn without switching to the game controls. It is the same choice as "🔥 its fire" in "🎮 Controls": pick a fire in either place and the other shows it too. 🔥 on the controller and F on the keyboard still breathe fire as before.
+
+## 0.0.398 (2026-10-21)
+
+Everything in 0.0.397, plus a 🤖 robot costume in eight styles.
+
+- **🤖 A robot costume** (in "🐯 Costume"), in eight styles to pick from in "🤖 style": "🔑 wind-up tin" (a tin toy with a big key in its back that turns as it walks), "📦 box bot" (a cardboard box robot, your own face showing through the hole and your own trousers and shoes underneath), "🤗 helper bot" (a round white robot with a glowing screen face), "🚀 space bot" (a glass bubble helmet and a rocket pack that sparks flames when you jump), "🦾 big mech" (a digger-yellow mech with a cockpit window, a beacon and huge shoulder blocks), "⚡ hero bot" (a helmet with a gold V crest and a visor), "📺 TV bot" (your face on an old television's screen, with rabbit-ear antennas and a curly power cord) and "🕷️ spider bot" (four jointed spider legs out of its back). Each style keeps its own colour in "🤖 its colour", and "💡 its lights" colours the lights on all of them ("auto" is each style's own). The tin's and the helper's faces are their own, and they smile or frown with yours. Facing us, from behind and from the side, standing, sitting, lying, crawling and swimming.
+
 ## 0.0.397 (2026-10-21)
 
 Everything in 0.0.396, plus lighter cauldron fumes.

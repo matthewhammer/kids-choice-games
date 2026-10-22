@@ -115,12 +115,16 @@ const figYMin = F => Math.max((F.top - F.ground) * 0.6, (F.back ?? -Infinity) - 
 const SOLID_DEPTH = 0.4, SOLID_MARGIN = 6;
 let wallsMemo = { text: undefined, kind: null, W: null };
 function castleWalls(B) {
-  if (B.kind !== "castleroom" && B.kind !== "treeroom" && B.kind !== "bubbleroom") return null;   // (ticket 223: the tree house rooms are square rooms too; ticket 290: and the bubble room)
+  if (B.kind !== "castleroom" && B.kind !== "treeroom" && B.kind !== "bubbleroom" && B.kind !== "treetop") return null;   // (ticket 516: and the round room at the top of the tree)   // (ticket 223: the tree house rooms are square rooms too; ticket 290: and the bubble room)
   if (wallsMemo.text === bgShown.text && wallsMemo.kind === B.kind && bgShown.text) return wallsMemo.W;
   wallsMemo = { text: bgShown.text, kind: B.kind, W: castleWallsOf(B) };
   return wallsMemo.W;
 }
 function castleWallsOf(B) {
+  // (ticket 516) the round room at the top of the tree: its wall round the back half of the floor's ellipse (topGeom), the
+  // back at its foot there; at y, as wide as the ellipse is there, the picture's whole width from its sides' feet on
+  if (B.kind === "treetop") { const { Yf, Df, R } = topGeom(stageC());
+    return { back: Yf, stairs: false, half: y => y <= Yf ? 0 : y >= Yf + Df ? R : R * Math.sqrt(1 - ((Yf + Df - y) / Df) ** 2) }; }
   if (B.kind === "treeroom" || B.kind === "bubbleroom") { const { floor, bw, vy } = roomFrame(stageC()); return { back: floor, stairs: false, half: y => Math.max(0, bw * (y - vy) / (floor - vy)) }; }
   const style = castleOf(B).rooms[Math.round(B.castleRoom ?? 1) - 1], deep = style === "hallway" || style === "dining";
   const c = deep ? { ...stageC(), eye: 0.3 } : stageC(), { floor, bw, vy } = roomFrame(c);
@@ -146,7 +150,7 @@ SCENE_BACK.castleroom = () => { const W = castleWallsOf(state.background); retur
 // wall as the room is drawn (livingroomScene, treeroomScene, witchroomScene,
 // healerroomScene; the tent's far wall, tentScene), in front of which the
 // friend stops, as in the imagination
-for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom", 110], ["witchroom", 100], ["healerroom", 100], ["tent", 70], ["hutroom", HUT_UP], ["hutbed", HUT_UP], ["hutpotion", HUT_UP], ["hutcenter", HUT_UP]])
+for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom", 110], ["witchroom", 100], ["healerroom", 100], ["tent", 70], ["hutroom", HUT_UP], ["hutbed", HUT_UP], ["hutpotion", HUT_UP], ["hutcenter", HUT_UP], ["treetop", HUT_UP]])
   SCENE_BACK[kind] = () => SCENE.ground - up * (SCENE.bottom - SCENE.top) / 700 + 3;
 // (ticket 214, Matthew: "the horz blue line in each scene is wrong, and always too high -- it doesn't correspond with
 // where we'd walk or run -- we'd need to fly") Each outdoor place's back limit at the far edge of its own ground, as

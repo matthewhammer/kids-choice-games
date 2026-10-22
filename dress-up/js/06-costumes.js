@@ -29,6 +29,9 @@ const ANIMALS = {
   // (ticket 499) a dragon: scales, horns, spines, teeth, slit eyes, nostrils, a plated belly, claws, bat wings and a long
   // spiked tail (its own colours are dragonScales, dragonBelly, dragonWings and dragonHorns: dragonLook, below)
   dragon: { suit: true, fur: "#3f8f4a", marks: "#d0453a", belly: "#e9d27a", eyes: "#f2b705", accent: "#f4ecd6", furPattern: "none" },
+  // (ticket 530) a Sasquatch: big shaggy fur, a tan muzzle with a big friendly grin, small round ears, big feet (its own
+  // colours are its style's: sasquatchLook, below)
+  sasquatch: { suit: true, fur: "#7a4e2d", marks: "#55361f", belly: "#d9b38c", eyes: "#3b2414", accent: "#d9b38c", furPattern: "shag" },
   // a whole falcon suit: feathers all over, wings on the arms, talons
   falconsuit: { suit: true, fur: "#55616d", marks: "#23282e", belly: "#f2ece0", eyes: "#1a1410", accent: "#f2c230", furPattern: "none" },
   // and a bald eagle's: dark brown feathers, white head and tail
@@ -50,7 +53,14 @@ const lookOf = kind => { const { suit, ...look } = ANIMALS[kind]; return look; }
 // teeth and claws (horn); its eyes are the animal eye colour, as any animal's
 const dragonLook = c => { const S = c.dragonScales || "#3f8f4a", dk = mix(S, "#000000", 0.3);
   return { ...c, fur: S, marks: dk, accent: dk, belly: c.dragonBelly || "#e9d27a", wing: c.dragonWings || "#d0453a", horn: c.dragonHorns || "#f4ecd6", furPattern: "none" }; };
-const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "dragon" ? dragonLook(state.costume) : state.costume) : null);
+// (ticket 530) the Sasquatch's look, from its style (SASQUATCH_STYLES, js/01-state.js) and that style's colour: its fur the
+// colour, its tufts a shade darker (the yeti's pale blue), its muzzle, belly and pads the style's face colour (or the fur
+// lightened), its eyes the animal eye colour; and the style itself (S), for the drawing's extras
+const sasquatchStyleOf = c => SASQUATCH_STYLES[c.sasquatchStyle] ? c.sasquatchStyle : "bigfoot";
+const sasquatchLook = c => { const id = sasquatchStyleOf(c), S = SASQUATCH_STYLES[id], fur = c["sasquatchColor_" + id] || S.colors[0];
+  const face = S.face || mix(fur, "#ffffff", 0.45);
+  return { ...c, fur, marks: S.marks || mix(fur, "#000000", 0.3), belly: face, accent: mix(face, "#000000", 0.25), furPattern: "shag", sq: S, sqId: id }; };
+const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "dragon" ? dragonLook(state.costume) : state.costume.kind === "sasquatch" ? sasquatchLook(state.costume) : state.costume) : null);
 // (ticket 433, Matthew: "monk/dryad costume with hooded cloak, and a staff (optional, like how the witch has an optional
 // broom)") A CLOTH HOOD, its colour, while one is up (the monk's or the dryad's cloak): over the hair, framing the face. In the
 // round head's units (stretched with the head, as hair is), on the animal hood's frame (hoodGeom): its back, behind the head,
@@ -151,6 +161,13 @@ function furDefs(C, kind) {
     const sc = `<rect width="24" height="20" fill="${C.fur}"/><path d="M0 10 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 M-6 20 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 ` +
                `M-6 0 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0" stroke="${C.marks}" fill="none" stroke-width="1.6" opacity="0.8"/>`;
     return `<pattern id="pat-fur" width="24" height="20" patternUnits="userSpaceOnUse">${sc}</pattern><pattern id="pat-bars" width="24" height="20" patternUnits="userSpaceOnUse">${sc}</pattern>`;
+  }
+  // (ticket 530) a Sasquatch's shag: the fur with six long tufts hanging down in each 40 tile, one path (the pattern is drawn
+  // once however big the suit)
+  if (kind === "sasquatch") {
+    const sh = `<rect width="40" height="40" fill="${C.fur}"/><path d="M3 4 l3 9 l3 -9 M21 2 l3 10 l3 -10 M12 18 l3 9 l3 -9 M30 19 l3 10 l3 -10 M4 30 l3 9 l3 -9 M22 30 l3 9 l3 -9" ` +
+               `stroke="${C.marks}" fill="none" stroke-width="1.8" stroke-linejoin="round" opacity="0.85"/>`;
+    return `<pattern id="pat-fur" width="40" height="40" patternUnits="userSpaceOnUse">${sh}</pattern><pattern id="pat-bars" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="${C.fur}"/></pattern>`;
   }
   if (BIRD_SUIT[kind])   // feathers: the color with curved bars, all over
     return `<pattern id="pat-fur" width="24" height="12" patternUnits="userSpaceOnUse">` +
@@ -298,7 +315,7 @@ function hoodBack(C, kind, F, dir = 0, away = false) {
            `fill="${C.belly}" stroke="${line}" stroke-width="3"/>` +
            `<ellipse cx="${100 + side * 70}" cy="6" rx="13" ry="18" transform="rotate(${side * 25} ${100 + side * 70} 6)" fill="${C.fur}"/>`;
     else if (!isBird(kind)) {
-      const r = kind === "lion" ? 20 : 25;
+      const r = kind === "lion" ? 20 : kind === "sasquatch" ? 17 : 25;   // (ticket 530: a Sasquatch's small round ears)
       s += `<circle cx="${x}" cy="20" r="${r}" fill="${C.fur}" stroke="${line}" stroke-width="3"/>` +
            `<circle cx="${x}" cy="22" r="${r * 0.5}" fill="${kind === "tiger" ? "#ffffff" : C.belly}"/>`;
     }
@@ -346,7 +363,7 @@ function hoodSide(C, kind, F, dir) {
   const all = kind === "dragon" ? "" : hoodFront(C, kind, F), cut = all.indexOf("/>", all.indexOf("<line ")) + 2;
   const features = kind === "dragon" ? dragonBrimSide(C, dir) : all.slice(cut);
   const teeth = kind === "dragon" ? dragonTeethSide(C, fx, fcy, frx, fry, dir, cy, ry) : "";
-  return cap + teeth + `<defs><clipPath id="hood-near"><rect x="${dir > 0 ? 100 : -4000}" y="-4000" width="4100" height="8000"/></clipPath></defs>` +
+  return cap + teeth + (kind === "sasquatch" ? sasquatchTop(C, F, dir, false) : "") + `<defs><clipPath id="hood-near"><rect x="${dir > 0 ? 100 : -4000}" y="-4000" width="4100" height="8000"/></clipPath></defs>` +
          `<g transform="translate(${f1(dir * 12)} 0)"><g clip-path="url(#hood-near)">${features}</g></g>`;
 }
 function hoodFront(C, kind, F) {
@@ -366,6 +383,24 @@ function hoodFront(C, kind, F) {
     let d = "";
     for (let i = 0; i < 12; i++) { const x = 25 + i * 150 / 11; d += `M${f1(x - 5)} 53 L${f1(x)} 67 L${f1(x + 5)} 53 Z`; }
     return s + `<g clip-path="url(#hood-inside)"><path data-dragon="teeth" d="${d}" fill="${C.horn}" stroke="${darker(C.horn)}" stroke-width="1.8" stroke-linejoin="round"/></g>`;
+  }
+  // (ticket 530) a Sasquatch's: its shaggy crown and its extras (before the brim's line, so the profile, which keeps what
+  // follows the line, draws its own: sasquatchTop), a shaggy brow over big round friendly eyes, a big muzzle, a wide flat
+  // nose, and its grin, two square teeth (or a plain smile); no whiskers or claws
+  if (kind === "sasquatch") {
+    const cut = s.indexOf("<line ");
+    s = s.slice(0, cut) + sasquatchTop(C, F, 0, false) + s.slice(cut);
+    const ln = darker(C.fur);
+    s += `<path d="M58 16 Q66 2 80 8 Q90 2 100 10 Q110 2 120 8 Q134 2 142 16 Q130 10 120 14 Q110 9 100 16 Q90 9 80 14 Q70 10 58 16 Z" fill="${C.marks}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>`;
+    for (const x of [79, 121])
+      s += `<circle cx="${x}" cy="26" r="10" fill="#ffffff" stroke="#111" stroke-width="2"/><circle cx="${x}" cy="27" r="5" fill="${C.eyes}"/>` + shine(x, 26, 9);
+    s += `<ellipse cx="100" cy="44" rx="26" ry="12" fill="${C.belly}" stroke="${mix(C.belly, "#000000", 0.25)}" stroke-width="1.5"/>` +
+         `<path d="M88 37 Q100 31 112 37 Q110 43 100 43 Q90 43 88 37 Z" fill="#3a2418"/>`;
+    s += C.sasquatchGrin !== false
+      ? `<path d="M84 45 Q100 45 116 45 Q114 55 100 55 Q86 55 84 45 Z" fill="#7a2e2e" stroke="#3a2418" stroke-width="1.6" stroke-linejoin="round"/>` +
+        `<path d="M93 45.5 h6 v4.5 h-6 Z M101 45.5 h6 v4.5 h-6 Z" fill="#ffffff" stroke="#3a2418" stroke-width="0.8"/>`
+      : `<path d="M90 48 Q100 53 110 48" fill="none" stroke="#3a2418" stroke-width="2.2" stroke-linecap="round"/>`;
+    return s;
   }
   if (falconHead(kind)) {
     for (const x of [76, 124])
@@ -423,6 +458,8 @@ function tailSvg(C, kind, hw, L) {
   const line = darker(C.fur), x0 = hw * 0.55, y0 = L + 5;
   if (kind === "bear")
     return `<circle cx="${f1(hw + 4)}" cy="${f1(L - 14)}" r="17" fill="url(#pat-fur)" stroke="${line}" stroke-width="3"/>`;
+  if (kind === "sasquatch")   // (ticket 530) the bear's stub, shaggy round its edge
+    return `<circle cx="${f1(hw + 4)}" cy="${f1(L - 14)}" r="17" fill="url(#pat-fur)" stroke="${line}" stroke-width="8" stroke-dasharray="4 3"/>`;
   if (kind === "deer")  // a short white tail, flicked up
     return `<ellipse cx="${f1(hw + 8)}" cy="${f1(L - 16)}" rx="11" ry="17" transform="rotate(35 ${f1(hw + 8)} ${f1(L - 16)})" ` +
            `fill="${C.belly}" stroke="${line}" stroke-width="3"/>`;
@@ -856,4 +893,837 @@ function leakTick(t) {
     b.el.setAttribute("transform", `translate(${f1(b.x)} ${f1(b.y)})`); b.el.setAttribute("opacity", Math.min(1, (b.life - age) / 500, age / 120).toFixed(2));
   }
   leakSim.raf = requestAnimationFrame(leakTick);
+}
+
+// (ticket 515, Matthew: "robot costume -- multiple styles -- do 8") THE ROBOT. costume.kind "robot"; costume.robotStyle one
+// of ROBOT_STYLES (js/01-state.js, its traits the data these read); robotColor_<style> its colour (each style its own, as
+// the fairy's wings); robotLights its lights ("auto": the style's own). A costume in the friend's own clothes, as the knight
+// is: drawNow replaces the shirt and pants (sleeves and legs in the style's limb colour; the box bot keeps the friend's own
+// trousers and shoes) and draws these pieces in its own slots. Each view is a drawing of its own (facing us; from the side,
+// dir -1 or 1, left and right mirrored; from behind, away), never a turned, skewed or scaled copy of another view's:
+//   robotHead   over the head, in the face's units (x 100 its middle), where the knight's helmet goes; a faceplate or a
+//               screen (tin, helper) draws eyes and a mouth of its own that follow the friend's mood, and the face is not
+//               drawn under it; a window or an opening shows the friend's face in the views `see` names
+//   robotTorso  over the shirt, where the knight's tabard goes; from behind, its back; crawling toward us or away, a
+//               drawing of its own (robotCrawlTorso), outside the body's turned or shortened group
+//   robotBack   what stands off the back, where wings go: behind them facing us, over the back from behind; crawling
+//               toward us or away, a drawing of its own over the back (robotCrawlBack), never the from-behind one turned
+//   robotArm    on each arm, in that arm's own slot, so a nearer arm's piece is over a farther one's
+//   robotLeg    on each leg, in the order the legs are drawn
+// Speed (the first rule): no masks, filters, gradients or animations; a few shapes each, a row of rivets, gears or slots
+// one path, ridges and stripes one dashed stroke; nothing blinks or moves by itself (the tin's key turns with the stride).
+const ROBOT_SILVER = "#c9ced6";
+function robotOf(WC) {
+  const id = ROBOT_STYLES[WC.robotStyle] ? WC.robotStyle : "tin", S = ROBOT_STYLES[id], main = WC["robotColor_" + id] || S.colors[0];
+  const lt = !WC.robotLights || WC.robotLights === "auto" ? S.lights : WC.robotLights;
+  // (the hero's red trim turns white on the red swatch)
+  const R = { id, S, main, dk: darker(main), lt, ltk: darker(lt), red: main === "#dc2626" ? "#f1f5f9" : "#e23b3b" };
+  const tint = c => c === "main" ? main : c === "darker" ? R.dk : c === "red" ? R.red : c;
+  return { ...R, limb: tint(S.limb), hand: tint(S.hand), boot: tint(S.boot) };
+}
+const robotHands = (R, hands) => ({ ...hands, style: R.S.hands, size: hands.size * (R.S.handK || 1), color: R.hand });
+const robotFeet = (R, shoes) => R.S.feet === "own" ? shoes : { style: "boot", size: shoes.size * (R.S.footK || 1), color: R.boot };
+const robotSees = (R, view) => R.S.see.split(" ").includes(view);
+// (each piece marked by what it is, data-robot head, eyes, torso, back, arm or leg, for the checks and 🔬: a group, no shape)
+const rbG = (what, t) => t ? `<g data-robot="${what}">${t}</g>` : "";
+// (small pieces of path: an outline through points, a box with round corners, a filled path)
+const rbLine = ps => "M" + ps.map(([x, y]) => f1(x) + " " + f1(y)).join(" L");
+function rbRect(x0, y0, x1, y1, r = 0) {
+  const a = Math.min(x0, x1), b = Math.max(x0, x1), c = Math.min(y0, y1), d = Math.max(y0, y1), q = Math.min(r, (b - a) / 2, (d - c) / 2);
+  return q > 0 ? `M${f1(a + q)} ${f1(c)} L${f1(b - q)} ${f1(c)} Q${f1(b)} ${f1(c)} ${f1(b)} ${f1(c + q)} L${f1(b)} ${f1(d - q)} Q${f1(b)} ${f1(d)} ${f1(b - q)} ${f1(d)} ` +
+                 `L${f1(a + q)} ${f1(d)} Q${f1(a)} ${f1(d)} ${f1(a)} ${f1(d - q)} L${f1(a)} ${f1(c + q)} Q${f1(a)} ${f1(c)} ${f1(a + q)} ${f1(c)} Z`
+               : `M${f1(a)} ${f1(c)} L${f1(b)} ${f1(c)} L${f1(b)} ${f1(d)} L${f1(a)} ${f1(d)} Z`;
+}
+const rbPath = (d, fill, stroke = null, sw = 3, more = "") => `<path d="${d}" fill="${fill}"${stroke ? ` stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"` : ""}${more}/>`;
+const rbStroke = (d, stroke, sw, more = "") => `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${sw}"${more.includes("stroke-linecap") ? "" : ' stroke-linecap="round"'} stroke-linejoin="round"${more}/>`;
+const rbDots = (ps, r) => ps.map(([x, y, rr]) => ellD(x, y, rr ?? r, rr ?? r)).join(" ");
+// a gear: n teeth round (cx, cy), r to their tips, and its hole (filled evenodd)
+const rbGear = (cx, cy, r, n = 8) => rbLine(Array.from({ length: 4 * n }, (_, i) => { const a = (i - 0.5) * Math.PI / (2 * n), rr = i % 4 < 2 ? r : 0.74 * r;
+  return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)]; })) + " Z " + ellD(cx, cy, 0.28 * r, 0.28 * r);
+// the wind-up key's bow, a figure of eight: its lobes above and below (cx, cy), each `a` across and `h` tall; or left and right
+const rbBow = (cx, cy, a, h, across = false) => [-1, 1].map(s => across
+  ? `M${f1(cx)} ${f1(cy)} C${f1(cx + s * 0.3 * h)} ${f1(cy - a)} ${f1(cx + s * h)} ${f1(cy - a)} ${f1(cx + s * h)} ${f1(cy)} C${f1(cx + s * h)} ${f1(cy + a)} ${f1(cx + s * 0.3 * h)} ${f1(cy + a)} ${f1(cx)} ${f1(cy)} Z`
+  : `M${f1(cx)} ${f1(cy)} C${f1(cx - a)} ${f1(cy + s * 0.3 * h)} ${f1(cx - a)} ${f1(cy + s * h)} ${f1(cx)} ${f1(cy + s * h)} C${f1(cx + a)} ${f1(cy + s * h)} ${f1(cx + a)} ${f1(cy + s * 0.3 * h)} ${f1(cx)} ${f1(cy)} Z`).join(" ");
+
+// The head, in the face's units (x 100 the middle; the head from headCrown to headChin, 80 * headWidth either side), worn
+// as the knight's helmet is. o: { dir, away, closed (the eyes shut, meditating), lieBack (lying face up) }. Returns its
+// svg, its eyes (a faceplate's, drawn on the eyes' veil), `behind` (the inside of a window the face looks out of: one
+// solid shape, drawn under the face, so nothing behind the friend shows round it), and how far up and out it reaches (for
+// the picture's frame).
+function robotHead(R, F, o) {
+  const H = diveHead(F), LY = H.LY, hw = H.hw, { dir, away } = o, m = R.main, dk = R.dk, lt = R.lt, P = rbPath;
+  const smile = Math.max(-1, Math.min(1, ((F.smile ?? 85) - 50) / 50));   // (the mood: 1 a big smile, -1 a frown; 50 or more smiles)
+  const X = d => 100 + dir * d, Y = k => H.cy + k * H.ry;   // (across: toward the face in profile; down, in the head's half heights)
+  let svg = "", eyes = "", behind = "", top = H.top, half = hw;
+  switch (R.S.head) {
+    // 🔑 the tin: a tall box with round top corners, a cone ear each side, one antenna with a bobble; facing us a printed
+    // tin face (two round eyes, a grille mouth bending with the mood, rivets round it); in profile its side, the ear end on;
+    // from behind a battery cover and a riveted seam
+    case "tinbox": {
+      const bw = 1.15 * hw, bot = H.chin + 12, ht = 2.6 * H.ry, tp = bot - ht, r = 0.3 * bw, ey = tp + 0.36 * ht, my = tp + 0.66 * ht;
+      const sk = "#8a929c", box = (a, b) => `M${f1(a)} ${f1(bot)} L${f1(a)} ${f1(tp + r)} Q${f1(a)} ${f1(tp)} ${f1(a + r)} ${f1(tp)} L${f1(b - r)} ${f1(tp)} Q${f1(b)} ${f1(tp)} ${f1(b)} ${f1(tp + r)} L${f1(b)} ${f1(bot)} Z`;
+      const ant = x => `<path d="M${f1(x)} ${f1(tp + 2)} L${f1(x)} ${f1(tp - 34)}" stroke="${sk}" stroke-width="6"/>` + P(ellD(x, tp - 42, 10, 10), lt, R.ltk, 3);
+      const cone = sd => { const x0 = 100 + sd * (bw - 2), x1 = 100 + sd * (bw + 28); return `M${f1(x0)} ${f1(ey - 20)} L${f1(x1)} ${f1(ey - 7)} L${f1(x1)} ${f1(ey + 7)} L${f1(x0)} ${f1(ey + 20)} Z`; };
+      const ring = (a, b, ins) => { const ps = [], n = 4;
+        for (let i = 0; i <= n; i++) ps.push([a + ins + i * (b - a - 2 * ins) / n, tp + ins], [a + ins + i * (b - a - 2 * ins) / n, bot - ins]);
+        for (let i = 1; i < 4; i++) ps.push([a + ins, tp + ins + i * (ht - 2 * ins) / 4], [b - ins, tp + ins + i * (ht - 2 * ins) / 4]);
+        return P(rbDots(ps, 3.2), ROBOT_SILVER, sk, 1); };
+      top = tp - 54; half = bw + 30;
+      if (!dir) {
+        svg = P(cone(-1) + " " + cone(1), ROBOT_SILVER, sk, 3) + P(box(100 - bw, 100 + bw), m, dk, 4) + ant(100) + ring(100 - bw, 100 + bw, 13);
+        if (away) svg += P(rbRect(100 - 0.5 * bw, tp + 0.3 * ht, 100 + 0.5 * bw, tp + 0.74 * ht, 8), mix(m, "#000000", 0.15), dk, 3);
+        else {
+          // (the grille: its outline and bars one path, bending down in the middle to smile, up to frown)
+          const x0 = 100 - 0.5 * bw, x1 = 100 + 0.5 * bw, mh = 24, c = 12 * smile, yAt = (x, y) => { const t = (x - x0) / (x1 - x0); return y + 4 * t * (1 - t) * c; };
+          let d = `M${f1(x0)} ${f1(my)} Q100 ${f1(my + 2 * c)} ${f1(x1)} ${f1(my)} L${f1(x1)} ${f1(my + mh)} Q100 ${f1(my + mh + 2 * c)} ${f1(x0)} ${f1(my + mh)} Z`;
+          for (let i = 1; i < 6; i++) { const x = x0 + i * (x1 - x0) / 6; d += ` M${f1(x)} ${f1(yAt(x, my))} L${f1(x)} ${f1(yAt(x, my) + mh)}`; }
+          svg += P(d, "#2b2b2b", ROBOT_SILVER, 3.5);
+          const ex = 0.42 * bw;
+          eyes = P(ellD(100 - ex, ey, 17, 17) + " " + ellD(100 + ex, ey, 17, 17), lt, dk, 4) +
+                 (o.closed ? rbStroke(`M${f1(100 - ex - 11)} ${f1(ey)} L${f1(100 - ex + 11)} ${f1(ey)} M${f1(100 + ex - 11)} ${f1(ey)} L${f1(100 + ex + 11)} ${f1(ey)}`, "#1f1f22", 4)
+                           : P(ellD(100 - ex, ey, 7, 7) + " " + ellD(100 + ex, ey, 7, 7), "#1f1f22"));
+        }
+      } else {
+        const bd = 0.85 * bw, fx = X(bd);
+        half = bd + 4;
+        svg = P(box(100 - bd, 100 + bd), m, dk, 4) + ant(100) + ring(100 - bd, 100 + bd, 12) +
+              P(ellD(X(-0.06 * bd), ey + 2, 18, 18), ROBOT_SILVER, sk, 3) +
+              P(rbRect(fx, my, fx - dir * 13, my + 24 + 2 * Math.max(0, 12 * smile) * 0.5, 3), "#2b2b2b", ROBOT_SILVER, 3);
+        eyes = P(ellD(fx - dir * 3, ey, 7, 17), lt, dk, 3.5) +
+               (o.closed ? rbStroke(`M${f1(fx - dir * 8)} ${f1(ey)} L${f1(fx + dir * 3)} ${f1(ey)}`, "#1f1f22", 3.5) : P(ellD(fx - dir * 1, ey, 3, 7), "#1f1f22"));
+      }
+      break;
+    }
+    // 📦 the box bot: a cardboard cube, a square hole cut for the face (the friend's own, mood and all), two pipe cleaners
+    // with pom-poms; from the side its side panel with a marker dial (nobody sees into a box from the side: no face), the
+    // front's edge and the hole's; from behind a packing-tape cross
+    case "cube": {
+      const bw = 1.25 * hw, bot = H.chin + 18, tp = bot - 1.96 * bw, wx = 0.64 * bw, wy0 = LY.eyeY - 42, wy1 = LY.mouthY + 32;
+      const pipes = xs => rbStroke(xs.map(x => `M${f1(x)} ${f1(tp + 2)} Q${f1(x - 12)} ${f1(tp - 14)} ${f1(x)} ${f1(tp - 30)} Q${f1(x + 12)} ${f1(tp - 46)} ${f1(x)} ${f1(tp - 62)}`).join(" "), lt, 5) +
+                         P(rbDots(xs.map(x => [x, tp - 70]), 11), lt, R.ltk, 2);
+      top = tp - 84; half = bw;
+      if (!dir && !away) { svg = P(rbRect(100 - bw, tp, 100 + bw, bot, 6) + " " + rbRect(100 - wx, wy0, 100 + wx, wy1, 3), m, dk, 4, ' fill-rule="evenodd"') + pipes([100 - 0.45 * bw, 100 + 0.45 * bw]);
+        behind = P(rbRect(100 - wx, wy0, 100 + wx, wy1, 3), mix(m, "#000000", 0.5)); }   // (the box's dark inside, round the face)
+      else if (away) svg = P(rbRect(100 - bw, tp, 100 + bw, bot, 6), m, dk, 4) +
+                            `<path d="M${f1(100 - bw + 2)} ${f1((tp + bot) / 2)} L${f1(100 + bw - 2)} ${f1((tp + bot) / 2)} M100 ${f1(tp + 2)} L100 ${f1(bot - 2)}" stroke="#b8bec6" stroke-width="22" opacity="0.9"/>` +
+                            pipes([100 - 0.45 * bw, 100 + 0.45 * bw]);
+      else {
+        const d = 0.92 * bw, fx = X(d), cx = X(-0.1 * bw), cy = tp + 0.56 * (bot - tp), rr = 0.3 * bw;
+        svg = P(rbRect(100 - d, tp, 100 + d, bot, 6), m, dk, 4) +
+              P(rbRect(fx, tp, fx + dir * 12, wy0, 2) + " " + rbRect(fx, wy1, fx + dir * 12, bot, 2), mix(m, "#ffffff", 0.25), dk, 3) +
+              P(rbRect(fx, wy0, fx + dir * 12, wy1, 0), mix(m, "#000000", 0.5)) +
+              rbStroke(ellD(cx, cy, rr, rr) + ` M${f1(cx)} ${f1(cy)} L${f1(cx + dir * 0.6 * rr)} ${f1(cy - 0.6 * rr)}`, dk, 3) +
+              pipes([X(0.22 * bw), X(-0.28 * bw)]);
+        half = d + 14;
+      }
+      break;
+    }
+    // 🤗 the helper bot: a white ball, a dark screen for a face (two glowing eyes and a smile following the mood; arcs when
+    // the eyes shut), a disc ear each side, a short nub with a light; in profile the screen a crescent at its front; from
+    // behind a speaker grille
+    case "ball": {
+      const r = 1.3 * hw, cy = H.chin + 14 - r, nt = cy - r, scr = "#20303a";
+      const nub = x => P(rbRect(x - 6, nt - 16, x + 6, nt + 6, 3), "#f4f6f8", dk, 2.5) + P(ellD(x, nt - 20, 8, 8), lt, R.ltk, 2);
+      const ball = P(ellD(100, cy, r, r), "#f4f6f8", dk, 4), c = 0.1 * r * smile;
+      top = nt - 30; half = r + 17;
+      if (!dir) {
+        svg = P(ellD(100 - r, cy, 17, 17) + " " + ellD(100 + r, cy, 17, 17), m, dk, 3) + ball + nub(100);
+        if (away) svg += rbStroke([-0.1, 0.05, 0.2, 0.35].map((v, i) => `M${f1(100 - (0.36 - 0.06 * i) * r)} ${f1(cy + v * r)} L${f1(100 + (0.36 - 0.06 * i) * r)} ${f1(cy + v * r)}`).join(" "), dk, 5);
+        else {
+          const y0 = cy - 0.42 * r, y1 = cy + 0.44 * r;
+          svg += P(rbRect(100 - 0.74 * r, y0, 100 + 0.74 * r, y1, 0.3 * r), scr, dk, 3) +
+                 rbStroke(`M${f1(100 - 0.62 * r)} ${f1(y0 + 0.3 * r)} Q${f1(100 - 0.6 * r)} ${f1(y0 + 0.08 * r)} ${f1(100 - 0.36 * r)} ${f1(y0 + 0.07 * r)}`, "#ffffff", 4, ' opacity="0.3"') +
+                 rbStroke(`M${f1(100 - 0.24 * r)} ${f1(cy + 0.18 * r)} Q100 ${f1(cy + 0.18 * r + 2 * c)} ${f1(100 + 0.24 * r)} ${f1(cy + 0.18 * r)}`, lt, 6);
+          const ex = 0.3 * r, ey = cy - 0.1 * r;
+          eyes = o.closed ? rbStroke([-1, 1].map(s => `M${f1(100 + s * ex - 12)} ${f1(ey + 4)} Q${f1(100 + s * ex)} ${f1(ey - 8)} ${f1(100 + s * ex + 12)} ${f1(ey + 4)}`).join(" "), lt, 5)
+                          : P(ellD(100 - ex, ey, 0.1 * r, 0.15 * r) + " " + ellD(100 + ex, ey, 0.1 * r, 0.15 * r), lt);
+        }
+      } else {
+        const a1 = 40 * Math.PI / 180, a2 = 34 * Math.PI / 180;
+        half = r + 4;
+        svg = ball + P(ellD(X(-0.12 * r), cy + 0.04 * r, 0.18 * r, 0.18 * r), m, dk, 3) + nub(X(-0.06 * r)) +
+              P(`M${f1(X(r * Math.cos(a1)))} ${f1(cy - r * Math.sin(a1))} A${f1(r)} ${f1(r)} 0 0 ${dir > 0 ? 1 : 0} ${f1(X(r * Math.cos(a2)))} ${f1(cy + r * Math.sin(a2))} Q${f1(X(0.52 * r))} ${f1(cy)} ${f1(X(r * Math.cos(a1)))} ${f1(cy - r * Math.sin(a1))} Z`, scr, dk, 3) +
+              rbStroke(`M${f1(X(0.66 * r))} ${f1(cy + 0.2 * r)} Q${f1(X(0.76 * r))} ${f1(cy + 0.2 * r + 1.4 * c)} ${f1(X(0.86 * r))} ${f1(cy + 0.16 * r)}`, lt, 5);
+        const ex = X(0.76 * r), ey = cy - 0.12 * r;
+        eyes = o.closed ? rbStroke(`M${f1(ex - 6)} ${f1(ey + 3)} Q${f1(ex)} ${f1(ey - 6)} ${f1(ex + 6)} ${f1(ey + 3)}`, lt, 4.5) : P(ellD(ex, ey, 0.055 * r, 0.14 * r), lt);
+      }
+      break;
+    }
+    // 🚀 the space bot: a glass bubble all round the head on a collar ring (the friend's face inside, in every view), a snug
+    // cap in its colour over the crown (the hair hidden), a light round its band, two lights on the collar
+    case "bubble": {
+      const rx = 1.5 * hw, ry = 1.62 * H.ry, cy = H.chin + 44 - ry, glass = ' fill-opacity="0.22"', cu = H.top - 12;
+      const collar = cx => P(rbRect(cx - 0.66 * rx, H.chin + 24, cx + 0.66 * rx, H.chin + 50, 8), m, dk, 3) + P(rbDots([[cx - 0.36 * rx, H.chin + 37], [cx + 0.36 * rx, H.chin + 37]], 5), lt, R.ltk, 1.5);
+      const bubble = cx => P(ellD(cx, cy, rx + (dir ? 4 : 0), ry), "#cfe8ff", "#8fb3cf", 4, glass) +
+                           rbStroke(`M${f1(cx - 0.74 * rx)} ${f1(cy - 0.32 * ry)} Q${f1(cx - 0.58 * rx)} ${f1(cy - 0.84 * ry)} ${f1(cx - 0.12 * rx)} ${f1(cy - 0.95 * ry)}`, "#ffffff", 7, ' opacity="0.85"');
+      top = cy - ry - 4; half = rx + 18;
+      if (away) svg = P(ellD(100, H.cy - 4, hw + 5, H.ry + 6), m, dk, 3) + rbStroke(`M${f1(100 - hw + 2)} ${f1(H.cy + 44)} Q100 ${f1(H.cy + 66)} ${f1(100 + hw - 2)} ${f1(H.cy + 44)}`, lt, 6) + bubble(100) + collar(100);
+      else if (!dir) svg = P(`M${f1(100 - hw - 4)} ${f1(Y(0.1))} Q${f1(100 - hw - 6)} ${f1(cu)} 100 ${f1(cu)} Q${f1(100 + hw + 6)} ${f1(cu)} ${f1(100 + hw + 4)} ${f1(Y(0.1))} Q${f1(100 + 0.62 * hw)} ${f1(Y(-0.63))} 100 ${f1(Y(-0.66))} Q${f1(100 - 0.62 * hw)} ${f1(Y(-0.63))} ${f1(100 - hw - 4)} ${f1(Y(0.1))} Z`, m, dk, 3) +
+                           rbStroke(`M${f1(100 - hw + 4)} ${f1(Y(-0.08))} Q${f1(100 - 0.55 * hw)} ${f1(Y(-0.5))} 100 ${f1(Y(-0.53))} Q${f1(100 + 0.55 * hw)} ${f1(Y(-0.5))} ${f1(100 + hw - 4)} ${f1(Y(-0.08))}`, lt, 6) + bubble(100) + collar(100);
+      else svg = P(`M${f1(X(0.62 * hw))} ${f1(Y(-0.58))} Q${f1(X(0.5 * hw))} ${f1(cu)} ${f1(X(-0.15 * hw))} ${f1(cu)} Q${f1(X(-hw - 8))} ${f1(cu + 6)} ${f1(X(-hw - 6))} ${f1(Y(0.12))} Q${f1(X(-hw - 2))} ${f1(Y(0.69))} ${f1(X(-0.6 * hw))} ${f1(Y(0.77))} Q${f1(X(-0.2 * hw))} ${f1(Y(0.2))} ${f1(X(0.62 * hw))} ${f1(Y(-0.58))} Z`, m, dk, 3) +
+                 rbStroke(`M${f1(X(0.5 * hw))} ${f1(Y(-0.48))} Q${f1(X(-0.2 * hw))} ${f1(Y(0.07))} ${f1(X(-0.52 * hw))} ${f1(Y(0.64))}`, lt, 6) + bubble(X(-12)) + collar(X(-10));
+      break;
+    }
+    // 🦾 the big mech: a short wide box, low with no neck, the friend in its cockpit window behind faint glass in a thick
+    // frame, a hazard stripe on the brow, two headlamps, an orange beacon on top (still, never blinking); in profile deeper
+    // than it is wide, the window a strip on its front edge, a vent on its side; from behind a grille and two bolts
+    case "cockpit": {
+      const bw = 1.25 * hw, tp = H.top - 14, bot = H.chin + 30, frame = "#3f3f46";
+      const beacon = x => P(`M${f1(x - 18)} ${f1(tp + 2)} Q${f1(x - 18)} ${f1(tp - 30)} ${f1(x)} ${f1(tp - 30)} Q${f1(x + 18)} ${f1(tp - 30)} ${f1(x + 18)} ${f1(tp + 2)} Z`, lt, R.ltk, 3) + P(ellD(x - 6, tp - 17, 4.5, 4.5), "#fff4dc");
+      top = tp - 34; half = 1.2 * bw;
+      if (!dir && !away) {
+        const wx = 0.64 * bw, w0 = LY.eyeY - 40, w1 = LY.mouthY + 30;
+        behind = P(rbRect(100 - wx, w0, 100 + wx, w1, 10), "#33383f");   // (the cockpit's dark inside)
+        svg = beacon(100) + P(rbRect(100 - bw, tp, 100 + bw, bot, 22) + " " + rbRect(100 - wx, w0, 100 + wx, w1, 10), m, dk, 4, ' fill-rule="evenodd"') +
+              P(rbRect(100 - wx, w0, 100 + wx, w1, 10), "#bae6fd", frame, 9, ' fill-opacity="0.2"') +
+              `<path d="M${f1(100 - bw + 36)} ${f1(tp + 21)} L${f1(100 + bw - 36)} ${f1(tp + 21)}" stroke="#1f2937" stroke-width="13" stroke-dasharray="11 9"/>` +
+              P(rbRect(100 - bw + 8, tp + 12, 100 - bw + 26, tp + 30, 3) + " " + rbRect(100 + bw - 26, tp + 12, 100 + bw - 8, tp + 30, 3), lt, R.ltk, 2.5);
+      } else if (away) svg = beacon(100) + P(rbRect(100 - bw, tp, 100 + bw, bot, 22), m, dk, 4) +
+          rbStroke([0, 1, 2, 3, 4].map(i => `M${f1(100 - 0.5 * bw)} ${f1(tp + 54 + 22 * i)} L${f1(100 + 0.5 * bw)} ${f1(tp + 54 + 22 * i)}`).join(" "), frame, 7) +
+          P(rbDots([[100 - 0.8 * bw, bot - 20], [100 + 0.8 * bw, bot - 20]], 7), ROBOT_SILVER, frame, 2.5);
+      else {
+        const xb = X(-1.2 * bw), xf = X(0.9 * bw), s0 = X(0.4 * hw), s1 = X(0.98 * hw), w0 = LY.eyeY - 38, w1 = LY.mouthY + 26;
+        behind = P(rbRect(s0, w0, s1, w1, 8), "#33383f");
+        svg = beacon(X(-0.15 * bw)) + P(rbRect(xb, tp, xf, bot, 22) + " " + rbRect(s0, w0, s1, w1, 8), m, dk, 4, ' fill-rule="evenodd"') +
+              P(rbRect(s0, w0, s1, w1, 8), "#bae6fd", frame, 8, ' fill-opacity="0.2"') +
+              P(rbRect(xf - dir * 26, tp + 12, xf - dir * 8, tp + 30, 3), lt, R.ltk, 2.5) +
+              rbStroke([0, 1, 2].map(i => `M${f1(X(-1.0 * bw))} ${f1(H.cy - 10 + 22 * i)} L${f1(X(-0.35 * bw))} ${f1(H.cy - 10 + 22 * i)}`).join(" "), frame, 8);
+      }
+      break;
+    }
+    // ⚡ the hero bot: a helmet with cheek guards (the friend's face in its opening, the chin clear), a wide shallow V crest
+    // of gold with a red gem at its root, a gold visor over the eyes (tinted, see-through), a vent at each ear; in profile one
+    // broad blade sweeping back; from behind a fin down its middle and the blades' darker backs
+    case "helm": {
+      const sx = hw + 12, g = 0.6 * hw, gy = H.chin - 24, ct = H.top - 16, gold = "#facc15", gk = "#a16207";
+      const crestV = (fill, line) => P([-1, 1].map(s => `M100 ${f1(ct + 18)} L${f1(100 + s * 132)} ${f1(ct - 62)} Q${f1(100 + s * 64)} ${f1(ct + 2)} 100 ${f1(ct + 42)} Z`).join(" "), fill, line, 3);
+      const gem = x => P(ellD(x, ct + 30, 10, 10), "#ef4444", "#7f1d1d", 2.5);
+      top = ct - 66; half = 136;
+      if (away) svg = crestV(darker(gold), "#713f12") +
+          P(`M${f1(100 - sx)} ${f1(H.chin - 14)} L${f1(100 - sx)} ${f1(H.cy)} Q${f1(100 - sx)} ${f1(ct)} 100 ${f1(ct)} Q${f1(100 + sx)} ${f1(ct)} ${f1(100 + sx)} ${f1(H.cy)} L${f1(100 + sx)} ${f1(H.chin - 14)} Q100 ${f1(H.chin + 6)} ${f1(100 - sx)} ${f1(H.chin - 14)} Z`, m, dk, 4) +
+          P(`M94 ${f1(ct + 6)} Q100 ${f1(ct - 12)} 106 ${f1(ct + 6)} L105 ${f1(H.chin - 4)} L95 ${f1(H.chin - 4)} Z`, mix(m, "#000000", 0.22), dk, 2);
+      else if (!dir) {
+        svg = P(`M${f1(100 - sx + 4)} ${f1(gy)} L${f1(100 - sx)} ${f1(H.cy)} Q${f1(100 - sx)} ${f1(ct)} 100 ${f1(ct)} Q${f1(100 + sx)} ${f1(ct)} ${f1(100 + sx)} ${f1(H.cy)} L${f1(100 + sx - 4)} ${f1(gy)} ` +
+                `Q${f1(100 + g + 18)} ${f1(gy + 6)} ${f1(100 + g)} ${f1(gy - 6)} L${f1(100 + g)} ${f1(LY.eyeY + 4)} Q${f1(100 + g)} ${f1(LY.eyeY - 36)} 100 ${f1(LY.eyeY - 38)} Q${f1(100 - g)} ${f1(LY.eyeY - 36)} ${f1(100 - g)} ${f1(LY.eyeY + 4)} L${f1(100 - g)} ${f1(gy - 6)} Q${f1(100 - g - 18)} ${f1(gy + 6)} ${f1(100 - sx + 4)} ${f1(gy)} Z`, m, dk, 4) +
+              rbStroke([-1, 1].map(s => [0, 1, 2].map(i => `M${f1(100 + s * (g + 14))} ${f1(H.cy + 8 + 12 * i)} L${f1(100 + s * (sx - 12))} ${f1(H.cy + 8 + 12 * i)}`).join(" ")).join(" "), dk, 4) +
+              crestV(gold, gk) + gem(100) +
+              P(rbRect(100 - g - 10, LY.eyeY - 20, 100 + g + 10, LY.eyeY + 18, 12), "#ffd34d", "#b45309", 3, ' fill-opacity="0.45"');
+      } else {
+        svg = P(`M${f1(X(-sx - 2))} ${f1(H.chin - 16)} L${f1(X(-sx - 4))} ${f1(H.cy)} Q${f1(X(-sx - 4))} ${f1(ct)} ${f1(X(-0.1 * sx))} ${f1(ct)} Q${f1(X(sx - 2))} ${f1(ct + 2)} ${f1(X(sx - 4))} ${f1(LY.eyeY - 24)} ` +
+                `L${f1(X(0.3 * hw))} ${f1(LY.eyeY - 20)} L${f1(X(0.22 * hw))} ${f1(gy)} Q${f1(X(0.05 * hw))} ${f1(gy + 10)} ${f1(X(-0.4 * hw))} ${f1(H.chin - 14)} Z`, m, dk, 4) +
+              rbStroke([0, 1, 2].map(i => `M${f1(X(-0.3 * hw))} ${f1(H.cy + 4 + 12 * i)} L${f1(X(-0.72 * hw))} ${f1(H.cy + 4 + 12 * i)}`).join(" "), dk, 4) +
+              P(`M${f1(X(0.62 * hw))} ${f1(ct + 18)} L${f1(X(-1.3 * hw))} ${f1(ct - 76)} Q${f1(X(-0.1 * hw))} ${f1(ct - 4)} ${f1(X(0.45 * hw))} ${f1(ct + 42)} Z`, gold, gk, 3) + gem(X(0.58 * hw)) +
+              P(rbRect(X(0.24 * hw), LY.eyeY - 20, X(hw + 6), LY.eyeY + 16, 9), "#ffd34d", "#b45309", 3, ' fill-opacity="0.45"');
+        top = ct - 80; half = 1.3 * hw + 6;
+      }
+      break;
+    }
+    // 📺 the TV bot: an old set for a head, the friend's face on its screen (behind glass glowing faintly, with a glare),
+    // two knobs and a speaker on the wider bezel, rabbit-ear antennas, a short neck stalk; in profile its deep side, the
+    // screen edge on, the picture tube's housing tapering back (flat, lying face up: its own drawing, so nothing goes
+    // through the floor); from behind the tube's round back, vents and the socket
+    case "set": {
+      const ht = 2.3 * H.ry, bot = H.chin + 8, tp = bot - ht, cl = 100 - 1.36 * hw, cr = 100 + 1.84 * hw, sw = 1.12 * hw, sy0 = tp + 12, sy1 = bot - 12, cream = "#d9d2c3";
+      const stalk = x => P(rbRect(x - 14, bot - 6, x + 14, bot + 30, 3), cream, darker(cream), 2.5);
+      const ears = (x0, xa, xb) => rbStroke(`M${f1(xa)} ${f1(tp - 144)} L${f1(x0)} ${f1(tp + 2)} L${f1(xb)} ${f1(tp - 144)}`, "#d1d5db", 5) + P(rbDots([[xa, tp - 148], [xb, tp - 148]], 8), "#374151");
+      top = tp - 158; half = 1.84 * hw;
+      if (!dir && !away) {
+        behind = P(rbRect(100 - sw, sy0, 100 + sw, sy1, 22), mix(lt, "#000000", 0.72));   // (the screen, dark round the face's picture)
+        svg = stalk(100) + ears(100, 100 - 0.42 * hw, 100 + 0.42 * hw) +
+              P(rbRect(cl, tp, cr, bot, 16) + " " + rbRect(100 - sw, sy0, 100 + sw, sy1, 22), m, dk, 4, ' fill-rule="evenodd"') +
+              P(rbRect(100 - sw, sy0, 100 + sw, sy1, 22), lt, lt, 5, ' fill-opacity="0.15"') +
+              rbStroke(`M${f1(100 - sw + 16)} ${f1(sy0 + 50)} Q${f1(100 - sw + 18)} ${f1(sy0 + 16)} ${f1(100 - sw + 54)} ${f1(sy0 + 12)}`, "#ffffff", 6, ' opacity="0.6"') +
+              P(rbDots([[cr - 27, tp + 46], [cr - 27, tp + 86]], 12), cream, dk, 3) +
+              rbStroke([0, 1, 2, 3].map(i => `M${f1(cr - 42)} ${f1(tp + 118 + 12 * i)} L${f1(cr - 12)} ${f1(tp + 118 + 12 * i)}`).join(" "), dk, 4);
+      } else if (away) {
+        const a = 100 - (cr - 100), b = 100 + (100 - cl);
+        svg = stalk(100) + ears(100, 100 - 0.42 * hw, 100 + 0.42 * hw) + P(rbRect(a, tp, b, bot, 16), m, dk, 4) +
+              P(rbRect(100 - 0.95 * hw, tp + 24, 100 + 0.95 * hw, bot - 24, 40), mix(m, "#000000", 0.25), dk, 3) +
+              rbStroke([0, 1, 2, 3].map(i => `M${f1(100 - 0.45 * hw)} ${f1(tp + 52 + 16 * i)} L${f1(100 + 0.45 * hw)} ${f1(tp + 52 + 16 * i)}`).join(" "), "#1f2937", 5) +
+              P(rbRect(100 - 13, bot - 64, 100 + 13, bot - 44, 3), "#1f2937");
+      } else {
+        const xf = X(0.95 * hw), xb = X(o.lieBack ? -0.9 * hw : -0.35 * hw), xt = X(-1.45 * hw);
+        svg = stalk(X(-0.1 * hw)) + ears(X(-0.1 * hw), X(-0.6 * hw), X(-0.32 * hw)) +
+              (o.lieBack ? "" : P(rbLine([[xb, tp + 14], [xt, tp + 0.3 * ht], [xt, bot - 0.3 * ht], [xb, bot - 14]]) + " Z", mix(m, "#000000", 0.3), dk, 3) +
+                                rbStroke([0, 1, 2].map(i => `M${f1(X(-0.55 * hw))} ${f1(H.cy - 18 + 18 * i)} L${f1(X(-1.15 * hw))} ${f1(H.cy - 18 + 18 * i)}`).join(" "), "#1f2937", 4)) +
+              P(rbRect(xb, tp, xf, bot, 12), m, dk, 4) + P(rbRect(xf - dir * 16, tp, xf, bot, 6), mix(m, "#000000", 0.15), dk, 3) +
+              P(rbRect(xf, sy0 + 6, xf + dir * 6, sy1 - 6, 2), lt, lt, 1.5) + P(ellD(xf - dir * 8, tp + 42, 7, 7), cream, dk, 2.5);
+        half = o.lieBack ? 0.95 * hw : 1.45 * hw;
+      }
+      break;
+    }
+    // 🕷️ the spider bot: a close round dome over the crown and down the sides to the jaw, the face in an oval opening (no
+    // cheek guards), six red lens eyes in two rows on the brow; in profile three lenses at its front; from behind a ridge
+    case "dome": {
+      const ox = hw + 12, oy = H.ry + 12, cy = H.cy - 6, glint = "#ffffff";
+      top = cy - oy - 4; half = ox;
+      if (!dir && !away) {
+        const L1 = [[100 - 17, cy - oy + 26, 8.5], [100 + 17, cy - oy + 26, 8.5], [100 - 37, cy - oy + 44, 6.5], [100 - 12, cy - oy + 46, 6.5], [100 + 12, cy - oy + 46, 6.5], [100 + 37, cy - oy + 44, 6.5]];
+        svg = P(ellD(100, cy, ox, oy) + " " + ellD(100, (LY.eyeY + LY.mouthY) / 2 + 3, 0.74 * hw, 60), m, dk, 4, ' fill-rule="evenodd"') +
+              P(rbDots(L1, 0), lt, "#450a0a", 2) + P(rbDots(L1.map(([x, y, r]) => [x - r * 0.35, y - r * 0.35, r * 0.3]), 0), glint);
+      } else if (away) svg = P(ellD(100, cy, ox, oy), m, dk, 4) + P([0, 1, 2].map(i => rbRect(92, cy - oy + 14 + 46 * i, 108, cy - oy + 52 + 46 * i, 7)).join(" "), mix(m, "#000000", 0.3), dk, 2);
+      else {
+        const L1 = [[X(0.66 * hw), cy - oy + 30, 8], [X(0.84 * hw), cy - oy + 48, 6.5], [X(0.5 * hw), cy - oy + 44, 6]];
+        svg = P(`M${f1(X(0.8 * hw))} ${f1(Y(-0.5))} Q${f1(X(hw + 4))} ${f1(cy - oy + 6)} ${f1(X(0.05 * hw))} ${f1(cy - oy)} Q${f1(X(-ox - 6))} ${f1(cy - oy + 8)} ${f1(X(-ox))} ${f1(cy)} ` +
+                `Q${f1(X(-ox + 4))} ${f1(cy + oy - 6)} ${f1(X(-0.2 * hw))} ${f1(cy + oy)} L${f1(X(0.18 * hw))} ${f1(cy + oy - 8)} Q${f1(X(0.34 * hw))} ${f1(Y(0.12))} ${f1(X(0.8 * hw))} ${f1(Y(-0.5))} Z`, m, dk, 4) +
+              P(rbDots(L1, 0), lt, "#450a0a", 2) + P(rbDots(L1.map(([x, y, r]) => [x - r * 0.35, y - r * 0.35, r * 0.3]), 0), glint);
+      }
+      break;
+    }
+  }
+  return { svg, eyes, behind, top, half };
+}
+
+// The torso, in the friend's own units (the shirt from the neck at -20 to its hem at L; w its half width, as drawn in this
+// view: 0.62 of it in profile), over the shirt. back: seen from behind. cr: crawling toward us or away (robotCrawlTorso).
+function robotTorso(R, w, L, dir, back, cr = null) {
+  const m = R.main, dk = R.dk, lt = R.lt, P = rbPath;
+  if (cr) return robotCrawlTorso(R, w, L, cr);
+  switch (R.S.torso) {
+    // 🔑 a straight tin column, flaring at the hips into a short hem (front and back in profile); facing us a dark window
+    // with two gears and a light
+    case "column": {
+      const c = w + 3, h = w + 13, y0 = L - 18, y1 = L + 12;
+      let t = P(`M${f1(-c)} -8 Q${f1(-c)} -24 ${f1(-c + 14)} -24 L${f1(c - 14)} -24 Q${f1(c)} -24 ${f1(c)} -8 L${f1(c)} ${f1(y0)} L${f1(h)} ${f1(y1)} L${f1(-h)} ${f1(y1)} L${f1(-c)} ${f1(y0)} Z`, m, dk, 3) +
+              `<path d="M${f1(-c)} ${f1(y0)} L${f1(c)} ${f1(y0)}" stroke="${dk}" stroke-width="2.5"/>`;
+      if (!dir && !back) { const gx = 0.52 * w, g0 = 12, g1 = 12 + 0.32 * L, gm = (g0 + g1) / 2;
+        t += P(rbRect(-gx, g0, gx, g1, 6), "#333333", dk, 2.5) + P(rbGear(-0.2 * w, gm + 2, 0.22 * w) + " " + rbGear(0.15 * w, gm - 4, 0.15 * w, 7), ROBOT_SILVER, "#6b7280", 1.5, ' fill-rule="evenodd"') +
+             P(ellD(0.38 * w, g0 + 10, 5, 5), lt, R.ltk, 1.5); }
+      return t;
+    }
+    // 📦 a big cardboard box from the shoulders to just below the hips, its top flaps sticking up at the corners, a strip of
+    // tape across; facing us a marker dial and three bottle-cap buttons, from behind a marker arrow; in profile its side
+    // (0.7 as deep as it is wide) and the near flap
+    case "box": {
+      const y0 = -26, y1 = L + 16, tape = (a, b) => P(rbRect(a, L - 32, b, L - 18, 0), "#b8bec6", "#8f969e", 1.5), flap = mix(m, "#000000", 0.12);
+      if (dir) { const d = 1.47 * w;
+        return P(`M${f1(-d + 4)} ${f1(y0)} L${f1(-d - 6)} ${f1(y0 - 24)} L${f1(d + 6)} ${f1(y0 - 30)} L${f1(d - 4)} ${f1(y0)} Z`, flap, dk, 2.5) + P(rbRect(-d, y0, d, y1, 3), m, dk, 3) + tape(-d, d); }
+      const b = 1.3 * w, flaps = [-1, 1].map(s => `M${f1(s * b)} ${f1(y0)} L${f1(s * (b + 22))} ${f1(y0 - 30)} L${f1(s * 0.54 * b)} ${f1(y0 - 36)} L${f1(s * 0.58 * b)} ${f1(y0)} Z`).join(" ");
+      let t = P(flaps, flap, dk, 2.5) + P(rbRect(-b, y0, b, y1, 3), m, dk, 3) + tape(-b, b);
+      if (back) t += rbStroke(`M0 ${f1(0.62 * L)} L0 ${f1(0.12 * L)} M-16 ${f1(0.12 * L + 18)} L0 ${f1(0.12 * L)} L16 ${f1(0.12 * L + 18)}`, dk, 4);
+      else { const cx = -0.42 * b, cy = 0.3 * L, r = 0.2 * b;
+        t += rbStroke(ellD(cx, cy, r, r) + ` M${f1(cx)} ${f1(cy)} L${f1(cx + 0.65 * r)} ${f1(cy - 0.6 * r)}`, dk, 3) +
+             P(rbDots([[0.3 * b, 0.22 * L], [0.55 * b, 0.22 * L], [0.42 * b, 0.36 * L]], 7), lt, R.ltk, 2); }
+      return t;
+    }
+    // 🤗 a white egg from the shoulders over the hips, widest at the belly, a coloured band round it; facing us a glowing
+    // heart, from behind a charging hatch; in profile rounder in front, like a belly. It is the body: the shirt's shape is not
+    // drawn under it (drawNow)
+    case "egg": {
+      const y0 = -26, y1 = L + 22, cy = (y0 + y1) / 2, ry = (y1 - y0) / 2, wh = "#f4f6f8";
+      const band = (cx, rx) => rbStroke(`M${f1(cx - 0.97 * rx)} ${f1(cy + 12)} Q${f1(cx)} ${f1(cy + 36)} ${f1(cx + 0.97 * rx)} ${f1(cy + 12)}`, m, 10, ' stroke-linecap="butt"');
+      if (dir) { const rx = 1.45 * w, cx = dir * 6;
+        return P(`M${f1(cx)} ${f1(y0)} C${f1(cx + dir * 1.25 * rx)} ${f1(y0)} ${f1(cx + dir * 1.2 * rx)} ${f1(y1)} ${f1(cx)} ${f1(y1)} C${f1(cx - dir * 1.05 * rx)} ${f1(y1)} ${f1(cx - dir * 1.1 * rx)} ${f1(y0)} ${f1(cx)} ${f1(y0)} Z`, wh, dk, 3) + band(cx, 0.9 * rx); }
+      const rx = 1.35 * w;
+      let t = P(ellD(0, cy, rx, ry), wh, dk, 3) + band(0, rx);
+      if (back) t += P(rbRect(-0.42 * rx, cy - 0.52 * ry, 0.42 * rx, cy - 0.02 * ry, 10) + ` M-10 ${f1(cy - 0.3 * ry)} L10 ${f1(cy - 0.3 * ry)}`, mix(wh, m, 0.18), dk, 2.5);
+      else { const hy = cy - 0.42 * ry;
+        t += P(`M0 ${f1(hy + 10)} C-18 ${f1(hy - 4)} -12 ${f1(hy - 20)} 0 ${f1(hy - 9)} C12 ${f1(hy - 20)} 18 ${f1(hy - 4)} 0 ${f1(hy + 10)} Z`, lt, R.ltk, 2); }
+      return t;
+    }
+    // 🚀 a rounded capsule chest plate; facing us a dial with its needle
+    case "capsule": {
+      const pl = "#eef2f6", pk = "#9aa6b2";
+      if (dir) return P(rbRect(-(w + 2), -22, w + 2, L - 14, w), pl, pk, 3);
+      if (back) return P(rbRect(-(w - 2), -22, w - 2, L - 14, 0.5 * w), "#e4e9ef", pk, 3);
+      return P(rbRect(-(w - 2), -22, w - 2, L - 14, 0.5 * w), pl, pk, 3) + P(ellD(0, 0.3 * L, 17, 17), "#1f2937", dk, 3) +
+             rbStroke(`M0 ${f1(0.3 * L)} L11 ${f1(0.3 * L - 9)}`, lt, 3.5);
+    }
+    // 🦾 a square chest plate and a belt; facing us a round fan vent (its shoulder blocks are the arms' pieces: robotArm)
+    case "chest": {
+      const belt = (a, b) => P(rbRect(a, L - 18, b, L - 3, 0), "#27272a", "#18181b", 2);
+      if (dir) return P(rbRect(dir * (w - 12), -8, dir * (w + 6), 0.62 * L, 4), m, dk, 3) + belt(-(w + 3), w + 3);
+      if (back) return P(rbRect(-(w - 8), -8, w - 8, 0.62 * L, 8), mix(m, "#000000", 0.15), dk, 3) + belt(-(w + 4), w + 4);
+      const vy = 0.3 * L;
+      return P(rbRect(-(w - 6), -8, w - 6, 0.62 * L, 8), m, dk, 3) + P(ellD(0, vy, 22, 22), "#3f3f46", dk, 3) +
+             P([0, 1, 2, 3].map(i => { const a = i * Math.PI / 2 + 0.4, c = Math.cos(a), s = Math.sin(a);
+               return rbLine([[3 * c, vy + 3 * s], [18 * c - 7 * s, vy + 18 * s + 7 * c], [18 * c + 5 * s, vy + 18 * s - 5 * c]]) + " Z"; }).join(" "), "#9ca3af") + belt(-(w + 4), w + 4);
+    }
+    // ⚡ a silver chest plate with a glowing round core, and a V belt with a gold buckle; from behind a back plate with two
+    // thruster vents (no core); in profile the plate edge on
+    case "plate": {
+      const silver = ROBOT_SILVER, red = R.red;
+      const vbelt = s => P(`M${f1(-(w + 2))} ${f1(L - 20)} L0 ${f1(L + s)} L${f1(w + 2)} ${f1(L - 20)} L${f1(w + 2)} ${f1(L - 7)} L0 ${f1(L + s + 13)} L${f1(-(w + 2))} ${f1(L - 7)} Z`, red, darker(red), 2);
+      if (dir) return P(`M${f1(dir * (w - 8))} -16 L${f1(dir * (w + 4))} -10 L${f1(dir * (w + 2))} ${f1(0.5 * L)} L${f1(dir * (w - 12))} ${f1(0.58 * L)} Z`, silver, "#6b7280", 2.5) +
+                      P(rbRect(-(w + 2), L - 20, w + 2, L - 7, 0), red, darker(red), 2);
+      if (back) return P(rbRect(-(w - 10), -12, w - 10, 0.5 * L, 12), mix(m, "#000000", 0.2), dk, 3) +
+                       P(rbRect(-0.55 * w, 0.18 * L, -0.15 * w, 0.4 * L, 6) + " " + rbRect(0.15 * w, 0.18 * L, 0.55 * w, 0.4 * L, 6), lt, R.ltk, 2) + vbelt(-4);
+      return P(`M${f1(-(w - 4))} -16 L${f1(w - 4)} -16 L${f1(w - 10)} ${f1(0.5 * L)} Q0 ${f1(0.68 * L)} ${f1(-(w - 10))} ${f1(0.5 * L)} Z`, silver, "#6b7280", 2.5) +
+             P(ellD(0, 0.24 * L, 22, 22), "none", dk, 4) + P(ellD(0, 0.24 * L, 15, 15), lt, R.ltk, 2) + vbelt(4) +
+             P(rbRect(-8, L - 2, 8, L + 12, 2), "#facc15", "#a16207", 2);
+    }
+    // 📺 no shell: the friend's own body in cream, a small control panel facing us
+    case "panel":
+      return dir || back ? "" : P(rbRect(-0.42 * w, 0.2 * L, 0.42 * w, 0.2 * L + 44, 5), mix("#d9d2c3", "#000000", 0.12), "#8a8274", 2.5) +
+                                P(rbDots([[-0.18 * w, 0.2 * L + 22], [0.18 * w, 0.2 * L + 22]], 7), lt, R.ltk, 2);
+    // 🕷️ a segmented torso plate: its bands across the front, the back, or the side
+    case "segments": {
+      const ys = [0.12, 0.34, 0.56, 0.78].map(f => f * L), a = dir ? w : w - 2, k = back ? -8 : 10;
+      return rbStroke(ys.map(y => dir ? `M${f1(-a)} ${f1(y)} Q0 ${f1(y + 6)} ${f1(a)} ${f1(y + 2)}` : `M${f1(-a)} ${f1(y)} Q0 ${f1(y + k)} ${f1(a)} ${f1(y)}`).join(" "), dk, 3);
+    }
+  }
+  return "";
+}
+
+// Crawling toward us or away (ticket 286's crawl: the body runs into the picture, its back up), the torso's own drawing, in
+// the friend's units as the picture has them, never the from-behind drawing turned over or seen short. cr: { to } crawling
+// toward us (the back rising behind the head from the shoulders at -20, that share of its length: the hips far, up the
+// picture), or { away } (the back rising from the hips at L toward the head, that share: the shoulders far). Fy carries a
+// place along the back (in the shirt's own units, neck -20 to hem L) to the picture; what stands off the back by h shows
+// 0.9 h higher (seen from a little above). Each shell shows its back as seen from there and, where it has depth, its near
+// end (toward us the shoulders' end, away the hips'): the tin's column end on, the box's open top and its side flaps (toward
+// us) or its closed bottom (away), the helper's egg round (its cross-section, not a flat ring), the plates thin on the back.
+function robotCrawlTorso(R, w, L, cr) {
+  const m = R.main, dk = R.dk, lt = R.lt, P = rbPath, to = !!cr.to, k = cr.to || cr.away;
+  const Fy = y => to ? -k * y - 20 * (1 + k) : L - k * (L - y);
+  const near = (yTop, yBot) => to ? Fy(yTop) : Fy(yBot);   // (the near end's line in the picture: the shoulders' toward us, the hips' away)
+  const band = (x0, x1, ya, yb, r, fill, line, sw = 2.5) => P(rbRect(x0, Fy(ya), x1, Fy(yb), r), fill, line, sw);
+  const pts = ps => rbLine(ps.map(([x, y, h = 0]) => [x, Fy(y) - 0.9 * h]));
+  switch (R.S.torso) {
+    // 🔑 the column: its back, the hem flaring at the hips, and its near end on (the shoulders' end, rounded; the hem's rim)
+    case "column": {
+      const c = w + 3, h = w + 13, y0 = L - 18, y1 = L + 12, sh = mix(m, "#000000", 0.18);
+      const end = to ? P(rbRect(-c, Fy(-24), c, Fy(-24) + 24, 12), sh, dk, 3) : P(rbRect(-h, Fy(y1) - 2, h, Fy(y1) + 14, 4), sh, dk, 3);
+      return end + P(rbRect(-c, Fy(-24), c, Fy(y0), 6), m, dk, 3) + P(pts([[-c, y0], [c, y0], [h, y1], [-h, y1]]) + " Z", m, dk, 3);
+    }
+    // 📦 the box: its back with the tape and the marker arrow; toward us its open top, dark inside, the side flaps opened out
+    // either side; away its closed bottom end on, the flaps far up at the top's corners
+    case "box": {
+      const y0 = -26, y1 = L + 16, b = 1.3 * w, flap = mix(m, "#000000", 0.12), inside = mix(m, "#000000", 0.5);
+      let t = "";
+      if (to) { const e = Fy(y0), d = 40;
+        t = P([-1, 1].map(s => rbLine([[s * b, e + 2], [s * (b + 30), e - 8], [s * (b + 26), e + d + 6], [s * b, e + d - 2]]) + " Z").join(" "), flap, dk, 2.5) +
+            P(rbRect(-b, e, b, e + d, 3), inside, dk, 3); }
+      else t = P([-1, 1].map(s => pts([[s * b, y0], [s * (b + 22), y0 - 30], [s * 0.54 * b, y0 - 36], [s * 0.58 * b, y0]]) + " Z").join(" "), flap, dk, 2.5) +
+               P(rbRect(-b, Fy(y1), b, Fy(y1) + 30, 3), flap, dk, 3);
+      return t + band(-b, b, y0, y1, 3, m, dk, 3) + band(-b, b, L - 32, L - 18, 0, "#b8bec6", "#8f969e", 1.5) +
+             rbStroke(pts([[0, 0.62 * L], [0, 0.12 * L]]) + " " + pts([[-16, 0.12 * L + 18], [0, 0.12 * L], [16, 0.12 * L + 18]]), dk, 4);
+    }
+    // 🤗 the egg, round from either end: its widest round (as wide as the egg, as deep as it is from the side, and the length
+    // it shows), the band round its middle arching over its back (its lower half under the egg), the hatch on top (away)
+    case "egg": {
+      const y0 = -26, y1 = L + 22, cy = (y0 + y1) / 2, ry = (y1 - y0) / 2, rx = 1.35 * w, dz = 0.9 * w, wh = "#f4f6f8";
+      const Ry = Math.hypot(k * ry, 0.9 * dz), bc = Fy(cy + 24), a = 0.97 * rx, bb = 0.7 * dz;
+      return P(ellD(0, Fy(cy), rx, Ry), wh, dk, 3) + rbStroke(`M${f1(-a)} ${f1(bc)} A${f1(a)} ${f1(bb)} 0 0 1 ${f1(a)} ${f1(bc)}`, m, 10, ' stroke-linecap="butt"') +
+             (to ? "" : P(rbRect(-0.42 * rx, Fy(cy - 0.52 * ry) - 0.55 * dz, 0.42 * rx, Fy(cy - 0.02 * ry) - 0.55 * dz, 8), mix(wh, m, 0.18), dk, 2.5));
+    }
+    // 🚀 the back plate on the back, its near edge's thickness under it
+    case "capsule": { const pk = "#9aa6b2", y = near(-22, L - 14);
+      return P(rbRect(-(w - 2), y, w - 2, y + 7, 3), mix("#e4e9ef", "#000000", 0.15), pk, 2) + band(-(w - 2), w - 2, -22, L - 14, 0.4 * w, "#e4e9ef", pk, 3); }
+    // 🦾 the back plate and the belt round the waist (near, away; far up, toward us)
+    case "chest": { const y = near(-8, 0.62 * L);
+      return P(rbRect(-(w - 8), y, w - 8, y + 7, 3), mix(m, "#000000", 0.3), dk, 2) + band(-(w - 8), w - 8, -8, 0.62 * L, 8, mix(m, "#000000", 0.15), dk, 3) +
+             band(-(w + 4), w + 4, L - 18, L - 3, 0, "#27272a", "#18181b", 2); }
+    // ⚡ the back plate with its two thruster vents, and the V belt at the waist
+    case "plate": { const red = R.red, y = near(-12, 0.5 * L);
+      return P(rbRect(-(w - 10), y, w - 10, y + 7, 3), mix(m, "#000000", 0.35), dk, 2) + band(-(w - 10), w - 10, -12, 0.5 * L, 10, mix(m, "#000000", 0.2), dk, 3) +
+             P(rbRect(-0.55 * w, Fy(0.18 * L), -0.15 * w, Fy(0.4 * L), 4) + " " + rbRect(0.15 * w, Fy(0.18 * L), 0.55 * w, Fy(0.4 * L), 4), lt, R.ltk, 2) +
+             P(pts([[-(w + 2), L - 20], [0, L - 4], [w + 2, L - 20], [w + 2, L - 7], [0, L + 9], [-(w + 2), L - 7]]) + " Z", red, darker(red), 2);
+    }
+    // 📺 no shell: the friend's own body
+    case "panel": return "";
+    // 🕷️ the bands across the back, bowed up over its round top
+    case "segments":
+      return rbStroke([0.12, 0.34, 0.56, 0.78].map(f => { const y = Fy(f * L); return `M${f1(-(w - 2))} ${f1(y)} Q0 ${f1(y - 18)} ${f1(w - 2)} ${f1(y)}`; }).join(" "), dk, 3);
+  }
+  return "";
+}
+
+// A piece on an arm (in the friend's units), drawn in that arm's slot. o: { dir (in profile), far (the far arm, behind),
+// w (the torso's half width as drawn), armW, sleeve (the sleeve's points) }
+function robotArm(R, arm, o) {
+  const m = R.main, dk = R.dk, P = rbPath, [ax] = arm.A, sd = arm.side, prof = !!o.dir, b = o.dir || 1;
+  switch (R.S.limbs) {
+    // 🔑 a bolt at the elbow
+    case "bolts": { const E = arm.E || [(arm.A[0] + arm.H[0]) / 2, (arm.A[1] + arm.H[1]) / 2]; return P(ellD(E[0], E[1], 6.5, 6.5), "#8a929c", "#4b5563", 2); }
+    // 📦 dryer hose, 🚀 an accordion: its ribs one dashed stroke along the sleeve (and the space bot's shoulder pad)
+    case "hose": case "accordion": {
+      const ribs = rbStroke(rbLine(o.sleeve), R.S.limbs === "hose" ? "#7d848c" : "#9aa6b2", o.armW + 7, ' stroke-dasharray="2.5 6" stroke-linecap="butt"');
+      if (R.S.limbs === "hose") return ribs;
+      const cx = prof ? ax - (o.far ? b * 12 : 0) : sd * (o.w - 4), cy = o.far ? -8 : -2, r = 23;
+      return ribs + P(`M${f1(cx - r)} ${f1(cy + 10)} A${r} ${r} 0 0 1 ${f1(cx + r)} ${f1(cy + 10)} Z`, o.far ? mix(m, "#000000", 0.2) : m, dk, 3);
+    }
+    // 🦾 a big block on the shoulder with a hazard stripe (after the arm, so a raised arm comes out from under it)
+    case "blocks": {
+      const fill = o.far ? mix(m, "#000000", 0.2) : m;
+      if (prof) { const cx = ax - (o.far ? b * 16 : 0), cy = o.far ? -6 : 0;
+        return P(rbRect(cx - 32, cy - 26, cx + 32, cy + 30, 12), fill, dk, 3) + `<path d="M${f1(cx - 22)} ${f1(cy + 18)} L${f1(cx + 22)} ${f1(cy + 18)}" stroke="#1f2937" stroke-width="9" stroke-dasharray="8 7"/>`; }
+      const x0 = sd * (o.w - 24), x1 = sd * (o.w + 46);
+      return P(rbRect(x0, -28, x1, 30, 12), fill, dk, 3) + `<path d="M${f1(x0 + sd * 10)} 18 L${f1(x1 - sd * 10)} 18" stroke="#1f2937" stroke-width="9" stroke-dasharray="8 7"/>`;
+    }
+    // ⚡ a pointed shoulder plate, flaring up and out to a point, its edge in the red trim
+    case "plates": {
+      const fill = o.far ? mix(m, "#000000", 0.2) : m;
+      if (prof) { const cx = ax - (o.far ? b * 12 : 0), cy = o.far ? -5 : 0;
+        return P(rbLine([[cx + b * 24, cy + 18], [cx + b * 22, cy - 8], [cx - b * 30, cy - 46], [cx - b * 26, cy + 20]]) + " Z", fill, R.red, 4); }
+      return P(rbLine([[sd * (o.w - 18), -8], [sd * (o.w + 44), -42], [sd * (o.w + 30), 24], [sd * (o.w - 6), 20]]) + " Z", fill, R.red, 4);
+    }
+  }
+  return "";
+}
+
+// A piece on a leg (its joints J, hip to foot; `half` the pants leg's half width; away: seen from behind): the tin's ridges,
+// the mech's knee pad
+function robotLeg(R, J, half, dir, away = false) {
+  if (R.S.limbs === "bolts") {
+    // (the ridges across the thigh and across the shin, each its own run of dashes, as wide as the leg less a margin: each run
+    // stops short of the knee by as far as its ends would reach past the knee's middle line, so a bent knee's two runs never
+    // cross, and the shin's short of the foot; a knee folded past 100 degrees (sitting cross-legged, meditating: the leg drawn
+    // as a flat fold) has no shin ridges, and its thigh's stop short leaves few or none)
+    const hr = half - 4, unit = (A, B) => { const l = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1; return [(B[0] - A[0]) / l, (B[1] - A[1]) / l, l]; };
+    const run = (A, B, a, b) => { const [ux, uy, l] = unit(A, B); return l - a - b < 6 ? "" : `M${f1(A[0] + ux * a)} ${f1(A[1] + uy * a)} L${f1(B[0] - ux * b)} ${f1(B[1] - uy * b)}`; };
+    let d;
+    if (J.length < 3) d = run(J[0], J[1], 0, 24);
+    else { const [t1, t2] = [unit(J[0], J[1]), unit(J[1], J[2])], bend = Math.acos(Math.max(-1, Math.min(1, t1[0] * t2[0] + t1[1] * t2[1])));
+      const gap = bend > 3 ? Infinity : hr * Math.tan(bend / 2) + 3;
+      d = [run(J[0], J[1], 0, gap), bend <= 1.75 ? run(J[1], J[2], gap, 24) : ""].filter(Boolean).join(" "); }
+    return d ? rbStroke(d, "#9aa1ab", f1(2 * hr), ' stroke-dasharray="2.5 10" stroke-linecap="butt"') : "";
+  }
+  // (the mech's knee pad: on the front of the knee, so none from behind)
+  if (R.S.limbs === "blocks" && !away) { const K = J.length > 2 ? J[1] : [(J[0][0] + J[1][0]) / 2, (J[0][1] + J[1][1]) / 2], x = K[0] + (dir ? dir * 5 : 0);
+    return rbPath(rbRect(x - 16, K[1] - 16, x + 16, K[1] + 16, 5), R.main, R.dk, 3); }
+  return "";
+}
+
+// What stands off the back (in the friend's units), drawn where wings are. o: { stride (walking or running, which of the
+// key's three drawings: 0, 1, 2), jump (in the air: the space bot's flames), sitting, lying (any facing: the spider's legs
+// folded), lieBack (lying face up: what is on the back is under them, not drawn), crawl ({ to } crawling toward us or
+// { away }: robotCrawlTorso's), crawlTo (crawling toward us: behind the back turned up, only what rises from behind it),
+// over (crawling toward us: its own drawing over that back), turn and phase (crawling or swimming in profile: the turn
+// about the hips, and LFO B's phase, the spider's legs stepping by it), floor (the floor, or the water's depth) }
+function robotBack(R, w, L, dir, away, o = {}) {
+  const m = R.main, dk = R.dk, lt = R.lt, P = rbPath, kind = R.S.back;
+  if (o.lieBack && kind !== "legs") return "";
+  if (o.crawlTo && !o.over && kind !== "legs") return "";
+  if (o.over && kind === "legs") return "";
+  // (crawling toward us, over the back turned up, or crawling away: each piece's own drawing there)
+  if (o.over || (o.crawl && o.crawl.away)) return robotCrawlBack(R, w, L, o);
+  switch (kind) {
+    // 🔑 the wind-up key: hidden facing us; from the side its stem straight out of the back at the shoulder blades, its bow
+    // seen full on (its iconic outline); from behind seen end on, the hub and the bow edge on, an upright bar. Walking or
+    // running it turns: three drawings of its own in turn (full on, half turned, edge on; from behind the bar upright, then
+    // slanting one way, then the other), never a rotate()
+    case "key": {
+      const k = o.stride || 0, steel = "#9aa1ab";
+      if (!dir && !away) return "";
+      if (away) { const a = [90, 30, 150][k] * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), y = 34, l = 30, t = 5;
+        return P(rbLine([[c * l - s * t, y - s * l - c * t], [c * l + s * t, y - s * l + c * t], [-c * l + s * t, y + s * l + c * t], [-c * l - s * t, y + s * l - c * t]]) + " Z", lt, R.ltk, 2.5) +
+               P(ellD(0, y, 9, 9), lt, R.ltk, 2.5); }
+      const x0 = -dir * (w + 3), x1 = x0 - dir * 26, y = 30, bx = x1 - dir * 12;
+      const bow = k === 0 ? rbBow(bx, y, 13, 26) : k === 1 ? rbBow(bx, y, 13, 13) : rbRect(bx - 13, y - 3, bx + 13, y + 3, 2);
+      return P(rbRect(x0, y - 4, x1, y + 4, 0), steel, "#4b5563", 2) + P(bow, lt, R.ltk, 2.5) + P(ellD(x0, y, 8, 8), lt, R.ltk, 2.5);
+    }
+    // 🚀 the rocket pack: two tubes behind, their nose cones over the shoulders, fins at the waist, the nozzles' rims (in the
+    // lights); in profile one tube along the back, its fin out behind; jumping, a still flame under each nozzle
+    case "rockets": {
+      const r = 13, top = -66, bot = L - 14;
+      const tube = x => `M${f1(x - r)} ${f1(bot)} L${f1(x - r)} ${f1(top + 1.6 * r)} Q${f1(x - r)} ${f1(top + 0.2 * r)} ${f1(x)} ${f1(top)} Q${f1(x + r)} ${f1(top + 0.2 * r)} ${f1(x + r)} ${f1(top + 1.6 * r)} L${f1(x + r)} ${f1(bot)} Z`;
+      const fin = (x, s) => `M${f1(x + s * r)} ${f1(bot - 46)} L${f1(x + s * (r + 26))} ${f1(bot + 8)} L${f1(x + s * r)} ${f1(bot)} Z`;
+      const rim = x => rbRect(x - r - 2, bot - 2, x + r + 2, bot + 8, 3);
+      const flame = (x, k) => `M${f1(x - k * (r - 2))} ${f1(bot + 8)} Q${f1(x - k * (r + 4))} ${f1(bot + 8 + 30 * k)} ${f1(x)} ${f1(bot + 8 + 58 * k)} Q${f1(x + k * (r + 4))} ${f1(bot + 8 + 30 * k)} ${f1(x + k * (r - 2))} ${f1(bot + 8)} Z`;
+      const xs = dir ? [-dir * (w + 14)] : away ? [-(w - 18), w - 18] : [-(w + 2), w + 2], out = x => dir ? -dir : Math.sign(x);
+      let t = (o.jump ? P(xs.map(x => flame(x, 1)).join(" "), "#f97316") + P(xs.map(x => flame(x, 0.55)).join(" "), "#fde047") : "") +
+              P(xs.map(x => fin(x, out(x))).join(" "), mix(m, "#000000", 0.12), dk, 2.5) + P(xs.map(tube).join(" "), m, dk, 3) + P(xs.map(rim).join(" "), lt, R.ltk, 2);
+      return t;
+    }
+    // 🦾 the battery box on the back, a lightning bolt on it: hidden facing us
+    case "battery": {
+      if (!dir && !away) return "";
+      const bolt = (cx, cy) => rbLine([[cx + 5, cy - 18], [cx - 7, cy + 2], [cx + 1, cy + 2], [cx - 4, cy + 18], [cx + 9, cy - 4], [cx + 1, cy - 4], [cx + 6, cy - 18]]) + " Z";
+      if (away) return P(rbRect(-28, 10, 28, 86, 6), m, dk, 3) + P(bolt(0, 48), lt, R.ltk, 1.5);
+      const a = -dir * (w - 2), b = -dir * (w + 30);
+      return P(rbRect(a, 6, b, 86, 6), m, dk, 3) + P(bolt((a + b) / 2, 46), lt, R.ltk, 1.5);
+    }
+    // 📺 the curly power cord down the back to its plug at the waist: hidden facing us
+    case "cord": {
+      if (!dir && !away) return "";
+      const x = away ? 0 : -dir * (w + 6), y0 = away ? -12 : 4, n = 7, step = (L - 30 - y0) / n, s = away ? 1 : -dir;
+      let d = `M${f1(away ? 0 : -dir * (w - 2))} ${f1(y0)} L${f1(x)} ${f1(y0)}`;
+      for (let i = 0; i < n; i++) d += ` a7 7 0 1 ${s > 0 ? 1 : 0} 0 ${f1(step)}`;
+      const py = y0 + n * step;
+      return rbStroke(d, "#374151", 4) + P(rbRect(x - 9, py, x + 9, py + 16, 3) + ` M${f1(x - 5)} ${f1(py + 16)} L${f1(x - 5)} ${f1(py + 25)} L${f1(x - 2)} ${f1(py + 25)} L${f1(x - 2)} ${f1(py + 16)} Z M${f1(x + 2)} ${f1(py + 16)} L${f1(x + 2)} ${f1(py + 25)} L${f1(x + 5)} ${f1(py + 25)} L${f1(x + 5)} ${f1(py + 16)} Z`, "#374151");
+    }
+    // 🕷️ four jointed legs arching out of the back, two each side, their knees above the shoulders, their tips at about knee
+    // height (above the seat, sitting); in profile all four fanning back, the far pair darker; from behind over the back with
+    // the abdomen pack; lying down, folded tight along the side (knee by the shoulder, tip by the hip); crawling toward us,
+    // rising from behind the back turned up (not turned over with it)
+    case "legs": {
+      const ln = dk, far = mix(dk, "#000000", 0.35), shine = mix(m, "#ffffff", 0.35), joint = mix(m, "#000000", 0.6);
+      const legs = (sets) => sets.map(([ps, col]) => rbStroke(ps.map(rbLine).join(" "), col, 7)).join("") +
+                             sets.map(([ps]) => rbStroke(ps.map(p => rbLine(p.slice(0, 2).map(([x, y]) => [x, y - 2.5]))).join(" "), shine, 2.5)).join("") +
+                             P(rbDots(sets.flatMap(([ps]) => ps.map(p => p[1])), 5), joint);
+      const sac = (cx, rx) => P(ellD(cx, 0.56 * L, rx, 0.36 * L), m, dk, 3) + rbStroke(`M${f1(cx - 0.9 * rx)} ${f1(0.6 * L)} Q${f1(cx)} ${f1(0.6 * L + 14)} ${f1(cx + 0.9 * rx)} ${f1(0.6 * L)}`, "#facc15", 8, ' stroke-linecap="butt"');
+      if (o.lying) {
+        if (dir) { const x = -dir * w * 0.4, f = s => -dir * (w + s);
+          return legs([[[[[x, 8], [f(8), -14], [f(10), L - 12]], [[x, 26], [f(14), 6], [f(16), L + 4]]], ln]]); }
+        return legs([-1, 1].map(s => [[[[s * 20, 6], [s * (w + 10), -16], [s * (w + 12), L - 14]], [[s * 20, 26], [s * (w + 18), 6], [s * (w + 20), L + 4]]], ln]));
+      }
+      // (crawling or swimming in profile, turned about the hips: a drawing of its own laid out level in the picture, two legs
+      // reaching forward and two back over the body, their knees high over the back and their tips down by the floor (or in
+      // the water), the far pair darker; each point carried back into the friend's turned units, as the dragon's tail is)
+      // (they step as the friend goes, by LFO B's phase: a front leg on one side with the back leg on the other, each lifted
+      // while it swings forward, the other two planted)
+      if (o.turn) { const a = o.turn * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), s = dir || 1, ph = 2 * Math.PI * (o.phase || 0);
+        const lev = ([x, y]) => [x * ca - (y - L) * sa, L + x * sa + (y - L) * ca], back = ([x, y]) => [x * ca + (y - L) * sa, L - x * sa + (y - L) * ca];
+        const [rx, ry] = lev([-s * w * 0.5, 0.3 * L]), fy = o.floor - 10;
+        const leg = (b, h, c, d = 0, i = 0) => { const sw = Math.sin(ph + i * Math.PI), up = 14 * Math.max(0, Math.cos(ph + i * Math.PI));
+          return [[rx + s * d, ry], [rx + s * (d + b + 6 * sw), ry - h - 0.5 * up], [rx + s * (d + c + 18 * sw), fy - up]].map(back); };
+        return legs([[[leg(62, 100, 156, 8, 1), leg(-58, 96, -150, -8, 0)], far], [[leg(42, 88, 112, 0, 0), leg(-40, 86, -112, 0, 1)], ln]]); }
+      const tipY = o.sitting ? [L - 40, L - 22] : [L + 56, L + 76];
+      if (dir) { const x = -dir * w * 0.4, f = s => -dir * (w + s);
+        return legs([[[[[x, 6], [f(8), -72], [f(70), tipY[0] - 6]], [[x, 26], [f(44), -46], [f(118), tipY[1] - 10]]], far],
+                     [[[[x, 10], [f(24), -62], [f(92), tipY[0] + 6]], [[x, 30], [f(62), -32], [f(142), tipY[1]]]], ln]]) + sac(-dir * (w + 10), 26); }
+      // (crawling toward us, rising from behind the back turned up, their tips on the floor, the front pair's a little further
+      // back, so higher in the picture)
+      const kb = o.crawlTo ? o.crawl.to : 0, dy = o.crawlTo ? -kb * 0.2 * L - 20 * (1 + kb) - 10 : 0, tip = i => o.crawlTo ? o.floor - (i ? 10 : 24) : tipY[i] + dy;
+      const set = s => [[[[s * 20, 6 + dy], [s * (w + 34), -64 + dy], [s * (w + 100), tip(0)]], [[s * 20, 26 + dy], [s * (w + 62), -34 + dy], [s * (w + 128), tip(1)]]], ln];
+      return legs([set(-1), set(1)]) + (away ? sac(0, 0.62 * w) : "");
+    }
+  }
+  return "";
+}
+// Crawling, the back's pieces as they are seen there, each its own drawing (never the from-behind drawing turned over or
+// seen short): over the back turned up behind the head (o.over: crawling toward us) or over the back seen from behind and a
+// little above (o.crawl.away). Fy as robotCrawlTorso's; what stands up off the back shows 0.9 of its height up the picture.
+function robotCrawlBack(R, w, L, o) {
+  const m = R.main, dk = R.dk, lt = R.lt, P = rbPath, to = !!o.crawl.to, k = o.crawl.to || o.crawl.away;
+  const Fy = y => to ? -k * y - 20 * (1 + k) : L - k * (L - y);
+  const pts = ps => rbLine(ps.map(([x, y, h = 0]) => [x, Fy(y) - 0.9 * h]));
+  switch (R.S.back) {
+    // 🔑 the key standing straight up off the back, the bow full on across its top (crawling toward us, the stem long enough
+    // that the bow shows over the tall tin head)
+    case "key": { const y = Fy(30), st = to ? 42 : 34;
+      return P(rbRect(-4, y - st, 4, y, 0), "#9aa1ab", "#4b5563", 2) + P(rbBow(0, y - st - 8, 11, 20, true), lt, R.ltk, 2.5) + P(ellD(0, y, 9, 9), lt, R.ltk, 2.5); }
+    // 🚀 the two tubes lying along the back, seen along their length: toward us their nose cones end on (the tips at us), the
+    // fins far up by the nozzles; away the nozzles end on, rimmed in the lights, the fins out beside them, the cones far up
+    case "rockets": {
+      const r = 13, top = -66, bot = L - 14, xs = [-(w - 18), w - 18], h = r + 2;
+      const tube = x => pts([[x - r, top + r, h], [x - r, bot, h], [x + r, bot, h], [x + r, top + r, h]]) + " Z";
+      const fin = x => { const s = Math.sign(x); return pts([[x + s * r, bot - 46, h], [x + s * (r + 26), bot + 8, h], [x + s * r, bot, h]]) + " Z"; };
+      const endOn = (x, y, rr) => ellD(x, Fy(y) - 0.9 * h, rr, 0.9 * rr);
+      let t = P(xs.map(fin).join(" "), mix(m, "#000000", 0.12), dk, 2.5) + P(xs.map(tube).join(" "), m, dk, 3);
+      if (to) t += P(xs.map(x => rbRect(x - r - 2, Fy(bot) - 0.9 * h - 4, x + r + 2, Fy(bot) - 0.9 * h + 5, 3)).join(" "), lt, R.ltk, 2) +   // (the nozzles' rims, far up, seen from the side)
+                   P(xs.map(x => endOn(x, top + r, r)).join(" "), m, dk, 3) + P(rbDots(xs.map(x => [x - 3, Fy(top + r) - 0.9 * h - 3]), 3), mix(m, "#ffffff", 0.6));
+      else t += P(xs.map(x => endOn(x, top + r, r)).join(" "), m, dk, 3) + P(xs.map(x => endOn(x, bot, r + 2)).join(" "), lt, R.ltk, 2) + P(xs.map(x => endOn(x, bot, r - 4)).join(" "), "#27272a");
+      return t;
+    }
+    // 🦾 the battery box on the back: its top with the bolt, and its near end
+    case "battery": {
+      const h = 30, ya = 10, yb = 86, ye = to ? ya : yb, mx = ([x, y]) => [x, y, h];
+      const bolt = [[5, -18], [-7, 2], [1, 2], [-4, 18], [9, -4], [1, -4], [6, -18]].map(([x, y]) => mx([x, 48 + y]));
+      return P(rbRect(-28, Fy(ye) - 0.9 * h, 28, Fy(ye), 4), mix(m, "#000000", 0.18), dk, 3) + P(rbRect(-28, Fy(ya) - 0.9 * h, 28, Fy(yb) - 0.9 * h, 5), m, dk, 3) +
+             P(pts(bolt) + " Z", lt, R.ltk, 1.5);
+    }
+    // 📺 the curly cord lying down the back in its coils, its plug at the waist (away, near us, its pins toward us; toward
+    // us, far up the back)
+    case "cord": {
+      const y0 = -12, n = 7, py = L - 30, step = (Fy(py) - Fy(y0)) / n;
+      let d = `M0 ${f1(Fy(y0))}`;
+      for (let i = 0; i < n; i++) d += ` a7 7 0 1 1 0 ${f1(step)}`;
+      const e = Fy(py), dirn = Math.sign(step), pe = e + dirn * 12;
+      return rbStroke(d, "#374151", 4) + P(rbRect(-9, e, 9, pe, 3) + " " + rbRect(-5, pe, -2, pe + dirn * 7, 0) + " " + rbRect(2, pe, 5, pe + dirn * 7, 0), "#374151");
+    }
+    // 🕷️ crawling away: the four legs out of the back, their knees up over it and their tips down on the floor either side
+    // (the front pair, further away, higher in the picture), and the abdomen pack round on the back
+    case "legs": {
+      const ln = dk, shine = mix(m, "#ffffff", 0.35), joint = mix(m, "#000000", 0.6), fl = o.floor;
+      const ps = [-1, 1].flatMap(s => [[[s * 20, Fy(6) - 10], [s * (w + 34), Fy(6) - 84], [s * (w + 100), fl - 24]], [[s * 20, Fy(26) - 10], [s * (w + 62), Fy(26) - 62], [s * (w + 128), fl - 10]]]);
+      const rx = 0.62 * w, sy = Fy(0.56 * L) - 14, sr = Math.hypot(k * 0.36 * L, 14);
+      return rbStroke(ps.map(rbLine).join(" "), ln, 7) + rbStroke(ps.map(p => rbLine(p.slice(0, 2).map(([x, y]) => [x, y - 2.5]))).join(" "), shine, 2.5) + P(rbDots(ps.map(p => p[1]), 5), joint) +
+             P(ellD(0, sy, rx, sr), m, dk, 3) + rbStroke(`M${f1(-0.9 * rx)} ${f1(sy + 4)} Q0 ${f1(sy - 10)} ${f1(0.9 * rx)} ${f1(sy + 4)}`, "#facc15", 8, ' stroke-linecap="butt"');
+    }
+  }
+  return "";   // (back "none", the box's, the helper's and the hero's: nothing stands off it; its details are the torso's)
+}
+// How far the robot reaches out sideways past its torso (w), in the friend's units, in this view: for the picture's frame,
+// and, lying down, for the ground under them (the box's flaps, the mech's blocks, the hero's plates, the fins, the legs;
+// lying face up, only how deep its torso is, what is on its back being under them)
+function robotOut(R, w, dir, lying) {
+  const T = R.S.torso, legs = R.S.back === "legs";
+  if (lying) return legs ? 24 : dir ? ({ box: 0.47 * w + 4, egg: 0.6 * w }[T] || 6) : ({ column: 13, box: 0.3 * w + 24, egg: 0.35 * w, capsule: 42, chest: 48, plate: 46 }[T] || 0);
+  if (legs) return dir ? 150 : 132;
+  return (dir ? { column: 60, box: 0.47 * w + 8, egg: 0.6 * w, capsule: 58, chest: 34, plate: 32, panel: 32 } : { column: 13, box: 0.3 * w + 24, egg: 0.35 * w, capsule: 42, chest: 48, plate: 46 })[T] || 0;
+}
+
+// ===================== THE COWGIRL AND THE COWBOY (ticket 522) =====================
+// (M and Matthew: "Cowgirl and Cowboy, 3 variations of style each. 6 styles of hat. Lasso to hold. No guns please.")
+// Built as the gnome and the witch are, in the friend's own clothes: drawNow replaces the shirt and pants (westernOf's
+// `shirt` and `pants`, so every pose draws them) and adds these pieces in its slots, every view each piece's own drawing
+// (dir: 0 facing us or away, -1/1 in profile; away: from behind; left and right mirror by dir). The hat (cowHatSvg) and the
+// lasso (lassoSvg) are in js/08-body.js, beside the witch's hat and the staff. Nothing gun-like: belts carry only buckles,
+// the badge is a toy star, the spurs are star discs.
+// westernOf(WC, kind): the style and the hat read into one object, every "main" its chosen colour
+function westernOf(WC, kind) {
+  const table = kind === "cowgirl" ? COWGIRL_STYLES : COWBOY_STYLES, id = table[WC[kind + "Style"]] ? WC[kind + "Style"] : Object.keys(table)[0];
+  const S = table[id], main = WC[kind + "Color_" + id] ?? S.colors[0], m = v => v === "main" ? main : v;
+  const hatId = WC.cowHat === "none" ? null : COW_HATS[WC.cowHat] ? WC.cowHat : "cattleman", H = hatId ? COW_HATS[hatId] : null;
+  const n = parseInt(main.slice(1), 16), reddish = (n >> 16) > 150 && ((n >> 8) & 255) < 110 && (n & 255) < 110;
+  const res = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, m(v)]));
+  return { id, S, main, kind, shirt: res(S.shirt), pants: res(S.pants), vest: m(S.vest), bootStar: m(S.bootStar),
+           bandana: S.bandana === "auto" ? (reddish ? "#1e3a8a" : "#c0392b") : S.bandana,
+           hatId, H, hatColor: hatId ? WC["cowHatColor_" + hatId] ?? H.colors[0] : null };
+}
+// the boots: SHOES.cowboot in the style's colour, its star and spurs
+const westernFeet = (W, shoes) => ({ style: "cowboot", size: shoes.size, color: W.S.boot, star: W.bootStar || null, spur: !!W.S.spur });
+// fringe: strands along a path, ONE dashed stroke (butt caps: each dash a strand as long as the stroke is wide); a light
+// fringe gets a darker dashed stroke under it, a little wider, so it shows on light scenes
+const fringeSvg = (d, col, len, under) => (under ? `<path d="${d}" fill="none" stroke="${under}" stroke-width="${len + 2}" stroke-dasharray="4.3 1.4" stroke-dashoffset="0.9"/>` : "") +
+                                          `<path d="${d}" fill="none" stroke="${col}" stroke-width="${len}" stroke-dasharray="2.5 3.2"/>`;
+// a path through points pushed out by `by` along each segment's normal toward `side` (a joint by the two's average),
+// stopping `cut` short of the last point
+const offsetPath = (pts, side, by, cut = 0) => {
+  const segN = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [side * dy / l, -side * dx / l]; };
+  const q = pts.slice(); if (cut && q.length > 1) { const a = q[q.length - 2], b = q[q.length - 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, k = Math.max(0, (l - cut) / l); q[q.length - 1] = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]; }
+  const ns = q.slice(1).map((b, i) => segN(q[i], b));
+  return "M" + q.map((p, i) => { const n = i === 0 ? ns[0] : i === q.length - 1 ? ns[ns.length - 1] : [(ns[i - 1][0] + ns[i][0]) / 2, (ns[i - 1][1] + ns[i][1]) / 2];
+    return f1(p[0] + n[0] * by) + " " + f1(p[1] + n[1] * by); }).join(" L");
+};
+// (ticket 530) A SASQUATCH'S SHAG along an edge: the fringe's trick, fur tufts as dashes of one thick stroke (butt caps), a
+// darker stroke under them half a dash along, so each edge is two shapes however long; pts the edge's points, pushed out
+// by `by` toward `side` (offsetPath), `len` how long the tufts are (times the style's shag)
+// (several edges at once: [[pts, side], ...], one path of each, still two shapes)
+const shagEdge = (pts, side, by, len, C) => { const E = side === "many" ? pts.filter(([p]) => p && p.length > 1) : pts && pts.length > 1 ? [[pts, side]] : [];
+  if (!E.length) return ""; const d = E.map(([p, sd]) => offsetPath(p, sd, by)).join(" "), k = (C.sq && C.sq.shag) || 1, L = f1(len * k);
+  return `<path d="${d}" fill="none" stroke="${mix(C.fur, "#000000", 0.35)}" stroke-width="${f1(len * k + 3)}" stroke-dasharray="6 5" stroke-dashoffset="6"/>` +
+         `<path d="${d}" fill="none" stroke="${C.fur}" stroke-width="${L}" stroke-dasharray="6 5"/>`; };
+// The hood's top, in the round head's units (the hood's middle at x 100), its own drawing toward us, from behind and in
+// profile (dir; left and right mirror): the shaggy crown along the hood's top, and the style's extras (the yeti's frosty
+// tips, the mossy's moss and leaves, the fluffy's bow), at the head's left toward us, its right from behind, at the back of
+// the head in profile
+function sasquatchTop(C, F, dir, away) {
+  const { cy, rx, ry } = hoodGeom(F), S = C.sq || {}, k = S.shag || 1, P = (x, y) => f1(x) + " " + f1(y);
+  const arc = (a0, a1, grow) => { const p = a => [100 + (rx + grow) * Math.cos(a * Math.PI / 180), cy + (ry + grow) * Math.sin(a * Math.PI / 180)];
+    return `M${P(...p(a0))} A${f1(rx + grow)} ${f1(ry + grow)} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${P(...p(a1))}`; };
+  const [a0, a1] = dir ? (dir > 0 ? [160, 330] : [210, 380]) : away ? [150, 390] : [195, 345];
+  let s = `<path data-sasquatch="crown" d="${arc(a0, a1, 2)}" fill="none" stroke="${darker(C.fur)}" stroke-width="${f1(16 * k + 3)}" stroke-dasharray="6 4" stroke-dashoffset="5"/>` +
+          `<path d="${arc(a0, a1, 2)}" fill="none" stroke="${C.fur}" stroke-width="${f1(16 * k)}" stroke-dasharray="5.5 4.5"/>`;
+  if (S.frost) s += `<path d="${arc(a0, a1, 2 + 6 * k)}" fill="none" stroke="${S.frost}" stroke-width="5" stroke-dasharray="5.5 4.5"/>`;
+  const X = dx => 100 + (away ? -1 : dir ? -dir : 1) * dx, top = cy - ry;
+  if (S.moss) s += `<path d="${[[-38, 22, 13], [30, 8, 10], [56, 46, 9]].map(([dx, dy, r]) => `M${P(X(dx) - r, top + dy)} a${r} ${f1(r * 0.7)} 0 1 0 ${2 * r} 0 a${r} ${f1(r * 0.7)} 0 1 0 ${-2 * r} 0 Z`).join(" ")}" fill="${S.moss}" opacity="0.9"/>`;
+  if (S.leaves) s += `<path d="${[[16, 2, -1], [46, 18, 1]].map(([dx, dy, t]) => { const x = X(dx), y = top + dy;
+    return `M${P(x, y)} Q${P(x + 10, y - 16 * t - 6)} ${P(x + 24, y - 8)} Q${P(x + 12, y + 6)} ${P(x, y)} Z M${P(x, y)} L${P(x + 22, y - 8)}`; }).join(" ")}" fill="${S.leaves}" stroke="${darker(S.leaves)}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (S.bow) { const x = X(52), y = top + 18;
+    s += `<path d="M${P(x, y)} Q${P(x - 28, y - 24)} ${P(x - 30, y + 2)} Q${P(x - 22, y + 18)} ${P(x, y)} Z M${P(x, y)} Q${P(x + 28, y - 24)} ${P(x + 30, y + 2)} Q${P(x + 22, y + 18)} ${P(x, y)} Z M${P(x - 6, y)} a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 Z" fill="${S.bow}" stroke="${darker(S.bow)}" stroke-width="2" stroke-linejoin="round"/>`; }
+  return s;
+}
+// Its big footprints on the ground (ticket 530), standing still, in the friend's units: a trail of four, walked in from
+// behind them (in profile) or from our left (toward us or away), the nearest by their feet; each print one path, a sole and
+// four round toes, the colour of wet mud
+function sasquatchPrints(C, hw, ground, dir, k) {
+  const P = (x, y) => f1(x) + " " + f1(y), sz = 14 * k;
+  const print = (x, y, f) => `M${P(x - f * sz * 0.9, y)} q${f1(f * sz * 0.2)} ${f1(-sz * 0.45)} ${f1(f * sz * 1.1)} ${f1(-sz * 0.38)} q${f1(f * sz * 0.8)} ${f1(sz * 0.08)} ${f1(f * sz * 0.8)} ${f1(sz * 0.38)} q0 ${f1(sz * 0.3)} ${f1(-f * sz * 0.8)} ${f1(sz * 0.38)} q${f1(-f * sz * 1)} ${f1(sz * 0.08)} ${f1(-f * sz * 1.1)} ${f1(-sz * 0.38)} Z ` +
+    [-0.3, -0.1, 0.1, 0.3].map(t => { const r = sz * 0.19, cx = x + f * sz * (1.12 - Math.abs(t) * 0.5), cyy = y + t * sz * 1.25; return `M${P(cx - r, cyy)} a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0 a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0 Z`; }).join(" ");
+  const f = dir || 1, pts = dir ? [0, 1, 2, 3].map(i => [-dir * (hw + 70 + i * 62 * k), ground + (i % 2 ? 4 : 14)])
+                                : [0, 1, 2, 3].map(i => [-(hw + 70 + i * 58 * k), ground + 8 - i * 7]);
+  return `<path data-sasquatch="prints" d="${pts.map(([x, y]) => print(x, y, f)).join(" ")}" fill="${mix("#6b4a2b", "#000000", 0.15)}" opacity="0.45"/>`;
+}
+// Over the shirt (where the witch's belt goes), in body units (the collar's top at y -20, the shirt's half width w, its hem
+// at L, the collar's half width nw): the rodeo star's chest fringe, the sheriff's vest, badge and string tie, the rider's
+// yoke, buckle and number card, the prairie collar's bow, a bandana, the trail boss's shirt panel, lapels and capelet, the
+// belt and its buckle. Facing us, front details; in profile, a side's own; from behind (also crawling toward us, where
+// the back is turned up), the back's.
+function westernTorso(W, w, L, nw, dir, away) {
+  const S = W.S, P = (x, y) => f1(x) + " " + f1(y), X = d => dir ? dir * d : d, out = [];
+  const fill = (d, f, sw = 2.5, line = darker(f)) => `<path d="${d}" fill="${f}" stroke="${line}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+  const star = (x, y, r, f, line) => `<polygon points="${starPts(x, y, r)}" fill="${f}" stroke="${line}" stroke-width="2" stroke-linejoin="round"/>`;
+  // the rider's white yoke: facing us two points on the chest, from behind one, in profile one toward the front
+  if (S.yoke) out.push(fill(dir ? `M${P(X(-(w + 2)), -6)} L${P(X(w + 2), -6)} L${P(X(w + 1), 14)} L${P(X(w * 0.35), 36)} L${P(X(-w * 0.1), 14)} L${P(X(-(w + 1)), 18)} Z`
+    : away ? `M${P(-(w + 3), -6)} Q${P(0, -14)} ${P(w + 3, -6)} L${P(w + 2, 14)} L${P(0, 40)} L${P(-(w + 2), 14)} Z`
+    : `M${P(-(w + 3), -6)} L${P(-nw, -20)} Q${P(0, -14)} ${P(nw, -20)} L${P(w + 3, -6)} L${P(w + 2, 14)} L${P(w * 0.5, 36)} L${P(w * 0.18, 14)} L${P(-w * 0.18, 14)} L${P(-w * 0.5, 36)} L${P(-(w + 2), 14)} Z`, S.yoke));
+  // the rodeo star's fringe across the chest: a U facing us, shallower behind, a shorter arc toward the front in profile
+  if (S.chestFringe) out.push(fringeSvg(dir ? `M${P(X(-w * 0.2), 10)} Q${P(X(w * 0.45), 36)} ${P(X(w + 2), 14)}` : `M${P(-w, 8)} Q${P(0, away ? 34 : 48)} ${P(w, 8)}`, S.fringe, 14, S.fringeUnder));
+  // the trail boss's cream shirt panel between the duster's open fronts and their edges (one path); in profile its strip at
+  // the chest's front
+  if (S.duster && !away) out.push(dir ? fill(`M${P(X(w - 14), -18)} L${P(X(w), -16)} L${P(X(w + 2), L - 8)} L${P(X(w - 10), L - 8)} Z`, S.panel, 2)
+    : fill(`M${P(-nw, -20)} L${P(nw, -20)} L${P(nw * 0.7, L)} L${P(-nw * 0.7, L)} Z`, S.panel, 2) +
+      `<path d="M${P(-nw * 0.7, L)} L${P(-nw - 2, -20)} M${P(nw * 0.7, L)} L${P(nw + 2, -20)}" fill="none" stroke="${darker(W.main)}" stroke-width="3"/>`);
+  // the sheriff's open vest: two front panels with western points at the hem; one panel at the side; one across the back
+  if (W.vest) out.push(fill(dir ? `M${P(X(-(w + 1)), -4)} L${P(X(w - 8), -10)} L${P(X(w - 8), L - 2)} L${P(X(w * 0.2), L + 6)} L${P(X(-(w + 2)), L - 4)} Z`
+    : away ? `M${P(-(w + 1), -4)} Q${P(0, -12)} ${P(w + 1, -4)} L${P(w + 2, L - 4)} L${P(-(w + 2), L - 4)} Z`
+    : `M${P(-(w + 1), -4)} L${P(-nw - 2, -20)} L${P(-10, L * 0.5)} L${P(-10, L - 2)} L${P(-w * 0.5, L + 7)} L${P(-(w + 2), L - 4)} Z ` +
+      `M${P(w + 1, -4)} L${P(nw + 2, -20)} L${P(10, L * 0.5)} L${P(10, L - 2)} L${P(w * 0.5, L + 7)} L${P(w + 2, L - 4)} Z`, W.vest));
+  // his badge, a toy star, on his left chest (our right facing us); in profile whole on his left side (facing our left),
+  // a gold sliver edge on at the chest's front from his right; none on his back
+  if (S.badge && !away) out.push(!dir ? star(w * 0.48, 26, 13, S.badge, "#8a6420") : dir < 0 ? star(X(w * 0.66), 24, 12, S.badge, "#8a6420")
+    : `<path d="M${P(X(w - 2), 16)} L${P(X(w - 1), 36)}" stroke="${S.badge}" stroke-width="5" stroke-linecap="round"/>`);
+  if (S.belt) {
+    out.push(`<rect x="${f1(-(w + 3))}" y="${f1(L - 16)}" width="${f1(2 * w + 6)}" height="12" fill="${S.belt}" stroke="${darker(S.belt)}" stroke-width="2"/>`);
+    const big = S.bigBuckle ? 1.35 : 1;   // (the rider's trophy buckle, with a star in it)
+    if (!away) out.push(dir ? `<rect x="${f1(dir * (w + 3) - (dir > 0 ? 7 : 0))}" y="${f1(L - 10 - 10 * big)}" width="7" height="${f1(20 * big)}" rx="2" fill="${S.buckle}" stroke="${darker(S.buckle)}" stroke-width="1.5"/>`
+      : `<ellipse cx="0" cy="${f1(L - 10)}" rx="${f1(14 * big)}" ry="${f1(10 * big)}" fill="${S.buckle}" stroke="${darker(S.buckle)}" stroke-width="2.5"/>` +
+        (S.bigBuckle ? `<polygon points="${starPts(0, L - 10, 7)}" fill="#8a6420"/>` : ""));
+  }
+  // the rider's contestant's card on his back, below where long hair ends, its 7 a path (no font)
+  if (S.number && away) out.push(`<rect x="-24" y="68" width="48" height="44" rx="3" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>` +
+                                 `<path d="M-9 78 L10 78 L-1 104" fill="none" stroke="#1f1f22" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`);
+  // the sheriff's string tie and its silver slide (one string at the front in profile)
+  if (S.tie && !away) out.push(dir ? `<path d="M${P(X(nw - 4), -18)} L${P(X(nw + 1), 34)}" stroke="${S.tie}" stroke-width="2.5" stroke-linecap="round"/>`
+    : `<path d="M-3 -16 L-7 38 M3 -16 L7 38" fill="none" stroke="${S.tie}" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="0" cy="-8" rx="6" ry="7" fill="#d1d5db" stroke="#6b7280" stroke-width="1.5"/>`);
+  // the prairie collar's bow: two loops and two tails, one path; half of it at the front in profile; none behind
+  if (S.collarBow && !away) out.push(fill(dir ? `M${P(X(nw - 2), -18)} Q${P(X(nw + 14), -28)} ${P(X(nw + 12), -12)} Z M${P(X(nw - 2), -16)} L${P(X(nw + 4), 2)} L${P(X(nw), 2)} Z`
+    : `M0 -16 Q-16 -30 -18 -14 Q-14 -6 0 -16 Z M0 -16 Q16 -30 18 -14 Q14 -6 0 -16 Z M-2 -14 L-8 6 L-3 4 Z M2 -14 L8 6 L3 4 Z`, S.collarBow, 2, "#c9c2b4"));
+  // a bandana at the neck (never over the face): its point down the chest facing us, at the front of the neck in profile
+  // with its knot's tails at the nape, its knot and tails from behind; white dots on the cow-print's
+  if (S.bandana) { const b = W.bandana, dots = S.bandana === "auto", dot = (x, y) => `M${P(x - 2.6, y)} a2.6 2.6 0 1 0 5.2 0 a2.6 2.6 0 1 0 -5.2 0`;
+    const neck = `M${P(-(nw - 2), -30)} L${P(nw - 2, -30)} L${P(nw + 4, -18)} L${P(-(nw + 4), -18)} Z`;
+    if (dir) out.push(fill(`M${P(X(-(nw - 2)), -30)} L${P(X(nw - 2), -30)} L${P(X(nw + 5), -18)} L${P(X(-(nw + 4)), -18)} Z M${P(X(nw * 0.1), -22)} L${P(X(nw + 12), -18)} L${P(X(nw + 3), 12)} Z ` +
+                           `M${P(X(-nw), -26)} L${P(X(-(nw + 16)), -6)} L${P(X(-(nw + 7)), -4)} Z`, b, 2) + (dots ? `<path d="${dot(X(nw + 4), -8)}" fill="#ffffff"/>` : ""));
+    else if (away) out.push(fill(`${neck} M-3 -24 L-15 0 L-6 2 Z M3 -24 L15 0 L6 2 Z M-6 -24 a6 5 0 1 0 12 0 a6 5 0 1 0 -12 0`, b, 2));
+    else out.push(fill(`${neck} M${P(-(nw + 6), -19)} Q${P(0, -10)} ${P(nw + 6, -19)} L0 26 Z`, b, 2) +
+                  (dots ? `<path d="${dot(-nw * 0.42, -8)} ${dot(nw * 0.42, -8)} ${dot(0, 9)}" fill="#ffffff"/>` : "")); }
+  // the trail boss's capelet over the shoulders, a shade darker than the duster: facing us open at the front (two pieces,
+  // one path), round the back from behind, its own shape at the side in profile
+  if (S.duster) { const c = mix(W.main, "#000000", 0.15), cw = w + 12, cy = 34;
+    out.push(fill(dir ? `M${P(X(-8), -24)} Q${P(X(w), -24)} ${P(X(w + 8), 0)} L${P(X(w + 6), cy)} Q${P(0, cy + 8)} ${P(X(-(w + 10)), cy - 6)} L${P(X(-(w + 6)), 0)} Z`
+      : away ? `M${P(-nw - 2, -22)} Q${P(0, -14)} ${P(nw + 2, -22)} L${P(cw, -2)} L${P(cw, cy)} Q${P(0, cy + 12)} ${P(-cw, cy)} L${P(-cw, -2)} Z`
+      : [-1, 1].map(s => `M${P(s * (nw + 2), -22)} Q${P(s * w, -24)} ${P(s * cw, -2)} L${P(s * cw, cy)} Q${P(s * (cw + nw) / 2, cy + 8)} ${P(s * (nw + 4), cy - 4)} Z`).join(" "), c, 2.5, darker(W.main))); }
+  return out.join("");
+}
+// the rodeo star's sleeve fringe: strands standing out from the sleeve's outer edge (in profile, the arm's back edge), one
+// dashed stroke over its dark under-stroke, following the arm through every pose
+function westernArm(W, sleevePts, armW, side, dir) {
+  if (!W.S.sleeveFringe || !sleevePts) return "";
+  return fringeSvg(offsetPath(sleevePts, dir ? -dir : side, (armW + 9) / 2 + 3), W.S.fringe, 11, W.S.fringeUnder);
+}
+// the cow-print's chaps over a pants leg, J its joints from the hip, along the leg's own joints (so they bend with the
+// knee): an outline stroke and a fill stroke wider than the pants, stopping 14 above the ankle; from behind only a strip
+// down the outside (chaps are open at the back). On a leg folded past 100 degrees (meditating), along the thigh only.
+// The spots: one path of blobs placed along the joints (three; two on the strip behind)
+function westernChap(W, J, half, side, dir, away) {
+  const S = W.S, wide = 2 * half + 8, P2 = (x, y) => f1(x) + " " + f1(y);
+  let cut = 14;
+  if (J.length > 2) { const [A, K, F] = J, ax = A[0] - K[0], ay = A[1] - K[1], fx = F[0] - K[0], fy = F[1] - K[1];
+    const inner = Math.acos(Math.max(-1, Math.min(1, (ax * fx + ay * fy) / ((Math.hypot(ax, ay) * Math.hypot(fx, fy)) || 1)))) * 180 / Math.PI;
+    if (180 - inner > 100) { J = [A, K]; cut = 0; } }
+  { const [A, B2] = J, l = Math.hypot(B2[0] - A[0], B2[1] - A[1]) || 1, k = Math.min(0.4, 12 / l);   // (from 12 below the hip: the jeans show above)
+    J = [[A[0] + (B2[0] - A[0]) * k, A[1] + (B2[1] - A[1]) * k], ...J.slice(1)]; }
+  const d = away ? offsetPath(J, side, half * 0.55, cut) : offsetPath(J, side, 0, cut), sw = away ? half * 0.95 : wide;
+  let s = `<path d="${d}" fill="none" stroke="${S.chapLine}" stroke-width="${f1(sw + 4)}" stroke-linejoin="round"/>` +
+          `<path d="${d}" fill="none" stroke="${S.chaps}" stroke-width="${f1(sw)}" stroke-linejoin="round"/>`;
+  const segs = J.slice(1).map((b, i) => [J[i], b]), len = segs.reduce((a, [p, q]) => a + Math.hypot(q[0] - p[0], q[1] - p[1]), 0) - cut;
+  const at = t => { let r = t * len; for (const [p, q] of segs) { const l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1; if (r <= l) { const k = r / l; return [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, (q[0] - p[0]) / l, (q[1] - p[1]) / l]; } r -= l; }
+    const [, q] = segs[segs.length - 1]; return [q[0], q[1], 0, 1]; };
+  const blob = (t, off, r) => { const [x, y, ux, uy] = at(t), cx = x + side * uy * off, cy = y - side * ux * off, a = r, b = r * 0.7;
+    return `M${P2(cx - a, cy)} Q${P2(cx - a, cy - b)} ${P2(cx - a * 0.2, cy - b * 1.1)} Q${P2(cx + a, cy - b * 0.9)} ${P2(cx + a * 0.9, cy + b * 0.1)} Q${P2(cx + a * 0.8, cy + b)} ${P2(cx, cy + b * 0.9)} Q${P2(cx - a * 0.9, cy + b * 1.1)} ${P2(cx - a, cy)} Z`; };
+  const spots = away ? [[0.3, half * 0.55, half * 0.3], [0.72, half * 0.6, half * 0.26]]
+                     : [[0.16, -half * 0.25, half * 0.48], [0.5, half * 0.35, half * 0.42], [0.82, -half * 0.15, half * 0.4]];
+  return s + `<path d="${spots.map(([t, o, r]) => blob(t, o, r)).join(" ")}" fill="${S.spots}"/>`;
+}
+// the rodeo star's skirt: fringe under its hem, following the skirt drawNow draws (to the hem at sl below the waist)
+function westernHem(W, hw, L, sl) {
+  if (!W.S.hemFringe) return "";
+  return fringeSvg(`M${f1(hw + 30)} ${f1(L + sl + 8)} Q0 ${f1(L + sl + 22)} ${f1(-hw - 30)} ${f1(L + sl + 8)}`, W.S.fringe, 16, W.S.fringeUnder);
+}
+// the trail boss's duster skirts, from the waist to `hem` (mid-shin standing, L + 0.72 LL; on the lap meditating), over
+// the trousers and under the arms (the gnome tunic's slot): facing us two panels flaring apart, the trousers between; in profile one panel, its front edge straight
+// and its back flaring behind (the legs walk inside it, as in a robe); from behind one panel and its centre vent
+function westernCoat(W, w, hw, L, hem, dir, away) {
+  if (!W.S.duster) return "";
+  const c = W.main, cd = darker(c), P = (x, y) => f1(x) + " " + f1(y);
+  const fill = d => `<path d="${d}" fill="${c}" stroke="${cd}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  if (dir) return fill(`M${P(-dir * (w + 2), L - 16)} L${P(dir * (w + 2), L - 16)} L${P(dir * (w + 4), hem)} L${P(-dir * (w + 34), hem - 6)} Z`);
+  if (away) return fill(`M${P(-(hw + 4), L - 16)} L${P(hw + 4, L - 16)} L${P(hw + 26, hem)} L${P(-(hw + 26), hem)} Z`) +
+                   `<path d="M0 ${f1(L + 20)} L0 ${f1(hem)}" stroke="${cd}" stroke-width="2.5"/>`;
+  return fill(`M${P(-(hw + 4), L - 16)} L${P(-8, L - 16)} L${P(-hw * 0.55, hem)} L${P(-(hw + 26), hem)} Z ` +
+              `M${P(hw + 4, L - 16)} L${P(8, L - 16)} L${P(hw * 0.55, hem)} L${P(hw + 26, hem)} Z`);
 }

@@ -214,7 +214,7 @@
     body.designer-big .world-split:hover, body.designer-big .world-split:active { opacity: 1; }   /* (the world designer's, and since ticket 285 the background designer's) */
     body.world-big .world-rest { grid-column: 3; grid-row: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }   /* (as .boxes) */
     body.world-big .world-rest > :not([hidden]) { margin: 0; border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--mu-main); }   /* (each a .box) */
-    body.world-big .world-rest > :is(.world-alert, .world-warn, .world-palette, .world-things, .world-off) { grid-column: 1 / -1; }
+    body.world-big .world-rest > :is(.world-alert, .world-warn, .world-palette, .world-things, .world-off, .world-settings:has(.world-settings-boxes)) { grid-column: 1 / -1; }
     body.world-big .world-rest > .world-alert { border-color: #d97706; background: color-mix(in srgb, #f59e0b 18%, var(--panel)); }
     /* (ticket 231's check: the grid's column, 🗑️ under it, no taller than the window under the bar, or at the end of
        the right side's scroll it rose 13px; 120px was the grid alone) */
@@ -667,6 +667,7 @@ svg.solid-boxes[data-hide~="you"] .you { display: none; }
 .world-rest { display: contents; }
 .world-rest > .world-alert { order: 1; } .world-rest > .world-warn { order: 2; } .world-rest > .world-palette { order: 3; } .world-gridcol { order: 4; }
 .world-rest > .world-sizes { order: 5; } .world-rest > .world-here { order: 6; } .world-rest > .world-things { order: 7; } .world-rest > .world-off { order: 8; }
+.world-rest > .world-settings { order: 6; }   /* (ticket 524: after the square's card, as it is in the page) */
 .world-split { display: none; }
 /* (ticket 488, ^du_report(5)'s "Always Be Knolling"; Matthew: "Especially, for example, non-FS world design control panels")
    🗺️ World design in the side panel, knolled as it is full screen: each part a box, named once (its own heading, or its
@@ -674,7 +675,7 @@ svg.solid-boxes[data-hide~="you"] .you { display: none; }
    to put and the things here across all of them; in the order they had (the order above) */
 body:not(.world-big) .world-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
 body:not(.world-big) .world-rest > :not([hidden]):not(.world-view) { margin: 0; border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--mu-main); }
-body:not(.world-big) :is(.world-gridcol, .world-rest > .world-alert, .world-rest > .world-palette, .world-rest > .world-things) { grid-column: 1 / -1; }
+body:not(.world-big) :is(.world-gridcol, .world-rest > .world-alert, .world-rest > .world-palette, .world-rest > .world-things, .world-rest > .world-settings:has(.world-settings-boxes)) { grid-column: 1 / -1; }
 body:not(.world-big) .world-rest > .world-alert:not([hidden]) { border-color: #d97706; background: color-mix(in srgb, #f59e0b 18%, var(--panel)); }   /* (as specific as the box rule above, after it: the review after 0.0.385) */
 .world-rest > [data-box-name]::before { content: attr(data-box-name); display: block; flex-basis: 100%; margin: 0 0 4px; font-size: 0.92em; font-weight: 700; color: var(--ink, inherit); }
 /* (ticket 255, Matthew: "the letters do not scale large enough in the grid when not full screen. I misread them") the
@@ -696,6 +697,10 @@ body:not(.world-big) .world-rest > .world-alert:not([hidden]) { border-color: #d
 body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-auto-rows: 3.2em; }
 .world-compass-mid.empty { opacity: 0.5; }   /* (ticket 249: a crossing's paths, round nothing) */
 .world-back-row { flex-wrap: wrap; gap: 4px; }
+/* (ticket 524) ⚙️ the place's settings: Background's boxes, a grid of them; the places off the grid as chips; which one */
+.world-settings-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; margin-top: 6px; }
+.world-off-chips, .world-which { flex-wrap: wrap; gap: 4px; align-items: center; }
+.world-off-chip[aria-pressed="true"] { outline: 2px solid var(--accent, #38bdf8); }
 .world-here .world-probs { border: 2px dotted var(--line); border-radius: 10px; padding: 6px 10px; margin: 8px 0; }
 .drag-ghost { position: fixed; z-index: 1000; pointer-events: none; transform: translate(-50%, -60%); font-size: 2.2em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
 
@@ -729,6 +734,12 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
              pointer-events: none; overflow: hidden; border-radius: 16px; will-change: transform; }   /* (a layer of its own: its flames moving paint it alone) */
 #fire-over .fi-fire { transition: opacity 0.1s; }
 #fire-over .fi-fire.fi-out { opacity: 0; transition: opacity 0.2s; }
+/* (ticket 523) 🐉 the dragon's 🔥 button, held to breathe fire (lit while held, by .row's pressed colours): a touch held on it is
+   not a scroll of the panel, nor a long press's menu or a selection, as the on-screen controller's buttons */
+.fire-hold { font-weight: 600; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+             -webkit-tap-highlight-color: transparent; }
+.fire-hold[aria-pressed=true] { transform: scale(0.96); }
+.fire-hold-row { margin-bottom: 6px; }   /* (a row of its own, over its six chips) */
 .fi-heat { animation: fi-shimmer 0.6s linear infinite; }
 @keyframes fi-shimmer { to { stroke-dashoffset: -22; } }
 .fi-glow { animation: fi-flicker 0.13s ease-in-out infinite alternate; }
@@ -959,6 +970,9 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
 .world-mini-cell small { font-size: 9px; opacity: 0.75; }
 .world-mini-cell.empty { font-size: 9px; opacity: 0.4; border: 1px dashed var(--line, #c9c2b4); }
 .world-mini-cell.chosen { outline: 3px solid #0ea5e9; }
+/* (ticket 525) a cave door's 🧭 on its card: where it leads, the worlds, the small grid, the places off the grid */
+.door-dest, .door-worlds, .door-offs { flex-wrap: wrap; gap: 4px; align-items: center; }
+.door-offs .world-off-chip { font-size: 13px; }
 
 
 /* (ticket 392) a row's name or a group's header that only says its box's name again */

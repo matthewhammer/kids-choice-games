@@ -2483,9 +2483,14 @@ const PASSAGE_STYLES = [["arch", "🌑 a natural archway"], ["wallhole", "🕳�
 // (the review after 0.0.385: only places a doorway can take the friend to, enterScene's, so not 🌊 open water or 🪸 deep sea,
 // reached only from the world's squares)
 const passagePlaces = () => (typeof PLACES === "undefined" ? [] : PLACES).filter(([k]) => !["none", "castleroom", "treeroom"].includes(k) && (SCENES[k] || PICTURE_CHOICES.some(([q]) => q === k)));
+// (ticket 525) where it leads by kind: the place it is linked to (dest), else the place its 🧭 says
+const passageTo = t => (t.dest && passageDestOk(t.dest) && t.dest.kind) || t.to || "cave";   // (a square taken away: its own 🧭 place till it is back)
 function passageThingSvg(t, seed) {
-  const st = t.style || "arch", Rs = (i, j) => seeded(seed + j)(i), P = (x, y) => `${f1(x)} ${f1(y)}`, to = t.to || "cave", c = { k: 1, R: Rs, P };
-  const portal = inner => `<g class="portal" data-to="${to}">${inner}</g>`;
+  const st = t.style || "arch", Rs = (i, j) => seeded(seed + j)(i), P = (x, y) => `${f1(x)} ${f1(y)}`, to = passageTo(t), c = { k: 1, R: Rs, P };
+  // (ticket 525) a passage with its name (uid) is a way with a nav arrow too: data-way "p-<uid>" (worldWaysHud's arrow finds it),
+  // data-passage (enterScene: to the square or inside it is linked to, its dest, out by its twin); no data-door, so measureMarks
+  // keeps it a doorway, glowing its opening
+  const portal = inner => `<g class="portal" data-to="${to}"${t.uid ? ` data-way="p-${t.uid}" data-passage="${t.uid}"` : ""}>${inner}</g>`;
   if (st === "floorhole") {
     const pts = [];
     for (let n = 0; n <= 18; n++) { const a = n / 18 * 2 * Math.PI, b = 1 + 0.2 * (Rs(n, 3) - 0.5); pts.push([48 * Math.cos(a) * b, 15 * Math.sin(a) * b]); }
@@ -3330,7 +3335,7 @@ const THING_PARAMS = {
   gem: [["style", "💎 kind", "choice", GEM_STYLES], ["color", "🎨", "color", GEM_COLORS], ["glow", "✨ glowing", "toggle"]],
   puddle: [["drip", "💧 a drip from above", "toggle"]],
   cascade: [["style", "💦 kind", "choice", CASCADE_STYLES]],
-  passage: [["style", "🕳️ kind", "choice", PASSAGE_STYLES], ["to", "🧭 leads to", "choice", passagePlaces]],
+  passage: [["style", "🕳️ kind", "choice", PASSAGE_STYLES], ["to", "🧭 leads to", "choice", passagePlaces], ["dest", "🧭 a cave door to a square, and back", "doordest"]],   // (ticket 525)
   cavemushroom: [["style", "🍄 kind", "choice", CAVE_MUSHROOMS], ["color", "🎨", "color", CAVE_MUSHROOM_COLORS], ["glow", "✨ glowing", "toggle"]],
   // (ticket 504, for M) the 🐄 farm animals' own: each its pose (four, each its own drawing) and its coat
   cow: [["pose", "🐄 pose", "choice", COW_POSES], ["coat", "🎨 coat", "choice", COW_COATS]],
@@ -3892,7 +3897,7 @@ function crossingScene(c) {
     obj("butterflies", g - 50 * k, butterfliesSvg(c, [[x0 + W * 0.22, g - 60 * k, 1], [x0 + W * 0.74, g - 100 * k, 0.8]])));
   return s;
 }
-const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, hutcenter: hutcenterScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, livingroom: livingroomScene, treeroom: treeroomScene,
+const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, hutcenter: hutcenterScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, treetop: treetopScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
                  tent: tentScene, cave: caveScene, caveroom: caveroomScene, farmyard: farmyardScene, desert: desertScene, woodpath: woodpathScene, pasture: pastureScene, crossing: crossingScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and

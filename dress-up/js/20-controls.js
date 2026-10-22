@@ -69,7 +69,7 @@ const clockHere = b => ((b.kind === "waterfall" || b.kind === "cave") ? b.fallTi
 const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["bubbleroom", "🫧 the bubble room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"], ["farmyard", "🚜 farm yard"],   // (farmyard: ticket 502, for M)
-  ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
+  ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"], ["treetop", "⭕ the round room at the top of the tree"],   // (treetop: ticket 516)
   ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
   ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
@@ -88,7 +88,7 @@ const PLACE_GROUPS = [
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom"]],
-  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
+  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "treetop", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
   ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion", "hutcenter"]],
@@ -132,6 +132,10 @@ const TABS = [
     ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"], ["hug", "🤗 jumping up into a hug"], ["lie", "🛌 lying down"]]],
     ["choice", "lieHow", "🛌 lying", [["back", "🛌 on the back, face up"], ["side", "🛏️ on the side, facing us"]]],   // (ticket 299)
     ["choice", "hand", "✋ dominant hand (it pulls the levers)", [["right", "🫱 right"], ["left", "🫲 left"], ["both", "🪙 both: a coin flip each time"]]],   // (ticket 316)
+    // (ticket 518) what each hand holds: a chip naming it, a tap for a box of every choice (holdChipBox). The right hand first:
+    // it is on our left when they face us, as with 'pair'.
+    ["hold", "holdR", "🫱 right hand holds"],
+    ["hold", "holdL", "🫲 left hand holds"],
     ["choice", "lieHead", "🛌 head toward", [["left", "⬅️ our left"], ["right", "➡️ our right"]]],
     ["range", "hugLift", "🙌 held up (100 = a leg's length)", 0, 300, 40, 90],
     ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"], ["back", "⬆️ away from us"]]],
@@ -320,7 +324,7 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["sasquatch", "🦶 Sasquatch"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"], ["cowgirl", "👢 cowgirl"], ["cowboy", "🤠 cowboy"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -387,6 +391,30 @@ const TABS = [
     ["color", "dragonHorns", "🦷 its horns, teeth and claws", ["#f4ecd6", "#e0b030", "#c9c5bd", "#1f1f22", "#8a5a2b", "#ffffff"]],
     ["choice", "dragonWingsHow", "🪽 its wings", DRAGON_WINGS],
     ["choice", "dragonWingLfo", "〰️ wings flap with", [["none", "their own slow beat"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
+    // (ticket 523) and its fire, tried on here: 🎮 Controls' 🔥 its fire (the friend's, one setting in both places), a chip
+    // tapped breathing it for a moment, and a 🔥 button to hold, so the controls need not be opened to try it
+    ["of", "body", ["breathe", "fireStyle", "🔥 its fire (tap one to try it, or hold 🔥 to breathe it)", FIRE_STYLES], c => c.kind === "dragon"],
+    // (ticket 515) the robot: one of eight styles, its colour (each style its own, shown while it is chosen, as the fairy's
+    // wings), and its lights ("auto": each style's own)
+    ["choice", "robotStyle", "🤖 style", Object.entries(ROBOT_STYLES).map(([id, r]) => [id, r.name])],
+    ...Object.entries(ROBOT_STYLES).map(([id, r]) => ["color", "robotColor_" + id, "🤖 its colour", r.colors]),
+    ["color", "robotLights", "💡 its lights", ROBOT_LIGHTS],
+    // (ticket 522) the cowgirl and the cowboy: three styles each, each its own colour (shown while it is chosen, as the
+    // robot's), a hat of six (or none) with a colour each, and a lasso
+    // (which hand holds it is 🧍 Body's 🫴 holding, since ticket 518)
+    ["choice", "cowgirlStyle", "👢 style", Object.entries(COWGIRL_STYLES).map(([id, t]) => [id, t.name])],
+    ...Object.entries(COWGIRL_STYLES).map(([id, t]) => ["color", "cowgirlColor_" + id, "👢 its colour", t.colors]),
+    ["choice", "cowboyStyle", "🤠 style", Object.entries(COWBOY_STYLES).map(([id, t]) => [id, t.name])],
+    ...Object.entries(COWBOY_STYLES).map(([id, t]) => ["color", "cowboyColor_" + id, "🤠 its colour", t.colors]),
+    ["choice", "cowHat", "🎩 hat", [["none", "🚫 no hat"], ...Object.entries(COW_HATS).map(([id, h]) => [id, h.name])]],
+    ...Object.entries(COW_HATS).map(([id, h]) => ["color", "cowHatColor_" + id, "🎩 hat's colour", h.colors]),
+    ["toggle", "lasso", "➿ lasso"],
+    // (ticket 530) the Sasquatch: four styles, each its own colour (shown while it is chosen, as the robot's), its big
+    // footprints on the ground, and its grin
+    ["choice", "sasquatchStyle", "🦶 style", Object.entries(SASQUATCH_STYLES).map(([id, t]) => [id, t.name])],
+    ...Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["color", "sasquatchColor_" + id, "🦶 its fur", t.colors]),
+    ["toggle", "sasquatchPrints", "👣 footprints"],
+    ["toggle", "sasquatchGrin", "🙂 big grin"],
     // (ticket 435) the knight: his arms (two colours, how they are laid out, an emblem), his helmet's plume and visor, sword and shield
     ["color", "knightA", "🛡️ arms' first color", ["#2f6db5", "#8a2b2b", "#1f1f22", "#2e7d32", "#e0b030", "#7b3f8c"]],
     ["color", "knightB", "🛡️ arms' second color", ["#f4f1ea", "#e0b030", "#1f1f22", "#8a2b2b", "#2f6db5"]],
@@ -531,6 +559,11 @@ const TABS = [
       ["choice", "treeBack" + n, `🏡 ${n}: ⬇️ the way toward us leads to`, BEHIND_PLACES],
       ["choice", "hatchShape" + n, `🏡 ${n}: 🕳️ its trapdoor's opening`, OPENING_SHAPES],   // (ticket 252)
       ["toggle", "hatchShut" + n, `🏡 ${n}: 🎚️ its trap door shut (its lever pulled)`]]),   // (ticket 334)
+    // (ticket 516) the round room at the top of the tree: its one trap door (down to the house below), its lever, its way toward us
+    ["choice", "hatchShapeTop", "⭕ 🕳️ its trapdoor's opening", OPENING_SHAPES],
+    ["toggle", "hatchShutTop", "⭕ 🎚️ its trap door shut (its lever pulled)"],
+    ["choice", "treetopBack", "⭕ ⬇️ the way toward us leads to", BEHIND_PLACES.filter(([k]) => k !== "treetop")],
+    ["choice", "topFurnish", "⭕ 🪑 how it is furnished", TOP_FURNISH],   // (ticket 517)
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
     ["of", "background", ["range", "toys", "🧸 things in the room", 0, 24, 4, 20], b => b.kind === "treeroom"],   // (ticket 285: its own rule, as the house's)
     // the mountain trail
@@ -839,6 +872,14 @@ function set(part, key, value) {
   if (part === "costume" && key === "monkWho" && ["#6b4a2b", "#4f6b3a"].includes(state.costume.monkCloak)) state.costume.monkCloak = value === "dryad" ? "#4f6b3a" : "#6b4a2b";
   // (ticket 431: as on the book's cover, the gnome man's hat red and the woman's purple, while the hat is one of those two)
   if (part === "costume" && key === "gnomeWho" && ["#d2382b", "#7b3f8c"].includes(state.costume.gnomeHat)) state.costume.gnomeHat = value === "woman" ? "#7b3f8c" : "#d2382b";
+  // (ticket 522: choosing a cowgirl's or cowboy's style, or the costume, puts on the style's usual hat, until a kid picks a
+  // hat themselves (cowHatAuto false), so a hat a kid picked is never changed)
+  if (part === "costume" && key === "cowHat") state.costume.cowHatAuto = false;
+  if (part === "costume" && (key === "cowgirlStyle" || key === "cowboyStyle" || (key === "kind" && (value === "cowgirl" || value === "cowboy")))) {
+    const C = state.costume, k = key === "kind" ? value : key === "cowgirlStyle" ? "cowgirl" : "cowboy", T = k === "cowgirl" ? COWGIRL_STYLES : COWBOY_STYLES;
+    const S = T[C[k + "Style"]] || Object.values(T)[0];
+    if (C.kind === k && C.cowHatAuto !== false) C.cowHat = S.hat;
+  }
   // a skirt starts at skirt length and a dress at dress length
   if (part === "pants" && key === "style" && value === "skirt") state.pants.skirtLen = 50;
   if (part === "pants" && key === "style" && value === "dress") state.pants.skirtLen = 95;
@@ -1052,8 +1093,8 @@ const SHOWN_WHEN = {
   "face.noseH": f => f.noseView !== "none",
   "face.noseW": f => f.noseView !== "none",
   "face.whites": f => f.iris > 0,
-  "costume.fur": c => !!ANIMALS[c.kind] && c.kind !== "dragon",   // (ticket 499: a dragon's colours are its own, below)
-  "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon",
+  "costume.fur": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",   // (ticket 499: a dragon's colours are its own, below)
+  "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon" && c.kind !== "sasquatch",
   ...Object.fromEntries(["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow"].map(k => ["costume." + k, c => c.kind === "dragon"])),
   "costume.dragonWingLfo": c => c.kind === "dragon" && (c.dragonWingsHow ?? "flap") === "flap",
   "costume.witchColor": c => c.kind === "witch",
@@ -1087,6 +1128,18 @@ const SHOWN_WHEN = {
   "costume.wreathFlowers": c => c.kind === "fairy" && c.wreath !== false,
   ...Object.fromEntries(Object.keys(FAIRY_WINGS).map(id => ["costume.wingColor_" + id, c => c.kind === "fairy" && (c.wingStyle ?? "butterfly") === id])),
   ...Object.fromEntries(Object.keys(FAIRY_TUNICS).map(id => ["costume.tunicColor_" + id, c => c.kind === "fairy" && (c.tunicStyle ?? "petal") === id])),
+  "costume.robotStyle": c => c.kind === "robot", "costume.robotLights": c => c.kind === "robot",   // (ticket 515)
+  ...Object.fromEntries(Object.keys(ROBOT_STYLES).map(id => ["costume.robotColor_" + id, c => c.kind === "robot" && (ROBOT_STYLES[c.robotStyle] ? c.robotStyle : "tin") === id])),
+  // (ticket 522) each style's colour while it is chosen; the hat, its colour (the hat worn's) and the lasso for both
+  "costume.cowgirlStyle": c => c.kind === "cowgirl", "costume.cowboyStyle": c => c.kind === "cowboy",
+  ...Object.fromEntries(Object.keys(COWGIRL_STYLES).map(id => ["costume.cowgirlColor_" + id, c => c.kind === "cowgirl" && (COWGIRL_STYLES[c.cowgirlStyle] ? c.cowgirlStyle : "rodeo") === id])),
+  ...Object.fromEntries(Object.keys(COWBOY_STYLES).map(id => ["costume.cowboyColor_" + id, c => c.kind === "cowboy" && (COWBOY_STYLES[c.cowboyStyle] ? c.cowboyStyle : "sheriff") === id])),
+  // (ticket 530) the Sasquatch's rows, each style's colour only while it is chosen
+  ...Object.fromEntries(["sasquatchStyle", "sasquatchPrints", "sasquatchGrin"].map(k => ["costume." + k, c => c.kind === "sasquatch"])),
+  ...Object.fromEntries(Object.keys(SASQUATCH_STYLES).map(id => ["costume.sasquatchColor_" + id, c => c.kind === "sasquatch" && (SASQUATCH_STYLES[c.sasquatchStyle] ? c.sasquatchStyle : "bigfoot") === id])),
+  "costume.cowHat": c => c.kind === "cowgirl" || c.kind === "cowboy",
+  ...Object.fromEntries(Object.keys(COW_HATS).map(id => ["costume.cowHatColor_" + id, c => (c.kind === "cowgirl" || c.kind === "cowboy") && (c.cowHat === "none" ? null : COW_HATS[c.cowHat] ? c.cowHat : "cattleman") === id])),
+  "costume.lasso": c => c.kind === "cowgirl" || c.kind === "cowboy",
   "costume.webColor": c => c.kind === "witch",
   "costume.webStyle": c => c.kind === "witch",
   "costume.trimColor": c => c.kind === "witch",
@@ -1110,7 +1163,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries([...NORTH_OUT, ...NORTH_ROOMS].map(kd => ["background.north_" + kd, b => b.kind === kd])),
   "background.lfoFast": b => !!sceneLfoThings(b).fast, "background.lfoSlow": b => !!sceneLfoThings(b).slow, "background.lfoWings": b => !!sceneLfoThings(b).wings,
   "background.figPos": b => b.kind !== "none",
-  ...Object.fromEntries(["leverShine", "leverShineColor", "leverFlicker"].map(k => ["background." + k, b => (b.kind === "castleroom" && roomHereNowOf(b)[1] === "trap") || (b.things || []).some(t => t.kind === "lever")])),   // (ticket 317)
+  ...Object.fromEntries(["leverShine", "leverShineColor", "leverFlicker"].map(k => ["background." + k, b => b.kind === "treetop" || (b.kind === "castleroom" && roomHereNowOf(b)[1] === "trap") || (b.things || []).some(t => t.kind === "lever")])),   // (ticket 317)
   "background.objectsOff": b => b.kind !== "none",
   "background.bubbles": b => b.kind === "bubblespace",   // (ticket 220)
   "background.bubbleBurstCount": b => (b.bubbleBurst ?? 40) > 0,   // (ticket 329)
@@ -1231,7 +1284,12 @@ const SHOWN_WHEN = {
     return (i === n && houseLinks(b, n - 1).some(L => L.way === "down")) || houseLinks(b, i - 1).some(L => L.way === "up" && L.to === n - 1); }])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
-  "background.windowSize": b => b.kind === "treeroom",
+  "background.windowSize": b => b.kind === "treeroom" || b.kind === "treetop",
+  // (ticket 516: the round room's trap door, its opening also the ceiling's in the house below, whose ladder goes up to it)
+  "background.hatchShapeTop": b => b.kind === "treetop" || (b.kind === "treeroom" && Math.max(1, Math.min(6, b.houses ?? 4, Math.round(b.inside ?? 1))) === topHouse(b)),
+  "background.hatchShutTop": b => b.kind === "treetop",
+  "background.treetopBack": b => b.kind === "treetop",
+  "background.topFurnish": b => b.kind === "treetop",
   "background.couchSize": b => b.kind === "livingroom" || b.kind === "hutroom",
   "background.view": b => b.kind === "livingroom" || b.kind === "hutroom",
   "background.viewDetail": b => b.kind === "livingroom" || b.kind === "hutroom",
@@ -1253,11 +1311,11 @@ const SHOWN_WHEN = {
   "background.pic4": b => b.kind === "livingroom" && b.pictures >= 4,
   "background.pic5": b => b.kind === "livingroom" && b.pictures >= 5,
   "background.pic6": b => b.kind === "livingroom" && b.pictures >= 6,
-  "costume.marks": c => !!ANIMALS[c.kind] && c.kind !== "dragon",
+  "costume.marks": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",
   "costume.spot": c => c.furPattern === "rosettes" && !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon",
-  "costume.belly": c => !!ANIMALS[c.kind] && c.kind !== "dragon",
+  "costume.belly": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",
   "costume.eyes": c => !!ANIMALS[c.kind],
-  "costume.accent": c => !!ANIMALS[c.kind] && c.kind !== "dragon",
+  "costume.accent": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",
   "hair.length": h => ["long", "curly", "pigtails", "spiky", "afro"].includes(h.style),
   "hair.bangs": h => !!BANG_LOCKS[h.style],
   "pants.skirtLen": p => p.style === "skirt" || p.style === "dress",
@@ -1459,6 +1517,49 @@ function offlineHelp() {
   say();
   return d;
 }
+// (ticket 524) 🗺️ World design's ⚙️ box of the place's settings: open or not, kept while the game is open (closed to start:
+// closed, it builds nothing; open, it costs what the 🏞️ Background tab does, ticket 167)
+let worldSettingsOpen = false;
+// (ticket 406, factored out for ticket 525) a world's grid drawn small: each square its emoji and its name (A1...); at(key, cell)
+// says whether it can be picked ({ ok, chosen, self, why }); picked, pick(key). attr: the data attribute naming its square
+function worldMiniGrid(T, at, pick, attr) {
+  const mini = el("div", { class: "world-mini" });
+  mini.style.setProperty("--cols", T.cols);
+  for (let r = 0; r < T.rows; r++) for (let c = 0; c < T.cols; c++) {
+    const key = c + "," + r, cell = T.cells[key], a = at(key, cell);
+    mini.append(cell && a.ok
+      ? el("button", { class: "world-mini-cell" + (a.chosen ? " chosen" : ""), [attr]: key, title: `${squareName(key)}: ${worldName(T, key)}`,
+                       onclick: () => pick(key) }, [el("span", {}, placeName(cell.kind).split(" ")[0]), el("small", {}, squareName(key))])
+      : el("span", { class: "world-mini-cell empty", title: squareName(key) + a.why }, a.self ? "📍" : squareName(key)));
+  }
+  return mini;
+}
+// (ticket 525) a cave door's 🧭 on its card: where it leads now (✖ to unlink: its twin there goes); a world's chips; its grid, small
+// (a square tapped: linked there, a twin put there leading back); and its places off the grid, chips (an inside of a square,
+// the cave room behind the falls among them). The world chosen is the page's only (doorWorld), not saved.
+let doorWorld = null;
+function doorDestParts(t, label, again) {
+  const here = passageHere(), hereHome = passageHome(here), d = t.dest, worlds = worldsAll();
+  if (!worlds.some(w => w.id === doorWorld)) doorWorld = state.world.id;
+  const T = worldById(doorWorld), out = [el("span", { class: "hint" }, label)];
+  if (d) { const ok = passageDestOk(d), Tw = ok && worldById(d.world);
+    const name = !ok ? "🚧 gone" : (Tw !== state.world ? "🌍 " + worldTitle(Tw) + ": " : "") + (d.key ? worldName(Tw, d.key) + " (" + squareName(d.key) + ")" : placeName(d.kind));
+    out.push(el("div", { class: "row door-dest" }, [el("span", {}, "→ " + name + (passageTwin(t) ? ", and back" : ", 🚧 no way back")),
+      el("button", { class: "door-unlink", title: "Take this link off (and the passage there that leads back)", onclick: () => { passageUnlink(t); again(); } }, "✖")])); }
+  if (!here) return [...out, el("span", { class: "hint" }, "(the place shown has no square or home yet)")];
+  out.push(el("div", { class: "row door-worlds" }, worlds.map(w => el("button", { "aria-pressed": String(w.id === doorWorld), "data-door-world": w.id,
+    onclick: () => { doorWorld = w.id; again(); } }, "🌍 " + worldTitle(w) + (w === state.world ? " (this one)" : "")))));
+  if (!T) return out;
+  out.push(worldMiniGrid(T, key => { const self = passageHome({ world: T.id, key }) === hereHome;
+      return { ok: !self, chosen: !!d && d.world === T.id && d.key === key, self, why: self ? ": this square" : ": empty" }; },
+    key => { if (passageLink(t, { world: T.id, key, kind: T.cells[key].kind })) again(); }, "data-door-to"));
+  // (the places off the grid there: as worldOffGrid lists them, each one's home its placeKey)
+  const offs = worldOffGrid(T).map(o => { const w = INSIDE_WHICH[o.kind], v = Object.assign(Object.create(state.background), { kind: o.kind, ...(w ? { [w]: o.which || 1 } : {}) });
+    return { world: T.id, off: placeKey(v), kind: o.kind, from: o.from, ...(w ? { [w]: o.which || 1 } : {}) }; }).filter(o => passageHome(o) !== hereHome);
+  if (offs.length) out.push(el("div", { class: "row door-offs" }, offs.map(o => el("button", { class: "world-off-chip", "data-door-off": o.off, "aria-pressed": String(!!d && passageHome(d) === passageHome(o)),
+    title: placeName(o.kind) + (o.from ? " (through " + squareName(o.from) + ")" : ""), onclick: () => { if (passageLink(t, o)) again(); } }, placeName(o.kind) + (o.from ? " · " + squareName(o.from) : "")))));
+  return out;
+}
 function control(part, [kind, key, label, ...rest], opts = {}) {
   // another tab's control, shown here when this tab's settings say (its
   // settings are that tab's: the ghost's see-through-ness is the
@@ -1485,6 +1586,16 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const when = SHOWN_WHEN[part + "." + key], here = rest[1];
     if (when || here) syncs.push(() => { if (when) setHidden(g, !when(state[part])); if (here) { const on = !!here(state[part]); if (g.classList.contains("here") !== on) g.classList.toggle("here", on); } });
     return g;
+  }
+  // (ticket 523, Matthew: "let's also add a 'fire' button within the dragon costume, with chips for testing each type, so the
+  // person trying on the costume need not switch to game controls to try") a choice of fire, the same row "choice" builds (its
+  // setting, wherever else it is shown, as 🎮 Controls' 🔥 its fire), with a 🔥 button over its chips that breathes fire while
+  // held (fireHoldButton), and a chip tapped breathing its fire for a moment as it is chosen (fireTry; js/25-world.js)
+  if (kind === "breathe") {
+    const box = control(part, ["choice", key, label, rest[0]], opts), chips = box.querySelector(":scope > .row");
+    chips.addEventListener("click", e => { if (e.target.closest("button")) fireTry(); });   // (after the chip's own click has chosen it)
+    box.insertBefore(el("div", { class: "row fire-hold-row" }, [fireHoldButton()]), chips);
+    return box;
   }
   // (ticket 230, Matthew: "for each of: all arrows ..., planned path ..., collision boxes (show a brick wall, not a red
   // box please): chip toggle, as we have now, and then when on, color and stroke/font-size controls. -- all on one line,
@@ -1707,7 +1818,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       // (a thing's words are typed, and its size slid, in place: not in the signature, or each key or step would
       // build the row again, and the box lose the caret, the slider the finger; a slider not in hand follows its thing)
       const T = state.background.things || [], sig = JSON.stringify(T.map(t => [t.kind, thingParams(t.kind).map(([p, , how]) => how === "text" || how === "range" ? null : t[p] ?? null),
-                                                                              t.kind === "signpost" ? signWays(state.background).join() : ""]));
+                                                                              t.kind === "signpost" ? signWays(state.background).join() : "", t.kind === "passage" ? [t.twin, doorWorld, worldsAll().map(w => w.id + worldTitle(w)).join()] : ""]));   // (ticket 525)
       if (sig === shown) {
         for (const r of list.querySelectorAll('input[type="range"][data-thing]')) {
           const t = T[+r.dataset.thing], v = t && (t[r.dataset.param] ?? 100);
@@ -1742,14 +1853,16 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             return [el("span", { class: "hint" }, label), ...doors.map(d => { const on = cur.includes(d.uid), n = all.indexOf(d) + 1;
               return el("button", { "aria-pressed": String(on), title: on ? `🕳️ trap door ${n} opens and shuts with this lever: tap to unjoin it` : `🕳️ trap door ${n} is not joined to this lever: tap to join it`,
                 onclick: () => { const c = t[p] || []; t[p] = c.includes(d.uid) ? c.filter(u => u !== d.uid) : [...c, d.uid]; changed(); } }, `${on ? "🔗" : "➕"} 🕳️ ${n}`); })]; }
+          if (how === "doordest") return doorDestParts(t, label, () => { shown = null; rows(); });
           if (how === "text") return [el("span", { class: "hint" }, label), el("input", { type: "text", maxlength: String(opts), size: String(opts), value: String(now ?? ""), "aria-label": label, oninput: e => { t[p] = e.target.value.slice(0, opts); changed(); } })];
           return [el("button", { "aria-pressed": String(!!t[p]), onclick: () => { t[p] = !t[p]; changed(); } }, label)];
       };
       list.replaceChildren(...T.map((t, i) => { const chips = [], lines = [];
-        for (const q of thingParams(t.kind)) { const parts = partsFor(t, i, q), how = q[2];
-          if (["color", "choice", "range", "dirs", "wires", "text"].includes(how)) lines.push(el("div", { class: "tline tline-" + how }, parts)); else chips.push(...parts); }
+        for (const q of thingParams(t.kind)) { if (t.kind === "passage" && q[0] === "to" && t.dest) continue;   // (ticket 525: linked, it leads where its dest says)
+          const parts = partsFor(t, i, q), how = q[2];
+          if (["color", "choice", "range", "dirs", "wires", "text", "doordest"].includes(how)) lines.push(el("div", { class: "tline tline-" + how }, parts)); else chips.push(...parts); }
         return el("div", { class: "row thingcard" }, [el("div", { class: "thead" }, [thingPic(i), el("span", { class: "name" }, `${thingLabel(t)} ${i + 1}`),
-          el("button", { class: "tdel", title: "Take it away", onclick: () => { T.splice(i, 1); changed(); } }, "✖")]), ...(chips.length ? [el("div", { class: "tline tchips" }, chips)] : []), ...lines]); }));
+          el("button", { class: "tdel", title: "Take it away", onclick: () => { passageUnlink(t, false); /* (ticket 525: a cave door's twin goes with it) */ T.splice(i, 1); changed(); } }, "✖")]), ...(chips.length ? [el("div", { class: "tline tchips" }, chips)] : []), ...lines]); }));
     };
     // (v2: dragged onto the picture, it stands where it was let go, kept within
     // the ground the friend can stand on; tapped, near the middle, a little
@@ -1762,7 +1875,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const z = next ? next.z : at ? Math.round(SCENE.ground + clamp(at.y - SCENE.ground, figYMin(F), F.bottom - F.ground)) : Math.round(SCENE.ground + 10 + (i * 29) % 70);
       if (thingsLatch) return;   // (ticket 203: shut till the marked ones are dealt with)
       T.push({ kind: kd, x, z, seed: 900 + Math.floor(Math.random() * 9000), size: 100, mirror: false, ...structuredClone(THING_DEFAULTS[kd] || {}), ...(kd === "rock" ? { tone: ROCK_TONES[i % ROCK_TONES.length] } : {}),
-               ...(kd === "trapdoor" ? { uid: "d" + Math.floor(Math.random() * 36 ** 6).toString(36) } : {}), ...extra });   // (ticket 284: a trap door's name for the levers wired to it)
+               ...(kd === "trapdoor" ? { uid: "d" + Math.floor(Math.random() * 36 ** 6).toString(36) } : {}), ...(kd === "passage" ? { uid: passageUid() } : {}), ...extra });   // (ticket 525: a cave door's name, for its arrow and its twin)   // (ticket 284: a trap door's name for the levers wired to it)
       // (ticket 303, M: a lever and a trap door put in one place work together at once, whichever came first; a chip unjoins them)
       const nu = T[T.length - 1];
       if (next) Object.assign(nu, { style: next.style ?? nu.style, size: next.size ?? nu.size, mirror: !!next.mirror });
@@ -1830,7 +1943,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     };
     groups.append(...THING_GROUPS.map(([g, name]) => el("button", { "data-group": g, onclick: () => { thingGroup = g; showGroup(); } }, name)));
     showGroup();
-    box.append(groups, items, slowNote, el("div", { class: "row" }, [el("button", { onclick: () => { state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
+    box.append(groups, items, slowNote, el("div", { class: "row" }, [el("button", { onclick: () => { for (const t of state.background.things || []) passageUnlink(t, false); state.background.things = []; changed(); } }, "🧹 take them all away"), n]), list);
     syncs.push(() => { const m = (state.background.things || []).length, t = m ? `${m} here: drag one to move it` : ""; if (n.textContent !== t) n.textContent = t; rows(); guard();
       // (ticket 201: every ten seconds, while there are things here that move)
       if (performance.now() - thingFpsAt > 10000 && box.isConnected && ((state.background.things || []).some(thingMoves) || ownMovingNow().length)) thingCheck(guard); });
@@ -1866,7 +1979,18 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { instanceUnapply(state.world); worldsInit(); const { id, name } = state.world;   // (ticket 406: this world again, still itself; the other worlds' links into it go)
           for (const w of Object.values(state.worldsAway)) for (const c of Object.values(w.cells)) for (const [d, L] of Object.entries(c.links || {})) if (L.world === id) delete c.links[d];
           state.world = Object.assign(clone(DEFAULTS.world), { id, name }); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
-    const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint", "data-box-name": "🚪 off the grid: the places inside others" });
+    // (ticket 524, Matthew: "we need to make each room, and its params, available to world builder"; "world design panel I
+    // mean") ⚙️ the settings of the place shown (a square's, or an inside's of it: the cave room's floor and ceiling), the
+    // 🏞️ Background tab's own rows (bgPlaceRows), so ✏️ 📍 only this square / 🧩 the template decides where a change goes,
+    // as there. A toggle, closed to start; it builds the tab again (showTab), so the rows are built once, never in render.
+    const settings = el("div", { class: "world-settings", "data-box-name": "⚙️ this place's settings" }, [
+      el("div", { class: "row" }, [el("button", { class: "flip world-settings-toggle", "aria-pressed": String(worldSettingsOpen),
+        title: "This place's own settings, as the 🏞️ Background tab has them: here, a change goes where ✏️ says (only this square, or every square of this place)",
+        onclick: () => { worldSettingsOpen = !worldSettingsOpen; showTab(); } }, worldSettingsOpen ? "⚙️ hide this place's settings" : "⚙️ show this place's settings")]),
+      ...(worldSettingsOpen ? [el("div", { class: "world-settings-boxes" }, bgPlaceRows())] : [])]);
+    syncs.push(() => { const kd = state.background.kind, t = `⚙️ ${placeName(kd)}'s settings`, none = kd === "none";
+      if (settings.dataset.boxName !== t) settings.dataset.boxName = t; if (settings.hidden !== none) settings.hidden = none; });
+    const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off", "data-box-name": "🚪 off the grid: the places inside others (tap one to go there, or drag it onto a square)" });
     // (ticket 195, M) every neighbour joined that can be
     const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself), and take away every way that leads off the map's edge",
       // (ticket 232: and every way off the map's edge taken away, saying how many)
@@ -1918,17 +2042,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           onclick: () => { linkWorld = w.id; shown = null; render(); } }, "🌍 " + worldTitle(w) + (w === W ? " (this one)" : "")))),
         el("div", { class: "hint" }, "3. the square it leads to:"));
       if (T) {
-        const mini = el("div", { class: "world-mini" });
-        mini.style.setProperty("--cols", T.cols);
-        for (let r = 0; r < T.rows; r++) for (let c = 0; c < T.cols; c++) {
-          const key = c + "," + r, cell = T.cells[key], cur = at.links && at.links[linkDir], chosen = cur && cur.world === T.id && cur.key === key;
-          const self = T === W && key === W.at, noBack = cell && worldNoWay(cell.kind, WORLD_OPP[linkDir]);
-          mini.append(cell && !self && !noBack
-            ? el("button", { class: "world-mini-cell" + (chosen ? " chosen" : ""), "data-link-to": key, title: `${squareName(key)}: ${worldName(T, key)}`,
-                             onclick: () => { if (linkDir && worldLink(linkDir, T.id, key)) { shown = null; render(); } } }, [el("span", {}, placeName(cell.kind).split(" ")[0]), el("small", {}, squareName(key))])
-            : el("span", { class: "world-mini-cell empty", title: squareName(key) + (self ? ": this square" : cell ? ": no way back that side" : ": empty") }, self ? "📍" : squareName(key)));
-        }
-        wrap.append(mini);
+        const cur = at.links && at.links[linkDir];
+        wrap.append(worldMiniGrid(T, (key, cell) => { const self = T === W && key === W.at;
+          return { ok: !self && !(cell && worldNoWay(cell.kind, WORLD_OPP[linkDir])), chosen: cur && cur.world === T.id && cur.key === key, self, why: self ? ": this square" : cell ? ": no way back that side" : ": empty" }; },
+          key => { if (linkDir && worldLink(linkDir, T.id, key)) { shown = null; render(); } }, "data-link-to"));
       }
       return wrap;
     };
@@ -1953,7 +2070,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       worldsInit();
       const W = state.world, P = worldProblems(W), at = W.at && W.cells[W.at];
       const sig = JSON.stringify([W.id, worldsAll().map(w => [w.id, worldTitle(w), w.cols, w.rows, Object.entries(w.cells).map(([k, c]) => [k, c.kind, c.name || "", c.links || null])]), Object.keys(state.worldTemplates),
-        linkOpen, linkDir, linkWorld, newTpl, state.background.kind, W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown, (W.unreachable || []).map(u => [u.kind, u.from, u.name || ""])]);
+        linkOpen, linkDir, linkWorld, newTpl, state.background.kind, at && INSIDE_WHICH[at.kind] ? [state.background[INSIDE_WHICH[at.kind]], insideCount(state.background, at.kind)] : null, W.cols, W.rows, W.start, W.at, Object.entries(W.cells).map(([k, c]) => [k, c.kind, worldWays(c), c.name || ""]), P.map(p => p.text), worldWarnShown, (W.unreachable || []).map(u => [u.kind, u.from, u.name || ""])]);
       if (sig === shown) return;
       shown = sig;
       worldsRender();
@@ -1976,7 +2093,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         return b;
       }).flatMap((sq, i) => i % W.cols ? [sq] : [lab("row", String(i / W.cols + 1)), sq]));
       // the square the friend is in: its ways out (a forest crossing's are its paths), the start
-      if (at && at.kind === state.background.kind) {
+      // (ticket 524) or an inside of it the friend is in (the cave room behind its falls): the square's card, named by both,
+      // a way back to the square, and no ways out (they are the outside's); ⚙️ below has the inside's own settings
+      const inside = !!at && at.kind !== state.background.kind && instanceOf(W) === W.at;
+      if (at && (at.kind === state.background.kind || inside)) {
         const ways = worldWays(at), fix = worldWarnShown ? worldWaysToToggle(W, W.at) : { on: [], off: [] }, toggle = d => () => {
           if (at.links && at.links[d]) { worldUnlinkAt(W, W.at, d); changed(); return; }   // (ticket 406: a linked way off: its link, and the link back, go)
           if (at.kind === "crossing") state.background["cross" + d] = !state.background["cross" + d];   // (its paths, which worldKeep keeps in its square)
@@ -2003,27 +2123,35 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                   class: hint ? "way-suggest" : drop ? "way-suggest-off" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]);
         };
         const mid = el("span", { class: "world-compass-mid", "data-kind": at.kind, title: placeName(at.kind) }, emojiOf(at.kind));
-        here.replaceChildren(el("div", { class: "cap" }, `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
+        // (ticket 524) a square holding an inside an outside has several of: which one (a tree house's room, a tent, a castle room)
+        const whichKey = !inside && INSIDE_WHICH[at.kind], B0 = state.background, whichNow = whichKey ? Math.round(B0[whichKey] ?? 1) : 0;
+        const whichRow = whichKey ? [el("div", { class: "row world-which" }, [el("span", { class: "hint" }, "which one:"),
+          ...Array.from({ length: insideCount(B0, at.kind) }, (_, i) => el("button", { "aria-pressed": String(whichNow === i + 1), "data-which": String(i + 1),
+            onclick: () => { at[whichKey] = B0[whichKey] = i + 1; changed(); } }, `${emojiOf(at.kind)} ${at.kind === "treeroom" ? "room" : at.kind === "tent" ? "tent" : "room"} ${i + 1}`))])] : [];
+        here.replaceChildren(el("div", { class: "cap" }, inside ? `📍 ${squareName(W.at)}: ${worldName(W, W.at)} → ${placeName(state.background.kind)} (inside)` : `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
+          ...(inside ? [el("div", { class: "row" }, [el("button", { class: "world-to-square", title: "Back out to the square this place is inside", onclick: () => worldEnter(W.at) }, `↩️ to ${squareName(W.at)}`)])] : []),
           el("label", { class: "row world-name-row" }, [el("span", { class: "hint" }, "✏️ its name on signs:"), nameBox]),
-          el("div", { class: "world-ways-out" }, [el("span", { class: "hint" }, "ways out:"),
-            el("div", { class: "world-compass" }, ["NW", "N", "NE", "W", null, "E", "SW", "S", "SE"].map(d => d ? wayBtn(d) : mid))]),
+          ...whichRow,
+          ...(inside ? [] : [el("div", { class: "world-ways-out" }, [el("span", { class: "hint" }, "ways out:"),
+            el("div", { class: "world-compass" }, ["NW", "N", "NE", "W", null, "E", "SW", "S", "SE"].map(d => d ? wayBtn(d) : mid))])]),
           // (ticket 249, Matthew: "expose the three far away options to the world designer") a forest crossing's 🌄 off in
           // the distance, here too (its square keeps it: CROSS_KEYS)
-          ...(at.kind === "crossing" ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🌄 off in the distance:"),
+          ...(at.kind === "crossing" && !inside ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🌄 off in the distance:"),
             ...CROSS_BACKS.map(([v, name]) => el("button", { "aria-pressed": String((state.background.crossBack || "woods") === v), "data-back": v,
               // (Matthew, 0.0.191: "does change the background, but it stays stale when clicked": this panel is built
               // again only when the world changes; the chips shown chosen as they are clicked)
               onclick: e => { state.background.crossBack = v; for (const b of e.currentTarget.parentNode.querySelectorAll("[data-back]")) b.setAttribute("aria-pressed", String(b.dataset.back === v)); changed(); } }, name))])] : []),
           probs,
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]),
-          linksEditor(W, at));
+          ...(inside ? [] : [linksEditor(W, at)]));
       } else {
         // (ticket 210, Matthew) the picture shows a place that is not the square the friend is in (one chosen in
         // 🏞️ Background, or not on the grid yet): say so, and where it is on the grid if it is there
         here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."), probs);
       }
       // (at the top of the tab, over the warnings, so it is seen)
-      const kind = state.background.kind, onGrid = !(at && at.kind === kind) && worldPalette().includes(kind) ? Object.keys(W.cells).filter(k => W.cells[k].kind === kind) : null;
+      // (ticket 524: an inside of the friend's square is shown from that square: instanceOf)
+      const kind = state.background.kind, onGrid = !instanceOf(W) && worldPalette().includes(kind) ? Object.keys(W.cells).filter(k => W.cells[k].kind === kind) : null;
       notHere.hidden = !onGrid;
       notHere.textContent = !onGrid ? "" : onGrid.length
         ? `📺 Showing ${placeName(kind)} in the viewport, not from a square of the world design: it is at ${onGrid.map(squareName).join(", ")}; tap ${onGrid.length === 1 ? "it" : "one"} to go there.`
@@ -2046,7 +2174,15 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           const chip = el("button", { class: "world-chip", title: `${own || words.join(" ")}, from ${squareName(u.from)}: drag onto a square to put it back (tap: the first empty square); onto 🗑️ to forget it` }, `${emoji} ${own || words.join(" ")} (was ${squareName(u.from)})`);
           pressDrag(chip, () => emoji, { onDrop: under => { if (!under || !under.closest) return; if (under.closest(".world-trash")) worldForget(i); else { const sq = under.closest("[data-square]"); if (sq) worldRestore(i, sq.dataset.square); } }, onTap: () => worldRestore(i) });
           return chip; }))] : []));
-      off.replaceChildren("Off the grid: ", ...worldOffGrid(W).flatMap((o, i) => [i ? " · " : "", `${o.id}: ${placeName(o.kind)}` + (o.from ? ` (through ${placeName(W.cells[o.from].kind)}, ${squareName(o.from)})` : "")]));
+      // (ticket 524) each place off the grid a chip: tapped, the friend goes there (worldVisit: an inside through its outside's
+      // square); dragged onto a square, it is put there as any place (worldPut), a square of its own
+      off.replaceChildren(el("div", { class: "row world-off-chips" }, worldOffGrid(W).map(o => {
+        const [emoji] = placeName(o.kind).split(" "), on = state.background.kind === o.kind && (!o.which || Math.round(state.background[INSIDE_WHICH[o.kind]] ?? 1) === o.which) && (o.from ? W.at === o.from : !instanceOf(W));
+        const chip = el("button", { class: "world-chip world-off-chip", "data-kind": o.kind, ...(o.from ? { "data-from": o.from } : {}), "aria-pressed": String(on),
+          title: `${o.id}: ${placeName(o.kind)}` + (o.from ? `, through ${placeName(W.cells[o.from].kind)} (${squareName(o.from)})` : "") + ". Tap to go there; drag onto a square to put it there." },
+          `${placeName(o.kind)}` + (o.from ? ` (${squareName(o.from)})` : ""));
+        pressDrag(chip, () => emoji, { onDrop: under => { const sq = under && under.closest && under.closest("[data-square]"); if (sq) worldPut(sq.dataset.square, o.kind, o); }, onTap: () => worldVisit(o) });
+        return chip; })));
     };
     // (ticket 224, Matthew: "in FS mode for world designer, we want to let the user scroll the RHS (with controls and
     // things to add) and the LHS (the grid of squares) stays in place, and maximal -- maybe also a dragger for LHS vs RHS
@@ -2066,7 +2202,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { class: "eye", onclick: () => worldViewShow(worldViewHidden) }, "👁️"), el("span", { class: "hint" }, "📺 in-game view")]), el("div", { class: "world-view-pic" })]);
     worldViewMark(view);
     const layout = el("div", { class: "world-layout" }, [
-      el("div", { class: "world-rest" }, [view, worldsBox, notHere, warnings, palette, el("div", { class: "world-sizes", "data-box-name": "📐 the world's size" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
+      el("div", { class: "world-rest" }, [view, worldsBox, notHere, warnings, palette, el("div", { class: "world-sizes", "data-box-name": "📐 the world's size" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, settings, things, off]),
       split, gridcol]);
     designerSplit(layout, split, "dress-up-world-split");
     box.append(el("div", { class: "hint world-intro" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."), layout);
@@ -2374,6 +2510,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         if (c[0] === "choice") b.querySelector(".lbl").remove();
         return b;
       })])));
+  } else if (kind === "hold") {
+    // (ticket 518) one chip naming what the hand holds now; a tap opens a box over the panel with every choice
+    const b = el("button", { class: "hold-chip", onclick: () => holdChipBox(part, key, label) });
+    box.append(el("div", { class: "row" }, [b]));
+    syncs.push(() => { const v = state[part][key] || "auto", t = (HOLD_CHOICES.find(([x]) => x === v) || HOLD_CHOICES[0])[1]; setText(b, t); });
   } else if (kind === "choice") {
     const row = el("div", { class: "row" });
     // (an option may come with a test of the settings: shown only when it holds, as a room the castle has)
@@ -2428,7 +2569,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const b = c === "skin" || c === "auto" || c === "off"
         ? el("button", { class: "swatch skin",
                          title: c === "skin" ? "same as skin" : c === "off" ? (key === "horseShoes" ? "no shoes" : "none: the fur shows through")
-                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color"
+                              : key === "spot" ? "a warm brown" : key === "beardShade" ? "the hair's color" : key === "robotLights" ? "each robot's own lights"
                               // (ticket 498: with armour on, the horse's blanket on auto is the armour's cloth colour)
                               : key === "horseBlanket" ? "a lighter shade of the halter's, or with armour the armour's colour" : "a lighter shade",
                          onclick: () => set(part, key, c) }, c)

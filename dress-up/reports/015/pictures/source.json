@@ -1,0 +1,26 @@
+{
+ "mock": {
+  "from": [
+   "mockups/dragon-fire.html",
+   "mockups/horse-armour.html"
+  ],
+  "how": "each page's own script under node (drivers/pictures.mjs), its scene() drawing one picture, its animation CSS inside"
+ },
+ "game": {
+  "tag": "dress-up-0.0.392",
+  "commit": "b1900d5e227fa04867aab1086a3700f3cbd00e2f",
+  "version": {
+   "number": "0.0.392",
+   "released": "2026-10-20"
+  },
+  "how": "the game's parts under node, horseSvg() and fireSvg()"
+ },
+ "archive": {
+  "tag": "run-2026-10-20",
+  "game": "Messed Up Dress Up",
+  "version": "0.0.392",
+  "commit": "b1900d5e227fa04867aab1086a3700f3cbd00e2f",
+  "made_at": "2026-10-20T19:35:30-06:00",
+  "made_on": "GitHub Actions, Chrome/155.0.8059.84 (matthewhammer/kids-choice-games run 39526191544, ticket 272)"
+ }
+}
