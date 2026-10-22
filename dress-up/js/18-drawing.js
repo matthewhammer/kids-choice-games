@@ -77,6 +77,8 @@ function drawNow() {
   // (ticket 557) a ninja: all in black, gloves, soft boots with bands up the shin, a mask hiding the face, and the gold head
   // covering with its gem (ninjaMask, ninjaBand, ninjaShin in js/06-costumes.js)
   const ninja = kind === "ninja", njG = (what, t) => t ? `<g data-ninja="${what}">${t}</g>` : "";
+  // (ticket 561) its bands on a forearm, from the glove up to below the elbow, the skin between them unless 🌑 full darkness
+  const njArm = arm => ninja ? njG("armbands", ninjaShin(armJoints(arm), (armW + 9) / 2, WC.ninjaBoots, WC.ninjaBetween === "dark" ? null : skin, 0.85 * state.hands.size)) : "";
   // (a fairy: her tunic in its style's color, and the style's pattern)
   const fTunic = FAIRY_TUNICS[WC.tunicStyle] ? WC.tunicStyle : "petal", fCol = WC["tunicColor_" + fTunic] ?? FAIRY_TUNICS[fTunic].colors[0];
   const fWing = FAIRY_WINGS[WC.wingStyle] ? WC.wingStyle : "butterfly", fWingCol = WC["wingColor_" + fWing] ?? FAIRY_WINGS[fWing].colors[0];
@@ -837,7 +839,7 @@ function drawNow() {
         return `<path d="${d}" fill="none" stroke="${ps}" stroke-width="${f1(2 * half + 5)}" stroke-linejoin="round"/>` +
                `<path d="${d}" fill="none" stroke="${pf}" stroke-width="${f1(2 * half)}" stroke-linejoin="round"/>`; };
       const legBits = side => robot ? rbG("leg", robotLeg(R, legJoints(side), half, dir)) : western && W.S.chaps ? westernChap(W, legJoints(side), half, side, dir, away) : sasq ? sqG("leg", shagEdge(legJoints(side), -dir, half, 10, C))
-        : ninja ? njG("bands", ninjaShin(legJoints(side), half, WC.ninjaBoots)) : "";   // (ticket 515: a robot's ridges or knee pads, with each leg; 522: chaps; 557: a ninja's bands up the shin)
+        : ninja ? njG("bands", ninjaShin(legJoints(side), half, WC.ninjaBoots, WC.ninjaBetween === "dark" ? null : skin)) : "";   // (ticket 515: a robot's ridges or knee pads, with each leg; 522: chaps; 557: a ninja's bands up the shin)
       for (const side of legSides) t += pantsLeg(side) + legBits(side);
       if (legApart) farLeg.pants += pantsLeg(dir) + legBits(dir);   // (ticket 136: the far one apart)
       svg += t + `<g transform="translate(0 1.5)">${hips(false).replace(/x="([^"]+)"/, (_, x) => `x="${f1(Number(x) + 1.5)}"`).replace(/width="([^"]+)"/, (_, w) => `width="${f1(Number(w) - 3)}"`)}</g>`;
@@ -862,7 +864,7 @@ function drawNow() {
   if (robot && !dir) for (const side of [1, -1]) svg += rbG("leg", robotLeg(R, legJoints(side), half, 0, away));   // (ticket 515: facing us, both legs'; from behind, no knee pads)
   if (western && W.S.chaps && !dir) for (const side of [1, -1]) svg += westernChap(W, legJoints(side), half, side, 0, away);   // (ticket 522: facing us or from behind, both chaps)
   if (sasq && !dir) svg += sqG("leg", shagEdge([1, -1].map(side => [legJoints(side), side]), "many", half, 10, C));   // (ticket 530: down each leg's outside)
-  if (ninja && !dir) for (const side of [1, -1]) svg += njG("bands", ninjaShin(legJoints(side), half, WC.ninjaBoots));   // (ticket 557: facing us or from behind, both shins)
+  if (ninja && !dir) for (const side of [1, -1]) svg += njG("bands", ninjaShin(legJoints(side), half, WC.ninjaBoots, WC.ninjaBetween === "dark" ? null : skin));   // (ticket 557: facing us or from behind, both shins; 561: the skin between the bands, unless 🌑)
   veilFrom("pants", pantsAt);
   // (ticket 288: a scuba suit's stripe down the outside of each leg)
   if (scuba) svg += veil("pants", [1, -1].map(side => { const J = legJoints(side);
@@ -947,13 +949,14 @@ function drawNow() {
   const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
     (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf) : "") +
     (wrapStripes(C) ? (P => limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""))(sleeveOf(arm)) : "") +
-    (robot ? rbG("arm", robotArm(R, arm, { dir: 0, w, armW, sleeve: sleeveOf(arm) })) : "") + (western ? westernArm(W, sleeveOf(arm), armW, arm.side, 0) : "") + sqArm(arm, 0);   // (ticket 515: a robot's, at its shoulder; 530: a Sasquatch's shag)
+    (robot ? rbG("arm", robotArm(R, arm, { dir: 0, w, armW, sleeve: sleeveOf(arm) })) : "") + (western ? westernArm(W, sleeveOf(arm), armW, arm.side, 0) : "") + sqArm(arm, 0) + njArm(arm);   // (ticket 515: a robot's, at its shoulder; 530: a Sasquatch's shag; 561: a ninja's bands)
   const flatHand = arm => move.swim ? handOf(arm) : `<g transform="translate(0 ${f1(arm.H[1] * 0.4)}) scale(1 0.6)">${handOf(arm)}</g>`;   // (swimming, as they are)
   // (in profile, or turned partway, the far arm's sleeve over it, and its hand, behind the body)
   if ((dir || q) && !winged && !squash) {
     if (sleeve > 0) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
     if (robot) for (const arm of farArms) svg += rbG("arm", robotArm(R, arm, { dir, far: true, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     if (western) for (const arm of farArms) svg += westernArm(W, sleeveOf(arm), armW, arm.side, dir);   // (ticket 522: the far sleeve's fringe)
+    if (ninja) for (const arm of farArms) svg += njArm(arm);   // (ticket 561)
     // (ticket 530: a Sasquatch's far arm, behind the body, without its shag: it barely showed, and the shapes stay under the cap)
     for (const h of heldFar) svg += heldDraw(h);
     const farHandsAt = svg.length;
@@ -1262,6 +1265,7 @@ function drawNow() {
     if (robot) for (const arm of nearArms) svg += rbG("arm", robotArm(R, arm, { dir, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     if (western) for (const arm of nearArms) svg += westernArm(W, sleeveOf(arm), armW, arm.side, dir);   // (ticket 522)
     if (sasq) for (const arm of nearArms) svg += sqArm(arm, dir);   // (ticket 530)
+    if (ninja) for (const arm of nearArms) svg += njArm(arm);   // (ticket 561)
     if (wrapStripes(C))
       for (const arm of nearArms) { const P = sleeveOf(arm);
         svg += limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""); }
@@ -1282,6 +1286,7 @@ function drawNow() {
     if (robot) for (const arm of arms) svg += rbG("arm", robotArm(R, arm, { dir: 0, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     if (western) for (const arm of arms) svg += westernArm(W, sleeveOf(arm), armW, arm.side, 0);   // (ticket 522)
     if (sasq) svg += sqG("arm", shagEdge(arms.map(arm => [armJoints(arm), arm.side]), "many", (armW + 9) / 2, 9, C));   // (ticket 530: both arms, one pair of shapes)
+    if (ninja) for (const arm of arms) svg += njArm(arm);   // (ticket 561)
     // (from past the shoulder, where the fur sleeve joins the body)
     if (wrapStripes(C))
       for (const arm of arms) { const P = sleeveOf(arm);   // (round a bent elbow: the upper arm's, then the forearm's)
