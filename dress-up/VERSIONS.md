@@ -4,6 +4,7 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **Fixed: 🪞 a counter whose followed part is gone shows a part, not a code.** In "🎵 Music", when the part a counter went against was removed or became a drum, its chip showed a code such as "ch3"; now it shows the first part it could follow, as the old list did.
 - **Fixed: the game's picture fills its card in every tab's full screen.** In a tab's ⛶ full screen (all but "🎵 Music", "🗺️ World design" and "🏞️ Background", which have designers of their own), the picture on the right kept the size it had beside the panel, often smaller than its card, with empty space around the drawing. Now it is sized to the card, as it is in the background designer: as wide as the card, or as tall as there is room for.
 - **Fixed: 🫧 the bubble room's settings have a box of their own.** In "🏞️ Background", in the bubble room, its settings were in a box called "🏰 the castles". Now they are in "🫧 the bubble room", and "🏰 the castles" no longer shows there.
 - **Fixed: the switches in "🔬 Inspection" and "♿ Accessibility" sit side by side again.** Since every tab got its full screen, each switch had a line of its own in the full screen, and an overlay switched on no longer took the panel's whole width beside the game. Now the switches that are off sit side by side, and one that is on opens across the panel with its own settings.

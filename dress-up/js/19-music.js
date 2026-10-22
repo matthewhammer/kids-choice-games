@@ -1759,7 +1759,7 @@ function channelReflect(id, p, parts, get, put, changed) {
     { class: "choice-chip ms", title: "how this part is reflected", "data-pick": "reflect" });
   const num = el("input", { type: "number", class: "ms", min: -7, max: 8, step: 1, title: "steps up or down the scale; beats later for a canon", oninput: e => set({ n: Number(e.target.value) || 0 }) });
   const fopts = parts.filter(q => q !== p && !PERCUSSION.has(q.inst)).map(q => [channelKey(q), partName(q.name)]);
-  const follow = choiceChip("🪞 the part a counter goes against", fopts, () => R().follow || (fopts[0] || [])[0],
+  const follow = choiceChip("🪞 the part a counter goes against", fopts, () => { const f = R().follow; return fopts.some(([k]) => k === f) ? f : (fopts[0] || [])[0]; },
     v => set({ follow: v }), { class: "choice-chip ms", title: "the part a counter goes against", "data-pick": "follow" });
   const show = () => { const r = R(); mode.sync(); num.value = r.n ?? 0; num.hidden = !["key", "canon"].includes(r.mode); follow.hidden = r.mode !== "counter"; follow.sync(); };
   show();
