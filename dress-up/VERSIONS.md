@@ -2,7 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.403 (2026-10-21)
+
+Everything in 0.0.402, plus a thing to hold in each hand, chosen in 🧍 Body.
 
 - **🫴 Things to hold, in either hand** (in "🧍 Body", "🫴 holding"): "🫱 right hand holds" and "🫲 left hand holds" each show what that hand holds; a tap opens a box of chips: "🎭 the costume's own" (what the costume always held, the usual), "✋ nothing", "🧹 broom", "🏹 bow", "👑 scepter", "🗡️ sword", "🛡️ shield", "🪄 staff", "➿ lasso", and, with a horse, "🐴 the horse's rein". Anyone can hold anything: a fairy with a sword, a knight with a broom, two swords at once. A shield is the knight's arms on a knight, a plain wooden one on anyone else.
 - **Each held thing has its own drawings from the side and from behind**: a broom, staff, scepter and sword leaning the way the friend faces, the sword's blade edge on, a shield seen by its rim, a scepter's plain back and a bow's string side from behind. In profile, a thing in the far hand is behind the body.
