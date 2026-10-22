@@ -6,11 +6,11 @@
 // the edges named one by one, with their commands written out, and Common's helpers called alone. Prints each failure, a count per
 // room, and per event the time of a call (globals in as text, JSON out) in each mode: p50, p95, in ms, node's, for the order of
 // things only. Exits 1 on a failure.
-//   node tools/fumola_rules_check.mjs [fumola wasm bindings dir]   (default: ~/fumola-wasm-main/bindings; fumola_wasm.js and
-//   fumola_wasm_bg.wasm, the build fumola.org serves)
+//   node tools/fumola_rules_check.mjs [fumola wasm bindings dir]   (default: the game's pinned copy, dress-up/vendor/fumola/2ec634b5df/,
+//   fumola_wasm.js and fumola_wasm_bg.wasm, the build the page loads)
 import fs from "node:fs"; import vm from "node:vm"; import path from "node:path"; import os from "node:os";
 const here = path.dirname(new URL(import.meta.url).pathname);
-const dir = path.resolve(process.argv[2] || path.join(os.homedir(), "fumola-wasm-main/bindings"));
+const dir = path.resolve(process.argv[2] || path.join(here, "..", "dress-up", "vendor", "fumola", "2ec634b5df"));
 if (!fs.existsSync(path.join(dir, "fumola_wasm.js"))) { console.log(`usage: node tools/fumola_rules_check.mjs <dir with fumola_wasm.js and fumola_wasm_bg.wasm> (none in ${dir})`); process.exit(2); }
 let bad = 0, n = 0;
 const ok = (what, cond, got) => { n++; if (!cond) { if (bad < 40) console.log(`FAIL ${what}: ${JSON.stringify(got).slice(0, 600)}`); bad++; } };

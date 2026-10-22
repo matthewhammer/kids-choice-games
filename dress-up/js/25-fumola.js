@@ -13,8 +13,13 @@
 //   tools/fumola_rules_check.mjs runs this file in node against Fumola's wasm build: every case the rules can get, the same answers
 // as the Hazel rules'. tools/checks/fumola542.mjs plays the same in a browser, against ?logic=js.
 
-// Fumola's wasm build, as fumola.org serves it (Adapton/fumola's pages): its ES module and its wasm
-const FUMOLA_BUILD = "https://fumola.org/";
+// Fumola's wasm build, pinned (Matthew, 2026-10-22: "actually pin it"): the two files fumola.org served on 2026-10-22, from
+// Adapton/fumola's main at 2ec634b5df (its pages deploy of 2026-10-18), copied into vendor/fumola/2ec634b5df/, so a later
+// fumola.org deploy cannot change the game's rules under it. To move to a newer build, copy its two files into a folder named by
+// its commit and change this line. Relative to the page (index.html).
+// (made absolute: an import() from this file resolves a relative path against js/, not against the page)
+const FUMOLA_BUILD = typeof document !== "undefined" && typeof URL !== "undefined" && document.baseURI
+  ? new URL("vendor/fumola/2ec634b5df/", document.baseURI).href : "vendor/fumola/2ec634b5df/";
 const FUMOLA_JS_URL = FUMOLA_BUILD + "fumola_wasm.js", FUMOLA_WASM_URL = FUMOLA_BUILD + "fumola_wasm_bg.wasm";
 
 // The rules, module by module, as 25-scripting.js has them in Hazel (SCRIPT_COMMON, SCRIPT_TRAP, ...), the same answers. Fumola's

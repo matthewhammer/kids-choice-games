@@ -5,7 +5,7 @@
 // swinging two trap doors, one dropping rocks), the trap room's pits under four lever settings, both dungeons' ladders up, and every
 // way out of six of the world's squares. Then a world walked, as a player walks it: four ways in turn from a square with a way
 // (worldWalk, the friend going through), and where each one ends. The game's state after each pull, where each way leads and where
-// each walk ends must be the same as under js. Under fumola and fumola-list: Fumola's wasm build loaded from fumola.org and the rules
+// each walk ends must be the same as under js. Under fumola and fumola-list: Fumola's wasm build loaded from the game's pinned copy (vendor/fumola/2ec634b5df) and the rules
 // defined, every pull, way and walk decided by Fumola (__hz.calls), no command unknown, nothing said otherwise than drawn
 // (__hz.mismatch), no rule stopped; fumola made its map at least once and fumola-list never. Each mode's per-event times printed
 // from __hz. Exits 1 on a failure.
