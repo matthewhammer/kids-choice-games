@@ -4,8 +4,8 @@
 // chooses that fire and breathes it for FIRE_TRY ms, then it is gone; the choice is 🎮 Controls' 🔥 its fire (one setting:
 // chosen in either, lit in both). The 🔥 button, held with the mouse, breathes until it is let go or the pointer leaves it; a
 // quick tap still shows; a touch held breathes and sliding off it lets go; Space held on it breathes; and it lets go when the
-// panel's tab changes or the window loses the focus while it is held. Pressing and letting go never redraws the friend (no
-// changed()); the frame rate while it is held is printed. Exits 1 on a failure.
+// panel's tab changes, the window loses the focus or the costume changes while it is held. Pressing and letting go never
+// redraws the friend (no changed()); the frame rate while it is held is printed. Exits 1 on a failure.
 //   node dragonfire523.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -115,6 +115,12 @@ try {
   await mouse("mouseMoved", b[0], b[1]); await mouse("mousePressed", b[0], b[1], 1); await sleep(300); const w1 = await fireNow();
   await ev(`window.dispatchEvent(new Event("blur")); 1`); await sleep(500); const w2 = await fireNow(); await mouse("mouseReleased", b[0], b[1], 0);
   ok("held as the window loses the focus: let go", w1.on && !w2.on && !w2.held && w2.pressed === "false", { w1, w2 });
+  // the costume changed from the dragon while it is held (the 🔥 button hidden, still on the page): let go
+  b = await at(HOLD);
+  await mouse("mouseMoved", b[0], b[1]); await mouse("mousePressed", b[0], b[1], 1); await sleep(300); const c1 = await fireNow();
+  await ev(`set("costume", "kind", "wolf"); 1`); await sleep(500); const c2 = await fireNow(); await mouse("mouseReleased", b[0], b[1], 0);
+  await ev(`set("costume", "kind", "dragon"); 1`); await sleep(400);
+  ok("held as the costume changes to the wolf: let go", c1.on && c1.held && !c2.on && !c2.held && c2.pressed === "false", { c1, c2 });
   ok("the controller's and F's flags untouched", await ev(`firePad === false && fireKey === false`), null);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

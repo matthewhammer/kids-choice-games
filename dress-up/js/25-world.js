@@ -847,9 +847,9 @@ function fireLayer() {
   return O;
 }
 function fireTick(t) {
-  // (ticket 523: the 🔥 button gone from the page while held, its tab changed or its panel built again: let go. Before the
-  // frame's own request is cleared, so letting go asks for no second one)
-  if (fireBtn && !fireBtn.el.isConnected) fireBtnUp();
+  // (ticket 523: the 🔥 button gone from the page while held, its tab changed or its panel built again, or hidden, the
+  // costume changed from the dragon: let go. Before the frame's own request is cleared, so letting go asks for no second one)
+  if (fireBtn && (!fireBtn.el.isConnected || fireBtn.el.closest("[hidden]"))) fireBtnUp();
   fireSim.raf = 0;
   const B = state.body, A = (firePad || fireKey || fireBtn || t < fireSim.until) && !figAway && !figBurst ? fireAt() : null, O = document.getElementById("fire-over");
   fireSim.at = A;
