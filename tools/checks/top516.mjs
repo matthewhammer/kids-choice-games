@@ -18,6 +18,7 @@ const send = (method, params = {}) => new Promise(res => { const i = ++n; pendin
 const ev = async x => { const r = await send("Runtime.evaluate", { expression: x, awaitPromise: true, returnByValue: true }); if (r.result.exceptionDetails) throw new Error(JSON.stringify(r.result.exceptionDetails).slice(0, 300)); return r.result.result.value; };
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 900)}`); if (!cond) bad++; };
+// (ticket 407: masks and filters counted outside the friend, who stands among the scene's objects by depth)
 const H = `const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, c = stageC();
   const settle = async (ms = 450) => { changed(); await w(ms); measureMarks(); };
   const go = async set => { Object.assign(B, { things: [], seat: null }, set); await settle(); };
@@ -35,7 +36,7 @@ try {
         hole: !!(hatch && hatch.querySelector("[data-hole]")), down: !!(hatch && hatch.querySelector("[data-ladder][data-down]")), lid: !!N.querySelector('.pit-lid[data-pit-i="hatch"]'),
         lever: !!N.querySelector('[data-obj="hatch lever"] [data-lever="H"] .lever-arm'), windows: N.querySelectorAll('.portal[data-to="treehouse"]').length,
         trunk: !!N.querySelector('[data-obj="tree trunk"] [data-trunk]'), footprint: !!N.querySelector('[data-obj="tree trunk"] [data-footprint]'), ring: !!N.querySelector('[data-here="top"]'),
-        masks: N.querySelectorAll("mask, filter").length, objs: bgShown.objs.map(o => o.name) };
+        masks: [...N.querySelectorAll("mask, filter")].filter(m => !figShown.some(f => f.contains(m))).length, objs: bgShown.objs.map(o => o.name) };
       await go({ kind: "treeroom", inside: top });
       const up = bgShown.node.querySelector('.portal[data-to="treetop"]');
       r.upHere = !!(up && up.querySelector("[data-ladder][data-up]"));

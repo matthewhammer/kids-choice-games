@@ -1077,7 +1077,10 @@ function topShellInSvg(c) {
 }
 // the hatch at the front, on the house below's side (sd), and the lever on its post beside it: where, for the drawing, the
 // arrivals (a step from the hatch, toward the middle) and ticket 517's furniture (kept clear)
-const topHatchAt = (c, o = c.o) => { const sd = topSide(o); return { sd, hx: sd * c.W * 0.3, hy: c.g + 26 * c.k, px: sd * c.W * 0.43, pz: c.g + 4 * c.k }; };
+// (ticket 407: the lever's post midway between the hole's edge and the round wall: the friend walked to it stands with a sole
+// either side of its foot, and at 0.43 the near sole was 3 px into the hole's solid; the span between them is ~102 px, the
+// soles ~97 px across, so there is little room either way)
+const topHatchAt = (c, o = c.o) => { const sd = topSide(o); return { sd, hx: sd * c.W * 0.3, hy: c.g + 26 * c.k, px: sd * c.W * 0.437, pz: c.g + 4 * c.k }; };
 // (ticket 517, Matthew: "5 styles with objects we have already. How should we furnish a round room?") The round room's
 // furnishing, picked by a chip row in its own settings (topFurnish), each style built from drawings the game already
 // has, each by its own code (the hut's living room, the hut bedroom, the tree rooms', the healer's, the hut potion room's):
