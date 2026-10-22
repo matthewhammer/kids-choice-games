@@ -1,0 +1,56 @@
+# (ticket 521, ^du_report(16)) The whitespace of every panel, before and after, on one machine per job: 0.0.204 (^du_report(5)'s
+# version), main where the branch left it, each commit of knoll-521 and its head, all served side by side, measured by one
+# instrument (this branch's tools/checks/knoll521.mjs, FULL=1). Three jobs, the builds in a different order in each: layout does not
+# depend on the machine's speed, so the three should agree to the pixel; how far they differ is the noise floor the report states.
+# On a diag-521* branch only (never merged): tests and speed workflows git rm'd there.
+name: Knolling 521 (whitespace, before and after)
+on:
+  push:
+    branches: ['diag-521*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  measure:
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [1, 2, 3]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Every build beside the others; Chrome, muted
+        shell: bash
+        run: |
+          git fetch -q origin main knoll-521 '+refs/tags/dress-up-0.0.204:refs/tags/dress-up-0.0.204'
+          base=$(git merge-base origin/main origin/knoll-521)
+          git worktree add -q --detach b/v204 dress-up-0.0.204
+          git worktree add -q --detach b/main "$base"
+          urls="v204=http://127.0.0.1:8133/b/v204/dress-up/index.html main=http://127.0.0.1:8133/b/main/dress-up/index.html"
+          i=0; for c in $(git rev-list --reverse "$base"..origin/knoll-521); do i=$((i+1)); git worktree add -q --detach "b/c$i" "$c"; urls="$urls c$i=http://127.0.0.1:8133/b/c$i/dress-up/index.html"; done
+          echo "URLS=$urls" >> "$GITHUB_ENV"
+          mkdir -p out
+          (python3 -m http.server 8133 --bind 127.0.0.1 > /dev/null 2>&1 &)
+          (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
+            --remote-debugging-port=9333 --remote-allow-origins='*' \
+            --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && curl -sf http://127.0.0.1:8133/b/main/dress-up/index.html > /dev/null && break; sleep 1; done
+          { echo "job ${{ matrix.job }}"; git rev-parse origin/main origin/knoll-521 "$base"; curl -sf http://127.0.0.1:9333/json/version | grep -i '"Browser"';
+            fc-match sans-serif; fc-match system-ui; fc-match emoji; lscpu | grep 'Model name'; echo "$urls"; } | tee out/env-${{ matrix.job }}.txt
+      - name: The whole matrix, every build (job 1 also takes the pictures)
+        shell: bash
+        run: |
+          # (job 2 reverses the builds; job 3 runs them in the order of job 1 again, after the other two have warmed nothing: a check that order does not matter)
+          FULL=1 ORDER=${{ matrix.job }} OUT=out/knoll521 SHOTS=${{ matrix.job == 1 && '1' || '' }} \
+            node tools/checks/knoll521.mjs 9333 $URLS | tee out/knoll521-${{ matrix.job }}.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: knoll521-job${{ matrix.job }}
+          path: out/

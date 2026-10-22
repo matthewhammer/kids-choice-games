@@ -1,0 +1,73 @@
+{
+ "title": "The Space Between the Boxes",
+ "date": "2026-10-21",
+ "after": 15,
+ "ticket": 521,
+ "question": "Every panel is boxed now. How much of each panel is empty, between its boxes and inside them, at the screens and zoom levels the game is played on? Where does that space come from, and how much can the layout give back without hiding what a player uses?",
+ "asked": {
+  "at": "2026-10-21 14:00",
+  "words": "The prior effort created panels that leave a lot of \"whitespace\" between them in common zoom levels and screen sizes. Do an audit of that for the new report, and try to reduce that (before vs after) with a PR that we plan to merge with improvements."
+ },
+ "report5": {
+  "version": "0.0.204",
+  "commit": "6e787a8",
+  "published": "2026-10-18",
+  "measured": "counts only: TABS walked and SHOWN_WHEN run in node at the defaults; no pixels, no whitespace, no zoom levels",
+  "rules": [
+   ["1. A box per thing, named once", "kept", "every boxed tab (ticket 375); each box says its name once since ticket 392"],
+   ["2. Nesting by boxes alone, no dashed lines", "partly", "kept in the boxed tabs; 🗺️ World design still draws dotted borders"],
+   ["3. Knolled: a grid, things of a kind the same size and lined up", "amended", "the grids line their boxes up row by row, so a short box leaves a hole as tall as its row's tallest: see #rules"],
+   ["4. A row on one line", "amended", "rows of 12 or more chips still wrap to 3 or more lines: extended to chip rows, see #rules"],
+   ["5. Show the thing", "kept", "places as pictures, things as cards, castle themes as flags"],
+   ["6. One decision, one place", "kept", "unchanged"],
+   ["7. Mirror the picture: every big tab a designer", "kept", "all 20 tabs have a full screen (5 kinds)"],
+   ["8. The same at every scale", "amended", "the side panel sits on the line between one and two columns at common laptop zooms: 'every scale' now means every width and zoom"],
+   ["9. Keep it fast", "kept", "guarded by tabs167 and castlefs365; this report times nothing"]
+  ],
+  "steps": [
+   ["1. The shared pieces: a box, the one-line row, the designer's shell", "done", "ticket 285, 0.0.211 to 0.0.214"],
+   ["2. 🏞️ Background as a designer", "done", "ticket 285"],
+   ["3. The castle's themes in one place, as flags", "done", "ticket 375"],
+   ["4. The bubble themes as three cards", "done", "ticket 375; its question, one on and off per theme, not settled either way"],
+   ["5. The house's 🧸 toys slider", "done", "ticket 285"],
+   ["6. The other tabs, biggest first", "done", "ticket 375 (12 tabs into boxes), ticket 488 (World design's side panel, Controls)"],
+   ["7. Tidy what the survey found stale", "partly", "the stale comments went with ticket 285; not checked line by line here"],
+   ["8. Measure the full-screen designer's speed (ticket 289)", "not done", "only the castle designer's, castlefs365 (ticket 365)"]
+  ]
+ },
+ "amend": [
+  ["Rule 3, split", "Things of a kind stay in rows (cards, theme cards, music cards, mixer strips, the castle designer's rooms, the world's order); different things, the boxes of a tab, are packed, each under the one above it, with no hole under a short one."],
+  ["Rule 4, extended", "A row of chips is a row too: a short row of chips (8 or fewer) sits beside its label in a box wide enough, and a row that would take 3 lines or more is a chip box (the next rule)."],
+  ["Rule 8, made exact", "The same at every width and zoom: the measure is the side panel at 1366x768 and 1920x1080 at 100%, 125% and 150%, the iPad both ways, and the phone, as tools/checks/knoll521.mjs measures it."],
+  ["New: no empty column", "A grid has no more columns than boxes; what a full screen does not need for boxes, the game's card takes."],
+  ["New: a long choice is one chip", "Twelve or more text choices are one chip naming the current one, opening ticket 459's chip box (✖ and Escape close it); no dropdowns."]
+ ],
+ "found": [
+  ["fitPic did not know the generic full screen's card", "21-size-and-divider.js: in the 17 generic full screens the picture was not fitted to its card, so it was letterboxed (Figure 6). Fixed in the PR, the commit named \"four panel bugs\"."],
+  ["The bubble room's settings landed in a box named \"🏰 the castles\"", "22-full-screen.js: the test picking the castles' box matched \"room\"; now it picks keys and groups that start with \"castle\". Same commit."],
+  ["🔬 and ♿ stopped laying their switches out as chips", "style.css: the rules for 🔬 Inspection's and ♿ Accessibility's chips did not reach through the designer's wrapper, one version after they shipped (0.0.315). Same commit."],
+  ["Background's side panel had boxes but no grid", "the boxes touched, with no gap between them; now a grid with the box gap, two to a row from 568 px. Same commit."],
+  ["The bubble room's full screen is not the same twice", "the only case where the three jobs differ (Figure 2's note): most likely because its bubbles move and the measure catches them in different places (not confirmed). Every other case, in every build, agrees to the pixel."]
+ ],
+ "next": [
+  ["The default split (c4's card)", "Show Matthew before and after pictures of the full screen with the game's card filling its column, and ask for his word on the default split, before that commit is built (ticket 521)"],
+  ["The PR", "Run all the checks on knoll-521, then open the PR with this report's before and after; merging and releasing wait for Matthew"],
+  ["The tab strip", "Measure and shorten the 20-tab strip, 3 to 5 lines tall in the side panel at the screens measured (the check's tabStrip numbers)"],
+  ["🎵 Music onto the box tokens", "Move Music's own 190 px and 330 px grid onto the shared box tokens, and the nine different minimum column widths onto one"],
+  ["The 56 px bar", "Name the 56 px bar once on :root, where it is written by hand in 6 places"],
+  ["📰 What's new and the HUD", "Fit what's new (55vh tall in one column) and the heads-up display into boxes, the two panels not yet knolled"],
+  ["World design's borders and the place picker", "Take World design's dotted borders away (rule 2) and make the place picker a chip box"],
+  ["A still bubble room", "Hold the bubble room still while the check measures it (holdStill), so its full screen measures the same in every job"],
+  ["Firefox, the iPad and the kids' fonts", "Measure in Firefox and on the iPad itself, with the fonts the kids' computers have; GitHub's runner has DejaVu Sans and Noto Color Emoji"],
+  ["Report 5's dated note", "When this report is published, add a dated note to ^du_report(5) pointing here"]
+ ],
+ "sources": {
+  "ticket": ["^ticket(521) on the dashboard", "https://matthewhammer.org/hazel/dashboard/#ticket-521"],
+  "r5": ["^du_report(5), Always Be Knolling", "../005/"],
+  "check": ["tools/checks/knoll521.mjs (this report's copy, drivers/knoll521.mjs)", "drivers/knoll521.mjs"],
+  "workflow": ["the workflow on the branch diag-521 (drivers/knoll521.yml)", "drivers/knoll521.yml"],
+  "pr": ["the branch knoll-521", "https://github.com/matthewhammer/kids-choice-games/tree/knoll-521"],
+  "counts": ["drivers/count_tabs.mjs, the panels counted in node", "drivers/count_tabs.mjs"],
+  "archive": ["the picture archive: the castle with the friend, as its run of 0.0.347 drew it", "https://github.com/matthewhammer/dress-up-pictures"]
+ }
+}
