@@ -35,15 +35,16 @@ const SCRIPT_ROOMS = [
   { name: "TrapRoom", label: "🏰 the trap room, over the castle's dungeons", kind: "trap" },
   { name: "TreeRoom", label: "🌳 the tree houses' trap doors, and the round room's at the top", kind: "tree" },
   { name: "Square", label: "🎚️ placed levers and trap doors, in any square or room", kind: "square" },
+  { name: "Castle", label: "🏰 the castle's ways: where a pit drops you", kind: "castle" },
 ];
 
 // (ticket 531) the whole game's vocabulary, for every room that has logic: what a rule may say (Cmd), what happened (Event), a placed
 // thing as a rule sees it (Thing), and what it is told (Globals, built by each room's globals in SCRIPT_ACTS: add a field in both).
 // No randomness and no clock in Hazel: the game's draws (draws, from a random wiring's seed) come in through Globals.
-const SCRIPT_PREAMBLE = `type Cmd = + Done + Flip(String, Cmd) + Say(String, Cmd) + SetPit(Int, Bool, Cmd) + DropBoulder(Int, Cmd) + LiftBoulder(Int, Cmd) + SetHatch(Int, Bool, Cmd) + OpenDoor(Int, Bool, Cmd) + DropRock(Int, Bool, Cmd) + Wait(Int, Cmd) in
-type Event = + Pull(String) + PullBoulder(String) + PullHatch(Int) + PullThing(Int) in
+const SCRIPT_PREAMBLE = `type Cmd = + Done + Flip(String, Cmd) + Say(String, Cmd) + SetPit(Int, Bool, Cmd) + DropBoulder(Int, Cmd) + LiftBoulder(Int, Cmd) + SetHatch(Int, Bool, Cmd) + OpenDoor(Int, Bool, Cmd) + DropRock(Int, Bool, Cmd) + Wait(Int, Cmd) + GoRoom(Int, Cmd) in
+type Event = + Pull(String) + PullBoulder(String) + PullHatch(Int) + PullThing(Int) + FallPit(Int) in
 type Thing = (at = Int, uid = String, kind = String, on = Bool, works = [String], does = String, open = Bool, boulder = Bool) in
-type Globals = (lever_L = Bool, lever_R = Bool, wiring = String, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing]) in`;
+type Globals = (lever_L = Bool, lever_R = Bool, wiring = String, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing], rooms = [String]) in`;
 
 const SCRIPT_COMMON = `# Sub-routines every room can use, as Common.wire and so on. #
 let flip2 = fun (a, b) : (String, String) -> Flip(a, Flip(b, Done));
@@ -57,7 +58,9 @@ let up = fun (l, r, side) : (Bool, Bool, String) -> if side == "L" then l else r
 let pits_open = fun (l, r, w) : (Bool, Bool, (String, String)) -> let (w0, w1) = w in (up(l, r, w0), up(l, r, w1));
 # a pit that changed from was to now: SetPit, else nothing #
 let pit_moves = fun (i, was, now, k) : (Int, Bool, Bool, Cmd) -> if was == now then k else SetPit(i, now, k);
-let member = fun (s, xs) : (String, [String]) -> case xs | [] => false | x :: rest => x == s || member(s, rest) end`;
+let member = fun (s, xs) : (String, [String]) -> case xs | [] => false | x :: rest => x == s || member(s, rest) end;
+# where s is in a list of Strings, counting from 1; 0 when it is not there #
+let index_of = fun (xs, s) : ([String], String) -> case xs | [] => 0 | x :: rest => if x == s then 1 else (let i = index_of(rest, s) in if i == 0 then 0 else i + 1) end`;
 
 const SCRIPT_TRAP = `# A red lever pulled: flip it, and each pit wired to it opens or shuts. #
 # A blue lever pulled: each of its pits gets a boulder, or loses one. #
@@ -111,8 +114,23 @@ let on_event = fun (g, e) : (Globals, Event) ->
   | _ => Done
   end`;
 
+// (ticket 531, phase 2) the castle's ways, decided when they are taken (never per frame, never per drawing): which room a trap
+// room's pit drops you into. The rooms come in as their kinds, room 1 first
+const SCRIPT_CASTLE = `# A trap room's pit fallen into (0 the left, 1 the right): #
+# the first pit drops into the dungeon, the second into the deep dungeon; #
+# a castle with only one of them, both into that one. #
+let on_event = fun (g, e) : (Globals, Event) ->
+  let d1 = Common.index_of(g.rooms, "dungeon1") in
+  let d2 = Common.index_of(g.rooms, "dungeon2") in
+  case e
+  | FallPit(i) =>
+    let to = if i == 0 then (if d1 > 0 then d1 else d2) else (if d2 > 0 then d2 else d1) in
+    if to == 0 then Done else GoRoom(to, Done)
+  | _ => Done
+  end`;
+
 // each room kind's shipped text: rules that do just what the plain JS does, so 🧩 on plays the same game (the fair comparison)
-const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE, square: SCRIPT_SQUARE };
+const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE, square: SCRIPT_SQUARE, castle: SCRIPT_CASTLE };
 const SCRIPT_LOGIC = (() => { try { const v = new URLSearchParams(location.search || "").get("logic"); return v === "hazel" || v === "js" ? v : ""; } catch (e) { return ""; } })();
 const scriptsOn = () => SCRIPT_LOGIC === "hazel" || (SCRIPT_LOGIC !== "js" && !!(state.scripts && state.scripts.on));
 const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntries(SCRIPT_ROOMS.map(r => [r.name, SCRIPT_TEXTS[r.kind] || ""])) });
@@ -253,7 +271,7 @@ function scriptRun(cmd, act, depth = 0, end = () => {}) {
 }
 
 // (the empty fields of a room's globals that are not its own)
-const scriptNoGlobals = () => ({ lever_L: false, lever_R: false, wiring: "normal", draws: [], pits_on: [], covered: [], hatch: false, things: [] });
+const scriptNoGlobals = () => ({ lever_L: false, lever_R: false, wiring: "normal", draws: [], pits_on: [], covered: [], hatch: false, things: [], rooms: [] });
 // (ticket 531) the event's room, its globals and how its commands act: per room kind (SCRIPT_ROOMS' kind), filled in as rules move
 const SCRIPT_ACTS = {
   trap: {
@@ -261,7 +279,7 @@ const SCRIPT_ACTS = {
     globals: () => { const B = state.background, K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
       const T = trapState(B, n, K.id), r = seeded(B[leverSeedKey(n, K.id)] ?? 1);
       return { lever_L: !leverDown(B, "L", n, K.id), lever_R: !leverDown(B, "R", n, K.id), wiring: B[leverWireKey(n, K.id)] || "normal", draws: [r(0), r(1)],
-        pits_on: T.on, covered: T.covered, hatch: false, things: [] }; },
+        pits_on: T.on, covered: T.covered, hatch: false, things: [], rooms: [] }; },
     // (a Flip moves the lever only; each SetPit swings its pit's lid, the rule having said which: ticket 531. A pit the rule says
     // otherwise than the drawing, which follows the levers, is counted in __hz.mismatch)
     // (each event its own gathered boulders, handed to done when its walk ends)
@@ -289,12 +307,36 @@ const SCRIPT_ACTS = {
     act: () => { const doors = []; return { doors, OpenDoor: (at, open) => { doors.push([at, "open", !!open]); }, DropRock: (at, down) => { doors.push([at, "boulder", !!down]); } }; },
     done: (ev, a) => { leverPullApply(ev.value, a.doors); },
   },
+  // (ticket 531, phase 2: a castle's ways, as they are taken; scriptGo) FallPit(i): a trap room's pit i fallen into. GoRoom(r) says
+  // where to: r a room, 0 out of the castle, below 0 nowhere; the walk is the JS's (enterScene), to that room
+  castle: {
+    here: ev => { const B = state.background; if (B.kind !== "castleroom") return false; const K = castleOf(B), n = castleRoomNow(B, K);
+      return ev.tag === "FallPit" && K.rooms[n - 1] === "trap"; },
+    globals: () => ({ ...scriptNoGlobals(), rooms: castleOf(state.background).rooms.slice() }),
+    act: () => { const got = { go: null }; return { got, GoRoom: r => { got.go = Math.round(+r); } }; },
+  },
 };
+// (the castle room the friend is in, as the game reads it)
+const castleRoomNow = (B, K = castleOf(B)) => Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
+
+// (ticket 531, phase 2) a castle door or pit taken: with 🧩 on and ready, the Castle rule says where it leads, and enterScene goes
+// there ({to, room}; false: nowhere, so not at all); what the drawing put on the door (decided when it was drawn) is checked
+// against it, a difference counted in __hz.mismatch. null: the JS's own way, the door's data-to and data-room, as always
+function scriptGo(door) {
+  const B = state.background, pit = door.dataset.pit;
+  if (B.kind !== "castleroom" || !pit) return null;
+  const ev = { tag: "FallPit", value: +pit.split(" ")[0] < 0 ? 0 : 1 };
+  if (!scriptEvent("Castle", ev)) { hzJs(ev.tag, () => door.dataset.room); return null; }
+  const got = scriptEvent.act && scriptEvent.act.got, r = got && got.go, go = r == null || r < 0 ? false : r === 0 ? { to: "castle", room: undefined } : { to: "castleroom", room: String(r) };
+  if ((go ? go.to : null) !== door.dataset.to || (go ? go.room : undefined) !== door.dataset.room) hzCounters().mismatch++;
+  return go;
+}
 
 // (ticket 531; ticket 482's scriptPull) an event in a room, with 🧩 on and the program ready: the room's rule says what happens, its
 // commands are acted on, and true. Otherwise false, and the caller's own JS runs as it always has: 🧩 off, Hazel not loaded yet,
 // not ready (errors, a hole to fill, a bracket left open), no handler for the room, or not in that room
 function scriptEvent(room, ev) {
+  scriptEvent.act = null;
   if (!scriptsOn()) return false;
   const R = SCRIPT_ROOMS.find(r => r.name === room), A = R && SCRIPT_ACTS[R.kind];
   if (!A || !A.here(ev)) return false;
@@ -306,7 +348,7 @@ function scriptEvent(room, ev) {
   const t1 = performance.now();
   try { cmd = f(A.globals(ev), ev); } catch (e) { scriptSay("the rule stopped: " + (e && e.message || e)); return true; }
   const t2 = performance.now();
-  const act = A.act(ev);
+  const act = scriptEvent.act = A.act(ev);   // (kept, for a caller that reads what the walk gathered: scriptGo)
   scriptRun(cmd, act, 0, () => { if (A.done) A.done(ev, act); });
   const t3 = performance.now();
   Z.calls++; hzPush(Z.ms, t2 - t1); hzPush(Z.runMs, t3 - t2); hzPush(Z.hazel[ev.tag] || (Z.hazel[ev.tag] = []), t3 - t0);

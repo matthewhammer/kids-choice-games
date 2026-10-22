@@ -1431,7 +1431,8 @@ function enterScene(door, here = false) {
   // (ticket 525: a cave door linked to a square or a place off the grid: there, out by its twin; unlinked, by kind, below)
   if (door.dataset.passage) { const t = passageOf(door.dataset.passage); if (t && t.dest && passageWalk(door, t)) return; }
   if (door.dataset.way && !door.dataset.to) { worldWalk(door, here); return; }
-  const to = door.dataset.to, house = door.dataset.house, tent = door.dataset.tent, room = door.dataset.room, B = state.background;
+  let to = door.dataset.to, room = door.dataset.room;
+  const house = door.dataset.house, tent = door.dataset.tent, B = state.background;
   if (!SCENES[to] && !PICTURE_CHOICES.some(([kd]) => kd === to)) return;
   // (a picture's own box: the scene inside it spills past it, hidden)
   const view = door.querySelector(":scope > svg, :scope > image");
@@ -1479,6 +1480,10 @@ function enterScene(door, here = false) {
   if (onBr && to === "treeroom" && house && [onBr.W.a, onBr.W.b].includes(+house - 1)) { bridgeGoIn({ j: onBr.j, end: onBr.W.b === +house - 1 ? 1 : 0, house: +house, other: (onBr.W.b === +house - 1 ? onBr.W.a : onBr.W.b) + 1 }); return; }
   const lad = !view && !(climb && climb.through) ? ladderOf(door) : null;
   if (lad) { climbLadder(lad); return; }
+  // (ticket 531, phase 2: 🧩 the Castle rule says where a castle pit leads, when it is on; false: nowhere)
+  const go = scriptGo(door);
+  if (go === false) return;
+  if (go) { to = go.to; room = go.room; from.to = to; }
   tripStart(door, view ? "spin" : door.dataset.pit ? "fall" : "walk");   // (⏱️)
   // (ticket 199) a picture out of reach: walked (or swum) to first, under it, then flown into
   const far = view && !passesNear().some(q => q.p.el === door), pp = far && marks.pics.find(q => q.el === door);

@@ -47,7 +47,7 @@ ok("the shipped program (under ?logic=hazel) is ready", C.ready, [C.errors, C.un
 console.log(`compiled in ${C.ms.toFixed(1)} ms; rooms: ${Object.keys(C.handlers).join(", ")}`);
 if (!C.ready) { console.log(C.errors, C.unfinished); process.exit(1); }
 const flat = c => { const out = []; while (c && c.tag !== "Done") { const v = Array.isArray(c.value) ? c.value : [c.value]; out.push([c.tag, ...v.slice(0, -1)]); c = v[v.length - 1]; } return out; };
-const none = { lever_L: false, lever_R: false, wiring: "normal", draws: [], pits_on: [], covered: [], hatch: false, things: [] };
+const none = vm.runInContext("scriptNoGlobals()", page);
 const times = {};
 const time = (key, f) => { const t = []; for (let i = 0; i < REPS; i++) { const t0 = performance.now(); f(); t.push(performance.now() - t0); } t.sort((a, b) => a - b); (times[key] = times[key] || []).push(...t); };
 
@@ -96,6 +96,19 @@ for (const k of [1, 2, 4, 8, 16, 40]) for (const seed of [1, 5, 9]) {
 }
 console.log(`ok   placed levers: ${sq} cases, the real leverPull's doors`);
 
+// ---- (phase 2) castle pits: every castle of 1 to 5 rooms from these kinds, each pit, against castleroomScene's own pits line ----
+const castle = src("13-castle-rooms-and-map.js");
+const pitsLine = castle.match(/  const d1 = K\.rooms\.indexOf\("dungeon1"\) \+ 1, d2 = [^\n]*\n  const pits = [^\n]*\n/)[0];
+const pitsOf = new Function("K", pitsLine + "return pits;");
+const KINDS = ["king", "trap", "dungeon1", "dungeon2", "hallway"];
+const castles = [[]]; for (let len = 1; len <= 4; len++) for (const c of castles.filter(c => c.length === len - 1)) for (const k of KINDS) castles.push([...c, k]);
+let cp = 0;
+for (const rooms of castles) if (rooms.length) for (const i of [0, 1]) {
+  const to = pitsOf({ rooms })[i], want = to ? [["GoRoom", to]] : [];
+  const got = flat(C.handlers.Castle({ ...none, rooms }, { tag: "FallPit", value: i }));
+  ok(`FallPit ${i} in ${rooms.join(",")}`, JSON.stringify(got) === JSON.stringify(want), { want, got }); cp++; }
+console.log(`ok   castle pits: ${cp} cases, castleroomScene's own pits`);
+
 // ---- times: a Hazel call (with the globals built as the game does) against the JS deciding the same ----
 const g0 = { ...none, lever_L: true, wiring: "random", draws: [0.3, 0.7], pits_on: [true, true], covered: [false, true] };
 time("Pull: hazel", () => C.handlers.TrapRoom(g0, { tag: "Pull", value: "L" }));
@@ -105,6 +118,9 @@ time("PullHatch: hazel", () => C.handlers.TreeRoom({ ...none, hatch: true }, { t
 for (const k of [2, 8, 40]) { const T = squareOf(k, 5), i = T.findIndex(t => t.kind === "lever");
   time(`PullThing, ${k} doors: hazel (globals copied in)`, () => C.handlers.Square({ ...none, things: thingsOf(T) }, { tag: "PullThing", value: i }));
   time(`PullThing, ${k} doors: js (leverPull)`, () => { game.state.background = { things: T.map(t => ({ ...t })) }; game.leverPull(i); }); }
+{ const rooms = ["king", "hallway", "trap", "dungeon1", "dungeon2"];
+  time("FallPit: hazel", () => C.handlers.Castle({ ...none, rooms: rooms.slice() }, { tag: "FallPit", value: 1 }));
+  time("FallPit: js (the pits line, as castleroomScene draws)", () => pitsOf({ rooms })[1]); }
 const q = (a, p) => a[Math.min(a.length - 1, Math.floor(p * a.length))];
 console.log(`\ntimes, ${REPS} reps each, node ${process.version} (ms)`);
 for (const [k, a] of Object.entries(times)) console.log(`  ${k.padEnd(44)} p50 ${q(a, 0.5).toFixed(4)}  p95 ${q(a, 0.95).toFixed(4)}  max ${a[a.length - 1].toFixed(3)}`);

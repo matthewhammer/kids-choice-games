@@ -68,8 +68,8 @@ try {
     out.names = scriptNames(); out.dedupe = scriptModuleName("Trap Room", new Set(["TrapRoom"]));
     out.frameSrc = (document.querySelector("#panel iframe.script-frame") || {}).src || null;
     return JSON.stringify(out); })()`));
-  // (ticket 531: then TreeRoom and Square)
-  ok("🧩 Scripting has an editor per module: Common, then TrapRoom, TreeRoom, Square", JSON.stringify(r.editors) === '["Common","TrapRoom","TreeRoom","Square"]', r.editors);
+  // (ticket 531: then TreeRoom and Square; phase 2, Castle)
+  ok("🧩 Scripting has an editor per module: Common, then TrapRoom, TreeRoom, Square, Castle", JSON.stringify(r.editors) === '["Common","TrapRoom","TreeRoom","Square","Castle"]', r.editors);
   ok("module names are unique, and a second of a name gets a number", r.names && r.dedupe === "TrapRoom2", r);
   // ---- the frame: ready, then a second more of the game's frames ----
   let phase = "none";
