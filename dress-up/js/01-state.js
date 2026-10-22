@@ -584,6 +584,9 @@ const ROPE = "#c8a46a", ROPE_DK = "#8a6a3a";
 const NINJA = { cloth: "#24252d", line: "#0c0c10", glove: "#18181e", slit: "#030304", gold: "#e0b030", goldLine: "#8a6420", goldLight: "#f6dc7a",
                 bandA: "#4d5263", bandB: "#71778b", bandLine: "#111216" };
 const NINJA_BOOTS = [["braided", "🪢 braided bands"], ["wrapped", "🧣 bands wrapped round"]];
+// (ticket 561, M's design) what shows between the bands: the friend's own skin (the default), or 🌑 full darkness (the
+// trousers under them, as 0.0.410 drew it; Matthew: "which I think looks more natural")
+const NINJA_BETWEEN = [["skin", "🦵 skin between the bands"], ["dark", "🌑 full darkness"]];
 const NINJA_GEMS = {
   ruby:     { name: "🔴 ruby", c: "#d0103a", light: "#ff7a96", line: "#6e0520" },
   emerald:  { name: "🟢 emerald", c: "#119a4c", light: "#7aeaa8", line: "#05502a" },
@@ -775,6 +778,7 @@ const DEFAULTS = {
              ...Object.fromEntries(Object.entries(COW_HATS).map(([id, t]) => ["cowHatColor_" + id, t.colors[0]])),
              // (ticket 557) the ninja: its boots' bands, its head covering (on), the gem's kind and shape, eyes in the slit (off)
              ninjaBoots: "braided", ninjaBand: true, ninjaGem: "ruby", ninjaGemShape: "round", ninjaEyes: false,
+             ninjaBetween: "skin",   // (ticket 561, M's design: the skin between the boots' bands; "dark", 🌑 full darkness)
              // (ticket 530) the Sasquatch: its style, each style's colour, its footprints and its grin
              sasquatchStyle: "bigfoot", sasquatchPrints: true, sasquatchGrin: true,
              ...Object.fromEntries(Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["sasquatchColor_" + id, t.colors[0]])),
