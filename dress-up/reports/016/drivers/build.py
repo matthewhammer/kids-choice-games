@@ -240,7 +240,7 @@ steps = "".join(f'<li id="step-{i}"><span class="stepnum"><a href="#step-{i}">{i
 sources = "".join(f'<li id="src-{k}"><a href="{E(u)}">{E(t)}</a></li>' for k, (t, u) in S.items())
 envj = JOBS[0]
 noise_txt = (f'In this run ({RUN["name"]}) {NOISE["compared"]:,} cases were measured in two jobs or more; all but {len(NOISE["differ"])} agree to the pixel. '
-             f'Those {len(NOISE["differ"])} are the bubble room\'s full screen, where the jobs differ by up to {100 * NOISE["maxShare"]:.1f} points ({NOISE["maxPx"]:,} px²): most likely because its bubbles move. '
+             f'Those {len(NOISE["differ"])} are the bubble room\'s full screen, where the jobs differ by up to {100 * NOISE["maxShare"]:.2f} points ({NOISE["maxPx"]:,} px²): most likely because its bubbles move. '
              f'Outside the bubble room the noise floor is 0.') if NOISE["differ"] else f'All {NOISE["compared"]:,} cases measured in two jobs or more agree to the pixel: the noise floor is 0.'
 def hl(scr, m): return HL[(scr, m)]
 h1 = hl("1920x1080", "fs"); h2 = hl("1920x1080", "side"); h3 = hl("1366x768", "side"); h4 = hl("ipad-820x1180", "fs")
@@ -266,7 +266,7 @@ body = f'''<main>
 <li><b>Full screen is where the space is.</b> At 1920×1080, {lname("main")} leaves {pc(h1["main"])} of the boxes' side of the full screen empty between boxes; after <code>{AFTER}</code>, {pc(h1[AFTER])}. At 0.0.204 only 🎵 Music and 🗺️ World design had a full screen ({pc(h1["v204"])}); on those two alone, main reads {pc(LIKE["main"])} and after {pc(LIKE[AFTER])}.</li>
 <li><b>The side panel is less empty than at 0.0.204, and less again after.</b> Side panel 1920×1080: {pc(h2["v204"])} at 0.0.204, {pc(h2["main"])} on main, {pc(h2[AFTER])} after. At 1366×768: {pc(h3["v204"])}, {pc(h3["main"])}, {pc(h3[AFTER])}. iPad portrait full screen: {pc(h4["v204"])}, {pc(h4["main"])}, {pc(h4[AFTER])}.</li>
 <li><b>Where it comes from</b> (read in the code, and seen in the box maps of Figure 3): empty columns (a grid of 4 columns holding 1 or 2 boxes), the hole under a short box beside a tall one, and the game's card in full screen, which left its column mostly empty. The side panel sits on the 568 px line between one and two columns at the common laptop zooms (<a href="#zoom">the zoom</a>).</li>
-<li><b>Four bugs found on the way</b>, fixed in the branch's second commit (<a href="#found">found</a>); one of the fixes, Background's side panel as a grid, made that panel longer and emptier at every place measured until its boxes are packed (<a href="#fixes">each commit</a>).</li>
+<li><b>Four bugs found on the way</b>, fixed in the branch's second commit (<a href="#found">found</a>); one of the fixes, Background's side panel as a grid, made that panel longer and emptier at every place measured; packing the boxes (c5) then made it shorter than on main (at 1920×1080, 2.92 → 2.65 windows tall), though with gaps between its boxes its empty share stays higher (5.7% → 19.6%) (<a href="#fixes">each commit</a>).</li>
 <li><b>The panels grew by half since {ref(5)}:</b> {tot(c204, "declared"):,} → {tot(c398, "declared"):,} rows declared, {tot(c204, "groups")} → {tot(c398, "groups")} groups, {nboxes} boxes planned in TAB_BOXES (none at 0.0.204).</li>
 <li><b>The measure repeats.</b> {noise_txt}</li>
 </ol>
