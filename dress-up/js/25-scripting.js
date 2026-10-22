@@ -174,8 +174,11 @@ let on_event = fun (g, e) : (Globals, Event) ->
 
 // each room kind's shipped text: rules that do just what the plain JS does, so 🧩 on plays the same game (the fair comparison)
 const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE, square: SCRIPT_SQUARE, world: SCRIPT_WORLD, castle: SCRIPT_CASTLE };
-const SCRIPT_LOGIC = (() => { try { const v = new URLSearchParams(location.search || "").get("logic"); return v === "hazel" || v === "js" ? v : ""; } catch (e) { return ""; } })();
-const scriptsOn = () => SCRIPT_LOGIC === "hazel" || (SCRIPT_LOGIC !== "js" && !!(state.scripts && state.scripts.on));
+const SCRIPT_LOGIC = (() => { try { const v = new URLSearchParams(location.search || "").get("logic"); return ["hazel", "js", "fumola", "fumola-list"].includes(v) ? v : ""; } catch (e) { return ""; } })();
+// (ticket 542) ?logic=fumola and ?logic=fumola-list: every room's logic through the same rules written in Fumola (25-fumola.js), run
+// by Fumola's wasm build, whatever the panel or the save says; fumola holds the World rule's map in Fumola, fumola-list passes it in
+const SCRIPT_FUMOLA = SCRIPT_LOGIC === "fumola" || SCRIPT_LOGIC === "fumola-list";
+const scriptsOn = () => SCRIPT_LOGIC === "hazel" || SCRIPT_FUMOLA || (SCRIPT_LOGIC !== "js" && !!(state.scripts && state.scripts.on));
 const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntries(SCRIPT_ROOMS.map(r => [r.name, SCRIPT_TEXTS[r.kind] || ""])) });
 
 function scriptsState() {
@@ -294,7 +297,8 @@ function scriptSay(text) {
 // handler call's ms (ms), each command walk's (runMs), each compile's (compileMs), the commands not understood (unknown), and per event
 // tag the whole event's ms in each mode (hazel, js: from the guard to the last command acted on, the drawing after it not counted)
 const HZ_KEEP = 5000;
-const hzCounters = () => window.__hz || (window.__hz = { calls: 0, ms: [], runMs: [], compileMs: [], unknown: 0, unknownTags: [], mismatch: 0, hazel: {}, js: {} });
+// (ticket 542: under ?logic=fumola and fumola-list, the whole event's ms per tag under fumola, not hazel)
+const hzCounters = () => window.__hz || (window.__hz = { calls: 0, ms: [], runMs: [], compileMs: [], unknown: 0, unknownTags: [], mismatch: 0, hazel: {}, fumola: {}, js: {} });
 const hzPush = (a, v) => { if (a.length < HZ_KEEP) a.push(Math.round(v * 1000) / 1000); };
 // (the plain JS's own handler, timed the same way: the whole event)
 function hzJs(tag, f) { const t0 = performance.now(); try { return f(); } finally { const Z = hzCounters(); hzPush(Z.js[tag] || (Z.js[tag] = []), performance.now() - t0); } }
@@ -404,15 +408,16 @@ function scriptGo(door) {
 
 // (ticket 531; ticket 482's scriptPull) an event in a room, with 🧩 on and the program ready: the room's rule says what happens, its
 // commands are acted on, and true. Otherwise false, and the caller's own JS runs as it always has: 🧩 off, Hazel not loaded yet,
-// not ready (errors, a hole to fill, a bracket left open), no handler for the room, or not in that room
+// not ready (errors, a hole to fill, a bracket left open), no handler for the room, or not in that room. (ticket 542) Under
+// ?logic=fumola and fumola-list, the rule is Fumola's (fumolaCompile, 25-fumola.js), with the same handler shape: the rest is the same
 function scriptEvent(room, ev) {
   scriptEvent.act = null;
   if (!scriptsOn()) return false;
   const R = SCRIPT_ROOMS.find(r => r.name === room), A = R && SCRIPT_ACTS[R.kind];
   if (!A || !A.here(ev)) return false;
-  if (!window.Hazel) { hazelLoad().catch(() => {}); return false; }
+  if (SCRIPT_FUMOLA ? !fumolaReady() : !window.Hazel) { (SCRIPT_FUMOLA ? fumolaLoad() : hazelLoad()).catch(() => {}); return false; }
   const t0 = performance.now(), Z = hzCounters();
-  const C = scriptCompile(), f = C && C.ready && C.handlers[room];
+  const C = SCRIPT_FUMOLA ? fumolaCompile() : scriptCompile(), f = C && C.ready && C.handlers[room];
   if (!f) return false;
   let cmd;
   const t1 = performance.now();
@@ -421,7 +426,8 @@ function scriptEvent(room, ev) {
   const act = scriptEvent.act = A.act(ev);   // (kept, for a caller that reads what the walk gathered: scriptGo)
   scriptRun(cmd, act, 0, () => { if (A.done) A.done(ev, act); });
   const t3 = performance.now();
-  Z.calls++; hzPush(Z.ms, t2 - t1); hzPush(Z.runMs, t3 - t2); hzPush(Z.hazel[ev.tag] || (Z.hazel[ev.tag] = []), t3 - t0);
+  const side = SCRIPT_FUMOLA ? Z.fumola || (Z.fumola = {}) : Z.hazel;
+  Z.calls++; hzPush(Z.ms, t2 - t1); hzPush(Z.runMs, t3 - t2); hzPush(side[ev.tag] || (side[ev.tag] = []), t3 - t0);
   return true;
 }
 
@@ -606,12 +612,16 @@ function scriptingPanel(box) {
   ]);
   box.append(
     el("div", { class: "hint" }, "The game's logic in Hazel: each editor is a module of one program; 📚 Common's are in scope in every room's, as Common.name. A room's on_event(globals, event) gives what to do, as Cmd, each command with the rest after it: Flip(\"lever_L\", then), SetPit(0, true, then), DropBoulder(0, then), SetHatch(2, false, then), OpenDoor(3, true, then), Say(\"words\", then), Wait(500, then), Done."),
-    ...(SCRIPT_LOGIC ? [el("div", { class: "hint" }, SCRIPT_LOGIC === "hazel" ? "This page was opened with ?logic=hazel: the levers run the shipped scripts, whatever is in the boxes or the switch." : "This page was opened with ?logic=js: the levers run the game's own code, whatever the switch says.")] : []),
+    ...(SCRIPT_LOGIC ? [el("div", { class: "hint" }, SCRIPT_LOGIC === "hazel" ? "This page was opened with ?logic=hazel: the levers run the shipped scripts, whatever is in the boxes or the switch."
+      : SCRIPT_FUMOLA ? `This page was opened with ?logic=${SCRIPT_LOGIC}: the levers and the ways run the same rules written in Fumola (below, to read), in Fumola's wasm build, whatever is in the boxes or the switch.`
+      : "This page was opened with ?logic=js: the levers run the game's own code, whatever the switch says.")] : []),
     el("div", { class: "row" }, [on]), status, errs,
     editor("📚 Common", "Common", () => scriptsState().common, v => { scriptsState().common = v; }),
     ...SCRIPT_ROOMS.map(r => editor(r.label, r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; })),
     tiles,
     el("details", { class: "script-preamble" }, [el("summary", {}, "what every module can name (the program's start)"), el("pre", {}, SCRIPT_PREAMBLE)]),
+    // (ticket 542) under ?logic=fumola or fumola-list, the rules that run, in Fumola
+    ...(SCRIPT_FUMOLA ? [el("details", { class: "script-preamble" }, [el("summary", {}, "the rules in Fumola, as they run under ?logic=" + SCRIPT_LOGIC), el("pre", {}, FUMOLA_SOURCE)])] : []),
   );
   // (a 📂 load or a ↺ start over replaces state, and so state.scripts, with the tab open: each box and the switch filled again from
   // the new one, before a keystroke can write the old box's text into it, and Hazel and the tiles told; per round, one compare)
