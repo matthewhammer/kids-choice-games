@@ -627,5 +627,7 @@ function scriptingPanel(box) {
   requestAnimationFrame(() => setTimeout(() => scriptFrameMount(tiles), 0));
 }
 
-// (ticket 531) under ?logic=hazel, Hazel loaded from the start, so the first event is not the one that waits for it
-if (SCRIPT_LOGIC === "hazel") hazelLoad().catch(() => {});
+// (ticket 531) under ?logic=hazel, Hazel loaded from the start, so the first event is not the one that waits for it; and the
+// program compiled as soon as it is (~780 ms on the runners), not in the first event: compiled there, a lever's pull stalled the
+// page past startPull's timers, the pull's end and its step aside (leverAct) fired together, and the friend walked off the lever
+if (SCRIPT_LOGIC === "hazel") hazelLoad().then(() => setTimeout(() => { try { scriptCompile(); } catch (e) {} }, 0)).catch(() => {});
