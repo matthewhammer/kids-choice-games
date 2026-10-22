@@ -1173,7 +1173,7 @@ function worldLink(d, worldId, key) {
 // it, come in from the side it leads to; the back chip can bring them back
 // (stepping through it its own way, facing it: east, to the right; here: from an edge, where they stand)
 function worldWalk(door, here = false) {
-  const W = state.world, d = door.dataset.way, t = worldTarget(W, W.at, d), B = state.background;
+  const W = state.world, d = door.dataset.way, t = scriptWay(W, d), B = state.background;   // (ticket 531, phase 2: 🧩 World's rule, when it is on)
   if (!t) return;
   const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: t.cell.kind, worldAt: W.at, worldId: W.id };
   tripStart(door, "walk");

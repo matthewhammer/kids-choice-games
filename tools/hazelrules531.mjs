@@ -124,6 +124,29 @@ for (const rooms of [...castles.filter(c => c.length), ["king", "greenhouse", "t
       ok(`WayOut ${n} (${out}) in ${rooms.join(",")}`, JSON.stringify(got) === JSON.stringify(want), { want, got }); wo++; } });
 console.log(`ok   ways out: ${wo} cases, the game's own wayOutOf (${ALL.length} room kinds read from ROOM_KINDS)`);
 
+// ---- (phase 2) world ways: maps of places and ways at random (seeded), every square, every direction, against the game's own
+// worldMeets (25-world.js, with worldNeighbour, worldWays and the waterfall's cliff) ----
+const world = src("25-world.js"), outdoors = src("14-outdoors.js");
+for (const re of [/const WORLD_DIRS = [^\n]*\n/, /const WORLD_OPP = [^\n]*\n/, /const WORLD_NO_WAY = [^\n]*\n/, /const worldNoWay = [^\n]*\n/, /const worldWays = [^\n]*\n/])
+  vm.runInContext(world.match(re)[0].replace(/^const /, "var "), game);
+vm.runInContext(outdoors.match(/const CROSS_DIRS = [\s\S]*?\];\n/)[0].replace(/^const /, "var "), game);
+vm.runInContext(fnText(world, "worldNeighbour") + "\n" + fnText(world, "worldMeets"), game);
+const DIRS = Object.keys(game.WORLD_DIRS), PLACE_KINDS = ["meadow", "waterfall", "crossing", "beach", "castle", "sea"];
+const cellsOf = W => Object.entries(W.cells).map(([k, cell]) => { const [col, row] = k.split(",").map(Number);
+  return { col, row, kind: cell.kind, ways: cell.kind === "crossing" ? game.CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : cell.ways || [] }; });
+const mapOf = (cols, rows, seed, fill = 0.75) => { const r = game.seeded(seed), cells = {}; let j = 0;
+  for (let c = 0; c < cols; c++) for (let rr = 0; rr < rows; rr++) { j++; if (r(j) > fill) continue;
+    const kind = PLACE_KINDS[Math.floor(r(j + 500) * PLACE_KINDS.length)], on = DIRS.filter((_, q) => r(j * 9 + q + 1000) < 0.55);
+    cells[c + "," + rr] = kind === "crossing" ? { kind, ...Object.fromEntries(on.map(d => ["cross" + d, true])) } : { kind, ways: on }; }
+  return { cols, rows, cells }; };
+let wc = 0;
+for (const [cols, rows] of [[1, 1], [3, 3], [5, 4], [8, 8]]) for (const seed of [1, 2, 3, 17]) { const W = mapOf(cols, rows, seed), cells = cellsOf(W);
+  for (const at of Object.keys(W.cells)) { const [ac, ar] = at.split(",").map(Number);
+    for (const d of DIRS) { const m = game.worldMeets(W, at, d), want = m ? [["GoSquare", ...m.split(",").map(Number), game.WORLD_OPP[d]]] : [];
+      const got = flat(C.handlers.World({ ...none, at_col: ac, at_row: ar, cols, rows, cells }, { tag: "Way", value: d }));
+      ok(`Way ${d} from ${at}, ${cols}x${rows} seed ${seed}`, JSON.stringify(got) === JSON.stringify(want), { want, got }); wc++; } } }
+console.log(`ok   world ways: ${wc} cases, the game's own worldMeets`);
+
 // ---- times: a Hazel call (with the globals built as the game does) against the JS deciding the same ----
 const g0 = { ...none, lever_L: true, wiring: "random", draws: [0.3, 0.7], pits_on: [true, true], covered: [false, true] };
 time("Pull: hazel", () => C.handlers.TrapRoom(g0, { tag: "Pull", value: "L" }));
@@ -139,6 +162,9 @@ for (const k of [2, 8, 40]) { const T = squareOf(k, 5), i = T.findIndex(t => t.k
   const hall = rooms.map(() => ({ out: "auto" })), exits = rooms.map(s => game.ROOM_KINDS[s].exits);
   time("WayOut: hazel", () => C.handlers.Castle({ ...none, rooms: rooms.slice(), exits, out: "auto", out_room: -1 }, { tag: "WayOut", value: 5 }));
   time("WayOut: js (wayOutOf, as castleWays draws)", () => game.wayOutOf({ rooms, hall }, 5)); }
+for (const [cols, rows] of [[3, 3], [8, 8], [16, 16]]) { const W = mapOf(cols, rows, 5, 0.9), at = Object.keys(W.cells)[0], [ac, ar] = at.split(",").map(Number);
+  time(`Way, ${cols}x${rows} map: hazel (globals copied in)`, () => C.handlers.World({ ...none, at_col: ac, at_row: ar, cols, rows, cells: cellsOf(W) }, { tag: "Way", value: "E" }));
+  time(`Way, ${cols}x${rows} map: js (worldMeets)`, () => game.worldMeets(W, at, "E")); }
 const q = (a, p) => a[Math.min(a.length - 1, Math.floor(p * a.length))];
 console.log(`\ntimes, ${REPS} reps each, node ${process.version} (ms)`);
 for (const [k, a] of Object.entries(times)) console.log(`  ${k.padEnd(44)} p50 ${q(a, 0.5).toFixed(4)}  p95 ${q(a, 0.95).toFixed(4)}  max ${a[a.length - 1].toFixed(3)}`);

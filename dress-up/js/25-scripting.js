@@ -35,16 +35,18 @@ const SCRIPT_ROOMS = [
   { name: "TrapRoom", label: "🏰 the trap room, over the castle's dungeons", kind: "trap" },
   { name: "TreeRoom", label: "🌳 the tree houses' trap doors, and the round room's at the top", kind: "tree" },
   { name: "Square", label: "🎚️ placed levers and trap doors, in any square or room", kind: "square" },
+  { name: "World", label: "🗺️ the world's ways: which square a way out leads to", kind: "world" },
   { name: "Castle", label: "🏰 the castle's ways: where a pit drops you, and a dungeon's ladder leads", kind: "castle" },
 ];
 
 // (ticket 531) the whole game's vocabulary, for every room that has logic: what a rule may say (Cmd), what happened (Event), a placed
 // thing as a rule sees it (Thing), and what it is told (Globals, built by each room's globals in SCRIPT_ACTS: add a field in both).
 // No randomness and no clock in Hazel: the game's draws (draws, from a random wiring's seed) come in through Globals.
-const SCRIPT_PREAMBLE = `type Cmd = + Done + Flip(String, Cmd) + Say(String, Cmd) + SetPit(Int, Bool, Cmd) + DropBoulder(Int, Cmd) + LiftBoulder(Int, Cmd) + SetHatch(Int, Bool, Cmd) + OpenDoor(Int, Bool, Cmd) + DropRock(Int, Bool, Cmd) + Wait(Int, Cmd) + GoRoom(Int, Cmd) in
-type Event = + Pull(String) + PullBoulder(String) + PullHatch(Int) + PullThing(Int) + FallPit(Int) + WayOut(Int) in
+const SCRIPT_PREAMBLE = `type Cmd = + Done + Flip(String, Cmd) + Say(String, Cmd) + SetPit(Int, Bool, Cmd) + DropBoulder(Int, Cmd) + LiftBoulder(Int, Cmd) + SetHatch(Int, Bool, Cmd) + OpenDoor(Int, Bool, Cmd) + DropRock(Int, Bool, Cmd) + Wait(Int, Cmd) + GoRoom(Int, Cmd) + GoSquare(Int, Int, String, Cmd) in
+type Event = + Pull(String) + PullBoulder(String) + PullHatch(Int) + PullThing(Int) + FallPit(Int) + WayOut(Int) + Way(String) in
 type Thing = (at = Int, uid = String, kind = String, on = Bool, works = [String], does = String, open = Bool, boulder = Bool) in
-type Globals = (lever_L = Bool, lever_R = Bool, wiring = String, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing], rooms = [String], exits = [String], out = String, out_room = Int) in`;
+type Cell = (col = Int, row = Int, kind = String, ways = [String]) in
+type Globals = (lever_L = Bool, lever_R = Bool, wiring = String, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing], rooms = [String], exits = [String], out = String, out_room = Int, at_col = Int, at_row = Int, cols = Int, rows = Int, cells = [Cell]) in`;
 
 const SCRIPT_COMMON = `# Sub-routines every room can use, as Common.wire and so on. #
 let flip2 = fun (a, b) : (String, String) -> Flip(a, Flip(b, Done));
@@ -63,7 +65,10 @@ let member = fun (s, xs) : (String, [String]) -> case xs | [] => false | x :: re
 let index_of = fun (xs, s) : ([String], String) -> case xs | [] => 0 | x :: rest => if x == s then 1 else (let i = index_of(rest, s) in if i == 0 then 0 else i + 1) end;
 # the i-th of a list of Strings, counting from 1; "" past its end #
 let nth_s = fun (xs, i) : ([String], Int) -> case xs | [] => "" | x :: rest => if i == 1 then x else nth_s(rest, i - 1) end;
-let length = fun xs : [String] -> case xs | [] => 0 | _ :: rest => 1 + length(rest) end`;
+let length = fun xs : [String] -> case xs | [] => 0 | _ :: rest => 1 + length(rest) end;
+# the world's eight directions: each one's step across and down the map, and the way back #
+let dir = fun d : String -> if d == "N" then (0, 0 - 1) else if d == "NE" then (1, 0 - 1) else if d == "E" then (1, 0) else if d == "SE" then (1, 1) else if d == "S" then (0, 1) else if d == "SW" then (0 - 1, 1) else if d == "W" then (0 - 1, 0) else if d == "NW" then (0 - 1, 0 - 1) else (0, 0);
+let opp = fun d : String -> if d == "N" then "S" else if d == "NE" then "SW" else if d == "E" then "W" else if d == "SE" then "NW" else if d == "S" then "N" else if d == "SW" then "NE" else if d == "W" then "E" else if d == "NW" then "SE" else ""`;
 
 const SCRIPT_TRAP = `# A red lever pulled: flip it, and each pit wired to it opens or shuts. #
 # A blue lever pulled: each of its pits gets a boulder, or loses one. #
@@ -117,6 +122,28 @@ let on_event = fun (g, e) : (Globals, Event) ->
   | _ => Done
   end`;
 
+// (ticket 531, phase 2) the world's ways, decided when one is walked through: the square beside this one that way, if it is on the
+// map, there, and has a way back (worldMeets and worldWays' rule, 25-world.js). A way linked to another world stays the JS's.
+const SCRIPT_WORLD = `# Places with no way out on a side, whatever their ways say: the waterfall's N, its cliff. #
+let no_way = fun (kind, d) : (String, String) -> kind == "waterfall" && d == "N";
+let find = fun (cs, c, r) : ([Cell], Int, Int) -> case cs | [] => None | x :: rest => if x.col == c && x.row == r then Some(x) else find(rest, c, r) end;
+# A way out walked through: into the square beside it, coming in from the side facing back, #
+# if that square is on the map and has a way back; else nowhere. #
+let on_event = fun (g, e) : (Globals, Event) ->
+  case e
+  | Way(d) =>
+    let (dx, dy) = Common.dir(d) in
+    let c = g.at_col + dx in
+    let r = g.at_row + dy in
+    let back = Common.opp(d) in
+    if c < 0 || r < 0 || c >= g.cols || r >= g.rows then Done
+    else (case find(g.cells, c, r)
+      | Some(x) => if Common.member(back, x.ways) && !no_way(x.kind, back) then GoSquare(c, r, back, Done) else Done
+      | None => Done
+      end)
+  | _ => Done
+  end`;
+
 // (ticket 531, phase 2) the castle's ways, decided when they are taken (never per frame, never per drawing): which room a trap
 // room's pit drops you into, and where a dungeon's ladder up leads (wayOutOf's rule, 13-castle-rooms-and-map.js). The rooms come in as
 // their kinds, room 1 first, with each one's exits (ROOM_KINDS' exits), and this room's way out setting
@@ -146,7 +173,7 @@ let on_event = fun (g, e) : (Globals, Event) ->
   end`;
 
 // each room kind's shipped text: rules that do just what the plain JS does, so 🧩 on plays the same game (the fair comparison)
-const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE, square: SCRIPT_SQUARE, castle: SCRIPT_CASTLE };
+const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE, square: SCRIPT_SQUARE, world: SCRIPT_WORLD, castle: SCRIPT_CASTLE };
 const SCRIPT_LOGIC = (() => { try { const v = new URLSearchParams(location.search || "").get("logic"); return v === "hazel" || v === "js" ? v : ""; } catch (e) { return ""; } })();
 const scriptsOn = () => SCRIPT_LOGIC === "hazel" || (SCRIPT_LOGIC !== "js" && !!(state.scripts && state.scripts.on));
 const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntries(SCRIPT_ROOMS.map(r => [r.name, SCRIPT_TEXTS[r.kind] || ""])) });
@@ -287,7 +314,7 @@ function scriptRun(cmd, act, depth = 0, end = () => {}) {
 }
 
 // (the empty fields of a room's globals that are not its own)
-const scriptNoGlobals = () => ({ lever_L: false, lever_R: false, wiring: "normal", draws: [], pits_on: [], covered: [], hatch: false, things: [], rooms: [], exits: [], out: "auto", out_room: -1 });
+const scriptNoGlobals = () => ({ lever_L: false, lever_R: false, wiring: "normal", draws: [], pits_on: [], covered: [], hatch: false, things: [], rooms: [], exits: [], out: "auto", out_room: -1, at_col: 0, at_row: 0, cols: 0, rows: 0, cells: [] });
 // (ticket 531) the event's room, its globals and how its commands act: per room kind (SCRIPT_ROOMS' kind), filled in as rules move
 const SCRIPT_ACTS = {
   trap: {
@@ -295,7 +322,7 @@ const SCRIPT_ACTS = {
     globals: () => { const B = state.background, K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
       const T = trapState(B, n, K.id), r = seeded(B[leverSeedKey(n, K.id)] ?? 1);
       return { lever_L: !leverDown(B, "L", n, K.id), lever_R: !leverDown(B, "R", n, K.id), wiring: B[leverWireKey(n, K.id)] || "normal", draws: [r(0), r(1)],
-        pits_on: T.on, covered: T.covered, hatch: false, things: [], rooms: [], exits: [], out: "auto", out_room: -1 }; },
+        pits_on: T.on, covered: T.covered, hatch: false, things: [], rooms: [], exits: [], out: "auto", out_room: -1, at_col: 0, at_row: 0, cols: 0, rows: 0, cells: [] }; },
     // (a Flip moves the lever only; each SetPit swings its pit's lid, the rule having said which: ticket 531. A pit the rule says
     // otherwise than the drawing, which follows the levers, is counted in __hz.mismatch)
     // (each event its own gathered boulders, handed to done when its walk ends)
@@ -323,6 +350,16 @@ const SCRIPT_ACTS = {
     act: () => { const doors = []; return { doors, OpenDoor: (at, open) => { doors.push([at, "open", !!open]); }, DropRock: (at, down) => { doors.push([at, "boulder", !!down]); } }; },
     done: (ev, a) => { leverPullApply(ev.value, a.doors); },
   },
+  // (ticket 531, phase 2: a world's way out walked through; scriptWay) Way(d), d one of WORLD_DIRS; cells: every square with its
+  // place and its ways as set (a crossing's, its paths switched on), unfiltered: the rule knows the waterfall's cliff. Copied
+  // whole for each way, so its cost grows with the map: the speed runs measure it. GoSquare(col, row, side): there, in from side
+  world: {
+    here: ev => { const W = state.world, cell = W && W.at && W.cells[W.at]; return !!cell && !!WORLD_DIRS[ev.value] && !(cell.links && cell.links[ev.value]); },
+    globals: () => { const W = state.world, [ac, ar] = W.at.split(",").map(Number);
+      return { ...scriptNoGlobals(), at_col: ac, at_row: ar, cols: W.cols, rows: W.rows, cells: Object.entries(W.cells).map(([k, cell]) => { const [col, row] = k.split(",").map(Number);
+        return { col, row, kind: String(cell.kind), ways: (cell.kind === "crossing" ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : cell.ways || []).map(String) }; }) }; },
+    act: () => { const got = { go: null }; return { got, GoSquare: (c, r, side) => { got.go = { key: Math.round(+c) + "," + Math.round(+r), side: String(side) }; } }; },
+  },
   // (ticket 531, phase 2: a castle's ways, as they are taken; scriptGo) FallPit(i): a trap room's pit i fallen into; WayOut(n): a
   // dungeon's (a ladder room's) one way, its ladder up, taken from room n. GoRoom(r) says
   // where to: r a room, 0 out of the castle, below 0 nowhere; the walk is the JS's (enterScene), to that room
@@ -336,6 +373,17 @@ const SCRIPT_ACTS = {
 };
 // (the castle room the friend is in, as the game reads it)
 const castleRoomNow = (B, K = castleOf(B)) => Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
+
+// (ticket 531, phase 2) a world's way out walked through (worldWalk): with 🧩 on and ready, the World rule says which square it leads
+// to (worldTarget's answer, or null: nowhere); what worldTarget says is checked against it, a difference counted in __hz.mismatch.
+// Otherwise, and for a way linked to another world, worldTarget, as always
+function scriptWay(W, d) {
+  if (!scriptEvent("World", { tag: "Way", value: d })) return hzJs("Way", () => worldTarget(W, W.at, d));
+  const go = scriptEvent.act && scriptEvent.act.got.go, t = go && W.cells[go.key] ? { W, key: go.key, cell: W.cells[go.key], link: false } : null;
+  const js = worldTarget(W, W.at, d);
+  if ((js ? js.key : null) !== (t ? t.key : null) || (go && go.side !== WORLD_OPP[d])) hzCounters().mismatch++;
+  return t;
+}
 
 // (ticket 531, phase 2) a castle door or pit taken: with 🧩 on and ready, the Castle rule says where it leads, and enterScene goes
 // there ({to, room}; false: nowhere, so not at all); what the drawing put on the door (decided when it was drawn) is checked
