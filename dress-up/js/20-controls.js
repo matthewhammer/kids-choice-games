@@ -132,6 +132,10 @@ const TABS = [
     ["choice", "pose", "🤸 poses", [["stand", "🧍 standing"], ["sit", "🪑 sitting"], ["meditate", "🧘 cross-legged, meditating"], ["dance", "💃 dancing (a new dance each time)"], ["hug", "🤗 jumping up into a hug"], ["lie", "🛌 lying down"]]],
     ["choice", "lieHow", "🛌 lying", [["back", "🛌 on the back, face up"], ["side", "🛏️ on the side, facing us"]]],   // (ticket 299)
     ["choice", "hand", "✋ dominant hand (it pulls the levers)", [["right", "🫱 right"], ["left", "🫲 left"], ["both", "🪙 both: a coin flip each time"]]],   // (ticket 316)
+    // (ticket 518) what each hand holds: a chip naming it, a tap for a box of every choice (holdChipBox). The right hand first:
+    // it is on our left when they face us, as with 'pair'.
+    ["hold", "holdR", "🫱 right hand holds"],
+    ["hold", "holdL", "🫲 left hand holds"],
     ["choice", "lieHead", "🛌 head toward", [["left", "⬅️ our left"], ["right", "➡️ our right"]]],
     ["range", "hugLift", "🙌 held up (100 = a leg's length)", 0, 300, 40, 90],
     ["choice", "facing", "↔️ facing", [["front", "🧍 toward us"], ["left", "⬅️ to the left"], ["right", "➡️ to the right"], ["back", "⬆️ away from us"]]],
@@ -396,7 +400,8 @@ const TABS = [
     ...Object.entries(ROBOT_STYLES).map(([id, r]) => ["color", "robotColor_" + id, "🤖 its colour", r.colors]),
     ["color", "robotLights", "💡 its lights", ROBOT_LIGHTS],
     // (ticket 522) the cowgirl and the cowboy: three styles each, each its own colour (shown while it is chosen, as the
-    // robot's), a hat of six (or none) with a colour each, and a lasso in the hand chosen
+    // robot's), a hat of six (or none) with a colour each, and a lasso
+    // (which hand holds it is 🧍 Body's 🫴 holding, since ticket 518)
     ["choice", "cowgirlStyle", "👢 style", Object.entries(COWGIRL_STYLES).map(([id, t]) => [id, t.name])],
     ...Object.entries(COWGIRL_STYLES).map(([id, t]) => ["color", "cowgirlColor_" + id, "👢 its colour", t.colors]),
     ["choice", "cowboyStyle", "🤠 style", Object.entries(COWBOY_STYLES).map(([id, t]) => [id, t.name])],
@@ -404,7 +409,6 @@ const TABS = [
     ["choice", "cowHat", "🎩 hat", [["none", "🚫 no hat"], ...Object.entries(COW_HATS).map(([id, h]) => [id, h.name])]],
     ...Object.entries(COW_HATS).map(([id, h]) => ["color", "cowHatColor_" + id, "🎩 hat's colour", h.colors]),
     ["toggle", "lasso", "➿ lasso"],
-    ["choice", "lassoHand", "➿ held in", [["left", "🫲 left hand"], ["right", "🫱 right hand"]]],
     // (ticket 435) the knight: his arms (two colours, how they are laid out, an emblem), his helmet's plume and visor, sword and shield
     ["color", "knightA", "🛡️ arms' first color", ["#2f6db5", "#8a2b2b", "#1f1f22", "#2e7d32", "#e0b030", "#7b3f8c"]],
     ["color", "knightB", "🛡️ arms' second color", ["#f4f1ea", "#e0b030", "#1f1f22", "#8a2b2b", "#2f6db5"]],
@@ -1121,7 +1125,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(Object.keys(COWBOY_STYLES).map(id => ["costume.cowboyColor_" + id, c => c.kind === "cowboy" && (COWBOY_STYLES[c.cowboyStyle] ? c.cowboyStyle : "sheriff") === id])),
   "costume.cowHat": c => c.kind === "cowgirl" || c.kind === "cowboy",
   ...Object.fromEntries(Object.keys(COW_HATS).map(id => ["costume.cowHatColor_" + id, c => (c.kind === "cowgirl" || c.kind === "cowboy") && (c.cowHat === "none" ? null : COW_HATS[c.cowHat] ? c.cowHat : "cattleman") === id])),
-  "costume.lasso": c => c.kind === "cowgirl" || c.kind === "cowboy", "costume.lassoHand": c => (c.kind === "cowgirl" || c.kind === "cowboy") && c.lasso !== false,
+  "costume.lasso": c => c.kind === "cowgirl" || c.kind === "cowboy",
   "costume.webColor": c => c.kind === "witch",
   "costume.webStyle": c => c.kind === "witch",
   "costume.trimColor": c => c.kind === "witch",
@@ -2455,6 +2459,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         if (c[0] === "choice") b.querySelector(".lbl").remove();
         return b;
       })])));
+  } else if (kind === "hold") {
+    // (ticket 518) one chip naming what the hand holds now; a tap opens a box over the panel with every choice
+    const b = el("button", { class: "hold-chip", onclick: () => holdChipBox(part, key, label) });
+    box.append(el("div", { class: "row" }, [b]));
+    syncs.push(() => { const v = state[part][key] || "auto", t = (HOLD_CHOICES.find(([x]) => x === v) || HOLD_CHOICES[0])[1]; setText(b, t); });
   } else if (kind === "choice") {
     const row = el("div", { class: "row" });
     // (an option may come with a test of the settings: shown only when it holds, as a room the castle has)

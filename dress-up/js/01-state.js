@@ -438,6 +438,42 @@ const ROBOT_STYLES = {
             see: "front side", limb: "main", hand: "darker", boot: "darker" },
 };
 const ROBOT_LIGHTS = ["auto", "#f6c445", "#39e0ff", "#6ee7b7", "#ff7a00", "#ef4444", "#f472b6", "#ffffff"];
+// (ticket 518, Matthew: "body can hold things in each hand. Audit all MUDU objects to hold (staff, broom, sword, shield, horse
+// rein) and add every option to body sub-panel, somehow.") HOLDABLES: everything a hand can hold, by id, in drawing order
+// (the order the costumes' own were drawn in). `name` its chip; `ext` how far it reaches from the hand, for the picture's
+// frame (up, down, out to the side, 0 for no room; the broom's times its size); `fist`, the hand closed round it. Their drawings are
+// heldSvg's (js/08-body.js): toward us, in profile and from behind, each view its own drawing. body.holdR and body.holdL
+// (the friend's OWN right and left hands) are "auto" (the costume's own, as before: heldAuto), "none", or an id here.
+// The rein draws nothing here: it decides which hand the horse's rein goes to (js/18-drawing.js), shown only with a horse.
+const HOLDABLES = {
+  broom:   { name: "🧹 broom", ext: [140, 140, 60], fist: true },
+  bow:     { name: "🏹 bow", ext: [90, 90, 50], fist: true },
+  scepter: { name: "👑 scepter", ext: [170, 0, 0], fist: true },
+  sword:   { name: "🗡️ sword", ext: [145, 0, 24], fist: true },
+  shield:  { name: "🛡️ shield", ext: [0, 45, 40], fist: true },
+  staff:   { name: "🪄 staff", ext: [190, 120, 40], fist: true },
+  lasso:   { name: "➿ lasso", ext: [0, 64, 44], fist: true },
+  rein:    { name: "🐴 the horse's rein", ext: [0, 0, 0], fist: true },
+};
+const HOLD_CHOICES = [["auto", "🎭 the costume's own"], ["none", "✋ nothing"], ...Object.entries(HOLDABLES).map(([id, h]) => [id, h.name])];
+// What a costume puts in each own hand by itself ("auto"): the broom, staff, scepter, sword and lasso in the left (side +1
+// facing us), the bow and the shield in the right, each while its own costume setting has it on
+function heldAuto(kind, WC) {
+  const L = kind === "witch" ? (WC.broom ? "broom" : null) : kind === "wizard" || kind === "monk" ? (WC.staff !== false ? "staff" : null)
+    : kind === "queen" || kind === "king" ? (WC.scepter !== false ? "scepter" : null) : kind === "knight" ? (WC.sword !== false ? "sword" : null)
+    : kind === "cowgirl" || kind === "cowboy" ? (WC.lasso !== false ? "lasso" : null) : null;
+  const R = kind === "robin" ? (WC.bow !== false ? "bow" : null) : kind === "knight" ? (WC.shield !== false ? "shield" : null) : null;
+  return { L, R };
+}
+// What each own hand holds: an explicit choice wins, and takes its item out of the other hand's "auto" (a lasso moved to the
+// right hand leaves the left); the rein only with a horse
+function heldItems(body, kind, WC) {
+  const auto = heldAuto(kind, WC), v = own => body["hold" + own] || "auto";
+  const pick = (own, other) => { const x = v(own);
+    if (x === "auto") { const a = auto[own]; return a && v(other) !== a ? a : null; }
+    return HOLDABLES[x] && (x !== "rein" || (body.horse && body.horse !== "none")) ? x : null; };
+  return { L: pick("L", "R"), R: pick("R", "L") };
+}
 // (ticket 522, M and Matthew: "Cowgirl and Cowboy, 3 variations of style each. 6 styles of hat. Lasso to hold. No guns
 // please.") The cowgirl's and the cowboy's styles, each with its own colours (the first its usual one, its colour row's) and
 // the traits the drawing reads (js/06-costumes.js, westernOf): `shirt` and `pants` (what replaces the friend's own, "main"
@@ -532,6 +568,7 @@ const DEFAULTS = {
            blowFrom: "mouth", blowA: true, blowB: false, blowC: false,   // (ticket 221: blowing bubbles)
            fireStyle: "roar", fireFrom: "mouth", fireSize: 100, fireHeat: true,   // (ticket 499: breathing fire, its fire, where from, how big, its heat shown)
            lieHead: "left", lieHow: "back", stairsWay: "up",   // (ticket 308: up or down the stairs)
+           holdR: "auto", holdL: "auto",   // (ticket 518: what each own hand holds, HOLDABLES)
            hand: "right",   // (ticket 316: the dominant hand, the one that pulls a lever: right, left, or both, by a coin flip)   // (ticket 299: lying down, the way the head points; on the back, face up, or on the side, facing us)
            neck: 22, neckW: 26, arms: 55, elbows: 0, elbowCurl: 0, elbowSwing: 0, armLen: 95, armW: 16, legLen: 140, legW: 20, knees: 0, kneeCurl: 0, kneeSwing: 0,
            // (ticket 121) each limb's own pose, dragged in the picture: on
@@ -659,8 +696,8 @@ const DEFAULTS = {
              // (ticket 515) the robot: its style, its lights, and each style's own colour (the fairy's way)
              robotStyle: "tin", robotLights: "auto", ...Object.fromEntries(Object.entries(ROBOT_STYLES).map(([id, r]) => ["robotColor_" + id, r.colors[0]])),
              // (ticket 522) the cowgirl and the cowboy: each one's style and each style's colour, the hat (both share it) and its colour
-             // for each hat, the lasso and the hand that holds it
-             cowgirlStyle: "rodeo", cowboyStyle: "sheriff", cowHat: "cattleman", cowHatAuto: true, lasso: true, lassoHand: "left",
+             // for each hat, and the lasso (its hand is 🧍 Body's, holdL/holdR, since ticket 518)
+             cowgirlStyle: "rodeo", cowboyStyle: "sheriff", cowHat: "cattleman", cowHatAuto: true, lasso: true,
              ...Object.fromEntries(Object.entries(COWGIRL_STYLES).map(([id, t]) => ["cowgirlColor_" + id, t.colors[0]])),
              ...Object.fromEntries(Object.entries(COWBOY_STYLES).map(([id, t]) => ["cowboyColor_" + id, t.colors[0]])),
              ...Object.fromEntries(Object.entries(COW_HATS).map(([id, t]) => ["cowHatColor_" + id, t.colors[0]])) },
@@ -815,6 +852,15 @@ function upgradeHorse(st, saved) {
   for (const P of Object.values((st && st.peopleAway) || {})) { const L = P && P.look, c = L && L.costume; if (!c) continue;
     const hadP = !!(L.body && L.body.horse !== undefined);
     for (const k of HORSE_KEYS) if (c[k] !== undefined) { if (!hadP) (L.body = L.body || {})[k] = c[k]; delete c[k]; } }
+}
+// (ticket 518) from 0.0.401 to ticket 518, the lasso's hand was the costume's lassoHand: "right" is now the right hand
+// holding it, chosen in 🧍 Body (holdR "lasso"); "left" was what "auto" does. For the friend and every person away.
+function upgradeLassoHand(st) {
+  const one = L => { const c = L && L.costume; if (!c || c.lassoHand === undefined) return;
+    if (c.lassoHand === "right") { const b = L.body = L.body || {}; if ((b.holdR || "auto") === "auto") b.holdR = "lasso"; }
+    delete c.lassoHand; };
+  one(st);
+  for (const P of Object.values((st && st.peopleAway) || {})) one(P && P.look);
 }
 function upgradeFeet(st, saved) {
   if (!(saved && saved.rightShoe)) for (const k of SHOE_OWN) st.rightShoe[k] = st.shoes[k];
@@ -1182,6 +1228,7 @@ try {
   upgradeRightHand(state, saved);
   upgradeFeet(state, saved);
   upgradeHorse(state, saved);
+  upgradeLassoHand(state);
   upgradeInside(state.background, saved);
   upgradeFigSize(state.background, saved);
   upgradeFoamMove(state.background, saved);

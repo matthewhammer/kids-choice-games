@@ -284,29 +284,29 @@ function drawNow() {
   const faceTop = Math.min(-90, HEAD_C - 175 * headH(F), headCrown(F) + 50.6 - 1.4 * F.burst - 40,
                            hairY(hr.top) - 40 - flying, (C ? (kind === "deer" || dragon ? -140 : -90) : 0) - flying,
                            witch ? hairY(-130) - 20 - flying : 0, gnome ? hairY(-240) - 20 - flying : 0, wizard ? hairY(-170) - 20 - flying : 0, hooded ? hairY(hoodGeom(F).cy - hoodGeom(F).ry - 40) - 10 - flying : 0, robin ? hairY(-90) - 10 - flying : 0, knight ? hairY(-40) - 10 - flying : 0, royal ? hairY(king ? -60 : -40) - 10 - flying : 0, RH ? RH.top - 10 - flying : 0, western && W.H ? hairY(W.H.top - 10) - 10 - flying : 0);
-  // (a broom stands 120 above the hand that holds it, its bristles 66 below)
-  const broomH = witch && WC.broom ? arms[0].H : null;
-  // (ticket 432: a wizard's staff, in the same hand: 160 above it, 120 below)
-  const staffH = (wizard || monk) && WC.staff !== false ? arms[0].H : null;
-  // (ticket 434: a forester's bow, in the other hand: 90 above and below it, its back 40 out)
-  const bowH = robin && WC.bow !== false ? arms[1].H : null;
-  // (ticket 435: a knight's sword in the hand a staff is in, his shield on the other)
-  const scepterH = royal && WC.scepter !== false ? arms[0].H : null;   // (tickets 436, 437: in the hand a staff is in)
-  const swordH = knight && WC.sword !== false ? arms[0].H : null, shieldH = knight && WC.shield !== false ? arms[1].H : null;
-  // (ticket 522) a lasso, in the hand chosen (lassoHand: the left, side +1 facing us, by default, so the right stays free for a
-  // horse's rein; swapped from behind, as the lever's pull is), hidden while the hands are busy (crawling, swimming or
-  // treading, climbing, lying); running, its loop twirls (LFO B's phase)
-  const lassoSide = (WC.lassoHand === "right" ? -1 : 1) * (away ? -1 : 1);
+  // (ticket 518) WHAT EACH HAND HOLDS (heldItems: the costume's own, "auto", or what 🧍 Body's 🫴 holding chose), in the
+  // arm that is that own hand: the left is side +1 facing us (arms[0], where the broom, staff, scepter, sword and lasso
+  // always were), side -1 from behind, so from behind a thing stays in its own hand. The lasso is put away while the hands
+  // are busy (crawling, swimming or treading, climbing, lying: ticket 522); running, its loop twirls (LFO B's phase).
   const handsBusy = (move && (move.swim || move.squash || move.rot || move.water || move.ladder != null)) || /climb/.test(B.anim || "") || B.pose === "lie";
-  const lassoArm = western && WC.lasso !== false && !handsBusy ? arms.find(x => x.side === lassoSide) || null : null, lassoH = lassoArm ? lassoArm.H : null;
+  const armOf = own => arms.find(x => x.side === (away ? -1 : 1) * (own === "L" ? 1 : -1)) || null;
+  const heldNow = heldItems(B, kind, WC);
+  const held = Object.keys(HOLDABLES).flatMap(id => ["L", "R"].filter(own => heldNow[own] === id).map(own => ({ own, item: id, arm: armOf(own) })))
+    .filter(h => h.arm && !(h.item === "lasso" && handsBusy));
+  const lassoArm = (held.find(h => h.item === "lasso") || {}).arm || null, lassoH = lassoArm ? lassoArm.H : null;
   const lassoSpin = lassoH && move && B.anim === "run" ? (lfoNow("B") || {}).phase || 0 : null;
   // (and a cat on the shoulder, 64 above where it sits and 42 below, its
   // tail out 34 to the side, all times its size)
   const kb = (state.costume.broomSize ?? 100) / 100, catK = witch && WC.witchCat ? (WC.catSize ?? 100) / 100 : 0;
+  // (each held thing's reach from its hand, HOLDABLES' ext: a broom's times its size, a twirling lasso's up and out)
+  const heldExt = h => { const [u, d, o] = HOLDABLES[h.item].ext, k = h.item === "broom" ? kb : 1, spin = h.item === "lasso" && lassoSpin != null;
+    return [spin ? 70 : u * k, d * k, spin ? 110 : o * k]; };
+  const heldUp = held.map(h => heldExt(h)[0] ? h.arm.H[1] - heldExt(h)[0] : 0), heldDown = held.map(h => heldExt(h)[1] ? h.arm.H[1] + heldExt(h)[1] : 0);
+  const heldOut = held.map(h => heldExt(h)[2] ? -(Math.abs(h.arm.H[0]) + heldExt(h)[2]) : 0);
   // (posed limbs: room for their elbows, knees and feet wherever they went)
   const armPosed = [1, -1].some(side => poseT("Arm", side) || poseT("Elbow", side));
   const posedYs = [...(armPosed ? arms.filter(x => x.E).map(x => x.E[1] - armW - 20) : []), ...(legPosed ? legBones.flatMap(l => l.joints.slice(1)).map(([, y]) => y - B.legW - 40) : [])];
-  let top = Math.min(ty + faceTop * s, ...handYs.map(y => y - Math.max(40, reach)), broomH ? broomH[1] - 140 * kb : 0, staffH ? staffH[1] - 190 : 0, bowH ? bowH[1] - 90 : 0, swordH ? swordH[1] - 145 : 0, scepterH ? scepterH[1] - 170 : 0, lassoSpin != null ? lassoH[1] - 70 : 0, ...posedYs,
+  let top = Math.min(ty + faceTop * s, ...handYs.map(y => y - Math.max(40, reach)), ...heldUp, ...posedYs,
                        catK ? -9 - 70 * catK : 0, dragon && dir ? -255 : 0);   // (ticket 499: the far wing, up over the head in profile)
   const pileP = F.sick > 100 ? 100 + (F.sick - 100) / 2 : F.sick > 30 ? (F.sick - 30) * 100 / 70 : 0;
   const pileRx = (6 + pileP * 84 / 100) * 1.6 * s;
@@ -315,15 +315,14 @@ function drawNow() {
     ? L + (feetY - L) * (P.skirtLen ?? 50) / 100 + 30 : 0;
   const toesDown = suit || witch ? 0 : feetY + Math.max(footDown(worn), footDown(rightShoeOf(worn))) * shoeSc + 12;
   let bottom = Math.max(ground + 24, toesDown, ty + hairY(hr.bottom) * s + 16, ...handYs.map(y => y + reach), skirtHem, beardStyle ? ty + (headChin(F) + beardLong(beardStyle, state.hair) + (BEARDS[beardStyle].braid ? 60 : 16)) * s : 0,
-                          broomH ? broomH[1] + 140 * kb : 0, staffH ? staffH[1] + 120 : 0, bowH ? bowH[1] + 90 : 0, shieldH ? shieldH[1] + 45 : 0, lassoH ? lassoH[1] + 64 : 0, catK ? -9 + 46 * catK : 0);
+                          ...heldDown, catK ? -9 + 46 * catK : 0);
   const hairHalf = hr.half * headWidth(F) * (1 + 0.12 * F.alien / 100) * s;
   let left = Math.min(-200, C ? -(w + 185) : -200, fairy ? -(w + 270) : -200, dragon ? -Math.max(w + 230, hw + 250) : -200, ...arms.map(x => x.H[0] - Math.max(40, reach)), ...arms.map(x => -x.H[0] - Math.max(40, reach)),
                         ...arms.filter(x => x.E).map(x => -Math.abs(x.E[0]) - armW - 20), knee ? -Math.abs(kneeAt(1)[0]) - B.legW - 30 : 0,
                         ...(legPosed ? legBones.flatMap(l => [-Math.abs(l.joints[1][0]) - B.legW - 30, -Math.abs(l.joints[2][0]) - 60 - Math.max(footReach(worn), footReach(rightShoeOf(worn))) * shoeSc]) : []),
                         -(fx + half + 70), -(fx + (witch ? FOOT_REACH.witchboot : Math.max(footReach(worn), footReach(rightShoeOf(worn)))) * shoeSc + 20), -(w + 40), -(pileRx + 20), -(B.neckW / 2 + 40), -(hairHalf + 20),
                         -((80 + (C ? (kind === "deer" ? 60 : 30) : witch ? brimRx - 80 : 0)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20),
-                        broomH ? -(Math.abs(broomH[0]) + 60 * kb) : 0, staffH ? -(Math.abs(staffH[0]) + 40) : 0, bowH ? -(Math.abs(bowH[0]) + 50) : 0, shieldH ? -(Math.abs(shieldH[0]) + 40) : 0, swordH ? -(Math.abs(swordH[0]) + 24) : 0,
-                        lassoH ? -(Math.abs(lassoH[0]) + (lassoSpin != null ? 110 : 44)) : 0, western && W.H ? -(Math.min(1.5 * W.H.bw, Math.max(W.H.bw, hairReach(state.hair).half + 12)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20) : 0,
+                        ...heldOut, western && W.H ? -(Math.min(1.5 * W.H.bw, Math.max(W.H.bw, hairReach(state.hair).half + 12)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20) : 0,
                         catK ? -(w - 4) - 24 * catK : 0, catK ? -(-(w - 4) + 40 * catK) : 0,
                         robot ? -(w + robotOut(R, w, dir, false) + 16) : 0, RH ? -(RH.half * s + 20) : 0);   // (ticket 515: a robot's head, its blocks, plates, fins, key or legs)
   // (ticket 454, Matthew: "look into the dress-up-pictures for clipped pictures ... see if you can find any and what caused
@@ -874,9 +873,10 @@ function drawNow() {
   const ss = suit ? darker(C.fur) : darker(SH.color);
   // (a falcon suit's arms are inside its wings, drawn after the body)
   const winged = !!BIRD_SUIT[kind];
-  // (ticket 522: a lasso in the far hand, in profile or turned partway, is drawn with that hand, behind the body, and goes
-  // into #figure-far with it)
-  const lassoFar = !!lassoArm && !!(dir || q) && !winged && !squash && farArms.includes(lassoArm), lassoView = dir ? "side" : away ? "back" : "front";
+  // (ticket 522, the lasso; ticket 518, everything held: a thing in the far hand, in profile or turned partway, is drawn with
+  // that hand, behind the body, and goes into #figure-far with it; the rest after the shirt, before the rein and the hands)
+  const heldFar = (dir || q) && !winged && !squash ? held.filter(h => farArms.includes(h.arm)) : [], heldView = dir ? "side" : away ? "back" : "front";
+  const heldDraw = h => heldSvg(h.item, h.arm.H, heldView, { WC, kb, monk, dryad: WC.monkWho === "dryad", knight, own: h.own, out: h.arm.side, dir, spin: lassoSpin });
   const farAt = svg.length;
   if (!winged && !squash) for (const arm of farArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
   // (a sleeve: the shirt's share of the arm, round the elbow)
@@ -886,7 +886,7 @@ function drawNow() {
   // they face us, wears its own style; one holding the broom is closed round
   // it, a round fist)
   const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : robot ? robotHands(R, state.hands) : state.hands, own = !suit && !robot && side < 0 ? rightHandOf(hands) : hands;   // (ticket 515: a robot's hands)
-    return handSvg(H[0], H[1], angle, out, ((broomH || staffH || swordH || scepterH) && side > 0) || ((bowH || shieldH) && side < 0) || (lassoArm && side === lassoArm.side) ? { ...own, style: "round" } : own, skin); };
+    return handSvg(H[0], H[1], angle, out, held.some(h => h.arm.side === side && HOLDABLES[h.item].fist) ? { ...own, style: "round" } : own, skin); };
   // (ticket 286: crawling toward us or away, each arm drawn whole, straight down to its hand flat on the floor, seen short)
   const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
     (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf) : "") +
@@ -898,7 +898,7 @@ function drawNow() {
     if (sleeve > 0) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
     if (robot) for (const arm of farArms) svg += rbG("arm", robotArm(R, arm, { dir, far: true, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     if (western) for (const arm of farArms) svg += westernArm(W, sleeveOf(arm), armW, arm.side, dir);   // (ticket 522: the far sleeve's fringe)
-    if (lassoFar) svg += `<g data-western="lasso">${lassoSvg(lassoH, lassoView, dir || lassoArm.side, lassoSpin)}</g>`;
+    for (const h of heldFar) svg += heldDraw(h);
     const farHandsAt = svg.length;
     for (const arm of farArms) svg += handOf(arm);
     veilFrom("hands", farHandsAt);
@@ -1209,17 +1209,9 @@ function drawNow() {
   }
   veilFrom("shirt", armsAt);
 
-  // a witch's broom, held in her right hand (on the picture's right)
-  // (it grows or shrinks about the hand)
-  if (broomH)
-    svg += `<g transform="translate(${f1(broomH[0])} ${f1(broomH[1])}) scale(${kb.toFixed(3)}) translate(${f1(-broomH[0])} ${f1(-broomH[1])})">` +
-           `${broomSvg(broomH, WC.trimColor)}</g>`;
-  if (bowH) svg += bowSvg(bowH, dir ? -dir : -1);
-  if (scepterH) svg += scepterSvg(scepterH, WC.crownJewel || "#d2382b");
-  if (swordH) svg += swordSvg(swordH[0] - 2, swordH[1] + 20, swordH[0] + 3, swordH[1] - 122, 1);   // (the trap room's sword, upright in his hand)
-  if (shieldH) svg += shieldSvg(shieldH, WC, "shield-arms", away);
-  if (staffH) svg += staffSvg(staffH, monk ? (WC.monkWho === "dryad" ? "leaves" : "knob") : WC.staffOrb || "#7dd3fc");
-  if (lassoArm && !lassoFar) svg += `<g data-western="lasso">${lassoSvg(lassoH, lassoView, dir || lassoArm.side, lassoSpin)}</g>`;   // (ticket 522: after the staff, before the rein and the hands)
+  // (ticket 518) what the hands hold, but the far hand's (drawn behind the body, above): the costumes' own in the order they
+  // always were (the broom, the bow, the scepter, the sword, the shield, the staff, the lasso), each in its view's own drawing
+  for (const h of held) if (!heldFar.includes(h)) svg += heldDraw(h);
 
   // and the hands last, in front of everything, the face too: raised
   // arms put them by the cheeks or over the eyes, not behind the head
@@ -1228,10 +1220,12 @@ function drawNow() {
     // (ridden: each near hand's rein to the bit on its side (in profile, the one rein to the ring), in the lifted frame;
     // from behind, hidden by them)
     if (!away)
-    for (const arm of nearArms) { const [x0, y0] = horseBits[horseBits.length > 1 && arm.H[0] > 0 ? 1 : 0], [x1, y1] = arm.H;
+    // (ticket 518: a hand holding something else lets go of its rein)
+    for (const arm of nearArms.filter(a => held.every(h => h.arm !== a || h.item === "rein"))) { const [x0, y0] = horseBits[horseBits.length > 1 && arm.H[0] > 0 ? 1 : 0], [x1, y1] = arm.H;
       svg += `<path class="rein" d="M${f1(x0)} ${f1(y0)} Q${f1((x0 + x1) / 2)} ${f1(Math.max(y0, y1) + 12)} ${f1(x1)} ${f1(y1)}" fill="none" stroke="${state.body.horseTack || "#7a3a1a"}" stroke-width="5" stroke-linecap="round"/>`; }
   } else if (horseRing && nearArms.length) {
-    const d = a => Math.hypot(a.H[0] - horseRing[0], a.H[1] - horseRing[1]), hand = nearArms.reduce((a, b) => d(b) < d(a) ? b : a);
+    // (ticket 518: in the hand chosen to hold it, else the nearer near hand)
+    const d = a => Math.hypot(a.H[0] - horseRing[0], a.H[1] - horseRing[1]), hand = (held.find(h => h.item === "rein") || {}).arm || nearArms.reduce((a, b) => d(b) < d(a) ? b : a);
     const [x0, y0] = horseRing, [x1, y1] = hand.H, sag = 30 + 0.12 * Math.hypot(x1 - x0, y1 - y0);
     svg += `<path class="rein" d="M${f1(x0)} ${f1(y0)} Q${f1((x0 + x1) / 2)} ${f1(Math.max(y0, y1) + sag)} ${f1(x1)} ${f1(y1)}" fill="none" stroke="${state.body.horseTack || "#7a3a1a"}" stroke-width="5" stroke-linecap="round"/>`;
   }

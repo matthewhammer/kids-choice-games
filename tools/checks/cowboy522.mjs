@@ -40,7 +40,7 @@ try {
     out.chooser = [list.some(([v, l]) => v === "cowgirl" && l === "👢 cowgirl"), list.some(([v, l]) => v === "cowboy" && l === "🤠 cowboy")];
     out.styles = Object.fromEntries(Object.entries(kinds).map(([k, T]) => [k, Object.values(T).map(t => t.name)]));
     out.hatNames = Object.values(COW_HATS).map(h => h.name);
-    out.defaults = [D.cowgirlStyle, D.cowboyStyle, D.cowHat, D.lasso, D.lassoHand,
+    out.defaults = [D.cowgirlStyle, D.cowboyStyle, D.cowHat, D.lasso, state.body.holdL, state.body.holdR,
                     ...Object.entries(kinds).flatMap(([k, T]) => Object.entries(T).map(([id, t]) => D[k + "Color_" + id] === t.colors[0])),
                     ...hats.map(id => D["cowHatColor_" + id] === COW_HATS[id].colors[0])];
     // each costume, each style, each hat (and none), each facing: drawn, nothing costly, under the cap, nothing turned inside
@@ -74,10 +74,10 @@ try {
     set("costume", "kind", "cowgirl"); set("costume", "cowgirlStyle", "rodeo"); out.side = {};
     const fig = () => document.getElementById("figure"), midX = el => { const b = el.getBoundingClientRect(); return b.left + b.width / 2; };
     const bodyX = () => midX(fig().querySelector('[data-western="torso"]'));
-    for (const hand of ["left", "right"]) { set("costume", "lassoHand", hand);
+    for (const hand of ["left", "right"]) { set("body", "holdR", hand === "right" ? "lasso" : "auto");   // (ticket 518: the hand is 🧍 Body's)
       for (const facing of ["front", "back"]) { state.body.facing = facing; changed(); await w(60); const l = fig().querySelector('[data-western="lasso"]');
         out.side[hand + "/" + facing] = l ? Math.sign(Math.round(midX(l) - bodyX())) : null; } }
-    set("costume", "lassoHand", "left");
+    set("body", "holdR", "auto");
     // in profile: the left hand is the far one facing our right, its lasso drawn before the body (the far section); near
     // facing our left, drawn after it
     out.order = {};
@@ -108,12 +108,12 @@ try {
     out.rules = [Object.keys(COWGIRL_STYLES).map(id => Object.keys(COWGIRL_STYLES).map(j => rule("cowgirlColor_" + j, { kind: "cowgirl", cowgirlStyle: id }) ? 1 : 0).join("")).join(" "),
                  Object.keys(COWBOY_STYLES).map(id => Object.keys(COWBOY_STYLES).map(j => rule("cowboyColor_" + j, { kind: "cowboy", cowboyStyle: id }) ? 1 : 0).join("")).join(" "),
                  hats.map(id => hats.map(j => rule("cowHatColor_" + j, { kind: "cowboy", cowHat: id }) ? 1 : 0).join("")).join(" "),
-                 [rule("cowHat", { kind: "cowgirl" }), rule("cowHat", { kind: "knight" }), rule("lasso", { kind: "cowboy" }), rule("lassoHand", { kind: "cowboy", lasso: true }),
-                  rule("lassoHand", { kind: "cowboy", lasso: false }), rule("lasso", { kind: "witch" }), rule("cowgirlStyle", { kind: "cowboy" }), rule("cowHatColor_cattleman", { kind: "cowboy", cowHat: "none" })].map(Number).join("")];
+                 [rule("cowHat", { kind: "cowgirl" }), rule("cowHat", { kind: "knight" }), rule("lasso", { kind: "cowboy" }),
+                  rule("lasso", { kind: "witch" }), rule("cowgirlStyle", { kind: "cowboy" }), rule("cowHatColor_cattleman", { kind: "cowboy", cowHat: "none" })].map(Number).join("")];
     // the tab itself
     set("costume", "kind", "cowboy"); set("costume", "cowboyStyle", "sheriff"); set("costume", "cowHat", "star"); tab = TABS.findIndex(t => t[1] === "costume"); showTab(); await w(250);
     const shown = key => { const el = document.querySelector('#panel [data-key="' + key + '"]'); return !!el && !el.hidden; };
-    const keys = ["cowboyStyle", "cowboyColor_sheriff", "cowboyColor_rider", "cowgirlStyle", "cowHat", "cowHatColor_star", "cowHatColor_bow", "lasso", "lassoHand"];
+    const keys = ["cowboyStyle", "cowboyColor_sheriff", "cowboyColor_rider", "cowgirlStyle", "cowHat", "cowHatColor_star", "cowHatColor_bow", "lasso"];
     out.rowsCowboy = keys.map(k => shown(k) ? 1 : 0).join("");
     set("costume", "kind", "knight"); changed(); await w(150); out.rowsKnight = keys.map(k => shown(k) ? 1 : 0).join("");
     return JSON.stringify(out); })()`));
@@ -122,8 +122,8 @@ try {
   ok("👢 cowgirl and 🤠 cowboy are among the costumes", r.chooser.every(Boolean), r.chooser);
   ok("three styles each, six hats", r.styles.cowgirl.join() === "🌟 rodeo star,🌻 prairie,🐮 cow-print" && r.styles.cowboy.join() === "⭐ sheriff,🏅 rodeo rider,🧥 trail boss" &&
      r.hatNames.join() === "🐂 cattleman,🪣 ten-gallon,🌾 straw,🎀 bow,🌠 star hat,🪶 feather", [r.styles, r.hatNames]);
-  ok("defaults: the rodeo star, the sheriff, the cattleman, the lasso in the left hand, every colour its usual first",
-     r.defaults.slice(0, 5).join() === "rodeo,sheriff,cattleman,true,left" && r.defaults.slice(5).every(Boolean), r.defaults);
+  ok("defaults: the rodeo star, the sheriff, the cattleman, the lasso (in the left hand: both of 🧍 Body's hands on auto), every colour its usual first",
+     r.defaults.slice(0, 6).join() === "rodeo,sheriff,cattleman,true,auto,auto" && r.defaults.slice(6).every(Boolean), r.defaults);
   ok("every style, hat and facing drawn, nothing undefined, with its pieces over the shirt and the hat (none with 🚫)",
      V.every(([k, v]) => !v.bad && v.torso === 1 && v.hat === (k.includes(" none/") ? 0 : 1)), V.filter(([k, v]) => v.bad || v.torso !== 1));
   ok("the lasso held in every standing view (on by default)", V.every(([, v]) => v.lasso === 1), V.filter(([, v]) => v.lasso !== 1).map(([k]) => k));
@@ -144,9 +144,9 @@ try {
      Object.values(r.medCoat).every(v => v != null && v > 20), r.medCoat);
   ok("no guns, holsters or bullets anywhere in the costumes", r.noGuns, r.noGuns);
   ok("each colour row only while its style or hat is chosen; the hat and lasso rows only for the cowgirl and the cowboy",
-     r.rules[0] === "100 010 001" && r.rules[1] === "100 010 001" && r.rules[2] === "100000 010000 001000 000100 000010 000001" && r.rules[3] === "10110000", r.rules);
-  ok("the tab: the cowboy's rows for the cowboy (the sheriff's colour, the star hat's)", r.rowsCowboy === "110011011", r.rowsCowboy);
-  ok("the knight shows none of them", r.rowsKnight === "000000000", r.rowsKnight);
+     r.rules[0] === "100 010 001" && r.rules[1] === "100 010 001" && r.rules[2] === "100000 010000 001000 000100 000010 000001" && r.rules[3] === "101000", r.rules);
+  ok("the tab: the cowboy's rows for the cowboy (the sheriff's colour, the star hat's)", r.rowsCowboy === "11001101", r.rowsCowboy);
+  ok("the knight shows none of them", r.rowsKnight === "00000000", r.rowsKnight);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

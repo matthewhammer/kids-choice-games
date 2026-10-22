@@ -1478,6 +1478,128 @@ function broomSvg([hx, hy], trim) {
     line(at(5, 9)[0], at(5, 9)[1], at(5, -9)[0], at(5, -9)[1], 6, trim);
 }
 
+// (ticket 518) THE THINGS A HAND HOLDS (HOLDABLES, js/01-state.js), each in each view its own drawing, never another
+// turned or flipped (Matthew's rule): "front" (toward us: the costumes' drawings above, as they always were), "side" (in
+// profile, `dir` the way they face) and "back" (from behind). The lasso and the bow already had their views; the shield its
+// back. H the fist, in body units.
+// A broom in profile: the stick leaning forward, the way they face; the bristles flaring down behind, seen across their round
+function broomSideSvg([hx, hy], trim, dir) {
+  const top = [hx + dir * 22, hy - 118], b = [hx - dir * 10, hy + 52];
+  const dx = b[0] - top[0], dy = b[1] - top[1], d = Math.hypot(dx, dy), ux = dx / d, uy = dy / d, nx = -uy, ny = ux;
+  const at = (along, across) => [b[0] + ux * along + nx * across, b[1] + uy * along + ny * across];
+  return line(top[0], top[1], b[0], b[1], 7, "#8b5a2b", "#4a2f16") +
+    poly([at(0, 7), at(56, 19), at(64, 0), at(56, -19), at(0, -7)], "#d9a441", "#8a6420", 2.5) +
+    [-1, 0, 1].map(k => { const [x1, y1] = at(4, k * 3), [x2, y2] = at(56, k * 10);
+      return `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" stroke="#a87a2a" stroke-width="1.5"/>`; }).join("") +
+    line(at(5, 8)[0], at(5, 8)[1], at(5, -8)[0], at(5, -8)[1], 6, trim);
+}
+// A broom from behind: the stick leaning to their right (our left: the front's lean, seen from the other side), the band
+// over the bristles' back, no ties showing
+function broomBackSvg([hx, hy], trim) {
+  const top = [hx - 16, hy - 120], b = [hx + 8, hy + 52];
+  const dx = b[0] - top[0], dy = b[1] - top[1], d = Math.hypot(dx, dy), ux = dx / d, uy = dy / d, nx = -uy, ny = ux;
+  const at = (along, across) => [b[0] + ux * along + nx * across, b[1] + uy * along + ny * across];
+  return line(top[0], top[1], b[0], b[1], 7, "#7a4f22", "#4a2f16") +
+    poly([at(0, 8), at(58, 25), at(66, 0), at(58, -25), at(0, -8)], "#c8933a", "#8a6420", 2.5) +
+    line(at(7, 10)[0], at(7, 10)[1], at(7, -10)[0], at(7, -10)[1], 8, trim);
+}
+// A staff in profile: leaning forward, its head's knot hooked round the orb toward the way they face
+function staffSideSvg([hx, hy], orb, dir) {
+  const top = [hx + dir * 14, hy - 150], b = [hx - dir * 8, hy + 110];
+  if (orb === "knob" || orb === "leaves") return line(top[0], top[1] - 6, b[0], b[1], 7, "#7a4f2a", "#4a2f16") +
+    (orb === "knob" ? `<circle cx="${f1(top[0])}" cy="${f1(top[1] - 8)}" r="8" fill="#7a4f2a" stroke="#4a2f16" stroke-width="2"/>`
+      : [[-10, -40], [-2, 30], [8, -60]].map(([dy, a]) => `<path d="M${f1(top[0])} ${f1(top[1] + dy)} Q${f1(top[0] + dir * 8)} ${f1(top[1] + dy - 8)} ${f1(top[0] + dir * (a > 0 ? 18 : 10))} ${f1(top[1] + dy - 18)} Q${f1(top[0] + dir * 2)} ${f1(top[1] + dy - 10)} ${f1(top[0])} ${f1(top[1] + dy)} Z" fill="#4caf50" stroke="#2e6b30" stroke-width="1.5"/>`).join(""));
+  return line(top[0], top[1], b[0], b[1], 7, "#7a4f2a", "#4a2f16") +
+    `<circle cx="${f1(top[0] + dir * 4)}" cy="${f1(top[1] - 12)}" r="22" fill="${orb}" opacity="0.25"/>` +
+    `<circle cx="${f1(top[0] + dir * 4)}" cy="${f1(top[1] - 12)}" r="11" fill="${orb}" stroke="${darker(orb)}" stroke-width="2"/>` +
+    `<path d="M${f1(top[0] - dir * 4)} ${f1(top[1] + 4)} Q${f1(top[0] - dir * 8)} ${f1(top[1] - 22)} ${f1(top[0] + dir * 6)} ${f1(top[1] - 26)} Q${f1(top[0] + dir * 16)} ${f1(top[1] - 24)} ${f1(top[0] + dir * 15)} ${f1(top[1] - 12)}" fill="none" stroke="#7a4f2a" stroke-width="5" stroke-linecap="round"/>` +
+    `<circle cx="${f1(top[0] + dir * 8)}" cy="${f1(top[1] - 15)}" r="3" fill="#ffffff" opacity="0.8"/>`;
+}
+// A staff from behind: leaning to our left, the knot's back over the orb, which glows round it
+function staffBackSvg([hx, hy], orb) {
+  const top = [hx - 10, hy - 150], b = [hx + 6, hy + 110];
+  if (orb === "knob" || orb === "leaves") return line(top[0], top[1] - 6, b[0], b[1], 7, "#6b4424", "#4a2f16") +
+    (orb === "knob" ? `<circle cx="${f1(top[0])}" cy="${f1(top[1] - 8)}" r="8" fill="#6b4424" stroke="#4a2f16" stroke-width="2"/>`
+      : [[1, -6, 30], [-1, 4, -35], [1, 12, 60]].map(([k, dy, a]) => `<path d="M0 0 Q${f1(k * 6)} -10 0 -20 Q${f1(-k * 6)} -10 0 0 Z" transform="translate(${f1(top[0])} ${f1(top[1] + dy)}) rotate(${a})" fill="#3f9a43" stroke="#2e6b30" stroke-width="1.5"/>`).join(""));
+  return `<circle cx="${f1(top[0])}" cy="${f1(top[1] - 10)}" r="22" fill="${orb}" opacity="0.25"/>` +
+    `<circle cx="${f1(top[0])}" cy="${f1(top[1] - 10)}" r="11" fill="${orb}" stroke="${darker(orb)}" stroke-width="2"/>` +
+    line(top[0], top[1], b[0], b[1], 7, "#6b4424", "#4a2f16") +
+    `<path d="M${f1(top[0] - 10)} ${f1(top[1] + 2)} Q${f1(top[0] - 13)} ${f1(top[1] - 16)} ${f1(top[0])} ${f1(top[1] - 22)} Q${f1(top[0] + 13)} ${f1(top[1] - 16)} ${f1(top[0] + 10)} ${f1(top[1] + 2)} Z" fill="#7a4f2a" stroke="#4a2f16" stroke-width="2"/>`;
+}
+// A scepter in profile: the rod leaning forward, the ball with its jewel on the side they face, the cross seen edge on
+function scepterSideSvg([hx, hy], jewel, dir) {
+  const t = [hx + dir * 8, hy - 130];
+  return line(hx - dir * 2, hy + 30, t[0], t[1], 6, "#e0b030", "#8a6420") +
+    `<circle cx="${f1(t[0])}" cy="${f1(t[1] - 8)}" r="11" fill="#e0b030" stroke="#8a6420" stroke-width="2"/>` +
+    `<ellipse cx="${f1(t[0] + dir * 6)}" cy="${f1(t[1] - 8)}" rx="2.6" ry="5" fill="${jewel}"/>` +
+    `<path d="M${f1(t[0])} ${f1(t[1] - 19)} L${f1(t[0])} ${f1(t[1] - 33)} M${f1(t[0] - 2)} ${f1(t[1] - 27)} L${f1(t[0] + 2)} ${f1(t[1] - 27)}" stroke="#e0b030" stroke-width="3.5" stroke-linecap="round"/>`;
+}
+// A scepter from behind: the ball's plain back (the jewel is on its front), a band round it, the cross
+function scepterBackSvg([hx, hy]) {
+  const t = [hx - 6, hy - 130];
+  return line(hx + 2, hy + 30, t[0], t[1], 6, "#d4a52a", "#8a6420") +
+    `<circle cx="${f1(t[0])}" cy="${f1(t[1] - 8)}" r="11" fill="#d4a52a" stroke="#8a6420" stroke-width="2"/>` +
+    `<path d="M${f1(t[0] - 11)} ${f1(t[1] - 8)} Q${f1(t[0])} ${f1(t[1] - 3)} ${f1(t[0] + 11)} ${f1(t[1] - 8)}" fill="none" stroke="#8a6420" stroke-width="2"/>` +
+    `<path d="M${f1(t[0])} ${f1(t[1] - 19)} L${f1(t[0])} ${f1(t[1] - 33)} M${f1(t[0] - 6)} ${f1(t[1] - 27)} L${f1(t[0] + 6)} ${f1(t[1] - 27)}" stroke="#d4a52a" stroke-width="3.5" stroke-linecap="round"/>`;
+}
+// A sword upright in the fist, in profile: the blade seen edge on, leaning a little forward, the crossguard end on, the
+// grip in the hand, the pommel under it
+function swordSideSvg([hx, hy], dir) {
+  const tip = [hx + dir * 6, hy - 124], base = [hx + dir * 1, hy - 14];
+  return `<polygon points="${f1(base[0] - 2.4)},${f1(base[1])} ${f1(tip[0] - 1.2)},${f1(tip[1] + 14)} ${f1(tip[0])},${f1(tip[1])} ${f1(tip[0] + 1.2)},${f1(tip[1] + 14)} ${f1(base[0] + 2.4)},${f1(base[1])}" fill="#c9ced6" stroke="#7d838e" stroke-width="1"/>` +
+    `<line x1="${f1(base[0] + dir * 0.8)}" y1="${f1(base[1] - 2)}" x2="${f1(tip[0] + dir * 0.4)}" y2="${f1(tip[1] + 16)}" stroke="#f1f3f7" stroke-width="0.9"/>` +
+    `<rect x="${f1(base[0] - 4)}" y="${f1(base[1] - 1)}" width="8" height="7" rx="2" fill="#b08d3a" stroke="#6e5520" stroke-width="0.9"/>` +
+    `<rect x="${f1(hx - 3.2)}" y="${f1(base[1] + 6)}" width="6.4" height="20" rx="1.6" fill="#6e4a2c"/>` +
+    `<circle cx="${f1(hx - dir * 0.5)}" cy="${f1(hy + 21)}" r="4.6" fill="#b08d3a" stroke="#6e5520" stroke-width="0.9"/>`;
+}
+// A sword upright in the fist, from behind: the blade's other flat, no gleam on it, the crossguard's back, the grip's
+// binding hidden in the hand, the pommel
+function swordBackSvg([hx, hy]) {
+  const tip = [hx - 3, hy - 122], b = [hx - 1, hy - 12];
+  return `<polygon points="${f1(b[0] - 4.8)},${f1(b[1])} ${f1(tip[0] - 3.7)},${f1(tip[1] + 17)} ${f1(tip[0])},${f1(tip[1])} ${f1(tip[0] + 3.7)},${f1(tip[1] + 17)} ${f1(b[0] + 4.8)},${f1(b[1])}" fill="#b9bec7" stroke="#7d838e" stroke-width="1"/>` +
+    `<line x1="${f1(b[0])}" y1="${f1(b[1] - 4)}" x2="${f1(tip[0])}" y2="${f1(tip[1] + 20)}" stroke="#9aa0aa" stroke-width="1.5"/>` +
+    `<rect x="${f1(hx - 15)}" y="${f1(b[1] - 1)}" width="28" height="5" rx="2" fill="#9c7a30" stroke="#6e5520" stroke-width="0.9"/>` +
+    `<rect x="${f1(hx - 3.2)}" y="${f1(b[1] + 4)}" width="6.4" height="22" rx="1.6" fill="#5a3b22"/>` +
+    `<circle cx="${f1(hx)}" cy="${f1(hy + 21)}" r="4.7" fill="#9c7a30" stroke="#6e5520" stroke-width="0.9"/>`;
+}
+// A shield in profile, held out the way they face: seen rim on, a narrow bowed lens of its face's colour edged in iron
+function shieldSideSvg([hx, hy], WC, plain, dir) {
+  const x = hx + dir * 10, face = plain ? "#8b5a2b" : WC.knightA || "#2f6db5";
+  return `<path d="M${f1(x - dir * 3)} ${f1(hy - 38)} Q${f1(x + dir * 9)} ${f1(hy)} ${f1(x - dir * 1)} ${f1(hy + 38)} L${f1(x - dir * 6)} ${f1(hy + 36)} Q${f1(x + dir * 2)} ${f1(hy)} ${f1(x - dir * 8)} ${f1(hy - 38)} Z" fill="${face}" stroke="#3b3b44" stroke-width="2.5" stroke-linejoin="round"/>` +
+    `<rect x="${f1(hx - 4)}" y="${f1(hy - 6)}" width="8" height="12" rx="2" fill="#4a2f16"/>`;
+}
+// A plain wooden shield toward us (anyone not a knight): planks, an iron rim and boss
+function shieldPlainSvg([hx, hy]) {
+  const d = `M${f1(hx - 30)} ${f1(hy - 38)} L${f1(hx + 30)} ${f1(hy - 38)} L${f1(hx + 30)} ${f1(hy - 4)} Q${f1(hx + 28)} ${f1(hy + 24)} ${f1(hx)} ${f1(hy + 38)} Q${f1(hx - 28)} ${f1(hy + 24)} ${f1(hx - 30)} ${f1(hy - 4)} Z`;
+  return `<path d="${d}" fill="#a0703c" stroke="#3b3b44" stroke-width="3"/>` +
+    [-10, 10].map(dx => `<line x1="${f1(hx + dx)}" y1="${f1(hy - 37)}" x2="${f1(hx + dx)}" y2="${f1(hy + 30 - Math.abs(dx))}" stroke="#7a4f2a" stroke-width="1.5"/>`).join("") +
+    `<circle cx="${f1(hx)}" cy="${f1(hy - 6)}" r="8" fill="#9aa0aa" stroke="#3b3b44" stroke-width="2"/>`;
+}
+// A bow from behind: its string nearer us, over the bow, a leather wrap at the grip
+function bowBackSvg([hx, hy], side) {
+  const t = [hx, hy - 78], b = [hx, hy + 78], bx = hx + side * 30;
+  return `<line x1="${f1(t[0])}" y1="${f1(t[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#e8e0cc" stroke-width="1.5"/>` +
+    `<path d="M${f1(t[0])} ${f1(t[1])} Q${f1(bx)} ${f1(hy)} ${f1(b[0])} ${f1(b[1])}" fill="none" stroke="#6b4424" stroke-width="6" stroke-linecap="round"/>` +
+    `<path d="M${f1(hx + side * 13)} ${f1(hy - 9)} L${f1(hx + side * 13)} ${f1(hy + 9)}" stroke="#3b2414" stroke-width="7" stroke-linecap="round"/>`;
+}
+// One held thing, by id, in a view: o = { WC, kb (the broom's size), monk, dryad, knight, own ("L"/"R"), out (the hand's own
+// side, or the way they face in profile), dir, spin (the lasso's twirl) }. The rein draws nothing here.
+function heldSvg(id, H, view, o) {
+  const WC = o.WC, side = view === "side", back = view === "back", dir = o.dir;
+  const orb = o.monk ? (o.dryad ? "leaves" : "knob") : WC.staffOrb || "#7dd3fc";
+  switch (id) {
+    case "broom": { const k = o.kb, d = side ? broomSideSvg(H, WC.trimColor, dir) : back ? broomBackSvg(H, WC.trimColor) : broomSvg(H, WC.trimColor);
+      return `<g transform="translate(${f1(H[0])} ${f1(H[1])}) scale(${k.toFixed(3)}) translate(${f1(-H[0])} ${f1(-H[1])})">${d}</g>`; }
+    case "bow": return side ? bowSvg(H, -dir) : back ? bowBackSvg(H, o.out) : bowSvg(H, o.out);
+    case "scepter": return side ? scepterSideSvg(H, WC.crownJewel || "#d2382b", dir) : back ? scepterBackSvg(H) : scepterSvg(H, WC.crownJewel || "#d2382b");
+    case "sword": return side ? swordSideSvg(H, dir) : back ? swordBackSvg(H) : swordSvg(H[0] - 2, H[1] + 20, H[0] + 3, H[1] - 122, 1);   // (toward us, the trap room's sword upright)
+    case "shield": return side ? shieldSideSvg(H, WC, !o.knight, dir) : back || o.knight ? shieldSvg(H, WC, o.own === "R" ? "shield-arms" : "shield-arms" + o.own, back) : shieldPlainSvg(H);
+    case "staff": return side ? staffSideSvg(H, orb, dir) : back ? staffBackSvg(H, orb) : staffSvg(H, orb);
+    case "lasso": return `<g data-western="lasso">${lassoSvg(H, view, side ? dir : o.out, o.spin)}</g>`;
+    default: return "";
+  }
+}
+
 // (ticket 499, Matthew: "optional dragon breath -- need an action for that, like bubbles -- shooting fire out of our
 // mouth."; "let's get serious about animating fire shooting out of things. Mock up the dragon costume and 6 fire styles.")
 // The six fires of the mock-up (dress-up/mockups/dragon-fire.html), each a fixed set of shapes, each shape moved by a CSS

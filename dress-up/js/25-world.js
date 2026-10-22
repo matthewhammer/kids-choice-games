@@ -1484,14 +1484,17 @@ function personNewCostume(kind, label) {
 const personCostumes = () => ((TABS.find(t => t[1] === "costume") || [, , []])[2].find(r => r[0] === "choice" && r[1] === "kind") || [])[3]?.filter(([v]) => v !== "none") || [];
 // The box to choose a costume in: laid over the panel where it is on the screen (not inside it), the costumes' chips, and ✖
 // cancel at its bottom; Escape or a tap outside it closes it too
-function personCostumeBox() {
+// (ticket 459; generalised in ticket 518) a box of chips laid over the panel: its title, a chip each ([value, label, on]: on,
+// the one chosen now, pressed), then ✖ cancel at its bottom; a chip, ✖, Escape or a tap outside closes it
+function chipBox(title, aria, chips, onPick, chipClass = "person-pick-chip", data = "kind") {
   document.querySelector(".person-pick")?.remove();
   const close = () => { box.remove(); document.removeEventListener("keydown", esc, true); document.removeEventListener("pointerdown", away, true); };
   const esc = e => { if (e.key === "Escape") { e.stopPropagation(); e.preventDefault(); close(); } };
   const away = e => { if (!box.contains(e.target)) close(); };
-  const box = el("div", { class: "person-pick", role: "dialog", "aria-label": "a new person in a costume" }, [
-    el("div", { class: "cap" }, "➕ a new person in a costume"),
-    el("div", { class: "person-pick-chips" }, personCostumes().map(([v, lab]) => el("button", { class: "person-pick-chip", "data-kind": v, onclick: () => { close(); personNewCostume(v, lab); } }, lab))),
+  const box = el("div", { class: "person-pick", role: "dialog", "aria-label": aria }, [
+    el("div", { class: "cap" }, title),
+    el("div", { class: "person-pick-chips" }, chips.map(([v, lab, on]) => el("button", { class: chipClass, ["data-" + data]: v, ...(on === undefined ? {} : { "aria-pressed": String(!!on) }),
+                                                                                        onclick: () => { close(); onPick(v, lab); } }, lab))),
     el("div", { class: "person-pick-foot" }, [el("button", { class: "person-pick-cancel", onclick: close }, "✖ cancel")])]);
   const host = document.getElementById("panel"), r = host ? host.getBoundingClientRect() : { left: 8, right: innerWidth - 8, top: 8, bottom: innerHeight - 8 };
   const top = Math.max(8, r.top), bottom = Math.min(innerHeight - 8, Math.max(r.bottom, top + 240)), left = Math.max(8, r.left), right = Math.min(innerWidth - 8, r.right);
@@ -1500,6 +1503,15 @@ function personCostumeBox() {
   document.addEventListener("keydown", esc, true);
   setTimeout(() => document.addEventListener("pointerdown", away, true), 0);
   return box;
+}
+function personCostumeBox() {
+  return chipBox("➕ a new person in a costume", "a new person in a costume", personCostumes(), (v, lab) => personNewCostume(v, lab));
+}
+// (ticket 518) what one hand holds (key holdR or holdL), chosen in a chip box: the costume's own, nothing, or each thing
+// (the horse's rein only while there is a horse)
+function holdChipBox(part, key, label) {
+  const now = state[part][key] || "auto", horse = state.body.horse && state.body.horse !== "none";
+  return chipBox(label, label, HOLD_CHOICES.filter(([v]) => v !== "rein" || horse).map(([v, lab]) => [v, lab, v === now]), v => set(part, key, v), "person-pick-chip hold-pick-chip", "hold");
 }
 function personSetTemplate(id, on) { const P = id === state.person.id ? state.person : state.peopleAway[id]; if (P) { P.template = !!on; changed(); } }
 function personPlace(id, at) { const P = state.peopleAway[id]; if (P) { P.place = at || null; changed(); } }

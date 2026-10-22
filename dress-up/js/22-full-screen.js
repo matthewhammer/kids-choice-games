@@ -328,7 +328,7 @@ function bgLayout(panel) {
 // as it is (its own layout: the designers, the controller, accessibility, advanced)
 const TAB_BOXES = {
   "🧍 Body": [["🤸 the pose", ["pose", "lieHow", "lieHead", "hugLift"]], ["↔️ facing and moving", ["facing", "anim", "stairsWay"]],
-              ["✋ the dominant hand", ["hand"]], ["📏 their size", ["size"]], ["🐴 the horse", ["horse", "horseLead", "horseArmour", "horseSize", "horseCoat", "horseMane", "horseManeStyle", "horseBows", "horseMark", "horseMarkColor", "horseTack", "horseSocks", "horseShoes", "horseSaddle", "horseBlanket"]], ["🐸 the jumps", ["jumps"]]],
+              ["✋ the dominant hand", ["hand"]], ["🫴 holding", ["holdR", "holdL"]], ["📏 their size", ["size"]], ["🐴 the horse", ["horse", "horseLead", "horseArmour", "horseSize", "horseCoat", "horseMane", "horseManeStyle", "horseBows", "horseMark", "horseMarkColor", "horseTack", "horseSocks", "horseShoes", "horseSaddle", "horseBlanket"]], ["🐸 the jumps", ["jumps"]]],
   "😀 Face": [["🙂 the head", ["color", "size", "faceW", "faceH", "alien", "eyeGap", "sides", "rays"], ["face"]], ["🤨 the brows", ["brow", "unibrow"]],
               ["👄 the mouth", ["smile", "mouthSize", "open", "teethStyle", "teeth", "tongue", "tongueLen", "tongueW", "tongueColor"]],
               ["👃 the nose", ["noseView", "nose", "noseFront", "noseH", "noseW", "witchDir", "witchLen"]], ["👂 the ears", ["ears", "earSize"]],
@@ -359,7 +359,7 @@ const TAB_BOXES = {
                 ["🐉 the dragon", ["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow", "dragonWingLfo", "fireStyle"]],   // (ticket 523: its fire, the friend's)
                 ["🤖 the robot", ["robotStyle", ...Object.keys(ROBOT_STYLES).map(id => "robotColor_" + id), "robotLights"]],   // (ticket 515)
                 ["🤠 the outfit", ["cowgirlStyle", ...Object.keys(COWGIRL_STYLES).map(id => "cowgirlColor_" + id), "cowboyStyle", ...Object.keys(COWBOY_STYLES).map(id => "cowboyColor_" + id)]],   // (ticket 522)
-                ["🎩 the hat", ["cowHat", ...Object.keys(COW_HATS).map(id => "cowHatColor_" + id)]], ["➿ the lasso", ["lasso", "lassoHand"]],
+                ["🎩 the hat", ["cowHat", ...Object.keys(COW_HATS).map(id => "cowHatColor_" + id)]], ["➿ the lasso", ["lasso"]],
                 ["🛡️ the knight", ["knightA", "knightB", "tabardLayout", "emblem", "plume", "plumeColor", "helmOpen", "sword", "shield"]],
                 ["🍄 the gnome", ["gnomeWho", "gnomeHat", "gnomeTunic", "gnomeTrousers", "gnomeBodice", "gnomeSkirt", "gnomeBoots"]],
                 ["🧙 the witch", ["witchColor", "webColor", "webStyle", "trimColor", "bootColor"]],

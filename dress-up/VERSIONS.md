@@ -2,6 +2,14 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🫴 Things to hold, in either hand** (in "🧍 Body", "🫴 holding"): "🫱 right hand holds" and "🫲 left hand holds" each show what that hand holds; a tap opens a box of chips: "🎭 the costume's own" (what the costume always held, the usual), "✋ nothing", "🧹 broom", "🏹 bow", "👑 scepter", "🗡️ sword", "🛡️ shield", "🪄 staff", "➿ lasso", and, with a horse, "🐴 the horse's rein". Anyone can hold anything: a fairy with a sword, a knight with a broom, two swords at once. A shield is the knight's arms on a knight, a plain wooden one on anyone else.
+- **Each held thing has its own drawings from the side and from behind**: a broom, staff, scepter and sword leaning the way the friend faces, the sword's blade edge on, a shield seen by its rim, a scepter's plain back and a bow's string side from behind. In profile, a thing in the far hand is behind the body.
+- **The lasso's hand is chosen in "🫴 holding" now**, not in the costume's "➿ held in" row: pick "➿ lasso" for "🫱 right hand holds" to move it. A friend saved with the lasso in the right hand still has it there.
+- **The horse's rein**: picking "🐴 the horse's rein" for a hand puts the led horse's rein in that hand. Riding, a hand holding something else lets go of its rein.
+- **Fixed:** from behind, the costumes' things (the broom, staff, scepter, sword, bow and shield) were in the wrong hand, as if the friend were still facing us. They now stay in their own hand. In profile, a thing in the far hand was drawn over the body.
+
 ## 0.0.402 (2026-10-21)
 
 Everything in 0.0.401, plus a round room at the top of the tree, round the trunk, with its limbs holding up the roof.

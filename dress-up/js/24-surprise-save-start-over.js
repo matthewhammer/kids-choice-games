@@ -20,6 +20,8 @@ function surpriseOne(part, [kind, key, , ...rest]) {
   else if (kind === "choice" || kind === "places") state[part][key] = pick(rest[0])[0];
   // (a pair's first column has a part of its own: the friend's right hand)
   else if (kind === "pair") for (const c of rest[1]) surpriseOne(key, c);
+  // (ticket 518: a hand mostly keeps the costume's own; now and then holds something, or nothing)
+  else if (kind === "hold") state[part][key] = Math.random() < 0.7 ? "auto" : pick(HOLD_CHOICES.filter(([v]) => v !== "rein"))[0];
   else if (kind === "color") state[part][key] = pick(rest[0]);
 }
 document.getElementById("surprise").addEventListener("click", () => {
@@ -225,6 +227,7 @@ document.getElementById("load-file").addEventListener("change", async e => {
     upgradeRightHand(next, saved);
     upgradeFeet(next, saved);
     upgradeHorse(next, saved);
+    upgradeLassoHand(next);
     upgradeInside(next.background, saved);
     upgradeFigSize(next.background, saved);
     upgradeFoamMove(next.background, saved);
