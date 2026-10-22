@@ -108,6 +108,21 @@ for (const rooms of castles) if (rooms.length) for (const i of [0, 1]) {
   const got = flat(C.handlers.Castle({ ...none, rooms }, { tag: "FallPit", value: i }));
   ok(`FallPit ${i} in ${rooms.join(",")}`, JSON.stringify(got) === JSON.stringify(want), { want, got }); cp++; }
 console.log(`ok   castle pits: ${cp} cases, castleroomScene's own pits`);
+// ---- (phase 2) a room's way out: every castle above, every room, every out setting, against the game's own wayOutOf ----
+vm.runInContext(st.match(/const ROOM_S_OUT = [^\n]*\n/)[0].replace("const ", "var "), game);
+game.ROOM_KINDS = Object.fromEntries([...st.matchAll(/^  (\w+): \{ label: [^\n]*exits: "(\w+)"/gm)].map(m => [m[1], { exits: m[2] }]));
+vm.runInContext(fnText(castle, "wayOutOf"), game);
+const ALL = Object.keys(game.ROOM_KINDS);
+let wo = 0;
+for (const rooms of [...castles.filter(c => c.length), ["king", "greenhouse", "trap", "dungeon1", "dungeon2", "hallway", "dining", "spiral"], ["dining", "dungeon2", "spiral", "trap"]])
+  rooms.forEach((_, j) => { const n = j + 1;
+    for (const out of ["auto", "out", "none", "1", "2", "3", "5", "9", "0"]) {
+      const hall = rooms.map(() => ({ out: "auto" })); hall[n - 1] = { out };
+      const w = game.wayOutOf({ rooms, hall }, n), want = [["GoRoom", w === null ? -1 : w]];
+      const r = Number(out), g = { ...none, rooms, exits: rooms.map(s => game.ROOM_KINDS[s].exits), out, out_room: Number.isInteger(r) ? r : -1 };
+      const got = flat(C.handlers.Castle(g, { tag: "WayOut", value: n }));
+      ok(`WayOut ${n} (${out}) in ${rooms.join(",")}`, JSON.stringify(got) === JSON.stringify(want), { want, got }); wo++; } });
+console.log(`ok   ways out: ${wo} cases, the game's own wayOutOf (${ALL.length} room kinds read from ROOM_KINDS)`);
 
 // ---- times: a Hazel call (with the globals built as the game does) against the JS deciding the same ----
 const g0 = { ...none, lever_L: true, wiring: "random", draws: [0.3, 0.7], pits_on: [true, true], covered: [false, true] };
@@ -120,7 +135,10 @@ for (const k of [2, 8, 40]) { const T = squareOf(k, 5), i = T.findIndex(t => t.k
   time(`PullThing, ${k} doors: js (leverPull)`, () => { game.state.background = { things: T.map(t => ({ ...t })) }; game.leverPull(i); }); }
 { const rooms = ["king", "hallway", "trap", "dungeon1", "dungeon2"];
   time("FallPit: hazel", () => C.handlers.Castle({ ...none, rooms: rooms.slice() }, { tag: "FallPit", value: 1 }));
-  time("FallPit: js (the pits line, as castleroomScene draws)", () => pitsOf({ rooms })[1]); }
+  time("FallPit: js (the pits line, as castleroomScene draws)", () => pitsOf({ rooms })[1]);
+  const hall = rooms.map(() => ({ out: "auto" })), exits = rooms.map(s => game.ROOM_KINDS[s].exits);
+  time("WayOut: hazel", () => C.handlers.Castle({ ...none, rooms: rooms.slice(), exits, out: "auto", out_room: -1 }, { tag: "WayOut", value: 5 }));
+  time("WayOut: js (wayOutOf, as castleWays draws)", () => game.wayOutOf({ rooms, hall }, 5)); }
 const q = (a, p) => a[Math.min(a.length - 1, Math.floor(p * a.length))];
 console.log(`\ntimes, ${REPS} reps each, node ${process.version} (ms)`);
 for (const [k, a] of Object.entries(times)) console.log(`  ${k.padEnd(44)} p50 ${q(a, 0.5).toFixed(4)}  p95 ${q(a, 0.95).toFixed(4)}  max ${a[a.length - 1].toFixed(3)}`);
