@@ -273,9 +273,13 @@ const BG_BOX = [["place", "🗺️ the place", k => k === "kind" || k === "instE
                 ["castles", "🏰 the castles", (k, row) => /^castle/.test(k) || /^castle/.test(row.dataset.group || ""), true]];
 // (ticket 521) the boxes shown, as --n on the panel, kept by a sync after the boxes' own hide syncs: a full screen's boxes column is
 // no wider than n boxes of --box-max (style.css), so a tab of one or two boxes leaves no empty column and the game's card takes the
-// rest; written only when it changes (showTab clears it)
+// rest; written only when it changes (showTab clears it). --nn, the boxes shown that are not across (.box-wide): a grid with a box
+// across folds no column (the box is in every one), so .bg-boxes keeps its columns to --nn instead (style.css)
 function boxCount(panel, boxes) {
-  syncs.push(() => { const n = String(Math.max(1, boxes.reduce((k, b) => k + (b.hidden ? 0 : 1), 0))); if (panel.style.getPropertyValue("--n") !== n) panel.style.setProperty("--n", n); });
+  syncs.push(() => {
+    const shownBoxes = boxes.filter(b => !b.hidden), n = String(Math.max(1, shownBoxes.length)), nn = String(Math.max(1, shownBoxes.filter(b => !b.classList.contains("box-wide")).length));
+    if (panel.style.getPropertyValue("--n") !== n) panel.style.setProperty("--n", n);
+    if (panel.style.getPropertyValue("--nn") !== nn) panel.style.setProperty("--nn", nn); });
 }
 function bgBoxes(rows) {
   const own = { rows: [] }, by = Object.fromEntries(BG_BOX.map(([id]) => [id, []]));

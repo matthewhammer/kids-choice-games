@@ -248,7 +248,10 @@
   .bg-layout, .bg-boxes, .bg-viewcol { display: contents; }
   /* (ticket 521) outside the full screen its boxes a grid with gaps too, as every other tab's .boxes (they touched, one column at any
      width), the wide ones across */
-  body:not(.bg-big) .bg-boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
+  /* (ticket 521) its wide boxes (.box-wide) go across, so they are in every column and auto-fit folds none: a column's least width is
+     also a share of --nn, the boxes shown that are not across (boxCount), so there are never more columns than they fill */
+  .bg-boxes { --bg-cols: repeat(auto-fit, minmax(max(min(100%, var(--box-min)), calc((100% - (var(--nn, 99) - 1) * var(--box-gap)) / var(--nn, 99))), 1fr)); }
+  body:not(.bg-big) .bg-boxes { display: grid; grid-template-columns: var(--bg-cols); gap: var(--box-gap); align-items: start; }
   body:not(.bg-big) .bg-boxes > .box-wide { grid-column: 1 / -1; }
   /* (ticket 375, the report's rules 7 and 8) every other tab a designer too (tabDesigner): outside its full screen as it was, its ⛶ chip
      first; full screen, its boxes on the left (a grid, as wide as there is room), the game the first card on the right, the dragger
@@ -268,7 +271,7 @@
   body.bg-big #panel > .ctl:has(> button.designer-chip)::before { content: "🏞️ Background designer"; font-weight: 700; font-size: 1.1em; margin-right: auto; }
   body.bg-big .bg-layout { display: grid; grid-template-columns: minmax(260px, var(--left, min(62%, calc(var(--n, 99) * (var(--box-max) + var(--box-gap)))))) 12px minmax(300px, 1fr); column-gap: 8px; align-items: start; }   /* (the dragger between, as the world designer's) */
   body.bg-big .bg-boxes { grid-column: 1; grid-row: 1; }
-  body.bg-big .bg-boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
+  body.bg-big .bg-boxes { display: grid; grid-template-columns: var(--bg-cols); gap: var(--box-gap); align-items: start; }
   body.bg-big .bg-boxes > :not([hidden]) { margin: 0; border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--mu-main); }
   body.bg-big .bg-boxes > .box-wide { grid-column: 1 / -1; }   /* (ticket 375: the place, the default background objects, the things and the castles across) */
   body.bg-big .bg-viewcol { display: block; position: sticky; top: 56px; grid-column: 3; grid-row: 1; }

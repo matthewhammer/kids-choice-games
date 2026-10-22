@@ -177,9 +177,12 @@ function measure(o) {
   let screenEmpty = 0; for (let i = 0; i < sg.length; i++) if (!sg[i]) screenEmpty++;
   const card = fs ? [...document.querySelectorAll(".tab-view, .bg-view")].find(shown) : null;
   const underCard = card ? Math.round(R(card).width * Math.max(0, innerHeight - R(card).bottom)) : null;
-  // (the card the picture sits in, full screen: its width, and the height fitPic allows there, 60% of the window under the bar)
+  // (the card the picture sits in, full screen: its width, and the height fitPic allows there: 60% of the window under the bar in the
+  // world designer's; in the others the window below the card's top, less 16 px, and no less than that 60%)
   const slotEl = fs ? [...document.querySelectorAll(".tab-view-pic, .bg-view-pic, .world-view-pic")].find(e => shown(e) && e.contains(pic)) : null;
-  const slot = slotEl ? { w: slotEl.clientWidth, capH: Math.round((innerHeight - 56) * 0.6) } : null;
+  const cap60 = (innerHeight - 56) * 0.6;
+  const slot = slotEl ? { w: slotEl.clientWidth, top: Math.round(R(slotEl).top),
+    capH: Math.round(slotEl.classList.contains("world-view-pic") ? cap60 : Math.max(cap60, innerHeight - R(slotEl).top - 16)) } : null;
   const tabs = document.getElementById("tabs"), tb = tabs && shown(tabs) ? [...tabs.children].filter(shown) : [];
   const scrollH = fs && side ? side.scrollHeight : document.documentElement.scrollHeight;
   return {
@@ -293,8 +296,10 @@ try {
     ok("🏞️ Background's boxes apart in the side panel (a gap, as every tab's)", bgs && bgs.between.boxes >= 4 && bgs.between.minGap >= 6, bgs && { boxes: bgs.between.boxes, minGap: bgs.between.minGap });
     // (c3, ticket 521: no empty columns. auto-fit folds a column no box is in, and --n keeps a tab's boxes column to the boxes it shows)
     const fs1920 = me.cases.filter(c => c.mode === "fs" && !c.skip && c.screen === "1920x1080");
-    const emptyCol = g => g.emptyTracks > 0 || (!g.across && g.tracks > Math.max(1, g.boxes));
-    ok("full screen at 1920x1080: no grid has more columns than the boxes it shows (no column without a box; a box across counts for each it spans)",
+    // (a box across is in every column, so it hides an empty cell beside the others: the columns no more than the boxes not across,
+    // unless every box is across)
+    const emptyCol = g => g.emptyTracks > 0 || (g.boxes > g.across && g.tracks > g.boxes - g.across);
+    ok("full screen at 1920x1080: no grid has more columns than the boxes it shows that are not across (no column without a box, nor a cell beside a row's last box)",
        fs1920.length > 0 && fs1920.every(c => !c.between.grids.some(emptyCol)), fs1920.filter(c => c.between.grids.some(emptyCol)).map(c => [c.tab, c.between.grids.filter(emptyCol)]));
     const one = fs1920.filter(c => c.between.grids.some(g => /tabboxes/.test(g.cls) && g.boxes <= 2));
     const narrow = c => { const g = c.between.grids.find(x => /tabboxes/.test(x.cls)); return c.region.w <= g.boxes * (440 + 8) + 16; };

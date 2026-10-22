@@ -2674,7 +2674,7 @@ function showTab() {
     el("button", { "aria-pressed": i === tab, onclick: () => { tab = i; showTab(); } }, name)));
   const [, part, ctls] = TABS[tab];
   panel.dataset.part = part;
-  panel.style.removeProperty("--n");   // (ticket 521: the boxes shown, set again by this tab's layout, if it has boxes)
+  panel.style.removeProperty("--n"); panel.style.removeProperty("--nn");   // (ticket 521: the boxes shown, and those not across, set again by this tab's layout, if it has boxes)
   panel.replaceChildren(...ctls.map(c => control(part, c)));
   if (part === "background") bgLayout(panel);   // (ticket 285)
   else if (part === "advanced") advLayout(panel);   // (ticket 375)

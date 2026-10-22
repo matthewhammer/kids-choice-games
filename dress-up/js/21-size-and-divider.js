@@ -32,7 +32,10 @@ function fitPic() {
     const bar = big ? null : area.querySelector(".bar"), slot = view ? document.querySelector(document.body.classList.contains("bg-big") ? ".bg-view-pic" : document.body.classList.contains("tab-big") ? ".tab-view-pic" : ".world-view-pic") : null;   // (ticket 285: whichever designer's card holds it; ticket 521: the generic one's too, as placePic chooses, or the picture kept its side size)
     // (ticket 231) in the world designer's right side (placePic): its card's width, and at most 60% of the window
     // under the bar (56px, as the stylesheet's), so the cards below it keep room to scroll
-    picAreaSize = slot ? { big, narrow, view, W: slot.clientWidth, H: (window.innerHeight - 56) * 0.6 }
+    // (ticket 521) the generic and the background designers' cards have nothing scrolling under them: the picture as tall as the
+    // window below the card's top, less 16 px, never less than the 60% it was (the world designer's keeps its 60%); read here only, when the area was reset (ticket 133)
+    const tall = slot && !slot.classList.contains("world-view-pic");
+    picAreaSize = slot ? { big, narrow, view, W: slot.clientWidth, H: Math.max((window.innerHeight - 56) * 0.6, tall ? window.innerHeight - slot.getBoundingClientRect().top - 16 : 0) }
       : { big, narrow, view, W: area.clientWidth, H: narrow ? window.innerHeight * 0.4 : area.clientHeight - (bar ? bar.offsetHeight : 0) };
   }
   const { W, H } = picAreaSize;
