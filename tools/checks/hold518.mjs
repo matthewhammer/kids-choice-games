@@ -77,6 +77,13 @@ try {
       for (const [k, facing, holdL] of [["front", "front", "none"], ["back", "back", "none"], ["backSword", "back", "sword"]]) {
         out.k = k; out.styles[k] = []; state.body.facing = facing; state.body.holdL = holdL; changed(); await w(60); out.styles[k] = out.styles[k].slice(-2).sort().join(); }
       window.handSvg = o; }
+    // (ticket 529) crawling toward us, each thing drawn in heldSvg's "floor" view, drawn, nothing undefined or costly;
+    // swimming (in the sea, in profile and toward us), nothing held is drawn
+    out.views = {}; { const o = heldSvg; window.heldSvg = (id, H, view, x) => { out.views[out.k].push(view); return o(id, H, view, x); };
+      for (const id of Object.keys(HOLDABLES).filter(x => x !== "rein" && x !== "lasso")) { state = clone(DEFAULTS); state.music.mute = true; state.body.holdL = id; state.body.facing = "front"; set("body", "anim", "crawl"); out.k = "crawl/" + id; out.views[out.k] = []; await w(80);
+        const t = figText(); out.views[out.k] = [...new Set(out.views[out.k])].join() + (t.length > 1000 && !/NaN|undefined/.test(t) && !costly(t) ? "" : " bad"); }
+      for (const facing of ["left", "front"]) { state = clone(DEFAULTS); state.music.mute = true; state.costume.kind = "knight"; state.background.kind = "sea"; state.body.facing = facing; set("body", "anim", "swim"); out.k = "swim/" + facing; out.views[out.k] = []; await w(150); out.views[out.k] = out.views[out.k].length; }
+      window.heldSvg = o; }
     return JSON.stringify(out); })()`));
   const D = Object.entries(r.draw);
   console.log("  " + JSON.stringify({ rows: r.rows, order: r.order, chips: r.chips, picked: r.picked, side: r.side, far: r.far, cow: [r.cowOwn, r.cowMoved], reins: [r.reinsFull, r.reinsFree], old: r.old }));
@@ -93,6 +100,7 @@ try {
   ok("an old save's lassoHand on a knight, or a lasso turned off, adds no lasso", r.oldOthers.every(x => x === "auto,true"), r.oldOthers);
   ok("an old save's lasso in the right hand loads as 🫱 holding the lasso", r.old.join() === "lasso,auto,true", r.old);
   ok("from behind, the right hand's own style is on our right, the left hand's sword fist on our left (ticket 528)", r.styles.front === "-1:claw,1:round" && r.styles.back === "-1:round,1:claw" && r.styles.backSword === "-1:round,1:claw", r.styles);
+  ok("crawling toward us, each thing lies on the floor (its floor drawing); swimming, nothing held is drawn (ticket 529)", Object.entries(r.views).every(([k, v]) => k.startsWith("swim") ? v === 0 : v === "floor"), r.views);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

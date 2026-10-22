@@ -294,14 +294,18 @@ function drawNow() {
   const armOf = own => arms.find(x => x.side === (away ? -1 : 1) * (own === "L" ? 1 : -1)) || null;
   const heldNow = heldItems(B, kind, WC);
   const held = Object.keys(HOLDABLES).flatMap(id => ["L", "R"].filter(own => heldNow[own] === id).map(own => ({ own, item: id, arm: armOf(own) })))
-    .filter(h => h.arm && !(h.item === "lasso" && handsBusy));
+    .filter(h => h.arm && !(h.item === "lasso" && handsBusy) && !(move && move.swim && h.item !== "rein"));
+  // (ticket 529: swimming, everything held is put away, as the lasso is: both arms windmill over the head and under the
+  // body each stroke, so a thing in the hand would sweep through the friend; crawling toward us, each lies flat on the
+  // floor under its hand, heldSvg's "floor" drawings, reaching out to the side, not up)
   const lassoArm = (held.find(h => h.item === "lasso") || {}).arm || null, lassoH = lassoArm ? lassoArm.H : null;
   const lassoSpin = lassoH && move && B.anim === "run" ? (lfoNow("B") || {}).phase || 0 : null;
   // (and a cat on the shoulder, 64 above where it sits and 42 below, its
   // tail out 34 to the side, all times its size)
   const kb = (state.costume.broomSize ?? 100) / 100, catK = witch && WC.witchCat ? (WC.catSize ?? 100) / 100 : 0;
   // (each held thing's reach from its hand, HOLDABLES' ext: a broom's times its size, a twirling lasso's up and out)
-  const heldExt = h => { const [u, d, o] = HOLDABLES[h.item].ext, k = h.item === "broom" ? kb : 1, spin = h.item === "lasso" && lassoSpin != null;
+  const heldExt = h => { if (crawlTo) return [16, 24, h.item === "broom" ? 130 * kb : 130];
+    const [u, d, o] = HOLDABLES[h.item].ext, k = h.item === "broom" ? kb : 1, spin = h.item === "lasso" && lassoSpin != null;
     return [spin ? 70 : u * k, d * k, spin ? 110 : o * k]; };
   const heldUp = held.map(h => heldExt(h)[0] ? h.arm.H[1] - heldExt(h)[0] : 0), heldDown = held.map(h => heldExt(h)[1] ? h.arm.H[1] + heldExt(h)[1] : 0);
   const heldOut = held.map(h => heldExt(h)[2] ? -(Math.abs(h.arm.H[0]) + heldExt(h)[2]) : 0);
@@ -877,7 +881,7 @@ function drawNow() {
   const winged = !!BIRD_SUIT[kind];
   // (ticket 522, the lasso; ticket 518, everything held: a thing in the far hand, in profile or turned partway, is drawn with
   // that hand, behind the body, and goes into #figure-far with it; the rest after the shirt, before the rein and the hands)
-  const heldFar = (dir || q) && !winged && !squash ? held.filter(h => farArms.includes(h.arm)) : [], heldView = dir ? "side" : away ? "back" : "front";
+  const heldFar = (dir || q) && !winged && !squash ? held.filter(h => farArms.includes(h.arm)) : [], heldView = crawlTo ? "floor" : dir ? "side" : away ? "back" : "front";
   const heldDraw = h => heldSvg(h.item, h.arm.H, heldView, { WC, kb, monk, dryad: WC.monkWho === "dryad", knight, own: h.own, out: h.arm.side, dir, spin: lassoSpin });
   const farAt = svg.length;
   if (!winged && !squash) for (const arm of farArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);

@@ -1582,11 +1582,83 @@ function bowBackSvg([hx, hy], side) {
     `<path d="M${f1(t[0])} ${f1(t[1])} Q${f1(bx)} ${f1(hy)} ${f1(b[0])} ${f1(b[1])}" fill="none" stroke="#6b4424" stroke-width="6" stroke-linecap="round"/>` +
     `<path d="M${f1(hx + side * 13)} ${f1(hy - 9)} L${f1(hx + side * 13)} ${f1(hy + 9)}" stroke="#3b2414" stroke-width="7" stroke-linecap="round"/>`;
 }
-// One held thing, by id, in a view: o = { WC, kb (the broom's size), monk, dryad, knight, own ("L"/"R"), out (the hand's own
+// (ticket 529) CRAWLING TOWARD US, each thing lies flat on the floor under its hand, its own drawing (never a standing one
+// turned): seen from in front and a little above, so what runs across the picture is whole and what runs into it is seen
+// short. Each lies out to the side, away from the body (s, the hand's side in the picture), the hand on its grip.
+// A broom on the floor: the stick across, under the hand, the bristles fanned out beyond it, flat, their ties' band
+function broomFloorSvg([hx, hy], trim, s) {
+  const y = hy + 4, a = hx - s * 40, b = hx + s * 70, e = hx + s * 122;
+  return `<ellipse cx="${f1((a + e) / 2)}" cy="${f1(y + 7)}" rx="${f1(Math.abs(e - a) / 2)}" ry="5" fill="#000" opacity="0.12"/>` +
+    line(a, y, b, y, 7, "#8b5a2b", "#4a2f16") +
+    poly([[b, y - 5], [e - s * 6, y - 11], [e, y], [e - s * 6, y + 9], [b, y + 5]], "#d9a441", "#8a6420", 2.5) +
+    [-1, 0, 1].map(k => `<line x1="${f1(b + s * 4)}" y1="${f1(y + k * 2)}" x2="${f1(e - s * 8)}" y2="${f1(y + k * 6)}" stroke="#a87a2a" stroke-width="1.5"/>`).join("") +
+    line(b + s * 5, y - 6, b + s * 5, y + 6, 6, trim);
+}
+// A staff on the floor: the shaft across, the head (orb, knob or leaves) lying out beyond the hand, the orb's glow flat on the floor
+function staffFloorSvg([hx, hy], orb, s) {
+  const y = hy + 4, a = hx - s * 70, t = hx + s * 120;
+  const head = orb === "knob" ? `<ellipse cx="${f1(t + s * 6)}" cy="${f1(y)}" rx="8" ry="6" fill="#7a4f2a" stroke="#4a2f16" stroke-width="2"/>`
+    : orb === "leaves" ? [[-1, -18], [1, 0], [-1, 18]].map(([k, dx]) => `<ellipse cx="${f1(t + s * (12 + dx / 3))}" cy="${f1(y + k * 6)}" rx="10" ry="4" fill="#4caf50" stroke="#2e6b30" stroke-width="1.5"/>`).join("")
+    : `<ellipse cx="${f1(t + s * 12)}" cy="${f1(y + 2)}" rx="24" ry="9" fill="${orb}" opacity="0.25"/>` +
+      `<circle cx="${f1(t + s * 12)}" cy="${f1(y - 3)}" r="10" fill="${orb}" stroke="${darker(orb)}" stroke-width="2"/>`;
+  return `<ellipse cx="${f1((a + t) / 2)}" cy="${f1(y + 7)}" rx="${f1(Math.abs(t - a) / 2)}" ry="4" fill="#000" opacity="0.12"/>` + line(a, y, t, y, 7, "#7a4f2a", "#4a2f16") + head;
+}
+// A scepter on the floor: the rod across, the ball rolled against its end, the jewel up, the cross lying out flat
+function scepterFloorSvg([hx, hy], jewel, s) {
+  const y = hy + 4, a = hx - s * 26, t = hx + s * 104;
+  return line(a, y, t, y, 6, "#e0b030", "#8a6420") +
+    `<circle cx="${f1(t + s * 9)}" cy="${f1(y - 2)}" r="11" fill="#e0b030" stroke="#8a6420" stroke-width="2"/>` +
+    `<ellipse cx="${f1(t + s * 9)}" cy="${f1(y - 5)}" rx="4" ry="2.6" fill="${jewel}"/>` +
+    `<path d="M${f1(t + s * 20)} ${f1(y - 2)} L${f1(t + s * 34)} ${f1(y - 2)} M${f1(t + s * 28)} ${f1(y - 5)} L${f1(t + s * 28)} ${f1(y + 1)}" stroke="#e0b030" stroke-width="3.5" stroke-linecap="round"/>`;
+}
+// A sword on the floor: lying on its flat, the blade out across the floor from the fist, the crossguard into the picture
+// (seen short), the pommel by the wrist
+function swordFloorSvg([hx, hy], s) {
+  const y = hy + 4, g = hx + s * 14, tip = hx + s * 128;
+  return `<ellipse cx="${f1((g + tip) / 2)}" cy="${f1(y + 6)}" rx="${f1(Math.abs(tip - g) / 2)}" ry="3" fill="#000" opacity="0.12"/>` +
+    `<polygon points="${f1(g)},${f1(y - 3.5)} ${f1(tip - s * 14)},${f1(y - 3)} ${f1(tip)},${f1(y)} ${f1(tip - s * 14)},${f1(y + 3)} ${f1(g)},${f1(y + 3.5)}" fill="#c9ced6" stroke="#7d838e" stroke-width="1"/>` +
+    `<line x1="${f1(g + s * 2)}" y1="${f1(y - 0.8)}" x2="${f1(tip - s * 16)}" y2="${f1(y - 0.6)}" stroke="#f1f3f7" stroke-width="0.9"/>` +
+    `<rect x="${f1(g - 3)}" y="${f1(y - 8)}" width="6" height="16" rx="2" fill="#b08d3a" stroke="#6e5520" stroke-width="0.9"/>` +
+    `<circle cx="${f1(hx - s * 14)}" cy="${f1(y)}" r="4.6" fill="#b08d3a" stroke="#6e5520" stroke-width="0.9"/>`;
+}
+// A bow on the floor: lying on its side, its curve out across the floor, the string straight along the near edge
+function bowFloorSvg([hx, hy], s) {
+  const y = hy + 6, a = hx - s * 60, b = hx + s * 70, m = (a + b) / 2;
+  return `<line x1="${f1(a)}" y1="${f1(y + 4)}" x2="${f1(b)}" y2="${f1(y + 4)}" stroke="#e8e0cc" stroke-width="1.5"/>` +
+    `<path d="M${f1(a)} ${f1(y + 4)} Q${f1(m)} ${f1(y - 18)} ${f1(b)} ${f1(y + 4)}" fill="none" stroke="#6b4424" stroke-width="6" stroke-linecap="round"/>` +
+    `<path d="M${f1(hx - 6)} ${f1(y - 5)} L${f1(hx + 6)} ${f1(y - 5)}" stroke="#3b2414" stroke-width="7" stroke-linecap="round"/>`;
+}
+// A shield on the floor: face up, flat, so seen short (an oval of its face in its colours, the boss in the middle), the
+// hand on its rim
+function shieldFloorSvg([hx, hy], WC, plain, s) {
+  const cx = hx + s * 34, cy = hy + 6, A = plain ? "#a0703c" : WC.knightA || "#2f6db5", B2 = plain ? "#7a4f2a" : WC.knightB || "#f4f1ea";
+  return `<ellipse cx="${f1(cx)}" cy="${f1(cy + 4)}" rx="36" ry="13" fill="#000" opacity="0.12"/>` +
+    `<path d="M${f1(cx - 32)} ${f1(cy - 9)} L${f1(cx + 32)} ${f1(cy - 9)} Q${f1(cx + 30)} ${f1(cy + 6)} ${f1(cx)} ${f1(cy + 12)} Q${f1(cx - 30)} ${f1(cy + 6)} ${f1(cx - 32)} ${f1(cy - 9)} Z" fill="${A}" stroke="#3b3b44" stroke-width="2.5"/>` +
+    `<path d="M${f1(cx)} ${f1(cy - 9)} L${f1(cx)} ${f1(cy + 12)} M${f1(cx - 31)} ${f1(cy - 1)} L${f1(cx + 31)} ${f1(cy - 1)}" stroke="${B2}" stroke-width="3"/>` +
+    `<ellipse cx="${f1(cx)}" cy="${f1(cy - 1)}" rx="7" ry="3.5" fill="#9aa0aa" stroke="#3b3b44" stroke-width="1.5"/>`;
+}
+// A lasso on the floor (drawn only if one is ever held crawling: today it is put away, ticket 522): its coil flat, an oval
+function lassoFloorSvg([hx, hy], s) {
+  const cx = hx + s * 30, cy = hy + 6;
+  return `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="28" ry="8" fill="none" stroke="#c8a165" stroke-width="3"/>` +
+    `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="22" ry="6" fill="none" stroke="#a8834a" stroke-width="2.5"/>`;
+}
+// One held thing, by id, in a view ("front", "side", "back", or "floor": crawling toward us, ticket 529): o = { WC, kb (the broom's size), monk, dryad, knight, own ("L"/"R"), out (the hand's own
 // side, or the way they face in profile), dir, spin (the lasso's twirl) }. The rein draws nothing here.
 function heldSvg(id, H, view, o) {
   const WC = o.WC, side = view === "side", back = view === "back", dir = o.dir;
   const orb = o.monk ? (o.dryad ? "leaves" : "knob") : WC.staffOrb || "#7dd3fc";
+  if (view === "floor") { const sd = Math.sign(H[0]) || 1;   // (ticket 529: crawling toward us)
+    switch (id) {
+      case "broom": { const k = o.kb; return `<g transform="translate(${f1(H[0])} ${f1(H[1])}) scale(${k.toFixed(3)}) translate(${f1(-H[0])} ${f1(-H[1])})">${broomFloorSvg(H, WC.trimColor, sd)}</g>`; }
+      case "bow": return bowFloorSvg(H, sd);
+      case "scepter": return scepterFloorSvg(H, WC.crownJewel || "#d2382b", sd);
+      case "sword": return swordFloorSvg(H, sd);
+      case "shield": return shieldFloorSvg(H, WC, !o.knight, sd);
+      case "staff": return staffFloorSvg(H, orb, sd);
+      case "lasso": return `<g data-western="lasso">${lassoFloorSvg(H, sd)}</g>`;
+      default: return "";
+    } }
   switch (id) {
     case "broom": { const k = o.kb, d = side ? broomSideSvg(H, WC.trimColor, dir) : back ? broomBackSvg(H, WC.trimColor) : broomSvg(H, WC.trimColor);
       return `<g transform="translate(${f1(H[0])} ${f1(H[1])}) scale(${k.toFixed(3)}) translate(${f1(-H[0])} ${f1(-H[1])})">${d}</g>`; }
