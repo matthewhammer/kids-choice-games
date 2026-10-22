@@ -22,7 +22,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // (ticket 50) where people can sit, per place: see seatsHere
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
-                    treehouse: 0.3, treeroom: 0.65, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
+                    treehouse: 0.3, treeroom: 0.65, treetop: 0.6, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
@@ -39,7 +39,7 @@ const figScale = B => (B.figSize ?? 100) / 100 * bodyScale();
 // kept between 0.3 and 1.5. A castle room's comes from its perspective
 // (roomFrame: the eye's height on the wall); rooms drawn flatter, with big
 // things at their back walls, vanish far above the picture.
-const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroom: -60, hutroom: -60, hutbed: -60, hutpotion: -60, hutcenter: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60, bubbleroom: -60 };
+const SCENE_VANISH = { treeroom: -60, treetop: -60, livingroom: -60, witchroom: -60, healerroom: -60, hutroom: -60, hutbed: -60, hutpotion: -60, hutcenter: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60, bubbleroom: -60 };
 // (ticket 214, Matthew: "this scene, and the forest clearing scene, and maybe others, should scale the player down more
 // dramatically as they go 'into' the scene (heading N)"; "each picture should have its own setting for how much we get
 // smaller as we move a certain number of fractions of picture N. north-ward scaling factor") Each place's 🔭 setting,
@@ -49,7 +49,7 @@ const SCENE_VANISH = { treeroom: -60, livingroom: -60, witchroom: -60, healerroo
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
                    "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "beach", "sea", "lake", "desert", "farmyard"];   // (desert: ticket 501)
-const NORTH_ROOMS = ["treeroom", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
+const NORTH_ROOMS = ["treeroom", "treetop", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
 const northDefault = kind => NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
   if (B.kind === "castleroom") {
@@ -608,7 +608,8 @@ const DEFAULTS = {
                    ...Object.values(RESIDENTS).flatMap(R => [[R.count[0] + id, R.count[2]], ...R.list.flatMap((d, i) => R.fields.map(f => [R.key + (i + 1) + f[0] + id, f[4](d)]))])])),
                 castleRoom: 1, livingOut: "house", ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["treeBack" + n, "none"])),
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShape" + n, "square"])),   // (ticket 252: each tree house's trapdoor's opening)
-                ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShut" + n, false])),   // (ticket 334: each tree house's trap door, open till its lever is pulled)
+                ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShut" + n, false])),
+                hatchShapeTop: "square", hatchShutTop: false, treetopBack: "none",   // (ticket 516: the round room at the top of the tree: its trapdoor's opening, shut or open, its way toward us)   // (ticket 334: each tree house's trap door, open till its lever is pulled)
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
                 lfoFast: "D", lfoSlow: "E", lfoWings: "F",

@@ -69,7 +69,7 @@ const clockHere = b => ((b.kind === "waterfall" || b.kind === "cave") ? b.fallTi
 const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["bubbleroom", "🫧 the bubble room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"], ["farmyard", "🚜 farm yard"],   // (farmyard: ticket 502, for M)
-  ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"],
+  ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"], ["treetop", "⭕ the round room at the top of the tree"],   // (treetop: ticket 516)
   ["livingroom", "🛋️ living room"], ["witchroom", "🧙 inside the witch's hut"],
   ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
@@ -88,7 +88,7 @@ const PLACE_GROUPS = [
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
   ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom"]],
-  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
+  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "treetop", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
   ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion", "hutcenter"]],
@@ -549,6 +549,10 @@ const TABS = [
       ["choice", "treeBack" + n, `🏡 ${n}: ⬇️ the way toward us leads to`, BEHIND_PLACES],
       ["choice", "hatchShape" + n, `🏡 ${n}: 🕳️ its trapdoor's opening`, OPENING_SHAPES],   // (ticket 252)
       ["toggle", "hatchShut" + n, `🏡 ${n}: 🎚️ its trap door shut (its lever pulled)`]]),   // (ticket 334)
+    // (ticket 516) the round room at the top of the tree: its one trap door (down to the house below), its lever, its way toward us
+    ["choice", "hatchShapeTop", "⭕ 🕳️ its trapdoor's opening", OPENING_SHAPES],
+    ["toggle", "hatchShutTop", "⭕ 🎚️ its trap door shut (its lever pulled)"],
+    ["choice", "treetopBack", "⭕ ⬇️ the way toward us leads to", BEHIND_PLACES],
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
     ["of", "background", ["range", "toys", "🧸 things in the room", 0, 24, 4, 20], b => b.kind === "treeroom"],   // (ticket 285: its own rule, as the house's)
     // the mountain trail
@@ -1141,7 +1145,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries([...NORTH_OUT, ...NORTH_ROOMS].map(kd => ["background.north_" + kd, b => b.kind === kd])),
   "background.lfoFast": b => !!sceneLfoThings(b).fast, "background.lfoSlow": b => !!sceneLfoThings(b).slow, "background.lfoWings": b => !!sceneLfoThings(b).wings,
   "background.figPos": b => b.kind !== "none",
-  ...Object.fromEntries(["leverShine", "leverShineColor", "leverFlicker"].map(k => ["background." + k, b => (b.kind === "castleroom" && roomHereNowOf(b)[1] === "trap") || (b.things || []).some(t => t.kind === "lever")])),   // (ticket 317)
+  ...Object.fromEntries(["leverShine", "leverShineColor", "leverFlicker"].map(k => ["background." + k, b => b.kind === "treetop" || (b.kind === "castleroom" && roomHereNowOf(b)[1] === "trap") || (b.things || []).some(t => t.kind === "lever")])),   // (ticket 317)
   "background.objectsOff": b => b.kind !== "none",
   "background.bubbles": b => b.kind === "bubblespace",   // (ticket 220)
   "background.bubbleBurstCount": b => (b.bubbleBurst ?? 40) > 0,   // (ticket 329)
@@ -1262,7 +1266,11 @@ const SHOWN_WHEN = {
     return (i === n && houseLinks(b, n - 1).some(L => L.way === "down")) || houseLinks(b, i - 1).some(L => L.way === "up" && L.to === n - 1); }])),
   ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => [["background.room" + n, b => b.kind === "treeroom" && (b.inside ?? 1) === n],
     ...[1, 2].map(i => [`background.r${n}pic${i}`, b => b.kind === "treeroom" && (b.inside ?? 1) === n && b.pictures >= i])])),
-  "background.windowSize": b => b.kind === "treeroom",
+  "background.windowSize": b => b.kind === "treeroom" || b.kind === "treetop",
+  // (ticket 516: the round room's trap door, its opening also the ceiling's in the house below, whose ladder goes up to it)
+  "background.hatchShapeTop": b => b.kind === "treetop" || (b.kind === "treeroom" && Math.max(1, Math.min(6, b.houses ?? 4, Math.round(b.inside ?? 1))) === topHouse(b)),
+  "background.hatchShutTop": b => b.kind === "treetop",
+  "background.treetopBack": b => b.kind === "treetop",
   "background.couchSize": b => b.kind === "livingroom" || b.kind === "hutroom",
   "background.view": b => b.kind === "livingroom" || b.kind === "hutroom",
   "background.viewDetail": b => b.kind === "livingroom" || b.kind === "hutroom",

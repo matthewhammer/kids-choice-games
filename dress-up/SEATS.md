@@ -75,6 +75,7 @@ Each kind as it stands in the places: all 38 at their default settings, and ever
 | table, tea table, worktable, picnic table | huts, underwater | **for Matthew** | see below |
 | woodpile | grass hut | **for Matthew** | see below |
 | chest of gold | the king's room | **for Matthew** | see below |
+| tree trunk, hatch lever, lantern, squirrel | the round room at the top of the tree | no | (ticket 516) a living trunk with no top, a lever on its post, lanterns that hang, a creature; the room has no seats until its furnishing (ticket 517) |
 | everything else listed in [OBJECTS.md](OBJECTS.md) | | no | flat on the floor (rugs, straw, moss, pebbles), on a wall, in the air, light or weather, a way out, or a creature: nothing to sit on |
 
 ## For Matthew

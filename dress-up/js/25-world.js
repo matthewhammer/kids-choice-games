@@ -22,7 +22,7 @@
 const WORLD_DIRS = { N: [0, -1], NE: [1, -1], E: [1, 0], SE: [1, 1], S: [0, 1], SW: [-1, 1], W: [-1, 0], NW: [-1, -1] };
 const WORLD_OPP = { N: "S", NE: "SW", E: "W", SE: "NW", S: "N", SW: "NE", W: "E", NW: "SE" };
 const WORLD_ARROWS = { N: "⬆️", NE: "↗️", E: "➡️", SE: "↘️", S: "⬇️", SW: "↙️", W: "⬅️", NW: "↖️" };
-const INSIDES = { house: ["livingroom"], treehouse: ["treeroom"], witch: ["witchroom"], clearing: ["healerroom"], campsite: ["tent"],
+const INSIDES = { house: ["livingroom"], treehouse: ["treeroom", "treetop"], witch: ["witchroom"], clearing: ["healerroom"], campsite: ["tent"],
                   waterfall: ["cave", "caveroom"], castle: ["castleroom"], lake: ["underwater"], hut: ["hutroom", "hutbed", "hutpotion", "hutcenter"] };
 const INSIDE_KINDS = new Set(Object.values(INSIDES).flat());
 const ELSEWHERE = ["imagination", "emptyroom", "bubblespace", "bubbleroom"];
@@ -322,6 +322,7 @@ function insideWays(B) {
   if (B.kind === "livingroom") return to(B.livingOut);
   if (B.kind === "hutroom") return to(B.hutCenter ? "hutcenter" : "hut");   // (ticket 278: toward us, out of the grass hut; 282: into its center, with one)
   if (B.kind === "hutcenter") return to("hut");
+  if (B.kind === "treetop") return to(B.treetopBack);   // (ticket 516)
   if (B.kind === "treeroom") return to(B["treeBack" + Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1)))]);
   if (B.kind === "castleroom") { const K = castleOf(B); return castleSouthWays(K, Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)))); }
   return [];

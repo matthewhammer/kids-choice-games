@@ -1218,7 +1218,7 @@ const TUNES = {
 };
 // each background's own tune
 const SCENE_TUNE = { hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", hutcenter: "lullaby", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
-                     lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", livingroom: "cushions",
+                     lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", treetop: "treechase", livingroom: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
                      tent: "lullaby", cave: "steppers", caveroom: "steppers", farmyard: "forest", desert: "canyon", woodpath: "forest", pasture: "forest", crossing: "forest", castle: "castlewaltz", castleroom: "ballroom",
                      bubbleroom: "bubbledub" };   // (ticket 290: the bubble room's own, 🫧 bubble super-dub step; Matthew: "oh there no music and no LFO?")
@@ -1604,6 +1604,7 @@ const SCENE_LFO_THINGS = {
   treehouse: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "🪢 the swing, ☁️ the clouds" },
   livingroom: { fast: "🕰️ the clock's pendulum", slow: "💡 the lamp's glow" },
   treeroom: { fast: "🍃 the leaves outside the window", slow: "🌳 the limbs outside the window swaying" },
+  treetop: { fast: "🍃 the leaves outside the windows, 🐿️ the squirrel peeking", slow: "🌳 the limbs outside the windows swaying, 🏮 the lanterns' glow, ☀️ the light through the thatch" },   // (ticket 516)
   witchroom: { fast: "🔥 the cauldron fire", slow: "🐦‍⬛ the crows' cages swinging" },
   healerroom: { fast: "🔥 the fire under the pot", slow: "🌿 the healer swaying" },
   hut: { fast: "🦋 the butterflies bobbing", wings: "🦋 the butterflies' wings", slow: "💨 the smoke, ☁️ the clouds" },

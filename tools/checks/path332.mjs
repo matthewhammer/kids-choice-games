@@ -24,7 +24,7 @@ try {
       if (open.length) lanes[kd] = open; }
     let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const walks = {};
-    for (const kd of ["treeroom", "livingroom", "castleroom", "hutroom", "witchroom", "healerroom", "emptyroom", "forest", "clearing", "house", "castle", "waterfall", "campsite", "tent", "cave", "hut"]) {
+    for (const kd of ["treeroom", "treetop", "livingroom", "castleroom", "hutroom", "witchroom", "healerroom", "emptyroom", "forest", "clearing", "house", "castle", "waterfall", "campsite", "tent", "cave", "hut"]) {
       state.background.kind = kd; changed(); await w(250);
       const F = sceneFrame, g = SCENE.ground, yMin = figYMin(F), L = solidsHere(), spots = [];
       for (let t = 0; t < 400 && spots.length < 24; t++) { const x = F.left + 20 + rnd() * (F.right - F.left - 40), y = yMin + 2 + rnd() * (F.bottom - g - yMin - 4); if (!solidAt(x, g + y)) spots.push([x, y]); }
