@@ -2,7 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.405 (2026-10-21)
+
+Everything in 0.0.404, plus five ways to furnish the round room at the top of the tree.
 
 - **⭕ 🪑 Furniture for the round room at the top of the tree** (its new setting "⭕ 🪑 how it is furnished"; it starts empty, "🚫 none"): five ways to furnish it, each made from things already in the game, set round the curved wall with their backs to it and round the trunk, and always leaving the trap door, its lever and the way round the trunk clear. "🛋️ hut parlour": the grass hut's couch and pillows, a rug round the trunk, the living room's lamp and plant, the wind chime hanging from a branch. "🛏️ sleeping loft": the tree house's bunk beds and toy chest, the hut's bed of logs with a candle on a stump beside it, the dreamcatcher on a branch. "📚 reading ring": shelves of books going round the trunk itself, the beanbag, the lookout's telescope, a lantern on a branch. "🧪 potion nook": the healer's potion shelves with her cat on top, the hut's curved shelves of bottles, herbs drying from the branches, the bubbling cauldron, the healer's worktable. "🍵 tea and kitchen": the healer's tea table and chairs, the tree house kitchen's counter and stove, and a bench of logs curving round the trunk. Sit on the couch, the beds, the beanbag, the chairs and the logs.
 
