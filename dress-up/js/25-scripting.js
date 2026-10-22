@@ -379,7 +379,8 @@ const castleRoomNow = (B, K = castleOf(B)) => Math.max(1, Math.min(K.rooms.lengt
 // Otherwise, and for a way linked to another world, worldTarget, as always
 function scriptWay(W, d) {
   if (!scriptEvent("World", { tag: "Way", value: d })) return hzJs("Way", () => worldTarget(W, W.at, d));
-  const go = scriptEvent.act && scriptEvent.act.got.go, t = go && W.cells[go.key] ? { W, key: go.key, cell: W.cells[go.key], link: false } : null;
+  if (!scriptEvent.act) return worldTarget(W, W.at, d);   // (the rule stopped: the JS's answer, not counted as a mismatch)
+  const go = scriptEvent.act.got.go, t = go && W.cells[go.key] ? { W, key: go.key, cell: W.cells[go.key], link: false } : null;
   const js = worldTarget(W, W.at, d);
   if ((js ? js.key : null) !== (t ? t.key : null) || (go && go.side !== WORLD_OPP[d])) hzCounters().mismatch++;
   return t;
@@ -395,7 +396,8 @@ function scriptGo(door) {
   // (a pit, by its side: the left's middle is left of the room's; else a door, which in a dungeon is its ladder up)
   const ev = pit ? { tag: "FallPit", value: +pit.split(" ")[0] < 0 ? 0 : 1 } : { tag: "WayOut", value: castleRoomNow(B) };
   if (!scriptEvent("Castle", ev)) { hzJs(ev.tag, () => door.dataset.room); return null; }
-  const got = scriptEvent.act && scriptEvent.act.got, r = got && got.go, go = r == null || r < 0 ? false : r === 0 ? { to: "castle", room: undefined } : { to: "castleroom", room: String(r) };
+  if (!scriptEvent.act) return null;   // (the rule stopped: the door's own way, not counted as a mismatch)
+  const got = scriptEvent.act.got, r = got && got.go, go = r == null || r < 0 ? false : r === 0 ? { to: "castle", room: undefined } : { to: "castleroom", room: String(r) };
   if ((go ? go.to : null) !== door.dataset.to || (go ? go.room : undefined) !== door.dataset.room) hzCounters().mismatch++;
   return go;
 }
@@ -414,7 +416,7 @@ function scriptEvent(room, ev) {
   if (!f) return false;
   let cmd;
   const t1 = performance.now();
-  try { cmd = f(A.globals(ev), ev); } catch (e) { scriptSay("the rule stopped: " + (e && e.message || e)); return true; }
+  try { cmd = f(A.globals(ev), ev); } catch (e) { scriptSay("the rule stopped: " + (e && e.message || e)); Z.stopped = (Z.stopped || 0) + 1; return true; }
   const t2 = performance.now();
   const act = scriptEvent.act = A.act(ev);   // (kept, for a caller that reads what the walk gathered: scriptGo)
   scriptRun(cmd, act, 0, () => { if (A.done) A.done(ev, act); });
