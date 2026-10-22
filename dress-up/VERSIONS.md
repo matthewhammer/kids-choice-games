@@ -2,10 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.411 (2026-10-22)
+
+Everything in 0.0.410, plus the ninja's gem cut as a gemstone, its white cuts glimmering, and M's design for the ninja's bands: skin showing between them.
 
 - **💎 The ninja's gem is a cut gemstone** (Matthew: "we also want the default (ruby) to have apparent cut marks, as a gemstone ... Please do the same for the others"): every gem on the "👑 golden head band" now has a flat table in the middle and bevelled facets round it out to the rim, the ones toward the light lit in the gem's own light, the others deep, and sharp, bright white lines along the cuts that stay sharp at any size (Matthew: "we need to add sharp, bright white lines to indicate the 'cuts', perhaps with an animation that makes them 'glimmer'"). The cuts glimmer, a flash running round them clockwise ("✨ the gem's cuts glimmer", on at first), and two more lights can be turned on in 🐯 Costume's 🥷 the ninja box: "⭐ stars twinkle on the gem" and "🌟 a shine sweeps the gem". Each kind in its own colours (ruby, emerald, sapphire, amethyst, topaz, diamond), and each shape cut its own way: round, oval, diamond shape, teardrop, a facet down each half of every point of the star, and the heart's facets following both its lobes. From the side, the gem shows its flat front and two sloping facets (ticket 560).
 - **🥷 The ninja's bands show skin between them** (M's design, as Matthew asked): the bands up the shins, and now bands on the forearms too, from the gloves up to below the elbows, are wound over bare skin in the friend's own skin colour, which shows between them, braided or "🧣 bands wrapped round" alike. "🦵 between the bands" switches to "🌑 full darkness", black cloth under the bands as before. The trousers and sleeves above the bands stay black (ticket 561).
+- **Checks:** the held-things check (hold518) stopped on its own bookkeeping in 0.0.409's speed run, not on the game; fixed.
 
 ## 0.0.410 (2026-10-22)
 

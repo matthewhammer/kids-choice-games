@@ -79,7 +79,7 @@ try {
       window.handSvg = o; }
     // (ticket 529) crawling toward us, each thing drawn in heldSvg's "floor" view, drawn, nothing undefined or costly;
     // swimming (in the sea, in profile and toward us), nothing held is drawn
-    out.views = {}; { const o = heldSvg; window.heldSvg = (id, H, view, x) => { out.views[out.k].push(view); return o(id, H, view, x); };
+    out.views = {}; { const o = heldSvg; window.heldSvg = (id, H, view, x) => { (out.views[out.k] ||= []).push(view); return o(id, H, view, x); };   // (set() draws before out.k names the next case: 0.0.409's run stopped here)
       for (const id of Object.keys(HOLDABLES).filter(x => x !== "rein" && x !== "lasso")) { state = clone(DEFAULTS); state.music.mute = true; state.body.holdL = id; state.body.facing = "front"; set("body", "anim", "crawl"); out.k = "crawl/" + id; out.views[out.k] = []; await w(80);
         const t = figText(); out.views[out.k] = [...new Set(out.views[out.k])].join() + (t.length > 1000 && !/NaN|undefined/.test(t) && !costly(t) ? "" : " bad"); }
       for (const facing of ["left", "front"]) { state = clone(DEFAULTS); state.music.mute = true; state.costume.kind = "knight"; state.background.kind = "sea"; state.body.facing = facing; set("body", "anim", "swim"); out.k = "swim/" + facing; out.views[out.k] = []; await w(150); out.views[out.k] = out.views[out.k].length; }
