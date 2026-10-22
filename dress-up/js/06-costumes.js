@@ -1507,3 +1507,147 @@ function robotOut(R, w, dir, lying) {
   if (legs) return dir ? 150 : 132;
   return (dir ? { column: 60, box: 0.47 * w + 8, egg: 0.6 * w, capsule: 58, chest: 34, plate: 32, panel: 32 } : { column: 13, box: 0.3 * w + 24, egg: 0.35 * w, capsule: 42, chest: 48, plate: 46 })[T] || 0;
 }
+
+// ===================== THE COWGIRL AND THE COWBOY (ticket 522) =====================
+// (M and Matthew: "Cowgirl and Cowboy, 3 variations of style each. 6 styles of hat. Lasso to hold. No guns please.")
+// Built as the gnome and the witch are, in the friend's own clothes: drawNow replaces the shirt and pants (westernOf's
+// `shirt` and `pants`, so every pose draws them) and adds these pieces in its slots, every view each piece's own drawing
+// (dir: 0 facing us or away, -1/1 in profile; away: from behind; left and right mirror by dir). The hat (cowHatSvg) and the
+// lasso (lassoSvg) are in js/08-body.js, beside the witch's hat and the staff. Nothing gun-like: belts carry only buckles,
+// the badge is a toy star, the spurs are star discs.
+// westernOf(WC, kind): the style and the hat read into one object, every "main" its chosen colour
+function westernOf(WC, kind) {
+  const table = kind === "cowgirl" ? COWGIRL_STYLES : COWBOY_STYLES, id = table[WC[kind + "Style"]] ? WC[kind + "Style"] : Object.keys(table)[0];
+  const S = table[id], main = WC[kind + "Color_" + id] ?? S.colors[0], m = v => v === "main" ? main : v;
+  const hatId = WC.cowHat === "none" ? null : COW_HATS[WC.cowHat] ? WC.cowHat : "cattleman", H = hatId ? COW_HATS[hatId] : null;
+  const n = parseInt(main.slice(1), 16), reddish = (n >> 16) > 150 && ((n >> 8) & 255) < 110 && (n & 255) < 110;
+  const res = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, m(v)]));
+  return { id, S, main, kind, shirt: res(S.shirt), pants: res(S.pants), vest: m(S.vest), bootStar: m(S.bootStar),
+           bandana: S.bandana === "auto" ? (reddish ? "#1e3a8a" : "#c0392b") : S.bandana,
+           hatId, H, hatColor: hatId ? WC["cowHatColor_" + hatId] ?? H.colors[0] : null };
+}
+// the boots: SHOES.cowboot in the style's colour, its star and spurs
+const westernFeet = (W, shoes) => ({ style: "cowboot", size: shoes.size, color: W.S.boot, star: W.bootStar || null, spur: !!W.S.spur });
+// fringe: strands along a path, ONE dashed stroke (butt caps: each dash a strand as long as the stroke is wide); a light
+// fringe gets a darker dashed stroke under it, a little wider, so it shows on light scenes
+const fringeSvg = (d, col, len, under) => (under ? `<path d="${d}" fill="none" stroke="${under}" stroke-width="${len + 2}" stroke-dasharray="4.3 1.4" stroke-dashoffset="0.9"/>` : "") +
+                                          `<path d="${d}" fill="none" stroke="${col}" stroke-width="${len}" stroke-dasharray="2.5 3.2"/>`;
+// a path through points pushed out by `by` along each segment's normal toward `side` (a joint by the two's average),
+// stopping `cut` short of the last point
+const offsetPath = (pts, side, by, cut = 0) => {
+  const segN = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [side * dy / l, -side * dx / l]; };
+  const q = pts.slice(); if (cut && q.length > 1) { const a = q[q.length - 2], b = q[q.length - 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, k = Math.max(0, (l - cut) / l); q[q.length - 1] = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]; }
+  const ns = q.slice(1).map((b, i) => segN(q[i], b));
+  return "M" + q.map((p, i) => { const n = i === 0 ? ns[0] : i === q.length - 1 ? ns[ns.length - 1] : [(ns[i - 1][0] + ns[i][0]) / 2, (ns[i - 1][1] + ns[i][1]) / 2];
+    return f1(p[0] + n[0] * by) + " " + f1(p[1] + n[1] * by); }).join(" L");
+};
+// Over the shirt (where the witch's belt goes), in body units (the collar's top at y -20, the shirt's half width w, its hem
+// at L, the collar's half width nw): the rodeo star's chest fringe, the sheriff's vest, badge and string tie, the rider's
+// yoke, buckle and number card, the prairie collar's bow, a bandana, the trail boss's shirt panel, lapels and capelet, the
+// belt and its buckle. Facing us, front details; in profile, a side's own; from behind (also crawling toward us, where
+// the back is turned up), the back's.
+function westernTorso(W, w, L, nw, dir, away) {
+  const S = W.S, P = (x, y) => f1(x) + " " + f1(y), X = d => dir ? dir * d : d, out = [];
+  const fill = (d, f, sw = 2.5, line = darker(f)) => `<path d="${d}" fill="${f}" stroke="${line}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+  const star = (x, y, r, f, line) => `<polygon points="${starPts(x, y, r)}" fill="${f}" stroke="${line}" stroke-width="2" stroke-linejoin="round"/>`;
+  // the rider's white yoke: facing us two points on the chest, from behind one, in profile one toward the front
+  if (S.yoke) out.push(fill(dir ? `M${P(X(-(w + 2)), -6)} L${P(X(w + 2), -6)} L${P(X(w + 1), 14)} L${P(X(w * 0.35), 36)} L${P(X(-w * 0.1), 14)} L${P(X(-(w + 1)), 18)} Z`
+    : away ? `M${P(-(w + 3), -6)} Q${P(0, -14)} ${P(w + 3, -6)} L${P(w + 2, 14)} L${P(0, 40)} L${P(-(w + 2), 14)} Z`
+    : `M${P(-(w + 3), -6)} L${P(-nw, -20)} Q${P(0, -14)} ${P(nw, -20)} L${P(w + 3, -6)} L${P(w + 2, 14)} L${P(w * 0.5, 36)} L${P(w * 0.18, 14)} L${P(-w * 0.18, 14)} L${P(-w * 0.5, 36)} L${P(-(w + 2), 14)} Z`, S.yoke));
+  // the rodeo star's fringe across the chest: a U facing us, shallower behind, a shorter arc toward the front in profile
+  if (S.chestFringe) out.push(fringeSvg(dir ? `M${P(X(-w * 0.2), 10)} Q${P(X(w * 0.45), 36)} ${P(X(w + 2), 14)}` : `M${P(-w, 8)} Q${P(0, away ? 34 : 48)} ${P(w, 8)}`, S.fringe, 14, S.fringeUnder));
+  // the trail boss's cream shirt panel between the duster's open fronts and their edges (one path); in profile its strip at
+  // the chest's front
+  if (S.duster && !away) out.push(dir ? fill(`M${P(X(w - 14), -18)} L${P(X(w), -16)} L${P(X(w + 2), L - 8)} L${P(X(w - 10), L - 8)} Z`, S.panel, 2)
+    : fill(`M${P(-nw, -20)} L${P(nw, -20)} L${P(nw * 0.7, L)} L${P(-nw * 0.7, L)} Z`, S.panel, 2) +
+      `<path d="M${P(-nw * 0.7, L)} L${P(-nw - 2, -20)} M${P(nw * 0.7, L)} L${P(nw + 2, -20)}" fill="none" stroke="${darker(W.main)}" stroke-width="3"/>`);
+  // the sheriff's open vest: two front panels with western points at the hem; one panel at the side; one across the back
+  if (W.vest) out.push(fill(dir ? `M${P(X(-(w + 1)), -4)} L${P(X(w - 8), -10)} L${P(X(w - 8), L - 2)} L${P(X(w * 0.2), L + 6)} L${P(X(-(w + 2)), L - 4)} Z`
+    : away ? `M${P(-(w + 1), -4)} Q${P(0, -12)} ${P(w + 1, -4)} L${P(w + 2, L - 4)} L${P(-(w + 2), L - 4)} Z`
+    : `M${P(-(w + 1), -4)} L${P(-nw - 2, -20)} L${P(-10, L * 0.5)} L${P(-10, L - 2)} L${P(-w * 0.5, L + 7)} L${P(-(w + 2), L - 4)} Z ` +
+      `M${P(w + 1, -4)} L${P(nw + 2, -20)} L${P(10, L * 0.5)} L${P(10, L - 2)} L${P(w * 0.5, L + 7)} L${P(w + 2, L - 4)} Z`, W.vest));
+  // his badge, a toy star, on his left chest (our right facing us); in profile whole on his left side (facing our left),
+  // a gold sliver edge on at the chest's front from his right; none on his back
+  if (S.badge && !away) out.push(!dir ? star(w * 0.48, 26, 13, S.badge, "#8a6420") : dir < 0 ? star(X(w * 0.66), 24, 12, S.badge, "#8a6420")
+    : `<path d="M${P(X(w - 2), 16)} L${P(X(w - 1), 36)}" stroke="${S.badge}" stroke-width="5" stroke-linecap="round"/>`);
+  if (S.belt) {
+    out.push(`<rect x="${f1(-(w + 3))}" y="${f1(L - 16)}" width="${f1(2 * w + 6)}" height="12" fill="${S.belt}" stroke="${darker(S.belt)}" stroke-width="2"/>`);
+    const big = S.bigBuckle ? 1.35 : 1;   // (the rider's trophy buckle, with a star in it)
+    if (!away) out.push(dir ? `<rect x="${f1(dir * (w + 3) - (dir > 0 ? 7 : 0))}" y="${f1(L - 10 - 10 * big)}" width="7" height="${f1(20 * big)}" rx="2" fill="${S.buckle}" stroke="${darker(S.buckle)}" stroke-width="1.5"/>`
+      : `<ellipse cx="0" cy="${f1(L - 10)}" rx="${f1(14 * big)}" ry="${f1(10 * big)}" fill="${S.buckle}" stroke="${darker(S.buckle)}" stroke-width="2.5"/>` +
+        (S.bigBuckle ? `<polygon points="${starPts(0, L - 10, 7)}" fill="#8a6420"/>` : ""));
+  }
+  // the rider's contestant's card on his back, below where long hair ends, its 7 a path (no font)
+  if (S.number && away) out.push(`<rect x="-24" y="68" width="48" height="44" rx="3" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>` +
+                                 `<path d="M-9 78 L10 78 L-1 104" fill="none" stroke="#1f1f22" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`);
+  // the sheriff's string tie and its silver slide (one string at the front in profile)
+  if (S.tie && !away) out.push(dir ? `<path d="M${P(X(nw - 4), -18)} L${P(X(nw + 1), 34)}" stroke="${S.tie}" stroke-width="2.5" stroke-linecap="round"/>`
+    : `<path d="M-3 -16 L-7 38 M3 -16 L7 38" fill="none" stroke="${S.tie}" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="0" cy="-8" rx="6" ry="7" fill="#d1d5db" stroke="#6b7280" stroke-width="1.5"/>`);
+  // the prairie collar's bow: two loops and two tails, one path; half of it at the front in profile; none behind
+  if (S.collarBow && !away) out.push(fill(dir ? `M${P(X(nw - 2), -18)} Q${P(X(nw + 14), -28)} ${P(X(nw + 12), -12)} Z M${P(X(nw - 2), -16)} L${P(X(nw + 4), 2)} L${P(X(nw), 2)} Z`
+    : `M0 -16 Q-16 -30 -18 -14 Q-14 -6 0 -16 Z M0 -16 Q16 -30 18 -14 Q14 -6 0 -16 Z M-2 -14 L-8 6 L-3 4 Z M2 -14 L8 6 L3 4 Z`, S.collarBow, 2, "#c9c2b4"));
+  // a bandana at the neck (never over the face): its point down the chest facing us, at the front of the neck in profile
+  // with its knot's tails at the nape, its knot and tails from behind; white dots on the cow-print's
+  if (S.bandana) { const b = W.bandana, dots = S.bandana === "auto", dot = (x, y) => `M${P(x - 2.6, y)} a2.6 2.6 0 1 0 5.2 0 a2.6 2.6 0 1 0 -5.2 0`;
+    const neck = `M${P(-(nw - 2), -30)} L${P(nw - 2, -30)} L${P(nw + 4, -18)} L${P(-(nw + 4), -18)} Z`;
+    if (dir) out.push(fill(`M${P(X(-(nw - 2)), -30)} L${P(X(nw - 2), -30)} L${P(X(nw + 5), -18)} L${P(X(-(nw + 4)), -18)} Z M${P(X(nw * 0.1), -22)} L${P(X(nw + 12), -18)} L${P(X(nw + 3), 12)} Z ` +
+                           `M${P(X(-nw), -26)} L${P(X(-(nw + 16)), -6)} L${P(X(-(nw + 7)), -4)} Z`, b, 2) + (dots ? `<path d="${dot(X(nw + 4), -8)}" fill="#ffffff"/>` : ""));
+    else if (away) out.push(fill(`${neck} M-3 -24 L-15 0 L-6 2 Z M3 -24 L15 0 L6 2 Z M-6 -24 a6 5 0 1 0 12 0 a6 5 0 1 0 -12 0`, b, 2));
+    else out.push(fill(`${neck} M${P(-(nw + 6), -19)} Q${P(0, -10)} ${P(nw + 6, -19)} L0 26 Z`, b, 2) +
+                  (dots ? `<path d="${dot(-nw * 0.42, -8)} ${dot(nw * 0.42, -8)} ${dot(0, 9)}" fill="#ffffff"/>` : "")); }
+  // the trail boss's capelet over the shoulders, a shade darker than the duster: facing us open at the front (two pieces,
+  // one path), round the back from behind, its own shape at the side in profile
+  if (S.duster) { const c = mix(W.main, "#000000", 0.15), cw = w + 12, cy = 34;
+    out.push(fill(dir ? `M${P(X(-8), -24)} Q${P(X(w), -24)} ${P(X(w + 8), 0)} L${P(X(w + 6), cy)} Q${P(0, cy + 8)} ${P(X(-(w + 10)), cy - 6)} L${P(X(-(w + 6)), 0)} Z`
+      : away ? `M${P(-nw - 2, -22)} Q${P(0, -14)} ${P(nw + 2, -22)} L${P(cw, -2)} L${P(cw, cy)} Q${P(0, cy + 12)} ${P(-cw, cy)} L${P(-cw, -2)} Z`
+      : [-1, 1].map(s => `M${P(s * (nw + 2), -22)} Q${P(s * w, -24)} ${P(s * cw, -2)} L${P(s * cw, cy)} Q${P(s * (cw + nw) / 2, cy + 8)} ${P(s * (nw + 4), cy - 4)} Z`).join(" "), c, 2.5, darker(W.main))); }
+  return out.join("");
+}
+// the rodeo star's sleeve fringe: strands standing out from the sleeve's outer edge (in profile, the arm's back edge), one
+// dashed stroke over its dark under-stroke, following the arm through every pose
+function westernArm(W, sleevePts, armW, side, dir) {
+  if (!W.S.sleeveFringe || !sleevePts) return "";
+  return fringeSvg(offsetPath(sleevePts, dir ? -dir : side, (armW + 9) / 2 + 3), W.S.fringe, 11, W.S.fringeUnder);
+}
+// the cow-print's chaps over a pants leg, J its joints from the hip, along the leg's own joints (so they bend with the
+// knee): an outline stroke and a fill stroke wider than the pants, stopping 14 above the ankle; from behind only a strip
+// down the outside (chaps are open at the back). On a leg folded past 100 degrees (meditating), along the thigh only.
+// The spots: one path of blobs placed along the joints (three; two on the strip behind)
+function westernChap(W, J, half, side, dir, away) {
+  const S = W.S, wide = 2 * half + 8, P2 = (x, y) => f1(x) + " " + f1(y);
+  let cut = 14;
+  if (J.length > 2) { const [A, K, F] = J, ax = A[0] - K[0], ay = A[1] - K[1], fx = F[0] - K[0], fy = F[1] - K[1];
+    const inner = Math.acos(Math.max(-1, Math.min(1, (ax * fx + ay * fy) / ((Math.hypot(ax, ay) * Math.hypot(fx, fy)) || 1)))) * 180 / Math.PI;
+    if (180 - inner > 100) { J = [A, K]; cut = 0; } }
+  { const [A, B2] = J, l = Math.hypot(B2[0] - A[0], B2[1] - A[1]) || 1, k = Math.min(0.4, 12 / l);   // (from 12 below the hip: the jeans show above)
+    J = [[A[0] + (B2[0] - A[0]) * k, A[1] + (B2[1] - A[1]) * k], ...J.slice(1)]; }
+  const d = away ? offsetPath(J, side, half * 0.55, cut) : offsetPath(J, side, 0, cut), sw = away ? half * 0.95 : wide;
+  let s = `<path d="${d}" fill="none" stroke="${S.chapLine}" stroke-width="${f1(sw + 4)}" stroke-linejoin="round"/>` +
+          `<path d="${d}" fill="none" stroke="${S.chaps}" stroke-width="${f1(sw)}" stroke-linejoin="round"/>`;
+  const segs = J.slice(1).map((b, i) => [J[i], b]), len = segs.reduce((a, [p, q]) => a + Math.hypot(q[0] - p[0], q[1] - p[1]), 0) - cut;
+  const at = t => { let r = t * len; for (const [p, q] of segs) { const l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1; if (r <= l) { const k = r / l; return [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, (q[0] - p[0]) / l, (q[1] - p[1]) / l]; } r -= l; }
+    const [, q] = segs[segs.length - 1]; return [q[0], q[1], 0, 1]; };
+  const blob = (t, off, r) => { const [x, y, ux, uy] = at(t), cx = x + side * uy * off, cy = y - side * ux * off, a = r, b = r * 0.7;
+    return `M${P2(cx - a, cy)} Q${P2(cx - a, cy - b)} ${P2(cx - a * 0.2, cy - b * 1.1)} Q${P2(cx + a, cy - b * 0.9)} ${P2(cx + a * 0.9, cy + b * 0.1)} Q${P2(cx + a * 0.8, cy + b)} ${P2(cx, cy + b * 0.9)} Q${P2(cx - a * 0.9, cy + b * 1.1)} ${P2(cx - a, cy)} Z`; };
+  const spots = away ? [[0.3, half * 0.55, half * 0.3], [0.72, half * 0.6, half * 0.26]]
+                     : [[0.16, -half * 0.25, half * 0.48], [0.5, half * 0.35, half * 0.42], [0.82, -half * 0.15, half * 0.4]];
+  return s + `<path d="${spots.map(([t, o, r]) => blob(t, o, r)).join(" ")}" fill="${S.spots}"/>`;
+}
+// the rodeo star's skirt: fringe under its hem, following the skirt drawNow draws (to the hem at sl below the waist)
+function westernHem(W, hw, L, sl) {
+  if (!W.S.hemFringe) return "";
+  return fringeSvg(`M${f1(hw + 30)} ${f1(L + sl + 8)} Q0 ${f1(L + sl + 22)} ${f1(-hw - 30)} ${f1(L + sl + 8)}`, W.S.fringe, 16, W.S.fringeUnder);
+}
+// the trail boss's duster skirts, from the waist to mid-shin (L + 0.72 LL), over the trousers and under the arms (the gnome
+// tunic's slot): facing us two panels flaring apart, the trousers between; in profile one panel, its front edge straight
+// and its back flaring behind (the legs walk inside it, as in a robe); from behind one panel and its centre vent
+function westernCoat(W, w, hw, L, LL, dir, away) {
+  if (!W.S.duster) return "";
+  const c = W.main, cd = darker(c), hem = L + LL * 0.72, P = (x, y) => f1(x) + " " + f1(y);
+  const fill = d => `<path d="${d}" fill="${c}" stroke="${cd}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  if (dir) return fill(`M${P(-dir * (w + 2), L - 16)} L${P(dir * (w + 2), L - 16)} L${P(dir * (w + 4), hem)} L${P(-dir * (w + 34), hem - 6)} Z`);
+  if (away) return fill(`M${P(-(hw + 4), L - 16)} L${P(hw + 4, L - 16)} L${P(hw + 26, hem)} L${P(-(hw + 26), hem)} Z`) +
+                   `<path d="M0 ${f1(L + 20)} L0 ${f1(hem)}" stroke="${cd}" stroke-width="2.5"/>`;
+  return fill(`M${P(-(hw + 4), L - 16)} L${P(-8, L - 16)} L${P(-hw * 0.55, hem)} L${P(-(hw + 26), hem)} Z ` +
+              `M${P(hw + 4, L - 16)} L${P(8, L - 16)} L${P(hw * 0.55, hem)} L${P(hw + 26, hem)} Z`);
+}

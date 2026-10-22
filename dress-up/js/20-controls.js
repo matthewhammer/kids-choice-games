@@ -320,7 +320,7 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"], ["cowgirl", "👢 cowgirl"], ["cowboy", "🤠 cowboy"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -395,6 +395,16 @@ const TABS = [
     ["choice", "robotStyle", "🤖 style", Object.entries(ROBOT_STYLES).map(([id, r]) => [id, r.name])],
     ...Object.entries(ROBOT_STYLES).map(([id, r]) => ["color", "robotColor_" + id, "🤖 its colour", r.colors]),
     ["color", "robotLights", "💡 its lights", ROBOT_LIGHTS],
+    // (ticket 522) the cowgirl and the cowboy: three styles each, each its own colour (shown while it is chosen, as the
+    // robot's), a hat of six (or none) with a colour each, and a lasso in the hand chosen
+    ["choice", "cowgirlStyle", "👢 style", Object.entries(COWGIRL_STYLES).map(([id, t]) => [id, t.name])],
+    ...Object.entries(COWGIRL_STYLES).map(([id, t]) => ["color", "cowgirlColor_" + id, "👢 its colour", t.colors]),
+    ["choice", "cowboyStyle", "🤠 style", Object.entries(COWBOY_STYLES).map(([id, t]) => [id, t.name])],
+    ...Object.entries(COWBOY_STYLES).map(([id, t]) => ["color", "cowboyColor_" + id, "🤠 its colour", t.colors]),
+    ["choice", "cowHat", "🎩 hat", [["none", "🚫 no hat"], ...Object.entries(COW_HATS).map(([id, h]) => [id, h.name])]],
+    ...Object.entries(COW_HATS).map(([id, h]) => ["color", "cowHatColor_" + id, "🎩 hat's colour", h.colors]),
+    ["toggle", "lasso", "➿ lasso"],
+    ["choice", "lassoHand", "➿ held in", [["left", "🫲 left hand"], ["right", "🫱 right hand"]]],
     // (ticket 435) the knight: his arms (two colours, how they are laid out, an emblem), his helmet's plume and visor, sword and shield
     ["color", "knightA", "🛡️ arms' first color", ["#2f6db5", "#8a2b2b", "#1f1f22", "#2e7d32", "#e0b030", "#7b3f8c"]],
     ["color", "knightB", "🛡️ arms' second color", ["#f4f1ea", "#e0b030", "#1f1f22", "#8a2b2b", "#2f6db5"]],
@@ -843,6 +853,13 @@ function set(part, key, value) {
   if (part === "costume" && key === "monkWho" && ["#6b4a2b", "#4f6b3a"].includes(state.costume.monkCloak)) state.costume.monkCloak = value === "dryad" ? "#4f6b3a" : "#6b4a2b";
   // (ticket 431: as on the book's cover, the gnome man's hat red and the woman's purple, while the hat is one of those two)
   if (part === "costume" && key === "gnomeWho" && ["#d2382b", "#7b3f8c"].includes(state.costume.gnomeHat)) state.costume.gnomeHat = value === "woman" ? "#7b3f8c" : "#d2382b";
+  // (ticket 522: choosing a cowgirl's or cowboy's style, or the costume, puts on the style's usual hat, but only while the hat
+  // worn is another style's usual one, so a hat a kid picked is never changed)
+  if (part === "costume" && (key === "cowgirlStyle" || key === "cowboyStyle" || (key === "kind" && (value === "cowgirl" || value === "cowboy")))) {
+    const C = state.costume, k = key === "kind" ? value : key === "cowgirlStyle" ? "cowgirl" : "cowboy", T = k === "cowgirl" ? COWGIRL_STYLES : COWBOY_STYLES;
+    const S = T[C[k + "Style"]] || Object.values(T)[0], usual = [...Object.values(COWGIRL_STYLES), ...Object.values(COWBOY_STYLES)].map(t => t.hat);
+    if (C.kind === k && usual.includes(C.cowHat ?? "cattleman")) C.cowHat = S.hat;
+  }
   // a skirt starts at skirt length and a dress at dress length
   if (part === "pants" && key === "style" && value === "skirt") state.pants.skirtLen = 50;
   if (part === "pants" && key === "style" && value === "dress") state.pants.skirtLen = 95;
@@ -1093,6 +1110,13 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(Object.keys(FAIRY_TUNICS).map(id => ["costume.tunicColor_" + id, c => c.kind === "fairy" && (c.tunicStyle ?? "petal") === id])),
   "costume.robotStyle": c => c.kind === "robot", "costume.robotLights": c => c.kind === "robot",   // (ticket 515)
   ...Object.fromEntries(Object.keys(ROBOT_STYLES).map(id => ["costume.robotColor_" + id, c => c.kind === "robot" && (ROBOT_STYLES[c.robotStyle] ? c.robotStyle : "tin") === id])),
+  // (ticket 522) each style's colour while it is chosen; the hat, its colour (the hat worn's) and the lasso for both
+  "costume.cowgirlStyle": c => c.kind === "cowgirl", "costume.cowboyStyle": c => c.kind === "cowboy",
+  ...Object.fromEntries(Object.keys(COWGIRL_STYLES).map(id => ["costume.cowgirlColor_" + id, c => c.kind === "cowgirl" && (COWGIRL_STYLES[c.cowgirlStyle] ? c.cowgirlStyle : "rodeo") === id])),
+  ...Object.fromEntries(Object.keys(COWBOY_STYLES).map(id => ["costume.cowboyColor_" + id, c => c.kind === "cowboy" && (COWBOY_STYLES[c.cowboyStyle] ? c.cowboyStyle : "sheriff") === id])),
+  "costume.cowHat": c => c.kind === "cowgirl" || c.kind === "cowboy",
+  ...Object.fromEntries(Object.keys(COW_HATS).map(id => ["costume.cowHatColor_" + id, c => (c.kind === "cowgirl" || c.kind === "cowboy") && (c.cowHat === "none" ? null : COW_HATS[c.cowHat] ? c.cowHat : "cattleman") === id])),
+  "costume.lasso": c => c.kind === "cowgirl" || c.kind === "cowboy", "costume.lassoHand": c => (c.kind === "cowgirl" || c.kind === "cowboy") && c.lasso !== false,
   "costume.webColor": c => c.kind === "witch",
   "costume.webStyle": c => c.kind === "witch",
   "costume.trimColor": c => c.kind === "witch",

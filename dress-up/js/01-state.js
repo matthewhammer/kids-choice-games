@@ -438,6 +438,55 @@ const ROBOT_STYLES = {
             see: "front side", limb: "main", hand: "darker", boot: "darker" },
 };
 const ROBOT_LIGHTS = ["auto", "#f6c445", "#39e0ff", "#6ee7b7", "#ff7a00", "#ef4444", "#f472b6", "#ffffff"];
+// (ticket 522, M and Matthew: "Cowgirl and Cowboy, 3 variations of style each. 6 styles of hat. Lasso to hold. No guns
+// please.") The cowgirl's and the cowboy's styles, each with its own colours (the first its usual one, its colour row's) and
+// the traits the drawing reads (js/06-costumes.js, westernOf): `shirt` and `pants` (what replaces the friend's own, "main"
+// the style's chosen colour); `hat`, its usual hat (choosing the style puts it on while the hat worn is another style's
+// usual one, set()); over the shirt `chestFringe` (the rodeo star's U of fringe), `vest`, `badge` (a toy star), `tie`,
+// `yoke`, `number` (the card on the back), `collarBow`, `bandana` ("auto": red with white dots, navy on a reddish shirt),
+// `duster` (the trail boss's long coat: its shirt panel, capelet and skirts) and `belt`, `buckle`, `bigBuckle`; on the arms
+// `sleeveFringe`; on the legs `chaps` (`chapLine`, `spots`); at the hem `hemFringe`, `ruffle` (a petticoat's frill); on the
+// feet `boot` (SHOES.cowboot), `bootStar` and `spur` (a toy star disc, nothing sharp). No guns, holsters or knives.
+const COWGIRL_STYLES = {
+  rodeo:     { name: "🌟 rodeo star", colors: ["#ec4899", "#14b8a6", "#8b5cf6", "#f97316", "#ef4444", "#3b82f6"], hat: "bow",
+               shirt: { style: "long", collar: "v", color: "main", pattern: "plain" }, pants: { style: "skirt", skirtLen: 42, color: "#f4f1ea", pattern: "plain" },
+               fringe: "#f4f1ea", fringeUnder: "#b8b2a6", chestFringe: true, sleeveFringe: true, hemFringe: true,
+               belt: "#f4f1ea", buckle: "#e0b030", boot: "#f4f1ea", bootStar: "main", spur: false },
+  prairie:   { name: "🌻 prairie", colors: ["#dc2626", "#2563eb", "#16a34a", "#9333ea", "#ea580c", "#db2777"], hat: "straw",
+               shirt: { style: "long", collar: "round", color: "main", pattern: "gingham", patternSize: 16, patternColor: "#ffffff" },
+               pants: { style: "dress", skirtLen: 86, color: "main", pattern: "gingham", patternSize: 16, patternColor: "#ffffff" },
+               ruffle: "#ffffff", collarBow: "#ffffff", boot: "#6b4226", spur: false },
+  cowprint:  { name: "🐮 cow-print", colors: ["#facc15", "#ef4444", "#a855f7", "#14b8a6", "#f4f1ea", "#fb923c"], hat: "cattleman",
+               shirt: { style: "long", collar: "v", color: "main", pattern: "plain" }, pants: { style: "long", color: "#3b5b8c", pattern: "plain" },
+               chaps: "#f7f3ea", chapLine: "#c9c2b4", spots: "#1f1a17", bandana: "auto", belt: "#6b4226", buckle: "#d1d5db", boot: "#8b5a2b", spur: true },
+};
+const COWBOY_STYLES = {
+  sheriff:   { name: "⭐ sheriff", colors: ["#6b4226", "#1f1f22", "#c8a27a", "#7a2e2e", "#475569", "#1e3a8a"], hat: "star",
+               shirt: { style: "long", collar: "flat", color: "#f4f1ea", pattern: "plain" }, pants: { style: "long", color: "#3b5b8c", pattern: "plain" },
+               vest: "main", badge: "#e0b030", tie: "#1f1f22", belt: "#1f1f22", buckle: "#d1d5db", boot: "#1f1f22", spur: true },
+  rider:     { name: "🏅 rodeo rider", colors: ["#dc2626", "#2563eb", "#7c3aed", "#0d9488", "#1f1f22", "#f97316"], hat: "tengallon",
+               shirt: { style: "long", collar: "flat", color: "main", pattern: "plain" }, pants: { style: "long", color: "#3b5b8c", pattern: "plain" },
+               yoke: "#f4f1ea", number: true, belt: "#6b4226", buckle: "#e0b030", bigBuckle: true, boot: "#c8a27a", spur: true },
+  trailboss: { name: "🧥 trail boss", colors: ["#b08a5a", "#3f3f46", "#5b3a1e", "#1f2937", "#6b7d3a", "#e8dcc4"], hat: "feather",
+               shirt: { style: "long", collar: "flat", color: "main", pattern: "plain" }, pants: { style: "long", color: "#4b5563", pattern: "plain" },
+               duster: true, panel: "#e9e1cf", bandana: "#7f1d1d", boot: "#1f1f22", spur: true },
+};
+// The hats, one setting for both (cowHat, or "none"), each with its own colours. In the round head's units (x 100 the
+// middle): the brim's line at y COW_HAT_Y, the hair tucked above COW_HAT_LINE (under a flat brim too). `crown` "pinch" (a
+// crease and two front pinches), "tall" (taller and rounder) or "flat"; `top` the crown's top; `bw` the brim's half width;
+// `curl` how far its sides (in profile, its back) turn up; `band` ("darker": the hat's colour toward black; "bow": white,
+// pink on a light hat); and its ornaments: conchos, the straw's weave and ribbon tails, a bow, a star, a feather.
+const COW_HAT_Y = 58, COW_HAT_LINE = 60;
+const COW_HATS = {
+  cattleman: { name: "🐂 cattleman", colors: ["#8b5a2b", "#c8a27a", "#1f1f22", "#f4f1ea", "#6b7280", "#7a2e2e"], crown: "pinch", top: -16, bw: 128, curl: 16, band: "darker" },
+  tengallon: { name: "🪣 ten-gallon", colors: ["#f4f1ea", "#c8a27a", "#8b5a2b", "#1f1f22", "#9ca3af", "#e9d5a8"], crown: "tall", top: -70, bw: 146, curl: 22, band: "#3b2414", conchos: true },
+  straw:     { name: "🌾 straw", colors: ["#e9c96b", "#f3e3a6", "#d4a84a", "#c9b38a", "#f4f1ea", "#b45309"], crown: "pinch", top: 0, bw: 158, curl: 4, band: "#c0392b", weave: true, tails: true },
+  bow:       { name: "🎀 bow", colors: ["#f472b6", "#f4f1ea", "#a78bfa", "#38bdf8", "#facc15", "#ef4444"], crown: "pinch", top: -10, bw: 122, curl: 18, band: "bow", bow: true },
+  star:      { name: "🌠 star hat", colors: ["#1f1f22", "#8b5a2b", "#f4f1ea", "#c8a27a", "#7a2e2e", "#475569"], crown: "pinch", top: -24, bw: 132, curl: 14, band: "#c9ced6", star: "#e0b030" },
+  feather:   { name: "🪶 feather", colors: ["#4b5563", "#1f1f22", "#7c3a2e", "#2f4f6f", "#c8a27a", "#3f6212"], crown: "flat", top: -6, bw: 134, curl: 3, band: "#1f1f22", feather: "#d2382b" },
+};
+// the lasso's rope (the monk's rope colour) over a darker one
+const ROPE = "#c8a46a", ROPE_DK = "#8a6a3a";
 const FAIRY_SHOES = [["slipper", "🩰 curly slippers"],["petal", "🌸 petal shoes"], ["leaf", "🍃 leaf wraps"], ["sparkle", "✨ sparkle boots"], ["bare", "🌼 bare feet, flower anklets"]];
 const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa", "#ffffff"];
 
@@ -607,7 +656,13 @@ const DEFAULTS = {
              ...Object.fromEntries(Object.entries(FAIRY_WINGS).map(([id, w]) => ["wingColor_" + id, w.colors[0]])),
              ...Object.fromEntries(Object.entries(FAIRY_TUNICS).map(([id, t]) => ["tunicColor_" + id, t.colors[0]])),
              // (ticket 515) the robot: its style, its lights, and each style's own colour (the fairy's way)
-             robotStyle: "tin", robotLights: "auto", ...Object.fromEntries(Object.entries(ROBOT_STYLES).map(([id, r]) => ["robotColor_" + id, r.colors[0]])) },
+             robotStyle: "tin", robotLights: "auto", ...Object.fromEntries(Object.entries(ROBOT_STYLES).map(([id, r]) => ["robotColor_" + id, r.colors[0]])),
+             // (ticket 522) the cowgirl and the cowboy: each one's style and each style's colour, the hat (both share it) and its colour
+             // for each hat, the lasso and the hand that holds it
+             cowgirlStyle: "rodeo", cowboyStyle: "sheriff", cowHat: "cattleman", lasso: true, lassoHand: "left",
+             ...Object.fromEntries(Object.entries(COWGIRL_STYLES).map(([id, t]) => ["cowgirlColor_" + id, t.colors[0]])),
+             ...Object.fromEntries(Object.entries(COWBOY_STYLES).map(([id, t]) => ["cowboyColor_" + id, t.colors[0]])),
+             ...Object.fromEntries(Object.entries(COW_HATS).map(([id, t]) => ["cowHatColor_" + id, t.colors[0]])) },
 };
 const clone = o => JSON.parse(JSON.stringify(o));
 // before the nose views: a nose was a shape (or "none"), a direction and

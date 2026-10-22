@@ -358,6 +358,8 @@ const TAB_BOXES = {
                 ["👑 the queen or king", ["queenRobe", "kingRobe", "crownJewel", "mantle", "scepter"]],
                 ["🐉 the dragon", ["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow", "dragonWingLfo", "fireStyle"]],   // (ticket 523: its fire, the friend's)
                 ["🤖 the robot", ["robotStyle", ...Object.keys(ROBOT_STYLES).map(id => "robotColor_" + id), "robotLights"]],   // (ticket 515)
+                ["🤠 the outfit", ["cowgirlStyle", ...Object.keys(COWGIRL_STYLES).map(id => "cowgirlColor_" + id), "cowboyStyle", ...Object.keys(COWBOY_STYLES).map(id => "cowboyColor_" + id)]],   // (ticket 522)
+                ["🎩 the hat", ["cowHat", ...Object.keys(COW_HATS).map(id => "cowHatColor_" + id)]], ["➿ the lasso", ["lasso", "lassoHand"]],
                 ["🛡️ the knight", ["knightA", "knightB", "tabardLayout", "emblem", "plume", "plumeColor", "helmOpen", "sword", "shield"]],
                 ["🍄 the gnome", ["gnomeWho", "gnomeHat", "gnomeTunic", "gnomeTrousers", "gnomeBodice", "gnomeSkirt", "gnomeBoots"]],
                 ["🧙 the witch", ["witchColor", "webColor", "webStyle", "trimColor", "bootColor"]],

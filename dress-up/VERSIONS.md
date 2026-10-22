@@ -2,6 +2,12 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **👢 A cowgirl and 🤠 a cowboy** (in "🐯 Costume"), asked for by M and Matthew, with no guns. The cowgirl has three styles in "👢 style": "🌟 rodeo star" (a bright shirt with white fringe across the chest, down the sleeves and under a short white skirt, a gold buckle, and white boots with a star), "🌻 prairie" (a long gingham dress with a scalloped hem, a white petticoat ruffle peeking out and a little bow at the collar) and "🐮 cow-print" (white chaps with black cow spots over blue jeans, a polka-dot bandana, a silver buckle and boots with star spurs). The cowboy has three in "🤠 style": "⭐ sheriff" (a leather vest with a big toy star badge and a string tie), "🏅 rodeo rider" (a pointed white yoke, a big trophy buckle with a star, and a number 7 card on his back) and "🧥 trail boss" (a long duster coat with a shoulder cape and a red neckerchief). Each style has its own colour row. Both wear cowboy boots, and the star on a boot or a spur is a toy star.
+- **🎩 Six cowboy hats** for either one, in "🎩 hat": "🐂 cattleman", "🪣 ten-gallon" (the tallest), "🌾 straw" (the widest, with red ribbon tails down the back), "🎀 bow" (a big bow at the front), "🌠 star hat" (a gold star on the front) and "🪶 feather" (a flat top with a long red feather), or "🚫 no hat". Each hat has its own colour. Each style has a usual hat it puts on when you pick it, but never over a hat you chose yourself. The hat is drawn from the front, the side and the back, and the hair tucks under it, even big hair seen from behind.
+- **➿ A lasso** to hold, a coil of rope in "➿ held in" "🫲 left hand" (so the right hand is free for a horse's rein) or "🫱 right hand". Running, the cowgirl or cowboy twirls its loop. It is put away while crawling, swimming, climbing or lying down. Switch it off with "➿ lasso".
+
 ## 0.0.400 (2026-10-21)
 
 Everything in 0.0.399, plus every room in 🗺️ World design, draggable onto the map, with its own settings.

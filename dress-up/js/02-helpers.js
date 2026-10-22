@@ -97,6 +97,8 @@ function patternDef(id, color, kind, size = 14, markColor = "auto") {
     // (ticket 431) a gnome woman's skirt: five upright stripes, the first in its color, then the cover's green, yellow,
     // purple and blue
     gnomeskirt: GNOME_STRIPES.slice(1).map((c, i) => `<rect x="${f1(2.8 * (i + 1))}" width="2.8" height="14" fill="${c}"/>`).join(""),
+    // (ticket 522) the prairie dress's gingham: two bands half way to the mark colour, the mark colour where they cross
+    gingham: (h => `<rect x="7" width="7" height="14" fill="${h}"/><rect y="7" width="14" height="7" fill="${h}"/><rect x="7" y="7" width="7" height="7" fill="${lt}"/>`)(mix(color, lt, 0.5)),
   }[kind];
   if (!inner) return "";
   return `<pattern id="${id}" width="14" height="14" patternUnits="userSpaceOnUse" ` +

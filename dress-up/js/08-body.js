@@ -16,6 +16,9 @@ const SHOES = {
   // a witch's: an ankle boot whose pointed toe curls up (with a strap and
   // a buckle: shoeSvg)
   witchboot: [[-12,-30],[12,-30],[13,6],[32,12],[48,4],[54,-2],[50,12],[40,26],[-13,26]],
+  // (ticket 522) a cowboy boot: a tall shaft, a pointed toe and a block heel (the arch cut up between); in shoeSvg a star on
+  // the shaft (sh.star) and a spur, a toy star disc behind the heel (sh.spur: no shank, no points)
+  cowboot: [[-12,-40],[12,-40],[12,4],[30,10],[48,21],[45,26],[8,26],[4,21],[-3,21],[-3,26],[-14,26],[-13,4]],
 };
 // BARE FEET WITH TOES, as the hands have fingers: in the foot's frame
 // (x outward from the ankle, y down, in shoe units), a sole and toes,
@@ -39,7 +42,7 @@ const TOED = {
 };
 // How far each kind of foot reaches out from the ankle, in shoe units,
 // so the picture's frame can hold big feet (and big shoes).
-const FOOT_REACH = { sneaker: 46, boot: 44, clown: 76, bare: 36, paw: 40, hoof: 34, witchboot: 58,
+const FOOT_REACH = { sneaker: 46, boot: 44, clown: 76, bare: 36, paw: 40, hoof: 34, witchboot: 58, cowboot: 52,
   "fairy-slipper": 60, "fairy-petal": 52, "fairy-leaf": 60, "fairy-sparkle": 48, "fairy-bare": 36,
                      toes5: 44, alien4: 52, alien3: 62, talons: 56 };
 // A human foot with n toes (1 to 100), as the hands have n fingers: the
@@ -320,6 +323,10 @@ function shoeSvg(x, y, side, sh, skin) {
     s += `<rect x="${f1(x - 13 * sc)}" y="${f1(y - 16 * sc)}" width="${f1(26 * sc)}" height="${f1(8 * sc)}" fill="${st}"/>` +
          `<rect x="${f1(bx - 5 * sc)}" y="${f1(y - 18 * sc)}" width="${f1(10 * sc)}" height="${f1(12 * sc)}" rx="${f1(1.5 * sc)}" ` +
          `fill="none" stroke="#f2c230" stroke-width="${f1(2.6 * sc)}"/>`;
+  }
+  if (sh.style === "cowboot") {
+    if (sh.star) s += `<polygon points="${starPts(x + side * 0.5 * sc, y - 10 * sc, 7 * sc)}" fill="${sh.star}" stroke="${darker(sh.star)}" stroke-width="1"/>`;
+    if (sh.spur) s += `<polygon points="${starPts(x - side * 19 * sc, y + 15 * sc, 6.5 * sc)}" fill="#d1d5db" stroke="#6b7280" stroke-width="1.2"/>`;
   }
   return s;
 }
@@ -862,6 +869,100 @@ function scepterSvg([hx, hy], jewel) {
   return line(hx - 2, hy + 30, t[0], t[1], 6, "#e0b030", "#8a6420") +
     `<circle cx="${f1(t[0])}" cy="${f1(t[1] - 8)}" r="11" fill="#e0b030" stroke="#8a6420" stroke-width="2"/><circle cx="${f1(t[0])}" cy="${f1(t[1] - 8)}" r="5" fill="${jewel}"/>` +
     `<path d="M${f1(t[0])} ${f1(t[1] - 19)} L${f1(t[0])} ${f1(t[1] - 33)} M${f1(t[0] - 6)} ${f1(t[1] - 27)} L${f1(t[0] + 6)} ${f1(t[1] - 27)}" stroke="#e0b030" stroke-width="3.5" stroke-linecap="round"/>`;
+}
+// (ticket 522) A cowboy hat (COW_HATS[W.hatId] in W.hatColor), in the round head's units (x 100 the middle, the brim's line
+// at COW_HAT_Y), stretched with the head as the witch's is: each view its own drawing. Facing us (and from behind, without
+// what is on its front: the pinches, a bow, a star) a crown with a crease (or tall, or flat), its band, a brim curled up at
+// both sides, rxHair widening it over big hair (at most half again); in profile the crown sloping down to its front, one
+// dent, the band, the brim nearly edge on with its back turned up, a star or a bow seen edge on at the front. The feather
+// is on the friend's right: our left facing us, our right from behind; in profile over the crown facing our right (their
+// right side near), behind it facing our left. The straw's ribbon tails hang down the back, seen from behind.
+function cowHatSvg(W, dir = 0, away = false, rxHair = 0) {
+  const H = W.H, c = W.hatColor, ln = darker(c), y0 = COW_HAT_Y, cw = 66, top = H.top, curl = H.curl;
+  const bw = Math.min(H.bw * 1.5, Math.max(H.bw, rxHair)), P = (x, y) => f1(x) + " " + f1(y);
+  const light = parseInt(c.slice(1, 3), 16) + parseInt(c.slice(3, 5), 16) + parseInt(c.slice(5, 7), 16) > 600;
+  const band = H.band === "darker" ? mix(c, "#000000", 0.45) : H.band === "bow" ? (light ? "#ec4899" : "#ffffff") : H.band;
+  const fill = (d, f, sw = 3) => `<path d="${d}" fill="${f}" stroke="${darker(f)}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+  const thin = (d, col, sw, extra = "") => `<path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round"${extra}/>`;
+  const conchos = pts => `<path d="${pts.map(([x, y]) => `M${P(x - 4, y)} a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0`).join(" ")}" fill="#d1d5db" stroke="#6b7280" stroke-width="1"/>`;
+  const feather = (bx, by, tx, ty, bend) => fill(`M${P(bx, by)} Q${P((bx + tx) / 2 + bend, (by + ty) / 2 - 6)} ${P(tx, ty)} Q${P((bx + tx) / 2 - bend * 0.6, (by + ty) / 2 + 10)} ${P(bx, by)} Z`, H.feather, 2) +
+                                            thin(`M${P(bx, by)} Q${P((bx + tx) / 2 + bend * 0.2, (by + ty) / 2)} ${P(tx, ty)}`, darker(H.feather), 1.5);
+  const weave = ` stroke-dasharray="6 4" opacity="0.7"`, out = [];
+  if (!dir) {
+    const mx = away ? -1 : 1, mid = (y0 + top) / 2;
+    const crown = H.crown === "flat" ? `M${P(100 - cw, y0 + 6)} L${P(100 - cw + 6, top)} Q${P(100, top - 3)} ${P(100 + cw - 6, top)} L${P(100 + cw, y0 + 6)} Z`
+      : (() => { const tall = H.crown === "tall", dip = tall ? 9 : 13, bul = tall ? 9 : 3;
+          return `M${P(100 - cw, y0 + 6)} Q${P(100 - cw - bul, mid)} ${P(100 - cw * 0.8, top + 8)} Q${P(100 - cw * 0.62, top - 3)} ${P(100 - cw * 0.34, top + 1)} ` +
+                 `Q${P(100, top + dip)} ${P(100 + cw * 0.34, top + 1)} Q${P(100 + cw * 0.62, top - 3)} ${P(100 + cw * 0.8, top + 8)} Q${P(100 + cw + bul, mid)} ${P(100 + cw, y0 + 6)} Z`; })();
+    out.push(fill(crown, c));
+    if (!away && H.crown !== "flat")
+      out.push(thin(`M${P(100 - cw * 0.44, top + 12)} Q${P(100 - cw * 0.3, top + 26)} ${P(100 - cw * 0.38, top + 42)} M${P(100 + cw * 0.44, top + 12)} Q${P(100 + cw * 0.3, top + 26)} ${P(100 + cw * 0.38, top + 42)}`, ln, 2.5));
+    out.push(`<path d="M${P(100 - cw - 1, y0 - 13)} Q${P(100, y0 - 7)} ${P(100 + cw + 1, y0 - 13)} L${P(100 + cw + 1, y0 + 2)} Q${P(100, y0 + 8)} ${P(100 - cw - 1, y0 + 2)} Z" fill="${band}"/>`);
+    if (H.conchos) out.push(conchos([[100 - cw * 0.62, y0 - 6], [100, y0 - 2], [100 + cw * 0.62, y0 - 6]]));
+    if (H.star && !away) out.push(`<polygon points="${starPts(100, mid + 4, 15)}" fill="${H.star}" stroke="#8a6420" stroke-width="2" stroke-linejoin="round"/>`);
+    if (H.feather) out.push(feather(100 - mx * (cw - 10), y0 - 8, 100 - mx * (cw + 30), top - 36, -mx * 16));
+    out.push(fill(`M${P(100 - bw, y0 - curl)} Q${P(100 - bw * 0.55, y0 + 3)} ${P(100, y0 + 4)} Q${P(100 + bw * 0.55, y0 + 3)} ${P(100 + bw, y0 - curl)} ` +
+                  `Q${P(100 + bw * 0.62, y0 + 17)} ${P(100, y0 + 18)} Q${P(100 - bw * 0.62, y0 + 17)} ${P(100 - bw, y0 - curl)} Z`, c));
+    if (H.weave) out.push(thin(`M${P(100 - cw * 0.86, top + 30)} Q${P(100, top + 38)} ${P(100 + cw * 0.86, top + 30)} M${P(100 - cw * 0.95, top + 50)} Q${P(100, top + 58)} ${P(100 + cw * 0.95, top + 50)} ` +
+                               `M${P(100 - bw * 0.8, y0 + 2 - curl * 0.5)} Q${P(100, y0 + 19)} ${P(100 + bw * 0.8, y0 + 2 - curl * 0.5)}`, ln, 2, weave));
+    if (H.tails && away) out.push(thin(`M${P(97, y0 + 10)} L${P(88, y0 + 48)} M${P(103, y0 + 10)} L${P(114, y0 + 44)}`, band, 6));
+    if (H.bow && !away) {
+      const by = y0 - 4;   // (a big bow over the band and the brim's front: two loops, two tails, then its knot)
+      out.push(fill(`M100 ${by} Q66 ${by - 34} 58 ${by - 8} Q62 ${by + 16} 100 ${by} Z M100 ${by} Q134 ${by - 34} 142 ${by - 8} Q138 ${by + 16} 100 ${by} Z ` +
+                    `M96 ${by + 4} L80 ${by + 36} L92 ${by + 32} Z M104 ${by + 4} L120 ${by + 36} L108 ${by + 32} Z`, band, 2.5));
+      out.push(`<circle cx="100" cy="${by}" r="9" fill="${band}" stroke="${darker(band)}" stroke-width="2.5"/>`);
+    }
+    return out.join("");
+  }
+  const X = d => 100 + dir * d, mid = (y0 + top) / 2, near = dir > 0;
+  const featherP = H.feather ? feather(X(-cw * 0.1), y0 - 8, X(-cw - 34), top - 30, dir * 18) : "";
+  if (featherP && !near) out.push(featherP);
+  const crown = H.crown === "flat" ? `M${P(X(-cw), y0 + 2)} L${P(X(-cw + 6), top)} L${P(X(cw - 6), top + 2)} L${P(X(cw), y0 + 2)} Z`
+    : (() => { const bul = H.crown === "tall" ? 9 : 3, back = H.crown === "tall" ? -6 : 0;   // (the ten-gallon's tall crown sloping a little back)
+        return `M${P(X(-cw), y0 + 2)} Q${P(X(-cw - bul), mid)} ${P(X(-cw * 0.82 + back), top + 6)} Q${P(X(-cw * 0.35 + back), top - 4)} ${P(X(cw * 0.1 + back), top + 4)} ` +
+               `Q${P(X(cw * 0.45), top + 8)} ${P(X(cw * 0.72), top + 16)} Q${P(X(cw + bul), mid + 6)} ${P(X(cw), y0 + 2)} Z`; })();
+  out.push(fill(crown, c));
+  if (H.crown !== "flat") out.push(thin(`M${P(X(cw * 0.5), top + 20)} Q${P(X(cw * 0.62), top + 32)} ${P(X(cw * 0.56), top + 46)}`, ln, 2.5));
+  out.push(`<path d="M${P(X(-cw - 1), y0 - 13)} L${P(X(cw + 1), y0 - 13)} L${P(X(cw + 1), y0 + 2)} L${P(X(-cw - 1), y0 + 2)} Z" fill="${band}"/>`);
+  if (H.conchos) out.push(conchos([[X(-cw * 0.5), y0 - 5], [X(cw * 0.35), y0 - 5]]));
+  if (featherP && near) out.push(featherP);
+  if (H.star) out.push(thin(`M${P(X(cw * 0.9), mid - 6)} L${P(X(cw * 0.97), mid + 12)}`, H.star, 5));
+  out.push(fill(`M${P(X(-bw), y0 - curl)} Q${P(X(-bw * 0.5), y0 + 8)} ${P(X(0), y0 + 8)} Q${P(X(bw * 0.55), y0 + 8)} ${P(X(bw), y0 - curl * 0.3)} ` +
+                `Q${P(X(bw * 0.55), y0 + 1)} ${P(X(0), y0 + 1)} Q${P(X(-bw * 0.5), y0 + 1)} ${P(X(-bw), y0 - curl)} Z`, c));
+  if (H.weave) out.push(thin(`M${P(X(-cw * 0.9), top + 32)} L${P(X(cw * 0.8), top + 40)} M${P(X(-bw * 0.8), y0 + 3)} Q${P(X(0), y0 + 6)} ${P(X(bw * 0.85), y0 + 3)}`, ln, 2, weave));
+  if (H.bow) {
+    out.push(fill(`M${P(X(cw), y0 - 6)} Q${P(X(cw + 20), y0 - 22)} ${P(X(cw + 16), y0 - 3)} Z M${P(X(cw + 1), y0 - 3)} L${P(X(cw + 8), y0 + 20)} L${P(X(cw + 3), y0 + 18)} Z`, band, 2));
+    out.push(`<circle cx="${f1(X(cw + 1))}" cy="${y0 - 5}" r="5" fill="${band}" stroke="${darker(band)}" stroke-width="2"/>`);
+  }
+  return out.join("");
+}
+// (ticket 522) A lasso held in the fist at H, in body units, the world's down below it: three coils of rope, each a little
+// bigger and further out, and its free end hanging inside them, as ONE path drawn twice (a darker rope under, the rope over
+// it dashed so its twist shows), and the honda, the small eye at the loop's end: 3 shapes, no transform, no animation.
+// view "front" (facing us: round loops hanging toward the hand's own side, out; the honda low and outward), "back" (the
+// same, the honda on the other side) or "side" (edge on, a third as wide, the honda toward the face, out the way they face).
+// spin (running), LFO B's phase: an open loop held out and up beside the hand, turning through four drawings (half
+// widths 44, 30, 12, 30), as the tin robot's key turns.
+function lassoSvg([hx, hy], view, out, spin = null) {
+  const P = (x, y) => f1(x) + " " + f1(y), ring = (cx, cy, rx, ry) => `M${P(cx - rx, cy)} a${f1(rx)} ${f1(ry)} 0 1 0 ${f1(2 * rx)} 0 a${f1(rx)} ${f1(ry)} 0 1 0 ${f1(-2 * rx)} 0`;
+  let d, honda;
+  if (spin != null) {
+    // (the fourth drawing as wide as the second, but turned on round: the rope meets the loop, and the honda is, at its far side)
+    const step = Math.floor((((spin % 1) + 1) % 1) * 4) % 4, rx = [44, 30, 12, 30][step], cx = hx + out * 52, cy = hy - 46, ex = cx - (step === 3 ? -1 : 1) * out * rx;
+    d = `M${P(hx, hy)} Q${P(hx + out * 20, hy - 30)} ${P(ex, cy)} ` + ring(cx, cy, rx, 13);
+    honda = [ex, cy];
+  } else {
+    const side = view === "side", k = side ? 0.32 : 1;
+    const loops = [0, 1, 2].map(i => [hx + out * (side ? 2 + 2 * i : 5 + 5 * i), hy + 25 + 3 * i, (19 + 2.5 * i) * k, 26 + 3 * i]);
+    d = loops.map(([cx, cy, rx, ry]) => `M${P(hx, hy - 2)} Q${P(cx - out * rx * 0.6, cy - ry * 0.9)} ${P(cx - out * rx, cy)} ` +
+          `A${f1(rx)} ${f1(ry)} 0 1 ${out > 0 ? 0 : 1} ${P(cx + out * rx, cy)} Q${P(cx + out * rx * 0.6, cy - ry * 0.9)} ${P(hx, hy - 2)}`).join(" ") +
+        ` M${P(hx, hy + 2)} Q${P(hx - out * 10, hy + 22)} ${P(hx - out * 4, hy + 44)}`;
+    const [cx, cy, rx, ry] = loops[2], s = view === "back" ? -1 : 1;
+    honda = side ? [cx + out * rx * 0.9, cy + ry * 0.5] : [cx + s * out * rx * 0.75, cy + ry * 0.62];
+  }
+  return `<path d="${d}" fill="none" stroke="${ROPE_DK}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>` +
+         `<path d="${d}" fill="none" stroke="${ROPE}" stroke-width="4.2" stroke-linecap="round" stroke-dasharray="7 2.5"/>` +
+         `<ellipse cx="${f1(honda[0])}" cy="${f1(honda[1])}" rx="5.5" ry="4.5" fill="none" stroke="${ROPE_DK}" stroke-width="3.5"/>`;
 }
 // (ticket 438, Matthew: "horse in all poses we have for people that 'make sense' for using in the game as a way to ride, or
 // walk/run with (holding the horse's reins, and walking/running next to it). The horse need not sit, or crawl, or swim, etc.
