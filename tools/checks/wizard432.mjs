@@ -23,7 +23,7 @@ try {
     set("costume", "kind", "wizard");
     const fig = () => document.getElementById("figure").innerHTML, C = state.costume;
     for (const facing of ["front", "left", "right", "back"]) { state.body.facing = facing; changed(); await w(80); const m = fig();
-      out.views[facing] = { stars: m.includes("polygon points") && ((document.getElementById("pat-shirt") || {}).outerHTML || "").includes("★"), beard: m.includes('fill="' + beardShade(state.hair) + '"') && state.hair.beard === "long", orb: m.includes(C.staffOrb), cord: m.includes("#e0b030") }; }
+      out.views[facing] = { stars: m.includes("polygon points") && ((document.getElementById("pat-shirt") || {}).outerHTML || "").includes("★"), beard: m.includes('fill="' + beardShade(state.hair) + '"') && state.hair.beard === "long", orb: (m + ((document.getElementById("figure-far") || {}).innerHTML || "")).includes(C.staffOrb),   /* (ticket 518, 0.0.403: in profile a thing in the far hand is behind the body, in #figure-far) */ cord: m.includes("#e0b030") }; }
     state.body.facing = "front"; set("costume", "staff", false); set("hair", "beard", "none"); changed(); await w(80);
     out.off = { orb: fig().includes(C.staffOrb), beard: fig().includes('fill="' + BEARD_WHITE + '"') };
     set("costume", "staff", true); set("hair", "beard", "long"); changed();

@@ -25,7 +25,7 @@ try {
     const hairMatters = async () => { set("hair", "style", "long"); changed(); await w(30); const a = fig(); set("hair", "style", "none"); changed(); await w(30); const b = fig(); set("hair", "style", "long"); changed(); await w(30); return a !== b; };
     for (const facing of ["front", "left", "right", "back"]) { state.body.facing = facing; changed(); await w(70); const m = fig();
       out.v[facing] = { helm: m.includes('fill="#a3a9b4"'), plate: m.includes('fill="#959ba6"'), slit: m.includes('fill="#1d1f24"'), emblem: m.includes('fill="#e0b030" opacity="0.95"'),
-        armsA: m.includes('fill="' + C.knightA + '"'), shieldBack: m.includes('fill="#7a4f2a" stroke="#3b3b44"'), sword: m.includes("22,-3.4 88,-2.6"), hair: await hairMatters() }; }
+        armsA: m.includes('fill="' + C.knightA + '"'), shieldBack: m.includes('fill="#7a4f2a" stroke="#3b3b44"'), sword: (h => h.includes("22,-3.4 88,-2.6") || h.includes('fill="#c9ced6" stroke="#7d838e"') || h.includes('fill="#b9bec7" stroke="#7d838e"'))(m + ((document.getElementById("figure-far") || {}).innerHTML || "")), hair: await hairMatters() }; }
     state.body.facing = "front"; set("costume", "helmOpen", true); changed(); await w(60); out.open = fig().includes('fill-rule="evenodd"') && fig().includes('fill="#a3a9b4"'); set("costume", "helmOpen", false);
     for (const lay of ["quartered", "halves", "plain"]) { set("costume", "tabardLayout", lay); changed(); await w(40); out["lay_" + lay] = (fig().match(/<rect [^>]*fill="(#2f6db5|#f4f1ea)"/g) || []).length; }
     set("costume", "tabardLayout", "quartered");
@@ -43,7 +43,9 @@ try {
   ok("the great helm worn every way, the hair under it", Object.values(V).every(v => v.helm && !v.hair), V);
   ok("closed facing us: its front plate and slit; in profile its own side view; from behind, no plate or slit", V.front.plate && V.front.slit && V.left.plate && V.right.plate && !V.back.plate && !V.back.slit, V);
   ok("the arms: the emblem on his chest and shield facing us, none from behind; the shield's wooden back from behind", V.front.emblem && !V.back.emblem && V.back.shieldBack && !V.front.shieldBack, V);
-  ok("the trap room's sword in his hand", V.front.sword && V.back.sword, V);
+  // (ticket 518, 0.0.403: each held thing its own drawing: the blade edge on in profile, its other flat from behind; in profile
+  // a thing in the far hand is behind the body, in #figure-far)
+  ok("the trap room's sword in his hand", V.front.sword && V.left.sword && V.right.sword && V.back.sword, V);
   ok("the open helm: his face in its window", r.open, r.open);
   ok("quartered, halves and plain lay the arms out differently", r.lay_quartered > r.lay_halves && r.lay_halves > r.lay_plain, [r.lay_quartered, r.lay_halves, r.lay_plain]);
   ok("every pose drawn", Object.values(r.poses).every(Boolean), r.poses);

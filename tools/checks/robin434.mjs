@@ -23,7 +23,7 @@ try {
     set("costume", "kind", "robin"); const C = state.costume, fig = () => document.getElementById("figure").innerHTML;
     const has = sel => !!document.querySelector("#figure " + sel);
     for (const facing of ["front", "left", "right", "back"]) { state.body.facing = facing; changed(); await w(70); const m = fig();
-      out.v[facing] = { feather: m.includes('fill="' + C.robinFeather + '"'), bow: m.includes('stroke="#e8e0cc"'), fletch: m.includes("l-5 -18 l5 6 l5 -6"), quiverCase: has('rect[rx="8"][fill="#7a4f2a"]'),
+      out.v[facing] = { feather: m.includes('fill="' + C.robinFeather + '"'), bow: (m + ((document.getElementById("figure-far") || {}).innerHTML || "")).includes('stroke="#e8e0cc"'),   /* (ticket 518, 0.0.403: in profile a thing in the far hand is behind the body, in #figure-far) */ fletch: m.includes("l-5 -18 l5 6 l5 -6"), quiverCase: has('rect[rx="8"][fill="#7a4f2a"]'),
         pouch: has('rect[fill="#8a5a2b"]'), quiverSide: (q => q ? Math.sign(q.getBoundingClientRect().left + q.getBoundingClientRect().width / 2 - (b => b.left + b.width / 2)(document.querySelector("#figure").getBoundingClientRect())) : 0)(document.querySelector('#figure rect[rx="8"][fill="#7a4f2a"]')), dagged: (m.match(/ L[\\d.-]+ [\\d.-]+ L[\\d.-]+ [\\d.-]+/g) || []).length > 8 }; }
     state.body.facing = "front"; set("costume", "bow", false); set("costume", "quiver", false); changed(); await w(60);
     out.off = { bow: fig().includes('stroke="#e8e0cc"'), fletch: fig().includes("l-5 -18 l5 6 l5 -6") }; set("costume", "bow", true); set("costume", "quiver", true);

@@ -25,7 +25,7 @@ try {
       out[k + "Beard"] = state.hair.beard;
       for (const facing of ["front", "left", "back"]) { state.body.facing = facing; changed(); await w(70); const m = fig();
         out.v[k + "-" + facing] = { pearls: pearls(), jewels: (m.match(/transform="rotate\\(45/g) || []).length, robe: m.includes('fill="' + robe + '"'), ermine: m.includes("url(#pat-ermine)"),
-          girdle: m.includes('stroke="#e0b030" stroke-width="6"'), scepter: m.includes('r="11" fill="#e0b030"') }; }
+          girdle: m.includes('stroke="#e0b030" stroke-width="6"'), scepter: m.includes('r="11" fill="#e0b030"') || m.includes('r="11" fill="#d4a52a"') }; }   // (ticket 518: from behind, the scepter's own plain back, scepterBackSvg)
       state.body.facing = "front";
       for (const pose of ["stand", "sit", "meditate", "dance", "hug", "lie"]) { set("body", "pose", pose); changed(); await w(50); out.poses[k + pose] = fig().length > 1000; }
       set("body", "pose", "stand"); state.body.sit = false; }
