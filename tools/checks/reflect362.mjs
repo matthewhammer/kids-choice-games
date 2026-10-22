@@ -31,7 +31,7 @@ try {
     const tab = [...document.querySelectorAll("button")].find(b => /Music/.test(b.textContent)); if (tab) tab.click(); await w(500);
     return JSON.stringify({ base: base.slice(0, 4), inKey: [inD(base), inD(k2), inD(mi), inD(ct)], thirds: k2.slice(0, 8).every((x, i) => [3, 4].includes(x[1] - base[i][1])),
       turned: (base[1][1] - base[0][1]) * (mi[1][1] - mi[0][1]) < 0, backSame: bk.map(x => x[1]).sort().join() === base.map(x => x[1]).sort().join(),
-      canon: ca[0][0] - base[0][0], ivs, choosers: document.querySelectorAll('select[title="how this part is reflected"]').length }); })()`));
+      canon: ca[0][0] - base[0][0], ivs, choosers: document.querySelectorAll('[title="how this part is reflected"]').length }); })()`));
   console.log("  " + JSON.stringify(r));
   ok("in key, mirror and counter stay in D major", r.inKey.every(Boolean), r.inKey);
   ok("in key 2 steps up: a third above", r.thirds, r.thirds);

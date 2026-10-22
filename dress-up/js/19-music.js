@@ -1754,12 +1754,14 @@ function channelMove(get, put, changed) {
 function channelReflect(id, p, parts, get, put, changed) {
   const R = () => get().reflect || { mode: "none", n: 0 };
   const set = o => { const ch = put(); ch.reflect = { ...R(), ...o }; changed(); show(); };
-  const mode = el("select", { class: "ms", title: "how this part is reflected", onchange: e => set({ mode: e.target.value, n: e.target.value === "key" ? 2 : e.target.value === "canon" ? 2 : 0, follow: R().follow || channelKey(parts.find(q => q !== p && !PERCUSSION.has(q.inst)) || p) }) },
-    REFLECTS.map(([v, l]) => el("option", { value: v }, l)));
+  const mode = choiceChip("🪞 how this part is reflected", REFLECTS, () => R().mode || "none",
+    v => set({ mode: v, n: v === "key" ? 2 : v === "canon" ? 2 : 0, follow: R().follow || channelKey(parts.find(q => q !== p && !PERCUSSION.has(q.inst)) || p) }),
+    { class: "choice-chip ms", title: "how this part is reflected", "data-pick": "reflect" });
   const num = el("input", { type: "number", class: "ms", min: -7, max: 8, step: 1, title: "steps up or down the scale; beats later for a canon", oninput: e => set({ n: Number(e.target.value) || 0 }) });
-  const follow = el("select", { class: "ms", title: "the part a counter goes against", onchange: e => set({ follow: e.target.value }) },
-    parts.filter(q => q !== p && !PERCUSSION.has(q.inst)).map(q => el("option", { value: channelKey(q) }, partName(q.name))));
-  const show = () => { const r = R(); mode.value = r.mode || "none"; num.value = r.n ?? 0; num.hidden = !["key", "canon"].includes(r.mode); follow.hidden = r.mode !== "counter"; if (r.follow) follow.value = r.follow; };
+  const fopts = parts.filter(q => q !== p && !PERCUSSION.has(q.inst)).map(q => [channelKey(q), partName(q.name)]);
+  const follow = choiceChip("🪞 the part a counter goes against", fopts, () => R().follow || (fopts[0] || [])[0],
+    v => set({ follow: v }), { class: "choice-chip ms", title: "the part a counter goes against", "data-pick": "follow" });
+  const show = () => { const r = R(); mode.sync(); num.value = r.n ?? 0; num.hidden = !["key", "canon"].includes(r.mode); follow.hidden = r.mode !== "counter"; follow.sync(); };
   show();
   return el("div", { class: "knob move" }, [el("span", {}, "🪞 reflect"), el("div", { class: "row" }, [mode, num, follow])]);
 }

@@ -1651,6 +1651,18 @@ function holdChipBox(part, key, label) {
   const now = state[part][key] || "auto", horse = state.body.horse && state.body.horse !== "none";
   return chipBox(label, label, HOLD_CHOICES.filter(([v]) => v !== "rein" || horse).map(([v, lab]) => [v, lab, v === now]), v => set(part, key, v), "person-pick-chip hold-pick-chip", "hold");
 }
+// (ticket 521, c7: ticket 459's chip box for every long choice) one chip naming the choice now, "its label ▾"; a tap opens chipBox
+// with every option ([value, label]), the one now pressed; `pick(v)` on a chip; ✖, Escape or a tap outside leave it as it was.
+// For a choice row of 12 or more options (control()) and for what were the 5 dropdowns (a new person's and a new world's
+// template, 📦 the place to take from, 🪞 reflect's mode and the part a counter follows)
+const choiceLabel = (opts, v) => { const o = opts.find(([x]) => x === v); return o ? o[1] : String(v ?? ""); };
+function choiceChip(title, opts, now, pick, attrs = {}) {
+  const b = el("button", { class: "choice-chip", "aria-haspopup": "dialog", ...attrs,
+    onclick: () => { const L = typeof opts === "function" ? opts() : opts, v = now(); chipBox(title, title, L.map(([x, lab]) => [x, lab, x === v]), x => pick(x), "person-pick-chip choice-pick-chip", "choice"); } });
+  b.sync = () => { const L = typeof opts === "function" ? opts() : opts, t = choiceLabel(L, now()) + " ▾"; if (b.textContent !== t) b.textContent = t; };
+  b.sync();
+  return b;
+}
 function personSetTemplate(id, on) { const P = id === state.person.id ? state.person : state.peopleAway[id]; if (P) { P.template = !!on; changed(); } }
 function personPlace(id, at) { const P = state.peopleAway[id]; if (P) { P.place = at || null; changed(); } }
 // (one away taken out of the game; never the one dressed now)

@@ -345,6 +345,46 @@ try {
     const wide = live.filter(c => c.screen === "1920x1080" && c.mode === "fs" && c.inside.beside > 0);
     ok("full screen at 1920x1080: some tab's short chip rows beside their labels (a tab of one or two boxes, each up to 440 px)",
        wide.length > 0, live.filter(c => c.screen === "1920x1080").map(c => [c.tab, c.inside.beside, c.inside.under]));
+    // (c7, ticket 521: ticket 459's chip box for every long choice. A choice row of 12 options or more (not the castle designer's)
+    // is one chip, "the one now ▾", and no dropdown is left in any tab; the chip box opens over the panel, ✖ and Escape close it
+    // leaving the choice as it was, a chip picks)
+    await load(builds[0].url, [1600, 1000], 1);
+    const c7 = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), out = { long: [], selects: [] };
+      state = clone(DEFAULTS); state.music.mute = true; changed();
+      const walk = (ti, part, rows) => { for (const r of rows || []) { if (!Array.isArray(r)) continue;
+        if (r[0] === "group") walk(ti, part, r[3]); else if (r[0] === "of") walk(ti, r[1], [r[2]]);
+        else if (r[0] === "choice" && Array.isArray(r[3]) && r[3].length >= 12 && !/^castle/.test(r[1]) && r[3].every(o => typeof o[1] === "string" && !o[2])) out.long.push([ti, part, r[1]]); } };
+      TABS.forEach((t, i) => walk(i, t[1], t[2]));
+      out.chips = []; for (let i = 0; i < TABS.length; i++) { tab = i; showTab(); await w(150);
+        if (document.querySelector("select")) out.selects.push(TABS[i][0]);
+        for (const [ti, , key] of out.long.filter(l => l[0] === i)) for (const c of document.querySelectorAll('#panel .ctl[data-key="' + key + '"]'))
+          out.chips.push([key, c.querySelectorAll(":scope > .row > .choice-chip").length, Math.max(0, ...[...c.querySelectorAll(".row")].map(r => r.querySelectorAll("button").length))]); }
+      const box = () => document.querySelector(".person-pick"), esc = () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      tab = TABS.findIndex(t => t[1] === "costume"); showTab(); await w(200);
+      const chip = () => document.querySelector('#panel .ctl[data-key="kind"] .choice-chip'), was = state.costume.kind;
+      chip().click(); await w(100); const b = box();
+      out.open = !!b && !b.closest("#panel"); out.values = b ? [...b.querySelectorAll(".choice-pick-chip")].map(c => c.dataset.choice) : [];
+      out.pressed = b ? [...b.querySelectorAll('.choice-pick-chip[aria-pressed="true"]')].map(c => c.dataset.choice) : [];
+      const last = b && [...b.querySelectorAll("button")].pop(); out.cancelLast = !!last && last.classList.contains("person-pick-cancel");
+      last.click(); await w(100); out.afterCancel = { open: !!box(), kind: state.costume.kind };
+      chip().click(); await w(100); esc(); await w(100); out.afterEsc = { open: !!box(), kind: state.costume.kind };
+      chip().click(); await w(100); box().querySelector('[data-choice="knight"]').click(); await w(300);
+      out.afterPick = { open: !!box(), kind: state.costume.kind, text: chip().textContent };
+      out.was = was; out.opts = (TABS.find(t => t[1] === "costume")[2].find(r => r[0] === "choice" && r[1] === "kind") || [])[3].map(o => o[0]);
+      out.knight = (TABS.find(t => t[1] === "costume")[2].find(r => r[0] === "choice" && r[1] === "kind") || [])[3].find(o => o[0] === "knight")[1];
+      for (let i = 0; i < TABS.length && !out.world; i++) { tab = i; showTab(); await w(150); const p = document.querySelector('[data-pick="world-tpl"]');
+        if (p) { p.click(); await w(100); const cs = [...box().querySelectorAll(".choice-pick-chip")], c = cs[cs.length - 1]; const want = c.textContent; c.click(); await w(100);
+                 out.world = { n: cs.length, closed: !box(), shows: p.isConnected ? p.textContent : document.querySelector('[data-pick="world-tpl"]').textContent, want }; } }
+      return JSON.stringify(out); })()`));
+    console.log(`  c7: ${JSON.stringify({ long: c7.long.length, chips: c7.chips.length, selects: c7.selects, world: c7.world })}`);
+    ok("every choice of 12 options or more (not the castle designer's) one chip, 'the one now ▾', no row of its options",
+       c7.long.length > 0 && c7.chips.length >= c7.long.length && c7.chips.every(([, n, most]) => n === 1 && most === 1), c7.chips.filter(([, n, most]) => n !== 1 || most !== 1));
+    ok("no dropdown in any tab (the 5 selects are chip boxes)", !c7.selects.length, c7.selects);
+    ok("🐯 Costume's chip opens a box over the panel, not in it, a chip per costume, the one now pressed, ✖ cancel last",
+       c7.open && JSON.stringify(c7.values) === JSON.stringify(c7.opts) && JSON.stringify(c7.pressed) === JSON.stringify([c7.was]) && c7.cancelLast, c7);
+    ok("✖ cancel and Escape close the box, the costume as it was", !c7.afterCancel.open && c7.afterCancel.kind === c7.was && !c7.afterEsc.open && c7.afterEsc.kind === c7.was, [c7.afterCancel, c7.afterEsc, c7.was]);
+    ok("a chip picked: the box closes, the costume is it, and the chip names it", !c7.afterPick.open && c7.afterPick.kind === "knight" && c7.afterPick.text === c7.knight + " ▾", [c7.afterPick, c7.knight]);
+    ok("🗺️ a new world's template: a chip box; the template picked is the one the chip names", !!c7.world && c7.world.n >= 1 && c7.world.closed && c7.world.shows === c7.world.want + " ▾", c7.world);
   }
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

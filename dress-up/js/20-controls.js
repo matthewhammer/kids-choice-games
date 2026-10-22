@@ -1746,8 +1746,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         onclick: () => { if (p !== me) personSwitch(p.id); } }, mark(p)));
       const nameBox = el("input", { type: "text", maxlength: String(PERSON_NAME_MAX), size: "14", value: String(me.name || ""), placeholder: personTitle({ ...me, name: "" }), "aria-label": "this person's name",
         onchange: e => { me.name = e.target.value.trim().slice(0, PERSON_NAME_MAX); changed(); } });
-      const pick = tpls.length ? el("select", { "aria-label": "the template for a new person", onchange: e => { newTpl = e.target.value; shown = null; render(); } },
-        tpls.map(t => el("option", { value: t.id, ...(t.id === newTpl ? { selected: "" } : {}) }, "⭐ " + personTitle(t)))) : null;
+      const pick = tpls.length ? choiceChip("⭐ the template for a new person", tpls.map(t => [t.id, "⭐ " + personTitle(t)]), () => newTpl, v => { newTpl = v; shown = null; render(); },
+        { "aria-label": "the template for a new person", "data-pick": "person-tpl" }) : null;
       const others = all.filter(p => p !== me).map(p => el("div", { class: "row person-row", "data-person-row": p.id }, [
         el("span", { class: "person-name" }, mark(p)), el("span", { class: "hint person-where" }, personWhere(p)),
         el("button", { class: "person-here", ...(here ? {} : { disabled: "" }), title: here ? "Put them here, beside the friend" : "Go to a place first: they stand in places", onclick: () => personPlace(p.id, personAside(here, p.id)) }, "📍 here"),
@@ -1920,8 +1920,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       if (thingGroup === "places") {
         // (ticket 284) 📦 every object of a place, chosen from a list of the places; the one the friend is in first
         const P = liftPlaces(), here = liftPlaceHere(state.background), cur = P.some(([k]) => k === liftPlace) ? liftPlace : [here, ...P.map(([k]) => k)].find(k => P.some(([q]) => q === k) && liftedOf(k).objs.size) || "forest";   // (here, if anything stands here; else the first place that has something)
-        const pick = el("select", { "aria-label": "📦 the place to take from", onchange: e => { liftPlace = e.target.value; showGroup(); } },
-          P.map(([k, label]) => el("option", k === cur ? { value: k, selected: "" } : { value: k }, label)));
+        const pick = choiceChip("📦 the place to take from", P, () => cur, v => { liftPlace = v; showGroup(); }, { "aria-label": "📦 the place to take from", "data-pick": "lift-place" });
         const names = [...liftedOf(cur).objs.keys()];
         items.replaceChildren(el("span", { class: "hint" }, "📦 from"), pick,
           ...(names.length ? names.map(name => addButton("lifted", { label: "📦 " + name }, { from: cur, name })) : [el("span", { class: "hint" }, "nothing standing here to take: choose another place")]));
@@ -2044,7 +2043,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         onchange: e => { const v = e.target.value.trim().slice(0, WORLD_NAME_MAX); W.name = v; changed(); } });
       const tpls = worldTemplatesAll();
       if (!tpls.some(t => t.id === newTpl)) newTpl = tpls[0].id;
-      const pick = el("select", { "aria-label": "the template for a new world", onchange: e => { newTpl = e.target.value; } }, tpls.map(t => el("option", { value: t.id, ...(t.id === newTpl ? { selected: "" } : {}) }, t.name)));
+      const pick = choiceChip("the template for a new world", tpls.map(t => [t.id, t.name]), () => newTpl, v => { newTpl = v; pick.sync(); }, { "aria-label": "the template for a new world", "data-pick": "world-tpl" });
       worldsBox.replaceChildren(el("div", { class: "cap" }, "🌍 worlds"),
         el("div", { class: "row world-chips" }, all.map(w => el("button", { class: "world-world", "aria-pressed": String(w === W), "data-world": w.id,
           title: w === W ? "The world the friend is in" : "Go to this world", onclick: () => { if (w !== W) worldSwitch(w.id); } }, "🌍 " + worldTitle(w)))),
@@ -2501,6 +2500,12 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const b = el("button", { class: "hold-chip", onclick: () => holdChipBox(part, key, label) });
     box.append(el("div", { class: "row" }, [b]));
     syncs.push(() => { const v = state[part][key] || "auto", t = (HOLD_CHOICES.find(([x]) => x === v) || HOLD_CHOICES[0])[1]; setText(b, t); });
+  } else if (kind === "choice" && rest[0].length >= 12 && !/^castle/.test(key) && rest[0].every(([, text, ok]) => typeof text === "string" && !ok)) {
+    // (ticket 521, c7) 12 options or more: one chip, "the one now ▾", and the options in a chip box over the panel (ticket 459's);
+    // not the castle designer's rooms and doors, whose options follow the settings
+    const b = choiceChip(typeof label === "string" ? label : key, rest[0], () => state[part][key], v => set(part, key, v), { "data-choice-of": key });
+    box.append(el("div", { class: "row" }, [b]));
+    syncs.push(b.sync);
   } else if (kind === "choice") {
     const row = el("div", { class: "row" });
     // (an option may come with a test of the settings: shown only when it holds, as a room the castle has)
