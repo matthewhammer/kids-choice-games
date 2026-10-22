@@ -436,7 +436,8 @@ function roomLeverPull(side) {
   hzJs("Pull", () => roomLeverFlip(side));   // (ticket 531: timed as the rule is)
 }
 // a red lever flipped, and the pits it works with it (the pull itself, and a script's Flip; ticket 482)
-function roomLeverFlip(side) {
+// (ticket 531: lids false, a 🧩 rule's Flip, whose SetPits swing the lids)
+function roomLeverFlip(side, lids = true) {
   const B = state.background;
   if (B.kind !== "castleroom") return;
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = leverKey(side, n, K.id);
@@ -445,10 +446,21 @@ function roomLeverFlip(side) {
   changed();
   const up = !B[key], sd = side === "L" ? -1 : 1, T = trapState(B, n, K.id), now = T.open;
   turnArm(`[data-lever="${side}"] .lever-arm`, (up ? 1 : -1) * sd * LEVER_TILT, LEVER_TURN * 100 / T.speed.lever);   // (ticket 328: the room's speeds)
+  if (!lids) return;
   for (const j of [0, 1]) if (now[j] !== was[j]) lidSwing(`.pit-lid[data-pit-i="${j}"]`, now[j], PIT_SWING * 100 / T.speed.lid);   // (ticket 307)
   // (Matthew: "opened by the red lever (trap door) while standing on it, and no falling sequence was triggered") a pit opened
   // under the friend: in they fall, as walking onto it does, once its lid has swung most of the way
   if (now.some((o, j) => o && !was[j])) setTimeout(fallIfOverPit, 0.6 * PIT_SWING * 100 / T.speed.lid);
+}
+// (ticket 531) a trap room's pit's lid swung open or shut, as a 🧩 rule's SetPit says, and in they fall if it opened under the
+// friend; false when the drawing (trapState, from the levers) has it otherwise
+function roomPitSwing(j, open) {
+  const B = state.background;
+  if (B.kind !== "castleroom") return false;
+  const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), T = trapState(B, n, K.id);
+  lidSwing(`.pit-lid[data-pit-i="${j}"]`, open, PIT_SWING * 100 / T.speed.lid);
+  if (open) setTimeout(fallIfOverPit, 0.6 * PIT_SWING * 100 / T.speed.lid);
+  return T.open[j] === open;
 }
 // (ticket 334) A tree room's trap door lever pulled: the trap door shuts (its lid swinging across, the ladder gone, the floor
 // walked over) or opens again; a friend standing on it as it opens is moved off the hole

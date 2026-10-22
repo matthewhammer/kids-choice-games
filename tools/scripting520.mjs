@@ -65,6 +65,7 @@ Object.assign(ctx, {
   el(tag, attrs = {}, kids = []) { const e = doc.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); } for (const k of [].concat(kids)) e.append(k); return e; },
   setPressed: (e, on) => e.setAttribute("aria-pressed", String(!!on)), changed() {}, syncs: [],
   castleOf: () => ({ id: "N", rooms: ["king", "hall", "trap"] }), leverDown: () => false, leverWireKey: () => "wire", roomLeverFlip: side => flips.push(side),
+  leverSeedKey: () => "seed", seeded: () => i => 0.25 + i / 2, trapState: () => ({ on: [true, true], covered: [false, false], open: [true, true] }), roomPitSwing: (i, open) => { flips.push("pit" + i + (open ? "+" : "-")); return true; },
 });
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(here, "../dress-up/js/25-scripting.js"), "utf8"), ctx, { filename: "25-scripting.js" });

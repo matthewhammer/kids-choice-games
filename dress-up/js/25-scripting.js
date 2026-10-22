@@ -35,25 +35,57 @@ const SCRIPT_ROOMS = [
   { name: "TrapRoom", label: "🏰 the trap room, over the castle's dungeons", kind: "trap" },
 ];
 
-const SCRIPT_PREAMBLE = `type Cmd = + Done + Flip(String, Cmd) + Say(String, Cmd) in
-type Event = + Pull(String) in
-type Globals = (lever_L = Bool, lever_R = Bool, wiring = String) in`;
+// (ticket 531) the whole game's vocabulary, for every room that has logic: what a rule may say (Cmd), what happened (Event), a placed
+// thing as a rule sees it (Thing), and what it is told (Globals, built by each room's globals in SCRIPT_ACTS: add a field in both).
+// No randomness and no clock in Hazel: the game's draws (draws, from a random wiring's seed) come in through Globals.
+const SCRIPT_PREAMBLE = `type Cmd = + Done + Flip(String, Cmd) + Say(String, Cmd) + SetPit(Int, Bool, Cmd) + DropBoulder(Int, Cmd) + LiftBoulder(Int, Cmd) + SetHatch(Int, Bool, Cmd) + OpenDoor(Int, Bool, Cmd) + DropRock(Int, Bool, Cmd) + Wait(Int, Cmd) in
+type Event = + Pull(String) + PullBoulder(String) + PullHatch(Int) + PullThing(Int) in
+type Thing = (at = Int, uid = String, kind = String, on = Bool, works = [String], does = String, open = Bool, boulder = Bool) in
+type Globals = (lever_L = Bool, lever_R = Bool, wiring = String, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing]) in`;
 
-const SCRIPT_COMMON = `# Sub-routines every room can use, as Common.flip2 and so on. #
-let flip2 = fun (a, b) : (String, String) -> Flip(a, Flip(b, Done))`;
+const SCRIPT_COMMON = `# Sub-routines every room can use, as Common.wire and so on. #
+let flip2 = fun (a, b) : (String, String) -> Flip(a, Flip(b, Done));
+# the i-th of a list of Bools, false past its end #
+let nth = fun (xs, i) : ([Bool], Int) -> case xs | [] => false | x :: rest => if i == 0 then x else nth(rest, i - 1) end;
+# which lever works each pit, the left and the right: normal, reversed, or at random by the game's two draws #
+let wire = fun (mode, draws) : (String, [Float]) -> (if mode == "reversed" then ("R", "L") else if mode == "random" then (case draws | a :: b :: _ => (if a <. 0.5 then "L" else "R", if b <. 0.5 then "L" else "R") | _ => ("L", "R") end) else ("L", "R"));
+# a red lever up? (true is up) #
+let up = fun (l, r, side) : (Bool, Bool, String) -> if side == "L" then l else r;
+# each pit open: open when the lever working it is up #
+let pits_open = fun (l, r, w) : (Bool, Bool, (String, String)) -> let (w0, w1) = w in (up(l, r, w0), up(l, r, w1));
+# a pit that changed from was to now: SetPit, else nothing #
+let pit_moves = fun (i, was, now, k) : (Int, Bool, Bool, Cmd) -> if was == now then k else SetPit(i, now, k);
+let member = fun (s, xs) : (String, [String]) -> case xs | [] => false | x :: rest => x == s || member(s, rest) end`;
 
-const SCRIPT_TRAP = `# A red lever pulled: flip it, and the pits wired to it follow, #
-# as they always have. Try: Pull("L") => Common.flip2("lever_L", "lever_R") #
+const SCRIPT_TRAP = `# A red lever pulled: flip it, and each pit wired to it opens or shuts. #
 let on_event = fun (g, e) : (Globals, Event) ->
+  let w = Common.wire(g.wiring, g.draws) in
+  let (w0, w1) = w in
   case e
-  | Pull(side) => Flip("lever_" ++ side, Done)
+  | Pull(side) =>
+    let (was0, was1) = Common.pits_open(g.lever_L, g.lever_R, w) in
+    let l = if side == "L" then !g.lever_L else g.lever_L in
+    let r = if side == "R" then !g.lever_R else g.lever_R in
+    let (now0, now1) = Common.pits_open(l, r, w) in
+    Flip("lever_" ++ side, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, Done)))
+  | _ => Done
   end`;
+
+// (ticket 531, Matthew: "let's do an experimental PR to dress-up where we try to export as much game logic as possible into the Hazel
+// panels for each square (or common logic) --- and do the speedruns again to compare against plain JS") one build, both ways:
+// ?logic=hazel runs every room's logic through the shipped texts (🧩 on, whatever the friend saved), ?logic=js the plain JS (🧩 off,
+// whatever was saved); no switch, the panel's (state.scripts.on). Read once, at start.
+// each room kind's shipped text: rules that do just what the plain JS does, so 🧩 on plays the same game (the fair comparison)
+const SCRIPT_TEXTS = { trap: SCRIPT_TRAP };
+const SCRIPT_LOGIC = (() => { try { const v = new URLSearchParams(location.search || "").get("logic"); return v === "hazel" || v === "js" ? v : ""; } catch (e) { return ""; } })();
+const scriptsOn = () => SCRIPT_LOGIC === "hazel" || (SCRIPT_LOGIC !== "js" && !!(state.scripts && state.scripts.on));
+const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntries(SCRIPT_ROOMS.map(r => [r.name, SCRIPT_TEXTS[r.kind] || ""])) });
 
 function scriptsState() {
   const S = state.scripts || (state.scripts = { on: false, common: null, rooms: {} });
   if (S.common == null) S.common = SCRIPT_COMMON;
   S.rooms = S.rooms || {};
-  for (const r of SCRIPT_ROOMS) if (S.rooms[r.name] == null) S.rooms[r.name] = r.kind === "trap" ? SCRIPT_TRAP : "";
+  for (const r of SCRIPT_ROOMS) if (S.rooms[r.name] == null) S.rooms[r.name] = SCRIPT_TEXTS[r.kind] || "";
   return S;
 }
 
@@ -78,7 +110,7 @@ const scriptBody = t => String(t || "").replace(/;\s*$/, "").trim();
 // come back as an object). A blank room has no on_event: an error, its room's, so its levers work as before.
 const scriptTail = () => "(" + [...SCRIPT_ROOMS.map(r => `${r.name.toLowerCase()} = (${r.name}.on_event : (Globals, Event) -> Cmd)`), `rooms = ${SCRIPT_ROOMS.length}`].join(", ") + ")";
 function scriptSpec() {
-  const S = scriptsState();
+  const S = SCRIPT_LOGIC === "hazel" ? SCRIPT_DEFAULTS() : scriptsState();
   return { preamble: SCRIPT_PREAMBLE,
     modules: [{ name: "Common", text: scriptBody(S.common) }, ...SCRIPT_ROOMS.map(r => ({ name: r.name, text: scriptBody(S.rooms[r.name]) }))],
     tail: scriptTail() };
@@ -86,7 +118,7 @@ function scriptSpec() {
 
 // The program as one text, joined by the page: for a library without runProgram (an older build, or one cached from before)
 function scriptProgram() {
-  const S = scriptsState();
+  const S = SCRIPT_LOGIC === "hazel" ? SCRIPT_DEFAULTS() : scriptsState();
   return [SCRIPT_PREAMBLE,
     `module Common = {\n${scriptBody(S.common) || "let nothing = ()"}\n} in`,
     ...SCRIPT_ROOMS.map(r => `module ${r.name} = {\n${scriptBody(S.rooms[r.name]) || "let on_event = fun (g, e) : (Globals, Event) -> Done"}\n} in`),
@@ -187,8 +219,13 @@ const SCRIPT_ACTS = {
   trap: {
     here: () => { const B = state.background; if (B.kind !== "castleroom") return false; const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))); return K.rooms[n - 1] === "trap"; },
     globals: () => { const B = state.background, K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
-      return { lever_L: !leverDown(B, "L", n, K.id), lever_R: !leverDown(B, "R", n, K.id), wiring: B[leverWireKey(n, K.id)] || "normal" }; },
-    act: () => ({ Flip: name => { if (name === "lever_L") roomLeverFlip("L"); else if (name === "lever_R") roomLeverFlip("R"); else return false; } }),
+      const T = trapState(B, n, K.id), r = seeded(B[leverSeedKey(n, K.id)] ?? 1);
+      return { lever_L: !leverDown(B, "L", n, K.id), lever_R: !leverDown(B, "R", n, K.id), wiring: B[leverWireKey(n, K.id)] || "normal", draws: [r(0), r(1)],
+        pits_on: T.on, covered: T.covered, hatch: false, things: [] }; },
+    // (a Flip moves the lever only; each SetPit swings its pit's lid, the rule having said which: ticket 531. A pit the rule says
+    // otherwise than the drawing, which follows the levers, is counted in __hz.mismatch)
+    act: () => ({ Flip: name => { if (name === "lever_L") roomLeverFlip("L", false); else if (name === "lever_R") roomLeverFlip("R", false); else return false; },
+                  SetPit: (i, open) => { if (i !== 0 && i !== 1) return false; if (!roomPitSwing(i, !!open)) hzCounters().mismatch++; } }),
   },
 };
 
@@ -196,8 +233,7 @@ const SCRIPT_ACTS = {
 // commands are acted on, and true. Otherwise false, and the caller's own JS runs as it always has: 🧩 off, Hazel not loaded yet,
 // not ready (errors, a hole to fill, a bracket left open), no handler for the room, or not in that room
 function scriptEvent(room, ev) {
-  const S = state.scripts;
-  if (!S || !S.on) return false;
+  if (!scriptsOn()) return false;
   const R = SCRIPT_ROOMS.find(r => r.name === room), A = R && SCRIPT_ACTS[R.kind];
   if (!A || !A.here(ev)) return false;
   if (!window.Hazel) { hazelLoad().catch(() => {}); return false; }
@@ -414,3 +450,6 @@ function scriptingPanel(box) {
   // (after showTab: its layout moves the rows, and a frame moved in the page loads again; after the tab's first paint, too)
   requestAnimationFrame(() => setTimeout(() => scriptFrameMount(tiles), 0));
 }
+
+// (ticket 531) under ?logic=hazel, Hazel loaded from the start, so the first event is not the one that waits for it
+if (SCRIPT_LOGIC === "hazel") hazelLoad().catch(() => {});
