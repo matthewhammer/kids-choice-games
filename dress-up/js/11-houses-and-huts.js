@@ -1065,9 +1065,10 @@ function treetopScene(c) {
     const rx = L.w1 * 0.75 + 4 * k, ry = rx * 0.62;
     return `<ellipse cx="${f1(ex)}" cy="${f1(ey)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#2a1a0e"/>` +
       `<path d="M${f1(ex - rx * 0.85)} ${f1(ey - ry * 0.7)} Q${f1(ex)} ${f1(ey - ry * 1.25)} ${f1(ex + rx * 0.85)} ${f1(ey - ry * 0.7)}" fill="none" stroke="#fff3c4" stroke-width="${f1(2.5 * k)}" opacity="0.9"/>`; }).join("")));
-  // the daylight: three pale shafts from the two holes and the brightest notch down to the floor behind the trunk, each
+  // the daylight: three pale shafts from the two holes and the brightest notch down to the floor, slanting outward, away
+  // from the lanterns (hung nearer the trunk, so no shaft reads as a lantern's beam), each
   // breathing with the slow LFO (as the hut center's from its smoke hole); where each lands, and the windows' light, pale patches
-  const shafts = LM.filter(L => L.kind === "hole" || L.j === 3).map((L, i) => { const [ex, ey] = L.p2, fx = ex * 0.62 + L.sd * 20 * k, fy = G.Yf + (24 + 16 * i) * k; return { ex, ey, fx, fy, i }; });
+  const shafts = LM.filter(L => L.kind === "hole" || L.j === 3).map((L, i) => { const [ex, ey] = L.p2, fx = ex * 1.3 + L.sd * 20 * k, fy = G.Yf + (24 + 16 * i) * k; return { ex, ey, fx, fy, i }; });
   s += SEP + wallObj("daylight", part("top-light", [c.F, slow], () => shafts.map(({ ex, ey, fx, fy, i }) =>
     `<polygon points="${P(ex - 9 * k, ey)} ${P(ex + 9 * k, ey)} ${P(fx + 36 * k, fy)} ${P(fx - 36 * k, fy)}" fill="#fff6c8" opacity="0.12" pointer-events="none">` +
     sceneLfo(o, "slow", 0.17 + 0.29 * i, "opacity", (v, amp) => (0.12 * (1 + (0.2 + 0.5 * amp) * v)).toFixed(3)) + `</polygon>`).join("")));

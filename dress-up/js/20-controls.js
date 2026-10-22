@@ -552,7 +552,7 @@ const TABS = [
     // (ticket 516) the round room at the top of the tree: its one trap door (down to the house below), its lever, its way toward us
     ["choice", "hatchShapeTop", "⭕ 🕳️ its trapdoor's opening", OPENING_SHAPES],
     ["toggle", "hatchShutTop", "⭕ 🎚️ its trap door shut (its lever pulled)"],
-    ["choice", "treetopBack", "⭕ ⬇️ the way toward us leads to", BEHIND_PLACES],
+    ["choice", "treetopBack", "⭕ ⬇️ the way toward us leads to", BEHIND_PLACES.filter(([k]) => k !== "treetop")],
     ["range", "windowSize", "🪟 window size", 40, 220, 70, 160],
     ["of", "background", ["range", "toys", "🧸 things in the room", 0, 24, 4, 20], b => b.kind === "treeroom"],   // (ticket 285: its own rule, as the house's)
     // the mountain trail

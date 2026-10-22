@@ -193,7 +193,7 @@ function treeInner(c, houses = true) {
     treeLimbs(n) + treeRoots() + `<g data-trunk="" data-base="5">` + treeBraid() + `</g>`);
   // (ticket 516) the round room at the top of the tree, wrapped round the trunk where the braid ends and the crown's limbs
   // begin, the limbs coming out through its thatch; the ladder up to it from the house below (topHouse)
-  s += SEP + part("tree-top", [n, hz, topHouse(o)], () => treeTopSvg(o, R));
+  s += SEP + part("tree-top", [n, hz, topHouse(o), o.windowSize ?? 100], () => treeTopSvg(o, R));
   s += SEP + part("tree-crown-pads", [leaves], () => {
     const tips = crownLimbs(R).flatMap(L => [[L.tx, L.ty], [L.fx, L.fy]]);
     tips.push([0, -1300], [-120, -1360], [120, -1350], [0, -1420]);
@@ -302,7 +302,8 @@ function topLadderSvg(o) {
 const topRoofHalf = y => { const v = (TOP.eaves - 4 - y) / (TOP.eaves - 4 - TOP.collar); return v < 0 ? TOP.RE : v > 1 ? 0 : TOP.RE * Math.sqrt(1 - v * v); };
 const TOP_STRAW = ["#c9c25a", "#a8a23e", "#d8d070"];
 // its shell, seen from below: the wall a cylinder of upright planks (its foot and top bowing up toward us, its sides shaded;
-// no windows on our side: inside, they are on the far wall), the platform's underside over the wall's foot with beams out
+// the two round windows the room has inside, at the same angles round the wall and the same 🪟 size, lit warm from within,
+// so a spin out through one finds it here), the platform's underside over the wall's foot with beams out
 // from the trunk and the ladder's opening, the dome of thatch over it all in rings of fringe, a straw collar round the trunk
 function topShellSvg(o) {
   const { floor, eaves, collar, R: Ro, RE, plat, collarR } = TOP, arc = (y, b, r = Ro) => [...Array(25)].map((_, i) => { const a = Math.PI * i / 24; return [-r * Math.cos(a), y - b * Math.sin(a)]; });
@@ -311,6 +312,12 @@ function topShellSvg(o) {
   for (let i = 1; i < 20; i++) { const a = Math.PI * i / 20, x = -Ro * Math.cos(a), sh = Math.sin(a); seams += `M${f1(x)} ${f1(floor - 16 * sh)} V${f1(eaves - 12 * sh)} `; }
   t += `<path d="${seams.trim()}" stroke="#7a4f2a" stroke-width="2" opacity="0.8"/>` +
        [-1, 1].map(s => `<polygon points="${f1(s * Ro)},${floor} ${f1(s * Ro * 0.8)},${floor - 10} ${f1(s * Ro * 0.8)},${eaves - 8} ${f1(s * Ro)},${eaves}" fill="#000000" opacity="0.16"/>`).join("");
+  // (the windows: inside at th 1.31π and 1.69π; a little lower here, clear of the eaves' fringe; here at a = th - π round the front's arc)
+  const ws = (o.windowSize ?? 100) / 100;
+  for (const th of [1.31, 1.69]) { const a = (th - 1) * Math.PI, sa = Math.sin(a), wx = -Ro * Math.cos(a), wy = eaves + 0.55 * (floor - eaves) - 14 * sa, ry = 19 * ws, rx = ry * Math.max(0.4, sa) * 0.9;
+    t += `<ellipse cx="${f1(wx)}" cy="${f1(wy)}" rx="${f1(rx + 4)}" ry="${f1(ry + 4)}" fill="#5e3d22" stroke="#3a2414" stroke-width="2"/>` +
+         `<ellipse cx="${f1(wx)}" cy="${f1(wy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="#f0c066"/>` +
+         `<path d="M${f1(wx - rx)} ${f1(wy)} H${f1(wx + rx)} M${f1(wx)} ${f1(wy - ry)} V${f1(wy + ry)}" stroke="#5e3d22" stroke-width="3"/>`; }
   // (the platform after the wall: seen from below, its near rim hides the wall's foot)
   let beams = "";
   for (let i = 0; i < 12; i++) { const a = Math.PI * (i + 0.5) / 12; beams += `M${f1(Math.cos(a) * 60)} ${f1(floor + 8 + Math.sin(a) * 8)} L${f1(Math.cos(a) * plat * 0.97)} ${f1(floor + 8 + Math.sin(a) * 25)} `; }
@@ -328,11 +335,14 @@ function topShellSvg(o) {
     P2.forEach(([x, yy], i) => { const l = 12 + ((i * 5 + jr) % 5) * 2; straw[(i + jr) % 3] += `M${f1(x)} ${f1(yy - 1)} q${(i % 3) - 1} ${f1(l / 2)} ${(i % 3) - 1.5} ${l} `; }); }
   for (let i = 0; i < 48; i++) { const x = -RE + 2 * RE * (i + 0.5) / 48, l = 12 + 9 * ((i * 7) % 5) / 4; straw[i % 3] += `M${f1(x)} ${f1(eY + 18 * Math.sqrt(1 - (x / RE) ** 2))} q${(i % 3) - 1} ${f1(l / 2)} ${(i % 3) - 1.5} ${f1(l)} `; }
   t += straw.map((d, i) => `<path d="${d.trim()}" stroke="${TOP_STRAW[i]}" stroke-width="3" fill="none" stroke-linecap="round"/>`).join("");
+  // (the trunk above the dome as thick as it is inside, its strands going on up into the crown's trunk)
+  t += `<polygon points="${-collarR + 2},${collar} -33,-1190 33,-1190 ${collarR - 2},${collar}" fill="#5e3d22" stroke="#3a2414" stroke-width="2"/>` +
+       `<path d="M-22 ${collar} Q-30 -1120 -16 -1190 M0 ${collar} Q8 -1120 -2 -1190 M22 ${collar} Q14 -1120 18 -1190" fill="none" stroke="#3a2414" stroke-width="3" opacity="0.5"/>`;
   t += `<path d="M${-collarR - 8} ${collar + 10} Q0 ${collar + 26} ${collarR + 8} ${collar + 10} L${collarR + 2} ${collar - 8} Q0 ${collar + 4} ${-collarR - 2} ${collar - 8} Z" fill="#a8a23e" stroke="#6e6a22" stroke-width="2"/>` +
        `<path d="M${-collarR - 4} ${collar + 2} Q0 ${collar + 16} ${collarR + 4} ${collar + 2}" fill="none" stroke="#d8c48a" stroke-width="4"/>`;
   return t;
 }
-// where each crown limb rooted inside the dome comes out through the thatch: the limb again from just inside the dome's edge
+// where each crown limb rooted inside the dome comes out through the thatch: the limb again from the dome's edge
 // (de Casteljau's split of its quadratic), over the roof, its fork from where it leaves the roof, and a straw collar
 function topLimbsOutSvg(R) {
   let t = "", straw = ["", "", ""];
@@ -340,13 +350,24 @@ function topLimbsOutSvg(R) {
     const p0 = [L.sd * 20, L.sy], p1 = [L.tx * 0.45, L.sy - 20], p2 = [L.tx, L.ty], q = u => [0, 1].map(a => (1 - u) * (1 - u) * p0[a] + 2 * u * (1 - u) * p1[a] + u * u * p2[a]);
     let u = 1;
     for (let s = 1; s <= 80; s++) { const [x, y] = q(s / 80); if (Math.abs(x) > topRoofHalf(y) - 4) { u = s / 80; break; } }
-    const u0 = Math.max(0, u - 0.05), a = q(u0), m = [0, 1].map(i => p1[i] + (p2[i] - p1[i]) * u0);
-    t += `<path d="M${f1(a[0])} ${f1(a[1])} Q${f1(m[0])} ${f1(m[1])} ${f1(L.tx)} ${f1(L.ty)}" fill="none" stroke="#6e4a2c" stroke-width="${f1(L.w)}" stroke-linecap="round"/>`;
-    // (its fork, from the first of it outside the roof)
+    // (the lowest four rest on the wall's top inside, as rafters do: out here they come out from under the eaves, curving up
+    // and out to their own tips; the rest out through the thatch where their curve meets it)
+    const eave = L.j < 4, u0 = u, a = eave ? [L.sd * (TOP.RE - 12 - 6 * (L.j >> 1)), TOP.eaves - 2 - 22 * (L.j >> 1)] : q(u0),
+      m = eave ? [L.sd * (Math.max(Math.abs(L.tx), TOP.RE) + 30), TOP.eaves - 30] : [0, 1].map(i => p1[i] + (p2[i] - p1[i]) * u0);
+    // (its bark edged dark, as inside, so the bit between the thatch and the leaves reads as a limb, not a knob)
+    const d = `M${f1(a[0])} ${f1(a[1])} Q${f1(m[0])} ${f1(m[1])} ${f1(L.tx)} ${f1(L.ty)}`;
+    t += `<path d="${d}" fill="none" stroke="#3a2414" stroke-width="${f1(L.w + 4)}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#6e4a2c" stroke-width="${f1(L.w)}" stroke-linecap="round"/>` +
+         `<path d="${d}" fill="none" stroke="#8a6040" stroke-width="${f1(L.w * 0.25)}" stroke-linecap="round" transform="translate(0 ${f1(-L.w * 0.2)})"/>`;
+    // (its fork, only when it leaves the limb outside the roof: one starting in the thatch would show as a stub; then the
+    // limb goes on from its tip to the fork's end instead, so a short limb reaches up into the leaves, not ending in a knob)
     const f0 = [L.tx * 0.6, (L.sy + L.ty) / 2 - 10];
-    for (let s = 0; s <= 20; s++) { const v = s / 20, x = f0[0] + (L.fx - f0[0]) * v, y = f0[1] + (L.fy - f0[1]) * v;
+    if (Math.abs(f0[0]) <= topRoofHalf(f0[1]) + 2) t += `<path d="M${f1(L.tx)} ${f1(L.ty)} L${f1(L.fx)} ${f1(L.fy)}" fill="none" stroke="#3a2414" stroke-width="15" stroke-linecap="round"/><path d="M${f1(L.tx)} ${f1(L.ty)} L${f1(L.fx)} ${f1(L.fy)}" fill="none" stroke="#6e4a2c" stroke-width="11" stroke-linecap="round"/>`;
+    else for (let s = 0; s <= 20; s++) { const v = s / 20, x = f0[0] + (L.fx - f0[0]) * v, y = f0[1] + (L.fy - f0[1]) * v;
       if (Math.abs(x) > topRoofHalf(y) + 2) { if (v < 0.9) t += `<path d="M${f1(x)} ${f1(y)} L${f1(L.fx)} ${f1(L.fy)}" fill="none" stroke="#6e4a2c" stroke-width="11" stroke-linecap="round"/>`; break; } }
-    const [x, y] = q(u);
+    // (a collar of thatch over where it comes out, wider than the limb, so its cut end never shows: a tuft of straw wrapped
+    // round it, fringe hanging over it)
+    const [x, y] = eave ? [a[0] + L.sd * 4, a[1]] : q(u), [dx, dy] = eave ? [m[0] - a[0], m[1] - a[1]] : [0, 1].map(i => q(Math.min(1, u + 0.02))[i] - q(u)[i]), ang = Math.atan2(dy, dx) * 180 / Math.PI;
+    t += `<ellipse cx="${f1(x - L.sd * 3)}" cy="${f1(y)}" rx="${f1(L.w * 0.6)}" ry="${f1(L.w * 1.05)}" transform="rotate(${f1(ang)} ${f1(x - L.sd * 3)} ${f1(y)})" fill="#c4b85a" stroke="#6e6a22" stroke-width="2"/>`;
     for (let i = 0; i < 7; i++) { const e = (i - 3) / 3, px = x - L.sd * 2, py = y - L.w * 0.5 + e * L.w * 0.6, l = 8 + 5 * R(L.j * 7 + i, 5172);
       straw[i % 3] += `M${f1(px)} ${f1(py)} q${f1(-L.sd * l * 0.2)} ${f1(l * 0.5)} ${f1(-L.sd * l * 0.1)} ${f1(l)} `; }
   }
