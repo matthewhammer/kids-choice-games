@@ -2,7 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.402 (2026-10-21)
+
+Everything in 0.0.401, plus a round room at the top of the tree, round the trunk, with its limbs holding up the roof.
 
 - **⭕ A round room at the top of the tree** (a new place in "🏠 home", "⭕ the round room at the top of the tree", after "🪜 inside the tree house"): a round room built round the great tree's trunk where its branches begin, with a thatched roof like the 🛖 grass hut's. The trunk rises through the middle of a floor laid in rings like a tree's, and the tree's own branches reach out to the walls and up through the thatch, where daylight falls in. Two round windows look out at the leaves blowing in the wind, two lanterns hang from the branches, and a squirrel peeks out of a knot hole in the trunk. Climb up to it by the ladder in the highest tree house ("🐰 4" with four houses or more), and down again through its trap door; or go out of a window to the tree house. Outside, the room sits in the top of the tree with the branches coming out through its roof: make "🌳 tree size" small to see it, and look for it on the tree in the 🌲 forest clearing. Its own settings: "⭕ 🕳️ its trapdoor's opening", "⭕ 🎚️ its trap door shut (its lever pulled)" (or pull the lever on its post beside the trap door) and "⭕ ⬇️ the way toward us leads to". The map on every tree house room's sign shows the new ladder, and the round room's sign shows the top of the tree.
 
