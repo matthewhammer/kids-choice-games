@@ -993,6 +993,15 @@ body.designer-big .crumbs { display: none; }
 .script-say { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 50; padding: 6px 14px; border-radius: 999px;
   background: #1f2937; color: #fff; font: 14px/1.4 system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .script-say[hidden] { display: none; }
+/* (ticket 520) Hazel's tiles of the whole program: Hazel's own app in a frame under the editors, as tall as it says (at most
+   SCRIPT_FRAME_MAX), its box scrolling past most of a screen; Hazel's own colours inside, so a light box in the dark theme too.
+   While the game is full screen the panel is visibility: hidden, which keeps a frame laid out and, in some browsers, drawing every
+   animation frame: display: none there, which browsers throttle (the 60 frames a second rule; 25-scripting.js) */
+.script-frame-wrap { max-height: min(70vh, 640px); overflow: auto; border-radius: 6px; border: 1px solid var(--line, #c8c8c8); background: #fff; margin: 4px 0; }
+.script-frame-wrap:empty { display: none; }
+.script-frame { display: block; width: 100%; height: 120px; border: 0; }
+body.big .script-frame { display: none; }
+.script-frame-again { margin-left: 4px; }
 /* (ticket 491) in one column, under the picture's stage, which sticks at the top (its height, --stage-h, kept by
    21-size-and-divider.js), not across the picture */
 @media (max-width: 760px) { .crumbs { top: var(--stage-h, 0px); } }
