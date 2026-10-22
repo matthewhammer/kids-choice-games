@@ -53,8 +53,8 @@ try {
     for (const facing of ["front", "back"]) { state.body.facing = facing; changed(); await w(60); const l = fig().querySelector('[data-western="lasso"]');
       out.side[facing] = l ? Math.sign(Math.round(midX(l) - torsoX())) : null; }
     // in profile, facing our right, the left hand is the far one: its lasso drawn before the head (with the far hand); facing our left, after
-    state.body.facing = "right"; changed(); await w(60); { const t = figText(); out.far = t.indexOf('data-western="lasso"') < t.indexOf('data-part="head"'); }
-    state.body.facing = "left"; changed(); await w(60); { const t = figText(); out.near = t.indexOf('data-western="lasso"') > t.indexOf('data-part="head"'); }
+    state.body.facing = "right"; changed(); await w(60); { const t = fig().closest("svg").outerHTML, i = t.indexOf('data-western="lasso"'); out.far = i >= 0 && i < t.indexOf('data-part="head"'); }
+    state.body.facing = "left"; changed(); await w(60); { const t = fig().closest("svg").outerHTML, i = t.indexOf('data-western="lasso"'); out.near = i >= 0 && i > t.indexOf('data-part="head"'); }
     // a cowgirl's own lasso toward us, then moved to the right hand: one lasso only
     state.body.holdL = state.body.holdR = "auto"; state.body.facing = "front"; set("costume", "kind", "cowgirl"); await w(60);
     out.cowOwn = fig().querySelectorAll('[data-western="lasso"]').length;
@@ -64,9 +64,12 @@ try {
     state.body.holdL = state.body.holdR = "none"; changed(); await w(100); out.reinsFree = fig().closest("svg").querySelectorAll(".rein").length;
     set("body", "horse", "none");
     // an old save
-    const old = clone(DEFAULTS); old.costume.lassoHand = "right"; delete old.body.holdR; delete old.body.holdL;
+    const old = clone(DEFAULTS); old.costume.kind = "cowgirl"; old.costume.lassoHand = "right"; delete old.body.holdR; delete old.body.holdL;
     const next = clone(DEFAULTS); for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(old[k] || {}) }; upgradeLassoHand(next);
     out.old = [next.body.holdR, next.body.holdL, next.costume.lassoHand === undefined];
+    // only a cowgirl or cowboy whose lasso showed keeps it; a knight, or a lasso turned off, loads on the costume's own
+    out.oldOthers = [["knight", true], ["cowgirl", false]].map(([kind, lasso]) => { const o = clone(DEFAULTS); o.costume.kind = kind; o.costume.lasso = lasso; o.costume.lassoHand = "right"; delete o.body.holdR;
+      const n = clone(DEFAULTS); for (const k of Object.keys(DEFAULTS)) n[k] = { ...DEFAULTS[k], ...(o[k] || {}) }; upgradeLassoHand(n); return [n.body.holdR, n.costume.lassoHand === undefined].join(); });
     return JSON.stringify(out); })()`));
   const D = Object.entries(r.draw);
   console.log("  " + JSON.stringify({ rows: r.rows, order: r.order, chips: r.chips, picked: r.picked, side: r.side, far: r.far, cow: [r.cowOwn, r.cowMoved], reins: [r.reinsFull, r.reinsFree], old: r.old }));
@@ -80,6 +83,7 @@ try {
   ok("in profile, the far hand's thing is behind the body, the near one's in front", r.far && r.near, [r.far, r.near]);
   ok("a cowgirl's own lasso, moved to the right hand, is one lasso, on our left", r.cowOwn === 1 && r.cowMoved[0] === 1 && r.cowMoved[1] === -1, [r.cowOwn, r.cowMoved]);
   ok("riding, full hands let go of the reins; empty ones hold them", r.reinsFull === 0 && r.reinsFree > 0, [r.reinsFull, r.reinsFree]);
+  ok("an old save's lassoHand on a knight, or a lasso turned off, adds no lasso", r.oldOthers.every(x => x === "auto,true"), r.oldOthers);
   ok("an old save's lasso in the right hand loads as 🫱 holding the lasso", r.old.join() === "lasso,auto,true", r.old);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

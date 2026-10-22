@@ -857,7 +857,7 @@ function upgradeHorse(st, saved) {
 // holding it, chosen in 🧍 Body (holdR "lasso"); "left" was what "auto" does. For the friend and every person away.
 function upgradeLassoHand(st) {
   const one = L => { const c = L && L.costume; if (!c || c.lassoHand === undefined) return;
-    if (c.lassoHand === "right") { const b = L.body = L.body || {}; if ((b.holdR || "auto") === "auto") b.holdR = "lasso"; }
+    if (c.lassoHand === "right" && (c.kind === "cowgirl" || c.kind === "cowboy") && c.lasso !== false) { const b = L.body = L.body || {}; if ((b.holdR || "auto") === "auto") b.holdR = "lasso"; }
     delete c.lassoHand; };
   one(st);
   for (const P of Object.values((st && st.peopleAway) || {})) one(P && P.look);
