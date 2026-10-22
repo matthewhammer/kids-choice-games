@@ -1709,10 +1709,11 @@ function westernChap(W, J, half, side, dir, away) {
                      : [[0.16, -half * 0.25, half * 0.48], [0.5, half * 0.35, half * 0.42], [0.82, -half * 0.15, half * 0.4]];
   return s + `<path d="${spots.map(([t, o, r]) => blob(t, o, r)).join(" ")}" fill="${S.spots}"/>`;
 }
-// the rodeo star's skirt: fringe under its hem, following the skirt drawNow draws (to the hem at sl below the waist)
-function westernHem(W, hw, L, sl) {
+// the rodeo star's skirt: fringe under its hem, following the skirt drawNow draws (to the hem at sl below the waist; ticket
+// 546: from xR to xL, where the skirt is drawn wider over posed legs)
+function westernHem(W, hw, L, sl, xL = -hw - 30, xR = hw + 30) {
   if (!W.S.hemFringe) return "";
-  return fringeSvg(`M${f1(hw + 30)} ${f1(L + sl + 8)} Q0 ${f1(L + sl + 22)} ${f1(-hw - 30)} ${f1(L + sl + 8)}`, W.S.fringe, 16, W.S.fringeUnder);
+  return fringeSvg(`M${f1(xR)} ${f1(L + sl + 8)} Q${f1((xL + xR) / 2)} ${f1(L + sl + 22)} ${f1(xL)} ${f1(L + sl + 8)}`, W.S.fringe, 16, W.S.fringeUnder);
 }
 // the trail boss's duster skirts, from the waist to `hem` (mid-shin standing, L + 0.72 LL; on the lap meditating), over
 // the trousers and under the arms (the gnome tunic's slot): facing us two panels flaring apart, the trousers between; in profile one panel, its front edge straight

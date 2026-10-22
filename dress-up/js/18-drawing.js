@@ -724,29 +724,40 @@ function drawNow() {
     // a skirt flares a little; a dress flares more as it gets longer and
     // has a scalloped hem. The length is a share of the legs' length.
     const sl = (feetY - L) * (P.skirtLen ?? 50) / 100;
+    const robe = P.style === "dress" && (monk || wizard || king);
+    // (ticket 546) its flare at the hem, by its style (below); and, where posed legs reach out past its straight sides above
+    // the hem (riding, crouching, running), the cloth over them (skirtOver): its outline from the hem's left end round to
+    // its right end, the hem between them as wide (xL to xR, its middle xm); null, drawn as it always was
+    const flare = P.style === "skirt" ? hw + 30 : robe ? hw + 6 + sl * 0.05 : hw + 26 + sl * 0.25;
+    const over = legPosed || knee ? skirtOver([1, -1].map(legJoints), B.legW / 2 + 4, hw, L - 10, flare, L + sl) : null;
+    const xL = over ? over.xL : -flare, xR = over ? over.xR : flare, xm = (xL + xR) / 2;
+    const sides = over ? "M" + over.side.map(([x, y]) => f1(x) + " " + f1(y)).join(" L") : `M${-hw} ${L - 10} L${hw} ${L - 10} L${f1(flare)} ${f1(L + sl)}`;
     if (P.style === "skirt")
-      svg += `<path d="M${-hw} ${L - 10} L${hw} ${L - 10} L${f1(hw + 30)} ${f1(L + sl)} Q0 ${f1(L + sl + 14)} ${f1(-hw - 30)} ${f1(L + sl)} Z" ` +
-             `fill="${pf}" stroke="${ps}" stroke-width="2.5" stroke-linejoin="round"/>` + (western ? westernHem(W, hw, L, sl) : "");   // (ticket 522: the rodeo star's fringe)
+      svg += `<path d="${sides} Q${f1(xm)} ${f1(L + sl + 14)} ${f1(xL)} ${f1(L + sl)} Z" ` +
+             `fill="${pf}" stroke="${ps}" stroke-width="2.5" stroke-linejoin="round"/>` + (western ? westernHem(W, hw, L, sl, xL, xR) : "");   // (ticket 522: the rodeo star's fringe)
     // (ticket 450, Matthew: "less bell shaped robe at the ankle/feet area -- it's a robe, not a dress") a robe (the monk's or
     // dryad's, the wizard's, the king's) falls nearly straight from the waist to a straight hem, its weight against the body
-    else if (monk || wizard || king) {
-      const fl = hw + 6 + sl * 0.05, hem = L + sl;
-      svg += `<path d="M${-hw} ${L - 10} L${hw} ${L - 10} L${f1(fl)} ${f1(hem)} Q0 ${f1(hem + 8)} ${f1(-fl)} ${f1(hem)} Z" fill="${pf}" stroke="${ps}" stroke-width="2.5" stroke-linejoin="round"/>` +
-             `<path d="M${f1(-fl + 6)} ${f1(hem - 8)} Q0 ${f1(hem)} ${f1(fl - 6)} ${f1(hem - 8)}" fill="none" stroke="${ps}" stroke-width="2" opacity="0.45"/>` +
-             [-0.45, 0.45].map(k => `<path d="M${f1(k * hw)} ${f1(L + 0.2 * sl)} L${f1(k * fl * 1.02)} ${f1(hem - 6)}" stroke="${ps}" stroke-width="2" opacity="0.3"/>`).join("");
+    else if (robe) {
+      const fl = flare, hem = L + sl;
+      svg += `<path d="${sides} Q${f1(xm)} ${f1(hem + 8)} ${f1(xL)} ${f1(hem)} Z" fill="${pf}" stroke="${ps}" stroke-width="2.5" stroke-linejoin="round"/>` +
+             `<path d="M${f1(xL + 6)} ${f1(hem - 8)} Q${f1(xm)} ${f1(hem)} ${f1(xR - 6)} ${f1(hem - 8)}" fill="none" stroke="${ps}" stroke-width="2" opacity="0.45"/>` +
+             [-0.45, 0.45].map(k => `<path d="M${f1(k * hw)} ${f1(L + 0.2 * sl)} L${f1(over ? xm + k * (xR - xL) * 0.51 : k * fl * 1.02)} ${f1(hem - 6)}" stroke="${ps}" stroke-width="2" opacity="0.3"/>`).join("");
     }
     else {
-      const fl = hw + 26 + sl * 0.25, n = witch ? 9 : fairy ? 7 : 6;
+      const fl = flare, n0 = witch ? 9 : fairy ? 7 : 6;
+      // (ticket 546: a hem made wider over the legs keeps its scallops, points or petals about as wide as they were)
+      const n = over ? Math.max(n0, Math.round(n0 * (xR - xL) / (2 * fl))) : n0;
       // (a toadstool's white frill peeps out under its hem)
       // (ticket 522: and a prairie dress's petticoat, 7 lower, so it reads as a ruffle)
       if ((fairy && fTunic === "toadstool") || (western && W.S.ruffle)) { const fy = L + sl + (fairy ? 0 : 7);
-        let fr = `M${f1(-fl - 6)} ${f1(fy - 6)}`;
-        for (let i = 0; i < 12; i++) { const xa = -fl - 6 + (2 * fl + 12) * i / 12, xb = -fl - 6 + (2 * fl + 12) * (i + 1) / 12; fr += ` Q${f1((xa + xb) / 2)} ${f1(fy + 26)} ${f1(xb)} ${f1(fy - 6)}`; }
+        let fr = `M${f1(xL - 6)} ${f1(fy - 6)}`;
+        for (let i = 0; i < 12; i++) { const xa = over ? xL - 6 + (xR - xL + 12) * i / 12 : -fl - 6 + (2 * fl + 12) * i / 12, xb = over ? xL - 6 + (xR - xL + 12) * (i + 1) / 12 : -fl - 6 + (2 * fl + 12) * (i + 1) / 12;
+          fr += ` Q${f1((xa + xb) / 2)} ${f1(fy + 26)} ${f1(xb)} ${f1(fy - 6)}`; }
         svg += `<path d="${fr} Z" fill="#fffaf0" stroke="#d6cfc0" stroke-width="2"/>`;
       }
-      let d = `M${-hw} ${L - 10} L${hw} ${L - 10} L${f1(fl)} ${f1(L + sl)}`;
+      let d = sides;
       for (let i = 1; i <= n; i++) {
-        const x0 = fl - (i - 1) * 2 * fl / n, x1 = fl - i * 2 * fl / n;
+        const x0 = over ? xR - (i - 1) * (xR - xL) / n : fl - (i - 1) * 2 * fl / n, x1 = over ? xR - i * (xR - xL) / n : fl - i * 2 * fl / n;
         // (a witch's hem is ragged: points, not scallops; a fairy's is her
         // tunic's: petals, leaves, bells, a sparkly zigzag, a toadstool's)
         d += witch ? ` L${f1((x0 + x1) / 2)} ${f1(L + sl + 18)} L${f1(x1)} ${f1(L + sl)}`
@@ -1411,6 +1422,41 @@ function drawNow() {
   if (move && !move.held && !treadLoop) treadLoop = requestAnimationFrame(treadTick);
   if (B.anim === "climbup" && scened && !climb && !drag && !entering && !climbLook) climbLook = setTimeout(startClimb, 0);   // (ticket 137)
   if (scened && marks.text !== bgShown.text && !marksLook) marksLook = setTimeout(measureMarks, 0);   // (tickets 145, 187: with any input, not only a controller)
+}
+// (ticket 546, M: in a dress, riding the horse, squatting or running, "the legs stick out of the dress as if it had strange
+// holes in it") A skirt, a dress or a robe is drawn standing: straight sides from the waist (±hw at y0) flaring to its hem
+// (±fl at hemY). Legs posed out past those sides (astride the horse, the knees out in a crouch, a stride's thighs, a lap
+// sitting) came out through its side, the cloth carrying on below them. Then the cloth is the convex outline over the waist,
+// the hem's ends and every part of each leg above the hem (each leg's joints `legs`, round as thick as the leg is drawn,
+// `r`), so a leg only ever comes out from under the hem. Above the waist line it stays the waist, except where a thigh
+// reaches out past the hips (sitting in profile: the lap). null while the legs keep inside the straight sides (standing,
+// and most steps): drawn exactly as before. Else { side, xL, xR }: the outline from the hem's left end, up over the waist,
+// down to its right end, and the hem's two ends.
+function skirtOver(legs, r, hw, y0, fl, hemY) {
+  const K = 12, rr = r / Math.cos(Math.PI / K), pts = [[-hw, y0], [hw, y0], [fl, hemY], [-fl, hemY]];
+  const ring = ([x, y]) => { for (let i = 0; i < K; i++) { const a = 2 * Math.PI * i / K, px = x + rr * Math.cos(a), py = y + rr * Math.sin(a);
+    pts.push([px, Math.min(hemY, Math.abs(px) <= hw ? Math.max(y0, py) : py)]); } };
+  for (const J of legs) {
+    // (down the leg from the hip, to where it first goes under the hem)
+    if (J[0][1] < hemY) ring(J[0]);
+    for (let i = 1; i < J.length; i++) { const A = J[i - 1], B = J[i];
+      if (B[1] <= hemY) { ring(B); continue; }
+      if (A[1] < hemY) ring([A[0] + (B[0] - A[0]) * (hemY - A[1]) / (B[1] - A[1]), hemY]);
+      break; }
+  }
+  const inside = ([x, y]) => y >= y0 - 0.5 && Math.abs(x) <= hw + (fl - hw) * Math.max(0, Math.min(1, (y - y0) / (hemY - y0))) + 1.5;
+  if (pts.every(inside)) return null;
+  // (the convex outline: Andrew's monotone chain, on points rounded as they are drawn)
+  const P = pts.map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const chain = list => { const h = []; for (const p of list) { while (h.length >= 2 && cross(h[h.length - 2], h[h.length - 1], p) <= 0) h.pop(); h.push(p); } h.pop(); return h; };
+  const hull = [...chain(P), ...chain(P.slice().reverse())], n = hull.length, hy = Math.round(hemY * 10) / 10;
+  const low = hull.map((p, i) => i).filter(i => hull[i][1] >= hy);
+  const iL = low.reduce((a, b) => (hull[b][0] < hull[a][0] ? b : a)), iR = low.reduce((a, b) => (hull[b][0] > hull[a][0] ? b : a));
+  // (from the hem's left end the other way round from its right end, up the left side, over the waist and down the right)
+  const d = (iL + 1) % n === iR ? -1 : 1, side = [];
+  for (let i = iL; ; i = (i + d + n) % n) { side.push(hull[i]); if (i === iR) break; }
+  return { side, xL: hull[iL][0], xR: hull[iR][0] };
 }
 // (ticket 123) While the friend treads water they are drawn again about 30
 // times a second: not while a drag draws them anyway, nor while the page is
