@@ -2,6 +2,11 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **⚙️ A place's settings in the world designer:** "⚙️ show this place's settings" opens the place's own settings from "🏞️ Background" in "🗺️ World design", such as the cave room's "🪨 on the cave room's floor" and "🦇 on the cave room's ceiling". With "✏️ changes here go to" set to "📍 only this square", a change stays in that square. It starts closed, because open it costs as much as the Background tab.
+- **📍 Inside a room, the world designer says where you are:** inside the cave room behind a waterfall (or any room inside a place on the grid), "🗺️ World design" shows that place's square, named with the room ("📍 A5: 💦 jungle waterfall → 🦇 cave room (inside)"), and a "↩️ to A5" button. It used to say only "Tap a square to go there and change it."
+
 ## 0.0.399 (2026-10-21)
 
 Everything in 0.0.398, plus a 🔥 button and the six fires' chips in the dragon costume.

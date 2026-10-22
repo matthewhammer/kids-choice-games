@@ -1465,6 +1465,9 @@ function offlineHelp() {
   say();
   return d;
 }
+// (ticket 524) 🗺️ World design's ⚙️ box of the place's settings: open or not, kept while the game is open (closed to start:
+// closed, it builds nothing; open, it costs what the 🏞️ Background tab does, ticket 167)
+let worldSettingsOpen = false;
 function control(part, [kind, key, label, ...rest], opts = {}) {
   // another tab's control, shown here when this tab's settings say (its
   // settings are that tab's: the ghost's see-through-ness is the
@@ -1882,6 +1885,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { title: "The world as the game first lays it out: every square, and the things put in them, as they were", onclick: () => { if (confirm("Start the world over, as the game first lays it out? The squares and the things put in them go back as they were.")) { instanceUnapply(state.world); worldsInit(); const { id, name } = state.world;   // (ticket 406: this world again, still itself; the other worlds' links into it go)
           for (const w of Object.values(state.worldsAway)) for (const c of Object.values(w.cells)) for (const [d, L] of Object.entries(c.links || {})) if (L.world === id) delete c.links[d];
           state.world = Object.assign(clone(DEFAULTS.world), { id, name }); worldChoose(state.background.kind); changed(); }   /* (ticket 195: the place shown takes its square's own settings, a crossing's paths too, not the other way round) */ } }, "🌍 the first world again")]);
+    // (ticket 524, Matthew: "we need to make each room, and its params, available to world builder"; "world design panel I
+    // mean") ⚙️ the settings of the place shown (a square's, or an inside's of it: the cave room's floor and ceiling), the
+    // 🏞️ Background tab's own rows (bgPlaceRows), so ✏️ 📍 only this square / 🧩 the template decides where a change goes,
+    // as there. A toggle, closed to start; it builds the tab again (showTab), so the rows are built once, never in render.
+    const settings = el("div", { class: "world-settings", "data-box-name": "⚙️ this place's settings" }, [
+      el("div", { class: "row" }, [el("button", { class: "flip world-settings-toggle", "aria-pressed": String(worldSettingsOpen),
+        title: "This place's own settings, as the 🏞️ Background tab has them: here, a change goes where ✏️ says (only this square, or every square of this place)",
+        onclick: () => { worldSettingsOpen = !worldSettingsOpen; showTab(); } }, worldSettingsOpen ? "⚙️ hide this place's settings" : "⚙️ show this place's settings")]),
+      ...(worldSettingsOpen ? [el("div", { class: "world-settings-boxes" }, bgPlaceRows())] : [])]);
+    syncs.push(() => { const kd = state.background.kind, t = `⚙️ ${placeName(kd)}'s settings`, none = kd === "none";
+      if (settings.dataset.boxName !== t) settings.dataset.boxName = t; if (settings.hidden !== none) settings.hidden = none; });
     const notHere = el("div", { class: "world-alert", role: "status", hidden: "" }), here = el("div", { class: "world-here" }), probs = el("div", { class: "world-probs" }), off = el("div", { class: "world-off hint", "data-box-name": "🚪 off the grid: the places inside others" });
     // (ticket 195, M) every neighbour joined that can be
     const joinNote = el("span", { class: "hint" }), joinAll = el("button", { title: "Join every pair of neighbouring squares whose places both have a way that way (a forest crossing all eight; never into the beach's sea, a castle's or a house's back, or the waterfall itself), and take away every way that leads off the map's edge",
@@ -1992,7 +2006,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         return b;
       }).flatMap((sq, i) => i % W.cols ? [sq] : [lab("row", String(i / W.cols + 1)), sq]));
       // the square the friend is in: its ways out (a forest crossing's are its paths), the start
-      if (at && at.kind === state.background.kind) {
+      // (ticket 524) or an inside of it the friend is in (the cave room behind its falls): the square's card, named by both,
+      // a way back to the square, and no ways out (they are the outside's); ⚙️ below has the inside's own settings
+      const inside = !!at && at.kind !== state.background.kind && instanceOf(W) === W.at;
+      if (at && (at.kind === state.background.kind || inside)) {
         const ways = worldWays(at), fix = worldWarnShown ? worldWaysToToggle(W, W.at) : { on: [], off: [] }, toggle = d => () => {
           if (at.links && at.links[d]) { worldUnlinkAt(W, W.at, d); changed(); return; }   // (ticket 406: a linked way off: its link, and the link back, go)
           if (at.kind === "crossing") state.background["cross" + d] = !state.background["cross" + d];   // (its paths, which worldKeep keeps in its square)
@@ -2019,27 +2036,29 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                   class: hint ? "way-suggest" : drop ? "way-suggest-off" : off && on ? "way-offmap" : "", ...(off && !on ? { disabled: "" } : {}), "data-way": d, onclick: toggle(d) }, WORLD_ARROWS[d]);
         };
         const mid = el("span", { class: "world-compass-mid", "data-kind": at.kind, title: placeName(at.kind) }, emojiOf(at.kind));
-        here.replaceChildren(el("div", { class: "cap" }, `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
+        here.replaceChildren(el("div", { class: "cap" }, inside ? `📍 ${squareName(W.at)}: ${worldName(W, W.at)} → ${placeName(state.background.kind)} (inside)` : `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
+          ...(inside ? [el("div", { class: "row" }, [el("button", { class: "world-to-square", title: "Back out to the square this place is inside", onclick: () => worldEnter(W.at) }, `↩️ to ${squareName(W.at)}`)])] : []),
           el("label", { class: "row world-name-row" }, [el("span", { class: "hint" }, "✏️ its name on signs:"), nameBox]),
-          el("div", { class: "world-ways-out" }, [el("span", { class: "hint" }, "ways out:"),
-            el("div", { class: "world-compass" }, ["NW", "N", "NE", "W", null, "E", "SW", "S", "SE"].map(d => d ? wayBtn(d) : mid))]),
+          ...(inside ? [] : [el("div", { class: "world-ways-out" }, [el("span", { class: "hint" }, "ways out:"),
+            el("div", { class: "world-compass" }, ["NW", "N", "NE", "W", null, "E", "SW", "S", "SE"].map(d => d ? wayBtn(d) : mid))])]),
           // (ticket 249, Matthew: "expose the three far away options to the world designer") a forest crossing's 🌄 off in
           // the distance, here too (its square keeps it: CROSS_KEYS)
-          ...(at.kind === "crossing" ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🌄 off in the distance:"),
+          ...(at.kind === "crossing" && !inside ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🌄 off in the distance:"),
             ...CROSS_BACKS.map(([v, name]) => el("button", { "aria-pressed": String((state.background.crossBack || "woods") === v), "data-back": v,
               // (Matthew, 0.0.191: "does change the background, but it stays stale when clicked": this panel is built
               // again only when the world changes; the chips shown chosen as they are clicked)
               onclick: e => { state.background.crossBack = v; for (const b of e.currentTarget.parentNode.querySelectorAll("[data-back]")) b.setAttribute("aria-pressed", String(b.dataset.back === v)); changed(); } }, name))])] : []),
           probs,
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]),
-          linksEditor(W, at));
+          ...(inside ? [] : [linksEditor(W, at)]));
       } else {
         // (ticket 210, Matthew) the picture shows a place that is not the square the friend is in (one chosen in
         // 🏞️ Background, or not on the grid yet): say so, and where it is on the grid if it is there
         here.replaceChildren(el("div", { class: "hint" }, "Tap a square to go there and change it."), probs);
       }
       // (at the top of the tab, over the warnings, so it is seen)
-      const kind = state.background.kind, onGrid = !(at && at.kind === kind) && worldPalette().includes(kind) ? Object.keys(W.cells).filter(k => W.cells[k].kind === kind) : null;
+      // (ticket 524: an inside of the friend's square is shown from that square: instanceOf)
+      const kind = state.background.kind, onGrid = !instanceOf(W) && worldPalette().includes(kind) ? Object.keys(W.cells).filter(k => W.cells[k].kind === kind) : null;
       notHere.hidden = !onGrid;
       notHere.textContent = !onGrid ? "" : onGrid.length
         ? `📺 Showing ${placeName(kind)} in the viewport, not from a square of the world design: it is at ${onGrid.map(squareName).join(", ")}; tap ${onGrid.length === 1 ? "it" : "one"} to go there.`
@@ -2082,7 +2101,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("button", { class: "eye", onclick: () => worldViewShow(worldViewHidden) }, "👁️"), el("span", { class: "hint" }, "📺 in-game view")]), el("div", { class: "world-view-pic" })]);
     worldViewMark(view);
     const layout = el("div", { class: "world-layout" }, [
-      el("div", { class: "world-rest" }, [view, worldsBox, notHere, warnings, palette, el("div", { class: "world-sizes", "data-box-name": "📐 the world's size" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, things, off]),
+      el("div", { class: "world-rest" }, [view, worldsBox, notHere, warnings, palette, el("div", { class: "world-sizes", "data-box-name": "📐 the world's size" }, [sizes, el("div", { class: "row" }, [joinAll, joinNote])]), here, settings, things, off]),
       split, gridcol]);
     designerSplit(layout, split, "dress-up-world-split");
     box.append(el("div", { class: "hint world-intro" }, "🗺️ The world: a place in each square, joined to the squares beside it through the ways out on their shared sides. Drag places onto squares; tap a square to go there and change it."), layout);
