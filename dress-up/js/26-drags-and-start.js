@@ -464,12 +464,19 @@ function roomPitSwing(j, open) {
 }
 // (ticket 334) A tree room's trap door lever pulled: the trap door shuts (its lid swinging across, the ladder gone, the floor
 // walked over) or opens again; a friend standing on it as it opens is moved off the hole
+// (ticket 531: the house, 0 for the round room at the top, and its key; hatchSet, the door shut or opened, by the JS or a 🧩 rule)
+const hatchHouse = () => { const B = state.background; return B.kind === "treetop" ? 0 : Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1))); };
+const hatchKey = () => hatchHouse() === 0 ? "hatchShutTop" : "hatchShut" + hatchHouse();
 function hatchLeverPull() {
   const B = state.background;
   // (ticket 516: and the round room at the top of the tree's, on its post)
   if (B.kind !== "treeroom" && B.kind !== "treetop") return;
-  const key = B.kind === "treetop" ? "hatchShutTop" : "hatchShut" + Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1)));
-  B[key] = !B[key];
+  if (scriptEvent("TreeRoom", { tag: "PullHatch", value: hatchHouse() })) return;   // (ticket 531: 🧩 TreeRoom's rule, when it is on)
+  hzJs("PullHatch", () => hatchSet(!B[hatchKey()]));
+}
+function hatchSet(shut) {
+  const B = state.background, key = hatchKey();
+  B[key] = shut;
   changed();
   const open = !B[key];
   turnArm(`[data-lever="H"] .lever-arm`, (open ? 1 : -1) * LEVER_TILT);

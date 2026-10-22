@@ -33,6 +33,7 @@ const SCRIPT_FRAME_URL = SCRIPT_BUILD + "index.html#embed";
 // the rooms that have logic so far, each a module of the program; module names must be unique (scriptNames checks it)
 const SCRIPT_ROOMS = [
   { name: "TrapRoom", label: "🏰 the trap room, over the castle's dungeons", kind: "trap" },
+  { name: "TreeRoom", label: "🌳 the tree houses' trap doors, and the round room's at the top", kind: "tree" },
 ];
 
 // (ticket 531) the whole game's vocabulary, for every room that has logic: what a rule may say (Cmd), what happened (Event), a placed
@@ -82,8 +83,16 @@ let on_event = fun (g, e) : (Globals, Event) ->
 // panels for each square (or common logic) --- and do the speedruns again to compare against plain JS") one build, both ways:
 // ?logic=hazel runs every room's logic through the shipped texts (🧩 on, whatever the friend saved), ?logic=js the plain JS (🧩 off,
 // whatever was saved); no switch, the panel's (state.scripts.on). Read once, at start.
+const SCRIPT_TREE = `# A tree room's trap-door lever, or the round room's at the top (house 0): #
+# the trap door shuts if open, opens if shut. #
+let on_event = fun (g, e) : (Globals, Event) ->
+  case e
+  | PullHatch(n) => SetHatch(n, !g.hatch, Done)
+  | _ => Done
+  end`;
+
 // each room kind's shipped text: rules that do just what the plain JS does, so 🧩 on plays the same game (the fair comparison)
-const SCRIPT_TEXTS = { trap: SCRIPT_TRAP };
+const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE };
 const SCRIPT_LOGIC = (() => { try { const v = new URLSearchParams(location.search || "").get("logic"); return v === "hazel" || v === "js" ? v : ""; } catch (e) { return ""; } })();
 const scriptsOn = () => SCRIPT_LOGIC === "hazel" || (SCRIPT_LOGIC !== "js" && !!(state.scripts && state.scripts.on));
 const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntries(SCRIPT_ROOMS.map(r => [r.name, SCRIPT_TEXTS[r.kind] || ""])) });
@@ -222,6 +231,8 @@ function scriptRun(cmd, act, depth = 0) {
 }
 
 let scriptBoulders = { drop: [], lift: [] };
+// (the empty fields of a room's globals that are not its own)
+const scriptNoGlobals = () => ({ lever_L: false, lever_R: false, wiring: "normal", draws: [], pits_on: [], covered: [], hatch: false, things: [] });
 // (ticket 531) the event's room, its globals and how its commands act: per room kind (SCRIPT_ROOMS' kind), filled in as rules move
 const SCRIPT_ACTS = {
   trap: {
@@ -240,6 +251,12 @@ const SCRIPT_ACTS = {
                   LiftBoulder: i => { if (i !== 0 && i !== 1) return false; scriptBoulders.lift.push(i); } }),
     done: ev => { if (ev.tag !== "PullBoulder") return; const { drop, lift } = scriptBoulders; scriptBoulders = { drop: [], lift: [] };
       roomBoulderAct(String(ev.value), lift.length ? lift : drop, lift.length > 0); },
+  },
+  // (a tree room's trap door, PullHatch(n), n its house, 0 the round room at the top; hatch: that door shut)
+  tree: {
+    here: ev => { const k = state.background.kind; return (k === "treeroom" || k === "treetop") && ev.value === hatchHouse(); },
+    globals: () => ({ ...scriptNoGlobals(), hatch: !!state.background[hatchKey()] }),
+    act: () => ({ SetHatch: (n, shut) => { if (n !== hatchHouse()) return false; hatchSet(!!shut); } }),
   },
 };
 

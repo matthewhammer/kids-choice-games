@@ -76,11 +76,13 @@ const msg = (data, { origin = "https://hazel.org", source } = {}) => { for (cons
 const panel = new FakeEl("div"); body.append(panel);
 run("scriptingPanel")(panel);
 const boxes = panel.querySelectorAll("textarea.script-editor");
-ok("an editor per module: Common, then TrapRoom", JSON.stringify(boxes.map(t => t.dataset.module)) === '["Common","TrapRoom"]', boxes.map(t => t.dataset.module));
+ok("an editor per module: Common, then each room's", JSON.stringify(boxes.map(t => t.dataset.module)) === JSON.stringify(["Common", ...run("SCRIPT_ROOMS").map(r => r.name)]), boxes.map(t => t.dataset.module));
 let spec = run("scriptSpec()");
-ok("the shipped program: the preamble, Common and TrapRoom as shipped, the tail asking each room's on_event at a rule's type",
-  spec.preamble === run("SCRIPT_PREAMBLE") && spec.modules.map(m => m.name).join() === "Common,TrapRoom" && spec.modules[0].text === run("SCRIPT_COMMON")
-  && spec.modules[1].text === run("SCRIPT_TRAP") && spec.tail === "(traproom = (TrapRoom.on_event : (Globals, Event) -> Cmd), rooms = 1)", spec);
+const ROOMS = run("SCRIPT_ROOMS").map(r => ({ ...r })), TEXTS = run("SCRIPT_TEXTS");
+ok("the shipped program: the preamble, Common and each room's text as shipped, the tail asking each room's on_event at a rule's type",
+  spec.preamble === run("SCRIPT_PREAMBLE") && spec.modules.map(m => m.name).join() === ["Common", ...ROOMS.map(r => r.name)].join() && spec.modules[0].text === run("SCRIPT_COMMON")
+  && ROOMS.every((r, i) => spec.modules[i + 1].text === TEXTS[r.kind]) && spec.modules[1].text === run("SCRIPT_TRAP")
+  && spec.tail === "(" + [...ROOMS.map(r => `${r.name.toLowerCase()} = (${r.name}.on_event : (Globals, Event) -> Cmd)`), `rooms = ${ROOMS.length}`].join(", ") + ")", spec);
 ok("the frame is made once the tab is laid out, not before", !panel.querySelector("iframe") && (advance(20), !!panel.querySelector("iframe.script-frame")), panel.querySelectorAll("iframe").length);
 const frame = run("scriptFrame").iframe;
 ok("the frame is Hazel's embed mode on the embed branch's build, out of the keyboard's Tab order",
@@ -140,7 +142,7 @@ ok("a crash after ready: said, the tiles kept, and the next program still posted
 msg({ type: "crash", message: "Invalid_argument" });
 msg({ type: "crash", message: "Not_found" });
 ok("three crashes in a minute: the frame taken away, its words and a button to start it again; the boxes kept",
-  !frame.isConnected && /stopped \(Not_found\)/.test(panel.querySelector(".script-frame-status").textContent) && !!panel.querySelector("button.script-frame-again") && panel.querySelectorAll("textarea").length === 2,
+  !frame.isConnected && /stopped \(Not_found\)/.test(panel.querySelector(".script-frame-status").textContent) && !!panel.querySelector("button.script-frame-again") && panel.querySelectorAll("textarea").length === ROOMS.length + 1,
   panel.querySelector(".script-frame-status").textContent);
 const n0 = posts.length;
 msg({ type: "ready", protocol: 1, build: "abc" }, { source: frame.win });
@@ -185,8 +187,9 @@ const setRule = t => run(`state.scripts = { on: true, common: null, rooms: { Tra
 const pull = () => { flips.length = 0; const used = run('scriptEvent("TrapRoom", { tag: "Pull", value: "L" })'); return { used, flips: flips.join("") }; };
 // (a stand-in library: runProgram answers as told; run, the joined text's, fine)
 const calls = { run: 0, runProgram: 0 }, Flip = (a, k) => ({ tag: "Flip", value: [a, k] }), Done = { tag: "Done" };
-const fake = (answer, withProgram = true) => { ctx.Hazel = { version: "fake", build: "local", run: text => { calls.run++; return { errors: [], value: { traproom: () => Flip("lever_L", Done), rooms: 1 }, text }; } };
-  if (withProgram) ctx.Hazel.runProgram = s => { calls.runProgram++; return { value: { traproom: () => Flip("lever_R", Done), rooms: 1 }, ...answer(s) }; }; };
+const others = () => Object.fromEntries(ROOMS.slice(1).map(r => [r.name.toLowerCase(), () => Done]));
+const fake = (answer, withProgram = true) => { ctx.Hazel = { version: "fake", build: "local", run: text => { calls.run++; return { errors: [], value: { ...others(), traproom: () => Flip("lever_L", Done), rooms: ROOMS.length }, text }; } };
+  if (withProgram) ctx.Hazel.runProgram = s => { calls.runProgram++; return { value: { ...others(), traproom: () => Flip("lever_R", Done), rooms: ROOMS.length }, ...answer(s) }; }; };
 const fine = { ok: true, errors: [], holes: { Common: 0, TrapRoom: 0 }, programHoles: 0, incomplete: { Common: 0, TrapRoom: 0 }, programIncomplete: 0 };
 setRule(shipped);
 fake(() => fine);
@@ -207,7 +210,7 @@ ok("without runProgram: the fallback, the joined text through Hazel.run", p.used
 ok("the fallback's text is today's join", run("scriptCompiled.key") === "text:" + run("scriptProgram()"), run("scriptCompiled.key").slice(0, 80));
 let seen = null; fake(s => { seen = s; return fine; }); setRule("let on_event = fun (g, e) : (Globals, Event) -> Done;  \n"); pull();
 ok("runProgram is given each module's text without its last \";\"", seen && seen.modules[1].text === "let on_event = fun (g, e) : (Globals, Event) -> Done", seen && seen.modules);
-fake(() => ({ ...fine, value: { traproom: { hazel: "?" }, rooms: 1 } })); run("scriptCompiled.key = null");
+fake(() => ({ ...fine, value: { ...others(), traproom: { hazel: "?" }, rooms: ROOMS.length } })); run("scriptCompiled.key = null");
 p = pull();
 ok("fine by Hazel but no function for a room: not ready, and said", !p.used && /TrapRoom: its on_event did not come back/.test(run("scriptCompiled.errors").join()), run("scriptCompiled.errors"));
 fake(() => ({ ...fine, ok: false, holes: { Common: 0, TrapRoom: 1 } })); run("scriptCompiled.key = null");
