@@ -507,6 +507,18 @@ const COWBOY_STYLES = {
                shirt: { style: "long", collar: "flat", color: "main", pattern: "plain" }, pants: { style: "long", color: "#4b5563", pattern: "plain" },
                duster: true, panel: "#e9e1cf", bandana: "#7f1d1d", boot: "#1f1f22", spur: true },
 };
+// (ticket 530, Matthew: "Sasquatch costume") The 🦶 Sasquatch: an animal suit (ANIMALS.sasquatch, js/06-costumes.js) in four
+// styles, offered as the robot's are: sasquatchStyle (a choice row), sasquatchColor_<id> (each style its own colour row, its
+// first swatch the usual one, shown only while it is chosen), all in 🐯 Costume's 🦶 the Sasquatch box. Each style: `colors`,
+// `face` (the muzzle, belly and pads), `shag` (how long its tufts are), `footK` (its feet's size), and its extras, every one
+// read by the drawing (sasquatchLook, shagEdge, sasquatchTop): `frost` (blue tuft tips), `moss` and `leaves` (stuck in the
+// fur), `bow` (on its head).
+const SASQUATCH_STYLES = {
+  bigfoot: { name: "🦶 Bigfoot", colors: ["#7a4e2d", "#5b3a1e", "#a0703f", "#3f2a1a", "#8b6a43"], face: "#d9b38c", shag: 1, footK: 1.45 },
+  yeti:    { name: "❄️ yeti", colors: ["#f4f1ea", "#dbeafe", "#e5e7eb", "#c7d2fe"], face: "#dbeafe", marks: "#bfdbfe", shag: 1.1, footK: 1.3, frost: "#60a5fa" },
+  mossy:   { name: "🌿 mossy", colors: ["#6b5a2e", "#4d5b2a", "#7c6a3a", "#3f4a2a"], face: null, shag: 1, footK: 1.3, moss: "#65a30d", leaves: "#84cc16" },
+  fluffy:  { name: "🍭 fluffy", colors: ["#f9a8d4", "#c4b5fd", "#fdba74", "#99f6e4", "#fde68a"], face: null, shag: 1.3, footK: 1.2, bow: "#ec4899" },
+};
 // The hats, one setting for both (cowHat, or "none"), each with its own colours. In the round head's units (x 100 the
 // middle): the brim's line at y COW_HAT_Y, the hair tucked above COW_HAT_LINE (under a flat brim too). `crown` "pinch" (a
 // crease and two front pinches), "tall" (taller and rounder) or "flat"; `top` the crown's top; `bw` the brim's half width;
@@ -700,7 +712,10 @@ const DEFAULTS = {
              cowgirlStyle: "rodeo", cowboyStyle: "sheriff", cowHat: "cattleman", cowHatAuto: true, lasso: true,
              ...Object.fromEntries(Object.entries(COWGIRL_STYLES).map(([id, t]) => ["cowgirlColor_" + id, t.colors[0]])),
              ...Object.fromEntries(Object.entries(COWBOY_STYLES).map(([id, t]) => ["cowboyColor_" + id, t.colors[0]])),
-             ...Object.fromEntries(Object.entries(COW_HATS).map(([id, t]) => ["cowHatColor_" + id, t.colors[0]])) },
+             ...Object.fromEntries(Object.entries(COW_HATS).map(([id, t]) => ["cowHatColor_" + id, t.colors[0]])),
+             // (ticket 530) the Sasquatch: its style, each style's colour, its footprints and its grin
+             sasquatchStyle: "bigfoot", sasquatchPrints: true, sasquatchGrin: true,
+             ...Object.fromEntries(Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["sasquatchColor_" + id, t.colors[0]])) },
 };
 const clone = o => JSON.parse(JSON.stringify(o));
 // before the nose views: a nose was a shape (or "none"), a direction and

@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🦶 Sasquatch costume** (Matthew: "Sasquatch costume"): a big, shaggy, friendly suit in 🐯 Costume, with four styles, each with its own fur colours: "🦶 Bigfoot" (brown, with the biggest feet), "❄️ yeti" (snow white with frosty blue tips), "🌿 mossy" (moss and leaves stuck in its fur), and "🍭 fluffy" (candy colours, extra fluffy, with a bow). Shaggy fur along its arms, legs and sides, a big muzzle with "🙂 big grin" (two square teeth), small round ears and a stubby tail. Stand still and "👣 footprints" shows the trail it walked in on. It works in every pose and from every side.
+
 ## 0.0.406 (2026-10-21)
 
 Everything in 0.0.405, plus each hand keeps its own look from behind, and held things lie on the floor while crawling.

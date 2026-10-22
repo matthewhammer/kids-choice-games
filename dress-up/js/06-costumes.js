@@ -29,6 +29,9 @@ const ANIMALS = {
   // (ticket 499) a dragon: scales, horns, spines, teeth, slit eyes, nostrils, a plated belly, claws, bat wings and a long
   // spiked tail (its own colours are dragonScales, dragonBelly, dragonWings and dragonHorns: dragonLook, below)
   dragon: { suit: true, fur: "#3f8f4a", marks: "#d0453a", belly: "#e9d27a", eyes: "#f2b705", accent: "#f4ecd6", furPattern: "none" },
+  // (ticket 530) a Sasquatch: big shaggy fur, a tan muzzle with a big friendly grin, small round ears, big feet (its own
+  // colours are its style's: sasquatchLook, below)
+  sasquatch: { suit: true, fur: "#7a4e2d", marks: "#55361f", belly: "#d9b38c", eyes: "#3b2414", accent: "#d9b38c", furPattern: "shag" },
   // a whole falcon suit: feathers all over, wings on the arms, talons
   falconsuit: { suit: true, fur: "#55616d", marks: "#23282e", belly: "#f2ece0", eyes: "#1a1410", accent: "#f2c230", furPattern: "none" },
   // and a bald eagle's: dark brown feathers, white head and tail
@@ -50,7 +53,14 @@ const lookOf = kind => { const { suit, ...look } = ANIMALS[kind]; return look; }
 // teeth and claws (horn); its eyes are the animal eye colour, as any animal's
 const dragonLook = c => { const S = c.dragonScales || "#3f8f4a", dk = mix(S, "#000000", 0.3);
   return { ...c, fur: S, marks: dk, accent: dk, belly: c.dragonBelly || "#e9d27a", wing: c.dragonWings || "#d0453a", horn: c.dragonHorns || "#f4ecd6", furPattern: "none" }; };
-const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "dragon" ? dragonLook(state.costume) : state.costume) : null);
+// (ticket 530) the Sasquatch's look, from its style (SASQUATCH_STYLES, js/01-state.js) and that style's colour: its fur the
+// colour, its tufts a shade darker (the yeti's pale blue), its muzzle, belly and pads the style's face colour (or the fur
+// lightened), its eyes the animal eye colour; and the style itself (S), for the drawing's extras
+const sasquatchStyleOf = c => SASQUATCH_STYLES[c.sasquatchStyle] ? c.sasquatchStyle : "bigfoot";
+const sasquatchLook = c => { const id = sasquatchStyleOf(c), S = SASQUATCH_STYLES[id], fur = c["sasquatchColor_" + id] || S.colors[0];
+  const face = S.face || mix(fur, "#ffffff", 0.45);
+  return { ...c, fur, marks: S.marks || mix(fur, "#000000", 0.3), belly: face, accent: mix(face, "#000000", 0.25), furPattern: "shag", sq: S, sqId: id }; };
+const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "dragon" ? dragonLook(state.costume) : state.costume.kind === "sasquatch" ? sasquatchLook(state.costume) : state.costume) : null);
 // (ticket 433, Matthew: "monk/dryad costume with hooded cloak, and a staff (optional, like how the witch has an optional
 // broom)") A CLOTH HOOD, its colour, while one is up (the monk's or the dryad's cloak): over the hair, framing the face. In the
 // round head's units (stretched with the head, as hair is), on the animal hood's frame (hoodGeom): its back, behind the head,
@@ -151,6 +161,13 @@ function furDefs(C, kind) {
     const sc = `<rect width="24" height="20" fill="${C.fur}"/><path d="M0 10 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 M-6 20 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 ` +
                `M-6 0 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0 a6 6 0 0 0 12 0" stroke="${C.marks}" fill="none" stroke-width="1.6" opacity="0.8"/>`;
     return `<pattern id="pat-fur" width="24" height="20" patternUnits="userSpaceOnUse">${sc}</pattern><pattern id="pat-bars" width="24" height="20" patternUnits="userSpaceOnUse">${sc}</pattern>`;
+  }
+  // (ticket 530) a Sasquatch's shag: the fur with six long tufts hanging down in each 40 tile, one path (the pattern is drawn
+  // once however big the suit)
+  if (kind === "sasquatch") {
+    const sh = `<rect width="40" height="40" fill="${C.fur}"/><path d="M3 4 l3 9 l3 -9 M21 2 l3 10 l3 -10 M12 18 l3 9 l3 -9 M30 19 l3 10 l3 -10 M4 30 l3 9 l3 -9 M22 30 l3 9 l3 -9" ` +
+               `stroke="${C.marks}" fill="none" stroke-width="1.8" stroke-linejoin="round" opacity="0.85"/>`;
+    return `<pattern id="pat-fur" width="40" height="40" patternUnits="userSpaceOnUse">${sh}</pattern><pattern id="pat-bars" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="${C.fur}"/></pattern>`;
   }
   if (BIRD_SUIT[kind])   // feathers: the color with curved bars, all over
     return `<pattern id="pat-fur" width="24" height="12" patternUnits="userSpaceOnUse">` +
@@ -298,7 +315,7 @@ function hoodBack(C, kind, F, dir = 0, away = false) {
            `fill="${C.belly}" stroke="${line}" stroke-width="3"/>` +
            `<ellipse cx="${100 + side * 70}" cy="6" rx="13" ry="18" transform="rotate(${side * 25} ${100 + side * 70} 6)" fill="${C.fur}"/>`;
     else if (!isBird(kind)) {
-      const r = kind === "lion" ? 20 : 25;
+      const r = kind === "lion" ? 20 : kind === "sasquatch" ? 17 : 25;   // (ticket 530: a Sasquatch's small round ears)
       s += `<circle cx="${x}" cy="20" r="${r}" fill="${C.fur}" stroke="${line}" stroke-width="3"/>` +
            `<circle cx="${x}" cy="22" r="${r * 0.5}" fill="${kind === "tiger" ? "#ffffff" : C.belly}"/>`;
     }
@@ -346,7 +363,7 @@ function hoodSide(C, kind, F, dir) {
   const all = kind === "dragon" ? "" : hoodFront(C, kind, F), cut = all.indexOf("/>", all.indexOf("<line ")) + 2;
   const features = kind === "dragon" ? dragonBrimSide(C, dir) : all.slice(cut);
   const teeth = kind === "dragon" ? dragonTeethSide(C, fx, fcy, frx, fry, dir, cy, ry) : "";
-  return cap + teeth + `<defs><clipPath id="hood-near"><rect x="${dir > 0 ? 100 : -4000}" y="-4000" width="4100" height="8000"/></clipPath></defs>` +
+  return cap + teeth + (kind === "sasquatch" ? sasquatchTop(C, F, dir, false) : "") + `<defs><clipPath id="hood-near"><rect x="${dir > 0 ? 100 : -4000}" y="-4000" width="4100" height="8000"/></clipPath></defs>` +
          `<g transform="translate(${f1(dir * 12)} 0)"><g clip-path="url(#hood-near)">${features}</g></g>`;
 }
 function hoodFront(C, kind, F) {
@@ -366,6 +383,24 @@ function hoodFront(C, kind, F) {
     let d = "";
     for (let i = 0; i < 12; i++) { const x = 25 + i * 150 / 11; d += `M${f1(x - 5)} 53 L${f1(x)} 67 L${f1(x + 5)} 53 Z`; }
     return s + `<g clip-path="url(#hood-inside)"><path data-dragon="teeth" d="${d}" fill="${C.horn}" stroke="${darker(C.horn)}" stroke-width="1.8" stroke-linejoin="round"/></g>`;
+  }
+  // (ticket 530) a Sasquatch's: its shaggy crown and its extras (before the brim's line, so the profile, which keeps what
+  // follows the line, draws its own: sasquatchTop), a shaggy brow over big round friendly eyes, a big muzzle, a wide flat
+  // nose, and its grin, two square teeth (or a plain smile); no whiskers or claws
+  if (kind === "sasquatch") {
+    const cut = s.indexOf("<line ");
+    s = s.slice(0, cut) + sasquatchTop(C, F, 0, false) + s.slice(cut);
+    const ln = darker(C.fur);
+    s += `<path d="M58 16 Q66 2 80 8 Q90 2 100 10 Q110 2 120 8 Q134 2 142 16 Q130 10 120 14 Q110 9 100 16 Q90 9 80 14 Q70 10 58 16 Z" fill="${C.marks}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>`;
+    for (const x of [79, 121])
+      s += `<circle cx="${x}" cy="26" r="10" fill="#ffffff" stroke="#111" stroke-width="2"/><circle cx="${x}" cy="27" r="5" fill="${C.eyes}"/>` + shine(x, 26, 9);
+    s += `<ellipse cx="100" cy="44" rx="26" ry="12" fill="${C.belly}" stroke="${mix(C.belly, "#000000", 0.25)}" stroke-width="1.5"/>` +
+         `<path d="M88 37 Q100 31 112 37 Q110 43 100 43 Q90 43 88 37 Z" fill="#3a2418"/>`;
+    s += C.sasquatchGrin !== false
+      ? `<path d="M84 45 Q100 45 116 45 Q114 55 100 55 Q86 55 84 45 Z" fill="#7a2e2e" stroke="#3a2418" stroke-width="1.6" stroke-linejoin="round"/>` +
+        `<path d="M93 45.5 h6 v4.5 h-6 Z M101 45.5 h6 v4.5 h-6 Z" fill="#ffffff" stroke="#3a2418" stroke-width="0.8"/>`
+      : `<path d="M90 48 Q100 53 110 48" fill="none" stroke="#3a2418" stroke-width="2.2" stroke-linecap="round"/>`;
+    return s;
   }
   if (falconHead(kind)) {
     for (const x of [76, 124])
@@ -423,6 +458,8 @@ function tailSvg(C, kind, hw, L) {
   const line = darker(C.fur), x0 = hw * 0.55, y0 = L + 5;
   if (kind === "bear")
     return `<circle cx="${f1(hw + 4)}" cy="${f1(L - 14)}" r="17" fill="url(#pat-fur)" stroke="${line}" stroke-width="3"/>`;
+  if (kind === "sasquatch")   // (ticket 530) the bear's stub, shaggy round its edge
+    return `<circle cx="${f1(hw + 4)}" cy="${f1(L - 14)}" r="17" fill="url(#pat-fur)" stroke="${line}" stroke-width="8" stroke-dasharray="4 3"/>`;
   if (kind === "deer")  // a short white tail, flicked up
     return `<ellipse cx="${f1(hw + 8)}" cy="${f1(L - 16)}" rx="11" ry="17" transform="rotate(35 ${f1(hw + 8)} ${f1(L - 16)})" ` +
            `fill="${C.belly}" stroke="${line}" stroke-width="3"/>`;
@@ -1541,6 +1578,45 @@ const offsetPath = (pts, side, by, cut = 0) => {
   return "M" + q.map((p, i) => { const n = i === 0 ? ns[0] : i === q.length - 1 ? ns[ns.length - 1] : [(ns[i - 1][0] + ns[i][0]) / 2, (ns[i - 1][1] + ns[i][1]) / 2];
     return f1(p[0] + n[0] * by) + " " + f1(p[1] + n[1] * by); }).join(" L");
 };
+// (ticket 530) A SASQUATCH'S SHAG along an edge: the fringe's trick, fur tufts as dashes of one thick stroke (butt caps), a
+// darker stroke under them half a dash along, so each edge is two shapes however long; pts the edge's points, pushed out
+// by `by` toward `side` (offsetPath), `len` how long the tufts are (times the style's shag)
+// (several edges at once: [[pts, side], ...], one path of each, still two shapes)
+const shagEdge = (pts, side, by, len, C) => { const E = side === "many" ? pts.filter(([p]) => p && p.length > 1) : pts && pts.length > 1 ? [[pts, side]] : [];
+  if (!E.length) return ""; const d = E.map(([p, sd]) => offsetPath(p, sd, by)).join(" "), k = (C.sq && C.sq.shag) || 1, L = f1(len * k);
+  return `<path d="${d}" fill="none" stroke="${mix(C.fur, "#000000", 0.35)}" stroke-width="${f1(len * k + 3)}" stroke-dasharray="6 5" stroke-dashoffset="6"/>` +
+         `<path d="${d}" fill="none" stroke="${C.fur}" stroke-width="${L}" stroke-dasharray="6 5"/>`; };
+// The hood's top, in the round head's units (the hood's middle at x 100), its own drawing toward us, from behind and in
+// profile (dir; left and right mirror): the shaggy crown along the hood's top, and the style's extras (the yeti's frosty
+// tips, the mossy's moss and leaves, the fluffy's bow), at the head's left toward us, its right from behind, at the back of
+// the head in profile
+function sasquatchTop(C, F, dir, away) {
+  const { cy, rx, ry } = hoodGeom(F), S = C.sq || {}, k = S.shag || 1, P = (x, y) => f1(x) + " " + f1(y);
+  const arc = (a0, a1, grow) => { const p = a => [100 + (rx + grow) * Math.cos(a * Math.PI / 180), cy + (ry + grow) * Math.sin(a * Math.PI / 180)];
+    return `M${P(...p(a0))} A${f1(rx + grow)} ${f1(ry + grow)} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${P(...p(a1))}`; };
+  const [a0, a1] = dir ? (dir > 0 ? [160, 330] : [210, 380]) : away ? [150, 390] : [195, 345];
+  let s = `<path data-sasquatch="crown" d="${arc(a0, a1, 2)}" fill="none" stroke="${darker(C.fur)}" stroke-width="${f1(16 * k + 3)}" stroke-dasharray="6 4" stroke-dashoffset="5"/>` +
+          `<path d="${arc(a0, a1, 2)}" fill="none" stroke="${C.fur}" stroke-width="${f1(16 * k)}" stroke-dasharray="5.5 4.5"/>`;
+  if (S.frost) s += `<path d="${arc(a0, a1, 2 + 6 * k)}" fill="none" stroke="${S.frost}" stroke-width="5" stroke-dasharray="5.5 4.5"/>`;
+  const X = dx => 100 + (away ? -1 : dir ? -dir : 1) * dx, top = cy - ry;
+  if (S.moss) s += `<path d="${[[-38, 22, 13], [30, 8, 10], [56, 46, 9]].map(([dx, dy, r]) => `M${P(X(dx) - r, top + dy)} a${r} ${f1(r * 0.7)} 0 1 0 ${2 * r} 0 a${r} ${f1(r * 0.7)} 0 1 0 ${-2 * r} 0 Z`).join(" ")}" fill="${S.moss}" opacity="0.9"/>`;
+  if (S.leaves) s += `<path d="${[[16, 2, -1], [46, 18, 1]].map(([dx, dy, t]) => { const x = X(dx), y = top + dy;
+    return `M${P(x, y)} Q${P(x + 10, y - 16 * t - 6)} ${P(x + 24, y - 8)} Q${P(x + 12, y + 6)} ${P(x, y)} Z M${P(x, y)} L${P(x + 22, y - 8)}`; }).join(" ")}" fill="${S.leaves}" stroke="${darker(S.leaves)}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (S.bow) { const x = X(52), y = top + 18;
+    s += `<path d="M${P(x, y)} Q${P(x - 28, y - 24)} ${P(x - 30, y + 2)} Q${P(x - 22, y + 18)} ${P(x, y)} Z M${P(x, y)} Q${P(x + 28, y - 24)} ${P(x + 30, y + 2)} Q${P(x + 22, y + 18)} ${P(x, y)} Z M${P(x - 6, y)} a6 6 0 1 0 12 0 a6 6 0 1 0 -12 0 Z" fill="${S.bow}" stroke="${darker(S.bow)}" stroke-width="2" stroke-linejoin="round"/>`; }
+  return s;
+}
+// Its big footprints on the ground (ticket 530), standing still, in the friend's units: a trail of four, walked in from
+// behind them (in profile) or from our left (toward us or away), the nearest by their feet; each print one path, a sole and
+// four round toes, the colour of wet mud
+function sasquatchPrints(C, hw, ground, dir, k) {
+  const P = (x, y) => f1(x) + " " + f1(y), sz = 14 * k;
+  const print = (x, y, f) => `M${P(x - f * sz * 0.9, y)} q${f1(f * sz * 0.2)} ${f1(-sz * 0.45)} ${f1(f * sz * 1.1)} ${f1(-sz * 0.38)} q${f1(f * sz * 0.8)} ${f1(sz * 0.08)} ${f1(f * sz * 0.8)} ${f1(sz * 0.38)} q0 ${f1(sz * 0.3)} ${f1(-f * sz * 0.8)} ${f1(sz * 0.38)} q${f1(-f * sz * 1)} ${f1(sz * 0.08)} ${f1(-f * sz * 1.1)} ${f1(-sz * 0.38)} Z ` +
+    [-0.3, -0.1, 0.1, 0.3].map(t => { const r = sz * 0.19, cx = x + f * sz * (1.12 - Math.abs(t) * 0.5), cyy = y + t * sz * 1.25; return `M${P(cx - r, cyy)} a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0 a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0 Z`; }).join(" ");
+  const f = dir || 1, pts = dir ? [0, 1, 2, 3].map(i => [-dir * (hw + 70 + i * 62 * k), ground + (i % 2 ? 4 : 14)])
+                                : [0, 1, 2, 3].map(i => [-(hw + 70 + i * 58 * k), ground + 8 - i * 7]);
+  return `<path data-sasquatch="prints" d="${pts.map(([x, y]) => print(x, y, f)).join(" ")}" fill="${mix("#6b4a2b", "#000000", 0.15)}" opacity="0.45"/>`;
+}
 // Over the shirt (where the witch's belt goes), in body units (the collar's top at y -20, the shirt's half width w, its hem
 // at L, the collar's half width nw): the rodeo star's chest fringe, the sheriff's vest, badge and string tie, the rider's
 // yoke, buckle and number card, the prairie collar's bow, a bandana, the trail boss's shirt panel, lapels and capelet, the

@@ -324,7 +324,7 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"], ["cowgirl", "👢 cowgirl"], ["cowboy", "🤠 cowboy"],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["sasquatch", "🦶 Sasquatch"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"], ["cowgirl", "👢 cowgirl"], ["cowboy", "🤠 cowboy"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -409,6 +409,12 @@ const TABS = [
     ["choice", "cowHat", "🎩 hat", [["none", "🚫 no hat"], ...Object.entries(COW_HATS).map(([id, h]) => [id, h.name])]],
     ...Object.entries(COW_HATS).map(([id, h]) => ["color", "cowHatColor_" + id, "🎩 hat's colour", h.colors]),
     ["toggle", "lasso", "➿ lasso"],
+    // (ticket 530) the Sasquatch: four styles, each its own colour (shown while it is chosen, as the robot's), its big
+    // footprints on the ground, and its grin
+    ["choice", "sasquatchStyle", "🦶 style", Object.entries(SASQUATCH_STYLES).map(([id, t]) => [id, t.name])],
+    ...Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["color", "sasquatchColor_" + id, "🦶 its fur", t.colors]),
+    ["toggle", "sasquatchPrints", "👣 footprints"],
+    ["toggle", "sasquatchGrin", "🙂 big grin"],
     // (ticket 435) the knight: his arms (two colours, how they are laid out, an emblem), his helmet's plume and visor, sword and shield
     ["color", "knightA", "🛡️ arms' first color", ["#2f6db5", "#8a2b2b", "#1f1f22", "#2e7d32", "#e0b030", "#7b3f8c"]],
     ["color", "knightB", "🛡️ arms' second color", ["#f4f1ea", "#e0b030", "#1f1f22", "#8a2b2b", "#2f6db5"]],
@@ -1083,8 +1089,8 @@ const SHOWN_WHEN = {
   "face.noseH": f => f.noseView !== "none",
   "face.noseW": f => f.noseView !== "none",
   "face.whites": f => f.iris > 0,
-  "costume.fur": c => !!ANIMALS[c.kind] && c.kind !== "dragon",   // (ticket 499: a dragon's colours are its own, below)
-  "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon",
+  "costume.fur": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",   // (ticket 499: a dragon's colours are its own, below)
+  "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon" && c.kind !== "sasquatch",
   ...Object.fromEntries(["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow"].map(k => ["costume." + k, c => c.kind === "dragon"])),
   "costume.dragonWingLfo": c => c.kind === "dragon" && (c.dragonWingsHow ?? "flap") === "flap",
   "costume.witchColor": c => c.kind === "witch",
@@ -1124,6 +1130,9 @@ const SHOWN_WHEN = {
   "costume.cowgirlStyle": c => c.kind === "cowgirl", "costume.cowboyStyle": c => c.kind === "cowboy",
   ...Object.fromEntries(Object.keys(COWGIRL_STYLES).map(id => ["costume.cowgirlColor_" + id, c => c.kind === "cowgirl" && (COWGIRL_STYLES[c.cowgirlStyle] ? c.cowgirlStyle : "rodeo") === id])),
   ...Object.fromEntries(Object.keys(COWBOY_STYLES).map(id => ["costume.cowboyColor_" + id, c => c.kind === "cowboy" && (COWBOY_STYLES[c.cowboyStyle] ? c.cowboyStyle : "sheriff") === id])),
+  // (ticket 530) the Sasquatch's rows, each style's colour only while it is chosen
+  ...Object.fromEntries(["sasquatchStyle", "sasquatchPrints", "sasquatchGrin"].map(k => ["costume." + k, c => c.kind === "sasquatch"])),
+  ...Object.fromEntries(Object.keys(SASQUATCH_STYLES).map(id => ["costume.sasquatchColor_" + id, c => c.kind === "sasquatch" && (SASQUATCH_STYLES[c.sasquatchStyle] ? c.sasquatchStyle : "bigfoot") === id])),
   "costume.cowHat": c => c.kind === "cowgirl" || c.kind === "cowboy",
   ...Object.fromEntries(Object.keys(COW_HATS).map(id => ["costume.cowHatColor_" + id, c => (c.kind === "cowgirl" || c.kind === "cowboy") && (c.cowHat === "none" ? null : COW_HATS[c.cowHat] ? c.cowHat : "cattleman") === id])),
   "costume.lasso": c => c.kind === "cowgirl" || c.kind === "cowboy",
@@ -1298,11 +1307,11 @@ const SHOWN_WHEN = {
   "background.pic4": b => b.kind === "livingroom" && b.pictures >= 4,
   "background.pic5": b => b.kind === "livingroom" && b.pictures >= 5,
   "background.pic6": b => b.kind === "livingroom" && b.pictures >= 6,
-  "costume.marks": c => !!ANIMALS[c.kind] && c.kind !== "dragon",
+  "costume.marks": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",
   "costume.spot": c => c.furPattern === "rosettes" && !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon",
-  "costume.belly": c => !!ANIMALS[c.kind] && c.kind !== "dragon",
+  "costume.belly": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",
   "costume.eyes": c => !!ANIMALS[c.kind],
-  "costume.accent": c => !!ANIMALS[c.kind] && c.kind !== "dragon",
+  "costume.accent": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",
   "hair.length": h => ["long", "curly", "pigtails", "spiky", "afro"].includes(h.style),
   "hair.bangs": h => !!BANG_LOCKS[h.style],
   "pants.skirtLen": p => p.style === "skirt" || p.style === "dress",
