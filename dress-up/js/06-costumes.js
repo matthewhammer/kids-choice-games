@@ -174,9 +174,7 @@ function ninjaMaskPts(F, grow = NINJA_FIT) {
   return headPoints(F).map(([x, y]) => { const dx = x - 100, dy = y - HEAD_C, r = Math.hypot(dx, dy) || 1, k = (r + grow) / r; return [100 + dx * k, HEAD_C + dy * k]; });
 }
 const ninjaPath = pts => "M" + pts.map(([x, y]) => f1(x) + " " + f1(y)).join(" L") + " Z";
-// (ticket 274's rule: a clip's id named by its shape, not by chance, so two friends' clips never share one)
-const ninjaClip = (pre, d) => { let h = 2166136261; for (let i = 0; i < d.length; i++) h = Math.imul(h ^ d.charCodeAt(i), 16777619);
-  const id = pre + (h >>> 0).toString(36); return { id, def: `<clipPath id="${id}"><path d="${d}"/></clipPath>` }; };
+// (its clips named by their shape, shapeClip in js/02-helpers.js: ticket 274's rule; ninjaClip until ticket 564)
 // the slit's middle line, the band's line (above the brows, below the crown) and the head's mask outline
 function ninjaGeom(F) {
   const LY = faceLayout(F), crown = headCrown(F), pts = ninjaMaskPts(F);
@@ -214,7 +212,7 @@ function ninjaMask(F, dir = 0, away = false, turn = 0) {
 // the eye slit alone, as a clip for the eyes in it (ninjaEyes), the same shape as ninjaMask's: { id, def }
 function ninjaSlitClip(F, dir = 0, turn = 0) {
   const m = ninjaMask(F, dir, false, turn).match(/data-ninja="slit" d="([^"]+)"/);
-  return m ? ninjaClip("ninja-slit-", m[1]) : null;
+  return m ? shapeClip("ninja-slit-", m[1]) : null;
 }
 // THE HEAD COVERING (ninjaBand): a gold band round the head above the brows and below the crown, and a second band from the
 // middle of the forehead over the top of the head to the back, joined to the first in front and behind (an inverted T on
@@ -225,7 +223,7 @@ function ninjaSlitClip(F, dir = 0, turn = 0) {
 // round band crosses the whole head and the band over the top follows the head's outline from the forehead to the back,
 // the gem standing out at the forehead's edge.
 function ninjaBand(F, WC, dir = 0, away = false, turn = 0) {
-  const G = ninjaGeom(F), { pts, bandY: yb, top } = G, bw = NINJA_BW, bow = 4, P = (x, y) => f1(x) + " " + f1(y), clip = ninjaClip("ninja-band-", ninjaPath(ninjaMaskPts(F, NINJA_FIT + 1)));
+  const G = ninjaGeom(F), { pts, bandY: yb, top } = G, bw = NINJA_BW, bow = 4, P = (x, y) => f1(x) + " " + f1(y), clip = shapeClip("ninja-band-", ninjaPath(ninjaMaskPts(F, NINJA_FIT + 1)));
   const cx = 100 + (away ? 0 : turn * 14), stroke = (d, c, w) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f1(w)}" stroke-linejoin="round"/>`;
   let round, over, gem = "", clasp = "";
   if (!dir) {
@@ -305,7 +303,7 @@ function ninjaGemLights(fx, { groups, stone, c: [cx, cy], r, w, spots }) {
   if (fx.glimmer) s += groups.map((d, j) => `<g opacity="0">${ninjaCut(d, 2 * w, 2 * NINJA_CUT_PX)}<animate attributeName="opacity" values="0;1;0;0" ` +
     `keyTimes="0;0.07;0.18;1" dur="${NINJA_GLIMMER_S}s" begin="${f1((j / groups.length - 1) * NINJA_GLIMMER_S)}s" repeatCount="indefinite"/></g>`).join("");
   if (fx.shine) {   // (a band across the light's way, from beyond the stone's upper left to beyond its lower right, then waiting there)
-    const c = ninjaClip("ninja-shine-", stone), u = 0.7071, L = 2 * r, b = 0.22 * r, far = f1(1.9 * r * u);
+    const c = shapeClip("ninja-shine-", stone), u = 0.7071, L = 2 * r, b = 0.22 * r, far = f1(1.9 * r * u);
     const P = (a, q) => f1(cx + a * u + q * u) + " " + f1(cy + a * u - q * u);
     s += c.def + `<g clip-path="url(#${c.id})"><path d="M${P(-b, -L)} L${P(b, -L)} L${P(b, L)} L${P(-b, L)} Z" fill="#ffffff" opacity="0.65" transform="translate(-${far} -${far})">` +
       `<animateTransform attributeName="transform" type="translate" values="-${far} -${far};${far} ${far};${far} ${far}" keyTimes="0;0.3;1" dur="${NINJA_SHINE_S}s" ` +

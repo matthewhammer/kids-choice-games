@@ -31,6 +31,12 @@ function rgbToHex([r, g, b]) { return "#" + [r, g, b].map(v => Math.round(v).toS
 // (ticket 258) a drawing marked with the procedure that drew it, for ♿ 🧩 what it's made of (madeOfHud): a group, its
 // data-proc that name; nothing else changes
 const drawnBy = (name, svg) => `<g data-proc="${name}">${svg}</g>`;
+// (ticket 274's rule: an id named by what it holds, not by chance, so the drawing is the same every time and two friends'
+// ids never meet) shapeId(pre, text): `pre` and a hash of the text (FNV-1a, in base 36); shapeClip(pre, d): a clip path of
+// the one path d, named so, { id, def }. (ticket 564: one namer for every such id; the ninja's clips, ninjaClip, and
+// drawNow's fig-clip each had a copy of the hash, so a crown's gem, or anything new with a clip, would have made a third)
+const shapeId = (pre, text) => { let h = 2166136261; for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619); return pre + (h >>> 0).toString(36); };
+const shapeClip = (pre, d) => { const id = shapeId(pre, d); return { id, def: `<clipPath id="${id}"><path d="${d}"/></clipPath>` }; };
 const mix = (h, to, t) => { const a = hexToRgb(h), b = hexToRgb(to); return rgbToHex(a.map((v, i) => v + (b[i] - v) * t)); };
 const darker = h => mix(h, "#000000", 0.45);
 const lighter = h => mix(h, "#ffffff", 0.45);

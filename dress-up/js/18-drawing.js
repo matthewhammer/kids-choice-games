@@ -1456,8 +1456,7 @@ function drawNow() {
     const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), shape = (clipRect ? clipRect.svg || `<rect x="${f1(clipRect.x0)}" y="${f1(clipRect.y0)}" width="${f1(clipRect.x1 - clipRect.x0)}" height="${f1(clipRect.y1 - clipRect.y0)}"/>` : clipSide ? (doorClip.side < 0 ? `<rect x="${f1(doorClip.x)}" y="-4000" width="8000" height="8000"/>` : `<rect x="-8000" y="-4000" width="${f1(8000 + doorClip.x)}" height="8000"/>`)
       : clipDown ? `<rect x="-4000" y="-4000" width="8000" height="${f1(4000 + climb.clip)}"/>`
       : `<rect x="-4000" y="${f1(climb.clipUp)}" width="8000" height="8000"/>`);
-    let hx = 2166136261; for (let i = 0; i < shape.length; i++) hx = Math.imul(hx ^ shape.charCodeAt(i), 16777619);
-    const id = "fig-clip-" + (hx >>> 0).toString(36) + "-" + clipN++;
+    const id = shapeId("fig-clip-", shape) + "-" + clipN++;   // (ticket 564: the one namer, js/02-helpers.js)
     w.setAttribute("class", "fig-clip"); w.setAttribute("clip-path", `url(#${id})`);
     w.innerHTML = `<clipPath id="${id}" clipPathUnits="userSpaceOnUse">` + shape + `</clipPath>`;
     n.replaceWith(w); w.append(n);
