@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **Fixed:** from behind, with different hands, the right hand's own look (claws, its style) was on the left hand, as if the friend still faced us, and a sword's fist in the left hand closed over it. Each hand's look now stays on its own hand from behind, like what it holds (ticket 528).
+
 ## 0.0.405 (2026-10-21)
 
 Everything in 0.0.404, plus five ways to furnish the round room at the top of the tree.

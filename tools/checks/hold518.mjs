@@ -70,6 +70,13 @@ try {
     // only a cowgirl or cowboy whose lasso showed keeps it; a knight, or a lasso turned off, loads on the costume's own
     out.oldOthers = [["knight", true], ["cowgirl", false]].map(([kind, lasso]) => { const o = clone(DEFAULTS); o.costume.kind = kind; o.costume.lasso = lasso; o.costume.lassoHand = "right"; delete o.body.holdR;
       const n = clone(DEFAULTS); for (const k of Object.keys(DEFAULTS)) n[k] = { ...DEFAULTS[k], ...(o[k] || {}) }; upgradeLassoHand(n); return [n.body.holdR, n.costume.lassoHand === undefined].join(); });
+    // (ticket 528) the right hand's own style (different hands, claws) follows that hand: our left toward us, our right from
+    // behind, also with the left hand's sword's fist on the other; handSvg spied on for each hand's side and style
+    out.styles = {}; { const o = handSvg; window.handSvg = (x, y, a, s, h, k) => { out.styles[out.k].push(Math.sign(Math.round(x)) + ":" + h.style); return o(x, y, a, s, h, k); };
+      state = clone(DEFAULTS); state.music.mute = true; state.hands.different = true; state.rightHand = { ...state.rightHand, style: "claw" };
+      for (const [k, facing, holdL] of [["front", "front", "none"], ["back", "back", "none"], ["backSword", "back", "sword"]]) {
+        out.k = k; out.styles[k] = []; state.body.facing = facing; state.body.holdL = holdL; changed(); await w(60); out.styles[k] = out.styles[k].slice(-2).sort().join(); }
+      window.handSvg = o; }
     return JSON.stringify(out); })()`));
   const D = Object.entries(r.draw);
   console.log("  " + JSON.stringify({ rows: r.rows, order: r.order, chips: r.chips, picked: r.picked, side: r.side, far: r.far, cow: [r.cowOwn, r.cowMoved], reins: [r.reinsFull, r.reinsFree], old: r.old }));
@@ -85,6 +92,7 @@ try {
   ok("riding, full hands let go of the reins; empty ones hold them", r.reinsFull === 0 && r.reinsFree > 0, [r.reinsFull, r.reinsFree]);
   ok("an old save's lassoHand on a knight, or a lasso turned off, adds no lasso", r.oldOthers.every(x => x === "auto,true"), r.oldOthers);
   ok("an old save's lasso in the right hand loads as 🫱 holding the lasso", r.old.join() === "lasso,auto,true", r.old);
+  ok("from behind, the right hand's own style is on our right, the left hand's sword fist on our left (ticket 528)", r.styles.front === "-1:claw,1:round" && r.styles.back === "-1:round,1:claw" && r.styles.backSword === "-1:round,1:claw", r.styles);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

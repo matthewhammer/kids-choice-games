@@ -289,6 +289,8 @@ function drawNow() {
   // always were), side -1 from behind, so from behind a thing stays in its own hand. The lasso is put away while the hands
   // are busy (crawling, swimming or treading, climbing, lying: ticket 522); running, its loop twirls (LFO B's phase).
   const handsBusy = (move && (move.swim || move.squash || move.rot || move.water || move.ladder != null)) || /climb/.test(B.anim || "") || B.pose === "lie";
+  // (ticket 528: and the other way, the own hand an arm is: from behind, side +1 is the right hand, so its style goes there too)
+  const ownOf = side => (away ? -side : side) > 0 ? "L" : "R";
   const armOf = own => arms.find(x => x.side === (away ? -1 : 1) * (own === "L" ? 1 : -1)) || null;
   const heldNow = heldItems(B, kind, WC);
   const held = Object.keys(HOLDABLES).flatMap(id => ["L", "R"].filter(own => heldNow[own] === id).map(own => ({ own, item: id, arm: armOf(own) })))
@@ -885,7 +887,7 @@ function drawNow() {
   // (a hand: with different hands, the friend's right hand, on our left when
   // they face us, wears its own style; one holding the broom is closed round
   // it, a round fist)
-  const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : robot ? robotHands(R, state.hands) : state.hands, own = !suit && !robot && side < 0 ? rightHandOf(hands) : hands;   // (ticket 515: a robot's hands)
+  const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : robot ? robotHands(R, state.hands) : state.hands, own = !suit && !robot && ownOf(side) === "R" ? rightHandOf(hands) : hands;   // (ticket 515: a robot's hands; ticket 528: by own hand, armOf's)
     return handSvg(H[0], H[1], angle, out, held.some(h => h.arm.side === side && HOLDABLES[h.item].fist) ? { ...own, style: "round" } : own, skin); };
   // (ticket 286: crawling toward us or away, each arm drawn whole, straight down to its hand flat on the floor, seen short)
   const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
