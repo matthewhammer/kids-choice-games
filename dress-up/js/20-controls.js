@@ -1729,7 +1729,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // others, each with where they stand (a square of a world), 📍 put here beside the friend, ✖ out of the places, ⭐ and
   // 🗑️. Kept while nothing in it changes (shown).
   if (kind === "people") {
-    const wrap = el("div", { class: "people" });
+    // (ticket 521, c8: in boxes, as every tab's: 👥 the people, ✏️ this one, ➕ new people, 🧍 the others; the tab names it, so no
+    // "👥 people" heading; packed as boxLayout's, --n the boxes shown)
+    const wrap = el("div", { class: "people boxes tabboxes" });
     box.append(wrap);
     let shown = null, newTpl = null;
     const render = () => {
@@ -1748,21 +1750,29 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         onchange: e => { me.name = e.target.value.trim().slice(0, PERSON_NAME_MAX); changed(); } });
       const pick = tpls.length ? choiceChip("⭐ the template for a new person", tpls.map(t => [t.id, "⭐ " + personTitle(t)]), () => newTpl, v => { newTpl = v; shown = null; render(); },
         { "aria-label": "the template for a new person", "data-pick": "person-tpl" }) : null;
-      const others = all.filter(p => p !== me).map(p => el("div", { class: "row person-row", "data-person-row": p.id }, [
+      const others = all.filter(p => p !== me).map(p => el("div", { class: "row person-row person-card", "data-person-row": p.id }, [
         el("span", { class: "person-name" }, mark(p)), el("span", { class: "hint person-where" }, personWhere(p)),
         el("button", { class: "person-here", ...(here ? {} : { disabled: "" }), title: here ? "Put them here, beside the friend" : "Go to a place first: they stand in places", onclick: () => personPlace(p.id, personAside(here, p.id)) }, "📍 here"),
         ...(p.place ? [el("button", { class: "person-out", title: "Take them out of the places (they stay in the list)", onclick: () => personPlace(p.id, null) }, "✖ out")] : []),
         el("button", { class: "person-tpl", "aria-pressed": String(!!p.template), title: "A template: new people can be made from them", onclick: () => personSetTemplate(p.id, !p.template) }, "⭐"),
         el("button", { class: "person-drop", title: "Take this person out of the game", onclick: () => { if (confirm(`Take ${personTitle(p)} out of the game? This can't be undone.`)) personDrop(p.id); } }, "🗑️")]));
-      wrap.replaceChildren(el("div", { class: "cap" }, "👥 people"), el("div", { class: "row people-chips" }, chips),
-        el("div", { class: "hint" }, `🧍 dressing ${personTitle(me)}: every tab dresses them, and they are the one who moves`),
-        el("label", { class: "row person-name-row" }, [el("span", { class: "hint" }, "✏️ their name:"), nameBox]),
-        el("div", { class: "row" }, [el("button", { class: "person-template", "aria-pressed": String(!!me.template), onclick: () => personSetTemplate(me.id, !me.template) }, "⭐ a template: new people can be made from them")]),
-        el("div", { class: "row person-new-row" }, tpls.length ? [el("span", { class: "hint" }, "➕ a new person from"), pick, el("button", { class: "person-new", onclick: () => personNew(newTpl) }, "➕ new person")]
-                                                         : [el("span", { class: "hint" }, "➕ to make new people, make someone ⭐ a template")]),
-        // (ticket 459: or from a costume, chosen in a box laid over the panels, to compare with the dropdown above)
-        el("div", { class: "row" }, [el("button", { class: "person-from-costume", title: "A new person in a costume: choose it in a box over the panels", onclick: () => personCostumeBox() }, "➕ from a costume")]),
-        ...(others.length ? [el("div", { class: "cap" }, "🧍 the others"), ...others] : []));
+      const sec = (name, kids, cls = "") => el("section", { class: "box tabbox" + cls }, [el("h3", { class: "box-name" }, [name]), ...kids]);
+      const boxes = [
+        sec("👥 the people", [el("div", { class: "row people-chips" }, chips),
+          el("div", { class: "hint" }, `🧍 dressing ${personTitle(me)}: every tab dresses them, and they are the one who moves`)]),
+        sec("✏️ this one", [el("label", { class: "row person-name-row" }, [el("span", { class: "hint" }, "✏️ their name:"), nameBox]),
+          el("div", { class: "row" }, [el("button", { class: "person-template", "aria-pressed": String(!!me.template), onclick: () => personSetTemplate(me.id, !me.template) }, "⭐ a template: new people can be made from them")])]),
+        sec("➕ new people", [
+          el("div", { class: "row person-new-row" }, tpls.length ? [el("span", { class: "hint" }, "➕ a new person from"), pick, el("button", { class: "person-new", onclick: () => personNew(newTpl) }, "➕ new person")]
+                                                           : [el("span", { class: "hint" }, "➕ to make new people, make someone ⭐ a template")]),
+          // (ticket 459: or from a costume, chosen in a box laid over the panels)
+          el("div", { class: "row" }, [el("button", { class: "person-from-costume", title: "A new person in a costume: choose it in a box over the panels", onclick: () => personCostumeBox() }, "➕ from a costume")])]),
+        ...(others.length ? [sec("🧍 the others", [el("div", { class: "person-cards" }, others)])] : [])];
+      if (packWatch) for (const b of wrap.children) packWatch.unobserve(b);
+      wrap.replaceChildren(...boxes);
+      const panel = document.getElementById("panel");
+      if (panel && panel.style.getPropertyValue("--n") !== String(boxes.length)) panel.style.setProperty("--n", String(boxes.length));
+      packBoxes(wrap);
     };
     syncs.push(render);
   }

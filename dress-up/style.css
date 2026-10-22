@@ -1015,7 +1015,9 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
 .head-dup { display: none !important; }
 
 /* (ticket 439) the people: a chip each, the one being dressed bold; the others' rows, name, where, then small buttons */
-.people { border: 1px solid var(--line, #c9c2b4); border-radius: 10px; padding: 6px 8px; margin: 6px 0; }
+/* (ticket 521, c8) in boxes (.boxes.tabboxes), as every tab's; the others as small cards, side by side as they fit */
+.people .person-cards { display: flex; flex-wrap: wrap; gap: 6px; }
+.people .person-card { border: 1px solid var(--line, #c9c2b4); border-radius: 8px; padding: 4px 6px; flex: 1 1 200px; flex-wrap: wrap; }
 .people .person-chip[aria-pressed="true"] { font-weight: bold; }
 .people .person-row { align-items: center; gap: 6px; }
 .people .person-row button { padding: 2px 8px; min-height: 0; }

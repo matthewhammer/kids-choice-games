@@ -385,6 +385,21 @@ try {
     ok("✖ cancel and Escape close the box, the costume as it was", !c7.afterCancel.open && c7.afterCancel.kind === c7.was && !c7.afterEsc.open && c7.afterEsc.kind === c7.was, [c7.afterCancel, c7.afterEsc, c7.was]);
     ok("a chip picked: the box closes, the costume is it, and the chip names it", !c7.afterPick.open && c7.afterPick.kind === "knight" && c7.afterPick.text === c7.knight + " ▾", [c7.afterPick, c7.knight]);
     ok("🗺️ a new world's template: a chip box; the template picked is the one the chip names", !!c7.world && c7.world.n >= 1 && c7.world.closed && c7.world.shows === c7.world.want + " ▾", c7.world);
+    // (c8, ticket 521: 👥 People in boxes, as every tab's: 👥 the people, ✏️ this one, ➕ new people, then 🧍 the others once there are
+    // others, as cards; no "👥 people" heading, the tab names it; the classes people439 and people459 use still there)
+    const c8 = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), out = {};
+      state = clone(DEFAULTS); state.music.mute = true; changed(); tab = TABS.findIndex(t => t[0] === "👥 People"); showTab(); await w(300);
+      const names = () => [...document.querySelectorAll("#panel .people.tabboxes > .tabbox > .box-name")].map(h => h.textContent);
+      out.start = names(); out.cap = [...document.querySelectorAll("#panel .people .cap")].map(c => c.textContent);
+      out.kept = ["person-chip", "person-name-row", "person-template", "person-new-row", "person-from-costume"].filter(c => !document.querySelector("#panel .people ." + c));
+      personSetTemplate(state.person.id, true); personNew(state.person.id); await w(400);
+      out.after = names(); out.cards = document.querySelectorAll("#panel .people .tabbox .person-cards > .person-row.person-card[data-person-row]").length;
+      out.packed = !!document.querySelector("#panel .people.tabboxes.packed");
+      return JSON.stringify(out); })()`));
+    console.log(`  c8: ${JSON.stringify(c8)}`);
+    ok("👥 People in boxes: 👥 the people, ✏️ this one, ➕ new people; no '👥 people' heading; people439's and people459's classes kept",
+       JSON.stringify(c8.start) === JSON.stringify(["👥 the people", "✏️ this one", "➕ new people"]) && !c8.cap.includes("👥 people") && !c8.kept.length && c8.packed, c8);
+    ok("👥 People: with another person, 🧍 the others a fourth box, each one a card", JSON.stringify(c8.after) === JSON.stringify(["👥 the people", "✏️ this one", "➕ new people", "🧍 the others"]) && c8.cards === 1, c8);
   }
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
