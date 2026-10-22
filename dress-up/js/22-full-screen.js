@@ -158,7 +158,9 @@ function advLayout(panel) {
   for (const c of kids) if (c.classList.contains("news-cap")) c.remove();   // (the box names it)
   if (lbl) lbl.style.display = "none";   // ("⚙️ advanced": the tab names it)
   const rest = kids.filter(c => c.isConnected && c.parentNode === root && c !== lbl);
-  root.replaceChildren(...(lbl ? [lbl] : []), el("div", { class: "boxes tabboxes" }, [...made, ...(rest.length ? [box("⚙️ more", rest)] : [])]));
+  const all = [...made, ...(rest.length ? [box("⚙️ more", rest)] : [])];
+  root.replaceChildren(...(lbl ? [lbl] : []), el("div", { class: "boxes tabboxes" }, all));
+  boxCount(panel, all);   // (ticket 521)
   // (a test's long account of what it does, folded under ℹ️, open on a tap: rule 4, a row on one line, and a fold that works on a touch
   // screen, where a hint on pointing does not)
   for (const h of root.querySelectorAll(".advbox .perfrow > .hint")) if ((h.textContent || "").length > 140) {
@@ -269,6 +271,12 @@ const BG_BOX = [["place", "🗺️ the place", k => k === "kind" || k === "instE
                 ["things", "🪨 things to put here", k => k === "things", true],
                 ["music", "🎵 the music moves it", k => /^lfo/.test(k)],
                 ["castles", "🏰 the castles", (k, row) => /^castle/.test(k) || /^castle/.test(row.dataset.group || ""), true]];
+// (ticket 521) the boxes shown, as --n on the panel, kept by a sync after the boxes' own hide syncs: a full screen's boxes column is
+// no wider than n boxes of --box-max (style.css), so a tab of one or two boxes leaves no empty column and the game's card takes the
+// rest; written only when it changes (showTab clears it)
+function boxCount(panel, boxes) {
+  syncs.push(() => { const n = String(Math.max(1, boxes.reduce((k, b) => k + (b.hidden ? 0 : 1), 0))); if (panel.style.getPropertyValue("--n") !== n) panel.style.setProperty("--n", n); });
+}
 function bgBoxes(rows) {
   const own = { rows: [] }, by = Object.fromEntries(BG_BOX.map(([id]) => [id, []]));
   for (const r of rows) { const k = r.dataset.key || "", hit = BG_BOX.find(([, , test]) => test(k, r)); (hit ? by[hit[0]] : own.rows).push(r); }
@@ -299,7 +307,8 @@ function bgPlaceRows() {
 // the game's card (.bg-viewcol); outside the full screen the two are display: contents, and the tab is as it always was
 function bgLayout(panel) {
   const kids = [...panel.children], bar = kids.find(c => c.querySelector(":scope > button.designer-chip")), view = kids.find(c => c.querySelector(":scope > .bg-view"));
-  const boxes = el("div", { class: "bg-boxes" }, bgBoxes(kids.filter(c => c !== bar && c !== view)));
+  const made = bgBoxes(kids.filter(c => c !== bar && c !== view)), boxes = el("div", { class: "bg-boxes" }, made);
+  boxCount(panel, made);   // (ticket 521)
   // (Matthew: "no drag between LHS and RHS -- that's a key feature of world designer": the same dragger, kept apart from the world's)
   const split = el("div", { class: "world-split bg-split", role: "separator", "aria-orientation": "vertical", title: "Drag: more room for the boxes, or for the game" });
   const layout = el("div", { class: "bg-layout" }, [boxes, split, el("div", { class: "bg-viewcol" }, view ? [view] : [])]);
@@ -408,6 +417,7 @@ function boxLayout(panel, tabName, ctls) {
     if (parts) { box.addEventListener("pointerenter", () => { document.body.dataset.lit = parts; }); box.addEventListener("pointerleave", () => { if (document.body.dataset.lit === parts) delete document.body.dataset.lit; }); }
     return box; });
   panel.replaceChildren(el("div", { class: "boxes tabboxes" }, made));
+  boxCount(panel, made);   // (ticket 521: after each box's hide sync)
 }
 // (a place's picture, the picture archive's thumbnail of it with the friend; the castle's rooms by the room shown now, or the king's)
 const PICTURES_SITE = "https://matthewhammer.org/dress-up-pictures/pictures/thumbs/backgrounds-with-friend/";

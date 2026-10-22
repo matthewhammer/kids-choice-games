@@ -122,10 +122,16 @@ function measure(o) {
   // the least space between two boxes one above the other (0: their borders touch)
   let minGap = null; const rs = outer.map(R);
   for (const a of rs) for (const b of rs) if (a !== b && b.top >= a.bottom - 1 && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 20) { const g = Math.round(b.top - a.bottom); if (minGap === null || g < minGap) minGap = g; }
-  // a grid's columns, and how many its first row uses
+  // a grid's columns, and how many its first row uses; its columns no box reaches (an empty column), and the boxes across more than
+  // one. Columns are the tracks wider than 0: auto-fit's folded tracks are still listed, as 0px, in gridTemplateColumns
   const grids = [...new Set(outer.map(b => b.parentElement))].filter(p => p && getComputedStyle(p).display === "grid").map(p => {
-    const kids = [...p.children].filter(shown), top = Math.min(...kids.map(k => R(k).top));
-    return { cls: (p.className || "").toString().slice(0, 40), tracks: getComputedStyle(p).gridTemplateColumns.split(" ").length, boxes: kids.length,
+    const kids = [...p.children].filter(shown), top = Math.min(...kids.map(k => R(k).top)), gcs = getComputedStyle(p), kr = kids.map(R);
+    const sizes = gcs.gridTemplateColumns.split(" ").map(parseFloat), gap = parseFloat(gcs.columnGap) || 0, spans = [];
+    let x = R(p).left + (parseFloat(gcs.borderLeftWidth) || 0) + (parseFloat(gcs.paddingLeft) || 0);
+    for (const sz of sizes) if (sz > 0) { spans.push([x, x + sz]); x += sz + gap; }   // (a folded track's gutters fold with it)
+    const reach = r => spans.filter(([a, b]) => Math.min(r.right, b) - Math.max(r.left, a) > 1).length;
+    return { cls: (p.className || "").toString().slice(0, 40), tracks: spans.length, tracksListed: sizes.length, boxes: kids.length,
+             emptyTracks: spans.filter(([a, b]) => !kr.some(r => Math.min(r.right, b) - Math.max(r.left, a) > 1)).length, across: kr.filter(r => reach(r) > 1).length,
              usedFirstRow: new Set(kids.filter(k => R(k).top < top + 2).map(k => Math.round(R(k).left))).size }; });
   // inside each box: what holds a control or a line of text
   let boxPx = 0, inkPx = 0;
@@ -285,6 +291,15 @@ try {
        acc && acc.access.some(a => a[0]) && acc.access.filter(a => a[0]).every(a => a[1] >= 0.95 * acc.region.w) && off && new Set(off.access.map(a => a[2])).size < off.access.length, { acc: acc && acc.access, w: acc && acc.region.w, off: off && off.access });
     const bgs = at("1366x768", "side", "🏞️ Background · castle");
     ok("🏞️ Background's boxes apart in the side panel (a gap, as every tab's)", bgs && bgs.between.boxes >= 4 && bgs.between.minGap >= 6, bgs && { boxes: bgs.between.boxes, minGap: bgs.between.minGap });
+    // (c3, ticket 521: no empty columns. auto-fit folds a column no box is in, and --n keeps a tab's boxes column to the boxes it shows)
+    const fs1920 = me.cases.filter(c => c.mode === "fs" && !c.skip && c.screen === "1920x1080");
+    const emptyCol = g => g.emptyTracks > 0 || (!g.across && g.tracks > Math.max(1, g.boxes));
+    ok("full screen at 1920x1080: no grid has more columns than the boxes it shows (no column without a box; a box across counts for each it spans)",
+       fs1920.length > 0 && fs1920.every(c => !c.between.grids.some(emptyCol)), fs1920.filter(c => c.between.grids.some(emptyCol)).map(c => [c.tab, c.between.grids.filter(emptyCol)]));
+    const one = fs1920.filter(c => c.between.grids.some(g => /tabboxes/.test(g.cls) && g.boxes <= 2));
+    const narrow = c => { const g = c.between.grids.find(x => /tabboxes/.test(x.cls)); return c.region.w <= g.boxes * (440 + 8) + 16; };
+    ok("full screen at 1920x1080: a tab of one or two boxes leaves the rest to the game's card (its column no wider than its boxes at --box-max, 440 px)",
+       one.length > 0 && one.every(narrow), one.filter(c => !narrow(c)).map(c => [c.tab, c.region.w, c.view.slot, c.between.grids.map(g => [g.tracks, g.boxes])]));
   }
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

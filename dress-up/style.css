@@ -113,9 +113,11 @@
      designerShell). A box: one thing you can see or hear, its name once, nesting by boxes alone (.box, .boxes for a grid
      of them). The one-line row: its label, its control, its value (.row1; the music's .knob is one). Their sizes are
      the tokens below, so a card, a strip and a knob are one size wherever they are. */
-  :root { --box-line: 2px solid var(--line); --box-radius: 12px; --box-pad: 8px 10px; --box-gap: 8px; --box-min: 280px; --row-label: 6.2em; --row-value: 3.8em; }
+  :root { --box-line: 2px solid var(--line); --box-radius: 12px; --box-pad: 8px 10px; --box-gap: 8px; --box-min: 280px; --box-max: 440px; --row-label: 6.2em; --row-value: 3.8em; }
   .box { border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--box-tint, var(--mu-main)); }
-  .boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
+  /* (ticket 521) auto-fit, not auto-fill: a column no box is in folds away, the boxes shown share the width (one box was a 287 px
+     column of four at 1920 full screen) */
+  .boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
   .row1 { display: grid; grid-template-columns: var(--row-label) 1fr var(--row-value); align-items: center; gap: 4px; }
   /* (ticket 375) every tab's rows in boxes (boxLayout, TAB_BOXES): each box its name once at its top, its rows inside, close; a
      box inside a box (a group) a shade lighter, no dashed lines; the boxes a grid, one column in the side panel, more as it widens */
@@ -246,14 +248,17 @@
   .bg-layout, .bg-boxes, .bg-viewcol { display: contents; }
   /* (ticket 521) outside the full screen its boxes a grid with gaps too, as every other tab's .boxes (they touched, one column at any
      width), the wide ones across */
-  body:not(.bg-big) .bg-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
+  body:not(.bg-big) .bg-boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
   body:not(.bg-big) .bg-boxes > .box-wide { grid-column: 1 / -1; }
   /* (ticket 375, the report's rules 7 and 8) every other tab a designer too (tabDesigner): outside its full screen as it was, its ⛶ chip
      first; full screen, its boxes on the left (a grid, as wide as there is room), the game the first card on the right, the dragger
      between, from 900 px wide */
   .tab-layout, .tab-content, .tab-viewcol { display: contents; }
   body.tab-big #panel > .tab-bar::before { content: attr(data-name); font-weight: 700; font-size: 1.1em; margin-right: auto; }
-  body.tab-big .tab-layout { display: grid; grid-template-columns: minmax(260px, var(--left, 62%)) 12px minmax(300px, 1fr); column-gap: 8px; align-items: start; }
+  /* (ticket 521) by default the boxes' column no wider than its boxes need, each at most --box-max: --n, the boxes shown, is set on
+     #panel by the layouts' syncs (boxCount); the game's card takes the rest. A tab with no boxes (no --n) keeps the 62%; a split
+     dragged (--left) is kept as it was dragged, and auto-fit spreads the boxes over it */
+  body.tab-big .tab-layout { display: grid; grid-template-columns: minmax(260px, var(--left, min(62%, calc(var(--n, 99) * (var(--box-max) + var(--box-gap)))))) 12px minmax(300px, 1fr); column-gap: 8px; align-items: start; }
   body.tab-big .tab-content { display: block; grid-column: 1; grid-row: 1; min-width: 0; }
   body.tab-big .tab-viewcol { display: block; position: sticky; top: 56px; grid-column: 3; grid-row: 1; }
   body.tab-big .tab-view { display: block; }
@@ -261,9 +266,9 @@
   .place-thumb, .obj-pic { display: none; }
   [data-obj].obj-lit { filter: drop-shadow(0 0 6px #ffd54a) drop-shadow(0 0 2px #ffd54a); }
   body.bg-big #panel > .ctl:has(> button.designer-chip)::before { content: "🏞️ Background designer"; font-weight: 700; font-size: 1.1em; margin-right: auto; }
-  body.bg-big .bg-layout { display: grid; grid-template-columns: minmax(260px, var(--left, 62%)) 12px minmax(300px, 1fr); column-gap: 8px; align-items: start; }   /* (the dragger between, as the world designer's) */
+  body.bg-big .bg-layout { display: grid; grid-template-columns: minmax(260px, var(--left, min(62%, calc(var(--n, 99) * (var(--box-max) + var(--box-gap)))))) 12px minmax(300px, 1fr); column-gap: 8px; align-items: start; }   /* (the dragger between, as the world designer's) */
   body.bg-big .bg-boxes { grid-column: 1; grid-row: 1; }
-  body.bg-big .bg-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
+  body.bg-big .bg-boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--box-min)), 1fr)); gap: var(--box-gap); align-items: start; }
   body.bg-big .bg-boxes > :not([hidden]) { margin: 0; border: var(--box-line); border-radius: var(--box-radius); padding: var(--box-pad); background: var(--mu-main); }
   body.bg-big .bg-boxes > .box-wide { grid-column: 1 / -1; }   /* (ticket 375: the place, the default background objects, the things and the castles across) */
   body.bg-big .bg-viewcol { display: block; position: sticky; top: 56px; grid-column: 3; grid-row: 1; }

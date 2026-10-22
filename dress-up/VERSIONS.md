@@ -8,6 +8,7 @@ Each version lists the game's features as of that version. The newest version is
 - **Fixed: 🫧 the bubble room's settings have a box of their own.** In "🏞️ Background", in the bubble room, its settings were in a box called "🏰 the castles". Now they are in "🫧 the bubble room", and "🏰 the castles" no longer shows there.
 - **Fixed: the switches in "🔬 Inspection" and "♿ Accessibility" sit side by side again.** Since every tab got its full screen, each switch had a line of its own in the full screen, and an overlay switched on no longer took the panel's whole width beside the game. Now the switches that are off sit side by side, and one that is on opens across the panel with its own settings.
 - **Fixed: "🏞️ Background"'s boxes have a gap between them** beside the game, as every other tab's do (their borders touched), and they sit two to a row when the panel is wide enough.
+- **No empty columns beside the boxes.** In a tab's ⛶ full screen and in the background designer, the boxes on the left no longer leave whole columns empty: a tab with one or two boxes showing (like "🖐 Hands" or "💇 Hair" at the start) used to sit in a narrow column with empty columns beside it. Now its boxes take only the room they need, and the game's card on the right gets the rest, so the picture is bigger. A box also fills the side panel's width when it is the only one in its row.
 
 ## 0.0.405 (2026-10-21)
 
