@@ -81,9 +81,16 @@ try {
   console.log(`  DATA ${JSON.stringify({ frameTarget: frameSessions.size ? "own process" : frameCtx ? "the page's process" : "none found", ...T })}`);
   console.log(`  (the game's frames from the 🧩 tab opening until a second after the frame's ready: ${T.frames} frames, ${T.fps} a second, median ${T.median} ms, 95% under ${T.p95} ms, longest ${T.max} ms, ${T.over50} over 50 ms; ` +
     `the frame ready in ${T.readyMs} ms, the library (window.Hazel, on the game's own thread) in ${T.libMs} ms; recorded, not gated)`);
+  // (a frame out of the viewport draws nothing: Chrome gives a cross-origin frame no animation frames there, and the embed takes a
+  // program on one; at 1600x1000 the tiles sit just below the fold, so they are looked at, as a kid would, scrolled into view.
+  // Found on diag-520: below the fold, 0 animation frames in 1.5 s, rows 10px; scrolled in, the tiles and status in ~90 ms)
+  const toView = () => ev(`(async () => { const f = scriptFrame && scriptFrame.iframe; if (!f) return false; f.scrollIntoView({ block: "start" });
+    await new Promise(r => setTimeout(r, 300)); const b = f.getBoundingClientRect(); return b.top >= 0 && b.top < innerHeight; })()`);
+  const inView0 = await toView();
   let look = null;
   for (let i = 0; i < 80 && !(look && look.tokens > 0); i++) { look = await frameLook(); if (!(look && look.tokens > 0)) await sleep(250); }
   const st0 = JSON.parse(await ev(`JSON.stringify((scriptFrame && scriptFrame.status) || null)`));
+  ok("the frame scrolled into view (out of it, Chrome gives it no animation frames)", inView0 === true, inView0);
   ok("Hazel's frame (index.html#embed on the embed branch's build) says ready", r.frameSrc === "https://hazel.org/build/js-library-embed/index.html#embed" && T.phase === "ready", [r.frameSrc, T.phase]);
   ok("the frame shows the shipped program as tiles (its modules and on_event among them), with no error mark, and its status says fine", !!look && look.tokens > 20 && look.words && look.marks === 0 && !!st0 && st0.ok === true, [look, st0]);
   const Z = JSON.parse(await ev(`JSON.stringify({ height: scriptFrame && scriptFrame.height, style: scriptFrame && parseInt(scriptFrame.iframe.style.height) })`));
@@ -127,6 +134,7 @@ try {
     const K = castleOf(B), lev = () => [leverDown(B, "L", 3, K.id), leverDown(B, "R", 3, K.id)];
     out.err0 = lev(); roomLeverPull("L"); await w(1600); out.err = lev(); out.errors = scriptCompiled.errors.length;
     return JSON.stringify(out); })()`));
+  await toView();
   let st = null; look = null;
   for (let i = 0; i < 60; i++) {
     st = JSON.parse(await ev(`JSON.stringify((scriptFrame && scriptFrame.status) || null)`)); look = await frameLook();
@@ -157,7 +165,7 @@ try {
   ok("while the game is full screen the frame is display: none, and shown again after", D.big === "none" && D.back !== "none" && D.connected, D);
   // ---- the keys: a click in the tiles, then B ----
   const box = JSON.parse(await ev(`(async () => { const f = scriptFrame.iframe; f.scrollIntoView({ block: "center" }); await new Promise(r => setTimeout(r, 400));
-    const b = f.getBoundingClientRect(); return JSON.stringify({ x: Math.round(b.left + Math.min(60, b.width / 2)), y: Math.round(b.top + Math.min(30, b.height / 2)), blurs: scriptFrame.blurs }); })()`));
+    const b = f.getBoundingClientRect(); return JSON.stringify({ inView: b.top >= 0 && b.bottom <= innerHeight, x: Math.round(b.left + Math.min(60, b.width / 2)), y: Math.round(b.top + Math.min(30, b.height / 2)), blurs: scriptFrame.blurs }); })()`));
   const mouse = (type, extra = {}) => send("Input.dispatchMouseEvent", { type, x: box.x, y: box.y, button: "left", clickCount: 1, ...extra });
   await mouse("mouseMoved", { button: "none", clickCount: 0 }); await mouse("mousePressed"); await mouse("mouseReleased");
   await sleep(800);
