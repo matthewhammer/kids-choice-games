@@ -58,6 +58,7 @@ let pit_moves = fun (i, was, now, k) : (Int, Bool, Bool, Cmd) -> if was == now t
 let member = fun (s, xs) : (String, [String]) -> case xs | [] => false | x :: rest => x == s || member(s, rest) end`;
 
 const SCRIPT_TRAP = `# A red lever pulled: flip it, and each pit wired to it opens or shuts. #
+# A blue lever pulled: each of its pits gets a boulder, or loses one. #
 let on_event = fun (g, e) : (Globals, Event) ->
   let w = Common.wire(g.wiring, g.draws) in
   let (w0, w1) = w in
@@ -68,6 +69,12 @@ let on_event = fun (g, e) : (Globals, Event) ->
     let r = if side == "R" then !g.lever_R else g.lever_R in
     let (now0, now1) = Common.pits_open(l, r, w) in
     Flip("lever_" ++ side, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, Done)))
+  | PullBoulder(side) =>
+    let mine0 = w0 == side && Common.nth(g.pits_on, 0) in
+    let mine1 = w1 == side && Common.nth(g.pits_on, 1) in
+    let lift = (mine0 && Common.nth(g.covered, 0)) || (mine1 && Common.nth(g.covered, 1)) in
+    let one = fun (i, mine, k) : (Int, Bool, Cmd) -> if !mine then k else if lift then LiftBoulder(i, k) else DropBoulder(i, k) in
+    one(0, mine0, one(1, mine1, Done))
   | _ => Done
   end`;
 
@@ -214,6 +221,7 @@ function scriptRun(cmd, act, depth = 0) {
   if (Z.unknown === 1) scriptSay(`a command this room does not know: ${cmd.tag}`);
 }
 
+let scriptBoulders = { drop: [], lift: [] };
 // (ticket 531) the event's room, its globals and how its commands act: per room kind (SCRIPT_ROOMS' kind), filled in as rules move
 const SCRIPT_ACTS = {
   trap: {
@@ -225,7 +233,13 @@ const SCRIPT_ACTS = {
     // (a Flip moves the lever only; each SetPit swings its pit's lid, the rule having said which: ticket 531. A pit the rule says
     // otherwise than the drawing, which follows the levers, is counted in __hz.mismatch)
     act: () => ({ Flip: name => { if (name === "lever_L") roomLeverFlip("L", false); else if (name === "lever_R") roomLeverFlip("R", false); else return false; },
-                  SetPit: (i, open) => { if (i !== 0 && i !== 1) return false; if (!roomPitSwing(i, !!open)) hzCounters().mismatch++; } }),
+                  SetPit: (i, open) => { if (i !== 0 && i !== 1) return false; if (!roomPitSwing(i, !!open)) hzCounters().mismatch++; },
+                  // (a blue lever: the boulders the rule names, gathered, then dropped or lifted together when the walk ends, as the
+                  // JS's roomBoulderAct; none named, the lever still turns, down)
+                  DropBoulder: i => { if (i !== 0 && i !== 1) return false; scriptBoulders.drop.push(i); },
+                  LiftBoulder: i => { if (i !== 0 && i !== 1) return false; scriptBoulders.lift.push(i); } }),
+    done: ev => { if (ev.tag !== "PullBoulder") return; const { drop, lift } = scriptBoulders; scriptBoulders = { drop: [], lift: [] };
+      roomBoulderAct(String(ev.value), lift.length ? lift : drop, lift.length > 0); },
   },
 };
 
@@ -245,6 +259,7 @@ function scriptEvent(room, ev) {
   try { cmd = f(A.globals(ev), ev); } catch (e) { scriptSay("the rule stopped: " + (e && e.message || e)); return true; }
   const t2 = performance.now();
   scriptRun(cmd, A.act(ev));
+  if (A.done) A.done(ev);
   const t3 = performance.now();
   Z.calls++; hzPush(Z.ms, t2 - t1); hzPush(Z.runMs, t3 - t2); hzPush(Z.hazel[ev.tag] || (Z.hazel[ev.tag] = []), t3 - t0);
   return true;

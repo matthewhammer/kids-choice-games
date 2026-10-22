@@ -487,12 +487,24 @@ function fallIfOverPit() {
 // fall from the ceiling into the hole, or rise away again. A new seed each time one falls: a new rock (its shape, and its
 // tone when the room's boulders are a surprise)
 function roomBoulderPull(side) {
+  if (scriptEvent("TrapRoom", { tag: "PullBoulder", value: side })) return;   // (ticket 531: 🧩 TrapRoom's rule, when it is on)
+  hzJs("PullBoulder", () => {
+    const B = state.background;
+    if (B.kind !== "castleroom") return;
+    const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
+    // (ticket 338) the pits this lever works: a fallen rock still on any, lifted away (each rising, and gone from the place's
+    // things); else into each a new rock falls, which once landed is a placed rock, "fallen N", dragged where one likes
+    const T0 = trapState(B, n, K.id), mine = [0, 1].filter(j => T0.wire[j] === side && T0.on[j]), lift = mine.some(j => T0.covered[j]);
+    roomBoulderAct(side, mine, lift);
+  });
+}
+// (ticket 531) what a blue lever does once it is decided (by the JS above, or a 🧩 rule's DropBoulder and LiftBoulder): the pits
+// mine, lifting their rocks or dropping new ones
+function roomBoulderAct(side, mine, lift) {
   const B = state.background;
   if (B.kind !== "castleroom") return;
   const K = castleOf(B), n = Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1))), key = boulderKey(side, n, K.id);
-  // (ticket 338) the pits this lever works: a fallen rock still on any, lifted away (each rising, and gone from the place's
-  // things); else into each a new rock falls, which once landed is a placed rock, "fallen N", dragged where one likes
-  const T0 = trapState(B, n, K.id), mine = [0, 1].filter(j => T0.wire[j] === side && T0.on[j]), lift = mine.some(j => T0.covered[j]);
+  const T0 = trapState(B, n, K.id);
   B[key] = !lift;
   if (!lift) for (const j of mine) B[boulderSeedKey(j, n, K.id)] = 1 + Math.floor(Math.random() * 999999);   // (ticket 328: a new rock, its own seed)
   changed();
