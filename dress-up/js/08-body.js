@@ -861,7 +861,7 @@ function staffSvg([hx, hy], orb) {
 // and dainty), a velvet cap inside in the robe's colour, pearls on the points and jewels on the band (facing us; none from
 // behind).
 function crownSvg(WC, king, cap, away = false) {
-  const gold = "#e0b030", ln = "#8a6420", j = WC.crownJewel || "#d2382b", n = king ? 5 : 3, top = king ? -18 : -2;
+  const gold = GOLD.c, ln = GOLD.line, j = WC.crownJewel || "#d2382b", n = king ? 5 : 3, top = king ? -18 : -2;   // (ticket 564: the gems' GOLD, the ninja's gold too)
   const xs = Array.from({ length: n }, (_, i) => 40 + 120 * (i + 0.5) / n);
   let pts = `M38 40 L38 20`;
   for (let i = 0; i < n; i++) pts += ` L${f1(xs[i] - 60 / n)} 20 L${f1(xs[i])} ${f1(top + (king && i % 2 ? 10 : 0))} L${f1(xs[i] + 60 / n)} 20`;
@@ -870,7 +870,7 @@ function crownSvg(WC, king, cap, away = false) {
     `<path d="${pts}" fill="${gold}" stroke="${ln}" stroke-width="2.5" stroke-linejoin="round"/>` +
     xs.map((x, i) => `<circle cx="${f1(x)}" cy="${f1(top + (king && i % 2 ? 10 : 0) - 2)}" r="4" fill="#f7f4ec" stroke="#c9c5bd" stroke-width="1"/>`).join("") +
     `<rect x="38" y="31" width="124" height="4" fill="${ln}" opacity="0.5"/>` +
-    (away ? "" : [72, 100, 128].map((x, i) => `<rect x="${f1(x - 5)}" y="25" width="10" height="10" rx="2" transform="rotate(45 ${x} 30)" fill="${i === 1 ? j : mix(j, "#2f6db5", 0.6)}" stroke="#8a6420" stroke-width="1"/>`).join(""));
+    (away ? "" : [72, 100, 128].map((x, i) => `<rect x="${f1(x - 5)}" y="25" width="10" height="10" rx="2" transform="rotate(45 ${x} 30)" fill="${i === 1 ? j : mix(j, "#2f6db5", 0.6)}" stroke="${ln}" stroke-width="1"/>`).join(""));
 }
 // A scepter through the hand at H, in body units: a gold rod 130 above the hand and 30 below, a jewel and a small cross on top
 function scepterSvg([hx, hy], jewel) {

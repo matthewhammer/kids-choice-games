@@ -572,22 +572,13 @@ const COW_HATS = {
 };
 // the lasso's rope (the monk's rope colour) over a darker one
 const ROPE = "#c8a46a", ROPE_DK = "#8a6a3a";
-// (ticket 557, for M: "ninja costume -- all black shirt and pants. black gloves. black face mask (we don't see the face at
-// all ...) special ninja boots/shoes (very quiet), with a braided pattern of bands ... golden head band ... with a separate,
-// connected golden band going from 3rd eye/ forehead to the back of the head ... a ruby (or other gem), with various shape
-// options mounted in the inverted T of golden bands") The 🥷 ninja, in the friend's own clothes as the cowboy is: the cloth,
-// near black with a hint of blue so its outlines still show (NINJA.cloth), the gloves a shade darker (NINJA.glove), the eye
-// slit black; the boots' bands (NINJA_BOOTS, ninjaBoots: braided, two tones crossing over and under, or wrapped straight
-// round, band above band); and the head covering (ninjaBand, on by default): gold bands round the head and over it, front
-// to back, and a gem where they meet on the forehead, its kind (NINJA_GEMS: its colour, its light facet, its outline) and
-// its shape (NINJA_GEM_SHAPES, drawn by ninjaGemPath in js/06-costumes.js). The rows are in 🐯 Costume's 🥷 the ninja box.
-const NINJA = { cloth: "#24252d", line: "#0c0c10", glove: "#18181e", slit: "#030304", gold: "#e0b030", goldLine: "#8a6420", goldLight: "#f6dc7a",
-                bandA: "#4d5263", bandB: "#71778b", bandLine: "#111216" };
-const NINJA_BOOTS = [["braided", "🪢 braided bands"], ["wrapped", "🧣 bands wrapped round"]];
-// (ticket 561, M's design) what shows between the bands: the friend's own skin (the default), or 🌑 full darkness (the
-// trousers under them, as 0.0.410 drew it; Matthew: "which I think looks more natural")
-const NINJA_BETWEEN = [["skin", "🦵 skin between the bands"], ["dark", "🌑 full darkness"]];
-const NINJA_GEMS = {
+// (ticket 564) THE GEMS, any drawing's (the gem itself, gemSvg and gemSideSvg, in js/02-helpers.js): the stones, each its
+// name, its colour (`c`), its light facet and its outline (GEMSTONES); the shapes they are cut in (GEMSTONE_SHAPES); the gold
+// they are set in (GOLD, with its outline and its light: the crown's gold too, crownSvg). Made for the ninja's gem
+// (ticket 557), as NINJA_GEMS and NINJA_GEM_SHAPES until ticket 564; the ninja's settings (ninjaGem, ninjaGemShape) still
+// name a stone and a shape from them, as saved files have them.
+const GOLD = { c: "#e0b030", line: "#8a6420", light: "#f6dc7a" };
+const GEMSTONES = {
   ruby:     { name: "🔴 ruby", c: "#d0103a", light: "#ff7a96", line: "#6e0520" },
   emerald:  { name: "🟢 emerald", c: "#119a4c", light: "#7aeaa8", line: "#05502a" },
   sapphire: { name: "🔵 sapphire", c: "#1d4ed8", light: "#86a8ff", line: "#0e266e" },
@@ -595,7 +586,22 @@ const NINJA_GEMS = {
   topaz:    { name: "🟡 topaz", c: "#f0a020", light: "#ffe394", line: "#8a5206" },
   diamond:  { name: "💎 diamond", c: "#d9f1ff", light: "#ffffff", line: "#6f93aa" },
 };
-const NINJA_GEM_SHAPES = [["round", "⚪ round"], ["oval", "🥚 oval"], ["rhombus", "♦️ diamond shape"], ["teardrop", "💧 teardrop"], ["star", "⭐ star"], ["heart", "❤️ heart"]];
+const GEMSTONE_SHAPES = [["round", "⚪ round"], ["oval", "🥚 oval"], ["rhombus", "♦️ diamond shape"], ["teardrop", "💧 teardrop"], ["star", "⭐ star"], ["heart", "❤️ heart"]];
+// (ticket 557, for M: "ninja costume -- all black shirt and pants. black gloves. black face mask (we don't see the face at
+// all ...) special ninja boots/shoes (very quiet), with a braided pattern of bands ... golden head band ... with a separate,
+// connected golden band going from 3rd eye/ forehead to the back of the head ... a ruby (or other gem), with various shape
+// options mounted in the inverted T of golden bands") The 🥷 ninja, in the friend's own clothes as the cowboy is: the cloth,
+// near black with a hint of blue so its outlines still show (NINJA.cloth), the gloves a shade darker (NINJA.glove), the eye
+// slit black; the boots' bands (NINJA_BOOTS, ninjaBoots: braided, two tones crossing over and under, or wrapped straight
+// round, band above band); and the head covering (ninjaBand, on by default): gold bands round the head and over it, front
+// to back, and a gem where they meet on the forehead, its kind and its shape (the gems' own, GEMSTONES and GEMSTONE_SHAPES,
+// above; ticket 564), its gold the gems' GOLD. The rows are in 🐯 Costume's 🥷 the ninja box.
+const NINJA = { cloth: "#24252d", line: "#0c0c10", glove: "#18181e", slit: "#030304", gold: GOLD.c, goldLine: GOLD.line, goldLight: GOLD.light,
+                bandA: "#4d5263", bandB: "#71778b", bandLine: "#111216" };
+const NINJA_BOOTS = [["braided", "🪢 braided bands"], ["wrapped", "🧣 bands wrapped round"]];
+// (ticket 561, M's design) what shows between the bands: the friend's own skin (the default), or 🌑 full darkness (the
+// trousers under them, as 0.0.410 drew it; Matthew: "which I think looks more natural")
+const NINJA_BETWEEN = [["skin", "🦵 skin between the bands"], ["dark", "🌑 full darkness"]];
 const FAIRY_SHOES = [["slipper", "🩰 curly slippers"],["petal", "🌸 petal shoes"], ["leaf", "🍃 leaf wraps"], ["sparkle", "✨ sparkle boots"], ["bare", "🌼 bare feet, flower anklets"]];
 const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa", "#ffffff"];
 

@@ -421,8 +421,8 @@ const TABS = [
     ["choice", "ninjaBoots", "🥾 the boots' bands", NINJA_BOOTS],
     ["choice", "ninjaBetween", "🦵 between the bands", NINJA_BETWEEN],   // (ticket 561, M's design: the skin, at first)
     ["toggle", "ninjaBand", "👑 golden head band"],
-    ["choice", "ninjaGem", "💎 the gem", Object.entries(NINJA_GEMS).map(([id, g]) => [id, g.name])],
-    ["choice", "ninjaGemShape", "💎 the gem's shape", NINJA_GEM_SHAPES],
+    ["choice", "ninjaGem", "💎 the gem", Object.entries(GEMSTONES).map(([id, g]) => [id, g.name])],
+    ["choice", "ninjaGemShape", "💎 the gem's shape", GEMSTONE_SHAPES],
     // (ticket 560) the gem's lights: its white cuts glimmer, stars twinkle on it, and a shine sweeps it (all three off at first)
     ["toggle", "ninjaGlimmer", "✨ the gem's cuts glimmer"],
     ["toggle", "ninjaGemStars", "⭐ stars twinkle on the gem"],
