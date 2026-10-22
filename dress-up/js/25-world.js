@@ -711,8 +711,48 @@ function blowTick(t) {
 // edge comes inside its heat (FIRE_HEAT, about half again as far as its flames: firePops). Let go, it fades and stops, and
 // nothing runs for it.
 let firePad = false, fireKey = false;
-const fireSim = { raf: 0, shown: "", tf: "", out: 0, at: null };
+const fireSim = { raf: 0, shown: "", tf: "", out: 0, at: null, until: 0 };
 function fireGo() { if (!fireSim.raf) fireSim.raf = requestAnimationFrame(fireTick); }
+// (ticket 523, Matthew: "let's also add a 'fire' button within the dragon costume, with chips for testing each type, so the
+// person trying on the costume need not switch to game controls to try") In 🐯 Costume's 🐉 the dragon box (the control
+// kind "breathe", js/20-controls.js): a 🔥 button breathes fire while it is held (fireBtn: a pointer down on it till it
+// lifts or leaves it, or Space or Enter on it; let go too when the window loses the focus or the browser's tab is hidden,
+// when the panel's tab changes (the button gone from the page: fireTick), and when the pointer lifts anywhere), a tap
+// breathing FIRE_TAP ms at least, so it is seen; and each fire's chip, tapped, breathes that fire for FIRE_TRY ms
+// (fireSim.until), long enough for each to show what it does (the brick fire's pieces click on, one after another, and pop
+// off; the fire bubbles fly and burst, one every 0.3 s), so the six can be tried one after another without holding anything.
+// Its own flag: firePad is the controller's, written every frame one is live, and fireKey is F's, cleared by F's keyup.
+// Neither redraws the friend (no changed()); a chip's setting does, as any setting does.
+const FIRE_TAP = 250, FIRE_TRY = 2000;
+let fireBtn = null;   // (the 🔥 button held: { el, at, id: the pointer's id, or "key" }; null when not)
+function fireBtnDown(b, id) { fireBtn = { el: b, at: performance.now(), id }; setPressed(b, true); fireGo(); }
+function fireBtnUp() {
+  if (!fireBtn) return;
+  const { el: b, at } = fireBtn;
+  fireBtn = null; setPressed(b, false);
+  fireSim.until = Math.max(fireSim.until, at + FIRE_TAP); fireGo();
+}
+function fireTry() { fireSim.until = performance.now() + FIRE_TRY; fireGo(); }
+function fireHoldButton() {
+  const b = el("button", { type: "button", class: "fire-hold", "aria-pressed": "false", title: "Hold to breathe fire (as 🔥 on the controller, or F on the keyboard)" }, "🔥 hold to breathe fire");
+  b.addEventListener("pointerdown", e => {
+    if (e.button > 0) return;
+    e.preventDefault();
+    // (a touch is held by what it began on till it lifts, so it never leaves it: let go of that, so sliding off lets go)
+    try { if (e.target.hasPointerCapture && e.target.hasPointerCapture(e.pointerId)) e.target.releasePointerCapture(e.pointerId); } catch (_) { /* (a synthetic press) */ }
+    fireBtnDown(b, e.pointerId);
+  });
+  b.addEventListener("pointerleave", e => { if (fireBtn && fireBtn.id === e.pointerId) fireBtnUp(); });
+  b.addEventListener("keydown", e => { if (e.key !== " " && e.key !== "Enter") return; e.preventDefault(); if (!e.repeat && !fireBtn) fireBtnDown(b, "key"); });
+  b.addEventListener("keyup", e => { if ((e.key === " " || e.key === "Enter") && fireBtn && fireBtn.id === "key") fireBtnUp(); });
+  b.addEventListener("blur", () => { if (fireBtn && fireBtn.el === b) fireBtnUp(); });
+  b.addEventListener("contextmenu", e => e.preventDefault());
+  return b;
+}
+// (the pointer lifted anywhere, heard before anything else: the button may be gone, its tab built again while it was held)
+for (const k of ["pointerup", "pointercancel"]) document.addEventListener(k, e => { if (fireBtn && fireBtn.id === e.pointerId) fireBtnUp(); }, true);
+window.addEventListener("blur", fireBtnUp);
+document.addEventListener("visibilitychange", () => { if (document.hidden) fireBtnUp(); });
 const fireSize = B => Math.max(0.3, Math.min(3, (Number(B.fireSize) || 100) / 100));
 // where it comes from and which way it goes, in the picture's units: { x, y, k (the friend's scale), view ("side", "front",
 // "away"), sx (side on: 1 toward our right, -1 our left), tilt (degrees, down), mouth (the open mouth's size, 0 none) }
@@ -807,8 +847,11 @@ function fireLayer() {
   return O;
 }
 function fireTick(t) {
+  // (ticket 523: the 🔥 button gone from the page while held, its tab changed or its panel built again: let go. Before the
+  // frame's own request is cleared, so letting go asks for no second one)
+  if (fireBtn && !fireBtn.el.isConnected) fireBtnUp();
   fireSim.raf = 0;
-  const B = state.body, A = (firePad || fireKey) && !figAway && !figBurst ? fireAt() : null, O = document.getElementById("fire-over");
+  const B = state.body, A = (firePad || fireKey || fireBtn || t < fireSim.until) && !figAway && !figBurst ? fireAt() : null, O = document.getElementById("fire-over");
   fireSim.at = A;
   if (A) {
     // (built again only when what it draws changes: its fire, which way it is seen, its heat shown, the mouth's size)
@@ -828,12 +871,15 @@ function fireTick(t) {
     fireSim.raf = requestAnimationFrame(fireTick);
     return;
   }
-  // (let go, or no friend to breathe it: it fades, then is hidden, its animations stopped, and this rests)
-  const g = O && O.querySelector(".fi-fire");
-  if (!g || O.style.display === "none") { fireSim.out = 0; return; }
+  // (let go, or no friend to breathe it: it fades, then is hidden, its animations stopped, and this rests; but while the 🔥
+  // button is still held or a chip's breath still goes on, with no friend to breathe it (spinning through a passage, gone to
+  // bubbles under a boulder) it waits for them: nothing else would start it again, as F's key repeats and the controller's
+  // every frame do)
+  const g = O && O.querySelector(".fi-fire"), wait = () => { if (fireBtn || t < fireSim.until) fireSim.raf = requestAnimationFrame(fireTick); };
+  if (!g || O.style.display === "none") { fireSim.out = 0; wait(); return; }
   if (!fireSim.out) { fireSim.out = t; g.classList.add("fi-out"); }
   if (t - fireSim.out < 220) { fireSim.raf = requestAnimationFrame(fireTick); return; }
-  O.style.display = "none"; fireSim.out = 0;
+  O.style.display = "none"; fireSim.out = 0; wait();
 }
 // (0.0.145, Matthew: "into FS mode, need to reposition the accessibility help, not make it wrong, or make it
 // disappear") Over the picture, everything placed through the screen (the nav arrows, the collision boxes, the planned

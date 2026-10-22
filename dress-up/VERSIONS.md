@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🔥 Try the dragon's fire while dressing up** (in "🐯 Costume", in "🐉 the dragon", while the dragon costume is on): a "🔥 hold to breathe fire" button breathes fire for as long as you hold it, with the mouse, a finger or the Space key, and stops when you let go or slide off it. Under it are the six fires: "🔥 roaring flame", "☄️ fireballs", "🌀 twisting fire", "🔵 blue-hot jet", "🧱 brick fire" and "🫧 fire bubbles". Tap one and the dragon breathes that fire for two seconds, so you can try each in turn without switching to the game controls. It is the same choice as "🔥 its fire" in "🎮 Controls": pick a fire in either place and the other shows it too. 🔥 on the controller and F on the keyboard still breathe fire as before.
+
 ## 0.0.398 (2026-10-21)
 
 Everything in 0.0.397, plus a 🤖 robot costume in eight styles.

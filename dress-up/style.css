@@ -729,6 +729,12 @@ body.world-big .world-compass { grid-template-columns: repeat(3, 3.2em); grid-au
              pointer-events: none; overflow: hidden; border-radius: 16px; will-change: transform; }   /* (a layer of its own: its flames moving paint it alone) */
 #fire-over .fi-fire { transition: opacity 0.1s; }
 #fire-over .fi-fire.fi-out { opacity: 0; transition: opacity 0.2s; }
+/* (ticket 523) 🐉 the dragon's 🔥 button, held to breathe fire (lit while held, by .row's pressed colours): a touch held on it is
+   not a scroll of the panel, nor a long press's menu or a selection, as the on-screen controller's buttons */
+.fire-hold { font-weight: 600; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+             -webkit-tap-highlight-color: transparent; }
+.fire-hold[aria-pressed=true] { transform: scale(0.96); }
+.fire-hold-row { margin-bottom: 6px; }   /* (a row of its own, over its six chips) */
 .fi-heat { animation: fi-shimmer 0.6s linear infinite; }
 @keyframes fi-shimmer { to { stroke-dashoffset: -22; } }
 .fi-glow { animation: fi-flicker 0.13s ease-in-out infinite alternate; }

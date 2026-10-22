@@ -387,6 +387,9 @@ const TABS = [
     ["color", "dragonHorns", "🦷 its horns, teeth and claws", ["#f4ecd6", "#e0b030", "#c9c5bd", "#1f1f22", "#8a5a2b", "#ffffff"]],
     ["choice", "dragonWingsHow", "🪽 its wings", DRAGON_WINGS],
     ["choice", "dragonWingLfo", "〰️ wings flap with", [["none", "their own slow beat"], ...LFO_NAMES.map(L => [L, "LFO " + L])]],
+    // (ticket 523) and its fire, tried on here: 🎮 Controls' 🔥 its fire (the friend's, one setting in both places), a chip
+    // tapped breathing it for a moment, and a 🔥 button to hold, so the controls need not be opened to try it
+    ["of", "body", ["breathe", "fireStyle", "🔥 its fire (tap one to try it, or hold 🔥 to breathe it)", FIRE_STYLES], c => c.kind === "dragon"],
     // (ticket 515) the robot: one of eight styles, its colour (each style its own, shown while it is chosen, as the fairy's
     // wings), and its lights ("auto": each style's own)
     ["choice", "robotStyle", "🤖 style", Object.entries(ROBOT_STYLES).map(([id, r]) => [id, r.name])],
@@ -1488,6 +1491,16 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const when = SHOWN_WHEN[part + "." + key], here = rest[1];
     if (when || here) syncs.push(() => { if (when) setHidden(g, !when(state[part])); if (here) { const on = !!here(state[part]); if (g.classList.contains("here") !== on) g.classList.toggle("here", on); } });
     return g;
+  }
+  // (ticket 523, Matthew: "let's also add a 'fire' button within the dragon costume, with chips for testing each type, so the
+  // person trying on the costume need not switch to game controls to try") a choice of fire, the same row "choice" builds (its
+  // setting, wherever else it is shown, as 🎮 Controls' 🔥 its fire), with a 🔥 button over its chips that breathes fire while
+  // held (fireHoldButton), and a chip tapped breathing its fire for a moment as it is chosen (fireTry; js/25-world.js)
+  if (kind === "breathe") {
+    const box = control(part, ["choice", key, label, rest[0]], opts), chips = box.querySelector(":scope > .row");
+    chips.addEventListener("click", e => { if (e.target.closest("button")) fireTry(); });   // (after the chip's own click has chosen it)
+    box.insertBefore(el("div", { class: "row fire-hold-row" }, [fireHoldButton()]), chips);
+    return box;
   }
   // (ticket 230, Matthew: "for each of: all arrows ..., planned path ..., collision boxes (show a brick wall, not a red
   // box please): chip toggle, as we have now, and then when on, color and stroke/font-size controls. -- all on one line,
