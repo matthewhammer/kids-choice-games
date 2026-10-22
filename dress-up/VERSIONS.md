@@ -2,6 +2,11 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **Fixed:** the cowgirl's and cowboy's ➿ lasso is put away while swimming anywhere, not only in deep water (ticket 522).
+- **Fixed:** in the ⭕ round room at the top of the tree, the hatch lever's post stands a little further from the hole, so walking to the lever never steps into it (ticket 516).
+
 ## 0.0.407 (2026-10-21)
 
 Everything in 0.0.406, plus a 🦶 Sasquatch costume in four styles.
