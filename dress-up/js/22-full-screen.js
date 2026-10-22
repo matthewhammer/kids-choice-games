@@ -261,12 +261,14 @@ function designerHeads(panel, tabName) {
 // (ticket 375) The Background tab's rows in boxes, a box for each thing in the picture, the same in the side panel and the full screen
 // (^du_report(5)'s step 2; till now its full screen made each row a box): 🗺️ the place, the place's own (named by the place, as it
 // changes), 🧍 the friend here, 👁️ default background objects, 🪨 things to put here, 🎵 its music's motion, 🏰 the castles. By the row's key.
+// (ticket 521: a castle's group by its key too, as every castle group's starts with "castle"; its heading was tested for "room", and
+// 🫧 the bubble room's group, key bubbleroom, went into 🏰 the castles in the bubble room)
 const BG_BOX = [["place", "🗺️ the place", k => k === "kind" || k === "instEdit", true],
                 ["friend", "🧍 the friend here", k => /^(figSize|figPos|seat|north_|water(See|Wake|Tread)|blow|swim|tread)/.test(k)],
                 ["stands", "👁️ default background objects", k => k === "objectsOff", true],   // (ticket 456, Matthew: "let's call this -- \"default background objects\" instead"; was 👁️ what stands here)
                 ["things", "🪨 things to put here", k => k === "things", true],
                 ["music", "🎵 the music moves it", k => /^lfo/.test(k)],
-                ["castles", "🏰 the castles", (k, row) => /^castle/.test(k) || (row.classList.contains("ctlgroup") && /castle|🏰|🚪|room/i.test((row.querySelector(":scope > .cap") || {}).textContent || "")), true]];
+                ["castles", "🏰 the castles", (k, row) => /^castle/.test(k) || /^castle/.test(row.dataset.group || ""), true]];
 function bgBoxes(rows) {
   const own = { rows: [] }, by = Object.fromEntries(BG_BOX.map(([id]) => [id, []]));
   for (const r of rows) { const k = r.dataset.key || "", hit = BG_BOX.find(([, , test]) => test(k, r)); (hit ? by[hit[0]] : own.rows).push(r); }

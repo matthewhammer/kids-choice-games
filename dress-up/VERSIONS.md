@@ -2,6 +2,13 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **Fixed: the game's picture fills its card in every tab's full screen.** In a tab's ⛶ full screen (all but "🎵 Music", "🗺️ World design" and "🏞️ Background", which have designers of their own), the picture on the right kept the size it had beside the panel, often smaller than its card, with empty space around the drawing. Now it is as wide as the card, as it is in the background designer.
+- **Fixed: 🫧 the bubble room's settings have a box of their own.** In "🏞️ Background", in the bubble room, its settings were in a box called "🏰 the castles". Now they are in "🫧 the bubble room", and "🏰 the castles" no longer shows there.
+- **Fixed: the switches in "🔬 Inspection" and "♿ Accessibility" sit side by side again.** Since every tab got its full screen, each switch had a line of its own in the full screen, and an overlay switched on no longer took the panel's whole width beside the game. Now the switches that are off sit side by side, and one that is on opens across the panel with its own settings.
+- **Fixed: "🏞️ Background"'s boxes have a gap between them** beside the game, as every other tab's do (their borders touched), and they sit two to a row when the panel is wide enough.
+
 ## 0.0.405 (2026-10-21)
 
 Everything in 0.0.404, plus five ways to furnish the round room at the top of the tree.

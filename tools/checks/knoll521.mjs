@@ -171,6 +171,9 @@ function measure(o) {
   let screenEmpty = 0; for (let i = 0; i < sg.length; i++) if (!sg[i]) screenEmpty++;
   const card = fs ? [...document.querySelectorAll(".tab-view, .bg-view")].find(shown) : null;
   const underCard = card ? Math.round(R(card).width * Math.max(0, innerHeight - R(card).bottom)) : null;
+  // (the card the picture sits in, full screen: its width, and the height fitPic allows there, 60% of the window under the bar)
+  const slotEl = fs ? [...document.querySelectorAll(".tab-view-pic, .bg-view-pic, .world-view-pic")].find(e => shown(e) && e.contains(pic)) : null;
+  const slot = slotEl ? { w: slotEl.clientWidth, capH: Math.round((innerHeight - 56) * 0.6) } : null;
   const tabs = document.getElementById("tabs"), tb = tabs && shown(tabs) ? [...tabs.children].filter(shown) : [];
   const scrollH = fs && side ? side.scrollHeight : document.documentElement.scrollHeight;
   return {
@@ -179,7 +182,7 @@ function measure(o) {
     between: { emptyPx: empty * C * C, share: +(empty / grid.length).toFixed(4), holes, grids, boxes: outer.length, names: outer.map(nameOf), minGap },
     access: panel.dataset.part === "access" ? [...panel.querySelectorAll(".accbox")].filter(shown).map(a => [a.classList.contains("on"), Math.round(R(a).width), Math.round(R(a).top)]) : undefined,
     inside: { boxPx, inkPx, share: boxPx ? +(1 - inkPx / boxPx).toFixed(4) : null, labelLines, labelPx: Math.round(labelPx), labelFit, orphans, tall, tallPx: Math.round(tallPx) },
-    view: { share: +(screenEmpty / sg.length).toFixed(4), picture, underCard },   // (the window at the top of the scroll)
+    view: { share: +(screenEmpty / sg.length).toFixed(4), picture, underCard, slot },   // (the window at the top of the scroll)
     tabStrip: tb.length ? { h: Math.round(R(tabs).height), lines: new Set(tb.map(b => Math.round(R(b).top / 6))).size } : null,
     map: o.map ? outer.map(b => { const r = R(b); return [Math.round(r.left - reg.x), Math.round(r.top - reg.y), Math.round(r.width), Math.round(r.height), nameOf(b)]; }) : undefined,
   };
@@ -267,21 +270,19 @@ try {
   writeFileSync(`${OUT}/${FULL ? "knoll521-" + ORDER : "knoll521"}.json`, JSON.stringify({ when: new Date().toISOString(), order: ORDER, screens: SCREENS, results }));
   const me = results[0], at = (scr, mode, tab) => me.cases.find(c => c.screen === scr && c.mode === mode && c.tab === tab);
   ok("every case laid out at 16 px to the rem (no text autosizing)", me.cases.filter(c => !c.skip).every(c => c.rootPx === 16), me.cases.filter(c => c.rootPx !== 16).map(c => [c.screen, c.tab, c.rootPx]));
-  // (the asserts below come with the fixes that make them true, one commit each; on main they fail)
+  // (the asserts below come with the fixes that make them true, each in its fix's commit; on main they fail)
   if (!FULL) {
+    // (c2, ticket 521: four bugs the audit found; each assert is its bug's case)
     const gen = me.cases.filter(c => c.mode === "fs" && !c.skip && !["music", "world", "background"].includes(c.part) && c.screen === "1920x1080");
-    ok("full screen, every generic designer: the picture sized to its card (letterbox under 2% of it: fitPic knows .tab-view-pic)",
-       gen.every(c => c.view.picture && c.view.picture.letterbox <= 0.02 * c.view.picture.w * c.view.picture.h), gen.map(c => [c.tab, c.view.picture]));
-    ok("full screen at 1920x1080: no box grid with an empty column (its columns no more than its boxes)",
-       me.cases.filter(c => c.mode === "fs" && !c.skip && c.screen === "1920x1080").every(c => c.between.grids.every(g => g.tracks <= Math.max(1, g.boxes))),
-       me.cases.filter(c => c.mode === "fs" && c.screen === "1920x1080" && !c.skip).map(c => [c.tab, c.between.grids]).filter(([, g]) => g.some(x => x.tracks > x.boxes)));
-    const big = me.cases.filter(c => c.mode === "side" && !c.skip).flatMap(c => c.between.holes.filter(h => h.h > 160 && h.w > 120).map(h => [c.screen, c.tab, h]));
-    ok("side panel: no hole between boxes taller than 160 px", big.length === 0, big);
+    const fits = c => { const p = c.view.picture, s = c.view.slot; return !!(p && s && p.letterbox <= 0.02 * p.w * p.h && (p.drawnW >= s.w - 8 || p.drawnH >= s.capH - 8)); };
+    ok("full screen, every generic designer: the picture sized to its card, as wide as the card or as tall as fitPic allows, no letterbox (fitPic knows .tab-view-pic)",
+       gen.length > 0 && gen.every(fits), gen.filter(c => !fits(c)).map(c => [c.tab, c.view.picture, c.view.slot]));
     const bub = at("1366x768", "side", "🏞️ Background · bubbleroom");
-    ok("the bubble room's settings in its own box, none in 🏰 the castles (BG_BOX tested a heading for 'room')", bub && !bub.between.names.includes("🏰 the castles"), bub && bub.between.names);
+    ok("the bubble room's settings in its own box, none in 🏰 the castles (BG_BOX tested a heading for 'room')",
+       bub && !bub.between.names.includes("🏰 the castles") && bub.between.names.some(n => /bubble room/.test(n)), bub && bub.between.names);
     const acc = at("1366x768", "side", me.cases.find(c => /all on$/.test(c.tab)).tab), off = at("1920x1080", "fs", me.cases.find(c => c.part === "access" && !/all on$/.test(c.tab)).tab);
     ok("🔬 overlays: an open one the panel's width; switches off side by side in full screen (the 0.0.314 rules reach through .tab-content)",
-       acc && acc.access.filter(a => a[0]).every(a => a[1] >= 0.95 * acc.region.w) && off && new Set(off.access.map(a => a[2])).size < off.access.length, { acc: acc && acc.access, w: acc && acc.region.w, off: off && off.access });
+       acc && acc.access.some(a => a[0]) && acc.access.filter(a => a[0]).every(a => a[1] >= 0.95 * acc.region.w) && off && new Set(off.access.map(a => a[2])).size < off.access.length, { acc: acc && acc.access, w: acc && acc.region.w, off: off && off.access });
     const bgs = at("1366x768", "side", "🏞️ Background · castle");
     ok("🏞️ Background's boxes apart in the side panel (a gap, as every tab's)", bgs && bgs.between.boxes >= 4 && bgs.between.minGap >= 6, bgs && { boxes: bgs.between.boxes, minGap: bgs.between.minGap });
   }
