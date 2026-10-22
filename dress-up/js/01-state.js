@@ -779,6 +779,7 @@ const DEFAULTS = {
              // (ticket 557) the ninja: its boots' bands, its head covering (on), the gem's kind and shape, eyes in the slit (off)
              ninjaBoots: "braided", ninjaBand: true, ninjaGem: "ruby", ninjaGemShape: "round", ninjaEyes: false,
              ninjaBetween: "skin",   // (ticket 561, M's design: the skin between the boots' bands; "dark", 🌑 full darkness)
+             ninjaGlimmer: true, ninjaGemStars: false, ninjaGemShine: false,   // (ticket 560: the gem's cuts glimmer; its stars and shine, off)
              // (ticket 530) the Sasquatch: its style, each style's colour, its footprints and its grin
              sasquatchStyle: "bigfoot", sasquatchPrints: true, sasquatchGrin: true,
              ...Object.fromEntries(Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["sasquatchColor_" + id, t.colors[0]])),
