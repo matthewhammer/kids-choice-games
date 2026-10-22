@@ -43,14 +43,22 @@ try {
     PullThing: { setup: `Object.assign(B, { kind: "emptyroom", figX: -700, figY: 0, things: [
         ...[0, 1, 2, 3].map(j => ({ ...(THING_DEFAULTS.trapdoor || {}), kind: "trapdoor", x: -300 + 150 * j, z: SCENE.ground + 90, size: 100, uid: "d" + j, open: j % 2 === 0 })),
         { ...(THING_DEFAULTS.lever || {}), kind: "lever", x: 350, z: SCENE.ground + 40, size: 100, works: ["d0", "d1", "d2", "d3"], on: false }] })`, pull: `leverPull(4)` },
+    // (phase 2: the ways, decided as when taken, on a door the game drew: scriptGo, scriptWay; the walk or fall after it, the same
+    // in both modes, left out, so the frame has only the decision in it)
+    FallPit: { setup: `Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -700, figY: 0, things: [], castleLeverWire3N: "normal", castleLeverL_3N: false, castleLeverR_3N: false })`,
+      pull: `{ const p = bgShown.node && bgShown.node.querySelector(".portal[data-pit]"); if (p) scriptGo(p); }`, room: "castleroom" },
+    WayOut: { setup: `Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: castleOf(B).rooms.indexOf("dungeon1") + 1 || 1, figX: 0, figY: 0, things: [] })`,
+      pull: `{ const p = bgShown.node && bgShown.node.querySelector('.portal[data-to="castleroom"], .portal[data-to="castle"]'); if (p) scriptGo(p); }`, room: "castleroom" },
+    Way: { setup: `worldEnter(state.world.cells[state.world.start] ? state.world.start : Object.keys(state.world.cells)[0], null, true)`,
+      pull: `scriptWay(state.world, worldWays(state.world.cells[state.world.at]).filter(d => !(state.world.cells[state.world.at].links || {})[d])[i % 3] || "E")`, room: "" },
   };
   for (const [tag, E] of Object.entries(EVENTS)) {
     result.events[tag] = JSON.parse(await ev(`(async () => { const B = state.background, w = ms => new Promise(r => setTimeout(r, ms)), raf = () => new Promise(r => requestAnimationFrame(r));
-      state.music.mute = true; state.world.at = null; climb = null; ${E.setup}; changed(); await w(600);
+      state.music.mute = true; ${E.room === "" ? "" : "state.world.at = null; "}climb = null; ${E.setup}; changed(); await w(600);
       const Z = window.__hz || (typeof hzCounters === "function" ? hzCounters() : null), mark = Z ? { js: (Z.js[${JSON.stringify(tag)}] || []).length, hz: (Z.hazel[${JSON.stringify(tag)}] || []).length, ms: Z.ms.length, run: Z.runMs.length } : null;
       const toFrame = [];
       for (let i = 0; i < ${N}; i++) { await raf(); await w(i % 10 === 9 ? 120 : 30);
-        if (B.kind !== ${JSON.stringify("")} && !/${tag === "PullHatch" ? "treeroom" : tag === "PullThing" ? "emptyroom" : "castleroom"}/.test(B.kind)) { ${E.setup}; changed(); await w(300); }
+        if (${JSON.stringify(E.room ?? "x")} !== "" && !/${E.room ?? (tag === "PullHatch" ? "treeroom" : tag === "PullThing" ? "emptyroom" : "castleroom")}/.test(B.kind)) { ${E.setup}; changed(); await w(300); }
         const a = performance.now(); ${E.pull}; await raf(); toFrame.push(performance.now() - a); }
       await w(1500);
       // (a burst: one pull a frame, the frames' intervals)

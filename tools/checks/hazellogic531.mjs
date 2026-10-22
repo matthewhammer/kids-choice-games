@@ -4,7 +4,9 @@
 // never comes from broken behaviour. The trap room wired at random (seed 42): red and blue levers, both sides, eight pulls; a tree
 // house's trap door and the round room's at the top, three pulls each; a room of placed levers (one swinging two trap doors, one
 // dropping rocks into one), five pulls. Compared: the levers, the boulders, the fallen rocks' pits, the hatches, the trap doors'
-// open and boulder, the levers' on, and where the friend is (a fall). Under hazel, every pull went through Hazel (__hz.calls), no
+// open and boulder, the levers' on, and where the friend is (a fall). (Phase 2) Then the ways, each decided as the game decides it when
+// taken: the trap room's open pits under four lever settings (FallPit), both dungeons' ladders up (WayOut), and every way out of six
+// of the world's squares (Way): where each leads, the same in both modes. Under hazel, every pull went through Hazel (__hz.calls), no
 // command was unknown, and no pit was said otherwise than drawn (__hz.mismatch). Recorded: each mode's per-event times from __hz.
 // Exits 1 on a failure.
 //   node hazellogic531.mjs <devtools port> <url>
@@ -39,6 +41,26 @@ const SCENARIO = `(async () => { const w = ms => new Promise(r => setTimeout(r, 
     { ...(THING_DEFAULTS.lever || {}), kind: "lever", x: 400, z: SCENE.ground + 40, size: 100, works: ["dc"], on: false, does: "boulder" }] });
   changed(); await w(400);
   for (const i of [3, 4, 3, 4, 3]) { leverPull(i); await w(1000); snap("thing " + i); }
+  // (phase 2) the castle's and the world's ways: each as the game decides it when one is taken (scriptGo in enterScene, scriptWay in
+  // worldWalk), on the doors the game drew; the walk itself left out (the same in both modes). Where each leads, in both modes
+  out.ways = []; out.extra = 0;
+  const lead = (what, door) => { if (!door) { out.ways.push({ what, none: true }); return; }
+    const go = scriptGo(door); out.extra++;
+    out.ways.push({ what, to: go === false ? "nowhere" : go ? go.to : door.dataset.to, room: go ? go.room ?? null : go === false ? null : door.dataset.room ?? null }); };
+  for (const k of Object.keys(B)) if (/^castle(Lever|Boulder)[LR]_/.test(k)) delete B[k];
+  for (const [l, r] of [[false, false], [true, true], [false, true], [true, false]]) {
+    Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -700, figY: 0, things: [], castleLeverWire3N: "normal", castleLeverL_3N: l, castleLeverR_3N: r });
+    changed(); await w(400);
+    for (const pit of bgShown.node ? bgShown.node.querySelectorAll(".portal[data-pit]") : []) lead("pit " + pit.dataset.pit.split(" ")[0] + " levers " + l + r, pit); }
+  const K = castleOf(B);
+  for (const st of ["dungeon1", "dungeon2"]) { const n = K.rooms.indexOf(st) + 1; if (!n) continue;
+    Object.assign(B, { kind: "castleroom", castleRoom: n, figX: 0, figY: 0, things: [] }); changed(); await w(400);
+    lead("ladder up from " + st, bgShown.node && bgShown.node.querySelector('.portal[data-to="castleroom"], .portal[data-to="castle"]')); }
+  const W = state.world;
+  for (const at of Object.keys(W.cells || {}).slice(0, 6)) { worldEnter(at, null, true); await w(300);
+    for (const d of worldWays(W.cells[at])) { if (W.cells[at].links && W.cells[at].links[d]) continue;
+      const t = scriptWay(W, d); out.extra++; out.ways.push({ what: "way " + at + " " + d, key: t ? t.key : null }); } }
+  W.at = null;
   out.hz = window.__hz || null;
   return JSON.stringify(out); })()`;
 async function runMode(mode) {
@@ -68,7 +90,10 @@ try {
   js.steps.forEach((s, i) => ok(`after ${s.what}: the same state in both modes`, JSON.stringify(s) === JSON.stringify(hz.steps[i]), { js: s, hazel: hz.steps[i] }));
   ok("the trap room's pulls changed something (not a scenario that does nothing)", new Set(js.steps.slice(0, 8).map(s => JSON.stringify(s.keys))).size > 3, js.steps.slice(0, 8).map(s => s.keys));
   ok("js: no pull went through Hazel", !js.hz || js.hz.calls === 0, js.hz && js.hz.calls);
-  ok(`hazel: every pull went through Hazel (${PULLS})`, hz.hz && hz.hz.calls === PULLS, hz.hz && hz.hz.calls);
+  // (phase 2: the ways, each decided in both modes, to the same place)
+  ok("the castle's and the world's ways: the same decisions in both modes", JSON.stringify(js.ways) === JSON.stringify(hz.ways), { js: js.ways, hazel: hz.ways });
+  ok("the ways: pits, both dungeons' ladders and world ways were found", js.ways.some(x => /^pit /.test(x.what) && !x.none) && js.ways.filter(x => /^ladder/.test(x.what) && !x.none).length === 2 && js.ways.filter(x => /^way /.test(x.what)).length > 10, js.ways.map(x => x.what + (x.none ? " (none)" : "")));
+  ok(`hazel: every pull and way went through Hazel (${PULLS} + ${hz.extra})`, hz.hz && hz.hz.calls === PULLS + hz.extra, hz.hz && [hz.hz.calls, hz.extra]);
   ok("hazel: no command unknown, no pit said otherwise than drawn", hz.hz && hz.hz.unknown === 0 && hz.hz.mismatch === 0, hz.hz && { unknown: hz.hz.unknown, tags: hz.hz.unknownTags, mismatch: hz.hz.mismatch });
   ok("no page errors", !js.errs.length && !hz.errs.length, [js.errs, hz.errs]);
   console.log(`  js:    ${timesOf(js.hz, "js")}`);
