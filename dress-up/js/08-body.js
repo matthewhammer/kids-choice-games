@@ -429,7 +429,7 @@ function talons(r, R, clawLen = 100, n = 4, fill = "#f4ecd6", line = "#5c4a2e") 
 // The cat costumes (lion too) have claws on their paws.
 const CLAWED = { cat: 1, tiger: 1, lion: 1, bobcat: 1, leopard: 1, cheetah: 1, jaguar: 1, wolf: 1, dragon: 1 };
 // A suit's hands: paws in the fur color, with claws on a cat.
-const suitHands = (C, kind) => ({ style: kind === "deer" ? "hoof" : "paw", size: Math.max(state.hands.size, 12), color: C.fur, pad: C.accent,
+const suitHands = (C, kind) => ({ style: kind === "deer" || kind === "giraffe" ? "hoof" : "paw", size: Math.max(state.hands.size, 12), color: C.fur, pad: C.accent,   // (ticket 544: a giraffe's hooves too)
                                   claws: !!CLAWED[kind], clawLen: state.hands.clawLen ?? 100,
                                   clawCount: state.hands.clawCount ?? 4, clawColor: C.horn });   // (ticket 499: a dragon's in its horns' colour)
 // How far a hand reaches from where it joins the arm, in any direction,

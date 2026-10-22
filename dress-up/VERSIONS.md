@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🦒 giraffe costume** (for Nick, Matthew's friend: "giraffe as a costume in dress up"): a giraffe suit in 🐯 Costume. Its long neck rises up over the friend's head, with the giraffe's own head on top: two little knobbed horns, ears, big eyes with long lashes and a soft muzzle. Brown patches on cream cover the whole suit, a short mane runs down the back of the neck, a thin tail ends in a dark tuft, and the hands and feet are hooves. It has three styles, each with its own colours for its patches: "🦒 reticulated" (the classic net of patches), "🌳 Masai" (dark, jagged patches and the longest neck) and "🍼 baby" (pale, with a shorter neck, big eyes and fluffy tufts on its horns). "🦒 neck's length" makes the neck shorter or much longer. It works in every pose and from every side: lying down, crawling or swimming, the neck bends up so the giraffe's head stays upright, and at a door too low for its neck the giraffe ducks and crawls through.
+
 ## 0.0.409 (2026-10-22)
 
 Everything in 0.0.408, plus a dress, a skirt or a robe that stays over the legs in every pose.
