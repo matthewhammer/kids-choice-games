@@ -44,7 +44,7 @@ try {
       out.poses[pose + "/" + facing] = { ok: t.length > 1000 && !/NaN|undefined/.test(t) && !groups(t).some(turnedIn), prints: t.includes('data-sasquatch="prints"') }; }
     set("body", "pose", "stand");
     for (const anim of ["walk", "run", "crawl", "swim", "climb", "jump"]) for (const facing of ["front", "right", "back"]) {
-      state.body.facing = facing; state.body.anim = anim; changed(); await w(60); const t = figText();
+      state.body.facing = facing; if (anim === "jump") { state.body.anim = "none"; startJump("none", "jump"); } else state.body.anim = anim; changed(); await w(anim === "jump" ? 300 : 60); const t = figText();
       out.poses[anim + "/" + facing] = { ok: t.length > 1000 && !/NaN|undefined/.test(t) && !groups(t).some(turnedIn), prints: t.includes('data-sasquatch="prints"') }; }
     state.body.anim = "none"; state.body.facing = "front"; changed(); await w(60);
     set("costume", "sasquatchPrints", false); changed(); await w(60); out.printsOff = figText().includes('data-sasquatch="prints"');
