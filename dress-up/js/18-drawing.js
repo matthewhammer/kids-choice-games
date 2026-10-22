@@ -266,6 +266,9 @@ function drawNow() {
   // the pose), they lie face down, and the back's pieces stand up off it as in profile
   const lying = !move && B.pose === "lie", lieBack = lying && !!dir && (B.lieHead === "right" ? -1 : 1) === dir;
   const RH = robot ? robotHead(R, F, { dir, away, closed: !!F.closed, lieBack }) : null;
+  // (ticket 536) a moth: the suit, a moth's wings on its arms as a bird suit's (mothWing: its style's, M), feathery antennae
+  // and a fuzzy crown on its hood, a fluffy collar, a banded belly; each piece a group marked data-moth, nothing in one turned
+  const moth = kind === "moth", M = moth ? mothOf(WC) : null;
 
   // The picture's frame grows to hold everything.
   const handYs = arms.map(x => x.H[1]);
@@ -336,6 +339,11 @@ function drawNow() {
                         ...heldOut, western && W.H ? -(Math.min(1.5 * W.H.bw, Math.max(W.H.bw, hairReach(state.hair).half + 12)) * headWidth(F) * (1 + 0.12 * F.alien / 100) * s + 20) : 0,
                         catK ? -(w - 4) - 24 * catK : 0, catK ? -(-(w - 4) + 40 * catK) : 0,
                         robot ? -(w + robotOut(R, w, dir, false) + 16) : 0, RH ? -(RH.half * s + 20) : 0);   // (ticket 515: a robot's head, its blocks, plates, fins, key or legs)
+  // (ticket 536) a moth's wings, wherever its arms take them (their outlines' points, and a little for the fringe and the
+  // curves between them), and its antennae over its hood (stretched with the head, as the hood is)
+  if (moth) { const P = arms.flatMap(arm => mothWingPts(arm, armW, dir ? 0.3 : 1, M)), { cy: hcy, ry: hry } = hoodGeom(F);
+    top = Math.min(top, ...P.map(p => p[1] - 14), ty + (HEAD_C + (hcy - hry - MOTH_ANT_UP - 14 - HEAD_C) * headH(F) - flying) * s);
+    bottom = Math.max(bottom, ...P.map(p => p[1] + 14)); left = Math.min(left, ...P.map(p => -Math.abs(p[0]) - 14)); }
   // (ticket 454, Matthew: "look into the dress-up-pictures for clipped pictures ... see if you can find any and what caused
   // them. Fix those if possible." The archive's 0.0.347 run had the head cut off at the frame's side lying down and crawling
   // in profile, and the top of the head cut jumping into a hug: the frame was the friend's standing one.) Turned about the
@@ -897,7 +905,7 @@ function drawNow() {
   const sf = suit ? "url(#pat-fur)" : fillOf("pat-shirt", SH.color, SH.pattern);
   const ss = suit ? darker(C.fur) : darker(SH.color);
   // (a falcon suit's arms are inside its wings, drawn after the body)
-  const winged = !!BIRD_SUIT[kind];
+  const winged = !!BIRD_SUIT[kind] || moth;   // (ticket 536: and a moth's)
   // (ticket 522, the lasso; ticket 518, everything held: a thing in the far hand, in profile or turned partway, is drawn with
   // that hand, behind the body, and goes into #figure-far with it; the rest after the shirt, before the rein and the hands)
   const heldFar = (dir || q) && !winged && !squash ? held.filter(h => farArms.includes(h.arm)) : [], heldView = crawlTo ? "floor" : dir ? "side" : away ? "back" : "front";
@@ -1010,6 +1018,8 @@ function drawNow() {
   if (wrapStripes(C) && !undies) svg += torsoStripes(torso, w, L, C.marks);
   if (suit && kind !== "eaglesuit" && !away)  // the suit's belly (a bald eagle is brown all over; none on its back: ticket 138)
     svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>` + (dragon ? dragonPlates(C, L * 0.58, w * 0.55, L * 0.36) : "");   // (ticket 499: plated)
+  // (ticket 536) a moth's fuzzy bands, across its belly, or from behind across its back
+  if (moth) svg += away ? mothBands(C, 0, L * 0.6, w * 0.8, L * 0.34) : mothBands(C, 0, L * 0.58, w * 0.55, L * 0.36);
   // (ticket 530) a Sasquatch's shaggy sides, from the shoulder to the hip: both toward us and from behind, the back's in profile
   if (sasq && !undies) svg += sqG("torso", shagEdge((dir ? [-dir] : [1, -1]).map(sd => [[[sd * (w + 2), 2], [sd * w, 44], [sd * (w + 2), L - 4]], sd]), "many", 0, 10, C));
   if (crawlTo && svg.length > shirtAt) svg = svg.slice(0, shirtAt) + flipped(svg.slice(shirtAt));   // (ticket 286: the back, rising behind the head; ticket 515: none to turn under the helper bot's egg, no empty group)
@@ -1046,7 +1056,9 @@ function drawNow() {
   // (ticket 286: crawling toward us, the arms reach down from behind the head to the floor: over the hair hanging
   // down, which hid them, and under the face, which is nearer than the shoulders; the hands come last, below)
   if (crawlTo) svg += kneesTo + (winged ? "" : veil("shirt", arms.map(crawlArm).join("")));
-  if (winged) svg += veil("shirt", arms.map(arm => dir ? armWing(C, arm, armW, 0.3) : armWing(C, arm, armW)).join(""));
+  if (winged && !moth) svg += veil("shirt", arms.map(arm => dir ? armWing(C, arm, armW, 0.3) : armWing(C, arm, armW)).join(""));
+  // (ticket 536) a moth's wings, the same way (in profile the far one first, shaded), and its fluffy collar over their roots
+  if (moth) svg += veil("shirt", (dir ? [...farArms, ...nearArms] : arms).map(arm => mothWing(C, arm, armW, dir ? 0.3 : 1, M, !!dir && farArms.includes(arm))).join("") + mothCollar(C, nw, dir));
 
   // the face, in its own units
   const groundInFace = (ground - ty) / s;

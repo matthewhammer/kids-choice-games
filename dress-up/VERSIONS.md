@@ -2,6 +2,10 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
+## Unreleased
+
+- **🦋 moth costume** (Matthew: "moth costume, 3 styles", with moth wings and antennae): a fuzzy suit in 🐯 Costume with a moth's broad, soft wings on its arms, worn the way the bird suits wear theirs: they fold along the sides when the arms are down and spread wide when the arms go up. Feathery antennae stand up from its hood, which has big round shiny eyes, a fluffy tuft and a curled-up tongue; a fluffy collar sits round its neck and fuzzy bands go across its belly and back. Three styles, each with its own wing colours in "🦋 its wings": "🌙 luna moth" (pale green, a purple edge, small eyespots and long tails on its back wings), "🦚 emperor moth" (warm orange and brown with big bold eyespots on all four wings) and "🌫️ night moth" (cozy dusty grey with zigzag bands, and orange back wings peeking out underneath). "👁️ eyespots" turns the eyespots off and on. Choosing a style dresses the suit in that style's colours, and the animal colour rows still change them. It works in every pose and from every side.
+
 ## 0.0.409 (2026-10-22)
 
 Everything in 0.0.408, plus a dress, a skirt or a robe that stays over the legs in every pose.

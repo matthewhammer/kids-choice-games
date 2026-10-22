@@ -36,6 +36,9 @@ const ANIMALS = {
   falconsuit: { suit: true, fur: "#55616d", marks: "#23282e", belly: "#f2ece0", eyes: "#1a1410", accent: "#f2c230", furPattern: "none" },
   // and a bald eagle's: dark brown feathers, white head and tail
   eaglesuit: { suit: true, fur: "#4a3222", marks: "#2a1a10", belly: "#ffffff", eyes: "#f2c230", accent: "#f2b705", furPattern: "none" },
+  // (ticket 536) a moth: a fuzzy suit, broad soft wings on the arms as a bird suit's are, feathery antennae, a fluffy collar
+  // (its colours are the luna moth's body; choosing a style puts on that style's: MOTH_STYLES, js/01-state.js)
+  moth: { suit: true, fur: "#f4f1e6", marks: "#c9b98f", belly: "#ffffff", eyes: "#2a2233", accent: "#e7b8cb", furPattern: "none" },
 };
 // cats (pointed ears, a triangle nose) and birds (no suit: wings and a tail)
 const FELINE = { cat: 1, tiger: 1, bobcat: 1, leopard: 1, cheetah: 1, jaguar: 1 };
@@ -273,6 +276,8 @@ function hoodBack(C, kind, F, dir = 0, away = false) {
   const line = darker(C.fur), fill = eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
   // (ticket 499) a dragon's horns and spines, behind the hood's own shape, which hides their roots
   if (kind === "dragon") return dragonHoodBack(C, F, dir, away) + `<ellipse ${HOOD} fill="${fill}" stroke="${line}" stroke-width="4"/>`;
+  // (ticket 536) a moth's feathery antennae and fuzzy crown, behind the hood's own shape, which hides their roots; no ears
+  if (kind === "moth") return mothHoodBack(C, F, dir, away) + `<ellipse ${HOOD} fill="${fill}" stroke="${line}" stroke-width="4"/>`;
   let s = "";
   if (kind === "lion") {
     const pts = [];
@@ -372,6 +377,16 @@ function hoodFront(C, kind, F) {
   let s = `<ellipse ${HOOD} fill="${brimFill}" stroke="${darker(C.fur)}" stroke-width="4" clip-path="url(#hood-brim)"/>` +
           `<line x1="0" y1="54" x2="200" y2="54" stroke="${darker(C.fur)}" stroke-width="4" clip-path="url(#hood-inside)"/>`;
   const shine = (x, y, r) => `<circle cx="${x - r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.28}" fill="#ffffff"/>`;
+  // (ticket 536) a moth's: a fluffy tuft between two big round glossy eyes (the animal eye colour), and its tongue curled up
+  // under them; no nose, whiskers or claws (its antennae and crown are behind the hood: mothHoodBack)
+  if (kind === "moth") {
+    const ln = darker(C.fur), tuft = mix(C.belly, C.fur, 0.25);
+    s += `<path data-moth="tuft" d="M90 20 Q86 10 94 8 Q98 0 106 6 Q115 9 110 20 Q106 29 100 27 Q94 29 90 20 Z" fill="${tuft}" stroke="${mix(tuft, "#000000", 0.25)}" stroke-width="2" stroke-dasharray="3 2"/>`;
+    for (const x of [72, 128])
+      s += `<circle cx="${x}" cy="28" r="17" fill="${C.eyes}" stroke="${ln}" stroke-width="2.5"/>` + shine(x, 28, 17) +
+           `<circle cx="${x + 6}" cy="35" r="2.6" fill="#ffffff" opacity="0.7"/>`;
+    return s + `<path data-moth="tongue" d="M100 31 C100 44 112 48 113 40 C114 33 104 33 105 39" fill="none" stroke="${mix(C.accent, "#000000", 0.25)}" stroke-width="3.4" stroke-linecap="round"/>`;
+  }
   // (ticket 499) a dragon's: a brow ridge over each slit-pupilled eye, two nostrils (no nose or whiskers), and its teeth along
   // the brim's edge, the top of the hood's opening, pointing down at the face
   if (kind === "dragon") {
@@ -455,6 +470,7 @@ function hoodFront(C, kind, F) {
 // THE SUIT'S EXTRAS, in body units: a tail out to the side (drawn behind
 // the body), and the falcon's wings and fanned tail.
 function tailSvg(C, kind, hw, L) {
+  if (kind === "moth") return "";   // (ticket 536: a moth has no tail; a luna's long tails are on its hindwings)
   const line = darker(C.fur), x0 = hw * 0.55, y0 = L + 5;
   if (kind === "bear")
     return `<circle cx="${f1(hw + 4)}" cy="${f1(L - 14)}" r="17" fill="url(#pat-fur)" stroke="${line}" stroke-width="3"/>`;
@@ -535,6 +551,143 @@ function falconTail(C, hw, L, LL, fill = "url(#pat-bars)") {
                [hw * 0.5, tl + 8], [hw + 28, tl - 10], [hw * 0.45, L - 20]];
   return poly(fan, fill, darker(fill.startsWith("url") ? C.fur : fill), 3) +
     `<polyline points="${pts(fan.slice(1, 6))}" fill="none" stroke="${C.belly}" stroke-width="6" stroke-linejoin="round"/>`;
+}
+
+// (ticket 536, Matthew: "moth costume, 3 styles. Follow the bird costume examples for wing ideas, but we want moth wings
+// here, and antenna, etc") THE MOTH, a suit as the bird suits are: a moth's wings on its arms, each built on one arm as
+// armWing builds a falcon suit's (the arm along the forewing's leading edge, from the shoulder A to the hand H and on to the
+// wing's round tip; the wing out on the arm's trailing side by armWing's rule, so it lies along the side as the arm is
+// lowered and spreads as it is raised, and in profile, `edge` 0.3, it is turned nearly edge on); feathery antennae and a
+// fuzzy crown behind its hood (mothHoodBack), its face on the brim (hoodFront), a fluffy collar (mothCollar) and a banded
+// belly (mothBands); in its style's colours (mothOf: MOTH_STYLES, js/01-state.js, and the style's chosen wing colour). Each
+// piece is a group marked data-moth, nothing in one turned.
+const mothStyleOf = c => MOTH_STYLES[c.mothStyle] ? c.mothStyle : "luna";
+const mothOf = c => { const id = mothStyleOf(c), S = MOTH_STYLES[id], wing = c["mothColor_" + id] || S.colors[0];
+  return { ...S, id, wing, hind: S.hind || wing, spots: c.mothSpots !== false }; };
+// a closed smooth path through points (each piece a cubic from its neighbours, as smoothPath's, round the loop)
+const mothLoop = P => { const n = P.length, p = i => P[(i + n) % n];
+  let d = `M${f1(P[0][0])} ${f1(P[0][1])}`;
+  for (let i = 0; i < n; i++) { const a = p(i - 1), b = p(i), c = p(i + 1), e = p(i + 2);
+    d += ` C${f1(b[0] + (c[0] - a[0]) / 6)} ${f1(b[1] + (c[1] - a[1]) / 6)} ${f1(c[0] - (e[0] - b[0]) / 6)} ${f1(c[1] - (e[1] - b[1]) / 6)} ${f1(c[0])} ${f1(c[1])}`; }
+  return d + " Z"; };
+// One wing's shape on its arm, in body units: Q(t, d), t along the arm from the shoulder and d out on its trailing side
+// (tipped toward the ground by MOTH_DROP, so a lowered arm's wing hangs down along the side rather than across the body);
+// `fore`, the forewing, broad and round-tipped past the hand; `hind`, the hindwing, rounder, out from under it; `tail`, a
+// luna's long tail hanging from the hindwing's edge (nearly straight down, a little curl, a broad tip). Their
+// points also make the picture's frame (drawNow).
+const MOTH_DROP = 0.6;
+function mothWingGeom({ A, H, side }, armW, edge, M) {
+  const len = Math.hypot(H[0] - A[0], H[1] - A[1]) || 1, ux = (H[0] - A[0]) / len, uy = (H[1] - A[1]) / len;
+  let nx = -uy, ny = ux;
+  if (ny < -0.15 || (Math.abs(ny) <= 0.15 && nx * side < 0)) { nx = -nx; ny = -ny; }
+  const gl = Math.hypot(nx, ny + MOTH_DROP), gx = nx / gl, gy = (ny + MOTH_DROP) / gl;
+  const Q = (t, d) => [A[0] + ux * t + gx * d, A[1] + uy * t + gy * d];
+  const L = len, ext = L * 0.3 * (edge < 1 ? 0.6 : 1), lead = armW / 2 + 5, D = (L * 0.6 + 26) * edge + 8 * (1 - edge);
+  const fore = [[-4, -lead + 2], [L * 0.5, -lead - 3], [L * 0.98, -lead - 1], [L + ext, 0], [L + ext * 0.8, D * 0.42], [L, D * 0.86],
+                [L * 0.78, D], [L * 0.45, D * 0.62], [L * 0.12, D * 0.3], [-2, lead + 2]];
+  const hind = [[L * 0.08, lead * 0.6], [L * 0.5, D * 0.5], [L * 0.82, D * 0.9], [L * 0.76, D * 1.2], [L * 0.55, D * 1.32],
+                [L * 0.3, D * 1.12], [L * 0.1, D * 0.75], [-2, lead + 4]];
+  let tail = null;
+  if (M.tail) {
+    const [bx, by] = Q(L * 0.66, D * 1.22), tl = Math.hypot(gx * 0.3, gy * 0.3 + 1), vx = gx * 0.3 / tl, vy = (gy * 0.3 + 1) / tl, px = -vy, py = vx;
+    const T = L * 0.72 * Math.max(edge, 0.6), c = s => [bx + vx * T * s + px * 7 * Math.sin(Math.PI * s) * side, by + vy * T * s + py * 7 * Math.sin(Math.PI * s) * side];
+    const wd = s => s > 0.85 ? 6.5 : 8 * (1 - s) + 3, S = [0, 0.35, 0.7, 0.92, 1];
+    tail = [...S.map(s => { const [x, y] = c(s); return [x + px * wd(s), y + py * wd(s)]; }),
+            ...S.slice().reverse().map(s => { const [x, y] = c(s); return [x - px * wd(s), y - py * wd(s)]; })];
+  }
+  return { Q, L, D, lead, ext, fore: fore.map(([t, d]) => Q(t, d)), hind: hind.map(([t, d]) => Q(t, d)), tail, hindTD: hind };
+}
+const mothWingPts = (arm, armW, edge, M) => { const G = mothWingGeom(arm, armW, edge, M); return [...G.fore, ...G.hind, ...(G.tail || [])]; };
+// an eyespot at Q(t, d), r across: its rim and ring one shape (a stroke round it), its middle, a shine; its axes along the
+// arm and across it, squashed as the wing is edge on (an ellipse drawn as two arcs, nothing turned)
+function mothSpot(G, t, d, r, [rim, ring, mid], edge, what = "spot") {
+  const [cx, cy] = G.Q(t, d), [ax, ay] = G.Q(t + 1, d), a = Math.atan2(ay - cy, ax - cx), deg = f1(a * 180 / Math.PI), k = Math.max(edge, 0.35);
+  const ell = (rr, fill, extra = "") => { const dx = Math.cos(a) * rr, dy = Math.sin(a) * rr;
+    return `<path d="M${f1(cx - dx)} ${f1(cy - dy)} A${f1(rr)} ${f1(rr * k)} ${deg} 1 0 ${f1(cx + dx)} ${f1(cy + dy)} A${f1(rr)} ${f1(rr * k)} ${deg} 1 0 ${f1(cx - dx)} ${f1(cy - dy)} Z" fill="${fill}"${extra}/>`; };
+  return ell(r * 0.85, ring, ` data-moth="${what}" stroke="${rim}" stroke-width="${f1(r * 0.3)}"`) + ell(r * 0.42, mid) +
+         `<circle cx="${f1(cx - r * 0.2)}" cy="${f1(cy - r * 0.2 * k)}" r="${f1(Math.max(1.2, r * 0.14))}" fill="#ffffff" opacity="0.85"/>`;
+}
+// a band across a wing, from a to b ([t, d] each), bowing toward the wing's tip by `bow`: wavy, or zigzag
+function mothBand(G, a, b, bow, [col, w, zig]) {
+  const P = [];
+  for (let i = 0; i <= 8; i++) { const s = i / 8;
+    P.push(G.Q(a[0] + (b[0] - a[0]) * s + bow * Math.sin(Math.PI * s) + (zig ? (i % 2 ? 4 : -4) : 2.5 * Math.sin(s * 9)), a[1] + (b[1] - a[1]) * s)); }
+  return `<path d="${zig ? "M" + P.map(p => f1(p[0]) + " " + f1(p[1])).join(" L") : smoothPath(P)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+// One wing (M: mothOf), behind to front: the luna's tail, the hindwing (its soft fringe, its band along its edge, its
+// eyespot), then the forewing (its fringe, its veins, the band along its leading edge, its bands across, its eyespot or a
+// night moth's kidney ring, its dusting of scales). `far`: in profile, the wing on the far arm, a shade darker and plain
+// (its markings would crowd the near wing's, just in front of it)
+function mothWing(C, arm, armW, edge, M, far = false) {
+  if (far) { const dk = c => mix(c, "#000000", 0.2); M = { ...M, wing: dk(M.wing), hind: dk(M.hind), costa: dk(M.costa), spots: false, bands: [], hindBand: null, kidney: false, dust: null }; }
+  const G = mothWingGeom(arm, armW, edge, M), { L, D, lead, ext } = G, Q = G.Q;
+  const W = M.wing, HW = M.hind, wl = mix(W, "#000000", 0.42), hl = mix(HW, "#000000", 0.42);
+  const fringe = (d, col) => `<path d="${d}" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="1.6 2.2" stroke-linecap="round"/>`;
+  const hd = mothLoop(G.hind), fd = mothLoop(G.fore), P = p => f1(p[0]) + " " + f1(p[1]);
+  let s = G.tail ? `<path data-moth="tail" d="${mothLoop(G.tail)}" fill="${HW}" stroke="${hl}" stroke-width="2"/>` : "";
+  s += fringe(hd, mix(HW, "#ffffff", 0.4)) + `<path d="${hd}" fill="${HW}" stroke="${hl}" stroke-width="2.2"/>`;
+  if (M.hindBand) { const c = [L * 0.4, D * 0.85], in_ = ([t, d]) => G.Q(c[0] + (t - c[0]) * 0.86, c[1] + (d - c[1]) * 0.86);
+    s += `<path d="${smoothPath(G.hindTD.slice(2, 7).map(in_))}" fill="none" stroke="${M.hindBand[0]}" stroke-width="${M.hindBand[1]}" stroke-linecap="round"/>`; }
+  if (M.spots && M.spot[3]) s += mothSpot(G, L * 0.5, D * 0.98, M.spot[3], M.spot, edge);
+  s += fringe(fd, mix(W, "#ffffff", 0.4)) + `<path d="${fd}" fill="${W}" stroke="${wl}" stroke-width="2.2"/>`;
+  const base = Q(L * 0.04, 0);
+  s += `<path d="${[Q(L + ext * 0.7, D * 0.2), Q(L * 0.98, D * 0.62), Q(L * 0.74, D * 0.9), Q(L * 0.42, D * 0.58)].map(p => `M${P(base)} L${P(p)}`).join(" ")}" fill="none" stroke="${wl}" stroke-width="1.2" opacity="0.35"/>`;
+  s += `<path d="${smoothPath([Q(0, -lead + 5.5), Q(L * 0.5, -lead + 2.5), Q(L * 0.98, -lead + 3.5), Q(L + ext * 0.85, 2)])}" fill="none" stroke="${M.costa}" stroke-width="6" stroke-linecap="round"/>`;
+  const [b1, b2] = M.bands;
+  if (b1) s += mothBand(G, [L * 0.82, -lead + 6], [L * 0.68, D * 0.86], 6, b1);
+  if (b2) s += mothBand(G, [L * 0.36, -lead + 6], [L * 0.24, D * 0.5], 4, b2);
+  if (M.kidney) s += mothSpot(G, L * 0.62, D * 0.3, 8, [M.costa, W, mix(W, M.costa, 0.35)], edge, "kidney");
+  else if (M.spots && M.foreSpot) s += mothSpot(G, L * 0.62, D * 0.42, M.foreSpot, M.spot, edge);
+  if (M.dust) s += `<path d="M${P(Q(L * 0.28, D * 0.15))} L${P(Q(L * 1.02, D * 0.3))} M${P(Q(L * 0.22, D * 0.42))} L${P(Q(L * 0.92, D * 0.7))} M${P(Q(L * 0.5, D * 0.72))} L${P(Q(L * 0.84, D * 0.92))}" ` +
+                  `fill="none" stroke="${M.dust}" stroke-width="2.6" stroke-dasharray="0.1 7" stroke-linecap="round" opacity="0.55"/>`;
+  return `<g data-moth="wing">${s}</g>`;
+}
+// (ticket 536) Behind the hood, in the round head's units: the fuzzy crown along its top (round puffs, the dots of one
+// thick stroke with round ends, on a darker one for their edge, the hood's own shape over half of them) and the two feathery antennae rising from it, each a curved shaft,
+// its barbs in one path and a pale vane behind them; toward us and from behind a V, out to either side; in profile (dir)
+// both rising and curving forward, the far one behind, a shade darker. MOTH_ANT_UP: how far above the hood's top they
+// reach (the picture's frame, drawNow).
+const MOTH_ANT_UP = 84;
+function mothHoodBack(C, F, dir, away) {
+  const { cy, rx, ry } = hoodGeom(F), top = cy - ry, M = mothOf(C), P = (x, y) => f1(x) + " " + f1(y);
+  const pt = a => [100 + (rx + 3) * Math.cos(a * Math.PI / 180), cy + (ry + 3) * Math.sin(a * Math.PI / 180)];
+  const crown = `M${P(...pt(200))} A${f1(rx + 3)} ${f1(ry + 3)} 0 0 1 ${P(...pt(340))}`, fz = mix(C.fur, C.belly, 0.5);
+  let s = `<path data-moth="crown" d="${crown}" fill="none" stroke="${mix(fz, "#000000", 0.3)}" stroke-width="16" stroke-dasharray="0.1 9" stroke-linecap="round"/>` +
+          `<path d="${crown}" fill="none" stroke="${fz}" stroke-width="12.5" stroke-dasharray="0.1 9" stroke-linecap="round"/>`;
+  // each antenna [base, bend, tip], a quadratic curve
+  const ants = dir ? [[[100 - dir * 2, top + 16], [100 - dir * 8, top - 46], [100 + dir * 28, top - MOTH_ANT_UP + 12]],
+                      [[100 + dir * 14, top + 16], [100 + dir * 8, top - 50], [100 + dir * 52, top - MOTH_ANT_UP + 4]]]
+                   : [-1, 1].map(sd => [[100 + sd * 22, top + 16], [100 + sd * 26, top - 48], [100 + sd * 66, top - MOTH_ANT_UP + 6]]);
+  const one = ([B, K, T], col) => {
+    const at = t => [(1 - t) * (1 - t) * B[0] + 2 * (1 - t) * t * K[0] + t * t * T[0], (1 - t) * (1 - t) * B[1] + 2 * (1 - t) * t * K[1] + t * t * T[1]];
+    const tan = t => { const x = 2 * (1 - t) * (K[0] - B[0]) + 2 * t * (T[0] - K[0]), y = 2 * (1 - t) * (K[1] - B[1]) + 2 * t * (T[1] - K[1]), l = Math.hypot(x, y) || 1; return [x / l, y / l]; };
+    let barbs = ""; const L = [], R = [];
+    for (let k = 0; k <= 10; k++) { const t = 0.32 + 0.66 * k / 10, [x, y] = at(t), [tx, ty] = tan(t), len = 3 + 11 * Math.pow(Math.sin(Math.PI * (t - 0.26) / 0.76), 0.7);
+      for (const sd of [1, -1]) { const bx = (-ty * sd * 0.85 + tx * 0.5) * len, by = (tx * sd * 0.85 + ty * 0.5) * len;
+        barbs += `M${P(x, y)} l${P(bx, by)} `; (sd > 0 ? L : R).push([x + bx, y + by]); } }
+    return `<path d="${mothLoop([...L, ...R.reverse()])}" fill="${col}" opacity="0.3"/>` +
+           `<path d="${barbs}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round"/>` +
+           `<path d="M${P(...B)} Q${P(...K)} ${P(...T)}" fill="none" stroke="${mix(col, "#000000", 0.25)}" stroke-width="3.2" stroke-linecap="round"/>`;
+  };
+  s += `<g data-moth="antennae">${ants.map((a, i) => one(a, dir && !i ? mix(M.antenna, "#000000", 0.25) : M.antenna)).join("")}</g>`;
+  return s;
+}
+// (ticket 536) A moth's fluffy collar round the neck, over the wings' roots, in body units (the collar's line at y -20, nw
+// its half width): a ring of round tufts with a dashed fuzzy edge; narrower in profile
+function mothCollar(C, nw, dir) {
+  const rx = dir ? nw + 10 : nw + 20, ry = 15, cy = -6, n = 14, fz = mix(C.belly, C.fur, 0.2);
+  const at = (a, k) => [rx * k * Math.cos(a), cy + ry * k * Math.sin(a)];
+  let d = `M${f1(at(0, 1)[0])} ${f1(at(0, 1)[1])}`;
+  for (let i = 0; i < n; i++) { const a = 2 * Math.PI * (i + 0.5) / n, b = 2 * Math.PI * (i + 1) / n, [qx, qy] = at(a, 1.22), [x, y] = at(b, 1);
+    d += ` Q${f1(qx)} ${f1(qy)} ${f1(x)} ${f1(y)}`; }
+  return `<g data-moth="collar"><path d="${d} Z" fill="${fz}" stroke="${mix(fz, "#000000", 0.3)}" stroke-width="2.4" stroke-dasharray="2.5 2" stroke-linejoin="round"/></g>`;
+}
+// (ticket 536) Fuzzy bands across a moth's belly (toward us) or its back (from behind), in the markings colour: four, each
+// bowed a little, inside the oval cx, cy, rx, ry, in one path
+function mothBands(C, cx, cy, rx, ry) {
+  const d = [-0.55, -0.18, 0.2, 0.56].map(k => { const y = cy + k * ry, h = rx * Math.sqrt(1 - k * k) * 0.88;
+    return `M${f1(cx - h)} ${f1(y)} Q${f1(cx)} ${f1(y + 7)} ${f1(cx + h)} ${f1(y)}`; }).join(" ");
+  return `<g data-moth="bands"><path d="${d}" fill="none" stroke="${C.marks}" stroke-width="6" stroke-linecap="round" stroke-dasharray="3 1.6" opacity="0.7"/></g>`;
 }
 
 // (ticket 499, Matthew: "new costume to add -- dragon." "look at Lego castles and knights for inspiration." "wings, tail and

@@ -322,7 +322,7 @@ const TABS = [
     ["choice", "kind", "costume", [["none", "none"], ["tiger", "🐯 tiger"], ["cat", "🐈‍⬛ black cat"],
                                    ["lion", "🦁 lion"], ["bear", "🐻 bear"], ["falcon", "🦅 peregrine falcon"],
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
-                                   ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
+                                   ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"], ["moth", "🦋 moth"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
                                    ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["sasquatch", "🦶 Sasquatch"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"], ["cowgirl", "👢 cowgirl"], ["cowboy", "🤠 cowboy"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
@@ -394,6 +394,11 @@ const TABS = [
     // (ticket 523) and its fire, tried on here: 🎮 Controls' 🔥 its fire (the friend's, one setting in both places), a chip
     // tapped breathing it for a moment, and a 🔥 button to hold, so the controls need not be opened to try it
     ["of", "body", ["breathe", "fireStyle", "🔥 its fire (tap one to try it, or hold 🔥 to breathe it)", FIRE_STYLES], c => c.kind === "dragon"],
+    // (ticket 536) the moth: three styles, each its own wing colour (shown while it is chosen, as the Sasquatch's fur), and
+    // its eyespots; its body's colours are the animal colour rows above, put on in the style's when it is chosen
+    ["choice", "mothStyle", "🦋 style", Object.entries(MOTH_STYLES).map(([id, t]) => [id, t.name])],
+    ...Object.entries(MOTH_STYLES).map(([id, t]) => ["color", "mothColor_" + id, "🦋 its wings", t.colors]),
+    ["toggle", "mothSpots", "👁️ eyespots"],
     // (ticket 515) the robot: one of eight styles, its colour (each style its own, shown while it is chosen, as the fairy's
     // wings), and its lights ("auto": each style's own)
     ["choice", "robotStyle", "🤖 style", Object.entries(ROBOT_STYLES).map(([id, r]) => [id, r.name])],
@@ -857,6 +862,9 @@ function set(part, key, value) {
   if (part === "body" && key === "anim" && value !== "none" && value !== "swim" && state.body.pose !== "stand") strikePose("stand");
   // choosing an animal dresses it in its natural colors
   if (part === "costume" && key === "kind" && ANIMALS[value]) Object.assign(state.costume, lookOf(value));
+  // (ticket 536) and a moth in its style's: choosing a style, or the moth, puts on that style's body colours (the animal
+  // colour rows change them after)
+  if (part === "costume" && (key === "mothStyle" || key === "kind") && state.costume.kind === "moth") Object.assign(state.costume, MOTH_STYLES[mothStyleOf(state.costume)].body);
   // (ticket 442) the wizard and the gnome man wear a beard, from 💇 Hair: put on (white; long, or full) when the friend has
   // none, and taken off again on leaving the costume, or the gnome becoming a woman, if it is still the one put on
   if (part === "costume" && (key === "kind" || key === "gnomeWho")) {
@@ -1093,6 +1101,10 @@ const SHOWN_WHEN = {
   "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon" && c.kind !== "sasquatch",
   ...Object.fromEntries(["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow"].map(k => ["costume." + k, c => c.kind === "dragon"])),
   "costume.dragonWingLfo": c => c.kind === "dragon" && (c.dragonWingsHow ?? "flap") === "flap",
+  // (ticket 536) the moth's rows: each style's wing colour only while it is chosen; the eyespots for a style that has them
+  "costume.mothStyle": c => c.kind === "moth",
+  ...Object.fromEntries(Object.keys(MOTH_STYLES).map(id => ["costume.mothColor_" + id, c => c.kind === "moth" && mothStyleOf(c) === id])),
+  "costume.mothSpots": c => c.kind === "moth" && (S => !!(S.spot[3] || S.foreSpot))(MOTH_STYLES[mothStyleOf(c)]),
   "costume.witchColor": c => c.kind === "witch",
   "hair.beardShade": h => !!BEARDS[h.beard], "hair.moustache": h => !!BEARDS[h.beard], "hair.beardLength": h => !!BEARDS[h.beard],
   "hair.braidWidth": h => !!(BEARDS[h.beard] && BEARDS[h.beard].braid),
