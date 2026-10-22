@@ -2,7 +2,9 @@
 
 Each version lists the game's features as of that version. The newest version is first.
 
-## Unreleased
+## 0.0.406 (2026-10-21)
+
+Everything in 0.0.405, plus each hand keeps its own look from behind, and held things lie on the floor while crawling.
 
 - **Held things while crawling and swimming** (ticket 529): crawling toward us, each thing in a hand (broom, bow, scepter, sword, shield, staff) lies flat on the floor under the hand, out to the side, its own drawing. Swimming, held things are put away, as the lasso already was: both arms sweep over the head and under the body each stroke, so a thing in the hand would sweep through the friend.
 - **Fixed:** from behind, with different hands, the right hand's own look (claws, its style) was on the left hand, as if the friend still faced us, and a sword's fist in the left hand closed over it. Each hand's look now stays on its own hand from behind, like what it holds (ticket 528).
