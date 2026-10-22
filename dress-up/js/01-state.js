@@ -646,7 +646,7 @@ const DEFAULTS = {
                 castleRoom: 1, livingOut: "house", ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["treeBack" + n, "none"])),
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShape" + n, "square"])),   // (ticket 252: each tree house's trapdoor's opening)
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => ["hatchShut" + n, false])),
-                hatchShapeTop: "square", hatchShutTop: false, treetopBack: "none",   // (ticket 516: the round room at the top of the tree: its trapdoor's opening, shut or open, its way toward us)   // (ticket 334: each tree house's trap door, open till its lever is pulled)
+                hatchShapeTop: "square", hatchShutTop: false, treetopBack: "none", topFurnish: "none",   // (ticket 517: how the round room is furnished) (ticket 516: the round room at the top of the tree: its trapdoor's opening, shut or open, its way toward us)   // (ticket 334: each tree house's trap door, open till its lever is pulled)
                 house1: "fox", house2: "owl", house3: "frog", house4: "bunny", house5: "bear", house6: "cat",
                 ...Object.fromEntries([1, 2, 3, 4, 5, 6].flatMap(n => Object.values(HOUSE_COLOR_DEFAULTS).flatMap(d => Object.entries(d).map(([k, v]) => [k + n, v])))),
                 lfoFast: "D", lfoSlow: "E", lfoWings: "F",
