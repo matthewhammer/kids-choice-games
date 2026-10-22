@@ -1,0 +1,107 @@
+# (ticket 531) The plain JS against the 🧩 Hazel rules, on GitHub's computers. NOT a workflow of this branch: the main session copies it
+# to .github/workflows/diag531.yml on a diag-531* branch cut from hazel-logic-531's tip, with both of the branch's own workflows
+# git rm'd there (so a push runs only this), and pushes that branch when Matthew says so.
+# Eight jobs, each on whatever runner GitHub gives (lscpu logged: the 7763 and the Xeon are slow, the 9V45 fast), each serving
+# two folders from one http.server: this commit (head/) and main at 0.0.407 (main/, before any change), and running, each in a fresh
+# Chrome: the correctness checks first (a speed number never comes from broken behaviour), then the probe in the order js, hazel, js,
+# hazel (main once, as the baseline that js matches), then the frame rates both ways. Every step records and none stops the job;
+# the verdict is read from the artifacts (tools/hazellogic531-sum.mjs).
+name: diag 531 (plain JS against Hazel rules)
+on:
+  push:
+    branches: ['diag-531*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    name: run ${{ matrix.run }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3, 4, 5, 6, 7, 8]
+    env:
+      HEAD_PAGE: http://127.0.0.1:8133/head/dress-up/index.html#inspect
+      MAIN_PAGE: http://127.0.0.1:8133/main/dress-up/index.html#inspect
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: head
+      - uses: actions/checkout@v4
+        with:
+          ref: dress-up-0.0.407
+          path: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The computer
+        run: |
+          mkdir -p out
+          lscpu | tee out/lscpu.txt
+          echo "cpu=$(lscpu | sed -n 's/^Model name:[[:space:]]*//p' | head -1)" | tee out/cpu.txt
+      - name: Serve both folders
+        run: (python3 -m http.server 8133 --bind 127.0.0.1 > /dev/null 2>&1 &)
+      - name: The checks, both modes (correctness first)
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd head
+          chrome() { pkill -f "remote-debugging-port=9333" || true; sleep 1; rm -rf "$RUNNER_TEMP/chrome"
+            (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check --remote-debugging-port=9333 --remote-allow-origins='*' \
+              --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+            for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done; }
+          mkdir -p ../out/checks
+          chrome
+          node tools/checks/hazellogic531.mjs 9333 "$HEAD_PAGE" | tee ../out/checks/hazellogic531.txt || true
+          for f in scripting482 boulder323 pitlids307 trap334 hatch238 lever316 lever378 trapdoor237 pits214 world185; do
+            for m in js hazel; do
+              [ -f "tools/checks/$f.mjs" ] || continue
+              page="${HEAD_PAGE%%#*}?logic=$m#inspect"; [ "$f" = scripting482 ] && page="$HEAD_PAGE"
+              node tools/fresh.mjs 9333 http://127.0.0.1:8133 > /dev/null 2>&1 || true
+              node "tools/checks/$f.mjs" 9333 "$page" > "../out/checks/$f-$m.txt" 2>&1; echo "$f $m: $(tail -1 "../out/checks/$f-$m.txt")"
+              [ "$f" = scripting482 ] && break
+            done
+          done
+      - name: The probe, alternating js, hazel, js, hazel, then main (each in a fresh Chrome)
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd head
+          chrome() { pkill -f "remote-debugging-port=9333" || true; sleep 1; rm -rf "$RUNNER_TEMP/chrome"
+            (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check --remote-debugging-port=9333 --remote-allow-origins='*' \
+              --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+            for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done; }
+          mkdir -p ../out/probe
+          k=0
+          for m in js hazel js hazel; do k=$((k+1)); chrome; node tools/hazellogic531.mjs 9333 "$HEAD_PAGE" "$m" "../out/probe/$k-$m.json" > "../out/probe/$k-$m.txt" 2>&1 || true; done
+          chrome; node tools/hazellogic531.mjs 9333 "$MAIN_PAGE" main ../out/probe/5-main.json > ../out/probe/5-main.txt 2>&1 || true
+      - name: Frame rates both ways (audit160 RUNS=6 on the castle and tree rooms; fpsgate SLOW=1 and BLACK=1)
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd head
+          chrome() { pkill -f "remote-debugging-port=9333" || true; sleep 1; rm -rf "$RUNNER_TEMP/chrome"
+            (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check --remote-debugging-port=9333 --remote-allow-origins='*' \
+              --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+            for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done; }
+          mkdir -p ../out/fps
+          CASES="castleroom:trap,castleroom:dungeon1,castleroom:dungeon2,castleroom:king,treeroom:1,treeroom:2,treeroom:3,treeroom:4,treeroom:5,treeroom:6,castle,treetop,meadow,emptyroom"
+          for m in js hazel js hazel; do
+            page="${HEAD_PAGE%%#*}?logic=$m#inspect"
+            chrome; RUNS=6 W=1920 H=1080 OUT="../out/fps/audit-$m-$RANDOM.json" node tools/audit160.mjs 9333 "$page" "$CASES" >> "../out/fps/audit-$m.txt" 2>&1 || true
+          done
+          for m in js hazel; do
+            page="${HEAD_PAGE%%#*}?logic=$m#inspect"
+            chrome; SLOW=1 W=1920 H=1080 OUT="../out/fps/gate-slow-$m.json" node tools/fpsgate.mjs 9333 "$page" > "../out/fps/gate-slow-$m.txt" 2>&1 || true
+            chrome; BLACK=1 W=1920 H=1080 OUT="../out/fps/gate-black-$m.json" node tools/fpsgate.mjs 9333 "$page" > "../out/fps/gate-black-$m.txt" 2>&1 || true
+          done
+      - name: Summary
+        if: always()
+        run: node head/tools/hazellogic531-sum.mjs out | tee out/summary.txt || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diag531-run-${{ matrix.run }}
+          path: out
