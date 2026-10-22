@@ -168,6 +168,20 @@ function measure(o) {
     const used = kids.filter(k => R(k).top < t0 + 4).reduce((s, k) => s + R(k).width + 6, 0);
     if (rg.getBoundingClientRect().width + 12 + used <= R(c).width) labelFit++;
   }
+  // (c6) the short chip rows a box 380 px wide inside puts beside their label (8 chips or fewer, one row, a label shown, no slider):
+  // how many are beside, how many are still under their label, and how many of those beside end in one chip
+  let beside = 0, under = 0, besideOrphans = 0;
+  if (!document.body.classList.contains("castle-big")) for (const c of all.filter(e => e.matches(".tabbox > .ctl") && !e.hidden && shown(e))) {
+    const box = c.parentElement, bcs = getComputedStyle(box), inner = box.clientWidth - (parseFloat(bcs.paddingLeft) || 0) - (parseFloat(bcs.paddingRight) || 0);
+    const L = c.querySelector(":scope > .lbl"), rws = c.querySelectorAll(":scope > .row"), row = rws[0];
+    if (inner < 380 || !L || L.hidden || L.classList.contains("head-dup") || !(L.textContent || "").trim() || rws.length !== 1 || row.hidden || row.children.length > 8 || c.querySelector(":scope > input[type=range]")) continue;
+    if (!shown(L) || !shown(row)) continue;
+    const lr = R(L), rr = R(row);
+    if (lr.right <= rr.left + 2 && lr.bottom > rr.top) { beside++;
+      const kids = [...row.children].filter(k => k.matches("button") && shown(k)), lineOf = k => Math.round(R(k).top / 6), lines = [...new Set(kids.map(lineOf))];
+      if (lines.length >= 2 && kids.filter(k => lineOf(k) === Math.max(...lines)).length === 1) besideOrphans++; }
+    else under++;
+  }
   // the screen at the top of the scroll: covered by a box, a control, a line of text, or the drawing (not its letterbox)
   const SC = 8, sw = Math.ceil(innerWidth / SC), sh = Math.ceil(innerHeight / SC), sg = new Uint8Array(sw * sh);
   for (const b of outer) mark(sg, sw, sh, 0, 0, R(b), GAP);
@@ -197,7 +211,7 @@ function measure(o) {
     region: { w: Math.round(reg.w), h: Math.round(reg.h) }, panelTop: Math.round(pr.top + scrollY), windows: +(scrollH / innerHeight).toFixed(2),
     between: { emptyPx: empty * C * C, share: +(empty / grid.length).toFixed(4), holes, grids, boxes: outer.length, names: outer.map(nameOf), minGap },
     access: panel.dataset.part === "access" ? [...panel.querySelectorAll(".accbox")].filter(shown).map(a => [a.classList.contains("on"), Math.round(R(a).width), Math.round(R(a).top)]) : undefined,
-    inside: { boxPx, inkPx, share: boxPx ? +(1 - inkPx / boxPx).toFixed(4) : null, labelLines, labelPx: Math.round(labelPx), labelFit, orphans, tall, tallPx: Math.round(tallPx) },
+    inside: { boxPx, inkPx, share: boxPx ? +(1 - inkPx / boxPx).toFixed(4) : null, labelLines, labelPx: Math.round(labelPx), labelFit, orphans, tall, tallPx: Math.round(tallPx), beside, under, besideOrphans },
     view: { share: +(screenEmpty / sg.length).toFixed(4), picture, underCard, slot },   // (the window at the top of the scroll)
     tabStrip: tb.length ? { h: Math.round(R(tabs).height), lines: new Set(tb.map(b => Math.round(R(b).top / 6))).size } : null,
     map: o.map ? outer.map(b => { const r = R(b); return [Math.round(r.left - reg.x), Math.round(r.top - reg.y), Math.round(r.width), Math.round(r.height), nameOf(b)]; }) : undefined,
@@ -323,6 +337,14 @@ try {
     const ctl = at("1920x1080", "fs", me.cases.find(c => c.part === "controls")?.tab), cg = ctl && ctl.between.grids.find(g => /tabboxes/.test(g.cls));
     ok("full screen at 1920x1080: 🎮 Controls' 🫧 themes box two columns wide (the grid 864 px or wider), its groups side by side",
        !!cg && cg.tracks >= 3 && cg.across >= 1, ctl && { w: ctl.region.w, grids: ctl.between.grids });
+    // (c6, ticket 521: a short chip row beside its label in a box 380 px wide inside; the count of rows ending in one chip is the full
+    // run's, against main)
+    const live = me.cases.filter(c => !c.skip);
+    ok("every box 380 px wide inside: no label of a short chip row (8 chips or fewer) on a line of its own above it (the container query)",
+       live.every(c => !c.inside.under), live.filter(c => c.inside.under).map(c => [c.screen, c.mode, c.tab, c.inside.under]));
+    const wide = live.filter(c => c.screen === "1920x1080" && c.mode === "fs" && c.inside.beside > 0);
+    ok("full screen at 1920x1080: some tab's short chip rows beside their labels (a tab of one or two boxes, each up to 440 px)",
+       wide.length > 0, live.filter(c => c.screen === "1920x1080").map(c => [c.tab, c.inside.beside, c.inside.under]));
   }
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }

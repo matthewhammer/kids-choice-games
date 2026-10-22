@@ -153,6 +153,18 @@
   :is(.tabbox, .chipset) > .ctl:has(> input[type="range"]) > .lbl > span:first-child { grid-column: 1; grid-row: 1; min-width: 0; line-height: 1.15; }
   :is(.tabbox, .chipset) > .ctl:has(> input[type="range"]) > input[type="range"] { grid-column: 2; grid-row: 1; width: 100%; margin: 0; }
   :is(.tabbox, .chipset) > .ctl:has(> input[type="range"]) > .lbl > .val { grid-column: 3; grid-row: 1; text-align: right; }
+  /* (ticket 521, c6) a short chip row beside its label, not under it, once the box is 380 px wide inside: the label in the slider
+     rows' column (minmax(6.2em, 38%)), so labels line up down the box, as ticket 226's .tunesctl has it. A row of 8 chips or fewer
+     (more would wrap to many lines in 62%); a label shown (not hidden, not empty, not the box's own name); the box a container
+     (style: its width never comes from its content, a grid item or a block). Not the castle designer's rooms (a grid of its own in
+     the castles box, each cell narrower than the box) */
+  .tabbox { container-type: inline-size; }
+  @container (min-width: 380px) {
+    body:not(.castle-big) .tabbox > .ctl:not([hidden]):has(> .lbl:not([hidden], :empty, .head-dup)):has(> .row:not([hidden], :has(> :nth-child(9)))):not(:has(> input[type="range"]), :has(> .row ~ .row)) {
+      display: grid; grid-template-columns: minmax(6.2em, 38%) 1fr; align-items: center; column-gap: 6px; }
+    body:not(.castle-big) .tabbox > .ctl:not([hidden]):has(> .lbl:not([hidden], :empty, .head-dup)):has(> .row:not([hidden], :has(> :nth-child(9)))):not(:has(> input[type="range"]), :has(> .row ~ .row)) > .lbl { margin: 0; min-width: 0; line-height: 1.15; }
+    body:not(.castle-big) .tabbox > .ctl:not([hidden]):has(> .lbl:not([hidden], :empty, .head-dup)):has(> .row:not([hidden], :has(> :nth-child(9)))):not(:has(> input[type="range"]), :has(> .row ~ .row)) > :not(.lbl, .row) { grid-column: 1 / -1; }
+  }
   .box .chipset, .box .box { background: rgba(255, 255, 255, 0.035); }
   /* (ticket 375) the things put in a place, knolled: same-size cards in a grid, each its picture, its name once, ✖, its chips, a line
      for each setting */
