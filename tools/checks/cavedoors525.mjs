@@ -77,6 +77,12 @@ try {
     const en = worldWaysAt.find(e => e[0] === "p-" + tw.uid); document.querySelector('#ways .way-arrow[data-way="p-' + tw.uid + '"]').click(); await new Promise(r => setTimeout(r, 5000));
     return JSON.stringify({ label: en && en[5], kind: state.background.kind, at: state.world.at }); })()`));
   ok("(e) the twin's arrow leads back to the cave room, through its waterfall square", e.kind === "caveroom" && e.at === wf, e);
+  // (e2) the linked square moved (swapped with another): the door follows it, and its twin still leads back
+  const e2 = JSON.parse(await ev(`(() => { const W = state.world, K = ${JSON.stringify(K)}, J = worldKeys(W).find(k => k !== K && k !== W.at && W.cells[k].kind !== "waterfall");
+    worldMove(K, J); const t = state.background.things.find(t => t.kind === "passage"), tw = passageTwin(t);
+    const r = { J, key: t.dest && t.dest.key, twin: !!tw, back: !!tw && passageTwin(tw) === t, probs: worldProblems(W).map(p => p.text).filter(x => /cave passage/.test(x)) };
+    worldMove(J, K); r.again = (state.background.things.find(t => t.kind === "passage").dest || {}).key === K; return JSON.stringify(r); })()`));
+  ok("(e2) a linked square moved: the door's dest follows it, its twin found both ways, no warning", e2.key === e2.J && e2.twin && e2.back && !e2.probs.length && e2.again, e2);
   // (f) ✖ on its card takes both
   await click(`#panel .thingcard .tdel`); await sleep(600);
   const f = JSON.parse(await ev(`JSON.stringify({ here: (state.background.things || []).filter(t => t.kind === "passage").length, there: (state.world.cells[${JSON.stringify(K)}].things || []).filter(t => t.kind === "passage").length })`));

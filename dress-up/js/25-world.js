@@ -1246,6 +1246,21 @@ function passagesEach(fn) {
   }
   if (Array.isArray(state.background.things)) fn(state.background.things, null);
 }
+// (squares renamed in world id: each door's dest naming one moved along, mv(key) its new key; and a door into an off-grid place
+// put on the grid, put: { off, key, kind }, now leading to that square)
+function passagesRemap(id, mv, put = null) {
+  passagesEach(T => { for (const t of T) {
+    const d = t.kind === "passage" && t.dest;
+    if (!d || d.world !== id) continue;
+    if (put && d.off === put.off) { t.dest = { world: id, key: put.key, kind: put.kind }; continue; }
+    if (d.key) d.key = mv(d.key);
+    if (d.from) d.from = mv(d.from);
+  } });
+}
+// (a square about to hold another place: the doors into it unlinked, their twins there going with it)
+function passagesUnlinkInto(id, key) {
+  passagesEach(T => { for (const t of T) if (t.kind === "passage" && t.dest && t.dest.world === id && t.dest.key === key) { delete t.dest; delete t.twin; } });
+}
 // each cave door's nav arrow: [id, x, y, angle, { kind }, its words, "", { glyph, side, name }], its spot on the floor its foot (wayHomes)
 const PASSAGE_TOP = { arch: 112, wallhole: 108, floorhole: 15 };
 function doorWays(B, k) {
@@ -1405,11 +1420,12 @@ function worldPut(key, kind, o = null) {
   const from = o && o.from && W.cells[o.from], fromOwn = from && from.own || {};
   const view = k => Object.assign(Object.create(state.background), fromOwn, { kind: k, ...(w ? { [w]: which } : {}) });
   const pk = o ? placeKey(view(kind)) : null, things = pk && W.off && W.off[pk] ? structuredClone(W.off[pk]) : [];
+  if (W.cells[key]) passagesUnlinkInto(W.id, key);
   const own = {};
   if (from) for (const [k, v] of Object.entries(fromOwn)) { const when = SHOWN_WHEN["background." + k]; if (when && when(view(kind)) && !when(view(from.kind))) own[k] = structuredClone(v); }
   W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", things }
                                      : { kind, ways: worldUsualWays(kind), things, ...(w ? { [w]: which } : {}), ...(Object.keys(own).length ? { own } : {}) };   // (ticket 524: which one)
-  if (pk && W.off) delete W.off[pk];
+  if (pk && W.off) { delete W.off[pk]; passagesRemap(W.id, k => k, { off: pk, key, kind }); }
   worldTrimEdges(W, [key]);   // (ticket 232: its usual ways, but none off the edge where it is put)
   if (!W.start || !W.cells[W.start]) W.start = key;
   if (W.at === key) W.at = null;   // (the square the friend was in holds another place now)
@@ -1423,6 +1439,7 @@ function worldMove(from, to) {
   W.cells[to] = a; if (b) W.cells[from] = b; else delete W.cells[from];
   worldTrimEdges(W, [to, from]);   // (ticket 232: moved to an edge, no way off it)
   W.start = swap(W.start); W.at = swap(W.at);
+  passagesRemap(W.id, swap);   // (ticket 525: the doors into them follow)
   changed();
 }
 // (ticket 300, Matthew: "removing a grid square does not remove its instance from the world: it goes into a list of
@@ -1480,6 +1497,7 @@ function worldShift(W, dc, dr) {
   W.cells = Object.fromEntries(Object.entries(W.cells).map(([k, v]) => [mv(k), v]));
   W.start = mv(W.start); W.at = mv(W.at); if (W.applied) W.applied = mv(W.applied);
   for (const u of W.unreachable || []) if (u.from) u.from = mv(u.from);
+  passagesRemap(W.id, mv);   // (ticket 525: the doors into them follow)
   if (typeof worldHome === "string" && worldHome.startsWith("sq:")) worldHome = "sq:" + mv(worldHome.slice(3));
 }
 // A press that becomes a drag after a few pixels: a ghost of it follows the

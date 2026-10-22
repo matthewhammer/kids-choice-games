@@ -2484,7 +2484,7 @@ const PASSAGE_STYLES = [["arch", "🌑 a natural archway"], ["wallhole", "🕳�
 // reached only from the world's squares)
 const passagePlaces = () => (typeof PLACES === "undefined" ? [] : PLACES).filter(([k]) => !["none", "castleroom", "treeroom"].includes(k) && (SCENES[k] || PICTURE_CHOICES.some(([q]) => q === k)));
 // (ticket 525) where it leads by kind: the place it is linked to (dest), else the place its 🧭 says
-const passageTo = t => (t.dest && t.dest.kind) || t.to || "cave";
+const passageTo = t => (t.dest && passageDestOk(t.dest) && t.dest.kind) || t.to || "cave";   // (a square taken away: its own 🧭 place till it is back)
 function passageThingSvg(t, seed) {
   const st = t.style || "arch", Rs = (i, j) => seeded(seed + j)(i), P = (x, y) => `${f1(x)} ${f1(y)}`, to = passageTo(t), c = { k: 1, R: Rs, P };
   // (ticket 525) a passage with its name (uid) is a way with a nav arrow too: data-way "p-<uid>" (worldWaysHud's arrow finds it),
