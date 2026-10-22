@@ -6,7 +6,9 @@
 // room through its waterfall's square, which stays the square the friend is in), and the card says so (not "Tap a
 // square"); ⚙️ this place's settings, opened, shows the cave room's own rows (its floor, its ceiling; not the cave's gems),
 // and with ✏️ 📍 only this square a change goes into that square's own settings, another waterfall square keeping the
-// template's; a tent in a square, set to tent 2, is tent 2 again after leaving and coming back; and the ⚙️ box closed adds
+// template's; a tent in a square, set to tent 2, is tent 2 again after leaving and coming back; a castle room's door to
+// another room leaves its square room 1 (with its things); the cave room off the grid, dragged onto a square, brings its
+// things; the campsite's tent chip, with tent 1 in a square, is another tent; and the ⚙️ box closed adds
 // no refreshes, open adds some, and settling does not pile them up. Exits 1 on a failure.
 //   node worldrooms524.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
@@ -107,6 +109,38 @@ try {
     const set = [B.tent, W.cells[k].tent]; worldEnter(${JSON.stringify(wf)}); ${settle}; worldEnter(k); ${settle};
     const r = JSON.stringify({ set, back: B.tent, kind: B.kind }); worldRemove(k); return r; })()`));
   ok("(f) a tent in a square set to tent 2 is tent 2 again after leaving and coming back", !f.nobtn && f.set[0] === 2 && f.set[1] === 2 && f.back === 2 && f.kind === "tent", f);
+  // (h) a castle room in a square, its door to another room walked through: that room is not this square's (worldKeep:
+  // cellHolds), the square still room 1 with its things, and room 1 again has them
+  const h = JSON.parse(await ev(`(async () => { const W = state.world, B = state.background, k = (() => { for (let r = 0; r < W.rows; r++) for (let c = 0; c < W.cols; c++) if (!W.cells[c + "," + r]) return c + "," + r; })();
+    worldPut(k, "castleroom"); worldEnter(k); ${settle};
+    B.things = [{ kind: "rock", x: 0, z: 360, seed: 3, size: 100, tone: "#6f8a94" }]; changed(); ${settle};
+    const door = bgShown.node && bgShown.node.querySelector('.portal[data-to="castleroom"][data-room]:not([data-room="1"])');
+    const n = door ? +door.dataset.room : 2; B.kind = "castleroom"; B.castleRoom = n; changed(); ${settle};
+    const there = { room: W.cells[k].castleRoom, cellThings: (W.cells[k].things || []).length, things: (B.things || []).length, inst: instanceOf(W) };
+    B.castleRoom = 1; changed(); ${settle};
+    const r = JSON.stringify({ door: !!door, n, there, back: { at: W.at, things: (B.things || []).length } }); worldRemove(k); return r; })()`));
+  ok("(h) through a castle room's door to another room, the square stays room 1 with its things, and room 1 has them again",
+     h.there.room === 1 && h.there.cellThings === 1 && h.there.things === 0 && h.there.inst === null && h.back.things === 1, h);
+  // (i) the cave room off the grid, a thing put in it, its chip dragged onto a square: the thing comes with it
+  const i0 = await ev(`(async () => { const W = state.world, B = state.background; worldEnter(${JSON.stringify(wf)}); ${settle};
+    worldVisit(worldOffGrid(W).find(o => o.kind === "caveroom" && o.from === ${JSON.stringify(wf)})); ${settle};
+    B.things = [{ kind: "rock", x: 40, z: 360, seed: 5, size: 100, tone: "#6f8a94" }]; changed(); ${settle};
+    worldEnter(${JSON.stringify(wf)}); ${settle};
+    const k = (() => { for (let r = 0; r < W.rows; r++) for (let c = 0; c < W.cols; c++) if (!W.cells[c + "," + r]) return c + "," + r; })();
+    return JSON.stringify({ k, off: ((W.off || {}).caveroom || []).length }); })()`);
+  const io = JSON.parse(i0);
+  await dragSel("the off-grid cave room's chip onto an empty square", chipSel, `.world-grid [data-square="${io.k}"]`);
+  const i1 = JSON.parse(await ev(`(async () => { const W = state.world, k = ${JSON.stringify(io.k)}, c = W.cells[k];
+    const r = JSON.stringify({ kind: c && c.kind, things: c ? (c.things || []).length : -1, off: ((W.off || {}).caveroom || []).length }); if (c) worldRemove(k); ${settle}; return r; })()`));
+  ok("(i) a thing put in the cave room off the grid comes with it when its chip is dropped on a square", io.off === 1 && i1.kind === "caveroom" && i1.things === 1 && i1.off === 0, { before: io, after: i1 });
+  // (j) a tent in a square (tent 1): the campsite's tent chip is another tent, not that square's
+  const j = JSON.parse(await ev(`(async () => { const W = state.world, B = state.background, camp = worldKeys(W).find(k => W.cells[k].kind === "campsite");
+    if (!camp) return JSON.stringify({ nocamp: true });
+    const k = (() => { for (let r = 0; r < W.rows; r++) for (let c = 0; c < W.cols; c++) if (!W.cells[c + "," + r]) return c + "," + r; })();
+    worldPut(k, "tent"); worldEnter(k); ${settle};
+    const o = worldOffGrid(W).find(o => o.kind === "tent" && o.from === camp); worldVisit(o); ${settle};
+    const r = JSON.stringify({ which: o.which, at: W.at, camp, tent: B.tent, kind: B.kind }); worldRemove(k); return r; })()`));
+  ok("(j) the campsite's tent chip, with tent 1 in a square: another tent, the friend still at the campsite", j.nocamp || (j.which !== 1 && j.at === j.camp && j.tent === j.which && j.kind === "tent"), j);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

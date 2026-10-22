@@ -2040,7 +2040,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         const whichKey = !inside && INSIDE_WHICH[at.kind], B0 = state.background, whichNow = whichKey ? Math.round(B0[whichKey] ?? 1) : 0;
         const whichRow = whichKey ? [el("div", { class: "row world-which" }, [el("span", { class: "hint" }, "which one:"),
           ...Array.from({ length: insideCount(B0, at.kind) }, (_, i) => el("button", { "aria-pressed": String(whichNow === i + 1), "data-which": String(i + 1),
-            onclick: () => { B0[whichKey] = i + 1; changed(); } }, `${emojiOf(at.kind)} ${at.kind === "treeroom" ? "room" : at.kind === "tent" ? "tent" : "room"} ${i + 1}`))])] : [];
+            onclick: () => { at[whichKey] = B0[whichKey] = i + 1; changed(); } }, `${emojiOf(at.kind)} ${at.kind === "treeroom" ? "room" : at.kind === "tent" ? "tent" : "room"} ${i + 1}`))])] : [];
         here.replaceChildren(el("div", { class: "cap" }, inside ? `📍 ${squareName(W.at)}: ${worldName(W, W.at)} → ${placeName(state.background.kind)} (inside)` : `📍 ${squareName(W.at)}: ${worldName(W, W.at)}`),
           ...(inside ? [el("div", { class: "row" }, [el("button", { class: "world-to-square", title: "Back out to the square this place is inside", onclick: () => worldEnter(W.at) }, `↩️ to ${squareName(W.at)}`)])] : []),
           el("label", { class: "row world-name-row" }, [el("span", { class: "hint" }, "✏️ its name on signs:"), nameBox]),
@@ -2090,11 +2090,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       // (ticket 524) each place off the grid a chip: tapped, the friend goes there (worldVisit: an inside through its outside's
       // square); dragged onto a square, it is put there as any place (worldPut), a square of its own
       off.replaceChildren(el("div", { class: "row world-off-chips" }, worldOffGrid(W).map(o => {
-        const [emoji] = placeName(o.kind).split(" "), on = state.background.kind === o.kind && (o.from ? W.at === o.from : !instanceOf(W));
+        const [emoji] = placeName(o.kind).split(" "), on = state.background.kind === o.kind && (!o.which || Math.round(state.background[INSIDE_WHICH[o.kind]] ?? 1) === o.which) && (o.from ? W.at === o.from : !instanceOf(W));
         const chip = el("button", { class: "world-chip world-off-chip", "data-kind": o.kind, ...(o.from ? { "data-from": o.from } : {}), "aria-pressed": String(on),
           title: `${o.id}: ${placeName(o.kind)}` + (o.from ? `, through ${placeName(W.cells[o.from].kind)} (${squareName(o.from)})` : "") + ". Tap to go there; drag onto a square to put it there." },
           `${placeName(o.kind)}` + (o.from ? ` (${squareName(o.from)})` : ""));
-        pressDrag(chip, () => emoji, { onDrop: under => { const sq = under && under.closest && under.closest("[data-square]"); if (sq) worldPut(sq.dataset.square, o.kind); }, onTap: () => worldVisit(o) });
+        pressDrag(chip, () => emoji, { onDrop: under => { const sq = under && under.closest && under.closest("[data-square]"); if (sq) worldPut(sq.dataset.square, o.kind, o); }, onTap: () => worldVisit(o) });
         return chip; })));
     };
     // (ticket 224, Matthew: "in FS mode for world designer, we want to let the user scroll the RHS (with controls and

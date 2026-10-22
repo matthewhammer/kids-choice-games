@@ -35,6 +35,19 @@ function insideCount(B, kind) {
   if (kind === "castleroom") { const id = CASTLE_DEFAULTS[B.castle] ? B.castle : "N"; return Math.max(1, Math.min(ROOM_MAX, Math.round(B["castleRooms" + id] ?? CASTLE_ROOMS[id].length))); }   // (castleOf's count, not the whole castle: ticket 167)
   return 1;
 }
+// (ticket 524) a square holds the place shown: its kind, and for an inside an outside has several of, that one (castle
+// room 2 is not castle room 1's square, though both are castle rooms)
+function cellHolds(cell, B) {
+  const w = INSIDE_WHICH[B.kind];
+  return !!cell && cell.kind === B.kind && (!w || Math.round(cell[w] ?? 1) === Math.round(B[w] ?? 1));
+}
+// (ticket 524) the first of an inside an outside has several of that no square holds (1 when every one is in a square)
+function worldFreeWhich(W, B, kind) {
+  const w = INSIDE_WHICH[kind];
+  if (!w) return undefined;
+  for (let n = 1; n <= insideCount(B, kind); n++) if (!Object.values(W.cells).some(c => cellHolds(c, { kind, [w]: n }))) return n;
+  return 1;
+}
 // (ticket 195, M) The waterfall's north is the waterfall itself, into the
 // cave behind it: "having both and having them mean different things is
 // too strange", so no way north on the grid there (WORLD_NO_WAY: never a
@@ -152,7 +165,8 @@ function worldNeighbour(W, key, d) {
 // an outside has several of (INSIDE_WHICH) stays, as the square holds only one of them.
 function worldOffGrid(W) {
   const out = [], has = new Set(Object.values(W.cells).map(c => c.kind)); let n = 0;
-  for (const key of worldKeys(W)) for (const kind of INSIDES[W.cells[key].kind] || []) if (INSIDE_WHICH[kind] || !has.has(kind)) out.push({ id: "inside " + (++n), kind, from: key });
+  for (const key of worldKeys(W)) for (const kind of INSIDES[W.cells[key].kind] || []) if (INSIDE_WHICH[kind] || !has.has(kind))
+    out.push({ id: "inside " + (++n), kind, from: key, ...(INSIDE_WHICH[kind] ? { which: worldFreeWhich(W, state.background, kind) } : {}) });   // (which one: one not in a square)
   ELSEWHERE.forEach((kind, i) => { if (!has.has(kind)) out.push({ id: "elsewhere " + (i + 1), kind, from: null }); });
   return out;
 }
@@ -162,6 +176,7 @@ function worldVisit(o) {
   const W = state.world, B = state.background;
   if (o.from && W.cells[o.from]) worldEnter(o.from, null, false);
   B.kind = o.kind;
+  if (o.which) B[INSIDE_WHICH[o.kind]] = o.which;   // (one not in a square, so the friend is not taken to one that is: worldKeep)
   [B.figX, B.figY] = ARRIVE[o.kind] || [0, 0]; arriveSettle = true; arriveSide = null;
   changed();
 }
@@ -1164,7 +1179,7 @@ const placeKey = B => B.kind + (B.kind === "castleroom" ? ":" + castleOf(B).id +
 // (ticket 524) an inside an outside has several of: only a square holding that one (tree room 3 through house 3's door);
 // with none, it is its outside's, off the grid, as before
 function worldSquareFor(W, kind, B = null) {
-  const which = B && INSIDE_WHICH[kind], fits = k => W.cells[k] && W.cells[k].kind === kind && (!which || Math.round(W.cells[k][which] ?? 1) === Math.round(B[which] ?? 1));
+  const fits = k => cellHolds(W.cells[k], B && B.kind === kind ? B : { kind });
   const nb = W.at && W.cells[W.at] ? Object.keys(WORLD_DIRS).map(d => worldNeighbour(W, W.at, d)).find(n => !n.off && fits(n.key)) : null;
   return nb ? nb.key : worldKeys(W).find(fits) || null;
 }
@@ -1173,9 +1188,9 @@ function worldKeep() {
   if (!W || !W.cells) return;
   let cell = W.at && W.cells[W.at];
   const adopting = !W.at;
-  if (B.kind !== "none" && (!cell || cell.kind !== B.kind)) { const key = worldSquareFor(W, B.kind, B); if (key) { W.at = key; cell = W.cells[key]; } }
+  if (B.kind !== "none" && !cellHolds(cell, B)) { const key = worldSquareFor(W, B.kind, B); if (key) { W.at = key; cell = W.cells[key]; } }
   worldsInit();
-  const sq = !!cell && cell.kind === B.kind, home = B.kind === "none" ? null : sq ? "sq:" + W.id + ":" + W.at : "off:" + W.id + ":" + placeKey(B);   // (ticket 406: by world, as two worlds have squares of one name)
+  const sq = cellHolds(cell, B), home = B.kind === "none" ? null : sq ? "sq:" + W.id + ":" + W.at : "off:" + W.id + ":" + placeKey(B);   // (ticket 406: by world, as two worlds have squares of one name)
   if (adopting) worldHome = home;
   if (home !== worldHome) {   // (just come: the place's own things, never those of the place left)
     worldHome = home;
@@ -1207,7 +1222,7 @@ function worldKeep() {
 const INSTANCE_SKIP = new Set(["kind", "figX", "figY", "figSize", "figUnit", "seat", "things", "onBridge", "onPlatform", "inside", "castleRoom", "tent", "crossLive", "lfoFast", "lfoSlow", "lfoWings", "instEdit", "big", "designerView", ...CROSS_KEYS]);
 let instanceLast = null, instanceState = null;
 const instanceOf = W => { const B = state.background, cell = W && W.at && W.cells[W.at];
-  return cell && (cell.kind === B.kind || (INSIDES[cell.kind] || []).includes(B.kind)) ? W.at : null; };
+  return cell && (cellHolds(cell, B) || (INSIDES[cell.kind] || []).includes(B.kind)) ? W.at : null; };
 function instanceUnapply(W) { const B = state.background; for (const [k, v] of Object.entries(W.tpl || {})) { if (v === undefined) delete B[k]; else B[k] = structuredClone(v); } W.tpl = {}; W.applied = null; }
 function instanceApply(W, key) {
   const B = state.background, cell = key && W.cells[key];
@@ -1262,10 +1277,18 @@ function worldTrimEdges(W, keys = worldKeys(W)) {
   }
   return gone;
 }
-function worldPut(key, kind) {
-  const W = state.world;
-  W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", things: [] }
-                                     : { kind, ways: worldUsualWays(kind), things: [], ...(INSIDE_WHICH[kind] ? { [INSIDE_WHICH[kind]]: 1 } : {}) };   // (ticket 524: which one, the first)
+// (ticket 524) o: a place off the grid (worldOffGrid), its chip dropped here: that place, with what it has, its things kept off
+// the grid (W.off) and the settings of its own its outside's square kept for it (cell.own, those that are this place's only)
+function worldPut(key, kind, o = null) {
+  const W = state.world, w = INSIDE_WHICH[kind], which = o && o.which || 1;
+  const from = o && o.from && W.cells[o.from], fromOwn = from && from.own || {};
+  const view = k => Object.assign(Object.create(state.background), fromOwn, { kind: k, ...(w ? { [w]: which } : {}) });
+  const pk = o ? placeKey(view(kind)) : null, things = pk && W.off && W.off[pk] ? structuredClone(W.off[pk]) : [];
+  const own = {};
+  if (from) for (const [k, v] of Object.entries(fromOwn)) { const when = SHOWN_WHEN["background." + k]; if (when && when(view(kind)) && !when(view(from.kind))) own[k] = structuredClone(v); }
+  W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", things }
+                                     : { kind, ways: worldUsualWays(kind), things, ...(w ? { [w]: which } : {}), ...(Object.keys(own).length ? { own } : {}) };   // (ticket 524: which one)
+  if (pk && W.off) delete W.off[pk];
   worldTrimEdges(W, [key]);   // (ticket 232: its usual ways, but none off the edge where it is put)
   if (!W.start || !W.cells[W.start]) W.start = key;
   if (W.at === key) W.at = null;   // (the square the friend was in holds another place now)
