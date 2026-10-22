@@ -62,11 +62,13 @@ const timesOf = (o, side) => Object.entries((o && o[side]) || {}).map(([k, a]) =
 try {
   const js = await runMode("js"), hz = await runMode("hazel");
   ok("hazel: the shipped program ready", hz.ready === true, hz.ready);
-  ok("the same number of steps", js.steps.length === hz.steps.length && js.steps.length === 22, [js.steps.length, hz.steps.length]);
+  // (the scenario's pulls: 8 in the trap room, 3 + 3 trap doors, 5 placed levers; 22 here until diag-531 counted 19 in both modes)
+  const PULLS = 8 + 3 + 3 + 5;
+  ok(`the same number of steps (${PULLS})`, js.steps.length === hz.steps.length && js.steps.length === PULLS, [js.steps.length, hz.steps.length]);
   js.steps.forEach((s, i) => ok(`after ${s.what}: the same state in both modes`, JSON.stringify(s) === JSON.stringify(hz.steps[i]), { js: s, hazel: hz.steps[i] }));
   ok("the trap room's pulls changed something (not a scenario that does nothing)", new Set(js.steps.slice(0, 8).map(s => JSON.stringify(s.keys))).size > 3, js.steps.slice(0, 8).map(s => s.keys));
   ok("js: no pull went through Hazel", !js.hz || js.hz.calls === 0, js.hz && js.hz.calls);
-  ok("hazel: every pull went through Hazel (22)", hz.hz && hz.hz.calls === 22, hz.hz && hz.hz.calls);
+  ok(`hazel: every pull went through Hazel (${PULLS})`, hz.hz && hz.hz.calls === PULLS, hz.hz && hz.hz.calls);
   ok("hazel: no command unknown, no pit said otherwise than drawn", hz.hz && hz.hz.unknown === 0 && hz.hz.mismatch === 0, hz.hz && { unknown: hz.hz.unknown, tags: hz.hz.unknownTags, mismatch: hz.hz.mismatch });
   ok("no page errors", !js.errs.length && !hz.errs.length, [js.errs, hz.errs]);
   console.log(`  js:    ${timesOf(js.hz, "js")}`);
