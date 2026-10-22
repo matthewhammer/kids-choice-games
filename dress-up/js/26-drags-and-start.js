@@ -412,14 +412,29 @@ function startPull(then) {
 // (ticket 307, Matthew: "the switch should animate too -- rocking back and forth somehow": it swings past and rocks back, settling)
 const LEVER_TURN = 1400;   // (ticket 328: slower, to be seen; 900 till 0.0.231)
 function leverPull(i) {
+  const T0 = (state.background.things || [])[i];
+  if (!T0 || T0.kind !== "lever") return;
+  if (scriptEvent("Square", { tag: "PullThing", value: i })) return;   // (ticket 531: 🧩 Square's rule, when it is on)
+  hzJs("PullThing", () => {
+    const B = state.background, T = B.things[i], doors = [];
+    // (ticket 323: a boulder lever drops a boulder into each of its trap doors as it goes over, and lifts it out as it comes back)
+    for (const d of B.things.entries()) { const [j, t] = d;
+      if (t.kind !== "trapdoor" || !(T.works || []).includes(t.uid)) continue;
+      if (T.does === "boulder") { if (!!t.boulder !== !T.on) doors.push([j, "boulder", !T.on]); } else doors.push([j, "open", !t.open]); }
+    leverPullApply(i, doors);
+  });
+}
+// (ticket 531) a placed lever's pull, decided (by the JS above, or a 🧩 rule's OpenDoor and DropRock): it flips over, and each trap door
+// named is opened or shut ([j, "open", Bool]) or has its boulder dropped or lifted ([j, "boulder", Bool]); then the animations
+function leverPullApply(i, doors) {
   const B = state.background, T = (B.things || [])[i];
   if (!T || T.kind !== "lever") return;
   T.on = !T.on;
-  const swung = [], dropped = [];
-  // (ticket 323: a boulder lever drops a boulder into each of its trap doors as it goes over, and lifts it out as it comes back)
-  if (T.does === "boulder") { const seed = 1 + Math.floor(Math.random() * 999999);
-    for (const [j, d] of B.things.entries()) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid) && !!d.boulder !== T.on) { d.boulder = T.on; d.rock = T.rock || ROCK_TONES[0]; if (T.on) d.rockSeed = seed + j; dropped.push([j, d.boulder]); } }
-  else for (const [j, d] of B.things.entries()) if (d.kind === "trapdoor" && (T.works || []).includes(d.uid)) { d.open = !d.open; swung.push([j, d.open]); }
+  const swung = [], dropped = [], seed = 1 + Math.floor(Math.random() * 999999);
+  for (const [j, what, v] of doors) { const d = B.things[j];
+    if (!d || d.kind !== "trapdoor") continue;
+    if (what === "boulder") { d.boulder = v; d.rock = T.rock || ROCK_TONES[0]; if (v) d.rockSeed = seed + j; dropped.push([j, v]); }
+    else { d.open = v; swung.push([j, v]); } }
   changed();
   turnArm(`[data-drag="thing:${i}"] .lever-arm`, T.on ? LEVER_TILT : -LEVER_TILT);
   for (const [j, open] of swung) lidSwing(`[data-drag="thing:${j}"] .pit-lid`, open);   // (ticket 307)

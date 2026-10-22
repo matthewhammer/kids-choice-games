@@ -34,6 +34,7 @@ const SCRIPT_FRAME_URL = SCRIPT_BUILD + "index.html#embed";
 const SCRIPT_ROOMS = [
   { name: "TrapRoom", label: "🏰 the trap room, over the castle's dungeons", kind: "trap" },
   { name: "TreeRoom", label: "🌳 the tree houses' trap doors, and the round room's at the top", kind: "tree" },
+  { name: "Square", label: "🎚️ placed levers and trap doors, in any square or room", kind: "square" },
 ];
 
 // (ticket 531) the whole game's vocabulary, for every room that has logic: what a rule may say (Cmd), what happened (Event), a placed
@@ -91,8 +92,27 @@ let on_event = fun (g, e) : (Globals, Event) ->
   | _ => Done
   end`;
 
+const SCRIPT_SQUARE = `# A placed lever pulled: each trap door wired to it swings, #
+# or, a boulder lever, gets its rock or loses it. #
+let on_event = fun (g, e) : (Globals, Event) ->
+  case e
+  | PullThing(i) =>
+    let find = fun ts : [Thing] -> case ts | [] => None | t :: rest => if t.at == i then Some(t) else find(rest) end in
+    let doors = fun (lever, ts) : (Thing, [Thing]) ->
+      case ts
+      | [] => Done
+      | d :: rest =>
+        let k = doors(lever, rest) in
+        if !(d.kind == "trapdoor" && Common.member(d.uid, lever.works)) then k
+        else if lever.does == "boulder" then (if d.boulder == !lever.on then k else DropRock(d.at, !lever.on, k))
+        else OpenDoor(d.at, !d.open, k)
+      end in
+    (case find(g.things) | Some(t) => doors(t, g.things) | None => Done end)
+  | _ => Done
+  end`;
+
 // each room kind's shipped text: rules that do just what the plain JS does, so 🧩 on plays the same game (the fair comparison)
-const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE };
+const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE, square: SCRIPT_SQUARE };
 const SCRIPT_LOGIC = (() => { try { const v = new URLSearchParams(location.search || "").get("logic"); return v === "hazel" || v === "js" ? v : ""; } catch (e) { return ""; } })();
 const scriptsOn = () => SCRIPT_LOGIC === "hazel" || (SCRIPT_LOGIC !== "js" && !!(state.scripts && state.scripts.on));
 const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntries(SCRIPT_ROOMS.map(r => [r.name, SCRIPT_TEXTS[r.kind] || ""])) });
@@ -230,7 +250,7 @@ function scriptRun(cmd, act, depth = 0) {
   if (Z.unknown === 1) scriptSay(`a command this room does not know: ${cmd.tag}`);
 }
 
-let scriptBoulders = { drop: [], lift: [] };
+let scriptBoulders = { drop: [], lift: [] }, scriptDoors = [];
 // (the empty fields of a room's globals that are not its own)
 const scriptNoGlobals = () => ({ lever_L: false, lever_R: false, wiring: "normal", draws: [], pits_on: [], covered: [], hatch: false, things: [] });
 // (ticket 531) the event's room, its globals and how its commands act: per room kind (SCRIPT_ROOMS' kind), filled in as rules move
@@ -257,6 +277,15 @@ const SCRIPT_ACTS = {
     here: ev => { const k = state.background.kind; return (k === "treeroom" || k === "treetop") && ev.value === hatchHouse(); },
     globals: () => ({ ...scriptNoGlobals(), hatch: !!state.background[hatchKey()] }),
     act: () => ({ SetHatch: (n, shut) => { if (n !== hatchHouse()) return false; hatchSet(!!shut); } }),
+  },
+  // (a placed lever, PullThing(i), i its place in the square's things; things: its levers and trap doors, each with its place (at).
+  // Copied whole for each pull, so its cost grows with the square's levers and doors: the speed runs measure it)
+  square: {
+    here: ev => { const T = (state.background.things || [])[ev.value]; return !!T && T.kind === "lever"; },
+    globals: () => ({ ...scriptNoGlobals(), things: (state.background.things || []).flatMap((t, at) => t.kind === "lever" || t.kind === "trapdoor"
+      ? [{ at, uid: String(t.uid || ""), kind: t.kind, on: !!t.on, works: (t.works || []).map(String), does: String(t.does || ""), open: !!t.open, boulder: !!t.boulder }] : []) }),
+    act: () => ({ OpenDoor: (at, open) => { scriptDoors.push([at, "open", !!open]); }, DropRock: (at, down) => { scriptDoors.push([at, "boulder", !!down]); } }),
+    done: ev => { const doors = scriptDoors; scriptDoors = []; leverPullApply(ev.value, doors); },
   },
 };
 
