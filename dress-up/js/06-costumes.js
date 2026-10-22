@@ -32,6 +32,9 @@ const ANIMALS = {
   // (ticket 530) a Sasquatch: big shaggy fur, a tan muzzle with a big friendly grin, small round ears, big feet (its own
   // colours are its style's: sasquatchLook, below)
   sasquatch: { suit: true, fur: "#7a4e2d", marks: "#55361f", belly: "#d9b38c", eyes: "#3b2414", accent: "#d9b38c", furPattern: "shag" },
+  // (ticket 544) a giraffe: brown patches on cream all over, a long neck up from the hood with the giraffe's own head on top
+  // (horns, ears, a soft muzzle), a short mane, a tufted tail, hooves (its own colours are its style's: giraffeLook, below)
+  giraffe: { suit: true, fur: "#b5652b", marks: "#6e3514", belly: "#f6e7c8", eyes: "#2b1a10", accent: "#7a4420", furPattern: "giraffe" },
   // a whole falcon suit: feathers all over, wings on the arms, talons
   falconsuit: { suit: true, fur: "#55616d", marks: "#23282e", belly: "#f2ece0", eyes: "#1a1410", accent: "#f2c230", furPattern: "none" },
   // and a bald eagle's: dark brown feathers, white head and tail
@@ -63,7 +66,13 @@ const sasquatchStyleOf = c => SASQUATCH_STYLES[c.sasquatchStyle] ? c.sasquatchSt
 const sasquatchLook = c => { const id = sasquatchStyleOf(c), S = SASQUATCH_STYLES[id], fur = c["sasquatchColor_" + id] || S.colors[0];
   const face = S.face || mix(fur, "#ffffff", 0.45);
   return { ...c, fur, marks: S.marks || mix(fur, "#000000", 0.3), belly: face, accent: mix(face, "#000000", 0.25), furPattern: "shag", sq: S, sqId: id }; };
-const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "dragon" ? dragonLook(state.costume) : state.costume.kind === "sasquatch" ? sasquatchLook(state.costume) : state.costume) : null);
+// (ticket 544) the giraffe's look, from its style (GIRAFFE_STYLES, js/01-state.js) and that style's colour: its fur the
+// patches' colour (the outlines a shade darker, as any suit's), the cream between them its belly, its mane (marks) the
+// style's, its eyes the animal eye colour; and the style itself (gf), for the coat and the drawing
+const giraffeStyleOf = c => GIRAFFE_STYLES[c.giraffeStyle] ? c.giraffeStyle : "reticulated";
+const giraffeLook = c => { const id = giraffeStyleOf(c), S = GIRAFFE_STYLES[id], fur = c["giraffeColor_" + id] || S.colors[0];
+  return { ...c, fur, marks: S.mane, belly: S.ground, accent: mix(fur, "#000000", 0.3), furPattern: "giraffe", gf: S, gfId: id }; };
+const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "dragon" ? dragonLook(state.costume) : state.costume.kind === "sasquatch" ? sasquatchLook(state.costume) : state.costume.kind === "giraffe" ? giraffeLook(state.costume) : state.costume) : null);
 // (ticket 433, Matthew: "monk/dryad costume with hooded cloak, and a staff (optional, like how the witch has an optional
 // broom)") A CLOTH HOOD, its colour, while one is up (the monk's or the dryad's cloak): over the hair, framing the face. In the
 // round head's units (stretched with the head, as hair is), on the animal hood's frame (hoodGeom): its back, behind the head,
@@ -318,6 +327,14 @@ function furDefs(C, kind) {
                `stroke="${C.marks}" fill="none" stroke-width="1.8" stroke-linejoin="round" opacity="0.85"/>`;
     return `<pattern id="pat-fur" width="40" height="40" patternUnits="userSpaceOnUse">${sh}</pattern><pattern id="pat-bars" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="${C.fur}"/></pattern>`;
   }
+  // (ticket 544) a giraffe's coat: its style's patches (GIRAFFE_COATS) in the fur colour on the cream (belly), one path a
+  // tile (drawn once however big the suit)
+  if (kind === "giraffe") {
+    const G = GIRAFFE_COATS[(C.gf && C.gf.coat) || "net"] || GIRAFFE_COATS.net;
+    return `<pattern id="pat-fur" width="${G.w}" height="${G.h}" patternUnits="userSpaceOnUse"><rect width="${G.w}" height="${G.h}" fill="${C.belly}"/>` +
+           `<path d="${G.d}" fill="${C.fur}" stroke="${C.fur}" stroke-width="2" stroke-linejoin="${G.join}"/></pattern>` +
+           `<pattern id="pat-bars" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="${C.fur}"/></pattern>`;
+  }
   if (BIRD_SUIT[kind])   // feathers: the color with curved bars, all over
     return `<pattern id="pat-fur" width="24" height="12" patternUnits="userSpaceOnUse">` +
       `<rect width="24" height="12" fill="${C.fur}"/>` +
@@ -465,7 +482,7 @@ function hoodBack(C, kind, F, dir = 0, away = false) {
       s += `<ellipse cx="${100 + side * 70}" cy="2" rx="22" ry="28" transform="rotate(${side * 25} ${100 + side * 70} 2)" ` +
            `fill="${C.belly}" stroke="${line}" stroke-width="3"/>` +
            `<ellipse cx="${100 + side * 70}" cy="6" rx="13" ry="18" transform="rotate(${side * 25} ${100 + side * 70} 6)" fill="${C.fur}"/>`;
-    else if (!isBird(kind)) {
+    else if (!isBird(kind) && kind !== "giraffe") {   // (ticket 544: a giraffe's ears are on its own head, up its neck)
       const r = kind === "lion" ? 20 : kind === "sasquatch" ? 17 : 25;   // (ticket 530: a Sasquatch's small round ears)
       s += `<circle cx="${x}" cy="20" r="${r}" fill="${C.fur}" stroke="${line}" stroke-width="3"/>` +
            `<circle cx="${x}" cy="22" r="${r * 0.5}" fill="${kind === "tiger" ? "#ffffff" : C.belly}"/>`;
@@ -563,6 +580,9 @@ function hoodFront(C, kind, F) {
       : `<path d="M90 48 Q100 53 110 48" fill="none" stroke="#3a2418" stroke-width="2.2" stroke-linecap="round"/>`;
     return s;
   }
+  // (ticket 544) a giraffe's: the brim plain in its coat, the foot of its neck; its face is its own head's, up the neck
+  // (giraffeNeckSvg)
+  if (kind === "giraffe") return s;
   if (falconHead(kind)) {
     for (const x of [76, 124])
       s += `<circle cx="${x}" cy="26" r="12" fill="${C.accent}"/>` +
@@ -615,13 +635,23 @@ function hoodFront(C, kind, F) {
 
 // THE SUIT'S EXTRAS, in body units: a tail out to the side (drawn behind
 // the body), and the falcon's wings and fanned tail.
-function tailSvg(C, kind, hw, L) {
+function tailSvg(C, kind, hw, L, floor = Infinity, lie = null) {
   if (kind === "moth") return "";   // (ticket 536: a moth has no tail; a luna's long tails are on its hindwings)
   const line = darker(C.fur), x0 = hw * 0.55, y0 = L + 5;
   if (kind === "bear")
     return `<circle cx="${f1(hw + 4)}" cy="${f1(L - 14)}" r="17" fill="url(#pat-fur)" stroke="${line}" stroke-width="3"/>`;
   if (kind === "sasquatch")   // (ticket 530) the bear's stub, shaggy round its edge
     return `<circle cx="${f1(hw + 4)}" cy="${f1(L - 14)}" r="17" fill="url(#pat-fur)" stroke="${line}" stroke-width="8" stroke-dasharray="4 3"/>`;
+  if (kind === "giraffe") {   // (ticket 544) a thin tail swinging out and down, its long dark tuft hanging from the end to the
+    // ground at most (sitting, it reaches out along it instead); lying down (lie: the side of the body on the ground, and the
+    // legs' length), along the ground by the legs, the tuft toward the feet
+    const drop = clamp(floor - 50 - L, 20, 100), sd = lie ? lie.side : 1, P = (x, y) => f1(sd * x) + " " + f1(y);
+    const [ex, ey] = lie ? [hw + 6, L + 0.55 * lie.LL] : [hw + 34 + 0.6 * (100 - drop), L + drop];
+    const d = lie ? `M${P(x0, L - 4)} C${P(hw + 10, L + 10)} ${P(hw + 8, L + 0.3 * lie.LL)} ${P(ex, ey)}` : `M${P(x0, L - 4)} C${P(hw + 26, L + 4)} ${P(hw + 40 + 0.3 * (100 - drop), L + drop / 2)} ${P(ex, ey)}`;
+    return `<path data-giraffe="tail" d="${d}" fill="none" stroke="${line}" stroke-width="9" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${C.fur}" stroke-width="5" stroke-linecap="round"/>` +
+           `<path d="M${P(ex - 3, ey - 4)} C${P(ex - 13, ey + 8)} ${P(ex - 14, ey + 28)} ${P(ex - 9, ey + 42)} L${P(ex - 4, ey + 36)} L${P(ex, ey + 49)} L${P(ex + 4, ey + 36)} L${P(ex + 9, ey + 42)} ` +
+           `C${P(ex + 14, ey + 28)} ${P(ex + 13, ey + 8)} ${P(ex + 3, ey - 4)} Z" fill="${C.marks}" stroke="${darker(C.marks)}" stroke-width="2" stroke-linejoin="round"/>`;
+  }
   if (kind === "deer")  // a short white tail, flicked up
     return `<ellipse cx="${f1(hw + 8)}" cy="${f1(L - 16)}" rx="11" ry="17" transform="rotate(35 ${f1(hw + 8)} ${f1(L - 16)})" ` +
            `fill="${C.belly}" stroke="${line}" stroke-width="3"/>`;
@@ -1915,6 +1945,131 @@ function sasquatchPrints(C, hw, ground, dir, k) {
   const f = dir || 1, pts = dir ? [0, 1, 2, 3].map(i => [-dir * (hw + 70 + i * 62 * k), ground + (i % 2 ? 4 : 14)])
                                 : [0, 1, 2, 3].map(i => [-(hw + 70 + i * 58 * k), ground + 8 - i * 7]);
   return `<path data-sasquatch="prints" d="${pts.map(([x, y]) => print(x, y, f)).join(" ")}" fill="${mix("#6b4a2b", "#000000", 0.15)}" opacity="0.45"/>`;
+}
+// (ticket 544) THE GIRAFFE. Its coats, furDefs' tile (w by h): "net", the reticulated giraffe's patches, a Voronoi diagram of
+// twelve seeds that tiles, each cell shrunk for the cream lines between them, and each crossing the tile's edge repeated a
+// tile over; "masai", the same cells further apart, a lobe out at each corner and notches cut into each side.
+const GIRAFFE_COATS = {
+  net: { w: 108, h: 124, join: "round", d: "M-3 19l-3-18 13-13 15 6-2 20-15 11zM-3 143l-3-18 13-13 15 6-2 20-15 11zM105 19l-3-18 13-13 15 6-2 20-15 11zM105 143l-3-18 13-13 15 6-2 20-15 11zM26 14l2-20 11-4 20 13 0 11-14 9zM26 138l2-20 11-4 20 13 0 11-14 9zM65 14l0-12 10-7 21 7 3 16-25 5zM65 138l0-12 10-7 21 7 3 16-25 5zM8 39l-1-8 16-12 19 9-4 18-10 6zM48 28l13-9 10 9 1 20-10 5-17-7zM-31 29l24-5 8 7 1 9-16 15-16-8zM77 29l24-5 8 7 1 9-16 15-16-8zM-8 79l-2-19 16-15 19 12 0 15-25 12zM100 79l-2-19 16-15 19 12 0 15-25 12zM31 57l10-6 18 7-2 21-14 5-12-11zM63 80l2-22 10-5 17 7 2 19-16 8zM25 113l-16-6-5-18 23-11 12 10-3 20zM45 89l15-4 15 7-3 22-10 7-20-12zM3 108l-13 12-20-7 3-21 16-8 9 5zM111 108l-13 12-20-7 3-21 16-8 9 5z" },
+  masai: { w: 108, h: 124, join: "miter", d: "M-2 19l2-8-5-3 4-4-5-4 7 0 0-6 5 1 2-7 4 6 10 0-4 9 2 2-4 5 3 4-7 1-1 5-4 0-3 5-2-6zM-2 143l2-8-5-3 4-4-5-4 7 0 0-6 5 1 2-7 4 6 10 0-4 9 2 2-4 5 3 4-7 1-1 5-4 0-3 5-2-6zM106 19l2-8-5-3 4-4-5-4 7 0 0-6 5 1 2-7 4 6 10 0-4 9 2 2-4 5 3 4-7 1-1 5-4 0-3 5-2-6zM106 143l2-8-5-3 4-4-5-4 7 0 0-6 5 1 2-7 4 6 10 0-4 9 2 2-4 5 3 4-7 1-1 5-4 0-3 5-2-6zM27 14l5-7-4-3 4-4-4-6 7 1 3-5 7 9 5-2 1 6 7 0-2 4 2 7-8 1-5 7-4-6-6 1-1-4zM27 138l5-7-4-3 4-4-4-6 7 1 3-5 7 9 5-2 1 6 7 0-2 4 2 7-8 1-5 7-4-6-6 1-1-4zM95 3l-2 7 6 8-12-2 0 5-8-3-5 5-2-6-7-3 3-4-3-7 7-1 3-7 5 6 8-1 2 3zM95 127l-2 7 6 8-12-2 0 5-8-3-5 5-2-6-7-3 3-4-3-7 7-1 3-7 5 6 8-1 2 3zM9 39l1-4-3-4 7-1 3-4 4 0 2-6 5 6 4-2 3 5 5 0-3 4 3 4-4 3 2 6-7 0-2 6-5-8-8 1 2-6zM49 29l7-1 5-9 3 7 6 2-3 6 4 6-4 2 4 5-5 1-4 5-4-6-5 1-1-3-7 1 4-6-3-3 5-4zM-30 30l9 1 5-4 5 4 5-7 2 5 6 2-3 4 2 4-8 2 1 8-5-1-3 5-4-5-5 1-2-3-4 0 3-5-4-4 3-4zM78 30l9 1 5-4 5 4 5-7 2 5 6 2-3 4 2 4-8 2 1 8-5-1-3 5-4-5-5 1-2-3-4 0 3-5-4-4 3-4zM-7 78l2-7-4-3 3-3-4-5 8-2 2-7 4 1 2-6 4 8 7-3 0 7 8-1-3 7 3 8-11 0-2 6-6-2-6 8-2-5zM101 78l2-7-4-3 3-3-4-5 8-2 2-7 4 1 2-6 4 8 7-3 0 7 8-1-3 7 3 8-11 0-2 6-6-2-6 8-2-5zM32 57l6-1 4-4 3 6 7-2 1 3 6-1-5 8 4 4-4 3 3 6-9-1-5 5-5-9-7-1 3-6zM64 79l5-7-5-5 6-3-4-6 6 0 3-4 5 6 5-1 1 3 6-1-3 5 4 6-4 2 3 4-8 2-6 6-5-7zM26 113l-4-5-6 0-1-3-5 1 2-6-5-4 2-3-4-4 11 0 0-5 7 1 4-7 4 9 7 2-4 7 3 3-5 2 4 7-7 0zM46 90l8 0 6-5 6 7 8 1-5 6 3 5-4 2 4 8-6 0-4 6-4-7-7 2-1-6-7-1 4-4-3-6 5-3zM3 108l-7 1-1 4-3 1-2 5-6-5-4 3-1-6-8 2 5-7-3-4 4-4-3-5 6 0 3-6 3 4 3-6 3 5 5 0-2 6 5 5-2 2zM111 108l-7 1-1 4-3 1-2 5-6-5-4 3-1-6-8 2 5-7-3-4 4-4-3-5 6 0 3-6 3 4 3-6 3 5 5 0-2 6 5 5-2 2z" },
+};
+// (the giraffe's head's size against its drawing's own units)
+const GIRAFFE_HEAD = 1.15;
+// Where the giraffe's neck goes, in the face's units (x 100 the head's middle; its stretch, a wide by b tall, is the hood's):
+// its foot (base) inside the hood's top, which hides it; the way it leaves the hood (d0: up the body; turned with the friend
+// by rot, crawling or swimming in profile or lying down, in the picture's upright frame its drawing is turned back into,
+// about base); its top (end), H from the foot, straight up (in profile leaning forward), or, turned, out along the body and
+// up (rise: lying down or swimming, more up than along); its half width at the foot (hb) and the top (ht), deeper in
+// profile; and how far its head reaches up (up) and out (out) from the top, for the picture's frame (giraffeReach).
+// Crawling toward us or away (squash) it leans that way, seen short. Its length is the style's (neck) times giraffeNeck, a
+// percent.
+function giraffeGeom(C, F, o = {}) {
+  const S = C.gf || GIRAFFE_STYLES.reticulated, a = headWidth(F) * (1 + 0.12 * F.alien / 100), b = headH(F);
+  const { cy, ry } = hoodGeom(F), dir = o.away ? 0 : o.dir || 0, r = (o.rot || 0) * Math.PI / 180;
+  const base = [100 - dir * 8 * a, HEAD_C + (cy - ry + 34 - HEAD_C) * b];
+  const H = 185 * S.neck * clamp((Number(C.giraffeNeck ?? 100) || 100) / 100, 0.5, 2.5) * b * (o.squash ? 0.4 : 1);
+  const k = o.rise ? 0.35 : 0.6, d0 = [Math.sin(r), -Math.cos(r)], u = [k * d0[0], k * d0[1] - (1 - k)], ul = Math.hypot(u[0], u[1]) || 1;
+  const end = [base[0] + H * u[0] / ul + dir * 22 * a * Math.max(0, Math.cos(r)), base[1] + H * u[1] / ul];
+  return { S, a, b, dir, base, d0, H, end, hb: (dir ? 58 : 48) * a, ht: (dir ? 33 : 22) * a, hk: GIRAFFE_HEAD, up: 124 * GIRAFFE_HEAD * b, out: (dir ? 100 : 86) * GIRAFFE_HEAD * a };
+}
+// How far the neck and head reach in the face's units, standing (not turned): the top (y) and the farthest either side of
+// the head's middle (x), for drawNow's frame
+const giraffeReach = (C, F, o) => { const G = giraffeGeom(C, F, o); return { top: G.end[1] - G.up, side: Math.abs(G.end[0] - 100) + G.out }; };
+// THE GIRAFFE'S NECK AND HEAD, in the face's units (drawNow puts it in the face's frame, with the lid when the head bursts,
+// before the face, so the hood hides the neck's foot): the neck along a cubic from its foot (leaving along d0) to its top
+// (upright there), tapering, in the coat; its short mane, in profile a row of short stiff tufts along the back of the neck
+// (the side away from the face), from behind a band down its middle (toward us it is hidden behind the neck); and on top
+// the giraffe's own head, upright, its own drawing toward us, in profile (dir; left and right mirror) and from behind
+// (away). Turned with the friend (rot), all of it is drawn in the picture's upright frame (turned back about the foot), so
+// the neck leaves the hood along the body and bends up, and the head stays upright. Each piece a data-giraffe group or path.
+function giraffeNeckSvg(C, F, o = {}) {
+  const G = giraffeGeom(C, F, o), { S, a, b, base, d0, H, end, hb, ht, hk } = G, away = !!o.away, rot = o.rot || 0, P = (x, y) => f1(x) + " " + f1(y);
+  // (in profile, the way the head faces: the friend's; turned past upright, the way the neck goes out along the body, so
+  // lying down it looks on ahead, not back over them)
+  const dir = G.dir && Math.cos(rot * Math.PI / 180) < 0.25 ? Math.sign(d0[0]) || G.dir : G.dir;
+  const c1 = [base[0] + d0[0] * 0.45 * H, base[1] + d0[1] * 0.45 * H], c2 = [end[0], end[1] + 0.35 * H];
+  const at = t => { const s = 1 - t; return [0, 1].map(i => s * s * s * base[i] + 3 * s * s * t * c1[i] + 3 * s * t * t * c2[i] + t * t * t * end[i]); };
+  const tan = t => { const s = 1 - t, v = [0, 1].map(i => 3 * s * s * (c1[i] - base[i]) + 6 * s * t * (c2[i] - c1[i]) + 3 * t * t * (end[i] - c2[i])), l = Math.hypot(v[0], v[1]) || 1;
+    return [v[0] / l, v[1] / l]; };
+  // (a point t of the way up, out to one side, k 1 or -1, by its half width and `by` more)
+  const edge = (t, k, by = 0) => { const p = at(t), v = tan(t), w = ht + (hb - ht) * Math.pow(1 - t, 1.5) + by; return [p[0] - k * v[1] * w, p[1] + k * v[0] * w]; };
+  // (through points, smoothly: quadratic curves between their midpoints)
+  const smooth = pts => pts.slice(1, -1).map((p, i) => { const q = pts[i + 2]; return ` Q${P(p[0], p[1])} ${P((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)}`; }).join("") + ` L${P(...pts[pts.length - 1])}`;
+  const ts = Array.from({ length: 11 }, (_, i) => i / 10), Lp = ts.map(t => edge(t, 1)), Rp = ts.map(t => edge(t, -1)).reverse();
+  let s = `<path data-giraffe="neck" d="M${P(...Lp[0])}${smooth(Lp)} L${P(...Rp[0])}${smooth(Rp)} Z" fill="url(#pat-fur)" stroke="${darker(C.fur)}" stroke-width="4" stroke-linejoin="round"/>`;
+  const mane = pts => `<path data-giraffe="mane" d="M${pts.map(p => P(...p)).join(" L")} Z" fill="${S.mane}" stroke="${darker(S.mane)}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  const t0 = 0.1, t1 = 0.96, K = 12, tk = i => t0 + (t1 - t0) * i / K;
+  if (away) {   // (down its middle, its edges tufted)
+    const side = k => Array.from({ length: K + 1 }, (_, i) => { const p = at(tk(i)), v = tan(tk(i)), w = (i % 2 ? 11 : 6) * a; return [p[0] - k * v[1] * w, p[1] + k * v[0] * w]; });
+    s += mane([...side(1), ...side(-1).reverse()]);
+  } else if (dir) {   // (along the back: the side whose outward way, at the top, is away from the face)
+    const k = Math.sign(dir * tan(1)[1]) || -dir, M = 13 * a;
+    s += mane([edge(t0, k, -3), ...Array.from({ length: K + 1 }, (_, i) => edge(tk(i), k, i % 2 ? M : 0.3 * M)), ...ts.filter(t => t > t0 && t < t1).reverse().map(t => edge(t, k, -3))]);
+  }
+  const head = away ? giraffeHeadBack(C, S) : dir ? giraffeHeadSide(C, S) : giraffeHeadFront(C, S);
+  s += `<g data-giraffe="head" transform="translate(${P(...end)}) scale(${(hk * (dir < 0 ? -a : a)).toFixed(3)} ${(hk * b).toFixed(3)})">${head}</g>`;
+  return rot ? `<g transform="rotate(${f1(-rot)} ${P(...base)})">${s}</g>` : s;
+}
+// The giraffe's head's pieces, in its own units (the neck's top at 0 0, up -y; about as big as the friend's face): its
+// horns (ossicones: [x, y] at the foot, [x, y] at the top, each), skin-covered in the coat's colour with their dark tufts
+// (a baby's shorter, the tufts big and fluffy); a few small patches (the masai's jagged) at [x, y, r]; eyes ([x, y] each)
+// with a shine and lashes, a baby's bigger; the ears ([side] each: out to that side toward us, behind in profile)
+function giraffeHorns(C, S, horns, far = false) {
+  const lift = S.baby ? 10 : 0, d = horns.map(([x0, y0, x1, y1]) => `M${x0} ${y0} L${x1} ${y1 + lift}`).join(" "), tuft = S.baby ? 12 : 8.5;
+  const ink = far ? mix(S.mane, "#000000", 0.2) : S.mane, skin = mix(C.fur, C.belly, far ? 0.15 : 0.35);
+  return `<path d="${d}" fill="none" stroke="${darker(C.fur)}" stroke-width="14" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${skin}" stroke-width="9" stroke-linecap="round"/>` +
+         `<path d="${horns.map(([, , x, y]) => `M${x - tuft} ${y + lift} a${tuft} ${tuft} 0 1 0 ${2 * tuft} 0 a${tuft} ${tuft} 0 1 0 ${-2 * tuft} 0 Z`).join(" ")}" fill="${ink}" stroke="${darker(ink)}" stroke-width="2"${S.baby ? ` stroke-dasharray="3 2"` : ""}/>`;
+}
+const giraffeSpots = (C, S, spots) => `<path d="${spots.map(([x, y, r]) => { const n = S.coat === "masai" ? 8 : 6, a0 = (x * 7 + y * 3) % 60;
+  return "M" + Array.from({ length: n }, (_, i) => { const q = (a0 + i * 360 / n) * Math.PI / 180, k = S.coat === "masai" ? (i % 2 ? 0.72 : 1.12) : [1, 0.86, 1.1, 0.9, 1.04, 0.82][i];
+    return f1(x + Math.cos(q) * r * k) + " " + f1(y + Math.sin(q) * r * k); }).join(" L") + "Z"; }).join(" ")}" fill="${C.fur}" stroke="${C.fur}" stroke-width="1.5" stroke-linejoin="round"/>`;
+function giraffeEyes(C, S, eyes, lashes) {
+  const k = S.baby ? 1.3 : 1, rx = 8 * k, ry = 9.5 * k;
+  return `<path d="${eyes.map(([x, y]) => `M${f1(x - rx)} ${y} a${f1(rx)} ${f1(ry)} 0 1 0 ${f1(2 * rx)} 0 a${f1(rx)} ${f1(ry)} 0 1 0 ${f1(-2 * rx)} 0 Z`).join(" ")}" fill="${C.eyes}" stroke="#111111" stroke-width="1.5"/>` +
+         `<path d="${eyes.map(([x, y]) => { const r = 2.6 * k, cx = x - 2.6 * k, cy = y - 3.6 * k; return `M${f1(cx - r)} ${f1(cy)} a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0 a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0 Z`; }).join(" ")}" fill="#ffffff"/>` +
+         `<path d="${lashes(k)}" fill="none" stroke="#2b1a10" stroke-width="1.8" stroke-linecap="round"/>`;
+}
+function giraffeEars(C, sides, back = false) {
+  const ear = sx => `M${24 * sx} -66 C${44 * sx} -86 ${74 * sx} -82 ${86 * sx} -64 C${72 * sx} -52 ${44 * sx} -50 ${24 * sx} -56 Z`;
+  const inner = sx => `M${32 * sx} -64 C${48 * sx} -76 ${66 * sx} -73 ${76 * sx} -64 C${62 * sx} -58 ${46 * sx} -56 ${32 * sx} -59 Z`;
+  return `<path d="${sides.map(ear).join(" ")}" fill="${back ? mix(C.belly, C.fur, 0.3) : C.belly}" stroke="${darker(C.fur)}" stroke-width="3" stroke-linejoin="round"/>` +
+         (back ? "" : `<path d="${sides.map(inner).join(" ")}" fill="${mix(C.fur, C.belly, 0.55)}"/>`);
+}
+// toward us: the ears out to the sides, the horns, the head long and narrowing to the soft muzzle, small patches over its
+// brow and cheeks, big eyes at its sides, two nostrils and a smile
+function giraffeHeadFront(C, S) {
+  const head = "M0 -96 C24 -96 36 -84 36 -64 C36 -42 29 -14 25 6 C22 26 13 36 0 36 C-13 36 -22 26 -25 6 C-29 -14 -36 -42 -36 -64 C-36 -84 -24 -96 0 -96 Z";
+  return giraffeEars(C, [-1, 1]) + giraffeHorns(C, S, [[-15, -84, -21, -112], [15, -84, 21, -112]]) +
+    `<defs><clipPath id="giraffe-face"><path d="${head}"/></clipPath></defs><path d="${head}" fill="${C.belly}"/>` +
+    `<g clip-path="url(#giraffe-face)">${giraffeSpots(C, S, [[0, -76, 9], [-20, -80, 6.5], [20, -80, 6.5], [-8, -96, 6], [9, -95, 6], [0, -55, 5.5], [-27, -28, 8], [27, -28, 8], [-31, -64, 5], [31, -64, 5]])}` +
+    `<path d="M-30 4 C-22 -12 22 -12 30 4 L30 40 L-30 40 Z" fill="${S.muzzle}"/></g><path d="${head}" fill="none" stroke="${darker(C.fur)}" stroke-width="3.5"/>` +
+    giraffeEyes(C, S, [[-21, -50], [21, -50]], k => [-1, 1].map(sx => `M${f1(sx * (21 + 5 * k))} ${f1(-50 - 7 * k)} l${f1(sx * 5)} -5 M${f1(sx * (21 + 1 * k))} ${f1(-50 - 9 * k)} l${f1(sx * 2)} -6 M${f1(sx * (21 + 8 * k))} ${f1(-50 - 3 * k)} l${f1(sx * 6)} -2`).join(" ")) +
+    `<path d="M-6 13 Q-12 18 -10 25 Q-5 21 -6 13 Z M6 13 Q12 18 10 25 Q5 21 6 13 Z" fill="${mix(S.muzzle, "#000000", 0.6)}"/>` +
+    `<path d="M-10 29 Q0 34 10 29" fill="none" stroke="${darker(C.fur)}" stroke-width="2" stroke-linecap="round"/>`;
+}
+// in profile (facing our right; drawn mirrored for our left): the far horn behind, the head from the back of the skull
+// forward and down to the muzzle, patches on its cheek, the near horn, the ear back from behind the horns, an eye with
+// its lashes, a nostril at the muzzle's tip and a smile
+function giraffeHeadSide(C, S) {
+  const head = "M-32 -40 C-36 -64 -16 -80 6 -76 C30 -72 54 -50 76 -32 C92 -20 98 -4 88 6 C78 14 60 12 44 10 C24 8 6 14 -10 14 C-26 14 -38 8 -37 -8 C-36 -22 -34 -32 -32 -40 Z";
+  return giraffeHorns(C, S, [[-14, -66, -24, -98]], true) +
+    `<defs><clipPath id="giraffe-face-side"><path d="${head}"/></clipPath></defs><path d="${head}" fill="${C.belly}"/>` +
+    `<g clip-path="url(#giraffe-face-side)">${giraffeSpots(C, S, [[-14, -28, 8], [-22, -56, 6], [2, -64, 6], [6, -20, 7], [36, -50, 5.5], [24, -6, 6], [-28, -6, 6]])}` +
+    `<path d="M58 -50 C78 -40 104 -24 100 2 C98 16 70 16 46 12 C48 -8 50 -30 58 -50 Z" fill="${S.muzzle}"/></g><path d="${head}" fill="none" stroke="${darker(C.fur)}" stroke-width="3.5"/>` +
+    giraffeHorns(C, S, [[-2, -70, -10, -104]]) +
+    `<path d="M-14 -60 C-36 -80 -64 -80 -78 -66 C-62 -54 -36 -50 -16 -52 Z" fill="${C.belly}" stroke="${darker(C.fur)}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="M-22 -60 C-38 -71 -58 -72 -68 -66 C-56 -60 -38 -57 -22 -57 Z" fill="${mix(C.fur, C.belly, 0.55)}"/>` +
+    giraffeEyes(C, S, [[20, -46]], k => `M${f1(20 - 4 * k)} ${f1(-46 - 8.5 * k)} l-3 -6 M20 ${f1(-46 - 9.5 * k)} l0 -7 M${f1(20 + 4 * k)} ${f1(-46 - 8.5 * k)} l3 -6`) +
+    `<path d="M84 -14 Q90 -18 91 -11 Q87 -9 84 -14 Z" fill="${mix(S.muzzle, "#000000", 0.6)}"/>` +
+    `<path d="M94 4 Q82 10 66 8" fill="none" stroke="${darker(C.fur)}" stroke-width="2" stroke-linecap="round"/>`;
+}
+// from behind: the ears' backs, the horns, the back of the head (its muzzle away from us, out of sight) with its patches
+function giraffeHeadBack(C, S) {
+  const head = "M0 -96 C24 -96 36 -84 36 -64 C36 -42 32 -16 26 0 C18 12 -18 12 -26 0 C-32 -16 -36 -42 -36 -64 C-36 -84 -24 -96 0 -96 Z";
+  return giraffeEars(C, [-1, 1], true) + giraffeHorns(C, S, [[-15, -84, -21, -112], [15, -84, 21, -112]]) +
+    `<defs><clipPath id="giraffe-face-back"><path d="${head}"/></clipPath></defs><path d="${head}" fill="${C.belly}"/>` +
+    `<g clip-path="url(#giraffe-face-back)">${giraffeSpots(C, S, [[0, -72, 10], [-22, -78, 7], [22, -78, 7], [-24, -40, 8], [24, -40, 8], [0, -36, 9], [-10, -94, 6], [10, -94, 6], [0, -8, 7]])}</g>` +
+    `<path d="${head}" fill="none" stroke="${darker(C.fur)}" stroke-width="3.5"/>`;
 }
 // Over the shirt (where the witch's belt goes), in body units (the collar's top at y -20, the shirt's half width w, its hem
 // at L, the collar's half width nw): the rodeo star's chest fringe, the sheriff's vest, badge and string tie, the rider's

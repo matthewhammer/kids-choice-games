@@ -542,6 +542,20 @@ const SASQUATCH_STYLES = {
   mossy:   { name: "🌿 mossy", colors: ["#6b5a2e", "#4d5b2a", "#7c6a3a", "#3f4a2a"], face: null, shag: 1, footK: 1.3, moss: "#65a30d", leaves: "#84cc16" },
   fluffy:  { name: "🍭 fluffy", colors: ["#f9a8d4", "#c4b5fd", "#fdba74", "#99f6e4", "#fde68a"], face: null, shag: 1.3, footK: 1.2, bow: "#ec4899" },
 };
+// (ticket 544, Matthew, for his friend Nick: "giraffe as a costume in dress up") The 🦒 giraffe: an animal suit
+// (ANIMALS.giraffe, js/06-costumes.js) in a giraffe's patched coat, its long neck rising from the hood over the friend's
+// head with the giraffe's own head on top, in three styles offered as the Sasquatch's are: giraffeStyle (a choice row),
+// giraffeColor_<id> (each style its patches' own colour row, its first swatch the usual one, shown only while it is
+// chosen), and giraffeNeck (how long the neck is, in percent), all in 🐯 Costume's 🦒 the giraffe box. Each style:
+// `colors` (its patches), `ground` (the cream between them), `coat` (GIRAFFE_COATS, js/06-costumes.js: "net", the
+// reticulated giraffe's patches, or "masai", jagged and leaf-like), `neck` (its neck's length, times giraffeNeck), `mane`
+// (its mane and its tail's tuft), `muzzle`, and `baby` (big eyes, fluffy tufts on its horns), every one read by the drawing
+// (giraffeLook, giraffeNeckSvg).
+const GIRAFFE_STYLES = {
+  reticulated: { name: "🦒 reticulated", colors: ["#b5652b", "#8c4a1e", "#cf8a3c", "#5c3317", "#7c4dbe"], ground: "#f6e7c8", coat: "net", neck: 1, mane: "#6e3514", muzzle: "#efdcb6" },
+  masai:       { name: "🌳 Masai", colors: ["#5a3418", "#3f2412", "#7a4a26", "#4a3a2a"], ground: "#ecd9b4", coat: "masai", neck: 1.1, mane: "#2e1b0e", muzzle: "#e6d2aa" },
+  baby:        { name: "🍼 baby", colors: ["#d68f52", "#e3a46a", "#c7834f", "#f0a6b9", "#9cc3e6"], ground: "#fbf1dc", coat: "net", neck: 0.7, mane: "#a8653a", muzzle: "#f8ead0", baby: true },
+};
 // The hats, one setting for both (cowHat, or "none"), each with its own colours. In the round head's units (x 100 the
 // middle): the brim's line at y COW_HAT_Y, the hair tucked above COW_HAT_LINE (under a flat brim too). `crown` "pinch" (a
 // crease and two front pinches), "tall" (taller and rounder) or "flat"; `top` the crown's top; `bw` the brim's half width;
@@ -763,7 +777,10 @@ const DEFAULTS = {
              ninjaBoots: "braided", ninjaBand: true, ninjaGem: "ruby", ninjaGemShape: "round", ninjaEyes: false,
              // (ticket 530) the Sasquatch: its style, each style's colour, its footprints and its grin
              sasquatchStyle: "bigfoot", sasquatchPrints: true, sasquatchGrin: true,
-             ...Object.fromEntries(Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["sasquatchColor_" + id, t.colors[0]])) },
+             ...Object.fromEntries(Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["sasquatchColor_" + id, t.colors[0]])),
+             // (ticket 544) the giraffe: its style, each style's patch colour, and its neck's length
+             giraffeStyle: "reticulated", giraffeNeck: 100,
+             ...Object.fromEntries(Object.entries(GIRAFFE_STYLES).map(([id, t]) => ["giraffeColor_" + id, t.colors[0]])) },
 };
 const clone = o => JSON.parse(JSON.stringify(o));
 // before the nose views: a nose was a shape (or "none"), a direction and

@@ -46,6 +46,9 @@ function drawNow() {
   const C = costumeOn(), kind = state.costume.kind, suit = C && ANIMALS[kind].suit;
   // (ticket 499) a dragon: the suit, with horns, spines and teeth on its hood, scales, a plated belly, claws, bat wings and a tail
   const dragon = kind === "dragon";
+  // (ticket 544) a giraffe: the suit in its style's coat, its long neck and its own head up over the hood (giraffeNeckSvg),
+  // hooves, a tail with a dark tuft
+  const giraffe = kind === "giraffe";
   // (ticket 530) a Sasquatch: the suit in its style's colours, shaggy along its arms, legs and sides (shagEdge: two shapes an
   // edge), big feet, and its footprints; each piece a group marked data-sasquatch, nothing in one turned
   const sasq = kind === "sasquatch", sqG = (what, t) => t ? `<g data-sasquatch="${what}">${t}</g>` : "";
@@ -357,11 +360,20 @@ function drawNow() {
   // the same way, as wide as they reach and as tall above the ground; held up into a hug, its top goes up by the lift.
   {
     const turn0 = move && move.rot ? move.rot : !move && B.pose === "lie" && state.background.kind === "none" ? (B.lieHead === "right" ? 90 : -90) : 0;
+    // (ticket 544) the giraffe's neck and head, up over the hood, raise the frame's top as a hat does (faceTop), and reach out
+    // to either side: its ears toward us and from behind, its muzzle ahead and its ear behind in profile (giraffeReach);
+    // turned, its neck bends up from the body (below), so the frame is turned without them
+    if (giraffe && !turn0) { const R = giraffeReach(C, F, { dir, away, squash }); top = Math.min(top, ty + (R.top - 10 - flying) * s); left = Math.min(left, -(R.side * s + 20)); }
     if (turn0) {
       const a = turn0 * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
       const pts = [[left, top], [-left, top], [left, bottom], [-left, bottom]].map(([x, y]) => [x * c - (y - L) * sn, L + x * sn + (y - L) * c]);
       left = Math.min(left, -Math.max(...pts.map(p => Math.abs(p[0]))));
       top = Math.min(top, ground - (Math.max(...pts.map(p => p[1])) - Math.min(...pts.map(p => p[1]))));
+      // (ticket 544) a giraffe's neck, turned, bends up from the body and its head stays upright (giraffeNeckSvg): its top, as
+      // high over the turned frame's foot, and as far out, as it is drawn
+      if (giraffe) { const G = giraffeGeom(C, F, { dir, away, rot: turn0, rise: (!move && B.pose === "lie") || !!(move && move.swim) }), bx = tx + G.base[0] * s, by = ty + G.base[1] * s;
+        const hx = bx * c - (by - L) * sn + (G.end[0] - G.base[0]) * s, hy = L + bx * sn + (by - L) * c + (G.end[1] - G.base[1]) * s;
+        top = Math.min(top, ground - (Math.max(...pts.map(p => p[1])) - (hy - G.up * s)) - 10); left = Math.min(left, -(Math.abs(hx) + G.out * s + 20)); }
     }
     if (B.pose === "hug" && !turn0) top -= LL * Math.max(0, Number(B.hugLift ?? 50) || 0) / 100;
   }
@@ -603,7 +615,8 @@ function drawNow() {
     const wg = dragonWingsSvg(C, WC, w, L, dir, away, sideTurn); svg += veil("shirt", squash && away ? squashed(wg) : wg); tail = dragonTailSvg(C, hw, L, ground, dir, away,
     !move && B.pose === "lie" && rot ? { lie: Math.sign(rot), w, LL } : crawlTo ? { rise: -backK * L - 20 * (1 + backK) } : sideTurn ? { turn: sideTurn, floor: swimming ? wl + 28 : gFig } : null); }
   // (a suit's tail swings out to our right; in profile, out behind them)
-  else if (suit) tail = dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(C, kind, hw, L)}</g>` : tailSvg(C, kind, hw, L);
+  else if (suit) { const tl = [C, kind, hw, L, rot ? Infinity : ground, giraffe && !move && B.pose === "lie" && rot ? { side: (dir > 0 ? -1 : 1) * Math.sign(rot), LL } : null];
+    tail = dir > 0 ? `<g transform="scale(-1 1)">${tailSvg(...tl)}</g>` : tailSvg(...tl); }   // (ticket 544: a giraffe's tuft no lower than the ground; lying down, along it)
   else if (fairy) svg += veil("shirt", turnedAway(fairyWingsSvg(fWing, fWingCol, w, L, WC.wingFlutter !== false, WC.wingLfo)));
   // (ticket 515) a robot's back: behind them facing us, over the back from behind (onBack); crawling away, its own drawing
   // over the back seen from behind and above (robotCrawlBack); crawling toward us only what rises from behind the back (the
@@ -655,7 +668,7 @@ function drawNow() {
   if (legApart) farLeg.skin = legSkin(dir) + (witch ? stocking(dir) : "");
   veilFrom("pants", legsAt);
   const feet = BIRD_SUIT[kind] ? { style: "talons", size: state.shoes.size }
-             : kind === "deer" ? { style: "hoof", size: state.shoes.size }
+             : kind === "deer" || giraffe ? { style: "hoof", size: state.shoes.size }   // (ticket 544: a giraffe's hooves too)
              : scuba ? { style: "fin", size: state.shoes.size, color: WC.scubaAccent }
              : diver ? { style: "boot", size: state.shoes.size * 1.25, color: "#3f3a33" }
              : witch ? { style: "witchboot", size: state.shoes.size, color: WC.bootColor ?? "#1f1f22" }
@@ -1026,7 +1039,7 @@ function drawNow() {
                   `<line x1="-3" y1="${f1(L - 10)}" x2="9" y2="${f1(L - 10)}" stroke="#f2c230" stroke-width="2.5" stroke-linecap="round"/>`);
   }
   if (wrapStripes(C) && !undies) svg += torsoStripes(torso, w, L, C.marks);
-  if (suit && kind !== "eaglesuit" && !away)  // the suit's belly (a bald eagle is brown all over; none on its back: ticket 138)
+  if (suit && kind !== "eaglesuit" && !giraffe && !away)  // the suit's belly (a bald eagle is brown all over; none on its back: ticket 138; nor on a giraffe, patched all over, ticket 544)
     svg += `<ellipse cx="0" cy="${f1(L * 0.58)}" rx="${f1(w * 0.55)}" ry="${f1(L * 0.36)}" fill="${C.belly}"/>` + (dragon ? dragonPlates(C, L * 0.58, w * 0.55, L * 0.36) : "");   // (ticket 499: plated)
   // (ticket 536) a moth's fuzzy bands, across its belly, or from behind across its back
   if (moth) svg += away ? mothBands(C, 0, L * 0.6, w * 0.8, L * 0.34) : mothBands(C, 0, L * 0.58, w * 0.55, L * 0.36);
@@ -1082,6 +1095,9 @@ function drawNow() {
   // horns, and no face on its brim)
   // (ticket 515: a robot's window, solid inside, under the face that looks out of it)
   if (robot && RH.behind && !away) svg += veil("head", inFace(`<g data-robot="behind" transform="${topFlies(F)}">${RH.behind}</g>`));
+  // (ticket 544) the giraffe's neck, its mane and its own head, up from the hood, before it, so the hood hides the neck's foot
+  // (with the lid when the head bursts); turned with the friend (rot), drawn turned back upright
+  if (giraffe) svg += veil("head", inFace(`<g transform="${topFlies(F)}">${giraffeNeckSvg(C, F, { dir, away, rot, squash, rise: lying || swimming })}</g>`));
   if (away && C) {
     const fill = falconHead(kind) ? C.marks : eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
     svg += veil("head", inFace(`<g transform="${topFlies(F)}"><g transform="${hairStretch(F)}">${hoodBack(C, kind, F, 0, true)}` +
