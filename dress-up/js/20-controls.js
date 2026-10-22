@@ -325,6 +325,7 @@ const TABS = [
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
                                    ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["sasquatch", "🦶 Sasquatch"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"], ["cowgirl", "👢 cowgirl"], ["cowboy", "🤠 cowboy"],
+                                   ["ninja", "🥷 ninja"],
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -409,6 +410,13 @@ const TABS = [
     ["choice", "cowHat", "🎩 hat", [["none", "🚫 no hat"], ...Object.entries(COW_HATS).map(([id, h]) => [id, h.name])]],
     ...Object.entries(COW_HATS).map(([id, h]) => ["color", "cowHatColor_" + id, "🎩 hat's colour", h.colors]),
     ["toggle", "lasso", "➿ lasso"],
+    // (ticket 557) the ninja: its boots' bands, braided or wrapped; the gold head covering, on by default, its gem and the
+    // gem's shape (shown while the covering is on); and the eyes in the mask's slit, off (the face is not seen)
+    ["choice", "ninjaBoots", "🥾 the boots' bands", NINJA_BOOTS],
+    ["toggle", "ninjaBand", "👑 golden head band"],
+    ["choice", "ninjaGem", "💎 the gem", Object.entries(NINJA_GEMS).map(([id, g]) => [id, g.name])],
+    ["choice", "ninjaGemShape", "💎 the gem's shape", NINJA_GEM_SHAPES],
+    ["toggle", "ninjaEyes", "👀 eyes in the slit"],
     // (ticket 530) the Sasquatch: four styles, each its own colour (shown while it is chosen, as the robot's), its big
     // footprints on the ground, and its grin
     ["choice", "sasquatchStyle", "🦶 style", Object.entries(SASQUATCH_STYLES).map(([id, t]) => [id, t.name])],
@@ -1130,6 +1138,9 @@ const SHOWN_WHEN = {
   "costume.cowgirlStyle": c => c.kind === "cowgirl", "costume.cowboyStyle": c => c.kind === "cowboy",
   ...Object.fromEntries(Object.keys(COWGIRL_STYLES).map(id => ["costume.cowgirlColor_" + id, c => c.kind === "cowgirl" && (COWGIRL_STYLES[c.cowgirlStyle] ? c.cowgirlStyle : "rodeo") === id])),
   ...Object.fromEntries(Object.keys(COWBOY_STYLES).map(id => ["costume.cowboyColor_" + id, c => c.kind === "cowboy" && (COWBOY_STYLES[c.cowboyStyle] ? c.cowboyStyle : "sheriff") === id])),
+  // (ticket 557) the ninja's rows; the gem's only with the head band on
+  ...Object.fromEntries(["ninjaBoots", "ninjaBand", "ninjaEyes"].map(k => ["costume." + k, c => c.kind === "ninja"])),
+  "costume.ninjaGem": c => c.kind === "ninja" && c.ninjaBand !== false, "costume.ninjaGemShape": c => c.kind === "ninja" && c.ninjaBand !== false,
   // (ticket 530) the Sasquatch's rows, each style's colour only while it is chosen
   ...Object.fromEntries(["sasquatchStyle", "sasquatchPrints", "sasquatchGrin"].map(k => ["costume." + k, c => c.kind === "sasquatch"])),
   ...Object.fromEntries(Object.keys(SASQUATCH_STYLES).map(id => ["costume.sasquatchColor_" + id, c => c.kind === "sasquatch" && (SASQUATCH_STYLES[c.sasquatchStyle] ? c.sasquatchStyle : "bigfoot") === id])),
