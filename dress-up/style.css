@@ -1089,6 +1089,9 @@ body.script-plain [class^="tk-"] { color: inherit; font-weight: inherit; font-st
 .script-frame { display: block; width: 100%; height: 120px; border: 0; }
 body.big .script-frame { display: none; }
 .script-frame-again { margin-left: 4px; }
+/* (ticket 578) a Hazel box's own tiles, in place of its text box; its chip (🧩 tiles / ✏️ text) above */
+.script-views { margin: 2px 0 4px; }
+.script-max-main .script-tile-wrap { max-height: none; }
 /* (ticket 491) in one column, under the picture's stage, which sticks at the top (its height, --stage-h, kept by
    21-size-and-divider.js), not across the picture */
 @media (max-width: 760px) { .crumbs { top: var(--stage-h, 0px); } }

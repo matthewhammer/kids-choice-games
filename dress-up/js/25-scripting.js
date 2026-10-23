@@ -617,6 +617,7 @@ function scriptFrameMessage(e) {
     if (F.phase === "loading") { F.phase = "ready"; F.readyMs = performance.now() - F.made; }
     F.build = m.build || null; F.sent = null;
     if (SCRIPT_TILES_EDIT) F.iframe.contentWindow.postMessage({ type: "editable", on: true }, SCRIPT_HAZEL_ORIGIN);
+    { const dark = scriptPageDark(); F.iframe.contentWindow.postMessage({ type: "theme", dark, contrast: dark }, SCRIPT_HAZEL_ORIGIN); }   // (578: the page's theme)
     scriptFramePost();
     // (a frame that takes no program says nothing back: it takes programs only from the pages it knows, EmbedProtocol.re's
     // site_origins and dev_hosts, so a copy of the game served from elsewhere, or from disk, has no tiles; said, after a while)
@@ -675,6 +676,77 @@ function scriptTilesEdit(F, text) {
   F.sent = JSON.stringify(scriptSpec());   // (the frame has this one: not posted back)
   if (any && scriptTilesEdited) scriptTilesEdited();
 }
+// (ticket 578, Matthew 2026-10-23: "each Hazel box (Common and each room) shows Hazel's tiles in place of its text box, with a chip to
+// switch back to text") a box's own tiles: a frame per Hazel box, told its module ({type: "focus", module}: embed-editable shows that
+// module's body alone, read in the program's context), that it may edit, and the page's theme; given the whole program as the big
+// frame is, on the same timer. Made when its box first comes into view, so six Hazels do not start at once. An edit writes that
+// module's text (the frame posts the body), the program is noted as the frame's own (not posted back to it: the caret stays), and
+// the other frames get it, keeping their carets (their bodies did not change).
+//   The theme (Matthew: "dark mode, high contrast, if the ambient page has the setting 'dark'. I want that default in general
+// everywhere"): dark and high contrast while the page is dark (its theme switch says dark, or auto with the system dark), light
+// otherwise; sent again when it changes.
+const scriptPageDark = () => { const t = document.documentElement.getAttribute("data-theme"); return t === "dark" || (t !== "light" && !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches)); };
+const scriptTileFrames = new Set();
+let scriptTilesListening = false;
+function scriptTileTheme(T) {
+  if (!T.ready || !T.iframe || !T.iframe.contentWindow) return;
+  const dark = scriptPageDark();
+  T.iframe.contentWindow.postMessage({ type: "theme", dark, contrast: dark }, SCRIPT_HAZEL_ORIGIN);
+}
+function scriptTileFrame(mod) {
+  const holder = el("div", { class: "script-frame-wrap script-tile-wrap" });
+  const T = { mod, holder, iframe: null, ready: false, sent: null, height: 0 };
+  if (!scriptTilesListening) {
+    scriptTilesListening = true;
+    window.addEventListener("message", scriptTileMessage);
+    const again = () => { for (const F of scriptTileFrames) scriptTileTheme(F); };
+    new MutationObserver(again).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", again);
+  }
+  const mount = () => {
+    if (T.iframe || !holder.isConnected) return;
+    T.iframe = el("iframe", { class: "script-frame script-tile-frame", src: SCRIPT_FRAME_URL, tabindex: "-1", title: `Hazel's tiles: module ${mod}, to edit` });
+    holder.replaceChildren(T.iframe);
+    scriptTileFrames.add(T);
+  };
+  // (in view: made; a box moved, as into the ⛶ view, loads its frame again, and says ready again)
+  if (typeof IntersectionObserver === "function") {
+    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); mount(); } });
+    setTimeout(() => io.observe(holder), 0);
+  } else setTimeout(mount, 0);
+  T.post = () => {
+    if (!T.ready || !T.iframe || !T.iframe.isConnected) return;
+    const spec = scriptSpec(), key = JSON.stringify(spec);
+    if (key === T.sent) return;
+    T.sent = key;
+    T.iframe.contentWindow.postMessage({ type: "set", ...spec }, SCRIPT_HAZEL_ORIGIN);
+  };
+  return T;
+}
+function scriptTilesPost() { for (const T of [...scriptTileFrames]) { if (!T.iframe || !T.iframe.isConnected) { scriptTileFrames.delete(T); continue; } T.post(); } }
+function scriptTileMessage(e) {
+  if (e.origin !== SCRIPT_HAZEL_ORIGIN) return;
+  const T = [...scriptTileFrames].find(T => T.iframe && T.iframe.contentWindow === e.source);
+  if (!T) return;
+  const m = e.data || {};
+  if (m.type === "ready") {
+    T.ready = true; T.sent = null;
+    const w = T.iframe.contentWindow;
+    scriptTileTheme(T);
+    w.postMessage({ type: "editable", on: true }, SCRIPT_HAZEL_ORIGIN);
+    w.postMessage({ type: "focus", module: T.mod }, SCRIPT_HAZEL_ORIGIN);
+    T.post();
+  } else if (m.type === "size") {
+    const h = Math.max(24, Math.min(SCRIPT_FRAME_MAX, Math.ceil(+m.height || 0)));
+    if (h !== T.height) { T.height = h; T.iframe.style.height = h + "px"; }
+  } else if (m.type === "edit") {
+    const S = scriptsState(), text = String(m.text || "");
+    if (T.mod === "Common") S.common = text; else if (SCRIPT_ROOMS.some(r => r.name === T.mod)) S.rooms[T.mod] = text;
+    T.sent = JSON.stringify(scriptSpec());   // (this frame has it: not posted back)
+    if (scriptTilesEdited) scriptTilesEdited();
+  }
+}
+
 // the program to the frame, when it is ready and the program is not the one it has
 function scriptFramePost() {
   const F = scriptFrame;
@@ -1057,6 +1129,7 @@ function scriptingPanel(box) {
   const uses = eng => SCRIPT_ROOMS.some(r => scriptEngine(r.name) === eng);
   const sync = () => {
     scriptFramePost();   // (ticket 520: the tiles, on the same timer)
+    scriptTilesPost();   // (578: each box's own tiles)
     if (window.Hazel) {
       const C = scriptCompile();
       status.textContent = `Hazel ${window.Hazel.version}: the program ${C.errors.length ? `has ${scriptPlural(C.errors.length, "error", "errors")}, so its rooms run their JS`
@@ -1119,6 +1192,25 @@ function scriptingPanel(box) {
     wrap.refill = ta.refill;
     return wrap;
   };
+  // (578) a Hazel box's body: a 🧩 tiles / ✏️ text chip, then its tiles (a frame for its module) or its text box; tiles unless
+  // the box was switched to text (kept with the scripts, per module)
+  const hazelBody = (mod, textEditor) => {
+    const E = scriptEditorSettings(), views = E.views || (E.views = {});
+    const view = () => views[mod] === "text" ? "text" : "tiles";
+    let T = null;
+    const tilesHolder = el("div", { class: "script-tiles-in" });
+    const chipsRow = el("div", { class: "row script-views" }, [["tiles", "🧩 tiles"], ["text", "✏️ text"]].map(([v, lab]) =>
+      el("button", { "data-view": v, "aria-pressed": "false", onclick: () => { views[mod] = v; show(); changed(); } }, lab)));
+    const show = () => {
+      const v = view();
+      textEditor.hidden = v !== "text"; tilesHolder.hidden = v !== "tiles";
+      if (v === "tiles" && !T) { T = scriptTileFrame(mod); tilesHolder.replaceChildren(T.holder); }
+      for (const b of chipsRow.querySelectorAll("button")) setPressed(b, b.dataset.view === v);
+    };
+    const wrap = el("div", { class: "script-hazel-body" }, [chipsRow, tilesHolder, textEditor]);
+    show();
+    return wrap;
+  };
   // (a read-only box laid out to its width too, as an editor is (579): again when its width changes, and on a setting's change;
   // its line numbers take 5 columns)
   const roPre = (cls, lang, text) => {
@@ -1152,7 +1244,7 @@ function scriptingPanel(box) {
       if (eng === "js") body.replaceChildren(el("div", { class: "hint" }, "the game's own code, as it runs (to read: switch to Hazel or Fumola to write the rule)"),
         jsPre(scriptJsSource(r.name)));
       else if (eng === "hazel") body.replaceChildren(el("div", { class: "hint" }, `module ${r.name}, in Hazel`),
-        editor(r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; }, "hazel"));
+        hazelBody(r.name, editor(r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; }, "hazel")));
       else body.replaceChildren(el("div", { class: "hint" }, `module ${r.name}, in Fumola`),
         editor(r.name, () => scriptsState().fumola.rooms[r.name] || "", v => { scriptsState().fumola.rooms[r.name] = v; }, "fumola"));
     };
@@ -1179,7 +1271,7 @@ function scriptingPanel(box) {
         el("div", { class: "hint" }, "the types every Hazel room can name (read-only: at the program's start until the game's Hazel has hazelgrove/hazel#2729)"),
         typesPre(),
         el("div", { class: "hint" }, "module Common, in Hazel: in scope in every Hazel room, as Common.name"),
-        editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }, "hazel"));
+        hazelBody("Common", editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }, "hazel")));
       else body.replaceChildren(el("div", { class: "hint" }, "module Common, in Fumola: in scope in every Fumola room, as Common.name"),
         editor("Common", () => scriptsState().fumola.common || "", t => { scriptsState().fumola.common = t; }, "fumola"));
     };
