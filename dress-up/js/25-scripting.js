@@ -727,14 +727,12 @@ function scriptTileFrame(mod) {
   };
   // (in view: made; a box moved, as into the ⛶ view, loads its frame again, and says ready again. Looked for every 0.7 s: an
   // IntersectionObserver made while the panel was being laid out never called back, in a box later moved into the ⛶ view)
-  // (preloaded, Matthew 2026-10-23: "let's pre-load the tile editor for each code block on the LHS, even if not in view": made as
-  // soon as its box is laid out, shown or not; looked for every 0.3 s until then)
-  const look = setInterval(() => {
-    if (T.iframe) { clearInterval(look); return; }
-    if (!holder.isConnected) { if (!document.body.contains(holder) && T.gone++ > 60) clearInterval(look); return; }
-    if (holder.getBoundingClientRect().width > 0) { clearInterval(look); mount(); }
-  }, 300);
-  T.gone = 0;
+  // (preloaded, Matthew 2026-10-23: "let's pre-load the tile editor for each code block on the LHS, even if not in view"; then "let's
+  // give the first editor a head start if it's not done in 2 sec, 3 sec, 4 sec, etc --- and then when another one becomes visible
+  // -- can we prioritize it somehow?") queued, in the panel's order, and made one at a time (scriptTilesPump)
+  T.mount = mount;
+  scriptTileQueue.push(T);
+  setTimeout(scriptTilesPump, 0);
   T.post = () => {
     if (!T.ready || !T.iframe || !T.iframe.isConnected) return;
     const spec = scriptSpec(), key = JSON.stringify(spec);
@@ -744,6 +742,33 @@ function scriptTileFrame(mod) {
   };
   return T;
 }
+// The queue of tiles not made yet, and the pump that makes them: the first at once; each next one when the one before says ready, or
+// after 2 s, then 3 s, 4 s and so on, whichever comes first (a slow one does not hold up the rest for long). One in view jumps the
+// queue: made at once, looked for every 0.4 s, as is the box opened at max size (scriptTilesFirst)
+const scriptTileQueue = [];
+let scriptTilesMade = 0, scriptTilesWait = null, scriptTilesWaiting = null, scriptTilesLook = null;
+const scriptTileShown = T => { const r = T.holder.getBoundingClientRect(); return r.width > 0 && r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth; };
+function scriptTilesMake(T) {
+  const i = scriptTileQueue.indexOf(T); if (i >= 0) scriptTileQueue.splice(i, 1);
+  if (T.iframe || !T.holder.isConnected) return;
+  T.mount(); scriptTilesMade++;
+  scriptTilesWaiting = T;
+  clearTimeout(scriptTilesWait);
+  scriptTilesWait = setTimeout(() => { scriptTilesWaiting = null; scriptTilesPump(); }, (scriptTilesMade + 1) * 1000);
+}
+function scriptTilesPump() {
+  for (let i = scriptTileQueue.length - 1; i >= 0; i--) { const T = scriptTileQueue[i]; if (T.iframe || (!T.holder.isConnected && !document.body.contains(T.holder))) scriptTileQueue.splice(i, 1); }
+  // (one in view first, whatever is loading)
+  const shown = scriptTileQueue.find(T => T.holder.getBoundingClientRect().width > 0 && scriptTileShown(T));
+  if (shown) scriptTilesMake(shown);
+  if (!scriptTilesWaiting || scriptTilesWaiting.ready) {
+    const next = scriptTileQueue.find(T => T.holder.getBoundingClientRect().width > 0);
+    if (next) scriptTilesMake(next);
+  }
+  if (scriptTileQueue.length && !scriptTilesLook) scriptTilesLook = setInterval(() => { if (!scriptTileQueue.length) { clearInterval(scriptTilesLook); scriptTilesLook = null; return; } if (scriptTileQueue.some(scriptTileShown)) scriptTilesPump(); }, 400);
+}
+// (a box opened at max size: its tiles made now, if they are still waiting)
+function scriptTilesFirst(box) { for (const T of [...scriptTileQueue]) if (box.contains(T.holder)) scriptTilesMake(T); }
 function scriptTilesPost() { for (const T of [...scriptTileFrames]) { if (!T.iframe || !T.iframe.isConnected) { scriptTileFrames.delete(T); continue; } T.post(); } }
 function scriptTileMessage(e) {
   if (e.origin !== SCRIPT_HAZEL_ORIGIN) return;
@@ -752,6 +777,7 @@ function scriptTileMessage(e) {
   const m = e.data || {};
   if (m.type === "ready") {
     T.ready = true; T.sent = null; T.holder.dataset.ready = "1"; scriptMaxNavSoon();
+    if (scriptTilesWaiting === T) { scriptTilesWaiting = null; setTimeout(scriptTilesPump, 0); }   // (the next one, now)
     const w = T.iframe.contentWindow;
     // (Matthew, 2026-10-23: "indentation in tiles panel is a regression --- we should respect the viewport, and enforce that line
     // limit, like we already have elsewhere") the module's stored text broken to the box's width, at most ⚙️'s wrap, as the text
@@ -1004,6 +1030,7 @@ function scriptMaxOpen(boxes, sec) {
   if (M.sec && M.sec !== sec) scriptMaxUnpin(M.sec);
   M.sec = sec;
   sec.classList.add("script-max-pinned");
+  scriptTilesFirst(sec);
   scriptMaxPlace();
   if (!M.placing) {
     M.placing = () => scriptMaxPlace();
