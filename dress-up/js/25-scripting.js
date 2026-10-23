@@ -39,36 +39,89 @@ const SCRIPT_ROOMS = [
   { name: "Castle", label: "🏰 the castle's ways: where a pit drops you, and a dungeon's ladder leads", kind: "castle" },
 ];
 
+// (ticket 566, Matthew: "Notice that in Languages of Play, the examples use sum types with typed constructions where we are using a
+// lot of strings (names of directions and squares/rooms on map) --- Let's try to match the prescription of that paper, and use the
+// sum types that each of these languages has already"; Languages of Play, Martens and Hammer, FDG 2017) The rules' vocabulary as
+// sums, not text: a direction, a lever's side, a wiring, a castle room's way-out setting, a square's kind (Place) and a castle
+// room's (Room), each from the game's own lists (PLACES, ROOM_KINDS), so they cannot drift from it, and a room's exits (Exit).
+// Hazel declares them at the program's start: declared inside module Common, their constructors are in scope only in Common
+// (js-library-embed's Hazel, 2026-10-23: a room's N is "Constructor is not defined"), which a module exporting its constructors
+// would change. Fumola's variants (#N) need no declaring. A thing's uid and kind stay text: names, not kinds.
+const SCRIPT_DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+// (in node, where the game's lists are not loaded: the same lists, held equal to them by tools/checks/scriptboxes566.mjs)
+const SCRIPT_PLACES_KNOWN = ["none", "emptyroom", "bubblespace", "bubbleroom", "imagination", "forest", "underwater", "deepsea", "beach", "sea", "witch", "cemetery",
+  "lake", "house", "farmyard", "treehouse", "treeroom", "treetop", "livingroom", "witchroom", "clearing", "healerroom", "fairyforest", "mountains", "waterfall",
+  "campsite", "tent", "cave", "caveroom", "woodpath", "pasture", "crossing", "castle", "castleroom", "hut", "hutroom", "hutbed", "hutpotion", "hutcenter", "desert"];
+const SCRIPT_ROOMS_KNOWN = ["king", "greenhouse", "trap", "dungeon1", "dungeon2", "hallway", "catroom", "stable", "dining", "kitchen", "smithy", "spiral"];
+const SCRIPT_EXITS = ["side", "long", "spiral", "trap", "ladder", "all", "hall"];
+const scriptCap = k => k[0].toUpperCase() + k.slice(1);
+// (a square's kind "none" is NoPlace: None is the option's)
+const scriptPlace = k => k === "none" ? "NoPlace" : scriptCap(String(k));
+const scriptExit = x => "Exit" + scriptCap(String(x));
+const scriptPlaces = () => typeof PLACES !== "undefined" ? PLACES.map(([k]) => k) : SCRIPT_PLACES_KNOWN;
+const scriptRoomKinds = () => typeof ROOM_KINDS !== "undefined" ? Object.keys(ROOM_KINDS) : SCRIPT_ROOMS_KNOWN;
+function SCRIPT_SUMS_TEXT() {
+  const sum = (name, ks) => `type ${name} = ${ks.map(k => "+ " + k).join(" ")} in`;
+  return [sum("Dir", SCRIPT_DIRS), sum("Side", ["L", "R"]), sum("Wiring", ["Normal", "Reversed", "Random"]), sum("Out", ["Auto", "OutOfCastle", "Nowhere", "ToRoom(Int)"]),
+    sum("Place", scriptPlaces().map(scriptPlace)), sum("Room", scriptRoomKinds().map(scriptCap)), sum("Exit", SCRIPT_EXITS.map(scriptExit))].join("\n");
+}
+// The boundary: the game hands a rule its globals and event with text in them, as always, and takes back commands as always; here
+// the text becomes constructors ({tag}, which Hazel's library and Fumola's literal writer take as a sum's value) on the way in,
+// and back on the way out (Flip's side to the lever's name, GoSquare's direction to its text). Both engines' handlers are wrapped
+// (scriptTyped), so the game, the checks and the tools keep passing what they pass.
+const scriptTag = t => ({ tag: t });
+function scriptTypedGlobals(g) {
+  if (!g || typeof g !== "object") return g;
+  const out = g.out === "auto" ? scriptTag("Auto") : g.out === "out" ? scriptTag("OutOfCastle") : g.out === "none" ? scriptTag("Nowhere") : { tag: "ToRoom", value: +g.out_room };
+  const t = { ...g, wiring: scriptTag(scriptCap(String(g.wiring || "normal"))), rooms: (g.rooms || []).map(r => scriptTag(scriptCap(String(r)))),
+    exits: (g.exits || []).map(x => scriptTag(scriptExit(x))), out,
+    cells: (g.cells || []).map(c => ({ ...c, kind: scriptTag(scriptPlace(c.kind)), ways: (c.ways || []).map(scriptTag) })) };
+  delete t.out_room;
+  return t;
+}
+const scriptTypedEvent = ev => ev && (ev.tag === "Pull" || ev.tag === "PullBoulder" || ev.tag === "Way") && typeof ev.value === "string" ? { tag: ev.tag, value: scriptTag(ev.value) } : ev;
+function scriptUntypedCmd(c) {
+  if (!c || typeof c !== "object" || !Array.isArray(c.value)) return c;
+  const v = c.value.slice(), k = v.pop();
+  if (c.tag === "Flip" && v[0] && v[0].tag) v[0] = "lever_" + v[0].tag;
+  if (c.tag === "GoSquare" && v[2] && v[2].tag) v[2] = v[2].tag;
+  return { tag: c.tag, value: [...v, scriptUntypedCmd(k)] };
+}
+const scriptTyped = f => (g, ev) => scriptUntypedCmd(f(scriptTypedGlobals(g), scriptTypedEvent(ev)));
+
 // (ticket 531) the whole game's vocabulary, for every room that has logic: what a rule may say (Cmd), what happened (Event), a placed
 // thing as a rule sees it (Thing), and what it is told (Globals, built by each room's globals in SCRIPT_ACTS: add a field in both).
 // No randomness and no clock in Hazel: the game's draws (draws, from a random wiring's seed) come in through Globals.
-const SCRIPT_PREAMBLE = `type Cmd = + Done + Flip(String, Cmd) + Say(String, Cmd) + SetPit(Int, Bool, Cmd) + DropBoulder(Int, Cmd) + LiftBoulder(Int, Cmd) + SetHatch(Int, Bool, Cmd) + OpenDoor(Int, Bool, Cmd) + DropRock(Int, Bool, Cmd) + Wait(Int, Cmd) + GoRoom(Int, Cmd) + GoSquare(Int, Int, String, Cmd) in
-type Event = + Pull(String) + PullBoulder(String) + PullHatch(Int) + PullThing(Int) + FallPit(Int) + WayOut(Int) + Way(String) in
+const SCRIPT_PREAMBLE = `${SCRIPT_SUMS_TEXT()}
+type Cmd = + Done + Flip(Side, Cmd) + Say(String, Cmd) + SetPit(Int, Bool, Cmd) + DropBoulder(Int, Cmd) + LiftBoulder(Int, Cmd) + SetHatch(Int, Bool, Cmd) + OpenDoor(Int, Bool, Cmd) + DropRock(Int, Bool, Cmd) + Wait(Int, Cmd) + GoRoom(Int, Cmd) + GoSquare(Int, Int, Dir, Cmd) in
+type Event = + Pull(Side) + PullBoulder(Side) + PullHatch(Int) + PullThing(Int) + FallPit(Int) + WayOut(Int) + Way(Dir) in
 type Thing = (at = Int, uid = String, kind = String, on = Bool, works = [String], does = String, open = Bool, boulder = Bool) in
-type Cell = (col = Int, row = Int, kind = String, ways = [String]) in
-type Globals = (lever_L = Bool, lever_R = Bool, wiring = String, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing], rooms = [String], exits = [String], out = String, out_room = Int, at_col = Int, at_row = Int, cols = Int, rows = Int, cells = [Cell]) in`;
+type Cell = (col = Int, row = Int, kind = Place, ways = [Dir]) in
+type Globals = (lever_L = Bool, lever_R = Bool, wiring = Wiring, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing], rooms = [Room], exits = [Exit], out = Out, at_col = Int, at_row = Int, cols = Int, rows = Int, cells = [Cell]) in`;
 
 const SCRIPT_COMMON = `# Sub-routines every room can use, as Common.wire and so on. #
-let flip2 = fun (a, b) : (String, String) -> Flip(a, Flip(b, Done));
+let flip2 = fun (a, b) : (Side, Side) -> Flip(a, Flip(b, Done));
 # the i-th of a list of Bools, false past its end #
 let nth = fun (xs, i) : ([Bool], Int) -> case xs | [] => false | x :: rest => if i == 0 then x else nth(rest, i - 1) end;
 # which lever works each pit, the left and the right: normal, reversed, or at random by the game's two draws #
-let wire = fun (mode, draws) : (String, [Float]) -> (if mode == "reversed" then ("R", "L") else if mode == "random" then (case draws | a :: b :: _ => (if a <. 0.5 then "L" else "R", if b <. 0.5 then "L" else "R") | _ => ("L", "R") end) else ("L", "R"));
+let wire = fun (mode, draws) : (Wiring, [Float]) -> case mode | Reversed => (R, L) | Random => (case draws | a :: b :: _ => (if a <. 0.5 then L else R, if b <. 0.5 then L else R) | _ => (L, R) end) | Normal => (L, R) end;
 # a red lever up? (true is up) #
-let up = fun (l, r, side) : (Bool, Bool, String) -> if side == "L" then l else r;
+let up = fun (l, r, side) : (Bool, Bool, Side) -> case side | L => l | R => r end;
 # each pit open: open when the lever working it is up #
-let pits_open = fun (l, r, w) : (Bool, Bool, (String, String)) -> let (w0, w1) = w in (up(l, r, w0), up(l, r, w1));
+let pits_open = fun (l, r, w) : (Bool, Bool, (Side, Side)) -> let (w0, w1) = w in (up(l, r, w0), up(l, r, w1));
 # a pit that changed from was to now: SetPit, else nothing #
 let pit_moves = fun (i, was, now, k) : (Int, Bool, Bool, Cmd) -> if was == now then k else SetPit(i, now, k);
 let member = fun (s, xs) : (String, [String]) -> case xs | [] => false | x :: rest => x == s || member(s, rest) end;
-# where s is in a list of Strings, counting from 1; 0 when it is not there #
-let index_of = fun (xs, s) : ([String], String) -> case xs | [] => 0 | x :: rest => if x == s then 1 else (let i = index_of(rest, s) in if i == 0 then 0 else i + 1) end;
-# the i-th of a list of Strings, counting from 1; "" past its end #
-let nth_s = fun (xs, i) : ([String], Int) -> case xs | [] => "" | x :: rest => if i == 1 then x else nth_s(rest, i - 1) end;
-let length = fun xs : [String] -> case xs | [] => 0 | _ :: rest => 1 + length(rest) end;
+# a way among a square's ways #
+let has_way = fun (d, ds) : (Dir, [Dir]) -> case ds | [] => false | x :: rest => x == d || has_way(d, rest) end;
+# where room kind k first is in a castle's rooms, counting from 1; 0 when it is not there #
+let room_at = fun (rs, k) : ([Room], Room) -> case rs | [] => 0 | x :: rest => if x == k then 1 else (let i = room_at(rest, k) in if i == 0 then 0 else i + 1) end;
+# the i-th room's exits, counting from 1; none past the end #
+let exit_of = fun (xs, i) : ([Exit], Int) -> case xs | [] => None | x :: rest => if i == 1 then Some(x) else exit_of(rest, i - 1) end;
+let rooms = fun rs : [Room] -> case rs | [] => 0 | _ :: rest => 1 + rooms(rest) end;
 # the world's eight directions: each one's step across and down the map, and the way back #
-let dir = fun d : String -> if d == "N" then (0, 0 - 1) else if d == "NE" then (1, 0 - 1) else if d == "E" then (1, 0) else if d == "SE" then (1, 1) else if d == "S" then (0, 1) else if d == "SW" then (0 - 1, 1) else if d == "W" then (0 - 1, 0) else if d == "NW" then (0 - 1, 0 - 1) else (0, 0);
-let opp = fun d : String -> if d == "N" then "S" else if d == "NE" then "SW" else if d == "E" then "W" else if d == "SE" then "NW" else if d == "S" then "N" else if d == "SW" then "NE" else if d == "W" then "E" else if d == "NW" then "SE" else ""`;
+let dir = fun d : Dir -> case d | N => (0, 0 - 1) | NE => (1, 0 - 1) | E => (1, 0) | SE => (1, 1) | S => (0, 1) | SW => (0 - 1, 1) | W => (0 - 1, 0) | NW => (0 - 1, 0 - 1) end;
+let opp = fun d : Dir -> case d | N => S | NE => SW | E => W | SE => NW | S => N | SW => NE | W => E | NW => SE end`;
 
 const SCRIPT_TRAP = `# A red lever pulled: flip it, and each pit wired to it opens or shuts. #
 # A blue lever pulled: each of its pits gets a boulder, or loses one. #
@@ -78,10 +131,10 @@ let on_event = fun (g, e) : (Globals, Event) ->
   case e
   | Pull(side) =>
     let (was0, was1) = Common.pits_open(g.lever_L, g.lever_R, w) in
-    let l = if side == "L" then !g.lever_L else g.lever_L in
-    let r = if side == "R" then !g.lever_R else g.lever_R in
+    let l = if side == L then !g.lever_L else g.lever_L in
+    let r = if side == R then !g.lever_R else g.lever_R in
     let (now0, now1) = Common.pits_open(l, r, w) in
-    Flip("lever_" ++ side, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, Done)))
+    Flip(side, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, Done)))
   | PullBoulder(side) =>
     let mine0 = w0 == side && Common.nth(g.pits_on, 0) in
     let mine1 = w1 == side && Common.nth(g.pits_on, 1) in
@@ -125,7 +178,7 @@ let on_event = fun (g, e) : (Globals, Event) ->
 // (ticket 531, phase 2) the world's ways, decided when one is walked through: the square beside this one that way, if it is on the
 // map, there, and has a way back (worldMeets and worldWays' rule, 25-world.js). A way linked to another world stays the JS's.
 const SCRIPT_WORLD = `# Places with no way out on a side, whatever their ways say: the waterfall's N, its cliff. #
-let no_way = fun (kind, d) : (String, String) -> kind == "waterfall" && d == "N";
+let no_way = fun (kind, d) : (Place, Dir) -> kind == Waterfall && d == N;
 let find = fun (cs, c, r) : ([Cell], Int, Int) -> case cs | [] => None | x :: rest => if x.col == c && x.row == r then Some(x) else find(rest, c, r) end;
 # A way out walked through: into the square beside it, coming in from the side facing back, #
 # if that square is on the map and has a way back; else nowhere. #
@@ -138,7 +191,7 @@ let on_event = fun (g, e) : (Globals, Event) ->
     let back = Common.opp(d) in
     if c < 0 || r < 0 || c >= g.cols || r >= g.rows then Done
     else (case find(g.cells, c, r)
-      | Some(x) => if Common.member(back, x.ways) && !no_way(x.kind, back) then GoSquare(c, r, back, Done) else Done
+      | Some(x) => if Common.has_way(back, x.ways) && !no_way(x.kind, back) then GoSquare(c, r, back, Done) else Done
       | None => Done
       end)
   | _ => Done
@@ -148,27 +201,29 @@ let on_event = fun (g, e) : (Globals, Event) ->
 // room's pit drops you into, and where a dungeon's ladder up leads (wayOutOf's rule, 13-castle-rooms-and-map.js). The rooms come in as
 // their kinds, room 1 first, with each one's exits (ROOM_KINDS' exits), and this room's way out setting
 const SCRIPT_CASTLE = `# Where room n's way out leads: 0 out of the castle, a room, or -1 nowhere. #
-# out is its setting (auto, out, none, or a room, then out_room); auto: #
-# a dungeon's ladder up to the trap room, room 1 out, any other to room 1. #
-let way_out = fun (rooms, exits, n, out, out_room) : ([String], [String], Int, String, Int) ->
-  let ex = Common.nth_s(exits, n) in
-  let s_out = ex == "side" || ex == "long" || ex == "spiral" in
-  let v = if out == "none" && !s_out then "auto" else out in
-  if v == "auto" then (let t = Common.index_of(rooms, "trap") in if ex == "ladder" && t > 0 && !(t == n) then t else if n == 1 then 0 else 1)
-  else if v == "out" then 0
-  else if v == "none" then 0 - 1
-  else if out_room >= 1 && out_room <= Common.length(rooms) then out_room else 0 - 1;
+# out is its setting; Auto: a dungeon's ladder up to the trap room, room 1 out, any other to room 1. #
+# Nowhere only where the way out is toward us (side doors, a long room's, a spiral's); elsewhere Auto. #
+let way_out = fun (rooms, exits, n, out) : ([Room], [Exit], Int, Out) ->
+  let ex = Common.exit_of(exits, n) in
+  let toward_us = (case ex | Some(ExitSide) => true | Some(ExitLong) => true | Some(ExitSpiral) => true | _ => false end) in
+  let ladder = (case ex | Some(ExitLadder) => true | _ => false end) in
+  case (case out | Nowhere => (if toward_us then Nowhere else Auto) | o => o end)
+  | Auto => (let t = Common.room_at(rooms, Trap) in if ladder && t > 0 && !(t == n) then t else if n == 1 then 0 else 1)
+  | OutOfCastle => 0
+  | Nowhere => 0 - 1
+  | ToRoom(r) => if r >= 1 && r <= Common.rooms(rooms) then r else 0 - 1
+  end;
 # A trap room's pit fallen into (0 the left, 1 the right): #
 # the first pit drops into the dungeon, the second into the deep dungeon; #
 # a castle with only one of them, both into that one. #
 let on_event = fun (g, e) : (Globals, Event) ->
-  let d1 = Common.index_of(g.rooms, "dungeon1") in
-  let d2 = Common.index_of(g.rooms, "dungeon2") in
+  let d1 = Common.room_at(g.rooms, Dungeon1) in
+  let d2 = Common.room_at(g.rooms, Dungeon2) in
   case e
   | FallPit(i) =>
     let to = if i == 0 then (if d1 > 0 then d1 else d2) else (if d2 > 0 then d2 else d1) in
     if to == 0 then Done else GoRoom(to, Done)
-  | WayOut(n) => GoRoom(way_out(g.rooms, g.exits, n, g.out, g.out_room), Done)
+  | WayOut(n) => GoRoom(way_out(g.rooms, g.exits, n, g.out), Done)
   | _ => Done
   end`;
 
@@ -322,7 +377,7 @@ function scriptCompile() {
     if (viaProgram) ({ errors, unfinished, ok: ready } = scriptReport(r));
     else { errors = Array.from(r.errors || []).map(String); ready = !errors.length; }
     const v = r.value || {};
-    for (const room of SCRIPT_ROOMS) { const f = v[room.name.toLowerCase()]; if (typeof f === "function") handlers[room.name] = f; }
+    for (const room of SCRIPT_ROOMS) { const f = v[room.name.toLowerCase()]; if (typeof f === "function") handlers[room.name] = scriptTyped(f); }   // (ticket 566: text to sums and back)
     // (fine by Hazel, yet a room's rule not a function here: said, and not ready)
     if (ready) for (const room of SCRIPT_ROOMS) if (!handlers[room.name]) { errors.push(`${room.name}: its on_event did not come back as a function`); ready = false; }
   } catch (e) { errors = [String(e && e.message || e)]; ready = false; }
