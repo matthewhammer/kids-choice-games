@@ -932,6 +932,9 @@ function scriptEditorApply() {
   document.body.classList.toggle("script-plain", !E.colours);
   document.body.classList.toggle("script-nolines", !E.lines);
   for (const b of document.querySelectorAll(".script-hazel-body")) if (b.show) b.show();
+  // (Matthew, 2026-10-23: "if we have 'tiles' selected, we shouldn't see both": in tiles, no text at all, the types' read-only
+  // listing included; the outline still names them)
+  document.body.classList.toggle("script-tiles-on", E.hazel === "tiles");
   for (const ta of document.querySelectorAll("textarea.script-editor, pre.script-js")) if (ta.reflow) ta.reflow();
 }
 // how many characters of the code's font fit across a text box, its padding and scroll bar taken off
@@ -1333,7 +1336,7 @@ function scriptingPanel(box) {
         // module's constructors in scope outside it: hazelgrove/hazel#2729 does, on dev; once it does, they move into Common)
         el("div", { class: "hint" }, "module Common, in Hazel: in scope in every Hazel room, as Common.name"),
         hazelBody("Common", editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }, "hazel")),
-        el("div", { class: "hint" }, "the types every Hazel room can name (read-only: at the program's start until the game's Hazel has hazelgrove/hazel#2729)"),
+        el("div", { class: "hint script-types-hint" }, "the types every Hazel room can name (read-only: at the program's start until the game's Hazel has hazelgrove/hazel#2729)"),
         typesPre());
       else body.replaceChildren(el("div", { class: "hint" }, "module Common, in Fumola: in scope in every Fumola room, as Common.name (as text: ⚙️'s tiles are Hazel's; Fumola has none in the game yet)"),
         editor("Common", () => scriptsState().fumola.common || "", t => { scriptsState().fumola.common = t; }, "fumola"));

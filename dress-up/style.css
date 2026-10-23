@@ -1102,6 +1102,7 @@ body.big .script-frame { display: none; }
 /* (ticket 578) a Hazel box's own tiles, in place of its text box; its chip (🧩 tiles / ✏️ text) above */
 /* (a hidden one hidden: .script-edit's own display would otherwise show it) */
 .script-hazel-body > [hidden] { display: none !important; }
+body.script-tiles-on .script-types, body.script-tiles-on .script-types-hint { display: none; }
 .script-max-main .script-tile-wrap { max-height: none; }
 .script-tile-wrap { position: relative; }
 .script-tile-wrap > .script-band { z-index: 1; }
