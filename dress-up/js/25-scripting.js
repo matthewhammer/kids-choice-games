@@ -271,6 +271,12 @@ function scriptsState() {
   if (F.common == null && FD.common) F.common = FD.common;
   F.rooms = F.rooms || {};
   for (const r of SCRIPT_ROOMS) if (F.rooms[r.name] == null && FD.rooms[r.name] != null) F.rooms[r.name] = FD.rooms[r.name];
+  // (2026-10-23) a Hazel module whose text is the shipped one but for spaces and line breaks (broken narrow for tiles seen in a
+  // small box, an hour's bug): the shipped one again, broken at ⚙️'s wrap
+  const bare = t => String(t || "").replace(/\s+/g, "");
+  const wrapAt = (S.editor && S.editor.wrap >= 20) ? S.editor.wrap : 77;
+  if (S.common !== SCRIPT_COMMON && bare(S.common) === bare(SCRIPT_COMMON)) S.common = scriptFlow("hazel", SCRIPT_COMMON, wrapAt);
+  for (const r of SCRIPT_ROOMS) { const d = SCRIPT_TEXTS[r.kind]; if (d && S.rooms[r.name] !== d && bare(S.rooms[r.name]) === bare(d)) S.rooms[r.name] = scriptFlow("hazel", d, wrapAt); }
   // (2026-10-23) a save holding the texts as shipped before their types, unchanged: the typed ones in their place (FUMOLA_UNTYPED)
   if (typeof FUMOLA_UNTYPED === "function") {
     if (FD.common && F.common !== FD.common && F.common === FUMOLA_UNTYPED(FD.common)) F.common = FD.common;
@@ -751,7 +757,9 @@ function scriptTileMessage(e) {
     // box shows it (579: only spaces and breaks change), before the tiles get it; not again while it is edited in them, so the
     // caret stays where it is. Hazel's tiles: about 12.8 px a character (measured in its frame, 2026-10-23)
     {
-      const S = scriptsState(), cols = Math.min(scriptEditorSettings().wrap, Math.floor((T.holder.clientWidth - 40) / 12.8));
+      // (at ⚙️'s wrap alone, not the box's width: a break cannot be taken back, and a box first seen narrow broke Common to 30
+      // columns for good (Matthew's screenshot, 16:05))
+      const S = scriptsState(), cols = scriptEditorSettings().wrap;
       if (cols > 20) {
         if (T.mod === "Common") S.common = scriptFlow("hazel", S.common, cols);
         else if (S.rooms[T.mod] != null) S.rooms[T.mod] = scriptFlow("hazel", S.rooms[T.mod], cols);

@@ -125,7 +125,13 @@ function setTabBig(on) {
 // puts the picture in it) with the dragger between; outside the full screen the two columns are display: contents, the panel as it was
 function tabDesigner(panel, name) {
   const kids = [...panel.children];
-  const chip = el("button", { class: "tabbig designer-chip", onclick: () => setTabBig(!document.body.classList.contains("tab-big")) }, document.body.classList.contains("tab-big") ? TAB_BIG[1] : TAB_BIG[0]);
+  // (Matthew, 2026-10-23: "top-level FS chip for scripts should be the same as 'max size' on Common please") the 📜 Scripting tab's
+  // ⛶ opens the scripts' own full size, at 📚 Common (scriptMaxOpen), not the tab's designer
+  const chip = el("button", { class: "tabbig designer-chip", onclick: () => {
+    const common = !document.body.classList.contains("tab-big") && panel.querySelector('.script-box[data-room="Common"] .script-max-btn');
+    if (common) { common.click(); return; }
+    setTabBig(!document.body.classList.contains("tab-big"));
+  } }, document.body.classList.contains("tab-big") ? TAB_BIG[1] : TAB_BIG[0]);
   const bar = el("div", { class: "ctl tab-bar", "data-name": name }, [chip]);
   const view = el("div", { class: "world-view tab-view" }, [el("div", { class: "row world-view-head" }, [
     el("button", { class: "eye", onclick: () => worldViewShow(worldViewHidden) }, "👁️"), el("span", { class: "hint" }, "📺 the game")]), el("div", { class: "tab-view-pic" })]);
