@@ -86,6 +86,10 @@ try {
   const L4 = JSON.parse(await ev(LOOK)), P4 = JSON.parse(await ev(PULL));
   ok("every room back on JS, its own chip forgotten", JSON.stringify(L4.master) === '["js"]' && JSON.stringify(L4.rooms.TrapRoom.chip) === '["js"]' && !!L4.rooms.TrapRoom.js && JSON.stringify(await ev(`JSON.stringify(state.scripts.engines)`)) === JSON.stringify("{}"), L4.master);
   ok("the pull runs the JS, and flips", JSON.stringify(P4.ran) === '["js"]' && P4.flipped, P4);
+  // (the sums' kinds for node, where the game's lists are not loaded: the same as the game's own)
+  const K = JSON.parse(await ev(`JSON.stringify({ places: SCRIPT_PLACES_KNOWN.join() === PLACES.map(p => p[0]).join(), rooms: SCRIPT_ROOMS_KNOWN.join() === Object.keys(ROOM_KINDS).join(),
+    exits: [...new Set(Object.values(ROOM_KINDS).map(R => R.exits))].every(x => SCRIPT_EXITS.includes(x)) })`));
+  ok("the sums' kinds held for node are the game's own (PLACES, ROOM_KINDS and their exits)", K.places && K.rooms && K.exits, K);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

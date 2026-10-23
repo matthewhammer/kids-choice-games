@@ -6,11 +6,11 @@
 // the edges named one by one, with their commands written out, and Common's helpers called alone. Prints each failure, a count per
 // room, and per event the time of a call (globals in as text, JSON out) in each mode: p50, p95, in ms, node's, for the order of
 // things only. Exits 1 on a failure.
-//   node tools/fumola_rules_check.mjs [fumola wasm bindings dir]   (default: the game's pinned copy, dress-up/vendor/fumola/2ec634b5df/,
+//   node tools/fumola_rules_check.mjs [fumola wasm bindings dir]   (default: the game's pinned copy, dress-up/vendor/fumola/877b155851/,
 //   fumola_wasm.js and fumola_wasm_bg.wasm, the build the page loads)
 import fs from "node:fs"; import vm from "node:vm"; import path from "node:path"; import os from "node:os";
 const here = path.dirname(new URL(import.meta.url).pathname);
-const dir = path.resolve(process.argv[2] || path.join(here, "..", "dress-up", "vendor", "fumola", "2ec634b5df"));
+const dir = path.resolve(process.argv[2] || path.join(here, "..", "dress-up", "vendor", "fumola", "877b155851"));
 if (!fs.existsSync(path.join(dir, "fumola_wasm.js"))) { console.log(`usage: node tools/fumola_rules_check.mjs <dir with fumola_wasm.js and fumola_wasm_bg.wasm> (none in ${dir})`); process.exit(2); }
 let bad = 0, n = 0;
 const ok = (what, cond, got) => { n++; if (!cond) { if (bad < 40) console.log(`FAIL ${what}: ${JSON.stringify(got).slice(0, 600)}`); bad++; } };
@@ -20,8 +20,13 @@ const fnText = (text, name) => { const a = text.indexOf(`function ${name}(`); if
 // ---- Fumola's build, and the page's own Fumola part ----
 const F = await import(path.join(dir, "fumola_wasm.js"));
 F.initSync({ module: fs.readFileSync(path.join(dir, "fumola_wasm_bg.wasm")) });
-const page = { console, Math, JSON, Object, Array, String, Number, Boolean, Error, Promise, performance, SCRIPT_FUMOLA: false };
+const page = { console, Math, JSON, Object, Array, String, Number, Boolean, Error, Promise, performance, Map, Set, RegExp, Symbol,
+  location: { search: "" }, setTimeout: () => 0, clearTimeout() {}, document: { head: { append() {} }, getElementById: () => null, body: { classList: { contains: () => false } } },
+  addEventListener() {}, state: { scripts: { on: false, common: null, rooms: {} }, background: {} } };
+page.window = page;
 vm.createContext(page);
+// (ticket 566: the page's own boundary, scriptTyped, which turns the game's text into the rules' variants and back, as the page does)
+vm.runInContext(src("25-scripting.js"), page, { filename: "25-scripting.js" });
 const X = vm.runInContext(src("25-fumola.js") + "\n;({ FUMOLA_SOURCE, FUMOLA_ROOMS, fumolaRules, fumolaLit, fumolaValue })", page, { filename: "25-fumola.js" });
 ok("the Fumola source is ASCII (a non-ASCII character once hid what came after it from Fumola's reader)", /^[\x00-\x7f]*$/.test(X.FUMOLA_SOURCE), [...X.FUMOLA_SOURCE].filter(c => c.charCodeAt(0) > 127).slice(0, 5));
 const MODES = ["fumola", "fumola-list"], RULES = {};
@@ -185,19 +190,20 @@ edge("Castle", { rooms: rs, exits: ex(rs), out: "0", out_room: 0 }, { tag: "WayO
 // ---- Common's helpers alone ----
 const val = t => { try { return X.fumolaValue(JSON.parse(F.fumola_eval_top(RULES.fumola.id, t))); } catch (e) { return "THREW " + e; } };
 const helper = (t, want) => { ok(`Common: ${t}`, JSON.stringify(val(t)) === JSON.stringify(want), { want, got: val(t) }); count.common = (count.common || 0) + 1; };
-helper(`Common.flip2("lever_L", "lever_R")`, { tag: "Flip", value: ["lever_L", { tag: "Flip", value: ["lever_R", { tag: "Done" }] }] });
+// (ticket 566: Common's helpers in the rules' variants; a direction's step off the map is World's now, checked by the World cases)
+helper(`Common.flip2(#L, #R)`, { tag: "Flip", value: [{ tag: "L" }, { tag: "Flip", value: [{ tag: "R" }, { tag: "Done" }] }] });
 helper(`Common.nth([true, false], 0)`, true); helper(`Common.nth([true, false], 1)`, false); helper(`Common.nth([true], 5)`, false); helper(`Common.nth([], 0)`, false);
-helper(`Common.wire("normal", [])`, ["L", "R"]); helper(`Common.wire("reversed", [])`, ["R", "L"]); helper(`Common.wire("random", [499999, 500000])`, ["L", "R"]); helper(`Common.wire("random", [7])`, ["L", "R"]);
-helper(`Common.up(true, false, "L")`, true); helper(`Common.up(true, false, "R")`, false);
-helper(`Common.pits_open(true, false, ("R", "L"))`, [false, true]);
+helper(`Common.wire(#Normal, [])`, [{ tag: "L" }, { tag: "R" }]); helper(`Common.wire(#Reversed, [])`, [{ tag: "R" }, { tag: "L" }]);
+helper(`Common.wire(#Random, [0.4999999, 0.5])`, [{ tag: "L" }, { tag: "R" }]); helper(`Common.wire(#Random, [0.7])`, [{ tag: "L" }, { tag: "R" }]);
+helper(`Common.up(true, false, #L)`, true); helper(`Common.up(true, false, #R)`, false);
+helper(`Common.pits_open(true, false, (#R, #L))`, [false, true]);
 helper(`Common.pit_moves(1, true, true, #Done)`, { tag: "Done" }); helper(`Common.pit_moves(1, true, false, #Done)`, { tag: "SetPit", value: [1, false, { tag: "Done" }] });
 helper(`Common.member("b", ["a", "b"])`, true); helper(`Common.member("c", ["a", "b"])`, false); helper(`Common.member("a", [])`, false);
-helper(`Common.index_of(["a", "trap", "trap"], "trap")`, 2); helper(`Common.index_of(["a"], "trap")`, 0);
-helper(`Common.nth_s(["x", "y"], 1)`, "x"); helper(`Common.nth_s(["x", "y"], 3)`, ""); helper(`Common.nth_s(["x", "y"], 0)`, "");
-helper(`Common.length(["x", "y", "z"])`, 3); helper(`Common.length([])`, 0);
-for (const [d, [dx, dy]] of Object.entries(game.WORLD_DIRS)) { helper(`Common.dir("${d}")`, [dx, dy]); helper(`Common.opp("${d}")`, game.WORLD_OPP[d]); }
-helper(`Common.dir("up")`, [0, 0]); helper(`Common.opp("up")`, "");
-helper(`Common.step(1, 1, "NW", 3, 3)`, [0, 0]); helper(`Common.step(0, 1, "SW", 3, 3)`, null); helper(`Common.step(2, 2, "SE", 3, 3)`, null); helper(`Common.step(2, 0, "S", 3, 3)`, [2, 1]);
+helper(`Common.has_way(#E, [#N, #E])`, true); helper(`Common.has_way(#W, [#N, #E])`, false);
+helper(`Common.room_at([#King, #Trap, #Trap], #Trap)`, 2); helper(`Common.room_at([#King], #Trap)`, 0);
+helper(`Common.exit_of([#ExitSide, #ExitLadder], 2)`, { tag: "ExitLadder" }); helper(`Common.exit_of([#ExitSide], 3)`, null); helper(`Common.exit_of([#ExitSide], 0)`, null);
+helper(`Common.rooms([#King, #Trap, #Stable])`, 3); helper(`Common.rooms([])`, 0);
+for (const [d, [dx, dy]] of Object.entries(game.WORLD_DIRS)) { helper(`Common.dir(#${d})`, [dx, dy]); helper(`Common.opp(#${d})`, { tag: game.WORLD_OPP[d] }); }
 // (the boundary: a text with a quote cannot cross, and says so; numbers, variants and records as the page writes them)
 let threw = ""; try { X.fumolaLit({ uid: 'a"b' }); } catch (e) { threw = String(e.message); }
 ok("a text with a quote is refused, not written broken", /cannot be given/.test(threw), threw);

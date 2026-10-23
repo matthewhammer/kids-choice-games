@@ -8,7 +8,7 @@
 // the same {tag, value} commands, so scriptRun and the rooms' acts are the same in every mode.
 //   The boundary is text in, JSON out. Fumola's build takes only source text: the rules are defined once in an instance (its
 // top-level modules persist), then each event is a call written as text, its globals and event as Fumola literals (fumolaLit:
-// records { a = 1; b = "x" }, arrays [...], variants #Pull("L"), a tuple payload twice parenthesised); the answer comes back as
+// records { a = 1; b = "x" }, arrays [...], variants #Pull(#L), a tuple payload in its own parentheses); the answer comes back as
 // JSON ({tag, value}: variants as {tag: "Variant", value: {name, value}}, numbers as strings), read by fumolaValue.
 //   tools/fumola_rules_check.mjs runs this file in node against Fumola's wasm build: every case the rules can get, the same answers
 // as the Hazel rules'. tools/checks/fumola542.mjs plays the same in a browser, against ?logic=js.
@@ -19,69 +19,60 @@
 // its commit and change this line. Relative to the page (index.html).
 // (made absolute: an import() from this file resolves a relative path against js/, not against the page)
 const FUMOLA_BUILD = typeof document !== "undefined" && typeof URL !== "undefined" && document.baseURI
-  ? new URL("vendor/fumola/2ec634b5df/", document.baseURI).href : "vendor/fumola/2ec634b5df/";
+  ? new URL("vendor/fumola/877b155851/", document.baseURI).href : "vendor/fumola/877b155851/";
 const FUMOLA_JS_URL = FUMOLA_BUILD + "fumola_wasm.js", FUMOLA_WASM_URL = FUMOLA_BUILD + "fumola_wasm_bg.wasm";
 
-// The rules, module by module, as 25-scripting.js has them in Hazel (SCRIPT_COMMON, SCRIPT_TRAP, ...), the same answers. Fumola's
-// traps, met here: text's != is inverted, so not (a == b); no text patterns, so if and ==; Nat and Int do not mix (a Nat minus a
-// bigger Nat is an Int, and only < compares the two), so coordinates stay Nat and an edge is checked before stepping off it (step),
-// and a test like x >= 1 is written not (x < 1); no < on Floats, so a random wiring's draws come in as Nats, in millionths
-// (fumolaGlobals); a tuple payload is #GoSquare((c, r, back, #Done)); #X does not match #X(payload). ASCII only (a non-ASCII
-// character once hid everything after it from Fumola's reader).
+// The rules, module by module, as 25-scripting.js has them in Hazel (SCRIPT_COMMON, SCRIPT_TRAP, ...), the same answers, in the
+// same vocabulary: variants for directions, sides, wirings, square and room kinds, exits and way-out settings (#N, #L, #Random,
+// #Waterfall, #Trap, #ExitLadder, #ToRoom(3); ticket 566, Languages of Play), the game's text turned into them at the boundary
+// (scriptTyped). Since Fumola's semantics fixes (ticket 571; the build in vendor/fumola/877b155851/): text != is right, literal
+// patterns of every kind, whole numbers mix (a step is (c + dx, r + dy), as Hazel's), Floats compare (the draws go in as they are).
+// ASCII only (a non-ASCII character once hid everything after it from Fumola's reader).
 const FUMOLA_COMMON = `module Common {
   // two levers flipped, one after the other
-  public func flip2(a, b) { #Flip((a, #Flip((b, #Done)))) };
+  public func flip2(a, b) { #Flip(a, #Flip(b, #Done)) };
   // the i-th of a list of Bools, false past its end
   public func nth(xs, i) { if (i < xs.size()) { xs[i] } else { false } };
-  // which lever works each pit, the left and the right: normal, reversed, or at random by the game's two draws (in millionths)
+  // which lever works each pit, the left and the right: normal, reversed, or at random by the game's two draws
   public func wire(mode, draws) {
-    if (mode == "reversed") { ("R", "L") }
-    else if (mode == "random") {
-      if (draws.size() < 2) { ("L", "R") }
-      else { (if (draws[0] < 500000) { "L" } else { "R" }, if (draws[1] < 500000) { "L" } else { "R" }) }
+    switch (mode) {
+      case (#Reversed) { (#R, #L) };
+      case (#Random) { if (draws.size() < 2) { (#L, #R) } else { (if (draws[0] < 0.5) { #L } else { #R }, if (draws[1] < 0.5) { #L } else { #R }) } };
+      case _ { (#L, #R) }
     }
-    else { ("L", "R") }
   };
   // a red lever up? (true is up)
-  public func up(l, r, side) { if (side == "L") { l } else { r } };
+  public func up(l, r, side) { switch (side) { case (#L) { l }; case _ { r } } };
   // each pit open: open when the lever working it is up
   public func pits_open(l, r, w) { let (w0, w1) = w; (up(l, r, w0), up(l, r, w1)) };
   // a pit that changed from was to now: SetPit, else nothing
-  public func pit_moves(i, was, now, k) { if (was == now) { k } else { #SetPit((i, now, k)) } };
+  public func pit_moves(i, was, now, k) { if (was == now) { k } else { #SetPit(i, now, k) } };
   public func member(s, xs) { var found = false; for (x in xs.vals()) { if (x == s) { found := true } }; found };
-  // where s is in a list of texts, counting from 1; 0 when it is not there
-  public func index_of(xs, s) { var i = 0; var at = 0; for (x in xs.vals()) { i := i + 1; if (at == 0 and x == s) { at := i } }; at };
-  // the i-th of a list of texts, counting from 1; "" past its end
-  public func nth_s(xs, i) { if (i == 0) { "" } else if (i < xs.size() + 1) { xs[i - 1] } else { "" } };
-  public func length(xs) { xs.size() };
-  // the world's eight directions: each one's step across and down the map (its minus ones are Ints: see step)
+  // a way among a square's ways
+  public func has_way(d, ds) { var found = false; for (x in ds.vals()) { if (x == d) { found := true } }; found };
+  // where room kind k first is in a castle's rooms, counting from 1; 0 when it is not there
+  public func room_at(rs, k) { var i = 0; var at = 0; for (x in rs.vals()) { i := i + 1; if (at == 0 and x == k) { at := i } }; at };
+  // the i-th room's exits, counting from 1; null past the end
+  public func exit_of(xs, i) { if (i >= 1 and i <= xs.size()) { ?(xs[i - 1]) } else { null } };
+  public func rooms(rs) { rs.size() };
+  // the world's eight directions: each one's step across and down the map, and the way back
   public func dir(d) {
-    if (d == "N") { (0, -1) } else if (d == "NE") { (1, -1) } else if (d == "E") { (1, 0) } else if (d == "SE") { (1, 1) }
-    else if (d == "S") { (0, 1) } else if (d == "SW") { (-1, 1) } else if (d == "W") { (-1, 0) } else if (d == "NW") { (-1, -1) } else { (0, 0) }
-  };
-  // dir's step taken from (c, r), the edges checked first: the square there, or null off the map (Nats throughout)
-  public func step(c, r, d, cols, rows) {
-    let up = d == "N" or d == "NE" or d == "NW";
-    let down = d == "S" or d == "SE" or d == "SW";
-    let left = d == "W" or d == "NW" or d == "SW";
-    let right = d == "E" or d == "NE" or d == "SE";
-    if ((up and r == 0) or (left and c == 0)) { null }
-    else {
-      let c2 = if (left) { c - 1 } else if (right) { c + 1 } else { c };
-      let r2 = if (up) { r - 1 } else if (down) { r + 1 } else { r };
-      if (c2 < cols and r2 < rows) { ?(c2, r2) } else { null }
+    switch (d) {
+      case (#N) { (0, -1) }; case (#NE) { (1, -1) }; case (#E) { (1, 0) }; case (#SE) { (1, 1) };
+      case (#S) { (0, 1) }; case (#SW) { (-1, 1) }; case (#W) { (-1, 0) }; case _ { (-1, -1) }
     }
   };
-  // the way back
   public func opp(d) {
-    if (d == "N") { "S" } else if (d == "NE") { "SW" } else if (d == "E") { "W" } else if (d == "SE") { "NW" }
-    else if (d == "S") { "N" } else if (d == "SW") { "NE" } else if (d == "W") { "E" } else if (d == "NW") { "SE" } else { "" }
+    switch (d) {
+      case (#N) { #S }; case (#NE) { #SW }; case (#E) { #W }; case (#SE) { #NW };
+      case (#S) { #N }; case (#SW) { #NE }; case (#W) { #E }; case _ { #SE }
+    }
   }
 }`;
 
 const FUMOLA_TRAP = `module TrapRoom {
   // a blue lever's pit i: nothing if not its own, else its rock lifted or a rock dropped
-  func one(i, mine, lift, k) { if (not mine) { k } else if (lift) { #LiftBoulder((i, k)) } else { #DropBoulder((i, k)) } };
+  func one(i, mine, lift, k) { if (not mine) { k } else if (lift) { #LiftBoulder(i, k) } else { #DropBoulder(i, k) } };
   // A red lever pulled: flip it, and each pit wired to it opens or shuts.
   // A blue lever pulled: each of its pits gets a boulder, or loses one.
   public func on_event(g, e) {
@@ -90,10 +81,10 @@ const FUMOLA_TRAP = `module TrapRoom {
     switch (e) {
       case (#Pull(side)) {
         let (was0, was1) = Common.pits_open(g.lever_L, g.lever_R, w);
-        let l = if (side == "L") { not g.lever_L } else { g.lever_L };
-        let r = if (side == "R") { not g.lever_R } else { g.lever_R };
+        let l = if (side == #L) { not g.lever_L } else { g.lever_L };
+        let r = if (side == #R) { not g.lever_R } else { g.lever_R };
         let (now0, now1) = Common.pits_open(l, r, w);
-        #Flip(("lever_" # side, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, #Done))))
+        #Flip(side, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, #Done)))
       };
       case (#PullBoulder(side)) {
         let mine0 = (w0 == side) and Common.nth(g.pits_on, 0);
@@ -111,7 +102,7 @@ const FUMOLA_TREE = `module TreeRoom {
   // the trap door shuts if open, opens if shut.
   public func on_event(g, e) {
     switch (e) {
-      case (#PullHatch(n)) { #SetHatch((n, not g.hatch, #Done)) };
+      case (#PullHatch(n)) { #SetHatch(n, not g.hatch, #Done) };
       case _ { #Done }
     }
   }
@@ -127,8 +118,8 @@ const FUMOLA_SQUARE = `module Square {
       let d = ts[j];
       let k = doors(lever, ts, j + 1);
       if (not (d.kind == "trapdoor" and Common.member(d.uid, lever.works))) { k }
-      else if (lever.does == "boulder") { if (d.boulder == (not lever.on)) { k } else { #DropRock((d.at, not lever.on, k)) } }
-      else { #OpenDoor((d.at, not d.open, k)) }
+      else if (lever.does == "boulder") { if (d.boulder == (not lever.on)) { k } else { #DropRock(d.at, not lever.on, k) } }
+      else { #OpenDoor(d.at, not d.open, k) }
     }
   };
   // A placed lever pulled: each trap door wired to it swings,
@@ -147,16 +138,23 @@ const FUMOLA_SQUARE = `module Square {
 const FUMOLA_WORLD = `var world_held = HashMap.new();
 module World {
   // Places with no way out on a side, whatever their ways say: the waterfall's N, its cliff.
-  func no_way(kind, d) { kind == "waterfall" and d == "N" };
+  func no_way(kind, d) { kind == #Waterfall and d == #N };
   // into square (c, r), come in from back, if it has a way back; else nowhere
-  func decide(x, back, c, r) { if (Common.member(back, x.ways) and not (no_way(x.kind, back))) { #GoSquare((c, r, back, #Done)) } else { #Done } };
+  func decide(x, back, c, r) { if (Common.has_way(back, x.ways) and not (no_way(x.kind, back))) { #GoSquare(c, r, back, #Done) } else { #Done } };
   func find_at(cs, i, c, r) { if (i == cs.size()) { null } else { let x = cs[i]; if (x.col == c and x.row == r) { ?x } else { find_at(cs, i + 1, c, r) } } };
+  // the square a way leads to, if it is on the map: (c, r), or null
+  func step(ac, ar, d, cols, rows) {
+    let (dx, dy) = Common.dir(d);
+    let c = ac + dx;
+    let r = ar + dy;
+    if (c < 0 or r < 0 or c >= cols or r >= rows) { null } else { ?(c, r) }
+  };
   // A way out walked through: into the square beside it, coming in from the side facing back,
   // if that square is on the map and has a way back; else nowhere.
   public func on_event(g, e) {
     switch (e) {
       case (#Way(d)) {
-        switch (Common.step(g.at_col, g.at_row, d, g.cols, g.rows)) {
+        switch (step(g.at_col, g.at_row, d, g.cols, g.rows)) {
           case (?(c, r)) { switch (find_at(g.cells, 0, c, r)) { case (?x) { decide(x, Common.opp(d), c, r) }; case null { #Done } } };
           case null { #Done }
         }
@@ -166,7 +164,7 @@ module World {
   };
   // the same, the square found in the map held here
   public func way(ac, ar, cols, rows, d) {
-    switch (Common.step(ac, ar, d, cols, rows)) {
+    switch (step(ac, ar, d, cols, rows)) {
       case (?(c, r)) { switch (HashMap.get(world_held, (c, r))) { case (?x) { decide(x, Common.opp(d), c, r) }; case null { #Done } } };
       case null { #Done }
     }
@@ -182,30 +180,32 @@ module World {
 
 const FUMOLA_CASTLE = `module Castle {
   // Where room n's way out leads: 0 out of the castle, a room, or -1 nowhere.
-  // out is its setting (auto, out, none, or a room, then out_room); auto:
-  // a dungeon's ladder up to the trap room, room 1 out, any other to room 1.
-  public func way_out(rooms, exits, n, out, out_room) {
-    let ex = Common.nth_s(exits, n);
-    let s_out = ex == "side" or ex == "long" or ex == "spiral";
-    let v = if (out == "none" and not s_out) { "auto" } else { out };
-    if (v == "auto") { let t = Common.index_of(rooms, "trap"); if (ex == "ladder" and t > 0 and not (t == n)) { t } else if (n == 1) { 0 } else { 1 } }
-    else if (v == "out") { 0 }
-    else if (v == "none") { -1 }
-    else if (not (out_room < 1) and out_room < Common.length(rooms) + 1) { out_room }
-    else { -1 }
+  // out is its setting; Auto: a dungeon's ladder up to the trap room, room 1 out, any other to room 1.
+  // Nowhere only where the way out is toward us (side doors, a long room's, a spiral's); elsewhere Auto.
+  public func way_out(rooms, exits, n, out) {
+    let ex = Common.exit_of(exits, n);
+    let toward_us = ex == ?(#ExitSide) or ex == ?(#ExitLong) or ex == ?(#ExitSpiral);
+    let v = if (out == #Nowhere and not toward_us) { #Auto } else { out };
+    switch (v) {
+      case (#Auto) { let t = Common.room_at(rooms, #Trap); if (ex == ?(#ExitLadder) and t > 0 and t != n) { t } else if (n == 1) { 0 } else { 1 } };
+      case (#OutOfCastle) { 0 };
+      case (#Nowhere) { -1 };
+      case (#ToRoom(r)) { if (r >= 1 and r <= Common.rooms(rooms)) { r } else { -1 } };
+      case _ { -1 }
+    }
   };
   // A trap room's pit fallen into (0 the left, 1 the right):
   // the first pit drops into the dungeon, the second into the deep dungeon;
   // a castle with only one of them, both into that one.
   public func on_event(g, e) {
-    let d1 = Common.index_of(g.rooms, "dungeon1");
-    let d2 = Common.index_of(g.rooms, "dungeon2");
+    let d1 = Common.room_at(g.rooms, #Dungeon1);
+    let d2 = Common.room_at(g.rooms, #Dungeon2);
     switch (e) {
       case (#FallPit(i)) {
         let to = if (i == 0) { if (d1 > 0) { d1 } else { d2 } } else { if (d2 > 0) { d2 } else { d1 } };
-        if (to == 0) { #Done } else { #GoRoom((to, #Done)) }
+        if (to == 0) { #Done } else { #GoRoom(to, #Done) }
       };
-      case (#WayOut(n)) { #GoRoom((way_out(g.rooms, g.exits, n, g.out, g.out_room), #Done)) };
+      case (#WayOut(n)) { #GoRoom(way_out(g.rooms, g.exits, n, g.out), #Done) };
       case _ { #Done }
     }
   }
@@ -233,6 +233,8 @@ function fumolaLit(v) {
   if (v === true || v === false) return String(v);
   if (typeof v === "number") {
     if (Number.isInteger(v)) return String(v);
+    // (ticket 571: a Float, written with a point and no exponent, which Fumola's reader takes)
+    if (Number.isFinite(v)) { const t = v.toFixed(17).replace(/0+$/, ""); return t.endsWith(".") ? t + "0" : t; }
     throw new Error(`a number Fumola is not given here: ${v}`);
   }
   if (typeof v === "string") {
@@ -266,9 +268,8 @@ function fumolaValue(v) {
   }
 }
 
-// a room's globals as Fumola is given them: the same fields as Hazel's, but a random wiring's draws in millionths, Nats (Fumola has
-// no < on Floats; x < 0.5 exactly when floor(x * 1000000) < 500000)
-const fumolaGlobals = g => g.draws && g.draws.length ? { ...g, draws: g.draws.map(x => Math.floor(x * 1000000)) } : g;
+// a room's globals as Fumola is given them: as Hazel's are (since ticket 571, Floats compare: the draws need no turning into Nats)
+const fumolaGlobals = g => g;
 
 // The rules in a new instance of the wasm build F (its exports: fumola_create, fumola_eval_top, fumola_eval_scratch), and each room's
 // handler, (globals, ev) -> cmd. A call runs in scratch (fumola_eval_scratch: its answer only, the instance left as it was), where
@@ -296,6 +297,9 @@ function fumolaRules(F, mode = "fumola", source = FUMOLA_SOURCE) {
     if (cells !== held.text) { run(`World.hold(${cells})`, true); held.text = cells; held.builds++; }
     return call(`World.way(${fumolaLit(g.at_col)}, ${fumolaLit(g.at_row)}, ${fumolaLit(g.cols)}, ${fumolaLit(g.rows)}, ${fumolaLit(ev.value)})`);
   };
+  // (ticket 566: the rules speak in variants; the game's text converted on the way in and back, as for Hazel's: scriptTyped, in
+  // 25-scripting.js, loaded with this file in the page and in the tools)
+  if (typeof scriptTyped === "function") for (const r of Object.keys(handlers)) handlers[r] = scriptTyped(handlers[r]);
   return { id, mode, ms, scratch, handlers, held, call, run };
 }
 
