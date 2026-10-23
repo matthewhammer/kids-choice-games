@@ -1,4 +1,4 @@
-// (ticket 531) The speed probe: the plain JS against the 🧩 Hazel rules, one mode per fresh Chrome (the workflow alternates js, hazel,
+// (ticket 531) The speed probe: the plain JS against the 📜 Hazel rules, one mode per fresh Chrome (the workflow alternates js, hazel,
 // js, hazel, and a "main" folder at 0.0.407 as a baseline before any change). For each moved event, N pulls (200), each a call of
 // the game's own pull (roomLeverPull, leverPull; the friend's walk to the lever left out, the same in both modes) a frame after the
 // last, recording:

@@ -4,7 +4,7 @@
 // swam at 2 to 15 frames a second (its room choices built the whole castle
 // on every refresh); every other tab, 60. Fails if any tab is under 50.
 // Every tab, to the last (until ticket 520 it stopped at 18, so ♿, 🧩 and ⚙️
-// were never swum); 🧩 with Hazel's tiles ready and in view.
+// were never swum); 📜 with Hazel's tiles ready and in view.
 //   node tabs167.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));

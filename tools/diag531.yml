@@ -1,4 +1,4 @@
-# (ticket 531) The plain JS against the 🧩 Hazel rules, on GitHub's computers. NOT a workflow of this branch: the main session copies it
+# (ticket 531) The plain JS against the 📜 Hazel rules, on GitHub's computers. NOT a workflow of this branch: the main session copies it
 # to .github/workflows/diag531.yml on a diag-531* branch cut from hazel-logic-531's tip, with both of the branch's own workflows
 # git rm'd there (so a push runs only this), and pushes that branch when Matthew says so.
 # Eight jobs, each on whatever runner GitHub gives (lscpu logged: the 7763 and the Xeon are slow, the 9V45 fast), each serving

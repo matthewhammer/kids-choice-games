@@ -1,4 +1,4 @@
-// (ticket 542) 🧩 the room rules in Fumola against the game's own JS, without a browser: js/25-fumola.js run in node (its rules'
+// (ticket 542) 📜 the room rules in Fumola against the game's own JS, without a browser: js/25-fumola.js run in node (its rules'
 // source, its literal writer and answer reader, its handlers: what the page runs under ?logic=fumola and ?logic=fumola-list) with
 // Fumola's wasm build, every room's handler given the cases tools/hazelrules531.mjs gives the Hazel rules, from the same makers, its
 // commands compared with what the plain JS does in that case (the same expectations that check holds Hazel's answers to, so the
