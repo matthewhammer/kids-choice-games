@@ -1050,6 +1050,9 @@ body.script-nolines .script-box pre .ln { font-size: 0; min-width: 0; margin: 0;
 .script-max-dragging { user-select: none; }
 .script-max-dragging iframe { pointer-events: none; }
 .script-max-left { display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+.script-max-settings-chip { text-align: left; }
+.script-max-settings:empty { display: none; }
+.script-max-settings .script-settings { margin: 0; }
 .script-max-nav { display: flex; flex-direction: column; gap: 3px; }
 .script-max-item { display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 5px 8px; border-radius: 6px; }
 .script-max-item[aria-current="true"] { outline: 2px solid #7c3aed; font-weight: 700; }

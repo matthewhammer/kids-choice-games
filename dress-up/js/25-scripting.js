@@ -1054,8 +1054,13 @@ function scriptMaxOpen(boxes, sec) {
     // (Matthew, 2026-10-23: "please make LHS vs RHS of FS script panel dragable") a divider between the outline and the box, dragged
     // to set the outline's width (remembered in this browser)
     const divider = el("div", { class: "script-max-divider", role: "separator", "aria-orientation": "vertical", "aria-label": "drag to widen or narrow the outline", tabindex: "0" });
+    // (Matthew, 2026-10-23: "in FS mode, lets hide the same script editor settings panel under a 'show editor settings here' chip
+    // that defaults to off", "just below the 'back' chip, on LHS") the panel's settings box, moved here while the chip is on, and
+    // back to its place when it is off or the view closes (scriptMaxSettings)
+    const setChip = el("button", { class: "script-max-settings-chip", "aria-pressed": "false", onclick: () => scriptMaxSettings(setChip.getAttribute("aria-pressed") !== "true") }, "⚙️ show editor settings here");
+    const setHolder = el("div", { class: "script-max-settings" });
     const wrap = el("div", { class: "script-max", role: "dialog", "aria-label": "the game's code, at full size" },
-      [el("div", { class: "script-max-left" }, [close, nav]), divider, main]);
+      [el("div", { class: "script-max-left" }, [close, setChip, setHolder, nav]), divider, main]);
     const setW = px => { const w = Math.max(140, Math.min(window.innerWidth - 240, px)); wrap.style.setProperty("--script-max-left", w + "px"); try { localStorage.setItem("scriptMaxLeft", String(w)); } catch (e) {} };
     try { const w = +localStorage.getItem("scriptMaxLeft"); if (w) setW(w); } catch (e) {}
     divider.addEventListener("pointerdown", e => {
@@ -1069,7 +1074,7 @@ function scriptMaxOpen(boxes, sec) {
     wrap.addEventListener("keydown", key);
     document.body.append(wrap);
     document.body.classList.add("script-maxed");
-    scriptMax = { wrap, nav, main, boxes, sec: null, spot: null };
+    scriptMax = { wrap, nav, main, boxes, sec: null, spot: null, setChip, setHolder, setSpot: null };
   }
   const M = scriptMax;
   // (Matthew, 2026-10-23: "let's pre-load the tile editor for each code block on the LHS, even if not in view": the chosen box is
@@ -1311,6 +1316,14 @@ let scriptMaxNavTimer = null;
 const scriptMaxNavSoon = () => { if (!scriptMax) return; clearTimeout(scriptMaxNavTimer); scriptMaxNavTimer = setTimeout(scriptMaxNav, 300); };
 // a box moved (into the ⛶ view or back) has a new width: its code laid out again, once it is in place (579)
 const scriptReflowSoon = box => setTimeout(() => { for (const n of box.querySelectorAll("textarea.script-editor, pre.script-js")) if (n.reflow) n.reflow(); }, 0);
+// the settings box shown in the max-size view's left column (on), or back in the panel (off)
+function scriptMaxSettings(on) {
+  const M = scriptMax; if (!M) return;
+  const box = M.setSpot ? null : document.querySelector("#panel .script-settings");
+  if (on && !M.setSpot && box) { M.setSpot = el("div", { hidden: "" }); box.replaceWith(M.setSpot); M.setHolder.replaceChildren(box); }
+  if (!on && M.setSpot) { const b = M.setHolder.firstChild; if (b) M.setSpot.replaceWith(b); else M.setSpot.remove(); M.setSpot = null; }
+  setPressed(M.setChip, !!M.setSpot);
+}
 // the pinned box set over the main area: its place and size
 function scriptMaxPlace() {
   const M = scriptMax; if (!M || !M.sec) return;
@@ -1325,6 +1338,7 @@ function scriptMaxUnpin(sec) {
 function scriptMaxClose() {
   const M = scriptMax; if (!M) return;
   if (M.sec) scriptMaxUnpin(M.sec);
+  scriptMaxSettings(false);
   if (M.placing) { window.removeEventListener("resize", M.placing); if (M.ro) M.ro.disconnect(); }
   M.wrap.remove(); document.body.classList.remove("script-maxed");
   scriptMax = null;
