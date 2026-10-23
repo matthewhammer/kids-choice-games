@@ -414,7 +414,7 @@ const LEVER_TURN = 1400;   // (ticket 328: slower, to be seen; 900 till 0.0.231)
 function leverPull(i) {
   const T0 = (state.background.things || [])[i];
   if (!T0 || T0.kind !== "lever") return;
-  if (scriptEvent("Square", { tag: "PullThing", value: i })) return;   // (ticket 531: 🧩 Square's rule, when it is on)
+  if (scriptEvent("Square", { tag: "PullThing", value: i })) return;   // (ticket 531: 📜 Square's rule, when it is on)
   hzJs("PullThing", () => {
     const B = state.background, T = B.things[i], doors = [];
     // (ticket 323: a boulder lever drops a boulder into each of its trap doors as it goes over, and lifts it out as it comes back)
@@ -424,7 +424,7 @@ function leverPull(i) {
     leverPullApply(i, doors);
   });
 }
-// (ticket 531) a placed lever's pull, decided (by the JS above, or a 🧩 rule's OpenDoor and DropRock): it flips over, and each trap door
+// (ticket 531) a placed lever's pull, decided (by the JS above, or a 📜 rule's OpenDoor and DropRock): it flips over, and each trap door
 // named is opened or shut ([j, "open", Bool]) or has its boulder dropped or lifted ([j, "boulder", Bool]); then the animations
 function leverPullApply(i, doors) {
   const B = state.background, T = (B.things || [])[i];
@@ -447,11 +447,11 @@ function leverPullApply(i, doors) {
 function roomLeverPull(side) {
   if (side[0] === "B") return roomBoulderPull(side.slice(1));   // (ticket 323: a blue one)
   if (side === "H") return hatchLeverPull();   // (ticket 334: a tree room's trap door's)
-  if (scriptEvent("TrapRoom", { tag: "Pull", value: side })) return;   // (ticket 482: 🧩 Scripting's rule for the trap room, when it is on)
+  if (scriptEvent("TrapRoom", { tag: "Pull", value: side })) return;   // (ticket 482: 📜 Scripting's rule for the trap room, when it is on)
   hzJs("Pull", () => roomLeverFlip(side));   // (ticket 531: timed as the rule is)
 }
 // a red lever flipped, and the pits it works with it (the pull itself, and a script's Flip; ticket 482)
-// (ticket 531: lids false, a 🧩 rule's Flip, whose SetPits swing the lids)
+// (ticket 531: lids false, a 📜 rule's Flip, whose SetPits swing the lids)
 function roomLeverFlip(side, lids = true) {
   const B = state.background;
   if (B.kind !== "castleroom") return;
@@ -467,7 +467,7 @@ function roomLeverFlip(side, lids = true) {
   // under the friend: in they fall, as walking onto it does, once its lid has swung most of the way
   if (now.some((o, j) => o && !was[j])) setTimeout(fallIfOverPit, 0.6 * PIT_SWING * 100 / T.speed.lid);
 }
-// (ticket 531) a trap room's pit's lid swung open or shut, as a 🧩 rule's SetPit says, and in they fall if it opened under the
+// (ticket 531) a trap room's pit's lid swung open or shut, as a 📜 rule's SetPit says, and in they fall if it opened under the
 // friend; false when the drawing (trapState, from the levers) has it otherwise
 function roomPitSwing(j, open) {
   const B = state.background;
@@ -479,14 +479,14 @@ function roomPitSwing(j, open) {
 }
 // (ticket 334) A tree room's trap door lever pulled: the trap door shuts (its lid swinging across, the ladder gone, the floor
 // walked over) or opens again; a friend standing on it as it opens is moved off the hole
-// (ticket 531: the house, 0 for the round room at the top, and its key; hatchSet, the door shut or opened, by the JS or a 🧩 rule)
+// (ticket 531: the house, 0 for the round room at the top, and its key; hatchSet, the door shut or opened, by the JS or a 📜 rule)
 const hatchHouse = () => { const B = state.background; return B.kind === "treetop" ? 0 : Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1))); };
 const hatchKey = () => hatchHouse() === 0 ? "hatchShutTop" : "hatchShut" + hatchHouse();
 function hatchLeverPull() {
   const B = state.background;
   // (ticket 516: and the round room at the top of the tree's, on its post)
   if (B.kind !== "treeroom" && B.kind !== "treetop") return;
-  if (scriptEvent("TreeRoom", { tag: "PullHatch", value: hatchHouse() })) return;   // (ticket 531: 🧩 TreeRoom's rule, when it is on)
+  if (scriptEvent("TreeRoom", { tag: "PullHatch", value: hatchHouse() })) return;   // (ticket 531: 📜 TreeRoom's rule, when it is on)
   hzJs("PullHatch", () => hatchSet(!B[hatchKey()]));
 }
 function hatchSet(shut) {
@@ -509,7 +509,7 @@ function fallIfOverPit() {
 // fall from the ceiling into the hole, or rise away again. A new seed each time one falls: a new rock (its shape, and its
 // tone when the room's boulders are a surprise)
 function roomBoulderPull(side) {
-  if (scriptEvent("TrapRoom", { tag: "PullBoulder", value: side })) return;   // (ticket 531: 🧩 TrapRoom's rule, when it is on)
+  if (scriptEvent("TrapRoom", { tag: "PullBoulder", value: side })) return;   // (ticket 531: 📜 TrapRoom's rule, when it is on)
   hzJs("PullBoulder", () => {
     const B = state.background;
     if (B.kind !== "castleroom") return;
@@ -520,7 +520,7 @@ function roomBoulderPull(side) {
     roomBoulderAct(side, mine, lift);
   });
 }
-// (ticket 531) what a blue lever does once it is decided (by the JS above, or a 🧩 rule's DropBoulder and LiftBoulder): the pits
+// (ticket 531) what a blue lever does once it is decided (by the JS above, or a 📜 rule's DropBoulder and LiftBoulder): the pits
 // mine, lifting their rocks or dropping new ones
 function roomBoulderAct(side, mine, lift) {
   const B = state.background;
@@ -1480,7 +1480,7 @@ function enterScene(door, here = false) {
   if (onBr && to === "treeroom" && house && [onBr.W.a, onBr.W.b].includes(+house - 1)) { bridgeGoIn({ j: onBr.j, end: onBr.W.b === +house - 1 ? 1 : 0, house: +house, other: (onBr.W.b === +house - 1 ? onBr.W.a : onBr.W.b) + 1 }); return; }
   const lad = !view && !(climb && climb.through) ? ladderOf(door) : null;
   if (lad) { climbLadder(lad); return; }
-  // (ticket 531, phase 2: 🧩 the Castle rule says where a castle pit leads, when it is on; false: nowhere)
+  // (ticket 531, phase 2: 📜 the Castle rule says where a castle pit leads, when it is on; false: nowhere)
   const go = scriptGo(door);
   if (go === false) return;
   if (go) { to = go.to; room = go.room; from.to = to; }

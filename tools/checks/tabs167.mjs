@@ -24,7 +24,7 @@ async function run(tabIndex) {
       Object.defineProperty(navigator, "getGamepads", { value: () => [window.__pad], configurable: true }); const e = new Event("gamepadconnected"); e.gamepad = window.__pad; window.dispatchEvent(e);
       state.background.kind = "lake"; choppy = false; slowFlag = false; PERF.slowMoving = true; tab = ${tabIndex}; showTab();
       window.__F = { gaps: [], last: 0, on: false }; const f = t => { if (__F.on) { if (__F.last) __F.gaps.push(t - __F.last); __F.last = t; } requestAnimationFrame(f); }; requestAnimationFrame(f); return 1; })()`);
-    // (ticket 520: 🧩 Scripting runs Hazel's app in a frame; its start-up is scripting482's, so here the steady state: the tiles in
+    // (ticket 520: 📜 Scripting runs Hazel's app in a frame; its start-up is scripting482's, so here the steady state: the tiles in
     // view, ready, with the program's status, before the warm-up)
     let tiles = "";
     if (await ev(`TABS[${tabIndex}][1]`) === "scripting") {

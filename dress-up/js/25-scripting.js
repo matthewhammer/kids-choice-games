@@ -5,7 +5,7 @@
 // room that needs logic, starting only with the dungeon in the castle. The editors are showing sub-programs of a large, global
 // program with global vars, using the $GameUpdate [monad] ... The programs can use sub-routines defined in a common editor that
 // they all have in scope in their subprograms. In terms of a full Hazel AST, each sub-editor (for each room/square in the world)
-// could be a module named by that square's name. Names should be unique, and we should enforce that.") 🧩 Scripting: the game's
+// could be a module named by that square's name. Names should be unique, and we should enforce that.") 📜 Scripting: the game's
 // logic in Hazel, run by the game. The panel's editors are the bodies of the modules of one program: 📚 Common, then one module
 // per room that has logic, named by the room (TrapRoom, for the castle's trap room over its dungeons). Before them, the program
 // declares what a rule may say and what it is told:
@@ -148,7 +148,7 @@ let on_event = fun (g, e) : (Globals, Event) ->
 
 // (ticket 531, Matthew: "let's do an experimental PR to dress-up where we try to export as much game logic as possible into the Hazel
 // panels for each square (or common logic) --- and do the speedruns again to compare against plain JS") one build, both ways:
-// ?logic=hazel runs every room's logic through the shipped texts (🧩 on, whatever the friend saved), ?logic=js the plain JS (🧩 off,
+// ?logic=hazel runs every room's logic through the shipped texts (📜 on, whatever the friend saved), ?logic=js the plain JS (📜 off,
 // whatever was saved); no switch, the panel's (state.scripts.on). Read once, at start.
 const SCRIPT_TREE = `# A tree room's trap-door lever, or the round room's at the top (house 0): #
 # the trap door shuts if open, opens if shut. #
@@ -229,7 +229,7 @@ let on_event = fun (g, e) : (Globals, Event) ->
   | _ => Done
   end`;
 
-// each room kind's shipped text: rules that do just what the plain JS does, so 🧩 on plays the same game (the fair comparison)
+// each room kind's shipped text: rules that do just what the plain JS does, so 📜 on plays the same game (the fair comparison)
 const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE, square: SCRIPT_SQUARE, world: SCRIPT_WORLD, castle: SCRIPT_CASTLE };
 const SCRIPT_LOGIC = (() => { try { const v = new URLSearchParams(location.search || "").get("logic"); return ["hazel", "js", "fumola", "fumola-list"].includes(v) ? v : ""; } catch (e) { return ""; } })();
 // (ticket 542) ?logic=fumola and ?logic=fumola-list: every room's logic through the same rules written in Fumola (25-fumola.js), run
@@ -241,7 +241,7 @@ const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntrie
 // box) ... we default to builtin JS, but there's a \"master toggle\" chip in the game script panel, at the top, that switches the
 // code boxes all"; "let's have the jS versions show up as JS code, but read only. The hazel and fumola boxes are for editing.")
 // Which engine runs a room's rule: "js" (the game's own code), "hazel" or "fumola". A room's own chip (engines[room]) if it has
-// one; else the master chip's (all); else, for a save from before, the old 🧩 switch (on: Hazel). ?logic= overrides all of it.
+// one; else the master chip's (all); else, for a save from before, the old 📜 switch (on: Hazel). ?logic= overrides all of it.
 const SCRIPT_ENGINES = [["js", "JS"], ["hazel", "Hazel"], ["fumola", "🍄 Fumola"]];
 // (Matthew, 2026-10-23: "for Hazel, let's use something hexagonal instead of the puzzle piece ... or place into a hex shaped box,
 // like a tile in hazel") Hazel's name drawn as one of its tiles: a box with pointed ends (style.css, .hazel-tile)
@@ -401,7 +401,7 @@ function scriptCompile() {
 function scriptSay(text) {
   let b = document.getElementById("script-say");
   if (!b) { b = el("div", { id: "script-say", class: "script-say" }); document.body.append(b); }
-  b.textContent = "🧩 " + text; b.hidden = false;
+  b.textContent = "📜 " + text; b.hidden = false;
   clearTimeout(scriptSay.t); scriptSay.t = setTimeout(() => { b.hidden = true; }, 3000);
 }
 
@@ -490,7 +490,7 @@ const SCRIPT_ACTS = {
 // (the castle room the friend is in, as the game reads it)
 const castleRoomNow = (B, K = castleOf(B)) => Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)));
 
-// (ticket 531, phase 2) a world's way out walked through (worldWalk): with 🧩 on and ready, the World rule says which square it leads
+// (ticket 531, phase 2) a world's way out walked through (worldWalk): with 📜 on and ready, the World rule says which square it leads
 // to (worldTarget's answer, or null: nowhere); what worldTarget says is checked against it, a difference counted in __hz.mismatch.
 // Otherwise, and for a way linked to another world, worldTarget, as always
 function scriptWay(W, d) {
@@ -502,7 +502,7 @@ function scriptWay(W, d) {
   return t;
 }
 
-// (ticket 531, phase 2) a castle door or pit taken: with 🧩 on and ready, the Castle rule says where it leads, and enterScene goes
+// (ticket 531, phase 2) a castle door or pit taken: with 📜 on and ready, the Castle rule says where it leads, and enterScene goes
 // there ({to, room}; false: nowhere, so not at all); what the drawing put on the door (decided when it was drawn) is checked
 // against it, a difference counted in __hz.mismatch. null: the JS's own way, the door's data-to and data-room, as always
 function scriptGo(door) {
@@ -518,8 +518,8 @@ function scriptGo(door) {
   return go;
 }
 
-// (ticket 531; ticket 482's scriptPull) an event in a room, with 🧩 on and the program ready: the room's rule says what happens, its
-// commands are acted on, and true. Otherwise false, and the caller's own JS runs as it always has: 🧩 off, Hazel not loaded yet,
+// (ticket 531; ticket 482's scriptPull) an event in a room, with 📜 on and the program ready: the room's rule says what happens, its
+// commands are acted on, and true. Otherwise false, and the caller's own JS runs as it always has: 📜 off, Hazel not loaded yet,
 // not ready (errors, a hole to fill, a bracket left open), no handler for the room, or not in that room. (ticket 542) Under
 // ?logic=fumola and fumola-list, the rule is Fumola's (fumolaCompile, 25-fumola.js), with the same handler shape: the rest is the same
 function scriptEvent(room, ev) {
@@ -551,7 +551,7 @@ function scriptEvent(room, ev) {
 // tiles, with Hazel's own error marks. The page posts the program ({type: "set", ...scriptSpec()}) when the frame says "ready" and
 // then on the panel's change timer, no more often (scriptFramePost); the frame posts back its height ("size") and what Hazel says
 // of the program ("status"), each only when it changes, and "crash". Taken only from SCRIPT_HAZEL_ORIGIN, with the frame as source.
-//   Lazy: made only with the 🧩 tab open, after showTab's layout (boxLayout and tabDesigner move the panel's rows, and a frame moved
+//   Lazy: made only with the 📜 tab open, after showTab's layout (boxLayout and tabDesigner move the panel's rows, and a frame moved
 // in the page loads again), and gone with the tab (showTab empties the panel: the frame's page goes with it), so the next visit
 // loads it again. While the game is full screen the panel is visibility: hidden, which keeps a frame laid out and, in some
 // browsers, drawing every animation frame; so there the frame is display: none (style.css), which browsers throttle (the 60
@@ -805,7 +805,7 @@ function scriptFrameShow(F) {
   list.replaceChildren(...items.slice(0, 8).map(t => el("li", {}, t)));
 }
 
-// the 🧩 Scripting tab: a switch, Hazel's state, then an editor per module, each with the module's name; the program's errors
+// the 📜 Scripting tab: a switch, Hazel's state, then an editor per module, each with the module's name; the program's errors
 // under them, at each change, a moment after typing stops; then (ticket 520) Hazel's tiles of the whole program
 // (ticket 577) colours for the code: a small tokenizer per language, drawn in a <pre> under the editor's text (which is transparent,
 // its caret not), so the text box stays a plain text box. Hazel's comments close with # as they open; Fumola's and JS's are // and /* */
@@ -1128,7 +1128,7 @@ function scriptCases(def) {
 }
 // (Matthew: "each type has an emoji, right justified, that says: sum type, product type, etc") what kind of type it defines, by
 // what follows its =: a sum's + , a product's ( (a tuple, labeled or not), a list's [ , a function's -> , else a name (an alias)
-const SCRIPT_TYPE_KINDS = { sum: ["➕", "sum type"], product: ["📦", "product type"], list: ["📜", "list type"], fn: ["➡️", "function type"], alias: ["🔗", "another name for a type"] };
+const SCRIPT_TYPE_KINDS = { sum: ["➕", "sum type"], product: ["📦", "product type"], list: ["📋", "list type"], fn: ["➡️", "function type"], alias: ["🔗", "another name for a type"] };
 function scriptTypeKind(def) {
   const body = def.slice(def.indexOf("=") + 1).replace(/\s+in\s*$/, "").trim();
   return body.startsWith("+") || /^\{\s*#/.test(body) ? "sum" : /->/.test(body.replace(/\([^()]*\)/g, "")) ? "fn"
@@ -1296,7 +1296,7 @@ function scriptingPanel(box) {
     return row;
   };
   // (ticket 577) ⛶: this box at full size, with the outline of them all (scriptMaxOpen)
-  // (the 🧩 tiles first in its outline: Matthew, 2026-10-23, maxed 📚 Common's text box looking for them, "doesn't look like tiles")
+  // (the 📜 tiles first in its outline: Matthew, 2026-10-23, maxed 📚 Common's text box looking for them, "doesn't look like tiles")
   const maxBtn = sec => el("button", { class: "script-max-btn", title: "full size, with every box listed beside it", onclick: () => scriptMaxOpen([tiles, ...boxes], sec()) }, "⛶ max size");
   // a room's box: its chip, then its code in that engine. JS: the game's own functions, to read; Hazel and Fumola: to edit
   const roomBox = r => {

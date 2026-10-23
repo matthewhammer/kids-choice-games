@@ -250,7 +250,7 @@ const FUMOLA_UNTYPED = text => {
 // the whole program, defined once in an instance; and each room's module (SCRIPT_ROOMS' names)
 const FUMOLA_SOURCE = [FUMOLA_COMMON, FUMOLA_TRAP, FUMOLA_TREE, FUMOLA_SQUARE, FUMOLA_WORLD, FUMOLA_CASTLE].join(";\n");
 const FUMOLA_ROOMS = ["TrapRoom", "TreeRoom", "Square", "World", "Castle"];
-// (ticket 566) each room's text by its module's name, for the 🧩 panel's Fumola boxes (25-scripting.js keeps them, edited, in
+// (ticket 566) each room's text by its module's name, for the 📜 panel's Fumola boxes (25-scripting.js keeps them, edited, in
 // state.scripts.fumola), and the program the boxes make: 📚 Common, then the rooms in this order. Under ?logic=fumola or
 // fumola-list, the shipped rules, whatever the boxes hold, as ?logic=hazel runs the shipped Hazel
 const FUMOLA_ROOM_TEXTS = { TrapRoom: FUMOLA_TRAP, TreeRoom: FUMOLA_TREE, Square: FUMOLA_SQUARE, World: FUMOLA_WORLD, Castle: FUMOLA_CASTLE };

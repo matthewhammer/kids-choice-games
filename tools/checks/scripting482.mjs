@@ -1,6 +1,6 @@
 // (ticket 482, Matthew: "an editor panel in MUDU, under a new control panel called 'Scripting' --- with a list of editors, one per
 // room that needs logic, starting only with the dungeon in the castle ... each sub-editor ... could be a module named by that
-// square's name. Names should be unique, and we should enforce that.") 🧩 Scripting: an editor per module (📚 Common, the trap
+// square's name. Names should be unique, and we should enforce that.") 📜 Scripting: an editor per module (📚 Common, the trap
 // room's TrapRoom), names unique; Hazel (window.Hazel, from SCRIPT_BUILD's library) loads and the shipped program is fine; with
 // the scripts on, a red lever pulled in the trap room runs TrapRoom.on_event: the shipped rule flips that lever only, a rule using
 // Common.flip2 flips both, Say puts its words over the picture and flips none; a program with an error, or with a hole to fill,
@@ -70,7 +70,7 @@ try {
     out.frameSrc = (document.querySelector("#panel iframe.script-frame") || {}).src || null;
     return JSON.stringify(out); })()`));
   // (ticket 531: then TreeRoom and Square; phase 2, World and Castle)
-  ok("🧩 Scripting has an editor per module: Common, then TrapRoom, TreeRoom, Square, World, Castle", JSON.stringify(r.editors) === '["Common","TrapRoom","TreeRoom","Square","World","Castle"]', r.editors);
+  ok("📜 Scripting has an editor per module: Common, then TrapRoom, TreeRoom, Square, World, Castle", JSON.stringify(r.editors) === '["Common","TrapRoom","TreeRoom","Square","World","Castle"]', r.editors);
   ok("module names are unique, and a second of a name gets a number", r.names && r.dedupe === "TrapRoom2", r);
   // ---- the frame: ready, then a second more of the game's frames ----
   let phase = "none";
@@ -81,7 +81,7 @@ try {
       libMs: __G.lib, libBuild: window.Hazel && Hazel.build, frames: g.length, fps: +(1000 * g.length / Math.max(1, s)).toFixed(1), median: q(0.5), p95: q(0.95), max: g.length ? g[g.length - 1] : null,
       over25: g.filter(x => x > 25).length, over50: g.filter(x => x > 50).length, over100: g.filter(x => x > 100).length, longest: __G.gaps.map((x, i) => [i, x]).filter(([, x]) => x > 50).slice(0, 12) }); })()`));
   console.log(`  DATA ${JSON.stringify({ frameTarget: frameSessions.size ? "own process" : frameCtx ? "the page's process" : "none found", ...T })}`);
-  console.log(`  (the game's frames from the 🧩 tab opening until a second after the frame's ready: ${T.frames} frames, ${T.fps} a second, median ${T.median} ms, 95% under ${T.p95} ms, longest ${T.max} ms, ${T.over50} over 50 ms; ` +
+  console.log(`  (the game's frames from the 📜 tab opening until a second after the frame's ready: ${T.frames} frames, ${T.fps} a second, median ${T.median} ms, 95% under ${T.p95} ms, longest ${T.max} ms, ${T.over50} over 50 ms; ` +
     `the frame ready in ${T.readyMs} ms, the library (window.Hazel, on the game's own thread) in ${T.libMs} ms; recorded, not gated)`);
   // (a frame out of the viewport draws nothing: Chrome gives a cross-origin frame no animation frames there, and the embed takes a
   // program on one; at 1600x1000 the tiles sit just below the fold, so they are looked at, as a kid would, scrolled into view.

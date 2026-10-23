@@ -1,4 +1,4 @@
-// (ticket 531) 🧩 the shipped Hazel rules against the plain JS, without a browser: js/25-scripting.js run in node with the real
+// (ticket 531) 📜 the shipped Hazel rules against the plain JS, without a browser: js/25-scripting.js run in node with the real
 // hazel-lib.js, every room's on_event given every case the game can give it, its commands compared with what the plain JS does
 // in that case, and both timed. What the JS does comes from the game's own code where it can run in node: trapWiring and seeded
 // (01-state.js, 10-nature.js) for the wiring, leverPull and leverPullApply (26-drags-and-start.js) for the placed levers, run

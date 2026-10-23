@@ -1,4 +1,4 @@
-// (ticket 520) 🧩 Scripting without a browser: js/25-scripting.js run in node, the page stood in by a small fake (its elements, the
+// (ticket 520) 📜 Scripting without a browser: js/25-scripting.js run in node, the page stood in by a small fake (its elements, the
 // window's messages, the clock), for what a browser is not needed for:
 //   the program Hazel.runProgram takes, built from the editors (typing in a box, the change timer), each module's last ";" dropped;
 //   the levers through runProgram where the library has it, and the fallback (the page's joined text, through Hazel.run) where not;

@@ -1,7 +1,7 @@
 // (ticket 566, Matthew: "each script box can be either: baked-in JS, or hazel code boxes, or fumola code boxes (3-way chip per code
 // box) ... we default to builtin JS, but there's a \"master toggle\" chip in the game script panel, at the top, that switches the
 // code boxes all"; "let's have the jS versions show up as JS code, but read only. The hazel and fumola boxes are for editing.")
-// 🧩 Scripting's three-way boxes, in the trap room: to start, the master chip on JS and every room's box showing its JS, read-only,
+// 📜 Scripting's three-way boxes, in the trap room: to start, the master chip on JS and every room's box showing its JS, read-only,
 // the game's own functions (their source as they run: TrapRoom's roomLeverFlip, Castle's pit lines, ...), and a red lever pulled
 // runs the JS; the master chip on Hazel: every room an editor, the pull through Hazel; TrapRoom's own chip on Fumola: the master
 // chip on none (rooms differ), TrapRoom's editor holds its Fumola module, Fumola loads and the pull runs through it; a broken

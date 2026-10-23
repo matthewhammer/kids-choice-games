@@ -840,8 +840,8 @@ const TABS = [
     ["accbox", "clickWalk", "👆 walk where you click", [["color", "clickWalkColor", "🎨"], ["choice", "clickPlan", "👆 a click while walking", CLICK_PLANS]]],
   ]],
   // (ticket 482) the game's logic in Hazel
-  ["🧩 Scripting", "scripting", [
-    ["scripting", "scripts", "🧩 scripting"],
+  ["📜 Scripting", "scripting", [
+    ["scripting", "scripts", "📜 scripting"],
   ]],
   ["⚙️ Advanced", "advanced", [
     ["advanced", "perf", "⚙️ advanced"],
