@@ -1011,10 +1011,17 @@ body.designer-big .crumbs { display: none; }
 .script-box pre.script-js { font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); tab-size: 2; white-space: pre; overflow: auto; max-height: 22em;
   margin: 4px 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line, #c8c8c8); background: color-mix(in srgb, var(--line, #c8c8c8) 14%, transparent); }
 /* (ticket 577) the code in colour: the editor's text transparent over a <pre> of coloured tokens, the same font, padding and size */
-.script-edit { position: relative; }
+.script-edit { display: flex; align-items: stretch; }
+.script-edit-in { position: relative; flex: 1; min-width: 0; display: flex; }
+.script-edit-in > textarea.script-editor { flex: 1; }
+/* (ticket 581) line numbers: a gutter beside an editor, scrolled with it; a span before each line of a read-only box */
+pre.script-ln { margin: 0; overflow: hidden; text-align: right; user-select: none; color: var(--muted, GrayText); opacity: 0.75;
+  font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); padding: 7px 6px 7px 0; }
+.script-box pre .ln { display: inline-block; min-width: 2.5ch; margin-right: 1.5ch; text-align: right; color: var(--muted, GrayText); opacity: 0.75; user-select: none; }
+body.script-nolines pre.script-ln, body.script-nolines .script-box pre .ln { display: none; }
 .script-edit textarea.script-editor { position: relative; z-index: 1; scrollbar-gutter: stable; background: transparent; color: transparent; caret-color: var(--ink, CanvasText); }
 .script-edit textarea.script-editor::selection { background: color-mix(in srgb, #3b82f6 30%, transparent); color: transparent; }
-.script-edit pre.script-hl { position: absolute; inset: 0; margin: 0; overflow: hidden; scrollbar-gutter: stable; pointer-events: none; white-space: pre-wrap; overflow-wrap: break-word;
+.script-edit pre.script-hl { position: absolute; inset: 0; margin: 0; overflow: hidden; scrollbar-gutter: stable; pointer-events: none; white-space: pre;
   font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); tab-size: 2; padding: 6px 8px; border-radius: 6px; border: 1px solid transparent;
   background: var(--panel, Canvas); color: var(--ink, CanvasText); }
 .tk-k { color: #7c3aed; font-weight: 600; } .tk-C { color: #0e7490; } .tk-v { color: #0e7490; } .tk-s { color: #b45309; }
@@ -1034,7 +1041,7 @@ body.designer-big .crumbs { display: none; }
 .script-max-main > .script-box { margin: 0; min-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
 .script-max-main > .script-box .script-max-btn { display: none; }
 .script-max-main .script-body { flex: 1; display: flex; flex-direction: column; }
-.script-max-main .script-edit { flex: 1; display: flex; }
+.script-max-main .script-edit { flex: 1; }
 .script-max-main textarea.script-editor { flex: 1; min-height: 60vh; resize: none; }
 .script-max-main pre.script-js { max-height: none; flex: 1; }
 body.script-maxed { overflow: hidden; }

@@ -704,8 +704,20 @@ function scriptTokens(lang, text) {
   return out;
 }
 // (under an editor, a last "\n" more, so a last empty line has its height, as it has in the text box)
+// (ticket 581) a read-only box (not under an editor) numbers its lines from 1, each number a span the text's copy leaves out
 function scriptHighlight(pre, lang, text, under = false) {
-  pre.replaceChildren(...scriptTokens(lang, text).map(([k, w]) => k ? el("span", { class: "tk-" + k }, w) : document.createTextNode(w)), ...(under ? ["\n"] : []));
+  const kids = [], num = n => el("span", { class: "ln", "aria-hidden": "true" }, String(n));
+  let n = 1;
+  if (!under) kids.push(num(n));
+  for (const [k, w] of scriptTokens(lang, text)) {
+    const parts = under ? [w] : w.split("\n");
+    parts.forEach((part, j) => {
+      if (j > 0) { kids.push("\n"); kids.push(num(++n)); }
+      if (part) kids.push(k ? el("span", { class: "tk-" + k }, part) : document.createTextNode(part));
+    });
+  }
+  if (under) kids.push("\n");
+  pre.replaceChildren(...kids);
 }
 
 // (ticket 579, Matthew: "can we adjust the auto-indentation to take the actual code box width into account?") a line longer than
@@ -756,6 +768,7 @@ function scriptFlow(lang, text, cols) {
   if (!(cols > 20)) return text;
   return text.split("\n").flatMap(l => scriptFlowLine(lang, l, cols)).join("\n");
 }
+// (ticket 581: and line numbers, on unless turned off, "start at 1 for each box")
 // (ticket 580, Matthew: "a sub-panel called script editor settings": every room's engine, font size, font, syntax colours on or
 // off, and the longest line before it is broken, default 77; "please make the panel minimal; with minimal label length"; "always be
 // knolling") kept with the scripts, so a save keeps them; drawn on the page's root, so the ⛶ view (outside the panel) has them too
@@ -768,6 +781,7 @@ function scriptEditorSettings() {
   if (!SCRIPT_FONTS.some(([n]) => n === E.font)) E.font = "sys";
   if (typeof E.colours !== "boolean") E.colours = true;
   if (!(E.wrap >= 20 && E.wrap <= 400)) E.wrap = 77;
+  if (typeof E.lines !== "boolean") E.lines = true;   // (ticket 581)
   return E;
 }
 function scriptEditorApply() {
@@ -775,6 +789,7 @@ function scriptEditorApply() {
   R.setProperty("--script-size", E.size + "px");
   R.setProperty("--script-font", SCRIPT_FONTS.find(([n]) => n === E.font)[1]);
   document.body.classList.toggle("script-plain", !E.colours);
+  document.body.classList.toggle("script-nolines", !E.lines);
   for (const ta of document.querySelectorAll("textarea.script-editor, pre.script-types")) if (ta.reflow) ta.reflow(); else if (ta.flow) ta.flow();
 }
 // how many characters of the code's font fit across a text box, its padding and scroll bar taken off
@@ -857,9 +872,9 @@ function scriptingPanel(box) {
   // (each change written to the state as it is now, not as the tab found it: a load or a start over replaces it, and then the
   // boxes are filled again from the new one, below)
   const editor = (modName, get, put, lang) => {
-    const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", "data-module": modName });
+    const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", wrap: "off", "data-module": modName });
     const hl = el("pre", { class: "script-hl", "aria-hidden": "true" });
-    const paint = () => { scriptHighlight(hl, lang, ta.value, true); hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; };
+    let paint = () => { scriptHighlight(hl, lang, ta.value, true); hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; };
     // (ticket 579) the text as stored (src), shown broken to the box's width, from src each time (so a wider box takes the breaks
     // a narrower one made back out, up to the ones typed): again when the box's width changes, and when the
     // box is left (lines typed long). The caret keeps its place: the same count of non-space characters before it. A typed change
@@ -886,7 +901,14 @@ function scriptingPanel(box) {
     ta.addEventListener("keydown", e => e.stopPropagation());
     paint();
     // (ticket 577: the colours under the text, the same size as it, however the box is resized)
-    const wrap = el("div", { class: "script-edit" }, [hl, ta]);
+    // (ticket 581) the line numbers beside it, from 1, scrolled with it; lines are not wrapped by the box (579 breaks them), so
+    // each number stays beside its line
+    const gutter = el("pre", { class: "script-ln", "aria-hidden": "true" });
+    const number = () => { const n = ta.value.split("\n").length; if (gutter.n !== n) { gutter.n = n; gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n") + "\n"; } gutter.scrollTop = ta.scrollTop; };
+    ta.addEventListener("input", number); ta.addEventListener("scroll", () => { gutter.scrollTop = ta.scrollTop; });
+    const repaint = paint; paint = () => { repaint(); number(); };
+    number();
+    const wrap = el("div", { class: "script-edit" }, [gutter, el("div", { class: "script-edit-in" }, [hl, ta])]);
     wrap.refill = ta.refill;
     return wrap;
   };
@@ -968,6 +990,7 @@ function scriptingPanel(box) {
       ...pickRow("size", SCRIPT_SIZES.map(n => [n, String(n)]), () => scriptEditorSettings().size, v => { scriptEditorSettings().size = v; }),
       ...pickRow("font", SCRIPT_FONTS.map(([n]) => [n, n]), () => scriptEditorSettings().font, v => { scriptEditorSettings().font = v; }),
       ...pickRow("colour", [[true, "on"], [false, "off"]], () => scriptEditorSettings().colours, v => { scriptEditorSettings().colours = v; }),
+      ...pickRow("lines", [[true, "on"], [false, "off"]], () => scriptEditorSettings().lines, v => { scriptEditorSettings().lines = v; }),
       el("span", { class: "cap" }, "wrap"), el("div", { class: "row" }, [wrapIn]),
     ]),
   ]);
