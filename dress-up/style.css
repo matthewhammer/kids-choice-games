@@ -1103,6 +1103,8 @@ body.big .script-frame { display: none; }
 /* (a hidden one hidden: .script-edit's own display would otherwise show it) */
 .script-hazel-body > [hidden] { display: none !important; }
 .script-max-main .script-tile-wrap { max-height: none; }
+.script-tile-wrap { position: relative; }
+.script-tile-wrap > .script-band { z-index: 1; }
 /* (ticket 491) in one column, under the picture's stage, which sticks at the top (its height, --stage-h, kept by
    21-size-and-divider.js), not across the picture */
 @media (max-width: 760px) { .crumbs { top: var(--stage-h, 0px); } }

@@ -1022,7 +1022,24 @@ function scriptBand(node, line, end) {
 function scriptMaxJump(box, node, line, end = line) {
   const M = scriptMax; if (!M) return;
   if (M.sec !== box) scriptMaxOpen(M.boxes, box);
-  scriptBand(node, line, end);
+  if (!(node.tagName === "TEXTAREA" && node.closest("[hidden]"))) scriptBand(node, line, end);
+  // (Matthew, 2026-10-23: "LHS nav bar does not respond to click -- a recent regression?" A Hazel box in tiles hides its text box,
+  // and the jump scrolled that. Now, in tiles, the view goes to the line's row in the tiles: the frame's height over the text's
+  // lines, as Hazel lays the text out a line to a row; the band drawn over the tiles there)
+  const hidden = node.tagName === "TEXTAREA" && node.closest("[hidden]");
+  const tilesWrap = hidden && node.closest(".script-hazel-body") && node.closest(".script-hazel-body").querySelector(".script-tile-wrap");
+  if (tilesWrap) {
+    const n = Math.max(1, node.value.split("\n").length), frame = tilesWrap.querySelector("iframe");
+    const top0 = 8, rowH = frame ? Math.max(8, (frame.getBoundingClientRect().height - 2 * top0) / n) : 20;
+    const y = tilesWrap.getBoundingClientRect().top + top0 + line * rowH;
+    const view = M.main, vtop = view.getBoundingClientRect().top;
+    view.scrollTop += y - vtop - 40;
+    for (const b of document.querySelectorAll(".script-band")) { if (b.unscroll) b.unscroll(); b.remove(); }
+    const band = el("div", { class: "script-band", "aria-hidden": "true" });
+    band.style.top = (top0 + line * rowH + tilesWrap.scrollTop) + "px"; band.style.height = ((end - line + 1) * rowH) + "px";
+    tilesWrap.prepend(band);
+    return;
+  }
   if (node.tagName === "TEXTAREA") {
     const at = node.value.split("\n").slice(0, line).reduce((n, l) => n + l.length + 1, 0);
     node.scrollIntoView({ block: "nearest" });
