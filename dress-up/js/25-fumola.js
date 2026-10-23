@@ -239,6 +239,14 @@ const FUMOLA_CASTLE = `module Castle {
   }
 }`;
 
+// (2026-10-23) the texts as shipped before their types (ticket 566's): a save holding one of them, unchanged, gets the typed one
+// (FUMOLA_UNTYPED: the shipped text with its type block and each function's annotations taken out, so a save is compared with that)
+const FUMOLA_UNTYPED_HEADS = [["flip2(a : Side, b : Side) : Cmd", "flip2(a, b)"], ["nth(xs : [Bool], i : Int) : Bool", "nth(xs, i)"], ["wire(mode : Wiring, draws : [Float]) : (Side, Side)", "wire(mode, draws)"], ["up(l : Bool, r : Bool, side : Side) : Bool", "up(l, r, side)"], ["pits_open(l : Bool, r : Bool, w : (Side, Side)) : (Bool, Bool)", "pits_open(l, r, w)"], ["pit_moves(i : Int, was : Bool, now : Bool, k : Cmd) : Cmd", "pit_moves(i, was, now, k)"], ["member(s : Text, xs : [Text]) : Bool", "member(s, xs)"], ["has_way(d : Dir, ds : [Dir]) : Bool", "has_way(d, ds)"], ["room_at(rs : [Room], k : Room) : Int", "room_at(rs, k)"], ["exit_of(xs : [Exit], i : Int) : ?Exit", "exit_of(xs, i)"], ["rooms(rs : [Room]) : Int", "rooms(rs)"], ["dir(d : Dir) : (Int, Int)", "dir(d)"], ["opp(d : Dir) : Dir", "opp(d)"], ["one(i : Int, mine : Bool, lift : Bool, k : Common.Cmd) : Common.Cmd", "one(i, mine, lift, k)"], ["on_event(g : Common.Globals, e : Common.Event) : Common.Cmd", "on_event(g, e)"], ["find(ts : [Common.Thing], j : Int, i : Int) : ?Common.Thing", "find(ts, j, i)"], ["doors(lever : Common.Thing, ts : [Common.Thing], j : Int) : Common.Cmd", "doors(lever, ts, j)"], ["no_way(kind : Common.Place, d : Common.Dir) : Bool", "no_way(kind, d)"], ["decide(x : Common.Cell, back : Common.Dir, c : Int, r : Int) : Common.Cmd", "decide(x, back, c, r)"], ["find_at(cs : [Common.Cell], i : Int, c : Int, r : Int) : ?Common.Cell", "find_at(cs, i, c, r)"], ["step(ac : Int, ar : Int, d : Common.Dir, cols : Int, rows : Int) : ?(Int, Int)", "step(ac, ar, d, cols, rows)"], ["way(ac : Int, ar : Int, cols : Int, rows : Int, d : Common.Dir) : Common.Cmd", "way(ac, ar, cols, rows, d)"], ["hold(cells : [Common.Cell]) : Int", "hold(cells)"], ["way_out(rooms : [Common.Room], exits : [Common.Exit], n : Int, out : Common.Out) : Int", "way_out(rooms, exits, n, out)"]];
+const FUMOLA_UNTYPED = text => {
+  let t = text.replace(/  \/\/ The game's vocabulary[\s\S]*?\n  \};\n(?=  \/\/ two levers)/, "");
+  for (const [a, b] of FUMOLA_UNTYPED_HEADS) t = t.split("func " + a + " {").join("func " + b + " {");
+  return t;
+};
 // the whole program, defined once in an instance; and each room's module (SCRIPT_ROOMS' names)
 const FUMOLA_SOURCE = [FUMOLA_COMMON, FUMOLA_TRAP, FUMOLA_TREE, FUMOLA_SQUARE, FUMOLA_WORLD, FUMOLA_CASTLE].join(";\n");
 const FUMOLA_ROOMS = ["TrapRoom", "TreeRoom", "Square", "World", "Castle"];

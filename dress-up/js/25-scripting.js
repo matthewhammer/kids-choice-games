@@ -271,6 +271,11 @@ function scriptsState() {
   if (F.common == null && FD.common) F.common = FD.common;
   F.rooms = F.rooms || {};
   for (const r of SCRIPT_ROOMS) if (F.rooms[r.name] == null && FD.rooms[r.name] != null) F.rooms[r.name] = FD.rooms[r.name];
+  // (2026-10-23) a save holding the texts as shipped before their types, unchanged: the typed ones in their place (FUMOLA_UNTYPED)
+  if (typeof FUMOLA_UNTYPED === "function") {
+    if (FD.common && F.common !== FD.common && F.common === FUMOLA_UNTYPED(FD.common)) F.common = FD.common;
+    for (const r of SCRIPT_ROOMS) { const d = FD.rooms[r.name]; if (d && F.rooms[r.name] !== d && F.rooms[r.name] === FUMOLA_UNTYPED(d)) F.rooms[r.name] = d; }
+  }
   return S;
 }
 
@@ -983,7 +988,7 @@ function scriptOutline(text, lang) {
   const out = [];
   text.split("\n").forEach((line, i) => {
     let m;
-    if ((m = line.match(/^type\s+([A-Za-z_]\w*)/))) out.push({ kind: "type", name: m[1], line: i });
+    if ((m = line.match(lang === "fumola" ? /^\s*(?:public\s+)?type\s+([A-Za-z_]\w*)/ : /^type\s+([A-Za-z_]\w*)/))) out.push({ kind: "type", name: m[1], line: i });
     else if (lang === "hazel" && (m = line.match(/^let\s+([a-z_]\w*)\s*=/))) out.push({ kind: "fn", name: m[1], line: i });
     else if (lang === "fumola" && (m = line.match(/^\s*(?:public\s+)?func\s+([A-Za-z_]\w*)/))) out.push({ kind: "fn", name: m[1], line: i });
     else if (lang === "js" && (m = line.match(/^\s*(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)/))) out.push({ kind: "fn", name: m[1], line: i });
@@ -1038,6 +1043,19 @@ function scriptMaxJump(box, node, line, end = line) {
 // written: the program, its tail replaced by one probe per function, each held to () (let _p : () = Common.nth in), so Hazel's
 // analysis says, for each, "Expecting type () but got inconsistent type [Bool], Int -> Bool". One analysis per program text,
 // after the outline is drawn; the outline drawn again with the types. A module with an error of its own gives no types
+// (a Fumola function's signature, from its annotations, as Hazel's are shown: (T1, T2) -> R, "Common." left off. None unless every
+// parameter and the result are annotated)
+function scriptFumolaSig(head) {
+  const m = head.match(/func\s+[A-Za-z_]\w*\s*\(([^)]*(?:\([^)]*\)[^)]*)*)\)\s*:\s*([^{=]+?)\s*[{=]/);
+  if (!m) return null;
+  const parts = []; let d = 0, from = 0, ps = m[1];
+  for (let i = 0; i <= ps.length; i++) { const c = ps[i]; if (c === "(" || c === "[" || c === "{") d++; else if (c === ")" || c === "]" || c === "}") d--; else if ((c === "," && d === 0) || i === ps.length) { parts.push(ps.slice(from, i)); from = i + 1; } }
+  const ts = parts.filter(x => x.trim()).map(x => { const k = x.indexOf(":"); return k < 0 ? null : x.slice(k + 1).trim(); });
+  if (ts.some(t => t == null)) return null;
+  const short = t => t.replace(/\bCommon\./g, "");
+  const args = ts.length === 1 ? short(ts[0]) : "(" + ts.map(short).join(", ") + ")";
+  return args + " -> " + short(m[2].trim());
+}
 let scriptTypesCache = { key: null, types: new Map() };
 function scriptHazelTypes() {
   if (!window.Hazel || typeof window.Hazel.analyze !== "function") return null;
@@ -1079,7 +1097,9 @@ function scriptTypeNames(t) {
 // (Matthew, 2026-10-23: "for each sum type being defined, it says the number of 'cases'") a sum's constructors, counted: each + and
 // a capital after the =, outside brackets (a payload's types are not cases); a record or an alias has none, and says nothing
 function scriptCases(def) {
-  const body = def.slice(def.indexOf("=") + 1).replace(/\s+in\s*$/, "");
+  const body = def.slice(def.indexOf("=") + 1).replace(/\s+in\s*$/, "").replace(/;\s*$/, "");
+  // (Fumola's, in Motoko's notation: a variant {#A; #B : T}, its cases each # at the braces' own depth)
+  if (/^\s*\{\s*#/.test(body)) { let d = 0, n = 0; for (const c of body) { if ("([{".includes(c)) d++; else if (")]}".includes(c)) d--; else if (c === "#" && d === 1) n++; } return n; }
   if (!/^\s*\+/.test(body)) return 0;
   let depth = 0, n = 0;
   for (let i = 0; i < body.length; i++) {
@@ -1094,7 +1114,8 @@ function scriptCases(def) {
 const SCRIPT_TYPE_KINDS = { sum: ["➕", "sum type"], product: ["📦", "product type"], list: ["📜", "list type"], fn: ["➡️", "function type"], alias: ["🔗", "another name for a type"] };
 function scriptTypeKind(def) {
   const body = def.slice(def.indexOf("=") + 1).replace(/\s+in\s*$/, "").trim();
-  return body.startsWith("+") ? "sum" : /->/.test(body.replace(/\([^()]*\)/g, "")) ? "fn" : body.startsWith("(") ? "product" : body.startsWith("[") ? "list" : "alias";
+  return body.startsWith("+") || /^\{\s*#/.test(body) ? "sum" : /->/.test(body.replace(/\([^()]*\)/g, "")) ? "fn"
+    : body.startsWith("(") || body.startsWith("{") ? "product" : body.startsWith("[") ? "list" : "alias";
 }
 // (Matthew: "for functions, let's say N lines --- and when they have type () -> ... no params, and no result, just effects, ---
 // let's use the magic wand emoji") a function's line count, right-justified, and 🪄 for one that takes nothing and only acts:
@@ -1131,7 +1152,8 @@ function scriptMaxNav() {
       // (584) its lines: up to the next definition, less the comments and blank lines that lead into that one
       let end = (os[i + 1] ? os[i + 1].line : lines.length) - 1;
       while (end > o.line && /^\s*(#|\/\/|$)/.test(lines[end])) end--;
-      const sig = o.kind === "fn" && lang === "hazel" && types ? types.get(modOf(b) + "." + o.name) : null;
+      const sig = o.kind !== "fn" ? null : lang === "hazel" ? (types ? types.get(modOf(b) + "." + o.name) : null)
+        : lang === "fumola" ? scriptFumolaSig(lines.slice(o.line, o.line + 3).join(" ")) : null;
       return el("button", { class: "script-max-sub script-max-" + o.kind + (sig ? " script-max-sig" : ""), title: (o.kind === "type" ? "type " : "") + o.name + ", lines " + (o.line + 1) + "-" + (end + 1), onclick: () => scriptMaxJump(b, node, o.line, end) },
         o.kind === "type" ? [el("span", { class: "script-max-kind" }, "type"), el("span", { class: "script-max-tname" }, o.name), ...cases(lines.slice(o.line, end + 1).join(" "))]
           : [el("span", { class: "script-max-fname" }, [o.name, fnTail(lang, sig, lines.slice(o.line, end + 1))]), ...(sig ? [el("span", { class: "script-max-type-sig", title: o.name + " : " + sig }, ": " + sig)] : [])]); }); });
@@ -1213,7 +1235,7 @@ function scriptingPanel(box) {
     // (ticket 581) the line numbers beside it, from 1, scrolled with it; lines are not wrapped by the box (579 breaks them), so
     // each number stays beside its line
     const gutter = el("pre", { class: "script-ln", "aria-hidden": "true" });
-    const number = () => { const n = ta.value.split("\n").length; if (gutter.n !== n) { gutter.n = n; gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n") + "\n"; } gutter.scrollTop = ta.scrollTop; };
+    const number = () => { const n = ta.value.split("\n").length; if (gutter.n !== n) { gutter.n = n; gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n") + "\n"; gutter.style.width = (String(n).length + 1) + "ch"; } gutter.scrollTop = ta.scrollTop; };
     ta.addEventListener("input", number); ta.addEventListener("scroll", () => { gutter.scrollTop = ta.scrollTop; });
     const repaint = paint; paint = () => { repaint(); number(); };
     number();

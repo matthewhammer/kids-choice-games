@@ -1014,12 +1014,14 @@ body.designer-big .crumbs { display: none; }
 .hazel-tile { display: inline-block; padding: 0.05em 0.85em; margin: 0 0.1em; line-height: 1.35; font-weight: 600; color: #fff;
   background: #7c3aed; clip-path: polygon(0.55em 0, calc(100% - 0.55em) 0, 100% 50%, calc(100% - 0.55em) 100%, 0.55em 100%, 0 50%); }
 .script-max-lang .hazel-tile { font-size: 0.85em; }
- the editor's text transparent over a <pre> of coloured tokens, the same font, padding and size */
+/* (ticket 577) the code in colour: the editor's text transparent over a <pre> of coloured tokens, the same font, padding and size */
 .script-edit { display: flex; align-items: stretch; }
 .script-edit-in { position: relative; flex: 1; min-width: 0; display: flex; overflow: hidden; border-radius: 6px; }
 .script-edit-in > textarea.script-editor { flex: 1; }
 /* (ticket 581) line numbers: a gutter beside an editor, scrolled with it; a span before each line of a read-only box */
-pre.script-ln { margin: 0; overflow: hidden; text-align: right; user-select: none; color: var(--muted, GrayText); opacity: 0.75;
+/* (its size contained: as tall as the editor beside it, not as its numbers, which would push the editor a page down; its width
+   set from its numbers, 25-scripting.js) */
+pre.script-ln { contain: size; flex: none; box-sizing: content-box; margin: 0; overflow: hidden; text-align: right; user-select: none; color: var(--muted, GrayText); opacity: 0.75;
   font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); padding: 7px 6px 7px 0; }
 .script-box pre .ln { display: inline-block; min-width: 2.5ch; margin-right: 1.5ch; text-align: right; color: var(--muted, GrayText); opacity: 0.75; user-select: none; }
 body.script-nolines pre.script-ln { display: none; }
