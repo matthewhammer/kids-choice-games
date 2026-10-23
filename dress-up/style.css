@@ -1010,6 +1010,35 @@ body.designer-big .crumbs { display: none; }
 .script-mixed:empty { display: none; }
 .script-box pre.script-js { font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 2; white-space: pre; overflow: auto; max-height: 22em;
   margin: 4px 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line, #c8c8c8); background: color-mix(in srgb, var(--line, #c8c8c8) 14%, transparent); }
+/* (ticket 577) the code in colour: the editor's text transparent over a <pre> of coloured tokens, the same font, padding and size */
+.script-edit { position: relative; }
+.script-edit textarea.script-editor { position: relative; z-index: 1; scrollbar-gutter: stable; background: transparent; color: transparent; caret-color: var(--ink, CanvasText); }
+.script-edit textarea.script-editor::selection { background: color-mix(in srgb, #3b82f6 30%, transparent); color: transparent; }
+.script-edit pre.script-hl { position: absolute; inset: 0; margin: 0; overflow: hidden; scrollbar-gutter: stable; pointer-events: none; white-space: pre-wrap; overflow-wrap: break-word;
+  font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 2; padding: 6px 8px; border-radius: 6px; border: 1px solid transparent;
+  background: var(--panel, Canvas); color: var(--ink, CanvasText); }
+.tk-k { color: #7c3aed; font-weight: 600; } .tk-C { color: #0e7490; } .tk-v { color: #0e7490; } .tk-s { color: #b45309; }
+.tk-n { color: #15803d; } .tk-c { color: #6b7280; font-style: italic; } .tk-o { color: #be185d; }
+@media (prefers-color-scheme: dark) { .tk-k { color: #c4b5fd; } .tk-C, .tk-v { color: #67e8f9; } .tk-s { color: #fcd34d; } .tk-n { color: #86efac; } .tk-c { color: #9ca3af; } .tk-o { color: #f9a8d4; } }
+/* (ticket 577) ⛶ max size: the outline of every box on the left, the chosen box filling the right */
+.script-box > .box-name { display: flex; align-items: center; gap: 8px; }
+.script-max-btn { margin-left: auto; font-size: 0.8em; padding: 1px 8px; }
+.script-max { position: fixed; inset: 0; z-index: 60; display: grid; grid-template-columns: minmax(11em, 16em) 1fr; gap: 10px; padding: 10px;
+  background: var(--panel, Canvas); color: var(--ink, CanvasText); box-sizing: border-box; }
+.script-max-left { display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+.script-max-nav { display: flex; flex-direction: column; gap: 3px; }
+.script-max-item { display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 5px 8px; border-radius: 6px; }
+.script-max-item[aria-current="true"] { outline: 2px solid #7c3aed; font-weight: 700; }
+.script-max-lang { color: var(--muted, GrayText); font-size: 0.85em; font-weight: 400; }
+.script-max-main { overflow: auto; min-width: 0; }
+.script-max-main > .script-box { margin: 0; min-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+.script-max-main > .script-box .script-max-btn { display: none; }
+.script-max-main .script-body { flex: 1; display: flex; flex-direction: column; }
+.script-max-main .script-edit { flex: 1; display: flex; }
+.script-max-main textarea.script-editor { flex: 1; min-height: 60vh; resize: none; }
+.script-max-main pre.script-js { max-height: none; flex: 1; }
+body.script-maxed { overflow: hidden; }
+@media (max-width: 640px) { .script-max { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .script-max-nav { flex-direction: row; flex-wrap: wrap; } }
 .script-say { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 50; padding: 6px 14px; border-radius: 999px;
   background: #1f2937; color: #fff; font: 14px/1.4 system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .script-say[hidden] { display: none; }

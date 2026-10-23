@@ -679,6 +679,75 @@ function scriptFrameShow(F) {
 
 // the 🧩 Scripting tab: a switch, Hazel's state, then an editor per module, each with the module's name; the program's errors
 // under them, at each change, a moment after typing stops; then (ticket 520) Hazel's tiles of the whole program
+// (ticket 577) colours for the code: a small tokenizer per language, drawn in a <pre> under the editor's text (which is transparent,
+// its caret not), so the text box stays a plain text box. Hazel's comments close with # as they open; Fumola's and JS's are // and /* */
+const SCRIPT_KEYWORDS = {
+  hazel: "let in fun case end if then else type module test rec and or",
+  fumola: "public let var func fun switch case if else return do while for in module type and or not true false null ignore",
+  js: "function const let var return if else for while of in new true false null undefined this switch case break continue default typeof",
+};
+function scriptTokens(lang, text) {
+  const kw = new Set(SCRIPT_KEYWORDS[lang].split(" "));
+  const comment = lang === "hazel" ? /#[^#\n]*#?/y : /\/\/[^\n]*|\/\*[\s\S]*?(\*\/|$)/y;
+  const rules = [["c", comment], ["s", /"(\\.|[^"\\\n])*"?/y], ["n", /\d+(\.\d+)?/y], ["v", lang === "fumola" ? /#[A-Za-z_]\w*/y : /(?!)/y],
+    ["w", /[A-Za-z_]\w*/y], ["o", /=>|->|\+\+|[|=<>!+\-*\/%:;,.?#@&^~]+/y], ["t", /\s+|./y]];
+  const out = [];
+  for (let i = 0; i < text.length;) {
+    for (const [k, re] of rules) {
+      re.lastIndex = i; const m = re.exec(text);
+      if (!m || !m[0]) continue;
+      const w = m[0];
+      out.push([k === "w" ? (kw.has(w) ? "k" : /^[A-Z]/.test(w) ? "C" : "") : k === "t" ? "" : k, w]);
+      i += w.length; break;
+    }
+  }
+  return out;
+}
+// (under an editor, a last "\n" more, so a last empty line has its height, as it has in the text box)
+function scriptHighlight(pre, lang, text, under = false) {
+  pre.replaceChildren(...scriptTokens(lang, text).map(([k, w]) => k ? el("span", { class: "tk-" + k }, w) : document.createTextNode(w)), ...(under ? ["\n"] : []));
+}
+
+// (ticket 577, Matthew: "let's add a 'max size' button for each code splice") ⛶ on a box: the page's code at full size, an outline
+// of every box on the left (📚 Common first, then the rooms, each with the language it shows) and the chosen box on the right. The
+// box itself moves there, editors and all, and back to its place when another is chosen or the view is closed (✖ or Escape)
+let scriptMax = null;
+function scriptMaxOpen(boxes, sec) {
+  if (!scriptMax) {
+    const nav = el("nav", { class: "script-max-nav", "aria-label": "the code, box by box" });
+    const main = el("div", { class: "script-max-main" });
+    const close = el("button", { class: "script-max-close", title: "back to the panel (Escape)", onclick: () => scriptMaxClose() }, "✖ back");
+    const wrap = el("div", { class: "script-max", role: "dialog", "aria-label": "the game's code, at full size" },
+      [el("div", { class: "script-max-left" }, [close, nav]), main]);
+    const key = e => { if (e.key === "Escape") { e.stopPropagation(); scriptMaxClose(); } };
+    wrap.addEventListener("keydown", key);
+    document.body.append(wrap);
+    document.body.classList.add("script-maxed");
+    scriptMax = { wrap, nav, main, boxes, sec: null, spot: null };
+  }
+  const M = scriptMax;
+  if (M.sec) M.spot.replaceWith(M.sec);
+  M.sec = sec; M.spot = el("div", { class: "script-max-spot", hidden: "" });
+  sec.replaceWith(M.spot); M.main.replaceChildren(sec);
+  scriptMaxNav();
+  const ta = sec.querySelector("textarea"); if (ta) ta.focus({ preventScroll: true });
+}
+function scriptMaxNav() {
+  const M = scriptMax; if (!M) return;
+  M.nav.replaceChildren(...M.boxes.map(b => {
+    const lang = (SCRIPT_ENGINES.find(([v]) => v === b.shown()) || [, ""])[1];
+    const a = el("button", { class: "script-max-item", "aria-current": String(b === M.sec), onclick: () => scriptMaxOpen(M.boxes, b) },
+      [el("span", {}, b.querySelector(".box-name").firstChild.textContent), el("span", { class: "script-max-lang" }, lang)]);
+    return a;
+  }));
+}
+function scriptMaxClose() {
+  const M = scriptMax; if (!M) return;
+  if (M.sec) M.spot.replaceWith(M.sec);
+  M.wrap.remove(); document.body.classList.remove("script-maxed");
+  scriptMax = null;
+}
+
 function scriptingPanel(box) {
   const S = scriptsState();
   const status = el("div", { class: "hint script-status" }, "Hazel: loading…");
@@ -709,14 +778,22 @@ function scriptingPanel(box) {
   const later = () => { clearTimeout(timer); timer = setTimeout(() => { changed(); sync(); }, 600); };
   // (each change written to the state as it is now, not as the tab found it: a load or a start over replaces it, and then the
   // boxes are filled again from the new one, below)
-  const editor = (modName, get, put) => {
+  const editor = (modName, get, put, lang) => {
     const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", "data-module": modName });
-    ta.value = get(); ta.refill = () => { ta.value = get(); };
-    ta.addEventListener("input", () => { put(ta.value); later(); });
+    const hl = el("pre", { class: "script-hl", "aria-hidden": "true" });
+    const paint = () => { scriptHighlight(hl, lang, ta.value, true); hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; };
+    ta.value = get(); ta.refill = () => { if (ta.value !== get()) { ta.value = get(); paint(); } };
+    ta.addEventListener("input", () => { put(ta.value); paint(); later(); });
+    ta.addEventListener("scroll", () => { hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; });
     // (the game's keys move the friend: in an editor they are the editor's)
     ta.addEventListener("keydown", e => e.stopPropagation());
-    return ta;
+    paint();
+    // (ticket 577: the colours under the text, the same size as it, however the box is resized)
+    const wrap = el("div", { class: "script-edit" }, [hl, ta]);
+    wrap.refill = ta.refill;
+    return wrap;
   };
+  const jsPre = text => { const p = el("pre", { class: "script-js", tabindex: "0" }); scriptHighlight(p, "js", text); return p; };
   // (ticket 566) a chip per engine; on, the one shown (and, for a room, the one that runs)
   const chips = (now, pick, cls) => {
     const bs = SCRIPT_ENGINES.map(([v, lab]) => [v, el("button", { "data-engine": v, "aria-pressed": String(now() === v), onclick: () => pick(v) }, lab)]);
@@ -724,6 +801,8 @@ function scriptingPanel(box) {
     row.refresh = () => { for (const [v, b] of bs) setPressed(b, now() === v); };
     return row;
   };
+  // (ticket 577) ⛶: this box at full size, with the outline of them all (scriptMaxOpen)
+  const maxBtn = sec => el("button", { class: "script-max-btn", title: "full size, with every box listed beside it", onclick: () => scriptMaxOpen(boxes, sec()) }, "⛶ max size");
   // a room's box: its chip, then its code in that engine. JS: the game's own functions, to read; Hazel and Fumola: to edit
   const roomBox = r => {
     const body = el("div", { class: "script-body" });
@@ -731,14 +810,14 @@ function scriptingPanel(box) {
     const show = () => {
       const eng = shown = scriptEngine(r.name);
       if (eng === "js") body.replaceChildren(el("div", { class: "hint" }, "the game's own code, as it runs (to read: switch to Hazel or Fumola to write the rule)"),
-        el("pre", { class: "script-js", tabindex: "0" }, scriptJsSource(r.name)));
+        jsPre(scriptJsSource(r.name)));
       else if (eng === "hazel") body.replaceChildren(el("div", { class: "hint" }, `module ${r.name}, in Hazel`),
-        editor(r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; }));
+        editor(r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; }, "hazel"));
       else body.replaceChildren(el("div", { class: "hint" }, `module ${r.name}, in Fumola`),
-        editor(r.name, () => scriptsState().fumola.rooms[r.name] || "", v => { scriptsState().fumola.rooms[r.name] = v; }));
+        editor(r.name, () => scriptsState().fumola.rooms[r.name] || "", v => { scriptsState().fumola.rooms[r.name] = v; }, "fumola"));
     };
     const row = chips(() => scriptEngine(r.name), v => { const T = scriptsState(); T.engines[r.name] = v; if (v === "fumola") wantFumola(); refresh(); changed(); sync(); }, "script-room-engines");
-    const sec = el("section", { class: "box script-box", "data-room": r.name }, [el("div", { class: "box-name" }, r.label), row, body]);
+    const sec = el("section", { class: "box script-box", "data-room": r.name }, [el("div", { class: "box-name" }, [r.label, maxBtn(() => sec)]), row, body]);
     sec.refresh = () => { row.refresh(); if (shown !== scriptEngine(r.name)) show(); else for (const ta of body.querySelectorAll("textarea.script-editor")) ta.refill(); };
     sec.shown = () => shown;
     show();
@@ -754,12 +833,12 @@ function scriptingPanel(box) {
       const v = shown = view();
       if (v === "js") body.replaceChildren(el("div", { class: "hint" }, "The game's JS has no common module: each room's functions carry what they need (switch a room to JS to read them)."));
       else if (v === "hazel") body.replaceChildren(el("div", { class: "hint" }, "module Common, in Hazel: in scope in every Hazel room, as Common.name"),
-        editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }));
+        editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }, "hazel"));
       else body.replaceChildren(el("div", { class: "hint" }, "module Common, in Fumola: in scope in every Fumola room, as Common.name"),
-        editor("Common", () => scriptsState().fumola.common || "", t => { scriptsState().fumola.common = t; }));
+        editor("Common", () => scriptsState().fumola.common || "", t => { scriptsState().fumola.common = t; }, "fumola"));
     };
-    const row = chips(view, v => { scriptsState().commonView = v; if (v === "fumola") wantFumola(); show(); row.refresh(); changed(); }, "script-common-engines");
-    const sec = el("section", { class: "box script-box", "data-room": "Common" }, [el("div", { class: "box-name" }, "📚 Common"), row, body]);
+    const row = chips(view, v => { scriptsState().commonView = v; if (v === "fumola") wantFumola(); show(); row.refresh(); scriptMaxNav(); changed(); }, "script-common-engines");
+    const sec = el("section", { class: "box script-box", "data-room": "Common" }, [el("div", { class: "box-name" }, ["📚 Common", maxBtn(() => sec)]), row, body]);
     sec.refresh = () => { row.refresh(); if (shown !== view()) show(); else for (const ta of body.querySelectorAll("textarea.script-editor")) ta.refill(); };
     sec.shown = () => shown;
     show();
@@ -770,7 +849,7 @@ function scriptingPanel(box) {
   const master = chips(allNow, v => { const T = scriptsState(); T.all = v; T.engines = {}; T.on = v === "hazel"; T.commonView = v; if (v === "fumola") wantFumola(); refresh(); changed(); sync(); }, "script-master");
   const mixed = el("span", { class: "hint script-mixed" });
   const boxes = [commonBox(), ...SCRIPT_ROOMS.map(roomBox)];
-  const refresh = () => { master.refresh(); mixed.textContent = allNow() === "mixed" ? "rooms differ: each box's chip says which runs" : ""; for (const b of boxes) b.refresh(); };
+  const refresh = () => { master.refresh(); mixed.textContent = allNow() === "mixed" ? "rooms differ: each box's chip says which runs" : ""; for (const b of boxes) b.refresh(); scriptMaxNav(); };
   // (ticket 520) Hazel's tiles: made once the tab is laid out (scriptFrameMount)
   const tiles = el("section", { class: "box script-box script-tiles" }, [
     el("div", { class: "box-name" }, "🧩 the Hazel program, in Hazel's tiles"),
