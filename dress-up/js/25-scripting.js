@@ -46,7 +46,8 @@ const SCRIPT_PREAMBLE = `type Cmd = + Done + Flip(String, Cmd) + Say(String, Cmd
 type Event = + Pull(String) + PullBoulder(String) + PullHatch(Int) + PullThing(Int) + FallPit(Int) + WayOut(Int) + Way(String) in
 type Thing = (at = Int, uid = String, kind = String, on = Bool, works = [String], does = String, open = Bool, boulder = Bool) in
 type Cell = (col = Int, row = Int, kind = String, ways = [String]) in
-type Globals = (lever_L = Bool, lever_R = Bool, wiring = String, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing], rooms = [String], exits = [String], out = String, out_room = Int, at_col = Int, at_row = Int, cols = Int, rows = Int, cells = [Cell]) in`;
+type Squares = + Leaf + Node(Squares, Cell, Squares) in
+type Globals =(lever_L = Bool, lever_R = Bool, wiring = String, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing], rooms = [String], exits = [String], out = String, out_room = Int, at_col = Int, at_row = Int, cols = Int, rows = Int, cells = [Cell]) in`;
 
 const SCRIPT_COMMON = `# Sub-routines every room can use, as Common.wire and so on. #
 let flip2 = fun (a, b) : (String, String) -> Flip(a, Flip(b, Done));
@@ -68,7 +69,25 @@ let nth_s = fun (xs, i) : ([String], Int) -> case xs | [] => "" | x :: rest => i
 let length = fun xs : [String] -> case xs | [] => 0 | _ :: rest => 1 + length(rest) end;
 # the world's eight directions: each one's step across and down the map, and the way back #
 let dir = fun d : String -> if d == "N" then (0, 0 - 1) else if d == "NE" then (1, 0 - 1) else if d == "E" then (1, 0) else if d == "SE" then (1, 1) else if d == "S" then (0, 1) else if d == "SW" then (0 - 1, 1) else if d == "W" then (0 - 1, 0) else if d == "NW" then (0 - 1, 0 - 1) else (0, 0);
-let opp = fun d : String -> if d == "N" then "S" else if d == "NE" then "SW" else if d == "E" then "W" else if d == "SE" then "NW" else if d == "S" then "N" else if d == "SW" then "NE" else if d == "W" then "E" else if d == "NW" then "SE" else ""`;
+let opp = fun d : String -> if d == "N" then "S" else if d == "NE" then "SW" else if d == "E" then "W" else if d == "SE" then "NW" else if d == "S" then "N" else if d == "SW" then "NE" else if d == "W" then "E" else if d == "NW" then "SE" else "";
+# The world's squares as a map from their places (Squares): a search tree, ordered by row, then column. #
+# Is the place (c, r) before square x's? #
+let before = fun (c, r, x) : (Int, Int, Cell) -> r < x.row || (r == x.row && c < x.col);
+let count_cells = fun xs : [Cell] -> case xs | [] => 0 | _ :: rest => 1 + count_cells(rest) end;
+# are the squares in order, each before the next? #
+let cells_in_order = fun xs : [Cell] -> case xs | x :: y :: rest => before(x.col, x.row, y) && cells_in_order(y :: rest) | _ => true end;
+# merge sort: two lists in order merged into one, a list dealt into two halves, and a list put in order #
+let merge_cells = fun (xs, ys) : ([Cell], [Cell]) -> case (xs, ys) | ([], _) => ys | (_, []) => xs | (x :: xr, y :: yr) => if before(x.col, x.row, y) then x :: merge_cells(xr, ys) else y :: merge_cells(xs, yr) end;
+let halve_cells = fun xs : [Cell] -> case xs | x :: y :: rest => (let (a, b) = halve_cells(rest) in (x :: a, y :: b)) | _ => (xs, []) end;
+let sort_cells = fun xs : [Cell] -> case xs | _ :: _ :: _ => (let (a, b) = halve_cells(xs) in merge_cells(sort_cells(a), sort_cells(b))) | _ => xs end;
+# the first n squares of a list in order, as a balanced map, and the rest of the list #
+let take_squares = fun (xs, n) : ([Cell], Int) -> if n == 0 then (Leaf, xs) else (let (l, rest) = take_squares(xs, n / 2) in case rest | x :: rest2 => (let (r, rest3) = take_squares(rest2, n - n / 2 - 1) in (Node(l, x, r), rest3)) | [] => (Leaf, []) end);
+# a world's squares as a map, from its cells in any order (put in order first when they are not) #
+let squares = fun xs : [Cell] -> let ys = (if cells_in_order(xs) then xs else sort_cells(xs)) in (let (m, _) = take_squares(ys, count_cells(ys)) in m);
+# the square at (c, r), if the map has one #
+let square = fun (m, c, r) : (Squares, Int, Int) -> case m | Leaf => None | Node(l, x, rt) => if before(c, r, x) then square(l, c, r) else if c == x.col && r == x.row then Some(x) else square(rt, c, r) end;
+# the map with x in its place, replacing the square there, or added below if none was: a map built whole is balanced, one grown square by square need not be #
+let set_square = fun (m, x) : (Squares, Cell) -> case m | Leaf => Node(Leaf, x, Leaf) | Node(l, y, rt) => if before(x.col, x.row, y) then Node(set_square(l, x), y, rt) else if x.col == y.col && x.row == y.row then Node(l, x, rt) else Node(l, y, set_square(rt, x)) end`;
 
 const SCRIPT_TRAP = `# A red lever pulled: flip it, and each pit wired to it opens or shuts. #
 # A blue lever pulled: each of its pits gets a boulder, or loses one. #
@@ -124,23 +143,34 @@ let on_event = fun (g, e) : (Globals, Event) ->
 
 // (ticket 531, phase 2) the world's ways, decided when one is walked through: the square beside this one that way, if it is on the
 // map, there, and has a way back (worldMeets and worldWays' rule, 25-world.js). A way linked to another world stays the JS's.
-const SCRIPT_WORLD = `# Places with no way out on a side, whatever their ways say: the waterfall's N, its cliff. #
+// (ticket 553, an experiment) with_squares: the same rule with the squares held in Common's map (Common.squares, a search tree),
+// so a way costs a lookup, not a walk of the list; on_event, which the game calls, still takes the cells with every way.
+const SCRIPT_WORLD =`# Places with no way out on a side, whatever their ways say: the waterfall's N, its cliff. #
 let no_way = fun (kind, d) : (String, String) -> kind == "waterfall" && d == "N";
 let find = fun (cs, c, r) : ([Cell], Int, Int) -> case cs | [] => None | x :: rest => if x.col == c && x.row == r then Some(x) else find(rest, c, r) end;
 # A way out walked through: into the square beside it, coming in from the side facing back, #
-# if that square is on the map and has a way back; else nowhere. #
+# if that square is on the map and has a way back; else nowhere. look finds a square by its place. #
+let way = fun (g, d, look) ->
+  let (dx, dy) = Common.dir(d) in
+  let c = g.at_col + dx in
+  let r = g.at_row + dy in
+  let back = Common.opp(d) in
+  if c < 0 || r < 0 || c >= g.cols || r >= g.rows then Done
+  else (case look(c, r)
+    | Some(x) => if Common.member(back, x.ways) && !no_way(x.kind, back) then GoSquare(c, r, back, Done) else Done
+    | None => Done
+    end);
+# The world's cells passed in with every way: a way looks through the list. #
 let on_event = fun (g, e) : (Globals, Event) ->
   case e
-  | Way(d) =>
-    let (dx, dy) = Common.dir(d) in
-    let c = g.at_col + dx in
-    let r = g.at_row + dy in
-    let back = Common.opp(d) in
-    if c < 0 || r < 0 || c >= g.cols || r >= g.rows then Done
-    else (case find(g.cells, c, r)
-      | Some(x) => if Common.member(back, x.ways) && !no_way(x.kind, back) then GoSquare(c, r, back, Done) else Done
-      | None => Done
-      end)
+  | Way(d) => way(g, d, fun (c, r) -> find(g.cells, c, r))
+  | _ => Done
+  end;
+# The world's squares held in a map (Common.squares), made once when the world changes: #
+# a way looks up one square, whatever the world's size, and the cells need not come in. #
+let with_squares = fun m : Squares -> fun (g, e) : (Globals, Event) ->
+  case e
+  | Way(d) => way(g, d, fun (c, r) -> Common.square(m, c, r))
   | _ => Done
   end`;
 
