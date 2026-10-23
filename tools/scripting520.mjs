@@ -74,6 +74,7 @@ const msg = (data, { origin = "https://hazel.org", source } = {}) => { for (cons
 
 // ---- the program, from the editors ----
 const panel = new FakeEl("div"); body.append(panel);
+run('state.scripts = { on: false, all: "hazel", common: null, rooms: {} }');   // (ticket 566: every room on Hazel, so each has its editor)
 run("scriptingPanel")(panel);
 const boxes = panel.querySelectorAll("textarea.script-editor");
 ok("an editor per module: Common, then each room's", JSON.stringify(boxes.map(t => t.dataset.module)) === JSON.stringify(["Common", ...run("SCRIPT_ROOMS").map(r => r.name)]), boxes.map(t => t.dataset.module));
@@ -104,7 +105,7 @@ advance(400);
 ok("the timer: the new program posted once, its last \";\" dropped", posts.length === 2 && posts[1].data.modules[1].text === 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Flip(1, Done) end', posts.map(p => p.data.modules[1].text));
 ok("the editors write the state", run("state.scripts.rooms.TrapRoom").startsWith("let on_event") && run("scriptSpec().modules[1].text").endsWith("end"), run("state.scripts.rooms.TrapRoom"));
 // (a 📂 load or a ↺ start over: state replaced, then changed(), whose round of syncs fills the tab again)
-const onBtn = panel.querySelector("button.script-on");
+const onBtn = panel.querySelectorAll("div.script-master")[0].kids.find(b => b.getAttribute("data-engine") === "hazel");   // (ticket 566: the master chip's Hazel)
 run('state = { ...state, scripts: { on: true, common: "let loaded = 1", rooms: { TrapRoom: "let on_event = fun (g, e) : (Globals, Event) -> Done" } } }; for (const f of syncs) f();');
 ok("after a load or a start over, both boxes and the switch show the new state", boxes[0].value === "let loaded = 1" && boxes[1].value === "let on_event = fun (g, e) : (Globals, Event) -> Done"
   && onBtn.getAttribute("aria-pressed") === "true", [boxes.map(b => b.value), onBtn.getAttribute("aria-pressed")]);
@@ -217,7 +218,7 @@ fake(() => ({ ...fine, ok: false, holes: { Common: 0, TrapRoom: 1 } })); run("sc
 const panel3 = new FakeEl("div"); body.append(panel3); run("scriptingPanel")(panel3);
 for (let i = 0; i < 5; i++) await Promise.resolve();
 const said3 = panel3.querySelector(".script-status").textContent, list3 = panel3.querySelector("ul.script-errors").kids.map(li => li.textContent);
-ok("the panel: a hole says the program is not finished, the levers as before, and whose hole", /is not finished, so the levers work as before/.test(said3) && JSON.stringify(list3) === '["TrapRoom: 1 hole to fill"]', [said3, list3]);
+ok("the panel: a hole says the program is not finished, its rooms on their JS, and whose hole", /is not finished, so its rooms run their JS/.test(said3) && JSON.stringify(list3) === '["TrapRoom: 1 hole to fill"]', [said3, list3]);
 panel3.remove();
 
 // ---- the real library ----

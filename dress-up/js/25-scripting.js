@@ -178,15 +178,61 @@ const SCRIPT_LOGIC = (() => { try { const v = new URLSearchParams(location.searc
 // (ticket 542) ?logic=fumola and ?logic=fumola-list: every room's logic through the same rules written in Fumola (25-fumola.js), run
 // by Fumola's wasm build, whatever the panel or the save says; fumola holds the World rule's map in Fumola, fumola-list passes it in
 const SCRIPT_FUMOLA = SCRIPT_LOGIC === "fumola" || SCRIPT_LOGIC === "fumola-list";
-const scriptsOn = () => SCRIPT_LOGIC === "hazel" || SCRIPT_FUMOLA || (SCRIPT_LOGIC !== "js" && !!(state.scripts && state.scripts.on));
 const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntries(SCRIPT_ROOMS.map(r => [r.name, SCRIPT_TEXTS[r.kind] || ""])) });
+
+// (ticket 566, Matthew: "each script box can be either: baked-in JS, or hazel code boxes, or fumola code boxes (3-way chip per code
+// box) ... we default to builtin JS, but there's a \"master toggle\" chip in the game script panel, at the top, that switches the
+// code boxes all"; "let's have the jS versions show up as JS code, but read only. The hazel and fumola boxes are for editing.")
+// Which engine runs a room's rule: "js" (the game's own code), "hazel" or "fumola". A room's own chip (engines[room]) if it has
+// one; else the master chip's (all); else, for a save from before, the old 🧩 switch (on: Hazel). ?logic= overrides all of it.
+const SCRIPT_ENGINES = [["js", "JS"], ["hazel", "🧩 Hazel"], ["fumola", "🍄 Fumola"]];
+function scriptEngine(room) {
+  if (SCRIPT_LOGIC === "hazel") return "hazel";
+  if (SCRIPT_FUMOLA) return "fumola";
+  if (SCRIPT_LOGIC === "js") return "js";
+  const S = state.scripts, e = S && ((S.engines && S.engines[room]) || S.all);
+  return e === "hazel" || e === "fumola" || e === "js" ? e : S && S.on ? "hazel" : "js";
+}
+const scriptsOn = () => SCRIPT_ROOMS.some(r => scriptEngine(r.name) !== "js");
+
+// (ticket 566) the Fumola boxes' texts, as the Hazel boxes' are kept: 📚 Common and each room's module, from 25-fumola.js's
+// shipped rules until edited (read there at run time, as that file comes after this one)
+const SCRIPT_FUMOLA_DEFAULTS = () => typeof FUMOLA_COMMON === "undefined" ? { common: "", rooms: {} }
+  : { common: FUMOLA_COMMON, rooms: { ...FUMOLA_ROOM_TEXTS } };
 
 function scriptsState() {
   const S = state.scripts || (state.scripts = { on: false, common: null, rooms: {} });
   if (S.common == null) S.common = SCRIPT_COMMON;
   S.rooms = S.rooms || {};
   for (const r of SCRIPT_ROOMS) if (S.rooms[r.name] == null) S.rooms[r.name] = SCRIPT_TEXTS[r.kind] || "";
+  S.engines = S.engines || {};
+  const FD = SCRIPT_FUMOLA_DEFAULTS(), F = S.fumola || (S.fumola = { common: null, rooms: {} });
+  if (F.common == null && FD.common) F.common = FD.common;
+  F.rooms = F.rooms || {};
+  for (const r of SCRIPT_ROOMS) if (F.rooms[r.name] == null && FD.rooms[r.name] != null) F.rooms[r.name] = FD.rooms[r.name];
   return S;
+}
+
+// (ticket 566) each room's own JS, as the game runs it: the source of its functions (Function.prototype.toString), never a copy
+// that could drift from them. A name alone is the whole function; [name, from, to] the lines of a long one from the one holding
+// from to the one holding to (the castle's pits are decided inside its scene)
+const SCRIPT_JS = {
+  TrapRoom: ["roomLeverPull", "roomLeverFlip", "roomBoulderPull"],
+  TreeRoom: ["hatchLeverPull", "hatchSet"],
+  Square: ["leverPull", "leverPullApply"],
+  World: ["worldTarget", "worldMeets"],
+  Castle: [["castleroomScene", "where a trap room's pits lead", "const pits ="], "wayOutOf", "scriptGo"],
+};
+function scriptJsSource(room) {
+  return (SCRIPT_JS[room] || []).map(spec => {
+    const [name, from, to] = Array.isArray(spec) ? spec : [spec];
+    const f = typeof window !== "undefined" ? window[name] : undefined;
+    if (typeof f !== "function") return `// ${name}: not in this page`;
+    const src = Function.prototype.toString.call(f);
+    if (!from) return src;
+    const lines = src.split("\n"), a = lines.findIndex(l => l.includes(from)), b = lines.findIndex((l, i) => i >= a && l.includes(to));
+    return a < 0 || b < 0 ? src : `// in ${name}(), the lines that decide it:\n` + lines.slice(a, b + 1).map(l => l.replace(/^ {2}/, "")).join("\n");
+  }).join("\n\n");
 }
 
 // (Matthew: "Names should be unique, and we should enforce that") a module name from a room's or square's name: a capital, then
@@ -415,9 +461,12 @@ function scriptEvent(room, ev) {
   if (!scriptsOn()) return false;
   const R = SCRIPT_ROOMS.find(r => r.name === room), A = R && SCRIPT_ACTS[R.kind];
   if (!A || !A.here(ev)) return false;
-  if (SCRIPT_FUMOLA ? !fumolaReady() : !window.Hazel) { (SCRIPT_FUMOLA ? fumolaLoad() : hazelLoad()).catch(() => {}); return false; }
+  // (ticket 566: the room's own engine; JS, the caller's own code)
+  const eng = scriptEngine(room), fum = eng === "fumola";
+  if (eng === "js") return false;
+  if (fum ? !fumolaReady() : !window.Hazel) { (fum ? fumolaLoad() : hazelLoad()).catch(() => {}); return false; }
   const t0 = performance.now(), Z = hzCounters();
-  const C = SCRIPT_FUMOLA ? fumolaCompile() : scriptCompile(), f = C && C.ready && C.handlers[room];
+  const C = fum ? fumolaCompile() : scriptCompile(), f = C && C.ready && C.handlers[room];
   if (!f) return false;
   let cmd;
   const t1 = performance.now();
@@ -426,7 +475,7 @@ function scriptEvent(room, ev) {
   const act = scriptEvent.act = A.act(ev);   // (kept, for a caller that reads what the walk gathered: scriptGo)
   scriptRun(cmd, act, 0, () => { if (A.done) A.done(ev, act); });
   const t3 = performance.now();
-  const side = SCRIPT_FUMOLA ? Z.fumola || (Z.fumola = {}) : Z.hazel;
+  const side = fum ? Z.fumola || (Z.fumola = {}) : Z.hazel;
   Z.calls++; hzPush(Z.ms, t2 - t1); hzPush(Z.runMs, t3 - t2); hzPush(side[ev.tag] || (side[ev.tag] = []), t3 - t0);
   return true;
 }
@@ -579,58 +628,121 @@ function scriptingPanel(box) {
   const S = scriptsState();
   const status = el("div", { class: "hint script-status" }, "Hazel: loading…");
   const errs = el("ul", { class: "script-errors" });
+  const fstatus = el("div", { class: "hint script-fumola-status" });
+  const ferrs = el("ul", { class: "script-errors script-fumola-errors" });
+  const uses = eng => SCRIPT_ROOMS.some(r => scriptEngine(r.name) === eng);
   const sync = () => {
     scriptFramePost();   // (ticket 520: the tiles, on the same timer)
-    if (!window.Hazel) return;
-    const C = scriptCompile();
-    status.textContent = `Hazel ${window.Hazel.version}: the program ${C.errors.length ? `has ${scriptPlural(C.errors.length, "error", "errors")}, so the levers work as before`
-      : !C.ready ? "is not finished, so the levers work as before" : "is fine"} (analyzed and run in ${Math.round(C.ms)} ms)`;
-    status.title = C.via === "runProgram" ? "built by Hazel from the modules (Hazel.runProgram)" : "joined by the game, run by Hazel.run (this Hazel has no runProgram)";
-    errs.replaceChildren(...[...C.errors.slice(0, 8), ...C.unfinished].map(e => el("li", {}, e)));
+    if (window.Hazel) {
+      const C = scriptCompile();
+      status.textContent = `Hazel ${window.Hazel.version}: the program ${C.errors.length ? `has ${scriptPlural(C.errors.length, "error", "errors")}, so its rooms run their JS`
+        : !C.ready ? "is not finished, so its rooms run their JS" : "is fine"} (analyzed and run in ${Math.round(C.ms)} ms)`;
+      status.title = C.via === "runProgram" ? "built by Hazel from the modules (Hazel.runProgram)" : "joined by the game, run by Hazel.run (this Hazel has no runProgram)";
+      errs.replaceChildren(...[...C.errors.slice(0, 8), ...C.unfinished].map(e => el("li", {}, e)));
+    }
+    // (ticket 566) Fumola's, once a room uses it or its box is shown: loaded then, not before
+    if (typeof fumolaReady !== "function") return;   // (a page without 25-fumola.js)
+    if (!fumolaReady()) { fstatus.textContent = uses("fumola") || boxes.some(b => b.shown() === "fumola") ? "Fumola: loading…" : ""; ferrs.replaceChildren(); return; }
+    const F = fumolaCompile();
+    fstatus.textContent = `Fumola: the rules ${F.errors.length ? "have an error, so its rooms run their JS" : "are fine"} (defined in ${Math.round(F.ms)} ms)`;
+    ferrs.replaceChildren(...F.errors.slice(0, 4).map(e => el("li", {}, e)));
   };
-  hazelLoad().then(sync, () => { status.textContent = "Hazel did not load (it comes from " + SCRIPT_LIB_URL + "): the levers work as before"; });
-  // (each change written to the state as it is now, not as the tab found it: a load or a start over replaces it, and then the
-  // boxes and the switch are filled again from the new one, below)
-  const on = el("button", { class: "script-on", "aria-pressed": String(!!S.on), onclick: () => { const T = scriptsState(); T.on = !T.on; setPressed(on, T.on); changed(); } },
-    "🧩 the levers run by these scripts (the trap room's, the tree houses' trap doors, placed levers)");
+  const wantFumola = () => typeof fumolaLoad !== "function" ? null : fumolaLoad().then(sync, () => { fstatus.textContent = "Fumola did not load (the game's copy, " + FUMOLA_BUILD + "): its rooms run their JS"; });
+  hazelLoad().then(sync, () => { status.textContent = "Hazel did not load (it comes from " + SCRIPT_LIB_URL + "): its rooms run their JS"; });
+  if (uses("fumola")) wantFumola();
   let timer = null;
-  const editor = (title, modName, get, put) => {
+  const later = () => { clearTimeout(timer); timer = setTimeout(() => { changed(); sync(); }, 600); };
+  // (each change written to the state as it is now, not as the tab found it: a load or a start over replaces it, and then the
+  // boxes are filled again from the new one, below)
+  const editor = (modName, get, put) => {
     const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", "data-module": modName });
     ta.value = get(); ta.refill = () => { ta.value = get(); };
-    ta.addEventListener("input", () => { put(ta.value); clearTimeout(timer); timer = setTimeout(() => { changed(); sync(); }, 600); });
+    ta.addEventListener("input", () => { put(ta.value); later(); });
     // (the game's keys move the friend: in an editor they are the editor's)
     ta.addEventListener("keydown", e => e.stopPropagation());
-    return el("section", { class: "box script-box" }, [el("div", { class: "box-name" }, title), el("div", { class: "hint" }, `module ${modName}`), ta]);
+    return ta;
   };
+  // (ticket 566) a chip per engine; on, the one shown (and, for a room, the one that runs)
+  const chips = (now, pick, cls) => {
+    const bs = SCRIPT_ENGINES.map(([v, lab]) => [v, el("button", { "data-engine": v, "aria-pressed": String(now() === v), onclick: () => pick(v) }, lab)]);
+    const row = el("div", { class: "row script-engines " + cls }, bs.map(([, b]) => b));
+    row.refresh = () => { for (const [v, b] of bs) setPressed(b, now() === v); };
+    return row;
+  };
+  // a room's box: its chip, then its code in that engine. JS: the game's own functions, to read; Hazel and Fumola: to edit
+  const roomBox = r => {
+    const body = el("div", { class: "script-body" });
+    let shown = null;
+    const show = () => {
+      const eng = shown = scriptEngine(r.name);
+      if (eng === "js") body.replaceChildren(el("div", { class: "hint" }, "the game's own code, as it runs (to read: switch to Hazel or Fumola to write the rule)"),
+        el("pre", { class: "script-js", tabindex: "0" }, scriptJsSource(r.name)));
+      else if (eng === "hazel") body.replaceChildren(el("div", { class: "hint" }, `module ${r.name}, in Hazel`),
+        editor(r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; }));
+      else body.replaceChildren(el("div", { class: "hint" }, `module ${r.name}, in Fumola`),
+        editor(r.name, () => scriptsState().fumola.rooms[r.name] || "", v => { scriptsState().fumola.rooms[r.name] = v; }));
+    };
+    const row = chips(() => scriptEngine(r.name), v => { const T = scriptsState(); T.engines[r.name] = v; if (v === "fumola") wantFumola(); refresh(); changed(); sync(); }, "script-room-engines");
+    const sec = el("section", { class: "box script-box", "data-room": r.name }, [el("div", { class: "box-name" }, r.label), row, body]);
+    sec.refresh = () => { row.refresh(); if (shown !== scriptEngine(r.name)) show(); else for (const ta of body.querySelectorAll("textarea.script-editor")) ta.refill(); };
+    sec.shown = () => shown;
+    show();
+    return sec;
+  };
+  // 📚 Common: the helpers the Hazel or the Fumola rooms call; its chip only chooses which to show (the JS has none: each function
+  // carries its own)
+  const commonBox = () => {
+    const body = el("div", { class: "script-body" });
+    const view = () => { const v = scriptsState().commonView; return v === "hazel" || v === "fumola" || v === "js" ? v : uses("fumola") && !uses("hazel") ? "fumola" : "hazel"; };
+    let shown = null;
+    const show = () => {
+      const v = shown = view();
+      if (v === "js") body.replaceChildren(el("div", { class: "hint" }, "The game's JS has no common module: each room's functions carry what they need (switch a room to JS to read them)."));
+      else if (v === "hazel") body.replaceChildren(el("div", { class: "hint" }, "module Common, in Hazel: in scope in every Hazel room, as Common.name"),
+        editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }));
+      else body.replaceChildren(el("div", { class: "hint" }, "module Common, in Fumola: in scope in every Fumola room, as Common.name"),
+        editor("Common", () => scriptsState().fumola.common || "", t => { scriptsState().fumola.common = t; }));
+    };
+    const row = chips(view, v => { scriptsState().commonView = v; if (v === "fumola") wantFumola(); show(); row.refresh(); changed(); }, "script-common-engines");
+    const sec = el("section", { class: "box script-box", "data-room": "Common" }, [el("div", { class: "box-name" }, "📚 Common"), row, body]);
+    sec.refresh = () => { row.refresh(); if (shown !== view()) show(); else for (const ta of body.querySelectorAll("textarea.script-editor")) ta.refill(); };
+    sec.shown = () => shown;
+    show();
+    return sec;
+  };
+  // the master chip: every room at once (its own chips forgotten), and 📚 Common shown in that engine; none on while rooms differ
+  const allNow = () => { const es = new Set(SCRIPT_ROOMS.map(r => scriptEngine(r.name))); return es.size === 1 ? [...es][0] : "mixed"; };
+  const master = chips(allNow, v => { const T = scriptsState(); T.all = v; T.engines = {}; T.on = v === "hazel"; T.commonView = v; if (v === "fumola") wantFumola(); refresh(); changed(); sync(); }, "script-master");
+  const mixed = el("span", { class: "hint script-mixed" });
+  const boxes = [commonBox(), ...SCRIPT_ROOMS.map(roomBox)];
+  const refresh = () => { master.refresh(); mixed.textContent = allNow() === "mixed" ? "rooms differ: each box's chip says which runs" : ""; for (const b of boxes) b.refresh(); };
   // (ticket 520) Hazel's tiles: made once the tab is laid out (scriptFrameMount)
   const tiles = el("section", { class: "box script-box script-tiles" }, [
-    el("div", { class: "box-name" }, "🧩 the whole program, in Hazel's tiles"),
+    el("div", { class: "box-name" }, "🧩 the Hazel program, in Hazel's tiles"),
     el("div", { class: "hint script-frame-status" }, "Hazel's tiles start once this tab is open."),
     el("ul", { class: "script-errors script-frame-errors" }),
     el("div", { class: "script-frame-wrap" }),
-    el("div", { class: "hint" }, "For looking: the tiles show what the text boxes hold, with Hazel's own marks where something is wrong; you write in the boxes above. A click in the tiles leaves the keys with the game."),
+    el("div", { class: "hint" }, "For looking: the tiles show what the Hazel boxes hold, with Hazel's own marks where something is wrong; you write in the boxes above. A click in the tiles leaves the keys with the game."),
   ]);
   box.append(
-    el("div", { class: "hint" }, "The game's logic in Hazel: each editor is a module of one program; 📚 Common's are in scope in every room's, as Common.name. A room's on_event(globals, event) gives what to do, as Cmd, each command with the rest after it: Flip(\"lever_L\", then), SetPit(0, true, then), DropBoulder(0, then), SetHatch(2, false, then), OpenDoor(3, true, then), Say(\"words\", then), Wait(500, then), Done."),
-    ...(SCRIPT_LOGIC ? [el("div", { class: "hint" }, SCRIPT_LOGIC === "hazel" ? "This page was opened with ?logic=hazel: the levers run the shipped scripts, whatever is in the boxes or the switch."
-      : SCRIPT_FUMOLA ? `This page was opened with ?logic=${SCRIPT_LOGIC}: the levers and the ways run the same rules written in Fumola (below, to read), in Fumola's wasm build, whatever is in the boxes or the switch.`
-      : "This page was opened with ?logic=js: the levers run the game's own code, whatever the switch says.")] : []),
-    el("div", { class: "row" }, [on]), status, errs,
-    editor("📚 Common", "Common", () => scriptsState().common, v => { scriptsState().common = v; }),
-    ...SCRIPT_ROOMS.map(r => editor(r.label, r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; })),
+    el("div", { class: "hint" }, "The game's logic, room by room, in one of three: the game's own JS (to read), or a rule you can write in Hazel or in Fumola. A rule's on_event(globals, event) gives what to do, as Cmd, each command with the rest after it: Flip(\"lever_L\", Done) flips the left lever. 📚 Common's helpers are in scope in every room of its language, as Common.name. A rule that has an error, or is not finished, leaves its room to the JS."),
+    ...(SCRIPT_LOGIC ? [el("div", { class: "hint" }, SCRIPT_LOGIC === "hazel" ? "This page was opened with ?logic=hazel: every room runs the shipped Hazel rules, whatever the chips or the boxes say."
+      : SCRIPT_FUMOLA ? `This page was opened with ?logic=${SCRIPT_LOGIC}: every room runs the shipped Fumola rules, in Fumola's wasm build, whatever the chips or the boxes say.`
+      : "This page was opened with ?logic=js: every room runs the game's own code, whatever the chips say.")] : []),
+    el("div", { class: "box-name" }, "every room"), master, mixed,
+    status, errs, fstatus, ferrs,
+    ...boxes,
     tiles,
-    el("details", { class: "script-preamble" }, [el("summary", {}, "what every module can name (the program's start)"), el("pre", {}, SCRIPT_PREAMBLE)]),
-    // (ticket 542) under ?logic=fumola or fumola-list, the rules that run, in Fumola
-    ...(SCRIPT_FUMOLA ? [el("details", { class: "script-preamble" }, [el("summary", {}, "the rules in Fumola, as they run under ?logic=" + SCRIPT_LOGIC), el("pre", {}, FUMOLA_SOURCE)])] : []),
+    el("details", { class: "script-preamble" }, [el("summary", {}, "what every Hazel module can name (the program's start)"), el("pre", {}, SCRIPT_PREAMBLE)]),
   );
-  // (a 📂 load or a ↺ start over replaces state, and so state.scripts, with the tab open: each box and the switch filled again from
+  refresh();
+  // (a 📂 load or a ↺ start over replaces state, and so state.scripts, with the tab open: each box and chip filled again from
   // the new one, before a keystroke can write the old box's text into it, and Hazel and the tiles told; per round, one compare)
   let filled = S;
   syncs.push(() => {
     if (state.scripts === filled) return;
     filled = scriptsState();
-    for (const ta of box.querySelectorAll("textarea.script-editor")) ta.refill();
-    setPressed(on, filled.on);
+    refresh();
     clearTimeout(timer); sync();
   });
   // (after showTab: its layout moves the rows, and a frame moved in the page loads again; after the tab's first paint, too)

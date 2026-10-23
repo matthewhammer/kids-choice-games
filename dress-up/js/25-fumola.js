@@ -214,6 +214,15 @@ const FUMOLA_CASTLE = `module Castle {
 // the whole program, defined once in an instance; and each room's module (SCRIPT_ROOMS' names)
 const FUMOLA_SOURCE = [FUMOLA_COMMON, FUMOLA_TRAP, FUMOLA_TREE, FUMOLA_SQUARE, FUMOLA_WORLD, FUMOLA_CASTLE].join(";\n");
 const FUMOLA_ROOMS = ["TrapRoom", "TreeRoom", "Square", "World", "Castle"];
+// (ticket 566) each room's text by its module's name, for the 🧩 panel's Fumola boxes (25-scripting.js keeps them, edited, in
+// state.scripts.fumola), and the program the boxes make: 📚 Common, then the rooms in this order. Under ?logic=fumola or
+// fumola-list, the shipped rules, whatever the boxes hold, as ?logic=hazel runs the shipped Hazel
+const FUMOLA_ROOM_TEXTS = { TrapRoom: FUMOLA_TRAP, TreeRoom: FUMOLA_TREE, Square: FUMOLA_SQUARE, World: FUMOLA_WORLD, Castle: FUMOLA_CASTLE };
+function fumolaSource() {
+  if (typeof SCRIPT_FUMOLA === "undefined" || SCRIPT_FUMOLA || typeof scriptsState !== "function") return FUMOLA_SOURCE;
+  const F = scriptsState().fumola;
+  return [F.common, ...FUMOLA_ROOMS.map(r => F.rooms[r] || "")].map(t => String(t || "").replace(/;\s*$/, "").trim()).filter(Boolean).join(";\n");
+}
 
 // A JS value as a Fumola literal: true/false; a whole number (a Nat, or an Int below 0); a text, quoted, which may
 // hold no quote, backslash or character outside printable ASCII (Fumola's text literals have no escapes; the game's kinds, uids,
@@ -266,7 +275,7 @@ const fumolaGlobals = g => g.draws && g.draws.length ? { ...g, draws: g.draws.ma
 // the build has it; defining the rules and holding the map run at the top level (fumola_eval_top), and stay. mode: "fumola" (the
 // World rule's map held in the instance, made again when the cells change: their text is the signature) or "fumola-list" (the
 // map passed in each call). An answer that is not ok throws, with Fumola's words.
-function fumolaRules(F, mode = "fumola") {
+function fumolaRules(F, mode = "fumola", source = FUMOLA_SOURCE) {
   const now = () => (typeof performance === "object" ? performance.now() : Date.now());
   const id = F.fumola_create(), scratch = typeof F.fumola_eval_scratch === "function";
   const run = (text, keep) => {
@@ -275,7 +284,7 @@ function fumolaRules(F, mode = "fumola") {
     return r;
   };
   const t0 = now();
-  run(FUMOLA_SOURCE, true);
+  run(source, true);
   const ms = now() - t0;
   const call = text => fumolaValue(run(text, false));
   const on = room => (g, ev) => call(`${room}.on_event(${fumolaLit(fumolaGlobals(g))}, ${fumolaLit(ev)})`);
@@ -301,15 +310,18 @@ function fumolaLoad() {
   return fumolaLoading;
 }
 const fumolaReady = () => !!fumolaBuild;
-// (scriptCompile's shape: ready, handlers, errors, ms; once, as the rules are the shipped ones)
+// (scriptCompile's shape: ready, handlers, errors, ms; once per text, as Hazel's: ticket 566's boxes can change it. A new text gets a
+// new instance, and the old one is dropped)
 let fumolaCompiled = null;
 function fumolaCompile() {
   if (!fumolaBuild) return null;
-  if (fumolaCompiled) return fumolaCompiled;
+  const source = fumolaSource();
+  if (fumolaCompiled && fumolaCompiled.source === source) return fumolaCompiled;
+  if (fumolaCompiled && fumolaCompiled.rules && typeof fumolaBuild.fumola_drop === "function") try { fumolaBuild.fumola_drop(fumolaCompiled.rules.id); } catch (e) {}
   try {
-    const R = fumolaRules(fumolaBuild, SCRIPT_LOGIC);
-    fumolaCompiled = { via: "fumola", ready: true, errors: [], unfinished: [], handlers: R.handlers, ms: R.ms, rules: R };
-  } catch (e) { fumolaCompiled = { via: "fumola", ready: false, errors: [String(e && e.message || e)], unfinished: [], handlers: {}, ms: 0 }; }
+    const R = fumolaRules(fumolaBuild, SCRIPT_LOGIC === "fumola-list" ? "fumola-list" : "fumola", source);
+    fumolaCompiled = { via: "fumola", ready: true, errors: [], unfinished: [], handlers: R.handlers, ms: R.ms, rules: R, source };
+  } catch (e) { fumolaCompiled = { via: "fumola", ready: false, errors: [String(e && e.message || e)], unfinished: [], handlers: {}, ms: 0, source }; }
   hzPush(hzCounters().compileMs, fumolaCompiled.ms);
   return fumolaCompiled;
 }

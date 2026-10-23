@@ -63,6 +63,7 @@ try {
     window.__G = { gaps: [], last: 0, on: true, t0: performance.now(), lib: null };
     const g = t => { if (!__G.on) return; if (__G.last) __G.gaps.push(+(t - __G.last).toFixed(1)); __G.last = t; if (__G.lib == null && window.Hazel) __G.lib = Math.round(performance.now() - __G.t0); requestAnimationFrame(g); };
     requestAnimationFrame(g);
+    state.scripts = { on: false, all: "hazel", common: null, rooms: {} };   // (ticket 566: every room on Hazel, so each shows its editor)
     tab = TABS.findIndex(t => t[1] === "scripting"); showTab(); await w(300);
     out.editors = [...document.querySelectorAll("#panel textarea.script-editor")].map(t => t.dataset.module);
     out.names = scriptNames(); out.dedupe = scriptModuleName("Trap Room", new Set(["TrapRoom"]));
