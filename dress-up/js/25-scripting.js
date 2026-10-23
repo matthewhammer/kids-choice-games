@@ -28,7 +28,9 @@ const SCRIPT_BUILD = "https://hazel.org/build/js-library-embed/";
 const SCRIPT_LIB_URL = SCRIPT_BUILD + "hazel-lib.js";
 // (the frame's messages are taken from this origin only, and posted to it only: SCRIPT_BUILD's)
 const SCRIPT_HAZEL_ORIGIN = SCRIPT_BUILD.split("/").slice(0, 3).join("/");
-const SCRIPT_FRAME_URL = SCRIPT_BUILD + "index.html#embed";
+// (ticket 578) the tiles from embed-editable (stacked on embed-selectable, on #2719's branch): the frame that takes edits; the
+// library stays SCRIPT_BUILD's, the same Hazel otherwise
+const SCRIPT_FRAME_URL = "https://hazel.org/build/embed-editable/index.html#embed";
 
 // the rooms that have logic so far, each a module of the program; module names must be unique (scriptNames checks it)
 const SCRIPT_ROOMS = [
@@ -591,7 +593,7 @@ function scriptFrameMount(holder) {
   }
   const wrap = holder.querySelector(".script-frame-wrap");
   const iframe = el("iframe", { class: "script-frame", src: SCRIPT_FRAME_URL, tabindex: "-1",
-    title: "Hazel's tiles: the whole program, read only, with Hazel's own marks where something is wrong" });
+    title: SCRIPT_TILES_EDIT ? "Hazel's tiles: the whole program, to edit, with Hazel's own marks where something is wrong" : "Hazel's tiles: the whole program, read only, with Hazel's own marks where something is wrong" });
   const F = scriptFrame = { iframe, holder, phase: "loading", made: performance.now(), readyMs: null, build: null, sent: null, status: null, height: 0, why: "",
     crashes: [], oops: "", blurs: 0, inView: undefined, waited: 0, quiet: 0, tick: 0, seen: null };
   wrap.replaceChildren(iframe);
@@ -614,6 +616,7 @@ function scriptFrameMessage(e) {
     if (m.protocol !== 1) { scriptFrameStop(F, "crashed", `they speak protocol ${m.protocol}, and this game knows protocol 1`); return; }
     if (F.phase === "loading") { F.phase = "ready"; F.readyMs = performance.now() - F.made; }
     F.build = m.build || null; F.sent = null;
+    if (SCRIPT_TILES_EDIT) F.iframe.contentWindow.postMessage({ type: "editable", on: true }, SCRIPT_HAZEL_ORIGIN);
     scriptFramePost();
     // (a frame that takes no program says nothing back: it takes programs only from the pages it knows, EmbedProtocol.re's
     // site_origins and dev_hosts, so a copy of the game served from elsewhere, or from disk, has no tiles; said, after a while)
@@ -623,6 +626,7 @@ function scriptFrameMessage(e) {
     if (h !== F.height) { F.height = h; F.iframe.style.height = h + "px"; }
     return;
   } else if (m.type === "status") F.status = m;
+  else if (m.type === "edit") { scriptTilesEdit(F, m.text); return; }
   else if (m.type === "crash") {
     const why = String(m.message || ""), t = performance.now();
     // (before ready, or again and again: taken away; otherwise said, and the tiles kept, as Hazel keeps its last program and goes on)
@@ -632,6 +636,44 @@ function scriptFrameMessage(e) {
   }
   else return;
   scriptFrameShow(F);
+}
+// (ticket 578, Matthew: "a real tile editing experience is top priority now") the tiles take edits: the page asks for an editable
+// cell ({type: "editable", on: true}, embed-editable's protocol), and after each edit the frame posts the program's text, as Hazel
+// lays it out ({type: "edit", text, edits}). Its modules are found in it (scriptTilesModules) and written to the Hazel boxes, and
+// that program is noted as the frame's own, so it is not posted back (which would set it again, and lose the caret)
+const SCRIPT_TILES_EDIT = true;
+// each module's body in a program's text: module Name = { ... } in, the braces matched outside strings and # comments #; the
+// body's common indent taken off. null when a module's braces do not match
+function scriptTilesModules(text) {
+  const out = {}, re = /(^|\n)\s*module\s+([A-Za-z_]\w*)\s*=\s*\{/g;
+  let m;
+  while ((m = re.exec(text))) {
+    let i = re.lastIndex, depth = 1;
+    for (; i < text.length && depth > 0; i++) {
+      const c = text[i];
+      if (c === '"') { for (i++; i < text.length && text[i] !== '"' && text[i] !== "\n"; i++) if (text[i] === "\\") i++; }
+      else if (c === "#") { for (i++; i < text.length && text[i] !== "#" && text[i] !== "\n"; i++); }
+      else if (c === "{") depth++;
+      else if (c === "}") depth--;
+    }
+    if (depth !== 0) return null;
+    const lines = text.slice(re.lastIndex, i - 1).replace(/^\s*\n/, "").replace(/\s+$/, "").split("\n");
+    const ind = Math.min(...lines.filter(l => l.trim()).map(l => l.match(/^ */)[0].length));
+    out[m[2]] = lines.map(l => l.slice(Number.isFinite(ind) ? ind : 0)).join("\n");
+    re.lastIndex = i;
+  }
+  return out;
+}
+let scriptTilesEdited = null;   // (the panel's hook: boxes filled again, the program saved and compiled; scriptingPanel sets it)
+function scriptTilesEdit(F, text) {
+  const mods = scriptTilesModules(String(text || ""));
+  if (!mods) return;
+  const S = scriptsState();
+  let any = false;
+  if (mods.Common != null && mods.Common !== S.common) { S.common = mods.Common; any = true; }
+  for (const r of SCRIPT_ROOMS) if (mods[r.name] != null && mods[r.name] !== S.rooms[r.name]) { S.rooms[r.name] = mods[r.name]; any = true; }
+  F.sent = JSON.stringify(scriptSpec());   // (the frame has this one: not posted back)
+  if (any && scriptTilesEdited) scriptTilesEdited();
 }
 // the program to the frame, when it is ready and the program is not the one it has
 function scriptFramePost() {
@@ -646,7 +688,7 @@ function scriptFramePost() {
 function scriptFrameBlur() {
   setTimeout(() => {
     const F = scriptFrame;
-    if (!F || document.activeElement !== F.iframe) return;
+    if (!F || document.activeElement !== F.iframe || SCRIPT_TILES_EDIT) return;   // (578: tiles that take edits keep the keys)
     F.blurs++; F.iframe.blur(); window.focus();
   }, 200);
 }
@@ -885,7 +927,13 @@ function scriptMaxJump(box, node, line, end = line) {
     const at = node.value.split("\n").slice(0, line).reduce((n, l) => n + l.length + 1, 0);
     node.scrollIntoView({ block: "nearest" });
     node.focus({ preventScroll: true }); node.setSelectionRange(at, at);
-    node.scrollTop = Math.max(0, line * parseFloat(getComputedStyle(node).lineHeight) - 8);
+    const cs = getComputedStyle(node), lh = parseFloat(cs.lineHeight);
+    node.scrollTop = Math.max(0, line * lh - 8);
+    // (Matthew, 2026-10-23: "need to scroll to things even if not visible in viewport") a text box as tall as its text does not
+    // scroll itself: the view around it does, to the line
+    const y = node.getBoundingClientRect().top + parseFloat(cs.paddingTop) + line * lh - node.scrollTop;
+    const view = M.main, top = view.getBoundingClientRect().top;
+    if (y < top + 8 || y > top + view.clientHeight - 2 * lh) view.scrollTop += y - top - 40;
   } else {
     const mark = node.querySelectorAll(".ln")[line];
     if (mark) mark.scrollIntoView({ block: "start" });
@@ -953,6 +1001,16 @@ function scriptTypeKind(def) {
   const body = def.slice(def.indexOf("=") + 1).replace(/\s+in\s*$/, "").trim();
   return body.startsWith("+") ? "sum" : /->/.test(body.replace(/\([^()]*\)/g, "")) ? "fn" : body.startsWith("(") ? "product" : body.startsWith("[") ? "list" : "alias";
 }
+// (Matthew: "for functions, let's say N lines --- and when they have type () -> ... no params, and no result, just effects, ---
+// let's use the magic wand emoji") a function's line count, right-justified, and 🪄 for one that takes nothing and only acts:
+// Hazel's, by its inferred type (() -> Cmd, () -> ()); Fumola's and JS's, by no parameters and no return of a value
+const fnTail = (lang, sig, ls) => {
+  const head = ls[0] || "";
+  const wand = sig ? /^\(\)\s*->\s*(\(\)|Cmd)$/.test(sig)
+    : lang !== "hazel" && /\(\s*\)/.test(head) && !ls.some(l => /\breturn\s+[^;\s]/.test(l));
+  return el("span", { class: "script-max-tail" }, [el("span", { class: "script-max-cases" }, ls.length + (ls.length === 1 ? " line" : " lines")),
+    el("span", { class: "script-max-tkind", title: wand ? "takes nothing, and only acts" : "", "aria-label": wand ? "takes nothing, and only acts" : "" }, wand ? "🪄" : "")]);
+};
 const cases = def => {
   const n = scriptCases(def), [emoji, what] = SCRIPT_TYPE_KINDS[scriptTypeKind(def)];
   return [el("span", { class: "script-max-tail" }, [...(n ? [el("span", { class: "script-max-cases" }, n + (n === 1 ? " case" : " cases"))] : []),
@@ -975,7 +1033,7 @@ function scriptMaxNav() {
       const sig = o.kind === "fn" && lang === "hazel" && types ? types.get(modOf(b) + "." + o.name) : null;
       return el("button", { class: "script-max-sub script-max-" + o.kind + (sig ? " script-max-sig" : ""), title: (o.kind === "type" ? "type " : "") + o.name + ", lines " + (o.line + 1) + "-" + (end + 1), onclick: () => scriptMaxJump(b, node, o.line, end) },
         o.kind === "type" ? [el("span", { class: "script-max-kind" }, "type"), el("span", { class: "script-max-tname" }, o.name), ...cases(lines.slice(o.line, end + 1).join(" "))]
-          : sig ? [el("span", {}, o.name), el("span", { class: "script-max-type-sig", title: o.name + " : " + sig }, ": " + sig)] : o.name); }); });
+          : [el("span", { class: "script-max-fname" }, [o.name, fnTail(lang, sig, lines.slice(o.line, end + 1))]), ...(sig ? [el("span", { class: "script-max-type-sig", title: o.name + " : " + sig }, ": " + sig)] : [])]); }); });
     return el("div", { class: "script-max-group" }, [a, ...(subs.length ? [el("div", { class: "script-max-subs" }, subs)] : [])]);
   }));
 }
@@ -1165,12 +1223,15 @@ function scriptingPanel(box) {
   const refresh = () => { master.refresh(); mixed.textContent = allNow() === "mixed" ? "mixed" : ""; for (const b of boxes) b.refresh(); scriptMaxNav(); };
   // (ticket 520) Hazel's tiles: made once the tab is laid out (scriptFrameMount)
   const tiles = el("section", { class: "box script-box script-tiles" }, [
-    el("div", { class: "box-name" }, "🧩 the Hazel program, in Hazel's tiles"),
+    el("div", { class: "box-name" }, ["🧩 the Hazel program, in Hazel's tiles", maxBtn(() => tiles)]),
     el("div", { class: "hint script-frame-status" }, "Hazel's tiles start once this tab is open."),
     el("ul", { class: "script-errors script-frame-errors" }),
     el("div", { class: "script-frame-wrap" }),
-    el("div", { class: "hint" }, "For looking: the tiles show what the Hazel boxes hold, with Hazel's own marks where something is wrong; you write in the boxes above. A click in the tiles leaves the keys with the game."),
+    el("div", { class: "hint" }, SCRIPT_TILES_EDIT ? "Type in the tiles: each edit goes to the Hazel boxes, and theirs to the tiles. A click on the game gives its keys back." : "For looking: the tiles show what the Hazel boxes hold, with Hazel's own marks where something is wrong; you write in the boxes above. A click in the tiles leaves the keys with the game."),
   ]);
+  tiles.shown = () => "hazel"; tiles.refresh = () => {};
+  // (578) an edit in the tiles: the boxes filled again from it, saved, and compiled a moment later (not posted back: scriptTilesEdit)
+  scriptTilesEdited = () => { refresh(); changed(); clearTimeout(timer); timer = setTimeout(sync, 600); };
   box.append(
     ...(SCRIPT_LOGIC ? [el("div", { class: "hint" }, SCRIPT_LOGIC === "hazel" ? "This page was opened with ?logic=hazel: every room runs the shipped Hazel rules, whatever the chips or the boxes say."
       : SCRIPT_FUMOLA ? `This page was opened with ?logic=${SCRIPT_LOGIC}: every room runs the shipped Fumola rules, in Fumola's wasm build, whatever the chips or the boxes say.`

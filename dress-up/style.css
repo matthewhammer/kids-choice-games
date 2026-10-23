@@ -1048,7 +1048,8 @@ body.script-nolines .script-box pre .ln { font-size: 0; min-width: 0; margin: 0;
 .script-max-sub:hover, .script-max-sub:focus-visible { background: color-mix(in srgb, #7c3aed 16%, transparent); }
 .script-max-kind { color: #7c3aed; font-weight: 600; }
 .script-max-type { display: flex; align-items: baseline; }
-.script-max-sig { display: flex; flex-direction: column; }
+.script-max-sig, .script-max-fn { display: flex; flex-direction: column; }
+.script-max-fname { display: flex; align-items: baseline; }
 .script-max-type-sig { color: var(--muted, GrayText); font-size: 0.88em; padding-left: 1ch; white-space: normal; }
 .script-max-tail { margin-left: auto; padding-left: 1ch; display: inline-flex; gap: 0.8ch; align-items: baseline; }
 .script-max-cases { color: var(--muted, GrayText); font-size: 0.9em; }
