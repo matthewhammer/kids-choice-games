@@ -27,7 +27,12 @@ try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.bringToFront"); await send("Emulation.setFocusEmulationEnabled", { enabled: true });
-  await send("Page.navigate", { url }); await sleep(5000);
+  // (the pictures without the CI's #inspect overlays: a report's and a thumbnail's, not a test's)
+  // (dark, Matthew 2026-10-23: "use dark mode screenshots in report please": the browser's preference dark, and the game's theme
+  // switch on dark, so Hazel's tiles take dark and high contrast from the page)
+  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
+  await send("Page.navigate", { url: url.replace(/#inspect$/, "") }); await sleep(5000);
+  await ev(`(() => { try { themeSet("dark"); } catch (e) {} return 1; })()`);
   // ---- 1. the pit room: its picture, its rule in tiles, its three scripts ----
   const pic = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
     state = clone(DEFAULTS); state.music.mute = true;
@@ -50,6 +55,7 @@ try {
   await shot("out/r32/trap-tiles.png");
   console.log("ok   pictures and the trap room's three scripts written (out/r32)");
   // ---- 2. as the code grows, and an edit at each size ----
+  await send("Emulation.setEmulatedMedia", { features: [] });
   await send("Page.navigate", { url }); await sleep(5000);
   for (const eng of ["hazel", "fumola"]) for (const k of [1, 2, 4, 8, 16]) {
     try {
@@ -61,17 +67,19 @@ try {
         const base = __base[eng];
         let text = base;
         if (eng === "hazel") { for (let c = 1; c < k; c++) text += ";\\n" + base.replace(/^let (\\w+) =/gm, "let $1_" + c + " =").replace(/;\\s*$/, ""); S.common = text; }
-        else { const body = base.slice(base.indexOf("{") + 1, base.lastIndexOf("}")); let extra = ""; for (let c = 1; c < k; c++) extra += body.replace(/func (\\w+)\\(/g, "func $1_" + c + "(").replace(/public type [\\s\\S]*?};\\n/g, ""); S.fumola.common = base.slice(0, base.lastIndexOf("}")) + extra + "}"; }
+        else { const body = base.slice(base.indexOf("{") + 1, base.lastIndexOf("}")); let extra = ""; for (let c = 1; c < k; c++) extra += (extra ? ";" : "") + body.replace(/func (\\w+)\\(/g, "func $1_" + c + "(").replace(/public type [\\s\\S]*?};\\n/g, ""); S.fumola.common = base.slice(0, base.lastIndexOf("}")).replace(/\\s*$/, "") + (extra ? ";" + extra.replace(/\\s*$/, "") : "") + "\\n}"; }
         const lines = (eng === "hazel" ? S.common : S.fumola.common).split("\\n").length;
         if (eng === "hazel") { if (!window.Hazel) await hazelLoad(); } else { await fumolaLoad(); }
         const compile = () => { const t = performance.now(); const C = eng === "hazel" ? scriptCompile() : fumolaCompile(); return { ms: performance.now() - t, ok: eng === "hazel" ? !!(C && C.ready) : !!(C && C.ready) }; };
         const first = compile();
+        if (!first.ok) { const C = eng === "hazel" ? scriptCompile() : fumolaCompile(); return JSON.stringify({ eng, k, lines, first: first.ms, error: "not ready at first", why: String(((C && C.errors) || [])[0] || (C && C.unfinished && C.unfinished[0]) || "").slice(0, 300) }); }
         // edits: a definition added to Common each time, compiled until ready again
         const edits = [];
         for (let e = 0; e < 5; e++) {
           if (eng === "hazel") S.common = S.common.replace(/;?\\s*$/, "") + ";\\nlet edit_" + k + "_" + e + " = " + e;
-          else S.fumola.common = S.fumola.common.slice(0, S.fumola.common.lastIndexOf("}")) + "  public func edit_" + k + "_" + e + "() : Int { " + e + " };\\n}";
-          const c = compile(); edits.push(+c.ms.toFixed(2)); if (!c.ok) return JSON.stringify({ eng, k, lines, error: "not ready after an edit" });
+          else S.fumola.common = S.fumola.common.slice(0, S.fumola.common.lastIndexOf("}")).replace(/\\s*$/, "") + ";\\n  public func edit_" + k + "_" + e + "() : Int { " + e + " }\\n}";
+          const c = compile(); edits.push(+c.ms.toFixed(2));
+          if (!c.ok) { const C = eng === "hazel" ? scriptCompile() : fumolaCompile(); return JSON.stringify({ eng, k, lines, edit_ms: c.ms, error: "not ready after an edit", why: String(((C && C.errors) || [])[0] || (C && C.unfinished && C.unfinished[0]) || "").slice(0, 300) }); }
           await w(50);
         }
         // Hazel's analysis of the whole program, as the tiles redo it after an edit
