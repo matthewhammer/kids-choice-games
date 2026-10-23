@@ -1018,7 +1018,8 @@ body.designer-big .crumbs { display: none; }
 pre.script-ln { margin: 0; overflow: hidden; text-align: right; user-select: none; color: var(--muted, GrayText); opacity: 0.75;
   font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); padding: 7px 6px 7px 0; }
 .script-box pre .ln { display: inline-block; min-width: 2.5ch; margin-right: 1.5ch; text-align: right; color: var(--muted, GrayText); opacity: 0.75; user-select: none; }
-body.script-nolines pre.script-ln, body.script-nolines .script-box pre .ln { display: none; }
+body.script-nolines pre.script-ln { display: none; }
+body.script-nolines .script-box pre .ln { font-size: 0; min-width: 0; margin: 0; }   /* (kept, empty: the outline scrolls to them, 582) */
 .script-edit textarea.script-editor { position: relative; z-index: 1; scrollbar-gutter: stable; background: transparent; color: transparent; caret-color: var(--ink, CanvasText); }
 .script-edit textarea.script-editor::selection { background: color-mix(in srgb, #3b82f6 30%, transparent); color: transparent; }
 .script-edit pre.script-hl { position: absolute; inset: 0; margin: 0; overflow: hidden; scrollbar-gutter: stable; pointer-events: none; white-space: pre;
@@ -1036,6 +1037,13 @@ body.script-nolines pre.script-ln, body.script-nolines .script-box pre .ln { dis
 .script-max-nav { display: flex; flex-direction: column; gap: 3px; }
 .script-max-item { display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 5px 8px; border-radius: 6px; }
 .script-max-item[aria-current="true"] { outline: 2px solid #7c3aed; font-weight: 700; }
+/* (ticket 582) the outline: each box's types, then its functions, indented under it */
+.script-max-group { display: flex; flex-direction: column; gap: 2px; }
+.script-max-subs { display: flex; flex-direction: column; margin: 0 0 4px 12px; padding-left: 6px; border-left: 2px solid var(--line, #c8c8c8); }
+.script-max-sub { text-align: left; padding: 1px 6px; border: 0; background: none; color: inherit; font: 12px/1.5 ui-monospace, monospace; border-radius: 4px; cursor: pointer; }
+.script-max-sub:hover, .script-max-sub:focus-visible { background: color-mix(in srgb, #7c3aed 16%, transparent); }
+.script-max-kind { color: #7c3aed; font-weight: 600; }
+.script-max-type + .script-max-fn { margin-top: 6px; }
 .script-max-lang { color: var(--muted, GrayText); font-size: 0.85em; font-weight: 400; }
 .script-max-main { overflow: auto; min-width: 0; }
 .script-max-main > .script-box { margin: 0; min-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
@@ -1047,6 +1055,8 @@ body.script-nolines pre.script-ln, body.script-nolines .script-box pre .ln { dis
 body.script-maxed { overflow: hidden; }
 @media (max-width: 640px) { .script-max { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .script-max-nav { flex-direction: row; flex-wrap: wrap; } }
 /* (ticket 580) ⚙️ the editor's settings, knolled: names in one column, their chips in the next; colours off: the text box's own text */
+.script-settings > .box-name { display: flex; align-items: center; gap: 8px; }
+.script-about-chip { margin-left: auto; min-width: 2em; padding: 1px 8px; border-radius: 999px; font-weight: 700; }
 .script-settings-grid { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; }
 .script-settings-grid > .cap { font-size: 0.85em; color: var(--muted, GrayText); text-align: right; }
 .script-settings-grid .row { margin: 0; }

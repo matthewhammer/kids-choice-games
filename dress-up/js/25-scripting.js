@@ -825,15 +825,53 @@ function scriptMaxOpen(boxes, sec) {
   scriptMaxNav();
   const ta = sec.querySelector("textarea"); if (ta) ta.focus({ preventScroll: true });   // (and so laid out to its new width: 579)
 }
+// (ticket 582, Matthew: "more of an 'outline' structure on LHS": Hazel's types apart from Common's other definitions, and "each
+// function for each code listing as an up-to-date way to scroll to that function") under each box, what its code defines, in
+// order: each type, then each function (Hazel's let, Fumola's func, JS's function), from the text as it is now; a click scrolls
+// that line into view (opening the box first)
+function scriptOutline(text, lang) {
+  const out = [];
+  text.split("\n").forEach((line, i) => {
+    let m;
+    if ((m = line.match(/^type\s+([A-Za-z_]\w*)/))) out.push({ kind: "type", name: m[1], line: i });
+    else if (lang === "hazel" && (m = line.match(/^let\s+([a-z_]\w*)\s*=/))) out.push({ kind: "fn", name: m[1], line: i });
+    else if (lang === "fumola" && (m = line.match(/^\s*(?:public\s+)?func\s+([A-Za-z_]\w*)/))) out.push({ kind: "fn", name: m[1], line: i });
+    else if (lang === "js" && (m = line.match(/^\s*(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)/))) out.push({ kind: "fn", name: m[1], line: i });
+  });
+  return out;
+}
+// each code listing in a box, in order: its element, its text and its language
+function scriptListings(box) {
+  return [...box.querySelectorAll("pre.script-types, pre.script-js, textarea.script-editor")].map(n =>
+    n.tagName === "TEXTAREA" ? { node: n, text: n.value, lang: n.dataset.lang } : { node: n, text: n.textContent.replace(/^\d+/gm, ""), lang: n.classList.contains("script-types") ? "hazel" : "js" });
+}
+function scriptMaxJump(box, node, line) {
+  const M = scriptMax; if (!M) return;
+  if (M.sec !== box) scriptMaxOpen(M.boxes, box);
+  if (node.tagName === "TEXTAREA") {
+    const at = node.value.split("\n").slice(0, line).reduce((n, l) => n + l.length + 1, 0);
+    node.scrollIntoView({ block: "nearest" });
+    node.focus({ preventScroll: true }); node.setSelectionRange(at, at);
+    node.scrollTop = Math.max(0, line * parseFloat(getComputedStyle(node).lineHeight) - 8);
+  } else {
+    const mark = node.querySelectorAll(".ln")[line];
+    if (mark) mark.scrollIntoView({ block: "start" });
+  }
+}
 function scriptMaxNav() {
   const M = scriptMax; if (!M) return;
   M.nav.replaceChildren(...M.boxes.map(b => {
     const lang = (SCRIPT_ENGINES.find(([v]) => v === b.shown()) || [, ""])[1];
     const a = el("button", { class: "script-max-item", "aria-current": String(b === M.sec), onclick: () => scriptMaxOpen(M.boxes, b) },
       [el("span", {}, b.querySelector(".box-name").firstChild.textContent), el("span", { class: "script-max-lang" }, lang)]);
-    return a;
+    const subs = scriptListings(b).flatMap(({ node, text, lang }) => scriptOutline(text, lang).map(o =>
+      el("button", { class: "script-max-sub script-max-" + o.kind, title: (o.kind === "type" ? "type " : "") + o.name + ", line " + (o.line + 1), onclick: () => scriptMaxJump(b, node, o.line) },
+        o.kind === "type" ? [el("span", { class: "script-max-kind" }, "type"), " " + o.name] : o.name)));
+    return el("div", { class: "script-max-group" }, [a, ...(subs.length ? [el("div", { class: "script-max-subs" }, subs)] : [])]);
   }));
 }
+let scriptMaxNavTimer = null;
+const scriptMaxNavSoon = () => { if (!scriptMax) return; clearTimeout(scriptMaxNavTimer); scriptMaxNavTimer = setTimeout(scriptMaxNav, 300); };
 function scriptMaxClose() {
   const M = scriptMax; if (!M) return;
   if (M.sec) M.spot.replaceWith(M.sec);
@@ -872,7 +910,7 @@ function scriptingPanel(box) {
   // (each change written to the state as it is now, not as the tab found it: a load or a start over replaces it, and then the
   // boxes are filled again from the new one, below)
   const editor = (modName, get, put, lang) => {
-    const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", wrap: "off", "data-module": modName });
+    const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", wrap: "off", "data-module": modName, "data-lang": lang });
     const hl = el("pre", { class: "script-hl", "aria-hidden": "true" });
     let paint = () => { scriptHighlight(hl, lang, ta.value, true); hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; };
     // (ticket 579) the text as stored (src), shown broken to the box's width, from src each time (so a wider box takes the breaks
@@ -884,12 +922,12 @@ function scriptingPanel(box) {
       const n = scriptCols(ta); if (n === cols && ta.value) return; cols = n;
       const t = scriptFlow(lang, src, cols); if (t === ta.value) return;
       const had = document.activeElement === ta, k = had ? ta.value.slice(0, ta.selectionStart).replace(/\s/g, "").length : 0;
-      ta.value = t; paint();
+      ta.value = t; paint(); scriptMaxNavSoon();
       if (had) { let i = 0; for (let m = 0; i < t.length && m < k; i++) if (!/\s/.test(t[i])) m++; ta.setSelectionRange(i, i); }
     };
     ta.value = src;
     ta.refill = () => { const want = get(); if (want !== src) { src = want; ta.value = want; cols = 0; flow(); paint(); } };
-    ta.addEventListener("input", () => { src = ta.value; put(src); paint(); later(); });
+    ta.addEventListener("input", () => { src = ta.value; put(src); paint(); later(); scriptMaxNavSoon(); });
     ta.addEventListener("blur", () => { cols = 0; flow(); });
     ta.reflow = () => { cols = 0; if (ta.clientWidth) flow(); };
     ta.addEventListener("focus", () => { if (ta.clientWidth) flow(); });
@@ -983,8 +1021,13 @@ function scriptingPanel(box) {
   const wrapIn = el("input", { type: "number", min: "20", max: "400", step: "1", value: String(E0.wrap), "aria-label": "longest line before it is broken",
     onchange: e => { const n = Math.round(+e.target.value); if (n >= 20 && n <= 400) { scriptEditorSettings().wrap = n; scriptEditorApply(); changed(); } else e.target.value = scriptEditorSettings().wrap; } });
   wrapIn.addEventListener("keydown", e => e.stopPropagation());
+  // (Matthew, 2026-10-23: "Just have a '?' chip for this text -- default is not shown") the panel's explanation, behind a ? chip
+  const aboutText = el("div", { class: "hint script-about", hidden: "" }, "The game's logic, room by room, in one of three: the game's own JS (to read), or a rule you can write in Hazel or in Fumola. A rule's on_event(globals, event) gives what to do, as Cmd, each command with the rest after it: Flip(L, Done) flips the left lever. 📚 Common's helpers are in scope in every room of its language, as Common.name. A rule that has an error, or is not finished, leaves its room to the JS.");
+  const aboutChip = el("button", { class: "script-about-chip", "aria-pressed": "false", "aria-label": "what this panel is", title: "what this panel is",
+    onclick: () => { aboutText.hidden = !aboutText.hidden; setPressed(aboutChip, !aboutText.hidden); } }, "?");
   const settings = el("section", { class: "box script-settings" }, [
-    el("div", { class: "box-name" }, "⚙️ script editor settings"),
+    el("div", { class: "box-name" }, ["⚙️ script editor settings", aboutChip]),
+    aboutText,
     el("div", { class: "script-settings-grid" }, [
       el("span", { class: "cap" }, "all"), el("div", {}, [master, mixed]),
       ...pickRow("size", SCRIPT_SIZES.map(n => [n, String(n)]), () => scriptEditorSettings().size, v => { scriptEditorSettings().size = v; }),
@@ -1006,7 +1049,6 @@ function scriptingPanel(box) {
     el("div", { class: "hint" }, "For looking: the tiles show what the Hazel boxes hold, with Hazel's own marks where something is wrong; you write in the boxes above. A click in the tiles leaves the keys with the game."),
   ]);
   box.append(
-    el("div", { class: "hint" }, "The game's logic, room by room, in one of three: the game's own JS (to read), or a rule you can write in Hazel or in Fumola. A rule's on_event(globals, event) gives what to do, as Cmd, each command with the rest after it: Flip(\"lever_L\", Done) flips the left lever. 📚 Common's helpers are in scope in every room of its language, as Common.name. A rule that has an error, or is not finished, leaves its room to the JS."),
     ...(SCRIPT_LOGIC ? [el("div", { class: "hint" }, SCRIPT_LOGIC === "hazel" ? "This page was opened with ?logic=hazel: every room runs the shipped Hazel rules, whatever the chips or the boxes say."
       : SCRIPT_FUMOLA ? `This page was opened with ?logic=${SCRIPT_LOGIC}: every room runs the shipped Fumola rules, in Fumola's wasm build, whatever the chips or the boxes say.`
       : "This page was opened with ?logic=js: every room runs the game's own code, whatever the chips say.")] : []),
