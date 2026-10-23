@@ -643,6 +643,8 @@ function scriptFrameMessage(e) {
     return;
   } else if (m.type === "status") F.status = m;
   else if (m.type === "edit") { scriptTilesEdit(F, m.text); return; }
+  else if (m.type === "caret") { scriptCaretTo(F.iframe, +m.top || 0); return; }
+  else if (m.type === "goto") { scriptGoto(String(m.name || "")); return; }
   else if (m.type === "crash") {
     const why = String(m.message || ""), t = performance.now();
     // (before ready, or again and again: taken away; otherwise said, and the tiles kept, as Hazel keeps its last program and goes on)
@@ -769,6 +771,48 @@ function scriptTilesPump() {
 }
 // (a box opened at max size: its tiles made now, if they are still waiting)
 function scriptTilesFirst(box) { for (const T of [...scriptTileQueue]) if (box.contains(T.holder)) scriptTilesMake(T); }
+// (^ticket(587)) a name revealed in a box's tiles (mod: Common or a room's name; "types": the whole program's tiles, whose start
+// has the types): that box shown (pinned, at max size), its frame told {type: "reveal", name} now, or when it is ready
+function scriptReveal(mod, name) {
+  const M = scriptMax;
+  let box = null, send = null;
+  if (mod === "types") {
+    box = document.querySelector(".script-box.script-tiles");
+    const F = scriptFrame;
+    send = () => { if (F && F.phase === "ready" && F.iframe.contentWindow) { F.revealing = true; F.iframe.contentWindow.postMessage({ type: "reveal", name }, SCRIPT_HAZEL_ORIGIN); return true; } return false; };
+  } else {
+    box = document.querySelector(`.script-box[data-room="${mod}"]`);
+    const T = [...scriptTileFrames, ...scriptTileQueue].find(T => T.mod === mod && box && box.contains(T.holder));
+    if (T && !T.iframe) scriptTilesMake(T);
+    send = () => { if (T && T.ready && T.iframe && T.iframe.contentWindow) { T.iframe.contentWindow.postMessage({ type: "reveal", name }, SCRIPT_HAZEL_ORIGIN); return true; } if (T) T.reveal = name; return true; };
+  }
+  if (!box) return;
+  if (M && M.sec !== box) scriptMaxOpen(M.boxes, box);
+  else if (!M) box.scrollIntoView({ block: "start" });
+  send();
+}
+// (^ticket(586), Matthew: "goto def does not work") a goto definition a frame could not answer in its own cell: the name found in the
+// program (a dotted Module.name; a type, or a constructor of one, at the program's start; else Common's, else a room's) and revealed
+function scriptGoto(name) {
+  const S = scriptsState(), parts = String(name).split(".");
+  if (parts.length > 1) { scriptReveal(parts[0], parts[parts.length - 1]); return; }
+  const pre = SCRIPT_PREAMBLE.split("\n");
+  if (pre.some(l => new RegExp("^type\\s+" + name + "\\b").test(l))) { scriptReveal("types", name); return; }
+  const owner = pre.find(l => /^type\s+\w+\s*=/.test(l) && new RegExp("\\+\\s*" + name + "\\b").test(l));
+  if (owner) { scriptReveal("types", owner.match(/^type\s+(\w+)/)[1]); return; }
+  const defines = text => scriptOutline(String(text || ""), "hazel").some(o => o.name === name);
+  if (defines(S.common)) { scriptReveal("Common", name); return; }
+  const room = SCRIPT_ROOMS.find(r => defines(S.rooms[r.name]));
+  if (room) scriptReveal(room.name, name);
+}
+// a frame's caret, after a reveal: the view holding the frame scrolled to it
+function scriptCaretTo(iframe, top) {
+  const M = scriptMax;
+  let view = M && M.sec && M.sec.contains(iframe) ? M.sec : iframe.parentElement;
+  while (view && view !== document.body && !(view.scrollHeight > view.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(view).overflowY))) view = view.parentElement;
+  if (!view || view === document.body) { window.scrollBy(0, iframe.getBoundingClientRect().top + top - 80); return; }
+  view.scrollTop += iframe.getBoundingClientRect().top + top - view.getBoundingClientRect().top - 80;
+}
 function scriptTilesPost() { for (const T of [...scriptTileFrames]) { if (!T.iframe || !T.iframe.isConnected) { scriptTileFrames.delete(T); continue; } T.post(); } }
 function scriptTileMessage(e) {
   if (e.origin !== SCRIPT_HAZEL_ORIGIN) return;
@@ -797,9 +841,12 @@ function scriptTileMessage(e) {
     w.postMessage({ type: "lines", on: scriptEditorSettings().lines }, SCRIPT_HAZEL_ORIGIN);   // (Hazel's own line numbers, as ⚙️ says)
     w.postMessage({ type: "focus", module: T.mod }, SCRIPT_HAZEL_ORIGIN);
     T.post();
+    if (T.reveal) { const n = T.reveal; T.reveal = null; setTimeout(() => w.postMessage({ type: "reveal", name: n }, SCRIPT_HAZEL_ORIGIN), 300); }
   } else if (m.type === "size") {
     const h = Math.max(24, Math.min(SCRIPT_FRAME_MAX, Math.ceil(+m.height || 0)));
     if (h !== T.height) { T.height = h; T.iframe.style.height = h + "px"; }
+  } else if (m.type === "caret") { scriptCaretTo(T.iframe, +m.top || 0);
+  } else if (m.type === "goto") { scriptGoto(String(m.name || ""));
   } else if (m.type === "edit") {
     const S = scriptsState(), text = String(m.text || "");
     if (T.mod === "Common") S.common = text; else if (SCRIPT_ROOMS.some(r => r.name === T.mod)) S.rooms[T.mod] = text;
@@ -1080,8 +1127,15 @@ function scriptBand(node, line, end) {
     node.prepend(band);
   }
 }
-function scriptMaxJump(box, node, line, end = line) {
+function scriptMaxJump(box, node, line, end = line, name = null) {
   const M = scriptMax; if (!M) return;
+  // (^ticket(587), Matthew 2026-10-23: "when the editor is the hazel tile editor, let's have click on LHS mean 'select tile' on RHS")
+  // in tiles, Hazel puts the caret on the definition and selects it (reveal), and says where, and the view scrolls there; a type,
+  // being the program's start, in the whole program's tiles
+  if (name && document.body.classList.contains("script-tiles-on") && ((node.tagName === "TEXTAREA" && node.closest("[hidden]")) || (node.matches && node.matches("pre.script-types")))) {
+    scriptReveal(node.matches("pre.script-types") ? "types" : (box.dataset.room || ""), name);
+    return;
+  }
   if (M.sec !== box) scriptMaxOpen(M.boxes, box);
   if (!(node.tagName === "TEXTAREA" && node.closest("[hidden]"))) scriptBand(node, line, end);
   // (Matthew, 2026-10-23: "LHS nav bar does not respond to click -- a recent regression?" A Hazel box in tiles hides its text box,
@@ -1235,7 +1289,7 @@ function scriptMaxNav() {
       while (end > o.line && /^\s*(#|\/\/|$)/.test(lines[end])) end--;
       const sig = o.kind !== "fn" ? null : lang === "hazel" ? (types ? types.get(modOf(b) + "." + o.name) : null)
         : lang === "fumola" ? scriptFumolaSig(lines.slice(o.line, o.line + 3).join(" ")) : null;
-      return el("button", { class: "script-max-sub script-max-" + o.kind + (sig ? " script-max-sig" : ""), title: (o.kind === "type" ? "type " : "") + o.name + ", lines " + (o.line + 1) + "-" + (end + 1), onclick: () => scriptMaxJump(b, node, o.line, end) },
+      return el("button", { class: "script-max-sub script-max-" + o.kind + (sig ? " script-max-sig" : ""), title: (o.kind === "type" ? "type " : "") + o.name + ", lines " + (o.line + 1) + "-" + (end + 1), onclick: () => scriptMaxJump(b, node, o.line, end, o.name) },
         o.kind === "type" ? [el("span", { class: "script-max-kind" }, "type"), el("span", { class: "script-max-tname" }, o.name), ...cases(lines.slice(o.line, end + 1).join(" "))]
           : [el("span", { class: "script-max-fname" }, [o.name, fnTail(lang, sig, lines.slice(o.line, end + 1))]), ...(sig ? [el("span", { class: "script-max-type-sig", title: o.name + " : " + sig }, ": " + sig)] : [])]); }); });
     return el("div", { class: "script-max-group" }, [a, ...(subs.length ? [el("div", { class: "script-max-subs" }, subs)] : [])]);
