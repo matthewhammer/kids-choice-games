@@ -768,6 +768,7 @@ function scriptTileMessage(e) {
     }
     scriptTileTheme(T);
     w.postMessage({ type: "editable", on: true }, SCRIPT_HAZEL_ORIGIN);
+    w.postMessage({ type: "lines", on: scriptEditorSettings().lines }, SCRIPT_HAZEL_ORIGIN);   // (Hazel's own line numbers, as ⚙️ says)
     w.postMessage({ type: "focus", module: T.mod }, SCRIPT_HAZEL_ORIGIN);
     T.post();
   } else if (m.type === "size") {
@@ -955,6 +956,8 @@ function scriptEditorApply() {
   // (Matthew, 2026-10-23: "if we have 'tiles' selected, we shouldn't see both": in tiles, no text at all, the types' read-only
   // listing included; the outline still names them)
   document.body.classList.toggle("script-tiles-on", E.hazel === "tiles");
+  // (Matthew, 2026-10-23: "line numbers vanished" in the tiles: Hazel draws its own, told by ⚙️'s lines, as every box's tiles are)
+  for (const T of scriptTileFrames) if (T.ready && T.iframe && T.iframe.contentWindow) T.iframe.contentWindow.postMessage({ type: "lines", on: E.lines }, SCRIPT_HAZEL_ORIGIN);
   for (const ta of document.querySelectorAll("textarea.script-editor, pre.script-js")) if (ta.reflow) ta.reflow();
 }
 // how many characters of the code's font fit across a text box, its padding and scroll bar taken off
