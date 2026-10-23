@@ -1012,7 +1012,7 @@ body.designer-big .crumbs { display: none; }
   margin: 4px 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line, #c8c8c8); background: color-mix(in srgb, var(--line, #c8c8c8) 14%, transparent); }
 /* (ticket 577) the code in colour: the editor's text transparent over a <pre> of coloured tokens, the same font, padding and size */
 .script-edit { display: flex; align-items: stretch; }
-.script-edit-in { position: relative; flex: 1; min-width: 0; display: flex; }
+.script-edit-in { position: relative; flex: 1; min-width: 0; display: flex; overflow: hidden; border-radius: 6px; }
 .script-edit-in > textarea.script-editor { flex: 1; }
 /* (ticket 581) line numbers: a gutter beside an editor, scrolled with it; a span before each line of a read-only box */
 pre.script-ln { margin: 0; overflow: hidden; text-align: right; user-select: none; color: var(--muted, GrayText); opacity: 0.75;
@@ -1037,12 +1037,23 @@ body.script-nolines .script-box pre .ln { font-size: 0; min-width: 0; margin: 0;
 .script-max-nav { display: flex; flex-direction: column; gap: 3px; }
 .script-max-item { display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 5px 8px; border-radius: 6px; }
 .script-max-item[aria-current="true"] { outline: 2px solid #7c3aed; font-weight: 700; }
+/* (ticket 584) the chosen definition's lines, a faint band behind them */
+.script-band { position: absolute; left: 0; right: 0; pointer-events: none; background: color-mix(in srgb, #7c3aed 13%, transparent); border-left: 3px solid color-mix(in srgb, #7c3aed 55%, transparent); }
+.script-edit-in > .script-band { z-index: 0; }
+.script-box pre.script-js { position: relative; white-space: pre-wrap; overflow-wrap: anywhere; }   /* (laid out to its width; a word longer than it, wrapped) */
 /* (ticket 582) the outline: each box's types, then its functions, indented under it */
 .script-max-group { display: flex; flex-direction: column; gap: 2px; }
 .script-max-subs { display: flex; flex-direction: column; margin: 0 0 4px 12px; padding-left: 6px; border-left: 2px solid var(--line, #c8c8c8); }
 .script-max-sub { text-align: left; padding: 1px 6px; border: 0; background: none; color: inherit; font: 12px/1.5 ui-monospace, monospace; border-radius: 4px; cursor: pointer; }
 .script-max-sub:hover, .script-max-sub:focus-visible { background: color-mix(in srgb, #7c3aed 16%, transparent); }
 .script-max-kind { color: #7c3aed; font-weight: 600; }
+.script-max-type { display: flex; align-items: baseline; }
+.script-max-sig { display: flex; flex-direction: column; }
+.script-max-type-sig { color: var(--muted, GrayText); font-size: 0.88em; padding-left: 1ch; white-space: normal; }
+.script-max-tail { margin-left: auto; padding-left: 1ch; display: inline-flex; gap: 0.8ch; align-items: baseline; }
+.script-max-cases { color: var(--muted, GrayText); font-size: 0.9em; }
+.script-max-tkind { width: 1.6em; text-align: center; }
+.script-max-tname { margin-left: 1ch; }
 .script-max-type + .script-max-fn { margin-top: 6px; }
 .script-max-lang { color: var(--muted, GrayText); font-size: 0.85em; font-weight: 400; }
 .script-max-main { overflow: auto; min-width: 0; }

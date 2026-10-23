@@ -731,11 +731,23 @@ const SCRIPT_BREAKS = [[["|"], []], [["+"], []], [["then", "else"], []], [["}"],
 function scriptFlowPieces(lang, toks, indent, cols, out) {
   const text = toks.map(([, w]) => w).join("").trim();
   if (indent + text.length <= cols) { out.push(" ".repeat(indent) + text); return; }
+  // (Matthew, 2026-10-23: "line wrap is not adjusting to big text and small screen") a comment alone, too long: several comments,
+  // its words shared out (Hazel's # ... # each closed; // each to its line's end)
+  const real = toks.filter(([, w]) => w.trim());
+  if (real.length === 1 && real[0][0] === "c" && !/^\/\*/.test(text)) {
+    const hz = text.startsWith("#"), words = (hz ? text.replace(/^#\s*/, "").replace(/\s*#$/, "") : text.replace(/^\/\/\s*/, "")).split(/\s+/);
+    const room = Math.max(12, cols - indent - (hz ? 4 : 3));
+    let cur = "";
+    const flush = () => { if (cur) out.push(" ".repeat(indent) + (hz ? "# " + cur + " #" : "// " + cur)); cur = ""; };
+    for (const w of words) { if (cur && cur.length + 1 + w.length > room) flush(); cur = cur ? cur + " " + w : w; }
+    flush(); return;
+  }
   // each place a line may break: the token index the next piece starts at, the bracket depth there, and how good a place it is
   const places = [];
   let depth = 0;
   toks.forEach(([k, w], i) => {
     const code = k === "o" || k === "k" || (k === "" && /^[()[\]{}]$/.test(w));
+    if (k === "c" && i > 0) places.push({ at: i, depth, rank: -1 });   // (a comment after code: first to go to its own line)
     if (code && i > 0) SCRIPT_BREAKS.forEach(([before], rank) => { if (before.includes(w)) places.push({ at: i, depth: w === "}" ? depth : depth, rank }); });
     if (k === "" || k === "o") for (const ch of w) depth += "([{".includes(ch) ? 1 : ")]}".includes(ch) ? -1 : 0;
     if (code && i + 1 < toks.length) SCRIPT_BREAKS.forEach(([, after], rank) => { if (after.includes(w)) places.push({ at: i + 1, depth, rank }); });
@@ -790,7 +802,7 @@ function scriptEditorApply() {
   R.setProperty("--script-font", SCRIPT_FONTS.find(([n]) => n === E.font)[1]);
   document.body.classList.toggle("script-plain", !E.colours);
   document.body.classList.toggle("script-nolines", !E.lines);
-  for (const ta of document.querySelectorAll("textarea.script-editor, pre.script-types")) if (ta.reflow) ta.reflow(); else if (ta.flow) ta.flow();
+  for (const ta of document.querySelectorAll("textarea.script-editor, pre.script-js")) if (ta.reflow) ta.reflow();
 }
 // how many characters of the code's font fit across a text box, its padding and scroll bar taken off
 function scriptCols(ta) {
@@ -822,6 +834,7 @@ function scriptMaxOpen(boxes, sec) {
   if (M.sec) M.spot.replaceWith(M.sec);
   M.sec = sec; M.spot = el("div", { class: "script-max-spot", hidden: "" });
   sec.replaceWith(M.spot); M.main.replaceChildren(sec);
+  scriptReflowSoon(sec); if (M.prev && M.prev !== sec) scriptReflowSoon(M.prev); M.prev = sec;
   scriptMaxNav();
   const ta = sec.querySelector("textarea"); if (ta) ta.focus({ preventScroll: true });   // (and so laid out to its new width: 579)
 }
@@ -845,9 +858,29 @@ function scriptListings(box) {
   return [...box.querySelectorAll("pre.script-types, pre.script-js, textarea.script-editor")].map(n =>
     n.tagName === "TEXTAREA" ? { node: n, text: n.value, lang: n.dataset.lang } : { node: n, text: n.textContent.replace(/^\d+/gm, ""), lang: n.classList.contains("script-types") ? "hazel" : "js" });
 }
-function scriptMaxJump(box, node, line) {
+// (ticket 584, Matthew: "when we select something, have a subtle bg highlight for those lines on RHS") a band behind the chosen
+// definition's lines, from its first to the last before the next one (less the comments and blank lines leading into that one);
+// one band at a time. Under an editor it sits between the colours and the text box, kept at its lines as the box scrolls; in a
+// read-only box, inside it, at its line numbers' marks
+function scriptBand(node, line, end) {
+  for (const b of document.querySelectorAll(".script-band")) { if (b.unscroll) b.unscroll(); b.remove(); }
+  const band = el("div", { class: "script-band", "aria-hidden": "true" });
+  if (node.tagName === "TEXTAREA") {
+    const cs = getComputedStyle(node), lh = parseFloat(cs.lineHeight), top0 = parseFloat(cs.paddingTop) + parseFloat(cs.borderTopWidth);
+    const place = () => { band.style.top = (top0 + line * lh - node.scrollTop) + "px"; band.style.height = ((end - line + 1) * lh) + "px"; };
+    place(); node.addEventListener("scroll", place); band.unscroll = () => node.removeEventListener("scroll", place);
+    node.before(band);
+  } else {
+    const marks = node.querySelectorAll(".ln"); if (!marks[line]) return;
+    const a = marks[line], z = marks[end] || a, lh = parseFloat(getComputedStyle(node).lineHeight);
+    band.style.top = a.offsetTop + "px"; band.style.height = (z.offsetTop - a.offsetTop + lh) + "px";
+    node.prepend(band);
+  }
+}
+function scriptMaxJump(box, node, line, end = line) {
   const M = scriptMax; if (!M) return;
   if (M.sec !== box) scriptMaxOpen(M.boxes, box);
+  scriptBand(node, line, end);
   if (node.tagName === "TEXTAREA") {
     const at = node.value.split("\n").slice(0, line).reduce((n, l) => n + l.length + 1, 0);
     node.scrollIntoView({ block: "nearest" });
@@ -858,23 +891,101 @@ function scriptMaxJump(box, node, line) {
     if (mark) mark.scrollIntoView({ block: "start" });
   }
 }
+// (Matthew, 2026-10-23: "Hazel functions give their type sigs in LHS") each Hazel function's type as Hazel infers it, not only as
+// written: the program, its tail replaced by one probe per function, each held to () (let _p : () = Common.nth in), so Hazel's
+// analysis says, for each, "Expecting type () but got inconsistent type [Bool], Int -> Bool". One analysis per program text,
+// after the outline is drawn; the outline drawn again with the types. A module with an error of its own gives no types
+let scriptTypesCache = { key: null, types: new Map() };
+function scriptHazelTypes() {
+  if (!window.Hazel || typeof window.Hazel.analyze !== "function") return null;
+  const S = scriptsState(), mods = [{ name: "Common", text: scriptBody(S.common) }, ...SCRIPT_ROOMS.map(r => ({ name: r.name, text: scriptBody(S.rooms[r.name]) }))];
+  const probes = mods.flatMap(m => scriptOutline(m.text, "hazel").filter(o => o.kind === "fn").map(o => `${m.name}.${o.name}`));
+  const prog = scriptProgram().split("\n").slice(0, -1).join("\n") + "\n" + probes.map((p, i) => `let probe${i} : () = ${p} in`).join("\n") + "\n0";
+  if (scriptTypesCache.key === prog) return scriptTypesCache.types;
+  const types = new Map();
+  try {
+    for (const e of (window.Hazel.analyze(prog).errors || [])) {
+      const m = String(e).match(/Error in term:\s*\n\s*(\S+)\s*\nNature of error: Expecting type \(\) but got inconsistent type ([^\n]+)/);
+      if (m) types.set(m[1], m[2].trim());
+    }
+  } catch (e) {}
+  for (const [k, t] of types) types.set(k, scriptTypeNames(t));
+  scriptTypesCache = { key: prog, types };
+  return types;
+}
+// Hazel prints a sum by its cases, not its name (Flip(+ L + R, Cmd), and a recursive one as rec Cmd -> ...): each of the
+// program's own sums folded back to its name, the smallest first (so a bigger one's cases read as its declaration does), then
+// spaced again
+function scriptTypeNames(t) {
+  const sums = SCRIPT_PREAMBLE.split(/\bin\b\s*\n?/).map(d => d.match(/^\s*type\s+(\w+)\s*=\s*\+?([\s\S]*)$/)).filter(m => m && /^\s*\+/.test(m[0].slice(m[0].indexOf("=") + 1)))
+    .map(([, name, body]) => [name, body.replace(/\s+/g, "")]).sort((a, b) => a[1].length - b[1].length);
+  const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  let u = t.replace(/\s+/g, "");
+  for (let again = true, n = 0; again && n < 4; n++) {
+    again = false;
+    for (const [name, body] of sums) {
+      const v = u.replace(new RegExp("rec" + name + "->\\+?" + esc(body), "g"), name).replace(new RegExp("(^|[(,>\\[])\\+?" + esc(body) + "(?=$|[),\\]-])", "g"), "$1" + name);
+      if (v !== u) { u = v; again = true; }
+    }
+  }
+  // (a tuple on either side of an arrow, in brackets, as the code writes it: Hazel leaves them out)
+  const top = (x, sep) => { const out = []; let d = 0, from = 0; for (let i = 0; i < x.length; i++) { const c = x[i]; if ("([".includes(c)) d++; else if (")]".includes(c)) d--; else if (d === 0 && x.startsWith(sep, i)) { out.push(x.slice(from, i)); from = i + sep.length; i += sep.length - 1; } } out.push(x.slice(from)); return out; };
+  u = top(u, "->").map(side => top(side, ",").length > 1 ? "(" + side + ")" : side).join("->");
+  return u.replace(/,/g, ", ").replace(/->/g, " -> ").replace(/\+/g, " + ");
+}
+// (Matthew, 2026-10-23: "for each sum type being defined, it says the number of 'cases'") a sum's constructors, counted: each + and
+// a capital after the =, outside brackets (a payload's types are not cases); a record or an alias has none, and says nothing
+function scriptCases(def) {
+  const body = def.slice(def.indexOf("=") + 1).replace(/\s+in\s*$/, "");
+  if (!/^\s*\+/.test(body)) return 0;
+  let depth = 0, n = 0;
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if ("([{".includes(ch)) depth++; else if (")]}".includes(ch)) depth--;
+    else if (ch === "+" && depth === 0 && /^\+\s*[A-Z]/.test(body.slice(i))) n++;
+  }
+  return n;
+}
+// (Matthew: "each type has an emoji, right justified, that says: sum type, product type, etc") what kind of type it defines, by
+// what follows its =: a sum's + , a product's ( (a tuple, labeled or not), a list's [ , a function's -> , else a name (an alias)
+const SCRIPT_TYPE_KINDS = { sum: ["➕", "sum type"], product: ["📦", "product type"], list: ["📜", "list type"], fn: ["➡️", "function type"], alias: ["🔗", "another name for a type"] };
+function scriptTypeKind(def) {
+  const body = def.slice(def.indexOf("=") + 1).replace(/\s+in\s*$/, "").trim();
+  return body.startsWith("+") ? "sum" : /->/.test(body.replace(/\([^()]*\)/g, "")) ? "fn" : body.startsWith("(") ? "product" : body.startsWith("[") ? "list" : "alias";
+}
+const cases = def => {
+  const n = scriptCases(def), [emoji, what] = SCRIPT_TYPE_KINDS[scriptTypeKind(def)];
+  return [el("span", { class: "script-max-tail" }, [...(n ? [el("span", { class: "script-max-cases" }, n + (n === 1 ? " case" : " cases"))] : []),
+    el("span", { class: "script-max-tkind", title: what, "aria-label": what }, emoji)])];
+};
 function scriptMaxNav() {
   const M = scriptMax; if (!M) return;
+  // (the Hazel types: as known for this program text, else asked for after this drawing, and drawn again with them)
+  const types = scriptTypesCache.key && scriptTypesCache.types;
+  const modOf = b => b.dataset.room;
+  if (window.Hazel && !scriptMaxNav.asking) { scriptMaxNav.asking = true; setTimeout(() => { const before = scriptTypesCache.key; scriptHazelTypes(); scriptMaxNav.asking = false; if (scriptTypesCache.key !== before) scriptMaxNav(); }, 0); }
   M.nav.replaceChildren(...M.boxes.map(b => {
     const lang = (SCRIPT_ENGINES.find(([v]) => v === b.shown()) || [, ""])[1];
     const a = el("button", { class: "script-max-item", "aria-current": String(b === M.sec), onclick: () => scriptMaxOpen(M.boxes, b) },
       [el("span", {}, b.querySelector(".box-name").firstChild.textContent), el("span", { class: "script-max-lang" }, lang)]);
-    const subs = scriptListings(b).flatMap(({ node, text, lang }) => scriptOutline(text, lang).map(o =>
-      el("button", { class: "script-max-sub script-max-" + o.kind, title: (o.kind === "type" ? "type " : "") + o.name + ", line " + (o.line + 1), onclick: () => scriptMaxJump(b, node, o.line) },
-        o.kind === "type" ? [el("span", { class: "script-max-kind" }, "type"), " " + o.name] : o.name)));
+    const subs = scriptListings(b).flatMap(({ node, text, lang }) => { const lines = text.split("\n"), os = scriptOutline(text, lang); return os.map((o, i) => {
+      // (584) its lines: up to the next definition, less the comments and blank lines that lead into that one
+      let end = (os[i + 1] ? os[i + 1].line : lines.length) - 1;
+      while (end > o.line && /^\s*(#|\/\/|$)/.test(lines[end])) end--;
+      const sig = o.kind === "fn" && lang === "hazel" && types ? types.get(modOf(b) + "." + o.name) : null;
+      return el("button", { class: "script-max-sub script-max-" + o.kind + (sig ? " script-max-sig" : ""), title: (o.kind === "type" ? "type " : "") + o.name + ", lines " + (o.line + 1) + "-" + (end + 1), onclick: () => scriptMaxJump(b, node, o.line, end) },
+        o.kind === "type" ? [el("span", { class: "script-max-kind" }, "type"), el("span", { class: "script-max-tname" }, o.name), ...cases(lines.slice(o.line, end + 1).join(" "))]
+          : sig ? [el("span", {}, o.name), el("span", { class: "script-max-type-sig", title: o.name + " : " + sig }, ": " + sig)] : o.name); }); });
     return el("div", { class: "script-max-group" }, [a, ...(subs.length ? [el("div", { class: "script-max-subs" }, subs)] : [])]);
   }));
 }
 let scriptMaxNavTimer = null;
 const scriptMaxNavSoon = () => { if (!scriptMax) return; clearTimeout(scriptMaxNavTimer); scriptMaxNavTimer = setTimeout(scriptMaxNav, 300); };
+// a box moved (into the ⛶ view or back) has a new width: its code laid out again, once it is in place (579)
+const scriptReflowSoon = box => setTimeout(() => { for (const n of box.querySelectorAll("textarea.script-editor, pre.script-js")) if (n.reflow) n.reflow(); }, 0);
 function scriptMaxClose() {
   const M = scriptMax; if (!M) return;
-  if (M.sec) M.spot.replaceWith(M.sec);
+  if (M.sec) { M.spot.replaceWith(M.sec); scriptReflowSoon(M.sec); }
   M.wrap.remove(); document.body.classList.remove("script-maxed");
   scriptMax = null;
 }
@@ -927,7 +1038,7 @@ function scriptingPanel(box) {
     };
     ta.value = src;
     ta.refill = () => { const want = get(); if (want !== src) { src = want; ta.value = want; cols = 0; flow(); paint(); } };
-    ta.addEventListener("input", () => { src = ta.value; put(src); paint(); later(); scriptMaxNavSoon(); });
+    ta.addEventListener("input", () => { src = ta.value; put(src); paint(); later(); scriptMaxNavSoon(); for (const b of ta.parentNode.querySelectorAll(".script-band")) { if (b.unscroll) b.unscroll(); b.remove(); } });
     ta.addEventListener("blur", () => { cols = 0; flow(); });
     ta.reflow = () => { cols = 0; if (ta.clientWidth) flow(); };
     ta.addEventListener("focus", () => { if (ta.clientWidth) flow(); });
@@ -950,8 +1061,20 @@ function scriptingPanel(box) {
     wrap.refill = ta.refill;
     return wrap;
   };
-  const typesPre = () => { const p = el("pre", { class: "script-js script-types", tabindex: "0" }); p.flow = () => scriptHighlight(p, "hazel", scriptFlow("hazel", SCRIPT_PREAMBLE.trim(), scriptEditorSettings().wrap)); p.flow(); return p; };
-  const jsPre = text => { const p = el("pre", { class: "script-js", tabindex: "0" }); scriptHighlight(p, "js", text); return p; };
+  // (a read-only box laid out to its width too, as an editor is (579): again when its width changes, and on a setting's change;
+  // its line numbers take 5 columns)
+  const roPre = (cls, lang, text) => {
+    const p = el("pre", { class: cls, tabindex: "0" });
+    let cols = -1;
+    p.flow = () => { const n = p.clientWidth ? scriptCols(p) - (scriptEditorSettings().lines ? 5 : 0) : 0; if (n === cols) return; cols = n; scriptHighlight(p, lang, n ? scriptFlow(lang, text, n) : text); };
+    p.reflow = () => { cols = -1; p.flow(); };
+    p.flow();
+    if (typeof ResizeObserver === "function") new ResizeObserver(() => p.flow()).observe(p);
+    setTimeout(() => p.flow(), 50);
+    return p;
+  };
+  const typesPre = () => roPre("script-js script-types", "hazel", SCRIPT_PREAMBLE.trim());
+  const jsPre = text => roPre("script-js", "js", text);
   // (ticket 566) a chip per engine; on, the one shown (and, for a room, the one that runs)
   const chips = (now, pick, cls) => {
     const bs = SCRIPT_ENGINES.map(([v, lab]) => [v, el("button", { "data-engine": v, "aria-pressed": String(now() === v), onclick: () => pick(v) }, lab)]);
