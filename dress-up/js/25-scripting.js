@@ -1136,7 +1136,19 @@ function scriptMaxJump(box, node, line, end = line, name = null) {
     scriptReveal(node.matches("pre.script-types") ? "types" : (box.dataset.room || ""), name);
     return;
   }
-  if (M.sec !== box) scriptMaxOpen(M.boxes, box);
+  // (Matthew, 2026-10-23: "LHS selection triggers incorrect range on RHS": a box opened at max size is laid out again at its new
+  // width, and its lines move; the outline's were the old layout's. Now the box opened first, then, laid out, the definition
+  // looked for again by its name in the text as it is, and its lines counted as the outline counts them)
+  if (M.sec !== box) { scriptMaxOpen(M.boxes, box); setTimeout(() => scriptMaxJump(box, node, line, end, name), 80); return; }
+  if (name) {
+    const lang = node.tagName === "TEXTAREA" ? node.dataset.lang : node.classList.contains("script-types") ? "hazel" : "js";
+    const text = node.tagName === "TEXTAREA" ? node.value : node.textContent.replace(/^\d+/gm, "");
+    const lines = text.split("\n"), os = scriptOutline(text, lang), i = os.findIndex(o => o.name === name);
+    if (i >= 0) {
+      line = os[i].line; end = (os[i + 1] ? os[i + 1].line : lines.length) - 1;
+      while (end > line && /^\s*(#|\/\/|$)/.test(lines[end])) end--;
+    }
+  }
   if (!(node.tagName === "TEXTAREA" && node.closest("[hidden]"))) scriptBand(node, line, end);
   // (Matthew, 2026-10-23: "LHS nav bar does not respond to click -- a recent regression?" A Hazel box in tiles hides its text box,
   // and the jump scrolled that. Now, in tiles, the view goes to the line's row in the tiles: the frame's height over the text's
@@ -1409,7 +1421,7 @@ function scriptingPanel(box) {
   const roPre = (cls, lang, text) => {
     const p = el("pre", { class: cls, tabindex: "0" });
     let cols = -1;
-    p.flow = () => { const n = p.clientWidth ? scriptCols(p) - (scriptEditorSettings().lines ? 5 : 0) : 0; if (n === cols) return; cols = n; scriptHighlight(p, lang, n ? scriptFlow(lang, text, n) : text); };
+    p.flow = () => { const n = p.clientWidth ? scriptCols(p) - (scriptEditorSettings().lines ? 5 : 0) : 0; if (n === cols) return; cols = n; scriptHighlight(p, lang, n ? scriptFlow(lang, text, n) : text); scriptMaxNavSoon(); };
     p.reflow = () => { cols = -1; p.flow(); };
     p.flow();
     if (typeof ResizeObserver === "function") new ResizeObserver(() => p.flow()).observe(p);
