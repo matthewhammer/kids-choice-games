@@ -53,6 +53,13 @@ try {
     return JSON.stringify(out); })()`);
   writeFileSync("out/r32/trap-code.json", code);
   await shot("out/r32/trap-tiles.png");
+  // (Matthew: "include MUDU game script screenshots, of max script mode, with common defs being shown") 📚 Common at max size, its
+  // tiles: the definitions every room calls, the outline of them all at the left
+  await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
+    document.querySelectorAll(".script-max-item")[1].click();
+    for (let i = 0; i < 300 && ![...scriptTileFrames].some(T => T.mod === "Common" && T.ready && T.height > 30); i++) await w(100);
+    await w(2500); return 1; })()`);
+  await shot("out/r32/common-tiles.png");
   console.log("ok   pictures and the trap room's three scripts written (out/r32)");
   // ---- 2. as the code grows, and an edit at each size ----
   await send("Emulation.setEmulatedMedia", { features: [] });
