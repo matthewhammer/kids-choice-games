@@ -1010,7 +1010,11 @@ body.designer-big .crumbs { display: none; }
 .script-mixed:empty { display: none; }
 .script-box pre.script-js { font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); tab-size: 2; white-space: pre; overflow: auto; max-height: 22em;
   margin: 4px 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line, #c8c8c8); background: color-mix(in srgb, var(--line, #c8c8c8) 14%, transparent); }
-/* (ticket 577) the code in colour: the editor's text transparent over a <pre> of coloured tokens, the same font, padding and size */
+/* (2026-10-23) Hazel's name as one of its tiles: a box with pointed ends, its colour Hazel's */
+.hazel-tile { display: inline-block; padding: 0.05em 0.85em; margin: 0 0.1em; line-height: 1.35; font-weight: 600; color: #fff;
+  background: #7c3aed; clip-path: polygon(0.55em 0, calc(100% - 0.55em) 0, 100% 50%, calc(100% - 0.55em) 100%, 0.55em 100%, 0 50%); }
+.script-max-lang .hazel-tile { font-size: 0.85em; }
+ the editor's text transparent over a <pre> of coloured tokens, the same font, padding and size */
 .script-edit { display: flex; align-items: stretch; }
 .script-edit-in { position: relative; flex: 1; min-width: 0; display: flex; overflow: hidden; border-radius: 6px; }
 .script-edit-in > textarea.script-editor { flex: 1; }

@@ -242,7 +242,11 @@ const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntrie
 // code boxes all"; "let's have the jS versions show up as JS code, but read only. The hazel and fumola boxes are for editing.")
 // Which engine runs a room's rule: "js" (the game's own code), "hazel" or "fumola". A room's own chip (engines[room]) if it has
 // one; else the master chip's (all); else, for a save from before, the old 🧩 switch (on: Hazel). ?logic= overrides all of it.
-const SCRIPT_ENGINES = [["js", "JS"], ["hazel", "⬢ Hazel"], ["fumola", "🍄 Fumola"]];
+const SCRIPT_ENGINES = [["js", "JS"], ["hazel", "Hazel"], ["fumola", "🍄 Fumola"]];
+// (Matthew, 2026-10-23: "for Hazel, let's use something hexagonal instead of the puzzle piece ... or place into a hex shaped box,
+// like a tile in hazel") Hazel's name drawn as one of its tiles: a box with pointed ends (style.css, .hazel-tile)
+const scriptHazelTile = (text = "Hazel") => el("span", { class: "hazel-tile" }, text);
+const scriptEngineLabel = (v, lab) => v === "hazel" ? scriptHazelTile(lab) : lab;
 function scriptEngine(room) {
   if (SCRIPT_LOGIC === "hazel") return "hazel";
   if (SCRIPT_FUMOLA) return "fumola";
@@ -1114,9 +1118,11 @@ function scriptMaxNav() {
   const modOf = b => b.dataset.room;
   if (window.Hazel && !scriptMaxNav.asking) { scriptMaxNav.asking = true; setTimeout(() => { const before = scriptTypesCache.key; scriptHazelTypes(); scriptMaxNav.asking = false; if (scriptTypesCache.key !== before) scriptMaxNav(); }, 0); }
   M.nav.replaceChildren(...M.boxes.map(b => {
-    const lang = (SCRIPT_ENGINES.find(([v]) => v === b.shown()) || [, ""])[1];
+    const eng = SCRIPT_ENGINES.find(([v]) => v === b.shown()) || [, ""];
+    const lang = eng[0] ? scriptEngineLabel(eng[0], eng[1]) : "";
+    const name = [...b.querySelector(".box-name").childNodes].filter(n => n.tagName !== "BUTTON").map(n => n.textContent).join("");
     const a = el("button", { class: "script-max-item", "aria-current": String(b === M.sec), onclick: () => scriptMaxOpen(M.boxes, b) },
-      [el("span", {}, b.querySelector(".box-name").firstChild.textContent), el("span", { class: "script-max-lang" }, lang)]);
+      [el("span", {}, name), el("span", { class: "script-max-lang" }, lang)]);
     const subs = scriptListings(b).flatMap(({ node, text, lang }) => { const lines = text.split("\n"), os = scriptOutline(text, lang); return os.map((o, i) => {
       // (584) its lines: up to the next definition, less the comments and blank lines that lead into that one
       let end = (os[i + 1] ? os[i + 1].line : lines.length) - 1;
@@ -1241,7 +1247,7 @@ function scriptingPanel(box) {
   const jsPre = text => roPre("script-js", "js", text);
   // (ticket 566) a chip per engine; on, the one shown (and, for a room, the one that runs)
   const chips = (now, pick, cls) => {
-    const bs = SCRIPT_ENGINES.map(([v, lab]) => [v, el("button", { "data-engine": v, "aria-pressed": String(now() === v), onclick: () => pick(v) }, lab)]);
+    const bs = SCRIPT_ENGINES.map(([v, lab]) => [v, el("button", { "data-engine": v, "aria-pressed": String(now() === v), onclick: () => pick(v) }, scriptEngineLabel(v, lab))]);
     const row = el("div", { class: "row script-engines " + cls }, bs.map(([, b]) => b));
     row.refresh = () => { for (const [v, b] of bs) setPressed(b, now() === v); };
     return row;
@@ -1321,7 +1327,7 @@ function scriptingPanel(box) {
       ...pickRow("size", SCRIPT_SIZES.map(n => [n, String(n)]), () => scriptEditorSettings().size, v => { scriptEditorSettings().size = v; }),
       ...pickRow("font", SCRIPT_FONTS.map(([n]) => [n, n]), () => scriptEditorSettings().font, v => { scriptEditorSettings().font = v; }),
       ...pickRow("colour", [[true, "on"], [false, "off"]], () => scriptEditorSettings().colours, v => { scriptEditorSettings().colours = v; }),
-      ...pickRow("hazel", [["tiles", "⬢ tiles"], ["text", "✏️ text"]], () => scriptEditorSettings().hazel, v => { scriptEditorSettings().hazel = v; }),
+      ...pickRow("hazel", [["tiles", scriptHazelTile("tiles")], ["text", "✏️ text"]], () => scriptEditorSettings().hazel, v => { scriptEditorSettings().hazel = v; }),
       ...pickRow("lines", [[true, "on"], [false, "off"]], () => scriptEditorSettings().lines, v => { scriptEditorSettings().lines = v; }),
       el("span", { class: "cap" }, "wrap"), el("div", { class: "row" }, [wrapIn]),
     ]),
@@ -1331,7 +1337,7 @@ function scriptingPanel(box) {
   const refresh = () => { master.refresh(); mixed.textContent = allNow() === "mixed" ? "mixed" : ""; for (const b of boxes) b.refresh(); scriptMaxNav(); };
   // (ticket 520) Hazel's tiles: made once the tab is laid out (scriptFrameMount)
   const tiles = el("section", { class: "box script-box script-tiles" }, [
-    el("div", { class: "box-name" }, ["⬢ the Hazel program, in Hazel's tiles", maxBtn(() => tiles)]),
+    el("div", { class: "box-name" }, ["the ", scriptHazelTile(), " program, in its tiles", maxBtn(() => tiles)]),
     el("div", { class: "hint script-frame-status" }, "Hazel's tiles start once this tab is open."),
     el("ul", { class: "script-errors script-frame-errors" }),
     el("div", { class: "script-frame-wrap" }),
