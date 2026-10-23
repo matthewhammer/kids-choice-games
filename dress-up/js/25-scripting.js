@@ -242,7 +242,7 @@ const SCRIPT_DEFAULTS = () => ({ common: SCRIPT_COMMON, rooms: Object.fromEntrie
 // code boxes all"; "let's have the jS versions show up as JS code, but read only. The hazel and fumola boxes are for editing.")
 // Which engine runs a room's rule: "js" (the game's own code), "hazel" or "fumola". A room's own chip (engines[room]) if it has
 // one; else the master chip's (all); else, for a save from before, the old 🧩 switch (on: Hazel). ?logic= overrides all of it.
-const SCRIPT_ENGINES = [["js", "JS"], ["hazel", "🧩 Hazel"], ["fumola", "🍄 Fumola"]];
+const SCRIPT_ENGINES = [["js", "JS"], ["hazel", "⬢ Hazel"], ["fumola", "🍄 Fumola"]];
 function scriptEngine(room) {
   if (SCRIPT_LOGIC === "hazel") return "hazel";
   if (SCRIPT_FUMOLA) return "fumola";
@@ -537,7 +537,7 @@ function scriptEvent(room, ev) {
   return true;
 }
 
-// (ticket 520) 🧩 Hazel's tiles: under the editors, Hazel's own app in a frame (SCRIPT_FRAME_URL, its embed mode; the messages are
+// (ticket 520) ⬢ Hazel's tiles: under the editors, Hazel's own app in a frame (SCRIPT_FRAME_URL, its embed mode; the messages are
 // protocol 1 of docs/hazel-as-a-js-library.md on hazelgrove/hazel#2719's branch) showing the whole program as one read-only cell of
 // tiles, with Hazel's own error marks. The page posts the program ({type: "set", ...scriptSpec()}) when the frame says "ready" and
 // then on the panel's change timer, no more often (scriptFramePost); the frame posts back its height ("size") and what Hazel says
@@ -694,7 +694,8 @@ function scriptTileTheme(T) {
   T.iframe.contentWindow.postMessage({ type: "theme", dark, contrast: dark }, SCRIPT_HAZEL_ORIGIN);
 }
 function scriptTileFrame(mod) {
-  const holder = el("div", { class: "script-frame-wrap script-tile-wrap" });
+  // (never empty: an empty frame-wrap is display: none, and so never comes into view, and its frame would never be made)
+  const holder = el("div", { class: "script-frame-wrap script-tile-wrap" }, [el("div", { class: "hint script-tile-wait" }, `⏳ Hazel's tiles for ${mod}…`)]);
   const T = { mod, holder, iframe: null, ready: false, sent: null, height: 0 };
   if (!scriptTilesListening) {
     scriptTilesListening = true;
@@ -709,11 +710,15 @@ function scriptTileFrame(mod) {
     holder.replaceChildren(T.iframe);
     scriptTileFrames.add(T);
   };
-  // (in view: made; a box moved, as into the ⛶ view, loads its frame again, and says ready again)
-  if (typeof IntersectionObserver === "function") {
-    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); mount(); } });
-    setTimeout(() => io.observe(holder), 0);
-  } else setTimeout(mount, 0);
+  // (in view: made; a box moved, as into the ⛶ view, loads its frame again, and says ready again. Looked for every 0.7 s: an
+  // IntersectionObserver made while the panel was being laid out never called back, in a box later moved into the ⛶ view)
+  const look = setInterval(() => {
+    if (T.iframe) { clearInterval(look); return; }
+    if (!holder.isConnected) { if (!document.body.contains(holder) && T.gone++ > 20) clearInterval(look); return; }
+    const r = holder.getBoundingClientRect();
+    if (r.width > 0 && r.bottom > 0 && r.top < window.innerHeight) { clearInterval(look); mount(); }
+  }, 700);
+  T.gone = 0;
   T.post = () => {
     if (!T.ready || !T.iframe || !T.iframe.isConnected) return;
     const spec = scriptSpec(), key = JSON.stringify(spec);
@@ -908,6 +913,7 @@ function scriptEditorSettings() {
   if (typeof E.colours !== "boolean") E.colours = true;
   if (!(E.wrap >= 20 && E.wrap <= 400)) E.wrap = 77;
   if (typeof E.lines !== "boolean") E.lines = true;   // (ticket 581)
+  if (E.hazel !== "text") E.hazel = "tiles";   // (ticket 578: Hazel's boxes in tiles, or text)
   return E;
 }
 function scriptEditorApply() {
@@ -916,6 +922,7 @@ function scriptEditorApply() {
   R.setProperty("--script-font", SCRIPT_FONTS.find(([n]) => n === E.font)[1]);
   document.body.classList.toggle("script-plain", !E.colours);
   document.body.classList.toggle("script-nolines", !E.lines);
+  for (const b of document.querySelectorAll(".script-hazel-body")) if (b.show) b.show();
   for (const ta of document.querySelectorAll("textarea.script-editor, pre.script-js")) if (ta.reflow) ta.reflow();
 }
 // how many characters of the code's font fit across a text box, its padding and scroll bar taken off
@@ -936,8 +943,20 @@ function scriptMaxOpen(boxes, sec) {
     const nav = el("nav", { class: "script-max-nav", "aria-label": "the code, box by box" });
     const main = el("div", { class: "script-max-main" });
     const close = el("button", { class: "script-max-close", title: "back to the panel (Escape)", onclick: () => scriptMaxClose() }, "✖ back");
+    // (Matthew, 2026-10-23: "please make LHS vs RHS of FS script panel dragable") a divider between the outline and the box, dragged
+    // to set the outline's width (remembered in this browser)
+    const divider = el("div", { class: "script-max-divider", role: "separator", "aria-orientation": "vertical", "aria-label": "drag to widen or narrow the outline", tabindex: "0" });
     const wrap = el("div", { class: "script-max", role: "dialog", "aria-label": "the game's code, at full size" },
-      [el("div", { class: "script-max-left" }, [close, nav]), main]);
+      [el("div", { class: "script-max-left" }, [close, nav]), divider, main]);
+    const setW = px => { const w = Math.max(140, Math.min(window.innerWidth - 240, px)); wrap.style.setProperty("--script-max-left", w + "px"); try { localStorage.setItem("scriptMaxLeft", String(w)); } catch (e) {} };
+    try { const w = +localStorage.getItem("scriptMaxLeft"); if (w) setW(w); } catch (e) {}
+    divider.addEventListener("pointerdown", e => {
+      e.preventDefault(); divider.setPointerCapture(e.pointerId); wrap.classList.add("script-max-dragging");
+      const move = ev => setW(ev.clientX - wrap.getBoundingClientRect().left - 10);
+      const up = () => { divider.removeEventListener("pointermove", move); divider.removeEventListener("pointerup", up); wrap.classList.remove("script-max-dragging"); };
+      divider.addEventListener("pointermove", move); divider.addEventListener("pointerup", up);
+    });
+    divider.addEventListener("keydown", e => { const w = wrap.querySelector(".script-max-left").getBoundingClientRect().width; if (e.key === "ArrowLeft") setW(w - 20); else if (e.key === "ArrowRight") setW(w + 20); else return; e.preventDefault(); e.stopPropagation(); });
     const key = e => { if (e.key === "Escape") { e.stopPropagation(); scriptMaxClose(); } };
     wrap.addEventListener("keydown", key);
     document.body.append(wrap);
@@ -1192,23 +1211,18 @@ function scriptingPanel(box) {
     wrap.refill = ta.refill;
     return wrap;
   };
-  // (578) a Hazel box's body: a 🧩 tiles / ✏️ text chip, then its tiles (a frame for its module) or its text box; tiles unless
-  // the box was switched to text (kept with the scripts, per module)
+  // (578) a Hazel box's body: its tiles (a frame for its module) or its text box, as ⚙️'s "hazel" row says (Matthew, 2026-10-23:
+  // "please place in editor settings --- not once per box"); tiles unless it says text
   const hazelBody = (mod, textEditor) => {
-    const E = scriptEditorSettings(), views = E.views || (E.views = {});
-    const view = () => views[mod] === "text" ? "text" : "tiles";
     let T = null;
     const tilesHolder = el("div", { class: "script-tiles-in" });
-    const chipsRow = el("div", { class: "row script-views" }, [["tiles", "🧩 tiles"], ["text", "✏️ text"]].map(([v, lab]) =>
-      el("button", { "data-view": v, "aria-pressed": "false", onclick: () => { views[mod] = v; show(); changed(); } }, lab)));
-    const show = () => {
-      const v = view();
+    const wrap = el("div", { class: "script-hazel-body" }, [tilesHolder, textEditor]);
+    wrap.show = () => {
+      const v = scriptEditorSettings().hazel;
       textEditor.hidden = v !== "text"; tilesHolder.hidden = v !== "tiles";
       if (v === "tiles" && !T) { T = scriptTileFrame(mod); tilesHolder.replaceChildren(T.holder); }
-      for (const b of chipsRow.querySelectorAll("button")) setPressed(b, b.dataset.view === v);
     };
-    const wrap = el("div", { class: "script-hazel-body" }, [chipsRow, tilesHolder, textEditor]);
-    show();
+    wrap.show();
     return wrap;
   };
   // (a read-only box laid out to its width too, as an editor is (579): again when its width changes, and on a setting's change;
@@ -1307,6 +1321,7 @@ function scriptingPanel(box) {
       ...pickRow("size", SCRIPT_SIZES.map(n => [n, String(n)]), () => scriptEditorSettings().size, v => { scriptEditorSettings().size = v; }),
       ...pickRow("font", SCRIPT_FONTS.map(([n]) => [n, n]), () => scriptEditorSettings().font, v => { scriptEditorSettings().font = v; }),
       ...pickRow("colour", [[true, "on"], [false, "off"]], () => scriptEditorSettings().colours, v => { scriptEditorSettings().colours = v; }),
+      ...pickRow("hazel", [["tiles", "⬢ tiles"], ["text", "✏️ text"]], () => scriptEditorSettings().hazel, v => { scriptEditorSettings().hazel = v; }),
       ...pickRow("lines", [[true, "on"], [false, "off"]], () => scriptEditorSettings().lines, v => { scriptEditorSettings().lines = v; }),
       el("span", { class: "cap" }, "wrap"), el("div", { class: "row" }, [wrapIn]),
     ]),
@@ -1316,7 +1331,7 @@ function scriptingPanel(box) {
   const refresh = () => { master.refresh(); mixed.textContent = allNow() === "mixed" ? "mixed" : ""; for (const b of boxes) b.refresh(); scriptMaxNav(); };
   // (ticket 520) Hazel's tiles: made once the tab is laid out (scriptFrameMount)
   const tiles = el("section", { class: "box script-box script-tiles" }, [
-    el("div", { class: "box-name" }, ["🧩 the Hazel program, in Hazel's tiles", maxBtn(() => tiles)]),
+    el("div", { class: "box-name" }, ["⬢ the Hazel program, in Hazel's tiles", maxBtn(() => tiles)]),
     el("div", { class: "hint script-frame-status" }, "Hazel's tiles start once this tab is open."),
     el("ul", { class: "script-errors script-frame-errors" }),
     el("div", { class: "script-frame-wrap" }),

@@ -1031,8 +1031,12 @@ body.script-nolines .script-box pre .ln { font-size: 0; min-width: 0; margin: 0;
 /* (ticket 577) ⛶ max size: the outline of every box on the left, the chosen box filling the right */
 .script-box > .box-name { display: flex; align-items: center; gap: 8px; }
 .script-max-btn { margin-left: auto; font-size: 0.8em; padding: 1px 8px; }
-.script-max { position: fixed; inset: 0; z-index: 60; display: grid; grid-template-columns: minmax(11em, 16em) 1fr; gap: 10px; padding: 10px;
+.script-max { position: fixed; inset: 0; z-index: 60; display: grid; grid-template-columns: var(--script-max-left, minmax(11em, 16em)) 8px 1fr; gap: 2px; padding: 10px;
   background: var(--panel, Canvas); color: var(--ink, CanvasText); box-sizing: border-box; }
+.script-max-divider { cursor: col-resize; border-radius: 4px; background: color-mix(in srgb, var(--line, #888) 40%, transparent); touch-action: none; }
+.script-max-divider:hover, .script-max-divider:focus-visible, .script-max-dragging .script-max-divider { background: color-mix(in srgb, #7c3aed 60%, transparent); }
+.script-max-dragging { user-select: none; }
+.script-max-dragging iframe { pointer-events: none; }
 .script-max-left { display: flex; flex-direction: column; gap: 6px; overflow: auto; }
 .script-max-nav { display: flex; flex-direction: column; gap: 3px; }
 .script-max-item { display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 5px 8px; border-radius: 6px; }
@@ -1065,7 +1069,7 @@ body.script-nolines .script-box pre .ln { font-size: 0; min-width: 0; margin: 0;
 .script-max-main textarea.script-editor { flex: 1; min-height: 60vh; resize: none; }
 .script-max-main pre.script-js { max-height: none; flex: 1; }
 body.script-maxed { overflow: hidden; }
-@media (max-width: 640px) { .script-max { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .script-max-nav { flex-direction: row; flex-wrap: wrap; } }
+@media (max-width: 640px) { .script-max { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .script-max-divider { display: none; } .script-max-nav { flex-direction: row; flex-wrap: wrap; } }
 /* (ticket 580) ⚙️ the editor's settings, knolled: names in one column, their chips in the next; colours off: the text box's own text */
 .script-settings > .box-name { display: flex; align-items: center; gap: 8px; }
 .script-about-chip { margin-left: auto; min-width: 2em; padding: 1px 8px; border-radius: 999px; font-weight: 700; }
@@ -1090,7 +1094,8 @@ body.script-plain [class^="tk-"] { color: inherit; font-weight: inherit; font-st
 body.big .script-frame { display: none; }
 .script-frame-again { margin-left: 4px; }
 /* (ticket 578) a Hazel box's own tiles, in place of its text box; its chip (🧩 tiles / ✏️ text) above */
-.script-views { margin: 2px 0 4px; }
+/* (a hidden one hidden: .script-edit's own display would otherwise show it) */
+.script-hazel-body > [hidden] { display: none !important; }
 .script-max-main .script-tile-wrap { max-height: none; }
 /* (ticket 491) in one column, under the picture's stage, which sticks at the top (its height, --stage-h, kept by
    21-size-and-divider.js), not across the picture */
