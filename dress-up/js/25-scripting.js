@@ -1177,9 +1177,14 @@ function scriptMaxJump(box, node, line, end = line, name = null) {
     return;
   }
   if (node.tagName === "TEXTAREA") {
-    const at = node.value.split("\n").slice(0, line).reduce((n, l) => n + l.length + 1, 0);
+    // (the review, Matthew 2026-10-23: "follow your recommendations") a text box's definition selected with the browser's own
+    // selection, its lines from the first to the last, not a band drawn over it: the browser keeps it on the text however the
+    // box wraps or scrolls (two bands drifted that day)
+    const ls = node.value.split("\n"), at = ls.slice(0, line).reduce((n, l) => n + l.length + 1, 0);
+    const to = ls.slice(0, end + 1).reduce((n, l) => n + l.length + 1, 0) - 1;
+    for (const b of document.querySelectorAll(".script-band")) { if (b.unscroll) b.unscroll(); b.remove(); }
     node.scrollIntoView({ block: "nearest" });
-    node.focus({ preventScroll: true }); node.setSelectionRange(at, at);
+    node.focus({ preventScroll: true }); node.setSelectionRange(at, Math.max(at, to), "backward");
     const cs = getComputedStyle(node), lh = parseFloat(cs.lineHeight);
     node.scrollTop = Math.max(0, line * lh - 8);
     // (Matthew, 2026-10-23: "need to scroll to things even if not visible in viewport") a text box as tall as its text does not
@@ -1187,7 +1192,6 @@ function scriptMaxJump(box, node, line, end = line, name = null) {
     const y = node.getBoundingClientRect().top + parseFloat(cs.paddingTop) + line * lh - node.scrollTop;
     const view = M.sec || M.main, top = view.getBoundingClientRect().top;
     if (y < top + 8 || y > top + view.clientHeight - 2 * lh) view.scrollTop += y - top - 40;
-    scriptBand(node, line, end);
   } else {
     const mark = node.querySelectorAll(".ln")[line];
     if (mark) mark.scrollIntoView({ block: "start" });

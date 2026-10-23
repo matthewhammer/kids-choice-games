@@ -1033,7 +1033,7 @@ pre.script-ln { contain: size; flex: none; box-sizing: content-box; margin: 0; o
 body.script-nolines pre.script-ln { display: none; }
 body.script-nolines .script-box pre .ln { font-size: 0; min-width: 0; margin: 0; }   /* (kept, empty: the outline scrolls to them, 582) */
 .script-edit textarea.script-editor { position: relative; z-index: 1; scrollbar-gutter: stable; background: transparent; color: transparent; caret-color: var(--ink, CanvasText); }
-.script-edit textarea.script-editor::selection { background: color-mix(in srgb, #3b82f6 30%, transparent); color: transparent; }
+.script-edit textarea.script-editor::selection { background: color-mix(in srgb, #7c3aed 32%, transparent); color: transparent; }   /* (the band's colour: a definition chosen in the outline is selected) */
 .script-edit pre.script-hl { position: absolute; inset: 0; margin: 0; overflow: hidden; scrollbar-gutter: stable; pointer-events: none; white-space: pre;
   font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); tab-size: 2; padding: 6px 8px; border-radius: 6px; border: 1px solid transparent;
   background: var(--panel, Canvas); color: var(--ink, CanvasText); }
