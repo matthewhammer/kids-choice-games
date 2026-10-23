@@ -1291,7 +1291,7 @@ function scriptingPanel(box) {
         jsPre(scriptJsSource(r.name)));
       else if (eng === "hazel") body.replaceChildren(el("div", { class: "hint" }, `module ${r.name}, in Hazel`),
         hazelBody(r.name, editor(r.name, () => scriptsState().rooms[r.name], v => { scriptsState().rooms[r.name] = v; }, "hazel")));
-      else body.replaceChildren(el("div", { class: "hint" }, `module ${r.name}, in Fumola`),
+      else body.replaceChildren(el("div", { class: "hint" }, `module ${r.name}, in Fumola (as text: ⚙️'s tiles are Hazel's; Fumola has none in the game yet)`),
         editor(r.name, () => scriptsState().fumola.rooms[r.name] || "", v => { scriptsState().fumola.rooms[r.name] = v; }, "fumola"));
     };
     const row = chips(() => scriptEngine(r.name), v => { const T = scriptsState(); T.engines[r.name] = v; if (v === "fumola") wantFumola(); refresh(); changed(); sync(); }, "script-room-engines");
@@ -1318,7 +1318,7 @@ function scriptingPanel(box) {
         hazelBody("Common", editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }, "hazel")),
         el("div", { class: "hint" }, "the types every Hazel room can name (read-only: at the program's start until the game's Hazel has hazelgrove/hazel#2729)"),
         typesPre());
-      else body.replaceChildren(el("div", { class: "hint" }, "module Common, in Fumola: in scope in every Fumola room, as Common.name"),
+      else body.replaceChildren(el("div", { class: "hint" }, "module Common, in Fumola: in scope in every Fumola room, as Common.name (as text: ⚙️'s tiles are Hazel's; Fumola has none in the game yet)"),
         editor("Common", () => scriptsState().fumola.common || "", t => { scriptsState().fumola.common = t; }, "fumola"));
     };
     const row = chips(view, v => { scriptsState().commonView = v; if (v === "fumola") wantFumola(); show(); row.refresh(); scriptMaxNav(); changed(); }, "script-common-engines");
