@@ -1009,7 +1009,7 @@ body.designer-big .crumbs { display: none; }
 .script-master { margin-bottom: 2px; }
 .script-mixed:empty { display: none; }
 .script-box pre.script-js { font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 2; white-space: pre; overflow: auto; max-height: 22em;
-  margin: 4px 0; padding: 6px 8px; border-radius: 6px; border: 1px dashed var(--line, #c8c8c8); background: color-mix(in srgb, var(--line, #c8c8c8) 14%, transparent); }
+  margin: 4px 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line, #c8c8c8); background: color-mix(in srgb, var(--line, #c8c8c8) 14%, transparent); }
 .script-say { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 50; padding: 6px 14px; border-radius: 999px;
   background: #1f2937; color: #fff; font: 14px/1.4 system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .script-say[hidden] { display: none; }
