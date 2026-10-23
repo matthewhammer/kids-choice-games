@@ -109,7 +109,7 @@ try {
     const K = castleOf(B), lev = () => [leverDown(B, "L", 3, K.id), leverDown(B, "R", 3, K.id)];
     const pullL = async () => { roomLeverPull("L"); await w(1600); return lev(); };
     out.before = lev(); out.shipped = await pullL();
-    state.scripts.rooms.TrapRoom = 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Common.flip2("lever_L", "lever_R") | _ => Done end';
+    state.scripts.rooms.TrapRoom = 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Common.flip2(L, R) | _ => Done end';
     out.both0 = lev(); out.both = await pullL();
     state.scripts.rooms.TrapRoom = 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Say("hello from Hazel", Done) | _ => Done end';
     out.say0 = lev(); out.say = await pullL(); out.sayText = (document.getElementById("script-say") || {}).textContent || "";
@@ -152,7 +152,7 @@ try {
   const F = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), out = {}, B = state.background, H = window.Hazel, rp = H.runProgram;
     H.runProgram = undefined;
     try {
-      state.scripts.rooms.TrapRoom = 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Common.flip2("lever_L", "lever_R") | _ => Done end';
+      state.scripts.rooms.TrapRoom = 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Common.flip2(L, R) | _ => Done end';
       const K = castleOf(B), lev = () => [leverDown(B, "L", 3, K.id), leverDown(B, "R", 3, K.id)];
       out.b0 = lev(); roomLeverPull("L"); await w(1600); out.b = lev(); out.via = scriptCompiled.via;
     } finally { H.runProgram = rp; }
