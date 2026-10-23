@@ -1141,7 +1141,8 @@ function scriptingPanel(box) {
     return row;
   };
   // (ticket 577) ⛶: this box at full size, with the outline of them all (scriptMaxOpen)
-  const maxBtn = sec => el("button", { class: "script-max-btn", title: "full size, with every box listed beside it", onclick: () => scriptMaxOpen(boxes, sec()) }, "⛶ max size");
+  // (the 🧩 tiles first in its outline: Matthew, 2026-10-23, maxed 📚 Common's text box looking for them, "doesn't look like tiles")
+  const maxBtn = sec => el("button", { class: "script-max-btn", title: "full size, with every box listed beside it", onclick: () => scriptMaxOpen([tiles, ...boxes], sec()) }, "⛶ max size");
   // a room's box: its chip, then its code in that engine. JS: the game's own functions, to read; Hazel and Fumola: to edit
   const roomBox = r => {
     const body = el("div", { class: "script-body" });
