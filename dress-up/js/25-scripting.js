@@ -1101,8 +1101,12 @@ function scriptTypeKind(def) {
 // Hazel's, by its inferred type (() -> Cmd, () -> ()); Fumola's and JS's, by no parameters and no return of a value
 const fnTail = (lang, sig, ls) => {
   const head = ls[0] || "";
+  // (Matthew, 2026-10-23, nth and rooms wanded: "the magic wand seems misapplied --- we haven't put optional type annotations on
+  // the Fumola code?" The test took any () on the line, xs.size()'s too. Now the function's OWN parameters must be empty; and a
+  // Fumola function gives back its last expression, with no return to look for, so without a type none can be said to give back
+  // nothing: no wand there, until its code carries types)
   const wand = sig ? /^\(\)\s*->\s*(\(\)|Cmd)$/.test(sig)
-    : lang !== "hazel" && /\(\s*\)/.test(head) && !ls.some(l => /\breturn\s+[^;\s]/.test(l));
+    : lang === "js" && /\bfunction\s*\*?\s*[\w$]*\s*\(\s*\)/.test(head) && !ls.some(l => /\breturn\s+[^;\s]/.test(l));
   return el("span", { class: "script-max-tail" }, [el("span", { class: "script-max-cases" }, ls.length + (ls.length === 1 ? " line" : " lines")),
     el("span", { class: "script-max-tkind", title: wand ? "takes nothing, and only acts" : "", "aria-label": wand ? "takes nothing, and only acts" : "" }, wand ? "🪄" : "")]);
 };
