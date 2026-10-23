@@ -746,6 +746,17 @@ function scriptTileMessage(e) {
   if (m.type === "ready") {
     T.ready = true; T.sent = null;
     const w = T.iframe.contentWindow;
+    // (Matthew, 2026-10-23: "indentation in tiles panel is a regression --- we should respect the viewport, and enforce that line
+    // limit, like we already have elsewhere") the module's stored text broken to the box's width, at most ⚙️'s wrap, as the text
+    // box shows it (579: only spaces and breaks change), before the tiles get it; not again while it is edited in them, so the
+    // caret stays where it is. Hazel's tiles: about 12.8 px a character (measured in its frame, 2026-10-23)
+    {
+      const S = scriptsState(), cols = Math.min(scriptEditorSettings().wrap, Math.floor((T.holder.clientWidth - 40) / 12.8));
+      if (cols > 20) {
+        if (T.mod === "Common") S.common = scriptFlow("hazel", S.common, cols);
+        else if (S.rooms[T.mod] != null) S.rooms[T.mod] = scriptFlow("hazel", S.rooms[T.mod], cols);
+      }
+    }
     scriptTileTheme(T);
     w.postMessage({ type: "editable", on: true }, SCRIPT_HAZEL_ORIGIN);
     w.postMessage({ type: "focus", module: T.mod }, SCRIPT_HAZEL_ORIGIN);
