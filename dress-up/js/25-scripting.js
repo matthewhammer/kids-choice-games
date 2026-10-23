@@ -727,12 +727,13 @@ function scriptTileFrame(mod) {
   };
   // (in view: made; a box moved, as into the ⛶ view, loads its frame again, and says ready again. Looked for every 0.7 s: an
   // IntersectionObserver made while the panel was being laid out never called back, in a box later moved into the ⛶ view)
+  // (preloaded, Matthew 2026-10-23: "let's pre-load the tile editor for each code block on the LHS, even if not in view": made as
+  // soon as its box is laid out, shown or not; looked for every 0.3 s until then)
   const look = setInterval(() => {
     if (T.iframe) { clearInterval(look); return; }
-    if (!holder.isConnected) { if (!document.body.contains(holder) && T.gone++ > 20) clearInterval(look); return; }
-    const r = holder.getBoundingClientRect();
-    if (r.width > 0 && r.bottom > 0 && r.top < window.innerHeight) { clearInterval(look); mount(); }
-  }, 700);
+    if (!holder.isConnected) { if (!document.body.contains(holder) && T.gone++ > 60) clearInterval(look); return; }
+    if (holder.getBoundingClientRect().width > 0) { clearInterval(look); mount(); }
+  }, 300);
   T.gone = 0;
   T.post = () => {
     if (!T.ready || !T.iframe || !T.iframe.isConnected) return;
@@ -750,7 +751,7 @@ function scriptTileMessage(e) {
   if (!T) return;
   const m = e.data || {};
   if (m.type === "ready") {
-    T.ready = true; T.sent = null;
+    T.ready = true; T.sent = null; T.holder.dataset.ready = "1"; scriptMaxNavSoon();
     const w = T.iframe.contentWindow;
     // (Matthew, 2026-10-23: "indentation in tiles panel is a regression --- we should respect the viewport, and enforce that line
     // limit, like we already have elsewhere") the module's stored text broken to the box's width, at most ⚙️'s wrap, as the text
@@ -995,9 +996,17 @@ function scriptMaxOpen(boxes, sec) {
     scriptMax = { wrap, nav, main, boxes, sec: null, spot: null };
   }
   const M = scriptMax;
-  if (M.sec) M.spot.replaceWith(M.sec);
-  M.sec = sec; M.spot = el("div", { class: "script-max-spot", hidden: "" });
-  sec.replaceWith(M.spot); M.main.replaceChildren(sec);
+  // (Matthew, 2026-10-23: "let's pre-load the tile editor for each code block on the LHS, even if not in view": the chosen box is
+  // pinned over the main area where it is in the page, not moved there, since a frame moved in the page loads again)
+  if (M.sec && M.sec !== sec) scriptMaxUnpin(M.sec);
+  M.sec = sec;
+  sec.classList.add("script-max-pinned");
+  scriptMaxPlace();
+  if (!M.placing) {
+    M.placing = () => scriptMaxPlace();
+    window.addEventListener("resize", M.placing);
+    if (typeof ResizeObserver === "function") { M.ro = new ResizeObserver(M.placing); M.ro.observe(M.main); }
+  }
   scriptReflowSoon(sec); if (M.prev && M.prev !== sec) scriptReflowSoon(M.prev); M.prev = sec;
   scriptMaxNav();
   const ta = sec.querySelector("textarea"); if (ta) ta.focus({ preventScroll: true });   // (and so laid out to its new width: 579)
@@ -1054,7 +1063,7 @@ function scriptMaxJump(box, node, line, end = line) {
     const n = Math.max(1, node.value.split("\n").length), frame = tilesWrap.querySelector("iframe");
     const top0 = 8, rowH = frame ? Math.max(8, (frame.getBoundingClientRect().height - 2 * top0) / n) : 20;
     const y = tilesWrap.getBoundingClientRect().top + top0 + line * rowH;
-    const view = M.main, vtop = view.getBoundingClientRect().top;
+    const view = M.sec || M.main, vtop = view.getBoundingClientRect().top;
     view.scrollTop += y - vtop - 40;
     for (const b of document.querySelectorAll(".script-band")) { if (b.unscroll) b.unscroll(); b.remove(); }
     const band = el("div", { class: "script-band", "aria-hidden": "true" });
@@ -1071,7 +1080,7 @@ function scriptMaxJump(box, node, line, end = line) {
     // (Matthew, 2026-10-23: "need to scroll to things even if not visible in viewport") a text box as tall as its text does not
     // scroll itself: the view around it does, to the line
     const y = node.getBoundingClientRect().top + parseFloat(cs.paddingTop) + line * lh - node.scrollTop;
-    const view = M.main, top = view.getBoundingClientRect().top;
+    const view = M.sec || M.main, top = view.getBoundingClientRect().top;
     if (y < top + 8 || y > top + view.clientHeight - 2 * lh) view.scrollTop += y - top - 40;
   } else {
     const mark = node.querySelectorAll(".ln")[line];
@@ -1184,6 +1193,9 @@ function scriptMaxNav() {
   M.nav.replaceChildren(...M.boxes.map(b => {
     const eng = SCRIPT_ENGINES.find(([v]) => v === b.shown()) || [, ""];
     const lang = eng[0] ? scriptEngineLabel(eng[0], eng[1]) : "";
+    // (Matthew, 2026-10-23: "Let's put a spinner on that chip on the LHS for each code block") its tiles not ready yet: the tile spins
+    const tw = b.querySelector(".script-tile-wrap");
+    if (lang && lang.classList && tw && !tw.closest("[hidden]") && tw.dataset.ready !== "1") lang.classList.add("loading");
     const name = [...b.querySelector(".box-name").childNodes].filter(n => n.tagName !== "BUTTON").map(n => n.textContent).join("");
     const a = el("button", { class: "script-max-item", "aria-current": String(b === M.sec), onclick: () => scriptMaxOpen(M.boxes, b) },
       [el("span", {}, name), el("span", { class: "script-max-lang" }, lang)]);
@@ -1203,9 +1215,21 @@ let scriptMaxNavTimer = null;
 const scriptMaxNavSoon = () => { if (!scriptMax) return; clearTimeout(scriptMaxNavTimer); scriptMaxNavTimer = setTimeout(scriptMaxNav, 300); };
 // a box moved (into the ⛶ view or back) has a new width: its code laid out again, once it is in place (579)
 const scriptReflowSoon = box => setTimeout(() => { for (const n of box.querySelectorAll("textarea.script-editor, pre.script-js")) if (n.reflow) n.reflow(); }, 0);
+// the pinned box set over the main area: its place and size
+function scriptMaxPlace() {
+  const M = scriptMax; if (!M || !M.sec) return;
+  const r = M.main.getBoundingClientRect(), st = M.sec.style;
+  st.left = r.left + "px"; st.top = r.top + "px"; st.width = r.width + "px"; st.height = r.height + "px";
+}
+function scriptMaxUnpin(sec) {
+  sec.classList.remove("script-max-pinned");
+  for (const k of ["left", "top", "width", "height"]) sec.style[k] = "";
+  scriptReflowSoon(sec);
+}
 function scriptMaxClose() {
   const M = scriptMax; if (!M) return;
-  if (M.sec) { M.spot.replaceWith(M.sec); scriptReflowSoon(M.sec); }
+  if (M.sec) scriptMaxUnpin(M.sec);
+  if (M.placing) { window.removeEventListener("resize", M.placing); if (M.ro) M.ro.disconnect(); }
   M.wrap.remove(); document.body.classList.remove("script-maxed");
   scriptMax = null;
 }

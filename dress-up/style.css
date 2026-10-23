@@ -1011,6 +1011,12 @@ body.designer-big .crumbs { display: none; }
 .script-box pre.script-js { font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); tab-size: 2; white-space: pre; overflow: auto; max-height: 22em;
   margin: 4px 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line, #c8c8c8); background: color-mix(in srgb, var(--line, #c8c8c8) 14%, transparent); }
 /* (2026-10-23) Hazel's name as one of its tiles: a box with pointed ends, its colour Hazel's */
+/* (a box's tiles still loading: its Hazel tile in the outline spins its colour) */
+@keyframes hazel-tile-wait { 0% { filter: brightness(1); } 50% { filter: brightness(1.6); } 100% { filter: brightness(1); } }
+.hazel-tile.loading { animation: hazel-tile-wait 1s ease-in-out infinite; }
+.hazel-tile.loading::after { content: ""; display: inline-block; width: 0.7em; height: 0.7em; margin-left: 0.35em; vertical-align: -0.05em;
+  border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: hazel-spin 0.8s linear infinite; }
+@keyframes hazel-spin { to { transform: rotate(360deg); } }
 .hazel-tile { display: inline-block; padding: 0.05em 0.85em; margin: 0 0.1em; line-height: 1.35; font-weight: 600; color: #fff;
   background: #7c3aed; clip-path: polygon(0.55em 0, calc(100% - 0.55em) 0, 100% 50%, calc(100% - 0.55em) 100%, 0.55em 100%, 0 50%); }
 .script-max-lang .hazel-tile { font-size: 0.85em; }
@@ -1068,14 +1074,17 @@ body.script-nolines .script-box pre .ln { font-size: 0; min-width: 0; margin: 0;
 .script-max-type + .script-max-fn { margin-top: 6px; }
 .script-max-lang { color: var(--muted, GrayText); font-size: 0.85em; font-weight: 400; }
 .script-max-main { overflow: auto; min-width: 0; }
-.script-max-main > .script-box { margin: 0; min-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
-.script-max-main > .script-box .script-max-btn { display: none; }
-.script-max-main .script-body { flex: 1; display: flex; flex-direction: column; }
-.script-max-main .script-edit { flex: 1; }
-.script-max-main textarea.script-editor { flex: 1; min-height: 60vh; resize: none; }
-.script-max-main pre.script-js { max-height: none; flex: 1; }
+/* (the chosen box pinned over .script-max-main, not moved into it: a frame moved in the page loads again, and the tiles are
+   preloaded; its place and size set from the main area's, 25-scripting.js) */
+.script-box.script-max-pinned { position: fixed; z-index: 61; margin: 0; overflow: auto; box-sizing: border-box; display: flex; flex-direction: column;
+  background: var(--panel, Canvas); }
+.script-max-pinned .script-max-btn { display: none; }
+.script-max-pinned .script-body { flex: 1; display: flex; flex-direction: column; }
+.script-max-pinned .script-edit { flex: 1; }
+.script-max-pinned textarea.script-editor { flex: 1; min-height: 60vh; resize: none; }
+.script-max-pinned pre.script-js { max-height: none; flex: 1; }
 body.script-maxed { overflow: hidden; }
-@media (max-width: 640px) { .script-max { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .script-max-divider { display: none; } .script-max-nav { flex-direction: row; flex-wrap: wrap; } }
+@media (max-width: 640px) { .script-max { grid-template-columns: 1fr; grid-template-rows: minmax(0, 40vh) 1fr; } .script-max-divider { display: none; } .script-max-main { min-height: 50vh; } .script-max-nav { flex-direction: row; flex-wrap: wrap; } }
 /* (ticket 580) ⚙️ the editor's settings, knolled: names in one column, their chips in the next; colours off: the text box's own text */
 .script-settings > .box-name { display: flex; align-items: center; gap: 8px; }
 .script-about-chip { margin-left: auto; min-width: 2em; padding: 1px 8px; border-radius: 999px; font-weight: 700; }
@@ -1103,7 +1112,7 @@ body.big .script-frame { display: none; }
 /* (a hidden one hidden: .script-edit's own display would otherwise show it) */
 .script-hazel-body > [hidden] { display: none !important; }
 body.script-tiles-on .script-types, body.script-tiles-on .script-types-hint { display: none; }
-.script-max-main .script-tile-wrap { max-height: none; }
+.script-max-pinned .script-tile-wrap { max-height: none; }
 .script-tile-wrap { position: relative; }
 .script-tile-wrap > .script-band { z-index: 1; }
 /* (ticket 491) in one column, under the picture's stage, which sticks at the top (its height, --stage-h, kept by
