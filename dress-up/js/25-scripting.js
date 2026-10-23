@@ -1125,6 +1125,7 @@ function scriptBand(node, line, end) {
     const place = () => { band.style.top = (top0 + line * lh - node.scrollTop) + "px"; band.style.height = ((end - line + 1) * lh) + "px"; };
     place(); node.addEventListener("scroll", place); band.unscroll = () => node.removeEventListener("scroll", place);
     node.before(band);
+    setTimeout(place, 60); setTimeout(place, 400);
   } else {
     const marks = node.querySelectorAll(".ln"); if (!marks[line]) return;
     const a = marks[line], z = marks[end] || a, lh = parseFloat(getComputedStyle(node).lineHeight);
@@ -1154,7 +1155,10 @@ function scriptMaxJump(box, node, line, end = line, name = null) {
       while (end > line && /^\s*(#|\/\/|$)/.test(lines[end])) end--;
     }
   }
-  if (!(node.tagName === "TEXTAREA" && node.closest("[hidden]"))) scriptBand(node, line, end);
+  // (Matthew, 2026-10-23: "Fumola LHS click to select also seems off": the band was placed before the text box scrolled to the
+  // line, and kept up only by its scroll events, which do not always come; now a text box's band is placed after the scroll, from
+  // where the box is then, and again a moment later)
+  if (node.tagName !== "TEXTAREA") scriptBand(node, line, end);
   // (Matthew, 2026-10-23: "LHS nav bar does not respond to click -- a recent regression?" A Hazel box in tiles hides its text box,
   // and the jump scrolled that. Now, in tiles, the view goes to the line's row in the tiles: the frame's height over the text's
   // lines, as Hazel lays the text out a line to a row; the band drawn over the tiles there)
@@ -1183,6 +1187,7 @@ function scriptMaxJump(box, node, line, end = line, name = null) {
     const y = node.getBoundingClientRect().top + parseFloat(cs.paddingTop) + line * lh - node.scrollTop;
     const view = M.sec || M.main, top = view.getBoundingClientRect().top;
     if (y < top + 8 || y > top + view.clientHeight - 2 * lh) view.scrollTop += y - top - 40;
+    scriptBand(node, line, end);
   } else {
     const mark = node.querySelectorAll(".ln")[line];
     if (mark) mark.scrollIntoView({ block: "start" });
