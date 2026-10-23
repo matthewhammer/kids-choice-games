@@ -999,7 +999,7 @@ body.game-font #bg text { transform-box: fill-box; transform-origin: center; sca
 body.designer-big .crumbs { display: none; }
 
 /* (ticket 482) 🧩 Scripting: an editor per module, the program's errors, and a script's words over the picture */
-.script-box textarea.script-editor { width: 100%; box-sizing: border-box; font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 2;
+.script-box textarea.script-editor { width: 100%; box-sizing: border-box; font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); tab-size: 2;
   padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line, #c8c8c8); background: var(--panel, Canvas); color: inherit; resize: vertical; }
 .script-errors { margin: 4px 0 8px 18px; padding: 0; color: #b42318; font: 12px/1.4 ui-monospace, monospace; white-space: pre-wrap; }
 .script-errors:empty { display: none; }
@@ -1008,14 +1008,14 @@ body.designer-big .crumbs { display: none; }
 .script-engines { margin: 2px 0 6px; }
 .script-master { margin-bottom: 2px; }
 .script-mixed:empty { display: none; }
-.script-box pre.script-js { font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 2; white-space: pre; overflow: auto; max-height: 22em;
+.script-box pre.script-js { font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); tab-size: 2; white-space: pre; overflow: auto; max-height: 22em;
   margin: 4px 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line, #c8c8c8); background: color-mix(in srgb, var(--line, #c8c8c8) 14%, transparent); }
 /* (ticket 577) the code in colour: the editor's text transparent over a <pre> of coloured tokens, the same font, padding and size */
 .script-edit { position: relative; }
 .script-edit textarea.script-editor { position: relative; z-index: 1; scrollbar-gutter: stable; background: transparent; color: transparent; caret-color: var(--ink, CanvasText); }
 .script-edit textarea.script-editor::selection { background: color-mix(in srgb, #3b82f6 30%, transparent); color: transparent; }
 .script-edit pre.script-hl { position: absolute; inset: 0; margin: 0; overflow: hidden; scrollbar-gutter: stable; pointer-events: none; white-space: pre-wrap; overflow-wrap: break-word;
-  font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 2; padding: 6px 8px; border-radius: 6px; border: 1px solid transparent;
+  font: var(--script-size, 12.5px)/1.45 var(--script-font, ui-monospace, SFMono-Regular, Menlo, monospace); tab-size: 2; padding: 6px 8px; border-radius: 6px; border: 1px solid transparent;
   background: var(--panel, Canvas); color: var(--ink, CanvasText); }
 .tk-k { color: #7c3aed; font-weight: 600; } .tk-C { color: #0e7490; } .tk-v { color: #0e7490; } .tk-s { color: #b45309; }
 .tk-n { color: #15803d; } .tk-c { color: #6b7280; font-style: italic; } .tk-o { color: #be185d; }
@@ -1039,6 +1039,15 @@ body.designer-big .crumbs { display: none; }
 .script-max-main pre.script-js { max-height: none; flex: 1; }
 body.script-maxed { overflow: hidden; }
 @media (max-width: 640px) { .script-max { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .script-max-nav { flex-direction: row; flex-wrap: wrap; } }
+/* (ticket 580) ⚙️ the editor's settings, knolled: names in one column, their chips in the next; colours off: the text box's own text */
+.script-settings-grid { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; }
+.script-settings-grid > .cap { font-size: 0.85em; color: var(--muted, GrayText); text-align: right; }
+.script-settings-grid .row { margin: 0; }
+.script-settings-grid .script-master { margin: 0; }
+.script-settings-grid input[type="number"] { width: 5em; }
+body.script-plain .script-edit pre.script-hl { display: none; }
+body.script-plain .script-edit textarea.script-editor { color: inherit; background: var(--panel, Canvas); }
+body.script-plain [class^="tk-"] { color: inherit; font-weight: inherit; font-style: inherit; }
 .script-say { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 50; padding: 6px 14px; border-radius: 999px;
   background: #1f2937; color: #fff; font: 14px/1.4 system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .script-say[hidden] { display: none; }

@@ -708,6 +708,84 @@ function scriptHighlight(pre, lang, text, under = false) {
   pre.replaceChildren(...scriptTokens(lang, text).map(([k, w]) => k ? el("span", { class: "tk-" + k }, w) : document.createTextNode(w)), ...(under ? ["\n"] : []));
 }
 
+// (ticket 579, Matthew: "can we adjust the auto-indentation to take the actual code box width into account?") a line longer than
+// the box is laid out as a pretty-printer would, to the box's width: broken at the outermost places the code allows, all of them
+// at once, so a case's arms each get a line, and a block's statements; then each piece still too long, the same way. The places,
+// best first: before a case's | ; before then and else ; after ; and before a closing } ; after , and { and in ; after => and ->.
+// Each piece goes on 2 deeper than the line, 2 more for each bracket open there; a closing bracket back at its opener's depth.
+// Only spaces and line breaks change, never inside a string or a comment (one token each), so a rule means what it meant; lines
+// already narrow enough are left as they are
+const SCRIPT_BREAKS = [[["|"], []], [["then", "else"], []], [["}"], [";"]], [[], [",", "{", "in"]], [[], ["=>", "->"]]];
+function scriptFlowPieces(lang, toks, indent, cols, out) {
+  const text = toks.map(([, w]) => w).join("").trim();
+  if (indent + text.length <= cols) { out.push(" ".repeat(indent) + text); return; }
+  // each place a line may break: the token index the next piece starts at, the bracket depth there, and how good a place it is
+  const places = [];
+  let depth = 0;
+  toks.forEach(([k, w], i) => {
+    const code = k === "o" || k === "k" || (k === "" && /^[()[\]{}]$/.test(w));
+    if (code && i > 0) SCRIPT_BREAKS.forEach(([before], rank) => { if (before.includes(w)) places.push({ at: i, depth: w === "}" ? depth : depth, rank }); });
+    if (k === "" || k === "o") for (const ch of w) depth += "([{".includes(ch) ? 1 : ")]}".includes(ch) ? -1 : 0;
+    if (code && i + 1 < toks.length) SCRIPT_BREAKS.forEach(([, after], rank) => { if (after.includes(w)) places.push({ at: i + 1, depth, rank }); });
+  });
+  if (!places.length) { out.push(" ".repeat(indent) + text); return; }
+  const low = Math.min(...places.map(p => p.depth));
+  const atLow = places.filter(p => p.depth === low);
+  const best = Math.min(...atLow.map(p => p.rank));
+  const cuts = [...new Set(atLow.filter(p => p.rank === best).map(p => p.at))].sort((x, y) => x - y);
+  if (best === 2) for (const p of atLow) if (p.rank === 2 && !cuts.includes(p.at)) cuts.push(p.at);   // (a block: its } too)
+  cuts.sort((x, y) => x - y);
+  let from = 0;
+  for (const c of [...cuts, toks.length]) {
+    const piece = toks.slice(from, c);
+    if (piece.some(([, w]) => w.trim())) {
+      const first = piece.find(([, w]) => w.trim())[1];
+      const ind = from === 0 ? indent : indent + 2 * (/^[)\]}]/.test(first) ? Math.max(0, low - 1) : Math.max(1, low));
+      scriptFlowPieces(lang, from === 0 ? piece : piece, ind, cols, out);
+    }
+    from = c;
+  }
+}
+function scriptFlowLine(lang, line, cols) {
+  if (line.length <= cols) return [line];
+  const base = line.match(/^ */)[0].length, out = [];
+  scriptFlowPieces(lang, scriptTokens(lang, line.slice(base)), base, cols, out);
+  return out;
+}
+function scriptFlow(lang, text, cols) {
+  if (!(cols > 20)) return text;
+  return text.split("\n").flatMap(l => scriptFlowLine(lang, l, cols)).join("\n");
+}
+// (ticket 580, Matthew: "a sub-panel called script editor settings": every room's engine, font size, font, syntax colours on or
+// off, and the longest line before it is broken, default 77; "please make the panel minimal; with minimal label length"; "always be
+// knolling") kept with the scripts, so a save keeps them; drawn on the page's root, so the ⛶ view (outside the panel) has them too
+const SCRIPT_FONTS = [["sys", "ui-monospace, SFMono-Regular, Menlo, monospace"], ["Menlo", "Menlo, Monaco, monospace"],
+  ["Consolas", "Consolas, 'Liberation Mono', monospace"], ["DejaVu", "'DejaVu Sans Mono', monospace"], ["Courier", "'Courier New', Courier, monospace"]];
+const SCRIPT_SIZES = [11, 12.5, 14, 16, 18];
+function scriptEditorSettings() {
+  const S = scriptsState(), E = S.editor || (S.editor = {});
+  if (!SCRIPT_SIZES.includes(E.size)) E.size = 12.5;
+  if (!SCRIPT_FONTS.some(([n]) => n === E.font)) E.font = "sys";
+  if (typeof E.colours !== "boolean") E.colours = true;
+  if (!(E.wrap >= 20 && E.wrap <= 400)) E.wrap = 77;
+  return E;
+}
+function scriptEditorApply() {
+  const E = scriptEditorSettings(), R = document.documentElement.style;
+  R.setProperty("--script-size", E.size + "px");
+  R.setProperty("--script-font", SCRIPT_FONTS.find(([n]) => n === E.font)[1]);
+  document.body.classList.toggle("script-plain", !E.colours);
+  for (const ta of document.querySelectorAll("textarea.script-editor")) if (ta.reflow) ta.reflow();
+}
+// how many characters of the code's font fit across a text box, its padding and scroll bar taken off
+function scriptCols(ta) {
+  const c = scriptCols.ctx || (scriptCols.ctx = document.createElement("canvas").getContext("2d"));
+  const cs = getComputedStyle(ta);
+  c.font = cs.font;
+  const w = ta.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  return Math.min(scriptEditorSettings().wrap, Math.floor(w / c.measureText("0123456789").width * 10) - 1);   // (580: at most the setting)
+}
+
 // (ticket 577, Matthew: "let's add a 'max size' button for each code splice") ⛶ on a box: the page's code at full size, an outline
 // of every box on the left (📚 Common first, then the rooms, each with the language it shows) and the chosen box on the right. The
 // box itself moves there, editors and all, and back to its place when another is chosen or the view is closed (✖ or Escape)
@@ -730,7 +808,7 @@ function scriptMaxOpen(boxes, sec) {
   M.sec = sec; M.spot = el("div", { class: "script-max-spot", hidden: "" });
   sec.replaceWith(M.spot); M.main.replaceChildren(sec);
   scriptMaxNav();
-  const ta = sec.querySelector("textarea"); if (ta) ta.focus({ preventScroll: true });
+  const ta = sec.querySelector("textarea"); if (ta) ta.focus({ preventScroll: true });   // (and so laid out to its new width: 579)
 }
 function scriptMaxNav() {
   const M = scriptMax; if (!M) return;
@@ -782,8 +860,27 @@ function scriptingPanel(box) {
     const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", "data-module": modName });
     const hl = el("pre", { class: "script-hl", "aria-hidden": "true" });
     const paint = () => { scriptHighlight(hl, lang, ta.value, true); hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; };
-    ta.value = get(); ta.refill = () => { if (ta.value !== get()) { ta.value = get(); paint(); } };
-    ta.addEventListener("input", () => { put(ta.value); paint(); later(); });
+    // (ticket 579) the text as stored (src), shown broken to the box's width, from src each time (so a wider box takes the breaks
+    // a narrower one made back out, up to the ones typed): again when the box's width changes, and when the
+    // box is left (lines typed long). The caret keeps its place: the same count of non-space characters before it. A typed change
+    // stores the text as shown
+    let src = get(), cols = 0;
+    const flow = () => {
+      const n = scriptCols(ta); if (n === cols && ta.value) return; cols = n;
+      const t = scriptFlow(lang, src, cols); if (t === ta.value) return;
+      const had = document.activeElement === ta, k = had ? ta.value.slice(0, ta.selectionStart).replace(/\s/g, "").length : 0;
+      ta.value = t; paint();
+      if (had) { let i = 0; for (let m = 0; i < t.length && m < k; i++) if (!/\s/.test(t[i])) m++; ta.setSelectionRange(i, i); }
+    };
+    ta.value = src;
+    ta.refill = () => { const want = get(); if (want !== src) { src = want; ta.value = want; cols = 0; flow(); paint(); } };
+    ta.addEventListener("input", () => { src = ta.value; put(src); paint(); later(); });
+    ta.addEventListener("blur", () => { cols = 0; flow(); });
+    ta.reflow = () => { cols = 0; if (ta.clientWidth) flow(); };
+    ta.addEventListener("focus", () => { if (ta.clientWidth) flow(); });
+    // (a ResizeObserver says when the width changes, in a shown page; a hidden one, or a browser without it: soon after it is made, as a hidden page has no frames)
+    if (typeof ResizeObserver === "function") new ResizeObserver(() => { if (ta.clientWidth) flow(); }).observe(ta);
+    setTimeout(() => { if (ta.clientWidth) flow(); }, 50);
     ta.addEventListener("scroll", () => { hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; });
     // (the game's keys move the friend: in an editor they are the editor's)
     ta.addEventListener("keydown", e => e.stopPropagation());
@@ -848,8 +945,28 @@ function scriptingPanel(box) {
   const allNow = () => { const es = new Set(SCRIPT_ROOMS.map(r => scriptEngine(r.name))); return es.size === 1 ? [...es][0] : "mixed"; };
   const master = chips(allNow, v => { const T = scriptsState(); T.all = v; T.engines = {}; T.on = v === "hazel"; T.commonView = v; if (v === "fumola") wantFumola(); refresh(); changed(); sync(); }, "script-master");
   const mixed = el("span", { class: "hint script-mixed" });
+  // (ticket 580) ⚙️ the editor's settings, knolled: a name and its chips, row under row
+  const E0 = scriptEditorSettings();
+  const pickRow = (name, opts, now, pick) => {
+    const bs = opts.map(([v, lab]) => [v, el("button", { "aria-pressed": String(now() === v), onclick: () => { pick(v); for (const [w, b] of bs) setPressed(b, now() === w); scriptEditorApply(); changed(); } }, lab)]);
+    return [el("span", { class: "cap" }, name), el("div", { class: "row" }, bs.map(([, b]) => b))];
+  };
+  const wrapIn = el("input", { type: "number", min: "20", max: "400", step: "1", value: String(E0.wrap), "aria-label": "longest line before it is broken",
+    onchange: e => { const n = Math.round(+e.target.value); if (n >= 20 && n <= 400) { scriptEditorSettings().wrap = n; scriptEditorApply(); changed(); } else e.target.value = scriptEditorSettings().wrap; } });
+  wrapIn.addEventListener("keydown", e => e.stopPropagation());
+  const settings = el("section", { class: "box script-settings" }, [
+    el("div", { class: "box-name" }, "⚙️ script editor settings"),
+    el("div", { class: "script-settings-grid" }, [
+      el("span", { class: "cap" }, "all"), el("div", {}, [master, mixed]),
+      ...pickRow("size", SCRIPT_SIZES.map(n => [n, String(n)]), () => scriptEditorSettings().size, v => { scriptEditorSettings().size = v; }),
+      ...pickRow("font", SCRIPT_FONTS.map(([n]) => [n, n]), () => scriptEditorSettings().font, v => { scriptEditorSettings().font = v; }),
+      ...pickRow("colour", [[true, "on"], [false, "off"]], () => scriptEditorSettings().colours, v => { scriptEditorSettings().colours = v; }),
+      el("span", { class: "cap" }, "wrap"), el("div", { class: "row" }, [wrapIn]),
+    ]),
+  ]);
+  scriptEditorApply();
   const boxes = [commonBox(), ...SCRIPT_ROOMS.map(roomBox)];
-  const refresh = () => { master.refresh(); mixed.textContent = allNow() === "mixed" ? "rooms differ: each box's chip says which runs" : ""; for (const b of boxes) b.refresh(); scriptMaxNav(); };
+  const refresh = () => { master.refresh(); mixed.textContent = allNow() === "mixed" ? "mixed" : ""; for (const b of boxes) b.refresh(); scriptMaxNav(); };
   // (ticket 520) Hazel's tiles: made once the tab is laid out (scriptFrameMount)
   const tiles = el("section", { class: "box script-box script-tiles" }, [
     el("div", { class: "box-name" }, "🧩 the Hazel program, in Hazel's tiles"),
@@ -863,7 +980,7 @@ function scriptingPanel(box) {
     ...(SCRIPT_LOGIC ? [el("div", { class: "hint" }, SCRIPT_LOGIC === "hazel" ? "This page was opened with ?logic=hazel: every room runs the shipped Hazel rules, whatever the chips or the boxes say."
       : SCRIPT_FUMOLA ? `This page was opened with ?logic=${SCRIPT_LOGIC}: every room runs the shipped Fumola rules, in Fumola's wasm build, whatever the chips or the boxes say.`
       : "This page was opened with ?logic=js: every room runs the game's own code, whatever the chips say.")] : []),
-    el("div", { class: "box-name" }, "every room"), master, mixed,
+    settings,
     status, errs, fstatus, ferrs,
     ...boxes,
     tiles,
