@@ -37,6 +37,23 @@ jobs:
           node-version: 22
       - name: The page's script parses
         run: python3 tools/check_script.py dress-up/index.html
+      # (ticket 567, Matthew: "the initial code is equiv, and runs equiv, for the game -- we need unit tests to maintain this as we
+      # go") The rooms' rules three ways, no browser: the shipped Hazel rules (with the Hazel library the game loads, SCRIPT_BUILD
+      # in 25-scripting.js) and the shipped Fumola rules (the game's pinned build) each given every case the game can give a
+      # room, its commands compared with what the game's own JS does in that case: so JS = Hazel = Fumola, on every push.
+      - name: The rules three ways, JS = Hazel = Fumola (ticket 567)
+        id: rules
+        if: hashFiles('tools/hazelrules531.mjs') != '' && hashFiles('tools/fumola_rules_check.mjs') != ''
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p out; s=0
+          lib=$(node -e 'const t = require("fs").readFileSync("dress-up/js/25-scripting.js", "utf8"); console.log(t.match(/SCRIPT_BUILD = "([^"]+)"/)[1] + "hazel-lib.js")')
+          echo "Hazel library: $lib"
+          curl -sfL "$lib" -o "$RUNNER_TEMP/hazel-lib.js"
+          node --stack-size=8000 tools/hazelrules531.mjs "$RUNNER_TEMP/hazel-lib.js" 20 | tee out/rules-hazel.txt || s=1
+          node tools/fumola_rules_check.mjs | tee out/rules-fumola.txt || s=1
+          exit $s
       - name: Serve this branch's game and main's beside it; start Chrome, muted
         run: |
           git worktree add --detach main origin/main
@@ -113,6 +130,9 @@ jobs:
           path: out/
       - name: Fail the run if the branch's own checks failed (after everything else ran)
         if: steps.checks.outcome == 'failure'
+        run: exit 1
+      - name: Fail the run if the rules differ three ways (ticket 567; after everything else ran)
+        if: steps.rules.outcome == 'failure'
         run: exit 1
   firefox:
     name: Firefox (the leak, ticket 167)
