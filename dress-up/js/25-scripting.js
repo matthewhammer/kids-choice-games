@@ -1311,13 +1311,13 @@ function scriptingPanel(box) {
       const v = shown = view();
       if (v === "js") body.replaceChildren(el("div", { class: "hint" }, "The game's JS has no common module: each room's functions carry what they need (switch a room to JS to read them)."));
       else if (v === "hazel") body.replaceChildren(
-        // (Matthew, 2026-10-23: "it seems like there are type defs not shown in the hazel common panel?") the sums every room names,
-        // shown here, read-only: they are declared at the program's start, since the game's Hazel does not yet put a module's
-        // constructors in scope outside it (hazelgrove/hazel#2729 does, on dev); once it does, they move into Common, to edit
-        el("div", { class: "hint" }, "the types every Hazel room can name (read-only: at the program's start until the game's Hazel has hazelgrove/hazel#2729)"),
-        typesPre(),
+        // (Matthew, 2026-10-23: "we still show plain text first, before tiles") the module first, in tiles or text; then the sums
+        // every room names, read-only (they are declared at the program's start, since the game's Hazel does not yet put a
+        // module's constructors in scope outside it: hazelgrove/hazel#2729 does, on dev; once it does, they move into Common)
         el("div", { class: "hint" }, "module Common, in Hazel: in scope in every Hazel room, as Common.name"),
-        hazelBody("Common", editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }, "hazel")));
+        hazelBody("Common", editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }, "hazel")),
+        el("div", { class: "hint" }, "the types every Hazel room can name (read-only: at the program's start until the game's Hazel has hazelgrove/hazel#2729)"),
+        typesPre());
       else body.replaceChildren(el("div", { class: "hint" }, "module Common, in Fumola: in scope in every Fumola room, as Common.name"),
         editor("Common", () => scriptsState().fumola.common || "", t => { scriptsState().fumola.common = t; }, "fumola"));
     };
