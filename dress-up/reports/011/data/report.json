@@ -1,0 +1,156 @@
+{
+ "date": "2026-10-18",
+ "question": "How are new costumes made, and could the friend's own design system make the whole cast of an adventure game like Hugo, Hero's Quest (Quest for Glory), King's Quest or Monkey Island: its kings and guards, wizards and witches, trolls and pirates, standing, walking and talking in its places?",
+ "trigger": "Matthew: \"let's do a report, in queue long-run, about making new costumes, and creating all of the NPCs for a game like Hugo, or Hero's Quest (Quest for Glory), or Kinds Quest, or Monkey Island, all with our character design system.\" Prompted by ticket 288 (the diving suits and gear).",
+ "game": {
+  "version": "0.0.305"
+ },
+ "measured": {
+  "laptop": "Ubuntu laptop (Intel i7), in the app's browser",
+  "walkDraw": [
+   [
+    "king",
+    2.4,
+    76,
+    9.7
+   ],
+   [
+    "guard",
+    1.8,
+    78,
+    10.0
+   ],
+   [
+    "wizard",
+    2.6,
+    107,
+    14.9
+   ],
+   [
+    "witch",
+    2.7,
+    131,
+    14.8
+   ],
+   [
+    "fairy godmother",
+    2.8,
+    147,
+    19.5
+   ],
+   [
+    "katta",
+    1.7,
+    102,
+    10.2
+   ],
+   [
+    "troll",
+    1.8,
+    85,
+    10.9
+   ],
+   [
+    "pirate captain",
+    1.8,
+    76,
+    9.6
+   ],
+   [
+    "diver",
+    2.0,
+    108,
+    12.0
+   ],
+   [
+    "mummy",
+    1.7,
+    64,
+    7.3
+   ]
+  ],
+  "stillInsert": [
+   0.4,
+   1.4
+  ],
+  "slowTier": "GitHub's slow tier (the page 4 times slower, the frame-rate gate's stand-in for the black laptop): a drawing of the friend walking took 6 to 10 ms in ticket 340's runs (no bubble makers), against 1.5 to 3.5 ms at full speed"
+ },
+ "people": [
+  [
+   "Standing",
+   "A person who stands is a still picture: drawn once at their spot, at the place's depth there, sorted among its objects as the friend is (the king's room and the beach above were made so, each person drawn by the game where they stand, then put into one scene). After the first drawing a standing person costs nothing a frame, until something about them changes; their shapes still add to what the browser paints when the picture around them changes (ticket 340's question)."
+  ],
+  [
+   "Walking a path",
+   "A person walking is drawn again every frame, a stride's moment at a time, as the friend is: 1.7 to 2.8 ms a drawing on the Ubuntu laptop, 6 to 10 ms on the slow tier. The black laptop's 16.7 ms a frame holds the friend and, at most, one more walking. The way round it is the friend's own: a walk is a cycle, so its moments can be drawn once (eight a stride, each way they face) and shown in turn, each a still picture put in, 0.4 to 1.4 ms, or one shown and the others hidden, near nothing."
+  ],
+  [
+   "Talking",
+   "A speech bubble over a person's head: words in a rounded box with a tail, in the picture over the scene's (#pic-over, ticket 340's), so a bubble coming and going never draws the scene again. Lines typed in the world designer, said when the friend comes near or taps them, one after another; the game has no words in its pictures yet except signs."
+  ],
+  [
+   "In the world designer",
+   "People as a place's things: a \"🧑 person\" among the things you put in a place, holding a whole friend's settings (\"put this friend here\", from the one you have made), their spot, which way they face, their pose (sitting on a seat, as the king and queen on their thrones), and, later, a path and their lines. Saved with the place, as things are."
+  ],
+  [
+   "In the object system",
+   "A person is an object of the place: their depth for sorting, and solid boxes under their feet like the friend's soles (feetSoles), so the friend walks round them, not through them; a person on a seat uses the seat's own box (as the thrones are). Planned walks (planPath) already go round solids."
+  ],
+  [
+   "At 60 frames a second on the black laptop",
+   "Standing people: as many as a place's things (their shapes are what counts; each is 64 to 147 shapes, as many as a big tree). Walking: one at a time drawn live, or many with their walk cycles drawn once. Talking: free, in its own picture."
+  ]
+ ],
+ "next": [
+  [
+   "A person, standing",
+   "\"🧑 person\" in a place's things, holding a friend's settings (copied from the friend you have made), drawn once as a still picture at its spot and depth, solid at its feet, saved with the place. The king's room, made by hand here, becomes something a kid does with taps"
+  ],
+  [
+   "Something held",
+   "a hand that holds a thing, in either hand, generalizing the witch's broom: a staff, a sceptre, a hammer, a wand, a lantern, a mug, a spear. Wanted by 8 of the 27"
+  ],
+  [
+   "A hat or a crown",
+   "a head slot over the hair, generalizing the witch's hat and the old diving helmet: a crown, a tiara, a helmet, a tricorn, a bandana, a head wrap. Wanted by 8 of the 27"
+  ],
+  [
+   "A beard",
+   "a face part under the mouth, in the hair's color or its own, short to long. Wanted by 5"
+  ],
+  [
+   "A costume as data",
+   "one record for each costume (its clothes, its head, its back, what it holds, its settings, its own drawing hooks), so a new one is a record and its drawings, not edits in five files (see the first section)"
+  ],
+  [
+   "Talking",
+   "a speech bubble in the picture over the scene's, lines typed in the world designer, said when the friend comes near"
+  ],
+  [
+   "Walking a path",
+   "a person walking between two spots, their walk cycle drawn once and shown in turn, so a few can walk at once on the black laptop"
+  ]
+ ],
+ "found": [
+  [
+   "The dressing room frames each friend to fit",
+   "In the gallery the fairy godmother and the dryad look smaller: the dressing room zooms out to fit what is worn, a fairy's wings here. In a place everyone is drawn at the place's one scale (the fairy on the beach: the same scale, 0.45, as the friend without wings). So the gallery's pictures are each framed alone; the two places show people at one scale."
+  ],
+  [
+   "The game already has one NPC, hand drawn",
+   "The healer in her hut (js/11-houses-and-huts.js: HEALER_SVG), stirring her soup and swaying with the scene's slow LFO, can be dragged about the room. She is a picture of her own, not a friend: she cannot change clothes, sit or walk. Made as a person, she could."
+  ],
+  [
+   "A suit replaces the clothes",
+   "The animal suits (the katta here is the bobcat) draw fur over everything below the hood, so a cat person cannot also wear a vest; Quest for Glory's Kattas wear clothes."
+  ],
+  [
+   "Surprise me never picks the witch, the fairy, the ghost or a diving suit",
+   "Surprise me picks a costume one time in four, and only an animal: never the witch, the fairy, the ghost or a diving suit (js/24-surprise-save-start-over.js:49); it does turn the gear on now and then."
+  ],
+  [
+   "The fins have no reach",
+   "The fins are missing from FOOT_REACH (js/08-body.js:40), the list that makes room in the picture's frame for big feet."
+  ]
+ ]
+}

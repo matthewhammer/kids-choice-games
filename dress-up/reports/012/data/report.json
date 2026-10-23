@@ -1,0 +1,89 @@
+{
+ "date": "2026-10-18",
+ "question": "Why is the bubble room slow with one bubble maker, even on a modern laptop, and how far can a kid go pressing \"+ 🫧 bubble maker\" before it breaks? What lets it scale?",
+ "trigger": "Matthew: \"bubble room with one bubble machine is stressing my modern laptop\"; \"let's do a long-run analysis about performance, and write a new du_report where we add bubble machines in bubble rooms, and see what we can do to support scaling better\"; \"scaling to the extreme, the way a kid would use the system (pressing +bubble machine until it breaks)\". Then, at 23:39, with a screenshot of the live game in Firefox, one maker, \"About 19 frames a second here\": \"debug --- but without crashing my machine.\"",
+ "short": [
+  [
+   "It was the foam, not the maker.",
+   "In Firefox at Matthew's screen size, the bubble room with his fairy and one maker ran at 16 to 18 frames a second. Hiding the maker's bubbles changed nothing (18); without the fairy, 21. Held still, the same room with the same maker and fairy ran at 52, and the empty room at 60. The room's own foam moved: 139 animations all over the picture, so the browser painted the whole picture again every frame."
+  ],
+  [
+   "Fixed in 0.0.306: the foam starts still.",
+   "Matthew's rule for costly effects (off at the start, its cost shown when on). A save still at the old default is made still once; an amount chosen is kept; the slider says what moving costs; and when the room is too busy for more things, the game now says the foam costs the most. His case in Firefox: 18 frames a second before, 60 after."
+  ],
+  [
+   "Many makers: better in 0.0.307, and a kid is stopped before it breaks.",
+   "All makers now share 12 bubbles a second, and their bubbles float in a picture of their own over the scene. On the slow tier with the room still, 16 makers walked at 53 frames a second instead of 37, and dragged at 43 instead of 24; 64 makers walked at 48 instead of 23. 256 makers stay unplayable (12 to 15). Long before that the game's guard refuses more moving things, once a second of frames measures under 48."
+  ],
+  [
+   "Each maker costs about 4 times the drawing it did in 0.0.239.",
+   "On the slow tier, dragging: 0.13 ms of drawing a maker today against 0.033 then (256 makers: 41 ms a drawing against 14). Since 0.0.239, placed things are solid, measured through the screen whenever the scene is built again (42 ms at 256 makers), and the things' layer is drawn again every frame. That is the next lever."
+  ],
+  [
+   "With scenery moving, nothing in the game's script helps.",
+   "Chrome's trace of the room standing with its foam moving: about 1.9 s of rasterizing (painting pixels, on its painting threads) every second, against 80 ms of the game's script. Moving foam stays off, unless it is drawn in a way the browser need not repaint (layers of its own)."
+  ]
+ ],
+ "next": [
+  [
+   "The things' layer drawn once",
+   "draw the place's things again only when they change, not every frame (today 256 things cost a part() call each per drawing)"
+  ],
+  [
+   "Placed things' solids kept per thing",
+   "measure a placed thing's boxes once and keep them by its kind, place and size, so a scene built again does not measure every maker through the screen (standingHere: 42 ms at 256 makers, on every tap that adds one)"
+  ],
+  [
+   "The first walk on a slow computer",
+   "the slow tier's first walk in the room ran at 5 to 12 frames a second before the game held the scenery still; find out sooner (from the first frames) that a computer is slow"
+  ],
+  [
+   "Moving foam that costs little",
+   "if the moving foam is wanted back on by default: its bands as layers of their own the browser moves without repainting, not 139 animations inside the picture"
+  ],
+  [
+   "The bubble room in the frame-rate gate",
+   "the room with 4 makers, at full speed and on the slow tier, in Chrome and Firefox, each release (makers340 checks the facts already: the foam still, the overlay lined up, the budget)"
+  ]
+ ],
+ "found": [
+  [
+   "The app's browser pane keeps no picture clock",
+   "With no frames drawn, the SVG's clock stands still while the page's runs, so the scene's music-timed begin times drift and the whole scene is built again four times a second there. Not a game bug, but it showed what such a rebuild costs with many things: 42 ms at 256 makers, measuring every placed thing's solids through the screen."
+  ],
+  [
+   "The guard blamed the maker",
+   "The moving-things guard marks the things put in a place that move the most; it could not see that the room's own foam moved more. It names the foam first now, and measures again when the foam is stilled."
+  ],
+  [
+   "The first walk on the slow tier",
+   "In the first measurement the slow tier's first walk ran at 5 to 15 frames a second, the second at 30 to 57: the game holds the scenery still only after it has seen a few slow frames, and the walk before that stutters."
+  ]
+ ],
+ "sources": {
+  "measure340": [
+   "measure-340 (run 39202069060): the gate's walk and drag, 0 to 256 makers, 0.0.303 against 0.0.239, Chrome, CPU 1 and 4",
+   "https://github.com/matthewhammer/kids-choice-games/actions/runs/39202069060"
+  ],
+  "measure340b": [
+   "measure-340b (run 39204930956): the two levers each way, 0 to 256 makers, Chrome, with traces",
+   "https://github.com/matthewhammer/kids-choice-games/actions/runs/39204930956"
+  ],
+  "firefox1": [
+   "measure-340c, first round (run 39205805155): Firefox, his screen, each suspect taken away",
+   "https://github.com/matthewhammer/kids-choice-games/actions/runs/39205805155"
+  ],
+  "firefox2": [
+   "measure-340c, second round (run 39206388768): Firefox on 0.0.306, the levers, 1, 4 and 16 makers",
+   "https://github.com/matthewhammer/kids-choice-games/actions/runs/39206388768"
+  ],
+  "release306": [
+   "0.0.306: the foam still at the start",
+   "https://github.com/matthewhammer/kids-choice-games/commit/c39dfe8"
+  ],
+  "release307": [
+   "0.0.307: the makers' budget and their own picture",
+   "https://github.com/matthewhammer/kids-choice-games/commit/12082d1"
+  ]
+ }
+}

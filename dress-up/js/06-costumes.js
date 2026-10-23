@@ -32,10 +32,16 @@ const ANIMALS = {
   // (ticket 530) a Sasquatch: big shaggy fur, a tan muzzle with a big friendly grin, small round ears, big feet (its own
   // colours are its style's: sasquatchLook, below)
   sasquatch: { suit: true, fur: "#7a4e2d", marks: "#55361f", belly: "#d9b38c", eyes: "#3b2414", accent: "#d9b38c", furPattern: "shag" },
+  // (ticket 544) a giraffe: brown patches on cream all over, a long neck up from the hood with the giraffe's own head on top
+  // (horns, ears, a soft muzzle), a short mane, a tufted tail, hooves (its own colours are its style's: giraffeLook, below)
+  giraffe: { suit: true, fur: "#b5652b", marks: "#6e3514", belly: "#f6e7c8", eyes: "#2b1a10", accent: "#7a4420", furPattern: "giraffe" },
   // a whole falcon suit: feathers all over, wings on the arms, talons
   falconsuit: { suit: true, fur: "#55616d", marks: "#23282e", belly: "#f2ece0", eyes: "#1a1410", accent: "#f2c230", furPattern: "none" },
   // and a bald eagle's: dark brown feathers, white head and tail
   eaglesuit: { suit: true, fur: "#4a3222", marks: "#2a1a10", belly: "#ffffff", eyes: "#f2c230", accent: "#f2b705", furPattern: "none" },
+  // (ticket 536) a moth: a fuzzy suit, broad soft wings on the arms as a bird suit's are, feathery antennae, a fluffy collar
+  // (its colours are the luna moth's body; choosing a style puts on that style's: MOTH_STYLES, js/01-state.js)
+  moth: { suit: true, fur: "#f4f1e6", marks: "#c9b98f", belly: "#ffffff", eyes: "#2a2233", accent: "#e7b8cb", furPattern: "none" },
 };
 // cats (pointed ears, a triangle nose) and birds (no suit: wings and a tail)
 const FELINE = { cat: 1, tiger: 1, bobcat: 1, leopard: 1, cheetah: 1, jaguar: 1 };
@@ -60,7 +66,13 @@ const sasquatchStyleOf = c => SASQUATCH_STYLES[c.sasquatchStyle] ? c.sasquatchSt
 const sasquatchLook = c => { const id = sasquatchStyleOf(c), S = SASQUATCH_STYLES[id], fur = c["sasquatchColor_" + id] || S.colors[0];
   const face = S.face || mix(fur, "#ffffff", 0.45);
   return { ...c, fur, marks: S.marks || mix(fur, "#000000", 0.3), belly: face, accent: mix(face, "#000000", 0.25), furPattern: "shag", sq: S, sqId: id }; };
-const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "dragon" ? dragonLook(state.costume) : state.costume.kind === "sasquatch" ? sasquatchLook(state.costume) : state.costume) : null);
+// (ticket 544) the giraffe's look, from its style (GIRAFFE_STYLES, js/01-state.js) and that style's colour: its fur the
+// patches' colour (the outlines a shade darker, as any suit's), the cream between them its belly, its mane (marks) the
+// style's, its eyes the animal eye colour; and the style itself (gf), for the coat and the drawing
+const giraffeStyleOf = c => GIRAFFE_STYLES[c.giraffeStyle] ? c.giraffeStyle : "reticulated";
+const giraffeLook = c => { const id = giraffeStyleOf(c), S = GIRAFFE_STYLES[id], fur = c["giraffeColor_" + id] || S.colors[0];
+  return { ...c, fur, marks: S.mane, belly: S.ground, accent: mix(fur, "#000000", 0.3), furPattern: "giraffe", gf: S, gfId: id }; };
+const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "dragon" ? dragonLook(state.costume) : state.costume.kind === "sasquatch" ? sasquatchLook(state.costume) : state.costume.kind === "giraffe" ? giraffeLook(state.costume) : state.costume) : null);
 // (ticket 433, Matthew: "monk/dryad costume with hooded cloak, and a staff (optional, like how the witch has an optional
 // broom)") A CLOTH HOOD, its colour, while one is up (the monk's or the dryad's cloak): over the hair, framing the face. In the
 // round head's units (stretched with the head, as hair is), on the animal hood's frame (hoodGeom): its back, behind the head,
@@ -148,6 +160,249 @@ function clothHoodAway(F, c) {
     `<path d="M100 ${f1(top + 10)} L100 ${f1(bot + 54)} L146 ${f1(top + 18)} Z" fill="#000000" opacity="0.1"/>`;
 }
 
+// (ticket 557, for M) THE NINJA'S HEAD: a black mask that hides the whole face, fitted tight (Matthew: "look at the hooded
+// monk/dryad, but let's make the mask fit tight, not so loose"), and over it the gold head covering. In the face's units,
+// on the head's own outline as drawn (headPoints: its width, height and alien shape already in it, so no hairStretch), grown
+// NINJA_FIT all round from the head's middle: the cloth hugs the head and the neck (the neck in the cloth: drawNow's
+// neckC). The face is not drawn under it (drawNow), nor the hair, the ears or a beard (`hooded`); a narrow slit across the
+// eyes is black, the eyes in it only with 👀 (ninjaEyes, off), drawn as the monk's eyes in the dark are, inside the slit.
+// Every view its own drawing: facing us (dir 0) the slit across both eyes, a face cloth's edge under it; in profile (dir -1
+// or 1) the slit on the near side, open at the front edge, and the cloth over the nose a small bump (with a nose); from
+// behind (away) no slit. `turn` (ticket 144, turned partway) slides what is on the face, as faceSvg slides the features.
+const NINJA_FIT = 5, NINJA_BW = 11;
+function ninjaMaskPts(F, grow = NINJA_FIT) {
+  return headPoints(F).map(([x, y]) => { const dx = x - 100, dy = y - HEAD_C, r = Math.hypot(dx, dy) || 1, k = (r + grow) / r; return [100 + dx * k, HEAD_C + dy * k]; });
+}
+const ninjaPath = pts => "M" + pts.map(([x, y]) => f1(x) + " " + f1(y)).join(" L") + " Z";
+// (ticket 274's rule: a clip's id named by its shape, not by chance, so two friends' clips never share one)
+const ninjaClip = (pre, d) => { let h = 2166136261; for (let i = 0; i < d.length; i++) h = Math.imul(h ^ d.charCodeAt(i), 16777619);
+  const id = pre + (h >>> 0).toString(36); return { id, def: `<clipPath id="${id}"><path d="${d}"/></clipPath>` }; };
+// the slit's middle line, the band's line (above the brows, below the crown) and the head's mask outline
+function ninjaGeom(F) {
+  const LY = faceLayout(F), crown = headCrown(F), pts = ninjaMaskPts(F);
+  return { LY, pts, eyeY: LY.eyeY, bandY: crown + 0.55 * (LY.eyeY - crown), top: Math.min(...pts.map(p => p[1])), hh: 8 };
+}
+function ninjaMask(F, dir = 0, away = false, turn = 0) {
+  const G = ninjaGeom(F), { pts, eyeY, hh, LY } = G, P = (x, y) => f1(x) + " " + f1(y), soft = mix(NINJA.cloth, "#ffffff", 0.14);
+  // (the cloth's sheen: a lighter arc inside the outline over the crown, toward the back of the head in profile)
+  const sheenPts = ninjaMaskPts(F, NINJA_FIT - 9), i0 = dir > 0 ? 42 : dir < 0 ? 58 : 40, sheen = sheenPts.slice(i0, i0 + 11);
+  let s = "";
+  // (in profile, the cloth over the nose: a small bump at the front edge, under the mask's own outline)
+  const noseOn = F.noseView && F.noseView !== "none";
+  if (dir && !away && noseOn) { const ny = LY.eyeY + 6 + 15 * F.noseH / 100, nh = Math.max(8, 13 * F.noseH / 100), ex = acrossAt(pts, ny)[dir > 0 ? 1 : 0], b = Math.min(11, 3 + 6 * F.noseW / 100);
+    s += `<path d="M${P(ex - dir * 6, ny - nh)} Q${P(ex + dir * b, ny - 2)} ${P(ex + dir * (b - 2), ny + nh * 0.6)} Q${P(ex + dir * 2, ny + nh)} ${P(ex - dir * 6, ny + nh)} Z" fill="${NINJA.cloth}" stroke="${NINJA.line}" stroke-width="3" stroke-linejoin="round"/>`; }
+  s += `<path data-ninja="mask" d="${ninjaPath(pts)}" fill="${NINJA.cloth}" stroke="${NINJA.line}" stroke-width="3.5" stroke-linejoin="round"/>` +
+       `<path d="M${sheen.map(([x, y]) => P(x, y)).join(" L")}" fill="none" stroke="${soft}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>`;
+  if (away) return s;
+  const cx = 100 + turn * 14, edge = (y, t) => { const [l, r] = acrossAt(pts, y); return dir ? (dir > 0 ? r : l) : t < 0 ? l : r; };
+  if (!dir) {
+    // facing us: the slit across both eyes, inside the head's outline, an almond narrower than the eyes are tall
+    const reach = LY.eyeDX + eyeHalfW(F) + 12, xl = Math.max(edge(eyeY, -1) + 12, cx - reach), xr = Math.min(edge(eyeY, 1) - 12, cx + reach), q = (xr - xl) * 0.25;
+    s += `<path data-ninja="slit" d="M${P(xl, eyeY)} C${P(xl + q, eyeY - hh * 1.35)} ${P(xr - q, eyeY - hh * 1.35)} ${P(xr, eyeY)} C${P(xr - q, eyeY + hh * 1.35)} ${P(xl + q, eyeY + hh * 1.35)} ${P(xl, eyeY)} Z" fill="${NINJA.slit}"/>`;
+    // the face cloth's top edge, just under the slit, from side to side
+    const wy = eyeY + hh + 6;
+    s += `<path d="M${P(edge(wy, -1) + 3, wy + 2)} Q${P(cx, wy + 7)} ${P(edge(wy, 1) - 3, wy + 2)}" fill="none" stroke="${soft}" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>`;
+    return s;
+  }
+  // in profile: the slit from behind the near eye to the face's front edge, and the face cloth's edge under it
+  const sh = 24 * headWidth(F), x0 = 100 + dir * (sh + LY.eyeDX - eyeHalfW(F) - 8), xe = edge(eyeY), xm = x0 + (xe - x0) * 0.55;
+  s += `<path data-ninja="slit" d="M${P(x0, eyeY)} Q${P(xm, eyeY - hh * 1.2)} ${P(xe, eyeY - hh)} L${P(xe, eyeY + hh * 0.8)} Q${P(xm, eyeY + hh * 1.1)} ${P(x0, eyeY)} Z" fill="${NINJA.slit}"/>`;
+  const wy = eyeY + hh + 6;
+  s += `<path d="M${P(x0 - dir * 14, wy + 1)} Q${P(xm, wy + 4)} ${P(edge(wy) - dir * 2, wy + 1)}" fill="none" stroke="${soft}" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>`;
+  return s;
+}
+// the eye slit alone, as a clip for the eyes in it (ninjaEyes), the same shape as ninjaMask's: { id, def }
+function ninjaSlitClip(F, dir = 0, turn = 0) {
+  const m = ninjaMask(F, dir, false, turn).match(/data-ninja="slit" d="([^"]+)"/);
+  return m ? ninjaClip("ninja-slit-", m[1]) : null;
+}
+// THE HEAD COVERING (ninjaBand): a gold band round the head above the brows and below the crown, and a second band from the
+// middle of the forehead over the top of the head to the back, joined to the first in front and behind (an inverted T on
+// the forehead), the gem where they meet in front (ninjaGemSvg), a round gold clasp where they meet behind. Both bands are
+// drawn inside the mask's outline grown by one (a band's thickness), so their ends meet its edge as they go round it: their
+// outlines first and then their gold, so the T is one piece. Facing us and from behind, the band round the head bows down a
+// little at the middle (a ring seen from just above it) and the band over the top rises from the junction; in profile the
+// round band crosses the whole head and the band over the top follows the head's outline from the forehead to the back,
+// the gem standing out at the forehead's edge.
+function ninjaBand(F, WC, dir = 0, away = false, turn = 0) {
+  const G = ninjaGeom(F), { pts, bandY: yb, top } = G, bw = NINJA_BW, bow = 4, P = (x, y) => f1(x) + " " + f1(y), clip = ninjaClip("ninja-band-", ninjaPath(ninjaMaskPts(F, NINJA_FIT + 1)));
+  const cx = 100 + (away ? 0 : turn * 14), stroke = (d, c, w) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f1(w)}" stroke-linejoin="round"/>`;
+  let round, over, gem = "", clasp = "";
+  if (!dir) {
+    round = `M${P(-60, yb - bow)} Q${P(cx, yb + 2 * bow)} ${P(260, yb - bow)}`;
+    over = `M${P(cx, yb + bow)} Q${P(cx + (100 - cx) * 0.2, (yb + top) / 2)} ${P(100 + (cx - 100) * 0.3, top - 20)}`;
+    if (away) clasp = `<circle cx="${f1(cx)}" cy="${f1(yb + bow)}" r="7.5" fill="${NINJA.gold}" stroke="${NINJA.goldLine}" stroke-width="2"/><circle cx="${f1(cx - 2.5)}" cy="${f1(yb + bow - 2.5)}" r="2.2" fill="${NINJA.goldLight}"/>`;
+    else gem = ninjaGemSvg(WC.ninjaGem, WC.ninjaGemShape, cx, yb + bow, 10, ninjaGemFx(WC));
+  } else {
+    // in profile: the round band straight across, the band over the top along the head's outline, inset by half its width
+    round = `M${P(-60, yb)} L${P(260, yb)}`;
+    const inner = ninjaMaskPts(F, NINJA_FIT + 1 - bw / 2), [xl, xr] = acrossAt(inner, yb);
+    const arc = inner.slice(36).filter(([, y]) => y < yb);
+    over = `M${P(xl, yb)} L${arc.map(([x, y]) => P(x, y)).join(" L")} L${P(xr, yb)}`;
+    if (!away) gem = ninjaGemSide(WC.ninjaGem, WC.ninjaGemShape, acrossAt(pts, yb)[dir > 0 ? 1 : 0] + dir, yb, 11, dir, ninjaGemFx(WC));
+  }
+  const shine = !dir ? `M${P(-60, yb - bow - 3)} Q${P(cx, yb + 2 * bow - 3)} ${P(260, yb - bow - 3)}` : `M${P(-60, yb - 3)} L${P(260, yb - 3)}`;
+  return clip.def + `<g clip-path="url(#${clip.id})">${stroke(round + " " + over, NINJA.goldLine, bw + 3.5)}${stroke(round + " " + over, NINJA.gold, bw)}${stroke(shine, NINJA.goldLight, 2.5)}</g>` + clasp + gem;
+}
+// a gem's outline, about (cx, cy), r its size (a round gem's radius), one of NINJA_GEM_SHAPES; and how far each reaches above
+// and below its middle, in r (for its side view)
+const NINJA_GEM_REACH = { round: [1, 1], oval: [1.08, 1.08], rhombus: [1.22, 1.22], teardrop: [1.3, 0.85], star: [1.2, 1], heart: [1.05, 1.05] };
+function ninjaGemPath(shape, cx, cy, r) {
+  const P = (x, y) => f1(cx + x * r) + " " + f1(cy + y * r);
+  switch (shape) {
+    case "oval": return `M${P(-0.74, 0)} A${f1(0.74 * r)} ${f1(1.08 * r)} 0 1 0 ${P(0.74, 0)} A${f1(0.74 * r)} ${f1(1.08 * r)} 0 1 0 ${P(-0.74, 0)} Z`;
+    case "rhombus": return `M${P(0, -1.22)} L${P(0.82, 0)} L${P(0, 1.22)} L${P(-0.82, 0)} Z`;
+    case "teardrop": return `M${P(0, -1.3)} C${P(0.3, -0.85)} ${P(0.85, -0.45)} ${P(0.85, 0)} A${f1(0.85 * r)} ${f1(0.85 * r)} 0 0 1 ${P(-0.85, 0)} C${P(-0.85, -0.45)} ${P(-0.3, -0.85)} ${P(0, -1.3)} Z`;
+    case "star": return "M" + Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 0.52 : 1.2; return P(q * Math.cos(a), q * Math.sin(a)); }).join(" L") + " Z";
+    case "heart": return `M${P(0, 1.05)} C${P(-0.35, 0.72)} ${P(-1.1, 0.2)} ${P(-1.05, -0.35)} C${P(-1, -0.95)} ${P(-0.25, -1.05)} ${P(0, -0.5)} C${P(0.25, -1.05)} ${P(1, -0.95)} ${P(1.05, -0.35)} C${P(1.1, 0.2)} ${P(0.35, 0.72)} ${P(0, 1.05)} Z`;
+    default: return `M${P(-1, 0)} A${f1(r)} ${f1(r)} 0 1 0 ${P(1, 0)} A${f1(r)} ${f1(r)} 0 1 0 ${P(-1, 0)} Z`;
+  }
+}
+const ninjaGemOf = kind => NINJA_GEMS[kind] || NINJA_GEMS.ruby;
+const ninjaShapeOf = shape => NINJA_GEM_REACH[shape] ? shape : "round";
+// (ticket 560, Matthew, with a picture of a cut oval ruby: "For the gems -- we also want the default (ruby) to have apparent
+// cut marks, as a gemstone ... Please do the same for the others (beleved edge lines)") THE GEM'S CUT, each shape's own, in r
+// about the stone's middle: `rim`, points on its girdle round from the top, clockwise, a corner (where a crown facet's far
+// point is) then the point between it and the next corner, and so on; `c` the table's middle and `t` how far out it reaches
+// toward each corner (the table is the corners drawn in toward c, so it follows the shape); `split` (the star) cuts each
+// point's facet in two down its middle, a lit half and a shaded one. A handful of facets: 6 corners (4 on the diamond shape,
+// 5 on the star, one a point; `glint`, how far out toward the light the glint is, if not 0.62), each a kite from the table out to its corner and a triangle from each table edge out to the
+// rim, which tile the crown between the table and the girdle. The rim's points are on the outline itself, and its arcs
+// between them bulge outward (the heart's cleft is a point of its own), so no facet reaches past the stone.
+const ninjaRing = (rx, ry, n = 12) => Array.from({ length: n }, (_, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [rx * Math.cos(a), ry * Math.sin(a)]; });
+const NINJA_GEM_CUTS = {
+  round: { rim: ninjaRing(1, 1), c: [0, 0], t: 0.5 },
+  oval: { rim: ninjaRing(0.74, 1.08), c: [0, 0], t: 0.5 },
+  rhombus: { rim: [[0, -1.22], [0.41, -0.61], [0.82, 0], [0.41, 0.61], [0, 1.22], [-0.41, 0.61], [-0.82, 0], [-0.41, -0.61]], c: [0, 0], t: 0.46, glint: 0.45 },
+  // (on ninjaGemPath's curves: a third and two thirds along each, and every 30 degrees round the bottom's arc)
+  teardrop: { rim: [[0, -1.3], [0.354, -0.863], [0.696, -0.437], [0.85, 0], [0.736, 0.425], [0.425, 0.736], [0, 0.85], [-0.425, 0.736], [-0.736, 0.425], [-0.85, 0], [-0.696, -0.437], [-0.354, -0.863]], c: [0, 0.04], t: 0.5 },
+  star: { rim: Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 0.52 : 1.2; return [q * Math.cos(a), q * Math.sin(a)]; }), c: [0, 0], t: 0.3, split: true, glint: 0.4 },
+  // (a corner toward each lobe's top and down each side, the cleft and the bottom tip between corners)
+  heart: { rim: [[0.372, -0.839], [0.811, -0.778], [1.05, -0.35], [0.878, 0.184], [0.439, 0.663], [0, 1.05], [-0.439, 0.663], [-0.878, 0.184], [-1.05, -0.35], [-0.811, -0.778], [-0.372, -0.839], [0, -0.5]], c: [0, 0.08], t: 0.48 },
+};
+// the gem's tones, from its colour, its light and its outline: the table a little deeper than the stone, the shaded facets
+// deeper still, the lit ones halfway to its light, the flashes its light (not near white: the white is the cuts', below)
+const ninjaGemTones = g => ({ table: mix(g.c, g.line, 0.18), dark: mix(g.c, g.line, 0.5), light: mix(g.c, g.light, 0.45), flash: g.light });
+// (ticket 560, Matthew: "gems don't appear faceted yet -- at all", then "we need to add sharp, bright white lines to
+// indicate the 'cuts', perhaps with an animation that makes them 'glimmer' -- and other animations optional too for
+// stars/shine on them, all over") THE CUTS IN WHITE, AND THE GEM'S LIGHTS. At its true size the gem is a few pixels across,
+// and its cuts were a pale line a quarter of a pixel wide: unseen. Each cut is now drawn twice in white, `w` wide in the
+// stone's own units and never thinner than NINJA_CUT_PX on the screen (non-scaling-stroke), so it is sharp small and in
+// proportion big. `fx`, the ninja's rows: `glimmer` (✨, on at first), a wider, brighter copy of each group of cuts
+// flashing in turn clockwise round the stone, a light running round its cuts; `stars` (⭐, off at first), four-pointed stars that
+// swell and vanish at `spots` all over the stone ([x, y, size in r]), each at its own pace; `shine` (🌟, off at first), a
+// pale band sweeping across the stone from the light, clipped to it. Every animation keeps time with the picture's clock
+// (begun before 0, as the tails' wags), so redrawing the friend never restarts one.
+const NINJA_CUT_PX = 0.8, NINJA_GLIMMER_S = 2.4, NINJA_SHINE_S = 3.6;
+const ninjaGemFx = WC => ({ glimmer: WC.ninjaGlimmer !== false, stars: !!WC.ninjaGemStars, shine: !!WC.ninjaGemShine });
+const ninjaCut = (d, w, px) => `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${f1(w)}" stroke-linejoin="round" stroke-linecap="round"/>` +
+  `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${px}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+const ninjaStar = s => { const P = (x, y) => f1(x) + " " + f1(y); return `M${P(0, -s)} Q0 0 ${P(s, 0)} Q0 0 ${P(0, s)} Q0 0 ${P(-s, 0)} Q0 0 ${P(0, -s)} Z`; };
+function ninjaGemLights(fx, { groups, stone, c: [cx, cy], r, w, spots }) {
+  let s = "";
+  if (fx.glimmer) s += groups.map((d, j) => `<g opacity="0">${ninjaCut(d, 2 * w, 2 * NINJA_CUT_PX)}<animate attributeName="opacity" values="0;1;0;0" ` +
+    `keyTimes="0;0.07;0.18;1" dur="${NINJA_GLIMMER_S}s" begin="${f1((j / groups.length - 1) * NINJA_GLIMMER_S)}s" repeatCount="indefinite"/></g>`).join("");
+  if (fx.shine) {   // (a band across the light's way, from beyond the stone's upper left to beyond its lower right, then waiting there)
+    const c = ninjaClip("ninja-shine-", stone), u = 0.7071, L = 2 * r, b = 0.22 * r, far = f1(1.9 * r * u);
+    const P = (a, q) => f1(cx + a * u + q * u) + " " + f1(cy + a * u - q * u);
+    s += c.def + `<g clip-path="url(#${c.id})"><path d="M${P(-b, -L)} L${P(b, -L)} L${P(b, L)} L${P(-b, L)} Z" fill="#ffffff" opacity="0.65" transform="translate(-${far} -${far})">` +
+      `<animateTransform attributeName="transform" type="translate" values="-${far} -${far};${far} ${far};${far} ${far}" keyTimes="0;0.3;1" dur="${NINJA_SHINE_S}s" ` +
+      `begin="-0.5s" repeatCount="indefinite"/></path></g>`;
+  }
+  if (fx.stars) s += spots.map(([x, y, k], i) => `<g transform="translate(${f1(x)} ${f1(y)})"><path d="${ninjaStar(k * r)}" fill="#ffffff" transform="scale(0)">` +
+    `<animateTransform attributeName="transform" type="scale" values="0;1;0;0" keyTimes="0;0.12;0.26;1" dur="${(1.9 + 0.43 * i).toFixed(2)}s" ` +
+    `begin="${(-0.71 * i).toFixed(2)}s" repeatCount="indefinite"/></path></g>`).join("");
+  return s;
+}
+// the gem facing us: a gold setting a size bigger, the stone, its crown's facets in three tones over it (one path each: lit
+// from up and to our left, the kites there flash and the next ones are lit, the rest the stone's own colour, the triangles
+// between them shaded but those nearest the light), the table, the cuts in white (a group to each corner: the two cuts out
+// from it to the rim and the table's edge on to the next), the girdle's outline, a glint on the crown toward the light, and
+// over it all the lights (`fx`: ninjaGemLights)
+function ninjaGemSvg(kind, shape, cx, cy, r, fx = {}) {
+  const g = ninjaGemOf(kind), sh = ninjaShapeOf(shape), T = ninjaGemTones(g), cut = NINJA_GEM_CUTS[sh], R = cut.rim, k = R.length / 2;
+  const at = ([x, y]) => [cx + x * r, cy + y * r], P = ([x, y]) => f1(x) + " " + f1(y), poly = pts => "M" + pts.map(P).join(" L") + " Z";
+  const C = at(cut.c), corner = j => at(R[(2 * j) % R.length]), mid = j => at(R[(2 * ((j + k) % k) + 1) % R.length]);
+  const tab = Array.from({ length: k }, (_, j) => { const q = corner(j); return [C[0] + (q[0] - C[0]) * cut.t, C[1] + (q[1] - C[1]) * cut.t]; });
+  const lit = pts => { const m = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]), dx = m[0] - C[0], dy = m[1] - C[1], l = Math.hypot(dx, dy) || 1;
+    return (-0.6 * dx - 0.8 * dy) / l; };
+  const tone = { flash: [], light: [], dark: [] }, put = (t, pts) => { if (t) tone[t].push(poly(pts)); };
+  for (let j = 0; j < k; j++) {
+    const Tj = tab[j], Tn = tab[(j + 1) % k], Rj = corner(j), Qj = mid(j), Qp = mid(j - 1);
+    if (cut.split) { const a = [Tj, Qp, Rj], b = [Tj, Rj, Qj];   // (the star's points: the half nearer the light lit, the other shaded)
+      const [hi, lo] = lit(a) >= lit(b) ? [a, b] : [b, a]; put(lit(hi) > 0.3 ? "flash" : "light", hi); put("dark", lo); }
+    else { const s = [Tj, Qj, Rj, Qp], v = lit(s); put(v > 0.55 ? "flash" : v > 0 ? "light" : null, s); }
+    const tri = [Tj, Tn, Qj], v = lit(tri); put(v > 0.5 ? null : "dark", tri);
+  }
+  const groups = tab.map((Tj, j) => `M${P(mid(j - 1))} L${P(Tj)} L${P(mid(j))}` + (cut.split ? ` M${P(Tj)} L${P(corner(j))}` : "") + ` M${P(Tj)} L${P(tab[(j + 1) % k])}`);
+  const lw = v => f1(v * r), stone = ninjaGemPath(sh, cx, cy, r), glint = [C[0] - 0.6 * (cut.glint ?? 0.62) * r, C[1] - 0.8 * (cut.glint ?? 0.62) * r];
+  // (the stars: a big one at the glint, and smaller ones at every other corner of the rim, round the stone)
+  const spots = [[...glint, 0.8], ...Array.from({ length: k }, (_, j) => j).filter(j => j % 2).map(j => [...corner(j), 0.5])];
+  return `<g data-ninja="gem"><path d="${ninjaGemPath(sh, cx, cy, r * 1.32)}" fill="${NINJA.gold}" stroke="${NINJA.goldLine}" stroke-width="2" stroke-linejoin="round"/>` +
+    `<path d="${stone}" fill="${g.c}"/>` +
+    ["dark", "light", "flash"].map(t => tone[t].length ? `<path d="${tone[t].join(" ")}" fill="${T[t]}"/>` : "").join("") +
+    `<path d="${poly(tab)}" fill="${T.table}"/>` +
+    ninjaCut(groups.join(" "), 0.05 * r, NINJA_CUT_PX) +
+    `<path d="${stone}" fill="none" stroke="${g.line}" stroke-width="${lw(0.14)}" stroke-linejoin="round"/>` +
+    `<circle cx="${f1(glint[0])}" cy="${f1(glint[1])}" r="${lw(0.09)}" fill="#ffffff"/>` +
+    ninjaGemLights(fx, { groups, stone, c: [cx, cy], r, w: 0.05 * r, spots }) + `</g>`;
+}
+// the gem from the side, at the forehead's edge (x, cy), toward `dir`: its setting's rim, and the stone standing out of it, as
+// tall as the shape is facing us, cut (ticket 560): a flat table at its front edge between two sloping crown facets, the upper
+// one lit, the lower shaded, their cuts in white (pointed, the diamond shape and the star: two facets meeting at the point),
+// and the lights over it (`fx`: ninjaGemLights, each cut its own group, the stars at the front, on the lit facet and low)
+function ninjaGemSide(kind, shape, x, cy, r, dir, fx = {}) {
+  const g = ninjaGemOf(kind), T = ninjaGemTones(g), sh = ninjaShapeOf(shape), [up, down] = NINJA_GEM_REACH[sh], y0 = cy - up * r, y1 = cy + down * r, P = (a, b) => f1(a) + " " + f1(b);
+  const out = 0.8 * r, xs = x + dir * 3, pointed = sh === "rhombus" || sh === "star", h = y1 - y0, xf = xs + dir * out * 0.75;
+  const ta = pointed ? [xs + dir * out, cy] : [xf, y0 + h * 0.3], tb = pointed ? ta : [xf, y1 - h * 0.3], ym = pointed ? cy : (ta[1] + tb[1]) / 2;
+  const stone = `M${P(xs, y0)} L${P(...ta)} L${P(...tb)} L${P(xs, y1)} Z`;
+  const groups = pointed ? [`M${P(xs, ym)} L${P(...ta)}`] : [`M${P(xs, ym)} L${P(...ta)}`, `M${P(...ta)} L${P(...tb)}`, `M${P(...tb)} L${P(xs, ym)}`];
+  const spots = [[...ta, 0.7], [(2 * xs + ta[0]) / 3, (y0 + ta[1] + ym) / 3, 0.5], [xs + dir * out * 0.3, y1 - h * 0.2, 0.45]];
+  return `<g data-ninja="gem"><path d="M${P(x - dir * 2, y0 - 1.5)} L${P(xs, y0 - 1.5)} L${P(xs, y1 + 1.5)} L${P(x - dir * 2, y1 + 1.5)} Z" fill="${NINJA.gold}" stroke="${NINJA.goldLine}" stroke-width="1.8" stroke-linejoin="round"/>` +
+    `<path d="${stone}" fill="${pointed ? g.c : T.table}"/>` +
+    `<path d="M${P(xs, y0)} L${P(...ta)} L${P(xs, ym)} Z" fill="${T.light}"/><path d="M${P(xs, ym)} L${P(...tb)} L${P(xs, y1)} Z" fill="${T.dark}"/>` +
+    ninjaCut(groups.join(" "), 0.55, NINJA_CUT_PX) +
+    `<path d="${stone}" fill="none" stroke="${g.line}" stroke-width="1.6" stroke-linejoin="round"/>` +
+    ninjaGemLights(fx, { groups, stone, c: [(xs + ta[0]) / 2, cy], r, w: 0.55, spots }) + `</g>`;
+}
+// THE BOOTS' BANDS (ninjaBoots), over the trousers from the ankle up the shin to below the knee, along the leg's own joints
+// (J, from the hip; the shin from the knee, or a straight leg's middle, to the ankle), `half` the trouser leg's half width:
+// "braided" (the default; Matthew: "we want the bands to be braided together, not wrapped around laterally"), two strands
+// in two tones crossing the shin from edge to edge, over and under in turn, between a tie at the ankle and one at the top;
+// "wrapped", straight round the shin, band above band, each bowed a little toward the ankle as a ring is seen from above.
+// Each set of strokes is one path (an outline under, the fills over), so the shapes stay few whatever the shin's length.
+// (ticket 561, M's design, Matthew: "M says that she wants the bands on the shins/ankles to show through the skin color
+// between them -- let's have that on be default, but a toggle to change to 'full darkness' mode") `skin`, the friend's skin
+// colour, shows between the bands, as if they were wound over bare legs: a strip of it as wide as the bands under them, from
+// the ankle's tie to the top one (wrapped: from the first band to the last, the bands narrower so the skin shows between
+// them); null, 🌑 full darkness (ninjaBetween "dark"): the trousers under the bands, drawn exactly as before.
+// (ticket 561, M: "ninja should have bands, with skin showing through, on the wrists/forearms") The same bands on each
+// forearm, J the arm's joints (shoulder, elbow, hand), `half` the sleeve's half width, `from` the glove's reach up the
+// forearm from the hand: the bands from there to below the elbow, a little thinner and fewer for the forearm's width.
+function ninjaShin(J, half, style, skin = null, from = 0) {
+  if (!J || J.length < 2) return "";
+  const F = J[J.length - 1], K = J.length > 2 ? J[J.length - 2] : [(J[0][0] + F[0]) / 2, (J[0][1] + F[1]) / 2];
+  const dx = K[0] - F[0], dy = K[1] - F[1], len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len, top = 0.84, wd = half + 1;
+  const lo = from ? Math.min(0.45, from / len) : 0, span = lo ? len * (top - lo) : len * top, tl = lo ? len * (top - lo) / top : len;   // (lo: where the bands begin)
+  const at = (t, s) => { const u = lo ? lo + t * (top - lo) / top : t; return f1(F[0] + dx * u + nx * s) + " " + f1(F[1] + dy * u + ny * s); };
+  const lines = (d, c, w) => d ? `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f1(w)}"/>` : "";
+  const bare = (t0, t1) => skin ? `<path data-ninja="skin" d="M${at(t0, 0)} L${at(t1, 0)}" fill="none" stroke="${skin}" stroke-width="${f1(2 * wd)}"/>` : "";
+  if (style === "wrapped") {
+    const n = lo ? Math.max(3, Math.round(span / 10)) : Math.max(4, Math.round(span / 11)), step = span / n, bow = Math.min(3, step * 0.3) / tl, bw = skin ? step * 0.5 : step - 2.2;
+    const d = Array.from({ length: n }, (_, i) => { const t = (i + 0.5) * top / n; return `M${at(t, -wd)} Q${at(t - bow, 0)} ${at(t, wd)}`; }).join(" ");
+    return bare(0.5 * top / n, (n - 0.5) * top / n) + lines(d, NINJA.bandLine, skin ? bw + 2.2 : step + 1.5) + lines(d, NINJA.bandA, bw) +
+      lines(Array.from({ length: n }, (_, i) => { const t = (i + 0.5) * top / n + (skin ? 0.22 * bw : 0.3 * step) / tl; return `M${at(t, -wd * 0.8)} Q${at(t - bow, 0)} ${at(t, wd * 0.8)}`; }).join(" "), NINJA.bandB, 1.6);
+  }
+  const n = lo ? Math.max(2, Math.round(span / 15)) : Math.max(3, Math.round(span / 17)), sw = lo ? 4.5 : 6.5, e = wd - 3.5, under = [[], []], over = [[], []];   // (e: the strands turn just inside the leg's edge, their corners on it)
+  for (let i = 0; i < n; i++) { const t0 = (0.06 + i * (top - 0.06) / n), t1 = 0.06 + (i + 1) * (top - 0.06) / n, s = i % 2 ? 1 : -1;
+    const a = `M${at(t0, s * e)} L${at(t1, -s * e)}`, b = `M${at(t0, -s * e)} L${at(t1, s * e)}`;
+    (i % 2 ? under : over)[0].push(a); (i % 2 ? over : under)[1].push(b); }
+  const ties = `M${at(0.03, -wd)} L${at(0.03, wd)} M${at(top, -wd)} L${at(top, wd)}`;
+  return bare(0.03, top) + lines(under[0].concat(under[1]).join(" "), NINJA.bandLine, sw + 2.5) + lines(under[0].join(" "), NINJA.bandA, sw) + lines(under[1].join(" "), NINJA.bandB, sw) +
+    lines(over[0].concat(over[1]).join(" "), NINJA.bandLine, sw + 2.5) + lines(over[0].join(" "), NINJA.bandA, sw) + lines(over[1].join(" "), NINJA.bandB, sw) +
+    lines(ties, NINJA.bandLine, lo ? 7 : 9.5) + lines(ties, NINJA.bandA, lo ? 5 : 7);
+}
+
 // Fur: the fur color with little tufts, and stripes, spots or patches in
 // the markings color. Feathers: the feather color with curved bars.
 // A rosette's middle: "auto" is a warm brown mixed into the fur, "off"
@@ -168,6 +423,14 @@ function furDefs(C, kind) {
     const sh = `<rect width="40" height="40" fill="${C.fur}"/><path d="M3 4 l3 9 l3 -9 M21 2 l3 10 l3 -10 M12 18 l3 9 l3 -9 M30 19 l3 10 l3 -10 M4 30 l3 9 l3 -9 M22 30 l3 9 l3 -9" ` +
                `stroke="${C.marks}" fill="none" stroke-width="1.8" stroke-linejoin="round" opacity="0.85"/>`;
     return `<pattern id="pat-fur" width="40" height="40" patternUnits="userSpaceOnUse">${sh}</pattern><pattern id="pat-bars" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="${C.fur}"/></pattern>`;
+  }
+  // (ticket 544) a giraffe's coat: its style's patches (GIRAFFE_COATS) in the fur colour on the cream (belly), one path a
+  // tile (drawn once however big the suit)
+  if (kind === "giraffe") {
+    const G = GIRAFFE_COATS[(C.gf && C.gf.coat) || "net"] || GIRAFFE_COATS.net;
+    return `<pattern id="pat-fur" width="${G.w}" height="${G.h}" patternUnits="userSpaceOnUse"><rect width="${G.w}" height="${G.h}" fill="${C.belly}"/>` +
+           `<path d="${G.d}" fill="${C.fur}" stroke="${C.fur}" stroke-width="2" stroke-linejoin="${G.join}"/></pattern>` +
+           `<pattern id="pat-bars" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="${C.fur}"/></pattern>`;
   }
   if (BIRD_SUIT[kind])   // feathers: the color with curved bars, all over
     return `<pattern id="pat-fur" width="24" height="12" patternUnits="userSpaceOnUse">` +
@@ -273,6 +536,8 @@ function hoodBack(C, kind, F, dir = 0, away = false) {
   const line = darker(C.fur), fill = eagleHead(kind) ? C.belly : ANIMALS[kind].suit ? "url(#pat-fur)" : C.fur;
   // (ticket 499) a dragon's horns and spines, behind the hood's own shape, which hides their roots
   if (kind === "dragon") return dragonHoodBack(C, F, dir, away) + `<ellipse ${HOOD} fill="${fill}" stroke="${line}" stroke-width="4"/>`;
+  // (ticket 536) a moth's feathery antennae and fuzzy crown, behind the hood's own shape, which hides their roots; no ears
+  if (kind === "moth") return mothHoodBack(C, F, dir, away) + `<ellipse ${HOOD} fill="${fill}" stroke="${line}" stroke-width="4"/>`;
   let s = "";
   if (kind === "lion") {
     const pts = [];
@@ -314,7 +579,7 @@ function hoodBack(C, kind, F, dir = 0, away = false) {
       s += `<ellipse cx="${100 + side * 70}" cy="2" rx="22" ry="28" transform="rotate(${side * 25} ${100 + side * 70} 2)" ` +
            `fill="${C.belly}" stroke="${line}" stroke-width="3"/>` +
            `<ellipse cx="${100 + side * 70}" cy="6" rx="13" ry="18" transform="rotate(${side * 25} ${100 + side * 70} 6)" fill="${C.fur}"/>`;
-    else if (!isBird(kind)) {
+    else if (!isBird(kind) && kind !== "giraffe") {   // (ticket 544: a giraffe's ears are on its own head, up its neck)
       const r = kind === "lion" ? 20 : kind === "sasquatch" ? 17 : 25;   // (ticket 530: a Sasquatch's small round ears)
       s += `<circle cx="${x}" cy="20" r="${r}" fill="${C.fur}" stroke="${line}" stroke-width="3"/>` +
            `<circle cx="${x}" cy="22" r="${r * 0.5}" fill="${kind === "tiger" ? "#ffffff" : C.belly}"/>`;
@@ -372,6 +637,16 @@ function hoodFront(C, kind, F) {
   let s = `<ellipse ${HOOD} fill="${brimFill}" stroke="${darker(C.fur)}" stroke-width="4" clip-path="url(#hood-brim)"/>` +
           `<line x1="0" y1="54" x2="200" y2="54" stroke="${darker(C.fur)}" stroke-width="4" clip-path="url(#hood-inside)"/>`;
   const shine = (x, y, r) => `<circle cx="${x - r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.28}" fill="#ffffff"/>`;
+  // (ticket 536) a moth's: a fluffy tuft between two big round glossy eyes (the animal eye colour), and its tongue curled up
+  // under them; no nose, whiskers or claws (its antennae and crown are behind the hood: mothHoodBack)
+  if (kind === "moth") {
+    const ln = darker(C.fur), tuft = mix(C.belly, C.fur, 0.25);
+    s += `<path data-moth="tuft" d="M90 20 Q86 10 94 8 Q98 0 106 6 Q115 9 110 20 Q106 29 100 27 Q94 29 90 20 Z" fill="${tuft}" stroke="${mix(tuft, "#000000", 0.25)}" stroke-width="2" stroke-dasharray="3 2"/>`;
+    for (const x of [72, 128])
+      s += `<circle cx="${x}" cy="28" r="17" fill="${C.eyes}" stroke="${ln}" stroke-width="2.5"/>` + shine(x, 28, 17) +
+           `<circle cx="${x + 6}" cy="35" r="2.6" fill="#ffffff" opacity="0.7"/>`;
+    return s + `<path data-moth="tongue" d="M100 31 C100 44 112 48 113 40 C114 33 104 33 105 39" fill="none" stroke="${mix(C.accent, "#000000", 0.25)}" stroke-width="3.4" stroke-linecap="round"/>`;
+  }
   // (ticket 499) a dragon's: a brow ridge over each slit-pupilled eye, two nostrils (no nose or whiskers), and its teeth along
   // the brim's edge, the top of the hood's opening, pointing down at the face
   if (kind === "dragon") {
@@ -402,6 +677,9 @@ function hoodFront(C, kind, F) {
       : `<path d="M90 48 Q100 53 110 48" fill="none" stroke="#3a2418" stroke-width="2.2" stroke-linecap="round"/>`;
     return s;
   }
+  // (ticket 544) a giraffe's: the brim plain in its coat, the foot of its neck; its face is its own head's, up the neck
+  // (giraffeNeckSvg)
+  if (kind === "giraffe") return s;
   if (falconHead(kind)) {
     for (const x of [76, 124])
       s += `<circle cx="${x}" cy="26" r="12" fill="${C.accent}"/>` +
@@ -454,12 +732,23 @@ function hoodFront(C, kind, F) {
 
 // THE SUIT'S EXTRAS, in body units: a tail out to the side (drawn behind
 // the body), and the falcon's wings and fanned tail.
-function tailSvg(C, kind, hw, L) {
+function tailSvg(C, kind, hw, L, floor = Infinity, lie = null) {
+  if (kind === "moth") return "";   // (ticket 536: a moth has no tail; a luna's long tails are on its hindwings)
   const line = darker(C.fur), x0 = hw * 0.55, y0 = L + 5;
   if (kind === "bear")
     return `<circle cx="${f1(hw + 4)}" cy="${f1(L - 14)}" r="17" fill="url(#pat-fur)" stroke="${line}" stroke-width="3"/>`;
   if (kind === "sasquatch")   // (ticket 530) the bear's stub, shaggy round its edge
     return `<circle cx="${f1(hw + 4)}" cy="${f1(L - 14)}" r="17" fill="url(#pat-fur)" stroke="${line}" stroke-width="8" stroke-dasharray="4 3"/>`;
+  if (kind === "giraffe") {   // (ticket 544) a thin tail swinging out and down, its long dark tuft hanging from the end to the
+    // ground at most (sitting, it reaches out along it instead); lying down (lie: the side of the body on the ground, and the
+    // legs' length), along the ground by the legs, the tuft toward the feet
+    const drop = clamp(floor - 50 - L, 20, 100), sd = lie ? lie.side : 1, P = (x, y) => f1(sd * x) + " " + f1(y);
+    const [ex, ey] = lie ? [hw + 6, L + 0.55 * lie.LL] : [hw + 34 + 0.6 * (100 - drop), L + drop];
+    const d = lie ? `M${P(x0, L - 4)} C${P(hw + 10, L + 10)} ${P(hw + 8, L + 0.3 * lie.LL)} ${P(ex, ey)}` : `M${P(x0, L - 4)} C${P(hw + 26, L + 4)} ${P(hw + 40 + 0.3 * (100 - drop), L + drop / 2)} ${P(ex, ey)}`;
+    return `<path data-giraffe="tail" d="${d}" fill="none" stroke="${line}" stroke-width="9" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${C.fur}" stroke-width="5" stroke-linecap="round"/>` +
+           `<path d="M${P(ex - 3, ey - 4)} C${P(ex - 13, ey + 8)} ${P(ex - 14, ey + 28)} ${P(ex - 9, ey + 42)} L${P(ex - 4, ey + 36)} L${P(ex, ey + 49)} L${P(ex + 4, ey + 36)} L${P(ex + 9, ey + 42)} ` +
+           `C${P(ex + 14, ey + 28)} ${P(ex + 13, ey + 8)} ${P(ex + 3, ey - 4)} Z" fill="${C.marks}" stroke="${darker(C.marks)}" stroke-width="2" stroke-linejoin="round"/>`;
+  }
   if (kind === "deer")  // a short white tail, flicked up
     return `<ellipse cx="${f1(hw + 8)}" cy="${f1(L - 16)}" rx="11" ry="17" transform="rotate(35 ${f1(hw + 8)} ${f1(L - 16)})" ` +
            `fill="${C.belly}" stroke="${line}" stroke-width="3"/>`;
@@ -535,6 +824,143 @@ function falconTail(C, hw, L, LL, fill = "url(#pat-bars)") {
                [hw * 0.5, tl + 8], [hw + 28, tl - 10], [hw * 0.45, L - 20]];
   return poly(fan, fill, darker(fill.startsWith("url") ? C.fur : fill), 3) +
     `<polyline points="${pts(fan.slice(1, 6))}" fill="none" stroke="${C.belly}" stroke-width="6" stroke-linejoin="round"/>`;
+}
+
+// (ticket 536, Matthew: "moth costume, 3 styles. Follow the bird costume examples for wing ideas, but we want moth wings
+// here, and antenna, etc") THE MOTH, a suit as the bird suits are: a moth's wings on its arms, each built on one arm as
+// armWing builds a falcon suit's (the arm along the forewing's leading edge, from the shoulder A to the hand H and on to the
+// wing's round tip; the wing out on the arm's trailing side by armWing's rule, so it lies along the side as the arm is
+// lowered and spreads as it is raised, and in profile, `edge` 0.3, it is turned nearly edge on); feathery antennae and a
+// fuzzy crown behind its hood (mothHoodBack), its face on the brim (hoodFront), a fluffy collar (mothCollar) and a banded
+// belly (mothBands); in its style's colours (mothOf: MOTH_STYLES, js/01-state.js, and the style's chosen wing colour). Each
+// piece is a group marked data-moth, nothing in one turned.
+const mothStyleOf = c => MOTH_STYLES[c.mothStyle] ? c.mothStyle : "luna";
+const mothOf = c => { const id = mothStyleOf(c), S = MOTH_STYLES[id], wing = c["mothColor_" + id] || S.colors[0];
+  return { ...S, id, wing, hind: S.hind || wing, spots: c.mothSpots !== false }; };
+// a closed smooth path through points (each piece a cubic from its neighbours, as smoothPath's, round the loop)
+const mothLoop = P => { const n = P.length, p = i => P[(i + n) % n];
+  let d = `M${f1(P[0][0])} ${f1(P[0][1])}`;
+  for (let i = 0; i < n; i++) { const a = p(i - 1), b = p(i), c = p(i + 1), e = p(i + 2);
+    d += ` C${f1(b[0] + (c[0] - a[0]) / 6)} ${f1(b[1] + (c[1] - a[1]) / 6)} ${f1(c[0] - (e[0] - b[0]) / 6)} ${f1(c[1] - (e[1] - b[1]) / 6)} ${f1(c[0])} ${f1(c[1])}`; }
+  return d + " Z"; };
+// One wing's shape on its arm, in body units: Q(t, d), t along the arm from the shoulder and d out on its trailing side
+// (tipped toward the ground by MOTH_DROP, so a lowered arm's wing hangs down along the side rather than across the body);
+// `fore`, the forewing, broad and round-tipped past the hand; `hind`, the hindwing, rounder, out from under it; `tail`, a
+// luna's long tail hanging from the hindwing's edge (nearly straight down, a little curl, a broad tip). Their
+// points also make the picture's frame (drawNow).
+const MOTH_DROP = 0.6;
+function mothWingGeom({ A, H, side }, armW, edge, M) {
+  const len = Math.hypot(H[0] - A[0], H[1] - A[1]) || 1, ux = (H[0] - A[0]) / len, uy = (H[1] - A[1]) / len;
+  let nx = -uy, ny = ux;
+  if (ny < -0.15 || (Math.abs(ny) <= 0.15 && nx * side < 0)) { nx = -nx; ny = -ny; }
+  const gl = Math.hypot(nx, ny + MOTH_DROP), gx = nx / gl, gy = (ny + MOTH_DROP) / gl;
+  const Q = (t, d) => [A[0] + ux * t + gx * d, A[1] + uy * t + gy * d];
+  const L = len, ext = L * 0.3 * (edge < 1 ? 0.6 : 1), lead = armW / 2 + 5, D = (L * 0.6 + 26) * edge + 8 * (1 - edge);
+  const fore = [[-4, -lead + 2], [L * 0.5, -lead - 3], [L * 0.98, -lead - 1], [L + ext, 0], [L + ext * 0.8, D * 0.42], [L, D * 0.86],
+                [L * 0.78, D], [L * 0.45, D * 0.62], [L * 0.12, D * 0.3], [-2, lead + 2]];
+  const hind = [[L * 0.08, lead * 0.6], [L * 0.5, D * 0.5], [L * 0.82, D * 0.9], [L * 0.76, D * 1.2], [L * 0.55, D * 1.32],
+                [L * 0.3, D * 1.12], [L * 0.1, D * 0.75], [-2, lead + 4]];
+  let tail = null;
+  if (M.tail) {
+    const [bx, by] = Q(L * 0.66, D * 1.22), tl = Math.hypot(gx * 0.3, gy * 0.3 + 1), vx = gx * 0.3 / tl, vy = (gy * 0.3 + 1) / tl, px = -vy, py = vx;
+    const T = L * 0.72 * Math.max(edge, 0.6), c = s => [bx + vx * T * s + px * 7 * Math.sin(Math.PI * s) * side, by + vy * T * s + py * 7 * Math.sin(Math.PI * s) * side];
+    const wd = s => s > 0.85 ? 6.5 : 8 * (1 - s) + 3, S = [0, 0.35, 0.7, 0.92, 1];
+    tail = [...S.map(s => { const [x, y] = c(s); return [x + px * wd(s), y + py * wd(s)]; }),
+            ...S.slice().reverse().map(s => { const [x, y] = c(s); return [x - px * wd(s), y - py * wd(s)]; })];
+  }
+  return { Q, L, D, lead, ext, fore: fore.map(([t, d]) => Q(t, d)), hind: hind.map(([t, d]) => Q(t, d)), tail, hindTD: hind };
+}
+const mothWingPts = (arm, armW, edge, M) => { const G = mothWingGeom(arm, armW, edge, M); return [...G.fore, ...G.hind, ...(G.tail || [])]; };
+// an eyespot at Q(t, d), r across: its rim and ring one shape (a stroke round it), its middle, a shine; its axes along the
+// arm and across it, squashed as the wing is edge on (an ellipse drawn as two arcs, nothing turned)
+function mothSpot(G, t, d, r, [rim, ring, mid], edge, what = "spot") {
+  const [cx, cy] = G.Q(t, d), [ax, ay] = G.Q(t + 1, d), a = Math.atan2(ay - cy, ax - cx), deg = f1(a * 180 / Math.PI), k = Math.max(edge, 0.35);
+  const ell = (rr, fill, extra = "") => { const dx = Math.cos(a) * rr, dy = Math.sin(a) * rr;
+    return `<path d="M${f1(cx - dx)} ${f1(cy - dy)} A${f1(rr)} ${f1(rr * k)} ${deg} 1 0 ${f1(cx + dx)} ${f1(cy + dy)} A${f1(rr)} ${f1(rr * k)} ${deg} 1 0 ${f1(cx - dx)} ${f1(cy - dy)} Z" fill="${fill}"${extra}/>`; };
+  return ell(r * 0.85, ring, ` data-moth="${what}" stroke="${rim}" stroke-width="${f1(r * 0.3)}"`) + ell(r * 0.42, mid) +
+         `<circle cx="${f1(cx - r * 0.2)}" cy="${f1(cy - r * 0.2 * k)}" r="${f1(Math.max(1.2, r * 0.14))}" fill="#ffffff" opacity="0.85"/>`;
+}
+// a band across a wing, from a to b ([t, d] each), bowing toward the wing's tip by `bow`: wavy, or zigzag
+function mothBand(G, a, b, bow, [col, w, zig]) {
+  const P = [];
+  for (let i = 0; i <= 8; i++) { const s = i / 8;
+    P.push(G.Q(a[0] + (b[0] - a[0]) * s + bow * Math.sin(Math.PI * s) + (zig ? (i % 2 ? 4 : -4) : 2.5 * Math.sin(s * 9)), a[1] + (b[1] - a[1]) * s)); }
+  return `<path d="${zig ? "M" + P.map(p => f1(p[0]) + " " + f1(p[1])).join(" L") : smoothPath(P)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+// One wing (M: mothOf), behind to front: the luna's tail, the hindwing (its soft fringe, its band along its edge, its
+// eyespot), then the forewing (its fringe, its veins, the band along its leading edge, its bands across, its eyespot or a
+// night moth's kidney ring, its dusting of scales). `far`: in profile, the wing on the far arm, a shade darker and plain
+// (its markings would crowd the near wing's, just in front of it)
+function mothWing(C, arm, armW, edge, M, far = false) {
+  if (far) { const dk = c => mix(c, "#000000", 0.2); M = { ...M, wing: dk(M.wing), hind: dk(M.hind), costa: dk(M.costa), spots: false, bands: [], hindBand: null, kidney: false, dust: null }; }
+  const G = mothWingGeom(arm, armW, edge, M), { L, D, lead, ext } = G, Q = G.Q;
+  const W = M.wing, HW = M.hind, wl = mix(W, "#000000", 0.42), hl = mix(HW, "#000000", 0.42);
+  const fringe = (d, col) => `<path d="${d}" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="1.6 2.2" stroke-linecap="round"/>`;
+  const hd = mothLoop(G.hind), fd = mothLoop(G.fore), P = p => f1(p[0]) + " " + f1(p[1]);
+  let s = G.tail ? `<path data-moth="tail" d="${mothLoop(G.tail)}" fill="${HW}" stroke="${hl}" stroke-width="2"/>` : "";
+  s += fringe(hd, mix(HW, "#ffffff", 0.4)) + `<path d="${hd}" fill="${HW}" stroke="${hl}" stroke-width="2.2"/>`;
+  if (M.hindBand) { const c = [L * 0.4, D * 0.85], in_ = ([t, d]) => G.Q(c[0] + (t - c[0]) * 0.86, c[1] + (d - c[1]) * 0.86);
+    s += `<path d="${smoothPath(G.hindTD.slice(2, 7).map(in_))}" fill="none" stroke="${M.hindBand[0]}" stroke-width="${M.hindBand[1]}" stroke-linecap="round"/>`; }
+  if (M.spots && M.spot[3]) s += mothSpot(G, L * 0.5, D * 0.98, M.spot[3], M.spot, edge);
+  s += fringe(fd, mix(W, "#ffffff", 0.4)) + `<path d="${fd}" fill="${W}" stroke="${wl}" stroke-width="2.2"/>`;
+  const base = Q(L * 0.04, 0);
+  s += `<path d="${[Q(L + ext * 0.7, D * 0.2), Q(L * 0.98, D * 0.62), Q(L * 0.74, D * 0.9), Q(L * 0.42, D * 0.58)].map(p => `M${P(base)} L${P(p)}`).join(" ")}" fill="none" stroke="${wl}" stroke-width="1.2" opacity="0.35"/>`;
+  s += `<path d="${smoothPath([Q(0, -lead + 5.5), Q(L * 0.5, -lead + 2.5), Q(L * 0.98, -lead + 3.5), Q(L + ext * 0.85, 2)])}" fill="none" stroke="${M.costa}" stroke-width="6" stroke-linecap="round"/>`;
+  const [b1, b2] = M.bands;
+  if (b1) s += mothBand(G, [L * 0.82, -lead + 6], [L * 0.68, D * 0.86], 6, b1);
+  if (b2) s += mothBand(G, [L * 0.36, -lead + 6], [L * 0.24, D * 0.5], 4, b2);
+  if (M.kidney) s += mothSpot(G, L * 0.62, D * 0.3, 8, [M.costa, W, mix(W, M.costa, 0.35)], edge, "kidney");
+  else if (M.spots && M.foreSpot) s += mothSpot(G, L * 0.62, D * 0.42, M.foreSpot, M.spot, edge);
+  if (M.dust) s += `<path d="M${P(Q(L * 0.28, D * 0.15))} L${P(Q(L * 1.02, D * 0.3))} M${P(Q(L * 0.22, D * 0.42))} L${P(Q(L * 0.92, D * 0.7))} M${P(Q(L * 0.5, D * 0.72))} L${P(Q(L * 0.84, D * 0.92))}" ` +
+                  `fill="none" stroke="${M.dust}" stroke-width="2.6" stroke-dasharray="0.1 7" stroke-linecap="round" opacity="0.55"/>`;
+  return `<g data-moth="wing">${s}</g>`;
+}
+// (ticket 536) Behind the hood, in the round head's units: the fuzzy crown along its top (round puffs, the dots of one
+// thick stroke with round ends, on a darker one for their edge, the hood's own shape over half of them) and the two feathery antennae rising from it, each a curved shaft,
+// its barbs in one path and a pale vane behind them; toward us and from behind a V, out to either side; in profile (dir)
+// both rising and curving forward, the far one behind, a shade darker. MOTH_ANT_UP: how far above the hood's top they
+// reach (the picture's frame, drawNow).
+const MOTH_ANT_UP = 84;
+function mothHoodBack(C, F, dir, away) {
+  const { cy, rx, ry } = hoodGeom(F), top = cy - ry, M = mothOf(C), P = (x, y) => f1(x) + " " + f1(y);
+  const pt = a => [100 + (rx + 3) * Math.cos(a * Math.PI / 180), cy + (ry + 3) * Math.sin(a * Math.PI / 180)];
+  const crown = `M${P(...pt(200))} A${f1(rx + 3)} ${f1(ry + 3)} 0 0 1 ${P(...pt(340))}`, fz = mix(C.fur, C.belly, 0.5);
+  let s = `<path data-moth="crown" d="${crown}" fill="none" stroke="${mix(fz, "#000000", 0.3)}" stroke-width="16" stroke-dasharray="0.1 9" stroke-linecap="round"/>` +
+          `<path d="${crown}" fill="none" stroke="${fz}" stroke-width="12.5" stroke-dasharray="0.1 9" stroke-linecap="round"/>`;
+  // each antenna [base, bend, tip], a quadratic curve
+  const ants = dir ? [[[100 - dir * 2, top + 16], [100 - dir * 8, top - 46], [100 + dir * 28, top - MOTH_ANT_UP + 12]],
+                      [[100 + dir * 14, top + 16], [100 + dir * 8, top - 50], [100 + dir * 52, top - MOTH_ANT_UP + 4]]]
+                   : [-1, 1].map(sd => [[100 + sd * 22, top + 16], [100 + sd * 26, top - 48], [100 + sd * 66, top - MOTH_ANT_UP + 6]]);
+  const one = ([B, K, T], col) => {
+    const at = t => [(1 - t) * (1 - t) * B[0] + 2 * (1 - t) * t * K[0] + t * t * T[0], (1 - t) * (1 - t) * B[1] + 2 * (1 - t) * t * K[1] + t * t * T[1]];
+    const tan = t => { const x = 2 * (1 - t) * (K[0] - B[0]) + 2 * t * (T[0] - K[0]), y = 2 * (1 - t) * (K[1] - B[1]) + 2 * t * (T[1] - K[1]), l = Math.hypot(x, y) || 1; return [x / l, y / l]; };
+    let barbs = ""; const L = [], R = [];
+    for (let k = 0; k <= 10; k++) { const t = 0.32 + 0.66 * k / 10, [x, y] = at(t), [tx, ty] = tan(t), len = 3 + 11 * Math.pow(Math.sin(Math.PI * (t - 0.26) / 0.76), 0.7);
+      for (const sd of [1, -1]) { const bx = (-ty * sd * 0.85 + tx * 0.5) * len, by = (tx * sd * 0.85 + ty * 0.5) * len;
+        barbs += `M${P(x, y)} l${P(bx, by)} `; (sd > 0 ? L : R).push([x + bx, y + by]); } }
+    return `<path d="${mothLoop([...L, ...R.reverse()])}" fill="${col}" opacity="0.3"/>` +
+           `<path d="${barbs}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round"/>` +
+           `<path d="M${P(...B)} Q${P(...K)} ${P(...T)}" fill="none" stroke="${mix(col, "#000000", 0.25)}" stroke-width="3.2" stroke-linecap="round"/>`;
+  };
+  s += `<g data-moth="antennae">${ants.map((a, i) => one(a, dir && !i ? mix(M.antenna, "#000000", 0.25) : M.antenna)).join("")}</g>`;
+  return s;
+}
+// (ticket 536) A moth's fluffy collar round the neck, over the wings' roots, in body units (the collar's line at y -20, nw
+// its half width): a ring of round tufts with a dashed fuzzy edge; narrower in profile
+function mothCollar(C, nw, dir) {
+  const rx = dir ? nw + 10 : nw + 20, ry = 15, cy = -6, n = 14, fz = mix(C.belly, C.fur, 0.2);
+  const at = (a, k) => [rx * k * Math.cos(a), cy + ry * k * Math.sin(a)];
+  let d = `M${f1(at(0, 1)[0])} ${f1(at(0, 1)[1])}`;
+  for (let i = 0; i < n; i++) { const a = 2 * Math.PI * (i + 0.5) / n, b = 2 * Math.PI * (i + 1) / n, [qx, qy] = at(a, 1.22), [x, y] = at(b, 1);
+    d += ` Q${f1(qx)} ${f1(qy)} ${f1(x)} ${f1(y)}`; }
+  return `<g data-moth="collar"><path d="${d} Z" fill="${fz}" stroke="${mix(fz, "#000000", 0.3)}" stroke-width="2.4" stroke-dasharray="2.5 2" stroke-linejoin="round"/></g>`;
+}
+// (ticket 536) Fuzzy bands across a moth's belly (toward us) or its back (from behind), in the markings colour: four, each
+// bowed a little, inside the oval cx, cy, rx, ry, in one path
+function mothBands(C, cx, cy, rx, ry) {
+  const d = [-0.55, -0.18, 0.2, 0.56].map(k => { const y = cy + k * ry, h = rx * Math.sqrt(1 - k * k) * 0.88;
+    return `M${f1(cx - h)} ${f1(y)} Q${f1(cx)} ${f1(y + 7)} ${f1(cx + h)} ${f1(y)}`; }).join(" ");
+  return `<g data-moth="bands"><path d="${d}" fill="none" stroke="${C.marks}" stroke-width="6" stroke-linecap="round" stroke-dasharray="3 1.6" opacity="0.7"/></g>`;
 }
 
 // (ticket 499, Matthew: "new costume to add -- dragon." "look at Lego castles and knights for inspiration." "wings, tail and
@@ -1617,6 +2043,131 @@ function sasquatchPrints(C, hw, ground, dir, k) {
                                 : [0, 1, 2, 3].map(i => [-(hw + 70 + i * 58 * k), ground + 8 - i * 7]);
   return `<path data-sasquatch="prints" d="${pts.map(([x, y]) => print(x, y, f)).join(" ")}" fill="${mix("#6b4a2b", "#000000", 0.15)}" opacity="0.45"/>`;
 }
+// (ticket 544) THE GIRAFFE. Its coats, furDefs' tile (w by h): "net", the reticulated giraffe's patches, a Voronoi diagram of
+// twelve seeds that tiles, each cell shrunk for the cream lines between them, and each crossing the tile's edge repeated a
+// tile over; "masai", the same cells further apart, a lobe out at each corner and notches cut into each side.
+const GIRAFFE_COATS = {
+  net: { w: 108, h: 124, join: "round", d: "M-3 19l-3-18 13-13 15 6-2 20-15 11zM-3 143l-3-18 13-13 15 6-2 20-15 11zM105 19l-3-18 13-13 15 6-2 20-15 11zM105 143l-3-18 13-13 15 6-2 20-15 11zM26 14l2-20 11-4 20 13 0 11-14 9zM26 138l2-20 11-4 20 13 0 11-14 9zM65 14l0-12 10-7 21 7 3 16-25 5zM65 138l0-12 10-7 21 7 3 16-25 5zM8 39l-1-8 16-12 19 9-4 18-10 6zM48 28l13-9 10 9 1 20-10 5-17-7zM-31 29l24-5 8 7 1 9-16 15-16-8zM77 29l24-5 8 7 1 9-16 15-16-8zM-8 79l-2-19 16-15 19 12 0 15-25 12zM100 79l-2-19 16-15 19 12 0 15-25 12zM31 57l10-6 18 7-2 21-14 5-12-11zM63 80l2-22 10-5 17 7 2 19-16 8zM25 113l-16-6-5-18 23-11 12 10-3 20zM45 89l15-4 15 7-3 22-10 7-20-12zM3 108l-13 12-20-7 3-21 16-8 9 5zM111 108l-13 12-20-7 3-21 16-8 9 5z" },
+  masai: { w: 108, h: 124, join: "miter", d: "M-2 19l2-8-5-3 4-4-5-4 7 0 0-6 5 1 2-7 4 6 10 0-4 9 2 2-4 5 3 4-7 1-1 5-4 0-3 5-2-6zM-2 143l2-8-5-3 4-4-5-4 7 0 0-6 5 1 2-7 4 6 10 0-4 9 2 2-4 5 3 4-7 1-1 5-4 0-3 5-2-6zM106 19l2-8-5-3 4-4-5-4 7 0 0-6 5 1 2-7 4 6 10 0-4 9 2 2-4 5 3 4-7 1-1 5-4 0-3 5-2-6zM106 143l2-8-5-3 4-4-5-4 7 0 0-6 5 1 2-7 4 6 10 0-4 9 2 2-4 5 3 4-7 1-1 5-4 0-3 5-2-6zM27 14l5-7-4-3 4-4-4-6 7 1 3-5 7 9 5-2 1 6 7 0-2 4 2 7-8 1-5 7-4-6-6 1-1-4zM27 138l5-7-4-3 4-4-4-6 7 1 3-5 7 9 5-2 1 6 7 0-2 4 2 7-8 1-5 7-4-6-6 1-1-4zM95 3l-2 7 6 8-12-2 0 5-8-3-5 5-2-6-7-3 3-4-3-7 7-1 3-7 5 6 8-1 2 3zM95 127l-2 7 6 8-12-2 0 5-8-3-5 5-2-6-7-3 3-4-3-7 7-1 3-7 5 6 8-1 2 3zM9 39l1-4-3-4 7-1 3-4 4 0 2-6 5 6 4-2 3 5 5 0-3 4 3 4-4 3 2 6-7 0-2 6-5-8-8 1 2-6zM49 29l7-1 5-9 3 7 6 2-3 6 4 6-4 2 4 5-5 1-4 5-4-6-5 1-1-3-7 1 4-6-3-3 5-4zM-30 30l9 1 5-4 5 4 5-7 2 5 6 2-3 4 2 4-8 2 1 8-5-1-3 5-4-5-5 1-2-3-4 0 3-5-4-4 3-4zM78 30l9 1 5-4 5 4 5-7 2 5 6 2-3 4 2 4-8 2 1 8-5-1-3 5-4-5-5 1-2-3-4 0 3-5-4-4 3-4zM-7 78l2-7-4-3 3-3-4-5 8-2 2-7 4 1 2-6 4 8 7-3 0 7 8-1-3 7 3 8-11 0-2 6-6-2-6 8-2-5zM101 78l2-7-4-3 3-3-4-5 8-2 2-7 4 1 2-6 4 8 7-3 0 7 8-1-3 7 3 8-11 0-2 6-6-2-6 8-2-5zM32 57l6-1 4-4 3 6 7-2 1 3 6-1-5 8 4 4-4 3 3 6-9-1-5 5-5-9-7-1 3-6zM64 79l5-7-5-5 6-3-4-6 6 0 3-4 5 6 5-1 1 3 6-1-3 5 4 6-4 2 3 4-8 2-6 6-5-7zM26 113l-4-5-6 0-1-3-5 1 2-6-5-4 2-3-4-4 11 0 0-5 7 1 4-7 4 9 7 2-4 7 3 3-5 2 4 7-7 0zM46 90l8 0 6-5 6 7 8 1-5 6 3 5-4 2 4 8-6 0-4 6-4-7-7 2-1-6-7-1 4-4-3-6 5-3zM3 108l-7 1-1 4-3 1-2 5-6-5-4 3-1-6-8 2 5-7-3-4 4-4-3-5 6 0 3-6 3 4 3-6 3 5 5 0-2 6 5 5-2 2zM111 108l-7 1-1 4-3 1-2 5-6-5-4 3-1-6-8 2 5-7-3-4 4-4-3-5 6 0 3-6 3 4 3-6 3 5 5 0-2 6 5 5-2 2z" },
+};
+// (the giraffe's head's size against its drawing's own units)
+const GIRAFFE_HEAD = 1.15;
+// Where the giraffe's neck goes, in the face's units (x 100 the head's middle; its stretch, a wide by b tall, is the hood's):
+// its foot (base) inside the hood's top, which hides it; the way it leaves the hood (d0: up the body; turned with the friend
+// by rot, crawling or swimming in profile or lying down, in the picture's upright frame its drawing is turned back into,
+// about base); its top (end), H from the foot, straight up (in profile leaning forward), or, turned, out along the body and
+// up (rise: lying down or swimming, more up than along); its half width at the foot (hb) and the top (ht), deeper in
+// profile; and how far its head reaches up (up) and out (out) from the top, for the picture's frame (giraffeReach).
+// Crawling toward us or away (squash) it leans that way, seen short. Its length is the style's (neck) times giraffeNeck, a
+// percent.
+function giraffeGeom(C, F, o = {}) {
+  const S = C.gf || GIRAFFE_STYLES.reticulated, a = headWidth(F) * (1 + 0.12 * F.alien / 100), b = headH(F);
+  const { cy, ry } = hoodGeom(F), dir = o.away ? 0 : o.dir || 0, r = (o.rot || 0) * Math.PI / 180;
+  const base = [100 - dir * 8 * a, HEAD_C + (cy - ry + 34 - HEAD_C) * b];
+  const H = 185 * S.neck * clamp((Number(C.giraffeNeck ?? 100) || 100) / 100, 0.5, 2.5) * b * (o.squash ? 0.4 : 1);
+  const k = o.rise ? 0.35 : 0.6, d0 = [Math.sin(r), -Math.cos(r)], u = [k * d0[0], k * d0[1] - (1 - k)], ul = Math.hypot(u[0], u[1]) || 1;
+  const end = [base[0] + H * u[0] / ul + dir * 22 * a * Math.max(0, Math.cos(r)), base[1] + H * u[1] / ul];
+  return { S, a, b, dir, base, d0, H, end, hb: (dir ? 58 : 48) * a, ht: (dir ? 33 : 22) * a, hk: GIRAFFE_HEAD, up: 124 * GIRAFFE_HEAD * b, out: (dir ? 100 : 86) * GIRAFFE_HEAD * a };
+}
+// How far the neck and head reach in the face's units, standing (not turned): the top (y) and the farthest either side of
+// the head's middle (x), for drawNow's frame
+const giraffeReach = (C, F, o) => { const G = giraffeGeom(C, F, o); return { top: G.end[1] - G.up, side: Math.abs(G.end[0] - 100) + G.out }; };
+// THE GIRAFFE'S NECK AND HEAD, in the face's units (drawNow puts it in the face's frame, with the lid when the head bursts,
+// before the face, so the hood hides the neck's foot): the neck along a cubic from its foot (leaving along d0) to its top
+// (upright there), tapering, in the coat; its short mane, in profile a row of short stiff tufts along the back of the neck
+// (the side away from the face), from behind a band down its middle (toward us it is hidden behind the neck); and on top
+// the giraffe's own head, upright, its own drawing toward us, in profile (dir; left and right mirror) and from behind
+// (away). Turned with the friend (rot), all of it is drawn in the picture's upright frame (turned back about the foot), so
+// the neck leaves the hood along the body and bends up, and the head stays upright. Each piece a data-giraffe group or path.
+function giraffeNeckSvg(C, F, o = {}) {
+  const G = giraffeGeom(C, F, o), { S, a, b, base, d0, H, end, hb, ht, hk } = G, away = !!o.away, rot = o.rot || 0, P = (x, y) => f1(x) + " " + f1(y);
+  // (in profile, the way the head faces: the friend's; turned past upright, the way the neck goes out along the body, so
+  // lying down it looks on ahead, not back over them)
+  const dir = G.dir && Math.cos(rot * Math.PI / 180) < 0.25 ? Math.sign(d0[0]) || G.dir : G.dir;
+  const c1 = [base[0] + d0[0] * 0.45 * H, base[1] + d0[1] * 0.45 * H], c2 = [end[0], end[1] + 0.35 * H];
+  const at = t => { const s = 1 - t; return [0, 1].map(i => s * s * s * base[i] + 3 * s * s * t * c1[i] + 3 * s * t * t * c2[i] + t * t * t * end[i]); };
+  const tan = t => { const s = 1 - t, v = [0, 1].map(i => 3 * s * s * (c1[i] - base[i]) + 6 * s * t * (c2[i] - c1[i]) + 3 * t * t * (end[i] - c2[i])), l = Math.hypot(v[0], v[1]) || 1;
+    return [v[0] / l, v[1] / l]; };
+  // (a point t of the way up, out to one side, k 1 or -1, by its half width and `by` more)
+  const edge = (t, k, by = 0) => { const p = at(t), v = tan(t), w = ht + (hb - ht) * Math.pow(1 - t, 1.5) + by; return [p[0] - k * v[1] * w, p[1] + k * v[0] * w]; };
+  // (through points, smoothly: quadratic curves between their midpoints)
+  const smooth = pts => pts.slice(1, -1).map((p, i) => { const q = pts[i + 2]; return ` Q${P(p[0], p[1])} ${P((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)}`; }).join("") + ` L${P(...pts[pts.length - 1])}`;
+  const ts = Array.from({ length: 11 }, (_, i) => i / 10), Lp = ts.map(t => edge(t, 1)), Rp = ts.map(t => edge(t, -1)).reverse();
+  let s = `<path data-giraffe="neck" d="M${P(...Lp[0])}${smooth(Lp)} L${P(...Rp[0])}${smooth(Rp)} Z" fill="url(#pat-fur)" stroke="${darker(C.fur)}" stroke-width="4" stroke-linejoin="round"/>`;
+  const mane = pts => `<path data-giraffe="mane" d="M${pts.map(p => P(...p)).join(" L")} Z" fill="${S.mane}" stroke="${darker(S.mane)}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  const t0 = 0.1, t1 = 0.96, K = 12, tk = i => t0 + (t1 - t0) * i / K;
+  if (away) {   // (down its middle, its edges tufted)
+    const side = k => Array.from({ length: K + 1 }, (_, i) => { const p = at(tk(i)), v = tan(tk(i)), w = (i % 2 ? 11 : 6) * a; return [p[0] - k * v[1] * w, p[1] + k * v[0] * w]; });
+    s += mane([...side(1), ...side(-1).reverse()]);
+  } else if (dir) {   // (along the back: the side whose outward way, at the top, is away from the face)
+    const k = Math.sign(dir * tan(1)[1]) || -dir, M = 13 * a;
+    s += mane([edge(t0, k, -3), ...Array.from({ length: K + 1 }, (_, i) => edge(tk(i), k, i % 2 ? M : 0.3 * M)), ...ts.filter(t => t > t0 && t < t1).reverse().map(t => edge(t, k, -3))]);
+  }
+  const head = away ? giraffeHeadBack(C, S) : dir ? giraffeHeadSide(C, S) : giraffeHeadFront(C, S);
+  s += `<g data-giraffe="head" transform="translate(${P(...end)}) scale(${(hk * (dir < 0 ? -a : a)).toFixed(3)} ${(hk * b).toFixed(3)})">${head}</g>`;
+  return rot ? `<g transform="rotate(${f1(-rot)} ${P(...base)})">${s}</g>` : s;
+}
+// The giraffe's head's pieces, in its own units (the neck's top at 0 0, up -y; about as big as the friend's face): its
+// horns (ossicones: [x, y] at the foot, [x, y] at the top, each), skin-covered in the coat's colour with their dark tufts
+// (a baby's shorter, the tufts big and fluffy); a few small patches (the masai's jagged) at [x, y, r]; eyes ([x, y] each)
+// with a shine and lashes, a baby's bigger; the ears ([side] each: out to that side toward us, behind in profile)
+function giraffeHorns(C, S, horns, far = false) {
+  const lift = S.baby ? 10 : 0, d = horns.map(([x0, y0, x1, y1]) => `M${x0} ${y0} L${x1} ${y1 + lift}`).join(" "), tuft = S.baby ? 12 : 8.5;
+  const ink = far ? mix(S.mane, "#000000", 0.2) : S.mane, skin = mix(C.fur, C.belly, far ? 0.15 : 0.35);
+  return `<path d="${d}" fill="none" stroke="${darker(C.fur)}" stroke-width="14" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${skin}" stroke-width="9" stroke-linecap="round"/>` +
+         `<path d="${horns.map(([, , x, y]) => `M${x - tuft} ${y + lift} a${tuft} ${tuft} 0 1 0 ${2 * tuft} 0 a${tuft} ${tuft} 0 1 0 ${-2 * tuft} 0 Z`).join(" ")}" fill="${ink}" stroke="${darker(ink)}" stroke-width="2"${S.baby ? ` stroke-dasharray="3 2"` : ""}/>`;
+}
+const giraffeSpots = (C, S, spots) => `<path d="${spots.map(([x, y, r]) => { const n = S.coat === "masai" ? 8 : 6, a0 = (x * 7 + y * 3) % 60;
+  return "M" + Array.from({ length: n }, (_, i) => { const q = (a0 + i * 360 / n) * Math.PI / 180, k = S.coat === "masai" ? (i % 2 ? 0.72 : 1.12) : [1, 0.86, 1.1, 0.9, 1.04, 0.82][i];
+    return f1(x + Math.cos(q) * r * k) + " " + f1(y + Math.sin(q) * r * k); }).join(" L") + "Z"; }).join(" ")}" fill="${C.fur}" stroke="${C.fur}" stroke-width="1.5" stroke-linejoin="round"/>`;
+function giraffeEyes(C, S, eyes, lashes) {
+  const k = S.baby ? 1.3 : 1, rx = 8 * k, ry = 9.5 * k;
+  return `<path d="${eyes.map(([x, y]) => `M${f1(x - rx)} ${y} a${f1(rx)} ${f1(ry)} 0 1 0 ${f1(2 * rx)} 0 a${f1(rx)} ${f1(ry)} 0 1 0 ${f1(-2 * rx)} 0 Z`).join(" ")}" fill="${C.eyes}" stroke="#111111" stroke-width="1.5"/>` +
+         `<path d="${eyes.map(([x, y]) => { const r = 2.6 * k, cx = x - 2.6 * k, cy = y - 3.6 * k; return `M${f1(cx - r)} ${f1(cy)} a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0 a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0 Z`; }).join(" ")}" fill="#ffffff"/>` +
+         `<path d="${lashes(k)}" fill="none" stroke="#2b1a10" stroke-width="1.8" stroke-linecap="round"/>`;
+}
+function giraffeEars(C, sides, back = false) {
+  const ear = sx => `M${24 * sx} -66 C${44 * sx} -86 ${74 * sx} -82 ${86 * sx} -64 C${72 * sx} -52 ${44 * sx} -50 ${24 * sx} -56 Z`;
+  const inner = sx => `M${32 * sx} -64 C${48 * sx} -76 ${66 * sx} -73 ${76 * sx} -64 C${62 * sx} -58 ${46 * sx} -56 ${32 * sx} -59 Z`;
+  return `<path d="${sides.map(ear).join(" ")}" fill="${back ? mix(C.belly, C.fur, 0.3) : C.belly}" stroke="${darker(C.fur)}" stroke-width="3" stroke-linejoin="round"/>` +
+         (back ? "" : `<path d="${sides.map(inner).join(" ")}" fill="${mix(C.fur, C.belly, 0.55)}"/>`);
+}
+// toward us: the ears out to the sides, the horns, the head long and narrowing to the soft muzzle, small patches over its
+// brow and cheeks, big eyes at its sides, two nostrils and a smile
+function giraffeHeadFront(C, S) {
+  const head = "M0 -96 C24 -96 36 -84 36 -64 C36 -42 29 -14 25 6 C22 26 13 36 0 36 C-13 36 -22 26 -25 6 C-29 -14 -36 -42 -36 -64 C-36 -84 -24 -96 0 -96 Z";
+  return giraffeEars(C, [-1, 1]) + giraffeHorns(C, S, [[-15, -84, -21, -112], [15, -84, 21, -112]]) +
+    `<defs><clipPath id="giraffe-face"><path d="${head}"/></clipPath></defs><path d="${head}" fill="${C.belly}"/>` +
+    `<g clip-path="url(#giraffe-face)">${giraffeSpots(C, S, [[0, -76, 9], [-20, -80, 6.5], [20, -80, 6.5], [-8, -96, 6], [9, -95, 6], [0, -55, 5.5], [-27, -28, 8], [27, -28, 8], [-31, -64, 5], [31, -64, 5]])}` +
+    `<path d="M-30 4 C-22 -12 22 -12 30 4 L30 40 L-30 40 Z" fill="${S.muzzle}"/></g><path d="${head}" fill="none" stroke="${darker(C.fur)}" stroke-width="3.5"/>` +
+    giraffeEyes(C, S, [[-21, -50], [21, -50]], k => [-1, 1].map(sx => `M${f1(sx * (21 + 5 * k))} ${f1(-50 - 7 * k)} l${f1(sx * 5)} -5 M${f1(sx * (21 + 1 * k))} ${f1(-50 - 9 * k)} l${f1(sx * 2)} -6 M${f1(sx * (21 + 8 * k))} ${f1(-50 - 3 * k)} l${f1(sx * 6)} -2`).join(" ")) +
+    `<path d="M-6 13 Q-12 18 -10 25 Q-5 21 -6 13 Z M6 13 Q12 18 10 25 Q5 21 6 13 Z" fill="${mix(S.muzzle, "#000000", 0.6)}"/>` +
+    `<path d="M-10 29 Q0 34 10 29" fill="none" stroke="${darker(C.fur)}" stroke-width="2" stroke-linecap="round"/>`;
+}
+// in profile (facing our right; drawn mirrored for our left): the far horn behind, the head from the back of the skull
+// forward and down to the muzzle, patches on its cheek, the near horn, the ear back from behind the horns, an eye with
+// its lashes, a nostril at the muzzle's tip and a smile
+function giraffeHeadSide(C, S) {
+  const head = "M-32 -40 C-36 -64 -16 -80 6 -76 C30 -72 54 -50 76 -32 C92 -20 98 -4 88 6 C78 14 60 12 44 10 C24 8 6 14 -10 14 C-26 14 -38 8 -37 -8 C-36 -22 -34 -32 -32 -40 Z";
+  return giraffeHorns(C, S, [[-14, -66, -24, -98]], true) +
+    `<defs><clipPath id="giraffe-face-side"><path d="${head}"/></clipPath></defs><path d="${head}" fill="${C.belly}"/>` +
+    `<g clip-path="url(#giraffe-face-side)">${giraffeSpots(C, S, [[-14, -28, 8], [-22, -56, 6], [2, -64, 6], [6, -20, 7], [36, -50, 5.5], [24, -6, 6], [-28, -6, 6]])}` +
+    `<path d="M58 -50 C78 -40 104 -24 100 2 C98 16 70 16 46 12 C48 -8 50 -30 58 -50 Z" fill="${S.muzzle}"/></g><path d="${head}" fill="none" stroke="${darker(C.fur)}" stroke-width="3.5"/>` +
+    giraffeHorns(C, S, [[-2, -70, -10, -104]]) +
+    `<path d="M-14 -60 C-36 -80 -64 -80 -78 -66 C-62 -54 -36 -50 -16 -52 Z" fill="${C.belly}" stroke="${darker(C.fur)}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="M-22 -60 C-38 -71 -58 -72 -68 -66 C-56 -60 -38 -57 -22 -57 Z" fill="${mix(C.fur, C.belly, 0.55)}"/>` +
+    giraffeEyes(C, S, [[20, -46]], k => `M${f1(20 - 4 * k)} ${f1(-46 - 8.5 * k)} l-3 -6 M20 ${f1(-46 - 9.5 * k)} l0 -7 M${f1(20 + 4 * k)} ${f1(-46 - 8.5 * k)} l3 -6`) +
+    `<path d="M84 -14 Q90 -18 91 -11 Q87 -9 84 -14 Z" fill="${mix(S.muzzle, "#000000", 0.6)}"/>` +
+    `<path d="M94 4 Q82 10 66 8" fill="none" stroke="${darker(C.fur)}" stroke-width="2" stroke-linecap="round"/>`;
+}
+// from behind: the ears' backs, the horns, the back of the head (its muzzle away from us, out of sight) with its patches
+function giraffeHeadBack(C, S) {
+  const head = "M0 -96 C24 -96 36 -84 36 -64 C36 -42 32 -16 26 0 C18 12 -18 12 -26 0 C-32 -16 -36 -42 -36 -64 C-36 -84 -24 -96 0 -96 Z";
+  return giraffeEars(C, [-1, 1], true) + giraffeHorns(C, S, [[-15, -84, -21, -112], [15, -84, 21, -112]]) +
+    `<defs><clipPath id="giraffe-face-back"><path d="${head}"/></clipPath></defs><path d="${head}" fill="${C.belly}"/>` +
+    `<g clip-path="url(#giraffe-face-back)">${giraffeSpots(C, S, [[0, -72, 10], [-22, -78, 7], [22, -78, 7], [-24, -40, 8], [24, -40, 8], [0, -36, 9], [-10, -94, 6], [10, -94, 6], [0, -8, 7]])}</g>` +
+    `<path d="${head}" fill="none" stroke="${darker(C.fur)}" stroke-width="3.5"/>`;
+}
 // Over the shirt (where the witch's belt goes), in body units (the collar's top at y -20, the shirt's half width w, its hem
 // at L, the collar's half width nw): the rodeo star's chest fringe, the sheriff's vest, badge and string tie, the rider's
 // yoke, buckle and number card, the prairie collar's bow, a bandana, the trail boss's shirt panel, lapels and capelet, the
@@ -1709,10 +2260,11 @@ function westernChap(W, J, half, side, dir, away) {
                      : [[0.16, -half * 0.25, half * 0.48], [0.5, half * 0.35, half * 0.42], [0.82, -half * 0.15, half * 0.4]];
   return s + `<path d="${spots.map(([t, o, r]) => blob(t, o, r)).join(" ")}" fill="${S.spots}"/>`;
 }
-// the rodeo star's skirt: fringe under its hem, following the skirt drawNow draws (to the hem at sl below the waist)
-function westernHem(W, hw, L, sl) {
+// the rodeo star's skirt: fringe under its hem, following the skirt drawNow draws (to the hem at sl below the waist; ticket
+// 546: from xR to xL, where the skirt is drawn wider over posed legs)
+function westernHem(W, hw, L, sl, xL = -hw - 30, xR = hw + 30) {
   if (!W.S.hemFringe) return "";
-  return fringeSvg(`M${f1(hw + 30)} ${f1(L + sl + 8)} Q0 ${f1(L + sl + 22)} ${f1(-hw - 30)} ${f1(L + sl + 8)}`, W.S.fringe, 16, W.S.fringeUnder);
+  return fringeSvg(`M${f1(xR)} ${f1(L + sl + 8)} Q${f1((xL + xR) / 2)} ${f1(L + sl + 22)} ${f1(xL)} ${f1(L + sl + 8)}`, W.S.fringe, 16, W.S.fringeUnder);
 }
 // the trail boss's duster skirts, from the waist to `hem` (mid-shin standing, L + 0.72 LL; on the lap meditating), over
 // the trousers and under the arms (the gnome tunic's slot): facing us two panels flaring apart, the trousers between; in profile one panel, its front edge straight

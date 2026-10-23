@@ -1,0 +1,266 @@
+{
+ "intro": "The 🎭 Costume tab offers 20 kinds. Fifteen are animals, each one row of a table (ANIMALS, js/06-costumes.js), drawn by shared code: a hood with the animal's ears and face, fur or feathers in a pattern, paws or hooves, a tail; thirteen of them are whole suits, and the falcon and the bald eagle a hood, wings and a tail worn over the clothes. The other five, the witch, the fairy, the ghost and the two diving suits, are each written into the friend's drawing (drawNow, js/18-drawing.js) case by case. Gear (a snorkel, a mask, an air tank, and their leaking bubbles) goes with any of them but the old diving suit. Ticket 288 added the diving suits as 0.0.260 and 0.0.261; ticket 371 fixed their tank and hose in 0.0.303.",
+ "kinds": [
+  {
+   "label": "🐯 tiger",
+   "firstVersion": "0.0.1",
+   "commits": 7,
+   "linesNow": "6 (and 82 of stripes)",
+   "parts": [
+    "suit",
+    "hood",
+    "tail",
+    "paws"
+   ]
+  },
+  {
+   "label": "🐈‍⬛ black cat",
+   "firstVersion": "0.0.1",
+   "commits": 6,
+   "linesNow": 7,
+   "parts": [
+    "suit",
+    "hood",
+    "tail",
+    "paws"
+   ]
+  },
+  {
+   "label": "🦁 lion",
+   "firstVersion": "0.0.1",
+   "commits": 6,
+   "linesNow": 15,
+   "parts": [
+    "suit",
+    "hood and mane",
+    "tail",
+    "paws"
+   ]
+  },
+  {
+   "label": "🐻 bear",
+   "firstVersion": "0.0.1",
+   "commits": 1,
+   "linesNow": 5,
+   "parts": [
+    "suit",
+    "hood",
+    "tail",
+    "paws"
+   ]
+  },
+  {
+   "label": "🦅 peregrine falcon",
+   "firstVersion": "0.0.1",
+   "commits": 9,
+   "linesNow": 16,
+   "parts": [
+    "hood",
+    "wings and tail over the clothes"
+   ]
+  },
+  {
+   "label": "🦝 raccoon",
+   "firstVersion": "0.0.1",
+   "commits": 4,
+   "linesNow": 11,
+   "parts": [
+    "suit",
+    "hood and mask",
+    "ringed tail",
+    "paws"
+   ]
+  },
+  {
+   "label": "🐈 bobcat",
+   "firstVersion": "0.0.1",
+   "commits": 5,
+   "linesNow": 8,
+   "parts": [
+    "suit",
+    "hood with tufts",
+    "tail",
+    "paws"
+   ]
+  },
+  {
+   "label": "🐆 leopard",
+   "firstVersion": "0.0.1",
+   "commits": 6,
+   "linesNow": 5,
+   "parts": [
+    "suit",
+    "hood",
+    "tail",
+    "paws",
+    "rosettes"
+   ]
+  },
+  {
+   "label": "🦅 bald eagle",
+   "firstVersion": "0.0.1",
+   "commits": 8,
+   "linesNow": 14,
+   "parts": [
+    "hood",
+    "wings and tail over the clothes"
+   ]
+  },
+  {
+   "label": "🐆 cheetah",
+   "firstVersion": "0.0.1",
+   "commits": 3,
+   "linesNow": 4,
+   "parts": [
+    "suit",
+    "hood",
+    "tail",
+    "paws"
+   ]
+  },
+  {
+   "label": "🐈‍⬛ black jaguar",
+   "firstVersion": "0.0.1",
+   "commits": 3,
+   "linesNow": 2,
+   "parts": [
+    "suit",
+    "hood",
+    "tail",
+    "paws"
+   ]
+  },
+  {
+   "label": "🦅 falcon suit",
+   "firstVersion": "0.0.1",
+   "commits": 4,
+   "linesNow": "3 (and ~50 shared by both bird suits)",
+   "parts": [
+    "feathers",
+    "hood",
+    "arm wings for hands",
+    "talons",
+    "tail"
+   ]
+  },
+  {
+   "label": "🦅 bald eagle suit",
+   "firstVersion": "0.0.1",
+   "commits": 4,
+   "linesNow": 4,
+   "parts": [
+    "feathers",
+    "hood",
+    "arm wings for hands",
+    "talons",
+    "tail"
+   ]
+  },
+  {
+   "label": "🐺 wolf",
+   "firstVersion": "0.0.1",
+   "commits": 1,
+   "linesNow": 9,
+   "parts": [
+    "suit",
+    "hood",
+    "bushy tail",
+    "paws"
+   ]
+  },
+  {
+   "label": "🦌 deer",
+   "firstVersion": "0.0.1",
+   "commits": 4,
+   "linesNow": 33,
+   "parts": [
+    "suit",
+    "hood and antlers",
+    "tail",
+    "hooves"
+   ]
+  },
+  {
+   "label": "🧙 witch",
+   "firstVersion": "0.0.1",
+   "commits": 13,
+   "linesNow": 165,
+   "parts": [
+    "long dress",
+    "hat over tucked hair",
+    "boots",
+    "a broom held",
+    "a cat on the shoulder"
+   ]
+  },
+  {
+   "label": "🧚 fairy",
+   "firstVersion": "0.0.29",
+   "commits": 12,
+   "linesNow": 245,
+   "parts": [
+    "tunic",
+    "wings on the back",
+    "shoes",
+    "a wreath"
+   ]
+  },
+  {
+   "label": "👻 ghost",
+   "firstVersion": "0.0.33",
+   "commits": 2,
+   "linesNow": 72,
+   "parts": [
+    "a sheet in place of the whole friend"
+   ]
+  },
+  {
+   "label": "🤿 scuba suit",
+   "firstVersion": "0.0.260",
+   "commits": 3,
+   "linesNow": 29,
+   "parts": [
+    "suit",
+    "fins"
+   ]
+  },
+  {
+   "label": "⚓ old diving suit",
+   "firstVersion": "0.0.260",
+   "commits": 3,
+   "linesNow": 74,
+   "parts": [
+    "suit",
+    "helmet",
+    "boots",
+    "a hose to the surface"
+   ]
+  },
+  {
+   "label": "🥽 gear: snorkel, mask, tank, leaks",
+   "firstVersion": "0.0.260",
+   "commits": "1-3 each",
+   "linesNow": "17 + 18 + 36 + 57",
+   "parts": [
+    "worn with any kind but the old diving suit"
+   ]
+  }
+ ],
+ "counting": "Counted by a helper reading the code and its history (its scripts: drivers/costumes-count.py, drivers/costumes-shared.py). Commits: those whose changed lines name the kind (its id, its own helpers or settings), the costume list itself and the split of the code into parts left out; a lower bound, since 35 more commits changed the shared animal code (hoods, tails, wings, fur) without naming a kind. Its own lines today: read by hand, comments included, only the lines that exist for that kind alone; the animals share about 380 lines of hood, fur, tail and wing code. Each animal's first version is 0.0.1: they were made on 10-09 to 10-11, before the game's versions were numbered.",
+ "steps": [
+  "Its name in the 🎭 Costume tab's list of kinds (js/20-controls.js:273).",
+  "A row in the tab for each of its settings (js/20-controls.js:280), and for each a rule saying when it shows, each repeating the kind's test (SHOWN_WHEN, js/20-controls.js:871: 56 such rules for costumes, 13 for the witch alone).",
+  "A default for each setting (DEFAULTS.costume, js/01-state.js:515; 57 keys in one flat list).",
+  "Its drawings, as functions returning SVG in the face's or the body's units (js/06-costumes.js; the diving suits' helmet, corselet, hose, mask, snorkel, tank).",
+  "A shoe, if it has its own feet (shoeSvg, js/08-body.js:245; and how far that foot reaches, FOOT_REACH, which the fins still lack).",
+  "In the friend's drawing (drawNow), 13 separate edits for the diving suits: a flag for the kind; what replaces the shirt and pants; the underwear guard (which lists five kinds); the feet's seven-way choice; each piece put in at its depth (the back, the legs, the torso, the head), each inside its visibility layer; and `!diver` beside `!C` in six places that hide the hair and ears under a hood or a helmet.",
+  "A check of every pose and facing: what is on the back must turn with the back, what hangs must keep the world's up. Ticket 371 found the tank on the belly while crawling toward us, and the hose turning with a body lying flat, the same night.",
+  "Rules that cross settings (set(), js/20-controls.js:657: leaving a diving suit takes the mask, snorkel and tank off).",
+  "A check of its own (tools/checks/dive288.mjs, gear371.mjs); the sweep of every costume picks a new kind up by itself."
+ ],
+ "cheaper": "An animal is already cheap: one row of ANIMALS brings its colors, the palette, Surprise me and its natural look; the jaguar and the cheetah are 2 to 4 lines of their own. What costs is the other kind, and the costs repeat: a flag and a clause in each of drawNow's shared guards, a showing rule per setting that repeats the kind's test, defaults kept apart from their controls, and lists of kinds in three files (felines, birds, the clawed, the diving suits). One record for each costume would hold it all: its label; its settings (each control with its key, its choices and its default, so the tab's rows, the defaults and the showing rules come from one place); what replaces the clothes (or nothing, so the underwear may show); its feet and hands; its head (whether it covers the hair, which replaces the six guards, and its drawing); what goes on its back, what it holds, what sits on its shoulder; its room in the picture's frame; and its drawings, called by drawNow at fixed places, each already inside the visibility layer and the pose's turns, so a thing on the back cannot land on the belly (ticket 371's bug). Gear becomes records too, each saying what it is worn with. Animal rows can carry their ears, face marks and tail as data, which would remove most of the kind-by-kind branches in the hood and tail code. The saving is mostly in places to edit and pose bugs, less in lines: the diving suits' 268 lines were about four fifths drawing, which a costume always needs.",
+ "sideFindings": [
+  "Surprise me picks a costume one time in four, and only an animal: never the witch, the fairy, the ghost or a diving suit (js/24-surprise-save-start-over.js:49); it does turn the gear on now and then.",
+  "The fins are missing from FOOT_REACH (js/08-body.js:40), the list that makes room in the picture's frame for big feet."
+ ]
+}

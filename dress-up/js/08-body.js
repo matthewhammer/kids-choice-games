@@ -42,7 +42,7 @@ const TOED = {
 };
 // How far each kind of foot reaches out from the ankle, in shoe units,
 // so the picture's frame can hold big feet (and big shoes).
-const FOOT_REACH = { sneaker: 46, boot: 44, clown: 76, bare: 36, paw: 40, hoof: 34, witchboot: 58, cowboot: 52,
+const FOOT_REACH = { sneaker: 46, boot: 44, clown: 76, bare: 36, paw: 40, hoof: 34, witchboot: 58, cowboot: 52, ninjaboot: 48,
   "fairy-slipper": 60, "fairy-petal": 52, "fairy-leaf": 60, "fairy-sparkle": 48, "fairy-bare": 36,
                      toes5: 44, alien4: 52, alien3: 62, talons: 56 };
 // A human foot with n toes (1 to 100), as the hands have n fingers: the
@@ -309,6 +309,15 @@ function shoeSvg(x, y, side, sh, skin) {
       `<rect x="${f1(x - 15 * sc)}" y="${f1(y - 34 * sc)}" width="${f1(30 * sc)}" height="${f1(7 * sc)}" rx="${f1(3 * sc)}" fill="${lt}"/>` +
       [[0, -18], [24, 14], [6, 6]].map(([px, py]) => `<path d="M${X(px)} ${Y(py - 5)} L${X(px + 1.5)} ${Y(py - 1.5)} L${X(px + 5)} ${Y(py)} L${X(px + 1.5)} ${Y(py + 1.5)} L${X(px)} ${Y(py + 5)} L${X(px - 1.5)} ${Y(py + 1.5)} L${X(px - 5)} ${Y(py)} L${X(px - 1.5)} ${Y(py - 1.5)} Z" fill="#fff7c2"/>`).join("");
   }
+  // (ticket 557) a ninja's boot, soft and quiet: no heel, a rounded toe split in two at its tip (the big toe's own pocket), a
+  // thin soft sole; its shaft under the trousers, where the bands begin (ninjaShin, js/06-costumes.js)
+  if (sh.style === "ninjaboot") {
+    const c = sh.color || "#18181e", X = v => f1(x + side * v * sc), Y = v => f1(y + v * sc);
+    return `<path d="M${X(-12)} ${Y(-30)} L${X(12)} ${Y(-30)} L${X(13)} ${Y(4)} Q${X(22)} ${Y(7)} ${X(32)} ${Y(10)} Q${X(46)} ${Y(9)} ${X(47.5)} ${Y(14.5)} ` +
+           `Q${X(48)} ${Y(18.5)} ${X(39.5)} ${Y(18.5)} Q${X(47.5)} ${Y(20)} ${X(46)} ${Y(23.5)} Q${X(45)} ${Y(26)} ${X(40)} ${Y(26)} L${X(-9)} ${Y(26)} Q${X(-15)} ${Y(25)} ${X(-14)} ${Y(14)} Z" ` +
+           `fill="${c}" stroke="${darker(c)}" stroke-width="2.5" stroke-linejoin="round"/>` +
+           `<path d="M${X(-10)} ${Y(24.2)} L${X(40)} ${Y(24.2)} M${X(39.5)} ${Y(18.5)} Q${X(34)} ${Y(16)} ${X(29)} ${Y(10.5)}" fill="none" stroke="${mix(c, "#ffffff", 0.2)}" stroke-width="${f1(2.2 * sc)}" stroke-linecap="round"/>`;
+  }
   const T = toesOf(sh);
   if (T) return toedFoot(x, y, side, sc, skin, T);
   const ps = SHOES[sh.style].map(([dx, dy]) => [x + side * dx * sc, y + dy * sc]);
@@ -429,7 +438,7 @@ function talons(r, R, clawLen = 100, n = 4, fill = "#f4ecd6", line = "#5c4a2e") 
 // The cat costumes (lion too) have claws on their paws.
 const CLAWED = { cat: 1, tiger: 1, lion: 1, bobcat: 1, leopard: 1, cheetah: 1, jaguar: 1, wolf: 1, dragon: 1 };
 // A suit's hands: paws in the fur color, with claws on a cat.
-const suitHands = (C, kind) => ({ style: kind === "deer" ? "hoof" : "paw", size: Math.max(state.hands.size, 12), color: C.fur, pad: C.accent,
+const suitHands = (C, kind) => ({ style: kind === "deer" || kind === "giraffe" ? "hoof" : "paw", size: Math.max(state.hands.size, 12), color: C.fur, pad: C.accent,   // (ticket 544: a giraffe's hooves too)
                                   claws: !!CLAWED[kind], clawLen: state.hands.clawLen ?? 100,
                                   clawCount: state.hands.clawCount ?? 4, clawColor: C.horn });   // (ticket 499: a dragon's in its horns' colour)
 // How far a hand reaches from where it joins the arm, in any direction,

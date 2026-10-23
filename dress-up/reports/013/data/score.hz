@@ -1,0 +1,14 @@
+# A tune as data: one bar of (note, length in steps), repeated for a form #
+let bar = [(48, 2), (55, 2), (60, 2), (64, 2), (67, 2), (64, 2), (60, 2), (55, 2), (50, 2), (57, 2), (62, 2), (65, 2), (69, 2), (65, 2), (62, 2), (57, 2)] in
+# the events of one bar, starting at step t: (start step, note, length) #
+let bar_events = fun (t, notes) ->
+  case notes
+  | [] => []
+  | (n, l) :: rest => (t, n, l) :: bar_events((t + l, rest))
+  end in
+# the events of a whole form: bars bars, one after another #
+let form = fun (k, bars) ->
+  if bars == 0 then [] else bar_events((32 * k, bar)) @ form((k + 1, bars - 1)) in
+let count = fun xs -> case xs | [] => 0 | _ :: rest => 1 + count(rest) end in
+let events = form((0, 76)) in
+(count(events), case events | e :: _ => e | [] => (0, 0, 0) end)

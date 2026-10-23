@@ -322,9 +322,11 @@ const TABS = [
     ["choice", "kind", "costume", [["none", "none"], ["tiger", "🐯 tiger"], ["cat", "🐈‍⬛ black cat"],
                                    ["lion", "🦁 lion"], ["bear", "🐻 bear"], ["falcon", "🦅 peregrine falcon"],
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
-                                   ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"],
+                                   ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"], ["moth", "🦋 moth"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
                                    ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["sasquatch", "🦶 Sasquatch"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"], ["cowgirl", "👢 cowgirl"], ["cowboy", "🤠 cowboy"],
+                                   ["ninja", "🥷 ninja"],
+                                   ["giraffe", "🦒 giraffe"],   // (ticket 544)
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
     // (ticket 288) diving: the two suits' colors, the old one's hose; and gear worn with any costume but the old helmet
     ["color", "scubaColor", "🤿 suit's color", ["#1f2937", "#111827", "#1e3a8a", "#0f766e", "#7c2d12", "#581c87", "#be123c"]],
@@ -394,6 +396,11 @@ const TABS = [
     // (ticket 523) and its fire, tried on here: 🎮 Controls' 🔥 its fire (the friend's, one setting in both places), a chip
     // tapped breathing it for a moment, and a 🔥 button to hold, so the controls need not be opened to try it
     ["of", "body", ["breathe", "fireStyle", "🔥 its fire (tap one to try it, or hold 🔥 to breathe it)", FIRE_STYLES], c => c.kind === "dragon"],
+    // (ticket 536) the moth: three styles, each its own wing colour (shown while it is chosen, as the Sasquatch's fur), and
+    // its eyespots; its body's colours are the animal colour rows above, put on in the style's when it is chosen
+    ["choice", "mothStyle", "🦋 style", Object.entries(MOTH_STYLES).map(([id, t]) => [id, t.name])],
+    ...Object.entries(MOTH_STYLES).map(([id, t]) => ["color", "mothColor_" + id, "🦋 its wings", t.colors]),
+    ["toggle", "mothSpots", "👁️ eyespots"],
     // (ticket 515) the robot: one of eight styles, its colour (each style its own, shown while it is chosen, as the fairy's
     // wings), and its lights ("auto": each style's own)
     ["choice", "robotStyle", "🤖 style", Object.entries(ROBOT_STYLES).map(([id, r]) => [id, r.name])],
@@ -409,12 +416,29 @@ const TABS = [
     ["choice", "cowHat", "🎩 hat", [["none", "🚫 no hat"], ...Object.entries(COW_HATS).map(([id, h]) => [id, h.name])]],
     ...Object.entries(COW_HATS).map(([id, h]) => ["color", "cowHatColor_" + id, "🎩 hat's colour", h.colors]),
     ["toggle", "lasso", "➿ lasso"],
+    // (ticket 557) the ninja: its boots' bands, braided or wrapped; the gold head covering, on by default, its gem and the
+    // gem's shape (shown while the covering is on); and the eyes in the mask's slit, off (the face is not seen)
+    ["choice", "ninjaBoots", "🥾 the boots' bands", NINJA_BOOTS],
+    ["choice", "ninjaBetween", "🦵 between the bands", NINJA_BETWEEN],   // (ticket 561, M's design: the skin, at first)
+    ["toggle", "ninjaBand", "👑 golden head band"],
+    ["choice", "ninjaGem", "💎 the gem", Object.entries(NINJA_GEMS).map(([id, g]) => [id, g.name])],
+    ["choice", "ninjaGemShape", "💎 the gem's shape", NINJA_GEM_SHAPES],
+    // (ticket 560) the gem's lights: its white cuts glimmer (on at first); stars twinkle on it, and a shine sweeps it (off)
+    ["toggle", "ninjaGlimmer", "✨ the gem's cuts glimmer"],
+    ["toggle", "ninjaGemStars", "⭐ stars twinkle on the gem"],
+    ["toggle", "ninjaGemShine", "🌟 a shine sweeps the gem"],
+    ["toggle", "ninjaEyes", "👀 eyes in the slit"],
     // (ticket 530) the Sasquatch: four styles, each its own colour (shown while it is chosen, as the robot's), its big
     // footprints on the ground, and its grin
     ["choice", "sasquatchStyle", "🦶 style", Object.entries(SASQUATCH_STYLES).map(([id, t]) => [id, t.name])],
     ...Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["color", "sasquatchColor_" + id, "🦶 its fur", t.colors]),
     ["toggle", "sasquatchPrints", "👣 footprints"],
     ["toggle", "sasquatchGrin", "🙂 big grin"],
+    // (ticket 544) the giraffe: three styles, each its patches' own colour (shown while it is chosen, as the Sasquatch's), and
+    // how long its neck is (a percent of the style's)
+    ["choice", "giraffeStyle", "🦒 style", Object.entries(GIRAFFE_STYLES).map(([id, t]) => [id, t.name])],
+    ...Object.entries(GIRAFFE_STYLES).map(([id, t]) => ["color", "giraffeColor_" + id, "🦒 its patches", t.colors]),
+    ["range", "giraffeNeck", "🦒 neck's length", 50, 250, 70, 160],
     // (ticket 435) the knight: his arms (two colours, how they are laid out, an emblem), his helmet's plume and visor, sword and shield
     ["color", "knightA", "🛡️ arms' first color", ["#2f6db5", "#8a2b2b", "#1f1f22", "#2e7d32", "#e0b030", "#7b3f8c"]],
     ["color", "knightB", "🛡️ arms' second color", ["#f4f1ea", "#e0b030", "#1f1f22", "#8a2b2b", "#2f6db5"]],
@@ -861,6 +885,9 @@ function set(part, key, value) {
   if (part === "body" && key === "anim" && value !== "none" && value !== "swim" && state.body.pose !== "stand") strikePose("stand");
   // choosing an animal dresses it in its natural colors
   if (part === "costume" && key === "kind" && ANIMALS[value]) Object.assign(state.costume, lookOf(value));
+  // (ticket 536) and a moth in its style's: choosing a style, or the moth, puts on that style's body colours (the animal
+  // colour rows change them after)
+  if (part === "costume" && (key === "mothStyle" || key === "kind") && state.costume.kind === "moth") Object.assign(state.costume, MOTH_STYLES[mothStyleOf(state.costume)].body);
   // (ticket 442) the wizard and the gnome man wear a beard, from 💇 Hair: put on (white; long, or full) when the friend has
   // none, and taken off again on leaving the costume, or the gnome becoming a woman, if it is still the one put on
   if (part === "costume" && (key === "kind" || key === "gnomeWho")) {
@@ -1093,10 +1120,14 @@ const SHOWN_WHEN = {
   "face.noseH": f => f.noseView !== "none",
   "face.noseW": f => f.noseView !== "none",
   "face.whites": f => f.iris > 0,
-  "costume.fur": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",   // (ticket 499: a dragon's colours are its own, below)
-  "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon" && c.kind !== "sasquatch",
+  "costume.fur": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch" && c.kind !== "giraffe",   // (ticket 499: a dragon's colours are its own, below)
+  "costume.furPattern": c => !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon" && c.kind !== "sasquatch" && c.kind !== "giraffe",
   ...Object.fromEntries(["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow"].map(k => ["costume." + k, c => c.kind === "dragon"])),
   "costume.dragonWingLfo": c => c.kind === "dragon" && (c.dragonWingsHow ?? "flap") === "flap",
+  // (ticket 536) the moth's rows: each style's wing colour only while it is chosen; the eyespots for a style that has them
+  "costume.mothStyle": c => c.kind === "moth",
+  ...Object.fromEntries(Object.keys(MOTH_STYLES).map(id => ["costume.mothColor_" + id, c => c.kind === "moth" && mothStyleOf(c) === id])),
+  "costume.mothSpots": c => c.kind === "moth" && (S => !!(S.spot[3] || S.foreSpot))(MOTH_STYLES[mothStyleOf(c)]),
   "costume.witchColor": c => c.kind === "witch",
   "hair.beardShade": h => !!BEARDS[h.beard], "hair.moustache": h => !!BEARDS[h.beard], "hair.beardLength": h => !!BEARDS[h.beard],
   "hair.braidWidth": h => !!(BEARDS[h.beard] && BEARDS[h.beard].braid),
@@ -1134,9 +1165,15 @@ const SHOWN_WHEN = {
   "costume.cowgirlStyle": c => c.kind === "cowgirl", "costume.cowboyStyle": c => c.kind === "cowboy",
   ...Object.fromEntries(Object.keys(COWGIRL_STYLES).map(id => ["costume.cowgirlColor_" + id, c => c.kind === "cowgirl" && (COWGIRL_STYLES[c.cowgirlStyle] ? c.cowgirlStyle : "rodeo") === id])),
   ...Object.fromEntries(Object.keys(COWBOY_STYLES).map(id => ["costume.cowboyColor_" + id, c => c.kind === "cowboy" && (COWBOY_STYLES[c.cowboyStyle] ? c.cowboyStyle : "sheriff") === id])),
+  // (ticket 557) the ninja's rows; the gem's only with the head band on
+  ...Object.fromEntries(["ninjaBoots", "ninjaBetween", "ninjaBand", "ninjaEyes"].map(k => ["costume." + k, c => c.kind === "ninja"])),
+  ...Object.fromEntries(["ninjaGem", "ninjaGemShape", "ninjaGlimmer", "ninjaGemStars", "ninjaGemShine"].map(k => ["costume." + k, c => c.kind === "ninja" && c.ninjaBand !== false])),
   // (ticket 530) the Sasquatch's rows, each style's colour only while it is chosen
   ...Object.fromEntries(["sasquatchStyle", "sasquatchPrints", "sasquatchGrin"].map(k => ["costume." + k, c => c.kind === "sasquatch"])),
   ...Object.fromEntries(Object.keys(SASQUATCH_STYLES).map(id => ["costume.sasquatchColor_" + id, c => c.kind === "sasquatch" && (SASQUATCH_STYLES[c.sasquatchStyle] ? c.sasquatchStyle : "bigfoot") === id])),
+  // (ticket 544) the giraffe's rows, each style's colour only while it is chosen
+  ...Object.fromEntries(["giraffeStyle", "giraffeNeck"].map(k => ["costume." + k, c => c.kind === "giraffe"])),
+  ...Object.fromEntries(Object.keys(GIRAFFE_STYLES).map(id => ["costume.giraffeColor_" + id, c => c.kind === "giraffe" && giraffeStyleOf(c) === id])),
   "costume.cowHat": c => c.kind === "cowgirl" || c.kind === "cowboy",
   ...Object.fromEntries(Object.keys(COW_HATS).map(id => ["costume.cowHatColor_" + id, c => (c.kind === "cowgirl" || c.kind === "cowboy") && (c.cowHat === "none" ? null : COW_HATS[c.cowHat] ? c.cowHat : "cattleman") === id])),
   "costume.lasso": c => c.kind === "cowgirl" || c.kind === "cowboy",
@@ -1311,11 +1348,11 @@ const SHOWN_WHEN = {
   "background.pic4": b => b.kind === "livingroom" && b.pictures >= 4,
   "background.pic5": b => b.kind === "livingroom" && b.pictures >= 5,
   "background.pic6": b => b.kind === "livingroom" && b.pictures >= 6,
-  "costume.marks": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",
+  "costume.marks": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch" && c.kind !== "giraffe",
   "costume.spot": c => c.furPattern === "rosettes" && !!(ANIMALS[c.kind] && ANIMALS[c.kind].suit) && c.kind !== "dragon",
-  "costume.belly": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",
+  "costume.belly": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch" && c.kind !== "giraffe",
   "costume.eyes": c => !!ANIMALS[c.kind],
-  "costume.accent": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch",
+  "costume.accent": c => !!ANIMALS[c.kind] && c.kind !== "dragon" && c.kind !== "sasquatch" && c.kind !== "giraffe",
   "hair.length": h => ["long", "curly", "pigtails", "spiky", "afro"].includes(h.style),
   "hair.bangs": h => !!BANG_LOCKS[h.style],
   "pants.skirtLen": p => p.style === "skirt" || p.style === "dress",

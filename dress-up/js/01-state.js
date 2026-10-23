@@ -438,6 +438,29 @@ const ROBOT_STYLES = {
             see: "front side", limb: "main", hand: "darker", boot: "darker" },
 };
 const ROBOT_LIGHTS = ["auto", "#f6c445", "#39e0ff", "#6ee7b7", "#ff7a00", "#ef4444", "#f472b6", "#ffffff"];
+// (ticket 536, Matthew: "moth costume, 3 styles. Follow the bird costume examples for wing ideas, but we want moth wings
+// here, and antenna, etc") The 🦋 moth: an animal suit (ANIMALS.moth, js/06-costumes.js) with a moth's wings on its arms,
+// as the bird suits' are (mothWing), feathery antennae and a fuzzy crown on its hood, a fluffy collar and a banded belly, in
+// three styles offered as the Sasquatch's are: mothStyle (a choice row), mothColor_<id> (each style its wings' own colour
+// row, its first swatch the usual one, shown only while it is chosen), and mothSpots (👁️ its eyespots), all in 🐯
+// Costume's 🦋 the moth box. Each style: `colors` (its wings); `body`, the suit's own colours, put on when the style (or the
+// costume) is chosen (set(), js/20-controls.js), which the animal colour rows then change as any animal's; `hind`, the
+// hindwings' colour (null: the wings' own); `costa`, the band along each forewing's leading edge; `bands`, the wavy lines
+// across the wings ([colour, width], "zig" lines zigzag); `hindBand`, one along each hindwing's edge; `spot`, an eyespot's rim, ring, middle and how big (on the
+// hindwings; `foreSpot` how big on the forewings, 0 none); `tail`, the hindwings' long tails; `antenna`, their colour;
+// `dust`, a dusting of darker scales; `kidney`, the small kidney-shaped ring a night moth has on each forewing.
+const MOTH_STYLES = {
+  luna:    { name: "🌙 luna moth", colors: ["#b8e6a0", "#9fdcc8", "#e8f09a", "#f5c4da", "#c6d4f5"], hind: null, costa: "#8a3b5c",
+             body: { fur: "#f4f1e6", marks: "#c9b98f", belly: "#ffffff", accent: "#e7b8cb", furPattern: "none" },
+             bands: [["#e9f5c8", 3]], hindBand: null, spot: ["#7a3450", "#f2c94c", "#dff3ff", 9], foreSpot: 6, tail: true, antenna: "#d4ae4f" },
+  emperor: { name: "🦚 emperor moth", colors: ["#c9773d", "#b0563a", "#9a6e4c", "#d9a05b", "#a77bb8", "#d9708e"], hind: "#e3913f", costa: "#efe2cf",
+             body: { fur: "#8d5d3b", marks: "#4b2d1d", belly: "#e2c29a", accent: "#f2d6a2", furPattern: "none" },
+             bands: [["#f6ead6", 4], ["#4a2a1a", 2.5]], hindBand: ["#f6ead6", 3.5], spot: ["#24160e", "#f4bd45", "#2c3a86", 15], foreSpot: 13, tail: false, antenna: "#5b3a24" },
+  night:   { name: "🌫️ night moth", colors: ["#9b9081", "#7f766b", "#b3a993", "#8c7b6a", "#a4a9b2"], hind: "#d9905f", costa: "#5d544a",
+             body: { fur: "#8f8578", marks: "#4f473f", belly: "#cfc5b4", accent: "#6d6154", furPattern: "none" },
+             bands: [["#3f3832", 3, "zig"], ["#3f3832", 3, "zig"]], hindBand: ["#2e2a26", 5], spot: ["#2e2a26", "#2e2a26", "#2e2a26", 0], foreSpot: 0, tail: false,
+             antenna: "#6c6156", dust: "#4a4239", kidney: true },
+};
 // (ticket 518, Matthew: "body can hold things in each hand. Audit all MUDU objects to hold (staff, broom, sword, shield, horse
 // rein) and add every option to body sub-panel, somehow.") HOLDABLES: everything a hand can hold, by id, in drawing order
 // (the order the costumes' own were drawn in). `name` its chip; `ext` how far it reaches from the hand, for the picture's
@@ -519,6 +542,20 @@ const SASQUATCH_STYLES = {
   mossy:   { name: "🌿 mossy", colors: ["#6b5a2e", "#4d5b2a", "#7c6a3a", "#3f4a2a"], face: null, shag: 1, footK: 1.3, moss: "#65a30d", leaves: "#84cc16" },
   fluffy:  { name: "🍭 fluffy", colors: ["#f9a8d4", "#c4b5fd", "#fdba74", "#99f6e4", "#fde68a"], face: null, shag: 1.3, footK: 1.2, bow: "#ec4899" },
 };
+// (ticket 544, Matthew, for his friend Nick: "giraffe as a costume in dress up") The 🦒 giraffe: an animal suit
+// (ANIMALS.giraffe, js/06-costumes.js) in a giraffe's patched coat, its long neck rising from the hood over the friend's
+// head with the giraffe's own head on top, in three styles offered as the Sasquatch's are: giraffeStyle (a choice row),
+// giraffeColor_<id> (each style its patches' own colour row, its first swatch the usual one, shown only while it is
+// chosen), and giraffeNeck (how long the neck is, in percent), all in 🐯 Costume's 🦒 the giraffe box. Each style:
+// `colors` (its patches), `ground` (the cream between them), `coat` (GIRAFFE_COATS, js/06-costumes.js: "net", the
+// reticulated giraffe's patches, or "masai", jagged and leaf-like), `neck` (its neck's length, times giraffeNeck), `mane`
+// (its mane and its tail's tuft), `muzzle`, and `baby` (big eyes, fluffy tufts on its horns), every one read by the drawing
+// (giraffeLook, giraffeNeckSvg).
+const GIRAFFE_STYLES = {
+  reticulated: { name: "🦒 reticulated", colors: ["#b5652b", "#8c4a1e", "#cf8a3c", "#5c3317", "#7c4dbe"], ground: "#f6e7c8", coat: "net", neck: 1, mane: "#6e3514", muzzle: "#efdcb6" },
+  masai:       { name: "🌳 Masai", colors: ["#5a3418", "#3f2412", "#7a4a26", "#4a3a2a"], ground: "#ecd9b4", coat: "masai", neck: 1.1, mane: "#2e1b0e", muzzle: "#e6d2aa" },
+  baby:        { name: "🍼 baby", colors: ["#d68f52", "#e3a46a", "#c7834f", "#f0a6b9", "#9cc3e6"], ground: "#fbf1dc", coat: "net", neck: 0.7, mane: "#a8653a", muzzle: "#f8ead0", baby: true },
+};
 // The hats, one setting for both (cowHat, or "none"), each with its own colours. In the round head's units (x 100 the
 // middle): the brim's line at y COW_HAT_Y, the hair tucked above COW_HAT_LINE (under a flat brim too). `crown` "pinch" (a
 // crease and two front pinches), "tall" (taller and rounder) or "flat"; `top` the crown's top; `bw` the brim's half width;
@@ -535,6 +572,30 @@ const COW_HATS = {
 };
 // the lasso's rope (the monk's rope colour) over a darker one
 const ROPE = "#c8a46a", ROPE_DK = "#8a6a3a";
+// (ticket 557, for M: "ninja costume -- all black shirt and pants. black gloves. black face mask (we don't see the face at
+// all ...) special ninja boots/shoes (very quiet), with a braided pattern of bands ... golden head band ... with a separate,
+// connected golden band going from 3rd eye/ forehead to the back of the head ... a ruby (or other gem), with various shape
+// options mounted in the inverted T of golden bands") The 🥷 ninja, in the friend's own clothes as the cowboy is: the cloth,
+// near black with a hint of blue so its outlines still show (NINJA.cloth), the gloves a shade darker (NINJA.glove), the eye
+// slit black; the boots' bands (NINJA_BOOTS, ninjaBoots: braided, two tones crossing over and under, or wrapped straight
+// round, band above band); and the head covering (ninjaBand, on by default): gold bands round the head and over it, front
+// to back, and a gem where they meet on the forehead, its kind (NINJA_GEMS: its colour, its light facet, its outline) and
+// its shape (NINJA_GEM_SHAPES, drawn by ninjaGemPath in js/06-costumes.js). The rows are in 🐯 Costume's 🥷 the ninja box.
+const NINJA = { cloth: "#24252d", line: "#0c0c10", glove: "#18181e", slit: "#030304", gold: "#e0b030", goldLine: "#8a6420", goldLight: "#f6dc7a",
+                bandA: "#4d5263", bandB: "#71778b", bandLine: "#111216" };
+const NINJA_BOOTS = [["braided", "🪢 braided bands"], ["wrapped", "🧣 bands wrapped round"]];
+// (ticket 561, M's design) what shows between the bands: the friend's own skin (the default), or 🌑 full darkness (the
+// trousers under them, as 0.0.410 drew it; Matthew: "which I think looks more natural")
+const NINJA_BETWEEN = [["skin", "🦵 skin between the bands"], ["dark", "🌑 full darkness"]];
+const NINJA_GEMS = {
+  ruby:     { name: "🔴 ruby", c: "#d0103a", light: "#ff7a96", line: "#6e0520" },
+  emerald:  { name: "🟢 emerald", c: "#119a4c", light: "#7aeaa8", line: "#05502a" },
+  sapphire: { name: "🔵 sapphire", c: "#1d4ed8", light: "#86a8ff", line: "#0e266e" },
+  amethyst: { name: "🟣 amethyst", c: "#8b3fc8", light: "#d6aaff", line: "#43186e" },
+  topaz:    { name: "🟡 topaz", c: "#f0a020", light: "#ffe394", line: "#8a5206" },
+  diamond:  { name: "💎 diamond", c: "#d9f1ff", light: "#ffffff", line: "#6f93aa" },
+};
+const NINJA_GEM_SHAPES = [["round", "⚪ round"], ["oval", "🥚 oval"], ["rhombus", "♦️ diamond shape"], ["teardrop", "💧 teardrop"], ["star", "⭐ star"], ["heart", "❤️ heart"]];
 const FAIRY_SHOES = [["slipper", "🩰 curly slippers"],["petal", "🌸 petal shoes"], ["leaf", "🍃 leaf wraps"], ["sparkle", "✨ sparkle boots"], ["bare", "🌼 bare feet, flower anklets"]];
 const FAIRY_SHOE_COLORS = ["#f472b6", "#a78bfa", "#4ade80", "#fde047", "#60a5fa", "#ffffff"];
 
@@ -709,15 +770,24 @@ const DEFAULTS = {
              ...Object.fromEntries(Object.entries(FAIRY_TUNICS).map(([id, t]) => ["tunicColor_" + id, t.colors[0]])),
              // (ticket 515) the robot: its style, its lights, and each style's own colour (the fairy's way)
              robotStyle: "tin", robotLights: "auto", ...Object.fromEntries(Object.entries(ROBOT_STYLES).map(([id, r]) => ["robotColor_" + id, r.colors[0]])),
+             // (ticket 536) the moth: its style, each style's wing colour, and its eyespots
+             mothStyle: "luna", mothSpots: true, ...Object.fromEntries(Object.entries(MOTH_STYLES).map(([id, t]) => ["mothColor_" + id, t.colors[0]])),
              // (ticket 522) the cowgirl and the cowboy: each one's style and each style's colour, the hat (both share it) and its colour
              // for each hat, and the lasso (its hand is 🧍 Body's, holdL/holdR, since ticket 518)
              cowgirlStyle: "rodeo", cowboyStyle: "sheriff", cowHat: "cattleman", cowHatAuto: true, lasso: true,
              ...Object.fromEntries(Object.entries(COWGIRL_STYLES).map(([id, t]) => ["cowgirlColor_" + id, t.colors[0]])),
              ...Object.fromEntries(Object.entries(COWBOY_STYLES).map(([id, t]) => ["cowboyColor_" + id, t.colors[0]])),
              ...Object.fromEntries(Object.entries(COW_HATS).map(([id, t]) => ["cowHatColor_" + id, t.colors[0]])),
+             // (ticket 557) the ninja: its boots' bands, its head covering (on), the gem's kind and shape, eyes in the slit (off)
+             ninjaBoots: "braided", ninjaBand: true, ninjaGem: "ruby", ninjaGemShape: "round", ninjaEyes: false,
+             ninjaBetween: "skin",   // (ticket 561, M's design: the skin between the boots' bands; "dark", 🌑 full darkness)
+             ninjaGlimmer: true, ninjaGemStars: false, ninjaGemShine: false,   // (ticket 560: the gem's cuts glimmer; its stars and shine, off)
              // (ticket 530) the Sasquatch: its style, each style's colour, its footprints and its grin
              sasquatchStyle: "bigfoot", sasquatchPrints: true, sasquatchGrin: true,
-             ...Object.fromEntries(Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["sasquatchColor_" + id, t.colors[0]])) },
+             ...Object.fromEntries(Object.entries(SASQUATCH_STYLES).map(([id, t]) => ["sasquatchColor_" + id, t.colors[0]])),
+             // (ticket 544) the giraffe: its style, each style's patch colour, and its neck's length
+             giraffeStyle: "reticulated", giraffeNeck: 100,
+             ...Object.fromEntries(Object.entries(GIRAFFE_STYLES).map(([id, t]) => ["giraffeColor_" + id, t.colors[0]])) },
 };
 const clone = o => JSON.parse(JSON.stringify(o));
 // before the nose views: a nose was a shape (or "none"), a direction and
@@ -1280,7 +1350,7 @@ function themeSet(t) {
   try { if (t === "light" || t === "dark") localStorage.setItem("dress-up-theme", t); else localStorage.removeItem("dress-up-theme"); } catch (_) { /* (for this visit) */ }
 }
 themeSet(themeNow());
-const VERSION = { number: "0.0.407", released: "2026-10-21" };
+const VERSION = { number: "0.0.411", released: "2026-10-22" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

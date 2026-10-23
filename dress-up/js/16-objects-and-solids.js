@@ -482,7 +482,10 @@ function youHeights(upright = false) {
     return { ankle: HORSE_FETLOCK * s, hips, crown: hips + Math.max(0, (hipsY - crownY) * T.k) }; }
   const C = !upright && crawlShape();
   if (C) return { ankle: C.ankle, hips: C.torso[4], crown: C.torso[5] };
-  const foot = Math.max(...J.legs.map(l => l.F[1])), hips = Math.max(...J.legs.map(l => l.H[1])), crown = faceFrame.ty - (upright ? faceFrame.drop || 0 : 0) + headCrown(state.face) * faceFrame.s;
+  // (ticket 544) upright, a giraffe stands as tall as the top of its neck and head (giraffeReach): a door too low for that
+  // it ducks through crawling, its neck leaning down the way it goes, seen short (giraffeGeom's squash)
+  const top = upright && state.costume.kind === "giraffe" ? Math.min(headCrown(state.face), giraffeReach(costumeOn(), state.face, {}).top) : headCrown(state.face);
+  const foot = Math.max(...J.legs.map(l => l.F[1])), hips = Math.max(...J.legs.map(l => l.H[1])), crown = faceFrame.ty - (upright ? faceFrame.drop || 0 : 0) + top * faceFrame.s;
   return { ankle: Math.max(4, 0.2 * (foot - hips) * T.k), hips: Math.max(0, (foot - hips) * T.k), crown: Math.max(0, (foot - crown) * T.k) };
 }
 // (ticket 286, Matthew: "when we crawl, our collision box does not match our torso -- it stays upright?") Crawling, the

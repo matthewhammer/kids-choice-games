@@ -36,8 +36,23 @@ const ends = async (fromSel, toSel) => JSON.parse(await ev(`(() => {
 })()`));
 const dragSel = async (what, fromSel, toSel) => {
   const e = await ends(fromSel, toSel);
-  if (e.missing || !e.onFrom || !e.onTo) { ok(what + ": both ends on screen", false, e); return false; }
-  await mouseDrag(e.from, e.to); return true;
+  if (e.missing || !e.onFrom) { ok(what + ": both ends on screen", false, e); return false; }
+  if (e.onTo) { await mouseDrag(e.from, e.to); return true; }
+  // (in the tab, one box under another: the off-grid chips sit far below the grid, more than a window apart;
+  // a player presses the chip, scrolls up to the grid holding it, and lets go there: the same here, the
+  // press on the chip, the window scrolled to the square mid-drag, the release measured on it after)
+  await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: e.from[0], y: e.from[1] });
+  await send("Input.dispatchMouseEvent", { type: "mousePressed", x: e.from[0], y: e.from[1], button: "left", buttons: 1, clickCount: 1 });
+  for (let i = 1; i <= 4; i++) { await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: e.from[0] + 4 * i, y: e.from[1] - 4 * i, button: "left", buttons: 1 }); await sleep(25); }
+  const t = JSON.parse(await ev(`(() => { const t = document.querySelector(${JSON.stringify(toSel)}); t.scrollIntoView({ block: "center" });
+    const r = t.getBoundingClientRect(), p = [r.left + r.width / 2, r.top + r.height / 2], u = document.elementFromPoint(p[0], p[1]);
+    return JSON.stringify({ to: p, onTo: !!u && (u === t || t.contains(u)) }); })()`));
+  const last = [e.from[0] + 16, e.from[1] - 16];
+  for (let i = 1; i <= 12; i++) { const x = last[0] + (t.to[0] - last[0]) * i / 12, y = last[1] + (t.to[1] - last[1]) * i / 12; await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y, button: "left", buttons: 1 }); await sleep(25); }
+  await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: t.to[0], y: t.to[1], button: "left", buttons: 0, clickCount: 1 });
+  await sleep(400);
+  if (!t.onTo) { ok(what + ": the square on screen after scrolling to it mid-drag", false, { ...e, after: t }); return false; }
+  return true;
 };
 const mouseDrag = async (from, to) => {
   await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: from[0], y: from[1] });

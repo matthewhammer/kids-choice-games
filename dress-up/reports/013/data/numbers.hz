@@ -1,0 +1,1 @@
+[to_fixed(12.0, 1), to_fixed(0.25, 1), to_fixed(0.0 -. 0.25, 1), to_fixed(1.45, 1), to_fixed(0.15, 1), to_fixed(2.35, 1), to_fixed(7.0, 1)]

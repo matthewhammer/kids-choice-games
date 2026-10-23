@@ -1,0 +1,1455 @@
+{
+ "url": "http://127.0.0.1:8133/dress-up/index.html#inspect",
+ "gate": [
+  {
+   "cpu": 1,
+   "n": 0,
+   "config": "none",
+   "walk": 33.5,
+   "drag": 27.5,
+   "walkRuns": [
+    33.5,
+    29.2
+   ],
+   "dragRuns": [
+    27.5,
+    27.2
+   ],
+   "walkDrawMs": [
+    3.74,
+    3.91
+   ],
+   "dragDrawMs": [
+    4.98,
+    5.19
+   ],
+   "worst": [
+    50,
+    50
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 1,
+   "config": "none",
+   "walk": 22.8,
+   "drag": 23.6,
+   "walkRuns": [
+    19,
+    22.8
+   ],
+   "dragRuns": [
+    23.6,
+    21.1
+   ],
+   "walkDrawMs": [
+    4.74,
+    4.24
+   ],
+   "dragDrawMs": [
+    4.95,
+    5.54
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 1,
+   "config": "budget",
+   "walk": 22.5,
+   "drag": 22.2,
+   "walkRuns": [
+    19.9,
+    22.5
+   ],
+   "dragRuns": [
+    22.2,
+    21.1
+   ],
+   "walkDrawMs": [
+    5,
+    4.95
+   ],
+   "dragDrawMs": [
+    5.43,
+    6.19
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 1,
+   "config": "overlay",
+   "walk": 23.1,
+   "drag": 23.5,
+   "walkRuns": [
+    19.4,
+    23.1
+   ],
+   "dragRuns": [
+    23.5,
+    21.7
+   ],
+   "walkDrawMs": [
+    4.77,
+    4.33
+   ],
+   "dragDrawMs": [
+    4.79,
+    5.35
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 1,
+   "config": "both",
+   "walk": 23.1,
+   "drag": 23.3,
+   "walkRuns": [
+    18.6,
+    23.1
+   ],
+   "dragRuns": [
+    23.3,
+    21.8
+   ],
+   "walkDrawMs": [
+    4.67,
+    4.47
+   ],
+   "dragDrawMs": [
+    4.21,
+    4.99
+   ],
+   "worst": [
+    83,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 4,
+   "config": "none",
+   "walk": 20.8,
+   "drag": 21.2,
+   "walkRuns": [
+    20.2,
+    20.8
+   ],
+   "dragRuns": [
+    21.2,
+    21.2
+   ],
+   "walkDrawMs": [
+    5.79,
+    5.25
+   ],
+   "dragDrawMs": [
+    6.12,
+    6.35
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 4,
+   "config": "budget",
+   "walk": 20.9,
+   "drag": 21,
+   "walkRuns": [
+    20.9,
+    20.2
+   ],
+   "dragRuns": [
+    21,
+    21
+   ],
+   "walkDrawMs": [
+    5.06,
+    5.4
+   ],
+   "dragDrawMs": [
+    5.93,
+    6.01
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 4,
+   "config": "overlay",
+   "walk": 21.1,
+   "drag": 21.6,
+   "walkRuns": [
+    21.1,
+    20.9
+   ],
+   "dragRuns": [
+    21.6,
+    20.8
+   ],
+   "walkDrawMs": [
+    4.12,
+    4.59
+   ],
+   "dragDrawMs": [
+    5.06,
+    4.73
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 4,
+   "config": "both",
+   "walk": 21.7,
+   "drag": 20.8,
+   "walkRuns": [
+    21.7,
+    20.7
+   ],
+   "dragRuns": [
+    20.8,
+    20.2
+   ],
+   "walkDrawMs": [
+    4.44,
+    4.59
+   ],
+   "dragDrawMs": [
+    5.19,
+    5.13
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 16,
+   "config": "none",
+   "walk": 19.2,
+   "drag": 19.9,
+   "walkRuns": [
+    19.2,
+    18.9
+   ],
+   "dragRuns": [
+    19.9,
+    19.6
+   ],
+   "walkDrawMs": [
+    6.13,
+    6.3
+   ],
+   "dragDrawMs": [
+    6.98,
+    6.87
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 16,
+   "config": "budget",
+   "walk": 19.1,
+   "drag": 18.6,
+   "walkRuns": [
+    19.1,
+    18.8
+   ],
+   "dragRuns": [
+    18.6,
+    18.1
+   ],
+   "walkDrawMs": [
+    6.2,
+    5.84
+   ],
+   "dragDrawMs": [
+    6.2,
+    6.71
+   ],
+   "worst": [
+    83,
+    83
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 16,
+   "config": "overlay",
+   "walk": 19.2,
+   "drag": 19.7,
+   "walkRuns": [
+    18.7,
+    19.2
+   ],
+   "dragRuns": [
+    19.6,
+    19.7
+   ],
+   "walkDrawMs": [
+    5.1,
+    5.23
+   ],
+   "dragDrawMs": [
+    5.17,
+    5.35
+   ],
+   "worst": [
+    100,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 16,
+   "config": "both",
+   "walk": 19.5,
+   "drag": 19.8,
+   "walkRuns": [
+    18.6,
+    19.5
+   ],
+   "dragRuns": [
+    19.8,
+    19.2
+   ],
+   "walkDrawMs": [
+    5.07,
+    4.94
+   ],
+   "dragDrawMs": [
+    5.22,
+    5.24
+   ],
+   "worst": [
+    67,
+    67
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 64,
+   "config": "none",
+   "walk": 16,
+   "drag": 15.2,
+   "walkRuns": [
+    15.1,
+    16
+   ],
+   "dragRuns": [
+    15,
+    15.2
+   ],
+   "walkDrawMs": [
+    8.47,
+    7.58
+   ],
+   "dragDrawMs": [
+    8.08,
+    8.3
+   ],
+   "worst": [
+    100,
+    100
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 64,
+   "config": "budget",
+   "walk": 16.1,
+   "drag": 15.4,
+   "walkRuns": [
+    15.2,
+    16.1
+   ],
+   "dragRuns": [
+    15.4,
+    14.5
+   ],
+   "walkDrawMs": [
+    7.22,
+    7.38
+   ],
+   "dragDrawMs": [
+    8.12,
+    7.43
+   ],
+   "worst": [
+    100,
+    83
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 64,
+   "config": "overlay",
+   "walk": 16.5,
+   "drag": 16.4,
+   "walkRuns": [
+    16.5,
+    16.2
+   ],
+   "dragRuns": [
+    16.4,
+    16.4
+   ],
+   "walkDrawMs": [
+    6.81,
+    6.72
+   ],
+   "dragDrawMs": [
+    7.43,
+    6.81
+   ],
+   "worst": [
+    83,
+    83
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 64,
+   "config": "both",
+   "walk": 16,
+   "drag": 16.2,
+   "walkRuns": [
+    15.6,
+    16
+   ],
+   "dragRuns": [
+    16.2,
+    15.9
+   ],
+   "walkDrawMs": [
+    6.11,
+    6.62
+   ],
+   "dragDrawMs": [
+    7.34,
+    7.55
+   ],
+   "worst": [
+    83,
+    83
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 256,
+   "config": "none",
+   "walk": 9.8,
+   "drag": 9,
+   "walkRuns": [
+    9.5,
+    9.8
+   ],
+   "dragRuns": [
+    8.8,
+    9
+   ],
+   "walkDrawMs": [
+    15.8,
+    16.78
+   ],
+   "dragDrawMs": [
+    16.42,
+    17.82
+   ],
+   "worst": [
+    133,
+    117
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 256,
+   "config": "budget",
+   "walk": 9.5,
+   "drag": 8.2,
+   "walkRuns": [
+    9.4,
+    9.5
+   ],
+   "dragRuns": [
+    8.2,
+    8.2
+   ],
+   "walkDrawMs": [
+    15.86,
+    16
+   ],
+   "dragDrawMs": [
+    17.34,
+    16.12
+   ],
+   "worst": [
+    150,
+    133
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 256,
+   "config": "overlay",
+   "walk": 9.6,
+   "drag": 9.5,
+   "walkRuns": [
+    9.6,
+    9.6
+   ],
+   "dragRuns": [
+    9.3,
+    9.5
+   ],
+   "walkDrawMs": [
+    16.28,
+    14.77
+   ],
+   "dragDrawMs": [
+    12.95,
+    16.63
+   ],
+   "worst": [
+    150,
+    117
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 1,
+   "n": 256,
+   "config": "both",
+   "walk": 9.5,
+   "drag": 9.3,
+   "walkRuns": [
+    9.5,
+    9.5
+   ],
+   "dragRuns": [
+    9.3,
+    9.2
+   ],
+   "walkDrawMs": [
+    16.44,
+    15.66
+   ],
+   "dragDrawMs": [
+    15.26,
+    14.18
+   ],
+   "worst": [
+    133,
+    150
+   ],
+   "scenery": "moving",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 0,
+   "config": "none",
+   "walk": 57.3,
+   "drag": 57.7,
+   "walkRuns": [
+    11.7,
+    57.3
+   ],
+   "dragRuns": [
+    57.7,
+    4.7
+   ],
+   "walkDrawMs": [
+    11.59,
+    8.12
+   ],
+   "dragDrawMs": [
+    8.27,
+    15.67
+   ],
+   "worst": [
+    350,
+    83
+   ],
+   "scenery": "held still (slow)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 1,
+   "config": "none",
+   "walk": 29.8,
+   "drag": 45.7,
+   "walkRuns": [
+    4.7,
+    29.8
+   ],
+   "dragRuns": [
+    45.7,
+    30.3
+   ],
+   "walkDrawMs": [
+    20.69,
+    12.63
+   ],
+   "dragDrawMs": [
+    12.13,
+    16.98
+   ],
+   "worst": [
+    467,
+    250
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 1,
+   "config": "budget",
+   "walk": 26.2,
+   "drag": 47.7,
+   "walkRuns": [
+    4.8,
+    26.2
+   ],
+   "dragRuns": [
+    47.7,
+    33
+   ],
+   "walkDrawMs": [
+    19.78,
+    11.66
+   ],
+   "dragDrawMs": [
+    11.82,
+    16.36
+   ],
+   "worst": [
+    417,
+    267
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 1,
+   "config": "overlay",
+   "walk": 31.5,
+   "drag": 54.7,
+   "walkRuns": [
+    5,
+    31.5
+   ],
+   "dragRuns": [
+    54.7,
+    38.2
+   ],
+   "walkDrawMs": [
+    21.26,
+    12.43
+   ],
+   "dragDrawMs": [
+    12.09,
+    15.84
+   ],
+   "worst": [
+    400,
+    267
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 1,
+   "config": "both",
+   "walk": 22.7,
+   "drag": 56.3,
+   "walkRuns": [
+    5.2,
+    22.7
+   ],
+   "dragRuns": [
+    56.3,
+    40.3
+   ],
+   "walkDrawMs": [
+    16.11,
+    12.45
+   ],
+   "dragDrawMs": [
+    10.69,
+    14.88
+   ],
+   "worst": [
+    533,
+    250
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 4,
+   "config": "none",
+   "walk": 5.3,
+   "drag": 36.9,
+   "walkRuns": [
+    5.2,
+    5.3
+   ],
+   "dragRuns": [
+    4.1,
+    36.9
+   ],
+   "walkDrawMs": [
+    21.96,
+    19.1
+   ],
+   "dragDrawMs": [
+    26.24,
+    15.04
+   ],
+   "worst": [
+    450,
+    383
+   ],
+   "scenery": "held still (slow)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 4,
+   "config": "budget",
+   "walk": 27,
+   "drag": 33.5,
+   "walkRuns": [
+    5.2,
+    27
+   ],
+   "dragRuns": [
+    33.5,
+    29.2
+   ],
+   "walkDrawMs": [
+    21.34,
+    12.6
+   ],
+   "dragDrawMs": [
+    15.24,
+    18.75
+   ],
+   "worst": [
+    450,
+    317
+   ],
+   "scenery": "held still (slow)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 4,
+   "config": "overlay",
+   "walk": 45.4,
+   "drag": 44.7,
+   "walkRuns": [
+    11,
+    45.4
+   ],
+   "dragRuns": [
+    37.1,
+    44.7
+   ],
+   "walkDrawMs": [
+    16.06,
+    11.89
+   ],
+   "dragDrawMs": [
+    14.29,
+    12.21
+   ],
+   "worst": [
+    350,
+    83
+   ],
+   "scenery": "held still (slow)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 4,
+   "config": "both",
+   "walk": 50.1,
+   "drag": 44.3,
+   "walkRuns": [
+    14.4,
+    50.1
+   ],
+   "dragRuns": [
+    24.5,
+    44.3
+   ],
+   "walkDrawMs": [
+    14.28,
+    11.36
+   ],
+   "dragDrawMs": [
+    13.75,
+    11.6
+   ],
+   "worst": [
+    400,
+    83
+   ],
+   "scenery": "held still (slow)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 16,
+   "config": "none",
+   "walk": 37.3,
+   "drag": 24.2,
+   "walkRuns": [
+    6.3,
+    37.3
+   ],
+   "dragRuns": [
+    16.9,
+    24.2
+   ],
+   "walkDrawMs": [
+    21.75,
+    16.52
+   ],
+   "dragDrawMs": [
+    22.92,
+    19.75
+   ],
+   "worst": [
+    383,
+    117
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 16,
+   "config": "budget",
+   "walk": 33.4,
+   "drag": 24.7,
+   "walkRuns": [
+    10.5,
+    33.4
+   ],
+   "dragRuns": [
+    24.7,
+    20.9
+   ],
+   "walkDrawMs": [
+    20.66,
+    17.79
+   ],
+   "dragDrawMs": [
+    19.48,
+    21.91
+   ],
+   "worst": [
+    367,
+    117
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 16,
+   "config": "overlay",
+   "walk": 41.3,
+   "drag": 29.5,
+   "walkRuns": [
+    9.4,
+    41.3
+   ],
+   "dragRuns": [
+    29.5,
+    26.2
+   ],
+   "walkDrawMs": [
+    19.38,
+    13.78
+   ],
+   "dragDrawMs": [
+    16.4,
+    18.5
+   ],
+   "worst": [
+    367,
+    117
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 16,
+   "config": "both",
+   "walk": 52.7,
+   "drag": 42.8,
+   "walkRuns": [
+    10.5,
+    52.7
+   ],
+   "dragRuns": [
+    42.8,
+    36.7
+   ],
+   "walkDrawMs": [
+    15.72,
+    12.36
+   ],
+   "dragDrawMs": [
+    13.23,
+    14.67
+   ],
+   "worst": [
+    350,
+    83
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 64,
+   "config": "none",
+   "walk": 23,
+   "drag": 17,
+   "walkRuns": [
+    23,
+    20.8
+   ],
+   "dragRuns": [
+    17,
+    16.7
+   ],
+   "walkDrawMs": [
+    23.14,
+    22.91
+   ],
+   "dragDrawMs": [
+    24,
+    25.68
+   ],
+   "worst": [
+    133,
+    150
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 64,
+   "config": "budget",
+   "walk": 31.5,
+   "drag": 17.3,
+   "walkRuns": [
+    31.5,
+    28
+   ],
+   "dragRuns": [
+    17.3,
+    16.3
+   ],
+   "walkDrawMs": [
+    20.57,
+    20.94
+   ],
+   "dragDrawMs": [
+    24.99,
+    23.84
+   ],
+   "worst": [
+    117,
+    150
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 64,
+   "config": "overlay",
+   "walk": 32.3,
+   "drag": 23.8,
+   "walkRuns": [
+    32.3,
+    31.5
+   ],
+   "dragRuns": [
+    23.8,
+    20.4
+   ],
+   "walkDrawMs": [
+    17.7,
+    17.42
+   ],
+   "dragDrawMs": [
+    19.24,
+    21.6
+   ],
+   "worst": [
+    117,
+    133
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 64,
+   "config": "both",
+   "walk": 48.5,
+   "drag": 24.2,
+   "walkRuns": [
+    48.5,
+    40.8
+   ],
+   "dragRuns": [
+    24.2,
+    21.7
+   ],
+   "walkDrawMs": [
+    16.35,
+    16.26
+   ],
+   "dragDrawMs": [
+    19.21,
+    21.65
+   ],
+   "worst": [
+    100,
+    133
+   ],
+   "scenery": "held still (slowchoppy)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 256,
+   "config": "none",
+   "walk": 11.8,
+   "drag": 8.4,
+   "walkRuns": [
+    5.4,
+    11.8
+   ],
+   "dragRuns": [
+    8,
+    8.4
+   ],
+   "walkDrawMs": [
+    45.17,
+    48.19
+   ],
+   "dragDrawMs": [
+    53.06,
+    57.38
+   ],
+   "worst": [
+    583,
+    217
+   ],
+   "scenery": "held still (slow)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 256,
+   "config": "budget",
+   "walk": 13.2,
+   "drag": 9.4,
+   "walkRuns": [
+    5.9,
+    13.2
+   ],
+   "dragRuns": [
+    9.4,
+    8.5
+   ],
+   "walkDrawMs": [
+    46.77,
+    43.51
+   ],
+   "dragDrawMs": [
+    55.41,
+    49.34
+   ],
+   "worst": [
+    617,
+    267
+   ],
+   "scenery": "held still (slow)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 256,
+   "config": "overlay",
+   "walk": 12.9,
+   "drag": 11.3,
+   "walkRuns": [
+    6.1,
+    12.9
+   ],
+   "dragRuns": [
+    10.5,
+    11.3
+   ],
+   "walkDrawMs": [
+    41.23,
+    42.4
+   ],
+   "dragDrawMs": [
+    44.58,
+    39.56
+   ],
+   "worst": [
+    617,
+    217
+   ],
+   "scenery": "held still (slow)",
+   "timedOut": false
+  },
+  {
+   "cpu": 4,
+   "n": 256,
+   "config": "both",
+   "walk": 14.9,
+   "drag": 12.3,
+   "walkRuns": [
+    5.8,
+    14.9
+   ],
+   "dragRuns": [
+    12.3,
+    11.9
+   ],
+   "walkDrawMs": [
+    43.33,
+    38.92
+   ],
+   "dragDrawMs": [
+    43.79,
+    43.74
+   ],
+   "worst": [
+    783,
+    283
+   ],
+   "scenery": "held still (slow)",
+   "timedOut": false
+  }
+ ],
+ "standing": [
+  {
+   "cpu": 1,
+   "n": 0,
+   "config": "none",
+   "fps": 23.3,
+   "elements": 971,
+   "anims": 139,
+   "flying": 0,
+   "still": false,
+   "heapMB": 26.2,
+   "msPerSecond": {
+    "script": 80,
+    "style": 24,
+    "layout": 12,
+    "prepaint": 14,
+    "paint": 26,
+    "layerize": 37,
+    "raster": 1950,
+    "gc": 2,
+    "commit": 13
+   },
+   "traced": 10114
+  },
+  {
+   "cpu": 1,
+   "n": 16,
+   "config": "none",
+   "fps": 19.7,
+   "elements": 1668,
+   "anims": 155,
+   "flying": 70,
+   "still": false,
+   "heapMB": 26.3,
+   "msPerSecond": {
+    "script": 134,
+    "style": 48,
+    "layout": 17,
+    "prepaint": 21,
+    "paint": 45,
+    "layerize": 43,
+    "raster": 1903,
+    "gc": 24,
+    "commit": 6
+   },
+   "traced": 18475
+  },
+  {
+   "cpu": 1,
+   "n": 16,
+   "config": "both",
+   "fps": 19.3,
+   "elements": 1580,
+   "anims": 155,
+   "flying": 48,
+   "still": false,
+   "heapMB": 16.8,
+   "msPerSecond": {
+    "script": 105,
+    "style": 27,
+    "layout": 14,
+    "prepaint": 19,
+    "paint": 39,
+    "layerize": 42,
+    "raster": 1887,
+    "gc": 26,
+    "commit": 12
+   },
+   "traced": 11445
+  },
+  {
+   "cpu": 1,
+   "n": 256,
+   "config": "none",
+   "fps": 9.7,
+   "elements": 7908,
+   "anims": 395,
+   "flying": 70,
+   "still": false,
+   "heapMB": 15.1,
+   "msPerSecond": {
+    "script": 196,
+    "style": 34,
+    "layout": 17,
+    "prepaint": 24,
+    "paint": 79,
+    "layerize": 62,
+    "raster": 1995,
+    "gc": 15,
+    "commit": 3
+   },
+   "traced": 14051
+  },
+  {
+   "cpu": 1,
+   "n": 256,
+   "config": "both",
+   "fps": 9.3,
+   "elements": 7756,
+   "anims": 395,
+   "flying": 32,
+   "still": false,
+   "heapMB": 58.4,
+   "msPerSecond": {
+    "script": 141,
+    "style": 23,
+    "layout": 17,
+    "prepaint": 20,
+    "paint": 73,
+    "layerize": 53,
+    "raster": 1923,
+    "gc": 10,
+    "commit": 4
+   },
+   "traced": 7550
+  },
+  {
+   "cpu": 4,
+   "n": 0,
+   "config": "none",
+   "fps": 60,
+   "elements": 834,
+   "anims": 0,
+   "flying": 0,
+   "still": true,
+   "heapMB": 28.7,
+   "msPerSecond": {
+    "script": 257,
+    "style": 58,
+    "layout": 38,
+    "prepaint": 17,
+    "paint": 100,
+    "layerize": 67,
+    "raster": 716,
+    "gc": 11,
+    "commit": 16
+   },
+   "traced": 14682
+  },
+  {
+   "cpu": 4,
+   "n": 16,
+   "config": "none",
+   "fps": 28,
+   "elements": 1511,
+   "anims": 0,
+   "flying": 69,
+   "still": true,
+   "heapMB": 27.7,
+   "msPerSecond": {
+    "script": 586,
+    "style": 187,
+    "layout": 53,
+    "prepaint": 33,
+    "paint": 154,
+    "layerize": 147,
+    "raster": 1301,
+    "gc": 95,
+    "commit": 37
+   },
+   "traced": 21272
+  },
+  {
+   "cpu": 4,
+   "n": 16,
+   "config": "both",
+   "fps": 43.3,
+   "elements": 1445,
+   "anims": 0,
+   "flying": 53,
+   "still": true,
+   "heapMB": 28.3,
+   "msPerSecond": {
+    "script": 483,
+    "style": 93,
+    "layout": 57,
+    "prepaint": 35,
+    "paint": 173,
+    "layerize": 169,
+    "raster": 906,
+    "gc": 68,
+    "commit": 40
+   },
+   "traced": 17764
+  },
+  {
+   "cpu": 4,
+   "n": 256,
+   "config": "none",
+   "fps": 8.3,
+   "elements": 7515,
+   "anims": 0,
+   "flying": 70,
+   "still": true,
+   "heapMB": 70.7,
+   "msPerSecond": {
+    "script": 629,
+    "style": 58,
+    "layout": 40,
+    "prepaint": 20,
+    "paint": 220,
+    "layerize": 126,
+    "raster": 1738,
+    "gc": 34,
+    "commit": 11
+   },
+   "traced": 11821
+  },
+  {
+   "cpu": 4,
+   "n": 256,
+   "config": "both",
+   "fps": 4.7,
+   "elements": 7301,
+   "anims": 0,
+   "flying": 17,
+   "still": true,
+   "heapMB": 38.5,
+   "msPerSecond": {
+    "script": 571,
+    "style": 87,
+    "layout": 60,
+    "prepaint": 16,
+    "paint": 132,
+    "layerize": 68,
+    "raster": 710,
+    "gc": 75,
+    "commit": 4
+   },
+   "traced": 8580
+  }
+ ]
+}

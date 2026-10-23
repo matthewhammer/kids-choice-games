@@ -357,8 +357,11 @@ const TAB_BOXES = {
                 ["🪄 the staff", ["staff", "staffOrb"]], ["🏹 Robin Hood", ["robinTunic", "robinHat", "robinFeather", "bow", "quiver"]],
                 ["👑 the queen or king", ["queenRobe", "kingRobe", "crownJewel", "mantle", "scepter"]],
                 ["🐉 the dragon", ["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow", "dragonWingLfo", "fireStyle"]],   // (ticket 523: its fire, the friend's)
+                ["🦋 the moth", ["mothStyle", ...Object.keys(MOTH_STYLES).map(id => "mothColor_" + id), "mothSpots"]],   // (ticket 536)
                 ["🤖 the robot", ["robotStyle", ...Object.keys(ROBOT_STYLES).map(id => "robotColor_" + id), "robotLights"]],   // (ticket 515)
+                ["🥷 the ninja", ["ninjaBoots", "ninjaBetween", "ninjaBand", "ninjaGem", "ninjaGemShape", "ninjaGlimmer", "ninjaGemStars", "ninjaGemShine", "ninjaEyes"]],   // (ticket 557; 561: what shows between the bands)
                 ["🦶 the Sasquatch", ["sasquatchStyle", ...Object.keys(SASQUATCH_STYLES).map(id => "sasquatchColor_" + id), "sasquatchPrints", "sasquatchGrin"]],   // (ticket 530)
+                ["🦒 the giraffe", ["giraffeStyle", ...Object.keys(GIRAFFE_STYLES).map(id => "giraffeColor_" + id), "giraffeNeck"]],   // (ticket 544)
                 ["🤠 the outfit", ["cowgirlStyle", ...Object.keys(COWGIRL_STYLES).map(id => "cowgirlColor_" + id), "cowboyStyle", ...Object.keys(COWBOY_STYLES).map(id => "cowboyColor_" + id)]],   // (ticket 522)
                 ["🎩 the hat", ["cowHat", ...Object.keys(COW_HATS).map(id => "cowHatColor_" + id)]], ["➿ the lasso", ["lasso"]],
                 ["🛡️ the knight", ["knightA", "knightB", "tabardLayout", "emblem", "plume", "plumeColor", "helmOpen", "sword", "shield"]],

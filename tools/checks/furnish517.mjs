@@ -15,6 +15,9 @@ const send = (method, params = {}) => new Promise(res => { const i = ++n; pendin
 const ev = async x => { const r = await send("Runtime.evaluate", { expression: x, awaitPromise: true, returnByValue: true }); if (r.result.exceptionDetails) throw new Error(JSON.stringify(r.result.exceptionDetails).slice(0, 300)); return r.result.result.value; };
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 900)}`); if (!cond) bad++; };
+// (ticket 407: the lever's post probed where pulling it walks the friend (leverAct: the foot of its drawing, pz + 5 k, then
+// 8 k toward us), under the post itself, not a step toward the hatch; masks and filters counted outside the friend, who
+// stands among the scene's objects by depth and whose hair has its own mask)
 const H = `const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, c = stageC();
   const settle = async (ms = 450) => { changed(); await w(ms); measureMarks(); };
   const go = async set => { Object.assign(B, { things: [], seat: null }, set); await settle(); };`;
@@ -34,8 +37,8 @@ try {
       const N = bgShown.node, { sd, hx, px, pz } = topHatchAt(c, B), solids = solidsHere(), g = SCENE.ground, back = g + figYMin(sceneFrame);
       const inSolid = (x, z) => { const s = solidAt(x, z); return s ? s.name : null; };
       const a = ARRIVE.treetop, plan1 = planPath(a[0], a[1], 0, back - g + 6, 10), plan2 = planPath(0, back - g + 6, sd * 160, 30 * c.k, 10);
-      out[style + houses] = { sd, names: bgShown.objs.map(o => o.name), solids: solids.map(o => o.name), masks: N.querySelectorAll("mask, filter").length,
-        arrive: inSolid(a[0], g + a[1]), ladder: inSolid(hx - sd * 110 * c.k, g + 30 * c.k), lever: inSolid(px - sd * 30 * c.k, pz + 6 * c.k),
+      out[style + houses] = { sd, names: bgShown.objs.map(o => o.name), solids: solids.map(o => o.name), masks: [...N.querySelectorAll("mask, filter")].filter(m => !figShown.some(f => f.contains(m))).length,
+        arrive: inSolid(a[0], g + a[1]), ladder: inSolid(hx - sd * 110 * c.k, g + 30 * c.k), lever: inSolid(px, pz + 13 * c.k),
         walk: [plan1.length > 0 && !plan1.short, plan2.length > 0 && !plan2.short], seats: placeSeats(B).map(s => [s.name, Math.sign(s.x0 + s.x1)]) };
     }
     B.topFurnish = "none"; await settle();

@@ -1,0 +1,99 @@
+{
+ "tally": [
+  [
+   "something held (a sceptre, a staff, a hammer, a club, a wand, a mug, a lantern, a spear)",
+   8,
+   [
+    "The king",
+    "A guard",
+    "The blacksmith",
+    "The innkeeper",
+    "The wizard",
+    "The fairy godmother",
+    "The troll",
+    "The servant"
+   ]
+  ],
+  [
+   "a hat or a crown (a crown, a tiara, a helmet, a tricorn, a bandana, a head wrap)",
+   8,
+   [
+    "The king",
+    "The queen",
+    "A guard",
+    "The princess",
+    "The pirate captain",
+    "A pirate",
+    "The ghost pirate",
+    "The voodoo lady"
+   ]
+  ],
+  [
+   "a beard",
+   5,
+   [
+    "The king",
+    "The blacksmith",
+    "The wizard",
+    "The pirate captain",
+    "The ghost pirate"
+   ]
+  ],
+  [
+   "a body changed (a peg leg, a hook, a hunched back, bones, all fours)",
+   4,
+   [
+    "A bear",
+    "The pirate captain",
+    "The servant",
+    "A skeleton"
+   ]
+  ],
+  [
+   "an apron",
+   3,
+   [
+    "The shopkeeper",
+    "The blacksmith",
+    "The innkeeper"
+   ]
+  ],
+  [
+   "something on the back (a cloak, a cape)",
+   2,
+   [
+    "The king",
+    "The vampire"
+   ]
+  ],
+  [
+   "a size of their own beside the hero",
+   2,
+   [
+    "The troll",
+    "A goblin"
+   ]
+  ],
+  [
+   "a costume worn with clothes or a face kept (a cat person's vest, the ghost's face under a hat)",
+   2,
+   [
+    "A katta (a cat person)",
+    "The ghost pirate"
+   ]
+  ],
+  [
+   "armour",
+   1,
+   [
+    "A guard"
+   ]
+  ]
+ ],
+ "complete": [
+  "The witch",
+  "A ghost",
+  "The wolf",
+  "The diver"
+ ]
+}

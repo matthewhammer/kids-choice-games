@@ -1,0 +1,1179 @@
+{
+ "0.0.204": {
+  "tabs": [
+   {
+    "name": "🧍 Body",
+    "part": "body",
+    "declared": 8,
+    "groups": 1,
+    "groupsShown": 1,
+    "shown": 7,
+    "chipsDeclared": 19,
+    "chipsShown": 19
+   },
+   {
+    "name": "😀 Face",
+    "part": "face",
+    "declared": 31,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 22,
+    "chipsDeclared": 42,
+    "chipsShown": 33
+   },
+   {
+    "name": "👁 Eyes",
+    "part": "face",
+    "declared": 15,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 13,
+    "chipsDeclared": 23,
+    "chipsShown": 16
+   },
+   {
+    "name": "💇 Hair",
+    "part": "hair",
+    "declared": 4,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 4,
+    "chipsDeclared": 15,
+    "chipsShown": 15
+   },
+   {
+    "name": "🦒 Neck, arms & legs",
+    "part": "body",
+    "declared": 12,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 11,
+    "chipsDeclared": 1,
+    "chipsShown": 0
+   },
+   {
+    "name": "👕 Shirt",
+    "part": "shirt",
+    "declared": 8,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 6,
+    "chipsDeclared": 29,
+    "chipsShown": 21
+   },
+   {
+    "name": "🖐 Hands",
+    "part": "hands",
+    "declared": 15,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 4,
+    "chipsDeclared": 18,
+    "chipsShown": 18
+   },
+   {
+    "name": "👖 Pants",
+    "part": "pants",
+    "declared": 6,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 3,
+    "chipsDeclared": 27,
+    "chipsShown": 19
+   },
+   {
+    "name": "🩱 Swim & undies",
+    "part": "undies",
+    "declared": 7,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 1,
+    "chipsDeclared": 29,
+    "chipsShown": 1
+   },
+   {
+    "name": "👟 Feet",
+    "part": "shoes",
+    "declared": 8,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 4,
+    "chipsDeclared": 18,
+    "chipsShown": 18
+   },
+   {
+    "name": "👻 Visibility",
+    "part": "visible",
+    "declared": 9,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 9,
+    "chipsDeclared": 3,
+    "chipsShown": 3
+   },
+   {
+    "name": "🐯 Costume",
+    "part": "costume",
+    "declared": 46,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 1,
+    "chipsDeclared": 225,
+    "chipsShown": 19
+   },
+   {
+    "name": "🏞️ Background",
+    "part": "background",
+    "declared": 1337,
+    "groups": 100,
+    "groupsShown": 0,
+    "shown": 2,
+    "chipsDeclared": 10246,
+    "chipsShown": 33
+   },
+   {
+    "name": "🎮 Controls",
+    "part": "controls",
+    "declared": 22,
+    "groups": 6,
+    "groupsShown": 6,
+    "shown": 22,
+    "chipsDeclared": 57,
+    "chipsShown": 57
+   },
+   {
+    "name": "🎵 Music",
+    "part": "music",
+    "declared": 10,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 10,
+    "chipsDeclared": 1,
+    "chipsShown": 1
+   },
+   {
+    "name": "🗺️ World design",
+    "part": "world",
+    "declared": 2,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 2,
+    "chipsDeclared": 0,
+    "chipsShown": 0
+   },
+   {
+    "name": "🔬 Inspection",
+    "part": "access",
+    "declared": 4,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 4,
+    "chipsDeclared": 0,
+    "chipsShown": 0
+   },
+   {
+    "name": "♿ Accessibility",
+    "part": "access",
+    "declared": 3,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 3,
+    "chipsDeclared": 0,
+    "chipsShown": 0
+   },
+   {
+    "name": "⚙️ Advanced",
+    "part": "advanced",
+    "declared": 1,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 1,
+    "chipsDeclared": 0,
+    "chipsShown": 0
+   }
+  ],
+  "perPlace": [
+   [
+    "emptyroom",
+    "🔲 empty room",
+    7,
+    0,
+    33
+   ],
+   [
+    "bubblespace",
+    "🫧 bubble space",
+    27,
+    4,
+    87
+   ],
+   [
+    "imagination",
+    "💭 our imagination",
+    9,
+    0,
+    49
+   ],
+   [
+    "forest",
+    "🌲 forest",
+    10,
+    0,
+    57
+   ],
+   [
+    "underwater",
+    "🐠 underwater",
+    9,
+    0,
+    49
+   ],
+   [
+    "deepsea",
+    "🪸 deep sea",
+    9,
+    0,
+    49
+   ],
+   [
+    "beach",
+    "🏖️ beach",
+    12,
+    0,
+    49
+   ],
+   [
+    "sea",
+    "🌊 open water",
+    10,
+    0,
+    33
+   ],
+   [
+    "witch",
+    "🧙 witch's woods",
+    17,
+    0,
+    53
+   ],
+   [
+    "cemetery",
+    "🌿 cemetery",
+    12,
+    0,
+    57
+   ],
+   [
+    "lake",
+    "🦆 lake",
+    17,
+    0,
+    49
+   ],
+   [
+    "house",
+    "🏠 house and yard",
+    13,
+    0,
+    57
+   ],
+   [
+    "treehouse",
+    "🌳 tree house",
+    22,
+    0,
+    93
+   ],
+   [
+    "treeroom",
+    "🪜 inside the tree house",
+    21,
+    0,
+    128
+   ],
+   [
+    "livingroom",
+    "🛋️ living room",
+    22,
+    0,
+    153
+   ],
+   [
+    "witchroom",
+    "🧙 inside the witch's hut",
+    15,
+    0,
+    51
+   ],
+   [
+    "clearing",
+    "🌲 forest clearing",
+    24,
+    3,
+    100
+   ],
+   [
+    "healerroom",
+    "🌿 inside the healer's hut",
+    13,
+    0,
+    66
+   ],
+   [
+    "fairyforest",
+    "🧚 fairy forest",
+    13,
+    0,
+    61
+   ],
+   [
+    "mountains",
+    "⛰️ mountain trail",
+    13,
+    0,
+    50
+   ],
+   [
+    "waterfall",
+    "💦 jungle waterfall",
+    18,
+    0,
+    52
+   ],
+   [
+    "campsite",
+    "🏕️ camp site",
+    14,
+    0,
+    56
+   ],
+   [
+    "tent",
+    "⛺ inside a tent",
+    12,
+    0,
+    56
+   ],
+   [
+    "cave",
+    "🪨 cave behind the falls",
+    18,
+    0,
+    58
+   ],
+   [
+    "woodpath",
+    "🥾 path through the woods",
+    10,
+    0,
+    57
+   ],
+   [
+    "crossing",
+    "🛤️ forest crossing",
+    13,
+    0,
+    66
+   ],
+   [
+    "castle",
+    "🏰 castle",
+    50,
+    10,
+    356
+   ],
+   [
+    "castleroom",
+    "🚪 inside the castle",
+    27,
+    6,
+    194
+   ],
+   [
+    "hut",
+    "🛖 grass hut",
+    9,
+    0,
+    57
+   ],
+   [
+    "hutroom",
+    "🛋️ inside the grass hut",
+    20,
+    0,
+    107
+   ],
+   [
+    "hutbed",
+    "🛏️ the grass hut's bedroom",
+    10,
+    0,
+    55
+   ],
+   [
+    "hutpotion",
+    "🧪 the grass hut's potion room",
+    10,
+    0,
+    55
+   ]
+  ],
+  "places": 32,
+  "placeGroups": 8,
+  "tabBoxes": null,
+  "designers": null
+ },
+ "0.0.398": {
+  "tabs": [
+   {
+    "name": "🧍 Body",
+    "part": "body",
+    "declared": 28,
+    "groups": 1,
+    "groupsShown": 1,
+    "shown": 10,
+    "chipsDeclared": 110,
+    "chipsShown": 27
+   },
+   {
+    "name": "😀 Face",
+    "part": "face",
+    "declared": 31,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 22,
+    "chipsDeclared": 42,
+    "chipsShown": 33
+   },
+   {
+    "name": "👁 Eyes",
+    "part": "face",
+    "declared": 15,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 13,
+    "chipsDeclared": 23,
+    "chipsShown": 16
+   },
+   {
+    "name": "💇 Hair",
+    "part": "hair",
+    "declared": 9,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 5,
+    "chipsDeclared": 30,
+    "chipsShown": 21
+   },
+   {
+    "name": "🦒 Neck, arms & legs",
+    "part": "body",
+    "declared": 16,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 15,
+    "chipsDeclared": 1,
+    "chipsShown": 0
+   },
+   {
+    "name": "👕 Shirt",
+    "part": "shirt",
+    "declared": 8,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 6,
+    "chipsDeclared": 29,
+    "chipsShown": 21
+   },
+   {
+    "name": "🖐 Hands",
+    "part": "hands",
+    "declared": 15,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 4,
+    "chipsDeclared": 18,
+    "chipsShown": 18
+   },
+   {
+    "name": "👖 Pants",
+    "part": "pants",
+    "declared": 6,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 3,
+    "chipsDeclared": 27,
+    "chipsShown": 19
+   },
+   {
+    "name": "🩱 Swim & undies",
+    "part": "undies",
+    "declared": 7,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 1,
+    "chipsDeclared": 29,
+    "chipsShown": 1
+   },
+   {
+    "name": "👟 Feet",
+    "part": "shoes",
+    "declared": 8,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 4,
+    "chipsDeclared": 18,
+    "chipsShown": 18
+   },
+   {
+    "name": "👻 Visibility",
+    "part": "visible",
+    "declared": 9,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 9,
+    "chipsDeclared": 3,
+    "chipsShown": 3
+   },
+   {
+    "name": "🐯 Costume",
+    "part": "costume",
+    "declared": 112,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 4,
+    "chipsDeclared": 512,
+    "chipsShown": 33
+   },
+   {
+    "name": "👥 People",
+    "part": "person",
+    "declared": 1,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 1,
+    "chipsDeclared": 0,
+    "chipsShown": 0
+   },
+   {
+    "name": "🏞️ Background",
+    "part": "background",
+    "declared": 1979,
+    "groups": 124,
+    "groupsShown": 0,
+    "shown": 4,
+    "chipsDeclared": 11550,
+    "chipsShown": 39
+   },
+   {
+    "name": "🎮 Controls",
+    "part": "controls",
+    "declared": 27,
+    "groups": 7,
+    "groupsShown": 7,
+    "shown": 27,
+    "chipsDeclared": 69,
+    "chipsShown": 69
+   },
+   {
+    "name": "🎵 Music",
+    "part": "music",
+    "declared": 10,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 10,
+    "chipsDeclared": 1,
+    "chipsShown": 1
+   },
+   {
+    "name": "🗺️ World design",
+    "part": "world",
+    "declared": 2,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 2,
+    "chipsDeclared": 0,
+    "chipsShown": 0
+   },
+   {
+    "name": "🔬 Inspection",
+    "part": "access",
+    "declared": 6,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 6,
+    "chipsDeclared": 0,
+    "chipsShown": 0
+   },
+   {
+    "name": "♿ Accessibility",
+    "part": "access",
+    "declared": 3,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 3,
+    "chipsDeclared": 0,
+    "chipsShown": 0
+   },
+   {
+    "name": "⚙️ Advanced",
+    "part": "advanced",
+    "declared": 1,
+    "groups": 0,
+    "groupsShown": 0,
+    "shown": 1,
+    "chipsDeclared": 0,
+    "chipsShown": 0
+   }
+  ],
+  "perPlace": [
+   [
+    "emptyroom",
+    "🔲 empty room",
+    9,
+    0,
+    39
+   ],
+   [
+    "bubblespace",
+    "🫧 bubble space",
+    38,
+    4,
+    99
+   ],
+   [
+    "bubbleroom",
+    "🫧 the bubble room",
+    31,
+    1,
+    61
+   ],
+   [
+    "imagination",
+    "💭 our imagination",
+    11,
+    0,
+    55
+   ],
+   [
+    "forest",
+    "🌲 forest",
+    12,
+    0,
+    63
+   ],
+   [
+    "underwater",
+    "🐠 underwater",
+    11,
+    0,
+    55
+   ],
+   [
+    "deepsea",
+    "🪸 deep sea",
+    11,
+    0,
+    55
+   ],
+   [
+    "beach",
+    "🏖️ beach",
+    14,
+    0,
+    55
+   ],
+   [
+    "sea",
+    "🌊 open water",
+    15,
+    1,
+    49
+   ],
+   [
+    "witch",
+    "🧙 witch's woods",
+    19,
+    0,
+    59
+   ],
+   [
+    "cemetery",
+    "🌿 cemetery",
+    14,
+    0,
+    63
+   ],
+   [
+    "lake",
+    "🦆 lake",
+    19,
+    0,
+    55
+   ],
+   [
+    "house",
+    "🏠 house and yard",
+    16,
+    0,
+    63
+   ],
+   [
+    "farmyard",
+    "🚜 farm yard",
+    11,
+    0,
+    55
+   ],
+   [
+    "treehouse",
+    "🌳 tree house",
+    24,
+    0,
+    99
+   ],
+   [
+    "treeroom",
+    "🪜 inside the tree house",
+    23,
+    0,
+    141
+   ],
+   [
+    "livingroom",
+    "🛋️ living room",
+    24,
+    0,
+    165
+   ],
+   [
+    "witchroom",
+    "🧙 inside the witch's hut",
+    17,
+    0,
+    57
+   ],
+   [
+    "clearing",
+    "🌲 forest clearing",
+    26,
+    3,
+    106
+   ],
+   [
+    "healerroom",
+    "🌿 inside the healer's hut",
+    15,
+    0,
+    72
+   ],
+   [
+    "fairyforest",
+    "🧚 fairy forest",
+    15,
+    0,
+    68
+   ],
+   [
+    "mountains",
+    "⛰️ mountain trail",
+    15,
+    0,
+    56
+   ],
+   [
+    "waterfall",
+    "💦 jungle waterfall",
+    20,
+    0,
+    59
+   ],
+   [
+    "campsite",
+    "🏕️ camp site",
+    16,
+    0,
+    63
+   ],
+   [
+    "tent",
+    "⛺ inside a tent",
+    14,
+    0,
+    63
+   ],
+   [
+    "cave",
+    "🪨 cave behind the falls",
+    20,
+    0,
+    65
+   ],
+   [
+    "caveroom",
+    "🦇 cave room",
+    13,
+    0,
+    67
+   ],
+   [
+    "woodpath",
+    "🥾 path through the woods",
+    12,
+    0,
+    63
+   ],
+   [
+    "pasture",
+    "🌾 pasture",
+    14,
+    0,
+    63
+   ],
+   [
+    "crossing",
+    "🛤️ forest crossing",
+    15,
+    0,
+    72
+   ],
+   [
+    "castle",
+    "🏰 castle",
+    69,
+    13,
+    393
+   ],
+   [
+    "castleroom",
+    "🚪 inside the castle",
+    59,
+    13,
+    371
+   ],
+   [
+    "hut",
+    "🛖 grass hut",
+    13,
+    0,
+    64
+   ],
+   [
+    "hutroom",
+    "🛋️ inside the grass hut",
+    22,
+    0,
+    113
+   ],
+   [
+    "hutbed",
+    "🛏️ the grass hut's bedroom",
+    12,
+    0,
+    61
+   ],
+   [
+    "hutpotion",
+    "🧪 the grass hut's potion room",
+    12,
+    0,
+    61
+   ],
+   [
+    "hutcenter",
+    "🔥 the grass hut's center",
+    11,
+    0,
+    55
+   ],
+   [
+    "desert",
+    "🏜️ desert",
+    12,
+    0,
+    60
+   ]
+  ],
+  "places": 38,
+  "placeGroups": 10,
+  "tabBoxes": {
+   "🧍 Body": [
+    [
+     "🤸 the pose",
+     4
+    ],
+    [
+     "↔️ facing and moving",
+     3
+    ],
+    [
+     "✋ the dominant hand",
+     1
+    ],
+    [
+     "📏 their size",
+     1
+    ],
+    [
+     "🐴 the horse",
+     15
+    ],
+    [
+     "🐸 the jumps",
+     1
+    ]
+   ],
+   "😀 Face": [
+    [
+     "🙂 the head",
+     8
+    ],
+    [
+     "🤨 the brows",
+     2
+    ],
+    [
+     "👄 the mouth",
+     9
+    ],
+    [
+     "👃 the nose",
+     7
+    ],
+    [
+     "👂 the ears",
+     2
+    ],
+    [
+     "💥 faces it makes",
+     3
+    ]
+   ],
+   "👁 Eyes": [
+    [
+     "👁 the eyes",
+     4
+    ],
+    [
+     "⚫ pupil and iris",
+     3
+    ],
+    [
+     "✨ the shine",
+     4
+    ],
+    [
+     "⭐ funny eyes",
+     4
+    ]
+   ],
+   "💇 Hair": [
+    [
+     "💇 the hair",
+     4
+    ],
+    [
+     "🧔 the beard",
+     5
+    ]
+   ],
+   "🦒 Neck, arms & legs": [
+    [
+     "🦒 the neck",
+     2
+    ],
+    [
+     "💪 the arms",
+     6
+    ],
+    [
+     "🦵 the legs",
+     6
+    ],
+    [
+     "🤸 posed",
+     2
+    ]
+   ],
+   "👕 Shirt": [
+    [
+     "👕 the shirt",
+     5
+    ],
+    [
+     "🔷 its pattern",
+     3
+    ]
+   ],
+   "🖐 Hands": [
+    [
+     "🖐 both hands",
+     4
+    ],
+    [
+     "🖐🖐 each hand",
+     1
+    ],
+    [
+     "🔢 how many",
+     5
+    ],
+    [
+     "🔄 the angle",
+     5
+    ]
+   ],
+   "👖 Pants": [
+    [
+     "👖 the pants",
+     3
+    ],
+    [
+     "🔷 its pattern",
+     3
+    ]
+   ],
+   "🩱 Swim & undies": [
+    [
+     "🩱 the swimsuit",
+     4
+    ],
+    [
+     "🔷 its pattern",
+     3
+    ]
+   ],
+   "👟 Feet": [
+    [
+     "👟 both feet",
+     4
+    ],
+    [
+     "👟👟 each foot",
+     1
+    ],
+    [
+     "🔢 how many",
+     3
+    ]
+   ],
+   "👻 Visibility": [
+    [
+     "🧍 the whole friend",
+     1
+    ],
+    [
+     "👻 each part",
+     7
+    ]
+   ],
+   "🎮 Controls": [
+    [
+     "🎮 the game controller",
+     1
+    ],
+    [
+     "🫧 bubbles",
+     2
+    ],
+    [
+     "🔥 fire",
+     1
+    ],
+    [
+     "🏃 moving",
+     2
+    ]
+   ],
+   "🐯 Costume": [
+    [
+     "🐯 the costume",
+     1
+    ],
+    [
+     "🐾 the animal",
+     7
+    ],
+    [
+     "🤿 the scuba suit",
+     2
+    ],
+    [
+     "⚓ the old diving suit",
+     4
+    ],
+    [
+     "🥽 diving gear",
+     7
+    ],
+    [
+     "👻 the ghost",
+     5
+    ],
+    [
+     "🧙‍♂️ the wizard",
+     2
+    ],
+    [
+     "🧘 the monk or dryad",
+     7
+    ],
+    [
+     "🪄 the staff",
+     2
+    ],
+    [
+     "🏹 Robin Hood",
+     5
+    ],
+    [
+     "👑 the queen or king",
+     5
+    ],
+    [
+     "🐉 the dragon",
+     6
+    ],
+    [
+     "🤖 the robot",
+     10
+    ],
+    [
+     "🛡️ the knight",
+     9
+    ],
+    [
+     "🍄 the gnome",
+     7
+    ],
+    [
+     "🧙 the witch",
+     5
+    ],
+    [
+     "🐈‍⬛ her cat",
+     6
+    ],
+    [
+     "🧹 her broom",
+     2
+    ],
+    [
+     "🧚 the fairy",
+     17
+    ],
+    [
+     "🌸 the wreath",
+     2
+    ]
+   ]
+  },
+  "designers": [
+   "music",
+   "world",
+   "background",
+   "tab",
+   "castle"
+  ]
+ }
+}
