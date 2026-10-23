@@ -80,6 +80,56 @@ const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "
 // out (from the forehead, at 64, to below the chin; in profile toward the face), drawn over the face but under its features;
 // from behind, closed over the head.
 const clothHood = () => state.costume.kind === "monk" && state.costume.hoodUp !== false ? (state.costume.monkCloak || "#6b4a2b") : null;
+// (ticket 564) WHAT EACH COSTUME WEARS FOR THE SHIRT AND PANTS, by costume.kind: a costume "in the friend's own clothes"
+// (the gnome's recipe, ticket 431) replaces drawNow's SH and P, each a style, a colour and a pattern, so every pose,
+// facing and animation draws it. An entry takes the costume's settings (WC) and the friend's own shirt and pants and gives
+// the two worn: [shirt, pants]. Each was an `if` of its own in drawNow until ticket 564, among the costumes' flags; as one
+// table, a new costume's clothes are one entry, and two costumes worn at once (one over the other, ticket 562's mock-up)
+// have one place to say whose clothes are worn. Drawn byte for byte as before (tools/same_friend.mjs, ^du_report(18)). An
+// animal suit has none (its fur is drawn over everything below the hood), nor the ghost.
+const COSTUME_CLOTHES = {
+  // (the witch's dress in her hat's colour, her spider web tiled all over it; with "a few" webs, plain, the webs drawn after it)
+  witch: (WC, SH, P) => { const webPat = WC.webStyle === "few" ? "plain" : "web";
+    return [{ ...SH, style: "long", color: WC.witchColor, pattern: webPat, patternSize: 96, patternColor: WC.webColor },
+            { ...P, style: "dress", skirtLen: 72, color: WC.witchColor, pattern: webPat, patternSize: 96, patternColor: WC.webColor }]; },
+  // (tickets 436, 437: a robe to the floor; the queen's gown is a dress, the king's falls straight, ticket 450)
+  queen: (WC, SH, P) => { const c = WC.queenRobe || "#5b2a86"; return [{ ...SH, style: "long", color: c, pattern: "plain" }, { ...P, style: "dress", skirtLen: 100, color: c, pattern: "plain" }]; },
+  king: (WC, SH, P) => { const c = WC.kingRobe || "#7a1f2b"; return [{ ...SH, style: "long", color: c, pattern: "plain" }, { ...P, style: "dress", skirtLen: 100, color: c, pattern: "plain" }]; },
+  // (ticket 435: chain mail, the dots pattern in steel, under his tabard)
+  knight: (WC, SH, P) => { const mail = { color: "#9ca3af", pattern: "dots", patternSize: 9, patternColor: "#6b7280" }; return [{ ...SH, style: "long", ...mail }, { ...P, style: "long", ...mail }]; },
+  // (ticket 434: a green tunic over brown hose)
+  robin: (WC, SH, P) => [{ ...SH, style: "long", color: WC.robinTunic || "#3f7d3a", pattern: "plain" }, { ...P, style: "long", color: "#5a3d22", pattern: "plain" }],
+  // (ticket 433: a cloak to the feet, the dryad's in the leaves pattern)
+  monk: (WC, SH, P) => {
+    const cloak = { color: WC.monkCloak || "#6b4a2b", ...(WC.monkWho === "dryad" ? { pattern: "leaves", patternSize: 26, patternColor: mix(WC.monkCloak || "#4f6b3a", "#000000", 0.3) } : { pattern: "plain" }) };
+    return [{ ...SH, style: "long", ...cloak }, { ...P, style: "dress", skirtLen: 94, ...cloak }]; },
+  // (ticket 432: a robe to the feet in the stars pattern)
+  wizard: (WC, SH, P) => {
+    const robe = { color: WC.wizardRobe || "#2a3a8c", pattern: "stars", patternSize: 30, patternColor: WC.wizardStars || "#f2c230" };
+    return [{ ...SH, style: "long", ...robe }, { ...P, style: "dress", skirtLen: 96, ...robe }]; },
+  // (ticket 431: the man's tunic and trousers; the woman's white blouse over the five-striped skirt, gnomeskirt)
+  gnome: (WC, SH, P) => WC.gnomeWho === "woman"
+    ? [{ ...SH, style: "long", color: GNOME_CLOTH, pattern: "plain" }, { ...P, style: "dress", skirtLen: 84, color: WC.gnomeSkirt || GNOME_STRIPES[0], pattern: "gnomeskirt", patternSize: 64 }]
+    : [{ ...SH, style: "long", color: WC.gnomeTunic || "#3f8f8a", pattern: "plain" }, { ...P, style: "long", color: WC.gnomeTrousers || "#7d8b6a", pattern: "plain" }],
+  // (the fairy's tunic in its style's colour and pattern: in a dress; or a shirt and pants, her tunic top over pants a
+  // shade deeper, its hem a short frill at her hips, drawn in drawNow)
+  fairy: (WC, SH, P) => {
+    const fTunic = FAIRY_TUNICS[WC.tunicStyle] ? WC.tunicStyle : "petal", fCol = WC["tunicColor_" + fTunic] ?? FAIRY_TUNICS[fTunic].colors[0];
+    const pat = fTunic === "toadstool" ? { pattern: "dots", patternSize: 34, patternColor: "#ffffff" } : fTunic === "sparkle" ? { pattern: "stars", patternSize: 26, patternColor: "#fde047" } : { pattern: "plain" };
+    return [{ ...SH, style: "tank", color: fCol, ...pat },
+            WC.fairyOutfit === "pants" ? { ...P, style: "pants", color: mix(fCol, "#000000", 0.28), pattern: "plain" } : { ...P, style: "dress", skirtLen: 58, color: fCol, ...pat }]; },
+  // (ticket 288: a scuba suit, long sleeves and legs in its colour; the old diving suit, canvas, a little wider)
+  scuba: (WC, SH, P) => [{ ...SH, style: "long", color: WC.scubaColor, pattern: "plain" }, { ...P, style: "long", color: WC.scubaColor, pattern: "plain" }],
+  diver: (WC, SH, P) => [{ ...SH, style: "long", color: WC.diverCloth, pattern: "plain", width: SH.width * 1.1 }, { ...P, style: "long", color: WC.diverCloth, pattern: "plain" }],
+  // (ticket 515: the robot's sleeves and legs in its limb colour; the box bot's legs and feet the friend's own)
+  robot: (WC, SH, P) => { const R = robotOf(WC);
+    return [{ ...SH, style: "long", collar: "flat", color: R.limb, pattern: "plain" }, R.S.feet !== "own" ? { ...P, style: "long", color: R.limb, pattern: "plain" } : P]; },
+  // (ticket 522: each style's shirt and pants, westernOf)
+  cowgirl: (WC, SH, P) => { const W = westernOf(WC, "cowgirl"); return [{ ...SH, ...W.shirt }, { ...P, ...W.pants }]; },
+  cowboy: (WC, SH, P) => { const W = westernOf(WC, "cowboy"); return [{ ...SH, ...W.shirt }, { ...P, ...W.pants }]; },
+  // (ticket 557: all in the near black cloth, a V at the neck)
+  ninja: (WC, SH, P) => [{ ...SH, style: "long", collar: "v", color: NINJA.cloth, pattern: "plain" }, { ...P, style: "long", color: NINJA.cloth, pattern: "plain" }],
+};
 // (ticket 435) the knight's helmet: the trap room's great helm, worn (helmetSvg in js/13-castle-rooms-and-map.js)
 // The knight's arms, as a tabard, a shield and the emblem show them: its two colours laid out (quartered, halves, plain) in a
 // shape, clipped to it, and the emblem in its middle; HERALDRY's emblems in a unit box about (0, 0), 30 across.

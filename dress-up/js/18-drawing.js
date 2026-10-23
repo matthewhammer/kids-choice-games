@@ -92,49 +92,16 @@ function drawNow() {
                                         `<g clip-path="url(#${id})">${inner}</g>` : inner;
   // (her web is tiled all over the dress, or "a few" separate webs on it,
   // as the Hazel slide draws them)
-  const fewWebs = witch && WC.webStyle === "few", webPat = fewWebs ? "plain" : "web";
-  if (witch) {
-    SH = { ...SH, style: "long", color: WC.witchColor, pattern: webPat, patternSize: 96, patternColor: WC.webColor };
-    P = { ...P, style: "dress", skirtLen: 72, color: WC.witchColor, pattern: webPat, patternSize: 96, patternColor: WC.webColor };
-  }
-  if (royal) { SH = { ...SH, style: "long", color: robeC, pattern: "plain" }; P = { ...P, style: "dress", skirtLen: 100, color: robeC, pattern: "plain" }; }
-  if (knight) { const mail = { color: "#9ca3af", pattern: "dots", patternSize: 9, patternColor: "#6b7280" }; SH = { ...SH, style: "long", ...mail }; P = { ...P, style: "long", ...mail }; }
-  if (robin) { SH = { ...SH, style: "long", color: WC.robinTunic || "#3f7d3a", pattern: "plain" }; P = { ...P, style: "long", color: "#5a3d22", pattern: "plain" }; }
-  if (monk) {
-    const cloak = { color: WC.monkCloak || "#6b4a2b", ...(WC.monkWho === "dryad" ? { pattern: "leaves", patternSize: 26, patternColor: mix(WC.monkCloak || "#4f6b3a", "#000000", 0.3) } : { pattern: "plain" }) };
-    SH = { ...SH, style: "long", ...cloak }; P = { ...P, style: "dress", skirtLen: 94, ...cloak };
-  }
-  if (wizard) {
-    const robe = { color: WC.wizardRobe || "#2a3a8c", pattern: "stars", patternSize: 30, patternColor: WC.wizardStars || "#f2c230" };
-    SH = { ...SH, style: "long", ...robe }; P = { ...P, style: "dress", skirtLen: 96, ...robe };
-  }
-  if (gnomeM) {
-    SH = { ...SH, style: "long", color: WC.gnomeTunic || "#3f8f8a", pattern: "plain" };
-    P = { ...P, style: "long", color: WC.gnomeTrousers || "#7d8b6a", pattern: "plain" };
-  }
-  if (gnomeW) {
-    SH = { ...SH, style: "long", color: GNOME_CLOTH, pattern: "plain" };
-    P = { ...P, style: "dress", skirtLen: 84, color: WC.gnomeSkirt || GNOME_STRIPES[0], pattern: "gnomeskirt", patternSize: 64 };
-  }
-  if (fairy) {
-    const pat = fTunic === "toadstool" ? { pattern: "dots", patternSize: 34, patternColor: "#ffffff" } : fTunic === "sparkle" ? { pattern: "stars", patternSize: 26, patternColor: "#fde047" } : { pattern: "plain" };
-    SH = { ...SH, style: "tank", color: fCol, ...pat };
-    // (in a dress; or a shirt and pants: her tunic top over pants a shade
-    // deeper, its hem a short frill at her hips, see below)
-    P = WC.fairyOutfit === "pants" ? { ...P, style: "pants", color: mix(fCol, "#000000", 0.28), pattern: "plain" }
-                                   : { ...P, style: "dress", skirtLen: 58, color: fCol, ...pat };
-  }
+  const fewWebs = witch && WC.webStyle === "few";
+  // (ticket 564) the shirt and pants the costume wears in place of the friend's own: its entry in COSTUME_CLOTHES
+  // (js/06-costumes.js), where each costume's was an `if` of its own here, among these flags
+  if (COSTUME_CLOTHES.hasOwnProperty(kind)) [SH, P] = COSTUME_CLOTHES[kind](WC, SH, P);   // (its own entries only: no kind is "toString")
   // (ticket 288) a scuba suit: long sleeves and legs in its color, its stripes and fins (below); the old diving suit:
   // canvas, a little wider, heavy boots, and over the head and shoulders its helmet and corselet (below)
   const scuba = kind === "scuba", diver = kind === "diver";
-  if (scuba) { SH = { ...SH, style: "long", color: WC.scubaColor, pattern: "plain" }; P = { ...P, style: "long", color: WC.scubaColor, pattern: "plain" }; }
-  if (diver) { SH = { ...SH, style: "long", color: WC.diverCloth, pattern: "plain", width: SH.width * 1.1 }; P = { ...P, style: "long", color: WC.diverCloth, pattern: "plain" }; }
   // (ticket 515) a robot: one of ROBOT_STYLES (R: its colours and traits), its sleeves and legs in its limb colour (the box
   // bot's legs and feet the friend's own); its pieces below, each in its own slot, each view its own drawing
   const robot = kind === "robot", R = robot ? robotOf(WC) : null;
-  if (robot) { SH = { ...SH, style: "long", collar: "flat", color: R.limb, pattern: "plain" }; if (R.S.feet !== "own") P = { ...P, style: "long", color: R.limb, pattern: "plain" }; }
-  if (western) { SH = { ...SH, ...W.shirt }; P = { ...P, ...W.pants }; }   // (ticket 522)
-  if (ninja) { SH = { ...SH, style: "long", collar: "v", color: NINJA.cloth, pattern: "plain" }; P = { ...P, style: "long", color: NINJA.cloth, pattern: "plain" }; }   // (ticket 557)
   const w = dir ? SH.width * 0.62 : q ? SH.width * 0.84 : SH.width, L = SH.length;
   const nw = Math.max(22, B.neckW / 2 + 6);           // the collar fits the neck
 
