@@ -29,12 +29,40 @@ const FUMOLA_JS_URL = FUMOLA_BUILD + "fumola_wasm.js", FUMOLA_WASM_URL = FUMOLA_
 // patterns of every kind, whole numbers mix (a step is (c + dx, r + dy), as Hazel's), Floats compare (the draws go in as they are).
 // ASCII only (a non-ASCII character once hid everything after it from Fumola's reader).
 const FUMOLA_COMMON = `module Common {
+  // The game's vocabulary, the Hazel rules' types in Motoko's notation (Matthew, 2026-10-23: "use the hazel types to inform the
+  // Fumola annotations, which are not enforced, but can be informative for both of us, and others"; "someday -- fumola will
+  // enforce types like Motoko/Hazel does"). Fumola reads them and does not check them yet: a type is a comment it can parse.
+  public type Dir = {#N; #NE; #E; #SE; #S; #SW; #W; #NW};
+  public type Side = {#L; #R};
+  public type Wiring = {#Normal; #Reversed; #Random};
+  public type Out = {#Auto; #OutOfCastle; #Nowhere; #ToRoom : Int};
+  public type Place = {
+    #NoPlace; #Emptyroom; #Bubblespace; #Bubbleroom; #Imagination; #Forest; #Underwater; #Deepsea; #Beach; #Sea;
+    #Witch; #Cemetery; #Lake; #House; #Farmyard; #Treehouse; #Treeroom; #Treetop; #Livingroom; #Witchroom;
+    #Clearing; #Healerroom; #Fairyforest; #Mountains; #Waterfall; #Campsite; #Tent; #Cave; #Caveroom; #Woodpath;
+    #Pasture; #Crossing; #Castle; #Castleroom; #Hut; #Hutroom; #Hutbed; #Hutpotion; #Hutcenter; #Desert
+  };
+  public type Room = {#King; #Greenhouse; #Trap; #Dungeon1; #Dungeon2; #Hallway; #Catroom; #Stable; #Dining; #Kitchen; #Smithy; #Spiral};
+  public type Exit = {#ExitSide; #ExitLong; #ExitSpiral; #ExitTrap; #ExitLadder; #ExitAll; #ExitHall};
+  // what a rule says to do, each command with the rest after it
+  public type Cmd = {
+    #Done; #Flip : (Side, Cmd); #Say : (Text, Cmd); #SetPit : (Int, Bool, Cmd); #DropBoulder : (Int, Cmd);
+    #LiftBoulder : (Int, Cmd); #SetHatch : (Int, Bool, Cmd); #OpenDoor : (Int, Bool, Cmd); #DropRock : (Int, Bool, Cmd);
+    #Wait : (Int, Cmd); #GoRoom : (Int, Cmd); #GoSquare : (Int, Int, Dir, Cmd)
+  };
+  public type Event = {#Pull : Side; #PullBoulder : Side; #PullHatch : Int; #PullThing : Int; #FallPit : Int; #WayOut : Int; #Way : Dir};
+  public type Thing = {at : Int; uid : Text; kind : Text; on : Bool; works : [Text]; does : Text; open : Bool; boulder : Bool};
+  public type Cell = {col : Int; row : Int; kind : Place; ways : [Dir]};
+  public type Globals = {
+    lever_L : Bool; lever_R : Bool; wiring : Wiring; draws : [Float]; pits_on : [Bool]; covered : [Bool]; hatch : Bool;
+    things : [Thing]; rooms : [Room]; exits : [Exit]; out : Out; at_col : Int; at_row : Int; cols : Int; rows : Int; cells : [Cell]
+  };
   // two levers flipped, one after the other
-  public func flip2(a, b) { #Flip(a, #Flip(b, #Done)) };
+  public func flip2(a : Side, b : Side) : Cmd { #Flip(a, #Flip(b, #Done)) };
   // the i-th of a list of Bools, false past its end
-  public func nth(xs, i) { if (i < xs.size()) { xs[i] } else { false } };
+  public func nth(xs : [Bool], i : Int) : Bool { if (i < xs.size()) { xs[i] } else { false } };
   // which lever works each pit, the left and the right: normal, reversed, or at random by the game's two draws
-  public func wire(mode, draws) {
+  public func wire(mode : Wiring, draws : [Float]) : (Side, Side) {
     switch (mode) {
       case (#Reversed) { (#R, #L) };
       case (#Random) { if (draws.size() < 2) { (#L, #R) } else { (if (draws[0] < 0.5) { #L } else { #R }, if (draws[1] < 0.5) { #L } else { #R }) } };
@@ -42,27 +70,27 @@ const FUMOLA_COMMON = `module Common {
     }
   };
   // a red lever up? (true is up)
-  public func up(l, r, side) { switch (side) { case (#L) { l }; case _ { r } } };
+  public func up(l : Bool, r : Bool, side : Side) : Bool { switch (side) { case (#L) { l }; case _ { r } } };
   // each pit open: open when the lever working it is up
-  public func pits_open(l, r, w) { let (w0, w1) = w; (up(l, r, w0), up(l, r, w1)) };
+  public func pits_open(l : Bool, r : Bool, w : (Side, Side)) : (Bool, Bool) { let (w0, w1) = w; (up(l, r, w0), up(l, r, w1)) };
   // a pit that changed from was to now: SetPit, else nothing
-  public func pit_moves(i, was, now, k) { if (was == now) { k } else { #SetPit(i, now, k) } };
-  public func member(s, xs) { var found = false; for (x in xs.vals()) { if (x == s) { found := true } }; found };
+  public func pit_moves(i : Int, was : Bool, now : Bool, k : Cmd) : Cmd { if (was == now) { k } else { #SetPit(i, now, k) } };
+  public func member(s : Text, xs : [Text]) : Bool { var found = false; for (x in xs.vals()) { if (x == s) { found := true } }; found };
   // a way among a square's ways
-  public func has_way(d, ds) { var found = false; for (x in ds.vals()) { if (x == d) { found := true } }; found };
+  public func has_way(d : Dir, ds : [Dir]) : Bool { var found = false; for (x in ds.vals()) { if (x == d) { found := true } }; found };
   // where room kind k first is in a castle's rooms, counting from 1; 0 when it is not there
-  public func room_at(rs, k) { var i = 0; var at = 0; for (x in rs.vals()) { i := i + 1; if (at == 0 and x == k) { at := i } }; at };
+  public func room_at(rs : [Room], k : Room) : Int { var i = 0; var at = 0; for (x in rs.vals()) { i := i + 1; if (at == 0 and x == k) { at := i } }; at };
   // the i-th room's exits, counting from 1; null past the end
-  public func exit_of(xs, i) { if (i >= 1 and i <= xs.size()) { ?(xs[i - 1]) } else { null } };
-  public func rooms(rs) { rs.size() };
+  public func exit_of(xs : [Exit], i : Int) : ?Exit { if (i >= 1 and i <= xs.size()) { ?(xs[i - 1]) } else { null } };
+  public func rooms(rs : [Room]) : Int { rs.size() };
   // the world's eight directions: each one's step across and down the map, and the way back
-  public func dir(d) {
+  public func dir(d : Dir) : (Int, Int) {
     switch (d) {
       case (#N) { (0, -1) }; case (#NE) { (1, -1) }; case (#E) { (1, 0) }; case (#SE) { (1, 1) };
       case (#S) { (0, 1) }; case (#SW) { (-1, 1) }; case (#W) { (-1, 0) }; case _ { (-1, -1) }
     }
   };
-  public func opp(d) {
+  public func opp(d : Dir) : Dir {
     switch (d) {
       case (#N) { #S }; case (#NE) { #SW }; case (#E) { #W }; case (#SE) { #NW };
       case (#S) { #N }; case (#SW) { #NE }; case (#W) { #E }; case _ { #SE }
@@ -72,10 +100,10 @@ const FUMOLA_COMMON = `module Common {
 
 const FUMOLA_TRAP = `module TrapRoom {
   // a blue lever's pit i: nothing if not its own, else its rock lifted or a rock dropped
-  func one(i, mine, lift, k) { if (not mine) { k } else if (lift) { #LiftBoulder(i, k) } else { #DropBoulder(i, k) } };
+  func one(i : Int, mine : Bool, lift : Bool, k : Common.Cmd) : Common.Cmd { if (not mine) { k } else if (lift) { #LiftBoulder(i, k) } else { #DropBoulder(i, k) } };
   // A red lever pulled: flip it, and each pit wired to it opens or shuts.
   // A blue lever pulled: each of its pits gets a boulder, or loses one.
-  public func on_event(g, e) {
+  public func on_event(g : Common.Globals, e : Common.Event) : Common.Cmd {
     let w = Common.wire(g.wiring, g.draws);
     let (w0, w1) = w;
     switch (e) {
@@ -100,7 +128,7 @@ const FUMOLA_TRAP = `module TrapRoom {
 const FUMOLA_TREE = `module TreeRoom {
   // A tree room's trap-door lever, or the round room's at the top (house 0):
   // the trap door shuts if open, opens if shut.
-  public func on_event(g, e) {
+  public func on_event(g : Common.Globals, e : Common.Event) : Common.Cmd {
     switch (e) {
       case (#PullHatch(n)) { #SetHatch(n, not g.hatch, #Done) };
       case _ { #Done }
@@ -110,9 +138,9 @@ const FUMOLA_TREE = `module TreeRoom {
 
 const FUMOLA_SQUARE = `module Square {
   // the first thing at place i, from the j-th on
-  func find(ts, j, i) { if (j == ts.size()) { null } else if (ts[j].at == i) { ?(ts[j]) } else { find(ts, j + 1, i) } };
+  func find(ts : [Common.Thing], j : Int, i : Int) : ?Common.Thing { if (j == ts.size()) { null } else if (ts[j].at == i) { ?(ts[j]) } else { find(ts, j + 1, i) } };
   // each trap door the lever works, from the j-th thing on, in order: it swings, or, a boulder lever, gets its rock or loses it
-  func doors(lever, ts, j) {
+  func doors(lever : Common.Thing, ts : [Common.Thing], j : Int) : Common.Cmd {
     if (j == ts.size()) { #Done }
     else {
       let d = ts[j];
@@ -124,7 +152,7 @@ const FUMOLA_SQUARE = `module Square {
   };
   // A placed lever pulled: each trap door wired to it swings,
   // or, a boulder lever, gets its rock or loses it.
-  public func on_event(g, e) {
+  public func on_event(g : Common.Globals, e : Common.Event) : Common.Cmd {
     switch (e) {
       case (#PullThing(i)) { switch (find(g.things, 0, i)) { case (?t) { doors(t, g.things, 0) }; case null { #Done } } };
       case _ { #Done }
@@ -138,12 +166,12 @@ const FUMOLA_SQUARE = `module Square {
 const FUMOLA_WORLD = `var world_held = HashMap.new();
 module World {
   // Places with no way out on a side, whatever their ways say: the waterfall's N, its cliff.
-  func no_way(kind, d) { kind == #Waterfall and d == #N };
+  func no_way(kind : Common.Place, d : Common.Dir) : Bool { kind == #Waterfall and d == #N };
   // into square (c, r), come in from back, if it has a way back; else nowhere
-  func decide(x, back, c, r) { if (Common.has_way(back, x.ways) and not (no_way(x.kind, back))) { #GoSquare(c, r, back, #Done) } else { #Done } };
-  func find_at(cs, i, c, r) { if (i == cs.size()) { null } else { let x = cs[i]; if (x.col == c and x.row == r) { ?x } else { find_at(cs, i + 1, c, r) } } };
+  func decide(x : Common.Cell, back : Common.Dir, c : Int, r : Int) : Common.Cmd { if (Common.has_way(back, x.ways) and not (no_way(x.kind, back))) { #GoSquare(c, r, back, #Done) } else { #Done } };
+  func find_at(cs : [Common.Cell], i : Int, c : Int, r : Int) : ?Common.Cell { if (i == cs.size()) { null } else { let x = cs[i]; if (x.col == c and x.row == r) { ?x } else { find_at(cs, i + 1, c, r) } } };
   // the square a way leads to, if it is on the map: (c, r), or null
-  func step(ac, ar, d, cols, rows) {
+  func step(ac : Int, ar : Int, d : Common.Dir, cols : Int, rows : Int) : ?(Int, Int) {
     let (dx, dy) = Common.dir(d);
     let c = ac + dx;
     let r = ar + dy;
@@ -151,7 +179,7 @@ module World {
   };
   // A way out walked through: into the square beside it, coming in from the side facing back,
   // if that square is on the map and has a way back; else nowhere.
-  public func on_event(g, e) {
+  public func on_event(g : Common.Globals, e : Common.Event) : Common.Cmd {
     switch (e) {
       case (#Way(d)) {
         switch (step(g.at_col, g.at_row, d, g.cols, g.rows)) {
@@ -163,14 +191,14 @@ module World {
     }
   };
   // the same, the square found in the map held here
-  public func way(ac, ar, cols, rows, d) {
+  public func way(ac : Int, ar : Int, cols : Int, rows : Int, d : Common.Dir) : Common.Cmd {
     switch (step(ac, ar, d, cols, rows)) {
       case (?(c, r)) { switch (HashMap.get(world_held, (c, r))) { case (?x) { decide(x, Common.opp(d), c, r) }; case null { #Done } } };
       case null { #Done }
     }
   };
   // the map held here made again from the game's cells
-  public func hold(cells) {
+  public func hold(cells : [Common.Cell]) : Int {
     var m = HashMap.new();
     for (x in cells.vals()) { let (m2, _) = HashMap.put(m, (x.col, x.row), x); m := m2 };
     world_held := m;
@@ -182,7 +210,7 @@ const FUMOLA_CASTLE = `module Castle {
   // Where room n's way out leads: 0 out of the castle, a room, or -1 nowhere.
   // out is its setting; Auto: a dungeon's ladder up to the trap room, room 1 out, any other to room 1.
   // Nowhere only where the way out is toward us (side doors, a long room's, a spiral's); elsewhere Auto.
-  public func way_out(rooms, exits, n, out) {
+  public func way_out(rooms : [Common.Room], exits : [Common.Exit], n : Int, out : Common.Out) : Int {
     let ex = Common.exit_of(exits, n);
     let toward_us = ex == ?(#ExitSide) or ex == ?(#ExitLong) or ex == ?(#ExitSpiral);
     let v = if (out == #Nowhere and not toward_us) { #Auto } else { out };
@@ -197,7 +225,7 @@ const FUMOLA_CASTLE = `module Castle {
   // A trap room's pit fallen into (0 the left, 1 the right):
   // the first pit drops into the dungeon, the second into the deep dungeon;
   // a castle with only one of them, both into that one.
-  public func on_event(g, e) {
+  public func on_event(g : Common.Globals, e : Common.Event) : Common.Cmd {
     let d1 = Common.room_at(g.rooms, #Dungeon1);
     let d2 = Common.room_at(g.rooms, #Dungeon2);
     switch (e) {
