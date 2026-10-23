@@ -76,6 +76,8 @@ let before = fun (c, r, x) : (Int, Int, Cell) -> r < x.row || (r == x.row && c <
 let count_cells = fun xs : [Cell] -> case xs | [] => 0 | _ :: rest => 1 + count_cells(rest) end;
 # are the squares in order, each before the next? #
 let cells_in_order = fun xs : [Cell] -> case xs | x :: y :: rest => before(x.col, x.row, y) && cells_in_order(y :: rest) | _ => true end;
+# are the squares in order, and how many are there: both in one walk #
+let order_count = fun xs : [Cell] -> case xs | [] => (true, 0) | x :: rest => (let (ok, n) = order_count(rest) in (case rest | y :: _ => (ok && before(x.col, x.row, y), n + 1) | [] => (ok, n + 1) end)) end;
 # merge sort: two lists in order merged into one, a list dealt into two halves, and a list put in order #
 let merge_cells = fun (xs, ys) : ([Cell], [Cell]) -> case (xs, ys) | ([], _) => ys | (_, []) => xs | (x :: xr, y :: yr) => if before(x.col, x.row, y) then x :: merge_cells(xr, ys) else y :: merge_cells(xs, yr) end;
 let halve_cells = fun xs : [Cell] -> case xs | x :: y :: rest => (let (a, b) = halve_cells(rest) in (x :: a, y :: b)) | _ => (xs, []) end;
@@ -83,7 +85,7 @@ let sort_cells = fun xs : [Cell] -> case xs | _ :: _ :: _ => (let (a, b) = halve
 # the first n squares of a list in order, as a balanced map, and the rest of the list #
 let take_squares = fun (xs, n) : ([Cell], Int) -> if n == 0 then (Leaf, xs) else (let (l, rest) = take_squares(xs, n / 2) in case rest | x :: rest2 => (let (r, rest3) = take_squares(rest2, n - n / 2 - 1) in (Node(l, x, r), rest3)) | [] => (Leaf, []) end);
 # a world's squares as a map, from its cells in any order (put in order first when they are not) #
-let squares = fun xs : [Cell] -> let ys = (if cells_in_order(xs) then xs else sort_cells(xs)) in (let (m, _) = take_squares(ys, count_cells(ys)) in m);
+let squares = fun xs : [Cell] -> let (ok, n) = order_count(xs) in (let (m, _) = take_squares((if ok then xs else sort_cells(xs)), n) in m);
 # the square at (c, r), if the map has one #
 let square = fun (m, c, r) : (Squares, Int, Int) -> case m | Leaf => None | Node(l, x, rt) => if before(c, r, x) then square(l, c, r) else if c == x.col && r == x.row then Some(x) else square(rt, c, r) end;
 # the map with x in its place, replacing the square there, or added below if none was: a map built whole is balanced, one grown square by square need not be #
