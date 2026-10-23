@@ -711,11 +711,11 @@ function scriptHighlight(pre, lang, text, under = false) {
 // (ticket 579, Matthew: "can we adjust the auto-indentation to take the actual code box width into account?") a line longer than
 // the box is laid out as a pretty-printer would, to the box's width: broken at the outermost places the code allows, all of them
 // at once, so a case's arms each get a line, and a block's statements; then each piece still too long, the same way. The places,
-// best first: before a case's | ; before then and else ; after ; and before a closing } ; after , and { and in ; after => and ->.
+// best first: before a case's | ; before a sum's + (or a sum's, in arithmetic: only spaces either way) ; before then and else ; after ; and before a closing } ; after , and { and in ; after => and ->.
 // Each piece goes on 2 deeper than the line, 2 more for each bracket open there; a closing bracket back at its opener's depth.
 // Only spaces and line breaks change, never inside a string or a comment (one token each), so a rule means what it meant; lines
 // already narrow enough are left as they are
-const SCRIPT_BREAKS = [[["|"], []], [["then", "else"], []], [["}"], [";"]], [[], [",", "{", "in"]], [[], ["=>", "->"]]];
+const SCRIPT_BREAKS = [[["|"], []], [["+"], []], [["then", "else"], []], [["}"], [";"]], [[], [",", "{", "in"]], [[], ["=>", "->"]]];
 function scriptFlowPieces(lang, toks, indent, cols, out) {
   const text = toks.map(([, w]) => w).join("").trim();
   if (indent + text.length <= cols) { out.push(" ".repeat(indent) + text); return; }
@@ -733,7 +733,7 @@ function scriptFlowPieces(lang, toks, indent, cols, out) {
   const atLow = places.filter(p => p.depth === low);
   const best = Math.min(...atLow.map(p => p.rank));
   const cuts = [...new Set(atLow.filter(p => p.rank === best).map(p => p.at))].sort((x, y) => x - y);
-  if (best === 2) for (const p of atLow) if (p.rank === 2 && !cuts.includes(p.at)) cuts.push(p.at);   // (a block: its } too)
+  
   cuts.sort((x, y) => x - y);
   let from = 0;
   for (const c of [...cuts, toks.length]) {
@@ -775,7 +775,7 @@ function scriptEditorApply() {
   R.setProperty("--script-size", E.size + "px");
   R.setProperty("--script-font", SCRIPT_FONTS.find(([n]) => n === E.font)[1]);
   document.body.classList.toggle("script-plain", !E.colours);
-  for (const ta of document.querySelectorAll("textarea.script-editor")) if (ta.reflow) ta.reflow();
+  for (const ta of document.querySelectorAll("textarea.script-editor, pre.script-types")) if (ta.reflow) ta.reflow(); else if (ta.flow) ta.flow();
 }
 // how many characters of the code's font fit across a text box, its padding and scroll bar taken off
 function scriptCols(ta) {
@@ -890,6 +890,7 @@ function scriptingPanel(box) {
     wrap.refill = ta.refill;
     return wrap;
   };
+  const typesPre = () => { const p = el("pre", { class: "script-js script-types", tabindex: "0" }); p.flow = () => scriptHighlight(p, "hazel", scriptFlow("hazel", SCRIPT_PREAMBLE.trim(), scriptEditorSettings().wrap)); p.flow(); return p; };
   const jsPre = text => { const p = el("pre", { class: "script-js", tabindex: "0" }); scriptHighlight(p, "js", text); return p; };
   // (ticket 566) a chip per engine; on, the one shown (and, for a room, the one that runs)
   const chips = (now, pick, cls) => {
@@ -929,7 +930,13 @@ function scriptingPanel(box) {
     const show = () => {
       const v = shown = view();
       if (v === "js") body.replaceChildren(el("div", { class: "hint" }, "The game's JS has no common module: each room's functions carry what they need (switch a room to JS to read them)."));
-      else if (v === "hazel") body.replaceChildren(el("div", { class: "hint" }, "module Common, in Hazel: in scope in every Hazel room, as Common.name"),
+      else if (v === "hazel") body.replaceChildren(
+        // (Matthew, 2026-10-23: "it seems like there are type defs not shown in the hazel common panel?") the sums every room names,
+        // shown here, read-only: they are declared at the program's start, since the game's Hazel does not yet put a module's
+        // constructors in scope outside it (hazelgrove/hazel#2729 does, on dev); once it does, they move into Common, to edit
+        el("div", { class: "hint" }, "the types every Hazel room can name (read-only: at the program's start until the game's Hazel has hazelgrove/hazel#2729)"),
+        typesPre(),
+        el("div", { class: "hint" }, "module Common, in Hazel: in scope in every Hazel room, as Common.name"),
         editor("Common", () => scriptsState().common, t => { scriptsState().common = t; }, "hazel"));
       else body.replaceChildren(el("div", { class: "hint" }, "module Common, in Fumola: in scope in every Fumola room, as Common.name"),
         editor("Common", () => scriptsState().fumola.common || "", t => { scriptsState().fumola.common = t; }, "fumola"));
