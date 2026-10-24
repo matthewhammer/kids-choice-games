@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.425 (2026-10-24)
+
+- **📜 A nested if stays on one line when it fits** (ticket 603): in the script boxes, a line too long for its box was cut at every `then` and `else`, a nested if's too, so `else if n == 1 then 0 else 1` took three lines with plenty of room left. Now a line is cut only at its outermost if's `then` and `else`, and an inner if that fits stays whole on its `else`'s line; an `else if` too long for one line still goes on as a chain, level with the if before it. In Hazel and in Fumola; only spaces and line breaks change.
+
 ## 0.0.424 (2026-10-24)
 
 - **🖍️ Arms and legs in lines only**: in the lines-only look, the friend's arms and legs were drawn as thin sticks. They are now drawn as outlined shapes, white inside, ready to color in.
