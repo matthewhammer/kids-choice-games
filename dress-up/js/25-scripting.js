@@ -996,8 +996,8 @@ function scriptHighlight(pre, lang, text, under = false) {
 // Only spaces and line breaks change, never inside a string or a comment (one token each), so a rule means what it meant; lines
 // already narrow enough are left as they are
 // (Matthew, 2026-10-24, the tiles at a narrow wrap: a long condition, a || b || c, had no place to break; last, so it is used only in a
-// piece nothing else breaks)
-const SCRIPT_BREAKS = [[["|"], []], [["+"], []], [["then", "else"], []], [["}"], [";"]], [[], [",", "{", "in"]], [[], ["=>", "->"]], [["||", "&&"], []]];
+// piece nothing else breaks; and after a let's =, last of all)
+const SCRIPT_BREAKS = [[["|"], []], [["+"], []], [["then", "else"], []], [["}"], [";"]], [[], [",", "{", "in"]], [[], ["=>", "->"]], [["||", "&&"], []], [[], ["="]]];
 function scriptFlowPieces(lang, toks, indent, cols, out) {
   const text = toks.map(([, w]) => w).join("").trim();
   if (indent + text.length <= cols) { out.push(" ".repeat(indent) + text); return; }
