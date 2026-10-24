@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.417 (2026-10-24)
+
+- **📜 🪵 Fields as chips**: in the log, each change's field of the globals is a coloured chip of its own. The commands of the rule's answer that set no field (SetPit, Say, Wait, GoRoom) sit beside the changes with no field chip, where a "no field" row listed them.
+
 ## 0.0.416 (2026-10-24)
 
 - **📜 🪵 The log, tidied**: an opened entry is a grid, a short label beside each part: event, answer, then the changes in their box under the snapshots' names, **pre event ⟶ post rule** and **post rule ⟶ post event**, then when the event was over and how long the call took. Each change is a chip (a field, what it was, a long ⟶, what it is), and the newest few are on the log's line itself, to skim the log without opening anything. A step that changed nothing says **no change** in a small chip.

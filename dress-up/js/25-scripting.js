@@ -1696,7 +1696,7 @@ function scriptMaxClose() {
 // (one change, as a chip: the field, what it was, a long "steps to" arrow, what it is)
 function scriptLogChip(c) {
   const short = v => { const t = JSON.stringify(v); return t === undefined ? "—" : t.length > 40 ? t.slice(0, 37) + "…" : t; };
-  return el("span", { class: "log-chip" }, [el("code", {}, c.path), " ", short(c.from), el("span", { class: "log-to" }, "⟶"), short(c.to)]);
+  return el("span", { class: "log-chip" }, [el("code", { class: "log-field" }, c.path), " ", short(c.from), el("span", { class: "log-to" }, "⟶"), short(c.to)]);
 }
 function scriptLogBox(maxBtn) {
   const list = el("div", { class: "script-log-list" }), count = el("span", { class: "hint script-log-count" });
@@ -1768,8 +1768,11 @@ function scriptLogBox(maxBtn) {
             ...(e.unknown ? row("", el("div", { class: "log-bad" }, `⚠️ unknown here: ${e.unknown.join(", ")}; the rest not acted on`)) : []),
             ...(e.error ? row("", el("div", { class: "log-bad" }, `⛔ the rule stopped: ${e.error}`)) : []),
             el("div", { class: "log-effect" }, [
-              ...row(el("span", {}, ["pre event", el("span", { class: "log-to" }, "⟶"), "post rule"]), chips(d1)),
-              ...(e.none ? row("no field", el("div", { class: "log-chips" }, e.none.map(t => el("span", { class: "log-chip" }, t)))) : []),
+              // (Matthew, 2026-10-24: "for the fields that are in globals, add a chip around them with some distinct colors -- and just
+              // say nothing --- instead of 'not in globals' -- the absence of the global field chip CSS style will be enough") the
+              // answer's commands with no field of their own, beside its changes, as chips with no field chip in them
+              ...row(el("span", {}, ["pre event", el("span", { class: "log-to" }, "⟶"), "post rule"]),
+                e.none ? el("div", { class: "log-chips" }, [...d1.map(scriptLogChip), ...e.none.map(t => el("span", { class: "log-chip" }, t))]) : chips(d1)),
               ...row(el("span", {}, ["post rule", el("span", { class: "log-to" }, "⟶"), "post event"]), e.settling && !d2.length ? el("span", { class: "log-diff" }, "still going…") : chips(d2)),
               ...(over && !e.settling ? row("over at", over) : []),
               ...(e.doneBy === "limit" ? row("", el("div", { class: "log-bad" }, `⚠️ still going at ${SCRIPT_EVENT_MAX_MS / 1000} s: post event may be early`)) : []),
