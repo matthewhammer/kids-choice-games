@@ -2,7 +2,7 @@
 // 1990s game manual, with screenshots (of script panels, of in-game correspondance (pit room)) ... show what log events look like, and
 // how to use them to 'debug' the game script"; "the report/manual for game scripts should show examples of erroneous scripts, and how to
 // check the errors and fix them") The manual's pictures, dark, each a scene set up and taken: the pit room in the game; the 📜 panel;
-// ⛶ at the trap room's tiles with the game viewport; 🪵 the event log, an entry opened and its globals side by side; a type error
+// ⛶ at the trap room's tiles with the game viewport (the friend away from the door: Matthew, "the box around the door isn't important"); 🪵 the event log, an entry opened and its globals side by side; a type error
 // (its box, its check entry, its event's entry); a command the room does not know; a Fumola rule that stops; Hazel's type error fixed.
 // Pictures to out/manual/, the texts the manual quotes to out/manual/texts.json. Not a gate: exits 1 only if a scene could not be set up.
 //   node manual593.mjs <devtools port> <url>
@@ -27,7 +27,7 @@ const step = async (what, f) => { try { await f(); } catch (e) { bad++; console.
 mkdirSync("out/manual", { recursive: true });
 const W = `const w = ms => new Promise(r => setTimeout(r, ms));`;
 const ROOM = `const B = state.background; for (const k of Object.keys(B)) if (/^castle(Lever|Boulder)[LR]_/.test(k)) delete B[k];
-  Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -120, figY: 80, things: [], castleLeverWire3N: "normal", castleLeverL_3N: true, castleLeverR_3N: true }); changed();`;
+  Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -470, figY: 150, things: [], castleLeverWire3N: "normal", castleLeverL_3N: true, castleLeverR_3N: true }); changed();`;
 try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
