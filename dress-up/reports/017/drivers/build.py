@@ -52,13 +52,15 @@ PAGE = f"""<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Game Scripts Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {{ --bg: #f4ecd8; --paper: #fffaf0; --ink: #231f1a; --muted: #6b6052; --line: #c9b99a; --accent: #b4361d; --alt: #1d5fb4; --good: #2f7d32; --bad: #b4361d; --tip: #fff3c4; --warn: #ffe0d6; --code: #1d1b16; --codeink: #e8e2d0; --link: #1d5fb4; }}
   @media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{ --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; }} }}
   :root[data-theme="dark"] {{ --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; }}
   * {{ box-sizing: border-box; }}
-  body {{ margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 Georgia, "Times New Roman", serif; }}
+  /* (Matthew, 2026-10-24: "This serif font choice ... is very close to actual manuals I read --- but I find it hard to read, and let's choose
+     a nicer looking one, that's a bit bigger") Literata, a serif made for long reading, larger */
+  body {{ margin: 0; background: var(--bg); color: var(--ink); font: 19px/1.62 "Literata", Georgia, serif; }}
   main {{ max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }}
   a {{ color: var(--link); }}
   .series {{ font: 15px/1.4 system-ui, sans-serif; color: var(--muted); }}
@@ -88,7 +90,9 @@ PAGE = f"""<!doctype html>
   td.st {{ font-family: "Press Start 2P", monospace; font-size: 0.6em; white-space: nowrap; }}
   td.st-done {{ color: var(--good); }} td.st-check {{ color: var(--alt); }} td.st-branch {{ color: #b8860b; }} td.st-next {{ color: var(--bad); }}
   .scroll {{ overflow-x: auto; }}
-  .key {{ display: inline-block; border: 2px solid var(--ink); border-bottom-width: 4px; padding: 0 6px; font: 0.85em ui-monospace, monospace; background: var(--paper); }}
+  /* (Matthew, 2026-10-24: "the buttons shown in the text should be equally round to the buttons in the actual GUI") a button named in the
+     text drawn as the game draws its chips */
+  .key {{ display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 1px 10px; font: 600 0.82em/1.5 system-ui, "Segoe UI", sans-serif; background: var(--paper); white-space: nowrap; vertical-align: 1px; }}
   .missing {{ color: var(--bad); font-family: "VT323", monospace; }}
   .wip {{ color: #b45309; font-weight: 600; }}
   button.theme {{ font: 13px system-ui; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; position: fixed; top: 8px; right: 8px; }}
@@ -172,7 +176,8 @@ PAGE = f"""<!doctype html>
 <li>how much of the globals it changed.</li>
 </ul>
 <p>Open a line to see the event, <b>what it changed</b> (each field, before → after), the rule's own answer, and, under one more fold, <b>the globals before and after in full</b>, side by side, with every changed field marked on both sides.</p>
-{pic("05-log.png", "🪵 the event log with an entry opened: the event, what it changed, the rule's answer, and the globals before and after side by side, the changed field marked.")}
+{pic("05-log.png", "Playing and reading at once: the game viewport at the top left, and 🪵 the event log with the two newest calls opened. Each shows its event, what it changed (in the box), and the rule's answer.")}
+{pic("05b-log-globals.png", "The same entry with “globals before and after, in full” opened: the two side by side, scrolling together, the field the call changed marked on both sides.")}
 <p>The log of the run behind these pictures:</p>
 {code(chr(10).join(log_line(e) for e in T.get("log", [])[::-1]) or "(no entries)")}
 {box("tip", "★ WHY A BOULDER ARRIVES LATE", "<p>A boulder takes over a second to fall. The game writes where it is only when it lands, so the log reads the globals again two seconds after the call. A change found then is marked <i>“when its animation ended, 2 s later”</i>. If another call comes in first, the log doesn't guess.</p>")}
@@ -256,4 +261,52 @@ PAGE = f"""<!doctype html>
 </html>
 """
 open(os.path.join(R, "index.html"), "w").write(PAGE)
+
+# (Matthew, 2026-10-24: "can we make a low-toner, Black and White, PDF version of the manual? ... like a zine, where each US Letter sized
+# page ... has 2 pages on top, and 2 pages on back, and they are meant to be folded and stapled") The same guide for paper: half-letter
+# pages (5.5 x 8.5 in), black on white, no fills (headings outlined, boxes ruled, code with a rule at its left), each chapter on a new
+# page, nothing split across a page; the light-mode pictures (pictures-light/, taken in the same run) in grey. Chrome prints it to PDF
+# on GitHub (tools/checks/manual593.mjs), and drivers/zine.sh lays the pages out on Letter for folding and stapling.
+import re
+PRINT_CSS = """
+  @page { size: 5.5in 8.5in; margin: 0.42in 0.38in 0.5in; }
+  * { box-sizing: border-box; color: #000 !important; background: transparent !important; box-shadow: none !important; text-shadow: none !important; }
+  html, body { background: #fff !important; }
+  body { margin: 0; font: 10pt/1.42 "Literata", Georgia, serif; }
+  main { max-width: none; padding: 0; }
+  a { text-decoration: none; } a.ref code b { font-weight: normal; }
+  .series { font: 7.5pt/1.35 system-ui, sans-serif; }
+  .cover { border: 2.5pt double #000; padding: 0.25in 0.18in; margin: 0 0 0.12in; text-align: center; break-after: page; }
+  .cover .pub { font-family: "VT323", monospace; font-size: 12pt; letter-spacing: 0.15em; }
+  h1 { font-family: "Press Start 2P", monospace; font-size: 15pt; line-height: 1.5; margin: 10pt 0; }
+  .cover .edition { font-family: "VT323", monospace; font-size: 12pt; }
+  h2 { font-family: "Press Start 2P", monospace; font-size: 8.5pt; line-height: 1.6; margin: 0 0 8pt; padding: 5pt 6pt; border: 1.5pt solid #000; break-before: page; break-after: avoid; }
+  h2 .ch { margin-right: 6pt; }
+  h3 { font-family: "VT323", monospace; font-size: 13pt; margin: 10pt 0 3pt; border-bottom: 1pt dotted #000; break-after: avoid; }
+  p, li { orphans: 3; widows: 3; }
+  .box { border: 1.2pt solid #000; padding: 5pt 7pt; margin: 7pt 0; break-inside: avoid; }
+  .box.warn { border-style: dashed; border-width: 1.5pt; }
+  .box .box-h { font-family: "Press Start 2P", monospace; font-size: 6pt; margin-bottom: 3pt; }
+  pre.code { border: none; border-left: 2pt solid #000; padding: 3pt 7pt; margin: 6pt 0; font: 8.5pt/1.3 "VT323", ui-monospace, monospace; white-space: pre-wrap; break-inside: avoid; }
+  code { font-size: 0.86em; }
+  figure.shot { border: 0.8pt solid #000; padding: 3pt; margin: 7pt 0; break-inside: avoid; }
+  figure.shot img { display: block; width: 100%; max-height: 4.1in; object-fit: contain; filter: grayscale(1) contrast(1.05); }
+  figure.shot figcaption { font: 7pt/1.3 system-ui, sans-serif; padding: 3pt 1pt 0; }
+  figure.half { max-width: none; }
+  .toc { columns: 1; font-family: "VT323", monospace; font-size: 11.5pt; border: 1pt dashed #000; padding: 6pt 10pt; break-after: page; }
+  table.feat { font: 6.8pt/1.3 system-ui, sans-serif; border-collapse: collapse; width: 100%; }
+  table.feat th, table.feat td { border: 0.5pt solid #000; padding: 2pt 3pt; }
+  table.feat th { font-family: "VT323", monospace; font-size: 9pt; border-bottom-width: 1.2pt; }
+  table.feat tr { break-inside: avoid; }
+  td.st { font-family: "Press Start 2P", monospace; font-size: 4.6pt; }
+  .scroll { overflow: visible; }
+  .key { border: 0.7pt solid #000; border-radius: 6pt; padding: 0 5pt; font: 600 0.85em/1.4 system-ui, sans-serif; }
+  button.theme, script { display: none !important; }
+"""
+light = lambda m: m.group(0).replace('src="pictures/', 'src="pictures-light/') if os.path.exists(os.path.join(R, "pictures-light", re.search(r'src="pictures/([^"]+)"', m.group(0)).group(1))) else m.group(0)
+PRINT = re.sub(r'<!-- nav: begin -->.*?<!-- nav: end -->', '', PAGE, flags=re.S)
+PRINT = re.sub(r"<style>.*?</style>", "<style>" + PRINT_CSS + "</style>", PRINT, count=1, flags=re.S)
+PRINT = re.sub(r'<img src="pictures/[^"]+"', light, PRINT).replace(' loading="lazy"', '')
+PRINT = re.sub(r'<script>\s*\(function \(\) \{.*?</script>', '', PRINT, flags=re.S).replace("<title>Game Scripts Guide</title>", "<title>Game Scripts Guide (print)</title>")
+open(os.path.join(R, "print.html"), "w").write(PRINT)
 print("wrote 017/index.html:", len(F), "features,", sum(1 for f in os.listdir(os.path.join(R, "pictures")) if f.endswith(".png")), "pictures")

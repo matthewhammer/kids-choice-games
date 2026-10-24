@@ -7,13 +7,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Game Scripts Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root { --bg: #f4ecd8; --paper: #fffaf0; --ink: #231f1a; --muted: #6b6052; --line: #c9b99a; --accent: #b4361d; --alt: #1d5fb4; --good: #2f7d32; --bad: #b4361d; --tip: #fff3c4; --warn: #ffe0d6; --code: #1d1b16; --codeink: #e8e2d0; --link: #1d5fb4; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; } }
   :root[data-theme="dark"] { --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 Georgia, "Times New Roman", serif; }
+  /* (Matthew, 2026-10-24: "This serif font choice ... is very close to actual manuals I read --- but I find it hard to read, and let's choose
+     a nicer looking one, that's a bit bigger") Literata, a serif made for long reading, larger */
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 19px/1.62 "Literata", Georgia, serif; }
   main { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
   a { color: var(--link); }
   .series { font: 15px/1.4 system-ui, sans-serif; color: var(--muted); }
@@ -43,7 +45,9 @@
   td.st { font-family: "Press Start 2P", monospace; font-size: 0.6em; white-space: nowrap; }
   td.st-done { color: var(--good); } td.st-check { color: var(--alt); } td.st-branch { color: #b8860b; } td.st-next { color: var(--bad); }
   .scroll { overflow-x: auto; }
-  .key { display: inline-block; border: 2px solid var(--ink); border-bottom-width: 4px; padding: 0 6px; font: 0.85em ui-monospace, monospace; background: var(--paper); }
+  /* (Matthew, 2026-10-24: "the buttons shown in the text should be equally round to the buttons in the actual GUI") a button named in the
+     text drawn as the game draws its chips */
+  .key { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 1px 10px; font: 600 0.82em/1.5 system-ui, "Segoe UI", sans-serif; background: var(--paper); white-space: nowrap; vertical-align: 1px; }
   .missing { color: var(--bad); font-family: "VT323", monospace; }
   .wip { color: #b45309; font-weight: 600; }
   button.theme { font: 13px system-ui; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; position: fixed; top: 8px; right: 8px; }
@@ -127,7 +131,8 @@
 <li>how much of the globals it changed.</li>
 </ul>
 <p>Open a line to see the event, <b>what it changed</b> (each field, before → after), the rule's own answer, and, under one more fold, <b>the globals before and after in full</b>, side by side, with every changed field marked on both sides.</p>
-<figure class="shot "><img src="pictures/05-log.png" alt="🪵 the event log with an entry opened: the event, what it changed, the rule&#x27;s answer, and the globals before and after side by side, the changed field marked." loading="lazy"><figcaption>🪵 the event log with an entry opened: the event, what it changed, the rule's answer, and the globals before and after side by side, the changed field marked.</figcaption></figure>
+<figure class="shot "><img src="pictures/05-log.png" alt="Playing and reading at once: the game viewport at the top left, and 🪵 the event log with the two newest calls opened. Each shows its event, what it changed (in the box), and the rule&#x27;s answer." loading="lazy"><figcaption>Playing and reading at once: the game viewport at the top left, and 🪵 the event log with the two newest calls opened. Each shows its event, what it changed (in the box), and the rule's answer.</figcaption></figure>
+<p class="missing">[picture 05b-log-globals.png not taken]</p>
 <p>The log of the run behind these pictures:</p>
 <pre class="code">#4 JS     TrapRoom.on_event(Pull(&quot;L&quot;)) 7.8 ms · lever_L: true → false
 #3 HAZEL  TrapRoom.on_event(Pull(&quot;R&quot;)) 26.7 ms · lever_R: false → true

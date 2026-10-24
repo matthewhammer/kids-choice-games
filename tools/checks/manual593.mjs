@@ -5,6 +5,8 @@
 // ⛶ at the trap room's tiles with the game viewport (the friend away from the door: Matthew, "the box around the door isn't important"); 🪵 the event log, an entry opened and its globals side by side; a type error
 // (its box, its check entry, its event's entry); a command the room does not know; a Fumola rule that stops; Hazel's type error fixed.
 // Pictures to out/manual/, the texts the manual quotes to out/manual/texts.json. Not a gate: exits 1 only if a scene could not be set up.
+// Then the same in light mode (out/manual-light/), four coloring pages (out/manual/color-*.svg), and the guide printed to half-letter pages
+// with the light pictures and the coloring pages (out/manual/guide-half.pdf), for drivers/zine.sh.
 //   node manual593.mjs <devtools port> <url>
 import { writeFileSync, mkdirSync } from "node:fs";
 const [dport, url] = process.argv.slice(2);
@@ -20,21 +22,16 @@ const shot = async (name, sel) => {
   let clip = null;
   if (sel) { const j = await ev(`(() => { const n = document.querySelector(${JSON.stringify(sel)}); if (!n) return ""; const r = n.getBoundingClientRect(); return JSON.stringify({ x: Math.max(0, r.left - 6), y: Math.max(0, r.top - 6), width: Math.min(r.width + 12, innerWidth), height: Math.min(r.height + 12, innerHeight - Math.max(0, r.top - 6)) }); })()`); if (j) clip = { ...JSON.parse(j), scale: 1 }; }
   const r = await send("Page.captureScreenshot", { format: "png", ...(clip ? { clip } : {}) });
-  writeFileSync(`out/manual/${name}.png`, Buffer.from(r.result.data, "base64")); console.log(`ok   ${name}.png${sel ? " (" + sel + ")" : ""}`);
+  writeFileSync(`out/${shotDir}/${name}.png`, Buffer.from(r.result.data, "base64")); if (shotDir === "manual-light") pics[name + ".png"] = "data:image/png;base64," + r.result.data; console.log(`ok   ${name}.png${sel ? " (" + sel + ")" : ""}`);
 };
-let bad = 0; const texts = {};
+let bad = 0, shotDir = "manual"; const texts = {};
+const pics = {};   // (each light picture as a data URL, for the printed guide)
 const step = async (what, f) => { try { await f(); } catch (e) { bad++; console.log(`FAIL ${what}: ${String(e).slice(0, 300)}`); } };
 mkdirSync("out/manual", { recursive: true });
 const W = `const w = ms => new Promise(r => setTimeout(r, ms));`;
 const ROOM = `const B = state.background; for (const k of Object.keys(B)) if (/^castle(Lever|Boulder)[LR]_/.test(k)) delete B[k];
   Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -470, figY: 150, things: [], castleLeverWire3N: "normal", castleLeverL_3N: true, castleLeverR_3N: true }); changed();`;
-try {
-  await send("Runtime.enable");
-  await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
-  await send("Page.bringToFront"); await send("Emulation.setFocusEmulationEnabled", { enabled: true });
-  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
-  await send("Page.navigate", { url: url.replace(/#inspect$/, "") }); await sleep(5000);
-  await ev(`(() => { try { themeSet("dark"); } catch (e) {} try { localStorage.setItem("scriptMaxGame", "0"); } catch (e) {} return 1; })()`);
+async function scenes() {
   // ---- the pit room, in the game ----
   await step("the pit room", async () => {
     await ev(`(async () => { ${W} state = clone(DEFAULTS); state.music.mute = true;
@@ -116,7 +113,80 @@ try {
     await ev(`(async () => { ${W} scriptMaxClose(); tab = TABS.findIndex(t => t[1] === "advanced"); showTab(); await w(1500); const c = document.querySelector(".script-cost"); if (c) c.scrollIntoView({ block: "center" }); await w(500); return 1; })()`);
     await shot("11-cost", ".script-cost");
   });
+}
+
+// (Matthew 2026-10-24: "a final set of 4 pages ... coloring pages with line drawings from the game, but no filled colors --- the kids can
+// color them in however they want!") A scene's own drawing (the game draws in SVG) copied and made line art: every shape white with a
+// black outline, the same width at any size; shadows, glows and see-through layers (under 35% opaque), pictures and filters left out;
+// text black. Shapes in front still cover what is behind them, as in the game.
+const LINEART = `(() => { const src = document.getElementById("pic"), out = src.cloneNode(true), a = [...src.querySelectorAll("*")], b = [...out.querySelectorAll("*")];
+  const SHAPES = new Set(["path", "rect", "circle", "ellipse", "polygon", "polyline", "line"]);
+  a.forEach((n, i) => { const m = b[i]; if (!m) return; const tag = n.tagName.toLowerCase();
+    if (["image", "foreignobject", "filter", "mask", "lineargradient", "radialgradient", "pattern", "clippath"].includes(tag)) { if (tag !== "clippath") m.remove(); return; }
+    const cs = getComputedStyle(n); m.removeAttribute("filter"); m.removeAttribute("mask"); m.removeAttribute("class");
+    const op = (+cs.opacity) * (+cs.fillOpacity || 1);
+    if (SHAPES.has(tag)) {
+      if (op < 0.35 && cs.stroke === "none") { m.remove(); return; }
+      const filled = cs.fill !== "none", stroked = cs.stroke !== "none";
+      m.setAttribute("style", "fill:" + (filled ? "#fff" : "none") + ";stroke:#000;stroke-width:" + (stroked && !filled ? 1.4 : 1.1) + "px;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round");
+    } else if (tag === "text" || tag === "tspan") m.setAttribute("style", "fill:#000;stroke:none;font-family:system-ui,sans-serif");
+    else m.setAttribute("style", "");
+  });
+  out.removeAttribute("style"); out.setAttribute("xmlns", "http://www.w3.org/2000/svg"); out.removeAttribute("id");
+  return new XMLSerializer().serializeToString(out); })()`;
+const colorPages = [];
+async function coloring() {
+  const scenes = [
+    ["the trap room", `Object.assign(state.background, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -320, figY: 140, things: [] })`],
+    ["the castle", `Object.assign(state.background, { kind: "castle", figX: -260, figY: 160, things: [] })`],
+    ["the farmyard", `Object.assign(state.background, { kind: "farmyard", figX: -200, figY: 160, things: [] })`],
+    ["your friend", `Object.assign(state.background, { kind: "emptyroom", figX: 0, figY: 120, things: [] })`],
+  ];
+  for (const [name, set] of scenes) await step("coloring: " + name, async () => {
+    const svg = await ev(`(async () => { ${W} ${set}; changed(); await w(1800); return ${LINEART}; })()`);
+    const file = `color-${colorPages.length + 1}.svg`;
+    writeFileSync(`out/manual/${file}`, svg); colorPages.push({ name, svg }); console.log(`ok   ${file} (${name}, ${Math.round(svg.length / 1024)} KB)`);
+  });
+}
+// The guide for paper: print.html, its pictures the light ones taken just now, and the coloring pages at its end, printed by Chrome to
+// half-letter pages, each numbered at its foot (out/manual/guide-half.pdf); drivers/zine.sh lays them out on Letter for folding
+async function printGuide() {
+  await step("the printed guide", async () => {
+    const at = new URL("reports/017/print.html", url.replace(/#.*$/, "")).href;
+    await send("Emulation.setEmulatedMedia", { media: "print", features: [{ name: "prefers-color-scheme", value: "light" }] });
+    await send("Page.navigate", { url: at }); await sleep(3000);
+    const n = await ev(`(async () => { const P = ${JSON.stringify(pics)}, C = ${JSON.stringify(colorPages)};
+      for (const img of document.querySelectorAll("img")) { const f = (img.getAttribute("src") || "").split("/").pop(); if (P[f]) img.src = P[f]; }
+      const end = document.createElement("section"); end.className = "coloring";
+      end.innerHTML = C.map((c, i) => '<div class="color-page"><h2><span class="ch">' + "★".repeat(i + 1) + '</span>COLOR ME: ' + c.name.toUpperCase() + '</h2><div class="color-art">' + c.svg + '</div><p class="color-note">From Messed Up Dress Up. Color it in however you like!</p></div>').join("");
+      const st = document.createElement("style"); st.textContent = ".color-page { break-before: page; display: flex; flex-direction: column; height: 7.5in; } .color-art { flex: 1; display: flex; align-items: center; justify-content: center; } .color-art svg { width: 100%; height: auto; max-height: 6.4in; } .color-note { font: 8pt system-ui, sans-serif; text-align: center; margin: 4pt 0 0; } .coloring h2 { break-before: auto; }";
+      document.head.append(st); document.querySelector("main").append(end);
+      await document.fonts.ready; await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+      return document.images.length; })()`);
+    const r = await send("Page.printToPDF", { preferCSSPageSize: true, printBackground: false, displayHeaderFooter: true,
+      headerTemplate: "<span></span>", footerTemplate: '<div style="width:100%;text-align:center;font:7px system-ui,sans-serif;color:#000"><span class="pageNumber"></span></div>' });
+    writeFileSync("out/manual/guide-half.pdf", Buffer.from(r.result.data, "base64"));
+    console.log(`ok   guide-half.pdf (${n} pictures, ${colorPages.length} coloring pages, ${Math.round(r.result.data.length * 0.75 / 1024)} KB)`);
+  });
+}
+try {
+  await send("Runtime.enable");
+  await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await send("Page.bringToFront"); await send("Emulation.setFocusEmulationEnabled", { enabled: true });
+  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "dark" }] });
+  await send("Page.navigate", { url: url.replace(/#inspect$/, "") }); await sleep(5000);
+  await ev(`(() => { try { themeSet("dark"); } catch (e) {} try { localStorage.setItem("scriptMaxGame", "0"); } catch (e) {} return 1; })()`);
+  await scenes();
   writeFileSync("out/manual/texts.json", JSON.stringify(texts, null, 1));
+  // ---- (Matthew 2026-10-24: "a low-toner, Black and White, PDF version of the manual ... like a zine") the same scenes in light mode, for
+  // paper (out/manual-light/), then the coloring pages, then the guide printed to half-letter pages ----
+  shotDir = "manual-light"; mkdirSync("out/manual-light", { recursive: true });
+  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
+  await send("Page.navigate", { url: url.replace(/#inspect$/, "") }); await sleep(5000);
+  await ev(`(() => { try { themeSet("light"); } catch (e) {} try { localStorage.setItem("scriptMaxGame", "0"); } catch (e) {} return 1; })()`);
+  await scenes();
+  await coloring();
+  await printGuide();
   console.log(`ok   texts (${Object.keys(texts).join(", ")}); page errors: ${errs.length}`);
 } catch (e) { console.log("stopped:", String(e).slice(0, 400)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`).catch(() => {}); }
