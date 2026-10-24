@@ -120,7 +120,7 @@ ok("no post without a change", posts.length === 4, posts.length);
 msg({ type: "size", height: 431.2 });
 ok("size: the frame as tall as it says", frame.style.height === "432px", frame.style.height);
 msg({ type: "size", height: 1e7 });
-ok("size: at most SCRIPT_FRAME_MAX", frame.style.height === "4000px", frame.style.height);
+ok("size: at most SCRIPT_FRAME_MAX", frame.style.height === "40000px", frame.style.height);
 msg({ type: "status", ok: false, errors: [{ module: "TrapRoom", message: "Expecting type String but got inconsistent type Int", id: "x" }, { module: null, message: "Label not found", id: "y" }],
   holes: { Common: 0, TrapRoom: 2 }, programHoles: 0, incomplete: { Common: 1, TrapRoom: 0 }, programIncomplete: 0 });
 const lines = panel.querySelector("ul.script-frame-errors").kids.map(li => li.textContent), said = panel.querySelector(".script-frame-status").textContent;

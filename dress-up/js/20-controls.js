@@ -423,7 +423,7 @@ const TABS = [
     ["toggle", "ninjaBand", "👑 golden head band"],
     ["choice", "ninjaGem", "💎 the gem", Object.entries(NINJA_GEMS).map(([id, g]) => [id, g.name])],
     ["choice", "ninjaGemShape", "💎 the gem's shape", NINJA_GEM_SHAPES],
-    // (ticket 560) the gem's lights: its white cuts glimmer (on at first); stars twinkle on it, and a shine sweeps it (off)
+    // (ticket 560) the gem's lights: its white cuts glimmer, stars twinkle on it, and a shine sweeps it (all three off at first)
     ["toggle", "ninjaGlimmer", "✨ the gem's cuts glimmer"],
     ["toggle", "ninjaGemStars", "⭐ stars twinkle on the gem"],
     ["toggle", "ninjaGemShine", "🌟 a shine sweeps the gem"],

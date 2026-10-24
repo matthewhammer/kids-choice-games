@@ -827,9 +827,13 @@ function scriptEventRun(room, ev, R, A, log) {
 // are kept (Hazel keeps its last model and goes on), unless SCRIPT_FRAME_CRASHES come within a minute. Its height is the one
 // posted, at most SCRIPT_FRAME_MAX; its box scrolls past a screenful (style.css).
 //   The keys: a click in the frame gives it the keyboard, as any frame takes it; the tiles are only for looking, and the game's keys
-// (B, F, Enter, Escape) are wanted back, so a frame given the focus gives it back (scriptFrameBlur).
+// (B, F, Enter, Escape) are wanted back, so a frame given the focus gives it back (scriptFrameBlur; 578: tiles that take edits keep
+// it, and a click on the game takes it back).
+// (ticket 482's check, 2026-10-24) SCRIPT_FRAME_MAX only a guard against a frame saying nonsense: the whole program, its types a case
+// to a line (370f532), is ~240 rows, 4397 px at ⚙️'s 12.5 and ~6300 at 18, and the frame never scrolls itself (Hazel's embed.css:
+// framed, overflow hidden), so the 4000 of ticket 520's two modules cut off Castle's end and the program's tail, out of reach
 const SCRIPT_FRAME_WAIT = 30000, SCRIPT_FRAME_QUIET = 10000, SCRIPT_FRAME_TICK = 1000;
-const SCRIPT_FRAME_MAX = 4000, SCRIPT_FRAME_CRASHES = 3;
+const SCRIPT_FRAME_MAX = 40000, SCRIPT_FRAME_CRASHES = 3;
 // the frame now: { iframe, holder, phase ("loading", "ready", "late", "crashed"), made, readyMs, build, sent, status, height, why (the
 // words it was taken away with, or "quiet": ready, yet no status SCRIPT_FRAME_QUIET on), crashes (the times of its crashes after ready)
 // and oops (the last one's words), blurs, inView (false while off screen), waited and quiet (the ms it could draw while loading, and
