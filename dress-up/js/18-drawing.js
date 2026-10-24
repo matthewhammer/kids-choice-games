@@ -947,13 +947,13 @@ function drawNow() {
     return handSvg(H[0], H[1], angle, out, held.some(h => h.arm.side === side && HOLDABLES[h.item].fist) ? { ...gl, style: "round" } : gl, skin); };
   // (ticket 286: crawling toward us or away, each arm drawn whole, straight down to its hand flat on the floor, seen short)
   const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
-    (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf) : "") +
+    (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf, false) : "") +
     (wrapStripes(C) ? (P => limbStripes(P[0], P[1], armW + 9, C.marks, `arm-stripes${arm.side}`, 22) + (P.length > 2 ? limbStripes(P[1], P[2], armW + 9, C.marks, `arm-stripes${arm.side}b`, 0) : ""))(sleeveOf(arm)) : "") +
     (robot ? rbG("arm", robotArm(R, arm, { dir: 0, w, armW, sleeve: sleeveOf(arm) })) : "") + (western ? westernArm(W, sleeveOf(arm), armW, arm.side, 0) : "") + sqArm(arm, 0) + njArm(arm);   // (ticket 515: a robot's, at its shoulder; 530: a Sasquatch's shag; 561: a ninja's bands)
   const flatHand = arm => move.swim ? handOf(arm) : `<g transform="translate(0 ${f1(arm.H[1] * 0.4)}) scale(1 0.6)">${handOf(arm)}</g>`;   // (swimming, as they are)
   // (in profile, or turned partway, the far arm's sleeve over it, and its hand, behind the body)
   if ((dir || q) && !winged && !squash) {
-    if (sleeve > 0) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
+    if (sleeve > 0) for (const arm of farArms) svg += limbThrough(sleeveOf(arm), armW + 9, sf, false);
     if (robot) for (const arm of farArms) svg += rbG("arm", robotArm(R, arm, { dir, far: true, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     if (western) for (const arm of farArms) svg += westernArm(W, sleeveOf(arm), armW, arm.side, dir);   // (ticket 522: the far sleeve's fringe)
     if (ninja) for (const arm of farArms) svg += njArm(arm);   // (ticket 561)
@@ -1261,7 +1261,7 @@ function drawNow() {
   if (!winged && (dir || q) && !squash) {
     // (in profile, or turned partway, the arm on our side wholly in front of the body)
     for (const arm of nearArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
-    if (sleeve > 0) for (const arm of nearArms) svg += limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf);
+    if (sleeve > 0) for (const arm of nearArms) svg += limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf, false);
     if (robot) for (const arm of nearArms) svg += rbG("arm", robotArm(R, arm, { dir, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     if (western) for (const arm of nearArms) svg += westernArm(W, sleeveOf(arm), armW, arm.side, dir);   // (ticket 522)
     if (sasq) for (const arm of nearArms) svg += sqArm(arm, dir);   // (ticket 530)
@@ -1282,7 +1282,7 @@ function drawNow() {
     for (const arm of arms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
     if (sleeve > 0) for (const arm of arms) svg += limbThrough(sleeveOf(arm), armW + 14, ss);
     if (!eggArms) svg += `</g>`;
-    if (sleeve > 0) for (const arm of arms) svg += limbThrough(sleeveOf(arm), armW + 9, sf);
+    if (sleeve > 0) for (const arm of arms) svg += limbThrough(sleeveOf(arm), armW + 9, sf, false);
     if (robot) for (const arm of arms) svg += rbG("arm", robotArm(R, arm, { dir: 0, w, armW, sleeve: sleeveOf(arm) }));   // (ticket 515)
     if (western) for (const arm of arms) svg += westernArm(W, sleeveOf(arm), armW, arm.side, 0);   // (ticket 522)
     if (sasq) svg += sqG("arm", shagEdge(arms.map(arm => [armJoints(arm), arm.side]), "many", (armW + 9) / 2, 9, C));   // (ticket 530: both arms, one pair of shapes)

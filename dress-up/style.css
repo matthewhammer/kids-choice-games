@@ -1182,6 +1182,9 @@ html.lineart svg * { fill: #fff !important; stroke: #000 !important; stroke-widt
 html.lineart svg text, html.lineart svg tspan { fill: #000 !important; stroke: none !important; }
 html.lineart svg image, html.lineart svg [fill="none"] { fill: none !important; }
 html.lineart svg image { display: none; }
+/* (a limb: white at its own width over a black outline, not a 1.1 line: 02-helpers.js limbThrough) */
+html.lineart svg .lw-out { stroke: #000 !important; stroke-width: var(--lwl) !important; vector-effect: none !important; }
+html.lineart svg .lw-in { stroke: #fff !important; stroke-width: var(--lw) !important; vector-effect: none !important; }
 html.lineart mark { background: #fff !important; outline: 1.5px solid #000; }
 html.lineart .hazel-tile, html.lineart .script-master [aria-pressed="true"] { background: #fff !important; color: #000 !important; outline: 1.5px solid #000; }
 .script-log .log-sides.log-three { grid-template-columns: 1fr 1fr 1fr; }

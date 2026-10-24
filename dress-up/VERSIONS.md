@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.424 (2026-10-24)
+
+- **🖍️ Arms and legs in lines only**: in the lines-only look, the friend's arms and legs were drawn as thin sticks. They are now drawn as outlined shapes, white inside, ready to color in.
+
 ## 0.0.423 (2026-10-24)
 
 - **🚶 The others walk their own paths** (ticket 599): in 👥 People, each person standing in a place has a 🚶 path button: a box for a path written like a 🎬 story (`walk X Z`, `wait`, `pose`, `face`), walked over and over, with the two steps of a walk, pauses, and poses held between walks. Each person's figure is drawn once per pose and then only moved, so many walkers stay smooth.

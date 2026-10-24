@@ -42,11 +42,15 @@ function line(x1, y1, x2, y2, w, color, outline) {
 }
 // a limb through its joints (an arm: shoulder, elbow, hand): a straight
 // one (two points) is a line, as ever; a bent one, a path round its joints
+// (Matthew, 2026-10-24, of the zine's coloring pages: "why is the friend have stick arms? Seems like a bug?") A limb is a thick
+// stroke, and 🖍️ lines only draws every line 1.1 wide, so it came out a stick. Now its two strokes are marked (lw-out, its
+// outline, and lw-in, the limb) with their widths (--lw, and --lwl, the outline's in lines only), and lines only draws the limb
+// white at its own width over a black outline a little wider (style.css). A limb with no outline of its own gets one, drawn only
+// in lines only (stroke none otherwise); outline false: none at all (a sleeve's inner layer, over its outer one).
 function limbThrough(P, w, color, outline) {
-  if (P.length === 2) return line(P[0][0], P[0][1], P[1][0], P[1][1], w, color, outline);
   const d = "M" + P.map(([x, y]) => f1(x) + " " + f1(y)).join(" L");
-  const l = (ww, c) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f1(ww)}" stroke-linecap="round" stroke-linejoin="round"/>`;
-  return (outline ? l(w + 5, outline) : "") + l(w, color);
+  const l = (ww, c, cls, lw) => `<path class="${cls}" style="--lw:${f1(ww)}px;--lwl:${f1(lw)}px" d="${d}" fill="none" stroke="${c}" stroke-width="${f1(ww)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return (outline === false ? "" : l(outline ? w + 5 : w + 2.4, outline || "none", "lw-out", w + 2.4)) + l(w, color, "lw-in", w);
 }
 const poly = (ps, fill, stroke, sw = 2.5) =>
   `<polygon points="${pts(ps)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>`;
