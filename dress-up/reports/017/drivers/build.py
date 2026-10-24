@@ -347,4 +347,7 @@ PRINT = re.sub(r"<style>.*?</style>", "<style>" + PRINT_CSS + "</style>", PRINT,
 PRINT = re.sub(r'<img src="pictures/[^"]+"', light, PRINT).replace(' loading="lazy"', '')
 PRINT = re.sub(r'<script>\s*\(function \(\) \{.*?</script>', '', PRINT, flags=re.S).replace("<title>Game Scripts Guide</title>", "<title>Game Scripts Guide (print)</title>")
 open(os.path.join(R, "print.html"), "w").write(PRINT)
+# (ticket 595) the 🔊 Listen bar, as every report has it
+import subprocess
+subprocess.run(["python3", os.path.join(R, "..", "..", "..", "tools", "add_listen.py"), os.path.join(R, "index.html")], check=True)
 print("wrote 017/index.html:", len(F), "features,", sum(1 for f in os.listdir(os.path.join(R, "pictures")) if f.endswith(".png")), "pictures")
