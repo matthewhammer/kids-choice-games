@@ -24,10 +24,11 @@ code = lambda s: f'<pre class="code">{esc(s)}</pre>'
 ref = lambda n: f'<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-{n}"><code><b>^ticket(</b>{n}<b>)</b></code></a>'
 
 def log_line(e):
-    d = e.get("diff") or []
-    ch = ", ".join(f'{c["path"]}: {json.dumps(c["from"])} → {json.dumps(c["to"])}' for c in d) or "no change"
+    chs = lambda d: ", ".join(f'{c["path"]}: {json.dumps(c["from"])} → {json.dumps(c["to"])}' for c in d or []) or "nothing"
     ev = e["ev"]; v = ev.get("value")
-    return f'#{e["n"]} {e["engine"].upper():6} {e["call"]}({ev["tag"]}({json.dumps(v)})) {e["ms"]} ms · {ch}'
+    # (ticket 597: the two steps, the handler's own and the game's, and when the game said the event was over)
+    over = f' (over at {e["doneMs"] / 1000:.1f} s)' if (e.get("doneMs") or 0) > 50 else ""
+    return f'#{e["n"]} {e["engine"].upper():6} {e["call"]}({ev["tag"]}({json.dumps(v)})) {e["ms"]} ms · handler: {chs(e.get("d1"))} · game{over}: {chs(e.get("d2"))}'
 
 te, un, st = T.get("typeError", {}), T.get("unknown", {}), T.get("stops", {})
 rows = "".join(f'<tr><td>{esc(f["area"])}</td><td>{f["what"]}</td><td class="st st-{f["status"]}">{esc(dict(done="DONE", branch="ON A BRANCH", next="NOT YET", check="TO CHECK").get(f["status"], f["status"]))}</td><td>{f.get("where", "")}</td></tr>' for f in F)
@@ -129,7 +130,7 @@ PAGE = f"""<!doctype html>
 <a href="#ch10">10 · BEHIND THE SCENES: THE GAME&#39;S STATE</a><br>
 <a href="#ch11">11 · QUICK REFERENCE: EVERY FEATURE</a><br>
 <a href="#ch12">12 · ABOUT THIS GUIDE</a><br>
-<a href="../../manuals/game-scripts-guide-0.0.412-zine.pdf">13 · PRINT IT: THE ZINE (PDF) 🖨️</a>
+<a href="../../manuals/game-scripts-guide-{esc(RUN.get("version", ""))}-zine.pdf">13 · PRINT IT: THE ZINE (PDF) 🖨️</a>
 </div>
 
 <h2 id="ch1"><span class="ch">1</span>WHAT ARE GAME SCRIPTS?</h2>
@@ -188,8 +189,8 @@ PAGE = f"""<!doctype html>
 {pic("05b-log-globals.png", "The same entry with “globals before and after, in full” opened: the two side by side, scrolling together, the field the call changed marked on both sides.")}
 <p>The log of the run behind these pictures:</p>
 {code(chr(10).join(log_line(e) for e in T.get("log", [])[::-1]) or "(no entries)")}
-{box("tip", "★ WHY SOME CHANGES ARRIVE LATE", "<p>A boulder takes over a second to fall, and a walk to the next square takes a few seconds; the game writes where the boulder is, or which square the friend is in, only when it lands or arrives. So snapshot 3 is not taken at once: the log watches the globals as the game works, until the next call into a script or ten seconds have passed, and keeps the last change it saw. While it watches, the line says <i>settling…</i>.</p>")}
-{box("tip", "★ A HUNDRED COPIES FOR THE PRICE OF ONE", "<p>Each entry keeps the whole globals twice, before and after. Most of it is the same from one call to the next, so the log stores each distinct part once and shares it. Six calls of the trap room keep their globals in about 8 shared parts, where plain copies would need 96. The line at the top of the log shows both numbers.</p>")}
+{box("tip", "★ WHEN IS AN EVENT OVER? THE GAME SAYS", "<p>A boulder takes over a second to fall, and a walk to the next square takes a few seconds; the game writes where the boulder is, or which square the friend is in, only when it lands or arrives. So snapshot 3 waits for the game to say the event is over. Everything the game starts while carrying out the event holds it open: a lever's handle turning, a lid or a boulder swinging, the friend walking through a doorway (until they have arrived in the next square), a script's <code>Wait</code>. When the last of them is done, snapshot 3 is taken, however long that took, and the line says how long. While the event is still going, the line says <i>the event still going…</i>. Two events at once (a second lever pulled before the first one's lid has shut) each wait for their own animations; the first says the second's changes may be mixed into its own. An event still going after 15 seconds, a walk cut short, say, is snapshotted then, with a ⚠️.</p>")}
+{box("tip", "★ A HUNDRED COPIES FOR THE PRICE OF ONE", "<p>Each entry keeps the whole globals three times: before, after the handler, and after the event. Most of it is the same from one call to the next, so the log stores each distinct part once and shares it. Six calls of the trap room keep their globals in about 8 shared parts, where plain copies would need 96. The line at the top of the log shows both numbers.</p>")}
 
 <h2 id="ch6"><span class="ch">6</span>DEBUGGING WITH THE LOG</h2>
 <p>When a lever does something you didn't expect, work through it like this:</p>

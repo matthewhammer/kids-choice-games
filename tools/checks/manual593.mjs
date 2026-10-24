@@ -64,7 +64,7 @@ async function scenes() {
   // ---- 🪵 the log beside the game (Matthew: "include screenshots like this one": the viewport, the log, two entries opened) ----
   await step("the log", async () => {
     await ev(`(async () => { ${W} scriptMaxOpen(scriptMax.boxes, document.querySelector(".script-log")); scriptMaxGame(true); await w(600);
-      ${ROOM} await w(400); for (const p of ["R", "L"]) { roomLeverPull(p); await w(1200); } await w(2200);
+      ${ROOM} await w(400); for (const p of ["R", "L"]) { roomLeverPull(p); await w(2200); } for (let i = 0; i < 80 && scriptLog.some(e => e.settling); i++) await w(250);   // (each event over before the next, so neither is marked overlapped; ticket 597)
       const es = [...document.querySelectorAll(".script-log .log-entry")].filter(d => !d.classList.contains("log-check"));
       for (const d of es.slice(0, 2)) d.open = true; await w(500); document.querySelector(".script-log").scrollTop = 0; return 1; })()`);
     await shot("05-log");
@@ -72,7 +72,8 @@ async function scenes() {
     await ev(`(async () => { ${W} const es = [...document.querySelectorAll(".script-log .log-entry")].filter(d => !d.classList.contains("log-check"));
       es[1] && (es[1].open = false); const g = es[0] && es[0].querySelector(".log-globals"); if (g) g.open = true; await w(500); return 1; })()`);
     await shot("05b-log-globals");
-    texts.log = JSON.parse(await ev(`JSON.stringify(scriptLog.map(e => ({ n: e.n, engine: e.engine, call: e.call, ev: e.ev, ms: e.ms, diff: scriptDiff(e.before, e.settled || e.after) })))`));
+    texts.log = JSON.parse(await ev(`(async () => { for (let i = 0; i < 80 && scriptLog.some(e => e.settling); i++) await new Promise(r => setTimeout(r, 250));
+      return JSON.stringify(scriptLog.map(e => ({ n: e.n, engine: e.engine, call: e.call, ev: e.ev, ms: e.ms, d1: scriptDiff(e.before, e.handled || e.after), d2: e.done ? scriptDiff(e.handled || e.after, e.done) : [], doneMs: e.doneMs, doneBy: e.doneBy, overlap: e.overlap || null }))); })()`));
   });
   // ---- a type error: the box, the check entry, the event's entry ----
   await step("type error", async () => {
