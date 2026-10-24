@@ -99,6 +99,8 @@ type Cmd = + Done + Flip(Side, Cmd) + Say(String, Cmd) + SetPit(Int, Bool, Cmd) 
 type Event = + Pull(Side) + PullBoulder(Side) + PullHatch(Int) + PullThing(Int) + FallPit(Int) + WayOut(Int) + Way(Dir) in
 type Thing = (at = Int, uid = String, kind = String, on = Bool, works = [String], does = String, open = Bool, boulder = Bool) in
 type Cell = (col = Int, row = Int, kind = Place, ways = [Dir]) in
+type ByAt = + AtLeaf + AtNode(ByAt, Thing, ByAt) in
+type ByUid = + UidLeaf + UidNode(ByUid, String, [Thing], ByUid) in
 type Globals = (lever_L = Bool, lever_R = Bool, wiring = Wiring, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing], rooms = [Room], exits = [Exit], out = Out, at_col = Int, at_row = Int, cols = Int, rows = Int, cells = [Cell]) in`;
 
 const SCRIPT_COMMON = `# Sub-routines every room can use, as Common.wire and so on. #
@@ -175,7 +177,52 @@ let on_event = fun (g, e) : (Globals, Event) ->
       end in
     (case find(g.things) | Some(t) => doors(t, g.things) | None => Done end)
   | _ => Done
-  end`;
+  end;
+# (ticket 540, an experiment) The same rule with the square's things held in two maps, made once when the square changes: #
+# every thing by its place (at), and the trap doors by their uid. A pull then finds its lever in O(log T) and each door it #
+# works in O(log T), not walking every thing for every door: O(W log T) for a lever that works W uids, of T things. #
+let count = fun ts : [Thing] -> case ts | [] => 0 | _ :: rest => 1 + count(rest) end;
+# the first n things of a list in order of place, as a balanced map, and the rest of the list #
+let take_at = fun (ts, n) : ([Thing], Int) -> if n == 0 then (AtLeaf, ts) else (let (l, rest) = take_at(ts, n / 2) in case rest | t :: rest2 => (let (r, rest3) = take_at(rest2, n - n / 2 - 1) in (AtNode(l, t, r), rest3)) | [] => (AtLeaf, []) end);
+# the things by place: they come in that order, each at its own place in the square's list #
+let by_at = fun ts : [Thing] -> let (m, _) = take_at(ts, count(ts)) in m;
+let thing_at = fun (m, i) : (ByAt, Int) -> case m | AtLeaf => None | AtNode(l, t, r) => if i < t.at then thing_at(l, i) else if i == t.at then Some(t) else thing_at(r, i) end;
+# the trap doors by uid: put in order of uid (a merge sort, which keeps doors of one uid in order of place), grouped, then a balanced map #
+let doors_of = fun ts : [Thing] -> case ts | [] => [] | t :: rest => if t.kind == "trapdoor" then t :: doors_of(rest) else doors_of(rest) end;
+let merge_uid = fun (xs, ys) : ([Thing], [Thing]) -> case (xs, ys) | ([], _) => ys | (_, []) => xs | (x :: xr, y :: yr) => if string_compare(y.uid, x.uid) == Lt then y :: merge_uid(xs, yr) else x :: merge_uid(xr, ys) end;
+let halve = fun ts : [Thing] -> case ts | x :: y :: rest => (let (a, b) = halve(rest) in (x :: a, y :: b)) | _ => (ts, []) end;
+let sort_uid = fun ts : [Thing] -> case ts | _ :: _ :: _ => (let (a, b) = halve(ts) in merge_uid(sort_uid(a), sort_uid(b))) | _ => ts end;
+let group = fun ts : [Thing] -> case ts | [] => [] | t :: rest => (case group(rest) | (u, ds) :: gs => if u == t.uid then (u, t :: ds) :: gs else (t.uid, [t]) :: (u, ds) :: gs | [] => [(t.uid, [t])] end) end;
+let count_g = fun gs : [(String, [Thing])] -> case gs | [] => 0 | _ :: rest => 1 + count_g(rest) end;
+let take_uid = fun (gs, n) : ([(String, [Thing])], Int) -> if n == 0 then (UidLeaf, gs) else (let (l, rest) = take_uid(gs, n / 2) in case rest | (u, ds) :: rest2 => (let (r, rest3) = take_uid(rest2, n - n / 2 - 1) in (UidNode(l, u, ds, r), rest3)) | [] => (UidLeaf, []) end);
+let by_uid = fun ts : [Thing] -> let gs = group(sort_uid(doors_of(ts))) in (let (m, _) = take_uid(gs, count_g(gs)) in m);
+let doors_with = fun (m, u) : (ByUid, String) -> case m | UidLeaf => [] | UidNode(l, k, ds, r) => (case string_compare(u, k) | Lt => doors_with(l, u) | Eq => ds | Gt => doors_with(r, u) end) end;
+# a lever's doors, in order of place and each once, as the rule above gives them: merge sorted by place, repeats dropped #
+let append = fun (xs, ys) : ([Thing], [Thing]) -> case xs | [] => ys | x :: rest => x :: append(rest, ys) end;
+let merge_at = fun (xs, ys) : ([Thing], [Thing]) -> case (xs, ys) | ([], _) => ys | (_, []) => xs | (x :: xr, y :: yr) => if y.at < x.at then y :: merge_at(xs, yr) else x :: merge_at(xr, ys) end;
+let sort_at = fun ts : [Thing] -> case ts | _ :: _ :: _ => (let (a, b) = halve(ts) in merge_at(sort_at(a), sort_at(b))) | _ => ts end;
+let once = fun ts : [Thing] -> case ts | x :: y :: rest => if x.at == y.at then once(y :: rest) else x :: once(y :: rest) | _ => ts end;
+let with_things = fun (m_at, m_uid) : (ByAt, ByUid) -> fun (g, e) : (Globals, Event) ->
+  case e
+  | PullThing(i) =>
+    (case thing_at(m_at, i)
+    | Some(lever) =>
+      let gather = fun us : [String] -> case us | [] => [] | u :: rest => append(doors_with(m_uid, u), gather(rest)) end in
+      let moves = fun ds : [Thing] ->
+        case ds
+        | [] => Done
+        | d :: rest =>
+          let k = moves(rest) in
+          if lever.does == "boulder" then (if d.boulder == !lever.on then k else DropRock(d.at, !lever.on, k))
+          else OpenDoor(d.at, !d.open, k)
+        end in
+      moves(once(sort_at(gather(lever.works))))
+    | None => Done
+    end)
+  | _ => Done
+  end;
+# the square's things held: both maps made from its list, once #
+let held = fun ts : [Thing] -> with_things(by_at(ts), by_uid(ts))`;
 
 // (ticket 531, phase 2) the world's ways, decided when one is walked through: the square beside this one that way, if it is on the
 // map, there, and has a way back (worldMeets and worldWays' rule, 25-world.js). A way linked to another world stays the JS's.
