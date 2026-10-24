@@ -17,5 +17,9 @@ blanks=""; for _ in $(seq 1 $pad); do blanks="$blanks,{}"; done
 sel="1-${body}${blanks},$((body + 1))-${n}"
 echo "pages: $n, notes pages added before the coloring pages: $pad, total: $((n + pad)), sheets: $(( (n + pad) / 4 ))"
 pdfjam --quiet --paper '{5.5in,8.5in}' --outfile "$out/guide-padded.pdf" "$in" "$sel"
-pdfjam --quiet --booklet true --landscape --paper letterpaper --outfile "$out/zine.pdf" "$out/guide-padded.pdf"
+# the order on the sheets, every side upright, for duplex flipped on the SHORT edge (pdfjam's --booklet turned each front upside down,
+# for long-edge printers): sheet i's front N-2i | 2i+1, its back 2i+2 | N-2i-1 (from 0), so the outer sheet is N|1 and 2|N-1
+N=$((n + pad)); order=""
+for ((i = 0; i < N / 4; i++)); do order="$order,$((N - 2*i)),$((2*i + 1)),$((2*i + 2)),$((N - 2*i - 1))"; done
+pdfjam --quiet --nup 2x1 --landscape --paper letterpaper --outfile "$out/zine.pdf" "$out/guide-padded.pdf" "${order#,}"
 pdfinfo "$out/zine.pdf" | awk '/^Pages:|^Page size:/'

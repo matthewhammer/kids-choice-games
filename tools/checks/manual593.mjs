@@ -132,6 +132,10 @@ const LINEART = `(() => { const src = document.getElementById("pic"), out = src.
     } else if (tag === "text" || tag === "tspan") m.setAttribute("style", "fill:#000;stroke:none;font-family:system-ui,sans-serif");
     else m.setAttribute("style", "");
   });
+  // (the friend's page: the drawing cropped to the friend, the empty room behind left out, so the friend fills the page)
+  if (window.__cropFriend) { const f = src.querySelector("#figure"), r = f.getBoundingClientRect(), s = src.getBoundingClientRect(), vb = src.viewBox.baseVal, k = vb.width / s.width;
+    const x = vb.x + (r.left - s.left) * k, y = vb.y + (r.top - s.top) * k, w = r.width * k, h = r.height * k, m = 0.08 * Math.max(w, h);
+    out.setAttribute("viewBox", [x - m, y - m, w + 2 * m, h + 2 * m].map(v => v.toFixed(1)).join(" ")); const bg = out.querySelector("#bg"); if (bg) bg.remove(); }
   out.removeAttribute("style"); out.setAttribute("xmlns", "http://www.w3.org/2000/svg"); out.removeAttribute("id");
   return new XMLSerializer().serializeToString(out); })()`;
 const colorPages = [];
@@ -140,10 +144,10 @@ async function coloring() {
     ["the trap room", `Object.assign(state.background, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -320, figY: 140, things: [] })`],
     ["the castle", `Object.assign(state.background, { kind: "castle", figX: -260, figY: 160, things: [] })`],
     ["the farmyard", `Object.assign(state.background, { kind: "farmyard", figX: -200, figY: 160, things: [] })`],
-    ["your friend", `Object.assign(state.background, { kind: "emptyroom", figX: 0, figY: 120, things: [] })`],
+    ["your friend", `Object.assign(state.background, { kind: "emptyroom", figX: 0, figY: 120, things: [] }); window.__cropFriend = true`],
   ];
   for (const [name, set] of scenes) await step("coloring: " + name, async () => {
-    const svg = await ev(`(async () => { ${W} ${set}; changed(); await w(1800); return ${LINEART}; })()`);
+    const svg = await ev(`(async () => { ${W} window.__cropFriend = false; ${set}; changed(); await w(1800); const out = ${LINEART}; window.__cropFriend = false; return out; })()`);
     const file = `color-${colorPages.length + 1}.svg`;
     writeFileSync(`out/manual/${file}`, svg); colorPages.push({ name, svg }); console.log(`ok   ${file} (${name}, ${Math.round(svg.length / 1024)} KB)`);
   });
