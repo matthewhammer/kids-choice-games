@@ -1308,6 +1308,7 @@ function scriptMaxOpen(boxes, sec) {
     document.body.append(wrap);
     document.body.classList.add("script-maxed");
     scriptMax = { wrap, nav, main, boxes, sec: null, spot: null, setChip, setHolder, setSpot: null, gameSpot, gameChip };
+    wrap.querySelector(".script-max-left").addEventListener("scroll", () => scriptMaxGamePlace(), { passive: true });   // (^ticket(596))
     let g = false; try { g = localStorage.getItem("scriptMaxGame") === "1"; } catch (e) {}
     if (g) setTimeout(() => scriptMaxGame(true), 0);
   }
@@ -1568,6 +1569,7 @@ function scriptMaxNav() {
           : [el("span", { class: "script-max-fname" }, [o.name, fnTail(lang, sig, lines.slice(o.line, end + 1))]), ...(sig ? [el("span", { class: "script-max-type-sig", title: o.name + " : " + sig }, ": " + sig)] : [])]); }); });
     return el("div", { class: "script-max-group" }, [a, ...(subs.length ? [el("div", { class: "script-max-subs" }, subs)] : [])]);
   }));
+  scriptMaxGamePlace();   // (^ticket(596): the outline drawn again may move the column)
 }
 let scriptMaxNavTimer = null;
 const scriptMaxNavSoon = () => { if (!scriptMax) return; clearTimeout(scriptMaxNavTimer); scriptMaxNavTimer = setTimeout(scriptMaxNav, 300); };
@@ -1594,7 +1596,7 @@ function scriptMaxGame(on) {
     scriptMaxGamePlace();
   } else {
     M.gameSpot.hidden = true; document.body.classList.remove("script-max-game-on"); pb.classList.remove("script-max-game-pinned");
-    for (const k of ["left", "top", "width", "height"]) pb.style[k] = "";
+    for (const k of ["left", "top", "width", "height", "clipPath", "visibility"]) pb.style[k] = "";
   }
 }
 function scriptMaxGamePlace() {
@@ -1602,6 +1604,13 @@ function scriptMaxGamePlace() {
   const w = M.gameSpot.getBoundingClientRect().width; M.gameSpot.style.height = Math.round(w * (M.gameRatio || 0.6)) + "px";
   const r = M.gameSpot.getBoundingClientRect(), st = pb.style;
   st.left = r.left + "px"; st.top = r.top + "px"; st.width = r.width + "px"; st.height = r.height + "px";
+  // (^ticket(596), Matthew 2026-10-24: "after we click on LHS nav for some Hazel def, and the RHS scrolls there, when we scroll LHS nav
+  // bar back to in-game view, it's empty/missing": the spot scrolls with the outline's column, and the picture, pinned over it, was
+  // placed only on a resize. Now placed again on the column's scroll, and clipped to the column, so a spot half scrolled away shows
+  // only its visible part, never over the buttons or above the window)
+  const col = M.gameSpot.parentElement.getBoundingClientRect(), top = Math.max(0, col.top - r.top), bottom = Math.max(0, r.bottom - col.bottom);
+  st.clipPath = top || bottom ? `inset(${top}px 0 ${bottom}px 0)` : "";
+  st.visibility = top + bottom >= r.height ? "hidden" : "";
 }
 function scriptMaxPlace() {
   const M = scriptMax; if (!M || !M.sec) return;
@@ -1619,7 +1628,7 @@ function scriptMaxClose() {
   const M = scriptMax; if (!M) return;
   if (M.sec) scriptMaxUnpin(M.sec);
   scriptMaxSettings(false);
-  { const pb = document.querySelector(".pic-box.script-max-game-pinned"); if (pb) { pb.classList.remove("script-max-game-pinned"); for (const k of ["left", "top", "width", "height"]) pb.style[k] = ""; } document.body.classList.remove("script-max-game-on"); }
+  { const pb = document.querySelector(".pic-box.script-max-game-pinned"); if (pb) { pb.classList.remove("script-max-game-pinned"); for (const k of ["left", "top", "width", "height", "clipPath", "visibility"]) pb.style[k] = ""; } document.body.classList.remove("script-max-game-on"); }
   if (M.placing) { window.removeEventListener("resize", M.placing); if (M.ro) M.ro.disconnect(); }
   M.wrap.remove(); document.body.classList.remove("script-maxed");
   scriptMax = null;
