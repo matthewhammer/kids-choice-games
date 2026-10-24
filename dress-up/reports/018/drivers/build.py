@@ -117,7 +117,7 @@ PAGE = f"""<!doctype html>
 <p>You write what happens as a <b>story script</b>: a list of steps, <b>one step on each line</b>. Your friend does them in order, from the top line to the bottom line.</p>
 {code("walk 30 60\nsay Hello!\npose dance")}
 <p>This story has three steps. Your friend walks, says “Hello!”, and dances. That's it! You just wrote your first story.</p>
-{box("tip", "★ GOOD TO KNOW", "<p>Each place has its own story. The farm yard can have one story, the castle another, and the tree house another.</p>")}
+{box("tip", "GOOD TO KNOW", "<p>Each place has its own story. The farm yard can have one story, the castle another, and the tree house another.</p>")}
 
 <h2 id="ch2"><span class="ch">2</span>WHERE THE STORY BOX IS</h2>
 <ol class="steps">
@@ -133,7 +133,7 @@ PAGE = f"""<!doctype html>
 <li><span class="key">⏹ stop</span> stops it.</li>
 <li><span class="key">🎬 play when we come here</span>: when it is on, the story starts by itself every time you come into this place.</li>
 </ul>
-{box("tip", "★ YOU CAN ALWAYS TAKE OVER", "<p>Click or tap in the picture, or press a key, and the story stops so you can play yourself.</p>")}
+{box("tip", "YOU CAN ALWAYS TAKE OVER", "<p>Click or tap in the picture, or press a key, and the story stops so you can play yourself.</p>")}
 
 <h2 id="ch3"><span class="ch">3</span>THE SEVEN STEPS</h2>
 <p>A story knows seven steps. Each line starts with one of these words:</p>
@@ -158,7 +158,7 @@ PAGE = f"""<!doctype html>
   <div class="dot" style="left:30%;top:52%">walk 30 60</div><div class="dot" style="left:75%;top:46%">walk 75 40</div><div class="dot" style="left:13%;top:66%">walk 10 100</div>
 </div>
 <p>You can leave out the second number: <code>walk 80</code> walks to 80 across and stays just as near or far as before.</p>
-{box("tip", "★ TRY THIS", "<p><code>walk 0</code>, then <code>walk 100</code>. Your friend walks all the way across.</p>")}
+{box("tip", "TRY THIS", "<p><code>walk 0</code>, then <code>walk 100</code>. Your friend walks all the way across.</p>")}
 
 <h2 id="ch5"><span class="ch">5</span>YOUR FIRST STORY</h2>
 <p>Go to the farm yard and type this story in the box:</p>
@@ -177,7 +177,7 @@ PAGE = f"""<!doctype html>
 </ul>
 {code("walk 25 55\nsay Which lever opens the pit?\npull L\nwait 1\nface front\nsay That one!")}
 {pic("05-lever.png", "pull L: the friend walked to the left red lever and pulled it.")}
-{box("warn", "⚠ CAREFUL", "<p>A pit that opens under your friend is a pit they fall into. That can be the story, too!</p>")}
+{box("warn", "CAREFUL", "<p>A pit that opens under your friend is a pit they fall into. That can be the story, too!</p>")}
 
 <h2 id="ch7"><span class="ch">7</span>AGAIN AND AGAIN: LOOP</h2>
 <p>Put <code>loop</code> at the end and the story starts over from the top, forever, until you press <span class="key">⏹ stop</span> or take over.</p>
@@ -194,7 +194,7 @@ PAGE = f"""<!doctype html>
 {pic("06-people-path.png", "👥 People: a person's 🚶 path box, open under their name.")}
 <p>A path always goes round and round: when it gets to the end, it starts again by itself.</p>
 {pic("07-walkers.png", "Two people walking their own paths while your friend stands still.")}
-{box("tip", "★ GOOD TO KNOW", "<p>People on paths can't say things or pull levers. Only your friend's story can do that.</p>")}
+{box("tip", "GOOD TO KNOW", "<p>People on paths can't say things or pull levers. Only your friend's story can do that.</p>")}
 
 <h2 id="ch9"><span class="ch">9</span>OOPS! A WRONG LINE</h2>
 <p>If a line has a word the story doesn't know, the story stops at that line and tells you which line it is, and what it can do instead.</p>
@@ -221,7 +221,7 @@ PAGE = f"""<!doctype html>
 {code("walk 40 50\nface front\nsay Goodnight, everyone!\npose meditate")}
 <h3>Which lever? (in the trap room)</h3>
 {code("say Let's try them all!\npull L\nwait 2\npull R\nwait 2\npull L\npull R\nsay Back the way they were.")}
-{box("tip", "★ MAKE YOUR OWN", "<p>Mix the steps any way you like. Short stories are great. Long stories are great. Silly stories are the best.</p>")}
+{box("tip", "MAKE YOUR OWN", "<p>Mix the steps any way you like. Short stories are great. Long stories are great. Silly stories are the best.</p>")}
 
 <h2 id="ch11"><span class="ch">11</span>THE QUICK CARD</h2>
 <div class="card">
