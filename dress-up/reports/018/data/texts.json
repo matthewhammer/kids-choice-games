@@ -1,1 +1,11 @@
-{}
+{
+ "people": {
+  "place": "woodpath",
+  "people": [
+   "the friend",
+   "tiger 1"
+  ],
+  "dressed": "black cat 1"
+ },
+ "wrong": "🎬 ⚠️ line 2: \"jump\" is not a step: walk, wait, pose, face, pull, say, loop"
+}

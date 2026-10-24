@@ -34,7 +34,7 @@ log = "".join(f'<li><span class="tag {e["kind"]}">{KIND.get(e["kind"], e["kind"]
               + (f' <span class="muted">({tix(e["source"])})</span>' if e.get("source") else "") + "</li>" for e in LOG["entries"])
 rules = [e for e in LOG["entries"] if e["kind"] == "rule"]
 body = f'''<main>
-<p class="series"><a href="../">Dress Up reports</a> · {ref(14)} · {D["date"]} · <span class="wip" style="color:#b45309;font-weight:600">work in progress</span> · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(13)}</p>
+<p class="series"><a href="../">Dress Up reports</a> · {ref(14)} · {D["date"]} · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(13)}</p>
 <h1>{E(D["h1"])}</h1>
 <p class="sub">{E(D["question"])} From two tickets of 2026-10-19, ticket 412 (lying down along the tent's sleeping bags) and ticket 414 (elbows and knees), and Matthew's calls on them, logged as they came (ticket 422). Pictures are the game's own drawings, on 0.0.342 and 0.0.343.</p>
 <div class="headline"><b>Short answers.</b><ol>{short}</ol></div>

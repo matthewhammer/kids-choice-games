@@ -108,7 +108,7 @@ PAGE = f"""<!doctype html>
 <body>
 <button class="theme" id="theme" title="Light or dark">◐ Auto</button>
 <main>
-<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../017/"><code><b>^du_report(</b>17<b>)</b></code></a> · 2026-10-24 · <span class="wip">work in progress</span> · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · {ref(593)}</p>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../017/"><code><b>^du_report(</b>17<b>)</b></code></a> · 2026-10-24 · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · {ref(593)}</p>
 <div class="cover">
   <div class="pub">KIDS' CHOICE GAMES PRESENTS</div>
   <h1>GAME SCRIPTS<br>PLAYER'S GUIDE</h1>

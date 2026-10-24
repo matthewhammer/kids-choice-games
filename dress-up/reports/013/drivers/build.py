@@ -22,7 +22,7 @@ page = f"""{head}<meta name="viewport" content="width=device-width, initial-scal
 </head>
 <body>
 <main>
-<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../013/"><code><b>^du_report(</b>13<b>)</b></code></a> · {J["date"]} · <span class="wip" style="color:#b45309;font-weight:600">work in progress</span> · about Hazel</p>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../013/"><code><b>^du_report(</b>13<b>)</b></code></a> · {J["date"]} · about Hazel</p>
 <h1>{J["title"]}</h1>
 <p class="sub">{J["sub"]}</p>
 <div class="headline">

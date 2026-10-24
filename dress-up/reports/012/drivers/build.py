@@ -73,7 +73,7 @@ found = "".join(f"<li><b>{E(a)}.</b> {tix(b)}</li>" for a, b in D["found"])
 steps = "".join(f'<li id="step-{i}"><span class="stepnum"><a href="#step-{i}">{i}.</a></span> <b>{E(a)}:</b> {tix(b)}. <button class="tk" data-step="{i}">copy for a ticket</button></li>' for i, (a, b) in enumerate(D["next"], 1))
 sources = "".join(f'<li id="src-{k}"><a href="{E(u)}">{E(t)}</a></li>' for k, (t, u) in S.items())
 body = f'''<main>
-<p class="series"><a href="../">Dress Up reports</a> · {ref(12)} · {D["date"]} · <span class="wip" style="color:#b45309;font-weight:600">work in progress</span> · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(11)}</p>
+<p class="series"><a href="../">Dress Up reports</a> · {ref(12)} · {D["date"]} · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(11)}</p>
 <h1>The foam, not the makers</h1>
 <p class="sub">{E(D["question"])} Measured on GitHub's computers in Chrome and in Firefox (no test browser on the laptop), four runs; fixed in 0.0.306 and 0.0.307.</p>
 <div class="headline"><b>Short answers.</b><ol>{short}</ol></div>

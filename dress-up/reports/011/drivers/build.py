@@ -51,7 +51,7 @@ people = "".join(f"<li><b>{E(a)}.</b> {tix(b)}</li>" for a, b in D["people"])
 found = "".join(f"<li><b>{E(a)}.</b> {tix(b)}</li>" for a, b in D["found"])
 steps = "".join(f'<li id="step-{i}"><span class="stepnum"><a href="#step-{i}">{i}.</a></span> <b>{E(a)}:</b> {tix(b)}. <button class="tk" data-step="{i}">copy for a ticket</button></li>' for i, (a, b) in enumerate(D["next"], 1))
 body = f'''<main>
-<p class="series"><a href="../">Dress Up reports</a> · {ref(11)} · {D["date"]} · <span class="wip" style="color:#b45309;font-weight:600">work in progress</span> · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(10)}</p>
+<p class="series"><a href="../">Dress Up reports</a> · {ref(11)} · {D["date"]} · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(10)}</p>
 <h1>A cast of friends</h1>
 <p class="sub">{E(D["question"])}</p>
 <div class="headline"><b>Short answers.</b>
