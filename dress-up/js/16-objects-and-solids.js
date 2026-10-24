@@ -79,6 +79,8 @@ function mountScene(text) {
   if (tripTimer) tripWork("building the place", tMount);
   // (ticket 322) a lever's handle or a lid swinging when the room is built again: carried on in it at once
   if (typeof SWINGS !== "undefined") for (const sw of SWINGS.values()) sw.redo(root);
+  // (ticket 440) a place arrived at: its 🎬 story, when it plays on arriving (26-drags-and-start.js; not yet defined while the game loads)
+  try { storyArrive(); } catch (e) { /* (the game still starting) */ }
   return root;
 }
 // the figure's size and place in its scene (k about its feet, at y = g),

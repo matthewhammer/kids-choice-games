@@ -407,6 +407,115 @@ function startPull(then) {
   setTimeout(then, 560);
   setTimeout(() => { if (body.anim === "pull") { body.anim = "none"; changed(); } }, 1150);
 }
+// (ticket 440, Matthew 2026-10-19: "animation planning/scripting/design system -- simple for now ... we'd like to create scripts
+// for the game story where its triggered by the script"; 2026-10-24: "Please continue on all of this.") 🎬 A story: a place's own
+// script, a step a line, the friend acting it out with the moves the game already animates. ▶ plays it; with 🎬 play when we
+// come here, it plays on arriving. Any click or key of yours in the picture stops it (you take over), as does ⏹.
+//   walk X [Z]    to X% across the picture (0 the left, 100 the right), and Z% toward the front (0 the back line, 100 the front)
+//   wait S        S seconds
+//   pose NAME     stand, sit, lie, meditate, hug or dance
+//   face WAY      left, right, front or back
+//   pull WHICH    a lever, walked to and pulled: L, R (the red ones), BL, BR (the blue), H (a tree room's), or N, the Nth placed lever
+//   say TEXT      a few words over the picture
+//   loop          from the top again
+// A line starting with # is a note. A line the story does not know stops it there and says so.
+const STORY_POSES = ["stand", "sit", "lie", "meditate", "hug", "dance"], STORY_FACES = ["left", "right", "front", "back"];
+let storyRun = null, storyAt = null, storyShow = null;
+function storyParse(text) {
+  const steps = [];
+  for (const [i, raw] of String(text || "").split("\n").entries()) {
+    const line = raw.trim(); if (!line || line.startsWith("#")) continue;
+    const [w, ...rest] = line.split(/\s+/), arg = rest.join(" "), n = rest.map(Number), verb = w.toLowerCase();
+    const bad = why => steps.push({ verb: "bad", line: i + 1, why: `line ${i + 1}: ${why}` });
+    if (verb === "walk") { if (!(n.length >= 1 && n.every(Number.isFinite))) { bad("walk X [Z], in % of the picture"); continue; } steps.push({ verb, x: n[0], z: n[1], line: i + 1 }); }
+    else if (verb === "wait") { if (!Number.isFinite(n[0])) { bad("wait S, in seconds"); continue; } steps.push({ verb, s: Math.max(0, n[0]), line: i + 1 }); }
+    else if (verb === "pose") { if (!STORY_POSES.includes(arg)) { bad(`pose ${STORY_POSES.join(", ")}`); continue; } steps.push({ verb, pose: arg, line: i + 1 }); }
+    else if (verb === "face") { if (!STORY_FACES.includes(arg)) { bad(`face ${STORY_FACES.join(", ")}`); continue; } steps.push({ verb, face: arg, line: i + 1 }); }
+    else if (verb === "pull") { if (!/^(L|R|BL|BR|H|\d+)$/.test(arg)) { bad("pull L, R, BL, BR, H, or a placed lever's number"); continue; } steps.push({ verb, which: arg, line: i + 1 }); }
+    else if (verb === "say") steps.push({ verb, text: arg, line: i + 1 });
+    else if (verb === "loop") steps.push({ verb, line: i + 1 });
+    else bad(`"${w}" is not a step: walk, wait, pose, face, pull, say, loop`);
+  }
+  return steps;
+}
+function storyStatus(text) { if (storyShow && storyShow.isConnected) storyShow.textContent = text; }
+function storyStop(why = "stopped") {
+  if (!storyRun) return;
+  clearTimeout(storyRun.timer); storyRun = null;
+  storyStatus("🎬 " + why);
+}
+function storyPlay(text = state.background.story) {
+  storyStop("stopped"); walkStop++; clickRun = null;
+  const steps = storyParse(text);
+  if (!steps.length) { storyStatus("🎬 nothing to play: write a step a line"); return; }
+  const run = storyRun = { i: 0, timer: 0, loops: 0 };
+  const next = (ms = 0) => { clearTimeout(run.timer); run.timer = setTimeout(() => { if (storyRun === run) step(); }, ms); };
+  // (a walk or a pull is over when the friend stands again, its walk done: looked at every 150 ms, for 30 s at most)
+  const settled = (then, t0 = performance.now()) => { if (storyRun !== run) return;
+    if ((!clickRun && state.body.anim === "none") || performance.now() - t0 > 30000) { then(); return; }
+    run.timer = setTimeout(() => settled(then, t0), 150); };
+  const step = () => {
+    if (run.i >= steps.length) { storyRun = null; storyStatus("🎬 the end"); return; }
+    const S = steps[run.i++], F = sceneFrame, g = SCENE.ground, B = state.body, BG = state.background;
+    storyStatus(`🎬 line ${S.line}: ${S.verb}${run.loops ? ` (time ${run.loops + 1})` : ""}`);
+    if (S.verb === "bad") { storyStop("⚠️ " + S.why); return; }
+    if (S.verb === "loop") { run.i = 0; run.loops++; next(50); return; }
+    if (S.verb === "wait") { next(S.s * 1000); return; }
+    if (S.verb === "say") { scriptSay(S.text, "💬"); next(300); return; }
+    if (S.verb === "face") { if (BG.seat) standUp(); B.facing = S.face; B.turn = ""; changed(); next(250); return; }
+    if (S.verb === "pose") { strikePose(S.pose); changed(); next(400); return; }
+    if (S.verb === "walk") {
+      const p = v => Math.max(0, Math.min(100, v)) / 100, x = F.left + p(S.x) * (F.right - F.left);
+      const zb = g + figYMin(F) + 4, zf = F.bottom - 4, z = S.z === undefined ? g + (BG.figY ?? 0) : zb + p(S.z) * (zf - zb);
+      if (BG.seat) standUp();
+      if (B.pose !== "stand") strikePose("stand");
+      walkPlanned(x, z); settled(() => next(100)); return;
+    }
+    if (S.verb === "pull") {
+      const w = S.which;
+      if (/^\d+$/.test(w)) {
+        const levers = (BG.things || []).map((t, i) => [t, i]).filter(([t]) => t.kind === "lever"), hit = levers[+w - 1];
+        if (!hit) { storyStop(`⚠️ line ${S.line}: no placed lever ${w} here (${levers.length} placed)`); return; }
+        leverAct(`[data-drag="thing:${hit[1]}"]`, () => leverPull(hit[1]));
+      } else {
+        if (!(bgShown.node && bgShown.node.querySelector(`[data-lever="${w}"]`))) { storyStop(`⚠️ line ${S.line}: no ${w} lever in this place`); return; }
+        leverAct(`[data-lever="${w}"]`, () => roomLeverPull(w));
+      }
+      next(200); run.timer = setTimeout(() => settled(() => next(900)), 250); return;
+    }
+  };
+  step();
+}
+// (a place arrived at: its story played, when it has one and 🎬 play when we come here is on; once per arrival)
+function storyArrive() {
+  const BG = state.background, W = state.world, key = [W && W.at, BG.kind, BG.castleRoom ?? "", BG.seat ? "" : ""].join("|");
+  if (key === storyAt) return;
+  storyAt = key; storyStop("stopped: a new place");
+  if (BG.story && BG.storyAuto) setTimeout(() => { if (storyAt === key && !storyRun) storyPlay(); }, 700);
+}
+// (you take over: a press in the picture, or a key not typed into a box)
+document.addEventListener("pointerdown", e => { if (storyRun && e.target.closest && e.target.closest("#pic")) storyStop("stopped: you took over"); }, true);
+document.addEventListener("keydown", e => { if (storyRun && !(e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) storyStop("stopped: you took over"); }, true);
+// the 🎬 story box in 🏞️ the place's tab: the script, ▶ and ⏹, play on arriving, and what is playing
+const STORY_EXAMPLE = "# an example: walk, look round, pull a lever\nwalk 30 60\nface right\nwait 1\nsay Which lever?\npull L\nwait 2\nwalk 70\npose dance\nwait 2\npose stand";
+function storyControl(label) {
+  const BG = () => state.background;
+  const ta = el("textarea", { class: "story-text", rows: 7, spellcheck: "false", placeholder: STORY_EXAMPLE, "aria-label": "the story, a step a line" });
+  ta.value = BG().story || "";
+  ta.addEventListener("input", () => { BG().story = ta.value; persist(); });
+  const auto = el("button", { class: "flip", "aria-pressed": String(!!BG().storyAuto), onclick: () => { BG().storyAuto = !BG().storyAuto; auto.setAttribute("aria-pressed", String(!!BG().storyAuto)); persist(); } }, "🎬 play when we come here");
+  const show = el("div", { class: "hint story-status" }, storyRun ? "🎬 playing" : "");
+  storyShow = show;
+  const box = el("div", { class: "story" }, [
+    el("div", { class: "label" }, label),
+    ta,
+    el("div", { class: "row" }, [el("button", { onclick: () => storyPlay(ta.value || STORY_EXAMPLE) }, "▶ play"), el("button", { onclick: () => storyStop("stopped") }, "⏹ stop"), auto]),
+    show,
+    el("div", { class: "hint" }, "a step a line: walk X [Z] (in % across, and toward the front) · wait S · pose stand/sit/lie/meditate/hug/dance · face left/right/front/back · pull L/R/BL/BR/H or a placed lever's number · say … · loop · # a note. Empty, ▶ plays the example.")]);
+  // (a different place shown: its own story in the box)
+  syncs.push(() => { if (!ta.isConnected || document.activeElement === ta) return; const v = BG().story || ""; if (ta.value !== v) ta.value = v; auto.setAttribute("aria-pressed", String(!!BG().storyAuto)); if (storyShow !== show && show.isConnected) storyShow = show; });
+  return box;
+}
 // (ticket 284) A 🎚️ lever pulled: it flips over, and so does every 🕳️ trap door here it is wired to (its 🔗); the picture is
 // drawn with it over, and then its handle on the screen turns across from where it was, in LEVER_TURN ms
 // (ticket 307, Matthew: "the switch should animate too -- rocking back and forth somehow": it swings past and rocks back, settling)

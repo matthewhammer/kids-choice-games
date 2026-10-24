@@ -1201,3 +1201,6 @@ html.lineart .script-log .log-field { background: none; border-color: currentCol
 .script-max-item .script-max-lines { margin-left: 0.6em; font-size: 0.8em; color: var(--muted, #999); font-weight: normal; }
 .script-log .log-to { display: inline-block; margin: 0 0.45em; transform: scaleX(1.5); }   /* a long "steps to" arrow */
 .script-log .log-nochange { display: inline-block; font-size: 0.8em; line-height: 1.3; padding: 0 7px; border-radius: 999px; border: 1px solid currentColor; opacity: 0.85; vertical-align: 1px; }
+/* (ticket 440) 🎬 a place's story */
+.story .story-text { width: 100%; box-sizing: border-box; font: 0.9em/1.4 ui-monospace, monospace; border-radius: 8px; padding: 6px 8px; }
+.story .story-status { min-height: 1.2em; }

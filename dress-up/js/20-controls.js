@@ -640,6 +640,7 @@ const TABS = [
     ["choice", "tent", "⛺ which tent", CAMP_TENTS.map((T, i) => [i + 1, `⛺ ${i + 1}: ${T.name}`])],
     // (ticket 185) the things put in any place; and the forest crossing: which paths meet, its floor
     ["things", "things", "🪨 things to put here, then drag them where they go"],
+    ["story", "story", "🎬 a story for this place: a script the friend acts out (ticket 440)"],
     ["toggle", "thingsSolid", "🧱 placed things are in your way (a tree by its trunk)"],   // (ticket 283)
     // (ticket 249, Matthew: "for the toggles for N/S/E/W, etc.... use the UX we made for world designer, with the 9 cells -- the
     // center cell be empty in this case") as the world designer's ways out, round an empty middle
@@ -1602,6 +1603,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // settings are that tab's: the ghost's see-through-ness is the
   // visibility panel's)
   if (kind === "of") return control(key, label, { when: rest[0] ? () => rest[0](state[part]) : null });
+  if (kind === "story") return storyControl(label);   // (ticket 440, 26-drags-and-start.js)
   // (ticket 249) a compass: a toggle each way (key prefix + direction), NW N NE / W · E / SW S SE, its middle empty, as
   // the world designer's ways out
   if (kind === "compass") {

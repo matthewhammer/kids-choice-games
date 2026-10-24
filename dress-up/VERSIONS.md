@@ -4,6 +4,11 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.422 (2026-10-24)
+
+- **🎬 A story for each place** (ticket 440, simple for now): in 🏞️ the place's tab, a box for a script the friend acts out, a step a line: `walk X Z` (where, in % of the picture), `wait`, `pose` (stand, sit, lie, meditate, hug, dance), `face`, `pull` a lever (walked to and pulled, as a click does), `say`, and `loop`. ▶ plays it, ⏹ stops it, and with 🎬 play when we come here it plays on arriving. Any click or key in the picture stops it, so you can take over. Empty, ▶ plays an example.
+- **🔊 Listen** on every Dress Up report (ticket 595).
+
 ## 0.0.421 (2026-10-24)
 
 - **📜 ⛶ The outline names modules**: each room's heading in the ⛶ outline is its module's name, like 🏰 TrapRoom, in every language (the long description shows when you point at it), followed by how many lines its code has.

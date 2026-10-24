@@ -570,10 +570,10 @@ function scriptCost() {
 function scriptCostClear() { const Z = hzCounters(); Z.js = {}; Z.hazel = {}; Z.fumola = {}; Z.fn = { hazel: {}, fumola: {} }; Z.ms = []; Z.runMs = []; Z.calls = 0; }
 
 // a few words over the picture, for a script's Say
-function scriptSay(text) {
+function scriptSay(text, mark = "📜") {   // (ticket 440: a story's say, 💬)
   let b = document.getElementById("script-say");
   if (!b) { b = el("div", { id: "script-say", class: "script-say" }); document.body.append(b); }
-  b.textContent = "📜 " + text; b.hidden = false;
+  b.textContent = mark + " " + text; b.hidden = false;
   clearTimeout(scriptSay.t); scriptSay.t = setTimeout(() => { b.hidden = true; }, 3000);
 }
 
