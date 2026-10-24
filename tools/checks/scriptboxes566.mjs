@@ -21,9 +21,11 @@ const ev = async x => { const r = await send("Runtime.evaluate", { expression: x
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 900)}`); if (!cond) bad++; };
 // (in the page: the panel's look, and a pull of the left red lever with which engine ran it and whether the lever flipped)
+// (ticket 581: a read-only box's line numbers are spans in its pre, left out of its text here, as its copy leaves them out)
 const LOOK = `(() => { const P = document.getElementById("panel"), pressed = sel => [...P.querySelectorAll(sel + " button")].filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.engine);
+  const code = pre => { const c = pre.cloneNode(true); for (const n of c.querySelectorAll(".ln")) n.remove(); return c.textContent; };
   const room = r => { const s = P.querySelector('section[data-room="' + r + '"]'); if (!s) return null; const pre = s.querySelector("pre.script-js"), ta = s.querySelector("textarea.script-editor");
-    return { chip: pressed('section[data-room="' + r + '"] .script-engines'), js: pre ? pre.textContent : null, text: ta ? ta.value : null }; };
+    return { chip: pressed('section[data-room="' + r + '"] .script-engines'), js: pre ? code(pre) : null, text: ta ? ta.value : null }; };
   return JSON.stringify({ master: pressed(".script-master"), mixed: (P.querySelector(".script-mixed") || {}).textContent || "",
     fumola: (P.querySelector(".script-fumola-status") || {}).textContent || "", hazel: (P.querySelector(".script-status") || {}).textContent || "",
     rooms: Object.fromEntries(["Common", ...SCRIPT_ROOMS.map(r => r.name)].map(r => [r, room(r)])) }); })()`;
@@ -47,10 +49,13 @@ try {
   ok("each room's box shows its JS, read-only (no editor): the game's own functions", ["TrapRoom", "TreeRoom", "Square", "World", "Castle"].every(r => L0.rooms[r].js && !L0.rooms[r].text),
     Object.fromEntries(Object.entries(L0.rooms).map(([k, v]) => [k, v && { js: v.js && v.js.slice(0, 40), text: v.text && v.text.slice(0, 40) }])));
   const J = L0.rooms;
+  // (tickets 579, 585: the box lays the code out to its width, changing only spaces and line breaks, and a long comment shared out
+  // over several // lines: the functions' own source still, set beside them without those)
+  const bare = s => String(s).replace(/\/\/|\s+/g, "");
   ok("... their source as they run: roomLeverFlip, hatchSet, leverPull, worldTarget, the castle's pit lines and wayOutOf",
     /function roomLeverFlip\(/.test(J.TrapRoom.js) && /function hatchSet\(/.test(J.TreeRoom.js) && /function leverPull\(/.test(J.Square.js)
     && /function worldTarget\(/.test(J.World.js) && /const pits =/.test(J.Castle.js) && /function wayOutOf\(/.test(J.Castle.js)
-    && J.TrapRoom.js === (await ev(`String(roomLeverPull) + "\\n\\n" + String(roomLeverFlip) + "\\n\\n" + String(roomBoulderPull)`)), J.TrapRoom.js.slice(0, 200));
+    && bare(J.TrapRoom.js) === bare(await ev(`String(roomLeverPull) + "\\n\\n" + String(roomLeverFlip) + "\\n\\n" + String(roomBoulderPull)`)), J.TrapRoom.js.slice(0, 200));
   const P0 = JSON.parse(await ev(PULL));
   ok("a red lever pulled runs the JS, and flips", JSON.stringify(P0.ran) === '["js"]' && P0.flipped, P0);
   // ---- the master chip on Hazel ----
@@ -67,7 +72,8 @@ try {
   let fm = false; for (let i = 0; i < 120 && !fm; i++) { await sleep(500); fm = await ev(`fumolaReady() && fumolaCompile().ready`); }
   await sleep(700);
   const L2 = JSON.parse(await ev(LOOK));
-  ok("rooms differ: the master chip on none, and said", JSON.stringify(L2.master) === "[]" && /differ/.test(L2.mixed), [L2.master, L2.mixed]);
+  // (ticket 580, Matthew: "minimal label length": said in a word, beside the master chip in ⚙️'s "all" row)
+  ok("rooms differ: the master chip on none, and said", JSON.stringify(L2.master) === "[]" && L2.mixed === "mixed", [L2.master, L2.mixed]);
   ok("TrapRoom's editor holds its Fumola module; the other rooms stay on Hazel", JSON.stringify(L2.rooms.TrapRoom.chip) === '["fumola"]' && /module TrapRoom/.test(L2.rooms.TrapRoom.text || "")
     && JSON.stringify(L2.rooms.World.chip) === '["hazel"]', { trap: L2.rooms.TrapRoom, world: L2.rooms.World.chip });
   ok("Fumola loads, and its rules are fine", fm && /are fine/.test(L2.fumola), L2.fumola);
