@@ -79,8 +79,9 @@ async function scenes() {
       scriptCompile(); await w(1500); ${ROOM} await w(400); scriptLog.length = 0; scriptCompile.said = null; scriptCompiled.key = null; scriptCompile(); roomLeverPull("L"); await w(1500);
       const C = scriptCompiled; window.__orig = orig;
       return JSON.stringify({ text: S.rooms.TrapRoom, errors: C.byModule.TrapRoom, entry: (() => { const e = scriptLog[scriptLog.length - 1]; return { engine: e.engine, dry: e.dry }; })() }); })()`));
-    await ev(`(async () => { ${W} const b = document.querySelector('.script-box[data-room="TrapRoom"]'); b.scrollIntoView({ block: "start" }); await w(600); return 1; })()`);
-    await shot("06-type-error-box", '.script-box[data-room="TrapRoom"]');
+    // (in ⛶, the box pinned across the screen: cropped to it inside the side panel, the picture came out blank (Matthew: "missing screenshot?"))
+    await ev(`(async () => { ${W} document.querySelector('.script-box[data-room="TrapRoom"] .script-max-btn').click(); await w(900); return 1; })()`);
+    await shot("06-type-error-box");
     await ev(`(async () => { ${W} document.querySelector(".script-log .script-max-btn").click(); await w(600);
       for (const d of document.querySelectorAll(".script-log .log-entry")) d.open = true; await w(500); document.querySelector(".script-log").scrollTop = 0; return 1; })()`);
     await shot("07-type-error-log");
