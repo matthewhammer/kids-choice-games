@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.426 (2026-10-24)
+
+- **📜 Hazel's tiles use the whole box, and a line breaks between a `let` and its body first** (ticket 604): the tiles were laid out for fewer characters than the box holds (100 with the wrap at 116 and room for more), because a character's width was guessed; it is now measured in the font and size the tiles use. And when a Hazel line is too long, it now breaks where one part of the code ends and the next begins: after a `let`'s `in`, a `fun`'s `->` or a case arm's `=>`, before anything inside, so an `if` after `in` goes on the next line whole when it fits. A case's arms stay level with the `case`. Fumola and JS boxes are laid out as before.
+
 ## 0.0.425 (2026-10-24)
 
 - **📜 A nested if stays on one line when it fits** (ticket 603): in the script boxes, a line too long for its box was cut at every `then` and `else`, a nested if's too, so `else if n == 1 then 0 else 1` took three lines with plenty of room left. Now a line is cut only at its outermost if's `then` and `else`, and an inner if that fits stays whole on its `else`'s line; an `else if` too long for one line still goes on as a chain, level with the if before it. In Hazel and in Fumola; only spaces and line breaks change.

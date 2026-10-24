@@ -34,11 +34,9 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(FLOW_CASES));
   console.log(r.castle + "\n" + r.trap + "\n" + r.fumola);
-  ok("the castle's Auto at 77: the inner if whole on its else's line", r.castle === [
-    "  | Auto =>",
-    "    (let t = Common.room_at(rooms, Trap) in if ladder && t > 0 && !(t == n)",
-    "      then t",
-    "      else if n == 1 then 0 else 1)"].join("\n"), r.castle);
+  // (since 0.0.426, ticket 604, the line cuts after the let's in first, and the whole if fits on the next: flowlet604.mjs has the layout)
+  ok("the castle's Auto at 77: the inner if whole on its else's line, never then 0 / else 1 on lines of their own",
+    r.castle.split("\n").some(l => l.trimEnd().endsWith("else if n == 1 then 0 else 1)")) && !r.castle.split("\n").some(l => /^\s*(then 0|else 1\))$/.test(l)), r.castle);
   ok("an else if too long for its line (at 40): a chain, its then and else level with the outer ones",
     /\n( +)then k\n\1else if lift\n\1then LiftBoulder\(i, k\)\n\1else DropBoulder\(i, k\) in$/.test(r.trap), r.trap);
   ok("Fumola the same: else if (n == 1) { 0 } else { 1 } on one line at 77", r.fumola.split("\n").pop().trim() === "else if (n == 1) { 0 } else { 1 } };", r.fumola);

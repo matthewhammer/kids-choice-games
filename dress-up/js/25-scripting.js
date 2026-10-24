@@ -1002,9 +1002,14 @@ function scriptTileFrame(mod) {
 // characters, less the line numbers' gutter; a copy for the tiles, not written into the stored text, so a wider box or a bigger wrap
 // gets the long lines back. Sent again when ⚙️ changes (scriptEditorApply) and when the window or the ⛶ view's divider changes the
 // box's width. A frame being typed in keeps its text and caret until then (its edit is noted as sent: scriptTilesEdit)
+// (ticket 604, Matthew, 2026-10-24: "limit is huge, and actual screen viewport is huge too") a character of the tiles measured, in the
+// font and size sent to them (scriptTileFont), as scriptCols measures a text box's: 0.71 of the size, from one measurement at 18 px
+// in Hazel's own font, was 0.61 in the sys font at 12.5, so a box with room for 116 was cut at 100
 function scriptTileCols(T) {
   const E = scriptEditorSettings(), w = T.holder ? T.holder.clientWidth : 0;
-  const ch = 0.71 * E.size;   // (Hazel's tiles: about 12.8 px a character at 18 px, measured in its frame, 2026-10-23)
+  const c = scriptCols.ctx || (scriptCols.ctx = document.createElement("canvas").getContext("2d"));
+  c.font = `${E.size}px ${(SCRIPT_FONTS.find(([n]) => n === E.font) || SCRIPT_FONTS[0])[1]}`;
+  const ch = c.measureText("0123456789").width / 10 || 0.71 * E.size;
   const fit = w > 0 ? Math.floor(w / ch) - (E.lines ? 5 : 1) - 2 : Infinity;
   return Math.max(20, Math.min(E.wrap, fit));
 }
@@ -1223,7 +1228,7 @@ function scriptHighlight(pre, lang, text, under = false) {
 // (Matthew, 2026-10-24, the tiles at a narrow wrap: a long condition, a || b || c, had no place to break; last, so it is used only in a
 // piece nothing else breaks; and after a let's =, last of all)
 const SCRIPT_BREAKS = [[["|"], []], [["+"], []], [["then", "else"], []], [["}"], [";"]], [[], [",", "{", "in"]], [[], ["=>", "->"]], [["||", "&&"], []], [[], ["="]]];
-function scriptFlowPieces(lang, toks, indent, cols, out, chain = false) {
+function scriptFlowPieces(lang, toks, indent, cols, out) {
   const text = toks.map(([, w]) => w).join("").trim();
   if (indent + text.length <= cols) { out.push(" ".repeat(indent) + text); return; }
   // (Matthew, 2026-10-23: "line wrap is not adjusting to big text and small screen") a comment alone, too long: several comments,
@@ -1242,24 +1247,40 @@ function scriptFlowPieces(lang, toks, indent, cols, out, chain = false) {
   // limit, and plenty of space") a then or else belongs to its own if: a nested if's count one deeper (nest), so a line cuts only at
   // its outermost if's, and an inner if that fits stays whole on its else's line. An if is open until its bracket closes, or a
   // | , ; or in beside it; an else after its if's own else belongs to the if around it
-  const places = [], ifs = [];
+  // (ticket 604, Matthew, 2026-10-24: "it would look better to have the line break, if there needs to be one, after the in (following
+  // let), not within the if-then-else stuff after the in") in Hazel a let, a fun and a case are open the way an if is: their in, ->
+  // and | are their own parts, and every place inside one counts one deeper, so a line cuts first between a let and its body (a fun
+  // and its body, a case's arms), and the if in the body goes on the next line whole when it fits
+  const hz = lang === "hazel", places = [], open = [];   // (each one open: its kind, its bracket depth, and whether its last part has begun)
   let depth = 0;
-  const nestHere = () => Math.max(0, ifs.filter(f => f.depth === depth).length - 1);
   toks.forEach(([k, w], i) => {
     const code = k === "o" || k === "k" || (k === "" && /^[()[\]{}]$/.test(w));
-    const top = () => ifs.length && ifs[ifs.length - 1].depth === depth ? ifs[ifs.length - 1] : null;
-    if (k === "k" && w === "if") ifs.push({ depth, done: false });
-    if ((k === "o" && ["|", ",", ";"].includes(w)) || (k === "k" && w === "in")) while (top()) ifs.pop();
-    if (k === "k" && w === "else") { while (top() && top().done && ifs.filter(f => f.depth === depth).length > 1) ifs.pop(); if (top()) top().done = true; }
-    if (k === "c" && i > 0) places.push({ at: i, depth, rank: -1 });   // (a comment after code: first to go to its own line)
-    if (code && i > 0) SCRIPT_BREAKS.forEach(([before], rank) => { if (before.includes(w)) places.push({ at: i, depth: w === "}" ? depth : depth, rank, nest: w === "then" || w === "else" ? nestHere() : 0 }); });
+    const here = () => open.filter(o => o.depth === depth), top = () => here().pop();
+    const owner = kind => here().some(o => o.kind === kind && !o.done);
+    const upTo = kind => { while (!(top().kind === kind && !top().done)) open.pop(); top().done = true; };
+    let part = false;
+    if (k === "k" && (w === "if" || (hz && ["let", "fun", "case"].includes(w)))) open.push({ kind: w, depth, done: false });
+    else if (k === "k" && w === "then") part = true;
+    else if (k === "k" && w === "else") { if (owner("if")) upTo("if"); part = true; }
+    else if (hz && k === "k" && w === "in" && owner("let")) { upTo("let"); part = true; }
+    else if (hz && k === "o" && w === "->" && owner("fun")) { upTo("fun"); part = true; }
+    else if (hz && k === "o" && w === "=>" && owner("arm")) { upTo("arm"); part = true; }
+    else if (hz && k === "o" && w === "|" && owner("case")) { while (top().kind !== "case") open.pop(); part = true; }
+    else if (hz && k === "k" && w === "end" && owner("case")) { while (top().kind !== "case") open.pop(); open.pop(); }
+    else if ((k === "o" && ["|", ",", ";"].includes(w)) || (k === "k" && w === "in")) while (top()) open.pop();
+    // (outside Hazel only an if's then and else count, as before)
+    const nest = part ? Math.max(0, here().length - 1) : hz ? here().length : 0, d0 = depth;
+    // (and each | opens an arm, whose => is its part, as a let's in is: so an arm cuts after its => before inside its body)
+    if (hz && k === "o" && w === "|") open.push({ kind: "arm", depth, done: false });
+    if (k === "c" && i > 0) places.push({ at: i, depth, rank: -1, nest: 0 });   // (a comment after code: first to go to its own line)
+    if (code && i > 0) SCRIPT_BREAKS.forEach(([before], rank) => { if (before.includes(w)) places.push({ at: i, depth, rank, nest }); });
     if (k === "" || k === "o") for (const ch of w) depth += "([{".includes(ch) ? 1 : ")]}".includes(ch) ? -1 : 0;
-    while (ifs.length && ifs[ifs.length - 1].depth > depth) ifs.pop();
-    if (code && i + 1 < toks.length) SCRIPT_BREAKS.forEach(([, after], rank) => { if (after.includes(w)) places.push({ at: i + 1, depth, rank, after: w }); });
+    while (open.length && open[open.length - 1].depth > depth) open.pop();
+    if (code && i + 1 < toks.length) SCRIPT_BREAKS.forEach(([, after], rank) => { if (after.includes(w)) places.push({ at: i + 1, depth, rank, after: w, nest: depth === d0 ? nest : 0 }); });
   });
   if (!places.length) { out.push(" ".repeat(indent) + text); return; }
   const low = Math.min(...places.map(p => p.depth));
-  const atDepth = places.filter(p => p.depth === low), atLow = atDepth.some(p => !p.nest) ? atDepth.filter(p => !p.nest) : atDepth;
+  const atDepth = places.filter(p => p.depth === low), least = Math.min(...atDepth.map(p => p.nest)), atLow = atDepth.filter(p => p.nest === least);
   const best = Math.min(...atLow.map(p => p.rank));
   // (Matthew, 2026-10-23: "I don't understand the indentation for Fumola in these types either") a block's members cut apart inside
   // its braces: cut after its { too, so the first member is not left on the opener's line ({#Pull : Side; ... on one, the rest under it)
@@ -1269,15 +1290,19 @@ function scriptFlowPieces(lang, toks, indent, cols, out, chain = false) {
   // the first; the line a list of a sum's cases, or of statements, broke as a staircase)
   const sibling = new Set(low === 0 ? chosen.filter(p => [";", ",", "in"].includes(p.after)).map(p => p.at) : []);
   // (603: and an else if too long for its line goes on as the chain it is, its then and else level with its else, as the outer
-  // if's were, not 2 deeper)
-  if (chain) chosen.filter(p => !p.after && ["then", "else"].includes(toks[p.at][1])).forEach(p => sibling.add(p.at));
+  // if's were, not 2 deeper; 604: so does any piece an if begins, as a let's body is now: if, then and else one under another)
+  const lead = toks.filter(([, w]) => w.trim()).slice(0, 2).map(([, w]) => w).join(" ");
+  // (its own then and else only: outside every bracket, not an if inside its braces)
+  if (low === 0 && (lead === "else if" || (hz && lead.startsWith("if ")))) chosen.filter(p => !p.after && ["then", "else"].includes(toks[p.at][1])).forEach(p => sibling.add(p.at));
+  // (604: and a piece a case begins keeps its arms' | level with it, as the scripts are written)
+  if (low === 0 && hz && lead.startsWith("case ")) chosen.filter(p => !p.after && toks[p.at][1] === "|").forEach(p => sibling.add(p.at));
   let from = 0;
   for (const c of [...cuts, toks.length]) {
     const piece = toks.slice(from, c);
     if (piece.some(([, w]) => w.trim())) {
       const real = piece.filter(([, w]) => w.trim()), first = real[0][1];
       const ind = from === 0 || sibling.has(from) ? indent : indent + 2 * (/^[)\]}]/.test(first) ? Math.max(0, low - 1) : Math.max(1, low));
-      scriptFlowPieces(lang, piece, ind, cols, out, first === "else" && real.length > 1 && real[1][1] === "if");
+      scriptFlowPieces(lang, piece, ind, cols, out);
     }
     from = c;
   }
