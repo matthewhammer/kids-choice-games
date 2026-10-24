@@ -1768,6 +1768,9 @@ function scriptLogBox(maxBtn) {
             ...(e.unknown ? row("", el("div", { class: "log-bad" }, `⚠️ unknown here: ${e.unknown.join(", ")}; the rest not acted on`)) : []),
             ...(e.error ? row("", el("div", { class: "log-bad" }, `⛔ the rule stopped: ${e.error}`)) : []),
             el("div", { class: "log-effect" }, [
+              // (Matthew, 2026-10-24: "each 'change box' in the event log expansion should offer, in a minimal way, a link in the upper
+              // right with <module name>.<handler name> and clicking it switches to focus on that code block, rather than the log")
+              el("button", { class: "log-goto", title: `go to ${e.room}'s on_event`, onclick: ev => { ev.preventDefault(); scriptGoto(e.room + ".on_event"); } }, `${e.room}.on_event`),
               // (Matthew, 2026-10-24: "for the fields that are in globals, add a chip around them with some distinct colors -- and just
               // say nothing --- instead of 'not in globals' -- the absence of the global field chip CSS style will be enough") the
               // answer's commands with no field of their own, beside its changes, as chips with no field chip in them
