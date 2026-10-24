@@ -182,12 +182,13 @@ PAGE = f"""<!doctype html>
 <li>how long it took in all (and how much of it was compiling the program, the first time);</li>
 <li>how much of the globals it changed.</li>
 </ul>
-<p>Open a line to see the event, <b>what it changed</b> (each field, before → after), the rule's own answer, and, under one more fold, <b>the globals before and after in full</b>, side by side, with every changed field marked on both sides.</p>
+<p>Open a line to see the event, <b>what it changed</b>, the rule's own answer, and, under one more fold, <b>the globals in full</b>, side by side, with every changed field marked.</p>
+<p>Each call keeps <b>three snapshots</b> of the globals: <b>1</b>, before, as the handler gets them; <b>2</b>, the moment the handler returns; <b>3</b>, after the event, once the game has finished carrying it out. So “what it changed” comes in two steps. <b>1 → 2</b> is what the handler code itself changed: for a Hazel or Fumola rule always nothing, because a rule only answers. <b>2 → 3</b> is what the game did with the answer: a lever's flip, a boulder's fall, a walk to the next square, each with how long after the call it finished.</p>
 {pic("05-log.png", "Playing and reading at once: the game viewport at the top left, and 🪵 the event log with the two newest calls opened. Each shows its event, what it changed (in the box), and the rule's answer.")}
 {pic("05b-log-globals.png", "The same entry with “globals before and after, in full” opened: the two side by side, scrolling together, the field the call changed marked on both sides.")}
 <p>The log of the run behind these pictures:</p>
 {code(chr(10).join(log_line(e) for e in T.get("log", [])[::-1]) or "(no entries)")}
-{box("tip", "★ WHY A BOULDER ARRIVES LATE", "<p>A boulder takes over a second to fall. The game writes where it is only when it lands, so the log reads the globals again two seconds after the call. A change found then is marked <i>“when its animation ended, 2 s later”</i>. If another call comes in first, the log doesn't guess.</p>")}
+{box("tip", "★ WHY SOME CHANGES ARRIVE LATE", "<p>A boulder takes over a second to fall, and a walk to the next square takes a few seconds; the game writes where the boulder is, or which square the friend is in, only when it lands or arrives. So snapshot 3 is not taken at once: the log watches the globals as the game works, until the next call into a script or ten seconds have passed, and keeps the last change it saw. While it watches, the line says <i>settling…</i>.</p>")}
 {box("tip", "★ A HUNDRED COPIES FOR THE PRICE OF ONE", "<p>Each entry keeps the whole globals twice, before and after. Most of it is the same from one call to the next, so the log stores each distinct part once and shares it. Six calls of the trap room keep their globals in about 8 shared parts, where plain copies would need 96. The line at the top of the log shows both numbers.</p>")}
 
 <h2 id="ch6"><span class="ch">6</span>DEBUGGING WITH THE LOG</h2>
