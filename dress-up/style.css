@@ -1179,3 +1179,5 @@ html.lineart svg image, html.lineart svg [fill="none"] { fill: none !important; 
 html.lineart svg image { display: none; }
 html.lineart mark { background: #fff !important; outline: 1.5px solid #000; }
 html.lineart .hazel-tile, html.lineart .script-master [aria-pressed="true"] { background: #fff !important; color: #000 !important; outline: 1.5px solid #000; }
+.script-log .log-sides.log-three { grid-template-columns: 1fr 1fr 1fr; }
+.script-log .log-step { font-size: 0.85em; opacity: 0.8; margin-top: 4px; }
