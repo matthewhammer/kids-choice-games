@@ -15,8 +15,10 @@ EV = json.load(open(os.path.join(R, "data", "events.json")))
 ST = json.load(open(os.path.join(R, "data", "state.json")))
 GL = json.load(open(os.path.join(R, "data", "globals.json")))
 esc = lambda s: html.escape(str(s if s is not None else ""))
-pic = lambda name, cap, cls="": (f'<figure class="shot {cls}"><img src="pictures/{name}" alt="{esc(cap)}" loading="lazy">'
-                                 f'<figcaption>{cap}</figcaption></figure>') if os.path.exists(os.path.join(R, "pictures", name)) else f'<p class="missing">[picture {esc(name)} not taken]</p>'
+# (each picture as WebP where it is, a third of the PNG's size: the game repository stays small)
+webp = lambda name: name[:-4] + ".webp" if name.endswith(".png") and os.path.exists(os.path.join(R, "pictures", name[:-4] + ".webp")) else name
+pic = lambda name, cap, cls="": (f'<figure class="shot {cls}"><img src="pictures/{webp(name)}" alt="{esc(cap)}" loading="lazy">'
+                                 f'<figcaption>{cap}</figcaption></figure>') if os.path.exists(os.path.join(R, "pictures", webp(name))) else f'<p class="missing">[picture {esc(name)} not taken]</p>'
 box = lambda kind, title, body: f'<aside class="box {kind}"><div class="box-h">{title}</div>{body}</aside>'
 code = lambda s: f'<pre class="code">{esc(s)}</pre>'
 ref = lambda n: f'<a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-{n}"><code><b>^ticket(</b>{n}<b>)</b></code></a>'
@@ -81,6 +83,8 @@ PAGE = f"""<!doctype html>
   figure.shot img {{ display: block; width: 100%; height: auto; image-rendering: auto; }}
   figure.shot figcaption {{ font: 14px/1.4 system-ui, sans-serif; color: var(--muted); padding: 6px 4px 2px; }}
   figure.half {{ max-width: 520px; }}
+  /* (Matthew, 2026-10-24: "center the screenshot, under title for report") */
+  .cover figure.shot {{ margin-left: auto; margin-right: auto; }}
   .toc {{ columns: 2; font-family: "VT323", monospace; font-size: 1.3em; border: 2px dashed var(--line); padding: 10px 16px; }}
   .toc a {{ text-decoration: none; }} @media (max-width: 560px) {{ .toc {{ columns: 1; }} }}
   ol.steps li {{ margin: 6px 0; }}
@@ -248,7 +252,7 @@ PAGE = f"""<!doctype html>
 <div class="scroll"><table class="feat"><thead><tr><th>area</th><th>feature</th><th>status</th><th>where</th></tr></thead><tbody>{rows}</tbody></table></div>
 
 <h2 id="ch12"><span class="ch">12</span>ABOUT THIS GUIDE</h2>
-<p>The pictures and every quoted entry and message come from one run of <code>tools/checks/manual593.mjs</code> (kids-choice-games) on GitHub's computers: branch <code>{esc(RUN.get("branch"))}</code>, the game at <code>{esc(RUN.get("game"))}</code>, run <a href="{esc(RUN.get("url"))}">{esc(RUN.get("id"))}</a>, dark mode, 1440 × 900. The check sets each scene up, breaks the rules on purpose, and takes the picture; nothing was retouched. <code>drivers/build.py</code> draws this page from <a href="data/texts.json">data/texts.json</a> and <a href="data/features.json">data/features.json</a>.</p>
+<p>Every picture is of <b>Messed Up Dress Up {esc(RUN.get("version", ""))}</b>, as released, and every quoted entry and message comes from the same run of <code>tools/checks/manual593.mjs</code> (kids-choice-games) on GitHub's computers: branch <code>{esc(RUN.get("branch"))}</code>, the game at <code>{esc(RUN.get("game"))}</code>, run <a href="{esc(RUN.get("url"))}">{esc(RUN.get("id"))}</a>, dark mode, 1440 × 900. The check sets each scene up, breaks the rules on purpose, and takes the picture; nothing was retouched. <code>drivers/build.py</code> draws this page from <a href="data/texts.json">data/texts.json</a> and <a href="data/features.json">data/features.json</a>.</p>
 <p>Related: <a href="https://matthewhammer.org/hazel/reports/">Hazel reports</a>, where the scripts' speed and the three-way checks are measured; hazelgrove/hazel <a href="https://github.com/hazelgrove/hazel/pull/2711">#2711</a> (Hazel as a JS library); Adapton/fumola.</p>
 </main>
 <script>

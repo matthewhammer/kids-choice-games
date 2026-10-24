@@ -163,7 +163,7 @@ async function printGuide() {
     await send("Emulation.setEmulatedMedia", { media: "print", features: [{ name: "prefers-color-scheme", value: "light" }] });
     await send("Page.navigate", { url: at }); await sleep(3000);
     const n = await ev(`(async () => { const P = ${JSON.stringify(pics)}, C = ${JSON.stringify(colorPages)};
-      for (const img of document.querySelectorAll("img")) { const f = (img.getAttribute("src") || "").split("/").pop();
+      for (const img of document.querySelectorAll("img")) { const f = (img.getAttribute("src") || "").split("/").pop().replace(/\.webp$/, ".png");   // (the web report's pictures are WebP)
         // ("and even have them use vector graphics?": the pit room as the game's own drawing, its lines, in place of its picture)
         if (f === "01-pit-room.png" && C[0]) { const d = document.createElement("div"); d.className = "vector"; d.innerHTML = C[0].svg; img.replaceWith(d); continue; }
         if (P[f]) img.src = P[f]; }
