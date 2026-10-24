@@ -8,7 +8,7 @@
     "tag": "Pull",
     "value": "L"
    },
-   "ms": 23.2,
+   "ms": 35.7,
    "diff": [
     {
      "path": "lever_L",
@@ -25,7 +25,7 @@
     "tag": "PullBoulder",
     "value": "L"
    },
-   "ms": 21.8,
+   "ms": 24.2,
    "diff": [
     {
      "path": "covered[0]",
@@ -42,7 +42,7 @@
     "tag": "Pull",
     "value": "R"
    },
-   "ms": 14.3,
+   "ms": 29.3,
    "diff": [
     {
      "path": "lever_R",
@@ -59,7 +59,7 @@
     "tag": "Pull",
     "value": "L"
    },
-   "ms": 6,
+   "ms": 8.7,
    "diff": [
     {
      "path": "lever_L",
@@ -76,7 +76,7 @@
     "tag": "Pull",
     "value": "R"
    },
-   "ms": 8.5,
+   "ms": 17.8,
    "diff": [
     {
      "path": "lever_R",
@@ -93,7 +93,7 @@
     "tag": "Pull",
     "value": "L"
    },
-   "ms": 10.9,
+   "ms": 13.9,
    "diff": [
     {
      "path": "lever_L",
@@ -112,7 +112,7 @@
   "entry": {
    "engine": "js",
    "dry": {
-    "ms": 5.4,
+    "ms": 6.8,
     "answer": {
      "tag": "Flip",
      "value": [
