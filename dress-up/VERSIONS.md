@@ -4,6 +4,16 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.428 (2026-10-24)
+
+Everything in 0.0.427, plus recordings, for N and M (ticket 608):
+
+- **🎙️ Recordings, a new tab**: ⏺ records from the microphone until ⏹ (the browser asks the first time; it stops by itself after ten minutes). Each recording becomes a button that plays it, showing a picture of its sound wave (as a recording editor draws one), how long it is and when it was made; tap it again to stop.
+- **🏷️ A name for each recording**: an emoji, chosen from more than 750 in nine kinds, from faces and animals to food, vehicles and hearts; or 🚫 no name.
+- **🎨 A colour for each recording's button**, from 24.
+- **✖ removes a recording**: a second tap, so a stray tap keeps it.
+- **Private**: recordings stay in this browser, on this computer. Nothing is sent anywhere, and they are not in 💾 saves. The microphone is used only between ⏺ and ⏹.
+
 ## 0.0.427 (2026-10-24)
 
 Everything in 0.0.426, plus the speed checks after each release working again (ticket 605):

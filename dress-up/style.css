@@ -1207,3 +1207,31 @@ html.lineart .script-log .log-field { background: none; border-color: currentCol
 /* (ticket 440) 🎬 a place's story */
 .story .story-text { width: 100%; box-sizing: border-box; font: 0.9em/1.4 ui-monospace, monospace; border-radius: 8px; padding: 6px 8px; }
 .story .story-status { min-height: 1.2em; }
+  /* (ticket 608) 🎙️ Recordings: ⏺ record (red while it records, with the sound's wave beside it), then each recording a
+     button in its own colour that plays it: its emoji, its wave, how long and when; 🏷️ 🎨 ✖ beside it */
+  .rec-top { gap: 10px; }
+  .rec-record { font-size: 1.15em; font-weight: 600; padding: 8px 18px; border-radius: 999px; white-space: pre; }
+  .rec-record.on { background: #e11d48; color: #fff; border-color: #e11d48; }
+  .rec-live { width: 220px; max-width: 100%; height: 40px; }
+  .rec-said { margin-top: 6px; }
+  .rec-list { display: grid; gap: 8px; margin-top: 10px; }
+  .rec-card { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; }
+  .rec-play { flex: 1 1 240px; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; border-radius: 14px; border: 2px solid;
+              padding: 6px 10px; text-align: left; font-size: 1em; }
+  .rec-play[aria-pressed=true] { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
+  .rec-icon { font-size: 1.2em; width: 1.3em; text-align: center; }
+  .rec-emoji { font-size: 1.8em; line-height: 1; }
+  .rec-emoji:empty { display: none; }
+  .rec-wave { flex: 1 1 120px; min-width: 80px; height: 40px; }
+  .rec-words { margin-left: auto; }
+  .rec-words { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.85em; white-space: nowrap; }
+  .rec-len { font-weight: 700; font-size: 1.1em; }
+  .rec-tools { display: flex; gap: 4px; align-items: center; }
+  .rec-tools button { font-size: 1.15em; padding: 4px 8px; }
+  .rec-remove.sure { background: rgba(239, 68, 68, 0.18); border-color: #ef4444; font-size: 1em; }
+  .rec-empty, .rec-note { margin-top: 8px; }
+  .rec-emoji-kinds { margin: 4px 0 8px; }
+  .rec-emoji-kinds button { font-size: 1.3em; padding: 2px 8px; }
+  .person-pick-chip.rec-emoji-chip { font-size: 1.6em; padding: 2px 6px; min-width: 2em; }
+  .person-pick-chip.rec-color-chip { padding: 3px; line-height: 0; }
+  .rec-swatch { display: inline-block; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); }

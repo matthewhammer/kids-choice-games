@@ -801,6 +801,10 @@ const TABS = [
     ["nudge", "transpose", "🎹 move the tune by an interval", -24, 24, "interval"],
     ["mixer", "mix", "🎚️ mixing board"],
   ]],
+  // (ticket 608, N and M: "new 'recordings' chip, at top level") record from the microphone, play back; kept in this browser only
+  ["🎙️ Recordings", "recordings", [
+    ["recordings", "list", "🎙️ recordings"],
+  ]],
   // (ticket 185, Matthew) after the music, before Advanced: the world designer
   ["🗺️ World design", "world", [
     ["worldbig", "big", "⛶ full screen"],
@@ -2265,6 +2269,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // kept off until they are fast (PERF_FEATURES), each with how many there
   // are in this place, and a measure of what it costs on this computer.
   if (kind === "scripting") { scriptingPanel(box); return box; }   // (ticket 482)
+  if (kind === "recordings") { recordingsPanel(box); return box; }   // (ticket 608, 25-recordings.js)
   if (kind === "advanced") {
     // (syncs run on every frame of a walk: the page is changed only when a value changes)
     const put = (node, text) => { if (node.textContent !== text) node.textContent = text; };
