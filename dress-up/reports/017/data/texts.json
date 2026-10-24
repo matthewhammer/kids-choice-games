@@ -8,14 +8,18 @@
     "tag": "Pull",
     "value": "L"
    },
-   "ms": 35.7,
-   "diff": [
+   "ms": 19.1,
+   "d1": [
     {
      "path": "lever_L",
      "from": false,
      "to": true
     }
-   ]
+   ],
+   "d2": [],
+   "doneMs": 1424,
+   "doneBy": "game",
+   "overlap": null
   },
   {
    "n": 2,
@@ -25,14 +29,18 @@
     "tag": "PullBoulder",
     "value": "L"
    },
-   "ms": 24.2,
-   "diff": [
+   "ms": 18.3,
+   "d1": [
     {
      "path": "covered[0]",
      "from": false,
      "to": true
     }
-   ]
+   ],
+   "d2": [],
+   "doneMs": 1422,
+   "doneBy": "game",
+   "overlap": null
   },
   {
    "n": 3,
@@ -42,14 +50,18 @@
     "tag": "Pull",
     "value": "R"
    },
-   "ms": 29.3,
-   "diff": [
+   "ms": 10.8,
+   "d1": [
     {
      "path": "lever_R",
      "from": false,
      "to": true
     }
-   ]
+   ],
+   "d2": [],
+   "doneMs": 1433,
+   "doneBy": "game",
+   "overlap": null
   },
   {
    "n": 4,
@@ -59,14 +71,18 @@
     "tag": "Pull",
     "value": "L"
    },
-   "ms": 8.7,
-   "diff": [
+   "ms": 5.2,
+   "d1": [
     {
      "path": "lever_L",
      "from": true,
      "to": false
     }
-   ]
+   ],
+   "d2": [],
+   "doneMs": 1415,
+   "doneBy": "game",
+   "overlap": null
   },
   {
    "n": 5,
@@ -76,14 +92,18 @@
     "tag": "Pull",
     "value": "R"
    },
-   "ms": 17.8,
-   "diff": [
+   "ms": 9.9,
+   "d1": [
     {
      "path": "lever_R",
      "from": false,
      "to": true
     }
-   ]
+   ],
+   "d2": [],
+   "doneMs": 1418,
+   "doneBy": "game",
+   "overlap": null
   },
   {
    "n": 6,
@@ -93,14 +113,18 @@
     "tag": "Pull",
     "value": "L"
    },
-   "ms": 13.9,
-   "diff": [
+   "ms": 11.5,
+   "d1": [
     {
      "path": "lever_L",
      "from": false,
      "to": true
     }
-   ]
+   ],
+   "d2": [],
+   "doneMs": 1424,
+   "doneBy": "game",
+   "overlap": null
   }
  ],
  "typeError": {
@@ -112,7 +136,7 @@
   "entry": {
    "engine": "js",
    "dry": {
-    "ms": 6.8,
+    "ms": 7.9,
     "answer": {
      "tag": "Flip",
      "value": [
