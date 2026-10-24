@@ -183,8 +183,8 @@ PAGE = f"""<!doctype html>
 <li>how long it took in all (and how much of it was compiling the program, the first time);</li>
 <li>how much of the globals it changed.</li>
 </ul>
-<p>Open a line to see the event, <b>what it changed</b>, the rule's own answer, and, under one more fold, <b>the globals in full</b>, side by side, with every changed field marked.</p>
-<p>Each call keeps <b>three snapshots</b> of the globals: <b>1</b>, before, as the handler gets them; <b>2</b>, the moment the handler returns; <b>3</b>, after the event, once the game has finished carrying it out. So “what it changed” comes in two steps. <b>1 → 2</b> is what the handler code itself changed: for a Hazel or Fumola rule always nothing, because a rule only answers. <b>2 → 3</b> is what the game did with the answer: a lever's flip, a boulder's fall, a walk to the next square, each with how long after the call it finished.</p>
+<p>Open a line to see the event, the rule's own answer just under it, then <b>what it changed</b>, and, under one more fold, <b>the globals in full</b>, side by side, with every changed field marked.</p>
+<p>Each call keeps <b>three snapshots</b> of the globals: <b>1</b>, before, as the handler gets them; <b>2</b>, the moment the handler returns; <b>3</b>, after the event, once the game has finished carrying it out. So “what it changed” comes in two steps. <b>1 → 2</b> is what the rule (the handler code) itself changed: for a Hazel or Fumola rule always nothing, because a rule only answers. <b>2 → 3</b> is what the game engine did with the answer: a lever's flip, a boulder's fall, a walk to the next square, each with how long after the call it finished.</p>
 {pic("05-log.png", "Playing and reading at once: the game viewport at the top left, and 🪵 the event log with the two newest calls opened. Each shows its event, what it changed (in the box), and the rule's answer.")}
 {pic("05b-log-globals.png", "The same entry with “globals before and after, in full” opened: the two side by side, scrolling together, the field the call changed marked on both sides.")}
 <p>The log of the run behind these pictures:</p>

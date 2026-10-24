@@ -1723,21 +1723,23 @@ function scriptLogBox(maxBtn) {
         return [
           el("div", { class: "hint" }, `${e.engine === "js" ? "the game's own JS handler" : "the rule's function alone " + e.ruleMs + " ms; the whole call, its commands acted on,"} ${e.ms} ms${e.compileMs ? `, ${e.compileMs} ms of it compiling the program first` : ""}`),
           el("div", { class: "cap" }, "event"), scriptJsonView(e.ev, new Set(), full()),
-          // (Matthew, 2026-10-24: "please put a box, with a distinct background, around what it changed ... and increase the font slightly")
-          el("div", { class: "log-effect" }, [el("div", { class: "cap" }, "what it changed"),
-            el("div", { class: "log-step" }, "1 → 2 · by the handler itself"),
-            list(d1, e.engine === "js" ? "nothing yet" : "nothing: a rule only answers; the game carries its answer out"),
-            el("div", { class: "log-step" }, `2 → 3 · by the game, carrying it out${e.settling ? " (still going…)" : e.doneMs > 50 ? ` (over ${(e.doneMs / 1000).toFixed(1)} s after the call)` : ""}`),
-            list(d2, "nothing"),
-            ...(e.doneBy === "limit" ? [el("div", { class: "log-bad" }, `⚠️ still going after ${SCRIPT_EVENT_MAX_MS / 1000} s (a walk cut short?): snapshot 3 may be early`)] : []),
-            ...(e.overlap ? [el("div", { class: "hint" }, `the next call came before this event was over: its changes may be in this one's step 2 → 3 too`)] : [])]),
           // (ticket 594) what the rule answered; a command the room did not know; a rule run in a program with errors
           ...(e.answer !== undefined ? [el("div", { class: "cap" }, "the rule's answer"), scriptJsonView(e.answer, new Set(), full())] : []),
           ...(e.unknown ? [el("div", { class: "log-bad" }, `⚠️ the room does not know ${e.unknown.join(", ")}: the commands from there on were not acted on`)] : []),
           ...(e.error ? [el("div", { class: "log-bad" }, `⛔ the rule stopped: ${e.error}`)] : []),
           ...(e.dry ? [el("div", { class: "cap" }, "Hazel's rule, run though the program has errors"),
-            el("div", { class: "hint log-bad" }, `${e.dry.errors.length ? e.dry.errors.join("; ") : "its own module is fine"}${e.dry.others.length ? `; errors also in ${e.dry.others.join(", ")}` : ""}. Its answer was not acted on: the game's own JS moved (the change above is the JS's).`),
+            el("div", { class: "hint log-bad" }, `${e.dry.errors.length ? e.dry.errors.join("; ") : "its own module is fine"}${e.dry.others.length ? `; errors also in ${e.dry.others.join(", ")}` : ""}. Its answer was not acted on: the game's own JS moved (the change below is the JS's).`),
             e.dry.threw ? el("div", { class: "log-bad" }, `⛔ it stopped: ${e.dry.threw}`) : scriptJsonView(e.dry.answer, new Set(), full())] : []),
+          // (Matthew, 2026-10-24: "let's have the event and \"rule's answer\" be consecutive, Show the diffs by the rule and engine after the
+          // answer from the rule.")
+          // (Matthew, 2026-10-24: "please put a box, with a distinct background, around what it changed ... and increase the font slightly")
+          el("div", { class: "log-effect" }, [el("div", { class: "cap" }, "what it changed"),
+            el("div", { class: "log-step" }, `1 → 2 · by ${e.engine === "js" ? "the JS handler" : "the rule"} itself`),
+            list(d1, e.engine === "js" ? "nothing yet" : "nothing: a rule only answers; the game carries its answer out"),
+            el("div", { class: "log-step" }, `2 → 3 · by the game engine, carrying it out${e.settling ? " (still going…)" : e.doneMs > 50 ? ` (over ${(e.doneMs / 1000).toFixed(1)} s after the call)` : ""}`),
+            list(d2, "nothing"),
+            ...(e.doneBy === "limit" ? [el("div", { class: "log-bad" }, `⚠️ still going after ${SCRIPT_EVENT_MAX_MS / 1000} s (a walk cut short?): snapshot 3 may be early`)] : []),
+            ...(e.overlap ? [el("div", { class: "hint" }, `the next call came before this event was over: its changes may be in this one's step 2 → 3 too`)] : [])]),
           whole];
       };
       const det = el("details", { class: "log-entry" }, [head]);
