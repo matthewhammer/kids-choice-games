@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.419 (2026-10-24)
+
+- **📜 🪵 Roomier change chips**: the field's chip sits inside its change's chip with a little space all round.
+
 ## 0.0.418 (2026-10-24)
 
 - **📜 🪵 field = value**: a change in the log reads `lever_R = false ⟶ true`, an = after the field's chip.
