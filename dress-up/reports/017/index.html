@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- nav: begin --><meta name="theme-support" content="data-theme"><script src="https://matthewhammer.org/nav/nav.js"></script><!-- nav: end -->
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Scripts Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #f4ecd8; --paper: #fffaf0; --ink: #231f1a; --muted: #6b6052; --line: #c9b99a; --accent: #b4361d; --alt: #1d5fb4; --good: #2f7d32; --bad: #b4361d; --tip: #fff3c4; --warn: #ffe0d6; --code: #1d1b16; --codeink: #e8e2d0; --link: #1d5fb4; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; } }
+  :root[data-theme="dark"] { --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 Georgia, "Times New Roman", serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+  a { color: var(--link); }
+  .series { font: 15px/1.4 system-ui, sans-serif; color: var(--muted); }
+  .cover { border: 4px double var(--ink); background: var(--paper); padding: 28px 22px; margin: 18px 0 30px; text-align: center; }
+  .cover .pub { font-family: "VT323", monospace; font-size: 1.3em; letter-spacing: 0.15em; color: var(--muted); }
+  h1 { font-family: "Press Start 2P", monospace; font-size: clamp(1.1em, 4.2vw, 1.9em); line-height: 1.5; margin: 14px 0; color: var(--accent); text-shadow: 3px 3px 0 color-mix(in srgb, var(--ink) 20%, transparent); }
+  .cover .edition { font-family: "VT323", monospace; font-size: 1.5em; }
+  h2 { font-family: "Press Start 2P", monospace; font-size: 1em; line-height: 1.6; margin: 48px 0 14px; padding: 10px 12px; background: var(--ink); color: var(--paper); }
+  h2 .ch { color: var(--accent); margin-right: 10px; }
+  h3 { font-family: "VT323", monospace; font-size: 1.6em; margin: 26px 0 6px; border-bottom: 2px dotted var(--line); }
+  .box { border: 3px solid var(--ink); padding: 10px 14px; margin: 16px 0; background: var(--paper); }
+  .box .box-h { font-family: "Press Start 2P", monospace; font-size: 0.7em; margin-bottom: 6px; }
+  .box.tip { background: var(--tip); } .box.warn { background: var(--warn); border-color: var(--bad); }
+  .box.warn .box-h { color: var(--bad); }
+  pre.code { background: var(--code); color: var(--codeink); padding: 10px 12px; overflow-x: auto; font: 14px/1.45 "VT323", ui-monospace, monospace; font-size: 1.05em; border-left: 6px solid var(--accent); white-space: pre-wrap; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 0.88em; }
+  figure.shot { margin: 18px 0; border: 3px solid var(--ink); background: var(--paper); padding: 6px; }
+  figure.shot img { display: block; width: 100%; height: auto; image-rendering: auto; }
+  figure.shot figcaption { font: 14px/1.4 system-ui, sans-serif; color: var(--muted); padding: 6px 4px 2px; }
+  figure.half { max-width: 520px; }
+  .toc { columns: 2; font-family: "VT323", monospace; font-size: 1.3em; border: 2px dashed var(--line); padding: 10px 16px; }
+  .toc a { text-decoration: none; } @media (max-width: 560px) { .toc { columns: 1; } }
+  ol.steps li { margin: 6px 0; }
+  table.feat { width: 100%; border-collapse: collapse; font: 14px/1.4 system-ui, sans-serif; }
+  table.feat td.n { text-align: right; } table.feat th, table.feat td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
+  table.feat th { background: var(--ink); color: var(--paper); font-family: "VT323", monospace; font-size: 1.2em; font-weight: normal; }
+  td.st { font-family: "Press Start 2P", monospace; font-size: 0.6em; white-space: nowrap; }
+  td.st-done { color: var(--good); } td.st-check { color: var(--alt); } td.st-branch { color: #b8860b; } td.st-next { color: var(--bad); }
+  .scroll { overflow-x: auto; }
+  .key { display: inline-block; border: 2px solid var(--ink); border-bottom-width: 4px; padding: 0 6px; font: 0.85em ui-monospace, monospace; background: var(--paper); }
+  .missing { color: var(--bad); font-family: "VT323", monospace; }
+  .wip { color: #b45309; font-weight: 600; }
+  button.theme { font: 13px system-ui; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; position: fixed; top: 8px; right: 8px; }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../017/"><code><b>^du_report(</b>17<b>)</b></code></a> · 2026-10-24 · <span class="wip">work in progress</span> · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-593"><code><b>^ticket(</b>593<b>)</b></code></a></p>
+<div class="cover">
+  <div class="pub">KIDS' CHOICE GAMES PRESENTS</div>
+  <h1>GAME SCRIPTS<br>PLAYER'S GUIDE</h1>
+  <div class="edition">for MESSED UP DRESS UP · the 📜 Scripting panel · first edition</div>
+  <figure class="shot half"><img src="pictures/01-pit-room.png" alt="The trap room, also called the pit room, in the game: two red levers, two blue levers, two pits. What each lever does is decided by a game script." loading="lazy"><figcaption>The trap room, also called the pit room, in the game: two red levers, two blue levers, two pits. What each lever does is decided by a game script.</figcaption></figure>
+</div>
+<p class="series">Matthew, 2026-10-24: “explaining the new game script feature, in the spirit of a 1980s or 1990s game manual, with screenshots … we want to show what log events look like, and how to use them to ‘debug’ the game script”; “the report/manual for game scripts should show examples of erroneous scripts, and how to check the errors and fix them”; and “use this report to list the full feature set, to track it”.</p>
+
+<div class="toc">
+<a href="#ch1">1 · WHAT ARE GAME SCRIPTS?</a><br>
+<a href="#ch2">2 · GETTING STARTED</a><br>
+<a href="#ch3">3 · THE SCRIPT PANEL</a><br>
+<a href="#ch4">4 · A WALK THROUGH THE PIT ROOM</a><br>
+<a href="#ch5">5 · THE EVENT LOG 🪵</a><br>
+<a href="#ch6">6 · DEBUGGING WITH THE LOG</a><br>
+<a href="#ch7">7 · TROUBLESHOOTING: BROKEN SCRIPTS</a><br>
+<a href="#ch8">8 · WHAT A SCRIPT COSTS 🔬</a><br>
+<a href="#ch9">9 · BEHIND THE SCENES: GAME EVENTS</a><br>
+<a href="#ch10">10 · BEHIND THE SCENES: THE GAME&#39;S STATE</a><br>
+<a href="#ch11">11 · QUICK REFERENCE: EVERY FEATURE</a><br>
+<a href="#ch12">12 · ABOUT THIS GUIDE</a>
+</div>
+
+<h2 id="ch1"><span class="ch">1</span>WHAT ARE GAME SCRIPTS?</h2>
+<p>Some rooms in Messed Up Dress Up have <i>rules</i>. Pull a red lever in the trap room and a pit opens or shuts. Pull a blue lever and a boulder drops into a pit, or is lifted out. Pull the lever in a tree house and its trap door swings. Walk out of a square and the world decides where you arrive.</p>
+<p>Every rule is a small program, a <b>game script</b>. The game hands it what it needs to know, the <b>globals</b> (which levers are up, which pits are open, which square of the world the friend is in), and an <b>event</b> (“the left red lever was pulled”). The script answers with <b>commands</b> (“flip the left lever; open pit 0”). The game carries them out, with the sounds and animations you know.</p>
+<aside class="box tip"><div class="box-h">★ GOOD TO KNOW</div><p>Each rule is written three times, in three languages, and all three give the same answers. The game checks this on every change, over 50,000 cases. You choose which version runs.</p></aside>
+<p>The three languages:</p>
+<ul>
+<li><b>JS</b>: the game's own JavaScript, shown read-only, exactly as the game runs it.</li>
+<li><b>Hazel</b>: a language with a type checker that reads your rule as you write it, and still runs a rule with mistakes in it.</li>
+<li><b>🍄 Fumola</b>: a language in the style of Motoko, running in the browser as WebAssembly.</li>
+</ul>
+
+<h2 id="ch2"><span class="ch">2</span>GETTING STARTED</h2>
+<ol class="steps">
+<li>Open the side panel and choose the <b>📜 Scripting</b> tab.</li>
+<li>At the top, in <b>⚙️ script editor settings</b>, the <b>all</b> row picks one language for every room: <span class="key">JS</span> <span class="key">Hazel</span> <span class="key">🍄 Fumola</span>. Each room's own box has the same three chips, to choose room by room.</li>
+<li>Walk into the trap room and pull a lever. The rule in the language you chose decides what happens.</li>
+</ol>
+<figure class="shot "><img src="pictures/02-panel.png" alt="The 📜 Scripting panel beside the game: the settings at the top, then 🪵 the event log, then a box for each room&#x27;s rule and one for Common, the helpers every room can call." loading="lazy"><figcaption>The 📜 Scripting panel beside the game: the settings at the top, then 🪵 the event log, then a box for each room's rule and one for Common, the helpers every room can call.</figcaption></figure>
+
+<h2 id="ch3"><span class="ch">3</span>THE SCRIPT PANEL</h2>
+<h3>Settings</h3>
+<figure class="shot half"><img src="pictures/03-settings.png" alt="⚙️ script editor settings: the language for every room; the code&#x27;s size and font; colours on or off; Hazel as tiles or text; line numbers; the event log on or off, and how many calls it keeps; and the longest line before it is broken." loading="lazy"><figcaption>⚙️ script editor settings: the language for every room; the code's size and font; colours on or off; Hazel as tiles or text; line numbers; the event log on or off, and how many calls it keeps; and the longest line before it is broken.</figcaption></figure>
+<h3>⛶ Max size and the outline</h3>
+<p>Every box has a <span class="key">⛶ max size</span> button. It opens the box across the screen, with an <b>outline</b> on the left: every box, and in each its types (with their kinds and how many cases) and its functions (with their types, as Hazel works them out). Click a line in the outline and the box goes to that definition and selects it. Drag the bar between the two sides to make the outline wider or narrower.</p>
+<p>Next to <span class="key">✖ back to game</span>, the <span class="key">🎮 show game viewport</span> chip puts the game itself at the top of the outline, so you can play while reading the rules and the log.</p>
+<figure class="shot "><img src="pictures/04-max-trap-room.png" alt="⛶ max size at the trap room&#x27;s rule, in Hazel&#x27;s tiles, with the game viewport at the top left and the outline below it." loading="lazy"><figcaption>⛶ max size at the trap room's rule, in Hazel's tiles, with the game viewport at the top left and the outline below it.</figcaption></figure>
+<h3>Hazel's tiles</h3>
+<p>Hazel boxes show the rule as Hazel's own <b>tiles</b>, the real Hazel editor, in the page's colours. Type in them and the game uses your change about half a second after you stop. Right-click a name for <b>Goto definition</b> (or press <span class="key">F12</span>): it finds the definition even in another box, in Common, or among the types at the program's start. Prefer plain text? Choose <b>hazel: ✏️ text</b> in the settings.</p>
+
+<h2 id="ch4"><span class="ch">4</span>A WALK THROUGH THE PIT ROOM</h2>
+<p>The trap room has two pits and four levers. The two <b>red</b> levers open and shut the pits; which lever works which pit depends on the room's <b>wiring</b>: normal, reversed, or at random. The two <b>blue</b> levers drop a boulder into each pit the lever's side works, or lift the boulders out if one is there.</p>
+<p>Here is the red lever's part of the rule, in Hazel:</p>
+<pre class="code">| Pull(side) =&gt;
+  let (was0, was1) = Common.pits_open(g.lever_L, g.lever_R, w) in
+  let l = if side == L then !g.lever_L else g.lever_L in
+  let r = if side == R then !g.lever_R else g.lever_R in
+  let (now0, now1) = Common.pits_open(l, r, w) in
+  Flip(side, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, Done)))</pre>
+<p>Read it line by line: which pits are open now; the levers after this pull; which pits are open after it; then the answer, flip the lever that was pulled and move each pit whose state changed. <code>Common.pits_open</code> and <code>Common.pit_moves</code> are helpers in the Common box, shared by every room.</p>
+<aside class="box tip"><div class="box-h">★ TRY THIS</div><p>Pull the left red lever, then look at 🪵 the event log: the newest entry says <code>lever_L: false → true</code>. Pull it again and it goes back.</p></aside>
+
+<h2 id="ch5"><span class="ch">5</span>THE EVENT LOG 🪵</h2>
+<p>Every time the game calls into a script, whichever language answers, the call goes into the <b>event log</b>, newest first, up to the last 100 (or all of them: <b>keep: all</b>). A line says:</p>
+<ul>
+<li>its number and the time, to the millisecond;</li>
+<li>which language answered: JS, Hazel or Fumola;</li>
+<li>the call and its event, as in <code>TrapRoom.on_event(Pull("L"))</code>;</li>
+<li>how long it took in all (and how much of it was compiling the program, the first time);</li>
+<li>how much of the globals it changed.</li>
+</ul>
+<p>Open a line to see the event, <b>what it changed</b> (each field, before → after), the rule's own answer, and, under one more fold, <b>the globals before and after in full</b>, side by side, with every changed field marked on both sides.</p>
+<figure class="shot "><img src="pictures/05-log.png" alt="🪵 the event log with an entry opened: the event, what it changed, the rule&#x27;s answer, and the globals before and after side by side, the changed field marked." loading="lazy"><figcaption>🪵 the event log with an entry opened: the event, what it changed, the rule's answer, and the globals before and after side by side, the changed field marked.</figcaption></figure>
+<p>The log of the run behind these pictures:</p>
+<pre class="code">#4 JS     TrapRoom.on_event(Pull(&quot;L&quot;)) 7.8 ms · lever_L: true → false
+#3 HAZEL  TrapRoom.on_event(Pull(&quot;R&quot;)) 26.7 ms · lever_R: false → true
+#2 HAZEL  TrapRoom.on_event(PullBoulder(&quot;L&quot;)) 31.9 ms · covered[0]: false → true
+#1 HAZEL  TrapRoom.on_event(Pull(&quot;L&quot;)) 30.6 ms · lever_L: false → true</pre>
+<aside class="box tip"><div class="box-h">★ WHY A BOULDER ARRIVES LATE</div><p>A boulder takes over a second to fall. The game writes where it is only when it lands, so the log reads the globals again two seconds after the call. A change found then is marked <i>“when its animation ended, 2 s later”</i>. If another call comes in first, the log doesn't guess.</p></aside>
+<aside class="box tip"><div class="box-h">★ A HUNDRED COPIES FOR THE PRICE OF ONE</div><p>Each entry keeps the whole globals twice, before and after. Most of it is the same from one call to the next, so the log stores each distinct part once and shares it. Six calls of the trap room keep their globals in about 8 shared parts, where plain copies would need 96. The line at the top of the log shows both numbers.</p></aside>
+
+<h2 id="ch6"><span class="ch">6</span>DEBUGGING WITH THE LOG</h2>
+<p>When a lever does something you didn't expect, work through it like this:</p>
+<ol class="steps">
+<li><b>Do it once.</b> Pull the lever a single time, so the newest entry is the one you care about.</li>
+<li><b>Which language answered?</b> If it says <b>JS</b> where you expected Hazel or Fumola, your rule didn't answer. Look for ⚠️ or ⛔ on the same line (chapter 7).</li>
+<li><b>What came in?</b> Open the entry and read the <b>event</b> and the globals <b>before</b>. Was the lever really up? Was the wiring what you thought?</li>
+<li><b>What did the rule say?</b> <b>The rule's answer</b> is exactly what it returned: <code>Flip(L, SetPit(0, true, Done))</code>, as data.</li>
+<li><b>What changed?</b> If the answer is right but <b>what it changed</b> isn't, the game carried a command out differently than you meant. If the answer itself is wrong, the mistake is in the rule.</li>
+<li><b>Compare with JS.</b> Switch that room to <span class="key">JS</span>, pull the lever again, and compare the two entries side by side.</li>
+</ol>
+
+<h2 id="ch7"><span class="ch">7</span>TROUBLESHOOTING: BROKEN SCRIPTS</h2>
+<p>Four ways a script goes wrong, what each one looks like, and how to fix it. Every example was broken on purpose, in the run behind this guide.</p>
+
+<h3>7.1 A type error (Hazel)</h3>
+<p>Hazel reads the whole program before anything runs. Change the red lever's answer from <code>Flip(side, …)</code> to <code>Flip(3, …)</code>: a lever is a <code>Side</code> (<code>L</code> or <code>R</code>), not a number.</p>
+<aside class="box warn"><div class="box-h">⚠ WHAT YOU SEE</div><p>The room's box lists its errors under its name; the ⛶ outline shows <b>⚠️</b> and a count beside the room; and the event log gets a <b>check</b> entry, before any lever is pulled:</p><pre class="code">3: a Side is wanted here, but this is an Int
+3, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, …: a (Side, Cmd) is wanted here, but this is a (Int, Cmd)</pre><p>The rule still <b>runs</b>: Hazel runs a program with errors as far as it can. Its answer goes in the entry, with <code>‹not a value›</code> where the error stopped it. But the game's own JS moves the lever, so the game keeps working while you fix it.</p></aside>
+<figure class="shot "><img src="pictures/06-type-error-box.png" alt="The trap room&#x27;s box with its type errors listed under its name." loading="lazy"><figcaption>The trap room's box with its type errors listed under its name.</figcaption></figure>
+<figure class="shot "><img src="pictures/07-type-error-log.png" alt="The log: a check entry with the errors, then the pull, answered by JS, with Hazel&#x27;s own answer and its errors underneath." loading="lazy"><figcaption>The log: a check entry with the errors, then the pull, answered by JS, with Hazel's own answer and its errors underneath.</figcaption></figure>
+<aside class="box tip"><div class="box-h">★ HOW TO FIX IT</div><p>Read the message: <i>“3: a Side is wanted here, but this is an Int”</i>. Put back a <code>Side</code> (here, <code>side</code>), and the next check entry says <b>✅ the program is fine again</b>.</p></aside>
+<figure class="shot "><img src="pictures/08-fixed-log.png" alt="Fixed: the check entry says the program is fine again, and the next pull is Hazel&#x27;s own." loading="lazy"><figcaption>Fixed: the check entry says the program is fine again, and the next pull is Hazel's own.</figcaption></figure>
+
+<h3>7.2 A hole to fill (Hazel)</h3>
+<p>Leave part of a rule unwritten, a <code>?</code> or an <code>if</code> without its <code>else</code>, and Hazel counts it: <i>“1 hole to fill”</i>, or <i>“1 bracket or keyword without its partner”</i>. It appears just like a type error: in the box, in the outline, and in a check entry. The game's JS moves until the rule is finished.</p>
+
+<h3>7.3 A command the room doesn't know</h3>
+<p>Every room carries out only its own commands. The trap room knows <code>Flip</code>, <code>SetPit</code>, <code>DropBoulder</code> and <code>LiftBoulder</code>; it doesn't know <code>GoSquare</code>, which belongs to the world. This rule type-checks, since <code>GoSquare</code> is a real command, but the room can't carry it out:</p>
+<pre class="code">let on_event = fun (g, e) : (Globals, Event) -&gt; GoSquare(0, 0, N, Flip(L, Done))</pre>
+<aside class="box warn"><div class="box-h">⚠ WHAT YOU SEE</div><p>The entry says <b>⚠️ 1 command the room does not know</b>, and inside: <i>the room does not know GoSquare: the commands from there on were not acted on</i>. The rule's answer shows the whole list it returned.</p></aside>
+<figure class="shot "><img src="pictures/09-unknown-command.png" alt="A command the trap room doesn&#x27;t know: the entry, its answer, and the warning." loading="lazy"><figcaption>A command the trap room doesn't know: the entry, its answer, and the warning.</figcaption></figure>
+<aside class="box tip"><div class="box-h">★ HOW TO FIX IT</div><p>Use only the room's own commands. The rule's answer shows where the list went wrong; everything after the unknown command was skipped too.</p></aside>
+
+<h3>7.4 A rule that stops (Fumola)</h3>
+<p>Some mistakes only show up when the rule runs. In Fumola, reading past the end of a list stops the rule:</p>
+<pre class="code">public func on_event(g : Common.Globals, e : Common.Event) : Common.Cmd { let z = [1, 2][5];</pre>
+<aside class="box warn"><div class="box-h">⚠ WHAT YOU SEE</div><p>The entry says <b>⛔ stopped: Fumola: an index past the end</b>. Nothing the rule meant to do happened, and the lever stays where it was.</p></aside>
+<figure class="shot "><img src="pictures/10-fumola-stops.png" alt="A Fumola rule that stops: the entry and its message." loading="lazy"><figcaption>A Fumola rule that stops: the entry and its message.</figcaption></figure>
+<aside class="box tip"><div class="box-h">★ HOW TO FIX IT</div><p>Find the line the message names, and check the list's length before reading from it, or read with a pattern (<code>switch</code>) that covers the empty case.</p></aside>
+
+<h2 id="ch8"><span class="ch">8</span>WHAT A SCRIPT COSTS 🔬</h2>
+<p>In the <b>⚙️ Advanced</b> tab, under <b>🧪 tests and timing</b>, <b>🔬 the scripts' cost</b> shows, for every kind of event the scripts answer, how long it takes in each language: the whole event (from the game's call to the last command carried out), and for Hazel and Fumola the rule alone. It also shows each language's set-up time. A frame is 16.7 ms; a rule that takes longer than that can make the game stutter.</p>
+<figure class="shot half"><img src="pictures/11-cost.png" alt="🔬 the scripts&#x27; cost, filled by playing the trap room." loading="lazy"><figcaption>🔬 the scripts' cost, filled by playing the trap room.</figcaption></figure>
+
+<h2 id="ch9"><span class="ch">9</span>BEHIND THE SCENES: GAME EVENTS</h2>
+<p>Scripts answer only some of what happens in the game. Every way of moving, every arrow, door, pit and ladder, ends in one place in the game's code, <code>enterScene</code>. It tries a passage, a world way, a rope bridge, a ladder, then asks the scripts (<code>scriptGo</code>), and otherwise takes the door's own destination, fixed when the scene was drawn. Here is every kind of game event, what the game reads to decide what happens next, and whether a script decides it today.</p>
+<h3>Moving: 4 of 16 kinds go through a script</h3>
+<div class="scroll"><table class="feat"><thead><tr><th>the event</th><th>what decides where it leads</th><th>who decides</th></tr></thead><tbody><tr><td>Arrow or edge-walk out of an outdoor square <i>(a way linked to another world is not scripted)</i></td><td>worldTarget: the square&#x27;s links (another world), else worldMeets, the neighbour in state.world.cells with a way back</td><td class="st st-done">World · Way(d)</td></tr><tr><td>Letting go of a sign board</td><td>signWays, then the same route as an arrow</td><td class="st st-done">World · Way(d)</td></tr><tr><td>Falling into a trap-room pit (walking on, landing a jump, a lid opening underneath)</td><td>pitAt; its room from the castle&#x27;s dungeon1/dungeon2; only an open, uncovered pit</td><td class="st st-done">Castle · FallPit(0 or 1)</td></tr><tr><td>A dungeon&#x27;s ladder up (its way out)</td><td>wayOutOf: auto is the trap room if there is one, else 0 or 1</td><td class="st st-done">Castle · WayOut(n)</td></tr><tr><td>Castle room doors, signs, arches and far-wall stairs <i>(only a ladder room&#x27;s way out reaches a script)</i></td><td>castleWays and roomExits: the castle&#x27;s rooms, each hall&#x27;s out, back, far and doors, ROOM_KINDS&#x27; exits</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Toward-us arrows inside (living room, huts, tree top, tree room)</td><td>insideWays: the place&#x27;s own back key (livingOut, treetopBack, treeBackN, …)</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>The castle gate</td><td>a fixed door: room 1</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Tree-house doors, hatches, ladders, bridges, windows</td><td>houseLinks, treeWalks, bridgeOn; a shut hatch is no door</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Caves and the waterfall</td><td>fixed doors</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Campsite tents</td><td>fixed doors (data-tent)</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Huts, the witch&#x27;s house, the clearing, the living room&#x27;s door</td><td>fixed doors</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Pictures and windows (fly-in)</td><td>the picture&#x27;s own view</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>The imagination map&#x27;s pictures</td><td>one door per kind of place</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Cave passages placed by the player</td><td>passageWalk: the passage&#x27;s twin, in this world or another (worldById)</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>The back chip</td><td>the trip so far (trips)</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Design-panel jumps (a place chosen, a world switched, a person switched)</td><td>the panel&#x27;s choice</td><td class="st st-next">THE GAME&#39;S JS</td></tr></tbody></table></div>
+<h3>Doing: 4 of 9 kinds go through a script</h3>
+<div class="scroll"><table class="feat"><thead><tr><th>the event</th><th>what it reads</th><th>who decides</th></tr></thead><tbody><tr><td>A placed 🎚️ lever</td><td>the square&#x27;s things: the lever&#x27;s works, does, and each door&#x27;s open and boulder</td><td class="st st-done">Square · PullThing(i)</td></tr><tr><td>The trap room&#x27;s red lever</td><td>trapState: the wiring, the pits open</td><td class="st st-done">TrapRoom · Pull(side)</td></tr><tr><td>The trap room&#x27;s blue lever</td><td>trapState: the wiring, the pits on, covered</td><td class="st st-done">TrapRoom · PullBoulder(side)</td></tr><tr><td>A tree room&#x27;s or the tree top&#x27;s hatch lever</td><td>hatchShutN / hatchShutTop</td><td class="st st-done">TreeRoom · PullHatch(house)</td></tr><tr><td>Sitting or lying down</td><td>the seats here (SEATS)</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Climbing a ladder</td><td>the ladders here</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Walking into a door to push it</td><td>the door&#x27;s glow (ends at the door&#x27;s own way)</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Jumping, diving, swimming</td><td>the water&#x27;s depth, the pits under the landing</td><td class="st st-next">THE GAME&#39;S JS</td></tr><tr><td>Click to walk</td><td>the path planned round pits and solids</td><td class="st st-next">THE GAME&#39;S JS</td></tr></tbody></table></div>
+<aside class="box tip"><div class="box-h">★ WHAT THIS MEANS</div><p>The scripts decide the levers and the trap room's pits, the dungeons' ladders up, and the world's arrows between squares. Everything else that moves the friend, including the castle's own doors, the tree houses, caves, tents, huts, pictures and passages, still goes where the game's JS sends it. Each of those could become a script the same way: a room, an event, and a command back.</p></aside>
+
+<h2 id="ch10"><span class="ch">10</span>BEHIND THE SCENES: THE GAME'S STATE</h2>
+<p>The game keeps everything it knows in one object, <code>state</code>: 23 parts, about 82 KB written out as JSON (a long-played save). A script sees a small slice of it, <b>Globals</b>: 17 fields, the slice its room needs, built fresh for each call.</p>
+<h3>The game's state</h3>
+<div class="scroll"><table class="feat"><thead><tr><th>part</th><th>bytes as JSON</th></tr></thead><tbody><tr><td><code>background</code></td><td class="n">47,733</td></tr><tr><td><code>scripts</code></td><td class="n">19,123</td></tr><tr><td><code>world</code></td><td class="n">8,713</td></tr><tr><td><code>costume</code></td><td class="n">3,480</td></tr><tr><td><code>body</code></td><td class="n">1,023</td></tr><tr><td><code>face</code></td><td class="n">642</td></tr><tr><td><code>access</code></td><td class="n">534</td></tr><tr><td><code>hands</code></td><td class="n">206</td></tr><tr><td><code>rightHand</code></td><td class="n">163</td></tr><tr><td><code>hair</code></td><td class="n">146</td></tr></tbody></table></div>
+<p>The <code>background</code> is the world itself: 1,994 settings in 186 families, most of them per castle room (<code>castleHall</code> 390, <code>castlePit</code> 201, <code>castleCat</code> 192, <code>castleThrone</code> 180, <code>castleRoom</code> 79, <code>castleLever</code> 79, <code>castleBoulder</code> 79, <code>castleBones</code> 78, <code>castleHorse</code> 60, <code>castleOut</code> 39, <code>castleFar</code> 39, <code>castleBack</code> 39, …). <code>world</code> is the map: 31 squares, each with its kind (one of 40), its ways, and its things (of 44 kinds); the castles have 12 kinds of room. The rest is the friend (face, body, clothes, costume), the scripts themselves, and the player's settings.</p>
+<h3>What a script sees: Globals</h3>
+<div class="scroll"><table class="feat"><thead><tr><th>field</th><th>for</th><th>where the game keeps it</th></tr></thead><tbody><tr><td><code>lever_L, lever_R</code></td><td>TrapRoom</td><td>the room&#x27;s two red levers: castleLeverL_/R_ keys, one per room and castle (leverDown)</td></tr><tr><td><code>wiring</code></td><td>TrapRoom</td><td>castleLeverWire#: normal, reversed or random</td></tr><tr><td><code>draws</code></td><td>TrapRoom</td><td>two numbers from the room&#x27;s seed (seeded(castleLeverSeed#)), for a random wiring: the rule has no randomness of its own</td></tr><tr><td><code>pits_on, covered</code></td><td>TrapRoom</td><td>trapState: which pits are open, which hold a boulder (castlePitOn#, castleBoulder…)</td></tr><tr><td><code>hatch</code></td><td>TreeRoom</td><td>the house&#x27;s hatch shut (hatchShutN, hatchShutTop)</td></tr><tr><td><code>things</code></td><td>Square</td><td>the square&#x27;s levers and trap doors only, 8 fields each (at, uid, kind, on, works, does, open, boulder)</td></tr><tr><td><code>rooms, exits</code></td><td>Castle</td><td>castleOf(B).rooms, and each one&#x27;s exits from ROOM_KINDS</td></tr><tr><td><code>out, out_room</code></td><td>Castle</td><td>the hall&#x27;s way out setting (auto, out, none, or a room)</td></tr><tr><td><code>at_col, at_row, cols, rows, cells</code></td><td>World</td><td>state.world: where the friend is, the map&#x27;s size, each square&#x27;s col, row, kind and ways (not its things or links)</td></tr></tbody></table></div>
+<aside class="box warn"><div class="box-h">⚠ NOT IN GLOBALS (YET)</div><p>Where the friend stands in a room, what they wear, any room but the one the event is in, the castle's hall doors (390 settings), its cats, thrones and horses, the world's things and links to other worlds, the people, the clock, and the music. A rule that needs one of these has to wait for a field to be added. The game builds each room's slice in <code>SCRIPT_ACTS[kind].globals</code> (25-scripting.js), and the type <code>Globals</code> at the program's start lists the fields, so the two change together.</p></aside>
+
+<h2 id="ch11"><span class="ch">11</span>QUICK REFERENCE: EVERY FEATURE</h2>
+<p>The full feature set of the 📜 Scripting panel, and where each feature stands: 20 done, 7 done but not yet seen by Matthew, 3 on a branch, 3 not yet built. This table is kept up to date as the work goes on.</p>
+<div class="scroll"><table class="feat"><thead><tr><th>area</th><th>feature</th><th>status</th><th>where</th></tr></thead><tbody><tr><td>panel</td><td>📜 Scripting tab: a box for each room with a rule, and 📚 Common for the helpers</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-482">482</a></td></tr><tr><td>panel</td><td>Three languages per room (JS, Hazel, 🍄 Fumola), and an <b>all</b> chip for every room</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-566">566</a></td></tr><tr><td>panel</td><td>JS shown read-only, as the game runs it</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-566">566</a></td></tr><tr><td>panel</td><td>Fumola rules with Motoko-style type annotations, from Hazel's types</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-577">577</a></td></tr><tr><td>settings</td><td>⚙️ size, font, colours, Hazel tiles or text, line numbers, wrap</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-580">580</a></td></tr><tr><td>settings</td><td>⚙️ the event log on or off, and keep 100 or all</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-592">592</a></td></tr><tr><td>editing</td><td>Syntax colours and line numbers in text boxes</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-581">581</a></td></tr><tr><td>editing</td><td>Long lines broken to the box and the wrap setting, live; widening gives them back</td><td class="st st-check">TO CHECK</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-578">578</a></td></tr><tr><td>tiles</td><td>Hazel's tiles in every Hazel box, editable, edits to the game</td><td class="st st-check">TO CHECK</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-578">578</a></td></tr><tr><td>tiles</td><td>Tiles in the page's theme (dark and high contrast), font, size and line numbers</td><td class="st st-check">TO CHECK</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-578">578</a></td></tr><tr><td>tiles</td><td>Goto definition (F12, right-click) across boxes, Common and the types</td><td class="st st-check">TO CHECK</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-586">586</a></td></tr><tr><td>tiles</td><td>Right-click menu opens downward, the frame grows to it</td><td class="st st-check">TO CHECK</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-578">578</a></td></tr><tr><td>⛶ view</td><td>Max size, with the outline of every box: types with kinds and cases, functions with types</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-577">577</a></td></tr><tr><td>⛶ view</td><td>Clicking the outline selects the definition (tiles, text or JS): 145 of 145 items checked</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-587">587</a></td></tr><tr><td>⛶ view</td><td>Draggable divider; settings shown on request</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-577">577</a></td></tr><tr><td>⛶ view</td><td>🎮 game viewport at the top of the outline; ✖ back to game</td><td class="st st-check">TO CHECK</td><td>—</td></tr><tr><td>⛶ view</td><td>The outline's Hazel types from Hazel itself (Hazel.outlineProgram)</td><td class="st st-branch">ON A BRANCH</td><td>hazel <code>lib-outline-587</code></td></tr><tr><td>⛶ view</td><td>The outline's Fumola definitions from Fumola itself (fumola_defs), exact ranges</td><td class="st st-branch">ON A BRANCH</td><td>fumola <code>wasm-defs-589</code></td></tr><tr><td>event log</td><td>🪵 every call from the game into a script, whichever language answers</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-592">592</a></td></tr><tr><td>event log</td><td>Entry: language, time, total and rule's own time, compile apart, event, globals before and after</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-592">592</a></td></tr><tr><td>event log</td><td>What it changed; the rule's answer; globals side by side, changes marked, JSON coloured</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-592">592</a></td></tr><tr><td>event log</td><td>Changes that land after the call (a boulder) read again when its animation ends</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-592">592</a></td></tr><tr><td>event log</td><td>Globals stored shared (hash-consed), so a long log stays small</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-592">592</a></td></tr><tr><td>errors</td><td>Hazel's type errors in the room's box, ⚠️ in the outline, a check entry in the log</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-594">594</a></td></tr><tr><td>errors</td><td>A Hazel rule with errors still runs, its answer in the log; the JS moves meanwhile</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-594">594</a></td></tr><tr><td>errors</td><td>A command the room does not know; a rule that stops: in the entry</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-594">594</a></td></tr><tr><td>errors</td><td>Fumola's type errors (Fumola does not check types yet)</td><td class="st st-next">NOT YET</td><td>—</td></tr><tr><td>errors</td><td>Error marks inside Fumola's boxes, at the line</td><td class="st st-next">NOT YET</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-589">589</a></td></tr><tr><td>measuring</td><td>🔬 the scripts' cost in ⚙️ Advanced: per event, per language, against JS</td><td class="st st-check">TO CHECK</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-568">568</a></td></tr><tr><td>measuring</td><td>Frame-rate standard per language in CI (55 fps): all pass</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-569">569</a></td></tr><tr><td>measuring</td><td>Big maps: the world's rule in Hazel is O(N) a call</td><td class="st st-next">NOT YET</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-540">540</a></td></tr><tr><td>correctness</td><td>CI: JS = Hazel = Fumola on every push, 32,761 + 20,649 comparisons</td><td class="st st-done">DONE</td><td><a href="https://matthewhammer.org/hazel/dashboard/#ticket-567">567</a></td></tr><tr><td>correctness</td><td>Hazel's library tests seeded from the game's rules (144 cases)</td><td class="st st-branch">ON A BRANCH</td><td>hazel <code>js-library-591</code></td></tr></tbody></table></div>
+
+<h2 id="ch12"><span class="ch">12</span>ABOUT THIS GUIDE</h2>
+<p>The pictures and every quoted entry and message come from one run of <code>tools/checks/manual593.mjs</code> (kids-choice-games) on GitHub's computers: branch <code>diag-593</code>, the game at <code>296b993</code>, run <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/40094091889">40094091889</a>, dark mode, 1440 × 900. The check sets each scene up, breaks the rules on purpose, and takes the picture; nothing was retouched. <code>drivers/build.py</code> draws this page from <a href="data/texts.json">data/texts.json</a> and <a href="data/features.json">data/features.json</a>.</p>
+<p>Related: <a href="https://matthewhammer.org/hazel/reports/">Hazel reports</a>, where the scripts' speed and the three-way checks are measured; hazelgrove/hazel <a href="https://github.com/hazelgrove/hazel/pull/2711">#2711</a> (Hazel as a JS library); Adapton/fumola.</p>
+</main>
+<script>
+(function () { var b = document.getElementById("theme"), modes = ["auto", "light", "dark"], labels = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
+  var cur = "auto"; try { cur = localStorage.getItem("theme") || "auto"; } catch (e) {}
+  function set(m) { cur = m; if (m === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", m); b.textContent = labels[m]; try { localStorage.setItem("theme", m); } catch (e) {} }
+  set(cur); b.onclick = function () { set(modes[(modes.indexOf(cur) + 1) % 3]); }; })();
+</script>
+</body>
+</html>

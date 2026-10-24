@@ -1,0 +1,148 @@
+{
+ "how": "enterScene(door) is where almost every way of moving ends: a passage, a world way, a rope bridge, a ladder, then scriptGo (the only one that reaches a script), else the door's own fixed destination, drawn with the scene.",
+ "navigation": [
+  {
+   "event": "Arrow or edge-walk out of an outdoor square",
+   "decides": "worldTarget: the square's links (another world), else worldMeets, the neighbour in state.world.cells with a way back",
+   "script": "World · Way(d)",
+   "note": "a way linked to another world is not scripted"
+  },
+  {
+   "event": "Letting go of a sign board",
+   "decides": "signWays, then the same route as an arrow",
+   "script": "World · Way(d)",
+   "note": ""
+  },
+  {
+   "event": "Falling into a trap-room pit (walking on, landing a jump, a lid opening underneath)",
+   "decides": "pitAt; its room from the castle's dungeon1/dungeon2; only an open, uncovered pit",
+   "script": "Castle · FallPit(0 or 1)",
+   "note": ""
+  },
+  {
+   "event": "A dungeon's ladder up (its way out)",
+   "decides": "wayOutOf: auto is the trap room if there is one, else 0 or 1",
+   "script": "Castle · WayOut(n)",
+   "note": ""
+  },
+  {
+   "event": "Castle room doors, signs, arches and far-wall stairs",
+   "decides": "castleWays and roomExits: the castle's rooms, each hall's out, back, far and doors, ROOM_KINDS' exits",
+   "script": null,
+   "note": "only a ladder room's way out reaches a script"
+  },
+  {
+   "event": "Toward-us arrows inside (living room, huts, tree top, tree room)",
+   "decides": "insideWays: the place's own back key (livingOut, treetopBack, treeBackN, …)",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "The castle gate",
+   "decides": "a fixed door: room 1",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "Tree-house doors, hatches, ladders, bridges, windows",
+   "decides": "houseLinks, treeWalks, bridgeOn; a shut hatch is no door",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "Caves and the waterfall",
+   "decides": "fixed doors",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "Campsite tents",
+   "decides": "fixed doors (data-tent)",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "Huts, the witch's house, the clearing, the living room's door",
+   "decides": "fixed doors",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "Pictures and windows (fly-in)",
+   "decides": "the picture's own view",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "The imagination map's pictures",
+   "decides": "one door per kind of place",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "Cave passages placed by the player",
+   "decides": "passageWalk: the passage's twin, in this world or another (worldById)",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "The back chip",
+   "decides": "the trip so far (trips)",
+   "script": null,
+   "note": ""
+  },
+  {
+   "event": "Design-panel jumps (a place chosen, a world switched, a person switched)",
+   "decides": "the panel's choice",
+   "script": null,
+   "note": ""
+  }
+ ],
+ "other": [
+  {
+   "event": "A placed 🎚️ lever",
+   "decides": "the square's things: the lever's works, does, and each door's open and boulder",
+   "script": "Square · PullThing(i)"
+  },
+  {
+   "event": "The trap room's red lever",
+   "decides": "trapState: the wiring, the pits open",
+   "script": "TrapRoom · Pull(side)"
+  },
+  {
+   "event": "The trap room's blue lever",
+   "decides": "trapState: the wiring, the pits on, covered",
+   "script": "TrapRoom · PullBoulder(side)"
+  },
+  {
+   "event": "A tree room's or the tree top's hatch lever",
+   "decides": "hatchShutN / hatchShutTop",
+   "script": "TreeRoom · PullHatch(house)"
+  },
+  {
+   "event": "Sitting or lying down",
+   "decides": "the seats here (SEATS)",
+   "script": null
+  },
+  {
+   "event": "Climbing a ladder",
+   "decides": "the ladders here",
+   "script": null
+  },
+  {
+   "event": "Walking into a door to push it",
+   "decides": "the door's glow (ends at the door's own way)",
+   "script": null
+  },
+  {
+   "event": "Jumping, diving, swimming",
+   "decides": "the water's depth, the pits under the landing",
+   "script": null
+  },
+  {
+   "event": "Click to walk",
+   "decides": "the path planned round pits and solids",
+   "script": null
+  }
+ ]
+}

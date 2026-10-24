@@ -1,0 +1,47 @@
+[
+ {
+  "fields": "lever_L, lever_R",
+  "room": "TrapRoom",
+  "source": "the room's two red levers: castleLeverL_/R_ keys, one per room and castle (leverDown)"
+ },
+ {
+  "fields": "wiring",
+  "room": "TrapRoom",
+  "source": "castleLeverWire#: normal, reversed or random"
+ },
+ {
+  "fields": "draws",
+  "room": "TrapRoom",
+  "source": "two numbers from the room's seed (seeded(castleLeverSeed#)), for a random wiring: the rule has no randomness of its own"
+ },
+ {
+  "fields": "pits_on, covered",
+  "room": "TrapRoom",
+  "source": "trapState: which pits are open, which hold a boulder (castlePitOn#, castleBoulder…)"
+ },
+ {
+  "fields": "hatch",
+  "room": "TreeRoom",
+  "source": "the house's hatch shut (hatchShutN, hatchShutTop)"
+ },
+ {
+  "fields": "things",
+  "room": "Square",
+  "source": "the square's levers and trap doors only, 8 fields each (at, uid, kind, on, works, does, open, boulder)"
+ },
+ {
+  "fields": "rooms, exits",
+  "room": "Castle",
+  "source": "castleOf(B).rooms, and each one's exits from ROOM_KINDS"
+ },
+ {
+  "fields": "out, out_room",
+  "room": "Castle",
+  "source": "the hall's way out setting (auto, out, none, or a room)"
+ },
+ {
+  "fields": "at_col, at_row, cols, rows, cells",
+  "room": "World",
+  "source": "state.world: where the friend is, the map's size, each square's col, row, kind and ways (not its things or links)"
+ }
+]

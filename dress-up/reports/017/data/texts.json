@@ -1,0 +1,135 @@
+{
+ "log": [
+  {
+   "n": 1,
+   "engine": "hazel",
+   "call": "TrapRoom.on_event",
+   "ev": {
+    "tag": "Pull",
+    "value": "L"
+   },
+   "ms": 30.6,
+   "diff": [
+    {
+     "path": "lever_L",
+     "from": false,
+     "to": true
+    }
+   ]
+  },
+  {
+   "n": 2,
+   "engine": "hazel",
+   "call": "TrapRoom.on_event",
+   "ev": {
+    "tag": "PullBoulder",
+    "value": "L"
+   },
+   "ms": 31.9,
+   "diff": [
+    {
+     "path": "covered[0]",
+     "from": false,
+     "to": true
+    }
+   ]
+  },
+  {
+   "n": 3,
+   "engine": "hazel",
+   "call": "TrapRoom.on_event",
+   "ev": {
+    "tag": "Pull",
+    "value": "R"
+   },
+   "ms": 26.7,
+   "diff": [
+    {
+     "path": "lever_R",
+     "from": false,
+     "to": true
+    }
+   ]
+  },
+  {
+   "n": 4,
+   "engine": "js",
+   "call": "TrapRoom.on_event",
+   "ev": {
+    "tag": "Pull",
+    "value": "L"
+   },
+   "ms": 7.8,
+   "diff": [
+    {
+     "path": "lever_L",
+     "from": true,
+     "to": false
+    }
+   ]
+  }
+ ],
+ "typeError": {
+  "text": "# A red lever pulled: flip it, and each pit wired to it opens or shuts. #\n# A blue lever pulled: each of its pits gets a boulder, or loses one. #\nlet on_event = fun (g, e) : (Globals, Event) ->\n  let w = Common.wire(g.wiring, g.draws) in\n  let (w0, w1) = w in\n  case e\n  | Pull(side) =>\n    let (was0, was1) = Common.pits_open(g.lever_L, g.lever_R, w) in\n    let l = if side == L then !g.lever_L else g.lever_L in\n    let r = if side == R then !g.lever_R else g.lever_R in\n    let (now0, now1) = Common.pits_open(l, r, w) in\n    Flip(3, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, Done)))\n  | PullBoulder(side) =>\n    let mine0 = w0 == side && Common.nth(g.pits_on, 0) in\n    let mine1 = w1 == side && Common.nth(g.pits_on, 1) in\n    let lift = (mine0 && Common.nth(g.covered, 0)) || (mine1 && Common.nth(g.covered, 1)) in\n    let one = fun (i, mine, k) : (Int, Bool, Cmd) -> if !mine then k else if lift then LiftBoulder(i, k) else DropBoulder(i, k) in\n    one(0, mine0, one(1, mine1, Done))\n  | _ => Done\n  end",
+  "errors": [
+   "3: a Side is wanted here, but this is an Int",
+   "3, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, …: a (Side, Cmd) is wanted here, but this is a (Int, Cmd)"
+  ],
+  "entry": {
+   "engine": "js",
+   "dry": {
+    "ms": 7.6,
+    "answer": {
+     "tag": "Flip",
+     "value": [
+      "‹not a value: an error stopped it here›",
+      {
+       "tag": "SetPit",
+       "value": [
+        0,
+        true,
+        {
+         "tag": "Done"
+        }
+       ]
+      }
+     ]
+    },
+    "threw": null,
+    "errors": [
+     "3: a Side is wanted here, but this is an Int",
+     "3, Common.pit_moves(0, was0, now0, Common.pit_moves(1, was1, now1, …: a (Side, Cmd) is wanted here, but this is a (Int, Cmd)"
+    ],
+    "others": []
+   }
+  }
+ },
+ "unknown": {
+  "text": "let on_event = fun (g, e) : (Globals, Event) -> GoSquare(0, 0, N, Flip(L, Done))",
+  "unknown": [
+   "GoSquare"
+  ],
+  "answer": {
+   "tag": "GoSquare",
+   "value": [
+    0,
+    0,
+    "N",
+    {
+     "tag": "Flip",
+     "value": [
+      "lever_L",
+      {
+       "tag": "Done"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "stops": {
+  "line": "public func on_event(g : Common.Globals, e : Common.Event) : Common.Cmd { let z = [1, 2][5];",
+  "error": "Fumola: an index past the end",
+  "engine": "fumola"
+ }
+}

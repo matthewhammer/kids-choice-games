@@ -1,0 +1,200 @@
+[
+ {
+  "area": "panel",
+  "what": "📜 Scripting tab: a box for each room with a rule, and 📚 Common for the helpers",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-482\">482</a>"
+ },
+ {
+  "area": "panel",
+  "what": "Three languages per room (JS, Hazel, 🍄 Fumola), and an <b>all</b> chip for every room",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-566\">566</a>"
+ },
+ {
+  "area": "panel",
+  "what": "JS shown read-only, as the game runs it",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-566\">566</a>"
+ },
+ {
+  "area": "panel",
+  "what": "Fumola rules with Motoko-style type annotations, from Hazel's types",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-577\">577</a>"
+ },
+ {
+  "area": "settings",
+  "what": "⚙️ size, font, colours, Hazel tiles or text, line numbers, wrap",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-580\">580</a>"
+ },
+ {
+  "area": "settings",
+  "what": "⚙️ the event log on or off, and keep 100 or all",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-592\">592</a>"
+ },
+ {
+  "area": "editing",
+  "what": "Syntax colours and line numbers in text boxes",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-581\">581</a>"
+ },
+ {
+  "area": "editing",
+  "what": "Long lines broken to the box and the wrap setting, live; widening gives them back",
+  "status": "check",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-578\">578</a>"
+ },
+ {
+  "area": "tiles",
+  "what": "Hazel's tiles in every Hazel box, editable, edits to the game",
+  "status": "check",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-578\">578</a>"
+ },
+ {
+  "area": "tiles",
+  "what": "Tiles in the page's theme (dark and high contrast), font, size and line numbers",
+  "status": "check",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-578\">578</a>"
+ },
+ {
+  "area": "tiles",
+  "what": "Goto definition (F12, right-click) across boxes, Common and the types",
+  "status": "check",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-586\">586</a>"
+ },
+ {
+  "area": "tiles",
+  "what": "Right-click menu opens downward, the frame grows to it",
+  "status": "check",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-578\">578</a>"
+ },
+ {
+  "area": "⛶ view",
+  "what": "Max size, with the outline of every box: types with kinds and cases, functions with types",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-577\">577</a>"
+ },
+ {
+  "area": "⛶ view",
+  "what": "Clicking the outline selects the definition (tiles, text or JS): 145 of 145 items checked",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-587\">587</a>"
+ },
+ {
+  "area": "⛶ view",
+  "what": "Draggable divider; settings shown on request",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-577\">577</a>"
+ },
+ {
+  "area": "⛶ view",
+  "what": "🎮 game viewport at the top of the outline; ✖ back to game",
+  "status": "check",
+  "where": "—"
+ },
+ {
+  "area": "⛶ view",
+  "what": "The outline's Hazel types from Hazel itself (Hazel.outlineProgram)",
+  "status": "branch",
+  "where": "hazel <code>lib-outline-587</code>"
+ },
+ {
+  "area": "⛶ view",
+  "what": "The outline's Fumola definitions from Fumola itself (fumola_defs), exact ranges",
+  "status": "branch",
+  "where": "fumola <code>wasm-defs-589</code>"
+ },
+ {
+  "area": "event log",
+  "what": "🪵 every call from the game into a script, whichever language answers",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-592\">592</a>"
+ },
+ {
+  "area": "event log",
+  "what": "Entry: language, time, total and rule's own time, compile apart, event, globals before and after",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-592\">592</a>"
+ },
+ {
+  "area": "event log",
+  "what": "What it changed; the rule's answer; globals side by side, changes marked, JSON coloured",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-592\">592</a>"
+ },
+ {
+  "area": "event log",
+  "what": "Changes that land after the call (a boulder) read again when its animation ends",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-592\">592</a>"
+ },
+ {
+  "area": "event log",
+  "what": "Globals stored shared (hash-consed), so a long log stays small",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-592\">592</a>"
+ },
+ {
+  "area": "errors",
+  "what": "Hazel's type errors in the room's box, ⚠️ in the outline, a check entry in the log",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-594\">594</a>"
+ },
+ {
+  "area": "errors",
+  "what": "A Hazel rule with errors still runs, its answer in the log; the JS moves meanwhile",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-594\">594</a>"
+ },
+ {
+  "area": "errors",
+  "what": "A command the room does not know; a rule that stops: in the entry",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-594\">594</a>"
+ },
+ {
+  "area": "errors",
+  "what": "Fumola's type errors (Fumola does not check types yet)",
+  "status": "next",
+  "where": "—"
+ },
+ {
+  "area": "errors",
+  "what": "Error marks inside Fumola's boxes, at the line",
+  "status": "next",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-589\">589</a>"
+ },
+ {
+  "area": "measuring",
+  "what": "🔬 the scripts' cost in ⚙️ Advanced: per event, per language, against JS",
+  "status": "check",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-568\">568</a>"
+ },
+ {
+  "area": "measuring",
+  "what": "Frame-rate standard per language in CI (55 fps): all pass",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-569\">569</a>"
+ },
+ {
+  "area": "measuring",
+  "what": "Big maps: the world's rule in Hazel is O(N) a call",
+  "status": "next",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-540\">540</a>"
+ },
+ {
+  "area": "correctness",
+  "what": "CI: JS = Hazel = Fumola on every push, 32,761 + 20,649 comparisons",
+  "status": "done",
+  "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-567\">567</a>"
+ },
+ {
+  "area": "correctness",
+  "what": "Hazel's library tests seeded from the game's rules (144 cases)",
+  "status": "branch",
+  "where": "hazel <code>js-library-591</code>"
+ }
+]
