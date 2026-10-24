@@ -51,7 +51,7 @@ async function scenes() {
     await shot("04-sit", ".pic-box");
   });
   await step("a lever", async () => {
-    await ev(`(async () => { ${W} storyStop(); ${ROOM} await w(800); storyPlay("walk 25 55\nsay Which lever opens the pit?\npull L\nwait 1\nface front\nsay That one!"); ${UNTIL(5)} await w(2600); return 1; })()`);
+    await ev(`(async () => { ${W} storyStop(); ${ROOM} await w(800); storyPlay("walk 25 55\\nsay Which lever opens the pit?\\npull L\\nwait 1\\nface front\\nsay That one!"); ${UNTIL(5)} await w(2600); return 1; })()`);
     await shot("05-lever", ".pic-box");
     await ev(`(async () => { ${W} for (let i = 0; i < 60 && storyRun; i++) await w(100); await w(300); return 1; })()`);
     await shot("05b-lever-said");
@@ -65,8 +65,8 @@ async function scenes() {
       state.background.figX = 150; changed(); personNewCostume(b, cos[1] ? cos[1][1] : b); await w(300);
       state.background.figX = 0; state.background.figY = 160; changed();
       const away = Object.values(state.peopleAway).filter(P => P.place);
-      if (away[0]) away[0].path = "# back and forth\nwalk 15 40\nface front\nwait 1\nwalk 45 40";
-      if (away[1]) away[1].path = "# a little dance, then a walk\npose dance\nwait 2\npose stand\nwalk 85 70\nwalk 60 70";
+      if (away[0]) away[0].path = "# back and forth\\nwalk 15 40\\nface front\\nwait 1\\nwalk 45 40";
+      if (away[1]) away[1].path = "# a little dance, then a walk\\npose dance\\nwait 2\\npose stand\\nwalk 85 70\\nwalk 60 70";
       changed(); await w(2500);
       return JSON.stringify({ place: state.background.kind, people: away.map(P => personTitle(P)), dressed: personTitle(state.person) }); })()`));
     await ev(`(async () => { ${W} tab = TABS.findIndex(t => t[1] === "person"); showTab(); await w(1000); const b = document.querySelector(".person-row .person-path"); if (b) b.click(); await w(500);
@@ -76,7 +76,7 @@ async function scenes() {
     await shot("07-walkers", ".pic-box");
   });
   await step("a wrong line", async () => {
-    texts.wrong = await ev(`(async () => { ${W} state = clone(DEFAULTS); state.music.mute = true; ${FARM} state.background.story = "walk 30 60\njump 5\nsay I never get here";
+    texts.wrong = await ev(`(async () => { ${W} state = clone(DEFAULTS); state.music.mute = true; ${FARM} state.background.story = "walk 30 60\\njump 5\\nsay I never get here";
       tab = TABS.findIndex(t => t[1] === "background"); showTab(); await w(1000); storyPlay(state.background.story); for (let i = 0; i < 100 && storyRun; i++) await w(100); await w(300);
       const s = document.querySelector(".story"); if (s) s.scrollIntoView({ block: "center" }); await w(300); return (document.querySelector(".story-status") || {}).textContent || ""; })()`);
     await shot("08-wrong-line", ".story");
@@ -134,6 +134,9 @@ async function printGuide() {
       for (const img of document.querySelectorAll("img")) { const f = (img.getAttribute("src") || "").split("/").pop().replace(/\.webp$/, ".png");   // (the web report's pictures are WebP)
         // ("and even have them use vector graphics?": the pit room as the game's own drawing, its lines, in place of its picture)
         if (P[f]) img.src = P[f]; }
+      // (a draft page has no pictures yet, only their placeholders: each one given its light picture from this run)
+      for (const m of document.querySelectorAll("p.missing")) { const f = ((m.textContent.match(/picture (\S+) not taken/) || [])[1] || "").replace(/\.webp$/, ".png");
+        if (P[f]) { const fig = document.createElement("figure"); fig.className = "shot"; const im = document.createElement("img"); im.src = P[f]; fig.append(im); m.replaceWith(fig); } }
       const end = document.createElement("section"); end.className = "coloring";
       end.innerHTML = C.map((c, i) => '<div class="color-page"><h2><span class="ch">★ ' + (i + 1) + '</span>COLOR ME: ' + c.name.toUpperCase() + '</h2><div class="color-art">' + c.svg + '</div><p class="color-note">From Messed Up Dress Up. Color it in however you like!</p></div>').join("");
       const st = document.createElement("style"); st.textContent = ".color-page { break-before: page; display: flex; flex-direction: column; height: 7.5in; } .color-art { flex: 1; display: flex; align-items: center; justify-content: center; } .color-art svg { width: 100%; height: auto; max-height: 6.4in; } .color-note { font: 8pt system-ui, sans-serif; text-align: center; margin: 4pt 0 0; } .coloring h2 { break-before: auto; } figure.shot .vector svg { display: block; width: 100%; height: auto; }";

@@ -155,7 +155,7 @@ PAGE = f"""<!doctype html>
 <div class="grid" role="img" aria-label="A map of the picture: across from 0 at the left to 100 at the right, and toward you from 0 at the back to 100 at the front">
   <div class="v" style="left:25%"><span>25</span></div><div class="v" style="left:50%"><span>50</span></div><div class="v" style="left:75%"><span>75</span></div>
   <div class="h" style="top:33%"><span>back: 0</span></div><div class="h" style="top:66%"><span>front: 100</span></div>
-  <div class="dot" style="left:30%;top:52%">walk 30 60</div><div class="dot" style="left:75%;top:40%">walk 75 40</div><div class="dot" style="left:10%;top:68%">walk 10 100</div>
+  <div class="dot" style="left:30%;top:52%">walk 30 60</div><div class="dot" style="left:75%;top:46%">walk 75 40</div><div class="dot" style="left:13%;top:66%">walk 10 100</div>
 </div>
 <p>You can leave out the second number: <code>walk 80</code> walks to 80 across and stays just as near or far as before.</p>
 {box("tip", "★ TRY THIS", "<p><code>walk 0</code>, then <code>walk 100</code>. Your friend walks all the way across.</p>")}
