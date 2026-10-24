@@ -135,7 +135,7 @@ async function printGuide() {
         // ("and even have them use vector graphics?": the pit room as the game's own drawing, its lines, in place of its picture)
         if (P[f]) img.src = P[f]; }
       // (a draft page has no pictures yet, only their placeholders: each one given its light picture from this run)
-      for (const m of document.querySelectorAll("p.missing")) { const f = ((m.textContent.match(/picture (\S+) not taken/) || [])[1] || "").replace(/\.webp$/, ".png");
+      for (const m of document.querySelectorAll("p.missing")) { const f = ((m.textContent.match(/picture (\\S+) not taken/) || [])[1] || "").replace(/\\.webp$/, ".png");
         if (P[f]) { const fig = document.createElement("figure"); fig.className = "shot"; const im = document.createElement("img"); im.src = P[f]; fig.append(im); m.replaceWith(fig); } }
       const end = document.createElement("section"); end.className = "coloring";
       end.innerHTML = C.map((c, i) => '<div class="color-page"><h2><span class="ch">★ ' + (i + 1) + '</span>COLOR ME: ' + c.name.toUpperCase() + '</h2><div class="color-art">' + c.svg + '</div><p class="color-note">From Messed Up Dress Up. Color it in however you like!</p></div>').join("");
