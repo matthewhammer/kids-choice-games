@@ -32,7 +32,7 @@ const step = async (what, f) => { try { await f(); } catch (e) { bad++; console.
 mkdirSync("out/manual", { recursive: true });
 const W = `const w = ms => new Promise(r => setTimeout(r, ms));`;
 const ROOM = `const B = state.background; for (const k of Object.keys(B)) if (/^castle(Lever|Boulder)[LR]_/.test(k)) delete B[k];
-  Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -470, figY: 150, things: [], castleLeverWire3N: "normal", castleLeverL_3N: true, castleLeverR_3N: true }); changed();`;
+  Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -230, figY: 150, things: [], castleLeverWire3N: "normal", castleLeverL_3N: true, castleLeverR_3N: true }); changed();`;
 async function scenes() {
   // ---- the pit room, in the game ----
   await step("the pit room", async () => {

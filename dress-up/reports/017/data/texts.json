@@ -8,7 +8,7 @@
     "tag": "Pull",
     "value": "L"
    },
-   "ms": 30.6,
+   "ms": 23.2,
    "diff": [
     {
      "path": "lever_L",
@@ -25,7 +25,7 @@
     "tag": "PullBoulder",
     "value": "L"
    },
-   "ms": 31.9,
+   "ms": 21.8,
    "diff": [
     {
      "path": "covered[0]",
@@ -42,7 +42,7 @@
     "tag": "Pull",
     "value": "R"
    },
-   "ms": 26.7,
+   "ms": 14.3,
    "diff": [
     {
      "path": "lever_R",
@@ -59,12 +59,46 @@
     "tag": "Pull",
     "value": "L"
    },
-   "ms": 7.8,
+   "ms": 6,
    "diff": [
     {
      "path": "lever_L",
      "from": true,
      "to": false
+    }
+   ]
+  },
+  {
+   "n": 5,
+   "engine": "hazel",
+   "call": "TrapRoom.on_event",
+   "ev": {
+    "tag": "Pull",
+    "value": "R"
+   },
+   "ms": 8.5,
+   "diff": [
+    {
+     "path": "lever_R",
+     "from": false,
+     "to": true
+    }
+   ]
+  },
+  {
+   "n": 6,
+   "engine": "hazel",
+   "call": "TrapRoom.on_event",
+   "ev": {
+    "tag": "Pull",
+    "value": "L"
+   },
+   "ms": 10.9,
+   "diff": [
+    {
+     "path": "lever_L",
+     "from": false,
+     "to": true
     }
    ]
   }
@@ -78,7 +112,7 @@
   "entry": {
    "engine": "js",
    "dry": {
-    "ms": 7.6,
+    "ms": 5.4,
     "answer": {
      "tag": "Flip",
      "value": [
