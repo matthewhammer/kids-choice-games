@@ -8,6 +8,9 @@
 # stacked, folded in half and stapled on the fold, reads 1, 2, 3 ... Writes zine.pdf, one copy (Matthew: "One copy per PDF is perfect":
 # print it twice for two).
 # (ticket 600: report 18 has eight coloring pages: the count of them is the third argument, four if left out)
+# (Matthew, 2026-10-24, after printing one flipped on the long edge, as most people do: "let's have two copies for each zine"; "make each
+# one say how to print it in the file name -- to avoid other people wasting paper"; "the default one (with a little link for the alt) is
+# the long edge": finish.sh names this one -print-2-sided-flip-short-edge and turns its backs over, rotate-backs.js, for -flip-long-edge)
 #   bash dress-up/reports/017/drivers/zine.sh <guide-half.pdf> <out dir> [coloring pages]
 set -euo pipefail
 in="$1"; out="$2"; colors="${3:-4}"; mkdir -p "$out"

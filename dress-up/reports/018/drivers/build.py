@@ -109,7 +109,7 @@ PAGE = f"""<!doctype html>
 <a href="#ch10">10 · STORIES TO TRY</a><br>
 <a href="#ch11">11 · THE QUICK CARD</a><br>
 <a href="#ch12">12 · ABOUT THIS GUIDE</a><br>
-<a href="../../manuals/story-scripts-guide-{esc(RUN.get("version", ""))}-zine.pdf">13 · PRINT IT: THE ZINE (PDF) 🖨️</a>
+<a href="../../manuals/story-scripts-guide-{esc(RUN.get("version", ""))}-zine-print-2-sided-flip-long-edge.pdf">13 · PRINT IT: THE ZINE (PDF) 🖨️</a> <small>print on both sides, flip on the long edge (<a href="../../manuals/story-scripts-guide-{esc(RUN.get("version", ""))}-zine-print-2-sided-flip-short-edge.pdf">or the copy for the short edge</a>)</small>
 </div>
 
 <h2 id="ch1"><span class="ch">1</span>YOU ARE THE DIRECTOR</h2>

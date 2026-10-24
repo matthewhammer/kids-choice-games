@@ -12,5 +12,7 @@ game=$(git -C "$R" rev-parse --short origin/main)
 printf '{"branch": "diag-593", "game": "%s", "version": "%s", "id": "%s", "url": "https://github.com/matthewhammer/kids-choice-games/actions/runs/%s"}\n' "$game" "$ver" "$run" "$run" > "$R/data/run.json"
 python3 "$R/drivers/build.py"
 bash "$R/drivers/zine.sh" "$art/manual/guide-half.pdf" "$art/zine"
-gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dPDFSETTINGS=/printer -dCompatibilityLevel=1.6 -sOutputFile="$M/game-scripts-guide-$ver-zine.pdf" "$art/zine/zine.pdf"
-du -h "$R/pictures" "$M/game-scripts-guide-$ver-zine.pdf" "$art/zine/zine.pdf" | sed 's|.*/kcg-566/||'
+z="$M/game-scripts-guide-$ver-zine-print-2-sided"  # two copies, each named for how to print it
+gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dPDFSETTINGS=/printer -dCompatibilityLevel=1.6 -sOutputFile="$z-flip-short-edge.pdf" "$art/zine/zine.pdf"
+mutool run "$R/drivers/rotate-backs.js" "$z-flip-short-edge.pdf" "$z-flip-long-edge.pdf"
+du -h "$R/pictures" "$z-flip-long-edge.pdf" "$z-flip-short-edge.pdf" "$art/zine/zine.pdf" | sed 's|.*/kcg-566/||'
