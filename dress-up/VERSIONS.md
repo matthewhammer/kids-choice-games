@@ -4,6 +4,8 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **✨ The ninja's gem glimmers when you ask it to**: the flash running round the gem's white cuts is now off at first, as its ⭐ stars and 🌟 shine are. Turn it on with "✨ the gem's cuts glimmer" in 🐯 Costume's 🥷 the ninja box; a friend saved with it on keeps it. The gem itself, its cut facets and its sharp white lines, looks as before. Moving lights on the friend start off, so walking and running stay smooth on slow computers.
+
 ## 0.0.426 (2026-10-24)
 
 - **📜 Hazel's tiles use the whole box, and a line breaks between a `let` and its body first** (ticket 604): the tiles were laid out for fewer characters than the box holds (100 with the wrap at 116 and room for more), because a character's width was guessed; it is now measured in the font and size the tiles use. And when a Hazel line is too long, it now breaks where one part of the code ends and the next begins: after a `let`'s `in`, a `fun`'s `->` or a case arm's `=>`, before anything inside, so an `if` after `in` goes on the next line whole when it fits. A case's arms stay level with the `case`. Fumola and JS boxes are laid out as before.

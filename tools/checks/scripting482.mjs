@@ -10,28 +10,34 @@
 // a frame (index.html#embed, from hazel.org: another origin, so its own target, attached to with Target.setAutoAttach; or, where
 // Chrome keeps it in the page's process, its own context): it says ready, shows the shipped program as tiles with no error mark,
 // and, once Flip(1, Done) is typed in TrapRoom's box, an error mark in the tiles and TrapRoom's error in its status; while the
-// game is full screen it is display: none; a click in it leaves the keys with the game (B still blows bubbles). Recorded, not
-// gated: the frame's ready time, the library's, and the game's frame times from the tab opening until a second after ready.
-// Exits 1 on a failure.
+// game is full screen it is display: none; a click in it keeps the keys there, to type (ticket 578: the tiles take edits), and a
+// click on the game gives them back (B blows bubbles). (ticket 578: a frame per Hazel box too, from the same URL: the one looked at
+// is the whole program's, scriptFrame's, found by its frame id.) Recorded, not gated: the frame's ready time, the library's, and the
+// game's frame times from the tab opening until a second after ready. Exits 1 on a failure.
 //   node scripting482.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const page = await (await fetch(`http://127.0.0.1:${dport}/json/new?about:blank`, { method: "PUT" })).json();
 const ws = new WebSocket(page.webSocketDebuggerUrl); await new Promise(r => ws.addEventListener("open", r, { once: true }));
-let n = 0; const pending = new Map(), errs = [], frameErrs = [], frameSessions = new Set();
-let frameCtx = null;
+let n = 0; const pending = new Map(), errs = [], frameErrs = [], frameSessions = new Map(), frameCtxs = new Map();
 const send = (method, params = {}, sessionId) => new Promise(res => { const i = ++n; pending.set(i, res); ws.send(JSON.stringify({ id: i, method, params, ...(sessionId ? { sessionId } : {}) })); });
 ws.addEventListener("message", e => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); }
   if (m.method === "Runtime.exceptionThrown") (m.sessionId ? frameErrs : errs).push(JSON.stringify(m.params.exceptionDetails).slice(0, 300));
-  // (the frame, out of the page's process: its own target)
-  if (m.method === "Target.attachedToTarget" && m.params.targetInfo.type === "iframe") { frameSessions.add(m.params.sessionId); send("Runtime.enable", {}, m.params.sessionId); }
+  // (the frame, out of the page's process: its own target, whose id is its frame's)
+  if (m.method === "Target.attachedToTarget" && m.params.targetInfo.type === "iframe") { frameSessions.set(m.params.sessionId, m.params.targetInfo.targetId); send("Runtime.enable", {}, m.params.sessionId); }
   if (m.method === "Target.detachedFromTarget") frameSessions.delete(m.params.sessionId);
-  // (or in it: the frame's own context)
-  if (m.method === "Runtime.executionContextCreated" && !m.sessionId) { const c = m.params.context; if (c.origin === "https://hazel.org" && c.auxData && c.auxData.isDefault) frameCtx = c.id; } });
+  // (or in it: the frame's own context, by its frame's id)
+  if (m.method === "Runtime.executionContextCreated" && !m.sessionId) { const c = m.params.context; if (c.origin === "https://hazel.org" && c.auxData && c.auxData.isDefault) frameCtxs.set(c.auxData.frameId, c.id); } });
 const ev = async x => { const r = await send("Runtime.evaluate", { expression: x, awaitPromise: true, returnByValue: true }); if (r.result.exceptionDetails) throw new Error(JSON.stringify(r.result.exceptionDetails).slice(0, 300)); return r.result.result.value; };
-// (an expression in Hazel's frame, wherever Chrome put it: the value from the one at https://hazel.org, or null)
+// (ticket 578: six more frames from the same URL, a box's tiles each, and the newest attached was taken, often a box's with 0 tokens:
+// the whole program's frame is the one whose id is its iframe's, DOM.describeNode's frameId, which needs no DOM.enable)
+const progFrameId = async () => { const o = await send("Runtime.evaluate", { expression: "scriptFrame && scriptFrame.iframe", objectGroup: "f482" });
+  const id = o.result && o.result.result && o.result.result.objectId; if (!id) return null;
+  const d = await send("DOM.describeNode", { objectId: id }); send("Runtime.releaseObjectGroup", { objectGroup: "f482" }); return (d.result && d.result.node && d.result.node.frameId) || null; };
+// (an expression in Hazel's frame of the whole program, wherever Chrome put it: the value from the one at https://hazel.org, or null)
 const frameEv = async x => {
-  const tries = [...[...frameSessions].reverse().map(s => ["", s]), ...(frameCtx ? [[frameCtx, undefined]] : [])];
+  const fid = await progFrameId(); if (!fid) return null;
+  const tries = [...[...frameSessions].filter(([, t]) => t === fid).map(([s]) => ["", s]), ...(frameCtxs.has(fid) ? [[frameCtxs.get(fid), undefined]] : [])];
   for (const [ctx, s] of tries) {
     const r = await send("Runtime.evaluate", { expression: `location.origin === "https://hazel.org" ? (${x}) : undefined`, returnByValue: true, ...(ctx ? { contextId: ctx } : {}) }, s);
     const v = r.result && !r.result.exceptionDetails && r.result.result ? r.result.result.value : undefined;
@@ -67,7 +73,6 @@ try {
     tab = TABS.findIndex(t => t[1] === "scripting"); showTab(); await w(300);
     out.editors = [...document.querySelectorAll("#panel textarea.script-editor")].map(t => t.dataset.module);
     out.names = scriptNames(); out.dedupe = scriptModuleName("Trap Room", new Set(["TrapRoom"]));
-    out.frameSrc = (document.querySelector("#panel iframe.script-frame") || {}).src || null;
     return JSON.stringify(out); })()`));
   // (ticket 531: then TreeRoom and Square; phase 2, World and Castle)
   ok("📜 Scripting has an editor per module: Common, then TrapRoom, TreeRoom, Square, World, Castle", JSON.stringify(r.editors) === '["Common","TrapRoom","TreeRoom","Square","World","Castle"]', r.editors);
@@ -80,7 +85,9 @@ try {
     return JSON.stringify({ phase: scriptFrame && scriptFrame.phase, readyMs: scriptFrame && scriptFrame.readyMs != null ? Math.round(scriptFrame.readyMs) : null, build: scriptFrame && scriptFrame.build,
       libMs: __G.lib, libBuild: window.Hazel && Hazel.build, frames: g.length, fps: +(1000 * g.length / Math.max(1, s)).toFixed(1), median: q(0.5), p95: q(0.95), max: g.length ? g[g.length - 1] : null,
       over25: g.filter(x => x > 25).length, over50: g.filter(x => x > 50).length, over100: g.filter(x => x > 100).length, longest: __G.gaps.map((x, i) => [i, x]).filter(([, x]) => x > 50).slice(0, 12) }); })()`));
-  console.log(`  DATA ${JSON.stringify({ frameTarget: frameSessions.size ? "own process" : frameCtx ? "the page's process" : "none found", ...T })}`);
+  // (ticket 578: the whole program's frame, read once it is made: the first iframe.script-frame in the panel is now a box's)
+  const src = await ev(`scriptFrame && scriptFrame.iframe ? scriptFrame.iframe.src : null`);
+  console.log(`  DATA ${JSON.stringify({ frameTarget: frameSessions.size ? "own process" : frameCtxs.size ? "the page's process" : "none found", ...T })}`);
   console.log(`  (the game's frames from the 📜 tab opening until a second after the frame's ready: ${T.frames} frames, ${T.fps} a second, median ${T.median} ms, 95% under ${T.p95} ms, longest ${T.max} ms, ${T.over50} over 50 ms; ` +
     `the frame ready in ${T.readyMs} ms, the library (window.Hazel, on the game's own thread) in ${T.libMs} ms; recorded, not gated)`);
   // (a frame out of the viewport draws nothing: Chrome gives a cross-origin frame no animation frames there, and the embed takes a
@@ -93,7 +100,8 @@ try {
   for (let i = 0; i < 80 && !(look && look.tokens > 0); i++) { look = await frameLook(); if (!(look && look.tokens > 0)) await sleep(250); }
   const st0 = JSON.parse(await ev(`JSON.stringify((scriptFrame && scriptFrame.status) || null)`));
   ok("the frame scrolled into view (out of it, Chrome gives it no animation frames)", inView0 === true, inView0);
-  ok("Hazel's frame (index.html#embed on the embed branch's build) says ready", r.frameSrc === "https://hazel.org/build/js-library-embed/index.html#embed" && T.phase === "ready", [r.frameSrc, T.phase]);
+  // (ticket 578: the tiles that take edits are embed-editable's build, f849f43; the library stays js-library-embed's)
+  ok("Hazel's frame (index.html#embed on embed-editable's build) says ready", src === "https://hazel.org/build/embed-editable/index.html#embed" && T.phase === "ready", [src, T.phase]);
   ok("the frame shows the shipped program as tiles (its modules and on_event among them), with no error mark, and its status says fine", !!look && look.tokens > 20 && look.words && look.marks === 0 && !!st0 && st0.ok === true, [look, st0]);
   const Z = JSON.parse(await ev(`JSON.stringify({ height: scriptFrame && scriptFrame.height, style: scriptFrame && parseInt(scriptFrame.iframe.style.height) })`));
   const row = parseFloat(look && look.row) || 30;
@@ -132,7 +140,9 @@ try {
     ta.value = 'let on_event = fun (g, e) : (Globals, Event) -> case e | Pull(side) => Flip(1, Done) end'; ta.dispatchEvent(new Event("input"));
     await w(1200);
     out.status = (document.querySelector("#panel .script-status") || {}).textContent || "";
-    out.listed = [...document.querySelectorAll("#panel ul.script-errors:not(.script-frame-errors) li")].map(li => li.textContent);
+    out.listed = [...document.querySelectorAll("#panel ul.script-errors:not(.script-frame-errors):not(.script-box-errors) li")].map(li => li.textContent);
+    // (ticket 594: and again under the name of the box they are in, "⚠️ ...", ae53071: TrapRoom's box only)
+    out.boxes = [...document.querySelectorAll("#panel .script-box")].filter(b => b.querySelector(":scope > ul.script-box-errors li")).map(b => b.dataset.room);
     const K = castleOf(B), lev = () => [leverDown(B, "L", 3, K.id), leverDown(B, "R", 3, K.id)];
     out.err0 = lev(); roomLeverPull("L"); await w(1600); out.err = lev(); out.errors = scriptCompiled.errors.length;
     return JSON.stringify(out); })()`));
@@ -145,7 +155,8 @@ try {
   }
   const frameSaid = await ev(`[...document.querySelectorAll("#panel .script-frame-status, #panel ul.script-frame-errors li")].map(e => e.textContent).join(" | ")`);
   console.log(`  ${JSON.stringify({ ...E, frameSaid, look })}`);
-  ok("Flip(1, Done) typed: the panel says the program has errors, each listed as TrapRoom's", /has \d+ errors?/.test(E.status) && E.listed.length > 0 && E.listed.every(t => t.startsWith("TrapRoom: ")), E);
+  ok("Flip(1, Done) typed: the panel says the program has errors, each listed as TrapRoom's, and in TrapRoom's box only", /has \d+ errors?/.test(E.status) && E.listed.length > 0 && E.listed.every(t => t.startsWith("TrapRoom: "))
+    && JSON.stringify(E.boxes) === '["TrapRoom"]', E);
   ok("... and the frame marks it in the tiles, its status TrapRoom's error", !!st && st.ok === false && (st.errors || []).length > 0 && st.errors.every(e => e.module === "TrapRoom") && !!look && look.marks > 0 && /TrapRoom: /.test(frameSaid), [st, look, frameSaid]);
   ok("a program with an error: the lever works as before (L flips)", E.errors > 0 && E.err[0] !== E.err0[0] && E.err[1] === E.err0[1], E);
   // ---- an older library, with no runProgram: the fallback ----
@@ -165,20 +176,29 @@ try {
     document.body.classList.remove("big"); await w(600); out.back = getComputedStyle(f).display; out.connected = f.isConnected;
     return JSON.stringify(out); })()`));
   ok("while the game is full screen the frame is display: none, and shown again after", D.big === "none" && D.back !== "none" && D.connected, D);
-  // ---- the keys: a click in the tiles, then B ----
+  // ---- the keys: a click in the tiles, a click on the game, then B ----
+  // (ticket 578, f849f43: the tiles take edits, so a click there keeps the keys, to type: scriptFrameBlur gives them back no more;
+  // the tiles' hint says "A click on the game gives its keys back". Not B in the tiles: it would be typed into the program)
   // (ticket 531: with four editors the tiles are taller than the viewport, so centred their top is above it: their top is scrolled to)
   const box = JSON.parse(await ev(`(async () => { const f = scriptFrame.iframe; f.scrollIntoView({ block: "start" }); await new Promise(r => setTimeout(r, 400));
     const b = f.getBoundingClientRect(); return JSON.stringify({ inView: b.top >= 0 && b.top + Math.min(30, b.height / 2) < innerHeight, x: Math.round(b.left + Math.min(60, b.width / 2)), y: Math.round(b.top + Math.min(30, b.height / 2)), blurs: scriptFrame.blurs }); })()`));
-  const mouse = (type, extra = {}) => send("Input.dispatchMouseEvent", { type, x: box.x, y: box.y, button: "left", clickCount: 1, ...extra });
-  await mouse("mouseMoved", { button: "none", clickCount: 0 }); await mouse("mousePressed"); await mouse("mouseReleased");
+  const click = async (x, y) => { for (const [type, extra] of [["mouseMoved", { button: "none", clickCount: 0 }], ["mousePressed", {}], ["mouseReleased", {}]]) await send("Input.dispatchMouseEvent", { type, x, y, button: "left", clickCount: 1, ...extra }); };
+  const active = `JSON.stringify({ active: document.activeElement === scriptFrame.iframe ? "the frame" : (document.activeElement || {}).tagName, blurs: scriptFrame.blurs, blowKey })`;
+  await click(box.x, box.y);
   await sleep(800);
-  const K1 = JSON.parse(await ev(`JSON.stringify({ active: document.activeElement === scriptFrame.iframe ? "the frame" : (document.activeElement || {}).tagName, blurs: scriptFrame.blurs, blowKey })`));
+  const K1 = JSON.parse(await ev(active));
+  // (the game: the hint under the tiles, which does nothing when clicked; a click on the picture would walk the friend)
+  const away = JSON.parse(await ev(`(async () => { const h = document.querySelector("#panel .script-tiles > .hint:last-child"); if (!h) return "null"; h.scrollIntoView({ block: "center" });
+    await new Promise(r => setTimeout(r, 300)); const b = h.getBoundingClientRect(); return JSON.stringify({ x: Math.round(b.left + Math.min(40, b.width / 2)), y: Math.round(b.top + b.height / 2) }); })()`));
+  if (away) { await click(away.x, away.y); await sleep(400); }
+  const K2 = JSON.parse(await ev(active));
   await send("Input.dispatchKeyEvent", { type: "keyDown", key: "b", code: "KeyB", text: "b", windowsVirtualKeyCode: 66, nativeVirtualKeyCode: 66 });
   await sleep(150);
   const blown = await ev("blowKey");
   await send("Input.dispatchKeyEvent", { type: "keyUp", key: "b", code: "KeyB", windowsVirtualKeyCode: 66, nativeVirtualKeyCode: 66 });
-  console.log(`  ${JSON.stringify({ box, after: K1, blown })}`);
-  ok("a click in the tiles takes the focus there, and it comes back to the game, whose B still blows bubbles", K1.blurs > box.blurs && K1.active !== "the frame" && blown === true, [box, K1, blown]);
+  console.log(`  ${JSON.stringify({ box, after: K1, away, back: K2, blown })}`);
+  ok("a click in the tiles takes the focus there, and keeps it, to type", K1.active === "the frame" && K1.blurs === box.blurs, [box, K1]);
+  ok("... and a click on the game gives the keys back: B blows bubbles", !!away && K2.active !== "the frame" && blown === true, [away, K2, blown]);
   // (a crash after ready keeps the tiles, said in their status line: still a failure here)
   const last = await ev(`scriptFrame ? scriptFrame.phase + (scriptFrame.oops ? " (crashed: " + scriptFrame.oops + ")" : "") : "none"`);
   ok("the frame did not crash", last === "ready", [last, await ev(`scriptFrame && scriptFrame.why`), frameErrs.slice(0, 3)]);

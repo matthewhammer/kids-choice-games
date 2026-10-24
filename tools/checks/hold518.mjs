@@ -78,11 +78,14 @@ try {
         out.k = k; out.styles[k] = []; state.body.facing = facing; state.body.holdL = holdL; changed(); await w(60); out.styles[k] = out.styles[k].slice(-2).sort().join(); }
       window.handSvg = o; }
     // (ticket 529) crawling toward us, each thing drawn in heldSvg's "floor" view, drawn, nothing undefined or costly;
-    // swimming (in the sea, in profile and toward us), nothing held is drawn
-    out.views = {}; { const o = heldSvg; window.heldSvg = (id, H, view, x) => { (out.views[out.k] ||= []).push(view); return o(id, H, view, x); };   // (set() draws before out.k names the next case: 0.0.409's run stopped here)
-      for (const id of Object.keys(HOLDABLES).filter(x => x !== "rein" && x !== "lasso")) { state = clone(DEFAULTS); state.music.mute = true; state.body.holdL = id; state.body.facing = "front"; set("body", "anim", "crawl"); out.k = "crawl/" + id; out.views[out.k] = []; await w(80);
+    // swimming (in the sea, in profile and toward us), nothing held is drawn. Each case named (out.k) before it is drawn:
+    // set() and changed() draw at once, and named after, that draw went to the case before, by then its result, a string
+    // (0.0.409's run, then 0.0.411's to 0.0.426's, stopped there). Crawling put on before facing us: set()'s anim, chosen
+    // facing us, turns the friend to our right (ANIM_SIDEWAYS), crawling in profile, heldSvg's "side"
+    out.views = {}; { const o = heldSvg; window.heldSvg = (id, H, view, x) => { out.views[out.k].push(view); return o(id, H, view, x); };
+      for (const id of Object.keys(HOLDABLES).filter(x => x !== "rein" && x !== "lasso")) { state = clone(DEFAULTS); state.music.mute = true; state.body.holdL = id; state.body.anim = "crawl"; state.body.facing = "front"; out.k = "crawl/" + id; out.views[out.k] = []; changed(); await w(80);
         const t = figText(); out.views[out.k] = [...new Set(out.views[out.k])].join() + (t.length > 1000 && !/NaN|undefined/.test(t) && !costly(t) ? "" : " bad"); }
-      for (const facing of ["left", "front"]) { state = clone(DEFAULTS); state.music.mute = true; state.costume.kind = "knight"; state.background.kind = "sea"; state.body.facing = facing; set("body", "anim", "swim"); out.k = "swim/" + facing; out.views[out.k] = []; await w(150); out.views[out.k] = out.views[out.k].length; }
+      for (const facing of ["left", "front"]) { state = clone(DEFAULTS); state.music.mute = true; state.costume.kind = "knight"; state.background.kind = "sea"; state.body.facing = facing; out.k = "swim/" + facing; out.views[out.k] = []; set("body", "anim", "swim"); await w(150); out.views[out.k] = out.views[out.k].length; }
       window.heldSvg = o; }
     return JSON.stringify(out); })()`));
   const D = Object.entries(r.draw);

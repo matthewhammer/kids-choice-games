@@ -364,8 +364,11 @@ function drawNow() {
     const turn0 = move && move.rot ? move.rot : !move && B.pose === "lie" && state.background.kind === "none" ? (B.lieHead === "right" ? 90 : -90) : 0;
     // (ticket 544) the giraffe's neck and head, up over the hood, raise the frame's top as a hat does (faceTop), and reach out
     // to either side: its ears toward us and from behind, its muzzle ahead and its ear behind in profile (giraffeReach);
-    // turned, its neck bends up from the body (below), so the frame is turned without them
-    if (giraffe && !turn0) { const R = giraffeReach(C, F, { dir, away, squash }); top = Math.min(top, ty + (R.top - 10 - flying) * s); left = Math.min(left, -(R.side * s + 20)); }
+    // turned, its neck bends up from the body (below), so the frame is turned without them; jumping, its top goes up by the
+    // jump's lift (move.lift, gFig's below), as a hug's does: the head had 8 over it (13 in profile) and the short jump lifts
+    // the friend up to 42, so it went out at the top (giraffe544's jump/front, jump/right and jump/back, red since 0.0.410)
+    if (giraffe && !turn0) { const R = giraffeReach(C, F, { dir, away, squash }), jumped = move && move.jump ? move.lift || 0 : 0;
+      top = Math.min(top, ty + (R.top - 10 - flying) * s - jumped); left = Math.min(left, -(R.side * s + 20)); }
     if (turn0) {
       const a = turn0 * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
       const pts = [[left, top], [-left, top], [left, bottom], [-left, bottom]].map(([x, y]) => [x * c - (y - L) * sn, L + x * sn + (y - L) * c]);

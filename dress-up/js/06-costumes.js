@@ -288,13 +288,15 @@ const ninjaGemTones = g => ({ table: mix(g.c, g.line, 0.18), dark: mix(g.c, g.li
 // stars/shine on them, all over") THE CUTS IN WHITE, AND THE GEM'S LIGHTS. At its true size the gem is a few pixels across,
 // and its cuts were a pale line a quarter of a pixel wide: unseen. Each cut is now drawn twice in white, `w` wide in the
 // stone's own units and never thinner than NINJA_CUT_PX on the screen (non-scaling-stroke), so it is sharp small and in
-// proportion big. `fx`, the ninja's rows: `glimmer` (✨, on at first), a wider, brighter copy of each group of cuts
+// proportion big. `fx`, the ninja's rows: `glimmer` (✨, off at first), a wider, brighter copy of each group of cuts
 // flashing in turn clockwise round the stone, a light running round its cuts; `stars` (⭐, off at first), four-pointed stars that
 // swell and vanish at `spots` all over the stone ([x, y, size in r]), each at its own pace; `shine` (🌟, off at first), a
 // pale band sweeping across the stone from the light, clipped to it. Every animation keeps time with the picture's clock
-// (begun before 0, as the tails' wags), so redrawing the friend never restarts one.
+// (begun before 0, as the tails' wags), so redrawing the friend never restarts one. All three are off at first (a costly
+// effect is off at the start, his rule, 10-16; ninja557.mjs, as every costume's check, holds the friend to no SMIL and the
+// knight's 92 shapes): the glimmer on at first was SMIL in every drawing of the gem, and 12 more shapes facing us, 99 in all.
 const NINJA_CUT_PX = 0.8, NINJA_GLIMMER_S = 2.4, NINJA_SHINE_S = 3.6;
-const ninjaGemFx = WC => ({ glimmer: WC.ninjaGlimmer !== false, stars: !!WC.ninjaGemStars, shine: !!WC.ninjaGemShine });
+const ninjaGemFx = WC => ({ glimmer: !!WC.ninjaGlimmer, stars: !!WC.ninjaGemStars, shine: !!WC.ninjaGemShine });
 const ninjaCut = (d, w, px) => `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${f1(w)}" stroke-linejoin="round" stroke-linecap="round"/>` +
   `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${px}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
 const ninjaStar = s => { const P = (x, y) => f1(x) + " " + f1(y); return `M${P(0, -s)} Q0 0 ${P(s, 0)} Q0 0 ${P(0, s)} Q0 0 ${P(-s, 0)} Q0 0 ${P(0, -s)} Z`; };
