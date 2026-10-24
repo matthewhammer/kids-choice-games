@@ -470,7 +470,7 @@ let scriptLogN = 0, scriptLogDropped = 0, scriptLogDrawSoon = null;
 const scriptLogOn = () => { try { return scriptEditorSettings().log !== false; } catch (e) { return true; } };
 function scriptLogPush(L, engine, ms, ruleMs, error) {
   const e = { n: ++scriptLogN, engine, room: L.room, call: L.room + ".on_event", at: L.at, ms: +ms.toFixed(3), ruleMs: ruleMs == null ? null : +ruleMs.toFixed(3), compileMs: L.compileMs > 1 ? +L.compileMs.toFixed(1) : null,
-    ev: scriptHash(L.ev), before: L.before, handled: L.handled || L.before, after: scriptHash(L.A.globals(L.ev)), settling: true, ...(error ? { error } : {}),
+    ev: scriptHash(L.ev), before: L.before, handled: L.handled || L.before, none: L.none && L.none.length ? L.none : null, after: scriptHash(L.A.globals(L.ev)), settling: true, ...(error ? { error } : {}),
     ...(L.answer !== undefined ? { answer: L.answer } : {}), ...(L.unknown && L.unknown.length ? { unknown: L.unknown } : {}), ...(L.dry ? { dry: L.dry } : {}) };
   scriptLog.push(e);
   const keep = scriptEditorSettings().logAll ? Infinity : 100;
@@ -604,6 +604,27 @@ function scriptRun(cmd, act, depth = 0, end = () => {}) {
   end();
 }
 
+// (Matthew, 2026-10-24: "the result gives a Cmd --- which specifies some diff for the engine to do on the rule's behalf --- we should do
+// it, and then show that as the diff(1,2). Then diff(2,3) are all of the effects not specified by the rule, as a Cmd (declaratively) or
+// not.") A rule's answer read as a change to the globals: each command's field set as it says, in order, the rest left as they were.
+// Commands with no field of their own (a pit's lid follows the levers; Say, Wait, GoRoom: the room gone to is not in the globals) are
+// listed apart (none). Snapshot 2 is this; whatever the game then does beyond it is step 2 -> 3
+function scriptCmdApply(g0, cmd) {
+  const g = JSON.parse(JSON.stringify(g0)), none = [], thing = at => (g.things || []).find(t => t.at === at);
+  for (let c = cmd, i = 0; c && c.tag !== "Done" && i < 200; i++) {
+    const v = Array.isArray(c.value) ? c.value : [c.value], k = v.length > 1 ? v[v.length - 1] : null, a = v.length > 1 ? v.slice(0, -1) : v;
+    const said = c.tag + "(" + a.map(x => JSON.stringify(x)).join(", ") + ")";
+    if (c.tag === "Flip" && (a[0] === "lever_L" || a[0] === "lever_R")) g[a[0]] = !g[a[0]];
+    else if ((c.tag === "DropBoulder" || c.tag === "LiftBoulder") && Array.isArray(g.covered) && a[0] in g.covered) g.covered[a[0]] = c.tag === "DropBoulder";
+    else if (c.tag === "SetHatch") g.hatch = !!a[1];
+    else if (c.tag === "OpenDoor" && thing(a[0])) thing(a[0]).open = !!a[1];
+    else if (c.tag === "DropRock" && thing(a[0])) thing(a[0]).boulder = !!a[1];
+    else if (c.tag === "GoSquare") { g.at_col = Math.round(+a[0]); g.at_row = Math.round(+a[1]); }
+    else none.push(said);
+    c = k;
+  }
+  return { g, none };
+}
 // (the empty fields of a room's globals that are not its own)
 const scriptNoGlobals = () => ({ lever_L: false, lever_R: false, wiring: "normal", draws: [], pits_on: [], covered: [], hatch: false, things: [], rooms: [], exits: [], out: "auto", out_room: -1, at_col: 0, at_row: 0, cols: 0, rows: 0, cells: [] });
 // (ticket 531) the event's room, its globals and how its commands act: per room kind (SCRIPT_ROOMS' kind), filled in as rules move
@@ -770,8 +791,8 @@ function scriptEventRun(room, ev, R, A, log) {
     if (log) scriptLogPush(log, eng, performance.now() - t1, performance.now() - t1, String(e && e.message || e)); return true; }
   const t2 = performance.now();
   // (Matthew, 2026-10-24: "for the first 'diff' of globals, we want to accurately reflect only the effects of the actual handler code,
-  // not the other ones that the game engine does too") snapshot 2, the moment the handler returns, before the game acts on its answer
-  if (log) log.handled = scriptHash(A.globals(ev));
+  // not the other ones that the game engine does too") snapshot 2: the globals before, with the rule's answer applied (scriptCmdApply)
+  if (log) { const r = scriptCmdApply(log.raw, cmd); log.handled = scriptHash(r.g); log.none = r.none; }
   const act = scriptEvent.act = A.act(ev);   // (kept, for a caller that reads what the walk gathered: scriptGo)
   if (log) { act.__unknown = []; log.answer = scriptHash(cmd === undefined ? null : cmd); }   // (ticket 594: what the rule said, and any command the room did not know)
   scriptRun(cmd, act, 0, () => { if (A.done) A.done(ev, act); if (log) { log.unknown = act.__unknown; scriptLogPush(log, eng, performance.now() - log.t0, t2 - t1); } });
@@ -1717,7 +1738,7 @@ function scriptLogBox(maxBtn) {
         const changed = new Set([...d1, ...d2].map(c => c.path)), three = end !== h, whole = el("details", { class: "log-globals" }, [el("summary", {}, three ? "globals before, after the handler, and after the event, in full" : "globals before and after, in full")]);
         const col = (cap, v) => el("div", {}, [el("div", { class: "cap" }, cap), scriptJsonView(v, changed, three ? third() : half())]);
         whole.addEventListener("toggle", () => { if (whole.open && whole.children.length === 1) whole.append(el("div", { class: "log-sides" + (three ? " log-three" : "") },
-          three ? [col("1 · before", e.before), col("2 · after the handler", h), col(`3 · after the event${e.doneMs > 50 ? `, ${(e.doneMs / 1000).toFixed(1)} s in` : ""}`, end)]
+          three ? [col("1 · before", e.before), col(e.engine === "js" ? "2 · after the handler" : "2 · with the answer applied", h), col(`3 · after the event${e.doneMs > 50 ? `, ${(e.doneMs / 1000).toFixed(1)} s in` : ""}`, end)]
                 : [col("before", e.before), col("after", end)])); }, { once: true });
         const list = (ds, empty) => ds.length ? el("ul", { class: "log-changes" }, ds.map(c => el("li", {}, [el("code", {}, c.path), ": ", short(c.from), " → ", short(c.to)]))) : el("div", { class: "hint" }, empty);
         return [
@@ -1734,9 +1755,10 @@ function scriptLogBox(maxBtn) {
           // answer from the rule.")
           // (Matthew, 2026-10-24: "please put a box, with a distinct background, around what it changed ... and increase the font slightly")
           el("div", { class: "log-effect" }, [el("div", { class: "cap" }, "what it changed"),
-            el("div", { class: "log-step" }, `1 → 2 · by ${e.engine === "js" ? "the JS handler" : "the rule"} itself`),
-            list(d1, e.engine === "js" ? "nothing yet" : "nothing: a rule only answers; the game carries its answer out"),
-            el("div", { class: "log-step" }, `2 → 3 · by the game engine, carrying it out${e.settling ? " (still going…)" : e.doneMs > 50 ? ` (over ${(e.doneMs / 1000).toFixed(1)} s after the call)` : ""}`),
+            el("div", { class: "log-step" }, e.engine === "js" ? "1 → 2 · by the JS handler itself" : "1 → 2 · what the rule's answer says to change"),
+            list(d1, e.engine === "js" ? "nothing yet" : "nothing: its answer sets no field of the globals"),
+            ...(e.none ? [el("div", { class: "hint" }, `also in its answer, with no field of their own in the globals: ${e.none.join(", ")}`)] : []),
+            el("div", { class: "log-step" }, `2 → 3 · by the game engine, beyond what ${e.engine === "js" ? "the handler wrote" : "the answer says"}${e.settling ? " (still going…)" : e.doneMs > 50 ? ` (over ${(e.doneMs / 1000).toFixed(1)} s after the call)` : ""}`),
             list(d2, "nothing"),
             ...(e.doneBy === "limit" ? [el("div", { class: "log-bad" }, `⚠️ still going after ${SCRIPT_EVENT_MAX_MS / 1000} s (a walk cut short?): snapshot 3 may be early`)] : []),
             ...(e.overlap ? [el("div", { class: "hint" }, `the next call came before this event was over: its changes may be in this one's step 2 → 3 too`)] : [])]),

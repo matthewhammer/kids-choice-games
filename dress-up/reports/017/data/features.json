@@ -115,7 +115,7 @@
  },
  {
   "area": "event log",
-  "what": "Entry: language, time, total and rule's own time, compile apart, event, globals before, after the handler, after the event",
+  "what": "Entry: language, time, total and rule's own time, compile apart, event, globals before, with the answer applied, after the event",
   "status": "done",
   "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-592\">592</a>"
  },
@@ -127,7 +127,7 @@
  },
  {
   "area": "event log",
-  "what": "Three snapshots, two steps: what the handler changed, then what the game did, snapshot 3 when the game says the event is over",
+  "what": "Three snapshots, two steps: what the rule's answer (its Cmd) says to change, then what the game engine did beyond it; snapshot 3 when the game says the event is over",
   "status": "done",
   "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-592\">592</a>, <a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-597\">597</a>"
  },

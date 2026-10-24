@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.415 (2026-10-24)
+
+- **📜 🪵 The log reads the rule's answer** (ticket 597): a Hazel or Fumola rule answers with a Cmd, a list of commands, each saying what to change. The log now applies that list to the globals: snapshot 2 is the globals with the answer applied (a Flip flips its lever, a GoSquare moves to its square), so “1 → 2” shows what the rule asked for, and “2 → 3” everything else the game engine did that no command asked for, or anything that came out otherwise. Commands with no field of their own (SetPit, Say, Wait, GoRoom) are listed under step 1. In an opened entry the rule's answer now comes right after the event, before what changed.
+- **📜 🎮 ⤢ from the game viewport**: in ⛶ max size, the ⤢ in the game viewport's corner goes back to the game, full screen.
+- **📜 The guide: what a rule says** (^du_report(17), chapter 5): the shape of Cmd, every command, and how to build one.
+
 ## 0.0.414 (2026-10-24)
 
 - **📜 🪵 Each event in three snapshots** (tickets 592, 597): the game's state before the call, after the rule itself (a Hazel or Fumola rule only answers, so nothing changes there; the game's own JS changes it at once), and when the event is over, which the game itself says: when the last lever has turned, the last lid or boulder has swung or landed, the friend has walked through the doorway and arrived, a script's waits are done. However long that takes, the log waits for it. Each log line shows the two steps apart: what the handler changed, then what the game changed carrying it out, and how long after the call the event was over. An event the next one began during says its changes may mix; one still going after 15 s says so.

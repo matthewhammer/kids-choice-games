@@ -122,15 +122,16 @@ PAGE = f"""<!doctype html>
 <a href="#ch2">2 · GETTING STARTED</a><br>
 <a href="#ch3">3 · THE SCRIPT PANEL</a><br>
 <a href="#ch4">4 · A WALK THROUGH THE PIT ROOM</a><br>
-<a href="#ch5">5 · THE EVENT LOG 🪵</a><br>
-<a href="#ch6">6 · DEBUGGING WITH THE LOG</a><br>
-<a href="#ch7">7 · TROUBLESHOOTING: BROKEN SCRIPTS</a><br>
-<a href="#ch8">8 · WHAT A SCRIPT COSTS 🔬</a><br>
-<a href="#ch9">9 · BEHIND THE SCENES: GAME EVENTS</a><br>
-<a href="#ch10">10 · BEHIND THE SCENES: THE GAME&#39;S STATE</a><br>
-<a href="#ch11">11 · QUICK REFERENCE: EVERY FEATURE</a><br>
-<a href="#ch12">12 · ABOUT THIS GUIDE</a><br>
-<a href="../../manuals/game-scripts-guide-{esc(RUN.get("version", ""))}-zine.pdf">13 · PRINT IT: THE ZINE (PDF) 🖨️</a>
+<a href="#ch5">5 · WHAT A RULE SAYS: THE SHAPE OF Cmd</a><br>
+<a href="#ch6">6 · THE EVENT LOG 🪵</a><br>
+<a href="#ch7">7 · DEBUGGING WITH THE LOG</a><br>
+<a href="#ch8">8 · TROUBLESHOOTING: BROKEN SCRIPTS</a><br>
+<a href="#ch9">9 · WHAT A SCRIPT COSTS 🔬</a><br>
+<a href="#ch10">10 · BEHIND THE SCENES: GAME EVENTS</a><br>
+<a href="#ch11">11 · BEHIND THE SCENES: THE GAME&#39;S STATE</a><br>
+<a href="#ch12">12 · QUICK REFERENCE: EVERY FEATURE</a><br>
+<a href="#ch13">13 · ABOUT THIS GUIDE</a><br>
+<a href="../../manuals/game-scripts-guide-{esc(RUN.get("version", ""))}-zine.pdf">14 · PRINT IT: THE ZINE (PDF) 🖨️</a>
 </div>
 
 <h2 id="ch1"><span class="ch">1</span>WHAT ARE GAME SCRIPTS?</h2>
@@ -174,7 +175,35 @@ PAGE = f"""<!doctype html>
 <p>Read it line by line: which pits are open now; the levers after this pull; which pits are open after it; then the answer, flip the lever that was pulled and move each pit whose state changed. <code>Common.pits_open</code> and <code>Common.pit_moves</code> are helpers in the Common box, shared by every room.</p>
 {box("tip", "★ TRY THIS", "<p>Pull the left red lever, then look at 🪵 the event log: the newest entry says <code>lever_L: false → true</code>. Pull it again and it goes back.</p>")}
 
-<h2 id="ch5"><span class="ch">5</span>THE EVENT LOG 🪵</h2>
+<h2 id="ch5"><span class="ch">5</span>WHAT A RULE SAYS: THE SHAPE OF Cmd</h2>
+<p>Every rule is one function, <code>on_event</code>. It takes two things, the <b>globals</b> <code>g</code> and the <b>event</b> <code>e</code>, and gives back one thing, a <b>Cmd</b>: what the rule wants the game to do. It changes nothing itself. It only answers, and the game carries the answer out.</p>
+{code('''# takes the globals and the event, gives back a Cmd #
+let on_event = fun (g, e) : (Globals, Event) -> ...''')}
+<h3>A list of things to do</h3>
+<p>A Cmd is a list of commands, one after another. Each command's <b>last</b> part is the rest of the list, and the list ends with <code>Done</code>:</p>
+{code('''# do nothing #
+Done
+# flip the left lever #
+Flip(L, Done)
+# flip it, then open pit 0 #
+Flip(L, SetPit(0, true, Done))
+# say it, wait half a second, then flip #
+Say("Ha!", Wait(500, Flip(L, Done)))''')}
+<p>Read it from the outside in: the first command is the outermost one. The game does them in that order, the first command first.</p>
+<h3>Every command</h3>
+<div class="scroll"><table class="feat"><tr><th>command</th><th>where</th><th>what the game does</th><th>the field of the globals it sets</th></tr><tr><td><code>Done</code></td><td>every room</td><td>the end of the list</td><td>—</td></tr><tr><td><code>Flip(side, rest)</code></td><td>trap room</td><td>flip the red lever on that side</td><td><code>lever_L</code> or <code>lever_R</code></td></tr><tr><td><code>SetPit(i, open, rest)</code></td><td>trap room</td><td>swing pit <i>i</i>'s lid open or shut</td><td>none: a pit follows its lever</td></tr><tr><td><code>DropBoulder(i, rest)</code></td><td>trap room</td><td>drop a boulder into pit <i>i</i></td><td><code>covered[i]</code> becomes true</td></tr><tr><td><code>LiftBoulder(i, rest)</code></td><td>trap room</td><td>lift pit <i>i</i>'s boulder out</td><td><code>covered[i]</code> becomes false</td></tr><tr><td><code>SetHatch(n, shut, rest)</code></td><td>tree houses</td><td>shut or open tree house <i>n</i>'s trap door</td><td><code>hatch</code></td></tr><tr><td><code>OpenDoor(at, open, rest)</code></td><td>any square</td><td>open or shut the placed trap door at <i>at</i></td><td>that thing's <code>open</code></td></tr><tr><td><code>DropRock(at, down, rest)</code></td><td>any square</td><td>drop or lift the rock over the trap door at <i>at</i></td><td>that thing's <code>boulder</code></td></tr><tr><td><code>GoSquare(col, row, side, rest)</code></td><td>the world</td><td>walk to that square, coming in from <i>side</i></td><td><code>at_col</code>, <code>at_row</code></td></tr><tr><td><code>GoRoom(r, rest)</code></td><td>the castle</td><td>go to room <i>r</i> (0: out of the castle; below 0: nowhere)</td><td>none: the room is not in the globals</td></tr><tr><td><code>Say(text, rest)</code></td><td>every room</td><td>show a few words over the picture</td><td>none</td></tr><tr><td><code>Wait(ms, rest)</code></td><td>every room</td><td>wait <i>ms</i> milliseconds, then the rest</td><td>none</td></tr></table></div>
+<p>A room only knows its own commands. Give the trap room a <code>GoSquare</code> and the list stops there: the log line says ⚠️ the room does not know it (chapter 8).</p>
+<h3>Building one: start with Done, wrap commands around it</h3>
+<p>Since each command holds the rest, you build a Cmd from the end. Many helpers take the rest as their last argument, called <code>k</code>, and either wrap a command around it or hand it back unchanged. <code>Common.pit_moves</code> is one:</p>
+{code('''# a pit that changed from was to now: SetPit, else nothing #
+let pit_moves = fun (i, was, now, k) : (Int, Bool, Bool, Cmd) ->
+  if was == now then k else SetPit(i, now, k)''')}
+<p>So the red lever's answer in chapter 4, <code>Flip(side, Common.pit_moves(0, …, Common.pit_moves(1, …, Done)))</code>, is a flip followed by zero, one or two <code>SetPit</code>s, whichever pits changed. To add a command to any answer, wrap it around the rest: <code>Say("Watch out!", Flip(side, …))</code>.</p>
+{box("tip", "★ THE SAME IN 🍄 FUMOLA", "<p>Fumola writes each command with a <code>#</code> in front and the same parts: <code>#Flip(side, #SetPit(0, true, #Done))</code>. The list's shape is the same, and so is its meaning.</p>")}
+<h3>Your answer in the log</h3>
+<p>Because a Cmd says what should change, the event log reads it as a change to the globals: each command sets its field, as in the table. That is the first step of “what it changed”, <b>1 → 2 · what the rule's answer says to change</b>. Commands with no field of their own (<code>SetPit</code>, <code>Say</code>, <code>Wait</code>, <code>GoRoom</code>) are listed under it. Everything else the game does while carrying the event out, which no command asked for, is the second step (chapter 6).</p>
+
+<h2 id="ch6"><span class="ch">6</span>THE EVENT LOG 🪵</h2>
 <p>Every time the game calls into a script, whichever language answers, the call goes into the <b>event log</b>, newest first, up to the last 100 (or all of them: <b>keep: all</b>). A line says:</p>
 <ul>
 <li>its number and the time, to the millisecond;</li>
@@ -184,26 +213,26 @@ PAGE = f"""<!doctype html>
 <li>how much of the globals it changed.</li>
 </ul>
 <p>Open a line to see the event, the rule's own answer just under it, then <b>what it changed</b>, and, under one more fold, <b>the globals in full</b>, side by side, with every changed field marked.</p>
-<p>Each call keeps <b>three snapshots</b> of the globals: <b>1</b>, before, as the handler gets them; <b>2</b>, the moment the handler returns; <b>3</b>, after the event, once the game has finished carrying it out. So “what it changed” comes in two steps. <b>1 → 2</b> is what the rule (the handler code) itself changed: for a Hazel or Fumola rule always nothing, because a rule only answers. <b>2 → 3</b> is what the game engine did with the answer: a lever's flip, a boulder's fall, a walk to the next square, each with how long after the call it finished.</p>
+<p>Each call keeps <b>three snapshots</b> of the globals: <b>1</b>, before, as the rule gets them; <b>2</b>, the same with the rule's answer applied, each command setting its field (chapter 5); <b>3</b>, after the event, once the game has finished carrying it out. So “what it changed” comes in two steps. <b>1 → 2</b> is what the rule's answer says to change: for the red lever, the lever it flips; for a way out, the square it walks to. <b>2 → 3</b> is what the game engine did beyond that, which no command asked for: a placed lever turning over, a boulder lying where it landed, and anything that came out otherwise than the answer said (a walk cut short shows the square changing back). For the game's own JS, which writes the globals itself, <b>1 → 2</b> is what its handler wrote. Each line says how long after the call the event was over.</p>
 {pic("05-log.png", "Playing and reading at once: the game viewport at the top left, and 🪵 the event log with the two newest calls opened. Each shows its event, what it changed (in the box), and the rule's answer.")}
 {pic("05b-log-globals.png", "The same entry with “globals before and after, in full” opened: the two side by side, scrolling together, the field the call changed marked on both sides.")}
 <p>The log of the run behind these pictures:</p>
 {code(chr(10).join(log_line(e) for e in T.get("log", [])[::-1]) or "(no entries)")}
 {box("tip", "★ WHEN IS AN EVENT OVER? THE GAME SAYS", "<p>A boulder takes over a second to fall, and a walk to the next square takes a few seconds; the game writes where the boulder is, or which square the friend is in, only when it lands or arrives. So snapshot 3 waits for the game to say the event is over. Everything the game starts while carrying out the event holds it open: a lever's handle turning, a lid or a boulder swinging, the friend walking through a doorway (until they have arrived in the next square), a script's <code>Wait</code>. When the last of them is done, snapshot 3 is taken, however long that took, and the line says how long. While the event is still going, the line says <i>the event still going…</i>. Two events at once (a second lever pulled before the first one's lid has shut) each wait for their own animations; the first says the second's changes may be mixed into its own. An event still going after 15 seconds, a walk cut short, say, is snapshotted then, with a ⚠️.</p>")}
-{box("tip", "★ A HUNDRED COPIES FOR THE PRICE OF ONE", "<p>Each entry keeps the whole globals three times: before, after the handler, and after the event. Most of it is the same from one call to the next, so the log stores each distinct part once and shares it. Six calls of the trap room keep their globals in about 8 shared parts, where plain copies would need 96. The line at the top of the log shows both numbers.</p>")}
+{box("tip", "★ A HUNDRED COPIES FOR THE PRICE OF ONE", "<p>Each entry keeps the whole globals three times: before, with the answer applied, and after the event. Most of it is the same from one call to the next, so the log stores each distinct part once and shares it. Six calls of the trap room keep their globals in about 8 shared parts, where plain copies would need 96. The line at the top of the log shows both numbers.</p>")}
 
-<h2 id="ch6"><span class="ch">6</span>DEBUGGING WITH THE LOG</h2>
+<h2 id="ch7"><span class="ch">7</span>DEBUGGING WITH THE LOG</h2>
 <p>When a lever does something you didn't expect, work through it like this:</p>
 <ol class="steps">
 <li><b>Do it once.</b> Pull the lever a single time, so the newest entry is the one you care about.</li>
-<li><b>Which language answered?</b> If it says <b>JS</b> where you expected Hazel or Fumola, your rule didn't answer. Look for ⚠️ or ⛔ on the same line (chapter 7).</li>
+<li><b>Which language answered?</b> If it says <b>JS</b> where you expected Hazel or Fumola, your rule didn't answer. Look for ⚠️ or ⛔ on the same line (chapter 8).</li>
 <li><b>What came in?</b> Open the entry and read the <b>event</b> and the globals <b>before</b>. Was the lever really up? Was the wiring what you thought?</li>
 <li><b>What did the rule say?</b> <b>The rule's answer</b> is exactly what it returned: <code>Flip(L, SetPit(0, true, Done))</code>, as data.</li>
 <li><b>What changed?</b> If the answer is right but <b>what it changed</b> isn't, the game carried a command out differently than you meant. If the answer itself is wrong, the mistake is in the rule.</li>
 <li><b>Compare with JS.</b> Switch that room to <span class="key">JS</span>, pull the lever again, and compare the two entries side by side.</li>
 </ol>
 
-<h2 id="ch7"><span class="ch">7</span>TROUBLESHOOTING: BROKEN SCRIPTS</h2>
+<h2 id="ch8"><span class="ch">8</span>TROUBLESHOOTING: BROKEN SCRIPTS</h2>
 <p>Four ways a script goes wrong, what each one looks like, and how to fix it. Every example was broken on purpose, in the run behind this guide.</p>
 
 <h3>7.1 A type error (Hazel)</h3>
@@ -231,11 +260,11 @@ PAGE = f"""<!doctype html>
 {pic("10-fumola-stops.png", "A Fumola rule that stops: the entry and its message.")}
 {box("tip", "★ HOW TO FIX IT", "<p>Find the line the message names, and check the list's length before reading from it, or read with a pattern (<code>switch</code>) that covers the empty case.</p>")}
 
-<h2 id="ch8"><span class="ch">8</span>WHAT A SCRIPT COSTS 🔬</h2>
+<h2 id="ch9"><span class="ch">9</span>WHAT A SCRIPT COSTS 🔬</h2>
 <p>In the <b>⚙️ Advanced</b> tab, under <b>🧪 tests and timing</b>, <b>🔬 the scripts' cost</b> shows, for every kind of event the scripts answer, how long it takes in each language: the whole event (from the game's call to the last command carried out), and for Hazel and Fumola the rule alone. It also shows each language's set-up time. A frame is 16.7 ms; a rule that takes longer than that can make the game stutter.</p>
 {pic("11-cost.png", "🔬 the scripts' cost, filled by playing the trap room.", "half")}
 
-<h2 id="ch9"><span class="ch">9</span>BEHIND THE SCENES: GAME EVENTS</h2>
+<h2 id="ch10"><span class="ch">10</span>BEHIND THE SCENES: GAME EVENTS</h2>
 <p>Scripts answer only some of what happens in the game. Every way of moving, every arrow, door, pit and ladder, ends in one place in the game's code, <code>enterScene</code>. It tries a passage, a world way, a rope bridge, a ladder, then asks the scripts (<code>scriptGo</code>), and otherwise takes the door's own destination, fixed when the scene was drawn. Here is every kind of game event, what the game reads to decide what happens next, and whether a script decides it today.</p>
 <h3>Moving: {n_nav_s} of {n_nav} kinds go through a script</h3>
 <div class="scroll"><table class="feat"><thead><tr><th>the event</th><th>what decides where it leads</th><th>who decides</th></tr></thead><tbody>{nav_rows}</tbody></table></div>
@@ -243,7 +272,7 @@ PAGE = f"""<!doctype html>
 <div class="scroll"><table class="feat"><thead><tr><th>the event</th><th>what it reads</th><th>who decides</th></tr></thead><tbody>{oth_rows}</tbody></table></div>
 {box("tip", "★ WHAT THIS MEANS", "<p>The scripts decide the levers and the trap room's pits, the dungeons' ladders up, and the world's arrows between squares. Everything else that moves the friend, including the castle's own doors, the tree houses, caves, tents, huts, pictures and passages, still goes where the game's JS sends it. Each of those could become a script the same way: a room, an event, and a command back.</p>")}
 
-<h2 id="ch10"><span class="ch">10</span>BEHIND THE SCENES: THE GAME'S STATE</h2>
+<h2 id="ch11"><span class="ch">11</span>BEHIND THE SCENES: THE GAME'S STATE</h2>
 <p>The game keeps everything it knows in one object, <code>state</code>: {ST["topParts"]} parts, about {ST["bytes"] // 1000} KB written out as JSON (a long-played save). A script sees a small slice of it, <b>Globals</b>: 17 fields, the slice its room needs, built fresh for each call.</p>
 <h3>The game's state</h3>
 <div class="scroll"><table class="feat"><thead><tr><th>part</th><th>bytes as JSON</th></tr></thead><tbody>{top_rows}</tbody></table></div>
@@ -252,11 +281,11 @@ PAGE = f"""<!doctype html>
 <div class="scroll"><table class="feat"><thead><tr><th>field</th><th>for</th><th>where the game keeps it</th></tr></thead><tbody>{gl_rows}</tbody></table></div>
 {box("warn", "⚠ NOT IN GLOBALS (YET)", "<p>Where the friend stands in a room, what they wear, any room but the one the event is in, the castle's hall doors (390 settings), its cats, thrones and horses, the world's things and links to other worlds, the people, the clock, and the music. A rule that needs one of these has to wait for a field to be added. The game builds each room's slice in <code>SCRIPT_ACTS[kind].globals</code> (25-scripting.js), and the type <code>Globals</code> at the program's start lists the fields, so the two change together.</p>")}
 
-<h2 id="ch11"><span class="ch">11</span>QUICK REFERENCE: EVERY FEATURE</h2>
+<h2 id="ch12"><span class="ch">12</span>QUICK REFERENCE: EVERY FEATURE</h2>
 <p>The full feature set of the 📜 Scripting panel, and where each feature stands: {counts["done"]} done, {counts["check"]} done but not yet seen by Matthew, {counts["branch"]} on a branch, {counts["next"]} not yet built. This table is kept up to date as the work goes on.</p>
 <div class="scroll"><table class="feat"><thead><tr><th>area</th><th>feature</th><th>status</th><th>where</th></tr></thead><tbody>{rows}</tbody></table></div>
 
-<h2 id="ch12"><span class="ch">12</span>ABOUT THIS GUIDE</h2>
+<h2 id="ch13"><span class="ch">13</span>ABOUT THIS GUIDE</h2>
 <p>Every picture is of <b>Messed Up Dress Up {esc(RUN.get("version", ""))}</b>, as released, and every quoted entry and message comes from the same run of <code>tools/checks/manual593.mjs</code> (kids-choice-games) on GitHub's computers: branch <code>{esc(RUN.get("branch"))}</code>, the game at <code>{esc(RUN.get("game"))}</code>, run <a href="{esc(RUN.get("url"))}">{esc(RUN.get("id"))}</a>, dark mode, 1440 × 900. The check sets each scene up, breaks the rules on purpose, and takes the picture; nothing was retouched. <code>drivers/build.py</code> draws this page from <a href="data/texts.json">data/texts.json</a> and <a href="data/features.json">data/features.json</a>.</p>
 <p>Related: <a href="https://matthewhammer.org/hazel/reports/">Hazel reports</a>, where the scripts' speed and the three-way checks are measured; hazelgrove/hazel <a href="https://github.com/hazelgrove/hazel/pull/2711">#2711</a> (Hazel as a JS library); Adapton/fumola.</p>
 </main>

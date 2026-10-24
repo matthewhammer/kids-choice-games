@@ -22,7 +22,12 @@ function setBig(on, keepScreen) {
     else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
   } catch (e) { /* the window-filling picture is enough */ }
 }
-maxBtn.addEventListener("click", () => setBig(!document.body.classList.contains("big")));
+// (Matthew, 2026-10-24: "the game viewport for game scripts has a FS button in its upper-right corner. it doesn't really work at the
+// moment --- it should switch: back to game; to FS mode for game") in 📜's ⛶, the viewport's ⤢ leaves the scripts for the game, full screen
+maxBtn.addEventListener("click", () => {
+  if (typeof scriptMax !== "undefined" && scriptMax) { scriptMaxClose(); setBig(true); return; }
+  setBig(!document.body.classList.contains("big"));
+});
 // (ticket 159, Matthew) The 🎵 Music tab full screen: what is playing, where
 // the tune is, the tunes and the mixing board take the whole window (the
 // picture, the title and the other tabs hidden), and the screen where the
