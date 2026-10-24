@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.413 (2026-10-24)
+
+- **📜 🎮 The game viewport stays put** (ticket 596): in ⛶ max size, after clicking a line in the outline and scrolling the outline back up, the game showed an empty space where it should be. It now follows the outline as it scrolls, and is never drawn over the buttons.
+
 ## 0.0.412 (2026-10-24)
 
 - **📜 ⛶ Max size and the outline**: each script box opens across the screen, with an outline of every box on the left: its types (and how many cases each has) and its functions (and their types, as Hazel works them out). Click a line and the box goes to that definition. Drag the bar between the two sides to make the outline wider or narrower.
