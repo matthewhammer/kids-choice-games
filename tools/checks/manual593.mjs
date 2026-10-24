@@ -20,7 +20,9 @@ ws.addEventListener("message", e => { const m = JSON.parse(e.data); if (m.id && 
 const ev = async x => { const r = await send("Runtime.evaluate", { expression: x, awaitPromise: true, returnByValue: true }); if (r.result.exceptionDetails) throw new Error(JSON.stringify(r.result.exceptionDetails).slice(0, 400)); return r.result.result.value; };
 const shot = async (name, sel) => {
   let clip = null;
-  if (sel) { const j = await ev(`(() => { const n = document.querySelector(${JSON.stringify(sel)}); if (!n) return ""; const r = n.getBoundingClientRect(); return JSON.stringify({ x: Math.max(0, r.left - 6), y: Math.max(0, r.top - 6), width: Math.min(r.width + 12, innerWidth), height: Math.min(r.height + 12, innerHeight - Math.max(0, r.top - 6)) }); })()`); if (j) clip = { ...JSON.parse(j), scale: 1 }; }
+  if (sel) { const j = await ev(`(() => { const n = document.querySelector(${JSON.stringify(sel)}); if (!n) return ""; const r = n.getBoundingClientRect(); return JSON.stringify({ x: scrollX + Math.max(0, r.left - 6), y: scrollY + Math.max(0, r.top - 6), width: Math.min(r.width + 12, innerWidth), height: Math.min(r.height + 12, innerHeight - Math.max(0, r.top - 6)) }); })()`);
+ if (j) clip = { ...JSON.parse(j), scale: 1 }; }
+  // (a crop is measured from the page's top, not the window's: a scrolled page cropped where nothing was, and 06 and 11 came out blank)
   const r = await send("Page.captureScreenshot", { format: "png", ...(clip ? { clip } : {}) });
   writeFileSync(`out/${shotDir}/${name}.png`, Buffer.from(r.result.data, "base64")); if (shotDir === "manual-light") pics[name + ".png"] = "data:image/png;base64," + r.result.data; console.log(`ok   ${name}.png${sel ? " (" + sel + ")" : ""}`);
 };
