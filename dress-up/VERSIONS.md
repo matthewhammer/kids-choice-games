@@ -4,7 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.427 (2026-10-24)
+
+Everything in 0.0.426, plus the speed checks after each release working again (ticket 605):
+
+- **🦒 The giraffe's head stays in the picture when it jumps**: the picture's top now rises with the jump, as it does for its long neck standing.
+- **📜 Hazel's tiles show the whole program**: the tiles of the whole program stopped at 4000 pixels, and the program is taller now, so the end of the castle's rules was cut off and could not be reached.
 - **✨ The ninja's gem glimmers when you ask it to**: the flash running round the gem's white cuts is now off at first, as its ⭐ stars and 🌟 shine are. Turn it on with "✨ the gem's cuts glimmer" in 🐯 Costume's 🥷 the ninja box; a friend saved with it on keeps it. The gem itself, its cut facets and its sharp white lines, looks as before. Moving lights on the friend start off, so walking and running stay smooth on slow computers.
+- **Behind the scenes**: the 🪵 event log no longer stops on a world it no longer has (a save loaded or the page started over while an event was still going), and the checks GitHub's computers run after each release fit in their time again, the on-screen controller's walk through every place on a computer of its own.
 
 ## 0.0.426 (2026-10-24)
 
