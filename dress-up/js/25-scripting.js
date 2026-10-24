@@ -101,6 +101,7 @@ type Thing = (at = Int, uid = String, kind = String, on = Bool, works = [String]
 type Cell = (col = Int, row = Int, kind = Place, ways = [Dir]) in
 type ByAt = + AtLeaf + AtNode(ByAt, Thing, ByAt) in
 type ByUid = + UidLeaf + UidNode(ByUid, String, [Thing], ByUid) in
+type ExitsByN = + ExLeaf + ExNode(ExitsByN, Int, Exit, ExitsByN) in
 type Globals = (lever_L = Bool, lever_R = Bool, wiring = Wiring, draws = [Float], pits_on = [Bool], covered = [Bool], hatch = Bool, things = [Thing], rooms = [Room], exits = [Exit], out = Out, at_col = Int, at_row = Int, cols = Int, rows = Int, cells = [Cell]) in`;
 
 const SCRIPT_COMMON = `# Sub-routines every room can use, as Common.wire and so on. #
@@ -274,7 +275,35 @@ let on_event = fun (g, e) : (Globals, Event) ->
     if to == 0 then Done else GoRoom(to, Done)
   | WayOut(n) => GoRoom(way_out(g.rooms, g.exits, n, g.out), Done)
   | _ => Done
-  end`;
+  end;
+# (ticket 540, an experiment) The same rule with what it reads of the castle made once when the castle changes: its two #
+# dungeons, its trap room and its count of rooms, and the rooms' exits as a map by room number. A pit is then O(1) and a #
+# way out O(log R), not a walk of the castle's R rooms at every event. #
+let count_ex = fun xs : [Exit] -> case xs | [] => 0 | _ :: rest => 1 + count_ex(rest) end;
+# the n exits of rooms i, i + 1, ... as a balanced map by room number, and the rest of the list #
+let take_ex = fun (xs, i, n) : ([Exit], Int, Int) -> if n == 0 then (ExLeaf, xs) else (let (l, rest) = take_ex(xs, i, n / 2) in case rest | x :: rest2 => (let (r, rest3) = take_ex(rest2, i + n / 2 + 1, n - n / 2 - 1) in (ExNode(l, i + n / 2, x, r), rest3)) | [] => (ExLeaf, []) end);
+let exit_at = fun (m, n) : (ExitsByN, Int) -> case m | ExLeaf => None | ExNode(l, k, x, r) => if n < k then exit_at(l, n) else if n == k then Some(x) else exit_at(r, n) end;
+let with_castle = fun (d1, d2, t, nrooms, m) : (Int, Int, Int, Int, ExitsByN) -> fun (g, e) : (Globals, Event) ->
+  case e
+  | FallPit(i) =>
+    let to = if i == 0 then (if d1 > 0 then d1 else d2) else (if d2 > 0 then d2 else d1) in
+    if to == 0 then Done else GoRoom(to, Done)
+  | WayOut(n) =>
+    let ex = exit_at(m, n) in
+    let toward_us = (case ex | Some(ExitSide) => true | Some(ExitLong) => true | Some(ExitSpiral) => true | _ => false end) in
+    let ladder = (case ex | Some(ExitLadder) => true | _ => false end) in
+    GoRoom((case (case g.out | Nowhere => (if toward_us then Nowhere else Auto) | o => o end)
+      | Auto => (if ladder && t > 0 && !(t == n) then t else if n == 1 then 0 else 1)
+      | OutOfCastle => 0
+      | Nowhere => 0 - 1
+      | ToRoom(r) => if r >= 1 && r <= nrooms then r else 0 - 1
+      end), Done)
+  | _ => Done
+  end;
+# the castle held: what the rule reads of it, made from its rooms and exits, once #
+let held = fun (rooms, exits) : ([Room], [Exit]) ->
+  let (m, _) = take_ex(exits, 1, count_ex(exits)) in
+  with_castle(Common.room_at(rooms, Dungeon1), Common.room_at(rooms, Dungeon2), Common.room_at(rooms, Trap), Common.rooms(rooms), m)`;
 
 // each room kind's shipped text: rules that do just what the plain JS does, so 📜 on plays the same game (the fair comparison)
 const SCRIPT_TEXTS = { trap: SCRIPT_TRAP, tree: SCRIPT_TREE, square: SCRIPT_SQUARE, world: SCRIPT_WORLD, castle: SCRIPT_CASTLE };
