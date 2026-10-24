@@ -1696,7 +1696,7 @@ function scriptMaxClose() {
 // (one change, as a chip: the field, what it was, a long "steps to" arrow, what it is)
 function scriptLogChip(c) {
   const short = v => { const t = JSON.stringify(v); return t === undefined ? "—" : t.length > 40 ? t.slice(0, 37) + "…" : t; };
-  return el("span", { class: "log-chip" }, [el("code", { class: "log-field" }, c.path), " ", short(c.from), el("span", { class: "log-to" }, "⟶"), short(c.to)]);
+  return el("span", { class: "log-chip" }, [el("code", { class: "log-field" }, c.path), el("span", { class: "log-eq" }, "="), short(c.from), el("span", { class: "log-to" }, "⟶"), short(c.to)]);
 }
 function scriptLogBox(maxBtn) {
   const list = el("div", { class: "script-log-list" }), count = el("span", { class: "hint script-log-count" });

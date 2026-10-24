@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.418 (2026-10-24)
+
+- **📜 🪵 field = value**: a change in the log reads `lever_R = false ⟶ true`, an = after the field's chip.
+
 ## 0.0.417 (2026-10-24)
 
 - **📜 🪵 Fields as chips**: in the log, each change's field of the globals is a coloured chip of its own. The commands of the rule's answer that set no field (SetPit, Say, Wait, GoRoom) sit beside the changes with no field chip, where a "no field" row listed them.
