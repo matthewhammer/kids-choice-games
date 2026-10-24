@@ -468,9 +468,14 @@ function scriptHCRebuild() {
 const scriptLog = [];
 let scriptLogN = 0, scriptLogDropped = 0, scriptLogDrawSoon = null;
 const scriptLogOn = () => { try { return scriptEditorSettings().log !== false; } catch (e) { return true; } };
+// (ticket 605) a snapshot of a room's globals for the log, taken after the event too, when the game says it is over: by then the page
+// may hold another world (a save loaded, the page reset, a check's next case), and the world's globals read W.at from a world with no
+// square (hazellogic531's page error, 25-scripting.js:669 in 0.0.426). The log then keeps no snapshot (the display falls back to the
+// one before), and the game goes on
+const scriptLogSnap = L => { try { return scriptHash(L.A.globals(L.ev)); } catch (e) { return null; } };
 function scriptLogPush(L, engine, ms, ruleMs, error) {
   const e = { n: ++scriptLogN, engine, room: L.room, call: L.room + ".on_event", at: L.at, ms: +ms.toFixed(3), ruleMs: ruleMs == null ? null : +ruleMs.toFixed(3), compileMs: L.compileMs > 1 ? +L.compileMs.toFixed(1) : null,
-    ev: scriptHash(L.ev), before: L.before, handled: L.handled || L.before, none: L.none && L.none.length ? L.none : null, after: scriptHash(L.A.globals(L.ev)), settling: true, ...(error ? { error } : {}),
+    ev: scriptHash(L.ev), before: L.before, handled: L.handled || L.before, none: L.none && L.none.length ? L.none : null, after: scriptLogSnap(L), settling: true, ...(error ? { error } : {}),
     ...(L.answer !== undefined ? { answer: L.answer } : {}), ...(L.unknown && L.unknown.length ? { unknown: L.unknown } : {}), ...(L.dry ? { dry: L.dry } : {}) };
   scriptLog.push(e);
   const keep = scriptEditorSettings().logAll ? Infinity : 100;
@@ -481,7 +486,7 @@ function scriptLogPush(L, engine, ms, ruleMs, error) {
   // handler, before animations and other state changes complete for event, via game engine; post event") snapshot 3 when the game says
   // the event is over (ticket 597: its last swing, walk or wait done), however long that is
   const ctx = L.ctx, end = () => {
-    e.done = scriptHash(L.A.globals(L.ev)); e.doneMs = Math.round(ctx ? ctx.ms : 0); e.doneBy = ctx && ctx.timedOut ? "limit" : "game";
+    e.done = scriptLogSnap(L); e.doneMs = Math.round(ctx ? ctx.ms : 0); e.doneBy = ctx && ctx.timedOut ? "limit" : "game";
     e.held = ctx ? ctx.what.slice() : []; if (ctx && ctx.overlap) e.overlap = ctx.overlap; e.settling = false;
     if (scriptLogDrawSoon) scriptLogDrawSoon();
   };
@@ -587,7 +592,7 @@ const hzPush = (a, v) => { if (a.length < HZ_KEEP) a.push(Math.round(v * 1000) /
 // (the plain JS's own handler, timed the same way: the whole event)
 function hzJs(tag, f) { const t0 = performance.now(); try { return f(); } finally { const ms = performance.now() - t0, Z = hzCounters(); hzPush(Z.js[tag] || (Z.js[tag] = []), ms);
   // (ticket 592: 🪵 the game's own JS, logged; its snapshot 2 when its handler returns: what that code itself wrote)
-  const L = scriptLogJs; if (L && L.ev.tag === tag) { scriptLogJs = null; L.handled = scriptHash(L.A.globals(L.ev)); scriptLogPush(L, "js", ms, null); } } }
+  const L = scriptLogJs; if (L && L.ev.tag === tag) { scriptLogJs = null; L.handled = scriptLogSnap(L); scriptLogPush(L, "js", ms, null); } } }
 
 // the commands a rule gave, run in order, each by the room's act (its tag's method, with the command's fields before the rest);
 // Wait(ms, rest) runs the rest later. A tag the room does not know ends the walk, counted (__hz.unknown) and said once.

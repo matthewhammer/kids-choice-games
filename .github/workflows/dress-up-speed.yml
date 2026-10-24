@@ -29,11 +29,13 @@ env:
   TAG: ${{ inputs.tag || github.ref_name }}
 jobs:
   chrome:
-    name: Chrome (checks, gate, audit, leak)
+    name: Chrome (checks, gate)
     runs-on: ubuntu-24.04
     # (ticket 369, 2026-10-19: the checks alone took 43 minutes in 0.0.319's run, and with the gate, the slow gate and the audit the job
     # ran past 60, so since 0.0.312 every run was cut off in the audit or the leak, its last steps never recorded)
-    timeout-minutes: 90
+    # (ticket 605, 2026-10-24: and again at 90: the checks took 78 minutes in 0.0.426's run, so the audit was cut off in every run
+    # since; the audit and the leak are a job of their own now, below, and this one has room to grow)
+    timeout-minutes: 150
     outputs:
       checks: ${{ steps.checks.outcome }}
       gate: ${{ steps.gate.outcome }}
@@ -92,23 +94,6 @@ jobs:
         continue-on-error: true
         shell: bash
         run: BLACK=1 W=1920 H=1080 OUT=out/fpsgate-black-bubble.json node tools/fpsgate.mjs 9333 "$PAGE" black-bubbleroom4 | tee out/fpsgate-black-bubble.txt
-      - name: Every place with the on-screen controller (ticket 160; recorded, not a verdict)
-        continue-on-error: true
-        shell: bash
-        # (2026-10-21, ticket 510: measured after the checks in the same Chrome, about 40 minutes of it, places walked late read
-        # low on the slower runners: the forest 55 to 58 here and 60 first thing in a fresh Chrome on the same computers,
-        # diag-509f. So a fresh Chrome for the audit; the steps after it open their own pages.)
-        run: |
-          pkill -x chrome || true; pkill -x google-chrome || true; sleep 2
-          (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
-            --remote-debugging-port=9333 --remote-allow-origins='*' \
-            --user-data-dir="$RUNNER_TEMP/chrome-audit" about:blank > "$RUNNER_TEMP/chrome-audit.log" 2>&1 &)
-          for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done
-          RUNS=1 OUT=out/audit160.json node tools/audit160.mjs 9333 "$PAGE" | tee out/audit160.txt
-      - name: After the duck pond (ticket 167), in Chrome (recorded, not a verdict)
-        continue-on-error: true
-        shell: bash
-        run: node tools/leak167.mjs 9333 "$PAGE" - 2 | tee out/leak167-chrome.txt
       - name: Summary
         if: always()
         shell: bash
@@ -124,6 +109,51 @@ jobs:
         if: always()
         with:
           name: speed-chrome
+          path: out/
+  audit:
+    # (ticket 605) the on-screen controller audit and the leak in Chrome, recorded, not verdicts: beside the checks, not after them
+    name: Chrome (the on-screen controller audit, the leak; recorded)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Serve the game; start Chrome, muted
+        run: |
+          mkdir -p out
+          (python3 -m http.server 8133 --bind 127.0.0.1 > /dev/null 2>&1 &)
+          (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
+            --remote-debugging-port=9333 --remote-allow-origins='*' \
+            --user-data-dir="$RUNNER_TEMP/chrome" about:blank > "$RUNNER_TEMP/chrome.log" 2>&1 &)
+          for i in $(seq 60); do
+            curl -sf http://127.0.0.1:9333/json/version > /dev/null && curl -sf "$PAGE" > /dev/null && break
+            sleep 1
+          done
+      - name: Every place with the on-screen controller (ticket 160; recorded, not a verdict)
+        continue-on-error: true
+        shell: bash
+        # (2026-10-21, ticket 510: measured after the checks in the same Chrome, about 40 minutes of it, places walked late read
+        # low on the slower runners: the forest 55 to 58 there and 60 first thing in a fresh Chrome on the same computers,
+        # diag-509f. So a fresh Chrome for the audit: since ticket 605, a computer of its own)
+        run: |
+          RUNS=1 OUT=out/audit160.json node tools/audit160.mjs 9333 "$PAGE" | tee out/audit160.txt
+      - name: After the duck pond (ticket 167), in Chrome (recorded, not a verdict)
+        continue-on-error: true
+        shell: bash
+        run: node tools/leak167.mjs 9333 "$PAGE" - 2 | tee out/leak167-chrome.txt
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          { echo "## ${TAG}: Chrome, the audit and the leak"; shopt -s nullglob; for f in out/*.txt; do echo "### ${f#out/}"; echo '```'; tail -n 70 "$f"; echo '```'; done; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: speed-audit
           path: out/
   firefox:
     name: Firefox (the leak, recorded)
