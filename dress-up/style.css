@@ -1164,6 +1164,11 @@ body.script-max-game-on .stage .pic-area > :not(.pic-box) { visibility: hidden; 
 .pic-box.script-max-game-pinned > #pic { width: 100% !important; height: 100% !important; }
 .script-log .log-effect { background: color-mix(in srgb, #f59e0b 14%, transparent); border: 1px solid color-mix(in srgb, #f59e0b 45%, transparent); border-radius: 8px; padding: 4px 10px 6px; margin: 6px 0; font-size: 1.08em; }
 .script-log .log-effect .log-changes { font-size: 1em; }
+.script-log .log-grid { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; align-items: baseline; margin: 4px 0; }
+.script-log .log-grid > .log-effect { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; gap: 3px 12px; align-items: baseline; margin: 2px 0; }
+.script-log .log-k { color: var(--muted, #888); font-size: 0.85em; white-space: nowrap; text-align: right; }
+.script-log .log-v { min-width: 0; }
+.script-log .log-v pre, .script-log .log-v .log-json { margin: 0; }
 /* (ticket 593) 🖍️ lines only: no fills anywhere, for printing on paper with little toner. Boxes white with grey borders and black text;
    the game's drawings white shapes with black outlines, the same width at any size; pictures inside drawings and filters left out */
 /* (the game's colours are its variables: redefined, so what was transparent, the layers over the picture among them, stays so; a blanket
@@ -1181,3 +1186,8 @@ html.lineart mark { background: #fff !important; outline: 1.5px solid #000; }
 html.lineart .hazel-tile, html.lineart .script-master [aria-pressed="true"] { background: #fff !important; color: #000 !important; outline: 1.5px solid #000; }
 .script-log .log-sides.log-three { grid-template-columns: 1fr 1fr 1fr; }
 .script-log .log-step { font-size: 0.85em; opacity: 0.8; margin-top: 4px; }
+.script-log .log-chips { display: flex; flex-wrap: wrap; gap: 4px 6px; padding-left: 0; margin: 3px 0 2px; }
+.script-log .log-chip { display: inline-block; padding: 1px 10px; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); white-space: nowrap; font-size: 0.92em; line-height: 1.5; }   /* (as a panel button looks, and nothing to click) */
+.script-log summary .log-chip { font-size: 0.85em; padding: 0 8px; }
+.script-log .log-to { display: inline-block; margin: 0 0.45em; transform: scaleX(1.5); }   /* a long "steps to" arrow */
+.script-log .log-nochange { display: inline-block; font-size: 0.8em; line-height: 1.3; padding: 0 7px; border-radius: 999px; border: 1px solid currentColor; opacity: 0.85; vertical-align: 1px; }

@@ -127,7 +127,7 @@
  },
  {
   "area": "event log",
-  "what": "Three snapshots, two steps: what the rule's answer (its Cmd) says to change, then what the game engine did beyond it; snapshot 3 when the game says the event is over",
+  "what": "Three snapshots, pre event, post rule, post event: what the rule's answer (its Cmd) says to change, then what the game engine did beyond it, post event when the game says the event is over; an empty step a no change chip",
   "status": "done",
   "where": "<a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-592\">592</a>, <a href=\"https://matthewhammer.org/hazel/dashboard/#ticket-597\">597</a>"
  },

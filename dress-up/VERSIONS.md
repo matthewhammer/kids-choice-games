@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.416 (2026-10-24)
+
+- **📜 🪵 The log, tidied**: an opened entry is a grid, a short label beside each part: event, answer, then the changes in their box under the snapshots' names, **pre event ⟶ post rule** and **post rule ⟶ post event**, then when the event was over and how long the call took. Each change is a chip (a field, what it was, a long ⟶, what it is), and the newest few are on the log's line itself, to skim the log without opening anything. A step that changed nothing says **no change** in a small chip.
+
 ## 0.0.415 (2026-10-24)
 
 - **📜 🪵 The log reads the rule's answer** (ticket 597): a Hazel or Fumola rule answers with a Cmd, a list of commands, each saying what to change. The log now applies that list to the globals: snapshot 2 is the globals with the answer applied (a Flip flips its lever, a GoSquare moves to its square), so “1 → 2” shows what the rule asked for, and “2 → 3” everything else the game engine did that no command asked for, or anything that came out otherwise. Commands with no field of their own (SetPit, Say, Wait, GoRoom) are listed under step 1. In an opened entry the rule's answer now comes right after the event, before what changed.

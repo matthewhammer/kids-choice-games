@@ -1693,6 +1693,11 @@ function scriptMaxClose() {
 // event log's box: newest first, a line a call (when, the engine, the call and its event, how long, how much changed), opened for
 // what changed (each path, before and after) and the globals whole; the count, and what sharing saves. Drawn again a moment after
 // each call while it is in the page, and never more than 100 lines (kept: all of them, with ⚙️ keep: all)
+// (one change, as a chip: the field, what it was, a long "steps to" arrow, what it is)
+function scriptLogChip(c) {
+  const short = v => { const t = JSON.stringify(v); return t === undefined ? "—" : t.length > 40 ? t.slice(0, 37) + "…" : t; };
+  return el("span", { class: "log-chip" }, [el("code", {}, c.path), " ", short(c.from), el("span", { class: "log-to" }, "⟶"), short(c.to)]);
+}
 function scriptLogBox(maxBtn) {
   const list = el("div", { class: "script-log-list" }), count = el("span", { class: "hint script-log-count" });
   const clear = el("button", { onclick: () => { scriptLog.length = 0; scriptHCRebuild(); draw(); } }, "🧹 clear");
@@ -1729,39 +1734,47 @@ function scriptLogBox(maxBtn) {
       const h = e.handled || e.before, end = e.done || e.after, d1 = scriptDiff(e.before, h), d2 = scriptDiff(h, end), d = scriptDiff(e.before, end);
       const head = el("summary", {}, [el("span", { class: "log-n" }, "#" + e.n), " ", el("span", { class: "log-at" }, clock(e.at)), " ",
         el("span", { class: "log-eng log-" + e.engine }, ENG[e.engine] || e.engine), " ", el("code", {}, `${e.call}(${evText(e.ev)})`), " ",
-        el("span", { class: "log-ms" }, `${e.ms} ms${e.compileMs ? ` (${e.compileMs} compiling)` : ""}`), " ", el("span", { class: "log-diff" }, [e.error ? "⛔ stopped: " + e.error : (d.length ? `${d.length} changed` : "no change") + (e.settling ? " so far, the event still going…" : ""),
-          e.unknown ? ` · ⚠️ ${scriptPlural(e.unknown.length, "command", "commands")} the room does not know` : "", e.dry ? " · ⚠️ Hazel's rule has errors: the JS moved" : ""].join(""))]);
+        el("span", { class: "log-ms" }, `${e.ms} ms${e.compileMs ? ` (${e.compileMs} compiling)` : ""}`), " ", el("span", { class: "log-diff" }, [e.error ? "⛔ stopped: " + e.error : d.length ? (e.settling ? "so far" : "") : "no change" + (e.settling ? " so far, the event still going…" : ""),
+          e.unknown ? ` · ⚠️ ${scriptPlural(e.unknown.length, "command", "commands")} the room does not know` : "", e.dry ? " · ⚠️ Hazel's rule has errors: the JS moved" : ""].join("")),
+        ...(e.error ? [] : d.slice(0, 3).map(c => [" ", scriptLogChip(c)]).flat()), d.length > 3 && !e.error ? el("span", { class: "log-diff" }, ` +${d.length - 3} more`) : ""]);
       // (Matthew, 2026-10-24: "the order is: summary info you have now, and then reveal: event data, event effect (the diff you have
       // now), and another option to reveal the globals before/after, in full"; "put globals before/after side by side (when revealed),
       // and actually highlight the field that changed, if any")
       const body = () => {
-        const changed = new Set([...d1, ...d2].map(c => c.path)), three = end !== h, whole = el("details", { class: "log-globals" }, [el("summary", {}, three ? "globals before, after the handler, and after the event, in full" : "globals before and after, in full")]);
+        const changed = new Set([...d1, ...d2].map(c => c.path)), three = end !== h, whole = el("details", { class: "log-globals" }, [el("summary", {}, three ? "globals pre event, post rule and post event, in full" : "globals pre event and post event, in full")]);
         const col = (cap, v) => el("div", {}, [el("div", { class: "cap" }, cap), scriptJsonView(v, changed, three ? third() : half())]);
         whole.addEventListener("toggle", () => { if (whole.open && whole.children.length === 1) whole.append(el("div", { class: "log-sides" + (three ? " log-three" : "") },
-          three ? [col("1 · before", e.before), col(e.engine === "js" ? "2 · after the handler" : "2 · with the answer applied", h), col(`3 · after the event${e.doneMs > 50 ? `, ${(e.doneMs / 1000).toFixed(1)} s in` : ""}`, end)]
-                : [col("before", e.before), col("after", end)])); }, { once: true });
-        const list = (ds, empty) => ds.length ? el("ul", { class: "log-changes" }, ds.map(c => el("li", {}, [el("code", {}, c.path), ": ", short(c.from), " → ", short(c.to)]))) : el("div", { class: "hint" }, empty);
+          three ? [col("pre event", e.before), col("post rule", h), col(`post event${e.doneMs > 50 ? `, ${(e.doneMs / 1000).toFixed(1)} s in` : ""}`, end)]
+                : [col("pre event", e.before), col("post event", end)])); }, { once: true });
+        // (Matthew, 2026-10-24: "when either 1 -> 2 or 2 -> 3 is empty, let's do a small chip that says that, with minimal space horz or
+        // vertically ---- (no change) chip"; "1 --- let's call it 'pre event' 2 -- 'post rule' 3 -- 'post event'") a step's line, and
+        // its changes under it, or a no change chip on the line itself
+        // (Matthew: "let's give them each a chip, so we can skim over the log and see each one quickly"; "chip won't have dynamic
+        // behavior -- just the same CSS appearance") each change a chip, as the panel's chips look, and nothing to click; an empty step,
+        // a small no change chip
+        const chips = ds => ds.length ? el("div", { class: "log-chips" }, ds.map(scriptLogChip)) : el("div", {}, el("span", { class: "log-nochange" }, "no change"));
+        // (Matthew, 2026-10-24: "please Knowll this a bit more, and remove the detailed explanations of each field -- that's what the
+        // manual is for"; "we don't need to say 'what it changed' --- it's implied by the red box") laid out as a grid, a short label
+        // to the left of each part; the changes in their box, the two steps named by their snapshots: pre event, post rule, post event
+        const row = (label, v, cls = "") => [el("div", { class: "log-k " + cls }, label), el("div", { class: "log-v " + cls }, v)];
+        const over = e.settling ? "still going…" : e.doneMs > 50 ? (e.doneMs / 1000).toFixed(1) + " s" : "";
+        const times = [e.engine === "js" ? `JS ${e.ms} ms` : `rule ${e.ruleMs} ms`, e.engine === "js" ? "" : `call ${e.ms} ms`, e.compileMs ? `compiling ${e.compileMs} ms` : ""].filter(Boolean).join(" · ");
         return [
-          el("div", { class: "hint" }, `${e.engine === "js" ? "the game's own JS handler" : "the rule's function alone " + e.ruleMs + " ms; the whole call, its commands acted on,"} ${e.ms} ms${e.compileMs ? `, ${e.compileMs} ms of it compiling the program first` : ""}`),
-          el("div", { class: "cap" }, "event"), scriptJsonView(e.ev, new Set(), full()),
-          // (ticket 594) what the rule answered; a command the room did not know; a rule run in a program with errors
-          ...(e.answer !== undefined ? [el("div", { class: "cap" }, "the rule's answer"), scriptJsonView(e.answer, new Set(), full())] : []),
-          ...(e.unknown ? [el("div", { class: "log-bad" }, `⚠️ the room does not know ${e.unknown.join(", ")}: the commands from there on were not acted on`)] : []),
-          ...(e.error ? [el("div", { class: "log-bad" }, `⛔ the rule stopped: ${e.error}`)] : []),
-          ...(e.dry ? [el("div", { class: "cap" }, "Hazel's rule, run though the program has errors"),
-            el("div", { class: "hint log-bad" }, `${e.dry.errors.length ? e.dry.errors.join("; ") : "its own module is fine"}${e.dry.others.length ? `; errors also in ${e.dry.others.join(", ")}` : ""}. Its answer was not acted on: the game's own JS moved (the change below is the JS's).`),
-            e.dry.threw ? el("div", { class: "log-bad" }, `⛔ it stopped: ${e.dry.threw}`) : scriptJsonView(e.dry.answer, new Set(), full())] : []),
-          // (Matthew, 2026-10-24: "let's have the event and \"rule's answer\" be consecutive, Show the diffs by the rule and engine after the
-          // answer from the rule.")
-          // (Matthew, 2026-10-24: "please put a box, with a distinct background, around what it changed ... and increase the font slightly")
-          el("div", { class: "log-effect" }, [el("div", { class: "cap" }, "what it changed"),
-            el("div", { class: "log-step" }, e.engine === "js" ? "1 → 2 · by the JS handler itself" : "1 → 2 · what the rule's answer says to change"),
-            list(d1, e.engine === "js" ? "nothing yet" : "nothing: its answer sets no field of the globals"),
-            ...(e.none ? [el("div", { class: "hint" }, `also in its answer, with no field of their own in the globals: ${e.none.join(", ")}`)] : []),
-            el("div", { class: "log-step" }, `2 → 3 · by the game engine, beyond what ${e.engine === "js" ? "the handler wrote" : "the answer says"}${e.settling ? " (still going…)" : e.doneMs > 50 ? ` (over ${(e.doneMs / 1000).toFixed(1)} s after the call)` : ""}`),
-            list(d2, "nothing"),
-            ...(e.doneBy === "limit" ? [el("div", { class: "log-bad" }, `⚠️ still going after ${SCRIPT_EVENT_MAX_MS / 1000} s (a walk cut short?): snapshot 3 may be early`)] : []),
-            ...(e.overlap ? [el("div", { class: "hint" }, `the next call came before this event was over: its changes may be in this one's step 2 → 3 too`)] : [])]),
+          el("div", { class: "log-grid" }, [
+            ...row("event", scriptJsonView(e.ev, new Set(), full())),
+            ...(e.answer !== undefined ? row("answer", scriptJsonView(e.answer, new Set(), full())) : []),
+            ...(e.dry ? row("answer", [el("div", { class: "log-bad" }, `⚠️ not acted on: ${e.dry.errors.length ? e.dry.errors.join("; ") : "its own module is fine"}${e.dry.others.length ? `; errors in ${e.dry.others.join(", ")}` : ""}; the JS moved`),
+              e.dry.threw ? el("div", { class: "log-bad" }, `⛔ it stopped: ${e.dry.threw}`) : scriptJsonView(e.dry.answer, new Set(), full())]) : []),
+            ...(e.unknown ? row("", el("div", { class: "log-bad" }, `⚠️ unknown here: ${e.unknown.join(", ")}; the rest not acted on`)) : []),
+            ...(e.error ? row("", el("div", { class: "log-bad" }, `⛔ the rule stopped: ${e.error}`)) : []),
+            el("div", { class: "log-effect" }, [
+              ...row(el("span", {}, ["pre event", el("span", { class: "log-to" }, "⟶"), "post rule"]), chips(d1)),
+              ...(e.none ? row("no field", el("div", { class: "log-chips" }, e.none.map(t => el("span", { class: "log-chip" }, t)))) : []),
+              ...row(el("span", {}, ["post rule", el("span", { class: "log-to" }, "⟶"), "post event"]), e.settling && !d2.length ? el("span", { class: "log-diff" }, "still going…") : chips(d2)),
+              ...(over && !e.settling ? row("over at", over) : []),
+              ...(e.doneBy === "limit" ? row("", el("div", { class: "log-bad" }, `⚠️ still going at ${SCRIPT_EVENT_MAX_MS / 1000} s: post event may be early`)) : []),
+              ...(e.overlap ? row("", el("div", { class: "hint" }, `⚠️ overlapped by #${e.overlap}`)) : [])]),
+            ...row("time", el("span", { class: "log-diff" }, times))]),
           whole];
       };
       const det = el("details", { class: "log-entry" }, [head]);
