@@ -465,15 +465,7 @@ function scriptHCRebuild() {
 // 🪵 the event log: the most recent 100 calls (⚙️ keep: all, for every one), each the engine that answered (js, hazel, fumola), when,
 // how long it took in all (the game's call to the last command acted on; for JS its handler), the rule's function alone, the room,
 // the event, and the globals before and after (hash-consed); a rule that stopped, its error
-const scriptLog = [], SCRIPT_SETTLE_MS = 10000;
-let scriptLogPending = null;
-// an entry's event over: by the next call (its snapshot 1 is this one's end), or after 10 s
-function scriptLogFinish(e, next, by) {
-  if (scriptLogPending === e) scriptLogPending = null;
-  if (next && next !== e.done) { e.done = next; e.doneBy = "next"; }
-  e.settling = false; e.doneBy = e.doneBy || by;
-  if (scriptLogDrawSoon) scriptLogDrawSoon();
-}
+const scriptLog = [];
 let scriptLogN = 0, scriptLogDropped = 0, scriptLogDrawSoon = null;
 const scriptLogOn = () => { try { return scriptEditorSettings().log !== false; } catch (e) { return true; } };
 function scriptLogPush(L, engine, ms, ruleMs, error) {
@@ -486,19 +478,14 @@ function scriptLogPush(L, engine, ms, ruleMs, error) {
   if (scriptLogDropped >= 100) { scriptLogDropped = 0; scriptHCRebuild(); }
   if (scriptLogDrawSoon) scriptLogDrawSoon();
   // (Matthew, 2026-10-24: "perhaps we really need to have 3 snapshots of the globals for each event: pre event/event handler; post event
-  // handler, before animations and other state changes complete for event, via game engine; post event") snapshot 3, the event's end: the
-  // globals sampled every quarter second, as the game carries the answer out (a lever's swing, a boulder's fall, a walk to the next
-  // square), until the next call into a script begins (whose own snapshot 1 is this one's end) or 10 s pass; the time of the last change
-  // kept. (A fixed 2 s read missed every walk longer than that: most Way events showed no change.)
-  scriptLogPending = e; e.done = e.after; e.doneMs = 0;
-  const t0 = performance.now(), tick = () => {
-    if (scriptLogPending !== e) return;
-    const now = scriptHash(L.A.globals(L.ev)), t = performance.now() - t0;
-    if (now !== e.done) { e.done = now; e.doneMs = Math.round(L.t0 ? performance.now() - L.t0 : t); if (scriptLogDrawSoon) scriptLogDrawSoon(); }
-    if (t >= SCRIPT_SETTLE_MS) { scriptLogFinish(e, null, "quiet"); return; }
-    setTimeout(tick, 250);
+  // handler, before animations and other state changes complete for event, via game engine; post event") snapshot 3 when the game says
+  // the event is over (ticket 597: its last swing, walk or wait done), however long that is
+  const ctx = L.ctx, end = () => {
+    e.done = scriptHash(L.A.globals(L.ev)); e.doneMs = Math.round(ctx ? ctx.ms : 0); e.doneBy = ctx && ctx.timedOut ? "limit" : "game";
+    e.held = ctx ? ctx.what.slice() : []; if (ctx && ctx.overlap) e.overlap = ctx.overlap; e.settling = false;
+    if (scriptLogDrawSoon) scriptLogDrawSoon();
   };
-  setTimeout(tick, 250);
+  if (!ctx || ctx.done) end(); else ctx.finish = end;
   return e;
 }
 // (ticket 594) what Hazel says of the program, when it changes: its errors and unfinished parts module by module, or fine again
@@ -609,7 +596,7 @@ function scriptRun(cmd, act, depth = 0, end = () => {}) {
   if (!cmd || depth > 200 || cmd.tag === "Done") return end();
   const v = Array.isArray(cmd.value) ? cmd.value : [cmd.value], k = v.length > 1 ? v[v.length - 1] : null, args = v.length > 1 ? v.slice(0, -1) : v;
   if (cmd.tag === "Say") { scriptSay(String(args[0])); return scriptRun(k, act, depth + 1, end); }
-  if (cmd.tag === "Wait") { setTimeout(() => scriptRun(k, act, depth + 1, end), Math.max(0, +args[0] || 0)); return; }
+  if (cmd.tag === "Wait") { const go = scriptHeld(() => scriptRun(k, act, depth + 1, end), "wait"); setTimeout(go, Math.max(0, +args[0] || 0)); return; }   // (ticket 597: the event goes on through its Wait)
   if (typeof act[cmd.tag] === "function" && act[cmd.tag](...args) !== false) return scriptRun(k, act, depth + 1, end);
   const Z = hzCounters(); Z.unknown++; if (Z.unknownTags.length < 20) Z.unknownTags.push(String(cmd.tag));
   if (act.__unknown) act.__unknown.push(String(cmd.tag));   // (ticket 594: for this event's log entry)
@@ -710,6 +697,35 @@ function scriptGo(door) {
 // commands are acted on, and true. Otherwise false, and the caller's own JS runs as it always has: 📜 off, Hazel not loaded yet,
 // not ready (errors, a hole to fill, a bracket left open), no handler for the room, or not in that room. (ticket 542) Under
 // ?logic=fumola and fumola-list, the rule is Fumola's (fumolaCompile, 25-fumola.js), with the same handler shape: the rest is the same
+// (ticket 597, Matthew 2026-10-24: "is there any chance that the log will 'miss' the final global updates by the game engine, for some
+// very long-running animation?", "yes -- we need to address this for our event system to work well and be loggable") When an event is
+// over, said by the game itself. Each call into a script opens an event context. Whatever the game starts while carrying the event out
+// takes a hold on it: a swing (a lever's handle, a pit's lid, a boulder: swingOn), a walk or a flight through a doorway (walkInto,
+// flyInto: given back when the friend has arrived, the new square entered), a script's Wait. The event is over when its first moment
+// has passed and every hold is given back. A hold taken while an event is being carried out (by a callback of one of its holds, or the
+// game going on from it) is that event's: the newest context still going. A safety limit, 15 s, for a walk cut short, says so.
+let scriptEvCtx = null, scriptEvN = 0;
+const SCRIPT_EVENT_MAX_MS = 15000;
+function scriptEvBegin() {
+  const ctx = { n: ++scriptEvN, holds: 0, opening: true, done: false, t0: performance.now(), what: [], finish: null, timedOut: false };
+  if (scriptEvCtx && !scriptEvCtx.done) scriptEvCtx.overlap = ctx.n;   // (the one before still going: its end may take in this one's changes)
+  scriptEvCtx = ctx;
+  setTimeout(() => { ctx.opening = false; scriptEvMaybeEnd(ctx); }, 0);   // (its first moment: what the caller does after the call)
+  setTimeout(() => { if (!ctx.done) { ctx.timedOut = true; scriptEvEnd(ctx); } }, SCRIPT_EVENT_MAX_MS);
+  return ctx;
+}
+function scriptHold(what) {
+  const ctx = scriptEvCtx; if (!ctx || ctx.done) return () => {};
+  ctx.holds++; if (ctx.what.length < 20) ctx.what.push(what);
+  let given = false;
+  // (given back a moment later, so what the hold's own end does (a boulder written as landed, a square entered) is in)
+  return () => { if (given) return; given = true; setTimeout(() => { ctx.holds--; scriptEvMaybeEnd(ctx); }, 0); };
+}
+// a callback held until it has run
+const scriptHeld = (f, what) => { if (typeof f !== "function") return f; const release = scriptHold(what); return (...a) => { try { return f(...a); } finally { release(); } }; };
+function scriptEvMaybeEnd(ctx) { if (!ctx.done && !ctx.opening && ctx.holds <= 0) scriptEvEnd(ctx); }
+function scriptEvEnd(ctx) { ctx.done = true; ctx.ms = performance.now() - ctx.t0; if (scriptEvCtx === ctx) scriptEvCtx = null; if (ctx.finish) ctx.finish(); }
+
 // (ticket 592, Matthew 2026-10-24: "it's also any other call from game engine --calls-into--> game script") every call from the game
 // into a room's script comes here, and, when that room's script does not answer it, goes to the game's own JS through hzJs: the two
 // places 🪵 the event log listens. An entry begun here (the globals before, the event) is finished when the rule's commands have been
@@ -718,9 +734,9 @@ let scriptLogJs = null;
 function scriptEvent(room, ev) {
   scriptLogJs = null;
   const R = SCRIPT_ROOMS.find(r => r.name === room), A = R && SCRIPT_ACTS[R.kind];
-  const log = A && A.here(ev) && scriptLogOn() ? { room, ev, A, raw: A.globals(ev), at: Date.now(), t0: performance.now() } : null;
+  const ctx = A && A.here(ev) ? scriptEvBegin() : null;   // (ticket 597: the event, until the game says it is over)
+  const log = ctx && scriptLogOn() ? { room, ev, A, ctx, raw: A.globals(ev), at: Date.now(), t0: performance.now() } : null;
   if (log) log.before = scriptHash(log.raw);
-  if (log && scriptLogPending) scriptLogFinish(scriptLogPending, log.before, "next");   // (the last event's end: snapshot 3)
   const took = scriptEventRun(room, ev, R, A, log);
   if (!took && log) scriptLogJs = log;   // (the game's JS answers it: hzJs finishes the entry)
   return took;
@@ -1692,7 +1708,7 @@ function scriptLogBox(maxBtn) {
       const h = e.handled || e.before, end = e.done || e.after, d1 = scriptDiff(e.before, h), d2 = scriptDiff(h, end), d = scriptDiff(e.before, end);
       const head = el("summary", {}, [el("span", { class: "log-n" }, "#" + e.n), " ", el("span", { class: "log-at" }, clock(e.at)), " ",
         el("span", { class: "log-eng log-" + e.engine }, ENG[e.engine] || e.engine), " ", el("code", {}, `${e.call}(${evText(e.ev)})`), " ",
-        el("span", { class: "log-ms" }, `${e.ms} ms${e.compileMs ? ` (${e.compileMs} compiling)` : ""}`), " ", el("span", { class: "log-diff" }, [e.error ? "⛔ stopped: " + e.error : (d.length ? `${d.length} changed` : "no change") + (e.settling ? " so far, settling…" : ""),
+        el("span", { class: "log-ms" }, `${e.ms} ms${e.compileMs ? ` (${e.compileMs} compiling)` : ""}`), " ", el("span", { class: "log-diff" }, [e.error ? "⛔ stopped: " + e.error : (d.length ? `${d.length} changed` : "no change") + (e.settling ? " so far, the event still going…" : ""),
           e.unknown ? ` · ⚠️ ${scriptPlural(e.unknown.length, "command", "commands")} the room does not know` : "", e.dry ? " · ⚠️ Hazel's rule has errors: the JS moved" : ""].join(""))]);
       // (Matthew, 2026-10-24: "the order is: summary info you have now, and then reveal: event data, event effect (the diff you have
       // now), and another option to reveal the globals before/after, in full"; "put globals before/after side by side (when revealed),
@@ -1701,7 +1717,7 @@ function scriptLogBox(maxBtn) {
         const changed = new Set([...d1, ...d2].map(c => c.path)), three = end !== h, whole = el("details", { class: "log-globals" }, [el("summary", {}, three ? "globals before, after the handler, and after the event, in full" : "globals before and after, in full")]);
         const col = (cap, v) => el("div", {}, [el("div", { class: "cap" }, cap), scriptJsonView(v, changed, three ? third() : half())]);
         whole.addEventListener("toggle", () => { if (whole.open && whole.children.length === 1) whole.append(el("div", { class: "log-sides" + (three ? " log-three" : "") },
-          three ? [col("1 · before", e.before), col("2 · after the handler", h), col(`3 · after the event${e.doneMs ? `, ${(e.doneMs / 1000).toFixed(1)} s in` : ""}`, end)]
+          three ? [col("1 · before", e.before), col("2 · after the handler", h), col(`3 · after the event${e.doneMs > 50 ? `, ${(e.doneMs / 1000).toFixed(1)} s in` : ""}`, end)]
                 : [col("before", e.before), col("after", end)])); }, { once: true });
         const list = (ds, empty) => ds.length ? el("ul", { class: "log-changes" }, ds.map(c => el("li", {}, [el("code", {}, c.path), ": ", short(c.from), " → ", short(c.to)]))) : el("div", { class: "hint" }, empty);
         return [
@@ -1711,8 +1727,10 @@ function scriptLogBox(maxBtn) {
           el("div", { class: "log-effect" }, [el("div", { class: "cap" }, "what it changed"),
             el("div", { class: "log-step" }, "1 → 2 · by the handler itself"),
             list(d1, e.engine === "js" ? "nothing yet" : "nothing: a rule only answers; the game carries its answer out"),
-            el("div", { class: "log-step" }, `2 → 3 · by the game, carrying it out${e.doneMs ? ` (the last change ${(e.doneMs / 1000).toFixed(1)} s after the call)` : ""}${e.settling ? ", still settling…" : e.doneBy === "next" ? ", until the next call" : ""}`),
-            list(d2, "nothing")]),
+            el("div", { class: "log-step" }, `2 → 3 · by the game, carrying it out${e.settling ? " (still going…)" : e.doneMs > 50 ? ` (over ${(e.doneMs / 1000).toFixed(1)} s after the call)` : ""}`),
+            list(d2, "nothing"),
+            ...(e.doneBy === "limit" ? [el("div", { class: "log-bad" }, `⚠️ still going after ${SCRIPT_EVENT_MAX_MS / 1000} s (a walk cut short?): snapshot 3 may be early`)] : []),
+            ...(e.overlap ? [el("div", { class: "hint" }, `the next call came before this event was over: its changes may be in this one's step 2 → 3 too`)] : [])]),
           // (ticket 594) what the rule answered; a command the room did not know; a rule run in a program with errors
           ...(e.answer !== undefined ? [el("div", { class: "cap" }, "the rule's answer"), scriptJsonView(e.answer, new Set(), full())] : []),
           ...(e.unknown ? [el("div", { class: "log-bad" }, `⚠️ the room does not know ${e.unknown.join(", ")}: the commands from there on were not acted on`)] : []),

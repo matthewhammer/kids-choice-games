@@ -4,6 +4,8 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **📜 🪵 Each event in three snapshots** (tickets 592, 597): the game's state before the call, after the rule itself (a Hazel or Fumola rule only answers, so nothing changes there; the game's own JS changes it at once), and when the event is over, which the game itself says: when the last lever has turned, the last lid or boulder has swung or landed, the friend has walked through the doorway and arrived, a script's waits are done. However long that takes, the log waits for it. Each log line shows the two steps apart: what the handler changed, then what the game changed carrying it out, and how long after the call the event was over. An event the next one began during says its changes may mix; one still going after 15 s says so.
+
 ## 0.0.413 (2026-10-24)
 
 - **📜 🎮 The game viewport stays put** (ticket 596): in ⛶ max size, after clicking a line in the outline and scrolling the outline back up, the game showed an empty space where it should be. It now follows the outline as it scrolls, and is never drawn over the buttons.

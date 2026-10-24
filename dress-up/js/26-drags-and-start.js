@@ -583,15 +583,17 @@ function swingOn(sel, dur, apply) {
   const was = SWINGS.get(sel); if (was) was.stop();
   stillPic.text = null;
   let raf = 0, tm = 0, t0 = null, done = false, lastU = 0;
+  // (ticket 597: the event that started this swing is not over until it ends; held, and given back when it ends or is stopped)
+  const release = typeof scriptHold === "function" ? scriptHold("swing " + sel) : () => {};
   // (redo: drawn again at once where it is, in a room just built (mountScene), not a frame later at its end)
-  const me = { stop: () => { done = true; cancelAnimationFrame(raf); clearTimeout(tm); }, redo: root => { const el = root.querySelector(sel); if (el) apply(el, lastU); } };
+  const me = { stop: () => { done = true; cancelAnimationFrame(raf); clearTimeout(tm); release(); }, redo: root => { const el = root.querySelector(sel); if (el) apply(el, lastU); } };
   SWINGS.set(sel, me);
   const step = () => { cancelAnimationFrame(raf); clearTimeout(tm); if (done) return;
     const el = bgShown.node && bgShown.node.querySelector(sel);
     const now = performance.now(); if (t0 === null) t0 = now;
     const u = Math.min(1, (now - t0) / dur); lastU = u;
     if (el) apply(el, u);
-    if (u < 1) { raf = requestAnimationFrame(step); tm = setTimeout(step, 40); } else { done = true; stillPic.text = null; if (SWINGS.get(sel) === me) SWINGS.delete(sel); } };
+    if (u < 1) { raf = requestAnimationFrame(step); tm = setTimeout(step, 40); } else { done = true; stillPic.text = null; if (SWINGS.get(sel) === me) SWINGS.delete(sel); release(); } };
   const el = bgShown.node && bgShown.node.querySelector(sel);
   if (el) apply(el, 0);
   raf = requestAnimationFrame(step); tm = setTimeout(step, 40);
@@ -1013,6 +1015,7 @@ function figCopy() {
 }
 function flyInto(box, arrive) {
   if (!document.getElementById("figure")) return;
+  arrive = scriptHeld(arrive, "fly");   // (ticket 597: the event is over when the friend has arrived)
   entering = true;
   const inv = pic.getScreenCTM().inverse();
   const at = r => new DOMPoint(r.x + r.width / 2, r.y + r.height / 2).matrixTransform(inv);
@@ -1711,6 +1714,7 @@ let figOver = null;
 function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {}) {
   const P = pic.getScreenCTM(), BG = state.background, B = state.body, F = sceneFrame;
   if (!P) return;
+  arrive = scriptHeld(arrive, "walk");   // (ticket 597: the event is over when the friend has gone through and arrived)
   doorClip = null; figOver = null; figClipRect = null;   // (ticket 331: none left over from a trip cut short, whose doorway this one would keep)
   bridgeOff();   // (ticket 245: from a rope bridge, down at its foot first)
   entering = true;
