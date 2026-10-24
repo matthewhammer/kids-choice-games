@@ -85,7 +85,6 @@ PAGE = f"""<!doctype html>
   figure.half {{ max-width: 520px; }}
   /* (Matthew, 2026-10-24: "center the screenshot, under title for report") */
   .cover figure.shot {{ margin-left: auto; margin-right: auto; }}
-  /* (Matthew, 2026-10-24: "add a link to zine PDF to report 17, near the top") */
   .toc {{ columns: 2; font-family: "VT323", monospace; font-size: 1.3em; border: 2px dashed var(--line); padding: 10px 16px; }}
   .toc a {{ text-decoration: none; display: inline-block; padding: 0 6px; margin: 1px 0; }}
   /* (Matthew, 2026-10-24: "invert colors of 'main menu' (report contents 1--12), when we do hover over") a menu line lit as a game's is */
@@ -115,7 +114,6 @@ PAGE = f"""<!doctype html>
   <div class="edition">for MESSED UP DRESS UP · the 📜 Scripting panel · first edition</div>
   {pic("01-pit-room.png", "The trap room, also called the pit room, in the game: two red levers, two blue levers, two pits. What each lever does is decided by a game script.", "half")}
 </div>
-{box("tip", "🖨️ PRINT IT", '<p>This guide is also a black-and-white zine, to print, fold and staple, with four pages to color at the end: <a href="../../manuals/game-scripts-guide-0.0.412-zine.pdf"><b>the zine (PDF, 7 Letter sheets)</b></a>. Print it on both sides, <b>flipped on the short edge</b>; stack the sheets, fold them in half, and staple on the fold.</p>')}
 <p class="series">Matthew, 2026-10-24: “explaining the new game script feature, in the spirit of a 1980s or 1990s game manual, with screenshots … we want to show what log events look like, and how to use them to ‘debug’ the game script”; “the report/manual for game scripts should show examples of erroneous scripts, and how to check the errors and fix them”; and “use this report to list the full feature set, to track it”.</p>
 
 <div class="toc">
@@ -130,7 +128,8 @@ PAGE = f"""<!doctype html>
 <a href="#ch9">9 · BEHIND THE SCENES: GAME EVENTS</a><br>
 <a href="#ch10">10 · BEHIND THE SCENES: THE GAME&#39;S STATE</a><br>
 <a href="#ch11">11 · QUICK REFERENCE: EVERY FEATURE</a><br>
-<a href="#ch12">12 · ABOUT THIS GUIDE</a>
+<a href="#ch12">12 · ABOUT THIS GUIDE</a><br>
+<a href="../../manuals/game-scripts-guide-0.0.412-zine.pdf">13 · PRINT IT: THE ZINE (PDF) 🖨️</a>
 </div>
 
 <h2 id="ch1"><span class="ch">1</span>WHAT ARE GAME SCRIPTS?</h2>
