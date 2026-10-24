@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.423 (2026-10-24)
+
+- **🚶 The others walk their own paths** (ticket 599): in 👥 People, each person standing in a place has a 🚶 path button: a box for a path written like a 🎬 story (`walk X Z`, `wait`, `pose`, `face`), walked over and over, with the two steps of a walk, pauses, and poses held between walks. Each person's figure is drawn once per pose and then only moved, so many walkers stay smooth.
+
 ## 0.0.422 (2026-10-24)
 
 - **🎬 A story for each place** (ticket 440, simple for now): in 🏞️ the place's tab, a box for a script the friend acts out, a step a line: `walk X Z` (where, in % of the picture), `wait`, `pose` (stand, sit, lie, meditate, hug, dance), `face`, `pull` a lever (walked to and pulled, as a click does), `say`, and `loop`. ▶ plays it, ⏹ stops it, and with 🎬 play when we come here it plays on arriving. Any click or key in the picture stops it, so you can take over. Empty, ▶ plays an example.

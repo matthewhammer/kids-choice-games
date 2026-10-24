@@ -1667,10 +1667,25 @@ function personWhere(P) {
 // node kept by person (personNodes) and put among the scene's objects by depth, as the friend is (peopleShow).
 const personDrawn = new Map(), personNodes = new Map();
 let personBusy = false, personWanted = false;
+// (ticket 599) a figure kept per look and per variant: "" standing as dressed; "walk:A:right" and its B, left and right, the two
+// steps of a walk; "pose:NAME", a pose struck (strikePose); "face:WAY", standing, turned that way
+const personKey = (P, v = "") => JSON.stringify(P.look) + (v ? "#" + v : "");
+function personVariant(v) {
+  const B = state.body; if (!v) return;
+  const [kind, a, b] = v.split(":");
+  if (kind === "pose") { strikePose(a); return; }
+  if (kind === "face") { strikePose("stand"); B.facing = a; B.turn = ""; return; }
+  if (kind === "walk") {   // (a step: legs apart, the arms swinging against them, in profile)
+    strikePose("stand"); B.facing = b; B.turn = "";
+    const s = a === "A" ? 1 : -1;
+    Object.assign(B, { poseLegL: 22 * s, poseLegR: -22 * s, poseKneeL: s > 0 ? 6 : 18, poseKneeR: s > 0 ? 18 : 6, poseArmL: -18 * s, poseArmR: 18 * s });
+  }
+}
 function peopleDrawMissing() {
   personWanted = false;
   if (personBusy) return;
-  const want = Object.values(state.peopleAway).filter(P => P.place && !personDrawn.has(JSON.stringify(P.look)));
+  const want = [];
+  for (const P of Object.values(state.peopleAway)) if (P.place) for (const v of ["", ...peoplePathVariants(P)]) if (!personDrawn.has(personKey(P, v))) want.push([P, v]);
   if (!want.length) return;
   // (not while the friend is held, climbing, dragged or going in somewhere: the drawing's own state is busy then)
   if (poseHeld || climb || drag || entering) { setTimeout(peopleDrawMissing, 400); return; }
@@ -1682,13 +1697,14 @@ function peopleDrawMissing() {
   try {
     real.id = "pic-real"; tmp.id = "pic"; document.body.append(tmp);
     figShown = [];
-    for (const P of want) {
+    for (const [P, v] of want) {
       const look = personLookWhole(P.look);
       for (const k of PERSON_PARTS) state[k] = look[k];
       state.body.anim = "none"; state.background = { ...keepBG, kind: "none" };
+      personVariant(v);
       drawNow();
       const fig = tmp.querySelector("#figure"), far = tmp.querySelector("#figure-far"), defs = tmp.querySelector("defs");
-      if (fig) personDrawn.set(JSON.stringify(P.look), { svg: (defs ? defs.outerHTML : "") + (far ? far.outerHTML : "") + fig.outerHTML, g: naturalFrame.ground });
+      if (fig) personDrawn.set(personKey(P, v), { svg: (defs ? defs.outerHTML : "") + (far ? far.outerHTML : "") + fig.outerHTML, g: naturalFrame.ground });
     }
   } finally {
     for (const k of PERSON_PARTS) state[k] = keep[k];
@@ -1697,7 +1713,7 @@ function peopleDrawMissing() {
     tmp.remove(); real.id = "pic";
     personBusy = false;
   }
-  if (personDrawn.size > 200) personDrawn.delete(personDrawn.keys().next().value);
+  while (personDrawn.size > 400) personDrawn.delete(personDrawn.keys().next().value);
   changed();
 }
 // (each id in a person's figure made their own, as the friend's are kept: pat-shirt, the veils' masks)
@@ -1706,26 +1722,46 @@ function personOwnIds(svg, pre) {
   for (const id of ids) svg = svg.split(`id="${id}"`).join(`id="${pre}${id}"`).split(`url(#${id})`).join(`url(#${pre}${id})`).split(`href="#${id}"`).join(`href="#${pre}${id}"`);
   return svg;
 }
+// (a person's size where they stand: as the friend's at that depth)
+const personScale = (BG, y) => (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, y);
+// a person's node: placed and sized by its own transform (moved by a path without being drawn again), its shadow, and a child
+// per variant drawn so far, one shown (personShowVariant)
+function personNodeFor(P) {
+  let kept = personNodes.get(P.id);
+  const sig = JSON.stringify(P.look);
+  if (!kept || kept.sig !== sig) {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "person-placed"); g.setAttribute("data-person", P.id);
+    g.innerHTML = `<ellipse cx="0" cy="0" rx="70" ry="12" fill="#000" opacity="0.08"/>`;
+    kept = { sig, node: g, vars: new Map(), shown: null }; personNodes.set(P.id, kept);
+  }
+  return kept;
+}
+function personShowVariant(P, kept, v) {
+  if (!personDrawn.has(personKey(P, v))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } v = ""; }
+  if (kept.shown === v) return;
+  let n = kept.vars.get(v);
+  if (!n) { const f = personDrawn.get(personKey(P, v)); if (!f) return;
+    n = document.createElementNS("http://www.w3.org/2000/svg", "g"); n.setAttribute("transform", `translate(0 ${f1(-f.g)})`);
+    n.innerHTML = personOwnIds(f.svg, "pp" + P.id + "-" + (v ? v.replace(/\W/g, "") + "-" : "")); kept.vars.set(v, n); kept.node.append(n); }
+  for (const [k, m] of kept.vars) m.style.display = k === v ? "" : "none";
+  kept.shown = v;
+}
+const personPlaceTransform = (x, z, k) => `translate(${f1(x)} ${f1(z)}) scale(${k.toFixed(4)})`;
 function peopleShow(pic, scenery, feetZ) {
   for (const n of pic.querySelectorAll("g.person-placed")) n.remove();
-  if (personBusy || !scenery) return;
+  if (personBusy || !scenery) { peoplePathsSync([]); return; }
   const BG = state.background, W = state.world;
   const here = Object.values(state.peopleAway).filter(P => P.place && P.place.world === W.id && P.place.key === W.at);
+  peoplePathsSync(here);
   if (!here.length) return;
   const items = [];
   for (const P of here) {
-    const f = personDrawn.get(JSON.stringify(P.look));
-    if (!f) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } continue; }
-    const x = P.place.x, y = P.place.y, z = SCENE.ground + y, k = (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * depthSize(BG, y);
-    const sig = [JSON.stringify(P.look), x, y, k.toFixed(4), f.g].join("|");
-    let kept = personNodes.get(P.id);
-    if (!kept || kept.sig !== sig) {
-      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.setAttribute("class", "person-placed"); g.setAttribute("data-person", P.id); g.setAttribute("data-obj", "👤 " + personTitle(P));
-      g.innerHTML = `<ellipse cx="${f1(x)}" cy="${f1(z)}" rx="${f1(70 * k)}" ry="${f1(12 * k)}" fill="#000" opacity="0.08"/>` +
-                    `<g transform="translate(${f1(x)} ${f1(z)}) scale(${k.toFixed(4)}) translate(0 ${f1(-f.g)})">${personOwnIds(f.svg, "pp" + P.id + "-")}</g>`;
-      kept = { sig, node: g }; personNodes.set(P.id, kept);
-    }
+    if (!personDrawn.get(personKey(P))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } continue; }
+    const R = peoplePaths.get(P.id), x = R ? R.cx ?? R.x : P.place.x, y = R ? R.cy ?? R.y : P.place.y, z = SCENE.ground + y;
+    const kept = personNodeFor(P);
+    kept.node.setAttribute("transform", personPlaceTransform(x, z, personScale(BG, y)));
+    personShowVariant(P, kept, R ? R.v : "");
     kept.node.setAttribute("data-obj", "👤 " + personTitle(P));
     items.push({ node: kept.node, z });
   }
@@ -1737,5 +1773,82 @@ function peopleShow(pic, scenery, feetZ) {
     if (z <= feetZ && ahead === friendAhead && friend && friend.parentNode) friend.parentNode.insertBefore(node, friend);
     else if (ahead) ahead.parentNode.insertBefore(node, ahead);
     else pic.append(node);
+  }
+}
+// (ticket 599, Matthew 2026-10-19: "we can create walking paths on each screen for characters to loop, with pauses, and pose
+// instructions while not walking") 🚶 A person's path in their place: a step a line, as a 🎬 story's (walk X [Z], wait S, pose
+// NAME, face WAY, loop; storyParse), looped from the top when it ends. They walk it with the two steps of a walk, a pose struck
+// or a turn held while not walking. Each frame only moves their node and shows the variant it needs (drawn once, kept), so many
+// people walking cost little; their depth among the scene's objects is put right at the next drawing, and every second.
+const peoplePaths = new Map();
+let peoplePathRaf = 0, peoplePathLastDraw = 0;
+const PERSON_WALK_SPEED = 150, PERSON_STEP_MS = 230;
+const PERSON_PATH_EXAMPLE = "# an example: back and forth, with a look round\nwalk 20 40\nface front\nwait 2\nwalk 80 60\npose dance\nwait 2\npose stand";
+function peoplePathVariants(P) {
+  const out = new Set(); if (!P.path) return [];
+  for (const S of storyParse(P.path)) {
+    if (S.verb === "walk") for (const a of ["A", "B"]) for (const d of ["left", "right"]) out.add(`walk:${a}:${d}`);
+    if (S.verb === "pose" && S.pose !== "stand") out.add("pose:" + S.pose);
+    if (S.verb === "face") out.add("face:" + S.face);
+  }
+  return [...out];
+}
+function peoplePathsSync(here) {
+  const live = new Set();
+  for (const P of here) {
+    if (!P.path || !String(P.path).trim()) continue;
+    const steps = storyParse(P.path).filter(S => ["walk", "wait", "pose", "face", "loop"].includes(S.verb));
+    if (!steps.length) continue;
+    live.add(P.id);
+    const sig = P.path + "|" + P.place.world + "|" + P.place.key;
+    let R = peoplePaths.get(P.id);
+    if (!R || R.sig !== sig) { R = { sig, steps, i: 0, x: P.place.x, y: P.place.y, v: "", seg: null, until: 0, dir: "right" }; peoplePaths.set(P.id, R); }
+  }
+  for (const id of [...peoplePaths.keys()]) if (!live.has(id)) peoplePaths.delete(id);
+  if (peoplePaths.size && !peoplePathRaf) peoplePathRaf = requestAnimationFrame(peoplePathTick);
+}
+function peoplePathTick(now) {
+  peoplePathRaf = 0;
+  if (!peoplePaths.size) return;
+  const BG = state.background, F = sceneFrame, g = SCENE.ground;
+  for (const [id, R] of peoplePaths) {
+    const P = state.peopleAway[id]; if (!P) continue;
+    // (the step in hand done, the next begun; a whole round with no step that takes time is not looped at once)
+    for (let guard = 0; guard < R.steps.length + 1; guard++) {
+      if (R.seg) { const u = (now - R.seg.t0) / R.seg.dur; if (u < 1) break; R.x = R.seg.x1; R.y = R.seg.y1; R.seg = null; R.v = "face:" + R.dir; }
+      if (now < R.until) break;
+      if (R.i >= R.steps.length) R.i = 0;
+      const S = R.steps[R.i++];
+      if (S.verb === "loop") { R.i = 0; continue; }
+      if (S.verb === "wait") { R.until = now + S.s * 1000; break; }
+      if (S.verb === "pose") { R.v = S.pose === "stand" ? "" : "pose:" + S.pose; continue; }
+      if (S.verb === "face") { R.dir = S.face === "left" || S.face === "right" ? S.face : R.dir; R.v = "face:" + S.face; continue; }
+      if (S.verb === "walk") {
+        const p = v => Math.max(0, Math.min(100, v)) / 100, x1 = F.left + p(S.x) * (F.right - F.left);
+        const zb = g + figYMin(F) + 4, zf = F.bottom - 4, y1 = S.z === undefined ? R.y : zb + p(S.z) * (zf - zb) - g;
+        const k = personScale(BG, R.y), d = Math.hypot(x1 - R.x, (y1 - R.y) / 0.6);
+        if (Math.abs(x1 - R.x) > 2) R.dir = x1 > R.x ? "right" : "left";
+        R.seg = { x0: R.x, y0: R.y, x1, y1, t0: now, dur: Math.max(200, d / (PERSON_WALK_SPEED * Math.max(0.3, k)) * 1000) };
+        break;
+      }
+    }
+    let x = R.x, y = R.y;
+    if (R.seg) { const u = Math.min(1, (now - R.seg.t0) / R.seg.dur); x = R.seg.x0 + (R.seg.x1 - R.seg.x0) * u; y = R.seg.y0 + (R.seg.y1 - R.seg.y0) * u;
+      R.v = `walk:${Math.floor((now - R.seg.t0) / PERSON_STEP_MS) % 2 ? "B" : "A"}:${R.dir}`; }
+    R.cx = x; R.cy = y;
+    const kept = personNodes.get(id);
+    if (kept && kept.node.isConnected) { kept.node.setAttribute("transform", personPlaceTransform(x, g + y, personScale(BG, y))); personShowVariant(P, kept, R.v); }
+  }
+  // (now and then a drawing, so each walker's depth among the scene's objects is put right)
+  if (now - peoplePathLastDraw > 1000 && [...peoplePaths.values()].some(R => R.seg)) { peoplePathLastDraw = now; peoplePathsKeepDepth(); }
+  if (peoplePaths.size) peoplePathRaf = requestAnimationFrame(peoplePathTick);
+}
+// (the walkers' depth put right without drawing the place: each node moved to its place among the scene's objects by its feet)
+function peoplePathsKeepDepth() {
+  const pic = document.getElementById("pic"); if (!pic) return;
+  for (const [id, R] of peoplePaths) {
+    const kept = personNodes.get(id); if (!kept || !kept.node.isConnected) continue;
+    const z = SCENE.ground + (R.cy ?? R.y), ahead = objectAhead(z);
+    if (ahead && ahead !== kept.node.nextSibling) ahead.parentNode.insertBefore(kept.node, ahead);
   }
 }

@@ -1784,6 +1784,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const wrap = el("div", { class: "people" });
     box.append(wrap);
     let shown = null, newTpl = null;
+    const pathOpen = new Set();   // (ticket 599: the people whose path box is open)
     const render = () => {
       peopleInit();
       const me = state.person, all = peopleAll(), here = personHere(), tpls = all.filter(p => p.template);
@@ -1804,8 +1805,19 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         el("span", { class: "person-name" }, mark(p)), el("span", { class: "hint person-where" }, personWhere(p)),
         el("button", { class: "person-here", ...(here ? {} : { disabled: "" }), title: here ? "Put them here, beside the friend" : "Go to a place first: they stand in places", onclick: () => personPlace(p.id, personAside(here, p.id)) }, "📍 here"),
         ...(p.place ? [el("button", { class: "person-out", title: "Take them out of the places (they stay in the list)", onclick: () => personPlace(p.id, null) }, "✖ out")] : []),
+        // (ticket 599) a path to walk where they stand, looped: its box opened below their row
+        ...(p.place ? [el("button", { class: "person-path", "aria-pressed": String(pathOpen.has(p.id)), title: "A path for them to walk here, looped, with pauses and poses",
+          onclick: () => { pathOpen.has(p.id) ? pathOpen.delete(p.id) : pathOpen.add(p.id); shown = null; render(); } }, p.path && String(p.path).trim() ? "🚶 path ✓" : "🚶 path")] : []),
         el("button", { class: "person-tpl", "aria-pressed": String(!!p.template), title: "A template: new people can be made from them", onclick: () => personSetTemplate(p.id, !p.template) }, "⭐"),
-        el("button", { class: "person-drop", title: "Take this person out of the game", onclick: () => { if (confirm(`Take ${personTitle(p)} out of the game? This can't be undone.`)) personDrop(p.id); } }, "🗑️")]));
+        el("button", { class: "person-drop", title: "Take this person out of the game", onclick: () => { if (confirm(`Take ${personTitle(p)} out of the game? This can't be undone.`)) personDrop(p.id); } }, "🗑️")]))
+        .flatMap((row, j) => { const p = all.filter(q => q !== me)[j]; if (!p.place || !pathOpen.has(p.id)) return [row];
+          const ta = el("textarea", { class: "story-text", rows: 5, spellcheck: "false", placeholder: PERSON_PATH_EXAMPLE, "aria-label": `${personTitle(p)}'s path` });
+          ta.value = p.path || "";
+          let t = 0; ta.addEventListener("input", () => { p.path = ta.value; persist(); clearTimeout(t); t = setTimeout(changed, 500); });
+          return [row, el("div", { class: "person-path-box story" }, [ta, el("div", { class: "row" }, [
+            el("button", { onclick: () => { if (!ta.value.trim()) { ta.value = PERSON_PATH_EXAMPLE; p.path = ta.value; } changed(); } }, "▶ walk it"),
+            el("button", { onclick: () => { p.path = ""; ta.value = ""; changed(); } }, "⏹ stop (clear)")]),
+            el("div", { class: "hint" }, "a step a line, looped: walk X [Z] (in % across, and toward the front) · wait S · pose stand/sit/lie/meditate/hug/dance · face left/right/front/back · # a note. Empty, ▶ walks the example.")])]; });
       wrap.replaceChildren(el("div", { class: "cap" }, "👥 people"), el("div", { class: "row people-chips" }, chips),
         el("div", { class: "hint" }, `🧍 dressing ${personTitle(me)}: every tab dresses them, and they are the one who moves`),
         el("label", { class: "row person-name-row" }, [el("span", { class: "hint" }, "✏️ their name:"), nameBox]),
