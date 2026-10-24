@@ -156,10 +156,13 @@ async function printGuide() {
     await send("Emulation.setEmulatedMedia", { media: "print", features: [{ name: "prefers-color-scheme", value: "light" }] });
     await send("Page.navigate", { url: at }); await sleep(3000);
     const n = await ev(`(async () => { const P = ${JSON.stringify(pics)}, C = ${JSON.stringify(colorPages)};
-      for (const img of document.querySelectorAll("img")) { const f = (img.getAttribute("src") || "").split("/").pop(); if (P[f]) img.src = P[f]; }
+      for (const img of document.querySelectorAll("img")) { const f = (img.getAttribute("src") || "").split("/").pop();
+        // ("and even have them use vector graphics?": the pit room as the game's own drawing, its lines, in place of its picture)
+        if (f === "01-pit-room.png" && C[0]) { const d = document.createElement("div"); d.className = "vector"; d.innerHTML = C[0].svg; img.replaceWith(d); continue; }
+        if (P[f]) img.src = P[f]; }
       const end = document.createElement("section"); end.className = "coloring";
       end.innerHTML = C.map((c, i) => '<div class="color-page"><h2><span class="ch">' + "★".repeat(i + 1) + '</span>COLOR ME: ' + c.name.toUpperCase() + '</h2><div class="color-art">' + c.svg + '</div><p class="color-note">From Messed Up Dress Up. Color it in however you like!</p></div>').join("");
-      const st = document.createElement("style"); st.textContent = ".color-page { break-before: page; display: flex; flex-direction: column; height: 7.5in; } .color-art { flex: 1; display: flex; align-items: center; justify-content: center; } .color-art svg { width: 100%; height: auto; max-height: 6.4in; } .color-note { font: 8pt system-ui, sans-serif; text-align: center; margin: 4pt 0 0; } .coloring h2 { break-before: auto; }";
+      const st = document.createElement("style"); st.textContent = ".color-page { break-before: page; display: flex; flex-direction: column; height: 7.5in; } .color-art { flex: 1; display: flex; align-items: center; justify-content: center; } .color-art svg { width: 100%; height: auto; max-height: 6.4in; } .color-note { font: 8pt system-ui, sans-serif; text-align: center; margin: 4pt 0 0; } .coloring h2 { break-before: auto; } figure.shot .vector svg { display: block; width: 100%; height: auto; }";
       document.head.append(st); document.querySelector("main").append(end);
       await document.fonts.ready; await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
       return document.images.length; })()`);
@@ -183,7 +186,9 @@ try {
   shotDir = "manual-light"; mkdirSync("out/manual-light", { recursive: true });
   await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
   await send("Page.navigate", { url: url.replace(/#inspect$/, "") }); await sleep(5000);
-  await ev(`(() => { try { themeSet("light"); } catch (e) {} try { localStorage.setItem("scriptMaxGame", "0"); } catch (e) {} return 1; })()`);
+  // (Matthew, 2026-10-24: "a special config setting ... where all CSS and SVG drawings have no filling", "then we can use real screenshots
+  // from the game": the paper's pictures taken in 🖍️ lines only)
+  await ev(`(() => { try { themeSet("light"); lineArtSet(true); } catch (e) {} try { localStorage.setItem("scriptMaxGame", "0"); } catch (e) {} return 1; })()`);
   await scenes();
   await coloring();
   await printGuide();
