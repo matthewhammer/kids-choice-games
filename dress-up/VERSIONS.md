@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.420 (2026-10-24)
+
+- **📜 🪵 From a log entry to its rule** (ticket 598): each opened entry's box has a small link in its corner, like `TrapRoom.on_event`; click it and the panel goes to that room's rule (in ⛶ max size, its box opens in place of the log).
+
 ## 0.0.419 (2026-10-24)
 
 - **📜 🪵 Roomier change chips**: the field's chip sits inside its change's chip with a little space all round.
