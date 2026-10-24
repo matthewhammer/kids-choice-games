@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.421 (2026-10-24)
+
+- **📜 ⛶ The outline names modules**: each room's heading in the ⛶ outline is its module's name, like 🏰 TrapRoom, in every language (the long description shows when you point at it), followed by how many lines its code has.
+
 ## 0.0.420 (2026-10-24)
 
 - **📜 🪵 From a log entry to its rule** (ticket 598): each opened entry's box has a small link in its corner, like `TrapRoom.on_event`; click it and the panel goes to that room's rule (in ⛶ max size, its box opens in place of the log).

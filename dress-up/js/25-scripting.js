@@ -1608,11 +1608,17 @@ function scriptMaxNav() {
     // (Matthew, 2026-10-23: "Let's put a spinner on that chip on the LHS for each code block") its tiles not ready yet: the tile spins
     const tw = b.querySelector(".script-tile-wrap");
     if (lang && lang.classList && tw && !tw.closest("[hidden]") && tw.dataset.ready !== "1") lang.classList.add("loading");
-    const name = [...b.querySelector(".box-name").childNodes].filter(n => n.tagName !== "BUTTON").map(n => n.textContent).join("");
+    // (Matthew, 2026-10-24: "LHS -- let's show the module name (Hazel/Fumola), even in JS mode, not this long text for each room/module")
+    // a room's box by its module's name, its emoji kept and its long label as the hover text
+    const long = [...b.querySelector(".box-name").childNodes].filter(n => n.tagName !== "BUTTON").map(n => n.textContent).join("");
+    const R = b.dataset && b.dataset.room && SCRIPT_ROOMS.find(r => r.name === b.dataset.room);
+    const name = R ? R.label.split(" ")[0] + " " + R.name : long;
+    // (Matthew: "after the module name, show total number of lines") the lines of what the box shows, in the language chosen
+    const nLines = b.classList.contains("script-log") ? 0 : scriptListings(b).reduce((n, { text }) => n + String(text).replace(/\n+$/, "").split("\n").length, 0);
     // (ticket 594) a Hazel module with errors: ⚠️ and how many, beside its name
     const bad = b.dataset && b.dataset.room && b.shown() === "hazel" && scriptCompiled && scriptCompiled.byModule ? (scriptCompiled.byModule[b.dataset.room] || []).length : 0;
     const a = el("button", { class: "script-max-item", "aria-current": String(b === M.sec), onclick: () => scriptMaxOpen(M.boxes, b) },
-      [el("span", {}, name), ...(bad ? [el("span", { class: "script-max-bad", title: scriptCompiled.byModule[b.dataset.room].join("\n") }, `⚠️ ${bad}`)] : []), el("span", { class: "script-max-lang" }, lang)]);
+      [el("span", R ? { title: long } : {}, name), ...(nLines ? [el("span", { class: "script-max-lines" }, scriptPlural(nLines, "line", "lines"))] : []), ...(bad ? [el("span", { class: "script-max-bad", title: scriptCompiled.byModule[b.dataset.room].join("\n") }, `⚠️ ${bad}`)] : []), el("span", { class: "script-max-lang" }, lang)]);
     const subs = scriptListings(b).flatMap(({ node, text, lang }) => { const lines = text.split("\n"), os = scriptOutline(text, lang); return os.map((o, i) => {
       // (584) its lines: up to the next definition, less the comments and blank lines that lead into that one
       let end = (os[i + 1] ? os[i + 1].line : lines.length) - 1;
