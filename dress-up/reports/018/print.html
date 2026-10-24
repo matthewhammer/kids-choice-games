@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story Scripts Guide (print)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  @page { size: 5.5in 8.5in; margin: 0.42in 0.38in 0.5in; }
+  * { box-sizing: border-box; color: #000 !important; background: transparent !important; box-shadow: none !important; text-shadow: none !important; }
+  html, body { background: #fff !important; }
+  body { margin: 0; font: 10pt/1.42 "Literata", Georgia, serif; }
+  main { max-width: none; padding: 0; }
+  a { text-decoration: none; } a.ref code b { font-weight: normal; }
+  .series { font: 7.5pt/1.35 system-ui, sans-serif; }
+  .cover { border: 2.5pt double #000; padding: 0.25in 0.18in; margin: 0 0 0.12in; text-align: center; break-after: page; }
+  .cover .pub { font-family: "VT323", monospace; font-size: 12pt; letter-spacing: 0.15em; }
+  h1 { font-family: "Press Start 2P", monospace; font-size: 15pt; line-height: 1.5; margin: 10pt 0; }
+  .cover .edition { font-family: "VT323", monospace; font-size: 12pt; }
+  h2 { font-family: "Press Start 2P", monospace; font-size: 8.5pt; line-height: 1.6; margin: 0 0 8pt; padding: 5pt 6pt; border: 1.5pt solid #000; break-before: page; break-after: avoid; }
+  h2 .ch { margin-right: 6pt; }
+  h3 { font-family: "VT323", monospace; font-size: 13pt; margin: 10pt 0 3pt; border-bottom: 1pt dotted #000; break-after: avoid; }
+  p, li { orphans: 3; widows: 3; }
+  .box { border: 1.2pt solid #000; padding: 5pt 7pt; margin: 7pt 0; break-inside: avoid; }
+  .box.warn { border-style: dashed; border-width: 1.5pt; }
+  .box .box-h { font-family: "Press Start 2P", monospace; font-size: 6pt; margin-bottom: 3pt; }
+  pre.code { border: none; border-left: 2pt solid #000; padding: 3pt 7pt; margin: 6pt 0; font: 8.5pt/1.3 "VT323", ui-monospace, monospace; white-space: pre-wrap; break-inside: avoid; }
+  code { font-size: 0.86em; }
+  figure.shot { border: 0.8pt solid #000; padding: 3pt; margin: 7pt 0; break-inside: avoid; }
+  figure.shot img { display: block; width: 100%; max-height: 4.1in; object-fit: contain; filter: grayscale(1) contrast(1.05); }
+  figure.shot figcaption { font: 7pt/1.3 system-ui, sans-serif; padding: 3pt 1pt 0; }
+  figure.half { max-width: none; }
+  .toc { columns: 1; font-family: "VT323", monospace; font-size: 11.5pt; border: 1pt dashed #000; padding: 6pt 10pt; break-after: page; }
+  table.feat { font: 6.8pt/1.3 system-ui, sans-serif; border-collapse: collapse; width: 100%; }
+  table.feat th, table.feat td { border: 0.5pt solid #000; padding: 2pt 3pt; }
+  table.feat th { font-family: "VT323", monospace; font-size: 9pt; border-bottom-width: 1.2pt; }
+  table.feat tr { break-inside: avoid; }
+  td.st { font-family: "Press Start 2P", monospace; font-size: 4.6pt; }
+  .scroll { overflow: visible; }
+  .key { border: 0.7pt solid #000; border-radius: 6pt; padding: 0 5pt; font: 600 0.85em/1.4 system-ui, sans-serif; }
+  button.theme, script { display: none !important; }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../018/"><code><b>^du_report(</b>18<b>)</b></code></a> · 2026-10-24 · <span class="wip">work in progress</span> · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a>, a game made with M and N · <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-600"><code><b>^ticket(</b>600<b>)</b></code></a></p>
+<div class="cover">
+  <div class="pub">KIDS' CHOICE GAMES PRESENTS</div>
+  <h1>STORY SCRIPTS<br>DIRECTOR'S GUIDE</h1>
+  <div class="edition">for MESSED UP DRESS UP · the 🎬 story box and 🚶 paths · version 0.0.424</div>
+  <p class="missing">[picture 03-dance.png not taken]</p>
+</div>
+<p class="series">Matthew, 2026-10-24: “a new Zine and manual report --- for the kids to understand the story-script language, with examples, and more coloring pages.”</p>
+
+<div class="toc">
+<a href="#ch1">1 · YOU ARE THE DIRECTOR</a><br>
+<a href="#ch2">2 · WHERE THE STORY BOX IS</a><br>
+<a href="#ch3">3 · THE SEVEN STEPS</a><br>
+<a href="#ch4">4 · WHERE IS 30? WHERE IS 60?</a><br>
+<a href="#ch5">5 · YOUR FIRST STORY</a><br>
+<a href="#ch6">6 · PULLING LEVERS</a><br>
+<a href="#ch7">7 · AGAIN AND AGAIN: LOOP</a><br>
+<a href="#ch8">8 · EVERYONE CAN WALK 🚶</a><br>
+<a href="#ch9">9 · OOPS! A WRONG LINE</a><br>
+<a href="#ch10">10 · STORIES TO TRY</a><br>
+<a href="#ch11">11 · THE QUICK CARD</a><br>
+<a href="#ch12">12 · ABOUT THIS GUIDE</a><br>
+<a href="../../manuals/story-scripts-guide-0.0.424-zine.pdf">13 · PRINT IT: THE ZINE (PDF) 🖨️</a>
+</div>
+
+<h2 id="ch1"><span class="ch">1</span>YOU ARE THE DIRECTOR</h2>
+<p>In a film, the <b>director</b> tells the actors what to do: walk over there, turn around, say your line, dance! In Messed Up Dress Up, <b>you</b> are the director, and your friend is the actor.</p>
+<p>You write what happens as a <b>story script</b>: a list of steps, <b>one step on each line</b>. Your friend does them in order, from the top line to the bottom line.</p>
+<pre class="code">walk 30 60
+say Hello!
+pose dance</pre>
+<p>This story has three steps. Your friend walks, says “Hello!”, and dances. That's it! You just wrote your first story.</p>
+<aside class="box tip"><div class="box-h">★ GOOD TO KNOW</div><p>Each place has its own story. The farm yard can have one story, the castle another, and the tree house another.</p></aside>
+
+<h2 id="ch2"><span class="ch">2</span>WHERE THE STORY BOX IS</h2>
+<ol class="steps">
+<li>Open the side panel and choose the <span class="key">🏞️ Background</span> tab.</li>
+<li>Find the <b>🎬 a story for this place</b> box.</li>
+<li>Write your steps in it, one on each line.</li>
+<li>Press <span class="key">▶ play</span>. Your friend acts it out!</li>
+</ol>
+<p class="missing">[picture 01-story-box.png not taken]</p>
+<p>Three buttons:</p>
+<ul>
+<li><span class="key">▶ play</span> starts the story from the top. If the box is empty, it plays an example story.</li>
+<li><span class="key">⏹ stop</span> stops it.</li>
+<li><span class="key">🎬 play when we come here</span>: when it is on, the story starts by itself every time you come into this place.</li>
+</ul>
+<aside class="box tip"><div class="box-h">★ YOU CAN ALWAYS TAKE OVER</div><p>Click or tap in the picture, or press a key, and the story stops so you can play yourself.</p></aside>
+
+<h2 id="ch3"><span class="ch">3</span>THE SEVEN STEPS</h2>
+<p>A story knows seven steps. Each line starts with one of these words:</p>
+<div class="scroll"><table class="feat"><thead><tr><th>step</th><th>what your friend does</th><th>try it</th></tr></thead><tbody>
+<tr><td><code>walk</code></td><td>walks to a spot in the picture (chapter 4 says how spots work)</td><td><code>walk 30 60</code></td></tr>
+<tr><td><code>wait</code></td><td>waits, a number of seconds</td><td><code>wait 2</code></td></tr>
+<tr><td><code>pose</code></td><td>stands, sits, lies down, meditates, hugs, or dances</td><td><code>pose dance</code></td></tr>
+<tr><td><code>face</code></td><td>turns to look left, right, front (at you), or back</td><td><code>face right</code></td></tr>
+<tr><td><code>pull</code></td><td>walks to a lever and pulls it</td><td><code>pull L</code></td></tr>
+<tr><td><code>say</code></td><td>says some words, shown over the picture</td><td><code>say Hello!</code></td></tr>
+<tr><td><code>loop</code></td><td>goes back to the top and does it all again</td><td><code>loop</code></td></tr>
+</tbody></table></div>
+<p>The poses are: <code>stand</code>, <code>sit</code>, <code>lie</code>, <code>meditate</code>, <code>hug</code> and <code>dance</code>. Each dance is a surprise: your friend picks a different one every time.</p>
+<p>A line that starts with <code>#</code> is a <b>note</b> for you. Your friend skips it.</p>
+<pre class="code"># this is a note: my friend does not read it
+say Hi!</pre>
+
+<h2 id="ch4"><span class="ch">4</span>WHERE IS 30? WHERE IS 60?</h2>
+<p><code>walk</code> takes two numbers. The <b>first</b> says how far <b>across</b> the picture: 0 is the left edge, 50 the middle, 100 the right edge. The <b>second</b> says how far <b>toward you</b>: 0 is far away at the back, 100 is right at the front.</p>
+<div class="grid" role="img" aria-label="A map of the picture: across from 0 at the left to 100 at the right, and toward you from 0 at the back to 100 at the front">
+  <div class="v" style="left:25%"><span>25</span></div><div class="v" style="left:50%"><span>50</span></div><div class="v" style="left:75%"><span>75</span></div>
+  <div class="h" style="top:33%"><span>back: 0</span></div><div class="h" style="top:66%"><span>front: 100</span></div>
+  <div class="dot" style="left:30%;top:52%">walk 30 60</div><div class="dot" style="left:75%;top:40%">walk 75 40</div><div class="dot" style="left:10%;top:68%">walk 10 100</div>
+</div>
+<p>You can leave out the second number: <code>walk 80</code> walks to 80 across and stays just as near or far as before.</p>
+<aside class="box tip"><div class="box-h">★ TRY THIS</div><p><code>walk 0</code>, then <code>walk 100</code>. Your friend walks all the way across.</p></aside>
+
+<h2 id="ch5"><span class="ch">5</span>YOUR FIRST STORY</h2>
+<p>Go to the farm yard and type this story in the box:</p>
+<pre class="code"># a walk round the farm yard
+walk 30 60
+face right
+say Good morning, farm!
+pose dance
+wait 2
+pose stand
+walk 75 40
+face front
+say Time for a rest.
+pose sit</pre>
+<p>Press <span class="key">▶ play</span>. Your friend walks out, turns, says good morning, dances, walks to the back, and sits down for a rest.</p>
+<p class="missing">[picture 02-say.png not taken]</p>
+<p class="missing">[picture 04-sit.png not taken]</p>
+<p>Change one line and play it again. Make your friend say something else. Make them dance twice. It's your story!</p>
+
+<h2 id="ch6"><span class="ch">6</span>PULLING LEVERS</h2>
+<p><code>pull</code> makes your friend walk to a lever and pull it, just like when you click a lever yourself.</p>
+<ul>
+<li>In the castle's trap room: <code>pull L</code> and <code>pull R</code> for the red levers, <code>pull BL</code> and <code>pull BR</code> for the blue ones.</li>
+<li>In a tree room: <code>pull H</code> for the trap door's lever.</li>
+<li>Levers you put in a place yourself have numbers: <code>pull 1</code> is the first one, <code>pull 2</code> the second.</li>
+</ul>
+<pre class="code">walk 25 55
+say Which lever opens the pit?
+pull L
+wait 1
+face front
+say That one!</pre>
+<p class="missing">[picture 05-lever.png not taken]</p>
+<aside class="box warn"><div class="box-h">⚠ CAREFUL</div><p>A pit that opens under your friend is a pit they fall into. That can be the story, too!</p></aside>
+
+<h2 id="ch7"><span class="ch">7</span>AGAIN AND AGAIN: LOOP</h2>
+<p>Put <code>loop</code> at the end and the story starts over from the top, forever, until you press <span class="key">⏹ stop</span> or take over.</p>
+<pre class="code"># the castle guard
+walk 20 50
+face right
+wait 2
+walk 80 50
+face left
+wait 2
+loop</pre>
+
+<h2 id="ch8"><span class="ch">8</span>EVERYONE CAN WALK 🚶</h2>
+<p>Your friend isn't the only one who can move. The other people you made in the <span class="key">👥 People</span> tab can walk too, each on their own <b>path</b>.</p>
+<ol class="steps">
+<li>Put a person in a place with <span class="key">📍 here</span>.</li>
+<li>Press <span class="key">🚶 path</span> next to their name.</li>
+<li>Write their path in the box, with the same steps as a story: <code>walk</code>, <code>wait</code>, <code>pose</code>, <code>face</code>.</li>
+<li>Press <span class="key">▶ walk it</span>.</li>
+</ol>
+<p class="missing">[picture 06-people-path.png not taken]</p>
+<p>A path always goes round and round: when it gets to the end, it starts again by itself.</p>
+<p class="missing">[picture 07-walkers.png not taken]</p>
+<aside class="box tip"><div class="box-h">★ GOOD TO KNOW</div><p>People on paths can't say things or pull levers. Only your friend's story can do that.</p></aside>
+
+<h2 id="ch9"><span class="ch">9</span>OOPS! A WRONG LINE</h2>
+<p>If a line has a word the story doesn't know, the story stops at that line and tells you which line it is, and what it can do instead.</p>
+<pre class="code">walk 30 60
+jump 5
+say I never get here</pre>
+<p class="missing">[picture 08-wrong-line.png not taken]</p>
+<p>The story box said: <b>(the run did not record it)</b></p>
+<p>Things that go wrong, and how to fix them:</p>
+<ul>
+<li><b>A spelling slip</b>, like <code>wlak</code>: fix the word.</li>
+<li><b>A missing number</b>, like <code>walk</code> on its own or <code>wait</code> with no seconds: add the number.</li>
+<li><b>A pose it doesn't know</b>, like <code>pose jump</code>: use stand, sit, lie, meditate, hug or dance.</li>
+<li><b>A lever that isn't here</b>, like <code>pull L</code> in the farm yard: go to the trap room, or pull a lever you placed.</li>
+<li><b>It stopped by itself?</b> Maybe you clicked the picture. Press <span class="key">▶ play</span> again.</li>
+</ul>
+
+<h2 id="ch10"><span class="ch">10</span>STORIES TO TRY</h2>
+<h3>The dance party</h3>
+<pre class="code">say Party time!
+pose dance
+wait 2
+pose dance
+wait 2
+pose dance
+wait 2
+loop</pre>
+<h3>Hide and seek</h3>
+<pre class="code">say I&#x27;ll count to three!
+face back
+wait 3
+face front
+say Ready or not!
+walk 10 40
+walk 90 40
+say Where are you?</pre>
+<h3>The lazy day</h3>
+<pre class="code">walk 50 80
+pose lie
+wait 5
+pose sit
+say What a nice nap.</pre>
+<h3>Goodnight</h3>
+<pre class="code">walk 40 50
+face front
+say Goodnight, everyone!
+pose meditate</pre>
+<h3>Which lever? (in the trap room)</h3>
+<pre class="code">say Let&#x27;s try them all!
+pull L
+wait 2
+pull R
+wait 2
+pull L
+pull R
+say Back the way they were.</pre>
+<aside class="box tip"><div class="box-h">★ MAKE YOUR OWN</div><p>Mix the steps any way you like. Short stories are great. Long stories are great. Silly stories are the best.</p></aside>
+
+<h2 id="ch11"><span class="ch">11</span>THE QUICK CARD</h2>
+<div class="card">
+<p><code>walk X Z</code>: to X across (0–100), Z toward you (0–100)</p>
+<p><code>wait S</code>: S seconds</p>
+<p><code>pose …</code>: stand, sit, lie, meditate, hug, dance</p>
+<p><code>face …</code>: left, right, front, back</p>
+<p><code>pull …</code>: L, R, BL, BR, H, or a lever's number</p>
+<p><code>say …</code>: words over the picture</p>
+<p><code>loop</code>: back to the top</p>
+<p><code># …</code>: a note, skipped</p>
+<p><span class="key">▶ play</span> · <span class="key">⏹ stop</span> · <span class="key">🎬 play when we come here</span></p>
+<p>🚶 paths: walk, wait, pose, face; always loop</p>
+</div>
+
+<h2 id="ch12"><span class="ch">12</span>ABOUT THIS GUIDE</h2>
+<p>Every picture is of <b>Messed Up Dress Up 0.0.424</b>, as released, taken by <code>tools/checks/storyguide600.mjs</code> (kids-choice-games) on GitHub's computers. The coloring pages at the end of the zine are the game's own drawings, with every color taken out.</p>
+<p>The story box is <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-440"><code><b>^ticket(</b>440<b>)</b></code></a>, the walking paths <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-599"><code><b>^ticket(</b>599<b>)</b></code></a>. Made with M and N, who will be reading it, and coloring it.</p>
+</main>
+
+</body>
+</html>

@@ -7,12 +7,13 @@
 # last; then two pages to each side of a landscape Letter sheet, in the order that, printed on both sides (flip on the SHORT edge),
 # stacked, folded in half and stapled on the fold, reads 1, 2, 3 ... Writes zine.pdf, one copy (Matthew: "One copy per PDF is perfect":
 # print it twice for two).
-#   bash dress-up/reports/017/drivers/zine.sh <guide-half.pdf> <out dir>
+# (ticket 600: report 18 has eight coloring pages: the count of them is the third argument, four if left out)
+#   bash dress-up/reports/017/drivers/zine.sh <guide-half.pdf> <out dir> [coloring pages]
 set -euo pipefail
-in="$1"; out="$2"; mkdir -p "$out"
+in="$1"; out="$2"; colors="${3:-4}"; mkdir -p "$out"
 n=$(pdfinfo "$in" | awk '/^Pages:/ {print $2}')
 pad=$(( (4 - n % 4) % 4 ))
-body=$(( n - 4 ))
+body=$(( n - colors ))
 blanks=""; for _ in $(seq 1 $pad); do blanks="$blanks,{}"; done
 sel="1-${body}${blanks},$((body + 1))-${n}"
 echo "pages: $n, notes pages added before the coloring pages: $pad, total: $((n + pad)), sheets: $(( (n + pad) / 4 ))"
