@@ -91,7 +91,12 @@ try {
         }
         // Hazel's analysis of the whole program, as the tiles redo it after an edit
         let analyze = null;
-        if (eng === "hazel" && window.Hazel && Hazel.analyzeProgram) { const sp = scriptSpec(), ts = []; for (let a = 0; a < 3; a++) { const t = performance.now(); Hazel.analyzeProgram(sp); ts.push(performance.now() - t); } analyze = ts.map(x => +x.toFixed(1)); }
+        // (0.0.427's run: at 8 times, Hazel's analysis ran out of stack, thrown as an OCaml exception out of analyzeProgram; the
+        // game's own calls into Hazel catch it (scriptCompile, scriptEventRun), this direct call did not, so the check stopped. The
+        // limit is a measurement for ^report(32), as "not ready at first" is at 16 times: recorded, not a failure)
+        if (eng === "hazel" && window.Hazel && Hazel.analyzeProgram) { const sp = scriptSpec(), ts = [];
+          try { for (let a = 0; a < 3; a++) { const t = performance.now(); Hazel.analyzeProgram(sp); ts.push(performance.now() - t); } analyze = ts.map(x => +x.toFixed(1)); }
+          catch (e) { analyze = { error: "the analysis stopped", why: String(e && e.message || e).slice(0, 120) }; } }
         // the game calling into the script
         window.__hz = undefined;
         for (let i = 0; i < 10; i++) { roomLeverPull(i % 2 ? "R" : "L"); await w(120); }
