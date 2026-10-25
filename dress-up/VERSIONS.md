@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.429 (2026-10-24)
+
+Everything in 0.0.428, plus the forest in the speed test (ticket 160):
+
+- **🧪 This computer's speed now walks the forest three ways**: by steps, as the other passes do; by a game controller with the on-screen one hidden; and holding the on-screen controller's arrows, as on an iPad. Each walks right, then left. The result line gives all three side by side, so the kids' devices can show whether holding the on-screen arrows costs frames. The test now has 23 passes, about 76 seconds, and puts the on-screen controller's setting back afterwards.
+
 ## 0.0.428 (2026-10-24)
 
 Everything in 0.0.427, plus recordings, for N and M (ticket 608):
