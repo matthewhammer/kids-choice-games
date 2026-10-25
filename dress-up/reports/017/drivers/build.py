@@ -132,7 +132,8 @@ PAGE = f"""<!doctype html>
 <a href="#ch12">12 · QUICK REFERENCE: EVERY FEATURE</a><br>
 <a href="#ch13">13 · ABOUT THIS GUIDE</a><br>
 <a href="../../manuals/game-scripts-guide-{esc(RUN.get("version", ""))}-zine-print-2-sided-flip-long-edge.pdf">14 · PRINT IT: THE ZINE (PDF) 🖨️</a><br>
-<small style="display: inline-block; padding: 0 6px">print on both sides, flip on the long edge · <a href="../../manuals/game-scripts-guide-{esc(RUN.get("version", ""))}-zine-print-2-sided-flip-short-edge.pdf">short-edge copy</a></small>
+<small style="display: inline-block; padding: 0 6px">print on both sides, flip on the long edge · <a href="../../manuals/game-scripts-guide-{esc(RUN.get("version", ""))}-zine-print-2-sided-flip-short-edge.pdf">short-edge copy</a></small><br>
+<small style="display: inline-block; padding: 0 6px">and <a href="../../manuals/story-words-one-page.pdf">the story words on one page, a picture for each (PDF)</a>, from <a href="../018/">the Story Scripts Guide</a></small>
 </div>
 
 <h2 id="ch1"><span class="ch">1</span>WHAT ARE GAME SCRIPTS?</h2>

@@ -1,0 +1,138 @@
+{
+ "old": "0.0.428 (fad0545)",
+ "new": "0.0.428 with Robin Hood's hose #5a3d23",
+ "cases": 167,
+ "identical": 0,
+ "differ": 167,
+ "threwOnOneSide": 0,
+ "threwOnBoth": 0,
+ "threwOnBothFirst": [],
+ "nothingDrawn": 0,
+ "sameStructure": true,
+ "charsCompared": 0,
+ "seconds": 6,
+ "firstDifferences": [
+  [
+   "robin · stand · front",
+   1745,
+   "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+   "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+  ],
+  [
+   "robin · sit · front",
+   1927,
+   " -9.6,173.2 -9.6,240.7 -67.6,240.7 -67.6,168.1\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><path d=\"M18.3 1",
+   " -9.6,173.2 -9.6,240.7 -67.6,240.7 -67.6,168.1\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><path d=\"M18.3 1"
+  ],
+  [
+   "robin · meditate · front",
+   1583,
+   "-51.6,169 -27.1,157.8 -39.1,214.6 -151.5,174.2\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+   "-51.6,169 -27.1,157.8 -39.1,214.6 -151.5,174.2\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+  ],
+  [
+   "robin · dance · front",
+   1867,
+   "37.3,216.1 -24.9,274.2 -81.7,286.3 -98.4,207.5\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+   "37.3,216.1 -24.9,274.2 -81.7,286.3 -98.4,207.5\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+  ],
+  [
+   "robin · hug · front",
+   1927,
+   "8 -9.1,170.2 4.3,233.1 -52.5,245.2 -68.2,171.2\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><path d=\"M18.3 1",
+   "8 -9.1,170.2 4.3,233.1 -52.5,245.2 -68.2,171.2\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><path d=\"M18.3 1"
+  ],
+  [
+   "robin · lie · front",
+   1694,
+   "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+   "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+  ],
+  [
+   "robin · stand · left",
+   1270,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\"",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\""
+  ],
+  [
+   "robin · sit · left",
+   1338,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-73 152.4 L-73 222.4\" ",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-73 152.4 L-73 222.4\" "
+  ],
+  [
+   "robin · meditate · left",
+   1012,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-69.6 171.6 L-1.1 186.",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-69.6 171.6 L-1.1 186."
+  ],
+  [
+   "robin · dance · left",
+   1356,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\"",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\""
+  ],
+  [
+   "robin · hug · left",
+   1367,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-73 152.4 L-58.4 220.9",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-73 152.4 L-58.4 220.9"
+  ],
+  [
+   "robin · lie · left",
+   1217,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\"",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\""
+  ],
+  [
+   "robin · stand · right",
+   1266,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non"
+  ],
+  [
+   "robin · sit · right",
+   1318,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L73 152.4 L73 222.4\" fil",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L73 152.4 L73 222.4\" fil"
+  ],
+  [
+   "robin · meditate · right",
+   1010,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L69.6 171.6 L-0.3 176.5\"",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L69.6 171.6 L-0.3 176.5\""
+  ],
+  [
+   "robin · dance · right",
+   1303,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non"
+  ],
+  [
+   "robin · hug · right",
+   1347,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L73 152.4 L58.4 220.9\" f",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L73 152.4 L58.4 220.9\" f"
+  ],
+  [
+   "robin · lie · right",
+   1213,
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non",
+   "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non"
+  ],
+  [
+   "robin · stand · back",
+   1252,
+   "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+   "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+  ],
+  [
+   "robin · sit · back",
+   1434,
+   " -9.6,173.2 -9.6,240.7 -67.6,240.7 -67.6,168.1\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+   " -9.6,173.2 -9.6,240.7 -67.6,240.7 -67.6,168.1\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+  ]
+ ],
+ "threw": [],
+ "ninjaGemCases": 0
+}

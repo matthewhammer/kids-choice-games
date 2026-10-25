@@ -37,10 +37,9 @@ function clearingScene(c) {
     }
     return `<defs>${FLOWER_DEFS}</defs>` + t + depthRows("flowers", fl, 12 * k);
   });
-  // the path toward us, flat on the ground, so painted before anything standing (ticket 233: no longer a doorway of
-  // its own to the path through the woods; the way toward us is the world's, a nav arrow, where it leads somewhere)
-  s += SEP + part("clear-front-path", c.F, () =>
-    `<path d="M${P(-40 * k, y1 + pad)} L${P(40 * k, y1 + pad)} L${P(26 * k, near)} L${P(-26 * k, near)} Z" fill="#d9c08a"/>`);
+  // (ticket 612, Matthew 2026-10-25: "layering issue with path? ... legs of friend and path 'below' them, that's drawn above
+  // them") the path toward us is clear-paths' own, flat on the ground under everything; its second copy here, a doorway till
+  // ticket 233 and since then the same shape again, was sorted among the standing things in front and painted over the friend
   // the things far off, each its own piece, over the paths' far ends (each
   // an object, standing where its path ends: at its foot, at its size)
   const thingName = { seeCastle: "castle", seeTree: "tree house", seeHouse: "house", seeWitch: "witch hut", seeHealer: "healer hut" };

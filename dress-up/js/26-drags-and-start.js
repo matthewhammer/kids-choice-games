@@ -1999,3 +1999,18 @@ setSplit();
 showVersion();
 // (a copy of the game kept on this device, for airplane mode: ticket 486)
 offlineStart();
+// (ticket 610) a test visit (TRY, 01-state.js): the place, with n cauldrons each over a burning campfire, and a note of its frames a second
+if (TRY) {
+  const B = state.background, n = TRY.n;
+  B.kind = TRY.kind;
+  B.things = potsOverFires(n);
+  changed();
+  const note = el("div", { class: "try-note" }), name = TRY.kind === "cave" ? "🪨 cave behind the falls" : "🦇 cave room";
+  document.body.append(note);
+  const say = fps => {
+    const own = [...document.querySelectorAll("#bg animate, #bg animateTransform, #bg animateMotion")].filter(a => !a.closest('[data-drag^="thing:"]')).length, things = thingsMovingNow().reduce((s, m) => s + m.n, 0);
+    note.textContent = `🧪 test, nothing saved: ${name}, ${n} pot${n === 1 ? "" : "s"} over a fire · ${!fps ? "measuring frames a second" : Math.round(fps) + " frames a second"} · moving parts: ${things} in the things, ${own} in the place`;
+  };
+  say(null);
+  (async function tick() { if (!document.hidden) say(await framesNow(2000)); setTimeout(tick, 1000); })();
+}

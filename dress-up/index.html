@@ -19,7 +19,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dress Up">
-<link rel="stylesheet" href="style.css?v=0.0.429">
+<link rel="stylesheet" href="style.css?v=0.0.439">
 </head>
 <body>
 <div class="app">
@@ -41,7 +41,7 @@
           <div class="actions">
             <button class="big" id="surprise">🎲 Surprise me!</button>
             <div class="save-menu">
-              <button id="save-open" aria-haspopup="true" aria-expanded="false" aria-controls="save-pop" title="Save your friend: a picture, a drawing, and its settings">💾 Save ▾</button>
+              <button id="save-quick" title="Saves your friend, to Load again later (.json)">💾 Save</button><button id="save-open" aria-haspopup="true" aria-expanded="false" aria-controls="save-pop" aria-label="More ways to save" title="More ways to save: a picture, a drawing, a postcard">▾</button>
               <div class="save-pop" id="save-pop" hidden>
                 <div class="formats" id="formats">
                   <span id="formats-label">save as:</span>
@@ -60,6 +60,7 @@
             </div>
             <button id="load" title="Load a friend you saved (.json)">📂 Load</button>
             <input type="file" id="load-file" accept=".json,application/json" hidden>
+            <button id="start-world" title="Go into the game's world, at its start: then walk about and explore"><span class="sw-hand" aria-hidden="true" hidden>👉</span>🌍 Start World</button>
             <button id="reset">↺ Start over</button>
           </div>
         </div>
@@ -79,34 +80,35 @@
 </div>
 
 <!-- (ticket 178) the game's script, in parts, run in this order; each carries the version, so a cached part never meets a newer page -->
-<script src="js/01-state.js?v=0.0.429"></script>
-<script src="js/02-helpers.js?v=0.0.429"></script>
-<script src="js/03-face.js?v=0.0.429"></script>
-<script src="js/04-hair.js?v=0.0.429"></script>
-<script src="js/05-ghost.js?v=0.0.429"></script>
-<script src="js/06-costumes.js?v=0.0.429"></script>
-<script src="js/07-underwear.js?v=0.0.429"></script>
-<script src="js/08-body.js?v=0.0.429"></script>
-<script src="js/09-backgrounds.js?v=0.0.429"></script>
-<script src="js/10-nature.js?v=0.0.429"></script>
-<script src="js/11-houses-and-huts.js?v=0.0.429"></script>
-<script src="js/12-clearing-and-castle.js?v=0.0.429"></script>
-<script src="js/13-castle-rooms-and-map.js?v=0.0.429"></script>
-<script src="js/14-outdoors.js?v=0.0.429"></script>
-<script src="js/15-place-picker.js?v=0.0.429"></script>
-<script src="js/16-objects-and-solids.js?v=0.0.429"></script>
-<script src="js/17-moving-and-climbing.js?v=0.0.429"></script>
-<script src="js/18-drawing.js?v=0.0.429"></script>
-<script src="js/19-music.js?v=0.0.429"></script>
-<script src="js/20-controls.js?v=0.0.429"></script>
-<script src="js/21-size-and-divider.js?v=0.0.429"></script>
-<script src="js/22-full-screen.js?v=0.0.429"></script>
-<script src="js/23-heads-up-display.js?v=0.0.429"></script>
-<script src="js/24-surprise-save-start-over.js?v=0.0.429"></script>
-<script src="js/25-world.js?v=0.0.429"></script>
-<script src="js/25-scripting.js?v=0.0.429"></script>
-<script src="js/25-fumola.js?v=0.0.429"></script>
-<script src="js/25-recordings.js?v=0.0.429"></script>
-<script src="js/26-drags-and-start.js?v=0.0.429"></script>
+<script src="js/01-state.js?v=0.0.439"></script>
+<script src="js/02-helpers.js?v=0.0.439"></script>
+<script src="js/03-face.js?v=0.0.439"></script>
+<script src="js/04-hair.js?v=0.0.439"></script>
+<script src="js/05-ghost.js?v=0.0.439"></script>
+<script src="js/06-costumes.js?v=0.0.439"></script>
+<script src="js/07-underwear.js?v=0.0.439"></script>
+<script src="js/08-body.js?v=0.0.439"></script>
+<script src="js/09-backgrounds.js?v=0.0.439"></script>
+<script src="js/10-nature.js?v=0.0.439"></script>
+<script src="js/11-houses-and-huts.js?v=0.0.439"></script>
+<script src="js/12-clearing-and-castle.js?v=0.0.439"></script>
+<script src="js/13-castle-rooms-and-map.js?v=0.0.439"></script>
+<script src="js/14-outdoors.js?v=0.0.439"></script>
+<script src="js/15-place-picker.js?v=0.0.439"></script>
+<script src="js/16-objects-and-solids.js?v=0.0.439"></script>
+<script src="js/17-moving-and-climbing.js?v=0.0.439"></script>
+<script src="js/18-drawing.js?v=0.0.439"></script>
+<script src="js/19-music.js?v=0.0.439"></script>
+<script src="js/20-controls.js?v=0.0.439"></script>
+<script src="js/21-size-and-divider.js?v=0.0.439"></script>
+<script src="js/22-full-screen.js?v=0.0.439"></script>
+<script src="js/23-heads-up-display.js?v=0.0.439"></script>
+<script src="js/24-surprise-save-start-over.js?v=0.0.439"></script>
+<script src="js/25-world.js?v=0.0.439"></script>
+<script src="js/25-scripting.js?v=0.0.439"></script>
+<script src="js/25-fumola.js?v=0.0.439"></script>
+<script src="js/25-friends.js?v=0.0.439"></script>
+<script src="js/25-recordings.js?v=0.0.439"></script>
+<script src="js/26-drags-and-start.js?v=0.0.439"></script>
 </body>
 </html>

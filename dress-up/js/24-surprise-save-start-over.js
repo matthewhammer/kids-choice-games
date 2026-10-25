@@ -58,6 +58,43 @@ document.getElementById("reset").addEventListener("click", () => {
   const { volume, mute } = state.music;
   state = clone(DEFAULTS); state.music.volume = volume; state.music.mute = mute; changed();
 });
+// (ticket 611, Matthew 2026-10-25: "Better 'first time user' experience --- Next to 'Start Over' button, offer 'Start World' button
+// that: * selects the 'start' square from the 'start' world, if any ... * places the friend into that square, as if they selected it
+// from the world design grid. * presents a pop-up explaining" what the game is now; then, after his friend R "tried the game on his
+// mobile phone and got confused about how to enter the world and do stuff": "emphasize that 'enter world' button, with something
+// hovering over it (like a 'hand pointing' emoji), floating on it. Like an in-game tutorial might have.") 🌍 Start World: the
+// world named "start" (else the first), at its start square, as a tap on that square in 🗺️ World design does; and the welcome. The
+// hand floats over the button on this device until it is pressed once (localStorage "dress-up-world-started")
+const startWorldBtn = document.getElementById("start-world"), startWorldHand = startWorldBtn.querySelector(".sw-hand");
+const startWorldDone = () => { try { return localStorage.getItem("dress-up-world-started") === "1"; } catch (_) { return false; } };
+startWorldHand.hidden = startWorldDone();
+startWorldBtn.classList.toggle("sw-new", !startWorldDone());
+function startWorld() {
+  const W = worldsAll().find(w => String(w.name || "").trim() === "start") || worldById(WORLD_FIRST) || state.world;
+  if (W && W.cells[W.start]) { if (W !== state.world) worldSwitch(W.id, W.start); else worldEnter(W.start); }
+  try { localStorage.setItem("dress-up-world-started", "1"); } catch (_) { /* (for this visit) */ }
+  startWorldHand.hidden = true; startWorldBtn.classList.remove("sw-new");
+  welcomeShow();
+}
+startWorldBtn.addEventListener("click", startWorld);
+// the welcome: what the game is, for now, and how to get about (his words, the first three)
+function welcomeShow() {
+  const old = document.querySelector(".welcome-pop");
+  if (old) old.remove();
+  const close = () => { pop.remove(); document.removeEventListener("keydown", esc, true); startWorldBtn.focus(); };
+  const esc = e => { if (e.key === "Escape") { e.preventDefault(); close(); } };
+  const go = el("button", { class: "big welcome-go", onclick: close }, "🧭 Let's explore");
+  const pop = el("div", { class: "welcome-pop", role: "dialog", "aria-modal": "true", "aria-labelledby": "welcome-title" }, [
+    el("div", { class: "welcome-card" }, [
+      el("h2", { id: "welcome-title" }, "🌍 Welcome to the world"),
+      el("p", {}, "Messed Up Dress Up is a work in progress, evolving from an activity into a full game world, gradually."),
+      el("p", {}, "For now, the world has stuff in it, but no interactive people (the people here are more like background animations) and no puzzles. It's a place to explore, and to evolve into something more dynamic."),
+      el("p", {}, "Current work is on ways for players to script their own adventure world. One baby step at a time. Feedback welcome!"),
+      el("p", { class: "welcome-how" }, "👣 To get about: tap where your friend should walk (or use the arrow keys, or a game controller). Near the edge of a place, an arrow shows the way out: tap it to go to the next place. 🗺️ World design shows the whole world."),
+      go])]);
+  pop.addEventListener("click", e => { if (e.target === pop) close(); });
+  document.body.append(pop); document.addEventListener("keydown", esc, true); go.focus();
+}
 // SAVE: up to three files with one name, stamped with the local date and time
 // so each save is new: my-friend-2026-10-10-16-29-05.png, .svg and .json.
 // The picture as it is drawn (.png), the drawing itself, which Firefox
@@ -97,7 +134,6 @@ if (oneFile) {
     try { localStorage.setItem("dress-up-save-off", JSON.stringify(formatBoxes.filter(x => !x.checked).map(x => x.value))); } catch (_) {}
   });
 }
-const wanted = f => formatBoxes.some(b => b.value === f && b.checked);
 // Several downloads from one click: some browsers let only the first
 // through, ask first ("allow multiple downloads?"), or drop ones that
 // start after the click has finished (the .png is drawn first). So the
@@ -111,8 +147,22 @@ const wanted = f => formatBoxes.some(b => b.value === f && b.checked);
 // "extra"; a tool keeps the picture file by dropping it, knowing none of its names (the picture archive keeps that).
 const snapshotFile = (d = new Date()) => ({ app: "dress-up", version: 1, extra: { saved: d.toISOString(), game: VERSION.number }, state });
 const pictureFile = file => { const { extra, saved, ...p } = file; return p; };   // (saved: a top-level time, before 0.0.203)
+// (2026-10-25, Matthew: "M can no longer easily save files on the ipad ... It's asking a lot of questions before we can save ...
+// Can we just make save to disk the default?"; then "can we save in the browser database somehow?" (ticket 615)) 💾 Save keeps
+// the friend in this browser (25-friends.js: no file, no question, and 📂 Load lists them); where the browser keeps nothing,
+// it saves the settings (.json) as a file, as 0.0.438 did. ▾ beside it opens the files: a picture, a drawing, the settings,
+// a postcard. (Safari's own "Download?" for a file is the browser's, not the game's.)
+let quickSave = false;
+const saveFileNow = () => { quickSave = true; try { document.getElementById("save").click(); } finally { quickSave = false; } };
+document.getElementById("save-quick").addEventListener("click", async e => {
+  const b = e.currentTarget, say = t => { b.textContent = t; clearTimeout(b.t); b.t = setTimeout(() => { b.textContent = "💾 Save"; }, 2200); };
+  if (!(await friendsSave())) { saveFileNow(); say("✅ Saved (a file)"); return; }
+  say("✅ Saved here");
+});
 document.getElementById("save").addEventListener("click", () => {
-  if (!formatBoxes.some(b => b.checked)) { alert("Check at least one kind of file to save."); return; }
+  // (the kinds saved by this tap: the friend's settings alone for 💾 Save, else those chosen in the menu)
+  const want = quickSave ? ["json"] : formatBoxes.filter(b => b.checked).map(b => b.value), wanted = f => want.includes(f);
+  if (!want.length) { alert("Check at least one kind of file to save."); return; }
   const d = new Date(), two = n => String(n).padStart(2, "0");
   const name = `my-friend-${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}-` +
                `${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
@@ -138,7 +188,7 @@ document.getElementById("save").addEventListener("click", () => {
     const order = ["json", "png", "svg"];
     const links = files.slice().sort((x, y) => order.indexOf(x[0]) - order.indexOf(y[0])).map(x => x[1]);
     saved.replaceChildren(...(oneFile
-      ? ["Saved the ." + formatBoxes.find(b => b.checked).value + " — tap to save: ",
+      ? ["Saved the ." + want[0] + " — tap to save: ",
          ...links.flatMap((x, k) => k ? [" · ", x] : [x])]
       : ["Saved ", ...links.flatMap((x, k) => k ? [" · ", x] : [x]), " — not in your downloads? click each one."]));
   };
@@ -212,34 +262,34 @@ document.getElementById("postcard").addEventListener("click", async () => {
 // LOAD: a saved .json (or a bare state object); anything it lacks keeps
 // its default, so friends saved before a feature existed still load. Only its
 // state is read: never its extra fields (ticket 275), nor an older file's saved time.
-document.getElementById("load").addEventListener("click", () => document.getElementById("load-file").click());
+document.getElementById("load").addEventListener("click", () => friendsOpen());   // (ticket 615: the friends kept here, and a file)
+// a saved friend (a .json file's, or one kept in this browser: 25-friends.js) made the friend shown, upgraded as an old one is
+function loadSaved(data) {
+  const saved = data && data.state ? data.state : data;
+  if (!saved || typeof saved !== "object") throw new Error("no settings in this file");
+  const next = clone(DEFAULTS);
+  for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
+  upgradeHands(next.hands);
+  upgradeRightHand(next, saved);
+  upgradeFeet(next, saved);
+  upgradeHorse(next, saved);
+  upgradeLassoHand(next);
+  upgradeInside(next.background, saved);
+  upgradeFigSize(next.background, saved);
+  upgradeFoamMove(next.background, saved);
+  upgradeThings(next, saved);
+  upgradeWorld(next);
+  upgradeClickWalk(next, saved);
+  upgradePitShapes(next, saved);
+  upgradeFace(next.face, saved.face);
+  next.music = { ...next.music, volume: state.music.volume, mute: state.music.mute };
+  state = next;
+  changed();
+}
 document.getElementById("load-file").addEventListener("change", async e => {
   const file = e.target.files[0];
   e.target.value = "";
   if (!file) return;
-  try {
-    const data = JSON.parse(await file.text());
-    const saved = data && data.state ? data.state : data;
-    if (!saved || typeof saved !== "object") throw new Error("no settings in this file");
-    const next = clone(DEFAULTS);
-    for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
-    upgradeHands(next.hands);
-    upgradeRightHand(next, saved);
-    upgradeFeet(next, saved);
-    upgradeHorse(next, saved);
-    upgradeLassoHand(next);
-    upgradeInside(next.background, saved);
-    upgradeFigSize(next.background, saved);
-    upgradeFoamMove(next.background, saved);
-    upgradeThings(next, saved);
-    upgradeWorld(next);
-    upgradeClickWalk(next, saved);
-    upgradePitShapes(next, saved);
-    upgradeFace(next.face, saved.face);
-    next.music = { ...next.music, volume: state.music.volume, mute: state.music.mute };
-    state = next;
-    changed();
-  } catch (err) {
-    alert("That file didn't load: " + err.message);
-  }
+  try { loadSaved(JSON.parse(await file.text())); }
+  catch (err) { alert("That file didn't load: " + err.message); }
 });

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- nav: begin --><meta name="theme-support" content="data-theme"><script src="https://matthewhammer.org/nav/nav.js"></script><!-- nav: end -->
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Way In</title>
+<!-- og: begin (tools/og_previews.py in matthewhammer.github.io: the link preview's text and picture) -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="A Way In">
+<meta property="og:description" content="A new player on a phone: how do they find the game&#x27;s world, and know what to do in it? Why a friend got lost, and the first step: 🌍 Start World, a pointing hand on it, and a welcome saying what the game is for now.">
+<meta property="og:url" content="https://matthewhammer.org/kids-choice-games/dress-up/reports/020/">
+<meta property="og:image" content="https://matthewhammer.org/kids-choice-games/dress-up/reports/020/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://matthewhammer.org/kids-choice-games/dress-up/reports/020/og.png">
+<!-- og: end -->
+<style>
+  :root { --bg: #fbfaf7; --paper: #ffffff; --ink: #1f2328; --muted: #5b6470; --line: #e3e0d8; --accent: #6d28d9; --link: #1d4ed8; --wip: #b45309; --tip: #fff7d6; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --link: #93c5fd; --wip: #fbbf24; --tip: #2e2a1a; } }
+  :root[data-theme="dark"] { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --link: #93c5fd; --wip: #fbbf24; --tip: #2e2a1a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 32px 16px 80px; }
+  a { color: var(--link); }
+  .series { color: var(--muted); font-size: 0.9em; margin: 0; }
+  .wip { color: var(--wip); font-weight: 600; }
+  h1 { margin: 6px 0 4px; font-size: 2em; line-height: 1.2; }
+  .q { color: var(--muted); font-size: 1.1em; margin: 0 0 18px; }
+  h2 { margin: 40px 0 10px; padding-bottom: 4px; border-bottom: 2px solid var(--line); font-size: 1.35em; }
+  .box { background: var(--paper); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: 10px; padding: 12px 16px; margin: 16px 0; }
+  .box.tip { background: var(--tip); border-left-color: var(--wip); }
+  .box p { margin: 6px 0; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 18px 0; }
+  figure { margin: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 6px; }
+  figcaption { font-size: 0.85em; color: var(--muted); padding: 6px 2px 0; line-height: 1.4; }
+  .key { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 0 9px; font: 600 0.85em/1.6 system-ui, sans-serif; background: var(--paper); white-space: nowrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--paper); }
+  .scroll { overflow-x: auto; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 0.88em; }
+  ol li, ul li { margin: 4px 0; }
+  .log { font-size: 0.92em; color: var(--muted); }
+  button.theme { font: inherit; font-size: 0.8em; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; position: fixed; top: 10px; right: 10px; }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a href="./"><code><b>^du_report(</b>20<b>)</b></code></a> · 2026-10-25 · <span class="wip">work in progress</span> · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after <a href="../019/"><code><b>^du_report(</b>19<b>)</b></code></a></p>
+<h1>A Way In</h1>
+<p class="q">A new player opens Messed Up Dress Up on a phone. How do they find the game's world, and know what to do once they are in it?</p>
+
+<div class="box">
+  <p><b>Short answers, for now.</b> Until today they mostly didn't. The game opens as the dress-up activity it started as: a friend on a blank card, and 22 tabs below it. The world is in one of those tabs, 🗺️ World design, and nothing points there.</p>
+  <p><b>The first step, in 0.0.433:</b> a <span class="key">🌍 Start World</span> button under the picture, with a pointing hand 👉 bobbing on it. It takes the friend to the start of the world, then a welcome card says what the game is for now and how to get about.</p>
+  <p>This is a live document: it will grow as the new-player experience does. Each step gets a dated section, and earlier sections are kept as written. It stays marked as a work in progress until R has tried the new way in and his feedback is written up here.</p>
+</div>
+
+<h2>How this started</h2>
+<p>A friend of Matthew's (call him R) tried the game on his phone. He got confused about how to enter the world and how to do anything once there. Matthew's summary: "It's not obvious at all at the moment."</p>
+<p>Looking at the game as R found it, that is fair:</p>
+<ul>
+  <li><b>It opens on no place at all.</b> A first visit, or <span class="key">↺ Start over</span>, puts the friend on a plain card (the background <code>none</code>). The world, 31 places on a 6 by 7 grid, from the deep sea to the castle, is all there, but the opening screen never mentions it.</li>
+  <li><b>The way in is a tab among 22.</b> On a phone, the controls sit under the picture: Body, Face, Eyes, Hair and so on, then 🗺️ World design near the end. Its grid of squares is how a player enters the world, by tapping a square. Nothing says so until that tab is open.</li>
+  <li><b>Getting about isn't announced.</b> Tapping in the picture walks the friend there (on by default). An arrow out of a place appears only when the friend is near that edge. Both work well once known, but neither is taught.</li>
+  <li><b>What the game is isn't said.</b> The world has places and things to explore, but no people to talk to and no puzzles yet. A player looking for a goal finds none and can't tell whether they have missed it.</li>
+</ul>
+
+<h2>Step 1: 🌍 Start World <span class="series">(0.0.433, 2026-10-25, ^ticket(611))</span></h2>
+<p>From Matthew's notes on ^ticket(611): next to <span class="key">↺ Start over</span>, a button that</p>
+<ol>
+  <li>picks the start square of the world called "start", if there is one (the game's own first world has one, a forest clearing);</li>
+  <li>puts the friend there, as a tap on that square in 🗺️ World design does;</li>
+  <li>and shows a pop-up saying what the game is now.</li>
+</ol>
+<p>He then added one more element, after R's visit: emphasize that button "with something hovering over it (like a 'hand pointing') emoji, floating on it. Like an in-game tutorial might have."</p>
+
+<div class="shots">
+  <figure><img src="pictures/first.webp" alt="The game on a phone: the friend on a plain card, and under it the buttons Surprise me, Save, Load, then Start World with a pointing hand and a yellow ring, and Start over" loading="lazy">
+    <figcaption>1. A first visit on a phone (390 px wide), as of 0.0.433: the friend on a plain card, and 👉 🌍 Start World ringed in yellow beside Start over.</figcaption></figure>
+  <figure><img src="pictures/welcome.webp" alt="The welcome card over the forest clearing: Welcome to the world, three short paragraphs, how to get about, and a Let's explore button" loading="lazy">
+    <figcaption>2. After pressing it: the friend is in the forest clearing (the start square), and the welcome card is open.</figcaption></figure>
+  <figure><img src="pictures/hand.webp" alt="The cave room with the buttons under it on two rows, Start World ringed with the hand" loading="lazy">
+    <figcaption>3. The same buttons in a place: on a phone they now wrap onto two rows. Before, with one more button, they ran off both sides.</figcaption></figure>
+</div>
+
+<h3>What it does, exactly</h3>
+<div class="scroll"><table>
+  <tr><th>Piece</th><th>Behaviour</th></tr>
+  <tr><td>The button</td><td>Goes to the world named <code>start</code>, or the first world if none has that name, at its start square. If that world isn't the one the friend is in, the game switches worlds the usual way, keeping the square left behind. Without a start square, only the welcome shows.</td></tr>
+  <tr><td>The hand 👉</td><td>Bobs on the button, with a yellow ring, until the button is pressed once on this device (kept in the browser, <code>dress-up-world-started</code>). It is a CSS animation of one emoji, so it costs next to nothing. If the device asks for reduced motion, it holds still.</td></tr>
+  <tr><td>The welcome</td><td>A card over the game, in Matthew's words (below). <span class="key">🧭 Let's explore</span>, Escape, or a tap outside the card closes it. It shows after every press of the button, not only the first.</td></tr>
+  <tr><td>Saves</td><td>Nothing new is saved in the friend: Start World changes where the friend is, as a tap on a square in 🗺️ World design does.</td></tr>
+</table></div>
+
+<h3>The welcome's words</h3>
+<div class="box tip">
+  <p><b>🌍 Welcome to the world</b></p>
+  <p>Messed Up Dress Up is a work in progress, evolving from an activity into a full game world, gradually.</p>
+  <p>For now, the world has stuff in it, but no interactive people (the people here are more like background animations) and no puzzles. It's a place to explore, and to evolve into something more dynamic.</p>
+  <p>Current work is on ways for players to script their own adventure world. One baby step at a time. Feedback welcome!</p>
+  <p>👣 To get about: tap where your friend should walk (or use the arrow keys, or a game controller). Near the edge of a place, an arrow shows the way out: tap it to go to the next place. 🗺️ World design shows the whole world.</p>
+</div>
+<p>The first three paragraphs are Matthew's, lightly joined. "No interactive people" is his correction to an earlier "no people": the world has people, but they are background animations, not quite characters you can interact with. The last paragraph is new, aimed at what confused R.</p>
+
+<h2>Not done yet: ideas for the next steps</h2>
+<p>None of these is decided. They are listed so the next step can be picked deliberately.</p>
+<ul>
+  <li><b>A second tutorial step.</b> After the welcome closes, move the hand to the nearest way-out arrow, or to a spot in the picture to tap, so the first walk is shown rather than described.</li>
+  <li><b>Open in the world.</b> Should a first visit start at the start square, with the dress-up card one tap away instead of the other way round? That would change what the game is first, so it is Matthew's call.</li>
+  <li><b>Where am I.</b> A small map in the corner of the picture, showing the current square in the world.</li>
+  <li><b>Feedback, where?</b> The welcome says "Feedback welcome!" but gives no way to send any. It could link to a place for that (the game sends nothing anywhere today, and that should stay true).</li>
+  <li><b>A phone check.</b> Hand the phone to someone new, as R did, and write down where they stop. That is the test this report should report on next.</li>
+</ul>
+
+<h2>Updates</h2>
+<p class="log">2026-10-25: first draft, published as a work in progress; R's feedback to come. Step 1 shipped in Dress Up 0.0.433. Pictures from the game at 390 × 844 in the dark theme.</p>
+</main>
+<script>
+  (function () { const b = document.getElementById("theme"), order = ["auto", "light", "dark"], label = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
+    let t; try { t = localStorage.getItem("theme") || "auto"; } catch (e) { t = "auto"; }
+    const set = v => { t = v; if (v === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", v); b.textContent = label[v]; try { if (v === "auto") localStorage.removeItem("theme"); else localStorage.setItem("theme", v); } catch (e) {} };
+    set(t); b.addEventListener("click", () => set(order[(order.indexOf(t) + 1) % 3])); })();
+</script>
+</body>
+</html>

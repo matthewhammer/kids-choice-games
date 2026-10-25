@@ -4,6 +4,63 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.439 (2026-10-25)
+
+Everything in 0.0.438, plus saving with no files:
+
+- **💾 Save keeps your friend in this browser.** No file and no question: the friend you see, with a small picture of it, is kept on this device. Where a browser keeps nothing (a private window), it saves the file instead.
+- **📂 Load shows your saved friends.** Newest first, each with its picture and when it was saved: tap one to bring it back, ✖ twice to remove it. "📄 from a file…" still opens a saved .json.
+- **▾ beside 💾 Save still writes files**, to keep a copy somewhere else: the picture, the drawing, the settings, a postcard.
+## 0.0.438 (2026-10-25)
+
+Everything in 0.0.437, plus an easier Save:
+
+- **💾 Save saves your friend at once.** One tap saves the friend's settings (.json), the file 📂 Load opens again, on every device, with no menu first. The ▾ beside it opens the other ways to save: a picture (.png), a drawing (.svg), a postcard. On an iPad, Safari still asks once whether to download the file; that question is the browser's own.
+## 0.0.437 (2026-10-25)
+
+Everything in 0.0.436, plus a fix for tablets:
+
+- **Drop-down menus look like the game's buttons.** On an iPad they were Safari's own, small and white in the dark look (the 📦 from menu among the things, the world's template menu, the music's): now rounded, in the look's own colours, the panel's size, with a ⌄ to show they open.
+## 0.0.436 (2026-10-25)
+
+Everything in 0.0.435, plus, for slow computers the game does not notice:
+
+- **🌀 The places' moving scenery, in ⚙️ Advanced: 📏 as measured, 🧊 always hold still, or 🌀 always move.** It replaces the switch "moving scenery and water on a slow computer". As measured is as before: held still on a computer found to be slow. Always hold still is for one that is slow in a way the game does not notice, like an older iPad that draws the friend quickly but its places slowly. Always move is the old switch, on (a computer that had it on keeps it). The line under it still says what this computer was measured to be.
+## 0.0.435 (2026-10-25)
+
+Everything in 0.0.434, plus a fix:
+
+- **🌲 In the forest clearing, the path toward us is under the friend again.** A second copy of it, left from when it was a doorway, was painted over the friend's legs.
+## 0.0.434 (2026-10-25)
+
+Everything in 0.0.433, plus:
+
+- **🧪 measures the caves.** The speed test in ⚙️ Advanced now goes to 🪨 the cave behind the falls and 🦇 the cave room too: each standing with nothing put there, and how many of its parts move, then walking with 0, 1, 2 and 4 pots over fires. 33 passes, about 106 seconds.
+- **Ready to re-mix (inside the game, nothing to see).** The ids a drawing makes from what it draws come from one namer; the ninja's gem is the gem any drawing uses; what each costume wears for its shirt and pants is one table. Every friend draws exactly as before (12,570 checked), as ^du_report(19) explains.
+## 0.0.433 (2026-10-25)
+
+Everything in 0.0.432, plus a way in for a new player:
+
+- **🌍 Start World, beside Start over.** It takes the friend into the game's world, at the start square of the world called start, as a tap on that square in 🗺️ World design does. A pointing hand 👉 bobs on it until it is pressed once on this device.
+- **A welcome.** After 🌍 Start World, a card says what the game is now (a work in progress, growing from an activity into a full game world; stuff to explore, but no interactive people and no puzzles yet; ways for players to script their own adventures coming, one baby step at a time; feedback welcome) and how to get about.
+- **On a phone, the buttons under the picture wrap onto two rows** rather than running off both sides.
+## 0.0.432 (2026-10-25)
+
+Everything in 0.0.431, plus a fix for lines only:
+
+- **🖍️ Lines only draws the trees as lines too.** The trees, flowers, clouds and tree houses that a place draws many times over (outside the tree house, in the woods) kept their colours in lines only. They are lines now, like the rest.
+## 0.0.431 (2026-10-25)
+
+Everything in 0.0.430, plus, for slow computers like an old iPad:
+
+- **🐢 A place is full below, in ⚙️ Advanced.** The frames a second below which no more moving things can be put in a place, and the ones moving the most are marked with red dashes: 48 as before, or lower, down to 20, so a slow computer can take more things, choppier. It never goes under 20, so the game keeps answering taps, and a place's things still never have more than 1000 moving parts.
+- **🧪 Test visits of the caves.** `?try=cave-0` to `?try=cave-12` (the cave behind the falls) and `?try=caveroom-0` to `?try=caveroom-12` (the cave room) open that place with that many pots over fires, and say its frames a second and how many parts move. Nothing is saved on a test visit: the friend's own save is kept as it was.
+## 0.0.430 (2026-10-25)
+
+Everything in 0.0.429, plus a fix for lines only:
+
+- **🖍️ Lines only draws every room again.** A room's light and shade (the tree house rooms' and the round room's dimming, the witch's and the healer's rooms' glow, the cave room's dark, the castle rooms' floor fade, the greenhouse's glass, light shafts in the woods) turned white in lines only and covered the picture, the friend too: a tree house room showed nothing at all. Lines only leaves them out now, as it leaves out colour.
+
 ## 0.0.429 (2026-10-24)
 
 Everything in 0.0.428, plus the forest in the speed test (ticket 160):

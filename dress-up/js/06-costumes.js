@@ -80,6 +80,56 @@ const costumeOn = () => (ANIMALS[state.costume.kind] ? (state.costume.kind === "
 // out (from the forehead, at 64, to below the chin; in profile toward the face), drawn over the face but under its features;
 // from behind, closed over the head.
 const clothHood = () => state.costume.kind === "monk" && state.costume.hoodUp !== false ? (state.costume.monkCloak || "#6b4a2b") : null;
+// (ticket 564) WHAT EACH COSTUME WEARS FOR THE SHIRT AND PANTS, by costume.kind: a costume "in the friend's own clothes"
+// (the gnome's recipe, ticket 431) replaces drawNow's SH and P, each a style, a colour and a pattern, so every pose,
+// facing and animation draws it. An entry takes the costume's settings (WC) and the friend's own shirt and pants and gives
+// the two worn: [shirt, pants]. Each was an `if` of its own in drawNow until ticket 564, among the costumes' flags; as one
+// table, a new costume's clothes are one entry, and two costumes worn at once (one over the other, ticket 562's mock-up)
+// have one place to say whose clothes are worn. Drawn byte for byte as before (tools/same_friend.mjs, ^du_report(18)). An
+// animal suit has none (its fur is drawn over everything below the hood), nor the ghost.
+const COSTUME_CLOTHES = {
+  // (the witch's dress in her hat's colour, her spider web tiled all over it; with "a few" webs, plain, the webs drawn after it)
+  witch: (WC, SH, P) => { const webPat = WC.webStyle === "few" ? "plain" : "web";
+    return [{ ...SH, style: "long", color: WC.witchColor, pattern: webPat, patternSize: 96, patternColor: WC.webColor },
+            { ...P, style: "dress", skirtLen: 72, color: WC.witchColor, pattern: webPat, patternSize: 96, patternColor: WC.webColor }]; },
+  // (tickets 436, 437: a robe to the floor; the queen's gown is a dress, the king's falls straight, ticket 450)
+  queen: (WC, SH, P) => { const c = WC.queenRobe || "#5b2a86"; return [{ ...SH, style: "long", color: c, pattern: "plain" }, { ...P, style: "dress", skirtLen: 100, color: c, pattern: "plain" }]; },
+  king: (WC, SH, P) => { const c = WC.kingRobe || "#7a1f2b"; return [{ ...SH, style: "long", color: c, pattern: "plain" }, { ...P, style: "dress", skirtLen: 100, color: c, pattern: "plain" }]; },
+  // (ticket 435: chain mail, the dots pattern in steel, under his tabard)
+  knight: (WC, SH, P) => { const mail = { color: "#9ca3af", pattern: "dots", patternSize: 9, patternColor: "#6b7280" }; return [{ ...SH, style: "long", ...mail }, { ...P, style: "long", ...mail }]; },
+  // (ticket 434: a green tunic over brown hose)
+  robin: (WC, SH, P) => [{ ...SH, style: "long", color: WC.robinTunic || "#3f7d3a", pattern: "plain" }, { ...P, style: "long", color: "#5a3d22", pattern: "plain" }],
+  // (ticket 433: a cloak to the feet, the dryad's in the leaves pattern)
+  monk: (WC, SH, P) => {
+    const cloak = { color: WC.monkCloak || "#6b4a2b", ...(WC.monkWho === "dryad" ? { pattern: "leaves", patternSize: 26, patternColor: mix(WC.monkCloak || "#4f6b3a", "#000000", 0.3) } : { pattern: "plain" }) };
+    return [{ ...SH, style: "long", ...cloak }, { ...P, style: "dress", skirtLen: 94, ...cloak }]; },
+  // (ticket 432: a robe to the feet in the stars pattern)
+  wizard: (WC, SH, P) => {
+    const robe = { color: WC.wizardRobe || "#2a3a8c", pattern: "stars", patternSize: 30, patternColor: WC.wizardStars || "#f2c230" };
+    return [{ ...SH, style: "long", ...robe }, { ...P, style: "dress", skirtLen: 96, ...robe }]; },
+  // (ticket 431: the man's tunic and trousers; the woman's white blouse over the five-striped skirt, gnomeskirt)
+  gnome: (WC, SH, P) => WC.gnomeWho === "woman"
+    ? [{ ...SH, style: "long", color: GNOME_CLOTH, pattern: "plain" }, { ...P, style: "dress", skirtLen: 84, color: WC.gnomeSkirt || GNOME_STRIPES[0], pattern: "gnomeskirt", patternSize: 64 }]
+    : [{ ...SH, style: "long", color: WC.gnomeTunic || "#3f8f8a", pattern: "plain" }, { ...P, style: "long", color: WC.gnomeTrousers || "#7d8b6a", pattern: "plain" }],
+  // (the fairy's tunic in its style's colour and pattern: in a dress; or a shirt and pants, her tunic top over pants a
+  // shade deeper, its hem a short frill at her hips, drawn in drawNow)
+  fairy: (WC, SH, P) => {
+    const fTunic = FAIRY_TUNICS[WC.tunicStyle] ? WC.tunicStyle : "petal", fCol = WC["tunicColor_" + fTunic] ?? FAIRY_TUNICS[fTunic].colors[0];
+    const pat = fTunic === "toadstool" ? { pattern: "dots", patternSize: 34, patternColor: "#ffffff" } : fTunic === "sparkle" ? { pattern: "stars", patternSize: 26, patternColor: "#fde047" } : { pattern: "plain" };
+    return [{ ...SH, style: "tank", color: fCol, ...pat },
+            WC.fairyOutfit === "pants" ? { ...P, style: "pants", color: mix(fCol, "#000000", 0.28), pattern: "plain" } : { ...P, style: "dress", skirtLen: 58, color: fCol, ...pat }]; },
+  // (ticket 288: a scuba suit, long sleeves and legs in its colour; the old diving suit, canvas, a little wider)
+  scuba: (WC, SH, P) => [{ ...SH, style: "long", color: WC.scubaColor, pattern: "plain" }, { ...P, style: "long", color: WC.scubaColor, pattern: "plain" }],
+  diver: (WC, SH, P) => [{ ...SH, style: "long", color: WC.diverCloth, pattern: "plain", width: SH.width * 1.1 }, { ...P, style: "long", color: WC.diverCloth, pattern: "plain" }],
+  // (ticket 515: the robot's sleeves and legs in its limb colour; the box bot's legs and feet the friend's own)
+  robot: (WC, SH, P) => { const R = robotOf(WC);
+    return [{ ...SH, style: "long", collar: "flat", color: R.limb, pattern: "plain" }, R.S.feet !== "own" ? { ...P, style: "long", color: R.limb, pattern: "plain" } : P]; },
+  // (ticket 522: each style's shirt and pants, westernOf)
+  cowgirl: (WC, SH, P) => { const W = westernOf(WC, "cowgirl"); return [{ ...SH, ...W.shirt }, { ...P, ...W.pants }]; },
+  cowboy: (WC, SH, P) => { const W = westernOf(WC, "cowboy"); return [{ ...SH, ...W.shirt }, { ...P, ...W.pants }]; },
+  // (ticket 557: all in the near black cloth, a V at the neck)
+  ninja: (WC, SH, P) => [{ ...SH, style: "long", collar: "v", color: NINJA.cloth, pattern: "plain" }, { ...P, style: "long", color: NINJA.cloth, pattern: "plain" }],
+};
 // (ticket 435) the knight's helmet: the trap room's great helm, worn (helmetSvg in js/13-castle-rooms-and-map.js)
 // The knight's arms, as a tabard, a shield and the emblem show them: its two colours laid out (quartered, halves, plain) in a
 // shape, clipped to it, and the emblem in its middle; HERALDRY's emblems in a unit box about (0, 0), 30 across.
@@ -174,9 +224,7 @@ function ninjaMaskPts(F, grow = NINJA_FIT) {
   return headPoints(F).map(([x, y]) => { const dx = x - 100, dy = y - HEAD_C, r = Math.hypot(dx, dy) || 1, k = (r + grow) / r; return [100 + dx * k, HEAD_C + dy * k]; });
 }
 const ninjaPath = pts => "M" + pts.map(([x, y]) => f1(x) + " " + f1(y)).join(" L") + " Z";
-// (ticket 274's rule: a clip's id named by its shape, not by chance, so two friends' clips never share one)
-const ninjaClip = (pre, d) => { let h = 2166136261; for (let i = 0; i < d.length; i++) h = Math.imul(h ^ d.charCodeAt(i), 16777619);
-  const id = pre + (h >>> 0).toString(36); return { id, def: `<clipPath id="${id}"><path d="${d}"/></clipPath>` }; };
+// (its clips named by their shape, shapeClip in js/02-helpers.js: ticket 274's rule; ninjaClip until ticket 564)
 // the slit's middle line, the band's line (above the brows, below the crown) and the head's mask outline
 function ninjaGeom(F) {
   const LY = faceLayout(F), crown = headCrown(F), pts = ninjaMaskPts(F);
@@ -214,159 +262,43 @@ function ninjaMask(F, dir = 0, away = false, turn = 0) {
 // the eye slit alone, as a clip for the eyes in it (ninjaEyes), the same shape as ninjaMask's: { id, def }
 function ninjaSlitClip(F, dir = 0, turn = 0) {
   const m = ninjaMask(F, dir, false, turn).match(/data-ninja="slit" d="([^"]+)"/);
-  return m ? ninjaClip("ninja-slit-", m[1]) : null;
+  return m ? shapeClip("ninja-slit-", m[1]) : null;
 }
 // THE HEAD COVERING (ninjaBand): a gold band round the head above the brows and below the crown, and a second band from the
 // middle of the forehead over the top of the head to the back, joined to the first in front and behind (an inverted T on
-// the forehead), the gem where they meet in front (ninjaGemSvg), a round gold clasp where they meet behind. Both bands are
+// the forehead), the gem where they meet in front (gemSvg, the shared gem, below), a round gold clasp where they meet behind. Both bands are
 // drawn inside the mask's outline grown by one (a band's thickness), so their ends meet its edge as they go round it: their
 // outlines first and then their gold, so the T is one piece. Facing us and from behind, the band round the head bows down a
 // little at the middle (a ring seen from just above it) and the band over the top rises from the junction; in profile the
 // round band crosses the whole head and the band over the top follows the head's outline from the forehead to the back,
 // the gem standing out at the forehead's edge.
 function ninjaBand(F, WC, dir = 0, away = false, turn = 0) {
-  const G = ninjaGeom(F), { pts, bandY: yb, top } = G, bw = NINJA_BW, bow = 4, P = (x, y) => f1(x) + " " + f1(y), clip = ninjaClip("ninja-band-", ninjaPath(ninjaMaskPts(F, NINJA_FIT + 1)));
+  const G = ninjaGeom(F), { pts, bandY: yb, top } = G, bw = NINJA_BW, bow = 4, P = (x, y) => f1(x) + " " + f1(y), clip = shapeClip("ninja-band-", ninjaPath(ninjaMaskPts(F, NINJA_FIT + 1)));
   const cx = 100 + (away ? 0 : turn * 14), stroke = (d, c, w) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f1(w)}" stroke-linejoin="round"/>`;
   let round, over, gem = "", clasp = "";
   if (!dir) {
     round = `M${P(-60, yb - bow)} Q${P(cx, yb + 2 * bow)} ${P(260, yb - bow)}`;
     over = `M${P(cx, yb + bow)} Q${P(cx + (100 - cx) * 0.2, (yb + top) / 2)} ${P(100 + (cx - 100) * 0.3, top - 20)}`;
     if (away) clasp = `<circle cx="${f1(cx)}" cy="${f1(yb + bow)}" r="7.5" fill="${NINJA.gold}" stroke="${NINJA.goldLine}" stroke-width="2"/><circle cx="${f1(cx - 2.5)}" cy="${f1(yb + bow - 2.5)}" r="2.2" fill="${NINJA.goldLight}"/>`;
-    else gem = ninjaGemSvg(WC.ninjaGem, WC.ninjaGemShape, cx, yb + bow, 10, ninjaGemFx(WC));
+    else gem = gemSvg(WC.ninjaGem, WC.ninjaGemShape, cx, yb + bow, 10, ninjaGemFx(WC), NINJA_GEM_LOOK);
   } else {
     // in profile: the round band straight across, the band over the top along the head's outline, inset by half its width
     round = `M${P(-60, yb)} L${P(260, yb)}`;
     const inner = ninjaMaskPts(F, NINJA_FIT + 1 - bw / 2), [xl, xr] = acrossAt(inner, yb);
     const arc = inner.slice(36).filter(([, y]) => y < yb);
     over = `M${P(xl, yb)} L${arc.map(([x, y]) => P(x, y)).join(" L")} L${P(xr, yb)}`;
-    if (!away) gem = ninjaGemSide(WC.ninjaGem, WC.ninjaGemShape, acrossAt(pts, yb)[dir > 0 ? 1 : 0] + dir, yb, 11, dir, ninjaGemFx(WC));
+    if (!away) gem = gemSideSvg(WC.ninjaGem, WC.ninjaGemShape, acrossAt(pts, yb)[dir > 0 ? 1 : 0] + dir, yb, 11, dir, ninjaGemFx(WC), NINJA_GEM_LOOK);
   }
   const shine = !dir ? `M${P(-60, yb - bow - 3)} Q${P(cx, yb + 2 * bow - 3)} ${P(260, yb - bow - 3)}` : `M${P(-60, yb - 3)} L${P(260, yb - 3)}`;
   return clip.def + `<g clip-path="url(#${clip.id})">${stroke(round + " " + over, NINJA.goldLine, bw + 3.5)}${stroke(round + " " + over, NINJA.gold, bw)}${stroke(shine, NINJA.goldLight, 2.5)}</g>` + clasp + gem;
 }
-// a gem's outline, about (cx, cy), r its size (a round gem's radius), one of NINJA_GEM_SHAPES; and how far each reaches above
-// and below its middle, in r (for its side view)
-const NINJA_GEM_REACH = { round: [1, 1], oval: [1.08, 1.08], rhombus: [1.22, 1.22], teardrop: [1.3, 0.85], star: [1.2, 1], heart: [1.05, 1.05] };
-function ninjaGemPath(shape, cx, cy, r) {
-  const P = (x, y) => f1(cx + x * r) + " " + f1(cy + y * r);
-  switch (shape) {
-    case "oval": return `M${P(-0.74, 0)} A${f1(0.74 * r)} ${f1(1.08 * r)} 0 1 0 ${P(0.74, 0)} A${f1(0.74 * r)} ${f1(1.08 * r)} 0 1 0 ${P(-0.74, 0)} Z`;
-    case "rhombus": return `M${P(0, -1.22)} L${P(0.82, 0)} L${P(0, 1.22)} L${P(-0.82, 0)} Z`;
-    case "teardrop": return `M${P(0, -1.3)} C${P(0.3, -0.85)} ${P(0.85, -0.45)} ${P(0.85, 0)} A${f1(0.85 * r)} ${f1(0.85 * r)} 0 0 1 ${P(-0.85, 0)} C${P(-0.85, -0.45)} ${P(-0.3, -0.85)} ${P(0, -1.3)} Z`;
-    case "star": return "M" + Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 0.52 : 1.2; return P(q * Math.cos(a), q * Math.sin(a)); }).join(" L") + " Z";
-    case "heart": return `M${P(0, 1.05)} C${P(-0.35, 0.72)} ${P(-1.1, 0.2)} ${P(-1.05, -0.35)} C${P(-1, -0.95)} ${P(-0.25, -1.05)} ${P(0, -0.5)} C${P(0.25, -1.05)} ${P(1, -0.95)} ${P(1.05, -0.35)} C${P(1.1, 0.2)} ${P(0.35, 0.72)} ${P(0, 1.05)} Z`;
-    default: return `M${P(-1, 0)} A${f1(r)} ${f1(r)} 0 1 0 ${P(1, 0)} A${f1(r)} ${f1(r)} 0 1 0 ${P(-1, 0)} Z`;
-  }
-}
-const ninjaGemOf = kind => NINJA_GEMS[kind] || NINJA_GEMS.ruby;
-const ninjaShapeOf = shape => NINJA_GEM_REACH[shape] ? shape : "round";
-// (ticket 560, Matthew, with a picture of a cut oval ruby: "For the gems -- we also want the default (ruby) to have apparent
-// cut marks, as a gemstone ... Please do the same for the others (beleved edge lines)") THE GEM'S CUT, each shape's own, in r
-// about the stone's middle: `rim`, points on its girdle round from the top, clockwise, a corner (where a crown facet's far
-// point is) then the point between it and the next corner, and so on; `c` the table's middle and `t` how far out it reaches
-// toward each corner (the table is the corners drawn in toward c, so it follows the shape); `split` (the star) cuts each
-// point's facet in two down its middle, a lit half and a shaded one. A handful of facets: 6 corners (4 on the diamond shape,
-// 5 on the star, one a point; `glint`, how far out toward the light the glint is, if not 0.62), each a kite from the table out to its corner and a triangle from each table edge out to the
-// rim, which tile the crown between the table and the girdle. The rim's points are on the outline itself, and its arcs
-// between them bulge outward (the heart's cleft is a point of its own), so no facet reaches past the stone.
-const ninjaRing = (rx, ry, n = 12) => Array.from({ length: n }, (_, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [rx * Math.cos(a), ry * Math.sin(a)]; });
-const NINJA_GEM_CUTS = {
-  round: { rim: ninjaRing(1, 1), c: [0, 0], t: 0.5 },
-  oval: { rim: ninjaRing(0.74, 1.08), c: [0, 0], t: 0.5 },
-  rhombus: { rim: [[0, -1.22], [0.41, -0.61], [0.82, 0], [0.41, 0.61], [0, 1.22], [-0.41, 0.61], [-0.82, 0], [-0.41, -0.61]], c: [0, 0], t: 0.46, glint: 0.45 },
-  // (on ninjaGemPath's curves: a third and two thirds along each, and every 30 degrees round the bottom's arc)
-  teardrop: { rim: [[0, -1.3], [0.354, -0.863], [0.696, -0.437], [0.85, 0], [0.736, 0.425], [0.425, 0.736], [0, 0.85], [-0.425, 0.736], [-0.736, 0.425], [-0.85, 0], [-0.696, -0.437], [-0.354, -0.863]], c: [0, 0.04], t: 0.5 },
-  star: { rim: Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 0.52 : 1.2; return [q * Math.cos(a), q * Math.sin(a)]; }), c: [0, 0], t: 0.3, split: true, glint: 0.4 },
-  // (a corner toward each lobe's top and down each side, the cleft and the bottom tip between corners)
-  heart: { rim: [[0.372, -0.839], [0.811, -0.778], [1.05, -0.35], [0.878, 0.184], [0.439, 0.663], [0, 1.05], [-0.439, 0.663], [-0.878, 0.184], [-1.05, -0.35], [-0.811, -0.778], [-0.372, -0.839], [0, -0.5]], c: [0, 0.08], t: 0.48 },
-};
-// the gem's tones, from its colour, its light and its outline: the table a little deeper than the stone, the shaded facets
-// deeper still, the lit ones halfway to its light, the flashes its light (not near white: the white is the cuts', below)
-const ninjaGemTones = g => ({ table: mix(g.c, g.line, 0.18), dark: mix(g.c, g.line, 0.5), light: mix(g.c, g.light, 0.45), flash: g.light });
-// (ticket 560, Matthew: "gems don't appear faceted yet -- at all", then "we need to add sharp, bright white lines to
-// indicate the 'cuts', perhaps with an animation that makes them 'glimmer' -- and other animations optional too for
-// stars/shine on them, all over") THE CUTS IN WHITE, AND THE GEM'S LIGHTS. At its true size the gem is a few pixels across,
-// and its cuts were a pale line a quarter of a pixel wide: unseen. Each cut is now drawn twice in white, `w` wide in the
-// stone's own units and never thinner than NINJA_CUT_PX on the screen (non-scaling-stroke), so it is sharp small and in
-// proportion big. `fx`, the ninja's rows: `glimmer` (✨, off at first), a wider, brighter copy of each group of cuts
-// flashing in turn clockwise round the stone, a light running round its cuts; `stars` (⭐, off at first), four-pointed stars that
-// swell and vanish at `spots` all over the stone ([x, y, size in r]), each at its own pace; `shine` (🌟, off at first), a
-// pale band sweeping across the stone from the light, clipped to it. Every animation keeps time with the picture's clock
-// (begun before 0, as the tails' wags), so redrawing the friend never restarts one. All three are off at first (a costly
-// effect is off at the start, his rule, 10-16; ninja557.mjs, as every costume's check, holds the friend to no SMIL and the
-// knight's 92 shapes): the glimmer on at first was SMIL in every drawing of the gem, and 12 more shapes facing us, 99 in all.
-const NINJA_CUT_PX = 0.8, NINJA_GLIMMER_S = 2.4, NINJA_SHINE_S = 3.6;
+// THE GEM ON THE FOREHEAD is the shared one (gemSvg and gemSideSvg in js/02-helpers.js, ticket 564; it was drawn here as
+// ninjaGemSvg and ninjaGemSide, tickets 557 and 560): the ninja's settings give its kind (ninjaGem), its shape
+// (ninjaGemShape) and its lights (ninjaGemFx: ✨ ninjaGlimmer, ⭐ ninjaGemStars and 🌟 ninjaGemShine, all three off at first: SMIL on the friend, ticket
+// 605), and
+// NINJA_GEM_LOOK names it as the ninja's piece (data-ninja="gem", its clip "ninja-shine-…") in the head band's gold
 const ninjaGemFx = WC => ({ glimmer: !!WC.ninjaGlimmer, stars: !!WC.ninjaGemStars, shine: !!WC.ninjaGemShine });
-const ninjaCut = (d, w, px) => `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${f1(w)}" stroke-linejoin="round" stroke-linecap="round"/>` +
-  `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${px}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
-const ninjaStar = s => { const P = (x, y) => f1(x) + " " + f1(y); return `M${P(0, -s)} Q0 0 ${P(s, 0)} Q0 0 ${P(0, s)} Q0 0 ${P(-s, 0)} Q0 0 ${P(0, -s)} Z`; };
-function ninjaGemLights(fx, { groups, stone, c: [cx, cy], r, w, spots }) {
-  let s = "";
-  if (fx.glimmer) s += groups.map((d, j) => `<g opacity="0">${ninjaCut(d, 2 * w, 2 * NINJA_CUT_PX)}<animate attributeName="opacity" values="0;1;0;0" ` +
-    `keyTimes="0;0.07;0.18;1" dur="${NINJA_GLIMMER_S}s" begin="${f1((j / groups.length - 1) * NINJA_GLIMMER_S)}s" repeatCount="indefinite"/></g>`).join("");
-  if (fx.shine) {   // (a band across the light's way, from beyond the stone's upper left to beyond its lower right, then waiting there)
-    const c = ninjaClip("ninja-shine-", stone), u = 0.7071, L = 2 * r, b = 0.22 * r, far = f1(1.9 * r * u);
-    const P = (a, q) => f1(cx + a * u + q * u) + " " + f1(cy + a * u - q * u);
-    s += c.def + `<g clip-path="url(#${c.id})"><path d="M${P(-b, -L)} L${P(b, -L)} L${P(b, L)} L${P(-b, L)} Z" fill="#ffffff" opacity="0.65" transform="translate(-${far} -${far})">` +
-      `<animateTransform attributeName="transform" type="translate" values="-${far} -${far};${far} ${far};${far} ${far}" keyTimes="0;0.3;1" dur="${NINJA_SHINE_S}s" ` +
-      `begin="-0.5s" repeatCount="indefinite"/></path></g>`;
-  }
-  if (fx.stars) s += spots.map(([x, y, k], i) => `<g transform="translate(${f1(x)} ${f1(y)})"><path d="${ninjaStar(k * r)}" fill="#ffffff" transform="scale(0)">` +
-    `<animateTransform attributeName="transform" type="scale" values="0;1;0;0" keyTimes="0;0.12;0.26;1" dur="${(1.9 + 0.43 * i).toFixed(2)}s" ` +
-    `begin="${(-0.71 * i).toFixed(2)}s" repeatCount="indefinite"/></path></g>`).join("");
-  return s;
-}
-// the gem facing us: a gold setting a size bigger, the stone, its crown's facets in three tones over it (one path each: lit
-// from up and to our left, the kites there flash and the next ones are lit, the rest the stone's own colour, the triangles
-// between them shaded but those nearest the light), the table, the cuts in white (a group to each corner: the two cuts out
-// from it to the rim and the table's edge on to the next), the girdle's outline, a glint on the crown toward the light, and
-// over it all the lights (`fx`: ninjaGemLights)
-function ninjaGemSvg(kind, shape, cx, cy, r, fx = {}) {
-  const g = ninjaGemOf(kind), sh = ninjaShapeOf(shape), T = ninjaGemTones(g), cut = NINJA_GEM_CUTS[sh], R = cut.rim, k = R.length / 2;
-  const at = ([x, y]) => [cx + x * r, cy + y * r], P = ([x, y]) => f1(x) + " " + f1(y), poly = pts => "M" + pts.map(P).join(" L") + " Z";
-  const C = at(cut.c), corner = j => at(R[(2 * j) % R.length]), mid = j => at(R[(2 * ((j + k) % k) + 1) % R.length]);
-  const tab = Array.from({ length: k }, (_, j) => { const q = corner(j); return [C[0] + (q[0] - C[0]) * cut.t, C[1] + (q[1] - C[1]) * cut.t]; });
-  const lit = pts => { const m = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]), dx = m[0] - C[0], dy = m[1] - C[1], l = Math.hypot(dx, dy) || 1;
-    return (-0.6 * dx - 0.8 * dy) / l; };
-  const tone = { flash: [], light: [], dark: [] }, put = (t, pts) => { if (t) tone[t].push(poly(pts)); };
-  for (let j = 0; j < k; j++) {
-    const Tj = tab[j], Tn = tab[(j + 1) % k], Rj = corner(j), Qj = mid(j), Qp = mid(j - 1);
-    if (cut.split) { const a = [Tj, Qp, Rj], b = [Tj, Rj, Qj];   // (the star's points: the half nearer the light lit, the other shaded)
-      const [hi, lo] = lit(a) >= lit(b) ? [a, b] : [b, a]; put(lit(hi) > 0.3 ? "flash" : "light", hi); put("dark", lo); }
-    else { const s = [Tj, Qj, Rj, Qp], v = lit(s); put(v > 0.55 ? "flash" : v > 0 ? "light" : null, s); }
-    const tri = [Tj, Tn, Qj], v = lit(tri); put(v > 0.5 ? null : "dark", tri);
-  }
-  const groups = tab.map((Tj, j) => `M${P(mid(j - 1))} L${P(Tj)} L${P(mid(j))}` + (cut.split ? ` M${P(Tj)} L${P(corner(j))}` : "") + ` M${P(Tj)} L${P(tab[(j + 1) % k])}`);
-  const lw = v => f1(v * r), stone = ninjaGemPath(sh, cx, cy, r), glint = [C[0] - 0.6 * (cut.glint ?? 0.62) * r, C[1] - 0.8 * (cut.glint ?? 0.62) * r];
-  // (the stars: a big one at the glint, and smaller ones at every other corner of the rim, round the stone)
-  const spots = [[...glint, 0.8], ...Array.from({ length: k }, (_, j) => j).filter(j => j % 2).map(j => [...corner(j), 0.5])];
-  return `<g data-ninja="gem"><path d="${ninjaGemPath(sh, cx, cy, r * 1.32)}" fill="${NINJA.gold}" stroke="${NINJA.goldLine}" stroke-width="2" stroke-linejoin="round"/>` +
-    `<path d="${stone}" fill="${g.c}"/>` +
-    ["dark", "light", "flash"].map(t => tone[t].length ? `<path d="${tone[t].join(" ")}" fill="${T[t]}"/>` : "").join("") +
-    `<path d="${poly(tab)}" fill="${T.table}"/>` +
-    ninjaCut(groups.join(" "), 0.05 * r, NINJA_CUT_PX) +
-    `<path d="${stone}" fill="none" stroke="${g.line}" stroke-width="${lw(0.14)}" stroke-linejoin="round"/>` +
-    `<circle cx="${f1(glint[0])}" cy="${f1(glint[1])}" r="${lw(0.09)}" fill="#ffffff"/>` +
-    ninjaGemLights(fx, { groups, stone, c: [cx, cy], r, w: 0.05 * r, spots }) + `</g>`;
-}
-// the gem from the side, at the forehead's edge (x, cy), toward `dir`: its setting's rim, and the stone standing out of it, as
-// tall as the shape is facing us, cut (ticket 560): a flat table at its front edge between two sloping crown facets, the upper
-// one lit, the lower shaded, their cuts in white (pointed, the diamond shape and the star: two facets meeting at the point),
-// and the lights over it (`fx`: ninjaGemLights, each cut its own group, the stars at the front, on the lit facet and low)
-function ninjaGemSide(kind, shape, x, cy, r, dir, fx = {}) {
-  const g = ninjaGemOf(kind), T = ninjaGemTones(g), sh = ninjaShapeOf(shape), [up, down] = NINJA_GEM_REACH[sh], y0 = cy - up * r, y1 = cy + down * r, P = (a, b) => f1(a) + " " + f1(b);
-  const out = 0.8 * r, xs = x + dir * 3, pointed = sh === "rhombus" || sh === "star", h = y1 - y0, xf = xs + dir * out * 0.75;
-  const ta = pointed ? [xs + dir * out, cy] : [xf, y0 + h * 0.3], tb = pointed ? ta : [xf, y1 - h * 0.3], ym = pointed ? cy : (ta[1] + tb[1]) / 2;
-  const stone = `M${P(xs, y0)} L${P(...ta)} L${P(...tb)} L${P(xs, y1)} Z`;
-  const groups = pointed ? [`M${P(xs, ym)} L${P(...ta)}`] : [`M${P(xs, ym)} L${P(...ta)}`, `M${P(...ta)} L${P(...tb)}`, `M${P(...tb)} L${P(xs, ym)}`];
-  const spots = [[...ta, 0.7], [(2 * xs + ta[0]) / 3, (y0 + ta[1] + ym) / 3, 0.5], [xs + dir * out * 0.3, y1 - h * 0.2, 0.45]];
-  return `<g data-ninja="gem"><path d="M${P(x - dir * 2, y0 - 1.5)} L${P(xs, y0 - 1.5)} L${P(xs, y1 + 1.5)} L${P(x - dir * 2, y1 + 1.5)} Z" fill="${NINJA.gold}" stroke="${NINJA.goldLine}" stroke-width="1.8" stroke-linejoin="round"/>` +
-    `<path d="${stone}" fill="${pointed ? g.c : T.table}"/>` +
-    `<path d="M${P(xs, y0)} L${P(...ta)} L${P(xs, ym)} Z" fill="${T.light}"/><path d="M${P(xs, ym)} L${P(...tb)} L${P(xs, y1)} Z" fill="${T.dark}"/>` +
-    ninjaCut(groups.join(" "), 0.55, NINJA_CUT_PX) +
-    `<path d="${stone}" fill="none" stroke="${g.line}" stroke-width="1.6" stroke-linejoin="round"/>` +
-    ninjaGemLights(fx, { groups, stone, c: [(xs + ta[0]) / 2, cy], r, w: 0.55, spots }) + `</g>`;
-}
+const NINJA_GEM_LOOK = { mark: `data-ninja="gem"`, ids: "ninja-", set: { c: NINJA.gold, line: NINJA.goldLine } };
 // THE BOOTS' BANDS (ninjaBoots), over the trousers from the ankle up the shin to below the knee, along the leg's own joints
 // (J, from the hip; the shin from the knee, or a straight leg's middle, to the ankle), `half` the trouser leg's half width:
 // "braided" (the default; Matthew: "we want the bands to be braided together, not wrapped around laterally"), two strands

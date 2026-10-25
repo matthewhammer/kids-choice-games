@@ -59,9 +59,9 @@ try {
     for (const facing of ["front", "left", "right", "back"]) { state.body.facing = facing; changed(); await w(40); const t = figText(); out.wrappedSkin[facing] = skinIn(t) && !skinOut(t); }
     set("costume", "ninjaBoots", "braided"); state.body.facing = "front";
     // each gem kind's colour; each shape its own outline
-    for (const g of Object.keys(NINJA_GEMS)) { set("costume", "ninjaGem", g); changed(); await w(40); out.gems[g] = figText().includes('fill="' + NINJA_GEMS[g].c + '"'); }
+    for (const g of Object.keys(GEMSTONES)) { set("costume", "ninjaGem", g); changed(); await w(40); out.gems[g] = figText().includes('fill="' + GEMSTONES[g].c + '"'); }
     set("costume", "ninjaGem", "ruby");
-    for (const [sh] of NINJA_GEM_SHAPES) { set("costume", "ninjaGemShape", sh); changed(); await w(40); const gg = groups(figText(), "gem")[0] || ""; out.shapes[sh] = (gg.match(/ d="([^"]+)"/g) || [])[1] || ""; }
+    for (const [sh] of GEMSTONE_SHAPES) { set("costume", "ninjaGemShape", sh); changed(); await w(40); const gg = groups(figText(), "gem")[0] || ""; out.shapes[sh] = (gg.match(/ d="([^"]+)"/g) || [])[1] || ""; }
     set("costume", "ninjaGemShape", "round");
     // the boots' two styles
     const bandsNow = () => groups(figText(), "bands").join("");
