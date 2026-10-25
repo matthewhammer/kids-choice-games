@@ -1827,7 +1827,13 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   doorClip = null; figOver = null; figClipRect = null;   // (ticket 331: none left over from a trip cut short, whose doorway this one would keep)
   bridgeOff();   // (ticket 245: from a rope bridge, down at its foot first)
   entering = true;
-  const inv = P.inverse(), shape = door.querySelector("path, rect") || door, r = shape.getBoundingClientRect();
+  // (ticket 618, Matthew 2026-10-25: "the forest clearing scene has the player walking away from the target of most clicks
+  // (check each building shown)") a door in a wall is its first drawn shape, as its glow is (not one in <defs> or a clip,
+  // which has no box: the castle's, the witch's and the healer's put the friend's goal at the picture's top left corner);
+  // anything else, a building far off, a sign, a way out, is its whole drawing, the feet under it, as the glow and X take
+  // it (the tree house's first shape is a line high in its tree)
+  const drawn = e => !e.closest("defs, clipPath, mask, pattern, symbol") && (b => b.width > 0 && b.height > 0)(e.getBoundingClientRect());
+  const inv = P.inverse(), shape = door.hasAttribute("data-door") ? [...door.querySelectorAll("path, rect")].find(drawn) || door : door, r = shape.getBoundingClientRect();
   // (a pit: its hole's middle; any other doorway: its foot)
   const pit = how === "fall" && door.dataset.pit ? door.dataset.pit.split(" ").map(Number) : null;
   // (a ladder (ticket 173): its foot, where a climb starts)

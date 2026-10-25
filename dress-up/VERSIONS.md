@@ -4,6 +4,11 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.440 (2026-10-25)
+
+Everything in 0.0.439, plus a fix:
+
+- **🌲 In the forest clearing, a tap on a building walks the friend to it.** The castle, the witch's hut and the healer's hut sent the friend off toward the picture's top left corner, and the tree house to a spot high in its tree: each is walked to its own foot now, as the house always was.
 ## 0.0.439 (2026-10-25)
 
 Everything in 0.0.438, plus saving with no files:
