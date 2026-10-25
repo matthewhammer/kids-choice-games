@@ -97,6 +97,13 @@
            background: var(--panel); color: var(--ink); padding: 6px 12px; }
   button.big { background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
                font-weight: 600; padding: 8px 16px; }
+  /* (2026-10-25, Matthew, a photo of M's iPad: "something about the UI doesn't look right? Drop downs are broken?") a drop-down
+     drawn as a button is: Safari's own was small and white in the dark look; the arrow a chevron in the theme's muted colour */
+  select { font: inherit; cursor: pointer; border-radius: 12px; border: 2px solid var(--line); background-color: var(--panel); color: var(--ink);
+           padding: 6px 30px 6px 12px; max-width: 100%; min-height: 2.4em; -webkit-appearance: none; appearance: none;
+           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+           background-repeat: no-repeat; background-position: right 10px center; background-size: 12px 8px; }
+  select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .tabs button { font-weight: 600; }
   .tabs button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }

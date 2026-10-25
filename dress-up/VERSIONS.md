@@ -4,6 +4,11 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.437 (2026-10-25)
+
+Everything in 0.0.436, plus a fix for tablets:
+
+- **Drop-down menus look like the game's buttons.** On an iPad they were Safari's own, small and white in the dark look (the 📦 from menu among the things, the world's template menu, the music's): now rounded, in the look's own colours, the panel's size, with a ⌄ to show they open.
 ## 0.0.436 (2026-10-25)
 
 Everything in 0.0.435, plus, for slow computers the game does not notice:
