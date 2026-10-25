@@ -1368,7 +1368,11 @@ try {
   if (saved && saved.pants && saved.pants.length && !(saved.body && saved.body.legLen))
     state.body.legLen = saved.pants.length;
 } catch (_) { /* no storage: start fresh */ }
-function persist() { try { localStorage.setItem("dress-up-v1", JSON.stringify(state)); } catch (_) {} }
+// (ticket 610, Matthew 2026-10-25: "please prepare cave room variations (both behind the water fall, and the cave room without a water
+// fall, with various amounts of placed objects (none, one, two, ...))") ?try=cave-2 or ?try=caveroom-0: a test visit, that place with
+// that many pots over fires put in it (26-drags-and-start.js), the friend as saved, and nothing saved, so a friend's own save is kept
+const TRY = (() => { try { const m = /^(cave|caveroom)-(\d{1,2})$/.exec(new URLSearchParams(location.search || "").get("try") || ""); return m ? { kind: m[1], n: +m[2] } : null; } catch (e) { return null; } })();
+function persist() { if (TRY) return; try { localStorage.setItem("dress-up-v1", JSON.stringify(state)); } catch (_) {} }
 
 // (ticket 134) This version, shown after the game's name, and newer ones.
 // A release changes both this and version.json beside the page (the same
@@ -1398,7 +1402,7 @@ function lineArtSet(on) {
   try { if (on) localStorage.setItem("dress-up-lineart", "1"); else localStorage.removeItem("dress-up-lineart"); } catch (_) { /* (for this visit) */ }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.430", released: "2026-10-25" };
+const VERSION = { number: "0.0.431", released: "2026-10-25" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

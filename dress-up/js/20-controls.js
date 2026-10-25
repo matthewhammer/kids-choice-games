@@ -1056,7 +1056,19 @@ function newsLoad(box) {
 // THING_MOVING_MAX moving parts in the place's things, no more moving
 // things can be put there (their buttons greyed, 🐢), and the things moving
 // the most are marked, in their rows and in the picture, as the ones to take away.
-const THING_FPS_MIN = 48, THING_MOVING_MAX = 1000;   // (about four cauldrons: GitHub's computer near 50 there)
+const THING_FPS_USUAL = 48, THING_MOVING_MAX = 1000;   // (about four cauldrons: GitHub's computer near 50 there)
+// (ticket 610, Matthew 2026-10-25: "under advanced, let's permit the advanced user to lower that minimum FPS to something else even
+// lower, if they want. But above some very bare min to service user interactions, and prevent the device from locking up, as N did
+// before we had this system by placing so many expensive objects at once") the frames a second below which a place is shut: 48
+// usually, as low as THING_FPS_FLOOR from ⚙️ Advanced (this computer's, localStorage "dress-up-fps-min"); THING_MOVING_MAX holds whatever
+// it is set to
+const THING_FPS_FLOOR = 20;
+let THING_FPS_MIN = (() => { try { const v = +localStorage.getItem("dress-up-fps-min"); return v ? clamp(Math.round(v), THING_FPS_FLOOR, THING_FPS_USUAL) : THING_FPS_USUAL; } catch (e) { return THING_FPS_USUAL; } })();
+function thingFpsMinSet(v) {
+  THING_FPS_MIN = clamp(Math.round(+v || THING_FPS_USUAL), THING_FPS_FLOOR, THING_FPS_USUAL);
+  try { if (THING_FPS_MIN === THING_FPS_USUAL) localStorage.removeItem("dress-up-fps-min"); else localStorage.setItem("dress-up-fps-min", String(THING_FPS_MIN)); } catch (e) { /* (for this visit) */ }
+  thingsLatch = false; thingsMeasured = "";   // (judged again, by the new floor, at the next measure)
+}
 let thingFps = null, thingFpsAt = 0, thingFpsBusy = false;
 // (ticket 203, Matthew: "when any kind of object has a red box around it, no
 // more objects of any kind can be added until the red box is resolved"; N
@@ -2354,6 +2366,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("div", { class: "hint" }, "Each event a room's script answers (a lever pulled, a pit fallen in, a way taken), timed in the game as you play: the whole event in each engine, from the game's call to the last command acted on, and for Hazel and Fumola the rule's function alone (the event in, the commands out). Switch 📜 Scripting's engine and play the same rooms to fill each column; 🧹 starts the counts again.")]));
     costDraw(); { const t = setInterval(() => { if (!costBody.isConnected) { clearInterval(t); return; } costDraw(); }, 1000); }
     if (!perfMeter.loop) perfMeter.loop = requestAnimationFrame(perfMeterTick);
+    // (ticket 610) the fewest frames a second a place may fall to before no more moving things can be put there
+    const fpsSay = el("span", { class: "hint" }), fpsIn = el("input", { type: "range", class: "fps-min", min: String(THING_FPS_FLOOR), max: String(THING_FPS_USUAL), step: "1", value: String(THING_FPS_MIN), "aria-label": "fewest frames a second before a place is full" });
+    const fpsPut = () => put(fpsSay, `${THING_FPS_MIN} frames a second${THING_FPS_MIN === THING_FPS_USUAL ? " (the usual)" : ""}`);
+    fpsIn.addEventListener("input", () => { thingFpsMinSet(fpsIn.value); fpsPut(); });
+    fpsPut();
+    box.append(el("div", { class: "perfrow fps-min-row" }, [el("div", { class: "row" }, [el("span", {}, "🐢 a place is full below"), fpsIn, fpsSay]),
+      el("div", { class: "hint" }, `When the picture falls below this many frames a second, no more moving things can be put in that place, and the ones moving the most are marked (red dashes). Lower lets a slow computer, like an old iPad, take more things, choppier. Never under ${THING_FPS_FLOOR}, so the game keeps answering taps; and never more than ${THING_MOVING_MAX} moving parts in one place's things, whatever this says.`)]));
     const rows = PERF_FEATURES.map(f => {
       const chip = el("button", { onclick: () => perfSet(f.id, !PERF[f.id]) }), here = el("div", { class: "hint" }), result = el("div", { class: "hint" });
       const measure = el("button", { onclick: () => perfMeasure(f, t => { result.textContent = t; }) }, "📏 measure here");

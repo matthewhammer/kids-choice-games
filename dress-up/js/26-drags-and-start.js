@@ -1999,3 +1999,22 @@ setSplit();
 showVersion();
 // (a copy of the game kept on this device, for airplane mode: ticket 486)
 offlineStart();
+// (ticket 610) a test visit (TRY, 01-state.js): the place, with n cauldrons each over a burning campfire, and a note of its frames a second
+if (TRY) {
+  const B = state.background, n = TRY.n;
+  B.kind = TRY.kind;
+  B.things = [];
+  for (let i = 0; i < n; i++) {
+    const x = Math.round(n === 1 ? 0 : -300 + 600 * i / (n - 1)), z = SCENE.ground + 30 + (i % 2) * 30, seed = 900 + i;
+    B.things.push({ kind: "campfire", x, z, seed, size: 100, mirror: false, burning: true }, { kind: "cauldron", x, z: z + 1, seed: seed + 50, size: 100, mirror: false, fumes: "simple" });
+  }
+  changed();
+  const note = el("div", { class: "try-note" }), name = TRY.kind === "cave" ? "🪨 cave behind the falls" : "🦇 cave room";
+  document.body.append(note);
+  const say = fps => {
+    const own = [...document.querySelectorAll("#bg animate, #bg animateTransform, #bg animateMotion")].filter(a => !a.closest('[data-drag^="thing:"]')).length, things = thingsMovingNow().reduce((s, m) => s + m.n, 0);
+    note.textContent = `🧪 test, nothing saved: ${name}, ${n} pot${n === 1 ? "" : "s"} over a fire · ${!fps ? "measuring frames a second" : Math.round(fps) + " frames a second"} · moving parts: ${things} in the things, ${own} in the place`;
+  };
+  say(null);
+  (async function tick() { if (!document.hidden) say(await framesNow(2000)); setTimeout(tick, 1000); })();
+}

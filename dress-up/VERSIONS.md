@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.431 (2026-10-25)
+
+Everything in 0.0.430, plus, for slow computers like an old iPad:
+
+- **🐢 A place is full below, in ⚙️ Advanced.** The frames a second below which no more moving things can be put in a place, and the ones moving the most are marked with red dashes: 48 as before, or lower, down to 20, so a slow computer can take more things, choppier. It never goes under 20, so the game keeps answering taps, and a place's things still never have more than 1000 moving parts.
+- **🧪 Test visits of the caves.** `?try=cave-0` to `?try=cave-12` (the cave behind the falls) and `?try=caveroom-0` to `?try=caveroom-12` (the cave room) open that place with that many pots over fires, and say its frames a second and how many parts move. Nothing is saved on a test visit: the friend's own save is kept as it was.
 ## 0.0.430 (2026-10-25)
 
 Everything in 0.0.429, plus a fix for lines only:
