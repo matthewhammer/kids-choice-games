@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.433 (2026-10-25)
+
+Everything in 0.0.432, plus a way in for a new player:
+
+- **🌍 Start World, beside Start over.** It takes the friend into the game's world, at the start square of the world called start, as a tap on that square in 🗺️ World design does. A pointing hand 👉 bobs on it until it is pressed once on this device.
+- **A welcome.** After 🌍 Start World, a card says what the game is now (a work in progress, growing from an activity into a full game world; stuff to explore, but no interactive people and no puzzles yet; ways for players to script their own adventures coming, one baby step at a time; feedback welcome) and how to get about.
+- **On a phone, the buttons under the picture wrap onto two rows** rather than running off both sides.
 ## 0.0.432 (2026-10-25)
 
 Everything in 0.0.431, plus a fix for lines only:

@@ -58,6 +58,43 @@ document.getElementById("reset").addEventListener("click", () => {
   const { volume, mute } = state.music;
   state = clone(DEFAULTS); state.music.volume = volume; state.music.mute = mute; changed();
 });
+// (ticket 611, Matthew 2026-10-25: "Better 'first time user' experience --- Next to 'Start Over' button, offer 'Start World' button
+// that: * selects the 'start' square from the 'start' world, if any ... * places the friend into that square, as if they selected it
+// from the world design grid. * presents a pop-up explaining" what the game is now; then, after his friend R "tried the game on his
+// mobile phone and got confused about how to enter the world and do stuff": "emphasize that 'enter world' button, with something
+// hovering over it (like a 'hand pointing' emoji), floating on it. Like an in-game tutorial might have.") 🌍 Start World: the
+// world named "start" (else the first), at its start square, as a tap on that square in 🗺️ World design does; and the welcome. The
+// hand floats over the button on this device until it is pressed once (localStorage "dress-up-world-started")
+const startWorldBtn = document.getElementById("start-world"), startWorldHand = startWorldBtn.querySelector(".sw-hand");
+const startWorldDone = () => { try { return localStorage.getItem("dress-up-world-started") === "1"; } catch (_) { return false; } };
+startWorldHand.hidden = startWorldDone();
+startWorldBtn.classList.toggle("sw-new", !startWorldDone());
+function startWorld() {
+  const W = worldsAll().find(w => String(w.name || "").trim() === "start") || worldById(WORLD_FIRST) || state.world;
+  if (W && W.cells[W.start]) { if (W !== state.world) worldSwitch(W.id, W.start); else worldEnter(W.start); }
+  try { localStorage.setItem("dress-up-world-started", "1"); } catch (_) { /* (for this visit) */ }
+  startWorldHand.hidden = true; startWorldBtn.classList.remove("sw-new");
+  welcomeShow();
+}
+startWorldBtn.addEventListener("click", startWorld);
+// the welcome: what the game is, for now, and how to get about (his words, the first three)
+function welcomeShow() {
+  const old = document.querySelector(".welcome-pop");
+  if (old) old.remove();
+  const close = () => { pop.remove(); document.removeEventListener("keydown", esc, true); startWorldBtn.focus(); };
+  const esc = e => { if (e.key === "Escape") { e.preventDefault(); close(); } };
+  const go = el("button", { class: "big welcome-go", onclick: close }, "🧭 Let's explore");
+  const pop = el("div", { class: "welcome-pop", role: "dialog", "aria-modal": "true", "aria-labelledby": "welcome-title" }, [
+    el("div", { class: "welcome-card" }, [
+      el("h2", { id: "welcome-title" }, "🌍 Welcome to the world"),
+      el("p", {}, "Messed Up Dress Up is a work in progress, evolving from an activity into a full game world, gradually."),
+      el("p", {}, "For now, the world has stuff in it, but no interactive people (the people here are more like background animations) and no puzzles. It's a place to explore, and to evolve into something more dynamic."),
+      el("p", {}, "Current work is on ways for players to script their own adventure world. One baby step at a time. Feedback welcome!"),
+      el("p", { class: "welcome-how" }, "👣 To get about: tap where your friend should walk (or use the arrow keys, or a game controller). Near the edge of a place, an arrow shows the way out: tap it to go to the next place. 🗺️ World design shows the whole world."),
+      go])]);
+  pop.addEventListener("click", e => { if (e.target === pop) close(); });
+  document.body.append(pop); document.addEventListener("keydown", esc, true); go.focus();
+}
 // SAVE: up to three files with one name, stamped with the local date and time
 // so each save is new: my-friend-2026-10-10-16-29-05.png, .svg and .json.
 // The picture as it is drawn (.png), the drawing itself, which Firefox
