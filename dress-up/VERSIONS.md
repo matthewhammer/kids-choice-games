@@ -4,6 +4,11 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.432 (2026-10-25)
+
+Everything in 0.0.431, plus a fix for lines only:
+
+- **🖍️ Lines only draws the trees as lines too.** The trees, flowers, clouds and tree houses that a place draws many times over (outside the tree house, in the woods) kept their colours in lines only. They are lines now, like the rest.
 ## 0.0.431 (2026-10-25)
 
 Everything in 0.0.430, plus, for slow computers like an old iPad:

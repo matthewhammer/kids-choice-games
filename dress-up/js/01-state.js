@@ -1400,9 +1400,29 @@ function lineArtNow() { try { return localStorage.getItem("dress-up-lineart") ==
 function lineArtSet(on) {
   document.documentElement.classList.toggle("lineart", !!on);
   try { if (on) localStorage.setItem("dress-up-lineart", "1"); else localStorage.removeItem("dress-up-lineart"); } catch (_) { /* (for this visit) */ }
+  if (on) setTimeout(() => { const p = document.getElementById("pic"); if (p) lineArtUnuse(p); }, 0);
+}
+// (2026-10-25, Matthew: "are the trees' SVGs being cached or something --- why does the 'lines only' scene look like this?") a <use>
+// draws its copy in a shadow tree the page's styles do not reach, so the trees, flowers and tree houses drawn by <use> kept their
+// colours in lines only: there, each <use> in the picture is made a plain copy of what it shows (a <g>, its x and y a translate),
+// which the styles do reach; the next drawing brings new ones (18-drawing.js)
+function lineArtUnuse(root) {
+  for (let pass = 0; pass < 4; pass++) {
+    const uses = root.querySelectorAll("use");
+    if (!uses.length) return;
+    for (const u of uses) {
+      const t = document.getElementById((u.getAttribute("href") || u.getAttribute("xlink:href") || "").slice(1));
+      if (!t || t.tagName === "symbol" || t.contains(u)) { u.remove(); continue; }
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g"), x = +u.getAttribute("x") || 0, y = +u.getAttribute("y") || 0;
+      for (const a of u.attributes) if (!["href", "xlink:href", "x", "y", "width", "height"].includes(a.name)) g.setAttribute(a.name, a.value);
+      if (x || y) g.setAttribute("transform", `${u.getAttribute("transform") || ""} translate(${x} ${y})`.trim());
+      const c = t.cloneNode(true); c.removeAttribute("id"); for (const e of c.querySelectorAll("[id]")) e.removeAttribute("id");
+      g.append(c); u.replaceWith(g);
+    }
+  }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.431", released: "2026-10-25" };
+const VERSION = { number: "0.0.432", released: "2026-10-25" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
