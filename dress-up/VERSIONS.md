@@ -4,6 +4,11 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.441 (2026-10-25)
+
+Everything in 0.0.440, plus a fix:
+
+- **⚙️ Advanced's what's new no longer starts with an empty "Unreleased" card.** That heading waits in the list of versions for the next version's notes; with none yet, it is left out.
 ## 0.0.440 (2026-10-25)
 
 Everything in 0.0.439, plus a fix:

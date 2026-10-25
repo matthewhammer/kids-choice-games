@@ -1022,21 +1022,24 @@ let newsHtml = null;
 const newsInline = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
   .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
   .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+// (2026-10-25, Matthew: "why does MUDU say 'unreleased' here": VERSIONS.md keeps an empty "## Unreleased" at its top for
+// the next version's notes) a heading with nothing under it is no card
 function newsCards(md) {
   const out = [];
-  let card = null, list = null;
+  let card = null, list = null, said = false;
+  const flush = () => { if (card && said) out.push(card + (list ? "</ul>" : "") + "</div>"); };
   for (const line of md.split("\n")) {
     const h = line.match(/^## (\S+)(?: \(([^)]*)\))?/);
-    if (h) { if (card) out.push(card + (list ? "</ul>" : "") + "</div>"); list = null;
+    if (h) { flush(); list = null; said = false;
       card = `<div class="news-card${h[1] === VERSION.number ? " now" : ""}" data-version="${newsInline(h[1])}"><div class="news-head"><b>${newsInline(h[1])}</b>${h[2] ? ` <span class="hint">${newsInline(h[2])}</span>` : ""}${h[1] === VERSION.number ? ' <span class="news-this">this one</span>' : ""}</div>`; continue; }
     if (!card) continue;
     const sub = line.match(/^#{3,} (.*)$/);
-    if (sub) { if (list) { card += "</ul>"; list = null; } card += `<div class="news-sub">${newsInline(sub[1])}</div>`; continue; }
+    if (sub) { if (list) { card += "</ul>"; list = null; } card += `<div class="news-sub">${newsInline(sub[1])}</div>`; said = true; continue; }
     const li = line.match(/^\s*[-*] (.*)$/);
-    if (li) { if (!list) { card += "<ul>"; list = true; } card += `<li>${newsInline(li[1])}</li>`; continue; }
-    if (line.trim()) { if (list) { card += "</ul>"; list = null; } card += `<p>${newsInline(line.trim())}</p>`; }
+    if (li) { if (!list) { card += "<ul>"; list = true; } card += `<li>${newsInline(li[1])}</li>`; said = true; continue; }
+    if (line.trim()) { if (list) { card += "</ul>"; list = null; } card += `<p>${newsInline(line.trim())}</p>`; said = true; }
   }
-  if (card) out.push(card + (list ? "</ul>" : "") + "</div>");
+  flush();
   return out.join("");
 }
 function newsLoad(box) {
