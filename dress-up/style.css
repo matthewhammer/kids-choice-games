@@ -1181,6 +1181,10 @@ html.lineart [aria-pressed="true"]:not(svg *) { border-color: #000 !important; b
 html.lineart svg * { fill: #fff !important; stroke: #000 !important; stroke-width: 1.1px !important; vector-effect: non-scaling-stroke; filter: none !important; }
 html.lineart svg text, html.lineart svg tspan { fill: #000 !important; stroke: none !important; }
 html.lineart svg image, html.lineart svg [fill="none"] { fill: none !important; }
+/* (2026-10-25, Matthew: lines only showed nothing in the fox's tree house room) a shape filled with a gradient or a pattern is light or shade
+   (a room's dimming over the whole picture, the floor's fade, glass, a light shaft): white, it covered everything drawn before it, the friend
+   too. They are there for colour and shading, which lines only drops (his word): not drawn at all */
+html.lineart svg [fill^="url("] { fill: none !important; stroke: none !important; }
 html.lineart svg image { display: none; }
 /* (a limb: white at its own width over a black outline, not a 1.1 line: 02-helpers.js limbThrough) */
 html.lineart svg .lw-out { stroke: #000 !important; stroke-width: var(--lwl) !important; vector-effect: none !important; }

@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.430 (2026-10-25)
+
+Everything in 0.0.429, plus a fix for lines only:
+
+- **🖍️ Lines only draws every room again.** A room's light and shade (the tree house rooms' and the round room's dimming, the witch's and the healer's rooms' glow, the cave room's dark, the castle rooms' floor fade, the greenhouse's glass, light shafts in the woods) turned white in lines only and covered the picture, the friend too: a tree house room showed nothing at all. Lines only leaves them out now, as it leaves out colour.
+
 ## 0.0.429 (2026-10-24)
 
 Everything in 0.0.428, plus the forest in the speed test (ticket 160):

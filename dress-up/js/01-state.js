@@ -1398,7 +1398,7 @@ function lineArtSet(on) {
   try { if (on) localStorage.setItem("dress-up-lineart", "1"); else localStorage.removeItem("dress-up-lineart"); } catch (_) { /* (for this visit) */ }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.429", released: "2026-10-24" };
+const VERSION = { number: "0.0.430", released: "2026-10-25" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
