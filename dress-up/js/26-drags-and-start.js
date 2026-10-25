@@ -2003,11 +2003,7 @@ offlineStart();
 if (TRY) {
   const B = state.background, n = TRY.n;
   B.kind = TRY.kind;
-  B.things = [];
-  for (let i = 0; i < n; i++) {
-    const x = Math.round(n === 1 ? 0 : -300 + 600 * i / (n - 1)), z = SCENE.ground + 30 + (i % 2) * 30, seed = 900 + i;
-    B.things.push({ kind: "campfire", x, z, seed, size: 100, mirror: false, burning: true }, { kind: "cauldron", x, z: z + 1, seed: seed + 50, size: 100, mirror: false, fumes: "simple" });
-  }
+  B.things = potsOverFires(n);
   changed();
   const note = el("div", { class: "try-note" }), name = TRY.kind === "cave" ? "🪨 cave behind the falls" : "🦇 cave room";
   document.body.append(note);
