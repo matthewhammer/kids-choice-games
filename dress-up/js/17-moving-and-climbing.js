@@ -1135,7 +1135,8 @@ function noteMoveFrame(t) {
 // takes it back after one drawing on a computer that draws fast: 0.0.92)
 // (ticket 274) Held still (holdStill), never: a held picture is the full scene, whatever this computer's speed, so
 // the settings alone decide it.
-const sceneryStill = () => (SPEED_TEST.still || (stillAt === null && (slowFlag || choppy) && !stillGaveUp.has(stillPlace()))) && !PERF.slowMoving;
+// (ticket 610) and stillMode, ⚙️ Advanced's choice: as measured, always held still, or always moving
+const sceneryStill = () => (SPEED_TEST.still || (stillMode !== "move" && stillAt === null && (stillMode === "still" || slowFlag || choppy) && !stillGaveUp.has(stillPlace()))) && !PERF.slowMoving;
 // (ticket 164, 0.0.86) 🧪's test passes, each taking one part of a place
 // away while the friend swims, to find what costs the black laptop its
 // frames: holder, a group drawn instead of the place's scenery (empty, or

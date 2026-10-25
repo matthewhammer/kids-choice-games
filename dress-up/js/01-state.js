@@ -1012,10 +1012,6 @@ const PERF_FEATURES = [
   // window's view of outside stays moving: it has no frame)
   { id: "livePictures", label: "🎞️ moving pictures", what: "framed pictures drawn live, each place's own animations playing: on the walls of the living room, the healer's hut and the castle's rooms, and the 22 in the 💭 imagination's map. Off, each is that place held still, as an image. A window's view of outside moves either way.",
     count: () => [...document.querySelectorAll("#bg .portal")].filter(p => p.querySelector(":scope > rect") && p.querySelector(":scope > svg")).length, unit: ["picture drawn live", "pictures drawn live"] },
-  // (ticket 164: on a computer too slow for them, a place's animations, the
-  // wake and the faint copy under the water cost it most of its frames)
-  { id: "slowMoving", label: "🌀 moving scenery and water on a slow computer", what: "on a computer measured to be slow (a drawing of the friend takes over 6 ms, on average, or frames come late while the friend moves), each place is held still: its animations (ducks, the sun's rays, the fumes, fairies' wings), the rings round the friend in water, and the faint part of the friend under the water; and while the friend moves, the place is drawn as one still picture, its standing things (trees, rocks) as they are. On, everything moves anyway. A fast computer is never held still.",
-    count: () => 0, unit: ["", ""], status: () => `this computer: ${slowFlag || choppy ? "slow" : "not slow"} (a drawing takes ${slowAvg.toFixed(1)} ms, on average${slowN < 30 ? ", still measuring" : ""}${choppy ? "; frames came late while the friend moved" : ""})${slowFlag || choppy ? (PERF.slowMoving ? ": everything moves anyway" : ": the places are held still") : ": everything moves"}` },
   // (ticket 161: Matthew found the beach and the empty room nearly frozen;
   // a friend half see-through walked at 36 frames a second in the empty
   // room, 60 without these masks)
@@ -1024,6 +1020,29 @@ const PERF_FEATURES = [
 ];
 const PERF = Object.fromEntries(PERF_FEATURES.map(f => [f.id, false]));
 try { Object.assign(PERF, JSON.parse(localStorage.getItem("dress-up-perf") || "{}")); } catch (e) { /* (all off) */ }
+// (ticket 610, Matthew 2026-10-25: "replace the 🌀 switch with measured / always hold still / always move") how a place's moving
+// scenery is shown on this computer (localStorage "dress-up-still-mode"): measured, held still on a computer measured to be
+// slow (a drawing of the friend over 6 ms on average, or frames late while the friend moves), as before; still, held still
+// always (M's iPad draws the friend in 1.5 ms, so is never measured slow, yet its duck pond moves at 14 frames a second); move,
+// never held still (the old 🌀 switch on). Held still: each place's animations (ducks, the sun's rays, the fumes, fairies'
+// wings), the rings round the friend in water and the faint part of the friend under the water stop, and while the friend
+// moves the place is one still picture. PERF.slowMoving is now 🧪's alone: its passes that must move, whatever this is set to
+const STILL_MODES = [["measured", "📏 as measured"], ["still", "🧊 always hold still"], ["move", "🌀 always move"]];
+let stillMode = (() => { try { const v = localStorage.getItem("dress-up-still-mode"); if (STILL_MODES.some(([m]) => m === v)) return v; } catch (e) { /* (as measured) */ }
+  return PERF.slowMoving ? "move" : "measured"; })();   // (the old switch, on: always move)
+if (PERF.slowMoving) { PERF.slowMoving = false; try { localStorage.setItem("dress-up-perf", JSON.stringify(PERF)); localStorage.setItem("dress-up-still-mode", stillMode); } catch (e) { /* (for this visit) */ } }
+PERF.slowMoving = false;
+function stillModeSet(m) {
+  if (!STILL_MODES.some(([v]) => v === m)) return;
+  stillMode = m;
+  try { localStorage.setItem("dress-up-still-mode", m); } catch (e) { /* (for this visit only) */ }
+  PARTS.clear(); READS.clear(); TRIMMED.clear(); STILLS.clear(); SCENE_PARTS.clear();
+  bgShown.text = null; bgShown.kept = new Map();
+  changed();
+}
+// what this computer was measured to be, and what that means for its places now
+const stillStatus = () => `this computer: ${slowFlag || choppy ? "slow" : "not slow"} (a drawing takes ${slowAvg.toFixed(1)} ms, on average${slowN < 30 ? ", still measuring" : ""}${choppy ? "; frames came late while the friend moved" : ""}): ` +
+  (stillMode === "still" ? "the places are held still (always)" : stillMode === "move" ? "everything moves (always)" : slowFlag || choppy ? "the places are held still" : "everything moves");
 function perfSet(id, on, keep = true) {
   PERF[id] = !!on;
   if (keep) try { localStorage.setItem("dress-up-perf", JSON.stringify(PERF)); } catch (e) { /* (for this visit only) */ }
@@ -1126,7 +1145,7 @@ function tripReport(T) {
   const ua = navigator.userAgent, browser = (ua.match(/(Firefox|Edg|Chrome|Safari)\/(\d+)/) || [, "a browser", ""]).slice(1).join(" ").trim();
   const data = { v: VERSION.number, trip: `${T.from} > ${T.to}`, how: T.how, s: +(all / 1000).toFixed(2), frames: F.length, fps: fps(F), long, phases,
                  game: Math.round(T.work.reduce((a, x) => a + x[1], 0)), browser, screen: `${screen.width}x${screen.height}`, dpr: devicePixelRatio,
-                 pic: (r => `${Math.round(r.width)}x${Math.round(r.height)}`)(pic.getBoundingClientRect()), found: { slow: slowFlag, choppy, slowMoving: PERF.slowMoving } };
+                 pic: (r => `${Math.round(r.width)}x${Math.round(r.height)}`)(pic.getBoundingClientRect()), found: { slow: slowFlag, choppy, stillMode } };
   T.report(`⏱️ Dress Up ${VERSION.number}, a trip from ${T.from} to ${T.to} (${T.how}): ${data.s} s, ${F.length} frames, ${data.fps} fps · ` +
            (long.length ? `long frames: ${long.map(l => `${l.ms} ms at ${l.at} s (${l.phase}; the game's own work ${l.game} ms${l.place ? ", building the place " + l.place : ""})`).join(", ")}` : `no frame over ${TRIP_LONG} ms`) +
            ` · ${phases.map(p => `${p.phase} ${p.fps} fps (longest ${p.worst} ms)`).join(", ")} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
@@ -1303,7 +1322,7 @@ async function speedCheck(report) {
     const p = r => `${r.fps} fps (longest pause ${r.worst} ms, ${r.late}% late)`;
     const data = { v: VERSION.number, draw: +med.toFixed(2), room, inPlace, forest: { steps: forestSteps, pad: forestPad, arrows: forestArrows }, caves, pond, pondStill, pondNoScene, pondNoUnder, pondNoRings, pondPicture, pondBitmap, bitmapOk: stillPic.bitmapOk, pondNoWater, pondMusic, roomAfter, roomAfterMusic, bubble: { nodes: bubbleNodes, stand: bubbleStand, walk: bubbleWalk, still: bubbleStill, m1: bubbleM1, m4: bubbleM4, m16: bubbleM16 }, browser, platform: navigator.platform || "",
                    screen: `${screen.width}x${screen.height}`, dpr: devicePixelRatio, cores: navigator.hardwareConcurrency || null, memory: navigator.deviceMemory || null,
-                   pic: (r => `${Math.round(r.width)}x${Math.round(r.height)}`)(pic.getBoundingClientRect()), found: { slow: keep.slowFlag, choppy: keep.choppy } };
+                   pic: (r => `${Math.round(r.width)}x${Math.round(r.height)}`)(pic.getBoundingClientRect()), found: { slow: keep.slowFlag, choppy: keep.choppy, stillMode } };
     report(`🧪 Dress Up ${VERSION.number}: a drawing ${med.toFixed(1)} ms · empty room, walking: ${p(room)} · in place: ${inPlace.fps} fps · 🌲 the forest, walking: ${p(forestSteps)} · by a controller, the on-screen one hidden: ${forestPad.fps === null ? forestPad.note : p(forestPad) + (forestPad.walked ? "" : ", but nothing walked")} · holding the on-screen arrows: ${forestArrows.fps === null ? forestArrows.note : p(forestArrows) + (forestArrows.walked ? "" : ", but nothing walked")} · duck pond, swimming: ${p(pond)} · held still: ${p(pondStill)} · without its scenery: ${p(pondNoScene)} · without the part under water: ${p(pondNoUnder)} · without the rings: ${p(pondNoRings)} · scenery a still picture: ${p(pondPicture)} · a still bitmap: ${p(pondBitmap)} · without the rings and the part under water: ${p(pondNoWater)} · with music: ${p(pondMusic)} · the empty room after the pond: ${p(roomAfter)}, with its music: ${p(roomAfterMusic)} · 🫧 the bubble room (${bubbleNodes} shapes), standing: ${bubbleStand.fps} fps, walking through it: ${p(bubbleWalk)}, its foam still: ${p(bubbleStill)}, with 1 bubble maker: ${p(bubbleM1)}, 4: ${p(bubbleM4)}, 16: ${p(bubbleM16)} · ${[["cave", "🪨 the cave behind the falls"], ["caveroom", "🦇 the cave room"]].map(([k, nm]) => { const C = caves[k]; return `${nm} (${C.moving} moving parts), standing: ${C.stand.fps} fps, walking with 0, 1, 2, 4 pots over fires: ${[0, 1, 2, 4].map(n => C["p" + n].fps).join(", ")} fps`; }).join(" · ")} · ${browser}, ${devicePixelRatio}× · DATA ${JSON.stringify(data)}`);
   } finally {
     state = JSON.parse(saved);
@@ -1456,7 +1475,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.435", released: "2026-10-25" };
+const VERSION = { number: "0.0.436", released: "2026-10-25" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

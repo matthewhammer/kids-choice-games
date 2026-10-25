@@ -4,6 +4,11 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.436 (2026-10-25)
+
+Everything in 0.0.435, plus, for slow computers the game does not notice:
+
+- **🌀 The places' moving scenery, in ⚙️ Advanced: 📏 as measured, 🧊 always hold still, or 🌀 always move.** It replaces the switch "moving scenery and water on a slow computer". As measured is as before: held still on a computer found to be slow. Always hold still is for one that is slow in a way the game does not notice, like an older iPad that draws the friend quickly but its places slowly. Always move is the old switch, on (a computer that had it on keeps it). The line under it still says what this computer was measured to be.
 ## 0.0.435 (2026-10-25)
 
 Everything in 0.0.434, plus a fix:

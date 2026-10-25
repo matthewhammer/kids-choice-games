@@ -2366,6 +2366,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       el("div", { class: "hint" }, "Each event a room's script answers (a lever pulled, a pit fallen in, a way taken), timed in the game as you play: the whole event in each engine, from the game's call to the last command acted on, and for Hazel and Fumola the rule's function alone (the event in, the commands out). Switch 📜 Scripting's engine and play the same rooms to fill each column; 🧹 starts the counts again.")]));
     costDraw(); { const t = setInterval(() => { if (!costBody.isConnected) { clearInterval(t); return; } costDraw(); }, 1000); }
     if (!perfMeter.loop) perfMeter.loop = requestAnimationFrame(perfMeterTick);
+    // (ticket 610) the places' moving scenery on this computer: as measured, always held still, or always moving (stillMode)
+    const stillSay = el("div", { class: "hint" }), stillChips = STILL_MODES.map(([m, label]) => el("button", { "data-still": m, onclick: () => stillModeSet(m) }, label));
+    box.append(el("div", { class: "perfrow still-row" }, [el("div", { class: "row" }, [el("span", {}, "🌀 the places' moving scenery:"), ...stillChips]),
+      el("div", { class: "hint" }, "Held still, each place's own animations stop (ducks, the sun's rays, the fumes, fairies' wings), and the rings and the faint friend under the water too; while the friend moves, the place is one still picture. 📏 As measured holds them still on a computer found to be slow; 🧊 always is for a computer that is slow in a way the game does not notice (an older iPad); 🌀 always move, for one that keeps up."), stillSay]));
+    syncs.push(() => { for (const b of stillChips) { const on = String(b.dataset.still === stillMode); if (b.getAttribute("aria-pressed") !== on) b.setAttribute("aria-pressed", on); } put(stillSay, stillStatus()); });
     // (ticket 610) the fewest frames a second a place may fall to before no more moving things can be put there
     const fpsSay = el("span", { class: "hint" }), fpsIn = el("input", { type: "range", class: "fps-min", min: String(THING_FPS_FLOOR), max: String(THING_FPS_USUAL), step: "1", value: String(THING_FPS_MIN), "aria-label": "fewest frames a second before a place is full" });
     const fpsPut = () => put(fpsSay, `${THING_FPS_MIN} frames a second${THING_FPS_MIN === THING_FPS_USUAL ? " (the usual)" : ""}`);
