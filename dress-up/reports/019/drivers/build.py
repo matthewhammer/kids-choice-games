@@ -130,7 +130,7 @@ how = "".join(f"<p>{tix(x)}</p>" for x in D["how"])
 asked = "".join(f'<li>{E(a["at"])}: “{E(a["words"])}”</li>' for a in D["asked"])
 
 body = f'''<main>
-<p class="series"><a href="../">Dress Up reports</a> · {ref(19)} · {D["date"]} · <b class="wip">draft</b> · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(18)}</p>
+<p class="series"><a href="../">Dress Up reports</a> · {ref(19)} · {D["date"]} · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after {ref(18)}</p>
 <h1>{E(TITLE)}</h1>
 <p class="reading">About READMIN minutes to read (READWORDS words, not counting tables and figures).</p>
 <p class="sub">{tix(D["question"])} From {ref(564, "ticket")}. Matthew's words:</p>
