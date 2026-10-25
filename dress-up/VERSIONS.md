@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.439 (2026-10-25)
+
+Everything in 0.0.438, plus saving with no files:
+
+- **💾 Save keeps your friend in this browser.** No file and no question: the friend you see, with a small picture of it, is kept on this device. Where a browser keeps nothing (a private window), it saves the file instead.
+- **📂 Load shows your saved friends.** Newest first, each with its picture and when it was saved: tap one to bring it back, ✖ twice to remove it. "📄 from a file…" still opens a saved .json.
+- **▾ beside 💾 Save still writes files**, to keep a copy somewhere else: the picture, the drawing, the settings, a postcard.
 ## 0.0.438 (2026-10-25)
 
 Everything in 0.0.437, plus an easier Save:

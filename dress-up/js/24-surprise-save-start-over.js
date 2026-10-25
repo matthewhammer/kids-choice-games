@@ -148,13 +148,16 @@ if (oneFile) {
 const snapshotFile = (d = new Date()) => ({ app: "dress-up", version: 1, extra: { saved: d.toISOString(), game: VERSION.number }, state });
 const pictureFile = file => { const { extra, saved, ...p } = file; return p; };   // (saved: a top-level time, before 0.0.203)
 // (2026-10-25, Matthew: "M can no longer easily save files on the ipad ... It's asking a lot of questions before we can save ...
-// Can we just make save to disk the default?") 💾 Save saves the friend at once, the settings (.json) Load reads, on any device;
-// ▾ beside it opens the menu: a picture, a drawing, a postcard. (Safari's own "Download?" is the browser's, not the game's.)
+// Can we just make save to disk the default?"; then "can we save in the browser database somehow?" (ticket 615)) 💾 Save keeps
+// the friend in this browser (25-friends.js: no file, no question, and 📂 Load lists them); where the browser keeps nothing,
+// it saves the settings (.json) as a file, as 0.0.438 did. ▾ beside it opens the files: a picture, a drawing, the settings,
+// a postcard. (Safari's own "Download?" for a file is the browser's, not the game's.)
 let quickSave = false;
-document.getElementById("save-quick").addEventListener("click", e => {
-  quickSave = true;
-  try { document.getElementById("save").click(); } finally { quickSave = false; }
-  const b = e.currentTarget; b.textContent = "✅ Saved"; clearTimeout(b.t); b.t = setTimeout(() => { b.textContent = "💾 Save"; }, 2000);
+const saveFileNow = () => { quickSave = true; try { document.getElementById("save").click(); } finally { quickSave = false; } };
+document.getElementById("save-quick").addEventListener("click", async e => {
+  const b = e.currentTarget, say = t => { b.textContent = t; clearTimeout(b.t); b.t = setTimeout(() => { b.textContent = "💾 Save"; }, 2200); };
+  if (!(await friendsSave())) { saveFileNow(); say("✅ Saved (a file)"); return; }
+  say("✅ Saved here");
 });
 document.getElementById("save").addEventListener("click", () => {
   // (the kinds saved by this tap: the friend's settings alone for 💾 Save, else those chosen in the menu)
@@ -259,34 +262,34 @@ document.getElementById("postcard").addEventListener("click", async () => {
 // LOAD: a saved .json (or a bare state object); anything it lacks keeps
 // its default, so friends saved before a feature existed still load. Only its
 // state is read: never its extra fields (ticket 275), nor an older file's saved time.
-document.getElementById("load").addEventListener("click", () => document.getElementById("load-file").click());
+document.getElementById("load").addEventListener("click", () => friendsOpen());   // (ticket 615: the friends kept here, and a file)
+// a saved friend (a .json file's, or one kept in this browser: 25-friends.js) made the friend shown, upgraded as an old one is
+function loadSaved(data) {
+  const saved = data && data.state ? data.state : data;
+  if (!saved || typeof saved !== "object") throw new Error("no settings in this file");
+  const next = clone(DEFAULTS);
+  for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
+  upgradeHands(next.hands);
+  upgradeRightHand(next, saved);
+  upgradeFeet(next, saved);
+  upgradeHorse(next, saved);
+  upgradeLassoHand(next);
+  upgradeInside(next.background, saved);
+  upgradeFigSize(next.background, saved);
+  upgradeFoamMove(next.background, saved);
+  upgradeThings(next, saved);
+  upgradeWorld(next);
+  upgradeClickWalk(next, saved);
+  upgradePitShapes(next, saved);
+  upgradeFace(next.face, saved.face);
+  next.music = { ...next.music, volume: state.music.volume, mute: state.music.mute };
+  state = next;
+  changed();
+}
 document.getElementById("load-file").addEventListener("change", async e => {
   const file = e.target.files[0];
   e.target.value = "";
   if (!file) return;
-  try {
-    const data = JSON.parse(await file.text());
-    const saved = data && data.state ? data.state : data;
-    if (!saved || typeof saved !== "object") throw new Error("no settings in this file");
-    const next = clone(DEFAULTS);
-    for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
-    upgradeHands(next.hands);
-    upgradeRightHand(next, saved);
-    upgradeFeet(next, saved);
-    upgradeHorse(next, saved);
-    upgradeLassoHand(next);
-    upgradeInside(next.background, saved);
-    upgradeFigSize(next.background, saved);
-    upgradeFoamMove(next.background, saved);
-    upgradeThings(next, saved);
-    upgradeWorld(next);
-    upgradeClickWalk(next, saved);
-    upgradePitShapes(next, saved);
-    upgradeFace(next.face, saved.face);
-    next.music = { ...next.music, volume: state.music.volume, mute: state.music.mute };
-    state = next;
-    changed();
-  } catch (err) {
-    alert("That file didn't load: " + err.message);
-  }
+  try { loadSaved(JSON.parse(await file.text())); }
+  catch (err) { alert("That file didn't load: " + err.message); }
 });
