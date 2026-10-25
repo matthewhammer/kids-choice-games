@@ -4,6 +4,11 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.438 (2026-10-25)
+
+Everything in 0.0.437, plus an easier Save:
+
+- **💾 Save saves your friend at once.** One tap saves the friend's settings (.json), the file 📂 Load opens again, on every device, with no menu first. The ▾ beside it opens the other ways to save: a picture (.png), a drawing (.svg), a postcard. On an iPad, Safari still asks once whether to download the file; that question is the browser's own.
 ## 0.0.437 (2026-10-25)
 
 Everything in 0.0.436, plus a fix for tablets:

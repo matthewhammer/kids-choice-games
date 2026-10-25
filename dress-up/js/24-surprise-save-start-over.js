@@ -134,7 +134,6 @@ if (oneFile) {
     try { localStorage.setItem("dress-up-save-off", JSON.stringify(formatBoxes.filter(x => !x.checked).map(x => x.value))); } catch (_) {}
   });
 }
-const wanted = f => formatBoxes.some(b => b.value === f && b.checked);
 // Several downloads from one click: some browsers let only the first
 // through, ask first ("allow multiple downloads?"), or drop ones that
 // start after the click has finished (the .png is drawn first). So the
@@ -148,8 +147,19 @@ const wanted = f => formatBoxes.some(b => b.value === f && b.checked);
 // "extra"; a tool keeps the picture file by dropping it, knowing none of its names (the picture archive keeps that).
 const snapshotFile = (d = new Date()) => ({ app: "dress-up", version: 1, extra: { saved: d.toISOString(), game: VERSION.number }, state });
 const pictureFile = file => { const { extra, saved, ...p } = file; return p; };   // (saved: a top-level time, before 0.0.203)
+// (2026-10-25, Matthew: "M can no longer easily save files on the ipad ... It's asking a lot of questions before we can save ...
+// Can we just make save to disk the default?") 💾 Save saves the friend at once, the settings (.json) Load reads, on any device;
+// ▾ beside it opens the menu: a picture, a drawing, a postcard. (Safari's own "Download?" is the browser's, not the game's.)
+let quickSave = false;
+document.getElementById("save-quick").addEventListener("click", e => {
+  quickSave = true;
+  try { document.getElementById("save").click(); } finally { quickSave = false; }
+  const b = e.currentTarget; b.textContent = "✅ Saved"; clearTimeout(b.t); b.t = setTimeout(() => { b.textContent = "💾 Save"; }, 2000);
+});
 document.getElementById("save").addEventListener("click", () => {
-  if (!formatBoxes.some(b => b.checked)) { alert("Check at least one kind of file to save."); return; }
+  // (the kinds saved by this tap: the friend's settings alone for 💾 Save, else those chosen in the menu)
+  const want = quickSave ? ["json"] : formatBoxes.filter(b => b.checked).map(b => b.value), wanted = f => want.includes(f);
+  if (!want.length) { alert("Check at least one kind of file to save."); return; }
   const d = new Date(), two = n => String(n).padStart(2, "0");
   const name = `my-friend-${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}-` +
                `${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
@@ -175,7 +185,7 @@ document.getElementById("save").addEventListener("click", () => {
     const order = ["json", "png", "svg"];
     const links = files.slice().sort((x, y) => order.indexOf(x[0]) - order.indexOf(y[0])).map(x => x[1]);
     saved.replaceChildren(...(oneFile
-      ? ["Saved the ." + formatBoxes.find(b => b.checked).value + " — tap to save: ",
+      ? ["Saved the ." + want[0] + " — tap to save: ",
          ...links.flatMap((x, k) => k ? [" · ", x] : [x])]
       : ["Saved ", ...links.flatMap((x, k) => k ? [" · ", x] : [x]), " — not in your downloads? click each one."]));
   };
