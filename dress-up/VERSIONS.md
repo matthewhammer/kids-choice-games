@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.442 (2026-10-25)
+
+Everything in 0.0.441, plus caves that scroll:
+
+- **🦇 A new place: the cave crossing.** Under ground, the forest crossing's eight ways: each way that leads somewhere is a passage (a tunnel's mouth in the back wall, an opening in a side, the worn floor running off toward us), and each that does not is shut by stones that really stand in the way. Four looks (🪨 grey stone, 💎 crystals that glow, 🌿 mossy and dripping, 🧊 ice), in 🏞️ Background and in 🗺️ World design.
+- **🎞️ Smooth scrolling between squares,** as A Link to the Past goes from screen to screen: walking out a way into a cave crossing beside it, the friend reaches the edge, the cave slides away and the next one slides in, diagonals too. On by default where it works (two cave crossings side by side in the same world); 🗺️ World design has a 🎞️ chip for each such way, to step through instead (🚪).
 ## 0.0.441 (2026-10-25)
 
 Everything in 0.0.440, plus a fix:

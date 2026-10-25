@@ -23,7 +23,7 @@ const HOUSE_COLOR_DEFAULTS = {
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, treetop: 0.6, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, cavecross: 0.45, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
 // for each background as we play around with them") the friend's own size (body.size, a share), in every place, on top of
@@ -48,7 +48,7 @@ const SCENE_VANISH = { treeroom: -60, treetop: -60, livingroom: -60, witchroom: 
 // of it shrinks as one. Outdoors 40 (the mountain trail's far edge about 0.4 of the size, the clearing's about 0.2);
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
-                   "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "beach", "sea", "lake", "desert", "farmyard"];   // (desert: ticket 501)
+                   "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "cavecross", "beach", "sea", "lake", "desert", "farmyard"];   // (desert: ticket 501)
 const NORTH_ROOMS = ["treeroom", "treetop", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
 const northDefault = kind => NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
@@ -745,7 +745,7 @@ const DEFAULTS = {
                 desertFar: "mesas",   // (ticket 501: what the desert has far off, farLayers' mountains)
                 skyWhere: "denver", skyLat: 39.74, skyLon: -104.99, skyYear: 2026, skyMonth: 10, skyDay: 20, skyHour: 20,   // (ticket 490: 🌍 where and when, for a sky by the clock)
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
-                crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossBack: "woods", things: [],
+                crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossBack: "woods", crossCave: "stone", things: [],
                 seaMountains: "none", seaForest: "none", seaBeach: false, seaShoreSize: 100,   // (ticket 212: the open water's distant shore, off by default)
                 starShape: "mix", starSize: 100, starBright: 85, starTwinkle: 40,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
@@ -881,7 +881,11 @@ const WORLD_DEFAULT_0123 = (() => { const W = structuredClone(WORLD_DEFAULT_0183
 // (ticket 195) and as 0.0.103 to 0.0.122 laid it out: its waterfall's only way was N, which is now
 // the waterfall itself; it goes NE to the forest crossing (C4, now C5) instead
 const WORLD_DEFAULT_0103 = (() => { const W = structuredClone(WORLD_DEFAULT_0123); W.cells["1,4"].ways = ["N"]; W.cells["1,3"].ways = ["N", "E", "S"]; W.cells["2,3"].crossSW = false; return W; })();
-const rawWays = c => c.kind === "crossing" ? ["N", "NE", "E", "SE", "S", "SW", "W", "NW"].filter(d => c["cross" + d]) : (c.ways || []);
+// (2026-10-25, Matthew: "new world squares/backgrounds to use --- different cave map background options, up to 8 ways of passages
+// ... use 8 way forest version as a template") a crossing is a forest crossing or a cave crossing: up to eight ways, its paths
+// the square's own settings (crossN ... crossNW), drawn only where they lead (crossLive)
+const CROSS_KINDS = new Set(["crossing", "cavecross"]), isCross = k => CROSS_KINDS.has(k);
+const rawWays = c => isCross(c.kind) ? ["N", "NE", "E", "SE", "S", "SW", "W", "NW"].filter(d => c["cross" + d]) : (c.ways || []);
 const sameWorld = (C, D) => Object.keys(C).length === Object.keys(D).length && Object.keys(D).every(k => C[k] && C[k].kind === D[k].kind &&
   rawWays(C[k]).join() === rawWays(D[k]).join() && !(C[k].things || []).length && !C[k].name);
 function upgradeWorld(next) {
@@ -1475,7 +1479,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.441", released: "2026-10-25" };
+const VERSION = { number: "0.0.442", released: "2026-10-25" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

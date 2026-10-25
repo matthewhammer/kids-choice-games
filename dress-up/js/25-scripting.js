@@ -53,7 +53,7 @@ const SCRIPT_DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 // (in node, where the game's lists are not loaded: the same lists, held equal to them by tools/checks/scriptboxes566.mjs)
 const SCRIPT_PLACES_KNOWN = ["none", "emptyroom", "bubblespace", "bubbleroom", "imagination", "forest", "underwater", "deepsea", "beach", "sea", "witch", "cemetery",
   "lake", "house", "farmyard", "treehouse", "treeroom", "treetop", "livingroom", "witchroom", "clearing", "healerroom", "fairyforest", "mountains", "waterfall",
-  "campsite", "tent", "cave", "caveroom", "woodpath", "pasture", "crossing", "castle", "castleroom", "hut", "hutroom", "hutbed", "hutpotion", "hutcenter", "desert"];
+  "campsite", "tent", "cave", "caveroom", "woodpath", "pasture", "crossing", "cavecross", "castle", "castleroom", "hut", "hutroom", "hutbed", "hutpotion", "hutcenter", "desert"];
 const SCRIPT_ROOMS_KNOWN = ["king", "greenhouse", "trap", "dungeon1", "dungeon2", "hallway", "catroom", "stable", "dining", "kitchen", "smithy", "spiral"];
 const SCRIPT_EXITS = ["side", "long", "spiral", "trap", "ladder", "all", "hall"];
 const scriptCap = k => k[0].toUpperCase() + k.slice(1);
@@ -674,7 +674,7 @@ const SCRIPT_ACTS = {
     here: ev => { const W = state.world, cell = W && W.at && W.cells[W.at]; return !!cell && !!WORLD_DIRS[ev.value] && !(cell.links && cell.links[ev.value]); },
     globals: () => { const W = state.world, [ac, ar] = W.at.split(",").map(Number);
       return { ...scriptNoGlobals(), at_col: ac, at_row: ar, cols: W.cols, rows: W.rows, cells: Object.entries(W.cells).map(([k, cell]) => { const [col, row] = k.split(",").map(Number);
-        return { col, row, kind: String(cell.kind), ways: (cell.kind === "crossing" ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : cell.ways || []).map(String) }; }) }; },
+        return { col, row, kind: String(cell.kind), ways: (isCross(cell.kind) ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : cell.ways || []).map(String) }; }) }; },
     act: () => { const got = { go: null }; return { got, GoSquare: (c, r, side) => { got.go = { key: Math.round(+c) + "," + Math.round(+r), side: String(side) }; } }; },
   },
   // (ticket 531, phase 2: a castle's ways, as they are taken; scriptGo) FallPit(i): a trap room's pit i fallen into; WayOut(n): a

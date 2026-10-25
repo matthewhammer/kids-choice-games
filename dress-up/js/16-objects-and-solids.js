@@ -172,7 +172,7 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // its horses grazing (PASTURE_HORSES: a horse moved farther back must keep LANE_MIN behind its footprint)
 const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 200, treehouse: 118, clearing: 140,
                     fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, farmyard: 90, desert: 120, castle: 138,
-                    woodpath: 165, pasture: 157, crossing: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
+                    woodpath: 165, pasture: 157, crossing: 295, cavecross: 295, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
 // (ticket 176) The things that stand in a place and can't be walked

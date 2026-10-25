@@ -74,7 +74,7 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"], ["caveroom", "🦇 cave room"],
-  ["woodpath", "🥾 path through the woods"], ["pasture", "🌾 pasture"], ["crossing", "🛤️ forest crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
+  ["woodpath", "🥾 path through the woods"], ["pasture", "🌾 pasture"], ["crossing", "🛤️ forest crossing"], ["cavecross", "🦇 cave crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
   // (ticket 278, for M) the grass hut, and its three rooms
   ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"], ["hutcenter", "🔥 the grass hut's center"],
   // (ticket 501, for M) the desert
@@ -87,7 +87,7 @@ const PLACE_GROUPS = [
   ["bubbles", "🫧 bubbles", ["bubblespace", "bubbleroom"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
-  ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom"]],
+  ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom", "cavecross"]],
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "treetop", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
@@ -647,6 +647,7 @@ const TABS = [
     ["compass", "crossPaths", "🛤️ the paths that meet here", "cross"],
     ["color", "crossFloor", "🌿 the forest floor", CROSS_FLOORS],
     ["choice", "crossBack", "🌄 off in the distance", CROSS_BACKS],
+    ["choice", "crossCave", "🪨 the cave's look", CAVE_LOOKS],   // (2026-10-25: the cave crossing's)
     // (ticket 212) the open water's distant shore, off by default: its layers, back to front, and its size (bigger: nearer)
     ["group", "seaShore", "🏝️ a distant shore", [
       ["choice", "seaMountains", "⛰️ mountains", SHORE_MOUNTAINS],
@@ -1273,7 +1274,9 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["skyWhen", "skyWhere", "skyYear", "skyMonth", "skyDay", "skyHour", "skySays"].map(key => ["background." + key, b => clockHere(b)])),
   ...Object.fromEntries(["skyLat", "skyLon"].map(key => ["background." + key, b => clockHere(b) && b.skyWhere === "custom"])),
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
-  ...Object.fromEntries(["crossPaths", "crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),
+  "background.crossPaths": b => isCross(b.kind),
+  ...Object.fromEntries(["crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),
+  "background.crossCave": b => b.kind === "cavecross",
   "background.things": b => b.kind !== "none",
   "background.thingsSolid": b => b.kind !== "none" && (b.things || []).length > 0,   // (ticket 283)
   // (a tent's door looks out on the camp: its time of day and its fire)
@@ -2169,7 +2172,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       if (at && (at.kind === state.background.kind || inside)) {
         const ways = worldWays(at), fix = worldWarnShown ? worldWaysToToggle(W, W.at) : { on: [], off: [] }, toggle = d => () => {
           if (at.links && at.links[d]) { worldUnlinkAt(W, W.at, d); changed(); return; }   // (ticket 406: a linked way off: its link, and the link back, go)
-          if (at.kind === "crossing") state.background["cross" + d] = !state.background["cross" + d];   // (its paths, which worldKeep keeps in its square)
+          if (isCross(at.kind)) state.background["cross" + d] = !state.background["cross" + d];   // (its paths, which worldKeep keeps in its square)
           else at.ways = ways.includes(d) ? ways.filter(x => x !== d) : [...ways, d].sort((x, y) => Object.keys(WORLD_DIRS).indexOf(x) - Object.keys(WORLD_DIRS).indexOf(y));
           changed();
         };
@@ -2211,6 +2214,20 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
               // (Matthew, 0.0.191: "does change the background, but it stays stale when clicked": this panel is built
               // again only when the world changes; the chips shown chosen as they are clicked)
               onclick: e => { state.background.crossBack = v; for (const b of e.currentTarget.parentNode.querySelectorAll("[data-back]")) b.setAttribute("aria-pressed", String(b.dataset.back === v)); changed(); } }, name))])] : []),
+          // (2026-10-25) a cave crossing's look, here too (its square keeps it: CROSS_KEYS)
+          ...(at.kind === "cavecross" && !inside ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🪨 the cave's look:"),
+            ...CAVE_LOOKS.map(([v, name]) => el("button", { "aria-pressed": String((state.background.crossCave || "stone") === v), "data-cave": v,
+              onclick: e => { state.background.crossCave = v; for (const b of e.currentTarget.parentNode.querySelectorAll("[data-cave]")) b.setAttribute("aria-pressed", String(b.dataset.cave === v)); changed(); } }, name))])] : []),
+          // (2026-10-25, Matthew: "new nav arrow option in world design that means --- 'smooth scroll' -- the default for where it
+          // works") each way out that can scroll to the square beside it (worldSmoothCan), its 🎞️ chip: on, it scrolls; off, the
+          // friend steps through, as on any other way
+          ...(() => { const can = inside ? [] : worldWays(at).filter(d => worldSmoothCan(W, W.at, d));
+            return can.length ? [el("div", { class: "row world-smooth-row" }, [el("span", { class: "hint" }, "🎞️ scrolls smoothly to the square beside it:"),
+              ...can.map(d => { const look = (b, on) => { b.setAttribute("aria-pressed", String(on)); b.title = on ? d + ": scrolls (tap: step through instead)" : d + ": steps through (tap: scroll)"; b.textContent = WORLD_ARROWS[d] + (on ? " 🎞️" : " 🚪"); };
+                // (this panel is built again only when the world changes: each chip reads, and shows, the square's state as it is tapped)
+                const b = el("button", { "data-smooth": d, onclick: () => { const offs = at.smoothOff || [], on = !offs.includes(d);
+                  at.smoothOff = on ? [...offs, d] : offs.filter(x => x !== d); if (!at.smoothOff.length) delete at.smoothOff; look(b, !on); changed(); } });
+                look(b, !(at.smoothOff || []).includes(d)); return b; })])] : []; })(),
           probs,
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]),
           ...(inside ? [] : [linksEditor(W, at)]));

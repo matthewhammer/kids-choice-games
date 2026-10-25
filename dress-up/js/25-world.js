@@ -69,7 +69,7 @@ function worldNaturalPair(a, d, b) {
   if (DEEP_WATER.has(a) || DEEP_WATER.has(b)) return (DEEP_WATER.has(a) && DEEP_WATER.has(b)) || (a === "beach" && b === "sea" && SEA_SIDE.includes(d)) || (b === "beach" && a === "sea" && SEA_SIDE.includes(WORLD_OPP[d]));
   return worldNatural(a, d) && worldNatural(b, WORLD_OPP[d]);
 }
-const worldWays = cell => !cell ? [] : (cell.kind === "crossing" ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : (cell.ways || [])).filter(d => !worldNoWay(cell.kind, d));
+const worldWays = cell => !cell ? [] : (isCross(cell.kind) ? CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : (cell.ways || [])).filter(d => !worldNoWay(cell.kind, d));
 // (Matthew, 2026-10-17: a crossing missing a passageway has no trail and no
 // arrow that way) A forest crossing in the world shows only the paths that
 // lead somewhere: switched on, and met by a way back from the square beside
@@ -77,7 +77,7 @@ const worldWays = cell => !cell ? [] : (cell.kind === "crossing" ? CROSS_DIRS.ma
 // all its ways, a way to nowhere grey with 🚧, a mistake to put right.
 function worldLiveWays(W, key) {
   const cell = W.cells[key], ways = worldWays(cell);
-  if (!cell || cell.kind !== "crossing") return ways;
+  if (!cell || !isCross(cell.kind)) return ways;
   return ways.filter(d => { if (cell.links && cell.links[d]) return !!worldTarget(W, key, d);   // (ticket 406: a way to another world leads somewhere)
     const nb = worldNeighbour(W, key, d), other = W.cells[nb.key]; return !nb.off && other && worldWays(other).includes(WORLD_OPP[d]); });
 }
@@ -114,7 +114,7 @@ function worldWaysToToggle(W, key, now = worldProblems(W).length) {
     const isOn = ways.includes(d);
     if (cell.links && cell.links[d]) continue;   // (ticket 406: a way linked to another world is the designer's, not a mistake to toggle)
     if (!isOn && (worldOffMap(W, key, d) || worldNoWay(cell.kind, d))) continue;
-    const c2 = cell.kind === "crossing" ? { ...cell, ["cross" + d]: !isOn } : { ...cell, ways: isOn ? ways.filter(x => x !== d) : [...ways, d] };
+    const c2 = isCross(cell.kind) ? { ...cell, ["cross" + d]: !isOn } : { ...cell, ways: isOn ? ways.filter(x => x !== d) : [...ways, d] };
     if (worldProblems({ ...W, cells: { ...W.cells, [key]: c2 } }).length < now) out[isOn ? "off" : "on"].push(d);
   }
   return out;
@@ -131,14 +131,14 @@ function worldJoinAll(W) {
     for (const d of order) {   // (ticket 524: an inside in a square is joined as any place)
       const nb = worldNeighbour(W, key, d), b = W.cells[nb.key];
       if (nb.off || !b || !worldNaturalPair(a.kind, d, b.kind) || worldWays(a).includes(d)) continue;
-      if (a.kind === "crossing") a["cross" + d] = true;
+      if (isCross(a.kind)) a["cross" + d] = true;
       else a.ways = order.filter(x => x === d || worldWays(a).includes(x));
       added++;
     }
   }
   // (the square the friend is in, a crossing: its paths are the place's settings too)
   const at = W.at && W.cells[W.at], B = state.background;
-  if (at && at.kind === "crossing" && B.kind === "crossing") for (const d of order) B["cross" + d] = !!at["cross" + d];
+  if (at && isCross(at.kind) && at.kind === B.kind) for (const d of order) B["cross" + d] = !!at["cross" + d];
   return added;
 }
 // (ticket 191: "the red square on the grid should correspond to the placement of the dotted red
@@ -184,7 +184,7 @@ function worldProblems(W) {
   const P = [], name = key => `${placeName(W.cells[key].kind)} (${squareName(key)})`;
   for (const key of worldKeys(W)) {
     const cell = W.cells[key];   // (ticket 524: an inside in a square is a square as any other, no mistake)
-    for (const d of cell.kind === "crossing" ? worldLiveWays(W, key) : worldWays(cell)) {   // (a crossing's dead ends are no mistake: not drawn)
+    for (const d of isCross(cell.kind) ? worldLiveWays(W, key) : worldWays(cell)) {   // (a crossing's dead ends are no mistake: not drawn)
       // (ticket 406: a way linked to a square of a world leads there, if that world and square are still there)
       if (cell.links && cell.links[d]) { if (!worldTarget(W, key, d)) P.push({ key, dir: d, text: `The way ${WORLD_ARROWS[d]} out of ${name(key)} is linked to a world or a square that is gone.` }); continue; }
       const nb = worldNeighbour(W, key, d), other = W.cells[nb.key];
@@ -224,9 +224,9 @@ function worldProblems(W) {
 // What a square keeps of its place, as the Background tab edits it
 // (state.background), so the square opened is the square changed: its
 // things, any place's; and a forest crossing's paths and floor.
-const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack"];
+const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave"];
 // (ticket 524) and an inside an outside has several of: which one it is (INSIDE_WHICH)
-const cellKeys = kind => kind === "crossing" ? ["things", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", INSIDE_WHICH[kind]] : ["things"];
+const cellKeys = kind => isCross(kind) ? ["things", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", INSIDE_WHICH[kind]] : ["things"];
 // where the friend comes in, walking into a square from a side: just
 // inside that side, as if they had come through it (the stage's units, as
 // figX and figY: across, and nearer or farther than the ground line)
@@ -372,7 +372,7 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const target = d => worldTarget(W, W.at, d);   // (ticket 406: the square beside it, or a square of a world it is linked to)
   const k = (y1 - y0) / 700;
   // (a forest crossing's at its own paths' ends: crossGeom; any other place's at its far ground and sides)
-  const G = B.kind === "crossing" ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;
+  const G = isCross(B.kind) ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;
   // (0.0.151: 0.0.149 put the far ways (N, NE, NW) at the place's back limit where that was nearer; on a shallow floor,
   // the witch's woods, or in a small window, they crowded the E and W arrows (arrows208), so they are at the far line
   // again: a tap walks as far as the back limit, and walking on into the edge takes the way, wherever its arrow is)
@@ -1139,13 +1139,13 @@ function worldDrop() {
 function worldWayOn(W, key, d) {
   const c = W.cells[key];
   if (!c) return;
-  if (c.kind === "crossing") { c["cross" + d] = true; if (W === state.world && W.at === key && state.background.kind === "crossing") state.background["cross" + d] = true; }
+  if (isCross(c.kind)) { c["cross" + d] = true; if (W === state.world && W.at === key && state.background.kind === c.kind) state.background["cross" + d] = true; }
   else if (!worldWays(c).includes(d)) { const order = Object.keys(WORLD_DIRS); c.ways = order.filter(x => x === d || (c.ways || []).includes(x)); }
 }
 function worldWayOff(W, key, d) {
   const c = W.cells[key];
   if (!c) return;
-  if (c.kind === "crossing") { c["cross" + d] = false; if (W === state.world && W.at === key && state.background.kind === "crossing") state.background["cross" + d] = false; }
+  if (isCross(c.kind)) { c["cross" + d] = false; if (W === state.world && W.at === key && state.background.kind === c.kind) state.background["cross" + d] = false; }
   else c.ways = (c.ways || []).filter(x => x !== d);
 }
 // a link taken off one way, and the link back from where it led; the ways stay where they still meet a square beside them
@@ -1177,8 +1177,49 @@ function worldWalk(door, here = false) {
   if (!t) return;
   const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: t.cell.kind, worldAt: W.at, worldId: W.id };
   tripStart(door, "walk");
+  // (2026-10-25: to a square beside it that scrolls in, the friend walks to the edge and the two pictures slide: worldScroll)
+  if (worldSmooth(W, W.at, d, t)) { walkInto(door, () => {}, true, "step", null, { out: WORLD_DIRS[d], here, smooth: () => worldScroll(d, t, from) }); return; }
   // (ticket 406: through a way linked to another world, into that world, at its square, come in from the side facing back)
   walkInto(door, () => { trips.push(from); if (t.W !== W) worldSwitch(t.W.id, t.key, WORLD_OPP[d], false); else worldEnter(t.key, WORLD_OPP[d], false); }, true, "step", null, { out: WORLD_DIRS[d], here });
+}
+// (2026-10-25, Matthew: "Study original NES Legend of Zelda (one screen at a time), versus SNES -- Link to the past, overworld
+// map, and dungeon maps -- many screens, and smooth scrolling"; "new nav arrow option in world design that means --- 'smooth
+// scroll' -- the default for where it works -- two adjacent screens in the same 'world' (cave smooth 8-way options we are
+// adding)") Smooth scrolling, as A Link to the Past goes from one screen to the next: the friend walks to the edge, and
+// there, rather than stepping through and fading in, the place slides away and the square beside it slides in from the
+// side the way leads (a diagonal: both ways at once), the friend carried in with it, just inside its edge. Where it works:
+// two squares beside each other in the same world (no link to another world), each a kind that scrolls (SMOOTH_KINDS: the
+// cave crossing, for now); on by default there, a way's 🎞️ chip in 🗺️ World design turning it off (cell.smoothOff)
+const SMOOTH_KINDS = new Set(["cavecross"]), SCROLL_MS = 650;
+const worldSmoothCan = (W, key, d, t = worldTarget(W, key, d)) => { const c = W.cells[key];
+  return !!(c && t && t.W === W && !t.link && SMOOTH_KINDS.has(c.kind) && SMOOTH_KINDS.has(t.cell.kind)); };
+const worldSmooth = (W, key, d, t) => worldSmoothCan(W, key, d, t) && !(W.cells[key].smoothOff || []).includes(d);
+function worldScroll(d, t, from) {
+  const B = state.background, body = state.body, [dx, dy] = WORLD_DIRS[d];
+  const old = document.getElementById("bg"), vb = pic.viewBox.baseVal, sw = vb.width, sh = vb.height;
+  const ways = document.getElementById("ways"), ghost = old && old.cloneNode(true);
+  if (ghost) { ghost.removeAttribute("id"); const f = ghost.querySelector("#figure"); if (f) f.remove(); }
+  trips.push(from);
+  worldEnter(t.key, WORLD_OPP[d], false);
+  body.anim = "walk"; body.facing = dx > 0 ? "right" : dx < 0 ? "left" : dy < 0 ? "back" : "front"; body.turn = "";
+  draw();
+  const nb = document.getElementById("bg");
+  if (ghost && nb && nb.parentNode) nb.parentNode.insertBefore(ghost, nb);
+  if (ways) ways.style.visibility = "hidden";
+  const t0 = performance.now();
+  const frame = now => {
+    const u = Math.min(1, (now - t0) / SCROLL_MS), e = u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u), cur = document.getElementById("bg");
+    if (ghost) ghost.setAttribute("transform", `translate(${f1(-dx * sw * e)} ${f1(-dy * sh * e)})`);
+    if (cur) cur.setAttribute("transform", `translate(${f1(dx * sw * (1 - e))} ${f1(dy * sh * (1 - e))})`);
+    if (u < 1) { requestAnimationFrame(frame); return; }
+    if (ghost) ghost.remove();
+    if (cur) cur.removeAttribute("transform");
+    if (ways) ways.style.visibility = "";
+    body.anim = "none"; body.facing = "front";
+    tripPhase = "arriving"; entering = false;
+    changed();
+  };
+  requestAnimationFrame(frame);
 }
 // (ticket 525, Matthew: "Also need a way to place cave doors --- as objects with nav arrows associated with them."; "world
 // design panel I mean.") A 🕳️ cave passage is a cave door: its own name (uid), and, linked (its card's 🧭, in 🗺️ World design or
@@ -1340,7 +1381,7 @@ function worldKeep() {
   }
   // (a crossing in its square draws the paths that lead somewhere: worldLiveWays,
   // as a setting of its own, so its cached drawing knows when they change)
-  if (sq && cell.kind === "crossing") { const live = worldLiveWays(W, W.at).join(","); if (B.crossLive !== live) B.crossLive = live; }
+  if (sq && isCross(cell.kind)) { const live = worldLiveWays(W, W.at).join(","); if (B.crossLive !== live) B.crossLive = live; }
   else if (B.crossLive !== undefined) delete B.crossLive;
   instanceKeep(W);
 }
@@ -1407,7 +1448,7 @@ function worldTrimEdges(W, keys = worldKeys(W)) {
   let gone = 0;
   for (const key of keys) {
     const c = W.cells[key];
-    if (!c || c.kind === "crossing" || !Array.isArray(c.ways)) continue;
+    if (!c || isCross(c.kind) || !Array.isArray(c.ways)) continue;
     const keep = c.ways.filter(d => !worldOffMap(W, key, d) || (c.links && c.links[d]));   // (ticket 406: a linked way leads off this world on purpose)
     gone += c.ways.length - keep.length; c.ways = keep;
   }
@@ -1423,7 +1464,7 @@ function worldPut(key, kind, o = null) {
   if (W.cells[key]) passagesUnlinkInto(W.id, key);
   const own = {};
   if (from) for (const [k, v] of Object.entries(fromOwn)) { const when = SHOWN_WHEN["background." + k]; if (when && when(view(kind)) && !when(view(from.kind))) own[k] = structuredClone(v); }
-  W.cells[key] = kind === "crossing" ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", things }
+  W.cells[key] = isCross(kind) ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", crossCave: "stone", things }
                                      : { kind, ways: worldUsualWays(kind), things, ...(w ? { [w]: which } : {}), ...(Object.keys(own).length ? { own } : {}) };   // (ticket 524: which one)
   if (pk && W.off) { delete W.off[pk]; passagesRemap(W.id, k => k, { off: pk, key, kind }); }
   worldTrimEdges(W, [key]);   // (ticket 232: its usual ways, but none off the edge where it is put)
