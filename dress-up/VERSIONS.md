@@ -4,6 +4,11 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.435 (2026-10-25)
+
+Everything in 0.0.434, plus a fix:
+
+- **🌲 In the forest clearing, the path toward us is under the friend again.** A second copy of it, left from when it was a doorway, was painted over the friend's legs.
 ## 0.0.434 (2026-10-25)
 
 Everything in 0.0.433, plus:
