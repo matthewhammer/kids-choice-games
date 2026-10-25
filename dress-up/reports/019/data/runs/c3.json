@@ -1,0 +1,17 @@
+{
+ "old": "/home/matthew/kids-choice-games/dress-up/index.html",
+ "new": "/home/matthew/kcg-564b/dress-up/index.html",
+ "cases": 12570,
+ "identical": 12570,
+ "differ": 0,
+ "threwOnOneSide": 0,
+ "threwOnBoth": 0,
+ "threwOnBothFirst": [],
+ "nothingDrawn": 0,
+ "sameStructure": true,
+ "charsCompared": 162124998,
+ "seconds": 640,
+ "firstDifferences": [],
+ "threw": [],
+ "ninjaGemCases": 5184
+}

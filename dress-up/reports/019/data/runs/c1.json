@@ -1,0 +1,17 @@
+{
+ "old": "0.0.428 (fad0545)",
+ "new": "commit 1 (one namer for ids)",
+ "cases": 12570,
+ "identical": 12570,
+ "differ": 0,
+ "threwOnOneSide": 0,
+ "threwOnBoth": 0,
+ "threwOnBothFirst": [],
+ "nothingDrawn": 0,
+ "sameStructure": true,
+ "charsCompared": 162124998,
+ "seconds": 638,
+ "firstDifferences": [],
+ "threw": [],
+ "ninjaGemCases": 5184
+}

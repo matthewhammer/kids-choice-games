@@ -1,0 +1,410 @@
+{
+ "base": "fad05453e54abae24ceae51757ce61e86445cacc",
+ "noise": {
+  "cases": 12570,
+  "identical": 12570,
+  "differ": 0,
+  "threwOnOneSide": 0,
+  "threwOnBoth": 0,
+  "threwOnBothFirst": [],
+  "nothingDrawn": 0,
+  "sameStructure": true,
+  "charsCompared": 162124998,
+  "seconds": 638,
+  "firstDifferences": [],
+  "threw": [],
+  "ninjaGemCases": 5184
+ },
+ "commits": [
+  {
+   "title": "One namer for ids made from content, and the proof as a tool",
+   "short": "one namer for ids",
+   "why": "A drawing's clip paths need ids, and ticket 274's rule names them by what they hold, never by chance, so the same settings draw the same text. The hash that makes such a name was written twice: in the ninja's clips and in drawNow's clips for walking through a door. A crown's gem with a shine, or any new drawing with a clip, would have needed a third copy.",
+   "moved": [
+    "{fn:shapeId} (an id from a prefix and a hash of the text) and {fn:shapeClip} (a clip path of one path, named so) are new in js/02-helpers.js, with ticket 274's note;",
+    "`ninjaClip` in js/06-costumes.js is gone: the ninja's slit, band and shine clips call {fn:shapeClip};",
+    "the door clips (`fig-clip-…`) in {fn:drawNow}, js/18-drawing.js, call {fn:shapeId} in place of their own copy of the hash;",
+    "`tools/same_friend.mjs` is new, the proof below; the agent instructions (The safety net; Testing: without a browser; The settings decide the picture; the ninja's clips) and tools/README.md say where both are."
+   ],
+   "proofNote": "The door clips are set on the page's own elements, outside drawNow's text, so the new namer was also checked against the old hash on 20,000 strings: the same ids, all 20,000.",
+   "sha": "a9b0f33d23618581a0fc1c80c926990cda27fa4a",
+   "subject": "Dress Up: one namer for ids made from content, and a proof that runs in node (ticket 564)",
+   "files": [
+    "agent-instructions.md",
+    "dress-up/js/02-helpers.js",
+    "dress-up/js/06-costumes.js",
+    "dress-up/js/18-drawing.js",
+    "tools/README.md",
+    "tools/same_friend.mjs"
+   ],
+   "stat": "6 files changed, 127 insertions(+), 11 deletions(-)",
+   "summary": {
+    "cases": 12570,
+    "identical": 12570,
+    "differ": 0,
+    "threwOnOneSide": 0,
+    "threwOnBoth": 0,
+    "threwOnBothFirst": [],
+    "nothingDrawn": 0,
+    "sameStructure": true,
+    "charsCompared": 162124998,
+    "seconds": 638,
+    "firstDifferences": [],
+    "threw": [],
+    "ninjaGemCases": 5184
+   }
+  },
+  {
+   "title": "The gem, any drawing's",
+   "short": "the gem",
+   "why": "The ninja's gem (tickets 557 and 560) was a general gem in all but its name: a stone, a shape, a middle, a size and its lights. Its functions were named and kept as the ninja's, set in the ninja's gold, marked as the ninja's piece, with outline widths right only at the forehead's size. Matthew's three scenarios all want it elsewhere.",
+   "moved": [
+    "the stones and shapes, `NINJA_GEMS` and `NINJA_GEM_SHAPES` in js/01-state.js, are {fn:GEMSTONES} and {fn:GEMSTONE_SHAPES}, in a section of their own just before the ninja's, with a new {fn:GOLD} (the gold, its outline and its light), which the ninja's gold ({fn:NINJA}) and the crown ({fn:crownSvg}) now read: the same three colours as before;",
+    "the gem's code, 120 lines in js/06-costumes.js, is a section of its own at the end of js/02-helpers.js, GEMS, under general names: `ninjaGemSvg` is {fn:gemSvg}, `ninjaGemSide` {fn:gemSideSvg}, `ninjaGemLights` {fn:gemLights}, `ninjaCut` {fn:gemCut}, `ninjaGemPath` {fn:gemstonePath}, `NINJA_GEM_CUTS` {fn:GEMSTONE_CUTS}, `ninjaGemTones` {fn:gemstoneTones}, `NINJA_GEM_REACH` {fn:GEMSTONE_REACH}, `ninjaRing` {fn:gemRing}, `ninjaStar` {fn:gemStarPath}, and the constants `GEM_CUT_PX`, `GEM_GLIMMER_S`, `GEM_SHINE_S`; its notes, Matthew's words from tickets 557 and 560 among them, moved with it;",
+    "a `look` says how a caller names and sets its gem ({fn:GEM_LOOK}: `mark`, the attribute on its group; `ids`, its clip's prefix; `set`, the metal it sits in, or null for a loose stone); the ninja's is {fn:NINJA_GEM_LOOK} (`data-ninja=\"gem\"`, \"ninja-\", the band's gold), and {fn:ninjaGemFx} still turns the ninja's settings into its lights, beside its head band in js/06-costumes.js;",
+    "the outline's width and the side view's widths and offsets are in proportion to the gem's size (at the ninja's sizes, 10 facing us and 11 from the side, they are the very numbers it drew before), so the same gem can be small on a forehead or big on a chest;",
+    "the 🐯 Costume tab's two rows read the new tables; the ninja's settings keep their names (`ninjaGem`, `ninjaGemShape`, `ninjaGlimmer`, `ninjaGemStars`, `ninjaGemShine`), as saved files have them; `tools/checks/ninja557.mjs` reads the new table names; the agent instructions' ninja section names the new functions, and a recipe, **A gem**, says how to call it."
+   ],
+   "proofNote": "Of the 12,570, 5,184 draw the ninja's gem: every stone, shape and mix of lights, in six views, on three heads.",
+   "sha": "93bedf4e32e7d7b1a32b4be832a10a87e71f75cf",
+   "subject": "Dress Up: the ninja's gem is any drawing's gem, gemSvg and gemSideSvg (ticket 564)",
+   "files": [
+    "agent-instructions.md",
+    "dress-up/js/01-state.js",
+    "dress-up/js/02-helpers.js",
+    "dress-up/js/06-costumes.js",
+    "dress-up/js/08-body.js",
+    "dress-up/js/20-controls.js",
+    "tools/checks/ninja557.mjs"
+   ],
+   "stat": "7 files changed, 175 insertions(+), 145 deletions(-)",
+   "summary": {
+    "cases": 12570,
+    "identical": 12570,
+    "differ": 0,
+    "threwOnOneSide": 0,
+    "threwOnBoth": 0,
+    "threwOnBothFirst": [],
+    "nothingDrawn": 0,
+    "sameStructure": true,
+    "charsCompared": 162124998,
+    "seconds": 639,
+    "firstDifferences": [],
+    "threw": [],
+    "ninjaGemCases": 5184
+   }
+  },
+  {
+   "title": "What each costume wears for the shirt and pants",
+   "short": "COSTUME_CLOTHES",
+   "why": "A costume worn in the friend's own clothes replaces the shirt and pants, so every pose, facing and animation draws it (the gnome's recipe, ticket 431). Fourteen costumes did so with an `if` each, in the middle of the costume flags in {fn:drawNow}. Two costumes at once (ticket 562) needs one place to say whose clothes are worn, and a new costume's clothes should be one entry.",
+   "moved": [
+    "the fourteen `if`s in {fn:drawNow} (js/18-drawing.js) are one line, which looks the costume up in {fn:COSTUME_CLOTHES};",
+    "{fn:COSTUME_CLOTHES} is new in js/06-costumes.js, beside the costumes' other tables: an entry per costume (the witch, the queen, the king, the knight, Robin Hood, the monk or dryad, the wizard, the gnome, the fairy, the scuba suit, the old diving suit, the robot, the cowgirl, the cowboy, the ninja), each taking the costume's settings and the friend's own shirt and pants and giving the two it wears, each with a note of its ticket;",
+    "drawNow keeps the flags and values it uses later (the robot's `R`, the cowboy's `W`, the fairy's tunic, the witch's few webs); the robot's and the cowboy's entries work out their own, a few object lookups more per drawing;",
+    "the agent instructions (how a costume is built; the ninja) say where a costume's clothes are now."
+   ],
+   "proofNote": "Every costume with clothes of its own is in the cases, in every view, pose and animation, and each of its rows in turn (the witch's few webs, the gnome man and woman, the dryad, each fairy tunic, every robot and cowboy style).",
+   "sha": "aff2b9dc2aaffe892ab6276311086bf395bb4333",
+   "subject": "Dress Up: what each costume wears for the shirt and pants, one table, COSTUME_CLOTHES (ticket 564)",
+   "files": [
+    "agent-instructions.md",
+    "dress-up/js/06-costumes.js",
+    "dress-up/js/18-drawing.js"
+   ],
+   "stat": "3 files changed, 56 insertions(+), 39 deletions(-)",
+   "summary": {
+    "cases": 12570,
+    "identical": 12570,
+    "differ": 0,
+    "threwOnOneSide": 0,
+    "threwOnBoth": 0,
+    "threwOnBothFirst": [],
+    "nothingDrawn": 0,
+    "sameStructure": true,
+    "charsCompared": 162124998,
+    "seconds": 640,
+    "firstDifferences": [],
+    "threw": [],
+    "ninjaGemCases": 5184
+   }
+  }
+ ],
+ "sensitivity": {
+  "ruby": {
+   "cases": 867,
+   "identical": 145,
+   "differ": 722,
+   "threwOnOneSide": 0,
+   "threwOnBoth": 0,
+   "threwOnBothFirst": [],
+   "nothingDrawn": 0,
+   "sameStructure": true,
+   "charsCompared": 1763712,
+   "seconds": 68,
+   "firstDifferences": [
+    [
+     "ninja · ninjaGem=ruby · front",
+     8528,
+     "8 A10 10 0 1 0 110 72.8 A10 10 0 1 0 90 72.8 Z\" fill=\"#d0103a\"/><path d=\"M100 67.8 L104.3 70.3 L105 64.1 Z M104.3 70.3 L104.3 75.3 L110 72.8",
+     "8 A10 10 0 1 0 110 72.8 A10 10 0 1 0 90 72.8 Z\" fill=\"#d0103b\"/><path d=\"M100 67.8 L104.3 70.3 L105 64.1 Z M104.3 70.3 L104.3 75.3 L110 72.8"
+    ],
+    [
+     "ninja · ninjaGem=ruby · left",
+     10121,
+     "h d=\"M22 57.8 L15.4 64.4 L15.4 73.2 L22 79.8 Z\" fill=\"#be0e35\"/><path d=\"M22 57.8 L15.4 64.4 L22 68.8 Z\" fill=\"#e54063\"/><path d=\"M22 68.8 L",
+     "h d=\"M22 57.8 L15.4 64.4 L15.4 73.2 L22 79.8 Z\" fill=\"#be0e36\"/><path d=\"M22 57.8 L15.4 64.4 L22 68.8 Z\" fill=\"#e54064\"/><path d=\"M22 68.8 L"
+    ],
+    [
+     "ninja gem ruby round fx0 · front · head0",
+     8528,
+     "8 A10 10 0 1 0 110 72.8 A10 10 0 1 0 90 72.8 Z\" fill=\"#d0103a\"/><path d=\"M100 67.8 L104.3 70.3 L105 64.1 Z M104.3 70.3 L104.3 75.3 L110 72.8",
+     "8 A10 10 0 1 0 110 72.8 A10 10 0 1 0 90 72.8 Z\" fill=\"#d0103b\"/><path d=\"M100 67.8 L104.3 70.3 L105 64.1 Z M104.3 70.3 L104.3 75.3 L110 72.8"
+    ],
+    [
+     "ninja gem ruby round fx0 · front · head1",
+     8495,
+     "9 A10 10 0 1 0 110 60.9 A10 10 0 1 0 90 60.9 Z\" fill=\"#d0103a\"/><path d=\"M100 55.9 L104.3 58.4 L105 52.3 Z M104.3 58.4 L104.3 63.4 L110 60.9",
+     "9 A10 10 0 1 0 110 60.9 A10 10 0 1 0 90 60.9 Z\" fill=\"#d0103b\"/><path d=\"M100 55.9 L104.3 58.4 L105 52.3 Z M104.3 58.4 L104.3 63.4 L110 60.9"
+    ],
+    [
+     "ninja gem ruby round fx0 · front · head2",
+     8474,
+     "90 71 A10 10 0 1 0 110 71 A10 10 0 1 0 90 71 Z\" fill=\"#d0103a\"/><path d=\"M100 66 L104.3 68.5 L105 62.3 Z M104.3 68.5 L104.3 73.5 L110 71 Z M",
+     "90 71 A10 10 0 1 0 110 71 A10 10 0 1 0 90 71 Z\" fill=\"#d0103b\"/><path d=\"M100 66 L104.3 68.5 L105 62.3 Z M104.3 68.5 L104.3 73.5 L110 71 Z M"
+    ],
+    [
+     "ninja gem ruby round fx0 · left · head0",
+     10121,
+     "h d=\"M22 57.8 L15.4 64.4 L15.4 73.2 L22 79.8 Z\" fill=\"#be0e35\"/><path d=\"M22 57.8 L15.4 64.4 L22 68.8 Z\" fill=\"#e54063\"/><path d=\"M22 68.8 L",
+     "h d=\"M22 57.8 L15.4 64.4 L15.4 73.2 L22 79.8 Z\" fill=\"#be0e36\"/><path d=\"M22 57.8 L15.4 64.4 L22 68.8 Z\" fill=\"#e54064\"/><path d=\"M22 68.8 L"
+    ],
+    [
+     "ninja gem ruby round fx0 · left · head1",
+     10075,
+     "\"M22.2 45.9 L15.6 52.5 L15.6 61.3 L22.2 67.9 Z\" fill=\"#be0e35\"/><path d=\"M22.2 45.9 L15.6 52.5 L22.2 56.9 Z\" fill=\"#e54063\"/><path d=\"M22.2 ",
+     "\"M22.2 45.9 L15.6 52.5 L15.6 61.3 L22.2 67.9 Z\" fill=\"#be0e36\"/><path d=\"M22.2 45.9 L15.6 52.5 L22.2 56.9 Z\" fill=\"#e54064\"/><path d=\"M22.2 "
+    ],
+    [
+     "ninja gem ruby round fx0 · left · head2",
+     10089,
+     "/><path d=\"M13.6 56 L7 62.6 L7 71.4 L13.6 78 Z\" fill=\"#be0e35\"/><path d=\"M13.6 56 L7 62.6 L13.6 67 Z\" fill=\"#e54063\"/><path d=\"M13.6 67 L7 7",
+     "/><path d=\"M13.6 56 L7 62.6 L7 71.4 L13.6 78 Z\" fill=\"#be0e36\"/><path d=\"M13.6 56 L7 62.6 L13.6 67 Z\" fill=\"#e54064\"/><path d=\"M13.6 67 L7 7"
+    ],
+    [
+     "ninja gem ruby round fx0 · right · head0",
+     10071,
+     "\"M178 57.8 L184.6 64.4 L184.6 73.2 L178 79.8 Z\" fill=\"#be0e35\"/><path d=\"M178 57.8 L184.6 64.4 L178 68.8 Z\" fill=\"#e54063\"/><path d=\"M178 68",
+     "\"M178 57.8 L184.6 64.4 L184.6 73.2 L178 79.8 Z\" fill=\"#be0e36\"/><path d=\"M178 57.8 L184.6 64.4 L178 68.8 Z\" fill=\"#e54064\"/><path d=\"M178 68"
+    ],
+    [
+     "ninja gem ruby round fx0 · right · head1",
+     10025,
+     "7.8 45.9 L184.4 52.5 L184.4 61.3 L177.8 67.9 Z\" fill=\"#be0e35\"/><path d=\"M177.8 45.9 L184.4 52.5 L177.8 56.9 Z\" fill=\"#e54063\"/><path d=\"M17",
+     "7.8 45.9 L184.4 52.5 L184.4 61.3 L177.8 67.9 Z\" fill=\"#be0e36\"/><path d=\"M177.8 45.9 L184.4 52.5 L177.8 56.9 Z\" fill=\"#e54064\"/><path d=\"M17"
+    ],
+    [
+     "ninja gem ruby round fx0 · right · head2",
+     10043,
+     "h d=\"M186.4 56 L193 62.6 L193 71.4 L186.4 78 Z\" fill=\"#be0e35\"/><path d=\"M186.4 56 L193 62.6 L186.4 67 Z\" fill=\"#e54063\"/><path d=\"M186.4 67",
+     "h d=\"M186.4 56 L193 62.6 L193 71.4 L186.4 78 Z\" fill=\"#be0e36\"/><path d=\"M186.4 56 L193 62.6 L186.4 67 Z\" fill=\"#e54064\"/><path d=\"M186.4 67"
+    ],
+    [
+     "ninja gem ruby round fx0 · frontleft · head0",
+     9184,
+     ".8 A10 10 0 1 0 96 72.8 A10 10 0 1 0 76 72.8 Z\" fill=\"#d0103a\"/><path d=\"M86 67.8 L90.3 70.3 L91 64.1 Z M90.3 70.3 L90.3 75.3 L96 72.8 Z M90",
+     ".8 A10 10 0 1 0 96 72.8 A10 10 0 1 0 76 72.8 Z\" fill=\"#d0103b\"/><path d=\"M86 67.8 L90.3 70.3 L91 64.1 Z M90.3 70.3 L90.3 75.3 L96 72.8 Z M90"
+    ],
+    [
+     "ninja gem ruby round fx0 · frontleft · head1",
+     9151,
+     ".9 A10 10 0 1 0 96 60.9 A10 10 0 1 0 76 60.9 Z\" fill=\"#d0103a\"/><path d=\"M86 55.9 L90.3 58.4 L91 52.3 Z M90.3 58.4 L90.3 63.4 L96 60.9 Z M90",
+     ".9 A10 10 0 1 0 96 60.9 A10 10 0 1 0 76 60.9 Z\" fill=\"#d0103b\"/><path d=\"M86 55.9 L90.3 58.4 L91 52.3 Z M90.3 58.4 L90.3 63.4 L96 60.9 Z M90"
+    ],
+    [
+     "ninja gem ruby round fx0 · frontleft · head2",
+     9130,
+     "M76 71 A10 10 0 1 0 96 71 A10 10 0 1 0 76 71 Z\" fill=\"#d0103a\"/><path d=\"M86 66 L90.3 68.5 L91 62.3 Z M90.3 68.5 L90.3 73.5 L96 71 Z M90.3 7",
+     "M76 71 A10 10 0 1 0 96 71 A10 10 0 1 0 76 71 Z\" fill=\"#d0103b\"/><path d=\"M86 66 L90.3 68.5 L91 62.3 Z M90.3 68.5 L90.3 73.5 L96 71 Z M90.3 7"
+    ],
+    [
+     "ninja gem ruby round fx0 · frontright · head0",
+     9161,
+     " A10 10 0 1 0 124 72.8 A10 10 0 1 0 104 72.8 Z\" fill=\"#d0103a\"/><path d=\"M114 67.8 L118.3 70.3 L119 64.1 Z M118.3 70.3 L118.3 75.3 L124 72.8",
+     " A10 10 0 1 0 124 72.8 A10 10 0 1 0 104 72.8 Z\" fill=\"#d0103b\"/><path d=\"M114 67.8 L118.3 70.3 L119 64.1 Z M118.3 70.3 L118.3 75.3 L124 72.8"
+    ],
+    [
+     "ninja gem ruby round fx0 · frontright · head1",
+     9128,
+     " A10 10 0 1 0 124 60.9 A10 10 0 1 0 104 60.9 Z\" fill=\"#d0103a\"/><path d=\"M114 55.9 L118.3 58.4 L119 52.3 Z M118.3 58.4 L118.3 63.4 L124 60.9",
+     " A10 10 0 1 0 124 60.9 A10 10 0 1 0 104 60.9 Z\" fill=\"#d0103b\"/><path d=\"M114 55.9 L118.3 58.4 L119 52.3 Z M118.3 58.4 L118.3 63.4 L124 60.9"
+    ],
+    [
+     "ninja gem ruby round fx0 · frontright · head2",
+     9107,
+     "4 71 A10 10 0 1 0 124 71 A10 10 0 1 0 104 71 Z\" fill=\"#d0103a\"/><path d=\"M114 66 L118.3 68.5 L119 62.3 Z M118.3 68.5 L118.3 73.5 L124 71 Z M",
+     "4 71 A10 10 0 1 0 124 71 A10 10 0 1 0 104 71 Z\" fill=\"#d0103b\"/><path d=\"M114 66 L118.3 68.5 L119 62.3 Z M118.3 68.5 L118.3 73.5 L124 71 Z M"
+    ],
+    [
+     "ninja gem ruby round fx1 · front · head0",
+     8528,
+     "8 A10 10 0 1 0 110 72.8 A10 10 0 1 0 90 72.8 Z\" fill=\"#d0103a\"/><path d=\"M100 67.8 L104.3 70.3 L105 64.1 Z M104.3 70.3 L104.3 75.3 L110 72.8",
+     "8 A10 10 0 1 0 110 72.8 A10 10 0 1 0 90 72.8 Z\" fill=\"#d0103b\"/><path d=\"M100 67.8 L104.3 70.3 L105 64.1 Z M104.3 70.3 L104.3 75.3 L110 72.8"
+    ],
+    [
+     "ninja gem ruby round fx1 · front · head1",
+     8495,
+     "9 A10 10 0 1 0 110 60.9 A10 10 0 1 0 90 60.9 Z\" fill=\"#d0103a\"/><path d=\"M100 55.9 L104.3 58.4 L105 52.3 Z M104.3 58.4 L104.3 63.4 L110 60.9",
+     "9 A10 10 0 1 0 110 60.9 A10 10 0 1 0 90 60.9 Z\" fill=\"#d0103b\"/><path d=\"M100 55.9 L104.3 58.4 L105 52.3 Z M104.3 58.4 L104.3 63.4 L110 60.9"
+    ],
+    [
+     "ninja gem ruby round fx1 · front · head2",
+     8474,
+     "90 71 A10 10 0 1 0 110 71 A10 10 0 1 0 90 71 Z\" fill=\"#d0103a\"/><path d=\"M100 66 L104.3 68.5 L105 62.3 Z M104.3 68.5 L104.3 73.5 L110 71 Z M",
+     "90 71 A10 10 0 1 0 110 71 A10 10 0 1 0 90 71 Z\" fill=\"#d0103b\"/><path d=\"M100 66 L104.3 68.5 L105 62.3 Z M104.3 68.5 L104.3 73.5 L110 71 Z M"
+    ]
+   ],
+   "threw": [],
+   "ninjaGemCases": 864
+  },
+  "robin": {
+   "cases": 167,
+   "identical": 0,
+   "differ": 167,
+   "threwOnOneSide": 0,
+   "threwOnBoth": 0,
+   "threwOnBothFirst": [],
+   "nothingDrawn": 0,
+   "sameStructure": true,
+   "charsCompared": 0,
+   "seconds": 6,
+   "firstDifferences": [
+    [
+     "robin · stand · front",
+     1745,
+     "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+     "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+    ],
+    [
+     "robin · sit · front",
+     1927,
+     " -9.6,173.2 -9.6,240.7 -67.6,240.7 -67.6,168.1\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><path d=\"M18.3 1",
+     " -9.6,173.2 -9.6,240.7 -67.6,240.7 -67.6,168.1\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><path d=\"M18.3 1"
+    ],
+    [
+     "robin · meditate · front",
+     1583,
+     "-51.6,169 -27.1,157.8 -39.1,214.6 -151.5,174.2\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+     "-51.6,169 -27.1,157.8 -39.1,214.6 -151.5,174.2\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+    ],
+    [
+     "robin · dance · front",
+     1867,
+     "37.3,216.1 -24.9,274.2 -81.7,286.3 -98.4,207.5\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+     "37.3,216.1 -24.9,274.2 -81.7,286.3 -98.4,207.5\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+    ],
+    [
+     "robin · hug · front",
+     1927,
+     "8 -9.1,170.2 4.3,233.1 -52.5,245.2 -68.2,171.2\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><path d=\"M18.3 1",
+     "8 -9.1,170.2 4.3,233.1 -52.5,245.2 -68.2,171.2\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><path d=\"M18.3 1"
+    ],
+    [
+     "robin · lie · front",
+     1694,
+     "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+     "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+    ],
+    [
+     "robin · stand · left",
+     1270,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\"",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\""
+    ],
+    [
+     "robin · sit · left",
+     1338,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-73 152.4 L-73 222.4\" ",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-73 152.4 L-73 222.4\" "
+    ],
+    [
+     "robin · meditate · left",
+     1012,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-69.6 171.6 L-1.1 186.",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-69.6 171.6 L-1.1 186."
+    ],
+    [
+     "robin · dance · left",
+     1356,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\"",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\""
+    ],
+    [
+     "robin · hug · left",
+     1367,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-73 152.4 L-58.4 220.9",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-73 152.4 L-58.4 220.9"
+    ],
+    [
+     "robin · lie · left",
+     1217,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\"",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M-3 150 L-3 220 L-3 290\" fill=\""
+    ],
+    [
+     "robin · stand · right",
+     1266,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non"
+    ],
+    [
+     "robin · sit · right",
+     1318,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L73 152.4 L73 222.4\" fil",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L73 152.4 L73 222.4\" fil"
+    ],
+    [
+     "robin · meditate · right",
+     1010,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L69.6 171.6 L-0.3 176.5\"",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L69.6 171.6 L-0.3 176.5\""
+    ],
+    [
+     "robin · dance · right",
+     1303,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non"
+    ],
+    [
+     "robin · hug · right",
+     1347,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L73 152.4 L58.4 220.9\" f",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L73 152.4 L58.4 220.9\" f"
+    ],
+    [
+     "robin · lie · right",
+     1213,
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non",
+     "2\" y=\"140\" width=\"74.4\" height=\"34.6\" rx=\"12.3\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\"/><path d=\"M3 150 L3 220 L3 290\" fill=\"non"
+    ],
+    [
+     "robin · stand · back",
+     1252,
+     "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+     "8,140 58,140 64,290 6,290 0,190 -6,290 -64,290\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+    ],
+    [
+     "robin · sit · back",
+     1434,
+     " -9.6,173.2 -9.6,240.7 -67.6,240.7 -67.6,168.1\" fill=\"#5a3d22\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part",
+     " -9.6,173.2 -9.6,240.7 -67.6,240.7 -67.6,168.1\" fill=\"#5a3d23\" stroke=\"#322213\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/></g><g data-part"
+    ]
+   ],
+   "threw": [],
+   "ninjaGemCases": 0
+  },
+  "words": "Yes. Against a copy of the release with the ruby's colour changed in its last hex digit (`#d0103a` to `#d0103b`), the ruby's 867 cases gave 722 different and 145 identical: the 145 are the views from behind, where the gem is not drawn (the clasp is). With Robin Hood's hose one digit browner (`#5a3d22` to `#5a3d23`), all 167 of Robin's cases differed."
+ },
+ "tool": "tools/same_friend.mjs",
+ "where": "node 22.23 on the Ubuntu laptop (Intel i7, 13th generation; Ubuntu 24.04), one job at a time, under nice"
+}
