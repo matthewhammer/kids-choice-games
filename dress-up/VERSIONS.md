@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.434 (2026-10-25)
+
+Everything in 0.0.433, plus:
+
+- **🧪 measures the caves.** The speed test in ⚙️ Advanced now goes to 🪨 the cave behind the falls and 🦇 the cave room too: each standing with nothing put there, and how many of its parts move, then walking with 0, 1, 2 and 4 pots over fires. 33 passes, about 106 seconds.
+- **Ready to re-mix (inside the game, nothing to see).** The ids a drawing makes from what it draws come from one namer; the ninja's gem is the gem any drawing uses; what each costume wears for its shirt and pants is one table. Every friend draws exactly as before (12,570 checked), as ^du_report(19) explains.
 ## 0.0.433 (2026-10-25)
 
 Everything in 0.0.432, plus a way in for a new player:
