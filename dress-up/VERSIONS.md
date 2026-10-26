@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.445 (2026-10-26)
+
+Everything in 0.0.444, plus two levels:
+
+- **🧱 A ledge, a level up,** across the back of a dungeon room (🗺️ World design: none, stairs in the middle, or stairs at both ends). Its face is a wall the friend cannot walk through: up and down only by its stairs, and a tap up on the ledge walks round by them. Up on it, the friend stands behind its face.
+- **The dungeon room's side walls stand in the way,** open only where a way goes out east or west: the friend no longer walks over them.
+
 ## 0.0.444 (2026-10-26)
 
 Everything in 0.0.443, plus floors below:

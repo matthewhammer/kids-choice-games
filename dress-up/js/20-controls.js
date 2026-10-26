@@ -1278,6 +1278,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),
   "background.crossCave": b => b.kind === "cavecross" || b.kind === "dungeon",
   "background.crossHole": b => b.kind === "dungeon",
+  "background.crossLedge": b => b.kind === "dungeon",
   "background.things": b => b.kind !== "none",
   "background.thingsSolid": b => b.kind !== "none" && (b.things || []).length > 0,   // (ticket 283)
   // (a tent's door looks out on the camp: its time of day and its fire)
@@ -2224,7 +2225,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             const pick = (attr, now, opts, set) => opts.map(([v, name]) => el("button", { "aria-pressed": String(now === v), [attr]: v,
               onclick: e => { set(v); for (const b of e.currentTarget.parentNode.querySelectorAll(`[${attr}]`)) b.setAttribute("aria-pressed", String(b.getAttribute(attr) === v)); changed(); } }, name));
             const others = worldsAll().filter(T => T !== W), below = holeBelow(W, W.at);
-            return [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🕳️ a hole in the floor:"),
+            return [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🧱 a ledge, a level up:"),
+                ...pick("data-ledge", state.background.crossLedge || "", [["", "none"], ...Object.entries(DUNGEON_LEDGES)], v => { state.background.crossLedge = v; })]),
+              el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🕳️ a hole in the floor:"),
                 ...pick("data-hole-at", state.background.crossHole || "", [["", "none"], ["left", "⬅️ left"], ["middle", "⬆️ middle"], ["right", "➡️ right"]], v => { state.background.crossHole = v; })]),
               el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, `⬇️ this world's floor below (holes drop there${below ? ", to " + squareName(W.at) : W.below ? "; it has no square " + squareName(W.at) : ""}):`),
                 ...pick("data-below", W.below || "", [["", "none"], ...others.map(T => [T.id, "🌍 " + worldTitle(T)])], v => { if (v) W.below = v; else delete W.below; })])];

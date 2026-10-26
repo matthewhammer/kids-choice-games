@@ -4029,6 +4029,12 @@ function dungeonGeom({ x0, x1, y0, y1, g, k }) {
 const DUNGEON_TILE = 46;
 // (ticket 622) where a dungeon room's hole can be: across, as a share of the picture's width; down, from the floor's middle
 const DUNGEON_HOLES = { left: [-0.22, 30], middle: [0, -60], right: [0.22, 30] };
+// (ticket 623) a dungeon room's ledge: its top's front edge (ly), its face's height (fh), and its stairs, [left, right] each
+const DUNGEON_LEDGES = { middle: "⬆️ at the back, stairs in the middle", ends: "⬆️ at the back, stairs at both ends" };
+function dungeonLedge(G, k, ledge) {
+  const ly = G.fy0 + 118 * k, fh = 36 * k, w = 96 * k;
+  return { ly, fh, stairs: ledge === "ends" ? [[G.fx0, G.fx0 + w], [G.fx1 - w, G.fx1]] : [[-w / 2, w / 2]] };
+}
 function dungeonScene(c) {
   const { x0, y0, x1, y1, W, k, pad, R, grad, all, o } = c;
   const G = dungeonGeom(c), { sw, fx0, fx1, fy0, fy1, cy } = G, look = CAVE_LOOK[o.crossCave] ? o.crossCave : "stone", L = CAVE_LOOK[look];
@@ -4118,6 +4124,46 @@ function dungeonScene(c) {
     }
     return t;
   });
+  // (ticket 623) the side walls stand in the way, as a dungeon's do: unseen boxes over them (named "ledge, …", which stand:
+  // 16-objects-and-solids.js), open where a way goes out east or west; sorted far back, so nothing is drawn over the friend
+  s += SEP + part("dg-sides", [c.F, has("E"), has("W"), x0, x1], () => {
+    let t = "";
+    for (const [d, a, b] of [["W", x0 - pad, fx0], ["E", fx1, x1 + pad]]) {
+      const spans = has(d) ? [[fy0 - 40 * k, cy - gap], [cy + gap, y1 + pad]] : [[fy0 - 40 * k, y1 + pad]];
+      spans.forEach(([top, bot], i) => { t += obj(`ledge, ${d === "W" ? "west" : "east"} wall ${i + 1}`, fy0 + k, `<rect data-footprint="1" x="${f1(a)}" y="${f1(top)}" width="${f1(b - a)}" height="${f1(bot - top)}" fill="none" stroke="none"/>`); });
+    }
+    return t;
+  });
+  // (ticket 623, Matthew 2026-10-26: "two levels per room") a raised ledge across the back (crossLedge): its top the room's
+  // back part, a little lighter; its face a wall the friend cannot walk through (two objects, "ledge", each marking its
+  // footprint: 16-objects-and-solids.js), but for its stairs, in the middle or at both ends, the only way up and down. A tap
+  // on the ledge from below walks round by the stairs (planPath). The friend up on it is drawn behind the face.
+  const ledge = DUNGEON_LEDGES[o.crossLedge] ? o.crossLedge : "";
+  if (ledge) s += SEP + part("dg-ledge", [c.F, look, ledge, x0, x1], () => {
+    const { ly, fh, stairs } = dungeonLedge(G, k, ledge), steps = 4;
+    let t = `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(fx1 - fx0)}" height="${f1(ly - fy0)}" fill="#ffffff" opacity="0.09"/>` +
+      `<rect x="${f1(fx0)}" y="${f1(ly + fh)}" width="${f1(fx1 - fx0)}" height="${f1(12 * k)}" fill="#000000" opacity="0.22"/>`;
+    // (the stairs: steps down from the ledge's edge to the floor, each lit on its tread)
+    for (const [a, b] of stairs) {
+      for (let i = 0; i < steps; i++) { const y = ly + fh * i / steps;
+        t += `<rect x="${f1(a)}" y="${f1(y)}" width="${f1(b - a)}" height="${f1(fh / steps)}" fill="${mix(L.floor[0], "#ffffff", 0.12 - i * 0.03)}" stroke="${line}" stroke-width="${f1(1.4 * k)}"/>`; }
+      t += `<path d="M${f1(a)} ${f1(ly)}V${f1(ly + fh)}M${f1(b)} ${f1(ly)}V${f1(ly + fh)}" stroke="${line}" stroke-width="${f1(3 * k)}"/>`;
+    }
+    // (the face, either side of each stairs: brick, its top edge lit)
+    const gaps = [[fx0 - sw, fx0], ...stairs, [fx1, fx1 + sw]].sort((p, q) => p[0] - q[0]);
+    for (let i = 0; i + 1 < gaps.length; i++) {
+      const a = gaps[i][1], b = gaps[i + 1][0];
+      if (b - a < 2 * k) continue;
+      let bricks = "";
+      for (let r = 0; r < 2; r++) for (let x = a + (r % 2) * 22 * k; x < b; x += 44 * k) bricks += `M${f1(x)} ${f1(ly + fh * r / 2)}V${f1(ly + fh * (r + 1) / 2)}`;
+      t += obj(`ledge ${i + 1}`, ly + fh, `<rect x="${f1(a)}" y="${f1(ly)}" width="${f1(b - a)}" height="${f1(fh)}" fill="${mix(face, "#000000", 0.1)}" stroke="${line}" stroke-width="${lw}"/>` +
+        `<path d="M${f1(a)} ${f1(ly + fh / 2)}H${f1(b)}${bricks}" stroke="${line}" stroke-width="${f1(1.4 * k)}" opacity="0.6" fill="none"/>` +
+        `<rect x="${f1(a)}" y="${f1(ly - 3 * k)}" width="${f1(b - a)}" height="${f1(6 * k)}" fill="${rim}"/>` +
+        // (its footprint to the picture's edge where it meets a side wall: no way round its end)
+        `<rect data-footprint="1" x="${f1(a <= fx0 + k ? x0 - pad : a)}" y="${f1(ly)}" width="${f1((b >= fx1 - k ? x1 + pad : b) - (a <= fx0 + k ? x0 - pad : a))}" height="${f1(fh)}" fill="none" stroke="none"/>`);
+    }
+    return t;
+  });
   // where a way is shut: wall, as a dungeon's is, and something on it: a carved stone in the north wall's middle; pots in a
   // shut corner; torches on the north wall either side, lit
   s += SEP + part("dg-shut", [c.F, look, on.join(","), x0, x1, sceneLfoKey(o, "fast")], () => {
@@ -4147,8 +4193,8 @@ function dungeonScene(c) {
   // (ticket 622) a hole in the floor, where crossHole puts it: dark, its rim of stones; leading to the floor below (holeLive),
   // a pit the friend falls into (as a castle's: .portal[data-pit], data-hole for enterScene); leading nowhere, a grate over it
   const hole = DUNGEON_HOLES[o.crossHole];
-  if (hole) s += SEP + part("dg-hole", [c.F, look, o.crossHole, o.holeLive || "", x0, x1], () => {
-    const hx = W * hole[0], hy = cy + hole[1] * k, rx = 58 * k, ry = 40 * k, live = o.holeLive === "1";
+  if (hole) s += SEP + part("dg-hole", [c.F, look, o.crossHole, o.holeLive || "", ledge, x0, x1], () => {
+    const hx = W * hole[0], hy = cy + (ledge && o.crossHole === "middle" ? 40 : hole[1]) * k, rx = 58 * k, ry = 40 * k, live = o.holeLive === "1";   // (ticket 623: in front of a ledge)
     let t = `<defs><radialGradient id="bg-dg-hole" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#000000"/><stop offset="0.7" stop-color="#05040a"/><stop offset="1" stop-color="${L.floor[1]}"/></radialGradient></defs>`;
     let pit = `<ellipse cx="${f1(hx)}" cy="${f1(hy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="url(#bg-dg-hole)" stroke="${line}" stroke-width="${f1(3 * k)}"/>`;
     for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2;
