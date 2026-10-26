@@ -745,7 +745,7 @@ const DEFAULTS = {
                 desertFar: "mesas",   // (ticket 501: what the desert has far off, farLayers' mountains)
                 skyWhere: "denver", skyLat: 39.74, skyLon: -104.99, skyYear: 2026, skyMonth: 10, skyDay: 20, skyHour: 20,   // (ticket 490: 🌍 where and when, for a sky by the clock)
                 campTime: "day", fireOn: true, flameSize: 100, campFood: "none", tents: 2, tent: 1,
-                crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossBack: "woods", crossHole: "", crossLedge: "", crossCave: "stone", things: [],
+                crossN: true, crossNE: false, crossE: true, crossSE: false, crossS: true, crossSW: false, crossW: true, crossNW: false, crossFloor: "#76843a", crossBack: "woods", crossHole: "", crossLedge: "", crossOpen: "", crossCave: "stone", things: [],
                 seaMountains: "none", seaForest: "none", seaBeach: false, seaShoreSize: 100,   // (ticket 212: the open water's distant shore, off by default)
                 starShape: "mix", starSize: 100, starBright: 85, starTwinkle: 40,
                 couchSize: 100, pillows: 4, pictures: 3, picDetail: 70, picSize: 100,
@@ -1496,7 +1496,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.447", released: "2026-10-26" };
+const VERSION = { number: "0.0.448", released: "2026-10-26" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

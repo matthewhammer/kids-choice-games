@@ -1284,3 +1284,4 @@ html.lineart .script-log .log-field { background: none; border-color: currentCol
 .world-smooth-dir { display: inline-block; min-width: 1.8em; text-align: center; }
 .world-smooth-row button[data-choice] { min-width: 2.6em; }
 .world-smooth-row button[data-choice]:disabled { opacity: 0.35; }
+.world-smooth-gap { display: inline-block; min-width: 2.6em; }

@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.448 (2026-10-26)
+
+Everything in 0.0.447, plus:
+
+- **🌫️ No wall.** Between two dungeon rooms side by side (north, east, south or west), a way can now have no wall at all: the floor runs on, and the friend runs from one room into the next, the rooms sliding faster, coming out at the same height (or the same place across) they crossed at. 🗺️ World design's four chips for each way: 🚫 wall, 🚪 doorway with a nav arrow, 🎞️ doorway that scrolls, 🌫️ no wall.
+
 ## 0.0.447 (2026-10-26)
 
 Everything in 0.0.446, plus:

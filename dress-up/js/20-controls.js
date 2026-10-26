@@ -2243,9 +2243,13 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             if (inside || !SMOOTH_KINDS.has(at.kind)) return [];
             const dirs = Object.keys(WORLD_DIRS).filter(d => !worldNoWay(at.kind, d) && !worldOffMap(W, W.at, d));
             const nbOf = d => { const nb = worldNeighbour(W, W.at, d), c = W.cells[nb.key]; return c ? { key: nb.key, cell: c } : null; };
-            const stateOf = d => !worldWays(at).includes(d) ? "none" : worldSmoothCan(W, W.at, d) && !(at.smoothOff || []).includes(d) ? "smooth" : "arrow";
+            const stateOf = d => !worldWays(at).includes(d) ? "none" : worldOpen(W, W.at, d) ? "open" : worldSmoothCan(W, W.at, d) && !(at.smoothOff || []).includes(d) ? "smooth" : "arrow";
             const set = (d, v) => {
               const nb = nbOf(d), back = WORLD_OPP[d], linked = at.links && at.links[d];
+              // (no wall: this side and the one facing it, on both squares; the square shown's through its place's setting)
+              state.background.crossOpen = commaSet(state.background.crossOpen, d, v === "open");
+              if (nb) nb.cell.crossOpen = commaSet(nb.cell.crossOpen, back, v === "open");
+              if (v === "open") v = "smooth";
               if (v === "none") { if (linked) worldUnlinkAt(W, W.at, d); else worldWayOff(W, W.at, d); if (nb && !(nb.cell.links && nb.cell.links[back])) worldWayOff(W, nb.key, back); }
               else { worldWayOn(W, W.at, d); if (nb && !linked) worldWayOn(W, nb.key, back);
                 const offs = (at.smoothOff || []).filter(x => x !== d); at.smoothOff = v === "arrow" ? [...offs, d] : offs; if (!at.smoothOff.length) delete at.smoothOff;
@@ -2253,16 +2257,18 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                 else if (nb && v === "arrow") nb.cell.smoothOff = [back]; }
               changed();
             };
-            const CHOICES = [["none", "🚫", "no way: wall"], ["arrow", "🚪", "a nav arrow: step through"], ["smooth", "🎞️", "smooth: the squares slide"]];
-            return [el("div", { class: "world-smooth-ways" }, [el("div", { class: "hint" }, "each way: 🚫 none · 🚪 nav arrow · 🎞️ smooth scroll"),
+            const CHOICES = [["none", "🚫", "no way: wall"], ["arrow", "🚪", "a doorway with a nav arrow: step through"], ["smooth", "🎞️", "a doorway that scrolls: the squares slide"], ["open", "🌫️", "no wall: run from room to room"]];
+            return [el("div", { class: "world-smooth-ways" }, [el("div", { class: "hint" }, "each way: 🚫 wall · 🚪 doorway, nav arrow · 🎞️ doorway, scrolls · 🌫️ no wall"),
               ...dirs.map(d => {
                 const nb = nbOf(d), canSmooth = !!nb && SMOOTH_KINDS.has(nb.cell.kind) && !(at.links && at.links[d]);
                 const row = el("div", { class: "row world-smooth-row", "data-way": d }, [el("span", { class: "world-smooth-dir" }, WORLD_ARROWS[d])]);
                 // (this panel is built again only when the world changes: the chips show the square's state again as one is tapped)
                 const show = () => { const now = stateOf(d); for (const b of row.querySelectorAll("[data-choice]")) b.setAttribute("aria-pressed", String(b.dataset.choice === now)); };
+                const canOpen = canSmooth && at.kind === "dungeon" && nb.cell.kind === "dungeon" && OPEN_DIRS.includes(d);
                 for (const [v, glyph, words] of CHOICES) {
-                  const off = v === "smooth" && !canSmooth;
-                  row.append(el("button", { "data-choice": v, "data-smooth": d, title: d + ": " + (off ? "smooth needs a square beside it, in this world, that scrolls too (a cave crossing or a dungeon room)" : words),
+                  if (v === "open" && !OPEN_DIRS.includes(d)) { row.append(el("span", { class: "world-smooth-gap" })); continue; }   // (a corner has a wall either side: no "no wall")
+                  const off = (v === "smooth" && !canSmooth) || (v === "open" && !canOpen);
+                  row.append(el("button", { "data-choice": v, "data-smooth": d, title: d + ": " + (off ? (v === "open" ? "no wall needs a dungeon room beside it, in this world" : "smooth needs a square beside it, in this world, that scrolls too (a cave crossing or a dungeon room)") : words),
                     ...(off ? { disabled: "" } : {}), onclick: () => { set(d, v); show(); } }, glyph));
                 }
                 show(); return row;

@@ -224,7 +224,7 @@ function worldProblems(W) {
 // What a square keeps of its place, as the Background tab edits it
 // (state.background), so the square opened is the square changed: its
 // things, any place's; and a forest crossing's paths and floor.
-const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave", "crossHole", "crossLedge"];
+const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave", "crossHole", "crossLedge", "crossOpen"];
 // (ticket 524) and an inside an outside has several of: which one it is (INSIDE_WHICH)
 const cellKeys = kind => isCross(kind) ? ["things", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", INSIDE_WHICH[kind]] : ["things"];
 // where the friend comes in, walking into a square from a side: just
@@ -1178,7 +1178,7 @@ function worldWalk(door, here = false) {
   const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: t.cell.kind, worldAt: W.at, worldId: W.id };
   tripStart(door, "walk");
   // (2026-10-25: to a square beside it that scrolls in, the friend walks to the edge and the two pictures slide: worldScroll)
-  if (worldSmooth(W, W.at, d, t)) { walkInto(door, () => {}, true, "step", null, { out: WORLD_DIRS[d], here, smooth: () => worldScroll(d, t, from) }); return; }
+  if (worldSmooth(W, W.at, d, t)) { const open = worldOpen(W, W.at, d); walkInto(door, () => {}, true, "step", null, { out: WORLD_DIRS[d], here, smooth: () => worldScroll(d, t, from, open) }); return; }
   // (ticket 406: through a way linked to another world, into that world, at its square, come in from the side facing back)
   walkInto(door, () => { trips.push(from); if (t.W !== W) worldSwitch(t.W.id, t.key, WORLD_OPP[d], false); else worldEnter(t.key, WORLD_OPP[d], false); }, true, "step", null, { out: WORLD_DIRS[d], here });
 }
@@ -1193,14 +1193,27 @@ function worldWalk(door, here = false) {
 const SMOOTH_KINDS = new Set(["cavecross", "dungeon"]), SCROLL_MS = 650;
 const worldSmoothCan = (W, key, d, t = worldTarget(W, key, d)) => { const c = W.cells[key];
   return !!(c && t && t.W === W && !t.link && SMOOTH_KINDS.has(c.kind) && SMOOTH_KINDS.has(t.cell.kind)); };
-const worldSmooth = (W, key, d, t) => worldSmoothCan(W, key, d, t) && !(W.cells[key].smoothOff || []).includes(d);
-function worldScroll(d, t, from) {
+const worldSmooth = (W, key, d, t) => worldSmoothCan(W, key, d, t) && (worldOpen(W, key, d) || !(W.cells[key].smoothOff || []).includes(d));
+// (Matthew 2026-10-26: "the wall in question is just missing, and we run from room to room, seamlessly") a side with no wall
+// between two dungeon rooms (crossOpen, on both): scrolled too, faster, the friend going on at the height (or across) they
+// crossed at, not brought to the way's spot
+const OPEN_DIRS = ["N", "E", "S", "W"], OPEN_SCROLL_MS = 420;
+const commaHas = (v, d) => String(v || "").split(",").includes(d);
+const commaSet = (v, d, on) => { const xs = String(v || "").split(",").filter(x => x && x !== d); if (on) xs.push(d); return xs.sort().join(","); };
+function worldOpen(W, key, d) {
+  const c = W && W.cells[key], t = c && worldTarget(W, key, d);
+  return !!(c && t && !t.link && t.W === W && OPEN_DIRS.includes(d) && c.kind === "dungeon" && t.cell.kind === "dungeon" && commaHas(c.crossOpen, d));
+}
+function worldScroll(d, t, from, open = false) {
   const B = state.background, body = state.body, [dx, dy] = WORLD_DIRS[d];
   const old = document.getElementById("bg"), vb = pic.viewBox.baseVal, sw = vb.width, sh = vb.height;
   const ways = document.getElementById("ways"), ghost = old && old.cloneNode(true);
   if (ghost) { ghost.removeAttribute("id"); const f = ghost.querySelector("#figure"); if (f) f.remove(); }
   trips.push(from);
   worldEnter(t.key, WORLD_OPP[d], false);
+  // (no wall between: on at the height, or across, where they crossed)
+  if (open) { const B2 = state.background; if (dx) B2.figY = from.figY; else B2.figX = from.figX; }
+  const ms = open ? OPEN_SCROLL_MS : SCROLL_MS;
   body.anim = "walk"; body.facing = dx > 0 ? "right" : dx < 0 ? "left" : dy < 0 ? "back" : "front"; body.turn = "";
   draw();
   const nb = document.getElementById("bg");
@@ -1208,7 +1221,7 @@ function worldScroll(d, t, from) {
   if (ways) ways.style.visibility = "hidden";
   const t0 = performance.now();
   const frame = now => {
-    const u = Math.min(1, (now - t0) / SCROLL_MS), e = u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u), cur = document.getElementById("bg");
+    const u = Math.min(1, (now - t0) / ms), e = u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u), cur = document.getElementById("bg");
     if (ghost) ghost.setAttribute("transform", `translate(${f1(-dx * sw * e)} ${f1(-dy * sh * e)})`);
     if (cur) cur.setAttribute("transform", `translate(${f1(dx * sw * (1 - e))} ${f1(dy * sh * (1 - e))})`);
     if (u < 1) { requestAnimationFrame(frame); return; }
@@ -1490,7 +1503,7 @@ function worldPut(key, kind, o = null) {
   if (W.cells[key]) passagesUnlinkInto(W.id, key);
   const own = {};
   if (from) for (const [k, v] of Object.entries(fromOwn)) { const when = SHOWN_WHEN["background." + k]; if (when && when(view(kind)) && !when(view(from.kind))) own[k] = structuredClone(v); }
-  W.cells[key] = isCross(kind) ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", crossCave: "stone", crossHole: "", crossLedge: "", things }
+  W.cells[key] = isCross(kind) ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", crossCave: "stone", crossHole: "", crossLedge: "", crossOpen: "", things }
                                      : { kind, ways: worldUsualWays(kind), things, ...(w ? { [w]: which } : {}), ...(Object.keys(own).length ? { own } : {}) };   // (ticket 524: which one)
   if (pk && W.off) { delete W.off[pk]; passagesRemap(W.id, k => k, { off: pk, key, kind }); }
   worldTrimEdges(W, [key]);   // (ticket 232: its usual ways, but none off the edge where it is put)

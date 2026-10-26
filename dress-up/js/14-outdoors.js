@@ -4042,15 +4042,19 @@ function dungeonScene(c) {
   const on = typeof o.crossLive === "string" ? o.crossLive.split(",").filter(Boolean) : CROSS_DIRS.map(([d]) => d).filter(d => o["cross" + d]);
   const has = d => on.includes(d), gap = 56 * k, line = mix(L.wall[1], "#000000", 0.35), lw = f1(2 * k);
   const rim = L.rock[2], face = L.wall[0], dark = L.wall[1];
+  // (Matthew 2026-10-26: "yet another kind of smooth scroll, where the wall in question is just missing, and we run from room
+  // to room, seamlessly"; "so we need to distinguish between doorway and -- no wall") a side with no wall (crossOpen: N, E, S
+  // or W, a way that leads somewhere): the floor runs on to the picture's edge, no wall, no doorway, and nothing stands there
+  const open = new Set((typeof o.crossOpen === "string" ? o.crossOpen.split(",") : []).filter(d => d.length === 1 && has(d))), isOpen = d => open.has(d), openKey = [...open].sort().join(",");
   let s = "";
-  // the floor: square tiles, a shade darker at the walls' feet
-  s += SEP + part("dg-floor", [c.F, look, x0, x1], () => {
-    const t0 = DUNGEON_TILE * k;
+  // the floor: square tiles, a shade darker at the walls' feet; to the picture's edge on a side with no wall
+  s += SEP + part("dg-floor", [c.F, look, x0, x1, openKey], () => {
+    const t0 = DUNGEON_TILE * k, ex0 = isOpen("W") ? x0 - pad : fx0, ex1 = isOpen("E") ? x1 + pad : fx1, ey0 = isOpen("N") ? y0 - pad : fy0, ey1 = isOpen("S") ? y1 + pad : fy1;
     let t = `<defs>${grad("bg-dg-floor", L.floor[0], L.floor[1], fy0, fy1)}</defs>` + all(dark) +
-      `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(fx1 - fx0)}" height="${f1(fy1 - fy0)}" fill="url(#bg-dg-floor)"/>`;
+      `<rect x="${f1(ex0)}" y="${f1(ey0)}" width="${f1(ex1 - ex0)}" height="${f1(ey1 - ey0)}" fill="url(#bg-dg-floor)"/>`;
     let grid = "";
-    for (let x = Math.ceil(fx0 / t0) * t0; x < fx1; x += t0) grid += `M${f1(x)} ${f1(fy0)}V${f1(fy1)}`;
-    for (let y = fy0 + t0; y < fy1; y += t0) grid += `M${f1(fx0)} ${f1(y)}H${f1(fx1)}`;
+    for (let x = Math.ceil(ex0 / t0) * t0; x < ex1; x += t0) grid += `M${f1(x)} ${f1(ey0)}V${f1(ey1)}`;
+    for (let y = fy0 - Math.floor((fy0 - ey0) / t0) * t0; y < ey1; y += t0) if (y > ey0) grid += `M${f1(ex0)} ${f1(y)}H${f1(ex1)}`;
     t += `<path d="${grid}" stroke="${mix(L.floor[1], "#000000", 0.3)}" stroke-width="${f1(1.6 * k)}" opacity="0.6" fill="none"/>`;
     // (a few tiles a little lighter or darker, worn)
     for (let i = 0; i < 18; i++) {
@@ -4059,26 +4063,30 @@ function dungeonScene(c) {
       t += `<rect x="${f1(tx + k)}" y="${f1(ty + k)}" width="${f1(t0 - 2 * k)}" height="${f1(t0 - 2 * k)}" fill="${i % 2 ? "#ffffff" : "#000000"}" opacity="0.07"/>`;
     }
     // (the walls' shadow on the floor at their feet)
-    t += `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(fx1 - fx0)}" height="${f1(16 * k)}" fill="#000000" opacity="0.22"/>` +
-         `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(12 * k)}" height="${f1(fy1 - fy0)}" fill="#000000" opacity="0.15"/>` +
-         `<rect x="${f1(fx1 - 12 * k)}" y="${f1(fy0)}" width="${f1(12 * k)}" height="${f1(fy1 - fy0)}" fill="#000000" opacity="0.15"/>`;
+    if (!isOpen("N")) t += `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(fx1 - fx0)}" height="${f1(16 * k)}" fill="#000000" opacity="0.22"/>`;
+    if (!isOpen("W")) t += `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(12 * k)}" height="${f1(fy1 - fy0)}" fill="#000000" opacity="0.15"/>`;
+    if (!isOpen("E")) t += `<rect x="${f1(fx1 - 12 * k)}" y="${f1(fy0)}" width="${f1(12 * k)}" height="${f1(fy1 - fy0)}" fill="#000000" opacity="0.15"/>`;
     return t;
   });
   // the walls: the north wall's face, brick courses, its top a rim along the picture's top; the side walls and the south
   // wall seen from above, a rim and, on the side walls, a strip of their inner face
-  s += SEP + part("dg-walls", [c.F, look, x0, x1], () => {
+  s += SEP + part("dg-walls", [c.F, look, x0, x1, openKey], () => {
     const top = y0 - pad, course = 26 * k, rimH = 22 * k;
-    let t = `<defs>${grad("bg-dg-north", face, mix(face, "#000000", 0.25), top, fy0)}</defs>` +
-      `<rect x="${f1(x0 - pad)}" y="${f1(top)}" width="${f1(W + 2 * pad)}" height="${f1(fy0 - top)}" fill="url(#bg-dg-north)"/>`;
-    let joints = "";
-    for (let y = fy0 - course, r = 0; y > y0 + rimH; y -= course, r++) {
-      joints += `M${f1(x0 - pad)} ${f1(y)}H${f1(x1 + pad)}`;
-      for (let x = x0 - pad + (r % 2) * 30 * k; x < x1 + pad; x += 60 * k) joints += `M${f1(x)} ${f1(y)}V${f1(y + course)}`;
+    let t = "";
+    if (!isOpen("N")) {
+      t += `<defs>${grad("bg-dg-north", face, mix(face, "#000000", 0.25), top, fy0)}</defs>` +
+        `<rect x="${f1(x0 - pad)}" y="${f1(top)}" width="${f1(W + 2 * pad)}" height="${f1(fy0 - top)}" fill="url(#bg-dg-north)"/>`;
+      let joints = "";
+      for (let y = fy0 - course, r = 0; y > y0 + rimH; y -= course, r++) {
+        joints += `M${f1(x0 - pad)} ${f1(y)}H${f1(x1 + pad)}`;
+        for (let x = x0 - pad + (r % 2) * 30 * k; x < x1 + pad; x += 60 * k) joints += `M${f1(x)} ${f1(y)}V${f1(y + course)}`;
+      }
+      t += `<path d="${joints}" stroke="${line}" stroke-width="${lw}" opacity="0.55" fill="none"/>`;
+      t += `<rect x="${f1(x0 - pad)}" y="${f1(top)}" width="${f1(W + 2 * pad)}" height="${f1(y0 + rimH - top)}" fill="${rim}" stroke="${line}" stroke-width="${lw}"/>`;
     }
-    t += `<path d="${joints}" stroke="${line}" stroke-width="${lw}" opacity="0.55" fill="none"/>`;
-    t += `<rect x="${f1(x0 - pad)}" y="${f1(top)}" width="${f1(W + 2 * pad)}" height="${f1(y0 + rimH - top)}" fill="${rim}" stroke="${line}" stroke-width="${lw}"/>`;
     // (the side walls: the rim outside, their inner face inside, both from the north wall's foot to the south wall)
     for (const sgn of [-1, 1]) {
+      if (isOpen(sgn < 0 ? "W" : "E")) continue;
       const outer = sgn < 0 ? x0 - pad : x1 + pad, mid = sgn < 0 ? x0 + sw * 0.5 : x1 - sw * 0.5, inner = sgn < 0 ? fx0 : fx1;
       t += `<path d="M${f1(outer)} ${f1(y0)} L${f1(mid)} ${f1(y0)} L${f1(mid)} ${f1(y1 + pad)} L${f1(outer)} ${f1(y1 + pad)} Z" fill="${rim}" stroke="${line}" stroke-width="${lw}"/>` +
            `<path d="M${f1(mid)} ${f1(y0 + rimH)} L${f1(inner)} ${f1(fy0)} L${f1(inner)} ${f1(fy1)} L${f1(mid)} ${f1(y1 + pad)} Z" fill="${mix(face, "#000000", 0.18)}" stroke="${line}" stroke-width="${lw}"/>`;
@@ -4087,28 +4095,29 @@ function dungeonScene(c) {
       t += `<path d="${v}" stroke="${line}" stroke-width="${lw}" opacity="0.5" fill="none"/>`;
     }
     // (the south wall's top, the nearest thing, across the picture's foot)
-    t += `<rect x="${f1(x0 - pad)}" y="${f1(fy1)}" width="${f1(W + 2 * pad)}" height="${f1(y1 + pad - fy1)}" fill="${rim}" stroke="${line}" stroke-width="${lw}"/>` +
+    if (!isOpen("S")) t += `<rect x="${f1(x0 - pad)}" y="${f1(fy1)}" width="${f1(W + 2 * pad)}" height="${f1(y1 + pad - fy1)}" fill="${rim}" stroke="${line}" stroke-width="${lw}"/>` +
          `<rect x="${f1(x0 - pad)}" y="${f1(fy1)}" width="${f1(W + 2 * pad)}" height="${f1(6 * k)}" fill="#000000" opacity="0.18"/>`;
     // (rough stones on the rims, so they read as rock, not plaster)
     for (let i = 0; i < 30; i++) {
       const u = R(i, 6210), [x, y] = i % 3 === 0 ? [x0 + W * u, y0 + rimH * 0.5] : i % 3 === 1 ? [(i % 2 ? x0 + sw * 0.25 : x1 - sw * 0.25), y0 + (y1 - y0) * u] : [x0 + W * u, (fy1 + y1) / 2];
+      if (isOpen(i % 3 === 0 ? "N" : i % 3 === 2 ? "S" : i % 2 ? "W" : "E")) continue;
       t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((6 + 6 * R(i, 6211)) * k)}" ry="${f1((4 + 3 * R(i, 6212)) * k)}" fill="${mix(rim, "#000000", 0.2)}" opacity="0.6"/>`;
     }
     return t;
   });
   // the openings, for the ways that lead somewhere: a gap in a wall, the floor running on into the dark; a corner's tunnel
   // slanting off, its floor between two walls
-  s += SEP + part("dg-ways", [c.F, look, on.join(","), x0, x1], () => {
+  s += SEP + part("dg-ways", [c.F, look, on.join(","), x0, x1, openKey], () => {
     let t = `<defs><linearGradient id="bg-dg-n" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${L.floor[1]}"/><stop offset="1" stop-color="#05040a"/></linearGradient>` +
       `<linearGradient id="bg-dg-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${L.floor[0]}"/><stop offset="1" stop-color="#05040a"/></linearGradient>` +
       `<linearGradient id="bg-dg-e" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${L.floor[0]}"/><stop offset="1" stop-color="#05040a"/></linearGradient>` +
       `<linearGradient id="bg-dg-w" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="${L.floor[0]}"/><stop offset="1" stop-color="#05040a"/></linearGradient></defs>`;
     const post = (x, y, w, h) => `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="${L.rock[1]}" stroke="${line}" stroke-width="${lw}" rx="${f1(3 * k)}"/>`;
     const p = 14 * k;
-    if (has("N")) t += `<rect x="${f1(-gap)}" y="${f1(y0 - pad)}" width="${f1(2 * gap)}" height="${f1(fy0 - y0 + pad + 2 * k)}" fill="url(#bg-dg-n)"/>` + post(-gap - p, y0 - pad, p, fy0 - y0 + pad) + post(gap, y0 - pad, p, fy0 - y0 + pad);
-    if (has("S")) t += `<rect x="${f1(-gap)}" y="${f1(fy1 - 2 * k)}" width="${f1(2 * gap)}" height="${f1(y1 + pad - fy1 + 2 * k)}" fill="url(#bg-dg-s)"/>` + post(-gap - p, fy1, p, y1 + pad - fy1) + post(gap, fy1, p, y1 + pad - fy1);
-    if (has("E")) t += `<rect x="${f1(fx1 - 2 * k)}" y="${f1(cy - gap)}" width="${f1(x1 + pad - fx1 + 2 * k)}" height="${f1(2 * gap)}" fill="url(#bg-dg-e)"/>` + post(fx1, cy - gap - p, x1 + pad - fx1, p) + post(fx1, cy + gap, x1 + pad - fx1, p);
-    if (has("W")) t += `<rect x="${f1(x0 - pad)}" y="${f1(cy - gap)}" width="${f1(fx0 - x0 + pad + 2 * k)}" height="${f1(2 * gap)}" fill="url(#bg-dg-w)"/>` + post(x0 - pad, cy - gap - p, fx0 - x0 + pad, p) + post(x0 - pad, cy + gap, fx0 - x0 + pad, p);
+    if (has("N") && !isOpen("N")) t += `<rect x="${f1(-gap)}" y="${f1(y0 - pad)}" width="${f1(2 * gap)}" height="${f1(fy0 - y0 + pad + 2 * k)}" fill="url(#bg-dg-n)"/>` + post(-gap - p, y0 - pad, p, fy0 - y0 + pad) + post(gap, y0 - pad, p, fy0 - y0 + pad);
+    if (has("S") && !isOpen("S")) t += `<rect x="${f1(-gap)}" y="${f1(fy1 - 2 * k)}" width="${f1(2 * gap)}" height="${f1(y1 + pad - fy1 + 2 * k)}" fill="url(#bg-dg-s)"/>` + post(-gap - p, fy1, p, y1 + pad - fy1) + post(gap, fy1, p, y1 + pad - fy1);
+    if (has("E") && !isOpen("E")) t += `<rect x="${f1(fx1 - 2 * k)}" y="${f1(cy - gap)}" width="${f1(x1 + pad - fx1 + 2 * k)}" height="${f1(2 * gap)}" fill="url(#bg-dg-e)"/>` + post(fx1, cy - gap - p, x1 + pad - fx1, p) + post(fx1, cy + gap, x1 + pad - fx1, p);
+    if (has("W") && !isOpen("W")) t += `<rect x="${f1(x0 - pad)}" y="${f1(cy - gap)}" width="${f1(fx0 - x0 + pad + 2 * k)}" height="${f1(2 * gap)}" fill="url(#bg-dg-w)"/>` + post(x0 - pad, cy - gap - p, fx0 - x0 + pad, p) + post(x0 - pad, cy + gap, fx0 - x0 + pad, p);
     // (a corner's tunnel: a strip of floor from the floor's corner off past the picture's, slanting, walled both sides, dark at its far end)
     for (const d of ["NE", "NW", "SE", "SW"]) {
       if (!has(d)) continue;
@@ -4127,10 +4136,10 @@ function dungeonScene(c) {
   // (ticket 623) the side walls stand in the way, as a dungeon's do: unseen boxes over them ("dungeon wall", which stands:
   // 16-objects-and-solids.js), from the floor's far edge down, open where a way goes out east or west; sorted far back, so
   // nothing is drawn over the friend. (Matthew, 0.0.446's 🔬: named "ledge, west wall 1", and reaching up into the north wall)
-  s += SEP + part("dg-sides", [c.F, has("E"), has("W"), x0, x1], () => {
+  s += SEP + part("dg-sides", [c.F, has("E"), has("W"), x0, x1, openKey], () => {
     let t = "";
     for (const [d, a, b] of [["W", x0 - pad, fx0], ["E", fx1, x1 + pad]]) {
-      const spans = has(d) ? [[fy0, cy - gap], [cy + gap, y1 + pad]] : [[fy0, y1 + pad]];
+      const spans = isOpen(d) ? [] : has(d) ? [[fy0, cy - gap], [cy + gap, y1 + pad]] : [[fy0, y1 + pad]];
       spans.forEach(([top, bot], i) => { t += obj(`dungeon wall, ${d === "W" ? "west" : "east"}${spans.length > 1 ? (i ? ", south of the way" : ", north of the way") : ""}`, fy0 + k, `<rect data-footprint="1" x="${f1(a)}" y="${f1(top)}" width="${f1(b - a)}" height="${f1(bot - top)}" fill="none" stroke="none"/>`); });
     }
     return t;
@@ -4167,7 +4176,7 @@ function dungeonScene(c) {
   });
   // where a way is shut: wall, as a dungeon's is, and something on it: a carved stone in the north wall's middle; pots in a
   // shut corner; torches on the north wall either side, lit
-  s += SEP + part("dg-shut", [c.F, look, on.join(","), x0, x1, sceneLfoKey(o, "fast")], () => {
+  s += SEP + part("dg-shut", [c.F, look, on.join(","), x0, x1, sceneLfoKey(o, "fast"), openKey], () => {
     let t = "", n = 0;
     if (!has("N")) {
       const w = 40 * k, h = 58 * k, y = fy0 - h - 14 * k;
@@ -4175,7 +4184,7 @@ function dungeonScene(c) {
       t += obj("carved stone", fy0, `<rect x="${f1(-w)}" y="${f1(y)}" width="${f1(2 * w)}" height="${f1(h)}" rx="${f1(6 * k)}" fill="${L.rock[0]}" stroke="${line}" stroke-width="${lw}"/>` +
            `<path d="M${f1(-w * 0.5)} ${f1(y + h * 0.35)} Q0 ${f1(y + h * 0.1)} ${f1(w * 0.5)} ${f1(y + h * 0.35)} M${f1(-w * 0.35)} ${f1(y + h * 0.62)} L${f1(w * 0.35)} ${f1(y + h * 0.62)}" stroke="${line}" stroke-width="${f1(3 * k)}" fill="none" stroke-linecap="round"/>`);
     }
-    for (const sgn of [-1, 1]) {
+    if (!isOpen("N")) for (const sgn of [-1, 1]) {   // (no north wall, no torches on it)
       const x = sgn * W * 0.28, y = fy0 - 62 * k;
       t += obj(`torch ${sgn < 0 ? "left" : "right"}`, fy0, `<rect x="${f1(x - 5 * k)}" y="${f1(y)}" width="${f1(10 * k)}" height="${f1(26 * k)}" fill="#5a3a1e" stroke="${line}" stroke-width="${lw}"/>` +
         `<ellipse cx="${f1(x)}" cy="${f1(y - 6 * k)}" rx="${f1(12 * k)}" ry="${f1(18 * k)}" fill="#ffb03a" opacity="0.9">` + fast(sgn < 0 ? 0 : 0.5, `<animate attributeName="ry" values="${f1(16 * k)};${f1(20 * k)};${f1(16 * k)}" dur="0.6s" repeatCount="indefinite"/>`) + `</ellipse>` +
