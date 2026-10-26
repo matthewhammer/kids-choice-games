@@ -4176,7 +4176,7 @@ function dungeonScene(c) {
   });
   // where a way is shut: wall, as a dungeon's is, and something on it: a carved stone in the north wall's middle; pots in a
   // shut corner; torches on the north wall either side, lit
-  s += SEP + part("dg-shut", [c.F, look, on.join(","), x0, x1, sceneLfoKey(o, "fast"), openKey], () => {
+  s += SEP + part("dg-shut", [c.F, look, on.join(","), x0, x1, sceneLfoKey(o, "fast"), openKey, o.potsGone || ""], () => {
     let t = "", n = 0;
     if (!has("N")) {
       const w = 40 * k, h = 58 * k, y = fy0 - h - 14 * k;
@@ -4194,7 +4194,8 @@ function dungeonScene(c) {
     // (Matthew, 0.0.447: "these 'pots' look like absolute shit") a pot as A Link to the Past's are, seen from a little above:
     // round and squat, its wide mouth showing its dark inside within a lip, lit on one side and shaded on the other, a band
     // of a deeper colour round its belly, its shadow on the floor
-    const pot = (x, y, i) => { const col = ["#b0703f", "#9c6238", "#b8794a"][i % 3], dk = mix(col, "#000000", 0.35), lt = mix(col, "#ffffff", 0.35);
+    const gone = new Set(String(o.potsGone || "").split(",").filter(Boolean));   // (ticket 629: lifted, gone till the friend comes back)
+    const pot = (x, y, i) => { if (gone.has(`pot ${n + 1}`)) { n++; return ""; } const col = ["#b0703f", "#9c6238", "#b8794a"][i % 3], dk = mix(col, "#000000", 0.35), lt = mix(col, "#ffffff", 0.35);
       const r = 17 * k, by = y - 13 * k, my = by - r * 0.62;
       return obj(`pot ${++n}`, y, `<ellipse cx="${f1(x + 2 * k)}" cy="${f1(y)}" rx="${f1(r * 1.05)}" ry="${f1(r * 0.38)}" fill="#000000" opacity="0.3"/>` +
         `<ellipse cx="${f1(x)}" cy="${f1(by)}" rx="${f1(r)}" ry="${f1(r * 0.86)}" fill="${col}" stroke="${line}" stroke-width="${lw}"/>` +

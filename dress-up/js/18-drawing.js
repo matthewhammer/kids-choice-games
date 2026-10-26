@@ -1413,6 +1413,8 @@ function drawNow() {
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
   if (lieAlong) lyingAlong(lieAlong);   // (ticket 412: lying along a sleeping bag, a view of its own)
   else if (scened && TOP_DOWN_KINDS.has(BG.kind) && !ride && !B.sit && B.pose !== "lie") topDownFigure(B);   // (ticket 621: seen from above, as the room is)
+  if (carry && !lieAlong) { const f = document.getElementById("figure"), H = figureT.base || 300;   // (ticket 629: the pot held over the head)
+    if (f) f.insertAdjacentHTML("beforeend", `<g data-carry="pot">${potSvg(0, figureT.g - H * 1.02, 0.13 * H, carry.color)}</g>`); }
   if (document.documentElement.classList.contains("lineart")) lineArtUnuse(pic);   // (lines only: no <use> left, its colours out of the styles' reach)
   if (figAway || figBurst) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 349: and burst into bubbles)   // (ticket 193: a spin's copy is shown instead)
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units
@@ -1601,7 +1603,8 @@ function topDownSvg(S, B, g, H) {
   // its sides, swinging, the hands at their ends
   const bw = (side ? 0.15 : 0.19) * H * Math.max(0.8, Math.min(1.4, (SH.width ?? 100) / 100)), armEnd = hip + 0.03 * H * (armF - 1);
   const sleeve = SH.style === "tank" ? 0 : SH.style === "long" || suit ? 1 : 0.45;
-  const arm = (x, swing) => { const ex = x + swing * 0.3, ey = armEnd + swing, mx = x + (ex - x) * sleeve, my = top + 0.03 * H + (ey - top - 0.03 * H) * sleeve;
+  const lifting = typeof carry !== "undefined" && !!carry;   // (ticket 629: holding a pot overhead, both arms up to it)
+  const arm = (x, swing) => { if (lifting) { swing = 0; } const ex = lifting ? Math.sign(x || 1) * 0.07 * H : x + swing * 0.3, ey = lifting ? hy - hr * 1.05 : armEnd + swing, mx = x + (ex - x) * sleeve, my = top + 0.03 * H + (ey - top - 0.03 * H) * sleeve;
     return V("hands", `<path d="M${P(x, top + 0.03 * H)} L${P(ex, ey)}" stroke="${suit ? C.fur : skin}" stroke-width="${f1(armW)}" stroke-linecap="round"/>`) +
       (sleeve ? V("shirt", `<path d="M${P(x, top + 0.03 * H)} L${P(mx, my)}" stroke="${shirtCol}" stroke-width="${f1(armW * 1.08)}" stroke-linecap="round"/>`) : "") +
       V("hands", `<circle cx="${f1(ex)}" cy="${f1(ey + 0.01 * H)}" r="${f1(0.04 * H * Math.max(0.6, Math.min(1.6, (S.hands.size ?? 100) / 100)))}" ${F(handCol)}/>`); };

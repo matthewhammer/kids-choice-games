@@ -897,10 +897,16 @@ document.addEventListener("keydown", e => {
 });
 document.addEventListener("keyup", e => { if (e.key === "f" || e.key === "F") fireKey = false; });
 window.addEventListener("blur", () => { fireKey = false; });
-// (ticket 187) Enter: through the passage that glows, as X
+// (ticket 187) Enter: through the passage that glows, as X; (ticket 629) a pot in reach first, lifted
 document.addEventListener("keydown", e => {
   if (e.key !== "Enter" || e.repeat || (e.target.closest && e.target.closest("input, textarea, select, button, [contenteditable]"))) return;
+  if (actionPress()) { e.preventDefault(); return; }
   if (enterAt) { e.preventDefault(); enterPicture(); }
+});
+// (ticket 629) T: throw the pot held
+document.addEventListener("keydown", e => {
+  if ((e.key !== "t" && e.key !== "T") || e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
+  if (carry) { e.preventDefault(); potThrow(); }
 });
 // a nested <svg>'s own box on the screen, from its x, y, width and height
 function svgBox(el) {
@@ -1178,7 +1184,7 @@ function flyInto(box, arrive) {
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
                      ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
                      ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"],
-                     ["bubbles", "🫧 blow bubbles (held)"], ["fire", "🔥 breathe fire (held)"]];   // (tickets 221, 499)
+                     ["bubbles", "🫧 blow bubbles (held)"], ["fire", "🔥 breathe fire (held)"], ["throw", "🏺 throw what you hold (with a pot held)"]];   // (tickets 221, 499)
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -1306,7 +1312,8 @@ function padPoll(t) {
       changed();
     }
   }
-  if (hit("jumpShort") && !onLadder) { startJump(B.anim, "jump"); changed(); }
+  if (hit("throw") && carry) potThrow();   // (ticket 629: holding a pot, its press throws it, and does not jump)
+  else if (hit("jumpShort") && !onLadder) { startJump(B.anim, "jump"); changed(); }
   if (hit("jumpHigh") && !onLadder) { startJump(B.anim, "jumphigh"); changed(); }
   if (hit("enter")) enterPicture();   // (ticket 145)
   blowPad = held("bubbles");   // (ticket 221: bubbles while it is held)
@@ -1399,8 +1406,71 @@ function edgeGo(ways) {
   return false;
 }
 // (the passage nearest the friend, however far: walked to and gone through; ticket 187: every kind, measured as X's)
+// (ticket 629, Matthew 2026-10-26: "let's give a new action to the player -- pick up a pot, and hold it over head"; "let's use
+// the 'action' verb -- same as doors and trapdoors, etc"; "once we are holding something, another action --- throw. different
+// from action for nearest door, since we might want to walk through a door holding a pot overhead") A pot within reach of the
+// feet (POT_REACH, in the floor's units) is lifted by the action press (🚪 the nearest passage: a controller's start, Enter, the
+// on-screen start), held over the head (carry; drawn by drawNow over the figure, its arms up from above: topDownSvg), carried
+// through doors, and thrown by its own press (🏺 throw, PAD_ACTIONS: on A with the short jump, which it takes while a pot is
+// held; T on a keyboard): it flies the way the friend faces and shatters. A lifted pot is gone from its room until the friend
+// comes back into it (B.potsGone, cleared by worldKeep on arriving).
+const POT_REACH = 80, POT_THROW = 230, POT_FLY_MS = 420;
+let carry = null;
+function potNear() {
+  const node = bgShown.node, B = state.background;
+  if (!node || entering) return null;
+  const fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
+  let best = null;
+  for (const g of node.querySelectorAll('[data-obj^="pot "]')) {
+    let bb; try { bb = g.getBBox(); } catch (e) { continue; }
+    const x = bb.x + bb.width / 2, z = +g.dataset.z, d = Math.hypot(x - fx, (z - fz) / 0.6);
+    if (d < POT_REACH && (!best || d < best.d)) best = { name: g.dataset.obj, d, color: (g.querySelector("path") || {}).getAttribute?.("fill") || "#b0703f" };
+  }
+  return best;
+}
+function potLift(p) {
+  const B = state.background;
+  carry = { kind: "pot", color: p.color };
+  B.potsGone = [...String(B.potsGone || "").split(",").filter(Boolean), p.name].join(",");
+  changed();
+}
+// the action: a pot in reach (none held) is lifted; else, as before, through the nearest passage
+function actionPress() {
+  if (!carry) { const p = potNear(); if (p) { potLift(p); return true; } }
+  return false;
+}
+function potSvg(x, y, r, color) {
+  const dk = darker(color), lt = mix(color, "#ffffff", 0.35);
+  return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(r)}" ry="${f1(r * 0.86)}" fill="${color}" stroke="${dk}" stroke-width="${f1(r * 0.08)}"/>` +
+    `<path d="M${f1(x - r * 0.98)} ${f1(y + r * 0.12)} Q${f1(x)} ${f1(y + r * 0.42)} ${f1(x + r * 0.98)} ${f1(y + r * 0.12)}" stroke="${dk}" stroke-width="${f1(r * 0.18)}" fill="none"/>` +
+    `<ellipse cx="${f1(x)}" cy="${f1(y - r * 0.62)}" rx="${f1(r * 0.62)}" ry="${f1(r * 0.3)}" fill="${lt}" stroke="${dk}" stroke-width="${f1(r * 0.06)}"/>` +
+    `<ellipse cx="${f1(x)}" cy="${f1(y - r * 0.6)}" rx="${f1(r * 0.44)}" ry="${f1(r * 0.19)}" fill="#1a0f08"/>`;
+}
+function potThrow() {
+  if (!carry || entering) return;
+  const B = state.background, body = state.body, T = figureT, H = T.base || 300, c = carry;
+  const dir = body.facing === "right" ? [1, 0] : body.facing === "left" ? [-1, 0] : body.facing === "back" || body.facing === "away" ? [0, -1] : [0, 1];
+  const sx = T.dx, sy = T.sg + T.dy - T.k * H * 1.02, gy = T.sg + T.dy, r = 0.13 * H * T.k;
+  carry = null; draw();
+  const O = makerOver(), NS = "http://www.w3.org/2000/svg", g = document.createElementNS(NS, "g");
+  g.setAttribute("data-pot-flying", "1"); O.append(g);
+  const t0 = performance.now(), ex = sx + dir[0] * POT_THROW * T.k, ez = gy + dir[1] * POT_THROW * 0.6 * T.k;
+  const frame = now => {
+    const u = Math.min(1, (now - t0) / POT_FLY_MS), x = sx + (ex - sx) * u, base = sy + (ez - r * 0.6 - sy) * u, y = base - 50 * T.k * Math.sin(Math.PI * u);
+    if (u < 1) { g.innerHTML = potSvg(x, y, r, c.color); requestAnimationFrame(frame); return; }
+    // (it shatters: pieces fly out and fade)
+    const shards = Array.from({ length: 7 }, (_, i) => { const a = i / 7 * Math.PI * 2; return [Math.cos(a), Math.sin(a) * 0.6]; }), t1 = performance.now();
+    const burst = now2 => { const v = Math.min(1, (now2 - t1) / 380);
+      g.innerHTML = shards.map(([cx, cy], i) => `<path d="M0 0 l${f1(r * 0.4)} ${f1(-r * 0.2)} l${f1(-r * 0.1)} ${f1(r * 0.35)} Z" fill="${i % 2 ? c.color : darker(c.color)}" opacity="${(1 - v).toFixed(2)}" transform="translate(${f1(x + cx * r * 2.2 * v)} ${f1(ez - r * 0.3 + cy * r * 2.2 * v)}) rotate(${Math.round(i * 50 + v * 200)})"/>`).join("") +
+        `<ellipse cx="${f1(x)}" cy="${f1(ez)}" rx="${f1(r * (0.6 + v))}" ry="${f1(r * 0.25 * (1 + v))}" fill="#000" opacity="${(0.25 * (1 - v)).toFixed(2)}"/>`;
+      if (v < 1) requestAnimationFrame(burst); else g.remove(); };
+    requestAnimationFrame(burst);
+  };
+  requestAnimationFrame(frame);
+}
 function padDoor() {
   if (entering || state.background.kind === "none") return;
+  if (actionPress()) return;   // (ticket 629: a pot in reach first)
   const all = passesNear(Infinity);
   if (all.length) { enterAt = all[0].p; enterPicture(); }
 }
@@ -1446,7 +1516,7 @@ function padUse(id) {
 // (localStorage "dress-up-touchpad"), not the friend's.
 const TOUCH_ID = "on-screen controller";
 // (ticket 499: 🫧 and 🔥 on their own buttons here too, so a layout kept from before an action came in gets it on its button)
-const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3, bubbles: 6, fire: 7 };
+const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3, bubbles: 6, fire: 7, throw: 1 };
 const touchPad = { want: false, shown: false, el: null, keys: "",
   pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
          buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, at: 0, tok: 0 })) } };

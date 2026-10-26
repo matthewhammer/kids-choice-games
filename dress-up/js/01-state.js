@@ -978,7 +978,7 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 // (ticket 146) R (5, the right shoulder) turns crawling on or off. A pad
 // taught its buttons (🎓 in the Controls tab) keeps its own layout, by its
 // name, in localStorage["dress-up-pads"], put back whenever it connects.
-DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4, bubbles: 6, fire: 7 };   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start)
+DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4, bubbles: 6, fire: 7, throw: 1 };   // (ticket 629: 🏺 throw on A with the short jump, which it takes while a pot is held)   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start)
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 // (ticket 217, Matthew) ♿ Accessibility: every nav arrow shown, how bright the
 // far ones are and their colour (not the near ones' warm white), the arrows'
@@ -1496,7 +1496,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.453", released: "2026-10-26" };
+const VERSION = { number: "0.0.454", released: "2026-10-26" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

@@ -1406,6 +1406,7 @@ function worldKeep() {
   worldsInit();
   const sq = cellHolds(cell, B), home = B.kind === "none" ? null : sq ? "sq:" + W.id + ":" + W.at : "off:" + W.id + ":" + placeKey(B);   // (ticket 406: by world, as two worlds have squares of one name)
   if (adopting) worldHome = home;
+  if (home !== worldHome && B.potsGone !== undefined) delete B.potsGone;   // (ticket 629: a room's pots back, come into it again)
   if (home !== worldHome) {   // (just come: the place's own things, never those of the place left)
     worldHome = home;
     if (sq) for (const k of cellKeys(cell.kind)) { const v = structuredClone(cell[k] ?? (k === "things" ? [] : DEFAULTS.background[k])); if (JSON.stringify(v) !== JSON.stringify(B[k])) B[k] = v; }

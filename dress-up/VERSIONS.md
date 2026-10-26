@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.454 (2026-10-26)
+
+Everything in 0.0.453, plus:
+
+- **🏺 Pick up a pot, and throw it.** In a dungeon room, the action that goes through the nearest passage (a controller's start, Enter, the on-screen start) lifts a pot within reach and holds it over the friend's head, arms up. Holding it, they can still walk through doors. "🏺 throw what you hold" (on A, with the short jump, which it takes while a pot is held; T on a keyboard; its own row in 🎮 Controls) throws it the way the friend faces, and it shatters. A room's pots are back when the friend comes into it again.
+
 ## 0.0.453 (2026-10-26)
 
 Everything in 0.0.452, plus:
