@@ -1413,7 +1413,7 @@ function drawNow() {
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
   if (lieAlong) lyingAlong(lieAlong);   // (ticket 412: lying along a sleeping bag, a view of its own)
-  else if (scened && TOP_DOWN_KINDS.has(BG.kind) && !ride && !B.sit && B.pose !== "lie") topDownFigure(B);   // (ticket 621: seen from above, as the room is)
+  else if (scened && TOP_DOWN_KINDS.has(BG.kind) && !ride) topDownFigure(B);   // (ticket 621: seen from above, as the room is; ticket 624: in every pose)
   if (carry && !lieAlong) { const f = document.getElementById("figure"), H = figureT.base || 300;   // (ticket 629: the pot held over the head)
     if (f) f.insertAdjacentHTML("beforeend", `<g data-carry="pot">${potSvg(0, figureT.g - H * 1.02, 0.13 * H, carry.color)}</g>`); }
   if (document.documentElement.classList.contains("lineart")) lineArtUnuse(pic);   // (lines only: no <use> left, its colours out of the styles' reach)
@@ -1539,6 +1539,8 @@ const TOP_DOWN_KINDS = new Set(["dungeon"]);
 function topDownFigure(B) {
   const f = document.getElementById("figure");
   if (!f) return;
+  // (ticket 624: no turn of the standing friend's, a lying or crawling one's: from above, the drawing lays itself along the floor)
+  f.setAttribute("transform", `translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g)})`);
   f.innerHTML = topDownSvg(state, B, figureT.g, figureT.base);
   const far = document.getElementById("figure-far"); if (far) far.style.display = "none";
 }
@@ -1565,7 +1567,13 @@ function topDownSvg(S, B, g, H) {
   const view = B.facing === "left" ? -1 : B.facing === "right" ? 1 : B.facing === "back" || B.facing === "away" ? 2 : 0, side = view === -1 || view === 1;
   const walking = B.anim === "walk" || B.anim === "run", ph = walking ? Math.sin(performance.now() / 1000 * Math.PI * 2 * (B.anim === "run" ? 3.2 : 2.4)) : 0;
   const lw = f1(Math.max(1.5, 0.012 * H)), ln = c => darker(c), F = c => `fill="${c}" stroke="${ln(c)}" stroke-width="${lw}"`;
-  const P = (x, y) => `${f1(x)} ${f1(y)}`, Y = u => g - u * H;
+  // (ticket 624, Matthew: "Zelda versions of each pose we have") the posture from above: what the pose or the animation does to the
+  // body seen from high up: lowered (sitting, crouching, cross-legged: sink), the legs forward or crossed, the arms up (dancing, in
+  // turn), forward (a hug) or ahead (crawling); lying or crawling, the whole friend laid along the floor (lay, below)
+  const posture = B.anim === "crawl" ? "crawl" : B.pose === "lie" ? "lie" : B.pose === "meditate" ? "meditate" : (B.sit || B.pose === "sit") ? "sit"
+    : B.anim === "crouch" ? "crouch" : B.pose === "dance" ? "dance" : B.pose === "hug" ? "hug" : "stand";
+  const sink = { sit: 0.15, crouch: 0.12, meditate: 0.2 }[posture] * H || 0;
+  const P = (x, y) => `${f1(x)} ${f1(y)}`, Y = u => g - u * H + sink * Math.min(1, u / 0.27);
   const rel = (k, d, lo, hi) => Math.max(lo, Math.min(hi, (Number(S.body[k]) || d) / d));
   const legF = rel("legLen", DEFAULTS.body.legLen || 140, 0.6, 1.6), armF = rel("armLen", DEFAULTS.body.armLen || 120, 0.6, 1.6);
   const legW = 0.055 * H * rel("legW", DEFAULTS.body.legW || 26, 0.6, 1.8), armW = 0.075 * H * rel("armW", DEFAULTS.body.armW || 22, 0.6, 1.8);
@@ -1577,7 +1585,9 @@ function topDownSvg(S, B, g, H) {
   if (S.pack && S.pack.drawn) { const pk = `<rect x="${f1(-0.14 * H)}" y="${f1(top - 0.01 * H)}" width="${f1(0.28 * H)}" height="${f1(0.2 * H)}" rx="${f1(0.04 * H)}" ${F("#8a5a2b")}/><rect x="${f1(-0.12 * H)}" y="${f1(top)}" width="${f1(0.24 * H)}" height="${f1(0.07 * H)}" rx="${f1(0.03 * H)}" fill="#5e3d22"/>`;
     gear.back = (gear.back || "") + pk; }
   const ghost = kind === "ghost", covered = !!(gear.hood || gear.helm || gear.headFill || suit);   // (a hood, a helmet or a suit's own head: no hair of the friend's shows)
-  let s = `<ellipse cx="0" cy="${f1(g)}" rx="${f1(0.24 * H)}" ry="${f1(0.07 * H)}" fill="#000000" opacity="0.28"/>`;
+  const lay = posture === "lie" || posture === "crawl", up = B.anim === "jump" || B.anim === "jumphigh";
+  const shadow = `<ellipse cx="0" cy="${f1(g)}" rx="${f1((lay ? 0.5 : up ? 0.17 : 0.24) * H)}" ry="${f1((lay ? 0.16 : up ? 0.05 : 0.07) * H)}" fill="#000000" opacity="${up ? 0.18 : 0.28}"/>`;
+  let s = lay ? "" : shadow;
   if (ghost) {   // (a sheet over everything: a round top, its hem rippling, two dark eyes)
     const col = hex(WC.ghostColor, "#f4f6f8"), ey = hy + 0.06 * H, hem = Y(0.08) + 0.02 * H * ph;
     s += `<path d="M${P(-hr * 1.15, hem)} Q${P(-hr * 1.4, hy)} ${P(0, hy - hr * 1.05)} Q${P(hr * 1.4, hy)} ${P(hr * 1.15, hem)} Q${P(hr * 0.6, hem - 0.04 * H)} ${P(0, hem)} Q${P(-hr * 0.6, hem - 0.04 * H)} ${P(-hr * 1.15, hem)} Z" ${F(col)} opacity="0.92"/>`;
@@ -1593,7 +1603,12 @@ function topDownSvg(S, B, g, H) {
       (boot ? `<rect x="${f1(x - legW)}" y="${f1(g - lift - 0.08 * H)}" width="${f1(2 * legW)}" height="${f1(0.06 * H)}" rx="${f1(0.015 * H)}" ${F(shoe)}/>` : "") +
       (footStyle === "talons" && !suit ? [-1, 0, 1].map(i => `<path d="M${P(x + i * 0.03 * H, g - lift - 0.01 * H)} l${f1(i * 0.012 * H)} ${f1(0.03 * H)}" stroke="${ln(shoe)}" stroke-width="${lw}"/>`).join("") : ""); };
   const leg = (x, lift, dx = 0) => V("pants", `<path d="M${P(x - legW, legTop)} L${P(x + dx - legW * 0.9, g - lift - 0.03 * H)} L${P(x + dx + legW * 0.9, g - lift - 0.03 * H)} L${P(x + legW, legTop)} Z" fill="${pantsFill}" stroke="${ln(pantsCol)}" stroke-width="${lw}"/>`) + V("feet", foot(x + dx, lift));
-  if (!longSkirt) {
+  if (posture === "meditate") {   // (cross-legged: the legs one lens across in front of the hips, the feet at its ends)
+    s += V("pants", `<ellipse cx="0" cy="${f1(hip + 0.07 * H)}" rx="${f1(0.24 * H)}" ry="${f1(0.07 * H)}" fill="${pantsFill}" stroke="${ln(pantsCol)}" stroke-width="${lw}"/>`) +
+      V("feet", [-1, 1].map(sd => `<ellipse cx="${f1(sd * 0.2 * H)}" cy="${f1(hip + 0.1 * H)}" rx="${f1(0.05 * H)}" ry="${f1(0.03 * H)}" ${F(shoe)}/>`).join(""));
+  } else if (posture === "sit") {   // (sitting: short legs out in front, toward us, the feet a step past the knees)
+    s += [-0.08 * H, 0.08 * H].map(x => V("pants", `<path d="M${P(x - legW, Y(0.27))} L${P(x - legW * 0.9, g + 0.05 * H)} L${P(x + legW * 0.9, g + 0.05 * H)} L${P(x + legW, Y(0.27))} Z" fill="${pantsFill}" stroke="${ln(pantsCol)}" stroke-width="${lw}"/>`) + V("feet", foot(x, -0.07 * H))).join("");
+  } else if (!longSkirt) {
     if (side) s += leg(0, Math.max(0, ph) * 0.03 * H, -view * ph * 0.08 * H) + leg(0, Math.max(0, -ph) * 0.03 * H, view * ph * 0.08 * H);
     else s += leg(-0.08 * H, Math.max(0, ph) * 0.035 * H) + leg(0.08 * H, Math.max(0, -ph) * 0.035 * H);
   } else s += V("feet", side ? foot(view * ph * 0.05 * H, 0) : foot(-0.07 * H, Math.max(0, ph) * 0.02 * H) + foot(0.07 * H, Math.max(0, -ph) * 0.02 * H));
@@ -1608,7 +1623,13 @@ function topDownSvg(S, B, g, H) {
   const bw = (side ? 0.15 : 0.19) * H * Math.max(0.8, Math.min(1.4, (SH.width ?? 100) / 100)), armEnd = hip + 0.03 * H * (armF - 1);
   const sleeve = SH.style === "tank" ? 0 : SH.style === "long" || suit ? 1 : 0.45;
   const lifting = (typeof carry !== "undefined" && !!carry) || (typeof presenting !== "undefined" && !!presenting);   // (ticket 629: holding a pot overhead, both arms up to it; ticket 631: holding up what a chest gave)
-  const arm = (x, swing) => { if (lifting) { swing = 0; } const ex = lifting ? Math.sign(x || 1) * 0.07 * H : x + swing * 0.3, ey = lifting ? hy - hr * 1.05 : armEnd + swing, mx = x + (ex - x) * sleeve, my = top + 0.03 * H + (ey - top - 0.03 * H) * sleeve;
+  const danceUp = posture === "dance" ? Math.sin(performance.now() / 1000 * Math.PI * 2 * 1.2) : 0;
+  const arm = (x, swing) => { if (lifting) { swing = 0; } const sx = Math.sign(x || 1);
+    const raised = lifting || (posture === "dance" && sx * danceUp > 0) || posture === "crawl";
+    let ex = raised ? sx * 0.07 * H : x + swing * 0.3, ey = raised ? hy - hr * 1.05 : armEnd + swing;
+    if (posture === "hug") { ex = sx * 0.05 * H; ey = top + 0.12 * H; }
+    if (posture === "meditate") { ex = sx * 0.19 * H; ey = hip + 0.05 * H; }
+    const mx = x + (ex - x) * sleeve, my = top + 0.03 * H + (ey - top - 0.03 * H) * sleeve;
     return V("hands", `<path d="M${P(x, top + 0.03 * H)} L${P(ex, ey)}" stroke="${suit ? C.fur : skin}" stroke-width="${f1(armW)}" stroke-linecap="round"/>`) +
       (sleeve ? V("shirt", `<path d="M${P(x, top + 0.03 * H)} L${P(mx, my)}" stroke="${shirtCol}" stroke-width="${f1(armW * 1.08)}" stroke-linecap="round"/>`) : "") +
       V("hands", `<circle cx="${f1(ex)}" cy="${f1(ey + 0.01 * H)}" r="${f1(0.04 * H * Math.max(0.6, Math.min(1.6, (S.hands.size ?? 100) / 100)))}" ${F(handCol)}/>`); };
@@ -1654,6 +1675,14 @@ function topDownSvg(S, B, g, H) {
   else if (side) s += V("eyes", gear.eyes !== undefined ? gear.eyes : eye(view * 0.12 * H));
   s += (gear.hat || "") + (gear.helm || "");
   if (gear.mask) s += gear.mask;
+  // (lying, or crawling: the friend laid along the floor, seen from above: their head to the side they lie toward (lieHead), or
+  // ahead the way they crawl; crawling toward us or away, foreshortened)
+  if (lay) {
+    const head = posture === "lie" ? (B.lieHead === "right" ? 1 : -1) : view === 1 ? 1 : view === -1 ? -1 : 0;
+    const pivot = (hip + hy) / 2;
+    const tf = head ? `translate(0 ${f1(g - 0.1 * H - pivot)}) rotate(${head * 90} 0 ${f1(pivot)})` : `translate(0 ${f1((g - 0.1 * H - pivot) * 0.4)}) scale(1 0.65)`;
+    s = shadow + `<g transform="${tf}">${s}</g>`;
+  }
   return s;
 }
 // (ticket 626) each costume's own things, from above, for topDownSvg: hat (on the head), hood or helm (in place of the hair),

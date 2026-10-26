@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.458 (2026-10-26)
+
+Everything in 0.0.457, plus:
+
+- **Every pose from above.** In a dungeon room the friend, drawn from above, now sits (legs out in front), sits cross-legged (hands on the knees), crouches, dances (arms up in turn), hugs (arms forward), lies on the floor (head to the side chosen), and crawls (laid along the floor, the head the way they go, arms reaching ahead); jumping, their shadow shrinks below them.
+
 ## 0.0.457 (2026-10-26)
 
 Everything in 0.0.456, plus:
