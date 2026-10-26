@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.446 (2026-10-26)
+
+Everything in 0.0.445, plus:
+
+- **🗝️ Dungeons, a kind of place of its own,** at the bottom of the list of places (🗺️ World design, 🏞️ Background): the dungeon room was under 🏕️ camping.
+
 ## 0.0.445 (2026-10-26)
 
 Everything in 0.0.444, plus two levels:

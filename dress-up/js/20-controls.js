@@ -87,12 +87,14 @@ const PLACE_GROUPS = [
   ["bubbles", "🫧 bubbles", ["bubblespace", "bubbleroom"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
-  ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom", "cavecross", "dungeon"]],
+  ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom", "cavecross"]],
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "treetop", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
   ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion", "hutcenter"]],
   ["desert", "🏜️ desert", ["desert"]],   // (ticket 501, for M: a kind of its own, as the bubbles are)
+  // (Matthew 2026-10-26, of 0.0.443's dungeon room under camping: "why camping? why not castle? or a new category at the bottom.")
+  ["dungeons", "🗝️ dungeons", ["dungeon"]],
 ];
 const groupOfPlace = v => v === "none" ? "none" : (PLACE_GROUPS.find(g => g[2].includes(v)) || [null])[0];
 console.assert(PLACES.every(([v]) => groupOfPlace(v)) && PLACE_GROUPS.flatMap(g => g[2]).length === PLACES.length - 1,
