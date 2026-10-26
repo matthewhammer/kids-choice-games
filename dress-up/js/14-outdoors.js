@@ -2539,6 +2539,30 @@ function caveMushroomSvg(t, seed, o) {
   return glow + shade + body + (t.glow ?? true ? [0, 1, 2].map(n => `<circle cx="${(n - 1) * 8}" cy="-50" r="1.6" fill="${col}" opacity="0">` +
     lfoTimed(o, "slow", n / 3 + R(2), `<animate attributeName="cy" values="-50;-100" dur="5s" repeatCount="indefinite"/>`) + lfoTimed(o, "slow", n / 3 + R(2), `<animate attributeName="opacity" values="0;0.9;0" dur="5s" repeatCount="indefinite"/>`) + `</circle>`).join("").replace(/^/, `<g class="fumes">`) + `</g>` : "");
 }
+// (ticket 631, Matthew: "the other object that comes out -- e.g., gold coins, crown, a new sheild, etc. -- let's make a list of 12
+// options from our current inventory of objects/things") What a chest gives, opened: twelve of the game's own things, each drawn
+// by its own drawing (giftSvg), its foot at 0, 0, about 70 units tall
+const CHEST_GIFTS = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown", "👑 a crown"], ["shield", "🛡️ a new shield"], ["sword", "🗡️ a sword"],
+  ["potion", "🧪 a potion"], ["helmet", "🪖 a helmet"], ["gem", "🔮 a glowing gem"], ["shell", "🐚 a shell"], ["starfish", "⭐ a starfish"],
+  ["toadstool", "🍄 a toadstool"], ["glowcap", "💡 a glowing mushroom"]];
+function giftSvg(id, o = {}) {
+  const coin = (x, y) => `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="12" ry="5" fill="#e8c33a" stroke="#9a7a12" stroke-width="1.5"/>`;
+  const gem = (x, y, col, s = 1) => `<path d="M${f1(x - 10 * s)} ${f1(y - 6 * s)} L${f1(x - 4 * s)} ${f1(y - 14 * s)} L${f1(x + 4 * s)} ${f1(y - 14 * s)} L${f1(x + 10 * s)} ${f1(y - 6 * s)} L${f1(x)} ${f1(y + 6 * s)} Z" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="1.5"/>`;
+  switch (id) {
+    case "gold": return [[0, 0], [-8, -8], [8, -8], [0, -16], [-6, -24], [6, -24], [0, -32]].map(([x, y]) => coin(x, y)).join("");
+    case "gems": return gem(-14, -6, GEM_COLORS[0]) + gem(14, -6, GEM_COLORS[2]) + gem(0, -20, GEM_COLORS[1], 1.3);
+    case "crown": return `<path d="M-30 0 L-30 -34 L-15 -18 L0 -40 L15 -18 L30 -34 L30 0 Z" fill="#f2c230" stroke="#9a7a12" stroke-width="2.5" stroke-linejoin="round"/>` + gem(0, -8, "#dc2626", 0.8) + `<circle cx="-30" cy="-36" r="4" fill="#e0f2fe"/><circle cx="30" cy="-36" r="4" fill="#e0f2fe"/><circle cx="0" cy="-42" r="4" fill="#e0f2fe"/>`;
+    case "shield": return `<g transform="translate(0 -36)"><path d="M-26 -30 L26 -30 L26 4 Q26 26 0 36 Q-26 26 -26 4 Z" fill="#2f4fa8" stroke="#c9ced6" stroke-width="5" stroke-linejoin="round"/><path d="M-16 6 L0 -12 L16 6" stroke="#c9ced6" stroke-width="6" fill="none" stroke-linecap="round"/></g>`;
+    case "sword": return swordSvg(0, 0, 0, -76, 1.1);
+    case "potion": return potionSvg("flask", 0, 0, 2.6, POTION_COLORS[5]);
+    case "helmet": return helmetSvg(0, 0, 1.2, { plume: "#c0392b", side: 0, back: false });
+    case "gem": return gemThingSvg({ style: "cut", color: GEM_COLORS[0], glow: true }, 7, o);
+    case "shell": return `<g transform="scale(1.4)">${seaShellSvg("scallop", SHELL_COLORS[1])}</g>`;
+    case "starfish": return `<g transform="scale(1.3)">${starfishSvg(STAR_COLORS[0], 3)}</g>`;
+    case "toadstool": return toadstool(0, 0, 1.5, "#d62828");
+    default: return caveMushroomSvg({ style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true }, 11, o);
+  }
+}
 // (ticket 471) what a treasure chest holds, open (seaChestSvg)
 const CHEST_TREASURE = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown", "👑 gold, gems and a crown"]];
 // (ticket 504, for M; Matthew: "More animals as placeable objects with animation: * cows (4 poses) * pigs (4 poses)", and
@@ -3320,7 +3344,10 @@ const THING_PARAMS = {
   shell: [["shape", "🐚", "choice", [["scallop", "scallop"], ["conch", "conch"], ["clam", "clam"]]], ["color", "🎨", "color", SHELL_COLORS]],
   starfish: [["color", "🎨", "color", STAR_COLORS]],
   seafish: [["color", "🎨", "color", SEAFISH_COLORS], ["bubbles", "🫧 bubbles", "toggle"]],
-  chest: [["open", "🔓 open", "toggle"], ["treasure", "💰 in it", "choice", CHEST_TREASURE]],   // (ticket 471: what is in it)
+  chest: [["open", "🔓 open", "toggle"], ["treasure", "💰 in it", "choice", CHEST_TREASURE],   // (ticket 471: what is in it)
+          // (ticket 631) opened with the action press: what comes out, its flourish, and a recording to play
+          ["gives", "🎁 what comes out", "choice", CHEST_GIFTS], ["flourish", "🎶 its flourish", "choice", () => Object.entries(CHEST_TUNES).map(([id, t]) => [id, t.name])],
+          ["rec", "🎙️ a recording to play", "choice", () => chestRecChoices()]],
   anchor: [["chain", "⛓️ broken chain", "toggle"]],
   // (ticket 284) a lever's 🔗: the trap doors here it opens and shuts (by their uid); a trap door's own: open or shut, its shape, its spikes
   // (ticket 323, N's: "each lever should choose going forward: controls doors; lets a boulder fall from somewhere, of a certain
@@ -3361,7 +3388,7 @@ const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, s
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, moss: { style: "haircap", on: "floor", color: "none", lobes: true }, lichen: { style: "crust", on: "back", color: "none" }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
                          coral: { color: CORAL_COLORS[0] }, shell: { shape: "scallop", color: SHELL_COLORS[0] }, starfish: { color: STAR_COLORS[0] },
-                         seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: true, treasure: "gold" }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
+                         seafish: { color: SEAFISH_COLORS[0], bubbles: true }, chest: { open: false, treasure: "gold", gives: "gold", flourish: "chestfanfare", rec: "" }, anchor: { chain: true }, lever: { on: false, works: [], does: "doors", rock: ROCK_TONES[0], knob: "auto" }, helmet: { facing: "toward", plume: "#c0392b" }, trapdoor: { open: false, shape: "circle", spikes: true },
                          bubblemaker: { shape: "round", rate: 4, theme: "A", color: MAKER_COLORS[0] },
                          kelp: { color: SEAPLANT_COLORS[0] }, seagrass: { color: SEAPLANT_COLORS[1] }, seafan: { color: CORAL_COLORS[2] }, sealettuce: { color: SEAPLANT_COLORS[2] },
                          gem: { style: "cut", color: GEM_COLORS[0], glow: true }, puddle: { drip: true }, cascade: { style: "trickle" }, passage: { style: "arch", to: "cave" }, cavemushroom: { style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true },   // (ticket 471)

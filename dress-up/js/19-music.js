@@ -605,7 +605,22 @@ function witchFunk(v) {
       S(8, "oom pah bell twinkles bongoHi bongoLo", -4),
     ] };
 }
+// (ticket 631, Matthew 2026-10-26: "create 8 musical flourishes to play, as 'chest opening' cat of music MIDI") Eight short
+// flourishes for a treasure chest opening: a kind of music of their own (🎁 chest opening), each a few seconds, played once when
+// a chest is opened (chestFlourish) and heard round and round in 🎵 Music like any tune
+const flourish = (name, bpm, parts) => ({ name, make: () => ({ bpm, room: 2, level: 1.2, parts: parts.map(([inst, line, level = 1]) => ({ name: inst, inst, level, rev: 0.35, echo: 0.2, line: lineOf(line) })) }) });
+const CHEST_TUNES = {
+  chestfanfare: flourish("🎺 a fanfare", 120, [["lead", "G4:2 C5:2 E5:2 G5:2 C6:8 | r:16"], ["pluck", "C4+E4+G4:8 C4+E4+G4:8 | r:16", 0.6]]),
+  chestsparkle: flourish("✨ sparkles", 132, [["musicbox", "E6:1 G6:1 B6:1 E7:1 B6:1 G6:1 E7:4 r:6 | r:16"], ["bell", "E5:8 B5:8 | r:16", 0.5]]),
+  chestroyal: flourish("👑 royal chords", 96, [["harpsichord", "C5+E5+G5:4 F5+A5+C6:4 G5+B5+D6:4 C6+E6+G6:4 | C6+E6+G6:8 r:8"]]),
+  chestmystery: flourish("🌙 a mystery", 100, [["vibes", "A4:2 C5:2 E5:2 A5:4 G#5:2 A5:4 | r:16"], ["pad", "A3+E4:12 r:4 | r:16", 0.5]]),
+  chestcalypso: flourish("🏝️ steel pan", 126, [["steelpan", "C5:2 E5:2 G5:2 E5:2 G5:2 C6:6 | r:16"]]),
+  chestchimes: flourish("🔔 falling chimes", 110, [["bell", "C7:2 G6:2 E6:2 C6:2 G6:8 | r:16"]]),
+  chesttrill: flourish("🪈 a flute's trill", 116, [["flute", "G5:1 A5:1 G5:1 A5:1 G5:1 A5:1 B5:2 D6:8 | r:16"], ["pizz", "G3:4 D4:4 G4:8 | r:16", 0.6]]),
+  chesttriumph: flourish("🏆 triumph", 112, [["lead", "D5:2 F#5:2 A5:2 D6:4 C#6:2 D6:4 | r:16"], ["tonewheel", "D4+F#4+A4:8 G4+B4+D5:4 D4+F#4+A4:4 | r:16", 0.5]]),
+};
 const TUNES = {
+  ...CHEST_TUNES,
   forest: { name: "🌲 a walk in the woods", make: () => {
     const chords = ["G", "C", "G", "D", "G", "C", "D", "G"], minor = ["Em", "C", "G", "D", "Em", "Am", "D", "G"];
     return { bpm: 100, room: 2, level: 1.3, parts: [
@@ -1264,7 +1279,16 @@ const TUNE_GROUPS = [
   ["waltz", "💃 waltz", ["witch", ..."ABCDE".split("").map(v => "witchfunk" + v), "castlewaltz", "ballroom", "healerwaltz"]],
   ["chase", "🏃 chase", ["treechase", "duckdash", "housechase"]],
   ["story", "📖 storybook", ["forest", "harpsichord", "spiders", "cemetery"]],
+  ["chest", "🎁 chest opening", Object.keys(CHEST_TUNES)],   // (ticket 631)
 ];
+// (ticket 631) a chest's flourish, played once, over the music, on the music's own instruments (as long as it lasts, no loop)
+function chestFlourish(id) {
+  if (state.music.mute || !TUNES[id] || !audioReady()) return;
+  const song = songOf(id); if (!song) return;
+  const into = gainOf(audio, audio.destination, 0.7 * Math.max(0, Math.min(1, (state.music.volume ?? 80) / 100))), buses = busesOf(audio, song.T, into);
+  const t0 = audio.currentTime + 0.05, sd = stepSecs(song.T);
+  for (const ev of song.events) playNote(audio, buses, song, ev, t0 + ev.at * sd, sd, 0, null, null, 0, null);
+}
 const groupOfTune = id => id === "scene" ? "scene" : (TUNE_GROUPS.find(g => g[2].includes(id)) || [null])[0];
 // (every tune in one kind, and only one)
 for (const id of Object.keys(TUNES))

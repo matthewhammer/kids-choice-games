@@ -1603,7 +1603,7 @@ function topDownSvg(S, B, g, H) {
   // its sides, swinging, the hands at their ends
   const bw = (side ? 0.15 : 0.19) * H * Math.max(0.8, Math.min(1.4, (SH.width ?? 100) / 100)), armEnd = hip + 0.03 * H * (armF - 1);
   const sleeve = SH.style === "tank" ? 0 : SH.style === "long" || suit ? 1 : 0.45;
-  const lifting = typeof carry !== "undefined" && !!carry;   // (ticket 629: holding a pot overhead, both arms up to it)
+  const lifting = (typeof carry !== "undefined" && !!carry) || (typeof presenting !== "undefined" && !!presenting);   // (ticket 629: holding a pot overhead, both arms up to it; ticket 631: holding up what a chest gave)
   const arm = (x, swing) => { if (lifting) { swing = 0; } const ex = lifting ? Math.sign(x || 1) * 0.07 * H : x + swing * 0.3, ey = lifting ? hy - hr * 1.05 : armEnd + swing, mx = x + (ex - x) * sleeve, my = top + 0.03 * H + (ey - top - 0.03 * H) * sleeve;
     return V("hands", `<path d="M${P(x, top + 0.03 * H)} L${P(ex, ey)}" stroke="${suit ? C.fur : skin}" stroke-width="${f1(armW)}" stroke-linecap="round"/>`) +
       (sleeve ? V("shirt", `<path d="M${P(x, top + 0.03 * H)} L${P(mx, my)}" stroke="${shirtCol}" stroke-width="${f1(armW * 1.08)}" stroke-linecap="round"/>`) : "") +

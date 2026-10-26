@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.456 (2026-10-26)
+
+Everything in 0.0.455, plus:
+
+- **🎁 Treasure chests to open.** A 💰 treasure chest put in a place starts shut. Walk up to it and press the action that goes through doors (a controller's start, Enter, the on-screen start): it opens, the friend turns to you with their arms up, and what it holds rises out and hovers over their head while a flourish plays, and then goes into their backpack. Each chest's card chooses: "🎁 what comes out" (12 things: gold coins, gems, a crown, a new shield, a sword, a potion, a helmet, a glowing gem, a shell, a starfish, a toadstool, a glowing mushroom), "🎶 its flourish", and "🎙️ a recording to play" (one of yours, from 🎙️ Recordings).
+- **🎶 A new kind of music, 🎁 chest opening:** eight short flourishes (🎺 a fanfare, ✨ sparkles, 👑 royal chords, 🌙 a mystery, 🏝️ steel pan, 🔔 falling chimes, 🪈 a flute's trill, 🏆 triumph), to hear in 🎵 Music too.
+
 ## 0.0.455 (2026-10-26)
 
 Everything in 0.0.454, plus the dungeon room's own looks:

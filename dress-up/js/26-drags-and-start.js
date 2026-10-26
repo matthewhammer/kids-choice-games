@@ -1434,9 +1434,58 @@ function potLift(p) {
   B.potsGone = [...String(B.potsGone || "").split(",").filter(Boolean), p.name].join(",");
   changed();
 }
-// the action: a pot in reach (none held) is lifted; else, as before, through the nearest passage
+// (ticket 631, Matthew 2026-10-26: "extend the chest object as a placeable object in the dungeon: action to open a closed chest";
+// "do the animation from Legend of Zelda when we open, where the object hovers over the open chest and friend, and we hear the
+// recording with a musical flourish") A shut 💰 chest within reach (CHEST_REACH) is opened by the action press: it stays open,
+// the friend turns to us with their arms up, what it gives (its 🎁, giftSvg) rises out of it and hovers over their head while
+// its 🎶 flourish (chestFlourish) and its 🎙️ recording play, and then goes into their 🎒 backpack (state.backpack).
+const CHEST_REACH = 110, GIFT_RISE_MS = 700, GIFT_HOLD_MS = 1700, GIFT_FADE_MS = 300;
+let presenting = null;
+function chestNear() {
+  const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
+  let best = null;
+  for (const t of B.things || []) {
+    if (t.kind !== "chest" || t.open !== false) continue;
+    const d = Math.hypot((t.x ?? 0) - fx, ((t.z ?? 0) - fz) / 0.6);
+    if (d < CHEST_REACH && (!best || d < best.d)) best = { t, d };
+  }
+  return best && best.t;
+}
+function chestRecChoices() {
+  if (recList === null) { recLoad().then(() => changed()).catch(() => {}); return [["", "none"]]; }
+  return [["", "none"], ...recList.map((r, i) => [r.id, `${r.emoji || "🎙️"} ${recList.length - i} (${(r.ms / 1000).toFixed(1)} s)`])];
+}
+async function chestRecPlay(id) {
+  if (!id) return;
+  try { if (recList === null) await recLoad(); const r = (recList || []).find(x => x.id === id); if (r) recPlay(r); } catch (e) { /* (no recording: the flourish alone) */ }
+}
+function chestOpen(t) {
+  const body = state.body, give = t.gives || "gold";
+  t.open = true; body.facing = "front"; body.anim = "none"; entering = true; presenting = give;
+  state.backpack = [...(Array.isArray(state.backpack) ? state.backpack : []), { id: give, got: Date.now(), from: "chest" }];
+  changed(); draw();
+  chestFlourish(t.flourish || "chestfanfare"); chestRecPlay(t.rec);
+  const T = figureT, H = T.base || 300, k = T.k, O = makerOver(), g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("data-gift", give); O.append(g);
+  const inner = giftSvg(give, state.background), sc = k * H / 300 * 1.35;
+  const fromX = t.x ?? 0, fromY = (t.z ?? 0) - 50 * k, toX = T.dx, toY = T.sg + T.dy - k * H * 1.08, t0 = performance.now();
+  const frame = now => {
+    const e = now - t0, u = Math.min(1, e / GIFT_RISE_MS), ease = 1 - (1 - u) * (1 - u);
+    const x = fromX + (toX - fromX) * ease, y = fromY + (toY - fromY) * ease + (e > GIFT_RISE_MS ? Math.sin((e - GIFT_RISE_MS) / 220) * 4 * k : 0);
+    const fade = e > GIFT_RISE_MS + GIFT_HOLD_MS ? Math.max(0, 1 - (e - GIFT_RISE_MS - GIFT_HOLD_MS) / GIFT_FADE_MS) : 1;
+    const shine = e > GIFT_RISE_MS ? `<circle cx="0" cy="-36" r="${f1(46 + 6 * Math.sin(e / 160))}" fill="#fff6c8" opacity="${(0.35 * fade).toFixed(2)}"/>` : "";
+    g.setAttribute("transform", `translate(${f1(x)} ${f1(y)}) scale(${sc.toFixed(3)})`); g.setAttribute("opacity", fade.toFixed(2));
+    g.innerHTML = shine + inner;
+    if (fade > 0) { requestAnimationFrame(frame); return; }
+    g.remove(); presenting = null; entering = false; changed();
+  };
+  requestAnimationFrame(frame);
+}
+// the action: a pot in reach (none held) is lifted; a shut chest in reach opened; else, as before, through the nearest passage
 function actionPress() {
+  if (presenting) return true;
   if (!carry) { const p = potNear(); if (p) { potLift(p); return true; } }
+  if (!carry) { const c = chestNear(); if (c) { chestOpen(c); return true; } }
   return false;
 }
 function potSvg(x, y, r, color) {
