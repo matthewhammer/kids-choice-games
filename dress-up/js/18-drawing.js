@@ -1534,56 +1534,189 @@ function topDownFigure(B) {
   f.innerHTML = topDownSvg(state, B, figureT.g, figureT.base);
   const far = document.getElementById("figure-far"); if (far) far.style.display = "none";
 }
+// (ticket 626, Matthew 2026-10-26: "how many params (costumes included) translate into this new drawing perspective? ... Please
+// complete our drawing routines so that they accurately portray these postures") The friend from above, as the friend is: the
+// clothes the costume wears (COSTUME_CLOTHES, drawNow's own pattern fills, pat-shirt and pat-pants, or an animal suit's pat-fur),
+// the skin, the hands' and the feet's own colours and styles, the arms' and legs' lengths and widths, the head's size, the eyes
+// (their size; closed, ✕, stars or hearts), the ears, the mouth, every hair style with its length and bangs, a beard, 👁️'s
+// see-through for each part; and each costume's own things seen from above (TD_GEAR): its hat, hood, helmet or crown, its
+// cape, wings and tail, what it holds or carries on its back. Facing us, away, or to a side; walking, the legs and arms step.
 function topDownSvg(S, B, g, H) {
   const hex = (v, d) => /^#[0-9a-f]{3,8}$/i.test(String(v || "")) ? v : d;
-  const skin = hex(S.face.color, "#cfa000"), hair = hex(S.hair.color, "#2b2b2b"), shirt = hex(S.shirt.color, "#4a7bd0"),
-        pants = hex(S.pants.color, "#3b5b8c"), shoe = hex(S.shoes && S.shoes.color, "#5a3a1e");
-  const view = B.facing === "left" ? -1 : B.facing === "right" ? 1 : B.facing === "back" || B.facing === "away" ? 2 : 0;
-  const walking = B.anim === "walk" || B.anim === "run", ph = walking ? Math.sin(performance.now() / 1000 * Math.PI * 2 * 2.4) : 0;
-  const lw = f1(Math.max(1.5, 0.012 * H)), ln = c => darker(c);
-  const P = (x, y) => `${f1(x)} ${f1(y)}`, Y = u => g - u * H;   // (u: a share of their height up from the feet)
-  const skirt = /skirt|dress/.test(S.pants.style || ""), longHair = /long|braid|pony/.test(S.hair.style || "") && (S.hair.length ?? 100) > 40;
-  const hr = 0.2 * H, hy = Y(0.66), side = view === -1 || view === 1;
+  const kind = S.costume.kind, WC = S.costume, C = costumeOn(), A = C && ANIMALS[kind], suit = !!(A && A.suit), bird = isBird(kind);
+  let SH = { ...S.shirt, color: hex(S.shirt.color, "#4a7bd0") }, PA = { ...S.pants, color: hex(S.pants.color, "#3b5b8c") };
+  if (COSTUME_CLOTHES.hasOwnProperty(kind)) [SH, PA] = COSTUME_CLOTHES[kind](WC, SH, PA);
+  const skin = hex(S.face.color, "#cfa000"), hair = hex(S.hair.color, "#2b2b2b");
+  const shirtFill = suit ? "url(#pat-fur)" : "url(#pat-shirt)", pantsFill = suit ? "url(#pat-fur)" : "url(#pat-pants)";
+  const shirtCol = suit ? C.fur : hex(SH.color, "#4a7bd0"), pantsCol = suit ? C.fur : hex(PA.color, "#3b5b8c");
+  const handCol = suit ? C.fur : hex(S.hands && S.hands.color, skin), footStyle = S.shoes.style || "sneaker";
+  const shoe = suit ? C.fur : footStyle === "bare" || footStyle === "human" ? skin : hex(S.shoes.color, "#5a3a1e");
+  const seen = visibility(), V = (part, svg) => !svg || seen[part] >= 1 ? svg : seen[part] <= 0 ? "" : `<g opacity="${seen[part].toFixed(2)}">${svg}</g>`;
+  const view = B.facing === "left" ? -1 : B.facing === "right" ? 1 : B.facing === "back" || B.facing === "away" ? 2 : 0, side = view === -1 || view === 1;
+  const walking = B.anim === "walk" || B.anim === "run", ph = walking ? Math.sin(performance.now() / 1000 * Math.PI * 2 * (B.anim === "run" ? 3.2 : 2.4)) : 0;
+  const lw = f1(Math.max(1.5, 0.012 * H)), ln = c => darker(c), F = c => `fill="${c}" stroke="${ln(c)}" stroke-width="${lw}"`;
+  const P = (x, y) => `${f1(x)} ${f1(y)}`, Y = u => g - u * H;
+  const rel = (k, d, lo, hi) => Math.max(lo, Math.min(hi, (Number(S.body[k]) || d) / d));
+  const legF = rel("legLen", DEFAULTS.body.legLen || 140, 0.6, 1.6), armF = rel("armLen", DEFAULTS.body.armLen || 120, 0.6, 1.6);
+  const legW = 0.055 * H * rel("legW", DEFAULTS.body.legW || 26, 0.6, 1.8), armW = 0.075 * H * rel("armW", DEFAULTS.body.armW || 22, 0.6, 1.8);
+  const hr = 0.2 * H * Math.max(0.7, Math.min(1.5, (S.face.size ?? 46) / 46)), hy = Y(0.66 + 0.06 * (legF - 1)), top = Y(0.5 + 0.06 * (legF - 1)), hip = Y(0.3 + 0.06 * (legF - 1));
+  const skirt = /skirt|dress/.test(PA.style || ""), longSkirt = skirt && (PA.skirtLen ?? 40) > 70, style = S.hair.style || "short";
+  const hairLen = Math.max(0.3, Math.min(4, (S.hair.length ?? 100) / 100)), bangs = Math.max(0, Math.min(3, (S.hair.bangs ?? 100) / 100));
+  const gear = (TD_GEAR[kind] || (() => ({})))({ WC, C, A, kind, H, g, hy, hr, top, hip, view, side, ph, P, Y, F, lw, ln, hex, skin, hair });
+  const ghost = kind === "ghost", covered = !!(gear.hood || gear.helm || gear.headFill || suit);   // (a hood, a helmet or a suit's own head: no hair of the friend's shows)
   let s = `<ellipse cx="0" cy="${f1(g)}" rx="${f1(0.24 * H)}" ry="${f1(0.07 * H)}" fill="#000000" opacity="0.28"/>`;
+  if (ghost) {   // (a sheet over everything: a round top, its hem rippling, two dark eyes)
+    const col = hex(WC.ghostColor, "#f4f6f8"), ey = hy + 0.06 * H, hem = Y(0.08) + 0.02 * H * ph;
+    s += `<path d="M${P(-hr * 1.15, hem)} Q${P(-hr * 1.4, hy)} ${P(0, hy - hr * 1.05)} Q${P(hr * 1.4, hy)} ${P(hr * 1.15, hem)} Q${P(hr * 0.6, hem - 0.04 * H)} ${P(0, hem)} Q${P(-hr * 0.6, hem - 0.04 * H)} ${P(-hr * 1.15, hem)} Z" ${F(col)} opacity="0.92"/>`;
+    if (view !== 2 && !WC.ghostHideEyes) for (const x of side ? [view * 0.1 * H] : [-0.06 * H, 0.06 * H]) s += `<ellipse cx="${f1(x)}" cy="${f1(ey)}" rx="${f1(0.025 * H)}" ry="${f1(0.035 * H)}" fill="#1b1b1b"/>`;
+    return s;
+  }
+  // behind the friend facing us or to a side: a cape, wings, a tail; facing away, they are drawn over them (below)
+  if (view !== 2) s += (gear.cape || "") + (gear.wings || "") + (gear.tail || "") + (gear.back || "");
   // the legs, short, seen from above; stepping, one lifts while the other is down; in profile they swing
-  const leg = (x, lift, dx = 0) => {
-    const top = Y(0.27), foot = g - lift;
-    return `<path d="M${P(x - 0.055 * H, top)} L${P(x + dx - 0.05 * H, foot - 0.03 * H)} L${P(x + dx + 0.05 * H, foot - 0.03 * H)} L${P(x + 0.055 * H, top)} Z" fill="${pants}" stroke="${ln(pants)}" stroke-width="${lw}"/>` +
-      `<ellipse cx="${f1(x + dx)}" cy="${f1(foot - 0.02 * H)}" rx="${f1(0.065 * H)}" ry="${f1(0.04 * H)}" fill="${shoe}" stroke="${ln(shoe)}" stroke-width="${lw}"/>`;
-  };
-  if (side) s += leg(0, Math.max(0, ph) * 0.03 * H, -view * ph * 0.08 * H) + leg(0, Math.max(0, -ph) * 0.03 * H, view * ph * 0.08 * H);
-  else s += leg(-0.08 * H, Math.max(0, ph) * 0.035 * H) + leg(0.08 * H, Math.max(0, -ph) * 0.035 * H);
-  // long hair down the back, under the body when they face us or to a side; over it, facing away
-  // (to a side, behind the head only: from its back to just past its middle)
+  const legTop = Y(0.27 + 0.06 * (legF - 1)), foot = (x, lift) => {
+    const boot = footStyle === "boot" || suit && kind !== "giraffe" && kind !== "deer", big = footStyle === "clown" ? 1.6 : kind === "sasquatch" ? 1.4 : 1;
+    return `<ellipse cx="${f1(x)}" cy="${f1(g - lift - 0.02 * H)}" rx="${f1(0.065 * H * big)}" ry="${f1(0.04 * H * big)}" ${F(shoe)}/>` +
+      (boot ? `<rect x="${f1(x - legW)}" y="${f1(g - lift - 0.08 * H)}" width="${f1(2 * legW)}" height="${f1(0.06 * H)}" rx="${f1(0.015 * H)}" ${F(shoe)}/>` : "") +
+      (footStyle === "talons" && !suit ? [-1, 0, 1].map(i => `<path d="M${P(x + i * 0.03 * H, g - lift - 0.01 * H)} l${f1(i * 0.012 * H)} ${f1(0.03 * H)}" stroke="${ln(shoe)}" stroke-width="${lw}"/>`).join("") : ""); };
+  const leg = (x, lift, dx = 0) => V("pants", `<path d="M${P(x - legW, legTop)} L${P(x + dx - legW * 0.9, g - lift - 0.03 * H)} L${P(x + dx + legW * 0.9, g - lift - 0.03 * H)} L${P(x + legW, legTop)} Z" fill="${pantsFill}" stroke="${ln(pantsCol)}" stroke-width="${lw}"/>`) + V("feet", foot(x + dx, lift));
+  if (!longSkirt) {
+    if (side) s += leg(0, Math.max(0, ph) * 0.03 * H, -view * ph * 0.08 * H) + leg(0, Math.max(0, -ph) * 0.03 * H, view * ph * 0.08 * H);
+    else s += leg(-0.08 * H, Math.max(0, ph) * 0.035 * H) + leg(0.08 * H, Math.max(0, -ph) * 0.035 * H);
+  } else s += V("feet", side ? foot(view * ph * 0.05 * H, 0) : foot(-0.07 * H, Math.max(0, ph) * 0.02 * H) + foot(0.07 * H, Math.max(0, -ph) * 0.02 * H));
+  // hair down the back (long, or pigtails), under the body when they face us or to a side; over it, facing away
   const [ha, hb] = side ? (view > 0 ? [-0.95, 0.15] : [-0.15, 0.95]) : [-0.9, 0.9];
-  const hang = longHair ? `<path d="M${P(ha * hr, hy)} Q${P((ha - 0.15) * hr, Y(0.42))} ${P(ha * hr * 0.7, Y(0.36))} L${P(hb * hr * 0.7, Y(0.36))} Q${P((hb + 0.15) * hr, Y(0.42))} ${P(hb * hr, hy)} Z" fill="${hair}" stroke="${ln(hair)}" stroke-width="${lw}"/>` : "";
-  if (view !== 2) s += hang;
-  // the body: the shirt from the shoulders to the hips, the pants (or a skirt) below it; the arms at its sides, swinging
-  const bw = side ? 0.15 * H : 0.19 * H, top = Y(0.5), hip = Y(0.3);
-  const arm = (x, swing) => `<path d="M${P(x, top + 0.03 * H)} L${P(x + swing * 0.3, hip + swing)}" stroke="${shirt}" stroke-width="${f1(0.075 * H)}" stroke-linecap="round"/>` +
-    `<circle cx="${f1(x + swing * 0.3)}" cy="${f1(hip + swing + 0.01 * H)}" r="${f1(0.04 * H)}" fill="${skin}" stroke="${ln(skin)}" stroke-width="${lw}"/>`;
+  const drop = Math.min(0.62, 0.3 * hairLen);
+  const hang = covered || style === "none" ? "" : style === "long" ? `<path d="M${P(ha * hr, hy)} Q${P((ha - 0.15) * hr, Y(0.66 - drop * 0.75))} ${P(ha * hr * 0.7, Y(0.66 - drop))} L${P(hb * hr * 0.7, Y(0.66 - drop))} Q${P((hb + 0.15) * hr, Y(0.66 - drop * 0.75))} ${P(hb * hr, hy)} Z" ${F(hair)}/>`
+    : style === "pigtails" ? [-1, 1].filter(sd => !side || sd === -view).map(sd => `<path d="M${P(sd * hr * 0.85, hy - hr * 0.2)} q${f1(sd * hr * 0.6)} ${f1(hr * 0.3)} ${f1(sd * hr * 0.35)} ${f1(hr * 0.5 + 0.12 * H * hairLen)}" stroke="${hair}" stroke-width="${f1(0.06 * H)}" stroke-linecap="round" fill="none"/>`).join("") : "";
+  if (view !== 2) s += V("hair", hang);
+  // the body: the shirt from the shoulders to the hips, the pants (or a skirt, or a dress to the feet) below it; the arms at
+  // its sides, swinging, the hands at their ends
+  const bw = (side ? 0.15 : 0.19) * H * Math.max(0.8, Math.min(1.4, (SH.width ?? 100) / 100)), armEnd = hip + 0.03 * H * (armF - 1);
+  const sleeve = SH.style === "tank" ? 0 : SH.style === "long" || suit ? 1 : 0.45;
+  const arm = (x, swing) => { const ex = x + swing * 0.3, ey = armEnd + swing, mx = x + (ex - x) * sleeve, my = top + 0.03 * H + (ey - top - 0.03 * H) * sleeve;
+    return V("hands", `<path d="M${P(x, top + 0.03 * H)} L${P(ex, ey)}" stroke="${suit ? C.fur : skin}" stroke-width="${f1(armW)}" stroke-linecap="round"/>`) +
+      (sleeve ? V("shirt", `<path d="M${P(x, top + 0.03 * H)} L${P(mx, my)}" stroke="${shirtCol}" stroke-width="${f1(armW * 1.08)}" stroke-linecap="round"/>`) : "") +
+      V("hands", `<circle cx="${f1(ex)}" cy="${f1(ey + 0.01 * H)}" r="${f1(0.04 * H * Math.max(0.6, Math.min(1.6, (S.hands.size ?? 100) / 100)))}" ${F(handCol)}/>`); };
   if (side) s += arm(-view * 0.02 * H, -ph * 0.05 * H);
   else s += arm(-bw - 0.02 * H, ph * 0.03 * H) + arm(bw + 0.02 * H, -ph * 0.03 * H);
-  s += skirt ? `<path d="M${P(-bw, Y(0.33))} L${P(-bw * 1.35, Y(0.2))} L${P(bw * 1.35, Y(0.2))} L${P(bw, Y(0.33))} Z" fill="${pants}" stroke="${ln(pants)}" stroke-width="${lw}"/>`
-             : `<rect x="${f1(-bw * 0.95)}" y="${f1(Y(0.33))}" width="${f1(bw * 1.9)}" height="${f1(0.07 * H)}" rx="${f1(0.02 * H)}" fill="${pants}" stroke="${ln(pants)}" stroke-width="${lw}"/>`;
-  s += `<rect x="${f1(-bw)}" y="${f1(top)}" width="${f1(bw * 2)}" height="${f1(Y(0.31) - top)}" rx="${f1(0.06 * H)}" fill="${shirt}" stroke="${ln(shirt)}" stroke-width="${lw}"/>`;
+  s += V("pants", skirt ? `<path d="M${P(-bw, Y(0.33))} L${P(-bw * (longSkirt ? 1.5 : 1.35), longSkirt ? Y(0.04) : Y(0.2))} L${P(bw * (longSkirt ? 1.5 : 1.35), longSkirt ? Y(0.04) : Y(0.2))} L${P(bw, Y(0.33))} Z" fill="${pantsFill}" stroke="${ln(pantsCol)}" stroke-width="${lw}"/>`
+             : `<rect x="${f1(-bw * 0.95)}" y="${f1(Y(0.33))}" width="${f1(bw * 1.9)}" height="${f1(0.07 * H)}" rx="${f1(0.02 * H)}" fill="${pantsFill}" stroke="${ln(pantsCol)}" stroke-width="${lw}"/>`);
+  s += V("shirt", `<rect x="${f1(-bw)}" y="${f1(top)}" width="${f1(bw * 2)}" height="${f1(Y(0.31) - top)}" rx="${f1(0.06 * H)}" fill="${shirtFill}" stroke="${ln(shirtCol)}" stroke-width="${lw}"/>`);
+  if (suit && C.belly && view === 0) s += V("shirt", `<ellipse cx="0" cy="${f1((top + Y(0.31)) / 2 + 0.01 * H)}" rx="${f1(bw * 0.55)}" ry="${f1((Y(0.31) - top) * 0.38)}" fill="${C.belly}"/>`);
+  s += gear.body || "";
   if (side) s += arm(view * 0.02 * H, ph * 0.05 * H);
-  // the head, big, seen mostly from its top: facing us the hair over its upper part, the face below it; facing away, all
-  // hair; to a side, the face's half on that side
-  s += `<circle cx="0" cy="${f1(hy)}" r="${f1(hr)}" fill="${view === 2 ? hair : skin}" stroke="${ln(view === 2 ? hair : skin)}" stroke-width="${lw}"/>`;
-  // (the hairline, from above: low, the face only the head's lower part)
-  const line = hy + 0.045 * H, lx = Math.sqrt(Math.max(0, hr * hr - (line - hy) ** 2));
-  if (view === 0) {
-    s += `<path d="M${P(-lx, line)} A${f1(hr)} ${f1(hr)} 0 1 1 ${P(lx, line)} Q${P(lx * 0.5, line - 0.05 * H)} ${P(0, line - 0.005 * H)} Q${P(-lx * 0.5, line - 0.05 * H)} ${P(-lx, line)} Z" fill="${hair}" stroke="${ln(hair)}" stroke-width="${lw}"/>`;
-    for (const x of [-0.06 * H, 0.06 * H]) s += `<ellipse cx="${f1(x)}" cy="${f1(hy + 0.1 * H)}" rx="${f1(0.017 * H)}" ry="${f1(0.024 * H)}" fill="#1b1b1b"/>`;
-  } else if (side) {
-    // (to a side: the hair over the top and the back half, down to the neck; the face's sliver toward where they go, one eye)
-    const front = [view * lx, line], back = [-view * hr * 0.55, hy + hr * 0.84];
-    s += `<path d="M${P(...front)} A${f1(hr)} ${f1(hr)} 0 1 ${view > 0 ? 0 : 1} ${P(...back)} Q${P(-view * hr * 0.05, hy + hr * 0.3)} ${P(view * hr * 0.2, line - 0.01 * H)} Q${P(view * hr * 0.6, line - 0.04 * H)} ${P(...front)} Z" fill="${hair}" stroke="${ln(hair)}" stroke-width="${lw}"/>` +
-         `<ellipse cx="${f1(view * 0.12 * H)}" cy="${f1(hy + 0.1 * H)}" rx="${f1(0.015 * H)}" ry="${f1(0.023 * H)}" fill="#1b1b1b"/>`;
-  } else s += hang;
+  s += gear.held || "";
+  if (view === 2) s += V("hair", hang) + (gear.cape || "") + (gear.back || "") + (gear.wings || "") + (gear.tail || "");
+  // the head, big, seen mostly from its top; its ears; the face's lower part (eyes, mouth) toward where they look
+  const ears = S.face.ears && S.face.ears !== "none" && !covered ? (view === 2 ? [-1, 1] : side ? [-view] : [-1, 1]).map(sd => S.face.ears === "elf"
+      ? `<path d="M${P(sd * hr * 0.9, hy + 0.02 * H)} L${P(sd * hr * 1.45, hy - 0.06 * H)} L${P(sd * hr * 0.95, hy + 0.06 * H)} Z" ${F(skin)}/>`
+      : `<ellipse cx="${f1(sd * (side ? 0.05 * H : hr * 0.98))}" cy="${f1(hy + 0.04 * H)}" rx="${f1(0.035 * H)}" ry="${f1(0.05 * H)}" ${F(skin)}/>`).join("") : "";
+  const afro = style === "afro" ? `<circle cx="0" cy="${f1(hy - hr * 0.15)}" r="${f1(hr * (1.25 + 0.15 * hairLen))}" ${F(hair)}/>` : "";
+  s += V("hair", covered ? "" : afro) + V("head", ears);
+  const headCol = gear.headFill || (suit ? C.fur : view === 2 ? hair : skin);
+  s += V("head", `<circle cx="0" cy="${f1(hy)}" r="${f1(hr)}" fill="${suit && !gear.headFill ? "url(#pat-fur)" : headCol}" stroke="${ln(suit ? C.fur : headCol)}" stroke-width="${lw}"/>`);
+  if (suit && view !== 2 && !gear.headFill) s += V("head", `<ellipse cx="${f1(side ? view * hr * 0.35 : 0)}" cy="${f1(hy + hr * 0.3)}" rx="${f1(hr * (side ? 0.45 : 0.62))}" ry="${f1(hr * 0.55)}" fill="${skin}" stroke="${ln(skin)}" stroke-width="${lw}"/>`);
+  // (the hairline, from above: low, the face only the head's lower part; bangs bring it lower)
+  const line = hy + 0.02 * H + 0.03 * H * Math.min(1.5, bangs), lx = Math.sqrt(Math.max(0, hr * hr - (line - hy) ** 2));
+  const cap = (pts = "") => view === 0 ? `<path d="M${P(-lx, line)} A${f1(hr)} ${f1(hr)} 0 1 1 ${P(lx, line)} Q${P(lx * 0.5, line - 0.05 * H)} ${P(0, line - 0.005 * H)} Q${P(-lx * 0.5, line - 0.05 * H)} ${P(-lx, line)} Z" ${F(hair)}/>${pts}`
+    : side ? `<path d="M${P(view * lx, line)} A${f1(hr)} ${f1(hr)} 0 1 ${view > 0 ? 0 : 1} ${P(-view * hr * 0.55, hy + hr * 0.84)} Q${P(-view * hr * 0.05, hy + hr * 0.3)} ${P(view * hr * 0.2, line - 0.01 * H)} Q${P(view * hr * 0.6, line - 0.04 * H)} ${P(view * lx, line)} Z" ${F(hair)}/>${pts}`
+    : `<circle cx="0" cy="${f1(hy)}" r="${f1(hr)}" ${F(hair)}/>${pts}`;
+  const bumps = (n, r) => Array.from({ length: n }, (_, i) => { const a = Math.PI * (1.05 + 0.9 * i / (n - 1)); return `<circle cx="${f1(Math.cos(a) * hr)}" cy="${f1(hy + Math.sin(a) * hr)}" r="${f1(r)}" ${F(hair)}/>`; }).join("");
+  const spikes = Array.from({ length: 5 }, (_, i) => { const a = Math.PI * (1.15 + 0.7 * i / 4), x = Math.cos(a) * hr, y = hy + Math.sin(a) * hr;
+    return `<path d="M${P(x - 0.03 * H, y + 0.01 * H)} L${P(x * 1.25, y - 0.07 * H * Math.min(2, hairLen))} L${P(x + 0.03 * H, y + 0.01 * H)} Z" ${F(hair)}/>`; }).join("");
+  const hairTop = covered ? "" : style === "none" ? "" : style === "curly" ? bumps(7, 0.05 * H) + cap() : style === "spiky" ? spikes + cap() : cap();
+  // (the face toward where they look: facing us its two eyes and mouth; to a side, one eye; the eyes' size and kind)
+  const ef = Math.max(0.3, Math.min(3, (S.face.eyes ?? 100) / 100)), er = 0.017 * H * ef, ey = hy + 0.1 * H;
+  const eye = x => S.face.closed > 0 ? `<path d="M${P(x - er, ey)} q${f1(er)} ${f1(er * 0.8)} ${f1(2 * er)} 0" stroke="#1b1b1b" stroke-width="${lw}" fill="none"/>`
+    : S.face.xeyes > 0 ? `<path d="M${P(x - er, ey - er)} l${f1(2 * er)} ${f1(2 * er)} M${P(x + er, ey - er)} l${f1(-2 * er)} ${f1(2 * er)}" stroke="#1b1b1b" stroke-width="${lw}"/>`
+    : S.face.stars > 0 || S.face.hearts > 0 ? `<text x="${f1(x)}" y="${f1(ey + er)}" font-size="${f1(er * 3)}" text-anchor="middle" fill="${S.face.hearts > 0 ? "#e11d48" : "#f2c230"}">${S.face.hearts > 0 ? "♥" : "★"}</text>`
+    : `<ellipse cx="${f1(x)}" cy="${f1(ey)}" rx="${f1(er)}" ry="${f1(er * 1.4)}" fill="#1b1b1b"/>` + (ef > 1.3 && S.face.irisColor ? `<circle cx="${f1(x)}" cy="${f1(ey)}" r="${f1(er * 0.55)}" fill="${hex(S.face.irisColor, "#4a3222")}"/>` : "");
+  const mouth = view === 0 && !gear.mask ? (S.face.open > 0 ? `<ellipse cx="0" cy="${f1(hy + 0.16 * H)}" rx="${f1(0.025 * H)}" ry="${f1(0.018 * H)}" fill="#3a1010"/>` : (S.face.smile ?? 85) > 40 ? `<path d="M${P(-0.03 * H, hy + 0.15 * H)} q${f1(0.03 * H)} ${f1(0.02 * H)} ${f1(0.06 * H)} 0" stroke="#3a1010" stroke-width="${lw}" fill="none"/>` : "") : "";
+  const beard = view === 0 && S.hair.beard && S.hair.beard !== "none" && !suit ? `<path d="M${P(-hr * 0.7, hy + 0.11 * H)} Q${P(0, hy + hr + 0.05 * H * Math.min(2, (S.hair.beardLength ?? 100) / 100))} ${P(hr * 0.7, hy + 0.11 * H)} Q${P(0, hy + 0.15 * H)} ${P(-hr * 0.7, hy + 0.11 * H)} Z" ${F(hair)}/>` : "";
+  s += gear.hood || "";   // (a hood over the head, the face's opening in it: under the eyes)
+  s += V("hair", hairTop) + (gear.faceUnder || "");
+  if (view === 0) s += V("eyes", gear.eyes !== undefined ? gear.eyes : eye(-0.06 * H) + eye(0.06 * H)) + V("head", mouth) + V("hair", beard);
+  else if (side) s += V("eyes", gear.eyes !== undefined ? gear.eyes : eye(view * 0.12 * H));
+  s += (gear.hat || "") + (gear.helm || "");
+  if (gear.mask) s += gear.mask;
   return s;
 }
+// (ticket 626) each costume's own things, from above, for topDownSvg: hat (on the head), hood or helm (in place of the hair),
+// headFill (the head's own colour: a helmet, a robot's box), cape and back (behind them, over them facing away), wings, tail,
+// body (over the shirt: a belt, a tabard), held (in a hand), eyes (in place of the friend's), mask (over the face). Each takes
+// the drawing's frame (h): the head's middle (hy) and size (hr), the shoulders (top), the hips (hip), which way they face.
+// (a hat from above: its brim high on the head, so the face below it shows; its crown a point, or round as a cowboy's)
+const tdHat = (h, col, brim, tip, tipCol = col, round = false) => { const { P, hy, hr, F, H, view } = h, by = hy - hr * 0.62;
+  return `<ellipse cx="0" cy="${f1(by)}" rx="${f1(hr * brim)}" ry="${f1(hr * brim * 0.42)}" ${F(col)}/>` +
+    (round ? `<path d="M${P(-hr * 0.6, by)} Q${P(-hr * 0.62, by - tip * H)} ${P(0, by - tip * H)} Q${P(hr * 0.62, by - tip * H)} ${P(hr * 0.6, by)} Z" ${F(tipCol)}/><path d="M${P(-hr * 0.6, by - 0.01 * H)} Q${P(0, by + 0.015 * H)} ${P(hr * 0.6, by - 0.01 * H)}" stroke="${darker(tipCol)}" stroke-width="${f1(0.02 * H)}" fill="none"/>`
+           : `<path d="M${P(-hr * 0.55, by)} L${P(view === 2 ? 0 : -h.view * 0.02 * H, by - tip * H)} L${P(hr * 0.55, by)} Z" ${F(tipCol)}/>`); };
+const tdEars = (h, sh) => { const { P, hy, hr, F, C } = h, col = C.fur, in2 = C.accent || C.belly;
+  return [-1, 1].map(sd => sh === "round" ? `<circle cx="${f1(sd * hr * 0.72)}" cy="${f1(hy - hr * 0.78)}" r="${f1(hr * 0.3)}" ${F(col)}/><circle cx="${f1(sd * hr * 0.72)}" cy="${f1(hy - hr * 0.78)}" r="${f1(hr * 0.15)}" fill="${in2}"/>`
+    : sh === "tall" ? `<path d="M${P(sd * hr * 0.35, hy - hr * 0.8)} L${P(sd * hr * 0.75, hy - hr * 1.55)} L${P(sd * hr * 0.92, hy - hr * 0.55)} Z" ${F(col)}/>`
+    : sh === "long" ? `<ellipse cx="${f1(sd * hr * 1.15)}" cy="${f1(hy - hr * 0.35)}" rx="${f1(hr * 0.42)}" ry="${f1(hr * 0.18)}" ${F(col)} transform="rotate(${sd * -20} ${f1(sd * hr * 1.15)} ${f1(hy - hr * 0.35)})"/>`
+    : `<path d="M${P(sd * hr * 0.3, hy - hr * 0.85)} L${P(sd * hr * 0.7, hy - hr * 1.3)} L${P(sd * hr * 0.9, hy - hr * 0.5)} Z" ${F(col)}/><path d="M${P(sd * hr * 0.45, hy - hr * 0.85)} L${P(sd * hr * 0.68, hy - hr * 1.12)} L${P(sd * hr * 0.78, hy - hr * 0.68)} Z" fill="${in2}"/>`).join(""); };
+const tdTail = (h, col, len, w, tip = null) => { const { P, hip, H, view, side } = h, sx = side ? -view : 0, x0 = sx * 0.12 * H, y0 = hip + 0.02 * H;
+  const x1 = side ? -view * (0.12 + len) * H : 0.12 * H * Math.sin(performance.now() / 600), y1 = side ? y0 - 0.05 * H : y0 + (view === 2 ? 0.02 : -0.04) * H - len * H * (view === 2 ? -0.3 : 0.5);
+  return `<path d="M${P(x0, y0)} Q${P((x0 + x1) / 2 + 0.05 * H, (y0 + y1) / 2)} ${P(x1, y1)}" stroke="${col}" stroke-width="${f1(w * H)}" stroke-linecap="round" fill="none"/>` + (tip ? `<circle cx="${f1(x1)}" cy="${f1(y1)}" r="${f1(w * H * 0.8)}" fill="${tip}"/>` : ""); };
+const tdWings = (h, col, span, shape = "round") => { const { P, top, H, F, view } = h, y = top + 0.05 * H, flap = 0.03 * H * Math.sin(performance.now() / 160);
+  return [-1, 1].map(sd => shape === "bat" ? `<path d="M${P(sd * 0.12 * H, y)} L${P(sd * span * H, y - 0.12 * H + flap)} L${P(sd * span * 0.8 * H, y + 0.05 * H)} L${P(sd * span * 0.55 * H, y + 0.02 * H)} L${P(sd * span * 0.4 * H, y + 0.1 * H)} Z" ${F(col)}/>`
+    : `<ellipse cx="${f1(sd * span * 0.6 * H)}" cy="${f1(y + flap)}" rx="${f1(span * 0.5 * H)}" ry="${f1(0.11 * H)}" ${F(col)} transform="rotate(${sd * -15} ${f1(sd * span * 0.6 * H)} ${f1(y)})"/>`).join(""); };
+const tdCape = (h, col, len, trim = null) => { const { P, top, H, F } = h, w = 0.22 * H;
+  return `<path d="M${P(-w * 0.8, top)} L${P(-w * 1.2, top + len * H)} Q${P(0, top + len * H + 0.03 * H)} ${P(w * 1.2, top + len * H)} L${P(w * 0.8, top)} Z" ${F(col)}/>` +
+    (trim ? `<path d="M${P(-w * 1.2, top + len * H)} Q${P(0, top + len * H + 0.03 * H)} ${P(w * 1.2, top + len * H)}" stroke="${trim}" stroke-width="${f1(0.025 * H)}" fill="none"/>` : ""); };
+const tdHood = (h, col, face = true) => { const { P, hy, hr, F, view, side } = h;
+  return `<circle cx="0" cy="${f1(hy - hr * 0.05)}" r="${f1(hr * 1.12)}" ${F(col)}/>` + (face && view !== 2 ? `<ellipse cx="${f1(side ? view * hr * 0.4 : 0)}" cy="${f1(hy + hr * 0.38)}" rx="${f1(hr * (side ? 0.4 : 0.58))}" ry="${f1(hr * 0.5)}" fill="${h.skin}" stroke="${darker(col)}" stroke-width="${h.lw}"/>` : ""); };
+const tdHeld = (h, svg) => h.view === 2 ? "" : svg;
+const TD_GEAR = {
+  // the animal suits: a hood of fur with the animal's ears (the head's own fur, drawn by topDownSvg), a tail, a bird's or moth's wings
+  ...Object.fromEntries(["cat", "tiger", "bobcat", "leopard", "cheetah", "jaguar"].map(k => [k, h => ({ hat: tdEars(h, "pointed"), tail: tdTail(h, h.C.fur, 0.22, 0.035, h.C.marks) })])),
+  lion: h => ({ hat: `<circle cx="0" cy="${f1(h.hy - h.hr * 0.05)}" r="${f1(h.hr * 1.3)}" fill="none" stroke="${h.C.marks}" stroke-width="${f1(h.hr * 0.4)}" stroke-dasharray="${f1(h.hr * 0.25)} ${f1(h.hr * 0.08)}"/>` + tdEars(h, "round"), tail: tdTail(h, h.C.fur, 0.22, 0.03, h.C.marks) }),
+  bear: h => ({ hat: tdEars(h, "round"), tail: tdTail(h, h.C.fur, 0.03, 0.06) }),
+  raccoon: h => ({ hat: tdEars(h, "round"), tail: tdTail(h, h.C.fur, 0.2, 0.06, h.C.marks), faceUnder: h.view === 2 ? "" : `<rect x="${f1(-h.hr * 0.75)}" y="${f1(h.hy + 0.07 * h.H)}" width="${f1(h.hr * 1.5)}" height="${f1(0.06 * h.H)}" rx="${f1(0.03 * h.H)}" fill="${h.C.marks}"/>` }),
+  wolf: h => ({ hat: tdEars(h, "tall"), tail: tdTail(h, h.C.fur, 0.2, 0.07, h.C.accent) }),
+  deer: h => ({ hat: tdEars(h, "long") + [-1, 1].map(sd => `<path d="M${h.P(sd * h.hr * 0.3, h.hy - h.hr * 0.8)} l${f1(sd * h.hr * 0.3)} ${f1(-h.hr * 0.7)} m0 ${f1(h.hr * 0.3)} l${f1(sd * h.hr * 0.3)} ${f1(-h.hr * 0.2)} m${f1(-sd * h.hr * 0.3)} ${f1(-h.hr * 0.1)} l${f1(-sd * h.hr * 0.1)} ${f1(-h.hr * 0.35)}" stroke="#7a5230" stroke-width="${f1(0.025 * h.H)}" stroke-linecap="round" fill="none"/>`).join(""), tail: tdTail(h, "#ffffff", 0.03, 0.05) }),
+  dragon: h => ({ hat: [-1, 1].map(sd => `<path d="M${h.P(sd * h.hr * 0.4, h.hy - h.hr * 0.75)} L${h.P(sd * h.hr * 0.8, h.hy - h.hr * 1.5)} L${h.P(sd * h.hr * 0.7, h.hy - h.hr * 0.6)} Z" ${h.F(h.C.horn || "#f4ecd6")}/>`).join(""),
+                  wings: tdWings(h, h.C.wing || "#d0453a", 0.5, "bat"), tail: tdTail(h, h.C.fur, 0.35, 0.06, h.C.wing) }),
+  sasquatch: h => ({ hat: tdEars(h, "round") }),
+  giraffe: h => ({ hat: tdEars(h, "long") + [-1, 1].map(sd => `<path d="M${h.P(sd * h.hr * 0.25, h.hy - h.hr * 0.85)} l0 ${f1(-h.hr * 0.5)}" stroke="${h.C.marks}" stroke-width="${f1(0.025 * h.H)}" stroke-linecap="round"/><circle cx="${f1(sd * h.hr * 0.25)}" cy="${f1(h.hy - h.hr * 1.38)}" r="${f1(0.022 * h.H)}" fill="${h.C.marks}"/>`).join(""), tail: tdTail(h, h.C.fur, 0.18, 0.025, h.C.marks) }),
+  moth: h => ({ hat: [-1, 1].map(sd => `<path d="M${h.P(sd * h.hr * 0.2, h.hy - h.hr * 0.9)} q${f1(sd * h.hr * 0.3)} ${f1(-h.hr * 0.6)} ${f1(sd * h.hr * 0.6)} ${f1(-h.hr * 0.6)}" stroke="${h.C.marks}" stroke-width="${f1(0.03 * h.H)}" fill="none" stroke-linecap="round"/>`).join(""),
+                wings: tdWings(h, h.C.accent || "#e7b8cb", 0.42) }),
+  // the birds: a hood with a beak (no suit, the falcon and the eagle, over the friend's own clothes), wings and a fan of a tail
+  ...Object.fromEntries(["falcon", "eagle", "falconsuit", "eaglesuit"].map(k => [k, h => ({
+    hood: tdHood(h, eagleHead(k) ? "#ffffff" : h.C.fur, false) + (h.view === 2 ? "" : `<path d="M${h.P((h.side ? h.view * h.hr * 0.6 : 0) - 0.03 * h.H, h.hy + h.hr * 0.25)} l${f1(0.06 * h.H)} 0 l${f1(-0.03 * h.H)} ${f1(0.06 * h.H)} Z" ${h.F(h.C.accent)}/>`),
+    eyes: h.view === 2 ? "" : (h.side ? [h.view * h.hr * 0.45] : [-0.07 * h.H, 0.07 * h.H]).map(x => `<circle cx="${f1(x)}" cy="${f1(h.hy + 0.02 * h.H)}" r="${f1(0.018 * h.H)}" fill="${h.C.eyes}" stroke="#1b1b1b" stroke-width="${h.lw}"/>`).join(""),
+    wings: tdWings(h, h.C.fur, 0.42), tail: tdTail(h, eagleHead(k) ? "#ffffff" : h.C.marks, 0.05, 0.08) })])),
+  // the costumes: hats, hoods, helmets, crowns; capes and mantles; what they carry
+  witch: h => ({ hat: tdHat(h, h.hex(h.WC.witchColor, "#1f1f22"), 1.45, 0.32), held: h.WC.broom ? tdHeld(h, `<path d="M${h.P(0.24 * h.H, h.top)} L${h.P(0.3 * h.H, h.g - 0.05 * h.H)}" stroke="#7a5230" stroke-width="${f1(0.02 * h.H)}"/><path d="M${h.P(0.27 * h.H, h.g - 0.12 * h.H)} l${f1(-0.05 * h.H)} ${f1(0.12 * h.H)} l${f1(0.12 * h.H)} 0 Z" ${h.F("#c9a25a")}/>`) : "" }),
+  wizard: h => ({ hat: tdHat(h, h.hex(h.WC.wizardRobe, "#2a3a8c"), 1.4, 0.36) + `<text x="0" y="${f1(h.hy - h.hr * 1.2)}" font-size="${f1(0.06 * h.H)}" text-anchor="middle" fill="${h.hex(h.WC.wizardStars, "#f2c230")}">★</text>`,
+                  held: h.WC.staff ? tdHeld(h, `<path d="M${h.P(0.25 * h.H, h.top - 0.15 * h.H)} L${h.P(0.27 * h.H, h.g - 0.02 * h.H)}" stroke="#7a5230" stroke-width="${f1(0.025 * h.H)}"/><circle cx="${f1(0.25 * h.H)}" cy="${f1(h.top - 0.17 * h.H)}" r="${f1(0.04 * h.H)}" fill="${h.hex(h.WC.staffOrb, "#7dd3fc")}" stroke="#ffffff" stroke-width="${h.lw}"/>`) : "" }),
+  gnome: h => ({ hat: tdHat(h, h.hex(h.WC.gnomeHat, "#c0392b"), 1.25, 0.42) }),
+  robin: h => ({ hat: tdHat(h, h.hex(h.WC.robinHat, "#3f7d3a"), 1.15, 0.14) + `<path d="M${h.P(h.hr * 0.3, h.hy - h.hr * 0.5)} q${f1(h.hr * 0.6)} ${f1(-h.hr * 0.5)} ${f1(h.hr * 0.9)} ${f1(-h.hr * 0.9)}" stroke="${h.hex(h.WC.robinFeather, "#c0392b")}" stroke-width="${f1(0.025 * h.H)}" fill="none" stroke-linecap="round"/>`,
+                 back: (h.WC.quiver ? `<rect x="${f1(0.05 * h.H)}" y="${f1(h.top - 0.06 * h.H)}" width="${f1(0.06 * h.H)}" height="${f1(0.16 * h.H)}" rx="${f1(0.02 * h.H)}" ${h.F("#7a5230")}/>` : "") + (h.WC.bow ? `<path d="M${h.P(-0.18 * h.H, h.top - 0.05 * h.H)} Q${h.P(0, h.top + 0.12 * h.H)} ${h.P(0.18 * h.H, h.hip)}" stroke="#7a5230" stroke-width="${f1(0.02 * h.H)}" fill="none"/>` : "") }),
+  knight: h => ({ helm: `<circle cx="0" cy="${f1(h.hy)}" r="${f1(h.hr * 1.05)}" ${h.F("#a7adb6")}/>` + (h.view === 2 ? "" : `<rect x="${f1(h.side ? h.view * h.hr * 0.1 : -h.hr * 0.6)}" y="${f1(h.hy + 0.07 * h.H)}" width="${f1(h.hr * (h.side ? 0.8 : 1.2))}" height="${f1(0.025 * h.H)}" fill="#1f2328"/>`) +
+                  `<path d="M${h.P(0, h.hy - h.hr)} q${f1(0.04 * h.H)} ${f1(-0.08 * h.H)} ${f1(0.12 * h.H)} ${f1(-0.06 * h.H)}" stroke="${h.hex(h.WC.plumeColor, "#c0392b")}" stroke-width="${f1(0.05 * h.H)}" stroke-linecap="round" fill="none"/>`,
+                  headFill: "#a7adb6", eyes: "",
+                  body: `<rect x="${f1(-0.1 * h.H)}" y="${f1(h.top + 0.01 * h.H)}" width="${f1(0.2 * h.H)}" height="${f1(h.hip - h.top + 0.02 * h.H)}" ${h.F(h.hex(h.WC.knightA, "#1e40af"))}/>`,
+                  held: (h.WC.shield !== false ? tdHeld(h, `<circle cx="${f1(-0.24 * h.H)}" cy="${f1(h.hip - 0.04 * h.H)}" r="${f1(0.09 * h.H)}" ${h.F(h.hex(h.WC.knightB, "#f2c230"))}/>`) : "") + (h.WC.sword !== false ? tdHeld(h, `<path d="M${h.P(0.25 * h.H, h.hip)} L${h.P(0.3 * h.H, h.hip - 0.2 * h.H)}" stroke="#d6dbe1" stroke-width="${f1(0.02 * h.H)}" stroke-linecap="round"/>`) : "") }),
+  queen: h => ({ hat: `<path d="M${h.P(-h.hr * 0.6, h.hy - h.hr * 0.55)} l${f1(h.hr * 0.2)} ${f1(-h.hr * 0.4)} l${f1(h.hr * 0.2)} ${f1(h.hr * 0.25)} l${f1(h.hr * 0.2)} ${f1(-h.hr * 0.35)} l${f1(h.hr * 0.2)} ${f1(h.hr * 0.35)} l${f1(h.hr * 0.2)} ${f1(-h.hr * 0.25)} l${f1(h.hr * 0.2)} ${f1(h.hr * 0.4)} Z" ${h.F("#f2c230")}/><circle cx="0" cy="${f1(h.hy - h.hr * 0.75)}" r="${f1(0.015 * h.H)}" fill="${h.hex(h.WC.crownJewel, "#dc2626")}"/>`,
+                   cape: h.WC.mantle !== false ? tdCape(h, h.hex(h.WC.queenRobe, "#5b2a86"), 0.42, "#f7f4ec") : "" }),
+  king: h => TD_GEAR.queen({ ...h, WC: { ...h.WC, queenRobe: h.WC.kingRobe || "#7a1f2b" } }),
+  monk: h => h.WC.hoodUp === false ? {} : { hood: tdHood(h, h.hex(h.WC.monkCloak, "#6b4a2b")),
+                 held: h.WC.staff ? tdHeld(h, `<path d="M${h.P(0.25 * h.H, h.top - 0.15 * h.H)} L${h.P(0.27 * h.H, h.g - 0.02 * h.H)}" stroke="#7a5230" stroke-width="${f1(0.025 * h.H)}"/>`) : "" },
+  robot: h => { const R = robotOf(h.WC); return { helm: `<rect x="${f1(-h.hr * 1.05)}" y="${f1(h.hy - h.hr * 1.05)}" width="${f1(h.hr * 2.1)}" height="${f1(h.hr * 2.1)}" rx="${f1(h.hr * 0.25)}" ${h.F(R.main)}/>` +
+                  (h.view === 2 ? "" : `<rect x="${f1(h.side ? h.view * h.hr * 0.1 : -h.hr * 0.7)}" y="${f1(h.hy + 0.05 * h.H)}" width="${f1(h.hr * (h.side ? 0.85 : 1.4))}" height="${f1(0.05 * h.H)}" rx="${f1(0.02 * h.H)}" fill="${R.lt}"/>`) +
+                  `<path d="M${h.P(0, h.hy - h.hr * 1.05)} l0 ${f1(-0.06 * h.H)}" stroke="${R.dk}" stroke-width="${h.lw}"/><circle cx="0" cy="${f1(h.hy - h.hr * 1.05 - 0.07 * h.H)}" r="${f1(0.015 * h.H)}" fill="${R.lt}"/>`, headFill: R.main, eyes: "" }; },
+  cowgirl: h => { const W = westernOf(h.WC, "cowgirl"); return W.H ? { hat: tdHat(h, W.hatColor || "#8b5a2b", 1.4, 0.09, W.hatColor || "#8b5a2b", true) } : {}; },
+  cowboy: h => { const W = westernOf(h.WC, "cowboy"); return W.H ? { hat: tdHat(h, W.hatColor || "#8b5a2b", 1.4, 0.09, W.hatColor || "#8b5a2b", true) } : {}; },
+  ninja: h => ({ hood: tdHood(h, "#1f1f22", false) + (h.view === 2 ? "" : `<rect x="${f1(h.side ? h.view * h.hr * 0.05 : -h.hr * 0.75)}" y="${f1(h.hy + 0.06 * h.H)}" width="${f1(h.hr * (h.side ? 0.9 : 1.5))}" height="${f1(0.06 * h.H)}" rx="${f1(0.02 * h.H)}" fill="${h.skin}"/>`) +
+                   `<rect x="${f1(-h.hr * 1.1)}" y="${f1(h.hy - h.hr * 0.25)}" width="${f1(h.hr * 2.2)}" height="${f1(0.035 * h.H)}" fill="${h.hex(h.WC.ninjaBand, "#c0392b")}"/>` }),
+  scuba: h => ({ mask: h.view === 2 || !h.WC.mask ? "" : `<rect x="${f1(h.side ? h.view * h.hr * 0.1 : -h.hr * 0.75)}" y="${f1(h.hy + 0.05 * h.H)}" width="${f1(h.hr * (h.side ? 0.85 : 1.5))}" height="${f1(0.08 * h.H)}" rx="${f1(0.03 * h.H)}" fill="#bfe9ff" stroke="${h.hex(h.WC.maskColor, "#111827")}" stroke-width="${f1(0.015 * h.H)}" opacity="0.85"/>`,
+                  back: h.WC.tank ? `<rect x="${f1(-0.07 * h.H)}" y="${f1(h.top - 0.02 * h.H)}" width="${f1(0.14 * h.H)}" height="${f1(0.2 * h.H)}" rx="${f1(0.06 * h.H)}" ${h.F(h.hex(h.WC.tankColor, "#facc15"))}/>` : "" }),
+  diver: h => ({ helm: `<circle cx="0" cy="${f1(h.hy)}" r="${f1(h.hr * 1.15)}" ${h.F(h.hex(h.WC.diverMetal, "#b8860b"))}/>` + (h.view === 2 ? "" : `<circle cx="${f1(h.side ? h.view * h.hr * 0.45 : 0)}" cy="${f1(h.hy + h.hr * 0.25)}" r="${f1(h.hr * 0.45)}" fill="#3b4a5a" stroke="${h.hex(h.WC.diverMetal, "#b8860b")}" stroke-width="${f1(0.02 * h.H)}"/>`), headFill: h.hex(h.WC.diverMetal, "#b8860b"), eyes: "" }),
+  fairy: h => { const fw = FAIRY_WINGS[h.WC.wingStyle] ? h.WC.wingStyle : "butterfly";
+    return { wings: tdWings(h, h.WC["wingColor_" + fw] ?? FAIRY_WINGS[fw].colors[0], 0.4), hat: h.WC.wreath ? `<circle cx="0" cy="${f1(h.hy - h.hr * 0.35)}" r="${f1(h.hr * 0.8)}" fill="none" stroke="#3f7d3a" stroke-width="${f1(0.025 * h.H)}" stroke-dasharray="${f1(0.02 * h.H)} ${f1(0.015 * h.H)}"/>` : "" }; },
+};
 function lyingAlong(A) {
   const f = document.getElementById("figure");
   if (!f) return;

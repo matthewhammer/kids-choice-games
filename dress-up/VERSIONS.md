@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.451 (2026-10-26)
+
+Everything in 0.0.450, plus:
+
+- **The friend from above, as you dressed them.** In the dungeon room the friend now wears what they wear everywhere else: every costume's clothes and patterns, an animal suit's fur and its ears and tail, a bird's or a moth's or a dragon's wings, and each costume's own hat, hood, helmet or crown, cape, and what it carries (the witch's broom, the wizard's staff, the knight's sword and shield, Robin Hood's bow and quiver, the scuba tank, the diver's helmet; the ghost is a sheet). And the friend's own settings: hand and foot styles, the arms' and legs' lengths and widths, the head's size, the eyes' size and kind (closed, ✕, stars, hearts), ears, mouth, every hair style with its length and bangs, beards, and 👁️'s see-through parts.
+
 ## 0.0.450 (2026-10-26)
 
 Everything in 0.0.449, plus a fix:
