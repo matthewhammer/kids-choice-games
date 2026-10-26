@@ -224,7 +224,7 @@ function worldProblems(W) {
 // What a square keeps of its place, as the Background tab edits it
 // (state.background), so the square opened is the square changed: its
 // things, any place's; and a forest crossing's paths and floor.
-const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave", "crossHole", "crossLedge", "crossOpen", "crossShade", "crossMoss", "crossMossKind", "crossShrooms", "crossShroomKind", "crossSeed"];
+const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave", "crossHole", "crossLedge", "crossOpen", "crossShade", "crossMoss", "crossMossKind", "crossShrooms", "crossShroomKind", "crossSeed", "crossStairs"];
 // (ticket 524) and an inside an outside has several of: which one it is (INSIDE_WHICH)
 const cellKeys = kind => isCross(kind) ? ["things", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", INSIDE_WHICH[kind]] : ["things"];
 // where the friend comes in, walking into a square from a side: just
@@ -1244,6 +1244,20 @@ function holeBelow(W, key) {
   const T = W && W.below && W.below !== W.id ? worldById(W.below) : null;
   return T && T.cells[key] ? { W: T, key, cell: T.cells[key] } : null;
 }
+// (ticket 625, Matthew: "stairs up to the floor above (a way out of a room below a hole)") the floor above a world: the world whose
+// floor below it is, square for square; a dungeon room's 🪜 stairs (crossStairs) lead up into its square with the same key, the
+// friend arriving at its hole if it has one there, else where its arrivals are
+function stairsAbove(W, key) {
+  const T = W ? worldsAll().find(X => X !== W && X.below === W.id) : null;
+  return T && T.cells[key] ? { W: T, key, cell: T.cells[key] } : null;
+}
+function stairsUp(door) {
+  const W = state.world, t = stairsAbove(W, W.at), B = state.background;
+  if (!t) return;
+  const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: t.cell.kind, worldAt: W.at, worldId: W.id };
+  tripStart(door, "walk");
+  walkInto(door, () => { trips.push(from); worldSwitch(t.W.id, t.key, null, false); }, true, "step");
+}
 function holeFall(door) {
   const W = state.world, t = holeBelow(W, W.at), B = state.background;
   if (!t) return;
@@ -1423,6 +1437,8 @@ function worldKeep() {
   else if (B.crossLive !== undefined) delete B.crossLive;
   // (ticket 622) a dungeon room's hole leads to the floor below where that world has a square here: so its drawing knows
   const below = sq && cell.kind === "dungeon" ? holeBelow(W, W.at) : null, holeLive = below ? "1" : "";
+  const above = sq && cell.kind === "dungeon" ? stairsAbove(W, W.at) : null, stairsLive = above ? "1" : "";   // (ticket 625)
+  if (sq && cell.kind === "dungeon") { if (B.stairsLive !== stairsLive) B.stairsLive = stairsLive; } else if (B.stairsLive !== undefined) delete B.stairsLive;
   if (sq && cell.kind === "dungeon") { if (B.holeLive !== holeLive) B.holeLive = holeLive; } else if (B.holeLive !== undefined) delete B.holeLive;
   instanceKeep(W);
 }
@@ -1505,7 +1521,7 @@ function worldPut(key, kind, o = null) {
   if (W.cells[key]) passagesUnlinkInto(W.id, key);
   const own = {};
   if (from) for (const [k, v] of Object.entries(fromOwn)) { const when = SHOWN_WHEN["background." + k]; if (when && when(view(kind)) && !when(view(from.kind))) own[k] = structuredClone(v); }
-  W.cells[key] = isCross(kind) ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", crossCave: "stone", crossHole: "", crossLedge: "", crossOpen: "", crossShade: 50, crossMoss: 0, crossMossKind: "carpet", crossShrooms: 0, crossShroomKind: "glowcap", crossSeed: 1 + Math.floor(Math.random() * 9999), things }
+  W.cells[key] = isCross(kind) ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", crossCave: "stone", crossHole: "", crossLedge: "", crossOpen: "", crossShade: 50, crossMoss: 0, crossMossKind: "carpet", crossShrooms: 0, crossShroomKind: "glowcap", crossSeed: 1 + Math.floor(Math.random() * 9999), crossStairs: "", things }
                                      : { kind, ways: worldUsualWays(kind), things, ...(w ? { [w]: which } : {}), ...(Object.keys(own).length ? { own } : {}) };   // (ticket 524: which one)
   if (pk && W.off) { delete W.off[pk]; passagesRemap(W.id, k => k, { off: pk, key, kind }); }
   worldTrimEdges(W, [key]);   // (ticket 232: its usual ways, but none off the edge where it is put)

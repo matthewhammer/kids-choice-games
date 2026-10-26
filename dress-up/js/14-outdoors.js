@@ -4263,6 +4263,18 @@ function dungeonScene(c) {
     t += live ? `<g class="portal" data-door="1" data-hole="below" data-pit="${f1(hx)} ${f1(hy)} ${f1(rx)} ${f1(ry)}" data-shape="circle">${pit}</g>` : pit;
     return t;
   });
+  // (ticket 625) 🪜 stairs up, where crossStairs puts them (by the north wall, left or right): steps rising into the dark; to the
+  // floor above (stairsLive) a doorway (data-stairs), else blocked by rubble
+  const stairsAt = { left: -0.3, right: 0.3 }[o.crossStairs];
+  if (stairsAt !== undefined) s += SEP + part("dg-stairs", [c.F, look, o.crossStairs, o.stairsLive || "", ledge, x0, x1, shade], () => {
+    const sx = W * stairsAt, w = 92 * k, h = 78 * k, sy = fy0 + 8 * k, live = o.stairsLive === "1", n = 5;
+    let st = `<rect x="${f1(sx - w / 2)}" y="${f1(sy)}" width="${f1(w)}" height="${f1(h)}" fill="#05040a" stroke="${line}" stroke-width="${lw}"/>`;
+    for (let i = 0; i < n; i++) { const y = sy + h * i / n;
+      st += `<rect x="${f1(sx - w / 2 + 4 * k)}" y="${f1(y + 2 * k)}" width="${f1(w - 8 * k)}" height="${f1(h / n - 2 * k)}" fill="${mix(L.rock[1], "#05040a", 0.75 - i * 0.15)}" stroke="${line}" stroke-width="${f1(1.2 * k)}"/>`; }
+    st += `<path d="M${f1(sx - w / 2)} ${f1(sy)} V${f1(sy + h)} M${f1(sx + w / 2)} ${f1(sy)} V${f1(sy + h)}" stroke="${L.rock[1]}" stroke-width="${f1(8 * k)}"/>`;
+    if (!live) st += [[-0.25, 0.7, 20], [0.2, 0.6, 18], [0, 0.35, 16]].map(([u, v, r], j) => rockSvg(sx + u * w, sy + v * h, r * k, 6290 + j, L.rock[j % 3])).join("");
+    return live ? `<g class="portal" data-door="1" data-stairs="up">${st}</g>` : st;
+  });
   // what grows in it, by its look: crystals glowing in the floor's corners; moss along the walls' feet; frost; cracks
   s += SEP + part("dg-growth", [c.F, look, x0, x1, sceneLfoKey(o, "slow"), shade, seed], () => {
     let t = "";

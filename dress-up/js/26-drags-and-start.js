@@ -1345,6 +1345,12 @@ function padPoll(t) {
       padMoving = false; padWant = null; changed(); padLoop = requestAnimationFrame(padPoll); return;
     }
     if (mx === (BG.figX ?? 0) && my === (BG.figY ?? 0) && !moving) padVel = [0, 0];   // (stopped by a wall while coasting)
+    // (ticket 625, Matthew: "a hop down off a ledge's edge") up on a dungeon room's ledge, pushing on into its face: a hop down,
+    // landing just in front of it (up again only by its stairs)
+    if (moving && !entering && !isJump(B.anim) && padVel[1] > 0 && my <= (BG.figY ?? 0) + 0.05 && /^ledge \d/.test(solidHit.name || "") && performance.now() - solidHit.t < 250) {
+      const L = solidsHere().find(q => q.name === solidHit.name);
+      if (L && SCENE.ground + (BG.figY ?? 0) <= L.back + 1) { BG.figY = Math.round(L.front + 16 - SCENE.ground); startJump(B.anim, "jump"); changed(); padLoop = requestAnimationFrame(padPoll); return; }
+    }
     BG.figX = mx; BG.figY = my;
     // (ticket 214, Matthew: "all collision directions that correspond to: edge of the N 'back wall' (or horizon); E, S
     // or W edges of the screen; Or their diagonals, to trigger the enter passage action") pushing on into an edge they
@@ -1662,6 +1668,7 @@ function enterScene(door, here = false) {
   // (ticket 525: a cave door linked to a square or a place off the grid: there, out by its twin; unlinked, by kind, below)
   if (door.dataset.passage) { const t = passageOf(door.dataset.passage); if (t && t.dest && passageWalk(door, t)) return; }
   if (door.dataset.hole) { holeFall(door); return; }   // (ticket 622: a dungeon room's hole, to the floor below)
+  if (door.dataset.stairs) { stairsUp(door); return; }   // (ticket 625: a dungeon room's stairs, to the floor above)
   if (door.dataset.way && !door.dataset.to) { worldWalk(door, here); return; }
   let to = door.dataset.to, room = door.dataset.room;
   const house = door.dataset.house, tent = door.dataset.tent, B = state.background;

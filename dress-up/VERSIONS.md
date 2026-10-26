@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.459 (2026-10-26)
+
+Everything in 0.0.458, plus:
+
+- **🪜 Stairs up to the floor above.** In 🗺️ World design, a dungeon room can have stairs on its left or right wall ("🪜 stairs up"). When another world has this one as its ⬇️ floor below, with a square in the same spot, walking onto the stairs (or 🚪 action next to them) takes the friend up there: the way back up after falling through a 🕳️ hole.
+- **A hop down off a ledge.** Up on a 🧱 ledge, walking ⬇ toward its edge jumps the friend down to the floor in front of it, instead of stopping them; the ledge's stairs still work too.
+
 ## 0.0.458 (2026-10-26)
 
 Everything in 0.0.457, plus:

@@ -1302,6 +1302,7 @@ const SHOWN_WHEN = {
   "background.crossCave": b => b.kind === "cavecross" || b.kind === "dungeon",
   "background.crossHole": b => b.kind === "dungeon",
   "background.crossLedge": b => b.kind === "dungeon",
+  "background.crossStairs": b => b.kind === "dungeon",
   ...Object.fromEntries(["crossShade", "crossMoss", "crossMossKind", "crossShrooms", "crossShroomKind", "crossSeed"].map(k => ["background." + k, b => b.kind === "dungeon"])),   // (ticket 630)
   "background.things": b => b.kind !== "none",
   "background.thingsSolid": b => b.kind !== "none" && (b.things || []).length > 0,   // (ticket 283)
@@ -2263,6 +2264,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                 ...pick("data-ledge", state.background.crossLedge || "", [["", "none"], ...Object.entries(DUNGEON_LEDGES)], v => { state.background.crossLedge = v; })]),
               el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🕳️ a hole in the floor:"),
                 ...pick("data-hole-at", state.background.crossHole || "", [["", "none"], ["left", "⬅️ left"], ["middle", "⬆️ middle"], ["right", "➡️ right"]], v => { state.background.crossHole = v; })]),
+              // (ticket 625) stairs up, to the world whose floor below is this one
+              el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, `🪜 stairs up (to the floor above${stairsAbove(W, W.at) ? ": there is one here" : ": a world whose ⬇️ floor below is this one, with a square here"}):`),
+                ...pick("data-stairs", state.background.crossStairs || "", [["", "none"], ["left", "⬅️ left"], ["right", "➡️ right"]], v => { state.background.crossStairs = v; })]),
               el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, `⬇️ this world's floor below (holes drop there${below ? ", to " + squareName(W.at) : W.below ? "; it has no square " + squareName(W.at) : ""}):`),
                 ...pick("data-below", W.below || "", [["", "none"], ...others.map(T => [T.id, "🌍 " + worldTitle(T)])], v => { if (v) W.below = v; else delete W.below; })])];
           })() : []),
