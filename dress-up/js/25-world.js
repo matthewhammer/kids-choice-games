@@ -224,7 +224,7 @@ function worldProblems(W) {
 // What a square keeps of its place, as the Background tab edits it
 // (state.background), so the square opened is the square changed: its
 // things, any place's; and a forest crossing's paths and floor.
-const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave"];
+const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave", "crossHole"];
 // (ticket 524) and an inside an outside has several of: which one it is (INSIDE_WHICH)
 const cellKeys = kind => isCross(kind) ? ["things", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", INSIDE_WHICH[kind]] : ["things"];
 // where the friend comes in, walking into a square from a side: just
@@ -1221,6 +1221,29 @@ function worldScroll(d, t, from) {
   };
   requestAnimationFrame(frame);
 }
+// (ticket 622, Matthew 2026-10-26: "holes that drop the friend to the next floor below (another world grid, structured that
+// way)") A world's floor below (W.below, a world's id, chosen in 🗺️ World design) is the world under it, square for square: a
+// hole in a dungeon room's floor (its crossHole: where it is) drops the friend into that world's square with the same key,
+// at the same spot, landing as from a castle's pit (landFall). Where the floor below has no square there, or the world none,
+// the hole has a grate over it, and leads nowhere.
+function holeBelow(W, key) {
+  const T = W && W.below && W.below !== W.id ? worldById(W.below) : null;
+  return T && T.cells[key] ? { W: T, key, cell: T.cells[key] } : null;
+}
+function holeFall(door) {
+  const W = state.world, t = holeBelow(W, W.at), B = state.background;
+  if (!t) return;
+  const [cx, cy] = door.dataset.pit.split(" ").map(Number);
+  const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: t.cell.kind, worldAt: W.at, worldId: W.id };
+  tripStart(door, "fall");
+  walkInto(door, () => {
+    trips.push(from);
+    worldSwitch(t.W.id, t.key, null, false);
+    const B2 = state.background;
+    B2.figX = Math.round(cx); B2.figY = Math.round(cy - SCENE.ground);
+    landFall = true;
+  }, true, "fall");
+}
 // (ticket 525, Matthew: "Also need a way to place cave doors --- as objects with nav arrows associated with them."; "world
 // design panel I mean.") A 🕳️ cave passage is a cave door: its own name (uid), and, linked (its card's 🧭, in 🗺️ World design or
 // 🏞️ Background), where it leads (dest: a square, { world, key, kind }; or a place off the grid, { world, off: its placeKey,
@@ -1383,6 +1406,9 @@ function worldKeep() {
   // as a setting of its own, so its cached drawing knows when they change)
   if (sq && isCross(cell.kind)) { const live = worldLiveWays(W, W.at).join(","); if (B.crossLive !== live) B.crossLive = live; }
   else if (B.crossLive !== undefined) delete B.crossLive;
+  // (ticket 622) a dungeon room's hole leads to the floor below where that world has a square here: so its drawing knows
+  const below = sq && cell.kind === "dungeon" ? holeBelow(W, W.at) : null, holeLive = below ? "1" : "";
+  if (sq && cell.kind === "dungeon") { if (B.holeLive !== holeLive) B.holeLive = holeLive; } else if (B.holeLive !== undefined) delete B.holeLive;
   instanceKeep(W);
 }
 // (ticket 300, part 4, Matthew: "each background has instances ..., each with its own settings, independent of the other

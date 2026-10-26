@@ -1542,6 +1542,7 @@ function enterScene(door, here = false) {
   // (ticket 185: a way out of a world square, to the one beside it; ticket 233: a room's way toward us has its own data-to)
   // (ticket 525: a cave door linked to a square or a place off the grid: there, out by its twin; unlinked, by kind, below)
   if (door.dataset.passage) { const t = passageOf(door.dataset.passage); if (t && t.dest && passageWalk(door, t)) return; }
+  if (door.dataset.hole) { holeFall(door); return; }   // (ticket 622: a dungeon room's hole, to the floor below)
   if (door.dataset.way && !door.dataset.to) { worldWalk(door, here); return; }
   let to = door.dataset.to, room = door.dataset.room;
   const house = door.dataset.house, tent = door.dataset.tent, B = state.background;

@@ -4027,6 +4027,8 @@ function dungeonGeom({ x0, x1, y0, y1, g, k }) {
            ends: { N: [0, y0], S: [0, y1], E: [x1, cy], W: [x0, cy], NE: [fx1, fy0], NW: [fx0, fy0], SE: [fx1, fy1], SW: [fx0, fy1] } };
 }
 const DUNGEON_TILE = 46;
+// (ticket 622) where a dungeon room's hole can be: across, as a share of the picture's width; down, from the floor's middle
+const DUNGEON_HOLES = { left: [-0.22, 30], middle: [0, -60], right: [0.22, 30] };
 function dungeonScene(c) {
   const { x0, y0, x1, y1, W, k, pad, R, grad, all, o } = c;
   const G = dungeonGeom(c), { sw, fx0, fx1, fy0, fy1, cy } = G, look = CAVE_LOOK[o.crossCave] ? o.crossCave : "stone", L = CAVE_LOOK[look];
@@ -4140,6 +4142,21 @@ function dungeonScene(c) {
       const [cx, cy2] = G.ends[d], ox = d.includes("E") ? -1 : 1, oy = d.includes("N") ? 1 : -1, y = cy2 + (oy > 0 ? 44 * k : -14 * k);
       t += pot(cx + ox * 30 * k, y, n) + pot(cx + ox * 66 * k, y, n + 1);
     }
+    return t;
+  });
+  // (ticket 622) a hole in the floor, where crossHole puts it: dark, its rim of stones; leading to the floor below (holeLive),
+  // a pit the friend falls into (as a castle's: .portal[data-pit], data-hole for enterScene); leading nowhere, a grate over it
+  const hole = DUNGEON_HOLES[o.crossHole];
+  if (hole) s += SEP + part("dg-hole", [c.F, look, o.crossHole, o.holeLive || "", x0, x1], () => {
+    const hx = W * hole[0], hy = cy + hole[1] * k, rx = 58 * k, ry = 40 * k, live = o.holeLive === "1";
+    let t = `<defs><radialGradient id="bg-dg-hole" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#000000"/><stop offset="0.7" stop-color="#05040a"/><stop offset="1" stop-color="${L.floor[1]}"/></radialGradient></defs>`;
+    let pit = `<ellipse cx="${f1(hx)}" cy="${f1(hy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="url(#bg-dg-hole)" stroke="${line}" stroke-width="${f1(3 * k)}"/>`;
+    for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2;
+      pit += `<ellipse cx="${f1(hx + Math.cos(a) * rx * 1.04)}" cy="${f1(hy + Math.sin(a) * ry * 1.06)}" rx="${f1((9 + 4 * R(i, 6230)) * k)}" ry="${f1((6 + 3 * R(i, 6231)) * k)}" fill="${L.rock[i % 3]}" stroke="${line}" stroke-width="${f1(1.4 * k)}"/>`; }
+    if (!live) { let bars = "";
+      for (let i = -3; i <= 3; i++) bars += `M${f1(hx + i * rx / 4)} ${f1(hy - ry * Math.sqrt(1 - (i / 4) ** 2))}V${f1(hy + ry * Math.sqrt(1 - (i / 4) ** 2))}`;
+      pit += `<path d="${bars}" stroke="#5a5560" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>`; }
+    t += live ? `<g class="portal" data-door="1" data-hole="below" data-pit="${f1(hx)} ${f1(hy)} ${f1(rx)} ${f1(ry)}" data-shape="circle">${pit}</g>` : pit;
     return t;
   });
   // what grows in it, by its look: crystals glowing in the floor's corners; moss along the walls' feet; frost; cracks

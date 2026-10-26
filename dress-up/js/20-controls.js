@@ -1277,6 +1277,7 @@ const SHOWN_WHEN = {
   "background.crossPaths": b => isCross(b.kind),
   ...Object.fromEntries(["crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),
   "background.crossCave": b => b.kind === "cavecross" || b.kind === "dungeon",
+  "background.crossHole": b => b.kind === "dungeon",
   "background.things": b => b.kind !== "none",
   "background.thingsSolid": b => b.kind !== "none" && (b.things || []).length > 0,   // (ticket 283)
   // (a tent's door looks out on the camp: its time of day and its fire)
@@ -2218,6 +2219,16 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           ...((at.kind === "cavecross" || at.kind === "dungeon") && !inside ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🪨 the cave's look:"),
             ...CAVE_LOOKS.map(([v, name]) => el("button", { "aria-pressed": String((state.background.crossCave || "stone") === v), "data-cave": v,
               onclick: e => { state.background.crossCave = v; for (const b of e.currentTarget.parentNode.querySelectorAll("[data-cave]")) b.setAttribute("aria-pressed", String(b.dataset.cave === v)); changed(); } }, name))])] : []),
+          // (ticket 622) a dungeon room's hole in the floor, and where holes in this world drop to: its floor below, another world
+          ...(at.kind === "dungeon" && !inside ? (() => {
+            const pick = (attr, now, opts, set) => opts.map(([v, name]) => el("button", { "aria-pressed": String(now === v), [attr]: v,
+              onclick: e => { set(v); for (const b of e.currentTarget.parentNode.querySelectorAll(`[${attr}]`)) b.setAttribute("aria-pressed", String(b.getAttribute(attr) === v)); changed(); } }, name));
+            const others = worldsAll().filter(T => T !== W), below = holeBelow(W, W.at);
+            return [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🕳️ a hole in the floor:"),
+                ...pick("data-hole-at", state.background.crossHole || "", [["", "none"], ["left", "⬅️ left"], ["middle", "⬆️ middle"], ["right", "➡️ right"]], v => { state.background.crossHole = v; })]),
+              el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, `⬇️ this world's floor below (holes drop there${below ? ", to " + squareName(W.at) : W.below ? "; it has no square " + squareName(W.at) : ""}):`),
+                ...pick("data-below", W.below || "", [["", "none"], ...others.map(T => [T.id, "🌍 " + worldTitle(T)])], v => { if (v) W.below = v; else delete W.below; })])];
+          })() : []),
           // (2026-10-25, Matthew: "new nav arrow option in world design that means --- 'smooth scroll' -- the default for where it
           // works"; ticket 621, 2026-10-26: "the world design for dress-up can choose no-nav, nav or smooth nav for each
           // edge/direction") In a square that can scroll (SMOOTH_KINDS), each way its three chips: 🚫 no way (wall, or stones);

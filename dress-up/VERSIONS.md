@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.444 (2026-10-26)
+
+Everything in 0.0.443, plus floors below:
+
+- **🕳️ Holes to the floor below.** A dungeon room can have a hole in its floor (🗺️ World design: none, left, middle or right). A world can have a floor below: another world, square for square (🗺️ World design: ⬇️ this world's floor below). Walking onto the hole, the friend falls through it and drops into the room under it, at the same spot, as into a castle's pit; ⬅️ back brings them up again. Where there is no room underneath, the hole has a grate over it.
+
 ## 0.0.443 (2026-10-26)
 
 Everything in 0.0.442, plus dungeon rooms seen from above:
