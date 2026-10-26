@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.457 (2026-10-26)
+
+Everything in 0.0.456, plus:
+
+- **🎒 A backpack, a tab of its own.** Everything the friend has been given (what a 💰 chest held) is in it, a card each: its picture, its name, where and when it was got. What each thing can be used for comes later ("uses: none yet").
+- **"🎒 drawn on the friend"**, in the 🎒 Backpack tab: a brown pack on their back, with any costume: its straps over the shoulders from the front, the pack itself from behind and from the side, on their back from above, and set down beside the sleeping bag in the tent.
+
 ## 0.0.456 (2026-10-26)
 
 Everything in 0.0.455, plus:

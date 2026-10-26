@@ -821,6 +821,13 @@ const TABS = [
   ["🎙️ Recordings", "recordings", [
     ["recordings", "list", "🎙️ recordings"],
   ]],
+  // (ticket 632, Matthew 2026-10-26: "player has a 'backpack' that may not be drawn, but is available as another top-level chip,
+  // with a list of panels for each object in our backpack, and options when it's relevant to use. For now, no use options."; "new
+  // drawing option: draw backpack on player") what the friend carries, a card each (packlist), and the pack drawn on them or not
+  ["🎒 Backpack", "pack", [
+    ["toggle", "drawn", "🎒 drawn on the friend"],
+    ["packlist", "list", "🎒 what's in it"],
+  ]],
   // (ticket 185, Matthew) after the music, before Advanced: the world designer
   ["🗺️ World design", "world", [
     ["worldbig", "big", "⛶ full screen"],
@@ -2373,6 +2380,25 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // are in this place, and a measure of what it costs on this computer.
   if (kind === "scripting") { scriptingPanel(box); return box; }   // (ticket 482)
   if (kind === "recordings") { recordingsPanel(box); return box; }   // (ticket 608, 25-recordings.js)
+  // (ticket 632) the backpack's cards: each thing's picture, its name, when and where it was got; its uses, none yet
+  if (kind === "packlist") {
+    const list = el("div", { class: "pack-list" }), names = Object.fromEntries(CHEST_GIFTS);
+    let sig = null;
+    const render = () => {
+      const items = Array.isArray(state.backpack) ? state.backpack : [], s = JSON.stringify(items);
+      if (s === sig) return; sig = s;
+      if (!items.length) { list.replaceChildren(el("p", { class: "hint" }, "Nothing in it yet: open a 💰 treasure chest (in a dungeon room, walk up to it and press the action that goes through doors).")); return; }
+      list.replaceChildren(...items.map((it, i) => {
+        const pic = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        pic.setAttribute("viewBox", "-60 -100 120 110"); pic.setAttribute("class", "pack-pic"); pic.setAttribute("aria-hidden", "true");
+        try { pic.innerHTML = giftSvg(it.id, {}); } catch (e) { /* (a thing not drawn: its name alone) */ }
+        const when = it.got ? new Date(it.got).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+        return el("div", { class: "pack-card" }, [pic, el("div", { class: "pack-name" }, names[it.id] || it.id),
+          el("div", { class: "hint" }, `${it.from === "chest" ? "from a 💰 chest" : ""}${when ? ", " + when : ""}`), el("div", { class: "hint pack-uses" }, "uses: none yet")]);
+      }));
+    };
+    render(); syncs.push(render); box.append(list); return box;
+  }
   if (kind === "advanced") {
     // (syncs run on every frame of a walk: the page is changed only when a value changes)
     const put = (node, text) => { if (node.textContent !== text) node.textContent = text; };

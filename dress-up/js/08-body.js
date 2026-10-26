@@ -829,6 +829,19 @@ function wandererCap(WC, dir = 0, away = false) {
 }
 // (ticket 628) the Time Wanderer's shield, as the knight's arms are drawn: plain blue, a silver chevron (his own, not any game's crest)
 const wandererArms = WC => ({ knightA: WC.wanderShield || "#2f4fa8", knightB: "#c9ced6", tabardLayout: "plain", emblem: "chevron" });
+// (ticket 632) A BACKPACK, in body units, worn on the back: from behind, the pack itself over the shirt (its flap, its buckle,
+// a pocket); toward us, its two straps over the shoulders; in profile (dir, the way they face), the pack behind the back, a strap
+// over the shoulder
+function backpackSvg(w, L, away, dir = 0) {
+  const c = "#8a5a2b", dk = "#5e3d22", F = col => `fill="${col}" stroke="#3e2814" stroke-width="2.5" stroke-linejoin="round"`;
+  if (away) return `<rect x="${f1(-w * 0.72)}" y="-6" width="${f1(w * 1.44)}" height="${f1(L * 0.78)}" rx="16" ${F(c)}/>` +
+    `<path d="M${f1(-w * 0.72)} 10 Q0 -14 ${f1(w * 0.72)} 10 L${f1(w * 0.72)} ${f1(L * 0.32)} Q0 ${f1(L * 0.4)} ${f1(-w * 0.72)} ${f1(L * 0.32)} Z" ${F(dk)}/>` +
+    `<rect x="-8" y="${f1(L * 0.3)}" width="16" height="12" rx="3" fill="#d4a72c" stroke="#7a5a12" stroke-width="2"/>` +
+    `<rect x="${f1(-w * 0.45)}" y="${f1(L * 0.48)}" width="${f1(w * 0.9)}" height="${f1(L * 0.22)}" rx="8" ${F(mix(c, "#000000", 0.1))}/>`;
+  if (dir) return `<rect x="${f1(dir > 0 ? -w - 34 : w + 2)}" y="-4" width="32" height="${f1(L * 0.72)}" rx="12" ${F(c)}/>` +
+    `<path d="M${f1(-dir * (w - 4))} -18 Q${f1(dir * 6)} 4 ${f1(-dir * (w - 2))} ${f1(L * 0.6)}" stroke="${dk}" stroke-width="9" fill="none" stroke-linecap="round"/>`;
+  return [-1, 1].map(s => `<path d="M${f1(s * (w - 10))} -16 Q${f1(s * (w - 2))} ${f1(L * 0.25)} ${f1(s * (w - 12))} ${f1(L * 0.58)}" stroke="${dk}" stroke-width="9" fill="none" stroke-linecap="round"/>`).join("");
+}
 // A bow through the hand at H, in body units: a curved wooden bow, its back toward the side `side` the hand is on, its
 // string straight between its tips through the hand
 function bowSvg([hx, hy], side) {

@@ -993,6 +993,7 @@ function drawNow() {
            (away ? "" : `<rect x="${f1(dir ? dir * (w - 18) - 9 : -w * 0.5)}" y="${f1(L - 8)}" width="18" height="22" rx="4" fill="#8a5a2b" stroke="#4a2f16" stroke-width="2"/>`);
     if (WC.quiver !== false) svg += quiverSvg(w, L, away, dir);
   }
+  if (state.pack && state.pack.drawn && !squash) svg += backpackSvg(w, L, away, dir);   // (ticket 632: the backpack, on any costume)
   // (ticket 433) a monk's or a dryad's rope belt (the wizard's cord, in rope), and the hood down: a cowl folded on the shoulders
   if (monk && !undies) { const gx = dir ? dir * (w - 4) : -10, cy = L - 14, rope = WC.monkWho === "dryad" ? "#8a6a3a" : "#c8a46a";
     svg += `<path d="M${f1(-(w + 2))} ${f1(cy)} Q0 ${f1(cy + 6)} ${f1(w + 2)} ${f1(cy)}" fill="none" stroke="${rope}" stroke-width="5" stroke-linecap="round"/>` +
@@ -1572,6 +1573,9 @@ function topDownSvg(S, B, g, H) {
   const skirt = /skirt|dress/.test(PA.style || ""), longSkirt = skirt && (PA.skirtLen ?? 40) > 70, style = S.hair.style || "short";
   const hairLen = Math.max(0.3, Math.min(4, (S.hair.length ?? 100) / 100)), bangs = Math.max(0, Math.min(3, (S.hair.bangs ?? 100) / 100));
   const gear = (TD_GEAR[kind] || (() => ({})))({ WC, C, A, kind, H, g, hy, hr, top, hip, view, side, ph, P, Y, F, lw, ln, hex, skin, hair });
+  // (ticket 632) the backpack from above: on the back, seen over the shoulders facing away, its top edge facing us
+  if (S.pack && S.pack.drawn) { const pk = `<rect x="${f1(-0.14 * H)}" y="${f1(top - 0.01 * H)}" width="${f1(0.28 * H)}" height="${f1(0.2 * H)}" rx="${f1(0.04 * H)}" ${F("#8a5a2b")}/><rect x="${f1(-0.12 * H)}" y="${f1(top)}" width="${f1(0.24 * H)}" height="${f1(0.07 * H)}" rx="${f1(0.03 * H)}" fill="#5e3d22"/>`;
+    gear.back = (gear.back || "") + pk; }
   const ghost = kind === "ghost", covered = !!(gear.hood || gear.helm || gear.headFill || suit);   // (a hood, a helmet or a suit's own head: no hair of the friend's shows)
   let s = `<ellipse cx="0" cy="${f1(g)}" rx="${f1(0.24 * H)}" ry="${f1(0.07 * H)}" fill="#000000" opacity="0.28"/>`;
   if (ghost) {   // (a sheet over everything: a round top, its hem rippling, two dark eyes)
@@ -1850,6 +1854,10 @@ function lieAlongSvg(A, S) {
     s += `<path d="M${P(at(0.1, -0.42, 0.05))} L${P(at(1.7, -0.45, 0.25))} Q${P(at(2.15, 0, 0.42))} ${P(at(1.7, 0.45, 0.25))} L${P(at(0.1, 0.42, 0.05))} Q${P(at(0.0, 0, 0.1))} ${P(at(0.1, -0.42, 0.05))} Z" fill="${col}" stroke="${darker(col)}" stroke-width="${lw(hp)}" opacity="0.95"/>` +
       (WC.ghostHideEyes ? "" : [-1, 1].map(sd => `<ellipse cx="${f1(hp[0] + sd * 0.27 * R)}" cy="${f1(hp[1] - 0.35 * R)}" rx="${f1(0.08 * R)}" ry="${f1(0.06 * R)}" fill="#1b1b1b"/>`).join("")); }
   if (gear.over) s += gear.over({ at, P, lw, capsule, hp, R });
+  // (ticket 632) the backpack, set down beside the bag, by the friend's feet
+  if (S.pack && S.pack.drawn) { const q = at(0.35, 0.78, 0.02), m = q[2];
+    s += `<rect x="${f1(q[0] - 0.13 * m)}" y="${f1(q[1] - 0.2 * m)}" width="${f1(0.26 * m)}" height="${f1(0.22 * m)}" rx="${f1(0.05 * m)}" fill="#8a5a2b" stroke="#3e2814" stroke-width="${f1(Math.max(0.6, 0.015 * m))}"/>` +
+      `<path d="M${f1(q[0] - 0.13 * m)} ${f1(q[1] - 0.12 * m)} Q${f1(q[0])} ${f1(q[1] - 0.2 * m)} ${f1(q[0] + 0.13 * m)} ${f1(q[1] - 0.12 * m)}" stroke="#5e3d22" stroke-width="${f1(Math.max(1, 0.03 * m))}" fill="none"/>`; }
   return `<g data-lie="along">${s}</g>`;
 }
 // (ticket 627) each costume as one asleep in the tent has it, for lieAlongSvg: beside (a hat or a helmet taken off, by the
