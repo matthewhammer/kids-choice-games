@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- nav: begin --><meta name="theme-support" content="data-theme"><script src="https://matthewhammer.org/nav/nav.js"></script><!-- nav: end -->
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dungeons, From Above</title>
+<!-- og: begin (tools/og_previews.py in matthewhammer.github.io: the link preview's text and picture) -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dungeons, From Above">
+<meta property="og:description" content="A day of design work after A Link to the Past: a dungeon room seen from above, four kinds of way between its rooms (a wall, a doorway, a doorway that scrolls, no wall), holes and ledges; and the friend drawn from above and asleep in the tent, in all 36 costumes, each costume and view on sheets…">
+<meta property="og:url" content="https://matthewhammer.org/kids-choice-games/dress-up/reports/021/">
+<meta property="og:image" content="https://matthewhammer.org/kids-choice-games/dress-up/reports/021/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://matthewhammer.org/kids-choice-games/dress-up/reports/021/og.png">
+<!-- og: end -->
+<style>
+  :root { --bg: #fbfaf7; --paper: #ffffff; --ink: #1f2328; --muted: #5b6470; --line: #e3e0d8; --accent: #6d28d9; --link: #1d4ed8; --wip: #b45309; --tip: #fff7d6; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --link: #93c5fd; --wip: #fbbf24; --tip: #2e2a1a; } }
+  :root[data-theme="dark"] { --bg: #15171a; --paper: #1d2024; --ink: #e8e6e3; --muted: #a2a9b3; --line: #33373d; --accent: #c4b5fd; --link: #93c5fd; --wip: #fbbf24; --tip: #2e2a1a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 32px 16px 80px; }
+  a { color: var(--link); }
+  .series { color: var(--muted); font-size: 0.9em; margin: 0; }
+  .wip { color: var(--wip); font-weight: 600; }
+  h1 { margin: 6px 0 4px; font-size: 2em; line-height: 1.2; }
+  .q { color: var(--muted); font-size: 1.1em; margin: 0 0 18px; }
+  h2 { margin: 40px 0 10px; padding-bottom: 4px; border-bottom: 2px solid var(--line); font-size: 1.35em; }
+  .box { background: var(--paper); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: 10px; padding: 12px 16px; margin: 16px 0; }
+  .box.tip { background: var(--tip); border-left-color: var(--wip); }
+  .box p { margin: 6px 0; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 18px 0; }
+  figure { margin: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 6px; }
+  figcaption { font-size: 0.85em; color: var(--muted); padding: 6px 2px 0; line-height: 1.4; }
+  .key { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 0 9px; font: 600 0.85em/1.6 system-ui, sans-serif; background: var(--paper); white-space: nowrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--paper); }
+  .scroll { overflow-x: auto; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 0.88em; }
+  ol li, ul li { margin: 4px 0; }
+  .log { font-size: 0.92em; color: var(--muted); }
+  button.theme { font: inherit; font-size: 0.8em; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; position: fixed; top: 10px; right: 10px; }
+</style>
+<style>
+  .sheet { margin: 18px 0; }
+  .sheet img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); }
+  .sheet figcaption { margin-top: 6px; }
+  .rooms { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a href="./"><code><b>^du_report(</b>21<b>)</b></code></a> · 2026-10-26 · <span class="wip">work in progress</span> · about <a href="https://matthewhammer.org/hazel/dress-up/">Messed Up Dress Up</a>, a game made with M and N · after <a href="../020/"><code><b>^du_report(</b>20<b>)</b></code></a></p>
+<h1>Dungeons, From Above</h1>
+<p class="q">A day of design work after A Link to the Past: a dungeon room seen from above, the ways between its rooms, holes and ledges, and the friend drawn from above and asleep, in every costume. Here is all of it, to look at in one place.</p>
+
+<div class="box">
+  <p><b>Short answers.</b> Ten releases in one day, 0.0.443 to 0.0.452, all live:</p>
+  <ul>
+    <li><b>A new kind of place, the 🗝️ dungeon room.</b> A cave room seen from above, eight ways out, four looks. Four kinds of way between rooms: 🚫 wall, 🚪 doorway with a nav arrow, 🎞️ doorway that scrolls, 🌫️ no wall at all.</li>
+    <li><b>Two levels, and a floor below.</b> A ledge with stairs, and holes that drop the friend into the world underneath.</li>
+    <li><b>The friend from above.</b> Its own drawing, now in all 36 costumes and nearly all of the friend's settings. In the morning it drew 9 of about 125 settings and no costume.</li>
+    <li><b>Asleep in the tent,</b> the same: all 36 costumes; about 20 settings and no costume before.</li>
+  </ul>
+  <p>Everything below is drawn by the game itself (the same drawing code, its pictures saved), in the default friend, each costume with its own colours.</p>
+</div>
+
+<h2>The dungeon room <span class="series">(0.0.443 – 0.0.449; ^ticket(621), ^ticket(622), ^ticket(623))</span></h2>
+<p>A floor of tiles; the north wall's bricks across the top with two torches; the side and south walls seen from above. Each of its eight ways that leads somewhere is an opening: a gap in a wall's middle, or a tunnel off at a corner. Each way that does not is wall, with something where a door would be: a carved stone in the north wall, a pair of pots in a corner. So any set of passages looks like a room that was built that way. Its looks are the cave crossing's: 🪨 stone, 💎 crystal, 🌿 moss, 🧊 ice. It has a group of its own at the bottom of the list of places, 🗝️ dungeons.</p>
+<div class="shots rooms">
+  <figure><img src="pictures/dungeon-eight-ways.webp" alt="A grey stone dungeon room with all eight ways open: gaps in each wall and tunnels at the four corners; a knight from above in the middle"><figcaption>All eight ways open, in grey stone: a gap in each wall, a tunnel at each corner. The 🛡️ knight, from above.</figcaption></figure>
+  <figure><img src="pictures/dungeon-ledge-hole.webp" alt="A crystal dungeon room with a raised ledge across its back, stairs in the middle, a hole in the floor below; a witch with her broom on the ledge"><figcaption>💎 crystal, with a 🧱 ledge across the back (stairs in the middle, its face a wall the friend cannot walk through) and a 🕳️ hole to the floor below. The 🧙 witch, with her broom, up on the ledge.</figcaption></figure>
+  <figure><img src="pictures/dungeon-no-wall.webp" alt="A mossy dungeon room whose east wall is missing, the floor running on to the picture's edge; a dragon walking toward it"><figcaption>🌿 moss, its east side with 🌫️ no wall: the floor runs on, and the 🐉 dragon runs into the next room without stopping.</figcaption></figure>
+  <figure><img src="pictures/dungeon-ice.webp" alt="An icy dungeon room with one way out, south; pots in its corners and a carved stone in the north wall; a wizard with his staff"><figcaption>🧊 ice, one way out (south): the carved stone and the pots where the others would be. The 🧙‍♂️ wizard with his staff.</figcaption></figure>
+</div>
+
+<h2>Four kinds of way</h2>
+<p>In 🗺️ World design, each way out of a dungeon room (or a cave crossing) has its chips; choosing one makes the room beside it agree.</p>
+<div class="scroll"><table>
+  <tr><th>Chip</th><th>What it is</th><th>What happens</th><th>Since</th></tr>
+  <tr><td>🚫</td><td>wall</td><td>No way: wall, or stones in a cave crossing.</td><td>0.0.443</td></tr>
+  <tr><td>🚪</td><td>a doorway with a nav arrow</td><td>The friend walks to the doorway and steps through; the next room fades in. As every other place in the game.</td><td>0.0.443</td></tr>
+  <tr><td>🎞️</td><td>a doorway that scrolls</td><td>As A Link to the Past goes from screen to screen: at the doorway the room slides away and the next slides in, diagonals too.</td><td>0.0.442</td></tr>
+  <tr><td>🌫️</td><td>no wall</td><td>That side of both rooms is not there. The friend runs from one room into the next, the rooms sliding faster, and comes out at the same height (or the same place across) they crossed at. North, east, south or west, between two dungeon rooms.</td><td>0.0.448</td></tr>
+</table></div>
+<p>Also in the room, in World design: <b>🧱 a ledge</b> (none, stairs in the middle, stairs at both ends), <b>🕳️ a hole</b> (left, middle or right), and a world's <b>⬇️ floor below</b>, another world square for square: walking onto the hole drops the friend into the room underneath, at the same spot, and ⬅️ back brings them up. With nothing underneath, the hole has a grate over it.</p>
+
+<h2>The friend from above, in every costume <span class="series">(0.0.443, 0.0.451; ^ticket(626))</span></h2>
+<p>A dungeon seen from above needs the friend seen from above too: a drawing of its own, not the standing friend squashed. The head big and seen mostly from its top, the hair over it, the body short below it, the legs shorter still; facing us, away, or to a side, and stepping as it walks.</p>
+<p><b>How much of the friend it draws.</b> The friend has about 125 settings for how it looks (face 47, hair 9, shirt 8, pants 6, shoes 7, hands 14, undies 7, see-through 8, the body's shape about 10), and 36 costumes with about 190 settings of their own.</p>
+<div class="scroll"><table>
+  <tr><th>View</th><th>Before (0.0.443)</th><th>Now</th></tr>
+  <tr><td>From above (dungeon room)</td><td>9 settings: skin, hair colour, style and length, shirt colour, pants colour and skirt or not, shoe colour, facing. No costume.</td><td>Every costume: its clothes and their patterns, a suit's fur, ears and tail, wings, the hat, hood, helmet or crown, a cape or a mantle, what it carries. And the friend's own: hand and foot styles, the arms' and legs' lengths and widths, the head's size, the eyes' size and kind (closed, ✕, stars, hearts), ears, mouth, all seven hair styles with length and bangs, beards, see-through.</td></tr>
+  <tr><td>Asleep in the tent</td><td>About 20: those, with the sleeves, hair style and bangs, see-through. No costume.</td><td>Every costume, as one asleep has it (below), and the same settings of the friend's own.</td></tr>
+</table></div>
+<p>Not drawn in these two views yet: the face's finer settings (brows, nose, tongue, teeth, the eyes' shine), the undies, and a friend on a horse.</p>
+<figure class="sheet"><a href="pictures/topdown-front.webp"><img src="pictures/topdown-front.webp" alt="36 costumes drawn from above, facing us"></a><figcaption>All 36 costumes from above, facing us (tap to see it whole).</figcaption></figure>
+<figure class="sheet"><a href="pictures/topdown-right.webp"><img src="pictures/topdown-right.webp" alt="36 costumes drawn from above, facing right"></a><figcaption>Facing to a side: the face's half that way, the tail and the wings behind.</figcaption></figure>
+<figure class="sheet"><a href="pictures/topdown-back.webp"><img src="pictures/topdown-back.webp" alt="36 costumes drawn from above, facing away"></a><figcaption>Facing away: the back of the head, capes, quivers and tanks, tails over the body.</figcaption></figure>
+
+<h2>Asleep in the tent, in every costume <span class="series">(0.0.452; ^ticket(627))</span></h2>
+<p>Lying along a sleeping bag (ticket 412's own view of the friend) wears every costume now, as one asleep would: a hat or a helmet taken off and lying by the pillow; what the costume carries (a broom, a staff, a sword, a bow, a scepter) beside the bag; wings or a royal mantle spread underneath; a suit's tail out on the bag; a monk's hood kept up, a robot's head, a ninja's mask; the ghost, a sheet over it all.</p>
+<figure class="sheet"><a href="pictures/asleep.webp"><img src="pictures/asleep.webp" alt="36 costumes, each lying along a sleeping bag"></a><figcaption>All 36 asleep (the bag itself left out, so the friend shows).</figcaption></figure>
+
+<h2>For comparison: standing</h2>
+<p>The same 36, as the game has always drawn them, standing and facing us. The views above are drawn to match these: the same colours, patterns and things, seen another way.</p>
+<figure class="sheet"><a href="pictures/standing.webp"><img src="pictures/standing.webp" alt="36 costumes standing, facing us"></a><figcaption>All 36 standing.</figcaption></figure>
+
+<h2>How it is built</h2>
+<ul>
+  <li><b>One look, three views.</b> The game already turns each costume into the shirt and pants it wears (<code>COSTUME_CLOTHES</code>, ^ticket(564)) and an animal suit into its fur. Both new views take those, and the standing drawing's own pattern fills, so a costume's clothes come out right in every view at once.</li>
+  <li><b>What is left, a table each.</b> Only what a costume has besides clothes is drawn per costume: from above (<code>TD_GEAR</code>) its hat, hood, helmet or crown, cape, wings, tail and what it holds; asleep (<code>LIE_GEAR</code>) the same things as one asleep has them. A new costume adds one entry to each.</li>
+  <li><b>Checked by drawing all of them.</b> Each sheet here is one run over all 36 costumes; none failed to draw.</li>
+</ul>
+
+<h2>Not done yet</h2>
+<ul>
+  <li><b>Scrolling's speed on the iPad.</b> The 🧪 page has two passes for it (walking in a dungeon room; scrolling to the next room and back). A run on M's iPad says whether the slide keeps up.</li>
+  <li>^ticket(624): the other poses from above (sitting, dancing, the animations), and ^ticket(625): stairs up to the floor above, and hopping down off a ledge.</li>
+  <li>^ticket(628): a new costume, 🗡️ the Time Wanderer: green tunic and pointed cap, belt, boots, sword and shield.</li>
+  <li>^ticket(629): picking up a pot and holding it overhead (the action press), and throwing it (a press of its own).</li>
+  <li>^ticket(630): the dungeon room's own settings: the stone's shade, moss and mushrooms (how much, five kinds each), and cracks different in each room.</li>
+  <li>^ticket(631): treasure chests, opened with the action press: World design chooses a recording, what comes out (12 things) and a flourish (8 new tunes), with A Link to the Past's moment of holding it up.</li>
+  <li>^ticket(632): a 🎒 backpack tab, a panel for each thing carried, and the backpack drawn on the friend.</li>
+</ul>
+
+<h2>Updates</h2>
+<p class="log">2026-10-26: first draft, published as a work in progress for Matthew's review. Pictures drawn by the game (0.0.452) and saved from it: the sheets at 1320 to 1680 pixels wide, the rooms at 1200.</p>
+</main>
+<script>
+  (function () { const b = document.getElementById("theme"), order = ["auto", "light", "dark"], label = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
+    let t; try { t = localStorage.getItem("theme") || "auto"; } catch (e) { t = "auto"; }
+    const set = v => { t = v; if (v === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", v); b.textContent = label[v]; try { if (v === "auto") localStorage.removeItem("theme"); else localStorage.setItem("theme", v); } catch (e) {} };
+    set(t); b.addEventListener("click", () => set(order[(order.indexOf(t) + 1) % 3])); })();
+</script>
+</body>
+</html>
