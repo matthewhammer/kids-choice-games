@@ -4191,9 +4191,18 @@ function dungeonScene(c) {
         `<ellipse cx="${f1(x)}" cy="${f1(y - 3 * k)}" rx="${f1(6 * k)}" ry="${f1(10 * k)}" fill="#fff2a8"/>` +
         `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(70 * k)}" fill="#ffb03a" opacity="0.08"/>`);
     }
-    const pot = (x, y, i) => obj(`pot ${++n}`, y, `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(16 * k)}" ry="${f1(6 * k)}" fill="#000000" opacity="0.25"/>` +
-      `<path d="M${f1(x - 15 * k)} ${f1(y - 4 * k)} Q${f1(x - 19 * k)} ${f1(y - 26 * k)} ${f1(x - 8 * k)} ${f1(y - 30 * k)} L${f1(x + 8 * k)} ${f1(y - 30 * k)} Q${f1(x + 19 * k)} ${f1(y - 26 * k)} ${f1(x + 15 * k)} ${f1(y - 4 * k)} Z" fill="${["#8a5a3a", "#7a4e34", "#96643f"][i % 3]}" stroke="${line}" stroke-width="${lw}"/>` +
-      `<ellipse cx="${f1(x)}" cy="${f1(y - 30 * k)}" rx="${f1(9 * k)}" ry="${f1(3.5 * k)}" fill="#2a1a10"/>`);
+    // (Matthew, 0.0.447: "these 'pots' look like absolute shit") a pot as A Link to the Past's are, seen from a little above:
+    // round and squat, its wide mouth showing its dark inside within a lip, lit on one side and shaded on the other, a band
+    // of a deeper colour round its belly, its shadow on the floor
+    const pot = (x, y, i) => { const col = ["#b0703f", "#9c6238", "#b8794a"][i % 3], dk = mix(col, "#000000", 0.35), lt = mix(col, "#ffffff", 0.35);
+      const r = 17 * k, by = y - 13 * k, my = by - r * 0.62;
+      return obj(`pot ${++n}`, y, `<ellipse cx="${f1(x + 2 * k)}" cy="${f1(y)}" rx="${f1(r * 1.05)}" ry="${f1(r * 0.38)}" fill="#000000" opacity="0.3"/>` +
+        `<ellipse cx="${f1(x)}" cy="${f1(by)}" rx="${f1(r)}" ry="${f1(r * 0.86)}" fill="${col}" stroke="${line}" stroke-width="${lw}"/>` +
+        `<path d="M${f1(x + r * 0.15)} ${f1(by - r * 0.84)} A${f1(r)} ${f1(r * 0.86)} 0 0 1 ${f1(x + r * 0.15)} ${f1(by + r * 0.84)} A${f1(r * 0.7)} ${f1(r * 0.86)} 0 0 0 ${f1(x + r * 0.15)} ${f1(by - r * 0.84)} Z" fill="${dk}" opacity="0.55"/>` +
+        `<path d="M${f1(x - r * 0.98)} ${f1(by + r * 0.12)} Q${f1(x)} ${f1(by + r * 0.42)} ${f1(x + r * 0.98)} ${f1(by + r * 0.12)}" stroke="${dk}" stroke-width="${f1(3.2 * k)}" fill="none"/>` +
+        `<ellipse cx="${f1(x - r * 0.45)}" cy="${f1(by - r * 0.15)}" rx="${f1(r * 0.17)}" ry="${f1(r * 0.3)}" fill="${lt}" opacity="0.7"/>` +
+        `<ellipse cx="${f1(x)}" cy="${f1(my)}" rx="${f1(r * 0.62)}" ry="${f1(r * 0.3)}" fill="${lt}" stroke="${line}" stroke-width="${lw}"/>` +
+        `<ellipse cx="${f1(x)}" cy="${f1(my + r * 0.03)}" rx="${f1(r * 0.44)}" ry="${f1(r * 0.19)}" fill="#1a0f08"/>`); };
     for (const d of ["NE", "NW", "SE", "SW"]) {
       if (has(d)) continue;
       const [cx, cy2] = G.ends[d], ox = d.includes("E") ? -1 : 1, oy = d.includes("N") ? 1 : -1, y = cy2 + (oy > 0 ? 44 * k : -14 * k);

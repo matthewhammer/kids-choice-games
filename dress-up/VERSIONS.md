@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.449 (2026-10-26)
+
+Everything in 0.0.448, plus:
+
+- **🏺 Better pots in the dungeon room:** round and squat, seen from a little above as A Link to the Past's are, their dark mouths showing inside a lip, lit on one side, a band round the belly.
+
 ## 0.0.448 (2026-10-26)
 
 Everything in 0.0.447, plus:
