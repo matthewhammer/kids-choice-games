@@ -1,8 +1,8 @@
 # Kids' Choice Games: agent checklist
 
-The explanation, for people and agents alike, is [^du_report(22), How Dress Up Is Made](https://matthewhammer.org/kids-choice-games/dress-up/reports/022/): who decides, how a change reaches the kids, the rules and why, the code in one page. Read it first. This file is the checklist that goes with it: exact steps and names.
+**Read [^du_report(22), How Dress Up Is Made](https://matthewhammer.org/kids-choice-games/dress-up/reports/022/) before this file.** It is the game's public, human-facing instructions, for people and agents alike: who decides, how a change reaches the kids, the rules and why, the code in one page. This file is the checklist that goes with it: exact steps and names. (Its source is `dress-up/reports/022/index.html`, in this repository.)
 
-Keep both in sync with the code, in the same commit. History is in the code's comments, by ticket (`grep -rn "ticket 412" dress-up/js`). The long, old version of this file is at commit `f356855`.
+Keep both in sync with the code, in the same commit: a rule or a step that changes is changed in the report and here. History is in the code's comments, by ticket (`grep -rn "ticket 412" dress-up/js`). The long, old version of this file is at commit `f356855`.
 
 ## Release ([why](https://matthewhammer.org/kids-choice-games/dress-up/reports/022/#release))
 
