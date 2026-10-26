@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.452 (2026-10-26)
+
+Everything in 0.0.451, plus:
+
+- **Asleep in the tent, as you dressed them.** Lying along a sleeping bag, the friend now wears every costume: its clothes and patterns, an animal suit's fur with its ears (a lion's mane, a deer's antlers) and its tail out on the bag, wings or a royal mantle spread under them, and the costume's hat or helmet taken off to sleep, lying by the pillow; what the costume carries (a broom, a staff, a sword, a bow, a scepter) beside the bag; a monk's hood kept up, a robot's head, a ninja's mask; the ghost, a sheet over it all. And the friend's own: hand and foot styles, the eyes' size and kind (closed, ✕, stars, hearts), an open mouth, a beard, elf ears, a long skirt or a dress over the legs.
+- **A fix:** shirts and pants of one plain colour drew without their colour, from above (0.0.451) and asleep.
+
 ## 0.0.451 (2026-10-26)
 
 Everything in 0.0.450, plus:

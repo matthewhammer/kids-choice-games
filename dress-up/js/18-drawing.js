@@ -1547,7 +1547,9 @@ function topDownSvg(S, B, g, H) {
   let SH = { ...S.shirt, color: hex(S.shirt.color, "#4a7bd0") }, PA = { ...S.pants, color: hex(S.pants.color, "#3b5b8c") };
   if (COSTUME_CLOTHES.hasOwnProperty(kind)) [SH, PA] = COSTUME_CLOTHES[kind](WC, SH, PA);
   const skin = hex(S.face.color, "#cfa000"), hair = hex(S.hair.color, "#2b2b2b");
-  const shirtFill = suit ? "url(#pat-fur)" : "url(#pat-shirt)", pantsFill = suit ? "url(#pat-fur)" : "url(#pat-pants)";
+  // (a plain colour has no pattern of its own: fillOf, as drawNow; a suit's fur its pattern, where it has one)
+  const furFill = suit && document.getElementById("pat-fur") ? "url(#pat-fur)" : suit ? C.fur : null;
+  const shirtFill = furFill || fillOf("pat-shirt", hex(SH.color, "#4a7bd0"), SH.pattern || "plain"), pantsFill = furFill || fillOf("pat-pants", hex(PA.color, "#3b5b8c"), PA.pattern || "plain");
   const shirtCol = suit ? C.fur : hex(SH.color, "#4a7bd0"), pantsCol = suit ? C.fur : hex(PA.color, "#3b5b8c");
   const handCol = suit ? C.fur : hex(S.hands && S.hands.color, skin), footStyle = S.shoes.style || "sneaker";
   const shoe = suit ? C.fur : footStyle === "bare" || footStyle === "human" ? skin : hex(S.shoes.color, "#5a3a1e");
@@ -1615,7 +1617,7 @@ function topDownSvg(S, B, g, H) {
   const afro = style === "afro" ? `<circle cx="0" cy="${f1(hy - hr * 0.15)}" r="${f1(hr * (1.25 + 0.15 * hairLen))}" ${F(hair)}/>` : "";
   s += V("hair", covered ? "" : afro) + V("head", ears);
   const headCol = gear.headFill || (suit ? C.fur : view === 2 ? hair : skin);
-  s += V("head", `<circle cx="0" cy="${f1(hy)}" r="${f1(hr)}" fill="${suit && !gear.headFill ? "url(#pat-fur)" : headCol}" stroke="${ln(suit ? C.fur : headCol)}" stroke-width="${lw}"/>`);
+  s += V("head", `<circle cx="0" cy="${f1(hy)}" r="${f1(hr)}" fill="${suit && !gear.headFill ? furFill : headCol}" stroke="${ln(suit ? C.fur : headCol)}" stroke-width="${lw}"/>`);
   if (suit && view !== 2 && !gear.headFill) s += V("head", `<ellipse cx="${f1(side ? view * hr * 0.35 : 0)}" cy="${f1(hy + hr * 0.3)}" rx="${f1(hr * (side ? 0.45 : 0.62))}" ry="${f1(hr * 0.55)}" fill="${skin}" stroke="${ln(skin)}" stroke-width="${lw}"/>`);
   // (the hairline, from above: low, the face only the head's lower part; bangs bring it lower)
   const line = hy + 0.02 * H + 0.03 * H * Math.min(1.5, bangs), lx = Math.sqrt(Math.max(0, hr * hr - (line - hy) ** 2));
@@ -1738,11 +1740,24 @@ function lieAlongSvg(A, S) {
   const at = (xr, a, h = 0) => { const y = vy + 1 / (i0 + (i1 - i0) * xr / LIE_LEN), m = (y - vy) / (fy - vy); return [(cx - side * a * Wf) * m, y - h * Wf * m, Wf * m]; };
   const P = p => `${f1(p[0])} ${f1(p[1])}`, lw = p => f1(Math.max(0.6, 0.018 * p[2]));
   // (a limb: tapered, round at both ends, from one point to another, each with its radius in the bag's widths)
-  const capsule = (p0, r0, p1, r1, fill) => { const R0 = r0 * p0[2], R1 = r1 * p1[2], dx = p1[0] - p0[0], dy = p1[1] - p0[1], d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny2 = dx / d;
+  const capsule = (p0, r0, p1, r1, fill, line = fill) => { const R0 = r0 * p0[2], R1 = r1 * p1[2], dx = p1[0] - p0[0], dy = p1[1] - p0[1], d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny2 = dx / d;
     const A0 = [p0[0] + nx * R0, p0[1] + ny2 * R0], B1 = [p1[0] + nx * R1, p1[1] + ny2 * R1], C1 = [p1[0] - nx * R1, p1[1] - ny2 * R1], D0 = [p0[0] - nx * R0, p0[1] - ny2 * R0];
-    return `<path d="M${P(A0)} L${P(B1)} A${f1(R1)} ${f1(R1)} 0 0 0 ${P(C1)} L${P(D0)} A${f1(R0)} ${f1(R0)} 0 0 0 ${P(A0)} Z" fill="${fill}" stroke="${darker(fill)}" stroke-width="${lw(p0)}" stroke-linejoin="round"/>`; };
-  const skin = S.face.color, hair = S.hair.color, shirt = S.shirt.color, pants = S.pants.color, shoe = S.shoes.color;
-  const sleeve = S.shirt.style === "tank" ? 0 : S.shirt.style === "long" ? 1 : 0.45, longPants = !/short|skirt/.test(S.pants.style || "long");
+    return `<path d="M${P(A0)} L${P(B1)} A${f1(R1)} ${f1(R1)} 0 0 0 ${P(C1)} L${P(D0)} A${f1(R0)} ${f1(R0)} 0 0 0 ${P(A0)} Z" fill="${fill}" stroke="${darker(line)}" stroke-width="${lw(p0)}" stroke-linejoin="round"/>`; };
+  // (ticket 627, Matthew 2026-10-26: "how many params (costumes included) translate into this new drawing perspective? ... Same
+  // question for sleeping in the tent. Please complete our drawing routines so that they accurately portray these postures")
+  // the friend as dressed: the costume's clothes (COSTUME_CLOTHES) in drawNow's own pattern fills, an animal suit's fur, the
+  // hands' and the feet's own colours and styles; what a costume has, as one asleep has it (LIE_GEAR, below)
+  const hex = (v, d) => /^#[0-9a-f]{3,8}$/i.test(String(v || "")) ? v : d;
+  const kind = S.costume.kind, WC = S.costume, C = costumeOn(), suit = !!(C && ANIMALS[kind].suit);
+  let SH = { ...S.shirt, color: hex(S.shirt.color, "#4a7bd0") }, PA = { ...S.pants, color: hex(S.pants.color, "#3b5b8c") };
+  if (COSTUME_CLOTHES.hasOwnProperty(kind)) [SH, PA] = COSTUME_CLOTHES[kind](WC, SH, PA);
+  const skin = hex(S.face.color, "#cfa000"), hair = hex(S.hair.color, "#2b2b2b"), shirt = suit ? C.fur : hex(SH.color, "#4a7bd0"), pants = suit ? C.fur : hex(PA.color, "#3b5b8c");
+  const furFill = suit && document.getElementById("pat-fur") ? "url(#pat-fur)" : suit ? C.fur : null;
+  const shirtFill = furFill || fillOf("pat-shirt", shirt, SH.pattern || "plain"), pantsFill = furFill || fillOf("pat-pants", pants, PA.pattern || "plain");
+  const footStyle = S.shoes.style || "sneaker", shoe = suit ? C.fur : footStyle === "bare" || footStyle === "human" ? skin : hex(S.shoes.color, "#5a3a1e");
+  const handCol = suit ? C.fur : hex(S.hands && S.hands.color, skin), limbSkin = suit ? C.fur : skin;
+  const sleeve = suit ? 1 : SH.style === "tank" ? 0 : SH.style === "long" ? 1 : 0.45, longPants = suit || !/short|skirt/.test(PA.style || "long"), dress = !suit && /dress|skirt/.test(PA.style || "") && (PA.skirtLen ?? 40) > 70;
+  const gear = (LIE_GEAR[kind] || (() => ({})))({ WC, C, kind, hex, skin, hair, darker, f1 });
   // (ticket 425: each part as see-through as its 👁️ slider says, as standing: the arms, the neck and the body the shirt's, the
   // legs the pants', the hands and the feet their own)
   const seen = visibility(), V = (part, svg) => !svg || seen[part] >= 1 ? svg : seen[part] <= 0 ? "" : `<g opacity="${seen[part].toFixed(2)}">${svg}</g>`;
@@ -1751,49 +1766,145 @@ function lieAlongSvg(A, S) {
   // towards us"), the hair on its far side (Matthew: "the hair should be on the far face of the head ball, not the top of it
   // (the head is reclined now, looking upward)"), behind the head and spread on the pillow
   const hx = 1.8, hc = 0.29, hr = 0.25;   // (the head smaller than the friend's own, so that, a ball raised by the pillow, it stays on the bag)
-  const hp = at(hx, 0, hc), R = hr * hp[2], hair3 = lyingHair(S.hair, { at, P, lw, hx, hp, R, hair });
+  const hp = at(hx, 0, hc), R = hr * hp[2], covered = suit || !!gear.hood || !!gear.head, hair3 = covered ? { behind: "", over: "" } : lyingHair(S.hair, { at, P, lw, hx, hp, R, hair });
+  // (under them on the bag: a cape, wings spread either side, a tail out toward the open end; by the pillow: a hat or a helmet
+  // taken off to sleep; beside the bag: what the costume carries)
+  if (gear.under) s += gear.under({ at, P, lw, capsule, hp, R });
+  if (gear.beside) s += gear.beside({ at, P, lw, capsule, hp, R });
+  if (suit) { const Lk = ANIMALS[kind]; s += lieTail(kind, C, { at, P, lw, capsule }) + lieEars(kind, C, { at, P, lw, hp, R }); }
   s += V("hair", hair3.behind);
-  let head = `<circle class="lie-head" cx="${f1(hp[0])}" cy="${f1(hp[1])}" r="${f1(R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
+  // (a suit's hood, or a costume's, round the face: its fur or cloth behind and round the head)
+  if (suit || gear.hood) s += `<circle cx="${f1(hp[0])}" cy="${f1(hp[1] - 0.1 * R)}" r="${f1(R * 1.18)}" fill="${suit ? furFill : gear.hood}" stroke="${darker(suit ? C.fur : gear.hood)}" stroke-width="${lw(hp)}"/>`;
+  let head = gear.head ? gear.head({ hp, R, lw }) : `<circle class="lie-head" cx="${f1(hp[0])}" cy="${f1(hp[1])}" r="${f1(R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
   // Lying face up, seen from the feet and above: the face looks at the ceiling, so it shows on the head's upper part, shortened,
   // its forehead and hairline at the far top, then the eyes, the nose and, nearer us, the mouth; below it the underside of
   // the chin and jaw, in shade. The ears at the head's sides.
   const lo = (y0, bow, a) => `<path d="M${f1(hp[0] - Math.sqrt(R * R - (y0 - hp[1]) ** 2))} ${f1(y0)} Q${f1(hp[0])} ${f1(y0 + bow)} ${f1(hp[0] + Math.sqrt(R * R - (y0 - hp[1]) ** 2))} ${f1(y0)} ` +
     `A${f1(R)} ${f1(R)} 0 ${y0 > hp[1] ? 0 : 1} 1 ${f1(hp[0] - Math.sqrt(R * R - (y0 - hp[1]) ** 2))} ${f1(y0)} Z" ${a}/>`;
-  head += lo(hp[1] + 0.1 * R, 0.14 * R, `fill="${darker(skin)}" opacity="0.45"`);   // (under the chin)
-  for (const sd of [-1, 1]) head += `<ellipse cx="${f1(hp[0] + sd * 0.97 * R)}" cy="${f1(hp[1] - 0.2 * R)}" rx="${f1(0.13 * R)}" ry="${f1(0.2 * R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
+  if (!gear.head) head += lo(hp[1] + 0.1 * R, 0.14 * R, `fill="${darker(skin)}" opacity="0.45"`);   // (under the chin)
+  // (the ears as the friend's: none, or an elf's pointed; a hood or a suit covers them)
+  const earKind = covered ? "none" : S.face.ears || "free";
+  if (!gear.head && earKind !== "none") for (const sd of [-1, 1]) head += earKind === "elf" ? `<path d="M${f1(hp[0] + sd * 0.9 * R)} ${f1(hp[1] - 0.05 * R)} L${f1(hp[0] + sd * 1.35 * R)} ${f1(hp[1] - 0.45 * R)} L${f1(hp[0] + sd * 0.95 * R)} ${f1(hp[1] - 0.35 * R)} Z" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>` : `<ellipse cx="${f1(hp[0] + sd * 0.97 * R)}" cy="${f1(hp[1] - 0.2 * R)}" rx="${f1(0.13 * R)}" ry="${f1(0.2 * R)}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hp)}"/>`;
   s += V("head", head) + V("hair", hair3.over);
+  // (the eyes as the friend's: their size, and closed, ✕, stars or hearts; asleep, a friend with plain eyes may still be awake)
+  const ef = Math.max(0.4, Math.min(2.5, (S.face.eyes ?? 100) / 100)), ink = Math.max(0.6, 0.035 * R);
   let eyes = "";
-  for (const sd of [-1, 1]) { const ex = hp[0] + sd * 0.27 * R, ey = hp[1] - 0.44 * R;
+  if (gear.head) eyes = gear.eyes ? gear.eyes({ hp, R }) : "";
+  else for (const sd of [-1, 1]) { const ex = hp[0] + sd * 0.27 * R, ey = hp[1] - 0.44 * R;
+    if (S.face.closed > 0) { eyes += `<path d="M${f1(ex - 0.1 * R * ef)} ${f1(ey)} Q${f1(ex)} ${f1(ey + 0.05 * R)} ${f1(ex + 0.1 * R * ef)} ${f1(ey)}" fill="none" stroke="#1f1f1f" stroke-width="${f1(ink)}" stroke-linecap="round"/>`; continue; }
+    if (S.face.xeyes > 0) { eyes += `<path d="M${f1(ex - 0.08 * R * ef)} ${f1(ey - 0.05 * R)} l${f1(0.16 * R * ef)} ${f1(0.1 * R)} M${f1(ex + 0.08 * R * ef)} ${f1(ey - 0.05 * R)} l${f1(-0.16 * R * ef)} ${f1(0.1 * R)}" stroke="#1f1f1f" stroke-width="${f1(ink)}"/>`; continue; }
+    if (S.face.stars > 0 || S.face.hearts > 0) { eyes += `<text x="${f1(ex)}" y="${f1(ey + 0.06 * R)}" font-size="${f1(0.22 * R * ef)}" text-anchor="middle" fill="${S.face.hearts > 0 ? "#e11d48" : "#f2c230"}">${S.face.hearts > 0 ? "♥" : "★"}</text>`; continue; }
     // (its whites, the pupils at their far edge: looking up at the ceiling, past the forehead)
     eyes += `<ellipse cx="${f1(ex)}" cy="${f1(ey)}" rx="${f1(0.1 * R)}" ry="${f1(0.06 * R)}" fill="#ffffff" stroke="${darker(skin)}" stroke-width="${f1(Math.max(0.5, 0.02 * R))}"/>` +
-            `<ellipse cx="${f1(ex)}" cy="${f1(ey - 0.025 * R)}" rx="${f1(0.05 * R)}" ry="${f1(0.035 * R)}" fill="#1f1f1f"/>` +
+            `<ellipse cx="${f1(ex)}" cy="${f1(ey - 0.025 * R)}" rx="${f1(0.05 * R * ef)}" ry="${f1(0.035 * R * ef)}" fill="${S.face.irisColor && ef > 1.2 ? hex(S.face.irisColor, "#1f1f1f") : "#1f1f1f"}"/>` +
             `<path d="M${f1(ex - 0.12 * R)} ${f1(ey - 0.1 * R)} Q${f1(ex)} ${f1(ey - 0.14 * R)} ${f1(ex + 0.12 * R)} ${f1(ey - 0.1 * R)}" fill="none" stroke="${darker(hair)}" stroke-width="${f1(Math.max(0.6, 0.035 * R))}" stroke-linecap="round"/>`; }
   s += V("eyes", eyes);
-  s += V("head", `<path d="M${f1(hp[0] - 0.06 * R)} ${f1(hp[1] - 0.22 * R)} Q${f1(hp[0])} ${f1(hp[1] - 0.15 * R)} ${f1(hp[0] + 0.06 * R)} ${f1(hp[1] - 0.22 * R)}" fill="none" stroke="${darker(skin)}" stroke-width="${f1(Math.max(0.6, 0.04 * R))}" stroke-linecap="round"/>` +   // (the nose)
-    `<path d="M${f1(hp[0] - 0.15 * R)} ${f1(hp[1] - 0.06 * R)} Q${f1(hp[0])} ${f1(hp[1] + 0.02 * R)} ${f1(hp[0] + 0.15 * R)} ${f1(hp[1] - 0.06 * R)}" fill="none" stroke="#7a2e2e" stroke-width="${f1(Math.max(0.7, 0.05 * R))}" stroke-linecap="round"/>`);
+  if (!gear.head) s += V("head", `<path d="M${f1(hp[0] - 0.06 * R)} ${f1(hp[1] - 0.22 * R)} Q${f1(hp[0])} ${f1(hp[1] - 0.15 * R)} ${f1(hp[0] + 0.06 * R)} ${f1(hp[1] - 0.22 * R)}" fill="none" stroke="${darker(skin)}" stroke-width="${f1(Math.max(0.6, 0.04 * R))}" stroke-linecap="round"/>` +   // (the nose)
+    `<path d="M${f1(hp[0] - 0.15 * R)} ${f1(hp[1] - 0.06 * R)} Q${f1(hp[0])} ${f1(hp[1] + 0.02 * R)} ${f1(hp[0] + 0.15 * R)} ${f1(hp[1] - 0.06 * R)}" fill="none" stroke="#7a2e2e" stroke-width="${f1(Math.max(0.7, 0.05 * R))}" stroke-linecap="round"/>` +
+    (S.face.open > 0 ? `<ellipse cx="${f1(hp[0])}" cy="${f1(hp[1] - 0.04 * R)}" rx="${f1(0.08 * R)}" ry="${f1(0.05 * R)}" fill="#3a1010"/>` : "") +   // (an open mouth)
+    (S.hair.beard && S.hair.beard !== "none" && !covered ? `<path d="M${f1(hp[0] - 0.55 * R)} ${f1(hp[1] - 0.05 * R)} Q${f1(hp[0])} ${f1(hp[1] + 0.75 * R)} ${f1(hp[0] + 0.55 * R)} ${f1(hp[1] - 0.05 * R)} Q${f1(hp[0])} ${f1(hp[1] + 0.12 * R)} ${f1(hp[0] - 0.55 * R)} ${f1(hp[1] - 0.05 * R)} Z" fill="${hair}" stroke="${darker(hair)}" stroke-width="${lw(hp)}"/>` : ""));   // (a beard, down the chin)
   // the neck
-  s += V("shirt", capsule(at(1.56, 0, 0.17), 0.1, at(1.64, 0, 0.2), 0.1, skin));
+  s += V("shirt", capsule(at(1.56, 0, 0.17), 0.1, at(1.64, 0, 0.2), 0.1, limbSkin));
   // an arm, shoulder to hand, along the body: its sleeve as the shirt's style, then the hand
   const arm = ac => { const sh = at(1.5, ac, 0.12), hd = at(0.97, ac * 1.04, 0.07), el = at(1.5 - 0.53 * sleeve, ac * 1.02, 0.1);
-    return V("shirt", (sleeve > 0 ? capsule(sh, 0.085, el, 0.075, shirt) : "") + capsule(sleeve > 0 ? el : sh, 0.068, hd, 0.06, skin)) +
-      V("hands", `<circle cx="${f1(hd[0])}" cy="${f1(hd[1])}" r="${f1(0.075 * hd[2])}" fill="${skin}" stroke="${darker(skin)}" stroke-width="${lw(hd)}"/>`); };
+    return V("shirt", (sleeve > 0 ? capsule(sh, 0.085, el, 0.075, shirtFill, shirt) : "") + capsule(sleeve > 0 ? el : sh, 0.068, hd, 0.06, limbSkin)) +
+      V("hands", `<circle cx="${f1(hd[0])}" cy="${f1(hd[1])}" r="${f1(0.075 * hd[2] * Math.max(0.6, Math.min(1.6, (S.hands.size ?? 100) / 100)))}" fill="${handCol}" stroke="${darker(handCol)}" stroke-width="${lw(hd)}"/>`); };
   s += arm(-0.38);   // (the arm by the wall: behind the body)
   // the body: its top, the shirt's front, and its side toward the room, seen below that top's edge
   const T = (xr, a) => at(xr, a, xr > 1.2 ? 0.24 : 0.21), B0 = (xr, a) => at(xr, a, 0);
   s += V("shirt", `<path d="M${P(T(0.95, 0.26))} Q${P(T(1.25, 0.33))} ${P(T(1.56, 0.31))} L${P(B0(1.56, 0.31))} Q${P(B0(1.25, 0.33))} ${P(B0(0.95, 0.26))} Z" fill="${darker(shirt)}"/>` +
     `<path d="M${P(T(0.95, -0.26))} Q${P(T(1.25, -0.33))} ${P(T(1.56, -0.31))} Q${P(at(1.66, 0, 0.27))} ${P(T(1.56, 0.31))} Q${P(T(1.25, 0.33))} ${P(T(0.95, 0.26))} Q${P(at(0.86, 0, 0.23))} ${P(T(0.95, -0.26))} Z" ` +
-    `fill="${shirt}" stroke="${darker(shirt)}" stroke-width="${lw(T(1.25, 0))}" stroke-linejoin="round"/>`);
+    `fill="${shirtFill}" stroke="${darker(shirt)}" stroke-width="${lw(T(1.25, 0))}" stroke-linejoin="round"/>` +
+    (suit && C.belly ? `<ellipse cx="${f1(T(1.2, 0)[0])}" cy="${f1(T(1.2, 0)[1])}" rx="${f1(0.16 * T(1.2, 0)[2])}" ry="${f1(0.07 * T(1.2, 0)[2])}" fill="${C.belly}"/>` : "") + (gear.body ? gear.body({ T, P, at, lw }) : ""));
   s += V("pants", `<path d="M${P(T(0.96, -0.25))} Q${P(at(0.9, 0, 0.22))} ${P(T(0.96, 0.25))}" fill="none" stroke="${darker(pants)}" stroke-width="${lw(T(0.96, 0))}"/>`);   // (the waist)
   s += arm(0.38);    // (the arm by the room: in front of the body)
   // the legs, hip to ankle, the wall's first; long pants to the ankle, short ones to the knee
   const leg = ac => { const hp2 = at(0.96, ac, 0.11), kn = at(0.55, ac, 0.1), an = at(0.2, ac, 0.08);
-    return longPants ? capsule(hp2, 0.11, an, 0.085, pants) : capsule(hp2, 0.11, kn, 0.1, pants) + capsule(kn, 0.085, an, 0.07, skin); };
+    return longPants ? capsule(hp2, 0.11, an, 0.085, pantsFill, pants) : capsule(hp2, 0.11, kn, 0.1, pantsFill, pants) + capsule(kn, 0.085, an, 0.07, limbSkin); };
   s += V("pants", leg(-0.13) + leg(0.13));
+  // (a long skirt, a dress or a robe: over the legs, from the hips to the ankles, flaring)
+  if (dress) s += V("pants", `<path d="M${P(at(0.98, -0.27, 0.2))} L${P(at(0.22, -0.36, 0.1))} Q${P(at(0.16, 0, 0.12))} ${P(at(0.22, 0.36, 0.1))} L${P(at(0.98, 0.27, 0.2))} Q${P(at(1.0, 0, 0.23))} ${P(at(0.98, -0.27, 0.2))} Z" fill="${pantsFill}" stroke="${darker(pants)}" stroke-width="${lw(at(0.6, 0, 0.15))}" stroke-linejoin="round"/>`);
   // the feet, pointing up: each shoe standing on its heel at the open end, its sole toward us
   const foot = ac => { const b = at(0.15, ac, 0.03), t = at(0.15, ac, 0.27), sole = at(0.11, ac, 0.05);
-    return capsule(b, 0.085, t, 0.08, shoe) + `<ellipse cx="${f1(sole[0])}" cy="${f1(sole[1])}" rx="${f1(0.07 * sole[2])}" ry="${f1(0.035 * sole[2])}" fill="#f2f2f2" opacity="0.8"/>`; };
+    const big = footStyle === "clown" ? 1.5 : kind === "sasquatch" ? 1.35 : 1, bare = !suit && (footStyle === "bare" || footStyle === "human");
+    return capsule(b, 0.085 * big, t, 0.08 * big, shoe) + (bare || suit ? "" : `<ellipse cx="${f1(sole[0])}" cy="${f1(sole[1])}" rx="${f1(0.07 * sole[2] * big)}" ry="${f1(0.035 * sole[2] * big)}" fill="#f2f2f2" opacity="0.8"/>`) +
+      (footStyle === "boot" && !suit ? capsule(at(0.2, ac, 0.08), 0.09, at(0.32, ac, 0.1), 0.095, shoe) : ""); };
   s += V("feet", foot(-0.13) + foot(0.13));
+  // (the ghost: a sheet over all of them, their shape under it, two dark eyes)
+  if (kind === "ghost") { const col = hex(WC.ghostColor, "#f4f6f8");
+    s += `<path d="M${P(at(0.1, -0.42, 0.05))} L${P(at(1.7, -0.45, 0.25))} Q${P(at(2.15, 0, 0.42))} ${P(at(1.7, 0.45, 0.25))} L${P(at(0.1, 0.42, 0.05))} Q${P(at(0.0, 0, 0.1))} ${P(at(0.1, -0.42, 0.05))} Z" fill="${col}" stroke="${darker(col)}" stroke-width="${lw(hp)}" opacity="0.95"/>` +
+      (WC.ghostHideEyes ? "" : [-1, 1].map(sd => `<ellipse cx="${f1(hp[0] + sd * 0.27 * R)}" cy="${f1(hp[1] - 0.35 * R)}" rx="${f1(0.08 * R)}" ry="${f1(0.06 * R)}" fill="#1b1b1b"/>`).join("")); }
+  if (gear.over) s += gear.over({ at, P, lw, capsule, hp, R });
   return `<g data-lie="along">${s}</g>`;
+}
+// (ticket 627) each costume as one asleep in the tent has it, for lieAlongSvg: beside (a hat or a helmet taken off, by the
+// pillow on the room's side; what it carries, beside the bag), under (a cape, wings spread either side of the body), hood
+// (a hood kept up: its colour, round the face), head (in place of the head: a robot's box, a ninja's mask), eyes (on such a
+// head), body (over the shirt: a tabard), over (on top of it all). The suits' ears and tails are lieEars and lieTail.
+const lieHatSvg = (type, col, q, extra = "") => { const m = q[2], x = q[0], y = q[1], F = c => `fill="${c}" stroke="${darker(c)}" stroke-width="${f1(Math.max(0.6, 0.018 * m))}"`;
+  if (type === "cone") return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(0.22 * m)}" ry="${f1(0.08 * m)}" ${F(col)}/><path d="M${f1(x - 0.12 * m)} ${f1(y)} L${f1(x + 0.05 * m)} ${f1(y - 0.32 * m)} L${f1(x + 0.12 * m)} ${f1(y)} Z" ${F(col)}/>${extra}`;
+  if (type === "cowboy") return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(0.22 * m)}" ry="${f1(0.08 * m)}" ${F(col)}/><path d="M${f1(x - 0.11 * m)} ${f1(y)} Q${f1(x - 0.11 * m)} ${f1(y - 0.13 * m)} ${f1(x)} ${f1(y - 0.13 * m)} Q${f1(x + 0.11 * m)} ${f1(y - 0.13 * m)} ${f1(x + 0.11 * m)} ${f1(y)} Z" ${F(col)}/>`;
+  if (type === "cap") return `<path d="M${f1(x - 0.15 * m)} ${f1(y)} Q${f1(x)} ${f1(y - 0.14 * m)} ${f1(x + 0.15 * m)} ${f1(y)} Z" ${F(col)}/>${extra}`;
+  if (type === "crown") return `<path d="M${f1(x - 0.12 * m)} ${f1(y)} l0 ${f1(-0.1 * m)} l${f1(0.06 * m)} ${f1(0.05 * m)} l${f1(0.06 * m)} ${f1(-0.07 * m)} l${f1(0.06 * m)} ${f1(0.07 * m)} l${f1(0.06 * m)} ${f1(-0.05 * m)} l0 ${f1(0.1 * m)} Z" ${F("#f2c230")}/><circle cx="${f1(x)}" cy="${f1(y - 0.05 * m)}" r="${f1(0.018 * m)}" fill="${col}"/>`;
+  if (type === "helm") return `<path d="M${f1(x - 0.14 * m)} ${f1(y)} A${f1(0.14 * m)} ${f1(0.14 * m)} 0 0 1 ${f1(x + 0.14 * m)} ${f1(y)} Z" ${F(col)}/>${extra}`;
+  return ""; };
+const lieHeld = (h, kind2, col = "#7a5230", tip = null) => { const { at, P } = h, a = at(0.45, 0.68, 0.02), b = at(1.55, 0.68, 0.02), m = b[2], w = f1(Math.max(1, 0.022 * m));
+  const line = `<path d="M${P(a)} L${P(b)}" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`;
+  return kind2 === "sword" ? `<path d="M${P(a)} L${P(at(1.25, 0.68, 0.02))}" stroke="#d6dbe1" stroke-width="${w}" stroke-linecap="round"/><path d="M${P(at(1.25, 0.6, 0.02))} L${P(at(1.25, 0.76, 0.02))}" stroke="#7a5230" stroke-width="${w}"/>`
+    : kind2 === "broom" ? line + `<path d="M${P(at(0.45, 0.6, 0.02))} L${P(at(0.25, 0.68, 0.02))} L${P(at(0.45, 0.76, 0.02))} Z" fill="#c9a25a" stroke="#8a6a2a" stroke-width="${w}"/>`
+    : kind2 === "bow" ? `<path d="M${P(a)} Q${P(at(1.0, 0.85, 0.02))} ${P(b)}" stroke="${col}" stroke-width="${w}" fill="none"/><path d="M${P(a)} L${P(b)}" stroke="#e5e5e5" stroke-width="${f1(Math.max(0.5, 0.008 * m))}"/>`
+    : line + (tip ? `<circle cx="${f1(b[0])}" cy="${f1(b[1])}" r="${f1(0.04 * m)}" fill="${tip}" stroke="#ffffff" stroke-width="${f1(Math.max(0.5, 0.01 * m))}"/>` : ""); };
+const liePillowSide = h => h.at(1.92, 0.78, 0.02);
+const lieWings = (col, shape = "round") => h => { const { at, P } = h;
+  return [-1, 1].map(sd => { const c = at(1.3, sd * 0.62, 0.05), m = c[2];
+    return shape === "bat" ? `<path d="M${P(at(1.45, sd * 0.3, 0.1))} L${P(at(1.6, sd * 0.95, 0.03))} L${P(at(1.2, sd * 0.8, 0.03))} L${P(at(1.05, sd * 0.35, 0.08))} Z" fill="${col}" stroke="${darker(col)}" stroke-width="${f1(Math.max(0.6, 0.015 * m))}"/>`
+      : `<ellipse cx="${f1(c[0])}" cy="${f1(c[1])}" rx="${f1(0.32 * m)}" ry="${f1(0.13 * m)}" fill="${col}" stroke="${darker(col)}" stroke-width="${f1(Math.max(0.6, 0.015 * m))}"/>`; }).join(""); };
+const lieCape = (col, trim = null) => h => { const { at, P } = h, m = at(1.2, 0, 0)[2];
+  return `<path d="M${P(at(1.62, -0.42, 0.02))} L${P(at(0.55, -0.45, 0.01))} Q${P(at(0.45, 0, 0.01))} ${P(at(0.55, 0.45, 0.01))} L${P(at(1.62, 0.42, 0.02))} Z" fill="${col}" stroke="${trim || darker(col)}" stroke-width="${f1(Math.max(0.8, 0.02 * m))}"/>`; };
+const LIE_GEAR = {
+  witch: h => ({ beside: c => lieHatSvg("cone", h.hex(h.WC.witchColor, "#1f1f22"), liePillowSide(c)) + (h.WC.broom ? lieHeld(c, "broom") : "") }),
+  wizard: h => ({ beside: c => lieHatSvg("cone", h.hex(h.WC.wizardRobe, "#2a3a8c"), liePillowSide(c)) + (h.WC.staff ? lieHeld(c, "staff", "#7a5230", h.hex(h.WC.staffOrb, "#7dd3fc")) : "") }),
+  gnome: h => ({ beside: c => lieHatSvg("cone", h.hex(h.WC.gnomeHat, "#c0392b"), liePillowSide(c)) }),
+  robin: h => ({ beside: c => lieHatSvg("cap", h.hex(h.WC.robinHat, "#3f7d3a"), liePillowSide(c)) + (h.WC.bow ? lieHeld(c, "bow") : "") }),
+  knight: h => ({ beside: c => lieHatSvg("helm", "#a7adb6", liePillowSide(c)) + (h.WC.sword !== false ? lieHeld(c, "sword") : ""),
+                  body: c => `<path d="M${c.P(c.T(1.5, -0.14))} L${c.P(c.T(0.98, -0.14))} L${c.P(c.T(0.98, 0.14))} L${c.P(c.T(1.5, 0.14))} Z" fill="${h.hex(h.WC.knightA, "#1e40af")}" opacity="0.9"/>` }),
+  queen: h => ({ beside: c => lieHatSvg("crown", h.hex(h.WC.crownJewel, "#dc2626"), liePillowSide(c)) + (h.WC.scepter ? lieHeld(c, "staff", "#f2c230", "#dc2626") : ""), under: h.WC.mantle !== false ? lieCape(h.hex(h.WC.queenRobe, "#5b2a86"), "#f7f4ec") : null }),
+  king: h => ({ beside: c => lieHatSvg("crown", h.hex(h.WC.crownJewel, "#dc2626"), liePillowSide(c)) + (h.WC.scepter ? lieHeld(c, "staff", "#f2c230", "#dc2626") : ""), under: h.WC.mantle !== false ? lieCape(h.hex(h.WC.kingRobe, "#7a1f2b"), "#f7f4ec") : null }),
+  monk: h => ({ hood: h.WC.hoodUp === false ? null : h.hex(h.WC.monkCloak, "#6b4a2b"), beside: c => h.WC.staff ? lieHeld(c, "staff") : "" }),
+  cowgirl: h => { const W = westernOf(h.WC, "cowgirl"); return W.H ? { beside: c => lieHatSvg("cowboy", W.hatColor || "#8b5a2b", liePillowSide(c)) } : {}; },
+  cowboy: h => { const W = westernOf(h.WC, "cowboy"); return W.H ? { beside: c => lieHatSvg("cowboy", W.hatColor || "#8b5a2b", liePillowSide(c)) } : {}; },
+  ninja: h => ({ head: c => `<circle cx="${f1(c.hp[0])}" cy="${f1(c.hp[1])}" r="${f1(c.R)}" fill="#1f1f22" stroke="#000000" stroke-width="${c.lw(c.hp)}"/>` +
+                   `<rect x="${f1(c.hp[0] - 0.55 * c.R)}" y="${f1(c.hp[1] - 0.56 * c.R)}" width="${f1(1.1 * c.R)}" height="${f1(0.24 * c.R)}" rx="${f1(0.1 * c.R)}" fill="${h.skin}"/>` +
+                   `<path d="M${f1(c.hp[0] - c.R)} ${f1(c.hp[1] - 0.75 * c.R)} L${f1(c.hp[0] + c.R)} ${f1(c.hp[1] - 0.75 * c.R)}" stroke="${h.hex(h.WC.ninjaBand, "#c0392b")}" stroke-width="${f1(0.12 * c.R)}"/>`,
+                 eyes: c => [-1, 1].map(sd => `<ellipse cx="${f1(c.hp[0] + sd * 0.25 * c.R)}" cy="${f1(c.hp[1] - 0.44 * c.R)}" rx="${f1(0.06 * c.R)}" ry="${f1(0.04 * c.R)}" fill="#1f1f1f"/>`).join("") }),
+  robot: h => { const R = robotOf(h.WC); return { head: c => `<rect x="${f1(c.hp[0] - c.R)}" y="${f1(c.hp[1] - c.R)}" width="${f1(2 * c.R)}" height="${f1(2 * c.R)}" rx="${f1(0.25 * c.R)}" fill="${R.main}" stroke="${R.dk}" stroke-width="${c.lw(c.hp)}"/>`,
+                  eyes: c => `<rect x="${f1(c.hp[0] - 0.6 * c.R)}" y="${f1(c.hp[1] - 0.55 * c.R)}" width="${f1(1.2 * c.R)}" height="${f1(0.22 * c.R)}" rx="${f1(0.08 * c.R)}" fill="${R.lt}" opacity="0.6"/>` }; },
+  diver: h => ({ beside: c => lieHatSvg("helm", h.hex(h.WC.diverMetal, "#b8860b"), liePillowSide(c), `<circle cx="${f1(liePillowSide(c)[0])}" cy="${f1(liePillowSide(c)[1] - 0.06 * liePillowSide(c)[2])}" r="${f1(0.05 * liePillowSide(c)[2])}" fill="#3b4a5a"/>`) }),
+  scuba: h => ({ beside: c => h.WC.tank ? lieHeld(c, "staff", h.hex(h.WC.tankColor, "#facc15")) : "" }),
+  fairy: h => { const fw = FAIRY_WINGS[h.WC.wingStyle] ? h.WC.wingStyle : "butterfly"; return { under: lieWings(h.WC["wingColor_" + fw] ?? FAIRY_WINGS[fw].colors[0]) }; },
+  dragon: h => ({ under: lieWings(h.C.wing || "#d0453a", "bat") }),
+  moth: h => ({ under: lieWings(h.C.accent || "#e7b8cb") }),
+  ...Object.fromEntries(["falcon", "eagle", "falconsuit", "eaglesuit"].map(k => [k, h => ({ under: lieWings(h.C.fur), ...(ANIMALS[k].suit ? {} : { hood: eagleHead(k) ? "#ffffff" : h.C.fur }) })])),
+};
+// (ticket 627) a suit's ears (or horns, antlers, antennae, a mane) round the head on the pillow, and its tail on the bag
+function lieEars(kind, C, { hp, R, lw }) {
+  const F = c => `fill="${c}" stroke="${darker(c)}" stroke-width="${lw(hp)}"`, x = hp[0], y = hp[1], col = C.fur, in2 = C.accent || C.belly;
+  const pair = f => [-1, 1].map(f).join("");
+  if (kind === "lion") return `<circle cx="${f1(x)}" cy="${f1(y - 0.1 * R)}" r="${f1(R * 1.45)}" fill="${C.marks}" stroke="${darker(C.marks)}" stroke-width="${lw(hp)}"/>` + pair(sd => `<circle cx="${f1(x + sd * 0.8 * R)}" cy="${f1(y - 0.95 * R)}" r="${f1(0.28 * R)}" ${F(col)}/>`);
+  if (FELINE[kind] || kind === "wolf") { const t = kind === "wolf" ? 1.7 : 1.4; return pair(sd => `<path d="M${f1(x + sd * 0.35 * R)} ${f1(y - 0.95 * R)} L${f1(x + sd * 0.8 * R)} ${f1(y - t * R)} L${f1(x + sd * 1.0 * R)} ${f1(y - 0.6 * R)} Z" ${F(col)}/><path d="M${f1(x + sd * 0.5 * R)} ${f1(y - 0.95 * R)} L${f1(x + sd * 0.78 * R)} ${f1(y - (t - 0.25) * R)} L${f1(x + sd * 0.88 * R)} ${f1(y - 0.75 * R)} Z" fill="${in2}"/>`); }
+  if (kind === "bear" || kind === "raccoon" || kind === "sasquatch") return pair(sd => `<circle cx="${f1(x + sd * 0.78 * R)}" cy="${f1(y - 0.95 * R)}" r="${f1(0.32 * R)}" ${F(col)}/>`);
+  if (kind === "deer") return pair(sd => `<ellipse cx="${f1(x + sd * 1.25 * R)}" cy="${f1(y - 0.55 * R)}" rx="${f1(0.45 * R)}" ry="${f1(0.18 * R)}" ${F(col)}/><path d="M${f1(x + sd * 0.35 * R)} ${f1(y - 0.95 * R)} l${f1(sd * 0.35 * R)} ${f1(-0.8 * R)} m${f1(-sd * 0.15 * R)} ${f1(0.35 * R)} l${f1(sd * 0.35 * R)} ${f1(-0.2 * R)}" stroke="#7a5230" stroke-width="${f1(0.1 * R)}" stroke-linecap="round" fill="none"/>`);
+  if (kind === "giraffe") return pair(sd => `<ellipse cx="${f1(x + sd * 1.2 * R)}" cy="${f1(y - 0.6 * R)}" rx="${f1(0.4 * R)}" ry="${f1(0.16 * R)}" ${F(col)}/><path d="M${f1(x + sd * 0.3 * R)} ${f1(y - 0.95 * R)} l0 ${f1(-0.5 * R)}" stroke="${C.marks}" stroke-width="${f1(0.1 * R)}" stroke-linecap="round"/>`);
+  if (kind === "dragon") return pair(sd => `<path d="M${f1(x + sd * 0.4 * R)} ${f1(y - 0.9 * R)} L${f1(x + sd * 0.85 * R)} ${f1(y - 1.7 * R)} L${f1(x + sd * 0.75 * R)} ${f1(y - 0.75 * R)} Z" ${F(C.horn || "#f4ecd6")}/>`);
+  if (kind === "moth") return pair(sd => `<path d="M${f1(x + sd * 0.2 * R)} ${f1(y - R)} q${f1(sd * 0.3 * R)} ${f1(-0.6 * R)} ${f1(sd * 0.7 * R)} ${f1(-0.6 * R)}" stroke="${C.marks}" stroke-width="${f1(0.1 * R)}" fill="none" stroke-linecap="round"/>`);
+  return "";
+}
+function lieTail(kind, C, { at, P, lw }) {
+  const T = { lion: [0.3, C.marks], wolf: [0.38, C.accent], raccoon: [0.35, C.marks], dragon: [0.6, C.wing || C.marks], giraffe: [0.3, C.marks], bear: [0.08, null], deer: [0.08, "#ffffff"] }[kind]
+    || (FELINE[kind] ? [0.4, C.marks] : null);
+  if (!T) return "";
+  const a = at(0.95, 0.3, 0.04), b = at(0.95 - T[0], 0.62, 0.02), m = a[2], w = f1(Math.max(1, (kind === "wolf" || kind === "raccoon" ? 0.09 : 0.05) * m));
+  return `<path d="M${P(a)} Q${P(at(0.95 - T[0] * 0.4, 0.62, 0.03))} ${P(b)}" stroke="${C.fur}" stroke-width="${w}" stroke-linecap="round" fill="none"/>` + (T[1] ? `<circle cx="${f1(b[0])}" cy="${f1(b[1])}" r="${f1(0.045 * m)}" fill="${T[1]}"/>` : "");
 }
 // (ticket 425) The friend's own hair, lying face up on a pillow, seen from the feet: `behind`, drawn before the head (on the
 // pillow, and round the head's far side, the crown toward the pillow), and `over`, the hairline at the head's far edge, its
