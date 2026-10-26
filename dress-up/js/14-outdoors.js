@@ -4171,13 +4171,14 @@ function dungeonScene(c) {
     return t;
   });
   // (ticket 623) the side walls stand in the way, as a dungeon's do: unseen boxes over them ("dungeon wall", which stands:
-  // 16-objects-and-solids.js), from the floor's far edge down, open where a way goes out east or west; sorted far back, so
+  // 16-objects-and-solids.js), from the floor's far edge down, open where a way goes out east or west; each sorted at its
+  // own far end, within its box (ticket 637: the span south of a way was sorted at the floor's far edge, outside it), so
   // nothing is drawn over the friend. (Matthew, 0.0.446's 🔬: named "ledge, west wall 1", and reaching up into the north wall)
   s += SEP + part("dg-sides", [c.F, has("E"), has("W"), x0, x1, openKey], () => {
     let t = "";
     for (const [d, a, b] of [["W", x0 - pad, fx0], ["E", fx1, x1 + pad]]) {
       const spans = isOpen(d) ? [] : has(d) ? [[fy0, cy - gap], [cy + gap, y1 + pad]] : [[fy0, y1 + pad]];
-      spans.forEach(([top, bot], i) => { t += obj(`dungeon wall, ${d === "W" ? "west" : "east"}${spans.length > 1 ? (i ? ", south of the way" : ", north of the way") : ""}`, fy0 + k, `<rect data-footprint="1" x="${f1(a)}" y="${f1(top)}" width="${f1(b - a)}" height="${f1(bot - top)}" fill="none" stroke="none"/>`); });
+      spans.forEach(([top, bot], i) => { t += obj(`dungeon wall, ${d === "W" ? "west" : "east"}${spans.length > 1 ? (i ? ", south of the way" : ", north of the way") : ""}`, top + k, `<rect data-footprint="1" x="${f1(a)}" y="${f1(top)}" width="${f1(b - a)}" height="${f1(bot - top)}" fill="none" stroke="none"/>`); });
     }
     return t;
   });

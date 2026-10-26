@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.460 (2026-10-26)
+
+Everything in 0.0.459, plus:
+
+- **Fixed:** the 🎒 backpack came back empty after 📂 Load, and after reloading the page: what a chest gave is kept now.
+- **Fixed:** the eight 🎁 chest opening flourishes say their key in 🎵 Music, like every other tune.
+- **Fixed:** a dungeon room's side wall past a way out east or west is sorted where it stands, as every wall is (nothing looks different).
+
 ## 0.0.459 (2026-10-26)
 
 Everything in 0.0.458, plus:

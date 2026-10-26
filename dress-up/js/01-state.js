@@ -798,6 +798,9 @@ const DEFAULTS = {
              ...Object.fromEntries(Object.entries(GIRAFFE_STYLES).map(([id, t]) => ["giraffeColor_" + id, t.colors[0]])) },
 };
 const clone = o => JSON.parse(JSON.stringify(o));
+// a top-level setting read from a save over its default: an object's fields over the default's, a list (the 🎒 backpack) whole
+// (ticket 637: spread as an object, the backpack came back {} from 📂 Load and from every reload's autosave)
+const savedOver = (k, v) => Array.isArray(DEFAULTS[k]) ? clone(Array.isArray(v) ? v : DEFAULTS[k]) : { ...DEFAULTS[k], ...(v || {}) };
 // before the nose views: a nose was a shape (or "none"), a direction and
 // one size
 // (0.0.188, Matthew: 👆 walk where you click "so helpful, let's have it on by default") a save from 0.0.187, the hour it
@@ -1415,7 +1418,7 @@ async function perfMeasure(f, report) {
 }
 try {
   const saved = JSON.parse(localStorage.getItem("dress-up-v1") || "null");
-  if (saved) for (const k of Object.keys(DEFAULTS)) state[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
+  if (saved) for (const k of Object.keys(DEFAULTS)) state[k] = savedOver(k, saved[k]);
   upgradeHands(state.hands);
   upgradeRightHand(state, saved);
   upgradeFeet(state, saved);
@@ -1498,7 +1501,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.459", released: "2026-10-26" };
+const VERSION = { number: "0.0.460", released: "2026-10-26" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

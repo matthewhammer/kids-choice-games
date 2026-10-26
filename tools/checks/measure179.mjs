@@ -28,8 +28,10 @@ try {
   const during = await look();
   say(during.measuring && during.note && /touch nothing/.test(during.note) && /\d+ s so far, of about \d+ s/.test(during.note), `while measuring, the notice: "${during.note}"`);
   say(during.buttons > 0 && during.disabled === during.buttons && during.copyDisabled, `while measuring, ${during.disabled} of ${during.buttons} buttons disabled, 📋 copy among them`);
+  // (ticket 637) as long as the game says it takes, and a minute more: a fixed 90 s ran out once it measured 35 things (about 106 s)
+  const about = +((during.note || "").match(/of about (\d+) s/) || [0, 90])[1];
   const t0 = Date.now(); let after;
-  while (Date.now() - t0 < 90000) { await sleep(2000); after = await look(); if (!after.measuring) break; }
+  while (Date.now() - t0 < (about + 60) * 1000) { await sleep(2000); after = await look(); if (!after.measuring) break; }
   say(after && !after.measuring && after.note === null && after.disabled === 0, `after (${Math.round((Date.now() - t0) / 1000 + 3.5)} s): the notice gone, ${after ? after.disabled : "?"} buttons disabled`);
   say(after && /^🧪 Dress Up /.test(after.line), `the line is there: ${after ? after.line.slice(0, 80) : ""}…`);
   if (errs.length) { fails++; console.log("FAIL page errors:", errs.slice(0, 3)); } else console.log("page errors: none");

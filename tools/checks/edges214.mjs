@@ -43,7 +43,8 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
   await send("Page.navigate", { url }); await sleep(4000);
   const lim = JSON.parse(await ev(`(async () => { const out = {}; state.world.at = null;
-    for (const kind of Object.keys(SCENE_FAR)) { Object.assign(state.background, { kind, figX: 0, figY: 40 }); changed(); await new Promise(r => setTimeout(r, 250));
+    // (ticket 637) a place drawn from above (TOP_DOWN_KINDS: the dungeon room) has its floor up to the picture's top: no sky to stay below
+    for (const kind of Object.keys(SCENE_FAR).filter(k => !TOP_DOWN_KINDS.has(k))) { Object.assign(state.background, { kind, figX: 0, figY: 40 }); changed(); await new Promise(r => setTimeout(r, 250));
       const F = sceneFrame; out[kind] = { back: Math.round(F.ground + figYMin(F)), stand: Math.round(F.ground + (F.top - F.ground) * 0.6) }; }
     return JSON.stringify(out); })()`));
   const high = Object.entries(lim).filter(([, v]) => !(v.back > v.stand + 20));

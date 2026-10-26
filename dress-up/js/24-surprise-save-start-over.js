@@ -268,7 +268,7 @@ function loadSaved(data) {
   const saved = data && data.state ? data.state : data;
   if (!saved || typeof saved !== "object") throw new Error("no settings in this file");
   const next = clone(DEFAULTS);
-  for (const k of Object.keys(DEFAULTS)) next[k] = { ...DEFAULTS[k], ...(saved[k] || {}) };
+  for (const k of Object.keys(DEFAULTS)) next[k] = savedOver(k, saved[k]);
   upgradeHands(next.hands);
   upgradeRightHand(next, saved);
   upgradeFeet(next, saved);

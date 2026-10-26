@@ -114,10 +114,12 @@ const world = src("25-world.js"), outdoors = src("14-outdoors.js");
 for (const re of [/const WORLD_DIRS = [^\n]*\n/, /const WORLD_OPP = [^\n]*\n/, /const WORLD_NO_WAY = [^\n]*\n/, /const worldNoWay = [^\n]*\n/, /const worldWays = [^\n]*\n/])
   vm.runInContext(world.match(re)[0].replace(/^const /, "var "), game);
 vm.runInContext(outdoors.match(/const CROSS_DIRS = [\s\S]*?\];\n/)[0].replace(/^const /, "var "), game);
+// (ticket 637: worldWays asks isCross since the dungeon room (0.0.442); as in hazelrules531.mjs, the game's own)
+vm.runInContext(st.match(/const CROSS_KINDS = [^\n]*\n/)[0].replace(/^const /, "var ").replace(", isCross =", "; var isCross ="), game);
 vm.runInContext(fnText(world, "worldNeighbour") + "\n" + fnText(world, "worldMeets"), game);
 const DIRS = Object.keys(game.WORLD_DIRS), PLACE_KINDS = ["meadow", "waterfall", "crossing", "beach", "castle", "sea"];
 const cellsOf = W => Object.entries(W.cells).map(([k, cell]) => { const [col, row] = k.split(",").map(Number);
-  return { col, row, kind: cell.kind, ways: cell.kind === "crossing" ? game.CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : cell.ways || [] }; });
+  return { col, row, kind: cell.kind, ways: game.isCross(cell.kind) ? game.CROSS_DIRS.map(([d]) => d).filter(d => cell["cross" + d]) : cell.ways || [] }; });
 const mapOf = (cols, rows, seed, fill = 0.75) => { const r = game.seeded(seed), cells = {}; let j = 0;
   for (let c = 0; c < cols; c++) for (let rr = 0; rr < rows; rr++) { j++; if (r(j) > fill) continue;
     const kind = PLACE_KINDS[Math.floor(r(j + 500) * PLACE_KINDS.length)], on = DIRS.filter((_, q) => r(j * 9 + q + 1000) < 0.55);
