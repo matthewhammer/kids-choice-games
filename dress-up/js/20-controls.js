@@ -74,7 +74,7 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"], ["caveroom", "🦇 cave room"],
-  ["woodpath", "🥾 path through the woods"], ["pasture", "🌾 pasture"], ["crossing", "🛤️ forest crossing"], ["cavecross", "🦇 cave crossing"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
+  ["woodpath", "🥾 path through the woods"], ["pasture", "🌾 pasture"], ["crossing", "🛤️ forest crossing"], ["cavecross", "🦇 cave crossing"], ["dungeon", "🗝️ dungeon room"], ["castle", "🏰 castle"], ["castleroom", "🚪 inside the castle"],
   // (ticket 278, for M) the grass hut, and its three rooms
   ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"], ["hutcenter", "🔥 the grass hut's center"],
   // (ticket 501, for M) the desert
@@ -87,7 +87,7 @@ const PLACE_GROUPS = [
   ["bubbles", "🫧 bubbles", ["bubblespace", "bubbleroom"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
-  ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom", "cavecross"]],
+  ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom", "cavecross", "dungeon"]],
   ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "treetop", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
@@ -1276,7 +1276,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["campFood", "tents"].map(key => ["background." + key, b => b.kind === "campsite"])),
   "background.crossPaths": b => isCross(b.kind),
   ...Object.fromEntries(["crossFloor", "crossBack"].map(key => ["background." + key, b => b.kind === "crossing"])),
-  "background.crossCave": b => b.kind === "cavecross",
+  "background.crossCave": b => b.kind === "cavecross" || b.kind === "dungeon",
   "background.things": b => b.kind !== "none",
   "background.thingsSolid": b => b.kind !== "none" && (b.things || []).length > 0,   // (ticket 283)
   // (a tent's door looks out on the camp: its time of day and its fire)
@@ -2215,19 +2215,43 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
               // again only when the world changes; the chips shown chosen as they are clicked)
               onclick: e => { state.background.crossBack = v; for (const b of e.currentTarget.parentNode.querySelectorAll("[data-back]")) b.setAttribute("aria-pressed", String(b.dataset.back === v)); changed(); } }, name))])] : []),
           // (2026-10-25) a cave crossing's look, here too (its square keeps it: CROSS_KEYS)
-          ...(at.kind === "cavecross" && !inside ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🪨 the cave's look:"),
+          ...((at.kind === "cavecross" || at.kind === "dungeon") && !inside ? [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🪨 the cave's look:"),
             ...CAVE_LOOKS.map(([v, name]) => el("button", { "aria-pressed": String((state.background.crossCave || "stone") === v), "data-cave": v,
               onclick: e => { state.background.crossCave = v; for (const b of e.currentTarget.parentNode.querySelectorAll("[data-cave]")) b.setAttribute("aria-pressed", String(b.dataset.cave === v)); changed(); } }, name))])] : []),
           // (2026-10-25, Matthew: "new nav arrow option in world design that means --- 'smooth scroll' -- the default for where it
-          // works") each way out that can scroll to the square beside it (worldSmoothCan), its 🎞️ chip: on, it scrolls; off, the
-          // friend steps through, as on any other way
-          ...(() => { const can = inside ? [] : worldWays(at).filter(d => worldSmoothCan(W, W.at, d));
-            return can.length ? [el("div", { class: "row world-smooth-row" }, [el("span", { class: "hint" }, "🎞️ scrolls smoothly to the square beside it:"),
-              ...can.map(d => { const look = (b, on) => { b.setAttribute("aria-pressed", String(on)); b.title = on ? d + ": scrolls (tap: step through instead)" : d + ": steps through (tap: scroll)"; b.textContent = WORLD_ARROWS[d] + (on ? " 🎞️" : " 🚪"); };
-                // (this panel is built again only when the world changes: each chip reads, and shows, the square's state as it is tapped)
-                const b = el("button", { "data-smooth": d, onclick: () => { const offs = at.smoothOff || [], on = !offs.includes(d);
-                  at.smoothOff = on ? [...offs, d] : offs.filter(x => x !== d); if (!at.smoothOff.length) delete at.smoothOff; look(b, !on); changed(); } });
-                look(b, !(at.smoothOff || []).includes(d)); return b; })])] : []; })(),
+          // works"; ticket 621, 2026-10-26: "the world design for dress-up can choose no-nav, nav or smooth nav for each
+          // edge/direction") In a square that can scroll (SMOOTH_KINDS), each way its three chips: 🚫 no way (wall, or stones);
+          // a nav arrow (step through, as on any other way); 🎞️ smooth (the two squares slide), offered where the square beside
+          // it, in this world, can scroll too. A choice makes the square beside it agree: its way back on, or off.
+          ...(() => {
+            if (inside || !SMOOTH_KINDS.has(at.kind)) return [];
+            const dirs = Object.keys(WORLD_DIRS).filter(d => !worldNoWay(at.kind, d) && !worldOffMap(W, W.at, d));
+            const nbOf = d => { const nb = worldNeighbour(W, W.at, d), c = W.cells[nb.key]; return c ? { key: nb.key, cell: c } : null; };
+            const stateOf = d => !worldWays(at).includes(d) ? "none" : worldSmoothCan(W, W.at, d) && !(at.smoothOff || []).includes(d) ? "smooth" : "arrow";
+            const set = (d, v) => {
+              const nb = nbOf(d), back = WORLD_OPP[d], linked = at.links && at.links[d];
+              if (v === "none") { if (linked) worldUnlinkAt(W, W.at, d); else worldWayOff(W, W.at, d); if (nb && !(nb.cell.links && nb.cell.links[back])) worldWayOff(W, nb.key, back); }
+              else { worldWayOn(W, W.at, d); if (nb && !linked) worldWayOn(W, nb.key, back);
+                const offs = (at.smoothOff || []).filter(x => x !== d); at.smoothOff = v === "arrow" ? [...offs, d] : offs; if (!at.smoothOff.length) delete at.smoothOff;
+                if (nb && nb.cell.smoothOff) { nb.cell.smoothOff = nb.cell.smoothOff.filter(x => x !== back); if (v === "arrow") nb.cell.smoothOff.push(back); if (!nb.cell.smoothOff.length) delete nb.cell.smoothOff; }
+                else if (nb && v === "arrow") nb.cell.smoothOff = [back]; }
+              changed();
+            };
+            const CHOICES = [["none", "🚫", "no way: wall"], ["arrow", "🚪", "a nav arrow: step through"], ["smooth", "🎞️", "smooth: the squares slide"]];
+            return [el("div", { class: "world-smooth-ways" }, [el("div", { class: "hint" }, "each way: 🚫 none · 🚪 nav arrow · 🎞️ smooth scroll"),
+              ...dirs.map(d => {
+                const nb = nbOf(d), canSmooth = !!nb && SMOOTH_KINDS.has(nb.cell.kind) && !(at.links && at.links[d]);
+                const row = el("div", { class: "row world-smooth-row", "data-way": d }, [el("span", { class: "world-smooth-dir" }, WORLD_ARROWS[d])]);
+                // (this panel is built again only when the world changes: the chips show the square's state again as one is tapped)
+                const show = () => { const now = stateOf(d); for (const b of row.querySelectorAll("[data-choice]")) b.setAttribute("aria-pressed", String(b.dataset.choice === now)); };
+                for (const [v, glyph, words] of CHOICES) {
+                  const off = v === "smooth" && !canSmooth;
+                  row.append(el("button", { "data-choice": v, "data-smooth": d, title: d + ": " + (off ? "smooth needs a square beside it, in this world, that scrolls too (a cave crossing or a dungeon room)" : words),
+                    ...(off ? { disabled: "" } : {}), onclick: () => { set(d, v); show(); } }, glyph));
+                }
+                show(); return row;
+              })])];
+          })(),
           probs,
           el("div", { class: "row" }, [el("button", { "aria-pressed": String(W.start === W.at), onclick: () => { W.start = W.at; changed(); } }, W.start === W.at ? "🏁 the friend starts here" : "🏁 start here")]),
           ...(inside ? [] : [linksEditor(W, at)]));

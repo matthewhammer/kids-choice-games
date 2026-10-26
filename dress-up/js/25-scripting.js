@@ -53,7 +53,7 @@ const SCRIPT_DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 // (in node, where the game's lists are not loaded: the same lists, held equal to them by tools/checks/scriptboxes566.mjs)
 const SCRIPT_PLACES_KNOWN = ["none", "emptyroom", "bubblespace", "bubbleroom", "imagination", "forest", "underwater", "deepsea", "beach", "sea", "witch", "cemetery",
   "lake", "house", "farmyard", "treehouse", "treeroom", "treetop", "livingroom", "witchroom", "clearing", "healerroom", "fairyforest", "mountains", "waterfall",
-  "campsite", "tent", "cave", "caveroom", "woodpath", "pasture", "crossing", "cavecross", "castle", "castleroom", "hut", "hutroom", "hutbed", "hutpotion", "hutcenter", "desert"];
+  "campsite", "tent", "cave", "caveroom", "woodpath", "pasture", "crossing", "cavecross", "dungeon", "castle", "castleroom", "hut", "hutroom", "hutbed", "hutpotion", "hutcenter", "desert"];
 const SCRIPT_ROOMS_KNOWN = ["king", "greenhouse", "trap", "dungeon1", "dungeon2", "hallway", "catroom", "stable", "dining", "kitchen", "smithy", "spiral"];
 const SCRIPT_EXITS = ["side", "long", "spiral", "trap", "ladder", "all", "hall"];
 const scriptCap = k => k[0].toUpperCase() + k.slice(1);

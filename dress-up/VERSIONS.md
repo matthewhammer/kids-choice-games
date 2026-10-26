@@ -4,6 +4,15 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.443 (2026-10-26)
+
+Everything in 0.0.442, plus dungeon rooms seen from above:
+
+- **🗝️ A new place: the dungeon room,** a cave room seen from above, as A Link to the Past draws its dungeons: a floor of tiles, the north wall's bricks across the top, torches on it. Each of its eight ways that leads somewhere is an opening (a gap in a wall, or a tunnel off at a corner); each that does not is wall, with a carved stone or pots where a door would be, so any set of ways looks right. The cave crossing's four looks (🪨 stone, 💎 crystal, 🌿 moss, 🧊 ice).
+- **The friend seen from above** in the dungeon room: a drawing of its own, the head big and the hair over it, the legs and arms stepping as they walk, facing us, away or to a side. Hardly smaller at the room's far wall than at its near one.
+- **🗺️ Each way: 🚫 none, 🚪 nav arrow, or 🎞️ smooth scroll.** In a cave crossing or a dungeon room, World design has three chips for each way; choosing one makes the square beside it agree. Smooth scrolling now works between dungeon rooms, and between dungeon rooms and cave crossings.
+- **🧪 Two new speed passes:** walking across a dungeon room, and scrolling from one to the next and back, so a slow tablet can say whether the sliding keeps up.
+
 ## 0.0.442 (2026-10-25)
 
 Everything in 0.0.441, plus caves that scroll:

@@ -372,11 +372,11 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   const target = d => worldTarget(W, W.at, d);   // (ticket 406: the square beside it, or a square of a world it is linked to)
   const k = (y1 - y0) / 700;
   // (a forest crossing's at its own paths' ends: crossGeom; any other place's at its far ground and sides)
-  const G = isCross(B.kind) ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;
+  const G = B.kind === "dungeon" ? dungeonGeom({ x0, x1, y0, y1, g, k }) : isCross(B.kind) ? crossGeom({ x0, x1, y1, g, W: x1 - x0, k, pad: 0 }) : null;   // (ticket 621: the dungeon room's at its openings)
   // (0.0.151: 0.0.149 put the far ways (N, NE, NW) at the place's back limit where that was nearer; on a shallow floor,
   // the witch's woods, or in a small window, they crowded the E and W arrows (arrows208), so they are at the far line
   // again: a tap walks as far as the back limit, and walking on into the edge takes the way, wherever its arrow is)
-  const far = G ? G.far + 10 * k : g - 150 * k, mid = G ? G.cy + 14 * k : g + 40 * k, side = G ? 0.6 : 0.55;
+  const far = G ? G.far + 10 * k : g - 150 * k, mid = G ? G.cy + 14 * k : g + 40 * k, side = G ? G.side ?? 0.6 : 0.55;
   const AT = { N: [0, far - 6 * k, -90], S: [0, y1 - 30 * k, 90], E: [x1 - 45 * k, mid, 0], W: [x0 + 45 * k, mid, 180],
                NE: [x1 * side, far, -40], NW: [x0 * side, far, -140], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
   const homes = Object.fromEntries(Object.entries(AT).map(([d, [x, y]]) => [d, [x, y]]));
@@ -1190,7 +1190,7 @@ function worldWalk(door, here = false) {
 // side the way leads (a diagonal: both ways at once), the friend carried in with it, just inside its edge. Where it works:
 // two squares beside each other in the same world (no link to another world), each a kind that scrolls (SMOOTH_KINDS: the
 // cave crossing, for now); on by default there, a way's 🎞️ chip in 🗺️ World design turning it off (cell.smoothOff)
-const SMOOTH_KINDS = new Set(["cavecross"]), SCROLL_MS = 650;
+const SMOOTH_KINDS = new Set(["cavecross", "dungeon"]), SCROLL_MS = 650;
 const worldSmoothCan = (W, key, d, t = worldTarget(W, key, d)) => { const c = W.cells[key];
   return !!(c && t && t.W === W && !t.link && SMOOTH_KINDS.has(c.kind) && SMOOTH_KINDS.has(t.cell.kind)); };
 const worldSmooth = (W, key, d, t) => worldSmoothCan(W, key, d, t) && !(W.cells[key].smoothOff || []).includes(d);

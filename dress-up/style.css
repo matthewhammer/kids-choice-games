@@ -1278,3 +1278,9 @@ html.lineart .script-log .log-field { background: none; border-color: currentCol
 .friends-remove { position: absolute; top: 4px; right: 4px; padding: 2px 8px; font-size: 0.85em; border-radius: 10px; }
 .friends-remove.asking { background: #b91c1c; color: #fff; border-color: #b91c1c; }
 .friends-foot { justify-content: center; }
+/* (ticket 621) a scrolling square's ways, three chips each: no way, a nav arrow, smooth */
+.world-smooth-ways { display: grid; gap: 4px; margin: 6px 0; }
+.world-smooth-ways .world-smooth-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+.world-smooth-dir { display: inline-block; min-width: 1.8em; text-align: center; }
+.world-smooth-row button[data-choice] { min-width: 2.6em; }
+.world-smooth-row button[data-choice]:disabled { opacity: 0.35; }

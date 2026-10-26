@@ -1531,7 +1531,7 @@ if (touchPad.want) padLoop = requestAnimationFrame(padPoll);
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { hut: [-120, 50], hutroom: [0, 40], hutbed: [130, 40], hutpotion: [-60, 50], hutcenter: [-260, 60], witchroom: [-170, 0], crossing: [0, -20], cavecross: [0, -20], imagination: [0, 70], emptyroom: [0, 70], bubblespace: [0, 70], bubbleroom: [0, 40], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], caveroom: [-120, 40], farmyard: [0, 30], desert: [-40, 30], castle: [-210, 30], castleroom: [0, 40],
+const ARRIVE = { hut: [-120, 50], hutroom: [0, 40], hutbed: [130, 40], hutpotion: [-60, 50], hutcenter: [-260, 60], witchroom: [-170, 0], crossing: [0, -20], cavecross: [0, -20], dungeon: [0, -40], imagination: [0, 70], emptyroom: [0, 70], bubblespace: [0, 70], bubbleroom: [0, 40], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], caveroom: [-120, 40], farmyard: [0, 30], desert: [-40, 30], castle: [-210, 30], castleroom: [0, 40],
   // (ticket 516: the round room at the top of the tree: at the front, on the side away from its hatch (the house below's side), under a window)
   get treetop() { return [-topSide(state.background) * 170, 50]; } };
 // Where each trip through a doorway began, the last on top: the back chip

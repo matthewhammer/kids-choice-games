@@ -4011,9 +4011,158 @@ function cavecrossScene(c) {
   });
   return s;
 }
+// (ticket 621, Matthew 2026-10-26: "cave rooms that look like Link to the Past dungeons"; "we need a way to have a 8-way kind of
+// crossing room that looks natural for each setting (each subset of passages), and we need to scroll it smooth and we run
+// around") The dungeon room: a cave room seen from above, as A Link to the Past draws its dungeons. Its floor of square tiles
+// fills the picture; the north wall's face stands across the top, its brick courses showing; the side walls and the south
+// wall are seen from above, their tops a rim. A way that leads somewhere is an opening: a gap in a wall's middle (N, E, S,
+// W), a tunnel off at a corner, slanting away (NE, NW, SE, SW); a way that does not is wall, as a dungeon's is, a torch or
+// a carved stone where a door would be, pots in a shut corner. Its look is the cave crossing's (crossCave, CAVE_LOOK).
+// Flat: the friend hardly smaller at its north wall than at its south (SCENE_VANISH), and drawn from above too (topDownSvg).
+// Its eight ways stand where its openings are: dungeonGeom.
+function dungeonGeom({ x0, x1, y0, y1, g, k }) {
+  const sw = 74 * k, bw = 40 * k, fx0 = x0 + sw, fx1 = x1 - sw, fy0 = g - 372 * k, fy1 = y1 - bw;
+  const cy = (fy0 + fy1) / 2;
+  return { far: fy0, cy, sw, bw, fx0, fx1, fy0, fy1, side: Math.max(0.3, (fx1 - 46 * k) / Math.max(1, x1)),
+           ends: { N: [0, y0], S: [0, y1], E: [x1, cy], W: [x0, cy], NE: [fx1, fy0], NW: [fx0, fy0], SE: [fx1, fy1], SW: [fx0, fy1] } };
+}
+const DUNGEON_TILE = 46;
+function dungeonScene(c) {
+  const { x0, y0, x1, y1, W, k, pad, R, grad, all, o } = c;
+  const G = dungeonGeom(c), { sw, fx0, fx1, fy0, fy1, cy } = G, look = CAVE_LOOK[o.crossCave] ? o.crossCave : "stone", L = CAVE_LOOK[look];
+  const fast = (off, own) => lfoTimed(o, "fast", off, own);
+  const on = typeof o.crossLive === "string" ? o.crossLive.split(",").filter(Boolean) : CROSS_DIRS.map(([d]) => d).filter(d => o["cross" + d]);
+  const has = d => on.includes(d), gap = 56 * k, line = mix(L.wall[1], "#000000", 0.35), lw = f1(2 * k);
+  const rim = L.rock[2], face = L.wall[0], dark = L.wall[1];
+  let s = "";
+  // the floor: square tiles, a shade darker at the walls' feet
+  s += SEP + part("dg-floor", [c.F, look, x0, x1], () => {
+    const t0 = DUNGEON_TILE * k;
+    let t = `<defs>${grad("bg-dg-floor", L.floor[0], L.floor[1], fy0, fy1)}</defs>` + all(dark) +
+      `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(fx1 - fx0)}" height="${f1(fy1 - fy0)}" fill="url(#bg-dg-floor)"/>`;
+    let grid = "";
+    for (let x = Math.ceil(fx0 / t0) * t0; x < fx1; x += t0) grid += `M${f1(x)} ${f1(fy0)}V${f1(fy1)}`;
+    for (let y = fy0 + t0; y < fy1; y += t0) grid += `M${f1(fx0)} ${f1(y)}H${f1(fx1)}`;
+    t += `<path d="${grid}" stroke="${mix(L.floor[1], "#000000", 0.3)}" stroke-width="${f1(1.6 * k)}" opacity="0.6" fill="none"/>`;
+    // (a few tiles a little lighter or darker, worn)
+    for (let i = 0; i < 18; i++) {
+      const tx = Math.floor((fx0 + (fx1 - fx0) * R(i, 6201)) / t0) * t0, ty = fy0 + Math.floor((fy1 - fy0) * R(i, 6202) / t0) * t0;
+      if (tx + t0 > fx1 || tx < fx0 || ty + t0 > fy1) continue;
+      t += `<rect x="${f1(tx + k)}" y="${f1(ty + k)}" width="${f1(t0 - 2 * k)}" height="${f1(t0 - 2 * k)}" fill="${i % 2 ? "#ffffff" : "#000000"}" opacity="0.07"/>`;
+    }
+    // (the walls' shadow on the floor at their feet)
+    t += `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(fx1 - fx0)}" height="${f1(16 * k)}" fill="#000000" opacity="0.22"/>` +
+         `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(12 * k)}" height="${f1(fy1 - fy0)}" fill="#000000" opacity="0.15"/>` +
+         `<rect x="${f1(fx1 - 12 * k)}" y="${f1(fy0)}" width="${f1(12 * k)}" height="${f1(fy1 - fy0)}" fill="#000000" opacity="0.15"/>`;
+    return t;
+  });
+  // the walls: the north wall's face, brick courses, its top a rim along the picture's top; the side walls and the south
+  // wall seen from above, a rim and, on the side walls, a strip of their inner face
+  s += SEP + part("dg-walls", [c.F, look, x0, x1], () => {
+    const top = y0 - pad, course = 26 * k, rimH = 22 * k;
+    let t = `<defs>${grad("bg-dg-north", face, mix(face, "#000000", 0.25), top, fy0)}</defs>` +
+      `<rect x="${f1(x0 - pad)}" y="${f1(top)}" width="${f1(W + 2 * pad)}" height="${f1(fy0 - top)}" fill="url(#bg-dg-north)"/>`;
+    let joints = "";
+    for (let y = fy0 - course, r = 0; y > y0 + rimH; y -= course, r++) {
+      joints += `M${f1(x0 - pad)} ${f1(y)}H${f1(x1 + pad)}`;
+      for (let x = x0 - pad + (r % 2) * 30 * k; x < x1 + pad; x += 60 * k) joints += `M${f1(x)} ${f1(y)}V${f1(y + course)}`;
+    }
+    t += `<path d="${joints}" stroke="${line}" stroke-width="${lw}" opacity="0.55" fill="none"/>`;
+    t += `<rect x="${f1(x0 - pad)}" y="${f1(top)}" width="${f1(W + 2 * pad)}" height="${f1(y0 + rimH - top)}" fill="${rim}" stroke="${line}" stroke-width="${lw}"/>`;
+    // (the side walls: the rim outside, their inner face inside, both from the north wall's foot to the south wall)
+    for (const sgn of [-1, 1]) {
+      const outer = sgn < 0 ? x0 - pad : x1 + pad, mid = sgn < 0 ? x0 + sw * 0.5 : x1 - sw * 0.5, inner = sgn < 0 ? fx0 : fx1;
+      t += `<path d="M${f1(outer)} ${f1(y0)} L${f1(mid)} ${f1(y0)} L${f1(mid)} ${f1(y1 + pad)} L${f1(outer)} ${f1(y1 + pad)} Z" fill="${rim}" stroke="${line}" stroke-width="${lw}"/>` +
+           `<path d="M${f1(mid)} ${f1(y0 + rimH)} L${f1(inner)} ${f1(fy0)} L${f1(inner)} ${f1(fy1)} L${f1(mid)} ${f1(y1 + pad)} Z" fill="${mix(face, "#000000", 0.18)}" stroke="${line}" stroke-width="${lw}"/>`;
+      let v = "";
+      for (let y = fy0 + 40 * k; y < fy1; y += 52 * k) v += `M${f1(mid)} ${f1(y)}L${f1(inner)} ${f1(y + 4 * k)}`;
+      t += `<path d="${v}" stroke="${line}" stroke-width="${lw}" opacity="0.5" fill="none"/>`;
+    }
+    // (the south wall's top, the nearest thing, across the picture's foot)
+    t += `<rect x="${f1(x0 - pad)}" y="${f1(fy1)}" width="${f1(W + 2 * pad)}" height="${f1(y1 + pad - fy1)}" fill="${rim}" stroke="${line}" stroke-width="${lw}"/>` +
+         `<rect x="${f1(x0 - pad)}" y="${f1(fy1)}" width="${f1(W + 2 * pad)}" height="${f1(6 * k)}" fill="#000000" opacity="0.18"/>`;
+    // (rough stones on the rims, so they read as rock, not plaster)
+    for (let i = 0; i < 30; i++) {
+      const u = R(i, 6210), [x, y] = i % 3 === 0 ? [x0 + W * u, y0 + rimH * 0.5] : i % 3 === 1 ? [(i % 2 ? x0 + sw * 0.25 : x1 - sw * 0.25), y0 + (y1 - y0) * u] : [x0 + W * u, (fy1 + y1) / 2];
+      t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((6 + 6 * R(i, 6211)) * k)}" ry="${f1((4 + 3 * R(i, 6212)) * k)}" fill="${mix(rim, "#000000", 0.2)}" opacity="0.6"/>`;
+    }
+    return t;
+  });
+  // the openings, for the ways that lead somewhere: a gap in a wall, the floor running on into the dark; a corner's tunnel
+  // slanting off, its floor between two walls
+  s += SEP + part("dg-ways", [c.F, look, on.join(","), x0, x1], () => {
+    let t = `<defs><linearGradient id="bg-dg-n" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${L.floor[1]}"/><stop offset="1" stop-color="#05040a"/></linearGradient>` +
+      `<linearGradient id="bg-dg-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${L.floor[0]}"/><stop offset="1" stop-color="#05040a"/></linearGradient>` +
+      `<linearGradient id="bg-dg-e" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${L.floor[0]}"/><stop offset="1" stop-color="#05040a"/></linearGradient>` +
+      `<linearGradient id="bg-dg-w" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="${L.floor[0]}"/><stop offset="1" stop-color="#05040a"/></linearGradient></defs>`;
+    const post = (x, y, w, h) => `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="${L.rock[1]}" stroke="${line}" stroke-width="${lw}" rx="${f1(3 * k)}"/>`;
+    const p = 14 * k;
+    if (has("N")) t += `<rect x="${f1(-gap)}" y="${f1(y0 - pad)}" width="${f1(2 * gap)}" height="${f1(fy0 - y0 + pad + 2 * k)}" fill="url(#bg-dg-n)"/>` + post(-gap - p, y0 - pad, p, fy0 - y0 + pad) + post(gap, y0 - pad, p, fy0 - y0 + pad);
+    if (has("S")) t += `<rect x="${f1(-gap)}" y="${f1(fy1 - 2 * k)}" width="${f1(2 * gap)}" height="${f1(y1 + pad - fy1 + 2 * k)}" fill="url(#bg-dg-s)"/>` + post(-gap - p, fy1, p, y1 + pad - fy1) + post(gap, fy1, p, y1 + pad - fy1);
+    if (has("E")) t += `<rect x="${f1(fx1 - 2 * k)}" y="${f1(cy - gap)}" width="${f1(x1 + pad - fx1 + 2 * k)}" height="${f1(2 * gap)}" fill="url(#bg-dg-e)"/>` + post(fx1, cy - gap - p, x1 + pad - fx1, p) + post(fx1, cy + gap, x1 + pad - fx1, p);
+    if (has("W")) t += `<rect x="${f1(x0 - pad)}" y="${f1(cy - gap)}" width="${f1(fx0 - x0 + pad + 2 * k)}" height="${f1(2 * gap)}" fill="url(#bg-dg-w)"/>` + post(x0 - pad, cy - gap - p, fx0 - x0 + pad, p) + post(x0 - pad, cy + gap, fx0 - x0 + pad, p);
+    // (a corner's tunnel: a strip of floor from the floor's corner off past the picture's, slanting, walled both sides, dark at its far end)
+    for (const d of ["NE", "NW", "SE", "SW"]) {
+      if (!has(d)) continue;
+      const [cx, cy2] = G.ends[d], ox = d.includes("E") ? 1 : -1, oy = d.includes("N") ? -1 : 1;
+      const far = 260 * k, hw = 52 * k, nx = -oy / Math.SQRT2, ny = ox / Math.SQRT2, ux = ox / Math.SQRT2, uy = oy / Math.SQRT2;
+      const a = [cx - ux * 40 * k, cy2 - uy * 40 * k], b = [cx + ux * far, cy2 + uy * far];
+      const id = `bg-dg-${d}`;
+      t += `<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}"><stop offset="0.3" stop-color="${L.floor[0]}"/><stop offset="0.95" stop-color="#05040a"/></linearGradient></defs>`;
+      const Q = (q, s2) => `${f1(q[0] + nx * s2)} ${f1(q[1] + ny * s2)}`;
+      t += `<path d="M${Q(a, hw)} L${Q(b, hw)} L${Q(b, -hw)} L${Q(a, -hw)} Z" fill="url(#${id})"/>`;
+      for (const s2 of [hw, -hw]) t += `<path d="M${Q(a, s2)} L${Q(b, s2)}" stroke="${L.rock[1]}" stroke-width="${f1(12 * k)}" stroke-linecap="round"/>` +
+        `<path d="M${Q(a, s2)} L${Q(b, s2)}" stroke="${line}" stroke-width="${lw}" opacity="0.7"/>`;
+    }
+    return t;
+  });
+  // where a way is shut: wall, as a dungeon's is, and something on it: a carved stone in the north wall's middle; pots in a
+  // shut corner; torches on the north wall either side, lit
+  s += SEP + part("dg-shut", [c.F, look, on.join(","), x0, x1, sceneLfoKey(o, "fast")], () => {
+    let t = "", n = 0;
+    if (!has("N")) {
+      const w = 40 * k, h = 58 * k, y = fy0 - h - 14 * k;
+      t += `<rect x="${f1(-w)}" y="${f1(y)}" width="${f1(2 * w)}" height="${f1(h)}" rx="${f1(6 * k)}" fill="${L.rock[0]}" stroke="${line}" stroke-width="${lw}"/>` +
+           `<path d="M${f1(-w * 0.5)} ${f1(y + h * 0.35)} Q0 ${f1(y + h * 0.1)} ${f1(w * 0.5)} ${f1(y + h * 0.35)} M${f1(-w * 0.35)} ${f1(y + h * 0.62)} L${f1(w * 0.35)} ${f1(y + h * 0.62)}" stroke="${line}" stroke-width="${f1(3 * k)}" fill="none" stroke-linecap="round"/>`;
+    }
+    for (const sgn of [-1, 1]) {
+      const x = sgn * W * 0.28, y = fy0 - 62 * k;
+      t += obj(`torch ${sgn < 0 ? "left" : "right"}`, fy0, `<rect x="${f1(x - 5 * k)}" y="${f1(y)}" width="${f1(10 * k)}" height="${f1(26 * k)}" fill="#5a3a1e" stroke="${line}" stroke-width="${lw}"/>` +
+        `<ellipse cx="${f1(x)}" cy="${f1(y - 6 * k)}" rx="${f1(12 * k)}" ry="${f1(18 * k)}" fill="#ffb03a" opacity="0.9">` + fast(sgn < 0 ? 0 : 0.5, `<animate attributeName="ry" values="${f1(16 * k)};${f1(20 * k)};${f1(16 * k)}" dur="0.6s" repeatCount="indefinite"/>`) + `</ellipse>` +
+        `<ellipse cx="${f1(x)}" cy="${f1(y - 3 * k)}" rx="${f1(6 * k)}" ry="${f1(10 * k)}" fill="#fff2a8"/>` +
+        `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(70 * k)}" fill="#ffb03a" opacity="0.08"/>`);
+    }
+    const pot = (x, y, i) => obj(`pot ${++n}`, y, `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(16 * k)}" ry="${f1(6 * k)}" fill="#000000" opacity="0.25"/>` +
+      `<path d="M${f1(x - 15 * k)} ${f1(y - 4 * k)} Q${f1(x - 19 * k)} ${f1(y - 26 * k)} ${f1(x - 8 * k)} ${f1(y - 30 * k)} L${f1(x + 8 * k)} ${f1(y - 30 * k)} Q${f1(x + 19 * k)} ${f1(y - 26 * k)} ${f1(x + 15 * k)} ${f1(y - 4 * k)} Z" fill="${["#8a5a3a", "#7a4e34", "#96643f"][i % 3]}" stroke="${line}" stroke-width="${lw}"/>` +
+      `<ellipse cx="${f1(x)}" cy="${f1(y - 30 * k)}" rx="${f1(9 * k)}" ry="${f1(3.5 * k)}" fill="#2a1a10"/>`);
+    for (const d of ["NE", "NW", "SE", "SW"]) {
+      if (has(d)) continue;
+      const [cx, cy2] = G.ends[d], ox = d.includes("E") ? -1 : 1, oy = d.includes("N") ? 1 : -1, y = cy2 + (oy > 0 ? 44 * k : -14 * k);
+      t += pot(cx + ox * 30 * k, y, n) + pot(cx + ox * 66 * k, y, n + 1);
+    }
+    return t;
+  });
+  // what grows in it, by its look: crystals glowing in the floor's corners; moss along the walls' feet; frost; cracks
+  s += SEP + part("dg-growth", [c.F, look, x0, x1, sceneLfoKey(o, "slow")], () => {
+    let t = "";
+    if (look === "crystal") for (const [i, x, y] of [[0, -W * 0.13, fy0 + 34 * k], [1, W * 0.13, fy0 + 34 * k], [2, fx0 + 26 * k, cy + 110 * k], [3, fx1 - 26 * k, cy - 100 * k]]) {   // (clear of the corners' pots and the openings)
+      const col = CAVE_GLOWS[i % CAVE_GLOWS.length], h = 26 * k;
+      t += obj(`crystal cluster ${i + 1}`, y, `<circle cx="${f1(x)}" cy="${f1(y - h * 0.4)}" r="${f1(h * 1.4)}" fill="${col}" opacity="0.18">` + lfoTimed(o, "slow", i / 4, `<animate attributeName="opacity" values="0.08;0.3;0.08" dur="4s" repeatCount="indefinite"/>`) + `</circle>` +
+        [[-0.4, 0.7], [0, 1], [0.4, 0.8]].map(([dx, f]) => `<polygon points="${f1(x + dx * h - h * 0.14)},${f1(y)} ${f1(x + dx * h)},${f1(y - h * f)} ${f1(x + dx * h + h * 0.14)},${f1(y)}" fill="${col}" stroke="${mix(col, "#ffffff", 0.5)}" stroke-width="${f1(1.2 * k)}"/>`).join(""));
+    }
+    if (look === "moss") for (let i = 0; i < 16; i++) {
+      const side = i % 4, u = R(i, 6220), [x, y] = side === 0 ? [fx0 + (fx1 - fx0) * u, fy0 + 8 * k] : side === 1 ? [fx0 + 8 * k, fy0 + (fy1 - fy0) * u] : side === 2 ? [fx1 - 8 * k, fy0 + (fy1 - fy0) * u] : [fx0 + (fx1 - fx0) * u, fy1 - 6 * k];
+      t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((14 + 18 * R(i, 6221)) * k)}" ry="${f1((6 + 6 * R(i, 6222)) * k)}" fill="#5f8a4a" opacity="0.55"/>`;
+    }
+    if (look === "ice") t += `<path d="M${f1(fx0 + 60 * k)} ${f1(fy0 + 70 * k)} L${f1(fx0 + 200 * k)} ${f1(fy0 + 40 * k)} M${f1(fx1 - 150 * k)} ${f1(fy1 - 60 * k)} L${f1(fx1 - 40 * k)} ${f1(fy1 - 90 * k)}" stroke="#ffffff" stroke-width="${f1(5 * k)}" opacity="0.35" stroke-linecap="round"/>`;
+    if (look === "stone") t += `<path d="M${f1(fx0 + 90 * k)} ${f1(fy1 - 50 * k)} l${f1(30 * k)} ${f1(-14 * k)} l${f1(12 * k)} ${f1(10 * k)} l${f1(26 * k)} ${f1(-8 * k)} M${f1(fx1 - 140 * k)} ${f1(fy0 + 60 * k)} l${f1(18 * k)} ${f1(16 * k)} l${f1(24 * k)} ${f1(-4 * k)}" stroke="${mix(L.floor[1], "#000000", 0.45)}" stroke-width="${f1(2 * k)}" fill="none"/>`;
+    return t;
+  });
+  return s;
+}
 const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, hutcenter: hutcenterScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, treetop: treetopScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, farmyard: farmyardScene, desert: desertScene, woodpath: woodpathScene, pasture: pastureScene, crossing: crossingScene, cavecross: cavecrossScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
+                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, farmyard: farmyardScene, desert: desertScene, woodpath: woodpathScene, pasture: pastureScene, crossing: crossingScene, cavecross: cavecrossScene, dungeon: dungeonScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width

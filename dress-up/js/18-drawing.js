@@ -1407,6 +1407,7 @@ function drawNow() {
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
   if (lieAlong) lyingAlong(lieAlong);   // (ticket 412: lying along a sleeping bag, a view of its own)
+  else if (scened && TOP_DOWN_KINDS.has(BG.kind) && !ride && !B.sit && B.pose !== "lie") topDownFigure(B);   // (ticket 621: seen from above, as the room is)
   if (document.documentElement.classList.contains("lineart")) lineArtUnuse(pic);   // (lines only: no <use> left, its colours out of the styles' reach)
   if (figAway || figBurst) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 349: and burst into bubbles)   // (ticket 193: a spin's copy is shown instead)
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units
@@ -1517,6 +1518,72 @@ function turned3(R, J, T, curl, swing, front) {
 // routine, not cheap 2d transformations of the poses that we have now") Lying face up along a sleeping bag by a side wall, the
 // feet at its open end toward us, the head on its pillow by the far wall: a view of the friend of its own, drawn in the bag's
 // perspective, not the standing friend turned or skewed. The figure's group holds this drawing instead, in the picture's units.
+// (ticket 621, Matthew 2026-10-26: "To make the background art look correct, we'll need a more Link To The Past ... top-down angle
+// for the rooms that are structured this way. We may need a new 'pose' (Zelda versions of each pose we have, more angled
+// towards nearly, but not quite, top down)") Standing in a room seen from above (TOP_DOWN_KINDS), the friend is seen from
+// above too: its own drawing, as lying along a bag is, not the standing friend squashed. From high up and in front, as A Link
+// to the Past draws its people: the head big and seen mostly from its top, the hair over it; the shoulders and the shirt
+// short below it; the legs shorter still, the feet just showing; a shadow under them. Facing us, away (all hair), or to a
+// side (the face's half on that side); walking, the legs and arms step. The friend's own colours (skin, hair, shirt, pants,
+// shoes) and long hair down the back; not yet: costumes, hair styles one by one, faces' settings. Drawn in the figure's own
+// units (its group keeps its place and size), the feet at (0, g), H its height standing.
+const TOP_DOWN_KINDS = new Set(["dungeon"]);
+function topDownFigure(B) {
+  const f = document.getElementById("figure");
+  if (!f) return;
+  f.innerHTML = topDownSvg(state, B, figureT.g, figureT.base);
+  const far = document.getElementById("figure-far"); if (far) far.style.display = "none";
+}
+function topDownSvg(S, B, g, H) {
+  const hex = (v, d) => /^#[0-9a-f]{3,8}$/i.test(String(v || "")) ? v : d;
+  const skin = hex(S.face.color, "#cfa000"), hair = hex(S.hair.color, "#2b2b2b"), shirt = hex(S.shirt.color, "#4a7bd0"),
+        pants = hex(S.pants.color, "#3b5b8c"), shoe = hex(S.shoes && S.shoes.color, "#5a3a1e");
+  const view = B.facing === "left" ? -1 : B.facing === "right" ? 1 : B.facing === "back" || B.facing === "away" ? 2 : 0;
+  const walking = B.anim === "walk" || B.anim === "run", ph = walking ? Math.sin(performance.now() / 1000 * Math.PI * 2 * 2.4) : 0;
+  const lw = f1(Math.max(1.5, 0.012 * H)), ln = c => darker(c);
+  const P = (x, y) => `${f1(x)} ${f1(y)}`, Y = u => g - u * H;   // (u: a share of their height up from the feet)
+  const skirt = /skirt|dress/.test(S.pants.style || ""), longHair = /long|braid|pony/.test(S.hair.style || "") && (S.hair.length ?? 100) > 40;
+  const hr = 0.2 * H, hy = Y(0.66), side = view === -1 || view === 1;
+  let s = `<ellipse cx="0" cy="${f1(g)}" rx="${f1(0.24 * H)}" ry="${f1(0.07 * H)}" fill="#000000" opacity="0.28"/>`;
+  // the legs, short, seen from above; stepping, one lifts while the other is down; in profile they swing
+  const leg = (x, lift, dx = 0) => {
+    const top = Y(0.27), foot = g - lift;
+    return `<path d="M${P(x - 0.055 * H, top)} L${P(x + dx - 0.05 * H, foot - 0.03 * H)} L${P(x + dx + 0.05 * H, foot - 0.03 * H)} L${P(x + 0.055 * H, top)} Z" fill="${pants}" stroke="${ln(pants)}" stroke-width="${lw}"/>` +
+      `<ellipse cx="${f1(x + dx)}" cy="${f1(foot - 0.02 * H)}" rx="${f1(0.065 * H)}" ry="${f1(0.04 * H)}" fill="${shoe}" stroke="${ln(shoe)}" stroke-width="${lw}"/>`;
+  };
+  if (side) s += leg(0, Math.max(0, ph) * 0.03 * H, -view * ph * 0.08 * H) + leg(0, Math.max(0, -ph) * 0.03 * H, view * ph * 0.08 * H);
+  else s += leg(-0.08 * H, Math.max(0, ph) * 0.035 * H) + leg(0.08 * H, Math.max(0, -ph) * 0.035 * H);
+  // long hair down the back, under the body when they face us or to a side; over it, facing away
+  // (to a side, behind the head only: from its back to just past its middle)
+  const [ha, hb] = side ? (view > 0 ? [-0.95, 0.15] : [-0.15, 0.95]) : [-0.9, 0.9];
+  const hang = longHair ? `<path d="M${P(ha * hr, hy)} Q${P((ha - 0.15) * hr, Y(0.42))} ${P(ha * hr * 0.7, Y(0.36))} L${P(hb * hr * 0.7, Y(0.36))} Q${P((hb + 0.15) * hr, Y(0.42))} ${P(hb * hr, hy)} Z" fill="${hair}" stroke="${ln(hair)}" stroke-width="${lw}"/>` : "";
+  if (view !== 2) s += hang;
+  // the body: the shirt from the shoulders to the hips, the pants (or a skirt) below it; the arms at its sides, swinging
+  const bw = side ? 0.15 * H : 0.19 * H, top = Y(0.5), hip = Y(0.3);
+  const arm = (x, swing) => `<path d="M${P(x, top + 0.03 * H)} L${P(x + swing * 0.3, hip + swing)}" stroke="${shirt}" stroke-width="${f1(0.075 * H)}" stroke-linecap="round"/>` +
+    `<circle cx="${f1(x + swing * 0.3)}" cy="${f1(hip + swing + 0.01 * H)}" r="${f1(0.04 * H)}" fill="${skin}" stroke="${ln(skin)}" stroke-width="${lw}"/>`;
+  if (side) s += arm(-view * 0.02 * H, -ph * 0.05 * H);
+  else s += arm(-bw - 0.02 * H, ph * 0.03 * H) + arm(bw + 0.02 * H, -ph * 0.03 * H);
+  s += skirt ? `<path d="M${P(-bw, Y(0.33))} L${P(-bw * 1.35, Y(0.2))} L${P(bw * 1.35, Y(0.2))} L${P(bw, Y(0.33))} Z" fill="${pants}" stroke="${ln(pants)}" stroke-width="${lw}"/>`
+             : `<rect x="${f1(-bw * 0.95)}" y="${f1(Y(0.33))}" width="${f1(bw * 1.9)}" height="${f1(0.07 * H)}" rx="${f1(0.02 * H)}" fill="${pants}" stroke="${ln(pants)}" stroke-width="${lw}"/>`;
+  s += `<rect x="${f1(-bw)}" y="${f1(top)}" width="${f1(bw * 2)}" height="${f1(Y(0.31) - top)}" rx="${f1(0.06 * H)}" fill="${shirt}" stroke="${ln(shirt)}" stroke-width="${lw}"/>`;
+  if (side) s += arm(view * 0.02 * H, ph * 0.05 * H);
+  // the head, big, seen mostly from its top: facing us the hair over its upper part, the face below it; facing away, all
+  // hair; to a side, the face's half on that side
+  s += `<circle cx="0" cy="${f1(hy)}" r="${f1(hr)}" fill="${view === 2 ? hair : skin}" stroke="${ln(view === 2 ? hair : skin)}" stroke-width="${lw}"/>`;
+  // (the hairline, from above: low, the face only the head's lower part)
+  const line = hy + 0.045 * H, lx = Math.sqrt(Math.max(0, hr * hr - (line - hy) ** 2));
+  if (view === 0) {
+    s += `<path d="M${P(-lx, line)} A${f1(hr)} ${f1(hr)} 0 1 1 ${P(lx, line)} Q${P(lx * 0.5, line - 0.05 * H)} ${P(0, line - 0.005 * H)} Q${P(-lx * 0.5, line - 0.05 * H)} ${P(-lx, line)} Z" fill="${hair}" stroke="${ln(hair)}" stroke-width="${lw}"/>`;
+    for (const x of [-0.06 * H, 0.06 * H]) s += `<ellipse cx="${f1(x)}" cy="${f1(hy + 0.1 * H)}" rx="${f1(0.017 * H)}" ry="${f1(0.024 * H)}" fill="#1b1b1b"/>`;
+  } else if (side) {
+    // (to a side: the hair over the top and the back half, down to the neck; the face's sliver toward where they go, one eye)
+    const front = [view * lx, line], back = [-view * hr * 0.55, hy + hr * 0.84];
+    s += `<path d="M${P(...front)} A${f1(hr)} ${f1(hr)} 0 1 ${view > 0 ? 0 : 1} ${P(...back)} Q${P(-view * hr * 0.05, hy + hr * 0.3)} ${P(view * hr * 0.2, line - 0.01 * H)} Q${P(view * hr * 0.6, line - 0.04 * H)} ${P(...front)} Z" fill="${hair}" stroke="${ln(hair)}" stroke-width="${lw}"/>` +
+         `<ellipse cx="${f1(view * 0.12 * H)}" cy="${f1(hy + 0.1 * H)}" rx="${f1(0.015 * H)}" ry="${f1(0.023 * H)}" fill="#1b1b1b"/>`;
+  } else s += hang;
+  return s;
+}
 function lyingAlong(A) {
   const f = document.getElementById("figure");
   if (!f) return;
@@ -1650,7 +1717,7 @@ const PLACE_PHRASE = { sea: "swimming in 🌊 open water", deepsea: "swimming in
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
   hut: "outside the 🛖 grass hut", hutroom: "in the 🛖 grass hut's living room", hutbed: "in the 🛖 grass hut's bedroom", hutpotion: "in the 🛖 grass hut's potion room", hutcenter: "in the 🛖 grass hut's 🔥 center", treetop: "in the ⭕ round room at the top of the 🌳 tree",
   healerroom: "in the 🌿 healer's hut", fairyforest: "in the 🧚 fairy forest", mountains: "on the ⛰️ mountain trail", waterfall: "at the 💦 jungle waterfall",
-  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", caveroom: "in the 🦇 cave room", cavecross: "in the 🦇 cave crossing", farmyard: "in the 🚜 farm yard", desert: "in the 🏜️ desert", woodpath: "on the 🥾 path through the woods", pasture: "in the 🌾 pasture", crossing: "at the 🛤️ forest crossing",
+  campsite: "at the 🏕️ camp site", tent: "in a ⛺ tent", cave: "in the 🪨 cave behind the falls", caveroom: "in the 🦇 cave room", cavecross: "in the 🦇 cave crossing", dungeon: "in the 🗝️ dungeon room", farmyard: "in the 🚜 farm yard", desert: "in the 🏜️ desert", woodpath: "on the 🥾 path through the woods", pasture: "in the 🌾 pasture", crossing: "at the 🛤️ forest crossing",
   castle: b => `outside of ${castleOf(b).id}'s 🏰 castle`,
   castleroom: b => { const K = castleOf(b), n = Math.max(1, Math.min(K.rooms.length, Math.round(b.castleRoom ?? 1)));
     return `in the ${roomLabel(K.rooms[n - 1])} (room ${n} of ${K.id}'s castle)`; } };
