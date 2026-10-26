@@ -814,6 +814,21 @@ function robinHat(WC, dir = 0, away = false) {
     `<path d="M${f1(fx)} ${f1(fy)} Q${f1((fx + tip[0]) / 2)} ${f1(fy - 56)} ${f1(tip[0])} ${f1(tip[1])}" fill="none" stroke="${darker(fc)}" stroke-width="1.5"/>`;
   return feather + `<path d="${crown}" fill="${c}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` + brim;
 }
+// (ticket 628, Matthew 2026-10-26: "please also mint a new costume --- Link" "but call it 'Time Wanderer', not 'Link'") THE TIME
+// WANDERER'S CAP, in the round head's units: a long soft cone in the tunic's green, its band round the head at 46, its point
+// drooping behind and down past the head (facing us, off to one side; in profile, trailing behind; from behind, down the back).
+function wandererCap(WC, dir = 0, away = false) {
+  const c = WC.wanderCap || "#3e9b3a", ln = darker(c), f = dir || 0;
+  // (the crown over the head from the band, up to its peak; then over and down to the point hanging behind, and back under to the band)
+  const body = away ? `M16 52 Q14 -46 100 -72 Q186 -46 184 52 Q100 66 16 52 Z M86 40 Q100 100 112 160 Q122 96 116 40 Z`
+    : !f ? `M16 52 Q14 -40 112 -74 Q208 -70 226 96 Q206 50 184 52 Q100 66 16 52 Z`
+    : `M${f1(100 - f * 84)} 54 Q${f1(100 - f * 84)} -40 ${f1(100 + f * 10)} -74 Q${f1(100 + f * 84)} -40 ${f1(100 + f * 86)} 50 Q${f1(100)} 60 ${f1(100 - f * 84)} 54 Z ` +
+      `M${f1(100 - f * 40)} -40 Q${f1(100 - f * 150)} -50 ${f1(100 - f * 170)} 100 Q${f1(100 - f * 120)} 20 ${f1(100 - f * 70)} 10 Z`;
+  return `<path d="${body}" fill="${c}" stroke="${ln}" stroke-width="3" stroke-linejoin="round"/>` +
+    `<path d="M16 50 Q100 ${away ? 60 : 66} 184 50" fill="none" stroke="${ln}" stroke-width="7" stroke-linecap="round"/>`;
+}
+// (ticket 628) the Time Wanderer's shield, as the knight's arms are drawn: plain blue, a silver chevron (his own, not any game's crest)
+const wandererArms = WC => ({ knightA: WC.wanderShield || "#2f4fa8", knightB: "#c9ced6", tabardLayout: "plain", emblem: "chevron" });
 // A bow through the hand at H, in body units: a curved wooden bow, its back toward the side `side` the hand is on, its
 // string straight between its tips through the hand
 function bowSvg([hx, hy], side) {

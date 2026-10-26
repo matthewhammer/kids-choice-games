@@ -67,7 +67,7 @@ function drawNow() {
   // (ticket 433) a monk or a dryad: a hooded cloak to the feet, a rope belt, a staff; the hood up hides the hair
   const monk = kind === "monk", hooded = !!clothHood() || kind === "knight" || kind === "robot" || kind === "ninja";   // (ticket 515: a robot's head too; 557: a ninja's mask)
   // (ticket 434) a forester (Robin Hood): a green tunic with dagged edges over hose, a strap across the chest, a quiver, a bow
-  const robin = kind === "robin";
+  const robin = kind === "robin", wanderer = kind === "wanderer";   // (ticket 628: the Time Wanderer, a tunic over tights, a long cap, a sword and a shield)
   // (ticket 435) a knight: mail under a tabard in his arms, a helmet (the hair under it), a sword and a shield
   const knight = kind === "knight";
   // (tickets 436, 437) a queen or a king: a robe to the floor, a gold girdle, an ermine mantle behind, a crown, a scepter
@@ -87,7 +87,7 @@ function drawNow() {
   const brimRx = witch ? Math.min(300, Math.max(128, hairReach(state.hair).half + 14)) : wizard ? Math.min(260, Math.max(116, hairReach(state.hair).half + 10)) : 128;
   // (y: the brim's line where the hair is drawn: 40 in the hair's own
   // units, stretched with the head; the bangs give it in the face's)
-  const hatLine = witch || wizard || robin || royal ? 40 : gnome ? 62 : western && W.H ? COW_HAT_LINE : null;
+  const hatLine = witch || wizard || robin || wanderer || royal ? 40 : gnome ? 62 : western && W.H ? COW_HAT_LINE : null;
   const tucked = (inner, id, y = hatLine) => hatLine !== null ? `<clipPath id="${id}"><rect x="-4000" y="${f1(y)}" width="8200" height="8000"/></clipPath>` +
                                         `<g clip-path="url(#${id})">${inner}</g>` : inner;
   // (her web is tiled all over the dress, or "a few" separate webs on it,
@@ -153,7 +153,7 @@ function drawNow() {
   };
   // no clothes: underwear or a swimsuit instead of the shirt and pants
   // (a full animal suit still covers everything)
-  const U = state.undies, undies = U.on && !suit && !witch && !fairy && !scuba && !diver && !gnome && !wizard && !monk && !robin && !knight && !royal && !robot && !western && !ninja;
+  const U = state.undies, undies = U.on && !suit && !witch && !fairy && !scuba && !diver && !gnome && !wizard && !monk && !robin && !wanderer && !knight && !royal && !robot && !western && !ninja;
   const sleeve = suit ? 0.97 : undies ? 0 : { tee: 0.38, long: 0.95, tank: 0 }[SH.style];
 
   // PANTS: their hips under the shirt's hem, their feet under the legs.
@@ -650,7 +650,7 @@ function drawNow() {
              // -- also, give a toggle for 'bare feet', where we ignore those params while wearing the druid") the monk or dryad: the
              // friend's own feet, or bare (their shoes hidden in the cloak: the story of the costume)
              : monk ? (WC.bareFeet ? { style: "bare", size: state.shoes.size } : state.shoes)
-             : robin ? { style: "boot", size: state.shoes.size, color: "#6b4226" }
+             : robin || wanderer ? { style: "boot", size: state.shoes.size, color: "#6b4226" }
              : knight ? { style: "boot", size: state.shoes.size, color: "#6b7280" }
              : royal ? { style: "boot", size: state.shoes.size, color: "#e0b030" }
              : western ? westernFeet(W, state.shoes)   // (ticket 522: cowboy boots)
@@ -847,7 +847,7 @@ function drawNow() {
                          `fill="${tc}" stroke="${darker(tc)}" stroke-width="2.5" stroke-linejoin="round"/>`);
   }
   // (ticket 434) a forester's tunic: its dagged hem below the belt, over the hose (under the arms, as the gnome's is)
-  if (robin && !undies) { const tc = SH.color, hemY = L + LL * 0.18, n = 7, sx = (2 * hw + 8) / n;
+  if ((robin || wanderer) && !undies) { const tc = SH.color, hemY = L + LL * 0.18, n = wanderer ? 5 : 7, sx = (2 * hw + 8) / n;   // (ticket 628: the Time Wanderer's tunic too, its hem in five points)
     let hem = `M${f1(-hw - 4)} ${f1(L - 10)} L${f1(hw + 4)} ${f1(L - 10)} L${f1(hw + 4)} ${f1(hemY)}`;
     for (let i = 0; i < n; i++) { const x0 = hw + 4 - i * sx; hem += ` L${f1(x0 - sx / 2)} ${f1(hemY + 12)} L${f1(x0 - sx)} ${f1(hemY)}`; }
     svg += veil("shirt", `<path d="${hem} Z" fill="${tc}" stroke="${darker(tc)}" stroke-width="2.5" stroke-linejoin="round"/>`); }
@@ -903,7 +903,7 @@ function drawNow() {
   // (ticket 522, the lasso; ticket 518, everything held: a thing in the far hand, in profile or turned partway, is drawn with
   // that hand, behind the body, and goes into #figure-far with it; the rest after the shirt, before the rein and the hands)
   const heldFar = (dir || q) && !winged && !squash ? held.filter(h => farArms.includes(h.arm)) : [], heldView = crawlTo ? "floor" : dir ? "side" : away ? "back" : "front";
-  const heldDraw = h => heldSvg(h.item, h.arm.H, heldView, { WC, kb, monk, dryad: WC.monkWho === "dryad", knight, own: h.own, out: h.arm.side, dir, spin: lassoSpin });
+  const heldDraw = h => heldSvg(h.item, h.arm.H, heldView, { WC: wanderer ? { ...WC, ...wandererArms(WC) } : WC, kb, monk, dryad: WC.monkWho === "dryad", knight: knight || wanderer, own: h.own, out: h.arm.side, dir, spin: lassoSpin });
   const farAt = svg.length;
   if (!winged && !squash) for (const arm of farArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
   // (a sleeve: the shirt's share of the arm, round the elbow)
@@ -979,6 +979,9 @@ function drawNow() {
   if (western) svg += `<g data-western="torso">${westernTorso(W, w, L, nw, dir, away || crawlTo)}</g>`;
   // (ticket 434) a forester's: the tunic's dagged hem over the hose, its dagged cape on the shoulders, a belt with a pouch,
   // the quiver's strap across the chest (the other way from behind, with the quiver on the back)
+  // (ticket 628) the Time Wanderer's belt, brown, its brass buckle toward us
+  if (wanderer && !undies) svg += `<rect x="${f1(-(w + 3))}" y="${f1(L - 16)}" width="${f1(2 * w + 6)}" height="12" fill="#6b4226" stroke="#4a2f16" stroke-width="2"/>` +
+    (away ? "" : `<rect x="${f1(dir ? dir * (w - 14) - 8 : -8)}" y="${f1(L - 18)}" width="16" height="16" rx="3" fill="none" stroke="#d4a72c" stroke-width="3.5"/>`);
   if (robin && !undies) { const tc = SH.color, tl = darker(tc);
     const cw = w + 8, cy = 30, m = 6, cs = 2 * cw / m;
     let cape = `M${f1(-nw - 2)} -22 Q0 ${away ? -14 : -4} ${f1(nw + 2)} -22 L${f1(cw)} -6 L${f1(cw)} ${f1(cy)}`;
@@ -1202,6 +1205,8 @@ function drawNow() {
   if (robot) svg += veil("head", inFace(`<g data-robot="head" transform="${topFlies(F)}">${RH.svg}</g>`)) + (RH.eyes ? veil("eyes", inFace(`<g data-robot="eyes" transform="${topFlies(F)}">${RH.eyes}</g>`)) : "");
   if (robin) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
                     `<g transform="${hairStretch(F)}">${robinHat(WC, dir, away)}</g></g></g>`);
+  if (wanderer) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
+                    `<g transform="${hairStretch(F)}">${wandererCap(WC, dir, away)}</g></g></g>`);   // (ticket 628)
   if (wizard) svg += veil("head", `<g transform="translate(${f1(tx)} ${f1(ty)}) scale(${s.toFixed(4)})"><g transform="${topFlies(F)}">` +
                      `<g transform="${hairStretch(F)}">${wizardHat(WC, brimRx, dir)}</g></g></g>`);
   // a witch's hat over it, stretched with the head as hair is (and flying
@@ -1693,9 +1698,16 @@ const TD_GEAR = {
   witch: h => ({ hat: tdHat(h, h.hex(h.WC.witchColor, "#1f1f22"), 1.45, 0.32), held: h.WC.broom ? tdHeld(h, `<path d="M${h.P(0.24 * h.H, h.top)} L${h.P(0.3 * h.H, h.g - 0.05 * h.H)}" stroke="#7a5230" stroke-width="${f1(0.02 * h.H)}"/><path d="M${h.P(0.27 * h.H, h.g - 0.12 * h.H)} l${f1(-0.05 * h.H)} ${f1(0.12 * h.H)} l${f1(0.12 * h.H)} 0 Z" ${h.F("#c9a25a")}/>`) : "" }),
   wizard: h => ({ hat: tdHat(h, h.hex(h.WC.wizardRobe, "#2a3a8c"), 1.4, 0.36) + `<text x="0" y="${f1(h.hy - h.hr * 1.2)}" font-size="${f1(0.06 * h.H)}" text-anchor="middle" fill="${h.hex(h.WC.wizardStars, "#f2c230")}">★</text>`,
                   held: h.WC.staff ? tdHeld(h, `<path d="M${h.P(0.25 * h.H, h.top - 0.15 * h.H)} L${h.P(0.27 * h.H, h.g - 0.02 * h.H)}" stroke="#7a5230" stroke-width="${f1(0.025 * h.H)}"/><circle cx="${f1(0.25 * h.H)}" cy="${f1(h.top - 0.17 * h.H)}" r="${f1(0.04 * h.H)}" fill="${h.hex(h.WC.staffOrb, "#7dd3fc")}" stroke="#ffffff" stroke-width="${h.lw}"/>`) : "" }),
-  gnome: h => ({ hat: tdHat(h, h.hex(h.WC.gnomeHat, "#c0392b"), 1.25, 0.42) }),
+  // (the gnome's hat has no brim, as standing: its cone sits on the head, its base no wider than the head; Matthew, 0.0.452)
+  gnome: h => ({ hat: tdHat(h, h.hex(h.WC.gnomeHat, "#c0392b"), 0.62, 0.42) }),
   robin: h => ({ hat: tdHat(h, h.hex(h.WC.robinHat, "#3f7d3a"), 1.15, 0.14) + `<path d="M${h.P(h.hr * 0.3, h.hy - h.hr * 0.5)} q${f1(h.hr * 0.6)} ${f1(-h.hr * 0.5)} ${f1(h.hr * 0.9)} ${f1(-h.hr * 0.9)}" stroke="${h.hex(h.WC.robinFeather, "#c0392b")}" stroke-width="${f1(0.025 * h.H)}" fill="none" stroke-linecap="round"/>`,
                  back: (h.WC.quiver ? `<rect x="${f1(0.05 * h.H)}" y="${f1(h.top - 0.06 * h.H)}" width="${f1(0.06 * h.H)}" height="${f1(0.16 * h.H)}" rx="${f1(0.02 * h.H)}" ${h.F("#7a5230")}/>` : "") + (h.WC.bow ? `<path d="M${h.P(-0.18 * h.H, h.top - 0.05 * h.H)} Q${h.P(0, h.top + 0.12 * h.H)} ${h.P(0.18 * h.H, h.hip)}" stroke="#7a5230" stroke-width="${f1(0.02 * h.H)}" fill="none"/>` : "") }),
+  // (ticket 628) the Time Wanderer: his long cap, its point drooping behind; a belt; the sword and the shield (his own arms)
+  wanderer: h => { const c = h.hex(h.WC.wanderCap, "#3e9b3a"), by = h.hy - h.hr * 0.62, back = h.view === 2 ? 0 : h.side ? -h.view : 1;
+    return { hat: `<path d="M${h.P(-h.hr * 0.62, by + 0.02 * h.H)} Q${h.P(-h.hr * 0.3, by - 0.2 * h.H)} ${h.P(back * 0.12 * h.H, by - 0.16 * h.H)} Q${h.P(back * 0.22 * h.H, by - 0.08 * h.H)} ${h.P(back * 0.26 * h.H, by + 0.06 * h.H)} Q${h.P(back * 0.14 * h.H, by - 0.02 * h.H)} ${h.P(h.hr * 0.62, by + 0.02 * h.H)} Z" ${h.F(c)}/>`,
+      body: `<rect x="${f1(-0.2 * h.H)}" y="${f1(h.hip - 0.035 * h.H)}" width="${f1(0.4 * h.H)}" height="${f1(0.03 * h.H)}" fill="#6b4226" stroke="#4a2f16" stroke-width="${h.lw}"/>`,
+      held: (h.WC.wanderShieldOn !== false ? tdHeld(h, `<path d="M${h.P(-0.33 * h.H, h.hip - 0.12 * h.H)} L${h.P(-0.15 * h.H, h.hip - 0.12 * h.H)} L${h.P(-0.15 * h.H, h.hip - 0.02 * h.H)} Q${h.P(-0.24 * h.H, h.hip + 0.07 * h.H)} ${h.P(-0.24 * h.H, h.hip + 0.07 * h.H)} Q${h.P(-0.33 * h.H, h.hip - 0.02 * h.H)} ${h.P(-0.33 * h.H, h.hip - 0.02 * h.H)} Z" ${h.F(h.hex(h.WC.wanderShield, "#2f4fa8"))}/><path d="M${h.P(-0.31 * h.H, h.hip - 0.02 * h.H)} L${h.P(-0.24 * h.H, h.hip - 0.09 * h.H)} L${h.P(-0.17 * h.H, h.hip - 0.02 * h.H)}" stroke="#c9ced6" stroke-width="${f1(0.02 * h.H)}" fill="none"/>`) : "") +
+            (h.WC.wanderSword !== false ? tdHeld(h, `<path d="M${h.P(0.25 * h.H, h.hip)} L${h.P(0.3 * h.H, h.hip - 0.2 * h.H)}" stroke="#d6dbe1" stroke-width="${f1(0.02 * h.H)}" stroke-linecap="round"/><path d="M${h.P(0.23 * h.H, h.hip - 0.02 * h.H)} l${f1(0.05 * h.H)} ${f1(-0.01 * h.H)}" stroke="#2f4fa8" stroke-width="${f1(0.02 * h.H)}"/>`) : "") }; },
   knight: h => ({ helm: `<circle cx="0" cy="${f1(h.hy)}" r="${f1(h.hr * 1.05)}" ${h.F("#a7adb6")}/>` + (h.view === 2 ? "" : `<rect x="${f1(h.side ? h.view * h.hr * 0.1 : -h.hr * 0.6)}" y="${f1(h.hy + 0.07 * h.H)}" width="${f1(h.hr * (h.side ? 0.8 : 1.2))}" height="${f1(0.025 * h.H)}" fill="#1f2328"/>`) +
                   `<path d="M${h.P(0, h.hy - h.hr)} q${f1(0.04 * h.H)} ${f1(-0.08 * h.H)} ${f1(0.12 * h.H)} ${f1(-0.06 * h.H)}" stroke="${h.hex(h.WC.plumeColor, "#c0392b")}" stroke-width="${f1(0.05 * h.H)}" stroke-linecap="round" fill="none"/>`,
                   headFill: "#a7adb6", eyes: "",
@@ -1841,8 +1853,8 @@ function lieAlongSvg(A, S) {
 // pillow on the room's side; what it carries, beside the bag), under (a cape, wings spread either side of the body), hood
 // (a hood kept up: its colour, round the face), head (in place of the head: a robot's box, a ninja's mask), eyes (on such a
 // head), body (over the shirt: a tabard), over (on top of it all). The suits' ears and tails are lieEars and lieTail.
-const lieHatSvg = (type, col, q, extra = "") => { const m = q[2], x = q[0], y = q[1], F = c => `fill="${c}" stroke="${darker(c)}" stroke-width="${f1(Math.max(0.6, 0.018 * m))}"`;
-  if (type === "cone") return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(0.22 * m)}" ry="${f1(0.08 * m)}" ${F(col)}/><path d="M${f1(x - 0.12 * m)} ${f1(y)} L${f1(x + 0.05 * m)} ${f1(y - 0.32 * m)} L${f1(x + 0.12 * m)} ${f1(y)} Z" ${F(col)}/>${extra}`;
+const lieHatSvg = (type, col, q, extra = "", brim = true) => { const m = q[2], x = q[0], y = q[1], F = c => `fill="${c}" stroke="${darker(c)}" stroke-width="${f1(Math.max(0.6, 0.018 * m))}"`;
+  if (type === "cone") return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((brim ? 0.22 : 0.12) * m)}" ry="${f1((brim ? 0.08 : 0.045) * m)}" ${F(col)}/><path d="M${f1(x - 0.12 * m)} ${f1(y)} L${f1(x + 0.05 * m)} ${f1(y - 0.32 * m)} L${f1(x + 0.12 * m)} ${f1(y)} Z" ${F(col)}/>${extra}`;
   if (type === "cowboy") return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(0.22 * m)}" ry="${f1(0.08 * m)}" ${F(col)}/><path d="M${f1(x - 0.11 * m)} ${f1(y)} Q${f1(x - 0.11 * m)} ${f1(y - 0.13 * m)} ${f1(x)} ${f1(y - 0.13 * m)} Q${f1(x + 0.11 * m)} ${f1(y - 0.13 * m)} ${f1(x + 0.11 * m)} ${f1(y)} Z" ${F(col)}/>`;
   if (type === "cap") return `<path d="M${f1(x - 0.15 * m)} ${f1(y)} Q${f1(x)} ${f1(y - 0.14 * m)} ${f1(x + 0.15 * m)} ${f1(y)} Z" ${F(col)}/>${extra}`;
   if (type === "crown") return `<path d="M${f1(x - 0.12 * m)} ${f1(y)} l0 ${f1(-0.1 * m)} l${f1(0.06 * m)} ${f1(0.05 * m)} l${f1(0.06 * m)} ${f1(-0.07 * m)} l${f1(0.06 * m)} ${f1(0.07 * m)} l${f1(0.06 * m)} ${f1(-0.05 * m)} l0 ${f1(0.1 * m)} Z" ${F("#f2c230")}/><circle cx="${f1(x)}" cy="${f1(y - 0.05 * m)}" r="${f1(0.018 * m)}" fill="${col}"/>`;
@@ -1864,8 +1876,9 @@ const lieCape = (col, trim = null) => h => { const { at, P } = h, m = at(1.2, 0,
 const LIE_GEAR = {
   witch: h => ({ beside: c => lieHatSvg("cone", h.hex(h.WC.witchColor, "#1f1f22"), liePillowSide(c)) + (h.WC.broom ? lieHeld(c, "broom") : "") }),
   wizard: h => ({ beside: c => lieHatSvg("cone", h.hex(h.WC.wizardRobe, "#2a3a8c"), liePillowSide(c)) + (h.WC.staff ? lieHeld(c, "staff", "#7a5230", h.hex(h.WC.staffOrb, "#7dd3fc")) : "") }),
-  gnome: h => ({ beside: c => lieHatSvg("cone", h.hex(h.WC.gnomeHat, "#c0392b"), liePillowSide(c)) }),
+  gnome: h => ({ beside: c => lieHatSvg("cone", h.hex(h.WC.gnomeHat, "#c0392b"), liePillowSide(c), "", false) }),
   robin: h => ({ beside: c => lieHatSvg("cap", h.hex(h.WC.robinHat, "#3f7d3a"), liePillowSide(c)) + (h.WC.bow ? lieHeld(c, "bow") : "") }),
+  wanderer: h => ({ beside: c => lieHatSvg("cone", h.hex(h.WC.wanderCap, "#3e9b3a"), liePillowSide(c), "", false) + (h.WC.wanderSword !== false ? lieHeld(c, "sword") : "") }),   // (ticket 628)
   knight: h => ({ beside: c => lieHatSvg("helm", "#a7adb6", liePillowSide(c)) + (h.WC.sword !== false ? lieHeld(c, "sword") : ""),
                   body: c => `<path d="M${c.P(c.T(1.5, -0.14))} L${c.P(c.T(0.98, -0.14))} L${c.P(c.T(0.98, 0.14))} L${c.P(c.T(1.5, 0.14))} Z" fill="${h.hex(h.WC.knightA, "#1e40af")}" opacity="0.9"/>` }),
   queen: h => ({ beside: c => lieHatSvg("crown", h.hex(h.WC.crownJewel, "#dc2626"), liePillowSide(c)) + (h.WC.scepter ? lieHeld(c, "staff", "#f2c230", "#dc2626") : ""), under: h.WC.mantle !== false ? lieCape(h.hex(h.WC.queenRobe, "#5b2a86"), "#f7f4ec") : null }),

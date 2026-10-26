@@ -326,7 +326,7 @@ const TABS = [
                                    ["raccoon", "🦝 raccoon"], ["bobcat", "🐈 bobcat"], ["leopard", "🐆 leopard"],
                                    ["eagle", "🦅 bald eagle"], ["cheetah", "🐆 cheetah"], ["jaguar", "🐈‍⬛ black jaguar"], ["moth", "🦋 moth"],
                                    ["falconsuit", "🦅 falcon suit"], ["eaglesuit", "🦅 bald eagle suit"],
-                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["sasquatch", "🦶 Sasquatch"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"], ["cowgirl", "👢 cowgirl"], ["cowboy", "🤠 cowboy"],
+                                   ["wolf", "🐺 wolf"], ["deer", "🦌 deer"], ["dragon", "🐉 dragon"], ["sasquatch", "🦶 Sasquatch"], ["witch", "🧙 witch"], ["fairy", "🧚 fairy"], ["ghost", "👻 ghost"], ["gnome", "🍄 gnome"], ["wizard", "🧙‍♂️ wizard"], ["monk", "🧘 monk or dryad"], ["robin", "🏹 Robin Hood"], ["wanderer", "🗡️ Time Wanderer"], ["knight", "🛡️ knight"], ["queen", "👸 queen"], ["king", "🤴 king"], ["robot", "🤖 robot"], ["cowgirl", "👢 cowgirl"], ["cowboy", "🤠 cowboy"],
                                    ["ninja", "🥷 ninja"],
                                    ["giraffe", "🦒 giraffe"],   // (ticket 544)
                                    ["scuba", "🤿 scuba suit"], ["diver", "⚓ old diving suit"]]],
@@ -451,6 +451,12 @@ const TABS = [
     ["toggle", "helmOpen", "🪖 face showing (an open helm)"],
     ["toggle", "sword", "🗡️ sword"],
     ["toggle", "shield", "🛡️ shield"],
+    // (ticket 628) the Time Wanderer: his tunic, his long cap, his shield's colour; his sword and his shield
+    ["color", "wanderTunic", "🗡️ tunic's color", ["#3e9b3a", "#2e7d32", "#1f6f8b", "#8a2b2b", "#6b4ea8"]],
+    ["color", "wanderCap", "🗡️ cap's color", ["#3e9b3a", "#2e7d32", "#1f6f8b", "#8a2b2b", "#6b4ea8"]],
+    ["color", "wanderShield", "🛡️ shield's color", ["#2f4fa8", "#8a2b2b", "#3e9b3a", "#7a5232", "#1f1f22"]],
+    ["toggle", "wanderSword", "🗡️ sword"],
+    ["toggle", "wanderShieldOn", "🛡️ shield"],
     // (ticket 434) Robin Hood: his tunic, his cap and its feather, his bow and quiver
     ["color", "robinTunic", "🏹 tunic's color", ["#3f7d3a", "#2e5e2a", "#7a5232", "#8a2b2b", "#6b7280"]],
     ["color", "robinHat", "🏹 cap's color", ["#3f7d3a", "#8a2b2b", "#7a5232", "#2e5e2a", "#e3b72f"]],
@@ -1162,6 +1168,7 @@ const SHOWN_WHEN = {
   "costume.plumeColor": c => c.kind === "knight" && c.plume !== false, "costume.helmOpen": c => c.kind === "knight", "costume.sword": c => c.kind === "knight", "costume.shield": c => c.kind === "knight",
   "costume.robinTunic": c => c.kind === "robin", "costume.robinHat": c => c.kind === "robin", "costume.robinFeather": c => c.kind === "robin",
   "costume.bow": c => c.kind === "robin", "costume.quiver": c => c.kind === "robin",
+  ...Object.fromEntries(["wanderTunic", "wanderCap", "wanderShield", "wanderSword", "wanderShieldOn"].map(k => ["costume." + k, c => c.kind === "wanderer"])),   // (ticket 628)
   "costume.monkWho": c => c.kind === "monk", "costume.monkCloak": c => c.kind === "monk", "costume.hoodUp": c => c.kind === "monk", "costume.bareFeet": c => c.kind === "monk",
   "costume.hoodFace": c => c.kind === "monk" && c.hoodUp !== false, "costume.hoodDim": c => c.kind === "monk" && c.hoodUp !== false && c.hoodFace !== false,
   "costume.hoodEyes": c => c.kind === "monk" && c.hoodUp !== false && c.hoodFace === false, "costume.staffOrb": c => c.kind === "wizard" && c.staff !== false,

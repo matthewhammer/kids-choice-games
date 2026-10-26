@@ -97,6 +97,8 @@ const COSTUME_CLOTHES = {
   king: (WC, SH, P) => { const c = WC.kingRobe || "#7a1f2b"; return [{ ...SH, style: "long", color: c, pattern: "plain" }, { ...P, style: "dress", skirtLen: 100, color: c, pattern: "plain" }]; },
   // (ticket 435: chain mail, the dots pattern in steel, under his tabard)
   knight: (WC, SH, P) => { const mail = { color: "#9ca3af", pattern: "dots", patternSize: 9, patternColor: "#6b7280" }; return [{ ...SH, style: "long", ...mail }, { ...P, style: "long", ...mail }]; },
+  // (ticket 628) the Time Wanderer: a green tunic over pale tights
+  wanderer: (WC, SH, P) => [{ ...SH, style: "long", color: WC.wanderTunic || "#3e9b3a", pattern: "plain" }, { ...P, style: "long", color: "#efe6cf", pattern: "plain" }],
   // (ticket 434: a green tunic over brown hose)
   robin: (WC, SH, P) => [{ ...SH, style: "long", color: WC.robinTunic || "#3f7d3a", pattern: "plain" }, { ...P, style: "long", color: "#5a3d22", pattern: "plain" }],
   // (ticket 433: a cloak to the feet, the dryad's in the leaves pattern)

@@ -484,8 +484,8 @@ const HOLD_CHOICES = [["auto", "🎭 the costume's own"], ["none", "✋ nothing"
 function heldAuto(kind, WC) {
   const L = kind === "witch" ? (WC.broom ? "broom" : null) : kind === "wizard" || kind === "monk" ? (WC.staff !== false ? "staff" : null)
     : kind === "queen" || kind === "king" ? (WC.scepter !== false ? "scepter" : null) : kind === "knight" ? (WC.sword !== false ? "sword" : null)
-    : kind === "cowgirl" || kind === "cowboy" ? (WC.lasso !== false ? "lasso" : null) : null;
-  const R = kind === "robin" ? (WC.bow !== false ? "bow" : null) : kind === "knight" ? (WC.shield !== false ? "shield" : null) : null;
+    : kind === "cowgirl" || kind === "cowboy" ? (WC.lasso !== false ? "lasso" : null) : kind === "wanderer" ? (WC.wanderSword !== false ? "sword" : null) : null;
+  const R = kind === "robin" ? (WC.bow !== false ? "bow" : null) : kind === "knight" ? (WC.shield !== false ? "shield" : null) : kind === "wanderer" ? (WC.wanderShieldOn !== false ? "shield" : null) : null;
   return { L, R };
 }
 // What each own hand holds: an explicit choice wins, and takes its item out of the other hand's "auto" (a lasso moved to the
@@ -763,7 +763,7 @@ const DEFAULTS = {
              monkWho: "monk", monkCloak: "#6b4a2b", hoodUp: true, bareFeet: false, hoodFace: true, hoodDim: 0, hoodEyes: true, queenRobe: "#5b2a86", kingRobe: "#7a1f2b", crownJewel: "#d2382b", mantle: true, scepter: true,
              knightA: "#2f6db5", knightB: "#f4f1ea", tabardLayout: "quartered", emblem: "falcon", plume: true, plumeColor: "#c0392b", helmOpen: false, sword: true, shield: true,
              dragonScales: "#3f8f4a", dragonBelly: "#e9d27a", dragonWings: "#d0453a", dragonHorns: "#f4ecd6", dragonWingsHow: "flap", dragonWingLfo: "none",   // (ticket 499)
-             robinTunic: "#3f7d3a", robinHat: "#3f7d3a", robinFeather: "#d2382b", bow: true, quiver: true,
+             wanderTunic: "#3e9b3a", wanderCap: "#3e9b3a", wanderShield: "#2f4fa8", wanderSword: true, wanderShieldOn: true, robinTunic: "#3f7d3a", robinHat: "#3f7d3a", robinFeather: "#d2382b", bow: true, quiver: true,
              wizardRobe: "#2a3a8c", wizardStars: "#f2c230", staff: true, staffOrb: "#7dd3fc", beardGiven: null,
              gnomeWho: "man", gnomeHat: "#d2382b", gnomeTunic: "#3f8f8a", gnomeTrousers: "#7d8b6a",
              gnomeBodice: "#d2382b", gnomeSkirt: "#d2382b", gnomeBoots: "#e8e4da",
@@ -1496,7 +1496,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.452", released: "2026-10-26" };
+const VERSION = { number: "0.0.453", released: "2026-10-26" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

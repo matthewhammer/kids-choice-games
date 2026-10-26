@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.453 (2026-10-26)
+
+Everything in 0.0.452, plus:
+
+- **🗡️ A new costume: the Time Wanderer.** A green tunic with a pointed hem over pale tights, a brown belt with a brass buckle, brown boots, and a long green cap whose point droops over behind the head; a sword in one hand and a blue shield in the other. In 🐯 Costume: "🗡️ tunic's color", "🗡️ cap's color", "🛡️ shield's color", and the "🗡️ sword" and "🛡️ shield" on or off. Drawn in every view: standing, from above in a dungeon room, and asleep in the tent (his cap by the pillow, his sword beside the bag).
+- **Fixed:** the gnome's hat had a brim from above and asleep; it has none, as standing.
+
 ## 0.0.452 (2026-10-26)
 
 Everything in 0.0.451, plus:

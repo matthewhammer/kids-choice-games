@@ -365,7 +365,7 @@ const TAB_BOXES = {
                 ["🥽 diving gear", ["snorkel", "snorkelColor", "mask", "maskColor", "tank", "tankColor", "leaks"]],
                 ["👻 the ghost", ["ghostRagged", "ghostEyes", "ghostHideEyes", "ghostColor", "visible"]],
                 ["🧙‍♂️ the wizard", ["wizardRobe", "wizardStars"]], ["🧘 the monk or dryad", ["monkWho", "monkCloak", "hoodUp", "hoodFace", "hoodDim", "hoodEyes", "bareFeet"]],
-                ["🪄 the staff", ["staff", "staffOrb"]], ["🏹 Robin Hood", ["robinTunic", "robinHat", "robinFeather", "bow", "quiver"]],
+                ["🪄 the staff", ["staff", "staffOrb"]], ["🏹 Robin Hood", ["robinTunic", "robinHat", "robinFeather", "bow", "quiver"]], ["🗡️ the Time Wanderer", ["wanderTunic", "wanderCap", "wanderShield", "wanderSword", "wanderShieldOn"]],
                 ["👑 the queen or king", ["queenRobe", "kingRobe", "crownJewel", "mantle", "scepter"]],
                 ["🐉 the dragon", ["dragonScales", "dragonBelly", "dragonWings", "dragonHorns", "dragonWingsHow", "dragonWingLfo", "fireStyle"]],   // (ticket 523: its fire, the friend's)
                 ["🦋 the moth", ["mothStyle", ...Object.keys(MOTH_STYLES).map(id => "mothColor_" + id), "mothSpots"]],   // (ticket 536)
