@@ -4124,13 +4124,14 @@ function dungeonScene(c) {
     }
     return t;
   });
-  // (ticket 623) the side walls stand in the way, as a dungeon's do: unseen boxes over them (named "ledge, …", which stand:
-  // 16-objects-and-solids.js), open where a way goes out east or west; sorted far back, so nothing is drawn over the friend
+  // (ticket 623) the side walls stand in the way, as a dungeon's do: unseen boxes over them ("dungeon wall", which stands:
+  // 16-objects-and-solids.js), from the floor's far edge down, open where a way goes out east or west; sorted far back, so
+  // nothing is drawn over the friend. (Matthew, 0.0.446's 🔬: named "ledge, west wall 1", and reaching up into the north wall)
   s += SEP + part("dg-sides", [c.F, has("E"), has("W"), x0, x1], () => {
     let t = "";
     for (const [d, a, b] of [["W", x0 - pad, fx0], ["E", fx1, x1 + pad]]) {
-      const spans = has(d) ? [[fy0 - 40 * k, cy - gap], [cy + gap, y1 + pad]] : [[fy0 - 40 * k, y1 + pad]];
-      spans.forEach(([top, bot], i) => { t += obj(`ledge, ${d === "W" ? "west" : "east"} wall ${i + 1}`, fy0 + k, `<rect data-footprint="1" x="${f1(a)}" y="${f1(top)}" width="${f1(b - a)}" height="${f1(bot - top)}" fill="none" stroke="none"/>`); });
+      const spans = has(d) ? [[fy0, cy - gap], [cy + gap, y1 + pad]] : [[fy0, y1 + pad]];
+      spans.forEach(([top, bot], i) => { t += obj(`dungeon wall, ${d === "W" ? "west" : "east"}${spans.length > 1 ? (i ? ", south of the way" : ", north of the way") : ""}`, fy0 + k, `<rect data-footprint="1" x="${f1(a)}" y="${f1(top)}" width="${f1(b - a)}" height="${f1(bot - top)}" fill="none" stroke="none"/>`); });
     }
     return t;
   });
@@ -4170,8 +4171,9 @@ function dungeonScene(c) {
     let t = "", n = 0;
     if (!has("N")) {
       const w = 40 * k, h = 58 * k, y = fy0 - h - 14 * k;
-      t += `<rect x="${f1(-w)}" y="${f1(y)}" width="${f1(2 * w)}" height="${f1(h)}" rx="${f1(6 * k)}" fill="${L.rock[0]}" stroke="${line}" stroke-width="${lw}"/>` +
-           `<path d="M${f1(-w * 0.5)} ${f1(y + h * 0.35)} Q0 ${f1(y + h * 0.1)} ${f1(w * 0.5)} ${f1(y + h * 0.35)} M${f1(-w * 0.35)} ${f1(y + h * 0.62)} L${f1(w * 0.35)} ${f1(y + h * 0.62)}" stroke="${line}" stroke-width="${f1(3 * k)}" fill="none" stroke-linecap="round"/>`;
+      // (an object, so 🔬 names it and 👁️ can hide it; on the wall, far back: never in front of the friend)
+      t += obj("carved stone", fy0, `<rect x="${f1(-w)}" y="${f1(y)}" width="${f1(2 * w)}" height="${f1(h)}" rx="${f1(6 * k)}" fill="${L.rock[0]}" stroke="${line}" stroke-width="${lw}"/>` +
+           `<path d="M${f1(-w * 0.5)} ${f1(y + h * 0.35)} Q0 ${f1(y + h * 0.1)} ${f1(w * 0.5)} ${f1(y + h * 0.35)} M${f1(-w * 0.35)} ${f1(y + h * 0.62)} L${f1(w * 0.35)} ${f1(y + h * 0.62)}" stroke="${line}" stroke-width="${f1(3 * k)}" fill="none" stroke-linecap="round"/>`);
     }
     for (const sgn of [-1, 1]) {
       const x = sgn * W * 0.28, y = fy0 - 62 * k;

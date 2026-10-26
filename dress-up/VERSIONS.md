@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.447 (2026-10-26)
+
+Everything in 0.0.446, plus:
+
+- **🔬 The dungeon room's names, right:** its side walls are "dungeon wall, west" and "dungeon wall, east" (they were named as ledges), their boxes start where the floor does (they reached up into the north wall), and the carved stone in the north wall is an object of its own, named.
+- **A new dungeon room starts with no ledge and no hole:** one put on the grid took them from the room shown before it.
+
 ## 0.0.446 (2026-10-26)
 
 Everything in 0.0.445, plus:

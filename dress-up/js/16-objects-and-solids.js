@@ -198,7 +198,7 @@ const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", 
    "pricklypear", "prickly pear", "barrelcactus", "barrel cactus", "agave",   // (ticket 501: the low desert plants, as things and in the desert)
    "grazing horse",   // (ticket 503: the pasture's horses, big as a hay cart: walked round, not through, by their footprints)
    "barn", "fencepiece", "haystack", "tractor", "windpump",
-   "ledge",   // (ticket 623: a dungeon room's ledge's face, by its footprint: up and down only by its stairs)   // (ticket 502: the farm things, each by its foot (data-footprint), and the farm yard's)
+   "ledge", "dungeon wall",   // (ticket 623: a dungeon room's ledge's face, by its footprint: up and down only by its stairs; its side walls)   // (ticket 502: the farm things, each by its foot (data-footprint), and the farm yard's)
    "woodpile", "helmet", "watering can", "teddy", "truck", "blocks", "chair", "shipwreck", "vent", "palisade", "fallen", "anchor", "anvil", "armor", "barrel", "barrels", "basket", "bed", "bench", "bookcase", "bubblemaker", "coral", "lever", "skeleton", "box", "bucket", "buckets", "bunk beds", "bush", "cage", "campfire",
   "cat tree", "cauldron", "chest", "chest of gold", "coal heap", "column", "counter", "crate", "drum kit", "easel", "firewood", "flour sack", "forge",
   "fountain", "green bush", "hay cart", "hay heap", "keyboard", "log", "mushroom", "oven", "paint table", "picnic table", "pink bush", "plant", "potion shelves",
