@@ -4,6 +4,15 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.455 (2026-10-26)
+
+Everything in 0.0.454, plus the dungeon room's own looks:
+
+- **🎨 The stone's shade,** darker or lighter than its look (🏞️ Background: a slider; 🗺️ World design: 🌑 dark, ⚪ as the look is, ☀️ light).
+- **🌿 Moss,** how much and of five kinds: a carpet of moss, cushions, hanging from the walls, lichen rings, glowing moss.
+- **🍄 Mushrooms,** how much and of five kinds, the cave room's own and the forest's: glowing caps, toadstools, bells, a crowd, puffballs; in clumps by the walls, clear of the pots and the doorways.
+- **Every room worn its own way:** its cracks and worn tiles are where its own seed puts them, so no two rooms look the same; 🎲 in World design gives a room new ones.
+
 ## 0.0.454 (2026-10-26)
 
 Everything in 0.0.453, plus:

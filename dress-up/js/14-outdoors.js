@@ -4029,6 +4029,9 @@ function dungeonGeom({ x0, x1, y0, y1, g, k }) {
 const DUNGEON_TILE = 46;
 // (ticket 622) where a dungeon room's hole can be: across, as a share of the picture's width; down, from the floor's middle
 const DUNGEON_HOLES = { left: [-0.22, 30], middle: [0, -60], right: [0.22, 30] };
+// (ticket 630) the dungeon room's kinds of moss and of mushroom (the cave room's own, and the forest's toadstools)
+const DUNGEON_MOSS = [["carpet", "🟩 a carpet of moss"], ["cushion", "🟢 cushions"], ["hanging", "🧶 hanging from the walls"], ["lichen", "🟡 lichen rings"], ["glow", "✨ glowing moss"]];
+const DUNGEON_SHROOMS = [["glowcap", "💡 glowing caps"], ["toadstool", "🍄 toadstools"], ["bells", "🔔 bells"], ["cluster", "🟤 a crowd"], ["puffballs", "⚪ puffballs"]];
 // (ticket 623) a dungeon room's ledge: its top's front edge (ly), its face's height (fh), and its stairs, [left, right] each
 const DUNGEON_LEDGES = { middle: "⬆️ at the back, stairs in the middle", ends: "⬆️ at the back, stairs at both ends" };
 function dungeonLedge(G, k, ledge) {
@@ -4037,7 +4040,14 @@ function dungeonLedge(G, k, ledge) {
 }
 function dungeonScene(c) {
   const { x0, y0, x1, y1, W, k, pad, R, grad, all, o } = c;
-  const G = dungeonGeom(c), { sw, fx0, fx1, fy0, fy1, cy } = G, look = CAVE_LOOK[o.crossCave] ? o.crossCave : "stone", L = CAVE_LOOK[look];
+  const G = dungeonGeom(c), { sw, fx0, fx1, fy0, fy1, cy } = G, look = CAVE_LOOK[o.crossCave] ? o.crossCave : "stone";
+  // (ticket 630, Matthew: "shade of stone?") the look's colours, darker or lighter by 🎨 the stone's shade (50: as the look is)
+  const shade = Math.max(0, Math.min(100, Number(o.crossShade ?? 50))), shTo = shade >= 50 ? "#ffffff" : "#000000", shBy = Math.abs(shade - 50) / 50 * 0.45;
+  const shC = col => shBy ? mix(col, shTo, shBy) : col, L0 = CAVE_LOOK[look];
+  const L = { wall: L0.wall.map(shC), floor: L0.floor.map(shC), rock: L0.rock.map(shC), path: shC(L0.path), tip: shC(L0.tip) };
+  // (ticket 630, Matthew: "cracks in dungeon floor should be less 'the same each time'") each room's own wear: its seed, kept with
+  // the square (crossSeed, chosen when the room is put on the grid), turning where its worn tiles and its cracks fall
+  const seed = Math.round(Number(o.crossSeed) || 0), Rs = (i, k) => R(i + seed * 37, k + seed % 997);
   const fast = (off, own) => lfoTimed(o, "fast", off, own);
   const on = typeof o.crossLive === "string" ? o.crossLive.split(",").filter(Boolean) : CROSS_DIRS.map(([d]) => d).filter(d => o["cross" + d]);
   const has = d => on.includes(d), gap = 56 * k, line = mix(L.wall[1], "#000000", 0.35), lw = f1(2 * k);
@@ -4048,7 +4058,7 @@ function dungeonScene(c) {
   const open = new Set((typeof o.crossOpen === "string" ? o.crossOpen.split(",") : []).filter(d => d.length === 1 && has(d))), isOpen = d => open.has(d), openKey = [...open].sort().join(",");
   let s = "";
   // the floor: square tiles, a shade darker at the walls' feet; to the picture's edge on a side with no wall
-  s += SEP + part("dg-floor", [c.F, look, x0, x1, openKey], () => {
+  s += SEP + part("dg-floor", [c.F, look, x0, x1, openKey, shade, seed], () => {
     const t0 = DUNGEON_TILE * k, ex0 = isOpen("W") ? x0 - pad : fx0, ex1 = isOpen("E") ? x1 + pad : fx1, ey0 = isOpen("N") ? y0 - pad : fy0, ey1 = isOpen("S") ? y1 + pad : fy1;
     let t = `<defs>${grad("bg-dg-floor", L.floor[0], L.floor[1], fy0, fy1)}</defs>` + all(dark) +
       `<rect x="${f1(ex0)}" y="${f1(ey0)}" width="${f1(ex1 - ex0)}" height="${f1(ey1 - ey0)}" fill="url(#bg-dg-floor)"/>`;
@@ -4058,7 +4068,7 @@ function dungeonScene(c) {
     t += `<path d="${grid}" stroke="${mix(L.floor[1], "#000000", 0.3)}" stroke-width="${f1(1.6 * k)}" opacity="0.6" fill="none"/>`;
     // (a few tiles a little lighter or darker, worn)
     for (let i = 0; i < 18; i++) {
-      const tx = Math.floor((fx0 + (fx1 - fx0) * R(i, 6201)) / t0) * t0, ty = fy0 + Math.floor((fy1 - fy0) * R(i, 6202) / t0) * t0;
+      const tx = Math.floor((fx0 + (fx1 - fx0) * Rs(i, 6201)) / t0) * t0, ty = fy0 + Math.floor((fy1 - fy0) * Rs(i, 6202) / t0) * t0;
       if (tx + t0 > fx1 || tx < fx0 || ty + t0 > fy1) continue;
       t += `<rect x="${f1(tx + k)}" y="${f1(ty + k)}" width="${f1(t0 - 2 * k)}" height="${f1(t0 - 2 * k)}" fill="${i % 2 ? "#ffffff" : "#000000"}" opacity="0.07"/>`;
     }
@@ -4070,7 +4080,7 @@ function dungeonScene(c) {
   });
   // the walls: the north wall's face, brick courses, its top a rim along the picture's top; the side walls and the south
   // wall seen from above, a rim and, on the side walls, a strip of their inner face
-  s += SEP + part("dg-walls", [c.F, look, x0, x1, openKey], () => {
+  s += SEP + part("dg-walls", [c.F, look, x0, x1, openKey, shade], () => {
     const top = y0 - pad, course = 26 * k, rimH = 22 * k;
     let t = "";
     if (!isOpen("N")) {
@@ -4107,7 +4117,7 @@ function dungeonScene(c) {
   });
   // the openings, for the ways that lead somewhere: a gap in a wall, the floor running on into the dark; a corner's tunnel
   // slanting off, its floor between two walls
-  s += SEP + part("dg-ways", [c.F, look, on.join(","), x0, x1, openKey], () => {
+  s += SEP + part("dg-ways", [c.F, look, on.join(","), x0, x1, openKey, shade], () => {
     let t = `<defs><linearGradient id="bg-dg-n" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${L.floor[1]}"/><stop offset="1" stop-color="#05040a"/></linearGradient>` +
       `<linearGradient id="bg-dg-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${L.floor[0]}"/><stop offset="1" stop-color="#05040a"/></linearGradient>` +
       `<linearGradient id="bg-dg-e" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${L.floor[0]}"/><stop offset="1" stop-color="#05040a"/></linearGradient>` +
@@ -4149,7 +4159,7 @@ function dungeonScene(c) {
   // footprint: 16-objects-and-solids.js), but for its stairs, in the middle or at both ends, the only way up and down. A tap
   // on the ledge from below walks round by the stairs (planPath). The friend up on it is drawn behind the face.
   const ledge = DUNGEON_LEDGES[o.crossLedge] ? o.crossLedge : "";
-  if (ledge) s += SEP + part("dg-ledge", [c.F, look, ledge, x0, x1], () => {
+  if (ledge) s += SEP + part("dg-ledge", [c.F, look, ledge, x0, x1, shade], () => {
     const { ly, fh, stairs } = dungeonLedge(G, k, ledge), steps = 4;
     let t = `<rect x="${f1(fx0)}" y="${f1(fy0)}" width="${f1(fx1 - fx0)}" height="${f1(ly - fy0)}" fill="#ffffff" opacity="0.09"/>` +
       `<rect x="${f1(fx0)}" y="${f1(ly + fh)}" width="${f1(fx1 - fx0)}" height="${f1(12 * k)}" fill="#000000" opacity="0.22"/>`;
@@ -4176,7 +4186,7 @@ function dungeonScene(c) {
   });
   // where a way is shut: wall, as a dungeon's is, and something on it: a carved stone in the north wall's middle; pots in a
   // shut corner; torches on the north wall either side, lit
-  s += SEP + part("dg-shut", [c.F, look, on.join(","), x0, x1, sceneLfoKey(o, "fast"), openKey, o.potsGone || ""], () => {
+  s += SEP + part("dg-shut", [c.F, look, on.join(","), x0, x1, sceneLfoKey(o, "fast"), openKey, o.potsGone || "", shade], () => {
     let t = "", n = 0;
     if (!has("N")) {
       const w = 40 * k, h = 58 * k, y = fy0 - h - 14 * k;
@@ -4227,7 +4237,7 @@ function dungeonScene(c) {
     return t;
   });
   // what grows in it, by its look: crystals glowing in the floor's corners; moss along the walls' feet; frost; cracks
-  s += SEP + part("dg-growth", [c.F, look, x0, x1, sceneLfoKey(o, "slow")], () => {
+  s += SEP + part("dg-growth", [c.F, look, x0, x1, sceneLfoKey(o, "slow"), shade, seed], () => {
     let t = "";
     if (look === "crystal") for (const [i, x, y] of [[0, -W * 0.13, fy0 + 34 * k], [1, W * 0.13, fy0 + 34 * k], [2, fx0 + 26 * k, cy + 110 * k], [3, fx1 - 26 * k, cy - 100 * k]]) {   // (clear of the corners' pots and the openings)
       const col = CAVE_GLOWS[i % CAVE_GLOWS.length], h = 26 * k;
@@ -4239,7 +4249,52 @@ function dungeonScene(c) {
       t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1((14 + 18 * R(i, 6221)) * k)}" ry="${f1((6 + 6 * R(i, 6222)) * k)}" fill="#5f8a4a" opacity="0.55"/>`;
     }
     if (look === "ice") t += `<path d="M${f1(fx0 + 60 * k)} ${f1(fy0 + 70 * k)} L${f1(fx0 + 200 * k)} ${f1(fy0 + 40 * k)} M${f1(fx1 - 150 * k)} ${f1(fy1 - 60 * k)} L${f1(fx1 - 40 * k)} ${f1(fy1 - 90 * k)}" stroke="#ffffff" stroke-width="${f1(5 * k)}" opacity="0.35" stroke-linecap="round"/>`;
-    if (look === "stone") t += `<path d="M${f1(fx0 + 90 * k)} ${f1(fy1 - 50 * k)} l${f1(30 * k)} ${f1(-14 * k)} l${f1(12 * k)} ${f1(10 * k)} l${f1(26 * k)} ${f1(-8 * k)} M${f1(fx1 - 140 * k)} ${f1(fy0 + 60 * k)} l${f1(18 * k)} ${f1(16 * k)} l${f1(24 * k)} ${f1(-4 * k)}" stroke="${mix(L.floor[1], "#000000", 0.45)}" stroke-width="${f1(2 * k)}" fill="none"/>`;
+    // (cracks: two to four, each its own zigzag, where this room's seed puts them)
+    let cracks = "";
+    for (let j = 0, nC = 2 + Math.floor(3 * Rs(1, 6240)); j < nC; j++) {
+      let x = fx0 + 40 * k + (fx1 - fx0 - 80 * k) * Rs(j, 6241), y = fy0 + 30 * k + (fy1 - fy0 - 60 * k) * Rs(j, 6242);
+      cracks += `M${f1(x)} ${f1(y)}`;
+      for (let q = 0, nQ = 3 + Math.floor(3 * Rs(j, 6243)); q < nQ; q++) { x += (14 + 18 * Rs(j * 7 + q, 6244)) * k; y += (Rs(j * 7 + q, 6245) - 0.5) * 30 * k; cracks += ` L${f1(x)} ${f1(y)}`; }
+    }
+    t += `<path d="${cracks}" stroke="${mix(L.floor[1], "#000000", 0.45)}" stroke-width="${f1(2 * k)}" fill="none" stroke-linejoin="round"/>`;
+    return t;
+  });
+  // (ticket 630, Matthew: "moss level and colony type (give 5 options, and reuse what we have if possible)"; "mushroom level and
+  // colony type (ditto)") 🌿 moss and 🍄 mushrooms, how much (0 to 100) and of which kind, where this room's seed puts them: moss
+  // along the walls' feet and up their faces, mushrooms in clumps by the walls and in the corners (the cave room's own, the
+  // forest's toadstools), each clump an object, so it stands at its depth
+  const mossN = Math.round(Math.max(0, Math.min(100, Number(o.crossMoss) || 0)) / 100 * 28), mossKind = DUNGEON_MOSS.some(([v]) => v === o.crossMossKind) ? o.crossMossKind : "carpet";
+  if (mossN) s += SEP + part("dg-moss", [c.F, look, x0, x1, shade, seed, mossN, mossKind, sceneLfoKey(o, "slow")], () => {
+    let t = "";
+    const base = mossKind === "lichen" ? "#b8c46a" : mossKind === "glow" ? "#5eead4" : mossKind === "cushion" ? "#4e7d3a" : "#5f8a4a";
+    for (let i = 0; i < mossN; i++) {
+      const side = Math.floor(4 * Rs(i, 6250)), u = Rs(i, 6251);
+      const [x, y] = side === 0 ? [fx0 + (fx1 - fx0) * u, fy0 + 8 * k] : side === 1 ? [fx0 + 8 * k, fy0 + (fy1 - fy0) * u] : side === 2 ? [fx1 - 8 * k, fy0 + (fy1 - fy0) * u] : [fx0 + (fx1 - fx0) * u, fy1 - 6 * k];
+      const sz = (12 + 20 * Rs(i, 6252)) * k, col = mix(base, i % 2 ? "#000000" : "#ffffff", 0.12);
+      if (mossKind === "carpet") t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(sz * 1.3)}" ry="${f1(sz * 0.45)}" fill="${col}" opacity="0.65"/>`;
+      else if (mossKind === "cushion") t += [0, 1, 2].map(q => `<circle cx="${f1(x + (q - 1) * sz * 0.5)}" cy="${f1(y - (q === 1 ? sz * 0.15 : 0))}" r="${f1(sz * (q === 1 ? 0.5 : 0.38))}" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="${f1(1.2 * k)}"/>`).join("");
+      else if (mossKind === "hanging") { const hx = x0 + sw + (fx1 - fx0) * u, hy = y0 + 30 * k, len = (30 + 70 * Rs(i, 6253)) * k;
+        t += `<path d="M${f1(hx)} ${f1(hy)} q${f1(4 * k)} ${f1(len * 0.5)} ${f1(-2 * k)} ${f1(len)}" stroke="${col}" stroke-width="${f1(5 * k)}" fill="none" stroke-linecap="round" opacity="0.85"/>`; }
+      else if (mossKind === "lichen") t += [0, 1, 2].map(q => `<circle cx="${f1(x + (Rs(i * 3 + q, 6254) - 0.5) * sz * 1.6)}" cy="${f1(y + (Rs(i * 3 + q, 6255) - 0.5) * sz * 0.6)}" r="${f1(sz * 0.22)}" fill="none" stroke="${col}" stroke-width="${f1(2.4 * k)}" opacity="0.8"/>`).join("");
+      else t += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(sz * 1.2)}" ry="${f1(sz * 0.4)}" fill="${col}" opacity="0.55"/>` +
+        `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(sz * 2)}" ry="${f1(sz * 0.8)}" fill="${col}" opacity="0.12">` + lfoTimed(o, "slow", i / mossN, `<animate attributeName="opacity" values="0.06;0.22;0.06" dur="4s" repeatCount="indefinite"/>`) + `</ellipse>`;
+    }
+    return t;
+  });
+  const shroomN = Math.round(Math.max(0, Math.min(100, Number(o.crossShrooms) || 0)) / 100 * 10), shroomKind = DUNGEON_SHROOMS.some(([v]) => v === o.crossShroomKind) ? o.crossShroomKind : "glowcap";
+  if (shroomN) s += SEP + part("dg-shrooms", [c.F, look, x0, x1, seed, shroomN, shroomKind, sceneLfoKey(o, "slow"), ledge], () => {
+    let t = "";
+    // (by the walls, clear of the corners, where the pots stand, and of the doorways in the walls' middles)
+    const along = (sd, u) => { const t = 0.12 + 0.3 * u + (u > 0.5 ? 0.16 : 0);   // (a third of the way along, either side of the middle)
+      return sd === 0 ? [fx0 + (fx1 - fx0) * t, fy0 + 26 * k] : sd === 1 ? [fx0 + (fx1 - fx0) * t, fy1 - 14 * k]
+        : [sd === 2 ? fx0 + 24 * k : fx1 - 24 * k, fy0 + (fy1 - fy0) * t]; };
+    for (let i = 0; i < shroomN; i++) {
+      const [x, y] = along(Math.floor(4 * Rs(i, 6260)), Rs(i, 6261));
+      const sc = (0.45 + 0.25 * Rs(i, 6263)) * k, col = CAVE_MUSHROOM_COLORS[Math.floor(Rs(i, 6264) * CAVE_MUSHROOM_COLORS.length)];
+      const svg = shroomKind === "toadstool" ? [-1, 0, 1].map(q => toadstool(x + q * 22 * sc, y - (q === 0 ? 4 * sc : 0), sc * (q === 0 ? 1.1 : 0.8))).join("")
+        : `<g transform="translate(${f1(x)} ${f1(y)}) scale(${sc.toFixed(3)})">${caveMushroomSvg({ style: shroomKind, color: col, glow: shroomKind === "glowcap" }, seed * 13 + i, o)}</g>`;
+      t += obj(`mushrooms ${i + 1}`, y, svg);
+    }
     return t;
   });
   return s;

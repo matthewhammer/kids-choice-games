@@ -224,7 +224,7 @@ function worldProblems(W) {
 // What a square keeps of its place, as the Background tab edits it
 // (state.background), so the square opened is the square changed: its
 // things, any place's; and a forest crossing's paths and floor.
-const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave", "crossHole", "crossLedge", "crossOpen"];
+const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave", "crossHole", "crossLedge", "crossOpen", "crossShade", "crossMoss", "crossMossKind", "crossShrooms", "crossShroomKind", "crossSeed"];
 // (ticket 524) and an inside an outside has several of: which one it is (INSIDE_WHICH)
 const cellKeys = kind => isCross(kind) ? ["things", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", INSIDE_WHICH[kind]] : ["things"];
 // where the friend comes in, walking into a square from a side: just
@@ -1505,7 +1505,7 @@ function worldPut(key, kind, o = null) {
   if (W.cells[key]) passagesUnlinkInto(W.id, key);
   const own = {};
   if (from) for (const [k, v] of Object.entries(fromOwn)) { const when = SHOWN_WHEN["background." + k]; if (when && when(view(kind)) && !when(view(from.kind))) own[k] = structuredClone(v); }
-  W.cells[key] = isCross(kind) ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", crossCave: "stone", crossHole: "", crossLedge: "", crossOpen: "", things }
+  W.cells[key] = isCross(kind) ? { kind, ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods", crossCave: "stone", crossHole: "", crossLedge: "", crossOpen: "", crossShade: 50, crossMoss: 0, crossMossKind: "carpet", crossShrooms: 0, crossShroomKind: "glowcap", crossSeed: 1 + Math.floor(Math.random() * 9999), things }
                                      : { kind, ways: worldUsualWays(kind), things, ...(w ? { [w]: which } : {}), ...(Object.keys(own).length ? { own } : {}) };   // (ticket 524: which one)
   if (pk && W.off) { delete W.off[pk]; passagesRemap(W.id, k => k, { off: pk, key, kind }); }
   worldTrimEdges(W, [key]);   // (ticket 232: its usual ways, but none off the edge where it is put)

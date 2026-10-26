@@ -656,6 +656,13 @@ const TABS = [
     ["color", "crossFloor", "🌿 the forest floor", CROSS_FLOORS],
     ["choice", "crossBack", "🌄 off in the distance", CROSS_BACKS],
     ["choice", "crossCave", "🪨 the cave's look", CAVE_LOOKS],   // (2026-10-25: the cave crossing's)
+    // (ticket 630) the dungeon room's own: its stone's shade, its moss and mushrooms, and its wear (cracks, worn tiles)
+    ["range", "crossShade", "🎨 the stone's shade (dark ↔ light)", 0, 100, 25, 75],
+    ["range", "crossMoss", "🌿 moss", 0, 100, 0, 70],
+    ["choice", "crossMossKind", "🌿 kind of moss", DUNGEON_MOSS],
+    ["range", "crossShrooms", "🍄 mushrooms", 0, 100, 0, 70],
+    ["choice", "crossShroomKind", "🍄 kind of mushroom", DUNGEON_SHROOMS],
+    ["range", "crossSeed", "🎲 its cracks and worn tiles", 0, 9999, 0, 9999],
     // (ticket 212) the open water's distant shore, off by default: its layers, back to front, and its size (bigger: nearer)
     ["group", "seaShore", "🏝️ a distant shore", [
       ["choice", "seaMountains", "⛰️ mountains", SHORE_MOUNTAINS],
@@ -1288,6 +1295,7 @@ const SHOWN_WHEN = {
   "background.crossCave": b => b.kind === "cavecross" || b.kind === "dungeon",
   "background.crossHole": b => b.kind === "dungeon",
   "background.crossLedge": b => b.kind === "dungeon",
+  ...Object.fromEntries(["crossShade", "crossMoss", "crossMossKind", "crossShrooms", "crossShroomKind", "crossSeed"].map(k => ["background." + k, b => b.kind === "dungeon"])),   // (ticket 630)
   "background.things": b => b.kind !== "none",
   "background.thingsSolid": b => b.kind !== "none" && (b.things || []).length > 0,   // (ticket 283)
   // (a tent's door looks out on the camp: its time of day and its fire)
@@ -2234,7 +2242,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
             const pick = (attr, now, opts, set) => opts.map(([v, name]) => el("button", { "aria-pressed": String(now === v), [attr]: v,
               onclick: e => { set(v); for (const b of e.currentTarget.parentNode.querySelectorAll(`[${attr}]`)) b.setAttribute("aria-pressed", String(b.getAttribute(attr) === v)); changed(); } }, name));
             const others = worldsAll().filter(T => T !== W), below = holeBelow(W, W.at);
-            return [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🧱 a ledge, a level up:"),
+            const B0 = state.background, num = (k, d) => String(Math.round(Number(B0[k] ?? d)));
+            return [el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🎨 the stone:"),   // (ticket 630)
+                ...pick("data-shade", num("crossShade", 50), [["20", "🌑 dark"], ["50", "⚪ as the look is"], ["80", "☀️ light"]], v => { B0.crossShade = +v; })]),
+              el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🌿 moss:"),
+                ...pick("data-moss", num("crossMoss", 0), [["0", "none"], ["35", "some"], ["80", "lots"]], v => { B0.crossMoss = +v; }),
+                ...pick("data-moss-kind", B0.crossMossKind || "carpet", DUNGEON_MOSS, v => { B0.crossMossKind = v; })]),
+              el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🍄 mushrooms:"),
+                ...pick("data-shrooms", num("crossShrooms", 0), [["0", "none"], ["35", "some"], ["80", "lots"]], v => { B0.crossShrooms = +v; }),
+                ...pick("data-shroom-kind", B0.crossShroomKind || "glowcap", DUNGEON_SHROOMS, v => { B0.crossShroomKind = v; })]),
+              el("div", { class: "row world-back-row" }, [el("button", { onclick: () => { B0.crossSeed = 1 + Math.floor(Math.random() * 9999); changed(); } }, "🎲 new cracks and worn tiles")]),
+              el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🧱 a ledge, a level up:"),
                 ...pick("data-ledge", state.background.crossLedge || "", [["", "none"], ...Object.entries(DUNGEON_LEDGES)], v => { state.background.crossLedge = v; })]),
               el("div", { class: "row world-back-row" }, [el("span", { class: "hint" }, "🕳️ a hole in the floor:"),
                 ...pick("data-hole-at", state.background.crossHole || "", [["", "none"], ["left", "⬅️ left"], ["middle", "⬆️ middle"], ["right", "➡️ right"]], v => { state.background.crossHole = v; })]),
