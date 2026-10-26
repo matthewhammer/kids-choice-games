@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.450 (2026-10-26)
+
+Everything in 0.0.449, plus a fix:
+
+- **📜 A smooth scroll ends its event.** Walking out a way that scrolls, the 🪵 event log waited for the event's end until its 15 s limit ("still going at 15 s: post event may be early"), and the next way taken overlapped it: the scroll never said the friend had arrived. It does now, as the slide ends.
+
 ## 0.0.449 (2026-10-26)
 
 Everything in 0.0.448, plus:

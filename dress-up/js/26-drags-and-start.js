@@ -1909,7 +1909,9 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
       }
     }
     // (2026-10-25: a way that scrolls to the square beside it: at the edge, the scroll takes over, worldScroll, in place of the step through)
-    if (phase === "in" && opt.smooth) { for (const u of undo) u(); walkPath = null; opt.smooth(); return; }
+    // (Matthew, 0.0.449's 🪵 event log: a smooth scroll's Way event "still going at 15 s": its walk's hold (arrive, scriptHeld)
+    // was never given back; the scroll calls arrive when its slide is over)
+    if (phase === "in" && opt.smooth) { for (const u of undo) u(); walkPath = null; opt.smooth(arrive); return; }
     if (phase === "in" && pit) { fallDown(pit, () => done()); return; }
     if (phase === "in" && lad && lad.down != null) {
       // (ticket 199) down a hatch's ladder: at its near edge, facing it, climbing down at ⬆'s pace,

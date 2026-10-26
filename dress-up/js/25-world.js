@@ -1178,7 +1178,7 @@ function worldWalk(door, here = false) {
   const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: t.cell.kind, worldAt: W.at, worldId: W.id };
   tripStart(door, "walk");
   // (2026-10-25: to a square beside it that scrolls in, the friend walks to the edge and the two pictures slide: worldScroll)
-  if (worldSmooth(W, W.at, d, t)) { const open = worldOpen(W, W.at, d); walkInto(door, () => {}, true, "step", null, { out: WORLD_DIRS[d], here, smooth: () => worldScroll(d, t, from, open) }); return; }
+  if (worldSmooth(W, W.at, d, t)) { const open = worldOpen(W, W.at, d); walkInto(door, () => {}, true, "step", null, { out: WORLD_DIRS[d], here, smooth: done => worldScroll(d, t, from, open, done) }); return; }
   // (ticket 406: through a way linked to another world, into that world, at its square, come in from the side facing back)
   walkInto(door, () => { trips.push(from); if (t.W !== W) worldSwitch(t.W.id, t.key, WORLD_OPP[d], false); else worldEnter(t.key, WORLD_OPP[d], false); }, true, "step", null, { out: WORLD_DIRS[d], here });
 }
@@ -1204,7 +1204,7 @@ function worldOpen(W, key, d) {
   const c = W && W.cells[key], t = c && worldTarget(W, key, d);
   return !!(c && t && !t.link && t.W === W && OPEN_DIRS.includes(d) && c.kind === "dungeon" && t.cell.kind === "dungeon" && commaHas(c.crossOpen, d));
 }
-function worldScroll(d, t, from, open = false) {
+function worldScroll(d, t, from, open = false, done = () => {}) {
   const B = state.background, body = state.body, [dx, dy] = WORLD_DIRS[d];
   const old = document.getElementById("bg"), vb = pic.viewBox.baseVal, sw = vb.width, sh = vb.height;
   const ways = document.getElementById("ways"), ghost = old && old.cloneNode(true);
@@ -1231,6 +1231,7 @@ function worldScroll(d, t, from, open = false) {
     body.anim = "none"; body.facing = "front";
     tripPhase = "arriving"; entering = false;
     changed();
+    done();   // (the walk's arrival: a script's event that took this way is over)
   };
   requestAnimationFrame(frame);
 }
