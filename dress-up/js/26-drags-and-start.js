@@ -201,7 +201,7 @@ pic.addEventListener("pointerdown", e => {
     else if (T && T.kind === "lever") Object.assign(drag, { lever: true, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 639, Matthew: "some players don't have a keyboard handy") pressed on a shut 💰 chest, a thing to carry, or (the net held) a
     // 🐝: as a lever, a press let go before SIGN_DRAG_PX walks there and opens it, picks it up, or swings
-    else if (T && ((T.kind === "chest" && T.open === false) || CARRY_KINDS.has(T.kind) || (T.kind === "bee" && toolHeld()))) Object.assign(drag, { act: true, cx: e.clientX, cy: e.clientY, far: false });
+    else if (T && ((T.kind === "chest" && T.open === false) || CARRY_KINDS.has(T.kind) || (T.kind === "plate" && !(T.wants === "any" ? T.held : T.lit) && T.switch !== "toggle") || (T.kind === "bee" && toolHeld()))) Object.assign(drag, { act: true, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 471, the review after 0.0.385) pressed on a 🕳️ cave passage's opening: as a board, a press let go before it has
     // gone SIGN_DRAG_PX goes through it, as any doorway clicked; moved further, the passage is dragged
     else if (T && e.target.closest && e.target.closest(".thing .portal")) Object.assign(drag, { door: true, cx: e.clientX, cy: e.clientY, far: false });
@@ -766,7 +766,7 @@ pic.addEventListener("click", e => {
   if (door) { enterScene(door); return; }
   // (ticket 299) a seat or a bed clicked, with 👆 on: walked to, and sat on, or lain on
   const seat = seatAtPointer(e);
-  if (seat) { walkSpotHide(); walkPlanned((seat.x0 + seat.x1) / 2, seat.flat ? seat.z : seat.z + 6, () => sitOn(seat)); return; }
+  if (seat && !seat.act) { walkSpotHide(); walkPlanned((seat.x0 + seat.x1) / 2, seat.flat ? seat.z : seat.z + 6, () => sitOn(seat)); return; }
   // (ticket 266) walking to a click already: another click on the ground is queued after it
   if (clickRun) { const spot = walkableAt(e); if (spot) walkPlanned(spot.x, spot.z); return; }
   // (ticket 187) a passage behind something standing in front of it (a fence, a bush, a sign's post):
@@ -797,12 +797,19 @@ function walkableAt(e) {
 // (ticket 299, Matthew: "point to sit, and point to lie down"; "pointing at a place to sit or lie down shows a pop-up
 // that says so") The seat or bed under the pointer, with 👆 on: its box, from where a sitter's feet go (z) up past its top
 // by as much again, across its span (a blanket's, flat, a band about its middle); the friend not on it already
+const actSay = T => T.kind === "chest" && T.open === false ? "💰 open the chest" : CARRY_KINDS.has(T.kind) ? "🎒 pick it up" :
+  T.kind === "plate" && !(T.wants === "any" ? T.held : T.lit) && T.switch !== "toggle" ? (T.wants === "any" ? "🧩 put something heavy here" : "🧩 put " + giftName(T.wants || "crown").replace(/^\S+ /, "") + " here") : T.kind === "bee" && toolHeld() ? "🥅 catch the bee" : "";
 function seatAtPointer(e) {
   const BG = state.background, A = state.access || DEFAULTS.access;
   if (!A.clickWalk || BG.kind === "none" || drag || !e.target || !e.target.closest || !e.target.closest("#pic") || e.target.closest("#figure, .portal, [data-ladder], #ways")) return null;
   // (ticket 413: over a thing put here, its own seat if it gives one; never another's through it)
   const put = e.target.closest("[data-drag]");
-  if (put) { const t = put.dataset.drag.startsWith("thing:") ? thingSeatOf(put) : null; return t && t.name !== (state.body.sit && BG.seat) ? t : null; }
+  if (put) {
+    // (ticket 639, Matthew: "chest says 'sit on chest' during hover over when it's full and closed; not 'open chest'") a thing the
+    // action takes says so, and a click on it does that (the press's own, at its letting go), not a sit
+    const T = put.dataset.drag.startsWith("thing:") ? (BG.things || [])[+put.dataset.drag.slice(6)] : null, say = T && actSay(T);
+    if (say) { let b; try { b = put.getBBox(); } catch (_) { return null; } return { act: true, say, name: say, x0: b.x, x1: b.x + b.width, y: b.y, z: b.y + b.height }; }
+    const t = put.dataset.drag.startsWith("thing:") ? thingSeatOf(put) : null; return t && t.name !== (state.body.sit && BG.seat) ? t : null; }
   const q = picUnits(e), k = (SCENE.bottom - SCENE.top) / 700;
   return seatsHere(BG).find(t => t.name !== (state.body.sit && BG.seat) && q.x >= t.x0 && q.x <= t.x1 &&
     (t.flat ? Math.abs(q.y - t.y) <= 24 * k : q.y >= t.y - Math.max(20 * k, t.z - t.y) && q.y <= t.z + 6)) || null;
@@ -817,7 +824,7 @@ function walkSpotShow(e) {
     const at = (x, y) => { const p = new DOMPoint(x, y).matrixTransform(M); return [p.x - box.left, p.y - box.top]; };
     const top = seat.flat ? seat.y - 18 * (SCENE.bottom - SCENE.top) / 700 : seat.y, [ax, ay] = at(seat.x0, top), [bx, by] = at(seat.x1, seat.flat ? seat.y + 18 * (SCENE.bottom - SCENE.top) / 700 : seat.z);
     if (!ov) { ov = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ov.setAttribute("class", "walk-spot"); layer.append(ov); }
-    const say = (seat.lie ? "🛏️ lie down on the " : "🪑 sit on the ") + seat.name.replace(/,.*$/, "").replace(/\s+\d+$/, "");   // (ticket 413: "the rock", not "the rock 1")
+    const say = seat.act ? seat.say : (seat.lie ? "🛏️ lie down on the " : "🪑 sit on the ") + seat.name.replace(/,.*$/, "").replace(/\s+\d+$/, "");   // (ticket 413: "the rock", not "the rock 1")
     ov.innerHTML = `<rect class="seat-spot" x="${ax.toFixed(1)}" y="${ay.toFixed(1)}" width="${(bx - ax).toFixed(1)}" height="${Math.max(6, by - ay).toFixed(1)}" rx="6"/>` +
       `<text class="seat-say" x="${((ax + bx) / 2).toFixed(1)}" y="${(ay - 8).toFixed(1)}" text-anchor="middle">${xmlEsc(say)}</text>`;
     ov.style.setProperty("--spot", (state.access || DEFAULTS.access).clickWalkColor || "#22d3ee");
@@ -1482,7 +1489,7 @@ async function chestRecPlay(id) {
 }
 function chestOpen(t) {
   const body = state.body, give = t.gives || "gold";
-  t.open = true; body.facing = "front"; body.anim = "none"; entering = true; presenting = give;
+  t.open = true; t.treasure = "empty"; body.facing = "front";   // (ticket 639, Matthew: "have them look empty after we take out the items") body.anim = "none"; entering = true; presenting = give;
   state.backpack = [...(Array.isArray(state.backpack) ? state.backpack : []), { id: give, got: Date.now(), from: "chest" }];
   changed(); draw();
   chestFlourish(t.flourish || "chestfanfare"); chestRecPlay(t.rec);
@@ -1648,18 +1655,40 @@ function roomCarrySeed() {
 // (ticket 639, Matthew: "let's have some small puzzles --- my one about the bug catching, and yours about plates") the plate puzzle:
 // each 🧩 stone plate lit while the thing it wants lies on it; every plate here lit, the first time, a big chest appears among them
 // with the prize (a 🥚 dragon egg), to a fanfare
-const PLATE_REACH = 55;
+const PLATE_REACH = 55, steppedOn = new WeakMap();
 function plateCheck() {
   const B = state.background, things = B.things || [], plates = things.filter(t => t.kind === "plate");
   if (!plates.length) return;
-  for (const p of plates) p.lit = things.some(t => CARRY_KINDS.has(t.kind) && carryId(t) === (p.wants || "crown") && Math.hypot((t.x ?? 0) - (p.x ?? 0), ((t.z ?? 0) - (p.z ?? 0)) / 0.6) < PLATE_REACH);
-  if (B.plateSolved || !plates.every(p => p.lit)) return;
+  // (Matthew: "maybe we can place a rock on top (or something else like that) to keep it pressed") a switch for "any": anything to carry
+  // (a rock most of all) on it, or the friend standing on it; the others, the thing they show
+  const fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0), on = (t, p) => Math.hypot((t.x ?? 0) - (p.x ?? 0), ((t.z ?? 0) - (p.z ?? 0)) / 0.6) < PLATE_REACH;
+  let flipped = false;
+  for (const p of plates) {
+    // (Matthew: "they had two kinds: toggle kind (toggle for each step seq across it); must be depressed to work; need a rock or statue to
+    // place on top") 🔁 a toggle flips as the friend steps onto it, and stays; ⬇️ a hold switch is down only while something is on it
+    if (p.switch === "toggle") { const now = on({ x: fx, z: fz }, p), was = steppedOn.get(p) ?? now; steppedOn.set(p, now);
+      if (now && !was) { p.lit = !p.lit; flipped = true; switchWorks(p); } continue; }
+    // (held: by a thing on it, so it stays down when the friend steps off; a switch only stood on still takes a thing)
+    p.held = p.wants === "any" && things.some(t => t !== p && CARRY_KINDS.has(t.kind) && on(t, p));
+    const lit = p.wants === "any" ? p.held || on({ x: fx, z: fz }, p)
+      : things.some(t => CARRY_KINDS.has(t.kind) && carryId(t) === (p.wants || "crown") && on(t, p));
+    if (!!p.lit !== lit) { p.lit = lit; flipped = true; switchWorks(p); }
+  }
+  if (flipped) queueMicrotask(() => { changed(); draw(); });
+  if (!B.plateReward || B.plateSolved || !plates.every(p => p.lit)) return;   // (only the 🧩 puzzle's switches give a prize; one put alone just goes down)
   B.plateSolved = true;
   const x = plates.reduce((a, p) => a + (p.x ?? 0), 0) / plates.length, z = Math.min(...plates.map(p => p.z ?? 0)) - 70;
   B.things = [...things, { kind: "chest", x: Math.round(x), z: Math.round(z), open: false, treasure: "crown", gives: "egg", flourish: "chestroyal", rec: "", seed: 7 }];
-  chestFlourish("chestfanfare"); scriptSay("Click! All the plates are lit... a treasure chest appeared!", "🧩");
+  chestFlourish("chestfanfare"); scriptSay("Click, click, click! All the floor switches are down... a treasure chest appeared!", "🧩");
 }
-// "🧩 put the plate puzzle here" (the 🎒 tab): three shut chests (a crown, a shell, a sword) and three plates carved with them, around
+// (ticket 639) a floor switch's 🔗 trap doors, as a lever's (leverPullApply): open while it is down, shut when it comes up
+function switchWorks(p) {
+  const B = state.background, swung = [];
+  (B.things || []).forEach((d, j) => { if (d.kind === "trapdoor" && (p.works || []).includes(d.uid) && !!d.open !== !!p.lit) { d.open = !!p.lit; swung.push([j, d.open]); } });
+  if (!swung.length) return;
+  queueMicrotask(() => { changed(); draw(); for (const [j, open] of swung) lidSwing(`[data-drag="thing:${j}"] .pit-lid`, open); });
+}
+// "🧩 put the floor switch puzzle here" (the 🎒 tab): three shut chests (a crown, a shell, a sword) and three switches carved with them, around
 // the friend, added to the things already here; solved once (B.plateSolved), set up again to play again
 function plateSetUp() {
   const B = state.background;
@@ -1667,10 +1696,13 @@ function plateSetUp() {
   const fz = SCENE.ground + (B.figY ?? 0), back = Math.max(SCENE.top + 60, fz - 150), xs = [-230, 0, 230], wants = ["crown", "shell", "sword"];
   const order = [2, 0, 1];   // (each chest away from its own plate: a little looking about)
   const chests = xs.map((x, i) => ({ kind: "chest", x, z: Math.round(back), open: false, treasure: "gold", gives: wants[order[i]], flourish: "chestfanfare", rec: "", seed: 11 + i }));
-  const plates = xs.map((x, i) => ({ kind: "plate", x: x + 40, z: Math.round(Math.min(SCENE.ground + 20, fz + 60)), wants: wants[i], seed: 21 + i }));
-  B.things = [...(B.things || []).filter(t => t.kind !== "plate" && !(t.kind === "chest" && t.gives === "egg")), ...chests, ...plates];
-  B.plateSolved = false; plateCheck(); changed(); draw();
-  scriptSay("Open the chests, and put each treasure on the plate that shows it!", "🧩");
+  const plates = xs.map((x, i) => ({ kind: "plate", switch: "hold", x: x + 40, z: Math.round(Math.min(SCENE.ground + 20, fz + 60)), wants: wants[i], seed: 21 + i }));
+  // (and a fourth that takes anything, a 🗿 statue beside it: something has to stay on it, the friend cannot stand on two at once)
+  const mid = Math.round((back + Math.min(SCENE.ground + 20, fz + 60)) / 2);
+  plates.push({ kind: "plate", switch: "hold", wants: "any", x: -330, z: mid, seed: 24 }); const statue = { kind: "item", id: "statue", x: 330, z: mid, seed: 25 };
+  B.things = [...(B.things || []).filter(t => t.kind !== "plate" && !(t.kind === "chest" && t.gives === "egg") && !(t.kind === "item" && t.id === "statue")), ...chests, ...plates, statue];
+  B.plateSolved = false; B.plateReward = true; plateCheck(); changed(); draw();
+  scriptSay("Open the chests, and put each treasure on the floor switch that shows it. And the fourth switch... what could keep it down?", "🧩");
 }
 // the action press: a pot in reach (none held) is lifted; a shut chest in reach opened; a thing to carry picked up; else, as before,
 // through the nearest passage. actTarget: which of them it would be, for the glow (actGlow) and a click or tap on it
@@ -1679,20 +1711,44 @@ function actTarget() {
   const p = potNear(); if (p) return { kind: "pot", p };
   const c = chestNear(); if (c) return { kind: "chest", t: c, i: (state.background.things || []).indexOf(c) };
   const i = carryNear(); if (i >= 0) return { kind: "carry", i };
+  const j = plateNear(); if (j >= 0) return { kind: "plate", i: j };
   return null;
+}
+// (ticket 639, Matthew: "how do we use the plate? what puzzle is it for?") a plate in reach, not yet lit, is an action's too: what it
+// shows goes onto it from the backpack, or the friend says what it wants
+function plateNear() {
+  const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
+  let best = -1, bd = Infinity;
+  (B.things || []).forEach((t, i) => { if (t.kind !== "plate" || (t.wants === "any" ? t.held : t.lit) || t.switch === "toggle") return; const d = Math.hypot((t.x ?? 0) - fx, ((t.z ?? 0) - fz) / 0.6); if (d < CARRY_REACH && d < bd) { best = i; bd = d; } });
+  return best;
+}
+const giftName = id => ((CHEST_GIFTS.find(([k]) => k === id) || [, id])[1]);
+function plateUse(i) {
+  const B = state.background, p = (B.things || [])[i];
+  if (!p) return;
+  const want = p.wants || "crown", list = packList();
+  const k = want === "any" ? Math.max(list.findIndex(o => o.id === "rock"), list.findIndex(o => o.id !== "rock" && !TOOLS[o.id])) : list.findIndex(o => o.id === want);
+  if (k < 0) { scriptSay(want === "any" ? "This floor switch stays down only with something on it: a 🪨 rock, or a 🗿 statue? Or stand on it!" : `This floor switch shows ${giftName(want)}. Find one, and put it here!`, "🧩"); return; }
+  const it = list[k], looks = it.t || {}, kind = looks.kind && CARRY_KINDS.has(looks.kind) ? looks.kind : THING_KINDS[it.id] && CARRY_KINDS.has(it.id) ? it.id : "item";
+  const t = { ...(THING_DEFAULTS[kind] || {}), ...looks, kind, x: p.x ?? 0, z: (p.z ?? SCENE.ground) + 2, seed: 1 + Math.floor(Math.random() * 99999) };
+  if (kind === "item") t.id = it.id;
+  if (state.pack && state.pack.tool === it.id && !list.some((o, j) => j !== k && o.id === it.id)) state.pack = { ...state.pack, tool: "" };
+  state.backpack = list.filter((_, j) => j !== k);
+  changed(); draw();
+  packFly(giftSvg(it.id, B), t.x, t.z - 20 * figureT.k, false, () => { B.things = [...(B.things || []), t]; plateCheck(); changed(); draw(); });
 }
 function actionPress() {
   if (presenting) return true;
   const a = actTarget();
   if (!a) return false;
-  if (a.kind === "pot") potLift(a.p); else if (a.kind === "chest") chestOpen(a.t); else pickUp(a.i);
+  if (a.kind === "pot") potLift(a.p); else if (a.kind === "chest") chestOpen(a.t); else if (a.kind === "plate") plateUse(a.i); else pickUp(a.i);
   return true;
 }
 // (ticket 639, Matthew: "some players don't have a keyboard handy -- we should make the chest glow, like doors and ladders do now")
 // what the action press would take, glowing as a passage in reach does (passFrame), and a click or tap on it takes it
 let actGlowEl = null;
 function actGlow() {
-  roomCarrySeed();
+  roomCarrySeed(); plateCheck();
   const a = actTarget(), node = bgShown.node;
   const el = a && a.kind !== "pot" && a.i >= 0 ? document.querySelector(`#pic [data-drag="thing:${a.i}"]`) : null;
   const want = el ? "thing:" + a.i : null;

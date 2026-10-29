@@ -2549,10 +2549,10 @@ const CHEST_GIFTS = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown
   // placeable on floor ...), glass bottle with cork, bug catcher's net, ... glass bottle holds bee, backpack holds glass bottle; certain
   // small mushrooms") the things to carry, each also a thing to put in a place; a hammer and a horseshoe for the smithy; a dragon egg
   ["chocolate", "🍫 a chocolate bar"], ["bottle", "🍾 a glass bottle with a cork"], ["bottlebee", "🐝 a bee in a bottle"], ["net", "🥅 a bug net"],
-  ["cavemushroom", "🍄 a little cave mushroom"], ["hammer", "🔨 a hammer"], ["horseshoe", "🧲 a horseshoe"], ["egg", "🥚 a dragon egg"]];
+  ["cavemushroom", "🍄 a little cave mushroom"], ["hammer", "🔨 a hammer"], ["horseshoe", "🧲 a horseshoe"], ["egg", "🥚 a dragon egg"], ["rock", "🪨 a rock"], ["statue", "🗿 a little statue"]];
 // (ticket 639) what can be picked up into the 🎒 backpack from a place, with the action press: these kinds of thing, and "item", a thing
 // put down from the backpack (its id, drawn by giftSvg). A thing's id in the backpack: its kind, or an item's own id
-const CARRY_KINDS = new Set(["potion", "toadstool", "cavemushroom", "chocolate", "bottle", "net", "item"]);
+const CARRY_KINDS = new Set(["potion", "toadstool", "cavemushroom", "chocolate", "bottle", "net", "item", "rock"]);   // (a 🗿 statue is an item)   // (a rock: to keep a floor switch pressed)
 const carryId = t => t.kind === "item" ? t.id || "gold" : t.kind;
 // (ticket 639) the tools: held in the hand (state.pack.tool) and swung with "use tool" (U, or the controller's 🥅 button)
 const TOOLS = { net: "🥅 the bug net" };
@@ -2570,12 +2570,14 @@ function beeSvg(k = 1) {
     `<ellipse cx="0" cy="0" rx="12" ry="8.5" fill="#f2c230" stroke="#231f1a" stroke-width="1.8"/><path d="M-4 -8 L-4 8 M3 -8 L3 8" stroke="#231f1a" stroke-width="3.2"/>` +
     `<circle cx="10" cy="-2" r="1.6" fill="#231f1a"/><path d="M-12 0 L-17 0" stroke="#231f1a" stroke-width="2"/></g>`;
 }
-// (ticket 639) a stone plate for the plate puzzle: a slab with what it wants carved on it, lit gold when that thing lies on it
+// (ticket 639) a floor switch (a "plate" in the code; Matthew: "ah --- a floor switch") for the switch puzzle: a slab with what it wants carved on it, lit gold when that thing lies on it
 function plateSvg(t) {
   const lit = !!t.lit;
   return `<ellipse cx="0" cy="0" rx="46" ry="15" fill="${lit ? "#f6d76b" : "#8d8a83"}" stroke="${lit ? "#b8860b" : "#5c5a55"}" stroke-width="3"/>` +
     `<ellipse cx="0" cy="-3" rx="40" ry="11" fill="${lit ? "#ffe9a0" : "#a5a29b"}"/>` +
-    `<g transform="scale(0.42 0.16)" opacity="${lit ? 0.9 : 0.55}" style="filter: grayscale(1)">${giftSvg(t.wants || "crown", {})}</g>` +
+    (t.switch === "toggle" ? `<path d="M-14 -6 A14 8 0 1 1 6 4 M6 4 L12 -2 M6 4 L-1 -1" fill="none" stroke="${lit ? "#8a5a00" : "#5c5a55"}" stroke-width="3" stroke-linecap="round" transform="scale(1 0.6)"/>`
+      : t.wants === "any" ? `<path d="M-14 -9 L0 3 L14 -9 M-14 -15 L0 -3 L14 -15" fill="none" stroke="${lit ? "#8a5a00" : "#5c5a55"}" stroke-width="3" stroke-linecap="round" transform="scale(1 0.6)"/>`
+      : `<g transform="scale(0.42 0.16)" opacity="${lit ? 0.9 : 0.55}" style="filter: grayscale(1)">${giftSvg(t.wants || "crown", {})}</g>`) +
     (lit ? `<ellipse cx="0" cy="-3" rx="54" ry="20" fill="none" stroke="#fff3b0" stroke-width="3" opacity="0.8"><animate attributeName="opacity" values="0.9;0.3;0.9" dur="1.6s" repeatCount="indefinite"/></ellipse>` : "");
 }
 // a bug net: its pole from the hand at 0, 0 up and out to a hoop and its bag (up = -y)
@@ -2612,6 +2614,12 @@ function giftSvg(id, o = {}) {
       `<rect x="-20" y="-76" width="40" height="16" rx="3" fill="#7d8790" stroke="#3f464c" stroke-width="2.5"/><rect x="-20" y="-76" width="40" height="5" fill="#a9b3bb"/></g>`;
     case "horseshoe": return `<path d="M-22 0 L-22 -26 Q-22 -50 0 -50 Q22 -50 22 -26 L22 0 L12 0 L12 -26 Q12 -40 0 -40 Q-12 -40 -12 -26 L-12 0 Z" fill="#8a9298" stroke="#454b50" stroke-width="2.5"/>` +
       `<circle cx="-17" cy="-14" r="2" fill="#3f464c"/><circle cx="17" cy="-14" r="2" fill="#3f464c"/><circle cx="-14" cy="-34" r="2" fill="#3f464c"/><circle cx="14" cy="-34" r="2" fill="#3f464c"/>`;
+    case "rock": return rockSvg(0, -2, 26, 5, ROCK_TONES[0]);
+    case "statue": { const fig = typeof statueFigure === "function" ? statueFigure(0.28) : "";
+      const base = `<ellipse cx="0" cy="0" rx="22" ry="6" fill="#6f6c66"/><rect x="-18" y="-10" width="36" height="10" rx="2" fill="#9a968e" stroke="#55524c" stroke-width="2"/>`;
+      if (fig) return base + `<g transform="translate(0 -10)">${fig}</g>`;
+      return base + `<path d="M-11 -10 L-9 -46 Q0 -54 9 -46 L11 -10 Z" fill="#a9a59c" stroke="#55524c" stroke-width="2"/><circle cx="0" cy="-58" r="10" fill="#a9a59c" stroke="#55524c" stroke-width="2"/>` +
+      `<path d="M-4 -60 L-2 -60 M2 -60 L4 -60 M-3 -53 L3 -53" stroke="#55524c" stroke-width="1.8"/>`; }
     case "egg": return `<ellipse cx="0" cy="-28" rx="22" ry="29" fill="#7fbf7a" stroke="#2f6b2a" stroke-width="2.5"/>` +
       `<path d="M-14 -40 l6 4 l-6 4 M8 -46 l6 4 l-6 4 M-4 -20 l6 4 l-6 4 M10 -22 l5 4 l-5 4" stroke="#2f6b2a" stroke-width="2" fill="none"/>` +
       `<ellipse cx="-8" cy="-42" rx="5" ry="8" fill="#ffffff" opacity="0.4"/>`;
@@ -3374,7 +3382,9 @@ function fencePieceSvg(o, t, i, s) {
 }
 const THING_PARAMS = {
   // (ticket 639) a thing put down from the backpack: which
-  item: [["id", "🎁 which", "choice", CHEST_GIFTS]], plate: [["wants", "🧩 the picture on it", "choice", CHEST_GIFTS]],   // (a plate: what it wants on it)
+  item: [["id", "🎁 which", "choice", CHEST_GIFTS]], plate: [["switch", "🧩 kind", "choice", [["hold", "⬇️ down only while something is on it"], ["toggle", "🔁 flips each time you step on it"]]],
+          ["wants", "⬇️ what holds it down", "choice", () => [["any", "🪨 anything (a rock, a statue, the friend)"], ...CHEST_GIFTS]],
+          ["works", "🔗 its trap doors (open while it is down)", "wires"]],   // (Matthew: "will the floor switches control ... trap doors")   // (Matthew: "like legend of zelda ... they had two kinds")   // (a plate: what it wants on it)
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
   rock: [["tone", "🎨", "color", ROCK_TONES]],
@@ -3440,7 +3450,7 @@ const THING_PARAMS = {
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
-const THING_DEFAULTS = { item: { id: "gold" }, plate: { wants: "crown" }, bee: {}, chocolate: {}, bottle: {}, net: {}, deadtree: { h: 300, droop: false, color: "#24192f" }, skullstake: { eyes: 100 }, palisade: { stakes: 6, skulls: true }, rock: { tone: ROCK_TONES[0] },   // (ticket 368: the first three)
+const THING_DEFAULTS = { item: { id: "gold" }, plate: { switch: "hold", wants: "any" }, bee: {}, chocolate: {}, bottle: {}, net: {}, deadtree: { h: 300, droop: false, color: "#24192f" }, skullstake: { eyes: 100 }, palisade: { stakes: 6, skulls: true }, rock: { tone: ROCK_TONES[0] },   // (ticket 368: the first three)
                          tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },   // (ticket 369: swallowed by the note above, 0.0.287-0.0.297)
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, moss: { style: "haircap", on: "floor", color: "none", lobes: true }, lichen: { style: "crust", on: "back", color: "none" }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
@@ -3563,13 +3573,13 @@ function seaChestSvg(open, treasure = "gold", o = {}) {
   if (open) {
     s += `<path d="M-40 -40 L-36 -76 L44 -76 L40 -40 Z" fill="#8b5e34" stroke="#4a2e1a" stroke-width="2"/><path d="M-34 -44 L-31 -70 L38 -70 L35 -44 Z" fill="#4a2e1a" opacity="0.55"/>` +
       [-1, 1].map(e => `<path d="M${f1(-3 + e * 26)} -40 L${f1(-1 + e * 27)} -76 L${f1(5 + e * 27)} -76 L${f1(3 + e * 26)} -40 Z" fill="${band}"/>`).join("");
-    // the heap: gold always, and gems or a crown as it says
-    s += `<path d="M-38 -40 Q-20 -58 0 -54 Q22 -60 38 -40 Z" fill="${gold}" stroke="#9a7a12" stroke-width="1.2"/>` +
+    // the heap: gold always, and gems or a crown as it says; (ticket 639) none in a chest opened and emptied
+    if (treasure !== "empty") s += `<path d="M-38 -40 Q-20 -58 0 -54 Q22 -60 38 -40 Z" fill="${gold}" stroke="#9a7a12" stroke-width="1.2"/>` +
       [...Array(12)].map((_, j) => coin(-32 + 64 * seaR(j, 970), -40 - 6 * seaR(j, 971) - 6 * Math.sin(Math.PI * seaR(j, 970)))).join("");
-    if (treasure !== "gold") s += [...Array(treasure === "gems" ? 7 : 4)].map((_, j) => gem(-26 + 52 * seaR(j, 974), -46 - 8 * seaR(j, 975), GEM_COLORS[j % 6])).join("");
+    if (treasure !== "gold" && treasure !== "empty") s += [...Array(treasure === "gems" ? 7 : 4)].map((_, j) => gem(-26 + 52 * seaR(j, 974), -46 - 8 * seaR(j, 975), GEM_COLORS[j % 6])).join("");
     if (treasure === "crown") s += `<path d="M-6 -56 L-6 -70 L0 -63 L6 -72 L12 -63 L18 -70 L18 -56 Z" fill="${gold}" stroke="#9a7a12" stroke-width="1.4"/>` +
       [[0, -60, "#e11d48"], [6, -62, "#3b82f6"], [12, -60, "#22c55e"]].map(([x, y, col]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="${col}"/>`).join("");
-    s += [...Array(5)].map((_, j) => coin(-48 - 26 * seaR(j, 972), 2 + 6 * seaR(j, 973))).join("") +
+    if (treasure !== "empty") s += [...Array(5)].map((_, j) => coin(-48 - 26 * seaR(j, 972), 2 + 6 * seaR(j, 973))).join("") +
       [[-14, -58, 6, 0], [16, -54, 5, 0.4], [-28, -46, 4, 0.7]].map(([x, y, r, off]) => gemSparkle(o, x, y, r, off)).join("");
   } else s += `<path d="M-42 -40 Q0 -62 42 -40 Z" fill="#8b5e34" stroke="#4a2e1a" stroke-width="2"/>` +
     [-1, 1].map(e => `<path d="M${f1(-3 + e * 26)} -40 Q${f1(-3 + e * 26)} ${f1(-56 + Math.abs(e) * 4)} ${f1(e * 27)} ${f1(-55 + Math.abs(e) * 4)} L${f1(6 + e * 26)} -55 Q${f1(3 + e * 26)} -50 ${f1(3 + e * 26)} -40 Z" fill="${band}"/>`).join("") +
@@ -3635,7 +3645,7 @@ const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["mag
 // it is not in the menu (THING_KINDS[k].group)
 const THING_KINDS_639 = { chocolate: { label: "🍫 chocolate bar", size: 1, group: "carry" }, bottle: { label: "🍾 glass bottle", size: 1, group: "carry" },
                           net: { label: "🥅 bug net", size: 1, group: "carry" }, bee: { label: "🐝 bee", size: 1, group: "carry", moving: true },
-                          plate: { label: "🧩 stone plate", size: 1, group: "carry" }, item: { label: "🎁 something put down", size: 1 } };
+                          plate: { label: "🧩 floor switch (a picture on it)", size: 1, group: "works" }, item: { label: "🎁 something put down", size: 1 } };
 const THING_KINDS = { ...THING_KINDS_639, rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
@@ -3876,7 +3886,7 @@ function thingsLayer(c) {
   // (ticket 380, ^du_report(12)'s next step 1: with 256 makers the layer cost a part() call each, its thing written out twice over, on
   // every drawing, 0.58 ms in the app's pane) the whole layer kept while nothing it draws from changes: the things, written out once,
   // and what else each reads; on a change each thing still comes from its own piece, so a drag makes one again, not all
-  const key = JSON.stringify([c.F, c.o.kind, vanish, T, T.map(extra)]);
+  const key = JSON.stringify([c.F, c.o.kind, vanish, T, T.map(extra), typeof statueFig !== "undefined" && !!statueFig]);   // (ticket 639: a 🗿 drawn again once its figure is)
   if (key === thingsLayerMemo.key) return thingsLayerMemo.svg;
   const svg = T.map((t, i) => SEP + part("thing-" + i, [c.F, c.o.kind, vanish, t, extra(t, i)], () => obj(t.fallen ? `fallen ${t.fallen}` : `${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`, thingDepth(c.o, t), thingSvg(c.o, t, i)))).join("");
   thingsLayerMemo = { key, svg };

@@ -4,6 +4,16 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.462 (2026-10-29)
+
+Everything in 0.0.461, plus:
+
+- **Floor switches**, as in Zelda (what 0.0.461 called stone plates; now in 🪨 things: 🎚️ switches and traps). Two kinds: ⬇️ **hold**, down only while something is on it (a picture switch wants the thing it shows; an "anything" switch takes a 🪨 rock, a 🗿 statue, or the friend standing on it), and 🔁 **toggle**, which flips each time the friend steps onto it. Walk up to a hold switch and press the action button (or tap it) to put what it wants on it from your backpack; if you have none, the friend says what it wants. A switch can be wired to trap doors (🔗, as a lever is): they open while it is down.
+- **Rocks** can be picked up and carried, and there is a new 🗿 **little statue**: the friend as the game first draws them, all in grey.
+- 🧩 put the floor switch puzzle here (the 🎒 tab): three chests, three picture switches, and a fourth that takes anything, with a statue beside it.
+- **Fixed:** a chest you opened looked full of gold you could not take: now it is empty once its treasure is out.
+- **Fixed:** pointing at a shut chest said "sit on the chest": now it says "💰 open the chest" (and "🎒 pick it up" on a thing to carry, "🧩 put ... here" on a floor switch, "🥅 catch the bee" with the net held), and a click does that.
+
 ## 0.0.461 (2026-10-29)
 
 Everything in 0.0.460, plus:

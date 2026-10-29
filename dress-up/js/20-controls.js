@@ -1980,8 +1980,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       const nu = T[T.length - 1];
       if (next) Object.assign(nu, { style: next.style ?? nu.style, size: next.size ?? nu.size, mirror: !!next.mirror });
       tileSnap(B, nu);   // (ticket 502: a thing that stands on the floor's tiles goes onto the nearest; any other stays where it is put)
-      if (kd === "lever") nu.works = T.filter(x => x.kind === "trapdoor" && x.uid).map(x => x.uid);
-      if (kd === "trapdoor") for (const L of T) if (L.kind === "lever") L.works = [...(L.works || []), nu.uid];
+      if (kd === "lever" || kd === "plate") nu.works = T.filter(x => x.kind === "trapdoor" && x.uid).map(x => x.uid);   // (ticket 639: a floor switch, wired as a lever)
+      if (kd === "trapdoor") for (const L of T) if (L.kind === "lever" || L.kind === "plate") L.works = [...(L.works || []), nu.uid];
       changed();
       if (thingMoves(T[T.length - 1])) thingCheck(guard);   // (ticket 201: how this computer takes it)
     };
@@ -2389,7 +2389,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const list = el("div", { class: "pack-list" }), names = Object.fromEntries(CHEST_GIFTS);
     let sig = null;
     const render = () => {
-      const items = Array.isArray(state.backpack) ? state.backpack : [], s = JSON.stringify([items, toolHeld(), state.background.kind === "none"]);
+      const items = Array.isArray(state.backpack) ? state.backpack : [], s = JSON.stringify([items, toolHeld(), state.background.kind === "none", typeof statueFig !== "undefined" && !!statueFig]);
       if (s === sig) return; sig = s;
       if (!items.length) { list.replaceChildren(el("p", { class: "hint" }, "Nothing in it yet: open a 💰 treasure chest, or walk up to a thing that glows (a potion, a mushroom, a bottle, a net...) and press Enter, or tap it.")); return; }
       const nowhere = state.background.kind === "none", held = toolHeld();
@@ -2408,8 +2408,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     };
     render(); syncs.push(render); box.append(list);
     // (ticket 639) the plate puzzle, set up here
-    box.append(el("div", { class: "row" }, [el("button", { onclick: () => plateSetUp() }, "🧩 put the plate puzzle here"),
-      el("span", { class: "hint" }, "three chests, three stone plates: each treasure on the plate that shows it")]));
+    box.append(el("div", { class: "row" }, [el("button", { onclick: () => plateSetUp() }, "🧩 put the floor switch puzzle here"),
+      el("span", { class: "hint" }, "three chests and three floor switches: put each treasure on the switch that shows it")]));
     return box;
   }
   if (kind === "advanced") {

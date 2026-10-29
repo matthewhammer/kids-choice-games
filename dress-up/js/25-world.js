@@ -1814,6 +1814,39 @@ function peopleDrawMissing() {
   while (personDrawn.size > 400) personDrawn.delete(personDrawn.keys().next().value);
   changed();
 }
+// (ticket 639, Matthew 2026-10-29: "let's render the statue as the default friend, with all grey tones") the 🗿 statue: the friend as the
+// game first draws them (DEFAULTS' look, standing, facing us), drawn once off the page as a person is (peopleDrawMissing), kept, and
+// shown in greys on a stone base by giftSvg("statue"); until it is drawn, a plain stone figure
+let statueFig = null, statueWanted = false;
+function statueDraw() {
+  statueWanted = false;
+  if (statueFig || personBusy) return;
+  if (poseHeld || climb || drag || entering) { statueWanted = true; setTimeout(statueDraw, 400); return; }
+  personBusy = true;
+  const real = document.getElementById("pic"), tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  tmp.setAttribute("style", "position:fixed;left:-10000px;top:0;width:400px;height:600px;visibility:hidden;pointer-events:none");
+  const keep = Object.fromEntries(PERSON_PARTS.map(k => [k, state[k]])), keepBG = state.background;
+  const keepG = { poseJoints, faceFrame, naturalFrame, figureT, figShown, objs: bgShown.objs };
+  try {
+    real.id = "pic-real"; tmp.id = "pic"; document.body.append(tmp); figShown = [];
+    const look = personLookWhole({});
+    for (const k of PERSON_PARTS) state[k] = look[k];
+    state.body.anim = "none"; state.background = { ...keepBG, kind: "none" }; strikePose("stand"); state.body.facing = "front";
+    drawNow();
+    const fig = tmp.querySelector("#figure"), far = tmp.querySelector("#figure-far"), defs = tmp.querySelector("defs");
+    if (fig) statueFig = { svg: personOwnIds((defs ? defs.outerHTML : "") + (far ? far.outerHTML : "") + fig.outerHTML, "statue-"), g: naturalFrame.ground };
+  } finally {
+    for (const k of PERSON_PARTS) state[k] = keep[k];
+    state.background = keepBG;
+    ({ poseJoints, faceFrame, naturalFrame, figureT, figShown } = keepG); bgShown.objs = keepG.objs;
+    tmp.remove(); real.id = "pic"; personBusy = false;
+  }
+  if (statueFig) changed();
+}
+function statueFigure(k) {
+  if (!statueFig) { if (!statueWanted) { statueWanted = true; setTimeout(statueDraw, 0); } return ""; }
+  return `<g style="filter: grayscale(1) contrast(0.85) brightness(1.08)" transform="scale(${k}) translate(0 ${f1(-statueFig.g)})">${statueFig.svg.replace(/ id="statue-figure"/, "").replace(/ id="statue-figure-far"/, "")}</g>`;
+}
 // (each id in a person's figure made their own, as the friend's are kept: pat-shirt, the veils' masks)
 function personOwnIds(svg, pre) {
   const ids = new Set([...svg.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
