@@ -916,7 +916,7 @@ document.addEventListener("keydown", e => {
   if (actionPress()) { e.preventDefault(); return; }
   if (enterAt) { e.preventDefault(); enterPicture(); }
 });
-// (ticket 639) U: use the tool held (the 🥅 bug net: a swing)
+// (ticket 639) U: use the tool held (the 🥅 bug net: a swing; ticket 656: or a 🗡️ sword, which cuts plants)
 document.addEventListener("keydown", e => {
   if ((e.key !== "u" && e.key !== "U") || e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
   if (toolUse()) e.preventDefault();
@@ -1204,7 +1204,7 @@ const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 
                      ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"],
                      ["bubbles", "🫧 blow bubbles (held)"], ["fire", "🔥 breathe fire (held)"], ["throw", "🏺 throw what you hold (with a pot held)"],
                      // (ticket 639: "permit a gamepad action to do 'open/use item' on it") on ✨'s button: what glows in reach first
-                     ["act", "🫳 open a chest, pick up, lift a pot (what glows)"], ["tool", "🥅 use the tool you hold (the bug net)"]];   // (tickets 221, 499)
+                     ["act", "🫳 open a chest, pick up, lift a pot (what glows)"], ["tool", "🥅 use the tool you hold (the bug net, a 🗡️ sword)"]];   // (tickets 221, 499)
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -1319,7 +1319,7 @@ function padPoll(t) {
   const coasting = !moving && ramp > 0 && Math.hypot(padVel[0], padVel[1]) > 2 && BG.kind !== "none" && !entering && !drag && !onLadder;
   if (!moving && !coasting) padVel = [0, 0];
   const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
-  const run = held("run"), low = (held("crouch") && !(toolHeld() && btn("tool") === btn("crouch"))) || padCrawl;   // (ticket 639: a tool held takes Y from crouching)
+  const run = held("run"), low = (held("crouch") && !(toolInHand() && btn("tool") === btn("crouch"))) || padCrawl;   // (ticket 639: a tool held takes Y from crouching; ticket 656: a sword in the hand too)
   const want = moving ? (low ? (wet ? "swim" : "crawl") : wet ? (run ? "swimfast" : "swim") : run ? "run" : "walk") : coasting && padWant ? padWant : low && !wet ? "crouch" : "none";
   if (isJump(B.anim)) jumpPrev = want;   // (landing into what they are told now)
   else if (want !== padWant && !onLadder) {
@@ -1580,24 +1580,88 @@ function beeFree(k) {
 // in the backpack is held (✋ hold it, its card), drawn in the friend's hand (drawNow); "use tool" (U, or 🥅 on the controller) swings
 // it. The net, swung near a 🐝 with an empty 🍾 bottle in the pack: the bee in the bottle, the bottle back in the pack.
 const NET_REACH = 150, SWING_MS = 360;
-let swinging = false;
+let swinging = "";   // (the tool swinging now, or "")
 const toolHeld = () => { const id = state.pack && state.pack.tool; return id && TOOLS[id] && packList().some(o => o.id === id) ? id : ""; };
+// (ticket 656) the tool "use tool" swings: the one held from the backpack, or else a sword already in the friend's own hand (a
+// knight's, the Time Wanderer's, or one chosen to hold)
+function toolInHand() {
+  const id = toolHeld();
+  if (id) return id;
+  const hands = heldItems(state.body, state.costume.kind, state.costume);
+  return hands.L === "sword" || hands.R === "sword" ? "sword" : "";
+}
 function toolHold(id) { state.pack = { ...(state.pack || {}), tool: toolHeld() === id ? "" : id }; changed(); draw(); }
 function toolUse() {
-  const id = toolHeld(), B = state.background;
+  const id = toolInHand(), B = state.background;
   if (!id || swinging || entering || B.kind === "none") return false;
   const T = figureT, H = T.base || 300, k = T.k, f = state.body.facing, side = f === "left" ? -1 : 1;
   const hx = T.dx + side * 0.22 * H * k, hy = T.sg + T.dy - 0.5 * H * k, O = makerOver(), g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  g.setAttribute("data-swing", id); O.append(g); swinging = true; draw();
-  const t0 = performance.now();
+  g.setAttribute("data-swing", id); O.append(g); swinging = id; draw();
+  const t0 = performance.now(), svg = toolSvg(id);
   const frame = now => {
     const u = Math.min(1, (now - t0) / SWING_MS), a = side * (-70 + 150 * u * u * (3 - 2 * u));
-    g.setAttribute("transform", `translate(${f1(hx)} ${f1(hy)}) rotate(${a.toFixed(1)}) scale(${(k * H / 300 * 1.1).toFixed(3)})`); g.innerHTML = netSvg(1);
+    g.setAttribute("transform", `translate(${f1(hx)} ${f1(hy)}) rotate(${a.toFixed(1)}) scale(${(k * H / 300 * 1.1).toFixed(3)})`);
+    if (!g.firstChild) g.innerHTML = svg;   // (the same drawing each frame: only the transform moves)
     if (u < 1) { requestAnimationFrame(frame); return; }
-    g.remove(); swinging = false; netCatch(); draw();
+    g.remove(); swinging = ""; if (id === "sword") swordCut(side); else netCatch(); draw();
   };
   requestAnimationFrame(frame);
   return true;
+}
+// (ticket 656, M: "sword can cut through vines and trees and other vegetation in the world, and the chopped up bits -- vanish, for
+// now") The sword, swung, cuts the nearest plant within SWORD_REACH on the side the friend faces (one a swing: chop, chop), which
+// vanishes in a puff of leaves: a plant put in the place (PLANT_KINDS) is taken out of it; one the scene draws itself goes on the
+// place's cut list (B.cut, read with objectsOff: hidden, and no longer in the way), kept by each square of the world for itself,
+// and shown 🙈 in 👁️ default background objects, where a tap grows it back. A row of flowers or grass across the place (GROUND_ROW, wider than the sword reaches) is ground to
+// walk through, not a plant to cut: a whole meadow went in a few swings, a strip at a time; a clump of them is cut
+const SWORD_REACH = 190;
+const GROUND_ROW = /^(flowers|grass|flowers and grass|grass and flowers) \d+$|^grass by the fence$|^lily pads$/;
+// (not the plants to carry, a toadstool or a cave mushroom: those go in the 🎒)
+const PLANT_KINDS = new Set(["bush", "tree", "pine", "moss", "lichen", "deadtree", "kelp", "seagrass", "sealettuce", "saguaro", "pricklypear",
+  "barrelcactus", "agave", "joshuatree", "ocotillo"]);
+// the scene's own plants, by name; not the far woods behind everything, not a trunk a tree house stands on, and (swordCut) not
+// anything with a way through it (a doorway)
+const PLANT_OBJ = /\b(trees?|bush|pines?|palm|willow|vines|ferns|plant|kelp|seaweed|monstera|hibiscus|bird of paradise|flowers|grass|cattails|lily pads|mushrooms?|toadstool|tumbleweed|agave|cactus|prickly pear|saguaro|ocotillo)\b/;
+const PLANT_OBJ_NOT = /\bfar\b|^woods$|tree trunk|tree house|cat tree/;
+function swordCut(side) {
+  const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0), cands = [];
+  // (how far each is: across to its near edge, none if the friend stands in front of it; back or forward counted as the net's catch counts it)
+  for (const t of B.things || []) {
+    if (!PLANT_KINDS.has(t.kind)) continue;
+    const dx = (t.x ?? 0) - fx, d = Math.hypot(dx, ((t.z ?? 0) - fz) / 0.6);
+    if (dx * side >= -30 && d <= SWORD_REACH) cands.push({ d, thing: t, at: [t.x ?? 0, (t.z ?? fz) - 60] });
+  }
+  // (a thing put in the place is drawn as an object too, named by its kind and number (thingsLayer): cut as the thing it is, above)
+  const thingObjs = new Set((B.things || []).map((t, i) => t.fallen ? `fallen ${t.fallen}` : `${t.kind === "lifted" ? t.name : t.kind} ${i + 1}`));
+  for (const o of bgShown.objs) {
+    if (thingObjs.has(o.name) || !PLANT_OBJ.test(o.name) || PLANT_OBJ_NOT.test(o.name) || o.node.style.display === "none" || o.node.querySelector(".portal")) continue;
+    let bb; try { bb = o.node.getBBox(); } catch (e) { continue; }
+    if (!bb.width || (GROUND_ROW.test(o.name) && bb.width > SWORD_REACH)) continue;
+    const gap = side > 0 ? bb.x - fx : fx - (bb.x + bb.width), reach = side > 0 ? bb.x + bb.width - fx : fx - bb.x;
+    const d = Math.hypot(Math.max(0, gap), (o.z - fz) / 0.6);
+    if (reach >= 20 && d <= SWORD_REACH) cands.push({ d, obj: o, at: [Math.max(bb.x, Math.min(bb.x + bb.width, fx + side * SWORD_REACH / 2)), Math.max(bb.y, o.z - 80)] });
+  }
+  const c = cands.sort((a, b) => a.d - b.d)[0];
+  if (!c) return;
+  if (c.thing) B.things = B.things.filter(t => t !== c.thing);
+  else { const at = objPlace(B), cut = { ...(B.cut || {}) }; cut[at] = [...new Set([...(cut[at] || []), c.obj.name])]; B.cut = cut; }
+  changed(); draw();
+  leafPuffs([c.at]);
+}
+// (ticket 656) a puff of leaves at each [x, y] (the scene's units), flying out and fading, with a "chop!"
+function leafPuffs(at) {
+  const O = makerOver(), g = document.createElementNS("http://www.w3.org/2000/svg", "g"), k = figureT.k || 1, t0 = performance.now();
+  g.setAttribute("data-chop", ""); O.append(g);
+  const leaves = at.flatMap(([x, y], j) => [...Array(7)].map((_, i) => ({ x, y, a: (i / 7) * 2 * Math.PI + j, v: 60 + 40 * ((i * 37 + j * 11) % 5) / 4, c: ["#4f8a3c", "#7bb35a", "#3c6e2e"][i % 3] })));
+  const frame = now => {
+    const u = Math.min(1, (now - t0) / 450);
+    g.innerHTML = leaves.map(l => { const cx = l.x + Math.cos(l.a) * l.v * u * k, cy = l.y + (Math.sin(l.a) * l.v * u + 60 * u * u) * k;
+      return `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(7 * k)}" ry="${f1(3.5 * k)}" fill="${l.c}" opacity="${(1 - u).toFixed(2)}" transform="rotate(${(l.a * 57 + 300 * u).toFixed(0)} ${f1(cx)} ${f1(cy)})"/>`; }).join("") +
+      `<text x="${f1(at[0][0])}" y="${f1(at[0][1] - 40 * k)}" font-size="${f1(26 * k)}" font-weight="700" fill="#2f5d22" font-family="sans-serif" text-anchor="middle" opacity="${(1 - u).toFixed(2)}">chop!</text>`;
+    if (u < 1) { requestAnimationFrame(frame); return; }
+    g.remove();
+  };
+  requestAnimationFrame(frame);
 }
 function netCatch() {
   const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);

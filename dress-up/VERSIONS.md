@@ -4,6 +4,15 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.465 (2026-10-29)
+
+Everything in 0.0.464, plus:
+
+- **The 🗡️ sword cuts plants** (M's idea). Hold a sword and press "use tool" (U, or the controller's 🥅 button): the nearest tree, bush, vine, cactus, clump of flowers or mushroom in front of you vanishes in a puff of leaves. *Chop!* One plant each swing. The sword can be a knight's or the Time Wanderer's own, one chosen to hold in a hand, or one from the 🎒 backpack (✋ hold it).
+- What is cut stays cut, and no longer stands in the way. In the 🌍 world, each square keeps its own. Rows of flowers and grass across a whole place are not cut: they are there to walk through.
+- A plant the place draws itself shows 🙈 in 🏞️ Background, 👁️ what stands in the scene; tap it there to grow it back.
+- With a sword in hand, the controller's button for "use tool" swings it, also when that button is the same as crouch's.
+
 ## 0.0.464 (2026-10-29)
 
 Everything in 0.0.463, plus:

@@ -226,7 +226,7 @@ function worldProblems(W) {
 // things, any place's; and a forest crossing's paths and floor.
 const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave", "crossHole", "crossLedge", "crossOpen", "crossShade", "crossMoss", "crossMossKind", "crossShrooms", "crossShroomKind", "crossSeed", "crossStairs"];
 // (ticket 524) and an inside an outside has several of: which one it is (INSIDE_WHICH)
-const cellKeys = kind => isCross(kind) ? ["things", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", INSIDE_WHICH[kind]] : ["things"];
+const cellKeys = kind => isCross(kind) ? ["things", "cut", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", "cut", INSIDE_WHICH[kind]] : ["things", "cut"];   // (ticket 656: and the plants cut in it)
 // where the friend comes in, walking into a square from a side: just
 // inside that side, as if they had come through it (the stage's units, as
 // figX and figY: across, and nearer or farther than the ground line)

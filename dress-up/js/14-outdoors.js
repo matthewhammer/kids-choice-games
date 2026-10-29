@@ -2563,7 +2563,10 @@ const CHEST_GIFTS = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown
 const CARRY_KINDS = new Set(["potion", "toadstool", "cavemushroom", "chocolate", "bottle", "net", "item", "rock"]);   // (a 🗿 statue is an item)   // (a rock: to keep a floor switch pressed)
 const carryId = t => t.kind === "item" ? t.id || "gold" : t.kind;
 // (ticket 639) the tools: held in the hand (state.pack.tool) and swung with "use tool" (U, or the controller's 🥅 button)
-const TOOLS = { net: "🥅 the bug net" };
+// (ticket 656) and the 🗡️ sword, which cuts plants (toolUse, swordCut)
+const TOOLS = { net: "🥅 the bug net", sword: "🗡️ the sword" };
+// a tool from the hand at 0, 0 up (-y), as it is held and swung
+const toolSvg = id => id === "sword" ? swordSideSvg([0, 0], 1) : netSvg(1);
 // a glass bottle with a cork, empty or with a bee buzzing in it: its foot at 0, 0
 function bottleSvg(bee) {
   return `<path d="M-7 -58 L7 -58 L7 -40 Q24 -31 24 -13 Q24 3 0 3 Q-24 3 -24 -13 Q-24 -31 -7 -40 Z" fill="#d6eef8" fill-opacity="0.75" stroke="#5a7a8a" stroke-width="2.5"/>` +

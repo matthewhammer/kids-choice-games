@@ -38,7 +38,8 @@ function objPlace(B) {
   if (B.kind === "treeroom") return "treeroom:" + Math.round(B.inside ?? 1);
   return B.kind;
 }
-const objectsOff = B => new Set(((B.objectsOff || {})[objPlace(B)]) || []);
+// (ticket 656) and the plants a 🗡️ sword has cut there (B.cut, by place as objectsOff is; a square of the world keeps its own)
+const objectsOff = B => new Set([...(((B.objectsOff || {})[objPlace(B)]) || []), ...(((B.cut || {})[objPlace(B)]) || [])]);
 function showObjects() {
   const off = objectsOff(state.background);
   // (ticket 163: written only when it changes; every drawing, each write

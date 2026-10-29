@@ -280,7 +280,8 @@ function drawNow() {
   const armOf = own => arms.find(x => x.side === (away ? -1 : 1) * (own === "L" ? 1 : -1)) || null;
   const heldNow = heldItems(B, kind, WC);
   const held = Object.keys(HOLDABLES).flatMap(id => ["L", "R"].filter(own => heldNow[own] === id).map(own => ({ own, item: id, arm: armOf(own) })))
-    .filter(h => h.arm && !(h.item === "lasso" && handsBusy) && !(move && move.swim && h.item !== "rein"));
+    .filter(h => h.arm && !(h.item === "lasso" && handsBusy) && !(move && move.swim && h.item !== "rein"))
+    .filter(h => !(swinging === "sword" && h.item === "sword"));   // (ticket 656: the sword in the hand is the one swinging, drawn by toolUse)
   // (ticket 529: swimming, everything held is put away, as the lasso is: both arms windmill over the head and under the
   // body each stroke, so a thing in the hand would sweep through the friend; crawling toward us, each lies flat on the
   // floor under its hand, heldSvg's "floor" drawings, reaching out to the side, not up)
@@ -1420,7 +1421,7 @@ function drawNow() {
   // (ticket 639) the tool held (✋ hold it, in the 🎒 tab), in the hand on the side they face, leaning out; not while it swings
   { const tool = !lieAlong && !carry && !swinging && toolHeld(); const f = tool && document.getElementById("figure");
     if (f) { const H = figureT.base || 300, side = state.body.facing === "left" ? -1 : 1;
-      f.insertAdjacentHTML("beforeend", `<g data-tool="${tool}" transform="translate(${f1(side * 0.22 * H)} ${f1(figureT.g - 0.5 * H)}) rotate(${side * 28}) scale(${(H / 300 * 1.1).toFixed(3)})">${netSvg(1)}</g>`); } }
+      f.insertAdjacentHTML("beforeend", `<g data-tool="${tool}" transform="translate(${f1(side * 0.22 * H)} ${f1(figureT.g - 0.5 * H)}) rotate(${side * 28}) scale(${(H / 300 * 1.1).toFixed(3)})">${toolSvg(tool)}</g>`); } }
   if (document.documentElement.classList.contains("lineart")) lineArtUnuse(pic);   // (lines only: no <use> left, its colours out of the styles' reach)
   if (figAway || figBurst) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 349: and burst into bubbles)   // (ticket 193: a spin's copy is shown instead)
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units

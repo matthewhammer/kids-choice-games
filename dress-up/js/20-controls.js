@@ -1797,6 +1797,9 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         const lit = (o, on) => { const g = bgShown.node && bgShown.node.querySelector(`[data-obj="${CSS.escape(o.name)}"]`); if (g) g.classList.toggle("obj-lit", on); };
         chips = list.map(o => [o, el("button", { class: "obj", onpointerenter: () => lit(o, true), onpointerleave: () => lit(o, false), "data-layer": o.layer || "stands", title: o.layer ? `${o.name}: on the ${o.layer}, always behind the friend, in nobody's way` : `${o.name}: stands at depth ${Number.isFinite(o.z) ? Math.round(o.z) : "in front of everything"} (the friend's feet are at ${Math.round(SCENE.ground)} on the ground line)`,
           onclick: () => { const all = { ...(B.objectsOff || {}) }, now = new Set(all[at] || []);
+                           // (ticket 656: a plant a sword cut grows back: off the cut list, not onto the hidden one)
+                           const cut = ((B.cut || {})[at]) || [];
+                           if (cut.includes(o.name)) { B.cut = { ...B.cut, [at]: cut.filter(n => n !== o.name) }; changed(); return; }
                            if (now.has(o.name)) now.delete(o.name); else now.add(o.name);
                            if (now.size) all[at] = [...now]; else delete all[at];
                            B.objectsOff = all; changed(); } }, [el("img", { class: "obj-pic", src: objPicture(at, o.name), alt: "", loading: "lazy", onerror: e => e.target.remove() }),
